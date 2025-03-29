@@ -23,6 +23,11 @@ type BaseApp struct {
 	onBeforeRequestHandle *hook.Hook[*BaseEvent]
 }
 
+// SetSettings implements App.
+func (a *BaseApp) SetSettings(settings *Settings) {
+	a.settings = settings
+}
+
 // TokenVerifier implements App.
 func (a *BaseApp) TokenVerifier() *TokenVerifier {
 	return a.tokenVerifier
@@ -73,6 +78,7 @@ func NewBaseApp(db bob.DB, cfg conf.EnvConfig, authOpt *Settings) *BaseApp {
 	return &BaseApp{
 		db:       db,
 		settings: authOpt,
+		cfg:      &cfg,
 	}
 }
 

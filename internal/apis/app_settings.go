@@ -11,12 +11,12 @@ import (
 
 func (api *Api) GetAppSettingsOperation(path string) huma.Operation {
 	return huma.Operation{
-		OperationID: "app-settings",
+		OperationID: "app-settings-get",
 		Method:      http.MethodGet,
 		Path:        path,
 		Summary:     "App settings",
 		Description: "App settings",
-		Tags:        []string{"App", "Settings"},
+		Tags:        []string{"Admin", "Settings"},
 		Security: []map[string][]string{
 			{shared.BearerAuthSecurityKey: {}},
 		},
@@ -35,11 +35,11 @@ func (api *Api) GetAppSettings(context context.Context, input *struct{}) (*AppSe
 
 func (api *Api) PostAppSettingsOperation(path string) huma.Operation {
 	return huma.Operation{
-		OperationID: "app-settings",
+		OperationID: "app-settings-post",
 		Method:      http.MethodPost,
 		Path:        path,
-		Summary:     "App settings",
-		Description: "App settings",
+		Summary:     "Update App settings",
+		Description: "Update App settings",
 		Tags:        []string{"App", "Settings"},
 		Security: []map[string][]string{
 			{shared.BearerAuthSecurityKey: {}},
@@ -51,8 +51,15 @@ type AppSettingsInput struct {
 	Body core.Settings
 }
 
-func (api *Api) PostAppSettings(context context.Context, input *AppSettingsInput) (*AppSettingsout, error) {
-	// err := input.Body.Va()
-	// settings, err := api.app.UpdateSettings(input.Body)
+func (api *Api) PostAppSettings(context context.Context, input *AppSettingsInput) (*struct{}, error) {
+	err := input.Body.Validate()
+	if err != nil {
+		return nil, err
+	}
+	err = core.EncryptAndSetSettings(context, api.app.Db(), &input.Body, api.app.EncryptionEnv())
+	if err != nil {
+		return nil, err
+	}
+	api.app.SetSettings(&input.Body)
 	return nil, nil
 }

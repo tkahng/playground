@@ -99,10 +99,10 @@ func BindApis(api huma.API, app core.App) {
 	huma.Register(api, appApi.OauthCallbackGetOperation("/auth/oauth/callback"), appApi.OauthCallbackGet)
 	adminGroup := huma.NewGroup(api, "/admin")
 	adminGroup.UseMiddleware(CheckRolesMiddleware(api, "superuser"))
-	huma.Register(adminGroup, appApi.AdminUsersOperation("/admin/users"), appApi.AdminUsers)
+	huma.Register(adminGroup, appApi.AdminUsersOperation("/users"), appApi.AdminUsers)
 
-	huma.Register(adminGroup, appApi.GetAppSettingsOperation("admin/settings"), appApi.GetAppSettings)
-	huma.Register(adminGroup, appApi.PostAppSettingsOperation("admin/settings"), appApi.GetAppSettings)
+	huma.Register(adminGroup, appApi.GetAppSettingsOperation("/settings"), appApi.GetAppSettings)
+	huma.Register(adminGroup, appApi.PostAppSettingsOperation("/settings"), appApi.PostAppSettings)
 
 	// bindUsersApi(api, app)
 	// bindStripeApi(api, app)

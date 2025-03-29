@@ -3,6 +3,7 @@ package cmd
 import (
 	"errors"
 
+	"github.com/alexedwards/argon2id"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/spf13/cobra"
 	"github.com/tkahng/authgo/internal/conf"
@@ -10,6 +11,7 @@ import (
 	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/authgo/internal/tools/security"
 	"github.com/tkahng/authgo/internal/types"
 )
 
@@ -53,11 +55,15 @@ var superuserCreate = &cobra.Command{
 			return err
 		}
 		if user == nil {
+			hash, err := security.CreateHash(args[1], argon2id.DefaultParams)
+			if err != nil {
+				return err
+			}
 			data := &shared.AuthenticateUserParams{
 				Email:             args[0],
 				Provider:          models.ProvidersCredentials,
 				ProviderAccountID: args[0],
-				HashPassword:      types.Pointer(args[1]),
+				HashPassword:      types.Pointer(hash),
 				Type:              models.ProviderTypesCredentials,
 			}
 			user, err = repository.CreateUser(ctx, dbx, data)

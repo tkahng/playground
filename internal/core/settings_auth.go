@@ -175,7 +175,7 @@ func GetOrSetEncryptedAuthOptions(ctx context.Context, dbx bob.DB, encryptionKey
 		encryptedOpts = &EncryptedAuthOptions{
 			EncryptedAuthOptions: encryptedOptsStr,
 		}
-		_, err = repository.SetParams(ctx, dbx, EncryptedAuthOptionsKey, encryptedOpts)
+		err = repository.SetParams(ctx, dbx, EncryptedAuthOptionsKey, encryptedOpts)
 		if err != nil {
 			return nil, err
 		}
