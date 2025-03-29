@@ -1,0 +1,76 @@
+{
+  "inlineSQL.enableDBIntegration": false,
+  "inlineSQL.lintSQLFiles": false,
+  "sqltools.connections": [
+    {
+      "previewLimit": 50,
+      "server": "localhost",
+      "port": 5432,
+      "driver": "PostgreSQL",
+      "name": "authgo",
+      "database": "authgo",
+      "username": "postgres"
+    }
+  ],
+  // "inlineSQL.dbHost": "host.docker.internal",
+  "go.inlayHints.assignVariableTypes": false,
+  "go.inlayHints.parameterNames": false,
+  "goStructTagAutogen.generation": {
+    "template": "json:\"{{snake}}\" db:\"{{snake}}\""
+  },
+  "goStructTagAutogen.valueSuggestion": {
+    "json": ["omitempty"],
+    "required": ["true", "false"],
+    "nullable": ["true", "false"]
+  },
+  "goStructTagAutogen.tagSuggestion": {
+    "json": {
+      "cases": ["snake"],
+      "options": ["omitempty", "-"]
+    },
+    "db": {
+      "cases": ["snake"],
+      "options": []
+    }
+  },
+  "editor.linkedEditing": true,
+  "codeium.enableCodeLens": false,
+  "gitlens.codeLens.enabled": false,
+
+  "css.customData": [".vscode/tailwindcss.json"],
+  "[sql]": {
+    "editor.formatOnSave": true
+  },
+  "[json]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  "[html]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  "go.enableCodeLens": {
+    "runtest": true
+  },
+  "editor.formatOnSave": true,
+  "bulma-css-class-completion.HTMLLanguages": ["html", "vue", "php"],
+  "tailwindCSS.includeLanguages": {
+    "templ": "html"
+  },
+  "emmet.includeLanguages": {
+    "templ": "html"
+  },
+  "go.formatTool": "gofumpt",
+  "[go]": {
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": "always"
+    },
+    "editor.defaultFormatter": "golang.go",
+    "editor.codeLens": true,
+    "editor.codeActionWidget.includeNearbyQuickFixes": true
+  },
+  "editor.quickSuggestions": {
+    "strings": true
+  }
+}

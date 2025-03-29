@@ -1,0 +1,70 @@
+SELECT to_json(obj) AS user
+FROM (
+        SELECT u.*,
+            ARRAY_AGG(DISTINCT ar.name)::text [] AS roles,
+            ARRAY_AGG(DISTINCT p.name)::text [] AS permissions
+        FROM public.users u
+            LEFT JOIN public.user_roles ur ON u.id = ur.user_id
+            LEFT JOIN public.roles ar ON ur.role_id = ar.id
+            LEFT JOIN public.role_permissions rp ON ar.id = rp.role_id
+            LEFT JOIN public.permissions p ON rp.permission_id = p.id
+        WHERE u.email = 'tkahng@gmail.com'
+        GROUP BY u.id
+        LIMIT 1
+    ) AS obj
+LIMIT 1;
+-- SELECT u.*,
+--     ARRAY_AGG(DISTINCT ar.name)::text [] AS roles,
+--     ARRAY_AGG(DISTINCT p.name)::text [] AS permissions
+-- FROM public.users u
+--     LEFT JOIN public.user_roles ur ON u.id = ur.user_id
+--     LEFT JOIN public.roles ar ON ur.role_id = ar.id
+--     LEFT JOIN public.role_permissions rp ON ar.id = rp.role_id
+--     LEFT JOIN public.permissions p ON rp.permission_id = p.id
+-- GROUP BY u.id;
+-- WITH FilteredAccounts AS (
+--     SELECT *
+--     FROM public.user_accounts
+--     WHERE provider = 'github'
+-- )
+-- SELECT u.*,
+--     a.*
+-- FROM public.users u
+--     LEFT JOIN FilteredAccounts a ON u.id = a."user_id"
+-- WHERE u.email = 'tkahng@gmail.com'
+-- LIMIT 1;
+-- 
+-- INSERT INTO public.user_accounts (
+--         "user_id",
+--         type,
+--         provider,
+--         provider_account_id
+--     )
+-- VALUES (
+--         '6331c5d3-4f7f-4301-b627-07dd8b496535',
+--         'credentials',
+--         'credentials',
+--         'tkahng'
+--     )
+-- RETURNING *;
+-- INSERT INTO public.users (email, name)
+-- VALUES ('tkahng@gmail.com', 'tkahng')
+-- RETURNING *;
+-- SELECT p.*
+-- from roles r
+--     LEFT JOIN role_permissions rp ON r.id = rp.role_id
+--     LEFT JOIN permissions p ON rp.permission_id = p.id
+-- WHERE r.name = 'pro';
+-- SELECT r.name,
+--     ARRAY_AGG(p.name)
+-- from roles r
+--     LEFT JOIN role_permissions rp ON r.id = rp.role_id
+--     LEFT JOIN permissions p ON rp.permission_id = p.id
+-- WHERE r.name = 'pro'
+--     OR r.name = 'admin'
+-- GROUP BY r.name;
+-- FROM users u
+--     LEFT JOIN user_roles ur ON u.id = ur.user_id
+--     LEFT JOIN roles ar ON ur.role_id = ar.id
+--     LEFT JOIN role_permissions rp ON ar.id = rp.role_id
+--     LEFT JOIN permissions p ON rp.permission_id = p.id
