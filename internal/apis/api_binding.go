@@ -86,6 +86,7 @@ func BindApis(api huma.API, app core.App) {
 			},
 		}, nil
 	})
+	huma.Register(api, appApi.AuthMethodsOperation("/auth/methods"), appApi.AuthMethods)
 	huma.Register(api, appApi.SignupOperation("/auth/signup"), appApi.SignUp)
 	huma.Register(api, appApi.SigninOperation("/auth/signin"), appApi.SignIn)
 	huma.Register(api, appApi.MeOperation("/auth/me"), appApi.Me)
