@@ -49,11 +49,40 @@
     "editor.defaultFormatter": "esbenp.prettier-vscode",
     "editor.formatOnSave": true
   },
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.suggest.showReferences": true,
+    "editor.codeLens": true,
+    "editor.gotoLocation.multipleTypeDefinitions": "gotoAndPeek"
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.suggest.showReferences": true,
+    "editor.codeLens": true,
+    "editor.gotoLocation.multipleTypeDefinitions": "gotoAndPeek"
+  },
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.formatOnPaste": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll": "always",
+    "source.organizeImports": "always"
+  },
+  "editor.suggest.showReferences": true,
+  "editor.gotoLocation.multipleTypeDefinitions": "gotoAndPeek",
+  "editor.codeLens": true,
+  "typescript.referencesCodeLens.enabled": true,
+  "typescript.implementationsCodeLens.enabled": true,
+  "typescript.implementationsCodeLens.showOnInterfaceMethods": true,
+  "typescript.referencesCodeLens.showOnAllFunctions": true,
   "go.enableCodeLens": {
     "runtest": true
   },
   "editor.formatOnSave": true,
   "bulma-css-class-completion.HTMLLanguages": ["html", "vue", "php"],
+  "files.associations": {
+    "*.css": "tailwindcss",
+    "*.scss": "tailwindcss"
+  },
   "tailwindCSS.includeLanguages": {
     "templ": "html"
   },
