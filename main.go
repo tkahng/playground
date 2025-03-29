@@ -11,11 +11,14 @@ import (
 	"github.com/danielgtaylor/huma/v2/humacli"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/spf13/cobra"
 	"github.com/tkahng/authgo/cmd"
 	"github.com/tkahng/authgo/internal/apis"
 	"github.com/tkahng/authgo/internal/conf"
 	"github.com/tkahng/authgo/internal/core"
 )
+
+var api huma.API
 
 // Options for the CLI.
 type Options struct {
@@ -40,7 +43,7 @@ func main() {
 		r := chi.NewMux()
 		r.Use(middleware.Logger)
 		r.Use(middleware.Recoverer)
-		api := humachi.New(r, config)
+		api = humachi.New(r, config)
 		grp := huma.NewGroup(api, "/api")
 		// Register GET /greeting/{name}
 		opts := conf.AppConfigGetter()
@@ -65,7 +68,17 @@ func main() {
 			server.Shutdown(ctx)
 		})
 	})
-	cli.Root().AddCommand(cmd.NewMigrateCmd(), cmd.NewSeedCmd(), cmd.NewSuperuserCmd())
+	cli.Root().AddCommand(cmd.NewMigrateCmd(), cmd.NewSeedCmd(), cmd.NewSuperuserCmd(), &cobra.Command{
+		Use:   "openapi",
+		Short: "Print the OpenAPI spec",
+		Run: func(cmd *cobra.Command, args []string) {
+			b, err := api.OpenAPI().YAML()
+			if err != nil {
+				panic(err)
+			}
+			fmt.Println(string(b))
+		},
+	})
 	// Run the CLI. When passed no commands, it starts the server.
 	cli.Run()
 }
