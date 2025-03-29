@@ -58,11 +58,6 @@ func (app *BaseApp) InitHooks() {
 	app.onBeforeRequestHandle = &hook.Hook[*BaseEvent]{}
 }
 
-// InitSettings implements App.
-func (app *BaseApp) InitSettings(ctx context.Context, db bob.DB) {
-	// app.InitAuthSettings(ctx, db)
-}
-
 func InitBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 	db := NewBobFromConf(ctx, cfg.Db)
 	authOpt, err := GetOrSetEncryptedAppOptions(ctx, db, cfg.EncryptionKey)
@@ -98,4 +93,5 @@ func (app *BaseApp) OnBeforeRequestHandle(tags ...string) *hook.TaggedHook[*Base
 func (app *BaseApp) Bootstrap() {
 	ctx := context.Background()
 	repository.EnsureRoleAndPermissions(ctx, app.db, "superuser", "superuser")
+	repository.EnsureRoleAndPermissions(ctx, app.db, "basic", "basic")
 }

@@ -24,7 +24,7 @@ func EnsureRoleAndPermissions(ctx context.Context, db bob.DB, roleName string, p
 		}
 
 		err = role.AttachPermissions(ctx, db, perm)
-		if !IsUniqConstraintErr(err) {
+		if err != nil && !IsUniqConstraintErr(err) {
 			log.Println(err)
 		}
 	}
