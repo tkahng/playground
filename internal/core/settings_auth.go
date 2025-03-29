@@ -48,6 +48,95 @@ type AuthOptions struct {
 	// ConfirmEmailChangeTemplate EmailTemplate `form:"confirmEmailChangeTemplate" json:"confirmEmailChangeTemplate"`
 }
 
+func (o AuthOptions) Validate() error {
+	err := validation.ValidateStruct(&o,
+		// validation.Field(
+		// 	&o.AuthRule,
+		// 	validation.By(cv.checkRule),
+		// 	validation.By(cv.ensureNoSystemRuleChange(cv.original.AuthRule)),
+		// ),
+		// validation.Field(
+		// 	&o.ManageRule,
+		// 	validation.NilOrNotEmpty,
+		// 	validation.By(cv.checkRule),
+		// 	validation.By(cv.ensureNoSystemRuleChange(cv.original.ManageRule)),
+		// ),
+		// validation.Field(&o.AuthAlert),
+		// validation.Field(&o.PasswordAuth),
+		validation.Field(&o.OAuth2),
+		// validation.Field(&o.OTP),
+		// validation.Field(&o.MFA),
+		validation.Field(&o.AccessToken),
+		validation.Field(&o.RefreshToken),
+		validation.Field(&o.VerificationToken),
+		validation.Field(&o.PasswordResetToken),
+		validation.Field(&o.StateToken),
+		// validation.Field(&o.FileToken),
+		// validation.Field(&o.VerificationTemplate, validation.Required),
+		// validation.Field(&o.ResetPasswordTemplate, validation.Required),
+		// validation.Field(&o.ConfirmEmailChangeTemplate, validation.Required),
+	)
+	if err != nil {
+		return err
+	}
+
+	// if o.MFA.Enabled {
+	// 	// if MFA is enabled require at least 2 auth methods
+	// 	//
+	// 	// @todo maybe consider disabling the check because if custom auth methods
+	// 	// are registered it may fail since we don't have mechanism to detect them at the moment
+	// 	authsEnabled := 0
+	// 	if o.PasswordAuth.Enabled {
+	// 		authsEnabled++
+	// 	}
+	// 	if o.OAuth2.Enabled {
+	// 		authsEnabled++
+	// 	}
+	// 	if o.OTP.Enabled {
+	// 		authsEnabled++
+	// 	}
+	// 	if authsEnabled < 2 {
+	// 		return validation.Errors{
+	// 			"mfa": validation.Errors{
+	// 				"enabled": validation.NewError("validation_mfa_not_enough_auths", "MFA requires at least 2 auth methods to be enabled."),
+	// 			},
+	// 		}
+	// 	}
+
+	// 	if o.MFA.Rule != "" {
+	// 		mfaRuleValidators := []validation.RuleFunc{
+	// 			cv.checkRule,
+	// 			cv.ensureNoSystemRuleChange(&cv.original.MFA.Rule),
+	// 		}
+
+	// 		for _, validator := range mfaRuleValidators {
+	// 			err := validator(&o.MFA.Rule)
+	// 			if err != nil {
+	// 				return validation.Errors{
+	// 					"mfa": validation.Errors{
+	// 						"rule": err,
+	// 					},
+	// 				}
+	// 			}
+	// 		}
+	// 	}
+	// }
+
+	// // extra check to ensure that only unique identity fields are used
+	// if o.PasswordAuth.Enabled {
+	// 	err = validation.Validate(o.PasswordAuth.IdentityFields, validation.By(cv.checkFieldsForUniqueIndex))
+	// 	if err != nil {
+	// 		return validation.Errors{
+	// 			"passwordAuth": validation.Errors{
+	// 				"identityFields": err,
+	// 			},
+	// 		}
+	// 	}
+	// }
+
+	return nil
+}
+
 func GetOrSetEncryptedAuthOptions(ctx context.Context, dbx bob.DB, encryptionKey string) (*AuthOptions, error) {
 	var opts *AuthOptions
 	var encryptedOpts *EncryptedAuthOptions
@@ -104,27 +193,27 @@ func DefaultAuthSettings() *AuthOptions {
 		// ConfirmEmailChangeTemplate: defaultConfirmEmailChangeTemplate,
 
 		VerificationToken: TokenConfig{
-			Type:     shared.VerificationTokenType,
+			// Type:     shared.VerificationTokenType,
 			Secret:   string(shared.VerificationTokenType),
 			Duration: 259200, // 3days
 		},
 		AccessToken: TokenConfig{
-			Type:     shared.AccessTokenType,
+			// Type:     shared.AccessTokenType,
 			Secret:   string(shared.AccessTokenType),
 			Duration: 3600, // 1hr
 		},
 		PasswordResetToken: TokenConfig{
-			Type:     shared.PasswordResetTokenType,
+			// Type:     shared.PasswordResetTokenType,
 			Secret:   string(shared.PasswordResetTokenType),
 			Duration: 1800, // 30min
 		},
 		RefreshToken: TokenConfig{
-			Type:     shared.RefreshTokenType,
+			// Type:     shared.RefreshTokenType,
 			Secret:   string(shared.RefreshTokenType),
 			Duration: 604800, // 7days
 		},
 		StateToken: TokenConfig{
-			Type:     shared.StateTokenType,
+			// Type:     shared.StateTokenType,
 			Secret:   string(shared.StateTokenType),
 			Duration: 1800, // 30min
 		},
@@ -166,7 +255,7 @@ type OAuth2ProviderConfig struct {
 
 	Name         string         `form:"name" json:"name"`
 	ClientId     string         `form:"client_id" json:"client_id"`
-	ClientSecret string         `form:"client_secret" json:"client_secret,omitempty"`
+	ClientSecret string         `form:"client_secret" json:"client_secret"`
 	AuthURL      string         `form:"auth_url" json:"auth_url"`
 	TokenURL     string         `form:"token_url" json:"token_url"`
 	UserInfoURL  string         `form:"user_info_url" json:"user_info_url"`

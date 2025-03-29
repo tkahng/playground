@@ -3,17 +3,22 @@ package core
 import (
 	"time"
 
+	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/tkahng/authgo/internal/shared"
 )
 
 type TokenConfig struct {
-	Name        string           `form:"name" json:"name"`
-	DisplayName string           `form:"display_name" json:"display_name"`
-	Type        shared.TokenType `form:"type" json:"type" enum:"authentication_token,password_reset_token,verification_token,refresh_token,state_token"`
-	Secret      string           `form:"secret" json:"secret,omitempty"`
+	// Type   shared.TokenType `form:"type" json:"type" enum:"authentication_token,password_reset_token,verification_token,refresh_token,state_token"`
+	Secret string `form:"secret" json:"secret,omitempty"`
 	// Duration specifies how long an issued token to be valid (in seconds)
 	Duration int64 `form:"duration" json:"duration"`
+}
+
+func (c TokenConfig) Validate() error {
+	return validation.ValidateStruct(&c,
+		validation.Field(&c.Secret, validation.Required, validation.Length(10, 255)),
+		validation.Field(&c.Duration, validation.Required, validation.Min(10), validation.Max(94670856)), // ~3y max
+	)
 }
 
 func (c *TokenConfig) DurationTime() time.Duration {
