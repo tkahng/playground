@@ -5,8 +5,8 @@ import (
 
 	"github.com/stephenafamo/bob"
 	"github.com/tkahng/authgo/internal/conf"
-
 	"github.com/tkahng/authgo/internal/repository"
+
 	"github.com/tkahng/authgo/internal/tools/hook"
 	"github.com/tkahng/authgo/internal/tools/mailer"
 )
@@ -19,7 +19,6 @@ type BaseApp struct {
 	cfg                   *conf.EnvConfig
 	db                    bob.DB
 	settings              *Settings
-	authOpt               *AuthOptions
 	onAfterRequestHandle  *hook.Hook[*BaseEvent]
 	onBeforeRequestHandle *hook.Hook[*BaseEvent]
 }
@@ -38,11 +37,6 @@ func (app *BaseApp) TokenStorage() *TokenStorage {
 func (a *BaseApp) Settings() *Settings {
 	return a.settings
 }
-
-// // SendVerificationEmail implements App.
-// func (a *BaseApp) SendVerificationEmail(ctx context.Context, db bob.DB, email string) error {
-// 	panic("unimplemented")
-// }
 
 // EncryptionEnv implements App.
 func (app *BaseApp) EncryptionEnv() string {
@@ -66,7 +60,7 @@ func (app *BaseApp) InitHooks() {
 
 // InitSettings implements App.
 func (app *BaseApp) InitSettings(ctx context.Context, db bob.DB) {
-	// a.InitAuthSettings(ctx, db)
+	// app.InitAuthSettings(ctx, db)
 }
 
 func InitBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
@@ -83,7 +77,6 @@ func InitBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 func NewBaseApp(db bob.DB, cfg conf.EnvConfig, authOpt *Settings) *BaseApp {
 	return &BaseApp{
 		db:       db,
-		authOpt:  &authOpt.Auth,
 		settings: authOpt,
 	}
 }
@@ -103,5 +96,6 @@ func (app *BaseApp) OnBeforeRequestHandle(tags ...string) *hook.TaggedHook[*Base
 }
 
 func (app *BaseApp) Bootstrap() {
-	repository.InitRolesFromTree(context.Background(), app.db)
+	ctx := context.Background()
+	repository.EnsureRoleAndPermissions(ctx, app.db, "superuser", "superuser")
 }

@@ -96,7 +96,7 @@ func BindApis(api huma.API, app core.App) {
 	huma.Register(api, appApi.RequestPasswordResetOperation("/auth/request-password-reset"), appApi.RequestPasswordReset)
 	huma.Register(api, appApi.ConfirmPasswordResetOperation("/auth/confirm-password-reset"), appApi.ConfirmPasswordReset)
 
-	huma.Register(api, appApi.OauthCallbackGetOperation("/auth/oauth/callback"), appApi.OauthCallbackGet())
+	huma.Register(api, appApi.OauthCallbackGetOperation("/auth/oauth/callback"), appApi.OauthCallbackGet)
 
 	huma.Register(api, appApi.AdminUsersOperation("/admin/users"), appApi.AdminUsers)
 

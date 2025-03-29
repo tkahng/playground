@@ -54,12 +54,12 @@ func UpdateUserEmailConfirm(ctx context.Context, db bob.Executor, userId uuid.UU
 	return user, nil
 }
 
-func AssignRoles(ctx context.Context, db bob.Executor, user *models.User, params []*models.Role) error {
+func AssignRoles(ctx context.Context, db bob.Executor, user *models.User, params ...*models.Role) error {
 	return user.AttachRoles(ctx, db, params...)
 }
 
-func AssignPermissions(ctx context.Context, db bob.Executor, user *models.User, params []*models.Permission) error {
-	return user.AttachPermissions(ctx, db, params...)
+func AssignPermissions(ctx context.Context, db bob.Executor, user *models.User, params *models.Permission) error {
+	return user.AttachPermissions(ctx, db, params)
 }
 
 func CreateAccount(ctx context.Context, db bob.Executor, user *models.User, params *shared.AuthenticateUserParams) (*models.UserAccount, error) {

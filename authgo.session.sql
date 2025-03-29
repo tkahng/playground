@@ -1,18 +1,29 @@
-SELECT to_json(obj) AS user
-FROM (
-        SELECT u.*,
-            ARRAY_AGG(DISTINCT ar.name)::text [] AS roles,
-            ARRAY_AGG(DISTINCT p.name)::text [] AS permissions
-        FROM public.users u
-            LEFT JOIN public.user_roles ur ON u.id = ur.user_id
-            LEFT JOIN public.roles ar ON ur.role_id = ar.id
-            LEFT JOIN public.role_permissions rp ON ar.id = rp.role_id
-            LEFT JOIN public.permissions p ON rp.permission_id = p.id
-        WHERE u.email = 'tkahng@gmail.com'
-        GROUP BY u.id
-        LIMIT 1
-    ) AS obj
-LIMIT 1;
+INSERT INTO "roles" AS "roles" (
+        "id",
+        "name",
+        "description",
+        "created_at",
+        "updated_at"
+    )
+VALUES (DEFAULT, 'hello', DEFAULT, DEFAULT, DEFAULT) ON CONFLICT (name) DO
+UPDATE
+SET "created_at" = now()
+RETURNING *;
+-- SELECT to_json(obj) AS user
+-- FROM (
+--         SELECT u.*,
+--             ARRAY_AGG(DISTINCT ar.name)::text [] AS roles,
+--             ARRAY_AGG(DISTINCT p.name)::text [] AS permissions
+--         FROM public.users u
+--             LEFT JOIN public.user_roles ur ON u.id = ur.user_id
+--             LEFT JOIN public.roles ar ON ur.role_id = ar.id
+--             LEFT JOIN public.role_permissions rp ON ar.id = rp.role_id
+--             LEFT JOIN public.permissions p ON rp.permission_id = p.id
+--         WHERE u.email = 'tkahng@gmail.com'
+--         GROUP BY u.id
+--         LIMIT 1
+--     ) AS obj
+-- LIMIT 1;
 -- SELECT u.*,
 --     ARRAY_AGG(DISTINCT ar.name)::text [] AS roles,
 --     ARRAY_AGG(DISTINCT p.name)::text [] AS permissions

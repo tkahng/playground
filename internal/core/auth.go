@@ -18,18 +18,12 @@ var (
 	ErrBadRequest         = shared.AppError{Status: 400, Message: "input is missing"}
 )
 
-// // AuthOptions implements App.
-func (a *BaseApp) AuthOptions() *AuthOptions {
-	// encryptionKey := a.EncryptionEnv()
-	return a.authOpt
-}
-
 func (a *BaseApp) CreateAuthTokens(ctx context.Context, db bob.DB, payload *shared.UserInfoDto) (*shared.TokenDto, error) {
 	if payload == nil || payload.User == nil {
 		return nil, fmt.Errorf("payload is nil")
 	}
 
-	opts := a.AuthOptions()
+	opts := a.Settings().Auth
 	authToken, err := CreateAuthenticationToken(&AuthenticationPayload{
 		UserId:      payload.User.ID,
 		Email:       payload.User.Email,
@@ -58,7 +52,7 @@ func (a *BaseApp) CreateAuthTokens(ctx context.Context, db bob.DB, payload *shar
 	}, nil
 }
 
-func (a *BaseApp) AuthenticateUser(ctx context.Context, db bob.DB, params *shared.AuthenticateUserParams, autoCreateUser bool) (*shared.AuthenticateUserState, error) {
+func (app *BaseApp) AuthenticateUser(ctx context.Context, db bob.DB, params *shared.AuthenticateUserParams, autoCreateUser bool) (*shared.AuthenticateUserState, error) {
 
 	// Query User and UserAccount by email and provider ----------------------------------------------------------------------------------------------------
 	result, err := repository.GetUserAccountByProviderAndEmail(ctx, db, params.Email, params.Provider)
@@ -79,13 +73,13 @@ func (a *BaseApp) AuthenticateUser(ctx context.Context, db bob.DB, params *share
 		if err != nil {
 			return nil, fmt.Errorf("error finding user role: %w", err)
 		}
-		err = repository.AssignRoles(ctx, db, user, roles)
+		err = repository.AssignRoles(ctx, db, user, roles...)
 		if err != nil {
 			return nil, fmt.Errorf("error assigning user role: %w", err)
 		}
 		result.User = user
 		result.Account = nil
-		a.SendVerificationEmail(ctx, db, user, "http://localhost:8080")
+		app.SendVerificationEmail(ctx, db, user, "http://localhost:8080")
 	}
 	// if user exists, but account does not exist, Create UserAccount ----------------------------------------------------------------------------------------------------
 	if result.Account == nil {

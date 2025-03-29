@@ -29,7 +29,7 @@ var seedRolesCmd = &cobra.Command{
 		conf := conf.AppConfigGetter()
 
 		dbx := core.NewBobFromConf(ctx, conf.Db)
-		err := repository.PopulateRolesFromTree(ctx, dbx)
+		err := repository.EnsureRoleAndPermissions(ctx, dbx, "superuser", "superuser")
 		if err != nil {
 			return err
 		}

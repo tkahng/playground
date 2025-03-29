@@ -1,6 +1,7 @@
 package apis
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"slices"
@@ -53,7 +54,7 @@ func CheckRolesMiddleware(api huma.API, roles ...string) func(ctx huma.Context, 
 				}
 			}
 		}
-		huma.WriteErr(api, ctx, http.StatusForbidden, "Forbidden")
+		huma.WriteErr(api, ctx, http.StatusForbidden, fmt.Sprintf("You do not have the required roles: %v", roles))
 	}
 }
 
@@ -72,7 +73,7 @@ func CheckPermissionsMiddleware(api huma.API, permissions ...string) func(ctx hu
 				}
 			}
 		}
-		huma.WriteErr(api, ctx, http.StatusForbidden, "Forbidden")
+		huma.WriteErr(api, ctx, http.StatusForbidden, fmt.Sprintf("You do not have the required permissions: %v", permissions))
 	}
 }
 

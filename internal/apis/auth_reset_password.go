@@ -70,7 +70,7 @@ func (api *Api) ConfirmPasswordResetGet(ctx context.Context, input *OtpInput) (*
 	if input.Type != shared.PasswordResetTokenType {
 		return nil, fmt.Errorf("invalid token type. want verification_token, got  %v", input.Type)
 	}
-	opts := api.app.AuthOptions()
+	opts := api.app.Settings().Auth
 	claims, err := core.ParseResetToken(input.Token, opts.PasswordResetToken)
 	if err != nil {
 		return nil, fmt.Errorf("error at parsing verification token: %w", err)
