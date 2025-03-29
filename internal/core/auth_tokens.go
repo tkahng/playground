@@ -11,7 +11,7 @@ import (
 // HandleAuthToken implements App.
 func (a *BaseApp) HandleAuthToken(ctx context.Context, token string) (*shared.UserInfoDto, error) {
 	db := a.Db()
-	opts := a.AuthOptions()
+	opts := a.Settings().Auth
 	claims, err := VerifyAuthenticationToken(token, opts.AccessToken)
 	if err != nil {
 		return nil, fmt.Errorf("error verifying refresh token: %w", err)
@@ -45,7 +45,7 @@ func (a *BaseApp) CreateAuthDto(ctx context.Context, email string) (*shared.Auth
 }
 
 func (a *BaseApp) RefreshTokens(ctx context.Context, db bob.DB, refreshToken string) (*shared.AuthenticatedDTO, error) {
-	opts := a.AuthOptions()
+	opts := a.Settings().Auth
 	claims, err := VerifyRefreshToken(ctx, db, refreshToken, opts.RefreshToken)
 	if err != nil {
 		return nil, fmt.Errorf("error verifying refresh token: %w", err)

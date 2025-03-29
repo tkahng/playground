@@ -26,6 +26,21 @@ type SmtpConfig struct {
 	TLS       bool   `env:"SMTP_TLS" required:"false"`
 	Enabled   bool   `env:"SMTP_ENABLED" envDefault:"false"`
 }
+type GithubConfig struct {
+	GithubClientId     string `env:"GITHUB_CLIENT_ID" required:"false"`
+	GithubClientSecret string `env:"GITHUB_CLIENT_SECRET" required:"false"`
+}
+
+type GoogleConfig struct {
+	GoogleClientId     string `env:"GOOGLE_CLIENT_ID" required:"false"`
+	GoogleClientSecret string `env:"GOOGLE_CLIENT_SECRET" required:"false"`
+}
+type OAuth2Config struct {
+	GithubConfig
+	GoogleConfig
+	AuthBaseUrl  string `env:"AUTH_BASE_URL" envDefault:"http://127.0.0.1:8080/api/auth"`
+	AuthCallback string `env:"AUTH_CALLBACK" envDefault:"http://127.0.0.1:8080/api/auth/callback"`
+}
 
 // type StripeConfig struct {
 // 	PublicKey string `env:"STRIPE_PUBLISHABLE_KEY"`
@@ -47,6 +62,7 @@ type EnvConfig struct {
 	Db DBConfig
 	AppConfig
 	ResendConfig
+	OAuth2Config
 	// DBConfig
 }
 

@@ -5,8 +5,8 @@ import (
 
 	"github.com/stephenafamo/bob"
 	"github.com/tkahng/authgo/internal/conf"
-
 	"github.com/tkahng/authgo/internal/repository"
+
 	"github.com/tkahng/authgo/internal/tools/hook"
 	"github.com/tkahng/authgo/internal/tools/mailer"
 )
@@ -19,9 +19,13 @@ type BaseApp struct {
 	cfg                   *conf.EnvConfig
 	db                    bob.DB
 	settings              *Settings
-	authOpt               *AuthOptions
 	onAfterRequestHandle  *hook.Hook[*BaseEvent]
 	onBeforeRequestHandle *hook.Hook[*BaseEvent]
+}
+
+// SetSettings implements App.
+func (a *BaseApp) SetSettings(settings *Settings) {
+	a.settings = settings
 }
 
 // TokenVerifier implements App.
@@ -38,11 +42,6 @@ func (app *BaseApp) TokenStorage() *TokenStorage {
 func (a *BaseApp) Settings() *Settings {
 	return a.settings
 }
-
-// // SendVerificationEmail implements App.
-// func (a *BaseApp) SendVerificationEmail(ctx context.Context, db bob.DB, email string) error {
-// 	panic("unimplemented")
-// }
 
 // EncryptionEnv implements App.
 func (app *BaseApp) EncryptionEnv() string {
@@ -64,11 +63,6 @@ func (app *BaseApp) InitHooks() {
 	app.onBeforeRequestHandle = &hook.Hook[*BaseEvent]{}
 }
 
-// InitSettings implements App.
-func (app *BaseApp) InitSettings(ctx context.Context, db bob.DB) {
-	// a.InitAuthSettings(ctx, db)
-}
-
 func InitBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 	db := NewBobFromConf(ctx, cfg.Db)
 	authOpt, err := GetOrSetEncryptedAppOptions(ctx, db, cfg.EncryptionKey)
@@ -83,8 +77,8 @@ func InitBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 func NewBaseApp(db bob.DB, cfg conf.EnvConfig, authOpt *Settings) *BaseApp {
 	return &BaseApp{
 		db:       db,
-		authOpt:  &authOpt.Auth,
 		settings: authOpt,
+		cfg:      &cfg,
 	}
 }
 
@@ -103,5 +97,7 @@ func (app *BaseApp) OnBeforeRequestHandle(tags ...string) *hook.TaggedHook[*Base
 }
 
 func (app *BaseApp) Bootstrap() {
-	repository.InitRoles(context.Background(), app.db)
+	ctx := context.Background()
+	repository.EnsureRoleAndPermissions(ctx, app.db, "superuser", "superuser")
+	repository.EnsureRoleAndPermissions(ctx, app.db, "basic", "basic")
 }

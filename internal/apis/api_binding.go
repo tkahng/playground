@@ -86,6 +86,7 @@ func BindApis(api huma.API, app core.App) {
 			},
 		}, nil
 	})
+	huma.Register(api, appApi.AuthMethodsOperation("/auth/methods"), appApi.AuthMethods)
 	huma.Register(api, appApi.SignupOperation("/auth/signup"), appApi.SignUp)
 	huma.Register(api, appApi.SigninOperation("/auth/signin"), appApi.SignIn)
 	huma.Register(api, appApi.MeOperation("/auth/me"), appApi.Me)
@@ -95,11 +96,13 @@ func BindApis(api huma.API, app core.App) {
 	huma.Register(api, appApi.RequestPasswordResetOperation("/auth/request-password-reset"), appApi.RequestPasswordReset)
 	huma.Register(api, appApi.ConfirmPasswordResetOperation("/auth/confirm-password-reset"), appApi.ConfirmPasswordReset)
 
-	huma.Register(api, appApi.OauthCallbackGetOperation("/auth/oauth/callback"), appApi.OauthCallbackGet())
+	huma.Register(api, appApi.OauthCallbackGetOperation("/auth/oauth/callback"), appApi.OauthCallbackGet)
+	adminGroup := huma.NewGroup(api, "/admin")
+	adminGroup.UseMiddleware(CheckRolesMiddleware(api, "superuser"))
+	huma.Register(adminGroup, appApi.AdminUsersOperation("/users"), appApi.AdminUsers)
 
-	huma.Register(api, appApi.AdminUsersOperation("/admin/users"), appApi.AdminUsers)
-
-	huma.Register(api, appApi.AppSettingsOperation("/app/settings"), appApi.AppSettings)
+	huma.Register(adminGroup, appApi.GetAppSettingsOperation("/settings"), appApi.GetAppSettings)
+	huma.Register(adminGroup, appApi.PostAppSettingsOperation("/settings"), appApi.PostAppSettings)
 
 	// bindUsersApi(api, app)
 	// bindStripeApi(api, app)

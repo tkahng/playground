@@ -2,11 +2,8 @@ package repository
 
 import (
 	"context"
-	"database/sql"
-	"errors"
 
 	"github.com/aarondl/opt/null"
-	"github.com/jackc/pgx/v5"
 	"github.com/stephenafamo/bob"
 	"github.com/stephenafamo/bob/dialect/psql"
 	"github.com/stephenafamo/bob/dialect/psql/im"
@@ -14,18 +11,6 @@ import (
 	"github.com/stephenafamo/bob/types"
 	"github.com/stephenafamo/scan"
 )
-
-func OptionalRow[T any](record *T, err error) (*T, error) {
-	if err == nil {
-		return record, nil
-	} else if errors.Is(err, pgx.ErrNoRows) {
-		return nil, nil
-	} else if errors.Is(err, sql.ErrNoRows) {
-		return nil, nil
-	} else {
-		return nil, err
-	}
-}
 
 type Param[T any] struct {
 	Value types.JSON[T]
@@ -43,7 +28,7 @@ func GetParams[T any](ctx context.Context, dbx bob.Executor, key string) (*Param
 	return OptionalRow(param, err)
 }
 
-func SetParams[T any](ctx context.Context, dbx bob.Executor, key string, data T) (*Param[T], error) {
+func SetParams[T any](ctx context.Context, dbx bob.Executor, key string, data T) error {
 	query := psql.Insert(
 		im.Into("app_params", "name", "value"),
 		im.Values(
@@ -55,8 +40,8 @@ func SetParams[T any](ctx context.Context, dbx bob.Executor, key string, data T)
 				psql.Raw("EXCLUDED.value"),
 			),
 		),
-		im.Returning("value"),
 	)
-	pa, err := bob.One(ctx, dbx, query, scan.StructMapper[*Param[T]]())
-	return OptionalRow(pa, err)
+	_, err := bob.Exec(ctx, dbx, query)
+
+	return err
 }

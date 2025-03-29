@@ -23,7 +23,7 @@ type App interface {
 	TokenVerifier() *TokenVerifier
 
 	Db() bob.DB
-	AuthOptions() *AuthOptions
+	SetSettings(settings *Settings)
 	Settings() *Settings
 	NewMailClient() mailer.Mailer
 	EncryptionEnv() string

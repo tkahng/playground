@@ -19,6 +19,7 @@ func (api *Api) OauthCallbackGetOperation(path string) huma.Operation {
 	}
 }
 
-func (api *Api) OauthCallbackGet() func(context.Context, *struct{}) (*struct{}, error) {
-	panic("unimplemented")
+func (api *Api) OauthCallbackGet(context.Context, *struct{}) (*struct{}, error) {
+	// panic("unimplemented")
+	return nil, nil
 }

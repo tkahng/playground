@@ -12,7 +12,7 @@ import (
 )
 
 func (app *BaseApp) VerifyAndUseVerificationToken(ctx context.Context, db bob.DB, verificationToken string) (*EmailVerificationClaims, error) {
-	opts := app.AuthOptions()
+	opts := app.Settings().Auth
 	jsond, err := app.TokenVerifier().ParseVerificationToken(verificationToken, opts.VerificationToken)
 	if err != nil {
 		return nil, fmt.Errorf("error at parsing verification token: %w", err)
@@ -26,7 +26,7 @@ func (app *BaseApp) VerifyAndUseVerificationToken(ctx context.Context, db bob.DB
 
 // SendVerificationEmail implements App.
 func (app *BaseApp) SendVerificationEmail(ctx context.Context, db bob.DB, user *models.User, redirectTo string) error {
-	opts := app.AuthOptions()
+	opts := app.Settings().Auth
 	config := app.Settings()
 	client := app.NewMailClient()
 	payload := app.TokenVerifier().CreateVerificationPayload(user, redirectTo)

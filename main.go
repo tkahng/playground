@@ -65,7 +65,7 @@ func main() {
 			server.Shutdown(ctx)
 		})
 	})
-	cli.Root().AddCommand(cmd.NewMigrateCmd(), cmd.NewSeedCmd())
+	cli.Root().AddCommand(cmd.NewMigrateCmd(), cmd.NewSeedCmd(), cmd.NewSuperuserCmd())
 	// Run the CLI. When passed no commands, it starts the server.
 	cli.Run()
 }

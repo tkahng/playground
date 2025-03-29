@@ -2,7 +2,10 @@ package repository
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/stephenafamo/bob"
 	"github.com/stephenafamo/bob/dialect/psql"
 	"github.com/stephenafamo/bob/dialect/psql/sm"
@@ -40,4 +43,15 @@ func CountExec[T any, Ts ~[]T](ctx context.Context, db bob.DB, v *psql.ViewQuery
 		return 0, err
 	}
 	return data, nil
+}
+func OptionalRow[T any](record *T, err error) (*T, error) {
+	if err == nil {
+		return record, nil
+	} else if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil
+	} else if errors.Is(err, sql.ErrNoRows) {
+		return nil, nil
+	} else {
+		return nil, err
+	}
 }

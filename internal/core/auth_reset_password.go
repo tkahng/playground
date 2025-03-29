@@ -13,7 +13,7 @@ import (
 )
 
 func (app *BaseApp) VerifyAndUsePasswordResetToken(ctx context.Context, db bob.DB, verificationToken string) (*PasswordResetClaims, error) {
-	opts := app.AuthOptions()
+	opts := app.Settings().Auth
 	jsond, err := ParseResetToken(verificationToken, opts.PasswordResetToken)
 	if err != nil {
 		return nil, fmt.Errorf("error at parsing verification token: %w", err)
@@ -34,7 +34,7 @@ func (app *BaseApp) VerifyAndUsePasswordResetToken(ctx context.Context, db bob.D
 // SendPasswordResetEmail implements App.
 
 func (app *BaseApp) SendPasswordResetEmail(ctx context.Context, db bob.DB, user *models.User, redirectTo string) error {
-	opts := app.AuthOptions()
+	opts := app.Settings().Auth
 	config := app.Settings()
 	client := app.NewMailClient()
 

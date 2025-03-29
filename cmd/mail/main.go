@@ -39,7 +39,7 @@ func main() {
 	settings := core.NewDefaultSettings()
 	app := core.NewBaseApp(db, cfg, settings)
 
-	opts := app.AuthOptions()
+	opts := app.Settings().Auth
 	// client := app.NewMailClient()
 	user, _ := factory.New().NewUser(factory.UserMods.RandomEmail(nil)).Create(ctx, db)
 	otp := security.GenerateOtp(6)
