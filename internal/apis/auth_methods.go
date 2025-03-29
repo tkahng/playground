@@ -7,6 +7,7 @@ import (
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/tkahng/authgo/internal/auth"
+	"github.com/tkahng/authgo/internal/core"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/security"
 	"golang.org/x/oauth2"
@@ -22,11 +23,6 @@ type providerInfo struct {
 	DisplayName string `json:"displayName"`
 	State       string `json:"state"`
 	AuthURL     string `json:"authURL"`
-
-	// @todo
-	// deprecated: use AuthURL instead
-	// AuthUrl will be removed after dropping v0.22 support
-	AuthUrl string `json:"authUrl"`
 
 	// technically could be omitted if the provider doesn't support PKCE,
 	// but to avoid breaking existing typed clients we'll return them as empty string
@@ -65,7 +61,12 @@ func (api *Api) AuthMethodsOperation(path string) huma.Operation {
 
 func (api *Api) AuthMethods(context.Context, *struct{}) (*struct{}, error) {
 	// collection, err := findAuthCollection(e)
-	collection := api.app.Settings().Auth
+	// return newFunction(api)
+
+	return &struct{}{}, nil
+}
+
+func NewFunction(collection core.AuthOptions) (*authMethodsResponse, error) {
 	// if err != nil {
 	// 	return err
 	// }
@@ -152,10 +153,9 @@ func (api *Api) AuthMethods(context.Context, *struct{}) (*struct{}, error) {
 			urlOpts...,
 		) + "&redirect_uri=" // empty redirect_uri so that users can append their redirect url
 
-		info.AuthUrl = info.AuthURL
+		// info.AuthUrl = info.AuthURL
 
 		result.OAuth2.Providers = append(result.OAuth2.Providers, info)
 	}
-
-	return &struct{}{}, nil
+	return &result, nil
 }
