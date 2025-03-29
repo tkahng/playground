@@ -75,7 +75,7 @@ func (a *BaseApp) AuthenticateUser(ctx context.Context, db bob.DB, params *share
 		if err != nil {
 			return nil, fmt.Errorf("error creating user: %w", err)
 		}
-		roles, err := repository.FindRolesByName(ctx, db, []string{"basic"})
+		roles, err := repository.FindRolesByNames(ctx, db, []string{"basic"})
 		if err != nil {
 			return nil, fmt.Errorf("error finding user role: %w", err)
 		}

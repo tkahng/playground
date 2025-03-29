@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/aarondl/opt/omit"
 	"github.com/aarondl/opt/omitnull"
@@ -11,140 +10,48 @@ import (
 	"github.com/tkahng/authgo/internal/db/models"
 )
 
-func CreatePermissions(ctx context.Context, db bob.Executor, rolePermissionsMap map[string]*models.PermissionSetter) (PermissionsMap, error) {
-
-	rolesmap := make(PermissionsMap)
-	for roleName, params := range rolePermissionsMap {
-		permissions, err := models.Permissions.Insert(params, im.Returning("*")).One(ctx, db)
-		if err != nil {
-			return nil, fmt.Errorf("error creating permission: %w", err)
-		}
-		rolesmap[roleName] = permissions
-	}
-	return rolesmap, nil
+type CreateRoleDto struct {
+	Name        string  `json:"name"`
+	DisplayName *string `json:"displayName,omitempty"`
 }
 
-func CreateRoles(ctx context.Context, dbx bob.Executor, roles map[string]*models.RoleSetter) (RolesMap, error) {
-	rolesmap := make(RolesMap)
-	for name, params := range roles {
-		role, err := models.Roles.Insert(params, im.Returning("*")).One(ctx, dbx)
-		if err != nil {
-			return nil, fmt.Errorf("error creating role: %w", err)
-		}
-		rolesmap[name] = role
-	}
-	return rolesmap, nil
+func CreateRole(ctx context.Context, dbx bob.Executor, role *CreateRoleDto) (*models.Role, error) {
+	data, err := models.Roles.Insert(
+		&models.RoleSetter{
+			Name:        omit.From(role.Name),
+			Description: omitnull.FromPtr(role.DisplayName),
+		},
+		im.Returning("*"),
+	).One(ctx, dbx)
+
+	return OptionalRow(data, err)
 }
 
-func FindRolesByName(ctx context.Context, dbx bob.Executor, params []string) ([]*models.Role, error) {
+func FindRolesByNames(ctx context.Context, dbx bob.Executor, params []string) ([]*models.Role, error) {
 	return models.Roles.Query(models.SelectWhere.Roles.Name.In(params...)).All(ctx, dbx)
 }
 
-func SyncRolesAndPermissions(ctx context.Context, dbx bob.Executor, roleTree map[string][]string, rolesMap RolesMap, permissionsMap PermissionsMap) (RoleStructTree, error) {
-	dtos := make(RoleStructTree)
-	for roleName, permissions := range roleTree {
-		var role = rolesMap[roleName]
-		var args []*models.Permission
-		for _, permission := range permissions {
-			args = append(args, permissionsMap[permission])
-		}
-		err := role.AttachPermissions(ctx, dbx, args...)
-		if err != nil {
-			return nil, fmt.Errorf("error creating role: %w", err)
-		}
-		// fmt.Println(re)
-		perms, err := role.Permissions().All(ctx, dbx)
-		if err != nil {
-			return nil, fmt.Errorf("error creating role: %w", err)
-		}
-		dtos[roleName] = RoleDto{
-			Role:        role,
-			Permissions: perms,
-		}
-	}
-
-	fmt.Println(dtos)
-	return dtos, nil
+func FindRoleByName(ctx context.Context, dbx bob.Executor, name string) (*models.Role, error) {
+	data, err := models.Roles.Query(models.SelectWhere.Roles.Name.EQ(name)).One(ctx, dbx)
+	return OptionalRow(data, err)
 }
 
-type RoleTreeDto struct {
-	Admin          string                              `json:"admin"`
-	Manager        string                              `json:"manager"`
-	Basic          string                              `json:"basic"`
-	RoleTree       map[string][]string                 `json:"role_tree"`
-	RoleArgs       map[string]*models.RoleSetter       `json:"role_args"`
-	PermissionArgs map[string]*models.PermissionSetter `json:"permission_args"`
-	// Advanced       string                              `json:"advanced"`
-	// Pro            string                              `json:"pro"`
+type CreatePermissionDto struct {
+	Name        string  `json:"name"`
+	Description *string `json:"description,omitempty"`
 }
 
-func Generate() RoleTreeDto {
-	var (
-		Admin   = "admin"
-		Manager = "manager"
-		Basic   = "basic"
-	)
-	return RoleTreeDto{
-		Admin:   "admin",
-		Manager: "manager",
-		Basic:   "basic",
-		RoleTree: map[string][]string{
-			Admin:   {Admin, Manager, Basic},
-			Manager: {Manager, Basic},
-			Basic:   {Basic},
+func CreatePermission(ctx context.Context, dbx bob.Executor, permission *CreatePermissionDto) (*models.Permission, error) {
+	data, err := models.Permissions.Insert(
+		&models.PermissionSetter{
+			Name:        omit.From(permission.Name),
+			Description: omitnull.FromPtr(permission.Description),
 		},
-
-		RoleArgs: map[string]*models.RoleSetter{
-			Admin:   {Name: omit.From(Admin), Description: omitnull.From(Admin)},
-			Manager: {Name: omit.From(Manager), Description: omitnull.From(Manager)},
-			Basic:   {Name: omit.From(Basic), Description: omitnull.From(Basic)},
-		},
-		PermissionArgs: map[string]*models.PermissionSetter{
-			Admin:   {Name: omit.From(Admin), Description: omitnull.From(Admin)},
-			Manager: {Name: omit.From(Manager), Description: omitnull.From(Manager)},
-			Basic:   {Name: omit.From(Basic), Description: omitnull.From(Basic)},
-		},
-	}
+		im.Returning("*"),
+	).One(ctx, dbx)
+	return OptionalRow(data, err)
 }
 
-func PopulateRoles(ctx context.Context, dbx bob.Executor) error {
-	tree := Generate()
-	rolesMap, err := CreateRoles(ctx, dbx, tree.RoleArgs)
-	if err != nil {
-		return fmt.Errorf("error creating roles: %w", err)
-	}
-	permissionsMap, err := CreatePermissions(ctx, dbx, tree.PermissionArgs)
-	if err != nil {
-		return fmt.Errorf("error creating permissions: %w", err)
-	}
-
-	_, err = SyncRolesAndPermissions(ctx, dbx, tree.RoleTree, rolesMap, permissionsMap)
-	if err != nil {
-		return fmt.Errorf("error syncing roles and permissions: %w", err)
-	}
-	return nil
-}
-
-func InitRoles(ctx context.Context, dbx bob.Executor) {
-
-	cnt, err := models.Roles.Query().Count(ctx, dbx)
-	if err != nil {
-		panic(err)
-	}
-	if cnt == 0 {
-		PopulateRoles(ctx, dbx)
-	}
-	a, err := models.Roles.Query(models.SelectWhere.Roles.Name.EQ("admin")).One(ctx, dbx)
-	a, err = OptionalRow(a, err)
-	if err != nil {
-		panic(err)
-	}
-	if a == nil {
-		role, err := models.Roles.Insert(&models.RoleSetter{Name: omit.From("admin"), Description: omitnull.From("admin")}, im.Returning("*")).One(ctx, dbx)
-		_, err = OptionalRow(role, err)
-		if err != nil {
-			panic(err)
-		}
-		// fmt.Println(role)
-	}
+func FindPermissionsByName(ctx context.Context, dbx bob.Executor, params []string) ([]*models.Permission, error) {
+	return models.Permissions.Query(models.SelectWhere.Permissions.Name.In(params...)).All(ctx, dbx)
 }

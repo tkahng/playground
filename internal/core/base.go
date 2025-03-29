@@ -103,5 +103,5 @@ func (app *BaseApp) OnBeforeRequestHandle(tags ...string) *hook.TaggedHook[*Base
 }
 
 func (app *BaseApp) Bootstrap() {
-	repository.InitRoles(context.Background(), app.db)
+	repository.InitRolesFromTree(context.Background(), app.db)
 }

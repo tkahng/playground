@@ -100,7 +100,7 @@ func BindApis(api huma.API, app core.App) {
 
 	huma.Register(api, appApi.AdminUsersOperation("/admin/users"), appApi.AdminUsers)
 
-	huma.Register(api, appApi.AppSettingsOperation("/app/settings"), appApi.AppSettings)
+	huma.Register(api, appApi.AppSettingsOperation("/settings"), appApi.AppSettings)
 
 	// bindUsersApi(api, app)
 	// bindStripeApi(api, app)

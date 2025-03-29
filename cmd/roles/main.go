@@ -43,13 +43,13 @@ func main() {
 	conf := conf.AppConfigGetter()
 
 	dbx := core.NewBobFromConf(ctx, conf.Db)
-	tree := repository.Generate()
-	rolesMap, _ := repository.CreateRoles(ctx, dbx, tree.RoleArgs)
-	permissionsMap, _ := repository.CreatePermissions(ctx, dbx, tree.PermissionArgs)
+	tree := repository.GenerateRoleTreeDto()
+	rolesMap, _ := repository.CreateRolesForTree(ctx, dbx, tree.RoleArgs)
+	permissionsMap, _ := repository.CreatePermissionsForTree(ctx, dbx, tree.PermissionArgs)
 	fmt.Println(permissionsMap)
 	fmt.Println(rolesMap)
 
-	result, _ := repository.SyncRolesAndPermissions(ctx, dbx, tree.RoleTree, rolesMap, permissionsMap)
+	result, _ := repository.SyncRolesAndPermissionsFromTree(ctx, dbx, tree.RoleTree, rolesMap, permissionsMap)
 	utils.PrettyPrintJSON(result)
 	NewFunction(ctx, dbx)
 	// fmt.Println(result)
@@ -65,7 +65,7 @@ func NewFunction(ctx context.Context, db bob.DB) bool {
 		fmt.Println(err)
 		return true
 	}
-	roles, err := repository.FindRolesByName(ctx, db, []string{"basic", "pro", "admin"})
+	roles, err := repository.FindRolesByNames(ctx, db, []string{"basic", "pro", "admin"})
 	if err != nil {
 		fmt.Println(err)
 		return true
