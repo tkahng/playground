@@ -8,11 +8,11 @@ import (
 	"github.com/tkahng/authgo/internal/db/models"
 )
 
-func (h *Api) OAuth2AuthorizationUrlOperation() huma.Operation {
+func (h *Api) OAuth2AuthorizationUrlOperation(path string) huma.Operation {
 	return huma.Operation{
 		OperationID: "oauth2-authorization-url",
 		Method:      http.MethodGet,
-		Path:        "/auth/providers/{provider}/authorization-url",
+		Path:        path,
 		Summary:     "OAuth2 authorization",
 		Description: "Count the number of colors for all themes",
 		Tags:        []string{"Auth"},
@@ -21,7 +21,7 @@ func (h *Api) OAuth2AuthorizationUrlOperation() huma.Operation {
 }
 
 type OAuth2AuthorizationUrlInput struct {
-	Provider models.Providers `json:"provider" path:"provider"`
+	Provider models.Providers `json:"provider" path:"provider" query:"provider" form:"provider"`
 }
 
 type OAuth2AuthorizationUrlOutput struct {
@@ -31,13 +31,8 @@ type OAuth2AuthorizationUrlOutput struct {
 }
 
 func (h *Api) OAuth2AuthorizationUrl(ctx context.Context, input *OAuth2AuthorizationUrlInput) (*OAuth2AuthorizationUrlOutput, error) {
-	// provider, err := auth.NewProviderByName(input.Provider, &h.app.Cfg().OAuth)
-	// if err != nil {
-	// 	log.Println(err)
-	// 	return nil, fmt.Errorf("Error at OAuth2AuthorizationUrl: %w", err)
-	// }
-
-	// res := provider.BuildAuthUrl("state", oauth2.AccessTypeOffline)
+	// provider, err := auth.NewProviderByName(input.Provider)
+	// res := provider.AuthURL()
 	return &OAuth2AuthorizationUrlOutput{
 		Body: struct {
 			Url string `json:"url"`

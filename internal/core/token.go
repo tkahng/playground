@@ -21,7 +21,7 @@ type TokenStorage struct {
 }
 
 // persist verification token to db
-func (storage *TokenStorage) PersistVerificationToken(ctx context.Context, db bob.DB, payload *OtpPayload, config TokenConfig) error {
+func (storage *TokenStorage) PersistVerificationToken(ctx context.Context, db bob.DB, payload *OtpPayload, config TokenOption) error {
 	return PersistOtpToken(ctx, db, payload, config)
 }
 
@@ -65,12 +65,12 @@ func (t *TokenVerifier) CreateResetPasswordPayload(user *models.User, redirectTo
 }
 
 // create a new verification token from claims
-func (t *TokenVerifier) CreateVerificationToken(payload *OtpPayload, config TokenConfig) (string, error) {
+func (t *TokenVerifier) CreateVerificationToken(payload *OtpPayload, config TokenOption) (string, error) {
 	return CreateOtpToken(payload, config)
 }
 
 // parse and verify token string to claims
-func (t *TokenVerifier) ParseVerificationToken(token string, config TokenConfig) (*EmailVerificationClaims, error) {
+func (t *TokenVerifier) ParseVerificationToken(token string, config TokenOption) (*EmailVerificationClaims, error) {
 	return ParseVerificationToken(token, config)
 }
 
@@ -89,7 +89,7 @@ type AuthenticationPayload struct {
 	Permissions []string  `json:"permissions"`
 }
 
-func CreateAuthenticationToken(payload *AuthenticationPayload, config TokenConfig) (string, error) {
+func CreateAuthenticationToken(payload *AuthenticationPayload, config TokenOption) (string, error) {
 	if payload == nil {
 		return "", fmt.Errorf("payload is nil")
 	}
@@ -108,7 +108,7 @@ func CreateAuthenticationToken(payload *AuthenticationPayload, config TokenConfi
 	return token, nil
 }
 
-func VerifyAuthenticationToken(token string, config TokenConfig) (*AuthenticationClaims, error) {
+func VerifyAuthenticationToken(token string, config TokenOption) (*AuthenticationClaims, error) {
 	claims, err := security.ParseJWTMapClaims(token, config.Secret)
 	if err != nil {
 		return nil, fmt.Errorf("error while parsing token string: %w", err)
@@ -139,7 +139,7 @@ type RefreshTokenPayload struct {
 	Token  string    `json:"token"`
 }
 
-func CreateAndPersistRefreshToken(ctx context.Context, db bob.DB, payload *RefreshTokenPayload, config TokenConfig) (string, error) {
+func CreateAndPersistRefreshToken(ctx context.Context, db bob.DB, payload *RefreshTokenPayload, config TokenOption) (string, error) {
 	if payload == nil {
 		return "", fmt.Errorf("payload is nil")
 	}
@@ -152,7 +152,7 @@ func CreateAndPersistRefreshToken(ctx context.Context, db bob.DB, payload *Refre
 	}
 	dto := &repository.TokenDTO{
 		Type:       models.TokenTypesRefreshToken,
-		Identifier: payload.UserId.String(),
+		Identifier: payload.Email,
 		Expires:    config.Expires(),
 		Token:      payload.Token,
 		UserID:     &payload.UserId,
@@ -177,7 +177,7 @@ func CheckTokenType(claims jwt.MapClaims, tokenType shared.TokenType) bool {
 	}
 }
 
-func VerifyRefreshToken(ctx context.Context, db bob.DB, token string, config TokenConfig) (*RefreshTokenClaims, error) {
+func VerifyRefreshToken(ctx context.Context, db bob.DB, token string, config TokenOption) (*RefreshTokenClaims, error) {
 	// parse token
 	claims, err := security.ParseJWTMapClaims(token, config.Secret)
 	if err != nil {
@@ -218,11 +218,10 @@ type OtpPayload struct {
 	Type       shared.TokenType `json:"type"`
 	Otp        string           `json:"otp,omitempty"`
 	RedirectTo string           `json:"redirect_to,omitempty"`
-	Provider   models.Providers `json:"provider,omitempty"`
 }
 
 // create a new verification token from claims
-func CreateOtpToken(payload *OtpPayload, config TokenConfig) (string, error) {
+func CreateOtpToken(payload *OtpPayload, config TokenOption) (string, error) {
 	if payload == nil {
 		return "", fmt.Errorf("payload is nil")
 	}
@@ -240,7 +239,7 @@ func CreateOtpToken(payload *OtpPayload, config TokenConfig) (string, error) {
 }
 
 // persist verification token to db
-func PersistOtpToken(ctx context.Context, db bob.DB, payload *OtpPayload, config TokenConfig) error {
+func PersistOtpToken(ctx context.Context, db bob.DB, payload *OtpPayload, config TokenOption) error {
 
 	//  clear any existing verification tokens
 	_ = repository.DeleteTokensByUser(ctx, db, &repository.OtpDto{
@@ -252,7 +251,7 @@ func PersistOtpToken(ctx context.Context, db bob.DB, payload *OtpPayload, config
 	// save new verification token
 	dto := &repository.TokenDTO{
 		Type:       models.TokenTypes(payload.Type),
-		Identifier: payload.UserId.String(),
+		Identifier: payload.Email,
 		Expires:    config.Expires(),
 		Token:      payload.Token,
 		Otp:        &payload.Otp,
@@ -266,7 +265,7 @@ func PersistOtpToken(ctx context.Context, db bob.DB, payload *OtpPayload, config
 }
 
 // parse and verify token string to claims
-func ParseVerificationToken(token string, config TokenConfig) (*EmailVerificationClaims, error) {
+func ParseVerificationToken(token string, config TokenOption) (*EmailVerificationClaims, error) {
 	claims, err := security.ParseJWTMapClaims(token, config.Secret)
 	if err != nil {
 		return nil, fmt.Errorf("error while parsing token string: %w", err)
@@ -311,11 +310,23 @@ func UseVerificationTokenAndUpdateUser(ctx context.Context, db bob.DB, token str
 
 type ProviderStateClaims struct {
 	jwt.RegisteredClaims
-	OtpPayload
+	ProviderStatePayload
+}
+
+type ProviderStatePayload struct {
+	// UserId              uuid.UUID        `json:"user_id,omitempty"`
+	// Email               string           `json:"email,omitempty"`
+	Token               string                `json:"token"`
+	Type                shared.TokenType      `json:"type"`
+	Provider            shared.OAuthProviders `json:"provider"`
+	CodeVerifier        string                `json:"code_verifier,omitempty"`
+	CodeChallenge       string                `json:"code_challenge,omitempty"`
+	CodeChallengeMethod string                `json:"code_challenge_method,omitempty"`
+	RedirectTo          string                `json:"redirect_to,omitempty"`
 }
 
 // create a new verification token from claims
-func NewProviderStateToken(payload *OtpPayload, config TokenConfig) (string, error) {
+func CreateProviderStateToken(payload *ProviderStatePayload, config TokenOption) (string, error) {
 	if payload == nil {
 		return "", fmt.Errorf("payload is nil")
 	}
@@ -323,7 +334,7 @@ func NewProviderStateToken(payload *OtpPayload, config TokenConfig) (string, err
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: config.ExpiresAt(),
 		},
-		OtpPayload: *payload,
+		ProviderStatePayload: *payload,
 	}
 	token, err := security.NewJWTWithClaims(claims, config.Secret)
 	if err != nil {
@@ -332,8 +343,23 @@ func NewProviderStateToken(payload *OtpPayload, config TokenConfig) (string, err
 	return token, nil
 }
 
+func PersistProviderStateToken(ctx context.Context, db bob.DB, payload *ProviderStatePayload, config TokenOption) error {
+	// save new verification token
+	dto := &repository.TokenDTO{
+		Type:       models.TokenTypes(payload.Type),
+		Identifier: string(payload.Type),
+		Expires:    config.Expires(),
+		Token:      payload.Token,
+	}
+	_, err := repository.CreateToken(ctx, db, dto)
+	if err != nil {
+		return fmt.Errorf("error at storing verification token: %w", err)
+	}
+	return nil
+}
+
 // parse and verify token string to claims
-func ParseProviderStateToken(token string, config TokenConfig) (*ProviderStateClaims, error) {
+func ParseProviderStateToken(token string, config TokenOption) (*ProviderStateClaims, error) {
 	claims, err := security.ParseJWTMapClaims(token, config.Secret)
 	if err != nil {
 		return nil, fmt.Errorf("error while parsing token string: %w", err)
@@ -358,7 +384,7 @@ type PasswordResetClaims struct {
 }
 
 // create a new verification token from claims
-func CreatePasswordResetToken(payload *OtpPayload, config TokenConfig) (string, error) {
+func CreatePasswordResetToken(payload *OtpPayload, config TokenOption) (string, error) {
 	if payload == nil {
 		return "", fmt.Errorf("payload is nil")
 	}
@@ -376,7 +402,7 @@ func CreatePasswordResetToken(payload *OtpPayload, config TokenConfig) (string, 
 }
 
 // parse and verify token string to claims
-func ParseResetToken(token string, config TokenConfig) (*PasswordResetClaims, error) {
+func ParseResetToken(token string, config TokenOption) (*PasswordResetClaims, error) {
 	claims, err := security.ParseJWTMapClaims(token, config.Secret)
 	if err != nil {
 		return nil, fmt.Errorf("error while parsing token string: %w", err)

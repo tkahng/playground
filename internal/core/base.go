@@ -18,13 +18,13 @@ type BaseApp struct {
 	tokenVerifier         *TokenVerifier
 	cfg                   *conf.EnvConfig
 	db                    bob.DB
-	settings              *Settings
+	settings              *AppOptions
 	onAfterRequestHandle  *hook.Hook[*BaseEvent]
 	onBeforeRequestHandle *hook.Hook[*BaseEvent]
 }
 
 // SetSettings implements App.
-func (a *BaseApp) SetSettings(settings *Settings) {
+func (a *BaseApp) SetSettings(settings *AppOptions) {
 	a.settings = settings
 }
 
@@ -39,7 +39,7 @@ func (app *BaseApp) TokenStorage() *TokenStorage {
 }
 
 // Settings implements App.
-func (a *BaseApp) Settings() *Settings {
+func (a *BaseApp) Settings() *AppOptions {
 	return a.settings
 }
 
@@ -74,7 +74,7 @@ func InitBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 	return app
 }
 
-func NewBaseApp(db bob.DB, cfg conf.EnvConfig, authOpt *Settings) *BaseApp {
+func NewBaseApp(db bob.DB, cfg conf.EnvConfig, authOpt *AppOptions) *BaseApp {
 	return &BaseApp{
 		db:       db,
 		settings: authOpt,

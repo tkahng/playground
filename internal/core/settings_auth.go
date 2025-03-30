@@ -33,13 +33,13 @@ type EncryptedAuthOptions struct {
 }
 
 type AuthOptions struct {
-	OAuth2 OAuth2Config `form:"oauth2" json:"oauth2"`
+	OAuth2 OAuth2Option `form:"oauth2" json:"oauth2"`
 
-	AccessToken        TokenConfig `form:"access_token" json:"access_token"`
-	PasswordResetToken TokenConfig `form:"password_reset_token" json:"password_reset_token"`
-	VerificationToken  TokenConfig `form:"verification_token" json:"verification_token"`
-	RefreshToken       TokenConfig `form:"refresh_token" json:"refresh_token"`
-	StateToken         TokenConfig `form:"state_token" json:"state_token"`
+	AccessToken        TokenOption `form:"access_token" json:"access_token"`
+	PasswordResetToken TokenOption `form:"password_reset_token" json:"password_reset_token"`
+	VerificationToken  TokenOption `form:"verification_token" json:"verification_token"`
+	RefreshToken       TokenOption `form:"refresh_token" json:"refresh_token"`
+	StateToken         TokenOption `form:"state_token" json:"state_token"`
 
 	// Default email templates
 	// ---
@@ -186,33 +186,39 @@ func GetOrSetEncryptedAuthOptions(ctx context.Context, dbx bob.DB, encryptionKey
 
 func DefaultAuthSettings() *AuthOptions {
 	return &AuthOptions{
-		OAuth2: OAuth2Config{},
+		OAuth2: OAuth2Option{
+			ProviderNameTypes: map[string]shared.OAuthProviders{
+				// auth.NameApple:  shared.ProvidersApple,
+				auth.NameGoogle: shared.ProvidersGoogle,
+				auth.NameGithub: shared.ProvidersGithub,
+			},
+		},
 
 		// VerificationTemplate:       defaultVerificationTemplate,
 		// ResetPasswordTemplate:      defaultResetPasswordTemplate,
 		// ConfirmEmailChangeTemplate: defaultConfirmEmailChangeTemplate,
 
-		VerificationToken: TokenConfig{
+		VerificationToken: TokenOption{
 			// Type:     shared.VerificationTokenType,
 			Secret:   string(shared.VerificationTokenType),
 			Duration: 259200, // 3days
 		},
-		AccessToken: TokenConfig{
+		AccessToken: TokenOption{
 			// Type:     shared.AccessTokenType,
 			Secret:   string(shared.AccessTokenType),
 			Duration: 3600, // 1hr
 		},
-		PasswordResetToken: TokenConfig{
+		PasswordResetToken: TokenOption{
 			// Type:     shared.PasswordResetTokenType,
 			Secret:   string(shared.PasswordResetTokenType),
 			Duration: 1800, // 30min
 		},
-		RefreshToken: TokenConfig{
+		RefreshToken: TokenOption{
 			// Type:     shared.RefreshTokenType,
 			Secret:   string(shared.RefreshTokenType),
 			Duration: 604800, // 7days
 		},
-		StateToken: TokenConfig{
+		StateToken: TokenOption{
 			// Type:     shared.StateTokenType,
 			Secret:   string(shared.StateTokenType),
 			Duration: 1800, // 30min
@@ -245,7 +251,7 @@ type ProviderInfo struct {
 	CodeChallengeMethod string `json:"code_challenge_method"`
 }
 
-type OAuth2ProviderConfig struct {
+type OAuth2ProviderOption struct {
 	// PKCE overwrites the default provider PKCE config option.
 	//
 	// This usually shouldn't be needed but some OAuth2 vendors, like the LinkedIn OIDC,
@@ -263,7 +269,7 @@ type OAuth2ProviderConfig struct {
 	Extra        map[string]any `form:"extra" json:"extra"`
 }
 
-func (c OAuth2ProviderConfig) Validate() error {
+func (c OAuth2ProviderOption) Validate() error {
 	return validation.ValidateStruct(&c,
 		validation.Field(&c.Name, validation.Required, validation.By(checkProviderName)),
 		validation.Field(&c.ClientId, validation.Required),
@@ -287,15 +293,15 @@ func checkProviderName(value any) error {
 	return nil
 }
 
-type OAuth2Config struct {
-	Providers []OAuth2ProviderConfig `form:"providers" json:"providers"`
-
-	MappedFields OAuth2KnownFields `form:"mapped_fields" json:"mapped_fields"`
+type OAuth2Option struct {
+	Providers         []OAuth2ProviderOption           `form:"providers" json:"providers"`
+	ProviderNameTypes map[string]shared.OAuthProviders `form:"provider_name_types" json:"provider_name_types"`
+	MappedFields      OAuth2KnownFields                `form:"mapped_fields" json:"mapped_fields"`
 
 	Enabled bool `form:"enabled" json:"enabled"`
 }
 
-func (c OAuth2Config) Validate() error {
+func (c OAuth2Option) Validate() error {
 	if !c.Enabled {
 		return nil // no need to validate
 	}
@@ -307,7 +313,7 @@ func (c OAuth2Config) Validate() error {
 }
 
 func checkForDuplicatedProviders(value any) error {
-	configs, _ := value.([]OAuth2ProviderConfig)
+	configs, _ := value.([]OAuth2ProviderOption)
 
 	existing := map[string]struct{}{}
 
@@ -329,7 +335,7 @@ func checkForDuplicatedProviders(value any) error {
 	return nil
 }
 
-func (c OAuth2Config) GetProviderConfig(name string) (config OAuth2ProviderConfig, exists bool) {
+func (c OAuth2Option) GetProviderConfig(name string) (config OAuth2ProviderOption, exists bool) {
 	for _, p := range c.Providers {
 		if p.Name == name {
 			return p, true
@@ -338,7 +344,7 @@ func (c OAuth2Config) GetProviderConfig(name string) (config OAuth2ProviderConfi
 	return
 }
 
-func (c OAuth2ProviderConfig) InitProvider() (auth.Provider, error) {
+func (c OAuth2ProviderOption) InitProvider() (auth.Provider, error) {
 	provider, err := auth.NewProviderByName(c.Name)
 	if err != nil {
 		return nil, err

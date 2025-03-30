@@ -48,7 +48,7 @@ func (app *BaseApp) SendVerificationEmail(ctx context.Context, db bob.DB, user *
 	return nil
 }
 
-func createVerificationMailParams(tokenHash string, payload *OtpPayload, config *Settings) (*mailer.Message, error) {
+func createVerificationMailParams(tokenHash string, payload *OtpPayload, config *AppOptions) (*mailer.Message, error) {
 	path, err := mailer.GetPath("/api/auth/confirm-verification", &mailer.EmailParams{
 		Token:      tokenHash,
 		Type:       string(shared.VerificationTokenType),

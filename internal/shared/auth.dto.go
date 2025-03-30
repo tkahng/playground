@@ -48,6 +48,16 @@ const (
 	StateTokenType         TokenType = "state_token"
 )
 
+type OAuthProviders string
+
+const (
+	ProvidersGoogle   OAuthProviders = "google"
+	ProvidersApple    OAuthProviders = "apple"
+	ProvidersFacebook OAuthProviders = "facebook"
+	ProvidersGithub   OAuthProviders = "github"
+	// ProvidersCredentials OAuthProviders = "credentials"
+)
+
 // const
 
 type TokenDto struct {

@@ -24,7 +24,7 @@ func (api *Api) GetAppSettingsOperation(path string) huma.Operation {
 }
 
 type AppSettingsout struct {
-	Body *core.Settings
+	Body *core.AppOptions
 }
 
 func (api *Api) GetAppSettings(context context.Context, input *struct{}) (*AppSettingsout, error) {
@@ -48,7 +48,7 @@ func (api *Api) PostAppSettingsOperation(path string) huma.Operation {
 }
 
 type AppSettingsInput struct {
-	Body core.Settings
+	Body core.AppOptions
 }
 
 func (api *Api) PostAppSettings(context context.Context, input *AppSettingsInput) (*struct{}, error) {
