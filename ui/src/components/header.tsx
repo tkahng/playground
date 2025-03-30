@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
 import { NavLink } from "react-router";
 import { LinkProps } from "./landing-links";
+import { ModeToggle } from "./mode-toggle";
 import NexusAILogo from "./nexus-logo";
 
 export function NexusAILandingHeader({
@@ -37,8 +38,8 @@ export function NexusAILandingHeader({
             rightLinks.map(({ to: href, title }) => (
               <NavLink key={title} title={title} to={href} />
             ))}
-          {/* <ModeToggle />
-            <AuthButton /> */}
+          <ModeToggle />
+          {/* <AuthButton /> */}
         </div>
       </nav>
     </header>

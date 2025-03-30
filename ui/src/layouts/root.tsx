@@ -6,9 +6,9 @@ import { Outlet } from "react-router";
 export default function RootLayout() {
   return (
     <>
-      <div className="relative flex min-h-screen flex-col justify-center">
+      <div className=" flex min-h-screen flex-col">
         <NexusAILandingHeader leftLinks={landingLinks} />
-        <main className="relative flex flex-col items-center justify-center">
+        <main className="flex-grow items-center justify-center">
           <Outlet />
         </main>
         <NexusAIFooter />
