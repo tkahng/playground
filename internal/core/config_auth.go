@@ -2,6 +2,7 @@ package core
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -15,6 +16,7 @@ import (
 )
 
 type ProviderConfig interface {
+	Pkce() bool
 	BuildAuthURL(state string, opts ...oauth2.AuthCodeOption) string
 	Client(ctx context.Context, token *oauth2.Token) *http.Client
 	FetchAuthUser(ctx context.Context, token *oauth2.Token) (*auth.AuthUser, error)
@@ -26,9 +28,10 @@ type ProviderConfig interface {
 
 func OAuth2ConfigFromEnv(cfg conf.EnvConfig) OAuth2Config {
 	var conf = OAuth2Config{}
-
+	var githubConf GithubConfig
+	var googleConf GoogleConfig
 	if cfg.GithubClientId != "" && cfg.GithubClientSecret != "" {
-		conf.Github = GithubConfig{
+		githubConf = GithubConfig{
 			OAuth2ProviderConfig: OAuth2ProviderConfig{
 				ClientID:     cfg.GithubClientId,
 				ClientSecret: cfg.GithubClientSecret,
@@ -42,9 +45,11 @@ func OAuth2ConfigFromEnv(cfg conf.EnvConfig) OAuth2Config {
 				RedirectURL:  cfg.AuthCallback,
 			},
 		}
+	} else {
+		githubConf = GithubConfig{}
 	}
 	if cfg.GoogleClientId != "" && cfg.GoogleClientSecret != "" {
-		conf.Google = GoogleConfig{
+		googleConf = GoogleConfig{
 			OAuth2ProviderConfig: OAuth2ProviderConfig{
 				Name:         "Google",
 				ClientID:     cfg.GoogleClientId,
@@ -60,13 +65,31 @@ func OAuth2ConfigFromEnv(cfg conf.EnvConfig) OAuth2Config {
 				UserInfoURL: "https://www.googleapis.com/oauth2/v3/userinfo",
 				RedirectURL: cfg.AuthCallback,
 			}}
+	} else {
+		googleConf = GoogleConfig{}
 	}
+	conf.Google = googleConf
+	conf.Github = githubConf
 	return conf
 }
 
 type OAuth2Config struct {
 	Google GoogleConfig
 	Github GithubConfig
+}
+
+const NameGithub = "github"
+const NameGoogle = "google"
+
+func (c *OAuth2Config) GetProvider(name string) (ProviderConfig, error) {
+	switch name {
+	case NameGoogle:
+		return &c.Google, nil
+	case NameGithub:
+		return &c.Github, nil
+	default:
+		return nil, errors.New("Missing provider " + string(name))
+	}
 }
 
 func (c OAuth2Config) Validate() error {
@@ -88,6 +111,10 @@ type OAuth2ProviderConfig struct {
 	Scopes       []string
 	RedirectURL  string
 	// extra       map[string]any
+}
+
+func (c OAuth2ProviderConfig) Pkce() bool {
+	return c.PKCE
 }
 
 func (c OAuth2ProviderConfig) Validate() error {

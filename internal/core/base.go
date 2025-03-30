@@ -9,7 +9,6 @@ import (
 
 	"github.com/tkahng/authgo/internal/tools/hook"
 	"github.com/tkahng/authgo/internal/tools/mailer"
-	"github.com/tkahng/authgo/internal/tools/utils"
 )
 
 var _ App = (*BaseApp)(nil)
@@ -78,9 +77,7 @@ func InitBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 func NewBaseApp(db bob.DB, cfg conf.EnvConfig, authOpt *AppOptions) *BaseApp {
 
 	oauth := OAuth2ConfigFromEnv(cfg)
-	utils.PrettyPrintJSON(oauth)
 	authOpt.Auth.OAuth2Config = oauth
-	utils.PrettyPrintJSON(authOpt)
 	return &BaseApp{
 		db:       db,
 		settings: authOpt,

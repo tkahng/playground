@@ -3,6 +3,7 @@ package core
 import (
 	"context"
 	"fmt"
+	"net/http"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
@@ -10,6 +11,7 @@ import (
 	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/authgo/internal/tools/cookie"
 	"github.com/tkahng/authgo/internal/tools/security"
 )
 
@@ -417,4 +419,11 @@ func ParseResetToken(token string, config TokenOption) (*PasswordResetClaims, er
 		return nil, fmt.Errorf("error at marshaling token: %w", err)
 	}
 	return jsond, nil
+}
+
+// ---------COOKIES------------
+
+func SetTokenCookies(w http.ResponseWriter, tokens shared.TokenDto, config AuthOptions) {
+	cookie.SetTokenCookie(w, cookie.AccessTokenCookieName, tokens.AccessToken, config.AccessToken.Expires())
+	cookie.SetTokenCookie(w, cookie.RefreshTokenCookieName, tokens.RefreshToken, config.RefreshToken.Expires())
 }

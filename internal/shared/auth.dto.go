@@ -69,8 +69,10 @@ type TokenDto struct {
 }
 
 type AuthenticatedDTO struct {
-	User   *models.User `json:"user"`
-	Tokens TokenDto     `json:"tokens"` //core.TokenDto `json:"tokens"`
+	User        *models.User `json:"user"`
+	Permissions []string     `json:"permissions"`
+	Roles       []string     `json:"roles"`
+	Tokens      TokenDto     `json:"tokens"` //core.TokenDto `json:"tokens"`
 }
 
 type RecordOAuth2LoginForm struct {
