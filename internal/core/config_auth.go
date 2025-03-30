@@ -24,7 +24,7 @@ type ProviderConfig interface {
 	FetchToken(ctx context.Context, code string, opts ...oauth2.AuthCodeOption) (*oauth2.Token, error)
 }
 
-// func Options
+// func
 
 func OAuth2ConfigFromEnv(cfg conf.EnvConfig) OAuth2Config {
 	var conf = OAuth2Config{}

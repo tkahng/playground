@@ -360,6 +360,19 @@ func PersistProviderStateToken(ctx context.Context, db bob.DB, payload *Provider
 	return nil
 }
 
+func CreateAndPersistStateToken(ctx context.Context, db bob.DB, payload *ProviderStatePayload, config TokenOption) (string, error) {
+
+	token, err := CreateProviderStateToken(payload, config)
+	if err != nil {
+		return "", err
+	}
+	err = PersistProviderStateToken(ctx, db, payload, config)
+	if err != nil {
+		return "", err
+	}
+	return token, nil
+}
+
 // parse and verify token string to claims
 func ParseProviderStateToken(token string, config TokenOption) (*ProviderStateClaims, error) {
 	claims, err := security.ParseJWTMapClaims(token, config.Secret)
