@@ -13,7 +13,7 @@ import (
 func (api *Api) MeOperation(path string) huma.Operation {
 	return huma.Operation{
 		OperationID: "me",
-		Method:      http.MethodPost,
+		Method:      http.MethodGet,
 		Path:        path,
 		Summary:     "Me",
 		Description: "Me",
