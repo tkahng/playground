@@ -1,3 +1,4 @@
+import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { JSX } from "react";
 import { Navigate } from "react-router";
 
@@ -6,7 +7,7 @@ export default function ProtectedRoute({
 }: {
   children: JSX.Element;
 }) {
-  const isAuthenticated = !!localStorage.getItem("auth");
+  const { user } = useAuthProvider();
 
-  return isAuthenticated ? children : <Navigate to="/login" />;
+  return user ? children : <Navigate to="/login" />;
 }

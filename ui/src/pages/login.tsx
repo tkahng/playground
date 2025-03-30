@@ -31,7 +31,7 @@ export default function LoginPage() {
     try {
       await login({ email: input.email, password: input.password });
       setLoading(false);
-      navigate("/dashboard");
+      navigate(RouteMap.DASHBOARD_HOME);
     } catch (error) {
       if (error instanceof Error) {
         toast.error(error.message, {

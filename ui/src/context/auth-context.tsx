@@ -9,6 +9,7 @@ interface AuthProviderProps {
 }
 
 export interface AuthContextType {
+  user: AuthenticatedDTO | null;
   login: ({ email, password }: SigninInput) => Promise<any>;
   logout: () => Promise<void>;
   checkError: (error: any) => Promise<void>;
@@ -16,6 +17,7 @@ export interface AuthContextType {
   getOrRefreshToken: () => Promise<AuthenticatedDTO>;
 }
 export const AuthContext = createContext<AuthContextType>({
+  user: null,
   login: async () => {},
   logout: async () => {},
   checkError: async () => {},

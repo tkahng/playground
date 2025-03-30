@@ -1,3 +1,4 @@
+import { RouteMap } from "@/components/route-map";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { useNavigate } from "react-router";
 
@@ -7,7 +8,7 @@ export default function Dashboard() {
 
   const handleLogout = async () => {
     await auth.logout();
-    navigate("/login");
+    navigate(RouteMap.SIGNIN);
   };
 
   return (
