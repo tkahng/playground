@@ -17,17 +17,19 @@ function App() {
             <Routes>
               <Route element={<RootLayout />}>
                 <Route path="/" element={<Landing />} />
+                <Route path="/signin" element={<Login />} />
+                <Route path="/signup" element={<Login />} />
               </Route>
-              <Route path="/" element={<Login />} />
-              <Route path="/signin" element={<Login />} />
-              <Route
-                path="/dashboard"
-                element={
-                  <ProtectedRoute>
-                    <Dashboard />
-                  </ProtectedRoute>
-                }
-              />
+              <Route element={<RootLayout />}>
+                <Route
+                  path="/dashboard"
+                  element={
+                    <ProtectedRoute>
+                      <Dashboard />
+                    </ProtectedRoute>
+                  }
+                />
+              </Route>
             </Routes>
           </BrowserRouter>
         </AuthProvider>

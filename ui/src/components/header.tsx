@@ -46,6 +46,11 @@ export function NexusAILandingHeader({
               <span>Sign in</span>
             </NavLink>
           </Button>
+          <Button asChild>
+            <NavLink to={RouteMap.SIGNUP}>
+              <span>Sign up</span>
+            </NavLink>
+          </Button>
           {/* <AuthButton /> */}
         </div>
       </nav>
