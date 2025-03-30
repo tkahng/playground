@@ -4,13 +4,19 @@ import Login from "@/pages/login2";
 import { BrowserRouter, Route, Routes } from "react-router";
 import { Toaster } from "sonner";
 import { AuthProvider } from "./context/auth-context";
+import RootLayout from "./layouts/root";
+import Landing from "./pages/landing";
 
 function App() {
   return (
-    <div>
+    <>
       <AuthProvider>
         <BrowserRouter>
           <Routes>
+            <Route element={<RootLayout />}>
+              <Route path="/" element={<Landing />} />
+            </Route>
+            <Route path="/" element={<Login />} />
             <Route path="/login" element={<Login />} />
             <Route
               path="/dashboard"
@@ -24,7 +30,7 @@ function App() {
         </BrowserRouter>
       </AuthProvider>
       <Toaster />
-    </div>
+    </>
   );
 }
 
