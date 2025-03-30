@@ -1,6 +1,6 @@
 import ProtectedRoute from "@/components/protected-route";
 import Dashboard from "@/pages/dashboard"; // Your protected page
-import Login from "@/pages/login2";
+import Login from "@/pages/login";
 import { BrowserRouter, Route, Routes } from "react-router";
 import { Toaster } from "sonner";
 import { ThemeProvider } from "./components/theme-provider";
@@ -19,7 +19,7 @@ function App() {
                 <Route path="/" element={<Landing />} />
               </Route>
               <Route path="/" element={<Login />} />
-              <Route path="/login" element={<Login />} />
+              <Route path="/signin" element={<Login />} />
               <Route
                 path="/dashboard"
                 element={

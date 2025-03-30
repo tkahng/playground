@@ -15,17 +15,16 @@ import { Label } from "@radix-ui/react-label";
 import { Lock } from "lucide-react";
 import { useContext, useState } from "react";
 import { Link, useNavigate } from "react-router";
+import { toast } from "sonner";
 
 export default function LoginPage() {
   const [input, setInput] = useState<SigninInput>({ email: "", password: "" });
-  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate(); // Get navigation function
   const { login } = useContext(AuthContext);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    setError(null);
     setLoading(true);
 
     // Simulate API call (replace with actual authentication)
@@ -34,10 +33,27 @@ export default function LoginPage() {
       setLoading(false);
       navigate("/dashboard");
     } catch (error) {
-      setError("Invalid email or password");
+      if (error instanceof Error) {
+        toast.error(error.message, {
+          description: "Please try again",
+          action: {
+            label: "Undo",
+            onClick: () => console.log("Undo"),
+          },
+        });
+      }
+      console.error(error);
+      toast.error("unknown error", {
+        description: "Please try again",
+        action: {
+          label: "Undo",
+          onClick: () => console.log("Undo"),
+        },
+      });
       setLoading(false);
     }
   };
+
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const key = e.target.id;
     const value = e.target.value;
@@ -58,28 +74,30 @@ export default function LoginPage() {
               Enter your email and password to access your account
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <form onSubmit={handleSubmit}>
+          <CardContent className="space-y-1">
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  placeholder="tkahng+0@gmail.com"
-                  required
-                  name="email"
-                  type="email"
-                  onChange={handleChange}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  required
-                  name="password"
-                  type="password"
-                  onChange={handleChange}
-                />
+                <div className="space-y-4">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    placeholder="tkahng+0@gmail.com"
+                    required
+                    name="email"
+                    type="email"
+                    onChange={handleChange}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <Input
+                    id="password"
+                    required
+                    name="password"
+                    type="password"
+                    onChange={handleChange}
+                  />
+                </div>
               </div>
               <Button className="w-full" type="submit" disabled={loading}>
                 <Lock className="mr-2 h-4 w-4" /> Login
