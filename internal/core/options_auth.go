@@ -33,13 +33,13 @@ type EncryptedAuthOptions struct {
 }
 
 type AuthOptions struct {
-	OAuth2 OAuth2Option `form:"oauth2" json:"oauth2"`
-
-	AccessToken        TokenOption `form:"access_token" json:"access_token"`
-	PasswordResetToken TokenOption `form:"password_reset_token" json:"password_reset_token"`
-	VerificationToken  TokenOption `form:"verification_token" json:"verification_token"`
-	RefreshToken       TokenOption `form:"refresh_token" json:"refresh_token"`
-	StateToken         TokenOption `form:"state_token" json:"state_token"`
+	OAuth2             OAuth2Option `form:"oauth2" json:"oauth2"`
+	OAuth2Config       OAuth2Config `form:"oauth2_config" json:"oauth2_config"`
+	AccessToken        TokenOption  `form:"access_token" json:"access_token"`
+	PasswordResetToken TokenOption  `form:"password_reset_token" json:"password_reset_token"`
+	VerificationToken  TokenOption  `form:"verification_token" json:"verification_token"`
+	RefreshToken       TokenOption  `form:"refresh_token" json:"refresh_token"`
+	StateToken         TokenOption  `form:"state_token" json:"state_token"`
 
 	// Default email templates
 	// ---
@@ -64,6 +64,7 @@ func (o AuthOptions) Validate() error {
 		// validation.Field(&o.AuthAlert),
 		// validation.Field(&o.PasswordAuth),
 		validation.Field(&o.OAuth2),
+		validation.Field(&o.OAuth2Config),
 		// validation.Field(&o.OTP),
 		// validation.Field(&o.MFA),
 		validation.Field(&o.AccessToken),
@@ -186,13 +187,7 @@ func GetOrSetEncryptedAuthOptions(ctx context.Context, dbx bob.DB, encryptionKey
 
 func DefaultAuthSettings() *AuthOptions {
 	return &AuthOptions{
-		OAuth2: OAuth2Option{
-			ProviderNameTypes: map[string]shared.OAuthProviders{
-				// auth.NameApple:  shared.ProvidersApple,
-				auth.NameGoogle: shared.ProvidersGoogle,
-				auth.NameGithub: shared.ProvidersGithub,
-			},
-		},
+		OAuth2: OAuth2Option{},
 
 		// VerificationTemplate:       defaultVerificationTemplate,
 		// ResetPasswordTemplate:      defaultResetPasswordTemplate,
@@ -294,9 +289,8 @@ func checkProviderName(value any) error {
 }
 
 type OAuth2Option struct {
-	Providers         []OAuth2ProviderOption           `form:"providers" json:"providers"`
-	ProviderNameTypes map[string]shared.OAuthProviders `form:"provider_name_types" json:"provider_name_types"`
-	MappedFields      OAuth2KnownFields                `form:"mapped_fields" json:"mapped_fields"`
+	Providers    []OAuth2ProviderOption `form:"providers" json:"providers"`
+	MappedFields OAuth2KnownFields      `form:"mapped_fields" json:"mapped_fields"`
 
 	Enabled bool `form:"enabled" json:"enabled"`
 }

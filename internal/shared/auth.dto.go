@@ -51,10 +51,10 @@ const (
 type OAuthProviders string
 
 const (
-	ProvidersGoogle   OAuthProviders = "google"
-	ProvidersApple    OAuthProviders = "apple"
-	ProvidersFacebook OAuthProviders = "facebook"
-	ProvidersGithub   OAuthProviders = "github"
+	ProvidersGoogle OAuthProviders = "google"
+	// ProvidersApple    OAuthProviders = "apple"
+	// ProvidersFacebook OAuthProviders = "facebook"
+	ProvidersGithub OAuthProviders = "github"
 	// ProvidersCredentials OAuthProviders = "credentials"
 )
 
