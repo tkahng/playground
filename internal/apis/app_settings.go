@@ -51,15 +51,15 @@ type AppSettingsInput struct {
 	Body core.AppOptions
 }
 
-func (api *Api) PostAppSettings(context context.Context, input *AppSettingsInput) (*struct{}, error) {
-	err := input.Body.Validate()
-	if err != nil {
-		return nil, err
-	}
-	err = core.EncryptAndSetSettings(context, api.app.Db(), &input.Body, api.app.EncryptionEnv())
-	if err != nil {
-		return nil, err
-	}
-	api.app.SetSettings(&input.Body)
-	return nil, nil
-}
+// func (api *Api) PostAppSettings(context context.Context, input *AppSettingsInput) (*struct{}, error) {
+// 	err := input.Body.Validate()
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	err = core.EncryptAndSetSettings(context, api.app.Db(), &input.Body, api.app.EncryptionEnv())
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	api.app.SetSettings(&input.Body)
+// 	return nil, nil
+// }

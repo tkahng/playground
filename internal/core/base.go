@@ -23,11 +23,6 @@ type BaseApp struct {
 	onBeforeRequestHandle *hook.Hook[*BaseEvent]
 }
 
-// SetSettings implements App.
-func (a *BaseApp) SetSettings(settings *AppOptions) {
-	a.settings = settings
-}
-
 // TokenVerifier implements App.
 func (a *BaseApp) TokenVerifier() *TokenVerifier {
 	return a.tokenVerifier
@@ -65,22 +60,18 @@ func (app *BaseApp) InitHooks() {
 
 func InitBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 	db := NewBobFromConf(ctx, cfg.Db)
-	authOpt, err := GetOrSetEncryptedAppOptions(ctx, db, cfg.EncryptionKey)
-	if err != nil {
-		panic(err)
-	}
-	app := NewBaseApp(db, cfg, authOpt)
+	app := NewBaseApp(db, cfg)
 	app.Bootstrap()
 	return app
 }
 
-func NewBaseApp(db bob.DB, cfg conf.EnvConfig, authOpt *AppOptions) *BaseApp {
-
+func NewBaseApp(db bob.DB, cfg conf.EnvConfig) *BaseApp {
 	oauth := OAuth2ConfigFromEnv(cfg)
-	authOpt.Auth.OAuth2Config = oauth
+	settings := NewDefaultSettings()
+	settings.Auth.OAuth2Config = oauth
 	return &BaseApp{
 		db:       db,
-		settings: authOpt,
+		settings: settings,
 		cfg:      &cfg,
 	}
 }

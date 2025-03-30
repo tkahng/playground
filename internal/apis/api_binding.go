@@ -101,8 +101,8 @@ func BindApis(api huma.API, app core.App) {
 	adminGroup.UseMiddleware(CheckRolesMiddleware(api, "superuser"))
 	huma.Register(adminGroup, appApi.AdminUsersOperation("/users"), appApi.AdminUsers)
 
-	huma.Register(adminGroup, appApi.GetAppSettingsOperation("/settings"), appApi.GetAppSettings)
-	huma.Register(adminGroup, appApi.PostAppSettingsOperation("/settings"), appApi.PostAppSettings)
+	// huma.Register(adminGroup, appApi.GetAppSettingsOperation("/settings"), appApi.GetAppSettings)
+	// huma.Register(adminGroup, appApi.PostAppSettingsOperation("/settings"), appApi.PostAppSettings)
 
 	// bindUsersApi(api, app)
 	// bindStripeApi(api, app)

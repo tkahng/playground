@@ -17,7 +17,7 @@ func (h *Api) OAuth2AuthorizationUrlOperation(path string) huma.Operation {
 		Method:      http.MethodGet,
 		Path:        path,
 		Summary:     "OAuth2 authorization",
-		Description: "Count the number of colors for all themes",
+		Description: "url for oauth2 authorization",
 		Tags:        []string{"Auth"},
 		Errors:      []int{http.StatusNotFound},
 	}

@@ -2,14 +2,9 @@ package core
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
-	"github.com/stephenafamo/bob"
-	"github.com/tkahng/authgo/internal/repository"
-	"github.com/tkahng/authgo/internal/tools/security"
 )
 
 const (
@@ -204,61 +199,61 @@ type EncryptedAppOptions struct {
 	EncryptedAppOptions string `form:"encrypted_app_options" json:"encrypted_app_options"`
 }
 
-func GetOrSetEncryptedAppOptions(ctx context.Context, dbx bob.DB, encryptionKey string) (*AppOptions, error) {
-	var opts *AppOptions
-	var encryptedOpts *EncryptedAppOptions
-	// get the encrypted auth options from the db
-	encryptedParams, err := repository.GetParams[EncryptedAppOptions](ctx, dbx, EncryptedAppOptionsKey)
-	if err != nil {
-		return nil, fmt.Errorf("error getting encrypted auth options from db: %w", err)
-	}
-	if encryptedParams != nil {
-		encryptedOpts = &encryptedParams.Value.Val
-	}
-	// if the encrypted auth options are not nil, decrypt them
-	if encryptedOpts != nil {
-		decryptedOptString, err := security.Decrypt(encryptedOpts.EncryptedAppOptions, encryptionKey)
-		if err != nil {
-			return nil, fmt.Errorf("error decrypting auth options: %w", err)
-		}
-		var appOpts *AppOptions
-		err = json.Unmarshal(decryptedOptString, &appOpts)
-		if err != nil {
-			return nil, fmt.Errorf("error unmarshalling auth options: %w", err)
-		}
-		opts = appOpts
-	}
-	if opts == nil {
-		opts = NewDefaultSettings()
-		err1 := EncryptAndSetSettings(ctx, dbx, opts, encryptionKey)
-		if err1 != nil {
-			return nil, err1
-		}
-		if opts != nil {
-			return opts, nil
-		}
-	}
-	return opts, nil
-}
+// func GetOrSetEncryptedAppOptions(ctx context.Context, dbx bob.DB, encryptionKey string) (*AppOptions, error) {
+// 	var opts *AppOptions
+// 	var encryptedOpts *EncryptedAppOptions
+// 	// get the encrypted auth options from the db
+// 	encryptedParams, err := repository.GetParams[EncryptedAppOptions](ctx, dbx, EncryptedAppOptionsKey)
+// 	if err != nil {
+// 		return nil, fmt.Errorf("error getting encrypted auth options from db: %w", err)
+// 	}
+// 	if encryptedParams != nil {
+// 		encryptedOpts = &encryptedParams.Value.Val
+// 	}
+// 	// if the encrypted auth options are not nil, decrypt them
+// 	if encryptedOpts != nil {
+// 		decryptedOptString, err := security.Decrypt(encryptedOpts.EncryptedAppOptions, encryptionKey)
+// 		if err != nil {
+// 			return nil, fmt.Errorf("error decrypting auth options: %w", err)
+// 		}
+// 		var appOpts *AppOptions
+// 		err = json.Unmarshal(decryptedOptString, &appOpts)
+// 		if err != nil {
+// 			return nil, fmt.Errorf("error unmarshalling auth options: %w", err)
+// 		}
+// 		opts = appOpts
+// 	}
+// 	if opts == nil {
+// 		opts = NewDefaultSettings()
+// 		err1 := EncryptAndSetSettings(ctx, dbx, opts, encryptionKey)
+// 		if err1 != nil {
+// 			return nil, err1
+// 		}
+// 		if opts != nil {
+// 			return opts, nil
+// 		}
+// 	}
+// 	return opts, nil
+// }
 
-func EncryptAndSetSettings(ctx context.Context, dbx bob.DB, opts *AppOptions, encryptionKey string) error {
-	optsStr, err := json.Marshal(opts)
-	if err != nil {
-		return fmt.Errorf("error marshalling auth options: %w", err)
-	}
-	encryptedOptsStr, err := security.Encrypt(optsStr, encryptionKey)
-	if err != nil {
-		return fmt.Errorf("error encrypting auth options: %w", err)
-	}
+// func EncryptAndSetSettings(ctx context.Context, dbx bob.DB, opts *AppOptions, encryptionKey string) error {
+// 	optsStr, err := json.Marshal(opts)
+// 	if err != nil {
+// 		return fmt.Errorf("error marshalling auth options: %w", err)
+// 	}
+// 	encryptedOptsStr, err := security.Encrypt(optsStr, encryptionKey)
+// 	if err != nil {
+// 		return fmt.Errorf("error encrypting auth options: %w", err)
+// 	}
 
-	encryptedOpts := &EncryptedAppOptions{
-		EncryptedAppOptions: encryptedOptsStr,
-	}
-	err = repository.SetParams(ctx, dbx, EncryptedAuthOptionsKey, encryptedOpts)
-	if err != nil {
-		return err
-	}
-	return nil
-}
+// 	encryptedOpts := &EncryptedAppOptions{
+// 		EncryptedAppOptions: encryptedOptsStr,
+// 	}
+// 	err = repository.SetParams(ctx, dbx, EncryptedAuthOptionsKey, encryptedOpts)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	return nil
+// }
 
 // regex to
