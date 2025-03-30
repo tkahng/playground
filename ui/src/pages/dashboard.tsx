@@ -1,10 +1,12 @@
+import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { useNavigate } from "react-router";
 
 export default function Dashboard() {
+  const auth = useAuthProvider();
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    localStorage.removeItem("auth");
+  const handleLogout = async () => {
+    await auth.logout();
     navigate("/login");
   };
 

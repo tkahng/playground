@@ -3,6 +3,7 @@ import {
   RefreshTokenInput,
   SigninInput,
   SignupInput,
+  User,
 } from "@/schema.types";
 import { client } from "./client";
 
@@ -19,7 +20,9 @@ export const signIn = async (
       password: args.password,
     },
   });
-  console.log({ data, error });
+  if (error) {
+    throw new Error(error.detail);
+  }
   return data || null;
 };
 
@@ -35,8 +38,10 @@ export const refreshToken = async (
       refresh_token: args.refresh_token,
     },
   });
-  console.log({ data, error });
-  return data || null;
+  if (error) {
+    throw new Error(error.detail);
+  }
+  return data;
 };
 
 export const signUp = async (
@@ -49,14 +54,20 @@ export const signUp = async (
   } = await client.POST("/api/auth/signup", {
     body: args,
   });
-  console.log({ data, error });
-  return data || null;
+  if (error) {
+    throw new Error(error.detail);
+  }
+  return data;
 };
 
-// export const getMe = async (token: string): Promise<void> => {
-//   const { data, error } = await client.GET("/api/auth/me", {
-//     headers: {
-//       Authorization: `Bearer ${token}`,
-//     },
-//   });
-// };
+export const getMe = async (token: string): Promise<User> => {
+  const { data, error } = await client.GET("/api/auth/me", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  if (error) {
+    throw new Error(error.detail);
+  }
+  return data;
+};

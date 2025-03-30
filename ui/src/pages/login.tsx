@@ -9,13 +9,43 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { AuthContext } from "@/context/auth-context";
+import { SigninInput } from "@/schema.types";
 import { Label } from "@radix-ui/react-label";
 import { Lock } from "lucide-react";
-import { Form, Link, useNavigation } from "react-router";
+import { useContext, useState } from "react";
+import { Link, useNavigate } from "react-router";
 
 export default function LoginPage() {
-  const navigation = useNavigation();
-  const isSubmitting = navigation.formAction === RouteMap.SIGNIN;
+  const [input, setInput] = useState<SigninInput>({ email: "", password: "" });
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate(); // Get navigation function
+  const { login } = useContext(AuthContext);
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setError(null);
+    setLoading(true);
+
+    // Simulate API call (replace with actual authentication)
+    try {
+      await login({ email: input.email, password: input.password });
+      setLoading(false);
+      navigate("/dashboard");
+    } catch (error) {
+      setError("Invalid email or password");
+      setLoading(false);
+    }
+  };
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const key = e.target.id;
+    const value = e.target.value;
+    setInput((values) => ({
+      ...values,
+      [key]: value,
+    }));
+  }
   return (
     <div className="flex min-h-screen flex-col">
       <div className="flex flex-1 items-center justify-center">
@@ -29,7 +59,7 @@ export default function LoginPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <Form method="post" action={RouteMap.SIGNIN}>
+            <form onSubmit={handleSubmit}>
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
@@ -38,16 +68,23 @@ export default function LoginPage() {
                   required
                   name="email"
                   type="email"
+                  onChange={handleChange}
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
-                <Input id="password" required name="password" type="password" />
+                <Input
+                  id="password"
+                  required
+                  name="password"
+                  type="password"
+                  onChange={handleChange}
+                />
               </div>
-              <Button className="w-full" type="submit" disabled={isSubmitting}>
+              <Button className="w-full" type="submit" disabled={loading}>
                 <Lock className="mr-2 h-4 w-4" /> Login
               </Button>
-            </Form>
+            </form>
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">
             <div className="text-center text-sm text-gray-500 dark:text-gray-400">

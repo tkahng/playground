@@ -12,20 +12,16 @@ export interface AuthContextType {
   login: ({ email, password }: SigninInput) => Promise<any>;
   logout: () => Promise<void>;
   checkError: (error: any) => Promise<void>;
-  checkAuth: () => Promise<AuthenticatedDTO>;
+  checkAuth: () => Promise<void>;
+  getOrRefreshToken: () => Promise<AuthenticatedDTO>;
 }
 export const AuthContext = createContext<AuthContextType>({
-  login: function (): Promise<any> {
-    throw new Error("Function not implemented.");
-  },
-  logout: function (): Promise<void> {
-    throw new Error("Function not implemented.");
-  },
-  checkError: function (): Promise<void> {
-    throw new Error("Function not implemented.");
-  },
-  checkAuth: function (): Promise<AuthenticatedDTO> {
-    throw new Error("Function not implemented.");
+  login: async () => {},
+  logout: async () => {},
+  checkError: async () => {},
+  checkAuth: async () => {},
+  getOrRefreshToken: async () => {
+    throw new Error("Not implemented");
   },
 });
 
@@ -66,7 +62,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     return Promise.resolve();
   };
 
-  const checkAuth = async () => {
+  const getOrRefreshToken = async () => {
     if (!user) {
       return Promise.reject();
     } else {
@@ -89,6 +85,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
+  const checkAuth = async () => {
+    await getOrRefreshToken();
+  };
+
   const value = useMemo(
     () => ({
       user,
@@ -96,6 +96,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       logout,
       checkAuth,
       checkError,
+      getOrRefreshToken,
     }),
     [user]
   );
