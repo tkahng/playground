@@ -2,6 +2,7 @@ package apis
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/danielgtaylor/huma/v2"
@@ -45,6 +46,9 @@ func (h *Api) OAuth2AuthorizationUrl(ctx context.Context, input *OAuth2Authoriza
 	provider, err := settings.Auth.OAuth2Config.GetProvider(string(input.Provider))
 	if err != nil {
 		return nil, err
+	}
+	if !provider.Active() {
+		return nil, fmt.Errorf("provider %v is not enabled", input.Provider)
 	}
 	urlOpts := []oauth2.AuthCodeOption{
 		oauth2.AccessTypeOffline,

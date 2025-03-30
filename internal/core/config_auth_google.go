@@ -15,6 +15,10 @@ type GoogleConfig struct {
 
 var _ ProviderConfig = (*GoogleConfig)(nil)
 
+func (p *GoogleConfig) Active() bool {
+	return p.Enabled
+}
+
 func (p *GoogleConfig) FetchAuthUser(ctx context.Context, token *oauth2.Token) (*auth.AuthUser, error) {
 	data, err := p.FetchRawUserInfo(ctx, token)
 	if err != nil {

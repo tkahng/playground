@@ -17,6 +17,11 @@ type GithubConfig struct {
 
 var _ ProviderConfig = (*GithubConfig)(nil)
 
+func (p *GithubConfig) Active() bool {
+	return p.Enabled
+}
+
+// FetchAuthUser implements Provider.FetchAuthUser() interface method.
 func (p *GithubConfig) FetchAuthUser(ctx context.Context, token *oauth2.Token) (*auth.AuthUser, error) {
 	data, err := p.FetchRawUserInfo(ctx, token)
 

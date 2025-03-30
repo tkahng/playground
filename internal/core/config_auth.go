@@ -17,6 +17,7 @@ import (
 
 type ProviderConfig interface {
 	Pkce() bool
+	Active() bool
 	BuildAuthURL(state string, opts ...oauth2.AuthCodeOption) string
 	Client(ctx context.Context, token *oauth2.Token) *http.Client
 	FetchAuthUser(ctx context.Context, token *oauth2.Token) (*auth.AuthUser, error)

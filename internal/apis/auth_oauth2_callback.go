@@ -64,6 +64,9 @@ func (api *Api) Oatuh2Callback(ctx context.Context, input *OAuth2CallbackInput) 
 	if provider == nil {
 		return nil, fmt.Errorf("invalid provider %v", parsedState.Provider)
 	}
+	if !provider.Active() {
+		return nil, fmt.Errorf("provider %v is not enabled", parsedState.Provider)
+	}
 	var redirectUrl string
 	if parsedState.RedirectTo != "" {
 		redirectUrl = parsedState.RedirectTo
