@@ -2,7 +2,9 @@ package apis
 
 import (
 	"context"
+	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
@@ -84,4 +86,63 @@ func (api *Api) AdminUsers(ctx context.Context, input *struct {
 			},
 		},
 	}, nil
+}
+
+func (api *Api) AdminUsersCreateOperation(path string) huma.Operation {
+	return huma.Operation{
+		OperationID: "admin-users-create",
+		Method:      http.MethodPost,
+		Path:        path,
+		Summary:     "Create user",
+		Description: "Create user",
+		Tags:        []string{"Auth", "Admin"},
+		Errors:      []int{http.StatusNotFound},
+		Security: []map[string][]string{
+			{shared.BearerAuthSecurityKey: {}},
+		},
+	}
+}
+
+type CreateUserInput struct {
+	Email           string
+	Name            *string
+	AvatarUrl       *string
+	EmailVerifiedAt *time.Time
+	Password        *string
+}
+
+func (api *Api) AdminUsersCreate(ctx context.Context, input *struct {
+	Body CreateUserInput
+}) (*struct {
+	Body models.User
+}, error) {
+	db := api.app.Db()
+	existingUser, err := repository.GetUserByEmail(ctx, db, input.Body.Email)
+	if err != nil {
+		return nil, err
+	}
+	if existingUser != nil {
+		return nil, huma.Error409Conflict("User already exists")
+	}
+	params := &shared.AuthenticateUserParams{
+		Email:             input.Body.Email,
+		Name:              input.Body.Name,
+		AvatarUrl:         input.Body.AvatarUrl,
+		EmailVerifiedAt:   input.Body.EmailVerifiedAt,
+		Provider:          models.ProvidersCredentials,
+		Password:          input.Body.Password,
+		Type:              models.ProviderTypesCredentials,
+		ProviderAccountID: input.Body.Email,
+	}
+	user, err := repository.CreateUser(ctx, db, params)
+	if err != nil {
+		return nil, err
+	}
+	account, err := repository.CreateAccount(ctx, db, user, params)
+	if err != nil {
+		return nil, err
+	}
+	fmt.Println(account)
+	return &struct{ Body models.User }{Body: *user}, nil
+
 }
