@@ -11,14 +11,6 @@ import (
 	"github.com/tkahng/authgo/internal/shared"
 )
 
-// import (
-// 	"net/http"
-
-// 	"github.com/danielgtaylor/huma/v2"
-// 	"github.com/tkahng/authgo/internal/core"
-// 	"github.com/tkahng/authgo/internal/middlewares"
-// )
-
 func InitApiConfig() huma.Config {
 	config := huma.DefaultConfig("My API", "1.0.0")
 	config.Servers = []*huma.Server{{URL: "http://localhost:8080"}}
@@ -112,12 +104,7 @@ func BindApis(api huma.API, app core.App) {
 	huma.Register(adminGroup, appApi.AdminPermissionsCreateOperation("/permissions"), appApi.AdminPermissionsCreate)
 	huma.Register(adminGroup, appApi.AdminPermissionsUpdateOperation("/permissions/{id}"), appApi.AdminPermissionsUpdate)
 	huma.Register(adminGroup, appApi.AdminPermissionsDeleteOperation("/permissions/{id}"), appApi.AdminPermissionsDelete)
-	// huma.Register(adminGroup, appApi.GetAppSettingsOperation("/settings"), appApi.GetAppSettings)
-	// huma.Register(adminGroup, appApi.PostAppSettingsOperation("/settings"), appApi.PostAppSettings)
 
-	// bindUsersApi(api, app)
-	// bindStripeApi(api, app)
-	// bindViewAPI(api, app)
 }
 
 func AddRoutes(api huma.API, app core.App) {

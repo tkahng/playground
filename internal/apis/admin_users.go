@@ -42,7 +42,6 @@ type UserInfo struct {
 func (api *Api) AdminUsers(ctx context.Context, input *struct {
 	shared.UserListParams
 }) (*PaginatedOutput[*UserInfo], error) {
-	// data, err := repository.ListUsers(ctx, input)
 	db := api.app.Db()
 	utils.PrettyPrintJSON(input)
 	users, err := repository.ListUsers(ctx, db, &input.UserListParams)

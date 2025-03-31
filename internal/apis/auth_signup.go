@@ -46,7 +46,6 @@ func (api *Api) SignUp(ctx context.Context, input *struct{ Body *SignupInput }) 
 		ProviderAccountID: input.Body.Email,
 	}
 	user, err := api.app.AuthenticateUser(ctx, db, params, true)
-	// 	user, err := AuthenticateUser(ctx, db, params)
 	if err != nil {
 		return nil, fmt.Errorf("error authenticating user: %w", err)
 	}

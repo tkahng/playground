@@ -18,9 +18,6 @@ func (api *Api) SigninOperation(path string) huma.Operation {
 		Description: "Count the number of colors for all themes",
 		Tags:        []string{"Auth"},
 		Errors:      []int{http.StatusNotFound},
-		// Security: []map[string][]string{
-		// 	middleware.BearerAuthSecurity("colors:read"),
-		// },
 	}
 }
 
@@ -41,7 +38,6 @@ func (api *Api) SignIn(ctx context.Context, input *struct{ Body *SigninDto }) (*
 		ProviderAccountID: input.Body.Email,
 	}
 	user, err := api.app.AuthenticateUser(ctx, db, params, false)
-	// 	user, err := AuthenticateUser(ctx, db, params)
 	if err != nil {
 		return nil, fmt.Errorf("error authenticating user: %w", err)
 	}
