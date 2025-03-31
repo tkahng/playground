@@ -62,6 +62,27 @@ func CreateRole(ctx context.Context, dbx bob.Executor, role *CreateRoleDto) (*mo
 	return data, err
 }
 
+type UpdateRoleDto struct {
+	Name        string  `json:"name"`
+	Description *string `json:"description,omitempty"`
+}
+
+func UpdateRole(ctx context.Context, dbx bob.Executor, id uuid.UUID, role *UpdateRoleDto) error {
+	r, err := FindRoleById(ctx, dbx, id)
+	if err != nil {
+		return err
+	}
+	err = r.Update(
+		ctx,
+		dbx,
+		&models.RoleSetter{
+			Name:        omit.From(role.Name),
+			Description: omitnull.FromPtr(role.Description),
+		},
+	)
+	return err
+}
+
 func DeleteRole(ctx context.Context, dbx bob.Executor, id uuid.UUID) error {
 	_, err := models.Roles.Delete(
 		models.DeleteWhere.Roles.ID.EQ(id),
@@ -71,6 +92,9 @@ func DeleteRole(ctx context.Context, dbx bob.Executor, id uuid.UUID) error {
 
 func FindRolesByNames(ctx context.Context, dbx bob.Executor, params []string) ([]*models.Role, error) {
 	return models.Roles.Query(models.SelectWhere.Roles.Name.In(params...)).All(ctx, dbx)
+}
+func FindRolesByIds(ctx context.Context, dbx bob.Executor, params []uuid.UUID) ([]*models.Role, error) {
+	return models.Roles.Query(models.SelectWhere.Roles.ID.In(params...)).All(ctx, dbx)
 }
 
 func FindRoleByName(ctx context.Context, dbx bob.Executor, name string) (*models.Role, error) {
