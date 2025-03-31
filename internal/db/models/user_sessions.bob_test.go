@@ -7,7 +7,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-
+	"os"
 	"testing"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -17,7 +17,7 @@ import (
 )
 
 func TestUserSessionUniqueConstraintErrors(t *testing.T) {
-	db, err := sql.Open("pgx", "postgres://postgres:postgres@localhost:5432/authgo_test?sslmode=disable")
+	db, err := sql.Open("pgx", os.Getenv("PSQL_TEST_DSN"))
 	if err != nil {
 		t.Fatal("Error connecting to database")
 	}

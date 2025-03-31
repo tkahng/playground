@@ -153,6 +153,234 @@ func (e *Providers) Scan(value any) error {
 	return nil
 }
 
+// Enum values for StripePricingPlanInterval
+const (
+	StripePricingPlanIntervalDay   StripePricingPlanInterval = "day"
+	StripePricingPlanIntervalWeek  StripePricingPlanInterval = "week"
+	StripePricingPlanIntervalMonth StripePricingPlanInterval = "month"
+	StripePricingPlanIntervalYear  StripePricingPlanInterval = "year"
+)
+
+func AllStripePricingPlanInterval() []StripePricingPlanInterval {
+	return []StripePricingPlanInterval{
+		StripePricingPlanIntervalDay,
+		StripePricingPlanIntervalWeek,
+		StripePricingPlanIntervalMonth,
+		StripePricingPlanIntervalYear,
+	}
+}
+
+type StripePricingPlanInterval string
+
+func (e StripePricingPlanInterval) String() string {
+	return string(e)
+}
+
+func (e StripePricingPlanInterval) Valid() bool {
+	switch e {
+	case StripePricingPlanIntervalDay,
+		StripePricingPlanIntervalWeek,
+		StripePricingPlanIntervalMonth,
+		StripePricingPlanIntervalYear:
+		return true
+	default:
+		return false
+	}
+}
+
+func (e StripePricingPlanInterval) MarshalText() ([]byte, error) {
+	return []byte(e), nil
+}
+
+func (e *StripePricingPlanInterval) UnmarshalText(text []byte) error {
+	return e.Scan(text)
+}
+
+func (e StripePricingPlanInterval) MarshalBinary() ([]byte, error) {
+	return []byte(e), nil
+}
+
+func (e *StripePricingPlanInterval) UnmarshalBinary(data []byte) error {
+	return e.Scan(data)
+}
+
+func (e StripePricingPlanInterval) Value() (driver.Value, error) {
+	return string(e), nil
+}
+
+func (e *StripePricingPlanInterval) Scan(value any) error {
+	switch x := value.(type) {
+	case string:
+		*e = StripePricingPlanInterval(x)
+	case []byte:
+		*e = StripePricingPlanInterval(x)
+	case nil:
+		return fmt.Errorf("cannot nil into StripePricingPlanInterval")
+	default:
+		return fmt.Errorf("cannot scan type %T: %v", value, value)
+	}
+
+	if !e.Valid() {
+		return fmt.Errorf("invalid StripePricingPlanInterval value: %s", *e)
+	}
+
+	return nil
+}
+
+// Enum values for StripePricingType
+const (
+	StripePricingTypeOneTime   StripePricingType = "one_time"
+	StripePricingTypeRecurring StripePricingType = "recurring"
+)
+
+func AllStripePricingType() []StripePricingType {
+	return []StripePricingType{
+		StripePricingTypeOneTime,
+		StripePricingTypeRecurring,
+	}
+}
+
+type StripePricingType string
+
+func (e StripePricingType) String() string {
+	return string(e)
+}
+
+func (e StripePricingType) Valid() bool {
+	switch e {
+	case StripePricingTypeOneTime,
+		StripePricingTypeRecurring:
+		return true
+	default:
+		return false
+	}
+}
+
+func (e StripePricingType) MarshalText() ([]byte, error) {
+	return []byte(e), nil
+}
+
+func (e *StripePricingType) UnmarshalText(text []byte) error {
+	return e.Scan(text)
+}
+
+func (e StripePricingType) MarshalBinary() ([]byte, error) {
+	return []byte(e), nil
+}
+
+func (e *StripePricingType) UnmarshalBinary(data []byte) error {
+	return e.Scan(data)
+}
+
+func (e StripePricingType) Value() (driver.Value, error) {
+	return string(e), nil
+}
+
+func (e *StripePricingType) Scan(value any) error {
+	switch x := value.(type) {
+	case string:
+		*e = StripePricingType(x)
+	case []byte:
+		*e = StripePricingType(x)
+	case nil:
+		return fmt.Errorf("cannot nil into StripePricingType")
+	default:
+		return fmt.Errorf("cannot scan type %T: %v", value, value)
+	}
+
+	if !e.Valid() {
+		return fmt.Errorf("invalid StripePricingType value: %s", *e)
+	}
+
+	return nil
+}
+
+// Enum values for StripeSubscriptionStatus
+const (
+	StripeSubscriptionStatusTrialing          StripeSubscriptionStatus = "trialing"
+	StripeSubscriptionStatusActive            StripeSubscriptionStatus = "active"
+	StripeSubscriptionStatusCanceled          StripeSubscriptionStatus = "canceled"
+	StripeSubscriptionStatusIncomplete        StripeSubscriptionStatus = "incomplete"
+	StripeSubscriptionStatusIncompleteExpired StripeSubscriptionStatus = "incomplete_expired"
+	StripeSubscriptionStatusPastDue           StripeSubscriptionStatus = "past_due"
+	StripeSubscriptionStatusUnpaid            StripeSubscriptionStatus = "unpaid"
+	StripeSubscriptionStatusPaused            StripeSubscriptionStatus = "paused"
+)
+
+func AllStripeSubscriptionStatus() []StripeSubscriptionStatus {
+	return []StripeSubscriptionStatus{
+		StripeSubscriptionStatusTrialing,
+		StripeSubscriptionStatusActive,
+		StripeSubscriptionStatusCanceled,
+		StripeSubscriptionStatusIncomplete,
+		StripeSubscriptionStatusIncompleteExpired,
+		StripeSubscriptionStatusPastDue,
+		StripeSubscriptionStatusUnpaid,
+		StripeSubscriptionStatusPaused,
+	}
+}
+
+type StripeSubscriptionStatus string
+
+func (e StripeSubscriptionStatus) String() string {
+	return string(e)
+}
+
+func (e StripeSubscriptionStatus) Valid() bool {
+	switch e {
+	case StripeSubscriptionStatusTrialing,
+		StripeSubscriptionStatusActive,
+		StripeSubscriptionStatusCanceled,
+		StripeSubscriptionStatusIncomplete,
+		StripeSubscriptionStatusIncompleteExpired,
+		StripeSubscriptionStatusPastDue,
+		StripeSubscriptionStatusUnpaid,
+		StripeSubscriptionStatusPaused:
+		return true
+	default:
+		return false
+	}
+}
+
+func (e StripeSubscriptionStatus) MarshalText() ([]byte, error) {
+	return []byte(e), nil
+}
+
+func (e *StripeSubscriptionStatus) UnmarshalText(text []byte) error {
+	return e.Scan(text)
+}
+
+func (e StripeSubscriptionStatus) MarshalBinary() ([]byte, error) {
+	return []byte(e), nil
+}
+
+func (e *StripeSubscriptionStatus) UnmarshalBinary(data []byte) error {
+	return e.Scan(data)
+}
+
+func (e StripeSubscriptionStatus) Value() (driver.Value, error) {
+	return string(e), nil
+}
+
+func (e *StripeSubscriptionStatus) Scan(value any) error {
+	switch x := value.(type) {
+	case string:
+		*e = StripeSubscriptionStatus(x)
+	case []byte:
+		*e = StripeSubscriptionStatus(x)
+	case nil:
+		return fmt.Errorf("cannot nil into StripeSubscriptionStatus")
+	default:
+		return fmt.Errorf("cannot scan type %T: %v", value, value)
+	}
+
+	if !e.Valid() {
+		return fmt.Errorf("invalid StripeSubscriptionStatus value: %s", *e)
+	}
+
+	return nil
+}
+
 // Enum values for TokenTypes
 const (
 	TokenTypesReauthenticationToken TokenTypes = "reauthentication_token"

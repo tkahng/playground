@@ -4,17 +4,21 @@
 package factory
 
 type Factory struct {
-	baseAppParamMods        AppParamModSlice
-	basePermissionMods      PermissionModSlice
-	baseRolePermissionMods  RolePermissionModSlice
-	baseRoleMods            RoleModSlice
-	baseSchemaMigrationMods SchemaMigrationModSlice
-	baseTokenMods           TokenModSlice
-	baseUserAccountMods     UserAccountModSlice
-	baseUserPermissionMods  UserPermissionModSlice
-	baseUserRoleMods        UserRoleModSlice
-	baseUserSessionMods     UserSessionModSlice
-	baseUserMods            UserModSlice
+	baseAppParamMods           AppParamModSlice
+	basePermissionMods         PermissionModSlice
+	baseRolePermissionMods     RolePermissionModSlice
+	baseRoleMods               RoleModSlice
+	baseSchemaMigrationMods    SchemaMigrationModSlice
+	baseStripeCustomerMods     StripeCustomerModSlice
+	baseStripePriceMods        StripePriceModSlice
+	baseStripeProductMods      StripeProductModSlice
+	baseStripeSubscriptionMods StripeSubscriptionModSlice
+	baseTokenMods              TokenModSlice
+	baseUserAccountMods        UserAccountModSlice
+	baseUserPermissionMods     UserPermissionModSlice
+	baseUserRoleMods           UserRoleModSlice
+	baseUserSessionMods        UserSessionModSlice
+	baseUserMods               UserModSlice
 }
 
 func New() *Factory {
@@ -77,6 +81,54 @@ func (f *Factory) NewSchemaMigration(mods ...SchemaMigrationMod) *SchemaMigratio
 	}
 
 	SchemaMigrationModSlice(mods).Apply(o)
+
+	return o
+}
+
+func (f *Factory) NewStripeCustomer(mods ...StripeCustomerMod) *StripeCustomerTemplate {
+	o := &StripeCustomerTemplate{f: f}
+
+	if f != nil {
+		f.baseStripeCustomerMods.Apply(o)
+	}
+
+	StripeCustomerModSlice(mods).Apply(o)
+
+	return o
+}
+
+func (f *Factory) NewStripePrice(mods ...StripePriceMod) *StripePriceTemplate {
+	o := &StripePriceTemplate{f: f}
+
+	if f != nil {
+		f.baseStripePriceMods.Apply(o)
+	}
+
+	StripePriceModSlice(mods).Apply(o)
+
+	return o
+}
+
+func (f *Factory) NewStripeProduct(mods ...StripeProductMod) *StripeProductTemplate {
+	o := &StripeProductTemplate{f: f}
+
+	if f != nil {
+		f.baseStripeProductMods.Apply(o)
+	}
+
+	StripeProductModSlice(mods).Apply(o)
+
+	return o
+}
+
+func (f *Factory) NewStripeSubscription(mods ...StripeSubscriptionMod) *StripeSubscriptionTemplate {
+	o := &StripeSubscriptionTemplate{f: f}
+
+	if f != nil {
+		f.baseStripeSubscriptionMods.Apply(o)
+	}
+
+	StripeSubscriptionModSlice(mods).Apply(o)
 
 	return o
 }
@@ -191,6 +243,38 @@ func (f *Factory) ClearBaseSchemaMigrationMods() {
 
 func (f *Factory) AddBaseSchemaMigrationMod(mods ...SchemaMigrationMod) {
 	f.baseSchemaMigrationMods = append(f.baseSchemaMigrationMods, mods...)
+}
+
+func (f *Factory) ClearBaseStripeCustomerMods() {
+	f.baseStripeCustomerMods = nil
+}
+
+func (f *Factory) AddBaseStripeCustomerMod(mods ...StripeCustomerMod) {
+	f.baseStripeCustomerMods = append(f.baseStripeCustomerMods, mods...)
+}
+
+func (f *Factory) ClearBaseStripePriceMods() {
+	f.baseStripePriceMods = nil
+}
+
+func (f *Factory) AddBaseStripePriceMod(mods ...StripePriceMod) {
+	f.baseStripePriceMods = append(f.baseStripePriceMods, mods...)
+}
+
+func (f *Factory) ClearBaseStripeProductMods() {
+	f.baseStripeProductMods = nil
+}
+
+func (f *Factory) AddBaseStripeProductMod(mods ...StripeProductMod) {
+	f.baseStripeProductMods = append(f.baseStripeProductMods, mods...)
+}
+
+func (f *Factory) ClearBaseStripeSubscriptionMods() {
+	f.baseStripeSubscriptionMods = nil
+}
+
+func (f *Factory) AddBaseStripeSubscriptionMod(mods ...StripeSubscriptionMod) {
+	f.baseStripeSubscriptionMods = append(f.baseStripeSubscriptionMods, mods...)
 }
 
 func (f *Factory) ClearBaseTokenMods() {

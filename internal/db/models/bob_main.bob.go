@@ -14,43 +14,55 @@ import (
 )
 
 var TableNames = struct {
-	AppParams        string
-	Permissions      string
-	RolePermissions  string
-	Roles            string
-	SchemaMigrations string
-	Tokens           string
-	UserAccounts     string
-	UserPermissions  string
-	UserRoles        string
-	UserSessions     string
-	Users            string
+	AppParams           string
+	Permissions         string
+	RolePermissions     string
+	Roles               string
+	SchemaMigrations    string
+	StripeCustomers     string
+	StripePrices        string
+	StripeProducts      string
+	StripeSubscriptions string
+	Tokens              string
+	UserAccounts        string
+	UserPermissions     string
+	UserRoles           string
+	UserSessions        string
+	Users               string
 }{
-	AppParams:        "app_params",
-	Permissions:      "permissions",
-	RolePermissions:  "role_permissions",
-	Roles:            "roles",
-	SchemaMigrations: "schema_migrations",
-	Tokens:           "tokens",
-	UserAccounts:     "user_accounts",
-	UserPermissions:  "user_permissions",
-	UserRoles:        "user_roles",
-	UserSessions:     "user_sessions",
-	Users:            "users",
+	AppParams:           "app_params",
+	Permissions:         "permissions",
+	RolePermissions:     "role_permissions",
+	Roles:               "roles",
+	SchemaMigrations:    "schema_migrations",
+	StripeCustomers:     "stripe_customers",
+	StripePrices:        "stripe_prices",
+	StripeProducts:      "stripe_products",
+	StripeSubscriptions: "stripe_subscriptions",
+	Tokens:              "tokens",
+	UserAccounts:        "user_accounts",
+	UserPermissions:     "user_permissions",
+	UserRoles:           "user_roles",
+	UserSessions:        "user_sessions",
+	Users:               "users",
 }
 
 var ColumnNames = struct {
-	AppParams        appParamColumnNames
-	Permissions      permissionColumnNames
-	RolePermissions  rolePermissionColumnNames
-	Roles            roleColumnNames
-	SchemaMigrations schemaMigrationColumnNames
-	Tokens           tokenColumnNames
-	UserAccounts     userAccountColumnNames
-	UserPermissions  userPermissionColumnNames
-	UserRoles        userRoleColumnNames
-	UserSessions     userSessionColumnNames
-	Users            userColumnNames
+	AppParams           appParamColumnNames
+	Permissions         permissionColumnNames
+	RolePermissions     rolePermissionColumnNames
+	Roles               roleColumnNames
+	SchemaMigrations    schemaMigrationColumnNames
+	StripeCustomers     stripeCustomerColumnNames
+	StripePrices        stripePriceColumnNames
+	StripeProducts      stripeProductColumnNames
+	StripeSubscriptions stripeSubscriptionColumnNames
+	Tokens              tokenColumnNames
+	UserAccounts        userAccountColumnNames
+	UserPermissions     userPermissionColumnNames
+	UserRoles           userRoleColumnNames
+	UserSessions        userSessionColumnNames
+	Users               userColumnNames
 }{
 	AppParams: appParamColumnNames{
 		ID:        "id",
@@ -79,6 +91,59 @@ var ColumnNames = struct {
 	},
 	SchemaMigrations: schemaMigrationColumnNames{
 		Version: "version",
+	},
+	StripeCustomers: stripeCustomerColumnNames{
+		ID:             "id",
+		StripeID:       "stripe_id",
+		BillingAddress: "billing_address",
+		PaymentMethod:  "payment_method",
+		CreatedAt:      "created_at",
+		UpdatedAt:      "updated_at",
+	},
+	StripePrices: stripePriceColumnNames{
+		ID:              "id",
+		ProductID:       "product_id",
+		LookupKey:       "lookup_key",
+		Active:          "active",
+		Description:     "description",
+		UnitAmount:      "unit_amount",
+		Currency:        "currency",
+		Type:            "type",
+		Interval:        "interval",
+		IntervalCount:   "interval_count",
+		TrialPeriodDays: "trial_period_days",
+		Metadata:        "metadata",
+		CreatedAt:       "created_at",
+		UpdatedAt:       "updated_at",
+	},
+	StripeProducts: stripeProductColumnNames{
+		ID:          "id",
+		Active:      "active",
+		Name:        "name",
+		Description: "description",
+		Image:       "image",
+		Metadata:    "metadata",
+		CreatedAt:   "created_at",
+		UpdatedAt:   "updated_at",
+	},
+	StripeSubscriptions: stripeSubscriptionColumnNames{
+		ID:                 "id",
+		UserID:             "user_id",
+		Status:             "status",
+		Metadata:           "metadata",
+		PriceID:            "price_id",
+		Quantity:           "quantity",
+		CancelAtPeriodEnd:  "cancel_at_period_end",
+		Created:            "created",
+		CurrentPeriodStart: "current_period_start",
+		CurrentPeriodEnd:   "current_period_end",
+		EndedAt:            "ended_at",
+		CancelAt:           "cancel_at",
+		CanceledAt:         "canceled_at",
+		TrialStart:         "trial_start",
+		TrialEnd:           "trial_end",
+		CreatedAt:          "created_at",
+		UpdatedAt:          "updated_at",
 	},
 	Tokens: tokenColumnNames{
 		ID:         "id",
@@ -143,42 +208,54 @@ var (
 )
 
 func Where[Q psql.Filterable]() struct {
-	AppParams        appParamWhere[Q]
-	Permissions      permissionWhere[Q]
-	RolePermissions  rolePermissionWhere[Q]
-	Roles            roleWhere[Q]
-	SchemaMigrations schemaMigrationWhere[Q]
-	Tokens           tokenWhere[Q]
-	UserAccounts     userAccountWhere[Q]
-	UserPermissions  userPermissionWhere[Q]
-	UserRoles        userRoleWhere[Q]
-	UserSessions     userSessionWhere[Q]
-	Users            userWhere[Q]
+	AppParams           appParamWhere[Q]
+	Permissions         permissionWhere[Q]
+	RolePermissions     rolePermissionWhere[Q]
+	Roles               roleWhere[Q]
+	SchemaMigrations    schemaMigrationWhere[Q]
+	StripeCustomers     stripeCustomerWhere[Q]
+	StripePrices        stripePriceWhere[Q]
+	StripeProducts      stripeProductWhere[Q]
+	StripeSubscriptions stripeSubscriptionWhere[Q]
+	Tokens              tokenWhere[Q]
+	UserAccounts        userAccountWhere[Q]
+	UserPermissions     userPermissionWhere[Q]
+	UserRoles           userRoleWhere[Q]
+	UserSessions        userSessionWhere[Q]
+	Users               userWhere[Q]
 } {
 	return struct {
-		AppParams        appParamWhere[Q]
-		Permissions      permissionWhere[Q]
-		RolePermissions  rolePermissionWhere[Q]
-		Roles            roleWhere[Q]
-		SchemaMigrations schemaMigrationWhere[Q]
-		Tokens           tokenWhere[Q]
-		UserAccounts     userAccountWhere[Q]
-		UserPermissions  userPermissionWhere[Q]
-		UserRoles        userRoleWhere[Q]
-		UserSessions     userSessionWhere[Q]
-		Users            userWhere[Q]
+		AppParams           appParamWhere[Q]
+		Permissions         permissionWhere[Q]
+		RolePermissions     rolePermissionWhere[Q]
+		Roles               roleWhere[Q]
+		SchemaMigrations    schemaMigrationWhere[Q]
+		StripeCustomers     stripeCustomerWhere[Q]
+		StripePrices        stripePriceWhere[Q]
+		StripeProducts      stripeProductWhere[Q]
+		StripeSubscriptions stripeSubscriptionWhere[Q]
+		Tokens              tokenWhere[Q]
+		UserAccounts        userAccountWhere[Q]
+		UserPermissions     userPermissionWhere[Q]
+		UserRoles           userRoleWhere[Q]
+		UserSessions        userSessionWhere[Q]
+		Users               userWhere[Q]
 	}{
-		AppParams:        buildAppParamWhere[Q](AppParamColumns),
-		Permissions:      buildPermissionWhere[Q](PermissionColumns),
-		RolePermissions:  buildRolePermissionWhere[Q](RolePermissionColumns),
-		Roles:            buildRoleWhere[Q](RoleColumns),
-		SchemaMigrations: buildSchemaMigrationWhere[Q](SchemaMigrationColumns),
-		Tokens:           buildTokenWhere[Q](TokenColumns),
-		UserAccounts:     buildUserAccountWhere[Q](UserAccountColumns),
-		UserPermissions:  buildUserPermissionWhere[Q](UserPermissionColumns),
-		UserRoles:        buildUserRoleWhere[Q](UserRoleColumns),
-		UserSessions:     buildUserSessionWhere[Q](UserSessionColumns),
-		Users:            buildUserWhere[Q](UserColumns),
+		AppParams:           buildAppParamWhere[Q](AppParamColumns),
+		Permissions:         buildPermissionWhere[Q](PermissionColumns),
+		RolePermissions:     buildRolePermissionWhere[Q](RolePermissionColumns),
+		Roles:               buildRoleWhere[Q](RoleColumns),
+		SchemaMigrations:    buildSchemaMigrationWhere[Q](SchemaMigrationColumns),
+		StripeCustomers:     buildStripeCustomerWhere[Q](StripeCustomerColumns),
+		StripePrices:        buildStripePriceWhere[Q](StripePriceColumns),
+		StripeProducts:      buildStripeProductWhere[Q](StripeProductColumns),
+		StripeSubscriptions: buildStripeSubscriptionWhere[Q](StripeSubscriptionColumns),
+		Tokens:              buildTokenWhere[Q](TokenColumns),
+		UserAccounts:        buildUserAccountWhere[Q](UserAccountColumns),
+		UserPermissions:     buildUserPermissionWhere[Q](UserPermissionColumns),
+		UserRoles:           buildUserRoleWhere[Q](UserRoleColumns),
+		UserSessions:        buildUserSessionWhere[Q](UserSessionColumns),
+		Users:               buildUserWhere[Q](UserColumns),
 	}
 }
 
@@ -203,15 +280,19 @@ func (j joinSet[Q]) AliasedAs(alias string) joinSet[Q] {
 }
 
 type joins[Q dialect.Joinable] struct {
-	Permissions     joinSet[permissionJoins[Q]]
-	RolePermissions joinSet[rolePermissionJoins[Q]]
-	Roles           joinSet[roleJoins[Q]]
-	Tokens          joinSet[tokenJoins[Q]]
-	UserAccounts    joinSet[userAccountJoins[Q]]
-	UserPermissions joinSet[userPermissionJoins[Q]]
-	UserRoles       joinSet[userRoleJoins[Q]]
-	UserSessions    joinSet[userSessionJoins[Q]]
-	Users           joinSet[userJoins[Q]]
+	Permissions         joinSet[permissionJoins[Q]]
+	RolePermissions     joinSet[rolePermissionJoins[Q]]
+	Roles               joinSet[roleJoins[Q]]
+	StripeCustomers     joinSet[stripeCustomerJoins[Q]]
+	StripePrices        joinSet[stripePriceJoins[Q]]
+	StripeProducts      joinSet[stripeProductJoins[Q]]
+	StripeSubscriptions joinSet[stripeSubscriptionJoins[Q]]
+	Tokens              joinSet[tokenJoins[Q]]
+	UserAccounts        joinSet[userAccountJoins[Q]]
+	UserPermissions     joinSet[userPermissionJoins[Q]]
+	UserRoles           joinSet[userRoleJoins[Q]]
+	UserSessions        joinSet[userSessionJoins[Q]]
+	Users               joinSet[userJoins[Q]]
 }
 
 func buildJoinSet[Q interface{ aliasedAs(string) Q }, C any, F func(C, string) Q](c C, f F) joinSet[Q] {
@@ -224,15 +305,19 @@ func buildJoinSet[Q interface{ aliasedAs(string) Q }, C any, F func(C, string) Q
 
 func getJoins[Q dialect.Joinable]() joins[Q] {
 	return joins[Q]{
-		Permissions:     buildJoinSet[permissionJoins[Q]](PermissionColumns, buildPermissionJoins),
-		RolePermissions: buildJoinSet[rolePermissionJoins[Q]](RolePermissionColumns, buildRolePermissionJoins),
-		Roles:           buildJoinSet[roleJoins[Q]](RoleColumns, buildRoleJoins),
-		Tokens:          buildJoinSet[tokenJoins[Q]](TokenColumns, buildTokenJoins),
-		UserAccounts:    buildJoinSet[userAccountJoins[Q]](UserAccountColumns, buildUserAccountJoins),
-		UserPermissions: buildJoinSet[userPermissionJoins[Q]](UserPermissionColumns, buildUserPermissionJoins),
-		UserRoles:       buildJoinSet[userRoleJoins[Q]](UserRoleColumns, buildUserRoleJoins),
-		UserSessions:    buildJoinSet[userSessionJoins[Q]](UserSessionColumns, buildUserSessionJoins),
-		Users:           buildJoinSet[userJoins[Q]](UserColumns, buildUserJoins),
+		Permissions:         buildJoinSet[permissionJoins[Q]](PermissionColumns, buildPermissionJoins),
+		RolePermissions:     buildJoinSet[rolePermissionJoins[Q]](RolePermissionColumns, buildRolePermissionJoins),
+		Roles:               buildJoinSet[roleJoins[Q]](RoleColumns, buildRoleJoins),
+		StripeCustomers:     buildJoinSet[stripeCustomerJoins[Q]](StripeCustomerColumns, buildStripeCustomerJoins),
+		StripePrices:        buildJoinSet[stripePriceJoins[Q]](StripePriceColumns, buildStripePriceJoins),
+		StripeProducts:      buildJoinSet[stripeProductJoins[Q]](StripeProductColumns, buildStripeProductJoins),
+		StripeSubscriptions: buildJoinSet[stripeSubscriptionJoins[Q]](StripeSubscriptionColumns, buildStripeSubscriptionJoins),
+		Tokens:              buildJoinSet[tokenJoins[Q]](TokenColumns, buildTokenJoins),
+		UserAccounts:        buildJoinSet[userAccountJoins[Q]](UserAccountColumns, buildUserAccountJoins),
+		UserPermissions:     buildJoinSet[userPermissionJoins[Q]](UserPermissionColumns, buildUserPermissionJoins),
+		UserRoles:           buildJoinSet[userRoleJoins[Q]](UserRoleColumns, buildUserRoleJoins),
+		UserSessions:        buildJoinSet[userSessionJoins[Q]](UserSessionColumns, buildUserSessionJoins),
+		Users:               buildJoinSet[userJoins[Q]](UserColumns, buildUserJoins),
 	}
 }
 

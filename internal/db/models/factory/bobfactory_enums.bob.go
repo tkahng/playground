@@ -6,9 +6,12 @@ package factory
 import models "github.com/tkahng/authgo/internal/db/models"
 
 type (
-	ProviderTypes = models.ProviderTypes
-	Providers     = models.Providers
-	TokenTypes    = models.TokenTypes
+	ProviderTypes             = models.ProviderTypes
+	Providers                 = models.Providers
+	StripePricingPlanInterval = models.StripePricingPlanInterval
+	StripePricingType         = models.StripePricingType
+	StripeSubscriptionStatus  = models.StripeSubscriptionStatus
+	TokenTypes                = models.TokenTypes
 )
 
 func allProviderTypes() []ProviderTypes {
@@ -17,6 +20,18 @@ func allProviderTypes() []ProviderTypes {
 
 func allProviders() []Providers {
 	return models.AllProviders()
+}
+
+func allStripePricingPlanInterval() []StripePricingPlanInterval {
+	return models.AllStripePricingPlanInterval()
+}
+
+func allStripePricingType() []StripePricingType {
+	return models.AllStripePricingType()
+}
+
+func allStripeSubscriptionStatus() []StripeSubscriptionStatus {
+	return models.AllStripeSubscriptionStatus()
 }
 
 func allTokenTypes() []TokenTypes {

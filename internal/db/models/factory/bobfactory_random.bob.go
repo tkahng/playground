@@ -35,6 +35,33 @@ func random_Providers(f *faker.Faker) Providers {
 	return all[f.IntBetween(0, len(all)-1)]
 }
 
+func random_StripePricingPlanInterval(f *faker.Faker) StripePricingPlanInterval {
+	if f == nil {
+		f = &defaultFaker
+	}
+
+	all := allStripePricingPlanInterval()
+	return all[f.IntBetween(0, len(all)-1)]
+}
+
+func random_StripePricingType(f *faker.Faker) StripePricingType {
+	if f == nil {
+		f = &defaultFaker
+	}
+
+	all := allStripePricingType()
+	return all[f.IntBetween(0, len(all)-1)]
+}
+
+func random_StripeSubscriptionStatus(f *faker.Faker) StripeSubscriptionStatus {
+	if f == nil {
+		f = &defaultFaker
+	}
+
+	all := allStripeSubscriptionStatus()
+	return all[f.IntBetween(0, len(all)-1)]
+}
+
 func random_TokenTypes(f *faker.Faker) TokenTypes {
 	if f == nil {
 		f = &defaultFaker
@@ -42,6 +69,14 @@ func random_TokenTypes(f *faker.Faker) TokenTypes {
 
 	all := allTokenTypes()
 	return all[f.IntBetween(0, len(all)-1)]
+}
+
+func random_bool(f *faker.Faker) bool {
+	if f == nil {
+		f = &defaultFaker
+	}
+
+	return f.Bool()
 }
 
 func random_int64(f *faker.Faker) int64 {

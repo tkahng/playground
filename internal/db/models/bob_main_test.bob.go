@@ -28,6 +28,18 @@ var _ bob.HookableType = &Role{}
 // Make sure the type SchemaMigration runs hooks after queries
 var _ bob.HookableType = &SchemaMigration{}
 
+// Make sure the type StripeCustomer runs hooks after queries
+var _ bob.HookableType = &StripeCustomer{}
+
+// Make sure the type StripePrice runs hooks after queries
+var _ bob.HookableType = &StripePrice{}
+
+// Make sure the type StripeProduct runs hooks after queries
+var _ bob.HookableType = &StripeProduct{}
+
+// Make sure the type StripeSubscription runs hooks after queries
+var _ bob.HookableType = &StripeSubscription{}
+
 // Make sure the type Token runs hooks after queries
 var _ bob.HookableType = &Token{}
 
@@ -57,6 +69,24 @@ var _ sql.Scanner = (*types.JSON[json.RawMessage])(nil)
 
 // Make sure the type types.JSON[json.RawMessage] satisfies database/sql/driver.Valuer
 var _ driver.Valuer = *new(types.JSON[json.RawMessage])
+
+// Make sure the type StripePricingType satisfies database/sql.Scanner
+var _ sql.Scanner = (*StripePricingType)(nil)
+
+// Make sure the type StripePricingType satisfies database/sql/driver.Valuer
+var _ driver.Valuer = *new(StripePricingType)
+
+// Make sure the type StripePricingPlanInterval satisfies database/sql.Scanner
+var _ sql.Scanner = (*StripePricingPlanInterval)(nil)
+
+// Make sure the type StripePricingPlanInterval satisfies database/sql/driver.Valuer
+var _ driver.Valuer = *new(StripePricingPlanInterval)
+
+// Make sure the type StripeSubscriptionStatus satisfies database/sql.Scanner
+var _ sql.Scanner = (*StripeSubscriptionStatus)(nil)
+
+// Make sure the type StripeSubscriptionStatus satisfies database/sql/driver.Valuer
+var _ driver.Valuer = *new(StripeSubscriptionStatus)
 
 // Make sure the type TokenTypes satisfies database/sql.Scanner
 var _ sql.Scanner = (*TokenTypes)(nil)

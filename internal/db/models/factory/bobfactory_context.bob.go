@@ -12,17 +12,21 @@ import (
 type contextKey string
 
 var (
-	appParamCtx        = newContextual[*models.AppParam]("appParam")
-	permissionCtx      = newContextual[*models.Permission]("permission")
-	rolePermissionCtx  = newContextual[*models.RolePermission]("rolePermission")
-	roleCtx            = newContextual[*models.Role]("role")
-	schemaMigrationCtx = newContextual[*models.SchemaMigration]("schemaMigration")
-	tokenCtx           = newContextual[*models.Token]("token")
-	userAccountCtx     = newContextual[*models.UserAccount]("userAccount")
-	userPermissionCtx  = newContextual[*models.UserPermission]("userPermission")
-	userRoleCtx        = newContextual[*models.UserRole]("userRole")
-	userSessionCtx     = newContextual[*models.UserSession]("userSession")
-	userCtx            = newContextual[*models.User]("user")
+	appParamCtx           = newContextual[*models.AppParam]("appParam")
+	permissionCtx         = newContextual[*models.Permission]("permission")
+	rolePermissionCtx     = newContextual[*models.RolePermission]("rolePermission")
+	roleCtx               = newContextual[*models.Role]("role")
+	schemaMigrationCtx    = newContextual[*models.SchemaMigration]("schemaMigration")
+	stripeCustomerCtx     = newContextual[*models.StripeCustomer]("stripeCustomer")
+	stripePriceCtx        = newContextual[*models.StripePrice]("stripePrice")
+	stripeProductCtx      = newContextual[*models.StripeProduct]("stripeProduct")
+	stripeSubscriptionCtx = newContextual[*models.StripeSubscription]("stripeSubscription")
+	tokenCtx              = newContextual[*models.Token]("token")
+	userAccountCtx        = newContextual[*models.UserAccount]("userAccount")
+	userPermissionCtx     = newContextual[*models.UserPermission]("userPermission")
+	userRoleCtx           = newContextual[*models.UserRole]("userRole")
+	userSessionCtx        = newContextual[*models.UserSession]("userSession")
+	userCtx               = newContextual[*models.User]("user")
 )
 
 // Contextual is a convienience wrapper around context.WithValue and context.Value
