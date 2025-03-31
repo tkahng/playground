@@ -103,7 +103,8 @@ func BindApis(api huma.API, app core.App) {
 	adminGroup := huma.NewGroup(api, "/admin")
 	adminGroup.UseMiddleware(CheckRolesMiddleware(api, "superuser"))
 	huma.Register(adminGroup, appApi.AdminUsersOperation("/users"), appApi.AdminUsers)
-
+	huma.Register(adminGroup, appApi.AdminRolesOperation("/roles"), appApi.AdminRoles)
+	huma.Register(adminGroup, appApi.AdminPermissionsOperation("/permissions"), appApi.AdminPermissions)
 	// huma.Register(adminGroup, appApi.GetAppSettingsOperation("/settings"), appApi.GetAppSettings)
 	// huma.Register(adminGroup, appApi.PostAppSettingsOperation("/settings"), appApi.PostAppSettings)
 

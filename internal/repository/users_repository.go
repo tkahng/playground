@@ -15,6 +15,7 @@ import (
 	"github.com/stephenafamo/scan"
 	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/authgo/internal/tools/dataloader"
 )
 
 type RolesMap map[string]*models.Role
@@ -223,6 +224,9 @@ func GetUsersWithRolesAndPermissions(ctx context.Context, db bob.Executor, ids .
 		claim.Providers = prov
 		claims = append(claims, claim)
 	}
+	claims = dataloader.MapTo(claims, ids, func(c RolePermissionClaims) uuid.UUID {
+		return c.UserID
+	})
 	return claims, nil
 
 }

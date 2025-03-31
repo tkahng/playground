@@ -38,28 +38,6 @@ func CountSessions(ctx context.Context, db bob.DB) (int64, error) {
 	return CountExec(ctx, db, q)
 }
 
-// ListPermissions implements AdminCrudActions.
-func ListPermissions(ctx context.Context, db bob.DB, input *shared.PaginatedInput) ([]models.Permission, error) {
-	panic("unimplemented")
-}
-
-// CountPermissions implements AdminCrudActions.
-func CountPermissions(ctx context.Context, db bob.DB) (int64, error) {
-	q := models.Permissions.Query()
-	return CountExec(ctx, db, q)
-}
-
-// ListRoles implements AdminCrudActions.
-func ListRoles(ctx context.Context, db bob.DB, input *shared.PaginatedInput) ([]models.Role, error) {
-	panic("unimplemented")
-}
-
-// CountRoles implements AdminCrudActions.
-func CountRoles(ctx context.Context, db bob.DB) (int64, error) {
-	q := models.Roles.Query()
-	return CountExec(ctx, db, q)
-}
-
 // CountTokens implements AdminCrudActions.
 func CountTokens(ctx context.Context, db bob.DB) (int64, error) {
 	q := models.Tokens.Query()
