@@ -16,7 +16,7 @@ import (
 	factory "github.com/tkahng/authgo/internal/db/models/factory"
 )
 
-func TestAppParamUniqueConstraintErrors(t *testing.T) {
+func TestStripeCustomerUniqueConstraintErrors(t *testing.T) {
 	db, err := sql.Open("pgx", os.Getenv("PSQL_TEST_DSN"))
 	if err != nil {
 		t.Fatal("Error connecting to database")
@@ -24,26 +24,26 @@ func TestAppParamUniqueConstraintErrors(t *testing.T) {
 	tests := []struct {
 		name        string
 		expectedErr *models.UniqueConstraintError
-		applyFn     func(tpl *factory.AppParamTemplate, obj *models.AppParam)
+		applyFn     func(tpl *factory.StripeCustomerTemplate, obj *models.StripeCustomer)
 	}{
 		{
-			name:        "ErrUniqueAppParamsPkey",
-			expectedErr: models.AppParamErrors.ErrUniqueAppParamsPkey,
-			applyFn: func(tpl *factory.AppParamTemplate, obj *models.AppParam) {
+			name:        "ErrUniqueStripeCustomersPkey",
+			expectedErr: models.StripeCustomerErrors.ErrUniqueStripeCustomersPkey,
+			applyFn: func(tpl *factory.StripeCustomerTemplate, obj *models.StripeCustomer) {
 				tpl.Apply(
-					factory.AppParamMods.RandomizeAllColumns(nil),
-					factory.AppParamMods.ID(obj.ID),
+					factory.StripeCustomerMods.RandomizeAllColumns(nil),
+					factory.StripeCustomerMods.ID(obj.ID),
 				)
 			},
 		},
 
 		{
-			name:        "ErrUniqueAppParamsNameKey",
-			expectedErr: models.AppParamErrors.ErrUniqueAppParamsNameKey,
-			applyFn: func(tpl *factory.AppParamTemplate, obj *models.AppParam) {
+			name:        "ErrUniqueStripeCustomersStripeIdKey",
+			expectedErr: models.StripeCustomerErrors.ErrUniqueStripeCustomersStripeIdKey,
+			applyFn: func(tpl *factory.StripeCustomerTemplate, obj *models.StripeCustomer) {
 				tpl.Apply(
-					factory.AppParamMods.RandomizeAllColumns(nil),
-					factory.AppParamMods.Name(obj.Name),
+					factory.StripeCustomerMods.RandomizeAllColumns(nil),
+					factory.StripeCustomerMods.StripeID(obj.StripeID),
 				)
 			},
 		},
@@ -58,13 +58,13 @@ func TestAppParamUniqueConstraintErrors(t *testing.T) {
 			}
 			exec := bob.New(tx)
 			f := factory.New()
-			tpl := f.NewAppParam(factory.AppParamMods.RandomizeAllColumns(nil))
+			tpl := f.NewStripeCustomer(factory.StripeCustomerMods.RandomizeAllColumns(nil))
 			obj, err := tpl.Create(ctx, exec)
 			if err != nil {
 				t.Fatal(err)
 			}
 			tt.applyFn(tpl, obj)
-			_, err = models.AppParams.Insert(tpl.BuildSetter()).One(ctx, exec)
+			_, err = models.StripeCustomers.Insert(tpl.BuildSetter()).One(ctx, exec)
 			if !errors.Is(models.ErrUniqueConstraint, err) {
 				t.Fatalf("Expected: %s, Got: %v", tt.name, err)
 			}

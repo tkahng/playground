@@ -1,14 +1,50 @@
-INSERT INTO "roles" AS "roles" (
-        "id",
-        "name",
-        "description",
-        "created_at",
-        "updated_at"
-    )
-VALUES (DEFAULT, 'hello', DEFAULT, DEFAULT, DEFAULT) ON CONFLICT (name) DO
-UPDATE
-SET "created_at" = now()
-RETURNING *;
+WITH FilteredAccounts AS (
+    SELECT u.id AS user_id,
+        u.email AS email,
+        ARRAY_AGG(DISTINCT ar.name)::text [] AS roles,
+        ARRAY_AGG(DISTINCT p.name)::text [] AS permissions,
+        ARRAY_AGG(DISTINCT ua.provider)::public.providers [] AS providers
+    FROM public.users u
+        LEFT JOIN public.user_roles ur ON u.id = ur.user_id
+        LEFT JOIN public.roles ar ON ur.role_id = ar.id
+        LEFT JOIN public.role_permissions rp ON ar.id = rp.role_id
+        LEFT JOIN public.permissions p ON rp.permission_id = p.id
+        LEFT JOIN public.user_accounts ua ON u.id = ua.user_id
+    GROUP BY u.id
+)
+SELECT fa.user_id AS id,
+    to_json(fa.*) AS info
+FROM FilteredAccounts fa
+WHERE fa.user_id IN (
+        '7d2574db-bd61-4b68-be42-c5b6d96ff564',
+        '43dddcb1-4ac3-4ce0-bcbd-faa662b25cfc',
+        '35f39cd6-558d-4bd4-ab10-441ac6d90e6a'
+    );
+-- SELECT u.id AS user_id,
+--     u.email AS email,
+--     to_json(u.*) AS user,
+--     ARRAY_AGG(DISTINCT ar.name)::text [] AS roles,
+--     ARRAY_AGG(DISTINCT p.name)::text [] AS permissions,
+--     ARRAY_AGG(DISTINCT ua.provider)::public.providers [] AS providers
+-- FROM public.users u
+--     LEFT JOIN public.user_roles ur ON u.id = ur.user_id
+--     LEFT JOIN public.roles ar ON ur.role_id = ar.id
+--     LEFT JOIN public.role_permissions rp ON ar.id = rp.role_id
+--     LEFT JOIN public.permissions p ON rp.permission_id = p.id
+--     LEFT JOIN public.user_accounts ua ON u.id = ua.user_id
+-- GROUP BY u.id OFFSET 20
+-- LIMIT 10;
+-- INSERT INTO "roles" AS "roles" (
+--         "id",
+--         "name",
+--         "description",
+--         "created_at",
+--         "updated_at"
+--     )
+-- VALUES (DEFAULT, 'hello', DEFAULT, DEFAULT, DEFAULT) ON CONFLICT (name) DO
+-- UPDATE
+-- SET "created_at" = now()
+-- RETURNING *;
 -- SELECT to_json(obj) AS user
 -- FROM (
 --         SELECT u.*,

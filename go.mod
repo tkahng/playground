@@ -22,7 +22,6 @@ require (
 	github.com/asaskevich/govalidator v0.0.0-20200108200545-475eaeb16496 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/qdm12/reprint v0.0.0-20200326205758-722754a53494 // indirect
-	github.com/rogpeppe/go-internal v1.13.1 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 )
 
@@ -37,7 +36,8 @@ require (
 	github.com/jackc/puddle/v2 v2.2.2 // indirect
 	github.com/joho/godotenv v1.5.1
 	github.com/resend/resend-go/v2 v2.17.0
-	github.com/spf13/cast v1.7.1
+	github.com/spf13/cast v1.7.1 // indirect
+	github.com/stripe/stripe-go/v81 v81.4.0
 	github.com/wneessen/go-mail v0.6.2
 	golang.org/x/crypto v0.36.0 // indirect
 	golang.org/x/sync v0.12.0 // indirect

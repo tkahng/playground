@@ -2,6 +2,7 @@ package shared
 
 import (
 	"github.com/aarondl/opt/null"
+	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/db/models"
 )
 
@@ -12,9 +13,14 @@ import (
 // ProvidersCredentials Providers = "credentials"
 
 type UserListFilter struct {
-	Provider  models.Providers   `query:"provider,omitempty" required:"false" enum:"google,apple,facebook,github,credentials"`
-	Providers []models.Providers `query:"providers,omitempty" required:"false" uniqueItems:"true" minLength:"1" maxLength:"80" enum:"google,apple,facebook,github,credentials"`
-	Q         string             `query:"q,omitempty" required:"false" default:""`
+	Providers []models.Providers `query:"providers,omitempty" required:"false" uniqueItems:"true" minimum:"1" maximum:"100" enum:"google,apple,facebook,github,credentials"`
+	Q         string             `query:"q,omitempty" required:"false"`
+	Ids       []uuid.UUID        `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+	Emails    []string           `query:"emails,omitempty" required:"false" minimum:"1" maximum:"100" format:"email"`
+	// Roles         []string           `query:"roles,omitempty" required:"false" minimum:"1" maximum:"100"`
+	// Permissions   []string           `query:"permissions,omitempty" required:"false" minimum:"1" maximum:"100"`
+	RoleIds       []string `query:"role_ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+	PermissionIds []string `query:"permission_ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
 	// 	Provider  OmitNull[models.Providers]   `query:"provider,omitempty" required:"false" enum:"google,apple,facebook,github,credentials"`
 	// 	Providers OmitNull[[]models.Providers] `query:"providers,omitempty" required:"false" uniqueItems:"true" minLength:"1" maxLength:"80" enum:"google,apple,facebook,github,credentials"`
 	// 	Q         OmitNull[string]             `query:"q,omitempty" required:"false" default:""`
@@ -22,6 +28,44 @@ type UserListFilter struct {
 type UserListParams struct {
 	PaginatedInput
 	UserListFilter
+	// 	SortBy    string `query:"sort_by,omitempty" required:"false" default:"created_at"`
+	// 	SortOrder string `query:"sort_order,omitempty" required:"false" default:"desc"`
+	SortBy    string `query:"sort_by,omitempty" required:"false" default:"created_at"`
+	SortOrder string `query:"sort_order,omitempty" required:"false" default:"desc"`
+}
+type RoleListFilter struct {
+	Q     string   `query:"q,omitempty" required:"false"`
+	Ids   []string `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+	Names []string `query:"names,omitempty" required:"false" minimum:"1" maximum:"100"`
+	// Roles         []string           `query:"roles,omitempty" required:"false" minimum:"1" maximum:"100"`
+	// Permissions   []string           `query:"permissions,omitempty" required:"false" minimum:"1" maximum:"100"`
+	PermissionIds []string `query:"permission_ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+	// 	Provider  OmitNull[models.Providers]   `query:"provider,omitempty" required:"false" enum:"google,apple,facebook,github,credentials"`
+	// 	Providers OmitNull[[]models.Providers] `query:"providers,omitempty" required:"false" uniqueItems:"true" minLength:"1" maxLength:"80" enum:"google,apple,facebook,github,credentials"`
+	// 	Q         OmitNull[string]             `query:"q,omitempty" required:"false" default:""`
+}
+type RolesListParams struct {
+	PaginatedInput
+	RoleListFilter
+	// 	SortBy    string `query:"sort_by,omitempty" required:"false" default:"created_at"`
+	// 	SortOrder string `query:"sort_order,omitempty" required:"false" default:"desc"`
+	SortBy    string `query:"sort_by,omitempty" required:"false" default:"created_at"`
+	SortOrder string `query:"sort_order,omitempty" required:"false" default:"desc"`
+}
+type PermissionsListFilter struct {
+	Q     string   `query:"q,omitempty" required:"false"`
+	Ids   []string `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+	Names []string `query:"names,omitempty" required:"false" minimum:"1" maximum:"100"`
+	// Roles         []string           `query:"roles,omitempty" required:"false" minimum:"1" maximum:"100"`
+	// Permissions   []string           `query:"permissions,omitempty" required:"false" minimum:"1" maximum:"100"`
+	RoleIds []string `query:"role_ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+	// 	Provider  OmitNull[models.Providers]   `query:"provider,omitempty" required:"false" enum:"google,apple,facebook,github,credentials"`
+	// 	Providers OmitNull[[]models.Providers] `query:"providers,omitempty" required:"false" uniqueItems:"true" minLength:"1" maxLength:"80" enum:"google,apple,facebook,github,credentials"`
+	// 	Q         OmitNull[string]             `query:"q,omitempty" required:"false" default:""`
+}
+type PermissionsListParams struct {
+	PaginatedInput
+	PermissionsListFilter
 	// 	SortBy    string `query:"sort_by,omitempty" required:"false" default:"created_at"`
 	// 	SortOrder string `query:"sort_order,omitempty" required:"false" default:"desc"`
 	SortBy    string `query:"sort_by,omitempty" required:"false" default:"created_at"`
@@ -40,14 +84,9 @@ type PaginatedResponse[T any] struct {
 	Meta Meta `json:"meta"`
 }
 type Meta struct {
-	Page int `json:"page"`
-	// From        null.Val[string]    `json:"from"`
-	// LastPage    int     `json:"last_page"`
-	// Links   []Link  `json:"links"`
-	// Path    *string `json:"path"`
+	Page    int `json:"page"`
 	PerPage int `json:"per_page"`
-	// To          *int    `json:"to"`
-	Total int `json:"total"`
+	Total   int `json:"total"`
 }
 
 type Link struct {

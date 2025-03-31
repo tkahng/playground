@@ -24,6 +24,7 @@ import (
 	"github.com/stephenafamo/bob/dialect/psql/um"
 	"github.com/stephenafamo/bob/expr"
 	"github.com/stephenafamo/bob/mods"
+	"github.com/stephenafamo/bob/orm"
 	"github.com/stephenafamo/scan"
 )
 
@@ -52,11 +53,13 @@ type UsersQuery = *psql.ViewQuery[*User, UserSlice]
 
 // userR is where relationships are stored.
 type userR struct {
-	Tokens       TokenSlice       `json:"Tokens"`       // tokens.tokens_user_id_fkey
-	UserAccounts UserAccountSlice `json:"UserAccounts"` // user_accounts.user_accounts_user_id_fkey
-	Permissions  PermissionSlice  `json:"Permissions"`  // user_permissions.user_permissions_permission_id_fkeyuser_permissions.user_permissions_user_id_fkey
-	Roles        RoleSlice        `json:"Roles"`        // user_roles.user_roles_role_id_fkeyuser_roles.user_roles_user_id_fkey
-	UserSessions UserSessionSlice `json:"UserSessions"` // user_sessions.user_sessions_user_id_fkey
+	IDStripeCustomer    *StripeCustomer         `json:"IDStripeCustomer"`    // stripe_customers.stripe_customers_id_fkey
+	StripeSubscriptions StripeSubscriptionSlice `json:"StripeSubscriptions"` // stripe_subscriptions.stripe_subscriptions_user_id_fkey
+	Tokens              TokenSlice              `json:"Tokens"`              // tokens.tokens_user_id_fkey
+	UserAccounts        UserAccountSlice        `json:"UserAccounts"`        // user_accounts.user_accounts_user_id_fkey
+	Permissions         PermissionSlice         `json:"Permissions"`         // user_permissions.user_permissions_permission_id_fkeyuser_permissions.user_permissions_user_id_fkey
+	Roles               RoleSlice               `json:"Roles"`               // user_roles.user_roles_role_id_fkeyuser_roles.user_roles_user_id_fkey
+	UserSessions        UserSessionSlice        `json:"UserSessions"`        // user_sessions.user_sessions_user_id_fkey
 }
 
 type userColumnNames struct {
@@ -547,12 +550,14 @@ func (o UserSlice) ReloadAll(ctx context.Context, exec bob.Executor) error {
 }
 
 type userJoins[Q dialect.Joinable] struct {
-	typ          string
-	Tokens       func(context.Context) modAs[Q, tokenColumns]
-	UserAccounts func(context.Context) modAs[Q, userAccountColumns]
-	Permissions  func(context.Context) modAs[Q, permissionColumns]
-	Roles        func(context.Context) modAs[Q, roleColumns]
-	UserSessions func(context.Context) modAs[Q, userSessionColumns]
+	typ                 string
+	IDStripeCustomer    func(context.Context) modAs[Q, stripeCustomerColumns]
+	StripeSubscriptions func(context.Context) modAs[Q, stripeSubscriptionColumns]
+	Tokens              func(context.Context) modAs[Q, tokenColumns]
+	UserAccounts        func(context.Context) modAs[Q, userAccountColumns]
+	Permissions         func(context.Context) modAs[Q, permissionColumns]
+	Roles               func(context.Context) modAs[Q, roleColumns]
+	UserSessions        func(context.Context) modAs[Q, userSessionColumns]
 }
 
 func (j userJoins[Q]) aliasedAs(alias string) userJoins[Q] {
@@ -561,12 +566,52 @@ func (j userJoins[Q]) aliasedAs(alias string) userJoins[Q] {
 
 func buildUserJoins[Q dialect.Joinable](cols userColumns, typ string) userJoins[Q] {
 	return userJoins[Q]{
-		typ:          typ,
-		Tokens:       usersJoinTokens[Q](cols, typ),
-		UserAccounts: usersJoinUserAccounts[Q](cols, typ),
-		Permissions:  usersJoinPermissions[Q](cols, typ),
-		Roles:        usersJoinRoles[Q](cols, typ),
-		UserSessions: usersJoinUserSessions[Q](cols, typ),
+		typ:                 typ,
+		IDStripeCustomer:    usersJoinIDStripeCustomer[Q](cols, typ),
+		StripeSubscriptions: usersJoinStripeSubscriptions[Q](cols, typ),
+		Tokens:              usersJoinTokens[Q](cols, typ),
+		UserAccounts:        usersJoinUserAccounts[Q](cols, typ),
+		Permissions:         usersJoinPermissions[Q](cols, typ),
+		Roles:               usersJoinRoles[Q](cols, typ),
+		UserSessions:        usersJoinUserSessions[Q](cols, typ),
+	}
+}
+
+func usersJoinIDStripeCustomer[Q dialect.Joinable](from userColumns, typ string) func(context.Context) modAs[Q, stripeCustomerColumns] {
+	return func(ctx context.Context) modAs[Q, stripeCustomerColumns] {
+		return modAs[Q, stripeCustomerColumns]{
+			c: StripeCustomerColumns,
+			f: func(to stripeCustomerColumns) bob.Mod[Q] {
+				mods := make(mods.QueryMods[Q], 0, 1)
+
+				{
+					mods = append(mods, dialect.Join[Q](typ, StripeCustomers.Name().As(to.Alias())).On(
+						to.ID.EQ(from.ID),
+					))
+				}
+
+				return mods
+			},
+		}
+	}
+}
+
+func usersJoinStripeSubscriptions[Q dialect.Joinable](from userColumns, typ string) func(context.Context) modAs[Q, stripeSubscriptionColumns] {
+	return func(ctx context.Context) modAs[Q, stripeSubscriptionColumns] {
+		return modAs[Q, stripeSubscriptionColumns]{
+			c: StripeSubscriptionColumns,
+			f: func(to stripeSubscriptionColumns) bob.Mod[Q] {
+				mods := make(mods.QueryMods[Q], 0, 1)
+
+				{
+					mods = append(mods, dialect.Join[Q](typ, StripeSubscriptions.Name().As(to.Alias())).On(
+						to.UserID.EQ(from.ID),
+					))
+				}
+
+				return mods
+			},
+		}
 	}
 }
 
@@ -681,6 +726,42 @@ func usersJoinUserSessions[Q dialect.Joinable](from userColumns, typ string) fun
 	}
 }
 
+// IDStripeCustomer starts a query for related objects on stripe_customers
+func (o *User) IDStripeCustomer(mods ...bob.Mod[*dialect.SelectQuery]) StripeCustomersQuery {
+	return StripeCustomers.Query(append(mods,
+		sm.Where(StripeCustomerColumns.ID.EQ(psql.Arg(o.ID))),
+	)...)
+}
+
+func (os UserSlice) IDStripeCustomer(mods ...bob.Mod[*dialect.SelectQuery]) StripeCustomersQuery {
+	PKArgs := make([]bob.Expression, len(os))
+	for i, o := range os {
+		PKArgs[i] = psql.ArgGroup(o.ID)
+	}
+
+	return StripeCustomers.Query(append(mods,
+		sm.Where(psql.Group(StripeCustomerColumns.ID).In(PKArgs...)),
+	)...)
+}
+
+// StripeSubscriptions starts a query for related objects on stripe_subscriptions
+func (o *User) StripeSubscriptions(mods ...bob.Mod[*dialect.SelectQuery]) StripeSubscriptionsQuery {
+	return StripeSubscriptions.Query(append(mods,
+		sm.Where(StripeSubscriptionColumns.UserID.EQ(psql.Arg(o.ID))),
+	)...)
+}
+
+func (os UserSlice) StripeSubscriptions(mods ...bob.Mod[*dialect.SelectQuery]) StripeSubscriptionsQuery {
+	PKArgs := make([]bob.Expression, len(os))
+	for i, o := range os {
+		PKArgs[i] = psql.ArgGroup(o.ID)
+	}
+
+	return StripeSubscriptions.Query(append(mods,
+		sm.Where(psql.Group(StripeSubscriptionColumns.UserID).In(PKArgs...)),
+	)...)
+}
+
 // Tokens starts a query for related objects on tokens
 func (o *User) Tokens(mods ...bob.Mod[*dialect.SelectQuery]) TokensQuery {
 	return Tokens.Query(append(mods,
@@ -787,6 +868,32 @@ func (o *User) Preload(name string, retrieved any) error {
 	}
 
 	switch name {
+	case "IDStripeCustomer":
+		rel, ok := retrieved.(*StripeCustomer)
+		if !ok {
+			return fmt.Errorf("user cannot load %T as %q", retrieved, name)
+		}
+
+		o.R.IDStripeCustomer = rel
+
+		if rel != nil {
+			rel.R.IDUser = o
+		}
+		return nil
+	case "StripeSubscriptions":
+		rels, ok := retrieved.(StripeSubscriptionSlice)
+		if !ok {
+			return fmt.Errorf("user cannot load %T as %q", retrieved, name)
+		}
+
+		o.R.StripeSubscriptions = rels
+
+		for _, rel := range rels {
+			if rel != nil {
+				rel.R.User = o
+			}
+		}
+		return nil
 	case "Tokens":
 		rels, ok := retrieved.(TokenSlice)
 		if !ok {
@@ -860,6 +967,163 @@ func (o *User) Preload(name string, retrieved any) error {
 	default:
 		return fmt.Errorf("user has no relationship %q", name)
 	}
+}
+
+func PreloadUserIDStripeCustomer(opts ...psql.PreloadOption) psql.Preloader {
+	return psql.Preload[*StripeCustomer, StripeCustomerSlice](orm.Relationship{
+		Name: "IDStripeCustomer",
+		Sides: []orm.RelSide{
+			{
+				From: TableNames.Users,
+				To:   TableNames.StripeCustomers,
+				FromColumns: []string{
+					ColumnNames.Users.ID,
+				},
+				ToColumns: []string{
+					ColumnNames.StripeCustomers.ID,
+				},
+			},
+		},
+	}, StripeCustomers.Columns().Names(), opts...)
+}
+
+func ThenLoadUserIDStripeCustomer(queryMods ...bob.Mod[*dialect.SelectQuery]) psql.Loader {
+	return psql.Loader(func(ctx context.Context, exec bob.Executor, retrieved any) error {
+		loader, isLoader := retrieved.(interface {
+			LoadUserIDStripeCustomer(context.Context, bob.Executor, ...bob.Mod[*dialect.SelectQuery]) error
+		})
+		if !isLoader {
+			return fmt.Errorf("object %T cannot load UserIDStripeCustomer", retrieved)
+		}
+
+		err := loader.LoadUserIDStripeCustomer(ctx, exec, queryMods...)
+
+		// Don't cause an issue due to missing relationships
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil
+		}
+
+		return err
+	})
+}
+
+// LoadUserIDStripeCustomer loads the user's IDStripeCustomer into the .R struct
+func (o *User) LoadUserIDStripeCustomer(ctx context.Context, exec bob.Executor, mods ...bob.Mod[*dialect.SelectQuery]) error {
+	if o == nil {
+		return nil
+	}
+
+	// Reset the relationship
+	o.R.IDStripeCustomer = nil
+
+	related, err := o.IDStripeCustomer(mods...).One(ctx, exec)
+	if err != nil {
+		return err
+	}
+
+	related.R.IDUser = o
+
+	o.R.IDStripeCustomer = related
+	return nil
+}
+
+// LoadUserIDStripeCustomer loads the user's IDStripeCustomer into the .R struct
+func (os UserSlice) LoadUserIDStripeCustomer(ctx context.Context, exec bob.Executor, mods ...bob.Mod[*dialect.SelectQuery]) error {
+	if len(os) == 0 {
+		return nil
+	}
+
+	stripeCustomers, err := os.IDStripeCustomer(mods...).All(ctx, exec)
+	if err != nil {
+		return err
+	}
+
+	for _, o := range os {
+		for _, rel := range stripeCustomers {
+			if o.ID != rel.ID {
+				continue
+			}
+
+			rel.R.IDUser = o
+
+			o.R.IDStripeCustomer = rel
+			break
+		}
+	}
+
+	return nil
+}
+
+func ThenLoadUserStripeSubscriptions(queryMods ...bob.Mod[*dialect.SelectQuery]) psql.Loader {
+	return psql.Loader(func(ctx context.Context, exec bob.Executor, retrieved any) error {
+		loader, isLoader := retrieved.(interface {
+			LoadUserStripeSubscriptions(context.Context, bob.Executor, ...bob.Mod[*dialect.SelectQuery]) error
+		})
+		if !isLoader {
+			return fmt.Errorf("object %T cannot load UserStripeSubscriptions", retrieved)
+		}
+
+		err := loader.LoadUserStripeSubscriptions(ctx, exec, queryMods...)
+
+		// Don't cause an issue due to missing relationships
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil
+		}
+
+		return err
+	})
+}
+
+// LoadUserStripeSubscriptions loads the user's StripeSubscriptions into the .R struct
+func (o *User) LoadUserStripeSubscriptions(ctx context.Context, exec bob.Executor, mods ...bob.Mod[*dialect.SelectQuery]) error {
+	if o == nil {
+		return nil
+	}
+
+	// Reset the relationship
+	o.R.StripeSubscriptions = nil
+
+	related, err := o.StripeSubscriptions(mods...).All(ctx, exec)
+	if err != nil {
+		return err
+	}
+
+	for _, rel := range related {
+		rel.R.User = o
+	}
+
+	o.R.StripeSubscriptions = related
+	return nil
+}
+
+// LoadUserStripeSubscriptions loads the user's StripeSubscriptions into the .R struct
+func (os UserSlice) LoadUserStripeSubscriptions(ctx context.Context, exec bob.Executor, mods ...bob.Mod[*dialect.SelectQuery]) error {
+	if len(os) == 0 {
+		return nil
+	}
+
+	stripeSubscriptions, err := os.StripeSubscriptions(mods...).All(ctx, exec)
+	if err != nil {
+		return err
+	}
+
+	for _, o := range os {
+		o.R.StripeSubscriptions = nil
+	}
+
+	for _, o := range os {
+		for _, rel := range stripeSubscriptions {
+			if o.ID != rel.UserID {
+				continue
+			}
+
+			rel.R.User = o
+
+			o.R.StripeSubscriptions = append(o.R.StripeSubscriptions, rel)
+		}
+	}
+
+	return nil
 }
 
 func ThenLoadUserTokens(queryMods ...bob.Mod[*dialect.SelectQuery]) psql.Loader {
@@ -1275,6 +1539,126 @@ func (os UserSlice) LoadUserUserSessions(ctx context.Context, exec bob.Executor,
 
 			o.R.UserSessions = append(o.R.UserSessions, rel)
 		}
+	}
+
+	return nil
+}
+
+func insertUserIDStripeCustomer0(ctx context.Context, exec bob.Executor, stripeCustomer1 *StripeCustomerSetter, user0 *User) (*StripeCustomer, error) {
+	stripeCustomer1.ID = omit.From(user0.ID)
+
+	ret, err := StripeCustomers.Insert(stripeCustomer1).One(ctx, exec)
+	if err != nil {
+		return ret, fmt.Errorf("insertUserIDStripeCustomer0: %w", err)
+	}
+
+	return ret, nil
+}
+
+func attachUserIDStripeCustomer0(ctx context.Context, exec bob.Executor, count int, stripeCustomer1 *StripeCustomer, user0 *User) (*StripeCustomer, error) {
+	setter := &StripeCustomerSetter{
+		ID: omit.From(user0.ID),
+	}
+
+	err := stripeCustomer1.Update(ctx, exec, setter)
+	if err != nil {
+		return nil, fmt.Errorf("attachUserIDStripeCustomer0: %w", err)
+	}
+
+	return stripeCustomer1, nil
+}
+
+func (user0 *User) InsertIDStripeCustomer(ctx context.Context, exec bob.Executor, related *StripeCustomerSetter) error {
+	stripeCustomer1, err := insertUserIDStripeCustomer0(ctx, exec, related, user0)
+	if err != nil {
+		return err
+	}
+
+	user0.R.IDStripeCustomer = stripeCustomer1
+
+	stripeCustomer1.R.IDUser = user0
+
+	return nil
+}
+
+func (user0 *User) AttachIDStripeCustomer(ctx context.Context, exec bob.Executor, stripeCustomer1 *StripeCustomer) error {
+	var err error
+
+	_, err = attachUserIDStripeCustomer0(ctx, exec, 1, stripeCustomer1, user0)
+	if err != nil {
+		return err
+	}
+
+	user0.R.IDStripeCustomer = stripeCustomer1
+
+	stripeCustomer1.R.IDUser = user0
+
+	return nil
+}
+
+func insertUserStripeSubscriptions0(ctx context.Context, exec bob.Executor, stripeSubscriptions1 []*StripeSubscriptionSetter, user0 *User) (StripeSubscriptionSlice, error) {
+	for i := range stripeSubscriptions1 {
+		stripeSubscriptions1[i].UserID = omit.From(user0.ID)
+	}
+
+	ret, err := StripeSubscriptions.Insert(bob.ToMods(stripeSubscriptions1...)).All(ctx, exec)
+	if err != nil {
+		return ret, fmt.Errorf("insertUserStripeSubscriptions0: %w", err)
+	}
+
+	return ret, nil
+}
+
+func attachUserStripeSubscriptions0(ctx context.Context, exec bob.Executor, count int, stripeSubscriptions1 StripeSubscriptionSlice, user0 *User) (StripeSubscriptionSlice, error) {
+	setter := &StripeSubscriptionSetter{
+		UserID: omit.From(user0.ID),
+	}
+
+	err := stripeSubscriptions1.UpdateAll(ctx, exec, *setter)
+	if err != nil {
+		return nil, fmt.Errorf("attachUserStripeSubscriptions0: %w", err)
+	}
+
+	return stripeSubscriptions1, nil
+}
+
+func (user0 *User) InsertStripeSubscriptions(ctx context.Context, exec bob.Executor, related ...*StripeSubscriptionSetter) error {
+	if len(related) == 0 {
+		return nil
+	}
+
+	var err error
+
+	stripeSubscriptions1, err := insertUserStripeSubscriptions0(ctx, exec, related, user0)
+	if err != nil {
+		return err
+	}
+
+	user0.R.StripeSubscriptions = append(user0.R.StripeSubscriptions, stripeSubscriptions1...)
+
+	for _, rel := range stripeSubscriptions1 {
+		rel.R.User = user0
+	}
+	return nil
+}
+
+func (user0 *User) AttachStripeSubscriptions(ctx context.Context, exec bob.Executor, related ...*StripeSubscription) error {
+	if len(related) == 0 {
+		return nil
+	}
+
+	var err error
+	stripeSubscriptions1 := StripeSubscriptionSlice(related)
+
+	_, err = attachUserStripeSubscriptions0(ctx, exec, len(related), stripeSubscriptions1, user0)
+	if err != nil {
+		return err
+	}
+
+	user0.R.StripeSubscriptions = append(user0.R.StripeSubscriptions, stripeSubscriptions1...)
+
+	for _, rel := range related {
+		rel.R.User = user0
 	}
 
 	return nil

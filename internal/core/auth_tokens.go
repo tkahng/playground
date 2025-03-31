@@ -42,6 +42,7 @@ func (a *BaseApp) CreateAuthDto(ctx context.Context, email string) (*shared.Auth
 		Tokens:      *tokens,
 		Roles:       info.Roles,
 		Permissions: info.Permissions,
+		Providers:   info.Providers,
 	}
 	return &bod, nil
 }
@@ -66,6 +67,7 @@ func (a *BaseApp) RefreshTokens(ctx context.Context, db bob.DB, refreshToken str
 		Tokens:      *tokens,
 		Roles:       user.Roles,
 		Permissions: user.Permissions,
+		Providers:   user.Providers,
 	}, nil
 
 }

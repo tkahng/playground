@@ -15,6 +15,7 @@ import (
 	"github.com/stephenafamo/scan"
 	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/authgo/internal/tools/dataloader"
 )
 
 type RolesMap map[string]*models.Role
@@ -110,17 +111,38 @@ func GetUserAccountByProviderAndEmail(ctx context.Context, db bob.Executor, emai
 const (
 	rawGetUserWithPermissionsByEmail string = `--sql
 	SELECT u.id AS user_id,
-	    u.email AS email,
-	    ARRAY_AGG(DISTINCT ar.name)::text [] AS roles,
-	    ARRAY_AGG(DISTINCT p.name)::text [] AS permissions
+		u.email AS email,
+		ARRAY_AGG(DISTINCT ar.name)::text [] AS roles,
+		ARRAY_AGG(DISTINCT p.name)::text [] AS permissions,
+		ARRAY_AGG(DISTINCT ua.provider)::public.providers [] AS providers
 	FROM public.users u
-	    LEFT JOIN public.user_roles ur ON u.id = ur.user_id
-	    LEFT JOIN public.roles ar ON ur.role_id = ar.id
-	    LEFT JOIN public.role_permissions rp ON ar.id = rp.role_id
-	    LEFT JOIN public.permissions p ON rp.permission_id = p.id
+		LEFT JOIN public.user_roles ur ON u.id = ur.user_id
+		LEFT JOIN public.roles ar ON ur.role_id = ar.id
+		LEFT JOIN public.role_permissions rp ON ar.id = rp.role_id
+		LEFT JOIN public.permissions p ON rp.permission_id = p.id
+		LEFT JOIN public.user_accounts ua ON u.id = ua.user_id
 	WHERE u.email = ?
 	GROUP BY u.id
 	LIMIT 1;
+	`
+	rawGetUsersWithPermissionsByIds string = `--sql
+	WITH FilteredAccounts AS (
+    SELECT u.id AS user_id,
+        u.email AS email,
+        ARRAY_AGG(DISTINCT ar.name)::text [] AS roles,
+        ARRAY_AGG(DISTINCT p.name)::text [] AS permissions,
+        ARRAY_AGG(DISTINCT ua.provider)::public.providers [] AS providers
+    FROM public.users u
+        LEFT JOIN public.user_roles ur ON u.id = ur.user_id
+        LEFT JOIN public.roles ar ON ur.role_id = ar.id
+        LEFT JOIN public.role_permissions rp ON ar.id = rp.role_id
+        LEFT JOIN public.permissions p ON rp.permission_id = p.id
+        LEFT JOIN public.user_accounts ua ON u.id = ua.user_id
+    GROUP BY u.id
+)
+SELECT fa.*
+FROM FilteredAccounts fa
+WHERE fa.user_id IN (?);
 	`
 )
 
@@ -129,12 +151,14 @@ type rolePermissionClaims struct {
 	Email       string         `json:"email" db:"email"`
 	Roles       pq.StringArray `json:"roles" db:"roles"`
 	Permissions pq.StringArray `json:"permissions" db:"permissions"`
+	Providers   pq.StringArray `json:"providers" db:"providers"`
 }
 type RolePermissionClaims struct {
-	UserID      uuid.UUID `json:"user_id" db:"user_id"`
-	Email       string    `json:"email" db:"email"`
-	Roles       []string  `json:"roles" db:"roles"`
-	Permissions []string  `json:"permissions" db:"permissions"`
+	UserID      uuid.UUID          `json:"user_id" db:"user_id"`
+	Email       string             `json:"email" db:"email"`
+	Roles       []string           `json:"roles" db:"roles"`
+	Permissions []string           `json:"permissions" db:"permissions"`
+	Providers   []models.Providers `json:"providers" db:"providers"`
 }
 
 func GetUserWithRolesAndPermissions(ctx context.Context, db bob.Executor, email string) (*RolePermissionClaims, error) {
@@ -144,12 +168,67 @@ func GetUserWithRolesAndPermissions(ctx context.Context, db bob.Executor, email 
 	if err != nil {
 		return nil, err
 	}
+	var prov []models.Providers
+	all := models.AllProviders()
+	for _, provider := range res.Providers {
+		for _, p := range all {
+			if provider == string(p) {
+				prov = append(prov, p)
+			}
+		}
+	}
 	return &RolePermissionClaims{
 		UserID:      res.UserID,
 		Email:       res.Email,
 		Roles:       res.Roles,
 		Permissions: res.Permissions,
+		Providers:   prov,
 	}, nil
+}
+
+type UserInfo struct {
+	ID   uuid.UUID            `json:"id" db:"id"`
+	Info rolePermissionClaims `json:"info" db:"info"`
+}
+
+func GetUsersWithRolesAndPermissions(ctx context.Context, db bob.Executor, ids ...uuid.UUID) ([]RolePermissionClaims, error) {
+	var input []any
+	for _, id := range ids {
+		input = append(input, id)
+	}
+
+	query := psql.RawQuery(rawGetUsersWithPermissionsByIds, psql.Arg(input...))
+	q, a := query.MustBuild(ctx)
+	fmt.Println(q, a)
+	res, err := bob.All(ctx, db, query, scan.StructMapper[rolePermissionClaims]())
+	if err != nil {
+		return nil, err
+	}
+	var claims []RolePermissionClaims
+	all := models.AllProviders()
+	for _, r := range res {
+		var prov []models.Providers
+		var claim RolePermissionClaims = RolePermissionClaims{
+			UserID:      r.UserID,
+			Email:       r.Email,
+			Roles:       r.Roles,
+			Permissions: r.Permissions,
+		}
+		for _, provider := range r.Providers {
+			for _, p := range all {
+				if provider == string(p) {
+					prov = append(prov, p)
+				}
+			}
+		}
+		claim.Providers = prov
+		claims = append(claims, claim)
+	}
+	claims = dataloader.MapTo(claims, ids, func(c RolePermissionClaims) uuid.UUID {
+		return c.UserID
+	})
+	return claims, nil
+
 }
 
 func GetUserByEmail(ctx context.Context, db bob.Executor, email string) (*models.User, error) {

@@ -103,7 +103,15 @@ func BindApis(api huma.API, app core.App) {
 	adminGroup := huma.NewGroup(api, "/admin")
 	adminGroup.UseMiddleware(CheckRolesMiddleware(api, "superuser"))
 	huma.Register(adminGroup, appApi.AdminUsersOperation("/users"), appApi.AdminUsers)
-
+	huma.Register(adminGroup, appApi.AdminUserRolesUpdateOperation("/users/{id}/roles"), appApi.AdminUserRolesUpdate)
+	huma.Register(adminGroup, appApi.AdminRolesOperation("/roles"), appApi.AdminRoles)
+	huma.Register(adminGroup, appApi.AdminRolesCreateOperation("/roles"), appApi.AdminRolesCreate)
+	huma.Register(adminGroup, appApi.AdminRolesUpdateOperation("/roles/{id}"), appApi.AdminRolesUpdate)
+	huma.Register(adminGroup, appApi.AdminRolesDeleteOperation("/roles/{id}"), appApi.AdminRolesDelete)
+	huma.Register(adminGroup, appApi.AdminPermissionsOperation("/permissions"), appApi.AdminPermissions)
+	huma.Register(adminGroup, appApi.AdminPermissionsCreateOperation("/permissions"), appApi.AdminPermissionsCreate)
+	huma.Register(adminGroup, appApi.AdminPermissionsUpdateOperation("/permissions/{id}"), appApi.AdminPermissionsUpdate)
+	huma.Register(adminGroup, appApi.AdminPermissionsDeleteOperation("/permissions/{id}"), appApi.AdminPermissionsDelete)
 	// huma.Register(adminGroup, appApi.GetAppSettingsOperation("/settings"), appApi.GetAppSettings)
 	// huma.Register(adminGroup, appApi.PostAppSettingsOperation("/settings"), appApi.PostAppSettings)
 

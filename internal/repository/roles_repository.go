@@ -6,6 +6,7 @@ import (
 
 	"github.com/aarondl/opt/omit"
 	"github.com/aarondl/opt/omitnull"
+	"github.com/google/uuid"
 	"github.com/stephenafamo/bob"
 	"github.com/stephenafamo/bob/dialect/psql/im"
 	"github.com/tkahng/authgo/internal/db/models"
@@ -61,12 +62,47 @@ func CreateRole(ctx context.Context, dbx bob.Executor, role *CreateRoleDto) (*mo
 	return data, err
 }
 
+type UpdateRoleDto struct {
+	Name        string  `json:"name"`
+	Description *string `json:"description,omitempty"`
+}
+
+func UpdateRole(ctx context.Context, dbx bob.Executor, id uuid.UUID, role *UpdateRoleDto) error {
+	r, err := FindRoleById(ctx, dbx, id)
+	if err != nil {
+		return err
+	}
+	err = r.Update(
+		ctx,
+		dbx,
+		&models.RoleSetter{
+			Name:        omit.From(role.Name),
+			Description: omitnull.FromPtr(role.Description),
+		},
+	)
+	return err
+}
+
+func DeleteRole(ctx context.Context, dbx bob.Executor, id uuid.UUID) error {
+	_, err := models.Roles.Delete(
+		models.DeleteWhere.Roles.ID.EQ(id),
+	).Exec(ctx, dbx)
+	return err
+}
+
 func FindRolesByNames(ctx context.Context, dbx bob.Executor, params []string) ([]*models.Role, error) {
 	return models.Roles.Query(models.SelectWhere.Roles.Name.In(params...)).All(ctx, dbx)
+}
+func FindRolesByIds(ctx context.Context, dbx bob.Executor, params []uuid.UUID) ([]*models.Role, error) {
+	return models.Roles.Query(models.SelectWhere.Roles.ID.In(params...)).All(ctx, dbx)
 }
 
 func FindRoleByName(ctx context.Context, dbx bob.Executor, name string) (*models.Role, error) {
 	data, err := models.Roles.Query(models.SelectWhere.Roles.Name.EQ(name)).One(ctx, dbx)
+	return OptionalRow(data, err)
+}
+func FindRoleById(ctx context.Context, dbx bob.Executor, id uuid.UUID) (*models.Role, error) {
+	data, err := models.Roles.Query(models.SelectWhere.Roles.ID.EQ(id)).One(ctx, dbx)
 	return OptionalRow(data, err)
 }
 
@@ -108,4 +144,16 @@ func FindPermissionByName(ctx context.Context, dbx bob.Executor, params string) 
 }
 func FindPermissionsByNames(ctx context.Context, dbx bob.Executor, params []string) ([]*models.Permission, error) {
 	return models.Permissions.Query(models.SelectWhere.Permissions.Name.In(params...)).All(ctx, dbx)
+}
+
+func DeletePermission(ctx context.Context, dbx bob.Executor, id uuid.UUID) error {
+	_, err := models.Permissions.Delete(
+		models.DeleteWhere.Permissions.ID.EQ(id),
+	).Exec(ctx, dbx)
+	return err
+}
+
+func FindPermissionById(ctx context.Context, dbx bob.Executor, id uuid.UUID) (*models.Permission, error) {
+	data, err := models.Permissions.Query(models.SelectWhere.Permissions.ID.EQ(id)).One(ctx, dbx)
+	return OptionalRow(data, err)
 }

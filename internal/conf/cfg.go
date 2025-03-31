@@ -42,11 +42,13 @@ type OAuth2Config struct {
 	AuthCallback string `env:"AUTH_CALLBACK" envDefault:"http://127.0.0.1:8080/api/auth/callback"`
 }
 
-// type StripeConfig struct {
-// 	PublicKey string `env:"STRIPE_PUBLISHABLE_KEY"`
-// 	ApiKey    string `env:"STRIPE_SECRET_KEY"`
-// 	Webhook   string `env:"STRIPE_WEBHOOK_SECRET"`
-// }
+type StripeConfig struct {
+	PublicKey string `env:"STRIPE_PUBLISHABLE_KEY"`
+	ApiKey    string `env:"STRIPE_SECRET_KEY"`
+	Webhook   string `env:"STRIPE_WEBHOOK_SECRET"`
+	AppUrl    string `env:"APP_URL" envDefault:"http://localhost:5173"`
+}
+
 // type AiConfig struct {
 // 	GoogleGeminiApiKey string `env:"GOOGLE_GEMINI_API_KEY"`
 // }
@@ -63,6 +65,7 @@ type EnvConfig struct {
 	AppConfig
 	ResendConfig
 	OAuth2Config
+	StripeConfig
 	// DBConfig
 }
 
