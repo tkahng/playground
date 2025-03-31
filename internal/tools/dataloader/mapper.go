@@ -29,3 +29,27 @@ func MapTo[T any, K comparable](records []T, keys []K, keyFn KeyFn[T, K]) []T {
 
 	return result
 }
+
+// export function mapToMany<R, K>(
+//
+//	records: ReadonlyArray<R>,
+//	keys: ReadonlyArray<K>,
+//	keyFn: (record: R) => K,
+//
+//	): Array<R[]> {
+//	  const group = new Map<K, R[]>(keys.map((key) => [key, []]));
+//	  records.forEach((record) => (group.get(keyFn(record)) || []).push(record));
+//	  return Array.from(group.values());
+//	}
+func MapToMany[T any, K comparable](records []T, keys []K, keyFn KeyFn[T, K]) [][]T {
+	var m = make(map[K][]T)
+	for _, record := range records {
+		m[keyFn(record)] = append(m[keyFn(record)], record)
+	}
+	var result [][]T
+	for _, key := range keys {
+		result = append(result, m[key])
+	}
+
+	return result
+}
