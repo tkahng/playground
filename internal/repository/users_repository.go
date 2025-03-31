@@ -110,14 +110,16 @@ func GetUserAccountByProviderAndEmail(ctx context.Context, db bob.Executor, emai
 const (
 	rawGetUserWithPermissionsByEmail string = `--sql
 	SELECT u.id AS user_id,
-	    u.email AS email,
-	    ARRAY_AGG(DISTINCT ar.name)::text [] AS roles,
-	    ARRAY_AGG(DISTINCT p.name)::text [] AS permissions
+		u.email AS email,
+		ARRAY_AGG(DISTINCT ar.name)::text [] AS roles,
+		ARRAY_AGG(DISTINCT p.name)::text [] AS permissions,
+		ARRAY_AGG(DISTINCT ua.provider)::public.providers [] AS providers
 	FROM public.users u
-	    LEFT JOIN public.user_roles ur ON u.id = ur.user_id
-	    LEFT JOIN public.roles ar ON ur.role_id = ar.id
-	    LEFT JOIN public.role_permissions rp ON ar.id = rp.role_id
-	    LEFT JOIN public.permissions p ON rp.permission_id = p.id
+		LEFT JOIN public.user_roles ur ON u.id = ur.user_id
+		LEFT JOIN public.roles ar ON ur.role_id = ar.id
+		LEFT JOIN public.role_permissions rp ON ar.id = rp.role_id
+		LEFT JOIN public.permissions p ON rp.permission_id = p.id
+		LEFT JOIN public.user_accounts ua ON u.id = ua.user_id
 	WHERE u.email = ?
 	GROUP BY u.id
 	LIMIT 1;
@@ -129,12 +131,14 @@ type rolePermissionClaims struct {
 	Email       string         `json:"email" db:"email"`
 	Roles       pq.StringArray `json:"roles" db:"roles"`
 	Permissions pq.StringArray `json:"permissions" db:"permissions"`
+	Providers   pq.StringArray `json:"providers" db:"providers"`
 }
 type RolePermissionClaims struct {
-	UserID      uuid.UUID `json:"user_id" db:"user_id"`
-	Email       string    `json:"email" db:"email"`
-	Roles       []string  `json:"roles" db:"roles"`
-	Permissions []string  `json:"permissions" db:"permissions"`
+	UserID      uuid.UUID          `json:"user_id" db:"user_id"`
+	Email       string             `json:"email" db:"email"`
+	Roles       []string           `json:"roles" db:"roles"`
+	Permissions []string           `json:"permissions" db:"permissions"`
+	Providers   []models.Providers `json:"providers" db:"providers"`
 }
 
 func GetUserWithRolesAndPermissions(ctx context.Context, db bob.Executor, email string) (*RolePermissionClaims, error) {
@@ -144,11 +148,21 @@ func GetUserWithRolesAndPermissions(ctx context.Context, db bob.Executor, email 
 	if err != nil {
 		return nil, err
 	}
+	var prov []models.Providers
+	all := models.AllProviders()
+	for _, provider := range res.Providers {
+		for _, p := range all {
+			if provider == string(p) {
+				prov = append(prov, p)
+			}
+		}
+	}
 	return &RolePermissionClaims{
 		UserID:      res.UserID,
 		Email:       res.Email,
 		Roles:       res.Roles,
 		Permissions: res.Permissions,
+		Providers:   prov,
 	}, nil
 }
 
