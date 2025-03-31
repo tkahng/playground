@@ -87,7 +87,7 @@ func BindApis(api huma.API, app core.App) {
 		}, nil
 	})
 	// http://127.0.0.1:8080/auth/callback
-	huma.Register(api, appApi.AuthMethodsOperation("/auth/methods"), appApi.AuthMethods)
+	// huma.Register(api, appApi.AuthMethodsOperation("/auth/methods"), appApi.AuthMethods)
 	huma.Register(api, appApi.SignupOperation("/auth/signup"), appApi.SignUp)
 	huma.Register(api, appApi.SigninOperation("/auth/signin"), appApi.SignIn)
 	huma.Register(api, appApi.MeOperation("/auth/me"), appApi.Me)

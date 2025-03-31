@@ -75,8 +75,6 @@ func (h *Api) OAuth2AuthorizationUrl(ctx context.Context, input *OAuth2Authoriza
 	}
 	res := provider.BuildAuthURL(state, urlOpts...)
 
-	// provider, err := auth.NewProviderByName(input.Provider)
-	// res := provider.AuthURL()
 	return &OAuth2AuthorizationUrlOutput{
 		Body: struct {
 			Url string `json:"url"`

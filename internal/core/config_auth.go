@@ -123,7 +123,7 @@ func (c OAuth2ProviderConfig) Validate() error {
 		return nil
 	}
 	return validation.ValidateStruct(&c,
-		validation.Field(&c.Name, validation.Required, validation.By(checkProviderName)),
+		validation.Field(&c.Name, validation.Required),
 		validation.Field(&c.ClientID, validation.Required),
 		validation.Field(&c.ClientSecret, validation.Required),
 		validation.Field(&c.Name, validation.Required),

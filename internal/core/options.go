@@ -13,10 +13,6 @@ const (
 	EncryptedAppOptionsKey  = "encrypted_app"
 )
 
-type EncryptedAppSettings struct {
-	EncryptedAppSettings string `form:"encrypted_app_settings" json:"encrypted_app_settings"`
-}
-
 type MetaOption struct {
 	AppName       string `form:"app_name" json:"app_name" envDefault:"AuthGo" default:"AuthGo"`
 	AppURL        string `form:"app_url" json:"app_url" envDefault:"http://localhost:8080" default:"http://localhost:8080"`
@@ -44,10 +40,6 @@ func NewDefaultSettings() *AppOptions {
 			SenderAddress: "support@example.com",
 		},
 		Auth: *DefaultAuthSettings(),
-		// Logs: LogsConfig{
-		// 	MaxDays: 5,
-		// 	LogIP:   true,
-		// },
 		SMTP: SMTPOption{
 			Enabled:  false,
 			Host:     "smtp.example.com",
@@ -56,23 +48,6 @@ func NewDefaultSettings() *AppOptions {
 			Password: "",
 			TLS:      false,
 		},
-		// Backups: BackupsConfig{
-		// 	CronMaxKeep: 3,
-		// },
-		// Batch: BatchConfig{
-		// 	Enabled:     false,
-		// 	MaxRequests: 50,
-		// 	Timeout:     3,
-		// },
-		// RateLimits: RateLimitsConfig{
-		// 	Enabled: false, // @todo once tested enough enable by default for new installations
-		// 	Rules: []RateLimitRule{
-		// 		{Label: "*:auth", MaxRequests: 2, Duration: 3},
-		// 		{Label: "*:create", MaxRequests: 20, Duration: 5},
-		// 		{Label: "/api/batch", MaxRequests: 3, Duration: 1},
-		// 		{Label: "/api/", MaxRequests: 300, Duration: 10},
-		// 	},
-		// },
 	}
 }
 
@@ -82,10 +57,6 @@ type AppOptions struct {
 	// Backups      BackupsConfig      `form:"backups" json:"backups"`
 	S3   S3option   `form:"s3" json:"s3"`
 	Meta MetaOption `form:"meta" json:"meta"`
-	// RateLimits   RateLimitsConfig   `form:"rateLimits" json:"rateLimits"`
-	// TrustedProxy TrustedProxyConfig `form:"trustedProxy" json:"trustedProxy"`
-	// Batch        BatchConfig        `form:"batch" json:"batch"`
-	// Logs         LogsConfig         `form:"logs" json:"logs"`
 }
 
 func (s AppOptions) Validate() error {
@@ -95,10 +66,6 @@ func (s AppOptions) Validate() error {
 		// validation.Field(&s.Logs),
 		validation.Field(&s.SMTP),
 		validation.Field(&s.S3),
-		// validation.Field(&s.Backups),
-		// validation.Field(&s.Batch),
-		// validation.Field(&s.RateLimits),
-		// validation.Field(&s.TrustedProxy),
 	)
 }
 
@@ -112,30 +79,7 @@ func (s *AppOptions) PostValidate(ctx context.Context) error {
 		// validation.Field(&s.Logs),
 		validation.Field(&s.SMTP),
 		validation.Field(&s.S3),
-		// validation.Field(&s.Backups),
-		// validation.Field(&s.Batch),
-		// validation.Field(&s.RateLimits),
-		// validation.Field(&s.TrustedProxy),
 	)
-}
-
-type PasswordAuthConfig struct {
-	Enabled bool `form:"enabled" json:"enabled"`
-
-	// IdentityFields is a list of field names that could be used as
-	// identity during password authentication.
-	//
-	// Usually only fields that has single column UNIQUE index are accepted as values.
-
-}
-
-type EmailContentOption struct {
-	Invite           string `json:"invite"`
-	Confirmation     string `json:"confirmation"`
-	Recovery         string `json:"recovery"`
-	EmailChange      string `json:"email_change" split_words:"true"`
-	MagicLink        string `json:"magic_link" split_words:"true"`
-	Reauthentication string `json:"reauthentication"`
 }
 
 type SMTPOption struct {
@@ -195,9 +139,9 @@ func (c S3option) Validate() error {
 	)
 }
 
-type EncryptedAppOptions struct {
-	EncryptedAppOptions string `form:"encrypted_app_options" json:"encrypted_app_options"`
-}
+// type EncryptedAppOptions struct {
+// 	EncryptedAppOptions string `form:"encrypted_app_options" json:"encrypted_app_options"`
+// }
 
 // func GetOrSetEncryptedAppOptions(ctx context.Context, dbx bob.DB, encryptionKey string) (*AppOptions, error) {
 // 	var opts *AppOptions
