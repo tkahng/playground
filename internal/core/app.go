@@ -23,8 +23,8 @@ type App interface {
 	TokenVerifier() *TokenVerifier
 
 	Db() bob.DB
-	SetSettings(settings *Settings)
-	Settings() *Settings
+	// SetSettings(settings *AppOptions)
+	Settings() *AppOptions
 	NewMailClient() mailer.Mailer
 	EncryptionEnv() string
 	// Signup(ctx context.Context, params *shared.AuthenticateUserParams) (*shared.AuthenticatedDTO, error)

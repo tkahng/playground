@@ -6,6 +6,7 @@ import { Toaster } from "sonner";
 import { ThemeProvider } from "./components/theme-provider";
 import { AuthProvider } from "./context/auth-context";
 import RootLayout from "./layouts/root";
+import CallbackComponent from "./pages/callback";
 import Landing from "./pages/landing";
 
 function App() {
@@ -20,6 +21,9 @@ function App() {
                 <Route path="/signin" element={<Login />} />
                 <Route path="/signup" element={<Login />} />
               </Route>
+              {/* Other routes */}
+              <Route path="/auth/callback" element={<CallbackComponent />} />
+
               <Route element={<RootLayout />}>
                 <Route
                   path="/dashboard"

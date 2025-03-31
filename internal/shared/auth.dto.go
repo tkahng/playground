@@ -48,6 +48,16 @@ const (
 	StateTokenType         TokenType = "state_token"
 )
 
+type OAuthProviders string
+
+const (
+	ProvidersGoogle OAuthProviders = "google"
+	// ProvidersApple    OAuthProviders = "apple"
+	// ProvidersFacebook OAuthProviders = "facebook"
+	ProvidersGithub OAuthProviders = "github"
+	// ProvidersCredentials OAuthProviders = "credentials"
+)
+
 // const
 
 type TokenDto struct {
@@ -59,8 +69,10 @@ type TokenDto struct {
 }
 
 type AuthenticatedDTO struct {
-	User   *models.User `json:"user"`
-	Tokens TokenDto     `json:"tokens"` //core.TokenDto `json:"tokens"`
+	User        *models.User `json:"user"`
+	Permissions []string     `json:"permissions"`
+	Roles       []string     `json:"roles"`
+	Tokens      TokenDto     `json:"tokens"` //core.TokenDto `json:"tokens"`
 }
 
 type RecordOAuth2LoginForm struct {

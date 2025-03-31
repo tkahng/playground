@@ -24,7 +24,7 @@ func (api *Api) GetAppSettingsOperation(path string) huma.Operation {
 }
 
 type AppSettingsout struct {
-	Body *core.Settings
+	Body *core.AppOptions
 }
 
 func (api *Api) GetAppSettings(context context.Context, input *struct{}) (*AppSettingsout, error) {
@@ -48,18 +48,18 @@ func (api *Api) PostAppSettingsOperation(path string) huma.Operation {
 }
 
 type AppSettingsInput struct {
-	Body core.Settings
+	Body core.AppOptions
 }
 
-func (api *Api) PostAppSettings(context context.Context, input *AppSettingsInput) (*struct{}, error) {
-	err := input.Body.Validate()
-	if err != nil {
-		return nil, err
-	}
-	err = core.EncryptAndSetSettings(context, api.app.Db(), &input.Body, api.app.EncryptionEnv())
-	if err != nil {
-		return nil, err
-	}
-	api.app.SetSettings(&input.Body)
-	return nil, nil
-}
+// func (api *Api) PostAppSettings(context context.Context, input *AppSettingsInput) (*struct{}, error) {
+// 	err := input.Body.Validate()
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	err = core.EncryptAndSetSettings(context, api.app.Db(), &input.Body, api.app.EncryptionEnv())
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	api.app.SetSettings(&input.Body)
+// 	return nil, nil
+// }

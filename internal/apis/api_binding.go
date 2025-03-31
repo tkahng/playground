@@ -86,7 +86,8 @@ func BindApis(api huma.API, app core.App) {
 			},
 		}, nil
 	})
-	huma.Register(api, appApi.AuthMethodsOperation("/auth/methods"), appApi.AuthMethods)
+	// http://127.0.0.1:8080/auth/callback
+	// huma.Register(api, appApi.AuthMethodsOperation("/auth/methods"), appApi.AuthMethods)
 	huma.Register(api, appApi.SignupOperation("/auth/signup"), appApi.SignUp)
 	huma.Register(api, appApi.SigninOperation("/auth/signin"), appApi.SignIn)
 	huma.Register(api, appApi.MeOperation("/auth/me"), appApi.Me)
@@ -96,13 +97,15 @@ func BindApis(api huma.API, app core.App) {
 	huma.Register(api, appApi.RequestPasswordResetOperation("/auth/request-password-reset"), appApi.RequestPasswordReset)
 	huma.Register(api, appApi.ConfirmPasswordResetOperation("/auth/confirm-password-reset"), appApi.ConfirmPasswordReset)
 
-	huma.Register(api, appApi.OauthCallbackGetOperation("/auth/oauth/callback"), appApi.OauthCallbackGet)
+	huma.Register(api, appApi.OAuth2CallbackGetOperation("/auth/callback"), appApi.OAuth2CallbackGet)
+	huma.Register(api, appApi.OAuth2CallbackPostOperation("/auth/callback"), appApi.OAuth2CallbackPost)
+	huma.Register(api, appApi.OAuth2AuthorizationUrlOperation("/auth/authorization-url"), appApi.OAuth2AuthorizationUrl)
 	adminGroup := huma.NewGroup(api, "/admin")
 	adminGroup.UseMiddleware(CheckRolesMiddleware(api, "superuser"))
 	huma.Register(adminGroup, appApi.AdminUsersOperation("/users"), appApi.AdminUsers)
 
-	huma.Register(adminGroup, appApi.GetAppSettingsOperation("/settings"), appApi.GetAppSettings)
-	huma.Register(adminGroup, appApi.PostAppSettingsOperation("/settings"), appApi.PostAppSettings)
+	// huma.Register(adminGroup, appApi.GetAppSettingsOperation("/settings"), appApi.GetAppSettings)
+	// huma.Register(adminGroup, appApi.PostAppSettingsOperation("/settings"), appApi.PostAppSettings)
 
 	// bindUsersApi(api, app)
 	// bindStripeApi(api, app)
@@ -113,12 +116,3 @@ func AddRoutes(api huma.API, app core.App) {
 	BindMiddlewares(api, app)
 	BindApis(api, app)
 }
-
-// type SetCookieOutput struct {
-// 	SetCookie []*http.Cookie `header:"Set-Cookie"`
-// }
-
-// type CookieInput struct {
-// 	AccessToken  *http.Cookie `cookie:"access_token" required:"false"`
-// 	RefreshToken *http.Cookie `cookie:"refresh_token" required:"false"`
-// }

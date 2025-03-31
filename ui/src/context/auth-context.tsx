@@ -14,7 +14,7 @@ export interface AuthContextType {
   logout: () => Promise<void>;
   checkError: (error: any) => Promise<void>;
   checkAuth: () => Promise<void>;
-  getOrRefreshToken: () => Promise<AuthenticatedDTO>;
+  getOrRefreshToken: (token?: string) => Promise<AuthenticatedDTO>;
 }
 export const AuthContext = createContext<AuthContextType>({
   user: null,
@@ -64,7 +64,19 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     return Promise.resolve();
   };
 
-  const getOrRefreshToken = async () => {
+  const getOrRefreshToken = async (token?: string) => {
+    if (token) {
+      const { data, error } = await client.POST("/api/auth/refresh-token", {
+        body: {
+          refresh_token: token,
+        },
+      });
+      if (error) {
+        throw error;
+      }
+      setUser(data);
+      return data;
+    }
     if (!user) {
       return Promise.reject();
     } else {

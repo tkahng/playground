@@ -23,7 +23,7 @@ func TestCreateAuthenticationToken(t *testing.T) {
 
 	type args struct {
 		payload *core.AuthenticationPayload
-		config  core.TokenConfig
+		config  core.TokenOption
 	}
 	tests := []struct {
 		name string
@@ -76,7 +76,7 @@ func TestVerifyAuthenticationToken(t *testing.T) {
 	fake := faker.New()
 	type args struct {
 		token  string
-		config core.TokenConfig
+		config core.TokenOption
 	}
 	type test struct {
 		name    string
@@ -146,7 +146,7 @@ func TestCreateRefreshToken(t *testing.T) {
 		ctx     context.Context
 		db      bob.DB
 		payload *core.RefreshTokenPayload
-		config  core.TokenConfig
+		config  core.TokenOption
 	}
 	tests := []struct {
 		name    string
@@ -204,7 +204,7 @@ func TestVerifyRefreshToken(t *testing.T) {
 		ctx    context.Context
 		db     bob.DB
 		token  string
-		config core.TokenConfig
+		config core.TokenOption
 	}
 	type test struct {
 		name    string

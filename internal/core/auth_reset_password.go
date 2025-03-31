@@ -57,7 +57,7 @@ func (app *BaseApp) SendPasswordResetEmail(ctx context.Context, db bob.DB, user 
 	return nil
 }
 
-func createPasswordResetMailParams(tokenHash string, payload *OtpPayload, config *Settings) (*mailer.Message, error) {
+func createPasswordResetMailParams(tokenHash string, payload *OtpPayload, config *AppOptions) (*mailer.Message, error) {
 	path, err := mailer.GetPath("/api/auth/confirm-password-reset", &mailer.EmailParams{
 		Token:      tokenHash,
 		Type:       string(shared.PasswordResetTokenType),

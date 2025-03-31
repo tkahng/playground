@@ -2,32 +2,65 @@ package apis
 
 import (
 	"context"
+	"fmt"
 	"net/http"
+	"net/url"
 
 	"github.com/danielgtaylor/huma/v2"
+	"github.com/tkahng/authgo/internal/core"
+	"github.com/tkahng/authgo/internal/db/models"
+	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/authgo/internal/tools/utils"
+	"golang.org/x/oauth2"
 )
 
+func (api *Api) OAuth2CallbackPostOperation(path string) huma.Operation {
+	return huma.Operation{
+		OperationID: "oauth-callback-post",
+		Method:      http.MethodPost,
+		Path:        path,
+		Summary:     "Oauth callback",
+		Description: "Oauth callback",
+		Tags:        []string{"Auth"},
+		Errors:      []int{http.StatusNotFound},
+	}
+}
+
+type OAuth2CallbackPostResponse struct {
+	Body *shared.AuthenticatedDTO
+}
+
+func (api *Api) OAuth2CallbackPost(ctx context.Context, input *OAuth2CallbackInput) (*AuthenticatedResponse, error) {
+
+	dto, err := OAuth2Callback(ctx, api, input)
+	if err != nil {
+		return nil, err
+	}
+	redirectUrl := dto.RedirectTo
+	uri, err := url.Parse(redirectUrl)
+	if err != nil {
+		return nil, err
+	}
+	q := uri.Query()
+	q.Add(string(shared.RefreshTokenType), dto.Tokens.RefreshToken)
+	uri.RawQuery = q.Encode()
+	fmt.Println(uri.String())
+
+	return &AuthenticatedResponse{
+		Body: dto.AuthenticatedDTO,
+	}, nil
+	// return TokenDtoFromUserWithApp(ctx, h.app, user, uuid.NewString())
+}
+
 type OAuth2CallbackInput struct {
-	Code  string `json:"code" query:"code" required:"true"`
-	State string `json:"state" query:"state" required:"true"`
+	Code  string `json:"code" query:"code" required:"true" minLength:"1"`
+	State string `json:"state" query:"state" required:"true" minLength:"1"`
 	// Provider db.AuthProviders `json:"provider" path:"provider"`
 }
 
-// func (m *OAuth2CallbackInput) Resolve(ctx huma.Context) []error {
-// 	// Get request info you don't normally have access to.
-// 	if m.Provider == db.AuthProvidersEmail || m.Provider == db.AuthProvidersCredentials {
-// 		return []error{errors.New("invalid provider")}
-// 	}
-// 	if m.Code == "" || m.Provider == "" {
-// 		return []error{errors.New("missing provider or code")}
-// 	}
-
-// 	return nil
-// }
-
-func (h *Api) OAuth2CallbackOperation(path string) huma.Operation {
+func (h *Api) OAuth2CallbackGetOperation(path string) huma.Operation {
 	return huma.Operation{
-		OperationID: "oauth2-callback",
+		OperationID: "oauth2-callback-get",
 		Method:      http.MethodGet,
 		Path:        path,
 		Summary:     "OAuth2 callback",
@@ -39,48 +72,119 @@ func (h *Api) OAuth2CallbackOperation(path string) huma.Operation {
 		// },
 	}
 }
-func (h *Api) Oatuh2Callback(ctx context.Context, input *OAuth2CallbackInput) (*AuthenticatedResponse, error) {
-	// provider, err := auth.NewProviderByName(input.Provider, &h.app.Cfg().OAuth)
-	// if err != nil {
-	// 	log.Println(err)
 
-	// 	return nil, fmt.Errorf("Error at Oatuh2Callback: %w", err)
-	// }
+type OAuth2CallbackGetResponse struct {
+	Status int
+	Url    string `header:"Location"`
+	// Body   *shared.AuthenticatedDTO
+}
 
-	// ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
-	// defer cancel()
+func (api *Api) OAuth2CallbackGet(ctx context.Context, input *OAuth2CallbackInput) (*OAuth2CallbackGetResponse, error) {
 
-	// provider.SetContext(ctx)
+	dto, err := OAuth2Callback(ctx, api, input)
+	if err != nil {
+		return nil, err
+	}
+	redirectUrl := dto.RedirectTo
+	uri, err := url.Parse(redirectUrl)
+	if err != nil {
+		return nil, err
+	}
+	q := uri.Query()
+	q.Add(string(shared.RefreshTokenType), dto.Tokens.RefreshToken)
+	uri.RawQuery = q.Encode()
+	fmt.Println(uri.String())
 
-	// var opts []oauth2.AuthCodeOption
-
-	// // fetch token
-	// token, err := provider.FetchToken(input.Code, opts...)
-	// if err != nil {
-	// 	log.Println(err)
-	// 	return nil, fmt.Errorf("Error at Oatuh2Callback: %w", err)
-	// }
-
-	// authUser, err := provider.FetchAuthUser(token)
-	// if err != nil {
-	// 	log.Println(err)
-	// 	return nil, fmt.Errorf("Error at Oatuh2Callback: %w", err)
-	// }
-
-	// params := &core.NewUserParams{
-	// 	Email:             authUser.Email,
-	// 	Name:              &authUser.Username,
-	// 	EmailVerifiedAt:   &authUser.Expiry,
-	// 	Provider:          input.Provider,
-	// 	Key:               authUser.RefreshToken,
-	// 	Type:              db.AuthProviderTypesOauth,
-	// 	ProviderAccountID: authUser.Id,
-	// }
-
-	// user, err := h.app.Signup(ctx, params)
-	// if err != nil {
-	// 	return nil, fmt.Errorf("Error at Oatuh2Callback: %w", err)
-	// }
+	return &OAuth2CallbackGetResponse{
+		Status: http.StatusTemporaryRedirect,
+		Url:    uri.String(),
+		// RefreshToken: dto.Tokens.RefreshToken,
+	}, nil
+	// return &OAuth2CallbackResponse{
+	// 	Body: dto,
+	// }, nil
 	// return TokenDtoFromUserWithApp(ctx, h.app, user, uuid.NewString())
-	return nil, nil
+}
+
+type CallbackOutput struct {
+	shared.AuthenticatedDTO
+	RedirectTo string `json:"redirect_to"`
+}
+
+func OAuth2Callback(ctx context.Context, api *Api, input *OAuth2CallbackInput) (*CallbackOutput, error) {
+	authOpts := api.app.Settings().Auth
+	db := api.app.Db()
+	parsedState, err := core.ParseProviderStateToken(input.State, authOpts.StateToken)
+	if err != nil {
+		return nil, err
+	}
+	if parsedState == nil {
+		return nil, fmt.Errorf("token not found")
+	}
+	if parsedState.Type != shared.StateTokenType {
+		return nil, fmt.Errorf("invalid token type. want verification_token, got  %v", parsedState.Type)
+	}
+	var provider core.ProviderConfig
+	switch parsedState.Provider {
+	case shared.ProvidersGithub:
+		provider = &authOpts.OAuth2Config.Github
+	case shared.ProvidersGoogle:
+		provider = &authOpts.OAuth2Config.Google
+	default:
+		return nil, fmt.Errorf("invalid provider %v", parsedState.Provider)
+	}
+	if provider == nil {
+		return nil, fmt.Errorf("invalid provider %v", parsedState.Provider)
+	}
+	if !provider.Active() {
+		return nil, fmt.Errorf("provider %v is not enabled", parsedState.Provider)
+	}
+	var redirectUrl string
+	if parsedState.RedirectTo != "" {
+		redirectUrl = parsedState.RedirectTo
+	} else {
+		redirectUrl = api.app.Settings().Meta.AppURL
+	}
+	var opts []oauth2.AuthCodeOption
+
+	if provider.Pkce() {
+		opts = append(opts, oauth2.SetAuthURLParam("code_verifier", parsedState.CodeVerifier))
+	}
+
+	// fetch token
+	token, err := provider.FetchToken(ctx, input.Code, opts...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch OAuth2 token. %w", err)
+	}
+
+	// fetch external auth user
+	authUser, err := provider.FetchAuthUser(ctx, token)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch OAuth2 user. %w", err)
+	}
+	utils.PrettyPrintJSON(authUser)
+	params := &shared.AuthenticateUserParams{
+		AvatarUrl:         &authUser.AvatarURL,
+		Email:             authUser.Email,
+		Name:              &authUser.Username,
+		EmailVerifiedAt:   &authUser.Expiry,
+		Provider:          models.Providers(parsedState.Provider),
+		Type:              models.ProviderTypesOauth,
+		ProviderAccountID: authUser.Id,
+		AccessToken:       &authUser.AccessToken,
+		RefreshToken:      &authUser.RefreshToken,
+	}
+	user, err := api.app.AuthenticateUser(ctx, db, params, true)
+	if err != nil {
+		return nil, fmt.Errorf("error at Oatuh2Callback: %w", err)
+
+	}
+	dto, err := api.app.CreateAuthDto(ctx, user.User.Email)
+	if err != nil || dto == nil {
+		return nil, fmt.Errorf("error creating auth dto: %w", err)
+	}
+	return &CallbackOutput{
+		AuthenticatedDTO: *dto,
+		RedirectTo:       redirectUrl,
+	}, nil
 }

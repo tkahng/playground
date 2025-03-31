@@ -48,7 +48,7 @@ func (app *BaseApp) SendVerificationEmail(ctx context.Context, db bob.DB, user *
 	return nil
 }
 
-func createVerificationMailParams(tokenHash string, payload *OtpPayload, config *Settings) (*mailer.Message, error) {
+func createVerificationMailParams(tokenHash string, payload *OtpPayload, config *AppOptions) (*mailer.Message, error) {
 	path, err := mailer.GetPath("/api/auth/confirm-verification", &mailer.EmailParams{
 		Token:      tokenHash,
 		Type:       string(shared.VerificationTokenType),
@@ -72,30 +72,3 @@ func createVerificationMailParams(tokenHash string, payload *OtpPayload, config 
 	}
 	return mailParams, err
 }
-
-// func SwitchTokenType(ctx context.Context, db bob.DB, tokenType shared.TokenType, token string) error {
-// 	switch tokenType {
-// 	case shared.VerificationTokenType:
-// 		_, err := VerifyAndUseVerificationToken(ctx, db, token, TokenConfig{})
-// 		if err != nil {
-// 			return fmt.Errorf("error verifying verification token: %w", err)
-// 		}
-// 	case shared.AuthenticationTokenType:
-// 		_, err := VerifyAuthenticationToken(token, TokenConfig{})
-// 		if err != nil {
-// 			return fmt.Errorf("error verifying authentication token: %w", err)
-// 		}
-// 	case shared.RefreshTokenType:
-// 		_, err := VerifyRefreshToken(ctx, db, token, TokenConfig{})
-// 		if err != nil {
-// 			return fmt.Errorf("error verifying refresh token: %w", err)
-// 		}
-// 	}
-// 	return nil
-// }
-// {
-// 	"From": "support@example.com",
-// 	"To": "tkahng+01@gmail.com",
-// 	"Subject": "Acme - Verify your email address",
-// 	"Body": "\u003ch2\u003eConfirm your email\u003c/h2\u003e\n\n\u003cp\u003eFollow this link to confirm your email:\u003c/p\u003e\n\u003cp\u003e\u003ca href=\"http://localhost:8080/api/auth/confirm-?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDM0MDEzNjksInR5cGUiOiJ2ZXJpZmljYXRpb25fdG9rZW4iLCJ1c2VyX2lkIjoiZTFiZTI1NTYtZDIzNS00ODIxLThiMWEtN2UxYjc4MDdhODlkIiwiZW1haWwiOiJ0a2FobmcrMDFAZ21haWwuY29tIiwidG9rZW4iOiJlMDljNWE5OC1lNTZkLTQ2M2ItODBlOS05YzAxNmQ1YjFjMmEiLCJvdHAiOiIxNTc0MTkiLCJyZWRpcmVjdF90byI6Imh0dHA6Ly9sb2NhbGhvc3Q6ODA4MCJ9.UVanKM0McUD8fcBdMp3zWujy3jLDIohqtNtBXijUdsw\u0026amp;type=verification_token\u0026amp;redirect_to=http://localhost:8080\"\u003eConfirm your email address\u003c/a\u003e\u003c/p\u003e\n\u003cp\u003eAlternatively, enter the code: 157419\u003c/p\u003e\n"
-//   }

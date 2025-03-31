@@ -18,14 +18,9 @@ type BaseApp struct {
 	tokenVerifier         *TokenVerifier
 	cfg                   *conf.EnvConfig
 	db                    bob.DB
-	settings              *Settings
+	settings              *AppOptions
 	onAfterRequestHandle  *hook.Hook[*BaseEvent]
 	onBeforeRequestHandle *hook.Hook[*BaseEvent]
-}
-
-// SetSettings implements App.
-func (a *BaseApp) SetSettings(settings *Settings) {
-	a.settings = settings
 }
 
 // TokenVerifier implements App.
@@ -39,7 +34,7 @@ func (app *BaseApp) TokenStorage() *TokenStorage {
 }
 
 // Settings implements App.
-func (a *BaseApp) Settings() *Settings {
+func (a *BaseApp) Settings() *AppOptions {
 	return a.settings
 }
 
@@ -65,19 +60,18 @@ func (app *BaseApp) InitHooks() {
 
 func InitBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 	db := NewBobFromConf(ctx, cfg.Db)
-	authOpt, err := GetOrSetEncryptedAppOptions(ctx, db, cfg.EncryptionKey)
-	if err != nil {
-		panic(err)
-	}
-	app := NewBaseApp(db, cfg, authOpt)
+	app := NewBaseApp(db, cfg)
 	app.Bootstrap()
 	return app
 }
 
-func NewBaseApp(db bob.DB, cfg conf.EnvConfig, authOpt *Settings) *BaseApp {
+func NewBaseApp(db bob.DB, cfg conf.EnvConfig) *BaseApp {
+	oauth := OAuth2ConfigFromEnv(cfg)
+	settings := NewDefaultSettings()
+	settings.Auth.OAuth2Config = oauth
 	return &BaseApp{
 		db:       db,
-		settings: authOpt,
+		settings: settings,
 		cfg:      &cfg,
 	}
 }
