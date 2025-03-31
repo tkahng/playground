@@ -37,6 +37,7 @@ require (
 	github.com/joho/godotenv v1.5.1
 	github.com/resend/resend-go/v2 v2.17.0
 	github.com/spf13/cast v1.7.1 // indirect
+	github.com/stripe/stripe-go/v81 v81.4.0
 	github.com/wneessen/go-mail v0.6.2
 	golang.org/x/crypto v0.36.0 // indirect
 	golang.org/x/sync v0.12.0 // indirect
