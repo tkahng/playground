@@ -4,6 +4,8 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/aarondl/opt/omit"
+	"github.com/aarondl/opt/omitnull"
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/db/models"
@@ -18,7 +20,7 @@ func (api *Api) AdminPermissionsOperation(path string) huma.Operation {
 		Path:        path,
 		Summary:     "Admin permissions",
 		Description: "List of permissions",
-		Tags:        []string{"Auth", "Admin"},
+		Tags:        []string{"Admin", "Permissions"},
 		Errors:      []int{http.StatusNotFound},
 		Security: []map[string][]string{
 			{shared.BearerAuthSecurityKey: {}},
@@ -60,7 +62,7 @@ func (api *Api) AdminPermissionsCreateOperation(path string) huma.Operation {
 		Path:        path,
 		Summary:     "Create permission",
 		Description: "Create permission",
-		Tags:        []string{"Auth", "Admin"},
+		Tags:        []string{"Admin", "Permissions"},
 		Errors:      []int{http.StatusNotFound},
 		Security: []map[string][]string{
 			{shared.BearerAuthSecurityKey: {}},
@@ -107,7 +109,7 @@ func (api *Api) AdminPermissionsDeleteOperation(path string) huma.Operation {
 		Path:        path,
 		Summary:     "Delete permission",
 		Description: "Delete permission",
-		Tags:        []string{"Auth", "Admin"},
+		Tags:        []string{"Admin", "Permissions"},
 		Errors:      []int{http.StatusNotFound},
 		Security: []map[string][]string{
 			{shared.BearerAuthSecurityKey: {}},
@@ -136,4 +138,54 @@ func (api *Api) AdminPermissionsDelete(ctx context.Context, input *struct {
 		return nil, err
 	}
 	return nil, nil
+}
+
+func (api *Api) AdminPermissionsUpdateOperation(path string) huma.Operation {
+	return huma.Operation{
+		OperationID: "admin-permissions-update",
+		Method:      http.MethodPut,
+		Path:        path,
+		Summary:     "Update permission",
+		Description: "Update permission",
+		Tags:        []string{"Admin", "Permissions"},
+		Errors:      []int{http.StatusNotFound},
+		Security: []map[string][]string{
+			{shared.BearerAuthSecurityKey: {}},
+		},
+	}
+}
+
+func (api *Api) AdminPermissionsUpdate(ctx context.Context, input *struct {
+	ID          string `path:"id"`
+	Body        models.Permission
+	Description *string `json:"description,omitempty"`
+}) (*struct {
+	Body models.Permission
+}, error) {
+	db := api.app.Db()
+	id, err := uuid.Parse(input.ID)
+	if err != nil {
+		return nil, err
+	}
+	permission, err := repository.FindPermissionById(ctx, db, id)
+	if err != nil {
+		return nil, err
+	}
+	if permission == nil {
+		return nil, huma.Error404NotFound("Permission not found")
+	}
+	err = permission.Update(
+		ctx,
+		db,
+		&models.PermissionSetter{
+			Name:        omit.From(input.Body.Name),
+			Description: omitnull.FromPtr(input.Description),
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &struct{ Body models.Permission }{
+		Body: *permission,
+	}, nil
 }
