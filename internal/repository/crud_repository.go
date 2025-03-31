@@ -4,49 +4,10 @@ import (
 	"context"
 
 	"github.com/stephenafamo/bob"
-	"github.com/stephenafamo/bob/dialect/psql"
+
 	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/shared"
 )
-
-func ListUserFilterFunc(ctx context.Context, q *psql.ViewQuery[*models.User, models.UserSlice], filter shared.UserListFilter) {
-	if len(string(filter.Provider)) > 0 {
-		q.Apply(
-			models.SelectJoins.Users.InnerJoin.UserAccounts(ctx),
-			models.SelectWhere.UserAccounts.Provider.EQ(filter.Provider),
-			// models.SelectWhere.UserAccounts.Provider.EQ(filter.Provider.MustGet()),
-
-		)
-	}
-}
-
-// ListUsers implements AdminCrudActions.
-func ListUsers(ctx context.Context, db bob.DB, input *shared.UserListParams) ([]*models.User, error) {
-
-	q := models.Users.Query()
-	filter := input.UserListFilter
-	pageInput := &input.PaginatedInput
-
-	ViewApplyPagination(q, pageInput)
-
-	ListUserFilterFunc(ctx, q, filter)
-	data, err := q.All(ctx, db)
-	if err != nil {
-		return nil, err
-	}
-	return data, nil
-}
-
-// CountUsers implements AdminCrudActions.
-func CountUsers(ctx context.Context, db bob.DB, filter shared.UserListFilter) (int64, error) {
-	q := models.Users.Query()
-	ListUserFilterFunc(ctx, q, filter)
-	data, err := q.Count(ctx, db)
-	if err != nil {
-		return 0, err
-	}
-	return data, nil
-}
 
 // ListUserAccounts implements AdminCrudActions.
 func ListUserAccounts(ctx context.Context, db bob.DB, input *shared.PaginatedInput) ([]*models.UserAccount, error) {

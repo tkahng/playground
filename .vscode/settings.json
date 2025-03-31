@@ -39,7 +39,8 @@
 
   "css.customData": [".vscode/tailwindcss.json"],
   "[sql]": {
-    "editor.formatOnSave": true
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "mtxr.sqltools"
   },
   "[json]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode",

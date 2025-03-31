@@ -2,6 +2,7 @@ package shared
 
 import (
 	"github.com/aarondl/opt/null"
+	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/db/models"
 )
 
@@ -15,6 +16,8 @@ type UserListFilter struct {
 	Provider  models.Providers   `query:"provider,omitempty" required:"false" enum:"google,apple,facebook,github,credentials"`
 	Providers []models.Providers `query:"providers,omitempty" required:"false" uniqueItems:"true" minLength:"1" maxLength:"80" enum:"google,apple,facebook,github,credentials"`
 	Q         string             `query:"q,omitempty" required:"false" default:""`
+	Ids       []uuid.UUID        `query:"ids,omitempty" required:"false"`
+	Emails    []string           `query:"emails,omitempty" required:"false"`
 	// 	Provider  OmitNull[models.Providers]   `query:"provider,omitempty" required:"false" enum:"google,apple,facebook,github,credentials"`
 	// 	Providers OmitNull[[]models.Providers] `query:"providers,omitempty" required:"false" uniqueItems:"true" minLength:"1" maxLength:"80" enum:"google,apple,facebook,github,credentials"`
 	// 	Q         OmitNull[string]             `query:"q,omitempty" required:"false" default:""`
