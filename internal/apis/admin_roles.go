@@ -4,6 +4,8 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/aarondl/opt/omit"
+	"github.com/aarondl/opt/omitnull"
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/db/models"
@@ -18,7 +20,7 @@ func (api *Api) AdminRolesOperation(path string) huma.Operation {
 		Path:        path,
 		Summary:     "Admin roles",
 		Description: "List of roles",
-		Tags:        []string{"Auth", "Admin"},
+		Tags:        []string{"Admin", "Roles"},
 		Errors:      []int{http.StatusNotFound},
 		Security: []map[string][]string{
 			{shared.BearerAuthSecurityKey: {}},
@@ -60,7 +62,7 @@ func (api *Api) AdminRolesCreateOperation(path string) huma.Operation {
 		Path:        path,
 		Summary:     "Create role",
 		Description: "Create role",
-		Tags:        []string{"Auth", "Admin"},
+		Tags:        []string{"Admin", "Roles"},
 		Errors:      []int{http.StatusNotFound},
 		Security: []map[string][]string{
 			{shared.BearerAuthSecurityKey: {}},
@@ -108,7 +110,7 @@ func (api *Api) AdminRolesDeleteOperation(path string) huma.Operation {
 		Path:        path,
 		Summary:     "Delete role",
 		Description: "Delete role",
-		Tags:        []string{"Auth", "Admin"},
+		Tags:        []string{"Admin", "Roles"},
 		Errors:      []int{http.StatusNotFound},
 		Security: []map[string][]string{
 			{shared.BearerAuthSecurityKey: {}},
@@ -136,4 +138,112 @@ func (api *Api) AdminRolesDelete(ctx context.Context, input *struct {
 		return nil, err
 	}
 	return nil, nil
+}
+
+func (api *Api) AdminRolesUpdateOperation(path string) huma.Operation {
+	return huma.Operation{
+		OperationID: "admin-roles-update",
+		Method:      http.MethodPut,
+		Path:        path,
+		Summary:     "Update role",
+		Description: "Update role",
+		Tags:        []string{"Admin", "Roles"},
+		Errors:      []int{http.StatusNotFound},
+		Security: []map[string][]string{
+			{shared.BearerAuthSecurityKey: {}},
+		},
+	}
+}
+
+func (api *Api) AdminRolesUpdate(ctx context.Context, input *struct {
+	RoleID string `path:"id"`
+	Body   RoleCreateInput
+}) (*struct {
+	Body models.Role
+}, error) {
+	db := api.app.Db()
+	id, err := uuid.Parse(input.RoleID)
+	if err != nil {
+		return nil, err
+	}
+	role, err := repository.FindRoleById(ctx, db, id)
+	if err != nil {
+		return nil, err
+	}
+	if role == nil {
+		return nil, huma.Error404NotFound("Role not found")
+	}
+	err = role.Update(
+		ctx,
+		db,
+		&models.RoleSetter{
+			Name:        omit.From(input.Body.Name),
+			Description: omitnull.FromPtr(input.Body.Description),
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &struct{ Body models.Role }{
+		Body: *role,
+	}, nil
+}
+
+func (api *Api) AdminUserRolesUpdateOperation(path string) huma.Operation {
+	return huma.Operation{
+		OperationID: "admin-update-user-roles",
+		Method:      http.MethodPut,
+		Path:        path,
+		Summary:     "Update user roles",
+		Description: "Update user roles",
+		Tags:        []string{"Admin", "Roles"},
+		Errors:      []int{http.StatusNotFound},
+		Security: []map[string][]string{
+			{shared.BearerAuthSecurityKey: {}},
+		},
+	}
+}
+
+type UserRolesUpdateInput struct {
+	RolesIds []string `json:"roles" minimum:"1" maximum:"100" format:"uuid" required:"true"`
+}
+
+func (api *Api) AdminUserRolesUpdate(ctx context.Context, input *struct {
+	UserID string               `path:"id"`
+	Body   UserRolesUpdateInput `json:"roles"`
+}) (*PaginatedOutput[*models.Role], error) {
+	db := api.app.Db()
+	id, err := uuid.Parse(input.UserID)
+	if err != nil {
+		return nil, err
+	}
+	user, err := repository.GetUserById(ctx, db, id)
+	if err != nil {
+		return nil, err
+	}
+	if user == nil {
+		return nil, huma.Error404NotFound("User not found")
+	}
+	roleIds := make([]uuid.UUID, len(input.Body.RolesIds))
+	for i, id := range input.Body.RolesIds {
+		id, err := uuid.Parse(id)
+		if err != nil {
+			return nil, err
+		}
+		roleIds[i] = id
+	}
+	roles, err := repository.FindRolesByIds(ctx, db, roleIds)
+	if err != nil {
+		return nil, err
+	}
+	err = user.AttachRoles(ctx, db, roles...)
+	if err != nil {
+		return nil, err
+	}
+	output := PaginatedOutput[*models.Role]{
+		Body: shared.PaginatedResponse[*models.Role]{
+			Data: roles,
+		},
+	}
+	return &output, nil
 }
