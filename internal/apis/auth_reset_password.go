@@ -6,11 +6,13 @@ import (
 	"net/http"
 
 	"github.com/aarondl/opt/omitnull"
+	"github.com/alexedwards/argon2id"
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/tkahng/authgo/internal/core"
 	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/authgo/internal/tools/security"
 )
 
 type RequestPasswordResetInput struct {
@@ -119,8 +121,14 @@ func (api *Api) ConfirmPasswordReset(ctx context.Context, input *struct{ Body *C
 		return nil, huma.Error404NotFound("No credentials cccount found")
 	}
 
+	hash, err := security.CreateHash(input.Body.Password, argon2id.DefaultParams)
+
+	if err != nil {
+		return nil, fmt.Errorf("error creating hash: %w", err)
+	}
+
 	err = acc.Account.Update(ctx, db, &models.UserAccountSetter{
-		Password: omitnull.From(input.Body.Password),
+		Password: omitnull.From(hash),
 	})
 
 	if err != nil {

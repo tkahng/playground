@@ -32,5 +32,6 @@ func GetUserInfoDTO(ctx context.Context, db bob.DB, email string) (*shared.UserI
 		User:        user,
 		Roles:       roles.Roles,
 		Permissions: roles.Permissions,
+		Providers:   roles.Providers,
 	}, nil
 }

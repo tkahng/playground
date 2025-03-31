@@ -43,14 +43,9 @@ type PaginatedResponse[T any] struct {
 	Meta Meta `json:"meta"`
 }
 type Meta struct {
-	Page int `json:"page"`
-	// From        null.Val[string]    `json:"from"`
-	// LastPage    int     `json:"last_page"`
-	// Links   []Link  `json:"links"`
-	// Path    *string `json:"path"`
+	Page    int `json:"page"`
 	PerPage int `json:"per_page"`
-	// To          *int    `json:"to"`
-	Total int `json:"total"`
+	Total   int `json:"total"`
 }
 
 type Link struct {
