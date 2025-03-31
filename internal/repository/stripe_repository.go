@@ -98,3 +98,54 @@ func UpsertPrice(ctx context.Context, dbx bob.Executor, price *models.StripePric
 	).Exec(ctx, dbx)
 	return err
 }
+
+func UpsertSubscription(ctx context.Context, dbx bob.Executor, subscription *models.StripeSubscriptionSetter) error {
+	_, err := models.StripeSubscriptions.Insert(
+		subscription,
+		im.OnConflict("id").DoUpdate(
+			im.SetCol("user_id").To(
+				psql.Raw("EXCLUDED.user_id"),
+			),
+			im.SetCol("status").To(
+				psql.Raw("EXCLUDED.status"),
+			),
+			im.SetCol("metadata").To(
+				psql.Raw("EXCLUDED.metadata"),
+			),
+			im.SetCol("price_id").To(
+				psql.Raw("EXCLUDED.price_id"),
+			),
+			im.SetCol("quantity").To(
+				psql.Raw("EXCLUDED.quantity"),
+			),
+			im.SetCol("cancel_at_period_end").To(
+				psql.Raw("EXCLUDED.cancel_at_period_end"),
+			),
+			im.SetCol("created").To(
+				psql.Raw("EXCLUDED.created"),
+			),
+			im.SetCol("current_period_start").To(
+				psql.Raw("EXCLUDED.current_period_start"),
+			),
+			im.SetCol("current_period_end").To(
+				psql.Raw("EXCLUDED.current_period_end"),
+			),
+			im.SetCol("ended_at").To(
+				psql.Raw("EXCLUDED.ended_at"),
+			),
+			im.SetCol("cancel_at").To(
+				psql.Raw("EXCLUDED.cancel_at"),
+			),
+			im.SetCol("canceled_at").To(
+				psql.Raw("EXCLUDED.canceled_at"),
+			),
+			im.SetCol("trial_start").To(
+				psql.Raw("EXCLUDED.trial_start"),
+			),
+			im.SetCol("trial_end").To(
+				psql.Raw("EXCLUDED.trial_end"),
+			),
+		),
+	).Exec(ctx, dbx)
+	return err
+}
