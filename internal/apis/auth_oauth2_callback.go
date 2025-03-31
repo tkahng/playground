@@ -4,13 +4,53 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/tkahng/authgo/internal/core"
 	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/authgo/internal/tools/utils"
 	"golang.org/x/oauth2"
 )
+
+func (api *Api) OAuth2CallbackPostOperation(path string) huma.Operation {
+	return huma.Operation{
+		OperationID: "oauth-callback-post",
+		Method:      http.MethodPost,
+		Path:        path,
+		Summary:     "Oauth callback",
+		Description: "Oauth callback",
+		Tags:        []string{"Auth"},
+		Errors:      []int{http.StatusNotFound},
+	}
+}
+
+type OAuth2CallbackPostResponse struct {
+	Body *shared.AuthenticatedDTO
+}
+
+func (api *Api) OAuth2CallbackPost(ctx context.Context, input *OAuth2CallbackInput) (*AuthenticatedResponse, error) {
+
+	dto, err := OAuth2Callback(ctx, api, input)
+	if err != nil {
+		return nil, err
+	}
+	redirectUrl := dto.RedirectTo
+	uri, err := url.Parse(redirectUrl)
+	if err != nil {
+		return nil, err
+	}
+	q := uri.Query()
+	q.Add(string(shared.RefreshTokenType), dto.Tokens.RefreshToken)
+	uri.RawQuery = q.Encode()
+	fmt.Println(uri.String())
+
+	return &AuthenticatedResponse{
+		Body: dto.AuthenticatedDTO,
+	}, nil
+	// return TokenDtoFromUserWithApp(ctx, h.app, user, uuid.NewString())
+}
 
 type OAuth2CallbackInput struct {
 	Code  string `json:"code" query:"code" required:"true" minLength:"1"`
@@ -18,9 +58,9 @@ type OAuth2CallbackInput struct {
 	// Provider db.AuthProviders `json:"provider" path:"provider"`
 }
 
-func (h *Api) OAuth2CallbackOperation(path string) huma.Operation {
+func (h *Api) OAuth2CallbackGetOperation(path string) huma.Operation {
 	return huma.Operation{
-		OperationID: "oauth2-callback",
+		OperationID: "oauth2-callback-get",
 		Method:      http.MethodGet,
 		Path:        path,
 		Summary:     "OAuth2 callback",
@@ -33,13 +73,45 @@ func (h *Api) OAuth2CallbackOperation(path string) huma.Operation {
 	}
 }
 
-type OAuth2CallbackResponse struct {
-	Status       int
-	Url          string `header:"Location"`
-	RefreshToken string `query:"refresh_token"`
+type OAuth2CallbackGetResponse struct {
+	Status int
+	Url    string `header:"Location"`
+	// Body   *shared.AuthenticatedDTO
 }
 
-func (api *Api) Oatuh2Callback(ctx context.Context, input *OAuth2CallbackInput) (*OAuth2CallbackResponse, error) {
+func (api *Api) OAuth2CallbackGet(ctx context.Context, input *OAuth2CallbackInput) (*OAuth2CallbackGetResponse, error) {
+
+	dto, err := OAuth2Callback(ctx, api, input)
+	if err != nil {
+		return nil, err
+	}
+	redirectUrl := dto.RedirectTo
+	uri, err := url.Parse(redirectUrl)
+	if err != nil {
+		return nil, err
+	}
+	q := uri.Query()
+	q.Add(string(shared.RefreshTokenType), dto.Tokens.RefreshToken)
+	uri.RawQuery = q.Encode()
+	fmt.Println(uri.String())
+
+	return &OAuth2CallbackGetResponse{
+		Status: http.StatusTemporaryRedirect,
+		Url:    uri.String(),
+		// RefreshToken: dto.Tokens.RefreshToken,
+	}, nil
+	// return &OAuth2CallbackResponse{
+	// 	Body: dto,
+	// }, nil
+	// return TokenDtoFromUserWithApp(ctx, h.app, user, uuid.NewString())
+}
+
+type CallbackOutput struct {
+	shared.AuthenticatedDTO
+	RedirectTo string `json:"redirect_to"`
+}
+
+func OAuth2Callback(ctx context.Context, api *Api, input *OAuth2CallbackInput) (*CallbackOutput, error) {
 	authOpts := api.app.Settings().Auth
 	db := api.app.Db()
 	parsedState, err := core.ParseProviderStateToken(input.State, authOpts.StateToken)
@@ -90,7 +162,7 @@ func (api *Api) Oatuh2Callback(ctx context.Context, input *OAuth2CallbackInput) 
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch OAuth2 user. %w", err)
 	}
-
+	utils.PrettyPrintJSON(authUser)
 	params := &shared.AuthenticateUserParams{
 		AvatarUrl:         &authUser.AvatarURL,
 		Email:             authUser.Email,
@@ -108,13 +180,11 @@ func (api *Api) Oatuh2Callback(ctx context.Context, input *OAuth2CallbackInput) 
 
 	}
 	dto, err := api.app.CreateAuthDto(ctx, user.User.Email)
-	if err != nil {
+	if err != nil || dto == nil {
 		return nil, fmt.Errorf("error creating auth dto: %w", err)
 	}
-	return &OAuth2CallbackResponse{
-		Status:       http.StatusTemporaryRedirect,
-		Url:          redirectUrl,
-		RefreshToken: dto.Tokens.RefreshToken,
+	return &CallbackOutput{
+		AuthenticatedDTO: *dto,
+		RedirectTo:       redirectUrl,
 	}, nil
-	// return TokenDtoFromUserWithApp(ctx, h.app, user, uuid.NewString())
 }

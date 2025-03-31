@@ -379,7 +379,7 @@ func ParseProviderStateToken(token string, config TokenOption) (*ProviderStateCl
 	if err != nil {
 		return nil, fmt.Errorf("error while parsing token string: %w", err)
 	}
-	if !CheckTokenType(claims, shared.PasswordResetTokenType) {
+	if !CheckTokenType(claims, shared.StateTokenType) {
 		return nil, fmt.Errorf("invalid token. want provider_state, got %v", claims)
 	}
 	var structData ProviderStateClaims

@@ -25,8 +25,8 @@ func (h *Api) OAuth2AuthorizationUrlOperation(path string) huma.Operation {
 }
 
 type OAuth2AuthorizationUrlInput struct {
-	Provider   shared.OAuthProviders `json:"provider" path:"provider" query:"provider" form:"provider" enum:"google,github" required:"true"`
-	RedirectTo string                `json:"redirect_to" path:"redirect_to" query:"redirect_to" form:"redirect_to" format:"uri" required:"false"`
+	Provider   shared.OAuthProviders `json:"provider"  query:"provider" form:"provider" enum:"google,github" required:"true"`
+	RedirectTo string                `json:"redirect_to" query:"redirect_to" form:"redirect_to" format:"uri" required:"false"`
 }
 
 type OAuth2AuthorizationUrlOutput struct {

@@ -21,30 +21,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/admin/settings": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * App settings
-         * @description App settings
-         */
-        get: operations["app-settings-get"];
-        put?: never;
-        /**
-         * Update App settings
-         * @description Update App settings
-         */
-        post: operations["app-settings-post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/admin/users": {
         parameters: {
             query?: never;
@@ -137,6 +113,26 @@ export interface paths {
          * @description Oauth callback
          */
         get: operations["oauth-callback-get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/oauth/url": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * OAuth2 authorization
+         * @description url for oauth2 authorization
+         */
+        get: operations["oauth2-authorization-url"];
         put?: never;
         post?: never;
         delete?: never;
@@ -249,20 +245,14 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        AuthOptions: {
-            access_token: components["schemas"]["TokenConfig"];
-            oauth2: components["schemas"]["OAuth2Config"];
-            password_reset_token: components["schemas"]["TokenConfig"];
-            refresh_token: components["schemas"]["TokenConfig"];
-            state_token: components["schemas"]["TokenConfig"];
-            verification_token: components["schemas"]["TokenConfig"];
-        };
         AuthenticatedDTO: {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
              */
             readonly $schema?: string;
+            permissions: string[] | null;
+            roles: string[] | null;
             tokens: components["schemas"]["TokenDto"];
             user: components["schemas"]["User"];
         };
@@ -321,37 +311,13 @@ export interface components {
             readonly $schema?: string;
             access: string;
         };
-        MetaConfig: {
-            /** @default AuthGo */
-            app_name: string;
-            /** @default http://localhost:8080 */
-            app_url: string;
-            sender_address: string;
-            sender_name: string;
-        };
-        OAuth2Config: {
-            enabled: boolean;
-            mapped_fields: components["schemas"]["OAuth2KnownFields"];
-            providers: components["schemas"]["OAuth2ProviderConfig"][] | null;
-        };
-        OAuth2KnownFields: {
-            avatarURL: string;
-            id: string;
-            name: string;
-            username: string;
-        };
-        OAuth2ProviderConfig: {
-            auth_url: string;
-            client_id: string;
-            client_secret: string;
-            display_name: string;
-            extra: {
-                [key: string]: unknown;
-            };
-            name: string;
-            pkce: boolean | null;
-            token_url: string;
-            user_info_url: string;
+        OAuth2AuthorizationUrlOutputBody: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            url: string;
         };
         RefreshTokenInput: {
             /**
@@ -368,36 +334,6 @@ export interface components {
              */
             readonly $schema?: string;
             email: string;
-        };
-        S3Config: {
-            access_key: string;
-            bucket: string;
-            enabled: boolean;
-            endpoint: string;
-            forcePathStyle: boolean;
-            region: string;
-            secret?: string;
-        };
-        SMTPConfig: {
-            /** @default false */
-            enabled: boolean;
-            host: string;
-            password?: string;
-            /** Format: int64 */
-            port: number;
-            tls: boolean;
-            username: string;
-        };
-        Settings: {
-            /**
-             * Format: uri
-             * @description A URL to the JSON Schema for this object.
-             */
-            readonly $schema?: string;
-            auth: components["schemas"]["AuthOptions"];
-            meta: components["schemas"]["MetaConfig"];
-            s3: components["schemas"]["S3Config"];
-            smtp: components["schemas"]["SMTPConfig"];
         };
         SigninDto: {
             /**
@@ -419,11 +355,6 @@ export interface components {
             email: string;
             name: string | null;
             password: string;
-        };
-        TokenConfig: {
-            /** Format: int64 */
-            duration: number;
-            secret?: string;
         };
         TokenDto: {
             access_token: string;
@@ -476,66 +407,6 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["IndexOutputBody"];
                 };
-            };
-            /** @description Error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-        };
-    };
-    "app-settings-get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Settings"];
-                };
-            };
-            /** @description Error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-        };
-    };
-    "app-settings-post": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["Settings"];
-            };
-        };
-        responses: {
-            /** @description No Content */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
             };
             /** @description Error */
             default: {
@@ -764,6 +635,56 @@ export interface operations {
             };
             /** @description Not Found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "oauth2-authorization-url": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                provider: "google" | "github";
+                redirect_to: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OAuth2AuthorizationUrlOutputBody"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };

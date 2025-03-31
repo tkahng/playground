@@ -7,6 +7,7 @@ import (
 
 	"github.com/alexedwards/argon2id"
 	"github.com/stephenafamo/bob"
+	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/security"
@@ -102,7 +103,7 @@ func (app *BaseApp) AuthenticateUser(ctx context.Context, db bob.DB, params *sha
 	}
 	// if user exists and account exists, check if password is correct  or check if provider key is correct ----------------------------------------------------------------------------------------------------
 	if result.Account != nil {
-		if params.Type == "credentials" {
+		if params.Type == models.ProviderTypesCredentials {
 			if params.Password == nil || result.Account.Password.IsNull() {
 				return nil, ErrBadRequest
 			}
@@ -113,7 +114,7 @@ func (app *BaseApp) AuthenticateUser(ctx context.Context, db bob.DB, params *sha
 			} else {
 				return result, nil
 			}
-		} else if params.Type == "provider" {
+		} else if params.Type == models.ProviderTypesOauth {
 			if result.Account.ProviderAccountID == params.ProviderAccountID {
 				return result, nil
 			}
