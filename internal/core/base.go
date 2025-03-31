@@ -7,20 +7,19 @@ import (
 	"github.com/tkahng/authgo/internal/conf"
 	"github.com/tkahng/authgo/internal/repository"
 
-	"github.com/tkahng/authgo/internal/tools/hook"
 	"github.com/tkahng/authgo/internal/tools/mailer"
 )
 
 var _ App = (*BaseApp)(nil)
 
 type BaseApp struct {
-	tokenStorage          *TokenStorage
-	tokenVerifier         *TokenVerifier
-	cfg                   *conf.EnvConfig
-	db                    bob.DB
-	settings              *AppOptions
-	onAfterRequestHandle  *hook.Hook[*BaseEvent]
-	onBeforeRequestHandle *hook.Hook[*BaseEvent]
+	tokenStorage  *TokenStorage
+	tokenVerifier *TokenVerifier
+	cfg           *conf.EnvConfig
+	db            bob.DB
+	settings      *AppOptions
+	// onAfterRequestHandle  *hook.Hook[*BaseEvent]
+	// onBeforeRequestHandle *hook.Hook[*BaseEvent]
 }
 
 // TokenVerifier implements App.
@@ -53,10 +52,10 @@ func (app *BaseApp) NewMailClient() mailer.Mailer {
 }
 
 // InitHooks implements App.
-func (app *BaseApp) InitHooks() {
-	app.onAfterRequestHandle = &hook.Hook[*BaseEvent]{}
-	app.onBeforeRequestHandle = &hook.Hook[*BaseEvent]{}
-}
+// func (app *BaseApp) InitHooks() {
+// 	app.onAfterRequestHandle = &hook.Hook[*BaseEvent]{}
+// 	app.onBeforeRequestHandle = &hook.Hook[*BaseEvent]{}
+// }
 
 func InitBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 	db := NewBobFromConf(ctx, cfg.Db)
@@ -80,15 +79,15 @@ func (app *BaseApp) Db() bob.DB {
 	return app.db
 }
 
-// OnAfterRequestHandle implements App.
-func (app *BaseApp) OnAfterRequestHandle(tags ...string) *hook.TaggedHook[*BaseEvent] {
-	return hook.NewTaggedHook(app.onAfterRequestHandle, tags...)
-}
+// // OnAfterRequestHandle implements App.
+// func (app *BaseApp) OnAfterRequestHandle(tags ...string) *hook.TaggedHook[*BaseEvent] {
+// 	return hook.NewTaggedHook(app.onAfterRequestHandle, tags...)
+// }
 
-// OnBeforeRequestHandle implements App.
-func (app *BaseApp) OnBeforeRequestHandle(tags ...string) *hook.TaggedHook[*BaseEvent] {
-	return hook.NewTaggedHook(app.onBeforeRequestHandle, tags...)
-}
+// // OnBeforeRequestHandle implements App.
+// func (app *BaseApp) OnBeforeRequestHandle(tags ...string) *hook.TaggedHook[*BaseEvent] {
+// 	return hook.NewTaggedHook(app.onBeforeRequestHandle, tags...)
+// }
 
 func (app *BaseApp) Bootstrap() {
 	ctx := context.Background()
