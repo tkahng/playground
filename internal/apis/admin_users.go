@@ -159,3 +159,29 @@ func (api *Api) AdminUsersCreate(ctx context.Context, input *struct {
 	return &struct{ Body models.User }{Body: *user}, nil
 
 }
+
+func (api *Api) AdminUsersDeleteOperation(path string) huma.Operation {
+	return huma.Operation{
+		OperationID: "admin-users-delete",
+		Method:      http.MethodDelete,
+		Path:        path,
+		Summary:     "Delete user",
+		Description: "Delete user",
+		Tags:        []string{"Auth", "Admin", "Users"},
+		Errors:      []int{http.StatusNotFound},
+		Security: []map[string][]string{
+			{shared.BearerAuthSecurityKey: {}},
+		},
+	}
+}
+
+func (api *Api) AdminUsersDelete(ctx context.Context, input *struct {
+	ID uuid.UUID `path:"id"`
+}) (*struct{}, error) {
+	db := api.app.Db()
+	err := repository.DeleteUsers(ctx, db, input.ID)
+	if err != nil {
+		return nil, err
+	}
+	return nil, nil
+}

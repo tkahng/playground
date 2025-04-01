@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 
 	"github.com/google/uuid"
 	"github.com/stephenafamo/bob"
@@ -91,4 +92,16 @@ func CountUsers(ctx context.Context, db bob.DB, filter *shared.UserListFilter) (
 		return 0, err
 	}
 	return data, nil
+}
+
+// delete users
+func DeleteUsers(ctx context.Context, db bob.DB, userId uuid.UUID) error {
+	user, err := models.FindUser(ctx, db, userId)
+	if err != nil {
+		return err
+	}
+	if user == nil {
+		return errors.New("user not found")
+	}
+	return user.Delete(ctx, db)
 }
