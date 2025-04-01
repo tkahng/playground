@@ -2,11 +2,13 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/aarondl/opt/omit"
 	"github.com/aarondl/opt/omitnull"
+	"github.com/alexedwards/argon2id"
 	"github.com/google/uuid"
 	"github.com/lib/pq"
 	"github.com/stephenafamo/bob"
@@ -16,6 +18,7 @@ import (
 	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/dataloader"
+	"github.com/tkahng/authgo/internal/tools/security"
 )
 
 type RolesMap map[string]*models.Role
@@ -255,4 +258,30 @@ func GetAdminUserCount(ctx context.Context, db bob.Executor) (int64, error) {
 		// user, err := CreateUser()
 	}
 	return usecount, nil
+}
+
+func UpdateUserPassword(ctx context.Context, db bob.Executor, userId uuid.UUID, password string) error {
+	user, err := models.FindUser(ctx, db, userId)
+	if err != nil {
+		return err
+	}
+	if user == nil {
+		return errors.New("user not found")
+	}
+	account, err := user.UserAccounts(
+		models.SelectWhere.UserAccounts.Provider.EQ(models.ProvidersCredentials),
+	).One(ctx, db)
+	if err != nil {
+		return err
+	}
+	if account == nil {
+		return errors.New("user ProvidersCredentials account not found")
+	}
+	hash, err := security.CreateHash(password, argon2id.DefaultParams)
+	if err != nil {
+		return err
+	}
+	return account.Update(ctx, db, &models.UserAccountSetter{
+		Password: omitnull.From(hash),
+	})
 }
