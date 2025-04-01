@@ -3,7 +3,10 @@ package repository
 import (
 	"context"
 	"errors"
+	"time"
 
+	"github.com/aarondl/opt/omit"
+	"github.com/aarondl/opt/omitnull"
 	"github.com/google/uuid"
 	"github.com/stephenafamo/bob"
 	"github.com/stephenafamo/bob/dialect/psql"
@@ -104,4 +107,28 @@ func DeleteUsers(ctx context.Context, db bob.DB, userId uuid.UUID) error {
 		return errors.New("user not found")
 	}
 	return user.Delete(ctx, db)
+}
+
+type UpdateUserInput struct {
+	Email           string
+	Name            *string
+	AvatarUrl       *string
+	EmailVerifiedAt *time.Time
+}
+
+// update users by id
+func UpdateUser(ctx context.Context, db bob.DB, userId uuid.UUID, input *UpdateUserInput) error {
+	user, err := models.FindUser(ctx, db, userId)
+	if err != nil {
+		return err
+	}
+	if user == nil {
+		return errors.New("user not found")
+	}
+	return user.Update(ctx, db, &models.UserSetter{
+		Email:           omit.From(input.Email),
+		Name:            omitnull.FromPtr(input.Name),
+		Image:           omitnull.FromPtr(input.AvatarUrl),
+		EmailVerifiedAt: omitnull.FromPtr(input.EmailVerifiedAt),
+	})
 }
