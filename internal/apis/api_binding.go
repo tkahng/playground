@@ -93,18 +93,31 @@ func BindApis(api huma.API, app core.App) {
 	huma.Register(api, appApi.OAuth2CallbackPostOperation("/auth/callback"), appApi.OAuth2CallbackPost)
 	huma.Register(api, appApi.OAuth2AuthorizationUrlOperation("/auth/authorization-url"), appApi.OAuth2AuthorizationUrl)
 
+	//  admin routes
 	adminGroup := huma.NewGroup(api, "/admin")
+	//  admin middleware
 	adminGroup.UseMiddleware(CheckRolesMiddleware(api, "superuser"))
+	//  admin user list
 	huma.Register(adminGroup, appApi.AdminUsersOperation("/users"), appApi.AdminUsers)
+	//  admin user create
 	huma.Register(adminGroup, appApi.AdminUsersCreateOperation("/users"), appApi.AdminUsersCreate)
+	//  admin user update roles
 	huma.Register(adminGroup, appApi.AdminUserRolesUpdateOperation("/users/{id}/roles"), appApi.AdminUserRolesUpdate)
+	// admin roles
 	huma.Register(adminGroup, appApi.AdminRolesOperation("/roles"), appApi.AdminRoles)
+	// admin roles create
 	huma.Register(adminGroup, appApi.AdminRolesCreateOperation("/roles"), appApi.AdminRolesCreate)
+	// admin roles update
 	huma.Register(adminGroup, appApi.AdminRolesUpdateOperation("/roles/{id}"), appApi.AdminRolesUpdate)
+	// admin roles delete
 	huma.Register(adminGroup, appApi.AdminRolesDeleteOperation("/roles/{id}"), appApi.AdminRolesDelete)
+	// admin permissions list
 	huma.Register(adminGroup, appApi.AdminPermissionsOperation("/permissions"), appApi.AdminPermissions)
+	// admin permissions create
 	huma.Register(adminGroup, appApi.AdminPermissionsCreateOperation("/permissions"), appApi.AdminPermissionsCreate)
+	// admin permissions update
 	huma.Register(adminGroup, appApi.AdminPermissionsUpdateOperation("/permissions/{id}"), appApi.AdminPermissionsUpdate)
+	// admin permissions delete
 	huma.Register(adminGroup, appApi.AdminPermissionsDeleteOperation("/permissions/{id}"), appApi.AdminPermissionsDelete)
 
 }
