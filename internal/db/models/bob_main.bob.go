@@ -23,6 +23,7 @@ var TableNames = struct {
 	StripePrices        string
 	StripeProducts      string
 	StripeSubscriptions string
+	StripeWebhookEvents string
 	Tokens              string
 	UserAccounts        string
 	UserPermissions     string
@@ -39,6 +40,7 @@ var TableNames = struct {
 	StripePrices:        "stripe_prices",
 	StripeProducts:      "stripe_products",
 	StripeSubscriptions: "stripe_subscriptions",
+	StripeWebhookEvents: "stripe_webhook_events",
 	Tokens:              "tokens",
 	UserAccounts:        "user_accounts",
 	UserPermissions:     "user_permissions",
@@ -57,6 +59,7 @@ var ColumnNames = struct {
 	StripePrices        stripePriceColumnNames
 	StripeProducts      stripeProductColumnNames
 	StripeSubscriptions stripeSubscriptionColumnNames
+	StripeWebhookEvents stripeWebhookEventColumnNames
 	Tokens              tokenColumnNames
 	UserAccounts        userAccountColumnNames
 	UserPermissions     userPermissionColumnNames
@@ -145,6 +148,17 @@ var ColumnNames = struct {
 		CreatedAt:          "created_at",
 		UpdatedAt:          "updated_at",
 	},
+	StripeWebhookEvents: stripeWebhookEventColumnNames{
+		ID:                "id",
+		StripeID:          "stripe_id",
+		Type:              "type",
+		ObjectType:        "object_type",
+		ObjectStripeID:    "object_stripe_id",
+		EventCreationDate: "event_creation_date",
+		RequestID:         "request_id",
+		CreatedAt:         "created_at",
+		UpdatedAt:         "updated_at",
+	},
 	Tokens: tokenColumnNames{
 		ID:         "id",
 		Type:       "type",
@@ -217,6 +231,7 @@ func Where[Q psql.Filterable]() struct {
 	StripePrices        stripePriceWhere[Q]
 	StripeProducts      stripeProductWhere[Q]
 	StripeSubscriptions stripeSubscriptionWhere[Q]
+	StripeWebhookEvents stripeWebhookEventWhere[Q]
 	Tokens              tokenWhere[Q]
 	UserAccounts        userAccountWhere[Q]
 	UserPermissions     userPermissionWhere[Q]
@@ -234,6 +249,7 @@ func Where[Q psql.Filterable]() struct {
 		StripePrices        stripePriceWhere[Q]
 		StripeProducts      stripeProductWhere[Q]
 		StripeSubscriptions stripeSubscriptionWhere[Q]
+		StripeWebhookEvents stripeWebhookEventWhere[Q]
 		Tokens              tokenWhere[Q]
 		UserAccounts        userAccountWhere[Q]
 		UserPermissions     userPermissionWhere[Q]
@@ -250,6 +266,7 @@ func Where[Q psql.Filterable]() struct {
 		StripePrices:        buildStripePriceWhere[Q](StripePriceColumns),
 		StripeProducts:      buildStripeProductWhere[Q](StripeProductColumns),
 		StripeSubscriptions: buildStripeSubscriptionWhere[Q](StripeSubscriptionColumns),
+		StripeWebhookEvents: buildStripeWebhookEventWhere[Q](StripeWebhookEventColumns),
 		Tokens:              buildTokenWhere[Q](TokenColumns),
 		UserAccounts:        buildUserAccountWhere[Q](UserAccountColumns),
 		UserPermissions:     buildUserPermissionWhere[Q](UserPermissionColumns),

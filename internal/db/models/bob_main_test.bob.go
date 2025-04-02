@@ -40,6 +40,9 @@ var _ bob.HookableType = &StripeProduct{}
 // Make sure the type StripeSubscription runs hooks after queries
 var _ bob.HookableType = &StripeSubscription{}
 
+// Make sure the type StripeWebhookEvent runs hooks after queries
+var _ bob.HookableType = &StripeWebhookEvent{}
+
 // Make sure the type Token runs hooks after queries
 var _ bob.HookableType = &Token{}
 

@@ -119,7 +119,32 @@ create table public.stripe_subscriptions (
 );
 CREATE TRIGGER handle_stripe_subscriptions_updated_at before
 update on public.stripe_subscriptions for each row execute procedure moddatetime(updated_at);
+--------------- STRIPE_SUBSCRIPTIONS TABLE END -----------------------------------------------------------------------
+--------------- STRIPE WEBHOOK EVENTS TABLE START -----------------------------------------------------------------------
+create table public.stripe_webhook_events (
+    id uuid primary key default gen_random_uuid(),
+    -- event id from Stripe
+    stripe_id text not null unique,
+    -- event type from Stripe
+    type text not null,
+    -- event. from Stripe
+    object_type text not null,
+    -- objects id from Stripe
+    object_stripe_id text not null,
+    -- event creation date
+    event_creation_date timestamptz not null,
+    -- stripe.event.request.id
+    request_id text null,
+    created_at timestamptz not null default now(),
+    updated_at timestamptz not null default now()
+);
+CREATE TRIGGER handle_stripe_webhook_events_updated_at before
+update on public.stripe_webhook_events for each row execute procedure moddatetime(updated_at);
+--------------- STRIPE WEBHOOK EVENTS TABLE END -----------------------------------------------------------------------
 -- migrate:down
+-- Drop the stripe_webhook_events table
+DROP TRIGGER IF EXISTS handle_stripe_webhook_events_updated_at on public.stripe_webhook_events;
+DROP TABLE IF EXISTS public.stripe_webhook_events;
 -- Drop the stripe_subscriptions table
 DROP TRIGGER IF EXISTS handle_stripe_subscriptions_updated_at on public.stripe_subscriptions;
 DROP TABLE IF EXISTS public.stripe_subscriptions;

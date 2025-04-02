@@ -13,6 +13,7 @@ type Factory struct {
 	baseStripePriceMods        StripePriceModSlice
 	baseStripeProductMods      StripeProductModSlice
 	baseStripeSubscriptionMods StripeSubscriptionModSlice
+	baseStripeWebhookEventMods StripeWebhookEventModSlice
 	baseTokenMods              TokenModSlice
 	baseUserAccountMods        UserAccountModSlice
 	baseUserPermissionMods     UserPermissionModSlice
@@ -129,6 +130,18 @@ func (f *Factory) NewStripeSubscription(mods ...StripeSubscriptionMod) *StripeSu
 	}
 
 	StripeSubscriptionModSlice(mods).Apply(o)
+
+	return o
+}
+
+func (f *Factory) NewStripeWebhookEvent(mods ...StripeWebhookEventMod) *StripeWebhookEventTemplate {
+	o := &StripeWebhookEventTemplate{f: f}
+
+	if f != nil {
+		f.baseStripeWebhookEventMods.Apply(o)
+	}
+
+	StripeWebhookEventModSlice(mods).Apply(o)
 
 	return o
 }
@@ -275,6 +288,14 @@ func (f *Factory) ClearBaseStripeSubscriptionMods() {
 
 func (f *Factory) AddBaseStripeSubscriptionMod(mods ...StripeSubscriptionMod) {
 	f.baseStripeSubscriptionMods = append(f.baseStripeSubscriptionMods, mods...)
+}
+
+func (f *Factory) ClearBaseStripeWebhookEventMods() {
+	f.baseStripeWebhookEventMods = nil
+}
+
+func (f *Factory) AddBaseStripeWebhookEventMod(mods ...StripeWebhookEventMod) {
+	f.baseStripeWebhookEventMods = append(f.baseStripeWebhookEventMods, mods...)
 }
 
 func (f *Factory) ClearBaseTokenMods() {
