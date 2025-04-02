@@ -2,14 +2,25 @@ package repository
 
 import (
 	"context"
+	"time"
 
 	"github.com/aarondl/opt/omit"
+	"github.com/aarondl/opt/omitnull"
 	"github.com/google/uuid"
 	"github.com/stephenafamo/bob"
 	"github.com/stephenafamo/bob/dialect/psql"
 	"github.com/stephenafamo/bob/dialect/psql/im"
+	"github.com/stephenafamo/bob/types"
+	"github.com/stripe/stripe-go/v81"
 	"github.com/tkahng/authgo/internal/db/models"
 )
+
+func FindCustomerByStripeId(ctx context.Context, dbx bob.Executor, stripeId string) (*models.StripeCustomer, error) {
+	data, err := models.StripeCustomers.Query(
+		models.SelectWhere.StripeCustomers.StripeID.EQ(stripeId),
+	).One(ctx, dbx)
+	return OptionalRow(data, err)
+}
 
 func FindCustomerByUserId(ctx context.Context, dbx bob.Executor, userId uuid.UUID) (*models.StripeCustomer, error) {
 	data, err := models.StripeCustomers.Query(
@@ -57,6 +68,24 @@ func UpsertProduct(ctx context.Context, dbx bob.Executor, product *models.Stripe
 	return err
 }
 
+func UpsertProductFromStripe(ctx context.Context, dbx bob.Executor, product *stripe.Product) error {
+	if product == nil {
+		return nil
+	}
+	param := &models.StripeProductSetter{
+		ID:          omit.From(product.ID),
+		Active:      omit.From(product.Active),
+		Name:        omitnull.From(product.Name),
+		Description: omitnull.From(product.Description),
+		Image:       omitnull.From(product.Images[0]),
+		Metadata:    omit.From(types.NewJSON(product.Metadata)),
+	}
+	if len(product.Images) > 0 {
+		param.Image = omitnull.From(product.Images[0])
+	}
+	return UpsertProduct(ctx, dbx, param)
+}
+
 func UpsertPrice(ctx context.Context, dbx bob.Executor, price *models.StripePriceSetter) error {
 	_, err := models.StripePrices.Insert(
 		price,
@@ -97,6 +126,55 @@ func UpsertPrice(ctx context.Context, dbx bob.Executor, price *models.StripePric
 		),
 	).Exec(ctx, dbx)
 	return err
+}
+
+func UpsertPriceFromStripe(ctx context.Context, dbx bob.Executor, price *stripe.Price) error {
+	if price == nil {
+		return nil
+	}
+	param := &models.StripePriceSetter{
+		ID:          omit.From(price.ID),
+		ProductID:   omit.From(price.Product.ID),
+		Active:      omit.From(price.Active),
+		LookupKey:   omitnull.From(price.LookupKey),
+		Description: omitnull.From(price.Nickname),
+		UnitAmount:  omit.From(price.UnitAmount),
+		Currency:    omit.From(string(price.Currency)),
+		Type:        omit.From(PriceTypeConvert(price.Type)),
+		Metadata:    omit.From(types.NewJSON(price.Metadata)),
+	}
+	if price.Recurring != nil {
+		param.Interval = omitnull.From(PriceIntervalConvert(price.Recurring.Interval))
+		param.IntervalCount = omitnull.From(price.Recurring.IntervalCount)
+		param.TrialPeriodDays = omitnull.From(price.Recurring.TrialPeriodDays)
+	}
+	return UpsertPrice(ctx, dbx, param)
+}
+
+func PriceIntervalConvert(priceRecurringInterval stripe.PriceRecurringInterval) models.StripePricingPlanInterval {
+	switch priceRecurringInterval {
+	case stripe.PriceRecurringIntervalMonth:
+		return models.StripePricingPlanIntervalMonth
+	case stripe.PriceRecurringIntervalYear:
+		return models.StripePricingPlanIntervalYear
+	case stripe.PriceRecurringIntervalWeek:
+		return models.StripePricingPlanIntervalWeek
+	case stripe.PriceRecurringIntervalDay:
+		return models.StripePricingPlanIntervalDay
+	default:
+		return models.StripePricingPlanIntervalMonth
+	}
+}
+
+func PriceTypeConvert(priceType stripe.PriceType) models.StripePricingType {
+	switch priceType {
+	case stripe.PriceTypeOneTime:
+		return models.StripePricingTypeOneTime
+	case stripe.PriceTypeRecurring:
+		return models.StripePricingTypeRecurring
+	default:
+		return models.StripePricingTypeRecurring
+	}
 }
 
 func UpsertSubscription(ctx context.Context, dbx bob.Executor, subscription *models.StripeSubscriptionSetter) error {
@@ -148,4 +226,55 @@ func UpsertSubscription(ctx context.Context, dbx bob.Executor, subscription *mod
 		),
 	).Exec(ctx, dbx)
 	return err
+}
+
+func UpsertSubscriptionFromStripe(ctx context.Context, exec bob.Executor, sub *stripe.Subscription, userId uuid.UUID) error {
+	if sub == nil {
+		return nil
+	}
+	status := StripeSubscriptionStatusConvert(sub.Status)
+	err := UpsertSubscription(ctx, exec, &models.StripeSubscriptionSetter{
+		ID:                 omit.From(sub.ID),
+		UserID:             omit.From(userId),
+		Status:             omit.From(status),
+		Metadata:           omit.From(types.NewJSON(sub.Metadata)),
+		PriceID:            omit.From(sub.Items.Data[0].Price.ID),
+		Quantity:           omit.From(sub.Items.Data[0].Quantity),
+		CancelAtPeriodEnd:  omit.From(sub.CancelAtPeriodEnd),
+		Created:            omit.From(Int64ToISODate(sub.Created)),
+		CurrentPeriodStart: omit.From(Int64ToISODate(sub.CurrentPeriodStart)),
+		CurrentPeriodEnd:   omit.From(Int64ToISODate(sub.CurrentPeriodEnd)),
+		EndedAt:            omitnull.From(Int64ToISODate(sub.EndedAt)),
+		CancelAt:           omitnull.From(Int64ToISODate(sub.CancelAt)),
+		CanceledAt:         omitnull.From(Int64ToISODate(sub.CanceledAt)),
+		TrialStart:         omitnull.From(Int64ToISODate(sub.TrialStart)),
+		TrialEnd:           omitnull.From(Int64ToISODate(sub.TrialEnd)),
+	})
+	return err
+}
+
+func Int64ToISODate(timestamp int64) time.Time {
+	return time.Unix(timestamp, 0)
+}
+
+func StripeSubscriptionStatusConvert(status stripe.SubscriptionStatus) models.StripeSubscriptionStatus {
+	switch status {
+	case stripe.SubscriptionStatusActive:
+		return models.StripeSubscriptionStatusActive
+	case stripe.SubscriptionStatusCanceled:
+		return models.StripeSubscriptionStatusCanceled
+	case stripe.SubscriptionStatusPastDue:
+		return models.StripeSubscriptionStatusPastDue
+	case stripe.SubscriptionStatusTrialing:
+		return models.StripeSubscriptionStatusTrialing
+	case stripe.SubscriptionStatusUnpaid:
+		return models.StripeSubscriptionStatusUnpaid
+	case stripe.SubscriptionStatusIncomplete:
+		return models.StripeSubscriptionStatusIncomplete
+	case stripe.SubscriptionStatusIncompleteExpired:
+		return models.StripeSubscriptionStatusIncompleteExpired
+	case stripe.SubscriptionStatusPaused:
+		return models.StripeSubscriptionStatusPaused
+	}
+	return models.StripeSubscriptionStatusActive
 }

@@ -20,7 +20,7 @@ type StripeClient struct {
 	config *conf.StripeConfig
 }
 
-func NewStripeService(bld conf.StripeConfig) *StripeClient {
+func NewStripeClient(bld conf.StripeConfig) *StripeClient {
 	cfg := &bld
 	stripe.Key = cfg.ApiKey
 	payment := &StripeClient{config: cfg}
@@ -59,14 +59,14 @@ func (s *StripeClient) FindCustomerByEmail(email string) (*stripe.Customer, erro
 	return cs, nil
 }
 
-func (s *StripeClient) FindAllCustomers() ([]stripe.Customer, error) {
-	var data []stripe.Customer
+func (s *StripeClient) FindAllCustomers() ([]*stripe.Customer, error) {
+	var data []*stripe.Customer
 	params := &stripe.CustomerListParams{}
 	list := customer.List(params)
 	for list.Next() {
 		prod := list.Customer()
 		if prod != nil {
-			data = append(data, *prod)
+			data = append(data, prod)
 		}
 
 	}
@@ -74,14 +74,14 @@ func (s *StripeClient) FindAllCustomers() ([]stripe.Customer, error) {
 	return data, nil
 }
 
-func (s *StripeClient) FindAllProducts() ([]stripe.Product, error) {
-	var data []stripe.Product
+func (s *StripeClient) FindAllProducts() ([]*stripe.Product, error) {
+	var data []*stripe.Product
 	params := &stripe.ProductListParams{}
 	list := product.List(params)
 	for list.Next() {
 		prod := list.Product()
 		if prod != nil {
-			data = append(data, *prod)
+			data = append(data, prod)
 		}
 
 	}
@@ -89,14 +89,14 @@ func (s *StripeClient) FindAllProducts() ([]stripe.Product, error) {
 	return data, nil
 }
 
-func (s *StripeClient) FindAllPrices() ([]stripe.Price, error) {
-	var data []stripe.Price
+func (s *StripeClient) FindAllPrices() ([]*stripe.Price, error) {
+	var data []*stripe.Price
 	params := &stripe.PriceListParams{}
 	list := price.List(params)
 	for list.Next() {
 		prod := list.Price()
 		if prod != nil {
-			data = append(data, *prod)
+			data = append(data, prod)
 		}
 
 	}
@@ -104,14 +104,14 @@ func (s *StripeClient) FindAllPrices() ([]stripe.Price, error) {
 	return data, nil
 }
 
-func (s *StripeClient) FindAllSubscriptions() ([]stripe.Subscription, error) {
-	var data []stripe.Subscription
+func (s *StripeClient) FindAllSubscriptions() ([]*stripe.Subscription, error) {
+	var data []*stripe.Subscription
 	params := &stripe.SubscriptionListParams{}
 	list := subscription.List(params)
 	for list.Next() {
 		prod := list.Subscription()
 		if prod != nil {
-			data = append(data, *prod)
+			data = append(data, prod)
 		}
 
 	}
