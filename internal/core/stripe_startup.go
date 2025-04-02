@@ -16,7 +16,21 @@ type StripeService struct {
 func NewStripeService(client *payment.StripeClient) *StripeService {
 	return &StripeService{client: client}
 }
-
+func (srv *StripeService) StartUp(ctx context.Context, exec bob.Executor) error {
+	if err := srv.FindAndUpsertAllProducts(ctx, exec); err != nil {
+		return err
+	}
+	if err := srv.FindAndUpsertAllPrices(ctx, exec); err != nil {
+		return err
+	}
+	if err := srv.FindAndUpsertAllCustomers(ctx, exec); err != nil {
+		return err
+	}
+	if err := srv.FindAndUpsertAllSubscriptions(ctx, exec); err != nil {
+		return err
+	}
+	return nil
+}
 func (srv *StripeService) FindAndUpsertAllCustomers(ctx context.Context, exec bob.Executor) error {
 	customers, err := srv.client.FindAllCustomers()
 	if err != nil {
