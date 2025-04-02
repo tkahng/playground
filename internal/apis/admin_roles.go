@@ -8,6 +8,7 @@ import (
 	"github.com/aarondl/opt/omitnull"
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
+	"github.com/stephenafamo/bob/dialect/psql"
 	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
@@ -233,6 +234,15 @@ func (api *Api) AdminUserRolesUpdate(ctx context.Context, input *struct {
 		roleIds[i] = id
 	}
 	roles, err := repository.FindRolesByIds(ctx, db, roleIds)
+	if err != nil {
+		return nil, err
+	}
+	_, err = models.UserRoles.Delete(
+		psql.WhereAnd(
+			models.DeleteWhere.UserRoles.RoleID.In(roleIds...),
+			models.DeleteWhere.UserRoles.UserID.EQ(user.ID),
+		),
+	).Exec(ctx, db)
 	if err != nil {
 		return nil, err
 	}

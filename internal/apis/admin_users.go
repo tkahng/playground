@@ -159,3 +159,87 @@ func (api *Api) AdminUsersCreate(ctx context.Context, input *struct {
 	return &struct{ Body models.User }{Body: *user}, nil
 
 }
+
+func (api *Api) AdminUsersDeleteOperation(path string) huma.Operation {
+	return huma.Operation{
+		OperationID: "admin-users-delete",
+		Method:      http.MethodDelete,
+		Path:        path,
+		Summary:     "Delete user",
+		Description: "Delete user",
+		Tags:        []string{"Auth", "Admin", "Users"},
+		Errors:      []int{http.StatusNotFound},
+		Security: []map[string][]string{
+			{shared.BearerAuthSecurityKey: {}},
+		},
+	}
+}
+
+func (api *Api) AdminUsersDelete(ctx context.Context, input *struct {
+	ID uuid.UUID `path:"id"`
+}) (*struct{}, error) {
+	db := api.app.Db()
+	err := repository.DeleteUsers(ctx, db, input.ID)
+	if err != nil {
+		return nil, err
+	}
+	return nil, nil
+}
+
+func (api *Api) AdminUsersUpdateOperation(path string) huma.Operation {
+	return huma.Operation{
+		OperationID: "admin-users-update",
+		Method:      http.MethodPut,
+		Path:        path,
+		Summary:     "Update user",
+		Description: "Update user",
+		Tags:        []string{"Auth", "Admin", "Users"},
+		Errors:      []int{http.StatusNotFound},
+		Security: []map[string][]string{
+			{shared.BearerAuthSecurityKey: {}},
+		},
+	}
+}
+
+func (api *Api) AdminUsersUpdate(ctx context.Context, input *struct {
+	ID   uuid.UUID `path:"id"`
+	Body repository.UpdateUserInput
+}) (*struct{}, error) {
+	db := api.app.Db()
+	err := repository.UpdateUser(ctx, db, input.ID, &input.Body)
+	if err != nil {
+		return nil, err
+	}
+	return nil, nil
+}
+
+func (api *Api) AdminUsersUpdatePasswordOperation(path string) huma.Operation {
+	return huma.Operation{
+		OperationID: "admin-users-update-password",
+		Method:      http.MethodPut,
+		Path:        path,
+		Summary:     "Update user password",
+		Description: "Update user password",
+		Tags:        []string{"Auth", "Admin", "Users"},
+		Errors:      []int{http.StatusNotFound},
+		Security: []map[string][]string{
+			{shared.BearerAuthSecurityKey: {}},
+		},
+	}
+}
+
+type UpdateUserPasswordInput struct {
+	Password string
+}
+
+func (api *Api) AdminUsersUpdatePassword(ctx context.Context, input *struct {
+	ID   uuid.UUID `path:"id"`
+	Body UpdateUserPasswordInput
+}) (*struct{}, error) {
+	db := api.app.Db()
+	err := repository.UpdateUserPassword(ctx, db, input.ID, input.Body.Password)
+	if err != nil {
+		return nil, err
+	}
+	return nil, nil
+}
