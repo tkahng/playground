@@ -6,7 +6,6 @@ package models
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -40,7 +39,7 @@ type StripePrice struct {
 	Interval        null.Val[StripePricingPlanInterval] `db:"interval" json:"interval"`
 	IntervalCount   null.Val[int64]                     `db:"interval_count" json:"interval_count"`
 	TrialPeriodDays null.Val[int64]                     `db:"trial_period_days" json:"trial_period_days"`
-	Metadata        types.JSON[json.RawMessage]         `db:"metadata" json:"metadata"`
+	Metadata        types.JSON[map[string]string]       `db:"metadata" json:"metadata"`
 	CreatedAt       time.Time                           `db:"created_at" json:"created_at"`
 	UpdatedAt       time.Time                           `db:"updated_at" json:"updated_at"`
 
@@ -140,7 +139,7 @@ type stripePriceWhere[Q psql.Filterable] struct {
 	Interval        psql.WhereNullMod[Q, StripePricingPlanInterval]
 	IntervalCount   psql.WhereNullMod[Q, int64]
 	TrialPeriodDays psql.WhereNullMod[Q, int64]
-	Metadata        psql.WhereMod[Q, types.JSON[json.RawMessage]]
+	Metadata        psql.WhereMod[Q, types.JSON[map[string]string]]
 	CreatedAt       psql.WhereMod[Q, time.Time]
 	UpdatedAt       psql.WhereMod[Q, time.Time]
 }
@@ -162,7 +161,7 @@ func buildStripePriceWhere[Q psql.Filterable](cols stripePriceColumns) stripePri
 		Interval:        psql.WhereNull[Q, StripePricingPlanInterval](cols.Interval),
 		IntervalCount:   psql.WhereNull[Q, int64](cols.IntervalCount),
 		TrialPeriodDays: psql.WhereNull[Q, int64](cols.TrialPeriodDays),
-		Metadata:        psql.Where[Q, types.JSON[json.RawMessage]](cols.Metadata),
+		Metadata:        psql.Where[Q, types.JSON[map[string]string]](cols.Metadata),
 		CreatedAt:       psql.Where[Q, time.Time](cols.CreatedAt),
 		UpdatedAt:       psql.Where[Q, time.Time](cols.UpdatedAt),
 	}
@@ -191,7 +190,7 @@ type StripePriceSetter struct {
 	Interval        omitnull.Val[StripePricingPlanInterval] `db:"interval" json:"interval"`
 	IntervalCount   omitnull.Val[int64]                     `db:"interval_count" json:"interval_count"`
 	TrialPeriodDays omitnull.Val[int64]                     `db:"trial_period_days" json:"trial_period_days"`
-	Metadata        omit.Val[types.JSON[json.RawMessage]]   `db:"metadata" json:"metadata"`
+	Metadata        omit.Val[types.JSON[map[string]string]] `db:"metadata" json:"metadata"`
 	CreatedAt       omit.Val[time.Time]                     `db:"created_at" json:"created_at"`
 	UpdatedAt       omit.Val[time.Time]                     `db:"updated_at" json:"updated_at"`
 }

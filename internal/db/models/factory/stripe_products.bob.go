@@ -5,7 +5,6 @@ package factory
 
 import (
 	"context"
-	"encoding/json"
 	"testing"
 	"time"
 
@@ -44,7 +43,7 @@ type StripeProductTemplate struct {
 	Name        func() null.Val[string]
 	Description func() null.Val[string]
 	Image       func() null.Val[string]
-	Metadata    func() types.JSON[json.RawMessage]
+	Metadata    func() types.JSON[map[string]string]
 	CreatedAt   func() time.Time
 	UpdatedAt   func() time.Time
 
@@ -203,7 +202,7 @@ func ensureCreatableStripeProduct(m *models.StripeProductSetter) {
 		m.ID = omit.From(random_string(nil))
 	}
 	if m.Metadata.IsUnset() {
-		m.Metadata = omit.From(random_types_JSON_json_RawMessage_(nil))
+		m.Metadata = omit.From(random_types_JSON_map_string_string_(nil))
 	}
 }
 
@@ -526,14 +525,14 @@ func (m stripeProductMods) RandomImage(f *faker.Faker) StripeProductMod {
 }
 
 // Set the model columns to this value
-func (m stripeProductMods) Metadata(val types.JSON[json.RawMessage]) StripeProductMod {
+func (m stripeProductMods) Metadata(val types.JSON[map[string]string]) StripeProductMod {
 	return StripeProductModFunc(func(o *StripeProductTemplate) {
-		o.Metadata = func() types.JSON[json.RawMessage] { return val }
+		o.Metadata = func() types.JSON[map[string]string] { return val }
 	})
 }
 
 // Set the Column from the function
-func (m stripeProductMods) MetadataFunc(f func() types.JSON[json.RawMessage]) StripeProductMod {
+func (m stripeProductMods) MetadataFunc(f func() types.JSON[map[string]string]) StripeProductMod {
 	return StripeProductModFunc(func(o *StripeProductTemplate) {
 		o.Metadata = f
 	})
@@ -550,8 +549,8 @@ func (m stripeProductMods) UnsetMetadata() StripeProductMod {
 // if faker is nil, a default faker is used
 func (m stripeProductMods) RandomMetadata(f *faker.Faker) StripeProductMod {
 	return StripeProductModFunc(func(o *StripeProductTemplate) {
-		o.Metadata = func() types.JSON[json.RawMessage] {
-			return random_types_JSON_json_RawMessage_(f)
+		o.Metadata = func() types.JSON[map[string]string] {
+			return random_types_JSON_map_string_string_(f)
 		}
 	})
 }

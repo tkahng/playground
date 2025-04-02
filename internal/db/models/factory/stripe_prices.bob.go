@@ -5,7 +5,6 @@ package factory
 
 import (
 	"context"
-	"encoding/json"
 	"testing"
 	"time"
 
@@ -50,7 +49,7 @@ type StripePriceTemplate struct {
 	Interval        func() null.Val[StripePricingPlanInterval]
 	IntervalCount   func() null.Val[int64]
 	TrialPeriodDays func() null.Val[int64]
-	Metadata        func() types.JSON[json.RawMessage]
+	Metadata        func() types.JSON[map[string]string]
 	CreatedAt       func() time.Time
 	UpdatedAt       func() time.Time
 
@@ -265,7 +264,7 @@ func ensureCreatableStripePrice(m *models.StripePriceSetter) {
 		m.Type = omit.From(random_StripePricingType(nil))
 	}
 	if m.Metadata.IsUnset() {
-		m.Metadata = omit.From(random_types_JSON_json_RawMessage_(nil))
+		m.Metadata = omit.From(random_types_JSON_map_string_string_(nil))
 	}
 }
 
@@ -814,14 +813,14 @@ func (m stripePriceMods) RandomTrialPeriodDays(f *faker.Faker) StripePriceMod {
 }
 
 // Set the model columns to this value
-func (m stripePriceMods) Metadata(val types.JSON[json.RawMessage]) StripePriceMod {
+func (m stripePriceMods) Metadata(val types.JSON[map[string]string]) StripePriceMod {
 	return StripePriceModFunc(func(o *StripePriceTemplate) {
-		o.Metadata = func() types.JSON[json.RawMessage] { return val }
+		o.Metadata = func() types.JSON[map[string]string] { return val }
 	})
 }
 
 // Set the Column from the function
-func (m stripePriceMods) MetadataFunc(f func() types.JSON[json.RawMessage]) StripePriceMod {
+func (m stripePriceMods) MetadataFunc(f func() types.JSON[map[string]string]) StripePriceMod {
 	return StripePriceModFunc(func(o *StripePriceTemplate) {
 		o.Metadata = f
 	})
@@ -838,8 +837,8 @@ func (m stripePriceMods) UnsetMetadata() StripePriceMod {
 // if faker is nil, a default faker is used
 func (m stripePriceMods) RandomMetadata(f *faker.Faker) StripePriceMod {
 	return StripePriceModFunc(func(o *StripePriceTemplate) {
-		o.Metadata = func() types.JSON[json.RawMessage] {
-			return random_types_JSON_json_RawMessage_(f)
+		o.Metadata = func() types.JSON[map[string]string] {
+			return random_types_JSON_map_string_string_(f)
 		}
 	})
 }

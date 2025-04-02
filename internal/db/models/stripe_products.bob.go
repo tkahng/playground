@@ -6,7 +6,6 @@ package models
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -28,14 +27,14 @@ import (
 
 // StripeProduct is an object representing the database table.
 type StripeProduct struct {
-	ID          string                      `db:"id,pk" json:"id"`
-	Active      bool                        `db:"active" json:"active"`
-	Name        null.Val[string]            `db:"name" json:"name"`
-	Description null.Val[string]            `db:"description" json:"description"`
-	Image       null.Val[string]            `db:"image" json:"image"`
-	Metadata    types.JSON[json.RawMessage] `db:"metadata" json:"metadata"`
-	CreatedAt   time.Time                   `db:"created_at" json:"created_at"`
-	UpdatedAt   time.Time                   `db:"updated_at" json:"updated_at"`
+	ID          string                        `db:"id,pk" json:"id"`
+	Active      bool                          `db:"active" json:"active"`
+	Name        null.Val[string]              `db:"name" json:"name"`
+	Description null.Val[string]              `db:"description" json:"description"`
+	Image       null.Val[string]              `db:"image" json:"image"`
+	Metadata    types.JSON[map[string]string] `db:"metadata" json:"metadata"`
+	CreatedAt   time.Time                     `db:"created_at" json:"created_at"`
+	UpdatedAt   time.Time                     `db:"updated_at" json:"updated_at"`
 
 	R stripeProductR `db:"-" json:"-"`
 }
@@ -108,7 +107,7 @@ type stripeProductWhere[Q psql.Filterable] struct {
 	Name        psql.WhereNullMod[Q, string]
 	Description psql.WhereNullMod[Q, string]
 	Image       psql.WhereNullMod[Q, string]
-	Metadata    psql.WhereMod[Q, types.JSON[json.RawMessage]]
+	Metadata    psql.WhereMod[Q, types.JSON[map[string]string]]
 	CreatedAt   psql.WhereMod[Q, time.Time]
 	UpdatedAt   psql.WhereMod[Q, time.Time]
 }
@@ -124,7 +123,7 @@ func buildStripeProductWhere[Q psql.Filterable](cols stripeProductColumns) strip
 		Name:        psql.WhereNull[Q, string](cols.Name),
 		Description: psql.WhereNull[Q, string](cols.Description),
 		Image:       psql.WhereNull[Q, string](cols.Image),
-		Metadata:    psql.Where[Q, types.JSON[json.RawMessage]](cols.Metadata),
+		Metadata:    psql.Where[Q, types.JSON[map[string]string]](cols.Metadata),
 		CreatedAt:   psql.Where[Q, time.Time](cols.CreatedAt),
 		UpdatedAt:   psql.Where[Q, time.Time](cols.UpdatedAt),
 	}
@@ -142,14 +141,14 @@ type stripeProductErrors struct {
 // All values are optional, and do not have to be set
 // Generated columns are not included
 type StripeProductSetter struct {
-	ID          omit.Val[string]                      `db:"id,pk" json:"id"`
-	Active      omit.Val[bool]                        `db:"active" json:"active"`
-	Name        omitnull.Val[string]                  `db:"name" json:"name"`
-	Description omitnull.Val[string]                  `db:"description" json:"description"`
-	Image       omitnull.Val[string]                  `db:"image" json:"image"`
-	Metadata    omit.Val[types.JSON[json.RawMessage]] `db:"metadata" json:"metadata"`
-	CreatedAt   omit.Val[time.Time]                   `db:"created_at" json:"created_at"`
-	UpdatedAt   omit.Val[time.Time]                   `db:"updated_at" json:"updated_at"`
+	ID          omit.Val[string]                        `db:"id,pk" json:"id"`
+	Active      omit.Val[bool]                          `db:"active" json:"active"`
+	Name        omitnull.Val[string]                    `db:"name" json:"name"`
+	Description omitnull.Val[string]                    `db:"description" json:"description"`
+	Image       omitnull.Val[string]                    `db:"image" json:"image"`
+	Metadata    omit.Val[types.JSON[map[string]string]] `db:"metadata" json:"metadata"`
+	CreatedAt   omit.Val[time.Time]                     `db:"created_at" json:"created_at"`
+	UpdatedAt   omit.Val[time.Time]                     `db:"updated_at" json:"updated_at"`
 }
 
 func (s StripeProductSetter) SetColumns() []string {

@@ -5,7 +5,6 @@ package factory
 
 import (
 	"context"
-	"encoding/json"
 	"testing"
 	"time"
 
@@ -43,7 +42,7 @@ type StripeSubscriptionTemplate struct {
 	ID                 func() string
 	UserID             func() uuid.UUID
 	Status             func() StripeSubscriptionStatus
-	Metadata           func() types.JSON[json.RawMessage]
+	Metadata           func() types.JSON[map[string]string]
 	PriceID            func() string
 	Quantity           func() int64
 	CancelAtPeriodEnd  func() bool
@@ -277,7 +276,7 @@ func ensureCreatableStripeSubscription(m *models.StripeSubscriptionSetter) {
 		m.Status = omit.From(random_StripeSubscriptionStatus(nil))
 	}
 	if m.Metadata.IsUnset() {
-		m.Metadata = omit.From(random_types_JSON_json_RawMessage_(nil))
+		m.Metadata = omit.From(random_types_JSON_map_string_string_(nil))
 	}
 	if m.PriceID.IsUnset() {
 		m.PriceID = omit.From(random_string(nil))
@@ -549,14 +548,14 @@ func (m stripeSubscriptionMods) RandomStatus(f *faker.Faker) StripeSubscriptionM
 }
 
 // Set the model columns to this value
-func (m stripeSubscriptionMods) Metadata(val types.JSON[json.RawMessage]) StripeSubscriptionMod {
+func (m stripeSubscriptionMods) Metadata(val types.JSON[map[string]string]) StripeSubscriptionMod {
 	return StripeSubscriptionModFunc(func(o *StripeSubscriptionTemplate) {
-		o.Metadata = func() types.JSON[json.RawMessage] { return val }
+		o.Metadata = func() types.JSON[map[string]string] { return val }
 	})
 }
 
 // Set the Column from the function
-func (m stripeSubscriptionMods) MetadataFunc(f func() types.JSON[json.RawMessage]) StripeSubscriptionMod {
+func (m stripeSubscriptionMods) MetadataFunc(f func() types.JSON[map[string]string]) StripeSubscriptionMod {
 	return StripeSubscriptionModFunc(func(o *StripeSubscriptionTemplate) {
 		o.Metadata = f
 	})
@@ -573,8 +572,8 @@ func (m stripeSubscriptionMods) UnsetMetadata() StripeSubscriptionMod {
 // if faker is nil, a default faker is used
 func (m stripeSubscriptionMods) RandomMetadata(f *faker.Faker) StripeSubscriptionMod {
 	return StripeSubscriptionModFunc(func(o *StripeSubscriptionTemplate) {
-		o.Metadata = func() types.JSON[json.RawMessage] {
-			return random_types_JSON_json_RawMessage_(f)
+		o.Metadata = func() types.JSON[map[string]string] {
+			return random_types_JSON_map_string_string_(f)
 		}
 	})
 }

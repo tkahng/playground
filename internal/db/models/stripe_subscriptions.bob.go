@@ -6,7 +6,6 @@ package models
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -30,23 +29,23 @@ import (
 
 // StripeSubscription is an object representing the database table.
 type StripeSubscription struct {
-	ID                 string                      `db:"id,pk" json:"id"`
-	UserID             uuid.UUID                   `db:"user_id" json:"user_id"`
-	Status             StripeSubscriptionStatus    `db:"status" json:"status"`
-	Metadata           types.JSON[json.RawMessage] `db:"metadata" json:"metadata"`
-	PriceID            string                      `db:"price_id" json:"price_id"`
-	Quantity           int64                       `db:"quantity" json:"quantity"`
-	CancelAtPeriodEnd  bool                        `db:"cancel_at_period_end" json:"cancel_at_period_end"`
-	Created            time.Time                   `db:"created" json:"created"`
-	CurrentPeriodStart time.Time                   `db:"current_period_start" json:"current_period_start"`
-	CurrentPeriodEnd   time.Time                   `db:"current_period_end" json:"current_period_end"`
-	EndedAt            null.Val[time.Time]         `db:"ended_at" json:"ended_at"`
-	CancelAt           null.Val[time.Time]         `db:"cancel_at" json:"cancel_at"`
-	CanceledAt         null.Val[time.Time]         `db:"canceled_at" json:"canceled_at"`
-	TrialStart         null.Val[time.Time]         `db:"trial_start" json:"trial_start"`
-	TrialEnd           null.Val[time.Time]         `db:"trial_end" json:"trial_end"`
-	CreatedAt          time.Time                   `db:"created_at" json:"created_at"`
-	UpdatedAt          time.Time                   `db:"updated_at" json:"updated_at"`
+	ID                 string                        `db:"id,pk" json:"id"`
+	UserID             uuid.UUID                     `db:"user_id" json:"user_id"`
+	Status             StripeSubscriptionStatus      `db:"status" json:"status"`
+	Metadata           types.JSON[map[string]string] `db:"metadata" json:"metadata"`
+	PriceID            string                        `db:"price_id" json:"price_id"`
+	Quantity           int64                         `db:"quantity" json:"quantity"`
+	CancelAtPeriodEnd  bool                          `db:"cancel_at_period_end" json:"cancel_at_period_end"`
+	Created            time.Time                     `db:"created" json:"created"`
+	CurrentPeriodStart time.Time                     `db:"current_period_start" json:"current_period_start"`
+	CurrentPeriodEnd   time.Time                     `db:"current_period_end" json:"current_period_end"`
+	EndedAt            null.Val[time.Time]           `db:"ended_at" json:"ended_at"`
+	CancelAt           null.Val[time.Time]           `db:"cancel_at" json:"cancel_at"`
+	CanceledAt         null.Val[time.Time]           `db:"canceled_at" json:"canceled_at"`
+	TrialStart         null.Val[time.Time]           `db:"trial_start" json:"trial_start"`
+	TrialEnd           null.Val[time.Time]           `db:"trial_end" json:"trial_end"`
+	CreatedAt          time.Time                     `db:"created_at" json:"created_at"`
+	UpdatedAt          time.Time                     `db:"updated_at" json:"updated_at"`
 
 	R stripeSubscriptionR `db:"-" json:"-"`
 }
@@ -145,7 +144,7 @@ type stripeSubscriptionWhere[Q psql.Filterable] struct {
 	ID                 psql.WhereMod[Q, string]
 	UserID             psql.WhereMod[Q, uuid.UUID]
 	Status             psql.WhereMod[Q, StripeSubscriptionStatus]
-	Metadata           psql.WhereMod[Q, types.JSON[json.RawMessage]]
+	Metadata           psql.WhereMod[Q, types.JSON[map[string]string]]
 	PriceID            psql.WhereMod[Q, string]
 	Quantity           psql.WhereMod[Q, int64]
 	CancelAtPeriodEnd  psql.WhereMod[Q, bool]
@@ -170,7 +169,7 @@ func buildStripeSubscriptionWhere[Q psql.Filterable](cols stripeSubscriptionColu
 		ID:                 psql.Where[Q, string](cols.ID),
 		UserID:             psql.Where[Q, uuid.UUID](cols.UserID),
 		Status:             psql.Where[Q, StripeSubscriptionStatus](cols.Status),
-		Metadata:           psql.Where[Q, types.JSON[json.RawMessage]](cols.Metadata),
+		Metadata:           psql.Where[Q, types.JSON[map[string]string]](cols.Metadata),
 		PriceID:            psql.Where[Q, string](cols.PriceID),
 		Quantity:           psql.Where[Q, int64](cols.Quantity),
 		CancelAtPeriodEnd:  psql.Where[Q, bool](cols.CancelAtPeriodEnd),
@@ -199,23 +198,23 @@ type stripeSubscriptionErrors struct {
 // All values are optional, and do not have to be set
 // Generated columns are not included
 type StripeSubscriptionSetter struct {
-	ID                 omit.Val[string]                      `db:"id,pk" json:"id"`
-	UserID             omit.Val[uuid.UUID]                   `db:"user_id" json:"user_id"`
-	Status             omit.Val[StripeSubscriptionStatus]    `db:"status" json:"status"`
-	Metadata           omit.Val[types.JSON[json.RawMessage]] `db:"metadata" json:"metadata"`
-	PriceID            omit.Val[string]                      `db:"price_id" json:"price_id"`
-	Quantity           omit.Val[int64]                       `db:"quantity" json:"quantity"`
-	CancelAtPeriodEnd  omit.Val[bool]                        `db:"cancel_at_period_end" json:"cancel_at_period_end"`
-	Created            omit.Val[time.Time]                   `db:"created" json:"created"`
-	CurrentPeriodStart omit.Val[time.Time]                   `db:"current_period_start" json:"current_period_start"`
-	CurrentPeriodEnd   omit.Val[time.Time]                   `db:"current_period_end" json:"current_period_end"`
-	EndedAt            omitnull.Val[time.Time]               `db:"ended_at" json:"ended_at"`
-	CancelAt           omitnull.Val[time.Time]               `db:"cancel_at" json:"cancel_at"`
-	CanceledAt         omitnull.Val[time.Time]               `db:"canceled_at" json:"canceled_at"`
-	TrialStart         omitnull.Val[time.Time]               `db:"trial_start" json:"trial_start"`
-	TrialEnd           omitnull.Val[time.Time]               `db:"trial_end" json:"trial_end"`
-	CreatedAt          omit.Val[time.Time]                   `db:"created_at" json:"created_at"`
-	UpdatedAt          omit.Val[time.Time]                   `db:"updated_at" json:"updated_at"`
+	ID                 omit.Val[string]                        `db:"id,pk" json:"id"`
+	UserID             omit.Val[uuid.UUID]                     `db:"user_id" json:"user_id"`
+	Status             omit.Val[StripeSubscriptionStatus]      `db:"status" json:"status"`
+	Metadata           omit.Val[types.JSON[map[string]string]] `db:"metadata" json:"metadata"`
+	PriceID            omit.Val[string]                        `db:"price_id" json:"price_id"`
+	Quantity           omit.Val[int64]                         `db:"quantity" json:"quantity"`
+	CancelAtPeriodEnd  omit.Val[bool]                          `db:"cancel_at_period_end" json:"cancel_at_period_end"`
+	Created            omit.Val[time.Time]                     `db:"created" json:"created"`
+	CurrentPeriodStart omit.Val[time.Time]                     `db:"current_period_start" json:"current_period_start"`
+	CurrentPeriodEnd   omit.Val[time.Time]                     `db:"current_period_end" json:"current_period_end"`
+	EndedAt            omitnull.Val[time.Time]                 `db:"ended_at" json:"ended_at"`
+	CancelAt           omitnull.Val[time.Time]                 `db:"cancel_at" json:"cancel_at"`
+	CanceledAt         omitnull.Val[time.Time]                 `db:"canceled_at" json:"canceled_at"`
+	TrialStart         omitnull.Val[time.Time]                 `db:"trial_start" json:"trial_start"`
+	TrialEnd           omitnull.Val[time.Time]                 `db:"trial_end" json:"trial_end"`
+	CreatedAt          omit.Val[time.Time]                     `db:"created_at" json:"created_at"`
+	UpdatedAt          omit.Val[time.Time]                     `db:"updated_at" json:"updated_at"`
 }
 
 func (s StripeSubscriptionSetter) SetColumns() []string {
