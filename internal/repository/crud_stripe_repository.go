@@ -12,9 +12,11 @@ import (
 )
 
 var (
-	StripeProductColumnNames = models.StripeProducts.Columns().Names()
-	StripePriceColumnNames   = models.StripePrices.Columns().Names()
-	MetadataIndexName        = "metadata.index"
+	StripeProductColumnNames      = models.StripeProducts.Columns().Names()
+	StripePriceColumnNames        = models.StripePrices.Columns().Names()
+	StripeCustomerColumnNames     = models.StripeCustomers.Columns().Names()
+	StripeSubscriptionColumnNames = models.StripeSubscriptions.Columns().Names()
+	MetadataIndexName             = "metadata.index"
 )
 
 func ListProducts(ctx context.Context, db bob.DB, input *shared.StripeProductListParams) (models.StripeProductSlice, error) {
@@ -101,11 +103,32 @@ func ListPrices(ctx context.Context, db bob.DB, input *shared.StripePriceListPar
 	ViewApplyPagination(q, pageInput)
 
 	ListPriceFilterFunc(ctx, q, &filter)
+	ListPriceOrderByFunc(ctx, q, input)
 	data, err := q.All(ctx, db)
 	if err != nil {
 		return nil, err
 	}
 	return data, nil
+}
+
+func ListPriceOrderByFunc(ctx context.Context, q *psql.ViewQuery[*models.StripePrice, models.StripePriceSlice], input *shared.StripePriceListParams) {
+	if input == nil {
+		return
+	}
+	if input.SortParams.SortBy == "" {
+		return
+	}
+	if slices.Contains(StripeCustomerColumnNames, input.SortBy) {
+		var order = sm.OrderBy(input.SortBy)
+		if input.SortParams.SortOrder == "desc" {
+			order = sm.OrderBy(input.SortBy).Desc()
+		} else if input.SortParams.SortOrder == "asc" {
+			order = sm.OrderBy(input.SortBy).Asc()
+		}
+		q.Apply(
+			order,
+		)
+	}
 }
 
 func ListPriceFilterFunc(ctx context.Context, q *psql.ViewQuery[*models.StripePrice, models.StripePriceSlice], filter *shared.StripePriceListFilter) {
@@ -132,6 +155,65 @@ func ListPriceFilterFunc(ctx context.Context, q *psql.ViewQuery[*models.StripePr
 }
 
 func CountPrices(ctx context.Context, db bob.DB, filter *shared.StripePriceListFilter) (int64, error) {
+	q := models.StripePrices.Query()
+	ListPriceFilterFunc(ctx, q, filter)
+	data, err := q.Count(ctx, db)
+	if err != nil {
+		return 0, err
+	}
+	return data, nil
+}
+
+func ListCustomers(ctx context.Context, db bob.DB, input *shared.StripeCustomerListParams) (models.StripeCustomerSlice, error) {
+
+	q := models.StripeCustomers.Query()
+	filter := input.StripeCustomerListFilter
+	pageInput := &input.PaginatedInput
+
+	ViewApplyPagination(q, pageInput)
+	ListCustomerFilterFunc(ctx, q, &filter)
+	StripeCustomerOrderByFunc(ctx, q, input)
+	data, err := q.All(ctx, db)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
+}
+
+func StripeCustomerOrderByFunc(ctx context.Context, q *psql.ViewQuery[*models.StripeCustomer, models.StripeCustomerSlice], input *shared.StripeCustomerListParams) {
+	if input == nil {
+		return
+	}
+	if input.SortParams.SortBy == "" {
+		return
+	}
+	if slices.Contains(StripeCustomerColumnNames, input.SortBy) {
+		var order = sm.OrderBy(input.SortBy)
+		if input.SortParams.SortOrder == "desc" {
+			order = sm.OrderBy(input.SortBy).Desc()
+		} else if input.SortParams.SortOrder == "asc" {
+			order = sm.OrderBy(input.SortBy).Asc()
+		}
+		q.Apply(
+			order,
+		)
+	}
+}
+
+func ListCustomerFilterFunc(ctx context.Context, q *psql.ViewQuery[*models.StripeCustomer, models.StripeCustomerSlice], filter *shared.StripeCustomerListFilter) {
+	if filter == nil {
+		return
+	}
+	if len(filter.Ids) > 0 {
+		ids := ParseUUIDs(filter.Ids)
+		q.Apply(
+			models.SelectWhere.StripeCustomers.ID.In(ids...),
+		)
+	}
+
+}
+
+func CountCustomers(ctx context.Context, db bob.DB, filter *shared.StripePriceListFilter) (int64, error) {
 	q := models.StripePrices.Query()
 	ListPriceFilterFunc(ctx, q, filter)
 	data, err := q.Count(ctx, db)

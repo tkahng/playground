@@ -2,7 +2,6 @@ package shared
 
 import (
 	"github.com/aarondl/opt/null"
-	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/db/models"
 )
 
@@ -15,7 +14,7 @@ import (
 type UserListFilter struct {
 	Providers []models.Providers `query:"providers,omitempty" required:"false" uniqueItems:"true" minimum:"1" maximum:"100" enum:"google,apple,facebook,github,credentials"`
 	Q         string             `query:"q,omitempty" required:"false"`
-	Ids       []uuid.UUID        `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+	Ids       []string           `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
 	Emails    []string           `query:"emails,omitempty" required:"false" minimum:"1" maximum:"100" format:"email"`
 	// Roles         []string           `query:"roles,omitempty" required:"false" minimum:"1" maximum:"100"`
 	// Permissions   []string           `query:"permissions,omitempty" required:"false" minimum:"1" maximum:"100"`
@@ -28,10 +27,8 @@ type UserListFilter struct {
 type UserListParams struct {
 	PaginatedInput
 	UserListFilter
-	// 	SortBy    string `query:"sort_by,omitempty" required:"false" default:"created_at"`
-	// 	SortOrder string `query:"sort_order,omitempty" required:"false" default:"desc"`
-	SortBy    string `query:"sort_by,omitempty" required:"false" default:"created_at"`
-	SortOrder string `query:"sort_order,omitempty" required:"false" default:"desc"`
+	SortParams
+	Expand []string `query:"expand,omitempty" required:"false" minimum:"1" maximum:"100" enum:"roles,permissions,accounts,subscriptions"`
 }
 type RoleListFilter struct {
 	Q      string   `query:"q,omitempty" required:"false"`
@@ -109,19 +106,23 @@ type StripePriceListFilter struct {
 type StripePriceListParams struct {
 	PaginatedInput
 	StripePriceListFilter
-	// 	SortBy    string `query:"sort_by,omitempty" required:"false" default:"created_at"`
-	// 	SortOrder string `query:"sort_order,omitempty" required:"false" default:"desc"`
-	SortBy    string `query:"sort_by,omitempty" required:"false" default:"created_at"`
-	SortOrder string `query:"sort_order,omitempty" required:"false" default:"desc"`
+	SortParams
+}
+
+type StripeCustomerListFilter struct {
+	Q   string   `query:"q,omitempty" required:"false"`
+	Ids []string `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+}
+type StripeCustomerListParams struct {
+	PaginatedInput
+	StripeCustomerListFilter
+	SortParams
+	Expand []string `query:"expand,omitempty" required:"false" minimum:"1" maximum:"100" enum:"users"`
 }
 
 type PaginatedInput struct {
 	Page    int `query:"page,omitempty" default:"1" minimum:"1"`
 	PerPage int `query:"per_page,omitempty" default:"10" minimum:"1" maximum:"100"`
-	// SortBy    string `query:"sort_by,omitempty" required:"false" default:"created_at"`
-	// SortOrder string `query:"sort_order,omitempty" required:"false" default:"desc"`
-	// 	Page    OmitNull[int] `query:"page,omitempty" default:"1" minimum:"1"`
-	// 	PerPage OmitNull[int] `query:"per_page,omitempty" default:"10" minimum:"1" maximum:"100"`
 }
 
 type PaginatedResponse[T any] struct {

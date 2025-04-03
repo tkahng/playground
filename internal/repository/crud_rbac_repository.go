@@ -20,28 +20,14 @@ func ListPermissionsFilterFunc(ctx context.Context, q *psql.ViewQuery[*models.Pe
 		)
 	}
 	if len(filter.Ids) > 0 {
-		var ids []uuid.UUID
-		for _, id := range filter.Ids {
-			parsed, err := uuid.Parse(id)
-			if err != nil {
-				continue
-			}
-			ids = append(ids, parsed)
-		}
+		var ids []uuid.UUID = ParseUUIDs(filter.Ids)
 		q.Apply(
 			models.SelectWhere.Permissions.ID.In(ids...),
 		)
 	}
 
 	if len(filter.RoleIds) > 0 {
-		var ids []uuid.UUID
-		for _, id := range filter.RoleIds {
-			parsed, err := uuid.Parse(id)
-			if err != nil {
-				continue
-			}
-			ids = append(ids, parsed)
-		}
+		var ids []uuid.UUID = ParseUUIDs(filter.RoleIds)
 		q.Apply(
 			models.SelectJoins.Permissions.InnerJoin.Roles(ctx),
 			models.SelectWhere.Roles.ID.In(ids...),
@@ -79,28 +65,15 @@ func ListRolesFilterFunc(ctx context.Context, q *psql.ViewQuery[*models.Role, mo
 		)
 	}
 	if len(filter.Ids) > 0 {
-		var ids []uuid.UUID
-		for _, id := range filter.Ids {
-			parsed, err := uuid.Parse(id)
-			if err != nil {
-				continue
-			}
-			ids = append(ids, parsed)
-		}
+		var ids []uuid.UUID = ParseUUIDs(filter.Ids)
 		q.Apply(
 			models.SelectWhere.Roles.ID.In(ids...),
 		)
 	}
 
 	if len(filter.PermissionIds) > 0 {
-		var ids []uuid.UUID
-		for _, id := range filter.PermissionIds {
-			parsed, err := uuid.Parse(id)
-			if err != nil {
-				continue
-			}
-			ids = append(ids, parsed)
-		}
+		var ids []uuid.UUID = ParseUUIDs(filter.PermissionIds)
+
 		q.Apply(
 			models.SelectJoins.Roles.InnerJoin.Permissions(ctx),
 			models.SelectWhere.Permissions.ID.In(ids...),
