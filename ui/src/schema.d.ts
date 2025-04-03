@@ -137,6 +137,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/subscriptions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Admin stripe subscriptions
+         * @description List of stripe subscriptions
+         */
+        get: operations["admin-stripe-subscriptions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/users": {
         parameters: {
             query?: never;
@@ -616,13 +636,22 @@ export interface components {
             data: components["schemas"]["RoleWithPermissions"][] | null;
             meta: components["schemas"]["Meta"];
         };
-        PaginatedResponseStripeProductWithPrice: {
+        PaginatedResponseStripeProductWithPrices: {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
              */
             readonly $schema?: string;
-            data: components["schemas"]["StripeProductWithPrice"][] | null;
+            data: components["schemas"]["StripeProductWithPrices"][] | null;
+            meta: components["schemas"]["Meta"];
+        };
+        PaginatedResponseSubscriptionWithData: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            data: components["schemas"]["SubscriptionWithData"][] | null;
             meta: components["schemas"]["Meta"];
         };
         PaginatedResponseUserInfo: {
@@ -664,7 +693,7 @@ export interface components {
             currency: string;
             id: string;
             /** @enum {string} */
-            interval: "day" | "week" | "month" | "year";
+            interval?: "day" | "week" | "month" | "year";
             interval_count: string;
             lookup_key: string;
             metadata: string;
@@ -775,9 +804,38 @@ export interface components {
             readonly $schema?: string;
             price_id: string;
         };
-        StripeProductWithPrice: {
-            prices: components["schemas"]["Price"][] | null;
-            product: components["schemas"]["Product"];
+        StripePricesWithProduct: {
+            active: boolean;
+            /** Format: date-time */
+            created_at: string;
+            currency: string;
+            id: string;
+            /** @enum {string} */
+            interval?: "day" | "week" | "month" | "year";
+            interval_count: string;
+            lookup_key: string;
+            metadata: string;
+            product?: components["schemas"]["Product"];
+            product_id: string;
+            trial_period_days: string;
+            /** @enum {string} */
+            type: "one_time" | "recurring";
+            unit_amount: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        StripeProductWithPrices: {
+            active: boolean;
+            /** Format: date-time */
+            created_at: string;
+            description: string;
+            id: string;
+            image: string;
+            metadata: string;
+            name: string;
+            prices?: components["schemas"]["Price"][] | null;
+            /** Format: date-time */
+            updated_at: string;
         };
         StripeUrlOutputBody: {
             /**
@@ -786,6 +844,33 @@ export interface components {
              */
             readonly $schema?: string;
             url: string;
+        };
+        SubscriptionWithData: {
+            cancel_at: string;
+            cancel_at_period_end: boolean;
+            canceled_at: string;
+            /** Format: date-time */
+            created: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            current_period_end: string;
+            /** Format: date-time */
+            current_period_start: string;
+            ended_at: string;
+            id: string;
+            metadata: string;
+            price?: components["schemas"]["StripePricesWithProduct"];
+            price_id: string;
+            /** Format: int64 */
+            quantity: number;
+            status: string;
+            trial_end: string;
+            trial_start: string;
+            /** Format: date-time */
+            updated_at: string;
+            user?: components["schemas"]["User"];
+            user_id: string;
         };
         TokenDto: {
             access_token: string;
@@ -838,9 +923,9 @@ export interface components {
             id: string;
             image: string;
             name: string;
-            permissions: string[] | null;
-            providers: string[] | null;
-            roles: string[] | null;
+            permissions?: string[] | null;
+            providers?: ("google" | "apple" | "facebook" | "github" | "credentials")[] | null;
+            roles?: string[] | null;
             /** Format: date-time */
             updated_at: string;
         };
@@ -1107,10 +1192,12 @@ export interface operations {
                 per_page?: number;
                 q?: string;
                 ids?: string[] | null;
+                not_ids?: string[] | null;
                 names?: string[] | null;
                 permission_ids?: string[] | null;
                 sort_by?: string;
                 sort_order?: string;
+                expand?: string[] | null;
             };
             header?: never;
             path?: never;
@@ -1360,6 +1447,62 @@ export interface operations {
             };
         };
     };
+    "admin-stripe-subscriptions": {
+        parameters: {
+            query?: {
+                page?: number;
+                per_page?: number;
+                q?: string;
+                ids?: string[] | null;
+                status?: ("trialing" | "active" | "canceled" | "incomplete" | "incomplete_expired" | "past_due" | "unpaid" | "paused")[] | null;
+                sort_by?: string;
+                sort_order?: string;
+                expand?: ("user" | "price" | "product")[] | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponseSubscriptionWithData"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
     "admin-users": {
         parameters: {
             query?: {
@@ -1373,6 +1516,7 @@ export interface operations {
                 permission_ids?: string[] | null;
                 sort_by?: string;
                 sort_order?: string;
+                expand?: ("roles" | "permissions" | "accounts" | "subscriptions")[] | null;
             };
             header?: never;
             path?: never;
@@ -2344,8 +2488,6 @@ export interface operations {
             query?: {
                 page?: number;
                 per_page?: number;
-                q?: string;
-                ids?: string[] | null;
                 sort_by?: string;
                 sort_order?: string;
             };
@@ -2361,7 +2503,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PaginatedResponseStripeProductWithPrice"];
+                    "application/json": components["schemas"]["PaginatedResponseStripeProductWithPrices"];
                 };
             };
             /** @description Bad Request */

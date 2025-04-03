@@ -71,3 +71,32 @@ export const getMe = async (token: string): Promise<User> => {
   }
   return data;
 };
+
+type UserPaginate = {
+  page?: number;
+  per_page?: number;
+  providers?:
+    | ("google" | "apple" | "facebook" | "github" | "credentials")[]
+    | null;
+  q?: string;
+  ids?: string[] | null;
+  emails?: string[] | null;
+  role_ids?: string[] | null;
+  permission_ids?: string[] | null;
+  sort_by?: string;
+  sort_order?: string;
+  expand?: ("roles" | "permissions" | "accounts" | "subscriptions")[] | null;
+};
+
+export const userPaginate = async (token: string, args: UserPaginate) => {
+  const { data, error } = await client.GET("/api/admin/users", {
+    query: args,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  if (error) {
+    throw new Error(error.detail);
+  }
+  return data;
+};
