@@ -19,19 +19,19 @@ type StripeWebhookInput struct {
 	RawBody   []byte
 }
 
-func (api *Api) WebhookOperation(path string) huma.Operation {
+func (api *Api) StripeWebhookOperation(path string) huma.Operation {
 	return huma.Operation{
 		OperationID: "stripe-webhook",
 		Method:      http.MethodPost,
 		Path:        path,
 		Summary:     "webhook",
 		Description: "Webhook for stripe",
-		Tags:        []string{"Stripe", "Webhook"},
+		Tags:        []string{"Payment", "Stripe", "Webhook"},
 		Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
 	}
 }
 
-func (api *Api) WebhookHandlerFunc(ctx context.Context, input *StripeWebhookInput) (*struct{}, error) {
+func (api *Api) StripeWebhook(ctx context.Context, input *StripeWebhookInput) (*struct{}, error) {
 	if input == nil {
 		return nil, huma.Error400BadRequest("Missing input")
 	}

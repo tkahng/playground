@@ -93,6 +93,15 @@ func BindApis(api huma.API, app core.App) {
 	huma.Register(api, appApi.OAuth2CallbackPostOperation("/auth/callback"), appApi.OAuth2CallbackPost)
 	huma.Register(api, appApi.OAuth2AuthorizationUrlOperation("/auth/authorization-url"), appApi.OAuth2AuthorizationUrl)
 
+	// stripe routes
+	stripeGroup := huma.NewGroup(api, "/stripe")
+	// stripe webhook
+	huma.Register(stripeGroup, appApi.StripeWebhookOperation("/webhook"), appApi.StripeWebhook)
+	// stripe billing portal
+	huma.Register(stripeGroup, appApi.StripeBillingPortalOperation("/billing-portal"), appApi.StripeBillingPortal)
+	//  stripe checkout session
+	huma.Register(stripeGroup, appApi.StripeCheckoutSessionOperation("/checkout-session"), appApi.StripeCheckoutSession)
+
 	//  admin routes
 	adminGroup := huma.NewGroup(api, "/admin")
 	//  admin middleware

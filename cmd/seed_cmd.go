@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"log/slog"
 
 	"github.com/spf13/cobra"
 	"github.com/tkahng/authgo/internal/conf"
@@ -29,11 +30,39 @@ var seedRolesCmd = &cobra.Command{
 		conf := conf.AppConfigGetter()
 
 		dbx := core.NewBobFromConf(ctx, conf.Db)
-		err := repository.EnsureRoleAndPermissions(ctx, dbx, "superuser", "superuser")
+		err := repository.EnsureRoleAndPermissions(ctx, dbx, "superuser", "superuser", "advanced", "pro", "basic")
 		if err != nil {
-			return err
+			slog.Error(
+				"error at createing roles",
+				"error", err,
+				"role", "superuser",
+			)
 		}
-		return nil
+		err = repository.EnsureRoleAndPermissions(ctx, dbx, "advanced", "advanced", "pro", "basic")
+		if err != nil {
+			slog.Error(
+				"error at createing roles",
+				"error", err,
+				"role", "basic",
+			)
+		}
+		err = repository.EnsureRoleAndPermissions(ctx, dbx, "pro", "pro", "basic")
+		if err != nil {
+			slog.Error(
+				"error at createing roles",
+				"error", err,
+				"role", "basic",
+			)
+		}
+		err = repository.EnsureRoleAndPermissions(ctx, dbx, "basic", "basic")
+		if err != nil {
+			slog.Error(
+				"error at createing roles",
+				"error", err,
+				"role", "basic",
+			)
+		}
+		return err
 	},
 }
 var seedUserCmd = &cobra.Command{
