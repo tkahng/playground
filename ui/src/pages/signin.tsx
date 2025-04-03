@@ -17,7 +17,7 @@ import { useContext, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
 
-export default function LoginPage() {
+export default function SigninPage() {
   const [input, setInput] = useState<SigninInput>({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate(); // Get navigation function
