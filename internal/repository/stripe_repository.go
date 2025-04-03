@@ -16,6 +16,7 @@ import (
 	"github.com/stephenafamo/scan"
 	"github.com/stripe/stripe-go/v81"
 	"github.com/tkahng/authgo/internal/db/models"
+	"github.com/tkahng/authgo/internal/shared"
 )
 
 func FindCustomerByStripeId(ctx context.Context, dbx bob.Executor, stripeId string) (*models.StripeCustomer, error) {
@@ -360,4 +361,38 @@ func FindProductWithPrices(ctx context.Context, dbx bob.Executor) ([]StripeProdu
 	}
 	return products, nil
 
+}
+
+func ListProducts(ctx context.Context, db bob.DB, input *shared.PaginatedInput) ([]*models.StripeProduct, error) {
+
+	q := models.StripeProducts.Query()
+	// filter := input.UserListFilter
+	pageInput := input
+
+	ViewApplyPagination(q, pageInput)
+
+	// ListUserFilterFunc(ctx, q, &filter)
+	data, err := q.All(ctx, db)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
+}
+
+// CountUsers implements AdminCrudActions.
+func CountProducts(ctx context.Context, db bob.DB, filter *struct{}) (int64, error) {
+	q := models.Users.Query()
+	// ListUserFilterFunc(ctx, q, filter)
+	data, err := q.Count(ctx, db)
+	if err != nil {
+		return 0, err
+	}
+	return data, nil
+}
+
+func PricesByProductIds(ctx context.Context, dbx bob.Executor, productIds []string) ([]*models.StripePrice, error) {
+	data, err := models.StripePrices.Query(
+		models.SelectWhere.StripePrices.ProductID.In(productIds...),
+	).All(ctx, dbx)
+	return data, err
 }
