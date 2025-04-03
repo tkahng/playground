@@ -1,17 +1,9 @@
-SELECT to_json(prod.*) AS "product",
-    (
-        SELECT coalesce(json_agg(agg), '[]')
-        FROM (
-                SELECT price.*
-                FROM stripe_prices price
-                WHERE price.product_id = prod.id
-                    AND price.active = TRUE
-                ORDER BY price.unit_amount ASC
-            ) AS agg
-    ) AS "prices"
-FROM stripe_products prod
-WHERE prod.active = TRUE
-ORDER BY prod.metadata->'index' ASC;
+SELECT r.*,
+    coalesce(json_agg(p), '[]') AS "permissions"
+FROM roles r
+    JOIN role_permissions rp ON r.id = rp.role_id
+    JOIN permissions p ON rp.permission_id = p.id
+GROUP BY r.id;
 -- WITH FilteredAccounts AS (
 --     SELECT u.id AS user_id,
 --         u.email AS email,

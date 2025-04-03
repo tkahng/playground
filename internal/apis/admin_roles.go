@@ -12,6 +12,7 @@ import (
 	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/authgo/internal/tools/dataloader"
 )
 
 func (api *Api) AdminRolesOperation(path string) huma.Operation {
@@ -29,23 +30,33 @@ func (api *Api) AdminRolesOperation(path string) huma.Operation {
 	}
 }
 
+type RoleWithPermissions struct {
+	*models.Role
+	Permissions []*models.Permission
+}
+
 func (api *Api) AdminRoles(ctx context.Context, input *struct {
 	shared.RolesListParams
-}) (*PaginatedOutput[*models.Role], error) {
+}) (*PaginatedOutput[*RoleWithPermissions], error) {
 	db := api.app.Db()
-	roles, err := repository.ListRoles(ctx, db, &input.RolesListParams)
+	roles, err := repository.ListRolesWithPermissions(ctx, db, &input.RolesListParams)
 	if err != nil {
 		return nil, err
 	}
+
 	count, err := repository.CountRoles(ctx, db, &input.RoleListFilter)
 	if err != nil {
 		return nil, err
 	}
-
-	return &PaginatedOutput[*models.Role]{
-		Body: shared.PaginatedResponse[*models.Role]{
-
-			Data: roles,
+	out := dataloader.Map(roles, func(role *models.Role) *RoleWithPermissions {
+		return &RoleWithPermissions{
+			Role:        role,
+			Permissions: role.R.Permissions,
+		}
+	})
+	return &PaginatedOutput[*RoleWithPermissions]{
+		Body: shared.PaginatedResponse[*RoleWithPermissions]{
+			Data: out,
 			Meta: shared.Meta{
 				Page:    input.PaginatedInput.Page,
 				PerPage: input.PaginatedInput.PerPage,
