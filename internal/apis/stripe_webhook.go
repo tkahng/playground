@@ -57,7 +57,7 @@ func (api *Api) WebhookHandlerFunc(ctx context.Context, input *StripeWebhookInpu
 		return nil, huma.Error400BadRequest(err.Error())
 	}
 	db := api.app.Db()
-	// payment := api.app.Payment()
+	payment := api.app.Payment()
 	switch event.Type {
 	case stripe.EventTypeProductCreated, stripe.EventTypeProductUpdated:
 		product, err := utils.UnmarshalJSON[stripe.Product](event.Data.Raw)
@@ -80,24 +80,24 @@ func (api *Api) WebhookHandlerFunc(ctx context.Context, input *StripeWebhookInpu
 		}
 		return nil, nil
 	case stripe.EventTypeCheckoutSessionCompleted:
-		_, err := utils.UnmarshalJSON[stripe.CheckoutSession](event.Data.Raw)
-		// if err != nil {
-		// 	return nil, huma.Error400BadRequest("failed to unmarshal session", err)
-		// }
-		// err = payment.UpsertCheckoutSessionByIds(ctx, session.ID, session.Customer.ID)
+		session, err := utils.UnmarshalJSON[stripe.CheckoutSession](event.Data.Raw)
+		if err != nil {
+			return nil, huma.Error400BadRequest("failed to unmarshal session", err)
+		}
+		err = payment.UpsertSubscriptionByIds(ctx, db, session.Customer.ID, session.Subscription.ID)
 		if err != nil {
 			return nil, huma.Error400BadRequest("failed to upsert checkout session complete", err)
 		}
 		return nil, nil
 	case stripe.EventTypeCustomerSubscriptionCreated, stripe.EventTypeCustomerSubscriptionUpdated, stripe.EventTypeCustomerSubscriptionDeleted:
-		_, err := utils.UnmarshalJSON[stripe.Subscription](event.Data.Raw)
+		subscription, err := utils.UnmarshalJSON[stripe.Subscription](event.Data.Raw)
 		if err != nil {
 			return nil, huma.Error400BadRequest("failed to unmarshal subscription", err)
 		}
-		// err = payment.UpsertSubscriptionByIds(ctx, subscription.ID, subscription.Customer.ID)
-		// if err != nil {
-		// 	return nil, huma.Error400BadRequest("failed to upsert subscription", err)
-		// }
+		err = payment.UpsertSubscriptionByIds(ctx, db, subscription.Customer.ID, subscription.ID)
+		if err != nil {
+			return nil, huma.Error400BadRequest("failed to upsert subscription", err)
+		}
 		return nil, nil
 	default:
 		fmt.Fprintf(os.Stderr, "⚠️  Unhandled event type: %s\n", event.Type)

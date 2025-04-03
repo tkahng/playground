@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/aarondl/opt/omit"
@@ -233,14 +234,21 @@ func UpsertSubscriptionFromStripe(ctx context.Context, exec bob.Executor, sub *s
 	if sub == nil {
 		return nil
 	}
+	var item *stripe.SubscriptionItem
+	if len(sub.Items.Data) > 0 {
+		item = sub.Items.Data[0]
+	}
+	if item == nil || item.Price == nil {
+		return errors.New("price not found")
+	}
 	status := StripeSubscriptionStatusConvert(sub.Status)
 	err := UpsertSubscription(ctx, exec, &models.StripeSubscriptionSetter{
 		ID:                 omit.From(sub.ID),
 		UserID:             omit.From(userId),
 		Status:             omit.From(status),
 		Metadata:           omit.From(types.NewJSON(sub.Metadata)),
-		PriceID:            omit.From(sub.Items.Data[0].Price.ID),
-		Quantity:           omit.From(sub.Items.Data[0].Quantity),
+		PriceID:            omit.From(item.Price.ID),
+		Quantity:           omit.From(item.Quantity),
 		CancelAtPeriodEnd:  omit.From(sub.CancelAtPeriodEnd),
 		Created:            omit.From(Int64ToISODate(sub.Created)),
 		CurrentPeriodStart: omit.From(Int64ToISODate(sub.CurrentPeriodStart)),
@@ -292,9 +300,18 @@ func FindLatestCheckoutSubscriptionByUserId(ctx context.Context, dbx bob.Executo
 	return OptionalRow(data, err)
 }
 
+func IsFirstSubscription(ctx context.Context, dbx bob.Executor, userId uuid.UUID) (bool, error) {
+	data, err := models.StripeSubscriptions.Query(
+		models.SelectWhere.StripeSubscriptions.UserID.EQ(userId),
+	).Exists(ctx, dbx)
+	return !data, err
+	// return OptionalRow(data, err)
+}
+
 func FindValidPriceById(ctx context.Context, dbx bob.Executor, priceId string) (*models.StripePrice, error) {
 	data, err := models.StripePrices.Query(
 		models.SelectWhere.StripePrices.ID.EQ(priceId),
+		models.SelectWhere.StripePrices.Type.EQ(models.StripePricingTypeRecurring),
 	).One(ctx, dbx)
 	return data, err
 }

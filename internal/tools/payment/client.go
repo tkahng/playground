@@ -159,7 +159,7 @@ func (s *StripeClient) FindSubscriptionByStripeId(stripeId string) (*stripe.Subs
 	return subscription.Get(stripeId, params)
 }
 
-func (s *StripeClient) CreateCheckoutSession(customerId, priceId string) (*stripe.CheckoutSession, error) {
+func (s *StripeClient) CreateCheckoutSession(customerId, priceId string, trialDays *int64) (*stripe.CheckoutSession, error) {
 	lineParams := []*stripe.CheckoutSessionLineItemParams{
 		{
 			Price:    stripe.String(priceId),
@@ -170,7 +170,8 @@ func (s *StripeClient) CreateCheckoutSession(customerId, priceId string) (*strip
 		Address: stripe.String("auto"),
 	}
 	subscriptionParams := &stripe.CheckoutSessionSubscriptionDataParams{
-		Metadata: map[string]string{},
+		Metadata:        map[string]string{},
+		TrialPeriodDays: trialDays,
 	}
 
 	sessionParams := &stripe.CheckoutSessionParams{
@@ -179,6 +180,7 @@ func (s *StripeClient) CreateCheckoutSession(customerId, priceId string) (*strip
 		CustomerUpdate:     customerUpdateParams,
 		Mode:               stripe.String("subscription"),
 		SuccessURL:         stripe.String(s.config.AppUrl + "/dashboard/subscriptions"),
+
 		// CancelURL:          stripe.String(s.config.AppUrl + "/payment/cancel"),
 		LineItems:        lineParams,
 		SubscriptionData: subscriptionParams,

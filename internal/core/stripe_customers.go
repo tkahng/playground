@@ -9,7 +9,30 @@ import (
 	"github.com/stephenafamo/bob"
 	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/repository"
+	"github.com/tkahng/authgo/internal/types"
 )
+
+func (srv *StripeService) UpsertSubscriptionByIds(ctx context.Context, db bob.Executor, cutomerId, subscriptionId string) error {
+	cus, err := repository.FindCustomerByStripeId(ctx, db, cutomerId)
+	if err != nil {
+		return err
+	}
+	if cus == nil {
+		return errors.New("customer not found")
+	}
+	sub, err := srv.client.FindSubscriptionByStripeId(subscriptionId)
+	if err != nil {
+		return err
+	}
+	if sub == nil {
+		return errors.New("subscription not found")
+	}
+	err = repository.UpsertSubscriptionFromStripe(ctx, db, sub, cus.ID)
+	if err != nil {
+		return err
+	}
+	return nil
+}
 
 func (srv *StripeService) FindOrCreateCustomerFromUser(ctx context.Context, exec bob.Executor, user *models.User) (*models.StripeCustomer, error) {
 	if user == nil {
@@ -50,6 +73,14 @@ func (srv *StripeService) CreateCheckoutSession(ctx context.Context, db bob.Exec
 	if val != nil {
 		return "", errors.New("user already has a valid subscription")
 	}
+	firstSub, err := repository.IsFirstSubscription(ctx, db, user.ID)
+	if err != nil {
+		return "", err
+	}
+	var trialDays *int64
+	if firstSub {
+		trialDays = types.Pointer(int64(14))
+	}
 	valPrice, err := repository.FindValidPriceById(ctx, db, priceId)
 	if err != nil {
 		return "", err
@@ -57,7 +88,7 @@ func (srv *StripeService) CreateCheckoutSession(ctx context.Context, db bob.Exec
 	if valPrice == nil {
 		return "", errors.New("price is not valid")
 	}
-	sesh, err := srv.client.CreateCheckoutSession(dbcus.StripeID, priceId)
+	sesh, err := srv.client.CreateCheckoutSession(dbcus.StripeID, priceId, trialDays)
 	if err != nil {
 		return "", err
 	}
