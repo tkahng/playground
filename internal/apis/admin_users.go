@@ -38,9 +38,9 @@ type PaginatedOutput[T any] struct {
 
 type UserInfo struct {
 	models.User
-	Roles       []string           `json:"roles"`
-	Permissions []string           `json:"permissions"`
-	Providers   []models.Providers `json:"providers"`
+	Roles       []string           `json:"roles,omitempty" required:"false"`
+	Permissions []string           `json:"permissions,omitempty" required:"false"`
+	Providers   []models.Providers `json:"providers,omitempty" required:"false" uniqueItems:"true" minimum:"1" maximum:"100" enum:"google,apple,facebook,github,credentials"`
 }
 
 func (api *Api) AdminUsers(ctx context.Context, input *struct {

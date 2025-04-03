@@ -35,7 +35,7 @@ type RoleWithPermissions struct {
 	Permissions []*models.Permission
 }
 
-func (api *Api) AdminRoles(ctx context.Context, input *struct {
+func (api *Api) AdminRolesList(ctx context.Context, input *struct {
 	shared.RolesListParams
 }) (*PaginatedOutput[*RoleWithPermissions], error) {
 	db := api.app.Db()

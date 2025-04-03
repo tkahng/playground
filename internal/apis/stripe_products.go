@@ -9,7 +9,6 @@ import (
 	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/dataloader"
-	"github.com/tkahng/authgo/internal/tools/utils"
 )
 
 func (api *Api) StripeProductsWithPricesOperation(path string) huma.Operation {
@@ -43,7 +42,6 @@ func (api *Api) StripeProductsWithPrices(ctx context.Context, inputt *StripeProd
 		},
 		SortParams: inputt.SortParams,
 	}
-	utils.PrettyPrintJSON(input)
 	users, err := repository.ListProducts(ctx, db, input)
 	if err != nil {
 		return nil, err

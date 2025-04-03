@@ -34,9 +34,10 @@ type UserListParams struct {
 	SortOrder string `query:"sort_order,omitempty" required:"false" default:"desc"`
 }
 type RoleListFilter struct {
-	Q     string   `query:"q,omitempty" required:"false"`
-	Ids   []string `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
-	Names []string `query:"names,omitempty" required:"false" minimum:"1" maximum:"100"`
+	Q      string   `query:"q,omitempty" required:"false"`
+	Ids    []string `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+	NotIds []string `query:"not_ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+	Names  []string `query:"names,omitempty" required:"false" minimum:"1" maximum:"100"`
 	// Roles         []string           `query:"roles,omitempty" required:"false" minimum:"1" maximum:"100"`
 	// Permissions   []string           `query:"permissions,omitempty" required:"false" minimum:"1" maximum:"100"`
 	PermissionIds []string `query:"permission_ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
@@ -47,10 +48,8 @@ type RoleListFilter struct {
 type RolesListParams struct {
 	PaginatedInput
 	RoleListFilter
-	// 	SortBy    string `query:"sort_by,omitempty" required:"false" default:"created_at"`
-	// 	SortOrder string `query:"sort_order,omitempty" required:"false" default:"desc"`
-	SortBy    string `query:"sort_by,omitempty" required:"false" default:"created_at"`
-	SortOrder string `query:"sort_order,omitempty" required:"false" default:"desc"`
+	SortParams
+	Expand []string `query:"expand,omitempty" required:"false" minimum:"1" maximum:"100"`
 }
 type PermissionsListFilter struct {
 	Q     string   `query:"q,omitempty" required:"false"`
