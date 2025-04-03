@@ -222,3 +222,62 @@ func CountCustomers(ctx context.Context, db bob.DB, filter *shared.StripePriceLi
 	}
 	return data, nil
 }
+
+func ListSubscriptions(ctx context.Context, db bob.DB, input *shared.StripeSubscriptionListParams) (models.StripeSubscriptionSlice, error) {
+
+	q := models.StripeSubscriptions.Query()
+	filter := input.StripeSubscriptionListFilter
+	pageInput := &input.PaginatedInput
+
+	ViewApplyPagination(q, pageInput)
+	ListSubscriptionFilterFunc(ctx, q, &filter)
+	StripeSubscriptionOrderByFunc(ctx, q, input)
+	data, err := q.All(ctx, db)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
+}
+
+func StripeSubscriptionOrderByFunc(ctx context.Context, q *psql.ViewQuery[*models.StripeSubscription, models.StripeSubscriptionSlice], input *shared.StripeSubscriptionListParams) {
+	if input == nil {
+		return
+	}
+	if input.SortParams.SortBy == "" {
+		return
+	}
+	if slices.Contains(StripeSubscriptionColumnNames, input.SortBy) {
+		var order = sm.OrderBy(input.SortBy)
+		if input.SortParams.SortOrder == "desc" {
+			order = sm.OrderBy(input.SortBy).Desc()
+		} else if input.SortParams.SortOrder == "asc" {
+			order = sm.OrderBy(input.SortBy).Asc()
+		}
+		q.Apply(
+			order,
+		)
+	}
+}
+
+func ListSubscriptionFilterFunc(ctx context.Context, q *psql.ViewQuery[*models.StripeSubscription, models.StripeSubscriptionSlice], filter *shared.StripeSubscriptionListFilter) {
+	if filter == nil {
+		return
+	}
+	if len(filter.Ids) > 0 {
+		ids := ParseUUIDs(filter.Ids)
+		q.Apply(
+			models.SelectWhere.StripeCustomers.ID.In(ids...),
+		)
+	}
+
+}
+
+func CountSubscriptions(ctx context.Context, db bob.DB, filter *shared.StripeSubscriptionListFilter) (int64, error) {
+	q := models.StripeSubscriptions.Query()
+	ListSubscriptionFilterFunc(ctx, q, filter)
+	data, err := q.Count(ctx, db)
+	if err != nil {
+		return 0, err
+	}
+	return data, nil
+}

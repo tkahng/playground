@@ -120,6 +120,26 @@ type StripeCustomerListParams struct {
 	Expand []string `query:"expand,omitempty" required:"false" minimum:"1" maximum:"100" enum:"users"`
 }
 
+// StripeSubscriptionStatusTrialing          StripeSubscriptionStatus = "trialing"
+// StripeSubscriptionStatusActive            StripeSubscriptionStatus = "active"
+// StripeSubscriptionStatusCanceled          StripeSubscriptionStatus = "canceled"
+// StripeSubscriptionStatusIncomplete        StripeSubscriptionStatus = "incomplete"
+// StripeSubscriptionStatusIncompleteExpired StripeSubscriptionStatus = "incomplete_expired"
+// StripeSubscriptionStatusPastDue           StripeSubscriptionStatus = "past_due"
+// StripeSubscriptionStatusUnpaid            StripeSubscriptionStatus = "unpaid"
+// StripeSubscriptionStatusPaused            StripeSubscriptionStatus = "paused"
+
+type StripeSubscriptionListFilter struct {
+	Q      string   `query:"q,omitempty" required:"false"`
+	Ids    []string `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+	Status []string `query:"status,omitempty" required:"false" minimum:"1" maximum:"100" enum:"trialing,active,canceled,incomplete,incomplete_expired,past_due,unpaid,paused"`
+}
+type StripeSubscriptionListParams struct {
+	PaginatedInput
+	StripeSubscriptionListFilter
+	SortParams
+	Expand []string `query:"expand,omitempty" required:"false" minimum:"1" maximum:"100" enum:"user,price,product"`
+}
 type PaginatedInput struct {
 	Page    int `query:"page,omitempty" default:"1" minimum:"1"`
 	PerPage int `query:"per_page,omitempty" default:"10" minimum:"1" maximum:"100"`

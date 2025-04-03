@@ -139,6 +139,9 @@ func BindApis(api huma.API, app core.App) {
 	// admin permissions delete
 	huma.Register(adminGroup, appApi.AdminPermissionsDeleteOperation("/permissions/{id}"), appApi.AdminPermissionsDelete)
 
+	// admin stripe subscriptions
+	huma.Register(adminGroup, appApi.AdminStripeSubscriptionsOperation("/subscriptions"), appApi.AdminStripeSubscriptions)
+
 }
 
 func AddRoutes(api huma.API, app core.App) {

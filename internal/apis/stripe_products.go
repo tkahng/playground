@@ -23,9 +23,13 @@ func (api *Api) StripeProductsWithPricesOperation(path string) huma.Operation {
 	}
 }
 
+type StripePricesWithProduct struct {
+	*models.StripePrice
+	Product *models.StripeProduct `db:"product" json:"product,omitempty" required:"false"`
+}
 type StripeProductWithPrices struct {
 	*models.StripeProduct
-	Prices []*models.StripePrice `db:"prices" json:"prices"`
+	Prices []*models.StripePrice `db:"prices" json:"prices,omitempty" required:"false"`
 }
 
 type StripeProductsWithPricesInput struct {
