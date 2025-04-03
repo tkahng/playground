@@ -11,7 +11,6 @@ import (
 	"github.com/aarondl/opt/null"
 	"github.com/aarondl/opt/omit"
 	"github.com/aarondl/opt/omitnull"
-	"github.com/google/uuid"
 	"github.com/stephenafamo/bob"
 	"github.com/stephenafamo/bob/dialect/psql"
 	"github.com/stephenafamo/bob/dialect/psql/dialect"
@@ -23,8 +22,7 @@ import (
 
 // StripeWebhookEvent is an object representing the database table.
 type StripeWebhookEvent struct {
-	ID                uuid.UUID        `db:"id,pk" json:"id"`
-	StripeID          string           `db:"stripe_id" json:"stripe_id"`
+	ID                string           `db:"id,pk" json:"id"`
 	Type              string           `db:"type" json:"type"`
 	ObjectType        string           `db:"object_type" json:"object_type"`
 	ObjectStripeID    string           `db:"object_stripe_id" json:"object_stripe_id"`
@@ -46,7 +44,6 @@ type StripeWebhookEventsQuery = *psql.ViewQuery[*StripeWebhookEvent, StripeWebho
 
 type stripeWebhookEventColumnNames struct {
 	ID                string
-	StripeID          string
 	Type              string
 	ObjectType        string
 	ObjectStripeID    string
@@ -61,7 +58,6 @@ var StripeWebhookEventColumns = buildStripeWebhookEventColumns("stripe_webhook_e
 type stripeWebhookEventColumns struct {
 	tableAlias        string
 	ID                psql.Expression
-	StripeID          psql.Expression
 	Type              psql.Expression
 	ObjectType        psql.Expression
 	ObjectStripeID    psql.Expression
@@ -83,7 +79,6 @@ func buildStripeWebhookEventColumns(alias string) stripeWebhookEventColumns {
 	return stripeWebhookEventColumns{
 		tableAlias:        alias,
 		ID:                psql.Quote(alias, "id"),
-		StripeID:          psql.Quote(alias, "stripe_id"),
 		Type:              psql.Quote(alias, "type"),
 		ObjectType:        psql.Quote(alias, "object_type"),
 		ObjectStripeID:    psql.Quote(alias, "object_stripe_id"),
@@ -95,8 +90,7 @@ func buildStripeWebhookEventColumns(alias string) stripeWebhookEventColumns {
 }
 
 type stripeWebhookEventWhere[Q psql.Filterable] struct {
-	ID                psql.WhereMod[Q, uuid.UUID]
-	StripeID          psql.WhereMod[Q, string]
+	ID                psql.WhereMod[Q, string]
 	Type              psql.WhereMod[Q, string]
 	ObjectType        psql.WhereMod[Q, string]
 	ObjectStripeID    psql.WhereMod[Q, string]
@@ -112,8 +106,7 @@ func (stripeWebhookEventWhere[Q]) AliasedAs(alias string) stripeWebhookEventWher
 
 func buildStripeWebhookEventWhere[Q psql.Filterable](cols stripeWebhookEventColumns) stripeWebhookEventWhere[Q] {
 	return stripeWebhookEventWhere[Q]{
-		ID:                psql.Where[Q, uuid.UUID](cols.ID),
-		StripeID:          psql.Where[Q, string](cols.StripeID),
+		ID:                psql.Where[Q, string](cols.ID),
 		Type:              psql.Where[Q, string](cols.Type),
 		ObjectType:        psql.Where[Q, string](cols.ObjectType),
 		ObjectStripeID:    psql.Where[Q, string](cols.ObjectStripeID),
@@ -126,22 +119,17 @@ func buildStripeWebhookEventWhere[Q psql.Filterable](cols stripeWebhookEventColu
 
 var StripeWebhookEventErrors = &stripeWebhookEventErrors{
 	ErrUniqueStripeWebhookEventsPkey: &UniqueConstraintError{s: "stripe_webhook_events_pkey"},
-
-	ErrUniqueStripeWebhookEventsStripeIdKey: &UniqueConstraintError{s: "stripe_webhook_events_stripe_id_key"},
 }
 
 type stripeWebhookEventErrors struct {
 	ErrUniqueStripeWebhookEventsPkey *UniqueConstraintError
-
-	ErrUniqueStripeWebhookEventsStripeIdKey *UniqueConstraintError
 }
 
 // StripeWebhookEventSetter is used for insert/upsert/update operations
 // All values are optional, and do not have to be set
 // Generated columns are not included
 type StripeWebhookEventSetter struct {
-	ID                omit.Val[uuid.UUID]  `db:"id,pk" json:"id"`
-	StripeID          omit.Val[string]     `db:"stripe_id" json:"stripe_id"`
+	ID                omit.Val[string]     `db:"id,pk" json:"id"`
 	Type              omit.Val[string]     `db:"type" json:"type"`
 	ObjectType        omit.Val[string]     `db:"object_type" json:"object_type"`
 	ObjectStripeID    omit.Val[string]     `db:"object_stripe_id" json:"object_stripe_id"`
@@ -152,13 +140,9 @@ type StripeWebhookEventSetter struct {
 }
 
 func (s StripeWebhookEventSetter) SetColumns() []string {
-	vals := make([]string, 0, 9)
+	vals := make([]string, 0, 8)
 	if !s.ID.IsUnset() {
 		vals = append(vals, "id")
-	}
-
-	if !s.StripeID.IsUnset() {
-		vals = append(vals, "stripe_id")
 	}
 
 	if !s.Type.IsUnset() {
@@ -196,9 +180,6 @@ func (s StripeWebhookEventSetter) Overwrite(t *StripeWebhookEvent) {
 	if !s.ID.IsUnset() {
 		t.ID, _ = s.ID.Get()
 	}
-	if !s.StripeID.IsUnset() {
-		t.StripeID, _ = s.StripeID.Get()
-	}
 	if !s.Type.IsUnset() {
 		t.Type, _ = s.Type.Get()
 	}
@@ -228,59 +209,53 @@ func (s *StripeWebhookEventSetter) Apply(q *dialect.InsertQuery) {
 	})
 
 	q.AppendValues(bob.ExpressionFunc(func(ctx context.Context, w io.Writer, d bob.Dialect, start int) ([]any, error) {
-		vals := make([]bob.Expression, 9)
+		vals := make([]bob.Expression, 8)
 		if s.ID.IsUnset() {
 			vals[0] = psql.Raw("DEFAULT")
 		} else {
 			vals[0] = psql.Arg(s.ID)
 		}
 
-		if s.StripeID.IsUnset() {
+		if s.Type.IsUnset() {
 			vals[1] = psql.Raw("DEFAULT")
 		} else {
-			vals[1] = psql.Arg(s.StripeID)
-		}
-
-		if s.Type.IsUnset() {
-			vals[2] = psql.Raw("DEFAULT")
-		} else {
-			vals[2] = psql.Arg(s.Type)
+			vals[1] = psql.Arg(s.Type)
 		}
 
 		if s.ObjectType.IsUnset() {
-			vals[3] = psql.Raw("DEFAULT")
+			vals[2] = psql.Raw("DEFAULT")
 		} else {
-			vals[3] = psql.Arg(s.ObjectType)
+			vals[2] = psql.Arg(s.ObjectType)
 		}
 
 		if s.ObjectStripeID.IsUnset() {
-			vals[4] = psql.Raw("DEFAULT")
+			vals[3] = psql.Raw("DEFAULT")
 		} else {
-			vals[4] = psql.Arg(s.ObjectStripeID)
+			vals[3] = psql.Arg(s.ObjectStripeID)
 		}
 
 		if s.EventCreationDate.IsUnset() {
-			vals[5] = psql.Raw("DEFAULT")
+			vals[4] = psql.Raw("DEFAULT")
 		} else {
-			vals[5] = psql.Arg(s.EventCreationDate)
+			vals[4] = psql.Arg(s.EventCreationDate)
 		}
 
 		if s.RequestID.IsUnset() {
-			vals[6] = psql.Raw("DEFAULT")
+			vals[5] = psql.Raw("DEFAULT")
 		} else {
-			vals[6] = psql.Arg(s.RequestID)
+			vals[5] = psql.Arg(s.RequestID)
 		}
 
 		if s.CreatedAt.IsUnset() {
-			vals[7] = psql.Raw("DEFAULT")
+			vals[6] = psql.Raw("DEFAULT")
 		} else {
-			vals[7] = psql.Arg(s.CreatedAt)
+			vals[6] = psql.Arg(s.CreatedAt)
 		}
 
 		if s.UpdatedAt.IsUnset() {
-			vals[8] = psql.Raw("DEFAULT")
+			vals[7] = psql.Raw("DEFAULT")
 		} else {
-			vals[8] = psql.Arg(s.UpdatedAt)
+			vals[7] = psql.Arg(s.UpdatedAt)
 		}
 
 		return bob.ExpressSlice(ctx, w, d, start, vals, "", ", ", "")
@@ -292,19 +267,12 @@ func (s StripeWebhookEventSetter) UpdateMod() bob.Mod[*dialect.UpdateQuery] {
 }
 
 func (s StripeWebhookEventSetter) Expressions(prefix ...string) []bob.Expression {
-	exprs := make([]bob.Expression, 0, 9)
+	exprs := make([]bob.Expression, 0, 8)
 
 	if !s.ID.IsUnset() {
 		exprs = append(exprs, expr.Join{Sep: " = ", Exprs: []bob.Expression{
 			psql.Quote(append(prefix, "id")...),
 			psql.Arg(s.ID),
-		}})
-	}
-
-	if !s.StripeID.IsUnset() {
-		exprs = append(exprs, expr.Join{Sep: " = ", Exprs: []bob.Expression{
-			psql.Quote(append(prefix, "stripe_id")...),
-			psql.Arg(s.StripeID),
 		}})
 	}
 
@@ -362,7 +330,7 @@ func (s StripeWebhookEventSetter) Expressions(prefix ...string) []bob.Expression
 
 // FindStripeWebhookEvent retrieves a single record by primary key
 // If cols is empty Find will return all columns.
-func FindStripeWebhookEvent(ctx context.Context, exec bob.Executor, IDPK uuid.UUID, cols ...string) (*StripeWebhookEvent, error) {
+func FindStripeWebhookEvent(ctx context.Context, exec bob.Executor, IDPK string, cols ...string) (*StripeWebhookEvent, error) {
 	if len(cols) == 0 {
 		return StripeWebhookEvents.Query(
 			SelectWhere.StripeWebhookEvents.ID.EQ(IDPK),
@@ -376,7 +344,7 @@ func FindStripeWebhookEvent(ctx context.Context, exec bob.Executor, IDPK uuid.UU
 }
 
 // StripeWebhookEventExists checks the presence of a single record by primary key
-func StripeWebhookEventExists(ctx context.Context, exec bob.Executor, IDPK uuid.UUID) (bool, error) {
+func StripeWebhookEventExists(ctx context.Context, exec bob.Executor, IDPK string) (bool, error) {
 	return StripeWebhookEvents.Query(
 		SelectWhere.StripeWebhookEvents.ID.EQ(IDPK),
 	).Exists(ctx, exec)

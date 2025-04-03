@@ -11,7 +11,6 @@ import (
 	"github.com/aarondl/opt/null"
 	"github.com/aarondl/opt/omit"
 	"github.com/aarondl/opt/omitnull"
-	"github.com/google/uuid"
 	"github.com/jaswdr/faker/v2"
 	"github.com/stephenafamo/bob"
 	models "github.com/tkahng/authgo/internal/db/models"
@@ -38,8 +37,7 @@ func (mods StripeWebhookEventModSlice) Apply(n *StripeWebhookEventTemplate) {
 // StripeWebhookEventTemplate is an object representing the database table.
 // all columns are optional and should be set by mods
 type StripeWebhookEventTemplate struct {
-	ID                func() uuid.UUID
-	StripeID          func() string
+	ID                func() string
 	Type              func() string
 	ObjectType        func() string
 	ObjectStripeID    func() string
@@ -65,9 +63,6 @@ func (o StripeWebhookEventTemplate) toModel() *models.StripeWebhookEvent {
 
 	if o.ID != nil {
 		m.ID = o.ID()
-	}
-	if o.StripeID != nil {
-		m.StripeID = o.StripeID()
 	}
 	if o.Type != nil {
 		m.Type = o.Type()
@@ -117,9 +112,6 @@ func (o StripeWebhookEventTemplate) BuildSetter() *models.StripeWebhookEventSett
 
 	if o.ID != nil {
 		m.ID = omit.From(o.ID())
-	}
-	if o.StripeID != nil {
-		m.StripeID = omit.From(o.StripeID())
 	}
 	if o.Type != nil {
 		m.Type = omit.From(o.Type())
@@ -182,8 +174,8 @@ func (o StripeWebhookEventTemplate) BuildMany(number int) models.StripeWebhookEv
 }
 
 func ensureCreatableStripeWebhookEvent(m *models.StripeWebhookEventSetter) {
-	if m.StripeID.IsUnset() {
-		m.StripeID = omit.From(random_string(nil))
+	if m.ID.IsUnset() {
+		m.ID = omit.From(random_string(nil))
 	}
 	if m.Type.IsUnset() {
 		m.Type = omit.From(random_string(nil))
@@ -313,7 +305,6 @@ type stripeWebhookEventMods struct{}
 func (m stripeWebhookEventMods) RandomizeAllColumns(f *faker.Faker) StripeWebhookEventMod {
 	return StripeWebhookEventModSlice{
 		StripeWebhookEventMods.RandomID(f),
-		StripeWebhookEventMods.RandomStripeID(f),
 		StripeWebhookEventMods.RandomType(f),
 		StripeWebhookEventMods.RandomObjectType(f),
 		StripeWebhookEventMods.RandomObjectStripeID(f),
@@ -325,14 +316,14 @@ func (m stripeWebhookEventMods) RandomizeAllColumns(f *faker.Faker) StripeWebhoo
 }
 
 // Set the model columns to this value
-func (m stripeWebhookEventMods) ID(val uuid.UUID) StripeWebhookEventMod {
+func (m stripeWebhookEventMods) ID(val string) StripeWebhookEventMod {
 	return StripeWebhookEventModFunc(func(o *StripeWebhookEventTemplate) {
-		o.ID = func() uuid.UUID { return val }
+		o.ID = func() string { return val }
 	})
 }
 
 // Set the Column from the function
-func (m stripeWebhookEventMods) IDFunc(f func() uuid.UUID) StripeWebhookEventMod {
+func (m stripeWebhookEventMods) IDFunc(f func() string) StripeWebhookEventMod {
 	return StripeWebhookEventModFunc(func(o *StripeWebhookEventTemplate) {
 		o.ID = f
 	})
@@ -349,38 +340,7 @@ func (m stripeWebhookEventMods) UnsetID() StripeWebhookEventMod {
 // if faker is nil, a default faker is used
 func (m stripeWebhookEventMods) RandomID(f *faker.Faker) StripeWebhookEventMod {
 	return StripeWebhookEventModFunc(func(o *StripeWebhookEventTemplate) {
-		o.ID = func() uuid.UUID {
-			return random_uuid_UUID(f)
-		}
-	})
-}
-
-// Set the model columns to this value
-func (m stripeWebhookEventMods) StripeID(val string) StripeWebhookEventMod {
-	return StripeWebhookEventModFunc(func(o *StripeWebhookEventTemplate) {
-		o.StripeID = func() string { return val }
-	})
-}
-
-// Set the Column from the function
-func (m stripeWebhookEventMods) StripeIDFunc(f func() string) StripeWebhookEventMod {
-	return StripeWebhookEventModFunc(func(o *StripeWebhookEventTemplate) {
-		o.StripeID = f
-	})
-}
-
-// Clear any values for the column
-func (m stripeWebhookEventMods) UnsetStripeID() StripeWebhookEventMod {
-	return StripeWebhookEventModFunc(func(o *StripeWebhookEventTemplate) {
-		o.StripeID = nil
-	})
-}
-
-// Generates a random value for the column using the given faker
-// if faker is nil, a default faker is used
-func (m stripeWebhookEventMods) RandomStripeID(f *faker.Faker) StripeWebhookEventMod {
-	return StripeWebhookEventModFunc(func(o *StripeWebhookEventTemplate) {
-		o.StripeID = func() string {
+		o.ID = func() string {
 			return random_string(f)
 		}
 	})

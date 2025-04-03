@@ -150,7 +150,6 @@ var ColumnNames = struct {
 	},
 	StripeWebhookEvents: stripeWebhookEventColumnNames{
 		ID:                "id",
-		StripeID:          "stripe_id",
 		Type:              "type",
 		ObjectType:        "object_type",
 		ObjectStripeID:    "object_stripe_id",
