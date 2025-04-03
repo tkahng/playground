@@ -122,21 +122,6 @@ func ListRoles(ctx context.Context, db bob.DB, input *shared.RolesListParams) (m
 	}
 	return data, nil
 }
-func ListRolesWithPermissions(ctx context.Context, db bob.DB, input *shared.RolesListParams) (models.RoleSlice, error) {
-	q := models.Roles.Query(
-		models.ThenLoadRolePermissions(),
-	)
-	filter := input.RoleListFilter
-	pageInput := &input.PaginatedInput
-
-	ViewApplyPagination(q, pageInput)
-	ListRolesFilterFunc(ctx, q, &filter)
-	data, err := q.All(ctx, db)
-	if err != nil {
-		return nil, err
-	}
-	return data, nil
-}
 
 // CountRoles implements AdminCrudActions.
 func CountRoles(ctx context.Context, db bob.DB, filter *shared.RoleListFilter) (int64, error) {

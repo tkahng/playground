@@ -9,7 +9,7 @@ import (
 	"github.com/tkahng/authgo/internal/shared"
 )
 
-func ListProducts(ctx context.Context, db bob.DB, input *shared.StripeProductListParams) ([]*models.StripeProduct, error) {
+func ListProducts(ctx context.Context, db bob.DB, input *shared.StripeProductListParams) (models.StripeProductSlice, error) {
 
 	q := models.StripeProducts.Query()
 	filter := input.StripeProductListFilter

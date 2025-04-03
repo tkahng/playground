@@ -39,11 +39,14 @@ func (api *Api) AdminRoles(ctx context.Context, input *struct {
 	shared.RolesListParams
 }) (*PaginatedOutput[*RoleWithPermissions], error) {
 	db := api.app.Db()
-	roles, err := repository.ListRolesWithPermissions(ctx, db, &input.RolesListParams)
+	roles, err := repository.ListRoles(ctx, db, &input.RolesListParams)
 	if err != nil {
 		return nil, err
 	}
-
+	err = roles.LoadRolePermissions(ctx, db)
+	if err != nil {
+		return nil, err
+	}
 	count, err := repository.CountRoles(ctx, db, &input.RoleListFilter)
 	if err != nil {
 		return nil, err
