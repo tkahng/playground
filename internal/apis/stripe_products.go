@@ -3,8 +3,11 @@ package apis
 import (
 	"context"
 	"net/http"
+	"time"
 
+	"github.com/aarondl/opt/null"
 	"github.com/danielgtaylor/huma/v2"
+	"github.com/stephenafamo/bob/types"
 	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
@@ -23,13 +26,40 @@ func (api *Api) StripeProductsWithPricesOperation(path string) huma.Operation {
 	}
 }
 
+type Price struct {
+	ID              string                                     `db:"id,pk" json:"id"`
+	ProductID       string                                     `db:"product_id" json:"product_id"`
+	LookupKey       null.Val[string]                           `db:"lookup_key" json:"lookup_key"`
+	Active          bool                                       `db:"active" json:"active"`
+	UnitAmount      null.Val[int64]                            `db:"unit_amount" json:"unit_amount"`
+	Currency        string                                     `db:"currency" json:"currency"`
+	Type            models.StripePricingType                   `db:"type" json:"type" required:"true" enum:"one_time,recurring"`
+	Interval        null.Val[models.StripePricingPlanInterval] `db:"interval" json:"interval,omitempty" enum:"day,week,month,year"`
+	IntervalCount   null.Val[int64]                            `db:"interval_count" json:"interval_count"`
+	TrialPeriodDays null.Val[int64]                            `db:"trial_period_days" json:"trial_period_days"`
+	Metadata        types.JSON[map[string]string]              `db:"metadata" json:"metadata"`
+	CreatedAt       time.Time                                  `db:"created_at" json:"created_at"`
+	UpdatedAt       time.Time                                  `db:"updated_at" json:"updated_at"`
+}
+
+type Product struct {
+	ID          string                        `db:"id,pk" json:"id"`
+	Active      bool                          `db:"active" json:"active"`
+	Name        string                        `db:"name" json:"name"`
+	Description null.Val[string]              `db:"description" json:"description"`
+	Image       null.Val[string]              `db:"image" json:"image"`
+	Metadata    types.JSON[map[string]string] `db:"metadata" json:"metadata"`
+	CreatedAt   time.Time                     `db:"created_at" json:"created_at"`
+	UpdatedAt   time.Time                     `db:"updated_at" json:"updated_at"`
+}
+
 type StripePricesWithProduct struct {
-	*models.StripePrice
-	Product *models.StripeProduct `db:"product" json:"product,omitempty" required:"false"`
+	*Price
+	Product *Product `db:"product" json:"product,omitempty" required:"false"`
 }
 type StripeProductWithPrices struct {
-	*models.StripeProduct
-	Prices []*models.StripePrice `db:"prices" json:"prices,omitempty" required:"false"`
+	*Product
+	Prices []*Price `db:"prices" json:"prices,omitempty" required:"false"`
 }
 
 type StripeProductsWithPricesInput struct {
@@ -64,8 +94,33 @@ func (api *Api) StripeProductsWithPrices(ctx context.Context, inputt *StripeProd
 	}
 	prods := dataloader.Map(users, func(user *models.StripeProduct) *StripeProductWithPrices {
 		return &StripeProductWithPrices{
-			StripeProduct: user,
-			Prices:        user.R.ProductStripePrices,
+			Product: &Product{
+				ID:          user.ID,
+				Active:      user.Active,
+				Name:        user.Name,
+				Description: user.Description,
+				Image:       user.Image,
+				Metadata:    user.Metadata,
+				CreatedAt:   user.CreatedAt,
+				UpdatedAt:   user.UpdatedAt,
+			},
+			Prices: dataloader.Map(user.R.ProductStripePrices, func(price *models.StripePrice) *Price {
+				return &Price{
+					ID:              price.ID,
+					ProductID:       price.ProductID,
+					LookupKey:       price.LookupKey,
+					Active:          price.Active,
+					UnitAmount:      price.UnitAmount,
+					Currency:        price.Currency,
+					Type:            price.Type,
+					Interval:        price.Interval,
+					IntervalCount:   price.IntervalCount,
+					TrialPeriodDays: price.TrialPeriodDays,
+					Metadata:        price.Metadata,
+					CreatedAt:       price.CreatedAt,
+					UpdatedAt:       price.UpdatedAt,
+				}
+			}),
 		}
 
 	})
