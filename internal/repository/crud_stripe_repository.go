@@ -2,11 +2,19 @@ package repository
 
 import (
 	"context"
+	"slices"
 
 	"github.com/stephenafamo/bob"
 	"github.com/stephenafamo/bob/dialect/psql"
+	"github.com/stephenafamo/bob/dialect/psql/sm"
 	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/shared"
+)
+
+var (
+	StripeProductColumnNames = models.StripeProducts.Columns().Names()
+	StripePriceColumnNames   = models.StripePrices.Columns().Names()
+	MetadataIndexName        = "metadata.index"
 )
 
 func ListProducts(ctx context.Context, db bob.DB, input *shared.StripeProductListParams) (models.StripeProductSlice, error) {
@@ -18,6 +26,7 @@ func ListProducts(ctx context.Context, db bob.DB, input *shared.StripeProductLis
 	ViewApplyPagination(q, pageInput)
 
 	ListProductFilterFunc(ctx, q, &filter)
+	ListProductOrderByFunc(ctx, q, input)
 	data, err := q.All(ctx, db)
 	if err != nil {
 		return nil, err
@@ -25,11 +34,46 @@ func ListProducts(ctx context.Context, db bob.DB, input *shared.StripeProductLis
 	return data, nil
 }
 
+func ListProductOrderByFunc(ctx context.Context, q *psql.ViewQuery[*models.StripeProduct, models.StripeProductSlice], input *shared.StripeProductListParams) {
+	if input == nil {
+		return
+	}
+	if input.SortParams.SortBy == "" {
+		return
+	}
+	if input.SortBy == MetadataIndexName {
+		q.Apply(
+			sm.OrderBy("metadata->'index'").Asc(),
+		)
+	} else if slices.Contains(StripeProductColumnNames, input.SortBy) {
+		var order = sm.OrderBy(input.SortBy)
+		if input.SortParams.SortOrder == "desc" {
+			order = sm.OrderBy(input.SortBy).Desc()
+		} else if input.SortParams.SortOrder == "asc" {
+			order = sm.OrderBy(input.SortBy).Asc()
+		}
+		q.Apply(
+			order,
+		)
+	}
+}
+
 func ListProductFilterFunc(ctx context.Context, q *psql.ViewQuery[*models.StripeProduct, models.StripeProductSlice], filter *shared.StripeProductListFilter) {
 	if filter == nil {
 		return
 	}
-
+	if filter.Active != "" {
+		if filter.Active == shared.Active {
+			q.Apply(
+				models.SelectWhere.StripeProducts.Active.EQ(true),
+			)
+		}
+		if filter.Active == shared.Inactive {
+			q.Apply(
+				models.SelectWhere.StripeProducts.Active.EQ(false),
+			)
+		}
+	}
 	if len(filter.Ids) > 0 {
 		q.Apply(
 			models.SelectWhere.StripeProducts.ID.In(filter.Ids...),
@@ -48,9 +92,51 @@ func CountProducts(ctx context.Context, db bob.DB, filter *shared.StripeProductL
 	return data, nil
 }
 
-func PricesByProductIds(ctx context.Context, dbx bob.Executor, productIds []string) ([]*models.StripePrice, error) {
-	data, err := models.StripePrices.Query(
-		models.SelectWhere.StripePrices.ProductID.In(productIds...),
-	).All(ctx, dbx)
-	return data, err
+func ListPrices(ctx context.Context, db bob.DB, input *shared.StripePriceListParams) (models.StripePriceSlice, error) {
+
+	q := models.StripePrices.Query()
+	filter := input.StripePriceListFilter
+	pageInput := &input.PaginatedInput
+
+	ViewApplyPagination(q, pageInput)
+
+	ListPriceFilterFunc(ctx, q, &filter)
+	data, err := q.All(ctx, db)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
+}
+
+func ListPriceFilterFunc(ctx context.Context, q *psql.ViewQuery[*models.StripePrice, models.StripePriceSlice], filter *shared.StripePriceListFilter) {
+	if filter == nil {
+		return
+	}
+	if filter.Active != "" {
+		if filter.Active == shared.Active {
+			q.Apply(
+				models.SelectWhere.StripeProducts.Active.EQ(true),
+			)
+		}
+		if filter.Active == shared.Inactive {
+			q.Apply(
+				models.SelectWhere.StripeProducts.Active.EQ(false),
+			)
+		}
+	}
+	if len(filter.Ids) > 0 {
+		q.Apply(
+			models.SelectWhere.StripeProducts.ID.In(filter.Ids...),
+		)
+	}
+}
+
+func CountPrices(ctx context.Context, db bob.DB, filter *shared.StripePriceListFilter) (int64, error) {
+	q := models.StripePrices.Query()
+	ListPriceFilterFunc(ctx, q, filter)
+	data, err := q.Count(ctx, db)
+	if err != nil {
+		return 0, err
+	}
+	return data, nil
 }

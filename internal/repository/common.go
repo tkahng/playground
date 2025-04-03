@@ -12,6 +12,10 @@ import (
 	"github.com/tkahng/authgo/internal/shared"
 )
 
+func VarCollect[T any](args ...T) []T {
+	return args
+}
+
 func ViewApplyPagination[T any, Ts ~[]T](view *psql.ViewQuery[T, Ts], input *shared.PaginatedInput) {
 	if input == nil {
 		input = &shared.PaginatedInput{

@@ -72,12 +72,44 @@ type PermissionsListParams struct {
 	SortOrder string `query:"sort_order,omitempty" required:"false" default:"desc"`
 }
 type StripeProductListFilter struct {
-	Q   string   `query:"q,omitempty" required:"false"`
-	Ids []string `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+	Q      string       `query:"q,omitempty" required:"false"`
+	Ids    []string     `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+	Active ActiveStatus `query:"active,omitempty" required:"false" enum:"active,inactive"`
+}
+
+type SortParams struct {
+	SortBy    string `query:"sort_by,omitempty" required:"false" default:"created_at"`
+	SortOrder string `query:"sort_order,omitempty" required:"false" default:"desc"`
 }
 type StripeProductListParams struct {
 	PaginatedInput
 	StripeProductListFilter
+	SortParams
+	Expand      []string     `query:"expand,omitempty" required:"false" minimum:"1" maximum:"100"`
+	PriceActive ActiveStatus `query:"price_active,omitempty" required:"false" enum:"active,inactive"`
+}
+type BooleanType string
+
+const (
+	True  BooleanType = "true"
+	False BooleanType = "false"
+)
+
+type ActiveStatus string
+
+const (
+	Active   ActiveStatus = "active"
+	Inactive ActiveStatus = "inactive"
+)
+
+type StripePriceListFilter struct {
+	Q      string       `query:"q,omitempty" required:"false"`
+	Ids    []string     `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+	Active ActiveStatus `query:"active,omitempty" required:"false" enum:"active,inactive"`
+}
+type StripePriceListParams struct {
+	PaginatedInput
+	StripePriceListFilter
 	// 	SortBy    string `query:"sort_by,omitempty" required:"false" default:"created_at"`
 	// 	SortOrder string `query:"sort_order,omitempty" required:"false" default:"desc"`
 	SortBy    string `query:"sort_by,omitempty" required:"false" default:"created_at"`
@@ -87,6 +119,8 @@ type StripeProductListParams struct {
 type PaginatedInput struct {
 	Page    int `query:"page,omitempty" default:"1" minimum:"1"`
 	PerPage int `query:"per_page,omitempty" default:"10" minimum:"1" maximum:"100"`
+	// SortBy    string `query:"sort_by,omitempty" required:"false" default:"created_at"`
+	// SortOrder string `query:"sort_order,omitempty" required:"false" default:"desc"`
 	// 	Page    OmitNull[int] `query:"page,omitempty" default:"1" minimum:"1"`
 	// 	PerPage OmitNull[int] `query:"per_page,omitempty" default:"10" minimum:"1" maximum:"100"`
 }

@@ -29,17 +29,33 @@ type StripeProductWithPrices struct {
 	Prices []*models.StripePrice `db:"prices" json:"prices"`
 }
 
-func (api *Api) StripeProductsWithPrices(ctx context.Context, input *shared.StripeProductListParams) (*PaginatedOutput[*StripeProductWithPrices], error) {
+type StripeProductsWithPricesInput struct {
+	shared.PaginatedInput
+	shared.SortParams
+}
+
+func (api *Api) StripeProductsWithPrices(ctx context.Context, inputt *StripeProductsWithPricesInput) (*PaginatedOutput[*StripeProductWithPrices], error) {
 	db := api.app.Db()
+	input := &shared.StripeProductListParams{
+		PaginatedInput: inputt.PaginatedInput,
+		StripeProductListFilter: shared.StripeProductListFilter{
+			Active: shared.Active,
+		},
+		SortParams: inputt.SortParams,
+	}
 	utils.PrettyPrintJSON(input)
 	users, err := repository.ListProducts(ctx, db, input)
 	if err != nil {
 		return nil, err
 	}
-	err = users.LoadStripeProductProductStripePrices(ctx, db)
+
+	err = users.LoadStripeProductProductStripePrices(ctx, db,
+		models.SelectWhere.StripePrices.Active.EQ(true),
+	)
 	if err != nil {
 		return nil, err
 	}
+
 	count, err := repository.CountProducts(ctx, db, &input.StripeProductListFilter)
 	if err != nil {
 		return nil, err

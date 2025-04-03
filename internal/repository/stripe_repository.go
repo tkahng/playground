@@ -13,7 +13,6 @@ import (
 	"github.com/stephenafamo/bob/dialect/psql/im"
 	"github.com/stephenafamo/bob/dialect/psql/sm"
 	"github.com/stephenafamo/bob/types"
-	"github.com/stephenafamo/scan"
 	"github.com/stripe/stripe-go/v81"
 	"github.com/tkahng/authgo/internal/db/models"
 )
@@ -315,49 +314,4 @@ func FindValidPriceById(ctx context.Context, dbx bob.Executor, priceId string) (
 		models.SelectWhere.StripePrices.Type.EQ(models.StripePricingTypeRecurring),
 	).One(ctx, dbx)
 	return data, err
-}
-
-type StripeProductWithPriceJson struct {
-	Product types.JSON[models.StripeProduct] `db:"product" json:"product"`
-	Prices  types.JSON[[]models.StripePrice] `db:"prices" json:"prices"`
-}
-
-type StripeProductWithPrice struct {
-	Product models.StripeProduct `db:"product" json:"product"`
-	Prices  []models.StripePrice `db:"prices" json:"prices"`
-}
-
-const StripeProductViewName = `
-SELECT to_json(prod.*) AS "product",
-    (
-        SELECT coalesce(json_agg(agg), '[]')
-        FROM (
-                SELECT price.*
-                FROM stripe_prices price
-                WHERE price.product_id = prod.id
-                    AND price.active = TRUE
-                ORDER BY price.unit_amount ASC
-            ) AS agg
-    ) AS "prices"
-FROM stripe_products prod
-WHERE prod.active = TRUE
-ORDER BY prod.metadata->'index' ASC;
-`
-
-func FindProductWithPrices(ctx context.Context, dbx bob.Executor) ([]StripeProductWithPrice, error) {
-	query := psql.RawQuery(StripeProductViewName)
-	res, err := bob.All(ctx, dbx, query, scan.StructMapper[StripeProductWithPriceJson]())
-	if err != nil {
-		return nil, err
-	}
-
-	var products []StripeProductWithPrice
-	for _, product := range res {
-		products = append(products, StripeProductWithPrice{
-			Product: product.Product.Val,
-			Prices:  product.Prices.Val,
-		})
-	}
-	return products, nil
-
 }
