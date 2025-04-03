@@ -20,7 +20,7 @@ create table public.stripe_products (
     -- Whether the product is currently available for purchase.
     active boolean not null default false,
     -- The product's name, meant to be displayable to the customer. Whenever this product is sold via a subscription, name will show up on associated invoice line item descriptions.
-    name text,
+    name text not null,
     -- The product's description, meant to be displayable to the customer. Use this field to optionally store a long form explanation of the product being sold for your own rendering purposes.
     description text,
     -- A URL of the product image in Stripe, meant to be displayable to the customer.
@@ -46,10 +46,8 @@ create table public.stripe_prices (
     lookup_key text,
     -- Whether the price can be used for new purchases.
     active boolean not null default false,
-    -- A brief description of the price.
-    description text,
     -- The unit amount as a positive integer in the smallest currency unit (e.g., 100 cents for US$1.00 or 100 for ¥100, a zero-decimal currency).
-    unit_amount bigint not null default 0,
+    unit_amount bigint,
     -- Three-letter ISO currency code, in lowercase.
     currency text not null check (char_length(currency) = 3),
     -- One of `one_time` or `recurring` depending on whether the price is for a one-time purchase or a recurring (subscription) purchase.
@@ -94,6 +92,7 @@ create table public.stripe_subscriptions (
     -- Set of key-value pairs, used to store additional information about the object in a structured format.
     metadata jsonb not null,
     price_id text not null references public.stripe_prices,
+    -- item_id text not null,
     -- Quantity multiplied by the unit amount of the price creates the amount of the subscription. Can be used to charge multiple seats.
     quantity bigint not null,
     -- If true the subscription has been canceled by the user and will be deleted at the end of the billing period.
@@ -119,7 +118,31 @@ create table public.stripe_subscriptions (
 );
 CREATE TRIGGER handle_stripe_subscriptions_updated_at before
 update on public.stripe_subscriptions for each row execute procedure moddatetime(updated_at);
+--------------- STRIPE_SUBSCRIPTIONS TABLE END -----------------------------------------------------------------------
+--------------- STRIPE WEBHOOK EVENTS TABLE START -----------------------------------------------------------------------
+create table public.stripe_webhook_events (
+    -- event.id from Stripe
+    id text primary key,
+    -- event.type from Stripe
+    type text not null,
+    -- event.object from Stripe
+    object_type text not null,
+    -- objects id from Stripe
+    object_stripe_id text not null,
+    -- event creation date
+    event_creation_date timestamptz not null,
+    -- stripe.event.request.id
+    request_id text null,
+    created_at timestamptz not null default now(),
+    updated_at timestamptz not null default now()
+);
+CREATE TRIGGER handle_stripe_webhook_events_updated_at before
+update on public.stripe_webhook_events for each row execute procedure moddatetime(updated_at);
+--------------- STRIPE WEBHOOK EVENTS TABLE END -----------------------------------------------------------------------
 -- migrate:down
+-- Drop the stripe_webhook_events table
+DROP TRIGGER IF EXISTS handle_stripe_webhook_events_updated_at on public.stripe_webhook_events;
+DROP TABLE IF EXISTS public.stripe_webhook_events;
 -- Drop the stripe_subscriptions table
 DROP TRIGGER IF EXISTS handle_stripe_subscriptions_updated_at on public.stripe_subscriptions;
 DROP TABLE IF EXISTS public.stripe_subscriptions;

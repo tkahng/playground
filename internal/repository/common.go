@@ -5,12 +5,17 @@ import (
 	"database/sql"
 	"errors"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/stephenafamo/bob"
 	"github.com/stephenafamo/bob/dialect/psql"
 	"github.com/stephenafamo/bob/dialect/psql/sm"
 	"github.com/tkahng/authgo/internal/shared"
 )
+
+func VarCollect[T any](args ...T) []T {
+	return args
+}
 
 func ViewApplyPagination[T any, Ts ~[]T](view *psql.ViewQuery[T, Ts], input *shared.PaginatedInput) {
 	if input == nil {
@@ -54,4 +59,16 @@ func OptionalRow[T any](record *T, err error) (*T, error) {
 	} else {
 		return nil, err
 	}
+}
+
+func ParseUUIDs(ids []string) []uuid.UUID {
+	var uuids []uuid.UUID
+	for _, id := range ids {
+		parsed, err := uuid.Parse(id)
+		if err != nil {
+			continue
+		}
+		uuids = append(uuids, parsed)
+	}
+	return uuids
 }

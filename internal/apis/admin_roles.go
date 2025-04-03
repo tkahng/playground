@@ -12,6 +12,7 @@ import (
 	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/authgo/internal/tools/dataloader"
 )
 
 func (api *Api) AdminRolesOperation(path string) huma.Operation {
@@ -29,11 +30,20 @@ func (api *Api) AdminRolesOperation(path string) huma.Operation {
 	}
 }
 
-func (api *Api) AdminRoles(ctx context.Context, input *struct {
+type RoleWithPermissions struct {
+	*models.Role
+	Permissions []*models.Permission
+}
+
+func (api *Api) AdminRolesList(ctx context.Context, input *struct {
 	shared.RolesListParams
-}) (*PaginatedOutput[*models.Role], error) {
+}) (*PaginatedOutput[*RoleWithPermissions], error) {
 	db := api.app.Db()
 	roles, err := repository.ListRoles(ctx, db, &input.RolesListParams)
+	if err != nil {
+		return nil, err
+	}
+	err = roles.LoadRolePermissions(ctx, db)
 	if err != nil {
 		return nil, err
 	}
@@ -41,11 +51,15 @@ func (api *Api) AdminRoles(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-
-	return &PaginatedOutput[*models.Role]{
-		Body: shared.PaginatedResponse[*models.Role]{
-
-			Data: roles,
+	out := dataloader.Map(roles, func(role *models.Role) *RoleWithPermissions {
+		return &RoleWithPermissions{
+			Role:        role,
+			Permissions: role.R.Permissions,
+		}
+	})
+	return &PaginatedOutput[*RoleWithPermissions]{
+		Body: shared.PaginatedResponse[*RoleWithPermissions]{
+			Data: out,
 			Meta: shared.Meta{
 				Page:    input.PaginatedInput.Page,
 				PerPage: input.PaginatedInput.PerPage,
@@ -238,10 +252,7 @@ func (api *Api) AdminUserRolesUpdate(ctx context.Context, input *struct {
 		return nil, err
 	}
 	_, err = models.UserRoles.Delete(
-		psql.WhereAnd(
-			models.DeleteWhere.UserRoles.RoleID.In(roleIds...),
-			models.DeleteWhere.UserRoles.UserID.EQ(user.ID),
-		),
+		models.DeleteWhere.UserRoles.UserID.EQ(user.ID),
 	).Exec(ctx, db)
 	if err != nil {
 		return nil, err
@@ -256,4 +267,70 @@ func (api *Api) AdminUserRolesUpdate(ctx context.Context, input *struct {
 		},
 	}
 	return &output, nil
+}
+
+func (api *Api) AdminRolesUpdatePermissionsOperation(path string) huma.Operation {
+	return huma.Operation{
+		OperationID: "admin-roles-update-permissions",
+		Method:      http.MethodPut,
+		Path:        path,
+		Summary:     "Update role permissions",
+		Description: "Update role permissions",
+		Tags:        []string{"Admin", "Roles"},
+		Errors:      []int{http.StatusNotFound},
+		Security: []map[string][]string{
+			{shared.BearerAuthSecurityKey: {}},
+		},
+	}
+}
+
+type RolePermissionsUpdateInput struct {
+	PermissionIDs []string `json:"permission_ids" minimum:"0" maximum:"100" format:"uuid" required:"true"`
+}
+
+func (api *Api) AdminRolesUpdatePermissions(ctx context.Context, input *struct {
+	RoleID string `path:"id"`
+	Body   RolePermissionsUpdateInput
+}) (*struct {
+	Body models.Role
+}, error) {
+	db := api.app.Db()
+	id, err := uuid.Parse(input.RoleID)
+	if err != nil {
+		return nil, err
+	}
+	role, err := repository.FindRoleById(ctx, db, id)
+	if err != nil {
+		return nil, err
+	}
+	if role == nil {
+		return nil, huma.Error404NotFound("Role not found")
+	}
+	permissionIds := make([]uuid.UUID, len(input.Body.PermissionIDs))
+	for i, id := range input.Body.PermissionIDs {
+		id, err := uuid.Parse(id)
+		if err != nil {
+			continue
+		}
+		permissionIds[i] = id
+	}
+	permissions, err := repository.FindPermissionsByIds(ctx, db, permissionIds)
+	if err != nil {
+		return nil, err
+	}
+	_, err = models.RolePermissions.Delete(
+		psql.WhereAnd(
+			models.DeleteWhere.RolePermissions.RoleID.EQ(role.ID),
+		),
+	).Exec(ctx, db)
+	if err != nil {
+		return nil, err
+	}
+	err = role.AttachPermissions(ctx, db, permissions...)
+	if err != nil {
+		return nil, err
+	}
+	return &struct{ Body models.Role }{
+		Body: *role,
+	}, nil
 }

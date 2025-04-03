@@ -5,7 +5,6 @@ package factory
 
 import (
 	"context"
-	"encoding/json"
 	"testing"
 	"time"
 
@@ -43,14 +42,13 @@ type StripePriceTemplate struct {
 	ProductID       func() string
 	LookupKey       func() null.Val[string]
 	Active          func() bool
-	Description     func() null.Val[string]
-	UnitAmount      func() int64
+	UnitAmount      func() null.Val[int64]
 	Currency        func() string
 	Type            func() StripePricingType
 	Interval        func() null.Val[StripePricingPlanInterval]
 	IntervalCount   func() null.Val[int64]
 	TrialPeriodDays func() null.Val[int64]
-	Metadata        func() types.JSON[json.RawMessage]
+	Metadata        func() types.JSON[map[string]string]
 	CreatedAt       func() time.Time
 	UpdatedAt       func() time.Time
 
@@ -94,9 +92,6 @@ func (o StripePriceTemplate) toModel() *models.StripePrice {
 	}
 	if o.Active != nil {
 		m.Active = o.Active()
-	}
-	if o.Description != nil {
-		m.Description = o.Description()
 	}
 	if o.UnitAmount != nil {
 		m.UnitAmount = o.UnitAmount()
@@ -182,11 +177,8 @@ func (o StripePriceTemplate) BuildSetter() *models.StripePriceSetter {
 	if o.Active != nil {
 		m.Active = omit.From(o.Active())
 	}
-	if o.Description != nil {
-		m.Description = omitnull.FromNull(o.Description())
-	}
 	if o.UnitAmount != nil {
-		m.UnitAmount = omit.From(o.UnitAmount())
+		m.UnitAmount = omitnull.FromNull(o.UnitAmount())
 	}
 	if o.Currency != nil {
 		m.Currency = omit.From(o.Currency())
@@ -265,7 +257,7 @@ func ensureCreatableStripePrice(m *models.StripePriceSetter) {
 		m.Type = omit.From(random_StripePricingType(nil))
 	}
 	if m.Metadata.IsUnset() {
-		m.Metadata = omit.From(random_types_JSON_json_RawMessage_(nil))
+		m.Metadata = omit.From(random_types_JSON_map_string_string_(nil))
 	}
 }
 
@@ -419,7 +411,6 @@ func (m stripePriceMods) RandomizeAllColumns(f *faker.Faker) StripePriceMod {
 		StripePriceMods.RandomProductID(f),
 		StripePriceMods.RandomLookupKey(f),
 		StripePriceMods.RandomActive(f),
-		StripePriceMods.RandomDescription(f),
 		StripePriceMods.RandomUnitAmount(f),
 		StripePriceMods.RandomCurrency(f),
 		StripePriceMods.RandomType(f),
@@ -565,53 +556,14 @@ func (m stripePriceMods) RandomActive(f *faker.Faker) StripePriceMod {
 }
 
 // Set the model columns to this value
-func (m stripePriceMods) Description(val null.Val[string]) StripePriceMod {
+func (m stripePriceMods) UnitAmount(val null.Val[int64]) StripePriceMod {
 	return StripePriceModFunc(func(o *StripePriceTemplate) {
-		o.Description = func() null.Val[string] { return val }
+		o.UnitAmount = func() null.Val[int64] { return val }
 	})
 }
 
 // Set the Column from the function
-func (m stripePriceMods) DescriptionFunc(f func() null.Val[string]) StripePriceMod {
-	return StripePriceModFunc(func(o *StripePriceTemplate) {
-		o.Description = f
-	})
-}
-
-// Clear any values for the column
-func (m stripePriceMods) UnsetDescription() StripePriceMod {
-	return StripePriceModFunc(func(o *StripePriceTemplate) {
-		o.Description = nil
-	})
-}
-
-// Generates a random value for the column using the given faker
-// if faker is nil, a default faker is used
-func (m stripePriceMods) RandomDescription(f *faker.Faker) StripePriceMod {
-	return StripePriceModFunc(func(o *StripePriceTemplate) {
-		o.Description = func() null.Val[string] {
-			if f == nil {
-				f = &defaultFaker
-			}
-
-			if f.Bool() {
-				return null.FromPtr[string](nil)
-			}
-
-			return null.From(random_string(f))
-		}
-	})
-}
-
-// Set the model columns to this value
-func (m stripePriceMods) UnitAmount(val int64) StripePriceMod {
-	return StripePriceModFunc(func(o *StripePriceTemplate) {
-		o.UnitAmount = func() int64 { return val }
-	})
-}
-
-// Set the Column from the function
-func (m stripePriceMods) UnitAmountFunc(f func() int64) StripePriceMod {
+func (m stripePriceMods) UnitAmountFunc(f func() null.Val[int64]) StripePriceMod {
 	return StripePriceModFunc(func(o *StripePriceTemplate) {
 		o.UnitAmount = f
 	})
@@ -628,8 +580,16 @@ func (m stripePriceMods) UnsetUnitAmount() StripePriceMod {
 // if faker is nil, a default faker is used
 func (m stripePriceMods) RandomUnitAmount(f *faker.Faker) StripePriceMod {
 	return StripePriceModFunc(func(o *StripePriceTemplate) {
-		o.UnitAmount = func() int64 {
-			return random_int64(f)
+		o.UnitAmount = func() null.Val[int64] {
+			if f == nil {
+				f = &defaultFaker
+			}
+
+			if f.Bool() {
+				return null.FromPtr[int64](nil)
+			}
+
+			return null.From(random_int64(f))
 		}
 	})
 }
@@ -814,14 +774,14 @@ func (m stripePriceMods) RandomTrialPeriodDays(f *faker.Faker) StripePriceMod {
 }
 
 // Set the model columns to this value
-func (m stripePriceMods) Metadata(val types.JSON[json.RawMessage]) StripePriceMod {
+func (m stripePriceMods) Metadata(val types.JSON[map[string]string]) StripePriceMod {
 	return StripePriceModFunc(func(o *StripePriceTemplate) {
-		o.Metadata = func() types.JSON[json.RawMessage] { return val }
+		o.Metadata = func() types.JSON[map[string]string] { return val }
 	})
 }
 
 // Set the Column from the function
-func (m stripePriceMods) MetadataFunc(f func() types.JSON[json.RawMessage]) StripePriceMod {
+func (m stripePriceMods) MetadataFunc(f func() types.JSON[map[string]string]) StripePriceMod {
 	return StripePriceModFunc(func(o *StripePriceTemplate) {
 		o.Metadata = f
 	})
@@ -838,8 +798,8 @@ func (m stripePriceMods) UnsetMetadata() StripePriceMod {
 // if faker is nil, a default faker is used
 func (m stripePriceMods) RandomMetadata(f *faker.Faker) StripePriceMod {
 	return StripePriceModFunc(func(o *StripePriceTemplate) {
-		o.Metadata = func() types.JSON[json.RawMessage] {
-			return random_types_JSON_json_RawMessage_(f)
+		o.Metadata = func() types.JSON[map[string]string] {
+			return random_types_JSON_map_string_string_(f)
 		}
 	})
 }

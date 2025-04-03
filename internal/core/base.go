@@ -8,6 +8,7 @@ import (
 	"github.com/tkahng/authgo/internal/repository"
 
 	"github.com/tkahng/authgo/internal/tools/mailer"
+	"github.com/tkahng/authgo/internal/tools/payment"
 )
 
 var _ App = (*BaseApp)(nil)
@@ -18,8 +19,14 @@ type BaseApp struct {
 	cfg           *conf.EnvConfig
 	db            bob.DB
 	settings      *AppOptions
+	payment       *StripeService
 	// onAfterRequestHandle  *hook.Hook[*BaseEvent]
 	// onBeforeRequestHandle *hook.Hook[*BaseEvent]
+}
+
+// Payment implements App.
+func (a *BaseApp) Payment() *StripeService {
+	return a.payment
 }
 
 // TokenVerifier implements App.
@@ -72,6 +79,7 @@ func NewBaseApp(db bob.DB, cfg conf.EnvConfig) *BaseApp {
 		db:       db,
 		settings: settings,
 		cfg:      &cfg,
+		payment:  NewStripeService(payment.NewStripeClient(cfg.StripeConfig)),
 	}
 }
 

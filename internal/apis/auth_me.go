@@ -30,7 +30,7 @@ type MeOutput struct {
 }
 
 func (api *Api) Me(ctx context.Context, input *struct{ Body *SigninDto }) (*MeOutput, error) {
-	claims := core.GetUserClaims(ctx)
+	claims := core.GetContextUserClaims(ctx)
 	if claims == nil {
 		return nil, huma.Error404NotFound("User not found")
 	}

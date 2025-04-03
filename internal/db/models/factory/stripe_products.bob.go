@@ -5,7 +5,6 @@ package factory
 
 import (
 	"context"
-	"encoding/json"
 	"testing"
 	"time"
 
@@ -41,10 +40,10 @@ func (mods StripeProductModSlice) Apply(n *StripeProductTemplate) {
 type StripeProductTemplate struct {
 	ID          func() string
 	Active      func() bool
-	Name        func() null.Val[string]
+	Name        func() string
 	Description func() null.Val[string]
 	Image       func() null.Val[string]
-	Metadata    func() types.JSON[json.RawMessage]
+	Metadata    func() types.JSON[map[string]string]
 	CreatedAt   func() time.Time
 	UpdatedAt   func() time.Time
 
@@ -142,7 +141,7 @@ func (o StripeProductTemplate) BuildSetter() *models.StripeProductSetter {
 		m.Active = omit.From(o.Active())
 	}
 	if o.Name != nil {
-		m.Name = omitnull.FromNull(o.Name())
+		m.Name = omit.From(o.Name())
 	}
 	if o.Description != nil {
 		m.Description = omitnull.FromNull(o.Description())
@@ -202,8 +201,11 @@ func ensureCreatableStripeProduct(m *models.StripeProductSetter) {
 	if m.ID.IsUnset() {
 		m.ID = omit.From(random_string(nil))
 	}
+	if m.Name.IsUnset() {
+		m.Name = omit.From(random_string(nil))
+	}
 	if m.Metadata.IsUnset() {
-		m.Metadata = omit.From(random_types_JSON_json_RawMessage_(nil))
+		m.Metadata = omit.From(random_types_JSON_map_string_string_(nil))
 	}
 }
 
@@ -409,14 +411,14 @@ func (m stripeProductMods) RandomActive(f *faker.Faker) StripeProductMod {
 }
 
 // Set the model columns to this value
-func (m stripeProductMods) Name(val null.Val[string]) StripeProductMod {
+func (m stripeProductMods) Name(val string) StripeProductMod {
 	return StripeProductModFunc(func(o *StripeProductTemplate) {
-		o.Name = func() null.Val[string] { return val }
+		o.Name = func() string { return val }
 	})
 }
 
 // Set the Column from the function
-func (m stripeProductMods) NameFunc(f func() null.Val[string]) StripeProductMod {
+func (m stripeProductMods) NameFunc(f func() string) StripeProductMod {
 	return StripeProductModFunc(func(o *StripeProductTemplate) {
 		o.Name = f
 	})
@@ -433,16 +435,8 @@ func (m stripeProductMods) UnsetName() StripeProductMod {
 // if faker is nil, a default faker is used
 func (m stripeProductMods) RandomName(f *faker.Faker) StripeProductMod {
 	return StripeProductModFunc(func(o *StripeProductTemplate) {
-		o.Name = func() null.Val[string] {
-			if f == nil {
-				f = &defaultFaker
-			}
-
-			if f.Bool() {
-				return null.FromPtr[string](nil)
-			}
-
-			return null.From(random_string(f))
+		o.Name = func() string {
+			return random_string(f)
 		}
 	})
 }
@@ -526,14 +520,14 @@ func (m stripeProductMods) RandomImage(f *faker.Faker) StripeProductMod {
 }
 
 // Set the model columns to this value
-func (m stripeProductMods) Metadata(val types.JSON[json.RawMessage]) StripeProductMod {
+func (m stripeProductMods) Metadata(val types.JSON[map[string]string]) StripeProductMod {
 	return StripeProductModFunc(func(o *StripeProductTemplate) {
-		o.Metadata = func() types.JSON[json.RawMessage] { return val }
+		o.Metadata = func() types.JSON[map[string]string] { return val }
 	})
 }
 
 // Set the Column from the function
-func (m stripeProductMods) MetadataFunc(f func() types.JSON[json.RawMessage]) StripeProductMod {
+func (m stripeProductMods) MetadataFunc(f func() types.JSON[map[string]string]) StripeProductMod {
 	return StripeProductModFunc(func(o *StripeProductTemplate) {
 		o.Metadata = f
 	})
@@ -550,8 +544,8 @@ func (m stripeProductMods) UnsetMetadata() StripeProductMod {
 // if faker is nil, a default faker is used
 func (m stripeProductMods) RandomMetadata(f *faker.Faker) StripeProductMod {
 	return StripeProductModFunc(func(o *StripeProductTemplate) {
-		o.Metadata = func() types.JSON[json.RawMessage] {
-			return random_types_JSON_json_RawMessage_(f)
+		o.Metadata = func() types.JSON[map[string]string] {
+			return random_types_JSON_map_string_string_(f)
 		}
 	})
 }

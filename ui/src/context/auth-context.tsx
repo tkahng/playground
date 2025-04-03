@@ -1,6 +1,6 @@
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { client } from "@/lib/client";
-import { AuthenticatedDTO, SigninInput } from "@/schema.types";
+import { AuthenticatedDTO, SigninInput, SignupInput } from "@/schema.types";
 import { jwtDecode } from "jwt-decode";
 import { createContext, useMemo } from "react";
 
@@ -10,6 +10,7 @@ interface AuthProviderProps {
 
 export interface AuthContextType {
   user: AuthenticatedDTO | null;
+  signUp: ({ email, name, password }: SignupInput) => Promise<void>;
   login: ({ email, password }: SigninInput) => Promise<any>;
   logout: () => Promise<void>;
   checkError: (error: any) => Promise<void>;
@@ -18,6 +19,7 @@ export interface AuthContextType {
 }
 export const AuthContext = createContext<AuthContextType>({
   user: null,
+  signUp: async () => {},
   login: async () => {},
   logout: async () => {},
   checkError: async () => {},
@@ -32,6 +34,24 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     "auth",
     null
   );
+  const signUp = async ({
+    email,
+    name,
+    password,
+  }: SignupInput): Promise<void> => {
+    const { data, error } = await client.POST("/api/auth/signup", {
+      body: {
+        email,
+        name,
+        password,
+      },
+    });
+    if (error) {
+      throw error;
+    }
+    setUser(data);
+    return Promise.resolve();
+  };
   const login = async ({ email, password }: SigninInput): Promise<void> => {
     const { data, error } = await client.POST("/api/auth/signin", {
       body: {
@@ -106,6 +126,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const value = useMemo(
     () => ({
       user,
+      signUp,
       login,
       logout,
       checkAuth,

@@ -40,6 +40,9 @@ var _ bob.HookableType = &StripeProduct{}
 // Make sure the type StripeSubscription runs hooks after queries
 var _ bob.HookableType = &StripeSubscription{}
 
+// Make sure the type StripeWebhookEvent runs hooks after queries
+var _ bob.HookableType = &StripeWebhookEvent{}
+
 // Make sure the type Token runs hooks after queries
 var _ bob.HookableType = &Token{}
 
@@ -81,6 +84,12 @@ var _ sql.Scanner = (*StripePricingPlanInterval)(nil)
 
 // Make sure the type StripePricingPlanInterval satisfies database/sql/driver.Valuer
 var _ driver.Valuer = *new(StripePricingPlanInterval)
+
+// Make sure the type types.JSON[map[string]string] satisfies database/sql.Scanner
+var _ sql.Scanner = (*types.JSON[map[string]string])(nil)
+
+// Make sure the type types.JSON[map[string]string] satisfies database/sql/driver.Valuer
+var _ driver.Valuer = *new(types.JSON[map[string]string])
 
 // Make sure the type StripeSubscriptionStatus satisfies database/sql.Scanner
 var _ sql.Scanner = (*StripeSubscriptionStatus)(nil)

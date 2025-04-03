@@ -1,3 +1,23 @@
+types:
+  types.JSON[map[string]string]:
+    # If true, a test for the random expression will not be generated
+    no_randomization_test: true
+    imports:
+      - '"github.com/stephenafamo/bob/types"'
+    # To be used in factory.random_type
+    # a variable `f` of type `faker.Faker` is available
+    random_expr: |-
+      return types.NewJSON(map[string]string{})
+    # Imports for the random expression
+    # random_expr_imports:
+    #   - '"bytes"'
+    #   - '"fmt"'
+    # CompareExpr is used to compare two values of this type
+    # if not provided, == is used
+    # Used AAA and BBB as placeholders for the two values
+    compare_expr: |-
+      reflect.DeepEqual(AAA, BBB)
+    compare_expr_imports: ['"reflect"']
 psql:
   dsn: "postgres://postgres:postgres@localhost:5432/authgo?sslmode=disable"
   uuid_pkg: "google"
@@ -5,6 +25,11 @@ psql:
   driver_name: "github.com/jackc/pgx/v5"
 tags:
   - "json"
+replacements:
+  - tables: ["stripe_products", "stripe_prices", "stripe_subscriptions"]
+    match:
+      name: "metadata"
+    replace: "types.JSON[map[string]string]"
 # replacements:
 #   - tables: [] # What tables to look inside. Matches all tables if empty
 

@@ -21,6 +21,7 @@ var (
 	stripePriceCtx        = newContextual[*models.StripePrice]("stripePrice")
 	stripeProductCtx      = newContextual[*models.StripeProduct]("stripeProduct")
 	stripeSubscriptionCtx = newContextual[*models.StripeSubscription]("stripeSubscription")
+	stripeWebhookEventCtx = newContextual[*models.StripeWebhookEvent]("stripeWebhookEvent")
 	tokenCtx              = newContextual[*models.Token]("token")
 	userAccountCtx        = newContextual[*models.UserAccount]("userAccount")
 	userPermissionCtx     = newContextual[*models.UserPermission]("userPermission")

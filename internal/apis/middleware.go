@@ -42,7 +42,7 @@ var HumaTokenFuncs = []func(huma.Context) string{
 func CheckRolesMiddleware(api huma.API, roles ...string) func(ctx huma.Context, next func(huma.Context)) {
 	return func(ctx huma.Context, next func(huma.Context)) {
 
-		if claims := core.GetUserClaims(ctx.Context()); claims != nil {
+		if claims := core.GetContextUserClaims(ctx.Context()); claims != nil {
 			if len(roles) == 0 {
 				next(ctx)
 				return
@@ -61,7 +61,7 @@ func CheckRolesMiddleware(api huma.API, roles ...string) func(ctx huma.Context, 
 func CheckPermissionsMiddleware(api huma.API, permissions ...string) func(ctx huma.Context, next func(huma.Context)) {
 	return func(ctx huma.Context, next func(huma.Context)) {
 
-		if claims := core.GetUserClaims(ctx.Context()); claims != nil {
+		if claims := core.GetContextUserClaims(ctx.Context()); claims != nil {
 			if len(permissions) == 0 {
 				next(ctx)
 				return
@@ -100,7 +100,7 @@ func RequireAuthMiddleware(api huma.API) func(ctx huma.Context, next func(huma.C
 		}
 
 		log.Println("RequireAuthMiddleware")
-		c := core.GetUserClaims(ctx.Context())
+		c := core.GetContextUserClaims(ctx.Context())
 		if c != nil {
 			if len(anyOfNeededScopes) == 0 {
 				next(ctx)
@@ -123,7 +123,7 @@ func AuthMiddleware(api huma.API, app core.App) func(ctx huma.Context, next func
 	return func(ctx huma.Context, next func(huma.Context)) {
 		log.Println("auth middleware")
 		// check if already has user claims
-		if claims := core.GetUserClaims(ctx.Context()); claims != nil {
+		if claims := core.GetContextUserClaims(ctx.Context()); claims != nil {
 			log.Println("already has user claims")
 			next(ctx)
 			return

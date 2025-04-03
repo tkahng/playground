@@ -93,6 +93,17 @@ func BindApis(api huma.API, app core.App) {
 	huma.Register(api, appApi.OAuth2CallbackPostOperation("/auth/callback"), appApi.OAuth2CallbackPost)
 	huma.Register(api, appApi.OAuth2AuthorizationUrlOperation("/auth/authorization-url"), appApi.OAuth2AuthorizationUrl)
 
+	// stripe routes
+	stripeGroup := huma.NewGroup(api, "/stripe")
+	// stripe webhook
+	huma.Register(stripeGroup, appApi.StripeWebhookOperation("/webhook"), appApi.StripeWebhook)
+	// stripe products with prices
+	huma.Register(stripeGroup, appApi.StripeProductsWithPricesOperation("/products"), appApi.StripeProductsWithPrices)
+	// stripe billing portal
+	huma.Register(stripeGroup, appApi.StripeBillingPortalOperation("/billing-portal"), appApi.StripeBillingPortal)
+	//  stripe checkout session
+	huma.Register(stripeGroup, appApi.StripeCheckoutSessionOperation("/checkout-session"), appApi.StripeCheckoutSession)
+
 	//  admin routes
 	adminGroup := huma.NewGroup(api, "/admin")
 	//  admin middleware
@@ -110,21 +121,26 @@ func BindApis(api huma.API, app core.App) {
 	//  admin user update roles
 	huma.Register(adminGroup, appApi.AdminUserRolesUpdateOperation("/users/{id}/roles"), appApi.AdminUserRolesUpdate)
 	// admin roles
-	huma.Register(adminGroup, appApi.AdminRolesOperation("/roles"), appApi.AdminRoles)
+	huma.Register(adminGroup, appApi.AdminRolesOperation("/roles"), appApi.AdminRolesList)
 	// admin roles create
 	huma.Register(adminGroup, appApi.AdminRolesCreateOperation("/roles"), appApi.AdminRolesCreate)
 	// admin roles update
 	huma.Register(adminGroup, appApi.AdminRolesUpdateOperation("/roles/{id}"), appApi.AdminRolesUpdate)
+	// admin roles update permissions
+	huma.Register(adminGroup, appApi.AdminRolesUpdatePermissionsOperation("/roles/{id}/permissions"), appApi.AdminRolesUpdatePermissions)
 	// admin roles delete
 	huma.Register(adminGroup, appApi.AdminRolesDeleteOperation("/roles/{id}"), appApi.AdminRolesDelete)
 	// admin permissions list
-	huma.Register(adminGroup, appApi.AdminPermissionsOperation("/permissions"), appApi.AdminPermissions)
+	huma.Register(adminGroup, appApi.AdminPermissionsListOperation("/permissions"), appApi.AdminPermissionsList)
 	// admin permissions create
 	huma.Register(adminGroup, appApi.AdminPermissionsCreateOperation("/permissions"), appApi.AdminPermissionsCreate)
 	// admin permissions update
 	huma.Register(adminGroup, appApi.AdminPermissionsUpdateOperation("/permissions/{id}"), appApi.AdminPermissionsUpdate)
 	// admin permissions delete
 	huma.Register(adminGroup, appApi.AdminPermissionsDeleteOperation("/permissions/{id}"), appApi.AdminPermissionsDelete)
+
+	// admin stripe subscriptions
+	huma.Register(adminGroup, appApi.AdminStripeSubscriptionsOperation("/subscriptions"), appApi.AdminStripeSubscriptions)
 
 }
 

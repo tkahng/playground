@@ -34,7 +34,7 @@ func (api *Api) RequestVerificationOperation(path string) huma.Operation {
 
 func (api *Api) RequestVerification(ctx context.Context, input *EmailVerificationInput) (*struct{}, error) {
 	db := api.app.Db()
-	claims := core.GetUserClaims(ctx)
+	claims := core.GetContextUserClaims(ctx)
 	if claims == nil || claims.User == nil {
 		return nil, huma.Error404NotFound("User not found")
 	}

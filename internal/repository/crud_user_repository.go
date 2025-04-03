@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"errors"
+	"slices"
 	"time"
 
 	"github.com/aarondl/opt/omit"
@@ -10,8 +11,13 @@ import (
 	"github.com/google/uuid"
 	"github.com/stephenafamo/bob"
 	"github.com/stephenafamo/bob/dialect/psql"
+	"github.com/stephenafamo/bob/dialect/psql/sm"
 	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/shared"
+)
+
+var (
+	UserColumnNames = models.Users.Columns().Names()
 )
 
 // func CreateUser(ctx context.Context, db bob.Executor, params *shared.AuthenticateUserParams) (*models.User, error) {
@@ -29,8 +35,9 @@ func ListUserFilterFunc(ctx context.Context, q *psql.ViewQuery[*models.User, mod
 		)
 	}
 	if len(filter.Ids) > 0 {
+		var ids = ParseUUIDs(filter.Ids)
 		q.Apply(
-			models.SelectWhere.Users.ID.In(filter.Ids...),
+			models.SelectWhere.Users.ID.In(ids...),
 		)
 	}
 	if len(filter.Emails) > 0 {
@@ -40,28 +47,14 @@ func ListUserFilterFunc(ctx context.Context, q *psql.ViewQuery[*models.User, mod
 	}
 
 	if len(filter.PermissionIds) > 0 {
-		var ids []uuid.UUID
-		for _, id := range filter.PermissionIds {
-			parsed, err := uuid.Parse(id)
-			if err != nil {
-				continue
-			}
-			ids = append(ids, parsed)
-		}
+		var ids = ParseUUIDs(filter.PermissionIds)
 		q.Apply(
 			models.SelectJoins.Users.InnerJoin.Permissions(ctx),
 			models.SelectWhere.Permissions.ID.In(ids...),
 		)
 	}
 	if len(filter.RoleIds) > 0 {
-		var ids []uuid.UUID
-		for _, id := range filter.RoleIds {
-			parsed, err := uuid.Parse(id)
-			if err != nil {
-				continue
-			}
-			ids = append(ids, parsed)
-		}
+		var ids = ParseUUIDs(filter.RoleIds)
 		q.Apply(
 			models.SelectJoins.Users.InnerJoin.Roles(ctx),
 			models.SelectWhere.Roles.ID.In(ids...),
@@ -77,13 +70,33 @@ func ListUsers(ctx context.Context, db bob.DB, input *shared.UserListParams) ([]
 	pageInput := &input.PaginatedInput
 
 	ViewApplyPagination(q, pageInput)
-
+	ListUsersOrderByFunc(ctx, q, input)
 	ListUserFilterFunc(ctx, q, &filter)
 	data, err := q.All(ctx, db)
 	if err != nil {
 		return nil, err
 	}
 	return data, nil
+}
+
+func ListUsersOrderByFunc(ctx context.Context, q *psql.ViewQuery[*models.User, models.UserSlice], input *shared.UserListParams) {
+	if input == nil {
+		return
+	}
+	if input.SortParams.SortBy == "" {
+		return
+	}
+	if slices.Contains(UserColumnNames, input.SortBy) {
+		var order = sm.OrderBy(input.SortBy)
+		if input.SortParams.SortOrder == "desc" {
+			order = sm.OrderBy(input.SortBy).Desc()
+		} else if input.SortParams.SortOrder == "asc" {
+			order = sm.OrderBy(input.SortBy).Asc()
+		}
+		q.Apply(
+			order,
+		)
+	}
 }
 
 // CountUsers implements AdminCrudActions.

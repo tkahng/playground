@@ -13,7 +13,7 @@ import (
 	"github.com/tkahng/authgo/internal/shared"
 )
 
-func (api *Api) AdminPermissionsOperation(path string) huma.Operation {
+func (api *Api) AdminPermissionsListOperation(path string) huma.Operation {
 	return huma.Operation{
 		OperationID: "admin-permissions",
 		Method:      http.MethodGet,
@@ -28,7 +28,7 @@ func (api *Api) AdminPermissionsOperation(path string) huma.Operation {
 	}
 }
 
-func (api *Api) AdminPermissions(ctx context.Context, input *struct {
+func (api *Api) AdminPermissionsList(ctx context.Context, input *struct {
 	shared.PermissionsListParams
 }) (*PaginatedOutput[*models.Permission], error) {
 	db := api.app.Db()

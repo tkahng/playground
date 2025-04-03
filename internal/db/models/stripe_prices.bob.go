@@ -6,7 +6,6 @@ package models
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -33,14 +32,13 @@ type StripePrice struct {
 	ProductID       string                              `db:"product_id" json:"product_id"`
 	LookupKey       null.Val[string]                    `db:"lookup_key" json:"lookup_key"`
 	Active          bool                                `db:"active" json:"active"`
-	Description     null.Val[string]                    `db:"description" json:"description"`
-	UnitAmount      int64                               `db:"unit_amount" json:"unit_amount"`
+	UnitAmount      null.Val[int64]                     `db:"unit_amount" json:"unit_amount"`
 	Currency        string                              `db:"currency" json:"currency"`
 	Type            StripePricingType                   `db:"type" json:"type"`
 	Interval        null.Val[StripePricingPlanInterval] `db:"interval" json:"interval"`
 	IntervalCount   null.Val[int64]                     `db:"interval_count" json:"interval_count"`
 	TrialPeriodDays null.Val[int64]                     `db:"trial_period_days" json:"trial_period_days"`
-	Metadata        types.JSON[json.RawMessage]         `db:"metadata" json:"metadata"`
+	Metadata        types.JSON[map[string]string]       `db:"metadata" json:"metadata"`
 	CreatedAt       time.Time                           `db:"created_at" json:"created_at"`
 	UpdatedAt       time.Time                           `db:"updated_at" json:"updated_at"`
 
@@ -68,7 +66,6 @@ type stripePriceColumnNames struct {
 	ProductID       string
 	LookupKey       string
 	Active          string
-	Description     string
 	UnitAmount      string
 	Currency        string
 	Type            string
@@ -88,7 +85,6 @@ type stripePriceColumns struct {
 	ProductID       psql.Expression
 	LookupKey       psql.Expression
 	Active          psql.Expression
-	Description     psql.Expression
 	UnitAmount      psql.Expression
 	Currency        psql.Expression
 	Type            psql.Expression
@@ -115,7 +111,6 @@ func buildStripePriceColumns(alias string) stripePriceColumns {
 		ProductID:       psql.Quote(alias, "product_id"),
 		LookupKey:       psql.Quote(alias, "lookup_key"),
 		Active:          psql.Quote(alias, "active"),
-		Description:     psql.Quote(alias, "description"),
 		UnitAmount:      psql.Quote(alias, "unit_amount"),
 		Currency:        psql.Quote(alias, "currency"),
 		Type:            psql.Quote(alias, "type"),
@@ -133,14 +128,13 @@ type stripePriceWhere[Q psql.Filterable] struct {
 	ProductID       psql.WhereMod[Q, string]
 	LookupKey       psql.WhereNullMod[Q, string]
 	Active          psql.WhereMod[Q, bool]
-	Description     psql.WhereNullMod[Q, string]
-	UnitAmount      psql.WhereMod[Q, int64]
+	UnitAmount      psql.WhereNullMod[Q, int64]
 	Currency        psql.WhereMod[Q, string]
 	Type            psql.WhereMod[Q, StripePricingType]
 	Interval        psql.WhereNullMod[Q, StripePricingPlanInterval]
 	IntervalCount   psql.WhereNullMod[Q, int64]
 	TrialPeriodDays psql.WhereNullMod[Q, int64]
-	Metadata        psql.WhereMod[Q, types.JSON[json.RawMessage]]
+	Metadata        psql.WhereMod[Q, types.JSON[map[string]string]]
 	CreatedAt       psql.WhereMod[Q, time.Time]
 	UpdatedAt       psql.WhereMod[Q, time.Time]
 }
@@ -155,14 +149,13 @@ func buildStripePriceWhere[Q psql.Filterable](cols stripePriceColumns) stripePri
 		ProductID:       psql.Where[Q, string](cols.ProductID),
 		LookupKey:       psql.WhereNull[Q, string](cols.LookupKey),
 		Active:          psql.Where[Q, bool](cols.Active),
-		Description:     psql.WhereNull[Q, string](cols.Description),
-		UnitAmount:      psql.Where[Q, int64](cols.UnitAmount),
+		UnitAmount:      psql.WhereNull[Q, int64](cols.UnitAmount),
 		Currency:        psql.Where[Q, string](cols.Currency),
 		Type:            psql.Where[Q, StripePricingType](cols.Type),
 		Interval:        psql.WhereNull[Q, StripePricingPlanInterval](cols.Interval),
 		IntervalCount:   psql.WhereNull[Q, int64](cols.IntervalCount),
 		TrialPeriodDays: psql.WhereNull[Q, int64](cols.TrialPeriodDays),
-		Metadata:        psql.Where[Q, types.JSON[json.RawMessage]](cols.Metadata),
+		Metadata:        psql.Where[Q, types.JSON[map[string]string]](cols.Metadata),
 		CreatedAt:       psql.Where[Q, time.Time](cols.CreatedAt),
 		UpdatedAt:       psql.Where[Q, time.Time](cols.UpdatedAt),
 	}
@@ -184,20 +177,19 @@ type StripePriceSetter struct {
 	ProductID       omit.Val[string]                        `db:"product_id" json:"product_id"`
 	LookupKey       omitnull.Val[string]                    `db:"lookup_key" json:"lookup_key"`
 	Active          omit.Val[bool]                          `db:"active" json:"active"`
-	Description     omitnull.Val[string]                    `db:"description" json:"description"`
-	UnitAmount      omit.Val[int64]                         `db:"unit_amount" json:"unit_amount"`
+	UnitAmount      omitnull.Val[int64]                     `db:"unit_amount" json:"unit_amount"`
 	Currency        omit.Val[string]                        `db:"currency" json:"currency"`
 	Type            omit.Val[StripePricingType]             `db:"type" json:"type"`
 	Interval        omitnull.Val[StripePricingPlanInterval] `db:"interval" json:"interval"`
 	IntervalCount   omitnull.Val[int64]                     `db:"interval_count" json:"interval_count"`
 	TrialPeriodDays omitnull.Val[int64]                     `db:"trial_period_days" json:"trial_period_days"`
-	Metadata        omit.Val[types.JSON[json.RawMessage]]   `db:"metadata" json:"metadata"`
+	Metadata        omit.Val[types.JSON[map[string]string]] `db:"metadata" json:"metadata"`
 	CreatedAt       omit.Val[time.Time]                     `db:"created_at" json:"created_at"`
 	UpdatedAt       omit.Val[time.Time]                     `db:"updated_at" json:"updated_at"`
 }
 
 func (s StripePriceSetter) SetColumns() []string {
-	vals := make([]string, 0, 14)
+	vals := make([]string, 0, 13)
 	if !s.ID.IsUnset() {
 		vals = append(vals, "id")
 	}
@@ -212,10 +204,6 @@ func (s StripePriceSetter) SetColumns() []string {
 
 	if !s.Active.IsUnset() {
 		vals = append(vals, "active")
-	}
-
-	if !s.Description.IsUnset() {
-		vals = append(vals, "description")
 	}
 
 	if !s.UnitAmount.IsUnset() {
@@ -270,11 +258,8 @@ func (s StripePriceSetter) Overwrite(t *StripePrice) {
 	if !s.Active.IsUnset() {
 		t.Active, _ = s.Active.Get()
 	}
-	if !s.Description.IsUnset() {
-		t.Description, _ = s.Description.GetNull()
-	}
 	if !s.UnitAmount.IsUnset() {
-		t.UnitAmount, _ = s.UnitAmount.Get()
+		t.UnitAmount, _ = s.UnitAmount.GetNull()
 	}
 	if !s.Currency.IsUnset() {
 		t.Currency, _ = s.Currency.Get()
@@ -308,7 +293,7 @@ func (s *StripePriceSetter) Apply(q *dialect.InsertQuery) {
 	})
 
 	q.AppendValues(bob.ExpressionFunc(func(ctx context.Context, w io.Writer, d bob.Dialect, start int) ([]any, error) {
-		vals := make([]bob.Expression, 14)
+		vals := make([]bob.Expression, 13)
 		if s.ID.IsUnset() {
 			vals[0] = psql.Raw("DEFAULT")
 		} else {
@@ -333,64 +318,58 @@ func (s *StripePriceSetter) Apply(q *dialect.InsertQuery) {
 			vals[3] = psql.Arg(s.Active)
 		}
 
-		if s.Description.IsUnset() {
+		if s.UnitAmount.IsUnset() {
 			vals[4] = psql.Raw("DEFAULT")
 		} else {
-			vals[4] = psql.Arg(s.Description)
-		}
-
-		if s.UnitAmount.IsUnset() {
-			vals[5] = psql.Raw("DEFAULT")
-		} else {
-			vals[5] = psql.Arg(s.UnitAmount)
+			vals[4] = psql.Arg(s.UnitAmount)
 		}
 
 		if s.Currency.IsUnset() {
-			vals[6] = psql.Raw("DEFAULT")
+			vals[5] = psql.Raw("DEFAULT")
 		} else {
-			vals[6] = psql.Arg(s.Currency)
+			vals[5] = psql.Arg(s.Currency)
 		}
 
 		if s.Type.IsUnset() {
-			vals[7] = psql.Raw("DEFAULT")
+			vals[6] = psql.Raw("DEFAULT")
 		} else {
-			vals[7] = psql.Arg(s.Type)
+			vals[6] = psql.Arg(s.Type)
 		}
 
 		if s.Interval.IsUnset() {
-			vals[8] = psql.Raw("DEFAULT")
+			vals[7] = psql.Raw("DEFAULT")
 		} else {
-			vals[8] = psql.Arg(s.Interval)
+			vals[7] = psql.Arg(s.Interval)
 		}
 
 		if s.IntervalCount.IsUnset() {
-			vals[9] = psql.Raw("DEFAULT")
+			vals[8] = psql.Raw("DEFAULT")
 		} else {
-			vals[9] = psql.Arg(s.IntervalCount)
+			vals[8] = psql.Arg(s.IntervalCount)
 		}
 
 		if s.TrialPeriodDays.IsUnset() {
-			vals[10] = psql.Raw("DEFAULT")
+			vals[9] = psql.Raw("DEFAULT")
 		} else {
-			vals[10] = psql.Arg(s.TrialPeriodDays)
+			vals[9] = psql.Arg(s.TrialPeriodDays)
 		}
 
 		if s.Metadata.IsUnset() {
-			vals[11] = psql.Raw("DEFAULT")
+			vals[10] = psql.Raw("DEFAULT")
 		} else {
-			vals[11] = psql.Arg(s.Metadata)
+			vals[10] = psql.Arg(s.Metadata)
 		}
 
 		if s.CreatedAt.IsUnset() {
-			vals[12] = psql.Raw("DEFAULT")
+			vals[11] = psql.Raw("DEFAULT")
 		} else {
-			vals[12] = psql.Arg(s.CreatedAt)
+			vals[11] = psql.Arg(s.CreatedAt)
 		}
 
 		if s.UpdatedAt.IsUnset() {
-			vals[13] = psql.Raw("DEFAULT")
+			vals[12] = psql.Raw("DEFAULT")
 		} else {
-			vals[13] = psql.Arg(s.UpdatedAt)
+			vals[12] = psql.Arg(s.UpdatedAt)
 		}
 
 		return bob.ExpressSlice(ctx, w, d, start, vals, "", ", ", "")
@@ -402,7 +381,7 @@ func (s StripePriceSetter) UpdateMod() bob.Mod[*dialect.UpdateQuery] {
 }
 
 func (s StripePriceSetter) Expressions(prefix ...string) []bob.Expression {
-	exprs := make([]bob.Expression, 0, 14)
+	exprs := make([]bob.Expression, 0, 13)
 
 	if !s.ID.IsUnset() {
 		exprs = append(exprs, expr.Join{Sep: " = ", Exprs: []bob.Expression{
@@ -429,13 +408,6 @@ func (s StripePriceSetter) Expressions(prefix ...string) []bob.Expression {
 		exprs = append(exprs, expr.Join{Sep: " = ", Exprs: []bob.Expression{
 			psql.Quote(append(prefix, "active")...),
 			psql.Arg(s.Active),
-		}})
-	}
-
-	if !s.Description.IsUnset() {
-		exprs = append(exprs, expr.Join{Sep: " = ", Exprs: []bob.Expression{
-			psql.Quote(append(prefix, "description")...),
-			psql.Arg(s.Description),
 		}})
 	}
 

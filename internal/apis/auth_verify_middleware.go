@@ -14,7 +14,7 @@ func RequireVerifyToken(api huma.API, app core.App) func(ctx huma.Context, next 
 		log.Println("verify middleware")
 		// check if already has user claims
 
-		if claims := core.GetUserClaims(ctx.Context()); claims != nil {
+		if claims := core.GetContextUserClaims(ctx.Context()); claims != nil {
 			log.Println("already has user claims")
 			next(ctx)
 			return

@@ -123,6 +123,14 @@ func random_types_JSON_json_RawMessage_(f *faker.Faker) types.JSON[json.RawMessa
 	return types.NewJSON[json.RawMessage](s.Bytes())
 }
 
+func random_types_JSON_map_string_string_(f *faker.Faker) types.JSON[map[string]string] {
+	if f == nil {
+		f = &defaultFaker
+	}
+
+	return types.NewJSON(map[string]string{})
+}
+
 func random_uuid_UUID(f *faker.Faker) uuid.UUID {
 	if f == nil {
 		f = &defaultFaker

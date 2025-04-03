@@ -25,7 +25,7 @@ func Authenticator(ja core.App) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		fmt.Println("Authenticator")
 		hfn := func(w http.ResponseWriter, r *http.Request) {
-			if claims := core.GetUserClaims(r.Context()); claims == nil {
+			if claims := core.GetContextUserClaims(r.Context()); claims == nil {
 				fmt.Println("not authorized")
 				http.Error(w, "not authorized", http.StatusUnauthorized)
 				return
@@ -38,7 +38,7 @@ func Authenticator(ja core.App) func(http.Handler) http.Handler {
 }
 
 func NewContext(ctx context.Context, t *shared.UserInfoDto, err error) context.Context {
-	ctx = core.SetUserClaims(ctx, t)
+	ctx = core.SetContextUserClaims(ctx, t)
 	// ctx = context.WithValue(ctx, ErrorCtxKey, err)
 	return ctx
 }

@@ -24,7 +24,7 @@ func (api *Api) AdminUsersOperation(path string) huma.Operation {
 		Path:        path,
 		Summary:     "Admin users",
 		Description: "List of users",
-		Tags:        []string{"Auth", "Admin"},
+		Tags:        []string{"Users", "Admin"},
 		Errors:      []int{http.StatusNotFound},
 		Security: []map[string][]string{
 			{shared.BearerAuthSecurityKey: {}},
@@ -38,9 +38,9 @@ type PaginatedOutput[T any] struct {
 
 type UserInfo struct {
 	models.User
-	Roles       []string           `json:"roles"`
-	Permissions []string           `json:"permissions"`
-	Providers   []models.Providers `json:"providers"`
+	Roles       []string           `json:"roles,omitempty" required:"false"`
+	Permissions []string           `json:"permissions,omitempty" required:"false"`
+	Providers   []models.Providers `json:"providers,omitempty" required:"false" uniqueItems:"true" minimum:"1" maximum:"100" enum:"google,apple,facebook,github,credentials"`
 }
 
 func (api *Api) AdminUsers(ctx context.Context, input *struct {
@@ -97,7 +97,7 @@ func (api *Api) AdminUsersCreateOperation(path string) huma.Operation {
 		Path:        path,
 		Summary:     "Create user",
 		Description: "Create user",
-		Tags:        []string{"Auth", "Admin"},
+		Tags:        []string{"Users", "Admin"},
 		Errors:      []int{http.StatusNotFound},
 		Security: []map[string][]string{
 			{shared.BearerAuthSecurityKey: {}},
@@ -167,7 +167,7 @@ func (api *Api) AdminUsersDeleteOperation(path string) huma.Operation {
 		Path:        path,
 		Summary:     "Delete user",
 		Description: "Delete user",
-		Tags:        []string{"Auth", "Admin", "Users"},
+		Tags:        []string{"Admin", "Users"},
 		Errors:      []int{http.StatusNotFound},
 		Security: []map[string][]string{
 			{shared.BearerAuthSecurityKey: {}},
@@ -193,7 +193,7 @@ func (api *Api) AdminUsersUpdateOperation(path string) huma.Operation {
 		Path:        path,
 		Summary:     "Update user",
 		Description: "Update user",
-		Tags:        []string{"Auth", "Admin", "Users"},
+		Tags:        []string{"Admin", "Users"},
 		Errors:      []int{http.StatusNotFound},
 		Security: []map[string][]string{
 			{shared.BearerAuthSecurityKey: {}},
@@ -220,7 +220,7 @@ func (api *Api) AdminUsersUpdatePasswordOperation(path string) huma.Operation {
 		Path:        path,
 		Summary:     "Update user password",
 		Description: "Update user password",
-		Tags:        []string{"Auth", "Admin", "Users"},
+		Tags:        []string{"Admin", "Users"},
 		Errors:      []int{http.StatusNotFound},
 		Security: []map[string][]string{
 			{shared.BearerAuthSecurityKey: {}},

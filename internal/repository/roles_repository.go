@@ -145,6 +145,9 @@ func FindPermissionByName(ctx context.Context, dbx bob.Executor, params string) 
 func FindPermissionsByNames(ctx context.Context, dbx bob.Executor, params []string) ([]*models.Permission, error) {
 	return models.Permissions.Query(models.SelectWhere.Permissions.Name.In(params...)).All(ctx, dbx)
 }
+func FindPermissionsByIds(ctx context.Context, dbx bob.Executor, params []uuid.UUID) ([]*models.Permission, error) {
+	return models.Permissions.Query(models.SelectWhere.Permissions.ID.In(params...)).All(ctx, dbx)
+}
 
 func DeletePermission(ctx context.Context, dbx bob.Executor, id uuid.UUID) error {
 	_, err := models.Permissions.Delete(
