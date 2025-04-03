@@ -66,7 +66,7 @@ func (srv *StripeService) CreateCheckoutSession(ctx context.Context, db bob.Exec
 	if err != nil {
 		return "", err
 	}
-	val, err := repository.FindLatestCheckoutSubscriptionByUserId(ctx, db, user.ID)
+	val, err := repository.FindLatestActiveSubscriptionByUserId(ctx, db, user.ID)
 	if err != nil {
 		return "", err
 	}
@@ -101,7 +101,7 @@ func (s *StripeService) CreateBillingPortalSession(ctx context.Context, db bob.E
 		return "", err
 	}
 	// verify user has a valid subscriptio
-	sub, err := repository.FindLatestCheckoutSubscriptionByUserId(ctx, db, user.ID)
+	sub, err := repository.FindLatestActiveSubscriptionByUserId(ctx, db, user.ID)
 	if err != nil {
 		return "", err
 	}

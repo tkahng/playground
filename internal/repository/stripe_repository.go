@@ -288,7 +288,7 @@ func StripeSubscriptionStatusConvert(status stripe.SubscriptionStatus) models.St
 	return models.StripeSubscriptionStatusActive
 }
 
-func FindLatestCheckoutSubscriptionByUserId(ctx context.Context, dbx bob.Executor, userId uuid.UUID) (*models.StripeSubscription, error) {
+func FindLatestActiveSubscriptionByUserId(ctx context.Context, dbx bob.Executor, userId uuid.UUID) (*models.StripeSubscription, error) {
 	data, err := models.StripeSubscriptions.Query(
 		models.SelectWhere.StripeSubscriptions.UserID.EQ(userId),
 		models.SelectWhere.StripeSubscriptions.Status.In(

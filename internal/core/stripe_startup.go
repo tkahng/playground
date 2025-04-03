@@ -14,6 +14,14 @@ type StripeService struct {
 	client *payment.StripeClient
 }
 
+func (srv *StripeService) Logger() *slog.Logger {
+	return srv.logger
+}
+
+func (srv *StripeService) Client() *payment.StripeClient {
+	return srv.client
+}
+
 func NewStripeService(client *payment.StripeClient) *StripeService {
 	return &StripeService{client: client, logger: slog.Default()}
 }
