@@ -2,7 +2,7 @@ package core
 
 import (
 	"context"
-	"log"
+	"log/slog"
 
 	"github.com/stephenafamo/bob"
 	"github.com/tkahng/authgo/internal/repository"
@@ -10,11 +10,12 @@ import (
 )
 
 type StripeService struct {
+	logger *slog.Logger
 	client *payment.StripeClient
 }
 
 func NewStripeService(client *payment.StripeClient) *StripeService {
-	return &StripeService{client: client}
+	return &StripeService{client: client, logger: slog.Default()}
 }
 func (srv *StripeService) StartUp(ctx context.Context, exec bob.Executor) error {
 	if err := srv.FindAndUpsertAllProducts(ctx, exec); err != nil {
@@ -23,46 +24,35 @@ func (srv *StripeService) StartUp(ctx context.Context, exec bob.Executor) error 
 	if err := srv.FindAndUpsertAllPrices(ctx, exec); err != nil {
 		return err
 	}
-	if err := srv.FindAndUpsertAllCustomers(ctx, exec); err != nil {
-		return err
-	}
-	if err := srv.FindAndUpsertAllSubscriptions(ctx, exec); err != nil {
-		return err
-	}
+	// if err := srv.FindAndUpsertAllCustomers(ctx, exec); err != nil {
+	// 	return err
+	// }
+	// if err := srv.FindAndUpsertAllSubscriptions(ctx, exec); err != nil {
+	// 	return err
+	// }
 	return nil
 }
-func (srv *StripeService) FindAndUpsertAllCustomers(ctx context.Context, exec bob.Executor) error {
-	customers, err := srv.client.FindAllCustomers()
-	if err != nil {
-		log.Printf("error finding all customers: %s", err)
-		return err
-	}
 
-	for _, customer := range customers {
-		user, err := repository.GetUserByEmail(ctx, exec, customer.Email)
-		if err != nil {
-			log.Printf("error finding user by email: %s", customer.Email)
-			continue
-		}
-		err = repository.UpsertCustomer(ctx, exec, user.ID, customer.ID)
-		if err != nil {
-			log.Printf("error upserting customer: %s", customer.Email)
-			continue
-		}
-	}
-	return nil
-}
+// func (srv *StripeService) FindAndUpsertAllCustomers(ctx context.Context, exec bob.Executor) error {
+// 	customers, err := srv.client.FindAllCustomers()
+// 	if err != nil {
+// 		log.Printf("error finding all customers: %s", err)
+// 		return err
+// 	}
+
+// 	return nil
+// }
 
 func (srv *StripeService) FindAndUpsertAllProducts(ctx context.Context, exec bob.Executor) error {
 	products, err := srv.client.FindAllProducts()
 	if err != nil {
-		log.Printf("error finding all products: %s", err)
+		srv.logger.Error("error finding all products", "error", err)
 		return err
 	}
 	for _, product := range products {
 		err = repository.UpsertProductFromStripe(ctx, exec, product)
 		if err != nil {
-			log.Printf("error upserting product: %s", product.ID)
+			srv.logger.Error("error upserting product", "product", product.ID, "error", err)
 			continue
 		}
 	}
@@ -72,38 +62,13 @@ func (srv *StripeService) FindAndUpsertAllProducts(ctx context.Context, exec bob
 func (srv *StripeService) FindAndUpsertAllPrices(ctx context.Context, exec bob.Executor) error {
 	prices, err := srv.client.FindAllPrices()
 	if err != nil {
-		log.Printf("error finding all prices: %s", err)
+		srv.logger.Error("error finding all prices", "error", err)
 		return err
 	}
 	for _, price := range prices {
 		err = repository.UpsertPriceFromStripe(ctx, exec, price)
 		if err != nil {
-			log.Printf("error upserting price: %s", price.ID)
-			continue
-		}
-	}
-	return nil
-}
-
-func (srv *StripeService) FindAndUpsertAllSubscriptions(ctx context.Context, exec bob.Executor) error {
-	subs, err := srv.client.FindAllSubscriptions()
-	if err != nil {
-		log.Printf("error finding all subscriptions: %s", err)
-		return err
-	}
-	for _, sub := range subs {
-		customer, err := repository.FindCustomerByStripeId(ctx, exec, sub.Customer.ID)
-		if err != nil {
-			log.Printf("error finding customer: %s", sub.Customer.ID)
-			continue
-		}
-		if customer == nil {
-			log.Printf("customer not found: %s", sub.Customer.ID)
-			continue
-		}
-		err = repository.UpsertSubscriptionFromStripe(ctx, exec, sub, customer.ID)
-		if err != nil {
-			log.Printf("error upserting subscription %s", sub.ID)
+			srv.logger.Error("error upserting price", "price", price.ID, "error", err)
 			continue
 		}
 	}

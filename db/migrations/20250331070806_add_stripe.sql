@@ -122,12 +122,11 @@ update on public.stripe_subscriptions for each row execute procedure moddatetime
 --------------- STRIPE_SUBSCRIPTIONS TABLE END -----------------------------------------------------------------------
 --------------- STRIPE WEBHOOK EVENTS TABLE START -----------------------------------------------------------------------
 create table public.stripe_webhook_events (
-    id uuid primary key default gen_random_uuid(),
-    -- event id from Stripe
-    stripe_id text not null unique,
-    -- event type from Stripe
+    -- event.id from Stripe
+    id text primary key,
+    -- event.type from Stripe
     type text not null,
-    -- event. from Stripe
+    -- event.object from Stripe
     object_type text not null,
     -- objects id from Stripe
     object_stripe_id text not null,

@@ -1,6 +1,9 @@
 package payment
 
 import (
+	"fmt"
+
+	"github.com/google/uuid"
 	"github.com/stripe/stripe-go/v81"
 	bs "github.com/stripe/stripe-go/v81/billingportal/session"
 	"github.com/stripe/stripe-go/v81/checkout/session"
@@ -56,6 +59,23 @@ func (s *StripeClient) FindCustomerByEmail(email string) (*stripe.Customer, erro
 		break
 	}
 
+	return cs, nil
+}
+
+func (client *StripeClient) FindCustomerByEmailAndUserId(email string, userId string) (*stripe.Customer, error) {
+	var cs *stripe.Customer
+	params := &stripe.CustomerSearchParams{
+		SearchParams: stripe.SearchParams{
+			Query: fmt.Sprintf("email:'%s' AND metadata['user_id']:'%s'", email, userId),
+			Limit: stripe.Int64(1),
+		},
+	}
+	result := customer.Search(params)
+
+	for result.Next() {
+		cs = result.Customer()
+		break
+	}
 	return cs, nil
 }
 
@@ -124,10 +144,10 @@ func (s *StripeClient) FindCustomerByStripeId(stripeId string) (*stripe.Customer
 	return customer.Get(stripeId, params)
 }
 
-func (s *StripeClient) FindOrCreateCustomer(email string, userId string) (*stripe.Customer, error) {
-	cs, _ := s.FindCustomerByEmail(email)
+func (s *StripeClient) FindOrCreateCustomer(email string, userId uuid.UUID) (*stripe.Customer, error) {
+	cs, _ := s.FindCustomerByEmailAndUserId(email, userId.String())
 	if cs == nil {
-		return s.CreateCustomer(email, userId)
+		return s.CreateCustomer(email, userId.String())
 	}
 	return cs, nil
 }

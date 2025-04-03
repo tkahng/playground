@@ -29,7 +29,7 @@ func FindCustomerByUserId(ctx context.Context, dbx bob.Executor, userId uuid.UUI
 	return OptionalRow(data, err)
 }
 
-func UpsertCustomer(ctx context.Context, dbx bob.Executor, userId uuid.UUID, stripeCustomerId string) error {
+func UpsertCustomerStripeId(ctx context.Context, dbx bob.Executor, userId uuid.UUID, stripeCustomerId string) error {
 	_, err := models.StripeCustomers.Insert(
 		&models.StripeCustomerSetter{
 			ID:       omit.From(userId),
@@ -278,3 +278,9 @@ func StripeSubscriptionStatusConvert(status stripe.SubscriptionStatus) models.St
 	}
 	return models.StripeSubscriptionStatusActive
 }
+
+// func FindEventByStripeId(ctx context.Context, dbx bob.Executor, stripeId string) (*models.StripeWebhookEvent, error) {
+// 	data, err := models.StripeWebhookEvents.Query(
+// 		models.SelectWhere.StripeWebhookEvents.StripeID.EQ(stripeId),
+// 	)
+// }

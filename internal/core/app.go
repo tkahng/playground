@@ -5,6 +5,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stephenafamo/bob"
+	"github.com/tkahng/authgo/internal/conf"
 	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mailer"
@@ -19,6 +20,7 @@ type AppDbx interface {
 }
 
 type App interface {
+	Cfg() *conf.EnvConfig
 	TokenStorage() *TokenStorage
 	TokenVerifier() *TokenVerifier
 
@@ -40,4 +42,7 @@ type App interface {
 	SendVerificationEmail(ctx context.Context, db bob.DB, user *models.User, redirectTo string) error
 	VerifyAndUsePasswordResetToken(ctx context.Context, db bob.DB, token string) (*PasswordResetClaims, error)
 	SendPasswordResetEmail(ctx context.Context, db bob.DB, user *models.User, redirectTo string) error
+
+	// stripe
+	Payment() *StripeService
 }

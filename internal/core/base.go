@@ -18,8 +18,14 @@ type BaseApp struct {
 	cfg           *conf.EnvConfig
 	db            bob.DB
 	settings      *AppOptions
+	payment       *StripeService
 	// onAfterRequestHandle  *hook.Hook[*BaseEvent]
 	// onBeforeRequestHandle *hook.Hook[*BaseEvent]
+}
+
+// Payment implements App.
+func (a *BaseApp) Payment() *StripeService {
+	return a.payment
 }
 
 // TokenVerifier implements App.
