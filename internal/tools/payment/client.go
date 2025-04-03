@@ -159,7 +159,7 @@ func (s *StripeClient) FindSubscriptionByStripeId(stripeId string) (*stripe.Subs
 	return subscription.Get(stripeId, params)
 }
 
-func (s *StripeClient) CreateCheckSession(customerId, priceId string) (*stripe.CheckoutSession, error) {
+func (s *StripeClient) CreateCheckoutSession(customerId, priceId string) (*stripe.CheckoutSession, error) {
 	lineParams := []*stripe.CheckoutSessionLineItemParams{
 		{
 			Price:    stripe.String(priceId),
@@ -178,18 +178,18 @@ func (s *StripeClient) CreateCheckSession(customerId, priceId string) (*stripe.C
 		PaymentMethodTypes: stripe.StringSlice([]string{"card"}),
 		CustomerUpdate:     customerUpdateParams,
 		Mode:               stripe.String("subscription"),
-		SuccessURL:         stripe.String(s.config.AppUrl + "/payment/success?session_id={CHECKOUT_SESSION_ID}"),
-		CancelURL:          stripe.String(s.config.AppUrl + "/payment/cancel"),
-		LineItems:          lineParams,
-		SubscriptionData:   subscriptionParams,
+		SuccessURL:         stripe.String(s.config.AppUrl + "/dashboard/subscriptions"),
+		// CancelURL:          stripe.String(s.config.AppUrl + "/payment/cancel"),
+		LineItems:        lineParams,
+		SubscriptionData: subscriptionParams,
 	}
 	return session.New(sessionParams)
 }
 
-func (s *StripeClient) CreateBillingPortalSession(customerId string, url string) (*stripe.BillingPortalSession, error) {
+func (s *StripeClient) CreateBillingPortalSession(customerId string) (*stripe.BillingPortalSession, error) {
 	params := &stripe.BillingPortalSessionParams{
 		Customer:  stripe.String(customerId),
-		ReturnURL: stripe.String(url + "/profile"),
+		ReturnURL: stripe.String(s.config.AppUrl + "/dashboard/subscriptions"),
 	}
 	return bs.New(params)
 }

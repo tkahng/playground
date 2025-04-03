@@ -10,6 +10,7 @@ import (
 	"github.com/stephenafamo/bob"
 	"github.com/stephenafamo/bob/dialect/psql"
 	"github.com/stephenafamo/bob/dialect/psql/im"
+	"github.com/stephenafamo/bob/dialect/psql/sm"
 	"github.com/stephenafamo/bob/types"
 	"github.com/stripe/stripe-go/v81"
 	"github.com/tkahng/authgo/internal/db/models"
@@ -72,12 +73,16 @@ func UpsertProductFromStripe(ctx context.Context, dbx bob.Executor, product *str
 	if product == nil {
 		return nil
 	}
+	var image *string
+	if len(product.Images) > 0 {
+		image = &product.Images[0]
+	}
 	param := &models.StripeProductSetter{
 		ID:          omit.From(product.ID),
 		Active:      omit.From(product.Active),
-		Name:        omitnull.From(product.Name),
+		Name:        omit.From(product.Name),
 		Description: omitnull.From(product.Description),
-		Image:       omitnull.From(product.Images[0]),
+		Image:       omitnull.FromPtr(image),
 		Metadata:    omit.From(types.NewJSON(product.Metadata)),
 	}
 	if len(product.Images) > 0 {
@@ -98,9 +103,6 @@ func UpsertPrice(ctx context.Context, dbx bob.Executor, price *models.StripePric
 			),
 			im.SetCol("active").To(
 				psql.Raw("EXCLUDED.active"),
-			),
-			im.SetCol("description").To(
-				psql.Raw("EXCLUDED.description"),
 			),
 			im.SetCol("unit_amount").To(
 				psql.Raw("EXCLUDED.unit_amount"),
@@ -133,15 +135,14 @@ func UpsertPriceFromStripe(ctx context.Context, dbx bob.Executor, price *stripe.
 		return nil
 	}
 	param := &models.StripePriceSetter{
-		ID:          omit.From(price.ID),
-		ProductID:   omit.From(price.Product.ID),
-		Active:      omit.From(price.Active),
-		LookupKey:   omitnull.From(price.LookupKey),
-		Description: omitnull.From(price.Nickname),
-		UnitAmount:  omit.From(price.UnitAmount),
-		Currency:    omit.From(string(price.Currency)),
-		Type:        omit.From(PriceTypeConvert(price.Type)),
-		Metadata:    omit.From(types.NewJSON(price.Metadata)),
+		ID:         omit.From(price.ID),
+		ProductID:  omit.From(price.Product.ID),
+		Active:     omit.From(price.Active),
+		LookupKey:  omitnull.From(price.LookupKey),
+		UnitAmount: omitnull.From(price.UnitAmount),
+		Currency:   omit.From(string(price.Currency)),
+		Type:       omit.From(PriceTypeConvert(price.Type)),
+		Metadata:   omit.From(types.NewJSON(price.Metadata)),
 	}
 	if price.Recurring != nil {
 		param.Interval = omitnull.From(PriceIntervalConvert(price.Recurring.Interval))
@@ -279,8 +280,21 @@ func StripeSubscriptionStatusConvert(status stripe.SubscriptionStatus) models.St
 	return models.StripeSubscriptionStatusActive
 }
 
-// func FindEventByStripeId(ctx context.Context, dbx bob.Executor, stripeId string) (*models.StripeWebhookEvent, error) {
-// 	data, err := models.StripeWebhookEvents.Query(
-// 		models.SelectWhere.StripeWebhookEvents.StripeID.EQ(stripeId),
-// 	)
-// }
+func FindLatestCheckoutSubscriptionByUserId(ctx context.Context, dbx bob.Executor, userId uuid.UUID) (*models.StripeSubscription, error) {
+	data, err := models.StripeSubscriptions.Query(
+		models.SelectWhere.StripeSubscriptions.UserID.EQ(userId),
+		models.SelectWhere.StripeSubscriptions.Status.In(
+			models.StripeSubscriptionStatusActive,
+			models.StripeSubscriptionStatusTrialing,
+		),
+		sm.OrderBy(models.StripeSubscriptionColumns.Created).Desc(),
+	).One(ctx, dbx)
+	return OptionalRow(data, err)
+}
+
+func FindValidPriceById(ctx context.Context, dbx bob.Executor, priceId string) (*models.StripePrice, error) {
+	data, err := models.StripePrices.Query(
+		models.SelectWhere.StripePrices.ID.EQ(priceId),
+	).One(ctx, dbx)
+	return data, err
+}

@@ -17,7 +17,7 @@ type StripeService struct {
 func NewStripeService(client *payment.StripeClient) *StripeService {
 	return &StripeService{client: client, logger: slog.Default()}
 }
-func (srv *StripeService) StartUp(ctx context.Context, exec bob.Executor) error {
+func (srv *StripeService) UpsertPriceProductFromStripe(ctx context.Context, exec bob.Executor) error {
 	if err := srv.FindAndUpsertAllProducts(ctx, exec); err != nil {
 		return err
 	}
@@ -32,16 +32,6 @@ func (srv *StripeService) StartUp(ctx context.Context, exec bob.Executor) error 
 	// }
 	return nil
 }
-
-// func (srv *StripeService) FindAndUpsertAllCustomers(ctx context.Context, exec bob.Executor) error {
-// 	customers, err := srv.client.FindAllCustomers()
-// 	if err != nil {
-// 		log.Printf("error finding all customers: %s", err)
-// 		return err
-// 	}
-
-// 	return nil
-// }
 
 func (srv *StripeService) FindAndUpsertAllProducts(ctx context.Context, exec bob.Executor) error {
 	products, err := srv.client.FindAllProducts()
