@@ -238,10 +238,7 @@ func (api *Api) AdminUserRolesUpdate(ctx context.Context, input *struct {
 		return nil, err
 	}
 	_, err = models.UserRoles.Delete(
-		psql.WhereAnd(
-			models.DeleteWhere.UserRoles.RoleID.In(roleIds...),
-			models.DeleteWhere.UserRoles.UserID.EQ(user.ID),
-		),
+		models.DeleteWhere.UserRoles.UserID.EQ(user.ID),
 	).Exec(ctx, db)
 	if err != nil {
 		return nil, err
@@ -256,4 +253,70 @@ func (api *Api) AdminUserRolesUpdate(ctx context.Context, input *struct {
 		},
 	}
 	return &output, nil
+}
+
+func (api *Api) AdminRolesUpdatePermissionsOperation(path string) huma.Operation {
+	return huma.Operation{
+		OperationID: "admin-roles-update-permissions",
+		Method:      http.MethodPut,
+		Path:        path,
+		Summary:     "Update role permissions",
+		Description: "Update role permissions",
+		Tags:        []string{"Admin", "Roles"},
+		Errors:      []int{http.StatusNotFound},
+		Security: []map[string][]string{
+			{shared.BearerAuthSecurityKey: {}},
+		},
+	}
+}
+
+type RolePermissionsUpdateInput struct {
+	PermissionIDs []string `json:"permission_ids" minimum:"0" maximum:"100" format:"uuid" required:"true"`
+}
+
+func (api *Api) AdminRolesUpdatePermissions(ctx context.Context, input *struct {
+	RoleID string `path:"id"`
+	Body   RolePermissionsUpdateInput
+}) (*struct {
+	Body models.Role
+}, error) {
+	db := api.app.Db()
+	id, err := uuid.Parse(input.RoleID)
+	if err != nil {
+		return nil, err
+	}
+	role, err := repository.FindRoleById(ctx, db, id)
+	if err != nil {
+		return nil, err
+	}
+	if role == nil {
+		return nil, huma.Error404NotFound("Role not found")
+	}
+	permissionIds := make([]uuid.UUID, len(input.Body.PermissionIDs))
+	for i, id := range input.Body.PermissionIDs {
+		id, err := uuid.Parse(id)
+		if err != nil {
+			continue
+		}
+		permissionIds[i] = id
+	}
+	permissions, err := repository.FindPermissionsByIds(ctx, db, permissionIds)
+	if err != nil {
+		return nil, err
+	}
+	_, err = models.RolePermissions.Delete(
+		psql.WhereAnd(
+			models.DeleteWhere.RolePermissions.RoleID.EQ(role.ID),
+		),
+	).Exec(ctx, db)
+	if err != nil {
+		return nil, err
+	}
+	err = role.AttachPermissions(ctx, db, permissions...)
+	if err != nil {
+		return nil, err
+	}
+	return &struct{ Body models.Role }{
+		Body: *role,
+	}, nil
 }

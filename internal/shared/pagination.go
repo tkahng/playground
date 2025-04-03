@@ -71,6 +71,18 @@ type PermissionsListParams struct {
 	SortBy    string `query:"sort_by,omitempty" required:"false" default:"created_at"`
 	SortOrder string `query:"sort_order,omitempty" required:"false" default:"desc"`
 }
+type StripeProductListFilter struct {
+	Q   string   `query:"q,omitempty" required:"false"`
+	Ids []string `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+}
+type StripeProductListParams struct {
+	PaginatedInput
+	StripeProductListFilter
+	// 	SortBy    string `query:"sort_by,omitempty" required:"false" default:"created_at"`
+	// 	SortOrder string `query:"sort_order,omitempty" required:"false" default:"desc"`
+	SortBy    string `query:"sort_by,omitempty" required:"false" default:"created_at"`
+	SortOrder string `query:"sort_order,omitempty" required:"false" default:"desc"`
+}
 
 type PaginatedInput struct {
 	Page    int `query:"page,omitempty" default:"1" minimum:"1"`
