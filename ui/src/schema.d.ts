@@ -117,6 +117,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/roles/{id}/permissions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Update role permissions
+         * @description Update role permissions
+         */
+        put: operations["admin-roles-update-permissions"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/users": {
         parameters: {
             query?: never;
@@ -389,6 +409,86 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/stripe/billing-portal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * billing-portal
+         * @description billing-portals
+         */
+        post: operations["stripe-billing-portal"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stripe/checkout-session": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * create checkout session
+         * @description create checkout session
+         */
+        post: operations["create-checkout-session"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stripe/products": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * stripe-products-with-prices
+         * @description stripe-products-with-prices
+         */
+        get: operations["stripe-products-with-prices"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stripe/webhook": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * webhook
+         * @description Webhook for stripe
+         */
+        post: operations["stripe-webhook"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -507,6 +607,24 @@ export interface components {
             data: components["schemas"]["Role"][] | null;
             meta: components["schemas"]["Meta"];
         };
+        PaginatedResponseRoleWithPermissions: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            data: components["schemas"]["RoleWithPermissions"][] | null;
+            meta: components["schemas"]["Meta"];
+        };
+        PaginatedResponseStripeProductWithPrice: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            data: components["schemas"]["StripeProductWithPrice"][] | null;
+            meta: components["schemas"]["Meta"];
+        };
         PaginatedResponseUserInfo: {
             /**
              * Format: uri
@@ -538,6 +656,37 @@ export interface components {
             readonly $schema?: string;
             description?: string;
             name: string;
+        };
+        Price: {
+            active: boolean;
+            /** Format: date-time */
+            created_at: string;
+            currency: string;
+            id: string;
+            /** @enum {string} */
+            interval: "day" | "week" | "month" | "year";
+            interval_count: string;
+            lookup_key: string;
+            metadata: string;
+            product_id: string;
+            trial_period_days: string;
+            /** @enum {string} */
+            type: "one_time" | "recurring";
+            unit_amount: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        Product: {
+            active: boolean;
+            /** Format: date-time */
+            created_at: string;
+            description: string;
+            id: string;
+            image: string;
+            metadata: string;
+            name: string;
+            /** Format: date-time */
+            updated_at: string;
         };
         RefreshTokenInput: {
             /**
@@ -578,6 +727,25 @@ export interface components {
             description?: string;
             name: string;
         };
+        RolePermissionsUpdateInput: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            /** Format: uuid */
+            permission_ids: string[] | null;
+        };
+        RoleWithPermissions: {
+            Permissions: components["schemas"]["Permission"][] | null;
+            /** Format: date-time */
+            created_at: string;
+            description: string;
+            id: string;
+            name: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
         SigninDto: {
             /**
              * Format: uri
@@ -598,6 +766,26 @@ export interface components {
             email: string;
             name: string | null;
             password: string;
+        };
+        StripePaymentPayload: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            price_id: string;
+        };
+        StripeProductWithPrice: {
+            prices: components["schemas"]["Price"][] | null;
+            product: components["schemas"]["Product"];
+        };
+        StripeUrlOutputBody: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            url: string;
         };
         TokenDto: {
             access_token: string;
@@ -936,7 +1124,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PaginatedResponseRole"];
+                    "application/json": components["schemas"]["PaginatedResponseRoleWithPermissions"];
                 };
             };
             /** @description Not Found */
@@ -1089,6 +1277,59 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "admin-roles-update-permissions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RolePermissionsUpdateInput"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Role"];
+                };
             };
             /** @description Not Found */
             404: {
@@ -1982,6 +2223,200 @@ export interface operations {
             };
             /** @description Not Found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "stripe-billing-portal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StripeUrlOutputBody"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "create-checkout-session": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StripePaymentPayload"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StripeUrlOutputBody"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "stripe-products-with-prices": {
+        parameters: {
+            query?: {
+                page?: number;
+                per_page?: number;
+                q?: string;
+                ids?: string[] | null;
+                sort_by?: string;
+                sort_order?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponseStripeProductWithPrice"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "stripe-webhook": {
+        parameters: {
+            query?: never;
+            header?: {
+                "Stripe-Signature"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/octet-stream": string;
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };
