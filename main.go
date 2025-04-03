@@ -79,7 +79,7 @@ func main() {
 			server.Shutdown(ctx)
 		})
 	})
-	cli.Root().AddCommand(cmd.NewMigrateCmd(), cmd.NewSeedCmd(), cmd.NewSuperuserCmd(), &cobra.Command{
+	cli.Root().AddCommand(cmd.NewMigrateCmd(), cmd.NewSeedCmd(), cmd.NewSuperuserCmd(), cmd.NewStripeCmd(), &cobra.Command{
 		Use:   "openapi",
 		Short: "Print the OpenAPI spec",
 		Run: func(cmd *cobra.Command, args []string) {

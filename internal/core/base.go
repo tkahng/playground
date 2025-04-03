@@ -8,6 +8,7 @@ import (
 	"github.com/tkahng/authgo/internal/repository"
 
 	"github.com/tkahng/authgo/internal/tools/mailer"
+	"github.com/tkahng/authgo/internal/tools/payment"
 )
 
 var _ App = (*BaseApp)(nil)
@@ -78,6 +79,7 @@ func NewBaseApp(db bob.DB, cfg conf.EnvConfig) *BaseApp {
 		db:       db,
 		settings: settings,
 		cfg:      &cfg,
+		payment:  NewStripeService(payment.NewStripeClient(cfg.StripeConfig)),
 	}
 }
 

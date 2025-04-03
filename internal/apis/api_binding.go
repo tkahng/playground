@@ -97,6 +97,7 @@ func BindApis(api huma.API, app core.App) {
 	stripeGroup := huma.NewGroup(api, "/stripe")
 	// stripe webhook
 	huma.Register(stripeGroup, appApi.StripeWebhookOperation("/webhook"), appApi.StripeWebhook)
+	// stripe products with prices
 	// stripe billing portal
 	huma.Register(stripeGroup, appApi.StripeBillingPortalOperation("/billing-portal"), appApi.StripeBillingPortal)
 	//  stripe checkout session
