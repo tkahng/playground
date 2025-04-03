@@ -108,7 +108,6 @@ var ColumnNames = struct {
 		ProductID:       "product_id",
 		LookupKey:       "lookup_key",
 		Active:          "active",
-		Description:     "description",
 		UnitAmount:      "unit_amount",
 		Currency:        "currency",
 		Type:            "type",

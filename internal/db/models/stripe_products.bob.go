@@ -29,7 +29,7 @@ import (
 type StripeProduct struct {
 	ID          string                        `db:"id,pk" json:"id"`
 	Active      bool                          `db:"active" json:"active"`
-	Name        null.Val[string]              `db:"name" json:"name"`
+	Name        string                        `db:"name" json:"name"`
 	Description null.Val[string]              `db:"description" json:"description"`
 	Image       null.Val[string]              `db:"image" json:"image"`
 	Metadata    types.JSON[map[string]string] `db:"metadata" json:"metadata"`
@@ -104,7 +104,7 @@ func buildStripeProductColumns(alias string) stripeProductColumns {
 type stripeProductWhere[Q psql.Filterable] struct {
 	ID          psql.WhereMod[Q, string]
 	Active      psql.WhereMod[Q, bool]
-	Name        psql.WhereNullMod[Q, string]
+	Name        psql.WhereMod[Q, string]
 	Description psql.WhereNullMod[Q, string]
 	Image       psql.WhereNullMod[Q, string]
 	Metadata    psql.WhereMod[Q, types.JSON[map[string]string]]
@@ -120,7 +120,7 @@ func buildStripeProductWhere[Q psql.Filterable](cols stripeProductColumns) strip
 	return stripeProductWhere[Q]{
 		ID:          psql.Where[Q, string](cols.ID),
 		Active:      psql.Where[Q, bool](cols.Active),
-		Name:        psql.WhereNull[Q, string](cols.Name),
+		Name:        psql.Where[Q, string](cols.Name),
 		Description: psql.WhereNull[Q, string](cols.Description),
 		Image:       psql.WhereNull[Q, string](cols.Image),
 		Metadata:    psql.Where[Q, types.JSON[map[string]string]](cols.Metadata),
@@ -143,7 +143,7 @@ type stripeProductErrors struct {
 type StripeProductSetter struct {
 	ID          omit.Val[string]                        `db:"id,pk" json:"id"`
 	Active      omit.Val[bool]                          `db:"active" json:"active"`
-	Name        omitnull.Val[string]                    `db:"name" json:"name"`
+	Name        omit.Val[string]                        `db:"name" json:"name"`
 	Description omitnull.Val[string]                    `db:"description" json:"description"`
 	Image       omitnull.Val[string]                    `db:"image" json:"image"`
 	Metadata    omit.Val[types.JSON[map[string]string]] `db:"metadata" json:"metadata"`
@@ -196,7 +196,7 @@ func (s StripeProductSetter) Overwrite(t *StripeProduct) {
 		t.Active, _ = s.Active.Get()
 	}
 	if !s.Name.IsUnset() {
-		t.Name, _ = s.Name.GetNull()
+		t.Name, _ = s.Name.Get()
 	}
 	if !s.Description.IsUnset() {
 		t.Description, _ = s.Description.GetNull()
