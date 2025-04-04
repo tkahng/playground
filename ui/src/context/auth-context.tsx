@@ -1,4 +1,4 @@
-import { useLocalStorage } from "@/hooks/useLocalStorage";
+import { useLocalStorage } from "@/hooks/use-local-storage";
 import { client } from "@/lib/client";
 import { AuthenticatedDTO, SigninInput, SignupInput } from "@/schema.types";
 import { jwtDecode } from "jwt-decode";
