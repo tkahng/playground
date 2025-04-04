@@ -25,9 +25,9 @@ export function NexusAILandingHeader({
     navigate(RouteMap.HOME);
   };
   return (
-    <header>
-      <nav className="flex h-14 items-center justify-between shadow-sm lg:px-6">
-        <div className="flex flex-grow items-center">
+    <header className="shadow-sm">
+      <nav className="container mx-auto flex h-14 items-center justify-between  lg:px-6">
+        <div className="flex flex-grow items-center content-center">
           <NexusAILogo />
           {leftLinks?.length &&
             leftLinks.map(({ to: href, title }) => (

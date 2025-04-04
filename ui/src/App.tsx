@@ -5,6 +5,7 @@ import { BrowserRouter, Route, Routes } from "react-router";
 import { Toaster } from "sonner";
 import { ThemeProvider } from "./components/theme-provider";
 import { AuthProvider } from "./context/auth-context";
+import AuthenticatedLayout from "./layouts/authenticated-layout";
 import RootLayout from "./layouts/root";
 import CallbackComponent from "./pages/callback";
 import Landing from "./pages/landing";
@@ -25,7 +26,7 @@ function App() {
               {/* Other routes */}
               <Route path="/auth/callback" element={<CallbackComponent />} />
 
-              <Route element={<RootLayout />}>
+              <Route element={<AuthenticatedLayout />}>
                 <Route
                   path="/dashboard"
                   element={

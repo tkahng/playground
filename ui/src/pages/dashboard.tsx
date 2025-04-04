@@ -12,7 +12,7 @@ export default function Dashboard() {
   };
 
   return (
-    <div>
+    <div className="flex w-full flex-col items-center justify-center">
       <h2>Dashboard - Protected Route</h2>
       <button onClick={handleLogout}>Logout</button>
     </div>
