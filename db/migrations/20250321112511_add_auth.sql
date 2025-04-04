@@ -86,13 +86,13 @@ CREATE TRIGGER handle_user_sessions_updated_at before
 update on public.user_sessions for each row execute procedure moddatetime(updated_at);
 -- migrate:down
 drop trigger if exists handle_user_sessions_updated_at on public.user_sessions;
-drop constraint if exists user_sessions_token_not_empty;
+alter table public.user_sessions drop constraint if exists user_sessions_token_not_empty;
 drop table if exists public.user_sessions;
 drop trigger if exists handle_user_accounts_updated_at on public.user_accounts;
-drop constraint if exists user_accounts_user_id_provider_unique;
+alter table public.user_accounts drop constraint if exists user_accounts_user_id_provider_unique;
 drop table if exists public.user_accounts;
 drop trigger if exists handle_tokens_updated_at on public.tokens;
-drop constraint if exists tokens_type_identifier_token_not_empty;
+alter table public.tokens drop constraint if exists tokens_type_identifier_token_not_empty;
 drop table if exists public.tokens;
 drop type if exists public.provider_types;
 drop type if exists public.providers;
