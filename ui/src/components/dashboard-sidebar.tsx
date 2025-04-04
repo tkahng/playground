@@ -17,7 +17,6 @@ const items: LinkProps[] = [
 
 export const DashboardSidebar = () => {
   const { pathname } = useLocation();
-  console.log(pathname);
   return (
     <nav className="flex flex-grow flex-col">
       <div className="border flex flex-col flex-grow p-8">

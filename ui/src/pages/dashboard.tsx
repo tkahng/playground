@@ -3,11 +3,11 @@ import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { useNavigate } from "react-router";
 
 export default function Dashboard() {
-  const auth = useAuthProvider();
+  const { logout } = useAuthProvider();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
-    await auth.logout();
+    await logout();
     navigate(RouteMap.SIGNIN);
   };
 

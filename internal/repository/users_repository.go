@@ -201,8 +201,6 @@ func GetUsersWithRolesAndPermissions(ctx context.Context, db bob.Executor, ids .
 	}
 
 	query := psql.RawQuery(rawGetUsersWithPermissionsByIds, psql.Arg(input...))
-	q, a := query.MustBuild(ctx)
-	fmt.Println(q, a)
 	res, err := bob.All(ctx, db, query, scan.StructMapper[rolePermissionClaims]())
 	if err != nil {
 		return nil, err

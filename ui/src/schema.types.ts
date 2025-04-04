@@ -16,3 +16,5 @@ export type BillingIntervals = Exclude<
   PriceIntervals,
   "week" | "day" | undefined
 >;
+
+export type UserInfo = components["schemas"]["UserInfo"];

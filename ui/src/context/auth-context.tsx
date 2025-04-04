@@ -9,6 +9,7 @@ interface AuthProviderProps {
 }
 
 export interface AuthContextType {
+  // client():
   user: AuthenticatedDTO | null;
   signUp: ({ email, name, password }: SignupInput) => Promise<void>;
   login: ({ email, password }: SigninInput) => Promise<any>;
