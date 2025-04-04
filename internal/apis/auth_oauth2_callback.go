@@ -10,7 +10,6 @@ import (
 	"github.com/tkahng/authgo/internal/core"
 	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/shared"
-	"github.com/tkahng/authgo/internal/tools/utils"
 	"golang.org/x/oauth2"
 )
 
@@ -162,7 +161,6 @@ func OAuth2Callback(ctx context.Context, api *Api, input *OAuth2CallbackInput) (
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch OAuth2 user. %w", err)
 	}
-	utils.PrettyPrintJSON(authUser)
 	params := &shared.AuthenticateUserParams{
 		AvatarUrl:         &authUser.AvatarURL,
 		Email:             authUser.Email,

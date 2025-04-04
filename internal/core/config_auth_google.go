@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 
 	"github.com/tkahng/authgo/internal/auth"
-	"github.com/tkahng/authgo/internal/tools/utils"
 	"golang.org/x/oauth2"
 )
 
@@ -29,7 +28,6 @@ func (p *GoogleConfig) FetchAuthUser(ctx context.Context, token *oauth2.Token) (
 	if err := json.Unmarshal(data, &rawUser); err != nil {
 		return nil, err
 	}
-	utils.PrettyPrintJSON(rawUser)
 	extracted := struct {
 		Id            string `json:"sub"`
 		Name          string `json:"name"`

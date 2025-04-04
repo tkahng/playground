@@ -14,7 +14,6 @@ import (
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/dataloader"
 	"github.com/tkahng/authgo/internal/tools/security"
-	"github.com/tkahng/authgo/internal/tools/utils"
 )
 
 func (api *Api) AdminUsersOperation(path string) huma.Operation {
@@ -47,7 +46,6 @@ func (api *Api) AdminUsers(ctx context.Context, input *struct {
 	shared.UserListParams
 }) (*PaginatedOutput[*UserInfo], error) {
 	db := api.app.Db()
-	utils.PrettyPrintJSON(input)
 	users, err := repository.ListUsers(ctx, db, &input.UserListParams)
 	if err != nil {
 		return nil, err
