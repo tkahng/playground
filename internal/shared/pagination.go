@@ -141,8 +141,8 @@ type StripeSubscriptionListParams struct {
 	Expand []string `query:"expand,omitempty" required:"false" minimum:"1" maximum:"100" enum:"user,price,product"`
 }
 type PaginatedInput struct {
-	Page    int `query:"page,omitempty" default:"1" minimum:"1"`
-	PerPage int `query:"per_page,omitempty" default:"10" minimum:"1" maximum:"100"`
+	Page    int `query:"page,omitempty" default:"1" minimum:"1" required:"false"`
+	PerPage int `query:"per_page,omitempty" default:"10" minimum:"1" maximum:"100" required:"false"`
 }
 
 type PaginatedResponse[T any] struct {
