@@ -7,7 +7,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/tkahng/authgo/internal/conf"
 	"github.com/tkahng/authgo/internal/core"
-	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/db/seeders"
 	"github.com/tkahng/authgo/internal/repository"
 )
@@ -73,21 +72,25 @@ var seedUserCmd = &cobra.Command{
 		conf := conf.AppConfigGetter()
 
 		dbx := core.NewBobFromConf(ctx, conf.Db)
+		role, err := repository.FindRoleByName(ctx, dbx, "basic")
+		if err != nil {
+			return fmt.Errorf("error at createing users: %w", err)
+		}
 
-		err := seeders.UserCredentialsFactory(ctx, dbx, 10)
+		_, err = seeders.UserCredentialsRolesFactory(ctx, dbx, 20, role)
 		// err := repository.PopulateRoles(ctx, dbx)
 		if err != nil {
 
 			return fmt.Errorf("error at createing users: %w", err)
 		}
-		err = seeders.UserOauthFactory(ctx, dbx, 10, models.ProvidersGoogle)
-		if err != nil {
-			return fmt.Errorf("error at createing users: %w", err)
-		}
-		err = seeders.UserOauthFactory(ctx, dbx, 10, models.ProvidersGithub)
-		if err != nil {
-			return fmt.Errorf("error at createing users: %w", err)
-		}
+		// err = seeders.UserOauthFactory(ctx, dbx, 10, models.ProvidersGoogle)
+		// if err != nil {
+		// 	return fmt.Errorf("error at createing users: %w", err)
+		// }
+		// err = seeders.UserOauthFactory(ctx, dbx, 10, models.ProvidersGithub)
+		// if err != nil {
+		// 	return fmt.Errorf("error at createing users: %w", err)
+		// }
 		return nil
 	},
 }
