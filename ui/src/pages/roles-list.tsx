@@ -7,7 +7,7 @@ import { PaginationState, Updater } from "@tanstack/react-table";
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 
-export default function UserListPage() {
+export default function RolesList() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const { user } = useAuthProvider();
