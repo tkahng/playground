@@ -35,5 +35,6 @@ export const useSortParams = () => {
     handleTableFieldChange,
     searchParams: objectParams,
     setSearchParams,
+    // setPaginationParams,
   };
 };

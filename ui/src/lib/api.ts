@@ -90,11 +90,14 @@ type UserPaginate = {
 
 export const userPaginate = async (token: string, args: UserPaginate) => {
   const { data, error } = await client.GET("/api/admin/users", {
-    query: args,
+    params: {
+      query: args,
+    },
     headers: {
       Authorization: `Bearer ${token}`,
     },
   });
+
   if (error) {
     throw new Error(error.detail);
   }
