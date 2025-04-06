@@ -49,7 +49,7 @@ type UserDetail struct {
 	*models.User
 	Roles []*RoleWithPermissions `json:"roles,omitempty" required:"false"`
 	// Permissions []*models.Permission   `json:"permissions,omitempty" required:"false"`
-	Accounts []*UserAccountDetail `json:"providers,omitempty" required:"false"`
+	Accounts []*UserAccountDetail `json:"accounts,omitempty" required:"false"`
 }
 
 func ToUserAccountDetail(userAccount *models.UserAccount) *UserAccountDetail {
