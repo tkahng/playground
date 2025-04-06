@@ -1,4 +1,3 @@
-import { User } from "@/schema.types";
 import {
   ColumnDef,
   flexRender,
@@ -18,23 +17,6 @@ import {
   TableHeader,
   TableRow,
 } from "./ui/table";
-
-export type Users = User;
-
-export const columns: ColumnDef<Users>[] = [
-  {
-    accessorKey: "id",
-    header: "Id",
-  },
-  {
-    accessorKey: "email",
-    header: "Email",
-  },
-  //   {
-  //     accessorKey: "amount",
-  //     header: "Amount",
-  //   },
-];
 
 interface DataTableProps<TData, TValue> {
   onClick?: <TData>(row: Row<TData>) => void;
@@ -57,7 +39,8 @@ export function DataTable<TData, TValue>({
     onPaginationChange,
     data,
     columns,
-    pageCount: Math.ceil(rowCount || 0 / (pagination?.pageSize ?? 10)),
+    rowCount,
+    // pageCount: Math.ceil(rowCount || 0 / (pagination?.pageSize ?? 10)),
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     manualPagination: true,
