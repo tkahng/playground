@@ -257,11 +257,33 @@ func (api *Api) AdminUsersGetOperation(path string) huma.Operation {
 	}
 }
 
+type UserAccountDetail struct {
+	ID        uuid.UUID            `db:"id,pk" json:"id"`
+	UserID    uuid.UUID            `db:"user_id" json:"user_id"`
+	Type      models.ProviderTypes `db:"type" json:"type" enum:"oauth,credentials"`
+	Provider  models.Providers     `db:"provider" json:"providers,omitempty" required:"false" enum:"google,apple,facebook,github,credentials"`
+	CreatedAt time.Time            `db:"created_at" json:"created_at"`
+	UpdatedAt time.Time            `db:"updated_at" json:"updated_at"`
+}
+
+type UserDetail struct {
+	models.User
+	Roles    []*RoleWithPermissions `json:"roles,omitempty" required:"false"`
+	Accounts []*UserAccountDetail   `json:"providers,omitempty" required:"false" uniqueItems:"true" minimum:"1" maximum:"100" enum:"google,apple,facebook,github,credentials"`
+}
+
 func (api *Api) AdminUsersGet(ctx context.Context, input *struct {
 	ID uuid.UUID `path:"id"`
 }) (*struct{ Body models.User }, error) {
 	db := api.app.Db()
 	user, err := repository.GetUserById(ctx, db, input.ID)
+	if err != nil {
+		return nil, err
+	}
+	err = user.LoadUserRoles(ctx,
+		db,
+		models.ThenLoadRolePermissions(),
+	)
 	if err != nil {
 		return nil, err
 	}

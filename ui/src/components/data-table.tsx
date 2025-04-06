@@ -6,6 +6,7 @@ import {
   getPaginationRowModel,
   OnChangeFn,
   PaginationState,
+  Row,
   useReactTable,
 } from "@tanstack/react-table";
 import { Button } from "./ui/button";
@@ -36,6 +37,7 @@ export const columns: ColumnDef<Users>[] = [
 ];
 
 interface DataTableProps<TData, TValue> {
+  onClick?: <TData>(row: Row<TData>) => void;
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
   rowCount?: number;
@@ -48,6 +50,7 @@ export function DataTable<TData, TValue>({
   data,
   pagination,
   rowCount,
+  onClick,
   onPaginationChange,
 }: DataTableProps<TData, TValue>) {
   const table = useReactTable({
@@ -91,6 +94,11 @@ export function DataTable<TData, TValue>({
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
+                  onClick={() => {
+                    if (onClick) {
+                      onClick(row);
+                    }
+                  }}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>

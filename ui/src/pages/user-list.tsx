@@ -1,12 +1,25 @@
-import { columns, DataTable } from "@/components/data-table";
+import { DataTable } from "@/components/data-table";
 import { RouteMap } from "@/components/route-map";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { userPaginate } from "@/lib/api";
 import { UserInfo } from "@/schema.types";
-import { PaginationState, Updater } from "@tanstack/react-table";
+import { ColumnDef, PaginationState, Updater } from "@tanstack/react-table";
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
-
+export const columns: ColumnDef<UserInfo>[] = [
+  {
+    accessorKey: "id",
+    header: "Id",
+  },
+  {
+    accessorKey: "email",
+    header: "Email",
+  },
+  //   {
+  //     accessorKey: "amount",
+  //     header: "Amount",
+  //   },
+];
 export default function UserListPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -17,6 +30,7 @@ export default function UserListPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const pageIndex = parseInt(searchParams.get("page") || "0", 10);
   const pageSize = parseInt(searchParams.get("per_page") || "10", 10);
+
   const onPaginationChange = (updater: Updater<PaginationState>) => {
     const newState =
       typeof updater === "function"
@@ -69,6 +83,9 @@ export default function UserListPage() {
         <DataTable
           columns={columns}
           data={users}
+          onClick={(row) => {
+            console.log(row);
+          }}
           rowCount={rowCount}
           pagination={{ pageIndex, pageSize }}
           onPaginationChange={onPaginationChange}
