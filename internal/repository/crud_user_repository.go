@@ -46,13 +46,13 @@ func ListUserFilterFunc(ctx context.Context, q *psql.ViewQuery[*models.User, mod
 		)
 	}
 
-	if len(filter.PermissionIds) > 0 {
-		var ids = ParseUUIDs(filter.PermissionIds)
-		q.Apply(
-			models.SelectJoins.Users.InnerJoin.Permissions(ctx),
-			models.SelectWhere.Permissions.ID.In(ids...),
-		)
-	}
+	// if len(filter.PermissionIds) > 0 {
+	// 	var ids = ParseUUIDs(filter.PermissionIds)
+	// 	q.Apply(
+	// 		models.SelectJoins.Users.InnerJoin.Permissions(ctx),
+	// 		models.SelectWhere.Permissions.ID.In(ids...),
+	// 	)
+	// }
 	if len(filter.RoleIds) > 0 {
 		var ids = ParseUUIDs(filter.RoleIds)
 		q.Apply(
