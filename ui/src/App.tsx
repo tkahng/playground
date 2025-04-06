@@ -8,6 +8,7 @@ import AuthenticatedLayout from "./layouts/authenticated-layout";
 import RootLayout from "./layouts/root";
 import CallbackComponent from "./pages/callback";
 import Landing from "./pages/landing";
+import RolesListPage from "./pages/roles-list";
 import SignupPage from "./pages/signup";
 import UserListPage from "./pages/user-list";
 
@@ -29,6 +30,7 @@ function App() {
               <Route path="/dashboard" element={<AuthenticatedLayout />}>
                 <Route index element={<Dashboard />} />
                 <Route path="users" element={<UserListPage />} />
+                <Route path="roles" element={<RolesListPage />} />
               </Route>
             </Routes>
           </BrowserRouter>

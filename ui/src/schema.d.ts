@@ -658,13 +658,13 @@ export interface components {
             data: components["schemas"]["SubscriptionWithData"][] | null;
             meta: components["schemas"]["Meta"];
         };
-        PaginatedResponseUserInfo: {
+        PaginatedResponseUserDetail: {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
              */
             readonly $schema?: string;
-            data: components["schemas"]["UserInfo"][] | null;
+            data: components["schemas"]["UserDetail"][] | null;
             meta: components["schemas"]["Meta"];
         };
         Permission: {
@@ -770,12 +770,12 @@ export interface components {
             permission_ids: string[] | null;
         };
         RoleWithPermissions: {
-            Permissions: components["schemas"]["Permission"][] | null;
             /** Format: date-time */
             created_at: string;
             description: string;
             id: string;
             name: string;
+            permissions?: components["schemas"]["Permission"][] | null;
             /** Format: date-time */
             updated_at: string;
         };
@@ -919,7 +919,20 @@ export interface components {
             /** Format: date-time */
             updated_at: string;
         };
-        UserInfo: {
+        UserAccountDetail: {
+            /** Format: date-time */
+            created_at: string;
+            id: string;
+            /** @enum {string} */
+            providers?: "google" | "apple" | "facebook" | "github" | "credentials";
+            /** @enum {string} */
+            type: "oauth" | "credentials";
+            /** Format: date-time */
+            updated_at: string;
+            user_id: string;
+        };
+        UserDetail: {
+            accounts?: components["schemas"]["UserAccountDetail"][] | null;
             /** Format: date-time */
             created_at: string;
             email: string;
@@ -927,9 +940,7 @@ export interface components {
             id: string;
             image: string;
             name: string;
-            permissions?: string[] | null;
-            providers?: ("google" | "apple" | "facebook" | "github" | "credentials")[] | null;
-            roles?: string[] | null;
+            roles?: components["schemas"]["RoleWithPermissions"][] | null;
             /** Format: date-time */
             updated_at: string;
         };
@@ -1198,7 +1209,7 @@ export interface operations {
                 ids?: string[] | null;
                 not_ids?: string[] | null;
                 names?: string[] | null;
-                permission_ids?: string[] | null;
+                user_id?: string;
                 sort_by?: string;
                 sort_order?: string;
                 expand?: string[] | null;
@@ -1517,7 +1528,6 @@ export interface operations {
                 ids?: string[] | null;
                 emails?: string[] | null;
                 role_ids?: string[] | null;
-                permission_ids?: string[] | null;
                 sort_by?: string;
                 sort_order?: string;
                 expand?: ("roles" | "permissions" | "accounts" | "subscriptions")[] | null;
@@ -1534,7 +1544,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PaginatedResponseUserInfo"];
+                    "application/json": components["schemas"]["PaginatedResponseUserDetail"];
                 };
             };
             /** @description Not Found */

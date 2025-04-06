@@ -17,4 +17,6 @@ export type BillingIntervals = Exclude<
   "week" | "day" | undefined
 >;
 
-export type UserInfo = components["schemas"]["UserInfo"];
+export type UserInfo = components["schemas"]["UserDetail"];
+
+export type RoleWithPermissions = components["schemas"]["RoleWithPermissions"];

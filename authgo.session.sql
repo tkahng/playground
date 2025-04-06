@@ -1,42 +1,72 @@
 WITH RolePermissions AS (
-    SELECT u.id as user_id,
-        u.email as email,
-        p.name as permission,
-        ar.name as role
-    FROM public.permissions p
-        LEFT JOIN public.role_permissions rp ON p.id = rp.permission_id
-        LEFT JOIN public.roles ar ON rp.role_id = ar.id
-        LEFT JOIN public.user_roles ur ON ar.id = ur.role_id
-        LEFT JOIN public.users u ON ur.user_id = u.id
+    SELECT ur.user_id as user_id,
+        rp.role_id::uuid as role,
+        rp.permission_id as permission
+    FROM user_roles ur
+        LEFT JOIN roles r ON ur.role_id = r.id
+        LEFT JOIN role_permissions rp ON r.id = rp.role_id
 ),
 UserPermissions AS (
-    SELECT u.id as user_id,
-        u.email as email,
-        p.name as permission,
-        NULL as role
-    FROM public.permissions p
-        LEFT JOIN public.user_permissions up ON p.id = up.permission_id
-        LEFT JOIN public.users u ON up.user_id = u.id
+    SELECT up.user_id as user_id,
+        NULL::uuid as role,
+        up.permission_id as permission
+    FROM user_permissions up
 ),
 AllPermissions AS(
     SELECT user_id,
-        email,
         role,
         permission
     FROM RolePermissions rp
     UNION
     SELECT user_id,
-        email,
         role,
         permission
     FROM UserPermissions up
 )
 SELECT user_id,
-    email,
     role,
     permission
 FROM AllPermissions
-WHERE email = 'tkahng+01@gmail.com';
+WHERE user_id = '4481343d-a744-4685-8586-80df2f6ddf85';
+-- WITH RolePermissions AS (
+--     SELECT u.id as user_id,
+--         u.email as email,
+--         p.name as permission,
+--         ar.name as role
+--     FROM public.permissions p
+--         LEFT JOIN public.role_permissions rp ON p.id = rp.permission_id
+--         LEFT JOIN public.roles ar ON rp.role_id = ar.id
+--         LEFT JOIN public.user_roles ur ON ar.id = ur.role_id
+--         LEFT JOIN public.users u ON ur.user_id = u.id
+-- ),
+-- UserPermissions AS (
+--     SELECT u.id as user_id,
+--         u.email as email,
+--         p.name as permission,
+--         NULL as role
+--     FROM public.permissions p
+--         LEFT JOIN public.user_permissions up ON p.id = up.permission_id
+--         LEFT JOIN public.users u ON up.user_id = u.id
+-- ),
+-- AllPermissions AS(
+--     SELECT user_id,
+--         email,
+--         role,
+--         permission
+--     FROM RolePermissions rp
+--     UNION
+--     SELECT user_id,
+--         email,
+--         role,
+--         permission
+--     FROM UserPermissions up
+-- )
+-- SELECT user_id,
+--     email,
+--     role,
+--     permission
+-- FROM AllPermissions
+-- WHERE email = 'tkahng+01@gmail.com';
 -- SELECT u.id AS user_id,
 --     u.email AS email,
 --     ar.name AS role,

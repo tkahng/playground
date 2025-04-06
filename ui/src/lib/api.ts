@@ -1,3 +1,4 @@
+import { operations } from "@/schema";
 import {
   AuthenticatedDTO,
   RefreshTokenInput,
@@ -95,6 +96,23 @@ export const userPaginate = async (token: string, args: UserPaginate) => {
     },
     headers: {
       Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (error) {
+    throw new Error(error.detail);
+  }
+  return data;
+};
+
+type rolesPaginateArgs = operations["admin-roles"]["parameters"]["query"];
+export const rolesPaginate = async (token: string, args: rolesPaginateArgs) => {
+  const { data, error } = await client.GET("/api/admin/roles", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    params: {
+      query: args,
     },
   });
 

@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { Home, User } from "lucide-react";
+import { Home, Key, User } from "lucide-react";
 import { Link, useLocation } from "react-router";
 import { LinkProps } from "./landing-links";
 const items: LinkProps[] = [
@@ -12,6 +12,11 @@ const items: LinkProps[] = [
     title: "Users",
     to: "/dashboard/users",
     icon: <User />,
+  },
+  {
+    title: "Roles",
+    to: "/dashboard/roles",
+    icon: <Key />,
   },
 ];
 
