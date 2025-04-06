@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"slices"
 	"time"
 
 	"github.com/alexedwards/argon2id"
@@ -35,16 +36,36 @@ type PaginatedOutput[T any] struct {
 	Body shared.PaginatedResponse[T] `json:"body"`
 }
 
-type UserInfo struct {
-	models.User
-	Roles       []string           `json:"roles,omitempty" required:"false"`
-	Permissions []string           `json:"permissions,omitempty" required:"false"`
-	Providers   []models.Providers `json:"providers,omitempty" required:"false" uniqueItems:"true" minimum:"1" maximum:"100" enum:"google,apple,facebook,github,credentials"`
+type UserAccountDetail struct {
+	ID        uuid.UUID            `db:"id,pk" json:"id"`
+	UserID    uuid.UUID            `db:"user_id" json:"user_id"`
+	Type      models.ProviderTypes `db:"type" json:"type" enum:"oauth,credentials"`
+	Provider  models.Providers     `db:"provider" json:"providers,omitempty" required:"false" enum:"google,apple,facebook,github,credentials"`
+	CreatedAt time.Time            `db:"created_at" json:"created_at"`
+	UpdatedAt time.Time            `db:"updated_at" json:"updated_at"`
+}
+
+type UserDetail struct {
+	*models.User
+	Roles       []*RoleWithPermissions `json:"roles,omitempty" required:"false"`
+	Permissions []*models.Permission   `json:"permissions,omitempty" required:"false"`
+	Accounts    []*UserAccountDetail   `json:"providers,omitempty" required:"false"`
+}
+
+func ToUserAccountDetail(userAccount *models.UserAccount) *UserAccountDetail {
+	return &UserAccountDetail{
+		ID:        userAccount.ID,
+		UserID:    userAccount.UserID,
+		Type:      userAccount.Type,
+		Provider:  userAccount.Provider,
+		CreatedAt: userAccount.CreatedAt,
+		UpdatedAt: userAccount.UpdatedAt,
+	}
 }
 
 func (api *Api) AdminUsers(ctx context.Context, input *struct {
 	shared.UserListParams
-}) (*PaginatedOutput[*UserInfo], error) {
+}) (*PaginatedOutput[*UserDetail], error) {
 	db := api.app.Db()
 	users, err := repository.ListUsers(ctx, db, &input.UserListParams)
 	if err != nil {
@@ -55,29 +76,37 @@ func (api *Api) AdminUsers(ctx context.Context, input *struct {
 		return nil, err
 	}
 
-	ids := dataloader.Map(users, func(user *models.User) uuid.UUID {
-		return user.ID
-	})
-	m := make(map[uuid.UUID]*repository.RolePermissionClaims)
-	claims, err := repository.GetUsersWithRolesAndPermissions(ctx, db, ids...)
-	if err != nil {
-		return nil, err
+	if slices.Contains(input.Expand, "roles") {
+		err = users.LoadUserRoles(ctx, db)
+		if err != nil {
+			return nil, err
+		}
 	}
-	for _, claim := range claims {
-		m[claim.UserID] = &claim
+
+	if slices.Contains(input.Expand, "permissions") {
+		err = users.LoadUserPermissions(ctx, db)
+		if err != nil {
+			return nil, err
+		}
 	}
-	info := dataloader.Map(users, func(user *models.User) *UserInfo {
-		claims := m[user.ID]
-		return &UserInfo{
-			User:        *user,
-			Roles:       claims.Roles,
-			Permissions: claims.Permissions,
-			Providers:   claims.Providers,
+
+	if slices.Contains(input.Expand, "accounts") {
+		err = users.LoadUserUserAccounts(ctx, db)
+		if err != nil {
+			return nil, err
+		}
+	}
+	info := dataloader.Map(users, func(user *models.User) *UserDetail {
+		return &UserDetail{
+			User:        user,
+			Roles:       dataloader.Map(user.R.Roles, ToRoleWithPermissions),
+			Permissions: user.R.Permissions,
+			Accounts:    dataloader.Map(user.R.UserAccounts, ToUserAccountDetail),
 		}
 	})
 
-	return &PaginatedOutput[*UserInfo]{
-		Body: shared.PaginatedResponse[*UserInfo]{
+	return &PaginatedOutput[*UserDetail]{
+		Body: shared.PaginatedResponse[*UserDetail]{
 			Data: info,
 			Meta: shared.Meta{
 				Page:    input.Page,
@@ -255,21 +284,6 @@ func (api *Api) AdminUsersGetOperation(path string) huma.Operation {
 			{shared.BearerAuthSecurityKey: {}},
 		},
 	}
-}
-
-type UserAccountDetail struct {
-	ID        uuid.UUID            `db:"id,pk" json:"id"`
-	UserID    uuid.UUID            `db:"user_id" json:"user_id"`
-	Type      models.ProviderTypes `db:"type" json:"type" enum:"oauth,credentials"`
-	Provider  models.Providers     `db:"provider" json:"providers,omitempty" required:"false" enum:"google,apple,facebook,github,credentials"`
-	CreatedAt time.Time            `db:"created_at" json:"created_at"`
-	UpdatedAt time.Time            `db:"updated_at" json:"updated_at"`
-}
-
-type UserDetail struct {
-	models.User
-	Roles    []*RoleWithPermissions `json:"roles,omitempty" required:"false"`
-	Accounts []*UserAccountDetail   `json:"providers,omitempty" required:"false" uniqueItems:"true" minimum:"1" maximum:"100" enum:"google,apple,facebook,github,credentials"`
 }
 
 func (api *Api) AdminUsersGet(ctx context.Context, input *struct {

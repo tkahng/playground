@@ -35,6 +35,13 @@ type RoleWithPermissions struct {
 	Permissions []*models.Permission
 }
 
+func ToRoleWithPermissions(role *models.Role) *RoleWithPermissions {
+	return &RoleWithPermissions{
+		Role:        role,
+		Permissions: role.R.Permissions,
+	}
+}
+
 func (api *Api) AdminRolesList(ctx context.Context, input *struct {
 	shared.RolesListParams
 }) (*PaginatedOutput[*RoleWithPermissions], error) {
@@ -51,12 +58,7 @@ func (api *Api) AdminRolesList(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	out := dataloader.Map(roles, func(role *models.Role) *RoleWithPermissions {
-		return &RoleWithPermissions{
-			Role:        role,
-			Permissions: role.R.Permissions,
-		}
-	})
+	out := dataloader.Map(roles, ToRoleWithPermissions)
 	return &PaginatedOutput[*RoleWithPermissions]{
 		Body: shared.PaginatedResponse[*RoleWithPermissions]{
 			Data: out,

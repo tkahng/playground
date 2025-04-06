@@ -63,7 +63,7 @@ func ListUserFilterFunc(ctx context.Context, q *psql.ViewQuery[*models.User, mod
 }
 
 // ListUsers implements AdminCrudActions.
-func ListUsers(ctx context.Context, db bob.DB, input *shared.UserListParams) ([]*models.User, error) {
+func ListUsers(ctx context.Context, db bob.DB, input *shared.UserListParams) (models.UserSlice, error) {
 
 	q := models.Users.Query()
 	filter := input.UserListFilter
