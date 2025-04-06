@@ -2,6 +2,7 @@ package seeders
 
 import (
 	"context"
+	"log/slog"
 	"time"
 
 	"github.com/aarondl/opt/null"
@@ -34,6 +35,34 @@ func UserCredentialsFactory(ctx context.Context, dbx bob.DB, count int) error {
 	usertemplate := f.NewUser()
 	_, err := usertemplate.CreateMany(ctx, dbx, count)
 	return err
+}
+func UserCredentialsRolesFactory(ctx context.Context, dbx bob.DB, count int, roles ...*models.Role) (models.UserSlice, error) {
+	f := factory.New()
+	hash, err := security.CreateHash("Password123!", argon2id.DefaultParams)
+	if err != nil {
+		return nil, err
+	}
+	f.AddBaseUserMod(
+		factory.UserMods.RandomEmail(nil),
+		factory.UserMods.AddNewUserAccounts(1,
+			factory.UserAccountMods.Provider(models.ProvidersCredentials),
+			factory.UserAccountMods.RandomProviderAccountID(nil),
+			factory.UserAccountMods.Password(null.From(hash)),
+			factory.UserAccountMods.Type(models.ProviderTypesCredentials),
+		),
+	)
+	usertemplate := f.NewUser()
+	data, err := usertemplate.CreateMany(ctx, dbx, count)
+	if err != nil {
+		return nil, err
+	}
+	for _, user := range data {
+		err = user.AttachRoles(ctx, dbx, roles...)
+		if err != nil {
+			slog.Error("error attaching roles", "error", err)
+		}
+	}
+	return data, err
 }
 
 func UserTokenFactory(user *models.User, tokenType models.TokenTypes, expires int64) *factory.TokenTemplate {

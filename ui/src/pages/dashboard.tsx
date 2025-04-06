@@ -3,16 +3,16 @@ import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { useNavigate } from "react-router";
 
 export default function Dashboard() {
-  const auth = useAuthProvider();
+  const { logout } = useAuthProvider();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
-    await auth.logout();
+    await logout();
     navigate(RouteMap.SIGNIN);
   };
 
   return (
-    <div>
+    <div className="flex w-full flex-col items-center justify-center">
       <h2>Dashboard - Protected Route</h2>
       <button onClick={handleLogout}>Logout</button>
     </div>

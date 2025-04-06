@@ -1,14 +1,16 @@
-import ProtectedRoute from "@/components/protected-route";
 import Dashboard from "@/pages/dashboard"; // Your protected page
 import Signin from "@/pages/signin";
 import { BrowserRouter, Route, Routes } from "react-router";
 import { Toaster } from "sonner";
 import { ThemeProvider } from "./components/theme-provider";
 import { AuthProvider } from "./context/auth-context";
+import AuthenticatedLayout from "./layouts/authenticated-layout";
 import RootLayout from "./layouts/root";
 import CallbackComponent from "./pages/callback";
 import Landing from "./pages/landing";
+import RolesListPage from "./pages/roles-list";
 import SignupPage from "./pages/signup";
+import UserListPage from "./pages/user-list";
 
 function App() {
   return (
@@ -25,15 +27,10 @@ function App() {
               {/* Other routes */}
               <Route path="/auth/callback" element={<CallbackComponent />} />
 
-              <Route element={<RootLayout />}>
-                <Route
-                  path="/dashboard"
-                  element={
-                    <ProtectedRoute>
-                      <Dashboard />
-                    </ProtectedRoute>
-                  }
-                />
+              <Route path="/dashboard" element={<AuthenticatedLayout />}>
+                <Route index element={<Dashboard />} />
+                <Route path="users" element={<UserListPage />} />
+                <Route path="roles" element={<RolesListPage />} />
               </Route>
             </Routes>
           </BrowserRouter>

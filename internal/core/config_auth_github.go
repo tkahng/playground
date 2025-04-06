@@ -7,7 +7,6 @@ import (
 	"strconv"
 
 	"github.com/tkahng/authgo/internal/auth"
-	"github.com/tkahng/authgo/internal/tools/utils"
 	"golang.org/x/oauth2"
 )
 
@@ -33,7 +32,6 @@ func (p *GithubConfig) FetchAuthUser(ctx context.Context, token *oauth2.Token) (
 	if err := json.Unmarshal(data, &rawUser); err != nil {
 		return nil, err
 	}
-	utils.PrettyPrintJSON(rawUser)
 	extracted := struct {
 		Login     string `json:"login"`
 		Name      string `json:"name"`

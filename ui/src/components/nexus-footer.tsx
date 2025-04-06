@@ -3,8 +3,8 @@ import { NavLink } from "react-router";
 
 export function NexusAIFooter() {
   return (
-    <footer className="border-t">
-      <div className="container px-4 py-12 md:px-6">
+    <footer className="border-t p-56">
+      <div className="container mx-auto px-4 py-12 md:px-6">
         <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
           <div className="space-y-4">
             <h4 className="text-lg font-semibold">Product</h4>

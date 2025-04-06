@@ -12,4 +12,11 @@ export type User = components["schemas"]["User"];
 
 export type PriceIntervals = components["schemas"]["Price"]["interval"];
 
-export type BillingIntervals = Exclude<PriceIntervals, "week" | "day">;
+export type BillingIntervals = Exclude<
+  PriceIntervals,
+  "week" | "day" | undefined
+>;
+
+export type UserInfo = components["schemas"]["UserDetail"];
+
+export type RoleWithPermissions = components["schemas"]["RoleWithPermissions"];

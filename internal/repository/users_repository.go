@@ -115,9 +115,9 @@ const (
 	rawGetUserWithPermissionsByEmail string = `--sql
 	SELECT u.id AS user_id,
 		u.email AS email,
-		ARRAY_AGG(DISTINCT ar.name)::text [] AS roles,
-		ARRAY_AGG(DISTINCT p.name)::text [] AS permissions,
-		ARRAY_AGG(DISTINCT ua.provider)::public.providers [] AS providers
+    array_remove(ARRAY_AGG(DISTINCT ar.name), NULL)::text [] AS roles,
+    array_remove(ARRAY_AGG(DISTINCT p.name), NULL)::text [] AS permissions,
+    array_remove(ARRAY_AGG(DISTINCT ua.provider), NULL)::public.providers [] AS providers
 	FROM public.users u
 		LEFT JOIN public.user_roles ur ON u.id = ur.user_id
 		LEFT JOIN public.roles ar ON ur.role_id = ar.id
@@ -132,9 +132,9 @@ const (
 	WITH FilteredAccounts AS (
     SELECT u.id AS user_id,
         u.email AS email,
-        ARRAY_AGG(DISTINCT ar.name)::text [] AS roles,
-        ARRAY_AGG(DISTINCT p.name)::text [] AS permissions,
-        ARRAY_AGG(DISTINCT ua.provider)::public.providers [] AS providers
+    array_remove(ARRAY_AGG(DISTINCT ar.name), NULL)::text [] AS roles,
+    array_remove(ARRAY_AGG(DISTINCT p.name), NULL)::text [] AS permissions,
+    array_remove(ARRAY_AGG(DISTINCT ua.provider), NULL)::public.providers [] AS providers
     FROM public.users u
         LEFT JOIN public.user_roles ur ON u.id = ur.user_id
         LEFT JOIN public.roles ar ON ur.role_id = ar.id
@@ -201,8 +201,6 @@ func GetUsersWithRolesAndPermissions(ctx context.Context, db bob.Executor, ids .
 	}
 
 	query := psql.RawQuery(rawGetUsersWithPermissionsByIds, psql.Arg(input...))
-	q, a := query.MustBuild(ctx)
-	fmt.Println(q, a)
 	res, err := bob.All(ctx, db, query, scan.StructMapper[rolePermissionClaims]())
 	if err != nil {
 		return nil, err

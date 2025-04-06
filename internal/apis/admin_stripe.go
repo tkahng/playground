@@ -62,10 +62,33 @@ func (api *Api) AdminStripeSubscriptions(ctx context.Context,
 		}
 		if sub.R.PriceStripePrice != nil {
 			ss.Price = &StripePricesWithProduct{
-				StripePrice: sub.R.PriceStripePrice,
+				Price: &Price{
+					ID:              sub.R.PriceStripePrice.ID,
+					Active:          sub.R.PriceStripePrice.Active,
+					UnitAmount:      sub.R.PriceStripePrice.UnitAmount,
+					Currency:        sub.R.PriceStripePrice.Currency,
+					Type:            sub.R.PriceStripePrice.Type,
+					Interval:        sub.R.PriceStripePrice.Interval,
+					IntervalCount:   sub.R.PriceStripePrice.IntervalCount,
+					TrialPeriodDays: sub.R.PriceStripePrice.TrialPeriodDays,
+					ProductID:       sub.R.PriceStripePrice.ProductID,
+					Metadata:        sub.R.PriceStripePrice.Metadata,
+					CreatedAt:       sub.R.PriceStripePrice.CreatedAt,
+					UpdatedAt:       sub.R.PriceStripePrice.UpdatedAt,
+					LookupKey:       sub.R.PriceStripePrice.LookupKey,
+				},
 			}
 			if sub.R.PriceStripePrice.R.ProductStripeProduct != nil {
-				ss.Price.Product = sub.R.PriceStripePrice.R.ProductStripeProduct
+				ss.Price.Product = &Product{
+					ID:          sub.R.PriceStripePrice.R.ProductStripeProduct.ID,
+					Active:      sub.R.PriceStripePrice.R.ProductStripeProduct.Active,
+					Name:        sub.R.PriceStripePrice.R.ProductStripeProduct.Name,
+					Description: sub.R.PriceStripePrice.R.ProductStripeProduct.Description,
+					Image:       sub.R.PriceStripePrice.R.ProductStripeProduct.Image,
+					Metadata:    sub.R.PriceStripePrice.R.ProductStripeProduct.Metadata,
+					CreatedAt:   sub.R.PriceStripePrice.R.ProductStripeProduct.CreatedAt,
+					UpdatedAt:   sub.R.PriceStripePrice.R.ProductStripeProduct.UpdatedAt,
+				}
 			}
 		}
 		return ss

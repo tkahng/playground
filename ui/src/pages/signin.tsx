@@ -81,7 +81,7 @@ export default function SigninPage() {
                   <Label htmlFor="email">Email</Label>
                   <Input
                     id="email"
-                    placeholder="tkahng+0@gmail.com"
+                    placeholder="tkahng+01@gmail.com"
                     required
                     name="email"
                     type="email"
@@ -94,6 +94,7 @@ export default function SigninPage() {
                     id="password"
                     required
                     name="password"
+                    placeholder="Password123!"
                     type="password"
                     onChange={handleChange}
                   />

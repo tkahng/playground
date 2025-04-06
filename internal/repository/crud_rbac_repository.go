@@ -71,12 +71,18 @@ func ListRolesFilterFunc(ctx context.Context, q *psql.ViewQuery[*models.Role, mo
 		)
 	}
 
-	if len(filter.PermissionIds) > 0 {
-		var ids []uuid.UUID = ParseUUIDs(filter.PermissionIds)
+	// if len(filter.PermissionIds) > 0 {
+	// 	var ids []uuid.UUID = ParseUUIDs(filter.PermissionIds)
 
+	// 	q.Apply(
+	// 		models.SelectJoins.Roles.InnerJoin.Permissions(ctx),
+	// 		models.SelectWhere.Permissions.ID.In(ids...),
+	// 	)
+	// }
+	if filter.UserId != uuid.Nil {
 		q.Apply(
-			models.SelectJoins.Roles.InnerJoin.Permissions(ctx),
-			models.SelectWhere.Permissions.ID.In(ids...),
+			models.SelectJoins.Roles.InnerJoin.Users(ctx),
+			models.SelectWhere.Users.ID.EQ(filter.UserId),
 		)
 	}
 }

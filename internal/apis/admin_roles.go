@@ -3,6 +3,7 @@ package apis
 import (
 	"context"
 	"net/http"
+	"slices"
 
 	"github.com/aarondl/opt/omit"
 	"github.com/aarondl/opt/omitnull"
@@ -32,7 +33,14 @@ func (api *Api) AdminRolesOperation(path string) huma.Operation {
 
 type RoleWithPermissions struct {
 	*models.Role
-	Permissions []*models.Permission
+	Permissions []*models.Permission `json:"permissions,omitempty" required:"false"`
+}
+
+func ToRoleWithPermissions(role *models.Role) *RoleWithPermissions {
+	return &RoleWithPermissions{
+		Role:        role,
+		Permissions: role.R.Permissions,
+	}
 }
 
 func (api *Api) AdminRolesList(ctx context.Context, input *struct {
@@ -43,20 +51,17 @@ func (api *Api) AdminRolesList(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	err = roles.LoadRolePermissions(ctx, db)
-	if err != nil {
-		return nil, err
+	if slices.Contains(input.Expand, "permissions") {
+		err = roles.LoadRolePermissions(ctx, db)
+		if err != nil {
+			return nil, err
+		}
 	}
 	count, err := repository.CountRoles(ctx, db, &input.RoleListFilter)
 	if err != nil {
 		return nil, err
 	}
-	out := dataloader.Map(roles, func(role *models.Role) *RoleWithPermissions {
-		return &RoleWithPermissions{
-			Role:        role,
-			Permissions: role.R.Permissions,
-		}
-	})
+	out := dataloader.Map(roles, ToRoleWithPermissions)
 	return &PaginatedOutput[*RoleWithPermissions]{
 		Body: shared.PaginatedResponse[*RoleWithPermissions]{
 			Data: out,
