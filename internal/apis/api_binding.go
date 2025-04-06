@@ -110,6 +110,8 @@ func BindApis(api huma.API, app core.App) {
 	adminGroup.UseMiddleware(CheckRolesMiddleware(api, "superuser"))
 	//  admin user list
 	huma.Register(adminGroup, appApi.AdminUsersOperation("/users"), appApi.AdminUsers)
+	// admin user get
+	huma.Register(adminGroup, appApi.AdminUsersGetOperation("/users/{id}"), appApi.AdminUsersGet)
 	//  admin user create
 	huma.Register(adminGroup, appApi.AdminUsersCreateOperation("/users"), appApi.AdminUsersCreate)
 	//  admin user delete

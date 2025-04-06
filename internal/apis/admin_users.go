@@ -241,3 +241,29 @@ func (api *Api) AdminUsersUpdatePassword(ctx context.Context, input *struct {
 	}
 	return nil, nil
 }
+
+func (api *Api) AdminUsersGetOperation(path string) huma.Operation {
+	return huma.Operation{
+		OperationID: "admin-user-get",
+		Method:      http.MethodGet,
+		Path:        path,
+		Summary:     "Get user",
+		Description: "Get user",
+		Tags:        []string{"Admin", "Users"},
+		Errors:      []int{http.StatusNotFound},
+		Security: []map[string][]string{
+			{shared.BearerAuthSecurityKey: {}},
+		},
+	}
+}
+
+func (api *Api) AdminUsersGet(ctx context.Context, input *struct {
+	ID uuid.UUID `path:"id"`
+}) (*struct{ Body models.User }, error) {
+	db := api.app.Db()
+	user, err := repository.GetUserById(ctx, db, input.ID)
+	if err != nil {
+		return nil, err
+	}
+	return &struct{ Body models.User }{Body: *user}, nil
+}
