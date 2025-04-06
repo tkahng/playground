@@ -2,6 +2,7 @@ package shared
 
 import (
 	"github.com/aarondl/opt/null"
+	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/db/models"
 )
 
@@ -16,13 +17,8 @@ type UserListFilter struct {
 	Q         string             `query:"q,omitempty" required:"false"`
 	Ids       []string           `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
 	Emails    []string           `query:"emails,omitempty" required:"false" minimum:"1" maximum:"100" format:"email"`
-	// Roles         []string           `query:"roles,omitempty" required:"false" minimum:"1" maximum:"100"`
-	// Permissions   []string           `query:"permissions,omitempty" required:"false" minimum:"1" maximum:"100"`
-	RoleIds       []string `query:"role_ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
-	PermissionIds []string `query:"permission_ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
-	// 	Provider  OmitNull[models.Providers]   `query:"provider,omitempty" required:"false" enum:"google,apple,facebook,github,credentials"`
-	// 	Providers OmitNull[[]models.Providers] `query:"providers,omitempty" required:"false" uniqueItems:"true" minLength:"1" maxLength:"80" enum:"google,apple,facebook,github,credentials"`
-	// 	Q         OmitNull[string]             `query:"q,omitempty" required:"false" default:""`
+	RoleIds   []string           `query:"role_ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+	// PermissionIds []string           `query:"permission_ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
 }
 type UserListParams struct {
 	PaginatedInput
@@ -31,16 +27,11 @@ type UserListParams struct {
 	Expand []string `query:"expand,omitempty" required:"false" minimum:"1" maximum:"100" enum:"roles,permissions,accounts,subscriptions"`
 }
 type RoleListFilter struct {
-	Q      string   `query:"q,omitempty" required:"false"`
-	Ids    []string `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
-	NotIds []string `query:"not_ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
-	Names  []string `query:"names,omitempty" required:"false" minimum:"1" maximum:"100"`
-	// Roles         []string           `query:"roles,omitempty" required:"false" minimum:"1" maximum:"100"`
-	// Permissions   []string           `query:"permissions,omitempty" required:"false" minimum:"1" maximum:"100"`
-	PermissionIds []string `query:"permission_ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
-	// 	Provider  OmitNull[models.Providers]   `query:"provider,omitempty" required:"false" enum:"google,apple,facebook,github,credentials"`
-	// 	Providers OmitNull[[]models.Providers] `query:"providers,omitempty" required:"false" uniqueItems:"true" minLength:"1" maxLength:"80" enum:"google,apple,facebook,github,credentials"`
-	// 	Q         OmitNull[string]             `query:"q,omitempty" required:"false" default:""`
+	Q      string    `query:"q,omitempty" required:"false"`
+	Ids    []string  `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+	NotIds []string  `query:"not_ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+	Names  []string  `query:"names,omitempty" required:"false" minimum:"1" maximum:"100"`
+	UserId uuid.UUID `query:"user_id,omitempty" required:"false" format:"uuid"`
 }
 type RolesListParams struct {
 	PaginatedInput
@@ -62,10 +53,7 @@ type PermissionsListFilter struct {
 type PermissionsListParams struct {
 	PaginatedInput
 	PermissionsListFilter
-	// 	SortBy    string `query:"sort_by,omitempty" required:"false" default:"created_at"`
-	// 	SortOrder string `query:"sort_order,omitempty" required:"false" default:"desc"`
-	SortBy    string `query:"sort_by,omitempty" required:"false" default:"created_at"`
-	SortOrder string `query:"sort_order,omitempty" required:"false" default:"desc"`
+	SortParams
 }
 type StripeProductListFilter struct {
 	Q      string       `query:"q,omitempty" required:"false"`
@@ -81,15 +69,9 @@ type StripeProductListParams struct {
 	PaginatedInput
 	StripeProductListFilter
 	SortParams
-	Expand      []string     `query:"expand,omitempty" required:"false" minimum:"1" maximum:"100"`
+	Expand      []string     `query:"expand,omitempty" required:"false" minimum:"1" maximum:"100" enum:"prices"`
 	PriceActive ActiveStatus `query:"price_active,omitempty" required:"false" enum:"active,inactive"`
 }
-type BooleanType string
-
-const (
-	True  BooleanType = "true"
-	False BooleanType = "false"
-)
 
 type ActiveStatus string
 
