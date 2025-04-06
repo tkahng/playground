@@ -1,10 +1,10 @@
 import { Facebook, Github, Linkedin, Twitter } from "lucide-react";
 import { NavLink } from "react-router";
-
+// container mx-auto flex h-14 items-center justify-between  lg:px-6
 export function NexusAIFooter() {
   return (
-    <footer className="border-t p-56">
-      <div className="container mx-auto px-4 py-12 md:px-6">
+    <footer className="border-t">
+      <div className="container mx-auto flex-col items-center justify-between px-4 py-12 md:px-6">
         <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
           <div className="space-y-4">
             <h4 className="text-lg font-semibold">Product</h4>
