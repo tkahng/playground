@@ -339,3 +339,58 @@ func (api *Api) AdminRolesUpdatePermissions(ctx context.Context, input *struct {
 		Body: *role,
 	}, nil
 }
+
+func (api *Api) AdminRolesGetOperation(path string) huma.Operation {
+	return huma.Operation{
+		OperationID: "admin-roles-get",
+		Method:      http.MethodGet,
+		Path:        path,
+		Summary:     "Get role",
+		Description: "Get role",
+		Tags:        []string{"Admin", "Roles"},
+		Errors:      []int{http.StatusNotFound},
+		Security: []map[string][]string{
+			{shared.BearerAuthSecurityKey: {}},
+		},
+	}
+}
+
+func (api *Api) AdminRolesGet(ctx context.Context, input *struct {
+	RoleID string   `path:"id"`
+	Expand []string `query:"expand" required:"false" minimum:"1" maximum:"100" enum:"permissions"`
+}) (*struct {
+	Body RoleWithPermissions
+}, error) {
+	db := api.app.Db()
+	id, err := uuid.Parse(input.RoleID)
+	if err != nil {
+		return nil, err
+	}
+	role, err := repository.FindRoleById(ctx, db, id)
+	if err != nil {
+		return nil, err
+	}
+	if role == nil {
+		return nil, huma.Error404NotFound("Role not found")
+	}
+	if len(input.Expand) > 0 {
+		if slices.Contains(input.Expand, "permissions") {
+			err = role.LoadRolePermissions(ctx, db)
+			if err != nil {
+				return nil, err
+			}
+		}
+		// if slices.Contains(input.Expand, "users") {
+		// 	err = role.LoadRoleUsers(ctx, db)
+		// 	if err != nil {
+		// 		return nil, err
+		// 	}
+		// }
+	}
+	return &struct{ Body RoleWithPermissions }{
+		Body: RoleWithPermissions{
+			Role:        role,
+			Permissions: role.R.Permissions,
+		},
+	}, nil
+}
