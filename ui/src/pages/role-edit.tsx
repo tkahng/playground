@@ -123,7 +123,9 @@ export default function RoleEdit() {
               </FormItem>
             )}
           />
-          <Button type="submit">Submit</Button>
+          <Button type="submit" disabled={!form.formState.isDirty}>
+            Submit
+          </Button>
         </form>
       </Form>
     </div>
