@@ -1,4 +1,4 @@
-import { operations } from "@/schema";
+import { components, operations } from "@/schema";
 import {
   AuthenticatedDTO,
   RefreshTokenInput,
@@ -129,6 +129,29 @@ export const getRole = async (token: string, id: string) => {
         id,
       },
     },
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (error) {
+    throw new Error(error.detail);
+  }
+  return data;
+};
+
+export const updateRole = async (
+  token: string,
+  id: string,
+  body: components["schemas"]["RoleCreateInput"]
+) => {
+  const { data, error } = await client.PUT(`/api/admin/roles/{id}`, {
+    params: {
+      path: {
+        id,
+      },
+    },
+    body,
     headers: {
       Authorization: `Bearer ${token}`,
     },

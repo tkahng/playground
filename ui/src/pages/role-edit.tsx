@@ -11,12 +11,13 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { getRole } from "@/lib/api";
+import { getRole, updateRole } from "@/lib/api";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate, useParams } from "react-router";
+import { toast } from "sonner";
 import { z } from "zod";
 
 const formSchema = z.object({
@@ -30,6 +31,7 @@ const formSchema = z.object({
 });
 export default function RoleEdit() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { user } = useAuthProvider();
   const { roleId } = useParams<{ roleId: string }>();
   const {
@@ -45,6 +47,24 @@ export default function RoleEdit() {
       return getRole(user.tokens.access_token, roleId);
     },
   });
+  const mutation = useMutation({
+    mutationFn: (values: z.infer<typeof formSchema>) =>
+      updateRole(user!.tokens.access_token, roleId!, values),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["role", user?.tokens.access_token, roleId],
+      });
+      const updatedRole = await queryClient.fetchQuery({
+        queryKey: ["role", user?.tokens.access_token, roleId],
+        queryFn: () => getRole(user!.tokens.access_token, roleId!),
+      });
+      form.reset(updatedRole);
+      toast.success("Role updated!");
+    },
+    onError: (err: any) => {
+      toast.error(`Failed to update role: ${err.message}`);
+    },
+  });
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -53,9 +73,7 @@ export default function RoleEdit() {
     },
   });
   function onSubmit(values: z.infer<typeof formSchema>) {
-    // Do something with the form values.
-    // ✅ This will be type-safe and validated.
-    console.log(values);
+    mutation.mutate(values);
   }
   useEffect(() => {
     if (role) {
