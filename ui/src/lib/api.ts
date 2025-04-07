@@ -121,3 +121,21 @@ export const rolesPaginate = async (token: string, args: rolesPaginateArgs) => {
   }
   return data;
 };
+
+export const getRole = async (token: string, id: string) => {
+  const { data, error } = await client.GET(`/api/admin/roles/{id}`, {
+    params: {
+      path: {
+        id,
+      },
+    },
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (error) {
+    throw new Error(error.detail);
+  }
+  return data;
+};

@@ -5,11 +5,16 @@ import { rolesPaginate } from "@/lib/api";
 import { RoleWithPermissions } from "@/schema.types";
 import { ColumnDef, PaginationState, Updater } from "@tanstack/react-table";
 import { useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router";
+import { Link, useNavigate, useSearchParams } from "react-router";
 export const columns: ColumnDef<RoleWithPermissions>[] = [
   {
     accessorKey: "id",
     header: "Id",
+    cell: ({ row }) => (
+      <Link to={`/dashboard/roles/${row.original.id}`}>
+        {row.original.name}
+      </Link>
+    ),
   },
   {
     accessorKey: "name",
@@ -85,7 +90,8 @@ export default function RolesListPage() {
           columns={columns}
           data={roles}
           onClick={(row) => {
-            console.log(row);
+            // @ts-ignore
+            navigate(RouteMap.ROLE_EDIT.replace(":roleId", row.original.id));
           }}
           rowCount={rowCount}
           pagination={{ pageIndex, pageSize }}
