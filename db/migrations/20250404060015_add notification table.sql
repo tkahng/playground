@@ -17,7 +17,10 @@ PERFORM pg_notify(
     'notification-' || NEW.user_id,
     row_to_json(NEW)::text
 );
-PERFORM pg_notify('notification', row_to_json(NEW)::text);
+PERFORM pg_notify(
+    'notification-' || NEW.type,
+    row_to_json(NEW)::text
+);
 RETURN NEW;
 END;
 $BODY$ LANGUAGE plpgsql;
