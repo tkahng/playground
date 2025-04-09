@@ -43,6 +43,12 @@ func ListPermissionsFilterFunc(ctx context.Context, q *psql.ViewQuery[*models.Pe
 	if filter == nil {
 		return
 	}
+	if filter.Q != "" {
+		q.Apply(
+			psql.WhereOr(models.SelectWhere.Permissions.Name.ILike("%"+filter.Q+"%"),
+				models.SelectWhere.Permissions.Description.ILike("%"+filter.Q+"%")),
+		)
+	}
 	if len(filter.Names) > 0 {
 		q.Apply(
 			models.SelectWhere.Permissions.Name.In(filter.Names...),
