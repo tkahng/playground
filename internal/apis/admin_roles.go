@@ -4,7 +4,9 @@ import (
 	"context"
 	"net/http"
 	"slices"
+	"time"
 
+	"github.com/aarondl/opt/null"
 	"github.com/aarondl/opt/omit"
 	"github.com/aarondl/opt/omitnull"
 	"github.com/danielgtaylor/huma/v2"
@@ -32,14 +34,22 @@ func (api *Api) AdminRolesOperation(path string) huma.Operation {
 }
 
 type RoleWithPermissions struct {
-	*models.Role
+	ID          uuid.UUID            `db:"id,pk" json:"id"`
+	Name        string               `db:"name" json:"name"`
+	Description null.Val[string]     `db:"description" json:"description"`
+	CreatedAt   time.Time            `db:"created_at" json:"created_at"`
+	UpdatedAt   time.Time            `db:"updated_at" json:"updated_at"`
 	Permissions []*models.Permission `json:"permissions,omitempty" required:"false"`
 }
 
 func ToRoleWithPermissions(role *models.Role) *RoleWithPermissions {
 	return &RoleWithPermissions{
-		Role:        role,
 		Permissions: role.R.Permissions,
+		ID:          role.ID,
+		Name:        role.Name,
+		Description: role.Description,
+		CreatedAt:   role.CreatedAt,
+		UpdatedAt:   role.UpdatedAt,
 	}
 }
 
@@ -388,10 +398,7 @@ func (api *Api) AdminRolesGet(ctx context.Context, input *struct {
 		// }
 	}
 	return &struct{ Body RoleWithPermissions }{
-		Body: RoleWithPermissions{
-			Role:        role,
-			Permissions: role.R.Permissions,
-		},
+		Body: *ToRoleWithPermissions(role),
 	}, nil
 }
 
@@ -414,7 +421,6 @@ func (api *Api) AdminRolesCreatePermissions(ctx context.Context, input *struct {
 	RoleID string `path:"id" format:"uuid" required:"true"`
 	Body   RolePermissionsUpdateInput
 }) (*struct {
-	Body models.Role
 }, error) {
 	db := api.app.Db()
 	id, err := uuid.Parse(input.RoleID)
