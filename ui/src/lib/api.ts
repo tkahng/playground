@@ -273,7 +273,7 @@ export const getUserInfo = async (token: string, id: string) => {
           description?: string;
           id: string;
           name: string;
-          permissions?: components["schemas"]["Permission"][] | null;
+          // permissions?: components["schemas"]["Permission"][] | null;
           updated_at: string;
         }[];
     updated_at: string;

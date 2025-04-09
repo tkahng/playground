@@ -19,11 +19,22 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { UserDetailContext } from "@/context/user-detail-context";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { getUserInfo } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "react-router";
+import { DialogDemo } from "./user-roles-dialog";
 
+// const formSchema = z.object({
+//   name: z.string().min(2, {
+//     message: "name must be at least 2 characters.",
+//   }),
+//   description: z
+//     .string()
+//     .min(2, { message: "description must be at least 2 characters." })
+//     .optional(),
+// });
 export default function UserEdit() {
   //   const navigate = useNavigate();
   //   const queryClient = useQueryClient();
@@ -42,6 +53,7 @@ export default function UserEdit() {
       return getUserInfo(user.tokens.access_token, userId);
     },
   });
+
   if (loading) {
     return <div>Loading...</div>;
   }
@@ -52,58 +64,62 @@ export default function UserEdit() {
     return <div>User not found</div>;
   }
   return (
-    <div className="flex w-full flex-col items-center justify-start">
-      <div className="w-full">
-        <Button asChild>
-          <Link to="/dashboard/users">Back to Users</Link>
-        </Button>
+    <UserDetailContext.Provider value={userInfo}>
+      <div className="flex w-full flex-col items-center justify-start">
+        <div className="w-full">
+          <Button asChild>
+            <Link to="/dashboard/users">Back to Users</Link>
+          </Button>
+        </div>
+        <Tabs defaultValue="profile" className="w-[400px]">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="profile">Account</TabsTrigger>
+            <TabsTrigger value="roles">roles</TabsTrigger>
+          </TabsList>
+          <TabsContent value="profile">
+            <Card>
+              <CardHeader>
+                <CardTitle>Account</CardTitle>
+                <CardDescription>
+                  Make changes to your account here. Click save when you're
+                  done.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <div className="space-y-1">
+                  <Label htmlFor="name">email</Label>
+                  <Input id="name" defaultValue={userInfo.email} />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="username">Username</Label>
+                  <Input id="username" defaultValue={userInfo.name} />
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Button>Save changes</Button>
+              </CardFooter>
+            </Card>
+          </TabsContent>
+          <TabsContent value="roles">
+            <Card>
+              <CardHeader>
+                <CardTitle>Password</CardTitle>
+                <CardDescription>
+                  Change your password here. After saving, you'll be logged out.
+                </CardDescription>
+                <DialogDemo />
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <TableDemo roles={userInfo.roles || []} />
+              </CardContent>
+              <CardFooter>
+                <Button>Save password</Button>
+              </CardFooter>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
-      <Tabs defaultValue="account" className="w-[400px]">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="profile">Account</TabsTrigger>
-          <TabsTrigger value="roles">roles</TabsTrigger>
-        </TabsList>
-        <TabsContent value="profile">
-          <Card>
-            <CardHeader>
-              <CardTitle>Account</CardTitle>
-              <CardDescription>
-                Make changes to your account here. Click save when you're done.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <div className="space-y-1">
-                <Label htmlFor="name">email</Label>
-                <Input id="name" defaultValue={userInfo.email} />
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="username">Username</Label>
-                <Input id="username" defaultValue={userInfo.name} />
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button>Save changes</Button>
-            </CardFooter>
-          </Card>
-        </TabsContent>
-        <TabsContent value="roles">
-          <Card>
-            <CardHeader>
-              <CardTitle>Password</CardTitle>
-              <CardDescription>
-                Change your password here. After saving, you'll be logged out.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <TableDemo roles={userInfo.roles || []} />
-            </CardContent>
-            <CardFooter>
-              <Button>Save password</Button>
-            </CardFooter>
-          </Card>
-        </TabsContent>
-      </Tabs>
-    </div>
+    </UserDetailContext.Provider>
   );
 }
 
