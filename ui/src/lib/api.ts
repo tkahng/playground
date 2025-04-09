@@ -73,23 +73,10 @@ export const getMe = async (token: string): Promise<User> => {
   return data;
 };
 
-type UserPaginate = {
-  page?: number;
-  per_page?: number;
-  providers?:
-    | ("google" | "apple" | "facebook" | "github" | "credentials")[]
-    | null;
-  q?: string;
-  ids?: string[] | null;
-  emails?: string[] | null;
-  role_ids?: string[] | null;
-  permission_ids?: string[] | null;
-  sort_by?: string;
-  sort_order?: string;
-  expand?: ("roles" | "permissions" | "accounts" | "subscriptions")[] | null;
-};
-
-export const userPaginate = async (token: string, args: UserPaginate) => {
+export const userPaginate = async (
+  token: string,
+  args: operations["admin-users"]["parameters"]["query"]
+) => {
   const { data, error } = await client.GET("/api/admin/users", {
     params: {
       query: args,
@@ -105,8 +92,10 @@ export const userPaginate = async (token: string, args: UserPaginate) => {
   return data;
 };
 
-type rolesPaginateArgs = operations["admin-roles"]["parameters"]["query"];
-export const rolesPaginate = async (token: string, args: rolesPaginateArgs) => {
+export const rolesPaginate = async (
+  token: string,
+  args: operations["admin-roles"]["parameters"]["query"]
+) => {
   const { data, error } = await client.GET("/api/admin/roles", {
     headers: {
       Authorization: `Bearer ${token}`,
@@ -182,6 +171,25 @@ export const updateRolePermissions = async (
       },
     }
   );
+
+  if (error) {
+    throw new Error(error.detail);
+  }
+  return data;
+};
+
+export const permissionsPaginate = async (
+  token: string,
+  args: operations["admin-permissions"]["parameters"]["query"]
+) => {
+  const { data, error } = await client.GET("/api/admin/permissions", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    params: {
+      query: args,
+    },
+  });
 
   if (error) {
     throw new Error(error.detail);
