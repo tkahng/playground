@@ -404,12 +404,12 @@ func (api *Api) AdminRolesGet(ctx context.Context, input *struct {
 
 func (api *Api) AdminRolesCreatePermissionsOperation(path string) huma.Operation {
 	return huma.Operation{
-		OperationID: "admin-roles-create",
+		OperationID: "admin-roles-create-permissions",
 		Method:      http.MethodPost,
 		Path:        path,
-		Summary:     "Create role",
-		Description: "Create role",
-		Tags:        []string{"Admin", "Roles"},
+		Summary:     "Create role permissions",
+		Description: "Create role permissions",
+		Tags:        []string{"Admin", "Roles", "Permissions"},
 		Errors:      []int{http.StatusNotFound},
 		Security: []map[string][]string{
 			{shared.BearerAuthSecurityKey: {}},
@@ -440,6 +440,59 @@ func (api *Api) AdminRolesCreatePermissions(ctx context.Context, input *struct {
 		return nil, err
 	}
 	err = role.AttachPermissions(ctx, db, permissions...)
+	if err != nil {
+		return nil, err
+	}
+	return nil, nil
+}
+
+func (api *Api) AdminRolesDeletePermissionsOperation(path string) huma.Operation {
+	return huma.Operation{
+		OperationID: "admin-roles-delete-permissions",
+		Method:      http.MethodDelete,
+		Path:        path,
+		Summary:     "Delete role permissions",
+		Description: "Delete role permissions",
+		Tags:        []string{"Admin", "Roles", "Permissions"},
+		Errors:      []int{http.StatusNotFound},
+		Security: []map[string][]string{
+			{shared.BearerAuthSecurityKey: {}},
+		},
+	}
+}
+
+func (api *Api) AdminRolesDeletePermissions(ctx context.Context, input *struct {
+	RoleId       string `path:"roleId" format:"uuid" required:"true"`
+	PermissionId string `path:"permissionId" format:"uuid" required:"true"`
+}) (*struct {
+}, error) {
+	db := api.app.Db()
+	id, err := uuid.Parse(input.RoleId)
+	if err != nil {
+		return nil, err
+	}
+	role, err := repository.FindRoleById(ctx, db, id)
+	if err != nil {
+		return nil, err
+	}
+	if role == nil {
+		return nil, huma.Error404NotFound("Role not found")
+	}
+	permissionId, err := uuid.Parse(input.PermissionId)
+	if err != nil {
+		return nil, err
+	}
+	permission, err := repository.FindPermissionById(ctx, db, permissionId)
+	if err != nil {
+		return nil, err
+	}
+	if permission == nil {
+		return nil, huma.Error404NotFound("Permission not found")
+	}
+	_, err = models.RolePermissions.Delete(
+		models.DeleteWhere.RolePermissions.RoleID.EQ(role.ID),
+		models.DeleteWhere.RolePermissions.PermissionID.EQ(permission.ID),
+	).Exec(ctx, db)
 	if err != nil {
 		return nil, err
 	}
