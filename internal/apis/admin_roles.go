@@ -416,6 +416,26 @@ func (api *Api) AdminRolesCreatePermissions(ctx context.Context, input *struct {
 }) (*struct {
 	Body models.Role
 }, error) {
-
+	db := api.app.Db()
+	id, err := uuid.Parse(input.RoleID)
+	if err != nil {
+		return nil, err
+	}
+	role, err := repository.FindRoleById(ctx, db, id)
+	if err != nil {
+		return nil, err
+	}
+	if role == nil {
+		return nil, huma.Error404NotFound("Role not found")
+	}
+	permissionIds := repository.ParseUUIDs(input.Body.PermissionIDs)
+	permissions, err := repository.FindPermissionsByIds(ctx, db, permissionIds)
+	if err != nil {
+		return nil, err
+	}
+	err = role.AttachPermissions(ctx, db, permissions...)
+	if err != nil {
+		return nil, err
+	}
 	return nil, nil
 }
