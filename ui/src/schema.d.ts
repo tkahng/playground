@@ -270,7 +270,11 @@ export interface paths {
          */
         get: operations["admin-user-permission-sources"];
         put?: never;
-        post?: never;
+        /**
+         * Create user permission
+         * @description Create user permission
+         */
+        post: operations["admin-user-permissions-create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -290,8 +294,52 @@ export interface paths {
          * @description Update user roles
          */
         put: operations["admin-update-user-roles"];
-        post?: never;
+        /**
+         * Create user roles
+         * @description Create user roles
+         */
+        post: operations["admin-create-user-roles"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/users/{userId}/permissions/{permissionId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete user permission
+         * @description Delete user permission
+         */
+        delete: operations["admin-user-permissions-delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/users/{userId}/roles/{roleId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete user roles
+         * @description Delete user roles
+         */
+        delete: operations["admin-user-roles-delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -565,6 +613,15 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        "Admin-user-permissions-createRequest": {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            /** Format: uuid */
+            permission_ids: string[] | null;
+        };
         AuthenticatedDTO: {
             /**
              * Format: uri
@@ -828,6 +885,15 @@ export interface components {
             description?: string;
             name: string;
         };
+        RoleIdsInput: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            /** Format: uuid */
+            role_ids: string[] | null;
+        };
         RolePermissionsUpdateInput: {
             /**
              * Format: uri
@@ -845,7 +911,7 @@ export interface components {
             readonly $schema?: string;
             /** Format: date-time */
             created_at: string;
-            description: string;
+            description?: string;
             id: string;
             name: string;
             permissions?: components["schemas"]["Permission"][] | null;
@@ -1016,15 +1082,6 @@ export interface components {
             roles?: components["schemas"]["RoleWithPermissions"][] | null;
             /** Format: date-time */
             updated_at: string;
-        };
-        UserRolesUpdateInput: {
-            /**
-             * Format: uri
-             * @description A URL to the JSON Schema for this object.
-             */
-            readonly $schema?: string;
-            /** Format: uuid */
-            roles: string[] | null;
         };
     };
     responses: never;
@@ -2105,6 +2162,57 @@ export interface operations {
             };
         };
     };
+    "admin-user-permissions-create": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Admin-user-permissions-createRequest"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
     "admin-update-user-roles": {
         parameters: {
             query?: never;
@@ -2116,7 +2224,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["UserRolesUpdateInput"];
+                "application/json": components["schemas"]["RoleIdsInput"];
             };
         };
         responses: {
@@ -2128,6 +2236,153 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["PaginatedResponseRole"];
                 };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "admin-create-user-roles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RoleIdsInput"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "admin-user-permissions-delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: string;
+                permissionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "admin-user-roles-delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: string;
+                roleId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Not Found */
             404: {

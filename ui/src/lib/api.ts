@@ -196,3 +196,125 @@ export const permissionsPaginate = async (
   }
   return data;
 };
+export const getUserRoles = async (token: string, id: string) => {
+  const { data, error } = await client.GET("/api/admin/roles", {
+    params: {
+      query: {
+        page: 1,
+        perPage: 50,
+        user_id: id,
+      },
+    },
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (error) {
+    throw new Error(error.detail);
+  }
+  return data;
+};
+
+export const getUserPermissions = async (token: string, id: string) => {
+  const { data, error } = await client.GET(
+    "/api/admin/users/{id}/permissions",
+    {
+      params: {
+        query: {
+          page: 1,
+          perPage: 50,
+        },
+        path: {
+          id,
+        },
+      },
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  ); // TODO: add pagination
+  if (error) {
+    throw new Error(error.detail);
+  }
+  return data;
+};
+
+export const getUser = async (token: string, id: string) => {
+  const { data, error } = await client.GET("/api/admin/users/{id}", {
+    params: {
+      path: {
+        id,
+      },
+    },
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  if (error) {
+    throw new Error(error.detail);
+  }
+  return data;
+};
+
+export const getUserInfo = async (token: string, id: string) => {
+  const user = await getUser(token, id);
+  const userRoles = await getUserRoles(token, id);
+  const userPermissions = await getUserPermissions(token, id);
+  const userPerms: {
+    created_at: string;
+    description?: string;
+    id: string;
+    is_directly_assigned: boolean;
+    name: string;
+    roles:
+      | {
+          created_at: string;
+          description?: string;
+          id: string;
+          name: string;
+          permissions?: components["schemas"]["Permission"][] | null;
+          updated_at: string;
+        }[];
+    updated_at: string;
+  }[] = [];
+  if (userPermissions.data?.length) {
+    const ids: Set<string> = new Set();
+    userPermissions.data.forEach((p) => {
+      if (p.role_ids?.length) {
+        p.role_ids.forEach((r) => {
+          ids.add(r);
+        });
+      }
+    });
+    const roles = await rolesPaginate(token, {
+      page: 1,
+      per_page: 50,
+      ids: Array.from(ids),
+    });
+    if (roles.data?.length) {
+      const map = new Map(roles.data.map((x) => [x.id, x]));
+      userPermissions.data.forEach((r) => {
+        const { role_ids, ...rest } = r;
+        const roleList: components["schemas"]["RoleWithPermissions"][] = [];
+        if (r.role_ids?.length) {
+          r.role_ids.forEach((id) => {
+            const role = map.get(id);
+            if (role) {
+              roleList.push(role);
+            }
+          });
+        }
+        userPerms.push({
+          ...rest,
+          roles: roleList,
+        });
+      });
+    }
+  }
+  return {
+    ...user,
+    roles: userRoles.data,
+    permissions: userPerms,
+  };
+};

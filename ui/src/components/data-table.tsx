@@ -19,7 +19,7 @@ import {
 } from "./ui/table";
 
 interface DataTableProps<TData, TValue> {
-  onClick?: <TData>(row: Row<TData>) => void;
+  onClick?: (row: Row<TData>) => void;
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
   rowCount?: number;

@@ -12,6 +12,7 @@ import Landing from "./pages/landing";
 import RoleEdit from "./pages/role-edit";
 import RolesListPage from "./pages/roles-list";
 import SignupPage from "./pages/signup";
+import UserEdit from "./pages/user-edit";
 import UserListPage from "./pages/user-list";
 
 const queryClient = new QueryClient();
@@ -33,7 +34,10 @@ function App() {
 
                 <Route path="/dashboard" element={<AuthenticatedLayout />}>
                   <Route index element={<Dashboard />} />
-                  <Route path="users" element={<UserListPage />} />
+                  <Route path="users">
+                    <Route index element={<UserListPage />} />
+                    <Route path=":userId" element={<UserEdit />} />
+                  </Route>
                   <Route path="roles">
                     <Route index element={<RolesListPage />} />
                     <Route path=":roleId" element={<RoleEdit />} />

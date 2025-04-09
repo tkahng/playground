@@ -84,7 +84,7 @@ export default function UserListPage() {
           columns={columns}
           data={users}
           onClick={(row) => {
-            console.log(row);
+            navigate(`/dashboard/users/${row.original.id}`);
           }}
           rowCount={rowCount}
           pagination={{ pageIndex, pageSize }}
