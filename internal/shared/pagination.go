@@ -2,7 +2,6 @@ package shared
 
 import (
 	"github.com/aarondl/opt/null"
-	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/db/models"
 )
 
@@ -27,34 +26,41 @@ type UserListParams struct {
 	Expand []string `query:"expand,omitempty" required:"false" minimum:"1" maximum:"100" enum:"roles,permissions,accounts,subscriptions"`
 }
 type RoleListFilter struct {
-	Q      string    `query:"q,omitempty" required:"false"`
-	Ids    []string  `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
-	NotIds []string  `query:"not_ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
-	Names  []string  `query:"names,omitempty" required:"false" minimum:"1" maximum:"100"`
-	UserId uuid.UUID `query:"user_id,omitempty" required:"false" format:"uuid"`
+	Q           string   `query:"q,omitempty" required:"false"`
+	Ids         []string `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+	Names       []string `query:"names,omitempty" required:"false" minimum:"1" maximum:"100"`
+	UserId      string   `query:"user_id,omitempty" required:"false" format:"uuid"`
+	UserReverse bool     `query:"user_reverse,omitempty" required:"false" doc:"When user_id is provided, if this is true, it will return the roles that the user does not have"`
 }
 type RolesListParams struct {
 	PaginatedInput
 	RoleListFilter
 	SortParams
-	Expand []string `query:"expand,omitempty" required:"false" minimum:"1" maximum:"100"`
+	Expand []string `query:"expand,omitempty" required:"false" minimum:"1" maximum:"100" enum:"users,permissions"`
 }
+
 type PermissionsListFilter struct {
-	Q     string   `query:"q,omitempty" required:"false"`
-	Ids   []string `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
-	Names []string `query:"names,omitempty" required:"false" minimum:"1" maximum:"100"`
-	// Roles         []string           `query:"roles,omitempty" required:"false" minimum:"1" maximum:"100"`
-	// Permissions   []string           `query:"permissions,omitempty" required:"false" minimum:"1" maximum:"100"`
-	RoleIds []string `query:"role_ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
-	// 	Provider  OmitNull[models.Providers]   `query:"provider,omitempty" required:"false" enum:"google,apple,facebook,github,credentials"`
-	// 	Providers OmitNull[[]models.Providers] `query:"providers,omitempty" required:"false" uniqueItems:"true" minLength:"1" maxLength:"80" enum:"google,apple,facebook,github,credentials"`
-	// 	Q         OmitNull[string]             `query:"q,omitempty" required:"false" default:""`
+	Q           string   `query:"q,omitempty" required:"false"`
+	Ids         []string `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+	Names       []string `query:"names,omitempty" required:"false" minimum:"1" maximum:"100"`
+	RoleId      string   `query:"role_id,omitempty" required:"false" format:"uuid"`
+	RoleReverse bool     `query:"role_reverse,omitempty" required:"false" doc:"When role_id is provided, if this is true, it will return the permissions that the role does not have"`
 }
 type PermissionsListParams struct {
 	PaginatedInput
 	PermissionsListFilter
 	SortParams
 }
+
+type UserPermissionsListFilter struct {
+	UserId string `path:"id" format:"uuid"`
+}
+type UserPermissionsListParams struct {
+	PaginatedInput
+	UserPermissionsListFilter
+	SortParams
+}
+
 type StripeProductListFilter struct {
 	Q      string       `query:"q,omitempty" required:"false"`
 	Ids    []string     `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
@@ -62,8 +68,8 @@ type StripeProductListFilter struct {
 }
 
 type SortParams struct {
-	SortBy    string `query:"sort_by,omitempty" required:"false" default:"created_at"`
-	SortOrder string `query:"sort_order,omitempty" required:"false" default:"desc"`
+	SortBy    string `query:"sort_by,omitempty" required:"false"`
+	SortOrder string `query:"sort_order,omitempty" required:"false" enum:"asc,desc"`
 }
 type StripeProductListParams struct {
 	PaginatedInput

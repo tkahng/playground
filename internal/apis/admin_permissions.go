@@ -13,6 +13,53 @@ import (
 	"github.com/tkahng/authgo/internal/shared"
 )
 
+func (api *Api) AdminUserPermissionSourceListOperation(path string) huma.Operation {
+	return huma.Operation{
+		OperationID: "admin-user-permission-sources",
+		Method:      http.MethodGet,
+		Path:        path,
+		Summary:     "Admin user permission sources",
+		Description: "List of permission sources",
+		Tags:        []string{"Admin", "Permissions", "User"},
+		Errors:      []int{http.StatusNotFound},
+		Security: []map[string][]string{
+			{shared.BearerAuthSecurityKey: {}},
+		},
+	}
+}
+
+func (api *Api) AdminUserPermissionSourceList(ctx context.Context, input *struct {
+	shared.UserPermissionsListParams
+}) (*PaginatedOutput[repository.PermissionSource], error) {
+	db := api.app.Db()
+	id, err := uuid.Parse(input.UserId)
+	if err != nil {
+		return nil, err
+	}
+	limit := input.PerPage
+	offset := (input.Page - 1) * input.PerPage
+	userPermissionSources, err := repository.ListUserPermissionsSource(ctx, db, id, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	count, err := repository.CountUserPermissionSource(ctx, db, id)
+	if err != nil {
+		return nil, err
+	}
+
+	return &PaginatedOutput[repository.PermissionSource]{
+		Body: shared.PaginatedResponse[repository.PermissionSource]{
+
+			Data: userPermissionSources,
+			Meta: shared.Meta{
+				Page:    input.PaginatedInput.Page,
+				PerPage: input.PaginatedInput.PerPage,
+				Total:   int(count),
+			},
+		},
+	}, nil
+}
+
 func (api *Api) AdminPermissionsListOperation(path string) huma.Operation {
 	return huma.Operation{
 		OperationID: "admin-permissions",

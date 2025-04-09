@@ -122,6 +122,8 @@ func BindApis(api huma.API, app core.App) {
 	huma.Register(adminGroup, appApi.AdminUsersUpdatePasswordOperation("/users/{id}/password"), appApi.AdminUsersUpdatePassword)
 	//  admin user update roles
 	huma.Register(adminGroup, appApi.AdminUserRolesUpdateOperation("/users/{id}/roles"), appApi.AdminUserRolesUpdate)
+	// admin user permission source list
+	huma.Register(adminGroup, appApi.AdminUserPermissionSourceListOperation("/users/{id}/permissions"), appApi.AdminUserPermissionSourceList)
 	// admin roles
 	huma.Register(adminGroup, appApi.AdminRolesOperation("/roles"), appApi.AdminRolesList)
 	// admin roles create
