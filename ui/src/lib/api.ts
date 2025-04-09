@@ -162,3 +162,29 @@ export const updateRole = async (
   }
   return data;
 };
+
+export const updateRolePermissions = async (
+  token: string,
+  id: string,
+  body: components["schemas"]["RolePermissionsUpdateInput"]
+) => {
+  const { data, error } = await client.PUT(
+    `/api/admin/roles/{id}/permissions`,
+    {
+      params: {
+        path: {
+          id,
+        },
+      },
+      body,
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  if (error) {
+    throw new Error(error.detail);
+  }
+  return data;
+};
