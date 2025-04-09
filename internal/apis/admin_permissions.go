@@ -118,7 +118,7 @@ func (api *Api) AdminPermissionsDeleteOperation(path string) huma.Operation {
 }
 
 func (api *Api) AdminPermissionsDelete(ctx context.Context, input *struct {
-	ID string `path:"id"`
+	ID string `path:"id" format:"uuid" required:"true"`
 }) (*struct {
 }, error) {
 	db := api.app.Db()
@@ -156,7 +156,7 @@ func (api *Api) AdminPermissionsUpdateOperation(path string) huma.Operation {
 }
 
 func (api *Api) AdminPermissionsUpdate(ctx context.Context, input *struct {
-	ID          string `path:"id"`
+	ID          string `path:"id" format:"uuid" required:"true"`
 	Body        models.Permission
 	Description *string `json:"description,omitempty"`
 }) (*struct {

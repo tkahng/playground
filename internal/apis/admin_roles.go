@@ -139,7 +139,7 @@ func (api *Api) AdminRolesDeleteOperation(path string) huma.Operation {
 }
 
 func (api *Api) AdminRolesDelete(ctx context.Context, input *struct {
-	RoleID string `path:"id"`
+	RoleID string `path:"id" format:"uuid" required:"true"`
 }) (*struct{}, error) {
 	db := api.app.Db()
 	id, err := uuid.Parse(input.RoleID)
@@ -176,7 +176,7 @@ func (api *Api) AdminRolesUpdateOperation(path string) huma.Operation {
 }
 
 func (api *Api) AdminRolesUpdate(ctx context.Context, input *struct {
-	RoleID string `path:"id"`
+	RoleID string `path:"id" format:"uuid" required:"true"`
 	Body   RoleCreateInput
 }) (*struct {
 	Body models.Role
@@ -229,7 +229,7 @@ type UserRolesUpdateInput struct {
 }
 
 func (api *Api) AdminUserRolesUpdate(ctx context.Context, input *struct {
-	UserID string               `path:"id"`
+	UserID string               `path:"id" format:"uuid" required:"true"`
 	Body   UserRolesUpdateInput `json:"roles"`
 }) (*PaginatedOutput[*models.Role], error) {
 	db := api.app.Db()
@@ -294,7 +294,7 @@ type RolePermissionsUpdateInput struct {
 }
 
 func (api *Api) AdminRolesUpdatePermissions(ctx context.Context, input *struct {
-	RoleID string `path:"id"`
+	RoleID string `path:"id" format:"uuid" required:"true"`
 	Body   RolePermissionsUpdateInput
 }) (*struct {
 	Body models.Role
@@ -356,7 +356,7 @@ func (api *Api) AdminRolesGetOperation(path string) huma.Operation {
 }
 
 func (api *Api) AdminRolesGet(ctx context.Context, input *struct {
-	RoleID string   `path:"id"`
+	RoleID string   `path:"id" format:"uuid" required:"true"`
 	Expand []string `query:"expand" required:"false" minimum:"1" maximum:"100" enum:"permissions"`
 }) (*struct {
 	Body RoleWithPermissions
@@ -393,4 +393,29 @@ func (api *Api) AdminRolesGet(ctx context.Context, input *struct {
 			Permissions: role.R.Permissions,
 		},
 	}, nil
+}
+
+func (api *Api) AdminRolesCreatePermissionsOperation(path string) huma.Operation {
+	return huma.Operation{
+		OperationID: "admin-roles-create",
+		Method:      http.MethodPost,
+		Path:        path,
+		Summary:     "Create role",
+		Description: "Create role",
+		Tags:        []string{"Admin", "Roles"},
+		Errors:      []int{http.StatusNotFound},
+		Security: []map[string][]string{
+			{shared.BearerAuthSecurityKey: {}},
+		},
+	}
+}
+
+func (api *Api) AdminRolesCreatePermissions(ctx context.Context, input *struct {
+	RoleID string `path:"id" format:"uuid" required:"true"`
+	Body   RolePermissionsUpdateInput
+}) (*struct {
+	Body models.Role
+}, error) {
+
+	return nil, nil
 }
