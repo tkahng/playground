@@ -15,6 +15,7 @@ import (
 
 var TableNames = struct {
 	AppParams           string
+	Notifications       string
 	Permissions         string
 	RolePermissions     string
 	Roles               string
@@ -32,6 +33,7 @@ var TableNames = struct {
 	Users               string
 }{
 	AppParams:           "app_params",
+	Notifications:       "notifications",
 	Permissions:         "permissions",
 	RolePermissions:     "role_permissions",
 	Roles:               "roles",
@@ -51,6 +53,7 @@ var TableNames = struct {
 
 var ColumnNames = struct {
 	AppParams           appParamColumnNames
+	Notifications       notificationColumnNames
 	Permissions         permissionColumnNames
 	RolePermissions     rolePermissionColumnNames
 	Roles               roleColumnNames
@@ -73,6 +76,13 @@ var ColumnNames = struct {
 		Value:     "value",
 		CreatedAt: "created_at",
 		UpdatedAt: "updated_at",
+	},
+	Notifications: notificationColumnNames{
+		ID:        "id",
+		CreatedAt: "created_at",
+		UpdatedAt: "updated_at",
+		UserID:    "user_id",
+		Type:      "type",
 	},
 	Permissions: permissionColumnNames{
 		ID:          "id",
@@ -221,6 +231,7 @@ var (
 
 func Where[Q psql.Filterable]() struct {
 	AppParams           appParamWhere[Q]
+	Notifications       notificationWhere[Q]
 	Permissions         permissionWhere[Q]
 	RolePermissions     rolePermissionWhere[Q]
 	Roles               roleWhere[Q]
@@ -239,6 +250,7 @@ func Where[Q psql.Filterable]() struct {
 } {
 	return struct {
 		AppParams           appParamWhere[Q]
+		Notifications       notificationWhere[Q]
 		Permissions         permissionWhere[Q]
 		RolePermissions     rolePermissionWhere[Q]
 		Roles               roleWhere[Q]
@@ -256,6 +268,7 @@ func Where[Q psql.Filterable]() struct {
 		Users               userWhere[Q]
 	}{
 		AppParams:           buildAppParamWhere[Q](AppParamColumns),
+		Notifications:       buildNotificationWhere[Q](NotificationColumns),
 		Permissions:         buildPermissionWhere[Q](PermissionColumns),
 		RolePermissions:     buildRolePermissionWhere[Q](RolePermissionColumns),
 		Roles:               buildRoleWhere[Q](RoleColumns),
@@ -295,6 +308,7 @@ func (j joinSet[Q]) AliasedAs(alias string) joinSet[Q] {
 }
 
 type joins[Q dialect.Joinable] struct {
+	Notifications       joinSet[notificationJoins[Q]]
 	Permissions         joinSet[permissionJoins[Q]]
 	RolePermissions     joinSet[rolePermissionJoins[Q]]
 	Roles               joinSet[roleJoins[Q]]
@@ -320,6 +334,7 @@ func buildJoinSet[Q interface{ aliasedAs(string) Q }, C any, F func(C, string) Q
 
 func getJoins[Q dialect.Joinable]() joins[Q] {
 	return joins[Q]{
+		Notifications:       buildJoinSet[notificationJoins[Q]](NotificationColumns, buildNotificationJoins),
 		Permissions:         buildJoinSet[permissionJoins[Q]](PermissionColumns, buildPermissionJoins),
 		RolePermissions:     buildJoinSet[rolePermissionJoins[Q]](RolePermissionColumns, buildRolePermissionJoins),
 		Roles:               buildJoinSet[roleJoins[Q]](RoleColumns, buildRoleJoins),

@@ -53,6 +53,7 @@ type UsersQuery = *psql.ViewQuery[*User, UserSlice]
 
 // userR is where relationships are stored.
 type userR struct {
+	Notifications       NotificationSlice       `json:"Notifications"`       // notifications.fk_notifications_user
 	IDStripeCustomer    *StripeCustomer         `json:"IDStripeCustomer"`    // stripe_customers.stripe_customers_id_fkey
 	StripeSubscriptions StripeSubscriptionSlice `json:"StripeSubscriptions"` // stripe_subscriptions.stripe_subscriptions_user_id_fkey
 	Tokens              TokenSlice              `json:"Tokens"`              // tokens.tokens_user_id_fkey
@@ -551,6 +552,7 @@ func (o UserSlice) ReloadAll(ctx context.Context, exec bob.Executor) error {
 
 type userJoins[Q dialect.Joinable] struct {
 	typ                 string
+	Notifications       func(context.Context) modAs[Q, notificationColumns]
 	IDStripeCustomer    func(context.Context) modAs[Q, stripeCustomerColumns]
 	StripeSubscriptions func(context.Context) modAs[Q, stripeSubscriptionColumns]
 	Tokens              func(context.Context) modAs[Q, tokenColumns]
@@ -567,6 +569,7 @@ func (j userJoins[Q]) aliasedAs(alias string) userJoins[Q] {
 func buildUserJoins[Q dialect.Joinable](cols userColumns, typ string) userJoins[Q] {
 	return userJoins[Q]{
 		typ:                 typ,
+		Notifications:       usersJoinNotifications[Q](cols, typ),
 		IDStripeCustomer:    usersJoinIDStripeCustomer[Q](cols, typ),
 		StripeSubscriptions: usersJoinStripeSubscriptions[Q](cols, typ),
 		Tokens:              usersJoinTokens[Q](cols, typ),
@@ -574,6 +577,25 @@ func buildUserJoins[Q dialect.Joinable](cols userColumns, typ string) userJoins[
 		Permissions:         usersJoinPermissions[Q](cols, typ),
 		Roles:               usersJoinRoles[Q](cols, typ),
 		UserSessions:        usersJoinUserSessions[Q](cols, typ),
+	}
+}
+
+func usersJoinNotifications[Q dialect.Joinable](from userColumns, typ string) func(context.Context) modAs[Q, notificationColumns] {
+	return func(ctx context.Context) modAs[Q, notificationColumns] {
+		return modAs[Q, notificationColumns]{
+			c: NotificationColumns,
+			f: func(to notificationColumns) bob.Mod[Q] {
+				mods := make(mods.QueryMods[Q], 0, 1)
+
+				{
+					mods = append(mods, dialect.Join[Q](typ, Notifications.Name().As(to.Alias())).On(
+						to.UserID.EQ(from.ID),
+					))
+				}
+
+				return mods
+			},
+		}
 	}
 }
 
@@ -726,6 +748,24 @@ func usersJoinUserSessions[Q dialect.Joinable](from userColumns, typ string) fun
 	}
 }
 
+// Notifications starts a query for related objects on notifications
+func (o *User) Notifications(mods ...bob.Mod[*dialect.SelectQuery]) NotificationsQuery {
+	return Notifications.Query(append(mods,
+		sm.Where(NotificationColumns.UserID.EQ(psql.Arg(o.ID))),
+	)...)
+}
+
+func (os UserSlice) Notifications(mods ...bob.Mod[*dialect.SelectQuery]) NotificationsQuery {
+	PKArgs := make([]bob.Expression, len(os))
+	for i, o := range os {
+		PKArgs[i] = psql.ArgGroup(o.ID)
+	}
+
+	return Notifications.Query(append(mods,
+		sm.Where(psql.Group(NotificationColumns.UserID).In(PKArgs...)),
+	)...)
+}
+
 // IDStripeCustomer starts a query for related objects on stripe_customers
 func (o *User) IDStripeCustomer(mods ...bob.Mod[*dialect.SelectQuery]) StripeCustomersQuery {
 	return StripeCustomers.Query(append(mods,
@@ -868,6 +908,20 @@ func (o *User) Preload(name string, retrieved any) error {
 	}
 
 	switch name {
+	case "Notifications":
+		rels, ok := retrieved.(NotificationSlice)
+		if !ok {
+			return fmt.Errorf("user cannot load %T as %q", retrieved, name)
+		}
+
+		o.R.Notifications = rels
+
+		for _, rel := range rels {
+			if rel != nil {
+				rel.R.User = o
+			}
+		}
+		return nil
 	case "IDStripeCustomer":
 		rel, ok := retrieved.(*StripeCustomer)
 		if !ok {
@@ -967,6 +1021,78 @@ func (o *User) Preload(name string, retrieved any) error {
 	default:
 		return fmt.Errorf("user has no relationship %q", name)
 	}
+}
+
+func ThenLoadUserNotifications(queryMods ...bob.Mod[*dialect.SelectQuery]) psql.Loader {
+	return psql.Loader(func(ctx context.Context, exec bob.Executor, retrieved any) error {
+		loader, isLoader := retrieved.(interface {
+			LoadUserNotifications(context.Context, bob.Executor, ...bob.Mod[*dialect.SelectQuery]) error
+		})
+		if !isLoader {
+			return fmt.Errorf("object %T cannot load UserNotifications", retrieved)
+		}
+
+		err := loader.LoadUserNotifications(ctx, exec, queryMods...)
+
+		// Don't cause an issue due to missing relationships
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil
+		}
+
+		return err
+	})
+}
+
+// LoadUserNotifications loads the user's Notifications into the .R struct
+func (o *User) LoadUserNotifications(ctx context.Context, exec bob.Executor, mods ...bob.Mod[*dialect.SelectQuery]) error {
+	if o == nil {
+		return nil
+	}
+
+	// Reset the relationship
+	o.R.Notifications = nil
+
+	related, err := o.Notifications(mods...).All(ctx, exec)
+	if err != nil {
+		return err
+	}
+
+	for _, rel := range related {
+		rel.R.User = o
+	}
+
+	o.R.Notifications = related
+	return nil
+}
+
+// LoadUserNotifications loads the user's Notifications into the .R struct
+func (os UserSlice) LoadUserNotifications(ctx context.Context, exec bob.Executor, mods ...bob.Mod[*dialect.SelectQuery]) error {
+	if len(os) == 0 {
+		return nil
+	}
+
+	notifications, err := os.Notifications(mods...).All(ctx, exec)
+	if err != nil {
+		return err
+	}
+
+	for _, o := range os {
+		o.R.Notifications = nil
+	}
+
+	for _, o := range os {
+		for _, rel := range notifications {
+			if o.ID != rel.UserID.GetOrZero() {
+				continue
+			}
+
+			rel.R.User = o
+
+			o.R.Notifications = append(o.R.Notifications, rel)
+		}
+	}
+
+	return nil
 }
 
 func PreloadUserIDStripeCustomer(opts ...psql.PreloadOption) psql.Preloader {
@@ -1539,6 +1665,74 @@ func (os UserSlice) LoadUserUserSessions(ctx context.Context, exec bob.Executor,
 
 			o.R.UserSessions = append(o.R.UserSessions, rel)
 		}
+	}
+
+	return nil
+}
+
+func insertUserNotifications0(ctx context.Context, exec bob.Executor, notifications1 []*NotificationSetter, user0 *User) (NotificationSlice, error) {
+	for i := range notifications1 {
+		notifications1[i].UserID = omitnull.From(user0.ID)
+	}
+
+	ret, err := Notifications.Insert(bob.ToMods(notifications1...)).All(ctx, exec)
+	if err != nil {
+		return ret, fmt.Errorf("insertUserNotifications0: %w", err)
+	}
+
+	return ret, nil
+}
+
+func attachUserNotifications0(ctx context.Context, exec bob.Executor, count int, notifications1 NotificationSlice, user0 *User) (NotificationSlice, error) {
+	setter := &NotificationSetter{
+		UserID: omitnull.From(user0.ID),
+	}
+
+	err := notifications1.UpdateAll(ctx, exec, *setter)
+	if err != nil {
+		return nil, fmt.Errorf("attachUserNotifications0: %w", err)
+	}
+
+	return notifications1, nil
+}
+
+func (user0 *User) InsertNotifications(ctx context.Context, exec bob.Executor, related ...*NotificationSetter) error {
+	if len(related) == 0 {
+		return nil
+	}
+
+	var err error
+
+	notifications1, err := insertUserNotifications0(ctx, exec, related, user0)
+	if err != nil {
+		return err
+	}
+
+	user0.R.Notifications = append(user0.R.Notifications, notifications1...)
+
+	for _, rel := range notifications1 {
+		rel.R.User = user0
+	}
+	return nil
+}
+
+func (user0 *User) AttachNotifications(ctx context.Context, exec bob.Executor, related ...*Notification) error {
+	if len(related) == 0 {
+		return nil
+	}
+
+	var err error
+	notifications1 := NotificationSlice(related)
+
+	_, err = attachUserNotifications0(ctx, exec, len(related), notifications1, user0)
+	if err != nil {
+		return err
+	}
+
+	user0.R.Notifications = append(user0.R.Notifications, notifications1...)
+
+	for _, rel := range related {
+		rel.R.User = user0
 	}
 
 	return nil
