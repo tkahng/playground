@@ -218,6 +218,102 @@ func (api *Api) AdminRolesUpdate(ctx context.Context, input *struct {
 		Body: *role,
 	}, nil
 }
+func (api *Api) AdminUserRolesDeleteOperation(path string) huma.Operation {
+	return huma.Operation{
+		OperationID: "admin-user-roles-delete",
+		Method:      http.MethodDelete,
+		Path:        path,
+		Summary:     "Delete user roles",
+		Description: "Delete user roles",
+		Tags:        []string{"Admin", "Roles", "User"},
+		Errors:      []int{http.StatusNotFound},
+		Security: []map[string][]string{
+			{shared.BearerAuthSecurityKey: {}},
+		},
+	}
+}
+
+func (api *Api) AdminUserRolesDelete(ctx context.Context, input *struct {
+	UserID string `path:"userId" format:"uuid" required:"true"`
+	RoleID string `path:"roleId" format:"uuid" required:"true"`
+}) (*struct{}, error) {
+	db := api.app.Db()
+	id, err := uuid.Parse(input.UserID)
+	if err != nil {
+		return nil, err
+	}
+	user, err := repository.GetUserById(ctx, db, id)
+	if err != nil {
+		return nil, err
+	}
+	if user == nil {
+		return nil, huma.Error404NotFound("User not found")
+	}
+	roleID, err := uuid.Parse(input.RoleID)
+	if err != nil {
+		return nil, err
+	}
+	role, err := repository.FindRoleById(ctx, db, roleID)
+	if err != nil {
+		return nil, err
+	}
+	if role == nil {
+		return nil, huma.Error404NotFound("Role not found")
+	}
+	_, err = models.UserRoles.Delete(
+		models.DeleteWhere.UserRoles.UserID.EQ(user.ID),
+		models.DeleteWhere.UserRoles.RoleID.EQ(role.ID),
+	).Exec(ctx, db)
+	if err != nil {
+		return nil, err
+	}
+	return nil, nil
+}
+func (api *Api) AdminUserRolesCreateOperation(path string) huma.Operation {
+	return huma.Operation{
+		OperationID: "admin-create-user-roles",
+		Method:      http.MethodPost,
+		Path:        path,
+		Summary:     "Create user roles",
+		Description: "Create user roles",
+		Tags:        []string{"Admin", "Roles", "User"},
+		Errors:      []int{http.StatusNotFound},
+		Security: []map[string][]string{
+			{shared.BearerAuthSecurityKey: {}},
+		},
+	}
+}
+
+func (api *Api) AdminUserRolesCreate(ctx context.Context, input *struct {
+	UserID string `path:"id" format:"uuid" required:"true"`
+	Body   RoleIdsInput
+}) (*struct{}, error) {
+	db := api.app.Db()
+	id, err := uuid.Parse(input.UserID)
+	if err != nil {
+		return nil, err
+	}
+	user, err := repository.GetUserById(ctx, db, id)
+	if err != nil {
+		return nil, err
+	}
+	if user == nil {
+		return nil, huma.Error404NotFound("User not found")
+	}
+
+	roleIds := repository.ParseUUIDs(input.Body.RolesIds)
+
+	roles, err := repository.FindRolesByIds(ctx, db, roleIds)
+	if err != nil {
+		return nil, err
+	}
+
+	err = user.AttachRoles(ctx, db, roles...)
+	if err != nil {
+		return nil, err
+	}
+	return nil, nil
+}
 
 func (api *Api) AdminUserRolesUpdateOperation(path string) huma.Operation {
 	return huma.Operation{
@@ -234,13 +330,13 @@ func (api *Api) AdminUserRolesUpdateOperation(path string) huma.Operation {
 	}
 }
 
-type UserRolesUpdateInput struct {
-	RolesIds []string `json:"roles" minimum:"1" maximum:"100" format:"uuid" required:"true"`
+type RoleIdsInput struct {
+	RolesIds []string `json:"role_ids" minimum:"1" maximum:"100" format:"uuid" required:"true"`
 }
 
 func (api *Api) AdminUserRolesUpdate(ctx context.Context, input *struct {
-	UserID string               `path:"id" format:"uuid" required:"true"`
-	Body   UserRolesUpdateInput `json:"roles"`
+	UserID string       `path:"id" format:"uuid" required:"true"`
+	Body   RoleIdsInput `json:"body" required:"true"`
 }) (*PaginatedOutput[*models.Role], error) {
 	db := api.app.Db()
 	id, err := uuid.Parse(input.UserID)
