@@ -36,7 +36,7 @@ func (api *Api) AdminRolesOperation(path string) huma.Operation {
 type RoleWithPermissions struct {
 	ID          uuid.UUID            `db:"id,pk" json:"id"`
 	Name        string               `db:"name" json:"name"`
-	Description null.Val[string]     `db:"description" json:"description"`
+	Description null.Val[string]     `db:"description" json:"description,omitempty"`
 	CreatedAt   time.Time            `db:"created_at" json:"created_at"`
 	UpdatedAt   time.Time            `db:"updated_at" json:"updated_at"`
 	Permissions []*models.Permission `json:"permissions,omitempty" required:"false"`

@@ -110,6 +110,12 @@ func ListRolesFilterFunc(ctx context.Context, q *psql.ViewQuery[*models.Role, mo
 	if filter == nil {
 		return
 	}
+	if filter.Q != "" {
+		q.Apply(
+			psql.WhereOr(models.SelectWhere.Roles.Name.ILike("%"+filter.Q+"%"),
+				models.SelectWhere.Roles.Description.ILike("%"+filter.Q+"%")),
+		)
+	}
 	if len(filter.Names) > 0 {
 		q.Apply(
 			models.SelectWhere.Roles.Name.In(filter.Names...),
