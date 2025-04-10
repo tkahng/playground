@@ -216,17 +216,46 @@ export const getUserRoles = async (token: string, id: string) => {
   return data;
 };
 
-export const getUserPermissions = async (token: string, id: string) => {
+export const getUserPermissions = async (
+  token: string,
+  userId: string,
+  reverse: boolean
+) => {
   const { data, error } = await client.GET(
-    "/api/admin/users/{id}/permissions",
+    "/api/admin/users/{userId}/permissions",
     {
       params: {
+        path: {
+          userId,
+        },
         query: {
           page: 1,
-          perPage: 50,
+          per_page: 50,
+          reverse,
         },
+      },
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  ); // TODO: add pagination
+  if (error) {
+    throw new Error(error.detail);
+  }
+  return data;
+};
+export const getUserPermissions2 = async (token: string, userId: string) => {
+  const { data, error } = await client.GET(
+    "/api/admin/users/{userId}/permissions",
+    {
+      params: {
         path: {
-          id,
+          userId,
+        },
+        query: {
+          page: 1,
+          per_page: 50,
+          reverse: true,
         },
       },
       headers: {
@@ -260,7 +289,7 @@ export const getUser = async (token: string, id: string) => {
 export const getUserInfo = async (token: string, id: string) => {
   const user = await getUser(token, id);
   const userRoles = await getUserRoles(token, id);
-  const userPermissions = await getUserPermissions(token, id);
+  const userPermissions = await getUserPermissions(token, id, false);
   const userPerms: {
     created_at: string;
     description?: string;
@@ -335,6 +364,81 @@ export const createUserRoles = async (
       Authorization: `Bearer ${token}`,
     },
   }); // TODO: add pagination
+  if (error) {
+    throw new Error(error.detail);
+  }
+  return data;
+};
+
+export const removeUserRole = async (
+  token: string,
+  userId: string,
+  roleId: string
+) => {
+  const { data, error } = await client.DELETE(
+    `/api/admin/users/{userId}/roles/{roleId}`,
+    {
+      params: {
+        path: {
+          userId,
+          roleId,
+        },
+      },
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  ); // TODO: add pagination
+  if (error) {
+    throw new Error(error.detail);
+  }
+  return data;
+};
+
+export const createUserPermissions = async (
+  token: string,
+  id: string,
+  body: operations["admin-user-permissions-create"]["requestBody"]["content"]["application/json"]
+) => {
+  const { data, error } = await client.POST(
+    `/api/admin/users/{userId}/permissions`,
+    {
+      params: {
+        path: {
+          userId: id,
+        },
+      },
+      body,
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  ); // TODO: add pagination
+  if (error) {
+    throw new Error(error.detail);
+  }
+  return data;
+};
+
+export const removeUserPermission = async (
+  token: string,
+  userId: string,
+  permissionId: string
+) => {
+  const { data, error } = await client.DELETE(
+    `/api/admin/users/{userId}/permissions/{permissionId}`,
+    {
+      params: {
+        path: {
+          userId,
+          permissionId,
+        },
+      },
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  ); // TODO: add pagination
   if (error) {
     throw new Error(error.detail);
   }

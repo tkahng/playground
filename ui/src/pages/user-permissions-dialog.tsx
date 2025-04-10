@@ -19,7 +19,7 @@ import {
 import MultipleSelector from "@/components/ui/multiple-selector";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { useUserDetail } from "@/hooks/use-user-detail";
-import { createUserRoles, rolesPaginate } from "@/lib/api";
+import { createUserPermissions, getUserPermissions2 } from "@/lib/api";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
@@ -29,7 +29,7 @@ import { z } from "zod";
 const formSchema = z.object({
   // userId: z.string().uuid(),
   // roleIds: z.string().uuid().array().min(1),
-  roles: z
+  permissions: z
     .object({
       value: z.string().uuid(),
       label: z.string(),
@@ -38,7 +38,7 @@ const formSchema = z.object({
     .min(1),
 });
 
-export function DialogDemo() {
+export function UserPermissionDialog() {
   const { user } = useAuthProvider();
   const [isDialogOpen, setDialogOpen] = useState(false);
   const queryClient = useQueryClient();
@@ -51,12 +51,10 @@ export function DialogDemo() {
       if (!user?.tokens.access_token || !userId) {
         throw new Error("Missing access token or role ID");
       }
-      const { data } = await rolesPaginate(user.tokens.access_token, {
-        user_id: userId,
-        user_reverse: true,
-        page: 1,
-        per_page: 50,
-      });
+      const { data } = await getUserPermissions2(
+        user.tokens.access_token,
+        userId
+      );
       return data;
     },
   });
@@ -65,8 +63,8 @@ export function DialogDemo() {
       if (!user?.tokens.access_token || !userId) {
         throw new Error("Missing access token or role ID");
       }
-      await createUserRoles(user.tokens.access_token, userId, {
-        role_ids: values.roles.map((role) => role.value),
+      await createUserPermissions(user.tokens.access_token, userId, {
+        permission_ids: values.permissions.map((perms) => perms.value),
       });
       setDialogOpen(false);
     },
@@ -75,14 +73,14 @@ export function DialogDemo() {
         queryKey: ["userInfo", userId],
       });
       await queryClient.invalidateQueries({
-        queryKey: ["user-roles-reverse", userId],
+        queryKey: ["user-permissions-reverse", userId],
       });
     },
   });
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      roles: [],
+      permissions: [],
     },
   });
 
@@ -91,7 +89,7 @@ export function DialogDemo() {
   };
   useEffect(() => {
     if (data) {
-      form.reset({ roles: [] });
+      form.reset({ permissions: [] });
     }
   }, [data, form.reset]);
 
@@ -102,20 +100,19 @@ export function DialogDemo() {
   if (error) {
     return <div>Error: {error.message}</div>;
   }
-
-  if (!data?.length) {
-    return <div>User not found</div>;
+  if (!data) {
+    return <div>No data available</div>;
   }
   return (
     <Dialog open={isDialogOpen} onOpenChange={setDialogOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline">Assign Roles</Button>
+        <Button variant="outline">Assign Permissions</Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Assign Roles</DialogTitle>
+          <DialogTitle>Assign Permissions</DialogTitle>
           <DialogDescription>
-            Select the roles you want to assign to this user
+            Select the Permissions you want to assign to this user
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -138,7 +135,7 @@ export function DialogDemo() {
                 />{" "} */}
                 <FormField
                   control={form.control}
-                  name="roles"
+                  name="permissions"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Frameworks</FormLabel>
