@@ -172,7 +172,12 @@ export function Permissions() {
                 perms.roles.map((role) => role.name).join(", ")}
             </TableCell>
             <TableCell className="text-right">
-              <Button variant="destructive">Delete</Button>
+              <Button
+                variant="destructive"
+                disabled={!perms.is_directly_assigned}
+              >
+                Delete
+              </Button>
             </TableCell>
           </TableRow>
         ))}
