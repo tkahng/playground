@@ -14,7 +14,7 @@ import (
 type UserListFilter struct {
 	Providers []models.Providers `query:"providers,omitempty" required:"false" uniqueItems:"true" minimum:"1" maximum:"100" enum:"google,apple,facebook,github,credentials"`
 	Q         string             `query:"q,omitempty" required:"false"`
-	Ids       []string           `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+	Ids       []string           `query:"ids,omitempty,explode" required:"false" minimum:"1" maximum:"100" format:"uuid"`
 	Emails    []string           `query:"emails,omitempty" required:"false" minimum:"1" maximum:"100" format:"email"`
 	RoleIds   []string           `query:"role_ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
 	// PermissionIds []string           `query:"permission_ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
@@ -27,7 +27,7 @@ type UserListParams struct {
 }
 type RoleListFilter struct {
 	Q           string   `query:"q,omitempty" required:"false"`
-	Ids         []string `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+	Ids         []string `query:"ids,omitempty,explode" required:"false" minimum:"1" maximum:"100" format:"uuid"`
 	Names       []string `query:"names,omitempty" required:"false" minimum:"1" maximum:"100"`
 	UserId      string   `query:"user_id,omitempty" required:"false" format:"uuid"`
 	UserReverse bool     `query:"user_reverse,omitempty" required:"false" doc:"When user_id is provided, if this is true, it will return the roles that the user does not have"`
@@ -41,7 +41,7 @@ type RolesListParams struct {
 
 type PermissionsListFilter struct {
 	Q           string   `query:"q,omitempty" required:"false"`
-	Ids         []string `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+	Ids         []string `query:"ids,omitempty,explode" required:"false" minimum:"1" maximum:"100" format:"uuid"`
 	Names       []string `query:"names,omitempty" required:"false" minimum:"1" maximum:"100"`
 	RoleId      string   `query:"role_id,omitempty" required:"false" format:"uuid"`
 	RoleReverse bool     `query:"role_reverse,omitempty" required:"false" doc:"When role_id is provided, if this is true, it will return the permissions that the role does not have"`
