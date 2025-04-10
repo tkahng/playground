@@ -34,6 +34,13 @@ func (api *Api) NotificationsSseOperation(path string) huma.Operation {
 
 }
 
+func (api *Api) NotificationsSseEvents() map[string]any {
+	// sse.
+	return map[string]any{
+		"notifications": "notifications",
+	}
+}
+
 func (api *Api) NotificationsSsefunc(ctx context.Context, input *struct{},
 	send sse.Sender,
 ) {
