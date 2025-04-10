@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"log/slog"
 	"os"
@@ -10,6 +9,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/tkahng/authgo/internal/conf"
 	"github.com/tkahng/authgo/internal/tools/notifier"
 )
 
@@ -17,23 +17,23 @@ func main() {
 
 	ctx := context.Background()
 	l := getDefaultLogger(slog.LevelInfo)
+	conf := conf.AppConfigGetter()
+	// var url string
+	// flag.StringVar(&url, "dbhost", "", "DB host (postgresql://{user}:{password}@{hostname}/{db}?sslmode=require)")
 
-	var url string
-	flag.StringVar(&url, "dbhost", "", "DB host (postgresql://{user}:{password}@{hostname}/{db}?sslmode=require)")
+	var topic string = "notification-default"
+	// flag.StringVar(&topic, "channel", "", "a string")
 
-	var topic string
-	flag.StringVar(&topic, "channel", "", "a string")
+	// flag.Parse()
 
-	flag.Parse()
-
-	if url == "" || topic == "" {
-		fmt.Fprintf(os.Stderr, "missing required flag")
-		os.Exit(1)
-		return
-	}
+	// if url == "" || topic == "" {
+	// 	fmt.Fprintf(os.Stderr, "missing required flag")
+	// 	os.Exit(1)
+	// 	return
+	// }
 
 	// get a connection pool
-	pool, err := pgxpool.New(ctx, url)
+	pool, err := pgxpool.New(ctx, conf.Db.DatabaseUrl)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error connection to DB: %v", err)
 		os.Exit(1)

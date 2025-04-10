@@ -18,6 +18,9 @@ func CreatePool(ctx context.Context, connString string) *pgxpool.Pool {
 		fmt.Fprintf(os.Stderr, "Unable to create connection pool: %v\n", err)
 		panic(err)
 	}
+	// if err = dbpool.Ping(ctx); err != nil {
+	// 	panic(err)
+	// } //dbpool.Ping(ctx)
 	// defer dbpool.Close()
 
 	return dbpool

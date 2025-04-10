@@ -6,22 +6,16 @@ CREATE TABLE "notifications" (
     "id" uuid NOT NULL DEFAULT gen_random_uuid(),
     "created_at" timestamptz NOT NULL DEFAULT now(),
     "updated_at" timestamptz NOT NULL DEFAULT now(),
+    "channel" text not null default 'general',
     "user_id" uuid NULL,
     "content" jsonb not null default '{}',
-    "type" text not null default 'default',
+    "type" text not null default 'general',
     PRIMARY KEY ("id"),
     CONSTRAINT "fk_notifications_user" FOREIGN KEY ("user_id") REFERENCES "users" ("id") ON UPDATE CASCADE ON DELETE CASCADE
 );
 -- Add function "notify_after_notification_insert"
 CREATE OR REPLACE FUNCTION notify_after_notification_insert() RETURNS TRIGGER AS $BODY$ BEGIN PERFORM pg_notify('notification', row_to_json(NEW)::text);
-PERFORM pg_notify(
-    'notification-' || NEW.user_id,
-    row_to_json(NEW)::text
-);
-PERFORM pg_notify(
-    'notification-' || NEW.type,
-    row_to_json(NEW)::text
-);
+PERFORM pg_notify(NEW.channel, row_to_json(NEW)::text);
 RETURN NEW;
 END;
 $BODY$ LANGUAGE plpgsql;
