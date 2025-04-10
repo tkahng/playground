@@ -196,6 +196,29 @@ export const permissionsPaginate = async (
   }
   return data;
 };
+
+export const updatePermission = async (
+  token: string,
+  id: string,
+  body: components["schemas"]["PermissionCreateInput"]
+) => {
+  const { data, error } = await client.PUT(`/api/admin/roles/{id}`, {
+    params: {
+      path: {
+        id,
+      },
+    },
+    body,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (error) {
+    throw new Error(error.detail);
+  }
+  return data;
+};
 export const getUserRoles = async (token: string, id: string) => {
   const { data, error } = await client.GET("/api/admin/roles", {
     params: {
@@ -215,7 +238,23 @@ export const getUserRoles = async (token: string, id: string) => {
   }
   return data;
 };
+export const getPermission = async (token: string, id: string) => {
+  const { data, error } = await client.GET(`/api/admin/permissions/{id}`, {
+    params: {
+      path: {
+        id,
+      },
+    },
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
 
+  if (error) {
+    throw new Error(error.detail);
+  }
+  return data;
+};
 export const getUserPermissions = async (
   token: string,
   userId: string,

@@ -9,6 +9,8 @@ import AuthenticatedLayout from "./layouts/authenticated-layout";
 import RootLayout from "./layouts/root";
 import CallbackComponent from "./pages/callback";
 import Landing from "./pages/landing";
+import PermissionEdit from "./pages/permissions-edit";
+import PermissionListPage from "./pages/permissions-list";
 import RoleEdit from "./pages/role-edit";
 import RolesListPage from "./pages/roles-list";
 import SignupPage from "./pages/signup";
@@ -41,6 +43,10 @@ function App() {
                   <Route path="roles">
                     <Route index element={<RolesListPage />} />
                     <Route path=":roleId" element={<RoleEdit />} />
+                  </Route>
+                  <Route path="permissions">
+                    <Route index element={<PermissionListPage />} />
+                    <Route path=":permissionId" element={<PermissionEdit />} />
                   </Route>
                 </Route>
               </Routes>
