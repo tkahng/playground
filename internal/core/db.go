@@ -43,8 +43,8 @@ func NewDBX(pool *pgxpool.Pool) DBX {
 	}
 }
 
-func NewBobFromConf(ctx context.Context, conf conf.DBConfig) bob.DB {
-	return NewBobFromPool(pool.CreatePool(ctx, conf.DatabaseUrl))
+func NewPoolFromConf(ctx context.Context, conf conf.DBConfig) *pgxpool.Pool {
+	return pool.CreatePool(ctx, conf.DatabaseUrl)
 }
 
 func NewBobFromPool(pool *pgxpool.Pool) bob.DB {

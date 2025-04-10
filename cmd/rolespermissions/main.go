@@ -23,7 +23,8 @@ func main() {
 	ctx := context.Background()
 	conf := conf.AppConfigGetter()
 
-	db := core.NewBobFromConf(ctx, conf.Db)
+	dbx := core.NewPoolFromConf(ctx, conf.Db)
+	db := core.NewBobFromPool(dbx)
 	res, err := repository.GetUserWithRolesAndPermissions(ctx, db, "tkahng@gmail.com")
 	if err != nil {
 		fmt.Println(err)

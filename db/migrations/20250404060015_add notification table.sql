@@ -7,7 +7,8 @@ CREATE TABLE "notifications" (
     "created_at" timestamptz NOT NULL DEFAULT now(),
     "updated_at" timestamptz NOT NULL DEFAULT now(),
     "user_id" uuid NULL,
-    "type" text NULL,
+    "content" jsonb not null default '{}',
+    "type" text not null default 'default',
     PRIMARY KEY ("id"),
     CONSTRAINT "fk_notifications_user" FOREIGN KEY ("user_id") REFERENCES "users" ("id") ON UPDATE CASCADE ON DELETE CASCADE
 );

@@ -3,8 +3,10 @@ package core
 import (
 	"context"
 
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stephenafamo/bob"
 	"github.com/tkahng/authgo/internal/conf"
+	"github.com/tkahng/authgo/internal/pool"
 	"github.com/tkahng/authgo/internal/repository"
 
 	"github.com/tkahng/authgo/internal/tools/mailer"
@@ -18,10 +20,18 @@ type BaseApp struct {
 	tokenVerifier *TokenVerifier
 	cfg           *conf.EnvConfig
 	db            bob.DB
+	pool          *pgxpool.Pool
 	settings      *AppOptions
 	payment       *StripeService
 	// onAfterRequestHandle  *hook.Hook[*BaseEvent]
 	// onBeforeRequestHandle *hook.Hook[*BaseEvent]
+}
+
+func (app *BaseApp) Db() bob.DB {
+	return app.db
+}
+func (a *BaseApp) Pool() *pgxpool.Pool {
+	return a.pool
 }
 
 // Payment implements App.
@@ -65,26 +75,23 @@ func (app *BaseApp) NewMailClient() mailer.Mailer {
 // }
 
 func InitBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
-	db := NewBobFromConf(ctx, cfg.Db)
-	app := NewBaseApp(db, cfg)
+	pool := pool.CreatePool(ctx, cfg.Db.DatabaseUrl)
+	app := NewBaseApp(pool, cfg)
 	app.Bootstrap()
 	return app
 }
 
-func NewBaseApp(db bob.DB, cfg conf.EnvConfig) *BaseApp {
+func NewBaseApp(pool *pgxpool.Pool, cfg conf.EnvConfig) *BaseApp {
 	oauth := OAuth2ConfigFromEnv(cfg)
 	settings := NewDefaultSettings()
 	settings.Auth.OAuth2Config = oauth
 	return &BaseApp{
-		db:       db,
+		pool:     pool,
+		db:       NewBobFromPool(pool),
 		settings: settings,
 		cfg:      &cfg,
 		payment:  NewStripeService(payment.NewStripeClient(cfg.StripeConfig)),
 	}
-}
-
-func (app *BaseApp) Db() bob.DB {
-	return app.db
 }
 
 // // OnAfterRequestHandle implements App.
@@ -99,6 +106,7 @@ func (app *BaseApp) Db() bob.DB {
 
 func (app *BaseApp) Bootstrap() {
 	ctx := context.Background()
-	repository.EnsureRoleAndPermissions(ctx, app.db, "superuser", "superuser")
-	repository.EnsureRoleAndPermissions(ctx, app.db, "basic", "basic")
+	db := app.Db()
+	repository.EnsureRoleAndPermissions(ctx, db, "superuser", "superuser")
+	repository.EnsureRoleAndPermissions(ctx, db, "basic", "basic")
 }

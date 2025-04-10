@@ -35,8 +35,8 @@ func main() {
 
 	ctx := context.Background()
 	cfg := conf.AppConfigGetter()
-	db := core.NewBobFromConf(ctx, cfg.Db)
-	app := core.NewBaseApp(db, cfg)
+	app := core.InitBaseApp(ctx, cfg)
+	db := app.Db()
 
 	opts := app.Settings().Auth
 	// client := app.NewMailClient()

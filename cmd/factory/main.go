@@ -35,7 +35,8 @@ func main() {
 	ctx := context.Background()
 	conf := conf.AppConfigGetter()
 
-	dbx := core.NewBobFromConf(ctx, conf.Db)
+	db := core.NewPoolFromConf(ctx, conf.Db)
+	dbx := core.NewBobFromPool(db)
 	hash, err := security.CreateHash("password", argon2id.DefaultParams)
 	if err != nil {
 		panic(err)

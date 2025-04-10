@@ -7,7 +7,9 @@ import (
 	"reflect"
 
 	"github.com/danielgtaylor/huma/v2"
+	"github.com/danielgtaylor/huma/v2/sse"
 	"github.com/tkahng/authgo/internal/core"
+	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/shared"
 )
 
@@ -92,7 +94,14 @@ func BindApis(api huma.API, app core.App) {
 	huma.Register(api, appApi.OAuth2CallbackGetOperation("/auth/callback"), appApi.OAuth2CallbackGet)
 	huma.Register(api, appApi.OAuth2CallbackPostOperation("/auth/callback"), appApi.OAuth2CallbackPost)
 	huma.Register(api, appApi.OAuth2AuthorizationUrlOperation("/auth/authorization-url"), appApi.OAuth2AuthorizationUrl)
-
+	// authenticated routes
+	authenticatedGroup := huma.NewGroup(api)
+	// authenticatedGroup.UseMiddleware(RequireAuthMiddleware(api))
+	// notifications
+	sse.Register(authenticatedGroup, appApi.NotificationsSseOperation("/notifications/sse"), map[string]any{
+		// Mapping of event type name to Go struct for that event.
+		"message": models.Notification{},
+	}, appApi.NotificationsSsefunc)
 	// stripe routes
 	stripeGroup := huma.NewGroup(api, "/stripe")
 	// stripe webhook
