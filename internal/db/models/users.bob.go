@@ -53,6 +53,7 @@ type UsersQuery = *psql.ViewQuery[*User, UserSlice]
 
 // userR is where relationships are stored.
 type userR struct {
+	Media               MediumSlice             `json:"Media"`               // media.media_user_id_fkey
 	Notifications       NotificationSlice       `json:"Notifications"`       // notifications.fk_notifications_user
 	IDStripeCustomer    *StripeCustomer         `json:"IDStripeCustomer"`    // stripe_customers.stripe_customers_id_fkey
 	StripeSubscriptions StripeSubscriptionSlice `json:"StripeSubscriptions"` // stripe_subscriptions.stripe_subscriptions_user_id_fkey
@@ -552,6 +553,7 @@ func (o UserSlice) ReloadAll(ctx context.Context, exec bob.Executor) error {
 
 type userJoins[Q dialect.Joinable] struct {
 	typ                 string
+	Media               func(context.Context) modAs[Q, mediumColumns]
 	Notifications       func(context.Context) modAs[Q, notificationColumns]
 	IDStripeCustomer    func(context.Context) modAs[Q, stripeCustomerColumns]
 	StripeSubscriptions func(context.Context) modAs[Q, stripeSubscriptionColumns]
@@ -569,6 +571,7 @@ func (j userJoins[Q]) aliasedAs(alias string) userJoins[Q] {
 func buildUserJoins[Q dialect.Joinable](cols userColumns, typ string) userJoins[Q] {
 	return userJoins[Q]{
 		typ:                 typ,
+		Media:               usersJoinMedia[Q](cols, typ),
 		Notifications:       usersJoinNotifications[Q](cols, typ),
 		IDStripeCustomer:    usersJoinIDStripeCustomer[Q](cols, typ),
 		StripeSubscriptions: usersJoinStripeSubscriptions[Q](cols, typ),
@@ -577,6 +580,25 @@ func buildUserJoins[Q dialect.Joinable](cols userColumns, typ string) userJoins[
 		Permissions:         usersJoinPermissions[Q](cols, typ),
 		Roles:               usersJoinRoles[Q](cols, typ),
 		UserSessions:        usersJoinUserSessions[Q](cols, typ),
+	}
+}
+
+func usersJoinMedia[Q dialect.Joinable](from userColumns, typ string) func(context.Context) modAs[Q, mediumColumns] {
+	return func(ctx context.Context) modAs[Q, mediumColumns] {
+		return modAs[Q, mediumColumns]{
+			c: MediumColumns,
+			f: func(to mediumColumns) bob.Mod[Q] {
+				mods := make(mods.QueryMods[Q], 0, 1)
+
+				{
+					mods = append(mods, dialect.Join[Q](typ, Media.Name().As(to.Alias())).On(
+						to.UserID.EQ(from.ID),
+					))
+				}
+
+				return mods
+			},
+		}
 	}
 }
 
@@ -748,6 +770,24 @@ func usersJoinUserSessions[Q dialect.Joinable](from userColumns, typ string) fun
 	}
 }
 
+// Media starts a query for related objects on media
+func (o *User) Media(mods ...bob.Mod[*dialect.SelectQuery]) MediaQuery {
+	return Media.Query(append(mods,
+		sm.Where(MediumColumns.UserID.EQ(psql.Arg(o.ID))),
+	)...)
+}
+
+func (os UserSlice) Media(mods ...bob.Mod[*dialect.SelectQuery]) MediaQuery {
+	PKArgs := make([]bob.Expression, len(os))
+	for i, o := range os {
+		PKArgs[i] = psql.ArgGroup(o.ID)
+	}
+
+	return Media.Query(append(mods,
+		sm.Where(psql.Group(MediumColumns.UserID).In(PKArgs...)),
+	)...)
+}
+
 // Notifications starts a query for related objects on notifications
 func (o *User) Notifications(mods ...bob.Mod[*dialect.SelectQuery]) NotificationsQuery {
 	return Notifications.Query(append(mods,
@@ -908,6 +948,20 @@ func (o *User) Preload(name string, retrieved any) error {
 	}
 
 	switch name {
+	case "Media":
+		rels, ok := retrieved.(MediumSlice)
+		if !ok {
+			return fmt.Errorf("user cannot load %T as %q", retrieved, name)
+		}
+
+		o.R.Media = rels
+
+		for _, rel := range rels {
+			if rel != nil {
+				rel.R.User = o
+			}
+		}
+		return nil
 	case "Notifications":
 		rels, ok := retrieved.(NotificationSlice)
 		if !ok {
@@ -1021,6 +1075,78 @@ func (o *User) Preload(name string, retrieved any) error {
 	default:
 		return fmt.Errorf("user has no relationship %q", name)
 	}
+}
+
+func ThenLoadUserMedia(queryMods ...bob.Mod[*dialect.SelectQuery]) psql.Loader {
+	return psql.Loader(func(ctx context.Context, exec bob.Executor, retrieved any) error {
+		loader, isLoader := retrieved.(interface {
+			LoadUserMedia(context.Context, bob.Executor, ...bob.Mod[*dialect.SelectQuery]) error
+		})
+		if !isLoader {
+			return fmt.Errorf("object %T cannot load UserMedia", retrieved)
+		}
+
+		err := loader.LoadUserMedia(ctx, exec, queryMods...)
+
+		// Don't cause an issue due to missing relationships
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil
+		}
+
+		return err
+	})
+}
+
+// LoadUserMedia loads the user's Media into the .R struct
+func (o *User) LoadUserMedia(ctx context.Context, exec bob.Executor, mods ...bob.Mod[*dialect.SelectQuery]) error {
+	if o == nil {
+		return nil
+	}
+
+	// Reset the relationship
+	o.R.Media = nil
+
+	related, err := o.Media(mods...).All(ctx, exec)
+	if err != nil {
+		return err
+	}
+
+	for _, rel := range related {
+		rel.R.User = o
+	}
+
+	o.R.Media = related
+	return nil
+}
+
+// LoadUserMedia loads the user's Media into the .R struct
+func (os UserSlice) LoadUserMedia(ctx context.Context, exec bob.Executor, mods ...bob.Mod[*dialect.SelectQuery]) error {
+	if len(os) == 0 {
+		return nil
+	}
+
+	media, err := os.Media(mods...).All(ctx, exec)
+	if err != nil {
+		return err
+	}
+
+	for _, o := range os {
+		o.R.Media = nil
+	}
+
+	for _, o := range os {
+		for _, rel := range media {
+			if o.ID != rel.UserID.GetOrZero() {
+				continue
+			}
+
+			rel.R.User = o
+
+			o.R.Media = append(o.R.Media, rel)
+		}
+	}
+
+	return nil
 }
 
 func ThenLoadUserNotifications(queryMods ...bob.Mod[*dialect.SelectQuery]) psql.Loader {
@@ -1665,6 +1791,74 @@ func (os UserSlice) LoadUserUserSessions(ctx context.Context, exec bob.Executor,
 
 			o.R.UserSessions = append(o.R.UserSessions, rel)
 		}
+	}
+
+	return nil
+}
+
+func insertUserMedia0(ctx context.Context, exec bob.Executor, media1 []*MediumSetter, user0 *User) (MediumSlice, error) {
+	for i := range media1 {
+		media1[i].UserID = omitnull.From(user0.ID)
+	}
+
+	ret, err := Media.Insert(bob.ToMods(media1...)).All(ctx, exec)
+	if err != nil {
+		return ret, fmt.Errorf("insertUserMedia0: %w", err)
+	}
+
+	return ret, nil
+}
+
+func attachUserMedia0(ctx context.Context, exec bob.Executor, count int, media1 MediumSlice, user0 *User) (MediumSlice, error) {
+	setter := &MediumSetter{
+		UserID: omitnull.From(user0.ID),
+	}
+
+	err := media1.UpdateAll(ctx, exec, *setter)
+	if err != nil {
+		return nil, fmt.Errorf("attachUserMedia0: %w", err)
+	}
+
+	return media1, nil
+}
+
+func (user0 *User) InsertMedia(ctx context.Context, exec bob.Executor, related ...*MediumSetter) error {
+	if len(related) == 0 {
+		return nil
+	}
+
+	var err error
+
+	media1, err := insertUserMedia0(ctx, exec, related, user0)
+	if err != nil {
+		return err
+	}
+
+	user0.R.Media = append(user0.R.Media, media1...)
+
+	for _, rel := range media1 {
+		rel.R.User = user0
+	}
+	return nil
+}
+
+func (user0 *User) AttachMedia(ctx context.Context, exec bob.Executor, related ...*Medium) error {
+	if len(related) == 0 {
+		return nil
+	}
+
+	var err error
+	media1 := MediumSlice(related)
+
+	_, err = attachUserMedia0(ctx, exec, len(related), media1, user0)
+	if err != nil {
+		return err
+	}
+
+	user0.R.Media = append(user0.R.Media, media1...)
+
+	for _, rel := range related {
+		rel.R.User = user0
 	}
 
 	return nil

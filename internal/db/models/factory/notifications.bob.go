@@ -5,6 +5,7 @@ package factory
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 	"time"
 
@@ -14,6 +15,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jaswdr/faker/v2"
 	"github.com/stephenafamo/bob"
+	"github.com/stephenafamo/bob/types"
 	models "github.com/tkahng/authgo/internal/db/models"
 )
 
@@ -41,8 +43,10 @@ type NotificationTemplate struct {
 	ID        func() uuid.UUID
 	CreatedAt func() time.Time
 	UpdatedAt func() time.Time
+	Channel   func() string
 	UserID    func() null.Val[uuid.UUID]
-	Type      func() null.Val[string]
+	Content   func() types.JSON[json.RawMessage]
+	Type      func() string
 
 	r notificationR
 	f *Factory
@@ -77,8 +81,14 @@ func (o NotificationTemplate) toModel() *models.Notification {
 	if o.UpdatedAt != nil {
 		m.UpdatedAt = o.UpdatedAt()
 	}
+	if o.Channel != nil {
+		m.Channel = o.Channel()
+	}
 	if o.UserID != nil {
 		m.UserID = o.UserID()
+	}
+	if o.Content != nil {
+		m.Content = o.Content()
 	}
 	if o.Type != nil {
 		m.Type = o.Type()
@@ -124,11 +134,17 @@ func (o NotificationTemplate) BuildSetter() *models.NotificationSetter {
 	if o.UpdatedAt != nil {
 		m.UpdatedAt = omit.From(o.UpdatedAt())
 	}
+	if o.Channel != nil {
+		m.Channel = omit.From(o.Channel())
+	}
 	if o.UserID != nil {
 		m.UserID = omitnull.FromNull(o.UserID())
 	}
+	if o.Content != nil {
+		m.Content = omit.From(o.Content())
+	}
 	if o.Type != nil {
-		m.Type = omitnull.FromNull(o.Type())
+		m.Type = omit.From(o.Type())
 	}
 
 	return m
@@ -300,7 +316,9 @@ func (m notificationMods) RandomizeAllColumns(f *faker.Faker) NotificationMod {
 		NotificationMods.RandomID(f),
 		NotificationMods.RandomCreatedAt(f),
 		NotificationMods.RandomUpdatedAt(f),
+		NotificationMods.RandomChannel(f),
 		NotificationMods.RandomUserID(f),
+		NotificationMods.RandomContent(f),
 		NotificationMods.RandomType(f),
 	}
 }
@@ -399,6 +417,37 @@ func (m notificationMods) RandomUpdatedAt(f *faker.Faker) NotificationMod {
 }
 
 // Set the model columns to this value
+func (m notificationMods) Channel(val string) NotificationMod {
+	return NotificationModFunc(func(o *NotificationTemplate) {
+		o.Channel = func() string { return val }
+	})
+}
+
+// Set the Column from the function
+func (m notificationMods) ChannelFunc(f func() string) NotificationMod {
+	return NotificationModFunc(func(o *NotificationTemplate) {
+		o.Channel = f
+	})
+}
+
+// Clear any values for the column
+func (m notificationMods) UnsetChannel() NotificationMod {
+	return NotificationModFunc(func(o *NotificationTemplate) {
+		o.Channel = nil
+	})
+}
+
+// Generates a random value for the column using the given faker
+// if faker is nil, a default faker is used
+func (m notificationMods) RandomChannel(f *faker.Faker) NotificationMod {
+	return NotificationModFunc(func(o *NotificationTemplate) {
+		o.Channel = func() string {
+			return random_string(f)
+		}
+	})
+}
+
+// Set the model columns to this value
 func (m notificationMods) UserID(val null.Val[uuid.UUID]) NotificationMod {
 	return NotificationModFunc(func(o *NotificationTemplate) {
 		o.UserID = func() null.Val[uuid.UUID] { return val }
@@ -438,14 +487,45 @@ func (m notificationMods) RandomUserID(f *faker.Faker) NotificationMod {
 }
 
 // Set the model columns to this value
-func (m notificationMods) Type(val null.Val[string]) NotificationMod {
+func (m notificationMods) Content(val types.JSON[json.RawMessage]) NotificationMod {
 	return NotificationModFunc(func(o *NotificationTemplate) {
-		o.Type = func() null.Val[string] { return val }
+		o.Content = func() types.JSON[json.RawMessage] { return val }
 	})
 }
 
 // Set the Column from the function
-func (m notificationMods) TypeFunc(f func() null.Val[string]) NotificationMod {
+func (m notificationMods) ContentFunc(f func() types.JSON[json.RawMessage]) NotificationMod {
+	return NotificationModFunc(func(o *NotificationTemplate) {
+		o.Content = f
+	})
+}
+
+// Clear any values for the column
+func (m notificationMods) UnsetContent() NotificationMod {
+	return NotificationModFunc(func(o *NotificationTemplate) {
+		o.Content = nil
+	})
+}
+
+// Generates a random value for the column using the given faker
+// if faker is nil, a default faker is used
+func (m notificationMods) RandomContent(f *faker.Faker) NotificationMod {
+	return NotificationModFunc(func(o *NotificationTemplate) {
+		o.Content = func() types.JSON[json.RawMessage] {
+			return random_types_JSON_json_RawMessage_(f)
+		}
+	})
+}
+
+// Set the model columns to this value
+func (m notificationMods) Type(val string) NotificationMod {
+	return NotificationModFunc(func(o *NotificationTemplate) {
+		o.Type = func() string { return val }
+	})
+}
+
+// Set the Column from the function
+func (m notificationMods) TypeFunc(f func() string) NotificationMod {
 	return NotificationModFunc(func(o *NotificationTemplate) {
 		o.Type = f
 	})
@@ -462,16 +542,8 @@ func (m notificationMods) UnsetType() NotificationMod {
 // if faker is nil, a default faker is used
 func (m notificationMods) RandomType(f *faker.Faker) NotificationMod {
 	return NotificationModFunc(func(o *NotificationTemplate) {
-		o.Type = func() null.Val[string] {
-			if f == nil {
-				f = &defaultFaker
-			}
-
-			if f.Bool() {
-				return null.FromPtr[string](nil)
-			}
-
-			return null.From(random_string(f))
+		o.Type = func() string {
+			return random_string(f)
 		}
 	})
 }

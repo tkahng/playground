@@ -51,6 +51,7 @@ type UserTemplate struct {
 }
 
 type userR struct {
+	Media               []*userRMediaR
 	Notifications       []*userRNotificationsR
 	IDStripeCustomer    *userRIDStripeCustomerR
 	StripeSubscriptions []*userRStripeSubscriptionsR
@@ -61,6 +62,10 @@ type userR struct {
 	UserSessions        []*userRUserSessionsR
 }
 
+type userRMediaR struct {
+	number int
+	o      *MediumTemplate
+}
 type userRNotificationsR struct {
 	number int
 	o      *NotificationTemplate
@@ -145,6 +150,19 @@ func (o UserTemplate) toModels(number int) models.UserSlice {
 // setModelRels creates and sets the relationships on *models.User
 // according to the relationships in the template. Nothing is inserted into the db
 func (t UserTemplate) setModelRels(o *models.User) {
+	if t.r.Media != nil {
+		rel := models.MediumSlice{}
+		for _, r := range t.r.Media {
+			related := r.o.toModels(r.number)
+			for _, rel := range related {
+				rel.UserID = null.From(o.ID)
+				rel.R.User = o
+			}
+			rel = append(rel, related...)
+		}
+		o.R.Media = rel
+	}
+
 	if t.r.Notifications != nil {
 		rel := models.NotificationSlice{}
 		for _, r := range t.r.Notifications {
@@ -319,15 +337,30 @@ func ensureCreatableUser(m *models.UserSetter) {
 func (o *UserTemplate) insertOptRels(ctx context.Context, exec bob.Executor, m *models.User) (context.Context, error) {
 	var err error
 
-	if o.r.Notifications != nil {
-		for _, r := range o.r.Notifications {
-			var rel0 models.NotificationSlice
+	if o.r.Media != nil {
+		for _, r := range o.r.Media {
+			var rel0 models.MediumSlice
 			ctx, rel0, err = r.o.createMany(ctx, exec, r.number)
 			if err != nil {
 				return ctx, err
 			}
 
-			err = m.AttachNotifications(ctx, exec, rel0...)
+			err = m.AttachMedia(ctx, exec, rel0...)
+			if err != nil {
+				return ctx, err
+			}
+		}
+	}
+
+	if o.r.Notifications != nil {
+		for _, r := range o.r.Notifications {
+			var rel1 models.NotificationSlice
+			ctx, rel1, err = r.o.createMany(ctx, exec, r.number)
+			if err != nil {
+				return ctx, err
+			}
+
+			err = m.AttachNotifications(ctx, exec, rel1...)
 			if err != nil {
 				return ctx, err
 			}
@@ -335,12 +368,12 @@ func (o *UserTemplate) insertOptRels(ctx context.Context, exec bob.Executor, m *
 	}
 
 	if o.r.IDStripeCustomer != nil {
-		var rel1 *models.StripeCustomer
-		ctx, rel1, err = o.r.IDStripeCustomer.o.create(ctx, exec)
+		var rel2 *models.StripeCustomer
+		ctx, rel2, err = o.r.IDStripeCustomer.o.create(ctx, exec)
 		if err != nil {
 			return ctx, err
 		}
-		err = m.AttachIDStripeCustomer(ctx, exec, rel1)
+		err = m.AttachIDStripeCustomer(ctx, exec, rel2)
 		if err != nil {
 			return ctx, err
 		}
@@ -348,13 +381,13 @@ func (o *UserTemplate) insertOptRels(ctx context.Context, exec bob.Executor, m *
 
 	if o.r.StripeSubscriptions != nil {
 		for _, r := range o.r.StripeSubscriptions {
-			var rel2 models.StripeSubscriptionSlice
-			ctx, rel2, err = r.o.createMany(ctx, exec, r.number)
+			var rel3 models.StripeSubscriptionSlice
+			ctx, rel3, err = r.o.createMany(ctx, exec, r.number)
 			if err != nil {
 				return ctx, err
 			}
 
-			err = m.AttachStripeSubscriptions(ctx, exec, rel2...)
+			err = m.AttachStripeSubscriptions(ctx, exec, rel3...)
 			if err != nil {
 				return ctx, err
 			}
@@ -363,13 +396,13 @@ func (o *UserTemplate) insertOptRels(ctx context.Context, exec bob.Executor, m *
 
 	if o.r.Tokens != nil {
 		for _, r := range o.r.Tokens {
-			var rel3 models.TokenSlice
-			ctx, rel3, err = r.o.createMany(ctx, exec, r.number)
+			var rel4 models.TokenSlice
+			ctx, rel4, err = r.o.createMany(ctx, exec, r.number)
 			if err != nil {
 				return ctx, err
 			}
 
-			err = m.AttachTokens(ctx, exec, rel3...)
+			err = m.AttachTokens(ctx, exec, rel4...)
 			if err != nil {
 				return ctx, err
 			}
@@ -378,13 +411,13 @@ func (o *UserTemplate) insertOptRels(ctx context.Context, exec bob.Executor, m *
 
 	if o.r.UserAccounts != nil {
 		for _, r := range o.r.UserAccounts {
-			var rel4 models.UserAccountSlice
-			ctx, rel4, err = r.o.createMany(ctx, exec, r.number)
+			var rel5 models.UserAccountSlice
+			ctx, rel5, err = r.o.createMany(ctx, exec, r.number)
 			if err != nil {
 				return ctx, err
 			}
 
-			err = m.AttachUserAccounts(ctx, exec, rel4...)
+			err = m.AttachUserAccounts(ctx, exec, rel5...)
 			if err != nil {
 				return ctx, err
 			}
@@ -393,13 +426,13 @@ func (o *UserTemplate) insertOptRels(ctx context.Context, exec bob.Executor, m *
 
 	if o.r.Permissions != nil {
 		for _, r := range o.r.Permissions {
-			var rel5 models.PermissionSlice
-			ctx, rel5, err = r.o.createMany(ctx, exec, r.number)
+			var rel6 models.PermissionSlice
+			ctx, rel6, err = r.o.createMany(ctx, exec, r.number)
 			if err != nil {
 				return ctx, err
 			}
 
-			err = m.AttachPermissions(ctx, exec, rel5...)
+			err = m.AttachPermissions(ctx, exec, rel6...)
 			if err != nil {
 				return ctx, err
 			}
@@ -408,13 +441,13 @@ func (o *UserTemplate) insertOptRels(ctx context.Context, exec bob.Executor, m *
 
 	if o.r.Roles != nil {
 		for _, r := range o.r.Roles {
-			var rel6 models.RoleSlice
-			ctx, rel6, err = r.o.createMany(ctx, exec, r.number)
+			var rel7 models.RoleSlice
+			ctx, rel7, err = r.o.createMany(ctx, exec, r.number)
 			if err != nil {
 				return ctx, err
 			}
 
-			err = m.AttachRoles(ctx, exec, rel6...)
+			err = m.AttachRoles(ctx, exec, rel7...)
 			if err != nil {
 				return ctx, err
 			}
@@ -423,13 +456,13 @@ func (o *UserTemplate) insertOptRels(ctx context.Context, exec bob.Executor, m *
 
 	if o.r.UserSessions != nil {
 		for _, r := range o.r.UserSessions {
-			var rel7 models.UserSessionSlice
-			ctx, rel7, err = r.o.createMany(ctx, exec, r.number)
+			var rel8 models.UserSessionSlice
+			ctx, rel8, err = r.o.createMany(ctx, exec, r.number)
 			if err != nil {
 				return ctx, err
 			}
 
-			err = m.AttachUserSessions(ctx, exec, rel7...)
+			err = m.AttachUserSessions(ctx, exec, rel8...)
 			if err != nil {
 				return ctx, err
 			}
@@ -813,6 +846,44 @@ func (m userMods) WithNewIDStripeCustomer(mods ...StripeCustomerMod) UserMod {
 func (m userMods) WithoutIDStripeCustomer() UserMod {
 	return UserModFunc(func(o *UserTemplate) {
 		o.r.IDStripeCustomer = nil
+	})
+}
+
+func (m userMods) WithMedia(number int, related *MediumTemplate) UserMod {
+	return UserModFunc(func(o *UserTemplate) {
+		o.r.Media = []*userRMediaR{{
+			number: number,
+			o:      related,
+		}}
+	})
+}
+
+func (m userMods) WithNewMedia(number int, mods ...MediumMod) UserMod {
+	return UserModFunc(func(o *UserTemplate) {
+		related := o.f.NewMedium(mods...)
+		m.WithMedia(number, related).Apply(o)
+	})
+}
+
+func (m userMods) AddMedia(number int, related *MediumTemplate) UserMod {
+	return UserModFunc(func(o *UserTemplate) {
+		o.r.Media = append(o.r.Media, &userRMediaR{
+			number: number,
+			o:      related,
+		})
+	})
+}
+
+func (m userMods) AddNewMedia(number int, mods ...MediumMod) UserMod {
+	return UserModFunc(func(o *UserTemplate) {
+		related := o.f.NewMedium(mods...)
+		m.AddMedia(number, related).Apply(o)
+	})
+}
+
+func (m userMods) WithoutMedia() UserMod {
+	return UserModFunc(func(o *UserTemplate) {
+		o.r.Media = nil
 	})
 }
 
