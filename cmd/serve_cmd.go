@@ -3,7 +3,12 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/http"
+	"os"
+	"os/signal"
+	"sync"
+	"time"
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/danielgtaylor/huma/v2/adapters/humachi"
@@ -25,14 +30,51 @@ func NewServeCmd() *cobra.Command {
 		Long:  `Starts the HTTP server on a specified port`,
 		Run: func(cmd *cobra.Command, args []string) {
 			ctx := cmd.Context()
-			serve(ctx)
+			if err := run(ctx); err != nil {
+				fmt.Fprintf(os.Stderr, "%s\n", err)
+				os.Exit(1)
+			}
+			// serve(ctx)
 		},
 	}
 	serveCmd.Flags().IntP("port", "p", 8080, "Port to listen on")
 	return serveCmd
 }
 
-func serve(ctx context.Context) {
+func run(ctx context.Context) error {
+	ctx, cancel := signal.NotifyContext(ctx, os.Interrupt)
+	defer cancel()
+	opts := conf.AppConfigGetter()
+	app := core.InitBaseApp(ctx, opts)
+	srv, api := NewServer()
+	apis.AddRoutes(api, app)
+	httpServer := &http.Server{
+		Addr:    fmt.Sprintf(":%d", port),
+		Handler: srv,
+	}
+	go func() {
+		log.Printf("listening on %s\n", httpServer.Addr)
+		if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			fmt.Fprintf(os.Stderr, "error listening and serving: %s\n", err)
+		}
+	}()
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		<-ctx.Done()
+		shutdownCtx := context.Background()
+		shutdownCtx, cancel := context.WithTimeout(shutdownCtx, 10*time.Second)
+		defer cancel()
+		if err := httpServer.Shutdown(shutdownCtx); err != nil {
+			fmt.Fprintf(os.Stderr, "error shutting down http server: %s\n", err)
+		}
+	}()
+	wg.Wait()
+	return nil
+}
+
+func NewServer() (http.Handler, huma.API) {
 	var api huma.API
 	// ctx := context.Background()
 	// Create a new router & API
@@ -53,30 +95,6 @@ func serve(ctx context.Context) {
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 	api = humachi.New(r, config)
-	grp := huma.NewGroup(api, "/api")
-	// port = fmt.Printf("Starting server on port: %d\n", port)
-	// Register GET /greeting/{name}
-	opts := conf.AppConfigGetter()
-	app := core.InitBaseApp(ctx, opts)
-	apis.AddRoutes(grp, app)
-
-	server := http.Server{
-		Addr:    fmt.Sprintf(":%d", port),
-		Handler: r,
-	}
-	// Tell the CLI how to start your server.
-	fmt.Printf("Starting server on port %d...\n", port)
-	if err := server.ListenAndServe(); err != nil {
-
-	}
-	// hooks.OnStart(func() {
-	// })
-	// Tell the CLI how to stop your server.
-	// hooks.OnStop(func() {
-	// 	// Give the server 5 seconds to gracefully shut down, then give up.
-	// 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	// 	defer cancel()
-
-	// 	server.Shutdown(ctx)
-	// })
+	// grp := huma.NewGroup(api, "/api")
+	return r, api
 }

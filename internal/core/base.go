@@ -2,6 +2,7 @@ package core
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stephenafamo/bob"
@@ -9,6 +10,7 @@ import (
 	"github.com/tkahng/authgo/internal/pool"
 	"github.com/tkahng/authgo/internal/repository"
 
+	"github.com/tkahng/authgo/internal/tools/logger"
 	"github.com/tkahng/authgo/internal/tools/mailer"
 	"github.com/tkahng/authgo/internal/tools/payment"
 )
@@ -23,10 +25,14 @@ type BaseApp struct {
 	pool          *pgxpool.Pool
 	settings      *AppOptions
 	payment       *StripeService
+	logger        *slog.Logger
 	// onAfterRequestHandle  *hook.Hook[*BaseEvent]
 	// onBeforeRequestHandle *hook.Hook[*BaseEvent]
 }
 
+func (app *BaseApp) Logger() *slog.Logger {
+	return app.logger
+}
 func (app *BaseApp) Db() bob.DB {
 	return app.db
 }
@@ -85,10 +91,12 @@ func NewBaseApp(pool *pgxpool.Pool, cfg conf.EnvConfig) *BaseApp {
 	oauth := OAuth2ConfigFromEnv(cfg)
 	settings := NewDefaultSettings()
 	settings.Auth.OAuth2Config = oauth
+
 	return &BaseApp{
 		pool:     pool,
 		db:       NewBobFromPool(pool),
 		settings: settings,
+		logger:   logger.GetDefaultLogger(slog.LevelInfo),
 		cfg:      &cfg,
 		payment:  NewStripeService(payment.NewStripeClient(cfg.StripeConfig)),
 	}
