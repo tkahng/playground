@@ -39,7 +39,7 @@ export default function RoleEdit() {
     isLoading: loading,
     error,
   } = useQuery({
-    queryKey: ["role", user?.tokens.access_token, roleId],
+    queryKey: ["role", roleId],
     queryFn: async () => {
       if (!user?.tokens.access_token || !roleId) {
         throw new Error("Missing access token or role ID");
@@ -52,10 +52,10 @@ export default function RoleEdit() {
       updateRole(user!.tokens.access_token, roleId!, values),
     onSuccess: async () => {
       await queryClient.invalidateQueries({
-        queryKey: ["role", user?.tokens.access_token, roleId],
+        queryKey: ["role", roleId],
       });
       const updatedRole = await queryClient.fetchQuery({
-        queryKey: ["role", user?.tokens.access_token, roleId],
+        queryKey: ["role", roleId],
         queryFn: () => getRole(user!.tokens.access_token, roleId!),
       });
       form.reset(updatedRole);

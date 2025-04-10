@@ -318,3 +318,25 @@ export const getUserInfo = async (token: string, id: string) => {
     permissions: userPerms,
   };
 };
+
+export const createUserRoles = async (
+  token: string,
+  id: string,
+  body: operations["admin-create-user-roles"]["requestBody"]["content"]["application/json"]
+) => {
+  const { data, error } = await client.POST(`/api/admin/users/{id}/roles`, {
+    params: {
+      path: {
+        id,
+      },
+    },
+    body,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  }); // TODO: add pagination
+  if (error) {
+    throw new Error(error.detail);
+  }
+  return data;
+};

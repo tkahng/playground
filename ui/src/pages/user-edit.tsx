@@ -45,7 +45,7 @@ export default function UserEdit() {
     isLoading: loading,
     error,
   } = useQuery({
-    queryKey: ["userInfo", user?.tokens.access_token, userId],
+    queryKey: ["userInfo", userId],
     queryFn: async () => {
       if (!user?.tokens.access_token || !userId) {
         throw new Error("Missing access token or role ID");
