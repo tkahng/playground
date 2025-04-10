@@ -16,6 +16,9 @@ import (
 // Make sure the type AppParam runs hooks after queries
 var _ bob.HookableType = &AppParam{}
 
+// Make sure the type Notification runs hooks after queries
+var _ bob.HookableType = &Notification{}
+
 // Make sure the type Permission runs hooks after queries
 var _ bob.HookableType = &Permission{}
 

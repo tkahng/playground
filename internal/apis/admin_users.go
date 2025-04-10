@@ -203,7 +203,7 @@ func (api *Api) AdminUsersDeleteOperation(path string) huma.Operation {
 }
 
 func (api *Api) AdminUsersDelete(ctx context.Context, input *struct {
-	ID uuid.UUID `path:"id"`
+	ID uuid.UUID `path:"id" format:"uuid" required:"true"`
 }) (*struct{}, error) {
 	db := api.app.Db()
 	err := repository.DeleteUsers(ctx, db, input.ID)
@@ -229,7 +229,7 @@ func (api *Api) AdminUsersUpdateOperation(path string) huma.Operation {
 }
 
 func (api *Api) AdminUsersUpdate(ctx context.Context, input *struct {
-	ID   uuid.UUID `path:"id"`
+	ID   uuid.UUID `path:"id" format:"uuid" required:"true"`
 	Body repository.UpdateUserInput
 }) (*struct{}, error) {
 	db := api.app.Db()
@@ -260,7 +260,7 @@ type UpdateUserPasswordInput struct {
 }
 
 func (api *Api) AdminUsersUpdatePassword(ctx context.Context, input *struct {
-	ID   uuid.UUID `path:"id"`
+	ID   uuid.UUID `path:"id" format:"uuid" required:"true"`
 	Body UpdateUserPasswordInput
 }) (*struct{}, error) {
 	db := api.app.Db()
@@ -287,7 +287,7 @@ func (api *Api) AdminUsersGetOperation(path string) huma.Operation {
 }
 
 func (api *Api) AdminUsersGet(ctx context.Context, input *struct {
-	ID uuid.UUID `path:"id"`
+	ID uuid.UUID `path:"id" format:"uuid" required:"true"`
 }) (*struct{ Body models.User }, error) {
 	db := api.app.Db()
 	user, err := repository.GetUserById(ctx, db, input.ID)

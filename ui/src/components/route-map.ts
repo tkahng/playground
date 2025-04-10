@@ -24,4 +24,5 @@ export enum RouteMap {
   AUTH_PROVIDER = "/auth/:provider",
   PROVIDER_PARAMS = ":provider",
   AUTH_CALLBACK = "/auth/callback",
+  ROLE_EDIT = "/dashboard/roles/:roleId",
 }

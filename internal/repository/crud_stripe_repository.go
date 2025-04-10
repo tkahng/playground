@@ -37,26 +37,40 @@ func ListProducts(ctx context.Context, db bob.DB, input *shared.StripeProductLis
 }
 
 func ListProductOrderByFunc(ctx context.Context, q *psql.ViewQuery[*models.StripeProduct, models.StripeProductSlice], input *shared.StripeProductListParams) {
+	if q == nil {
+		return
+	}
 	if input == nil {
+		q.Apply(
+			sm.OrderBy("metadata->'index'").Asc(),
+		)
 		return
 	}
 	if input.SortParams.SortBy == "" {
+		q.Apply(
+			sm.OrderBy("metadata->'index'").Asc(),
+		)
 		return
 	}
 	if input.SortBy == MetadataIndexName {
 		q.Apply(
 			sm.OrderBy("metadata->'index'").Asc(),
 		)
+		return
 	} else if slices.Contains(StripeProductColumnNames, input.SortBy) {
-		var order = sm.OrderBy(input.SortBy)
 		if input.SortParams.SortOrder == "desc" {
-			order = sm.OrderBy(input.SortBy).Desc()
+			q.Apply(
+				sm.OrderBy(input.SortBy).Desc(),
+				sm.OrderBy(models.StripeProductColumns.ID).Desc(),
+			)
+			return
 		} else if input.SortParams.SortOrder == "asc" {
-			order = sm.OrderBy(input.SortBy).Asc()
+			q.Apply(
+				sm.OrderBy(input.SortBy).Asc(),
+				sm.OrderBy(models.StripeProductColumns.ID).Asc(),
+			)
+			return
 		}
-		q.Apply(
-			order,
-		)
 	}
 }
 

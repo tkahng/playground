@@ -3,12 +3,17 @@ package repository
 import (
 	"context"
 	"log"
+	"time"
 
+	"github.com/aarondl/opt/null"
 	"github.com/aarondl/opt/omit"
 	"github.com/aarondl/opt/omitnull"
 	"github.com/google/uuid"
+	"github.com/lib/pq"
 	"github.com/stephenafamo/bob"
+	"github.com/stephenafamo/bob/dialect/psql"
 	"github.com/stephenafamo/bob/dialect/psql/im"
+	"github.com/stephenafamo/scan"
 	"github.com/tkahng/authgo/internal/db/models"
 )
 
@@ -159,4 +164,148 @@ func DeletePermission(ctx context.Context, dbx bob.Executor, id uuid.UUID) error
 func FindPermissionById(ctx context.Context, dbx bob.Executor, id uuid.UUID) (*models.Permission, error) {
 	data, err := models.Permissions.Query(models.SelectWhere.Permissions.ID.EQ(id)).One(ctx, dbx)
 	return OptionalRow(data, err)
+}
+
+const (
+	QueryUserPermissionSource string = `
+WITH -- Get permissions assigned through roles
+role_based_permissions AS (
+    SELECT p.*,
+        rp.role_id,
+        NULL::uuid AS direct_assignment -- Null indicates not directly assigned
+    FROM public.user_roles ur
+        JOIN public.role_permissions rp ON ur.role_id = rp.role_id
+        JOIN public.permissions p ON rp.permission_id = p.id
+    WHERE ur.user_id = ?
+),
+-- Get permissions assigned directly to user
+direct_permissions AS (
+    SELECT p.*,
+        NULL::uuid AS role_id,
+        -- Null indicates not from a role
+        up.user_id AS direct_assignment
+    FROM public.user_permissions up
+        JOIN public.permissions p ON up.permission_id = p.id
+    WHERE up.user_id = ?
+),
+-- Combine both sources
+combined_permissions AS (
+    SELECT *
+    FROM role_based_permissions
+    UNION ALL
+    SELECT *
+    FROM direct_permissions
+) -- Final result with aggregated role information
+SELECT p.id,
+    p.name,
+    p.description,
+    p.created_at,
+    p.updated_at,
+    -- Array of role IDs that grant this permission (empty if direct)
+    array_remove(array_agg(DISTINCT rp.role_id), NULL) AS role_ids,
+    -- Boolean indicating if permission is directly assigned
+    bool_or(rp.direct_assignment IS NOT NULL) AS is_directly_assigned
+FROM (
+        SELECT DISTINCT id,
+            name,
+            description,
+            created_at,
+            updated_at
+        FROM combined_permissions
+    ) p
+    LEFT JOIN combined_permissions rp ON p.id = rp.id
+GROUP BY p.id,
+    p.name,
+    p.description,
+    p.created_at,
+    p.updated_at
+ORDER BY p.name,
+    p.id
+LIMIT ?
+OFFSET ?
+	;`
+	QueryUserPermissionSourceCount string = `
+WITH -- Get permissions assigned through roles
+role_based_permissions AS (
+    SELECT p.*,
+        rp.role_id,
+        NULL::uuid AS direct_assignment -- Null indicates not directly assigned
+    FROM public.user_roles ur
+        JOIN public.role_permissions rp ON ur.role_id = rp.role_id
+        JOIN public.permissions p ON rp.permission_id = p.id
+    WHERE ur.user_id = ?
+),
+-- Get permissions assigned directly to user
+direct_permissions AS (
+    SELECT p.*,
+        NULL::uuid AS role_id,
+        -- Null indicates not from a role
+        up.user_id AS direct_assignment
+    FROM public.user_permissions up
+        JOIN public.permissions p ON up.permission_id = p.id
+    WHERE up.user_id = ?
+),
+-- Combine both sources
+combined_permissions AS (
+    SELECT *
+    FROM role_based_permissions
+    UNION ALL
+    SELECT *
+    FROM direct_permissions
+) -- Final result with aggregated role information
+SELECT COUNT(DISTINCT id)
+FROM combined_permissions
+	;`
+)
+
+type permSource struct {
+	ID          uuid.UUID        `db:"id,pk" json:"id"`
+	Name        string           `db:"name" json:"name"`
+	Description null.Val[string] `db:"description" json:"description"`
+	CreatedAt   time.Time        `db:"created_at" json:"created_at"`
+	UpdatedAt   time.Time        `db:"updated_at" json:"updated_at"`
+	RoleIDs     pq.StringArray   `db:"role_ids" json:"role_ids"`
+	IsDirectly  bool             `db:"is_directly_assigned" json:"is_directly_assigned"`
+}
+
+type PermissionSource struct {
+	ID          uuid.UUID        `db:"id,pk" json:"id"`
+	Name        string           `db:"name" json:"name"`
+	Description null.Val[string] `db:"description" json:"description"`
+	CreatedAt   time.Time        `db:"created_at" json:"created_at"`
+	UpdatedAt   time.Time        `db:"updated_at" json:"updated_at"`
+	RoleIDs     []uuid.UUID      `db:"role_ids" json:"role_ids"`
+	IsDirectly  bool             `db:"is_directly_assigned" json:"is_directly_assigned"`
+}
+
+func ListUserPermissionsSource(ctx context.Context, dbx bob.Executor, userId uuid.UUID, limit int, offset int) ([]PermissionSource, error) {
+	q := psql.RawQuery(QueryUserPermissionSource, userId, userId, limit, offset)
+
+	data, err := bob.All(ctx, dbx, q, scan.StructMapper[permSource]())
+	if err != nil {
+		return nil, err
+	}
+	res := make([]PermissionSource, len(data))
+	for i, p := range data {
+		res[i] = PermissionSource{
+			ID:          p.ID,
+			Name:        p.Name,
+			Description: p.Description,
+			CreatedAt:   p.CreatedAt,
+			UpdatedAt:   p.UpdatedAt,
+			RoleIDs:     ParseUUIDs(p.RoleIDs),
+			IsDirectly:  p.IsDirectly,
+		}
+	}
+	return res, nil
+}
+
+func CountUserPermissionSource(ctx context.Context, dbx bob.Executor, userId uuid.UUID) (int64, error) {
+	q := psql.RawQuery(QueryUserPermissionSourceCount, userId, userId)
+
+	data, err := bob.One(ctx, dbx, q, scan.SingleColumnMapper[int64])
+	if err != nil {
+		return 0, err
+	}
+	return data, nil
 }

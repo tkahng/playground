@@ -13,6 +13,156 @@ import (
 	"github.com/tkahng/authgo/internal/shared"
 )
 
+func (api *Api) AdminUserPermissionsDeleteOperation(path string) huma.Operation {
+	return huma.Operation{
+		OperationID: "admin-user-permissions-delete",
+		Method:      http.MethodDelete,
+		Path:        path,
+		Summary:     "Delete user permission",
+		Description: "Delete user permission",
+		Tags:        []string{"Admin", "Permissions", "User"},
+		Errors:      []int{http.StatusNotFound},
+		Security: []map[string][]string{
+			{shared.BearerAuthSecurityKey: {}},
+		},
+	}
+}
+
+func (api *Api) AdminUserPermissionsDelete(ctx context.Context, input *struct {
+	UserId       string `path:"userId" format:"uuid" required:"true"`
+	PermissionId string `path:"permissionId" format:"uuid" required:"true"`
+}) (*struct{}, error) {
+	db := api.app.Db()
+	id, err := uuid.Parse(input.UserId)
+	if err != nil {
+		return nil, err
+	}
+	user, err := repository.GetUserById(ctx, db, id)
+	if err != nil {
+		return nil, err
+	}
+	if user == nil {
+		return nil, huma.Error404NotFound("User not found")
+	}
+	permissionId, err := uuid.Parse(input.PermissionId)
+	if err != nil {
+		return nil, err
+	}
+	permission, err := repository.FindPermissionById(ctx, db, permissionId)
+	if err != nil {
+		return nil, err
+	}
+	if permission == nil {
+		return nil, huma.Error404NotFound("Permission not found")
+	}
+	_, err = models.UserPermissions.Delete(
+		models.DeleteWhere.UserPermissions.UserID.EQ(user.ID),
+		models.DeleteWhere.UserPermissions.PermissionID.EQ(permission.ID),
+	).Exec(ctx, db)
+	if err != nil {
+		return nil, err
+	}
+	return nil, nil
+}
+
+func (api *Api) AdminUserPermissionsCreateOperation(path string) huma.Operation {
+	return huma.Operation{
+		OperationID: "admin-user-permissions-create",
+		Method:      http.MethodPost,
+		Path:        path,
+		Summary:     "Create user permission",
+		Description: "Create user permission",
+		Tags:        []string{"Admin", "Permissions", "User"},
+		Errors:      []int{http.StatusNotFound},
+		Security: []map[string][]string{
+			{shared.BearerAuthSecurityKey: {}},
+		},
+	}
+}
+
+func (api *Api) AdminUserPermissionsCreate(ctx context.Context, input *struct {
+	UserId string `path:"userId" format:"uuid" required:"true"`
+	Body   struct {
+		PermissionIds []string `json:"permission_ids" minimum:"0" maximum:"50" format:"uuid" required:"true"`
+	} `json:"body" required:"true"`
+}) (*struct{}, error) {
+	db := api.app.Db()
+	id, err := uuid.Parse(input.UserId)
+	if err != nil {
+		return nil, err
+	}
+	user, err := repository.GetUserById(ctx, db, id)
+	if err != nil {
+		return nil, err
+	}
+	if user == nil {
+		return nil, huma.Error404NotFound("User not found")
+	}
+
+	permissionIds := repository.ParseUUIDs(input.Body.PermissionIds)
+
+	permissions, err := repository.FindPermissionsByIds(ctx, db, permissionIds)
+	if err != nil {
+		return nil, err
+	}
+	if len(permissions) != len(permissionIds) {
+		return nil, huma.Error404NotFound("Permission not found")
+	}
+
+	err = user.AttachPermissions(ctx, db, permissions...)
+	if err != nil {
+		return nil, err
+	}
+	return nil, nil
+}
+
+func (api *Api) AdminUserPermissionSourceListOperation(path string) huma.Operation {
+	return huma.Operation{
+		OperationID: "admin-user-permission-sources",
+		Method:      http.MethodGet,
+		Path:        path,
+		Summary:     "Admin user permission sources",
+		Description: "List of permission sources",
+		Tags:        []string{"Admin", "Permissions", "User"},
+		Errors:      []int{http.StatusNotFound},
+		Security: []map[string][]string{
+			{shared.BearerAuthSecurityKey: {}},
+		},
+	}
+}
+
+func (api *Api) AdminUserPermissionSourceList(ctx context.Context, input *struct {
+	shared.UserPermissionsListParams
+}) (*PaginatedOutput[repository.PermissionSource], error) {
+	db := api.app.Db()
+	id, err := uuid.Parse(input.UserId)
+	if err != nil {
+		return nil, err
+	}
+	limit := input.PerPage
+	offset := (input.Page - 1) * input.PerPage
+	userPermissionSources, err := repository.ListUserPermissionsSource(ctx, db, id, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	count, err := repository.CountUserPermissionSource(ctx, db, id)
+	if err != nil {
+		return nil, err
+	}
+
+	return &PaginatedOutput[repository.PermissionSource]{
+		Body: shared.PaginatedResponse[repository.PermissionSource]{
+
+			Data: userPermissionSources,
+			Meta: shared.Meta{
+				Page:    input.PaginatedInput.Page,
+				PerPage: input.PaginatedInput.PerPage,
+				Total:   int(count),
+			},
+		},
+	}, nil
+}
+
 func (api *Api) AdminPermissionsListOperation(path string) huma.Operation {
 	return huma.Operation{
 		OperationID: "admin-permissions",
@@ -118,7 +268,7 @@ func (api *Api) AdminPermissionsDeleteOperation(path string) huma.Operation {
 }
 
 func (api *Api) AdminPermissionsDelete(ctx context.Context, input *struct {
-	ID string `path:"id"`
+	ID string `path:"id" format:"uuid" required:"true"`
 }) (*struct {
 }, error) {
 	db := api.app.Db()
@@ -156,7 +306,7 @@ func (api *Api) AdminPermissionsUpdateOperation(path string) huma.Operation {
 }
 
 func (api *Api) AdminPermissionsUpdate(ctx context.Context, input *struct {
-	ID          string `path:"id"`
+	ID          string `path:"id" format:"uuid" required:"true"`
 	Body        models.Permission
 	Description *string `json:"description,omitempty"`
 }) (*struct {

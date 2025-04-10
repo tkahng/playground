@@ -19,9 +19,9 @@ export default function AuthenticatedLayout() {
   }
   return (
     <>
-      <div className=" flex min-h-screen flex-col">
+      <div className="relative flex min-h-screen flex-col justify-center">
         <NexusAILandingHeader leftLinks={landingLinks} />
-        <main className="flex-row flex flex-grow">
+        <main className="flex flex-grow">
           <DashboardSidebar />
           {outlet}
         </main>

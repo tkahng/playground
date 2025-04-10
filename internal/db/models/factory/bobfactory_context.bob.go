@@ -13,6 +13,7 @@ type contextKey string
 
 var (
 	appParamCtx           = newContextual[*models.AppParam]("appParam")
+	notificationCtx       = newContextual[*models.Notification]("notification")
 	permissionCtx         = newContextual[*models.Permission]("permission")
 	rolePermissionCtx     = newContextual[*models.RolePermission]("rolePermission")
 	roleCtx               = newContextual[*models.Role]("role")

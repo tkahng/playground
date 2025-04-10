@@ -80,22 +80,28 @@ func ListUsers(ctx context.Context, db bob.DB, input *shared.UserListParams) (mo
 }
 
 func ListUsersOrderByFunc(ctx context.Context, q *psql.ViewQuery[*models.User, models.UserSlice], input *shared.UserListParams) {
-	if input == nil {
+	if q == nil {
 		return
 	}
-	if input.SortParams.SortBy == "" {
+	if input == nil || input.SortBy == "" {
+		q.Apply(
+			sm.OrderBy(models.UserColumns.CreatedAt).Desc(),
+			sm.OrderBy(models.UserColumns.ID).Desc(),
+		)
 		return
 	}
 	if slices.Contains(UserColumnNames, input.SortBy) {
-		var order = sm.OrderBy(input.SortBy)
 		if input.SortParams.SortOrder == "desc" {
-			order = sm.OrderBy(input.SortBy).Desc()
+			q.Apply(
+				sm.OrderBy(input.SortBy).Desc(),
+				sm.OrderBy(models.UserColumns.ID).Desc(),
+			)
 		} else if input.SortParams.SortOrder == "asc" {
-			order = sm.OrderBy(input.SortBy).Asc()
+			q.Apply(
+				sm.OrderBy(input.SortBy).Asc(),
+				sm.OrderBy(models.UserColumns.ID).Asc(),
+			)
 		}
-		q.Apply(
-			order,
-		)
 	}
 }
 

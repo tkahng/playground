@@ -8,6 +8,71 @@ import (
 	"fmt"
 )
 
+// Enum values for NotificationType
+const (
+	NotificationTypeMention NotificationType = "mention"
+)
+
+func AllNotificationType() []NotificationType {
+	return []NotificationType{
+		NotificationTypeMention,
+	}
+}
+
+type NotificationType string
+
+func (e NotificationType) String() string {
+	return string(e)
+}
+
+func (e NotificationType) Valid() bool {
+	switch e {
+	case NotificationTypeMention:
+		return true
+	default:
+		return false
+	}
+}
+
+func (e NotificationType) MarshalText() ([]byte, error) {
+	return []byte(e), nil
+}
+
+func (e *NotificationType) UnmarshalText(text []byte) error {
+	return e.Scan(text)
+}
+
+func (e NotificationType) MarshalBinary() ([]byte, error) {
+	return []byte(e), nil
+}
+
+func (e *NotificationType) UnmarshalBinary(data []byte) error {
+	return e.Scan(data)
+}
+
+func (e NotificationType) Value() (driver.Value, error) {
+	return string(e), nil
+}
+
+func (e *NotificationType) Scan(value any) error {
+	switch x := value.(type) {
+	case string:
+		*e = NotificationType(x)
+	case []byte:
+		*e = NotificationType(x)
+	case nil:
+		return fmt.Errorf("cannot nil into NotificationType")
+	default:
+		return fmt.Errorf("cannot scan type %T: %v", value, value)
+	}
+
+	if !e.Valid() {
+		return fmt.Errorf("invalid NotificationType value: %s", *e)
+	}
+
+	return nil
+}
+
 // Enum values for ProviderTypes
 const (
 	ProviderTypesOauth       ProviderTypes = "oauth"
