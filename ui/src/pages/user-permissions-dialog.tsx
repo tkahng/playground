@@ -46,7 +46,7 @@ export function DialogDemo() {
   // const [value, setValue] = useState<Option[]>([]);
   const userId = userDetail?.id;
   const { data, isLoading, error } = useQuery({
-    queryKey: ["user-roles-reverse", userId],
+    queryKey: ["user-permissions-reverse", userId],
     queryFn: async () => {
       if (!user?.tokens.access_token || !userId) {
         throw new Error("Missing access token or role ID");

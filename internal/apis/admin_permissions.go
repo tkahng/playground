@@ -141,15 +141,27 @@ func (api *Api) AdminUserPermissionSourceList(ctx context.Context, input *struct
 	}
 	limit := input.PerPage
 	offset := (input.Page - 1) * input.PerPage
-	userPermissionSources, err := repository.ListUserPermissionsSource(ctx, db, id, limit, offset)
-	if err != nil {
-		return nil, err
+	var userPermissionSources []repository.PermissionSource
+	var count int64
+	if input.Reverse {
+		userPermissionSources, err = repository.ListUserNotPermissionsSource(ctx, db, id, limit, offset)
+		if err != nil {
+			return nil, err
+		}
+		count, err = repository.CountNotUserPermissionSource(ctx, db, id)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		userPermissionSources, err = repository.ListUserPermissionsSource(ctx, db, id, limit, offset)
+		if err != nil {
+			return nil, err
+		}
+		count, err = repository.CountUserPermissionSource(ctx, db, id)
+		if err != nil {
+			return nil, err
+		}
 	}
-	count, err := repository.CountUserPermissionSource(ctx, db, id)
-	if err != nil {
-		return nil, err
-	}
-
 	return &PaginatedOutput[repository.PermissionSource]{
 		Body: shared.PaginatedResponse[repository.PermissionSource]{
 

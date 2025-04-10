@@ -309,3 +309,115 @@ func CountUserPermissionSource(ctx context.Context, dbx bob.Executor, userId uui
 	}
 	return data, nil
 }
+
+const (
+	getuserNotPermissions = `WITH -- Get permissions assigned through roles
+role_based_permissions AS (
+    SELECT p.*,
+        rp.role_id,
+        NULL::uuid AS direct_assignment -- Null indicates not directly assigned
+    FROM public.user_roles ur
+        JOIN public.role_permissions rp ON ur.role_id = rp.role_id
+        JOIN public.permissions p ON rp.permission_id = p.id
+    WHERE ur.user_id = ?
+),
+-- Get permissions assigned directly to user
+direct_permissions AS (
+    SELECT p.*,
+        NULL::uuid AS role_id,
+        -- Null indicates not from a role
+        up.user_id AS direct_assignment
+    FROM public.user_permissions up
+        JOIN public.permissions p ON up.permission_id = p.id
+    WHERE up.user_id = ?
+),
+-- Combine both sources
+combined_permissions AS (
+    SELECT *
+    FROM role_based_permissions
+    UNION ALL
+    SELECT *
+    FROM direct_permissions
+) -- Final result with aggregated role information
+SELECT p.id,
+    p.name,
+    p.description,
+    p.created_at,
+    p.updated_at,
+    -- Array of role IDs that grant this permission (empty if direct)
+    array []::uuid [] AS role_ids,
+    -- Boolean indicating if permission is directly assigned
+    false AS is_directly_assigned
+FROM public.permissions p
+    LEFT JOIN combined_permissions cp ON p.id = cp.id
+WHERE cp.id IS NULL
+GROUP BY p.id
+ORDER BY p.name,
+    p.id
+LIMIT ? OFFSET ?;`
+	getuserNotPermissionCounts = `WITH -- Get permissions assigned through roles
+role_based_permissions AS (
+    SELECT p.*,
+        rp.role_id,
+        NULL::uuid AS direct_assignment -- Null indicates not directly assigned
+    FROM public.user_roles ur
+        JOIN public.role_permissions rp ON ur.role_id = rp.role_id
+        JOIN public.permissions p ON rp.permission_id = p.id
+    WHERE ur.user_id = ?
+),
+-- Get permissions assigned directly to user
+direct_permissions AS (
+    SELECT p.*,
+        NULL::uuid AS role_id,
+        -- Null indicates not from a role
+        up.user_id AS direct_assignment
+    FROM public.user_permissions up
+        JOIN public.permissions p ON up.permission_id = p.id
+    WHERE up.user_id = ?
+),
+-- Combine both sources
+combined_permissions AS (
+    SELECT *
+    FROM role_based_permissions
+    UNION ALL
+    SELECT *
+    FROM direct_permissions
+) -- Final result with aggregated role information
+SELECT COUNT(DISTINCT p.id)
+FROM public.permissions p
+    LEFT JOIN combined_permissions cp ON p.id = cp.id
+WHERE cp.id IS NULL;
+;`
+)
+
+func ListUserNotPermissionsSource(ctx context.Context, dbx bob.Executor, userId uuid.UUID, limit int, offset int) ([]PermissionSource, error) {
+	q := psql.RawQuery(getuserNotPermissions, userId, userId, limit, offset)
+
+	data, err := bob.All(ctx, dbx, q, scan.StructMapper[permSource]())
+	if err != nil {
+		return nil, err
+	}
+	res := make([]PermissionSource, len(data))
+	for i, p := range data {
+		res[i] = PermissionSource{
+			ID:          p.ID,
+			Name:        p.Name,
+			Description: p.Description,
+			CreatedAt:   p.CreatedAt,
+			UpdatedAt:   p.UpdatedAt,
+			RoleIDs:     ParseUUIDs(p.RoleIDs),
+			IsDirectly:  p.IsDirectly,
+		}
+	}
+	return res, nil
+}
+
+func CountNotUserPermissionSource(ctx context.Context, dbx bob.Executor, userId uuid.UUID) (int64, error) {
+	q := psql.RawQuery(getuserNotPermissionCounts, userId, userId)
+
+	data, err := bob.One(ctx, dbx, q, scan.SingleColumnMapper[int64])
+	if err != nil {
+		return 0, err
+	}
+	return data, nil
+}

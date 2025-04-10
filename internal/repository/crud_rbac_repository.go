@@ -68,6 +68,56 @@ func ListPermissionsFilterFunc(ctx context.Context, q *psql.ViewQuery[*models.Pe
 	// 		models.SelectWhere.Roles.ID.In(ids...),
 	// 	)
 	// }
+	// if filter.UserId != "" {
+	// 	id, err := uuid.Parse(filter.UserId)
+	// 	if err != nil {
+	// 		return
+	// 	}
+	// 	q.Apply(
+	// 		sm.LeftJoin(models.UserPermissions.NameAs()).On(
+	// 			models.PermissionColumns.ID.EQ(models.UserPermissionColumns.PermissionID),
+	// 			models.UserPermissionColumns.UserID.EQ(psql.Arg(id)),
+	// 		),
+	// 		sm.LeftJoin(models.UserRoles.NameAs()).On(
+	// 			models.UserPermissionColumns.UserID.EQ(models.UserRoleColumns.UserID),
+	// 		),
+	// 		sm.LeftJoin(models.Roles.NameAs()).On(
+	// 			models.UserRoleColumns.RoleID.EQ(models.RoleColumns.ID),
+	// 		),
+	// 		sm.LeftJoin(models.RolePermissions.NameAs()).On(
+	// 			models.RoleColumns.ID.EQ(models.RolePermissionColumns.RoleID),
+	// 			models.RolePermissionColumns.PermissionID.EQ(models.PermissionColumns.ID),
+	// 		),
+	// 		sm.GroupBy(
+	// 			models.PermissionColumns.ID),
+	// 		// sm.Where(
+	// 		// 	psql.And(
+	// 		// 		models.UserPermissionColumns.PermissionID.IsNull(),
+	// 		// 		models.RolePermissionColumns.PermissionID.IsNull(),
+	// 		// 	),
+	// 		// ),
+	// 	)
+	// 	if filter.RoleReverse {
+	// 		q.Apply(
+	// 			sm.Where(
+	// 				psql.Or(
+	// 					models.UserPermissionColumns.PermissionID.IsNull(),
+	// 					models.RolePermissionColumns.PermissionID.IsNull(),
+	// 				),
+	// 			),
+	// 		)
+	// 	} else {
+	// 		q.Apply(
+	// 			sm.Where(
+	// 				psql.And(
+	// 					models.UserPermissionColumns.PermissionID.IsNotNull(),
+	// 					models.RolePermissionColumns.PermissionID.IsNotNull(),
+	// 				),
+	// 			),
+	// 		)
+	// 	}
+	// 	return
+	// }
 	if filter.RoleId != "" {
 		id, err := uuid.Parse(filter.RoleId)
 		if err != nil {

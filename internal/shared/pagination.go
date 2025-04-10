@@ -53,7 +53,8 @@ type PermissionsListParams struct {
 }
 
 type UserPermissionsListFilter struct {
-	UserId string `path:"id" format:"uuid"`
+	UserId  string `path:"id" format:"uuid"`
+	Reverse bool   `query:"reverse,omitempty" required:"false"`
 }
 type UserPermissionsListParams struct {
 	PaginatedInput
