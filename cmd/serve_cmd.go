@@ -8,13 +8,9 @@ import (
 	"os"
 	"os/signal"
 	"sync"
+	"syscall"
 	"time"
 
-	"github.com/danielgtaylor/huma/v2"
-	"github.com/danielgtaylor/huma/v2/adapters/humachi"
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
-	"github.com/go-chi/cors"
 	"github.com/spf13/cobra"
 	"github.com/tkahng/authgo/internal/apis"
 	"github.com/tkahng/authgo/internal/conf"
@@ -37,17 +33,20 @@ func NewServeCmd() *cobra.Command {
 			// serve(ctx)
 		},
 	}
-	serveCmd.Flags().IntP("port", "p", 8080, "Port to listen on")
+	serveCmd.Flags().IntVarP(&port, "port", "p", 8080, "Port to listen on")
 	return serveCmd
 }
 
 func run(ctx context.Context) error {
-	ctx, cancel := signal.NotifyContext(ctx, os.Interrupt)
+	ctx, cancel := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM, syscall.SIGHUP, syscall.SIGINT)
 	defer cancel()
 	opts := conf.AppConfigGetter()
 	app := core.InitBaseApp(ctx, opts)
-	srv, api := NewServer()
+	srv, api := apis.NewServer()
 	apis.AddRoutes(api, app)
+	if port == 0 {
+		port = 8080
+	}
 	httpServer := &http.Server{
 		Addr:    fmt.Sprintf(":%d", port),
 		Handler: srv,
@@ -72,29 +71,4 @@ func run(ctx context.Context) error {
 	}()
 	wg.Wait()
 	return nil
-}
-
-func NewServer() (http.Handler, huma.API) {
-	var api huma.API
-	// ctx := context.Background()
-	// Create a new router & API
-	config := apis.InitApiConfig()
-	// config.DocsPath = ""
-	// r := http.newser
-	r := chi.NewMux()
-	r.Use(cors.Handler(cors.Options{
-		// AllowedOrigins:   []string{"https://foo.com"}, // Use this to allow specific origin hosts
-		AllowedOrigins: []string{"*"},
-		// AllowOriginFunc:  func(r *http.Request, origin string) bool { return true },
-		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
-		ExposedHeaders:   []string{"Link"},
-		AllowCredentials: true,
-		// MaxAge:           300, // Maximum value not ignored by any of major browsers
-	}))
-	r.Use(middleware.Logger)
-	r.Use(middleware.Recoverer)
-	api = humachi.New(r, config)
-	// grp := huma.NewGroup(api, "/api")
-	return r, api
 }
