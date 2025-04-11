@@ -52,7 +52,7 @@ func (api *Api) UploadMedia(ctx context.Context, input *struct {
 				return nil, err
 			}
 
-			dto, err := api.app.Fs().NewFileFromBytes(buf.Bytes(), file.Filename)
+			dto, err := api.app.Fs().NewFileFromBytes2(ctx, buf.Bytes(), file.Filename)
 			if err != nil {
 				return nil, err
 			}
@@ -143,5 +143,57 @@ func (api *Api) GetMedia(ctx context.Context, input *struct {
 		URL:       url,
 		CreatedAt: media.CreatedAt,
 		UpdatedAt: media.UpdatedAt,
+	}, nil
+}
+
+func (api *Api) MedialListOperation(path string /** /media */) huma.Operation {
+	return huma.Operation{
+		OperationID: "get-media-list",
+		Method:      http.MethodGet,
+		Path:        path,
+		Summary:     "Get media list",
+		Description: "Get media list",
+		Tags:        []string{"Media"},
+		Errors:      []int{http.StatusNotFound, http.StatusBadRequest},
+		Security: []map[string][]string{
+			{shared.BearerAuthSecurityKey: {}},
+		},
+	}
+}
+
+func (api *Api) MediaList(ctx context.Context, input *shared.MediaListParams) (*PaginatedOutput[*MediaOuput], error) {
+	db := api.app.Db()
+	medias, err := repository.ListMedia(ctx, db, input)
+	if err != nil {
+		return nil, err
+	}
+	var data []*MediaOuput
+	for _, media := range medias {
+		url, err := api.app.Fs().GeneratePresignedURL(ctx, media.Disk, path.Join(media.Directory, media.Filename))
+		if err != nil {
+			return nil, err
+		}
+		data = append(data, &MediaOuput{
+			ID:        media.ID,
+			Filename:  media.Filename,
+			URL:       url,
+			CreatedAt: media.CreatedAt,
+			UpdatedAt: media.UpdatedAt,
+		})
+	}
+	count, err := repository.CountMedia(ctx, db, &input.MediaListFilter)
+	if err != nil {
+		return nil, err
+	}
+
+	return &PaginatedOutput[*MediaOuput]{
+		Body: shared.PaginatedResponse[*MediaOuput]{
+			Data: data,
+			Meta: shared.Meta{
+				Page:    input.PaginatedInput.Page,
+				PerPage: input.PaginatedInput.PerPage,
+				Total:   int(count),
+			},
+		},
 	}, nil
 }

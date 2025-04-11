@@ -98,6 +98,10 @@ func BindApis(api huma.API, app core.App) {
 	authenticatedGroup := huma.NewGroup(api)
 	// ---- Upload File
 	huma.Register(authenticatedGroup, appApi.UploadMediaOperation("/media"), appApi.UploadMedia)
+	// ---- Get Media
+	huma.Register(authenticatedGroup, appApi.GetMediaOperation("/media/{id}"), appApi.GetMedia)
+	// ---- Get Media List
+	huma.Register(authenticatedGroup, appApi.MedialListOperation("/media"), appApi.MediaList)
 	// ---- notifications
 	sse.Register(authenticatedGroup, appApi.NotificationsSseOperation("/notifications/sse"), map[string]any{
 		// Mapping of event type name to Go struct for that event.

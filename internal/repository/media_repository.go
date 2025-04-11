@@ -22,8 +22,6 @@ func CreateMedia(ctx context.Context, exec bob.Executor, media *models.Medium) (
 			Extension:        omit.From(media.Extension),
 			MimeType:         omit.From(media.MimeType),
 			Size:             omit.From(media.Size),
-			CreatedAt:        omit.From(media.CreatedAt),
-			UpdatedAt:        omit.From(media.UpdatedAt),
 		},
 		im.Returning("*"),
 	)

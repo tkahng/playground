@@ -18,7 +18,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	awss3 "github.com/aws/aws-sdk-go-v2/service/s3"
-	"github.com/c2fo/vfs/v7/backend/s3"
 	"github.com/gabriel-vasile/mimetype"
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/conf"
@@ -26,8 +25,18 @@ import (
 
 type FileSystem struct {
 	client *awss3.Client
-	fs     *s3.FileSystem
 	cfg    conf.StorageConfig
+}
+
+func (fs *FileSystem) NewFile(ctx context.Context, authority string, key string, file io.Reader) error {
+	// Read content into memory or directly stream it
+
+	_, err := fs.client.PutObject(ctx, &awss3.PutObjectInput{
+		Bucket: aws.String(fs.cfg.BucketName),
+		Key:    aws.String(key),
+		Body:   file,
+	})
+	return err
 }
 
 func NewFileSystem(cfg conf.StorageConfig) (*FileSystem, error) {
@@ -43,17 +52,9 @@ func NewFileSystem(cfg conf.StorageConfig) (*FileSystem, error) {
 		o.BaseEndpoint = aws.String(cfg.EndpointUrl)
 		o.UsePathStyle = true
 	})
-	bucketAuth := s3.NewFileSystem(s3.WithOptions(s3.Options{
-		AccessKeyID:     cfg.ClientId,
-		SecretAccessKey: cfg.ClientSecret,
-		Region:          cfg.Region,
-		Endpoint:        cfg.EndpointUrl,
-		ForcePathStyle:  true,
-	}), s3.WithClient(client))
 
 	return &FileSystem{
 		client: client,
-		fs:     bucketAuth,
 		cfg:    cfg,
 	}, nil
 }
@@ -128,7 +129,7 @@ func (fs *FileSystem) NewFileFromURL(ctx context.Context, url string) (*FileDto,
 		return nil, err
 	}
 
-	return fs.NewFileFromBytes(buf.Bytes(), path.Base(url))
+	return fs.NewFileFromBytes2(ctx, buf.Bytes(), path.Base(url))
 }
 
 type FileDto struct {
@@ -142,18 +143,7 @@ type FileDto struct {
 	Size         int64     `db:"size" json:"size"`
 }
 
-// func (fs *FileSystem) NewFileFromReader(r io.WriteCloser, name string, size int) (*FileDto, error) {
-// 	defer r.Close()
-
-// 	var buf bytes.Buffer
-
-// 	if _, err = io.Copy(&buf, r); err != nil {
-// 		return nil, err
-// 	}
-
-//		return fs.NewFileFromBytes(buf.Bytes(), path.Base(url))
-//	}
-func (fs *FileSystem) NewFileFromBytes(b []byte, name string) (*FileDto, error) {
+func (fs *FileSystem) NewFileFromBytes2(ctx context.Context, b []byte, name string) (*FileDto, error) {
 	id := uuid.New()
 	size := len(b)
 	if size == 0 {
@@ -162,27 +152,17 @@ func (fs *FileSystem) NewFileFromBytes(b []byte, name string) (*FileDto, error) 
 	mime := http.DetectContentType(b)
 	ext := path.Ext(name)
 	if ext == "" {
-		ext = mimetype.Detect(b).Extension()
+		mt := mimetype.Detect(b)
+		ext = mt.Extension()
+		mime = mt.String()
 	}
 	key := "media/" + id.String() + ext
 
-	f, err := fs.fs.NewFile(fs.cfg.BucketName, "/"+key)
+	err := fs.NewFile(ctx, fs.cfg.BucketName, key, bytes.NewReader(b))
 	if err != nil {
 		return nil, err
 	}
-	defer f.Close()
 
-	ok, err := f.Exists()
-	if err != nil {
-		return nil, err
-	}
-	if ok {
-		return nil, errors.New("file already exists")
-	}
-
-	if _, err := f.Write(b); err != nil {
-		return nil, err
-	}
 	dto := &FileDto{
 		ID:           id,
 		Disk:         fs.cfg.BucketName,

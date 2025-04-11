@@ -13,7 +13,7 @@ import (
 	"github.com/tkahng/authgo/internal/shared"
 )
 
-func ListMedia(ctx context.Context, db bob.DB, input *shared.MediaListParams) ([]*models.Medium, error) {
+func ListMedia(ctx context.Context, db bob.DB, input *shared.MediaListParams) (models.MediumSlice, error) {
 	q := models.Media.Query()
 	filter := input.MediaListFilter
 	pageInput := &input.PaginatedInput
