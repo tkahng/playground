@@ -11,6 +11,7 @@ import (
 	"path"
 	"regexp"
 	"strings"
+	"time"
 	"unicode"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -32,7 +33,7 @@ type FileSystem struct {
 func NewFileSystem(cfg conf.StorageConfig) (*FileSystem, error) {
 	config, err := config.LoadDefaultConfig(context.TODO(),
 		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(cfg.ClientId, cfg.ClientSecret, "")),
-		config.WithRegion("auto"),
+		config.WithRegion(cfg.Region),
 	)
 	if err != nil {
 		log.Fatal(err)
@@ -40,12 +41,14 @@ func NewFileSystem(cfg conf.StorageConfig) (*FileSystem, error) {
 
 	client := awss3.NewFromConfig(config, func(o *awss3.Options) {
 		o.BaseEndpoint = aws.String(cfg.EndpointUrl)
+		o.UsePathStyle = true
 	})
 	bucketAuth := s3.NewFileSystem(s3.WithOptions(s3.Options{
 		AccessKeyID:     cfg.ClientId,
 		SecretAccessKey: cfg.ClientSecret,
 		Region:          cfg.Region,
 		Endpoint:        cfg.EndpointUrl,
+		ForcePathStyle:  true,
 	}), s3.WithClient(client))
 
 	return &FileSystem{
@@ -60,10 +63,10 @@ func (fs *FileSystem) GeneratePresignedURL(ctx context.Context, bucket, key stri
 
 	presignClient := awss3.NewPresignClient(client)
 
-	presignResult, err := presignClient.PresignPutObject(context.TODO(), &awss3.PutObjectInput{
-		Bucket: aws.String(fs.cfg.BucketName),
-		Key:    aws.String("example.txt"),
-	})
+	presignResult, err := presignClient.PresignGetObject(ctx, &awss3.GetObjectInput{
+		Bucket: aws.String(bucket),
+		Key:    aws.String(key),
+	}, awss3.WithPresignExpires(10*time.Minute))
 
 	if err != nil {
 		return "", err
@@ -150,9 +153,9 @@ func (fs *FileSystem) NewFileFromBytes(b []byte, name string) (*FileDto, error) 
 	if ext == "" {
 		ext = mimetype.Detect(b).Extension()
 	}
-	key := "/media/" + id.String() + ext
+	key := "media/" + id.String() + ext
 
-	f, err := fs.fs.NewFile(fs.cfg.BucketName, key)
+	f, err := fs.fs.NewFile(fs.cfg.BucketName, "/"+key)
 	if err != nil {
 		return nil, err
 	}
