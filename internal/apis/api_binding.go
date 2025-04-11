@@ -94,15 +94,16 @@ func BindApis(api huma.API, app core.App) {
 	huma.Register(api, appApi.OAuth2CallbackGetOperation("/auth/callback"), appApi.OAuth2CallbackGet)
 	huma.Register(api, appApi.OAuth2CallbackPostOperation("/auth/callback"), appApi.OAuth2CallbackPost)
 	huma.Register(api, appApi.OAuth2AuthorizationUrlOperation("/auth/authorization-url"), appApi.OAuth2AuthorizationUrl)
-	// authenticated routes
+	// authenticated routes -----------------------------------------------------------
 	authenticatedGroup := huma.NewGroup(api)
-	// authenticatedGroup.UseMiddleware(RequireAuthMiddleware(api))
-	// notifications
+	// ---- Upload File
+	huma.Register(authenticatedGroup, appApi.UploadMediaOperation("/media"), appApi.UploadMedia)
+	// ---- notifications
 	sse.Register(authenticatedGroup, appApi.NotificationsSseOperation("/notifications/sse"), map[string]any{
 		// Mapping of event type name to Go struct for that event.
 		"message": models.Notification{},
 	}, appApi.NotificationsSsefunc)
-	// stripe routes
+	// stripe routes -------------------------------------------------------------------------------------------------
 	stripeGroup := huma.NewGroup(api, "/stripe")
 	// stripe webhook
 	huma.Register(stripeGroup, appApi.StripeWebhookOperation("/webhook"), appApi.StripeWebhook)
@@ -113,7 +114,7 @@ func BindApis(api huma.API, app core.App) {
 	//  stripe checkout session
 	huma.Register(stripeGroup, appApi.StripeCheckoutSessionOperation("/checkout-session"), appApi.StripeCheckoutSession)
 
-	//  admin routes
+	//  admin routes ----------------------------------------------------------------------------
 	adminGroup := huma.NewGroup(api, "/admin")
 	//  admin middleware
 	adminGroup.UseMiddleware(CheckRolesMiddleware(api, "superuser"))

@@ -8,6 +8,7 @@ import (
 	"github.com/tkahng/authgo/internal/conf"
 	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/authgo/internal/tools/filesystem"
 	"github.com/tkahng/authgo/internal/tools/mailer"
 )
 
@@ -23,8 +24,9 @@ type App interface {
 	Cfg() *conf.EnvConfig
 	TokenStorage() *TokenStorage
 	TokenVerifier() *TokenVerifier
-
+	Pool() *pgxpool.Pool
 	Db() bob.DB
+	Fs() *filesystem.FileSystem
 	// SetSettings(settings *AppOptions)
 	Settings() *AppOptions
 	NewMailClient() mailer.Mailer

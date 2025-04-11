@@ -1,5 +1,7 @@
-INSERT INTO notifications (content, type)
-VALUES ('{ "message": "test" }', 'default');
+SELECT *
+FROM media;
+-- INSERT INTO notifications (content, type)
+-- VALUES ('{ "message": "test" }', 'default');
 -- WITH -- Get permissions assigned through roles
 -- role_based_permissions AS (
 --     SELECT p.*,

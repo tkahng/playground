@@ -142,6 +142,17 @@ type FileDto struct {
 	Size         int64     `db:"size" json:"size"`
 }
 
+// func (fs *FileSystem) NewFileFromReader(r io.WriteCloser, name string, size int) (*FileDto, error) {
+// 	defer r.Close()
+
+// 	var buf bytes.Buffer
+
+// 	if _, err = io.Copy(&buf, r); err != nil {
+// 		return nil, err
+// 	}
+
+//		return fs.NewFileFromBytes(buf.Bytes(), path.Base(url))
+//	}
 func (fs *FileSystem) NewFileFromBytes(b []byte, name string) (*FileDto, error) {
 	id := uuid.New()
 	size := len(b)

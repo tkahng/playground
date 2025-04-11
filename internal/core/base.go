@@ -10,6 +10,7 @@ import (
 	"github.com/tkahng/authgo/internal/pool"
 	"github.com/tkahng/authgo/internal/repository"
 
+	"github.com/tkahng/authgo/internal/tools/filesystem"
 	"github.com/tkahng/authgo/internal/tools/logger"
 	"github.com/tkahng/authgo/internal/tools/mailer"
 	"github.com/tkahng/authgo/internal/tools/payment"
@@ -26,8 +27,13 @@ type BaseApp struct {
 	settings      *AppOptions
 	payment       *StripeService
 	logger        *slog.Logger
+	fs            *filesystem.FileSystem
 	// onAfterRequestHandle  *hook.Hook[*BaseEvent]
 	// onBeforeRequestHandle *hook.Hook[*BaseEvent]
+}
+
+func (app *BaseApp) Fs() *filesystem.FileSystem {
+	return app.fs
 }
 
 func (app *BaseApp) Logger() *slog.Logger {
@@ -91,8 +97,12 @@ func NewBaseApp(pool *pgxpool.Pool, cfg conf.EnvConfig) *BaseApp {
 	oauth := OAuth2ConfigFromEnv(cfg)
 	settings := NewDefaultSettings()
 	settings.Auth.OAuth2Config = oauth
-
+	fs, err := filesystem.NewFileSystem(cfg.StorageConfig)
+	if err != nil {
+		panic(err)
+	}
 	return &BaseApp{
+		fs:       fs,
 		pool:     pool,
 		db:       NewBobFromPool(pool),
 		settings: settings,
