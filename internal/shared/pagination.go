@@ -62,6 +62,17 @@ type UserPermissionsListParams struct {
 	SortParams
 }
 
+type MediaListFilter struct {
+	Q      string `query:"q,omitempty" required:"false"`
+	UserID string `query:"userId,omitempty" format:"uuid" required:"false"`
+}
+
+type MediaListParams struct {
+	PaginatedInput
+	MediaListFilter
+	SortParams
+}
+
 type StripeProductListFilter struct {
 	Q      string       `query:"q,omitempty" required:"false"`
 	Ids    []string     `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
@@ -108,15 +119,6 @@ type StripeCustomerListParams struct {
 	SortParams
 	Expand []string `query:"expand,omitempty" required:"false" minimum:"1" maximum:"100" enum:"users"`
 }
-
-// StripeSubscriptionStatusTrialing          StripeSubscriptionStatus = "trialing"
-// StripeSubscriptionStatusActive            StripeSubscriptionStatus = "active"
-// StripeSubscriptionStatusCanceled          StripeSubscriptionStatus = "canceled"
-// StripeSubscriptionStatusIncomplete        StripeSubscriptionStatus = "incomplete"
-// StripeSubscriptionStatusIncompleteExpired StripeSubscriptionStatus = "incomplete_expired"
-// StripeSubscriptionStatusPastDue           StripeSubscriptionStatus = "past_due"
-// StripeSubscriptionStatusUnpaid            StripeSubscriptionStatus = "unpaid"
-// StripeSubscriptionStatusPaused            StripeSubscriptionStatus = "paused"
 
 type StripeSubscriptionListFilter struct {
 	Q      string   `query:"q,omitempty" required:"false"`

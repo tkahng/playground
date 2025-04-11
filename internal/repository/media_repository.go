@@ -5,6 +5,7 @@ import (
 
 	"github.com/aarondl/opt/omit"
 	"github.com/aarondl/opt/omitnull"
+	"github.com/google/uuid"
 	"github.com/stephenafamo/bob"
 	"github.com/stephenafamo/bob/dialect/psql/im"
 	"github.com/tkahng/authgo/internal/db/models"
@@ -32,4 +33,11 @@ func CreateMedia(ctx context.Context, exec bob.Executor, media *models.Medium) (
 		return nil, err
 	}
 	return d, nil
+}
+
+func FindMediaByID(ctx context.Context, exec bob.Executor, id uuid.UUID) (*models.Medium, error) {
+	data, err := models.Media.Query(
+		models.SelectWhere.Media.ID.EQ(id),
+	).One(ctx, exec)
+	return OptionalRow(data, err)
 }

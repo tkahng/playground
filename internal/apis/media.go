@@ -5,9 +5,12 @@ import (
 	"context"
 	"io"
 	"net/http"
+	"path"
+	"time"
 
 	"github.com/aarondl/opt/null"
 	"github.com/danielgtaylor/huma/v2"
+	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/core"
 	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/repository"
@@ -93,4 +96,52 @@ func (api *Api) UploadMedia(ctx context.Context, input *struct {
 	}
 
 	return nil, nil
+}
+
+type MediaOuput struct {
+	ID        uuid.UUID `json:"id" db:"id" format:"uuid"`
+	Filename  string    `json:"filename" db:"filename"`
+	URL       string    `json:"url" db:"url" format:"uri"`
+	CreatedAt time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt time.Time `json:"updated_at" db:"updated_at"`
+}
+
+func (api *Api) GetMediaOperation(path string /** /media/:id */) huma.Operation {
+	return huma.Operation{
+		OperationID: "get-media",
+		Method:      http.MethodGet,
+		Path:        path,
+		Summary:     "Get media",
+		Description: "Get media",
+		Tags:        []string{"Media"},
+		Errors:      []int{http.StatusNotFound, http.StatusBadRequest},
+		Security: []map[string][]string{
+			{shared.BearerAuthSecurityKey: {}},
+		},
+	}
+}
+
+func (api *Api) GetMedia(ctx context.Context, input *struct {
+	ID string `path:"id" format:"uuid" required:"true" description:"Id of the media"`
+}) (*MediaOuput, error) {
+	db := api.app.Db()
+	id, err := uuid.Parse(input.ID)
+	if err != nil {
+		return nil, err
+	}
+	media, err := repository.FindMediaByID(ctx, db, id)
+	if err != nil {
+		return nil, err
+	}
+	url, err := api.app.Fs().GeneratePresignedURL(ctx, media.Disk, path.Join(media.Directory, media.Filename))
+	if err != nil {
+		return nil, err
+	}
+	return &MediaOuput{
+		ID:        media.ID,
+		Filename:  media.Filename,
+		URL:       url,
+		CreatedAt: media.CreatedAt,
+		UpdatedAt: media.UpdatedAt,
+	}, nil
 }
