@@ -9,13 +9,6 @@ import (
 	"github.com/tkahng/authgo/internal/shared"
 )
 
-type VerifyTokenType string
-
-const (
-	VerifyTokenTypeEmail VerifyTokenType = "verification_token"
-	// VerifyTokenTypePassword VerifyTokenType = "password_reset_token"
-)
-
 type OtpInput struct {
 	Token string           `query:"token" json:"token" required:"true"`
 	Type  shared.TokenType `query:"type" json:"type" required:"true"`
@@ -36,9 +29,6 @@ func (api *Api) VerifyOperation(path string) huma.Operation {
 		Description: "Verify",
 		Tags:        []string{"Auth", "Verify"},
 		Errors:      []int{http.StatusNotFound, http.StatusBadRequest},
-		// Security: []map[string][]string{
-		// 	{shared.BearerAuthSecurityKey: {}},
-		// },
 	}
 }
 
