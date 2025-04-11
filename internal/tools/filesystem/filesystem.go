@@ -1,91 +1,183 @@
 package filesystem
 
 import (
+	"bytes"
+	"context"
+	"errors"
+	"fmt"
+	"io"
+	"log"
+	"net/http"
+	"path"
+	"regexp"
+	"strings"
+	"unicode"
+
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/credentials"
+	awss3 "github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/c2fo/vfs/v7/backend/s3"
+	"github.com/gabriel-vasile/mimetype"
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/conf"
 )
 
 type FileSystem struct {
-	fs  *s3.FileSystem
-	cfg conf.StorageConfig
+	client *awss3.Client
+	fs     *s3.FileSystem
+	cfg    conf.StorageConfig
 }
 
-func NewFileSystem(cfg conf.StorageConfig) FileSystem {
+func NewFileSystem(cfg conf.StorageConfig) (*FileSystem, error) {
+	config, err := config.LoadDefaultConfig(context.TODO(),
+		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(cfg.ClientId, cfg.ClientSecret, "")),
+		config.WithRegion("auto"),
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	client := awss3.NewFromConfig(config, func(o *awss3.Options) {
+		o.BaseEndpoint = aws.String(cfg.EndpointUrl)
+	})
 	bucketAuth := s3.NewFileSystem(s3.WithOptions(s3.Options{
 		AccessKeyID:     cfg.ClientId,
 		SecretAccessKey: cfg.ClientSecret,
 		Region:          cfg.Region,
 		Endpoint:        cfg.EndpointUrl,
-	}))
+	}), s3.WithClient(client))
 
-	return FileSystem{
-		fs:  bucketAuth,
-		cfg: cfg,
-	}
+	return &FileSystem{
+		client: client,
+		fs:     bucketAuth,
+		cfg:    cfg,
+	}, nil
 }
 
-// func extractExtension(name string) string {
-// 	primaryDot := strings.LastIndex(name, ".")
+func (fs *FileSystem) GeneratePresignedURL(ctx context.Context, bucket, key string) (string, error) {
+	client := fs.client
 
-// 	if primaryDot == -1 {
-// 		return ""
-// 	}
+	presignClient := awss3.NewPresignClient(client)
 
-// 	// look for secondary extension
-// 	secondaryDot := strings.LastIndex(name[:primaryDot], ".")
-// 	if secondaryDot >= 0 {
-// 		return name[secondaryDot:]
-// 	}
+	presignResult, err := presignClient.PresignPutObject(context.TODO(), &awss3.PutObjectInput{
+		Bucket: aws.String(fs.cfg.BucketName),
+		Key:    aws.String("example.txt"),
+	})
 
-// 	return name[primaryDot:]
-// }
+	if err != nil {
+		return "", err
+	}
 
-// func (fs *FileSystem) NewFileFromURL(ctx context.Context, url string) (vfs.File, error) {
-// 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
-// 	if err != nil {
-// 		return nil, err
-// 	}
+	return presignResult.URL, nil
+}
 
-// 	res, err := http.DefaultClient.Do(req)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	defer res.Body.Close()
+var snakecaseSplitRegex = regexp.MustCompile(`[\W_]+`)
 
-// 	if res.StatusCode < 200 || res.StatusCode > 399 {
-// 		return nil, fmt.Errorf("failed to download url %s (%d)", url, res.StatusCode)
-// 	}
+func Snakecase(str string) string {
+	var result strings.Builder
 
-// 	var buf bytes.Buffer
+	// split at any non word character and underscore
+	words := snakecaseSplitRegex.Split(str, -1)
 
-// 	if _, err = io.Copy(&buf, res.Body); err != nil {
-// 		return nil, err
-// 	}
+	for _, word := range words {
+		if word == "" {
+			continue
+		}
 
-// 	return fs.NewFileFromBytes(buf.Bytes(), path.Base(url))
-// }
+		if result.Len() > 0 {
+			result.WriteString("_")
+		}
+
+		for i, c := range word {
+			if unicode.IsUpper(c) && i > 0 &&
+				// is not a following uppercase character
+				!unicode.IsUpper(rune(word[i-1])) {
+				result.WriteString("_")
+			}
+
+			result.WriteRune(c)
+		}
+	}
+
+	return strings.ToLower(result.String())
+}
+
+func (fs *FileSystem) NewFileFromURL(ctx context.Context, url string) (*FileDto, error) {
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode < 200 || res.StatusCode > 399 {
+		return nil, fmt.Errorf("failed to download url %s (%d)", url, res.StatusCode)
+	}
+
+	var buf bytes.Buffer
+
+	if _, err = io.Copy(&buf, res.Body); err != nil {
+		return nil, err
+	}
+
+	return fs.NewFileFromBytes(buf.Bytes(), path.Base(url))
+}
 
 type FileDto struct {
 	ID           uuid.UUID `json:"id"`
-	Size         int64     `json:"size"`
-	Extension    string    `json:"extension"`
-	MimeType     string    `json:"mime_type"`
-	OriginalName string    `json:"original_name"`
+	Disk         string    `db:"disk" json:"disk"`
+	Directory    string    `db:"directory" json:"directory"`
+	Filename     string    `db:"filename" json:"filename"`
+	OriginalName string    `db:"original_name" json:"original_name"`
+	Extension    string    `db:"extension" json:"extension"`
+	MimeType     string    `db:"mime_type" json:"mime_type"`
+	Size         int64     `db:"size" json:"size"`
 }
 
-// func (fs *FileSystem) NewFileFromBytes(b []byte, name string) (vfs.File, error) {
-// 	id := uuid.New()
-// 	size := len(b)
-// 	if size == 0 {
-// 		return nil, errors.New("cannot create an empty file")
-// 	}
-// 	mime := http.DetectContentType(b)
-// 	// f := &FileDto{}
-// 	a := mimetype.Lookup(mime)
-// 	// f.Size = int64(size)
-// 	// f.OriginalName = name
-// 	// f.Name = normalizeName(f.Reader, f.OriginalName)
+func (fs *FileSystem) NewFileFromBytes(b []byte, name string) (*FileDto, error) {
+	id := uuid.New()
+	size := len(b)
+	if size == 0 {
+		return nil, errors.New("cannot create an empty file")
+	}
+	mime := http.DetectContentType(b)
+	ext := path.Ext(name)
+	if ext == "" {
+		ext = mimetype.Detect(b).Extension()
+	}
+	key := "/media/" + id.String() + ext
 
-// 	return nil, nil
-// }
+	f, err := fs.fs.NewFile(fs.cfg.BucketName, key)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	ok, err := f.Exists()
+	if err != nil {
+		return nil, err
+	}
+	if ok {
+		return nil, errors.New("file already exists")
+	}
+
+	if _, err := f.Write(b); err != nil {
+		return nil, err
+	}
+	dto := &FileDto{
+		ID:           id,
+		Disk:         fs.cfg.BucketName,
+		Directory:    path.Dir(key),
+		Filename:     path.Base(key),
+		OriginalName: name,
+		Extension:    ext,
+		MimeType:     mime,
+		Size:         int64(size),
+	}
+	return dto, nil
+}

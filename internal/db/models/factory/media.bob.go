@@ -38,16 +38,17 @@ func (mods MediumModSlice) Apply(n *MediumTemplate) {
 // MediumTemplate is an object representing the database table.
 // all columns are optional and should be set by mods
 type MediumTemplate struct {
-	ID        func() uuid.UUID
-	UserID    func() null.Val[uuid.UUID]
-	Disk      func() string
-	Directory func() string
-	Filename  func() string
-	Extension func() string
-	MimeType  func() string
-	Size      func() int64
-	CreatedAt func() time.Time
-	UpdatedAt func() time.Time
+	ID               func() uuid.UUID
+	UserID           func() null.Val[uuid.UUID]
+	Disk             func() string
+	Directory        func() string
+	Filename         func() string
+	OriginalFilename func() string
+	Extension        func() string
+	MimeType         func() string
+	Size             func() int64
+	CreatedAt        func() time.Time
+	UpdatedAt        func() time.Time
 
 	r mediumR
 	f *Factory
@@ -87,6 +88,9 @@ func (o MediumTemplate) toModel() *models.Medium {
 	}
 	if o.Filename != nil {
 		m.Filename = o.Filename()
+	}
+	if o.OriginalFilename != nil {
+		m.OriginalFilename = o.OriginalFilename()
 	}
 	if o.Extension != nil {
 		m.Extension = o.Extension()
@@ -149,6 +153,9 @@ func (o MediumTemplate) BuildSetter() *models.MediumSetter {
 	}
 	if o.Filename != nil {
 		m.Filename = omit.From(o.Filename())
+	}
+	if o.OriginalFilename != nil {
+		m.OriginalFilename = omit.From(o.OriginalFilename())
 	}
 	if o.Extension != nil {
 		m.Extension = omit.From(o.Extension())
@@ -213,6 +220,9 @@ func ensureCreatableMedium(m *models.MediumSetter) {
 	}
 	if m.Filename.IsUnset() {
 		m.Filename = omit.From(random_string(nil))
+	}
+	if m.OriginalFilename.IsUnset() {
+		m.OriginalFilename = omit.From(random_string(nil))
 	}
 	if m.Extension.IsUnset() {
 		m.Extension = omit.From(random_string(nil))
@@ -355,6 +365,7 @@ func (m mediumMods) RandomizeAllColumns(f *faker.Faker) MediumMod {
 		MediumMods.RandomDisk(f),
 		MediumMods.RandomDirectory(f),
 		MediumMods.RandomFilename(f),
+		MediumMods.RandomOriginalFilename(f),
 		MediumMods.RandomExtension(f),
 		MediumMods.RandomMimeType(f),
 		MediumMods.RandomSize(f),
@@ -521,6 +532,37 @@ func (m mediumMods) UnsetFilename() MediumMod {
 func (m mediumMods) RandomFilename(f *faker.Faker) MediumMod {
 	return MediumModFunc(func(o *MediumTemplate) {
 		o.Filename = func() string {
+			return random_string(f)
+		}
+	})
+}
+
+// Set the model columns to this value
+func (m mediumMods) OriginalFilename(val string) MediumMod {
+	return MediumModFunc(func(o *MediumTemplate) {
+		o.OriginalFilename = func() string { return val }
+	})
+}
+
+// Set the Column from the function
+func (m mediumMods) OriginalFilenameFunc(f func() string) MediumMod {
+	return MediumModFunc(func(o *MediumTemplate) {
+		o.OriginalFilename = f
+	})
+}
+
+// Clear any values for the column
+func (m mediumMods) UnsetOriginalFilename() MediumMod {
+	return MediumModFunc(func(o *MediumTemplate) {
+		o.OriginalFilename = nil
+	})
+}
+
+// Generates a random value for the column using the given faker
+// if faker is nil, a default faker is used
+func (m mediumMods) RandomOriginalFilename(f *faker.Faker) MediumMod {
+	return MediumModFunc(func(o *MediumTemplate) {
+		o.OriginalFilename = func() string {
 			return random_string(f)
 		}
 	})

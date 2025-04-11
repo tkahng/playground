@@ -6,6 +6,7 @@ create table if not exists public.media (
         disk varchar(32) not null,
         directory varchar(255) not null,
         filename varchar(255) not null,
+        original_filename varchar(255) not null,
         extension varchar(32) not null,
         mime_type varchar(128) not null,
         size bigint not null,

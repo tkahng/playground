@@ -28,16 +28,17 @@ import (
 
 // Medium is an object representing the database table.
 type Medium struct {
-	ID        uuid.UUID           `db:"id,pk" json:"id"`
-	UserID    null.Val[uuid.UUID] `db:"user_id" json:"user_id"`
-	Disk      string              `db:"disk" json:"disk"`
-	Directory string              `db:"directory" json:"directory"`
-	Filename  string              `db:"filename" json:"filename"`
-	Extension string              `db:"extension" json:"extension"`
-	MimeType  string              `db:"mime_type" json:"mime_type"`
-	Size      int64               `db:"size" json:"size"`
-	CreatedAt time.Time           `db:"created_at" json:"created_at"`
-	UpdatedAt time.Time           `db:"updated_at" json:"updated_at"`
+	ID               uuid.UUID           `db:"id,pk" json:"id"`
+	UserID           null.Val[uuid.UUID] `db:"user_id" json:"user_id"`
+	Disk             string              `db:"disk" json:"disk"`
+	Directory        string              `db:"directory" json:"directory"`
+	Filename         string              `db:"filename" json:"filename"`
+	OriginalFilename string              `db:"original_filename" json:"original_filename"`
+	Extension        string              `db:"extension" json:"extension"`
+	MimeType         string              `db:"mime_type" json:"mime_type"`
+	Size             int64               `db:"size" json:"size"`
+	CreatedAt        time.Time           `db:"created_at" json:"created_at"`
+	UpdatedAt        time.Time           `db:"updated_at" json:"updated_at"`
 
 	R mediumR `db:"-" json:"-"`
 }
@@ -58,32 +59,34 @@ type mediumR struct {
 }
 
 type mediumColumnNames struct {
-	ID        string
-	UserID    string
-	Disk      string
-	Directory string
-	Filename  string
-	Extension string
-	MimeType  string
-	Size      string
-	CreatedAt string
-	UpdatedAt string
+	ID               string
+	UserID           string
+	Disk             string
+	Directory        string
+	Filename         string
+	OriginalFilename string
+	Extension        string
+	MimeType         string
+	Size             string
+	CreatedAt        string
+	UpdatedAt        string
 }
 
 var MediumColumns = buildMediumColumns("media")
 
 type mediumColumns struct {
-	tableAlias string
-	ID         psql.Expression
-	UserID     psql.Expression
-	Disk       psql.Expression
-	Directory  psql.Expression
-	Filename   psql.Expression
-	Extension  psql.Expression
-	MimeType   psql.Expression
-	Size       psql.Expression
-	CreatedAt  psql.Expression
-	UpdatedAt  psql.Expression
+	tableAlias       string
+	ID               psql.Expression
+	UserID           psql.Expression
+	Disk             psql.Expression
+	Directory        psql.Expression
+	Filename         psql.Expression
+	OriginalFilename psql.Expression
+	Extension        psql.Expression
+	MimeType         psql.Expression
+	Size             psql.Expression
+	CreatedAt        psql.Expression
+	UpdatedAt        psql.Expression
 }
 
 func (c mediumColumns) Alias() string {
@@ -96,31 +99,33 @@ func (mediumColumns) AliasedAs(alias string) mediumColumns {
 
 func buildMediumColumns(alias string) mediumColumns {
 	return mediumColumns{
-		tableAlias: alias,
-		ID:         psql.Quote(alias, "id"),
-		UserID:     psql.Quote(alias, "user_id"),
-		Disk:       psql.Quote(alias, "disk"),
-		Directory:  psql.Quote(alias, "directory"),
-		Filename:   psql.Quote(alias, "filename"),
-		Extension:  psql.Quote(alias, "extension"),
-		MimeType:   psql.Quote(alias, "mime_type"),
-		Size:       psql.Quote(alias, "size"),
-		CreatedAt:  psql.Quote(alias, "created_at"),
-		UpdatedAt:  psql.Quote(alias, "updated_at"),
+		tableAlias:       alias,
+		ID:               psql.Quote(alias, "id"),
+		UserID:           psql.Quote(alias, "user_id"),
+		Disk:             psql.Quote(alias, "disk"),
+		Directory:        psql.Quote(alias, "directory"),
+		Filename:         psql.Quote(alias, "filename"),
+		OriginalFilename: psql.Quote(alias, "original_filename"),
+		Extension:        psql.Quote(alias, "extension"),
+		MimeType:         psql.Quote(alias, "mime_type"),
+		Size:             psql.Quote(alias, "size"),
+		CreatedAt:        psql.Quote(alias, "created_at"),
+		UpdatedAt:        psql.Quote(alias, "updated_at"),
 	}
 }
 
 type mediumWhere[Q psql.Filterable] struct {
-	ID        psql.WhereMod[Q, uuid.UUID]
-	UserID    psql.WhereNullMod[Q, uuid.UUID]
-	Disk      psql.WhereMod[Q, string]
-	Directory psql.WhereMod[Q, string]
-	Filename  psql.WhereMod[Q, string]
-	Extension psql.WhereMod[Q, string]
-	MimeType  psql.WhereMod[Q, string]
-	Size      psql.WhereMod[Q, int64]
-	CreatedAt psql.WhereMod[Q, time.Time]
-	UpdatedAt psql.WhereMod[Q, time.Time]
+	ID               psql.WhereMod[Q, uuid.UUID]
+	UserID           psql.WhereNullMod[Q, uuid.UUID]
+	Disk             psql.WhereMod[Q, string]
+	Directory        psql.WhereMod[Q, string]
+	Filename         psql.WhereMod[Q, string]
+	OriginalFilename psql.WhereMod[Q, string]
+	Extension        psql.WhereMod[Q, string]
+	MimeType         psql.WhereMod[Q, string]
+	Size             psql.WhereMod[Q, int64]
+	CreatedAt        psql.WhereMod[Q, time.Time]
+	UpdatedAt        psql.WhereMod[Q, time.Time]
 }
 
 func (mediumWhere[Q]) AliasedAs(alias string) mediumWhere[Q] {
@@ -129,16 +134,17 @@ func (mediumWhere[Q]) AliasedAs(alias string) mediumWhere[Q] {
 
 func buildMediumWhere[Q psql.Filterable](cols mediumColumns) mediumWhere[Q] {
 	return mediumWhere[Q]{
-		ID:        psql.Where[Q, uuid.UUID](cols.ID),
-		UserID:    psql.WhereNull[Q, uuid.UUID](cols.UserID),
-		Disk:      psql.Where[Q, string](cols.Disk),
-		Directory: psql.Where[Q, string](cols.Directory),
-		Filename:  psql.Where[Q, string](cols.Filename),
-		Extension: psql.Where[Q, string](cols.Extension),
-		MimeType:  psql.Where[Q, string](cols.MimeType),
-		Size:      psql.Where[Q, int64](cols.Size),
-		CreatedAt: psql.Where[Q, time.Time](cols.CreatedAt),
-		UpdatedAt: psql.Where[Q, time.Time](cols.UpdatedAt),
+		ID:               psql.Where[Q, uuid.UUID](cols.ID),
+		UserID:           psql.WhereNull[Q, uuid.UUID](cols.UserID),
+		Disk:             psql.Where[Q, string](cols.Disk),
+		Directory:        psql.Where[Q, string](cols.Directory),
+		Filename:         psql.Where[Q, string](cols.Filename),
+		OriginalFilename: psql.Where[Q, string](cols.OriginalFilename),
+		Extension:        psql.Where[Q, string](cols.Extension),
+		MimeType:         psql.Where[Q, string](cols.MimeType),
+		Size:             psql.Where[Q, int64](cols.Size),
+		CreatedAt:        psql.Where[Q, time.Time](cols.CreatedAt),
+		UpdatedAt:        psql.Where[Q, time.Time](cols.UpdatedAt),
 	}
 }
 
@@ -158,20 +164,21 @@ type mediumErrors struct {
 // All values are optional, and do not have to be set
 // Generated columns are not included
 type MediumSetter struct {
-	ID        omit.Val[uuid.UUID]     `db:"id,pk" json:"id"`
-	UserID    omitnull.Val[uuid.UUID] `db:"user_id" json:"user_id"`
-	Disk      omit.Val[string]        `db:"disk" json:"disk"`
-	Directory omit.Val[string]        `db:"directory" json:"directory"`
-	Filename  omit.Val[string]        `db:"filename" json:"filename"`
-	Extension omit.Val[string]        `db:"extension" json:"extension"`
-	MimeType  omit.Val[string]        `db:"mime_type" json:"mime_type"`
-	Size      omit.Val[int64]         `db:"size" json:"size"`
-	CreatedAt omit.Val[time.Time]     `db:"created_at" json:"created_at"`
-	UpdatedAt omit.Val[time.Time]     `db:"updated_at" json:"updated_at"`
+	ID               omit.Val[uuid.UUID]     `db:"id,pk" json:"id"`
+	UserID           omitnull.Val[uuid.UUID] `db:"user_id" json:"user_id"`
+	Disk             omit.Val[string]        `db:"disk" json:"disk"`
+	Directory        omit.Val[string]        `db:"directory" json:"directory"`
+	Filename         omit.Val[string]        `db:"filename" json:"filename"`
+	OriginalFilename omit.Val[string]        `db:"original_filename" json:"original_filename"`
+	Extension        omit.Val[string]        `db:"extension" json:"extension"`
+	MimeType         omit.Val[string]        `db:"mime_type" json:"mime_type"`
+	Size             omit.Val[int64]         `db:"size" json:"size"`
+	CreatedAt        omit.Val[time.Time]     `db:"created_at" json:"created_at"`
+	UpdatedAt        omit.Val[time.Time]     `db:"updated_at" json:"updated_at"`
 }
 
 func (s MediumSetter) SetColumns() []string {
-	vals := make([]string, 0, 10)
+	vals := make([]string, 0, 11)
 	if !s.ID.IsUnset() {
 		vals = append(vals, "id")
 	}
@@ -190,6 +197,10 @@ func (s MediumSetter) SetColumns() []string {
 
 	if !s.Filename.IsUnset() {
 		vals = append(vals, "filename")
+	}
+
+	if !s.OriginalFilename.IsUnset() {
+		vals = append(vals, "original_filename")
 	}
 
 	if !s.Extension.IsUnset() {
@@ -231,6 +242,9 @@ func (s MediumSetter) Overwrite(t *Medium) {
 	if !s.Filename.IsUnset() {
 		t.Filename, _ = s.Filename.Get()
 	}
+	if !s.OriginalFilename.IsUnset() {
+		t.OriginalFilename, _ = s.OriginalFilename.Get()
+	}
 	if !s.Extension.IsUnset() {
 		t.Extension, _ = s.Extension.Get()
 	}
@@ -254,7 +268,7 @@ func (s *MediumSetter) Apply(q *dialect.InsertQuery) {
 	})
 
 	q.AppendValues(bob.ExpressionFunc(func(ctx context.Context, w io.Writer, d bob.Dialect, start int) ([]any, error) {
-		vals := make([]bob.Expression, 10)
+		vals := make([]bob.Expression, 11)
 		if s.ID.IsUnset() {
 			vals[0] = psql.Raw("DEFAULT")
 		} else {
@@ -285,34 +299,40 @@ func (s *MediumSetter) Apply(q *dialect.InsertQuery) {
 			vals[4] = psql.Arg(s.Filename)
 		}
 
-		if s.Extension.IsUnset() {
+		if s.OriginalFilename.IsUnset() {
 			vals[5] = psql.Raw("DEFAULT")
 		} else {
-			vals[5] = psql.Arg(s.Extension)
+			vals[5] = psql.Arg(s.OriginalFilename)
+		}
+
+		if s.Extension.IsUnset() {
+			vals[6] = psql.Raw("DEFAULT")
+		} else {
+			vals[6] = psql.Arg(s.Extension)
 		}
 
 		if s.MimeType.IsUnset() {
-			vals[6] = psql.Raw("DEFAULT")
+			vals[7] = psql.Raw("DEFAULT")
 		} else {
-			vals[6] = psql.Arg(s.MimeType)
+			vals[7] = psql.Arg(s.MimeType)
 		}
 
 		if s.Size.IsUnset() {
-			vals[7] = psql.Raw("DEFAULT")
+			vals[8] = psql.Raw("DEFAULT")
 		} else {
-			vals[7] = psql.Arg(s.Size)
+			vals[8] = psql.Arg(s.Size)
 		}
 
 		if s.CreatedAt.IsUnset() {
-			vals[8] = psql.Raw("DEFAULT")
+			vals[9] = psql.Raw("DEFAULT")
 		} else {
-			vals[8] = psql.Arg(s.CreatedAt)
+			vals[9] = psql.Arg(s.CreatedAt)
 		}
 
 		if s.UpdatedAt.IsUnset() {
-			vals[9] = psql.Raw("DEFAULT")
+			vals[10] = psql.Raw("DEFAULT")
 		} else {
-			vals[9] = psql.Arg(s.UpdatedAt)
+			vals[10] = psql.Arg(s.UpdatedAt)
 		}
 
 		return bob.ExpressSlice(ctx, w, d, start, vals, "", ", ", "")
@@ -324,7 +344,7 @@ func (s MediumSetter) UpdateMod() bob.Mod[*dialect.UpdateQuery] {
 }
 
 func (s MediumSetter) Expressions(prefix ...string) []bob.Expression {
-	exprs := make([]bob.Expression, 0, 10)
+	exprs := make([]bob.Expression, 0, 11)
 
 	if !s.ID.IsUnset() {
 		exprs = append(exprs, expr.Join{Sep: " = ", Exprs: []bob.Expression{
@@ -358,6 +378,13 @@ func (s MediumSetter) Expressions(prefix ...string) []bob.Expression {
 		exprs = append(exprs, expr.Join{Sep: " = ", Exprs: []bob.Expression{
 			psql.Quote(append(prefix, "filename")...),
 			psql.Arg(s.Filename),
+		}})
+	}
+
+	if !s.OriginalFilename.IsUnset() {
+		exprs = append(exprs, expr.Join{Sep: " = ", Exprs: []bob.Expression{
+			psql.Quote(append(prefix, "original_filename")...),
+			psql.Arg(s.OriginalFilename),
 		}})
 	}
 
