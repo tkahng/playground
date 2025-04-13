@@ -14,7 +14,7 @@ import (
 func NewServer() (http.Handler, huma.API) {
 	var api huma.API
 	config := InitApiConfig()
-	config.DocsPath = ""
+	// config.DocsPath = ""
 
 	r := chi.NewMux()
 	r.Use(cors.Handler(cors.Options{
@@ -29,7 +29,7 @@ func NewServer() (http.Handler, huma.API) {
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 	api = humachi.New(r, config)
-	r.Get("/docs", func(w http.ResponseWriter, r *http.Request) {
+	r.Get("/swagger", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html")
 		w.Write([]byte(`<!DOCTYPE html>
 <html lang="en">

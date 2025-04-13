@@ -42,6 +42,24 @@ type Price struct {
 	UpdatedAt       time.Time                                  `db:"updated_at" json:"updated_at"`
 }
 
+func ModelToPrice(price *models.StripePrice) *Price {
+	return &Price{
+		ID:              price.ID,
+		ProductID:       price.ProductID,
+		LookupKey:       price.LookupKey,
+		Active:          price.Active,
+		UnitAmount:      price.UnitAmount,
+		Currency:        price.Currency,
+		Type:            price.Type,
+		Interval:        price.Interval,
+		IntervalCount:   price.IntervalCount,
+		TrialPeriodDays: price.TrialPeriodDays,
+		Metadata:        price.Metadata,
+		CreatedAt:       price.CreatedAt,
+		UpdatedAt:       price.UpdatedAt,
+	}
+}
+
 type Product struct {
 	ID          string                        `db:"id,pk" json:"id"`
 	Active      bool                          `db:"active" json:"active"`
@@ -51,6 +69,19 @@ type Product struct {
 	Metadata    types.JSON[map[string]string] `db:"metadata" json:"metadata"`
 	CreatedAt   time.Time                     `db:"created_at" json:"created_at"`
 	UpdatedAt   time.Time                     `db:"updated_at" json:"updated_at"`
+}
+
+func ModelToProduct(product *models.StripeProduct) *Product {
+	return &Product{
+		ID:          product.ID,
+		Active:      product.Active,
+		Name:        product.Name,
+		Description: product.Description,
+		Image:       product.Image,
+		Metadata:    product.Metadata,
+		CreatedAt:   product.CreatedAt,
+		UpdatedAt:   product.UpdatedAt,
+	}
 }
 
 type StripePricesWithProduct struct {

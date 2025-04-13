@@ -109,6 +109,8 @@ func BindApis(api huma.API, app core.App) {
 	}, appApi.NotificationsSsefunc)
 	// stripe routes -------------------------------------------------------------------------------------------------
 	stripeGroup := huma.NewGroup(api, "/stripe")
+	// stripe my subscriptions
+	huma.Register(stripeGroup, appApi.MyStripeSubscriptionsOperation("/my-subscriptions"), appApi.MyStripeSubscriptions)
 	// stripe webhook
 	huma.Register(stripeGroup, appApi.StripeWebhookOperation("/webhook"), appApi.StripeWebhook)
 	// stripe products with prices

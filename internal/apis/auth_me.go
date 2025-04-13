@@ -29,7 +29,7 @@ type MeOutput struct {
 	Body *models.User
 }
 
-func (api *Api) Me(ctx context.Context, input *struct{ Body *SigninDto }) (*MeOutput, error) {
+func (api *Api) Me(ctx context.Context, input *struct{}) (*MeOutput, error) {
 	claims := core.GetContextUserClaims(ctx)
 	if claims == nil {
 		return nil, huma.Error404NotFound("User not found")

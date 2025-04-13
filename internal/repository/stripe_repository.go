@@ -300,6 +300,21 @@ func FindLatestActiveSubscriptionByUserId(ctx context.Context, dbx bob.Executor,
 	return OptionalRow(data, err)
 }
 
+func FindLatestActiveSubscriptionWithPriceByUserId(ctx context.Context, dbx bob.Executor, userId uuid.UUID) (*models.StripeSubscription, error) {
+	data, err := models.StripeSubscriptions.Query(
+		models.SelectWhere.StripeSubscriptions.UserID.EQ(userId),
+		models.SelectWhere.StripeSubscriptions.Status.In(
+			models.StripeSubscriptionStatusActive,
+			models.StripeSubscriptionStatusTrialing,
+		),
+		sm.OrderBy(models.StripeSubscriptionColumns.Created).Desc(),
+		models.PreloadStripeSubscriptionPriceStripePrice(
+			models.PreloadStripePriceProductStripeProduct(),
+		),
+	).One(ctx, dbx)
+	return OptionalRow(data, err)
+}
+
 func IsFirstSubscription(ctx context.Context, dbx bob.Executor, userId uuid.UUID) (bool, error) {
 	data, err := models.StripeSubscriptions.Query(
 		models.SelectWhere.StripeSubscriptions.UserID.EQ(userId),
