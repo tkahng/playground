@@ -23,9 +23,8 @@ var stripeRolesCmd = &cobra.Command{
 		ctx := cmd.Context()
 		conf := conf.AppConfigGetter()
 
-		dbx := core.NewBobFromConf(ctx, conf.Db)
-		app := core.NewBaseApp(dbx, conf)
-
+		app := core.InitBaseApp(ctx, conf)
+		dbx := app.Db()
 		return app.Payment().UpsertPriceProductFromStripe(ctx, dbx)
 	},
 }

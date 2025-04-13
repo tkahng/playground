@@ -21,6 +21,7 @@ export type UserInfo = components["schemas"]["UserDetail"];
 
 export type RoleWithPermissions = components["schemas"]["RoleWithPermissions"];
 
+export type Permission = components["schemas"]["Permission"];
 export type UserDetail = {
   roles:
     | {

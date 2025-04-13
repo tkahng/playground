@@ -25,6 +25,7 @@ import { useUserDetail } from "@/hooks/use-user-detail";
 import { getUserInfo } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "react-router";
+import { UserPermissionDialog } from "./user-permissions-dialog";
 import { DialogDemo } from "./user-roles-dialog";
 
 // const formSchema = z.object({
@@ -122,17 +123,17 @@ export default function UserEdit() {
           <TabsContent value="permissions">
             <Card>
               <CardHeader>
-                <CardTitle>Password</CardTitle>
+                <CardTitle>Permissions</CardTitle>
                 <CardDescription>
                   Change your password here. After saving, you'll be logged out.
                 </CardDescription>
-                <DialogDemo />
+                <UserPermissionDialog />
               </CardHeader>
               <CardContent className="space-y-2">
                 <Permissions />
               </CardContent>
               <CardFooter>
-                <Button>Save password</Button>
+                <Button>Save permissions</Button>
               </CardFooter>
             </Card>
           </TabsContent>

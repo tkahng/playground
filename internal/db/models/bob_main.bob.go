@@ -15,6 +15,7 @@ import (
 
 var TableNames = struct {
 	AppParams           string
+	Media               string
 	Notifications       string
 	Permissions         string
 	RolePermissions     string
@@ -33,6 +34,7 @@ var TableNames = struct {
 	Users               string
 }{
 	AppParams:           "app_params",
+	Media:               "media",
 	Notifications:       "notifications",
 	Permissions:         "permissions",
 	RolePermissions:     "role_permissions",
@@ -53,6 +55,7 @@ var TableNames = struct {
 
 var ColumnNames = struct {
 	AppParams           appParamColumnNames
+	Media               mediumColumnNames
 	Notifications       notificationColumnNames
 	Permissions         permissionColumnNames
 	RolePermissions     rolePermissionColumnNames
@@ -77,11 +80,26 @@ var ColumnNames = struct {
 		CreatedAt: "created_at",
 		UpdatedAt: "updated_at",
 	},
+	Media: mediumColumnNames{
+		ID:               "id",
+		UserID:           "user_id",
+		Disk:             "disk",
+		Directory:        "directory",
+		Filename:         "filename",
+		OriginalFilename: "original_filename",
+		Extension:        "extension",
+		MimeType:         "mime_type",
+		Size:             "size",
+		CreatedAt:        "created_at",
+		UpdatedAt:        "updated_at",
+	},
 	Notifications: notificationColumnNames{
 		ID:        "id",
 		CreatedAt: "created_at",
 		UpdatedAt: "updated_at",
+		Channel:   "channel",
 		UserID:    "user_id",
+		Content:   "content",
 		Type:      "type",
 	},
 	Permissions: permissionColumnNames{
@@ -231,6 +249,7 @@ var (
 
 func Where[Q psql.Filterable]() struct {
 	AppParams           appParamWhere[Q]
+	Media               mediumWhere[Q]
 	Notifications       notificationWhere[Q]
 	Permissions         permissionWhere[Q]
 	RolePermissions     rolePermissionWhere[Q]
@@ -250,6 +269,7 @@ func Where[Q psql.Filterable]() struct {
 } {
 	return struct {
 		AppParams           appParamWhere[Q]
+		Media               mediumWhere[Q]
 		Notifications       notificationWhere[Q]
 		Permissions         permissionWhere[Q]
 		RolePermissions     rolePermissionWhere[Q]
@@ -268,6 +288,7 @@ func Where[Q psql.Filterable]() struct {
 		Users               userWhere[Q]
 	}{
 		AppParams:           buildAppParamWhere[Q](AppParamColumns),
+		Media:               buildMediumWhere[Q](MediumColumns),
 		Notifications:       buildNotificationWhere[Q](NotificationColumns),
 		Permissions:         buildPermissionWhere[Q](PermissionColumns),
 		RolePermissions:     buildRolePermissionWhere[Q](RolePermissionColumns),
@@ -308,6 +329,7 @@ func (j joinSet[Q]) AliasedAs(alias string) joinSet[Q] {
 }
 
 type joins[Q dialect.Joinable] struct {
+	Media               joinSet[mediumJoins[Q]]
 	Notifications       joinSet[notificationJoins[Q]]
 	Permissions         joinSet[permissionJoins[Q]]
 	RolePermissions     joinSet[rolePermissionJoins[Q]]
@@ -334,6 +356,7 @@ func buildJoinSet[Q interface{ aliasedAs(string) Q }, C any, F func(C, string) Q
 
 func getJoins[Q dialect.Joinable]() joins[Q] {
 	return joins[Q]{
+		Media:               buildJoinSet[mediumJoins[Q]](MediumColumns, buildMediumJoins),
 		Notifications:       buildJoinSet[notificationJoins[Q]](NotificationColumns, buildNotificationJoins),
 		Permissions:         buildJoinSet[permissionJoins[Q]](PermissionColumns, buildPermissionJoins),
 		RolePermissions:     buildJoinSet[rolePermissionJoins[Q]](RolePermissionColumns, buildRolePermissionJoins),

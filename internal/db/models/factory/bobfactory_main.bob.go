@@ -5,6 +5,7 @@ package factory
 
 type Factory struct {
 	baseAppParamMods           AppParamModSlice
+	baseMediumMods             MediumModSlice
 	baseNotificationMods       NotificationModSlice
 	basePermissionMods         PermissionModSlice
 	baseRolePermissionMods     RolePermissionModSlice
@@ -35,6 +36,18 @@ func (f *Factory) NewAppParam(mods ...AppParamMod) *AppParamTemplate {
 	}
 
 	AppParamModSlice(mods).Apply(o)
+
+	return o
+}
+
+func (f *Factory) NewMedium(mods ...MediumMod) *MediumTemplate {
+	o := &MediumTemplate{f: f}
+
+	if f != nil {
+		f.baseMediumMods.Apply(o)
+	}
+
+	MediumModSlice(mods).Apply(o)
 
 	return o
 }
@@ -237,6 +250,14 @@ func (f *Factory) ClearBaseAppParamMods() {
 
 func (f *Factory) AddBaseAppParamMod(mods ...AppParamMod) {
 	f.baseAppParamMods = append(f.baseAppParamMods, mods...)
+}
+
+func (f *Factory) ClearBaseMediumMods() {
+	f.baseMediumMods = nil
+}
+
+func (f *Factory) AddBaseMediumMod(mods ...MediumMod) {
+	f.baseMediumMods = append(f.baseMediumMods, mods...)
 }
 
 func (f *Factory) ClearBaseNotificationMods() {

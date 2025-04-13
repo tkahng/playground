@@ -7,7 +7,9 @@ import (
 	"reflect"
 
 	"github.com/danielgtaylor/huma/v2"
+	"github.com/danielgtaylor/huma/v2/sse"
 	"github.com/tkahng/authgo/internal/core"
+	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/shared"
 )
 
@@ -92,8 +94,20 @@ func BindApis(api huma.API, app core.App) {
 	huma.Register(api, appApi.OAuth2CallbackGetOperation("/auth/callback"), appApi.OAuth2CallbackGet)
 	huma.Register(api, appApi.OAuth2CallbackPostOperation("/auth/callback"), appApi.OAuth2CallbackPost)
 	huma.Register(api, appApi.OAuth2AuthorizationUrlOperation("/auth/authorization-url"), appApi.OAuth2AuthorizationUrl)
-
-	// stripe routes
+	// authenticated routes -----------------------------------------------------------
+	authenticatedGroup := huma.NewGroup(api)
+	// ---- Upload File
+	huma.Register(authenticatedGroup, appApi.UploadMediaOperation("/media"), appApi.UploadMedia)
+	// ---- Get Media
+	huma.Register(authenticatedGroup, appApi.GetMediaOperation("/media/{id}"), appApi.GetMedia)
+	// ---- Get Media List
+	huma.Register(authenticatedGroup, appApi.MedialListOperation("/media"), appApi.MediaList)
+	// ---- notifications
+	sse.Register(authenticatedGroup, appApi.NotificationsSseOperation("/notifications/sse"), map[string]any{
+		// Mapping of event type name to Go struct for that event.
+		"message": models.Notification{},
+	}, appApi.NotificationsSsefunc)
+	// stripe routes -------------------------------------------------------------------------------------------------
 	stripeGroup := huma.NewGroup(api, "/stripe")
 	// stripe webhook
 	huma.Register(stripeGroup, appApi.StripeWebhookOperation("/webhook"), appApi.StripeWebhook)
@@ -104,7 +118,7 @@ func BindApis(api huma.API, app core.App) {
 	//  stripe checkout session
 	huma.Register(stripeGroup, appApi.StripeCheckoutSessionOperation("/checkout-session"), appApi.StripeCheckoutSession)
 
-	//  admin routes
+	//  admin routes ----------------------------------------------------------------------------
 	adminGroup := huma.NewGroup(api, "/admin")
 	//  admin middleware
 	adminGroup.UseMiddleware(CheckRolesMiddleware(api, "superuser"))
@@ -127,9 +141,9 @@ func BindApis(api huma.API, app core.App) {
 	// admin user delete roles
 	huma.Register(adminGroup, appApi.AdminUserRolesDeleteOperation("/users/{userId}/roles/{roleId}"), appApi.AdminUserRolesDelete)
 	// admin user permission source list
-	huma.Register(adminGroup, appApi.AdminUserPermissionSourceListOperation("/users/{id}/permissions"), appApi.AdminUserPermissionSourceList)
+	huma.Register(adminGroup, appApi.AdminUserPermissionSourceListOperation("/users/{userId}/permissions"), appApi.AdminUserPermissionSourceList)
 	// admin user permissions create
-	huma.Register(adminGroup, appApi.AdminUserPermissionsCreateOperation("/users/{id}/permissions"), appApi.AdminUserPermissionsCreate)
+	huma.Register(adminGroup, appApi.AdminUserPermissionsCreateOperation("/users/{userId}/permissions"), appApi.AdminUserPermissionsCreate)
 	// admin user permissions delete
 	huma.Register(adminGroup, appApi.AdminUserPermissionsDeleteOperation("/users/{userId}/permissions/{permissionId}"), appApi.AdminUserPermissionsDelete)
 	// admin roles
@@ -152,6 +166,8 @@ func BindApis(api huma.API, app core.App) {
 	huma.Register(adminGroup, appApi.AdminPermissionsListOperation("/permissions"), appApi.AdminPermissionsList)
 	// admin permissions create
 	huma.Register(adminGroup, appApi.AdminPermissionsCreateOperation("/permissions"), appApi.AdminPermissionsCreate)
+	// admin permissions get
+	huma.Register(adminGroup, appApi.AdminPermissionsGetOperation("/permissions/{id}"), appApi.AdminPermissionsGet)
 	// admin permissions update
 	huma.Register(adminGroup, appApi.AdminPermissionsUpdateOperation("/permissions/{id}"), appApi.AdminPermissionsUpdate)
 	// admin permissions delete

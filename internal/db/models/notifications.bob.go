@@ -6,6 +6,7 @@ package models
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -24,15 +25,18 @@ import (
 	"github.com/stephenafamo/bob/expr"
 	"github.com/stephenafamo/bob/mods"
 	"github.com/stephenafamo/bob/orm"
+	"github.com/stephenafamo/bob/types"
 )
 
 // Notification is an object representing the database table.
 type Notification struct {
-	ID        uuid.UUID           `db:"id,pk" json:"id"`
-	CreatedAt time.Time           `db:"created_at" json:"created_at"`
-	UpdatedAt time.Time           `db:"updated_at" json:"updated_at"`
-	UserID    null.Val[uuid.UUID] `db:"user_id" json:"user_id"`
-	Type      null.Val[string]    `db:"type" json:"type"`
+	ID        uuid.UUID                   `db:"id,pk" json:"id"`
+	CreatedAt time.Time                   `db:"created_at" json:"created_at"`
+	UpdatedAt time.Time                   `db:"updated_at" json:"updated_at"`
+	Channel   string                      `db:"channel" json:"channel"`
+	UserID    null.Val[uuid.UUID]         `db:"user_id" json:"user_id"`
+	Content   types.JSON[json.RawMessage] `db:"content" json:"content"`
+	Type      string                      `db:"type" json:"type"`
 
 	R notificationR `db:"-" json:"-"`
 }
@@ -56,7 +60,9 @@ type notificationColumnNames struct {
 	ID        string
 	CreatedAt string
 	UpdatedAt string
+	Channel   string
 	UserID    string
+	Content   string
 	Type      string
 }
 
@@ -67,7 +73,9 @@ type notificationColumns struct {
 	ID         psql.Expression
 	CreatedAt  psql.Expression
 	UpdatedAt  psql.Expression
+	Channel    psql.Expression
 	UserID     psql.Expression
+	Content    psql.Expression
 	Type       psql.Expression
 }
 
@@ -85,7 +93,9 @@ func buildNotificationColumns(alias string) notificationColumns {
 		ID:         psql.Quote(alias, "id"),
 		CreatedAt:  psql.Quote(alias, "created_at"),
 		UpdatedAt:  psql.Quote(alias, "updated_at"),
+		Channel:    psql.Quote(alias, "channel"),
 		UserID:     psql.Quote(alias, "user_id"),
+		Content:    psql.Quote(alias, "content"),
 		Type:       psql.Quote(alias, "type"),
 	}
 }
@@ -94,8 +104,10 @@ type notificationWhere[Q psql.Filterable] struct {
 	ID        psql.WhereMod[Q, uuid.UUID]
 	CreatedAt psql.WhereMod[Q, time.Time]
 	UpdatedAt psql.WhereMod[Q, time.Time]
+	Channel   psql.WhereMod[Q, string]
 	UserID    psql.WhereNullMod[Q, uuid.UUID]
-	Type      psql.WhereNullMod[Q, string]
+	Content   psql.WhereMod[Q, types.JSON[json.RawMessage]]
+	Type      psql.WhereMod[Q, string]
 }
 
 func (notificationWhere[Q]) AliasedAs(alias string) notificationWhere[Q] {
@@ -107,8 +119,10 @@ func buildNotificationWhere[Q psql.Filterable](cols notificationColumns) notific
 		ID:        psql.Where[Q, uuid.UUID](cols.ID),
 		CreatedAt: psql.Where[Q, time.Time](cols.CreatedAt),
 		UpdatedAt: psql.Where[Q, time.Time](cols.UpdatedAt),
+		Channel:   psql.Where[Q, string](cols.Channel),
 		UserID:    psql.WhereNull[Q, uuid.UUID](cols.UserID),
-		Type:      psql.WhereNull[Q, string](cols.Type),
+		Content:   psql.Where[Q, types.JSON[json.RawMessage]](cols.Content),
+		Type:      psql.Where[Q, string](cols.Type),
 	}
 }
 
@@ -124,15 +138,17 @@ type notificationErrors struct {
 // All values are optional, and do not have to be set
 // Generated columns are not included
 type NotificationSetter struct {
-	ID        omit.Val[uuid.UUID]     `db:"id,pk" json:"id"`
-	CreatedAt omit.Val[time.Time]     `db:"created_at" json:"created_at"`
-	UpdatedAt omit.Val[time.Time]     `db:"updated_at" json:"updated_at"`
-	UserID    omitnull.Val[uuid.UUID] `db:"user_id" json:"user_id"`
-	Type      omitnull.Val[string]    `db:"type" json:"type"`
+	ID        omit.Val[uuid.UUID]                   `db:"id,pk" json:"id"`
+	CreatedAt omit.Val[time.Time]                   `db:"created_at" json:"created_at"`
+	UpdatedAt omit.Val[time.Time]                   `db:"updated_at" json:"updated_at"`
+	Channel   omit.Val[string]                      `db:"channel" json:"channel"`
+	UserID    omitnull.Val[uuid.UUID]               `db:"user_id" json:"user_id"`
+	Content   omit.Val[types.JSON[json.RawMessage]] `db:"content" json:"content"`
+	Type      omit.Val[string]                      `db:"type" json:"type"`
 }
 
 func (s NotificationSetter) SetColumns() []string {
-	vals := make([]string, 0, 5)
+	vals := make([]string, 0, 7)
 	if !s.ID.IsUnset() {
 		vals = append(vals, "id")
 	}
@@ -145,8 +161,16 @@ func (s NotificationSetter) SetColumns() []string {
 		vals = append(vals, "updated_at")
 	}
 
+	if !s.Channel.IsUnset() {
+		vals = append(vals, "channel")
+	}
+
 	if !s.UserID.IsUnset() {
 		vals = append(vals, "user_id")
+	}
+
+	if !s.Content.IsUnset() {
+		vals = append(vals, "content")
 	}
 
 	if !s.Type.IsUnset() {
@@ -166,11 +190,17 @@ func (s NotificationSetter) Overwrite(t *Notification) {
 	if !s.UpdatedAt.IsUnset() {
 		t.UpdatedAt, _ = s.UpdatedAt.Get()
 	}
+	if !s.Channel.IsUnset() {
+		t.Channel, _ = s.Channel.Get()
+	}
 	if !s.UserID.IsUnset() {
 		t.UserID, _ = s.UserID.GetNull()
 	}
+	if !s.Content.IsUnset() {
+		t.Content, _ = s.Content.Get()
+	}
 	if !s.Type.IsUnset() {
-		t.Type, _ = s.Type.GetNull()
+		t.Type, _ = s.Type.Get()
 	}
 }
 
@@ -180,7 +210,7 @@ func (s *NotificationSetter) Apply(q *dialect.InsertQuery) {
 	})
 
 	q.AppendValues(bob.ExpressionFunc(func(ctx context.Context, w io.Writer, d bob.Dialect, start int) ([]any, error) {
-		vals := make([]bob.Expression, 5)
+		vals := make([]bob.Expression, 7)
 		if s.ID.IsUnset() {
 			vals[0] = psql.Raw("DEFAULT")
 		} else {
@@ -199,16 +229,28 @@ func (s *NotificationSetter) Apply(q *dialect.InsertQuery) {
 			vals[2] = psql.Arg(s.UpdatedAt)
 		}
 
-		if s.UserID.IsUnset() {
+		if s.Channel.IsUnset() {
 			vals[3] = psql.Raw("DEFAULT")
 		} else {
-			vals[3] = psql.Arg(s.UserID)
+			vals[3] = psql.Arg(s.Channel)
+		}
+
+		if s.UserID.IsUnset() {
+			vals[4] = psql.Raw("DEFAULT")
+		} else {
+			vals[4] = psql.Arg(s.UserID)
+		}
+
+		if s.Content.IsUnset() {
+			vals[5] = psql.Raw("DEFAULT")
+		} else {
+			vals[5] = psql.Arg(s.Content)
 		}
 
 		if s.Type.IsUnset() {
-			vals[4] = psql.Raw("DEFAULT")
+			vals[6] = psql.Raw("DEFAULT")
 		} else {
-			vals[4] = psql.Arg(s.Type)
+			vals[6] = psql.Arg(s.Type)
 		}
 
 		return bob.ExpressSlice(ctx, w, d, start, vals, "", ", ", "")
@@ -220,7 +262,7 @@ func (s NotificationSetter) UpdateMod() bob.Mod[*dialect.UpdateQuery] {
 }
 
 func (s NotificationSetter) Expressions(prefix ...string) []bob.Expression {
-	exprs := make([]bob.Expression, 0, 5)
+	exprs := make([]bob.Expression, 0, 7)
 
 	if !s.ID.IsUnset() {
 		exprs = append(exprs, expr.Join{Sep: " = ", Exprs: []bob.Expression{
@@ -243,10 +285,24 @@ func (s NotificationSetter) Expressions(prefix ...string) []bob.Expression {
 		}})
 	}
 
+	if !s.Channel.IsUnset() {
+		exprs = append(exprs, expr.Join{Sep: " = ", Exprs: []bob.Expression{
+			psql.Quote(append(prefix, "channel")...),
+			psql.Arg(s.Channel),
+		}})
+	}
+
 	if !s.UserID.IsUnset() {
 		exprs = append(exprs, expr.Join{Sep: " = ", Exprs: []bob.Expression{
 			psql.Quote(append(prefix, "user_id")...),
 			psql.Arg(s.UserID),
+		}})
+	}
+
+	if !s.Content.IsUnset() {
+		exprs = append(exprs, expr.Join{Sep: " = ", Exprs: []bob.Expression{
+			psql.Quote(append(prefix, "content")...),
+			psql.Arg(s.Content),
 		}})
 	}
 

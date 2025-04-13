@@ -11,13 +11,16 @@ import (
 )
 
 func CreatePool(ctx context.Context, connString string) *pgxpool.Pool {
-
+	fmt.Println("Creating pool...")
 	// dbpool, err := pgxpool.New(ctx, connString)
 	dbpool, err := getDbPool(ctx, connString)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to create connection pool: %v\n", err)
 		panic(err)
 	}
+	// if err = dbpool.Ping(ctx); err != nil {
+	// 	panic(err)
+	// } //dbpool.Ping(ctx)
 	// defer dbpool.Close()
 
 	return dbpool

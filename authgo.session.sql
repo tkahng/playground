@@ -1,56 +1,130 @@
-WITH -- Get permissions assigned through roles
-role_based_permissions AS (
-    SELECT p.*,
-        rp.role_id,
-        NULL::uuid AS direct_assignment -- Null indicates not directly assigned
-    FROM public.user_roles ur
-        JOIN public.role_permissions rp ON ur.role_id = rp.role_id
-        JOIN public.permissions p ON rp.permission_id = p.id
-    WHERE ur.user_id = '4481343d-a744-4685-8586-80df2f6ddf85'
-),
--- Get permissions assigned directly to user
-direct_permissions AS (
-    SELECT p.*,
-        NULL::uuid AS role_id,
-        -- Null indicates not from a role
-        up.user_id AS direct_assignment
-    FROM public.user_permissions up
-        JOIN public.permissions p ON up.permission_id = p.id
-    WHERE up.user_id = '4481343d-a744-4685-8586-80df2f6ddf85'
-),
--- Combine both sources
-combined_permissions AS (
-    SELECT *
-    FROM role_based_permissions
-    UNION ALL
-    SELECT *
-    FROM direct_permissions
-) -- Final result with aggregated role information
-SELECT p.id,
-    p.name,
-    p.description,
-    p.created_at,
-    p.updated_at,
-    -- Array of role IDs that grant this permission (empty if direct)
-    array_remove(array_agg(DISTINCT rp.role_id), NULL) AS role_ids,
-    -- Boolean indicating if permission is directly assigned
-    bool_or(rp.direct_assignment IS NOT NULL) AS is_directly_assigned
-FROM (
-        SELECT DISTINCT id,
-            name,
-            description,
-            created_at,
-            updated_at
-        FROM combined_permissions
-    ) p
-    LEFT JOIN combined_permissions rp ON p.id = rp.id
-GROUP BY p.id,
-    p.name,
-    p.description,
-    p.created_at,
-    p.updated_at
-ORDER BY p.name,
-    p.id;
+SELECT *
+FROM media;
+-- INSERT INTO notifications (content, type)
+-- VALUES ('{ "message": "test" }', 'default');
+-- WITH -- Get permissions assigned through roles
+-- role_based_permissions AS (
+--     SELECT p.*,
+--         rp.role_id,
+--         NULL::uuid AS direct_assignment -- Null indicates not directly assigned
+--     FROM public.user_roles ur
+--         JOIN public.role_permissions rp ON ur.role_id = rp.role_id
+--         JOIN public.permissions p ON rp.permission_id = p.id
+--     WHERE ur.user_id = 'bb59e199-8748-43fc-a3e0-407e658234e2'
+-- ),
+-- -- Get permissions assigned directly to user
+-- direct_permissions AS (
+--     SELECT p.*,
+--         NULL::uuid AS role_id,
+--         -- Null indicates not from a role
+--         up.user_id AS direct_assignment
+--     FROM public.user_permissions up
+--         JOIN public.permissions p ON up.permission_id = p.id
+--     WHERE up.user_id = 'bb59e199-8748-43fc-a3e0-407e658234e2'
+-- ),
+-- -- Combine both sources
+-- combined_permissions AS (
+--     SELECT *
+--     FROM role_based_permissions
+--     UNION ALL
+--     SELECT *
+--     FROM direct_permissions
+-- ) -- Final result with aggregated role information
+-- -- SELECT p.id,
+--     p.name,
+--     p.description,
+--     p.created_at,
+--     p.updated_at,
+--     -- Array of role IDs that grant this permission (empty if direct)
+--     array []::uuid [] AS role_ids,
+--     -- Boolean indicating if permission is directly assigned
+--     false AS is_directly_assigned
+-- SELECT COUNT(DISTINCT p.id)
+-- FROM public.permissions p
+--     LEFT JOIN combined_permissions cp ON p.id = cp.id
+-- WHERE cp.id IS NULL;
+-- GROUP BY p.id
+-- ORDER BY p.name,
+-- p.id
+-- LIMIT 10 OFFSET 0;
+-- SELECT p.*
+-- FROM public.permissions p
+-- LEFT JOIN combined_permissions rp ON p.id = rp.id
+-- WHERE rp.id IS NULL;
+-- SELECT p.*
+-- FROM public.permissions p
+--     LEFT JOIN public.user_permissions up ON p.id = up.permission_id
+--     AND up.user_id = '4481343d-a744-4685-8586-80df2f6ddf85'
+--     LEFT JOIN public.user_roles ur ON up.user_id = ur.user_id
+--     LEFT JOIN public.roles r ON ur.role_id = r.id
+--     LEFT JOIN public.role_permissions rp ON r.id = rp.role_id
+--     AND rp.permission_id = p.id
+-- WHERE up.permission_id IS NULL
+--     AND rp.permission_id IS NULL
+-- GROUP BY p.id
+-- ORDER BY p.name
+-- LIMIT 10 OFFSET 0;
+-- GROUP BY p.id,
+--     p.name,
+--     p.description,
+--     p.created_at,
+--     p.updated_at,
+--     rp.id
+-- ORDER BY p.name,
+--     p.id;
+-- WITH -- Get permissions assigned through roles
+-- role_based_permissions AS (
+--     SELECT p.*,
+--         rp.role_id,
+--         NULL::uuid AS direct_assignment -- Null indicates not directly assigned
+--     FROM public.user_roles ur
+--         JOIN public.role_permissions rp ON ur.role_id = rp.role_id
+--         JOIN public.permissions p ON rp.permission_id = p.id
+--     WHERE ur.user_id = '4481343d-a744-4685-8586-80df2f6ddf85'
+-- ),
+-- -- Get permissions assigned directly to user
+-- direct_permissions AS (
+--     SELECT p.*,
+--         NULL::uuid AS role_id,
+--         -- Null indicates not from a role
+--         up.user_id AS direct_assignment
+--     FROM public.user_permissions up
+--         JOIN public.permissions p ON up.permission_id = p.id
+--     WHERE up.user_id = '4481343d-a744-4685-8586-80df2f6ddf85'
+-- ),
+-- -- Combine both sources
+-- combined_permissions AS (
+--     SELECT *
+--     FROM role_based_permissions
+--     UNION ALL
+--     SELECT *
+--     FROM direct_permissions
+-- ) -- Final result with aggregated role information
+-- SELECT p.id,
+--     p.name,
+--     p.description,
+--     p.created_at,
+--     p.updated_at,
+--     -- Array of role IDs that grant this permission (empty if direct)
+--     array_remove(array_agg(DISTINCT rp.role_id), NULL) AS role_ids,
+--     -- Boolean indicating if permission is directly assigned
+--     bool_or(rp.direct_assignment IS NOT NULL) AS is_directly_assigned
+-- FROM (
+--         SELECT DISTINCT id,
+--             name,
+--             description,
+--             created_at,
+--             updated_at
+--         FROM combined_permissions
+--     ) p
+--     LEFT JOIN combined_permissions rp ON p.id = rp.id
+-- GROUP BY p.id,
+--     p.name,
+--     p.description,
+--     p.created_at,
+--     p.updated_at
+-- ORDER BY p.name,
+--     p.id;
 -- SELECT p.*
 -- FROM public.permissions p
 --     LEFT JOIN public.role_permissions rp ON p.id = rp.permission_id
