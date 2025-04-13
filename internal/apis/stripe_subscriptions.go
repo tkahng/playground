@@ -89,7 +89,7 @@ func (api *Api) MyStripeSubscriptions(ctx context.Context, input *struct{}) (*st
 		return nil, err
 	}
 	if subscriptions == nil {
-		return output, nil
+		return nil, nil
 	}
 	output.Body = &SubscriptionWithPrice{
 		Subscription: ModelToSubscription(subscriptions),
