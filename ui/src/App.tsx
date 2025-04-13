@@ -8,6 +8,7 @@ import { AuthProvider } from "./context/auth-context";
 import AuthenticatedLayout from "./layouts/authenticated-layout";
 import RootLayout from "./layouts/root";
 import CallbackComponent from "./pages/callback";
+import Features from "./pages/features";
 import Landing from "./pages/landing";
 import PermissionEdit from "./pages/permissions-edit";
 import PermissionListPage from "./pages/permissions-list";
@@ -28,6 +29,7 @@ function App() {
               <Routes>
                 <Route element={<RootLayout />}>
                   <Route path="/" element={<Landing />} />
+                  <Route path="/features" element={<Features />} />
                   <Route path="/signin" element={<Signin />} />
                   <Route path="/signup" element={<SignupPage />} />
                 </Route>
