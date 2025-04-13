@@ -5,7 +5,6 @@ import (
 	"errors"
 	"log"
 
-	"github.com/danielgtaylor/huma/v2"
 	"github.com/stephenafamo/bob"
 	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/repository"
@@ -106,15 +105,15 @@ func (s *StripeService) CreateBillingPortalSession(ctx context.Context, db bob.E
 		return "", err
 	}
 	if sub == nil {
-		return "", huma.Error400BadRequest("no subscription.  subscribe to access billing portal")
+		return "", errors.New("no subscription.  subscribe to access billing portal")
 	}
 	url, err := s.client.CreateBillingPortalSession(dbcus.StripeID)
 	if err != nil {
 		log.Println(err)
-		return "", huma.Error500InternalServerError("failed to create checkout session")
+		return "", errors.New("failed to create checkout session")
 	}
 	if url == nil {
-		return "", huma.Error500InternalServerError("failed to create checkout session")
+		return "", errors.New("failed to create checkout session")
 	}
 	return url.URL, nil
 }
