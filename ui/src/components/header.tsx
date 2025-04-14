@@ -1,5 +1,4 @@
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import AccountDropdown from "./account-dropdown";
 import { LinkProps } from "./landing-links";
 import { NavLink } from "./link/nav-link";
 import { ModeToggle } from "./mode-toggle";
@@ -44,7 +43,7 @@ export function NexusAILandingHeader({
             user ? (
               <>
                 <NavLink title="Dashboard" to={RouteMap.DASHBOARD_HOME} />
-                <AccountDropdown />
+                {/* <AccountDropdown /> */}
               </>
             ) : (
               <NonAuthenticatedButton />

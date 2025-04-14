@@ -6,12 +6,10 @@ import { createCheckoutSession } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 import { ProductWithPrices, SubscriptionWithPrice, User } from "@/schema.types";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 
 import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { useLocation, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import { z } from "zod";
 
 interface Props {
@@ -42,7 +40,7 @@ export default function Pricing({ products, subscription }: Props) {
   const [billingInterval, setBillingInterval] =
     useState<BillingInterval>("month");
   const [priceIdLoading, setPriceIdLoading] = useState<string>();
-  const { pathname: currentPath } = useLocation();
+  // const { pathname: currentPath } = useLocation();
 
   const mutation = useMutation({
     mutationFn: async (values: z.infer<typeof formSchema>) => {
@@ -59,12 +57,12 @@ export default function Pricing({ products, subscription }: Props) {
       window.location.href = url;
     },
   });
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      price_id: "",
-    },
-  });
+  // const form = useForm<z.infer<typeof formSchema>>({
+  //   resolver: zodResolver(formSchema),
+  //   defaultValues: {
+  //     price_id: "",
+  //   },
+  // });
   function onSubmit(values: z.infer<typeof formSchema>) {
     mutation.mutate(values);
   }
