@@ -28,6 +28,7 @@ func NewServer() (http.Handler, huma.API) {
 	}))
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
+	// r.Get("/*", http.FileServer(http.FS(ui.DistDirFS)).ServeHTTP)
 	api = humachi.New(r, config)
 	r.Get("/swagger", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html")
