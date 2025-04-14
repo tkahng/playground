@@ -82,6 +82,12 @@ func BindApis(api huma.API, app core.App) {
 	})
 	// http://127.0.0.1:8080/auth/callback
 	// huma.Register(api, appApi.AuthMethodsOperation("/auth/methods"), appApi.AuthMethods)
+	// protected test routes -----------------------------------------------------------
+
+	huma.Register(api, appApi.ApiProtectedBasicPermissionOperation("/api/protected/basic-permission"), appApi.ApiProtectedBasicPermission)
+	huma.Register(api, appApi.ApiProtectedProPermissionOperation("/api/protected/pro-permission"), appApi.ApiProtectedProPermission)
+	huma.Register(api, appApi.ApiProtectedAdvancedPermissionOperation("/api/protected/advanced-permission"), appApi.ApiProtectedAdvancedPermission)
+
 	huma.Register(api, appApi.SignupOperation("/auth/signup"), appApi.SignUp)
 	huma.Register(api, appApi.SigninOperation("/auth/signin"), appApi.SignIn)
 	huma.Register(api, appApi.MeOperation("/auth/me"), appApi.Me)
