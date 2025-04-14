@@ -2,10 +2,12 @@ package core
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 
 	"github.com/stephenafamo/bob"
 	"github.com/tkahng/authgo/internal/repository"
+	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/payment"
 )
 
@@ -25,6 +27,33 @@ func (srv *StripeService) Client() *payment.StripeClient {
 func NewStripeService(client *payment.StripeClient) *StripeService {
 	return &StripeService{client: client, logger: slog.Default()}
 }
+
+func (srv *StripeService) SyncRoles(ctx context.Context, exec bob.Executor) error {
+	var err error
+	for productId, role := range shared.StripeRoleMap {
+		err = srv.SyncProductRole(ctx, exec, productId, role)
+	}
+	return err
+}
+
+func (srv *StripeService) SyncProductRole(ctx context.Context, exec bob.Executor, productId string, roleName string) error {
+	product, err := repository.FindProductByStripeId(ctx, exec, productId)
+	if err != nil {
+		return err
+	}
+	if product == nil {
+		return errors.New("product not found")
+	}
+	role, err := repository.FindRoleByName(ctx, exec, roleName)
+	if err != nil {
+		return err
+	}
+	if role == nil {
+		return errors.New("role not found")
+	}
+	return product.AttachRoles(ctx, exec, role)
+}
+
 func (srv *StripeService) UpsertPriceProductFromStripe(ctx context.Context, exec bob.Executor) error {
 	if err := srv.FindAndUpsertAllProducts(ctx, exec); err != nil {
 		return err
