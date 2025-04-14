@@ -20,7 +20,7 @@ const items: LinkProps[] = [
   },
 ];
 
-export const DashboardSidebar = () => {
+export const AdminDashboardSidebar = () => {
   const { pathname } = useLocation();
   return (
     <nav className="flex flex-grow flex-col">
