@@ -25,6 +25,12 @@ var _ bob.HookableType = &Notification{}
 // Make sure the type Permission runs hooks after queries
 var _ bob.HookableType = &Permission{}
 
+// Make sure the type ProductPermission runs hooks after queries
+var _ bob.HookableType = &ProductPermission{}
+
+// Make sure the type ProductRole runs hooks after queries
+var _ bob.HookableType = &ProductRole{}
+
 // Make sure the type RolePermission runs hooks after queries
 var _ bob.HookableType = &RolePermission{}
 

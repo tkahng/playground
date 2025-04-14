@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"strconv"
 	"time"
 
 	"github.com/aarondl/opt/null"
@@ -23,6 +24,7 @@ import (
 	"github.com/stephenafamo/bob/expr"
 	"github.com/stephenafamo/bob/mods"
 	"github.com/stephenafamo/bob/types"
+	"github.com/stephenafamo/scan"
 )
 
 // StripeProduct is an object representing the database table.
@@ -51,6 +53,8 @@ type StripeProductsQuery = *psql.ViewQuery[*StripeProduct, StripeProductSlice]
 
 // stripeProductR is where relationships are stored.
 type stripeProductR struct {
+	Permissions         PermissionSlice  `json:"Permissions"`         // product_permissions.product_permissions_permission_id_fkeyproduct_permissions.product_permissions_product_id_fkey
+	Roles               RoleSlice        `json:"Roles"`               // product_roles.product_roles_product_id_fkeyproduct_roles.product_roles_role_id_fkey
 	ProductStripePrices StripePriceSlice `json:"ProductStripePrices"` // stripe_prices.stripe_prices_product_id_fkey
 }
 
@@ -565,6 +569,8 @@ func (o StripeProductSlice) ReloadAll(ctx context.Context, exec bob.Executor) er
 
 type stripeProductJoins[Q dialect.Joinable] struct {
 	typ                 string
+	Permissions         func(context.Context) modAs[Q, permissionColumns]
+	Roles               func(context.Context) modAs[Q, roleColumns]
 	ProductStripePrices func(context.Context) modAs[Q, stripePriceColumns]
 }
 
@@ -575,7 +581,63 @@ func (j stripeProductJoins[Q]) aliasedAs(alias string) stripeProductJoins[Q] {
 func buildStripeProductJoins[Q dialect.Joinable](cols stripeProductColumns, typ string) stripeProductJoins[Q] {
 	return stripeProductJoins[Q]{
 		typ:                 typ,
+		Permissions:         stripeProductsJoinPermissions[Q](cols, typ),
+		Roles:               stripeProductsJoinRoles[Q](cols, typ),
 		ProductStripePrices: stripeProductsJoinProductStripePrices[Q](cols, typ),
+	}
+}
+
+func stripeProductsJoinPermissions[Q dialect.Joinable](from stripeProductColumns, typ string) func(context.Context) modAs[Q, permissionColumns] {
+	return func(ctx context.Context) modAs[Q, permissionColumns] {
+		return modAs[Q, permissionColumns]{
+			c: PermissionColumns,
+			f: func(to permissionColumns) bob.Mod[Q] {
+				random := strconv.FormatInt(randInt(), 10)
+				mods := make(mods.QueryMods[Q], 0, 2)
+
+				{
+					to := ProductPermissionColumns.AliasedAs(ProductPermissionColumns.Alias() + random)
+					mods = append(mods, dialect.Join[Q](typ, ProductPermissions.Name().As(to.Alias())).On(
+						to.ProductID.EQ(from.ID),
+					))
+				}
+				{
+					from := ProductPermissionColumns.AliasedAs(ProductPermissionColumns.Alias() + random)
+					mods = append(mods, dialect.Join[Q](typ, Permissions.Name().As(to.Alias())).On(
+						to.ID.EQ(from.PermissionID),
+					))
+				}
+
+				return mods
+			},
+		}
+	}
+}
+
+func stripeProductsJoinRoles[Q dialect.Joinable](from stripeProductColumns, typ string) func(context.Context) modAs[Q, roleColumns] {
+	return func(ctx context.Context) modAs[Q, roleColumns] {
+		return modAs[Q, roleColumns]{
+			c: RoleColumns,
+			f: func(to roleColumns) bob.Mod[Q] {
+				random := strconv.FormatInt(randInt(), 10)
+				mods := make(mods.QueryMods[Q], 0, 2)
+
+				{
+					to := ProductRoleColumns.AliasedAs(ProductRoleColumns.Alias() + random)
+					mods = append(mods, dialect.Join[Q](typ, ProductRoles.Name().As(to.Alias())).On(
+						to.ProductID.EQ(from.ID),
+					))
+				}
+				{
+					from := ProductRoleColumns.AliasedAs(ProductRoleColumns.Alias() + random)
+					mods = append(mods, dialect.Join[Q](typ, Roles.Name().As(to.Alias())).On(
+						to.ID.EQ(from.RoleID),
+					))
+				}
+
+				return mods
+			},
+		}
 	}
 }
 
@@ -596,6 +658,52 @@ func stripeProductsJoinProductStripePrices[Q dialect.Joinable](from stripeProduc
 			},
 		}
 	}
+}
+
+// Permissions starts a query for related objects on permissions
+func (o *StripeProduct) Permissions(mods ...bob.Mod[*dialect.SelectQuery]) PermissionsQuery {
+	return Permissions.Query(append(mods,
+		sm.InnerJoin(ProductPermissions.NameAs()).On(
+			PermissionColumns.ID.EQ(ProductPermissionColumns.PermissionID)),
+		sm.Where(ProductPermissionColumns.ProductID.EQ(psql.Arg(o.ID))),
+	)...)
+}
+
+func (os StripeProductSlice) Permissions(mods ...bob.Mod[*dialect.SelectQuery]) PermissionsQuery {
+	PKArgs := make([]bob.Expression, len(os))
+	for i, o := range os {
+		PKArgs[i] = psql.ArgGroup(o.ID)
+	}
+
+	return Permissions.Query(append(mods,
+		sm.InnerJoin(ProductPermissions.NameAs()).On(
+			PermissionColumns.ID.EQ(ProductPermissionColumns.PermissionID),
+		),
+		sm.Where(psql.Group(ProductPermissionColumns.ProductID).In(PKArgs...)),
+	)...)
+}
+
+// Roles starts a query for related objects on roles
+func (o *StripeProduct) Roles(mods ...bob.Mod[*dialect.SelectQuery]) RolesQuery {
+	return Roles.Query(append(mods,
+		sm.InnerJoin(ProductRoles.NameAs()).On(
+			RoleColumns.ID.EQ(ProductRoleColumns.RoleID)),
+		sm.Where(ProductRoleColumns.ProductID.EQ(psql.Arg(o.ID))),
+	)...)
+}
+
+func (os StripeProductSlice) Roles(mods ...bob.Mod[*dialect.SelectQuery]) RolesQuery {
+	PKArgs := make([]bob.Expression, len(os))
+	for i, o := range os {
+		PKArgs[i] = psql.ArgGroup(o.ID)
+	}
+
+	return Roles.Query(append(mods,
+		sm.InnerJoin(ProductRoles.NameAs()).On(
+			RoleColumns.ID.EQ(ProductRoleColumns.RoleID),
+		),
+		sm.Where(psql.Group(ProductRoleColumns.ProductID).In(PKArgs...)),
+	)...)
 }
 
 // ProductStripePrices starts a query for related objects on stripe_prices
@@ -622,6 +730,34 @@ func (o *StripeProduct) Preload(name string, retrieved any) error {
 	}
 
 	switch name {
+	case "Permissions":
+		rels, ok := retrieved.(PermissionSlice)
+		if !ok {
+			return fmt.Errorf("stripeProduct cannot load %T as %q", retrieved, name)
+		}
+
+		o.R.Permissions = rels
+
+		for _, rel := range rels {
+			if rel != nil {
+				rel.R.StripeProducts = StripeProductSlice{o}
+			}
+		}
+		return nil
+	case "Roles":
+		rels, ok := retrieved.(RoleSlice)
+		if !ok {
+			return fmt.Errorf("stripeProduct cannot load %T as %q", retrieved, name)
+		}
+
+		o.R.Roles = rels
+
+		for _, rel := range rels {
+			if rel != nil {
+				rel.R.StripeProducts = StripeProductSlice{o}
+			}
+		}
+		return nil
 	case "ProductStripePrices":
 		rels, ok := retrieved.(StripePriceSlice)
 		if !ok {
@@ -639,6 +775,208 @@ func (o *StripeProduct) Preload(name string, retrieved any) error {
 	default:
 		return fmt.Errorf("stripeProduct has no relationship %q", name)
 	}
+}
+
+func ThenLoadStripeProductPermissions(queryMods ...bob.Mod[*dialect.SelectQuery]) psql.Loader {
+	return psql.Loader(func(ctx context.Context, exec bob.Executor, retrieved any) error {
+		loader, isLoader := retrieved.(interface {
+			LoadStripeProductPermissions(context.Context, bob.Executor, ...bob.Mod[*dialect.SelectQuery]) error
+		})
+		if !isLoader {
+			return fmt.Errorf("object %T cannot load StripeProductPermissions", retrieved)
+		}
+
+		err := loader.LoadStripeProductPermissions(ctx, exec, queryMods...)
+
+		// Don't cause an issue due to missing relationships
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil
+		}
+
+		return err
+	})
+}
+
+// LoadStripeProductPermissions loads the stripeProduct's Permissions into the .R struct
+func (o *StripeProduct) LoadStripeProductPermissions(ctx context.Context, exec bob.Executor, mods ...bob.Mod[*dialect.SelectQuery]) error {
+	if o == nil {
+		return nil
+	}
+
+	// Reset the relationship
+	o.R.Permissions = nil
+
+	related, err := o.Permissions(mods...).All(ctx, exec)
+	if err != nil {
+		return err
+	}
+
+	for _, rel := range related {
+		rel.R.StripeProducts = StripeProductSlice{o}
+	}
+
+	o.R.Permissions = related
+	return nil
+}
+
+// LoadStripeProductPermissions loads the stripeProduct's Permissions into the .R struct
+func (os StripeProductSlice) LoadStripeProductPermissions(ctx context.Context, exec bob.Executor, mods ...bob.Mod[*dialect.SelectQuery]) error {
+	if len(os) == 0 {
+		return nil
+	}
+
+	// since we are changing the columns, we need to check if the original columns were set or add the defaults
+	sq := dialect.SelectQuery{}
+	for _, mod := range mods {
+		mod.Apply(&sq)
+	}
+
+	if len(sq.SelectList.Columns) == 0 {
+		mods = append(mods, sm.Columns(Permissions.Columns()))
+	}
+
+	q := os.Permissions(append(
+		mods,
+		sm.Columns(ProductPermissionColumns.ProductID.As("related_stripe_products.ID")),
+	)...)
+
+	IDSlice := []string{}
+
+	mapper := scan.Mod(scan.StructMapper[*Permission](), func(ctx context.Context, cols []string) (scan.BeforeFunc, func(any, any) error) {
+		return func(row *scan.Row) (any, error) {
+				IDSlice = append(IDSlice, *new(string))
+				row.ScheduleScan("related_stripe_products.ID", &IDSlice[len(IDSlice)-1])
+
+				return nil, nil
+			},
+			func(any, any) error {
+				return nil
+			}
+	})
+
+	permissions, err := bob.Allx[*Permission, PermissionSlice](ctx, exec, q, mapper)
+	if err != nil {
+		return err
+	}
+
+	for _, o := range os {
+		o.R.Permissions = nil
+	}
+
+	for _, o := range os {
+		for i, rel := range permissions {
+			if o.ID != IDSlice[i] {
+				continue
+			}
+
+			rel.R.StripeProducts = append(rel.R.StripeProducts, o)
+
+			o.R.Permissions = append(o.R.Permissions, rel)
+		}
+	}
+
+	return nil
+}
+
+func ThenLoadStripeProductRoles(queryMods ...bob.Mod[*dialect.SelectQuery]) psql.Loader {
+	return psql.Loader(func(ctx context.Context, exec bob.Executor, retrieved any) error {
+		loader, isLoader := retrieved.(interface {
+			LoadStripeProductRoles(context.Context, bob.Executor, ...bob.Mod[*dialect.SelectQuery]) error
+		})
+		if !isLoader {
+			return fmt.Errorf("object %T cannot load StripeProductRoles", retrieved)
+		}
+
+		err := loader.LoadStripeProductRoles(ctx, exec, queryMods...)
+
+		// Don't cause an issue due to missing relationships
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil
+		}
+
+		return err
+	})
+}
+
+// LoadStripeProductRoles loads the stripeProduct's Roles into the .R struct
+func (o *StripeProduct) LoadStripeProductRoles(ctx context.Context, exec bob.Executor, mods ...bob.Mod[*dialect.SelectQuery]) error {
+	if o == nil {
+		return nil
+	}
+
+	// Reset the relationship
+	o.R.Roles = nil
+
+	related, err := o.Roles(mods...).All(ctx, exec)
+	if err != nil {
+		return err
+	}
+
+	for _, rel := range related {
+		rel.R.StripeProducts = StripeProductSlice{o}
+	}
+
+	o.R.Roles = related
+	return nil
+}
+
+// LoadStripeProductRoles loads the stripeProduct's Roles into the .R struct
+func (os StripeProductSlice) LoadStripeProductRoles(ctx context.Context, exec bob.Executor, mods ...bob.Mod[*dialect.SelectQuery]) error {
+	if len(os) == 0 {
+		return nil
+	}
+
+	// since we are changing the columns, we need to check if the original columns were set or add the defaults
+	sq := dialect.SelectQuery{}
+	for _, mod := range mods {
+		mod.Apply(&sq)
+	}
+
+	if len(sq.SelectList.Columns) == 0 {
+		mods = append(mods, sm.Columns(Roles.Columns()))
+	}
+
+	q := os.Roles(append(
+		mods,
+		sm.Columns(ProductRoleColumns.ProductID.As("related_stripe_products.ID")),
+	)...)
+
+	IDSlice := []string{}
+
+	mapper := scan.Mod(scan.StructMapper[*Role](), func(ctx context.Context, cols []string) (scan.BeforeFunc, func(any, any) error) {
+		return func(row *scan.Row) (any, error) {
+				IDSlice = append(IDSlice, *new(string))
+				row.ScheduleScan("related_stripe_products.ID", &IDSlice[len(IDSlice)-1])
+
+				return nil, nil
+			},
+			func(any, any) error {
+				return nil
+			}
+	})
+
+	roles, err := bob.Allx[*Role, RoleSlice](ctx, exec, q, mapper)
+	if err != nil {
+		return err
+	}
+
+	for _, o := range os {
+		o.R.Roles = nil
+	}
+
+	for _, o := range os {
+		for i, rel := range roles {
+			if o.ID != IDSlice[i] {
+				continue
+			}
+
+			rel.R.StripeProducts = append(rel.R.StripeProducts, o)
+
+			o.R.Roles = append(o.R.Roles, rel)
+		}
+	}
+
+	return nil
 }
 
 func ThenLoadStripeProductProductStripePrices(queryMods ...bob.Mod[*dialect.SelectQuery]) psql.Loader {
@@ -708,6 +1046,136 @@ func (os StripeProductSlice) LoadStripeProductProductStripePrices(ctx context.Co
 
 			o.R.ProductStripePrices = append(o.R.ProductStripePrices, rel)
 		}
+	}
+
+	return nil
+}
+
+func attachStripeProductPermissions0(ctx context.Context, exec bob.Executor, count int, stripeProduct0 *StripeProduct, permissions2 PermissionSlice) (ProductPermissionSlice, error) {
+	setters := make([]*ProductPermissionSetter, count)
+	for i := 0; i < count; i++ {
+		setters[i] = &ProductPermissionSetter{
+			ProductID:    omit.From(stripeProduct0.ID),
+			PermissionID: omit.From(permissions2[i].ID),
+		}
+	}
+
+	productPermissions1, err := ProductPermissions.Insert(bob.ToMods(setters...)).All(ctx, exec)
+	if err != nil {
+		return nil, fmt.Errorf("attachStripeProductPermissions0: %w", err)
+	}
+
+	return productPermissions1, nil
+}
+
+func (stripeProduct0 *StripeProduct) InsertPermissions(ctx context.Context, exec bob.Executor, related ...*PermissionSetter) error {
+	if len(related) == 0 {
+		return nil
+	}
+
+	var err error
+
+	inserted, err := Permissions.Insert(bob.ToMods(related...)).All(ctx, exec)
+	if err != nil {
+		return fmt.Errorf("inserting related objects: %w", err)
+	}
+	permissions2 := PermissionSlice(inserted)
+
+	_, err = attachStripeProductPermissions0(ctx, exec, len(related), stripeProduct0, permissions2)
+	if err != nil {
+		return err
+	}
+
+	stripeProduct0.R.Permissions = append(stripeProduct0.R.Permissions, permissions2...)
+
+	for _, rel := range permissions2 {
+		rel.R.StripeProducts = append(rel.R.StripeProducts, stripeProduct0)
+	}
+	return nil
+}
+
+func (stripeProduct0 *StripeProduct) AttachPermissions(ctx context.Context, exec bob.Executor, related ...*Permission) error {
+	if len(related) == 0 {
+		return nil
+	}
+
+	var err error
+	permissions2 := PermissionSlice(related)
+
+	_, err = attachStripeProductPermissions0(ctx, exec, len(related), stripeProduct0, permissions2)
+	if err != nil {
+		return err
+	}
+
+	stripeProduct0.R.Permissions = append(stripeProduct0.R.Permissions, permissions2...)
+
+	for _, rel := range related {
+		rel.R.StripeProducts = append(rel.R.StripeProducts, stripeProduct0)
+	}
+
+	return nil
+}
+
+func attachStripeProductRoles0(ctx context.Context, exec bob.Executor, count int, stripeProduct0 *StripeProduct, roles2 RoleSlice) (ProductRoleSlice, error) {
+	setters := make([]*ProductRoleSetter, count)
+	for i := 0; i < count; i++ {
+		setters[i] = &ProductRoleSetter{
+			ProductID: omit.From(stripeProduct0.ID),
+			RoleID:    omit.From(roles2[i].ID),
+		}
+	}
+
+	productRoles1, err := ProductRoles.Insert(bob.ToMods(setters...)).All(ctx, exec)
+	if err != nil {
+		return nil, fmt.Errorf("attachStripeProductRoles0: %w", err)
+	}
+
+	return productRoles1, nil
+}
+
+func (stripeProduct0 *StripeProduct) InsertRoles(ctx context.Context, exec bob.Executor, related ...*RoleSetter) error {
+	if len(related) == 0 {
+		return nil
+	}
+
+	var err error
+
+	inserted, err := Roles.Insert(bob.ToMods(related...)).All(ctx, exec)
+	if err != nil {
+		return fmt.Errorf("inserting related objects: %w", err)
+	}
+	roles2 := RoleSlice(inserted)
+
+	_, err = attachStripeProductRoles0(ctx, exec, len(related), stripeProduct0, roles2)
+	if err != nil {
+		return err
+	}
+
+	stripeProduct0.R.Roles = append(stripeProduct0.R.Roles, roles2...)
+
+	for _, rel := range roles2 {
+		rel.R.StripeProducts = append(rel.R.StripeProducts, stripeProduct0)
+	}
+	return nil
+}
+
+func (stripeProduct0 *StripeProduct) AttachRoles(ctx context.Context, exec bob.Executor, related ...*Role) error {
+	if len(related) == 0 {
+		return nil
+	}
+
+	var err error
+	roles2 := RoleSlice(related)
+
+	_, err = attachStripeProductRoles0(ctx, exec, len(related), stripeProduct0, roles2)
+	if err != nil {
+		return err
+	}
+
+	stripeProduct0.R.Roles = append(stripeProduct0.R.Roles, roles2...)
+
+	for _, rel := range related {
+		rel.R.StripeProducts = append(rel.R.StripeProducts, stripeProduct0)
 	}
 
 	return nil
