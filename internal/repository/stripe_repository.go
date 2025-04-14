@@ -13,7 +13,7 @@ import (
 	"github.com/stephenafamo/bob/dialect/psql/im"
 	"github.com/stephenafamo/bob/dialect/psql/sm"
 	"github.com/stephenafamo/bob/types"
-	"github.com/stripe/stripe-go/v81"
+	"github.com/stripe/stripe-go/v82"
 	"github.com/tkahng/authgo/internal/db/models"
 )
 
@@ -258,8 +258,8 @@ func UpsertSubscriptionFromStripe(ctx context.Context, exec bob.Executor, sub *s
 		Quantity:           omit.From(item.Quantity),
 		CancelAtPeriodEnd:  omit.From(sub.CancelAtPeriodEnd),
 		Created:            omit.From(Int64ToISODate(sub.Created)),
-		CurrentPeriodStart: omit.From(Int64ToISODate(sub.CurrentPeriodStart)),
-		CurrentPeriodEnd:   omit.From(Int64ToISODate(sub.CurrentPeriodEnd)),
+		CurrentPeriodStart: omit.From(Int64ToISODate(item.CurrentPeriodStart)),
+		CurrentPeriodEnd:   omit.From(Int64ToISODate(item.CurrentPeriodEnd)),
 		EndedAt:            omitnull.From(Int64ToISODate(sub.EndedAt)),
 		CancelAt:           omitnull.From(Int64ToISODate(sub.CancelAt)),
 		CanceledAt:         omitnull.From(Int64ToISODate(sub.CanceledAt)),

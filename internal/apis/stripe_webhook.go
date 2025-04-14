@@ -8,8 +8,8 @@ import (
 	"os"
 
 	"github.com/danielgtaylor/huma/v2"
-	"github.com/stripe/stripe-go/v81"
-	"github.com/stripe/stripe-go/v81/webhook"
+	"github.com/stripe/stripe-go/v82"
+	"github.com/stripe/stripe-go/v82/webhook"
 	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/tools/utils"
 )
