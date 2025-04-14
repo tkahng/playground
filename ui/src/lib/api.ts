@@ -484,11 +484,13 @@ export const removeUserPermission = async (
   return data;
 };
 
-export const getProductsWithPrices = async (token: string) => {
+export const getProductsWithPrices = async (token?: string) => {
   const { data, error } = await client.GET("/api/stripe/products", {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
+    headers: token
+      ? {
+          Authorization: `Bearer ${token}`,
+        }
+      : {},
   });
   if (error) {
     throw new Error(error.detail);
@@ -504,6 +506,50 @@ export const getUserSubscriptions = async (token: string) => {
   const { data, error } = await client.GET("/api/stripe/my-subscriptions", {
     headers: {
       Authorization: `Bearer ${token}`,
+    },
+  });
+  if (error) {
+    throw new Error(error.detail);
+  }
+  // if !data) {
+  //   throw new Error("No data");
+  // }
+  return data;
+};
+
+export const getCheckoutSession = async (token: string, id: string) => {
+  const { data, error } = await client.GET(
+    "/api/stripe/checkout-session/{checkoutSessionId}",
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      params: {
+        path: {
+          checkoutSessionId: id,
+        },
+      },
+    }
+  );
+  if (error) {
+    throw new Error(error.detail);
+  }
+  if (!data) {
+    throw new Error("No data");
+  }
+  return data;
+};
+
+export const createCheckoutSession = async (
+  token: string,
+  { price_id }: { price_id: string }
+) => {
+  const { data, error } = await client.POST("/api/stripe/checkout-session", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: {
+      price_id,
     },
   });
   if (error) {

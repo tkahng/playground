@@ -1,13 +1,41 @@
+import Pricing from "@/components/pricing/pricing";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
+import { getProductsWithPrices, getUserSubscriptions } from "@/lib/api";
+import { useQuery } from "@tanstack/react-query";
 
-export default function Pricing() {
-  const { user } = useAuthProvider();
-  //   const
+export default function PricingPage() {
+  const { user, logout } = useAuthProvider();
+  const {
+    data: products,
+    isPending: isPendingProducts,
+    isError: isErrorProducts,
+    error: errorProducts,
+  } = useQuery({
+    queryKey: ["stripe-products-with-prices"],
+    queryFn: async () => {
+      let userSubs = null;
+      if (user) {
+        try {
+          userSubs = await getUserSubscriptions(user.tokens.access_token);
+        } catch (error) {
+          await logout();
+        }
+      }
+      const products = await getProductsWithPrices();
+      return { products, userSubs };
+    },
+  });
+  if (isPendingProducts) {
+    return <div>Loading...</div>;
+  }
+  if (isErrorProducts) {
+    return <div>Error: {errorProducts.message}</div>;
+  }
   return (
-    <div>
-      <h1 className="text-3xl font-bold tracking-tighter sm:text-5xl xl:text-6xl/none">
-        Pricing
-      </h1>
-    </div>
+    <Pricing
+      user={user?.user}
+      products={products?.products.data || []}
+      subscription={products?.userSubs}
+    />
   );
 }

@@ -6,12 +6,15 @@ import { Toaster } from "sonner";
 import { ThemeProvider } from "./components/theme-provider";
 import { AuthProvider } from "./context/auth-context";
 import AuthenticatedLayout from "./layouts/authenticated-layout";
+import AuthenticatedLayoutBase from "./layouts/authenticated-layout-base";
 import RootLayout from "./layouts/root";
 import CallbackComponent from "./pages/callback";
 import Features from "./pages/features";
 import Landing from "./pages/landing";
+import PaymentSuccessPage from "./pages/payment-success";
 import PermissionEdit from "./pages/permissions-edit";
 import PermissionListPage from "./pages/permissions-list";
+import PricingPage from "./pages/pricing";
 import RoleEdit from "./pages/role-edit";
 import RolesListPage from "./pages/roles-list";
 import SignupPage from "./pages/signup";
@@ -30,12 +33,16 @@ function App() {
                 <Route element={<RootLayout />}>
                   <Route path="/" element={<Landing />} />
                   <Route path="/features" element={<Features />} />
+                  <Route path="/pricing" element={<PricingPage />} />
                   <Route path="/signin" element={<Signin />} />
                   <Route path="/signup" element={<SignupPage />} />
                 </Route>
                 {/* Other routes */}
                 <Route path="/auth/callback" element={<CallbackComponent />} />
-
+                <Route path="/payment" element={<AuthenticatedLayoutBase />}>
+                  {/* /payment/success?sessionId */}
+                  <Route path="success" element={<PaymentSuccessPage />} />
+                </Route>
                 <Route path="/dashboard" element={<AuthenticatedLayout />}>
                   <Route index element={<Dashboard />} />
                   <Route path="users">

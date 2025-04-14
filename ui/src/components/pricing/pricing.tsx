@@ -1,16 +1,18 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { useAuthProvider } from "@/hooks/use-auth-provider";
+import { createCheckoutSession } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
-import {
-  Price,
-  ProductWithPrices,
-  SubscriptionWithPrice,
-  User,
-} from "@/schema.types";
+import { ProductWithPrices, SubscriptionWithPrice, User } from "@/schema.types";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation } from "@tanstack/react-query";
 
 import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { useLocation, useNavigate } from "react-router";
+import { z } from "zod";
 
 interface Props {
   user: User | null | undefined;
@@ -20,7 +22,14 @@ interface Props {
 
 type BillingInterval = "lifetime" | "year" | "month";
 
-export default function Pricing({ user, products, subscription }: Props) {
+const formSchema = z.object({
+  price_id: z.string().min(2, {
+    message: "name must be at least 2 characters.",
+  }),
+});
+
+export default function Pricing({ products, subscription }: Props) {
+  const { user } = useAuthProvider();
   const intervals = Array.from(
     new Set(
       products.flatMap((product) =>
@@ -29,50 +38,80 @@ export default function Pricing({ user, products, subscription }: Props) {
     )
   );
   //   const router = useRouter();
+  const navigate = useNavigate();
   const [billingInterval, setBillingInterval] =
     useState<BillingInterval>("month");
   const [priceIdLoading, setPriceIdLoading] = useState<string>();
-  //   const currentPath = usePathname();
+  const { pathname: currentPath } = useLocation();
 
-  const handleStripeCheckout = async (price: Price) => {
-    console.log("price", price);
-    // setPriceIdLoading(price.id);
+  const mutation = useMutation({
+    mutationFn: async (values: z.infer<typeof formSchema>) => {
+      setPriceIdLoading(values.price_id);
+      if (!user) {
+        setPriceIdLoading(undefined);
+        return navigate("/signin");
+      }
+      const { url } = await createCheckoutSession(
+        user.tokens.access_token,
+        values
+      );
+      setPriceIdLoading(undefined);
+      window.location.href = url;
+    },
+  });
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      price_id: "",
+    },
+  });
+  function onSubmit(values: z.infer<typeof formSchema>) {
+    mutation.mutate(values);
+  }
+  // const handleStripeCheckout = async (price: Price) => {
+  //   console.log("price", price);
+  //   setPriceIdLoading(price.id);
 
-    // if (!user) {
-    //   setPriceIdLoading(undefined);
-    //   return router.push("/signin/signup");
-    // }
+  //   if (!user) {
+  //     setPriceIdLoading(undefined);
+  //     return navigate("/signin/signup");
+  //   }
 
-    // const { errorRedirect, sessionId } = await checkoutWithStripe(
-    //   price,
-    //   currentPath
-    // );
+  //   const { url } = await createCheckoutSession(
+  //     user.tokens.access_token,
+  //     price
+  //   );
+  //   navigate(url);
+  //   // const { errorRedirect, sessionId } = await checkoutWithStripe(
+  //   //   price,
+  //   //   currentPath
+  //   // );
 
-    // if (errorRedirect) {
-    //   setPriceIdLoading(undefined);
-    //   return router.push(errorRedirect);
-    // }
+  //   // if (errorRedirect) {
+  //   //   setPriceIdLoading(undefined);
+  //   //   return router.push(errorRedirect);
+  //   // }
 
-    // if (!sessionId) {
-    //   setPriceIdLoading(undefined);
-    //   return router.push(
-    //     getErrorRedirect(
-    //       currentPath,
-    //       "An unknown error occurred.",
-    //       "Please try again later or contact a system administrator."
-    //     )
-    //   );
-    // }
+  //   // if (!sessionId) {
+  //   //   setPriceIdLoading(undefined);
+  //   //   return router.push(
+  //   //     getErrorRedirect(
+  //   //       currentPath,
+  //   //       "An unknown error occurred.",
+  //   //       "Please try again later or contact a system administrator."
+  //   //     )
+  //   //   );
+  //   // }
 
-    // const stripe = await getStripe();
-    // stripe?.redirectToCheckout({ sessionId });
+  //   // const stripe = await getStripe();
+  //   // stripe?.redirectToCheckout({ sessionId });
 
-    // setPriceIdLoading(undefined);
-  };
+  //   // setPriceIdLoading(undefined);
+  // };
 
   if (!products.length) {
     return (
-      <section className="bg-black">
+      <section className="">
         <div className="max-w-6xl px-4 py-8 mx-auto sm:py-24 sm:px-6 lg:px-8">
           <div className="sm:flex sm:flex-col sm:align-center"></div>
           <p className="text-4xl font-extrabold text-white sm:text-center sm:text-6xl">
@@ -93,17 +132,17 @@ export default function Pricing({ user, products, subscription }: Props) {
     );
   } else {
     return (
-      <section className="bg-black">
+      <section className="">
         <div className="max-w-6xl px-4 py-8 mx-auto sm:py-24 sm:px-6 lg:px-8">
           <div className="sm:flex sm:flex-col sm:align-center">
-            <h1 className="text-4xl font-extrabold text-white sm:text-center sm:text-6xl">
+            <h1 className="text-4xl font-extrabold text-primary sm:text-center sm:text-6xl">
               Pricing Plans
             </h1>
-            <p className="max-w-2xl m-auto mt-5 text-xl text-zinc-200 sm:text-center sm:text-2xl">
+            <p className="max-w-2xl m-auto mt-5 text-xl text-secondary-foreground sm:text-center sm:text-2xl">
               Start building for free, then add a site plan to go live. Account
               plans unlock additional features.
             </p>
-            <div className="relative self-center mt-6 bg-zinc-900 rounded-lg p-0.5 flex sm:mt-8 border border-zinc-800">
+            <div className="relative self-center mt-6 bg-primary-foreground rounded-lg p-0.5 flex sm:mt-8 border">
               {intervals.includes("month") && (
                 <button
                   onClick={() => setBillingInterval("month")}
@@ -147,7 +186,7 @@ export default function Pricing({ user, products, subscription }: Props) {
                 <div
                   key={product.id}
                   className={cn(
-                    "flex flex-col rounded-lg shadow-sm divide-y divide-zinc-600 bg-zinc-900",
+                    "flex flex-col rounded-lg shadow-sm divide-y divide-zinc-600",
                     {
                       "border border-pink-500": subscription
                         ? product.name === subscription?.price?.product?.name
@@ -159,7 +198,7 @@ export default function Pricing({ user, products, subscription }: Props) {
                   )}
                 >
                   <div className="p-6">
-                    <h2 className="text-2xl font-semibold leading-6 text-white">
+                    <h2 className="text-2xl font-semibold leading-6 ">
                       {product.name}
                     </h2>
                     <p className="mt-4 text-zinc-300">{product.description}</p>
@@ -167,15 +206,16 @@ export default function Pricing({ user, products, subscription }: Props) {
                       <span className="text-5xl font-extrabold white">
                         {priceString}
                       </span>
-                      <span className="text-base font-medium text-zinc-100">
+                      <span className="text-base font-medium ">
                         /{billingInterval}
                       </span>
                     </p>
                     <Button
                       //   variant="slim"
-                      type="button"
-                      //   loading={priceIdLoading === price.id}
-                      onClick={() => handleStripeCheckout(price)}
+                      type="submit"
+                      disabled={priceIdLoading === price.id}
+                      // loading={priceIdLoading === price.id}
+                      onClick={() => onSubmit({ price_id: price.id })}
                       className="block w-full py-2 mt-8 text-sm font-semibold text-center text-white rounded-md hover:bg-zinc-900"
                     >
                       {subscription ? "Manage" : "Subscribe"}
@@ -185,7 +225,6 @@ export default function Pricing({ user, products, subscription }: Props) {
               );
             })}
           </div>
-          {/* <LogoCloud /> */}
         </div>
       </section>
     );
