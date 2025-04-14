@@ -28,9 +28,9 @@ func (api *Api) AdminStripeSubscriptionsOperation(path string) huma.Operation {
 }
 
 type SubscriptionWithData struct {
-	*models.StripeSubscription
+	*Subscription
 	Price            *StripePricesWithProduct `json:"price,omitempty" required:"false"`
-	SubscriptionUser *models.User             `json:"user,omitempty" required:"false"`
+	SubscriptionUser *shared.User             `json:"user,omitempty" required:"false"`
 }
 
 func (api *Api) AdminStripeSubscriptions(ctx context.Context,
@@ -55,10 +55,10 @@ func (api *Api) AdminStripeSubscriptions(ctx context.Context,
 	}
 	subs := dataloader.Map(subscriptions, func(sub *models.StripeSubscription) *SubscriptionWithData {
 		ss := &SubscriptionWithData{
-			StripeSubscription: sub,
+			Subscription: ModelToSubscription(sub),
 		}
 		if sub.R.User != nil {
-			ss.SubscriptionUser = sub.R.User
+			ss.SubscriptionUser = shared.ToUser(sub.R.User)
 		}
 		if sub.R.PriceStripePrice != nil {
 			ss.Price = &StripePricesWithProduct{

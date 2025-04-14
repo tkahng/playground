@@ -11,6 +11,7 @@ import (
 	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/authgo/internal/tools/dataloader"
 )
 
 func (api *Api) AdminUserPermissionsDeleteOperation(path string) huma.Operation {
@@ -192,7 +193,7 @@ func (api *Api) AdminPermissionsListOperation(path string) huma.Operation {
 
 func (api *Api) AdminPermissionsList(ctx context.Context, input *struct {
 	shared.PermissionsListParams
-}) (*PaginatedOutput[*models.Permission], error) {
+}) (*PaginatedOutput[*Permission], error) {
 	db := api.app.Db()
 	permissions, err := repository.ListPermissions(ctx, db, &input.PermissionsListParams)
 	if err != nil {
@@ -203,10 +204,10 @@ func (api *Api) AdminPermissionsList(ctx context.Context, input *struct {
 		return nil, err
 	}
 
-	return &PaginatedOutput[*models.Permission]{
-		Body: shared.PaginatedResponse[*models.Permission]{
+	return &PaginatedOutput[*Permission]{
+		Body: shared.PaginatedResponse[*Permission]{
 
-			Data: permissions,
+			Data: dataloader.Map(permissions, ToPermission),
 			Meta: shared.Meta{
 				Page:    input.PaginatedInput.Page,
 				PerPage: input.PaginatedInput.PerPage,
@@ -239,7 +240,7 @@ type PermissionCreateInput struct {
 
 func (api *Api) AdminPermissionsCreate(ctx context.Context, input *struct {
 	Body PermissionCreateInput
-}) (*struct{ Body models.Permission }, error) {
+}) (*struct{ Body Permission }, error) {
 	db := api.app.Db()
 	perm, err := repository.FindPermissionByName(ctx, db, input.Body.Name)
 	if err != nil {
@@ -259,8 +260,8 @@ func (api *Api) AdminPermissionsCreate(ctx context.Context, input *struct {
 	if data == nil {
 		return nil, huma.Error500InternalServerError("Failed to create permission")
 	}
-	return &struct{ Body models.Permission }{
-		Body: *data,
+	return &struct{ Body Permission }{
+		Body: *ToPermission(data),
 	}, nil
 }
 
@@ -322,7 +323,7 @@ func (api *Api) AdminPermissionsUpdate(ctx context.Context, input *struct {
 	Body        PermissionCreateInput
 	Description *string `json:"description,omitempty"`
 }) (*struct {
-	Body models.Permission
+	Body Permission
 }, error) {
 	db := api.app.Db()
 	id, err := uuid.Parse(input.ID)
@@ -347,8 +348,8 @@ func (api *Api) AdminPermissionsUpdate(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	return &struct{ Body models.Permission }{
-		Body: *permission,
+	return &struct{ Body Permission }{
+		Body: *ToPermission(permission),
 	}, nil
 }
 
@@ -370,7 +371,7 @@ func (api *Api) AdminPermissionsGetOperation(path string) huma.Operation {
 func (api *Api) AdminPermissionsGet(ctx context.Context, input *struct {
 	ID string `path:"id" format:"uuid" required:"true"`
 }) (*struct {
-	Body models.Permission
+	Body Permission
 }, error) {
 	db := api.app.Db()
 	id, err := uuid.Parse(input.ID)
@@ -384,7 +385,7 @@ func (api *Api) AdminPermissionsGet(ctx context.Context, input *struct {
 	if permission == nil {
 		return nil, huma.Error404NotFound("Permission not found")
 	}
-	return &struct{ Body models.Permission }{
-		Body: *permission,
+	return &struct{ Body Permission }{
+		Body: *ToPermission(permission),
 	}, nil
 }

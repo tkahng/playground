@@ -123,33 +123,8 @@ func (api *Api) StripeProductsWithPrices(ctx context.Context, inputt *StripeProd
 	}
 	prods := dataloader.Map(users, func(user *models.StripeProduct) *StripeProductWithPrices {
 		return &StripeProductWithPrices{
-			Product: &Product{
-				ID:          user.ID,
-				Active:      user.Active,
-				Name:        user.Name,
-				Description: user.Description.Ptr(),
-				Image:       user.Image.Ptr(),
-				Metadata:    user.Metadata.Val,
-				CreatedAt:   user.CreatedAt,
-				UpdatedAt:   user.UpdatedAt,
-			},
-			Prices: dataloader.Map(user.R.ProductStripePrices, func(price *models.StripePrice) *Price {
-				return &Price{
-					ID:              price.ID,
-					ProductID:       price.ProductID,
-					LookupKey:       price.LookupKey.Ptr(),
-					Active:          price.Active,
-					UnitAmount:      price.UnitAmount.Ptr(),
-					Currency:        price.Currency,
-					Type:            price.Type,
-					Interval:        price.Interval.Ptr(),
-					IntervalCount:   price.IntervalCount.Ptr(),
-					TrialPeriodDays: price.TrialPeriodDays.Ptr(),
-					Metadata:        price.Metadata.Val,
-					CreatedAt:       price.CreatedAt,
-					UpdatedAt:       price.UpdatedAt,
-				}
-			}),
+			Product: ModelToProduct(user),
+			Prices:  dataloader.Map(user.R.ProductStripePrices, ModelToPrice),
 		}
 
 	})
