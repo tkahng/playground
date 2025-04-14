@@ -8,7 +8,9 @@ import { AuthProvider } from "./context/auth-context";
 import AuthenticatedLayout from "./layouts/authenticated-layout";
 import AuthenticatedLayoutBase from "./layouts/authenticated-layout-base";
 import RootLayout from "./layouts/root";
+import LandingAboutPage from "./pages/about";
 import CallbackComponent from "./pages/callback";
+import LandingContactPage from "./pages/contact";
 import Features from "./pages/features";
 import Landing from "./pages/landing";
 import PaymentSuccessPage from "./pages/payment-success";
@@ -32,8 +34,11 @@ function App() {
               <Routes>
                 <Route element={<RootLayout />}>
                   <Route path="/" element={<Landing />} />
+                  <Route path="/home" element={<Landing />} />
                   <Route path="/features" element={<Features />} />
                   <Route path="/pricing" element={<PricingPage />} />
+                  <Route path="/about" element={<LandingAboutPage />} />
+                  <Route path="/contact" element={<LandingContactPage />} />
                   <Route path="/signin" element={<Signin />} />
                   <Route path="/signup" element={<SignupPage />} />
                 </Route>
