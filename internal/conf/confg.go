@@ -45,7 +45,6 @@ type GoogleConfig struct {
 type OAuth2Config struct {
 	GithubConfig
 	GoogleConfig
-	AuthBaseUrl  string `env:"AUTH_BASE_URL" envDefault:"http://127.0.0.1:8080/api/auth"`
 	AuthCallback string `env:"AUTH_CALLBACK" envDefault:"http://127.0.0.1:8080/api/auth/callback"`
 }
 

@@ -11,7 +11,7 @@ import (
 )
 
 func CreatePool(ctx context.Context, connString string) *pgxpool.Pool {
-	fmt.Println("Creating pool...")
+	fmt.Println("Creating pool for url:", connString)
 	// dbpool, err := pgxpool.New(ctx, connString)
 	dbpool, err := getDbPool(ctx, connString)
 	if err != nil {

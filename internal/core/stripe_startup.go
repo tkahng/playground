@@ -3,6 +3,7 @@ package core
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 
 	"github.com/stephenafamo/bob"
@@ -59,9 +60,11 @@ func (srv *StripeService) SyncProductRole(ctx context.Context, exec bob.Executor
 
 func (srv *StripeService) UpsertPriceProductFromStripe(ctx context.Context, exec bob.Executor) error {
 	if err := srv.FindAndUpsertAllProducts(ctx, exec); err != nil {
+		fmt.Println(err)
 		return err
 	}
 	if err := srv.FindAndUpsertAllPrices(ctx, exec); err != nil {
+		fmt.Println(err)
 		return err
 	}
 	// if err := srv.FindAndUpsertAllCustomers(ctx, exec); err != nil {
