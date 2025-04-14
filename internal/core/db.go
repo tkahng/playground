@@ -50,3 +50,8 @@ func NewPoolFromConf(ctx context.Context, conf conf.DBConfig) *pgxpool.Pool {
 func NewBobFromPool(pool *pgxpool.Pool) bob.DB {
 	return bob.NewDB(stdlib.OpenDBFromPool(pool))
 }
+
+func NewPoolAndBobFromConf(ctx context.Context, conf conf.DBConfig) (*pgxpool.Pool, bob.DB) {
+	pool := NewPoolFromConf(ctx, conf)
+	return pool, NewBobFromPool(pool)
+}

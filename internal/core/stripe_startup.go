@@ -6,6 +6,7 @@ import (
 	"log/slog"
 
 	"github.com/stephenafamo/bob"
+	"github.com/tkahng/authgo/internal/conf"
 	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/payment"
@@ -23,7 +24,9 @@ func (srv *StripeService) Logger() *slog.Logger {
 func (srv *StripeService) Client() *payment.StripeClient {
 	return srv.client
 }
-
+func NewStripeServiceFromConf(conf conf.StripeConfig) *StripeService {
+	return &StripeService{client: payment.NewStripeClient(conf), logger: slog.Default()}
+}
 func NewStripeService(client *payment.StripeClient) *StripeService {
 	return &StripeService{client: client, logger: slog.Default()}
 }

@@ -36,8 +36,10 @@ var stripeRolesCmd = &cobra.Command{
 		ctx := cmd.Context()
 		conf := conf.AppConfigGetter()
 
-		app := core.InitBaseApp(ctx, conf)
-		dbx := app.Db()
-		return app.Payment().SyncRoles(ctx, dbx)
+		// app := core.InitBaseApp(ctx, conf)
+		_, db := core.NewPoolAndBobFromConf(ctx, conf.Db)
+		// client := payment.NewStripeClient(conf.StripeConfig)
+		service := core.NewStripeServiceFromConf(conf.StripeConfig)
+		return service.SyncRoles(ctx, db)
 	},
 }
