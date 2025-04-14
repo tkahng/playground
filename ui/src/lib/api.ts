@@ -579,3 +579,39 @@ export const createBillingPortalSession = async (token: string) => {
   }
   return data.url;
 };
+
+export const getAuthUrl = async ({
+  provider,
+  redirect,
+}: {
+  provider: "google" | "github";
+  redirect?: string;
+}) => {
+  const { data, error } = await client.GET("/api/auth/authorization-url", {
+    params: {
+      query: {
+        provider,
+        redirect_to: redirect,
+      },
+    },
+  });
+  if (error) {
+    throw new Error(error.detail);
+  }
+  if (!data) {
+    throw new Error("No data");
+  }
+  return data.url;
+};
+
+export const confirmVerification = async (token: string, type: string) => {
+  const { error } = await client.POST("/api/auth/verify", {
+    body: {
+      type,
+      token,
+    },
+  });
+  if (error) {
+    throw new Error(error.detail);
+  }
+};

@@ -14,6 +14,9 @@
 // import { BarChart } from "lucide-react";
 // import { useSearchParams } from "react-router";
 
+import { ProfileForm } from "@/components/profile-form";
+import { Separator } from "@/components/ui/separator";
+
 // enum TabType {
 //   PROFILE = "profile",
 //   SECURITY = "security",
@@ -57,8 +60,8 @@ export default function AccountSettingsPage() {
           This is how others will see you on the site.
         </p>
       </div>
-      {/* <Separator />
-      <ProfileForm /> */}
+      <Separator />
+      <ProfileForm />
     </div>
   );
 }

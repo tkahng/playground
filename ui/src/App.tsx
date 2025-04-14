@@ -13,7 +13,9 @@ import DashboardLayout from "./layouts/dashboard-layout";
 import RootLayout from "./layouts/root";
 import LandingAboutPage from "./pages/about";
 import AccountSettingsPage from "./pages/account-settings";
+import BillingSettingPage from "./pages/billing-settings";
 import CallbackComponent from "./pages/callback";
+import ConfirmVerification from "./pages/confirm-verification";
 import LandingContactPage from "./pages/contact";
 import Features from "./pages/features";
 import Landing from "./pages/landing";
@@ -21,6 +23,7 @@ import PaymentSuccessPage from "./pages/payment-success";
 import PermissionEdit from "./pages/permissions-edit";
 import PermissionListPage from "./pages/permissions-list";
 import PricingPage from "./pages/pricing";
+import ProfilePage from "./pages/profile";
 import RoleEdit from "./pages/role-edit";
 import RolesListPage from "./pages/roles-list";
 import SignupPage from "./pages/signup";
@@ -49,6 +52,10 @@ function App() {
                 {/* <Route element= */}
                 {/* Other routes */}
                 <Route path="/auth/callback" element={<CallbackComponent />} />
+                <Route
+                  path="/auth/confirm-verification"
+                  element={<ConfirmVerification />}
+                />
                 <Route element={<AuthenticatedLayoutBase />}>
                   <Route path="/payment">
                     {/* /payment/success?sessionId */}
@@ -58,7 +65,9 @@ function App() {
                     <Route index element={<Dashboard />} />
                   </Route>
                   <Route path="/settings" element={<SettingLayout />}>
+                    <Route path="profile" element={<ProfilePage />} />
                     <Route path="account" element={<AccountSettingsPage />} />
+                    <Route path="billing" element={<BillingSettingPage />} />
                   </Route>
                 </Route>
 

@@ -1,3 +1,7 @@
+import {
+  ProviderConnectionForm,
+  providerNames,
+} from "@/components/connections";
 import { RouteMap } from "@/components/route-map";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,6 +21,7 @@ import { useContext, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
 
+const callbackUrl = "http://localhost:5173/auth/callback";
 export default function SigninPage() {
   const [input, setInput] = useState<SigninInput>({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
@@ -125,18 +130,19 @@ export default function SigninPage() {
                 </span>
               </div>
             </div>
-            {/* <div className="flex justify-center space-x-4">
+            <div className="flex justify-center space-x-4">
               <ul>
                 {providerNames.map((providerName) => (
                   <li key={providerName}>
                     <ProviderConnectionForm
                       type="Login"
                       providerName={providerName}
+                      redirectTo={callbackUrl}
                     />
                   </li>
                 ))}
               </ul>
-            </div> */}
+            </div>
             {/* <div className="flex justify-center space-x-4">
               <Button variant="outline" size="icon">
                 <Twitter className="h-4 w-4" />

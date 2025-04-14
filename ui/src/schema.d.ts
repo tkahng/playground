@@ -524,9 +524,13 @@ export interface paths {
          * Verify
          * @description Verify
          */
-        get: operations["verify"];
+        get: operations["verify-get"];
         put?: never;
-        post?: never;
+        /**
+         * Verify
+         * @description Verify
+         */
+        post: operations["verify-post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -847,6 +851,15 @@ export interface components {
              */
             readonly $schema?: string;
             url: string;
+        };
+        OtpInput: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            token: string;
+            type: string;
         };
         PaginatedResponseMediaOuput: {
             /**
@@ -3170,7 +3183,7 @@ export interface operations {
             };
         };
     };
-    verify: {
+    "verify-get": {
         parameters: {
             query: {
                 token: string;
@@ -3185,8 +3198,64 @@ export interface operations {
             /** @description No Content */
             204: {
                 headers: {
-                    Location?: string;
-                    "Set-Cookie"?: string;
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "verify-post": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["OtpInput"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
                     [name: string]: unknown;
                 };
                 content?: never;

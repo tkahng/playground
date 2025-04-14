@@ -68,46 +68,8 @@ export default function Pricing({ products, subscription }: Props) {
   function onSubmit(values: z.infer<typeof formSchema>) {
     mutation.mutate(values);
   }
-  // const handleStripeCheckout = async (price: Price) => {
-  //   console.log("price", price);
-  //   setPriceIdLoading(price.id);
 
-  //   if (!user) {
-  //     setPriceIdLoading(undefined);
-  //     return navigate("/signin/signup");
-  //   }
-
-  //   const { url } = await createCheckoutSession(
-  //     user.tokens.access_token,
-  //     price
-  //   );
-  //   navigate(url);
-  //   // const { errorRedirect, sessionId } = await checkoutWithStripe(
-  //   //   price,
-  //   //   currentPath
-  //   // );
-
-  //   // if (errorRedirect) {
-  //   //   setPriceIdLoading(undefined);
-  //   //   return router.push(errorRedirect);
-  //   // }
-
-  //   // if (!sessionId) {
-  //   //   setPriceIdLoading(undefined);
-  //   //   return router.push(
-  //   //     getErrorRedirect(
-  //   //       currentPath,
-  //   //       "An unknown error occurred.",
-  //   //       "Please try again later or contact a system administrator."
-  //   //     )
-  //   //   );
-  //   // }
-
-  //   // const stripe = await getStripe();
-  //   // stripe?.redirectToCheckout({ sessionId });
-
-  //   // setPriceIdLoading(undefined);
-  // };
+  // function onClick(event:k)
 
   if (!products.length) {
     return (
