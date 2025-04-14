@@ -45,8 +45,9 @@ export default function AccountDropdown() {
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="container rounded p-1" align="end">
-        <DropdownMenuLabel className="font-normal">
+      {/* <DropdownMenuContent className="container rounded p-1" align="end"> */}
+      <DropdownMenuContent align="end" className="container">
+        <DropdownMenuLabel>
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-medium leading-none">
               {user?.user?.name}
