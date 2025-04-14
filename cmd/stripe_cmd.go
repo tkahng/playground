@@ -7,7 +7,7 @@ import (
 )
 
 func NewStripeCmd() *cobra.Command {
-	stripeCmd.AddCommand(stripeRolesCmd)
+	stripeCmd.AddCommand(stripeSyncCmd, stripeRolesCmd)
 	return stripeCmd
 }
 
@@ -16,15 +16,31 @@ var stripeCmd = &cobra.Command{
 	Short: "stripe",
 }
 
-var stripeRolesCmd = &cobra.Command{
+var stripeSyncCmd = &cobra.Command{
 	Use:   "sync",
 	Short: "stripe sync",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
-		conf := conf.AppConfigGetter()
+		dbconf := conf.GetConfig[conf.DBConfig]()
+		stripeconfig := conf.GetConfig[conf.StripeConfig]()
 
-		app := core.InitBaseApp(ctx, conf)
-		dbx := app.Db()
-		return app.Payment().UpsertPriceProductFromStripe(ctx, dbx)
+		_, dbx := core.NewPoolAndBobFromConf(ctx, dbconf)
+		service := core.NewStripeServiceFromConf(stripeconfig)
+
+		return service.UpsertPriceProductFromStripe(ctx, dbx)
+	},
+}
+
+var stripeRolesCmd = &cobra.Command{
+	Use:   "role",
+	Short: "stripe role",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		ctx := cmd.Context()
+		dbconf := conf.GetConfig[conf.DBConfig]()
+		stripeconfig := conf.GetConfig[conf.StripeConfig]()
+
+		_, db := core.NewPoolAndBobFromConf(ctx, dbconf)
+		service := core.NewStripeServiceFromConf(stripeconfig)
+		return service.SyncRoles(ctx, db)
 	},
 }

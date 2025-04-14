@@ -34,8 +34,8 @@ var upCmd = &cobra.Command{
 	Use:   "up",
 	Short: "migrate up",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg := conf.AppConfigGetter()
-		u, err := url.Parse(cfg.Db.DatabaseUrl)
+		cfg := conf.GetConfig[conf.DBConfig]()
+		u, err := url.Parse(cfg.DatabaseUrl)
 		if err != nil {
 			return err
 		}

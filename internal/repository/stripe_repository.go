@@ -31,6 +31,13 @@ func FindCustomerByUserId(ctx context.Context, dbx bob.Executor, userId uuid.UUI
 	return OptionalRow(data, err)
 }
 
+func FindProductByStripeId(ctx context.Context, dbx bob.Executor, stripeId string) (*models.StripeProduct, error) {
+	data, err := models.StripeProducts.Query(
+		models.SelectWhere.StripeProducts.ID.EQ(stripeId),
+	).One(ctx, dbx)
+	return OptionalRow(data, err)
+}
+
 func UpsertCustomerStripeId(ctx context.Context, dbx bob.Executor, userId uuid.UUID, stripeCustomerId string) error {
 	_, err := models.StripeCustomers.Insert(
 		&models.StripeCustomerSetter{
@@ -288,6 +295,23 @@ func StripeSubscriptionStatusConvert(status stripe.SubscriptionStatus) models.St
 	return models.StripeSubscriptionStatusActive
 }
 
+func FindSubscriptionById(ctx context.Context, dbx bob.Executor, stripeId string) (*models.StripeSubscription, error) {
+	data, err := models.StripeSubscriptions.Query(
+		models.SelectWhere.StripeSubscriptions.ID.EQ(stripeId),
+	).One(ctx, dbx)
+	return OptionalRow(data, err)
+}
+
+func FindSubscriptionWithPriceById(ctx context.Context, dbx bob.Executor, stripeId string) (*models.StripeSubscription, error) {
+	data, err := models.StripeSubscriptions.Query(
+		models.SelectWhere.StripeSubscriptions.ID.EQ(stripeId),
+		models.PreloadStripeSubscriptionPriceStripePrice(
+			models.PreloadStripePriceProductStripeProduct(),
+		),
+	).One(ctx, dbx)
+	return OptionalRow(data, err)
+}
+
 func FindLatestActiveSubscriptionByUserId(ctx context.Context, dbx bob.Executor, userId uuid.UUID) (*models.StripeSubscription, error) {
 	data, err := models.StripeSubscriptions.Query(
 		models.SelectWhere.StripeSubscriptions.UserID.EQ(userId),
@@ -296,6 +320,21 @@ func FindLatestActiveSubscriptionByUserId(ctx context.Context, dbx bob.Executor,
 			models.StripeSubscriptionStatusTrialing,
 		),
 		sm.OrderBy(models.StripeSubscriptionColumns.Created).Desc(),
+	).One(ctx, dbx)
+	return OptionalRow(data, err)
+}
+
+func FindLatestActiveSubscriptionWithPriceByUserId(ctx context.Context, dbx bob.Executor, userId uuid.UUID) (*models.StripeSubscription, error) {
+	data, err := models.StripeSubscriptions.Query(
+		models.SelectWhere.StripeSubscriptions.UserID.EQ(userId),
+		models.SelectWhere.StripeSubscriptions.Status.In(
+			models.StripeSubscriptionStatusActive,
+			models.StripeSubscriptionStatusTrialing,
+		),
+		sm.OrderBy(models.StripeSubscriptionColumns.Created).Desc(),
+		models.PreloadStripeSubscriptionPriceStripePrice(
+			models.PreloadStripePriceProductStripeProduct(),
+		),
 	).One(ctx, dbx)
 	return OptionalRow(data, err)
 }

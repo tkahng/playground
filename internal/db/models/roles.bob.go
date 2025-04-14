@@ -50,8 +50,9 @@ type RolesQuery = *psql.ViewQuery[*Role, RoleSlice]
 
 // roleR is where relationships are stored.
 type roleR struct {
-	Permissions PermissionSlice `json:"Permissions"` // role_permissions.role_permissions_permission_id_fkeyrole_permissions.role_permissions_role_id_fkey
-	Users       UserSlice       `json:"Users"`       // user_roles.user_roles_role_id_fkeyuser_roles.user_roles_user_id_fkey
+	StripeProducts StripeProductSlice `json:"StripeProducts"` // product_roles.product_roles_product_id_fkeyproduct_roles.product_roles_role_id_fkey
+	Permissions    PermissionSlice    `json:"Permissions"`    // role_permissions.role_permissions_permission_id_fkeyrole_permissions.role_permissions_role_id_fkey
+	Users          UserSlice          `json:"Users"`          // user_roles.user_roles_role_id_fkeyuser_roles.user_roles_user_id_fkey
 }
 
 type roleColumnNames struct {
@@ -490,9 +491,10 @@ func (o RoleSlice) ReloadAll(ctx context.Context, exec bob.Executor) error {
 }
 
 type roleJoins[Q dialect.Joinable] struct {
-	typ         string
-	Permissions func(context.Context) modAs[Q, permissionColumns]
-	Users       func(context.Context) modAs[Q, userColumns]
+	typ            string
+	StripeProducts func(context.Context) modAs[Q, stripeProductColumns]
+	Permissions    func(context.Context) modAs[Q, permissionColumns]
+	Users          func(context.Context) modAs[Q, userColumns]
 }
 
 func (j roleJoins[Q]) aliasedAs(alias string) roleJoins[Q] {
@@ -501,9 +503,37 @@ func (j roleJoins[Q]) aliasedAs(alias string) roleJoins[Q] {
 
 func buildRoleJoins[Q dialect.Joinable](cols roleColumns, typ string) roleJoins[Q] {
 	return roleJoins[Q]{
-		typ:         typ,
-		Permissions: rolesJoinPermissions[Q](cols, typ),
-		Users:       rolesJoinUsers[Q](cols, typ),
+		typ:            typ,
+		StripeProducts: rolesJoinStripeProducts[Q](cols, typ),
+		Permissions:    rolesJoinPermissions[Q](cols, typ),
+		Users:          rolesJoinUsers[Q](cols, typ),
+	}
+}
+
+func rolesJoinStripeProducts[Q dialect.Joinable](from roleColumns, typ string) func(context.Context) modAs[Q, stripeProductColumns] {
+	return func(ctx context.Context) modAs[Q, stripeProductColumns] {
+		return modAs[Q, stripeProductColumns]{
+			c: StripeProductColumns,
+			f: func(to stripeProductColumns) bob.Mod[Q] {
+				random := strconv.FormatInt(randInt(), 10)
+				mods := make(mods.QueryMods[Q], 0, 2)
+
+				{
+					to := ProductRoleColumns.AliasedAs(ProductRoleColumns.Alias() + random)
+					mods = append(mods, dialect.Join[Q](typ, ProductRoles.Name().As(to.Alias())).On(
+						to.RoleID.EQ(from.ID),
+					))
+				}
+				{
+					from := ProductRoleColumns.AliasedAs(ProductRoleColumns.Alias() + random)
+					mods = append(mods, dialect.Join[Q](typ, StripeProducts.Name().As(to.Alias())).On(
+						to.ID.EQ(from.ProductID),
+					))
+				}
+
+				return mods
+			},
+		}
 	}
 }
 
@@ -561,6 +591,29 @@ func rolesJoinUsers[Q dialect.Joinable](from roleColumns, typ string) func(conte
 	}
 }
 
+// StripeProducts starts a query for related objects on stripe_products
+func (o *Role) StripeProducts(mods ...bob.Mod[*dialect.SelectQuery]) StripeProductsQuery {
+	return StripeProducts.Query(append(mods,
+		sm.InnerJoin(ProductRoles.NameAs()).On(
+			StripeProductColumns.ID.EQ(ProductRoleColumns.ProductID)),
+		sm.Where(ProductRoleColumns.RoleID.EQ(psql.Arg(o.ID))),
+	)...)
+}
+
+func (os RoleSlice) StripeProducts(mods ...bob.Mod[*dialect.SelectQuery]) StripeProductsQuery {
+	PKArgs := make([]bob.Expression, len(os))
+	for i, o := range os {
+		PKArgs[i] = psql.ArgGroup(o.ID)
+	}
+
+	return StripeProducts.Query(append(mods,
+		sm.InnerJoin(ProductRoles.NameAs()).On(
+			StripeProductColumns.ID.EQ(ProductRoleColumns.ProductID),
+		),
+		sm.Where(psql.Group(ProductRoleColumns.RoleID).In(PKArgs...)),
+	)...)
+}
+
 // Permissions starts a query for related objects on permissions
 func (o *Role) Permissions(mods ...bob.Mod[*dialect.SelectQuery]) PermissionsQuery {
 	return Permissions.Query(append(mods,
@@ -613,6 +666,20 @@ func (o *Role) Preload(name string, retrieved any) error {
 	}
 
 	switch name {
+	case "StripeProducts":
+		rels, ok := retrieved.(StripeProductSlice)
+		if !ok {
+			return fmt.Errorf("role cannot load %T as %q", retrieved, name)
+		}
+
+		o.R.StripeProducts = rels
+
+		for _, rel := range rels {
+			if rel != nil {
+				rel.R.Roles = RoleSlice{o}
+			}
+		}
+		return nil
 	case "Permissions":
 		rels, ok := retrieved.(PermissionSlice)
 		if !ok {
@@ -644,6 +711,107 @@ func (o *Role) Preload(name string, retrieved any) error {
 	default:
 		return fmt.Errorf("role has no relationship %q", name)
 	}
+}
+
+func ThenLoadRoleStripeProducts(queryMods ...bob.Mod[*dialect.SelectQuery]) psql.Loader {
+	return psql.Loader(func(ctx context.Context, exec bob.Executor, retrieved any) error {
+		loader, isLoader := retrieved.(interface {
+			LoadRoleStripeProducts(context.Context, bob.Executor, ...bob.Mod[*dialect.SelectQuery]) error
+		})
+		if !isLoader {
+			return fmt.Errorf("object %T cannot load RoleStripeProducts", retrieved)
+		}
+
+		err := loader.LoadRoleStripeProducts(ctx, exec, queryMods...)
+
+		// Don't cause an issue due to missing relationships
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil
+		}
+
+		return err
+	})
+}
+
+// LoadRoleStripeProducts loads the role's StripeProducts into the .R struct
+func (o *Role) LoadRoleStripeProducts(ctx context.Context, exec bob.Executor, mods ...bob.Mod[*dialect.SelectQuery]) error {
+	if o == nil {
+		return nil
+	}
+
+	// Reset the relationship
+	o.R.StripeProducts = nil
+
+	related, err := o.StripeProducts(mods...).All(ctx, exec)
+	if err != nil {
+		return err
+	}
+
+	for _, rel := range related {
+		rel.R.Roles = RoleSlice{o}
+	}
+
+	o.R.StripeProducts = related
+	return nil
+}
+
+// LoadRoleStripeProducts loads the role's StripeProducts into the .R struct
+func (os RoleSlice) LoadRoleStripeProducts(ctx context.Context, exec bob.Executor, mods ...bob.Mod[*dialect.SelectQuery]) error {
+	if len(os) == 0 {
+		return nil
+	}
+
+	// since we are changing the columns, we need to check if the original columns were set or add the defaults
+	sq := dialect.SelectQuery{}
+	for _, mod := range mods {
+		mod.Apply(&sq)
+	}
+
+	if len(sq.SelectList.Columns) == 0 {
+		mods = append(mods, sm.Columns(StripeProducts.Columns()))
+	}
+
+	q := os.StripeProducts(append(
+		mods,
+		sm.Columns(ProductRoleColumns.RoleID.As("related_roles.ID")),
+	)...)
+
+	IDSlice := []uuid.UUID{}
+
+	mapper := scan.Mod(scan.StructMapper[*StripeProduct](), func(ctx context.Context, cols []string) (scan.BeforeFunc, func(any, any) error) {
+		return func(row *scan.Row) (any, error) {
+				IDSlice = append(IDSlice, *new(uuid.UUID))
+				row.ScheduleScan("related_roles.ID", &IDSlice[len(IDSlice)-1])
+
+				return nil, nil
+			},
+			func(any, any) error {
+				return nil
+			}
+	})
+
+	stripeProducts, err := bob.Allx[*StripeProduct, StripeProductSlice](ctx, exec, q, mapper)
+	if err != nil {
+		return err
+	}
+
+	for _, o := range os {
+		o.R.StripeProducts = nil
+	}
+
+	for _, o := range os {
+		for i, rel := range stripeProducts {
+			if o.ID != IDSlice[i] {
+				continue
+			}
+
+			rel.R.Roles = append(rel.R.Roles, o)
+
+			o.R.StripeProducts = append(o.R.StripeProducts, rel)
+		}
+	}
+
+	return nil
 }
 
 func ThenLoadRolePermissions(queryMods ...bob.Mod[*dialect.SelectQuery]) psql.Loader {
@@ -843,6 +1011,71 @@ func (os RoleSlice) LoadRoleUsers(ctx context.Context, exec bob.Executor, mods .
 
 			o.R.Users = append(o.R.Users, rel)
 		}
+	}
+
+	return nil
+}
+
+func attachRoleStripeProducts0(ctx context.Context, exec bob.Executor, count int, role0 *Role, stripeProducts2 StripeProductSlice) (ProductRoleSlice, error) {
+	setters := make([]*ProductRoleSetter, count)
+	for i := 0; i < count; i++ {
+		setters[i] = &ProductRoleSetter{
+			RoleID:    omit.From(role0.ID),
+			ProductID: omit.From(stripeProducts2[i].ID),
+		}
+	}
+
+	productRoles1, err := ProductRoles.Insert(bob.ToMods(setters...)).All(ctx, exec)
+	if err != nil {
+		return nil, fmt.Errorf("attachRoleStripeProducts0: %w", err)
+	}
+
+	return productRoles1, nil
+}
+
+func (role0 *Role) InsertStripeProducts(ctx context.Context, exec bob.Executor, related ...*StripeProductSetter) error {
+	if len(related) == 0 {
+		return nil
+	}
+
+	var err error
+
+	inserted, err := StripeProducts.Insert(bob.ToMods(related...)).All(ctx, exec)
+	if err != nil {
+		return fmt.Errorf("inserting related objects: %w", err)
+	}
+	stripeProducts2 := StripeProductSlice(inserted)
+
+	_, err = attachRoleStripeProducts0(ctx, exec, len(related), role0, stripeProducts2)
+	if err != nil {
+		return err
+	}
+
+	role0.R.StripeProducts = append(role0.R.StripeProducts, stripeProducts2...)
+
+	for _, rel := range stripeProducts2 {
+		rel.R.Roles = append(rel.R.Roles, role0)
+	}
+	return nil
+}
+
+func (role0 *Role) AttachStripeProducts(ctx context.Context, exec bob.Executor, related ...*StripeProduct) error {
+	if len(related) == 0 {
+		return nil
+	}
+
+	var err error
+	stripeProducts2 := StripeProductSlice(related)
+
+	_, err = attachRoleStripeProducts0(ctx, exec, len(related), role0, stripeProducts2)
+	if err != nil {
+		return err
+	}
+
+	role0.R.StripeProducts = append(role0.R.StripeProducts, stripeProducts2...)
+
+	for _, rel := range related {
+		rel.R.Roles = append(rel.R.Roles, role0)
 	}
 
 	return nil

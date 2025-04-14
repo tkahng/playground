@@ -101,3 +101,54 @@ func (a *Api) StripeBillingPortal(ctx context.Context, input *StripeBillingPorta
 	}, nil
 
 }
+
+type CheckoutSession struct {
+	ID      string   `json:"id"`
+	Price   *Price   `json:"price"`
+	Product *Product `json:"product"`
+}
+
+type CheckoutSessionOutput struct {
+	Body SubscriptionWithPrice
+}
+
+func (a *Api) StripeCheckoutSessionGetOperation(path string) huma.Operation {
+	return huma.Operation{
+		OperationID: "get-checkout-session",
+		Method:      http.MethodGet,
+		Path:        path,
+		Summary:     "get checkout session",
+		Description: "get checkout session",
+		Tags:        []string{"Payment", "Stripe", "Checkout Session"},
+		Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
+		Security: []map[string][]string{
+			{shared.BearerAuthSecurityKey: {}},
+		},
+	}
+}
+
+type StripeCheckoutSessionInput struct {
+	CheckoutSessionID string `path:"checkoutSessionId"`
+}
+
+func (a *Api) StripeCheckoutSessionGet(ctx context.Context, input *StripeCheckoutSessionInput) (*CheckoutSessionOutput, error) {
+	db := a.app.Db()
+	payment := a.app.Payment()
+	cs, err := payment.FindSubscriptionWithPriceBySessionId(ctx, db, input.CheckoutSessionID)
+	if err != nil {
+		return nil, err
+	}
+	if cs == nil {
+		return nil, huma.Error404NotFound("checkout session not found")
+	}
+
+	return &CheckoutSessionOutput{
+		Body: SubscriptionWithPrice{
+			Subscription: ModelToSubscription(cs),
+			Price: &StripePricesWithProduct{
+				Price:   ModelToPrice(cs.R.PriceStripePrice),
+				Product: ModelToProduct(cs.R.PriceStripePrice.R.ProductStripeProduct),
+			},
+		},
+	}, nil
+}

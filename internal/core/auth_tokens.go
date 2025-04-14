@@ -38,7 +38,7 @@ func (a *BaseApp) CreateAuthDto(ctx context.Context, email string) (*shared.Auth
 		return nil, fmt.Errorf("error creating auth tokens: %w", err)
 	}
 	bod := shared.AuthenticatedDTO{
-		User:        info.User,
+		User:        shared.ToUser(info.User),
 		Tokens:      *tokens,
 		Roles:       info.Roles,
 		Permissions: info.Permissions,
@@ -63,7 +63,7 @@ func (a *BaseApp) RefreshTokens(ctx context.Context, db bob.DB, refreshToken str
 		return nil, fmt.Errorf("error creating auth tokens: %w", err)
 	}
 	return &shared.AuthenticatedDTO{
-		User:        user.User,
+		User:        shared.ToUser(user.User),
 		Tokens:      *tokens,
 		Roles:       user.Roles,
 		Permissions: user.Permissions,

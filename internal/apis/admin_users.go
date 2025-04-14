@@ -46,10 +46,9 @@ type UserAccountDetail struct {
 }
 
 type UserDetail struct {
-	*models.User
-	Roles []*RoleWithPermissions `json:"roles,omitempty" required:"false"`
-	// Permissions []*models.Permission   `json:"permissions,omitempty" required:"false"`
-	Accounts []*UserAccountDetail `json:"accounts,omitempty" required:"false"`
+	*shared.User
+	Roles    []*RoleWithPermissions `json:"roles,omitempty" required:"false"`
+	Accounts []*UserAccountDetail   `json:"accounts,omitempty" required:"false"`
 }
 
 func ToUserAccountDetail(userAccount *models.UserAccount) *UserAccountDetail {
@@ -98,7 +97,7 @@ func (api *Api) AdminUsers(ctx context.Context, input *struct {
 	}
 	info := dataloader.Map(users, func(user *models.User) *UserDetail {
 		return &UserDetail{
-			User:  user,
+			User:  shared.ToUser(user),
 			Roles: dataloader.Map(user.R.Roles, ToRoleWithPermissions),
 			// Permissions: user.R.Permissions,
 			Accounts: dataloader.Map(user.R.UserAccounts, ToUserAccountDetail),
@@ -143,7 +142,7 @@ type CreateUserInput struct {
 func (api *Api) AdminUsersCreate(ctx context.Context, input *struct {
 	Body CreateUserInput
 }) (*struct {
-	Body models.User
+	Body *shared.User
 }, error) {
 	db := api.app.Db()
 	existingUser, err := repository.GetUserByEmail(ctx, db, input.Body.Email)
@@ -183,7 +182,7 @@ func (api *Api) AdminUsersCreate(ctx context.Context, input *struct {
 		return nil, err
 	}
 	fmt.Println(account)
-	return &struct{ Body models.User }{Body: *user}, nil
+	return &struct{ Body *shared.User }{Body: shared.ToUser(user)}, nil
 
 }
 
@@ -288,7 +287,7 @@ func (api *Api) AdminUsersGetOperation(path string) huma.Operation {
 
 func (api *Api) AdminUsersGet(ctx context.Context, input *struct {
 	ID uuid.UUID `path:"id" format:"uuid" required:"true"`
-}) (*struct{ Body models.User }, error) {
+}) (*struct{ Body *shared.User }, error) {
 	db := api.app.Db()
 	user, err := repository.GetUserById(ctx, db, input.ID)
 	if err != nil {
@@ -301,5 +300,5 @@ func (api *Api) AdminUsersGet(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	return &struct{ Body models.User }{Body: *user}, nil
+	return &struct{ Body *shared.User }{Body: shared.ToUser(user)}, nil
 }

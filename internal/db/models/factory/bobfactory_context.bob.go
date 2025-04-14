@@ -16,6 +16,8 @@ var (
 	mediumCtx             = newContextual[*models.Medium]("medium")
 	notificationCtx       = newContextual[*models.Notification]("notification")
 	permissionCtx         = newContextual[*models.Permission]("permission")
+	productPermissionCtx  = newContextual[*models.ProductPermission]("productPermission")
+	productRoleCtx        = newContextual[*models.ProductRole]("productRole")
 	rolePermissionCtx     = newContextual[*models.RolePermission]("rolePermission")
 	roleCtx               = newContextual[*models.Role]("role")
 	schemaMigrationCtx    = newContextual[*models.SchemaMigration]("schemaMigration")

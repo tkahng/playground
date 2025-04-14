@@ -1,12 +1,10 @@
-import { DashboardSidebar } from "@/components/dashboard-sidebar";
-import { NexusAILandingHeader } from "@/components/header";
-import { landingLinks } from "@/components/landing-links";
-import { NexusAIFooter } from "@/components/nexus-footer";
+import { NexusAILandingHeader } from "@/components/nexus-landing-header";
+import { NexusAIMinimalFooter } from "@/components/nexus-minimal-footer";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { useEffect } from "react";
 import { Navigate, useLocation, useOutlet } from "react-router";
 
-export default function AuthenticatedLayout() {
+export default function AuthenticatedLayoutBase() {
   const location = useLocation();
   const { checkAuth, user } = useAuthProvider();
   const outlet = useOutlet();
@@ -20,12 +18,12 @@ export default function AuthenticatedLayout() {
   return (
     <>
       <div className="relative flex min-h-screen flex-col justify-center">
-        <NexusAILandingHeader leftLinks={landingLinks} />
+        <NexusAILandingHeader full />
         <main className="flex flex-grow">
-          <DashboardSidebar />
+          {/* <DashboardSidebar /> */}
           {outlet}
         </main>
-        <NexusAIFooter />
+        <NexusAIMinimalFooter />
       </div>
     </>
   );

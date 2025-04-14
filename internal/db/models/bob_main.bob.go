@@ -18,6 +18,8 @@ var TableNames = struct {
 	Media               string
 	Notifications       string
 	Permissions         string
+	ProductPermissions  string
+	ProductRoles        string
 	RolePermissions     string
 	Roles               string
 	SchemaMigrations    string
@@ -37,6 +39,8 @@ var TableNames = struct {
 	Media:               "media",
 	Notifications:       "notifications",
 	Permissions:         "permissions",
+	ProductPermissions:  "product_permissions",
+	ProductRoles:        "product_roles",
 	RolePermissions:     "role_permissions",
 	Roles:               "roles",
 	SchemaMigrations:    "schema_migrations",
@@ -58,6 +62,8 @@ var ColumnNames = struct {
 	Media               mediumColumnNames
 	Notifications       notificationColumnNames
 	Permissions         permissionColumnNames
+	ProductPermissions  productPermissionColumnNames
+	ProductRoles        productRoleColumnNames
 	RolePermissions     rolePermissionColumnNames
 	Roles               roleColumnNames
 	SchemaMigrations    schemaMigrationColumnNames
@@ -108,6 +114,14 @@ var ColumnNames = struct {
 		Description: "description",
 		CreatedAt:   "created_at",
 		UpdatedAt:   "updated_at",
+	},
+	ProductPermissions: productPermissionColumnNames{
+		ProductID:    "product_id",
+		PermissionID: "permission_id",
+	},
+	ProductRoles: productRoleColumnNames{
+		ProductID: "product_id",
+		RoleID:    "role_id",
 	},
 	RolePermissions: rolePermissionColumnNames{
 		RoleID:       "role_id",
@@ -252,6 +266,8 @@ func Where[Q psql.Filterable]() struct {
 	Media               mediumWhere[Q]
 	Notifications       notificationWhere[Q]
 	Permissions         permissionWhere[Q]
+	ProductPermissions  productPermissionWhere[Q]
+	ProductRoles        productRoleWhere[Q]
 	RolePermissions     rolePermissionWhere[Q]
 	Roles               roleWhere[Q]
 	SchemaMigrations    schemaMigrationWhere[Q]
@@ -272,6 +288,8 @@ func Where[Q psql.Filterable]() struct {
 		Media               mediumWhere[Q]
 		Notifications       notificationWhere[Q]
 		Permissions         permissionWhere[Q]
+		ProductPermissions  productPermissionWhere[Q]
+		ProductRoles        productRoleWhere[Q]
 		RolePermissions     rolePermissionWhere[Q]
 		Roles               roleWhere[Q]
 		SchemaMigrations    schemaMigrationWhere[Q]
@@ -291,6 +309,8 @@ func Where[Q psql.Filterable]() struct {
 		Media:               buildMediumWhere[Q](MediumColumns),
 		Notifications:       buildNotificationWhere[Q](NotificationColumns),
 		Permissions:         buildPermissionWhere[Q](PermissionColumns),
+		ProductPermissions:  buildProductPermissionWhere[Q](ProductPermissionColumns),
+		ProductRoles:        buildProductRoleWhere[Q](ProductRoleColumns),
 		RolePermissions:     buildRolePermissionWhere[Q](RolePermissionColumns),
 		Roles:               buildRoleWhere[Q](RoleColumns),
 		SchemaMigrations:    buildSchemaMigrationWhere[Q](SchemaMigrationColumns),
@@ -332,6 +352,8 @@ type joins[Q dialect.Joinable] struct {
 	Media               joinSet[mediumJoins[Q]]
 	Notifications       joinSet[notificationJoins[Q]]
 	Permissions         joinSet[permissionJoins[Q]]
+	ProductPermissions  joinSet[productPermissionJoins[Q]]
+	ProductRoles        joinSet[productRoleJoins[Q]]
 	RolePermissions     joinSet[rolePermissionJoins[Q]]
 	Roles               joinSet[roleJoins[Q]]
 	StripeCustomers     joinSet[stripeCustomerJoins[Q]]
@@ -359,6 +381,8 @@ func getJoins[Q dialect.Joinable]() joins[Q] {
 		Media:               buildJoinSet[mediumJoins[Q]](MediumColumns, buildMediumJoins),
 		Notifications:       buildJoinSet[notificationJoins[Q]](NotificationColumns, buildNotificationJoins),
 		Permissions:         buildJoinSet[permissionJoins[Q]](PermissionColumns, buildPermissionJoins),
+		ProductPermissions:  buildJoinSet[productPermissionJoins[Q]](ProductPermissionColumns, buildProductPermissionJoins),
+		ProductRoles:        buildJoinSet[productRoleJoins[Q]](ProductRoleColumns, buildProductRoleJoins),
 		RolePermissions:     buildJoinSet[rolePermissionJoins[Q]](RolePermissionColumns, buildRolePermissionJoins),
 		Roles:               buildJoinSet[roleJoins[Q]](RoleColumns, buildRoleJoins),
 		StripeCustomers:     buildJoinSet[stripeCustomerJoins[Q]](StripeCustomerColumns, buildStripeCustomerJoins),

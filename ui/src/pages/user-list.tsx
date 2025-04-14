@@ -84,7 +84,7 @@ export default function UserListPage() {
           columns={columns}
           data={users}
           onClick={(row) => {
-            navigate(`/dashboard/users/${row.original.id}`);
+            navigate(`${RouteMap.ADMIN_DASHBOARD_USERS}/${row.original.id}`);
           }}
           rowCount={rowCount}
           pagination={{ pageIndex, pageSize }}

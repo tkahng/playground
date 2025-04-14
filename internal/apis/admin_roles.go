@@ -6,7 +6,6 @@ import (
 	"slices"
 	"time"
 
-	"github.com/aarondl/opt/null"
 	"github.com/aarondl/opt/omit"
 	"github.com/aarondl/opt/omitnull"
 	"github.com/danielgtaylor/huma/v2"
@@ -33,23 +32,51 @@ func (api *Api) AdminRolesOperation(path string) huma.Operation {
 	}
 }
 
+type Role struct {
+	ID          uuid.UUID `db:"id,pk" json:"id"`
+	Name        string    `db:"name" json:"name"`
+	Description *string   `db:"description" json:"description,omitempty"`
+	CreatedAt   time.Time `db:"created_at" json:"created_at"`
+	UpdatedAt   time.Time `db:"updated_at" json:"updated_at"`
+}
+
+func ToRole(role *models.Role) *Role {
+	return &Role{
+		ID:          role.ID,
+		Name:        role.Name,
+		Description: role.Description.Ptr(),
+		CreatedAt:   role.CreatedAt,
+		UpdatedAt:   role.UpdatedAt,
+	}
+}
+
+type Permission struct {
+	ID          uuid.UUID `db:"id,pk" json:"id"`
+	Name        string    `db:"name" json:"name"`
+	Description *string   `db:"description" json:"description,omitempty"`
+	CreatedAt   time.Time `db:"created_at" json:"created_at"`
+	UpdatedAt   time.Time `db:"updated_at" json:"updated_at"`
+}
+
+func ToPermission(permission *models.Permission) *Permission {
+	return &Permission{
+		ID:          permission.ID,
+		Name:        permission.Name,
+		Description: permission.Description.Ptr(),
+		CreatedAt:   permission.CreatedAt,
+		UpdatedAt:   permission.UpdatedAt,
+	}
+}
+
 type RoleWithPermissions struct {
-	ID          uuid.UUID            `db:"id,pk" json:"id"`
-	Name        string               `db:"name" json:"name"`
-	Description null.Val[string]     `db:"description" json:"description,omitempty"`
-	CreatedAt   time.Time            `db:"created_at" json:"created_at"`
-	UpdatedAt   time.Time            `db:"updated_at" json:"updated_at"`
-	Permissions []*models.Permission `json:"permissions,omitempty" required:"false"`
+	*Role
+	Permissions []*Permission `json:"permissions,omitempty" required:"false"`
 }
 
 func ToRoleWithPermissions(role *models.Role) *RoleWithPermissions {
 	return &RoleWithPermissions{
-		Permissions: role.R.Permissions,
-		ID:          role.ID,
-		Name:        role.Name,
-		Description: role.Description,
-		CreatedAt:   role.CreatedAt,
-		UpdatedAt:   role.UpdatedAt,
+		Permissions: dataloader.Map(role.R.Permissions, ToPermission),
+		Role:        ToRole(role),
 	}
 }
 
@@ -108,7 +135,7 @@ type RoleCreateInput struct {
 func (api *Api) AdminRolesCreate(ctx context.Context, input *struct {
 	Body RoleCreateInput
 }) (*struct {
-	Body models.Role
+	Body Role
 }, error) {
 	db := api.app.Db()
 	data, err := repository.FindRoleByName(ctx, db, input.Body.Name)
@@ -128,8 +155,8 @@ func (api *Api) AdminRolesCreate(ctx context.Context, input *struct {
 	if role == nil {
 		return nil, huma.Error500InternalServerError("Failed to create role")
 	}
-	return &struct{ Body models.Role }{
-		Body: *role,
+	return &struct{ Body Role }{
+		Body: *ToRole(role),
 	}, nil
 }
 
@@ -189,7 +216,7 @@ func (api *Api) AdminRolesUpdate(ctx context.Context, input *struct {
 	RoleID string `path:"id" format:"uuid" required:"true"`
 	Body   RoleCreateInput
 }) (*struct {
-	Body models.Role
+	Body *Role
 }, error) {
 	db := api.app.Db()
 	id, err := uuid.Parse(input.RoleID)
@@ -214,8 +241,8 @@ func (api *Api) AdminRolesUpdate(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	return &struct{ Body models.Role }{
-		Body: *role,
+	return &struct{ Body *Role }{
+		Body: ToRole(role),
 	}, nil
 }
 func (api *Api) AdminUserRolesDeleteOperation(path string) huma.Operation {
@@ -337,7 +364,7 @@ type RoleIdsInput struct {
 func (api *Api) AdminUserRolesUpdate(ctx context.Context, input *struct {
 	UserID string       `path:"id" format:"uuid" required:"true"`
 	Body   RoleIdsInput `json:"body" required:"true"`
-}) (*PaginatedOutput[*models.Role], error) {
+}) (*PaginatedOutput[*Role], error) {
 	db := api.app.Db()
 	id, err := uuid.Parse(input.UserID)
 	if err != nil {
@@ -372,9 +399,9 @@ func (api *Api) AdminUserRolesUpdate(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	output := PaginatedOutput[*models.Role]{
-		Body: shared.PaginatedResponse[*models.Role]{
-			Data: roles,
+	output := PaginatedOutput[*Role]{
+		Body: shared.PaginatedResponse[*Role]{
+			Data: dataloader.Map(roles, ToRole),
 		},
 	}
 	return &output, nil
@@ -403,7 +430,7 @@ func (api *Api) AdminRolesUpdatePermissions(ctx context.Context, input *struct {
 	RoleID string `path:"id" format:"uuid" required:"true"`
 	Body   RolePermissionsUpdateInput
 }) (*struct {
-	Body models.Role
+	Body *Role
 }, error) {
 	db := api.app.Db()
 	id, err := uuid.Parse(input.RoleID)
@@ -441,8 +468,8 @@ func (api *Api) AdminRolesUpdatePermissions(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	return &struct{ Body models.Role }{
-		Body: *role,
+	return &struct{ Body *Role }{
+		Body: ToRole(role),
 	}, nil
 }
 

@@ -95,7 +95,7 @@ export default function UserEdit() {
                 </div>
                 <div className="space-y-1">
                   <Label htmlFor="username">Username</Label>
-                  <Input id="username" defaultValue={userInfo.name} />
+                  <Input id="username" defaultValue={userInfo.name || ""} />
                 </div>
               </CardContent>
               <CardFooter>

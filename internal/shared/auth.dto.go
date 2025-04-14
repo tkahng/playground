@@ -70,7 +70,7 @@ type TokenDto struct {
 }
 
 type AuthenticatedDTO struct {
-	User        *models.User       `json:"user"`
+	User        *User              `json:"user"`
 	Permissions []string           `json:"permissions"`
 	Roles       []string           `json:"roles"`
 	Providers   []models.Providers `json:"providers"`

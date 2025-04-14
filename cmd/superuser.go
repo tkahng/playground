@@ -39,9 +39,9 @@ var superuserCreate = &cobra.Command{
 		}
 
 		ctx := cmd.Context()
-		conf := conf.AppConfigGetter()
+		conf := conf.GetConfig[conf.DBConfig]()
 
-		db := core.NewPoolFromConf(ctx, conf.Db)
+		db := core.NewPoolFromConf(ctx, conf)
 		dbx := core.NewBobFromPool(db)
 		err := repository.EnsureRoleAndPermissions(ctx, dbx, "superuser", "superuser")
 		if err != nil {

@@ -8,6 +8,8 @@ type Factory struct {
 	baseMediumMods             MediumModSlice
 	baseNotificationMods       NotificationModSlice
 	basePermissionMods         PermissionModSlice
+	baseProductPermissionMods  ProductPermissionModSlice
+	baseProductRoleMods        ProductRoleModSlice
 	baseRolePermissionMods     RolePermissionModSlice
 	baseRoleMods               RoleModSlice
 	baseSchemaMigrationMods    SchemaMigrationModSlice
@@ -72,6 +74,30 @@ func (f *Factory) NewPermission(mods ...PermissionMod) *PermissionTemplate {
 	}
 
 	PermissionModSlice(mods).Apply(o)
+
+	return o
+}
+
+func (f *Factory) NewProductPermission(mods ...ProductPermissionMod) *ProductPermissionTemplate {
+	o := &ProductPermissionTemplate{f: f}
+
+	if f != nil {
+		f.baseProductPermissionMods.Apply(o)
+	}
+
+	ProductPermissionModSlice(mods).Apply(o)
+
+	return o
+}
+
+func (f *Factory) NewProductRole(mods ...ProductRoleMod) *ProductRoleTemplate {
+	o := &ProductRoleTemplate{f: f}
+
+	if f != nil {
+		f.baseProductRoleMods.Apply(o)
+	}
+
+	ProductRoleModSlice(mods).Apply(o)
 
 	return o
 }
@@ -274,6 +300,22 @@ func (f *Factory) ClearBasePermissionMods() {
 
 func (f *Factory) AddBasePermissionMod(mods ...PermissionMod) {
 	f.basePermissionMods = append(f.basePermissionMods, mods...)
+}
+
+func (f *Factory) ClearBaseProductPermissionMods() {
+	f.baseProductPermissionMods = nil
+}
+
+func (f *Factory) AddBaseProductPermissionMod(mods ...ProductPermissionMod) {
+	f.baseProductPermissionMods = append(f.baseProductPermissionMods, mods...)
+}
+
+func (f *Factory) ClearBaseProductRoleMods() {
+	f.baseProductRoleMods = nil
+}
+
+func (f *Factory) AddBaseProductRoleMod(mods ...ProductRoleMod) {
+	f.baseProductRoleMods = append(f.baseProductRoleMods, mods...)
 }
 
 func (f *Factory) ClearBaseRolePermissionMods() {
