@@ -564,3 +564,18 @@ export const createCheckoutSession = async (
   }
   return data;
 };
+
+export const createBillingPortalSession = async (token: string) => {
+  const { data, error } = await client.POST("/api/stripe/billing-portal", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  if (error) {
+    throw new Error(error.detail);
+  }
+  if (!data) {
+    throw new Error("No data");
+  }
+  return data.url;
+};

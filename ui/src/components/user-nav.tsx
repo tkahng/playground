@@ -50,7 +50,7 @@ export function UserNav({ links }: UserNavProps) {
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
-          className="relative h-8 w-8 rounded-full shadow-sm"
+          className="relative h-8 w-8 rounded-full shadow-sm border-2"
         >
           <Avatar>
             <AvatarImage src="https://avatars.githubusercontent.com/u/124599?v=4" />

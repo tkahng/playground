@@ -25,7 +25,8 @@ export function NexusAILandingHeader({
   // };
   return (
     <header className="shadow-sm">
-      <nav className="container mx-auto flex h-14 items-center justify-between  lg:px-6">
+      {/* <nav className="container mx-auto flex h-14 items-center justify-between  lg:px-6"> */}
+      <nav className=" flex h-14 items-center justify-between  lg:px-6">
         <div className="flex flex-grow items-center content-center">
           <NexusAILogo />
           {leftLinks?.length &&
