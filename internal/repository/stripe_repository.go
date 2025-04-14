@@ -288,6 +288,23 @@ func StripeSubscriptionStatusConvert(status stripe.SubscriptionStatus) models.St
 	return models.StripeSubscriptionStatusActive
 }
 
+func FindSubscriptionById(ctx context.Context, dbx bob.Executor, stripeId string) (*models.StripeSubscription, error) {
+	data, err := models.StripeSubscriptions.Query(
+		models.SelectWhere.StripeSubscriptions.ID.EQ(stripeId),
+	).One(ctx, dbx)
+	return OptionalRow(data, err)
+}
+
+func FindSubscriptionWithPriceById(ctx context.Context, dbx bob.Executor, stripeId string) (*models.StripeSubscription, error) {
+	data, err := models.StripeSubscriptions.Query(
+		models.SelectWhere.StripeSubscriptions.ID.EQ(stripeId),
+		models.PreloadStripeSubscriptionPriceStripePrice(
+			models.PreloadStripePriceProductStripeProduct(),
+		),
+	).One(ctx, dbx)
+	return OptionalRow(data, err)
+}
+
 func FindLatestActiveSubscriptionByUserId(ctx context.Context, dbx bob.Executor, userId uuid.UUID) (*models.StripeSubscription, error) {
 	data, err := models.StripeSubscriptions.Query(
 		models.SelectWhere.StripeSubscriptions.UserID.EQ(userId),

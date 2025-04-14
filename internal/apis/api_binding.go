@@ -119,6 +119,8 @@ func BindApis(api huma.API, app core.App) {
 	huma.Register(stripeGroup, appApi.StripeBillingPortalOperation("/billing-portal"), appApi.StripeBillingPortal)
 	//  stripe checkout session
 	huma.Register(stripeGroup, appApi.StripeCheckoutSessionOperation("/checkout-session"), appApi.StripeCheckoutSession)
+	//  stripe get checkout session by checkoutSessionId
+	huma.Register(stripeGroup, appApi.StripeCheckoutSessionGetOperation("/checkout-session/{checkoutSessionId}"), appApi.StripeCheckoutSessionGet)
 
 	//  admin routes ----------------------------------------------------------------------------
 	adminGroup := huma.NewGroup(api, "/admin")

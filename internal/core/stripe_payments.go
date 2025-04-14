@@ -11,6 +11,20 @@ import (
 	"github.com/tkahng/authgo/internal/types"
 )
 
+func (srv *StripeService) FindSubscriptionWithPriceBySessionId(ctx context.Context, db bob.Executor, sessionId string) (*models.StripeSubscription, error) {
+	sub, err := srv.client.FindCheckoutSessionByStripeId(sessionId)
+	if err != nil {
+		return nil, err
+	}
+	if sub == nil {
+		return nil, errors.New("subscription not found")
+	}
+	if sub.Subscription == nil {
+		return nil, errors.New("subscription not found")
+	}
+	return repository.FindSubscriptionWithPriceById(ctx, db, sub.Subscription.ID)
+}
+
 func (srv *StripeService) UpsertSubscriptionByIds(ctx context.Context, db bob.Executor, cutomerId, subscriptionId string) error {
 	cus, err := repository.FindCustomerByStripeId(ctx, db, cutomerId)
 	if err != nil {
