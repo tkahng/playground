@@ -483,3 +483,34 @@ export const removeUserPermission = async (
   }
   return data;
 };
+
+export const getProductsWithPrices = async (token: string) => {
+  const { data, error } = await client.GET("/api/stripe/products", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  if (error) {
+    throw new Error(error.detail);
+  }
+  if (!data) {
+    throw new Error("No data");
+  }
+
+  return data;
+};
+
+export const getUserSubscriptions = async (token: string) => {
+  const { data, error } = await client.GET("/api/stripe/my-subscriptions", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  if (error) {
+    throw new Error(error.detail);
+  }
+  if (!data) {
+    throw new Error("No data");
+  }
+  return data;
+};
