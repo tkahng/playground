@@ -30,7 +30,7 @@ func (api *Api) AdminStripeSubscriptionsOperation(path string) huma.Operation {
 type SubscriptionWithData struct {
 	*Subscription
 	Price            *StripePricesWithProduct `json:"price,omitempty" required:"false"`
-	SubscriptionUser *shared.User             `json:"user,omitempty" required:"false"`
+	SubscriptionUser *shared.User       `json:"user,omitempty" required:"false"`
 }
 
 func (api *Api) AdminStripeSubscriptions(ctx context.Context,

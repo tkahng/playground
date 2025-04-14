@@ -1122,9 +1122,11 @@ export interface components {
             url: string;
         };
         SubscriptionWithData: {
-            cancel_at: string;
+            /** Format: date-time */
+            cancel_at: string | null;
             cancel_at_period_end: boolean;
-            canceled_at: string;
+            /** Format: date-time */
+            canceled_at: string | null;
             /** Format: date-time */
             created: string;
             /** Format: date-time */
@@ -1133,16 +1135,21 @@ export interface components {
             current_period_end: string;
             /** Format: date-time */
             current_period_start: string;
-            ended_at: string;
+            /** Format: date-time */
+            ended_at: string | null;
             id: string;
-            metadata: string;
+            metadata: {
+                [key: string]: string;
+            };
             price?: components["schemas"]["StripePricesWithProduct"];
             price_id: string;
             /** Format: int64 */
             quantity: number;
             status: string;
-            trial_end: string;
-            trial_start: string;
+            /** Format: date-time */
+            trial_end: string | null;
+            /** Format: date-time */
+            trial_start: string | null;
             /** Format: date-time */
             updated_at: string;
             user?: components["schemas"]["User"];
@@ -1154,9 +1161,11 @@ export interface components {
              * @description A URL to the JSON Schema for this object.
              */
             readonly $schema?: string;
-            cancel_at: string;
+            /** Format: date-time */
+            cancel_at: string | null;
             cancel_at_period_end: boolean;
-            canceled_at: string;
+            /** Format: date-time */
+            canceled_at: string | null;
             /** Format: date-time */
             created: string;
             /** Format: date-time */
@@ -1165,16 +1174,21 @@ export interface components {
             current_period_end: string;
             /** Format: date-time */
             current_period_start: string;
-            ended_at: string;
+            /** Format: date-time */
+            ended_at: string | null;
             id: string;
-            metadata: string;
+            metadata: {
+                [key: string]: string;
+            };
             price?: components["schemas"]["StripePricesWithProduct"];
             price_id: string;
             /** Format: int64 */
             quantity: number;
             status: string;
-            trial_end: string;
-            trial_start: string;
+            /** Format: date-time */
+            trial_end: string | null;
+            /** Format: date-time */
+            trial_start: string | null;
             /** Format: date-time */
             updated_at: string;
             user_id: string;
