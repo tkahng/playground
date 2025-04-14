@@ -8,6 +8,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
+	"github.com/tkahng/authgo/ui"
 )
 
 // func NewServer(app core.App) *huma.Server {
@@ -28,7 +29,9 @@ func NewServer() (http.Handler, huma.API) {
 	}))
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
-	// r.Get("/*", http.FileServer(http.FS(ui.DistDirFS)).ServeHTTP)
+	handler := http.FileServer(http.FS(ui.DistDirFS))
+	// r.Handle("/", handler)
+	r.Get("/*", handler.ServeHTTP)
 	api = humachi.New(r, config)
 	r.Get("/swagger", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html")
