@@ -5,6 +5,8 @@ import { BrowserRouter, Route, Routes } from "react-router";
 import { Toaster } from "sonner";
 import { ThemeProvider } from "./components/theme-provider";
 import { AuthProvider } from "./context/auth-context";
+import AdminDashboardLayout from "./layouts/admin-dashboard-layout";
+import AdminLayoutBase from "./layouts/admin-layout-base";
 import AuthenticatedLayout from "./layouts/authenticated-layout";
 import AuthenticatedLayoutBase from "./layouts/authenticated-layout-base";
 import RootLayout from "./layouts/root";
@@ -42,6 +44,7 @@ function App() {
                   <Route path="/signin" element={<Signin />} />
                   <Route path="/signup" element={<SignupPage />} />
                 </Route>
+                {/* <Route element= */}
                 {/* Other routes */}
                 <Route path="/auth/callback" element={<CallbackComponent />} />
                 <Route path="/payment" element={<AuthenticatedLayoutBase />}>
@@ -61,6 +64,26 @@ function App() {
                   <Route path="permissions">
                     <Route index element={<PermissionListPage />} />
                     <Route path=":permissionId" element={<PermissionEdit />} />
+                  </Route>
+                </Route>
+                <Route path="/admin" element={<AdminLayoutBase />}>
+                  <Route path="dashboard" element={<AdminDashboardLayout />}>
+                    <Route index element={<Dashboard />} />
+                    <Route path="users">
+                      <Route index element={<UserListPage />} />
+                      <Route path=":userId" element={<UserEdit />} />
+                    </Route>
+                    <Route path="roles">
+                      <Route index element={<RolesListPage />} />
+                      <Route path=":roleId" element={<RoleEdit />} />
+                    </Route>
+                    <Route path="permissions">
+                      <Route index element={<PermissionListPage />} />
+                      <Route
+                        path=":permissionId"
+                        element={<PermissionEdit />}
+                      />
+                    </Route>
                   </Route>
                 </Route>
               </Routes>

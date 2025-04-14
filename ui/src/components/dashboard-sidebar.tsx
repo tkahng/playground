@@ -1,31 +1,13 @@
 import { cn } from "@/lib/utils";
-import { Home, Key, User } from "lucide-react";
 import { Link, useLocation } from "react-router";
 import { LinkProps } from "./landing-links";
-const items: LinkProps[] = [
-  {
-    title: "Home",
-    to: "/dashboard",
-    icon: <Home />,
-  },
-  {
-    title: "Users",
-    to: "/dashboard/users",
-    icon: <User />,
-  },
-  {
-    title: "Roles",
-    to: "/dashboard/roles",
-    icon: <Key />,
-  },
-];
 
-export const AdminDashboardSidebar = () => {
+export const DashboardSidebar = ({ links }: { links: LinkProps[] }) => {
   const { pathname } = useLocation();
   return (
     <nav className="flex flex-grow flex-col">
       <div className="border flex flex-col flex-grow p-8">
-        {items.map((item) => (
+        {links.map((item) => (
           <Link
             key={item.title}
             to={item.to}

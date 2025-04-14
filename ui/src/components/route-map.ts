@@ -25,4 +25,9 @@ export enum RouteMap {
   PROVIDER_PARAMS = ":provider",
   AUTH_CALLBACK = "/auth/callback",
   ROLE_EDIT = "/dashboard/roles/:roleId",
+
+  ADMIN_DASHBOARD_HOME = "/admin/dashboard",
+  ADMIN_DASHBOARD_USERS = "/admin/dashboard/users",
+  ADMIN_DASHBOARD_ROLES = "/admin/dashboard/roles",
+  ADMIN_DASHBOARD_PERMISSIONS = "/admin/dashboard/permissions",
 }

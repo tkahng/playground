@@ -1,4 +1,6 @@
-import { UserDetail } from "@/schema.types";
+import { UserDetailWithRoles } from "@/schema.types";
 import { createContext } from "react";
 
-export const UserDetailContext = createContext<UserDetail | null>(null);
+export const UserDetailContext = createContext<UserDetailWithRoles | null>(
+  null
+);

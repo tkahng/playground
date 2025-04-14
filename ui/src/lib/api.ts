@@ -5,6 +5,7 @@ import {
   SigninInput,
   SignupInput,
   User,
+  UserDetailWithRoles,
 } from "@/schema.types";
 import { client } from "./client";
 
@@ -325,7 +326,10 @@ export const getUser = async (token: string, id: string) => {
   return data;
 };
 
-export const getUserInfo = async (token: string, id: string) => {
+export const getUserInfo = async (
+  token: string,
+  id: string
+): Promise<UserDetailWithRoles> => {
   const user = await getUser(token, id);
   const userRoles = await getUserRoles(token, id);
   const userPermissions = await getUserPermissions(token, id, false);
