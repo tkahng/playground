@@ -114,6 +114,29 @@ func BindApis(api huma.API, app core.App) {
 		// Mapping of event type name to Go struct for that event.
 		"message": models.Notification{},
 	}, appApi.NotificationsSsefunc)
+	// ---- task routes -------------------------------------------------------------------------------------------------
+	taskGroup := huma.NewGroup(api, "/tasks")
+	// task list
+	huma.Register(taskGroup, appApi.TaskListOperation("/"), appApi.TaskList)
+	// task create
+	// huma.Register(taskGroup, appApi.TaskCreateOperation("/"), appApi.TaskCreate)
+	// task update
+	huma.Register(taskGroup, appApi.TaskUpdateOperation("/{id}"), appApi.TaskUpdate)
+	// // task delete
+	// huma.Register(taskGroup, appApi.TaskDeleteOperation("/{id}"), appApi.TaskDelete)
+	// // task get
+	// huma.Register(taskGroup, appApi.TaskGetOperation("/{id}"), appApi.TaskGet)
+	taskProjectGroup := huma.NewGroup(api, "/projects")
+	// task project list
+	huma.Register(taskProjectGroup, appApi.TaskProjectListOperation("/"), appApi.TaskProjectList)
+	// task project create
+	huma.Register(taskProjectGroup, appApi.TaskProjectCreateOperation("/"), appApi.TaskProjectCreate)
+	// // task project update
+	// huma.Register(taskProjectGroup, appApi.TaskProjectUpdateOperation("/{id}"), appApi.TaskProjectUpdate)
+	// // task project delete
+	// huma.Register(taskProjectGroup, appApi.TaskProjectDeleteOperation("/{id}"), appApi.TaskProjectDelete)
+	// // task project get
+	// huma.Register(taskProjectGroup, appApi.TaskProjectGetOperation("/{id}"), appApi.TaskProjectGet)
 	// stripe routes -------------------------------------------------------------------------------------------------
 	stripeGroup := huma.NewGroup(api, "/stripe")
 	// stripe my subscriptions

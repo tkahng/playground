@@ -73,6 +73,21 @@ type CreateTaskBaseDTO struct {
 	Name        string            `json:"name" required:"true"`
 	Description *string           `json:"description,omitempty" required:"false"`
 	Status      models.TaskStatus `json:"status" required:"false" enum:"todo,in_progress,done" default:"todo"`
+	Order       float64           `json:"order,omitempty" required:"false"`
+}
+
+type UpdateTaskBaseDTO struct {
+	Name        string            `json:"name" required:"true"`
+	Description *string           `json:"description,omitempty" required:"false"`
+	Status      models.TaskStatus `json:"status" enum:"todo,in_progress,done"`
+	Order       float64           `json:"order"`
+	Position    *int64            `json:"position,omitempty" required:"false"`
+	ParentID    *uuid.UUID        `json:"parent_id,omitempty" required:"false"`
+}
+
+type UpdateTaskDTO struct {
+	UpdateTaskBaseDTO
+	TaskID uuid.UUID `path:"task_id" json:"task_id" required:"true"`
 }
 
 type CreateTaskWithChildrenDTO struct {
@@ -81,10 +96,15 @@ type CreateTaskWithChildrenDTO struct {
 }
 
 type CreateTaskProjectDTO struct {
-	Name        string                      `json:"name" required:"true"`
-	Description *string                     `json:"description,omitempty" required:"false"`
-	Status      models.TaskProjectStatus    `json:"status" required:"false" enum:"todo,in_progress,done" default:"todo"`
-	Tasks       []CreateTaskWithChildrenDTO `json:"tasks,omitempty" required:"false"`
+	Name        string                   `json:"name" required:"true"`
+	Description *string                  `json:"description,omitempty" required:"false"`
+	Status      models.TaskProjectStatus `json:"status" required:"false" enum:"todo,in_progress,done" default:"todo"`
+	Order       float64                  `json:"order,omitempty" required:"false"`
+}
+
+type CreateTaskProjectWithTasksDTO struct {
+	CreateTaskProjectDTO
+	Tasks []CreateTaskBaseDTO `json:"tasks,omitempty" required:"false"`
 }
 
 type TaskProjectsListFilter struct {

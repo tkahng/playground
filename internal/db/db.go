@@ -14,12 +14,12 @@ import (
 
 type DBTX interface {
 	Begin(ctx context.Context) (pgx.Tx, error)
-	BeginTx(ctx context.Context, txOptions pgx.TxOptions) (pgx.Tx, error)
+	// BeginTx(ctx context.Context, txOptions pgx.TxOptions) (pgx.Tx, error)
 	Query(ctx context.Context, sql string, arguments ...any) (pgx.Rows, error)
 	QueryRow(ctx context.Context, sql string, arguments ...any) pgx.Row
 	Exec(ctx context.Context, sql string, arguments ...any) (pgconn.CommandTag, error)
 	SendBatch(ctx context.Context, b *pgx.Batch) pgx.BatchResults
-	Ping(ctx context.Context) error
+	// Ping(ctx context.Context) error
 	// Executor() *DbTx
 }
 
@@ -53,10 +53,6 @@ func (r rows) Columns() ([]string, error) {
 	}
 
 	return cols, nil
-}
-
-func (v *DBTx) Executor() *DBTX {
-	return &v.pool
 }
 
 func (v *DBTx) QueryContext(ctx context.Context, query string, args ...any) (scan.Rows, error) {

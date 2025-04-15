@@ -2,11 +2,15 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"slices"
 
+	"github.com/aarondl/opt/omit"
+	"github.com/aarondl/opt/omitnull"
 	"github.com/google/uuid"
 	"github.com/stephenafamo/bob"
 	"github.com/stephenafamo/bob/dialect/psql"
+	"github.com/stephenafamo/bob/dialect/psql/im"
 	"github.com/stephenafamo/bob/dialect/psql/sm"
 	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/shared"
@@ -213,3 +217,204 @@ func CountTaskProjects(ctx context.Context, db bob.Executor, filter *shared.Task
 	}
 	return data, nil
 }
+
+func CreateTaskProject(ctx context.Context, db bob.Executor, userID uuid.UUID, input *shared.CreateTaskProjectDTO) (*models.TaskProject, error) {
+	taskProject := models.TaskProjectSetter{
+		UserID:      omit.From(userID),
+		Name:        omit.From(input.Name),
+		Description: omitnull.FromPtr(input.Description),
+		Status:      omit.From(input.Status),
+		Order:       omit.From(input.Order),
+	}
+	projects, err := models.TaskProjects.Insert(&taskProject, im.Returning("*")).One(ctx, db)
+	if err != nil {
+		return nil, err
+	}
+	return projects, nil
+}
+
+func CreateTaskProjectWithTasks(ctx context.Context, db bob.Executor, userID uuid.UUID, input *shared.CreateTaskProjectWithTasksDTO) (*models.TaskProject, error) {
+	count, err := CountTaskProjects(ctx, db, nil)
+	if err != nil {
+		return nil, err
+	}
+	input.CreateTaskProjectDTO.Order = float64(count * 1000)
+	taskProject, err := CreateTaskProject(ctx, db, userID, &input.CreateTaskProjectDTO)
+	if err != nil {
+		return nil, err
+	}
+	var tasks []*models.Task
+	for i, task := range input.Tasks {
+		task.Order = float64(i * 1000)
+		newTask, err := CreateTask(ctx, db, userID, taskProject.ID, &task)
+		if err != nil {
+			return nil, err
+		}
+		tasks = append(tasks, newTask)
+	}
+	err = taskProject.AttachProjectTasks(ctx, db, tasks...)
+	if err != nil {
+		return nil, err
+	}
+	return taskProject, nil
+}
+
+func CreateTaskWithChildren(ctx context.Context, db bob.Executor, userID uuid.UUID, projectID uuid.UUID, input *shared.CreateTaskWithChildrenDTO) (*models.Task, error) {
+	task, err := CreateTask(ctx, db, userID, projectID, &input.CreateTaskBaseDTO)
+	if err != nil {
+		return nil, err
+	}
+	// for _, child := range input.Children {
+	// 	childTask, err := CreateTask(ctx, db, userID, projectID, &child)
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+	// }
+	return task, nil
+}
+
+func CreateTask(ctx context.Context, db bob.Executor, userID uuid.UUID, projectID uuid.UUID, input *shared.CreateTaskBaseDTO) (*models.Task, error) {
+	setter := models.TaskSetter{
+		ProjectID:   omit.From(projectID),
+		UserID:      omit.From(userID),
+		Name:        omit.From(input.Name),
+		Description: omitnull.FromPtr(input.Description),
+		Status:      omit.From(input.Status),
+		Order:       omit.From(input.Order),
+	}
+	task, err := models.Tasks.Insert(&setter, im.Returning("*")).One(ctx, db)
+	if err != nil {
+		return nil, err
+	}
+	return task, nil
+}
+
+func DefineTaskOrderNumber(ctx context.Context, db bob.Executor, taskId uuid.UUID, taskProjectId uuid.UUID, currentOrder float64, position int64) (float64, error) {
+	if position == 0 {
+		response, err := models.Tasks.Query(
+			sm.Where(models.TaskColumns.ProjectID.EQ(psql.Arg(taskProjectId))),
+			sm.OrderBy(models.TaskColumns.Order).Asc(),
+			sm.Limit(1),
+		).One(ctx, db)
+		if err != nil {
+			return 0, err
+		}
+		if response.ID == taskId {
+			return response.Order, nil
+		}
+		return response.Order - 1000, nil
+	}
+	element, err := models.Tasks.Query(
+		sm.Where(models.TaskColumns.ProjectID.EQ(psql.Arg(taskProjectId))),
+		sm.OrderBy(models.TaskColumns.Order).Asc(),
+		sm.Limit(1),
+		sm.Offset(position),
+	).One(ctx, db)
+	if err != nil {
+		return 0, err
+	}
+	if element.ID == taskId {
+		return element.Order, nil
+	}
+	if currentOrder > element.Order {
+		sideElements, err := models.Tasks.Query(
+			sm.Where(models.TaskColumns.ID.EQ(psql.Arg(taskProjectId))),
+			sm.OrderBy(models.TaskColumns.Order).Asc(),
+			sm.Limit(1),
+			sm.Offset(position-1),
+		).One(ctx, db)
+		if err != nil {
+			return 0, err
+		}
+		return (element.Order + sideElements.Order) / 2, nil
+	}
+	sideElements, err := models.Tasks.Query(
+		sm.Where(models.TaskColumns.ID.EQ(psql.Arg(taskProjectId))),
+		sm.OrderBy(models.TaskColumns.Order).Asc(),
+		sm.Limit(1),
+		sm.Offset(position+1),
+	).One(ctx, db)
+	if err != nil {
+		return 0, err
+	}
+	if sideElements == nil {
+		return element.Order + 1000, nil
+	}
+	return (element.Order + sideElements.Order) / 2, nil
+
+}
+
+func UpdateTask(ctx context.Context, db bob.Executor, input *shared.UpdateTaskDTO) error {
+	task, err := GetTaskByID(ctx, db, input.TaskID)
+	if err != nil {
+		return err
+	}
+	if task == nil {
+		return errors.New("task not found")
+	}
+	taskSetter := &models.TaskSetter{
+		Name:        omit.From(input.Name),
+		Description: omitnull.FromPtr(input.Description),
+		Status:      omit.From(input.Status),
+		Order:       omit.From(input.Order),
+		ParentID:    omitnull.FromPtr(input.ParentID),
+	}
+	if input.Position != nil {
+		position := *input.Position
+		order, err := DefineTaskOrderNumber(ctx, db, task.ID, task.ProjectID, task.Order, position)
+		if err != nil {
+			return err
+		}
+		taskSetter.Order = omit.From(order)
+	}
+	err = task.Update(ctx, db, taskSetter)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// private defineOrderNumber = async (
+//
+//		  id: number,
+//		  todoListId: number,
+//		  currentOrder: number,
+//		  position: number,
+//		) => {
+//	    if (position === 0) {
+//	      const response = await this.findByTodoListId(
+//	        todoListId,
+//	        { take: 1, skip: 0 },
+//	        { property: 'order', direction: 'ASC' },
+//	      );
+//	      if (response.elements[0].id === id) return response.elements[0].order;
+//	      return response.elements[0].order - 1000;
+//	    }
+//	    const elements = await this.todoGroupRepository.find(
+//	      { take: 1, skip: position },
+//	      {
+//	        filter: { todoListId },
+//	        sorting: { property: 'order', direction: 'ASC' },
+//	      },
+//	    );
+//	    if (elements[0].id === id) return elements[0].order;
+//	    if (currentOrder > elements[0].order) {
+//	      const sideElements = await this.todoGroupRepository.find(
+//	        { take: 1, skip: position - 1 },
+//	        {
+//	          filter: { todoListId },
+//	          sorting: { property: 'order', direction: 'ASC' },
+//	        },
+//	      );
+//	      return (elements[0].order + sideElements[0].order) / 2;
+//	    }
+//	    const sideElements = await this.todoGroupRepository.find(
+//	      { take: 1, skip: position + 1 },
+//	      {
+//	        filter: { todoListId },
+//	        sorting: { property: 'order', direction: 'ASC' },
+//	      },
+//	    );
+//	    if (!sideElements.length) return elements[0].order + 1000;
+//	    return (elements[0].order + sideElements[0].order) / 2;
+//	  };
