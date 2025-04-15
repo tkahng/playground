@@ -1,5 +1,3 @@
-import { NexusAILandingHeader } from "@/components/nexus-landing-header";
-import { NexusAIMinimalFooter } from "@/components/nexus-minimal-footer";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { useEffect } from "react";
 import { Navigate, useLocation, useOutlet } from "react-router";
@@ -42,14 +40,14 @@ export default function AdminLayoutBase() {
   }
   return (
     <>
-      <div className="relative flex min-h-screen flex-col justify-center">
+      {/* <div className="relative flex min-h-screen flex-col justify-center">
         <NexusAILandingHeader full />
-        <main className="flex flex-grow">
-          {/* <DashboardSidebar links={links} /> */}
-          {outlet}
-        </main>
+        <main className="flex flex-grow"> */}
+      {/* <DashboardSidebar links={links} /> */}
+      {outlet}
+      {/* </main>
         <NexusAIMinimalFooter />
-      </div>
+      </div> */}
     </>
   );
 }
