@@ -56,7 +56,7 @@ func ModelToTask(task *models.Task) *Task {
 	}
 }
 
-func ModelToTaskWithSubtask(task *models.TaskProject) *TaskProject {
+func ModelToProject(task *models.TaskProject) *TaskProject {
 	return &TaskProject{
 		ID:          task.ID,
 		UserID:      task.UserID,
@@ -102,12 +102,21 @@ type TaskProjectsListParams struct {
 }
 
 type TaskListFilter struct {
-	Q         string              `query:"q,omitempty" required:"false"`
-	Status    []models.TaskStatus `query:"status,omitempty,explode" required:"false" enum:"todo,in_progress,done"`
-	ProjectID string              `query:"project_id,omitempty" required:"false" format:"uuid"`
-	UserID    string              `query:"user_id,omitempty" required:"false" format:"uuid"`
-	Ids       []string            `query:"ids,omitempty,explode" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+	Q            string              `query:"q,omitempty" required:"false"`
+	Status       []models.TaskStatus `query:"status,omitempty,explode" required:"false" enum:"todo,in_progress,done"`
+	ProjectID    string              `query:"project_id,omitempty" required:"false" format:"uuid"`
+	UserID       string              `query:"user_id,omitempty" required:"false" format:"uuid"`
+	Ids          []string            `query:"ids,omitempty,explode" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+	ParentID     string              `query:"parent_id,omitempty" required:"false" format:"uuid"`
+	ParentStatus ParentStatus        `query:"parent_status,omitempty" required:"false" enum:"parent,child"`
 }
+
+type ParentStatus string
+
+const (
+	ParentStatusParent ParentStatus = "parent"
+	ParentStatusChild  ParentStatus = "child"
+)
 
 type TaskListParams struct {
 	PaginatedInput

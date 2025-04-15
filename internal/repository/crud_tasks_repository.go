@@ -92,6 +92,20 @@ func ListTasksFilterFunc(ctx context.Context, q *psql.ViewQuery[*models.Task, mo
 			models.SelectWhere.Tasks.ID.In(ids...),
 		)
 	}
+	if filter.ParentID != "" {
+		id, err := uuid.Parse(filter.ParentID)
+		if err != nil {
+			return
+		}
+		q.Apply(models.SelectWhere.Tasks.ParentID.EQ(id))
+	}
+	if filter.ParentStatus != "" {
+		if filter.ParentStatus == "parent" {
+			q.Apply(models.SelectWhere.Tasks.ParentID.IsNull())
+		} else if filter.ParentStatus == "child" {
+			q.Apply(models.SelectWhere.Tasks.ParentID.IsNotNull())
+		}
+	}
 }
 
 // ListTasks implements AdminCrudActions.
