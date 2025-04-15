@@ -22,14 +22,16 @@ const links: LinkProps[] = [
     icon: <Key />,
   },
 ];
-
+const headerLinks: LinkProps[] = [
+  { title: "Dashboard", to: RouteMap.DASHBOARD_HOME },
+];
 export default function AdminDashboardLayout() {
   const outlet = useOutlet();
 
   return (
     <>
       <div className="relative flex min-h-screen flex-col justify-center">
-        <NexusAILandingHeader full />
+        <NexusAILandingHeader full leftLinks={headerLinks} />
         <main className="flex flex-grow">
           <DashboardSidebar links={links} />
           {outlet}

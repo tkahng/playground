@@ -1,12 +1,4 @@
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -67,28 +59,28 @@ export default function UserEdit() {
   }
   return (
     <UserDetailContext.Provider value={userInfo}>
-      <div className="flex w-full flex-col items-center justify-start">
+      <div className="h-full px-4 py-6 lg:px-8">
+        {/* <div className="flex w-full flex-col items-center justify-start"> */}
         <div className="w-full">
           <Button asChild>
             <Link to="/dashboard/users">Back to Users</Link>
           </Button>
         </div>
-        <Tabs defaultValue="profile" className="w-[ 800px]">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="profile">Account</TabsTrigger>
-            <TabsTrigger value="roles">roles</TabsTrigger>
-            <TabsTrigger value="permissions">permissions</TabsTrigger>
-          </TabsList>
+        <Tabs defaultValue="profile" className="h-full space-y-6">
+          <div className="space-between flex items-center">
+            <TabsList>
+              <TabsTrigger value="profile">Account</TabsTrigger>
+              <TabsTrigger value="roles">roles</TabsTrigger>
+              <TabsTrigger value="permissions">permissions</TabsTrigger>
+            </TabsList>
+          </div>
           <TabsContent value="profile">
-            <Card>
-              <CardHeader>
-                <CardTitle>Account</CardTitle>
-                <CardDescription>
-                  Make changes to your account here. Click save when you're
-                  done.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-2">
+            <div>
+              <h1>Account</h1>
+              <h3>
+                Make changes to your account here. Click save when you're done.
+              </h3>
+              <div className="space-y-2">
                 <div className="space-y-1">
                   <Label htmlFor="name">email</Label>
                   <Input id="name" defaultValue={userInfo.email} />
@@ -97,45 +89,45 @@ export default function UserEdit() {
                   <Label htmlFor="username">Username</Label>
                   <Input id="username" defaultValue={userInfo.name || ""} />
                 </div>
-              </CardContent>
-              <CardFooter>
+              </div>
+              <div>
                 <Button>Save changes</Button>
-              </CardFooter>
-            </Card>
+              </div>
+            </div>
           </TabsContent>
           <TabsContent value="roles">
-            <Card>
-              <CardHeader>
-                <CardTitle>Password</CardTitle>
-                <CardDescription>
+            <div>
+              <div>
+                <h1>Password</h1>
+                <h2>
                   Change your password here. After saving, you'll be logged out.
-                </CardDescription>
+                </h2>
                 <DialogDemo />
-              </CardHeader>
-              <CardContent className="space-y-2">
+              </div>
+              <div className="space-y-2">
                 <TableDemo roles={userInfo.roles || []} />
-              </CardContent>
-              <CardFooter>
+              </div>
+              <div>
                 <Button>Save password</Button>
-              </CardFooter>
-            </Card>
+              </div>
+            </div>
           </TabsContent>
           <TabsContent value="permissions">
-            <Card>
-              <CardHeader>
-                <CardTitle>Permissions</CardTitle>
-                <CardDescription>
+            <div>
+              <div>
+                <h1>Permissions</h1>
+                <h2>
                   Change your password here. After saving, you'll be logged out.
-                </CardDescription>
+                </h2>
                 <UserPermissionDialog />
-              </CardHeader>
-              <CardContent className="space-y-2">
+              </div>
+              <div className="space-y-2">
                 <Permissions />
-              </CardContent>
-              <CardFooter>
+              </div>
+              <div>
                 <Button>Save permissions</Button>
-              </CardFooter>
-            </Card>
+              </div>
+            </div>
           </TabsContent>
         </Tabs>
       </div>
