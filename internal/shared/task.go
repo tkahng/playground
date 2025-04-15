@@ -87,7 +87,12 @@ type UpdateTaskBaseDTO struct {
 
 type UpdateTaskDTO struct {
 	UpdateTaskBaseDTO
-	TaskID uuid.UUID `path:"task_id" json:"task_id" required:"true"`
+	TaskID uuid.UUID `path:"task-id" json:"task_id" required:"true"`
+}
+
+type CreateTaskInput struct {
+	TaskProjectID uuid.UUID `path:"task-project-id"`
+	CreateTaskWithChildrenDTO
 }
 
 type CreateTaskWithChildrenDTO struct {

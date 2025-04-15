@@ -4,12 +4,17 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
+	"net/http"
 	"reflect"
+	"slices"
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/danielgtaylor/huma/v2/sse"
+	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/core"
 	"github.com/tkahng/authgo/internal/db/models"
+	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
 )
 
@@ -115,22 +120,61 @@ func BindApis(api huma.API, app core.App) {
 		"message": models.Notification{},
 	}, appApi.NotificationsSsefunc)
 	// ---- task routes -------------------------------------------------------------------------------------------------
-	taskGroup := huma.NewGroup(api, "/tasks")
+	taskGroup := huma.NewGroup(api, "/")
+	taskGroup.UseMiddleware(func(ctx huma.Context, next func(huma.Context)) {
+		db := app.Db()
+		rawCtx := ctx.Context()
+		taskId := ctx.Param("task-id")
+		fmt.Println("taskId", taskId)
+		if taskId == "" {
+			next(ctx)
+			return
+		}
+		id, err := uuid.Parse(taskId)
+		if err != nil {
+			huma.WriteErr(api, ctx, http.StatusBadRequest, "invalid task id")
+			return
+		}
+		task, err := repository.GetTaskByID(rawCtx, db, id)
+		if err != nil {
+			huma.WriteErr(api, ctx, http.StatusInternalServerError, "error getting task", err)
+			return
+		}
+		if task == nil {
+			huma.WriteErr(api, ctx, http.StatusNotFound, "task not found")
+			return
+		}
+		user := core.GetContextUserClaims(rawCtx)
+		if user == nil {
+			huma.WriteErr(api, ctx, http.StatusUnauthorized, "unauthorized")
+			return
+		}
+		if task.UserID != user.User.ID {
+			if slices.Contains(user.Permissions, "superuser") {
+				next(ctx)
+				return
+			}
+			huma.WriteErr(api, ctx, http.StatusForbidden, "task not found")
+			return
+		}
+		// if
+		next(ctx)
+	})
 	// task list
-	huma.Register(taskGroup, appApi.TaskListOperation("/"), appApi.TaskList)
+	huma.Register(taskGroup, appApi.TaskListOperation("task"), appApi.TaskList)
 	// task create
 	// huma.Register(taskGroup, appApi.TaskCreateOperation("/"), appApi.TaskCreate)
 	// task update
-	huma.Register(taskGroup, appApi.TaskUpdateOperation("/{id}"), appApi.TaskUpdate)
+	huma.Register(taskGroup, appApi.TaskUpdateOperation("task/{task-id}"), appApi.TaskUpdate)
 	// // task delete
 	// huma.Register(taskGroup, appApi.TaskDeleteOperation("/{id}"), appApi.TaskDelete)
 	// // task get
 	// huma.Register(taskGroup, appApi.TaskGetOperation("/{id}"), appApi.TaskGet)
-	taskProjectGroup := huma.NewGroup(api, "/projects")
+	taskProjectGroup := huma.NewGroup(api, "/")
 	// task project list
-	huma.Register(taskProjectGroup, appApi.TaskProjectListOperation("/"), appApi.TaskProjectList)
+	huma.Register(taskProjectGroup, appApi.TaskProjectListOperation("task-project"), appApi.TaskProjectList)
 	// task project create
-	huma.Register(taskProjectGroup, appApi.TaskProjectCreateOperation("/"), appApi.TaskProjectCreate)
+	huma.Register(taskProjectGroup, appApi.TaskProjectCreateOperation("task-project"), appApi.TaskProjectCreate)
 	// // task project update
 	// huma.Register(taskProjectGroup, appApi.TaskProjectUpdateOperation("/{id}"), appApi.TaskProjectUpdate)
 	// // task project delete

@@ -43,52 +43,62 @@ func (api *Api) TaskListOperation(path string) huma.Operation {
 	}
 }
 
-func (api *Api) TaskList(ctx context.Context, input *shared.TaskListParams) (*shared.PaginatedResponse[*shared.TaskWithSubtask], error) {
+type TaskListResponse struct {
+	Body *shared.PaginatedResponse[*shared.TaskWithSubtask]
+}
+
+func (api *Api) TaskList(ctx context.Context, input *shared.TaskListParams) (*TaskListResponse, error) {
 	db := api.app.Db()
-	task, err := repository.ListTasks(ctx, db, input)
+	tasks, err := repository.ListTasks(ctx, db, input)
 	if err != nil {
-		return nil, err
+		return nil, huma.Error500InternalServerError("error listing tasks", err)
 	}
 	total, err := repository.CountTasks(ctx, db, &input.TaskListFilter)
 	if err != nil {
-		return nil, err
+		return nil, huma.Error500InternalServerError("error counting tasks", err)
 	}
-	return &shared.PaginatedResponse[*shared.TaskWithSubtask]{
-		Data: dataloader.Map(task, func(task *models.Task) *shared.TaskWithSubtask {
-			return &shared.TaskWithSubtask{
-				Task: shared.ModelToTask(task),
-				Children: dataloader.Map(task.R.ReverseParents, func(child *models.Task) *shared.Task {
-					return shared.ModelToTask(child)
-				}),
-			}
-		}),
-		Meta: shared.Meta{Total: int(total)},
+	return &TaskListResponse{
+		Body: &shared.PaginatedResponse[*shared.TaskWithSubtask]{
+			Data: dataloader.Map(tasks, func(task *models.Task) *shared.TaskWithSubtask {
+				return &shared.TaskWithSubtask{
+					Task: shared.ModelToTask(task),
+					Children: dataloader.Map(task.R.ReverseParents, func(child *models.Task) *shared.Task {
+						return shared.ModelToTask(child)
+					}),
+				}
+			}),
+			Meta: shared.Meta{Total: int(total)},
+		},
 	}, nil
 }
 
-// func (api *Api) TaskCreateOperation(path string) huma.Operation {
-// 	return huma.Operation{
-// 		OperationID: "task-create",
-// 		Method:      http.MethodPost,
-// 		Path:        path,
-// 		Summary:     "Create task",
-// 		Description: "Create a new task",
-// 		Tags:        []string{"Task"},
-// 		Errors:      []int{http.StatusNotFound},
-// 		Security: []map[string][]string{
-// 			{shared.BearerAuthSecurityKey: {}},
-// 		},
-// 	}
-// }
+func (api *Api) TaskCreateOperation(path string) huma.Operation {
+	return huma.Operation{
+		OperationID: "task-create",
+		Method:      http.MethodPost,
+		Path:        path,
+		Summary:     "Create task",
+		Description: "Create a new task",
+		Tags:        []string{"Task"},
+		Errors:      []int{http.StatusNotFound},
+		Security: []map[string][]string{
+			{shared.BearerAuthSecurityKey: {}},
+		},
+	}
+}
 
-// func (api *Api) TaskCreate(ctx context.Context, input *shared.CreateTaskWithChildrenDTO) (*shared.Task, error) {
-// 	db := api.app.Db()
-// 	task, err := repository.CreateTask(ctx, db, input)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	return task, nil
-// }
+func (api *Api) TaskCreate(ctx context.Context, input *shared.CreateTaskWithChildrenDTO) (*shared.Task, error) {
+	// db := api.app.Db()
+	userInfo := core.GetContextUserClaims(ctx)
+	if userInfo == nil || userInfo.User == nil {
+
+	}
+	// _, err := repository.CreateTaskWithChildren(ctx, db, userInfo.User.ID, input)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	return nil, nil
+}
 
 func (api *Api) TaskProjectListOperation(path string) huma.Operation {
 	return huma.Operation{

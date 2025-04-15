@@ -32,21 +32,21 @@ func ListTasksOrderByFunc(ctx context.Context, q *psql.ViewQuery[*models.Task, m
 	}
 	if input == nil || input.SortBy == "" {
 		q.Apply(
-			sm.OrderBy(models.TaskProjectColumns.CreatedAt).Desc(),
-			sm.OrderBy(models.TaskProjectColumns.ID).Desc(),
+			sm.OrderBy(models.TaskColumns.CreatedAt).Desc(),
+			sm.OrderBy(models.TaskColumns.ID).Desc(),
 		)
 		return
 	}
-	if slices.Contains(models.TaskProjects.Columns().Names(), input.SortBy) {
+	if slices.Contains(models.Tasks.Columns().Names(), input.SortBy) {
 		if input.SortParams.SortOrder == "desc" {
 			q.Apply(
-				sm.OrderBy(input.SortBy).Desc(),
-				sm.OrderBy(models.TaskProjectColumns.ID).Desc(),
+				sm.OrderBy(psql.Quote(input.SortBy)).Desc(),
+				sm.OrderBy(models.TaskColumns.ID).Desc(),
 			)
 		} else if input.SortParams.SortOrder == "asc" || input.SortParams.SortOrder == "" {
 			q.Apply(
-				sm.OrderBy(input.SortBy).Asc(),
-				sm.OrderBy(models.TaskProjectColumns.ID).Asc(),
+				sm.OrderBy(psql.Quote(input.SortBy)).Asc(),
+				sm.OrderBy(models.TaskColumns.ID).Asc(),
 			)
 		}
 		return
@@ -70,12 +70,12 @@ func ListTasksFilterFunc(ctx context.Context, q *psql.ViewQuery[*models.Task, mo
 		)
 	}
 	if len(filter.UserID) > 0 {
-		id, err := uuid.Parse(filter.ProjectID)
+		id, err := uuid.Parse(filter.UserID)
 		if err != nil {
 			return
 		}
 		q.Apply(
-			models.SelectWhere.Tasks.ID.EQ(id),
+			models.SelectWhere.Tasks.UserID.EQ(id),
 		)
 	}
 
@@ -85,8 +85,7 @@ func ListTasksFilterFunc(ctx context.Context, q *psql.ViewQuery[*models.Task, mo
 			return
 		}
 		q.Apply(
-			models.SelectJoins.Tasks.InnerJoin.ProjectTaskProject(ctx),
-			models.SelectWhere.TaskProjects.ID.EQ(id),
+			models.SelectWhere.Tasks.ProjectID.EQ(id),
 		)
 	}
 
