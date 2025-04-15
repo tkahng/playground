@@ -102,7 +102,7 @@ func TestUseToken(t *testing.T) {
 	}
 }
 
-func randomToken(ctx context.Context, db bob.DB, email string, tokenType models.TokenTypes, otp string) (*models.Token, error) {
+func randomToken(ctx context.Context, db bob.Executor, email string, tokenType models.TokenTypes, otp string) (*models.Token, error) {
 	token := &models.TokenSetter{
 		Identifier: omit.From(email),
 		Type:       omit.From(tokenType),

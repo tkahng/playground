@@ -5,7 +5,6 @@ import (
 	"log/slog"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/stephenafamo/bob"
 	"github.com/tkahng/authgo/internal/conf"
 	"github.com/tkahng/authgo/internal/db"
 	"github.com/tkahng/authgo/internal/repository"
@@ -22,7 +21,7 @@ type BaseApp struct {
 	tokenStorage  *TokenStorage
 	tokenVerifier *TokenVerifier
 	cfg           *conf.EnvConfig
-	db            bob.DB
+	db            *db.DBTx
 	pool          *pgxpool.Pool
 	settings      *AppOptions
 	payment       *StripeService
@@ -39,7 +38,7 @@ func (app *BaseApp) Fs() *filesystem.FileSystem {
 func (app *BaseApp) Logger() *slog.Logger {
 	return app.logger
 }
-func (app *BaseApp) Db() bob.DB {
+func (app *BaseApp) Db() *db.DBTx {
 	return app.db
 }
 func (a *BaseApp) Pool() *pgxpool.Pool {
@@ -104,7 +103,7 @@ func NewBaseApp(pool *pgxpool.Pool, cfg conf.EnvConfig) *BaseApp {
 	return &BaseApp{
 		fs:       fs,
 		pool:     pool,
-		db:       NewBobFromPool(pool),
+		db:       db.NewDBTx(pool),
 		settings: settings,
 		logger:   logger.GetDefaultLogger(slog.LevelInfo),
 		cfg:      &cfg,

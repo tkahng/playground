@@ -19,7 +19,7 @@ var (
 	MetadataIndexName             = "metadata.index"
 )
 
-func ListProducts(ctx context.Context, db bob.DB, input *shared.StripeProductListParams) (models.StripeProductSlice, error) {
+func ListProducts(ctx context.Context, db bob.Executor, input *shared.StripeProductListParams) (models.StripeProductSlice, error) {
 
 	q := models.StripeProducts.Query()
 	filter := input.StripeProductListFilter
@@ -98,7 +98,7 @@ func ListProductFilterFunc(ctx context.Context, q *psql.ViewQuery[*models.Stripe
 }
 
 // CountUsers implements AdminCrudActions.
-func CountProducts(ctx context.Context, db bob.DB, filter *shared.StripeProductListFilter) (int64, error) {
+func CountProducts(ctx context.Context, db bob.Executor, filter *shared.StripeProductListFilter) (int64, error) {
 	q := models.StripeProducts.Query()
 	ListProductFilterFunc(ctx, q, filter)
 	data, err := q.Count(ctx, db)
@@ -108,7 +108,7 @@ func CountProducts(ctx context.Context, db bob.DB, filter *shared.StripeProductL
 	return data, nil
 }
 
-func ListPrices(ctx context.Context, db bob.DB, input *shared.StripePriceListParams) (models.StripePriceSlice, error) {
+func ListPrices(ctx context.Context, db bob.Executor, input *shared.StripePriceListParams) (models.StripePriceSlice, error) {
 
 	q := models.StripePrices.Query()
 	filter := input.StripePriceListFilter
@@ -168,7 +168,7 @@ func ListPriceFilterFunc(ctx context.Context, q *psql.ViewQuery[*models.StripePr
 	}
 }
 
-func CountPrices(ctx context.Context, db bob.DB, filter *shared.StripePriceListFilter) (int64, error) {
+func CountPrices(ctx context.Context, db bob.Executor, filter *shared.StripePriceListFilter) (int64, error) {
 	q := models.StripePrices.Query()
 	ListPriceFilterFunc(ctx, q, filter)
 	data, err := q.Count(ctx, db)
@@ -178,7 +178,7 @@ func CountPrices(ctx context.Context, db bob.DB, filter *shared.StripePriceListF
 	return data, nil
 }
 
-func ListCustomers(ctx context.Context, db bob.DB, input *shared.StripeCustomerListParams) (models.StripeCustomerSlice, error) {
+func ListCustomers(ctx context.Context, db bob.Executor, input *shared.StripeCustomerListParams) (models.StripeCustomerSlice, error) {
 
 	q := models.StripeCustomers.Query()
 	filter := input.StripeCustomerListFilter
@@ -227,7 +227,7 @@ func ListCustomerFilterFunc(ctx context.Context, q *psql.ViewQuery[*models.Strip
 
 }
 
-func CountCustomers(ctx context.Context, db bob.DB, filter *shared.StripePriceListFilter) (int64, error) {
+func CountCustomers(ctx context.Context, db bob.Executor, filter *shared.StripePriceListFilter) (int64, error) {
 	q := models.StripePrices.Query()
 	ListPriceFilterFunc(ctx, q, filter)
 	data, err := q.Count(ctx, db)
@@ -237,7 +237,7 @@ func CountCustomers(ctx context.Context, db bob.DB, filter *shared.StripePriceLi
 	return data, nil
 }
 
-func ListSubscriptions(ctx context.Context, db bob.DB, input *shared.StripeSubscriptionListParams) (models.StripeSubscriptionSlice, error) {
+func ListSubscriptions(ctx context.Context, db bob.Executor, input *shared.StripeSubscriptionListParams) (models.StripeSubscriptionSlice, error) {
 
 	q := models.StripeSubscriptions.Query()
 	filter := input.StripeSubscriptionListFilter
@@ -286,7 +286,7 @@ func ListSubscriptionFilterFunc(ctx context.Context, q *psql.ViewQuery[*models.S
 
 }
 
-func CountSubscriptions(ctx context.Context, db bob.DB, filter *shared.StripeSubscriptionListFilter) (int64, error) {
+func CountSubscriptions(ctx context.Context, db bob.Executor, filter *shared.StripeSubscriptionListFilter) (int64, error) {
 	q := models.StripeSubscriptions.Query()
 	ListSubscriptionFilterFunc(ctx, q, filter)
 	data, err := q.Count(ctx, db)

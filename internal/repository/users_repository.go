@@ -111,42 +111,7 @@ func GetUserAccountByProviderAndEmail(ctx context.Context, db bob.Executor, emai
 }
 
 const (
-	rawGetUserWithPermissionsByEmail string = `--sql
-	SELECT u.id AS user_id,
-		u.email AS email,
-    array_remove(ARRAY_AGG(DISTINCT ar.name), NULL)::text [] AS roles,
-    array_remove(ARRAY_AGG(DISTINCT p.name), NULL)::text [] AS permissions,
-    array_remove(ARRAY_AGG(DISTINCT ua.provider), NULL)::public.providers [] AS providers
-	FROM public.users u
-		LEFT JOIN public.user_roles ur ON u.id = ur.user_id
-		LEFT JOIN public.roles ar ON ur.role_id = ar.id
-		LEFT JOIN public.role_permissions rp ON ar.id = rp.role_id
-		LEFT JOIN public.permissions p ON rp.permission_id = p.id
-		LEFT JOIN public.user_accounts ua ON u.id = ua.user_id
-	WHERE u.email = ?
-	GROUP BY u.id
-	LIMIT 1;
-	`
-	rawGetUsersWithPermissionsByIds string = `--sql
-	WITH FilteredAccounts AS (
-    SELECT u.id AS user_id,
-        u.email AS email,
-    array_remove(ARRAY_AGG(DISTINCT ar.name), NULL)::text [] AS roles,
-    array_remove(ARRAY_AGG(DISTINCT p.name), NULL)::text [] AS permissions,
-    array_remove(ARRAY_AGG(DISTINCT ua.provider), NULL)::public.providers [] AS providers
-    FROM public.users u
-        LEFT JOIN public.user_roles ur ON u.id = ur.user_id
-        LEFT JOIN public.roles ar ON ur.role_id = ar.id
-        LEFT JOIN public.role_permissions rp ON ar.id = rp.role_id
-        LEFT JOIN public.permissions p ON rp.permission_id = p.id
-        LEFT JOIN public.user_accounts ua ON u.id = ua.user_id
-    GROUP BY u.id
-)
-SELECT fa.*
-FROM FilteredAccounts fa
-WHERE fa.user_id IN (?);
-	`
-	rawGetUserWithAllRolesAndPermissionsByEmail string = `--sql
+	RawGetUserWithAllRolesAndPermissionsByEmail string = `--sql
 WITH -- Get permissions assigned through roles
 user_role_permissions AS (
     SELECT ur.user_id AS user_id,
@@ -217,7 +182,7 @@ type RolePermissionClaims struct {
 }
 
 func GetUserWithRolesAndPermissions(ctx context.Context, db bob.Executor, email string) (*RolePermissionClaims, error) {
-	query := psql.RawQuery(rawGetUserWithAllRolesAndPermissionsByEmail, email)
+	query := psql.RawQuery(RawGetUserWithAllRolesAndPermissionsByEmail, email)
 
 	res, err := bob.One(ctx, db, query, scan.StructMapper[rolePermissionClaims]())
 	if err != nil {
@@ -239,11 +204,6 @@ func GetUserWithRolesAndPermissions(ctx context.Context, db bob.Executor, email 
 		Permissions: res.Permissions,
 		Providers:   prov,
 	}, nil
-}
-
-type UserInfo struct {
-	ID   uuid.UUID            `json:"id" db:"id"`
-	Info rolePermissionClaims `json:"info" db:"info"`
 }
 
 // func GetUsersWithRolesAndPermissions(ctx context.Context, db bob.Executor, ids ...uuid.UUID) ([]RolePermissionClaims, error) {

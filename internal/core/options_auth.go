@@ -57,7 +57,7 @@ func (o AuthOptions) Validate() error {
 	return nil
 }
 
-func GetOrSetEncryptedAuthOptions(ctx context.Context, dbx bob.DB, encryptionKey string) (*AuthOptions, error) {
+func GetOrSetEncryptedAuthOptions(ctx context.Context, dbx bob.Executor, encryptionKey string) (*AuthOptions, error) {
 	var opts *AuthOptions
 	var encryptedOpts *EncryptedAuthOptions
 	// get the encrypted auth options from the db

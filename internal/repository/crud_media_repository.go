@@ -13,7 +13,7 @@ import (
 	"github.com/tkahng/authgo/internal/shared"
 )
 
-func ListMedia(ctx context.Context, db bob.DB, input *shared.MediaListParams) (models.MediumSlice, error) {
+func ListMedia(ctx context.Context, db bob.Executor, input *shared.MediaListParams) (models.MediumSlice, error) {
 	q := models.Media.Query()
 	filter := input.MediaListFilter
 	pageInput := &input.PaginatedInput
@@ -73,7 +73,7 @@ func ListMediaOrderByFunc(ctx context.Context, q *psql.ViewQuery[*models.Medium,
 	}
 }
 
-func CountMedia(ctx context.Context, db bob.DB, input *shared.MediaListFilter) (int64, error) {
+func CountMedia(ctx context.Context, db bob.Executor, input *shared.MediaListFilter) (int64, error) {
 	q := models.Media.Query()
 	ListMediaFilterFunc(ctx, q, input)
 	return CountExec(ctx, db, q)

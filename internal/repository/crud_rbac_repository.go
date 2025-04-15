@@ -141,7 +141,7 @@ func ListPermissionsFilterFunc(ctx context.Context, q *psql.ViewQuery[*models.Pe
 }
 
 // ListPermissions implements AdminCrudActions.
-func ListPermissions(ctx context.Context, db bob.DB, input *shared.PermissionsListParams) ([]*models.Permission, error) {
+func ListPermissions(ctx context.Context, db bob.Executor, input *shared.PermissionsListParams) ([]*models.Permission, error) {
 	q := models.Permissions.Query()
 	filter := input.PermissionsListFilter
 	pageInput := &input.PaginatedInput
@@ -157,7 +157,7 @@ func ListPermissions(ctx context.Context, db bob.DB, input *shared.PermissionsLi
 }
 
 // CountPermissions implements AdminCrudActions.
-func CountPermissions(ctx context.Context, db bob.DB, filter *shared.PermissionsListFilter) (int64, error) {
+func CountPermissions(ctx context.Context, db bob.Executor, filter *shared.PermissionsListFilter) (int64, error) {
 	q := models.Permissions.Query()
 	ListPermissionsFilterFunc(ctx, q, filter)
 	return CountExec(ctx, db, q)
@@ -234,7 +234,7 @@ func ListRolesOrderByFunc(ctx context.Context, q *psql.ViewQuery[*models.Role, m
 }
 
 // ListRoles implements AdminCrudActions.
-func ListRoles(ctx context.Context, db bob.DB, input *shared.RolesListParams) (models.RoleSlice, error) {
+func ListRoles(ctx context.Context, db bob.Executor, input *shared.RolesListParams) (models.RoleSlice, error) {
 	q := models.Roles.Query()
 	filter := input.RoleListFilter
 	pageInput := &input.PaginatedInput
@@ -250,7 +250,7 @@ func ListRoles(ctx context.Context, db bob.DB, input *shared.RolesListParams) (m
 }
 
 // CountRoles implements AdminCrudActions.
-func CountRoles(ctx context.Context, db bob.DB, filter *shared.RoleListFilter) (int64, error) {
+func CountRoles(ctx context.Context, db bob.Executor, filter *shared.RoleListFilter) (int64, error) {
 	q := models.Roles.Query()
 	ListRolesFilterFunc(ctx, q, filter)
 	data, err := q.Count(ctx, db)
@@ -260,7 +260,7 @@ func CountRoles(ctx context.Context, db bob.DB, filter *shared.RoleListFilter) (
 	return data, nil
 }
 
-// func ListAssignablePermissionsForRole(ctx context.Context, db bob.DB, roleId uuid.UUID) ([]*models.Permission, error) {
+// func ListAssignablePermissionsForRole(ctx context.Context, db bob.Executor, roleId uuid.UUID) ([]*models.Permission, error) {
 // 	q := psql.Select(
 // 		sm.Columns(
 // 			models.PermissionColumns.ID,

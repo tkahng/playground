@@ -4,6 +4,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/tkahng/authgo/internal/conf"
 	"github.com/tkahng/authgo/internal/core"
+	"github.com/tkahng/authgo/internal/db"
 )
 
 func NewStripeCmd() *cobra.Command {
@@ -24,7 +25,8 @@ var stripeSyncCmd = &cobra.Command{
 		dbconf := conf.GetConfig[conf.DBConfig]()
 		stripeconfig := conf.GetConfig[conf.StripeConfig]()
 
-		_, dbx := core.NewPoolAndBobFromConf(ctx, dbconf)
+		pool := db.NewPoolFromConf(ctx, dbconf)
+		dbx := db.NewDBTx(pool)
 		service := core.NewStripeServiceFromConf(stripeconfig)
 
 		return service.UpsertPriceProductFromStripe(ctx, dbx)
@@ -39,7 +41,8 @@ var stripeRolesCmd = &cobra.Command{
 		dbconf := conf.GetConfig[conf.DBConfig]()
 		stripeconfig := conf.GetConfig[conf.StripeConfig]()
 
-		_, db := core.NewPoolAndBobFromConf(ctx, dbconf)
+		pool := db.NewPoolFromConf(ctx, dbconf)
+		db := db.NewDBTx(pool)
 		service := core.NewStripeServiceFromConf(stripeconfig)
 		return service.SyncRoles(ctx, db)
 	},

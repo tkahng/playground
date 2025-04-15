@@ -23,12 +23,12 @@ type TokenStorage struct {
 }
 
 // persist verification token to db
-func (storage *TokenStorage) PersistVerificationToken(ctx context.Context, db bob.DB, payload *OtpPayload, config TokenOption) error {
+func (storage *TokenStorage) PersistVerificationToken(ctx context.Context, db bob.Executor, payload *OtpPayload, config TokenOption) error {
 	return PersistOtpToken(ctx, db, payload, config)
 }
 
 // gets and expires give token, then updates user email confirmed when token is valid
-func (storage *TokenStorage) UseVerificationTokenAndUpdateUser(ctx context.Context, db bob.DB, token string) error {
+func (storage *TokenStorage) UseVerificationTokenAndUpdateUser(ctx context.Context, db bob.Executor, token string) error {
 	return UseVerificationTokenAndUpdateUser(ctx, db, token)
 }
 
@@ -141,7 +141,7 @@ type RefreshTokenPayload struct {
 	Token  string    `json:"token"`
 }
 
-func CreateAndPersistRefreshToken(ctx context.Context, db bob.DB, payload *RefreshTokenPayload, config TokenOption) (string, error) {
+func CreateAndPersistRefreshToken(ctx context.Context, db bob.Executor, payload *RefreshTokenPayload, config TokenOption) (string, error) {
 	if payload == nil {
 		return "", fmt.Errorf("payload is nil")
 	}
@@ -179,7 +179,7 @@ func CheckTokenType(claims jwt.MapClaims, tokenType shared.TokenType) bool {
 	}
 }
 
-func VerifyRefreshToken(ctx context.Context, db bob.DB, token string, config TokenOption) (*RefreshTokenClaims, error) {
+func VerifyRefreshToken(ctx context.Context, db bob.Executor, token string, config TokenOption) (*RefreshTokenClaims, error) {
 	// parse token
 	claims, err := security.ParseJWTMapClaims(token, config.Secret)
 	if err != nil {
@@ -241,7 +241,7 @@ func CreateOtpToken(payload *OtpPayload, config TokenOption) (string, error) {
 }
 
 // persist verification token to db
-func PersistOtpToken(ctx context.Context, db bob.DB, payload *OtpPayload, config TokenOption) error {
+func PersistOtpToken(ctx context.Context, db bob.Executor, payload *OtpPayload, config TokenOption) error {
 
 	//  clear any existing verification tokens
 	_ = repository.DeleteTokensByUser(ctx, db, &repository.OtpDto{
@@ -285,7 +285,7 @@ func ParseVerificationToken(token string, config TokenOption) (*EmailVerificatio
 }
 
 // gets and expires give token, then updates user email confirmed when token is valid
-func UseVerificationTokenAndUpdateUser(ctx context.Context, db bob.DB, token string) error {
+func UseVerificationTokenAndUpdateUser(ctx context.Context, db bob.Executor, token string) error {
 	//  get and delete token
 	dbToken, err := repository.UseToken(ctx, db, token)
 	if err != nil {
@@ -345,7 +345,7 @@ func CreateProviderStateToken(payload *ProviderStatePayload, config TokenOption)
 	return token, nil
 }
 
-func PersistProviderStateToken(ctx context.Context, db bob.DB, payload *ProviderStatePayload, config TokenOption) error {
+func PersistProviderStateToken(ctx context.Context, db bob.Executor, payload *ProviderStatePayload, config TokenOption) error {
 	// save new verification token
 	dto := &repository.TokenDTO{
 		Type:       models.TokenTypes(payload.Type),
@@ -360,7 +360,7 @@ func PersistProviderStateToken(ctx context.Context, db bob.DB, payload *Provider
 	return nil
 }
 
-func CreateAndPersistStateToken(ctx context.Context, db bob.DB, payload *ProviderStatePayload, config TokenOption) (string, error) {
+func CreateAndPersistStateToken(ctx context.Context, db bob.Executor, payload *ProviderStatePayload, config TokenOption) (string, error) {
 
 	token, err := CreateProviderStateToken(payload, config)
 	if err != nil {

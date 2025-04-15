@@ -42,7 +42,7 @@ func ViewApplyPagination[T any, Ts ~[]T](view *psql.ViewQuery[T, Ts], input *sha
 	)
 }
 
-func CountExec[T any, Ts ~[]T](ctx context.Context, db bob.DB, v *psql.ViewQuery[T, Ts]) (int64, error) {
+func CountExec[T any, Ts ~[]T](ctx context.Context, db bob.Executor, v *psql.ViewQuery[T, Ts]) (int64, error) {
 	data, err := v.Count(ctx, db)
 	if err != nil {
 		return 0, err

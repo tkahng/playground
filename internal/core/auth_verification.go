@@ -11,7 +11,7 @@ import (
 	"github.com/tkahng/authgo/internal/tools/mailer"
 )
 
-func (app *BaseApp) VerifyAndUseVerificationToken(ctx context.Context, db bob.DB, verificationToken string) (*EmailVerificationClaims, error) {
+func (app *BaseApp) VerifyAndUseVerificationToken(ctx context.Context, db bob.Executor, verificationToken string) (*EmailVerificationClaims, error) {
 	opts := app.Settings().Auth
 	jsond, err := app.TokenVerifier().ParseVerificationToken(verificationToken, opts.VerificationToken)
 	if err != nil {
@@ -25,7 +25,7 @@ func (app *BaseApp) VerifyAndUseVerificationToken(ctx context.Context, db bob.DB
 }
 
 // SendVerificationEmail implements App.
-func (app *BaseApp) SendVerificationEmail(ctx context.Context, db bob.DB, user *models.User, redirectTo string) error {
+func (app *BaseApp) SendVerificationEmail(ctx context.Context, db bob.Executor, user *models.User, redirectTo string) error {
 	opts := app.Settings().Auth
 	config := app.Settings()
 	client := app.NewMailClient()

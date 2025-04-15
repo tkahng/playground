@@ -9,7 +9,7 @@ import (
 	"github.com/tkahng/authgo/internal/shared"
 )
 
-func GetUserInfoDTO(ctx context.Context, db bob.DB, email string) (*shared.UserInfoDto, error) {
+func GetUserInfoDTO(ctx context.Context, db bob.Executor, email string) (*shared.UserInfoDto, error) {
 
 	user, err := repository.GetUserByEmail(ctx, db, email)
 	if err != nil {

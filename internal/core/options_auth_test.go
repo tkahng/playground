@@ -21,7 +21,7 @@ func TestGetOrSetEncryptedAuthOptions(t *testing.T) {
 	})
 	type args struct {
 		ctx           context.Context
-		dbx           bob.DB
+		dbx           bob.Executor
 		encryptionKey string
 	}
 	tests := []struct {

@@ -20,15 +20,20 @@ type DBTX interface {
 	Exec(ctx context.Context, sql string, arguments ...any) (pgconn.CommandTag, error)
 	SendBatch(ctx context.Context, b *pgx.Batch) pgx.BatchResults
 	Ping(ctx context.Context) error
+	// Executor() *DbTx
 }
 
 var _ DBTX = (*pgxpool.Pool)(nil)
 
-type DbTx struct {
+type DBTx struct {
 	pool DBTX
 }
 
-var _ bob.Executor = (*DbTx)(nil)
+func NewDBTx(pool DBTX) *DBTx {
+	return &DBTx{pool: pool}
+}
+
+var _ bob.Executor = (*DBTx)(nil)
 
 type rows struct {
 	pgx.Rows
@@ -50,7 +55,11 @@ func (r rows) Columns() ([]string, error) {
 	return cols, nil
 }
 
-func (v *DbTx) QueryContext(ctx context.Context, query string, args ...any) (scan.Rows, error) {
+func (v *DBTx) Executor() *DBTX {
+	return &v.pool
+}
+
+func (v *DBTx) QueryContext(ctx context.Context, query string, args ...any) (scan.Rows, error) {
 	r, err := v.pool.Query(ctx, query, args...)
 	if err != nil {
 		return nil, err
@@ -59,7 +68,7 @@ func (v *DbTx) QueryContext(ctx context.Context, query string, args ...any) (sca
 	return rows{r}, nil
 }
 
-func (v *DbTx) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
+func (v *DBTx) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
 	tag, err := v.pool.Exec(ctx, query, args...)
 	if err != nil {
 		return nil, err

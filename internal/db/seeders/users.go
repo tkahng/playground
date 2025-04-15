@@ -36,7 +36,7 @@ func UserCredentialsFactory(ctx context.Context, dbx bob.DB, count int) error {
 	_, err := usertemplate.CreateMany(ctx, dbx, count)
 	return err
 }
-func UserCredentialsRolesFactory(ctx context.Context, dbx bob.DB, count int, roles ...*models.Role) (models.UserSlice, error) {
+func UserCredentialsRolesFactory(ctx context.Context, dbx bob.Executor, count int, roles ...*models.Role) (models.UserSlice, error) {
 	f := factory.New()
 	hash, err := security.CreateHash("Password123!", argon2id.DefaultParams)
 	if err != nil {

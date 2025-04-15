@@ -14,10 +14,11 @@ import (
 	"github.com/stephenafamo/bob/dialect/psql"
 	"github.com/stephenafamo/bob/dialect/psql/im"
 	"github.com/stephenafamo/scan"
+	"github.com/tkahng/authgo/internal/db"
 	"github.com/tkahng/authgo/internal/db/models"
 )
 
-func EnsureRoleAndPermissions(ctx context.Context, db bob.DB, roleName string, permissionNames ...string) error {
+func EnsureRoleAndPermissions(ctx context.Context, db *db.DBTx, roleName string, permissionNames ...string) error {
 	// find superuser role
 	role, err := FindOrCreateRole(ctx, db, roleName)
 	if err != nil {
