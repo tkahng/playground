@@ -3,7 +3,7 @@ import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { createBillingPortalSession } from "@/lib/api";
 import { SubscriptionWithPrice } from "@/schema.types";
 import { ReactNode, useState } from "react";
-import { Link, useLocation } from "react-router";
+import { Link } from "react-router";
 import { toast } from "sonner";
 
 type SubscriptionWithPriceAndProduct = SubscriptionWithPrice;
@@ -15,7 +15,7 @@ interface Props {
 export default function CustomerPortalForm({ subscription }: Props) {
   //   const router = useRouter();
   const { user } = useAuthProvider();
-  const { pathname: currentPath } = useLocation();
+  // const { pathname: currentPath } = useLocation();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const subscriptionPrice =
@@ -28,14 +28,16 @@ export default function CustomerPortalForm({ subscription }: Props) {
 
   const handleStripePortalRequest = async () => {
     setIsSubmitting(true);
-    if (!user?.tokens.access_token) {
+    if (!user) {
       setIsSubmitting(false);
       toast.error("Please login to open the customer portal.");
+      return;
     }
-    const redirectUrl = await createBillingPortalSession(currentPath);
+    const redirectUrl = await createBillingPortalSession(
+      user.tokens.access_token
+    );
     window.location.href = redirectUrl;
     setIsSubmitting(false);
-    // return router.push(redirectUrl);
   };
 
   return (

@@ -21,9 +21,9 @@ export default function BillingSettingPage() {
   if (isError) {
     return <div>Error: {error.message}</div>;
   }
-  if (!data) {
-    return <div>No data</div>;
-  }
+  // if (!data) {
+  //   return <div>No data</div>;
+  // }
   return (
     <div className="space-y-6 flex w-full flex-col items-center justify-center">
       {/* <div>

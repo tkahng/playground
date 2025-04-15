@@ -75,8 +75,12 @@ func (api *Api) MyStripeSubscriptionsOperation(path string) huma.Operation {
 	}
 }
 
-func (api *Api) MyStripeSubscriptions(ctx context.Context, input *struct{}) (*struct{ Body *SubscriptionWithPrice }, error) {
-	output := &struct{ Body *SubscriptionWithPrice }{}
+func (api *Api) MyStripeSubscriptions(ctx context.Context, input *struct{}) (*struct {
+	Body *SubscriptionWithPrice `json:"body,omitempty" required:"false"`
+}, error) {
+	output := &struct {
+		Body *SubscriptionWithPrice `json:"body,omitempty" required:"false"`
+	}{}
 	db := api.app.Db()
 	user := core.GetContextUserClaims(ctx)
 	if user == nil || user.User == nil {
@@ -87,7 +91,7 @@ func (api *Api) MyStripeSubscriptions(ctx context.Context, input *struct{}) (*st
 		return nil, err
 	}
 	if subscriptions == nil {
-		return nil, nil
+		return output, nil
 	}
 	output.Body = &SubscriptionWithPrice{
 		Subscription: ModelToSubscription(subscriptions),

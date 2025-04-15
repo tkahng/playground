@@ -31,4 +31,8 @@ export enum RouteMap {
   ADMIN_DASHBOARD_USERS = "/admin/dashboard/users",
   ADMIN_DASHBOARD_ROLES = "/admin/dashboard/roles",
   ADMIN_DASHBOARD_PERMISSIONS = "/admin/dashboard/permissions",
+
+  PROTECTED_BASIC = "/dashboard/protected/basic",
+  PROTECTED_PRO = " /dashboard/protected/pro",
+  PROTECTED_ADVANCED = "/dashboard/protected/advanced",
 }

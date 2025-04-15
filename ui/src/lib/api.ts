@@ -615,3 +615,55 @@ export const confirmVerification = async (token: string, type: string) => {
     throw new Error(error.detail);
   }
 };
+
+export const getBasicRoute = async (token: string) => {
+  const { data, error } = await client.GET(
+    "/api/api/protected/basic-permission",
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+  if (error) {
+    throw new Error(error.detail);
+  }
+  if (!data) {
+    throw new Error("No data");
+  }
+  return data;
+};
+export const getProRoute = async (token: string) => {
+  const { data, error } = await client.GET(
+    "/api/api/protected/pro-permission",
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+  if (error) {
+    throw new Error(error.detail);
+  }
+  if (!data) {
+    throw new Error("No data");
+  }
+  return data;
+};
+export const getAdvancedRoute = async (token: string) => {
+  const { data, error } = await client.GET(
+    "/api/api/protected/advanced-permission",
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+  if (error) {
+    throw new Error(error.detail);
+  }
+  if (!data) {
+    throw new Error("No data");
+  }
+  return data;
+};

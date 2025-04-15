@@ -9,6 +9,18 @@ const links: LinkProps[] = [
     to: RouteMap.DASHBOARD_HOME,
     icon: <Home />,
   },
+  {
+    title: "Basic Route",
+    to: RouteMap.PROTECTED_BASIC,
+  },
+  {
+    title: "Pro Route",
+    to: RouteMap.PROTECTED_PRO,
+  },
+  {
+    title: "Advanced Route",
+    to: RouteMap.PROTECTED_ADVANCED,
+  },
 ];
 
 export default function DashboardLayout() {

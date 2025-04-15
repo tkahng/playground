@@ -26,6 +26,9 @@ import PricingPage from "./pages/pricing";
 import ProfilePage from "./pages/profile";
 import RoleEdit from "./pages/role-edit";
 import RolesListPage from "./pages/roles-list";
+import AdvancedRoute from "./pages/route-advanced";
+import BasicRoute from "./pages/route-basic";
+import ProRoute from "./pages/route-pro";
 import SignupPage from "./pages/signup";
 import UserEdit from "./pages/user-edit";
 import UserListPage from "./pages/user-list";
@@ -63,6 +66,11 @@ function App() {
                   </Route>
                   <Route path="/dashboard" element={<DashboardLayout />}>
                     <Route index element={<Dashboard />} />
+                    <Route path="protected">
+                      <Route path="basic" element={<BasicRoute />} />
+                      <Route path="pro" element={<ProRoute />} />
+                      <Route path="advanced" element={<AdvancedRoute />} />
+                    </Route>
                   </Route>
                   <Route path="/settings" element={<SettingLayout />}>
                     <Route path="profile" element={<ProfilePage />} />
