@@ -40,3 +40,31 @@ type TaskWithSubtask struct {
 	*Task
 	Children []*Task `json:"children,omitempty" required:"false"`
 }
+
+func ModelToTask(task *models.Task) *Task {
+	return &Task{
+		ID:          task.ID,
+		UserID:      task.UserID,
+		ProjectID:   task.ProjectID,
+		Name:        task.Name,
+		Description: task.Description.Ptr(),
+		Status:      task.Status,
+		Order:       task.Order,
+		ParentID:    task.ParentID.Ptr(),
+		CreatedAt:   task.CreatedAt,
+		UpdatedAt:   task.UpdatedAt,
+	}
+}
+
+func ModelToTaskWithSubtask(task *models.TaskProject) *TaskProject {
+	return &TaskProject{
+		ID:          task.ID,
+		UserID:      task.UserID,
+		Name:        task.Name,
+		Description: task.Description.Ptr(),
+		Status:      task.Status,
+		Order:       task.Order,
+		CreatedAt:   task.CreatedAt,
+		UpdatedAt:   task.UpdatedAt,
+	}
+}

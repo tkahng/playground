@@ -11,6 +11,35 @@ import (
 // ProvidersGithub      Providers = "github"
 // ProvidersCredentials Providers = "credentials"
 
+type TaskProjectsListFilter struct {
+	Q      string                     `query:"q,omitempty" required:"false"`
+	UserID string                     `query:"user_id,omitempty" required:"false" format:"uuid"`
+	Status []models.TaskProjectStatus `query:"status,omitempty,explode" required:"false" minimum:"1" maximum:"100" enum:"todo,in_progress,done"`
+	Ids    []string                   `query:"ids,omitempty,explode" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+}
+
+type TaskProjectsListParams struct {
+	PaginatedInput
+	TaskProjectsListFilter
+	SortParams
+	Expand []string `query:"expand,omitempty" required:"false" minimum:"1" maximum:"100" enum:"tasks,subtasks"`
+}
+
+type TaskListFilter struct {
+	Q         string              `query:"q,omitempty" required:"false"`
+	Status    []models.TaskStatus `query:"status,omitempty,explode" required:"false" enum:"todo,in_progress,done"`
+	ProjectID string              `query:"project_id,omitempty" required:"false" format:"uuid"`
+	UserID    string              `query:"user_id,omitempty" required:"false" format:"uuid"`
+	Ids       []string            `query:"ids,omitempty,explode" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+}
+
+type TaskListParams struct {
+	PaginatedInput
+	TaskListFilter
+	SortParams
+	Expand []string `query:"expand,omitempty" required:"false" minimum:"1" maximum:"100" enum:"subtasks"`
+}
+
 type UserListFilter struct {
 	Providers []models.Providers `query:"providers,omitempty" required:"false" uniqueItems:"true" minimum:"1" maximum:"100" enum:"google,apple,facebook,github,credentials"`
 	Q         string             `query:"q,omitempty" required:"false"`
