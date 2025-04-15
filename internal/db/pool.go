@@ -1,4 +1,4 @@
-package pool
+package db
 
 import (
 	"context"
@@ -8,7 +8,12 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/tkahng/authgo/internal/conf"
 )
+
+func NewPoolFromConf(ctx context.Context, conf conf.DBConfig) *pgxpool.Pool {
+	return CreatePool(ctx, conf.DatabaseUrl)
+}
 
 func CreatePool(ctx context.Context, connString string) *pgxpool.Pool {
 	fmt.Println("Creating pool for url:", connString)

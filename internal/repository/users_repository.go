@@ -17,7 +17,6 @@ import (
 	"github.com/stephenafamo/scan"
 	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/shared"
-	"github.com/tkahng/authgo/internal/tools/dataloader"
 	"github.com/tkahng/authgo/internal/tools/security"
 )
 
@@ -247,43 +246,43 @@ type UserInfo struct {
 	Info rolePermissionClaims `json:"info" db:"info"`
 }
 
-func GetUsersWithRolesAndPermissions(ctx context.Context, db bob.Executor, ids ...uuid.UUID) ([]RolePermissionClaims, error) {
-	var input []any
-	for _, id := range ids {
-		input = append(input, id)
-	}
+// func GetUsersWithRolesAndPermissions(ctx context.Context, db bob.Executor, ids ...uuid.UUID) ([]RolePermissionClaims, error) {
+// 	var input []any
+// 	for _, id := range ids {
+// 		input = append(input, id)
+// 	}
 
-	query := psql.RawQuery(rawGetUsersWithPermissionsByIds, psql.Arg(input...))
-	res, err := bob.All(ctx, db, query, scan.StructMapper[rolePermissionClaims]())
-	if err != nil {
-		return nil, err
-	}
-	var claims []RolePermissionClaims
-	all := models.AllProviders()
-	for _, r := range res {
-		var prov []models.Providers
-		var claim RolePermissionClaims = RolePermissionClaims{
-			UserID:      r.UserID,
-			Email:       r.Email,
-			Roles:       r.Roles,
-			Permissions: r.Permissions,
-		}
-		for _, provider := range r.Providers {
-			for _, p := range all {
-				if provider == string(p) {
-					prov = append(prov, p)
-				}
-			}
-		}
-		claim.Providers = prov
-		claims = append(claims, claim)
-	}
-	claims = dataloader.MapTo(claims, ids, func(c RolePermissionClaims) uuid.UUID {
-		return c.UserID
-	})
-	return claims, nil
+// 	query := psql.RawQuery(rawGetUsersWithPermissionsByIds, psql.Arg(input...))
+// 	res, err := bob.All(ctx, db, query, scan.StructMapper[rolePermissionClaims]())
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	var claims []RolePermissionClaims
+// 	all := models.AllProviders()
+// 	for _, r := range res {
+// 		var prov []models.Providers
+// 		var claim RolePermissionClaims = RolePermissionClaims{
+// 			UserID:      r.UserID,
+// 			Email:       r.Email,
+// 			Roles:       r.Roles,
+// 			Permissions: r.Permissions,
+// 		}
+// 		for _, provider := range r.Providers {
+// 			for _, p := range all {
+// 				if provider == string(p) {
+// 					prov = append(prov, p)
+// 				}
+// 			}
+// 		}
+// 		claim.Providers = prov
+// 		claims = append(claims, claim)
+// 	}
+// 	claims = dataloader.MapTo(claims, ids, func(c RolePermissionClaims) uuid.UUID {
+// 		return c.UserID
+// 	})
+// 	return claims, nil
 
-}
+// }
 
 func GetUserByEmail(ctx context.Context, db bob.Executor, email string) (*models.User, error) {
 	a, err := models.Users.Query(models.SelectWhere.Users.Email.EQ(email)).One(ctx, db)

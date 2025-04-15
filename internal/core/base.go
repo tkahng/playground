@@ -7,7 +7,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stephenafamo/bob"
 	"github.com/tkahng/authgo/internal/conf"
-	"github.com/tkahng/authgo/internal/pool"
+	"github.com/tkahng/authgo/internal/db"
 	"github.com/tkahng/authgo/internal/repository"
 
 	"github.com/tkahng/authgo/internal/tools/filesystem"
@@ -87,7 +87,7 @@ func (app *BaseApp) NewMailClient() mailer.Mailer {
 // }
 
 func InitBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
-	pool := pool.CreatePool(ctx, cfg.Db.DatabaseUrl)
+	pool := db.CreatePool(ctx, cfg.Db.DatabaseUrl)
 	app := NewBaseApp(pool, cfg)
 	app.Bootstrap()
 	return app

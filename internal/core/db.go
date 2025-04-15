@@ -7,7 +7,7 @@ import (
 	"github.com/jackc/pgx/v5/stdlib"
 	"github.com/stephenafamo/bob"
 	"github.com/tkahng/authgo/internal/conf"
-	"github.com/tkahng/authgo/internal/pool"
+	"github.com/tkahng/authgo/internal/db"
 )
 
 type DBX interface {
@@ -43,8 +43,13 @@ func NewDBX(pool *pgxpool.Pool) DBX {
 	}
 }
 
+func NewDBXFromConf(ctx context.Context, conf conf.DBConfig) DBX {
+	pool := NewPoolFromConf(ctx, conf)
+	return NewDBX(pool)
+}
+
 func NewPoolFromConf(ctx context.Context, conf conf.DBConfig) *pgxpool.Pool {
-	return pool.CreatePool(ctx, conf.DatabaseUrl)
+	return db.CreatePool(ctx, conf.DatabaseUrl)
 }
 
 func NewBobFromPool(pool *pgxpool.Pool) bob.DB {

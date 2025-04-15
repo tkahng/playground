@@ -181,6 +181,9 @@ func (s *StripeClient) CreateCheckoutSession(customerId, priceId string, trialDa
 	}
 
 	sessionParams := &stripe.CheckoutSessionParams{
+		AutomaticTax:       &stripe.CheckoutSessionAutomaticTaxParams{
+			Enabled: stripe.Bool(true),
+		},
 		Customer:           stripe.String(customerId),
 		PaymentMethodTypes: stripe.StringSlice([]string{"card"}),
 		CustomerUpdate:     customerUpdateParams,
