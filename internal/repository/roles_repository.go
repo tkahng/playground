@@ -9,7 +9,6 @@ import (
 	"github.com/aarondl/opt/omit"
 	"github.com/aarondl/opt/omitnull"
 	"github.com/google/uuid"
-	"github.com/lib/pq"
 	"github.com/stephenafamo/bob"
 	"github.com/stephenafamo/bob/dialect/psql"
 	"github.com/stephenafamo/bob/dialect/psql/im"
@@ -259,16 +258,6 @@ FROM combined_permissions
 	;`
 )
 
-type permSource struct {
-	ID          uuid.UUID        `db:"id,pk" json:"id"`
-	Name        string           `db:"name" json:"name"`
-	Description null.Val[string] `db:"description" json:"description"`
-	CreatedAt   time.Time        `db:"created_at" json:"created_at"`
-	UpdatedAt   time.Time        `db:"updated_at" json:"updated_at"`
-	RoleIDs     pq.StringArray   `db:"role_ids" json:"role_ids"`
-	IsDirectly  bool             `db:"is_directly_assigned" json:"is_directly_assigned"`
-}
-
 type PermissionSource struct {
 	ID          uuid.UUID        `db:"id,pk" json:"id"`
 	Name        string           `db:"name" json:"name"`
@@ -282,23 +271,12 @@ type PermissionSource struct {
 func ListUserPermissionsSource(ctx context.Context, dbx bob.Executor, userId uuid.UUID, limit int, offset int) ([]PermissionSource, error) {
 	q := psql.RawQuery(QueryUserPermissionSource, userId, userId, limit, offset)
 
-	data, err := bob.All(ctx, dbx, q, scan.StructMapper[permSource]())
+	data, err := bob.All(ctx, dbx, q, scan.StructMapper[PermissionSource]())
 	if err != nil {
 		return nil, err
 	}
-	res := make([]PermissionSource, len(data))
-	for i, p := range data {
-		res[i] = PermissionSource{
-			ID:          p.ID,
-			Name:        p.Name,
-			Description: p.Description,
-			CreatedAt:   p.CreatedAt,
-			UpdatedAt:   p.UpdatedAt,
-			RoleIDs:     ParseUUIDs(p.RoleIDs),
-			IsDirectly:  p.IsDirectly,
-		}
-	}
-	return res, nil
+
+	return data, nil
 }
 
 func CountUserPermissionSource(ctx context.Context, dbx bob.Executor, userId uuid.UUID) (int64, error) {
@@ -394,22 +372,11 @@ WHERE cp.id IS NULL;
 func ListUserNotPermissionsSource(ctx context.Context, dbx bob.Executor, userId uuid.UUID, limit int, offset int) ([]PermissionSource, error) {
 	q := psql.RawQuery(getuserNotPermissions, userId, userId, limit, offset)
 
-	data, err := bob.All(ctx, dbx, q, scan.StructMapper[permSource]())
+	res, err := bob.All(ctx, dbx, q, scan.StructMapper[PermissionSource]())
 	if err != nil {
 		return nil, err
 	}
-	res := make([]PermissionSource, len(data))
-	for i, p := range data {
-		res[i] = PermissionSource{
-			ID:          p.ID,
-			Name:        p.Name,
-			Description: p.Description,
-			CreatedAt:   p.CreatedAt,
-			UpdatedAt:   p.UpdatedAt,
-			RoleIDs:     ParseUUIDs(p.RoleIDs),
-			IsDirectly:  p.IsDirectly,
-		}
-	}
+
 	return res, nil
 }
 

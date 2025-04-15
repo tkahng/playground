@@ -10,7 +10,6 @@ import (
 	"github.com/aarondl/opt/omitnull"
 	"github.com/alexedwards/argon2id"
 	"github.com/google/uuid"
-	"github.com/lib/pq"
 	"github.com/stephenafamo/bob"
 	"github.com/stephenafamo/bob/dialect/psql"
 	"github.com/stephenafamo/bob/dialect/psql/im"
@@ -166,13 +165,6 @@ LIMIT 1;
 `
 )
 
-type rolePermissionClaims struct {
-	UserID      uuid.UUID      `json:"user_id" db:"user_id"`
-	Email       string         `json:"email" db:"email"`
-	Roles       pq.StringArray `json:"roles" db:"roles"`
-	Permissions pq.StringArray `json:"permissions" db:"permissions"`
-	Providers   pq.StringArray `json:"providers" db:"providers"`
-}
 type RolePermissionClaims struct {
 	UserID      uuid.UUID          `json:"user_id" db:"user_id"`
 	Email       string             `json:"email" db:"email"`
@@ -184,26 +176,12 @@ type RolePermissionClaims struct {
 func GetUserWithRolesAndPermissions(ctx context.Context, db bob.Executor, email string) (*RolePermissionClaims, error) {
 	query := psql.RawQuery(RawGetUserWithAllRolesAndPermissionsByEmail, email)
 
-	res, err := bob.One(ctx, db, query, scan.StructMapper[rolePermissionClaims]())
+	res, err := bob.One(ctx, db, query, scan.StructMapper[RolePermissionClaims]())
 	if err != nil {
 		return nil, err
 	}
-	var prov []models.Providers
-	all := models.AllProviders()
-	for _, provider := range res.Providers {
-		for _, p := range all {
-			if provider == string(p) {
-				prov = append(prov, p)
-			}
-		}
-	}
-	return &RolePermissionClaims{
-		UserID:      res.UserID,
-		Email:       res.Email,
-		Roles:       res.Roles,
-		Permissions: res.Permissions,
-		Providers:   prov,
-	}, nil
+
+	return &res, nil
 }
 
 // func GetUsersWithRolesAndPermissions(ctx context.Context, db bob.Executor, ids ...uuid.UUID) ([]RolePermissionClaims, error) {
