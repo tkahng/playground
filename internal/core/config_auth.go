@@ -43,7 +43,7 @@ func OAuth2ConfigFromEnv(cfg conf.EnvConfig) OAuth2Config {
 				AuthURL:      github.Endpoint.AuthURL,
 				TokenURL:     github.Endpoint.TokenURL,
 				UserInfoURL:  "https://api.github.com/user",
-				RedirectURL:  cfg.AuthCallback,
+				RedirectURL:  cfg.AppConfig.AppUrl + cfg.OAuth2Config.AuthCallback,
 			},
 		}
 	} else {
@@ -64,7 +64,7 @@ func OAuth2ConfigFromEnv(cfg conf.EnvConfig) OAuth2Config {
 				AuthURL:     "https://accounts.google.com/o/oauth2/v2/auth",
 				TokenURL:    "https://oauth2.googleapis.com/token",
 				UserInfoURL: "https://www.googleapis.com/oauth2/v3/userinfo",
-				RedirectURL: cfg.AuthCallback,
+				RedirectURL: cfg.AppConfig.AppUrl + cfg.OAuth2Config.AuthCallback,
 			}}
 	} else {
 		googleConf = GoogleConfig{}

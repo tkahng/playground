@@ -185,7 +185,7 @@ func (s *StripeClient) CreateCheckoutSession(customerId, priceId string, trialDa
 		PaymentMethodTypes: stripe.StringSlice([]string{"card"}),
 		CustomerUpdate:     customerUpdateParams,
 		Mode:               stripe.String("subscription"),
-		SuccessURL:         stripe.String(s.config.AppUrl + "/payment/success?sessionId={CHECKOUT_SESSION_ID}"),
+		SuccessURL:         stripe.String(s.config.StripeAppUrl + "/payment/success?sessionId={CHECKOUT_SESSION_ID}"),
 		// CancelURL:          stripe.String(s.config.AppUrl + "/payment/cancel"),
 		LineItems:        lineParams,
 		SubscriptionData: subscriptionParams,
@@ -196,7 +196,7 @@ func (s *StripeClient) CreateCheckoutSession(customerId, priceId string, trialDa
 func (s *StripeClient) CreateBillingPortalSession(customerId string) (*stripe.BillingPortalSession, error) {
 	params := &stripe.BillingPortalSessionParams{
 		Customer:  stripe.String(customerId),
-		ReturnURL: stripe.String(s.config.AppUrl + "/dashboard/subscriptions"),
+		ReturnURL: stripe.String(s.config.StripeAppUrl + "/dashboard/subscriptions"),
 	}
 	return bs.New(params)
 }

@@ -38,10 +38,11 @@ type OAuth2AuthorizationUrlOutput struct {
 func (h *Api) OAuth2AuthorizationUrl(ctx context.Context, input *OAuth2AuthorizationUrlInput) (*OAuth2AuthorizationUrlOutput, error) {
 
 	settings := h.app.Settings()
+	conf := h.app.Cfg()
 	db := h.app.Db()
 	redirectTo := input.RedirectTo
 	if redirectTo == "" {
-		redirectTo = settings.Meta.AppURL
+		redirectTo = conf.AppConfig.AppUrl
 	}
 	provider, err := settings.Auth.OAuth2Config.GetProvider(string(input.Provider))
 	if err != nil {

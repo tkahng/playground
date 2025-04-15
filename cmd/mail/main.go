@@ -56,7 +56,7 @@ func main() {
 		Type:       string(shared.VerificationTokenType),
 		RedirectTo: payload.RedirectTo,
 	})
-	appUrl, _ := url.Parse(app.Settings().Meta.AppURL)
+	appUrl, _ := url.Parse(cfg.AppUrl)
 	param := &mailer.CommonParams{
 		SiteURL:         appUrl.String(),
 		ConfirmationURL: appUrl.ResolveReference(path).String(),

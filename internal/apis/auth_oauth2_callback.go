@@ -142,7 +142,7 @@ func OAuth2Callback(ctx context.Context, api *Api, input *OAuth2CallbackInput) (
 	if parsedState.RedirectTo != "" {
 		redirectUrl = parsedState.RedirectTo
 	} else {
-		redirectUrl = api.app.Settings().Meta.AppURL
+		redirectUrl = api.app.Cfg().AppConfig.AppUrl
 	}
 	var opts []oauth2.AuthCodeOption
 

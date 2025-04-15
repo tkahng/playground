@@ -5,6 +5,7 @@ import (
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
+	"github.com/tkahng/authgo/internal/conf"
 )
 
 const (
@@ -30,7 +31,26 @@ func (c MetaOption) Validate() error {
 }
 
 // --
-
+func NewSettingsFromConf(cfg *conf.EnvConfig) *AppOptions {
+	meta := MetaOption{
+		AppName:       cfg.AppConfig.AppName,
+		AppURL:        cfg.AppConfig.AppUrl,
+		SenderName:    cfg.AppConfig.SenderName,
+		SenderAddress: cfg.AppConfig.SenderAddress,
+	}
+	return &AppOptions{
+		Meta: meta,
+		Auth: *DefaultAuthSettings(),
+		// SMTP: SMTPOption{
+		// 	Enabled:  false,
+		// 	Host:     "smtp.example.com",
+		// 	Port:     587,
+		// 	Username: "",
+		// 	Password: "",
+		// 	TLS:      false,
+		// },
+	}
+}
 func NewDefaultSettings() *AppOptions {
 	return &AppOptions{
 		Meta: MetaOption{
@@ -40,22 +60,22 @@ func NewDefaultSettings() *AppOptions {
 			SenderAddress: "support@example.com",
 		},
 		Auth: *DefaultAuthSettings(),
-		SMTP: SMTPOption{
-			Enabled:  false,
-			Host:     "smtp.example.com",
-			Port:     587,
-			Username: "",
-			Password: "",
-			TLS:      false,
-		},
+		// SMTP: SMTPOption{
+		// 	Enabled:  false,
+		// 	Host:     "smtp.example.com",
+		// 	Port:     587,
+		// 	Username: "",
+		// 	Password: "",
+		// 	TLS:      false,
+		// },
 	}
 }
 
 type AppOptions struct {
 	Auth AuthOptions `form:"auth" json:"auth"`
-	SMTP SMTPOption  `form:"smtp" json:"smtp"`
+	// SMTP SMTPOption  `form:"smtp" json:"smtp"`
 	// Backups      BackupsConfig      `form:"backups" json:"backups"`
-	S3   S3option   `form:"s3" json:"s3"`
+	// S3   S3option   `form:"s3" json:"s3"`
 	Meta MetaOption `form:"meta" json:"meta"`
 }
 
@@ -64,8 +84,8 @@ func (s AppOptions) Validate() error {
 		validation.Field(&s.Meta),
 		validation.Field(&s.Auth),
 		// validation.Field(&s.Logs),
-		validation.Field(&s.SMTP),
-		validation.Field(&s.S3),
+		// validation.Field(&s.SMTP),
+		// validation.Field(&s.S3),
 	)
 }
 
@@ -74,11 +94,11 @@ func (s *AppOptions) PostValidate(ctx context.Context) error {
 	// defer s.mu.RUnlock()
 
 	return validation.ValidateStructWithContext(ctx, s,
-		validation.Field(&s.Meta),
+		// validation.Field(&s.Meta),
 		validation.Field(&s.Auth),
 		// validation.Field(&s.Logs),
-		validation.Field(&s.SMTP),
-		validation.Field(&s.S3),
+		// validation.Field(&s.SMTP),
+		// validation.Field(&s.S3),
 	)
 }
 
@@ -125,7 +145,7 @@ type S3option struct {
 	Endpoint       string `form:"endpoint" json:"endpoint"`
 	AccessKey      string `form:"access_key" json:"access_key"`
 	Secret         string `form:"secret" json:"secret,omitempty"`
-	ForcePathStyle bool   `form:"forcePathStyle" json:"forcePathStyle"`
+	ForcePathStyle bool   `form:"force_path_style" json:"force_path_style"`
 	//
 }
 
