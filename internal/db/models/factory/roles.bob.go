@@ -49,10 +49,15 @@ type RoleTemplate struct {
 }
 
 type roleR struct {
-	Permissions []*roleRPermissionsR
-	Users       []*roleRUsersR
+	StripeProducts []*roleRStripeProductsR
+	Permissions    []*roleRPermissionsR
+	Users          []*roleRUsersR
 }
 
+type roleRStripeProductsR struct {
+	number int
+	o      *StripeProductTemplate
+}
 type roleRPermissionsR struct {
 	number int
 	o      *PermissionTemplate
@@ -108,6 +113,18 @@ func (o RoleTemplate) toModels(number int) models.RoleSlice {
 // setModelRels creates and sets the relationships on *models.Role
 // according to the relationships in the template. Nothing is inserted into the db
 func (t RoleTemplate) setModelRels(o *models.Role) {
+	if t.r.StripeProducts != nil {
+		rel := models.StripeProductSlice{}
+		for _, r := range t.r.StripeProducts {
+			related := r.o.toModels(r.number)
+			for _, rel := range related {
+				rel.R.Roles = append(rel.R.Roles, o)
+			}
+			rel = append(rel, related...)
+		}
+		o.R.StripeProducts = rel
+	}
+
 	if t.r.Permissions != nil {
 		rel := models.PermissionSlice{}
 		for _, r := range t.r.Permissions {
@@ -204,15 +221,30 @@ func ensureCreatableRole(m *models.RoleSetter) {
 func (o *RoleTemplate) insertOptRels(ctx context.Context, exec bob.Executor, m *models.Role) (context.Context, error) {
 	var err error
 
-	if o.r.Permissions != nil {
-		for _, r := range o.r.Permissions {
-			var rel0 models.PermissionSlice
+	if o.r.StripeProducts != nil {
+		for _, r := range o.r.StripeProducts {
+			var rel0 models.StripeProductSlice
 			ctx, rel0, err = r.o.createMany(ctx, exec, r.number)
 			if err != nil {
 				return ctx, err
 			}
 
-			err = m.AttachPermissions(ctx, exec, rel0...)
+			err = m.AttachStripeProducts(ctx, exec, rel0...)
+			if err != nil {
+				return ctx, err
+			}
+		}
+	}
+
+	if o.r.Permissions != nil {
+		for _, r := range o.r.Permissions {
+			var rel1 models.PermissionSlice
+			ctx, rel1, err = r.o.createMany(ctx, exec, r.number)
+			if err != nil {
+				return ctx, err
+			}
+
+			err = m.AttachPermissions(ctx, exec, rel1...)
 			if err != nil {
 				return ctx, err
 			}
@@ -221,13 +253,13 @@ func (o *RoleTemplate) insertOptRels(ctx context.Context, exec bob.Executor, m *
 
 	if o.r.Users != nil {
 		for _, r := range o.r.Users {
-			var rel1 models.UserSlice
-			ctx, rel1, err = r.o.createMany(ctx, exec, r.number)
+			var rel2 models.UserSlice
+			ctx, rel2, err = r.o.createMany(ctx, exec, r.number)
 			if err != nil {
 				return ctx, err
 			}
 
-			err = m.AttachUsers(ctx, exec, rel1...)
+			err = m.AttachUsers(ctx, exec, rel2...)
 			if err != nil {
 				return ctx, err
 			}
@@ -509,6 +541,44 @@ func (m roleMods) RandomUpdatedAt(f *faker.Faker) RoleMod {
 		o.UpdatedAt = func() time.Time {
 			return random_time_Time(f)
 		}
+	})
+}
+
+func (m roleMods) WithStripeProducts(number int, related *StripeProductTemplate) RoleMod {
+	return RoleModFunc(func(o *RoleTemplate) {
+		o.r.StripeProducts = []*roleRStripeProductsR{{
+			number: number,
+			o:      related,
+		}}
+	})
+}
+
+func (m roleMods) WithNewStripeProducts(number int, mods ...StripeProductMod) RoleMod {
+	return RoleModFunc(func(o *RoleTemplate) {
+		related := o.f.NewStripeProduct(mods...)
+		m.WithStripeProducts(number, related).Apply(o)
+	})
+}
+
+func (m roleMods) AddStripeProducts(number int, related *StripeProductTemplate) RoleMod {
+	return RoleModFunc(func(o *RoleTemplate) {
+		o.r.StripeProducts = append(o.r.StripeProducts, &roleRStripeProductsR{
+			number: number,
+			o:      related,
+		})
+	})
+}
+
+func (m roleMods) AddNewStripeProducts(number int, mods ...StripeProductMod) RoleMod {
+	return RoleModFunc(func(o *RoleTemplate) {
+		related := o.f.NewStripeProduct(mods...)
+		m.AddStripeProducts(number, related).Apply(o)
+	})
+}
+
+func (m roleMods) WithoutStripeProducts() RoleMod {
+	return RoleModFunc(func(o *RoleTemplate) {
+		o.r.StripeProducts = nil
 	})
 }
 

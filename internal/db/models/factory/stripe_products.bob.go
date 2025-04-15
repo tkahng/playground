@@ -52,9 +52,19 @@ type StripeProductTemplate struct {
 }
 
 type stripeProductR struct {
+	Permissions         []*stripeProductRPermissionsR
+	Roles               []*stripeProductRRolesR
 	ProductStripePrices []*stripeProductRProductStripePricesR
 }
 
+type stripeProductRPermissionsR struct {
+	number int
+	o      *PermissionTemplate
+}
+type stripeProductRRolesR struct {
+	number int
+	o      *RoleTemplate
+}
 type stripeProductRProductStripePricesR struct {
 	number int
 	o      *StripePriceTemplate
@@ -115,6 +125,30 @@ func (o StripeProductTemplate) toModels(number int) models.StripeProductSlice {
 // setModelRels creates and sets the relationships on *models.StripeProduct
 // according to the relationships in the template. Nothing is inserted into the db
 func (t StripeProductTemplate) setModelRels(o *models.StripeProduct) {
+	if t.r.Permissions != nil {
+		rel := models.PermissionSlice{}
+		for _, r := range t.r.Permissions {
+			related := r.o.toModels(r.number)
+			for _, rel := range related {
+				rel.R.StripeProducts = append(rel.R.StripeProducts, o)
+			}
+			rel = append(rel, related...)
+		}
+		o.R.Permissions = rel
+	}
+
+	if t.r.Roles != nil {
+		rel := models.RoleSlice{}
+		for _, r := range t.r.Roles {
+			related := r.o.toModels(r.number)
+			for _, rel := range related {
+				rel.R.StripeProducts = append(rel.R.StripeProducts, o)
+			}
+			rel = append(rel, related...)
+		}
+		o.R.Roles = rel
+	}
+
 	if t.r.ProductStripePrices != nil {
 		rel := models.StripePriceSlice{}
 		for _, r := range t.r.ProductStripePrices {
@@ -215,15 +249,45 @@ func ensureCreatableStripeProduct(m *models.StripeProductSetter) {
 func (o *StripeProductTemplate) insertOptRels(ctx context.Context, exec bob.Executor, m *models.StripeProduct) (context.Context, error) {
 	var err error
 
-	if o.r.ProductStripePrices != nil {
-		for _, r := range o.r.ProductStripePrices {
-			var rel0 models.StripePriceSlice
+	if o.r.Permissions != nil {
+		for _, r := range o.r.Permissions {
+			var rel0 models.PermissionSlice
 			ctx, rel0, err = r.o.createMany(ctx, exec, r.number)
 			if err != nil {
 				return ctx, err
 			}
 
-			err = m.AttachProductStripePrices(ctx, exec, rel0...)
+			err = m.AttachPermissions(ctx, exec, rel0...)
+			if err != nil {
+				return ctx, err
+			}
+		}
+	}
+
+	if o.r.Roles != nil {
+		for _, r := range o.r.Roles {
+			var rel1 models.RoleSlice
+			ctx, rel1, err = r.o.createMany(ctx, exec, r.number)
+			if err != nil {
+				return ctx, err
+			}
+
+			err = m.AttachRoles(ctx, exec, rel1...)
+			if err != nil {
+				return ctx, err
+			}
+		}
+	}
+
+	if o.r.ProductStripePrices != nil {
+		for _, r := range o.r.ProductStripePrices {
+			var rel2 models.StripePriceSlice
+			ctx, rel2, err = r.o.createMany(ctx, exec, r.number)
+			if err != nil {
+				return ctx, err
+			}
+
+			err = m.AttachProductStripePrices(ctx, exec, rel2...)
 			if err != nil {
 				return ctx, err
 			}
@@ -609,6 +673,82 @@ func (m stripeProductMods) RandomUpdatedAt(f *faker.Faker) StripeProductMod {
 		o.UpdatedAt = func() time.Time {
 			return random_time_Time(f)
 		}
+	})
+}
+
+func (m stripeProductMods) WithPermissions(number int, related *PermissionTemplate) StripeProductMod {
+	return StripeProductModFunc(func(o *StripeProductTemplate) {
+		o.r.Permissions = []*stripeProductRPermissionsR{{
+			number: number,
+			o:      related,
+		}}
+	})
+}
+
+func (m stripeProductMods) WithNewPermissions(number int, mods ...PermissionMod) StripeProductMod {
+	return StripeProductModFunc(func(o *StripeProductTemplate) {
+		related := o.f.NewPermission(mods...)
+		m.WithPermissions(number, related).Apply(o)
+	})
+}
+
+func (m stripeProductMods) AddPermissions(number int, related *PermissionTemplate) StripeProductMod {
+	return StripeProductModFunc(func(o *StripeProductTemplate) {
+		o.r.Permissions = append(o.r.Permissions, &stripeProductRPermissionsR{
+			number: number,
+			o:      related,
+		})
+	})
+}
+
+func (m stripeProductMods) AddNewPermissions(number int, mods ...PermissionMod) StripeProductMod {
+	return StripeProductModFunc(func(o *StripeProductTemplate) {
+		related := o.f.NewPermission(mods...)
+		m.AddPermissions(number, related).Apply(o)
+	})
+}
+
+func (m stripeProductMods) WithoutPermissions() StripeProductMod {
+	return StripeProductModFunc(func(o *StripeProductTemplate) {
+		o.r.Permissions = nil
+	})
+}
+
+func (m stripeProductMods) WithRoles(number int, related *RoleTemplate) StripeProductMod {
+	return StripeProductModFunc(func(o *StripeProductTemplate) {
+		o.r.Roles = []*stripeProductRRolesR{{
+			number: number,
+			o:      related,
+		}}
+	})
+}
+
+func (m stripeProductMods) WithNewRoles(number int, mods ...RoleMod) StripeProductMod {
+	return StripeProductModFunc(func(o *StripeProductTemplate) {
+		related := o.f.NewRole(mods...)
+		m.WithRoles(number, related).Apply(o)
+	})
+}
+
+func (m stripeProductMods) AddRoles(number int, related *RoleTemplate) StripeProductMod {
+	return StripeProductModFunc(func(o *StripeProductTemplate) {
+		o.r.Roles = append(o.r.Roles, &stripeProductRRolesR{
+			number: number,
+			o:      related,
+		})
+	})
+}
+
+func (m stripeProductMods) AddNewRoles(number int, mods ...RoleMod) StripeProductMod {
+	return StripeProductModFunc(func(o *StripeProductTemplate) {
+		related := o.f.NewRole(mods...)
+		m.AddRoles(number, related).Apply(o)
+	})
+}
+
+func (m stripeProductMods) WithoutRoles() StripeProductMod {
+	return StripeProductModFunc(func(o *StripeProductTemplate) {
+		o.r.Roles = nil
 	})
 }
 

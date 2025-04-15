@@ -22,7 +22,7 @@ type oauthLoginResponse struct {
 
 func (api *Api) VerifyOperation(path string) huma.Operation {
 	return huma.Operation{
-		OperationID: "verify",
+		OperationID: "verify-get",
 		Method:      http.MethodGet,
 		Path:        path,
 		Summary:     "Verify",
@@ -32,7 +32,27 @@ func (api *Api) VerifyOperation(path string) huma.Operation {
 	}
 }
 
-func (api *Api) Verify(ctx context.Context, input *OtpInput) (*oauthLoginResponse, error) {
+func (api *Api) Verify(ctx context.Context, input *OtpInput) (*struct{}, error) {
+	return Verify(api, ctx, input)
+}
+
+func (api *Api) VerifyPostOperation(path string) huma.Operation {
+	return huma.Operation{
+		OperationID: "verify-post",
+		Method:      http.MethodPost,
+		Path:        path,
+		Summary:     "Verify",
+		Description: "Verify",
+		Tags:        []string{"Auth", "Verify"},
+		Errors:      []int{http.StatusNotFound, http.StatusBadRequest},
+	}
+}
+
+func (h *Api) VerifyPost(ctx context.Context, input *struct{ Body *OtpInput }) (*struct{}, error) {
+	return Verify(h, ctx, input.Body)
+}
+
+func Verify(api *Api, ctx context.Context, input *OtpInput) (*struct{}, error) {
 	db := api.app.Db()
 	switch input.Type {
 	case shared.VerificationTokenType:

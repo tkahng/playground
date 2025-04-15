@@ -82,12 +82,19 @@ func BindApis(api huma.API, app core.App) {
 	})
 	// http://127.0.0.1:8080/auth/callback
 	// huma.Register(api, appApi.AuthMethodsOperation("/auth/methods"), appApi.AuthMethods)
+	// protected test routes -----------------------------------------------------------
+
+	huma.Register(api, appApi.ApiProtectedBasicPermissionOperation("/api/protected/basic-permission"), appApi.ApiProtectedBasicPermission)
+	huma.Register(api, appApi.ApiProtectedProPermissionOperation("/api/protected/pro-permission"), appApi.ApiProtectedProPermission)
+	huma.Register(api, appApi.ApiProtectedAdvancedPermissionOperation("/api/protected/advanced-permission"), appApi.ApiProtectedAdvancedPermission)
+
 	huma.Register(api, appApi.SignupOperation("/auth/signup"), appApi.SignUp)
 	huma.Register(api, appApi.SigninOperation("/auth/signin"), appApi.SignIn)
 	huma.Register(api, appApi.MeOperation("/auth/me"), appApi.Me)
 	huma.Register(api, appApi.RefreshTokenOperation("/auth/refresh-token"), appApi.RefreshToken)
 
 	huma.Register(api, appApi.VerifyOperation("/auth/verify"), appApi.Verify)
+	huma.Register(api, appApi.VerifyPostOperation("/auth/verify"), appApi.VerifyPost)
 	huma.Register(api, appApi.RequestPasswordResetOperation("/auth/request-password-reset"), appApi.RequestPasswordReset)
 	huma.Register(api, appApi.ConfirmPasswordResetOperation("/auth/confirm-password-reset"), appApi.ConfirmPasswordReset)
 
@@ -109,6 +116,8 @@ func BindApis(api huma.API, app core.App) {
 	}, appApi.NotificationsSsefunc)
 	// stripe routes -------------------------------------------------------------------------------------------------
 	stripeGroup := huma.NewGroup(api, "/stripe")
+	// stripe my subscriptions
+	huma.Register(stripeGroup, appApi.MyStripeSubscriptionsOperation("/my-subscriptions"), appApi.MyStripeSubscriptions)
 	// stripe webhook
 	huma.Register(stripeGroup, appApi.StripeWebhookOperation("/webhook"), appApi.StripeWebhook)
 	// stripe products with prices
@@ -117,6 +126,8 @@ func BindApis(api huma.API, app core.App) {
 	huma.Register(stripeGroup, appApi.StripeBillingPortalOperation("/billing-portal"), appApi.StripeBillingPortal)
 	//  stripe checkout session
 	huma.Register(stripeGroup, appApi.StripeCheckoutSessionOperation("/checkout-session"), appApi.StripeCheckoutSession)
+	//  stripe get checkout session by checkoutSessionId
+	huma.Register(stripeGroup, appApi.StripeCheckoutSessionGetOperation("/checkout-session/{checkoutSessionId}"), appApi.StripeCheckoutSessionGet)
 
 	//  admin routes ----------------------------------------------------------------------------
 	adminGroup := huma.NewGroup(api, "/admin")

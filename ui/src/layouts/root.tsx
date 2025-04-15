@@ -1,6 +1,6 @@
-import { NexusAILandingHeader } from "@/components/header";
 import { landingLinks } from "@/components/landing-links";
 import { NexusAIFooter } from "@/components/nexus-footer";
+import { NexusAILandingHeader } from "@/components/nexus-landing-header";
 import { Outlet } from "react-router";
 
 export default function RootLayout() {

@@ -4,13 +4,13 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	"github.com/stripe/stripe-go/v81"
-	bs "github.com/stripe/stripe-go/v81/billingportal/session"
-	"github.com/stripe/stripe-go/v81/checkout/session"
-	"github.com/stripe/stripe-go/v81/customer"
-	"github.com/stripe/stripe-go/v81/price"
-	"github.com/stripe/stripe-go/v81/product"
-	"github.com/stripe/stripe-go/v81/subscription"
+	"github.com/stripe/stripe-go/v82"
+	bs "github.com/stripe/stripe-go/v82/billingportal/session"
+	"github.com/stripe/stripe-go/v82/checkout/session"
+	"github.com/stripe/stripe-go/v82/customer"
+	"github.com/stripe/stripe-go/v82/price"
+	"github.com/stripe/stripe-go/v82/product"
+	"github.com/stripe/stripe-go/v82/subscription"
 	"github.com/tkahng/authgo/internal/conf"
 )
 
@@ -159,6 +159,12 @@ func (s *StripeClient) FindSubscriptionByStripeId(stripeId string) (*stripe.Subs
 	return subscription.Get(stripeId, params)
 }
 
+// find stripe subscription by stripe id
+func (s *StripeClient) FindCheckoutSessionByStripeId(stripeId string) (*stripe.CheckoutSession, error) {
+	params := &stripe.CheckoutSessionParams{}
+	return session.Get(stripeId, params)
+}
+
 func (s *StripeClient) CreateCheckoutSession(customerId, priceId string, trialDays *int64) (*stripe.CheckoutSession, error) {
 	lineParams := []*stripe.CheckoutSessionLineItemParams{
 		{
@@ -179,8 +185,7 @@ func (s *StripeClient) CreateCheckoutSession(customerId, priceId string, trialDa
 		PaymentMethodTypes: stripe.StringSlice([]string{"card"}),
 		CustomerUpdate:     customerUpdateParams,
 		Mode:               stripe.String("subscription"),
-		SuccessURL:         stripe.String(s.config.AppUrl + "/dashboard/subscriptions"),
-
+		SuccessURL:         stripe.String(s.config.AppUrl + "/payment/success?sessionId={CHECKOUT_SESSION_ID}"),
 		// CancelURL:          stripe.String(s.config.AppUrl + "/payment/cancel"),
 		LineItems:        lineParams,
 		SubscriptionData: subscriptionParams,

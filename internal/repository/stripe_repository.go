@@ -13,7 +13,7 @@ import (
 	"github.com/stephenafamo/bob/dialect/psql/im"
 	"github.com/stephenafamo/bob/dialect/psql/sm"
 	"github.com/stephenafamo/bob/types"
-	"github.com/stripe/stripe-go/v81"
+	"github.com/stripe/stripe-go/v82"
 	"github.com/tkahng/authgo/internal/db/models"
 )
 
@@ -27,6 +27,13 @@ func FindCustomerByStripeId(ctx context.Context, dbx bob.Executor, stripeId stri
 func FindCustomerByUserId(ctx context.Context, dbx bob.Executor, userId uuid.UUID) (*models.StripeCustomer, error) {
 	data, err := models.StripeCustomers.Query(
 		models.SelectWhere.StripeCustomers.ID.EQ(userId),
+	).One(ctx, dbx)
+	return OptionalRow(data, err)
+}
+
+func FindProductByStripeId(ctx context.Context, dbx bob.Executor, stripeId string) (*models.StripeProduct, error) {
+	data, err := models.StripeProducts.Query(
+		models.SelectWhere.StripeProducts.ID.EQ(stripeId),
 	).One(ctx, dbx)
 	return OptionalRow(data, err)
 }
@@ -251,8 +258,8 @@ func UpsertSubscriptionFromStripe(ctx context.Context, exec bob.Executor, sub *s
 		Quantity:           omit.From(item.Quantity),
 		CancelAtPeriodEnd:  omit.From(sub.CancelAtPeriodEnd),
 		Created:            omit.From(Int64ToISODate(sub.Created)),
-		CurrentPeriodStart: omit.From(Int64ToISODate(sub.CurrentPeriodStart)),
-		CurrentPeriodEnd:   omit.From(Int64ToISODate(sub.CurrentPeriodEnd)),
+		CurrentPeriodStart: omit.From(Int64ToISODate(item.CurrentPeriodStart)),
+		CurrentPeriodEnd:   omit.From(Int64ToISODate(item.CurrentPeriodEnd)),
 		EndedAt:            omitnull.From(Int64ToISODate(sub.EndedAt)),
 		CancelAt:           omitnull.From(Int64ToISODate(sub.CancelAt)),
 		CanceledAt:         omitnull.From(Int64ToISODate(sub.CanceledAt)),
@@ -288,6 +295,23 @@ func StripeSubscriptionStatusConvert(status stripe.SubscriptionStatus) models.St
 	return models.StripeSubscriptionStatusActive
 }
 
+func FindSubscriptionById(ctx context.Context, dbx bob.Executor, stripeId string) (*models.StripeSubscription, error) {
+	data, err := models.StripeSubscriptions.Query(
+		models.SelectWhere.StripeSubscriptions.ID.EQ(stripeId),
+	).One(ctx, dbx)
+	return OptionalRow(data, err)
+}
+
+func FindSubscriptionWithPriceById(ctx context.Context, dbx bob.Executor, stripeId string) (*models.StripeSubscription, error) {
+	data, err := models.StripeSubscriptions.Query(
+		models.SelectWhere.StripeSubscriptions.ID.EQ(stripeId),
+		models.PreloadStripeSubscriptionPriceStripePrice(
+			models.PreloadStripePriceProductStripeProduct(),
+		),
+	).One(ctx, dbx)
+	return OptionalRow(data, err)
+}
+
 func FindLatestActiveSubscriptionByUserId(ctx context.Context, dbx bob.Executor, userId uuid.UUID) (*models.StripeSubscription, error) {
 	data, err := models.StripeSubscriptions.Query(
 		models.SelectWhere.StripeSubscriptions.UserID.EQ(userId),
@@ -296,6 +320,21 @@ func FindLatestActiveSubscriptionByUserId(ctx context.Context, dbx bob.Executor,
 			models.StripeSubscriptionStatusTrialing,
 		),
 		sm.OrderBy(models.StripeSubscriptionColumns.Created).Desc(),
+	).One(ctx, dbx)
+	return OptionalRow(data, err)
+}
+
+func FindLatestActiveSubscriptionWithPriceByUserId(ctx context.Context, dbx bob.Executor, userId uuid.UUID) (*models.StripeSubscription, error) {
+	data, err := models.StripeSubscriptions.Query(
+		models.SelectWhere.StripeSubscriptions.UserID.EQ(userId),
+		models.SelectWhere.StripeSubscriptions.Status.In(
+			models.StripeSubscriptionStatusActive,
+			models.StripeSubscriptionStatusTrialing,
+		),
+		sm.OrderBy(models.StripeSubscriptionColumns.Created).Desc(),
+		models.PreloadStripeSubscriptionPriceStripePrice(
+			models.PreloadStripePriceProductStripeProduct(),
+		),
 	).One(ctx, dbx)
 	return OptionalRow(data, err)
 }

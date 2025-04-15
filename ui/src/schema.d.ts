@@ -349,6 +349,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/api/protected/advanced-permission": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Api protected advanced permission
+         * @description Api protected advanced permission
+         */
+        get: operations["api-protected-advanced-permission"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/api/protected/basic-permission": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Api protected basic permission
+         * @description Api protected basic permission
+         */
+        get: operations["api-protected-basic-permission"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/api/protected/pro-permission": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Api protected pro permission
+         * @description Api protected pro permission
+         */
+        get: operations["api-protected-pro-permission"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/authorization-url": {
         parameters: {
             query?: never;
@@ -524,7 +584,75 @@ export interface paths {
          * Verify
          * @description Verify
          */
-        get: operations["verify"];
+        get: operations["verify-get"];
+        put?: never;
+        /**
+         * Verify
+         * @description Verify
+         */
+        post: operations["verify-post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/media": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get media list
+         * @description Get media list
+         */
+        get: operations["get-media-list"];
+        put?: never;
+        /**
+         * Upload media
+         * @description Upload media
+         */
+        post: operations["upload-media"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/media/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get media
+         * @description Get media
+         */
+        get: operations["get-media"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notifications/sse": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Notifications SSE
+         * @description Notifications SSE
+         */
+        get: operations["notifications-sse"];
         put?: never;
         post?: never;
         delete?: never;
@@ -567,6 +695,46 @@ export interface paths {
          * @description create checkout session
          */
         post: operations["create-checkout-session"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stripe/checkout-session/{checkoutSessionId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * get checkout session
+         * @description get checkout session
+         */
+        get: operations["get-checkout-session"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stripe/my-subscriptions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * stripe-my-subscriptions
+         * @description stripe-my-subscriptions
+         */
+        get: operations["stripe-my-subscriptions"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -706,6 +874,17 @@ export interface components {
             readonly $schema?: string;
             access: string;
         };
+        MediaOuput: {
+            /** Format: date-time */
+            created_at: string;
+            filename: string;
+            /** Format: uuid */
+            id: string;
+            /** Format: date-time */
+            updated_at: string;
+            /** Format: uri */
+            url: string;
+        };
         Meta: {
             /** Format: int64 */
             page: number;
@@ -714,6 +893,17 @@ export interface components {
             /** Format: int64 */
             total: number;
         };
+        Notification: {
+            channel: string;
+            content: string;
+            /** Format: date-time */
+            created_at: string;
+            id: string;
+            type: string;
+            /** Format: date-time */
+            updated_at: string;
+            user_id: string;
+        };
         OAuth2AuthorizationUrlOutputBody: {
             /**
              * Format: uri
@@ -721,6 +911,24 @@ export interface components {
              */
             readonly $schema?: string;
             url: string;
+        };
+        OtpInput: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            token: string;
+            type: string;
+        };
+        PaginatedResponseMediaOuput: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            data: components["schemas"]["MediaOuput"][] | null;
+            meta: components["schemas"]["Meta"];
         };
         PaginatedResponsePermission: {
             /**
@@ -793,7 +1001,7 @@ export interface components {
             readonly $schema?: string;
             /** Format: date-time */
             created_at: string;
-            description: string;
+            description?: string;
             id: string;
             name: string;
             /** Format: date-time */
@@ -827,14 +1035,19 @@ export interface components {
             id: string;
             /** @enum {string} */
             interval?: "day" | "week" | "month" | "year";
-            interval_count: string;
-            lookup_key: string;
-            metadata: string;
+            /** Format: int64 */
+            interval_count: number | null;
+            lookup_key: string | null;
+            metadata: {
+                [key: string]: string;
+            };
             product_id: string;
-            trial_period_days: string;
+            /** Format: int64 */
+            trial_period_days: number | null;
             /** @enum {string} */
             type: "one_time" | "recurring";
-            unit_amount: string;
+            /** Format: int64 */
+            unit_amount: number | null;
             /** Format: date-time */
             updated_at: string;
         };
@@ -842,10 +1055,12 @@ export interface components {
             active: boolean;
             /** Format: date-time */
             created_at: string;
-            description: string;
+            description: string | null;
             id: string;
-            image: string;
-            metadata: string;
+            image: string | null;
+            metadata: {
+                [key: string]: string;
+            };
             name: string;
             /** Format: date-time */
             updated_at: string;
@@ -874,7 +1089,7 @@ export interface components {
             readonly $schema?: string;
             /** Format: date-time */
             created_at: string;
-            description: string;
+            description?: string;
             id: string;
             name: string;
             /** Format: date-time */
@@ -959,15 +1174,20 @@ export interface components {
             id: string;
             /** @enum {string} */
             interval?: "day" | "week" | "month" | "year";
-            interval_count: string;
-            lookup_key: string;
-            metadata: string;
+            /** Format: int64 */
+            interval_count: number | null;
+            lookup_key: string | null;
+            metadata: {
+                [key: string]: string;
+            };
             product?: components["schemas"]["Product"];
             product_id: string;
-            trial_period_days: string;
+            /** Format: int64 */
+            trial_period_days: number | null;
             /** @enum {string} */
             type: "one_time" | "recurring";
-            unit_amount: string;
+            /** Format: int64 */
+            unit_amount: number | null;
             /** Format: date-time */
             updated_at: string;
         };
@@ -975,10 +1195,12 @@ export interface components {
             active: boolean;
             /** Format: date-time */
             created_at: string;
-            description: string;
+            description: string | null;
             id: string;
-            image: string;
-            metadata: string;
+            image: string | null;
+            metadata: {
+                [key: string]: string;
+            };
             name: string;
             prices?: components["schemas"]["Price"][] | null;
             /** Format: date-time */
@@ -993,9 +1215,11 @@ export interface components {
             url: string;
         };
         SubscriptionWithData: {
-            cancel_at: string;
+            /** Format: date-time */
+            cancel_at: string | null;
             cancel_at_period_end: boolean;
-            canceled_at: string;
+            /** Format: date-time */
+            canceled_at: string | null;
             /** Format: date-time */
             created: string;
             /** Format: date-time */
@@ -1004,19 +1228,62 @@ export interface components {
             current_period_end: string;
             /** Format: date-time */
             current_period_start: string;
-            ended_at: string;
+            /** Format: date-time */
+            ended_at: string | null;
             id: string;
-            metadata: string;
+            metadata: {
+                [key: string]: string;
+            };
             price?: components["schemas"]["StripePricesWithProduct"];
             price_id: string;
             /** Format: int64 */
             quantity: number;
             status: string;
-            trial_end: string;
-            trial_start: string;
+            /** Format: date-time */
+            trial_end: string | null;
+            /** Format: date-time */
+            trial_start: string | null;
             /** Format: date-time */
             updated_at: string;
             user?: components["schemas"]["User"];
+            user_id: string;
+        };
+        SubscriptionWithPrice: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            /** Format: date-time */
+            cancel_at: string | null;
+            cancel_at_period_end: boolean;
+            /** Format: date-time */
+            canceled_at: string | null;
+            /** Format: date-time */
+            created: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            current_period_end: string;
+            /** Format: date-time */
+            current_period_start: string;
+            /** Format: date-time */
+            ended_at: string | null;
+            id: string;
+            metadata: {
+                [key: string]: string;
+            };
+            price?: components["schemas"]["StripePricesWithProduct"];
+            price_id: string;
+            /** Format: int64 */
+            quantity: number;
+            status: string;
+            /** Format: date-time */
+            trial_end: string | null;
+            /** Format: date-time */
+            trial_start: string | null;
+            /** Format: date-time */
+            updated_at: string;
             user_id: string;
         };
         TokenDto: {
@@ -1055,10 +1322,11 @@ export interface components {
             /** Format: date-time */
             created_at: string;
             email: string;
-            email_verified_at: string;
+            /** Format: date-time */
+            email_verified_at: string | null;
             id: string;
-            image: string;
-            name: string;
+            image: string | null;
+            name: string | null;
             /** Format: date-time */
             updated_at: string;
         };
@@ -1079,10 +1347,11 @@ export interface components {
             /** Format: date-time */
             created_at: string;
             email: string;
-            email_verified_at: string;
+            /** Format: date-time */
+            email_verified_at: string | null;
             id: string;
-            image: string;
-            name: string;
+            image: string | null;
+            name: string | null;
             roles?: components["schemas"]["RoleWithPermissions"][] | null;
             /** Format: date-time */
             updated_at: string;
@@ -2467,6 +2736,120 @@ export interface operations {
             };
         };
     };
+    "api-protected-advanced-permission": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "api-protected-basic-permission": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "api-protected-pro-permission": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
     "oauth2-authorization-url": {
         parameters: {
             query: {
@@ -2687,11 +3070,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: {
-            content: {
-                "application/json": components["schemas"]["SigninDto"];
-            };
-        };
+        requestBody?: never;
         responses: {
             /** @description OK */
             200: {
@@ -2713,15 +3092,6 @@ export interface operations {
             };
             /** @description Not Found */
             404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-            /** @description Unprocessable Entity */
-            422: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -2987,7 +3357,7 @@ export interface operations {
             };
         };
     };
-    verify: {
+    "verify-get": {
         parameters: {
             query: {
                 token: string;
@@ -3002,8 +3372,6 @@ export interface operations {
             /** @description No Content */
             204: {
                 headers: {
-                    Location?: string;
-                    "Set-Cookie"?: string;
                     [name: string]: unknown;
                 };
                 content?: never;
@@ -3028,6 +3396,290 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "verify-post": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["OtpInput"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "get-media-list": {
+        parameters: {
+            query?: {
+                page?: number;
+                per_page?: number;
+                q?: string;
+                userId?: string;
+                sort_by?: string;
+                sort_order?: "asc" | "desc";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponseMediaOuput"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "upload-media": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": {
+                    files?: string[];
+                    /** Format: uri */
+                    urls?: string[];
+                };
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "get-media": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    CreatedAt?: string;
+                    Filename?: string;
+                    ID?: string;
+                    URL?: string;
+                    UpdatedAt?: string;
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "notifications-sse": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/event-stream": {
+                        data: components["schemas"]["Notification"];
+                        /**
+                         * @description The event name.
+                         * @constant
+                         */
+                        event?: "message";
+                        /** @description The event ID. */
+                        id?: number;
+                        /** @description The retry time in milliseconds. */
+                        retry?: number;
+                    }[];
+                };
+            };
+            /** @description Not Found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3117,6 +3769,93 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "get-checkout-session": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                checkoutSessionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubscriptionWithPrice"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "stripe-my-subscriptions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubscriptionWithPrice"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };

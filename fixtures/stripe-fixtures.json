@@ -1,0 +1,97 @@
+{
+  "_meta": {
+    "template_version": 0
+  },
+  "fixtures": [
+    {
+      "name": "prod_pro",
+      "path": "/v1/products",
+      "method": "post",
+      "params": {
+        "id": "prod_pro",
+        "name": "Pro",
+        "description": "Pro product description",
+        "metadata": {
+          "index": 1
+        }
+      }
+    },
+    {
+      "name": "price_pro_month_usd_5000",
+      "path": "/v1/prices",
+      "method": "post",
+      "params": {
+        "lookup_key": "price_pro_month_usd_5000",
+        "product": "${prod_pro:id}",
+        "currency": "usd",
+        "billing_scheme": "per_unit",
+        "unit_amount": 5000,
+        "recurring": {
+          "interval": "month",
+          "interval_count": 1
+        }
+      }
+    },
+    {
+      "name": "price_pro_year_usd_50000",
+      "path": "/v1/prices",
+      "method": "post",
+      "params": {
+        "lookup_key": "price_pro_year_usd_50000",
+        "product": "${prod_pro:id}",
+        "currency": "usd",
+        "billing_scheme": "per_unit",
+        "unit_amount": 50000,
+        "recurring": {
+          "interval": "year",
+          "interval_count": 1
+        }
+      }
+    },
+    {
+      "name": "prod_advanced",
+      "path": "/v1/products",
+      "method": "post",
+      "params": {
+        "id": "prod_advanced",
+        "name": "Advanced",
+        "description": "Advanced product description",
+        "metadata": {
+          "index": 1
+        }
+      }
+    },
+    {
+      "name": "price_advanced_month_usd_8500",
+      "path": "/v1/prices",
+      "method": "post",
+      "params": {
+        "lookup_key": "price_advanced_month_usd_8500",
+        "product": "${prod_advanced:id}",
+        "currency": "usd",
+        "billing_scheme": "per_unit",
+        "unit_amount": 8500,
+        "recurring": {
+          "interval": "month",
+          "interval_count": 1
+        }
+      }
+    },
+    {
+      "name": "price_advanced_year_usd_85000",
+      "path": "/v1/prices",
+      "method": "post",
+      "params": {
+        "lookup_key": "price_advanced_year_usd_85000",
+        "product": "${prod_advanced:id}",
+        "currency": "usd",
+        "billing_scheme": "per_unit",
+        "unit_amount": 85000,
+        "recurring": {
+          "interval": "year",
+          "interval_count": 1
+        }
+      }
+    }
+  ]
+}

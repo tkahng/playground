@@ -12,3 +12,7 @@ export const landingLinks: LinkProps[] = [
   { to: RouteMap.ABOUT, title: "About" },
   { to: RouteMap.CONTACT, title: "Contact" },
 ];
+
+export const adminLinks: LinkProps[] = [
+  { to: RouteMap.DASHBOARD_HOME, title: "Dashboard" },
+];

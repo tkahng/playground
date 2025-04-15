@@ -12,6 +12,13 @@
       "username": "postgres"
     }
   ],
+  "go.lintTool": "golangci-lint",
+  "go.lintFlags": ["--path-mode=abs", "--fast-only"],
+  "go.formatTool": "custom",
+  "go.alternateTools": {
+    "customFormatter": "golangci-lint"
+  },
+  "go.formatFlags": ["fmt", "--stdin"],
   // "inlineSQL.dbHost": "host.docker.internal",
   "go.inlayHints.assignVariableTypes": false,
   "go.inlayHints.parameterNames": false,
@@ -90,7 +97,6 @@
   "emmet.includeLanguages": {
     "templ": "html"
   },
-  "go.formatTool": "gofumpt",
   "[go]": {
     "editor.formatOnSave": true,
     "editor.codeActionsOnSave": {

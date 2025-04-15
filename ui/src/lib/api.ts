@@ -5,6 +5,7 @@ import {
   SigninInput,
   SignupInput,
   User,
+  UserDetailWithRoles,
 } from "@/schema.types";
 import { client } from "./client";
 
@@ -325,7 +326,10 @@ export const getUser = async (token: string, id: string) => {
   return data;
 };
 
-export const getUserInfo = async (token: string, id: string) => {
+export const getUserInfo = async (
+  token: string,
+  id: string
+): Promise<UserDetailWithRoles> => {
   const user = await getUser(token, id);
   const userRoles = await getUserRoles(token, id);
   const userPermissions = await getUserPermissions(token, id, false);
@@ -480,6 +484,186 @@ export const removeUserPermission = async (
   ); // TODO: add pagination
   if (error) {
     throw new Error(error.detail);
+  }
+  return data;
+};
+
+export const getProductsWithPrices = async (token?: string) => {
+  const { data, error } = await client.GET("/api/stripe/products", {
+    headers: token
+      ? {
+          Authorization: `Bearer ${token}`,
+        }
+      : {},
+  });
+  if (error) {
+    throw new Error(error.detail);
+  }
+  if (!data) {
+    throw new Error("No data");
+  }
+
+  return data;
+};
+
+export const getUserSubscriptions = async (token: string) => {
+  const { data, error } = await client.GET("/api/stripe/my-subscriptions", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  if (error) {
+    throw new Error(error.detail);
+  }
+  // if !data) {
+  //   throw new Error("No data");
+  // }
+  return data;
+};
+
+export const getCheckoutSession = async (token: string, id: string) => {
+  const { data, error } = await client.GET(
+    "/api/stripe/checkout-session/{checkoutSessionId}",
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      params: {
+        path: {
+          checkoutSessionId: id,
+        },
+      },
+    }
+  );
+  if (error) {
+    throw new Error(error.detail);
+  }
+  if (!data) {
+    throw new Error("No data");
+  }
+  return data;
+};
+
+export const createCheckoutSession = async (
+  token: string,
+  { price_id }: { price_id: string }
+) => {
+  const { data, error } = await client.POST("/api/stripe/checkout-session", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: {
+      price_id,
+    },
+  });
+  if (error) {
+    throw new Error(error.detail);
+  }
+  if (!data) {
+    throw new Error("No data");
+  }
+  return data;
+};
+
+export const createBillingPortalSession = async (token: string) => {
+  const { data, error } = await client.POST("/api/stripe/billing-portal", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  if (error) {
+    throw new Error(error.detail);
+  }
+  if (!data) {
+    throw new Error("No data");
+  }
+  return data.url;
+};
+
+export const getAuthUrl = async ({
+  provider,
+  redirect,
+}: {
+  provider: "google" | "github";
+  redirect?: string;
+}) => {
+  const { data, error } = await client.GET("/api/auth/authorization-url", {
+    params: {
+      query: {
+        provider,
+        redirect_to: redirect,
+      },
+    },
+  });
+  if (error) {
+    throw new Error(error.detail);
+  }
+  if (!data) {
+    throw new Error("No data");
+  }
+  return data.url;
+};
+
+export const confirmVerification = async (token: string, type: string) => {
+  const { error } = await client.POST("/api/auth/verify", {
+    body: {
+      type,
+      token,
+    },
+  });
+  if (error) {
+    throw new Error(error.detail);
+  }
+};
+
+export const getBasicRoute = async (token: string) => {
+  const { data, error } = await client.GET(
+    "/api/api/protected/basic-permission",
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+  if (error) {
+    throw new Error(error.detail);
+  }
+  if (!data) {
+    throw new Error("No data");
+  }
+  return data;
+};
+export const getProRoute = async (token: string) => {
+  const { data, error } = await client.GET(
+    "/api/api/protected/pro-permission",
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+  if (error) {
+    throw new Error(error.detail);
+  }
+  if (!data) {
+    throw new Error("No data");
+  }
+  return data;
+};
+export const getAdvancedRoute = async (token: string) => {
+  const { data, error } = await client.GET(
+    "/api/api/protected/advanced-permission",
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+  if (error) {
+    throw new Error(error.detail);
+  }
+  if (!data) {
+    throw new Error("No data");
   }
   return data;
 };

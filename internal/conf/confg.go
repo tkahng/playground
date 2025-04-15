@@ -45,7 +45,6 @@ type GoogleConfig struct {
 type OAuth2Config struct {
 	GithubConfig
 	GoogleConfig
-	AuthBaseUrl  string `env:"AUTH_BASE_URL" envDefault:"http://127.0.0.1:8080/api/auth"`
 	AuthCallback string `env:"AUTH_CALLBACK" envDefault:"http://127.0.0.1:8080/api/auth/callback"`
 }
 
@@ -77,10 +76,18 @@ type EnvConfig struct {
 	AiConfig
 }
 
-type ConfigGetter func() EnvConfig
-
 func AppConfigGetter() EnvConfig {
 	var config EnvConfig
+	if err := env.ParseWithOptions(&config, env.Options{
+		RequiredIfNoDef: true,
+	}); err != nil {
+		panic(err)
+	}
+	return config
+}
+
+func GetConfig[T any]() T {
+	var config T
 	if err := env.ParseWithOptions(&config, env.Options{
 		RequiredIfNoDef: true,
 	}); err != nil {

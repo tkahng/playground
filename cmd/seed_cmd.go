@@ -26,9 +26,9 @@ var seedRolesCmd = &cobra.Command{
 	Short: "seed roles",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
-		conf := conf.AppConfigGetter()
+		conf := conf.GetConfig[conf.DBConfig]()
 
-		db := core.NewPoolFromConf(ctx, conf.Db)
+		db := core.NewPoolFromConf(ctx, conf)
 		dbx := core.NewBobFromPool(db)
 		err := repository.EnsureRoleAndPermissions(ctx, dbx, "superuser", "superuser", "advanced", "pro", "basic")
 		if err != nil {
@@ -70,9 +70,9 @@ var seedUserCmd = &cobra.Command{
 	Short: "seed users",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
-		conf := conf.AppConfigGetter()
+		conf := conf.GetConfig[conf.DBConfig]()
 
-		db := core.NewPoolFromConf(ctx, conf.Db)
+		db := core.NewPoolFromConf(ctx, conf)
 		dbx := core.NewBobFromPool(db)
 		role, err := repository.FindRoleByName(ctx, dbx, "basic")
 		if err != nil {
