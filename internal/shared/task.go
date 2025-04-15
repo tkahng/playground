@@ -68,3 +68,50 @@ func ModelToTaskWithSubtask(task *models.TaskProject) *TaskProject {
 		UpdatedAt:   task.UpdatedAt,
 	}
 }
+
+type CreateTaskBaseDTO struct {
+	Name        string            `json:"name" required:"true"`
+	Description *string           `json:"description,omitempty" required:"false"`
+	Status      models.TaskStatus `json:"status" required:"false" enum:"todo,in_progress,done" default:"todo"`
+}
+
+type CreateTaskWithChildrenDTO struct {
+	CreateTaskBaseDTO
+	Children []CreateTaskBaseDTO `json:"children,omitempty" required:"false"`
+}
+
+type CreateTaskProjectDTO struct {
+	Name        string                      `json:"name" required:"true"`
+	Description *string                     `json:"description,omitempty" required:"false"`
+	Status      models.TaskProjectStatus    `json:"status" required:"false" enum:"todo,in_progress,done" default:"todo"`
+	Tasks       []CreateTaskWithChildrenDTO `json:"tasks,omitempty" required:"false"`
+}
+
+type TaskProjectsListFilter struct {
+	Q      string                     `query:"q,omitempty" required:"false"`
+	UserID string                     `query:"user_id,omitempty" required:"false" format:"uuid"`
+	Status []models.TaskProjectStatus `query:"status,omitempty,explode" required:"false" minimum:"1" maximum:"100" enum:"todo,in_progress,done"`
+	Ids    []string                   `query:"ids,omitempty,explode" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+}
+
+type TaskProjectsListParams struct {
+	PaginatedInput
+	TaskProjectsListFilter
+	SortParams
+	Expand []string `query:"expand,omitempty" required:"false" minimum:"1" maximum:"100" enum:"tasks,subtasks"`
+}
+
+type TaskListFilter struct {
+	Q         string              `query:"q,omitempty" required:"false"`
+	Status    []models.TaskStatus `query:"status,omitempty,explode" required:"false" enum:"todo,in_progress,done"`
+	ProjectID string              `query:"project_id,omitempty" required:"false" format:"uuid"`
+	UserID    string              `query:"user_id,omitempty" required:"false" format:"uuid"`
+	Ids       []string            `query:"ids,omitempty,explode" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+}
+
+type TaskListParams struct {
+	PaginatedInput
+	TaskListFilter
+	SortParams
+	Expand []string `query:"expand,omitempty" required:"false" minimum:"1" maximum:"100" enum:"subtasks"`
+}
