@@ -12,6 +12,8 @@ type (
 	StripePricingPlanInterval = models.StripePricingPlanInterval
 	StripePricingType         = models.StripePricingType
 	StripeSubscriptionStatus  = models.StripeSubscriptionStatus
+	TaskProjectStatus         = models.TaskProjectStatus
+	TaskStatus                = models.TaskStatus
 	TokenTypes                = models.TokenTypes
 )
 
@@ -37,6 +39,14 @@ func allStripePricingType() []StripePricingType {
 
 func allStripeSubscriptionStatus() []StripeSubscriptionStatus {
 	return models.AllStripeSubscriptionStatus()
+}
+
+func allTaskProjectStatus() []TaskProjectStatus {
+	return models.AllTaskProjectStatus()
+}
+
+func allTaskStatus() []TaskStatus {
+	return models.AllTaskStatus()
 }
 
 func allTokenTypes() []TokenTypes {

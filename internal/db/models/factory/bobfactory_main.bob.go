@@ -18,6 +18,8 @@ type Factory struct {
 	baseStripeProductMods      StripeProductModSlice
 	baseStripeSubscriptionMods StripeSubscriptionModSlice
 	baseStripeWebhookEventMods StripeWebhookEventModSlice
+	baseTaskProjectMods        TaskProjectModSlice
+	baseTaskMods               TaskModSlice
 	baseTokenMods              TokenModSlice
 	baseUserAccountMods        UserAccountModSlice
 	baseUserPermissionMods     UserPermissionModSlice
@@ -194,6 +196,30 @@ func (f *Factory) NewStripeWebhookEvent(mods ...StripeWebhookEventMod) *StripeWe
 	}
 
 	StripeWebhookEventModSlice(mods).Apply(o)
+
+	return o
+}
+
+func (f *Factory) NewTaskProject(mods ...TaskProjectMod) *TaskProjectTemplate {
+	o := &TaskProjectTemplate{f: f}
+
+	if f != nil {
+		f.baseTaskProjectMods.Apply(o)
+	}
+
+	TaskProjectModSlice(mods).Apply(o)
+
+	return o
+}
+
+func (f *Factory) NewTask(mods ...TaskMod) *TaskTemplate {
+	o := &TaskTemplate{f: f}
+
+	if f != nil {
+		f.baseTaskMods.Apply(o)
+	}
+
+	TaskModSlice(mods).Apply(o)
 
 	return o
 }
@@ -380,6 +406,22 @@ func (f *Factory) ClearBaseStripeWebhookEventMods() {
 
 func (f *Factory) AddBaseStripeWebhookEventMod(mods ...StripeWebhookEventMod) {
 	f.baseStripeWebhookEventMods = append(f.baseStripeWebhookEventMods, mods...)
+}
+
+func (f *Factory) ClearBaseTaskProjectMods() {
+	f.baseTaskProjectMods = nil
+}
+
+func (f *Factory) AddBaseTaskProjectMod(mods ...TaskProjectMod) {
+	f.baseTaskProjectMods = append(f.baseTaskProjectMods, mods...)
+}
+
+func (f *Factory) ClearBaseTaskMods() {
+	f.baseTaskMods = nil
+}
+
+func (f *Factory) AddBaseTaskMod(mods ...TaskMod) {
+	f.baseTaskMods = append(f.baseTaskMods, mods...)
 }
 
 func (f *Factory) ClearBaseTokenMods() {

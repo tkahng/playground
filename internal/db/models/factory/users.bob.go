@@ -55,6 +55,8 @@ type userR struct {
 	Notifications       []*userRNotificationsR
 	IDStripeCustomer    *userRIDStripeCustomerR
 	StripeSubscriptions []*userRStripeSubscriptionsR
+	TaskProjects        []*userRTaskProjectsR
+	Tasks               []*userRTasksR
 	Tokens              []*userRTokensR
 	UserAccounts        []*userRUserAccountsR
 	Permissions         []*userRPermissionsR
@@ -76,6 +78,14 @@ type userRIDStripeCustomerR struct {
 type userRStripeSubscriptionsR struct {
 	number int
 	o      *StripeSubscriptionTemplate
+}
+type userRTaskProjectsR struct {
+	number int
+	o      *TaskProjectTemplate
+}
+type userRTasksR struct {
+	number int
+	o      *TaskTemplate
 }
 type userRTokensR struct {
 	number int
@@ -194,6 +204,32 @@ func (t UserTemplate) setModelRels(o *models.User) {
 			rel = append(rel, related...)
 		}
 		o.R.StripeSubscriptions = rel
+	}
+
+	if t.r.TaskProjects != nil {
+		rel := models.TaskProjectSlice{}
+		for _, r := range t.r.TaskProjects {
+			related := r.o.toModels(r.number)
+			for _, rel := range related {
+				rel.UserID = o.ID
+				rel.R.User = o
+			}
+			rel = append(rel, related...)
+		}
+		o.R.TaskProjects = rel
+	}
+
+	if t.r.Tasks != nil {
+		rel := models.TaskSlice{}
+		for _, r := range t.r.Tasks {
+			related := r.o.toModels(r.number)
+			for _, rel := range related {
+				rel.UserID = o.ID
+				rel.R.User = o
+			}
+			rel = append(rel, related...)
+		}
+		o.R.Tasks = rel
 	}
 
 	if t.r.Tokens != nil {
@@ -394,15 +430,45 @@ func (o *UserTemplate) insertOptRels(ctx context.Context, exec bob.Executor, m *
 		}
 	}
 
-	if o.r.Tokens != nil {
-		for _, r := range o.r.Tokens {
-			var rel4 models.TokenSlice
+	if o.r.TaskProjects != nil {
+		for _, r := range o.r.TaskProjects {
+			var rel4 models.TaskProjectSlice
 			ctx, rel4, err = r.o.createMany(ctx, exec, r.number)
 			if err != nil {
 				return ctx, err
 			}
 
-			err = m.AttachTokens(ctx, exec, rel4...)
+			err = m.AttachTaskProjects(ctx, exec, rel4...)
+			if err != nil {
+				return ctx, err
+			}
+		}
+	}
+
+	if o.r.Tasks != nil {
+		for _, r := range o.r.Tasks {
+			var rel5 models.TaskSlice
+			ctx, rel5, err = r.o.createMany(ctx, exec, r.number)
+			if err != nil {
+				return ctx, err
+			}
+
+			err = m.AttachTasks(ctx, exec, rel5...)
+			if err != nil {
+				return ctx, err
+			}
+		}
+	}
+
+	if o.r.Tokens != nil {
+		for _, r := range o.r.Tokens {
+			var rel6 models.TokenSlice
+			ctx, rel6, err = r.o.createMany(ctx, exec, r.number)
+			if err != nil {
+				return ctx, err
+			}
+
+			err = m.AttachTokens(ctx, exec, rel6...)
 			if err != nil {
 				return ctx, err
 			}
@@ -411,13 +477,13 @@ func (o *UserTemplate) insertOptRels(ctx context.Context, exec bob.Executor, m *
 
 	if o.r.UserAccounts != nil {
 		for _, r := range o.r.UserAccounts {
-			var rel5 models.UserAccountSlice
-			ctx, rel5, err = r.o.createMany(ctx, exec, r.number)
+			var rel7 models.UserAccountSlice
+			ctx, rel7, err = r.o.createMany(ctx, exec, r.number)
 			if err != nil {
 				return ctx, err
 			}
 
-			err = m.AttachUserAccounts(ctx, exec, rel5...)
+			err = m.AttachUserAccounts(ctx, exec, rel7...)
 			if err != nil {
 				return ctx, err
 			}
@@ -426,13 +492,13 @@ func (o *UserTemplate) insertOptRels(ctx context.Context, exec bob.Executor, m *
 
 	if o.r.Permissions != nil {
 		for _, r := range o.r.Permissions {
-			var rel6 models.PermissionSlice
-			ctx, rel6, err = r.o.createMany(ctx, exec, r.number)
+			var rel8 models.PermissionSlice
+			ctx, rel8, err = r.o.createMany(ctx, exec, r.number)
 			if err != nil {
 				return ctx, err
 			}
 
-			err = m.AttachPermissions(ctx, exec, rel6...)
+			err = m.AttachPermissions(ctx, exec, rel8...)
 			if err != nil {
 				return ctx, err
 			}
@@ -441,13 +507,13 @@ func (o *UserTemplate) insertOptRels(ctx context.Context, exec bob.Executor, m *
 
 	if o.r.Roles != nil {
 		for _, r := range o.r.Roles {
-			var rel7 models.RoleSlice
-			ctx, rel7, err = r.o.createMany(ctx, exec, r.number)
+			var rel9 models.RoleSlice
+			ctx, rel9, err = r.o.createMany(ctx, exec, r.number)
 			if err != nil {
 				return ctx, err
 			}
 
-			err = m.AttachRoles(ctx, exec, rel7...)
+			err = m.AttachRoles(ctx, exec, rel9...)
 			if err != nil {
 				return ctx, err
 			}
@@ -456,13 +522,13 @@ func (o *UserTemplate) insertOptRels(ctx context.Context, exec bob.Executor, m *
 
 	if o.r.UserSessions != nil {
 		for _, r := range o.r.UserSessions {
-			var rel8 models.UserSessionSlice
-			ctx, rel8, err = r.o.createMany(ctx, exec, r.number)
+			var rel10 models.UserSessionSlice
+			ctx, rel10, err = r.o.createMany(ctx, exec, r.number)
 			if err != nil {
 				return ctx, err
 			}
 
-			err = m.AttachUserSessions(ctx, exec, rel8...)
+			err = m.AttachUserSessions(ctx, exec, rel10...)
 			if err != nil {
 				return ctx, err
 			}
@@ -960,6 +1026,82 @@ func (m userMods) AddNewStripeSubscriptions(number int, mods ...StripeSubscripti
 func (m userMods) WithoutStripeSubscriptions() UserMod {
 	return UserModFunc(func(o *UserTemplate) {
 		o.r.StripeSubscriptions = nil
+	})
+}
+
+func (m userMods) WithTaskProjects(number int, related *TaskProjectTemplate) UserMod {
+	return UserModFunc(func(o *UserTemplate) {
+		o.r.TaskProjects = []*userRTaskProjectsR{{
+			number: number,
+			o:      related,
+		}}
+	})
+}
+
+func (m userMods) WithNewTaskProjects(number int, mods ...TaskProjectMod) UserMod {
+	return UserModFunc(func(o *UserTemplate) {
+		related := o.f.NewTaskProject(mods...)
+		m.WithTaskProjects(number, related).Apply(o)
+	})
+}
+
+func (m userMods) AddTaskProjects(number int, related *TaskProjectTemplate) UserMod {
+	return UserModFunc(func(o *UserTemplate) {
+		o.r.TaskProjects = append(o.r.TaskProjects, &userRTaskProjectsR{
+			number: number,
+			o:      related,
+		})
+	})
+}
+
+func (m userMods) AddNewTaskProjects(number int, mods ...TaskProjectMod) UserMod {
+	return UserModFunc(func(o *UserTemplate) {
+		related := o.f.NewTaskProject(mods...)
+		m.AddTaskProjects(number, related).Apply(o)
+	})
+}
+
+func (m userMods) WithoutTaskProjects() UserMod {
+	return UserModFunc(func(o *UserTemplate) {
+		o.r.TaskProjects = nil
+	})
+}
+
+func (m userMods) WithTasks(number int, related *TaskTemplate) UserMod {
+	return UserModFunc(func(o *UserTemplate) {
+		o.r.Tasks = []*userRTasksR{{
+			number: number,
+			o:      related,
+		}}
+	})
+}
+
+func (m userMods) WithNewTasks(number int, mods ...TaskMod) UserMod {
+	return UserModFunc(func(o *UserTemplate) {
+		related := o.f.NewTask(mods...)
+		m.WithTasks(number, related).Apply(o)
+	})
+}
+
+func (m userMods) AddTasks(number int, related *TaskTemplate) UserMod {
+	return UserModFunc(func(o *UserTemplate) {
+		o.r.Tasks = append(o.r.Tasks, &userRTasksR{
+			number: number,
+			o:      related,
+		})
+	})
+}
+
+func (m userMods) AddNewTasks(number int, mods ...TaskMod) UserMod {
+	return UserModFunc(func(o *UserTemplate) {
+		related := o.f.NewTask(mods...)
+		m.AddTasks(number, related).Apply(o)
+	})
+}
+
+func (m userMods) WithoutTasks() UserMod {
+	return UserModFunc(func(o *UserTemplate) {
+		o.r.Tasks = nil
 	})
 }
 

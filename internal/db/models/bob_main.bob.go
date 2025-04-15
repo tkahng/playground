@@ -28,6 +28,8 @@ var TableNames = struct {
 	StripeProducts      string
 	StripeSubscriptions string
 	StripeWebhookEvents string
+	TaskProjects        string
+	Tasks               string
 	Tokens              string
 	UserAccounts        string
 	UserPermissions     string
@@ -49,6 +51,8 @@ var TableNames = struct {
 	StripeProducts:      "stripe_products",
 	StripeSubscriptions: "stripe_subscriptions",
 	StripeWebhookEvents: "stripe_webhook_events",
+	TaskProjects:        "task_projects",
+	Tasks:               "tasks",
 	Tokens:              "tokens",
 	UserAccounts:        "user_accounts",
 	UserPermissions:     "user_permissions",
@@ -72,6 +76,8 @@ var ColumnNames = struct {
 	StripeProducts      stripeProductColumnNames
 	StripeSubscriptions stripeSubscriptionColumnNames
 	StripeWebhookEvents stripeWebhookEventColumnNames
+	TaskProjects        taskProjectColumnNames
+	Tasks               taskColumnNames
 	Tokens              tokenColumnNames
 	UserAccounts        userAccountColumnNames
 	UserPermissions     userPermissionColumnNames
@@ -199,6 +205,28 @@ var ColumnNames = struct {
 		CreatedAt:         "created_at",
 		UpdatedAt:         "updated_at",
 	},
+	TaskProjects: taskProjectColumnNames{
+		ID:          "id",
+		UserID:      "user_id",
+		Name:        "name",
+		Description: "description",
+		Status:      "status",
+		Order:       "order",
+		CreatedAt:   "created_at",
+		UpdatedAt:   "updated_at",
+	},
+	Tasks: taskColumnNames{
+		ID:          "id",
+		UserID:      "user_id",
+		ProjectID:   "project_id",
+		Name:        "name",
+		Description: "description",
+		Status:      "status",
+		Order:       "order",
+		ParentID:    "parent_id",
+		CreatedAt:   "created_at",
+		UpdatedAt:   "updated_at",
+	},
 	Tokens: tokenColumnNames{
 		ID:         "id",
 		Type:       "type",
@@ -276,6 +304,8 @@ func Where[Q psql.Filterable]() struct {
 	StripeProducts      stripeProductWhere[Q]
 	StripeSubscriptions stripeSubscriptionWhere[Q]
 	StripeWebhookEvents stripeWebhookEventWhere[Q]
+	TaskProjects        taskProjectWhere[Q]
+	Tasks               taskWhere[Q]
 	Tokens              tokenWhere[Q]
 	UserAccounts        userAccountWhere[Q]
 	UserPermissions     userPermissionWhere[Q]
@@ -298,6 +328,8 @@ func Where[Q psql.Filterable]() struct {
 		StripeProducts      stripeProductWhere[Q]
 		StripeSubscriptions stripeSubscriptionWhere[Q]
 		StripeWebhookEvents stripeWebhookEventWhere[Q]
+		TaskProjects        taskProjectWhere[Q]
+		Tasks               taskWhere[Q]
 		Tokens              tokenWhere[Q]
 		UserAccounts        userAccountWhere[Q]
 		UserPermissions     userPermissionWhere[Q]
@@ -319,6 +351,8 @@ func Where[Q psql.Filterable]() struct {
 		StripeProducts:      buildStripeProductWhere[Q](StripeProductColumns),
 		StripeSubscriptions: buildStripeSubscriptionWhere[Q](StripeSubscriptionColumns),
 		StripeWebhookEvents: buildStripeWebhookEventWhere[Q](StripeWebhookEventColumns),
+		TaskProjects:        buildTaskProjectWhere[Q](TaskProjectColumns),
+		Tasks:               buildTaskWhere[Q](TaskColumns),
 		Tokens:              buildTokenWhere[Q](TokenColumns),
 		UserAccounts:        buildUserAccountWhere[Q](UserAccountColumns),
 		UserPermissions:     buildUserPermissionWhere[Q](UserPermissionColumns),
@@ -360,6 +394,8 @@ type joins[Q dialect.Joinable] struct {
 	StripePrices        joinSet[stripePriceJoins[Q]]
 	StripeProducts      joinSet[stripeProductJoins[Q]]
 	StripeSubscriptions joinSet[stripeSubscriptionJoins[Q]]
+	TaskProjects        joinSet[taskProjectJoins[Q]]
+	Tasks               joinSet[taskJoins[Q]]
 	Tokens              joinSet[tokenJoins[Q]]
 	UserAccounts        joinSet[userAccountJoins[Q]]
 	UserPermissions     joinSet[userPermissionJoins[Q]]
@@ -389,6 +425,8 @@ func getJoins[Q dialect.Joinable]() joins[Q] {
 		StripePrices:        buildJoinSet[stripePriceJoins[Q]](StripePriceColumns, buildStripePriceJoins),
 		StripeProducts:      buildJoinSet[stripeProductJoins[Q]](StripeProductColumns, buildStripeProductJoins),
 		StripeSubscriptions: buildJoinSet[stripeSubscriptionJoins[Q]](StripeSubscriptionColumns, buildStripeSubscriptionJoins),
+		TaskProjects:        buildJoinSet[taskProjectJoins[Q]](TaskProjectColumns, buildTaskProjectJoins),
+		Tasks:               buildJoinSet[taskJoins[Q]](TaskColumns, buildTaskJoins),
 		Tokens:              buildJoinSet[tokenJoins[Q]](TokenColumns, buildTokenJoins),
 		UserAccounts:        buildJoinSet[userAccountJoins[Q]](UserAccountColumns, buildUserAccountJoins),
 		UserPermissions:     buildJoinSet[userPermissionJoins[Q]](UserPermissionColumns, buildUserPermissionJoins),

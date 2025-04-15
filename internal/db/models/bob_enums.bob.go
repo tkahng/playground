@@ -446,6 +446,148 @@ func (e *StripeSubscriptionStatus) Scan(value any) error {
 	return nil
 }
 
+// Enum values for TaskProjectStatus
+const (
+	TaskProjectStatusTodo       TaskProjectStatus = "todo"
+	TaskProjectStatusInProgress TaskProjectStatus = "in_progress"
+	TaskProjectStatusDone       TaskProjectStatus = "done"
+)
+
+func AllTaskProjectStatus() []TaskProjectStatus {
+	return []TaskProjectStatus{
+		TaskProjectStatusTodo,
+		TaskProjectStatusInProgress,
+		TaskProjectStatusDone,
+	}
+}
+
+type TaskProjectStatus string
+
+func (e TaskProjectStatus) String() string {
+	return string(e)
+}
+
+func (e TaskProjectStatus) Valid() bool {
+	switch e {
+	case TaskProjectStatusTodo,
+		TaskProjectStatusInProgress,
+		TaskProjectStatusDone:
+		return true
+	default:
+		return false
+	}
+}
+
+func (e TaskProjectStatus) MarshalText() ([]byte, error) {
+	return []byte(e), nil
+}
+
+func (e *TaskProjectStatus) UnmarshalText(text []byte) error {
+	return e.Scan(text)
+}
+
+func (e TaskProjectStatus) MarshalBinary() ([]byte, error) {
+	return []byte(e), nil
+}
+
+func (e *TaskProjectStatus) UnmarshalBinary(data []byte) error {
+	return e.Scan(data)
+}
+
+func (e TaskProjectStatus) Value() (driver.Value, error) {
+	return string(e), nil
+}
+
+func (e *TaskProjectStatus) Scan(value any) error {
+	switch x := value.(type) {
+	case string:
+		*e = TaskProjectStatus(x)
+	case []byte:
+		*e = TaskProjectStatus(x)
+	case nil:
+		return fmt.Errorf("cannot nil into TaskProjectStatus")
+	default:
+		return fmt.Errorf("cannot scan type %T: %v", value, value)
+	}
+
+	if !e.Valid() {
+		return fmt.Errorf("invalid TaskProjectStatus value: %s", *e)
+	}
+
+	return nil
+}
+
+// Enum values for TaskStatus
+const (
+	TaskStatusTodo       TaskStatus = "todo"
+	TaskStatusInProgress TaskStatus = "in_progress"
+	TaskStatusDone       TaskStatus = "done"
+)
+
+func AllTaskStatus() []TaskStatus {
+	return []TaskStatus{
+		TaskStatusTodo,
+		TaskStatusInProgress,
+		TaskStatusDone,
+	}
+}
+
+type TaskStatus string
+
+func (e TaskStatus) String() string {
+	return string(e)
+}
+
+func (e TaskStatus) Valid() bool {
+	switch e {
+	case TaskStatusTodo,
+		TaskStatusInProgress,
+		TaskStatusDone:
+		return true
+	default:
+		return false
+	}
+}
+
+func (e TaskStatus) MarshalText() ([]byte, error) {
+	return []byte(e), nil
+}
+
+func (e *TaskStatus) UnmarshalText(text []byte) error {
+	return e.Scan(text)
+}
+
+func (e TaskStatus) MarshalBinary() ([]byte, error) {
+	return []byte(e), nil
+}
+
+func (e *TaskStatus) UnmarshalBinary(data []byte) error {
+	return e.Scan(data)
+}
+
+func (e TaskStatus) Value() (driver.Value, error) {
+	return string(e), nil
+}
+
+func (e *TaskStatus) Scan(value any) error {
+	switch x := value.(type) {
+	case string:
+		*e = TaskStatus(x)
+	case []byte:
+		*e = TaskStatus(x)
+	case nil:
+		return fmt.Errorf("cannot nil into TaskStatus")
+	default:
+		return fmt.Errorf("cannot scan type %T: %v", value, value)
+	}
+
+	if !e.Valid() {
+		return fmt.Errorf("invalid TaskStatus value: %s", *e)
+	}
+
+	return nil
+}
+
 // Enum values for TokenTypes
 const (
 	TokenTypesReauthenticationToken TokenTypes = "reauthentication_token"

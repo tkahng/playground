@@ -62,6 +62,24 @@ func random_StripeSubscriptionStatus(f *faker.Faker) StripeSubscriptionStatus {
 	return all[f.IntBetween(0, len(all)-1)]
 }
 
+func random_TaskProjectStatus(f *faker.Faker) TaskProjectStatus {
+	if f == nil {
+		f = &defaultFaker
+	}
+
+	all := allTaskProjectStatus()
+	return all[f.IntBetween(0, len(all)-1)]
+}
+
+func random_TaskStatus(f *faker.Faker) TaskStatus {
+	if f == nil {
+		f = &defaultFaker
+	}
+
+	all := allTaskStatus()
+	return all[f.IntBetween(0, len(all)-1)]
+}
+
 func random_TokenTypes(f *faker.Faker) TokenTypes {
 	if f == nil {
 		f = &defaultFaker
@@ -77,6 +95,14 @@ func random_bool(f *faker.Faker) bool {
 	}
 
 	return f.Bool()
+}
+
+func random_float64(f *faker.Faker) float64 {
+	if f == nil {
+		f = &defaultFaker
+	}
+
+	return f.Float64(10, -1_000_000, 1_000_000)
 }
 
 func random_int64(f *faker.Faker) int64 {

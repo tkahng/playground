@@ -57,6 +57,8 @@ type userR struct {
 	Notifications       NotificationSlice       `json:"Notifications"`       // notifications.fk_notifications_user
 	IDStripeCustomer    *StripeCustomer         `json:"IDStripeCustomer"`    // stripe_customers.stripe_customers_id_fkey
 	StripeSubscriptions StripeSubscriptionSlice `json:"StripeSubscriptions"` // stripe_subscriptions.stripe_subscriptions_user_id_fkey
+	TaskProjects        TaskProjectSlice        `json:"TaskProjects"`        // task_projects.task_projects_user_id_fkey
+	Tasks               TaskSlice               `json:"Tasks"`               // tasks.tasks_user_id_fkey
 	Tokens              TokenSlice              `json:"Tokens"`              // tokens.tokens_user_id_fkey
 	UserAccounts        UserAccountSlice        `json:"UserAccounts"`        // user_accounts.user_accounts_user_id_fkey
 	Permissions         PermissionSlice         `json:"Permissions"`         // user_permissions.user_permissions_permission_id_fkeyuser_permissions.user_permissions_user_id_fkey
@@ -557,6 +559,8 @@ type userJoins[Q dialect.Joinable] struct {
 	Notifications       func(context.Context) modAs[Q, notificationColumns]
 	IDStripeCustomer    func(context.Context) modAs[Q, stripeCustomerColumns]
 	StripeSubscriptions func(context.Context) modAs[Q, stripeSubscriptionColumns]
+	TaskProjects        func(context.Context) modAs[Q, taskProjectColumns]
+	Tasks               func(context.Context) modAs[Q, taskColumns]
 	Tokens              func(context.Context) modAs[Q, tokenColumns]
 	UserAccounts        func(context.Context) modAs[Q, userAccountColumns]
 	Permissions         func(context.Context) modAs[Q, permissionColumns]
@@ -575,6 +579,8 @@ func buildUserJoins[Q dialect.Joinable](cols userColumns, typ string) userJoins[
 		Notifications:       usersJoinNotifications[Q](cols, typ),
 		IDStripeCustomer:    usersJoinIDStripeCustomer[Q](cols, typ),
 		StripeSubscriptions: usersJoinStripeSubscriptions[Q](cols, typ),
+		TaskProjects:        usersJoinTaskProjects[Q](cols, typ),
+		Tasks:               usersJoinTasks[Q](cols, typ),
 		Tokens:              usersJoinTokens[Q](cols, typ),
 		UserAccounts:        usersJoinUserAccounts[Q](cols, typ),
 		Permissions:         usersJoinPermissions[Q](cols, typ),
@@ -649,6 +655,44 @@ func usersJoinStripeSubscriptions[Q dialect.Joinable](from userColumns, typ stri
 
 				{
 					mods = append(mods, dialect.Join[Q](typ, StripeSubscriptions.Name().As(to.Alias())).On(
+						to.UserID.EQ(from.ID),
+					))
+				}
+
+				return mods
+			},
+		}
+	}
+}
+
+func usersJoinTaskProjects[Q dialect.Joinable](from userColumns, typ string) func(context.Context) modAs[Q, taskProjectColumns] {
+	return func(ctx context.Context) modAs[Q, taskProjectColumns] {
+		return modAs[Q, taskProjectColumns]{
+			c: TaskProjectColumns,
+			f: func(to taskProjectColumns) bob.Mod[Q] {
+				mods := make(mods.QueryMods[Q], 0, 1)
+
+				{
+					mods = append(mods, dialect.Join[Q](typ, TaskProjects.Name().As(to.Alias())).On(
+						to.UserID.EQ(from.ID),
+					))
+				}
+
+				return mods
+			},
+		}
+	}
+}
+
+func usersJoinTasks[Q dialect.Joinable](from userColumns, typ string) func(context.Context) modAs[Q, taskColumns] {
+	return func(ctx context.Context) modAs[Q, taskColumns] {
+		return modAs[Q, taskColumns]{
+			c: TaskColumns,
+			f: func(to taskColumns) bob.Mod[Q] {
+				mods := make(mods.QueryMods[Q], 0, 1)
+
+				{
+					mods = append(mods, dialect.Join[Q](typ, Tasks.Name().As(to.Alias())).On(
 						to.UserID.EQ(from.ID),
 					))
 				}
@@ -842,6 +886,42 @@ func (os UserSlice) StripeSubscriptions(mods ...bob.Mod[*dialect.SelectQuery]) S
 	)...)
 }
 
+// TaskProjects starts a query for related objects on task_projects
+func (o *User) TaskProjects(mods ...bob.Mod[*dialect.SelectQuery]) TaskProjectsQuery {
+	return TaskProjects.Query(append(mods,
+		sm.Where(TaskProjectColumns.UserID.EQ(psql.Arg(o.ID))),
+	)...)
+}
+
+func (os UserSlice) TaskProjects(mods ...bob.Mod[*dialect.SelectQuery]) TaskProjectsQuery {
+	PKArgs := make([]bob.Expression, len(os))
+	for i, o := range os {
+		PKArgs[i] = psql.ArgGroup(o.ID)
+	}
+
+	return TaskProjects.Query(append(mods,
+		sm.Where(psql.Group(TaskProjectColumns.UserID).In(PKArgs...)),
+	)...)
+}
+
+// Tasks starts a query for related objects on tasks
+func (o *User) Tasks(mods ...bob.Mod[*dialect.SelectQuery]) TasksQuery {
+	return Tasks.Query(append(mods,
+		sm.Where(TaskColumns.UserID.EQ(psql.Arg(o.ID))),
+	)...)
+}
+
+func (os UserSlice) Tasks(mods ...bob.Mod[*dialect.SelectQuery]) TasksQuery {
+	PKArgs := make([]bob.Expression, len(os))
+	for i, o := range os {
+		PKArgs[i] = psql.ArgGroup(o.ID)
+	}
+
+	return Tasks.Query(append(mods,
+		sm.Where(psql.Group(TaskColumns.UserID).In(PKArgs...)),
+	)...)
+}
+
 // Tokens starts a query for related objects on tokens
 func (o *User) Tokens(mods ...bob.Mod[*dialect.SelectQuery]) TokensQuery {
 	return Tokens.Query(append(mods,
@@ -995,6 +1075,34 @@ func (o *User) Preload(name string, retrieved any) error {
 		}
 
 		o.R.StripeSubscriptions = rels
+
+		for _, rel := range rels {
+			if rel != nil {
+				rel.R.User = o
+			}
+		}
+		return nil
+	case "TaskProjects":
+		rels, ok := retrieved.(TaskProjectSlice)
+		if !ok {
+			return fmt.Errorf("user cannot load %T as %q", retrieved, name)
+		}
+
+		o.R.TaskProjects = rels
+
+		for _, rel := range rels {
+			if rel != nil {
+				rel.R.User = o
+			}
+		}
+		return nil
+	case "Tasks":
+		rels, ok := retrieved.(TaskSlice)
+		if !ok {
+			return fmt.Errorf("user cannot load %T as %q", retrieved, name)
+		}
+
+		o.R.Tasks = rels
 
 		for _, rel := range rels {
 			if rel != nil {
@@ -1372,6 +1480,150 @@ func (os UserSlice) LoadUserStripeSubscriptions(ctx context.Context, exec bob.Ex
 			rel.R.User = o
 
 			o.R.StripeSubscriptions = append(o.R.StripeSubscriptions, rel)
+		}
+	}
+
+	return nil
+}
+
+func ThenLoadUserTaskProjects(queryMods ...bob.Mod[*dialect.SelectQuery]) psql.Loader {
+	return psql.Loader(func(ctx context.Context, exec bob.Executor, retrieved any) error {
+		loader, isLoader := retrieved.(interface {
+			LoadUserTaskProjects(context.Context, bob.Executor, ...bob.Mod[*dialect.SelectQuery]) error
+		})
+		if !isLoader {
+			return fmt.Errorf("object %T cannot load UserTaskProjects", retrieved)
+		}
+
+		err := loader.LoadUserTaskProjects(ctx, exec, queryMods...)
+
+		// Don't cause an issue due to missing relationships
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil
+		}
+
+		return err
+	})
+}
+
+// LoadUserTaskProjects loads the user's TaskProjects into the .R struct
+func (o *User) LoadUserTaskProjects(ctx context.Context, exec bob.Executor, mods ...bob.Mod[*dialect.SelectQuery]) error {
+	if o == nil {
+		return nil
+	}
+
+	// Reset the relationship
+	o.R.TaskProjects = nil
+
+	related, err := o.TaskProjects(mods...).All(ctx, exec)
+	if err != nil {
+		return err
+	}
+
+	for _, rel := range related {
+		rel.R.User = o
+	}
+
+	o.R.TaskProjects = related
+	return nil
+}
+
+// LoadUserTaskProjects loads the user's TaskProjects into the .R struct
+func (os UserSlice) LoadUserTaskProjects(ctx context.Context, exec bob.Executor, mods ...bob.Mod[*dialect.SelectQuery]) error {
+	if len(os) == 0 {
+		return nil
+	}
+
+	taskProjects, err := os.TaskProjects(mods...).All(ctx, exec)
+	if err != nil {
+		return err
+	}
+
+	for _, o := range os {
+		o.R.TaskProjects = nil
+	}
+
+	for _, o := range os {
+		for _, rel := range taskProjects {
+			if o.ID != rel.UserID {
+				continue
+			}
+
+			rel.R.User = o
+
+			o.R.TaskProjects = append(o.R.TaskProjects, rel)
+		}
+	}
+
+	return nil
+}
+
+func ThenLoadUserTasks(queryMods ...bob.Mod[*dialect.SelectQuery]) psql.Loader {
+	return psql.Loader(func(ctx context.Context, exec bob.Executor, retrieved any) error {
+		loader, isLoader := retrieved.(interface {
+			LoadUserTasks(context.Context, bob.Executor, ...bob.Mod[*dialect.SelectQuery]) error
+		})
+		if !isLoader {
+			return fmt.Errorf("object %T cannot load UserTasks", retrieved)
+		}
+
+		err := loader.LoadUserTasks(ctx, exec, queryMods...)
+
+		// Don't cause an issue due to missing relationships
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil
+		}
+
+		return err
+	})
+}
+
+// LoadUserTasks loads the user's Tasks into the .R struct
+func (o *User) LoadUserTasks(ctx context.Context, exec bob.Executor, mods ...bob.Mod[*dialect.SelectQuery]) error {
+	if o == nil {
+		return nil
+	}
+
+	// Reset the relationship
+	o.R.Tasks = nil
+
+	related, err := o.Tasks(mods...).All(ctx, exec)
+	if err != nil {
+		return err
+	}
+
+	for _, rel := range related {
+		rel.R.User = o
+	}
+
+	o.R.Tasks = related
+	return nil
+}
+
+// LoadUserTasks loads the user's Tasks into the .R struct
+func (os UserSlice) LoadUserTasks(ctx context.Context, exec bob.Executor, mods ...bob.Mod[*dialect.SelectQuery]) error {
+	if len(os) == 0 {
+		return nil
+	}
+
+	tasks, err := os.Tasks(mods...).All(ctx, exec)
+	if err != nil {
+		return err
+	}
+
+	for _, o := range os {
+		o.R.Tasks = nil
+	}
+
+	for _, o := range os {
+		for _, rel := range tasks {
+			if o.ID != rel.UserID {
+				continue
+			}
+
+			rel.R.User = o
+
+			o.R.Tasks = append(o.R.Tasks, rel)
 		}
 	}
 
@@ -2044,6 +2296,142 @@ func (user0 *User) AttachStripeSubscriptions(ctx context.Context, exec bob.Execu
 	}
 
 	user0.R.StripeSubscriptions = append(user0.R.StripeSubscriptions, stripeSubscriptions1...)
+
+	for _, rel := range related {
+		rel.R.User = user0
+	}
+
+	return nil
+}
+
+func insertUserTaskProjects0(ctx context.Context, exec bob.Executor, taskProjects1 []*TaskProjectSetter, user0 *User) (TaskProjectSlice, error) {
+	for i := range taskProjects1 {
+		taskProjects1[i].UserID = omit.From(user0.ID)
+	}
+
+	ret, err := TaskProjects.Insert(bob.ToMods(taskProjects1...)).All(ctx, exec)
+	if err != nil {
+		return ret, fmt.Errorf("insertUserTaskProjects0: %w", err)
+	}
+
+	return ret, nil
+}
+
+func attachUserTaskProjects0(ctx context.Context, exec bob.Executor, count int, taskProjects1 TaskProjectSlice, user0 *User) (TaskProjectSlice, error) {
+	setter := &TaskProjectSetter{
+		UserID: omit.From(user0.ID),
+	}
+
+	err := taskProjects1.UpdateAll(ctx, exec, *setter)
+	if err != nil {
+		return nil, fmt.Errorf("attachUserTaskProjects0: %w", err)
+	}
+
+	return taskProjects1, nil
+}
+
+func (user0 *User) InsertTaskProjects(ctx context.Context, exec bob.Executor, related ...*TaskProjectSetter) error {
+	if len(related) == 0 {
+		return nil
+	}
+
+	var err error
+
+	taskProjects1, err := insertUserTaskProjects0(ctx, exec, related, user0)
+	if err != nil {
+		return err
+	}
+
+	user0.R.TaskProjects = append(user0.R.TaskProjects, taskProjects1...)
+
+	for _, rel := range taskProjects1 {
+		rel.R.User = user0
+	}
+	return nil
+}
+
+func (user0 *User) AttachTaskProjects(ctx context.Context, exec bob.Executor, related ...*TaskProject) error {
+	if len(related) == 0 {
+		return nil
+	}
+
+	var err error
+	taskProjects1 := TaskProjectSlice(related)
+
+	_, err = attachUserTaskProjects0(ctx, exec, len(related), taskProjects1, user0)
+	if err != nil {
+		return err
+	}
+
+	user0.R.TaskProjects = append(user0.R.TaskProjects, taskProjects1...)
+
+	for _, rel := range related {
+		rel.R.User = user0
+	}
+
+	return nil
+}
+
+func insertUserTasks0(ctx context.Context, exec bob.Executor, tasks1 []*TaskSetter, user0 *User) (TaskSlice, error) {
+	for i := range tasks1 {
+		tasks1[i].UserID = omit.From(user0.ID)
+	}
+
+	ret, err := Tasks.Insert(bob.ToMods(tasks1...)).All(ctx, exec)
+	if err != nil {
+		return ret, fmt.Errorf("insertUserTasks0: %w", err)
+	}
+
+	return ret, nil
+}
+
+func attachUserTasks0(ctx context.Context, exec bob.Executor, count int, tasks1 TaskSlice, user0 *User) (TaskSlice, error) {
+	setter := &TaskSetter{
+		UserID: omit.From(user0.ID),
+	}
+
+	err := tasks1.UpdateAll(ctx, exec, *setter)
+	if err != nil {
+		return nil, fmt.Errorf("attachUserTasks0: %w", err)
+	}
+
+	return tasks1, nil
+}
+
+func (user0 *User) InsertTasks(ctx context.Context, exec bob.Executor, related ...*TaskSetter) error {
+	if len(related) == 0 {
+		return nil
+	}
+
+	var err error
+
+	tasks1, err := insertUserTasks0(ctx, exec, related, user0)
+	if err != nil {
+		return err
+	}
+
+	user0.R.Tasks = append(user0.R.Tasks, tasks1...)
+
+	for _, rel := range tasks1 {
+		rel.R.User = user0
+	}
+	return nil
+}
+
+func (user0 *User) AttachTasks(ctx context.Context, exec bob.Executor, related ...*Task) error {
+	if len(related) == 0 {
+		return nil
+	}
+
+	var err error
+	tasks1 := TaskSlice(related)
+
+	_, err = attachUserTasks0(ctx, exec, len(related), tasks1, user0)
+	if err != nil {
+		return err
+	}
+
+	user0.R.Tasks = append(user0.R.Tasks, tasks1...)
 
 	for _, rel := range related {
 		rel.R.User = user0

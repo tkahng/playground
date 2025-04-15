@@ -55,6 +55,12 @@ var _ bob.HookableType = &StripeSubscription{}
 // Make sure the type StripeWebhookEvent runs hooks after queries
 var _ bob.HookableType = &StripeWebhookEvent{}
 
+// Make sure the type TaskProject runs hooks after queries
+var _ bob.HookableType = &TaskProject{}
+
+// Make sure the type Task runs hooks after queries
+var _ bob.HookableType = &Task{}
+
 // Make sure the type Token runs hooks after queries
 var _ bob.HookableType = &Token{}
 
@@ -108,6 +114,18 @@ var _ sql.Scanner = (*StripeSubscriptionStatus)(nil)
 
 // Make sure the type StripeSubscriptionStatus satisfies database/sql/driver.Valuer
 var _ driver.Valuer = *new(StripeSubscriptionStatus)
+
+// Make sure the type TaskProjectStatus satisfies database/sql.Scanner
+var _ sql.Scanner = (*TaskProjectStatus)(nil)
+
+// Make sure the type TaskProjectStatus satisfies database/sql/driver.Valuer
+var _ driver.Valuer = *new(TaskProjectStatus)
+
+// Make sure the type TaskStatus satisfies database/sql.Scanner
+var _ sql.Scanner = (*TaskStatus)(nil)
+
+// Make sure the type TaskStatus satisfies database/sql/driver.Valuer
+var _ driver.Valuer = *new(TaskStatus)
 
 // Make sure the type TokenTypes satisfies database/sql.Scanner
 var _ sql.Scanner = (*TokenTypes)(nil)
