@@ -21,17 +21,8 @@ export default function BillingSettingPage() {
   if (isError) {
     return <div>Error: {error.message}</div>;
   }
-  // if (!data) {
-  //   return <div>No data</div>;
-  // }
   return (
-    <div className="space-y-6 flex w-full flex-col items-center justify-center">
-      {/* <div>
-        <h3 className="text-lg font-medium">Profile</h3>
-        <p className="text-sm text-muted-foreground">
-          This is how others will see you on the site.
-        </p>
-      </div> */}
+    <div className="flex w-full flex-col p-12">
       <CustomerPortalForm subscription={data} />
     </div>
   );
