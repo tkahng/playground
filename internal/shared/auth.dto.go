@@ -25,7 +25,6 @@ type AuthenticateUserParams struct {
 type AuthenticateUserState struct {
 	User    *models.User
 	Account *models.UserAccount
-	error   error
 }
 
 type UserInfoDto struct {
@@ -33,10 +32,6 @@ type UserInfoDto struct {
 	Roles       []string           `db:"roles" json:"roles"`
 	Permissions []string           `db:"permissions" json:"permissions"`
 	Providers   []models.Providers `db:"providers" json:"providers"`
-}
-
-func (r *AuthenticateUserState) Error() string {
-	return r.error.Error()
 }
 
 type TokenType string

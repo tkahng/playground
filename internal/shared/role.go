@@ -37,3 +37,17 @@ func ToRoleWithPermissions(role *models.Role) *RoleWithPermissions {
 		Role:        ToRole(role),
 	}
 }
+
+type RoleListFilter struct {
+	Q           string   `query:"q,omitempty" required:"false"`
+	Ids         []string `query:"ids,omitempty,explode" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+	Names       []string `query:"names,omitempty" required:"false" minimum:"1" maximum:"100"`
+	UserId      string   `query:"user_id,omitempty" required:"false" format:"uuid"`
+	UserReverse bool     `query:"user_reverse,omitempty" required:"false" doc:"When user_id is provided, if this is true, it will return the roles that the user does not have"`
+}
+type RolesListParams struct {
+	PaginatedInput
+	RoleListFilter
+	SortParams
+	Expand []string `query:"expand,omitempty" required:"false" minimum:"1" maximum:"100" enum:"users,permissions"`
+}
