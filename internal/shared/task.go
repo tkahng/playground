@@ -49,10 +49,10 @@ type CreateTaskBaseDTO struct {
 
 type UpdateTaskBaseDTO struct {
 	Name        string            `json:"name" required:"true"`
-	Description *string           `json:"description,omitempty" required:"false"`
+	Description *string           `json:"description,omitempty"`
 	Status      models.TaskStatus `json:"status" enum:"todo,in_progress,done"`
 	Order       float64           `json:"order"`
-	ParentID    *uuid.UUID        `json:"parent_id,omitempty" required:"false"`
+	ParentID    *uuid.UUID        `json:"parent_id,omitempty"`
 }
 
 type UpdateTaskDTO struct {
