@@ -133,9 +133,6 @@ export default function RolesListPage() {
           },
         ]}
         data={roles}
-        // onClick={(row) => {
-        //   navigate(`${RouteMap.ADMIN_DASHBOARD_ROLES}/${row.original.id}`);
-        // }}
         rowCount={rowCount}
         paginationState={{ pageIndex, pageSize }}
         onPaginationChange={onPaginationChange}

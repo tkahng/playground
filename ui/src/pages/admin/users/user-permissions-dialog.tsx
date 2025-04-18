@@ -18,8 +18,8 @@ import {
 } from "@/components/ui/form";
 import MultipleSelector from "@/components/ui/multiple-selector";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { useUserDetail } from "@/hooks/use-user-detail";
 import { createUserPermissions, getUserPermissions2 } from "@/lib/queries";
+import { UserDetailWithRoles } from "@/schema.types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
@@ -38,12 +38,14 @@ const formSchema = z.object({
     .min(1),
 });
 
-export function UserPermissionDialog() {
+export function UserPermissionDialog({
+  userDetail,
+}: {
+  userDetail: UserDetailWithRoles;
+}) {
   const { user } = useAuthProvider();
   const [isDialogOpen, setDialogOpen] = useState(false);
   const queryClient = useQueryClient();
-  const userDetail = useUserDetail();
-  // const [value, setValue] = useState<Option[]>([]);
   const userId = userDetail?.id;
   const { data, isLoading, error } = useQuery({
     queryKey: ["user-permissions-reverse", userId],
