@@ -13,7 +13,7 @@ import (
 	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
-	"github.com/tkahng/authgo/internal/tools/dataloader"
+	"github.com/tkahng/authgo/internal/tools/mapper"
 	"github.com/tkahng/authgo/internal/tools/security"
 )
 
@@ -95,12 +95,12 @@ func (api *Api) AdminUsers(ctx context.Context, input *struct {
 			return nil, err
 		}
 	}
-	info := dataloader.Map(users, func(user *models.User) *UserDetail {
+	info := mapper.Map(users, func(user *models.User) *UserDetail {
 		return &UserDetail{
 			User:  shared.ToUser(user),
-			Roles: dataloader.Map(user.R.Roles, ToRoleWithPermissions),
+			Roles: mapper.Map(user.R.Roles, ToRoleWithPermissions),
 			// Permissions: user.R.Permissions,
-			Accounts: dataloader.Map(user.R.UserAccounts, ToUserAccountDetail),
+			Accounts: mapper.Map(user.R.UserAccounts, ToUserAccountDetail),
 		}
 	})
 

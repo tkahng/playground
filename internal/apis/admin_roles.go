@@ -14,7 +14,7 @@ import (
 	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
-	"github.com/tkahng/authgo/internal/tools/dataloader"
+	"github.com/tkahng/authgo/internal/tools/mapper"
 )
 
 func (api *Api) AdminRolesOperation(path string) huma.Operation {
@@ -75,7 +75,7 @@ type RoleWithPermissions struct {
 
 func ToRoleWithPermissions(role *models.Role) *RoleWithPermissions {
 	return &RoleWithPermissions{
-		Permissions: dataloader.Map(role.R.Permissions, ToPermission),
+		Permissions: mapper.Map(role.R.Permissions, ToPermission),
 		Role:        ToRole(role),
 	}
 }
@@ -98,7 +98,7 @@ func (api *Api) AdminRolesList(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	out := dataloader.Map(roles, ToRoleWithPermissions)
+	out := mapper.Map(roles, ToRoleWithPermissions)
 	return &PaginatedOutput[*RoleWithPermissions]{
 		Body: shared.PaginatedResponse[*RoleWithPermissions]{
 			Data: out,
@@ -401,7 +401,7 @@ func (api *Api) AdminUserRolesUpdate(ctx context.Context, input *struct {
 	}
 	output := PaginatedOutput[*Role]{
 		Body: shared.PaginatedResponse[*Role]{
-			Data: dataloader.Map(roles, ToRole),
+			Data: mapper.Map(roles, ToRole),
 		},
 	}
 	return &output, nil

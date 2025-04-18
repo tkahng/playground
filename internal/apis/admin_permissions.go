@@ -11,7 +11,7 @@ import (
 	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
-	"github.com/tkahng/authgo/internal/tools/dataloader"
+	"github.com/tkahng/authgo/internal/tools/mapper"
 )
 
 func (api *Api) AdminUserPermissionsDeleteOperation(path string) huma.Operation {
@@ -207,7 +207,7 @@ func (api *Api) AdminPermissionsList(ctx context.Context, input *struct {
 	return &PaginatedOutput[*Permission]{
 		Body: shared.PaginatedResponse[*Permission]{
 
-			Data: dataloader.Map(permissions, ToPermission),
+			Data: mapper.Map(permissions, ToPermission),
 			Meta: shared.Meta{
 				Page:    input.PaginatedInput.Page,
 				PerPage: input.PaginatedInput.PerPage,

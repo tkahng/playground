@@ -9,7 +9,7 @@ import (
 	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
-	"github.com/tkahng/authgo/internal/tools/dataloader"
+	"github.com/tkahng/authgo/internal/tools/mapper"
 )
 
 func (api *Api) AdminStripeSubscriptionsOperation(path string) huma.Operation {
@@ -53,7 +53,7 @@ func (api *Api) AdminStripeSubscriptions(ctx context.Context,
 			subscriptions.LoadStripeSubscriptionPriceStripePrice(ctx, db)
 		}
 	}
-	subs := dataloader.Map(subscriptions, func(sub *models.StripeSubscription) *SubscriptionWithData {
+	subs := mapper.Map(subscriptions, func(sub *models.StripeSubscription) *SubscriptionWithData {
 		ss := &SubscriptionWithData{
 			Subscription: ModelToSubscription(sub),
 		}

@@ -10,7 +10,7 @@ import (
 	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
-	"github.com/tkahng/authgo/internal/tools/dataloader"
+	"github.com/tkahng/authgo/internal/tools/mapper"
 )
 
 func (api *Api) TaskListOperation(path string) huma.Operation {
@@ -44,10 +44,10 @@ func (api *Api) TaskList(ctx context.Context, input *shared.TaskListParams) (*Ta
 	}
 	return &TaskListResponse{
 		Body: &shared.PaginatedResponse[*shared.TaskWithSubtask]{
-			Data: dataloader.Map(tasks, func(task *models.Task) *shared.TaskWithSubtask {
+			Data: mapper.Map(tasks, func(task *models.Task) *shared.TaskWithSubtask {
 				return &shared.TaskWithSubtask{
 					Task: shared.ModelToTask(task),
-					Children: dataloader.Map(task.R.ReverseParents, func(child *models.Task) *shared.Task {
+					Children: mapper.Map(task.R.ReverseParents, func(child *models.Task) *shared.Task {
 						return shared.ModelToTask(child)
 					}),
 				}
@@ -135,13 +135,13 @@ func (api *Api) TaskProjectList(ctx context.Context, input *shared.TaskProjectsL
 	}
 	return &TaskProjectListResponse{
 		Body: &shared.PaginatedResponse[*shared.TaskProjectWithTasks]{
-			Data: dataloader.Map(taskProject, func(taskProject *models.TaskProject) *shared.TaskProjectWithTasks {
+			Data: mapper.Map(taskProject, func(taskProject *models.TaskProject) *shared.TaskProjectWithTasks {
 				return &shared.TaskProjectWithTasks{
 					TaskProject: shared.ModelToProject(taskProject),
-					Tasks: dataloader.Map(taskProject.R.ProjectTasks, func(task *models.Task) *shared.TaskWithSubtask {
+					Tasks: mapper.Map(taskProject.R.ProjectTasks, func(task *models.Task) *shared.TaskWithSubtask {
 						return &shared.TaskWithSubtask{
 							Task: shared.ModelToTask(task),
-							Children: dataloader.Map(task.R.ReverseParents, func(child *models.Task) *shared.Task {
+							Children: mapper.Map(task.R.ReverseParents, func(child *models.Task) *shared.Task {
 								return shared.ModelToTask(child)
 							}),
 						}

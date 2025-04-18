@@ -1,4 +1,4 @@
-package dataloader
+package mapper
 
 // func MapTo[]
 
