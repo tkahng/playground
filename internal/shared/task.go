@@ -52,13 +52,21 @@ type UpdateTaskBaseDTO struct {
 	Description *string           `json:"description,omitempty" required:"false"`
 	Status      models.TaskStatus `json:"status" enum:"todo,in_progress,done"`
 	Order       float64           `json:"order"`
-	Position    *int64            `json:"position,omitempty" required:"false"`
 	ParentID    *uuid.UUID        `json:"parent_id,omitempty" required:"false"`
 }
 
 type UpdateTaskDTO struct {
 	Body   UpdateTaskBaseDTO
 	TaskID string `path:"task-id" json:"task_id" required:"true" format:"uuid"`
+}
+
+type TaskPositionDTO struct {
+	Position int64 `json:"position" required:"true"`
+}
+
+type TaskPositionInput struct {
+	TaskID string `path:"task-id" json:"task_id" required:"true" format:"uuid"`
+	Body   TaskPositionDTO
 }
 
 type CreateTaskWithProjectIdInput struct {

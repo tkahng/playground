@@ -120,7 +120,7 @@ func BindApis(api huma.API, app core.App) {
 		"message": models.Notification{},
 	}, appApi.NotificationsSsefunc)
 	// ---- task routes -------------------------------------------------------------------------------------------------
-	taskGroup := huma.NewGroup(api, "/")
+	taskGroup := huma.NewGroup(api)
 	taskGroup.UseMiddleware(func(ctx huma.Context, next func(huma.Context)) {
 		db := app.Db()
 		rawCtx := ctx.Context()
@@ -161,30 +161,32 @@ func BindApis(api huma.API, app core.App) {
 		next(ctx)
 	})
 	// task list
-	huma.Register(taskGroup, appApi.TaskListOperation("/task"), appApi.TaskList)
+	huma.Register(taskGroup, appApi.TaskListOperation("/tasks"), appApi.TaskList)
 	// task create
 	// huma.Register(taskGroup, appApi.TaskCreateOperation("/task"), appApi.TaskCreate)
 	// task update
-	huma.Register(taskGroup, appApi.TaskUpdateOperation("/task/{task-id}"), appApi.TaskUpdate)
+	huma.Register(taskGroup, appApi.TaskUpdateOperation("/tasks/{task-id}"), appApi.TaskUpdate)
+	// task position
+	huma.Register(taskGroup, appApi.UpdateTaskPositionOperation("/tasks/{task-id}/position"), appApi.UpdateTaskPosition)
 	// // task delete
-	huma.Register(taskGroup, appApi.TaskDeleteOperation("/task/{task-id}"), appApi.TaskDelete)
+	huma.Register(taskGroup, appApi.TaskDeleteOperation("/tasks/{task-id}"), appApi.TaskDelete)
 	// // task get
-	huma.Register(taskGroup, appApi.TaskGetOperation("/task/{task-id}"), appApi.TaskGet)
+	huma.Register(taskGroup, appApi.TaskGetOperation("/tasks/{task-id}"), appApi.TaskGet)
 
 	// task project routes -------------------------------------------------------------------------------------------------
-	taskProjectGroup := huma.NewGroup(api, "/")
+	taskProjectGroup := huma.NewGroup(api)
 	// task project list
-	huma.Register(taskProjectGroup, appApi.TaskProjectListOperation("/task-project"), appApi.TaskProjectList)
+	huma.Register(taskProjectGroup, appApi.TaskProjectListOperation("/task-projects"), appApi.TaskProjectList)
 	// task project create
-	huma.Register(taskProjectGroup, appApi.TaskProjectCreateOperation("/task-project"), appApi.TaskProjectCreate)
+	huma.Register(taskProjectGroup, appApi.TaskProjectCreateOperation("/task-projects"), appApi.TaskProjectCreate)
 	// task project update
-	huma.Register(taskProjectGroup, appApi.TaskProjectUpdateOperation("/task-project/{task-project-id}"), appApi.TaskProjectUpdate)
+	huma.Register(taskProjectGroup, appApi.TaskProjectUpdateOperation("/task-projects/{task-project-id}"), appApi.TaskProjectUpdate)
 	// // task project delete
-	huma.Register(taskProjectGroup, appApi.TaskProjectDeleteOperation("/task-project/{task-project-id}"), appApi.TaskProjectDelete)
+	huma.Register(taskProjectGroup, appApi.TaskProjectDeleteOperation("/task-projects/{task-project-id}"), appApi.TaskProjectDelete)
 	// // task project get
-	huma.Register(taskProjectGroup, appApi.TaskProjectGetOperation("/task-project/{task-project-id}"), appApi.TaskProjectGet)
+	huma.Register(taskProjectGroup, appApi.TaskProjectGetOperation("/task-projects/{task-project-id}"), appApi.TaskProjectGet)
 	// task project tasks create
-	huma.Register(taskProjectGroup, appApi.TaskProjectTasksCreateOperation("/task-project/{task-project-id}/tasks"), appApi.TaskProjectTasksCreate)
+	huma.Register(taskProjectGroup, appApi.TaskProjectTasksCreateOperation("/task-projects/{task-project-id}/tasks"), appApi.TaskProjectTasksCreate)
 
 	// stripe routes -------------------------------------------------------------------------------------------------
 	stripeGroup := huma.NewGroup(api, "/stripe")

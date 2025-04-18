@@ -309,6 +309,7 @@ func DefineTaskOrderNumber(ctx context.Context, db bob.Executor, taskId uuid.UUI
 			sm.OrderBy(models.TaskColumns.Order).Asc(),
 			sm.Limit(1),
 		).One(ctx, db)
+		response, err = OptionalRow(response, err)
 		if err != nil {
 			return 0, err
 		}
@@ -323,6 +324,7 @@ func DefineTaskOrderNumber(ctx context.Context, db bob.Executor, taskId uuid.UUI
 		sm.Limit(1),
 		sm.Offset(position),
 	).One(ctx, db)
+	element, err = OptionalRow(element, err)
 	if err != nil {
 		return 0, err
 	}
@@ -336,6 +338,7 @@ func DefineTaskOrderNumber(ctx context.Context, db bob.Executor, taskId uuid.UUI
 			sm.Limit(1),
 			sm.Offset(position-1),
 		).One(ctx, db)
+		sideElements, err = OptionalRow(sideElements, err)
 		if err != nil {
 			return 0, err
 		}
@@ -347,6 +350,7 @@ func DefineTaskOrderNumber(ctx context.Context, db bob.Executor, taskId uuid.UUI
 		sm.Limit(1),
 		sm.Offset(position+1),
 	).One(ctx, db)
+	sideElements, err = OptionalRow(sideElements, err)
 	if err != nil {
 		return 0, err
 	}
@@ -372,14 +376,36 @@ func UpdateTask(ctx context.Context, db bob.Executor, taskID uuid.UUID, input *s
 		Order:       omit.From(input.Order),
 		ParentID:    omitnull.FromPtr(input.ParentID),
 	}
-	if input.Position != nil {
-		position := *input.Position
-		order, err := DefineTaskOrderNumber(ctx, db, task.ID, task.ProjectID, task.Order, position)
-		if err != nil {
-			return err
-		}
-		taskSetter.Order = omit.From(order)
+	// if input.Position != nil {
+	// 	position := *input.Position
+	// 	order, err := DefineTaskOrderNumber(ctx, db, task.ID, task.ProjectID, task.Order, position)
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// 	taskSetter.Order = omit.From(order)
+	// }
+	err = task.Update(ctx, db, taskSetter)
+	if err != nil {
+		return err
 	}
+	return nil
+}
+
+func UpdateTaskPosition(ctx context.Context, db bob.Executor, taskID uuid.UUID, position int64) error {
+	task, err := FindTaskByID(ctx, db, taskID)
+	if err != nil {
+		return err
+	}
+	if task == nil {
+		return errors.New("task not found")
+	}
+	taskSetter := &models.TaskSetter{}
+
+	order, err := DefineTaskOrderNumber(ctx, db, task.ID, task.ProjectID, task.Order, position)
+	if err != nil {
+		return err
+	}
+	taskSetter.Order = omit.From(order)
 	err = task.Update(ctx, db, taskSetter)
 	if err != nil {
 		return err
