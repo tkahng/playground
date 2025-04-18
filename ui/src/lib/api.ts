@@ -115,6 +115,9 @@ export const rolesPaginate = async (
 export const getRole = async (token: string, id: string) => {
   const { data, error } = await client.GET(`/api/admin/roles/{id}`, {
     params: {
+      query: {
+        expand: ["permissions"],
+      },
       path: {
         id,
       },

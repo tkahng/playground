@@ -1,10 +1,10 @@
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { LinkProps } from "./landing-links";
-import { NavLink } from "./link/nav-link";
-import { ModeToggle } from "./mode-toggle";
-import NexusAILogo from "./nexus-logo";
-import NonAuthenticatedButton from "./non-authenticated-button";
-import { RouteMap } from "./route-map";
+import { LinkProps } from "@/components/landing-links";
+import { NavLink } from "@/components/link/nav-link";
+import { ModeToggle } from "@/components/mode-toggle";
+import NexusAILogo from "@/components/nexus-logo";
+import NonAuthenticatedButton from "@/components/non-authenticated-button";
+import { RouteMap } from "@/components/route-map";
 
 export function NexusAILandingHeader({
   leftLinks,

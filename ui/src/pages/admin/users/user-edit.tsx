@@ -17,8 +17,8 @@ import { useUserDetail } from "@/hooks/use-user-detail";
 import { getUserInfo } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "react-router";
-import { UserPermissionDialog } from "./user-permissions-dialog";
-import { DialogDemo } from "./user-roles-dialog";
+import { UserPermissionDialog } from "@/pages/admin/users/user-permissions-dialog";
+import { DialogDemo } from "@/pages/admin/users/user-roles-dialog";
 
 // const formSchema = z.object({
 //   name: z.string().min(2, {

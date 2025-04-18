@@ -1,8 +1,8 @@
 import { cn } from "@/lib/utils";
-import AuthButton from "./auth-button";
-import { LinkProps } from "./landing-links";
-import { NavLink } from "./link/nav-link";
-import NexusAILogo from "./nexus-logo";
+import AuthButton from "@/components/auth-button";
+import { LinkProps } from "@/components/landing-links";
+import { NavLink } from "@/components/link/nav-link";
+import NexusAILogo from "@/components/nexus-logo";
 
 export function NexusAILandingHeader({
   leftLinks,

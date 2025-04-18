@@ -1,6 +1,6 @@
-import { LinkProps } from "./landing-links";
-import { RouteMap } from "./route-map";
-import { UserNav } from "./user-nav";
+import { LinkProps } from "@/components/landing-links";
+import { RouteMap } from "@/components/route-map";
+import { UserNav } from "@/components/user-nav";
 const links: LinkProps[] = [
   {
     to: RouteMap.DASHBOARD_HOME,
