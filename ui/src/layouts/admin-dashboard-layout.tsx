@@ -34,7 +34,9 @@ export default function AdminDashboardLayout() {
         <NexusAILandingHeader full leftLinks={headerLinks} />
         <main className="flex flex-grow">
           <DashboardSidebar links={links} />
-          {outlet}
+          <div className="mx-auto w-full max-w-[1200px] py-12 px-4 @lg:px-6 @xl:px-12 @2xl:px-20 @3xl:px-24">
+            {outlet}
+          </div>
         </main>
         <NexusAIMinimalFooter />
       </div>

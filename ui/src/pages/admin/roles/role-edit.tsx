@@ -9,12 +9,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
   Form,
   FormControl,
   FormDescription,
@@ -36,8 +30,8 @@ import {
 import { CreateRolePermissionDialog } from "@/pages/admin/roles/create-role-permission-dialog";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ChevronLeft, Ellipsis } from "lucide-react";
-import { useEffect, useState } from "react";
+import { ChevronLeft, Trash } from "lucide-react";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
@@ -130,7 +124,7 @@ export default function RoleEdit() {
 
   return (
     // <div className="h-full px-4 py-6 lg:px-8 space-y-6">
-    <div className="mx-auto w-full max-w-[1200px] py-12 px-4 @lg:px-6 @xl:px-12 @2xl:px-20 @3xl:px-24">
+    <div>
       <Link
         to={RouteMap.ADMIN_DASHBOARD_ROLES}
         className="flex items-center gap-2 text-sm text-muted-foreground"
@@ -209,7 +203,7 @@ export default function RoleEdit() {
                 cell: ({ row }) => {
                   return (
                     <div className="flex flex-row gap-2 justify-end">
-                      <EllipsisDropdown
+                      <DeleteButton
                         permissionId={row.original.id}
                         onDelete={onDelete}
                       />
@@ -226,7 +220,7 @@ export default function RoleEdit() {
   );
 }
 
-function EllipsisDropdown({
+function DeleteButton({
   permissionId,
   onDelete,
 }: {
@@ -234,25 +228,11 @@ function EllipsisDropdown({
   onDelete: (permissionId: string) => void;
 }) {
   const editDialog = useDialog();
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  const onSelect = () => {
-    setDropdownOpen(false);
-    editDialog.trigger();
-  };
   return (
     <>
-      <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon">
-            <Ellipsis className="h-4 w-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent>
-          <DropdownMenuItem onSelect={onSelect}>
-            <span>Remove</span>
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <Button variant="outline" size="icon" onClick={editDialog.trigger}>
+        <Trash className="h-4 w-4" />
+      </Button>
       <ConfirmDialog dialogProps={editDialog.props}>
         <>
           <DialogHeader>

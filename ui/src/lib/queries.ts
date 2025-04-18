@@ -172,6 +172,21 @@ export const updateRole = async (
   return data;
 };
 
+export const deleteRole = async (token: string, id: string) => {
+  const { data, error } = await client.DELETE(`/api/admin/roles/{id}`, {
+    params: {
+      path: { id },
+    },
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  if (error) {
+    throw new Error(error.detail);
+  }
+  return data;
+};
+
 export const deleteRolePermission = async (
   token: string,
   roleId: string,

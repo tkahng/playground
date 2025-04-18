@@ -1,31 +1,36 @@
 import { DataTable } from "@/components/data-table";
 import { RouteMap } from "@/components/route-map";
+import { Button } from "@/components/ui/button";
+import {
+  DialogClose,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { rolesPaginate } from "@/lib/queries";
+import { ConfirmDialog, useDialog } from "@/hooks/use-dialog";
+import { deleteRole, rolesPaginate } from "@/lib/queries";
 import { CreateRoleDialog } from "@/pages/admin/roles/create-role-dialog";
-import { RoleWithPermissions } from "@/schema.types";
-import { useQuery } from "@tanstack/react-query";
-import { ColumnDef, PaginationState, Updater } from "@tanstack/react-table";
-import { useNavigate, useSearchParams } from "react-router";
-export const columns: ColumnDef<RoleWithPermissions>[] = [
-  {
-    accessorKey: "name",
-    header: "Name",
-  },
-  {
-    accessorKey: "description",
-    header: "Description",
-  },
-];
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { PaginationState, Updater } from "@tanstack/react-table";
+import { Ellipsis, Pencil, Trash } from "lucide-react";
+import { useState } from "react";
+import { NavLink, useNavigate, useSearchParams } from "react-router";
+import { toast } from "sonner";
 
 export default function RolesListPage() {
   const { user } = useAuthProvider();
-  const navigate = useNavigate();
-
   const [searchParams, setSearchParams] = useSearchParams();
   const pageIndex = parseInt(searchParams.get("page") || "0", 10);
   const pageSize = parseInt(searchParams.get("per_page") || "10", 10);
-
+  const queryClient = useQueryClient();
   const onPaginationChange = (updater: Updater<PaginationState>) => {
     const newState =
       typeof updater === "function"
@@ -55,7 +60,22 @@ export default function RolesListPage() {
       return data;
     },
   });
-
+  const mutation = useMutation({
+    mutationFn: async (roleId: string) => {
+      if (!user?.tokens.access_token) {
+        throw new Error("Missing access token or role ID");
+      }
+      await deleteRole(user.tokens.access_token, roleId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["roles-list"] });
+      toast.success("Role deleted successfully");
+    },
+    onError: (error) => {
+      console.error(error);
+      toast.error("Failed to delete role");
+    },
+  });
   if (isLoading) {
     return <div>Loading...</div>;
   }
@@ -67,7 +87,7 @@ export default function RolesListPage() {
 
   return (
     // <div className="flex w-full flex-col items-center justify-center">
-    <div className="h-full px-4 py-6 lg:px-8 space-y-6">
+    <div>
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Roles</h1>
         <CreateRoleDialog />
@@ -77,16 +97,131 @@ export default function RolesListPage() {
         of Permissions and can be assigned to Users.
       </p>
       <DataTable
-        columns={columns}
+        columns={[
+          {
+            accessorKey: "name",
+            header: "Name",
+            cell: ({ row }) => {
+              return (
+                <NavLink
+                  to={`${RouteMap.ADMIN_DASHBOARD_ROLES}/${row.original.id}`}
+                  className="hover:underline text-blue-500"
+                >
+                  {row.original.name}
+                </NavLink>
+              );
+            },
+          },
+          {
+            accessorKey: "description",
+            header: "Description",
+          },
+          {
+            id: "actions",
+            cell: ({ row }) => {
+              return (
+                <div className="flex flex-row gap-2 justify-end">
+                  <RoleEllipsisDropdown
+                    roleId={row.original.id}
+                    onDelete={(roleId) => {
+                      mutation.mutate(roleId);
+                    }}
+                  />
+                </div>
+              );
+            },
+          },
+        ]}
         data={roles}
-        onClick={(row) => {
-          navigate(`${RouteMap.ADMIN_DASHBOARD_ROLES}/${row.original.id}`);
-        }}
+        // onClick={(row) => {
+        //   navigate(`${RouteMap.ADMIN_DASHBOARD_ROLES}/${row.original.id}`);
+        // }}
         rowCount={rowCount}
         paginationState={{ pageIndex, pageSize }}
         onPaginationChange={onPaginationChange}
         paginationEnabled
       />
     </div>
+  );
+}
+
+function RoleEllipsisDropdown({
+  roleId,
+  onDelete,
+}: {
+  roleId: string;
+  onDelete: (roleId: string) => void;
+}) {
+  const editDialog = useDialog();
+  const navigate = useNavigate();
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  return (
+    <>
+      <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon">
+            <Ellipsis className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent>
+          <DropdownMenuItem
+            onSelect={() => {
+              setDropdownOpen(false);
+              navigate(`${RouteMap.ADMIN_DASHBOARD_ROLES}/${roleId}`);
+            }}
+          >
+            <Button variant="ghost" size="sm">
+              <Pencil className="h-4 w-4" />
+              <span>Edit</span>
+            </Button>
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onSelect={() => {
+              setDropdownOpen(false);
+              editDialog.trigger();
+            }}
+          >
+            <Button variant="ghost" size="sm">
+              <Trash className="h-4 w-4" />
+              <span>Remove</span>
+            </Button>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <ConfirmDialog dialogProps={editDialog.props}>
+        <>
+          <DialogHeader>
+            <DialogTitle>Are you absolutely sure?</DialogTitle>
+          </DialogHeader>
+          {/* Dialog Content */}
+          <DialogDescription>This action cannot be undone.</DialogDescription>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  console.log("cancel");
+                  // editDialog.props.onOpenChange(false);
+                }}
+              >
+                Cancel
+              </Button>
+            </DialogClose>
+            <DialogClose asChild>
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  console.log("delete");
+                  // editDialog.props.onOpenChange(false);
+                  onDelete(roleId);
+                }}
+              >
+                Delete
+              </Button>
+            </DialogClose>
+          </DialogFooter>
+        </>
+      </ConfirmDialog>
+    </>
   );
 }
