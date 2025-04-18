@@ -401,15 +401,25 @@ func UpdateTask(ctx context.Context, db bob.Executor, taskID uuid.UUID, input *s
 		Order:       omit.From(input.Order),
 		ParentID:    omitnull.FromPtr(input.ParentID),
 	}
-	// if input.Position != nil {
-	// 	position := *input.Position
-	// 	order, err := DefineTaskOrderNumber(ctx, db, task.ID, task.ProjectID, task.Order, position)
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// 	taskSetter.Order = omit.From(order)
-	// }
 	err = task.Update(ctx, db, taskSetter)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func UpdateTaskProject(ctx context.Context, db bob.Executor, taskProjectID uuid.UUID, input *shared.UpdateTaskProjectBaseDTO) error {
+	taskProject, err := FindTaskProjectByID(ctx, db, taskProjectID)
+	if err != nil {
+		return err
+	}
+	taskProjectSetter := &models.TaskProjectSetter{
+		Name:        omit.From(input.Name),
+		Description: omitnull.FromPtr(input.Description),
+		Status:      omit.From(input.Status),
+		Order:       omit.From(input.Order),
+	}
+	err = taskProject.Update(ctx, db, taskProjectSetter)
 	if err != nil {
 		return err
 	}

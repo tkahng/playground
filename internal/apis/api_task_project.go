@@ -150,11 +150,16 @@ func (api *Api) TaskProjectUpdate(ctx context.Context, input *shared.UpdateTaskP
 	if userInfo == nil || userInfo.User == nil {
 		return nil, huma.Error401Unauthorized("Unauthorized")
 	}
-	// db := api.app.Db()
-	// // err := repository.task(ctx, db, input.Body)
-	// if err != nil {
-	// 	return nil, err
-	// }
+	db := api.app.Db()
+	id, err := uuid.Parse(input.TaskProjectID)
+	if err != nil {
+		return nil, huma.Error400BadRequest("Invalid task project id")
+	}
+	payload := input.Body
+	err = repository.UpdateTaskProject(ctx, db, id, &payload)
+	if err != nil {
+		return nil, err
+	}
 	return nil, nil
 }
 
