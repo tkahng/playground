@@ -21,11 +21,25 @@ func FindTaskByID(ctx context.Context, db bob.Executor, id uuid.UUID) (*models.T
 	return OptionalRow(task, err)
 }
 
+func DeleteTask(ctx context.Context, db bob.Executor, taskID uuid.UUID) error {
+	task, err := models.FindTask(ctx, db, taskID)
+	if err != nil {
+		return err
+	}
+	return task.Delete(ctx, db)
+}
+
 func FindTaskProjectByID(ctx context.Context, db bob.Executor, id uuid.UUID) (*models.TaskProject, error) {
 	task, err := models.FindTaskProject(ctx, db, id)
 	return OptionalRow(task, err)
 }
-
+func DeleteTaskProject(ctx context.Context, db bob.Executor, taskProjectID uuid.UUID) error {
+	taskProject, err := models.FindTaskProject(ctx, db, taskProjectID)
+	if err != nil {
+		return err
+	}
+	return taskProject.Delete(ctx, db)
+}
 func ListTasksOrderByFunc(ctx context.Context, q *psql.ViewQuery[*models.Task, models.TaskSlice], input *shared.TaskListParams) {
 	if q == nil {
 		return
@@ -343,8 +357,8 @@ func DefineTaskOrderNumber(ctx context.Context, db bob.Executor, taskId uuid.UUI
 
 }
 
-func UpdateTask(ctx context.Context, db bob.Executor, input *shared.UpdateTaskDTO) error {
-	task, err := FindTaskByID(ctx, db, input.TaskID)
+func UpdateTask(ctx context.Context, db bob.Executor, taskID uuid.UUID, input *shared.UpdateTaskBaseDTO) error {
+	task, err := FindTaskByID(ctx, db, taskID)
 	if err != nil {
 		return err
 	}

@@ -89,9 +89,9 @@ func BindApis(api huma.API, app core.App) {
 	// huma.Register(api, appApi.AuthMethodsOperation("/auth/methods"), appApi.AuthMethods)
 	// protected test routes -----------------------------------------------------------
 
-	huma.Register(api, appApi.ApiProtectedBasicPermissionOperation("/api/protected/basic-permission"), appApi.ApiProtectedBasicPermission)
-	huma.Register(api, appApi.ApiProtectedProPermissionOperation("/api/protected/pro-permission"), appApi.ApiProtectedProPermission)
-	huma.Register(api, appApi.ApiProtectedAdvancedPermissionOperation("/api/protected/advanced-permission"), appApi.ApiProtectedAdvancedPermission)
+	huma.Register(api, appApi.ApiProtectedBasicPermissionOperation("/protected/basic-permission"), appApi.ApiProtectedBasicPermission)
+	huma.Register(api, appApi.ApiProtectedProPermissionOperation("/protected/pro-permission"), appApi.ApiProtectedProPermission)
+	huma.Register(api, appApi.ApiProtectedAdvancedPermissionOperation("/protected/advanced-permission"), appApi.ApiProtectedAdvancedPermission)
 
 	huma.Register(api, appApi.SignupOperation("/auth/signup"), appApi.SignUp)
 	huma.Register(api, appApi.SigninOperation("/auth/signin"), appApi.SignIn)
@@ -161,26 +161,31 @@ func BindApis(api huma.API, app core.App) {
 		next(ctx)
 	})
 	// task list
-	huma.Register(taskGroup, appApi.TaskListOperation("task"), appApi.TaskList)
+	huma.Register(taskGroup, appApi.TaskListOperation("/task"), appApi.TaskList)
 	// task create
-	// huma.Register(taskGroup, appApi.TaskCreateOperation("/"), appApi.TaskCreate)
+	// huma.Register(taskGroup, appApi.TaskCreateOperation("/task"), appApi.TaskCreate)
 	// task update
-	huma.Register(taskGroup, appApi.TaskUpdateOperation("task/{task-id}"), appApi.TaskUpdate)
+	huma.Register(taskGroup, appApi.TaskUpdateOperation("/task/{task-id}"), appApi.TaskUpdate)
 	// // task delete
-	// huma.Register(taskGroup, appApi.TaskDeleteOperation("/{id}"), appApi.TaskDelete)
+	huma.Register(taskGroup, appApi.TaskDeleteOperation("/task/{task-id}"), appApi.TaskDelete)
 	// // task get
-	// huma.Register(taskGroup, appApi.TaskGetOperation("/{id}"), appApi.TaskGet)
+	huma.Register(taskGroup, appApi.TaskGetOperation("/task/{task-id}"), appApi.TaskGet)
+
+	// task project routes -------------------------------------------------------------------------------------------------
 	taskProjectGroup := huma.NewGroup(api, "/")
 	// task project list
-	huma.Register(taskProjectGroup, appApi.TaskProjectListOperation("task-project"), appApi.TaskProjectList)
+	huma.Register(taskProjectGroup, appApi.TaskProjectListOperation("/task-project"), appApi.TaskProjectList)
 	// task project create
-	huma.Register(taskProjectGroup, appApi.TaskProjectCreateOperation("task-project"), appApi.TaskProjectCreate)
-	// // task project update
-	// huma.Register(taskProjectGroup, appApi.TaskProjectUpdateOperation("/{id}"), appApi.TaskProjectUpdate)
+	huma.Register(taskProjectGroup, appApi.TaskProjectCreateOperation("/task-project"), appApi.TaskProjectCreate)
+	// task project update
+	huma.Register(taskProjectGroup, appApi.TaskProjectUpdateOperation("/task-project/{task-project-id}"), appApi.TaskProjectUpdate)
 	// // task project delete
-	// huma.Register(taskProjectGroup, appApi.TaskProjectDeleteOperation("/{id}"), appApi.TaskProjectDelete)
+	huma.Register(taskProjectGroup, appApi.TaskProjectDeleteOperation("/task-project/{task-project-id}"), appApi.TaskProjectDelete)
 	// // task project get
-	// huma.Register(taskProjectGroup, appApi.TaskProjectGetOperation("/{id}"), appApi.TaskProjectGet)
+	huma.Register(taskProjectGroup, appApi.TaskProjectGetOperation("/task-project/{task-project-id}"), appApi.TaskProjectGet)
+	// task project tasks create
+	huma.Register(taskProjectGroup, appApi.TaskProjectTasksCreateOperation("/task-project/{task-project-id}/tasks"), appApi.TaskProjectTasksCreate)
+
 	// stripe routes -------------------------------------------------------------------------------------------------
 	stripeGroup := huma.NewGroup(api, "/stripe")
 	// stripe my subscriptions
