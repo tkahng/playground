@@ -1,7 +1,7 @@
 import { Icons } from "@/components/ui/icons";
 import { getAuthUrl } from "@/lib/api";
 import { z } from "zod";
-import { Button } from "./ui/button";
+import { Button } from "@/components/ui/button";
 export const GITHUB_PROVIDER_NAME = "github";
 export const GOOGLE_PROVIDER_NAME = "google";
 // to add another provider, set their name here and add it to the providerNames below

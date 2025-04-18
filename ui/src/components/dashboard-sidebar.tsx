@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 import { Link, useLocation } from "react-router";
-import { LinkProps } from "./landing-links";
-import { buttonVariants } from "./ui/button";
+import { LinkProps } from "@/components/landing-links";
+import { buttonVariants } from "@/components/ui/button";
 
 export const DashboardSidebar = ({ links }: { links: LinkProps[] }) => {
   const { pathname } = useLocation();

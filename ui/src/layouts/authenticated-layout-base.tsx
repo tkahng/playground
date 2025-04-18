@@ -15,14 +15,7 @@ export default function AuthenticatedLayoutBase() {
   }
   return (
     <>
-      {/* <div className="relative flex min-h-screen flex-col justify-center">
-        <NexusAILandingHeader full />
-        <main className="flex flex-grow"> */}
-      {/* <DashboardSidebar /> */}
       {outlet}
-      {/* </main>
-        <NexusAIMinimalFooter />
-      </div> */}
     </>
   );
 }

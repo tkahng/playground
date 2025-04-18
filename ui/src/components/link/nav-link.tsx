@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 import { JSX, PropsWithChildren } from "react";
 import { Link } from "react-router";
-import { LinkProps } from "../landing-links";
+import { LinkProps } from "@/components/landing-links";
 
 type NavLinkProps = { className?: string } & LinkProps;
 

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useAuthProvider } from "./use-auth-provider";
+import { useAuthProvider } from "@/hooks/use-auth-provider";
 
 export const useCheckAuth = () => {
   const auth = useAuthProvider();

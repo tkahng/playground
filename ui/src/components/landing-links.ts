@@ -1,6 +1,6 @@
 // import { LinkProps } from "react-router";
 import { JSX } from "react";
-import { RouteMap } from "./route-map";
+import { RouteMap } from "@/components/route-map";
 export type LinkProps = {
   title?: string;
   icon?: JSX.Element;

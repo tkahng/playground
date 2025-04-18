@@ -7,7 +7,7 @@ import {
   User,
   UserDetailWithRoles,
 } from "@/schema.types";
-import { client } from "./client";
+import { client } from "@/lib/client";
 
 export const signIn = async (
   args: SigninInput

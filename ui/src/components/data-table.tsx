@@ -8,7 +8,7 @@ import {
   Row,
   useReactTable,
 } from "@tanstack/react-table";
-import { Button } from "./ui/button";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -16,7 +16,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "./ui/table";
+} from "@/components/ui/table";
 
 interface DataTableProps<TData, TValue> {
   onClick?: (row: Row<TData>) => void;
@@ -62,9 +62,9 @@ export function DataTable<TData, TValue>({
                       {header.isPlaceholder
                         ? null
                         : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
                     </TableHead>
                   );
                 })}

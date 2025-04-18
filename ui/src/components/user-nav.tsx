@@ -8,13 +8,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { Avatar, AvatarFallback, AvatarImage } from "@radix-ui/react-avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dot } from "lucide-react";
 import { Link, useNavigate } from "react-router";
-import { LinkProps } from "./landing-links";
-import { RouteMap } from "./route-map";
-import { useTheme } from "./theme-provider";
-import { Button } from "./ui/button";
+import { LinkProps } from "@/components/landing-links";
+import { RouteMap } from "@/components/route-map";
+import { useTheme } from "@/components/theme-provider";
+import { Button } from "@/components/ui/button";
 
 type UserNavProps = {
   links: LinkProps[];
@@ -38,7 +38,6 @@ export function UserNav({ links }: UserNavProps) {
         <Avatar>
           <AvatarImage
             src="https://avatars.githubusercontent.com/u/124599?v=4"
-            alt="@shadcn"
           />
           <AvatarFallback>SC</AvatarFallback>
         </Avatar>
@@ -53,7 +52,9 @@ export function UserNav({ links }: UserNavProps) {
           className="relative h-8 w-8 rounded-full shadow-sm border-2"
         >
           <Avatar>
-            <AvatarImage src="https://avatars.githubusercontent.com/u/124599?v=4" />
+            <AvatarImage
+              src="https://avatars.githubusercontent.com/u/124599?v=4"
+            />
             <AvatarFallback>SC</AvatarFallback>
           </Avatar>
         </Button>
