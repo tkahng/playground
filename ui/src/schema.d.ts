@@ -966,7 +966,7 @@ export interface components {
             readonly $schema?: string;
             access: string;
         };
-        MediaOuput: {
+        Media: {
             /** Format: date-time */
             created_at: string;
             filename: string;
@@ -1013,13 +1013,13 @@ export interface components {
             token: string;
             type: string;
         };
-        PaginatedResponseMediaOuput: {
+        PaginatedResponseMedia: {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
              */
             readonly $schema?: string;
-            data: components["schemas"]["MediaOuput"][] | null;
+            data: components["schemas"]["Media"][] | null;
             meta: components["schemas"]["Meta"];
         };
         PaginatedResponsePermission: {
@@ -3667,7 +3667,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PaginatedResponseMediaOuput"];
+                    "application/json": components["schemas"]["PaginatedResponseMedia"];
                 };
             };
             /** @description Bad Request */

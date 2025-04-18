@@ -89,6 +89,7 @@ export default function UserListPage() {
           rowCount={rowCount}
           paginationState={{ pageIndex, pageSize }}
           onPaginationChange={onPaginationChange}
+          paginationEnabled
         />
       )}
     </div>

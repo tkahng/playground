@@ -8,7 +8,7 @@ export const DashboardSidebar = ({ links }: { links: LinkDto[] }) => {
   return (
     // <nav className="flex flex-grow flex-col">
     //   <div className="border flex flex-col flex-grow p-8">
-    <nav className="flex flex-col p-12 border">
+    <nav className="flex flex-col border p-12 items-center">
       {/* <div className="border flex flex-col flex-grow "> */}
       {links.map((item) => (
         <Link

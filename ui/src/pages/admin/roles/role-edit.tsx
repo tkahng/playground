@@ -30,6 +30,7 @@ import { useForm } from "react-hook-form";
 import { Link, useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
 import { z } from "zod";
+import { CreateRolePermissionDialog } from "./create-role-permission-dialog";
 
 const formSchema = z.object({
   name: z.string().min(2, {
@@ -51,7 +52,7 @@ export default function RoleEdit() {
     isLoading: loading,
     error,
   } = useQuery({
-    queryKey: ["role", roleId],
+    queryKey: ["role-with-permission", roleId],
     queryFn: async () => {
       if (!user?.tokens.access_token || !roleId) {
         throw new Error("Missing access token or role ID");
@@ -64,10 +65,10 @@ export default function RoleEdit() {
       updateRole(user!.tokens.access_token, roleId!, values),
     onSuccess: async () => {
       await queryClient.invalidateQueries({
-        queryKey: ["role", roleId],
+        queryKey: ["role-with-permission", roleId],
       });
       const updatedRole = await queryClient.fetchQuery({
-        queryKey: ["role", roleId],
+        queryKey: ["role-with-permission", roleId],
         queryFn: () =>
           getRoleWithPermission(user!.tokens.access_token, roleId!),
       });
@@ -101,7 +102,8 @@ export default function RoleEdit() {
   if (!role) return <p>Role not found</p>;
 
   return (
-    <div className="h-full px-4 py-6 lg:px-8 space-y-6">
+    // <div className="h-full px-4 py-6 lg:px-8 space-y-6">
+    <div className="mx-auto w-full max-w-[1200px] py-12 px-4 @lg:px-6 @xl:px-12 @2xl:px-20 @3xl:px-24">
       <Link
         to={RouteMap.ADMIN_DASHBOARD_ROLES}
         className="flex items-center gap-2 text-sm text-muted-foreground"
@@ -157,7 +159,14 @@ export default function RoleEdit() {
           </Form>
         </TabsContent>
         <TabsContent value="permissions">
-          <div>Permissions</div>
+          <div className="space-y-4 flex flex-row space-x-16">
+            <p className="flex-1">
+              Add Permissions to this Role. Users who have this Role will
+              receive all Permissions below that match the API of their login
+              request.
+            </p>
+            <CreateRolePermissionDialog roleId={roleId!} />
+          </div>
           <Table>
             <TableHeader>
               <TableRow>
