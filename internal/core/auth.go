@@ -74,9 +74,11 @@ func (app *BaseApp) AuthenticateUser(ctx context.Context, db bob.Executor, param
 		if err != nil {
 			return nil, fmt.Errorf("error finding user role: %w", err)
 		}
-		err = repository.AssignRoles(ctx, db, user, roles...)
-		if err != nil {
-			return nil, fmt.Errorf("error assigning user role: %w", err)
+		if len(roles) > 0 {
+			err = repository.AssignRoles(ctx, db, user, roles...)
+			if err != nil {
+				return nil, fmt.Errorf("error assigning user role: %w", err)
+			}
 		}
 		result.User = user
 		result.Account = nil
