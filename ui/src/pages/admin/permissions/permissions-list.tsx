@@ -1,53 +1,40 @@
+import { DataTable } from "@/components/data-table";
 import { RouteMap } from "@/components/route-map";
 import { Button } from "@/components/ui/button";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { permissionsPaginate } from "@/lib/queries";
-import { Permission } from "@/schema.types";
+  DialogClose,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
-  ColumnDef,
-  flexRender,
-  getCoreRowModel,
-  getPaginationRowModel,
-  PaginationState,
-  Updater,
-  useReactTable,
-} from "@tanstack/react-table";
-import { useEffect, useState } from "react";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useAuthProvider } from "@/hooks/use-auth-provider";
+import { ConfirmDialog, useDialog } from "@/hooks/use-dialog";
+import { deletePermission, permissionsPaginate } from "@/lib/queries";
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
+import { PaginationState, Updater } from "@tanstack/react-table";
+import { Ellipsis, Pencil, Trash } from "lucide-react";
+import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
-export const columns: ColumnDef<Permission>[] = [
-  {
-    accessorKey: "id",
-    header: "Id",
-  },
-  {
-    accessorKey: "name",
-    header: "Name",
-  },
-  {
-    accessorKey: "description",
-    header: "Description",
-  },
-];
+import { CreatePermissionDialog } from "./create-permission-dialog";
 
 export default function PermissionListPage() {
-  const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
   const { user } = useAuthProvider();
-  const [permissions, setPermissions] = useState<Permission[]>([]);
-  const [rowCount, setRowCount] = useState(0);
-
   const [searchParams, setSearchParams] = useSearchParams();
   const pageIndex = parseInt(searchParams.get("page") || "0", 10);
   const pageSize = parseInt(searchParams.get("per_page") || "10", 10);
-
+  const queryClient = useQueryClient();
   const onPaginationChange = (updater: Updater<PaginationState>) => {
     const newState =
       typeof updater === "function"
@@ -61,146 +48,161 @@ export default function PermissionListPage() {
     }
   };
 
-  useEffect(() => {
-    const fetchUsers = async () => {
-      setLoading(true);
-      if (!user) {
-        navigate(RouteMap.SIGNIN);
-        setLoading(false);
-
-        return;
+  const { data, isLoading, isError, error } = useQuery({
+    queryKey: ["permissions-list", pageIndex, pageSize],
+    queryFn: async () => {
+      if (!user?.tokens.access_token) {
+        throw new Error("Missing access token or role ID");
       }
-      try {
-        const { data, meta } = await permissionsPaginate(
-          user.tokens.access_token,
-          {
-            page: pageIndex + 1,
-            per_page: pageSize,
-          }
-        );
-        if (!data) {
-          setLoading(false);
-          return;
-        }
-        console.log(data);
-        setLoading(false);
-        setPermissions(data);
-        setRowCount(meta.total);
-      } catch (error) {
-        console.error("Error fetching users:", error);
-        setLoading(false);
+      const data = await permissionsPaginate(user.tokens.access_token, {
+        page: pageIndex + 1,
+        per_page: pageSize,
+      });
+      return data;
+    },
+    placeholderData: keepPreviousData,
+  });
+  const deletePermissionMutation = useMutation({
+    mutationFn: async (permissionId: string) => {
+      if (!user?.tokens.access_token) {
+        throw new Error("Missing access token or role ID");
       }
-    };
-    fetchUsers();
-  }, [pageIndex, pageSize]);
-  const table = useReactTable({
-    onPaginationChange,
-    data: permissions,
-    columns,
-    rowCount,
-    // pageCount: Math.ceil(rowCount || 0 / (pagination?.pageSize ?? 10)),
-    getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    manualPagination: true,
-    state: {
-      pagination: { pageIndex, pageSize },
+      await deletePermission(user.tokens.access_token, permissionId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["permissions-list"] });
+    },
+    onError: (error) => {
+      console.error(error);
     },
   });
-  if (loading) {
+
+  if (isLoading) {
     return <div>Loading...</div>;
+  }
+  if (isError) {
+    return <div>Error: {error.message}</div>;
   }
 
   return (
-    <div className="flex w-full flex-col items-center justify-center">
-      <h1>Users</h1>
-      {permissions.length && user && !loading && (
-        // <DataTable
-        //   columns={columns}
-        //   data={roles}
-        //   onClick={(row) => {
-        //     // @ts-ignore
-        //     navigate(RouteMap.ROLE_EDIT.replace(":roleId", row.original.id));
-        //   }}
-        //   rowCount={rowCount}
-        //   pagination={{ pageIndex, pageSize }}
-        //   onPaginationChange={onPaginationChange}
-        // />
-        <>
-          <div>
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  {table.getHeaderGroups().map((headerGroup) => (
-                    <TableRow key={headerGroup.id}>
-                      {headerGroup.headers.map((header) => {
-                        return (
-                          <TableHead key={header.id}>
-                            {header.isPlaceholder
-                              ? null
-                              : flexRender(
-                                  header.column.columnDef.header,
-                                  header.getContext()
-                                )}
-                          </TableHead>
-                        );
-                      })}
-                    </TableRow>
-                  ))}
-                </TableHeader>
-                <TableBody>
-                  {table.getRowModel().rows?.length ? (
-                    table.getRowModel().rows.map((row) => (
-                      <TableRow
-                        key={row.id}
-                        data-state={row.getIsSelected() && "selected"}
-                        onClick={() => {
-                          navigate(`/dashboard/permissions/${row.original.id}`);
-                        }}
-                      >
-                        {row.getVisibleCells().map((cell) => (
-                          <TableCell key={cell.id}>
-                            {flexRender(
-                              cell.column.columnDef.cell,
-                              cell.getContext()
-                            )}
-                          </TableCell>
-                        ))}
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell
-                        colSpan={columns.length}
-                        className="h-24 text-center"
-                      >
-                        No results.
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-            <div className="flex items-center justify-end space-x-2 py-4">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => table.previousPage()}
-                disabled={!table.getCanPreviousPage()}
-              >
-                Previous
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => table.nextPage()}
-                disabled={!table.getCanNextPage()}
-              >
-                Next
-              </Button>
-            </div>
-          </div>
-        </>
-      )}
+    <div>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Permissions</h1>
+        <CreatePermissionDialog />
+      </div>
+      <DataTable
+        columns={[
+          {
+            accessorKey: "name",
+            header: "Name",
+          },
+          {
+            accessorKey: "description",
+            header: "Description",
+          },
+          {
+            id: "actions",
+            cell: ({ row }) => {
+              return (
+                <div className="flex items-center gap-2 justify-end">
+                  <PermissionEllipsisDropdown
+                    permissionId={row.original.id}
+                    onDelete={deletePermissionMutation.mutate}
+                  />
+                </div>
+              );
+            },
+          },
+        ]}
+        data={data?.data || []}
+        rowCount={data?.meta.total || 0}
+        paginationState={{ pageIndex, pageSize }}
+        onPaginationChange={onPaginationChange}
+        paginationEnabled
+      />
     </div>
+  );
+}
+
+function PermissionEllipsisDropdown({
+  permissionId,
+  onDelete,
+}: {
+  permissionId: string;
+  onDelete: (permissionId: string) => void;
+}) {
+  const editDialog = useDialog();
+  const navigate = useNavigate();
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  return (
+    <>
+      <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon">
+            <Ellipsis className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent>
+          <DropdownMenuItem
+            onSelect={() => {
+              setDropdownOpen(false);
+              navigate(
+                `${RouteMap.ADMIN_DASHBOARD_PERMISSIONS}/${permissionId}`
+              );
+            }}
+          >
+            <Button variant="ghost" size="sm">
+              <Pencil className="h-4 w-4" />
+              <span>Edit</span>
+            </Button>
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onSelect={() => {
+              setDropdownOpen(false);
+              editDialog.trigger();
+            }}
+          >
+            <Button variant="ghost" size="sm">
+              <Trash className="h-4 w-4" />
+              <span>Remove</span>
+            </Button>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <ConfirmDialog dialogProps={editDialog.props}>
+        <>
+          <DialogHeader>
+            <DialogTitle>Are you absolutely sure?</DialogTitle>
+          </DialogHeader>
+          {/* Dialog Content */}
+          <DialogDescription>This action cannot be undone.</DialogDescription>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  console.log("cancel");
+                  // editDialog.props.onOpenChange(false);
+                }}
+              >
+                Cancel
+              </Button>
+            </DialogClose>
+            <DialogClose asChild>
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  console.log("delete");
+                  // editDialog.props.onOpenChange(false);
+                  onDelete(permissionId);
+                }}
+              >
+                Delete
+              </Button>
+            </DialogClose>
+          </DialogFooter>
+        </>
+      </ConfirmDialog>
+    </>
   );
 }

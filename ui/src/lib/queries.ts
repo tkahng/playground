@@ -258,12 +258,43 @@ export const permissionsPaginate = async (
   return data;
 };
 
+export const deletePermission = async (token: string, id: string) => {
+  const { data, error } = await client.DELETE(`/api/admin/permissions/{id}`, {
+    params: {
+      path: {
+        id,
+      },
+    },
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  if (error) {
+    throw new Error(error.detail);
+  }
+  return data;
+};
+export const createPermission = async (
+  token: string,
+  body: components["schemas"]["PermissionCreateInput"]
+) => {
+  const { data, error } = await client.POST("/api/admin/permissions", {
+    body,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  if (error) {
+    throw new Error(error.detail);
+  }
+  return data;
+};
 export const updatePermission = async (
   token: string,
   id: string,
   body: components["schemas"]["PermissionCreateInput"]
 ) => {
-  const { data, error } = await client.PUT(`/api/admin/roles/{id}`, {
+  const { data, error } = await client.PUT(`/api/admin/permissions/{id}`, {
     params: {
       path: {
         id,

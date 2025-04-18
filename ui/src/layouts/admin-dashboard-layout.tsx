@@ -21,6 +21,11 @@ const links: LinkDto[] = [
     to: RouteMap.ADMIN_DASHBOARD_ROLES,
     icon: <Key />,
   },
+  {
+    title: "Permissions",
+    to: RouteMap.ADMIN_DASHBOARD_PERMISSIONS,
+    icon: <Key />,
+  },
 ];
 const headerLinks: LinkDto[] = [
   { title: "Dashboard", to: RouteMap.DASHBOARD_HOME },
