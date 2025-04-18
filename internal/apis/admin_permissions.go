@@ -296,6 +296,9 @@ func (api *Api) AdminPermissionsDelete(ctx context.Context, input *struct {
 	if permission == nil {
 		return nil, huma.Error404NotFound("Permission not found")
 	}
+	if permission.Name == shared.PermissionNameAdmin {
+		return nil, huma.Error400BadRequest("Cannot delete admin permission")
+	}
 	err = repository.DeletePermission(ctx, db, permission.ID)
 	if err != nil {
 		return nil, err

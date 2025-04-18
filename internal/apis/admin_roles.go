@@ -141,6 +141,9 @@ func (api *Api) AdminRolesDelete(ctx context.Context, input *struct {
 	if role == nil {
 		return nil, huma.Error404NotFound("Role not found")
 	}
+	if role.Name == shared.PermissionNameAdmin {
+		return nil, huma.Error400BadRequest("Cannot delete admin role")
+	}
 	err = repository.DeleteRole(ctx, db, role.ID)
 	if err != nil {
 		return nil, err
