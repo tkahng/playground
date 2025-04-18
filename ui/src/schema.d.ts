@@ -781,6 +781,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/task": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Task list
+         * @description List of tasks
+         */
+        get: operations["task-list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/task-project": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Task project list
+         * @description List of task projects
+         */
+        get: operations["task-project-list"];
+        put?: never;
+        /**
+         * Task project create
+         * @description Create a new task project
+         */
+        post: operations["task-project-create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/task/{task-id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Task update
+         * @description Update a task
+         */
+        put: operations["task-update"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -815,6 +879,34 @@ export interface components {
             confirm_password: string;
             password: string;
             token: string;
+        };
+        CreateTaskBaseDTO: {
+            description?: string;
+            name: string;
+            /** Format: double */
+            order?: number;
+            /**
+             * @default todo
+             * @enum {string}
+             */
+            status: "todo" | "in_progress" | "done";
+        };
+        CreateTaskProjectWithTasksDTO: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            description?: string;
+            name: string;
+            /** Format: double */
+            order?: number;
+            /**
+             * @default todo
+             * @enum {string}
+             */
+            status: "todo" | "in_progress" | "done";
+            tasks?: components["schemas"]["CreateTaskBaseDTO"][] | null;
         };
         CreateUserInput: {
             /**
@@ -982,6 +1074,24 @@ export interface components {
              */
             readonly $schema?: string;
             data: components["schemas"]["SubscriptionWithData"][] | null;
+            meta: components["schemas"]["Meta"];
+        };
+        PaginatedResponseTaskProjectWithTasks: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            data: components["schemas"]["TaskProjectWithTasks"][] | null;
+            meta: components["schemas"]["Meta"];
+        };
+        PaginatedResponseTaskWithSubtask: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            data: components["schemas"]["TaskWithSubtask"][] | null;
             meta: components["schemas"]["Meta"];
         };
         PaginatedResponseUserDetail: {
@@ -1282,6 +1392,69 @@ export interface components {
             trial_end: string | null;
             /** Format: date-time */
             trial_start: string | null;
+            /** Format: date-time */
+            updated_at: string;
+            user_id: string;
+        };
+        Task: {
+            /** Format: date-time */
+            created_at: string;
+            description: string | null;
+            id: string;
+            name: string;
+            /** Format: double */
+            order: number;
+            parent_id: string;
+            project_id: string;
+            status: string;
+            /** Format: date-time */
+            updated_at: string;
+            user_id: string;
+        };
+        TaskProject: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            /** Format: date-time */
+            created_at: string;
+            description: string | null;
+            id: string;
+            name: string;
+            /** Format: double */
+            order: number;
+            status: string;
+            /** Format: date-time */
+            updated_at: string;
+            user_id: string;
+        };
+        TaskProjectWithTasks: {
+            /** Format: date-time */
+            created_at: string;
+            description: string | null;
+            id: string;
+            name: string;
+            /** Format: double */
+            order: number;
+            status: string;
+            tasks: components["schemas"]["TaskWithSubtask"][] | null;
+            /** Format: date-time */
+            updated_at: string;
+            user_id: string;
+        };
+        TaskWithSubtask: {
+            children?: components["schemas"]["Task"][] | null;
+            /** Format: date-time */
+            created_at: string;
+            description: string | null;
+            id: string;
+            name: string;
+            /** Format: double */
+            order: number;
+            parent_id: string;
+            project_id: string;
+            status: string;
             /** Format: date-time */
             updated_at: string;
             user_id: string;
@@ -3950,6 +4123,221 @@ export interface operations {
             };
             /** @description Bad Request */
             400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "task-list": {
+        parameters: {
+            query?: {
+                page?: number;
+                per_page?: number;
+                q?: string;
+                status?: ("todo" | "in_progress" | "done")[] | null;
+                project_id?: string;
+                user_id?: string;
+                ids?: string[] | null;
+                parent_id?: string;
+                parent_status?: "parent" | "child";
+                sort_by?: string;
+                sort_order?: "asc" | "desc";
+                expand?: "subtasks"[] | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponseTaskWithSubtask"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "task-project-list": {
+        parameters: {
+            query?: {
+                page?: number;
+                per_page?: number;
+                q?: string;
+                user_id?: string;
+                status?: ("todo" | "in_progress" | "done")[] | null;
+                ids?: string[] | null;
+                sort_by?: string;
+                sort_order?: "asc" | "desc";
+                expand?: ("tasks" | "subtasks")[] | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponseTaskProjectWithTasks"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "task-project-create": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["CreateTaskProjectWithTasksDTO"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskProject"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "task-update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                "task-id": string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
