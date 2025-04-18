@@ -1,8 +1,3 @@
-import Dashboard from "@/pages/dashboard"; // Your protected page
-import Signin from "@/pages/auth/signin";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router";
-import { Toaster } from "sonner";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from "@/context/auth-context";
 import SettingLayout from "@/layouts/account-setting-layout";
@@ -11,27 +6,33 @@ import AdminLayoutBase from "@/layouts/admin-layout-base";
 import AuthenticatedLayoutBase from "@/layouts/authenticated-layout-base";
 import DashboardLayout from "@/layouts/dashboard-layout";
 import RootLayout from "@/layouts/root";
-import LandingAboutPage from "@/pages/landing/about";
-import AccountSettingsPage from "@/pages/settings/account-settings";
-import BillingSettingPage from "@/pages/settings/billing-settings";
+import PermissionEdit from "@/pages/admin/permissions/permissions-edit";
+import PermissionListPage from "@/pages/admin/permissions/permissions-list";
+import RoleEdit from "@/pages/admin/roles/role-edit";
+import RolesListPage from "@/pages/admin/roles/roles-list";
+import UserEdit from "@/pages/admin/users/user-edit";
+import UserListPage from "@/pages/admin/users/user-list";
 import CallbackComponent from "@/pages/auth/callback";
 import ConfirmVerification from "@/pages/auth/confirm-verification";
+import Signin from "@/pages/auth/signin";
+import SignupPage from "@/pages/auth/signup";
+import Dashboard from "@/pages/dashboard"; // Your protected page
+import LandingAboutPage from "@/pages/landing/about";
 import LandingContactPage from "@/pages/landing/contact";
 import Features from "@/pages/landing/features";
 import Landing from "@/pages/landing/landing";
-import PaymentSuccessPage from "@/pages/payment/payment-success";
-import PermissionEdit from "@/pages/admin/permissions/permissions-edit";
-import PermissionListPage from "@/pages/admin/permissions/permissions-list";
 import PricingPage from "@/pages/landing/pricing";
+import PaymentSuccessPage from "@/pages/payment/payment-success";
 import ProfilePage from "@/pages/profile";
-import RoleEdit from "@/pages/admin/roles/role-edit";
-import RolesListPage from "@/pages/admin/roles/roles-list";
 import AdvancedRoute from "@/pages/protected-routes/route-advanced";
 import BasicRoute from "@/pages/protected-routes/route-basic";
 import ProRoute from "@/pages/protected-routes/route-pro";
-import SignupPage from "@/pages/auth/signup";
-import UserEdit from "@/pages/admin/users/user-edit";
-import UserListPage from "@/pages/admin/users/user-list";
+import AccountSettingsPage from "@/pages/settings/account-settings";
+import BillingSettingPage from "@/pages/settings/billing-settings";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Route, Routes } from "react-router";
+import { Toaster } from "sonner";
+import { KanbanBoard } from "./components/KanbanBoard";
 
 const queryClient = new QueryClient();
 function App() {
@@ -66,6 +67,7 @@ function App() {
                   </Route>
                   <Route path="/dashboard" element={<DashboardLayout />}>
                     <Route index element={<Dashboard />} />
+                    <Route path="kanban" element={<KanbanBoard />} />
                     <Route path="protected">
                       <Route path="basic" element={<BasicRoute />} />
                       <Route path="pro" element={<ProRoute />} />

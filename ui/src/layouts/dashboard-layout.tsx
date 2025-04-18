@@ -12,6 +12,10 @@ const links: LinkDto[] = [
     icon: <Home />,
   },
   {
+    title: "Kanban",
+    to: RouteMap.DASHBOARD_KANBAN,
+  },
+  {
     title: "Basic Route",
     to: RouteMap.PROTECTED_BASIC,
   },
