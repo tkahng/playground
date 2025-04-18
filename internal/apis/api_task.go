@@ -120,6 +120,37 @@ func (api *Api) UpdateTaskPosition(ctx context.Context, input *shared.TaskPositi
 	return nil, nil
 }
 
+func (api *Api) UpdateTaskPositionStatusOperation(path string) huma.Operation {
+	return huma.Operation{
+		OperationID: "update-task-position-status",
+		Method:      http.MethodPut,
+		Path:        path,
+		Summary:     "Update task position and status",
+		Description: "Update task position and status",
+		Tags:        []string{"Task"},
+		Errors:      []int{http.StatusNotFound},
+		Security: []map[string][]string{
+			{shared.BearerAuthSecurityKey: {}},
+		},
+	}
+}
+
+func (api *Api) UpdateTaskPositionStatus(ctx context.Context, input *shared.TaskPositionStatusInput) (*struct{}, error) {
+	if input == nil {
+		return nil, huma.Error400BadRequest("Invalid input")
+	}
+	db := api.app.Db()
+	id, err := uuid.Parse(input.TaskID)
+	if err != nil {
+		return nil, huma.Error400BadRequest("Invalid task ID")
+	}
+	err = repository.UpdateTaskPositionStatus(ctx, db, id, input.Body.Position, input.Body.Status)
+	if err != nil {
+		return nil, err
+	}
+	return nil, nil
+}
+
 func (api *Api) TaskDeleteOperation(path string) huma.Operation {
 	return huma.Operation{
 		OperationID: "task-delete",

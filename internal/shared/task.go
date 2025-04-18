@@ -64,9 +64,19 @@ type TaskPositionDTO struct {
 	Position int64 `json:"position" required:"true"`
 }
 
+type TaskPositionStatusDTO struct {
+	Position int64             `json:"position" required:"true"`
+	Status   models.TaskStatus `json:"status" required:"true" enum:"todo,in_progress,done"`
+}
+
 type TaskPositionInput struct {
 	TaskID string `path:"task-id" json:"task_id" required:"true" format:"uuid"`
 	Body   TaskPositionDTO
+}
+
+type TaskPositionStatusInput struct {
+	TaskID string `path:"task-id" json:"task_id" required:"true" format:"uuid"`
+	Body   TaskPositionStatusDTO
 }
 
 type CreateTaskWithProjectIdInput struct {

@@ -168,6 +168,8 @@ func BindApis(api huma.API, app core.App) {
 	huma.Register(taskGroup, appApi.TaskUpdateOperation("/tasks/{task-id}"), appApi.TaskUpdate)
 	// task position
 	huma.Register(taskGroup, appApi.UpdateTaskPositionOperation("/tasks/{task-id}/position"), appApi.UpdateTaskPosition)
+	// task position status
+	huma.Register(taskGroup, appApi.UpdateTaskPositionStatusOperation("/tasks/{task-id}/position-status"), appApi.UpdateTaskPositionStatus)
 	// // task delete
 	huma.Register(taskGroup, appApi.TaskDeleteOperation("/tasks/{task-id}"), appApi.TaskDelete)
 	// // task get

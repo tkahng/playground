@@ -318,6 +318,77 @@ func CreateTask(ctx context.Context, db bob.Executor, userID uuid.UUID, projectI
 	return task, nil
 }
 
+func DefineTaskOrderNumberByStatus(ctx context.Context, db bob.Executor, taskId uuid.UUID, taskProjectId uuid.UUID, status models.TaskStatus, currentOrder float64, position int64) (float64, error) {
+	if position == 0 {
+		response, err := models.Tasks.Query(
+			sm.Where(models.TaskColumns.ProjectID.EQ(psql.Arg(taskProjectId))),
+			sm.Where(models.TaskColumns.Status.EQ(psql.Arg(status))),
+			sm.OrderBy(models.TaskColumns.Order).Asc(),
+			sm.Limit(1),
+		).One(ctx, db)
+		response, err = OptionalRow(response, err)
+		if err != nil {
+			return 0, err
+		}
+		if response == nil {
+			return 0, nil
+		}
+		if response.ID == taskId {
+			return response.Order, nil
+		}
+		return response.Order - 1000, nil
+	}
+	element, err := models.Tasks.Query(
+		sm.Where(models.TaskColumns.ProjectID.EQ(psql.Arg(taskProjectId))),
+		sm.OrderBy(models.TaskColumns.Order).Asc(),
+		sm.Limit(1),
+		sm.Offset(position),
+	).One(ctx, db)
+	element, err = OptionalRow(element, err)
+	if err != nil {
+		return 0, err
+	}
+	if element == nil {
+		return 0, nil
+	}
+	if element.ID == taskId {
+		return element.Order, nil
+	}
+	if currentOrder > element.Order {
+		sideElements, err := models.Tasks.Query(
+			sm.Where(models.TaskColumns.ProjectID.EQ(psql.Arg(taskProjectId))),
+			sm.Where(models.TaskColumns.Status.EQ(psql.Arg(status))),
+			sm.OrderBy(models.TaskColumns.Order).Asc(),
+			sm.Limit(1),
+			sm.Offset(position-1),
+		).One(ctx, db)
+		sideElements, err = OptionalRow(sideElements, err)
+		if err != nil {
+			return 0, err
+		}
+		if sideElements == nil {
+			return element.Order - 1000, nil
+		}
+		return (element.Order + sideElements.Order) / 2, nil
+	}
+	sideElements, err := models.Tasks.Query(
+		sm.Where(models.TaskColumns.ProjectID.EQ(psql.Arg(taskProjectId))),
+		sm.Where(models.TaskColumns.Status.EQ(psql.Arg(status))),
+		sm.OrderBy(models.TaskColumns.Order).Asc(),
+		sm.Limit(1),
+		sm.Offset(position+1),
+	).One(ctx, db)
+	sideElements, err = OptionalRow(sideElements, err)
+	if err != nil {
+		return 0, err
+	}
+	if sideElements == nil {
+		return element.Order + 1000, nil
+	}
+	return (element.Order + sideElements.Order) / 2, nil
+
+}
+
 func DefineTaskOrderNumber(ctx context.Context, db bob.Executor, taskId uuid.UUID, taskProjectId uuid.UUID, currentOrder float64, position int64) (float64, error) {
 	if position == 0 {
 		response, err := models.Tasks.Query(
@@ -355,7 +426,7 @@ func DefineTaskOrderNumber(ctx context.Context, db bob.Executor, taskId uuid.UUI
 	}
 	if currentOrder > element.Order {
 		sideElements, err := models.Tasks.Query(
-			sm.Where(models.TaskColumns.ID.EQ(psql.Arg(taskProjectId))),
+			sm.Where(models.TaskColumns.ProjectID.EQ(psql.Arg(taskProjectId))),
 			sm.OrderBy(models.TaskColumns.Order).Asc(),
 			sm.Limit(1),
 			sm.Offset(position-1),
@@ -370,7 +441,7 @@ func DefineTaskOrderNumber(ctx context.Context, db bob.Executor, taskId uuid.UUI
 		return (element.Order + sideElements.Order) / 2, nil
 	}
 	sideElements, err := models.Tasks.Query(
-		sm.Where(models.TaskColumns.ID.EQ(psql.Arg(taskProjectId))),
+		sm.Where(models.TaskColumns.ProjectID.EQ(psql.Arg(taskProjectId))),
 		sm.OrderBy(models.TaskColumns.Order).Asc(),
 		sm.Limit(1),
 		sm.Offset(position+1),
@@ -437,6 +508,29 @@ func UpdateTaskPosition(ctx context.Context, db bob.Executor, taskID uuid.UUID, 
 	taskSetter := &models.TaskSetter{}
 
 	order, err := DefineTaskOrderNumber(ctx, db, task.ID, task.ProjectID, task.Order, position)
+	if err != nil {
+		return err
+	}
+	taskSetter.Order = omit.From(order)
+	err = task.Update(ctx, db, taskSetter)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func UpdateTaskPositionStatus(ctx context.Context, db bob.Executor, taskID uuid.UUID, position int64, status models.TaskStatus) error {
+	task, err := FindTaskByID(ctx, db, taskID)
+	if err != nil {
+		return err
+	}
+	if task == nil {
+		return errors.New("task not found")
+	}
+	taskSetter := &models.TaskSetter{
+		Status: omit.From(status),
+	}
+	order, err := DefineTaskOrderNumberByStatus(ctx, db, task.ID, task.ProjectID, status, task.Order, position)
 	if err != nil {
 		return err
 	}
