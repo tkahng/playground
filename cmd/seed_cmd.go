@@ -29,7 +29,7 @@ var seedRolesCmd = &cobra.Command{
 		conf := conf.GetConfig[conf.DBConfig]()
 
 		pool := db.NewPoolFromConf(ctx, conf)
-		dbx := db.NewDBTx(pool)
+		dbx := db.NewQueries(pool)
 		err := repository.EnsureRoleAndPermissions(ctx, dbx, "superuser", "superuser", "advanced", "pro", "basic")
 		if err != nil {
 			slog.Error(
@@ -73,7 +73,7 @@ var seedUserCmd = &cobra.Command{
 		conf := conf.GetConfig[conf.DBConfig]()
 
 		pool := db.NewPoolFromConf(ctx, conf)
-		dbx := db.NewDBTx(pool)
+		dbx := db.NewQueries(pool)
 		role, err := repository.FindRoleByName(ctx, dbx, "basic")
 		if err != nil {
 			return fmt.Errorf("error at createing users: %w", err)

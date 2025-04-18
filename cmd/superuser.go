@@ -42,7 +42,7 @@ var superuserCreate = &cobra.Command{
 		conf := conf.GetConfig[conf.DBConfig]()
 
 		pool := db.NewPoolFromConf(ctx, conf)
-		dbx := db.NewDBTx(pool)
+		dbx := db.NewQueries(pool)
 		err := repository.EnsureRoleAndPermissions(ctx, dbx, "superuser", "superuser")
 		if err != nil {
 			return err

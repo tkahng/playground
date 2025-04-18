@@ -17,7 +17,7 @@ import (
 	"github.com/tkahng/authgo/internal/db/models"
 )
 
-func EnsureRoleAndPermissions(ctx context.Context, db *db.DBTx, roleName string, permissionNames ...string) error {
+func EnsureRoleAndPermissions(ctx context.Context, db *db.Queries, roleName string, permissionNames ...string) error {
 	// find superuser role
 	role, err := FindOrCreateRole(ctx, db, roleName)
 	if err != nil {

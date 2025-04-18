@@ -25,15 +25,15 @@ type DBTX interface {
 
 var _ DBTX = (*pgxpool.Pool)(nil)
 
-type DBTx struct {
+type Queries struct {
 	pool DBTX
 }
 
-func NewDBTx(pool DBTX) *DBTx {
-	return &DBTx{pool: pool}
+func NewQueries(pool DBTX) *Queries {
+	return &Queries{pool: pool}
 }
 
-var _ bob.Executor = (*DBTx)(nil)
+var _ bob.Executor = (*Queries)(nil)
 
 type rows struct {
 	pgx.Rows
@@ -55,7 +55,7 @@ func (r rows) Columns() ([]string, error) {
 	return cols, nil
 }
 
-func (v *DBTx) QueryContext(ctx context.Context, query string, args ...any) (scan.Rows, error) {
+func (v *Queries) QueryContext(ctx context.Context, query string, args ...any) (scan.Rows, error) {
 	r, err := v.pool.Query(ctx, query, args...)
 	if err != nil {
 		return nil, err
@@ -64,7 +64,7 @@ func (v *DBTx) QueryContext(ctx context.Context, query string, args ...any) (sca
 	return rows{r}, nil
 }
 
-func (v *DBTx) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
+func (v *Queries) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
 	tag, err := v.pool.Exec(ctx, query, args...)
 	if err != nil {
 		return nil, err

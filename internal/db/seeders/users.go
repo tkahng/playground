@@ -14,7 +14,7 @@ import (
 	"github.com/tkahng/authgo/internal/tools/security"
 )
 
-func UserCredentialsFactory(ctx context.Context, dbx bob.DB, count int) error {
+func UserCredentialsFactory(ctx context.Context, dbx bob.Executor, count int) error {
 	f := factory.New()
 	// fake := faker.New()
 	hash, _ := security.CreateHash("password", argon2id.DefaultParams)
@@ -82,7 +82,7 @@ func UserTokenFactory(user *models.User, tokenType models.TokenTypes, expires in
 	// return err/
 }
 
-func UserOauthFactory(ctx context.Context, dbx bob.DB, count int, provider models.Providers) error {
+func UserOauthFactory(ctx context.Context, dbx bob.Executor, count int, provider models.Providers) error {
 	f := factory.New()
 	// fake := faker.New()
 	// hash, _ := security.CreateHash("password", argon2id.DefaultParams)

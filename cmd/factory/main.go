@@ -36,7 +36,7 @@ func main() {
 	conf := conf.AppConfigGetter()
 
 	dl := db.NewPoolFromConf(ctx, conf.Db)
-	dbx := db.NewDBTx(dl)
+	dbx := db.NewQueries(dl)
 	hash, err := security.CreateHash("password", argon2id.DefaultParams)
 	if err != nil {
 		panic(err)

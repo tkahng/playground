@@ -5,7 +5,9 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stephenafamo/bob"
+	"github.com/tkahng/authgo/internal/db"
 	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/db/models/factory"
 	"github.com/tkahng/authgo/internal/repository"
@@ -81,24 +83,24 @@ func TestExecWrapper(t *testing.T) {
 }
 
 func TestExecWrapperTransaction(t *testing.T) {
-	ctx, db, pl := test.DbSetup()
+	ctx, dbx, pl := test.DbSetup()
 	t.Cleanup(func() {
-		repository.TruncateModels(ctx, db)
+		repository.TruncateModels(ctx, dbx)
 		pl.Close()
 	})
-	_, err := f.NewUser(factory.UserMods.WithNewRoles(1, factory.RoleMods.WithNewPermissions(1))).Create(ctx, db)
+	_, err := f.NewUser(factory.UserMods.WithNewRoles(1, factory.RoleMods.WithNewPermissions(1))).Create(ctx, dbx)
 	if err != nil {
 		t.Fatal("error creating users", err)
 	}
-	user_count, err := models.Users.Query().Count(ctx, db)
+	user_count, err := models.Users.Query().Count(ctx, dbx)
 	if err != nil {
 		t.Fatal("error counting users", err)
 	}
-	roles_count, err := models.Roles.Query().Count(ctx, db)
+	roles_count, err := models.Roles.Query().Count(ctx, dbx)
 	if err != nil {
 		t.Fatal("error counting roles", err)
 	}
-	permissions_count := repository.DefaultCountWrapper(ctx, db, models.Permissions.Query().Count)
+	permissions_count := repository.DefaultCountWrapper(ctx, dbx, models.Permissions.Query().Count)
 	if err != nil {
 		t.Fatal("error counting permissions", err)
 	}
@@ -111,15 +113,15 @@ func TestExecWrapperTransaction(t *testing.T) {
 	if permissions_count != 1 {
 		t.Fatalf("expected 1 permission, got %d", permissions_count)
 	}
-	err = func(ctx context.Context, db bob.DB) error {
+	err = func(ctx context.Context, plpool *pgxpool.Pool) error {
 		var err error
-		tx, err := db.BeginTx(ctx, nil)
+		tx, err := plpool.Begin(ctx)
 		if err != nil {
 			t.Fatal("error creating transaction", err)
 		}
-		defer tx.Rollback()
-
-		err = repository.ErrorWrapper(ctx, tx, true,
+		defer tx.Rollback(ctx)
+		db := db.NewQueries(tx)
+		err = repository.ErrorWrapper(ctx, db, true,
 			models.Users.Delete().Exec,
 			models.Roles.Delete().Exec,
 			func(ctx context.Context, exec bob.Executor) (int64, error) {
@@ -130,23 +132,23 @@ func TestExecWrapperTransaction(t *testing.T) {
 		if err != nil {
 			return err
 		}
-		tx.Commit()
+		tx.Commit(ctx)
 		return err
-	}(ctx, db)
+	}(ctx, pl)
 
 	if err == nil {
 		t.Log("expected error", err)
 	}
 
-	new_user_count, err := models.Users.Query().Count(ctx, db)
+	new_user_count, err := models.Users.Query().Count(ctx, dbx)
 	if err != nil {
 		t.Fatal("error counting users", err)
 	}
-	new_roles_count, err := models.Roles.Query().Count(ctx, db)
+	new_roles_count, err := models.Roles.Query().Count(ctx, dbx)
 	if err != nil {
 		t.Fatal("error counting roles", err)
 	}
-	new_permissions_count, err := models.Permissions.Query().Count(ctx, db)
+	new_permissions_count, err := models.Permissions.Query().Count(ctx, dbx)
 	if err != nil {
 		t.Fatal("error counting permissions", err)
 	}

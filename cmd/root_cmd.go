@@ -18,5 +18,7 @@ func init() {
 }
 
 func Execute() {
-	rootCmd.Execute()
+	if err := rootCmd.Execute(); err != nil {
+		panic(err)
+	}
 }

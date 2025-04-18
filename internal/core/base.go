@@ -21,7 +21,7 @@ type BaseApp struct {
 	tokenStorage  *TokenStorage
 	tokenVerifier *TokenVerifier
 	cfg           *conf.EnvConfig
-	db            *db.DBTx
+	db            *db.Queries
 	pool          *pgxpool.Pool
 	settings      *AppOptions
 	payment       *StripeService
@@ -38,7 +38,7 @@ func (app *BaseApp) Fs() *filesystem.FileSystem {
 func (app *BaseApp) Logger() *slog.Logger {
 	return app.logger
 }
-func (app *BaseApp) Db() *db.DBTx {
+func (app *BaseApp) Db() *db.Queries {
 	return app.db
 }
 func (a *BaseApp) Pool() *pgxpool.Pool {
@@ -103,7 +103,7 @@ func NewBaseApp(pool *pgxpool.Pool, cfg conf.EnvConfig) *BaseApp {
 	return &BaseApp{
 		fs:       fs,
 		pool:     pool,
-		db:       db.NewDBTx(pool),
+		db:       db.NewQueries(pool),
 		settings: settings,
 		logger:   logger.GetDefaultLogger(slog.LevelInfo),
 		cfg:      &cfg,

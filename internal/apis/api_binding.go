@@ -132,7 +132,7 @@ func BindApis(api huma.API, app core.App) {
 		}
 		id, err := uuid.Parse(taskId)
 		if err != nil {
-			huma.WriteErr(api, ctx, http.StatusBadRequest, "invalid task id")
+			huma.WriteErr(api, ctx, http.StatusBadRequest, "invalid task id", err)
 			return
 		}
 		task, err := repository.GetTaskByID(rawCtx, db, id)

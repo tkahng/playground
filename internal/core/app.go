@@ -16,7 +16,7 @@ import (
 type AppDbx interface {
 
 	// Dbx() DBX
-	Db() *db.DBTx
+	Db() *db.Queries
 	Pool() *pgxpool.Pool
 	AuthConfig() *AuthOptions
 }
@@ -26,7 +26,7 @@ type App interface {
 	TokenStorage() *TokenStorage
 	TokenVerifier() *TokenVerifier
 	Pool() *pgxpool.Pool
-	Db() *db.DBTx
+	Db() *db.Queries
 	Fs() *filesystem.FileSystem
 	// SetSettings(settings *AppOptions)
 	Settings() *AppOptions

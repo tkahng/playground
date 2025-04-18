@@ -79,7 +79,10 @@ var resetCmd = &cobra.Command{
 			fmt.Println(m.Version, m.FilePath)
 		}
 		fmt.Println("\nApplying...")
-		db.Drop()
+		err = db.Drop()
+		if err != nil {
+			return fmt.Errorf("error at error: %w", err)
+		}
 		err = db.CreateAndMigrate()
 		if err != nil {
 			return fmt.Errorf("error at error: %w", err)

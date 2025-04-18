@@ -30,7 +30,7 @@ func (api *Api) AdminStripeSubscriptionsOperation(path string) huma.Operation {
 type SubscriptionWithData struct {
 	*Subscription
 	Price            *StripePricesWithProduct `json:"price,omitempty" required:"false"`
-	SubscriptionUser *shared.User       `json:"user,omitempty" required:"false"`
+	SubscriptionUser *shared.User             `json:"user,omitempty" required:"false"`
 }
 
 func (api *Api) AdminStripeSubscriptions(ctx context.Context,
@@ -42,15 +42,24 @@ func (api *Api) AdminStripeSubscriptions(ctx context.Context,
 		return nil, err
 	}
 	if slices.Contains(input.Expand, "user") {
-		subscriptions.LoadStripeSubscriptionUser(ctx, db)
+		err = subscriptions.LoadStripeSubscriptionUser(ctx, db)
+		if err != nil {
+			return nil, err
+		}
 	}
 	if slices.Contains(input.Expand, "price") {
 		if slices.Contains(input.Expand, "product") {
-			subscriptions.LoadStripeSubscriptionPriceStripePrice(ctx, db,
+			err = subscriptions.LoadStripeSubscriptionPriceStripePrice(ctx, db,
 				models.PreloadStripePriceProductStripeProduct(),
 			)
+			if err != nil {
+				return nil, err
+			}
 		} else {
-			subscriptions.LoadStripeSubscriptionPriceStripePrice(ctx, db)
+			err = subscriptions.LoadStripeSubscriptionPriceStripePrice(ctx, db)
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 	subs := mapper.Map(subscriptions, func(sub *models.StripeSubscription) *SubscriptionWithData {
