@@ -87,7 +87,7 @@ export default function UserListPage() {
             navigate(`${RouteMap.ADMIN_DASHBOARD_USERS}/${row.original.id}`);
           }}
           rowCount={rowCount}
-          pagination={{ pageIndex, pageSize }}
+          paginationState={{ pageIndex, pageSize }}
           onPaginationChange={onPaginationChange}
         />
       )}

@@ -1,23 +1,13 @@
 import { DataTable } from "@/components/data-table";
 import { RouteMap } from "@/components/route-map";
-import { Button } from "@/components/ui/button";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { rolesPaginate } from "@/lib/queries";
+import { CreateRoleDialog } from "@/pages/admin/roles/create-role-dialog";
 import { RoleWithPermissions } from "@/schema.types";
 import { useQuery } from "@tanstack/react-query";
 import { ColumnDef, PaginationState, Updater } from "@tanstack/react-table";
-import { Plus } from "lucide-react";
-import { Link, useNavigate, useSearchParams } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 export const columns: ColumnDef<RoleWithPermissions>[] = [
-  {
-    accessorKey: "id",
-    header: "Id",
-    cell: ({ row }) => (
-      <Link to={`/dashboard/roles/${row.original.id}`}>
-        {row.original.name}
-      </Link>
-    ),
-  },
   {
     accessorKey: "name",
     header: "Name",
@@ -59,6 +49,9 @@ export default function RolesListPage() {
         page: pageIndex + 1,
         per_page: pageSize,
       });
+      if (!data.data) {
+        throw new Error("No data returned from rolesPaginate");
+      }
       return data;
     },
   });
@@ -77,10 +70,7 @@ export default function RolesListPage() {
     <div className="h-full px-4 py-6 lg:px-8 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Roles</h1>
-        <Button asChild variant="outline">
-          <Plus className="h-4 w-4" />
-          Create Role
-        </Button>
+        <CreateRoleDialog />
       </div>
       <p>
         Create and manage Roles for your applications. Roles contain collections
@@ -93,8 +83,9 @@ export default function RolesListPage() {
           navigate(`${RouteMap.ADMIN_DASHBOARD_ROLES}/${row.original.id}`);
         }}
         rowCount={rowCount}
-        pagination={{ pageIndex, pageSize }}
+        paginationState={{ pageIndex, pageSize }}
         onPaginationChange={onPaginationChange}
+        paginationEnabled
       />
     </div>
   );
