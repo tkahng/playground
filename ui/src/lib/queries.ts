@@ -708,14 +708,11 @@ export const confirmVerification = async (token: string, type: string) => {
 };
 
 export const getBasicRoute = async (token: string) => {
-  const { data, error } = await client.GET(
-    "/api/api/protected/basic-permission",
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    }
-  );
+  const { data, error } = await client.GET("/api/protected/basic-permission", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
   if (error) {
     throw new Error(error.detail);
   }
@@ -725,14 +722,11 @@ export const getBasicRoute = async (token: string) => {
   return data;
 };
 export const getProRoute = async (token: string) => {
-  const { data, error } = await client.GET(
-    "/api/api/protected/pro-permission",
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    }
-  );
+  const { data, error } = await client.GET("/api/protected/pro-permission", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
   if (error) {
     throw new Error(error.detail);
   }
@@ -743,7 +737,7 @@ export const getProRoute = async (token: string) => {
 };
 export const getAdvancedRoute = async (token: string) => {
   const { data, error } = await client.GET(
-    "/api/api/protected/advanced-permission",
+    "/api/protected/advanced-permission",
     {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -764,4 +758,65 @@ export const api = {
     pro: getProRoute,
     advanced: getAdvancedRoute,
   },
+};
+
+export const taskProjectList = async (
+  token: string,
+  args: operations["task-project-list"]["parameters"]["query"]
+) => {
+  const { data, error } = await client.GET("/api/task-projects", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    params: {
+      query: args,
+    },
+  });
+  if (error) {
+    throw new Error(error.detail);
+  }
+  if (!data) {
+    throw new Error("No data");
+  }
+  return data;
+};
+
+export const taskProjectCreate = async (
+  token: string,
+  args: operations["task-project-create"]["requestBody"]["content"]["application/json"]
+) => {
+  const { data, error } = await client.POST("/api/task-projects", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: args,
+  });
+  if (error) {
+    throw new Error(error.detail);
+  }
+  if (!data) {
+    throw new Error("No data");
+  }
+  return data;
+};
+
+export const taskList = async (
+  token: string,
+  args: operations["task-list"]["parameters"]["query"]
+) => {
+  const { data, error } = await client.GET("/api/tasks", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    params: {
+      query: args,
+    },
+  });
+  if (error) {
+    throw new Error(error.detail);
+  }
+  if (!data) {
+    throw new Error("No data");
+  }
+  return data;
 };

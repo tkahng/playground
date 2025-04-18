@@ -92,7 +92,7 @@ func (api *Api) TaskProjectCreateOperation(path string) huma.Operation {
 }
 
 func (api *Api) TaskProjectCreate(ctx context.Context, input *struct {
-	Body *shared.CreateTaskProjectWithTasksDTO
+	Body shared.CreateTaskProjectWithTasksDTO
 }) (*struct {
 	Body *shared.TaskProject
 }, error) {
@@ -107,7 +107,7 @@ func (api *Api) TaskProjectCreate(ctx context.Context, input *struct {
 	// }
 	// defer tx.Rollback(ctx)
 	// db := db.NewDBTx(tx)
-	taskProject, err := repository.CreateTaskProjectWithTasks(ctx, db, userInfo.User.ID, input.Body)
+	taskProject, err := repository.CreateTaskProjectWithTasks(ctx, db, userInfo.User.ID, &input.Body)
 	if err != nil {
 		return nil, err
 	}
