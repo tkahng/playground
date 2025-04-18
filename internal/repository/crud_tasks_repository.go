@@ -21,6 +21,22 @@ func FindTaskByID(ctx context.Context, db bob.Executor, id uuid.UUID) (*models.T
 	return OptionalRow(task, err)
 }
 
+func FindLastTaskOrder(ctx context.Context, db bob.Executor, taskProjectID uuid.UUID) (float64, error) {
+	task, err := models.Tasks.Query(
+		sm.Where(models.TaskColumns.ProjectID.EQ(psql.Arg(taskProjectID))),
+		sm.OrderBy(models.TaskColumns.Order).Desc(),
+		sm.Limit(1),
+	).One(ctx, db)
+	task, err = OptionalRow(task, err)
+	if err != nil {
+		return 0, err
+	}
+	if task == nil {
+		return 0, nil
+	}
+	return task.Order + 1000, nil
+}
+
 func DeleteTask(ctx context.Context, db bob.Executor, taskID uuid.UUID) error {
 	task, err := models.FindTask(ctx, db, taskID)
 	if err != nil {

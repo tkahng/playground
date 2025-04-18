@@ -254,6 +254,11 @@ func (api *Api) TaskProjectTasksCreate(ctx context.Context, input *shared.Create
 		return nil, huma.Error400BadRequest("Invalid task project id")
 	}
 	payload := input.Body
+	order, err := repository.FindLastTaskOrder(ctx, db, id)
+	if err != nil {
+		return nil, err
+	}
+	payload.Order = order
 	task, err := repository.CreateTaskWithChildren(ctx, db, userInfo.User.ID, id, &payload)
 	if err != nil {
 		return nil, err
