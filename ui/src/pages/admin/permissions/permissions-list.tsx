@@ -26,7 +26,7 @@ import {
 import { PaginationState, Updater } from "@tanstack/react-table";
 import { Ellipsis, Pencil, Trash } from "lucide-react";
 import { useState } from "react";
-import { useNavigate, useSearchParams } from "react-router";
+import { NavLink, useNavigate, useSearchParams } from "react-router";
 import { CreatePermissionDialog } from "./create-permission-dialog";
 
 export default function PermissionListPage() {
@@ -95,6 +95,16 @@ export default function PermissionListPage() {
           {
             accessorKey: "name",
             header: "Name",
+            cell: ({ row }) => {
+              return (
+                <NavLink
+                  to={`${RouteMap.ADMIN_DASHBOARD_PERMISSIONS}/${row.original.id}`}
+                  className="hover:underline text-blue-500"
+                >
+                  {row.original.name}
+                </NavLink>
+              );
+            },
           },
           {
             accessorKey: "description",

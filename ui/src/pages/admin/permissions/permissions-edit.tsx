@@ -14,9 +14,10 @@ import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { getPermission, updatePermission } from "@/lib/queries";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { ChevronLeft } from "lucide-react";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { useNavigate, useParams } from "react-router";
+import { Link, useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -88,7 +89,15 @@ export default function PermissionEdit() {
   if (!permission) return <p>Role not found</p>;
 
   return (
-    <div className="flex w-full flex-col items-center justify-center">
+    <div>
+      <Link
+        to={RouteMap.ADMIN_DASHBOARD_PERMISSIONS}
+        className="flex items-center gap-2 text-sm text-muted-foreground"
+      >
+        <ChevronLeft className="h-4 w-4" />
+        Back to permissions
+      </Link>
+      <h1 className="text-2xl font-bold">{permission.name}</h1>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
           <FormField
