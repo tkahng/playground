@@ -13,21 +13,6 @@ import (
 	"github.com/tkahng/authgo/internal/tools/dataloader"
 )
 
-// func (api *Api) AdminRolesOperation(path string) huma.Operation {
-// 	return huma.Operation{
-// 		OperationID: "admin-roles",
-// 		Method:      http.MethodGet,
-// 		Path:        path,
-// 		Summary:     "Admin roles",
-// 		Description: "List of roles",
-// 		Tags:        []string{"Admin", "Roles"},
-// 		Errors:      []int{http.StatusNotFound},
-// 		Security: []map[string][]string{
-// 			{shared.BearerAuthSecurityKey: {}},
-// 		},
-// 	}
-// }
-
 func (api *Api) TaskListOperation(path string) huma.Operation {
 	return huma.Operation{
 		OperationID: "task-list",
@@ -87,17 +72,23 @@ func (api *Api) TaskCreateOperation(path string) huma.Operation {
 	}
 }
 
-func (api *Api) TaskCreate(ctx context.Context, input *shared.CreateTaskWithChildrenDTO) (*shared.Task, error) {
-	// db := api.app.Db()
+type TaskResposne struct {
+	Body *shared.Task
+}
+
+func (api *Api) TaskCreate(ctx context.Context, input *shared.CreateTaskInput) (*TaskResposne, error) {
+	db := api.app.Db()
 	userInfo := core.GetContextUserClaims(ctx)
 	if userInfo == nil || userInfo.User == nil {
-
+		return nil, huma.Error401Unauthorized("Unauthorized")
 	}
-	// _, err := repository.CreateTaskWithChildren(ctx, db, userInfo.User.ID, input)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	return nil, nil
+	task, err := repository.CreateTaskWithChildren(ctx, db, userInfo.User.ID, input.TaskProjectID, &input.CreateTaskWithChildrenDTO)
+	if err != nil {
+		return nil, err
+	}
+	return &TaskResposne{
+		Body: shared.ModelToTask(task),
+	}, nil
 }
 
 func (api *Api) TaskProjectListOperation(path string) huma.Operation {
@@ -115,9 +106,11 @@ func (api *Api) TaskProjectListOperation(path string) huma.Operation {
 	}
 }
 
-func (api *Api) TaskProjectList(ctx context.Context, input *shared.TaskProjectsListParams) (*struct {
+type TaskProjectListResponse struct {
 	Body *shared.PaginatedResponse[*shared.TaskProjectWithTasks]
-}, error) {
+}
+
+func (api *Api) TaskProjectList(ctx context.Context, input *shared.TaskProjectsListParams) (*TaskProjectListResponse, error) {
 	db := api.app.Db()
 	taskProject, err := repository.ListTaskProjects(ctx, db, input)
 	if err != nil {
@@ -140,9 +133,7 @@ func (api *Api) TaskProjectList(ctx context.Context, input *shared.TaskProjectsL
 			}
 		}
 	}
-	return &struct {
-		Body *shared.PaginatedResponse[*shared.TaskProjectWithTasks]
-	}{
+	return &TaskProjectListResponse{
 		Body: &shared.PaginatedResponse[*shared.TaskProjectWithTasks]{
 			Data: dataloader.Map(taskProject, func(taskProject *models.TaskProject) *shared.TaskProjectWithTasks {
 				return &shared.TaskProjectWithTasks{

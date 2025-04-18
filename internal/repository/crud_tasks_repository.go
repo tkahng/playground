@@ -177,12 +177,12 @@ func ListTaskProjectsOrderByFunc(ctx context.Context, q *psql.ViewQuery[*models.
 	if slices.Contains(models.TaskProjects.Columns().Names(), input.SortBy) {
 		if input.SortParams.SortOrder == "desc" {
 			q.Apply(
-				sm.OrderBy(input.SortBy).Desc(),
+				sm.OrderBy(psql.Quote(input.SortBy)).Desc(),
 				sm.OrderBy(models.TaskProjectColumns.ID).Desc(),
 			)
 		} else if input.SortParams.SortOrder == "asc" || input.SortParams.SortOrder == "" {
 			q.Apply(
-				sm.OrderBy(input.SortBy).Asc(),
+				sm.OrderBy(psql.Quote(input.SortBy)).Asc(),
 				sm.OrderBy(models.TaskProjectColumns.ID).Asc(),
 			)
 		}
