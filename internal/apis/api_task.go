@@ -57,39 +57,9 @@ func (api *Api) TaskList(ctx context.Context, input *shared.TaskListParams) (*Ta
 	}, nil
 }
 
-// func (api *Api) TaskCreateOperation(path string) huma.Operation {
-// 	return huma.Operation{
-// 		OperationID: "task-create",
-// 		Method:      http.MethodPost,
-// 		Path:        path,
-// 		Summary:     "Create task",
-// 		Description: "Create a new task",
-// 		Tags:        []string{"Task"},
-// 		Errors:      []int{http.StatusNotFound},
-// 		Security: []map[string][]string{
-// 			{shared.BearerAuthSecurityKey: {}},
-// 		},
-// 	}
-// }
-
 type TaskResposne struct {
-	Body *shared.Task
+	Body *shared.TaskWithSubtask
 }
-
-// func (api *Api) TaskCreate(ctx context.Context, input *shared.CreateTaskInput) (*TaskResposne, error) {
-// 	db := api.app.Db()
-// 	userInfo := core.GetContextUserClaims(ctx)
-// 	if userInfo == nil || userInfo.User == nil {
-// 		return nil, huma.Error401Unauthorized("Unauthorized")
-// 	}
-// 	task, err := repository.CreateTaskWithChildren(ctx, db, userInfo.User.ID, input.TaskProjectID, &input.CreateTaskWithChildrenDTO)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	return &TaskResposne{
-// 		Body: shared.ModelToTask(task),
-// 	}, nil
-// }
 
 func (api *Api) TaskUpdateOperation(path string) huma.Operation {
 	return huma.Operation{
@@ -216,6 +186,11 @@ func (api *Api) TaskGet(ctx context.Context, input *struct {
 		return nil, err
 	}
 	return &TaskResposne{
-		Body: shared.ModelToTask(task),
+		Body: &shared.TaskWithSubtask{
+			Task: shared.ModelToTask(task),
+			Children: mapper.Map(task.R.ReverseParents, func(child *models.Task) *shared.Task {
+				return shared.ModelToTask(child)
+			}),
+		},
 	}, nil
 }

@@ -208,7 +208,7 @@ func (api *Api) TaskProjectGetOperation(path string) huma.Operation {
 }
 
 func (api *Api) TaskProjectGet(ctx context.Context, input *struct {
-	TaskProjectID string   `path:"task-project-id" required:"true" format:"uuid"`
+	TaskProjectID string   `path:"task-project-id" json:"task_project_id" required:"true" format:"uuid"`
 	Expand        []string `query:"expand,omitempty" required:"false" minimum:"1" maximum:"100" enum:"tasks"`
 }) (*TaskProjectResponse, error) {
 	userInfo := core.GetContextUserClaims(ctx)
@@ -281,6 +281,11 @@ func (api *Api) TaskProjectTasksCreate(ctx context.Context, input *shared.Create
 		return nil, err
 	}
 	return &TaskResposne{
-		Body: shared.ModelToTask(task),
+		Body: &shared.TaskWithSubtask{
+			Task: shared.ModelToTask(task),
+			Children: mapper.Map(task.R.ReverseParents, func(child *models.Task) *shared.Task {
+				return shared.ModelToTask(child)
+			}),
+		},
 	}, nil
 }
