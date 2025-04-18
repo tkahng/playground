@@ -781,6 +781,32 @@ export const taskProjectList = async (
   return data;
 };
 
+export const taskProjectGet = async (token: string, id: string) => {
+  const { data, error } = await client.GET(
+    "/api/task-projects/{task-project-id}",
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      params: {
+        query: {
+          expand: ["tasks"],
+        },
+        path: {
+          "task-project-id": id,
+        },
+      },
+    }
+  );
+  if (error) {
+    throw new Error(error.detail);
+  }
+  if (!data) {
+    throw new Error("No data");
+  }
+  return data;
+};
+
 export const taskProjectCreate = async (
   token: string,
   args: operations["task-project-create"]["requestBody"]["content"]["application/json"]

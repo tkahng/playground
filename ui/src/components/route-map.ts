@@ -36,4 +36,5 @@ export enum RouteMap {
   PROTECTED_PRO = " /dashboard/protected/pro",
   PROTECTED_ADVANCED = "/dashboard/protected/advanced",
   DASHBOARD_KANBAN = "/dashboard/kanban",
+  TASK_PROJECTS = "/dashboard/task-projects",
 }

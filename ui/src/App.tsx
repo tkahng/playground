@@ -32,7 +32,8 @@ import BillingSettingPage from "@/pages/settings/billing-settings";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router";
 import { Toaster } from "sonner";
-import { KanbanBoard } from "./components/KanbanBoard";
+import ProjectEdit from "./pages/tasks/task-projects/project-edit";
+import ProjectListPage from "./pages/tasks/task-projects/projects-list";
 
 const queryClient = new QueryClient();
 function App() {
@@ -67,7 +68,11 @@ function App() {
                   </Route>
                   <Route path="/dashboard" element={<DashboardLayout />}>
                     <Route index element={<Dashboard />} />
-                    <Route path="kanban" element={<KanbanBoard />} />
+                    <Route path="task-projects">
+                      <Route index element={<ProjectListPage />} />
+                      <Route path=":projectId" element={<ProjectEdit />} />
+                    </Route>
+
                     <Route path="protected">
                       <Route path="basic" element={<BasicRoute />} />
                       <Route path="pro" element={<ProRoute />} />

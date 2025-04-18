@@ -12,6 +12,10 @@ const links: LinkDto[] = [
     icon: <Home />,
   },
   {
+    title: "Projects",
+    to: RouteMap.TASK_PROJECTS,
+  },
+  {
     title: "Kanban",
     to: RouteMap.DASHBOARD_KANBAN,
   },

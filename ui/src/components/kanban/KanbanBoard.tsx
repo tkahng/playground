@@ -1,26 +1,26 @@
 import { useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
-import { BoardColumn, BoardContainer } from "./BoardColumn";
+import { coordinateGetter } from "@/components/kanban/multipleContainersKeyboardPreset";
+import { hasDraggableData } from "@/components/kanban/utils";
 import {
+  Announcements,
   DndContext,
   type DragEndEvent,
   type DragOverEvent,
   DragOverlay,
   type DragStartEvent,
+  KeyboardSensor,
+  MouseSensor,
+  TouchSensor,
+  UniqueIdentifier,
   useSensor,
   useSensors,
-  KeyboardSensor,
-  Announcements,
-  UniqueIdentifier,
-  TouchSensor,
-  MouseSensor,
 } from "@dnd-kit/core";
 import { SortableContext, arrayMove } from "@dnd-kit/sortable";
-import { type Task, TaskCard } from "./TaskCard";
 import type { Column } from "./BoardColumn";
-import { hasDraggableData } from "./utils";
-import { coordinateGetter } from "./multipleContainersKeyboardPreset";
+import { BoardColumn, BoardContainer } from "./BoardColumn";
+import { type Task, TaskCard } from "./TaskCard";
 
 const defaultCols = [
   {
@@ -39,79 +39,12 @@ const defaultCols = [
 
 export type ColumnId = (typeof defaultCols)[number]["id"];
 
-const initialTasks: Task[] = [
-  {
-    id: "task1",
-    columnId: "done",
-    content: "Project initiation and planning",
-  },
-  {
-    id: "task2",
-    columnId: "done",
-    content: "Gather requirements from stakeholders",
-  },
-  {
-    id: "task3",
-    columnId: "done",
-    content: "Create wireframes and mockups",
-  },
-  {
-    id: "task4",
-    columnId: "in-progress",
-    content: "Develop homepage layout",
-  },
-  {
-    id: "task5",
-    columnId: "in-progress",
-    content: "Design color scheme and typography",
-  },
-  {
-    id: "task6",
-    columnId: "todo",
-    content: "Implement user authentication",
-  },
-  {
-    id: "task7",
-    columnId: "todo",
-    content: "Build contact us page",
-  },
-  {
-    id: "task8",
-    columnId: "todo",
-    content: "Create product catalog",
-  },
-  {
-    id: "task9",
-    columnId: "todo",
-    content: "Develop about us page",
-  },
-  {
-    id: "task10",
-    columnId: "todo",
-    content: "Optimize website for mobile devices",
-  },
-  {
-    id: "task11",
-    columnId: "todo",
-    content: "Integrate payment gateway",
-  },
-  {
-    id: "task12",
-    columnId: "todo",
-    content: "Perform testing and bug fixing",
-  },
-  {
-    id: "task13",
-    columnId: "todo",
-    content: "Launch website and deploy to server",
-  },
-];
-export function KanbanBoard() {
+export function KanbanBoard(props: { tasks: Task[] }) {
   const [columns, setColumns] = useState<Column[]>(defaultCols);
   const pickedUpTaskColumn = useRef<ColumnId | null>(null);
   const columnsId = useMemo(() => columns.map((col) => col.id), [columns]);
 
-  const [tasks, setTasks] = useState<Task[]>(initialTasks);
+  const [tasks, setTasks] = useState<Task[]>(props.tasks);
 
   const [activeColumn, setActiveColumn] = useState<Column | null>(null);
 
@@ -291,6 +224,7 @@ export function KanbanBoard() {
     setActiveTask(null);
 
     const { active, over } = event;
+    console.log("onDragEnd", active, over);
     if (!over) return;
 
     const activeId = active.id;
