@@ -61,7 +61,7 @@ func GetOrSetEncryptedAuthOptions(ctx context.Context, dbx bob.Executor, encrypt
 	var opts *AuthOptions
 	var encryptedOpts *EncryptedAuthOptions
 	// get the encrypted auth options from the db
-	encryptedParams, err := repository.GetParams[EncryptedAuthOptions](ctx, dbx, EncryptedAuthOptionsKey)
+	encryptedParams, err := repository.FindParams[EncryptedAuthOptions](ctx, dbx, EncryptedAuthOptionsKey)
 	if err != nil {
 		return nil, fmt.Errorf("error getting encrypted auth options from db: %w", err)
 	}

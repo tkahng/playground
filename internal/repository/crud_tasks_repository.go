@@ -16,12 +16,12 @@ import (
 	"github.com/tkahng/authgo/internal/shared"
 )
 
-func GetTaskByID(ctx context.Context, db bob.Executor, id uuid.UUID) (*models.Task, error) {
+func FindTaskByID(ctx context.Context, db bob.Executor, id uuid.UUID) (*models.Task, error) {
 	task, err := models.FindTask(ctx, db, id)
 	return OptionalRow(task, err)
 }
 
-func GetTaskProjectByID(ctx context.Context, db bob.Executor, id uuid.UUID) (*models.TaskProject, error) {
+func FindTaskProjectByID(ctx context.Context, db bob.Executor, id uuid.UUID) (*models.TaskProject, error) {
 	task, err := models.FindTaskProject(ctx, db, id)
 	return OptionalRow(task, err)
 }
@@ -344,7 +344,7 @@ func DefineTaskOrderNumber(ctx context.Context, db bob.Executor, taskId uuid.UUI
 }
 
 func UpdateTask(ctx context.Context, db bob.Executor, input *shared.UpdateTaskDTO) error {
-	task, err := GetTaskByID(ctx, db, input.TaskID)
+	task, err := FindTaskByID(ctx, db, input.TaskID)
 	if err != nil {
 		return err
 	}

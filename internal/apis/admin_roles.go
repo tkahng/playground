@@ -220,7 +220,7 @@ func (api *Api) AdminUserRolesDelete(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	user, err := repository.GetUserById(ctx, db, id)
+	user, err := repository.FindUserById(ctx, db, id)
 	if err != nil {
 		return nil, err
 	}
@@ -271,7 +271,7 @@ func (api *Api) AdminUserRolesCreate(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	user, err := repository.GetUserById(ctx, db, id)
+	user, err := repository.FindUserById(ctx, db, id)
 	if err != nil {
 		return nil, err
 	}
@@ -321,7 +321,7 @@ func (api *Api) AdminUserRolesUpdate(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	user, err := repository.GetUserById(ctx, db, id)
+	user, err := repository.FindUserById(ctx, db, id)
 	if err != nil {
 		return nil, err
 	}

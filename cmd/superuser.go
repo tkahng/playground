@@ -48,7 +48,7 @@ var superuserCreate = &cobra.Command{
 			return err
 		}
 
-		user, err := repository.GetUserByEmail(ctx, dbx, args[0])
+		user, err := repository.FindUserByEmail(ctx, dbx, args[0])
 		if err != nil {
 			return err
 		}

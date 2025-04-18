@@ -37,7 +37,7 @@ func (api *Api) RequestPasswordResetOperation(path string) huma.Operation {
 func (api *Api) RequestPasswordReset(ctx context.Context, input *struct{ Body *RequestPasswordResetInput }) (*RequestPasswordResetOutput, error) {
 	db := api.app.Db()
 
-	acc, err := repository.GetUserAccountByProviderAndEmail(ctx, db, input.Body.Email, models.ProvidersCredentials)
+	acc, err := repository.FindUserAccountByProviderAndEmail(ctx, db, input.Body.Email, models.ProvidersCredentials)
 	if err != nil {
 		return nil, err
 	}
@@ -110,7 +110,7 @@ func (api *Api) ConfirmPasswordReset(ctx context.Context, input *struct{ Body *C
 	if err != nil {
 		return nil, err
 	}
-	acc, err := repository.GetUserAccountByProviderAndEmail(ctx, db, claims.Email, models.ProvidersCredentials)
+	acc, err := repository.FindUserAccountByProviderAndEmail(ctx, db, claims.Email, models.ProvidersCredentials)
 	if err != nil {
 		return nil, err
 	}

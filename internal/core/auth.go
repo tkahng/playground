@@ -56,7 +56,7 @@ func (a *BaseApp) CreateAuthTokens(ctx context.Context, db bob.Executor, payload
 func (app *BaseApp) AuthenticateUser(ctx context.Context, db bob.Executor, params *shared.AuthenticateUserParams, autoCreateUser bool) (*shared.AuthenticateUserState, error) {
 
 	// Query User and UserAccount by email and provider ----------------------------------------------------------------------------------------------------
-	result, err := repository.GetUserAccountByProviderAndEmail(ctx, db, params.Email, params.Provider)
+	result, err := repository.FindUserAccountByProviderAndEmail(ctx, db, params.Email, params.Provider)
 	if err != nil {
 		return nil, err
 	}

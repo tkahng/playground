@@ -69,7 +69,7 @@ func UseToken(ctx context.Context, db bob.Executor, params string) (*models.Toke
 	return token, err
 }
 
-func GetFirstTokenByUserAndType(ctx context.Context, db bob.Executor, params *OtpDto) (*models.Token, error) {
+func FindFirstTokenByUserAndType(ctx context.Context, db bob.Executor, params *OtpDto) (*models.Token, error) {
 	if params == nil {
 		return nil, errors.New("params is nil")
 	}

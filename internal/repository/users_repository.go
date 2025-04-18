@@ -40,7 +40,7 @@ func CreateUser(ctx context.Context, db bob.Executor, params *shared.Authenticat
 }
 
 func UpdateUserEmailConfirm(ctx context.Context, db bob.Executor, userId uuid.UUID) (*models.User, error) {
-	user, err := GetUserById(ctx, db, userId)
+	user, err := FindUserById(ctx, db, userId)
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +77,7 @@ func CreateAccount(ctx context.Context, db bob.Executor, user *models.User, para
 	return OptionalRow(r, err)
 }
 
-func GetUserAccountByProviderAndEmail(ctx context.Context, db bob.Executor, email string, provider models.Providers) (*shared.AuthenticateUserState, error) {
+func FindUserAccountByProviderAndEmail(ctx context.Context, db bob.Executor, email string, provider models.Providers) (*shared.AuthenticateUserState, error) {
 	user, err := models.Users.Query(models.SelectWhere.Users.Email.EQ(email)).One(ctx, db)
 	user, err = OptionalRow(user, err)
 	if err != nil {
@@ -173,7 +173,7 @@ type RolePermissionClaims struct {
 	Providers   []models.Providers `json:"providers" db:"providers"`
 }
 
-func GetUserWithRolesAndPermissions(ctx context.Context, db bob.Executor, email string) (*RolePermissionClaims, error) {
+func FindUserWithRolesAndPermissionsByEmail(ctx context.Context, db bob.Executor, email string) (*RolePermissionClaims, error) {
 	query := psql.RawQuery(RawGetUserWithAllRolesAndPermissionsByEmail, email)
 
 	res, err := bob.One(ctx, db, query, scan.StructMapper[RolePermissionClaims]())
@@ -222,17 +222,17 @@ func GetUserWithRolesAndPermissions(ctx context.Context, db bob.Executor, email 
 
 // }
 
-func GetUserByEmail(ctx context.Context, db bob.Executor, email string) (*models.User, error) {
+func FindUserByEmail(ctx context.Context, db bob.Executor, email string) (*models.User, error) {
 	a, err := models.Users.Query(models.SelectWhere.Users.Email.EQ(email)).One(ctx, db)
 	return OptionalRow(a, err)
 }
-func GetUserById(ctx context.Context, db bob.Executor, userId uuid.UUID) (*models.User, error) {
+func FindUserById(ctx context.Context, db bob.Executor, userId uuid.UUID) (*models.User, error) {
 	a, err := models.Users.Query(models.SelectWhere.Users.ID.EQ(userId)).One(ctx, db)
 	return OptionalRow(a, err)
 }
 
 // // func GetUserInfo(ctx context.Context, db bob.Executor,email string) (*models.User, error) {
-func GetAdminUserCount(ctx context.Context, db bob.Executor) (int64, error) {
+func FindAdminUserCount(ctx context.Context, db bob.Executor) (int64, error) {
 	a, err := models.Roles.Query(models.SelectWhere.Roles.Name.EQ("admin")).One(ctx, db)
 	a, err = OptionalRow(a, err)
 	if err != nil {

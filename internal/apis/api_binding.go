@@ -135,7 +135,7 @@ func BindApis(api huma.API, app core.App) {
 			huma.WriteErr(api, ctx, http.StatusBadRequest, "invalid task id", err)
 			return
 		}
-		task, err := repository.GetTaskByID(rawCtx, db, id)
+		task, err := repository.FindTaskByID(rawCtx, db, id)
 		if err != nil {
 			huma.WriteErr(api, ctx, http.StatusInternalServerError, "error getting task", err)
 			return

@@ -144,7 +144,7 @@ func (api *Api) AdminUsersCreate(ctx context.Context, input *struct {
 	Body *shared.User
 }, error) {
 	db := api.app.Db()
-	existingUser, err := repository.GetUserByEmail(ctx, db, input.Body.Email)
+	existingUser, err := repository.FindUserByEmail(ctx, db, input.Body.Email)
 	if err != nil {
 		return nil, err
 	}
@@ -288,7 +288,7 @@ func (api *Api) AdminUsersGet(ctx context.Context, input *struct {
 	ID uuid.UUID `path:"id" format:"uuid" required:"true"`
 }) (*struct{ Body *shared.User }, error) {
 	db := api.app.Db()
-	user, err := repository.GetUserById(ctx, db, input.ID)
+	user, err := repository.FindUserById(ctx, db, input.ID)
 	if err != nil {
 		return nil, err
 	}

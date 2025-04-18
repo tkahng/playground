@@ -38,7 +38,7 @@ func (api *Api) AdminUserPermissionsDelete(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	user, err := repository.GetUserById(ctx, db, id)
+	user, err := repository.FindUserById(ctx, db, id)
 	if err != nil {
 		return nil, err
 	}
@@ -92,7 +92,7 @@ func (api *Api) AdminUserPermissionsCreate(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	user, err := repository.GetUserById(ctx, db, id)
+	user, err := repository.FindUserById(ctx, db, id)
 	if err != nil {
 		return nil, err
 	}
