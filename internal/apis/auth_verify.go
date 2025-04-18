@@ -14,12 +14,6 @@ type OtpInput struct {
 	Type  shared.TokenType `query:"type" json:"type" required:"true"`
 }
 
-type oauthLoginResponse struct {
-	Status int
-	Url    string `header:"Location"`
-	Cookie string `header:"Set-Cookie"`
-}
-
 func (api *Api) VerifyOperation(path string) huma.Operation {
 	return huma.Operation{
 		OperationID: "verify-get",
