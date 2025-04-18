@@ -142,7 +142,7 @@ func (api *Api) TaskProjectUpdateOperation(path string) huma.Operation {
 }
 
 type TaskProjectResponse struct {
-	Body *shared.TaskProject
+	Body *shared.TaskProjectWithTasks
 }
 
 func (api *Api) TaskProjectUpdate(ctx context.Context, input *shared.UpdateTaskProjectDTO) (*struct{}, error) {
@@ -208,7 +208,8 @@ func (api *Api) TaskProjectGetOperation(path string) huma.Operation {
 }
 
 func (api *Api) TaskProjectGet(ctx context.Context, input *struct {
-	TaskProjectID string `path:"task-project-id"`
+	TaskProjectID string   `path:"task-project-id" required:"true" format:"uuid"`
+	Expand        []string `query:"expand,omitempty" required:"false" minimum:"1" maximum:"100" enum:"tasks"`
 }) (*TaskProjectResponse, error) {
 	userInfo := core.GetContextUserClaims(ctx)
 	if userInfo == nil || userInfo.User == nil {
@@ -223,8 +224,24 @@ func (api *Api) TaskProjectGet(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
+	if input.Expand != nil && slices.Contains(input.Expand, "tasks") {
+		err = taskProject.LoadTaskProjectProjectTasks(ctx, db)
+		if err != nil {
+			return nil, err
+		}
+	}
 	return &TaskProjectResponse{
-		Body: shared.ModelToProject(taskProject),
+		Body: &shared.TaskProjectWithTasks{
+			TaskProject: shared.ModelToProject(taskProject),
+			Tasks: mapper.Map(taskProject.R.ProjectTasks, func(task *models.Task) *shared.TaskWithSubtask {
+				return &shared.TaskWithSubtask{
+					Task: shared.ModelToTask(task),
+					Children: mapper.Map(task.R.ReverseParents, func(child *models.Task) *shared.Task {
+						return shared.ModelToTask(child)
+					}),
+				}
+			}),
+		},
 	}, nil
 }
 

@@ -19,7 +19,7 @@ type TaskProject struct {
 }
 type TaskProjectWithTasks struct {
 	*TaskProject
-	Tasks []*TaskWithSubtask `json:"tasks"`
+	Tasks []*TaskWithSubtask `json:"tasks,omitempty" required:"false"`
 }
 
 func ModelToProject(task *models.TaskProject) *TaskProject {
