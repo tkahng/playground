@@ -102,9 +102,6 @@ export function UserPermissionDialog({
   if (error) {
     return <div>Error: {error.message}</div>;
   }
-  if (!data) {
-    return <div>No data available</div>;
-  }
   return (
     <Dialog open={isDialogOpen} onOpenChange={setDialogOpen}>
       <DialogTrigger asChild>
@@ -121,20 +118,6 @@ export function UserPermissionDialog({
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
             <div className="grid gap-4 py-4">
               <div className="w-full px-10">
-                {/* <MultipleSelector
-                  value={value}
-                  onChange={setValue}
-                  defaultOptions={data.map((role) => ({
-                    label: role.name,
-                    value: role.id,
-                  }))}
-                  placeholder="Select roles..."
-                  emptyIndicator={
-                    <p className="text-center text-lg leading-10 text-gray-600 dark:text-gray-400">
-                      no results found.
-                    </p>
-                  }
-                />{" "} */}
                 <FormField
                   control={form.control}
                   name="permissions"
@@ -144,7 +127,7 @@ export function UserPermissionDialog({
                       <FormControl>
                         <MultipleSelector
                           {...field}
-                          defaultOptions={data.map((role) => ({
+                          defaultOptions={data?.map((role) => ({
                             label: role.name,
                             value: role.id,
                           }))}

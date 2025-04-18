@@ -9,26 +9,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { userPaginate } from "@/lib/queries";
-import { UserInfo } from "@/schema.types";
 import { useQuery } from "@tanstack/react-query";
-import { ColumnDef, PaginationState, Updater } from "@tanstack/react-table";
+import { PaginationState, Updater } from "@tanstack/react-table";
 import { Ellipsis, Pencil } from "lucide-react";
 import { useState } from "react";
 import { NavLink, useNavigate, useSearchParams } from "react-router";
-export const columns: ColumnDef<UserInfo>[] = [
-  {
-    accessorKey: "id",
-    header: "Id",
-  },
-  {
-    accessorKey: "email",
-    header: "Email",
-  },
-  //   {
-  //     accessorKey: "amount",
-  //     header: "Amount",
-  //   },
-];
 export default function UserListPage() {
   const { user } = useAuthProvider();
 

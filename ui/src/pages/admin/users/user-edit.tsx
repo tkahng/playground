@@ -1,7 +1,13 @@
 import { DataTable } from "@/components/data-table";
 import { RouteMap } from "@/components/route-map";
 import { Button } from "@/components/ui/button";
-import { DialogFooter, DialogHeader } from "@/components/ui/dialog";
+import {
+  DialogClose,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -15,11 +21,6 @@ import {
   removeUserRole,
 } from "@/lib/queries";
 import { UserPermissionDialog } from "@/pages/admin/users/user-permissions-dialog";
-import {
-  DialogClose,
-  DialogDescription,
-  DialogTitle,
-} from "@radix-ui/react-dialog";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronLeft, Trash } from "lucide-react";
 import { Link, useParams } from "react-router";
@@ -99,11 +100,11 @@ export default function UserEdit() {
     <UserDetailContext.Provider value={userInfo}>
       <div>
         <Link
-          to={RouteMap.ADMIN_DASHBOARD_ROLES}
+          to={RouteMap.ADMIN_DASHBOARD_USERS}
           className="flex items-center gap-2 text-sm text-muted-foreground"
         >
           <ChevronLeft className="h-4 w-4" />
-          Back to roles
+          Back to Users
         </Link>
         <h1 className="text-2xl font-bold">{userInfo.email}</h1>
         <Tabs value={tab} onValueChange={onClick} className="h-full space-y-6">
@@ -173,64 +174,58 @@ export default function UserEdit() {
             />
           </TabsContent>
           <TabsContent value="permissions">
-            <div>
-              <div>
-                <h1>Permissions</h1>
-                <h2>
-                  Change your password here. After saving, you'll be logged out.
-                </h2>
-                <UserPermissionDialog userDetail={userInfo} />
-              </div>
-              <div className="space-y-2">
-                <DataTable
-                  columns={[
-                    {
-                      header: "Permission",
-                      accessorKey: "name",
-                    },
-                    {
-                      header: "Description",
-                      accessorKey: "description",
-                    },
-                    {
-                      header: "Assignment",
-                      cell: ({ row }) => {
-                        return (
-                          <p>
-                            {row.original.is_directly_assigned && "DIRECT"},{" "}
-                            {row.original.roles.length &&
-                              row.original.roles
-                                .map((role) => role.name)
-                                .join(", ")}
-                          </p>
-                        );
-                      },
-                    },
-                    {
-                      id: "actions",
-                      cell: ({ row }) => {
-                        return (
-                          <div className="flex flex-row gap-2 justify-end">
-                            <DeleteButton
-                              onDelete={() => {
-                                deleteUserPermissionMutation.mutate(
-                                  row.original.id
-                                );
-                              }}
-                              disabled={!row.original.is_directly_assigned}
-                            />
-                          </div>
-                        );
-                      },
-                    },
-                  ]}
-                  data={userInfo.permissions || []}
-                />
-              </div>
-              <div>
-                <Button>Save permissions</Button>
-              </div>
+            <div className="space-y-4 flex flex-row space-x-16">
+              <p className="flex-1">
+                Add Permissions to this Role. Users who have this Role will
+                receive all Permissions below that match the API of their login
+                request.
+              </p>
+              <UserPermissionDialog userDetail={userInfo} />
             </div>
+            <DataTable
+              columns={[
+                {
+                  header: "Permission",
+                  accessorKey: "name",
+                },
+                {
+                  header: "Description",
+                  accessorKey: "description",
+                },
+                {
+                  header: "Assignment",
+                  cell: ({ row }) => {
+                    return (
+                      <p>
+                        {row.original.is_directly_assigned && "DIRECT"},{" "}
+                        {row.original.roles.length &&
+                          row.original.roles
+                            .map((role) => role.name)
+                            .join(", ")}
+                      </p>
+                    );
+                  },
+                },
+                {
+                  id: "actions",
+                  cell: ({ row }) => {
+                    return (
+                      <div className="flex flex-row gap-2 justify-end">
+                        <DeleteButton
+                          onDelete={() => {
+                            deleteUserPermissionMutation.mutate(
+                              row.original.id
+                            );
+                          }}
+                          disabled={!row.original.is_directly_assigned}
+                        />
+                      </div>
+                    );
+                  },
+                },
+              ]}
+              data={userInfo.permissions || []}
+            />
           </TabsContent>
         </Tabs>
       </div>
