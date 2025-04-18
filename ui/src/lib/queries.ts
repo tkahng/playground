@@ -172,20 +172,20 @@ export const updateRole = async (
   return data;
 };
 
-export const updateRolePermissions = async (
+export const deleteRolePermission = async (
   token: string,
-  id: string,
-  body: components["schemas"]["RolePermissionsUpdateInput"]
+  roleId: string,
+  permissionId: string
 ) => {
-  const { data, error } = await client.PUT(
-    `/api/admin/roles/{id}/permissions`,
+  const { data, error } = await client.DELETE(
+    `/api/admin/roles/{roleId}/permissions/{permissionId}`,
     {
       params: {
         path: {
-          id,
+          roleId,
+          permissionId,
         },
       },
-      body,
       headers: {
         Authorization: `Bearer ${token}`,
       },

@@ -1,5 +1,19 @@
+import { DataTable } from "@/components/data-table";
 import { RouteMap } from "@/components/route-map";
 import { Button } from "@/components/ui/button";
+import {
+  DialogClose,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Form,
   FormControl,
@@ -10,27 +24,24 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
+import { ConfirmDialog, useDialog } from "@/hooks/use-dialog";
 import { useTabs } from "@/hooks/use-tabs";
-import { getRoleWithPermission, updateRole } from "@/lib/queries";
+import {
+  deleteRolePermission,
+  getRoleWithPermission,
+  updateRole,
+} from "@/lib/queries";
+import { CreateRolePermissionDialog } from "@/pages/admin/roles/create-role-permission-dialog";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ChevronLeft } from "lucide-react";
-import { useEffect } from "react";
+import { ChevronLeft, Ellipsis } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
 import { z } from "zod";
-import { CreateRolePermissionDialog } from "./create-role-permission-dialog";
 
 const formSchema = z.object({
   name: z.string().min(2, {
@@ -79,6 +90,19 @@ export default function RoleEdit() {
       toast.error(`Failed to update role: ${err.message}`);
     },
   });
+  const deletePermissionMutation = useMutation({
+    mutationFn: (permissionId: string) =>
+      deleteRolePermission(user!.tokens.access_token, roleId!, permissionId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["role-with-permission", roleId],
+      });
+      toast.success("Permission deleted!");
+    },
+    onError: (err: any) => {
+      toast.error(`Failed to delete permission: ${err.message}`);
+    },
+  });
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -89,6 +113,9 @@ export default function RoleEdit() {
   function onSubmit(values: z.infer<typeof formSchema>) {
     mutation.mutate(values);
   }
+  const onDelete = (permissionId: string) => {
+    deletePermissionMutation.mutate(permissionId);
+  };
   useEffect(() => {
     if (role) {
       form.reset(role);
@@ -167,26 +194,99 @@ export default function RoleEdit() {
             </p>
             <CreateRolePermissionDialog roleId={roleId!} />
           </div>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Permission</TableHead>
-                <TableHead>Description</TableHead>
-                <TableHead>Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {role.permissions?.map((permission) => (
-                <TableRow key={permission.id}>
-                  <TableCell>{permission.name}</TableCell>
-                  <TableCell>{permission.description}</TableCell>
-                  {/* <TableCell>{permission.status}</TableCell> */}
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          <DataTable
+            columns={[
+              {
+                header: "Permission",
+                accessorKey: "name",
+              },
+              {
+                header: "Description",
+                accessorKey: "description",
+              },
+              {
+                id: "actions",
+                cell: ({ row }) => {
+                  return (
+                    <div className="flex flex-row gap-2 justify-end">
+                      <EllipsisDropdown
+                        permissionId={row.original.id}
+                        onDelete={onDelete}
+                      />
+                    </div>
+                  );
+                },
+              },
+            ]}
+            data={role.permissions || []}
+          />
         </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+function EllipsisDropdown({
+  permissionId,
+  onDelete,
+}: {
+  permissionId: string;
+  onDelete: (permissionId: string) => void;
+}) {
+  const editDialog = useDialog();
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const onSelect = () => {
+    setDropdownOpen(false);
+    editDialog.trigger();
+  };
+  return (
+    <>
+      <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon">
+            <Ellipsis className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent>
+          <DropdownMenuItem onSelect={onSelect}>
+            <span>Remove</span>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <ConfirmDialog dialogProps={editDialog.props}>
+        <>
+          <DialogHeader>
+            <DialogTitle>Are you absolutely sure?</DialogTitle>
+          </DialogHeader>
+          {/* Dialog Content */}
+          <DialogDescription>This action cannot be undone.</DialogDescription>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  console.log("cancel");
+                  // editDialog.props.onOpenChange(false);
+                }}
+              >
+                Cancel
+              </Button>
+            </DialogClose>
+            <DialogClose asChild>
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  console.log("delete");
+                  // editDialog.props.onOpenChange(false);
+                  onDelete(permissionId);
+                }}
+              >
+                Delete
+              </Button>
+            </DialogClose>
+          </DialogFooter>
+        </>
+      </ConfirmDialog>
+    </>
   );
 }
