@@ -14,11 +14,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserDetailContext } from "@/context/user-detail-context";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { useUserDetail } from "@/hooks/use-user-detail";
-import { getUserInfo } from "@/lib/api";
-import { useQuery } from "@tanstack/react-query";
-import { Link, useParams } from "react-router";
+import { getUserInfo } from "@/lib/queries";
 import { UserPermissionDialog } from "@/pages/admin/users/user-permissions-dialog";
 import { DialogDemo } from "@/pages/admin/users/user-roles-dialog";
+import { useQuery } from "@tanstack/react-query";
+import { Link, useParams } from "react-router";
 
 // const formSchema = z.object({
 //   name: z.string().min(2, {

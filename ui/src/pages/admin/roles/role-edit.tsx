@@ -1,12 +1,4 @@
 import { RouteMap } from "@/components/route-map";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow
-} from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -18,14 +10,24 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { getRole, updateRole } from "@/lib/api";
+import { useTabs } from "@/hooks/use-tabs";
+import { getRoleWithPermission, updateRole } from "@/lib/queries";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { ChevronLeft } from "lucide-react";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { useNavigate, useParams } from "react-router";
+import { Link, useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -40,6 +42,7 @@ const formSchema = z.object({
 });
 export default function RoleEdit() {
   const navigate = useNavigate();
+  const { tab, onClick } = useTabs("general");
   const queryClient = useQueryClient();
   const { user } = useAuthProvider();
   const { roleId } = useParams<{ roleId: string }>();
@@ -53,7 +56,7 @@ export default function RoleEdit() {
       if (!user?.tokens.access_token || !roleId) {
         throw new Error("Missing access token or role ID");
       }
-      return getRole(user.tokens.access_token, roleId);
+      return getRoleWithPermission(user.tokens.access_token, roleId);
     },
   });
   const mutation = useMutation({
@@ -65,7 +68,8 @@ export default function RoleEdit() {
       });
       const updatedRole = await queryClient.fetchQuery({
         queryKey: ["role", roleId],
-        queryFn: () => getRole(user!.tokens.access_token, roleId!),
+        queryFn: () =>
+          getRoleWithPermission(user!.tokens.access_token, roleId!),
       });
       form.reset(updatedRole);
       toast.success("Role updated!");
@@ -97,8 +101,16 @@ export default function RoleEdit() {
   if (!role) return <p>Role not found</p>;
 
   return (
-    <div className="flex w-full flex-col items-center justify-center">
-      <Tabs defaultValue="general">
+    <div className="h-full px-4 py-6 lg:px-8 space-y-6">
+      <Link
+        to={RouteMap.ADMIN_DASHBOARD_ROLES}
+        className="flex items-center gap-2 text-sm text-muted-foreground"
+      >
+        <ChevronLeft className="h-4 w-4" />
+        Back to roles
+      </Link>
+      <h1 className="text-2xl font-bold">{role.name}</h1>
+      <Tabs value={tab} onValueChange={onClick} className="h-full space-y-6">
         <TabsList>
           <TabsTrigger value="general">General</TabsTrigger>
           <TabsTrigger value="permissions">Permissions</TabsTrigger>
@@ -155,11 +167,13 @@ export default function RoleEdit() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              <TableRow>
-                <TableCell>No permissions data available</TableCell>
-                <TableCell></TableCell>
-                <TableCell></TableCell>
-              </TableRow>
+              {role.permissions?.map((permission) => (
+                <TableRow key={permission.id}>
+                  <TableCell>{permission.name}</TableCell>
+                  <TableCell>{permission.description}</TableCell>
+                  {/* <TableCell>{permission.status}</TableCell> */}
+                </TableRow>
+              ))}
             </TableBody>
           </Table>
         </TabsContent>

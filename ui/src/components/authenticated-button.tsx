@@ -1,7 +1,7 @@
-import { LinkProps } from "@/components/landing-links";
+import { LinkDto } from "@/components/landing-links";
 import { RouteMap } from "@/components/route-map";
 import { UserNav } from "@/components/user-nav";
-const links: LinkProps[] = [
+const links: LinkDto[] = [
   {
     to: RouteMap.DASHBOARD_HOME,
     title: "Dashboard",

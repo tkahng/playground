@@ -1,10 +1,10 @@
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
-import { LinkProps } from "@/components/landing-links";
+import { LinkDto } from "@/components/landing-links";
 import { NexusAILandingHeader } from "@/components/nexus-landing-header";
 import { NexusAIMinimalFooter } from "@/components/nexus-minimal-footer";
 import { RouteMap } from "@/components/route-map";
 import { useOutlet } from "react-router";
-const links: LinkProps[] = [
+const links: LinkDto[] = [
   {
     title: "Account",
     to: RouteMap.ACCOUNT_SETTINGS,
@@ -15,7 +15,7 @@ const links: LinkProps[] = [
   },
 ];
 
-const headerLinks: LinkProps[] = [
+const headerLinks: LinkDto[] = [
   { title: "Dashboard", to: RouteMap.DASHBOARD_HOME },
 ];
 export default function AccountSettingsLayout() {

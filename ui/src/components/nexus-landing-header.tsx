@@ -1,16 +1,16 @@
-import { cn } from "@/lib/utils";
 import AuthButton from "@/components/auth-button";
-import { LinkProps } from "@/components/landing-links";
+import { LinkDto } from "@/components/landing-links";
 import { NavLink } from "@/components/link/nav-link";
 import NexusAILogo from "@/components/nexus-logo";
+import { cn } from "@/lib/utils";
 
 export function NexusAILandingHeader({
   leftLinks,
   rightLinks,
   full = false,
 }: {
-  leftLinks?: LinkProps[];
-  rightLinks?: LinkProps[];
+  leftLinks?: LinkDto[];
+  rightLinks?: LinkDto[];
   full?: boolean;
 }) {
   return (

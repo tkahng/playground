@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { createBillingPortalSession } from "@/lib/api";
+import { createBillingPortalSession } from "@/lib/queries";
 import { SubscriptionWithPrice } from "@/schema.types";
 import { ReactNode, useState } from "react";
 import { Link } from "react-router";

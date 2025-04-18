@@ -1,9 +1,9 @@
+import { LinkDto } from "@/components/landing-links";
+import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Link, useLocation } from "react-router";
-import { LinkProps } from "@/components/landing-links";
-import { buttonVariants } from "@/components/ui/button";
 
-export const DashboardSidebar = ({ links }: { links: LinkProps[] }) => {
+export const DashboardSidebar = ({ links }: { links: LinkDto[] }) => {
   const { pathname } = useLocation();
   return (
     // <nav className="flex flex-grow flex-col">

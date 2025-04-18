@@ -9,7 +9,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { permissionsPaginate } from "@/lib/api";
+import { permissionsPaginate } from "@/lib/queries";
 import { Permission } from "@/schema.types";
 import {
   ColumnDef,

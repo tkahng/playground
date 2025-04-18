@@ -19,7 +19,7 @@ import {
 import MultipleSelector from "@/components/ui/multiple-selector";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { useUserDetail } from "@/hooks/use-user-detail";
-import { createUserPermissions, getUserPermissions2 } from "@/lib/api";
+import { createUserPermissions, getUserPermissions2 } from "@/lib/queries";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";

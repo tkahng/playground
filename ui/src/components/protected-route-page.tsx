@@ -1,5 +1,5 @@
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { getAdvancedRoute, getBasicRoute, getProRoute } from "@/lib/api";
+import { api } from "@/lib/queries";
 import { useQuery } from "@tanstack/react-query";
 
 type Props = {
@@ -15,11 +15,11 @@ export default function ProtectedRoutePage(props: Props) {
         throw new Error("Missing access token");
       }
       if (props.route === "basic") {
-        return getBasicRoute(user.tokens.access_token);
+        return api.protected.basic(user.tokens.access_token);
       } else if (props.route === "pro") {
-        return getProRoute(user.tokens.access_token);
+        return api.protected.pro(user.tokens.access_token);
       } else if (props.route === "advanced") {
-        return getAdvancedRoute(user.tokens.access_token);
+        return api.protected.advanced(user.tokens.access_token);
       }
     },
   });

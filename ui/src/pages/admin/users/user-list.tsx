@@ -1,7 +1,7 @@
 import { DataTable } from "@/components/data-table";
 import { RouteMap } from "@/components/route-map";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { userPaginate } from "@/lib/api";
+import { userPaginate } from "@/lib/queries";
 import { UserInfo } from "@/schema.types";
 import { ColumnDef, PaginationState, Updater } from "@tanstack/react-table";
 import { useEffect, useState } from "react";

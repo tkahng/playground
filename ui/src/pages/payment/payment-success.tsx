@@ -1,5 +1,5 @@
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { getCheckoutSession } from "@/lib/api";
+import { getCheckoutSession } from "@/lib/queries";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "react-router";
 // /payment/success?sessionId

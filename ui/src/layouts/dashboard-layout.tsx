@@ -1,11 +1,11 @@
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
-import { LinkProps } from "@/components/landing-links";
+import { LinkDto } from "@/components/landing-links";
 import { NexusAILandingHeader } from "@/components/nexus-landing-header";
 import { NexusAIMinimalFooter } from "@/components/nexus-minimal-footer";
 import { RouteMap } from "@/components/route-map";
 import { Home } from "lucide-react";
 import { useOutlet } from "react-router";
-const links: LinkProps[] = [
+const links: LinkDto[] = [
   {
     title: "Home",
     to: RouteMap.DASHBOARD_HOME,

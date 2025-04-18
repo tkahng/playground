@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { createCheckoutSession } from "@/lib/api";
+import { createCheckoutSession } from "@/lib/queries";
 import { cn } from "@/lib/utils";
 
 import { ProductWithPrices, SubscriptionWithPrice, User } from "@/schema.types";

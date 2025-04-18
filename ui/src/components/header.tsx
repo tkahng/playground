@@ -1,17 +1,17 @@
-import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { LinkProps } from "@/components/landing-links";
+import { LinkDto } from "@/components/landing-links";
 import { NavLink } from "@/components/link/nav-link";
 import { ModeToggle } from "@/components/mode-toggle";
 import NexusAILogo from "@/components/nexus-logo";
 import NonAuthenticatedButton from "@/components/non-authenticated-button";
 import { RouteMap } from "@/components/route-map";
+import { useAuthProvider } from "@/hooks/use-auth-provider";
 
 export function NexusAILandingHeader({
   leftLinks,
   rightLinks,
 }: {
-  leftLinks?: LinkProps[];
-  rightLinks?: LinkProps[];
+  leftLinks?: LinkDto[];
+  rightLinks?: LinkDto[];
 }) {
   // const [loading, setLoading] = useState(false);
   const { user } = useAuthProvider();

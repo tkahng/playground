@@ -1,6 +1,6 @@
 import CustomerPortalForm from "@/components/customer-portal-form";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { getUserSubscriptions } from "@/lib/api";
+import { getUserSubscriptions } from "@/lib/queries";
 import { useQuery } from "@tanstack/react-query";
 
 export default function BillingSettingPage() {
