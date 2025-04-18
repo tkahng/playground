@@ -371,7 +371,7 @@ func (api *Api) AdminPermissionsGetOperation(path string) huma.Operation {
 func (api *Api) AdminPermissionsGet(ctx context.Context, input *struct {
 	ID string `path:"id" format:"uuid" required:"true"`
 }) (*struct {
-	Body shared.Permission
+	Body *shared.Permission
 }, error) {
 	db := api.app.Db()
 	id, err := uuid.Parse(input.ID)
@@ -385,7 +385,7 @@ func (api *Api) AdminPermissionsGet(ctx context.Context, input *struct {
 	if permission == nil {
 		return nil, huma.Error404NotFound("Permission not found")
 	}
-	return &struct{ Body shared.Permission }{
-		Body: *shared.ToPermission(permission),
+	return &struct{ Body *shared.Permission }{
+		Body: shared.ToPermission(permission),
 	}, nil
 }
