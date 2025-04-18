@@ -193,7 +193,7 @@ func (api *Api) AdminPermissionsListOperation(path string) huma.Operation {
 
 func (api *Api) AdminPermissionsList(ctx context.Context, input *struct {
 	shared.PermissionsListParams
-}) (*PaginatedOutput[*Permission], error) {
+}) (*PaginatedOutput[*shared.Permission], error) {
 	db := api.app.Db()
 	permissions, err := repository.ListPermissions(ctx, db, &input.PermissionsListParams)
 	if err != nil {
@@ -204,10 +204,10 @@ func (api *Api) AdminPermissionsList(ctx context.Context, input *struct {
 		return nil, err
 	}
 
-	return &PaginatedOutput[*Permission]{
-		Body: shared.PaginatedResponse[*Permission]{
+	return &PaginatedOutput[*shared.Permission]{
+		Body: shared.PaginatedResponse[*shared.Permission]{
 
-			Data: mapper.Map(permissions, ToPermission),
+			Data: mapper.Map(permissions, shared.ToPermission),
 			Meta: shared.Meta{
 				Page:    input.PaginatedInput.Page,
 				PerPage: input.PaginatedInput.PerPage,
@@ -240,7 +240,7 @@ type PermissionCreateInput struct {
 
 func (api *Api) AdminPermissionsCreate(ctx context.Context, input *struct {
 	Body PermissionCreateInput
-}) (*struct{ Body Permission }, error) {
+}) (*struct{ Body shared.Permission }, error) {
 	db := api.app.Db()
 	perm, err := repository.FindPermissionByName(ctx, db, input.Body.Name)
 	if err != nil {
@@ -260,8 +260,8 @@ func (api *Api) AdminPermissionsCreate(ctx context.Context, input *struct {
 	if data == nil {
 		return nil, huma.Error500InternalServerError("Failed to create permission")
 	}
-	return &struct{ Body Permission }{
-		Body: *ToPermission(data),
+	return &struct{ Body shared.Permission }{
+		Body: *shared.ToPermission(data),
 	}, nil
 }
 
@@ -323,7 +323,7 @@ func (api *Api) AdminPermissionsUpdate(ctx context.Context, input *struct {
 	Body        PermissionCreateInput
 	Description *string `json:"description,omitempty"`
 }) (*struct {
-	Body Permission
+	Body shared.Permission
 }, error) {
 	db := api.app.Db()
 	id, err := uuid.Parse(input.ID)
@@ -348,8 +348,8 @@ func (api *Api) AdminPermissionsUpdate(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	return &struct{ Body Permission }{
-		Body: *ToPermission(permission),
+	return &struct{ Body shared.Permission }{
+		Body: *shared.ToPermission(permission),
 	}, nil
 }
 
@@ -371,7 +371,7 @@ func (api *Api) AdminPermissionsGetOperation(path string) huma.Operation {
 func (api *Api) AdminPermissionsGet(ctx context.Context, input *struct {
 	ID string `path:"id" format:"uuid" required:"true"`
 }) (*struct {
-	Body Permission
+	Body shared.Permission
 }, error) {
 	db := api.app.Db()
 	id, err := uuid.Parse(input.ID)
@@ -385,7 +385,7 @@ func (api *Api) AdminPermissionsGet(ctx context.Context, input *struct {
 	if permission == nil {
 		return nil, huma.Error404NotFound("Permission not found")
 	}
-	return &struct{ Body Permission }{
-		Body: *ToPermission(permission),
+	return &struct{ Body shared.Permission }{
+		Body: *shared.ToPermission(permission),
 	}, nil
 }

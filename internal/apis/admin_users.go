@@ -47,8 +47,8 @@ type UserAccountDetail struct {
 
 type UserDetail struct {
 	*shared.User
-	Roles    []*RoleWithPermissions `json:"roles,omitempty" required:"false"`
-	Accounts []*UserAccountDetail   `json:"accounts,omitempty" required:"false"`
+	Roles    []*shared.RoleWithPermissions `json:"roles,omitempty" required:"false"`
+	Accounts []*UserAccountDetail          `json:"accounts,omitempty" required:"false"`
 }
 
 func ToUserAccountDetail(userAccount *models.UserAccount) *UserAccountDetail {
@@ -97,9 +97,8 @@ func (api *Api) AdminUsers(ctx context.Context, input *struct {
 	}
 	info := mapper.Map(users, func(user *models.User) *UserDetail {
 		return &UserDetail{
-			User:  shared.ToUser(user),
-			Roles: mapper.Map(user.R.Roles, ToRoleWithPermissions),
-			// Permissions: user.R.Permissions,
+			User:     shared.ToUser(user),
+			Roles:    mapper.Map(user.R.Roles, shared.ToRoleWithPermissions),
 			Accounts: mapper.Map(user.R.UserAccounts, ToUserAccountDetail),
 		}
 	})

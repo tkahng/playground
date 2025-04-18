@@ -4,7 +4,6 @@ import (
 	"context"
 	"net/http"
 	"slices"
-	"time"
 
 	"github.com/aarondl/opt/omit"
 	"github.com/aarondl/opt/omitnull"
@@ -32,57 +31,9 @@ func (api *Api) AdminRolesOperation(path string) huma.Operation {
 	}
 }
 
-type Role struct {
-	ID          uuid.UUID `db:"id,pk" json:"id"`
-	Name        string    `db:"name" json:"name"`
-	Description *string   `db:"description" json:"description,omitempty"`
-	CreatedAt   time.Time `db:"created_at" json:"created_at"`
-	UpdatedAt   time.Time `db:"updated_at" json:"updated_at"`
-}
-
-func ToRole(role *models.Role) *Role {
-	return &Role{
-		ID:          role.ID,
-		Name:        role.Name,
-		Description: role.Description.Ptr(),
-		CreatedAt:   role.CreatedAt,
-		UpdatedAt:   role.UpdatedAt,
-	}
-}
-
-type Permission struct {
-	ID          uuid.UUID `db:"id,pk" json:"id"`
-	Name        string    `db:"name" json:"name"`
-	Description *string   `db:"description" json:"description,omitempty"`
-	CreatedAt   time.Time `db:"created_at" json:"created_at"`
-	UpdatedAt   time.Time `db:"updated_at" json:"updated_at"`
-}
-
-func ToPermission(permission *models.Permission) *Permission {
-	return &Permission{
-		ID:          permission.ID,
-		Name:        permission.Name,
-		Description: permission.Description.Ptr(),
-		CreatedAt:   permission.CreatedAt,
-		UpdatedAt:   permission.UpdatedAt,
-	}
-}
-
-type RoleWithPermissions struct {
-	*Role
-	Permissions []*Permission `json:"permissions,omitempty" required:"false"`
-}
-
-func ToRoleWithPermissions(role *models.Role) *RoleWithPermissions {
-	return &RoleWithPermissions{
-		Permissions: mapper.Map(role.R.Permissions, ToPermission),
-		Role:        ToRole(role),
-	}
-}
-
 func (api *Api) AdminRolesList(ctx context.Context, input *struct {
 	shared.RolesListParams
-}) (*PaginatedOutput[*RoleWithPermissions], error) {
+}) (*PaginatedOutput[*shared.RoleWithPermissions], error) {
 	db := api.app.Db()
 	roles, err := repository.ListRoles(ctx, db, &input.RolesListParams)
 	if err != nil {
@@ -98,9 +49,9 @@ func (api *Api) AdminRolesList(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	out := mapper.Map(roles, ToRoleWithPermissions)
-	return &PaginatedOutput[*RoleWithPermissions]{
-		Body: shared.PaginatedResponse[*RoleWithPermissions]{
+	out := mapper.Map(roles, shared.ToRoleWithPermissions)
+	return &PaginatedOutput[*shared.RoleWithPermissions]{
+		Body: shared.PaginatedResponse[*shared.RoleWithPermissions]{
 			Data: out,
 			Meta: shared.Meta{
 				Page:    input.PaginatedInput.Page,
@@ -135,7 +86,7 @@ type RoleCreateInput struct {
 func (api *Api) AdminRolesCreate(ctx context.Context, input *struct {
 	Body RoleCreateInput
 }) (*struct {
-	Body Role
+	Body shared.Role
 }, error) {
 	db := api.app.Db()
 	data, err := repository.FindRoleByName(ctx, db, input.Body.Name)
@@ -155,8 +106,8 @@ func (api *Api) AdminRolesCreate(ctx context.Context, input *struct {
 	if role == nil {
 		return nil, huma.Error500InternalServerError("Failed to create role")
 	}
-	return &struct{ Body Role }{
-		Body: *ToRole(role),
+	return &struct{ Body shared.Role }{
+		Body: *shared.ToRole(role),
 	}, nil
 }
 
@@ -216,7 +167,7 @@ func (api *Api) AdminRolesUpdate(ctx context.Context, input *struct {
 	RoleID string `path:"id" format:"uuid" required:"true"`
 	Body   RoleCreateInput
 }) (*struct {
-	Body *Role
+	Body *shared.Role
 }, error) {
 	db := api.app.Db()
 	id, err := uuid.Parse(input.RoleID)
@@ -241,8 +192,8 @@ func (api *Api) AdminRolesUpdate(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	return &struct{ Body *Role }{
-		Body: ToRole(role),
+	return &struct{ Body *shared.Role }{
+		Body: shared.ToRole(role),
 	}, nil
 }
 func (api *Api) AdminUserRolesDeleteOperation(path string) huma.Operation {
@@ -364,7 +315,7 @@ type RoleIdsInput struct {
 func (api *Api) AdminUserRolesUpdate(ctx context.Context, input *struct {
 	UserID string       `path:"id" format:"uuid" required:"true"`
 	Body   RoleIdsInput `json:"body" required:"true"`
-}) (*PaginatedOutput[*Role], error) {
+}) (*PaginatedOutput[*shared.Role], error) {
 	db := api.app.Db()
 	id, err := uuid.Parse(input.UserID)
 	if err != nil {
@@ -399,9 +350,9 @@ func (api *Api) AdminUserRolesUpdate(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	output := PaginatedOutput[*Role]{
-		Body: shared.PaginatedResponse[*Role]{
-			Data: mapper.Map(roles, ToRole),
+	output := PaginatedOutput[*shared.Role]{
+		Body: shared.PaginatedResponse[*shared.Role]{
+			Data: mapper.Map(roles, shared.ToRole),
 		},
 	}
 	return &output, nil
@@ -430,7 +381,7 @@ func (api *Api) AdminRolesUpdatePermissions(ctx context.Context, input *struct {
 	RoleID string `path:"id" format:"uuid" required:"true"`
 	Body   RolePermissionsUpdateInput
 }) (*struct {
-	Body *Role
+	Body *shared.Role
 }, error) {
 	db := api.app.Db()
 	id, err := uuid.Parse(input.RoleID)
@@ -468,8 +419,8 @@ func (api *Api) AdminRolesUpdatePermissions(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	return &struct{ Body *Role }{
-		Body: ToRole(role),
+	return &struct{ Body *shared.Role }{
+		Body: shared.ToRole(role),
 	}, nil
 }
 
@@ -492,7 +443,7 @@ func (api *Api) AdminRolesGet(ctx context.Context, input *struct {
 	RoleID string   `path:"id" format:"uuid" required:"true"`
 	Expand []string `query:"expand" required:"false" minimum:"1" maximum:"100" enum:"permissions"`
 }) (*struct {
-	Body RoleWithPermissions
+	Body shared.RoleWithPermissions
 }, error) {
 	db := api.app.Db()
 	id, err := uuid.Parse(input.RoleID)
@@ -520,8 +471,8 @@ func (api *Api) AdminRolesGet(ctx context.Context, input *struct {
 		// 	}
 		// }
 	}
-	return &struct{ Body RoleWithPermissions }{
-		Body: *ToRoleWithPermissions(role),
+	return &struct{ Body shared.RoleWithPermissions }{
+		Body: *shared.ToRoleWithPermissions(role),
 	}, nil
 }
 
