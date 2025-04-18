@@ -313,6 +313,9 @@ func DefineTaskOrderNumber(ctx context.Context, db bob.Executor, taskId uuid.UUI
 		if err != nil {
 			return 0, err
 		}
+		if response == nil {
+			return 0, nil
+		}
 		if response.ID == taskId {
 			return response.Order, nil
 		}
@@ -328,6 +331,9 @@ func DefineTaskOrderNumber(ctx context.Context, db bob.Executor, taskId uuid.UUI
 	if err != nil {
 		return 0, err
 	}
+	if element == nil {
+		return 0, nil
+	}
 	if element.ID == taskId {
 		return element.Order, nil
 	}
@@ -341,6 +347,9 @@ func DefineTaskOrderNumber(ctx context.Context, db bob.Executor, taskId uuid.UUI
 		sideElements, err = OptionalRow(sideElements, err)
 		if err != nil {
 			return 0, err
+		}
+		if sideElements == nil {
+			return element.Order - 1000, nil
 		}
 		return (element.Order + sideElements.Order) / 2, nil
 	}
