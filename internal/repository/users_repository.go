@@ -39,7 +39,7 @@ func CreateUser(ctx context.Context, db bob.Executor, params *shared.Authenticat
 	}, im.Returning("*")).One(ctx, db)
 }
 
-func UpdateUserEmailConfirm(ctx context.Context, db bob.Executor, userId uuid.UUID) (*models.User, error) {
+func UpdateUserEmailConfirm(ctx context.Context, db bob.Executor, userId uuid.UUID, emailVerifiedAt time.Time) (*models.User, error) {
 	user, err := FindUserById(ctx, db, userId)
 	if err != nil {
 		return nil, err
@@ -48,7 +48,7 @@ func UpdateUserEmailConfirm(ctx context.Context, db bob.Executor, userId uuid.UU
 		return user, nil
 	}
 	err = user.Update(ctx, db, &models.UserSetter{
-		EmailVerifiedAt: omitnull.From(time.Now()),
+		EmailVerifiedAt: omitnull.From(emailVerifiedAt),
 	})
 	if err != nil {
 		return nil, err

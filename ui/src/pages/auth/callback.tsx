@@ -1,6 +1,7 @@
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { useEffect } from "react";
 import { useNavigate } from "react-router";
+import { toast } from "sonner";
 
 export default function CallbackComponent() {
   const auth = useAuthProvider();
@@ -14,7 +15,8 @@ export default function CallbackComponent() {
     if (error) {
       // Handle error (e.g., display an error message)
       console.error("OAuth error:", error);
-      navigate("/login"); // Redirect to login page or error page
+      toast.error(error);
+      navigate("/"); // Redirect to login page or error page
       return;
     }
 

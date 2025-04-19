@@ -41,15 +41,18 @@ func (app *BaseApp) SendVerificationEmail(ctx context.Context, db bob.Executor, 
 		return fmt.Errorf("error at storing verification token: %w", err)
 	}
 	mailParams, err := createVerificationMailParams(tokenHash, payload, config)
-	client.Send(mailParams)
 	if err != nil {
 		return fmt.Errorf("error creating verification token: %w", err)
+	}
+	err = client.Send(mailParams)
+	if err != nil {
+		return fmt.Errorf("error sending verification token: %w", err)
 	}
 	return nil
 }
 
 func createVerificationMailParams(tokenHash string, payload *OtpPayload, config *AppOptions) (*mailer.Message, error) {
-	path, err := mailer.GetPath("/api/auth/confirm-verification", &mailer.EmailParams{
+	path, err := mailer.GetPath("/api/auth/verify", &mailer.EmailParams{
 		Token:      tokenHash,
 		Type:       string(shared.VerificationTokenType),
 		RedirectTo: payload.RedirectTo,

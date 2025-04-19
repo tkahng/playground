@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
@@ -301,7 +302,7 @@ func UseVerificationTokenAndUpdateUser(ctx context.Context, db bob.Executor, tok
 		return fmt.Errorf("found a verification token, but it cannot have userId nil")
 	}
 	//  if token is valid, update user email confirmed
-	_, err = repository.UpdateUserEmailConfirm(ctx, db, dbToken.UserID.MustGet())
+	_, err = repository.UpdateUserEmailConfirm(ctx, db, dbToken.UserID.MustGet(), time.Now())
 	if err != nil {
 		return fmt.Errorf("eror updating user: %w", err)
 	}

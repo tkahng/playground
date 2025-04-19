@@ -21,13 +21,15 @@ import { useContext, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
 
-const callbackUrl = "http://localhost:5173/auth/callback";
 export default function SigninPage() {
   const [input, setInput] = useState<SigninInput>({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate(); // Get navigation function
   const { login } = useContext(AuthContext);
 
+  const callbackUrl = new URL(
+    window.location.origin + "/auth/callback"
+  ).toString();
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setLoading(true);
@@ -130,8 +132,8 @@ export default function SigninPage() {
                 </span>
               </div>
             </div>
-            <div className="flex justify-center space-x-4">
-              <ul>
+            <div className="flex flex-row justify-center space-x-4">
+              <ul className="flex flex-row justify-center space-x-4">
                 {providerNames.map((providerName) => (
                   <li key={providerName}>
                     <ProviderConnectionForm

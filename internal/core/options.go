@@ -38,28 +38,12 @@ func NewSettingsFromConf(cfg *conf.EnvConfig) *AppOptions {
 		SenderName:    cfg.AppConfig.SenderName,
 		SenderAddress: cfg.AppConfig.SenderAddress,
 	}
+	oauth := OAuth2ConfigFromEnv(*cfg)
+	auth := DefaultAuthSettings()
+	auth.OAuth2Config = oauth
 	return &AppOptions{
 		Meta: meta,
-		Auth: *DefaultAuthSettings(),
-		// SMTP: SMTPOption{
-		// 	Enabled:  false,
-		// 	Host:     "smtp.example.com",
-		// 	Port:     587,
-		// 	Username: "",
-		// 	Password: "",
-		// 	TLS:      false,
-		// },
-	}
-}
-func NewDefaultSettings() *AppOptions {
-	return &AppOptions{
-		Meta: MetaOption{
-			AppName:       "Acme",
-			AppURL:        "http://localhost:8080",
-			SenderName:    "Support",
-			SenderAddress: "support@example.com",
-		},
-		Auth: *DefaultAuthSettings(),
+		Auth: *auth,
 		// SMTP: SMTPOption{
 		// 	Enabled:  false,
 		// 	Host:     "smtp.example.com",

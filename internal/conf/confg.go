@@ -13,10 +13,10 @@ type StorageConfig struct {
 	Region       string `env:"STORAGE_REGION" required:"true" json:"region"`
 }
 type AppConfig struct {
-	AppUrl        string `env:"APP_URL" envDefault:"http://localhost:8080"`
+	AppUrl        string `env:"APP_URL" envDefault:"http://127.0.0.1:8080"`
 	AppName       string `env:"APP_NAME" envDefault:"NexusAI"`
 	SenderName    string `env:"SENDER_NAME" envDefault:"AuthGo"`
-	SenderAddress string `env:"SENDER_ADDRESS" envDefault:"support@example.com"`
+	SenderAddress string `env:"SENDER_ADDRESS" envDefault:"Hb4k@notifications.k2dv.io"`
 	EncryptionKey string `env:"ENCRYPTION_KEY" envDefault:"12345678901234567890123456789012"` //
 }
 

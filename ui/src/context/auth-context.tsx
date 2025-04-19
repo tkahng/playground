@@ -93,6 +93,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         },
       });
       if (error) {
+        console.error("Error refreshing token:", error);
+        setUser(null);
         throw error;
       }
       setUser(data);

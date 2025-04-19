@@ -3,6 +3,7 @@ package repository_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/stephenafamo/bob"
@@ -52,7 +53,7 @@ func TestUpdateUserEmailConfirm(t *testing.T) {
 				factory.UserMods.ID(tt.args.userId),
 				factory.UserMods.RandomEmail(nil),
 			).Create(ctx, dbx)
-			got, err := repository.UpdateUserEmailConfirm(tt.args.ctx, tt.args.db, tt.args.userId)
+			got, err := repository.UpdateUserEmailConfirm(tt.args.ctx, tt.args.db, tt.args.userId, time.Now())
 			if (err != nil) != tt.wantErr {
 				t.Errorf("UpdateUserEmailConfirm() error = %v, wantErr %v", err, tt.wantErr)
 				return
