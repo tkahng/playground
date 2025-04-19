@@ -98,7 +98,7 @@ export default function UserEdit() {
   }
   return (
     <UserDetailContext.Provider value={userInfo}>
-      <div>
+      <div className="space-y-6">
         <Link
           to={RouteMap.ADMIN_DASHBOARD_USERS}
           className="flex items-center gap-2 text-sm text-muted-foreground"

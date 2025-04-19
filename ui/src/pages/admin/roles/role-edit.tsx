@@ -124,7 +124,7 @@ export default function RoleEdit() {
 
   return (
     // <div className="h-full px-4 py-6 lg:px-8 space-y-6">
-    <div>
+    <div className="space-y-6">
       <Link
         to={RouteMap.ADMIN_DASHBOARD_ROLES}
         className="flex items-center gap-2 text-sm text-muted-foreground"

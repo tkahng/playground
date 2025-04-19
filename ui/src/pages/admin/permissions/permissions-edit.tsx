@@ -89,7 +89,7 @@ export default function PermissionEdit() {
   if (!permission) return <p>Role not found</p>;
 
   return (
-    <div>
+    <div className="space-y-6">
       <Link
         to={RouteMap.ADMIN_DASHBOARD_PERMISSIONS}
         className="flex items-center gap-2 text-sm text-muted-foreground"
