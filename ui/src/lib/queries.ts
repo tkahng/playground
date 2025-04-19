@@ -682,7 +682,7 @@ export const getAuthUrl = async ({
     params: {
       query: {
         provider,
-        redirect_to: redirect,
+        redirect_to: redirect || "",
       },
     },
   });

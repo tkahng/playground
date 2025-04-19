@@ -23,6 +23,10 @@
 // import { createSupabaseWithSession } from "~/modules/common/supabase/supabase.server";
 // import "~/tailwind.css";
 
+import {
+  ProviderConnectionForm,
+  providerNames,
+} from "@/components/connections";
 import { RouteMap } from "@/components/route-map";
 import { Button } from "@/components/ui/button";
 import {
@@ -42,8 +46,10 @@ import { Check } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
-
 export default function SignupPage() {
+  const callbackUrl = new URL(
+    window.location.origin + "/auth/callback"
+  ).toString();
   const [input, setInput] = useState<SignupInput>({
     email: "",
     password: "",
@@ -98,8 +104,10 @@ export default function SignupPage() {
   //   const navigation = useNavigation();
   //   const isSubmitting = navigation.formAction === RouteMap.SIGNUP;
   return (
-    <div className="container px-4 md:px-6">
-      <div className="mx-auto grid max-w-6xl items-start gap-6 lg:grid-cols-2 lg:gap-12">
+    // <div className="container px-4 md:px-6">
+    //   <div className="mx-auto grid max-w-6xl items-center gap-6 lg:grid-cols-2 lg:gap-12">
+    <div className="flex min-h-screen flex-col">
+      <div className=" flex flex-1 items-center justify-center gap-16 px-6 py-4 lg:px-8 lg:py-4">
         <div className="flex flex-col justify-center space-y-4">
           <div className="space-y-2">
             <h1 className="text-3xl font-bold tracking-tighter sm:text-5xl">
@@ -145,7 +153,6 @@ export default function SignupPage() {
                   id="name"
                   name="name"
                   placeholder="John Doe"
-                  required
                   onChange={handleChange}
                 />
               </div>
@@ -170,15 +177,7 @@ export default function SignupPage() {
                   onChange={handleChange}
                 />
               </div>
-              {/* <div className="space-y-2">
-                <Label htmlFor="confirm-password">Confirm Password</Label>
-                <Input
-                  id="confirm-password"
-                  name="confirm-password"
-                  required
-                  type="password"
-                />
-              </div> */}
+
               <div className="flex items-center space-x-2">
                 <Checkbox id="terms" name="terms" />
                 <label
@@ -211,16 +210,17 @@ export default function SignupPage() {
                 </span>
               </div>
             </div>
-            <div className="flex justify-center space-x-4">
-              <ul>
-                {/* {providerNames.map((providerName) => (
+            <div className="flex flex-row justify-center space-x-4">
+              <ul className="flex flex-row justify-center space-x-4">
+                {providerNames.map((providerName) => (
                   <li key={providerName}>
                     <ProviderConnectionForm
                       type="Signup"
                       providerName={providerName}
+                      redirectTo={callbackUrl}
                     />
                   </li>
-                ))} */}
+                ))}
               </ul>
             </div>
             <p className="text-center text-xs text-gray-500 dark:text-gray-400">
