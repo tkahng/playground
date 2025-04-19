@@ -14,6 +14,7 @@ import (
 )
 
 var TableNames = struct {
+	AiUsages            string
 	AppParams           string
 	Media               string
 	Notifications       string
@@ -37,6 +38,7 @@ var TableNames = struct {
 	UserSessions        string
 	Users               string
 }{
+	AiUsages:            "ai_usages",
 	AppParams:           "app_params",
 	Media:               "media",
 	Notifications:       "notifications",
@@ -62,6 +64,7 @@ var TableNames = struct {
 }
 
 var ColumnNames = struct {
+	AiUsages            aiUsageColumnNames
 	AppParams           appParamColumnNames
 	Media               mediumColumnNames
 	Notifications       notificationColumnNames
@@ -85,6 +88,15 @@ var ColumnNames = struct {
 	UserSessions        userSessionColumnNames
 	Users               userColumnNames
 }{
+	AiUsages: aiUsageColumnNames{
+		ID:               "id",
+		UserID:           "user_id",
+		PromptTokens:     "prompt_tokens",
+		CompletionTokens: "completion_tokens",
+		TotalTokens:      "total_tokens",
+		CreatedAt:        "created_at",
+		UpdatedAt:        "updated_at",
+	},
 	AppParams: appParamColumnNames{
 		ID:        "id",
 		Name:      "name",
@@ -290,6 +302,7 @@ var (
 )
 
 func Where[Q psql.Filterable]() struct {
+	AiUsages            aiUsageWhere[Q]
 	AppParams           appParamWhere[Q]
 	Media               mediumWhere[Q]
 	Notifications       notificationWhere[Q]
@@ -314,6 +327,7 @@ func Where[Q psql.Filterable]() struct {
 	Users               userWhere[Q]
 } {
 	return struct {
+		AiUsages            aiUsageWhere[Q]
 		AppParams           appParamWhere[Q]
 		Media               mediumWhere[Q]
 		Notifications       notificationWhere[Q]
@@ -337,6 +351,7 @@ func Where[Q psql.Filterable]() struct {
 		UserSessions        userSessionWhere[Q]
 		Users               userWhere[Q]
 	}{
+		AiUsages:            buildAiUsageWhere[Q](AiUsageColumns),
 		AppParams:           buildAppParamWhere[Q](AppParamColumns),
 		Media:               buildMediumWhere[Q](MediumColumns),
 		Notifications:       buildNotificationWhere[Q](NotificationColumns),
@@ -383,6 +398,7 @@ func (j joinSet[Q]) AliasedAs(alias string) joinSet[Q] {
 }
 
 type joins[Q dialect.Joinable] struct {
+	AiUsages            joinSet[aiUsageJoins[Q]]
 	Media               joinSet[mediumJoins[Q]]
 	Notifications       joinSet[notificationJoins[Q]]
 	Permissions         joinSet[permissionJoins[Q]]
@@ -414,6 +430,7 @@ func buildJoinSet[Q interface{ aliasedAs(string) Q }, C any, F func(C, string) Q
 
 func getJoins[Q dialect.Joinable]() joins[Q] {
 	return joins[Q]{
+		AiUsages:            buildJoinSet[aiUsageJoins[Q]](AiUsageColumns, buildAiUsageJoins),
 		Media:               buildJoinSet[mediumJoins[Q]](MediumColumns, buildMediumJoins),
 		Notifications:       buildJoinSet[notificationJoins[Q]](NotificationColumns, buildNotificationJoins),
 		Permissions:         buildJoinSet[permissionJoins[Q]](PermissionColumns, buildPermissionJoins),

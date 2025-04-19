@@ -12,6 +12,7 @@ import (
 type contextKey string
 
 var (
+	aiUsageCtx            = newContextual[*models.AiUsage]("aiUsage")
 	appParamCtx           = newContextual[*models.AppParam]("appParam")
 	mediumCtx             = newContextual[*models.Medium]("medium")
 	notificationCtx       = newContextual[*models.Notification]("notification")

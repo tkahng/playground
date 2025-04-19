@@ -4,6 +4,7 @@
 package factory
 
 type Factory struct {
+	baseAiUsageMods            AiUsageModSlice
 	baseAppParamMods           AppParamModSlice
 	baseMediumMods             MediumModSlice
 	baseNotificationMods       NotificationModSlice
@@ -30,6 +31,18 @@ type Factory struct {
 
 func New() *Factory {
 	return &Factory{}
+}
+
+func (f *Factory) NewAiUsage(mods ...AiUsageMod) *AiUsageTemplate {
+	o := &AiUsageTemplate{f: f}
+
+	if f != nil {
+		f.baseAiUsageMods.Apply(o)
+	}
+
+	AiUsageModSlice(mods).Apply(o)
+
+	return o
 }
 
 func (f *Factory) NewAppParam(mods ...AppParamMod) *AppParamTemplate {
@@ -294,6 +307,14 @@ func (f *Factory) NewUser(mods ...UserMod) *UserTemplate {
 	UserModSlice(mods).Apply(o)
 
 	return o
+}
+
+func (f *Factory) ClearBaseAiUsageMods() {
+	f.baseAiUsageMods = nil
+}
+
+func (f *Factory) AddBaseAiUsageMod(mods ...AiUsageMod) {
+	f.baseAiUsageMods = append(f.baseAiUsageMods, mods...)
 }
 
 func (f *Factory) ClearBaseAppParamMods() {

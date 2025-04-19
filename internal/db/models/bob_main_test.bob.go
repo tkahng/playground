@@ -13,6 +13,9 @@ import (
 	"github.com/stephenafamo/bob/types"
 )
 
+// Make sure the type AiUsage runs hooks after queries
+var _ bob.HookableType = &AiUsage{}
+
 // Make sure the type AppParam runs hooks after queries
 var _ bob.HookableType = &AppParam{}
 
