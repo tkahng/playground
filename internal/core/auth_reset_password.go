@@ -91,17 +91,17 @@ func (app *BaseApp) SendSecurityPasswordResetEmail(ctx context.Context, db bob.E
 
 	tokenHash, err := CreatePasswordResetToken(payload, opts.PasswordResetToken)
 	if err != nil {
-		return fmt.Errorf("error at creating verification token: %w", err)
+		return fmt.Errorf("error at creating security password reset token: %w", err)
 	}
 
 	err = PersistOtpToken(ctx, db, payload, opts.PasswordResetToken)
 	if err != nil {
-		return fmt.Errorf("error at storing verification token: %w", err)
+		return fmt.Errorf("error at storing security password reset token: %w", err)
 	}
 	mailParams, err := createSecurityPasswordResetMailParams(tokenHash, payload, config)
 	client.Send(mailParams)
 	if err != nil {
-		return fmt.Errorf("error creating verification token: %w", err)
+		return fmt.Errorf("error creating security password reset token: %w", err)
 	}
 	return nil
 }

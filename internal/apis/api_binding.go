@@ -1,12 +1,9 @@
 package apis
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
-	"reflect"
 	"slices"
 
 	"github.com/danielgtaylor/huma/v2"
@@ -36,34 +33,6 @@ func BindMiddlewares(api huma.API, app core.App) {
 	api.UseMiddleware(RequireAuthMiddleware(api))
 }
 
-// OmittableNullable is a field which can be omitted from the input,
-// set to `null`, or set to a value. Each state is tracked and can
-// be checked for in handling code.
-type OmittableNullable[T any] struct {
-	Sent  bool
-	Null  bool
-	Value T
-}
-
-// UnmarshalJSON unmarshals this value from JSON input.
-func (o *OmittableNullable[T]) UnmarshalJSON(b []byte) error {
-	if len(b) > 0 {
-		o.Sent = true
-		if bytes.Equal(b, []byte("null")) {
-			o.Null = true
-			return nil
-		}
-		return json.Unmarshal(b, &o.Value)
-	}
-	return nil
-}
-
-// Schema returns a schema representing this value on the wire.
-// It returns the schema of the contained type.
-func (o OmittableNullable[T]) Schema(r huma.Registry) *huma.Schema {
-	return r.Schema(reflect.TypeOf(o.Value), true, "")
-}
-
 type IndexOutputBody struct {
 	Access string `json:"access"`
 }
@@ -77,8 +46,9 @@ func BindApis(api huma.API, app core.App) {
 		app: app,
 	}
 	huma.Get(api, "/", func(ctx context.Context, input *struct {
-		Page OmittableNullable[string] `query:"page" required:"false"`
+		Page shared.OmittableNullable[string] `query:"page" required:"false"`
 	}) (*IndexOutput, error) {
+		fmt.Println("input", input)
 		return &IndexOutput{
 			Body: IndexOutputBody{
 				Access: "public",
@@ -210,7 +180,7 @@ func BindApis(api huma.API, app core.App) {
 	//  admin routes ----------------------------------------------------------------------------
 	adminGroup := huma.NewGroup(api, "/admin")
 	//  admin middleware
-	adminGroup.UseMiddleware(CheckRolesMiddleware(api, "superuser"))
+	adminGroup.UseMiddleware(CheckPermissionsMiddleware(api, "superuser"))
 	//  admin user list
 	huma.Register(adminGroup, appApi.AdminUsersOperation("/users"), appApi.AdminUsers)
 	// admin user get

@@ -82,12 +82,15 @@ func (app *BaseApp) AuthenticateUser(ctx context.Context, db bob.Executor, param
 		}
 		result.User = user
 		result.Account = nil
-		app.SendVerificationEmail(ctx, db, user, "http://localhost:8080")
+		err = app.SendVerificationEmail(ctx, db, user, "http://localhost:8080")
+		if err != nil {
+			return nil, fmt.Errorf("error sending verification email: %w", err)
+		}
 	}
 	// if user exists, but account does not exist, Create UserAccount ----------------------------------------------------------------------------------------------------
 	if result.Account == nil {
 		// if type is credentials, hash password and set params
-		if params.Type == "credentials" {
+		if params.Type == models.ProviderTypesCredentials {
 			pw, err := security.CreateHash(*params.Password, argon2id.DefaultParams)
 			if err != nil {
 				return nil, fmt.Errorf("error at hashing password: %w", err)
@@ -100,7 +103,10 @@ func (app *BaseApp) AuthenticateUser(ctx context.Context, db bob.Executor, param
 			return nil, fmt.Errorf("error creating user account: %w", err)
 		}
 		result.Account = account
-
+		err = app.CheckUserCredentialsSecurity(ctx, db, result.User, params)
+		if err != nil {
+			return nil, fmt.Errorf("error checking user credentials security: %w", err)
+		}
 		return result, nil
 	}
 	// if user exists and account exists, check if password is correct  or check if provider key is correct ----------------------------------------------------------------------------------------------------
@@ -126,4 +132,42 @@ func (app *BaseApp) AuthenticateUser(ctx context.Context, db bob.Executor, param
 		}
 	}
 	return nil, errors.New("unknown error")
+}
+
+func (app *BaseApp) CheckUserCredentialsSecurity(ctx context.Context, db bob.Executor, user *models.User, params *shared.AuthenticateUserParams) error {
+
+	// err := user.LoadUserUserAccounts(ctx, db, models.SelectWhere.UserAccounts.UserID.EQ(user.ID))
+	if user == nil || params == nil {
+		return fmt.Errorf("user not found")
+	}
+	// if user is not verified,
+	if user.EmailVerifiedAt.IsNull() {
+		if params.EmailVerifiedAt != nil {
+			// and if incoming request is oauth,
+			if params.Type == models.ProviderTypesOauth {
+				//  check if user has a credentials account
+				account, err := repository.FindUserAccountByProviderAndEmail(ctx, db, user.Email, models.ProvidersCredentials)
+				if err != nil {
+					return fmt.Errorf("error loading user accounts: %w", err)
+				}
+				if account != nil {
+					// if user has a credentials account, send security password reset email
+					randomPassword := security.RandomString(20)
+					err = repository.UpdateUserPassword(ctx, db, user.ID, randomPassword)
+					if err != nil {
+						return fmt.Errorf("error updating user password: %w", err)
+					}
+					err = app.SendPasswordResetEmail(ctx, db, user, app.Settings().Meta.AppURL)
+					if err != nil {
+						return fmt.Errorf("error sending password reset email: %w", err)
+					}
+				}
+			}
+			_, err := repository.UpdateUserEmailConfirm(ctx, db, user.ID, *params.EmailVerifiedAt)
+			if err != nil {
+				return fmt.Errorf("error updating user email confirmation: %w", err)
+			}
+		}
+	}
+	return nil
 }
