@@ -27,7 +27,7 @@ import {
   Column,
   ColumnDragData,
 } from "./BoardColumn";
-import { Car, CarCard, CarDragData } from "./CarCard";
+import { CarCard, Task, TaskDragData } from "./CarCard";
 import { coordinateGetter } from "./multipleContainersKeyboardPreset";
 
 type NestedColumn = Column & {
@@ -51,11 +51,11 @@ const defaultCols = [
 
 export type ColumnId = (typeof defaultCols)[number]["id"];
 
-export function KanbanBoard(props: { cars: Car[]; projectId: string }) {
+export function KanbanBoard(props: { cars: Task[]; projectId: string }) {
   const [columns, setColumns] = useState<Column[]>(defaultCols);
-  const [cars, setCars] = useState<Car[]>(props.cars);
+  const [cars, setCars] = useState<Task[]>(props.cars);
   const [activeColumn, setActiveColumn] = useState<Column | null>(null);
-  const [activeCar, setActiveCar] = useState<Car | null>(null);
+  const [activeCar, setActiveCar] = useState<Task | null>(null);
   const dndContextId = useId();
 
   const queryClient = useQueryClient();
@@ -100,7 +100,7 @@ export function KanbanBoard(props: { cars: Car[]; projectId: string }) {
   const hasDraggableData = <T extends Active | Over>(
     entry: T | null | undefined
   ): entry is T & {
-    data: DataRef<CarDragData | ColumnDragData>;
+    data: DataRef<TaskDragData | ColumnDragData>;
   } => {
     if (!entry) {
       return false;
@@ -198,7 +198,7 @@ export function KanbanBoard(props: { cars: Car[]; projectId: string }) {
       const newColumnId = hasDraggableData(over)
         ? over.data.current?.type === "Column"
           ? (over.id as ColumnId)
-          : over.data.current?.car.columnId
+          : over.data.current?.task.columnId
         : (over.id as ColumnId);
 
       const oldColumnId = activeData.car.columnId;
@@ -302,7 +302,7 @@ export function KanbanBoard(props: { cars: Car[]; projectId: string }) {
                 isOverlay
               />
             )}
-            {activeCar && <CarCard car={activeCar} isOverlay />}
+            {activeCar && <CarCard task={activeCar} isOverlay />}
           </DragOverlay>,
           document.body
         )}

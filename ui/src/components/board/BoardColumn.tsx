@@ -1,12 +1,12 @@
-import { SortableContext, useSortable } from "@dnd-kit/sortable";
-import { useDndContext, type UniqueIdentifier } from "@dnd-kit/core";
-import { CSS } from "@dnd-kit/utilities";
-import { useMemo } from "react";
-import { cva } from "class-variance-authority";
-import { Card, CardHeader, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { useDndContext, type UniqueIdentifier } from "@dnd-kit/core";
+import { SortableContext, useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { cva } from "class-variance-authority";
+import { useMemo } from "react";
 import { Badge } from "../ui/badge";
-import { Car, CarCard } from "./CarCard";
+import { CarCard, Task } from "./CarCard";
 
 export interface Column {
   id: UniqueIdentifier;
@@ -18,11 +18,11 @@ export type ColumnType = "Column";
 export type ColumnDragData = {
   type: ColumnType;
   column: Column;
-}
+};
 
 interface BoardColumnProps {
   column: Column;
-  cars: Car[];
+  cars: Task[];
   isOverlay?: boolean;
 }
 
@@ -35,16 +35,16 @@ export const BoardColumn = ({ column, cars, isOverlay }: BoardColumnProps) => {
     id: column.id,
     data: {
       type: "Column",
-      column
+      column,
     } satisfies ColumnDragData,
     attributes: {
-      roleDescription: `Column: ${column.title}`
-    }
+      roleDescription: `Column: ${column.title}`,
+    },
   });
 
   const style = {
     transition,
-    transform: CSS.Translate.toString(transform)
+    transform: CSS.Translate.toString(transform),
   };
 
   const variants = cva(
@@ -54,9 +54,9 @@ export const BoardColumn = ({ column, cars, isOverlay }: BoardColumnProps) => {
         dragging: {
           default: "border-2 border-transparent",
           over: "ring-2 opacity-30",
-          overlay: "ring-2 ring-primary"
-        }
-      }
+          overlay: "ring-2 ring-primary",
+        },
+      },
     }
   );
 
@@ -66,7 +66,8 @@ export const BoardColumn = ({ column, cars, isOverlay }: BoardColumnProps) => {
       style={style}
       className={variants({
         dragging: isOverlay ? "overlay" : isDragging ? "over" : undefined,
-      })}>
+      })}
+    >
       <CardHeader className="p-4 font-semibold border-b-2 bg-gray-100 dark:bg-zinc-800 flex flex-row items-center justify-between">
         <h1>{column.title}</h1>
         <Badge variant="outline">{cars.length}</Badge>
@@ -79,14 +80,14 @@ export const BoardColumn = ({ column, cars, isOverlay }: BoardColumnProps) => {
                 <p className="text-gray-400">No cars here.</p>
               </div>
             ) : (
-              cars.map((car) => <CarCard key={car.id} car={car} />)
+              cars.map((car) => <CarCard key={car.id} task={car} />)
             )}
           </SortableContext>
         </CardContent>
       </ScrollArea>
     </Card>
   );
-}
+};
 
 export const BoardContainer = ({ children }: { children: React.ReactNode }) => {
   const dndContext = useDndContext();
@@ -101,11 +102,15 @@ export const BoardContainer = ({ children }: { children: React.ReactNode }) => {
   });
 
   return (
-    <ScrollArea className={variations({ dragging: dndContext.active ? "active" : "default" })}>
+    <ScrollArea
+      className={variations({
+        dragging: dndContext.active ? "active" : "default",
+      })}
+    >
       <div className="flex gap-4 items-start flex-row justify-center">
         {children}
       </div>
       <ScrollBar orientation="horizontal" />
     </ScrollArea>
   );
-}
+};
