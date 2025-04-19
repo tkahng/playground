@@ -14,6 +14,7 @@ export function MainNav({
     >
       {links.map((link) => (
         <Link
+          key={link.to}
           to={link.to}
           className="text-sm font-medium transition-colors hover:text-primary"
         >
