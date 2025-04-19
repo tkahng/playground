@@ -144,7 +144,7 @@ export function CreateProjectTaskDialog({ projectId }: { projectId: string }) {
                   )}
                 />
                 <DialogFooter>
-                  <Button type="submit">Assign Permissions</Button>
+                  <Button type="submit">Create Project Task</Button>
                 </DialogFooter>
               </div>
             </div>

@@ -71,12 +71,12 @@ export default function ProjectListPage() {
     // <div className="flex w-full flex-col items-center justify-center">
     <div>
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Roles</h1>
+        <h1 className="text-2xl font-bold">Projects</h1>
         <CreateProjectDialog />
       </div>
       <p>
-        Create and manage Roles for your applications. Roles contain collections
-        of Permissions and can be assigned to Users.
+        Create and manage Projects for your applications. Projects contain
+        collections of Tasks and can be assigned to Users.
       </p>
       <DataTable
         columns={[
@@ -123,84 +123,3 @@ export default function ProjectListPage() {
     </div>
   );
 }
-
-// function RoleEllipsisDropdown({
-//   roleId,
-//   onDelete,
-// }: {
-//   roleId: string;
-//   onDelete: (roleId: string) => void;
-// }) {
-//   const editDialog = useDialog();
-//   const navigate = useNavigate();
-//   const [dropdownOpen, setDropdownOpen] = useState(false);
-//   return (
-//     <>
-//       <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
-//         <DropdownMenuTrigger asChild>
-//           <Button variant="ghost" size="icon">
-//             <Ellipsis className="h-4 w-4" />
-//           </Button>
-//         </DropdownMenuTrigger>
-//         <DropdownMenuContent>
-//           <DropdownMenuItem
-//             onSelect={() => {
-//               setDropdownOpen(false);
-//               navigate(`${RouteMap.ADMIN_DASHBOARD_ROLES}/${roleId}`);
-//             }}
-//           >
-//             <Button variant="ghost" size="sm">
-//               <Pencil className="h-4 w-4" />
-//               <span>Edit</span>
-//             </Button>
-//           </DropdownMenuItem>
-//           <DropdownMenuItem
-//             onSelect={() => {
-//               setDropdownOpen(false);
-//               editDialog.trigger();
-//             }}
-//           >
-//             <Button variant="ghost" size="sm">
-//               <Trash className="h-4 w-4" />
-//               <span>Remove</span>
-//             </Button>
-//           </DropdownMenuItem>
-//         </DropdownMenuContent>
-//       </DropdownMenu>
-//       <ConfirmDialog dialogProps={editDialog.props}>
-//         <>
-//           <DialogHeader>
-//             <DialogTitle>Are you absolutely sure?</DialogTitle>
-//           </DialogHeader>
-//           {/* Dialog Content */}
-//           <DialogDescription>This action cannot be undone.</DialogDescription>
-//           <DialogFooter>
-//             <DialogClose asChild>
-//               <Button
-//                 variant="outline"
-//                 onClick={() => {
-//                   console.log("cancel");
-//                   // editDialog.props.onOpenChange(false);
-//                 }}
-//               >
-//                 Cancel
-//               </Button>
-//             </DialogClose>
-//             <DialogClose asChild>
-//               <Button
-//                 variant="destructive"
-//                 onClick={() => {
-//                   console.log("delete");
-//                   // editDialog.props.onOpenChange(false);
-//                   onDelete(roleId);
-//                 }}
-//               >
-//                 Delete
-//               </Button>
-//             </DialogClose>
-//           </DialogFooter>
-//         </>
-//       </ConfirmDialog>
-//     </>
-//   );
-// }

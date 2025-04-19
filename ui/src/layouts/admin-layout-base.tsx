@@ -1,6 +1,6 @@
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { useEffect } from "react";
-import { Navigate, useLocation, useOutlet } from "react-router";
+import { Navigate, Outlet, useLocation } from "react-router";
 import { toast } from "sonner";
 // const links: LinkProps[] = [
 //   {
@@ -23,7 +23,6 @@ import { toast } from "sonner";
 export default function AdminLayoutBase() {
   const location = useLocation();
   const { checkAuth, user } = useAuthProvider();
-  const outlet = useOutlet();
   useEffect(() => {
     checkAuth();
   }, [location]);
@@ -44,7 +43,7 @@ export default function AdminLayoutBase() {
         <NexusAILandingHeader full />
         <main className="flex flex-grow"> */}
       {/* <DashboardSidebar links={links} /> */}
-      {outlet}
+      <Outlet />
       {/* </main>
         <NexusAIMinimalFooter />
       </div> */}

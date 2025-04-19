@@ -2,47 +2,25 @@ import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { LinkDto } from "@/components/landing-links";
 import { NexusAILandingHeader } from "@/components/nexus-landing-header";
 import { NexusAIMinimalFooter } from "@/components/nexus-minimal-footer";
-import { RouteMap } from "@/components/route-map";
-import { Home } from "lucide-react";
-import { useOutlet } from "react-router";
-const links: LinkDto[] = [
-  {
-    title: "Home",
-    to: RouteMap.DASHBOARD_HOME,
-    icon: <Home />,
-  },
-  {
-    title: "Projects",
-    to: RouteMap.TASK_PROJECTS,
-  },
-  {
-    title: "Kanban",
-    to: RouteMap.DASHBOARD_KANBAN,
-  },
-  {
-    title: "Basic Route",
-    to: RouteMap.PROTECTED_BASIC,
-  },
-  {
-    title: "Pro Route",
-    to: RouteMap.PROTECTED_PRO,
-  },
-  {
-    title: "Advanced Route",
-    to: RouteMap.PROTECTED_ADVANCED,
-  },
-];
+import { JSX } from "react";
+import { Outlet } from "react-router";
 
-export default function DashboardLayout() {
-  const outlet = useOutlet();
-
+export default function DashboardLayout({
+  links,
+  backLink,
+}: {
+  links: LinkDto[];
+  backLink?: JSX.Element;
+}) {
   return (
     <>
       <div className="relative flex min-h-screen flex-col justify-center">
         <NexusAILandingHeader full />
         <main className="flex flex-grow">
-          <DashboardSidebar links={links} />
-          {outlet}
+          <DashboardSidebar links={links} backLink={backLink} />
+          <div className="mx-auto w-full max-w-[1200px] py-12 px-4 @lg:px-6 @xl:px-12 @2xl:px-20 @3xl:px-24">
+            <Outlet />
+          </div>
         </main>
         <NexusAIMinimalFooter />
       </div>
