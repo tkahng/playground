@@ -1,8 +1,10 @@
 import CustomerPortalForm from "@/components/customer-portal-form";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -52,6 +54,44 @@ export default function BillingSettingPage() {
           <p>Billing Information</p>
         </CardContent>
       </Card>
+      <div className="px-8 grid grid-cols-2 grid-rows-1 gap-8">
+        <Card>
+          <CardHeader>
+            <CardTitle>Billing Information</CardTitle>
+            <CardDescription>Billing Information</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p>Billing Information</p>
+          </CardContent>
+          <CardFooter>
+            <Button>Cancel</Button>
+          </CardFooter>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Billing Information</CardTitle>
+            <CardDescription>Billing Information</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p>Billing Information</p>
+          </CardContent>
+          <CardFooter>
+            <Button>Cancel</Button>
+          </CardFooter>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Billing Information</CardTitle>
+            <CardDescription>Billing Information</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p>Billing Information</p>
+          </CardContent>
+          <CardFooter>
+            <Button>Cancel</Button>
+          </CardFooter>
+        </Card>
+      </div>
     </div>
   );
 }

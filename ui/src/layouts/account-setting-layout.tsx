@@ -1,3 +1,4 @@
+import BackLink from "@/components/back-link";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import {
   authenticatedSubHeaderLinks,
@@ -31,7 +32,12 @@ export default function AccountSettingsLayout() {
           <MainNav links={authenticatedSubHeaderLinks ?? []} />
         </div>
         <main className="flex flex-grow">
-          <DashboardSidebar links={links} />
+          <DashboardSidebar
+            links={links}
+            backLink={
+              <BackLink to={RouteMap.DASHBOARD_HOME} name="Dashboard" />
+            }
+          />
           <Outlet />
         </main>
         <NexusAIMinimalFooter />

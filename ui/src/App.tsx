@@ -30,9 +30,9 @@ import ProRoute from "@/pages/protected-routes/route-pro";
 import AccountSettingsPage from "@/pages/settings/account-settings";
 import BillingSettingPage from "@/pages/settings/billing-settings";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { ChevronLeft } from "lucide-react";
-import { BrowserRouter, Link, Route, Routes } from "react-router";
+import { BrowserRouter, Route, Routes } from "react-router";
 import { Toaster } from "sonner";
+import BackLink from "./components/back-link";
 import {
   adminHeaderLinks,
   adminSidebarLinks,
@@ -42,6 +42,7 @@ import {
   tasksSidebarLinks,
 } from "./components/landing-links";
 import { RouteMap } from "./components/route-map";
+import NotAuthorizedPage from "./pages/not-authorized";
 import ProjectEdit from "./pages/tasks/task-projects/project-edit";
 import ProjectListPage from "./pages/tasks/task-projects/projects-list";
 
@@ -66,6 +67,7 @@ function App() {
                 </Route>
                 {/* <Route element= */}
                 {/* Other routes */}
+                <Route path="/not-authorized" element={<NotAuthorizedPage />} />
                 <Route path="/auth/callback" element={<CallbackComponent />} />
                 <Route
                   path="/auth/confirm-verification"
@@ -95,15 +97,10 @@ function App() {
                         links={tasksSidebarLinks}
                         headerLinks={authenticatedSubHeaderLinks}
                         backLink={
-                          <>
-                            <Link
-                              to={RouteMap.DASHBOARD_HOME}
-                              className="flex items-center gap-2 text-sm text-muted-foreground"
-                            >
-                              <ChevronLeft className="h-4 w-4" />
-                              Back to Dashboard
-                            </Link>
-                          </>
+                          <BackLink
+                            to={RouteMap.DASHBOARD_HOME}
+                            name="Dashboard"
+                          />
                         }
                       />
                     }
@@ -120,15 +117,10 @@ function App() {
                         links={protectedSidebarLinks}
                         headerLinks={authenticatedSubHeaderLinks}
                         backLink={
-                          <>
-                            <Link
-                              to={RouteMap.DASHBOARD_HOME}
-                              className="flex items-center gap-2 text-sm text-muted-foreground"
-                            >
-                              <ChevronLeft className="h-4 w-4" />
-                              Back to Dashboard
-                            </Link>
-                          </>
+                          <BackLink
+                            to={RouteMap.DASHBOARD_HOME}
+                            name="Dashboard"
+                          />
                         }
                       />
                     }
