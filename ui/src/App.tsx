@@ -93,6 +93,7 @@ function App() {
                     element={
                       <DashboardLayout
                         links={tasksSidebarLinks}
+                        headerLinks={authenticatedSubHeaderLinks}
                         backLink={
                           <>
                             <Link
@@ -117,6 +118,7 @@ function App() {
                     element={
                       <DashboardLayout
                         links={protectedSidebarLinks}
+                        headerLinks={authenticatedSubHeaderLinks}
                         backLink={
                           <>
                             <Link

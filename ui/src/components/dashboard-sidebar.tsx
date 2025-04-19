@@ -1,8 +1,8 @@
 import { LinkDto } from "@/components/landing-links";
-import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { JSX } from "react";
 import { Link, useLocation } from "react-router";
+import { buttonVariants } from "./ui/button";
 
 export const DashboardSidebar = ({
   links,
@@ -15,7 +15,7 @@ export const DashboardSidebar = ({
   return (
     // <nav className="flex flex-grow flex-col">
     //   <div className="border flex flex-col flex-grow p-8">
-    <nav className="flex flex-col border p-12 justify-start">
+    <nav className="flex flex-col border w-64 px-8 py-12 gap-4 justify-start">
       {/* <div className="border flex flex-col flex-grow "> */}
       {backLink}
       {links.map((item) => (

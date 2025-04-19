@@ -18,7 +18,7 @@ export function NexusAILandingHeader({
       {/* <nav className=" flex h-14 items-center justify-between lg:px-6"> */}
       <nav
         className={cn(
-          "flex h-14 items-center justify-between lg:px-6",
+          "flex h-14 items-center justify-between lg:px-8",
           !full ? "mx-auto container" : undefined
         )}
       >

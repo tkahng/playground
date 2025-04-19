@@ -19,7 +19,9 @@ export default function DashboardLayout({
     <>
       <div className="relative flex min-h-screen flex-col justify-center">
         <NexusAILandingHeader full />
-        <MainNav links={headerLinks ?? []} />
+        <div className="flex items-center justify-between px-6 py-4 lg:px-8 lg:py-4 border-b">
+          <MainNav links={headerLinks ?? []} />
+        </div>
         <main className="flex flex-grow">
           <DashboardSidebar links={links} backLink={backLink} />
           <div className="mx-auto w-full max-w-[1200px] py-12 px-4 @lg:px-6 @xl:px-12 @2xl:px-20 @3xl:px-24">

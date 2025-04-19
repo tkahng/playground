@@ -27,7 +27,9 @@ export default function AccountSettingsLayout() {
     <>
       <div className="relative flex min-h-screen flex-col justify-center">
         <NexusAILandingHeader full leftLinks={headerLinks} />
-        <MainNav links={authenticatedSubHeaderLinks} />
+        <div className="flex items-center justify-between px-6 py-4 lg:px-8 lg:py-4 border-b">
+          <MainNav links={authenticatedSubHeaderLinks ?? []} />
+        </div>
         <main className="flex flex-grow">
           <DashboardSidebar links={links} />
           <Outlet />
