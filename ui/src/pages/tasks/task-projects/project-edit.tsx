@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { useTabs } from "@/hooks/use-tabs";
-import { taskProjectGet } from "@/lib/queries";
+import { taskList, taskProjectGet } from "@/lib/queries";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronLeft } from "lucide-react";
@@ -48,7 +48,17 @@ export default function ProjectEdit() {
       if (!user?.tokens.access_token || !projectId) {
         throw new Error("Missing access token or project ID");
       }
-      return taskProjectGet(user.tokens.access_token, projectId);
+      const project = await taskProjectGet(user.tokens.access_token, projectId);
+      const tasks = await taskList(user.tokens.access_token, {
+        project_id: projectId,
+        sort_by: "order",
+        sort_order: "asc",
+        per_page: 50,
+      });
+      return {
+        ...project,
+        tasks: tasks.data,
+      };
     },
   });
   // const mutation = useMutation({

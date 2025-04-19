@@ -789,9 +789,9 @@ export const taskProjectGet = async (token: string, id: string) => {
         Authorization: `Bearer ${token}`,
       },
       params: {
-        query: {
-          expand: ["tasks"],
-        },
+        // query: {
+        //   expand: ["tasks"],
+        // },
         path: {
           "task-project-id": id,
         },
