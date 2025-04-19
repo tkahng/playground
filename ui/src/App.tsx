@@ -42,6 +42,7 @@ import {
   tasksSidebarLinks,
 } from "./components/landing-links";
 import { RouteMap } from "./components/route-map";
+import { ToastListener } from "./components/toast-listener";
 import NotAuthorizedPage from "./pages/not-authorized";
 import ProjectEdit from "./pages/tasks/task-projects/project-edit";
 import ProjectListPage from "./pages/tasks/task-projects/projects-list";
@@ -54,6 +55,7 @@ function App() {
         <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
           <AuthProvider>
             <BrowserRouter>
+              <ToastListener />
               <Routes>
                 <Route element={<RootLayout />}>
                   <Route path="/" element={<Landing />} />
