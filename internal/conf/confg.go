@@ -16,7 +16,7 @@ type AppConfig struct {
 	AppUrl        string `env:"APP_URL" envDefault:"http://127.0.0.1:8080"`
 	AppName       string `env:"APP_NAME" envDefault:"NexusAI"`
 	SenderName    string `env:"SENDER_NAME" envDefault:"AuthGo"`
-	SenderAddress string `env:"SENDER_ADDRESS" envDefault:"support@example.com"`
+	SenderAddress string `env:"SENDER_ADDRESS" envDefault:"Hb4k@notifications.k2dv.io"`
 	EncryptionKey string `env:"ENCRYPTION_KEY" envDefault:"12345678901234567890123456789012"` //
 }
 

@@ -23,8 +23,8 @@ func (api *Api) RequestVerificationOperation(path string) huma.Operation {
 		Method:      http.MethodPost,
 		Path:        path,
 		Summary:     "Email verification request",
-		Description: "Count the number of colors for all themes",
-		Tags:        []string{"Auth"},
+		Description: "Request email verification",
+		Tags:        []string{"Auth", "Verify"},
 		Errors:      []int{http.StatusNotFound},
 		Security: []map[string][]string{
 			{shared.BearerAuthSecurityKey: {}},
@@ -32,7 +32,7 @@ func (api *Api) RequestVerificationOperation(path string) huma.Operation {
 	}
 }
 
-func (api *Api) RequestVerification(ctx context.Context, input *EmailVerificationInput) (*struct{}, error) {
+func (api *Api) RequestVerification(ctx context.Context, input *struct{}) (*struct{}, error) {
 	db := api.app.Db()
 	claims := core.GetContextUserClaims(ctx)
 	if claims == nil || claims.User == nil {
@@ -41,7 +41,7 @@ func (api *Api) RequestVerification(ctx context.Context, input *EmailVerificatio
 	if !claims.User.EmailVerifiedAt.IsNull() {
 		return nil, huma.Error404NotFound("Email already verified")
 	}
-	err := api.app.SendVerificationEmail(ctx, db, claims.User, "http://localhost:8080")
+	err := api.app.SendVerificationEmail(ctx, db, claims.User, api.app.Settings().Meta.AppURL)
 	if err != nil {
 		return nil, err
 	}

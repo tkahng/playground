@@ -27,6 +27,7 @@ type BaseApp struct {
 	payment       *StripeService
 	logger        *slog.Logger
 	fs            *filesystem.FileSystem
+	mail          mailer.Mailer
 	// onAfterRequestHandle  *hook.Hook[*BaseEvent]
 	// onBeforeRequestHandle *hook.Hook[*BaseEvent]
 }
@@ -76,7 +77,7 @@ func (app *BaseApp) Cfg() *conf.EnvConfig {
 
 // NewMailClient implements App.
 func (app *BaseApp) NewMailClient() mailer.Mailer {
-	return &mailer.LogMailer{}
+	return app.mail
 }
 
 // InitHooks implements App.
@@ -93,12 +94,16 @@ func InitBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 }
 
 func NewBaseApp(pool *pgxpool.Pool, cfg conf.EnvConfig) *BaseApp {
-	oauth := OAuth2ConfigFromEnv(cfg)
-	settings := NewDefaultSettings()
-	settings.Auth.OAuth2Config = oauth
+	settings := NewSettingsFromConf(&cfg)
 	fs, err := filesystem.NewFileSystem(cfg.StorageConfig)
 	if err != nil {
 		panic(err)
+	}
+	var mail mailer.Mailer
+	if cfg.ResendConfig.ResendApiKey != "" {
+		mail = mailer.NewResendMailer(cfg.ResendConfig)
+	} else {
+		mail = &mailer.LogMailer{}
 	}
 	return &BaseApp{
 		fs:       fs,
@@ -107,6 +112,7 @@ func NewBaseApp(pool *pgxpool.Pool, cfg conf.EnvConfig) *BaseApp {
 		settings: settings,
 		logger:   logger.GetDefaultLogger(slog.LevelInfo),
 		cfg:      &cfg,
+		mail:     mail,
 		payment:  NewStripeService(payment.NewStripeClient(cfg.StripeConfig)),
 	}
 }

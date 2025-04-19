@@ -82,7 +82,7 @@ func (app *BaseApp) AuthenticateUser(ctx context.Context, db bob.Executor, param
 		}
 		result.User = user
 		result.Account = nil
-		err = app.SendVerificationEmail(ctx, db, user, "http://localhost:8080")
+		err = app.SendVerificationEmail(ctx, db, user, app.Settings().Meta.AppURL)
 		if err != nil {
 			return nil, fmt.Errorf("error sending verification email: %w", err)
 		}

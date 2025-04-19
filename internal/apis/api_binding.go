@@ -70,6 +70,7 @@ func BindApis(api huma.API, app core.App) {
 
 	huma.Register(api, appApi.VerifyOperation("/auth/verify"), appApi.Verify)
 	huma.Register(api, appApi.VerifyPostOperation("/auth/verify"), appApi.VerifyPost)
+	huma.Register(api, appApi.RequestVerificationOperation("/auth/request-verification"), appApi.RequestVerification)
 	huma.Register(api, appApi.RequestPasswordResetOperation("/auth/request-password-reset"), appApi.RequestPasswordReset)
 	huma.Register(api, appApi.ConfirmPasswordResetOperation("/auth/confirm-password-reset"), appApi.ConfirmPasswordReset)
 
