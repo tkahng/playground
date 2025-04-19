@@ -109,13 +109,13 @@ export function CreateProjectTaskDialog({
   return (
     <Dialog open={isDialogOpen} onOpenChange={setDialogOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline">Add Permissions to Role</Button>
+        <Button variant="outline">Add Task to Project</Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Assign Permissions</DialogTitle>
+          <DialogTitle>Add Task to Project</DialogTitle>
           <DialogDescription>
-            Select the Permissions you want to assign to this role
+            Select the Task you want to add to this project
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
