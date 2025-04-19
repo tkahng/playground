@@ -157,7 +157,7 @@ func (app *BaseApp) CheckUserCredentialsSecurity(ctx context.Context, db bob.Exe
 					if err != nil {
 						return fmt.Errorf("error updating user password: %w", err)
 					}
-					err = app.SendPasswordResetEmail(ctx, db, user, app.Settings().Meta.AppURL)
+					err = app.SendSecurityPasswordResetEmail(ctx, db, user, app.Settings().Meta.AppURL)
 					if err != nil {
 						return fmt.Errorf("error sending password reset email: %w", err)
 					}
