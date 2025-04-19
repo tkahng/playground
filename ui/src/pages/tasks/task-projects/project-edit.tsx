@@ -1,4 +1,4 @@
-import { KanbanBoard } from "@/components/kanban/KanbanBoard";
+import { KanbanBoard } from "@/components/board/KanbanBoard";
 import { RouteMap } from "@/components/route-map";
 import { Button } from "@/components/ui/button";
 import {
@@ -174,7 +174,7 @@ export default function ProjectEdit() {
             </form>
           </Form>
         </TabsContent>
-        <TabsContent value="tasks" className="h-full flex flex-col gap-4 ">
+        <TabsContent value="tasks" className="flex flex-col gap-4 mx-4 ">
           <div className="space-y-4 flex flex-row space-x-16">
             <p className="flex-1">
               Add Tasks to this Project. Users who have this Project will
@@ -182,16 +182,18 @@ export default function ProjectEdit() {
             </p>
             <CreateProjectTaskDialog projectId={projectId!} />
           </div>
-          <KanbanBoard
-            tasks={
-              project.tasks?.map((task) => ({
-                columnId: task.status as "todo" | "done" | "in_progress",
-                content: task.name,
-                id: task.id,
-              })) || []
-            }
-            projectId={projectId!}
-          />
+          <div className="flex flex-col grow">
+            <KanbanBoard
+              cars={
+                project.tasks?.map((task) => ({
+                  columnId: task.status as "todo" | "done" | "in_progress",
+                  content: task.name,
+                  id: task.id,
+                })) || []
+              }
+              projectId={projectId!}
+            />
+          </div>
           {/* <DataTable
             columns={[
               {
