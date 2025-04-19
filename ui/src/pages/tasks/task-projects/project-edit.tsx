@@ -14,12 +14,14 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { useTabs } from "@/hooks/use-tabs";
-import { taskList, taskProjectGet } from "@/lib/queries";
+import { createTask, taskList, taskProjectGet } from "@/lib/queries";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronLeft } from "lucide-react";
+import { useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
-import { Link, useNavigate, useParams } from "react-router";
+import { Link, useParams } from "react-router";
+import { toast } from "sonner";
 import { z } from "zod";
 import { CreateProjectTaskDialog } from "./create-project-task-dialog";
 
@@ -31,11 +33,12 @@ const formSchema = z.object({
     .string()
     .min(2, { message: "description must be at least 2 characters." })
     .optional(),
+  status: z.enum(["todo", "in_progress", "done"]),
 });
 export default function ProjectEdit() {
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
   const { tab, onClick } = useTabs("general");
-  // const queryClient = useQueryClient();
+  const queryClient = useQueryClient();
   const { user } = useAuthProvider();
   const { projectId } = useParams<{ projectId: string }>();
   const {
@@ -43,7 +46,7 @@ export default function ProjectEdit() {
     isLoading: loading,
     error,
   } = useQuery({
-    queryKey: ["project", projectId],
+    queryKey: ["project-with-tasks", projectId],
     queryFn: async () => {
       if (!user?.tokens.access_token || !projectId) {
         throw new Error("Missing access token or project ID");
@@ -61,46 +64,59 @@ export default function ProjectEdit() {
       };
     },
   });
-  // const mutation = useMutation({
-  //   mutationFn: (values: z.infer<typeof formSchema>) =>
-  //     updateRole(user!.tokens.access_token, projectId!, values),
-  //   onSuccess: async () => {
-  //     await queryClient.invalidateQueries({
-  //       queryKey: ["project", projectId],
-  //     });
-  //     const updatedRole = await queryClient.fetchQuery({
-  //       queryKey: ["project", projectId],
-  //       queryFn: () => taskProjectGet(user!.tokens.access_token, projectId!),
-  //     });
-  //     form.reset(updatedRole);
-  //     toast.success("Project updated!");
-  //   },
-  //   onError: (err: any) => {
-  //     toast.error(`Failed to update project: ${err.message}`);
-  //   },
-  // });
-  // const deletePermissionMutation = useMutation({
-  //   mutationFn: (permissionId: string) =>
-  //     deleteRolePermission(user!.tokens.access_token, projectId!, permissionId),
-  //   onSuccess: () => {
-  //     queryClient.invalidateQueries({
-  //       queryKey: ["project", projectId],
-  //     });
-  //     toast.success("Permission deleted!");
-  //   },
-  //   onError: (err: any) => {
-  //     toast.error(`Failed to delete permission: ${err.message}`);
-  //   },
-  // });
+
+  useEffect(() => {
+    queryClient.refetchQueries({
+      queryKey: ["project-with-tasks", projectId],
+    });
+  }, [projectId]);
+  // const tasks =
+  //   project?.tasks?.map((task) => ({
+  //     columnId: task.status as "todo" | "done" | "in_progress",
+  //     content: task.name,
+  //     id: task.id,
+  //   })) || [];
+  const tasks = useMemo(() => {
+    return project?.tasks?.map((task) => ({
+      columnId: task.status as "todo" | "done" | "in_progress",
+      content: task.name,
+      id: task.id,
+    }));
+  }, [project]);
+
+  const mutation = useMutation({
+    mutationFn: async (values: z.infer<typeof formSchema>) => {
+      if (!user?.tokens.access_token) {
+        throw new Error("Missing access token");
+      }
+      await createTask(user.tokens.access_token, projectId!, {
+        name: values.name,
+        description: values.description,
+        status: values.status,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["project-with-tasks"],
+      });
+      queryClient.refetchQueries;
+      toast.success("Project updated!");
+    },
+    onError: (err: any) => {
+      toast.error(`Failed to update project: ${err.message}`);
+    },
+  });
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: project?.name || "",
       description: project?.description || "",
+      status: project?.status as "todo" | "in_progress" | "done" | undefined,
     },
   });
-  function onSubmit(_: z.infer<typeof formSchema>) {
-    // mutation.mutate(values);
+  function onSubmit(values: z.infer<typeof formSchema>) {
+    mutation.mutate(values);
   }
   // const onDelete = (permissionId: string) => {
   //   // deletePermissionMutation.mutate(permissionId);
@@ -110,9 +126,7 @@ export default function ProjectEdit() {
   //     form.reset(project);
   //   }
   // }, [project, form.reset]);
-  if (!user) {
-    navigate(RouteMap.SIGNIN);
-  }
+
   if (loading) return <p>Loading...</p>;
   if (error) return <p>Error: {error.message}</p>;
   if (!project) return <p>Project not found</p>;
@@ -183,16 +197,7 @@ export default function ProjectEdit() {
             <CreateProjectTaskDialog projectId={projectId!} />
           </div>
           <div className="flex flex-col grow">
-            <KanbanBoard
-              cars={
-                project.tasks?.map((task) => ({
-                  columnId: task.status as "todo" | "done" | "in_progress",
-                  content: task.name,
-                  id: task.id,
-                })) || []
-              }
-              projectId={projectId!}
-            />
+            <KanbanBoard cars={tasks || []} projectId={projectId!} />
           </div>
           {/* <DataTable
             columns={[

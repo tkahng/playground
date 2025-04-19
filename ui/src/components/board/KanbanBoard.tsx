@@ -77,9 +77,9 @@ export function KanbanBoard(props: { cars: Task[]; projectId: string }) {
       });
       return;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["project", props.projectId],
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["project-with-tasks", props.projectId],
       });
       toast.success("Task updated");
     },

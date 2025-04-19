@@ -27,7 +27,7 @@ export default function ProjectListPage() {
   };
 
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: ["projects-list"],
+    queryKey: ["projects-list", pageIndex, pageSize],
     queryFn: async () => {
       if (!user?.tokens.access_token) {
         throw new Error("Missing access token or role ID");
@@ -36,7 +36,7 @@ export default function ProjectListPage() {
         page: pageIndex + 1,
         per_page: pageSize,
       });
-      if (!data.data) {
+      if (!data) {
         throw new Error("No data returned from taskProjectList");
       }
       return data;

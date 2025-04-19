@@ -17,6 +17,13 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { taskProjectCreate } from "@/lib/queries";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -46,10 +53,10 @@ export function CreateProjectDialog() {
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({
-        queryKey: ["roles-list"],
+        queryKey: ["projects-list"],
       });
       setDialogOpen(false);
-      toast.success("Role created successfully");
+      toast.success("Project created successfully");
     },
     onError: (error) => {
       toast.error(error.message);
@@ -106,6 +113,32 @@ export function CreateProjectDialog() {
                         <Input {...field} placeholder="Project Description" />
                       </FormControl>
                       <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="status"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Status</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <FormControl {...field}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select Task Status" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="todo">Todo</SelectItem>
+                          <SelectItem value="in_progress">
+                            In Progress
+                          </SelectItem>
+                          <SelectItem value="done">Done</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </FormItem>
                   )}
                 />

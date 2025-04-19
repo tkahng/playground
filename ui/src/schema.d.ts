@@ -1539,7 +1539,8 @@ export interface components {
             order: number;
             parent_id: string;
             project_id: string;
-            status: string;
+            /** @enum {string} */
+            status: "todo" | "in_progress" | "done";
             /** Format: date-time */
             updated_at: string;
             user_id: string;
@@ -1625,7 +1626,8 @@ export interface components {
             order: number;
             parent_id: string;
             project_id: string;
-            status: string;
+            /** @enum {string} */
+            status: "todo" | "in_progress" | "done";
             /** Format: date-time */
             updated_at: string;
             user_id: string;

@@ -789,9 +789,9 @@ export const taskProjectGet = async (token: string, id: string) => {
         Authorization: `Bearer ${token}`,
       },
       params: {
-        // query: {
-        //   expand: ["tasks"],
-        // },
+        query: {
+          expand: ["tasks"],
+        },
         path: {
           "task-project-id": id,
         },
@@ -847,9 +847,37 @@ export const taskList = async (
   return data;
 };
 
+export const createTask = async (
+  token: string,
+  taskProjectId: string,
+  args: operations["task-project-tasks-create"]["requestBody"]["content"]["application/json"]
+) => {
+  const { data, error } = await client.POST(
+    "/api/task-projects/{task-project-id}/tasks",
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      params: {
+        path: {
+          "task-project-id": taskProjectId,
+        },
+      },
+      body: args,
+    }
+  );
+  if (error) {
+    throw new Error(error.detail);
+  }
+  if (!data) {
+    throw new Error("No data");
+  }
+  return data;
+};
+
 export const taskPositionStatus = async (
   token: string,
-  id: string,
+  taskId: string,
   args: operations["update-task-position-status"]["requestBody"]["content"]["application/json"]
 ) => {
   const { data, error } = await client.PUT(
@@ -860,7 +888,7 @@ export const taskPositionStatus = async (
       },
       params: {
         path: {
-          "task-id": id,
+          "task-id": taskId,
         },
       },
       body: args,

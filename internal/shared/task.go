@@ -13,7 +13,7 @@ type Task struct {
 	ProjectID   uuid.UUID         `db:"project_id" json:"project_id"`
 	Name        string            `db:"name" json:"name"`
 	Description *string           `db:"description" json:"description"`
-	Status      models.TaskStatus `db:"status" json:"status"`
+	Status      models.TaskStatus `db:"status" json:"status" enum:"todo,in_progress,done"`
 	Order       float64           `db:"order" json:"order"`
 	ParentID    *uuid.UUID        `db:"parent_id" json:"parent_id"`
 	CreatedAt   time.Time         `db:"created_at" json:"created_at"`

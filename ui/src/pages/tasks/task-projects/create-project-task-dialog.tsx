@@ -16,96 +16,65 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import MultipleSelector from "@/components/ui/multiple-selector";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { createRolePermission, permissionsPaginate } from "@/lib/queries";
+import { createTask } from "@/lib/queries";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
 const formSchema = z.object({
-  permissions: z
-    .object({
-      value: z.string().uuid(),
-      label: z.string(),
-    })
-    .array()
-    .min(1),
+  name: z.string().min(1),
+  description: z.string().min(1).optional(),
+  status: z.enum(["todo", "in_progress", "done"]),
 });
 
-export function CreateProjectTaskDialog({
-  projectId: roleId,
-}: {
-  projectId: string;
-}) {
+export function CreateProjectTaskDialog({ projectId }: { projectId: string }) {
   const { user } = useAuthProvider();
   const [isDialogOpen, setDialogOpen] = useState(false);
   const queryClient = useQueryClient();
-  const { data, isLoading, error } = useQuery({
-    queryKey: ["role-permissions-reverse", roleId],
-    queryFn: async () => {
-      if (!user?.tokens.access_token) {
-        throw new Error("Missing access token or role ID");
-      }
-      const data = await permissionsPaginate(user.tokens.access_token, {
-        page: 1,
-        per_page: 50,
-        role_id: roleId,
-        role_reverse: true,
-      });
-      if (!data.data) {
-        throw new Error("No data available");
-      }
-      return data.data;
-    },
-  });
-  const mutation = useMutation({
-    mutationFn: async (values: z.infer<typeof formSchema>) => {
-      if (!user?.tokens.access_token || !roleId) {
-        throw new Error("Missing access token or role ID");
-      }
-      await createRolePermission(user.tokens.access_token, roleId, {
-        permission_ids: values.permissions.map((perms) => perms.value),
-      });
-      setDialogOpen(false);
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: ["role-with-permission", roleId],
-      });
-      toast.success("Permissions assigned successfully");
-      setDialogOpen(false);
-    },
-  });
+  // const navigate = useNavigate();
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      permissions: [],
+      name: "",
+      description: "",
+      status: "todo",
     },
   });
 
+  const mutation = useMutation({
+    mutationFn: async (values: z.infer<typeof formSchema>) => {
+      if (!user?.tokens.access_token) {
+        throw new Error("Missing access token");
+      }
+      await createTask(user.tokens.access_token, projectId, values);
+    },
+    onSuccess: async () => {
+      setDialogOpen(false);
+      await queryClient.invalidateQueries({
+        queryKey: ["project-with-tasks", projectId],
+      });
+      toast.success("Task created successfully");
+    },
+    onError: (error: any) => {
+      toast.error(`Failed to create task: ${error.message}`);
+    },
+  });
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     mutation.mutate(values);
   };
-  useEffect(() => {
-    if (data) {
-      form.reset({ permissions: [] });
-    }
-  }, [data, form.reset]);
-
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
-
-  if (error) {
-    return <div>Error: {error.message}</div>;
-  }
-  if (!data) {
-    return <div>No data available</div>;
-  }
   return (
     <Dialog open={isDialogOpen} onOpenChange={setDialogOpen}>
       <DialogTrigger asChild>
@@ -124,26 +93,53 @@ export function CreateProjectTaskDialog({
               <div className="w-full px-10">
                 <FormField
                   control={form.control}
-                  name="permissions"
+                  name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Permissions</FormLabel>
+                      <FormLabel>Name</FormLabel>
                       <FormControl>
-                        <MultipleSelector
-                          {...field}
-                          defaultOptions={data.map((permission) => ({
-                            label: permission.name,
-                            value: permission.id,
-                          }))}
-                          placeholder="Select permissions you like..."
-                          emptyIndicator={
-                            <p className="text-center text-lg leading-10 text-gray-600 dark:text-gray-400">
-                              no results found.
-                            </p>
-                          }
-                        />
+                        <Input {...field} placeholder="Task Name" />
                       </FormControl>
                       <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Description</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="Task Description" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="status"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Status</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select Task Status" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="todo">Todo</SelectItem>
+                          <SelectItem value="in_progress">
+                            In Progress
+                          </SelectItem>
+                          <SelectItem value="done">Done</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </FormItem>
                   )}
                 />
