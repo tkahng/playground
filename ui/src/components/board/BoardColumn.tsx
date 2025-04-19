@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { CreateProjectTaskDialog } from "@/pages/tasks/task-projects/create-project-task-dialog";
 import { useDndContext, type UniqueIdentifier } from "@dnd-kit/core";
 import { SortableContext, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -24,9 +25,15 @@ interface BoardColumnProps {
   column: Column;
   cars: Task[];
   isOverlay?: boolean;
+  projectId: string;
 }
 
-export const BoardColumn = ({ column, cars, isOverlay }: BoardColumnProps) => {
+export const BoardColumn = ({
+  column,
+  cars,
+  isOverlay,
+  projectId,
+}: BoardColumnProps) => {
   const carIds = useMemo(() => {
     return cars.map((car) => car.id);
   }, [cars]);
@@ -83,6 +90,10 @@ export const BoardColumn = ({ column, cars, isOverlay }: BoardColumnProps) => {
               cars.map((car) => <CarCard key={car.id} task={car} />)
             )}
           </SortableContext>
+          <CreateProjectTaskDialog
+            projectId={projectId}
+            status={column.id as "todo" | "done" | "in_progress"}
+          />
         </CardContent>
       </ScrollArea>
     </Card>

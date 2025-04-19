@@ -16,6 +16,7 @@ export enum RouteMap {
   DASHBOARD_CHAT_PAGE = "/dashboard/chat/:chatId",
   DASHBOARD_CHAT_PARAMS = ":chatId",
   DASHBOARD_HOME = "/dashboard",
+  SETTINGS_HOME = "/settings",
   ACCOUNT_SETTINGS = "/settings/account",
   BILLING_SETTINGS = "/settings/billing",
 

@@ -9,8 +9,10 @@ import { ColumnId } from "./KanbanBoard";
 
 export type Task = {
   id: UniqueIdentifier;
+  name: string;
   columnId: ColumnId;
   content: string;
+  order: number;
 };
 
 type TaskCardProps = {
@@ -77,6 +79,11 @@ export function CarCard({ task, isOverlay }: TaskCardProps) {
           <GripVertical />
         </Button>
         {task.content}
+        <div className="text-sm text-muted-foreground">
+          {task.name}
+          <br />
+          {task.order}
+        </div>
       </CardContent>
     </Card>
   );

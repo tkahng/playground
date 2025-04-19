@@ -36,6 +36,7 @@ import { Toaster } from "sonner";
 import {
   adminHeaderLinks,
   adminSidebarLinks,
+  authenticatedSubHeaderLinks,
   dashboardSidebarLinks,
   protectedSidebarLinks,
   tasksSidebarLinks,
@@ -77,7 +78,12 @@ function App() {
                   </Route>
                   <Route
                     path="/dashboard"
-                    element={<DashboardLayout links={dashboardSidebarLinks} />}
+                    element={
+                      <DashboardLayout
+                        links={dashboardSidebarLinks}
+                        headerLinks={authenticatedSubHeaderLinks}
+                      />
+                    }
                   >
                     <Route index element={<Dashboard />} />
                   </Route>

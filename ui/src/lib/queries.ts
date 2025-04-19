@@ -826,6 +826,25 @@ export const taskProjectCreate = async (
   return data;
 };
 
+export const taskProjectCreateWithAi = async (
+  token: string,
+  args: operations["task-project-create-with-ai"]["requestBody"]["content"]["application/json"]
+) => {
+  const { data, error } = await client.POST("/api/task-projects/ai", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: args,
+  });
+  if (error) {
+    throw new Error(error.detail);
+  }
+  if (!data) {
+    throw new Error("No data");
+  }
+  return data;
+};
+
 export const taskList = async (
   token: string,
   args: operations["task-list"]["parameters"]["query"]

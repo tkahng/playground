@@ -17,13 +17,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { createTask } from "@/lib/queries";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -39,7 +32,13 @@ const formSchema = z.object({
   status: z.enum(["todo", "in_progress", "done"]),
 });
 
-export function CreateProjectTaskDialog({ projectId }: { projectId: string }) {
+export function CreateProjectTaskDialog({
+  projectId,
+  status,
+}: {
+  projectId: string;
+  status: "todo" | "in_progress" | "done";
+}) {
   const { user } = useAuthProvider();
   const [isDialogOpen, setDialogOpen] = useState(false);
   const queryClient = useQueryClient();
@@ -50,7 +49,7 @@ export function CreateProjectTaskDialog({ projectId }: { projectId: string }) {
     defaultValues: {
       name: "",
       description: "",
-      status: "todo",
+      status: status,
     },
   });
 
@@ -123,23 +122,10 @@ export function CreateProjectTaskDialog({ projectId }: { projectId: string }) {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Status</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select Task Status" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="todo">Todo</SelectItem>
-                          <SelectItem value="in_progress">
-                            In Progress
-                          </SelectItem>
-                          <SelectItem value="done">Done</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <FormControl>
+                        <Input {...field} placeholder="Task Status" hidden />
+                      </FormControl>
+                      <FormMessage />
                     </FormItem>
                   )}
                 />

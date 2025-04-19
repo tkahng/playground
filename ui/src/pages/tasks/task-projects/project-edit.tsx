@@ -78,6 +78,8 @@ export default function ProjectEdit() {
   //   })) || [];
   const tasks = useMemo(() => {
     return project?.tasks?.map((task) => ({
+      name: task.name,
+      order: task.order,
       columnId: task.status as "todo" | "done" | "in_progress",
       content: task.name,
       id: task.id,
@@ -194,7 +196,10 @@ export default function ProjectEdit() {
               Add Tasks to this Project. Users who have this Project will
               receive all Tasks below that match the API of their login request.
             </p>
-            <CreateProjectTaskDialog projectId={projectId!} />
+            <CreateProjectTaskDialog
+              projectId={projectId!}
+              status={project.status as "todo" | "in_progress" | "done"}
+            />
           </div>
           <div className="flex flex-col grow">
             <KanbanBoard cars={tasks || []} projectId={projectId!} />

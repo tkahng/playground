@@ -142,7 +142,11 @@ export function KanbanBoard(props: { cars: Task[]; projectId: string }) {
         return (
           <div key={col.id} className="flex flex-col">
             {carsInColumn.length > 0 && (
-              <BoardColumn column={col} cars={carsInColumn} />
+              <BoardColumn
+                column={col}
+                cars={carsInColumn}
+                projectId={props.projectId}
+              />
             )}
             <div className={carsInColumn.length > 0 ? "ml-4 mt-2" : ""}>
               {renderNestedColumns(col.children)}
@@ -150,7 +154,14 @@ export function KanbanBoard(props: { cars: Task[]; projectId: string }) {
           </div>
         );
       } else {
-        return <BoardColumn key={col.id} column={col} cars={carsInColumn} />;
+        return (
+          <BoardColumn
+            key={col.id}
+            column={col}
+            cars={carsInColumn}
+            projectId={props.projectId}
+          />
+        );
       }
     });
   };
@@ -297,6 +308,7 @@ export function KanbanBoard(props: { cars: Task[]; projectId: string }) {
           <DragOverlay>
             {activeColumn && (
               <BoardColumn
+                projectId={props.projectId}
                 column={activeColumn}
                 cars={cars.filter((car) => car.columnId === activeColumn.id)}
                 isOverlay

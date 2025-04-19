@@ -32,6 +32,25 @@ export const dashboardSidebarLinks: LinkDto[] = [
   },
 ];
 
+export const authenticatedSubHeaderLinks: LinkDto[] = [
+  {
+    title: "Home",
+    to: RouteMap.DASHBOARD_HOME,
+  },
+  {
+    title: "Projects",
+    to: RouteMap.TASKS_HOME,
+  },
+  {
+    title: "Protected",
+    to: RouteMap.PROTECTED_HOME,
+  },
+  {
+    title: "Settings",
+    to: RouteMap.SETTINGS_HOME,
+  },
+];
+
 export const tasksSidebarLinks: LinkDto[] = [
   {
     title: "Home",

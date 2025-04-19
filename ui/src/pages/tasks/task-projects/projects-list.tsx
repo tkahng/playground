@@ -5,6 +5,7 @@ import { taskProjectList } from "@/lib/queries";
 import { useQuery } from "@tanstack/react-query";
 import { PaginationState, Updater } from "@tanstack/react-table";
 import { NavLink, useSearchParams } from "react-router";
+import { CreateProjectAiDialog } from "./create-project-ai-dialog";
 import { CreateProjectDialog } from "./create-project-dialog";
 
 export default function ProjectListPage() {
@@ -71,6 +72,7 @@ export default function ProjectListPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Projects</h1>
         <CreateProjectDialog />
+        <CreateProjectAiDialog />
       </div>
       <p>
         Create and manage Projects for your applications. Projects contain
