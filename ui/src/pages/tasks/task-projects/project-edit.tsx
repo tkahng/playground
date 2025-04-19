@@ -174,7 +174,7 @@ export default function ProjectEdit() {
             </form>
           </Form>
         </TabsContent>
-        <TabsContent value="tasks">
+        <TabsContent value="tasks" className="h-full flex flex-col gap-4 ">
           <div className="space-y-4 flex flex-row space-x-16">
             <p className="flex-1">
               Add Tasks to this Project. Users who have this Project will

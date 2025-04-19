@@ -117,6 +117,7 @@ export function BoardContainer({ children }: { children: React.ReactNode }) {
     <ScrollArea
       className={variations({
         dragging: dndContext.active ? "active" : "default",
+        className: "px-2 md:px-0 flex lg:justify-center pb-4 h-full",
       })}
     >
       <div className="flex gap-4 items-center flex-row justify-center">
