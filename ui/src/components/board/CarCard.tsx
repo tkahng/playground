@@ -18,11 +18,11 @@ type TaskCardProps = {
   isOverlay?: boolean;
 };
 
-export type TaskType = "Task";
+export type CarType = "Car";
 
-export type TaskDragData = {
-  type: TaskType;
-  task: Task;
+export type CarDragData = {
+  type: CarType;
+  car: Task;
 };
 
 export function CarCard({ task, isOverlay }: TaskCardProps) {
@@ -36,9 +36,9 @@ export function CarCard({ task, isOverlay }: TaskCardProps) {
   } = useSortable({
     id: task.id,
     data: {
-      type: "Task",
-      task: task,
-    } satisfies TaskDragData,
+      type: "Car",
+      car: task,
+    } satisfies CarDragData,
     attributes: {
       roleDescription: "Car",
     },
