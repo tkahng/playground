@@ -27,10 +27,6 @@ export const dashboardSidebarLinks: LinkDto[] = [
     to: RouteMap.TASKS_HOME,
   },
   {
-    title: "Kanban",
-    to: RouteMap.DASHBOARD_KANBAN,
-  },
-  {
     title: "Protected",
     to: RouteMap.PROTECTED_HOME,
   },
