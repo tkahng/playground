@@ -41,7 +41,10 @@ func (app *BaseApp) SendVerificationEmail(ctx context.Context, db bob.Executor, 
 		return fmt.Errorf("error at storing verification token: %w", err)
 	}
 	mailParams, err := createVerificationMailParams(tokenHash, payload, config)
-	client.Send(mailParams)
+	if err != nil {
+		return fmt.Errorf("error creating verification token: %w", err)
+	}
+	err = client.Send(mailParams)
 	if err != nil {
 		return fmt.Errorf("error creating verification token: %w", err)
 	}

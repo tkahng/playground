@@ -31,6 +31,13 @@ const DefaultConfirmationMail = `<h2>Confirm your email</h2>
 <p>Alternatively, enter the code: {{ .Token }}</p>
 `
 
+const DefaultSecurityPasswordResetMail = `<h2>Your password has been reset due to security concerns</h2>
+<p>We noticed that you signed in with a social provider while you were already signed in with an unverified email/password account.</p>
+<p>For your security, we have reset your password to a temporary password.</p>
+<p>If you wish to sign in with your email/password account, please reset your password by clicking the link below:</p>
+<p><a href="{{ .ConfirmationURL }}">Reset password</a></p>
+<p>Alternatively, enter the code: {{ .Token }}</p>`
+
 const DefaultRecoveryMail = `<h2>Reset password</h2>
 
 <p>Follow this link to reset the password for your user:</p>
