@@ -12,7 +12,7 @@ import (
 	"github.com/tkahng/authgo/internal/tools/mailer"
 )
 
-func (app *BaseApp) VerifyAndUsePasswordResetToken(ctx context.Context, db bob.DB, verificationToken string) (*PasswordResetClaims, error) {
+func (app *BaseApp) VerifyAndUsePasswordResetToken(ctx context.Context, db bob.Executor, verificationToken string) (*PasswordResetClaims, error) {
 	opts := app.Settings().Auth
 	jsond, err := ParseResetToken(verificationToken, opts.PasswordResetToken)
 	if err != nil {
@@ -33,7 +33,7 @@ func (app *BaseApp) VerifyAndUsePasswordResetToken(ctx context.Context, db bob.D
 
 // SendPasswordResetEmail implements App.
 
-func (app *BaseApp) SendPasswordResetEmail(ctx context.Context, db bob.DB, user *models.User, redirectTo string) error {
+func (app *BaseApp) SendPasswordResetEmail(ctx context.Context, db bob.Executor, user *models.User, redirectTo string) error {
 	opts := app.Settings().Auth
 	config := app.Settings()
 	client := app.NewMailClient()

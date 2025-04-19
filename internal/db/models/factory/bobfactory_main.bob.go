@@ -4,6 +4,7 @@
 package factory
 
 type Factory struct {
+	baseAiUsageMods            AiUsageModSlice
 	baseAppParamMods           AppParamModSlice
 	baseMediumMods             MediumModSlice
 	baseNotificationMods       NotificationModSlice
@@ -18,6 +19,8 @@ type Factory struct {
 	baseStripeProductMods      StripeProductModSlice
 	baseStripeSubscriptionMods StripeSubscriptionModSlice
 	baseStripeWebhookEventMods StripeWebhookEventModSlice
+	baseTaskProjectMods        TaskProjectModSlice
+	baseTaskMods               TaskModSlice
 	baseTokenMods              TokenModSlice
 	baseUserAccountMods        UserAccountModSlice
 	baseUserPermissionMods     UserPermissionModSlice
@@ -28,6 +31,18 @@ type Factory struct {
 
 func New() *Factory {
 	return &Factory{}
+}
+
+func (f *Factory) NewAiUsage(mods ...AiUsageMod) *AiUsageTemplate {
+	o := &AiUsageTemplate{f: f}
+
+	if f != nil {
+		f.baseAiUsageMods.Apply(o)
+	}
+
+	AiUsageModSlice(mods).Apply(o)
+
+	return o
 }
 
 func (f *Factory) NewAppParam(mods ...AppParamMod) *AppParamTemplate {
@@ -198,6 +213,30 @@ func (f *Factory) NewStripeWebhookEvent(mods ...StripeWebhookEventMod) *StripeWe
 	return o
 }
 
+func (f *Factory) NewTaskProject(mods ...TaskProjectMod) *TaskProjectTemplate {
+	o := &TaskProjectTemplate{f: f}
+
+	if f != nil {
+		f.baseTaskProjectMods.Apply(o)
+	}
+
+	TaskProjectModSlice(mods).Apply(o)
+
+	return o
+}
+
+func (f *Factory) NewTask(mods ...TaskMod) *TaskTemplate {
+	o := &TaskTemplate{f: f}
+
+	if f != nil {
+		f.baseTaskMods.Apply(o)
+	}
+
+	TaskModSlice(mods).Apply(o)
+
+	return o
+}
+
 func (f *Factory) NewToken(mods ...TokenMod) *TokenTemplate {
 	o := &TokenTemplate{f: f}
 
@@ -268,6 +307,14 @@ func (f *Factory) NewUser(mods ...UserMod) *UserTemplate {
 	UserModSlice(mods).Apply(o)
 
 	return o
+}
+
+func (f *Factory) ClearBaseAiUsageMods() {
+	f.baseAiUsageMods = nil
+}
+
+func (f *Factory) AddBaseAiUsageMod(mods ...AiUsageMod) {
+	f.baseAiUsageMods = append(f.baseAiUsageMods, mods...)
 }
 
 func (f *Factory) ClearBaseAppParamMods() {
@@ -380,6 +427,22 @@ func (f *Factory) ClearBaseStripeWebhookEventMods() {
 
 func (f *Factory) AddBaseStripeWebhookEventMod(mods ...StripeWebhookEventMod) {
 	f.baseStripeWebhookEventMods = append(f.baseStripeWebhookEventMods, mods...)
+}
+
+func (f *Factory) ClearBaseTaskProjectMods() {
+	f.baseTaskProjectMods = nil
+}
+
+func (f *Factory) AddBaseTaskProjectMod(mods ...TaskProjectMod) {
+	f.baseTaskProjectMods = append(f.baseTaskProjectMods, mods...)
+}
+
+func (f *Factory) ClearBaseTaskMods() {
+	f.baseTaskMods = nil
+}
+
+func (f *Factory) AddBaseTaskMod(mods ...TaskMod) {
+	f.baseTaskMods = append(f.baseTaskMods, mods...)
 }
 
 func (f *Factory) ClearBaseTokenMods() {

@@ -14,6 +14,9 @@ type StorageConfig struct {
 }
 type AppConfig struct {
 	AppUrl        string `env:"APP_URL" envDefault:"http://localhost:8080"`
+	AppName       string `env:"APP_NAME" envDefault:"NexusAI"`
+	SenderName    string `env:"SENDER_NAME" envDefault:"AuthGo"`
+	SenderAddress string `env:"SENDER_ADDRESS" envDefault:"support@example.com"`
 	EncryptionKey string `env:"ENCRYPTION_KEY" envDefault:"12345678901234567890123456789012"` //
 }
 
@@ -45,18 +48,18 @@ type GoogleConfig struct {
 type OAuth2Config struct {
 	GithubConfig
 	GoogleConfig
-	AuthCallback string `env:"AUTH_CALLBACK" envDefault:"http://127.0.0.1:8080/api/auth/callback"`
+	AuthCallback string `env:"AUTH_CALLBACK" envDefault:"/api/auth/callback"`
 }
 
 type StripeConfig struct {
-	PublicKey string `env:"STRIPE_PUBLISHABLE_KEY"`
-	ApiKey    string `env:"STRIPE_SECRET_KEY"`
-	Webhook   string `env:"STRIPE_WEBHOOK_SECRET"`
-	AppUrl    string `env:"APP_URL" envDefault:"http://localhost:5173"`
+	PublicKey    string `env:"STRIPE_PUBLISHABLE_KEY"`
+	ApiKey       string `env:"STRIPE_SECRET_KEY"`
+	Webhook      string `env:"STRIPE_WEBHOOK_SECRET"`
+	StripeAppUrl string `env:"APP_URL" envDefault:"http://localhost:5173"`
 }
 
 type AiConfig struct {
-	GoogleGeminiApiKey string `env:"GOOGLE_GEMINI_API_KEY" required:"false"`
+	GoogleGeminiApiKey string `env:"GOOGLE_GEMINI_API_KEY" required:"true"`
 }
 
 type Options struct {

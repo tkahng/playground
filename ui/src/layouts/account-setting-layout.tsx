@@ -1,8 +1,14 @@
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
-import { LinkProps } from "@/components/landing-links";
+import {
+  authenticatedSubHeaderLinks,
+  LinkDto,
+} from "@/components/landing-links";
+import { MainNav } from "@/components/main-nav";
+import { NexusAILandingHeader } from "@/components/nexus-landing-header";
+import { NexusAIMinimalFooter } from "@/components/nexus-minimal-footer";
 import { RouteMap } from "@/components/route-map";
-import { useOutlet } from "react-router";
-const links: LinkProps[] = [
+import { Outlet } from "react-router";
+const links: LinkDto[] = [
   {
     title: "Account",
     to: RouteMap.ACCOUNT_SETTINGS,
@@ -12,13 +18,22 @@ const links: LinkProps[] = [
     to: RouteMap.BILLING_SETTINGS,
   },
 ];
-export default function AccountSettingsLayout() {
-  const outlet = useOutlet();
 
+const headerLinks: LinkDto[] = [
+  { title: "Dashboard", to: RouteMap.DASHBOARD_HOME },
+];
+export default function AccountSettingsLayout() {
   return (
-    <div className="flex-row flex grow">
-      <DashboardSidebar links={links} />
-      {outlet}
-    </div>
+    <>
+      <div className="relative flex min-h-screen flex-col justify-center">
+        <NexusAILandingHeader full leftLinks={headerLinks} />
+        <MainNav links={authenticatedSubHeaderLinks} />
+        <main className="flex flex-grow">
+          <DashboardSidebar links={links} />
+          <Outlet />
+        </main>
+        <NexusAIMinimalFooter />
+      </div>
+    </>
   );
 }

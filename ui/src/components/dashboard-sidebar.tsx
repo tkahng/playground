@@ -1,15 +1,23 @@
+import { LinkDto } from "@/components/landing-links";
+import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { JSX } from "react";
 import { Link, useLocation } from "react-router";
-import { LinkProps } from "./landing-links";
-import { buttonVariants } from "./ui/button";
 
-export const DashboardSidebar = ({ links }: { links: LinkProps[] }) => {
+export const DashboardSidebar = ({
+  links,
+  backLink,
+}: {
+  links: LinkDto[];
+  backLink?: JSX.Element;
+}) => {
   const { pathname } = useLocation();
   return (
     // <nav className="flex flex-grow flex-col">
     //   <div className="border flex flex-col flex-grow p-8">
-    <nav className="flex flex-col p-12 border">
+    <nav className="flex flex-col border p-12 justify-start">
       {/* <div className="border flex flex-col flex-grow "> */}
+      {backLink}
       {links.map((item) => (
         <Link
           key={item.title}
@@ -20,7 +28,7 @@ export const DashboardSidebar = ({ links }: { links: LinkProps[] }) => {
             pathname === item.to
               ? "bg-muted hover:bg-muted underline"
               : "hover:bg-transparent hover:underline",
-            "justify-start text-lg"
+            "justify-start text-md"
           )}
         >
           {item.icon}

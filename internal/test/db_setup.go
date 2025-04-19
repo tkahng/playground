@@ -4,20 +4,15 @@ import (
 	"context"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/jackc/pgx/v5/stdlib"
 
-	"github.com/stephenafamo/bob"
-	"github.com/tkahng/authgo/internal/pool"
+	"github.com/tkahng/authgo/internal/db"
 )
 
-func DbSetup() (context.Context, bob.DB, *pgxpool.Pool) {
-	// migrator.Migrate()
-
+func DbSetup() (context.Context, *db.Queries, *pgxpool.Pool) {
 	var (
 		ctx context.Context = context.Background()
-		pl  *pgxpool.Pool   = pool.CreatePool(ctx, "postgres://postgres@localhost:5432/authgo_test?sslmode=disable")
-
-		dbx bob.DB = bob.NewDB(stdlib.OpenDBFromPool(pl))
+		pl  *pgxpool.Pool   = db.CreatePool(ctx, "postgres://postgres@localhost:5432/authgo_test?sslmode=disable")
+		dbx *db.Queries     = db.NewQueries(pl)
 	)
 
 	return ctx, dbx, pl

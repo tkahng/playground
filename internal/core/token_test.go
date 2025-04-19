@@ -144,7 +144,7 @@ func TestCreateRefreshToken(t *testing.T) {
 
 	type args struct {
 		ctx     context.Context
-		db      bob.DB
+		db      bob.Executor
 		payload *core.RefreshTokenPayload
 		config  core.TokenOption
 	}
@@ -202,7 +202,7 @@ func TestVerifyRefreshToken(t *testing.T) {
 	}
 	type args struct {
 		ctx    context.Context
-		db     bob.DB
+		db     bob.Executor
 		token  string
 		config core.TokenOption
 	}

@@ -9,9 +9,9 @@ import (
 	"github.com/tkahng/authgo/internal/shared"
 )
 
-func GetUserInfoDTO(ctx context.Context, db bob.DB, email string) (*shared.UserInfoDto, error) {
+func GetUserInfoDTO(ctx context.Context, db bob.Executor, email string) (*shared.UserInfoDto, error) {
 
-	user, err := repository.GetUserByEmail(ctx, db, email)
+	user, err := repository.FindUserByEmail(ctx, db, email)
 	if err != nil {
 		return nil, fmt.Errorf("error getting user: %w", err)
 	}
@@ -21,7 +21,7 @@ func GetUserInfoDTO(ctx context.Context, db bob.DB, email string) (*shared.UserI
 	result := &shared.UserInfoDto{
 		User: user,
 	}
-	roles, err := repository.GetUserWithRolesAndPermissions(ctx, db, email)
+	roles, err := repository.FindUserWithRolesAndPermissionsByEmail(ctx, db, email)
 	if err != nil {
 		return nil, fmt.Errorf("error getting user roles and permissions: %w", err)
 	}

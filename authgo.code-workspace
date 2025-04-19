@@ -1,0 +1,54 @@
+{
+	"folders": [
+		{
+			"name": "internal",
+			"path": "internal"
+		},
+		{
+			"name": "ui",
+			"path": "ui"
+		},
+		{
+			"name": "authgo",
+			"path": "."
+		}
+	],
+	"settings": {
+		"editor.formatOnSave": true,
+		"go.inlayHints.assignVariableTypes": false,
+		"go.inlayHints.parameterNames": false,
+		"gitlens.codeLens.enabled": false,
+		"typescript.referencesCodeLens.enabled": true,
+		"typescript.implementationsCodeLens.enabled": true,
+		"typescript.implementationsCodeLens.showOnInterfaceMethods": true,
+		"typescript.referencesCodeLens.showOnAllFunctions": true,
+		"files.associations": {
+			"*.css": "tailwindcss",
+			"*.scss": "tailwindcss"
+		},
+		"emmet.includeLanguages": {
+			"templ": "html"
+		},
+		"editor.codeLens": true,
+		"[typescript]": {
+			"editor.codeActionsOnSave": {
+				"source.fixAll": "always",
+				"source.organizeImports": "always"
+			},
+			"editor.defaultFormatter": "esbenp.prettier-vscode",
+			"editor.suggest.showReferences": true,
+			"editor.codeLens": true,
+			"editor.gotoLocation.multipleTypeDefinitions": "gotoAndPeek"
+		},
+		"[typescriptreact]": {
+			"editor.codeActionsOnSave": {
+				"source.fixAll": "always",
+				"source.organizeImports": "always"
+			},
+			"editor.defaultFormatter": "esbenp.prettier-vscode",
+			"editor.suggest.showReferences": true,
+			"editor.codeLens": true,
+			"editor.gotoLocation.multipleTypeDefinitions": "gotoAndPeek"
+		},
+	}
+}

@@ -1,9 +1,9 @@
 import { Button } from "@/components/ui/button";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { createBillingPortalSession } from "@/lib/api";
+import { createBillingPortalSession } from "@/lib/queries";
 import { SubscriptionWithPrice } from "@/schema.types";
 import { ReactNode, useState } from "react";
-import { Link, useLocation } from "react-router";
+import { Link } from "react-router";
 import { toast } from "sonner";
 
 type SubscriptionWithPriceAndProduct = SubscriptionWithPrice;
@@ -15,7 +15,7 @@ interface Props {
 export default function CustomerPortalForm({ subscription }: Props) {
   //   const router = useRouter();
   const { user } = useAuthProvider();
-  const { pathname: currentPath } = useLocation();
+  // const { pathname: currentPath } = useLocation();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const subscriptionPrice =
@@ -28,14 +28,16 @@ export default function CustomerPortalForm({ subscription }: Props) {
 
   const handleStripePortalRequest = async () => {
     setIsSubmitting(true);
-    if (!user?.tokens.access_token) {
+    if (!user) {
       setIsSubmitting(false);
       toast.error("Please login to open the customer portal.");
+      return;
     }
-    const redirectUrl = await createBillingPortalSession(currentPath);
+    const redirectUrl = await createBillingPortalSession(
+      user.tokens.access_token
+    );
     window.location.href = redirectUrl;
     setIsSubmitting(false);
-    // return router.push(redirectUrl);
   };
 
   return (
@@ -47,24 +49,26 @@ export default function CustomerPortalForm({ subscription }: Props) {
           : "You are not currently subscribed to any plan."
       }
       footer={
-        <div className="flex flex-col items-start justify-between sm:flex-row sm:items-center">
-          <p className="pb-4 sm:pb-0">Manage your subscription on Stripe.</p>
-          <Button
-            // variant="slim"
-            onClick={handleStripePortalRequest}
-            // loading={isSubmitting}
-            disabled={isSubmitting}
-          >
-            Open customer portal
-          </Button>
-        </div>
+        subscription && (
+          <div className="flex flex-col items-start justify-between sm:flex-row sm:items-center">
+            <p className="pb-4 sm:pb-0">Manage your subscription on Stripe.</p>
+            <Button
+              // variant="slim"
+              onClick={handleStripePortalRequest}
+              // loading={isSubmitting}
+              disabled={isSubmitting}
+            >
+              Open customer portal
+            </Button>
+          </div>
+        )
       }
     >
       <div className="mt-8 mb-4 text-xl font-semibold">
         {subscription ? (
           `${subscriptionPrice}/${subscription?.price?.interval}`
         ) : (
-          <Link to="/">Choose your plan</Link>
+          <Link to="/pricing">Choose your plan</Link>
         )}
       </div>
     </Card>

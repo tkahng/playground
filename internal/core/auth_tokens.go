@@ -47,7 +47,7 @@ func (a *BaseApp) CreateAuthDto(ctx context.Context, email string) (*shared.Auth
 	return &bod, nil
 }
 
-func (a *BaseApp) RefreshTokens(ctx context.Context, db bob.DB, refreshToken string) (*shared.AuthenticatedDTO, error) {
+func (a *BaseApp) RefreshTokens(ctx context.Context, db bob.Executor, refreshToken string) (*shared.AuthenticatedDTO, error) {
 	opts := a.Settings().Auth
 	claims, err := VerifyRefreshToken(ctx, db, refreshToken, opts.RefreshToken)
 	if err != nil {

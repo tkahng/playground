@@ -13,12 +13,18 @@
     }
   ],
   "go.lintTool": "golangci-lint",
-  "go.lintFlags": ["--path-mode=abs", "--fast-only"],
+  "go.lintFlags": [
+    "--path-mode=abs",
+    "--fast-only"
+  ],
   "go.formatTool": "custom",
   "go.alternateTools": {
     "customFormatter": "golangci-lint"
   },
-  "go.formatFlags": ["fmt", "--stdin"],
+  "go.formatFlags": [
+    "fmt",
+    "--stdin"
+  ],
   // "inlineSQL.dbHost": "host.docker.internal",
   "go.inlayHints.assignVariableTypes": false,
   "go.inlayHints.parameterNames": false,
@@ -26,25 +32,41 @@
     "template": "json:\"{{snake}}\" db:\"{{snake}}\""
   },
   "goStructTagAutogen.valueSuggestion": {
-    "json": ["omitempty"],
-    "required": ["true", "false"],
-    "nullable": ["true", "false"]
+    "json": [
+      "omitempty"
+    ],
+    "required": [
+      "true",
+      "false"
+    ],
+    "nullable": [
+      "true",
+      "false"
+    ]
   },
   "goStructTagAutogen.tagSuggestion": {
     "json": {
-      "cases": ["snake"],
-      "options": ["omitempty", "-"]
+      "cases": [
+        "snake"
+      ],
+      "options": [
+        "omitempty",
+        "-"
+      ]
     },
     "db": {
-      "cases": ["snake"],
+      "cases": [
+        "snake"
+      ],
       "options": []
     }
   },
   "editor.linkedEditing": true,
   "codeium.enableCodeLens": false,
   "gitlens.codeLens.enabled": false,
-
-  "css.customData": [".vscode/tailwindcss.json"],
+  "css.customData": [
+    ".vscode/tailwindcss.json"
+  ],
   "[sql]": {
     "editor.formatOnSave": true,
     "editor.defaultFormatter": "mtxr.sqltools"
@@ -86,7 +108,11 @@
     "runtest": true
   },
   "editor.formatOnSave": true,
-  "bulma-css-class-completion.HTMLLanguages": ["html", "vue", "php"],
+  "bulma-css-class-completion.HTMLLanguages": [
+    "html",
+    "vue",
+    "php"
+  ],
   "files.associations": {
     "*.css": "tailwindcss",
     "*.scss": "tailwindcss"

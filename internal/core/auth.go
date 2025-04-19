@@ -19,7 +19,7 @@ var (
 	ErrBadRequest         = shared.AppError{Status: 400, Message: "input is missing"}
 )
 
-func (a *BaseApp) CreateAuthTokens(ctx context.Context, db bob.DB, payload *shared.UserInfoDto) (*shared.TokenDto, error) {
+func (a *BaseApp) CreateAuthTokens(ctx context.Context, db bob.Executor, payload *shared.UserInfoDto) (*shared.TokenDto, error) {
 	if payload == nil || payload.User == nil {
 		return nil, fmt.Errorf("payload is nil")
 	}
@@ -53,10 +53,10 @@ func (a *BaseApp) CreateAuthTokens(ctx context.Context, db bob.DB, payload *shar
 	}, nil
 }
 
-func (app *BaseApp) AuthenticateUser(ctx context.Context, db bob.DB, params *shared.AuthenticateUserParams, autoCreateUser bool) (*shared.AuthenticateUserState, error) {
+func (app *BaseApp) AuthenticateUser(ctx context.Context, db bob.Executor, params *shared.AuthenticateUserParams, autoCreateUser bool) (*shared.AuthenticateUserState, error) {
 
 	// Query User and UserAccount by email and provider ----------------------------------------------------------------------------------------------------
-	result, err := repository.GetUserAccountByProviderAndEmail(ctx, db, params.Email, params.Provider)
+	result, err := repository.FindUserAccountByProviderAndEmail(ctx, db, params.Email, params.Provider)
 	if err != nil {
 		return nil, err
 	}
@@ -74,9 +74,11 @@ func (app *BaseApp) AuthenticateUser(ctx context.Context, db bob.DB, params *sha
 		if err != nil {
 			return nil, fmt.Errorf("error finding user role: %w", err)
 		}
-		err = repository.AssignRoles(ctx, db, user, roles...)
-		if err != nil {
-			return nil, fmt.Errorf("error assigning user role: %w", err)
+		if len(roles) > 0 {
+			err = repository.AssignRoles(ctx, db, user, roles...)
+			if err != nil {
+				return nil, fmt.Errorf("error assigning user role: %w", err)
+			}
 		}
 		result.User = user
 		result.Account = nil

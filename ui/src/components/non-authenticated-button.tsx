@@ -1,5 +1,5 @@
-import { NavLink } from "./link/nav-link";
-import { RouteMap } from "./route-map";
+import { NavLink } from "@/components/link/nav-link";
+import { RouteMap } from "@/components/route-map";
 
 export default function NonAuthenticatedButton() {
   return (

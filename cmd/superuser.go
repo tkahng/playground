@@ -7,7 +7,7 @@ import (
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/spf13/cobra"
 	"github.com/tkahng/authgo/internal/conf"
-	"github.com/tkahng/authgo/internal/core"
+	"github.com/tkahng/authgo/internal/db"
 	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
@@ -41,14 +41,14 @@ var superuserCreate = &cobra.Command{
 		ctx := cmd.Context()
 		conf := conf.GetConfig[conf.DBConfig]()
 
-		db := core.NewPoolFromConf(ctx, conf)
-		dbx := core.NewBobFromPool(db)
+		pool := db.NewPoolFromConf(ctx, conf)
+		dbx := db.NewQueries(pool)
 		err := repository.EnsureRoleAndPermissions(ctx, dbx, "superuser", "superuser")
 		if err != nil {
 			return err
 		}
 
-		user, err := repository.GetUserByEmail(ctx, dbx, args[0])
+		user, err := repository.FindUserByEmail(ctx, dbx, args[0])
 		if err != nil {
 			return err
 		}

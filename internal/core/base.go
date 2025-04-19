@@ -5,9 +5,8 @@ import (
 	"log/slog"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/stephenafamo/bob"
 	"github.com/tkahng/authgo/internal/conf"
-	"github.com/tkahng/authgo/internal/pool"
+	"github.com/tkahng/authgo/internal/db"
 	"github.com/tkahng/authgo/internal/repository"
 
 	"github.com/tkahng/authgo/internal/tools/filesystem"
@@ -22,7 +21,7 @@ type BaseApp struct {
 	tokenStorage  *TokenStorage
 	tokenVerifier *TokenVerifier
 	cfg           *conf.EnvConfig
-	db            bob.DB
+	db            *db.Queries
 	pool          *pgxpool.Pool
 	settings      *AppOptions
 	payment       *StripeService
@@ -39,7 +38,7 @@ func (app *BaseApp) Fs() *filesystem.FileSystem {
 func (app *BaseApp) Logger() *slog.Logger {
 	return app.logger
 }
-func (app *BaseApp) Db() bob.DB {
+func (app *BaseApp) Db() *db.Queries {
 	return app.db
 }
 func (a *BaseApp) Pool() *pgxpool.Pool {
@@ -87,7 +86,7 @@ func (app *BaseApp) NewMailClient() mailer.Mailer {
 // }
 
 func InitBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
-	pool := pool.CreatePool(ctx, cfg.Db.DatabaseUrl)
+	pool := db.CreatePool(ctx, cfg.Db.DatabaseUrl)
 	app := NewBaseApp(pool, cfg)
 	app.Bootstrap()
 	return app
@@ -104,7 +103,7 @@ func NewBaseApp(pool *pgxpool.Pool, cfg conf.EnvConfig) *BaseApp {
 	return &BaseApp{
 		fs:       fs,
 		pool:     pool,
-		db:       NewBobFromPool(pool),
+		db:       db.NewQueries(pool),
 		settings: settings,
 		logger:   logger.GetDefaultLogger(slog.LevelInfo),
 		cfg:      &cfg,

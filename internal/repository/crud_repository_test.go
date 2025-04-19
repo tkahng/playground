@@ -23,7 +23,7 @@ func TestListUsers(t *testing.T) {
 	_ = seeders.UserOauthFactory(ctx, db, 10, models.ProvidersGithub)
 	type args struct {
 		ctx   context.Context
-		db    bob.DB
+		db    bob.Executor
 		input *shared.UserListParams
 		count int64
 	}

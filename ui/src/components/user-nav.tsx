@@ -1,3 +1,8 @@
+import { LinkDto } from "@/components/landing-links";
+import { RouteMap } from "@/components/route-map";
+import { useTheme } from "@/components/theme-provider";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -8,16 +13,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { Avatar, AvatarFallback, AvatarImage } from "@radix-ui/react-avatar";
 import { Dot } from "lucide-react";
 import { Link, useNavigate } from "react-router";
-import { LinkProps } from "./landing-links";
-import { RouteMap } from "./route-map";
-import { useTheme } from "./theme-provider";
-import { Button } from "./ui/button";
 
 type UserNavProps = {
-  links: LinkProps[];
+  links: LinkDto[];
 };
 
 export function UserNav({ links }: UserNavProps) {
@@ -36,10 +36,7 @@ export function UserNav({ links }: UserNavProps) {
     return (
       <Button variant="ghost" className="relative h-8 w-8 rounded-full">
         <Avatar>
-          <AvatarImage
-            src="https://avatars.githubusercontent.com/u/124599?v=4"
-            alt="@shadcn"
-          />
+          <AvatarImage src="https://avatars.githubusercontent.com/u/124599?v=4" />
           <AvatarFallback>SC</AvatarFallback>
         </Avatar>
       </Button>

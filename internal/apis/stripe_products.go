@@ -9,7 +9,7 @@ import (
 	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
-	"github.com/tkahng/authgo/internal/tools/dataloader"
+	"github.com/tkahng/authgo/internal/tools/mapper"
 )
 
 func (api *Api) StripeProductsWithPricesOperation(path string) huma.Operation {
@@ -121,10 +121,10 @@ func (api *Api) StripeProductsWithPrices(ctx context.Context, inputt *StripeProd
 	if err != nil {
 		return nil, err
 	}
-	prods := dataloader.Map(users, func(user *models.StripeProduct) *StripeProductWithPrices {
+	prods := mapper.Map(users, func(user *models.StripeProduct) *StripeProductWithPrices {
 		return &StripeProductWithPrices{
 			Product: ModelToProduct(user),
-			Prices:  dataloader.Map(user.R.ProductStripePrices, ModelToPrice),
+			Prices:  mapper.Map(user.R.ProductStripePrices, ModelToPrice),
 		}
 
 	})

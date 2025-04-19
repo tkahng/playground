@@ -6,7 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/tkahng/authgo/internal/conf"
-	"github.com/tkahng/authgo/internal/core"
+	"github.com/tkahng/authgo/internal/db"
 	"github.com/tkahng/authgo/internal/db/seeders"
 	"github.com/tkahng/authgo/internal/repository"
 )
@@ -28,8 +28,8 @@ var seedRolesCmd = &cobra.Command{
 		ctx := cmd.Context()
 		conf := conf.GetConfig[conf.DBConfig]()
 
-		db := core.NewPoolFromConf(ctx, conf)
-		dbx := core.NewBobFromPool(db)
+		pool := db.NewPoolFromConf(ctx, conf)
+		dbx := db.NewQueries(pool)
 		err := repository.EnsureRoleAndPermissions(ctx, dbx, "superuser", "superuser", "advanced", "pro", "basic")
 		if err != nil {
 			slog.Error(
@@ -72,8 +72,8 @@ var seedUserCmd = &cobra.Command{
 		ctx := cmd.Context()
 		conf := conf.GetConfig[conf.DBConfig]()
 
-		db := core.NewPoolFromConf(ctx, conf)
-		dbx := core.NewBobFromPool(db)
+		pool := db.NewPoolFromConf(ctx, conf)
+		dbx := db.NewQueries(pool)
 		role, err := repository.FindRoleByName(ctx, dbx, "basic")
 		if err != nil {
 			return fmt.Errorf("error at createing users: %w", err)

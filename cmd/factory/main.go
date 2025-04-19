@@ -6,7 +6,7 @@ import (
 	"github.com/aarondl/opt/null"
 	"github.com/alexedwards/argon2id"
 	"github.com/tkahng/authgo/internal/conf"
-	"github.com/tkahng/authgo/internal/core"
+	"github.com/tkahng/authgo/internal/db"
 	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/db/models/factory"
 	"github.com/tkahng/authgo/internal/tools/security"
@@ -35,8 +35,8 @@ func main() {
 	ctx := context.Background()
 	conf := conf.AppConfigGetter()
 
-	db := core.NewPoolFromConf(ctx, conf.Db)
-	dbx := core.NewBobFromPool(db)
+	dl := db.NewPoolFromConf(ctx, conf.Db)
+	dbx := db.NewQueries(dl)
 	hash, err := security.CreateHash("password", argon2id.DefaultParams)
 	if err != nil {
 		panic(err)

@@ -6,7 +6,6 @@ import (
 	"io"
 	"net/http"
 	"path"
-	"time"
 
 	"github.com/aarondl/opt/null"
 	"github.com/danielgtaylor/huma/v2"
@@ -98,14 +97,6 @@ func (api *Api) UploadMedia(ctx context.Context, input *struct {
 	return nil, nil
 }
 
-type MediaOuput struct {
-	ID        uuid.UUID `json:"id" db:"id" format:"uuid"`
-	Filename  string    `json:"filename" db:"filename"`
-	URL       string    `json:"url" db:"url" format:"uri"`
-	CreatedAt time.Time `json:"created_at" db:"created_at"`
-	UpdatedAt time.Time `json:"updated_at" db:"updated_at"`
-}
-
 func (api *Api) GetMediaOperation(path string /** /media/:id */) huma.Operation {
 	return huma.Operation{
 		OperationID: "get-media",
@@ -123,7 +114,7 @@ func (api *Api) GetMediaOperation(path string /** /media/:id */) huma.Operation 
 
 func (api *Api) GetMedia(ctx context.Context, input *struct {
 	ID string `path:"id" format:"uuid" required:"true" description:"Id of the media"`
-}) (*MediaOuput, error) {
+}) (*shared.Media, error) {
 	db := api.app.Db()
 	id, err := uuid.Parse(input.ID)
 	if err != nil {
@@ -137,7 +128,7 @@ func (api *Api) GetMedia(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	return &MediaOuput{
+	return &shared.Media{
 		ID:        media.ID,
 		Filename:  media.Filename,
 		URL:       url,
@@ -161,19 +152,19 @@ func (api *Api) MedialListOperation(path string /** /media */) huma.Operation {
 	}
 }
 
-func (api *Api) MediaList(ctx context.Context, input *shared.MediaListParams) (*PaginatedOutput[*MediaOuput], error) {
+func (api *Api) MediaList(ctx context.Context, input *shared.MediaListParams) (*PaginatedOutput[*shared.Media], error) {
 	db := api.app.Db()
 	medias, err := repository.ListMedia(ctx, db, input)
 	if err != nil {
 		return nil, err
 	}
-	var data []*MediaOuput
+	var data []*shared.Media
 	for _, media := range medias {
 		url, err := api.app.Fs().GeneratePresignedURL(ctx, media.Disk, path.Join(media.Directory, media.Filename))
 		if err != nil {
 			return nil, err
 		}
-		data = append(data, &MediaOuput{
+		data = append(data, &shared.Media{
 			ID:        media.ID,
 			Filename:  media.Filename,
 			URL:       url,
@@ -186,8 +177,8 @@ func (api *Api) MediaList(ctx context.Context, input *shared.MediaListParams) (*
 		return nil, err
 	}
 
-	return &PaginatedOutput[*MediaOuput]{
-		Body: shared.PaginatedResponse[*MediaOuput]{
+	return &PaginatedOutput[*shared.Media]{
+		Body: shared.PaginatedResponse[*shared.Media]{
 			Data: data,
 			Meta: shared.Meta{
 				Page:    input.PaginatedInput.Page,

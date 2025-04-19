@@ -13,7 +13,7 @@ import (
 	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
-	"github.com/tkahng/authgo/internal/tools/dataloader"
+	"github.com/tkahng/authgo/internal/tools/mapper"
 	"github.com/tkahng/authgo/internal/tools/security"
 )
 
@@ -47,8 +47,8 @@ type UserAccountDetail struct {
 
 type UserDetail struct {
 	*shared.User
-	Roles    []*RoleWithPermissions `json:"roles,omitempty" required:"false"`
-	Accounts []*UserAccountDetail   `json:"accounts,omitempty" required:"false"`
+	Roles    []*shared.RoleWithPermissions `json:"roles,omitempty" required:"false"`
+	Accounts []*UserAccountDetail          `json:"accounts,omitempty" required:"false"`
 }
 
 func ToUserAccountDetail(userAccount *models.UserAccount) *UserAccountDetail {
@@ -95,12 +95,11 @@ func (api *Api) AdminUsers(ctx context.Context, input *struct {
 			return nil, err
 		}
 	}
-	info := dataloader.Map(users, func(user *models.User) *UserDetail {
+	info := mapper.Map(users, func(user *models.User) *UserDetail {
 		return &UserDetail{
-			User:  shared.ToUser(user),
-			Roles: dataloader.Map(user.R.Roles, ToRoleWithPermissions),
-			// Permissions: user.R.Permissions,
-			Accounts: dataloader.Map(user.R.UserAccounts, ToUserAccountDetail),
+			User:     shared.ToUser(user),
+			Roles:    mapper.Map(user.R.Roles, shared.ToRoleWithPermissions),
+			Accounts: mapper.Map(user.R.UserAccounts, ToUserAccountDetail),
 		}
 	})
 
@@ -145,7 +144,7 @@ func (api *Api) AdminUsersCreate(ctx context.Context, input *struct {
 	Body *shared.User
 }, error) {
 	db := api.app.Db()
-	existingUser, err := repository.GetUserByEmail(ctx, db, input.Body.Email)
+	existingUser, err := repository.FindUserByEmail(ctx, db, input.Body.Email)
 	if err != nil {
 		return nil, err
 	}
@@ -289,7 +288,7 @@ func (api *Api) AdminUsersGet(ctx context.Context, input *struct {
 	ID uuid.UUID `path:"id" format:"uuid" required:"true"`
 }) (*struct{ Body *shared.User }, error) {
 	db := api.app.Db()
-	user, err := repository.GetUserById(ctx, db, input.ID)
+	user, err := repository.FindUserById(ctx, db, input.ID)
 	if err != nil {
 		return nil, err
 	}

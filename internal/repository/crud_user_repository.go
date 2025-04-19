@@ -63,7 +63,7 @@ func ListUserFilterFunc(ctx context.Context, q *psql.ViewQuery[*models.User, mod
 }
 
 // ListUsers implements AdminCrudActions.
-func ListUsers(ctx context.Context, db bob.DB, input *shared.UserListParams) (models.UserSlice, error) {
+func ListUsers(ctx context.Context, db bob.Executor, input *shared.UserListParams) (models.UserSlice, error) {
 
 	q := models.Users.Query()
 	filter := input.UserListFilter
@@ -106,7 +106,7 @@ func ListUsersOrderByFunc(ctx context.Context, q *psql.ViewQuery[*models.User, m
 }
 
 // CountUsers implements AdminCrudActions.
-func CountUsers(ctx context.Context, db bob.DB, filter *shared.UserListFilter) (int64, error) {
+func CountUsers(ctx context.Context, db bob.Executor, filter *shared.UserListFilter) (int64, error) {
 	q := models.Users.Query()
 	ListUserFilterFunc(ctx, q, filter)
 	data, err := q.Count(ctx, db)
@@ -117,7 +117,7 @@ func CountUsers(ctx context.Context, db bob.DB, filter *shared.UserListFilter) (
 }
 
 // delete users
-func DeleteUsers(ctx context.Context, db bob.DB, userId uuid.UUID) error {
+func DeleteUsers(ctx context.Context, db bob.Executor, userId uuid.UUID) error {
 	user, err := models.FindUser(ctx, db, userId)
 	if err != nil {
 		return err
@@ -136,7 +136,7 @@ type UpdateUserInput struct {
 }
 
 // update users by id
-func UpdateUser(ctx context.Context, db bob.DB, userId uuid.UUID, input *UpdateUserInput) error {
+func UpdateUser(ctx context.Context, db bob.Executor, userId uuid.UUID, input *UpdateUserInput) error {
 	user, err := models.FindUser(ctx, db, userId)
 	if err != nil {
 		return err

@@ -57,11 +57,11 @@ func (o AuthOptions) Validate() error {
 	return nil
 }
 
-func GetOrSetEncryptedAuthOptions(ctx context.Context, dbx bob.DB, encryptionKey string) (*AuthOptions, error) {
+func GetOrSetEncryptedAuthOptions(ctx context.Context, dbx bob.Executor, encryptionKey string) (*AuthOptions, error) {
 	var opts *AuthOptions
 	var encryptedOpts *EncryptedAuthOptions
 	// get the encrypted auth options from the db
-	encryptedParams, err := repository.GetParams[EncryptedAuthOptions](ctx, dbx, EncryptedAuthOptionsKey)
+	encryptedParams, err := repository.FindParams[EncryptedAuthOptions](ctx, dbx, EncryptedAuthOptionsKey)
 	if err != nil {
 		return nil, fmt.Errorf("error getting encrypted auth options from db: %w", err)
 	}
