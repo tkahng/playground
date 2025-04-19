@@ -81,3 +81,52 @@ func createPasswordResetMailParams(tokenHash string, payload *OtpPayload, config
 	}
 	return mailParams, err
 }
+
+func (app *BaseApp) SendSecurityPasswordResetEmail(ctx context.Context, db bob.Executor, user *models.User, redirectTo string) error {
+	opts := app.Settings().Auth
+	config := app.Settings()
+	client := app.NewMailClient()
+
+	payload := app.TokenVerifier().CreateResetPasswordPayload(user, redirectTo)
+
+	tokenHash, err := CreatePasswordResetToken(payload, opts.PasswordResetToken)
+	if err != nil {
+		return fmt.Errorf("error at creating verification token: %w", err)
+	}
+
+	err = PersistOtpToken(ctx, db, payload, opts.PasswordResetToken)
+	if err != nil {
+		return fmt.Errorf("error at storing verification token: %w", err)
+	}
+	mailParams, err := createSecurityPasswordResetMailParams(tokenHash, payload, config)
+	client.Send(mailParams)
+	if err != nil {
+		return fmt.Errorf("error creating verification token: %w", err)
+	}
+	return nil
+}
+
+func createSecurityPasswordResetMailParams(tokenHash string, payload *OtpPayload, config *AppOptions) (*mailer.Message, error) {
+	path, err := mailer.GetPath("/api/auth/confirm-password-reset", &mailer.EmailParams{
+		Token:      tokenHash,
+		Type:       string(shared.PasswordResetTokenType),
+		RedirectTo: payload.RedirectTo,
+	})
+	appUrl, _ := url.Parse(config.Meta.AppURL)
+	param := &mailer.CommonParams{
+		SiteURL:         appUrl.String(),
+		ConfirmationURL: appUrl.ResolveReference(path).String(),
+		Email:           payload.Email,
+		Token:           payload.Otp,
+		TokenHash:       tokenHash,
+		RedirectTo:      payload.RedirectTo,
+	}
+	bodyStr := mailer.GetTemplate("body", mailer.DefaultRecoveryMail, param)
+	mailParams := &mailer.Message{
+		From:    config.Meta.SenderAddress,
+		To:      payload.Email,
+		Subject: fmt.Sprintf("%s - Verify your email address", config.Meta.AppName),
+		Body:    bodyStr,
+	}
+	return mailParams, err
+}
