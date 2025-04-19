@@ -83,6 +83,17 @@ type TaskResponse struct {
 	Tasks   []Task  `json:"tasks"`
 }
 
+type AiTaskResponse struct {
+	TaskResponse
+	Usage AiUsage `json:"usage"`
+}
+
+type AiUsage struct {
+	PromptTokens     int64 `json:"prompt_tokens"`
+	CompletionTokens int64 `json:"completion_tokens"`
+	TotalTokens      int64 `json:"total_tokens"`
+}
+
 type AiService struct {
 	client *genai.Client
 }
@@ -99,10 +110,10 @@ func NewAiService(ctx context.Context, config conf.AiConfig) *AiService {
 }
 
 type TaskProjectGenerator interface {
-	GenerateProjectPlan(ctx context.Context, projectInput string) (*TaskResponse, error)
+	GenerateProjectPlan(ctx context.Context, projectInput string) (*AiTaskResponse, error)
 }
 
-func (c *AiService) GenerateProjectPlan(ctx context.Context, projectInput string) (*TaskResponse, error) {
+func (c *AiService) GenerateProjectPlan(ctx context.Context, projectInput string) (*AiTaskResponse, error) {
 	model := c.client.GenerativeModel("gemini-1.5-pro-latest")
 	model.ResponseMIMEType = "application/json"
 	model.ResponseSchema = Schema
@@ -115,5 +126,13 @@ func (c *AiService) GenerateProjectPlan(ctx context.Context, projectInput string
 	if err := json.Unmarshal([]byte(resp.Candidates[0].Content.Parts[0].(genai.Text)), &taskResponse); err != nil {
 		return nil, err
 	}
-	return &taskResponse, nil
+	usage := AiUsage{
+		PromptTokens:     int64(resp.UsageMetadata.PromptTokenCount),
+		CompletionTokens: int64(resp.UsageMetadata.CandidatesTokenCount),
+		TotalTokens:      int64(resp.UsageMetadata.TotalTokenCount),
+	}
+	return &AiTaskResponse{
+		TaskResponse: taskResponse,
+		Usage:        usage,
+	}, nil
 }
