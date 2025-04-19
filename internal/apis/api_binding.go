@@ -181,6 +181,8 @@ func BindApis(api huma.API, app core.App) {
 	huma.Register(taskProjectGroup, appApi.TaskProjectListOperation("/task-projects"), appApi.TaskProjectList)
 	// task project create
 	huma.Register(taskProjectGroup, appApi.TaskProjectCreateOperation("/task-projects"), appApi.TaskProjectCreate)
+	// task project create with ai
+	huma.Register(taskProjectGroup, appApi.TaskProjectCreateWithAiOperation("/task-projects/ai"), appApi.TaskProjectCreateWithAi)
 	// task project update
 	huma.Register(taskProjectGroup, appApi.TaskProjectUpdateOperation("/task-projects/{task-project-id}"), appApi.TaskProjectUpdate)
 	// // task project delete

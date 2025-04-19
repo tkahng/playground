@@ -8,9 +8,11 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/core"
+	"github.com/tkahng/authgo/internal/db"
 	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/authgo/internal/tools/ai/googleai"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 )
 
@@ -101,24 +103,78 @@ func (api *Api) TaskProjectCreate(ctx context.Context, input *struct {
 		return nil, huma.Error401Unauthorized("Unauthorized")
 	}
 	db := api.app.Db()
-	// db, err := pool.Begin(ctx)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// defer tx.Rollback(ctx)
-	// db := db.NewDBTx(tx)
-	taskProject, err := repository.CreateTaskProjectWithTasks(ctx, db, userInfo.User.ID, &input.Body)
+	taskProject, err := createTaskProjectWithTasks(ctx, db, userInfo.User.ID, input.Body)
 	if err != nil {
 		return nil, err
 	}
-	// err = tx.Commit(ctx)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// err = taskProject.LoadTaskProjectProjectTasks(ctx, db)
-	// if err != nil {
-	// 	return nil, err
-	// }
+	return &struct {
+		Body *shared.TaskProject
+	}{
+		Body: shared.ModelToProject(taskProject),
+	}, nil
+}
+
+func createTaskProjectWithTasks(ctx context.Context, db *db.Queries, userId uuid.UUID, input shared.CreateTaskProjectWithTasksDTO) (*models.TaskProject, error) {
+	taskProject, err := repository.CreateTaskProjectWithTasks(ctx, db, userId, &input)
+	if err != nil {
+		return nil, err
+	}
+	return taskProject, nil
+}
+
+func (api *Api) TaskProjectCreateWithAiOperation(path string) huma.Operation {
+	return huma.Operation{
+		OperationID: "task-project-create-with-ai",
+		Method:      http.MethodPost,
+		Path:        path,
+		Summary:     "Task project create with ai",
+		Description: "Create a new task project with ai",
+		Tags:        []string{"Task"},
+		Errors:      []int{http.StatusNotFound},
+		Security: []map[string][]string{
+			{shared.BearerAuthSecurityKey: {}},
+		},
+	}
+}
+
+type TaskProjectCreateWithAiDto struct {
+	Input string `json:"input"`
+}
+type TaskProjectCreateWithAiInput struct {
+	Body TaskProjectCreateWithAiDto `json:"body"`
+}
+
+func (api *Api) TaskProjectCreateWithAi(ctx context.Context, input *TaskProjectCreateWithAiInput) (*struct {
+	Body *shared.TaskProject
+}, error) {
+	userInfo := core.GetContextUserClaims(ctx)
+	if userInfo == nil || userInfo.User == nil {
+		return nil, huma.Error401Unauthorized("Unauthorized")
+	}
+	db := api.app.Db()
+	aiService := googleai.NewAiService(ctx, api.app.Cfg().AiConfig)
+	taskProjectPlan, err := aiService.GenerateProjectPlan(ctx, input.Body.Input)
+	if err != nil {
+		return nil, err
+	}
+	args := shared.CreateTaskProjectWithTasksDTO{
+		CreateTaskProjectDTO: shared.CreateTaskProjectDTO{
+			Name:        taskProjectPlan.Project.Name,
+			Description: &taskProjectPlan.Project.Description,
+			Status:      models.TaskProjectStatusTodo,
+		},
+		Tasks: mapper.Map(taskProjectPlan.Tasks, func(task googleai.Task) shared.CreateTaskBaseDTO {
+			return shared.CreateTaskBaseDTO{
+				Name:        task.Name,
+				Description: &task.Description,
+				Status:      models.TaskStatusTodo,
+			}
+		}),
+	}
+	taskProject, err := createTaskProjectWithTasks(ctx, db, userInfo.User.ID, args)
+	if err != nil {
+		return nil, err
+	}
 	return &struct {
 		Body *shared.TaskProject
 	}{

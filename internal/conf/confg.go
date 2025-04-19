@@ -59,7 +59,7 @@ type StripeConfig struct {
 }
 
 type AiConfig struct {
-	GoogleGeminiApiKey string `env:"GOOGLE_GEMINI_API_KEY" required:"false"`
+	GoogleGeminiApiKey string `env:"GOOGLE_GEMINI_API_KEY" required:"true"`
 }
 
 type Options struct {
