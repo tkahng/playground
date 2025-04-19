@@ -9,7 +9,7 @@ type Props = {
 export default function ProtectedRoutePage(props: Props) {
   const { user } = useAuthProvider();
   const { data, isPending, isError, error } = useQuery({
-    queryKey: ["basic-route"],
+    queryKey: ["protected-route"],
     queryFn: async () => {
       if (!user?.tokens.access_token) {
         throw new Error("Missing access token");

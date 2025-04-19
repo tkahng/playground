@@ -36,9 +36,7 @@ export default function ProjectListPage() {
         page: pageIndex + 1,
         per_page: pageSize,
       });
-      if (!data) {
-        throw new Error("No data returned from taskProjectList");
-      }
+
       return data;
     },
   });

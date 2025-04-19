@@ -37,6 +37,11 @@ type TaskProjectListResponse struct {
 
 func (api *Api) TaskProjectList(ctx context.Context, input *shared.TaskProjectsListParams) (*TaskProjectListResponse, error) {
 	db := api.app.Db()
+	userInfo := core.GetContextUserClaims(ctx)
+	if userInfo == nil || userInfo.User == nil {
+		return nil, huma.Error401Unauthorized("Unauthorized")
+	}
+	input.TaskProjectsListFilter.UserID = userInfo.User.ID.String()
 	taskProject, err := repository.ListTaskProjects(ctx, db, input)
 	if err != nil {
 		return nil, err
