@@ -175,11 +175,12 @@ export default function ProjectEdit() {
           <KanbanBoard
             tasks={
               project.tasks?.map((task) => ({
-                columnId: task.status as "todo" | "done" | "in-progress",
+                columnId: task.status as "todo" | "done" | "in_progress",
                 content: task.name,
                 id: task.id,
               })) || []
             }
+            projectId={projectId!}
           />
           {/* <DataTable
             columns={[

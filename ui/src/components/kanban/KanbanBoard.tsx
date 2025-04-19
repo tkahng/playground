@@ -3,6 +3,8 @@ import { createPortal } from "react-dom";
 
 import { coordinateGetter } from "@/components/kanban/multipleContainersKeyboardPreset";
 import { hasDraggableData } from "@/components/kanban/utils";
+import { useAuthProvider } from "@/hooks/use-auth-provider";
+import { taskPositionStatus } from "@/lib/queries";
 import {
   Announcements,
   DndContext,
@@ -18,6 +20,8 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 import { SortableContext, arrayMove } from "@dnd-kit/sortable";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import type { Column } from "./BoardColumn";
 import { BoardColumn, BoardContainer } from "./BoardColumn";
 import { type Task, TaskCard } from "./TaskCard";
@@ -28,7 +32,7 @@ const defaultCols = [
     title: "Todo",
   },
   {
-    id: "in-progress" as const,
+    id: "in_progress" as const,
     title: "In progress",
   },
   {
@@ -39,17 +43,47 @@ const defaultCols = [
 
 export type ColumnId = (typeof defaultCols)[number]["id"];
 
-export function KanbanBoard(props: { tasks: Task[] }) {
+export function KanbanBoard(props: { tasks: Task[]; projectId: string }) {
+  const { user } = useAuthProvider();
   const [columns, setColumns] = useState<Column[]>(defaultCols);
   const pickedUpTaskColumn = useRef<ColumnId | null>(null);
   const columnsId = useMemo(() => columns.map((col) => col.id), [columns]);
-
+  const queryClient = useQueryClient();
   const [tasks, setTasks] = useState<Task[]>(props.tasks);
 
   const [activeColumn, setActiveColumn] = useState<Column | null>(null);
 
   const [activeTask, setActiveTask] = useState<Task | null>(null);
 
+  const mutation = useMutation({
+    mutationFn: async ({
+      taskId,
+      status,
+      position,
+    }: {
+      taskId: string;
+      status: "todo" | "in_progress" | "done";
+      position: number;
+    }) => {
+      if (!user?.tokens.access_token) return;
+      await taskPositionStatus(user?.tokens.access_token, taskId, {
+        status: status,
+        position: position,
+      });
+      return;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["project", props.projectId],
+      });
+      toast.success("Task updated");
+    },
+    onError: (error) => {
+      toast.error("Failed to update task", {
+        description: error.message,
+      });
+    },
+  });
   const sensors = useSensors(
     useSensor(MouseSensor),
     useSensor(TouchSensor),
@@ -280,9 +314,18 @@ export function KanbanBoard(props: { tasks: Task[] }) {
           activeTask.columnId !== overTask.columnId
         ) {
           activeTask.columnId = overTask.columnId;
+          mutation.mutate({
+            taskId: activeTask.id.toString(),
+            status: activeTask.columnId,
+            position: overData.sortable.index,
+          });
           return arrayMove(tasks, activeIndex, overIndex - 1);
         }
-
+        mutation.mutate({
+          taskId: activeTask.id.toString(),
+          status: activeTask.columnId,
+          position: overData.sortable.index,
+        });
         return arrayMove(tasks, activeIndex, overIndex);
       });
     }

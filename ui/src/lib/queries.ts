@@ -846,3 +846,28 @@ export const taskList = async (
   }
   return data;
 };
+
+export const taskPositionStatus = async (
+  token: string,
+  id: string,
+  args: operations["update-task-position-status"]["requestBody"]["content"]["application/json"]
+) => {
+  const { data, error } = await client.PUT(
+    `/api/tasks/{task-id}/position-status`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      params: {
+        path: {
+          "task-id": id,
+        },
+      },
+      body: args,
+    }
+  );
+  if (error) {
+    throw new Error(error.detail);
+  }
+  return data;
+};
