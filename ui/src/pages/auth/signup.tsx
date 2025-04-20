@@ -1,28 +1,3 @@
-// import { Form, Link, redirect, useNavigation } from "@remix-run/react";
-// import type { ActionFunctionArgs } from "@vercel/remix";
-// import { Check } from "lucide-react";
-// import {
-//   ProviderConnectionForm,
-//   providerNames,
-// } from "~/components/auth/connections";
-// import { GeneralErrorBoundary } from "~/components/general-error-boundary";
-// import { Button } from "~/components/ui/button";
-// import {
-//   Card,
-//   CardContent,
-//   CardDescription,
-//   CardFooter,
-//   CardHeader,
-//   CardTitle,
-// } from "~/components/ui/card";
-// import { Checkbox } from "~/components/ui/checkbox";
-// import { Input } from "~/components/ui/input";
-// import { Label } from "~/components/ui/label";
-// import { RouteMap } from "~/lib/config/route.config";
-// import { signUp } from "~/modules/auth/sign-up.server";
-// import { createSupabaseWithSession } from "~/modules/common/supabase/supabase.server";
-// import "~/tailwind.css";
-
 import {
   ProviderConnectionForm,
   providerNames,
@@ -47,9 +22,6 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
 export default function SignupPage() {
-  const callbackUrl = new URL(
-    window.location.origin + "/auth/callback"
-  ).toString();
   const [input, setInput] = useState<SignupInput>({
     email: "",
     password: "",
@@ -217,7 +189,6 @@ export default function SignupPage() {
                     <ProviderConnectionForm
                       type="Signup"
                       providerName={providerName}
-                      redirectTo={callbackUrl}
                     />
                   </li>
                 ))}

@@ -1,5 +1,3 @@
-import { ThemeProvider } from "@/components/theme-provider";
-import { AuthProvider } from "@/context/auth-context";
 import SettingLayout from "@/layouts/account-setting-layout";
 import AdminDashboardLayout from "@/layouts/admin-dashboard-layout";
 import AdminLayoutBase from "@/layouts/admin-layout-base";
@@ -29,9 +27,7 @@ import BasicRoute from "@/pages/protected-routes/route-basic";
 import ProRoute from "@/pages/protected-routes/route-pro";
 import AccountSettingsPage from "@/pages/settings/account-settings";
 import BillingSettingPage from "@/pages/settings/billing-settings";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router";
-import { Toaster } from "sonner";
 import BackLink from "./components/back-link";
 import {
   adminHeaderLinks,
@@ -41,137 +37,122 @@ import {
   protectedSidebarLinks,
   tasksSidebarLinks,
 } from "./components/landing-links";
+import { Providers } from "./components/providers";
 import { RouteMap } from "./components/route-map";
-import { ToastListener } from "./components/toast-listener";
+import NotFoundPage from "./pages/404";
 import NotAuthorizedPage from "./pages/not-authorized";
 import ProjectEdit from "./pages/tasks/task-projects/project-edit";
 import ProjectListPage from "./pages/tasks/task-projects/projects-list";
-
-const queryClient = new QueryClient();
 function App() {
   return (
     <>
-      <QueryClientProvider client={queryClient}>
-        <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
-          <AuthProvider>
-            <BrowserRouter>
-              <ToastListener />
-              <Routes>
-                <Route element={<RootLayout />}>
-                  <Route path="/" element={<Landing />} />
-                  <Route path="/home" element={<Landing />} />
-                  <Route path="/features" element={<Features />} />
-                  <Route path="/pricing" element={<PricingPage />} />
-                  <Route path="/about" element={<LandingAboutPage />} />
-                  <Route path="/contact" element={<LandingContactPage />} />
-                  <Route path="/signin" element={<Signin />} />
-                  <Route path="/signup" element={<SignupPage />} />
-                </Route>
-                {/* <Route element= */}
-                {/* Other routes */}
-                <Route path="/not-authorized" element={<NotAuthorizedPage />} />
-                <Route path="/auth/callback" element={<CallbackComponent />} />
-                <Route
-                  path="/auth/confirm-verification"
-                  element={<ConfirmVerification />}
-                />
-                <Route element={<AuthenticatedLayoutBase />}>
-                  <Route path="/payment">
-                    {/* /payment/success?sessionId */}
-                    <Route path="success" element={<PaymentSuccessPage />} />
-                  </Route>
-                  <Route
-                    path="/dashboard"
-                    element={
-                      <DashboardLayout
-                        links={dashboardSidebarLinks}
-                        headerLinks={authenticatedSubHeaderLinks}
-                      />
-                    }
-                  >
-                    <Route index element={<Dashboard />} />
-                  </Route>
+      <Providers>
+        <BrowserRouter>
+          <Routes>
+            <Route element={<RootLayout />}>
+              <Route path="/" element={<Landing />} />
+              <Route path="/home" element={<Landing />} />
+              <Route path="/features" element={<Features />} />
+              <Route path="/pricing" element={<PricingPage />} />
+              <Route path="/about" element={<LandingAboutPage />} />
+              <Route path="/contact" element={<LandingContactPage />} />
+              <Route path="/signin" element={<Signin />} />
+              <Route path="/signup" element={<SignupPage />} />
+            </Route>
+            {/* <Route element= */}
+            {/* Other routes */}
+            <Route path="/not-authorized" element={<NotAuthorizedPage />} />
+            <Route path="/auth/callback" element={<CallbackComponent />} />
+            <Route
+              path="/auth/confirm-verification"
+              element={<ConfirmVerification />}
+            />
+            <Route element={<AuthenticatedLayoutBase />}>
+              <Route path="/payment">
+                {/* /payment/success?sessionId */}
+                <Route path="success" element={<PaymentSuccessPage />} />
+              </Route>
+              <Route
+                path="/dashboard"
+                element={
+                  <DashboardLayout
+                    links={dashboardSidebarLinks}
+                    headerLinks={authenticatedSubHeaderLinks}
+                  />
+                }
+              >
+                <Route index element={<Dashboard />} />
+              </Route>
 
-                  <Route
-                    path="/dashboard/tasks"
-                    element={
-                      <DashboardLayout
-                        links={tasksSidebarLinks}
-                        headerLinks={authenticatedSubHeaderLinks}
-                        backLink={
-                          <BackLink
-                            to={RouteMap.DASHBOARD_HOME}
-                            name="Dashboard"
-                          />
-                        }
-                      />
+              <Route
+                path="/dashboard/tasks"
+                element={
+                  <DashboardLayout
+                    links={tasksSidebarLinks}
+                    headerLinks={authenticatedSubHeaderLinks}
+                    backLink={
+                      <BackLink to={RouteMap.DASHBOARD_HOME} name="Dashboard" />
                     }
-                  >
-                    <Route path="projects">
-                      <Route index element={<ProjectListPage />} />
-                      <Route path=":projectId" element={<ProjectEdit />} />
-                    </Route>
-                  </Route>
-                  <Route
-                    path="/dashboard/protected"
-                    element={
-                      <DashboardLayout
-                        links={protectedSidebarLinks}
-                        headerLinks={authenticatedSubHeaderLinks}
-                        backLink={
-                          <BackLink
-                            to={RouteMap.DASHBOARD_HOME}
-                            name="Dashboard"
-                          />
-                        }
-                      />
-                    }
-                  >
-                    <Route path="basic" element={<BasicRoute />} />
-                    <Route path="pro" element={<ProRoute />} />
-                    <Route path="advanced" element={<AdvancedRoute />} />
-                  </Route>
-                  <Route path="/settings" element={<SettingLayout />}>
-                    <Route path="profile" element={<ProfilePage />} />
-                    <Route path="account" element={<AccountSettingsPage />} />
-                    <Route path="billing" element={<BillingSettingPage />} />
-                  </Route>
+                  />
+                }
+              >
+                <Route path="projects">
+                  <Route index element={<ProjectListPage />} />
+                  <Route path=":projectId" element={<ProjectEdit />} />
                 </Route>
+              </Route>
+              <Route
+                path="/dashboard/protected"
+                element={
+                  <DashboardLayout
+                    links={protectedSidebarLinks}
+                    headerLinks={authenticatedSubHeaderLinks}
+                    backLink={
+                      <BackLink to={RouteMap.DASHBOARD_HOME} name="Dashboard" />
+                    }
+                  />
+                }
+              >
+                <Route path="basic" element={<BasicRoute />} />
+                <Route path="pro" element={<ProRoute />} />
+                <Route path="advanced" element={<AdvancedRoute />} />
+              </Route>
+              <Route path="/settings" element={<SettingLayout />}>
+                <Route path="profile" element={<ProfilePage />} />
+                <Route path="account" element={<AccountSettingsPage />} />
+                <Route path="billing" element={<BillingSettingPage />} />
+              </Route>
+            </Route>
 
-                <Route path="/admin" element={<AdminLayoutBase />}>
-                  <Route
-                    path="dashboard"
-                    element={
-                      <AdminDashboardLayout
-                        links={adminSidebarLinks}
-                        headerLinks={adminHeaderLinks}
-                      />
-                    }
-                  >
-                    <Route index element={<Dashboard />} />
-                    <Route path="users">
-                      <Route index element={<UserListPage />} />
-                      <Route path=":userId" element={<UserEdit />} />
-                    </Route>
-                    <Route path="roles">
-                      <Route index element={<RolesListPage />} />
-                      <Route path=":roleId" element={<RoleEdit />} />
-                    </Route>
-                    <Route path="permissions">
-                      <Route index element={<PermissionListPage />} />
-                      <Route
-                        path=":permissionId"
-                        element={<PermissionEdit />}
-                      />
-                    </Route>
-                  </Route>
+            <Route path="/admin" element={<AdminLayoutBase />}>
+              <Route
+                path="dashboard"
+                element={
+                  <AdminDashboardLayout
+                    links={adminSidebarLinks}
+                    headerLinks={adminHeaderLinks}
+                  />
+                }
+              >
+                <Route index element={<Dashboard />} />
+                <Route path="users">
+                  <Route index element={<UserListPage />} />
+                  <Route path=":userId" element={<UserEdit />} />
                 </Route>
-              </Routes>
-            </BrowserRouter>
-          </AuthProvider>
-          <Toaster />
-        </ThemeProvider>
-      </QueryClientProvider>
+                <Route path="roles">
+                  <Route index element={<RolesListPage />} />
+                  <Route path=":roleId" element={<RoleEdit />} />
+                </Route>
+                <Route path="permissions">
+                  <Route index element={<PermissionListPage />} />
+                  <Route path=":permissionId" element={<PermissionEdit />} />
+                </Route>
+              </Route>
+            </Route>
+            <Route path="*" element={<NotFoundPage />} />
+          </Routes>
+        </BrowserRouter>
+      </Providers>
     </>
   );
 }

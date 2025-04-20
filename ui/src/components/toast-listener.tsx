@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { toast } from "sonner";
 
-export const ToastListener = () => {
+export const ToastListener = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -11,12 +11,7 @@ export const ToastListener = () => {
     const error = params.get("error");
 
     if (error) {
-      toast.error(error);
-
-      // Remove "error" from the query params
       params.delete("error");
-
-      // Replace the URL with the updated query string
       navigate(
         {
           pathname: location.pathname,
@@ -24,8 +19,21 @@ export const ToastListener = () => {
         },
         { replace: true }
       );
-    }
-  }, [location, navigate]);
+      toast.error(error);
+      toast.error("Error", {
+        description: error,
+        action: {
+          label: "Close",
+          onClick: () => console.log("Close"),
+        },
+      });
 
-  return null; // this component doesn’t render anything
+      // Remove "error" from the query params
+
+      // Replace the URL with the updated query string
+    }
+  }, [location]);
+  // toast.error("Error");
+
+  return children; // this component doesn’t render anything
 };
