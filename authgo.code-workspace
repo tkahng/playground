@@ -50,5 +50,16 @@
 			"editor.codeLens": true,
 			"editor.gotoLocation.multipleTypeDefinitions": "gotoAndPeek"
 		},
+		"sqltools.connections": [
+			{
+				"previewLimit": 50,
+				"server": "localhost",
+				"port": 5432,
+				"driver": "PostgreSQL",
+				"name": "authgo",
+				"database": "authgo",
+				"username": "postgres"
+			}
+		],
 	}
 }

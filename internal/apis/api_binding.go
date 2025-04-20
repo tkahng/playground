@@ -78,7 +78,9 @@ func BindApis(api huma.API, app core.App) {
 	huma.Register(api, appApi.OAuth2CallbackPostOperation("/auth/callback"), appApi.OAuth2CallbackPost)
 	huma.Register(api, appApi.OAuth2AuthorizationUrlOperation("/auth/authorization-url"), appApi.OAuth2AuthorizationUrl)
 	// authenticated routes -----------------------------------------------------------
+
 	authenticatedGroup := huma.NewGroup(api)
+
 	// ---- Upload File
 	huma.Register(authenticatedGroup, appApi.UploadMediaOperation("/media"), appApi.UploadMedia)
 	// ---- Get Media
@@ -90,6 +92,9 @@ func BindApis(api huma.API, app core.App) {
 		// Mapping of event type name to Go struct for that event.
 		"message": models.Notification{},
 	}, appApi.NotificationsSsefunc)
+	// stats routes -------------------------------------------------------------------------------------------------
+	statsGroup := huma.NewGroup(api, "/stats")
+	huma.Register(statsGroup, appApi.StatsOperation("/stats"), appApi.Stats)
 	// ---- task routes -------------------------------------------------------------------------------------------------
 	taskGroup := huma.NewGroup(api)
 	taskGroup.UseMiddleware(func(ctx huma.Context, next func(huma.Context)) {

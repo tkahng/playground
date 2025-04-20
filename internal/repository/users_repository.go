@@ -119,7 +119,7 @@ user_role_permissions AS (
     FROM public.user_roles ur
         JOIN public.roles r ON ur.role_id = r.id
         JOIN public.role_permissions rp ON ur.role_id = rp.role_id
-        JOIN public.permissions p ON rp.permission_id = p.id -- WHERE ur.user_id = '575a9f91-159e-4680-ba8b-3fc4db40d194'
+        JOIN public.permissions p ON rp.permission_id = p.id
 ),
 user_direct_permissions AS (
     SELECT up.user_id AS user_id,
@@ -139,7 +139,7 @@ user_sub_role_permissions AS (
         JOIN public.product_roles pr ON product.id = pr.product_id
         JOIN public.roles r ON pr.role_id = r.id
         JOIN public.role_permissions rp ON r.id = rp.role_id
-        JOIN public.permissions p ON rp.permission_id = p.id -- WHERE u.id = '575a9f91-159e-4680-ba8b-3fc4db40d194'
+        JOIN public.permissions p ON rp.permission_id = p.id
 ),
 combined_permissions AS (
     SELECT *
@@ -184,44 +184,6 @@ func FindUserWithRolesAndPermissionsByEmail(ctx context.Context, db bob.Executor
 	return &res, nil
 }
 
-// func GetUsersWithRolesAndPermissions(ctx context.Context, db bob.Executor, ids ...uuid.UUID) ([]RolePermissionClaims, error) {
-// 	var input []any
-// 	for _, id := range ids {
-// 		input = append(input, id)
-// 	}
-
-// 	query := psql.RawQuery(rawGetUsersWithPermissionsByIds, psql.Arg(input...))
-// 	res, err := bob.All(ctx, db, query, scan.StructMapper[rolePermissionClaims]())
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	var claims []RolePermissionClaims
-// 	all := models.AllProviders()
-// 	for _, r := range res {
-// 		var prov []models.Providers
-// 		var claim RolePermissionClaims = RolePermissionClaims{
-// 			UserID:      r.UserID,
-// 			Email:       r.Email,
-// 			Roles:       r.Roles,
-// 			Permissions: r.Permissions,
-// 		}
-// 		for _, provider := range r.Providers {
-// 			for _, p := range all {
-// 				if provider == string(p) {
-// 					prov = append(prov, p)
-// 				}
-// 			}
-// 		}
-// 		claim.Providers = prov
-// 		claims = append(claims, claim)
-// 	}
-// 	claims = dataloader.MapTo(claims, ids, func(c RolePermissionClaims) uuid.UUID {
-// 		return c.UserID
-// 	})
-// 	return claims, nil
-
-// }
-
 func FindUserByEmail(ctx context.Context, db bob.Executor, email string) (*models.User, error) {
 	a, err := models.Users.Query(models.SelectWhere.Users.Email.EQ(email)).One(ctx, db)
 	return OptionalRow(a, err)
@@ -229,23 +191,6 @@ func FindUserByEmail(ctx context.Context, db bob.Executor, email string) (*model
 func FindUserById(ctx context.Context, db bob.Executor, userId uuid.UUID) (*models.User, error) {
 	a, err := models.Users.Query(models.SelectWhere.Users.ID.EQ(userId)).One(ctx, db)
 	return OptionalRow(a, err)
-}
-
-// // func GetUserInfo(ctx context.Context, db bob.Executor,email string) (*models.User, error) {
-func FindAdminUserCount(ctx context.Context, db bob.Executor) (int64, error) {
-	a, err := models.Roles.Query(models.SelectWhere.Roles.Name.EQ("admin")).One(ctx, db)
-	a, err = OptionalRow(a, err)
-	if err != nil {
-		panic(err)
-	}
-	usecount, err := a.Users().Count(ctx, db)
-	if err != nil {
-		panic(err)
-	}
-	if usecount == 0 {
-		// user, err := CreateUser()
-	}
-	return usecount, nil
 }
 
 func UpdateUserPassword(ctx context.Context, db bob.Executor, userId uuid.UUID, password string) error {
