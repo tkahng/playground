@@ -1,5 +1,3 @@
-"use client";
-
 import { Button } from "@/components/ui/button";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { createCheckoutSession } from "@/lib/queries";
@@ -9,7 +7,7 @@ import { ProductWithPrices, SubscriptionWithPrice, User } from "@/schema.types";
 import { useMutation } from "@tanstack/react-query";
 
 import { useState } from "react";
-import { useNavigate } from "react-router";
+import { createSearchParams, useNavigate } from "react-router";
 import { z } from "zod";
 
 interface Props {
@@ -47,7 +45,12 @@ export default function Pricing({ products, subscription }: Props) {
       setPriceIdLoading(values.price_id);
       if (!user) {
         setPriceIdLoading(undefined);
-        return navigate("/signin");
+        return navigate({
+          pathname: "/signin",
+          search: createSearchParams({
+            redirect_to: window.location.pathname + window.location.search,
+          }).toString(),
+        });
       }
       const { url } = await createCheckoutSession(
         user.tokens.access_token,
@@ -57,24 +60,16 @@ export default function Pricing({ products, subscription }: Props) {
       window.location.href = url;
     },
   });
-  // const form = useForm<z.infer<typeof formSchema>>({
-  //   resolver: zodResolver(formSchema),
-  //   defaultValues: {
-  //     price_id: "",
-  //   },
-  // });
   function onSubmit(values: z.infer<typeof formSchema>) {
     mutation.mutate(values);
   }
-
-  // function onClick(event:k)
 
   if (!products.length) {
     return (
       <section className="">
         <div className="max-w-6xl px-4 py-8 mx-auto sm:py-24 sm:px-6 lg:px-8">
           <div className="sm:flex sm:flex-col sm:align-center"></div>
-          <p className="text-4xl font-extrabold text-white sm:text-center sm:text-6xl">
+          <p className="text-4xl font-extrabold sm:text-center sm:text-6xl">
             No subscription pricing plans found. Create them in your{" "}
             <a
               className="text-pink-500 underline"
@@ -161,12 +156,14 @@ export default function Pricing({ products, subscription }: Props) {
                     <h2 className="text-2xl font-semibold leading-6 ">
                       {product.name}
                     </h2>
-                    <p className="mt-4 text-zinc-300">{product.description}</p>
+                    <p className="mt-4 text-muted-foreground">
+                      {product.description}
+                    </p>
                     <p className="mt-8">
-                      <span className="text-5xl font-extrabold white">
+                      <span className="text-5xl font-extrabold">
                         {priceString}
                       </span>
-                      <span className="text-base font-medium ">
+                      <span className="text-base font-medium">
                         /{billingInterval}
                       </span>
                     </p>
@@ -176,7 +173,7 @@ export default function Pricing({ products, subscription }: Props) {
                       disabled={priceIdLoading === price.id}
                       // loading={priceIdLoading === price.id}
                       onClick={() => onSubmit({ price_id: price.id })}
-                      className="block w-full py-2 mt-8 text-sm font-semibold text-center text-white rounded-md hover:bg-zinc-900"
+                      className="block w-full py-2 mt-8 text-sm font-semibold text-center rounded-md"
                     >
                       {subscription ? "Manage" : "Subscribe"}
                     </Button>

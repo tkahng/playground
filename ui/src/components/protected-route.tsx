@@ -9,5 +9,5 @@ export default function ProtectedRoute({
 }) {
   const { user } = useAuthProvider();
 
-  return user ? children : <Navigate to="/login" />;
+  return user ? children : <Navigate to="/signin" />;
 }

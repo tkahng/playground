@@ -18,18 +18,17 @@ import { SigninInput } from "@/schema.types";
 import { Label } from "@radix-ui/react-label";
 import { Lock } from "lucide-react";
 import { useContext, useState } from "react";
-import { Link, useNavigate } from "react-router";
+import { Link, useLocation, useNavigate } from "react-router";
 import { toast } from "sonner";
 
 export default function SigninPage() {
   const [input, setInput] = useState<SigninInput>({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
+  const { search } = useLocation();
+  const redirectTo = new URLSearchParams(search).get("redirect_to");
   const navigate = useNavigate(); // Get navigation function
   const { login } = useContext(AuthContext);
 
-  const callbackUrl = new URL(
-    window.location.origin + "/auth/callback"
-  ).toString();
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setLoading(true);
@@ -38,7 +37,7 @@ export default function SigninPage() {
     try {
       await login({ email: input.email, password: input.password });
       setLoading(false);
-      navigate(RouteMap.DASHBOARD_HOME);
+      navigate(redirectTo || RouteMap.DASHBOARD_HOME);
     } catch (error) {
       if (error instanceof Error) {
         toast.error(error.message, {
@@ -139,26 +138,11 @@ export default function SigninPage() {
                     <ProviderConnectionForm
                       type="Login"
                       providerName={providerName}
-                      redirectTo={callbackUrl}
                     />
                   </li>
                 ))}
               </ul>
             </div>
-            {/* <div className="flex justify-center space-x-4">
-              <Button variant="outline" size="icon">
-                <Twitter className="h-4 w-4" />
-              </Button>
-              <Button variant="outline" size="icon">
-                <Facebook className="h-4 w-4" />
-              </Button>
-              <Button variant="outline" size="icon">
-                <Linkedin className="h-4 w-4" />
-              </Button>
-              <Button variant="outline" size="icon">
-                <Github className="h-4 w-4" />
-              </Button>
-            </div> */}
           </CardFooter>
         </Card>
       </div>

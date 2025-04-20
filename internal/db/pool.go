@@ -16,8 +16,6 @@ func NewPoolFromConf(ctx context.Context, conf conf.DBConfig) *pgxpool.Pool {
 }
 
 func CreatePool(ctx context.Context, connString string) *pgxpool.Pool {
-	fmt.Println("Creating pool for url:", connString)
-	// dbpool, err := pgxpool.New(ctx, connString)
 	dbpool, err := getDbPool(ctx, connString)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to create connection pool: %v\n", err)

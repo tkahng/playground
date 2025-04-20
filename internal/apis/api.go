@@ -1,7 +1,11 @@
 package apis
 
 import (
+	"io"
 	"net/http"
+	"path/filepath"
+	"strings"
+	"time"
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/danielgtaylor/huma/v2/adapters/humachi"
@@ -11,7 +15,6 @@ import (
 	"github.com/tkahng/authgo/ui"
 )
 
-// func NewServer(app core.App) *huma.Server {
 func NewServer() (http.Handler, huma.API) {
 	var api huma.API
 	config := InitApiConfig()
@@ -29,10 +32,36 @@ func NewServer() (http.Handler, huma.API) {
 	}))
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
-	handler := http.FileServer(http.FS(ui.DistDirFS))
-	// r.Handle("/", handler)
-	r.Get("/*", handler.ServeHTTP)
+
+	// Handle all other routes by serving index.html (for React Router)
+	r.HandleFunc("/*", func(w http.ResponseWriter, r *http.Request) {
+		p := filepath.Clean(r.URL.Path)
+		if strings.Contains(p, ".") {
+			http.FileServer(http.FS(ui.DistDirFS)).ServeHTTP(w, r)
+			return
+		}
+		if _, err := ui.DistDirFS.Open(p); err != nil {
+			file, err := ui.DistDirFS.Open("index.html")
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			defer file.Close()
+			ff, ok := file.(io.ReadSeeker)
+			if !ok {
+				http.Error(w, "[FileFS] file does not implement io.ReadSeeker", http.StatusInternalServerError)
+				return
+			}
+
+			http.ServeContent(w, r, "index.html", time.Now(), ff)
+		} else {
+			http.FileServer(http.FS(ui.DistDirFS)).ServeHTTP(w, r)
+		}
+	})
+
 	api = humachi.New(r, config)
+
+	// swagger
 	r.Get("/swagger", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html")
 		w.Write([]byte(`<!DOCTYPE html>
@@ -58,6 +87,7 @@ func NewServer() (http.Handler, huma.API) {
 </body>
 </html>`))
 	})
+
 	grp := huma.NewGroup(api, "/api")
 	return r, grp
 }

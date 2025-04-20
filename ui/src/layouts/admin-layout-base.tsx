@@ -2,23 +2,6 @@ import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { useEffect } from "react";
 import { Navigate, Outlet, useLocation } from "react-router";
 import { toast } from "sonner";
-// const links: LinkProps[] = [
-//   {
-//     title: "Home",
-//     to: RouteMap.ADMIN_DASHBOARD_HOME,
-//     icon: <Home />,
-//   },
-//   {
-//     title: "Users",
-//     to: RouteMap.ADMIN_DASHBOARD_USERS,
-//     icon: <User />,
-//   },
-//   {
-//     title: "Roles",
-//     to: RouteMap.ADMIN_DASHBOARD_ROLES,
-//     icon: <Key />,
-//   },
-// ];
 
 export default function AdminLayoutBase() {
   const location = useLocation();
@@ -27,7 +10,7 @@ export default function AdminLayoutBase() {
     checkAuth();
   }, [location]);
 
-  if (!user || !user.roles?.includes("superuser")) {
+  if (!user || !user.permissions?.includes("superuser")) {
     toast.error("Unauthorized", {
       description: "You are not an admin",
       action: {

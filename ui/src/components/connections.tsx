@@ -37,11 +37,13 @@ export function ProviderConnectionForm({
   providerName: ProviderName;
 }) {
   // const label = providerLabels[providerName];
-
+  const callbackUrl = new URL(
+    window.location.origin + "/auth/callback"
+  ).toString();
   const onSubmit = async () => {
     const url = await getAuthUrl({
       provider: providerName,
-      redirect: redirectTo || undefined,
+      redirect: redirectTo || callbackUrl,
     });
     window.location.href = url;
   };
