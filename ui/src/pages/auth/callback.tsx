@@ -35,7 +35,7 @@ export default function CallbackComponent() {
           // Handle error (e.g., display an error message)
           console.error("Error exchanging code for token:", error);
           toast.error(error);
-          navigate("/login"); // Redirect to login page or error page
+          navigate("/signin"); // Redirect to login page or error page
         });
     }
   }, [navigate]);
