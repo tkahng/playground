@@ -47,6 +47,7 @@ func NewServer() (http.Handler, huma.API) {
 				return
 			}
 			defer file.Close()
+
 			ff, ok := file.(io.ReadSeeker)
 			if !ok {
 				http.Error(w, "[FileFS] file does not implement io.ReadSeeker", http.StatusInternalServerError)
