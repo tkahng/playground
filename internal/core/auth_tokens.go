@@ -29,16 +29,15 @@ func (a *BaseApp) CreateAuthDto(ctx context.Context, email string) (*shared.Auth
 	if err != nil {
 		return nil, fmt.Errorf("error getting user info: %w", err)
 	}
-	tokens, err := a.CreateAuthTokens(ctx, db, &shared.UserInfoDto{
-		User:        info.User,
-		Roles:       info.Roles,
-		Permissions: info.Permissions,
-	})
+	if info == nil {
+		return nil, fmt.Errorf("user not found")
+	}
+	tokens, err := a.CreateAuthTokens(ctx, db, info)
 	if err != nil || tokens == nil {
 		return nil, fmt.Errorf("error creating auth tokens: %w", err)
 	}
 	bod := shared.AuthenticatedDTO{
-		User:        shared.ToUser(info.User),
+		User:        shared.ToUser(&info.User),
 		Tokens:      *tokens,
 		Roles:       info.Roles,
 		Permissions: info.Permissions,
@@ -53,21 +52,21 @@ func (a *BaseApp) RefreshTokens(ctx context.Context, db bob.Executor, refreshTok
 	if err != nil {
 		return nil, fmt.Errorf("error verifying refresh token: %w", err)
 	}
-	user, err := GetUserInfoDTO(ctx, db, claims.Email)
+	info, err := GetUserInfoDTO(ctx, db, claims.Email)
 	if err != nil {
 		return nil, fmt.Errorf("error getting user info: %w", err)
 	}
 
-	tokens, err := a.CreateAuthTokens(ctx, db, user)
+	tokens, err := a.CreateAuthTokens(ctx, db, info)
 	if err != nil || tokens == nil {
 		return nil, fmt.Errorf("error creating auth tokens: %w", err)
 	}
 	return &shared.AuthenticatedDTO{
-		User:        shared.ToUser(user.User),
+		User:        shared.ToUser(&info.User),
 		Tokens:      *tokens,
-		Roles:       user.Roles,
-		Permissions: user.Permissions,
-		Providers:   user.Providers,
+		Roles:       info.Roles,
+		Permissions: info.Permissions,
+		Providers:   info.Providers,
 	}, nil
 
 }

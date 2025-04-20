@@ -35,13 +35,13 @@ func (api *Api) RequestVerificationOperation(path string) huma.Operation {
 func (api *Api) RequestVerification(ctx context.Context, input *struct{}) (*struct{}, error) {
 	db := api.app.Db()
 	claims := core.GetContextUserClaims(ctx)
-	if claims == nil || claims.User == nil {
+	if claims == nil {
 		return nil, huma.Error404NotFound("User not found")
 	}
 	if !claims.User.EmailVerifiedAt.IsNull() {
 		return nil, huma.Error404NotFound("Email already verified")
 	}
-	err := api.app.SendVerificationEmail(ctx, db, claims.User, api.app.Settings().Meta.AppURL)
+	err := api.app.SendVerificationEmail(ctx, db, &claims.User, api.app.Settings().Meta.AppURL)
 	if err != nil {
 		return nil, err
 	}

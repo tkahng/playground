@@ -41,11 +41,11 @@ func (a *Api) StripeCheckoutSessionOperation(path string) huma.Operation {
 
 func (a *Api) StripeCheckoutSession(ctx context.Context, input *StripePaymentInput) (*StripeUrlOutput, error) {
 	db := a.app.Db()
-	userr := core.GetContextUserClaims(ctx)
-	if userr == nil || userr.User == nil {
+	info := core.GetContextUserClaims(ctx)
+	if info == nil {
 		return nil, huma.Error403Forbidden("Not authenticated")
 	}
-	user := userr.User
+	user := &info.User
 
 	// return sesh.URL, nil
 	url, err := a.app.Payment().CreateCheckoutSession(ctx, db, user, input.Body.PriceID)
@@ -84,11 +84,11 @@ func (a *Api) StripeBillingPortalOperation(path string) huma.Operation {
 
 func (a *Api) StripeBillingPortal(ctx context.Context, input *StripeBillingPortalInput) (*StripeUrlOutput, error) {
 	db := a.app.Db()
-	user := core.GetContextUserClaims(ctx)
-	if user == nil || user.User == nil {
+	info := core.GetContextUserClaims(ctx)
+	if info == nil {
 		return nil, huma.Error401Unauthorized("not authorized")
 	}
-	url, err := a.app.Payment().CreateBillingPortalSession(ctx, db, user.User)
+	url, err := a.app.Payment().CreateBillingPortalSession(ctx, db, &info.User)
 	if err != nil {
 		return nil, err
 	}

@@ -33,7 +33,7 @@ type StatsResponse struct {
 func (api *Api) Stats(ctx context.Context, input *struct{}) (*StatsResponse, error) {
 	db := api.app.Db()
 	user := core.GetContextUserClaims(ctx)
-	if user == nil || user.User == nil {
+	if user == nil {
 		return nil, errors.New("user not found")
 	}
 	stats, err := repository.GetUserTaskStats(ctx, db, user.User.ID)

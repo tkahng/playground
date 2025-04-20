@@ -38,7 +38,7 @@ type TaskProjectListResponse struct {
 func (api *Api) TaskProjectList(ctx context.Context, input *shared.TaskProjectsListParams) (*TaskProjectListResponse, error) {
 	db := api.app.Db()
 	userInfo := core.GetContextUserClaims(ctx)
-	if userInfo == nil || userInfo.User == nil {
+	if userInfo == nil {
 		return nil, huma.Error401Unauthorized("Unauthorized")
 	}
 	input.TaskProjectsListFilter.UserID = userInfo.User.ID.String()
@@ -104,7 +104,7 @@ func (api *Api) TaskProjectCreate(ctx context.Context, input *struct {
 	Body *shared.TaskProject
 }, error) {
 	userInfo := core.GetContextUserClaims(ctx)
-	if userInfo == nil || userInfo.User == nil {
+	if userInfo == nil {
 		return nil, huma.Error401Unauthorized("Unauthorized")
 	}
 	db := api.app.Db()
@@ -153,7 +153,7 @@ func (api *Api) TaskProjectCreateWithAi(ctx context.Context, input *TaskProjectC
 	Body *shared.TaskProject
 }, error) {
 	userInfo := core.GetContextUserClaims(ctx)
-	if userInfo == nil || userInfo.User == nil {
+	if userInfo == nil {
 		return nil, huma.Error401Unauthorized("Unauthorized")
 	}
 	db := api.app.Db()
@@ -208,7 +208,7 @@ type TaskProjectResponse struct {
 
 func (api *Api) TaskProjectUpdate(ctx context.Context, input *shared.UpdateTaskProjectDTO) (*struct{}, error) {
 	userInfo := core.GetContextUserClaims(ctx)
-	if userInfo == nil || userInfo.User == nil {
+	if userInfo == nil {
 		return nil, huma.Error401Unauthorized("Unauthorized")
 	}
 	db := api.app.Db()
@@ -243,7 +243,7 @@ func (api *Api) TaskProjectDelete(ctx context.Context, input *struct {
 	TaskProjectID string `path:"task-project-id"`
 }) (*struct{}, error) {
 	userInfo := core.GetContextUserClaims(ctx)
-	if userInfo == nil || userInfo.User == nil {
+	if userInfo == nil {
 		return nil, huma.Error401Unauthorized("Unauthorized")
 	}
 	db := api.app.Db()
@@ -278,7 +278,7 @@ func (api *Api) TaskProjectGet(ctx context.Context, input *struct {
 	Expand        []string `query:"expand,omitempty" required:"false" minimum:"1" maximum:"100" enum:"tasks"`
 }) (*TaskProjectResponse, error) {
 	userInfo := core.GetContextUserClaims(ctx)
-	if userInfo == nil || userInfo.User == nil {
+	if userInfo == nil {
 		return nil, huma.Error401Unauthorized("Unauthorized")
 	}
 	db := api.app.Db()
@@ -328,7 +328,7 @@ func (api *Api) TaskProjectTasksCreateOperation(path string) huma.Operation {
 
 func (api *Api) TaskProjectTasksCreate(ctx context.Context, input *shared.CreateTaskWithProjectIdInput) (*TaskResposne, error) {
 	userInfo := core.GetContextUserClaims(ctx)
-	if userInfo == nil || userInfo.User == nil {
+	if userInfo == nil {
 		return nil, huma.Error401Unauthorized("Unauthorized")
 	}
 	db := api.app.Db()

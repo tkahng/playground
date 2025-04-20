@@ -20,7 +20,7 @@ var (
 )
 
 func (a *BaseApp) CreateAuthTokens(ctx context.Context, db bob.Executor, payload *shared.UserInfoDto) (*shared.TokenDto, error) {
-	if payload == nil || payload.User == nil {
+	if payload == nil {
 		return nil, fmt.Errorf("payload is nil")
 	}
 

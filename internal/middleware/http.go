@@ -50,7 +50,7 @@ func VerifyRequest(ja core.App, w http.ResponseWriter, r *http.Request) (*shared
 	// 	fmt.Println(err)
 	// 	return nil, fmt.Errorf("Error at error: %w", err)
 	// }
-	user := &models.User{}
+	user := models.User{}
 	// fmt.Println(user)
 	return &shared.UserInfoDto{
 		User: user,

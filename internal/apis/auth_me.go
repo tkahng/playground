@@ -34,7 +34,7 @@ func (api *Api) Me(ctx context.Context, input *struct{}) (*MeOutput, error) {
 		return nil, huma.Error404NotFound("User not found")
 	}
 	return &MeOutput{
-		Body: shared.ToUser(claims.User),
+		Body: shared.ToUser(&claims.User),
 	}, nil
 
 }

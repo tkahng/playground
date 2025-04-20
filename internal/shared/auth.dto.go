@@ -28,7 +28,7 @@ type AuthenticateUserState struct {
 }
 
 type UserInfoDto struct {
-	User        *models.User       `db:"user" json:"user"`
+	User        models.User        `db:"user" json:"user"`
 	Roles       []string           `db:"roles" json:"roles"`
 	Permissions []string           `db:"permissions" json:"permissions"`
 	Providers   []models.Providers `db:"providers" json:"providers"`

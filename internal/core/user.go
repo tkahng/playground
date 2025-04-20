@@ -19,7 +19,7 @@ func GetUserInfoDTO(ctx context.Context, db bob.Executor, email string) (*shared
 		return nil, fmt.Errorf("user not found")
 	}
 	result := &shared.UserInfoDto{
-		User: user,
+		User: *user,
 	}
 	roles, err := repository.FindUserWithRolesAndPermissionsByEmail(ctx, db, email)
 	if err != nil {
@@ -29,7 +29,7 @@ func GetUserInfoDTO(ctx context.Context, db bob.Executor, email string) (*shared
 		return result, nil
 	}
 	return &shared.UserInfoDto{
-		User:        user,
+		User:        *user,
 		Roles:       roles.Roles,
 		Permissions: roles.Permissions,
 		Providers:   roles.Providers,
