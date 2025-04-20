@@ -15,7 +15,6 @@ import (
 	"github.com/tkahng/authgo/ui"
 )
 
-// func NewServer(app core.App) *huma.Server {
 func NewServer() (http.Handler, huma.API) {
 	var api huma.API
 	config := InitApiConfig()
@@ -33,11 +32,7 @@ func NewServer() (http.Handler, huma.API) {
 	}))
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
-	// handler := http.FileServer(http.FS(ui.DistDirFS))
-	// r.Handle("/", handler)
-	// r.Handle("/*", http.StripPrefix("/", handler))
-	// http.Handle("/", http.FileServer(http.FS(ui.DistDirFS)))
-	// r.Handle("/", http.FileServer(http.FS(ui.DistDirFS)))
+
 	// Handle all other routes by serving index.html (for React Router)
 	r.HandleFunc("/*", func(w http.ResponseWriter, r *http.Request) {
 		p := filepath.Clean(r.URL.Path)
@@ -63,7 +58,10 @@ func NewServer() (http.Handler, huma.API) {
 			http.FileServer(http.FS(ui.DistDirFS)).ServeHTTP(w, r)
 		}
 	})
+
 	api = humachi.New(r, config)
+
+	// swagger
 	r.Get("/swagger", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html")
 		w.Write([]byte(`<!DOCTYPE html>
@@ -89,6 +87,7 @@ func NewServer() (http.Handler, huma.API) {
 </body>
 </html>`))
 	})
+
 	grp := huma.NewGroup(api, "/api")
 	return r, grp
 }
