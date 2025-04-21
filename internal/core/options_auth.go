@@ -108,27 +108,27 @@ func DefaultAuthSettings() *AuthOptions {
 	return &AuthOptions{
 
 		VerificationToken: TokenOption{
-			// Type:     shared.VerificationTokenType,
+			Type:     shared.VerificationTokenType,
 			Secret:   string(shared.VerificationTokenType),
 			Duration: 259200, // 3days
 		},
 		AccessToken: TokenOption{
-			// Type:     shared.AccessTokenType,
+			Type:     shared.AccessTokenType,
 			Secret:   string(shared.AccessTokenType),
 			Duration: 3600, // 1hr
 		},
 		PasswordResetToken: TokenOption{
-			// Type:     shared.PasswordResetTokenType,
+			Type:     shared.PasswordResetTokenType,
 			Secret:   string(shared.PasswordResetTokenType),
 			Duration: 1800, // 30min
 		},
 		RefreshToken: TokenOption{
-			// Type:     shared.RefreshTokenType,
+			Type:     shared.RefreshTokenType,
 			Secret:   string(shared.RefreshTokenType),
 			Duration: 604800, // 7days
 		},
 		StateToken: TokenOption{
-			// Type:     shared.StateTokenType,
+			Type:     shared.StateTokenType,
 			Secret:   string(shared.StateTokenType),
 			Duration: 1800, // 30min
 		},

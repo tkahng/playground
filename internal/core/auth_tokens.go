@@ -12,7 +12,8 @@ import (
 func (a *BaseApp) HandleAuthToken(ctx context.Context, token string) (*shared.UserInfoDto, error) {
 	db := a.Db()
 	opts := a.Settings().Auth
-	claims, err := VerifyAuthenticationToken(token, opts.AccessToken)
+	var claims AuthenticationClaims
+	err := VerifyAndParseToken(token, opts.AccessToken, &claims)
 	if err != nil {
 		return nil, fmt.Errorf("error verifying refresh token: %w", err)
 	}

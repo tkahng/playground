@@ -5,11 +5,12 @@ import (
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/tkahng/authgo/internal/shared"
 )
 
 type TokenOption struct {
-	// Type   shared.TokenType `form:"type" json:"type" enum:"authentication_token,password_reset_token,verification_token,refresh_token,state_token"`
-	Secret string `form:"secret" json:"secret,omitempty"`
+	Type   shared.TokenType `form:"type" json:"type" enum:"authentication_token,password_reset_token,verification_token,refresh_token,state_token"`
+	Secret string           `form:"secret" json:"secret,omitempty"`
 	// Duration specifies how long an issued token to be valid (in seconds)
 	Duration int64 `form:"duration" json:"duration"`
 }
