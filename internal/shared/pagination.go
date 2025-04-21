@@ -1,6 +1,8 @@
 package shared
 
 import (
+	"math"
+
 	"github.com/aarondl/opt/null"
 )
 
@@ -16,8 +18,8 @@ type SortParams struct {
 }
 
 type PaginatedInput struct {
-	Page    int `query:"page,omitempty" default:"1" minimum:"1" required:"false"`
-	PerPage int `query:"per_page,omitempty" default:"10" minimum:"1" maximum:"100" required:"false"`
+	Page    int64 `query:"page,omitempty" minimum:"0" required:"false"`
+	PerPage int64 `query:"per_page,omitempty" default:"10" minimum:"1" maximum:"100" required:"false"`
 }
 
 type PaginatedResponse[T any] struct {
@@ -25,9 +27,39 @@ type PaginatedResponse[T any] struct {
 	Meta Meta `json:"meta"`
 }
 type Meta struct {
-	Page    int `json:"page"`
-	PerPage int `json:"per_page"`
-	Total   int `json:"total"`
+	Page     int64  `json:"page"`
+	PerPage  int64  `json:"per_page"`
+	Total    int64  `json:"total"`
+	NextPage *int64 `json:"next_page"`
+	PrevPage *int64 `json:"prev_page"`
+	HasMore  bool   `json:"has_more"`
+}
+
+func GenerateMeta(input PaginatedInput, total int64) Meta {
+	var meta Meta = Meta{
+		Page:    input.Page,
+		PerPage: input.PerPage,
+		Total:   total,
+	}
+	nextPage, prevPage := input.Page+1, input.Page-1
+
+	perPage := input.PerPage
+	if perPage == 0 {
+		perPage = 10
+	}
+	pageCount := int64(math.Ceil(float64(total) / float64(perPage)))
+
+	if prevPage >= 0 {
+		meta.PrevPage = &prevPage
+	} else {
+		meta.PrevPage = nil
+	}
+	if nextPage < pageCount-1 {
+		meta.NextPage = &nextPage
+	} else {
+		meta.NextPage = nil
+	}
+	return meta
 }
 
 type Link struct {

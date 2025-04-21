@@ -78,7 +78,7 @@ func (api *Api) TaskProjectList(ctx context.Context, input *shared.TaskProjectsL
 					}),
 				}
 			}),
-			Meta: shared.Meta{Total: int(total)},
+			Meta: shared.GenerateMeta(input.PaginatedInput, total),
 		},
 	}, nil
 }

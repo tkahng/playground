@@ -328,8 +328,7 @@ type ProviderStatePayload struct {
 	RedirectTo          string                `json:"redirect_to,omitempty"`
 }
 
-// create a new verification token from claims
-func CreateProviderStateToken(payload *ProviderStatePayload, config TokenOption) (string, error) {
+func CreateAndPersistStateToken(ctx context.Context, db bob.Executor, payload *ProviderStatePayload, config TokenOption) (string, error) {
 	if payload == nil {
 		return "", fmt.Errorf("payload is nil")
 	}
@@ -343,33 +342,15 @@ func CreateProviderStateToken(payload *ProviderStatePayload, config TokenOption)
 	if err != nil {
 		return "", fmt.Errorf("error at creating verification token: %w", err)
 	}
-	return token, nil
-}
-
-func PersistProviderStateToken(ctx context.Context, db bob.Executor, payload *ProviderStatePayload, config TokenOption) error {
-	// save new verification token
 	dto := &repository.TokenDTO{
 		Type:       models.TokenTypes(payload.Type),
 		Identifier: string(payload.Type),
 		Expires:    config.Expires(),
 		Token:      payload.Token,
 	}
-	_, err := repository.CreateToken(ctx, db, dto)
+	_, err = repository.CreateToken(ctx, db, dto)
 	if err != nil {
-		return fmt.Errorf("error at storing verification token: %w", err)
-	}
-	return nil
-}
-
-func CreateAndPersistStateToken(ctx context.Context, db bob.Executor, payload *ProviderStatePayload, config TokenOption) (string, error) {
-
-	token, err := CreateProviderStateToken(payload, config)
-	if err != nil {
-		return "", err
-	}
-	err = PersistProviderStateToken(ctx, db, payload, config)
-	if err != nil {
-		return "", err
+		return "", fmt.Errorf("error at storing verification token: %w", err)
 	}
 	return token, nil
 }

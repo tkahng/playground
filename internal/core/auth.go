@@ -55,7 +55,8 @@ func (a *BaseApp) CreateAuthTokens(ctx context.Context, db bob.Executor, payload
 func (app *BaseApp) AuthenticateUser(ctx context.Context, db bob.Executor, params *shared.AuthenticateUserParams, autoCreateUser bool) (*shared.AuthenticateUserState, error) {
 	var user *models.User
 	var account *models.UserAccount
-	user, err := repository.FindUserByEmail(ctx, db, params.Email)
+	var err error
+	user, err = repository.FindUserByEmail(ctx, db, params.Email)
 	if err != nil {
 		return nil, err
 	}
@@ -70,8 +71,7 @@ func (app *BaseApp) AuthenticateUser(ctx context.Context, db bob.Executor, param
 		if !autoCreateUser {
 			return nil, fmt.Errorf("user not found")
 		}
-		user, err := repository.CreateUser(ctx, db, params)
-
+		user, err = repository.CreateUser(ctx, db, params)
 		if err != nil {
 			return nil, fmt.Errorf("error creating user: %w", err)
 		}
@@ -101,9 +101,15 @@ func (app *BaseApp) AuthenticateUser(ctx context.Context, db bob.Executor, param
 			}
 			params.HashPassword = &pw
 		}
+		if user == nil {
+			return nil, fmt.Errorf("user not found")
+		}
 		// else just create account and return
-		account, err := repository.CreateAccount(ctx, db, user, params)
+		account, err = repository.CreateAccount(ctx, db, user, params)
 		if err != nil {
+			return nil, fmt.Errorf("error creating user account: %w", err)
+		}
+		if account == nil {
 			return nil, fmt.Errorf("error creating user account: %w", err)
 		}
 		err = app.CheckUserCredentialsSecurity(ctx, db, user, params)

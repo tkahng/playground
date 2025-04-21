@@ -106,11 +106,7 @@ func (api *Api) AdminUsers(ctx context.Context, input *struct {
 	return &PaginatedOutput[*UserDetail]{
 		Body: shared.PaginatedResponse[*UserDetail]{
 			Data: info,
-			Meta: shared.Meta{
-				Page:    input.Page,
-				PerPage: input.PerPage,
-				Total:   int(count),
-			},
+			Meta: shared.GenerateMeta(input.PaginatedInput, count),
 		},
 	}, nil
 }

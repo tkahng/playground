@@ -12,7 +12,6 @@ import (
 	"github.com/stephenafamo/bob/dialect/psql"
 	"github.com/stephenafamo/bob/dialect/psql/dm"
 	"github.com/stephenafamo/bob/dialect/psql/im"
-	"github.com/stephenafamo/bob/dialect/psql/sm"
 	"github.com/tkahng/authgo/internal/db/models"
 )
 
@@ -67,22 +66,6 @@ func UseToken(ctx context.Context, db bob.Executor, params string) (*models.Toke
 		).
 		One(ctx, db)
 	return token, err
-}
-
-func FindFirstTokenByUserAndType(ctx context.Context, db bob.Executor, params *OtpDto) (*models.Token, error) {
-	if params == nil {
-		return nil, errors.New("params is nil")
-	}
-	q := models.Tokens.Query()
-	q.Apply(
-		models.SelectWhere.Tokens.Type.EQ(params.Type),
-		models.SelectWhere.Tokens.Identifier.EQ(params.Identifier),
-		models.SelectWhere.Tokens.Expires.GT(time.Now()),
-		sm.OrderBy(models.TokenColumns.CreatedAt).Desc(),
-		sm.OrderBy(models.TokenColumns.ID).Desc(),
-		sm.Limit(1),
-	)
-	return q.One(ctx, db)
 }
 
 func DeleteTokensByUser(ctx context.Context, db bob.Executor, params *OtpDto) error {

@@ -52,7 +52,7 @@ func (api *Api) TaskList(ctx context.Context, input *shared.TaskListParams) (*Ta
 					}),
 				}
 			}),
-			Meta: shared.Meta{Total: int(total)},
+			Meta: shared.GenerateMeta(input.PaginatedInput, total),
 		},
 	}, nil
 }

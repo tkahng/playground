@@ -20,25 +20,16 @@ func VarCollect[T any](args ...T) []T {
 func ViewApplyPagination[T any, Ts ~[]T](view *psql.ViewQuery[T, Ts], input *shared.PaginatedInput) {
 	if input == nil {
 		input = &shared.PaginatedInput{
-			// PerPage: shared.From(10),
-			// Page:    shared.From(1),
 			PerPage: 10,
-			Page:    1,
+			Page:    0,
 		}
 	}
-	// if input.Page.IsUnset() {
-	if input.Page == 0 {
-		// input.Page = shared.From(1)
-		input.Page = 1
-	}
 	if input.PerPage == 0 {
-		// input.PerPage = shared.From(10)
 		input.PerPage = 10
 	}
 	view.Apply(
 		sm.Limit(psql.Arg(input.PerPage)),
-		sm.Offset(psql.Arg((input.Page-1)*input.PerPage)),
-		// sm.Offset(psql.Arg((input.Page.MustGet()-1)*input.PerPage.MustGet())),
+		sm.Offset(psql.Arg((input.Page)*input.PerPage)),
 	)
 }
 

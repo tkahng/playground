@@ -141,7 +141,7 @@ func (api *Api) AdminUserPermissionSourceList(ctx context.Context, input *struct
 		return nil, err
 	}
 	limit := input.PerPage
-	offset := (input.Page - 1) * input.PerPage
+	offset := input.Page * input.PerPage
 	var userPermissionSources []repository.PermissionSource
 	var count int64
 	if input.Reverse {
@@ -170,7 +170,7 @@ func (api *Api) AdminUserPermissionSourceList(ctx context.Context, input *struct
 			Meta: shared.Meta{
 				Page:    input.PaginatedInput.Page,
 				PerPage: input.PaginatedInput.PerPage,
-				Total:   int(count),
+				Total:   count,
 			},
 		},
 	}, nil
@@ -211,7 +211,7 @@ func (api *Api) AdminPermissionsList(ctx context.Context, input *struct {
 			Meta: shared.Meta{
 				Page:    input.PaginatedInput.Page,
 				PerPage: input.PaginatedInput.PerPage,
-				Total:   int(count),
+				Total:   count,
 			},
 		},
 	}, nil

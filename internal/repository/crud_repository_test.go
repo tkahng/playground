@@ -43,7 +43,7 @@ func TestListUsers(t *testing.T) {
 						// PerPage: shared.From(10),
 						// Page:    shared.From(1),
 						PerPage: 10,
-						Page:    1,
+						Page:    0,
 					},
 				},
 				count: 10,
@@ -61,7 +61,7 @@ func TestListUsers(t *testing.T) {
 						// PerPage: shared.From(5),
 						// Page:    shared.From(2),
 						PerPage: 5,
-						Page:    2,
+						Page:    1,
 					},
 					UserListFilter: shared.UserListFilter{
 						// Provider: shared.From(models.ProvidersGoogle),
@@ -80,10 +80,8 @@ func TestListUsers(t *testing.T) {
 				db:  db,
 				input: &shared.UserListParams{
 					PaginatedInput: shared.PaginatedInput{
-						// PerPage: shared.From(10),
-						// Page:    shared.From(2),
 						PerPage: 10,
-						Page:    2,
+						Page:    1,
 					},
 					UserListFilter: shared.UserListFilter{
 						// Provider: shared.From(models.ProvidersCredentials),
@@ -107,7 +105,7 @@ func TestListUsers(t *testing.T) {
 						// PerPage: shared.From(10),
 						// Page:    shared.From(2),
 						PerPage: 10,
-						Page:    2,
+						Page:    1,
 					},
 					UserListFilter: shared.UserListFilter{
 						// Provider: shared.From(models.ProvidersGithub),

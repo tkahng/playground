@@ -135,7 +135,7 @@ func (api *Api) StripeProductsWithPrices(ctx context.Context, inputt *StripeProd
 			Meta: shared.Meta{
 				Page:    input.Page,
 				PerPage: input.PerPage,
-				Total:   int(count),
+				Total:   count,
 			},
 		},
 	}, nil

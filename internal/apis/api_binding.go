@@ -93,8 +93,9 @@ func BindApis(api huma.API, app core.App) {
 		"message": models.Notification{},
 	}, appApi.NotificationsSsefunc)
 	// stats routes -------------------------------------------------------------------------------------------------
-	statsGroup := huma.NewGroup(api, "/stats")
+	statsGroup := huma.NewGroup(api)
 	huma.Register(statsGroup, appApi.StatsOperation("/stats"), appApi.Stats)
+
 	// ---- task routes -------------------------------------------------------------------------------------------------
 	taskGroup := huma.NewGroup(api)
 	taskGroup.UseMiddleware(func(ctx huma.Context, next func(huma.Context)) {
