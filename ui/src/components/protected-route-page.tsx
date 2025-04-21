@@ -1,7 +1,6 @@
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { api } from "@/lib/queries";
+import { api, GetError } from "@/lib/queries";
 import { useQuery } from "@tanstack/react-query";
-
 type Props = {
   route: "basic" | "pro" | "advanced";
 };
@@ -22,20 +21,30 @@ export default function ProtectedRoutePage(props: Props) {
         return api.protected.advanced(user.tokens.access_token);
       }
     },
+    retry: false,
   });
   if (isPending) {
     return <div>Loading...</div>;
   }
 
   if (isError) {
-    return (
-      <>
-        <div>Error: {error.message}</div>
-        <div>This is a protected route</div>
-        <div>You need to have a {props.route} permission.</div>
-        <div>Try subscribing to a correct plan.</div>
-      </>
-    );
+    const err = GetError(error);
+    console.log("err", err);
+    if (err) {
+      return (
+        <>
+          <div>Error: {err.detail}</div>
+          <div>This is a protected route</div>
+          <div>You need to have a {props.route} permission.</div>
+          <div>Try subscribing to a correct plan.</div>
+          <div>
+            {err.errors?.map((e) => (
+              <div key={e.location}>{e.message}</div>
+            ))}
+          </div>
+        </>
+      );
+    }
   }
   return (
     <div>

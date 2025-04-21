@@ -55,3 +55,5 @@ export type ProductWithPrices =
 export type Price = components["schemas"]["Price"];
 
 export type UserPermissions = components["schemas"]["PermissionSource"];
+
+export type ErrorModel = components["schemas"]["ErrorModel"];

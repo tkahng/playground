@@ -28,6 +28,7 @@ import ProRoute from "@/pages/protected-routes/route-pro";
 import AccountSettingsPage from "@/pages/settings/account-settings";
 import BillingSettingPage from "@/pages/settings/billing-settings";
 import { BrowserRouter, Route, Routes } from "react-router";
+import AuthVerify from "./components/auth-verify";
 import BackLink from "./components/back-link";
 import {
   adminHeaderLinks,
@@ -48,6 +49,7 @@ function App() {
     <>
       <Providers>
         <BrowserRouter>
+          <AuthVerify />
           <Routes>
             <Route element={<RootLayout />}>
               <Route path="/" element={<Landing />} />

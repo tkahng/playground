@@ -4,7 +4,7 @@ import { getProductsWithPrices, getUserSubscriptions } from "@/lib/queries";
 import { useQuery } from "@tanstack/react-query";
 
 export default function PricingPage() {
-  const { user, logout } = useAuthProvider();
+  const { user } = useAuthProvider();
   const {
     data: products,
     isPending: isPendingProducts,
@@ -17,9 +17,7 @@ export default function PricingPage() {
       if (user) {
         try {
           userSubs = await getUserSubscriptions(user.tokens.access_token);
-        } catch (error) {
-          await logout();
-        }
+        } catch (error) {}
       }
       const products = await getProductsWithPrices();
       return { products, userSubs };

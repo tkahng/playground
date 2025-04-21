@@ -123,7 +123,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   };
 
   const checkAuth = async () => {
-    await getOrRefreshToken();
+    if (!user) {
+      return;
+    }
+    try {
+      await getOrRefreshToken();
+    } catch (error) {}
   };
 
   const value = useMemo(

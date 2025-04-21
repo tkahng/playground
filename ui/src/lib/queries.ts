@@ -2,12 +2,25 @@ import { client } from "@/lib/client";
 import { components, operations } from "@/schema";
 import {
   AuthenticatedDTO,
+  ErrorModel,
   RefreshTokenInput,
   SigninInput,
   SignupInput,
   User,
   UserDetailWithRoles,
 } from "@/schema.types";
+
+export const GetError = <T>(error: T | ErrorModel) => {
+  if (typeof error === "object" && error !== null && "$schema" in error) {
+    if (
+      typeof error.$schema === "string" &&
+      error.$schema.includes("ErrorModel")
+    ) {
+      return error as ErrorModel;
+    }
+  }
+  return null;
+};
 
 export const signIn = async (
   args: SigninInput
@@ -23,7 +36,7 @@ export const signIn = async (
     },
   });
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   return data || null;
 };
@@ -41,7 +54,7 @@ export const refreshToken = async (
     },
   });
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   return data;
 };
@@ -57,7 +70,7 @@ export const signUp = async (
     body: args,
   });
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   return data;
 };
@@ -69,7 +82,7 @@ export const getMe = async (token: string): Promise<User> => {
     },
   });
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   return data;
 };
@@ -88,7 +101,7 @@ export const userPaginate = async (
   });
 
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   return data;
 };
@@ -107,7 +120,7 @@ export const rolesPaginate = async (
   });
 
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   return data;
 };
@@ -128,7 +141,7 @@ export const getRoleWithPermission = async (token: string, id: string) => {
   });
 
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   return data;
 };
@@ -144,7 +157,7 @@ export const createRole = async (
     },
   });
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   return data;
 };
@@ -167,7 +180,7 @@ export const updateRole = async (
   });
 
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   return data;
 };
@@ -182,7 +195,7 @@ export const deleteRole = async (token: string, id: string) => {
     },
   });
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   return data;
 };
@@ -208,7 +221,7 @@ export const deleteRolePermission = async (
   );
 
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   return data;
 };
@@ -234,7 +247,7 @@ export const createRolePermission = async (
   );
 
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   return data;
 };
@@ -253,7 +266,7 @@ export const permissionsPaginate = async (
   });
 
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   return data;
 };
@@ -270,7 +283,7 @@ export const deletePermission = async (token: string, id: string) => {
     },
   });
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   return data;
 };
@@ -285,7 +298,7 @@ export const createPermission = async (
     },
   });
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   return data;
 };
@@ -307,7 +320,7 @@ export const updatePermission = async (
   });
 
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   return data;
 };
@@ -326,7 +339,7 @@ export const getUserRoles = async (token: string, id: string) => {
   });
 
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   return data;
 };
@@ -343,7 +356,7 @@ export const getPermission = async (token: string, id: string) => {
   });
 
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   return data;
 };
@@ -371,7 +384,7 @@ export const getUserPermissions = async (
     }
   ); // TODO: add pagination
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   return data;
 };
@@ -395,7 +408,7 @@ export const getUserPermissions2 = async (token: string, userId: string) => {
     }
   ); // TODO: add pagination
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   return data;
 };
@@ -412,7 +425,7 @@ export const getUser = async (token: string, id: string) => {
     },
   });
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   return data;
 };
@@ -499,7 +512,7 @@ export const createUserRoles = async (
     },
   }); // TODO: add pagination
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   return data;
 };
@@ -524,7 +537,7 @@ export const removeUserRole = async (
     }
   ); // TODO: add pagination
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   return data;
 };
@@ -549,7 +562,7 @@ export const createUserPermissions = async (
     }
   ); // TODO: add pagination
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   return data;
 };
@@ -574,7 +587,7 @@ export const removeUserPermission = async (
     }
   ); // TODO: add pagination
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   return data;
 };
@@ -588,7 +601,7 @@ export const getProductsWithPrices = async (token?: string) => {
       : {},
   });
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   if (!data) {
     throw new Error("No data");
@@ -604,7 +617,7 @@ export const getUserSubscriptions = async (token: string) => {
     },
   });
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   // if !data) {
   //   throw new Error("No data");
@@ -627,7 +640,7 @@ export const getCheckoutSession = async (token: string, id: string) => {
     }
   );
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   if (!data) {
     throw new Error("No data");
@@ -648,7 +661,7 @@ export const createCheckoutSession = async (
     },
   });
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   if (!data) {
     throw new Error("No data");
@@ -663,7 +676,7 @@ export const createBillingPortalSession = async (token: string) => {
     },
   });
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   if (!data) {
     throw new Error("No data");
@@ -687,7 +700,7 @@ export const getAuthUrl = async ({
     },
   });
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   if (!data) {
     throw new Error("No data");
@@ -703,7 +716,7 @@ export const confirmVerification = async (token: string, type: string) => {
     },
   });
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
 };
 
@@ -714,7 +727,7 @@ export const getBasicRoute = async (token: string) => {
     },
   });
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   if (!data) {
     throw new Error("No data");
@@ -728,7 +741,7 @@ export const getProRoute = async (token: string) => {
     },
   });
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   if (!data) {
     throw new Error("No data");
@@ -745,7 +758,7 @@ export const getAdvancedRoute = async (token: string) => {
     }
   );
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   if (!data) {
     throw new Error("No data");
@@ -773,7 +786,7 @@ export const taskProjectList = async (
     },
   });
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   if (!data) {
     throw new Error("No data");
@@ -799,7 +812,7 @@ export const taskProjectGet = async (token: string, id: string) => {
     }
   );
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   if (!data) {
     throw new Error("No data");
@@ -818,7 +831,7 @@ export const taskProjectCreate = async (
     body: args,
   });
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   if (!data) {
     throw new Error("No data");
@@ -837,7 +850,7 @@ export const taskProjectCreateWithAi = async (
     body: args,
   });
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   if (!data) {
     throw new Error("No data");
@@ -858,7 +871,7 @@ export const taskList = async (
     },
   });
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   if (!data) {
     throw new Error("No data");
@@ -886,7 +899,7 @@ export const createTask = async (
     }
   );
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   if (!data) {
     throw new Error("No data");
@@ -914,7 +927,7 @@ export const taskPositionStatus = async (
     }
   );
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   return data;
 };
