@@ -3,7 +3,7 @@ import { NavLink } from "react-router";
 // container mx-auto flex h-14 items-center justify-between  lg:px-6
 export function NexusAIFooter() {
   return (
-    <footer className="border-t">
+    <footer className="border-t flex justify-center">
       <div className="container mx-auto flex-col items-center justify-between px-4 py-12 md:px-6">
         <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
           <div className="space-y-4">

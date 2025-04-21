@@ -55,7 +55,7 @@ export default function PermissionListPage() {
         throw new Error("Missing access token or role ID");
       }
       const data = await permissionsPaginate(user.tokens.access_token, {
-        page: pageIndex + 1,
+        page: pageIndex,
         per_page: pageSize,
       });
       return data;

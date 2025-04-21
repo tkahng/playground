@@ -14,7 +14,7 @@ export function NexusAILandingHeader({
   full?: boolean;
 }) {
   return (
-    <header className="shadow-sm border">
+    <header className="">
       {/* <nav className=" flex h-14 items-center justify-between lg:px-6"> */}
       <nav
         className={cn(

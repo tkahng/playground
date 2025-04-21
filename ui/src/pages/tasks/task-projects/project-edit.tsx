@@ -18,7 +18,7 @@ import { createTask, taskList, taskProjectGet } from "@/lib/queries";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronLeft } from "lucide-react";
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useParams } from "react-router";
 import { toast } from "sonner";
@@ -35,9 +35,10 @@ const formSchema = z.object({
     .optional(),
   status: z.enum(["todo", "in_progress", "done"]),
 });
+
 export default function ProjectEdit() {
   // const navigate = useNavigate();
-  const { tab, onClick } = useTabs("general");
+  const { tab, onClick } = useTabs("tasks");
   const queryClient = useQueryClient();
   const { user } = useAuthProvider();
   const { projectId } = useParams<{ projectId: string }>();
@@ -46,6 +47,18 @@ export default function ProjectEdit() {
     isLoading: loading,
     error,
   } = useQuery({
+    select: (data) => {
+      return {
+        ...data,
+        tasks: data.tasks?.map((task) => ({
+          name: task.name,
+          order: task.order,
+          columnId: task.status as "todo" | "done" | "in_progress",
+          content: task.name,
+          id: task.id,
+        })),
+      };
+    },
     queryKey: ["project-with-tasks", projectId],
     queryFn: async () => {
       if (!user?.tokens.access_token || !projectId) {
@@ -72,19 +85,21 @@ export default function ProjectEdit() {
   }, [projectId]);
   // const tasks =
   //   project?.tasks?.map((task) => ({
+  //     name: task.name,
+  //     order: task.order,
   //     columnId: task.status as "todo" | "done" | "in_progress",
   //     content: task.name,
   //     id: task.id,
   //   })) || [];
-  const tasks = useMemo(() => {
-    return project?.tasks?.map((task) => ({
-      name: task.name,
-      order: task.order,
-      columnId: task.status as "todo" | "done" | "in_progress",
-      content: task.name,
-      id: task.id,
-    }));
-  }, [project]);
+  // const tasks = useMemo(() => {
+  //   return project?.tasks?.map((task) => ({
+  //     name: task.name,
+  //     order: task.order,
+  //     columnId: task.status as "todo" | "done" | "in_progress",
+  //     content: task.name,
+  //     id: task.id,
+  //   }));
+  // }, [project]);
 
   const mutation = useMutation({
     mutationFn: async (values: z.infer<typeof formSchema>) => {
@@ -135,21 +150,47 @@ export default function ProjectEdit() {
 
   return (
     // <div className="h-full px-4 py-6 lg:px-8 space-y-6">
-    <div>
-      <Link
-        to={RouteMap.TASK_PROJECTS}
-        className="flex items-center gap-2 text-sm text-muted-foreground"
-      >
-        <ChevronLeft className="h-4 w-4" />
-        Back to projects
-      </Link>
-      <h1 className="text-2xl font-bold">{project.name}</h1>
-      <Tabs value={tab} onValueChange={onClick} className="h-full space-y-6">
-        <TabsList>
-          <TabsTrigger value="general">General</TabsTrigger>
-          <TabsTrigger value="tasks">Tasks</TabsTrigger>
-        </TabsList>
-        <TabsContent value="general">
+    <div className="grow">
+      <div className="flex flex-row gap-4">
+        <div className="px-4 md:px-6 gap-4 flex-1">
+          <Link
+            to={RouteMap.TASK_PROJECTS}
+            className="flex items-center gap-2 text-sm text-muted-foreground"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            Back to projects
+          </Link>
+          <h1 className="text-2xl font-bold">{project.name}</h1>
+          <Tabs
+            value={tab}
+            onValueChange={onClick}
+            className="h-full space-y-6"
+          >
+            <TabsList>
+              <TabsTrigger value="tasks">Tasks</TabsTrigger>
+            </TabsList>
+            <TabsContent value="tasks" className="flex flex-col gap-4 mx-4 ">
+              <div className="space-y-4 flex flex-row space-x-16">
+                <p className="flex-1">
+                  Add Tasks to this Project. Users who have this Project will
+                  receive all Tasks below that match the API of their login
+                  request.
+                </p>
+                <CreateProjectTaskDialog
+                  projectId={projectId!}
+                  status={project.status as "todo" | "in_progress" | "done"}
+                />
+              </div>
+              <div className="flex flex-col grow">
+                <KanbanBoard
+                  cars={project.tasks || []}
+                  projectId={projectId!}
+                />
+              </div>
+            </TabsContent>
+          </Tabs>
+        </div>
+        <div className="gap-4 flex-none px-4 md:px-6">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
               <FormField
@@ -189,23 +230,8 @@ export default function ProjectEdit() {
               </Button>
             </form>
           </Form>
-        </TabsContent>
-        <TabsContent value="tasks" className="flex flex-col gap-4 mx-4 ">
-          <div className="space-y-4 flex flex-row space-x-16">
-            <p className="flex-1">
-              Add Tasks to this Project. Users who have this Project will
-              receive all Tasks below that match the API of their login request.
-            </p>
-            <CreateProjectTaskDialog
-              projectId={projectId!}
-              status={project.status as "todo" | "in_progress" | "done"}
-            />
-          </div>
-          <div className="flex flex-col grow">
-            <KanbanBoard cars={tasks || []} projectId={projectId!} />
-          </div>
-        </TabsContent>
-      </Tabs>
+        </div>
+      </div>
     </div>
   );
 }

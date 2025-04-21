@@ -66,7 +66,7 @@ export function CreateProjectDialog() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
-      description: "",
+      status: "todo",
     },
   });
 

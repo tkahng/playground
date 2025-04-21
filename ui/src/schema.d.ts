@@ -473,6 +473,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/auth/request-verification": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Email verification request
+         * @description Request email verification
+         */
+        post: operations["request-verification"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/signin": {
         parameters: {
             query?: never;
@@ -653,6 +673,26 @@ export interface paths {
          * @description Api protected pro permission
          */
         get: operations["api-protected-pro-permission"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get stats
+         * @description Get stats
+         */
+        get: operations["stats-get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1111,10 +1151,15 @@ export interface components {
             url: string;
         };
         Meta: {
+            has_more: boolean;
+            /** Format: int64 */
+            next_page: number | null;
             /** Format: int64 */
             page: number;
             /** Format: int64 */
             per_page: number;
+            /** Format: int64 */
+            prev_page: number | null;
             /** Format: int64 */
             total: number;
         };
@@ -1610,6 +1655,16 @@ export interface components {
             updated_at: string;
             user_id: string;
         };
+        TaskStats: {
+            /** Format: int64 */
+            completed_projects: number;
+            /** Format: int64 */
+            completed_tasks: number;
+            /** Format: int64 */
+            total_projects: number;
+            /** Format: int64 */
+            total_tasks: number;
+        };
         TaskWithSubtask: {
             /**
              * Format: uri
@@ -1730,6 +1785,14 @@ export interface components {
             roles?: components["schemas"]["RoleWithPermissions"][] | null;
             /** Format: date-time */
             updated_at: string;
+        };
+        UserStats: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            task_stats: components["schemas"]["TaskStats"];
         };
     };
     responses: never;
@@ -3486,6 +3549,42 @@ export interface operations {
             };
         };
     };
+    "request-verification": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
     signin: {
         parameters: {
             query?: never;
@@ -4051,6 +4150,44 @@ export interface operations {
                 };
                 content: {
                     "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "stats-get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserStats"];
                 };
             };
             /** @description Not Found */

@@ -1,5 +1,3 @@
-import SettingLayout from "@/layouts/account-setting-layout";
-import AdminDashboardLayout from "@/layouts/admin-dashboard-layout";
 import AdminLayoutBase from "@/layouts/admin-layout-base";
 import AuthenticatedLayoutBase from "@/layouts/authenticated-layout-base";
 import DashboardLayout from "@/layouts/dashboard-layout";
@@ -29,17 +27,15 @@ import AccountSettingsPage from "@/pages/settings/account-settings";
 import BillingSettingPage from "@/pages/settings/billing-settings";
 import { BrowserRouter, Route, Routes } from "react-router";
 import AuthVerify from "./components/auth-verify";
-import BackLink from "./components/back-link";
 import {
   adminHeaderLinks,
   adminSidebarLinks,
   authenticatedSubHeaderLinks,
-  dashboardSidebarLinks,
   protectedSidebarLinks,
-  tasksSidebarLinks,
+  RouteLinks,
+  settingsSidebarLinks,
 } from "./components/landing-links";
 import { Providers } from "./components/providers";
-import { RouteMap } from "./components/route-map";
 import NotFoundPage from "./pages/404";
 import NotAuthorizedPage from "./pages/not-authorized";
 import ProjectEdit from "./pages/tasks/task-projects/project-edit";
@@ -78,7 +74,7 @@ function App() {
                 path="/dashboard"
                 element={
                   <DashboardLayout
-                    links={dashboardSidebarLinks}
+                    // sidebarLinks={dashboardSidebarLinks}
                     headerLinks={authenticatedSubHeaderLinks}
                   />
                 }
@@ -87,31 +83,22 @@ function App() {
               </Route>
 
               <Route
-                path="/dashboard/tasks"
+                path="/dashboard/projects"
                 element={
-                  <DashboardLayout
-                    links={tasksSidebarLinks}
-                    headerLinks={authenticatedSubHeaderLinks}
-                    backLink={
-                      <BackLink to={RouteMap.DASHBOARD_HOME} name="Dashboard" />
-                    }
-                  />
+                  <DashboardLayout headerLinks={authenticatedSubHeaderLinks} />
                 }
               >
-                <Route path="projects">
-                  <Route index element={<ProjectListPage />} />
-                  <Route path=":projectId" element={<ProjectEdit />} />
-                </Route>
+                {/* <Route path="projects"> */}
+                <Route index element={<ProjectListPage />} />
+                <Route path=":projectId" element={<ProjectEdit />} />
+                {/* </Route> */}
               </Route>
               <Route
                 path="/dashboard/protected"
                 element={
                   <DashboardLayout
-                    links={protectedSidebarLinks}
+                    sidebarLinks={protectedSidebarLinks}
                     headerLinks={authenticatedSubHeaderLinks}
-                    backLink={
-                      <BackLink to={RouteMap.DASHBOARD_HOME} name="Dashboard" />
-                    }
                   />
                 }
               >
@@ -119,7 +106,15 @@ function App() {
                 <Route path="pro" element={<ProRoute />} />
                 <Route path="advanced" element={<AdvancedRoute />} />
               </Route>
-              <Route path="/settings" element={<SettingLayout />}>
+              <Route
+                path="/settings"
+                element={
+                  <DashboardLayout
+                    sidebarLinks={settingsSidebarLinks}
+                    headerLinks={authenticatedSubHeaderLinks}
+                  />
+                }
+              >
                 <Route path="profile" element={<ProfilePage />} />
                 <Route path="account" element={<AccountSettingsPage />} />
                 <Route path="billing" element={<BillingSettingPage />} />
@@ -130,9 +125,10 @@ function App() {
               <Route
                 path="dashboard"
                 element={
-                  <AdminDashboardLayout
-                    links={adminSidebarLinks}
+                  <DashboardLayout
+                    sidebarLinks={adminSidebarLinks}
                     headerLinks={adminHeaderLinks}
+                    sidebarBackLink={RouteLinks.DASHBOARD_HOME}
                   />
                 }
               >

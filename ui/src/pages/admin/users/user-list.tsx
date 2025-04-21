@@ -38,7 +38,7 @@ export default function UserListPage() {
         throw new Error("Missing access token");
       }
       const data = await userPaginate(user.tokens.access_token, {
-        page: pageIndex + 1,
+        page: pageIndex,
         per_page: pageSize,
       });
       return data;

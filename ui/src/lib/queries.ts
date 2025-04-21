@@ -931,3 +931,18 @@ export const taskPositionStatus = async (
   }
   return data;
 };
+
+export const getStats = async (token: string) => {
+  const { data, error } = await client.GET("/api/stats", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  if (error) {
+    throw error;
+  }
+  if (!data) {
+    throw new Error("No data");
+  }
+  return data;
+};

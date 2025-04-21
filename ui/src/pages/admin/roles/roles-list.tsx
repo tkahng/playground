@@ -51,7 +51,7 @@ export default function RolesListPage() {
         throw new Error("Missing access token or role ID");
       }
       const data = await rolesPaginate(user.tokens.access_token, {
-        page: pageIndex + 1,
+        page: pageIndex,
         per_page: pageSize,
       });
       if (!data.data) {

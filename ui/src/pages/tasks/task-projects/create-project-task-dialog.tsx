@@ -17,6 +17,13 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { createTask } from "@/lib/queries";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -28,7 +35,7 @@ import { z } from "zod";
 
 const formSchema = z.object({
   name: z.string().min(1),
-  description: z.string().min(1).optional(),
+  description: z.string().min(0).optional(),
   status: z.enum(["todo", "in_progress", "done"]),
 });
 
@@ -122,10 +129,23 @@ export function CreateProjectTaskDialog({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Status</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="Task Status" hidden />
-                      </FormControl>
-                      <FormMessage />
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <FormControl {...field}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select Task Status" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="todo">Todo</SelectItem>
+                          <SelectItem value="in_progress">
+                            In Progress
+                          </SelectItem>
+                          <SelectItem value="done">Done</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </FormItem>
                   )}
                 />
