@@ -41,6 +41,23 @@ export const signIn = async (
   return data || null;
 };
 
+export const signOut = async (
+  token: string,
+  refreshToken: string
+): Promise<void> => {
+  const { error } = await client.POST("/api/auth/signout", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: {
+      refresh_token: refreshToken,
+    },
+  });
+  if (error) {
+    throw error;
+  }
+};
+
 export const refreshToken = async (
   args: RefreshTokenInput
 ): Promise<AuthenticatedDTO | null> => {
@@ -921,6 +938,31 @@ export const taskPositionStatus = async (
       params: {
         path: {
           "task-id": taskId,
+        },
+      },
+      body: args,
+    }
+  );
+  if (error) {
+    throw error;
+  }
+  return data;
+};
+
+export const taskProjectUpdate = async (
+  token: string,
+  taskProjectId: string,
+  args: operations["task-project-update"]["requestBody"]["content"]["application/json"]
+) => {
+  const { data, error } = await client.PUT(
+    "/api/task-projects/{task-project-id}",
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      params: {
+        path: {
+          "task-project-id": taskProjectId,
         },
       },
       body: args,

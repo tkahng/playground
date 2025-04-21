@@ -11,10 +11,15 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { useTabs } from "@/hooks/use-tabs";
-import { createTask, taskList, taskProjectGet } from "@/lib/queries";
+import { taskList, taskProjectGet, taskProjectUpdate } from "@/lib/queries";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronLeft } from "lucide-react";
@@ -34,11 +39,12 @@ const formSchema = z.object({
     .min(2, { message: "description must be at least 2 characters." })
     .optional(),
   status: z.enum(["todo", "in_progress", "done"]),
+  order: z.number(),
 });
 
 export default function ProjectEdit() {
   // const navigate = useNavigate();
-  const { tab, onClick } = useTabs("tasks");
+  // const { tab, onClick } = useTabs("tasks");
   const queryClient = useQueryClient();
   const { user } = useAuthProvider();
   const { projectId } = useParams<{ projectId: string }>();
@@ -54,7 +60,7 @@ export default function ProjectEdit() {
           name: task.name,
           order: task.order,
           columnId: task.status as "todo" | "done" | "in_progress",
-          content: task.name,
+          content: task.description,
           id: task.id,
         })),
       };
@@ -78,45 +84,24 @@ export default function ProjectEdit() {
     },
   });
 
-  useEffect(() => {
-    queryClient.refetchQueries({
-      queryKey: ["project-with-tasks", projectId],
-    });
-  }, [projectId]);
-  // const tasks =
-  //   project?.tasks?.map((task) => ({
-  //     name: task.name,
-  //     order: task.order,
-  //     columnId: task.status as "todo" | "done" | "in_progress",
-  //     content: task.name,
-  //     id: task.id,
-  //   })) || [];
-  // const tasks = useMemo(() => {
-  //   return project?.tasks?.map((task) => ({
-  //     name: task.name,
-  //     order: task.order,
-  //     columnId: task.status as "todo" | "done" | "in_progress",
-  //     content: task.name,
-  //     id: task.id,
-  //   }));
-  // }, [project]);
-
   const mutation = useMutation({
     mutationFn: async (values: z.infer<typeof formSchema>) => {
       if (!user?.tokens.access_token) {
         throw new Error("Missing access token");
       }
-      await createTask(user.tokens.access_token, projectId!, {
+      await taskProjectUpdate(user.tokens.access_token, projectId!, {
         name: values.name,
         description: values.description,
         status: values.status,
+        order: values.order,
       });
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
         queryKey: ["project-with-tasks"],
       });
-      queryClient.refetchQueries;
+      await queryClient.refetchQueries();
+      // form.reset();
       toast.success("Project updated!");
     },
     onError: (err: any) => {
@@ -130,19 +115,22 @@ export default function ProjectEdit() {
       name: project?.name || "",
       description: project?.description || "",
       status: project?.status as "todo" | "in_progress" | "done" | undefined,
+      order: project?.order || 0,
     },
   });
   function onSubmit(values: z.infer<typeof formSchema>) {
     mutation.mutate(values);
   }
-  // const onDelete = (permissionId: string) => {
-  //   // deletePermissionMutation.mutate(permissionId);
-  // };
-  // useEffect(() => {
-  //   if (project) {
-  //     form.reset(project);
-  //   }
-  // }, [project, form.reset]);
+  useEffect(() => {
+    if (project) {
+      form.reset({
+        name: project.name,
+        description: project.description || "",
+        status: project.status as "todo" | "in_progress" | "done",
+        order: project.order || 0,
+      });
+    }
+  }, [project]);
 
   if (loading) return <p>Loading...</p>;
   if (error) return <p>Error: {error.message}</p>;
@@ -161,7 +149,7 @@ export default function ProjectEdit() {
             Back to projects
           </Link>
           <h1 className="text-2xl font-bold">{project.name}</h1>
-          <Tabs
+          {/* <Tabs
             value={tab}
             onValueChange={onClick}
             className="h-full space-y-6"
@@ -169,26 +157,22 @@ export default function ProjectEdit() {
             <TabsList>
               <TabsTrigger value="tasks">Tasks</TabsTrigger>
             </TabsList>
-            <TabsContent value="tasks" className="flex flex-col gap-4 mx-4 ">
-              <div className="space-y-4 flex flex-row space-x-16">
-                <p className="flex-1">
-                  Add Tasks to this Project. Users who have this Project will
-                  receive all Tasks below that match the API of their login
-                  request.
-                </p>
-                <CreateProjectTaskDialog
-                  projectId={projectId!}
-                  status={project.status as "todo" | "in_progress" | "done"}
-                />
-              </div>
-              <div className="flex flex-col grow">
-                <KanbanBoard
-                  cars={project.tasks || []}
-                  projectId={projectId!}
-                />
-              </div>
-            </TabsContent>
-          </Tabs>
+            <TabsContent value="tasks" className="flex flex-col gap-4 mx-4 "> */}
+          <div className="space-y-4 flex flex-row space-x-16">
+            <p className="flex-1">
+              Add Tasks to this Project. Users who have this Project will
+              receive all Tasks below that match the API of their login request.
+            </p>
+            <CreateProjectTaskDialog
+              projectId={projectId!}
+              status={project.status as "todo" | "in_progress" | "done"}
+            />
+          </div>
+          <div className="flex flex-col grow">
+            <KanbanBoard cars={project.tasks || []} projectId={projectId!} />
+          </div>
+          {/* </TabsContent>
+          </Tabs> */}
         </div>
         <div className="gap-4 flex-none px-4 md:px-6">
           <Form {...form}>
@@ -211,6 +195,32 @@ export default function ProjectEdit() {
               />
               <FormField
                 control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Status</FormLabel>
+                    <Select
+                      {...field}
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a status" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="todo">Todo</SelectItem>
+                        <SelectItem value="in_progress">In Progress</SelectItem>
+                        <SelectItem value="done">Done</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
                 name="description"
                 render={({ field }) => (
                   <FormItem>
@@ -221,6 +231,19 @@ export default function ProjectEdit() {
                     <FormDescription>
                       This is your public display name.
                     </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="order"
+                render={({ field }) => (
+                  <FormItem>
+                    {/* <FormLabel>Order</FormLabel> */}
+                    <FormControl>
+                      <Input {...field} hidden />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}

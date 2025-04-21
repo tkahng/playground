@@ -11,7 +11,7 @@ export type Task = {
   id: UniqueIdentifier;
   name: string;
   columnId: ColumnId;
-  content: string;
+  content: string | null;
   order: number;
 };
 
@@ -78,9 +78,10 @@ export function CarCard({ task, isOverlay }: TaskCardProps) {
           <span className="sr-only">Move car</span>
           <GripVertical />
         </Button>
-        {task.content}
         <div className="text-sm text-muted-foreground">
           {task.name}
+          <br />
+          {task.content}
           <br />
           {task.order}
         </div>
