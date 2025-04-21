@@ -2,7 +2,6 @@ package core
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/alexedwards/argon2id"
@@ -54,14 +53,20 @@ func (a *BaseApp) CreateAuthTokens(ctx context.Context, db bob.Executor, payload
 }
 
 func (app *BaseApp) AuthenticateUser(ctx context.Context, db bob.Executor, params *shared.AuthenticateUserParams, autoCreateUser bool) (*shared.AuthenticateUserState, error) {
-
-	// Query User and UserAccount by email and provider ----------------------------------------------------------------------------------------------------
-	result, err := repository.FindUserAccountByProviderAndEmail(ctx, db, params.Email, params.Provider)
+	var user *models.User
+	var account *models.UserAccount
+	user, err := repository.FindUserByEmail(ctx, db, params.Email)
 	if err != nil {
 		return nil, err
 	}
+	if user != nil {
+		account, err = repository.FindUserAccountByUserIdAndProvider(ctx, db, user.ID, params.Provider)
+		if err != nil {
+			return nil, err
+		}
+	}
 	// if user does not exist, Create User and continue to create UserAccount ----------------------------------------------------------------------------------------------------
-	if result.User == nil {
+	if user == nil {
 		if !autoCreateUser {
 			return nil, fmt.Errorf("user not found")
 		}
@@ -80,15 +85,14 @@ func (app *BaseApp) AuthenticateUser(ctx context.Context, db bob.Executor, param
 				return nil, fmt.Errorf("error assigning user role: %w", err)
 			}
 		}
-		result.User = user
-		result.Account = nil
+
 		err = app.SendVerificationEmail(ctx, db, user, app.Settings().Meta.AppURL)
 		if err != nil {
 			return nil, fmt.Errorf("error sending verification email: %w", err)
 		}
 	}
 	// if user exists, but account does not exist, Create UserAccount ----------------------------------------------------------------------------------------------------
-	if result.Account == nil {
+	if account == nil {
 		// if type is credentials, hash password and set params
 		if params.Type == models.ProviderTypesCredentials {
 			pw, err := security.CreateHash(*params.Password, argon2id.DefaultParams)
@@ -98,40 +102,45 @@ func (app *BaseApp) AuthenticateUser(ctx context.Context, db bob.Executor, param
 			params.HashPassword = &pw
 		}
 		// else just create account and return
-		account, err := repository.CreateAccount(ctx, db, result.User, params)
+		account, err := repository.CreateAccount(ctx, db, user, params)
 		if err != nil {
 			return nil, fmt.Errorf("error creating user account: %w", err)
 		}
-		result.Account = account
-		err = app.CheckUserCredentialsSecurity(ctx, db, result.User, params)
+		err = app.CheckUserCredentialsSecurity(ctx, db, user, params)
 		if err != nil {
 			return nil, fmt.Errorf("error checking user credentials security: %w", err)
 		}
-		return result, nil
+		return &shared.AuthenticateUserState{
+			User:    user,
+			Account: account,
+		}, nil
 	}
 	// if user exists and account exists, check if password is correct  or check if provider key is correct ----------------------------------------------------------------------------------------------------
-	if result.Account != nil {
-		if params.Type == models.ProviderTypesCredentials {
-			if params.Password == nil || result.Account.Password.IsNull() {
-				return nil, ErrBadRequest
-			}
-			if match, err := security.ComparePasswordAndHash(*params.Password, *result.Account.Password.Ptr()); err != nil {
-				return nil, fmt.Errorf("error comparing password: %w", err)
-			} else if !match {
-				return nil, ErrPasswordIncorrect
-			} else {
-				return result, nil
-			}
-		} else if params.Type == models.ProviderTypesOauth {
-			if result.Account.ProviderAccountID == params.ProviderAccountID {
-				return result, nil
-			}
-			return nil, ErrInvalidProviderKey
-		} else {
+	if params.Type == models.ProviderTypesCredentials {
+		if params.Password == nil || account.Password.IsNull() {
 			return nil, ErrBadRequest
 		}
+		if match, err := security.ComparePasswordAndHash(*params.Password, *account.Password.Ptr()); err != nil {
+			return nil, fmt.Errorf("error comparing password: %w", err)
+		} else if !match {
+			return nil, ErrPasswordIncorrect
+		} else {
+			return &shared.AuthenticateUserState{
+				User:    user,
+				Account: account,
+			}, nil
+		}
+	} else if params.Type == models.ProviderTypesOauth {
+		if account.ProviderAccountID == params.ProviderAccountID {
+			return &shared.AuthenticateUserState{
+				User:    user,
+				Account: account,
+			}, nil
+		}
+		return nil, ErrInvalidProviderKey
+	} else {
+		return nil, ErrBadRequest
 	}
-	return nil, errors.New("unknown error")
 }
 
 func (app *BaseApp) CheckUserCredentialsSecurity(ctx context.Context, db bob.Executor, user *models.User, params *shared.AuthenticateUserParams) error {
@@ -146,7 +155,7 @@ func (app *BaseApp) CheckUserCredentialsSecurity(ctx context.Context, db bob.Exe
 			// and if incoming request is oauth,
 			if params.Type == models.ProviderTypesOauth {
 				//  check if user has a credentials account
-				account, err := repository.FindUserAccountByProviderAndEmail(ctx, db, user.Email, models.ProvidersCredentials)
+				account, err := repository.FindUserAccountByUserIdAndProvider(ctx, db, user.ID, models.ProvidersCredentials)
 				if err != nil {
 					return fmt.Errorf("error loading user accounts: %w", err)
 				}

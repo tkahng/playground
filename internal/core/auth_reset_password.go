@@ -121,11 +121,11 @@ func createSecurityPasswordResetMailParams(tokenHash string, payload *OtpPayload
 		TokenHash:       tokenHash,
 		RedirectTo:      payload.RedirectTo,
 	}
-	bodyStr := mailer.GetTemplate("body", mailer.DefaultRecoveryMail, param)
+	bodyStr := mailer.GetTemplate("body", mailer.DefaultSecurityPasswordResetMail, param)
 	mailParams := &mailer.Message{
 		From:    config.Meta.SenderAddress,
 		To:      payload.Email,
-		Subject: fmt.Sprintf("%s - Verify your email address", config.Meta.AppName),
+		Subject: fmt.Sprintf("%s - Reset your password", config.Meta.AppName),
 		Body:    bodyStr,
 	}
 	return mailParams, err

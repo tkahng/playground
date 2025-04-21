@@ -39,25 +39,6 @@ var HumaTokenFuncs = []func(huma.Context) string{
 	HumaTokenFromCookie,
 }
 
-func CheckRolesMiddleware(api huma.API, roles ...string) func(ctx huma.Context, next func(huma.Context)) {
-	return func(ctx huma.Context, next func(huma.Context)) {
-
-		if claims := core.GetContextUserClaims(ctx.Context()); claims != nil {
-			if len(roles) == 0 {
-				next(ctx)
-				return
-			}
-			for _, role := range claims.Roles {
-				if slices.Contains(roles, role) {
-					next(ctx)
-					return
-				}
-			}
-		}
-		huma.WriteErr(api, ctx, http.StatusForbidden, fmt.Sprintf("You do not have the required roles: %v", roles))
-	}
-}
-
 func CheckPermissionsMiddleware(api huma.API, permissions ...string) func(ctx huma.Context, next func(huma.Context)) {
 	return func(ctx huma.Context, next func(huma.Context)) {
 
@@ -66,8 +47,8 @@ func CheckPermissionsMiddleware(api huma.API, permissions ...string) func(ctx hu
 				next(ctx)
 				return
 			}
-			for _, role := range claims.Permissions {
-				if slices.Contains(permissions, role) {
+			for _, permission := range claims.Permissions {
+				if slices.Contains(permissions, permission) {
 					next(ctx)
 					return
 				}
@@ -99,7 +80,6 @@ func RequireAuthMiddleware(api huma.API) func(ctx huma.Context, next func(huma.C
 			return
 		}
 
-		log.Println("RequireAuthMiddleware")
 		c := core.GetContextUserClaims(ctx.Context())
 		if c != nil {
 			if len(anyOfNeededScopes) == 0 {

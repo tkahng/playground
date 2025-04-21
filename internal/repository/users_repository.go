@@ -3,7 +3,6 @@ package repository
 import (
 	"context"
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/aarondl/opt/omit"
@@ -76,37 +75,12 @@ func CreateAccount(ctx context.Context, db bob.Executor, user *models.User, para
 	}, im.Returning("*")).One(ctx, db)
 	return OptionalRow(r, err)
 }
-
-func FindUserAccountByProviderAndEmail(ctx context.Context, db bob.Executor, email string, provider models.Providers) (*shared.AuthenticateUserState, error) {
-	user, err := models.Users.Query(models.SelectWhere.Users.Email.EQ(email)).One(ctx, db)
-	user, err = OptionalRow(user, err)
-	if err != nil {
-		return nil, fmt.Errorf("error while to get user: %w", err)
-	}
-	if user == nil {
-		return &shared.AuthenticateUserState{}, nil
-	}
-
-	acc, err := models.
-		UserAccounts.
-		Query(
-			psql.WhereAnd(
-				models.SelectWhere.UserAccounts.UserID.EQ(
-					user.ID,
-				),
-				models.SelectWhere.UserAccounts.Provider.EQ(
-					provider,
-				),
-			),
-		).One(ctx, db)
-	acc, err = OptionalRow(acc, err)
-	if err != nil {
-		return nil, err
-	}
-	return &shared.AuthenticateUserState{
-		User:    user,
-		Account: acc,
-	}, nil
+func FindUserAccountByUserIdAndProvider(ctx context.Context, db bob.Executor, userId uuid.UUID, provider models.Providers) (*models.UserAccount, error) {
+	acc, err := models.UserAccounts.Query(
+		models.SelectWhere.UserAccounts.Provider.EQ(provider),
+		models.SelectWhere.UserAccounts.UserID.EQ(userId),
+	).One(ctx, db)
+	return OptionalRow(acc, err)
 }
 
 const (

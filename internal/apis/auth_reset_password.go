@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/aarondl/opt/omitnull"
 	"github.com/alexedwards/argon2id"
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/tkahng/authgo/internal/core"
@@ -36,19 +35,24 @@ func (api *Api) RequestPasswordResetOperation(path string) huma.Operation {
 
 func (api *Api) RequestPasswordReset(ctx context.Context, input *struct{ Body *RequestPasswordResetInput }) (*RequestPasswordResetOutput, error) {
 	db := api.app.Db()
-
-	acc, err := repository.FindUserAccountByProviderAndEmail(ctx, db, input.Body.Email, models.ProvidersCredentials)
+	var user *models.User
+	var account *models.UserAccount
+	user, err := repository.FindUserByEmail(ctx, db, input.Body.Email)
 	if err != nil {
 		return nil, err
 	}
-	if acc == nil || acc.User == nil {
+	if user == nil {
 		return nil, huma.Error404NotFound("User not found")
 	}
-	if acc.Account == nil {
+	account, err = repository.FindUserAccountByUserIdAndProvider(ctx, db, user.ID, models.ProvidersCredentials)
+	if err != nil {
+		return nil, err
+	}
+	if account == nil {
 		return nil, huma.Error404NotFound("No credentials cccount found")
 	}
 
-	err = api.app.SendPasswordResetEmail(ctx, db, acc.User, api.app.Settings().Meta.AppURL)
+	err = api.app.SendPasswordResetEmail(ctx, db, user, api.app.Settings().Meta.AppURL)
 
 	if err != nil {
 		return nil, err
@@ -110,14 +114,18 @@ func (api *Api) ConfirmPasswordReset(ctx context.Context, input *struct{ Body *C
 	if err != nil {
 		return nil, err
 	}
-	acc, err := repository.FindUserAccountByProviderAndEmail(ctx, db, claims.Email, models.ProvidersCredentials)
+	user, err := repository.FindUserByEmail(ctx, db, claims.Email)
 	if err != nil {
 		return nil, err
 	}
-	if acc == nil || acc.User == nil {
+	if user == nil {
 		return nil, huma.Error404NotFound("User not found")
 	}
-	if acc.Account == nil {
+	account, err := repository.FindUserAccountByUserIdAndProvider(ctx, db, user.ID, models.ProvidersCredentials)
+	if err != nil {
+		return nil, err
+	}
+	if account == nil {
 		return nil, huma.Error404NotFound("No credentials cccount found")
 	}
 
@@ -127,9 +135,7 @@ func (api *Api) ConfirmPasswordReset(ctx context.Context, input *struct{ Body *C
 		return nil, fmt.Errorf("error creating hash: %w", err)
 	}
 
-	err = acc.Account.Update(ctx, db, &models.UserAccountSetter{
-		Password: omitnull.From(hash),
-	})
+	err = repository.UpdateUserPassword(ctx, db, user.ID, hash)
 
 	if err != nil {
 		return nil, fmt.Errorf("error updating user password: %w", err)

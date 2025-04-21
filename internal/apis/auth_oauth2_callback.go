@@ -125,9 +125,9 @@ func OAuth2Callback(ctx context.Context, api *Api, input *OAuth2CallbackInput) (
 	}
 	var provider core.ProviderConfig
 	switch parsedState.Provider {
-	case shared.ProvidersGithub:
+	case shared.OAuthProvidersGithub:
 		provider = &authOpts.OAuth2Config.Github
-	case shared.ProvidersGoogle:
+	case shared.OAuthProvidersGoogle:
 		provider = &authOpts.OAuth2Config.Google
 	default:
 		return nil, fmt.Errorf("invalid provider %v", parsedState.Provider)
