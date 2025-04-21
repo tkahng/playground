@@ -28,6 +28,16 @@ func ToProviderType(p models.ProviderTypes) ProviderTypes {
 	return ProviderTypeCredentials
 }
 
+func ToModelProviderType(p ProviderTypes) models.ProviderTypes {
+	switch p {
+	case ProviderTypeOAuth:
+		return models.ProviderTypesOauth
+	case ProviderTypeCredentials:
+		return models.ProviderTypesCredentials
+	}
+	return models.ProviderTypesCredentials
+}
+
 type Providers string
 
 const (
@@ -57,6 +67,20 @@ func ToProvider(p models.Providers) Providers {
 	default:
 		return ProvidersCredentials
 	}
+}
+
+func ToModelProvider(p Providers) models.Providers {
+	switch p {
+	case ProvidersGoogle:
+		return models.ProvidersGoogle
+	case ProvidersApple:
+		return models.ProvidersApple
+	case ProvidersFacebook:
+		return models.ProvidersFacebook
+	case ProvidersGithub:
+		return models.ProvidersGithub
+	}
+	return models.ProvidersCredentials
 }
 
 type UserAccount struct {

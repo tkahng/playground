@@ -44,6 +44,43 @@ const (
 	StateTokenType         TokenType = "state_token"
 )
 
+func (t TokenType) String() string {
+	return string(t)
+}
+
+func ToTokenType(t models.TokenTypes) TokenType {
+	switch t {
+	case models.TokenTypesReauthenticationToken:
+		return AccessTokenType
+	case models.TokenTypesRefreshToken:
+		return RefreshTokenType
+	case models.TokenTypesVerificationToken:
+		return VerificationTokenType
+	case models.TokenTypesPasswordResetToken:
+		return PasswordResetTokenType
+	case models.TokenTypesStateToken:
+		return StateTokenType
+	}
+	return AccessTokenType
+}
+
+func ToModelTokenType(t TokenType) models.TokenTypes {
+	switch t {
+	// case AccessTokenType:
+	// 	return models.TokenTypesReauthenticationToken
+	case PasswordResetTokenType:
+		return models.TokenTypesPasswordResetToken
+	case VerificationTokenType:
+		return models.TokenTypesVerificationToken
+	case RefreshTokenType:
+		return models.TokenTypesRefreshToken
+	case StateTokenType:
+		return models.TokenTypesStateToken
+	default:
+		return models.TokenTypesReauthenticationToken
+	}
+}
+
 type OAuthProviders string
 
 const (
@@ -95,4 +132,26 @@ type RecordOAuth2LoginForm struct {
 	// deprecated: use RedirectURL instead
 	// RedirectUrl will be removed after dropping v0.22 support
 	RedirectUrl string `form:"redirectUrl" json:"redirectUrl"`
+}
+
+type CreateTokenDTO struct {
+	Type       TokenType  `db:"type" json:"type"`
+	Identifier string     `db:"identifier" json:"identifier"`
+	Expires    time.Time  `db:"expires" json:"expires"`
+	Token      string     `db:"token" json:"token"`
+	ID         *uuid.UUID `db:"id" json:"id"`
+	UserID     *uuid.UUID `db:"user_id" json:"user_id"`
+	Otp        *string    `db:"otp" json:"otp"`
+}
+
+type Token struct {
+	ID         uuid.UUID  `db:"id,pk" json:"id"`
+	Type       TokenType  `db:"type" json:"type"`
+	UserID     *uuid.UUID `db:"user_id" json:"user_id"`
+	Otp        *string    `db:"otp" json:"otp"`
+	Identifier string     `db:"identifier" json:"identifier"`
+	Expires    time.Time  `db:"expires" json:"expires"`
+	Token      string     `db:"token" json:"token"`
+	CreatedAt  time.Time  `db:"created_at" json:"created_at"`
+	UpdatedAt  time.Time  `db:"updated_at" json:"updated_at"`
 }
