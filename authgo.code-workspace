@@ -29,6 +29,9 @@
 		"emmet.includeLanguages": {
 			"templ": "html"
 		},
+		"gopls": {
+			"ui.semanticTokens": true,
+		},
 		"editor.codeLens": true,
 		"[typescript]": {
 			"editor.codeActionsOnSave": {

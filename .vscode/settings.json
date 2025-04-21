@@ -12,6 +12,7 @@
       "username": "postgres"
     }
   ],
+  "go.lintOnSave": "file",
   "go.lintTool": "golangci-lint",
   "go.lintFlags": [
     "--path-mode=abs",
