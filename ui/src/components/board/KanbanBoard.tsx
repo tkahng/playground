@@ -1,4 +1,4 @@
-import { useCallback, useId, useMemo, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 
 import { useAuthProvider } from "@/hooks/use-auth-provider";
@@ -57,6 +57,10 @@ export function KanbanBoard(props: { cars: Task[]; projectId: string }) {
   const [activeColumn, setActiveColumn] = useState<Column | null>(null);
   const [activeCar, setActiveCar] = useState<Task | null>(null);
   const dndContextId = useId();
+
+  useEffect(() => {
+    setCars(props.cars);
+  }, [props.cars]);
 
   const queryClient = useQueryClient();
   const { user } = useAuthProvider();
