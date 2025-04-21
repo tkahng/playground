@@ -119,12 +119,12 @@ func BindApis(api huma.API, app core.App) {
 			return
 		}
 		if task == nil {
-			huma.WriteErr(api, ctx, http.StatusNotFound, "task not found")
+			huma.WriteErr(api, ctx, http.StatusNotFound, "task not found at middleware")
 			return
 		}
 		user := core.GetContextUserClaims(rawCtx)
 		if user == nil {
-			huma.WriteErr(api, ctx, http.StatusUnauthorized, "unauthorized")
+			huma.WriteErr(api, ctx, http.StatusUnauthorized, "unauthorized at middleware")
 			return
 		}
 		if task.UserID != user.User.ID {
@@ -132,7 +132,7 @@ func BindApis(api huma.API, app core.App) {
 				next(ctx)
 				return
 			}
-			huma.WriteErr(api, ctx, http.StatusForbidden, "task not found")
+			huma.WriteErr(api, ctx, http.StatusForbidden, "task user id does not match user id")
 			return
 		}
 		// if
