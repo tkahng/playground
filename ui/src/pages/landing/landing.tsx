@@ -32,24 +32,26 @@ export default function Landing() {
           <div className="grid gap-10 sm:grid-cols-2 md:grid-cols-3">
             <div className="flex flex-col items-center space-y-3 text-center">
               <Zap className="h-10 w-10 text-primary" />
-              <h3 className="text-xl font-bold">Lightning Fast Processing</h3>
+              <h3 className="text-xl font-bold">AI Task Generation</h3>
               <p className="text-gray-500 dark:text-gray-400">
-                Experience unparalleled speed in data analysis and task
-                completion.
+                Describe your project in plain language, and our AI will break
+                it down into actionable tasks with deadlines.
               </p>
             </div>
             <div className="flex flex-col items-center space-y-3 text-center">
               <Brain className="h-10 w-10 text-primary" />
-              <h3 className="text-xl font-bold">Advanced Machine Learning</h3>
+              <h3 className="text-xl font-bold">Smart Suggestions</h3>
               <p className="text-gray-500 dark:text-gray-400">
-                Our AI continuously learns and adapts to your specific needs.
+                Get intelligent recommendations for task prioritization,
+                resource allocation, and timeline adjustments.
               </p>
             </div>
             <div className="flex flex-col items-center space-y-3 text-center">
               <CheckCircle className="h-10 w-10 text-primary" />
-              <h3 className="text-xl font-bold">99.9% Accuracy</h3>
+              <h3 className="text-xl font-bold">Automated Workflows</h3>
               <p className="text-gray-500 dark:text-gray-400">
-                Trust in results with our industry-leading accuracy rates.
+                Set up custom workflows that trigger automatically as tasks
+                progress through different stages.
               </p>
             </div>
           </div>
