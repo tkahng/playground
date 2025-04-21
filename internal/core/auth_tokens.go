@@ -68,5 +68,14 @@ func (a *BaseApp) RefreshTokens(ctx context.Context, db bob.Executor, refreshTok
 		Permissions: info.Permissions,
 		Providers:   info.Providers,
 	}, nil
+}
 
+func (a *BaseApp) Signout(ctx context.Context, db bob.Executor, refreshToken string) error {
+	opts := a.Settings().Auth
+	_, err := VerifyRefreshToken(ctx, db, refreshToken, opts.RefreshToken)
+	if err != nil {
+		return fmt.Errorf("error verifying refresh token: %w", err)
+	}
+
+	return nil
 }

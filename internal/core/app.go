@@ -32,6 +32,7 @@ type App interface {
 	CreateAuthDto(ctx context.Context, email string) (*shared.AuthenticatedDTO, error)
 	HandleAuthToken(ctx context.Context, token string) (*shared.UserInfoDto, error)
 	RefreshTokens(ctx context.Context, db bob.Executor, refreshToken string) (*shared.AuthenticatedDTO, error)
+	Signout(ctx context.Context, db bob.Executor, refreshToken string) error
 	// verification
 	VerifyAndUseVerificationToken(ctx context.Context, db bob.Executor, token string) (*EmailVerificationClaims, error)
 	SendVerificationEmail(ctx context.Context, db bob.Executor, user *models.User, redirectTo string) error
