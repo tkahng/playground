@@ -105,7 +105,7 @@ func (app *BaseApp) AuthenticateUser(ctx context.Context, db bob.Executor, param
 			return nil, fmt.Errorf("user not found")
 		}
 		// else just create account and return
-		account, err = repository.CreateAccount(ctx, db, user, params)
+		account, err = repository.CreateAccount(ctx, db, user.ID, params)
 		if err != nil {
 			return nil, fmt.Errorf("error creating user account: %w", err)
 		}

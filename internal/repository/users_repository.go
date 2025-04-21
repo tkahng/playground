@@ -63,9 +63,9 @@ func AssignPermissions(ctx context.Context, db bob.Executor, user *models.User, 
 	return user.AttachPermissions(ctx, db, params)
 }
 
-func CreateAccount(ctx context.Context, db bob.Executor, user *models.User, params *shared.AuthenticateUserParams) (*models.UserAccount, error) {
+func CreateAccount(ctx context.Context, db bob.Executor, userId uuid.UUID, params *shared.AuthenticateUserParams) (*models.UserAccount, error) {
 	r, err := models.UserAccounts.Insert(&models.UserAccountSetter{
-		UserID:            omit.From(user.ID),
+		UserID:            omit.From(userId),
 		Type:              omit.From(params.Type),
 		Provider:          omit.From(params.Provider),
 		ProviderAccountID: omit.From(params.ProviderAccountID),

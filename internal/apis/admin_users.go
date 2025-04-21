@@ -172,7 +172,7 @@ func (api *Api) AdminUsersCreate(ctx context.Context, input *struct {
 		return nil, err
 	}
 	// create account
-	account, err := repository.CreateAccount(ctx, db, user, params)
+	account, err := repository.CreateAccount(ctx, db, user.ID, params)
 	if err != nil {
 		return nil, err
 	}
