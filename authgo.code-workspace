@@ -14,6 +14,15 @@
 		}
 	],
 	"settings": {
+		"[go]": {
+			"editor.formatOnSave": true,
+			"editor.codeActionsOnSave": {
+				"source.organizeImports": "always"
+			},
+			"editor.defaultFormatter": "golang.go",
+			"editor.codeLens": true,
+			"editor.codeActionWidget.includeNearbyQuickFixes": true
+		},
 		"editor.formatOnSave": true,
 		"go.inlayHints.assignVariableTypes": false,
 		"go.inlayHints.parameterNames": false,
