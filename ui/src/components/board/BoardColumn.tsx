@@ -1,3 +1,4 @@
+import { CarCard, Task } from "@/components/board/CarCard";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { CreateProjectTaskDialog } from "@/pages/tasks/task-projects/create-project-task-dialog";
@@ -7,7 +8,6 @@ import { CSS } from "@dnd-kit/utilities";
 import { cva } from "class-variance-authority";
 import { useMemo } from "react";
 import { Badge } from "../ui/badge";
-import { CarCard, Task } from "./CarCard";
 
 export interface Column {
   id: UniqueIdentifier;
