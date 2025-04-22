@@ -1,5 +1,6 @@
 import { Link, useSearchParams } from "react-router";
 
+import { NexusAILandingHeader } from "@/components/nexus-landing-header";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,7 +14,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
-import { checkPasswordReset, confirmPasswordReset } from "@/lib/queries";
+import {
+  checkPasswordReset,
+  confirmPasswordReset,
+  GetError,
+} from "@/lib/queries";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   AlertCircle,
@@ -56,6 +61,7 @@ export default function ResetPasswordPage() {
       await checkPasswordReset(token);
       return true;
     },
+    retry: false,
   });
   // Password strength calculation
   const calculateStrength = (password: string): number => {
@@ -84,15 +90,6 @@ export default function ResetPasswordPage() {
     return "bg-green-500";
   };
 
-  // const form = useForm<z.infer<typeof formSchema>>({
-  //   resolver: zodResolver(formSchema),
-  //   defaultValues: {
-  //     password: "",
-  //     confirmPassword: "",
-  //     token: token || "",
-  //   },
-  // });
-
   const mutation = useMutation({
     mutationFn: async (data: z.infer<typeof formSchema>) => {
       return await confirmPasswordReset(
@@ -110,11 +107,7 @@ export default function ResetPasswordPage() {
       setIsSubmitting(false);
     },
   });
-  // function onSubmit(values: z.infer<typeof formSchema>) {
-  //   setIsSubmitting(true);
-  //   mutation.mutate(values);
-  //   setIsSubmitting(false);
-  // }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -145,18 +138,11 @@ export default function ResetPasswordPage() {
     setIsSubmitting(true);
 
     try {
-      // This would be replaced with your actual API call
-      // await resetPassword(token, password)
-
-      // Simulate API call
-      // await new Promise((resolve) => setTimeout(resolve, 1500));
       mutation.mutate({
         token,
         password,
         confirmPassword,
       });
-
-      // setIsSuccess(true);
     } catch (err) {
       setError(
         "Failed to reset password. Please try again or request a new reset link."
@@ -166,17 +152,20 @@ export default function ResetPasswordPage() {
     }
   };
 
+  useEffect(() => {
+    if (isCheckPasswordResetError) {
+      const err = GetError(checkPasswordResetError);
+      setError(err?.detail || "An error occurred");
+    }
+  }, [isCheckPasswordResetError, checkPasswordResetError]);
+
+  if (isCheckPasswordResetPending) {
+    return <div>Loading...</div>;
+  }
   if (isSuccess) {
     return (
       <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
-        <header className="px-4 lg:px-6 h-14 flex items-center border-b bg-white dark:bg-gray-800">
-          <Link className="flex items-center justify-center" to="/">
-            <Brain className="h-6 w-6 text-primary" />
-            <span className="ml-2 text-2xl font-bold text-primary">
-              NexusAI
-            </span>
-          </Link>
-        </header>
+        <NexusAILandingHeader />
         <main className="flex-1 flex items-center justify-center p-4">
           <Card className="max-w-md w-full">
             <CardHeader className="text-center">
@@ -220,14 +209,6 @@ export default function ResetPasswordPage() {
         </footer>
       </div>
     );
-  }
-  useEffect(() => {
-    if (isCheckPasswordResetError) {
-      setError(checkPasswordResetError?.message || "An error occurred");
-    }
-  }, [isCheckPasswordResetError, checkPasswordResetError]);
-  if (isCheckPasswordResetPending) {
-    return <div>Loading...</div>;
   }
   return (
     <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
