@@ -170,6 +170,11 @@ type AuthenticatedDTO struct {
 	Tokens      TokenDto           `json:"tokens"` //core.TokenDto `json:"tokens"`
 }
 
+type UserInfoTokens struct {
+	UserInfo
+	Tokens TokenDto `json:"tokens"`
+}
+
 type RecordOAuth2LoginForm struct {
 	// collection *core.Collection
 
