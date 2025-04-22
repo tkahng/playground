@@ -64,6 +64,37 @@ func ToProvidersArray(providers []models.Providers) []Providers {
 	return result
 }
 
+func ToModelProvidersArray(providers []Providers) []models.Providers {
+	var result []models.Providers
+	for _, provider := range providers {
+		result = append(result, ToModelProvider(provider))
+	}
+	return result
+}
+func ToUserInfo(user *UserInfoDto) *UserInfo {
+	if user == nil {
+		return nil
+	}
+	return &UserInfo{
+		User:        *ToUser(&user.User),
+		Roles:       user.Roles,
+		Permissions: user.Permissions,
+		Providers:   ToProvidersArray(user.Providers),
+	}
+}
+
+func ToUserInfoDto(user *UserInfo) *UserInfoDto {
+	if user == nil {
+		return nil
+	}
+	return &UserInfoDto{
+		User:        *ToModelUser(&user.User),
+		Roles:       user.Roles,
+		Permissions: user.Permissions,
+		Providers:   ToModelProvidersArray(user.Providers),
+	}
+}
+
 type TokenType string
 
 const (

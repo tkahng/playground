@@ -3,6 +3,7 @@ package shared
 import (
 	"time"
 
+	"github.com/aarondl/opt/null"
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/db/models"
 )
@@ -27,6 +28,21 @@ func ToUser(user *models.User) *User {
 		EmailVerifiedAt: user.EmailVerifiedAt.Ptr(),
 		Name:            user.Name.Ptr(),
 		Image:           user.Image.Ptr(),
+		CreatedAt:       user.CreatedAt,
+		UpdatedAt:       user.UpdatedAt,
+	}
+}
+
+func ToModelUser(user *User) *models.User {
+	if user == nil {
+		return nil
+	}
+	return &models.User{
+		ID:              user.ID,
+		Email:           user.Email,
+		EmailVerifiedAt: null.FromPtr(user.EmailVerifiedAt),
+		Name:            null.FromPtr(user.Name),
+		Image:           null.FromPtr(user.Image),
 		CreatedAt:       user.CreatedAt,
 		UpdatedAt:       user.UpdatedAt,
 	}

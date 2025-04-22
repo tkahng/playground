@@ -225,6 +225,11 @@ func VerifyRefreshToken(ctx context.Context, db bob.Executor, token string, conf
 
 // ----------- Email Verification Claims -----------------
 
+type OtpClaims struct {
+	jwt.RegisteredClaims
+	OtpPayload
+}
+
 type EmailVerificationClaims struct {
 	jwt.RegisteredClaims
 	OtpPayload
@@ -401,7 +406,7 @@ func CreatePasswordResetToken(payload *OtpPayload, config TokenOption) (string, 
 	if payload == nil {
 		return "", fmt.Errorf("payload is nil")
 	}
-	claims := PasswordResetClaims{
+	claims := OtpClaims{
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: config.ExpiresAt(),
 		},
