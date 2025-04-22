@@ -44,7 +44,5 @@ type App interface {
 	// stripe
 	Payment() *StripeService
 
-	AuthMailer() AuthMailer
-	TokenAdapter() TokenAdapter
-	AuthAdapter() AuthAdapter
+	NewAuthActions(db bob.Executor) AuthActions
 }

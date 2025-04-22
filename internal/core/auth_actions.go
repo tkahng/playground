@@ -6,7 +6,9 @@ import (
 
 	"github.com/alexedwards/argon2id"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/stephenafamo/bob"
 	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/authgo/internal/tools/mailer"
 	"github.com/tkahng/authgo/internal/tools/security"
 )
 
@@ -32,6 +34,17 @@ type AuthActionsBase struct {
 	settings     *AppOptions
 }
 
+func NewAuthActions(db bob.Executor, mailer mailer.Mailer, settings *AppOptions) AuthActions {
+	authAdapter := NewAuthAdapter(db)
+	authMailer := NewAuthMailer(mailer)
+	tokenAdapter := NewTokenAdapter(db)
+	return &AuthActionsBase{
+		authAdapter:  authAdapter,
+		authMailer:   authMailer,
+		tokenAdapter: tokenAdapter,
+		settings:     settings,
+	}
+}
 func (app *AuthActionsBase) createAuthenticationToken(payload *AuthenticationPayload, config TokenOption) (string, error) {
 	if payload == nil {
 		return "", fmt.Errorf("payload is nil")

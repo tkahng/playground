@@ -5,6 +5,7 @@ import (
 	"log/slog"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/stephenafamo/bob"
 	"github.com/tkahng/authgo/internal/conf"
 	"github.com/tkahng/authgo/internal/db"
 	"github.com/tkahng/authgo/internal/repository"
@@ -35,19 +36,9 @@ type BaseApp struct {
 	// onBeforeRequestHandle *hook.Hook[*BaseEvent]
 }
 
-// AuthAdapter implements App.
-func (a *BaseApp) AuthAdapter() AuthAdapter {
-	return a.authAdapter
-}
-
-// AuthMailer implements App.
-func (a *BaseApp) AuthMailer() AuthMailer {
-	return a.authMailer
-}
-
-// TokenAdapter implements App.
-func (a *BaseApp) TokenAdapter() TokenAdapter {
-	return a.tokenAdapter
+// NewAuthActions implements App.
+func (a *BaseApp) NewAuthActions(db bob.Executor) AuthActions {
+	return NewAuthActions(db, a.mail, a.settings)
 }
 
 func (app *BaseApp) Fs() *filesystem.FileSystem {
