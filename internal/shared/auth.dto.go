@@ -35,6 +35,21 @@ type UserInfoDto struct {
 	Providers   []models.Providers `db:"providers" json:"providers"`
 }
 
+type UserInfo struct {
+	User        User        `db:"user" json:"user"`
+	Roles       []string    `db:"roles" json:"roles"`
+	Permissions []string    `db:"permissions" json:"permissions"`
+	Providers   []Providers `db:"providers" json:"providers" enum:"google,apple,facebook,github,credentials"`
+}
+
+func ToProvidersArray(providers []models.Providers) []Providers {
+	var result []Providers
+	for _, provider := range providers {
+		result = append(result, ToProvider(provider))
+	}
+	return result
+}
+
 type TokenType string
 
 const (

@@ -3,6 +3,7 @@ package core
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/google/uuid"
 	"github.com/stephenafamo/bob"
@@ -11,6 +12,8 @@ import (
 )
 
 type AuthAdapter interface {
+	Db() bob.Executor
+	GetUserInfo(ctx context.Context, email string) (*shared.UserInfo, error)
 	CreateUser(ctx context.Context, user *shared.User) (*shared.User, error)
 	GetUser(ctx context.Context, id uuid.UUID) (*shared.User, error)
 	GetUserByEmail(ctx context.Context, email string) (*shared.User, error)
@@ -25,6 +28,39 @@ var _ AuthAdapter = (*AuthAdapterBase)(nil)
 
 type AuthAdapterBase struct {
 	db bob.Executor
+}
+
+func (a *AuthAdapterBase) Db() bob.Executor {
+	return a.db
+}
+
+// GetUserInfo implements AuthAdapter.
+func (a *AuthAdapterBase) GetUserInfo(ctx context.Context, email string) (*shared.UserInfo, error) {
+	db := a.Db()
+	user, err := a.GetUserByEmail(ctx, email)
+	if err != nil {
+		return nil, fmt.Errorf("error getting user: %w", err)
+	}
+	if user == nil {
+		return nil, fmt.Errorf("user not found")
+	}
+	result := &shared.UserInfo{
+		User: *user,
+	}
+	roles, err := repository.FindUserWithRolesAndPermissionsByEmail(ctx, db, email)
+	if err != nil {
+		return nil, fmt.Errorf("error getting user roles and permissions: %w", err)
+	}
+	if roles == nil {
+		return result, nil
+	}
+	providers := shared.ToProvidersArray(roles.Providers)
+	return &shared.UserInfo{
+		User:        *user,
+		Roles:       roles.Roles,
+		Permissions: roles.Permissions,
+		Providers:   providers,
+	}, nil
 }
 
 // CreateUser implements AuthAdapter.

@@ -1,29 +1,43 @@
 package core
 
 import (
-	"context"
 	"fmt"
 	"net/url"
 
-	"github.com/stephenafamo/bob"
-	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mailer"
 )
 
 type AuthMailer interface {
-	SendVerificationEmail(ctx context.Context, db bob.Executor, user *models.User, redirectTo string) error
-	SendPasswordResetEmail(ctx context.Context, db bob.Executor, user *models.User, redirectTo string) error
-	SendSecurityPasswordResetEmail(ctx context.Context, db bob.Executor, user *models.User, redirectTo string) error
+	Client() mailer.Mailer
+	SendVerificationEmail(tokenHash string, payload *OtpPayload, config *AppOptions) error
+	SendPasswordResetEmail(tokenHash string, payload *OtpPayload, config *AppOptions) error
+	SendSecurityPasswordResetEmail(tokenHash string, payload *OtpPayload, config *AppOptions) error
 }
 
-func createVerificationMailParams(tokenHash string, payload *OtpPayload, config *AppOptions) (*mailer.Message, error) {
+var _ AuthMailer = (*AuthMailerBase)(nil)
+
+type AuthMailerBase struct {
+	mailer mailer.Mailer
+}
+
+func (a *AuthMailerBase) Client() mailer.Mailer {
+	return a.mailer
+}
+
+func (a *AuthMailerBase) SendVerificationEmail(tokenHash string, payload *OtpPayload, config *AppOptions) error {
 	path, err := mailer.GetPath("/api/auth/verify", &mailer.EmailParams{
 		Token:      tokenHash,
 		Type:       string(shared.VerificationTokenType),
 		RedirectTo: payload.RedirectTo,
 	})
-	appUrl, _ := url.Parse(config.Meta.AppURL)
+	if err != nil {
+		return err
+	}
+	appUrl, err := url.Parse(config.Meta.AppURL)
+	if err != nil {
+		return err
+	}
 	param := &mailer.CommonParams{
 		SiteURL:         appUrl.String(),
 		ConfirmationURL: appUrl.ResolveReference(path).String(),
@@ -39,16 +53,22 @@ func createVerificationMailParams(tokenHash string, payload *OtpPayload, config 
 		Subject: fmt.Sprintf("%s - Verify your email address", config.Meta.AppName),
 		Body:    bodyStr,
 	}
-	return mailParams, err
+	return a.Client().Send(mailParams)
 }
 
-func createPasswordResetMailParams(tokenHash string, payload *OtpPayload, config *AppOptions) (*mailer.Message, error) {
+func (a *AuthMailerBase) SendPasswordResetEmail(tokenHash string, payload *OtpPayload, config *AppOptions) error {
 	path, err := mailer.GetPath("/api/auth/confirm-password-reset", &mailer.EmailParams{
 		Token:      tokenHash,
 		Type:       string(shared.PasswordResetTokenType),
 		RedirectTo: payload.RedirectTo,
 	})
-	appUrl, _ := url.Parse(config.Meta.AppURL)
+	if err != nil {
+		return err
+	}
+	appUrl, err := url.Parse(config.Meta.AppURL)
+	if err != nil {
+		return err
+	}
 	param := &mailer.CommonParams{
 		SiteURL:         appUrl.String(),
 		ConfirmationURL: appUrl.ResolveReference(path).String(),
@@ -64,16 +84,22 @@ func createPasswordResetMailParams(tokenHash string, payload *OtpPayload, config
 		Subject: fmt.Sprintf("%s - Verify your email address", config.Meta.AppName),
 		Body:    bodyStr,
 	}
-	return mailParams, err
+	return a.Client().Send(mailParams)
 }
 
-func createSecurityPasswordResetMailParams(tokenHash string, payload *OtpPayload, config *AppOptions) (*mailer.Message, error) {
+func (a *AuthMailerBase) SendSecurityPasswordResetEmail(tokenHash string, payload *OtpPayload, config *AppOptions) error {
 	path, err := mailer.GetPath("/api/auth/confirm-password-reset", &mailer.EmailParams{
 		Token:      tokenHash,
 		Type:       string(shared.PasswordResetTokenType),
 		RedirectTo: payload.RedirectTo,
 	})
-	appUrl, _ := url.Parse(config.Meta.AppURL)
+	if err != nil {
+		return err
+	}
+	appUrl, err := url.Parse(config.Meta.AppURL)
+	if err != nil {
+		return err
+	}
 	param := &mailer.CommonParams{
 		SiteURL:         appUrl.String(),
 		ConfirmationURL: appUrl.ResolveReference(path).String(),
@@ -89,5 +115,5 @@ func createSecurityPasswordResetMailParams(tokenHash string, payload *OtpPayload
 		Subject: fmt.Sprintf("%s - Reset your password", config.Meta.AppName),
 		Body:    bodyStr,
 	}
-	return mailParams, err
+	return a.Client().Send(mailParams)
 }
