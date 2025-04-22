@@ -1,7 +1,5 @@
 "use client";
 
-import { NexusAILandingHeader } from "@/components/nexus-landing-header";
-import { NexusAIMinimalFooter } from "@/components/nexus-minimal-footer";
 import { RouteMap } from "@/components/route-map";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -19,6 +17,7 @@ import { useMutation } from "@tanstack/react-query";
 import {
   AlertCircle,
   ArrowLeft,
+  Brain,
   CheckCircle,
   Loader2,
   Mail,
@@ -91,7 +90,12 @@ export default function ResetPasswordRequestPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
-      <NexusAILandingHeader full />
+      <header className="px-4 lg:px-6 h-14 flex items-center border-b bg-white dark:bg-gray-800">
+        <Link className="flex items-center justify-center" to={RouteMap.HOME}>
+          <Brain className="h-6 w-6 text-primary" />
+          <span className="ml-2 text-2xl font-bold text-primary">NexusAI</span>
+        </Link>
+      </header>
       <main className="flex-1 flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
           <CardHeader className="space-y-1">
@@ -111,15 +115,12 @@ export default function ResetPasswordRequestPage() {
                 <AlertDescription>{formState.message}</AlertDescription>
               </Alert>
             ) : formState.status === "error" ? (
-              <>
-                <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>Error</AlertTitle>
-                  <AlertDescription>{formState.message}</AlertDescription>
-                  <div className="flex justify-center "></div>
-                </Alert>
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Error</AlertTitle>
+                <AlertDescription>{formState.message}</AlertDescription>
                 <Button
-                  variant={"link"}
+                  variant="outline"
                   size="sm"
                   className="w-full"
                   onClick={onClickBackToLogin}
@@ -127,7 +128,7 @@ export default function ResetPasswordRequestPage() {
                   <ArrowLeft className="mr-2 h-4 w-4" />
                   Try Again
                 </Button>
-              </>
+              </Alert>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
@@ -205,7 +206,13 @@ export default function ResetPasswordRequestPage() {
           </CardFooter>
         </Card>
       </main>
-      <NexusAIMinimalFooter />
+      <footer className="border-t bg-gray-100 dark:bg-gray-800">
+        <div className="container px-4 md:px-6 py-8">
+          <p className="text-xs text-center text-gray-500 dark:text-gray-400">
+            © 2023 NexusAI. All rights reserved.
+          </p>
+        </div>
+      </footer>
     </div>
   );
 }
