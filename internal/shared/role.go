@@ -17,6 +17,9 @@ type Role struct {
 }
 
 func ToRole(role *models.Role) *Role {
+	if role == nil {
+		return nil
+	}
 	return &Role{
 		ID:          role.ID,
 		Name:        role.Name,
@@ -32,6 +35,9 @@ type RoleWithPermissions struct {
 }
 
 func ToRoleWithPermissions(role *models.Role) *RoleWithPermissions {
+	if role == nil {
+		return nil
+	}
 	return &RoleWithPermissions{
 		Permissions: mapper.Map(role.R.Permissions, ToPermission),
 		Role:        ToRole(role),

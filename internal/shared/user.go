@@ -18,6 +18,9 @@ type User struct {
 }
 
 func ToUser(user *models.User) *User {
+	if user == nil {
+		return nil
+	}
 	return &User{
 		ID:              user.ID,
 		Email:           user.Email,

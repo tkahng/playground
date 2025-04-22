@@ -23,6 +23,9 @@ type TaskProjectWithTasks struct {
 }
 
 func ModelToProject(task *models.TaskProject) *TaskProject {
+	if task == nil {
+		return nil
+	}
 	return &TaskProject{
 		ID:          task.ID,
 		UserID:      task.UserID,

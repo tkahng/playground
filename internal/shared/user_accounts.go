@@ -102,6 +102,9 @@ type UserAccount struct {
 }
 
 func ToUserAccount(u *models.UserAccount) *UserAccount {
+	if u == nil {
+		return nil
+	}
 	return &UserAccount{
 		ID:                u.ID,
 		UserID:            u.UserID,

@@ -3,6 +3,7 @@ package shared
 import (
 	"time"
 
+	"github.com/aarondl/opt/null"
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/db/models"
 )
@@ -154,4 +155,38 @@ type Token struct {
 	Token      string     `db:"token" json:"token"`
 	CreatedAt  time.Time  `db:"created_at" json:"created_at"`
 	UpdatedAt  time.Time  `db:"updated_at" json:"updated_at"`
+}
+
+func ToModelToken(dto *Token) *models.Token {
+	if dto == nil {
+		return nil
+	}
+	return &models.Token{
+		ID:         dto.ID,
+		Type:       ToModelTokenType(dto.Type),
+		UserID:     null.FromPtr(dto.UserID),
+		Otp:        null.FromPtr(dto.Otp),
+		Identifier: dto.Identifier,
+		Expires:    dto.Expires,
+		Token:      dto.Token,
+		CreatedAt:  dto.CreatedAt,
+		UpdatedAt:  dto.UpdatedAt,
+	}
+}
+
+func ToToken(model *models.Token) *Token {
+	if model == nil {
+		return nil
+	}
+	return &Token{
+		ID:         model.ID,
+		Type:       ToTokenType(model.Type),
+		UserID:     model.UserID.Ptr(),
+		Otp:        model.Otp.Ptr(),
+		Identifier: model.Identifier,
+		Expires:    model.Expires,
+		Token:      model.Token,
+		CreatedAt:  model.CreatedAt,
+		UpdatedAt:  model.UpdatedAt,
+	}
 }
