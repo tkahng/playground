@@ -393,6 +393,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/auth/check-password-reset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Check password reset
+         * @description Check password reset
+         */
+        get: operations["check-password-reset"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/confirm-password-reset": {
         parameters: {
             query?: never;
@@ -1209,7 +1229,6 @@ export interface components {
              */
             readonly $schema?: string;
             token: string;
-            type: string;
         };
         PaginatedResponseMedia: {
             /**
@@ -1813,6 +1832,18 @@ export interface components {
             roles?: components["schemas"]["RoleWithPermissions"][] | null;
             /** Format: date-time */
             updated_at: string;
+        };
+        UserInfoTokens: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            permissions: string[] | null;
+            providers: ("google" | "apple" | "facebook" | "github" | "credentials")[] | null;
+            roles: string[] | null;
+            tokens: components["schemas"]["TokenDto"];
+            user: components["schemas"]["User"];
         };
         UserStats: {
             /**
@@ -3366,6 +3397,53 @@ export interface operations {
             };
         };
     };
+    "check-password-reset": {
+        parameters: {
+            query: {
+                token: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
     "confirm-password-reset": {
         parameters: {
             query?: never;
@@ -3496,7 +3574,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AuthenticatedDTO"];
+                    "application/json": components["schemas"]["UserInfoTokens"];
                 };
             };
             /** @description Not Found */
@@ -3647,7 +3725,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AuthenticatedDTO"];
+                    "application/json": components["schemas"]["UserInfoTokens"];
                 };
             };
             /** @description Not Found */
@@ -3744,7 +3822,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: {
+        requestBody: {
             content: {
                 "application/json": components["schemas"]["SignupInput"];
             };
@@ -3771,7 +3849,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AuthenticatedDTO"];
+                    "application/json": components["schemas"]["UserInfoTokens"];
                 };
             };
             /** @description Not Found */
@@ -3807,7 +3885,6 @@ export interface operations {
         parameters: {
             query: {
                 token: string;
-                type: string;
             };
             header?: never;
             path?: never;

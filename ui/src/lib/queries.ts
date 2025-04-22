@@ -988,3 +988,38 @@ export const getStats = async (token: string) => {
   }
   return data;
 };
+
+export const checkPasswordReset = async (token: string) => {
+  const { data, error } = await client.GET("/api/auth/check-password-reset", {
+    params: {
+      query: {
+        token,
+      },
+    },
+  });
+  if (error) {
+    throw error;
+  }
+  return data;
+};
+
+export const confirmPasswordReset = async (
+  token: string,
+  password: string,
+  confirmPassword: string
+) => {
+  const { data, error } = await client.POST(
+    "/api/auth/confirm-password-reset",
+    {
+      body: {
+        token,
+        password,
+        confirm_password: confirmPassword,
+      },
+    }
+  );
+  if (error) {
+    throw error;
+  }
+  return data;
+};
