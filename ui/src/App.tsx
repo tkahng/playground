@@ -56,12 +56,12 @@ function App() {
               <Route path="/pricing" element={<PricingPage />} />
               <Route path="/about" element={<LandingAboutPage />} />
               <Route path="/contact" element={<LandingContactPage />} />
-              <Route path="/signin" element={<Signin />} />
-              <Route path="/signup" element={<SignupPage />} />
             </Route>
             {/* <Route element= */}
             {/* Other routes */}
             <Route element={<DashboardLayout />}>
+              <Route path="/signin" element={<Signin />} />
+              <Route path="/signup" element={<SignupPage />} />
               <Route path="/not-authorized" element={<NotAuthorizedPage />} />
               <Route path="/auth/callback" element={<CallbackComponent />} />
               <Route
