@@ -1,6 +1,7 @@
 import { Link, useSearchParams } from "react-router";
 
 import { NexusAILandingHeader } from "@/components/nexus-landing-header";
+import { NexusAIMinimalFooter } from "@/components/nexus-minimal-footer";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,7 +24,6 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   AlertCircle,
   ArrowRight,
-  Brain,
   Check,
   Eye,
   EyeOff,
@@ -164,7 +164,7 @@ export default function ResetPasswordPage() {
   }
   if (isSuccess) {
     return (
-      <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="flex flex-col min-h-screen">
         <NexusAILandingHeader />
         <main className="flex-1 flex items-center justify-center p-4">
           <Card className="max-w-md w-full">
@@ -200,26 +200,15 @@ export default function ResetPasswordPage() {
             </CardFooter>
           </Card>
         </main>
-        <footer className="border-t bg-gray-100 dark:bg-gray-800">
-          <div className="container px-4 md:px-6 py-8">
-            <p className="text-xs text-center text-gray-500 dark:text-gray-400">
-              © 2023 NexusAI. All rights reserved.
-            </p>
-          </div>
-        </footer>
+        <NexusAIMinimalFooter />
       </div>
     );
   }
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
-      <header className="px-4 lg:px-6 h-14 flex items-center border-b bg-white dark:bg-gray-800">
-        <Link className="flex items-center justify-center" to="/">
-          <Brain className="h-6 w-6 text-primary" />
-          <span className="ml-2 text-2xl font-bold text-primary">NexusAI</span>
-        </Link>
-      </header>
+    <div className="flex flex-col min-h-screen">
+      <NexusAILandingHeader />
       <main className="flex-1 flex items-center justify-center p-4">
-        <Card className="max-w-md w-full">
+        <Card className="max-w-md w-full border-none drop-shadow-sm">
           <CardHeader>
             <div className="mx-auto rounded-full w-12 h-12 bg-primary/10 flex items-center justify-center mb-4">
               <KeyRound className="h-6 w-6 text-primary" />
@@ -370,33 +359,7 @@ export default function ResetPasswordPage() {
           </CardFooter>
         </Card>
       </main>
-      <footer className="border-t bg-gray-100 dark:bg-gray-800">
-        <div className="container px-4 md:px-6 py-8">
-          <p className="text-xs text-center text-gray-500 dark:text-gray-400">
-            © 2023 NexusAI. All rights reserved.
-          </p>
-        </div>
-      </footer>
+      <NexusAIMinimalFooter />
     </div>
   );
 }
-// export default function ConfirmPasswordReset() {
-//   const [searchParams] = useSearchParams();
-//   const token = searchParams.get("token");
-//   const { isPending, isError, error } = useQuery({
-//     queryKey: ["check-password-reset", token],
-//     queryFn: async () => {
-//       if (!token) {
-//         throw new Error("Missing token");
-//       }
-//       return await checkPasswordReset(token);
-//     },
-//   });
-//   if (isPending) {
-//     return <div>Loading...</div>;
-//   }
-//   if (isError) {
-//     return <div>Error: {error.message}</div>;
-//   }
-//   return <div>ConfirmPasswordReset</div>;
-// }
