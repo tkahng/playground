@@ -61,17 +61,22 @@ function App() {
             </Route>
             {/* <Route element= */}
             {/* Other routes */}
-            <Route path="/not-authorized" element={<NotAuthorizedPage />} />
-            <Route path="/auth/callback" element={<CallbackComponent />} />
-            <Route
-              path="/auth/confirm-verification"
-              element={<ConfirmVerification />}
-            />
-            <Route path="/password-reset" element={<ConfirmPasswordReset />} />
-            <Route
-              path="/forgot-password"
-              element={<ResetPasswordRequestPage />}
-            />
+            <Route element={<DashboardLayout />}>
+              <Route path="/not-authorized" element={<NotAuthorizedPage />} />
+              <Route path="/auth/callback" element={<CallbackComponent />} />
+              <Route
+                path="/auth/confirm-verification"
+                element={<ConfirmVerification />}
+              />
+              <Route
+                path="/password-reset"
+                element={<ConfirmPasswordReset />}
+              />
+              <Route
+                path="/forgot-password"
+                element={<ResetPasswordRequestPage />}
+              />
+            </Route>
             <Route element={<AuthenticatedLayoutBase />}>
               <Route path="/payment">
                 {/* /payment/success?sessionId */}

@@ -72,6 +72,12 @@ export function UserNav({ links }: UserNavProps) {
             </DropdownMenuItem>
           ))}
         </DropdownMenuGroup>
+        <>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem>
+            <Link to={RouteMap.LANDING_HOME}>Home</Link>
+          </DropdownMenuItem>
+        </>
         {isAdmin && (
           <>
             <DropdownMenuSeparator />

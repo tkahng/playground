@@ -17,7 +17,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { SignupInput } from "@/schema.types";
-import { Check } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
@@ -80,8 +79,8 @@ export default function SignupPage() {
     //   <div className="mx-auto grid max-w-6xl items-center gap-6 lg:grid-cols-2 lg:gap-12">
     <div className="flex min-h-screen flex-col">
       <div className=" flex flex-1 items-center justify-center gap-16 px-6 py-4 lg:px-8 lg:py-4">
-        <div className="flex flex-col justify-center space-y-4">
-          <div className="space-y-2">
+        {/* <div className="flex flex-col justify-center space-y-4"> */}
+        {/* <div className="space-y-2">
             <h1 className="text-3xl font-bold tracking-tighter sm:text-5xl">
               Join NexusAI and Unlock the Power of AI
             </h1>
@@ -90,8 +89,8 @@ export default function SignupPage() {
               a suite of tools designed to revolutionize your development
               process.
             </p>
-          </div>
-          <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          </div> */}
+        {/* <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {[
               "Access to state-of-the-art AI models",
               "Powerful and easy-to-use APIs",
@@ -103,12 +102,14 @@ export default function SignupPage() {
                 <span className="text-sm">{feature}</span>
               </li>
             ))}
-          </ul>
-        </div>
+          </ul> */}
+        {/* </div> */}
         <Card>
-          <CardHeader>
-            <CardTitle>Create your account</CardTitle>
-            <CardDescription>
+          <CardHeader className="space-y-1">
+            <CardTitle className="text-center text-2xl font-bold">
+              Create your account
+            </CardTitle>
+            <CardDescription className="text-center">
               Enter your details to get started with NexusAI
             </CardDescription>
           </CardHeader>
@@ -172,6 +173,48 @@ export default function SignupPage() {
             </form>
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">
+            <div className="text-center text-sm text-gray-500 dark:text-gray-400">
+              Forgot your password?{" "}
+              <Link
+                className="text-primary underline-offset-4 hover:underline"
+                to={RouteMap.FORGOT_PASSWORD}
+              >
+                Reset password
+              </Link>
+            </div>
+            <div className="text-center text-sm text-gray-500 dark:text-gray-400">
+              Already have an account?{" "}
+              <Link
+                className="text-primary underline-offset-4 hover:underline"
+                to={RouteMap.SIGNIN}
+              >
+                Sign in
+              </Link>
+            </div>
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">
+                  Or continue with
+                </span>
+              </div>
+            </div>
+            <div className="flex flex-row justify-center space-x-4">
+              <ul className="flex flex-row justify-center space-x-4">
+                {providerNames.map((providerName) => (
+                  <li key={providerName}>
+                    <ProviderConnectionForm
+                      type="Login"
+                      providerName={providerName}
+                    />
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </CardFooter>
+          {/* <CardFooter className="flex flex-col space-y-4">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
                 <span className="w-full border-t" />
@@ -200,7 +243,7 @@ export default function SignupPage() {
                 Log in
               </Link>
             </p>
-          </CardFooter>
+          </CardFooter> */}
         </Card>
       </div>
     </div>
