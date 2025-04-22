@@ -1023,3 +1023,15 @@ export const confirmPasswordReset = async (
   }
   return data;
 };
+
+export const requestPasswordReset = async (email: string) => {
+  const { error } = await client.POST("/api/auth/request-password-reset", {
+    body: {
+      email,
+    },
+  });
+  if (error) {
+    throw error;
+  }
+  return true;
+};
