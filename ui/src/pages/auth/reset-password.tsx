@@ -41,23 +41,25 @@ export default function ResetPasswordRequestPage() {
     message: "",
   });
   const [validationError, setValidationError] = useState("");
-
+  const onClickBackToLogin = () => {
+    setFormState({ status: "idle", message: "" });
+  };
   const mutation = useMutation({
     mutationFn: async (email: string) => {
       await requestPasswordReset(email);
     },
-    // onSuccess: () => {
-    //   setFormState({
-    //     status: "success",
-    //     message: "Password reset link sent! Please check your email inbox.",
-    //   });
-    // },
-    // onError: () => {
-    //   setFormState({
-    //     status: "error",
-    //     message: "Failed to send reset email. Please try again.",
-    //   });
-    // },
+    onSuccess: () => {
+      setFormState({
+        status: "success",
+        message: "Password reset link sent! Please check your email inbox.",
+      });
+    },
+    onError: () => {
+      setFormState({
+        status: "error",
+        message: "Failed to send reset email. Please try again.",
+      });
+    },
   });
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -80,18 +82,7 @@ export default function ResetPasswordRequestPage() {
 
     try {
       mutation.mutate(email);
-      setFormState({
-        status: "success",
-        message: "Password reset link sent! Please check your email inbox.",
-      });
     } catch (error) {
-      setFormState({
-        status: "error",
-        message:
-          error instanceof Error
-            ? error.message
-            : "Failed to send reset email. Please try again.",
-      });
     } finally {
       setIsLoading(false);
     }
@@ -124,11 +115,23 @@ export default function ResetPasswordRequestPage() {
                 <AlertDescription>{formState.message}</AlertDescription>
               </Alert>
             ) : formState.status === "error" ? (
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Error</AlertTitle>
-                <AlertDescription>{formState.message}</AlertDescription>
-              </Alert>
+              <>
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>Error</AlertTitle>
+                  <AlertDescription>{formState.message}</AlertDescription>
+                  <div className="flex justify-center "></div>
+                </Alert>
+                <Button
+                  variant={"link"}
+                  size="sm"
+                  className="w-full"
+                  onClick={onClickBackToLogin}
+                >
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Try Again
+                </Button>
+              </>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
@@ -197,12 +200,12 @@ export default function ResetPasswordRequestPage() {
                 </p>
               )}
             </div>
-            <Button variant="outline" size="sm" className="w-full" asChild>
+            {/* <Button variant="outline" size="sm" className="w-full" asChild>
               <Link to={RouteMap.SIGNIN}>
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Back to Login
               </Link>
-            </Button>
+            </Button> */}
           </CardFooter>
         </Card>
       </main>
