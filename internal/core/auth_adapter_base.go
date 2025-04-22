@@ -19,17 +19,6 @@ type AuthAdapter interface {
 	DeleteUser(ctx context.Context, id uuid.UUID) error
 	LinkAccount(ctx context.Context, account *shared.UserAccount) error
 	UnlinkAccount(ctx context.Context, userId uuid.UUID, provider shared.Providers) error
-	// CreateSession(session *Session) (*Session, error)
-	// GetSession(sessionToken string) (*Session, error)
-	// UpdateSession(session *Session) (*Session, error)
-	// DeleteSession(sessionToken string) error
-	// CreateToken(ctx context.Context, token *shared.CreateTokenDTO) (*shared.Token, error)
-	// GetVerificationToken(identifier string, token string) (*VerificationToken, error)
-	// GetAccount(providerAccountId string, provider string) (*Account, error)
-	// GetAuthenticator(credentialID string) (*Authenticator, error)
-	// CreateAuthenticator(authenticator *Authenticator) (*Authenticator, error)
-	// ListAuthenticatorsByUserId(userId string) ([]*Authenticator, error)
-	// UpdateAuthenticatorCounter(credentialID string, newCounter string) (*Authenticator, error)
 }
 
 var _ AuthAdapter = (*AuthAdapterBase)(nil)

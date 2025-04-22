@@ -21,13 +21,6 @@ type AuthActions interface {
 	// OAuth2Signin(ctx context.Context, code string, state string) (*shared.AuthenticatedDTO, error)
 }
 
-type TokenAdapter interface {
-	ParseTokenString(ctx context.Context, tokenString string, config TokenOption, data any) error
-	GetToken(ctx context.Context, token string) (*shared.Token, error)
-	SaveToken(ctx context.Context, token *shared.CreateTokenDTO) (*shared.Token, error)
-	DeleteToken(ctx context.Context, token string) error
-}
-
 type AuthActionsBase struct {
 	adapter AuthAdapter
 }

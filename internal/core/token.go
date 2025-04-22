@@ -16,22 +16,6 @@ import (
 	"github.com/tkahng/authgo/internal/tools/security"
 )
 
-func VerifyAndParseToken(token string, config TokenOption, data any) error {
-	claims, err := security.ParseJWTMapClaims(token, config.Secret)
-	if err != nil {
-		return fmt.Errorf("error while parsing token string: %w", err)
-	}
-	if !CheckTokenType(claims, config.Type) {
-		return fmt.Errorf("invalid token type")
-	}
-	// Convert the JSON to a struct
-	_, err = security.MarshalToken(claims, data)
-	if err != nil {
-		return fmt.Errorf("error at error: %w", err)
-	}
-	return nil
-}
-
 // Token Storage ----------------------------------------------------------------------------------------------
 
 // TokenStorage persists and verifies tokens through queries
@@ -125,6 +109,22 @@ func CreateAuthenticationToken(payload *AuthenticationPayload, config TokenOptio
 	}
 
 	return token, nil
+}
+
+func VerifyAndParseToken(token string, config TokenOption, data any) error {
+	claims, err := security.ParseJWTMapClaims(token, config.Secret)
+	if err != nil {
+		return fmt.Errorf("error while parsing token string: %w", err)
+	}
+	if !CheckTokenType(claims, config.Type) {
+		return fmt.Errorf("invalid token type")
+	}
+	// Convert the JSON to a struct
+	_, err = security.MarshalToken(claims, data)
+	if err != nil {
+		return fmt.Errorf("error at error: %w", err)
+	}
+	return nil
 }
 
 func VerifyAuthenticationToken(token string, config TokenOption) (*AuthenticationClaims, error) {

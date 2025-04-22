@@ -22,6 +22,14 @@ func (c TokenOption) Validate() error {
 	)
 }
 
+func (o *TokenOption) SetClaims(c *jwt.RegisteredClaims) {
+	c.ExpiresAt = o.ExpiresAt()
+}
+
+func (o *TokenOption) SetDto(c *shared.CreateTokenDTO) {
+	c.Expires = o.Expires()
+}
+
 func (c *TokenOption) DurationTime() time.Duration {
 	return time.Duration(c.Duration) * time.Second
 }

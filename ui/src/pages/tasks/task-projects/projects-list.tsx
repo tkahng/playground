@@ -15,10 +15,9 @@ import { CreateProjectDialog } from "./create-project-dialog";
 
 export default function ProjectListPage() {
   const { user } = useAuthProvider();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const pageIndex = parseInt(searchParams.get("page") || "0", 10);
+  const [searchParams] = useSearchParams();
+  // const pageIndex = parseInt(searchParams.get("page") || "0", 10);
   const pageSize = parseInt(searchParams.get("per_page") || "10", 10);
-  console.log(pageIndex, pageSize);
   // const queryClient = useQueryClient();
   // const onPaginationChange = (updater: Updater<PaginationState>) => {
   //   const newState =

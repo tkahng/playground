@@ -3,13 +3,10 @@ package core
 import (
 	"context"
 	"fmt"
-	"net/url"
 
 	"github.com/stephenafamo/bob"
 	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/repository"
-	"github.com/tkahng/authgo/internal/shared"
-	"github.com/tkahng/authgo/internal/tools/mailer"
 )
 
 func (app *BaseApp) VerifyAndUsePasswordResetToken(ctx context.Context, db bob.Executor, verificationToken string) (*PasswordResetClaims, error) {
@@ -57,31 +54,6 @@ func (app *BaseApp) SendPasswordResetEmail(ctx context.Context, db bob.Executor,
 	return nil
 }
 
-func createPasswordResetMailParams(tokenHash string, payload *OtpPayload, config *AppOptions) (*mailer.Message, error) {
-	path, err := mailer.GetPath("/api/auth/confirm-password-reset", &mailer.EmailParams{
-		Token:      tokenHash,
-		Type:       string(shared.PasswordResetTokenType),
-		RedirectTo: payload.RedirectTo,
-	})
-	appUrl, _ := url.Parse(config.Meta.AppURL)
-	param := &mailer.CommonParams{
-		SiteURL:         appUrl.String(),
-		ConfirmationURL: appUrl.ResolveReference(path).String(),
-		Email:           payload.Email,
-		Token:           payload.Otp,
-		TokenHash:       tokenHash,
-		RedirectTo:      payload.RedirectTo,
-	}
-	bodyStr := mailer.GetTemplate("body", mailer.DefaultRecoveryMail, param)
-	mailParams := &mailer.Message{
-		From:    config.Meta.SenderAddress,
-		To:      payload.Email,
-		Subject: fmt.Sprintf("%s - Verify your email address", config.Meta.AppName),
-		Body:    bodyStr,
-	}
-	return mailParams, err
-}
-
 func (app *BaseApp) SendSecurityPasswordResetEmail(ctx context.Context, db bob.Executor, user *models.User, redirectTo string) error {
 	opts := app.Settings().Auth
 	config := app.Settings()
@@ -104,29 +76,4 @@ func (app *BaseApp) SendSecurityPasswordResetEmail(ctx context.Context, db bob.E
 		return fmt.Errorf("error creating security password reset token: %w", err)
 	}
 	return nil
-}
-
-func createSecurityPasswordResetMailParams(tokenHash string, payload *OtpPayload, config *AppOptions) (*mailer.Message, error) {
-	path, err := mailer.GetPath("/api/auth/confirm-password-reset", &mailer.EmailParams{
-		Token:      tokenHash,
-		Type:       string(shared.PasswordResetTokenType),
-		RedirectTo: payload.RedirectTo,
-	})
-	appUrl, _ := url.Parse(config.Meta.AppURL)
-	param := &mailer.CommonParams{
-		SiteURL:         appUrl.String(),
-		ConfirmationURL: appUrl.ResolveReference(path).String(),
-		Email:           payload.Email,
-		Token:           payload.Otp,
-		TokenHash:       tokenHash,
-		RedirectTo:      payload.RedirectTo,
-	}
-	bodyStr := mailer.GetTemplate("body", mailer.DefaultSecurityPasswordResetMail, param)
-	mailParams := &mailer.Message{
-		From:    config.Meta.SenderAddress,
-		To:      payload.Email,
-		Subject: fmt.Sprintf("%s - Reset your password", config.Meta.AppName),
-		Body:    bodyStr,
-	}
-	return mailParams, err
 }

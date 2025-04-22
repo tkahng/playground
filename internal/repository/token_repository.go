@@ -68,6 +68,16 @@ func UseToken(ctx context.Context, db bob.Executor, params string) (*models.Toke
 	return token, err
 }
 
+func GetToken(ctx context.Context, db bob.Executor, token string) (*models.Token, error) {
+	res, err := models.Tokens.Query(
+		models.SelectWhere.Tokens.Token.EQ(token),
+	).One(ctx, db)
+	if err != nil {
+		return nil, err
+	}
+	return res, nil
+}
+
 func DeleteTokensByUser(ctx context.Context, db bob.Executor, params *OtpDto) error {
 	if params == nil {
 		return errors.New("params is nil")

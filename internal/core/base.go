@@ -80,12 +80,6 @@ func (app *BaseApp) NewMailClient() mailer.Mailer {
 	return app.mail
 }
 
-// InitHooks implements App.
-// func (app *BaseApp) InitHooks() {
-// 	app.onAfterRequestHandle = &hook.Hook[*BaseEvent]{}
-// 	app.onBeforeRequestHandle = &hook.Hook[*BaseEvent]{}
-// }
-
 func InitBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 	pool := db.CreatePool(ctx, cfg.Db.DatabaseUrl)
 	app := NewBaseApp(pool, cfg)
@@ -116,16 +110,6 @@ func NewBaseApp(pool *pgxpool.Pool, cfg conf.EnvConfig) *BaseApp {
 		payment:  NewStripeService(payment.NewStripeClient(cfg.StripeConfig)),
 	}
 }
-
-// // OnAfterRequestHandle implements App.
-// func (app *BaseApp) OnAfterRequestHandle(tags ...string) *hook.TaggedHook[*BaseEvent] {
-// 	return hook.NewTaggedHook(app.onAfterRequestHandle, tags...)
-// }
-
-// // OnBeforeRequestHandle implements App.
-// func (app *BaseApp) OnBeforeRequestHandle(tags ...string) *hook.TaggedHook[*BaseEvent] {
-// 	return hook.NewTaggedHook(app.onBeforeRequestHandle, tags...)
-// }
 
 func (app *BaseApp) Bootstrap() {
 	ctx := context.Background()
