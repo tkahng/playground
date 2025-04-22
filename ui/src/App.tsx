@@ -37,6 +37,7 @@ import {
 } from "./components/landing-links";
 import { Providers } from "./components/providers";
 import NotFoundPage from "./pages/404";
+import ConfirmPasswordReset from "./pages/auth/confirm-password-reset";
 import NotAuthorizedPage from "./pages/not-authorized";
 import ProjectEdit from "./pages/tasks/task-projects/project-edit";
 import ProjectListPage from "./pages/tasks/task-projects/projects-list";
@@ -64,6 +65,10 @@ function App() {
             <Route
               path="/auth/confirm-verification"
               element={<ConfirmVerification />}
+            />
+            <Route
+              path="/auth/password-reset"
+              element={<ConfirmPasswordReset />}
             />
             <Route element={<AuthenticatedLayoutBase />}>
               <Route path="/payment">
