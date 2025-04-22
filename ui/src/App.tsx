@@ -67,12 +67,9 @@ function App() {
               path="/auth/confirm-verification"
               element={<ConfirmVerification />}
             />
+            <Route path="/password-reset" element={<ConfirmPasswordReset />} />
             <Route
-              path="/auth/password-reset"
-              element={<ConfirmPasswordReset />}
-            />
-            <Route
-              path="/auth/password-reset/request"
+              path="/forgot-password"
               element={<ResetPasswordRequestPage />}
             />
             <Route element={<AuthenticatedLayoutBase />}>

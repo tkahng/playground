@@ -1,5 +1,6 @@
 import { NexusAILandingHeader } from "@/components/nexus-landing-header";
 import { NexusAIMinimalFooter } from "@/components/nexus-minimal-footer";
+import { RouteMap } from "@/components/route-map";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -52,7 +53,7 @@ export default function NotAuthorizedPage() {
               </Button>
             </div>
             <Button className="w-full" asChild>
-              <Link to="/login">
+              <Link to={RouteMap.SIGNIN}>
                 <LogIn className="mr-2 h-4 w-4" />
                 Sign In
               </Link>

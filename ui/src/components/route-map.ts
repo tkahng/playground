@@ -3,7 +3,7 @@ export enum RouteMap {
   API_STRIPE_PAYMENT = "/api/stripe/payment",
   API_STRIPE_SUBSCRIPTION = "/api/stripe/subscribe",
   FORGOT_PASSWORD = "/forgot-password",
-  RESET_PASSWORD = "/reset-password",
+  RESET_PASSWORD = "/password-reset",
   FEATURES = "/features",
   PRICING = "/pricing",
   ABOUT = "/about",

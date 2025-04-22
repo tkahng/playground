@@ -31,12 +31,12 @@ var (
 		},
 		EmailTypeConfirmPasswordReset: {
 			Subject:      "%s - Confirm your password reset",
-			TemplatePath: "/auth/password-reset",
+			TemplatePath: "/password-reset",
 			Template:     mailer.DefaultRecoveryMail,
 		},
 		EmailTypeSecurityPasswordReset: {
 			Subject:      "%s - Reset your password",
-			TemplatePath: "/auth/password-reset",
+			TemplatePath: "/password-reset",
 			Template:     mailer.DefaultSecurityPasswordResetMail,
 		},
 	}

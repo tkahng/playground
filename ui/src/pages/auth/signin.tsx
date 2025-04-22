@@ -113,6 +113,15 @@ export default function SigninPage() {
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">
             <div className="text-center text-sm text-gray-500 dark:text-gray-400">
+              Forgot your password?{" "}
+              <Link
+                className="text-primary underline-offset-4 hover:underline"
+                to={RouteMap.FORGOT_PASSWORD}
+              >
+                Reset password
+              </Link>
+            </div>
+            <div className="text-center text-sm text-gray-500 dark:text-gray-400">
               Don't have an account?{" "}
               <Link
                 className="text-primary underline-offset-4 hover:underline"

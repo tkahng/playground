@@ -1,3 +1,4 @@
+import { RouteMap } from "@/components/route-map";
 import { Link, useSearchParams } from "react-router";
 
 import { NexusAILandingHeader } from "@/components/nexus-landing-header";
@@ -186,13 +187,13 @@ export default function ResetPasswordPage() {
             </CardContent>
             <CardFooter className="flex flex-col space-y-2">
               <Button className="w-full" asChild>
-                <Link to="/login">
+                <Link to={RouteMap.SIGNIN}>
                   <ArrowRight className="mr-2 h-4 w-4" />
                   Continue to Login
                 </Link>
               </Button>
               <Button variant="outline" className="w-full" asChild>
-                <Link to="/">
+                <Link to={RouteMap.HOME}>
                   <Home className="mr-2 h-4 w-4" />
                   Return to Home
                 </Link>
@@ -352,7 +353,10 @@ export default function ResetPasswordPage() {
           <CardFooter className="flex justify-center">
             <p className="text-xs text-muted-foreground">
               Remember your password?{" "}
-              <Link to="/login" className="text-primary hover:underline">
+              <Link
+                to={RouteMap.SIGNIN}
+                className="text-primary hover:underline"
+              >
                 Log in
               </Link>
             </p>

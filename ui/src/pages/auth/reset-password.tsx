@@ -1,5 +1,6 @@
 "use client";
 
+import { RouteMap } from "@/components/route-map";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -99,7 +100,7 @@ export default function ResetPasswordRequestPage() {
   return (
     <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
       <header className="px-4 lg:px-6 h-14 flex items-center border-b bg-white dark:bg-gray-800">
-        <Link className="flex items-center justify-center" to="/">
+        <Link className="flex items-center justify-center" to={RouteMap.HOME}>
           <Brain className="h-6 w-6 text-primary" />
           <span className="ml-2 text-2xl font-bold text-primary">NexusAI</span>
         </Link>
@@ -187,14 +188,17 @@ export default function ResetPasswordRequestPage() {
               ) : (
                 <p>
                   Remember your password?{" "}
-                  <Link to="/login" className="text-primary hover:underline">
+                  <Link
+                    to={RouteMap.SIGNIN}
+                    className="text-primary hover:underline"
+                  >
                     Back to login
                   </Link>
                 </p>
               )}
             </div>
             <Button variant="outline" size="sm" className="w-full" asChild>
-              <Link to="/login">
+              <Link to={RouteMap.SIGNIN}>
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Back to Login
               </Link>
