@@ -3,6 +3,7 @@ package shared
 import (
 	"time"
 
+	"github.com/aarondl/opt/null"
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/db/models"
 )
@@ -119,6 +120,29 @@ func ToUserAccount(u *models.UserAccount) *UserAccount {
 		Scope:             u.Scope.Ptr(),
 		SessionState:      u.SessionState.Ptr(),
 		TokenType:         u.TokenType.Ptr(),
+		CreatedAt:         u.CreatedAt,
+		UpdatedAt:         u.UpdatedAt,
+	}
+}
+
+func ToUserAccountModel(u *UserAccount) *models.UserAccount {
+	if u == nil {
+		return nil
+	}
+	return &models.UserAccount{
+		ID:                u.ID,
+		UserID:            u.UserID,
+		Type:              ToModelProviderType(u.Type),
+		Provider:          ToModelProvider(u.Provider),
+		ProviderAccountID: u.ProviderAccountID,
+		Password:          null.FromPtr(u.Password),
+		RefreshToken:      null.FromPtr(u.RefreshToken),
+		AccessToken:       null.FromPtr(u.AccessToken),
+		ExpiresAt:         null.FromPtr(u.ExpiresAt),
+		IDToken:           null.FromPtr(u.IDToken),
+		Scope:             null.FromPtr(u.Scope),
+		SessionState:      null.FromPtr(u.SessionState),
+		TokenType:         null.FromPtr(u.TokenType),
 		CreatedAt:         u.CreatedAt,
 		UpdatedAt:         u.UpdatedAt,
 	}

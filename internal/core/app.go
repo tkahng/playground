@@ -43,4 +43,8 @@ type App interface {
 	CheckUserCredentialsSecurity(ctx context.Context, db bob.Executor, user *models.User, params *shared.AuthenticateUserParams) error
 	// stripe
 	Payment() *StripeService
+
+	AuthMailer() AuthMailer
+	TokenAdapter() TokenAdapter
+	AuthAdapter() AuthAdapter
 }

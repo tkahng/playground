@@ -28,8 +28,26 @@ type BaseApp struct {
 	logger        *slog.Logger
 	fs            *filesystem.FileSystem
 	mail          mailer.Mailer
+	authAdapter   *AuthAdapterBase
+	authMailer    *AuthMailerBase
+	tokenAdapter  *TokenAdapterBase
 	// onAfterRequestHandle  *hook.Hook[*BaseEvent]
 	// onBeforeRequestHandle *hook.Hook[*BaseEvent]
+}
+
+// AuthAdapter implements App.
+func (a *BaseApp) AuthAdapter() AuthAdapter {
+	return a.authAdapter
+}
+
+// AuthMailer implements App.
+func (a *BaseApp) AuthMailer() AuthMailer {
+	return a.authMailer
+}
+
+// TokenAdapter implements App.
+func (a *BaseApp) TokenAdapter() TokenAdapter {
+	return a.tokenAdapter
 }
 
 func (app *BaseApp) Fs() *filesystem.FileSystem {
@@ -99,15 +117,22 @@ func NewBaseApp(pool *pgxpool.Pool, cfg conf.EnvConfig) *BaseApp {
 	} else {
 		mail = &mailer.LogMailer{}
 	}
+	db := db.NewQueries(pool)
+	authAdapter := NewAuthAdapter(db)
+	authMailer := NewAuthMailer(mail)
+	tokenAdapter := NewTokenAdapter(db)
 	return &BaseApp{
-		fs:       fs,
-		pool:     pool,
-		db:       db.NewQueries(pool),
-		settings: settings,
-		logger:   logger.GetDefaultLogger(slog.LevelInfo),
-		cfg:      &cfg,
-		mail:     mail,
-		payment:  NewStripeService(payment.NewStripeClient(cfg.StripeConfig)),
+		fs:           fs,
+		pool:         pool,
+		db:           db,
+		settings:     settings,
+		logger:       logger.GetDefaultLogger(slog.LevelInfo),
+		cfg:          &cfg,
+		mail:         mail,
+		payment:      NewStripeService(payment.NewStripeClient(cfg.StripeConfig)),
+		authAdapter:  authAdapter,
+		authMailer:   authMailer,
+		tokenAdapter: tokenAdapter,
 	}
 }
 

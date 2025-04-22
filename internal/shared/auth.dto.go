@@ -22,6 +22,20 @@ type AuthenticateUserParams struct {
 	AccessToken       *string
 	RefreshToken      *string
 }
+type AuthenticationInput struct {
+	Email             string
+	Name              *string
+	AvatarUrl         *string
+	EmailVerifiedAt   *time.Time
+	Provider          Providers
+	Password          *string
+	HashPassword      *string
+	Type              ProviderTypes
+	ProviderAccountID string
+	UserId            *uuid.UUID
+	AccessToken       *string
+	RefreshToken      *string
+}
 
 type AuthenticateUserState struct {
 	User    *models.User

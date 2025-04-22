@@ -21,6 +21,10 @@ type AuthMailerBase struct {
 	mailer mailer.Mailer
 }
 
+func NewAuthMailer(mailer mailer.Mailer) *AuthMailerBase {
+	return &AuthMailerBase{mailer: mailer}
+}
+
 func (a *AuthMailerBase) Client() mailer.Mailer {
 	return a.mailer
 }

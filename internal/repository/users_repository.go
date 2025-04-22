@@ -167,6 +167,25 @@ func FindUserById(ctx context.Context, db bob.Executor, userId uuid.UUID) (*mode
 	return OptionalRow(a, err)
 }
 
+func UpdateUserAccount(ctx context.Context, db bob.Executor, account *models.UserAccount) error {
+	return account.Update(ctx, db, &models.UserAccountSetter{
+		UserID:            omit.From(account.UserID),
+		Type:              omit.From(account.Type),
+		Provider:          omit.From(account.Provider),
+		ProviderAccountID: omit.From(account.ProviderAccountID),
+		Password:          omitnull.FromNull(account.Password),
+		RefreshToken:      omitnull.FromNull(account.RefreshToken),
+		AccessToken:       omitnull.FromNull(account.AccessToken),
+		ExpiresAt:         omitnull.FromNull(account.ExpiresAt),
+		IDToken:           omitnull.FromNull(account.IDToken),
+		Scope:             omitnull.FromNull(account.Scope),
+		SessionState:      omitnull.FromNull(account.SessionState),
+		TokenType:         omitnull.FromNull(account.TokenType),
+		CreatedAt:         omit.From(account.CreatedAt),
+		UpdatedAt:         omit.From(account.UpdatedAt),
+	})
+}
+
 func UpdateUserPassword(ctx context.Context, db bob.Executor, userId uuid.UUID, password string) error {
 	user, err := models.FindUser(ctx, db, userId)
 	if err != nil {

@@ -16,9 +16,11 @@ type AuthAdapter interface {
 	GetUserInfo(ctx context.Context, email string) (*shared.UserInfo, error)
 	CreateUser(ctx context.Context, user *shared.User) (*shared.User, error)
 	GetUser(ctx context.Context, id uuid.UUID) (*shared.User, error)
+	AssignUserRoles(ctx context.Context, userId uuid.UUID, roleNames ...string) error
 	GetUserByEmail(ctx context.Context, email string) (*shared.User, error)
 	GetUserAccount(ctx context.Context, userId uuid.UUID, provider shared.Providers) (*shared.UserAccount, error)
 	UpdateUser(ctx context.Context, user *shared.User) error
+	UpdateUserAccount(ctx context.Context, account *shared.UserAccount) error
 	DeleteUser(ctx context.Context, id uuid.UUID) error
 	LinkAccount(ctx context.Context, account *shared.UserAccount) error
 	UnlinkAccount(ctx context.Context, userId uuid.UUID, provider shared.Providers) error
@@ -28,6 +30,16 @@ var _ AuthAdapter = (*AuthAdapterBase)(nil)
 
 type AuthAdapterBase struct {
 	db bob.Executor
+}
+
+// UpdateUserAccount implements AuthAdapter.
+func (a *AuthAdapterBase) UpdateUserAccount(ctx context.Context, account *shared.UserAccount) error {
+	md := shared.ToUserAccountModel(account)
+	return repository.UpdateUserAccount(ctx, a.db, md)
+}
+
+func NewAuthAdapter(db bob.Executor) *AuthAdapterBase {
+	return &AuthAdapterBase{db: db}
 }
 
 func (a *AuthAdapterBase) Db() bob.Executor {
@@ -153,6 +165,31 @@ func (a *AuthAdapterBase) UpdateUser(ctx context.Context, user *shared.User) err
 	})
 	if err != nil {
 		return err
+	}
+	return nil
+}
+
+// AssignUserRoles implements AuthAdapter.
+func (a *AuthAdapterBase) AssignUserRoles(ctx context.Context, userId uuid.UUID, roleNames ...string) error {
+	if len(roleNames) > 0 {
+		db := a.Db()
+		user, err := repository.FindUserById(ctx, db, userId)
+		if err != nil {
+			return fmt.Errorf("error finding user while assigning roles: %w", err)
+		}
+		if user == nil {
+			return fmt.Errorf("user not found while assigning roles")
+		}
+		roles, err := repository.FindRolesByNames(ctx, db, roleNames)
+		if err != nil {
+			return fmt.Errorf("error finding user role while assigning roles: %w", err)
+		}
+		if len(roles) > 0 {
+			err = repository.AssignRoles(ctx, db, user, roles...)
+			if err != nil {
+				return fmt.Errorf("error assigning user role while assigning roles: %w", err)
+			}
+		}
 	}
 	return nil
 }
