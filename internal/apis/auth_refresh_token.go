@@ -23,13 +23,15 @@ type RefreshTokenInput struct {
 	RefreshToken string `json:"refresh_token" cookie:"refresh_token" form:"refresh_token" required:"true"`
 }
 
-func (api *Api) RefreshToken(ctx context.Context, input *struct{ Body *RefreshTokenInput }) (*AuthenticatedResponse, error) {
+func (api *Api) RefreshToken(ctx context.Context, input *struct{ Body *RefreshTokenInput }) (*AuthenticatedInfoResponse, error) {
 	db := api.app.Db()
-	claims, err := api.app.RefreshTokens(ctx, db, input.Body.RefreshToken)
+	action := api.app.NewAuthActions(db)
+	claims, err := action.HandleRefreshToken(ctx, input.Body.RefreshToken)
 	if err != nil {
 		return nil, err
 	}
-	return &AuthenticatedResponse{
+
+	return &AuthenticatedInfoResponse{
 		Body: *claims,
 	}, nil
 }

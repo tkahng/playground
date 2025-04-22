@@ -130,15 +130,17 @@ func (a *AuthAdapterBase) LinkAccount(ctx context.Context, account *shared.UserA
 	}
 	providerModel := shared.ToModelProvider(account.Provider)
 	providerTypeModel := shared.ToModelProviderType(account.Type)
-	_, err := repository.CreateAccount(ctx, a.db, account.UserID, &shared.AuthenticateUserParams{
-		UserId:            &account.UserID,
-		Type:              providerTypeModel,
-		Provider:          providerModel,
-		ProviderAccountID: account.ProviderAccountID,
-		Password:          account.Password,
-		AccessToken:       account.AccessToken,
-		RefreshToken:      account.RefreshToken,
-	})
+	params := &shared.AuthenticateUserParams{}
+	params.UserId = &account.UserID
+	params.Type = providerTypeModel
+	params.Provider = providerModel
+	params.ProviderAccountID = account.ProviderAccountID
+	params.HashPassword = account.Password
+	params.Password = account.Password
+	params.AccessToken = account.AccessToken
+	params.RefreshToken = account.RefreshToken
+
+	_, err := repository.CreateAccount(ctx, a.db, account.UserID, params)
 	if err != nil {
 		return err
 	}

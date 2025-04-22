@@ -20,12 +20,10 @@ type App interface {
 	Pool() *pgxpool.Pool
 	Db() *db.Queries
 	Fs() *filesystem.FileSystem
-	// SetSettings(settings *AppOptions)
+
 	Settings() *AppOptions
 	NewMailClient() mailer.Mailer
 	EncryptionEnv() string
-	// Signup(ctx context.Context, params *shared.AuthenticateUserParams) (*shared.AuthenticatedDTO, error)
-	AuthenticateUser(ctx context.Context, db bob.Executor, params *shared.AuthenticateUserParams, autoCreateUser bool) (*shared.AuthenticateUserState, error)
 
 	// jwt
 	CreateAuthTokens(ctx context.Context, db bob.Executor, payload *shared.UserInfoDto) (*shared.TokenDto, error)
@@ -34,7 +32,6 @@ type App interface {
 	RefreshTokens(ctx context.Context, db bob.Executor, refreshToken string) (*shared.AuthenticatedDTO, error)
 	Signout(ctx context.Context, db bob.Executor, refreshToken string) error
 	// verification
-	VerifyAndUseVerificationToken(ctx context.Context, db bob.Executor, token string) (*EmailVerificationClaims, error)
 	SendVerificationEmail(ctx context.Context, db bob.Executor, user *models.User, redirectTo string) error
 	VerifyAndUsePasswordResetToken(ctx context.Context, db bob.Executor, token string) (*PasswordResetClaims, error)
 	SendPasswordResetEmail(ctx context.Context, db bob.Executor, user *models.User, redirectTo string) error

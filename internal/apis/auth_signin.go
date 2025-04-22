@@ -26,26 +26,36 @@ type SigninDto struct {
 	Password RequiredPasswordField `json:"password" form:"password" minimum:"8" example:"Password123!"`
 }
 
-func (api *Api) SignIn(ctx context.Context, input *struct{ Body *SigninDto }) (*AuthenticatedResponse, error) {
-	db := api.app.Db()
+type AuthenticatedInfoResponse struct {
+	// SetCookieOutput
+	SetCookie []http.Cookie `header:"Set-Cookie"`
 
+	Body shared.UserInfoTokens `json:"body"`
+}
+
+func (api *Api) SignIn(ctx context.Context, input *struct{ Body *SigninDto }) (*AuthenticatedInfoResponse, error) {
+	db := api.app.Db()
+	action := api.app.NewAuthActions(db)
 	password := input.Body.Password.String()
-	params := &shared.AuthenticateUserParams{
+	params := &shared.AuthenticationInput{
 		Email:             input.Body.Email,
-		Provider:          "credentials",
+		Provider:          shared.ProvidersCredentials,
 		Password:          &password,
-		Type:              "credentials",
+		Type:              shared.ProviderTypeCredentials,
 		ProviderAccountID: input.Body.Email,
 	}
-	user, err := api.app.AuthenticateUser(ctx, db, params, false)
+	user, err := action.Authenticate(ctx, params)
 	if err != nil {
 		return nil, fmt.Errorf("error authenticating user: %w", err)
 	}
-	dto, err := api.app.CreateAuthDto(ctx, user.User.Email)
+	dto, err := action.CreateAuthTokensFromEmail(ctx, user.Email)
 	if err != nil {
 		return nil, fmt.Errorf("error creating auth dto: %w", err)
 	}
-	return &AuthenticatedResponse{
+	if dto == nil {
+		return nil, fmt.Errorf("error creating auth dto: %w", err)
+	}
+	return &AuthenticatedInfoResponse{
 		Body: *dto,
 	}, nil
 

@@ -8,7 +8,6 @@ import (
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/tkahng/authgo/internal/core"
-	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/shared"
 	"golang.org/x/oauth2"
 )
@@ -113,7 +112,8 @@ type CallbackOutput struct {
 func OAuth2Callback(ctx context.Context, api *Api, input *OAuth2CallbackInput) (*CallbackOutput, error) {
 	authOpts := api.app.Settings().Auth
 	db := api.app.Db()
-	parsedState, err := core.ParseProviderStateToken(input.State, authOpts.StateToken)
+	action := api.app.NewAuthActions(db)
+	parsedState, err := action.VerifyStateToken(ctx, input.State)
 	if err != nil {
 		return nil, err
 	}
@@ -161,23 +161,30 @@ func OAuth2Callback(ctx context.Context, api *Api, input *OAuth2CallbackInput) (
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch OAuth2 user. %w", err)
 	}
-	params := &shared.AuthenticateUserParams{
+	var prv shared.Providers
+	switch parsedState.Provider {
+	case shared.OAuthProvidersGithub:
+		prv = shared.ProvidersGithub
+	case shared.OAuthProvidersGoogle:
+		prv = shared.ProvidersGoogle
+	}
+	params := &shared.AuthenticationInput{
 		AvatarUrl:         &authUser.AvatarURL,
 		Email:             authUser.Email,
 		Name:              &authUser.Username,
 		EmailVerifiedAt:   &authUser.Expiry,
-		Provider:          models.Providers(parsedState.Provider),
-		Type:              models.ProviderTypesOauth,
+		Provider:          prv,
+		Type:              shared.ProviderTypeOAuth,
 		ProviderAccountID: authUser.Id,
 		AccessToken:       &authUser.AccessToken,
 		RefreshToken:      &authUser.RefreshToken,
 	}
-	user, err := api.app.AuthenticateUser(ctx, db, params, true)
+	user, err := action.Authenticate(ctx, params)
 	if err != nil {
 		return nil, fmt.Errorf("error at Oatuh2Callback: %w", err)
 
 	}
-	dto, err := api.app.CreateAuthDto(ctx, user.User.Email)
+	dto, err := api.app.CreateAuthDto(ctx, user.Email)
 	if err != nil || dto == nil {
 		return nil, fmt.Errorf("error creating auth dto: %w", err)
 	}

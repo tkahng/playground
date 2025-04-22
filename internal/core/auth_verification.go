@@ -8,19 +8,6 @@ import (
 	"github.com/tkahng/authgo/internal/db/models"
 )
 
-func (app *BaseApp) VerifyAndUseVerificationToken(ctx context.Context, db bob.Executor, verificationToken string) (*EmailVerificationClaims, error) {
-	opts := app.Settings().Auth
-	jsond, err := app.TokenVerifier().ParseVerificationToken(verificationToken, opts.VerificationToken)
-	if err != nil {
-		return nil, fmt.Errorf("error at parsing verification token: %w", err)
-	}
-	err = app.TokenStorage().UseVerificationTokenAndUpdateUser(ctx, db, jsond.Token)
-	if err != nil {
-		return nil, fmt.Errorf("error verifying refresh token: %w", err)
-	}
-	return jsond, nil
-}
-
 // SendVerificationEmail implements App.
 func (app *BaseApp) SendVerificationEmail(ctx context.Context, db bob.Executor, user *models.User, redirectTo string) error {
 	opts := app.Settings().Auth

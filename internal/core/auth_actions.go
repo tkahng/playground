@@ -3,6 +3,7 @@ package core
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/alexedwards/argon2id"
 	"github.com/golang-jwt/jwt/v5"
@@ -13,9 +14,19 @@ import (
 )
 
 type AuthActions interface {
-	// CreateAuthenticationToken(ctx context.Context, user *AuthenticationPayload) (string, error)
+	HandlePasswordResetRequest(ctx context.Context, email string) error
+	CheckResetPasswordToken(ctx context.Context, token string) error
+	HandlePasswordResetToken(ctx context.Context, token, password string) error
+	VerifyStateToken(ctx context.Context, token string) (*ProviderStateClaims, error)
+	CreateAndPersistStateToken(ctx context.Context, payload *ProviderStatePayload) (string, error)
+	HandleAccessToken(ctx context.Context, token string) (*shared.UserInfo, error)
 	HandleRefreshToken(ctx context.Context, token string) (*shared.UserInfoTokens, error)
+	HandleVerificationToken(ctx context.Context, token string) error
 	VerifyAndParseOtpToken(ctx context.Context, emailType EmailType, token string) (*OtpClaims, error)
+	Authenticate(ctx context.Context, params *shared.AuthenticationInput) (*shared.User, error)
+	// CreateAuthTokens(ctx context.Context, payload *shared.UserInfo) (*shared.UserInfoTokens, error)
+	CreateAuthTokensFromEmail(ctx context.Context, email string) (*shared.UserInfoTokens, error)
+	SendOtpEmail(emailType EmailType, ctx context.Context, user *shared.User) error
 	// CreateAndSaveRefreshToken(ctx context.Context, user *RefreshTokenPayload) (string, error)
 	// CreateAndSaveVerificationToken(ctx context.Context, user *OtpPayload) (string, error)
 	// CreateAndSavePasswordResetToken(ctx context.Context, user *OtpPayload) (string, error)
@@ -32,6 +43,69 @@ type AuthActionsBase struct {
 	authMailer   *AuthMailerBase
 	tokenAdapter *TokenAdapterBase
 	settings     *AppOptions
+}
+
+// HandlePasswordResetRequest implements AuthActions.
+func (app *AuthActionsBase) HandlePasswordResetRequest(ctx context.Context, email string) error {
+	user, err := app.authAdapter.GetUserByEmail(ctx, email)
+	if err != nil {
+		return fmt.Errorf("error getting user by email: %w", err)
+	}
+	if user == nil {
+		return fmt.Errorf("user not found")
+	}
+	account, err := app.authAdapter.GetUserAccount(ctx, user.ID, shared.ProvidersCredentials)
+	if err != nil {
+		return fmt.Errorf("error getting user account: %w", err)
+	}
+	if account == nil {
+		return fmt.Errorf("user account not found")
+	}
+
+	err = app.SendOtpEmail(EmailTypeConfirmPasswordReset, ctx, user)
+	if err != nil {
+		return fmt.Errorf("error sending password reset email: %w", err)
+	}
+	return nil
+}
+
+// CreateAndPersistStateToken implements AuthActions.
+func (app *AuthActionsBase) CreateAndPersistStateToken(ctx context.Context, payload *ProviderStatePayload) (string, error) {
+	if payload == nil {
+		return "", fmt.Errorf("payload is nil")
+	}
+	config := app.settings.Auth.StateToken
+	claims := ProviderStateClaims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: config.ExpiresAt(),
+		},
+		ProviderStatePayload: *payload,
+	}
+	dto := &shared.CreateTokenDTO{
+		Type:       shared.StateTokenType,
+		Identifier: payload.Token,
+		Expires:    config.Expires(),
+		Token:      payload.Token,
+	}
+	token, err := security.NewJWTWithClaims(claims, config.Secret)
+	if err != nil {
+		return token, fmt.Errorf("error at error: %w", err)
+	}
+
+	err = app.tokenAdapter.SaveToken(ctx, dto)
+	if err != nil {
+		return token, fmt.Errorf("error at error: %w", err)
+	}
+	return token, nil
+}
+
+// CreateAuthTokensFromEmail implements AuthActions.
+func (app *AuthActionsBase) CreateAuthTokensFromEmail(ctx context.Context, email string) (*shared.UserInfoTokens, error) {
+	user, err := app.authAdapter.GetUserInfo(ctx, email)
+	if err != nil {
+		return nil, fmt.Errorf("error at getting user by email: %w", err)
+	}
+	return app.CreateAuthTokens(ctx, user)
 }
 
 func NewAuthActions(db bob.Executor, mailer mailer.Mailer, settings *AppOptions) AuthActions {
@@ -131,6 +205,75 @@ func (app *AuthActionsBase) CreateAuthTokens(ctx context.Context, payload *share
 	}, nil
 }
 
+// CheckResetPasswordToken implements AuthActions.
+func (app *AuthActionsBase) CheckResetPasswordToken(ctx context.Context, tokenHash string) error {
+	opts := app.settings.Auth
+	var claims PasswordResetClaims
+	err := app.tokenAdapter.ParseTokenString(tokenHash, opts.PasswordResetToken, &claims)
+	if err != nil {
+		return fmt.Errorf("error verifying password reset token: %w", err)
+	}
+	token, err := app.tokenAdapter.GetToken(ctx, claims.Token)
+	if err != nil {
+		return fmt.Errorf("error getting token: %w", err)
+	}
+	if token == nil {
+		return fmt.Errorf("token not found")
+	}
+	return nil
+}
+
+// HandlePasswordResetToken implements AuthActions.
+func (app *AuthActionsBase) HandlePasswordResetToken(ctx context.Context, token, password string) error {
+	opts := app.settings.Auth
+	var claims PasswordResetClaims
+	err := app.tokenAdapter.ParseTokenString(token, opts.PasswordResetToken, &claims)
+	if err != nil {
+		return fmt.Errorf("error verifying password reset token: %w", err)
+	}
+	err = app.tokenAdapter.VerifyTokenStorage(ctx, claims.Token)
+	if err != nil {
+		return fmt.Errorf("error deleting token: %w", err)
+	}
+	user, err := app.authAdapter.GetUserByEmail(ctx, claims.Email)
+	if err != nil {
+		return fmt.Errorf("error getting user by email: %w", err)
+	}
+	if user == nil {
+		return fmt.Errorf("user not found")
+	}
+	account, err := app.authAdapter.GetUserAccount(ctx, user.ID, shared.ProvidersCredentials)
+	if err != nil {
+		return fmt.Errorf("error getting user account: %w", err)
+	}
+	if account == nil {
+		return fmt.Errorf("user account not found")
+	}
+	hash, err := security.CreateHash(password, argon2id.DefaultParams)
+	if err != nil {
+		return fmt.Errorf("error at hashing password: %w", err)
+	}
+	account.Password = &hash
+	err = app.authAdapter.UpdateUserAccount(ctx, account)
+	if err != nil {
+		return fmt.Errorf("error updating user password: %w", err)
+	}
+	return nil
+
+}
+func (app *AuthActionsBase) VerifyStateToken(ctx context.Context, token string) (*ProviderStateClaims, error) {
+	opts := app.settings.Auth
+	var claims ProviderStateClaims
+	err := app.tokenAdapter.ParseTokenString(token, opts.StateToken, &claims)
+	if err != nil {
+		return nil, fmt.Errorf("error verifying state token: %w", err)
+	}
+	err = app.tokenAdapter.VerifyTokenStorage(ctx, claims.Token)
+	if err != nil {
+		return nil, fmt.Errorf("error deleting token: %w", err)
+	}
+	return &claims, nil
+}
 func (app *AuthActionsBase) HandleAccessToken(ctx context.Context, token string) (*shared.UserInfo, error) {
 	opts := app.settings.Auth
 	var claims AuthenticationClaims
@@ -149,13 +292,44 @@ func (app *AuthActionsBase) HandleRefreshToken(ctx context.Context, token string
 	if err != nil {
 		return nil, fmt.Errorf("error verifying refresh token: %w", err)
 	}
-
+	err = app.tokenAdapter.VerifyTokenStorage(ctx, claims.Token)
+	if err != nil {
+		return nil, fmt.Errorf("error deleting token: %w", err)
+	}
 	info, err := app.authAdapter.GetUserInfo(ctx, claims.Email)
 	if err != nil {
 		return nil, fmt.Errorf("error getting user info: %w", err)
 	}
 
 	return app.CreateAuthTokens(ctx, info)
+}
+
+func (app *AuthActionsBase) HandleVerificationToken(ctx context.Context, token string) error {
+	claims, err := app.VerifyAndParseOtpToken(ctx, EmailTypeVerify, token)
+	if err != nil {
+		return fmt.Errorf("error verifying verification token: %w", err)
+	}
+	err = app.tokenAdapter.VerifyTokenStorage(ctx, claims.Token)
+	if err != nil {
+		return fmt.Errorf("error deleting token: %w", err)
+	}
+	user, err := app.authAdapter.GetUserByEmail(ctx, claims.Email)
+	if err != nil {
+		return fmt.Errorf("error getting user info: %w", err)
+	}
+	if user == nil {
+		return fmt.Errorf("user not found")
+	}
+	if user.EmailVerifiedAt != nil {
+		return fmt.Errorf("user already verified")
+	}
+	now := time.Now()
+	user.EmailVerifiedAt = &now
+	err = app.authAdapter.UpdateUser(ctx, user)
+	if err != nil {
+		return fmt.Errorf("error updating user: %w", err)
+	}
+	return nil
 }
 
 // VerifyAndUseVerificationToken implements AuthActions.
@@ -187,7 +361,7 @@ func (app *AuthActionsBase) Authenticate(ctx context.Context, params *shared.Aut
 	var account *shared.UserAccount
 	var err error
 	var isFirstLogin bool
-
+	fmt.Println("Authenticate")
 	// get user by email
 	user, err = app.authAdapter.GetUserByEmail(ctx, params.Email)
 	if err != nil {
@@ -202,6 +376,7 @@ func (app *AuthActionsBase) Authenticate(ctx context.Context, params *shared.Aut
 	}
 	// if user does not exist, Create User and continue to create UserAccount ----------------------------------------------------------------------------------------------------
 	if user == nil {
+		fmt.Println("User does not exist, creating user")
 		// is first login
 		isFirstLogin = true
 		user, err = app.authAdapter.CreateUser(ctx, &shared.User{
@@ -222,17 +397,22 @@ func (app *AuthActionsBase) Authenticate(ctx context.Context, params *shared.Aut
 	}
 	// if user exists, but requested account type does not exist, Create UserAccount  of requested type ----------------------------------------------------------------------------------------------------
 	if account == nil {
+		fmt.Println("Account does not exist, creating account")
 		// from within this block, we should return and not continue to next block
 		// if type is credentials, hash password and set params
 		if params.Type == shared.ProviderTypeCredentials {
+			if params.Password == nil {
+				return nil, fmt.Errorf("password is nil")
+			}
 			pw, err := security.CreateHash(*params.Password, argon2id.DefaultParams)
 			if err != nil {
 				return nil, fmt.Errorf("error at hashing password: %w", err)
 			}
 			params.HashPassword = &pw
+			fmt.Println("Hashed password: ", pw)
 		}
 		// link account of requested type
-		err = app.authAdapter.LinkAccount(ctx, &shared.UserAccount{
+		newVar := &shared.UserAccount{
 			UserID:            user.ID,
 			Type:              params.Type,
 			Provider:          params.Provider,
@@ -240,17 +420,20 @@ func (app *AuthActionsBase) Authenticate(ctx context.Context, params *shared.Aut
 			Password:          params.HashPassword,
 			AccessToken:       params.AccessToken,
 			RefreshToken:      params.RefreshToken,
-		})
+		}
+		err = app.authAdapter.LinkAccount(ctx, newVar)
 		if err != nil {
 			return nil, fmt.Errorf("error at linking account: %w", err)
 		}
 		// if user is first login, send verification email
 		if isFirstLogin {
+			fmt.Println("User is first login, sending verification email")
 			err = app.SendOtpEmail(EmailTypeVerify, ctx, user)
 			if err != nil {
 				return nil, fmt.Errorf("error at sending verification email: %w", err)
 			}
 		} else {
+			fmt.Println("User is not first login, checking user credentials security")
 			// if user is not first login, check if user credentials security
 			err = app.CheckUserCredentialsSecurity(ctx, user, params)
 			if err != nil {
@@ -293,7 +476,11 @@ func (app *AuthActionsBase) CheckUserCredentialsSecurity(ctx context.Context, us
 				if account != nil {
 					// if user has a credentials account, send security password reset email
 					randomPassword := security.RandomString(20)
-					account.Password = &randomPassword
+					hash, err := security.CreateHash(randomPassword, argon2id.DefaultParams)
+					if err != nil {
+						return fmt.Errorf("error at hashing password: %w", err)
+					}
+					account.Password = &hash
 					err = app.authAdapter.UpdateUserAccount(ctx, account)
 					if err != nil {
 						return fmt.Errorf("error updating user password: %w", err)
@@ -316,7 +503,17 @@ func (app *AuthActionsBase) CheckUserCredentialsSecurity(ctx context.Context, us
 
 // SendOtpEmail creates and saves a new otp token and sends it to the user's email
 func (app *AuthActionsBase) SendOtpEmail(emailType EmailType, ctx context.Context, user *shared.User) error {
-	opts := app.settings.Auth.VerificationToken
+	var opts TokenOption
+	switch emailType {
+	case EmailTypeVerify:
+		opts = app.settings.Auth.VerificationToken
+	case EmailTypeSecurityPasswordReset:
+		opts = app.settings.Auth.PasswordResetToken
+	case EmailTypeConfirmPasswordReset:
+		opts = app.settings.Auth.PasswordResetToken
+	default:
+		return fmt.Errorf("invalid email type")
+	}
 
 	tokenKey := security.GenerateTokenKey()
 	otp := security.GenerateOtp(6)

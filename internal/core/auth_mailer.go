@@ -26,20 +26,17 @@ var (
 	EmailPathMap = map[EmailType]SendMailParams{
 		EmailTypeVerify: {
 			Subject:      "%s - Verify your email address",
-			Type:         "verify",
-			TemplatePath: "body",
+			TemplatePath: "/api/auth/verify",
 			Template:     mailer.DefaultConfirmationMail,
 		},
 		EmailTypeConfirmPasswordReset: {
 			Subject:      "%s - Confirm your password reset",
-			Type:         "confirm-password-reset",
-			TemplatePath: "body",
+			TemplatePath: "/auth/password-reset",
 			Template:     mailer.DefaultRecoveryMail,
 		},
 		EmailTypeSecurityPasswordReset: {
 			Subject:      "%s - Reset your password",
-			Type:         "security-password-reset",
-			TemplatePath: "body",
+			TemplatePath: "/auth/password-reset",
 			Template:     mailer.DefaultSecurityPasswordResetMail,
 		},
 	}

@@ -75,7 +75,9 @@ func DeleteToken(ctx context.Context, db bob.Executor, token string) error {
 func GetToken(ctx context.Context, db bob.Executor, token string) (*models.Token, error) {
 	res, err := models.Tokens.Query(
 		models.SelectWhere.Tokens.Token.EQ(token),
+		models.SelectWhere.Tokens.Expires.GT(time.Now()),
 	).One(ctx, db)
+	res, err = OptionalRow(res, err)
 	if err != nil {
 		return nil, err
 	}

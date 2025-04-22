@@ -2,16 +2,9 @@ package apis
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
-	"github.com/alexedwards/argon2id"
 	"github.com/danielgtaylor/huma/v2"
-	"github.com/tkahng/authgo/internal/core"
-	"github.com/tkahng/authgo/internal/db/models"
-	"github.com/tkahng/authgo/internal/repository"
-	"github.com/tkahng/authgo/internal/shared"
-	"github.com/tkahng/authgo/internal/tools/security"
 )
 
 type RequestPasswordResetInput struct {
@@ -35,57 +28,33 @@ func (api *Api) RequestPasswordResetOperation(path string) huma.Operation {
 
 func (api *Api) RequestPasswordReset(ctx context.Context, input *struct{ Body *RequestPasswordResetInput }) (*RequestPasswordResetOutput, error) {
 	db := api.app.Db()
-	var user *models.User
-	var account *models.UserAccount
-	user, err := repository.FindUserByEmail(ctx, db, input.Body.Email)
-	if err != nil {
-		return nil, err
-	}
-	if user == nil {
-		return nil, huma.Error404NotFound("User not found")
-	}
-	account, err = repository.FindUserAccountByUserIdAndProvider(ctx, db, user.ID, models.ProvidersCredentials)
-	if err != nil {
-		return nil, err
-	}
-	if account == nil {
-		return nil, huma.Error404NotFound("No credentials cccount found")
-	}
-
-	err = api.app.SendPasswordResetEmail(ctx, db, user, api.app.Settings().Meta.AppURL)
-
+	action := api.app.NewAuthActions(db)
+	err := action.HandlePasswordResetRequest(ctx, input.Body.Email)
 	if err != nil {
 		return nil, err
 	}
 	return nil, nil
 }
 
-func (api *Api) ConfirmPasswordResetGetOperation(path string) huma.Operation {
+func (api *Api) CheckPasswordResetOperation(path string) huma.Operation {
 	return huma.Operation{
-		OperationID: "confirm-password-reset-get",
+		OperationID: "check-password-reset",
 		Method:      http.MethodGet,
 		Path:        path,
-		Summary:     "Confirm password reset",
-		Description: "Confirm password reset",
+		Summary:     "Check password reset",
+		Description: "Check password reset",
 		Tags:        []string{"Auth"},
 		Errors:      []int{http.StatusNotFound},
 	}
 }
 
-func (api *Api) ConfirmPasswordResetGet(ctx context.Context, input *OtpInput) (*struct{}, error) {
-	if input.Type != shared.PasswordResetTokenType {
-		return nil, fmt.Errorf("invalid token type. want verification_token, got  %v", input.Type)
-	}
-	opts := api.app.Settings().Auth
-	claims, err := core.ParseResetToken(input.Token, opts.PasswordResetToken)
+func (api *Api) CheckPasswordResetGet(ctx context.Context, input *OtpInput) (*struct{}, error) {
+
+	db := api.app.Db()
+	action := api.app.NewAuthActions(db)
+	err := action.CheckResetPasswordToken(ctx, input.Token)
 	if err != nil {
-		return nil, fmt.Errorf("error at parsing verification token: %w", err)
-	}
-	if claims == nil {
-		return nil, fmt.Errorf("token not found")
-	}
-	if claims.Type != shared.PasswordResetTokenType {
-		return nil, fmt.Errorf("invalid token type. want verification_token, got  %v", claims.Type)
+		return nil, err
 	}
 	return nil, nil
 }
@@ -110,36 +79,10 @@ type ConfirmPasswordResetInput struct {
 
 func (api *Api) ConfirmPasswordReset(ctx context.Context, input *struct{ Body *ConfirmPasswordResetInput }) (*RequestPasswordResetOutput, error) {
 	db := api.app.Db()
-	claims, err := api.app.VerifyAndUsePasswordResetToken(ctx, db, input.Body.Token)
+	action := api.app.NewAuthActions(db)
+	err := action.HandlePasswordResetToken(ctx, input.Body.Token, input.Body.Password)
 	if err != nil {
 		return nil, err
-	}
-	user, err := repository.FindUserByEmail(ctx, db, claims.Email)
-	if err != nil {
-		return nil, err
-	}
-	if user == nil {
-		return nil, huma.Error404NotFound("User not found")
-	}
-	account, err := repository.FindUserAccountByUserIdAndProvider(ctx, db, user.ID, models.ProvidersCredentials)
-	if err != nil {
-		return nil, err
-	}
-	if account == nil {
-		return nil, huma.Error404NotFound("No credentials cccount found")
-	}
-
-	hash, err := security.CreateHash(input.Body.Password, argon2id.DefaultParams)
-
-	if err != nil {
-		return nil, fmt.Errorf("error creating hash: %w", err)
-	}
-
-	err = repository.UpdateUserPassword(ctx, db, user.ID, hash)
-
-	if err != nil {
-		return nil, fmt.Errorf("error updating user password: %w", err)
 	}
 	return nil, nil
-
 }

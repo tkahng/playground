@@ -14,6 +14,7 @@ import (
 type TokenAdapter interface {
 	CreateOtpTokenHash(payload *OtpPayload, config TokenOption) (string, error)
 	ParseTokenString(tokenString string, config TokenOption, data any) error
+	VerifyTokenStorage(ctx context.Context, token string) error
 	GetToken(ctx context.Context, token string) (*shared.Token, error)
 	SaveToken(ctx context.Context, token *shared.CreateTokenDTO) error
 	DeleteToken(ctx context.Context, token string) error
@@ -23,6 +24,25 @@ var _ TokenAdapter = (*TokenAdapterBase)(nil)
 
 type TokenAdapterBase struct {
 	db bob.Executor
+}
+
+// VerifyTokenStorage implements TokenAdapter.
+// Verify if the token is stored in the database
+// if it is, delete it
+// if it is not, return an error
+func (a *TokenAdapterBase) VerifyTokenStorage(ctx context.Context, token string) error {
+	res, err := a.GetToken(ctx, token)
+	if err != nil {
+		return fmt.Errorf("error at getting token: %w", err)
+	}
+	if res == nil {
+		return fmt.Errorf("token not found")
+	}
+	err = a.DeleteToken(ctx, token)
+	if err != nil {
+		return fmt.Errorf("error at deleting token: %w", err)
+	}
+	return nil
 }
 
 // CreateOtpTokenHash implements TokenAdapter.
