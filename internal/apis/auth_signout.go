@@ -30,7 +30,8 @@ type SignoutDto struct {
 
 func (api *Api) Signout(ctx context.Context, input *struct{ Body SignoutDto }) (*struct{}, error) {
 	db := api.app.Db()
-	err := api.app.Signout(ctx, db, input.Body.RefreshToken)
+	action := api.app.NewAuthActions(db)
+	err := action.Signout(ctx, input.Body.RefreshToken)
 	if err != nil {
 		return nil, fmt.Errorf("error signing out: %w", err)
 	}

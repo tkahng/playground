@@ -27,6 +27,7 @@ type AuthActions interface {
 	// CreateAuthTokens(ctx context.Context, payload *shared.UserInfo) (*shared.UserInfoTokens, error)
 	CreateAuthTokensFromEmail(ctx context.Context, email string) (*shared.UserInfoTokens, error)
 	SendOtpEmail(emailType EmailType, ctx context.Context, user *shared.User) error
+	Signout(ctx context.Context, token string) error
 	// CreateAndSaveRefreshToken(ctx context.Context, user *RefreshTokenPayload) (string, error)
 	// CreateAndSaveVerificationToken(ctx context.Context, user *OtpPayload) (string, error)
 	// CreateAndSavePasswordResetToken(ctx context.Context, user *OtpPayload) (string, error)
@@ -43,6 +44,21 @@ type AuthActionsBase struct {
 	authMailer   *AuthMailerBase
 	tokenAdapter *TokenAdapterBase
 	settings     *AppOptions
+}
+
+// Signout implements AuthActions.
+func (app *AuthActionsBase) Signout(ctx context.Context, token string) error {
+	opts := app.settings.Auth
+	var claims RefreshTokenClaims
+	err := app.tokenAdapter.ParseTokenString(token, opts.RefreshToken, &claims)
+	if err != nil {
+		return fmt.Errorf("error verifying refresh token: %w", err)
+	}
+	err = app.tokenAdapter.VerifyTokenStorage(ctx, claims.Token)
+	if err != nil {
+		return fmt.Errorf("error deleting token: %w", err)
+	}
+	return nil
 }
 
 // HandlePasswordResetRequest implements AuthActions.

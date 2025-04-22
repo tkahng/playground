@@ -25,10 +25,10 @@ func (api *Api) OAuth2CallbackPostOperation(path string) huma.Operation {
 }
 
 type OAuth2CallbackPostResponse struct {
-	Body *shared.AuthenticatedDTO
+	Body *shared.UserInfoTokens
 }
 
-func (api *Api) OAuth2CallbackPost(ctx context.Context, input *OAuth2CallbackInput) (*AuthenticatedResponse, error) {
+func (api *Api) OAuth2CallbackPost(ctx context.Context, input *OAuth2CallbackInput) (*AuthenticatedInfoResponse, error) {
 
 	dto, err := OAuth2Callback(ctx, api, input)
 	if err != nil {
@@ -44,8 +44,8 @@ func (api *Api) OAuth2CallbackPost(ctx context.Context, input *OAuth2CallbackInp
 	uri.RawQuery = q.Encode()
 	fmt.Println(uri.String())
 
-	return &AuthenticatedResponse{
-		Body: dto.AuthenticatedDTO,
+	return &AuthenticatedInfoResponse{
+		Body: dto.UserInfoTokens,
 	}, nil
 	// return TokenDtoFromUserWithApp(ctx, h.app, user, uuid.NewString())
 }
@@ -98,14 +98,11 @@ func (api *Api) OAuth2CallbackGet(ctx context.Context, input *OAuth2CallbackInpu
 		Url:    uri.String(),
 		// RefreshToken: dto.Tokens.RefreshToken,
 	}, nil
-	// return &OAuth2CallbackResponse{
-	// 	Body: dto,
-	// }, nil
-	// return TokenDtoFromUserWithApp(ctx, h.app, user, uuid.NewString())
+
 }
 
 type CallbackOutput struct {
-	shared.AuthenticatedDTO
+	shared.UserInfoTokens
 	RedirectTo string `json:"redirect_to"`
 }
 
@@ -184,12 +181,12 @@ func OAuth2Callback(ctx context.Context, api *Api, input *OAuth2CallbackInput) (
 		return nil, fmt.Errorf("error at Oatuh2Callback: %w", err)
 
 	}
-	dto, err := api.app.CreateAuthDto(ctx, user.Email)
+	dto, err := action.CreateAuthTokensFromEmail(ctx, user.Email)
 	if err != nil || dto == nil {
 		return nil, fmt.Errorf("error creating auth dto: %w", err)
 	}
 	return &CallbackOutput{
-		AuthenticatedDTO: *dto,
-		RedirectTo:       redirectUrl,
+		UserInfoTokens: *dto,
+		RedirectTo:     redirectUrl,
 	}, nil
 }

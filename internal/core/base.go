@@ -19,21 +19,14 @@ import (
 var _ App = (*BaseApp)(nil)
 
 type BaseApp struct {
-	tokenStorage  *TokenStorage
-	tokenVerifier *TokenVerifier
-	cfg           *conf.EnvConfig
-	db            *db.Queries
-	pool          *pgxpool.Pool
-	settings      *AppOptions
-	payment       *StripeService
-	logger        *slog.Logger
-	fs            *filesystem.FileSystem
-	mail          mailer.Mailer
-	authAdapter   *AuthAdapterBase
-	authMailer    *AuthMailerBase
-	tokenAdapter  *TokenAdapterBase
-	// onAfterRequestHandle  *hook.Hook[*BaseEvent]
-	// onBeforeRequestHandle *hook.Hook[*BaseEvent]
+	cfg      *conf.EnvConfig
+	db       *db.Queries
+	pool     *pgxpool.Pool
+	settings *AppOptions
+	payment  *StripeService
+	logger   *slog.Logger
+	fs       *filesystem.FileSystem
+	mail     mailer.Mailer
 }
 
 // NewAuthActions implements App.
@@ -58,16 +51,6 @@ func (a *BaseApp) Pool() *pgxpool.Pool {
 // Payment implements App.
 func (a *BaseApp) Payment() *StripeService {
 	return a.payment
-}
-
-// TokenVerifier implements App.
-func (a *BaseApp) TokenVerifier() *TokenVerifier {
-	return a.tokenVerifier
-}
-
-// TokenStorage implements App.
-func (app *BaseApp) TokenStorage() *TokenStorage {
-	return app.tokenStorage
 }
 
 // Settings implements App.
@@ -109,21 +92,15 @@ func NewBaseApp(pool *pgxpool.Pool, cfg conf.EnvConfig) *BaseApp {
 		mail = &mailer.LogMailer{}
 	}
 	db := db.NewQueries(pool)
-	authAdapter := NewAuthAdapter(db)
-	authMailer := NewAuthMailer(mail)
-	tokenAdapter := NewTokenAdapter(db)
 	return &BaseApp{
-		fs:           fs,
-		pool:         pool,
-		db:           db,
-		settings:     settings,
-		logger:       logger.GetDefaultLogger(slog.LevelInfo),
-		cfg:          &cfg,
-		mail:         mail,
-		payment:      NewStripeService(payment.NewStripeClient(cfg.StripeConfig)),
-		authAdapter:  authAdapter,
-		authMailer:   authMailer,
-		tokenAdapter: tokenAdapter,
+		fs:       fs,
+		pool:     pool,
+		db:       db,
+		settings: settings,
+		logger:   logger.GetDefaultLogger(slog.LevelInfo),
+		cfg:      &cfg,
+		mail:     mail,
+		payment:  NewStripeService(payment.NewStripeClient(cfg.StripeConfig)),
 	}
 }
 
