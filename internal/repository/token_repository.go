@@ -43,14 +43,9 @@ func CreateToken(ctx context.Context, db bob.Executor, params *TokenDTO) (*model
 		Expires:    omit.From(params.Expires),
 		Token:      omit.From(params.Token),
 		Otp:        omitnull.FromPtr(params.Otp),
+		ID:         omit.FromPtr(params.ID),
 	}
-	if params.ID != nil {
-		newVar.ID = omit.FromPtr(params.ID)
-	}
-	if params.UserID != nil {
-		newVar.UserID = omitnull.FromPtr(params.UserID)
 
-	}
 	return models.Tokens.Insert(newVar, im.Returning("*")).One(ctx, db)
 }
 
@@ -68,6 +63,15 @@ func UseToken(ctx context.Context, db bob.Executor, params string) (*models.Toke
 	return token, err
 }
 
+func DeleteToken(ctx context.Context, db bob.Executor, token string) error {
+	_, err := models.Tokens.Delete(
+		psql.WhereAnd(
+			models.DeleteWhere.Tokens.Token.EQ(token),
+			models.DeleteWhere.Tokens.Expires.GT(time.Now()),
+		),
+	).Exec(ctx, db)
+	return err
+}
 func GetToken(ctx context.Context, db bob.Executor, token string) (*models.Token, error) {
 	res, err := models.Tokens.Query(
 		models.SelectWhere.Tokens.Token.EQ(token),

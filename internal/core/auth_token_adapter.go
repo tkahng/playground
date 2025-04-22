@@ -17,6 +17,8 @@ type TokenAdapter interface {
 	DeleteToken(ctx context.Context, token string) error
 }
 
+var _ TokenAdapter = (*TokenAdapterBase)(nil)
+
 type TokenAdapterBase struct {
 	db bob.Executor
 }
@@ -46,5 +48,26 @@ func (a *TokenAdapterBase) GetToken(ctx context.Context, token string) (*shared.
 }
 
 func (a *TokenAdapterBase) SaveToken(ctx context.Context, token *shared.CreateTokenDTO) (*shared.Token, error) {
-	return nil, nil
+	tt := shared.ToModelTokenType(token.Type)
+	res, err := repository.CreateToken(ctx, a.db, &repository.TokenDTO{
+		Type:       tt,
+		Identifier: token.Identifier,
+		Expires:    token.Expires,
+		Token:      token.Token,
+		ID:         token.ID,
+		UserID:     token.UserID,
+		Otp:        token.Otp,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("error at saving token: %w", err)
+	}
+	return shared.ToToken(res), nil
+}
+
+func (a *TokenAdapterBase) DeleteToken(ctx context.Context, token string) error {
+	err := repository.DeleteToken(ctx, a.db, token)
+	if err != nil {
+		return fmt.Errorf("error at deleting token: %w", err)
+	}
+	return nil
 }
