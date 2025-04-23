@@ -34,7 +34,7 @@ import {
   protectedSidebarLinks,
   RouteLinks,
   settingsSidebarLinks,
-} from "./components/landing-links";
+} from "./components/links";
 import { Providers } from "./components/providers";
 import NotFoundPage from "./pages/404";
 import ConfirmPasswordReset from "./pages/auth/confirm-password-reset";
@@ -49,6 +49,7 @@ function App() {
         <BrowserRouter>
           <AuthVerify />
           <Routes>
+            {/* Landing page */}
             <Route element={<RootLayout />}>
               <Route path="/" element={<Landing />} />
               <Route path="/home" element={<Landing />} />
@@ -57,8 +58,7 @@ function App() {
               <Route path="/about" element={<LandingAboutPage />} />
               <Route path="/contact" element={<LandingContactPage />} />
             </Route>
-            {/* <Route element= */}
-            {/* Other routes */}
+            {/* Dashboard routes */}
             <Route element={<DashboardLayout />}>
               <Route path="/signin" element={<Signin />} />
               <Route path="/signup" element={<SignupPage />} />
@@ -77,6 +77,7 @@ function App() {
                 element={<ResetPasswordRequestPage />}
               />
             </Route>
+
             <Route element={<AuthenticatedLayoutBase />}>
               <Route path="/payment">
                 {/* /payment/success?sessionId */}
@@ -85,10 +86,7 @@ function App() {
               <Route
                 path="/dashboard"
                 element={
-                  <DashboardLayout
-                    // sidebarLinks={dashboardSidebarLinks}
-                    headerLinks={authenticatedSubHeaderLinks}
-                  />
+                  <DashboardLayout headerLinks={authenticatedSubHeaderLinks} />
                 }
               >
                 <Route index element={<Dashboard />} />
@@ -135,7 +133,6 @@ function App() {
 
             <Route path="/admin" element={<AdminLayoutBase />}>
               <Route
-                path="dashboard"
                 element={
                   <DashboardLayout
                     sidebarLinks={adminSidebarLinks}

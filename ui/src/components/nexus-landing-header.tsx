@@ -1,6 +1,6 @@
 import AuthButton from "@/components/auth-button";
-import { LinkDto } from "@/components/landing-links";
-import { NavLink } from "@/components/link/nav-link";
+import { NavbarLink } from "@/components/link/nav-link";
+import { LinkDto } from "@/components/links";
 import NexusAILogo from "@/components/nexus-logo";
 import { cn } from "@/lib/utils";
 
@@ -13,18 +13,18 @@ export function NexusAILandingHeader({
 }) {
   return (
     <header>
-      <nav className={cn("flex h-14 items-center")}>
+      <nav className={cn("flex h-14 items-center box-border")}>
         <div className="flex flex-grow items-center space-x-4">
           <NexusAILogo />
           {leftLinks?.length &&
             leftLinks.map(({ to, title }) => (
-              <NavLink key={title} title={title} to={to} />
+              <NavbarLink key={title} title={title} to={to} />
             ))}
         </div>
         <div className="flex shrink items-center space-x-4">
           {rightLinks?.length &&
             rightLinks.map(({ to, title }) => (
-              <NavLink key={title} title={title} to={to} />
+              <NavbarLink key={title} title={title} to={to} />
             ))}
           <AuthButton />
         </div>

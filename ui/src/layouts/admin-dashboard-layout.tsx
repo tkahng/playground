@@ -1,5 +1,5 @@
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
-import { LinkDto, RouteLinks } from "@/components/landing-links";
+import { LinkDto, RouteLinks } from "@/components/links";
 import { MainNav } from "@/components/main-nav";
 import { NexusAILandingHeader } from "@/components/nexus-landing-header";
 import { NexusAIMinimalFooter } from "@/components/nexus-minimal-footer";
@@ -15,7 +15,7 @@ export default function AdminDashboardLayout({
   return (
     <>
       <div className="relative flex min-h-screen flex-col justify-center">
-        <NexusAILandingHeader full leftLinks={headerLinks} />
+        <NexusAILandingHeader leftLinks={headerLinks} />
         <div className="flex items-center sticky top-0 z-50 w-full">
           {headerLinks && headerLinks.length > 0 && (
             <MainNav links={headerLinks} />

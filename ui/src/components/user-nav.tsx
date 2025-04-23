@@ -1,4 +1,4 @@
-import { LinkDto } from "@/components/landing-links";
+import { LinkDto } from "@/components/links";
 import { RouteMap } from "@/components/route-map";
 import { useTheme } from "@/components/theme-provider";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -86,7 +86,7 @@ export function UserNav({ links }: UserNavProps) {
           <>
             <DropdownMenuSeparator />
             <DropdownMenuItem>
-              <Link to={RouteMap.ADMIN_DASHBOARD_HOME} className="w-full">
+              <Link to={RouteMap.ADMIN} className="w-full">
                 Admin
               </Link>
             </DropdownMenuItem>

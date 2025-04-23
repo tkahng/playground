@@ -1,4 +1,4 @@
-import { LinkDto } from "@/components/landing-links";
+import { LinkDto } from "@/components/links";
 import { cn } from "@/lib/utils";
 import { Link, useLocation } from "react-router";
 

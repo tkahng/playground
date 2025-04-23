@@ -98,7 +98,7 @@ export default function PermissionListPage() {
             cell: ({ row }) => {
               return (
                 <NavLink
-                  to={`${RouteMap.ADMIN_DASHBOARD_PERMISSIONS}/${row.original.id}`}
+                  to={`${RouteMap.ADMIN_PERMISSIONS}/${row.original.id}`}
                   className="hover:underline text-blue-500"
                 >
                   {row.original.name}
@@ -156,9 +156,7 @@ function PermissionEllipsisDropdown({
           <DropdownMenuItem
             onSelect={() => {
               setDropdownOpen(false);
-              navigate(
-                `${RouteMap.ADMIN_DASHBOARD_PERMISSIONS}/${permissionId}`
-              );
+              navigate(`${RouteMap.ADMIN_PERMISSIONS}/${permissionId}`);
             }}
           >
             <Button variant="ghost" size="sm">

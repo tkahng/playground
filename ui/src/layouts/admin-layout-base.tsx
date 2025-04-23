@@ -30,16 +30,5 @@ export default function AdminLayoutBase() {
       />
     );
   }
-  return (
-    <>
-      {/* <div className="relative flex min-h-screen flex-col justify-center">
-        <NexusAILandingHeader full />
-        <main className="flex flex-grow"> */}
-      {/* <DashboardSidebar links={links} /> */}
-      <Outlet context={{ user }} />
-      {/* </main>
-        <NexusAIMinimalFooter />
-      </div> */}
-    </>
-  );
+  return <Outlet context={{ user }} />;
 }

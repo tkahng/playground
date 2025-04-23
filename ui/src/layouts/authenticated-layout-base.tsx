@@ -22,9 +22,5 @@ export default function AuthenticatedLayoutBase() {
       />
     );
   }
-  return (
-    <>
-      <Outlet context={{ user }} />
-    </>
-  );
+  return <Outlet context={{ user }} />;
 }

@@ -11,20 +11,20 @@ export const RouteLinks = {
   PRICING: { to: RouteMap.PRICING, title: "Pricing" },
   ABOUT: { to: RouteMap.ABOUT, title: "About" },
   CONTACT: { to: RouteMap.CONTACT, title: "Contact" },
-  DASHBOARD_HOME: { to: RouteMap.DASHBOARD_HOME, title: "Dashboard" },
+  DASHBOARD_HOME: { to: RouteMap.DASHBOARD, title: "Dashboard" },
   TASK_PROJECTS: { to: RouteMap.TASK_PROJECTS, title: "Projects" },
   PROTECTED_HOME: { to: RouteMap.PROTECTED_HOME, title: "Protected" },
-  SETTINGS_HOME: { to: RouteMap.SETTINGS_HOME, title: "Settings" },
+  SETTINGS_HOME: { to: RouteMap.SETTINGS, title: "Settings" },
   SETTINGS_ACCOUNT: { to: RouteMap.ACCOUNT_SETTINGS, title: "Account" },
   SETTINGS_BILLING: { to: RouteMap.BILLING_SETTINGS, title: "Billing" },
   ADMIN_DASHBOARD_HOME: {
-    to: RouteMap.ADMIN_DASHBOARD_HOME,
+    to: RouteMap.ADMIN,
     title: "Dashboard",
   },
-  ADMIN_DASHBOARD_USERS: { to: RouteMap.ADMIN_DASHBOARD_USERS, title: "Users" },
-  ADMIN_DASHBOARD_ROLES: { to: RouteMap.ADMIN_DASHBOARD_ROLES, title: "Roles" },
+  ADMIN_DASHBOARD_USERS: { to: RouteMap.ADMIN_USERS, title: "Users" },
+  ADMIN_DASHBOARD_ROLES: { to: RouteMap.ADMIN_ROLES, title: "Roles" },
   ADMIN_DASHBOARD_PERMISSIONS: {
-    to: RouteMap.ADMIN_DASHBOARD_PERMISSIONS,
+    to: RouteMap.ADMIN_PERMISSIONS,
     title: "Permissions",
   },
   PROTECTED_BASIC: { to: RouteMap.PROTECTED_BASIC, title: "Basic" },
@@ -39,7 +39,12 @@ export const landingLinks: LinkDto[] = [
   RouteLinks.CONTACT,
 ];
 
-export const adminHeaderLinks: LinkDto[] = [RouteLinks.ADMIN_DASHBOARD_HOME];
+export const adminHeaderLinks: LinkDto[] = [
+  RouteLinks.ADMIN_DASHBOARD_HOME,
+  RouteLinks.ADMIN_DASHBOARD_USERS,
+  RouteLinks.ADMIN_DASHBOARD_ROLES,
+  RouteLinks.ADMIN_DASHBOARD_PERMISSIONS,
+];
 
 export const dashboardSidebarLinks: LinkDto[] = [
   RouteLinks.DASHBOARD_HOME,

@@ -1,5 +1,5 @@
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
-import { LinkDto } from "@/components/landing-links";
+import { LinkDto } from "@/components/links";
 import { MainNav } from "@/components/main-nav";
 import { NexusAILandingHeader } from "@/components/nexus-landing-header";
 import { NexusAIMinimalFooter } from "@/components/nexus-minimal-footer";

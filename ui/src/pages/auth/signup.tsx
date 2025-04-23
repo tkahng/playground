@@ -41,7 +41,7 @@ export default function SignupPage() {
         name: input.name,
       });
       setLoading(false);
-      navigate(RouteMap.DASHBOARD_HOME);
+      navigate(RouteMap.DASHBOARD);
     } catch (error) {
       if (error instanceof Error) {
         toast.error(error.message, {

@@ -37,7 +37,7 @@ export default function SigninPage() {
     try {
       await login({ email: input.email, password: input.password });
       setLoading(false);
-      navigate(redirectTo || RouteMap.DASHBOARD_HOME);
+      navigate(redirectTo || RouteMap.DASHBOARD);
     } catch (error) {
       if (error instanceof Error) {
         toast.error(error.message, {

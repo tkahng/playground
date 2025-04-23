@@ -1,11 +1,11 @@
-import { LinkDto } from "@/components/landing-links";
+import { LinkDto } from "@/components/links";
 import { RouteMap } from "@/components/route-map";
 import { UserNav } from "@/components/user-nav";
 import { useLocation } from "react-router";
-import { NavLink } from "./link/nav-link";
+import { NavbarLink } from "./link/nav-link";
 const links: LinkDto[] = [
   {
-    to: RouteMap.DASHBOARD_HOME,
+    to: RouteMap.DASHBOARD,
     title: "Dashboard",
   },
   {
@@ -21,8 +21,8 @@ export default function AuthenticatedButton() {
   // const isAdmin = user?.roles?.includes("superuser");
   return (
     <>
-      {!pathname.startsWith(RouteMap.DASHBOARD_HOME) && (
-        <NavLink title="Dashboard" to={RouteMap.DASHBOARD_HOME} />
+      {!pathname.startsWith(RouteMap.DASHBOARD) && (
+        <NavbarLink title="Dashboard" to={RouteMap.DASHBOARD} />
       )}
       <UserNav links={links} />
     </>
