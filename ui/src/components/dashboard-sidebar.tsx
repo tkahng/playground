@@ -15,7 +15,7 @@ export const DashboardSidebar = ({
     return null;
   }
   return (
-    <nav className="flex flex-col w-64 py-8 space-y-2 justify-start border-r">
+    <nav className="flex flex-col w-64 py-8 space-y-2 justify-start border-r grow-0">
       {backLink && <BackLink to={backLink.to} name={backLink.title} />}
       {links.map((item) => (
         <Link

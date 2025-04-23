@@ -79,15 +79,15 @@ export function CreatePermissionDialog() {
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-            <div className="grid gap-4 py-4">
-              <div className="w-full px-10">
+          <form onSubmit={form.handleSubmit(onSubmit)}>
+            <div className="grid">
+              <div className="space-y-4">
                 <FormField
                   control={form.control}
                   name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Role Name</FormLabel>
+                      <FormLabel>Permission Name</FormLabel>
                       <FormControl>
                         <Input {...field} placeholder="Permission Name" />
                       </FormControl>

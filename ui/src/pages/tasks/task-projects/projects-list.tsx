@@ -50,6 +50,8 @@ export default function ProjectListPage() {
       const data = await taskProjectList(user.tokens.access_token, {
         page: pageParam,
         per_page: pageSize,
+        sort_by: "updated_at",
+        sort_order: "desc",
       });
 
       return data;
@@ -78,7 +80,7 @@ export default function ProjectListPage() {
 
   return (
     // <div className="flex w-full flex-col items-center justify-center">
-    <div className="mx-auto w-full max-w-[1200px] py-12 px-4 @lg:px-6 @xl:px-12 @2xl:px-20 @3xl:px-24">
+    <div className="py-12 px-4 @lg:px-6 @xl:px-12 @2xl:px-20 @3xl:px-24">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Projects</h1>
         <CreateProjectDialog />

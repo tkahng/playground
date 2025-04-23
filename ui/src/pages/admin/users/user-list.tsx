@@ -32,7 +32,7 @@ export default function UserListPage() {
     });
   };
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: ["users-list"],
+    queryKey: ["users-list", pageIndex, pageSize],
     queryFn: async () => {
       if (!user?.tokens.access_token) {
         throw new Error("Missing access token");

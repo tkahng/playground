@@ -41,6 +41,7 @@ import NotAuthorizedPage from "./pages/not-authorized";
 import ProtectedRouteIndex from "./pages/protected-routes/route-index";
 import ProjectEdit from "./pages/tasks/task-projects/project-edit";
 import ProjectListPage from "./pages/tasks/task-projects/projects-list";
+import TaskLayout from "./pages/tasks/task-projects/task-layout";
 function App() {
   return (
     <>
@@ -98,8 +99,10 @@ function App() {
                 }
               >
                 <Route element={<PageSectionLayout title="Projects" />}>
-                  <Route index element={<ProjectListPage />} />
-                  <Route path=":projectId" element={<ProjectEdit />} />
+                  <Route element={<TaskLayout />}>
+                    <Route index element={<ProjectListPage />} />
+                    <Route path=":projectId" element={<ProjectEdit />} />
+                  </Route>
                 </Route>
               </Route>
               <Route
