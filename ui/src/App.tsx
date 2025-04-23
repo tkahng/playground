@@ -29,13 +29,11 @@ import { BrowserRouter, Route, Routes } from "react-router";
 import AuthVerify from "./components/auth-verify";
 import {
   adminHeaderLinks,
-  adminSidebarLinks,
   authenticatedSubHeaderLinks,
-  protectedSidebarLinks,
-  RouteLinks,
-  settingsSidebarLinks,
 } from "./components/links";
 import { Providers } from "./components/providers";
+import PageSectionLayout from "./layouts/page-section";
+import PublicLayout from "./layouts/public-layout";
 import NotFoundPage from "./pages/404";
 import ConfirmPasswordReset from "./pages/auth/confirm-password-reset";
 import ResetPasswordRequestPage from "./pages/auth/reset-password";
@@ -59,7 +57,7 @@ function App() {
               <Route path="/contact" element={<LandingContactPage />} />
             </Route>
             {/* Dashboard routes */}
-            <Route element={<DashboardLayout />}>
+            <Route element={<PublicLayout />}>
               <Route path="/signin" element={<Signin />} />
               <Route path="/signup" element={<SignupPage />} />
               <Route path="/not-authorized" element={<NotAuthorizedPage />} />
@@ -106,10 +104,7 @@ function App() {
               <Route
                 path="/dashboard/protected"
                 element={
-                  <DashboardLayout
-                    sidebarLinks={protectedSidebarLinks}
-                    headerLinks={authenticatedSubHeaderLinks}
-                  />
+                  <DashboardLayout headerLinks={authenticatedSubHeaderLinks} />
                 }
               >
                 <Route path="basic" element={<BasicRoute />} />
@@ -119,10 +114,7 @@ function App() {
               <Route
                 path="/settings"
                 element={
-                  <DashboardLayout
-                    sidebarLinks={settingsSidebarLinks}
-                    headerLinks={authenticatedSubHeaderLinks}
-                  />
+                  <DashboardLayout headerLinks={authenticatedSubHeaderLinks} />
                 }
               >
                 <Route path="profile" element={<ProfilePage />} />
@@ -133,24 +125,27 @@ function App() {
 
             <Route path="/admin" element={<AdminLayoutBase />}>
               <Route
-                element={
-                  <DashboardLayout
-                    sidebarLinks={adminSidebarLinks}
-                    headerLinks={adminHeaderLinks}
-                    sidebarBackLink={RouteLinks.DASHBOARD_HOME}
-                  />
-                }
+                element={<DashboardLayout headerLinks={adminHeaderLinks} />}
               >
                 <Route index element={<Dashboard />} />
-                <Route path="users">
+                <Route
+                  path="users"
+                  element={<PageSectionLayout title="Users" />}
+                >
                   <Route index element={<UserListPage />} />
                   <Route path=":userId" element={<UserEdit />} />
                 </Route>
-                <Route path="roles">
+                <Route
+                  path="roles"
+                  element={<PageSectionLayout title="Roles" />}
+                >
                   <Route index element={<RolesListPage />} />
                   <Route path=":roleId" element={<RoleEdit />} />
                 </Route>
-                <Route path="permissions">
+                <Route
+                  path="permissions"
+                  element={<PageSectionLayout title="Permissions" />}
+                >
                   <Route index element={<PermissionListPage />} />
                   <Route path=":permissionId" element={<PermissionEdit />} />
                 </Route>
