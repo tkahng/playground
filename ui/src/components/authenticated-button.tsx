@@ -1,6 +1,8 @@
 import { LinkDto } from "@/components/landing-links";
 import { RouteMap } from "@/components/route-map";
 import { UserNav } from "@/components/user-nav";
+import { useLocation } from "react-router";
+import { NavLink } from "./link/nav-link";
 const links: LinkDto[] = [
   {
     to: RouteMap.DASHBOARD_HOME,
@@ -14,20 +16,14 @@ const links: LinkDto[] = [
 
 export default function AuthenticatedButton() {
   // const { user } = useAuthProvider();
+  const { pathname } = useLocation();
   // const isAdmin = user?.roles?.includes("superuser");
   return (
     <>
-      {/* <NavLink title="Dashboard" to={RouteMap.DASHBOARD_HOME} /> */}
-      {/* {isAdmin && <NavLink title="Admin" to={RouteMap.ADMIN_DASHBOARD_HOME} />} */}
-      {/* <AccountDropdown /> */}
+      {!pathname.startsWith(RouteMap.DASHBOARD_HOME) && (
+        <NavLink title="Dashboard" to={RouteMap.DASHBOARD_HOME} />
+      )}
       <UserNav links={links} />
-      {/* <NavUser
-        user={{
-          avatar: user?.user.image || "",
-          name: user?.user.name || "",
-          email: user?.user.email || "",
-        }}
-      /> */}
     </>
   );
 }
