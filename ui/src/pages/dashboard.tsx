@@ -13,8 +13,12 @@ export default function DashboardPage() {
       if (!user) {
         throw new Error("User not found");
       }
-      const data = await getStats(user.tokens.access_token);
-      return data;
+      try {
+        return await getStats(user.tokens.access_token);
+      } catch (error) {
+        // await checkAuth();
+        throw error;
+      }
     },
   });
   if (isLoading) {

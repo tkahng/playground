@@ -89,7 +89,7 @@ export default function ProjectListPage() {
         collections of Tasks and can be assigned to Users.
       </p>
 
-      <div className="gap-4 grid md:grid-cols-2 lg:grid-cols-3">
+      <div className="gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 space-y-4">
         {data.pages.map(
           (group, i) =>
             group?.data && (

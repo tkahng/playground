@@ -2,25 +2,12 @@ import { client } from "@/lib/client";
 import { components, operations } from "@/schema";
 import {
   AuthenticatedDTO,
-  ErrorModel,
   RefreshTokenInput,
   SigninInput,
   SignupInput,
   User,
   UserDetailWithRoles,
 } from "@/schema.types";
-
-export const GetError = <T>(error: T | ErrorModel) => {
-  if (typeof error === "object" && error !== null && "$schema" in error) {
-    if (
-      typeof error.$schema === "string" &&
-      error.$schema.includes("ErrorModel")
-    ) {
-      return error as ErrorModel;
-    }
-  }
-  return null;
-};
 
 export const signIn = async (
   args: SigninInput

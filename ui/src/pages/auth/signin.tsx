@@ -33,7 +33,6 @@ export default function SigninPage() {
     event.preventDefault();
     setLoading(true);
 
-    // Simulate API call (replace with actual authentication)
     try {
       await login({ email: input.email, password: input.password });
       setLoading(false);

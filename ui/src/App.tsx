@@ -32,12 +32,14 @@ import {
   authenticatedSubHeaderLinks,
 } from "./components/links";
 import { Providers } from "./components/providers";
+import { RouteMap } from "./components/route-map";
 import PageSectionLayout from "./layouts/page-section";
 import PublicLayout from "./layouts/public-layout";
 import NotFoundPage from "./pages/404";
 import ConfirmPasswordReset from "./pages/auth/confirm-password-reset";
 import ResetPasswordRequestPage from "./pages/auth/reset-password";
 import NotAuthorizedPage from "./pages/not-authorized";
+import ProtectedRouteIndex from "./pages/protected-routes/route-index";
 import ProjectEdit from "./pages/tasks/task-projects/project-edit";
 import ProjectListPage from "./pages/tasks/task-projects/projects-list";
 function App() {
@@ -102,14 +104,17 @@ function App() {
                 {/* </Route> */}
               </Route>
               <Route
-                path="/dashboard/protected"
+                path={RouteMap.PROTECTED}
                 element={
                   <DashboardLayout headerLinks={authenticatedSubHeaderLinks} />
                 }
               >
-                <Route path="basic" element={<BasicRoute />} />
-                <Route path="pro" element={<ProRoute />} />
-                <Route path="advanced" element={<AdvancedRoute />} />
+                <Route element={<PageSectionLayout title="Protected" />}>
+                  <Route index element={<ProtectedRouteIndex />} />
+                  <Route path="basic" element={<BasicRoute />} />
+                  <Route path="pro" element={<ProRoute />} />
+                  <Route path="advanced" element={<AdvancedRoute />} />
+                </Route>
               </Route>
               <Route
                 path="/settings"
@@ -117,9 +122,12 @@ function App() {
                   <DashboardLayout headerLinks={authenticatedSubHeaderLinks} />
                 }
               >
-                <Route path="profile" element={<ProfilePage />} />
-                <Route path="account" element={<AccountSettingsPage />} />
-                <Route path="billing" element={<BillingSettingPage />} />
+                <Route element={<PageSectionLayout title="Settings" />}>
+                  <Route index element={<AccountSettingsPage />} />
+                  <Route path="profile" element={<ProfilePage />} />
+                  <Route path="account" element={<AccountSettingsPage />} />
+                  <Route path="billing" element={<BillingSettingPage />} />
+                </Route>
               </Route>
             </Route>
 

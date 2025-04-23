@@ -1,5 +1,6 @@
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { api, GetError } from "@/lib/queries";
+import { GetError } from "@/lib/get-erro";
+import { api } from "@/lib/queries";
 import { useQuery } from "@tanstack/react-query";
 type Props = {
   route: "basic" | "pro" | "advanced";

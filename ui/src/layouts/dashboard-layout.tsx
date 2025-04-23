@@ -10,19 +10,17 @@ export default function DashboardLayout({
   headerLinks?: LinkDto[];
 }) {
   return (
-    <>
-      <div className="relative min-h-dvh flex-col">
-        <div className="px-4 md:px-6 lg:px-8 py-2 items-center sticky top-0 z-50 w-full bg-background shadow-sm border-b">
-          <NexusAILandingHeader />
-          {headerLinks && headerLinks.length > 0 && (
-            <MainNav links={headerLinks} />
-          )}
-        </div>
-        <main className="flex-1">
-          <Outlet />
-        </main>
-        <NexusAIMinimalFooter />
+    <div className="min-h-screen flex flex-col">
+      <div className="px-4 md:px-6 lg:px-8 py-2 items-center sticky top-0 z-50 w-full bg-background shadow-sm border-b">
+        <NexusAILandingHeader />
+        {headerLinks && headerLinks.length > 0 && (
+          <MainNav links={headerLinks} />
+        )}
       </div>
-    </>
+      <main className="flex-1">
+        <Outlet />
+      </main>
+      <NexusAIMinimalFooter />
+    </div>
   );
 }

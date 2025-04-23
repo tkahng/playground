@@ -32,7 +32,7 @@ export enum RouteMap {
   ADMIN_ROLES = "/admin/roles",
   ADMIN_PERMISSIONS = "/admin/permissions",
 
-  PROTECTED_HOME = "/dashboard/protected",
+  PROTECTED = "/dashboard/protected",
   PROTECTED_BASIC = "/dashboard/protected/basic",
   PROTECTED_PRO = "/dashboard/protected/pro",
   PROTECTED_ADVANCED = "/dashboard/protected/advanced",

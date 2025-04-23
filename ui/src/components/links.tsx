@@ -11,13 +11,14 @@ export const RouteLinks = {
   PRICING: { to: RouteMap.PRICING, title: "Pricing" },
   ABOUT: { to: RouteMap.ABOUT, title: "About" },
   CONTACT: { to: RouteMap.CONTACT, title: "Contact" },
-  DASHBOARD_HOME: { to: RouteMap.DASHBOARD, title: "Dashboard" },
+  DASHBOARD: { to: RouteMap.DASHBOARD, title: "Dashboard" },
+  DASHBOARD_OVERVIEW: { to: RouteMap.DASHBOARD, title: "Overview" },
   TASK_PROJECTS: { to: RouteMap.TASK_PROJECTS, title: "Projects" },
-  PROTECTED_HOME: { to: RouteMap.PROTECTED_HOME, title: "Protected" },
-  SETTINGS_HOME: { to: RouteMap.SETTINGS, title: "Settings" },
-  SETTINGS_ACCOUNT: { to: RouteMap.ACCOUNT_SETTINGS, title: "Account" },
-  SETTINGS_BILLING: { to: RouteMap.BILLING_SETTINGS, title: "Billing" },
-  ADMIN_DASHBOARD_HOME: {
+  PROTECTED: { to: RouteMap.PROTECTED, title: "Protected" },
+  SETTINGS: { to: RouteMap.SETTINGS, title: "Settings" },
+  ACCOUNT_SETTINGS: { to: RouteMap.ACCOUNT_SETTINGS, title: "Account" },
+  BILLING_SETTINGS: { to: RouteMap.BILLING_SETTINGS, title: "Billing" },
+  ADMIN: {
     to: RouteMap.ADMIN,
     title: "Dashboard",
   },
@@ -40,30 +41,30 @@ export const landingLinks: LinkDto[] = [
 ];
 
 export const adminHeaderLinks: LinkDto[] = [
-  RouteLinks.ADMIN_DASHBOARD_HOME,
+  RouteLinks.ADMIN,
   RouteLinks.ADMIN_DASHBOARD_USERS,
   RouteLinks.ADMIN_DASHBOARD_ROLES,
   RouteLinks.ADMIN_DASHBOARD_PERMISSIONS,
 ];
 
 export const dashboardSidebarLinks: LinkDto[] = [
-  RouteLinks.DASHBOARD_HOME,
+  RouteLinks.DASHBOARD,
   RouteLinks.TASK_PROJECTS,
-  RouteLinks.PROTECTED_HOME,
-  RouteLinks.SETTINGS_HOME,
+  RouteLinks.PROTECTED,
+  RouteLinks.SETTINGS,
 ];
 
 export const authenticatedSubHeaderLinks: LinkDto[] = [
-  RouteLinks.DASHBOARD_HOME,
+  RouteLinks.DASHBOARD_OVERVIEW,
   RouteLinks.TASK_PROJECTS,
-  RouteLinks.PROTECTED_HOME,
-  RouteLinks.SETTINGS_HOME,
+  RouteLinks.PROTECTED,
+  RouteLinks.SETTINGS,
 ];
 
 export const tasksSidebarLinks: LinkDto[] = [RouteLinks.TASK_PROJECTS];
 
 export const adminSidebarLinks: LinkDto[] = [
-  RouteLinks.ADMIN_DASHBOARD_HOME,
+  RouteLinks.ADMIN,
   RouteLinks.ADMIN_DASHBOARD_USERS,
   RouteLinks.ADMIN_DASHBOARD_ROLES,
   RouteLinks.ADMIN_DASHBOARD_PERMISSIONS,
@@ -76,6 +77,6 @@ export const protectedSidebarLinks: LinkDto[] = [
 ];
 
 export const settingsSidebarLinks: LinkDto[] = [
-  RouteLinks.SETTINGS_ACCOUNT,
-  RouteLinks.SETTINGS_BILLING,
+  RouteLinks.ACCOUNT_SETTINGS,
+  RouteLinks.BILLING_SETTINGS,
 ];

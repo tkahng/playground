@@ -16,11 +16,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
-import {
-  checkPasswordReset,
-  confirmPasswordReset,
-  GetError,
-} from "@/lib/queries";
+import { GetError } from "@/lib/get-erro";
+import { checkPasswordReset, confirmPasswordReset } from "@/lib/queries";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   AlertCircle,
