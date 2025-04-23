@@ -10,7 +10,7 @@ export function MainNav({
   const { pathname } = useLocation();
 
   return (
-    <nav className={cn("flex items-center px-2 md:px-4", className)} {...props}>
+    <nav className={cn("flex items-center h-12", className)} {...props}>
       {links.map((link) => (
         <Link
           key={link.to}
@@ -18,7 +18,7 @@ export function MainNav({
           className={cn(
             // buttonVariants({ variant: "ghost" }),
             pathname === link.to ? "underline" : "text-muted-foreground",
-            "text-sm font-normal hover:text-primary transition-colors py-4 px-3 hover:bg-muted rounded-md"
+            "text-sm font-normal hover:text-primary transition-colors hover:bg-muted rounded-md p-2"
           )}
           // className={cn(
           //   // buttonVariants({ variant: "ghost" }),

@@ -1,5 +1,4 @@
 import { KanbanBoard } from "@/components/board/KanbanBoard";
-import { RouteMap } from "@/components/route-map";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -22,10 +21,9 @@ import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { taskList, taskProjectGet, taskProjectUpdate } from "@/lib/queries";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ChevronLeft } from "lucide-react";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { Link, useParams } from "react-router";
+import { useParams } from "react-router";
 import { toast } from "sonner";
 import { z } from "zod";
 import { CreateProjectTaskDialog } from "./create-project-task-dialog";
@@ -137,27 +135,11 @@ export default function ProjectEdit() {
   if (!project) return <p>Project not found</p>;
 
   return (
-    // <div className="h-full px-4 py-6 lg:px-8 space-y-6">
-    <div className="grow">
+    <div className="grow px-4 py-6 lg:px-8 space-y-6">
       <div className="flex flex-row gap-4">
-        <div className="px-4 md:px-6 gap-4 flex-1">
-          <Link
-            to={RouteMap.TASK_PROJECTS}
-            className="flex items-center gap-2 text-sm text-muted-foreground"
-          >
-            <ChevronLeft className="h-4 w-4" />
-            Back to projects
-          </Link>
+        <div className="gap-4 flex-1">
           <h1 className="text-2xl font-bold">{project.name}</h1>
-          {/* <Tabs
-            value={tab}
-            onValueChange={onClick}
-            className="h-full space-y-6"
-          >
-            <TabsList>
-              <TabsTrigger value="tasks">Tasks</TabsTrigger>
-            </TabsList>
-            <TabsContent value="tasks" className="flex flex-col gap-4 mx-4 "> */}
+
           <div className="space-y-4 flex flex-row space-x-16">
             <p className="flex-1">
               Add Tasks to this Project. Users who have this Project will

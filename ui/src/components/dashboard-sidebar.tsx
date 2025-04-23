@@ -18,9 +18,10 @@ export const DashboardSidebar = ({
   return (
     // <nav className="flex flex-grow flex-col">
     //   <div className="border flex flex-col flex-grow p-8">
-    <nav className="flex flex-col w-64 px-8 py-12 gap-4 justify-start">
+    <nav className="flex flex-col w-64 px-4 md:px-6 lg:px-8 py-8 justify-start border-r">
       {/* <div className="border flex flex-col flex-grow "> */}
       {backLink && <BackLink to={backLink.to} name={backLink.title} />}
+      <h1 className="text-2xl font-bold">NexusAI</h1>
       {links.map((item) => (
         <Link
           key={item.title}

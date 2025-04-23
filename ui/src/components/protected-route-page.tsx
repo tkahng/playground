@@ -32,7 +32,7 @@ export default function ProtectedRoutePage(props: Props) {
     console.log("err", err);
     if (err) {
       return (
-        <>
+        <div>
           <div>Error: {err.detail}</div>
           <div>This is a protected route</div>
           <div>You need to have a {props.route} permission.</div>
@@ -42,7 +42,7 @@ export default function ProtectedRoutePage(props: Props) {
               <div key={e.location}>{e.message}</div>
             ))}
           </div>
-        </>
+        </div>
       );
     }
   }

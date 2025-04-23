@@ -68,21 +68,27 @@ export function UserNav({ links }: UserNavProps) {
         <DropdownMenuGroup>
           {links.map((link) => (
             <DropdownMenuItem key={link.to}>
-              <Link to={link.to}>{link.title}</Link>
+              <Link to={link.to} className="w-full">
+                {link.title}
+              </Link>
             </DropdownMenuItem>
           ))}
         </DropdownMenuGroup>
         <>
           <DropdownMenuSeparator />
           <DropdownMenuItem>
-            <Link to={RouteMap.LANDING_HOME}>Home</Link>
+            <Link to={RouteMap.LANDING_HOME} className="w-full">
+              Home
+            </Link>
           </DropdownMenuItem>
         </>
         {isAdmin && (
           <>
             <DropdownMenuSeparator />
             <DropdownMenuItem>
-              <Link to={RouteMap.ADMIN_DASHBOARD_HOME}>Admin</Link>
+              <Link to={RouteMap.ADMIN_DASHBOARD_HOME} className="w-full">
+                Admin
+              </Link>
             </DropdownMenuItem>
           </>
         )}

@@ -17,6 +17,7 @@ const links: LinkDto[] = [
 export default function AuthenticatedButton() {
   // const { user } = useAuthProvider();
   const { pathname } = useLocation();
+  console.log(pathname);
   // const isAdmin = user?.roles?.includes("superuser");
   return (
     <>

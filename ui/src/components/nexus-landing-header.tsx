@@ -7,21 +7,13 @@ import { cn } from "@/lib/utils";
 export function NexusAILandingHeader({
   leftLinks,
   rightLinks,
-  full = false,
 }: {
   leftLinks?: LinkDto[];
   rightLinks?: LinkDto[];
-  full?: boolean;
 }) {
   return (
-    <header className="">
-      {/* <nav className=" flex h-14 items-center justify-between lg:px-6"> */}
-      <nav
-        className={cn(
-          "flex h-14 items-center lg:px-8",
-          !full ? "mx-auto container" : undefined
-        )}
-      >
+    <header>
+      <nav className={cn("flex h-14 items-center")}>
         <div className="flex flex-grow items-center space-x-4">
           <NexusAILogo />
           {leftLinks?.length &&

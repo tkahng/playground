@@ -28,13 +28,12 @@ export default function SignupPage() {
     name: "",
   });
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate(); // Get navigation function
+  const navigate = useNavigate();
   const { signUp } = useAuthProvider();
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setLoading(true);
 
-    // Simulate API call (replace with actual authentication)
     try {
       await signUp({
         email: input.email,
