@@ -19,12 +19,11 @@ import Features from "@/pages/landing/features";
 import Landing from "@/pages/landing/landing";
 import PricingPage from "@/pages/landing/pricing";
 import PaymentSuccessPage from "@/pages/payment/payment-success";
-import ProfilePage from "@/pages/profile";
 import AdvancedRoute from "@/pages/protected-routes/route-advanced";
 import BasicRoute from "@/pages/protected-routes/route-basic";
 import ProRoute from "@/pages/protected-routes/route-pro";
-import AccountSettingsPage from "@/pages/settings/account-settings";
 import BillingSettingPage from "@/pages/settings/billing-settings";
+import AccountSettingsPage from "@/pages/settings/general-settings";
 import { BrowserRouter, Route, Routes } from "react-router";
 import AuthVerify from "./components/auth-verify";
 import {
@@ -79,29 +78,29 @@ function App() {
             </Route>
 
             <Route element={<AuthenticatedLayoutBase />}>
-              <Route path="/payment">
+              <Route path={RouteMap.PAYMENT}>
                 {/* /payment/success?sessionId */}
                 <Route path="success" element={<PaymentSuccessPage />} />
               </Route>
               <Route
-                path="/dashboard"
                 element={
                   <DashboardLayout headerLinks={authenticatedSubHeaderLinks} />
                 }
+                path={RouteMap.DASHBOARD}
               >
                 <Route index element={<Dashboard />} />
               </Route>
 
               <Route
-                path="/dashboard/projects"
+                path={RouteMap.TASK_PROJECTS}
                 element={
                   <DashboardLayout headerLinks={authenticatedSubHeaderLinks} />
                 }
               >
-                {/* <Route path="projects"> */}
-                <Route index element={<ProjectListPage />} />
-                <Route path=":projectId" element={<ProjectEdit />} />
-                {/* </Route> */}
+                <Route element={<PageSectionLayout title="Projects" />}>
+                  <Route index element={<ProjectListPage />} />
+                  <Route path=":projectId" element={<ProjectEdit />} />
+                </Route>
               </Route>
               <Route
                 path={RouteMap.PROTECTED}
@@ -117,21 +116,19 @@ function App() {
                 </Route>
               </Route>
               <Route
-                path="/settings"
+                path={RouteMap.SETTINGS}
                 element={
                   <DashboardLayout headerLinks={authenticatedSubHeaderLinks} />
                 }
               >
                 <Route element={<PageSectionLayout title="Settings" />}>
                   <Route index element={<AccountSettingsPage />} />
-                  <Route path="profile" element={<ProfilePage />} />
-                  <Route path="account" element={<AccountSettingsPage />} />
                   <Route path="billing" element={<BillingSettingPage />} />
                 </Route>
               </Route>
             </Route>
 
-            <Route path="/admin" element={<AdminLayoutBase />}>
+            <Route path={"/admin"} element={<AdminLayoutBase />}>
               <Route
                 element={<DashboardLayout headerLinks={adminHeaderLinks} />}
               >

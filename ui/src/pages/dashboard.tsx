@@ -31,8 +31,8 @@ export default function DashboardPage() {
     return <div>No data</div>;
   }
   return (
-    <div className="px-4 md:px-6 lg:px-8 flex-col gap-4 p-4 grow">
-      <h1 className="mb-6 text-3xl font-bold">Dashboard</h1>
+    <div className="mx-auto px-8 py-8 justify-start items-stretch flex-1 max-w-[1200px]">
+      <h1 className="mb-6 text-3xl font-bold">Overview</h1>
       <div className="grid gap-6 md:grid-cols-3 lg:grid-cols-5">
         <Card className="col-span-3">
           <CardHeader>

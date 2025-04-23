@@ -9,7 +9,7 @@ const links: LinkDto[] = [
     title: "Dashboard",
   },
   {
-    to: RouteMap.ACCOUNT_SETTINGS,
+    to: RouteMap.SETTINGS,
     title: "Settings",
   },
 ];
