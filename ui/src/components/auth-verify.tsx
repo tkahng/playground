@@ -8,11 +8,16 @@ const AuthVerify = () => {
   const isMounted = useRef(false);
   useEffect(() => {
     if (!isMounted.current) {
-      checkAuth();
       isMounted.current = true;
-      // return () => {
-      //   isMounted.current = false;
-      // };
+      console.log("checkAuth");
+      checkAuth()
+        .then(() => {
+          console.log("checkAuth done");
+          isMounted.current = false;
+        })
+        .catch(() => {
+          isMounted.current = false;
+        });
     }
   }, [location]);
   return null;
