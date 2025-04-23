@@ -1,26 +1,29 @@
--- I need a query to get a user's total projects count, completed projects count, and total tasks count, completed tasks count.
-WITH project_stats AS (
-    SELECT COUNT(*) as total_projects,
-        COUNT(*) FILTER (
-            WHERE tp.status = 'done'
-        ) as completed_projects
-    FROM task_projects tp
-    WHERE tp.user_id = 'c7304543-3ceb-47ce-a214-961521d10494'
-),
-task_stats AS (
-    SELECT COUNT(*) as total_tasks,
-        COUNT(*) FILTER (
-            WHERE t.status = 'done'
-        ) as completed_tasks
-    FROM tasks t
-    WHERE t.user_id = 'c7304543-3ceb-47ce-a214-961521d10494'
-)
-SELECT p.total_projects,
-    p.completed_projects,
-    t.total_tasks,
-    t.completed_tasks
-FROM project_stats ps
-    CROSS JOIN task_stats t;
+SELECT *
+from task_projects
+ORDER BY updated_at DESC;
+-- -- I need a query to get a user's total projects count, completed projects count, and total tasks count, completed tasks count.
+-- WITH project_statsec006d55-00f2-4b86-9411-873a22c2c40eAS (
+--     SELECT COUNT(*) as total_projects,
+--         COUNT(*) FILTER (
+--             WHERE tp.status = 'done'
+--         ) as completed_projects
+--     FROM task_projects tp
+--     WHERE tp.user_id = 'c7304543-3ceb-47ce-a214-961521d10494'
+-- ),
+-- task_stats AS (
+--     SELECT COUNT(*) as total_tasks,
+--         COUNT(*) FILTER (
+--             WHERE t.status = 'done'
+--         ) as completed_tasks
+--     FROM tasks t
+--     WHERE t.user_id = 'c7304543-3ceb-47ce-a214-961521d10494'
+-- )
+-- SELECT p.total_projects,
+--     p.completed_projects,
+--     t.total_tasks,
+--     t.completed_tasks
+-- FROM project_stats ps
+--     CROSS JOIN task_stats t;
 -- -- VALUES ('{ "message": "test" }', 'default');
 -- WITH -- Get permissions assigned through roles
 -- user_role_permissions AS (

@@ -73,19 +73,18 @@ type UpdateRoleDto struct {
 }
 
 func UpdateRole(ctx context.Context, dbx bob.Executor, id uuid.UUID, role *UpdateRoleDto) error {
-	r, err := FindRoleById(ctx, dbx, id)
+	q := models.Roles.Update(
+		models.UpdateWhere.Roles.ID.EQ(id),
+		models.RoleSetter{
+			Name:        omit.From(role.Name),
+			Description: omitnull.FromPtr(role.Description),
+		}.UpdateMod(),
+	)
+	_, err := q.Exec(ctx, dbx)
 	if err != nil {
 		return err
 	}
-	err = r.Update(
-		ctx,
-		dbx,
-		&models.RoleSetter{
-			Name:        omit.From(role.Name),
-			Description: omitnull.FromPtr(role.Description),
-		},
-	)
-	return err
+	return nil
 }
 
 func DeleteRole(ctx context.Context, dbx bob.Executor, id uuid.UUID) error {
