@@ -75,6 +75,13 @@ export const adminHeaderLinks: LinkDto[] = [
   RouteLinks.ADMIN_DASHBOARD_PERMISSIONS,
 ];
 
+export const protectedSidebarLinks: LinkDto[] = [
+  RouteLinks.PROTECTED,
+  RouteLinks.PROTECTED_BASIC,
+  RouteLinks.PROTECTED_PRO,
+  RouteLinks.PROTECTED_ADVANCED,
+];
+
 export const authenticatedSubHeaderLinks: LinkDto[] = [
   RouteLinks.DASHBOARD_OVERVIEW,
   RouteLinks.TASK_PROJECTS,

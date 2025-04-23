@@ -115,7 +115,7 @@ func DefaultAuthSettings() *AuthOptions {
 		AccessToken: TokenOption{
 			Type:     shared.AccessTokenType,
 			Secret:   string(shared.AccessTokenType),
-			Duration: 3600, // 1hr
+			Duration: 30, // 1hr
 		},
 		PasswordResetToken: TokenOption{
 			Type:     shared.PasswordResetTokenType,
