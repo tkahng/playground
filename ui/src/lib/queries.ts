@@ -1037,3 +1037,23 @@ export const requestPasswordReset = async (email: string) => {
   }
   return true;
 };
+
+export const resetPassword = async (
+  token: string,
+  currentPassword: string,
+  newPassword: string
+) => {
+  const { data, error } = await client.POST("/api/auth/password-reset", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: {
+      previous_password: currentPassword,
+      new_password: newPassword,
+    },
+  });
+  if (error) {
+    throw error;
+  }
+  return data;
+};
