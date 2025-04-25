@@ -18,6 +18,11 @@ type User struct {
 	UpdatedAt       time.Time  `db:"updated_at" json:"updated_at"`
 }
 
+type UserWithAccounts struct {
+	*User
+	Accounts []*UserAccountOutput `json:"accounts"`
+}
+
 func ToUser(user *models.User) *User {
 	if user == nil {
 		return nil

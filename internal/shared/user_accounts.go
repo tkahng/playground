@@ -102,6 +102,31 @@ type UserAccount struct {
 	UpdatedAt         time.Time     `db:"updated_at" json:"updated_at"`
 }
 
+type UserAccountOutput struct {
+	ID                uuid.UUID     `db:"id,pk" json:"id"`
+	UserID            uuid.UUID     `db:"user_id" json:"user_id"`
+	Type              ProviderTypes `db:"type" json:"type"`
+	Provider          Providers     `db:"provider" json:"provider"`
+	ProviderAccountID string        `db:"provider_account_id" json:"provider_account_id"`
+	CreatedAt         time.Time     `db:"created_at" json:"created_at"`
+	UpdatedAt         time.Time     `db:"updated_at" json:"updated_at"`
+}
+
+func ToUserAccountOutput(u *models.UserAccount) *UserAccountOutput {
+	if u == nil {
+		return nil
+	}
+	return &UserAccountOutput{
+		ID:                u.ID,
+		UserID:            u.UserID,
+		Type:              ToProviderType(u.Type),
+		Provider:          ToProvider(u.Provider),
+		ProviderAccountID: u.ProviderAccountID,
+		CreatedAt:         u.CreatedAt,
+		UpdatedAt:         u.UpdatedAt,
+	}
+}
+
 func ToUserAccount(u *models.UserAccount) *UserAccount {
 	if u == nil {
 		return nil
