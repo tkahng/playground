@@ -445,7 +445,11 @@ export interface paths {
          * @description Me
          */
         get: operations["me"];
-        put?: never;
+        /**
+         * Me Update
+         * @description Me Update
+         */
+        put: operations["meUpdate"];
         post?: never;
         delete?: never;
         options?: never;
@@ -1731,6 +1735,15 @@ export interface components {
             refresh_token: string;
             token_type: string;
         };
+        UpdateMeInput: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            image: string | null;
+            name: string | null;
+        };
         UpdateTaskBaseDTO: {
             /**
              * Format: uri
@@ -1797,12 +1810,13 @@ export interface components {
             /** Format: date-time */
             updated_at: string;
         };
-        UserAccountDetail: {
+        UserAccountOutput: {
             /** Format: date-time */
             created_at: string;
             id: string;
             /** @enum {string} */
-            providers?: "google" | "apple" | "facebook" | "github" | "credentials";
+            provider: "google" | "apple" | "facebook" | "github" | "credentials";
+            provider_account_id: string;
             /** @enum {string} */
             type: "oauth" | "credentials";
             /** Format: date-time */
@@ -1810,7 +1824,7 @@ export interface components {
             user_id: string;
         };
         UserDetail: {
-            accounts?: components["schemas"]["UserAccountDetail"][] | null;
+            accounts?: components["schemas"]["UserAccountOutput"][] | null;
             /** Format: date-time */
             created_at: string;
             email: string;
@@ -1842,6 +1856,24 @@ export interface components {
              */
             readonly $schema?: string;
             task_stats: components["schemas"]["TaskStats"];
+        };
+        UserWithAccounts: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            accounts: components["schemas"]["UserAccountOutput"][] | null;
+            /** Format: date-time */
+            created_at: string;
+            email: string;
+            /** Format: date-time */
+            email_verified_at: string | null;
+            id: string;
+            image: string | null;
+            name: string | null;
+            /** Format: date-time */
+            updated_at: string;
         };
     };
     responses: never;
@@ -3498,7 +3530,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["User"];
+                    "application/json": components["schemas"]["UserWithAccounts"];
                 };
             };
             /** @description Unauthorized */
@@ -3512,6 +3544,64 @@ export interface operations {
             };
             /** @description Not Found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    meUpdate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateMeInput"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };

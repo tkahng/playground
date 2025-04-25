@@ -5,8 +5,8 @@ import {
   RefreshTokenInput,
   SigninInput,
   SignupInput,
-  User,
   UserDetailWithRoles,
+  UserWithAccounts,
 } from "@/schema.types";
 
 export const signIn = async (
@@ -79,7 +79,7 @@ export const signUp = async (
   return data;
 };
 
-export const getMe = async (token: string): Promise<User> => {
+export const getMe = async (token: string): Promise<UserWithAccounts> => {
   const { data, error } = await client.GET("/api/auth/me", {
     headers: {
       Authorization: `Bearer ${token}`,

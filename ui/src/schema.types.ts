@@ -17,8 +17,6 @@ export type BillingIntervals = Exclude<
   "week" | "day" | undefined
 >;
 
-export type UserInfo = components["schemas"]["UserDetail"];
-
 export type RoleWithPermissions = components["schemas"]["RoleWithPermissions"];
 export type Role = components["schemas"]["Role"];
 export type Permission = components["schemas"]["Permission"];
@@ -59,3 +57,5 @@ export type UserPermissions = components["schemas"]["PermissionSource"];
 export type ErrorModel = components["schemas"]["ErrorModel"];
 
 export type TaskStatus = components["schemas"]["Task"]["status"];
+
+export type UserWithAccounts = components["schemas"]["UserWithAccounts"];
