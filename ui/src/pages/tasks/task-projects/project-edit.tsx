@@ -3,7 +3,7 @@ import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { taskList, taskProjectGet } from "@/lib/queries";
 import { useQuery } from "@tanstack/react-query";
 import { useParams } from "react-router";
-import { ProjectEditDialog } from "./project-edit-dialog";
+import { ProjectEditDialog } from "./edit-project-dialog";
 
 export default function ProjectEdit() {
   const { user } = useAuthProvider();
@@ -57,25 +57,24 @@ export default function ProjectEdit() {
 
   return (
     <div className="space-y-6 px-12 py-8">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">{project.name}</h1>
+        <ProjectEditDialog
+          project={{
+            description: project.description || "",
+            id: project.id,
+            name: project.name,
+            order: project.order,
+            status: project.status,
+          }}
+        />
+      </div>
+      <p>
+        Create and manage Roles for your applications. Roles contain collections
+        of Permissions and can be assigned to Users.
+      </p>
       <div className="flex flex-row gap-4">
         <div className="gap-4 flex-1">
-          <h1 className="text-2xl font-bold">{project.name}</h1>
-
-          <div className="space-y-4 flex flex-row space-x-16">
-            <p className="flex-1">
-              Add Tasks to this Project. Users who have this Project will
-              receive all Tasks below that match the API of their login request.
-            </p>
-            <ProjectEditDialog
-              project={{
-                description: project.description || "",
-                id: project.id,
-                name: project.name,
-                order: project.order,
-                status: project.status,
-              }}
-            />
-          </div>
           <div className="flex flex-col">
             <KanbanBoard cars={project.tasks || []} projectId={projectId!} />
           </div>
