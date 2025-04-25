@@ -13,7 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "../ui/dialog";
-import { ColumnId } from "./KanbanBoard";
+import { ColumnId } from "./kanban-board";
 
 export type Task = {
   id: UniqueIdentifier;
@@ -30,12 +30,12 @@ type TaskCardProps = {
 
 export type CardType = "Task";
 
-export type CarDragData = {
+export type CardDragData = {
   type: CardType;
   car: Task;
 };
 
-export function CarCard({ task, isOverlay }: TaskCardProps) {
+export function TaskCard({ task, isOverlay }: TaskCardProps) {
   const {
     setNodeRef,
     attributes,
@@ -48,7 +48,7 @@ export function CarCard({ task, isOverlay }: TaskCardProps) {
     data: {
       type: "Task",
       car: task,
-    } satisfies CarDragData,
+    } satisfies CardDragData,
     attributes: {
       roleDescription: "Task",
     },

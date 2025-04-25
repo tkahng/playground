@@ -1,4 +1,4 @@
-import { KanbanBoard } from "@/components/board/KanbanBoard";
+import { KanbanBoard } from "@/components/board/kanban-board";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { taskList, taskProjectGet } from "@/lib/queries";
 import { useQuery } from "@tanstack/react-query";

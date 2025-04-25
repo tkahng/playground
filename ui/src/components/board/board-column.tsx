@@ -1,4 +1,4 @@
-import { CarCard, Task } from "@/components/board/Card";
+import { Task, TaskCard } from "@/components/board/task-card";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { CreateProjectTaskDialog } from "@/pages/tasks/task-projects/create-project-task-dialog";
@@ -87,7 +87,7 @@ export const BoardColumn = ({
                 <p className="text-gray-400">No tasks here.</p>
               </div>
             ) : (
-              cars.map((car) => <CarCard key={car.id} task={car} />)
+              cars.map((car) => <TaskCard key={car.id} task={car} />)
             )}
           </SortableContext>
           <CreateProjectTaskDialog

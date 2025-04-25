@@ -7,7 +7,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { useState } from "react";
-import { CarCard, Task } from "./Card";
+import { Task, TaskCard } from "./task-card";
 
 export function DialogWrapper({ task }: { task: Task }) {
   const [open, setOpen] = useState(false);
@@ -20,7 +20,7 @@ export function DialogWrapper({ task }: { task: Task }) {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <div onDoubleClick={handleDoubleClick}>
-          <CarCard task={task} />
+          <TaskCard task={task} />
         </div>
       </DialogTrigger>
       <DialogContent>

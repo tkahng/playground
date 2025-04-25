@@ -26,9 +26,9 @@ import {
   BoardContainer,
   Column,
   ColumnDragData,
-} from "./BoardColumn";
-import { CarCard, CarDragData, Task } from "./Card";
-import { coordinateGetter } from "./multipleContainersKeyboardPreset";
+} from "./board-column";
+import { coordinateGetter } from "./keyboard-preset";
+import { CardDragData, Task, TaskCard } from "./task-card";
 
 type NestedColumn = Column & {
   children?: NestedColumn[];
@@ -104,7 +104,7 @@ export function KanbanBoard(props: { cars: Task[]; projectId: string }) {
   const hasDraggableData = <T extends Active | Over>(
     entry: T | null | undefined
   ): entry is T & {
-    data: DataRef<CarDragData | ColumnDragData>;
+    data: DataRef<CardDragData | ColumnDragData>;
   } => {
     if (!entry) {
       return false;
@@ -321,7 +321,7 @@ export function KanbanBoard(props: { cars: Task[]; projectId: string }) {
                 isOverlay
               />
             )}
-            {activeCar && <CarCard task={activeCar} isOverlay />}
+            {activeCar && <TaskCard task={activeCar} isOverlay />}
           </DragOverlay>,
           document.body
         )}
