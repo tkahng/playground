@@ -55,6 +55,7 @@ func GenerateMeta(input PaginatedInput, total int64) Meta {
 		meta.PrevPage = nil
 	}
 	if nextPage < pageCount-1 {
+		meta.HasMore = true
 		meta.NextPage = &nextPage
 	} else {
 		meta.NextPage = nil
