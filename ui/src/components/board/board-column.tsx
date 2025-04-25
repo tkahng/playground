@@ -75,7 +75,7 @@ export const BoardColumn = ({
         dragging: isOverlay ? "overlay" : isDragging ? "over" : undefined,
       })}
     >
-      <CardHeader className="p-4 font-semibold border-b-2 bg-gray-100 dark:bg-zinc-800 flex flex-row items-center justify-between">
+      <CardHeader className="p-4 font-semibold border-b-2 bg-gray-200 dark:bg-zinc-800 flex flex-row items-center justify-between">
         <h1>{column.title}</h1>
         <Badge variant="outline">{cars.length}</Badge>
       </CardHeader>
