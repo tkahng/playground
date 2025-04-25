@@ -727,6 +727,18 @@ export const getAuthUrl = async ({
   return data.url;
 };
 
+export const requestVerification = async (token: string) => {
+  const { error } = await client.POST("/api/auth/request-verification", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  if (error) {
+    throw error;
+  }
+  return true;
+};
+
 export const confirmVerification = async (token: string, type: string) => {
   const { error } = await client.POST("/api/auth/verify", {
     body: {

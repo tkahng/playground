@@ -13,12 +13,20 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { GetError } from "@/lib/get-erro";
-import { getMe, resetPassword, updateMe } from "@/lib/queries";
+import {
+  getMe,
+  requestVerification,
+  resetPassword,
+  updateMe,
+} from "@/lib/queries";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { CheckCircle } from "lucide-react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
+// import { useNavigate } from "react-router-dom";
 
 const formSchema = z.object({
   name: z.string().min(1).nullable().optional(),
@@ -31,6 +39,7 @@ const resetPasswordSchema = z.object({
 });
 
 export default function AccountSettingsPage() {
+  const [_, setIsPending] = useState(false);
   const { user } = useAuthProvider();
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["auth/me"],
@@ -89,12 +98,44 @@ export default function AccountSettingsPage() {
       // toast.error(`Failed to reset password: ${error.message}`);
     },
     onSuccess: async () => {
+      setIsPending(true);
       await queryClient.invalidateQueries({
         queryKey: ["auth/me"],
       });
       resetPasswordForm.reset();
     },
   });
+  const requestVerificationEmailMutation = useMutation({
+    mutationFn: async () => {
+      if (!user) {
+        throw new Error("User not found");
+      }
+      await requestVerification(user.tokens.access_token);
+    },
+    onSuccess: async () => {
+      setIsPending(false);
+      await queryClient.invalidateQueries({
+        queryKey: ["auth/me"],
+      });
+      toast.success("Verification email sent successfully");
+    },
+    onError: (error: any) => {
+      setIsPending(false);
+      const err = GetError(error);
+      if (err) {
+        if (err.errors?.length) {
+          toast.error(`${err.errors[0].message || err.errors[0].value}`);
+        } else if (err.title) toast.error(`${err.detail || err.title}`);
+      } else {
+        toast.error(`Failed to send verification email: ${error.message}`);
+      }
+    },
+  });
+
+  const requestVerificationEmail = () => {
+    requestVerificationEmailMutation.mutate();
+  };
+
   const resetPasswordForm = useForm<z.infer<typeof resetPasswordSchema>>({
     resolver: zodResolver(resetPasswordSchema),
     defaultValues: {
@@ -130,6 +171,23 @@ export default function AccountSettingsPage() {
           <p className="text-sm text-muted-foreground">
             This is how others will see you on the site.
           </p>
+        </div>
+        <Separator />
+        <div className="flex flex-row w-full justify-between">
+          <div className="flex items-center space-x-4">
+            <h1>Email </h1>
+            <p className="text-sm text-muted-foreground">{data.email}</p>
+          </div>
+
+          {data.email_verified_at ? (
+            <div>
+              <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-300" />
+            </div>
+          ) : (
+            <Button onClick={requestVerificationEmail}>
+              Send Verification Email
+            </Button>
+          )}
         </div>
         <Separator />
         <Form {...form}>
