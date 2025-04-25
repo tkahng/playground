@@ -5,6 +5,8 @@ import (
 	"net/http"
 
 	"github.com/danielgtaylor/huma/v2"
+	"github.com/tkahng/authgo/internal/core"
+	"github.com/tkahng/authgo/internal/shared"
 )
 
 type RequestPasswordResetInput struct {
@@ -81,6 +83,40 @@ func (api *Api) ConfirmPasswordReset(ctx context.Context, input *struct{ Body *C
 	db := api.app.Db()
 	action := api.app.NewAuthActions(db)
 	err := action.HandlePasswordResetToken(ctx, input.Body.Token, input.Body.Password)
+	if err != nil {
+		return nil, err
+	}
+	return nil, nil
+}
+
+func (api *Api) ResetPasswordOperation(path string) huma.Operation {
+	return huma.Operation{
+		OperationID: "reset-password",
+		Method:      http.MethodPost,
+		Path:        path,
+		Summary:     "Reset password",
+		Description: "Reset password",
+		Tags:        []string{"Auth"},
+		Errors:      []int{http.StatusNotFound},
+		Security: []map[string][]string{
+			{shared.BearerAuthSecurityKey: {}},
+		},
+	}
+}
+
+type PasswordResetInput struct {
+	PreviousPassword string `form:"previous_password" json:"previous_password"`
+	NewPassword      string `form:"new_password" json:"new_password"`
+}
+
+func (api *Api) ResetPassword(ctx context.Context, input *struct{ Body PasswordResetInput }) (*struct{}, error) {
+	db := api.app.Db()
+	action := api.app.NewAuthActions(db)
+	claims := core.GetContextUserInfo(ctx)
+	if claims == nil {
+		return nil, huma.Error404NotFound("User not found")
+	}
+	err := action.ResetPassword(ctx, claims.User.ID, input.Body.PreviousPassword, input.Body.NewPassword)
 	if err != nil {
 		return nil, err
 	}

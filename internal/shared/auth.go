@@ -255,3 +255,8 @@ func ToToken(model *models.Token) *Token {
 		UpdatedAt:  model.UpdatedAt,
 	}
 }
+
+type PasswordResetInput struct {
+	PreviousPassword string `form:"previous_password" json:"previous_password" required:"true" minimum:"8" maximum:"64"`
+	NewPassword      string `form:"new_password" json:"new_password" required:"true" minimum:"8" maximum:"64"`
+}

@@ -7,6 +7,7 @@ import (
 
 	"github.com/alexedwards/argon2id"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 	"github.com/stephenafamo/bob"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mailer"
@@ -28,6 +29,8 @@ type AuthActions interface {
 	CreateAuthTokensFromEmail(ctx context.Context, email string) (*shared.UserInfoTokens, error)
 	SendOtpEmail(emailType EmailType, ctx context.Context, user *shared.User) error
 	Signout(ctx context.Context, token string) error
+	ResetPassword(ctx context.Context, userId uuid.UUID, oldPassword, newPassword string) error
+
 	// CreateAndSaveRefreshToken(ctx context.Context, user *RefreshTokenPayload) (string, error)
 	// CreateAndSaveVerificationToken(ctx context.Context, user *OtpPayload) (string, error)
 	// CreateAndSavePasswordResetToken(ctx context.Context, user *OtpPayload) (string, error)
@@ -44,6 +47,33 @@ type AuthActionsBase struct {
 	authMailer   *AuthMailerBase
 	tokenAdapter *TokenAdapterBase
 	settings     *AppOptions
+}
+
+// ResetPassword implements AuthActions.
+func (app *AuthActionsBase) ResetPassword(ctx context.Context, userId uuid.UUID, oldPassword string, newPassword string) error {
+	account, err := app.authAdapter.GetUserAccount(ctx, userId, shared.ProvidersCredentials)
+	if err != nil {
+		return fmt.Errorf("error getting user account: %w", err)
+	}
+	if account == nil {
+		return fmt.Errorf("user account not found")
+	}
+
+	if match, err := security.ComparePasswordAndHash(oldPassword, *account.Password); err != nil {
+		return fmt.Errorf("error at comparing password: %w", err)
+	} else if !match {
+		return fmt.Errorf("password is incorrect")
+	}
+	hash, err := security.CreateHash(newPassword, argon2id.DefaultParams)
+	if err != nil {
+		return fmt.Errorf("error at hashing password: %w", err)
+	}
+	account.Password = &hash
+	err = app.authAdapter.UpdateUserAccount(ctx, account)
+	if err != nil {
+		return fmt.Errorf("error updating user password: %w", err)
+	}
+	return nil
 }
 
 // Signout implements AuthActions.
