@@ -1054,18 +1054,6 @@ export interface components {
             /** Format: uuid */
             permission_ids: string[] | null;
         };
-        AuthenticatedDTO: {
-            /**
-             * Format: uri
-             * @description A URL to the JSON Schema for this object.
-             */
-            readonly $schema?: string;
-            permissions: string[] | null;
-            providers: string[] | null;
-            roles: string[] | null;
-            tokens: components["schemas"]["TokenDto"];
-            user: components["schemas"]["User"];
-        };
         ConfirmPasswordResetInput: {
             /**
              * Format: uri
@@ -1670,7 +1658,8 @@ export interface components {
             name: string;
             /** Format: double */
             order: number;
-            status: string;
+            /** @enum {string} */
+            status: "todo" | "in_progress" | "done";
             /** Format: date-time */
             updated_at: string;
             user_id: string;
@@ -1696,7 +1685,8 @@ export interface components {
             name: string;
             /** Format: double */
             order: number;
-            status: string;
+            /** @enum {string} */
+            status: "todo" | "in_progress" | "done";
             tasks?: components["schemas"]["TaskWithSubtask"][] | null;
             /** Format: date-time */
             updated_at: string;
@@ -3365,7 +3355,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AuthenticatedDTO"];
+                    "application/json": components["schemas"]["UserInfoTokens"];
                 };
             };
             /** @description Not Found */

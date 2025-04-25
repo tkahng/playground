@@ -1,6 +1,7 @@
 import { KanbanBoard } from "@/components/board/kanban-board";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { taskList, taskProjectGet } from "@/lib/queries";
+import { TaskStatus } from "@/schema.types";
 import { useQuery } from "@tanstack/react-query";
 import { useParams } from "react-router";
 import { ProjectEditDialog } from "./edit-project-dialog";
@@ -65,7 +66,7 @@ export default function ProjectEdit() {
             id: project.id,
             name: project.name,
             order: project.order,
-            status: project.status,
+            status: project.status as TaskStatus,
           }}
         />
       </div>

@@ -2,11 +2,11 @@ import { components } from "@/schema";
 
 export type SigninInput = components["schemas"]["SigninDto"];
 
-export type AuthenticatedDTO = components["schemas"]["AuthenticatedDTO"];
+export type AuthenticatedDTO = components["schemas"]["UserInfoTokens"];
 export type SignupInput = components["schemas"]["SignupInput"];
 
 export type RefreshTokenInput = components["schemas"]["RefreshTokenInput"];
-export type RefreshTokenOutput = components["schemas"]["AuthenticatedDTO"];
+export type RefreshTokenOutput = components["schemas"]["UserInfoTokens"];
 
 export type User = components["schemas"]["User"];
 
@@ -57,3 +57,5 @@ export type Price = components["schemas"]["Price"];
 export type UserPermissions = components["schemas"]["PermissionSource"];
 
 export type ErrorModel = components["schemas"]["ErrorModel"];
+
+export type TaskStatus = components["schemas"]["Task"]["status"];

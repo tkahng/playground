@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/select";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { taskProjectUpdate } from "@/lib/queries";
+import { TaskStatus } from "@/schema.types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -47,7 +48,7 @@ export function ProjectEditDialog({
     id: string;
     name: string;
     description: string;
-    status: string;
+    status: TaskStatus;
     order: number;
   };
 }) {
@@ -59,8 +60,10 @@ export function ProjectEditDialog({
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: "",
-      description: "",
+      name: project.name,
+      description: project.description,
+      status: project.status,
+      order: project.order,
     },
   });
 
