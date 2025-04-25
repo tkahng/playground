@@ -104,7 +104,6 @@ func BindApis(api huma.API, app core.App) {
 		db := app.Db()
 		rawCtx := ctx.Context()
 		taskId := ctx.Param("task-id")
-		fmt.Println("taskId", taskId)
 		if taskId == "" {
 			next(ctx)
 			return
@@ -136,7 +135,6 @@ func BindApis(api huma.API, app core.App) {
 			huma.WriteErr(api, ctx, http.StatusForbidden, "task user id does not match user id")
 			return
 		}
-		// if
 		next(ctx)
 	})
 	// task list

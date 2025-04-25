@@ -55,7 +55,6 @@ export function ProjectEditDialog({
   const { user } = useAuthProvider();
   const [isDialogOpen, setDialogOpen] = useState(false);
   const queryClient = useQueryClient();
-  // const navigate = useNavigate();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
