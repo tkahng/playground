@@ -91,7 +91,7 @@ export default function PermissionEdit() {
   return (
     <div className="space-y-6">
       <Link
-        to={RouteMap.ADMIN_DASHBOARD_PERMISSIONS}
+        to={RouteMap.ADMIN_PERMISSIONS}
         className="flex items-center gap-2 text-sm text-muted-foreground"
       >
         <ChevronLeft className="h-4 w-4" />

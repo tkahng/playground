@@ -1,35 +1,38 @@
-import { DashboardSidebar } from "@/components/dashboard-sidebar";
-import { LinkDto } from "@/components/landing-links";
+import { LinkDto } from "@/components/links";
 import { MainNav } from "@/components/main-nav";
 import { NexusAILandingHeader } from "@/components/nexus-landing-header";
 import { NexusAIMinimalFooter } from "@/components/nexus-minimal-footer";
-import { JSX } from "react";
-import { Outlet } from "react-router";
+import { RouteMap } from "@/components/route-map";
+import { useAuthProvider } from "@/hooks/use-auth-provider";
+import { Outlet, useLocation } from "react-router";
 
 export default function DashboardLayout({
-  links,
   headerLinks,
-  backLink,
 }: {
-  links: LinkDto[];
   headerLinks?: LinkDto[];
-  backLink?: JSX.Element;
 }) {
+  const { user } = useAuthProvider();
+  const { pathname } = useLocation();
+  const isAdmin = user?.roles?.includes("superuser");
+  const isAdminPath = pathname.startsWith(RouteMap.ADMIN);
+
+  const links =
+    isAdmin && !isAdminPath ? [{ to: RouteMap.ADMIN, title: "Admin" }] : [];
+  // if (!isAdminPath) {
+  //   links.push({ to: RouteMap.DASHBOARD, title: "Dashboard" });
+  // }
   return (
-    <>
-      <div className="relative flex min-h-screen flex-col justify-center">
-        <NexusAILandingHeader full />
-        <div className="flex items-center justify-between px-6 py-4 lg:px-8 lg:py-4 border-b">
-          <MainNav links={headerLinks ?? []} />
-        </div>
-        <main className="flex flex-grow">
-          <DashboardSidebar links={links} backLink={backLink} />
-          <div className="mx-auto w-full max-w-[1200px] py-12 px-4 @lg:px-6 @xl:px-12 @2xl:px-20 @3xl:px-24">
-            <Outlet />
-          </div>
-        </main>
-        <NexusAIMinimalFooter />
+    <div className="min-h-screen flex flex-col">
+      <div className="px-4 md:px-6 lg:px-8 py-2 items-center sticky top-0 z-50 w-full bg-background shadow-sm border-b">
+        <NexusAILandingHeader rightLinks={links.length ? links : undefined} />
+        {headerLinks && headerLinks.length > 0 && (
+          <MainNav links={headerLinks} />
+        )}
       </div>
-    </>
+      <main className="flex-1">
+        <Outlet />
+      </main>
+      <NexusAIMinimalFooter />
+    </div>
   );
 }

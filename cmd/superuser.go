@@ -72,7 +72,7 @@ var superuserCreate = &cobra.Command{
 			if err != nil {
 				return err
 			}
-			_, err = repository.CreateAccount(ctx, dbx, user, data)
+			_, err = repository.CreateAccount(ctx, dbx, user.ID, data)
 			if err != nil {
 				return err
 			}

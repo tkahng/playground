@@ -51,7 +51,7 @@ export default function RolesListPage() {
         throw new Error("Missing access token or role ID");
       }
       const data = await rolesPaginate(user.tokens.access_token, {
-        page: pageIndex + 1,
+        page: pageIndex,
         per_page: pageSize,
       });
       if (!data.data) {
@@ -104,7 +104,7 @@ export default function RolesListPage() {
             cell: ({ row }) => {
               return (
                 <NavLink
-                  to={`${RouteMap.ADMIN_DASHBOARD_ROLES}/${row.original.id}`}
+                  to={`${RouteMap.ADMIN_ROLES}/${row.original.id}`}
                   className="hover:underline text-blue-500"
                 >
                   {row.original.name}
@@ -164,7 +164,7 @@ function RoleEllipsisDropdown({
           <DropdownMenuItem
             onSelect={() => {
               setDropdownOpen(false);
-              navigate(`${RouteMap.ADMIN_DASHBOARD_ROLES}/${roleId}`);
+              navigate(`${RouteMap.ADMIN_ROLES}/${roleId}`);
             }}
           >
             <Button variant="ghost" size="sm">

@@ -183,7 +183,7 @@ func (api *Api) MediaList(ctx context.Context, input *shared.MediaListParams) (*
 			Meta: shared.Meta{
 				Page:    input.PaginatedInput.Page,
 				PerPage: input.PaginatedInput.PerPage,
-				Total:   int(count),
+				Total:   count,
 			},
 		},
 	}, nil

@@ -1,33 +1,27 @@
-import { LinkDto } from "@/components/landing-links";
+import { LinkDto } from "@/components/links";
 import { RouteMap } from "@/components/route-map";
 import { UserNav } from "@/components/user-nav";
 const links: LinkDto[] = [
   {
-    to: RouteMap.DASHBOARD_HOME,
+    to: RouteMap.DASHBOARD,
     title: "Dashboard",
   },
   {
-    to: RouteMap.ACCOUNT_SETTINGS,
+    to: RouteMap.SETTINGS,
     title: "Settings",
   },
 ];
 
 export default function AuthenticatedButton() {
   // const { user } = useAuthProvider();
+  // const { pathname } = useLocation();
   // const isAdmin = user?.roles?.includes("superuser");
   return (
     <>
-      {/* <NavLink title="Dashboard" to={RouteMap.DASHBOARD_HOME} /> */}
-      {/* {isAdmin && <NavLink title="Admin" to={RouteMap.ADMIN_DASHBOARD_HOME} />} */}
-      {/* <AccountDropdown /> */}
+      {/* {![RouteMap.DASHBOARD, RouteMap.PROTECTED].includes(pathname) && (
+        <NavbarLink title="Dashboard" to={RouteMap.DASHBOARD} />
+      )} */}
       <UserNav links={links} />
-      {/* <NavUser
-        user={{
-          avatar: user?.user.image || "",
-          name: user?.user.name || "",
-          email: user?.user.email || "",
-        }}
-      /> */}
     </>
   );
 }

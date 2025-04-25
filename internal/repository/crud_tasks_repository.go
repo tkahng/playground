@@ -3,7 +3,9 @@ package repository
 import (
 	"context"
 	"errors"
+	"fmt"
 	"slices"
+	"time"
 
 	"github.com/aarondl/opt/omit"
 	"github.com/aarondl/opt/omitnull"
@@ -315,6 +317,10 @@ func CreateTask(ctx context.Context, db bob.Executor, userID uuid.UUID, projectI
 	if err != nil {
 		return nil, err
 	}
+	err = UpdateTaskProjectUpdateDate(ctx, db, task.ProjectID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update task project update date: %w", err)
+	}
 	return task, nil
 }
 
@@ -476,6 +482,24 @@ func UpdateTask(ctx context.Context, db bob.Executor, taskID uuid.UUID, input *s
 	if err != nil {
 		return err
 	}
+	err = UpdateTaskProjectUpdateDate(ctx, db, task.ProjectID)
+	if err != nil {
+		return fmt.Errorf("failed to update task project update date: %w", err)
+	}
+	return nil
+}
+
+func UpdateTaskProjectUpdateDate(ctx context.Context, db bob.Executor, taskProjectID uuid.UUID) error {
+	q := models.TaskProjects.Update(
+		models.UpdateWhere.TaskProjects.ID.EQ(taskProjectID),
+		models.TaskProjectSetter{
+			UpdatedAt: omit.From(time.Now()),
+		}.UpdateMod(),
+	)
+	_, err := q.Exec(ctx, db)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -516,6 +540,10 @@ func UpdateTaskPosition(ctx context.Context, db bob.Executor, taskID uuid.UUID, 
 	if err != nil {
 		return err
 	}
+	err = UpdateTaskProjectUpdateDate(ctx, db, task.ProjectID)
+	if err != nil {
+		return fmt.Errorf("failed to update task project update date: %w", err)
+	}
 	return nil
 }
 
@@ -539,50 +567,9 @@ func UpdateTaskPositionStatus(ctx context.Context, db bob.Executor, taskID uuid.
 	if err != nil {
 		return err
 	}
+	err = UpdateTaskProjectUpdateDate(ctx, db, task.ProjectID)
+	if err != nil {
+		return fmt.Errorf("failed to update task project update date: %w", err)
+	}
 	return nil
 }
-
-// private defineOrderNumber = async (
-//
-//		  id: number,
-//		  todoListId: number,
-//		  currentOrder: number,
-//		  position: number,
-//		) => {
-//	    if (position === 0) {
-//	      const response = await this.findByTodoListId(
-//	        todoListId,
-//	        { take: 1, skip: 0 },
-//	        { property: 'order', direction: 'ASC' },
-//	      );
-//	      if (response.elements[0].id === id) return response.elements[0].order;
-//	      return response.elements[0].order - 1000;
-//	    }
-//	    const elements = await this.todoGroupRepository.find(
-//	      { take: 1, skip: position },
-//	      {
-//	        filter: { todoListId },
-//	        sorting: { property: 'order', direction: 'ASC' },
-//	      },
-//	    );
-//	    if (elements[0].id === id) return elements[0].order;
-//	    if (currentOrder > elements[0].order) {
-//	      const sideElements = await this.todoGroupRepository.find(
-//	        { take: 1, skip: position - 1 },
-//	        {
-//	          filter: { todoListId },
-//	          sorting: { property: 'order', direction: 'ASC' },
-//	        },
-//	      );
-//	      return (elements[0].order + sideElements[0].order) / 2;
-//	    }
-//	    const sideElements = await this.todoGroupRepository.find(
-//	      { take: 1, skip: position + 1 },
-//	      {
-//	        filter: { todoListId },
-//	        sorting: { property: 'order', direction: 'ASC' },
-//	      },
-//	    );
-//	    if (!sideElements.length) return elements[0].order + 1000;
-//	    return (elements[0].order + sideElements[0].order) / 2;
-//	  };

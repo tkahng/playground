@@ -1,4 +1,4 @@
-import { useCallback, useId, useMemo, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 
 import { useAuthProvider } from "@/hooks/use-auth-provider";
@@ -26,9 +26,9 @@ import {
   BoardContainer,
   Column,
   ColumnDragData,
-} from "./BoardColumn";
-import { CarCard, CarDragData, Task } from "./CarCard";
-import { coordinateGetter } from "./multipleContainersKeyboardPreset";
+} from "./board-column";
+import { coordinateGetter } from "./keyboard-preset";
+import { CardDragData, Task, TaskCard } from "./task-card";
 
 type NestedColumn = Column & {
   children?: NestedColumn[];
@@ -57,6 +57,10 @@ export function KanbanBoard(props: { cars: Task[]; projectId: string }) {
   const [activeColumn, setActiveColumn] = useState<Column | null>(null);
   const [activeCar, setActiveCar] = useState<Task | null>(null);
   const dndContextId = useId();
+
+  useEffect(() => {
+    setCars(props.cars);
+  }, [props.cars]);
 
   const queryClient = useQueryClient();
   const { user } = useAuthProvider();
@@ -100,7 +104,7 @@ export function KanbanBoard(props: { cars: Task[]; projectId: string }) {
   const hasDraggableData = <T extends Active | Over>(
     entry: T | null | undefined
   ): entry is T & {
-    data: DataRef<CarDragData | ColumnDragData>;
+    data: DataRef<CardDragData | ColumnDragData>;
   } => {
     if (!entry) {
       return false;
@@ -108,7 +112,7 @@ export function KanbanBoard(props: { cars: Task[]; projectId: string }) {
 
     const data = entry.data.current;
 
-    if (data?.type === "Column" || data?.type === "Car") {
+    if (data?.type === "Column" || data?.type === "Task") {
       return true;
     }
 
@@ -116,13 +120,16 @@ export function KanbanBoard(props: { cars: Task[]; projectId: string }) {
   };
 
   // Helper function to flatten nested columns
-  const flattenColumns = useCallback((cols: NestedColumn[]): Column[] => {
-    return cols.flatMap((col) =>
-      col.children
-        ? [{ id: col.id, title: col.title }, ...flattenColumns(col.children)]
-        : [col]
-    );
-  }, []);
+  const flattenColumns = useCallback(
+    (cols: NestedColumn[]): Column[] => {
+      return cols.flatMap((col) =>
+        col.children
+          ? [{ id: col.id, title: col.title }, ...flattenColumns(col.children)]
+          : [col]
+      );
+    },
+    [cars]
+  );
 
   const flatColumns = useMemo(
     () => flattenColumns(columns),
@@ -174,7 +181,7 @@ export function KanbanBoard(props: { cars: Task[]; projectId: string }) {
       return;
     }
 
-    if (data?.type === "Car") {
+    if (data?.type === "Task") {
       setActiveCar(data.car);
       return;
     }
@@ -205,7 +212,7 @@ export function KanbanBoard(props: { cars: Task[]; projectId: string }) {
         const overColumnIndex = columns.findIndex((col) => col.id === overId);
         return arrayMove(columns, activeColumnIndex, overColumnIndex);
       });
-    } else if (activeData?.type === "Car") {
+    } else if (activeData?.type === "Task") {
       const newColumnId = hasDraggableData(over)
         ? over.data.current?.type === "Column"
           ? (over.id as ColumnId)
@@ -240,8 +247,8 @@ export function KanbanBoard(props: { cars: Task[]; projectId: string }) {
     const activeData = active.data.current;
     const overData = over.data.current;
 
-    const isActiveACar = activeData?.type === "Car";
-    const isOverACar = overData?.type === "Car";
+    const isActiveACar = activeData?.type === "Task";
+    const isOverACar = overData?.type === "Task";
 
     if (!isActiveACar) return;
 
@@ -314,7 +321,7 @@ export function KanbanBoard(props: { cars: Task[]; projectId: string }) {
                 isOverlay
               />
             )}
-            {activeCar && <CarCard task={activeCar} isOverlay />}
+            {activeCar && <TaskCard task={activeCar} isOverlay />}
           </DragOverlay>,
           document.body
         )}

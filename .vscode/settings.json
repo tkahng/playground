@@ -12,19 +12,6 @@
       "username": "postgres"
     }
   ],
-  "go.lintTool": "golangci-lint",
-  "go.lintFlags": [
-    "--path-mode=abs",
-    "--fast-only"
-  ],
-  "go.formatTool": "custom",
-  "go.alternateTools": {
-    "customFormatter": "golangci-lint"
-  },
-  "go.formatFlags": [
-    "fmt",
-    "--stdin"
-  ],
   // "inlineSQL.dbHost": "host.docker.internal",
   "go.inlayHints.assignVariableTypes": false,
   "go.inlayHints.parameterNames": false,
@@ -61,82 +48,4 @@
       "options": []
     }
   },
-  "editor.linkedEditing": true,
-  "codeium.enableCodeLens": false,
-  "gitlens.codeLens.enabled": false,
-  "css.customData": [
-    ".vscode/tailwindcss.json"
-  ],
-  "[sql]": {
-    "editor.formatOnSave": true,
-    "editor.defaultFormatter": "mtxr.sqltools"
-  },
-  "[json]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode",
-    "editor.formatOnSave": true
-  },
-  "[html]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode",
-    "editor.formatOnSave": true
-  },
-  "[typescript]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode",
-    "editor.suggest.showReferences": true,
-    "editor.codeLens": true,
-    "editor.gotoLocation.multipleTypeDefinitions": "gotoAndPeek"
-  },
-  "[typescriptreact]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode",
-    "editor.suggest.showReferences": true,
-    "editor.codeLens": true,
-    "editor.gotoLocation.multipleTypeDefinitions": "gotoAndPeek"
-  },
-  "editor.defaultFormatter": "esbenp.prettier-vscode",
-  "editor.formatOnPaste": true,
-  "editor.codeActionsOnSave": {
-    "source.fixAll": "always",
-    "source.organizeImports": "always"
-  },
-  "editor.suggest.showReferences": true,
-  "editor.gotoLocation.multipleTypeDefinitions": "gotoAndPeek",
-  "editor.codeLens": true,
-  "typescript.referencesCodeLens.enabled": true,
-  "typescript.implementationsCodeLens.enabled": true,
-  "typescript.implementationsCodeLens.showOnInterfaceMethods": true,
-  "typescript.referencesCodeLens.showOnAllFunctions": true,
-  "go.enableCodeLens": {
-    "runtest": true
-  },
-  "editor.formatOnSave": true,
-  "bulma-css-class-completion.HTMLLanguages": [
-    "html",
-    "vue",
-    "php"
-  ],
-  "files.associations": {
-    "*.css": "tailwindcss",
-    "*.scss": "tailwindcss"
-  },
-  "tailwindCSS.includeLanguages": {
-    "templ": "html"
-  },
-  "emmet.includeLanguages": {
-    "templ": "html"
-  },
-  "[go]": {
-    "editor.formatOnSave": true,
-    "editor.codeActionsOnSave": {
-      "source.organizeImports": "always"
-    },
-    "editor.defaultFormatter": "golang.go",
-    "editor.codeLens": true,
-    "editor.codeActionWidget.includeNearbyQuickFixes": true
-  },
-  "editor.quickSuggestions": {
-    "strings": true
-  },
-  "files.exclude": {
-    "/opt/homebrew/": true
-  },
-  "explorer.excludeGitIgnore": false,
 }

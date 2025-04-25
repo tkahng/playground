@@ -122,9 +122,9 @@ export function UserRolesDialog({
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-            <div className="grid gap-4 py-4">
-              <div className="w-full px-10">
+          <form onSubmit={form.handleSubmit(onSubmit)}>
+            <div className="grid">
+              <div className="space-y-4">
                 {/* <MultipleSelector
                   value={value}
                   onChange={setValue}

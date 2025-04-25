@@ -12,7 +12,6 @@ import (
 	"github.com/stephenafamo/bob/dialect/psql"
 	"github.com/stephenafamo/bob/dialect/psql/dm"
 	"github.com/stephenafamo/bob/dialect/psql/im"
-	"github.com/stephenafamo/bob/dialect/psql/sm"
 	"github.com/tkahng/authgo/internal/db/models"
 )
 
@@ -44,14 +43,9 @@ func CreateToken(ctx context.Context, db bob.Executor, params *TokenDTO) (*model
 		Expires:    omit.From(params.Expires),
 		Token:      omit.From(params.Token),
 		Otp:        omitnull.FromPtr(params.Otp),
+		ID:         omit.FromPtr(params.ID),
 	}
-	if params.ID != nil {
-		newVar.ID = omit.FromPtr(params.ID)
-	}
-	if params.UserID != nil {
-		newVar.UserID = omitnull.FromPtr(params.UserID)
 
-	}
 	return models.Tokens.Insert(newVar, im.Returning("*")).One(ctx, db)
 }
 
@@ -69,20 +63,25 @@ func UseToken(ctx context.Context, db bob.Executor, params string) (*models.Toke
 	return token, err
 }
 
-func FindFirstTokenByUserAndType(ctx context.Context, db bob.Executor, params *OtpDto) (*models.Token, error) {
-	if params == nil {
-		return nil, errors.New("params is nil")
-	}
-	q := models.Tokens.Query()
-	q.Apply(
-		models.SelectWhere.Tokens.Type.EQ(params.Type),
-		models.SelectWhere.Tokens.Identifier.EQ(params.Identifier),
+func DeleteToken(ctx context.Context, db bob.Executor, token string) error {
+	_, err := models.Tokens.Delete(
+		psql.WhereAnd(
+			models.DeleteWhere.Tokens.Token.EQ(token),
+			models.DeleteWhere.Tokens.Expires.GT(time.Now()),
+		),
+	).Exec(ctx, db)
+	return err
+}
+func GetToken(ctx context.Context, db bob.Executor, token string) (*models.Token, error) {
+	res, err := models.Tokens.Query(
+		models.SelectWhere.Tokens.Token.EQ(token),
 		models.SelectWhere.Tokens.Expires.GT(time.Now()),
-		sm.OrderBy(models.TokenColumns.CreatedAt).Desc(),
-		sm.OrderBy(models.TokenColumns.ID).Desc(),
-		sm.Limit(1),
-	)
-	return q.One(ctx, db)
+	).One(ctx, db)
+	res, err = OptionalRow(res, err)
+	if err != nil {
+		return nil, err
+	}
+	return res, nil
 }
 
 func DeleteTokensByUser(ctx context.Context, db bob.Executor, params *OtpDto) error {

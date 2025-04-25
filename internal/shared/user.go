@@ -3,6 +3,7 @@ package shared
 import (
 	"time"
 
+	"github.com/aarondl/opt/null"
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/db/models"
 )
@@ -17,13 +18,36 @@ type User struct {
 	UpdatedAt       time.Time  `db:"updated_at" json:"updated_at"`
 }
 
+type UserWithAccounts struct {
+	*User
+	Accounts []*UserAccountOutput `json:"accounts"`
+}
+
 func ToUser(user *models.User) *User {
+	if user == nil {
+		return nil
+	}
 	return &User{
 		ID:              user.ID,
 		Email:           user.Email,
 		EmailVerifiedAt: user.EmailVerifiedAt.Ptr(),
 		Name:            user.Name.Ptr(),
 		Image:           user.Image.Ptr(),
+		CreatedAt:       user.CreatedAt,
+		UpdatedAt:       user.UpdatedAt,
+	}
+}
+
+func ToModelUser(user *User) *models.User {
+	if user == nil {
+		return nil
+	}
+	return &models.User{
+		ID:              user.ID,
+		Email:           user.Email,
+		EmailVerifiedAt: null.FromPtr(user.EmailVerifiedAt),
+		Name:            null.FromPtr(user.Name),
+		Image:           null.FromPtr(user.Image),
 		CreatedAt:       user.CreatedAt,
 		UpdatedAt:       user.UpdatedAt,
 	}
@@ -42,4 +66,9 @@ type UserListParams struct {
 	UserListFilter
 	SortParams
 	Expand []string `query:"expand,omitempty" required:"false" minimum:"1" maximum:"100" enum:"roles,permissions,accounts,subscriptions"`
+}
+
+type UpdateMeInput struct {
+	Name  *string `json:"name"`
+	Image *string `json:"image"`
 }

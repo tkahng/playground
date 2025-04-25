@@ -40,6 +40,7 @@ func (h *Api) OAuth2AuthorizationUrl(ctx context.Context, input *OAuth2Authoriza
 	settings := h.app.Settings()
 	conf := h.app.Cfg()
 	db := h.app.Db()
+	action := h.app.NewAuthActions(db)
 	redirectTo := input.RedirectTo
 	if redirectTo == "" {
 		redirectTo = conf.AppConfig.AppUrl
@@ -70,7 +71,7 @@ func (h *Api) OAuth2AuthorizationUrl(ctx context.Context, input *OAuth2Authoriza
 			oauth2.SetAuthURLParam("code_challenge_method", info.CodeChallengeMethod),
 		)
 	}
-	state, err := core.CreateAndPersistStateToken(ctx, db, info, settings.Auth.StateToken)
+	state, err := action.CreateAndPersistStateToken(ctx, info)
 	if err != nil {
 		return nil, err
 	}

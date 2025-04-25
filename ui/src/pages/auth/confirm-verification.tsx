@@ -3,8 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "react-router";
 // /payment/success?sessionId
 export default function ConfirmVerification() {
-  //   const { user } = useAuthProvider();
-  //   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token");
   const type = searchParams.get("type");

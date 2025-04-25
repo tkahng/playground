@@ -1,16 +1,16 @@
-import { LinkDto } from "@/components/landing-links";
+import { LinkDto } from "@/components/links";
 import { cn } from "@/lib/utils";
 import { JSX, PropsWithChildren } from "react";
 import { Link } from "react-router";
 
-type NavLinkProps = { className?: string } & LinkDto;
+type NavbarLinkProps = { className?: string } & LinkDto;
 
-export function NavLink({
+export function NavbarLink({
   title,
   to,
   icon,
   className,
-}: PropsWithChildren<NavLinkProps>): JSX.Element {
+}: PropsWithChildren<NavbarLinkProps>): JSX.Element {
   return (
     <Link
       className={cn(

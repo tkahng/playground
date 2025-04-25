@@ -1,55 +1,81 @@
--- VALUES ('{ "message": "test" }', 'default');
-WITH -- Get permissions assigned through roles
-user_role_permissions AS (
-    SELECT ur.user_id AS user_id,
-        p.name AS permission,
-        r.name AS role
-    FROM public.user_roles ur
-        JOIN public.roles r ON ur.role_id = r.id
-        JOIN public.role_permissions rp ON ur.role_id = rp.role_id
-        JOIN public.permissions p ON rp.permission_id = p.id -- WHERE ur.user_id = '575a9f91-159e-4680-ba8b-3fc4db40d194'
-),
-user_direct_permissions AS (
-    SELECT up.user_id AS user_id,
-        p.name AS permission,
-        NULL::text AS role
-    FROM public.user_permissions up
-        JOIN public.permissions p ON up.permission_id = p.id
-),
-user_sub_role_permissions AS (
-    SELECT u.id AS user_id,
-        p.name AS permission,
-        r.name AS role
-    FROM public.stripe_subscriptions s
-        JOIN public.users u ON s.user_id = u.id
-        JOIN public.stripe_prices price ON s.price_id = price.id
-        JOIN public.stripe_products product ON price.product_id = product.id
-        JOIN public.product_roles pr ON product.id = pr.product_id
-        JOIN public.roles r ON pr.role_id = r.id
-        JOIN public.role_permissions rp ON r.id = rp.role_id
-        JOIN public.permissions p ON rp.permission_id = p.id -- WHERE u.id = '575a9f91-159e-4680-ba8b-3fc4db40d194'
-),
-combined_permissions AS (
-    SELECT *
-    FROM user_role_permissions
-    UNION ALL
-    SELECT *
-    FROM user_direct_permissions
-    UNION ALL
-    SELECT *
-    FROM user_sub_role_permissions
-)
-SELECT u.id AS user_id,
-    u.email AS email,
-    array_remove(ARRAY_AGG(DISTINCT p.role), NULL)::text [] AS roles,
-    array_remove(ARRAY_AGG(DISTINCT p.permission), NULL)::text [] AS permissions,
-    array_remove(ARRAY_AGG(DISTINCT ua.provider), NULL)::public.providers [] AS providers
-FROM public.users u
-    LEFT JOIN combined_permissions p ON u.id = p.user_id
-    LEFT JOIN public.user_accounts ua ON u.id = ua.user_id
-WHERE u.email = 'tkahng+01@gmail.com'
-GROUP BY u.id
-LIMIT 1;
+SELECT *
+from task_projects
+ORDER BY updated_at DESC;
+-- -- I need a query to get a user's total projects count, completed projects count, and total tasks count, completed tasks count.
+-- WITH project_statsec006d55-00f2-4b86-9411-873a22c2c40eAS (
+--     SELECT COUNT(*) as total_projects,
+--         COUNT(*) FILTER (
+--             WHERE tp.status = 'done'
+--         ) as completed_projects
+--     FROM task_projects tp
+--     WHERE tp.user_id = 'c7304543-3ceb-47ce-a214-961521d10494'
+-- ),
+-- task_stats AS (
+--     SELECT COUNT(*) as total_tasks,
+--         COUNT(*) FILTER (
+--             WHERE t.status = 'done'
+--         ) as completed_tasks
+--     FROM tasks t
+--     WHERE t.user_id = 'c7304543-3ceb-47ce-a214-961521d10494'
+-- )
+-- SELECT p.total_projects,
+--     p.completed_projects,
+--     t.total_tasks,
+--     t.completed_tasks
+-- FROM project_stats ps
+--     CROSS JOIN task_stats t;
+-- -- VALUES ('{ "message": "test" }', 'default');
+-- WITH -- Get permissions assigned through roles
+-- user_role_permissions AS (
+--     SELECT ur.user_id AS user_id,
+--         p.name AS permission,
+--         r.name AS role
+--     FROM public.user_roles ur
+--         JOIN public.roles r ON ur.role_id = r.id
+--         JOIN public.role_permissions rp ON ur.role_id = rp.role_id
+--         JOIN public.permissions p ON rp.permission_id = p.id -- WHERE ur.user_id = '575a9f91-159e-4680-ba8b-3fc4db40d194'
+-- ),
+-- user_direct_permissions AS (
+--     SELECT up.user_id AS user_id,
+--         p.name AS permission,
+--         NULL::text AS role
+--     FROM public.user_permissions up
+--         JOIN public.permissions p ON up.permission_id = p.id
+-- ),
+-- user_sub_role_permissions AS (
+--     SELECT u.id AS user_id,
+--         p.name AS permission,
+--         r.name AS role
+--     FROM public.stripe_subscriptions s
+--         JOIN public.users u ON s.user_id = u.id
+--         JOIN public.stripe_prices price ON s.price_id = price.id
+--         JOIN public.stripe_products product ON price.product_id = product.id
+--         JOIN public.product_roles pr ON product.id = pr.product_id
+--         JOIN public.roles r ON pr.role_id = r.id
+--         JOIN public.role_permissions rp ON r.id = rp.role_id
+--         JOIN public.permissions p ON rp.permission_id = p.id -- WHERE u.id = '575a9f91-159e-4680-ba8b-3fc4db40d194'
+-- ),
+-- combined_permissions AS (
+--     SELECT *
+--     FROM user_role_permissions
+--     UNION ALL
+--     SELECT *
+--     FROM user_direct_permissions
+--     UNION ALL
+--     SELECT *
+--     FROM user_sub_role_permissions
+-- )
+-- SELECT u.id AS user_id,
+--     u.email AS email,
+--     array_remove(ARRAY_AGG(DISTINCT p.role), NULL)::text [] AS roles,
+--     array_remove(ARRAY_AGG(DISTINCT p.permission), NULL)::text [] AS permissions,
+--     array_remove(ARRAY_AGG(DISTINCT ua.provider), NULL)::public.providers [] AS providers
+-- FROM public.users u
+--     LEFT JOIN combined_permissions p ON u.id = p.user_id
+--     LEFT JOIN public.user_accounts ua ON u.id = ua.user_id
+-- WHERE u.email = 'tkahng+01@gmail.com'
+-- GROUP BY u.id
+-- LIMIT 1;
 -- -- Get permissions assigned directly to user
 -- direct_permissions AS (
 --     SELECT p.*,

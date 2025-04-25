@@ -12,7 +12,7 @@ type TaskProject struct {
 	UserID      uuid.UUID                `db:"user_id" json:"user_id"`
 	Name        string                   `db:"name" json:"name"`
 	Description *string                  `db:"description" json:"description"`
-	Status      models.TaskProjectStatus `db:"status" json:"status"`
+	Status      models.TaskProjectStatus `db:"status" json:"status" enum:"todo,in_progress,done"`
 	Order       float64                  `db:"order" json:"order"`
 	CreatedAt   time.Time                `db:"created_at" json:"created_at"`
 	UpdatedAt   time.Time                `db:"updated_at" json:"updated_at"`
@@ -23,6 +23,9 @@ type TaskProjectWithTasks struct {
 }
 
 func ModelToProject(task *models.TaskProject) *TaskProject {
+	if task == nil {
+		return nil
+	}
 	return &TaskProject{
 		ID:          task.ID,
 		UserID:      task.UserID,

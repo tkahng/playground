@@ -32,13 +32,13 @@ export default function UserListPage() {
     });
   };
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: ["users-list"],
+    queryKey: ["users-list", pageIndex, pageSize],
     queryFn: async () => {
       if (!user?.tokens.access_token) {
         throw new Error("Missing access token");
       }
       const data = await userPaginate(user.tokens.access_token, {
-        page: pageIndex + 1,
+        page: pageIndex,
         per_page: pageSize,
       });
       return data;
@@ -70,7 +70,7 @@ export default function UserListPage() {
             cell: ({ row }) => {
               return (
                 <NavLink
-                  to={`${RouteMap.ADMIN_DASHBOARD_USERS}/${row.original.id}`}
+                  to={`${RouteMap.ADMIN_USERS}/${row.original.id}`}
                   className="hover:underline text-blue-500"
                 >
                   {row.original.email}
@@ -119,7 +119,7 @@ function UserEllipsisDropdown({ userId }: { userId: string }) {
           <DropdownMenuItem
             onSelect={() => {
               setDropdownOpen(false);
-              navigate(`${RouteMap.ADMIN_DASHBOARD_USERS}/${userId}`);
+              navigate(`${RouteMap.ADMIN_USERS}/${userId}`);
             }}
           >
             <Button variant="ghost" size="sm">
@@ -130,7 +130,7 @@ function UserEllipsisDropdown({ userId }: { userId: string }) {
           <DropdownMenuItem
             onSelect={() => {
               setDropdownOpen(false);
-              navigate(`${RouteMap.ADMIN_DASHBOARD_USERS}/${userId}?tab=roles`);
+              navigate(`${RouteMap.ADMIN_USERS}/${userId}?tab=roles`);
             }}
           >
             <Button variant="ghost" size="sm">

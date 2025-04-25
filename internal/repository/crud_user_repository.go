@@ -137,17 +137,18 @@ type UpdateUserInput struct {
 
 // update users by id
 func UpdateUser(ctx context.Context, db bob.Executor, userId uuid.UUID, input *UpdateUserInput) error {
-	user, err := models.FindUser(ctx, db, userId)
+	q := models.Users.Update(
+		models.UpdateWhere.Users.ID.EQ(userId),
+		models.UserSetter{
+			Email:           omit.From(input.Email),
+			Name:            omitnull.FromPtr(input.Name),
+			Image:           omitnull.FromPtr(input.AvatarUrl),
+			EmailVerifiedAt: omitnull.FromPtr(input.EmailVerifiedAt),
+		}.UpdateMod(),
+	)
+	_, err := q.Exec(ctx, db)
 	if err != nil {
 		return err
 	}
-	if user == nil {
-		return errors.New("user not found")
-	}
-	return user.Update(ctx, db, &models.UserSetter{
-		Email:           omit.From(input.Email),
-		Name:            omitnull.FromPtr(input.Name),
-		Image:           omitnull.FromPtr(input.AvatarUrl),
-		EmailVerifiedAt: omitnull.FromPtr(input.EmailVerifiedAt),
-	})
+	return nil
 }

@@ -126,7 +126,7 @@ export default function RoleEdit() {
     // <div className="h-full px-4 py-6 lg:px-8 space-y-6">
     <div className="space-y-6">
       <Link
-        to={RouteMap.ADMIN_DASHBOARD_ROLES}
+        to={RouteMap.ADMIN_ROLES}
         className="flex items-center gap-2 text-sm text-muted-foreground"
       >
         <ChevronLeft className="h-4 w-4" />
@@ -176,6 +176,7 @@ export default function RoleEdit() {
               <Button type="submit" disabled={!form.formState.isDirty}>
                 Submit
               </Button>
+              <div className="flex flex-row gap-2 justify-start"></div>
             </form>
           </Form>
         </TabsContent>

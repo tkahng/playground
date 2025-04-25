@@ -9,7 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { BarChart, Brain, CheckCircle, Globe, Lock, Zap } from "lucide-react";
+import { Zap } from "lucide-react";
 
 export default function Features() {
   return (
@@ -22,103 +22,35 @@ export default function Features() {
         }}
       />
       <SecondarySection>
-        <Card>
-          <CardHeader>
-            <Zap className="h-8 w-8 text-primary mb-2" />
-            <CardTitle>Lightning Fast Processing</CardTitle>
-            <CardDescription>
-              Experience unparalleled speed in data analysis and task
-              completion.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ul className="list-disc list-inside space-y-2 text-sm">
-              <li>Process large datasets in seconds</li>
-              <li>Real-time analysis and insights</li>
-              <li>Optimized for high-performance computing</li>
-            </ul>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <Brain className="h-8 w-8 text-primary mb-2" />
-            <CardTitle>Advanced Machine Learning</CardTitle>
-            <CardDescription>
-              Our AI continuously learns and adapts to your specific needs.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ul className="list-disc list-inside space-y-2 text-sm">
-              <li>Personalized AI models</li>
-              <li>Continuous learning from user interactions</li>
-              <li>Adaptive algorithms for improved accuracy</li>
-            </ul>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CheckCircle className="h-8 w-8 text-primary mb-2" />
-            <CardTitle>99.9% Accuracy</CardTitle>
-            <CardDescription>
-              Trust in results with our industry-leading accuracy rates.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ul className="list-disc list-inside space-y-2 text-sm">
-              <li>Rigorous testing and validation</li>
-              <li>Continuous model refinement</li>
-              <li>Human-in-the-loop verification for critical tasks</li>
-            </ul>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <BarChart className="h-8 w-8 text-primary mb-2" />
-            <CardTitle>Advanced Analytics</CardTitle>
-            <CardDescription>
-              Gain deep insights with our powerful analytics tools.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ul className="list-disc list-inside space-y-2 text-sm">
-              <li>Customizable dashboards and reports</li>
-              <li>Predictive analytics and forecasting</li>
-              <li>Data visualization tools</li>
-            </ul>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <Lock className="h-8 w-8 text-primary mb-2" />
-            <CardTitle>Enterprise-Grade Security</CardTitle>
-            <CardDescription>
-              Your data is safe with our robust security measures.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ul className="list-disc list-inside space-y-2 text-sm">
-              <li>End-to-end encryption</li>
-              <li>Compliance with GDPR, HIPAA, and other regulations</li>
-              <li>Regular security audits and penetration testing</li>
-            </ul>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <Globe className="h-8 w-8 text-primary mb-2" />
-            <CardTitle>Seamless Integration</CardTitle>
-            <CardDescription>
-              Easily integrate NexusAI with your existing tools and workflows.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ul className="list-disc list-inside space-y-2 text-sm">
-              <li>API access for custom integrations</li>
-              <li>Pre-built connectors for popular platforms</li>
-              <li>Extensible plugin architecture</li>
-            </ul>
-          </CardContent>
-        </Card>
+        <FeatureCard
+          title="AI Task Generation"
+          description="Describe your project in plain language, and our AI will break it down
+          into actionable tasks with deadlines."
+          items={[
+            "Suggested timelines and dependencies based on task complexity",
+            "Automatically adjusts timelines as tasks are completed",
+          ]}
+        />
+        <FeatureCard
+          title="Smart Suggestions"
+          description="Get intelligent recommendations for task prioritization, resource
+          allocation, and timeline adjustments."
+          items={[
+            "Task prioritization based on deadlines and dependencies",
+            "Resource allocation recommendations to balance workloads",
+            "Early warning system for potential delays or issues",
+          ]}
+        />
+        <FeatureCard
+          title="Automated Workflows"
+          description="Set up custom workflows that trigger automatically as tasks
+          progress through different stages."
+          items={[
+            "Rigorous testing and validation to ensure accuracy and reliability",
+            "Continuous model refinement to improve performance over time",
+            "Human-in-the-loop verification for critical tasks",
+          ]}
+        />
       </SecondarySection>
       <PrimarySection>
         <div className="space-y-2">
@@ -138,5 +70,29 @@ export default function Features() {
         </div>
       </PrimarySection>
     </>
+  );
+}
+function FeatureCard(props: {
+  title: string;
+  description: string;
+  items: string[];
+}) {
+  return (
+    <Card>
+      <CardHeader>
+        <Zap className="h-8 w-8 text-primary mb-2" />
+        <CardTitle className="text-2xl font-bold">{props.title}</CardTitle>
+        <CardDescription className="text-lg">
+          {props.description}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <ul className="list-disc list-inside space-y-2">
+          {props.items.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+      </CardContent>
+    </Card>
   );
 }

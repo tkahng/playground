@@ -11,6 +11,8 @@ import (
 	"github.com/danielgtaylor/huma/v2/adapters/humachi"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/httprate"
+
 	"github.com/go-chi/cors"
 	"github.com/tkahng/authgo/ui"
 )
@@ -21,6 +23,7 @@ func NewServer() (http.Handler, huma.API) {
 	// config.DocsPath = ""
 
 	r := chi.NewMux()
+
 	r.Use(cors.Handler(cors.Options{
 		// AllowedOrigins:   []string{"https://foo.com"}, // Use this to allow specific origin hosts
 		AllowedOrigins: []string{"*"},
@@ -30,9 +33,10 @@ func NewServer() (http.Handler, huma.API) {
 		ExposedHeaders:   []string{"Link"},
 		AllowCredentials: true,
 	}))
+
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
-
+	r.Use(httprate.LimitByIP(100, 1*time.Minute))
 	// Handle all other routes by serving index.html (for React Router)
 	r.HandleFunc("/*", func(w http.ResponseWriter, r *http.Request) {
 		p := filepath.Clean(r.URL.Path)

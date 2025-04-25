@@ -52,7 +52,7 @@ func (api *Api) TaskList(ctx context.Context, input *shared.TaskListParams) (*Ta
 					}),
 				}
 			}),
-			Meta: shared.Meta{Total: int(total)},
+			Meta: shared.GenerateMeta(input.PaginatedInput, total),
 		},
 	}, nil
 }
@@ -171,7 +171,7 @@ func (api *Api) TaskDelete(ctx context.Context, input *struct {
 }) (*struct{}, error) {
 	db := api.app.Db()
 	userInfo := core.GetContextUserClaims(ctx)
-	if userInfo == nil || userInfo.User == nil {
+	if userInfo == nil {
 		return nil, huma.Error401Unauthorized("Unauthorized")
 	}
 	id, err := uuid.Parse(input.TaskID)
@@ -205,7 +205,7 @@ func (api *Api) TaskGet(ctx context.Context, input *struct {
 }) (*TaskResposne, error) {
 	db := api.app.Db()
 	userInfo := core.GetContextUserClaims(ctx)
-	if userInfo == nil || userInfo.User == nil {
+	if userInfo == nil {
 		return nil, huma.Error401Unauthorized("Unauthorized")
 	}
 	id, err := uuid.Parse(input.TaskID)

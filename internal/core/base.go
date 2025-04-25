@@ -5,6 +5,7 @@ import (
 	"log/slog"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/stephenafamo/bob"
 	"github.com/tkahng/authgo/internal/conf"
 	"github.com/tkahng/authgo/internal/db"
 	"github.com/tkahng/authgo/internal/repository"
@@ -18,18 +19,19 @@ import (
 var _ App = (*BaseApp)(nil)
 
 type BaseApp struct {
-	tokenStorage  *TokenStorage
-	tokenVerifier *TokenVerifier
-	cfg           *conf.EnvConfig
-	db            *db.Queries
-	pool          *pgxpool.Pool
-	settings      *AppOptions
-	payment       *StripeService
-	logger        *slog.Logger
-	fs            *filesystem.FileSystem
-	mail          mailer.Mailer
-	// onAfterRequestHandle  *hook.Hook[*BaseEvent]
-	// onBeforeRequestHandle *hook.Hook[*BaseEvent]
+	cfg      *conf.EnvConfig
+	db       *db.Queries
+	pool     *pgxpool.Pool
+	settings *AppOptions
+	payment  *StripeService
+	logger   *slog.Logger
+	fs       *filesystem.FileSystem
+	mail     mailer.Mailer
+}
+
+// NewAuthActions implements App.
+func (a *BaseApp) NewAuthActions(db bob.Executor) AuthActions {
+	return NewAuthActions(db, a.mail, a.settings)
 }
 
 func (app *BaseApp) Fs() *filesystem.FileSystem {
@@ -51,16 +53,6 @@ func (a *BaseApp) Payment() *StripeService {
 	return a.payment
 }
 
-// TokenVerifier implements App.
-func (a *BaseApp) TokenVerifier() *TokenVerifier {
-	return a.tokenVerifier
-}
-
-// TokenStorage implements App.
-func (app *BaseApp) TokenStorage() *TokenStorage {
-	return app.tokenStorage
-}
-
 // Settings implements App.
 func (a *BaseApp) Settings() *AppOptions {
 	return a.settings
@@ -79,12 +71,6 @@ func (app *BaseApp) Cfg() *conf.EnvConfig {
 func (app *BaseApp) NewMailClient() mailer.Mailer {
 	return app.mail
 }
-
-// InitHooks implements App.
-// func (app *BaseApp) InitHooks() {
-// 	app.onAfterRequestHandle = &hook.Hook[*BaseEvent]{}
-// 	app.onBeforeRequestHandle = &hook.Hook[*BaseEvent]{}
-// }
 
 func InitBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 	pool := db.CreatePool(ctx, cfg.Db.DatabaseUrl)
@@ -105,10 +91,11 @@ func NewBaseApp(pool *pgxpool.Pool, cfg conf.EnvConfig) *BaseApp {
 	} else {
 		mail = &mailer.LogMailer{}
 	}
+	db := db.NewQueries(pool)
 	return &BaseApp{
 		fs:       fs,
 		pool:     pool,
-		db:       db.NewQueries(pool),
+		db:       db,
 		settings: settings,
 		logger:   logger.GetDefaultLogger(slog.LevelInfo),
 		cfg:      &cfg,
@@ -116,16 +103,6 @@ func NewBaseApp(pool *pgxpool.Pool, cfg conf.EnvConfig) *BaseApp {
 		payment:  NewStripeService(payment.NewStripeClient(cfg.StripeConfig)),
 	}
 }
-
-// // OnAfterRequestHandle implements App.
-// func (app *BaseApp) OnAfterRequestHandle(tags ...string) *hook.TaggedHook[*BaseEvent] {
-// 	return hook.NewTaggedHook(app.onAfterRequestHandle, tags...)
-// }
-
-// // OnBeforeRequestHandle implements App.
-// func (app *BaseApp) OnBeforeRequestHandle(tags ...string) *hook.TaggedHook[*BaseEvent] {
-// 	return hook.NewTaggedHook(app.onBeforeRequestHandle, tags...)
-// }
 
 func (app *BaseApp) Bootstrap() {
 	ctx := context.Background()

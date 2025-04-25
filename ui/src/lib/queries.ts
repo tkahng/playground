@@ -5,8 +5,8 @@ import {
   RefreshTokenInput,
   SigninInput,
   SignupInput,
-  User,
   UserDetailWithRoles,
+  UserWithAccounts,
 } from "@/schema.types";
 
 export const signIn = async (
@@ -23,9 +23,26 @@ export const signIn = async (
     },
   });
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   return data || null;
+};
+
+export const signOut = async (
+  token: string,
+  refreshToken: string
+): Promise<void> => {
+  const { error } = await client.POST("/api/auth/signout", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: {
+      refresh_token: refreshToken,
+    },
+  });
+  if (error) {
+    throw error;
+  }
 };
 
 export const refreshToken = async (
@@ -41,7 +58,7 @@ export const refreshToken = async (
     },
   });
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   return data;
 };
@@ -57,19 +74,34 @@ export const signUp = async (
     body: args,
   });
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   return data;
 };
 
-export const getMe = async (token: string): Promise<User> => {
+export const getMe = async (token: string): Promise<UserWithAccounts> => {
   const { data, error } = await client.GET("/api/auth/me", {
     headers: {
       Authorization: `Bearer ${token}`,
     },
   });
   if (error) {
-    throw new Error(error.detail);
+    throw error;
+  }
+  return data;
+};
+export const updateMe = async (
+  token: string,
+  body: components["schemas"]["UpdateMeInput"]
+) => {
+  const { data, error } = await client.PUT("/api/auth/me", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body,
+  });
+  if (error) {
+    throw error;
   }
   return data;
 };
@@ -88,7 +120,7 @@ export const userPaginate = async (
   });
 
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   return data;
 };
@@ -107,7 +139,7 @@ export const rolesPaginate = async (
   });
 
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   return data;
 };
@@ -128,7 +160,7 @@ export const getRoleWithPermission = async (token: string, id: string) => {
   });
 
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   return data;
 };
@@ -144,7 +176,7 @@ export const createRole = async (
     },
   });
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   return data;
 };
@@ -167,7 +199,7 @@ export const updateRole = async (
   });
 
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   return data;
 };
@@ -182,7 +214,7 @@ export const deleteRole = async (token: string, id: string) => {
     },
   });
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   return data;
 };
@@ -208,7 +240,7 @@ export const deleteRolePermission = async (
   );
 
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   return data;
 };
@@ -234,7 +266,7 @@ export const createRolePermission = async (
   );
 
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   return data;
 };
@@ -253,7 +285,7 @@ export const permissionsPaginate = async (
   });
 
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   return data;
 };
@@ -270,7 +302,7 @@ export const deletePermission = async (token: string, id: string) => {
     },
   });
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   return data;
 };
@@ -285,7 +317,7 @@ export const createPermission = async (
     },
   });
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   return data;
 };
@@ -307,7 +339,7 @@ export const updatePermission = async (
   });
 
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   return data;
 };
@@ -326,7 +358,7 @@ export const getUserRoles = async (token: string, id: string) => {
   });
 
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   return data;
 };
@@ -343,7 +375,7 @@ export const getPermission = async (token: string, id: string) => {
   });
 
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   return data;
 };
@@ -371,7 +403,7 @@ export const getUserPermissions = async (
     }
   ); // TODO: add pagination
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   return data;
 };
@@ -395,7 +427,7 @@ export const getUserPermissions2 = async (token: string, userId: string) => {
     }
   ); // TODO: add pagination
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   return data;
 };
@@ -412,7 +444,7 @@ export const getUser = async (token: string, id: string) => {
     },
   });
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   return data;
 };
@@ -499,7 +531,7 @@ export const createUserRoles = async (
     },
   }); // TODO: add pagination
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   return data;
 };
@@ -524,7 +556,7 @@ export const removeUserRole = async (
     }
   ); // TODO: add pagination
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   return data;
 };
@@ -549,7 +581,7 @@ export const createUserPermissions = async (
     }
   ); // TODO: add pagination
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   return data;
 };
@@ -574,7 +606,7 @@ export const removeUserPermission = async (
     }
   ); // TODO: add pagination
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   return data;
 };
@@ -588,7 +620,7 @@ export const getProductsWithPrices = async (token?: string) => {
       : {},
   });
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   if (!data) {
     throw new Error("No data");
@@ -604,7 +636,7 @@ export const getUserSubscriptions = async (token: string) => {
     },
   });
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   // if !data) {
   //   throw new Error("No data");
@@ -627,7 +659,7 @@ export const getCheckoutSession = async (token: string, id: string) => {
     }
   );
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   if (!data) {
     throw new Error("No data");
@@ -648,7 +680,7 @@ export const createCheckoutSession = async (
     },
   });
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   if (!data) {
     throw new Error("No data");
@@ -663,7 +695,7 @@ export const createBillingPortalSession = async (token: string) => {
     },
   });
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   if (!data) {
     throw new Error("No data");
@@ -687,12 +719,24 @@ export const getAuthUrl = async ({
     },
   });
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   if (!data) {
     throw new Error("No data");
   }
   return data.url;
+};
+
+export const requestVerification = async (token: string) => {
+  const { error } = await client.POST("/api/auth/request-verification", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  if (error) {
+    throw error;
+  }
+  return true;
 };
 
 export const confirmVerification = async (token: string, type: string) => {
@@ -703,7 +747,7 @@ export const confirmVerification = async (token: string, type: string) => {
     },
   });
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
 };
 
@@ -714,7 +758,7 @@ export const getBasicRoute = async (token: string) => {
     },
   });
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   if (!data) {
     throw new Error("No data");
@@ -728,7 +772,7 @@ export const getProRoute = async (token: string) => {
     },
   });
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   if (!data) {
     throw new Error("No data");
@@ -745,7 +789,7 @@ export const getAdvancedRoute = async (token: string) => {
     }
   );
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   if (!data) {
     throw new Error("No data");
@@ -773,7 +817,7 @@ export const taskProjectList = async (
     },
   });
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   if (!data) {
     throw new Error("No data");
@@ -799,7 +843,7 @@ export const taskProjectGet = async (token: string, id: string) => {
     }
   );
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   if (!data) {
     throw new Error("No data");
@@ -818,7 +862,7 @@ export const taskProjectCreate = async (
     body: args,
   });
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   if (!data) {
     throw new Error("No data");
@@ -837,7 +881,7 @@ export const taskProjectCreateWithAi = async (
     body: args,
   });
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   if (!data) {
     throw new Error("No data");
@@ -858,7 +902,7 @@ export const taskList = async (
     },
   });
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   if (!data) {
     throw new Error("No data");
@@ -886,7 +930,7 @@ export const createTask = async (
     }
   );
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   if (!data) {
     throw new Error("No data");
@@ -914,7 +958,114 @@ export const taskPositionStatus = async (
     }
   );
   if (error) {
-    throw new Error(error.detail);
+    throw error;
+  }
+  return data;
+};
+
+export const taskProjectUpdate = async (
+  token: string,
+  taskProjectId: string,
+  args: operations["task-project-update"]["requestBody"]["content"]["application/json"]
+) => {
+  const { data, error } = await client.PUT(
+    "/api/task-projects/{task-project-id}",
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      params: {
+        path: {
+          "task-project-id": taskProjectId,
+        },
+      },
+      body: args,
+    }
+  );
+  if (error) {
+    throw error;
+  }
+  return data;
+};
+
+export const getStats = async (token: string) => {
+  const { data, error } = await client.GET("/api/stats", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  if (error) {
+    throw error;
+  }
+  if (!data) {
+    throw new Error("No data");
+  }
+  return data;
+};
+
+export const checkPasswordReset = async (token: string) => {
+  const { data, error } = await client.GET("/api/auth/check-password-reset", {
+    params: {
+      query: {
+        token,
+      },
+    },
+  });
+  if (error) {
+    throw error;
+  }
+  return data;
+};
+
+export const confirmPasswordReset = async (
+  token: string,
+  password: string,
+  confirmPassword: string
+) => {
+  const { data, error } = await client.POST(
+    "/api/auth/confirm-password-reset",
+    {
+      body: {
+        token,
+        password,
+        confirm_password: confirmPassword,
+      },
+    }
+  );
+  if (error) {
+    throw error;
+  }
+  return data;
+};
+
+export const requestPasswordReset = async (email: string) => {
+  const { error } = await client.POST("/api/auth/request-password-reset", {
+    body: {
+      email,
+    },
+  });
+  if (error) {
+    throw error;
+  }
+  return true;
+};
+
+export const resetPassword = async (
+  token: string,
+  currentPassword: string,
+  newPassword: string
+) => {
+  const { data, error } = await client.POST("/api/auth/password-reset", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: {
+      previous_password: currentPassword,
+      new_password: newPassword,
+    },
+  });
+  if (error) {
+    throw error;
   }
   return data;
 };

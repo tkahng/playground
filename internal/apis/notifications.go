@@ -82,7 +82,7 @@ func (api *Api) NotificationsSsefunc(ctx context.Context, input *struct{},
 // 			Meta: shared.Meta{
 // 				Page:    input.PaginatedInput.Page,
 // 				PerPage: input.PaginatedInput.PerPage,
-// 				Total:   int(count),
+// 				Total:   count,
 // 			},
 // 		},
 // 	}, nil

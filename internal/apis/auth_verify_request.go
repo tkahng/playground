@@ -34,17 +34,17 @@ func (api *Api) RequestVerificationOperation(path string) huma.Operation {
 
 func (api *Api) RequestVerification(ctx context.Context, input *struct{}) (*struct{}, error) {
 	db := api.app.Db()
-	claims := core.GetContextUserClaims(ctx)
-	if claims == nil || claims.User == nil {
+	action := api.app.NewAuthActions(db)
+	claims := core.GetContextUserInfo(ctx)
+	if claims == nil {
 		return nil, huma.Error404NotFound("User not found")
 	}
-	if !claims.User.EmailVerifiedAt.IsNull() {
+	if claims.User.EmailVerifiedAt != nil {
 		return nil, huma.Error404NotFound("Email already verified")
 	}
-	err := api.app.SendVerificationEmail(ctx, db, claims.User, api.app.Settings().Meta.AppURL)
+	err := action.SendOtpEmail(core.EmailTypeVerify, ctx, &claims.User)
 	if err != nil {
 		return nil, err
 	}
-	// TODO: send email
 	return nil, nil
 }

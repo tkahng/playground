@@ -393,6 +393,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/auth/check-password-reset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Check password reset
+         * @description Check password reset
+         */
+        get: operations["check-password-reset"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/confirm-password-reset": {
         parameters: {
             query?: never;
@@ -425,8 +445,32 @@ export interface paths {
          * @description Me
          */
         get: operations["me"];
-        put?: never;
+        /**
+         * Me Update
+         * @description Me Update
+         */
+        put: operations["meUpdate"];
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/password-reset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reset password
+         * @description Reset password
+         */
+        post: operations["reset-password"];
         delete?: never;
         options?: never;
         head?: never;
@@ -473,6 +517,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/auth/request-verification": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Email verification request
+         * @description Request email verification
+         */
+        post: operations["request-verification"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/signin": {
         parameters: {
             query?: never;
@@ -487,6 +551,26 @@ export interface paths {
          * @description Count the number of colors for all themes
          */
         post: operations["signin"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/signout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Signout
+         * @description Signout
+         */
+        post: operations["signout"];
         delete?: never;
         options?: never;
         head?: never;
@@ -653,6 +737,26 @@ export interface paths {
          * @description Api protected pro permission
          */
         get: operations["api-protected-pro-permission"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get stats
+         * @description Get stats
+         */
+        get: operations["stats-get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -974,18 +1078,6 @@ export interface components {
             /** Format: uuid */
             permission_ids: string[] | null;
         };
-        AuthenticatedDTO: {
-            /**
-             * Format: uri
-             * @description A URL to the JSON Schema for this object.
-             */
-            readonly $schema?: string;
-            permissions: string[] | null;
-            providers: string[] | null;
-            roles: string[] | null;
-            tokens: components["schemas"]["TokenDto"];
-            user: components["schemas"]["User"];
-        };
         ConfirmPasswordResetInput: {
             /**
              * Format: uri
@@ -1111,10 +1203,15 @@ export interface components {
             url: string;
         };
         Meta: {
+            has_more: boolean;
+            /** Format: int64 */
+            next_page: number | null;
             /** Format: int64 */
             page: number;
             /** Format: int64 */
             per_page: number;
+            /** Format: int64 */
+            prev_page: number | null;
             /** Format: int64 */
             total: number;
         };
@@ -1144,7 +1241,6 @@ export interface components {
              */
             readonly $schema?: string;
             token: string;
-            type: string;
         };
         PaginatedResponseMedia: {
             /**
@@ -1235,6 +1331,15 @@ export interface components {
             readonly $schema?: string;
             data: components["schemas"]["UserDetail"][] | null;
             meta: components["schemas"]["Meta"];
+        };
+        PasswordResetInput: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            new_password: string;
+            previous_password: string;
         };
         Permission: {
             /**
@@ -1389,6 +1494,14 @@ export interface components {
             /** Format: email */
             email: string;
             password: string;
+        };
+        SignoutDto: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            refresh_token: string;
         };
         SignupInput: {
             /**
@@ -1578,7 +1691,8 @@ export interface components {
             name: string;
             /** Format: double */
             order: number;
-            status: string;
+            /** @enum {string} */
+            status: "todo" | "in_progress" | "done";
             /** Format: date-time */
             updated_at: string;
             user_id: string;
@@ -1604,11 +1718,22 @@ export interface components {
             name: string;
             /** Format: double */
             order: number;
-            status: string;
+            /** @enum {string} */
+            status: "todo" | "in_progress" | "done";
             tasks?: components["schemas"]["TaskWithSubtask"][] | null;
             /** Format: date-time */
             updated_at: string;
             user_id: string;
+        };
+        TaskStats: {
+            /** Format: int64 */
+            completed_projects: number;
+            /** Format: int64 */
+            completed_tasks: number;
+            /** Format: int64 */
+            total_projects: number;
+            /** Format: int64 */
+            total_tasks: number;
         };
         TaskWithSubtask: {
             /**
@@ -1638,6 +1763,15 @@ export interface components {
             expires_in: number;
             refresh_token: string;
             token_type: string;
+        };
+        UpdateMeInput: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            image: string | null;
+            name: string | null;
         };
         UpdateTaskBaseDTO: {
             /**
@@ -1705,12 +1839,13 @@ export interface components {
             /** Format: date-time */
             updated_at: string;
         };
-        UserAccountDetail: {
+        UserAccountOutput: {
             /** Format: date-time */
             created_at: string;
             id: string;
             /** @enum {string} */
-            providers?: "google" | "apple" | "facebook" | "github" | "credentials";
+            provider: "google" | "apple" | "facebook" | "github" | "credentials";
+            provider_account_id: string;
             /** @enum {string} */
             type: "oauth" | "credentials";
             /** Format: date-time */
@@ -1718,7 +1853,7 @@ export interface components {
             user_id: string;
         };
         UserDetail: {
-            accounts?: components["schemas"]["UserAccountDetail"][] | null;
+            accounts?: components["schemas"]["UserAccountOutput"][] | null;
             /** Format: date-time */
             created_at: string;
             email: string;
@@ -1728,6 +1863,44 @@ export interface components {
             image: string | null;
             name: string | null;
             roles?: components["schemas"]["RoleWithPermissions"][] | null;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        UserInfoTokens: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            permissions: string[] | null;
+            providers: ("google" | "apple" | "facebook" | "github" | "credentials")[] | null;
+            roles: string[] | null;
+            tokens: components["schemas"]["TokenDto"];
+            user: components["schemas"]["User"];
+        };
+        UserStats: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            task_stats: components["schemas"]["TaskStats"];
+        };
+        UserWithAccounts: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            accounts: components["schemas"]["UserAccountOutput"][] | null;
+            /** Format: date-time */
+            created_at: string;
+            email: string;
+            /** Format: date-time */
+            email_verified_at: string | null;
+            id: string;
+            image: string | null;
+            name: string | null;
             /** Format: date-time */
             updated_at: string;
         };
@@ -3243,8 +3416,55 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AuthenticatedDTO"];
+                    "application/json": components["schemas"]["UserInfoTokens"];
                 };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "check-password-reset": {
+        parameters: {
+            query: {
+                token: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Not Found */
             404: {
@@ -3339,7 +3559,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["User"];
+                    "application/json": components["schemas"]["UserWithAccounts"];
                 };
             };
             /** @description Unauthorized */
@@ -3353,6 +3573,113 @@ export interface operations {
             };
             /** @description Not Found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    meUpdate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateMeInput"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "reset-password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasswordResetInput"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3405,7 +3732,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AuthenticatedDTO"];
+                    "application/json": components["schemas"]["UserInfoTokens"];
                 };
             };
             /** @description Not Found */
@@ -3486,6 +3813,42 @@ export interface operations {
             };
         };
     };
+    "request-verification": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
     signin: {
         parameters: {
             query?: never;
@@ -3520,7 +3883,65 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AuthenticatedDTO"];
+                    "application/json": components["schemas"]["UserInfoTokens"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    signout: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SignoutDto"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
                 };
             };
             /** @description Not Found */
@@ -3559,7 +3980,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: {
+        requestBody: {
             content: {
                 "application/json": components["schemas"]["SignupInput"];
             };
@@ -3586,7 +4007,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AuthenticatedDTO"];
+                    "application/json": components["schemas"]["UserInfoTokens"];
                 };
             };
             /** @description Not Found */
@@ -3622,7 +4043,6 @@ export interface operations {
         parameters: {
             query: {
                 token: string;
-                type: string;
             };
             header?: never;
             path?: never;
@@ -4051,6 +4471,44 @@ export interface operations {
                 };
                 content: {
                     "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "stats-get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserStats"];
                 };
             };
             /** @description Not Found */

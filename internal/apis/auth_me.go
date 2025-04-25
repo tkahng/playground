@@ -6,7 +6,9 @@ import (
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/tkahng/authgo/internal/core"
+	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/authgo/internal/tools/mapper"
 )
 
 func (api *Api) MeOperation(path string) huma.Operation {
@@ -25,16 +27,61 @@ func (api *Api) MeOperation(path string) huma.Operation {
 }
 
 type MeOutput struct {
-	Body *shared.User
+	Body *shared.UserWithAccounts
 }
 
 func (api *Api) Me(ctx context.Context, input *struct{}) (*MeOutput, error) {
+	db := api.app.Db()
 	claims := core.GetContextUserClaims(ctx)
 	if claims == nil {
 		return nil, huma.Error404NotFound("User not found")
 	}
+	user, err := repository.FindUserById(ctx, db, claims.User.ID)
+	if err != nil {
+		return nil, err
+	}
+	err = user.LoadUserUserAccounts(
+		ctx,
+		db,
+	)
+	if err != nil {
+		return nil, err
+	}
 	return &MeOutput{
-		Body: shared.ToUser(claims.User),
+		Body: &shared.UserWithAccounts{
+			User:     shared.ToUser(user),
+			Accounts: mapper.Map(user.R.UserAccounts, shared.ToUserAccountOutput),
+		},
 	}, nil
 
+}
+
+func (api *Api) MeUpdateOperation(path string) huma.Operation {
+	return huma.Operation{
+		OperationID: "meUpdate",
+		Method:      http.MethodPut,
+		Path:        path,
+		Summary:     "Me Update",
+		Description: "Me Update",
+		Tags:        []string{"Auth"},
+		Errors:      []int{http.StatusUnauthorized, http.StatusNotFound},
+		Security: []map[string][]string{
+			{shared.BearerAuthSecurityKey: {}},
+		},
+	}
+}
+
+func (api *Api) MeUpdate(ctx context.Context, input *struct {
+	Body shared.UpdateMeInput
+}) (*struct{}, error) {
+	db := api.app.Db()
+	claims := core.GetContextUserClaims(ctx)
+	if claims == nil {
+		return nil, huma.Error404NotFound("User not found")
+	}
+	err := repository.UpdateMe(ctx, db, claims.User.ID, &input.Body)
+	if err != nil {
+		return nil, err
+	}
+	return nil, nil
 }

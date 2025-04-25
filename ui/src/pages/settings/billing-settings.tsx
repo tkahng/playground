@@ -1,4 +1,6 @@
 import CustomerPortalForm from "@/components/customer-portal-form";
+import { DashboardSidebar } from "@/components/dashboard-sidebar";
+import { settingsSidebarLinks } from "@/components/links";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -31,66 +33,57 @@ export default function BillingSettingPage() {
     return <div>Error: {error.message}</div>;
   }
   return (
-    <div className="flex w-full flex-col p-12">
-      <CustomerPortalForm subscription={data} />
-      {/* <div className="w-full max-w-3xl m-auto my-8 border rounded-md p border-zinc-700">
-        <div className="px-5 py-4">
-          <h3 className="mb-1 text-2xl font-medium">{title}</h3>
-          <p className="text-zinc-300">{description}</p>
-          {children}
+    <div className="flex">
+      <DashboardSidebar links={settingsSidebarLinks} />
+      <div className="flex-1 space-y-6 p-12 w-full">
+        <CustomerPortalForm subscription={data} />
+        <Card className="w-full max-w-3xl m-auto my-8 border rounded-md p border-zinc-700">
+          <CardHeader>
+            <CardTitle>Billing Information</CardTitle>
+            <CardDescription>Billing Information</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p>Billing Information</p>
+          </CardContent>
+        </Card>
+        <div className="px-8 grid grid-cols-2 grid-rows-1 gap-8">
+          <Card>
+            <CardHeader>
+              <CardTitle>Billing Information</CardTitle>
+              <CardDescription>Billing Information</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p>Billing Information</p>
+            </CardContent>
+            <CardFooter>
+              <Button>Cancel</Button>
+            </CardFooter>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Billing Information</CardTitle>
+              <CardDescription>Billing Information</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p>Billing Information</p>
+            </CardContent>
+            <CardFooter>
+              <Button>Cancel</Button>
+            </CardFooter>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Billing Information</CardTitle>
+              <CardDescription>Billing Information</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p>Billing Information</p>
+            </CardContent>
+            <CardFooter>
+              <Button>Cancel</Button>
+            </CardFooter>
+          </Card>
         </div>
-        {footer && (
-          <div className="p-4 border-t rounded-b-md border-zinc-700 bg-zinc-900 text-zinc-500">
-            {footer}
-          </div>
-        )}
-      </div> */}
-      <Card className="w-full max-w-3xl m-auto my-8 border rounded-md p border-zinc-700">
-        <CardHeader>
-          <CardTitle>Billing Information</CardTitle>
-          <CardDescription>Billing Information</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p>Billing Information</p>
-        </CardContent>
-      </Card>
-      <div className="px-8 grid grid-cols-2 grid-rows-1 gap-8">
-        <Card>
-          <CardHeader>
-            <CardTitle>Billing Information</CardTitle>
-            <CardDescription>Billing Information</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p>Billing Information</p>
-          </CardContent>
-          <CardFooter>
-            <Button>Cancel</Button>
-          </CardFooter>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Billing Information</CardTitle>
-            <CardDescription>Billing Information</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p>Billing Information</p>
-          </CardContent>
-          <CardFooter>
-            <Button>Cancel</Button>
-          </CardFooter>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Billing Information</CardTitle>
-            <CardDescription>Billing Information</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p>Billing Information</p>
-          </CardContent>
-          <CardFooter>
-            <Button>Cancel</Button>
-          </CardFooter>
-        </Card>
       </div>
     </div>
   );

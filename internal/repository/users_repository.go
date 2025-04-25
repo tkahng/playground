@@ -3,7 +3,6 @@ package repository
 import (
 	"context"
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/aarondl/opt/omit"
@@ -64,9 +63,9 @@ func AssignPermissions(ctx context.Context, db bob.Executor, user *models.User, 
 	return user.AttachPermissions(ctx, db, params)
 }
 
-func CreateAccount(ctx context.Context, db bob.Executor, user *models.User, params *shared.AuthenticateUserParams) (*models.UserAccount, error) {
+func CreateAccount(ctx context.Context, db bob.Executor, userId uuid.UUID, params *shared.AuthenticateUserParams) (*models.UserAccount, error) {
 	r, err := models.UserAccounts.Insert(&models.UserAccountSetter{
-		UserID:            omit.From(user.ID),
+		UserID:            omit.From(userId),
 		Type:              omit.From(params.Type),
 		Provider:          omit.From(params.Provider),
 		ProviderAccountID: omit.From(params.ProviderAccountID),
@@ -76,37 +75,12 @@ func CreateAccount(ctx context.Context, db bob.Executor, user *models.User, para
 	}, im.Returning("*")).One(ctx, db)
 	return OptionalRow(r, err)
 }
-
-func FindUserAccountByProviderAndEmail(ctx context.Context, db bob.Executor, email string, provider models.Providers) (*shared.AuthenticateUserState, error) {
-	user, err := models.Users.Query(models.SelectWhere.Users.Email.EQ(email)).One(ctx, db)
-	user, err = OptionalRow(user, err)
-	if err != nil {
-		return nil, fmt.Errorf("error while to get user: %w", err)
-	}
-	if user == nil {
-		return &shared.AuthenticateUserState{}, nil
-	}
-
-	acc, err := models.
-		UserAccounts.
-		Query(
-			psql.WhereAnd(
-				models.SelectWhere.UserAccounts.UserID.EQ(
-					user.ID,
-				),
-				models.SelectWhere.UserAccounts.Provider.EQ(
-					provider,
-				),
-			),
-		).One(ctx, db)
-	acc, err = OptionalRow(acc, err)
-	if err != nil {
-		return nil, err
-	}
-	return &shared.AuthenticateUserState{
-		User:    user,
-		Account: acc,
-	}, nil
+func FindUserAccountByUserIdAndProvider(ctx context.Context, db bob.Executor, userId uuid.UUID, provider models.Providers) (*models.UserAccount, error) {
+	acc, err := models.UserAccounts.Query(
+		models.SelectWhere.UserAccounts.Provider.EQ(provider),
+		models.SelectWhere.UserAccounts.UserID.EQ(userId),
+	).One(ctx, db)
+	return OptionalRow(acc, err)
 }
 
 const (
@@ -119,7 +93,7 @@ user_role_permissions AS (
     FROM public.user_roles ur
         JOIN public.roles r ON ur.role_id = r.id
         JOIN public.role_permissions rp ON ur.role_id = rp.role_id
-        JOIN public.permissions p ON rp.permission_id = p.id -- WHERE ur.user_id = '575a9f91-159e-4680-ba8b-3fc4db40d194'
+        JOIN public.permissions p ON rp.permission_id = p.id
 ),
 user_direct_permissions AS (
     SELECT up.user_id AS user_id,
@@ -139,7 +113,7 @@ user_sub_role_permissions AS (
         JOIN public.product_roles pr ON product.id = pr.product_id
         JOIN public.roles r ON pr.role_id = r.id
         JOIN public.role_permissions rp ON r.id = rp.role_id
-        JOIN public.permissions p ON rp.permission_id = p.id -- WHERE u.id = '575a9f91-159e-4680-ba8b-3fc4db40d194'
+        JOIN public.permissions p ON rp.permission_id = p.id
 ),
 combined_permissions AS (
     SELECT *
@@ -184,44 +158,6 @@ func FindUserWithRolesAndPermissionsByEmail(ctx context.Context, db bob.Executor
 	return &res, nil
 }
 
-// func GetUsersWithRolesAndPermissions(ctx context.Context, db bob.Executor, ids ...uuid.UUID) ([]RolePermissionClaims, error) {
-// 	var input []any
-// 	for _, id := range ids {
-// 		input = append(input, id)
-// 	}
-
-// 	query := psql.RawQuery(rawGetUsersWithPermissionsByIds, psql.Arg(input...))
-// 	res, err := bob.All(ctx, db, query, scan.StructMapper[rolePermissionClaims]())
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	var claims []RolePermissionClaims
-// 	all := models.AllProviders()
-// 	for _, r := range res {
-// 		var prov []models.Providers
-// 		var claim RolePermissionClaims = RolePermissionClaims{
-// 			UserID:      r.UserID,
-// 			Email:       r.Email,
-// 			Roles:       r.Roles,
-// 			Permissions: r.Permissions,
-// 		}
-// 		for _, provider := range r.Providers {
-// 			for _, p := range all {
-// 				if provider == string(p) {
-// 					prov = append(prov, p)
-// 				}
-// 			}
-// 		}
-// 		claim.Providers = prov
-// 		claims = append(claims, claim)
-// 	}
-// 	claims = dataloader.MapTo(claims, ids, func(c RolePermissionClaims) uuid.UUID {
-// 		return c.UserID
-// 	})
-// 	return claims, nil
-
-// }
-
 func FindUserByEmail(ctx context.Context, db bob.Executor, email string) (*models.User, error) {
 	a, err := models.Users.Query(models.SelectWhere.Users.Email.EQ(email)).One(ctx, db)
 	return OptionalRow(a, err)
@@ -231,21 +167,23 @@ func FindUserById(ctx context.Context, db bob.Executor, userId uuid.UUID) (*mode
 	return OptionalRow(a, err)
 }
 
-// // func GetUserInfo(ctx context.Context, db bob.Executor,email string) (*models.User, error) {
-func FindAdminUserCount(ctx context.Context, db bob.Executor) (int64, error) {
-	a, err := models.Roles.Query(models.SelectWhere.Roles.Name.EQ("admin")).One(ctx, db)
-	a, err = OptionalRow(a, err)
-	if err != nil {
-		panic(err)
-	}
-	usecount, err := a.Users().Count(ctx, db)
-	if err != nil {
-		panic(err)
-	}
-	if usecount == 0 {
-		// user, err := CreateUser()
-	}
-	return usecount, nil
+func UpdateUserAccount(ctx context.Context, db bob.Executor, account *models.UserAccount) error {
+	return account.Update(ctx, db, &models.UserAccountSetter{
+		UserID:            omit.From(account.UserID),
+		Type:              omit.From(account.Type),
+		Provider:          omit.From(account.Provider),
+		ProviderAccountID: omit.From(account.ProviderAccountID),
+		Password:          omitnull.FromNull(account.Password),
+		RefreshToken:      omitnull.FromNull(account.RefreshToken),
+		AccessToken:       omitnull.FromNull(account.AccessToken),
+		ExpiresAt:         omitnull.FromNull(account.ExpiresAt),
+		IDToken:           omitnull.FromNull(account.IDToken),
+		Scope:             omitnull.FromNull(account.Scope),
+		SessionState:      omitnull.FromNull(account.SessionState),
+		TokenType:         omitnull.FromNull(account.TokenType),
+		CreatedAt:         omit.From(account.CreatedAt),
+		UpdatedAt:         omit.From(account.UpdatedAt),
+	})
 }
 
 func UpdateUserPassword(ctx context.Context, db bob.Executor, userId uuid.UUID, password string) error {
@@ -272,4 +210,20 @@ func UpdateUserPassword(ctx context.Context, db bob.Executor, userId uuid.UUID, 
 	return account.Update(ctx, db, &models.UserAccountSetter{
 		Password: omitnull.From(hash),
 	})
+}
+
+func UpdateMe(ctx context.Context, db bob.Executor, userId uuid.UUID, input *shared.UpdateMeInput) error {
+	q := models.Users.Update(
+		models.UpdateWhere.Users.ID.EQ(userId),
+		models.UserSetter{
+			Name:      omitnull.FromPtr(input.Name),
+			Image:     omitnull.FromPtr(input.Image),
+			UpdatedAt: omit.From(time.Now()),
+		}.UpdateMod(),
+	)
+	_, err := q.Exec(ctx, db)
+	if err != nil {
+		return err
+	}
+	return nil
 }

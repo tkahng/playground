@@ -26,6 +26,9 @@ type TaskWithSubtask struct {
 }
 
 func ModelToTask(task *models.Task) *Task {
+	if task == nil {
+		return nil
+	}
 	return &Task{
 		ID:          task.ID,
 		UserID:      task.UserID,

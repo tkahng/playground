@@ -1,3 +1,4 @@
+import { Task, TaskCard } from "@/components/board/task-card";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { CreateProjectTaskDialog } from "@/pages/tasks/task-projects/create-project-task-dialog";
@@ -7,7 +8,6 @@ import { CSS } from "@dnd-kit/utilities";
 import { cva } from "class-variance-authority";
 import { useMemo } from "react";
 import { Badge } from "../ui/badge";
-import { CarCard, Task } from "./CarCard";
 
 export interface Column {
   id: UniqueIdentifier;
@@ -75,7 +75,7 @@ export const BoardColumn = ({
         dragging: isOverlay ? "overlay" : isDragging ? "over" : undefined,
       })}
     >
-      <CardHeader className="p-4 font-semibold border-b-2 bg-gray-100 dark:bg-zinc-800 flex flex-row items-center justify-between">
+      <CardHeader className="p-4 font-semibold border-b-2 bg-gray-200 dark:bg-zinc-800 flex flex-row items-center justify-between">
         <h1>{column.title}</h1>
         <Badge variant="outline">{cars.length}</Badge>
       </CardHeader>
@@ -84,10 +84,10 @@ export const BoardColumn = ({
           <SortableContext items={carIds}>
             {cars.length === 0 ? (
               <div className="flex flex-grow items-center justify-center">
-                <p className="text-gray-400">No cars here.</p>
+                <p className="text-gray-400">No tasks here.</p>
               </div>
             ) : (
-              cars.map((car) => <CarCard key={car.id} task={car} />)
+              cars.map((car) => <TaskCard key={car.id} task={car} />)
             )}
           </SortableContext>
           <CreateProjectTaskDialog

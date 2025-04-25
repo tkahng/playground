@@ -83,7 +83,7 @@ func (api *Api) MyStripeSubscriptions(ctx context.Context, input *struct{}) (*st
 	}{}
 	db := api.app.Db()
 	user := core.GetContextUserClaims(ctx)
-	if user == nil || user.User == nil {
+	if user == nil {
 		return nil, huma.Error401Unauthorized("not authorized")
 	}
 	subscriptions, err := repository.FindLatestActiveSubscriptionWithPriceByUserId(ctx, db, user.User.ID)

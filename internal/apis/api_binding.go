@@ -66,19 +66,25 @@ func BindApis(api huma.API, app core.App) {
 	huma.Register(api, appApi.SignupOperation("/auth/signup"), appApi.SignUp)
 	huma.Register(api, appApi.SigninOperation("/auth/signin"), appApi.SignIn)
 	huma.Register(api, appApi.MeOperation("/auth/me"), appApi.Me)
+	huma.Register(api, appApi.MeUpdateOperation("/auth/me"), appApi.MeUpdate)
 	huma.Register(api, appApi.RefreshTokenOperation("/auth/refresh-token"), appApi.RefreshToken)
+	huma.Register(api, appApi.SignoutOperation("/auth/signout"), appApi.Signout)
 
 	huma.Register(api, appApi.VerifyOperation("/auth/verify"), appApi.Verify)
 	huma.Register(api, appApi.VerifyPostOperation("/auth/verify"), appApi.VerifyPost)
 	huma.Register(api, appApi.RequestVerificationOperation("/auth/request-verification"), appApi.RequestVerification)
 	huma.Register(api, appApi.RequestPasswordResetOperation("/auth/request-password-reset"), appApi.RequestPasswordReset)
 	huma.Register(api, appApi.ConfirmPasswordResetOperation("/auth/confirm-password-reset"), appApi.ConfirmPasswordReset)
-
+	huma.Register(api, appApi.CheckPasswordResetOperation("/auth/check-password-reset"), appApi.CheckPasswordResetGet)
+	// password reset
+	huma.Register(api, appApi.ResetPasswordOperation("/auth/password-reset"), appApi.ResetPassword)
 	huma.Register(api, appApi.OAuth2CallbackGetOperation("/auth/callback"), appApi.OAuth2CallbackGet)
 	huma.Register(api, appApi.OAuth2CallbackPostOperation("/auth/callback"), appApi.OAuth2CallbackPost)
 	huma.Register(api, appApi.OAuth2AuthorizationUrlOperation("/auth/authorization-url"), appApi.OAuth2AuthorizationUrl)
 	// authenticated routes -----------------------------------------------------------
+
 	authenticatedGroup := huma.NewGroup(api)
+
 	// ---- Upload File
 	huma.Register(authenticatedGroup, appApi.UploadMediaOperation("/media"), appApi.UploadMedia)
 	// ---- Get Media
@@ -90,13 +96,16 @@ func BindApis(api huma.API, app core.App) {
 		// Mapping of event type name to Go struct for that event.
 		"message": models.Notification{},
 	}, appApi.NotificationsSsefunc)
+	// stats routes -------------------------------------------------------------------------------------------------
+	statsGroup := huma.NewGroup(api)
+	huma.Register(statsGroup, appApi.StatsOperation("/stats"), appApi.Stats)
+
 	// ---- task routes -------------------------------------------------------------------------------------------------
 	taskGroup := huma.NewGroup(api)
 	taskGroup.UseMiddleware(func(ctx huma.Context, next func(huma.Context)) {
 		db := app.Db()
 		rawCtx := ctx.Context()
 		taskId := ctx.Param("task-id")
-		fmt.Println("taskId", taskId)
 		if taskId == "" {
 			next(ctx)
 			return
@@ -112,12 +121,12 @@ func BindApis(api huma.API, app core.App) {
 			return
 		}
 		if task == nil {
-			huma.WriteErr(api, ctx, http.StatusNotFound, "task not found")
+			huma.WriteErr(api, ctx, http.StatusNotFound, "task not found at middleware")
 			return
 		}
 		user := core.GetContextUserClaims(rawCtx)
 		if user == nil {
-			huma.WriteErr(api, ctx, http.StatusUnauthorized, "unauthorized")
+			huma.WriteErr(api, ctx, http.StatusUnauthorized, "unauthorized at middleware")
 			return
 		}
 		if task.UserID != user.User.ID {
@@ -125,10 +134,9 @@ func BindApis(api huma.API, app core.App) {
 				next(ctx)
 				return
 			}
-			huma.WriteErr(api, ctx, http.StatusForbidden, "task not found")
+			huma.WriteErr(api, ctx, http.StatusForbidden, "task user id does not match user id")
 			return
 		}
-		// if
 		next(ctx)
 	})
 	// task list

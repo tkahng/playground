@@ -16,7 +16,7 @@ func (r RequiredPasswordField) String() string {
 }
 
 type SignupInput struct {
-	Email    string                `json:"email" form:"email" format:"email" example:"tkahng@gmail.com"`
+	Email    string                `json:"email" form:"email" format:"email" example:"tkahng+01@gmail.com"`
 	Password RequiredPasswordField `json:"password" form:"password" minimum:"8" example:"Password123!"`
 	Name     *string               `json:"name"`
 }
@@ -33,27 +33,30 @@ func (api *Api) SignupOperation(path string) huma.Operation {
 	}
 }
 
-func (api *Api) SignUp(ctx context.Context, input *struct{ Body *SignupInput }) (*AuthenticatedResponse, error) {
+func (api *Api) SignUp(ctx context.Context, input *struct{ Body SignupInput }) (*AuthenticatedInfoResponse, error) {
 	db := api.app.Db()
+	action := api.app.NewAuthActions(db)
 	password := input.Body.Password.String()
-	params := &shared.AuthenticateUserParams{
+	params := &shared.AuthenticationInput{
 		Email:             input.Body.Email,
-		Name:              input.Body.Name,
-		EmailVerifiedAt:   nil,
-		Provider:          "credentials",
+		Provider:          shared.ProvidersCredentials,
 		Password:          &password,
-		Type:              "credentials",
+		Type:              shared.ProviderTypeCredentials,
+		Name:              input.Body.Name,
 		ProviderAccountID: input.Body.Email,
 	}
-	user, err := api.app.AuthenticateUser(ctx, db, params, true)
+	user, err := action.Authenticate(ctx, params)
 	if err != nil {
 		return nil, fmt.Errorf("error authenticating user: %w", err)
 	}
-	dto, err := api.app.CreateAuthDto(ctx, user.User.Email)
+	dto, err := action.CreateAuthTokensFromEmail(ctx, user.Email)
 	if err != nil {
 		return nil, fmt.Errorf("error creating auth dto: %w", err)
 	}
-	return &AuthenticatedResponse{
+	if dto == nil {
+		return nil, fmt.Errorf("error creating auth dto: %w", err)
+	}
+	return &AuthenticatedInfoResponse{
 		Body: *dto,
 	}, nil
 }

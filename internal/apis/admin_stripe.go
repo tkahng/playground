@@ -112,7 +112,7 @@ func (api *Api) AdminStripeSubscriptions(ctx context.Context,
 			Meta: shared.Meta{
 				Page:    input.PaginatedInput.Page,
 				PerPage: input.PaginatedInput.PerPage,
-				Total:   int(count),
+				Total:   count,
 			},
 		},
 	}, nil

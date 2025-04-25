@@ -48,7 +48,7 @@ type UserAccountDetail struct {
 type UserDetail struct {
 	*shared.User
 	Roles    []*shared.RoleWithPermissions `json:"roles,omitempty" required:"false"`
-	Accounts []*UserAccountDetail          `json:"accounts,omitempty" required:"false"`
+	Accounts []*shared.UserAccountOutput   `json:"accounts,omitempty" required:"false"`
 }
 
 func ToUserAccountDetail(userAccount *models.UserAccount) *UserAccountDetail {
@@ -99,18 +99,14 @@ func (api *Api) AdminUsers(ctx context.Context, input *struct {
 		return &UserDetail{
 			User:     shared.ToUser(user),
 			Roles:    mapper.Map(user.R.Roles, shared.ToRoleWithPermissions),
-			Accounts: mapper.Map(user.R.UserAccounts, ToUserAccountDetail),
+			Accounts: mapper.Map(user.R.UserAccounts, shared.ToUserAccountOutput),
 		}
 	})
 
 	return &PaginatedOutput[*UserDetail]{
 		Body: shared.PaginatedResponse[*UserDetail]{
 			Data: info,
-			Meta: shared.Meta{
-				Page:    input.Page,
-				PerPage: input.PerPage,
-				Total:   int(count),
-			},
+			Meta: shared.GenerateMeta(input.PaginatedInput, count),
 		},
 	}, nil
 }
@@ -176,7 +172,7 @@ func (api *Api) AdminUsersCreate(ctx context.Context, input *struct {
 		return nil, err
 	}
 	// create account
-	account, err := repository.CreateAccount(ctx, db, user, params)
+	account, err := repository.CreateAccount(ctx, db, user.ID, params)
 	if err != nil {
 		return nil, err
 	}

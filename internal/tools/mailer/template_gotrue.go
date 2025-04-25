@@ -194,8 +194,7 @@ type CommonParams struct {
 	Email           string `json:"email"`
 	Token           string `json:"token"`
 	TokenHash       string `json:"token_hash"`
-	// Data            string `json:"data"`
-	RedirectTo string `json:"redirect_to"`
+	RedirectTo      string `json:"redirect_to"`
 }
 
 // InviteMail sends a invite mail to a new user

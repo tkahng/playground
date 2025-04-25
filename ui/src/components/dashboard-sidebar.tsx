@@ -1,41 +1,40 @@
-import { LinkDto } from "@/components/landing-links";
+import { LinkDto } from "@/components/links";
 import { cn } from "@/lib/utils";
-import { JSX } from "react";
 import { Link, useLocation } from "react-router";
-import { buttonVariants } from "./ui/button";
+import BackLink from "./back-link";
 
 export const DashboardSidebar = ({
   links,
   backLink,
 }: {
   links: LinkDto[];
-  backLink?: JSX.Element;
+  backLink?: LinkDto;
 }) => {
   const { pathname } = useLocation();
+  if (links.length === 0) {
+    return null;
+  }
   return (
-    // <nav className="flex flex-grow flex-col">
-    //   <div className="border flex flex-col flex-grow p-8">
-    <nav className="flex flex-col border w-64 px-8 py-12 gap-4 justify-start">
-      {/* <div className="border flex flex-col flex-grow "> */}
-      {backLink}
+    <nav className="flex flex-col w-64 py-8 space-y-2 justify-start border-r grow-0">
+      {backLink && <BackLink to={backLink.to} name={backLink.title} />}
       {links.map((item) => (
         <Link
-          key={item.title}
+          key={item.to}
           to={item.to}
-          // className="flex items-center gap-2 rounded-md p-2 hover:bg-muted"
           className={cn(
-            buttonVariants({ variant: "ghost" }),
-            pathname === item.to
-              ? "bg-muted hover:bg-muted underline"
-              : "hover:bg-transparent hover:underline",
-            "justify-start text-md"
+            // buttonVariants({ variant: "ghost" }),
+            pathname === item.to ? "underline" : "text-muted-foreground",
+            "text-sm font-normal hover:text-primary transition-colors hover:bg-muted rounded-md p-2"
           )}
+          // className={cn(
+          //   // buttonVariants({ variant: "ghost" }),
+          //   pathname === link.to && "text-primary underline",
+          //   "text-muted-foreground text-sm font-medium transition-colors hover:text-primary"
+          // )}
         >
-          {item.icon}
           <span>{item.title}</span>
         </Link>
       ))}
-      {/* </div> */}
     </nav>
   );
 };
