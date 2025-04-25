@@ -90,6 +90,21 @@ export const getMe = async (token: string): Promise<UserWithAccounts> => {
   }
   return data;
 };
+export const updateMe = async (
+  token: string,
+  body: components["schemas"]["UpdateMeInput"]
+) => {
+  const { data, error } = await client.PUT("/api/auth/me", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body,
+  });
+  if (error) {
+    throw error;
+  }
+  return data;
+};
 
 export const userPaginate = async (
   token: string,
