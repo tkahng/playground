@@ -70,6 +70,7 @@ export default function ProjectEdit() {
           }}
         />
       </div>
+      <div>{project.description}</div>
       <p>
         Create and manage Roles for your applications. Roles contain collections
         of Permissions and can be assigned to Users.

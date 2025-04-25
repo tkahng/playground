@@ -79,6 +79,9 @@ export function ProjectEditDialog({
       await queryClient.invalidateQueries({
         queryKey: ["project-with-tasks", project.id],
       });
+      await queryClient.invalidateQueries({
+        queryKey: ["recent-projects"],
+      });
       toast.success("Project updated successfully");
     },
     onError: (error: any) => {
