@@ -27,7 +27,7 @@ import {
   Column,
   ColumnDragData,
 } from "./BoardColumn";
-import { CarCard, CarDragData, Task } from "./CarCard";
+import { CarCard, CarDragData, Task } from "./Card";
 import { coordinateGetter } from "./multipleContainersKeyboardPreset";
 
 type NestedColumn = Column & {
@@ -112,7 +112,7 @@ export function KanbanBoard(props: { cars: Task[]; projectId: string }) {
 
     const data = entry.data.current;
 
-    if (data?.type === "Column" || data?.type === "Car") {
+    if (data?.type === "Column" || data?.type === "Task") {
       return true;
     }
 
@@ -181,7 +181,7 @@ export function KanbanBoard(props: { cars: Task[]; projectId: string }) {
       return;
     }
 
-    if (data?.type === "Car") {
+    if (data?.type === "Task") {
       setActiveCar(data.car);
       return;
     }
@@ -212,7 +212,7 @@ export function KanbanBoard(props: { cars: Task[]; projectId: string }) {
         const overColumnIndex = columns.findIndex((col) => col.id === overId);
         return arrayMove(columns, activeColumnIndex, overColumnIndex);
       });
-    } else if (activeData?.type === "Car") {
+    } else if (activeData?.type === "Task") {
       const newColumnId = hasDraggableData(over)
         ? over.data.current?.type === "Column"
           ? (over.id as ColumnId)
@@ -247,8 +247,8 @@ export function KanbanBoard(props: { cars: Task[]; projectId: string }) {
     const activeData = active.data.current;
     const overData = over.data.current;
 
-    const isActiveACar = activeData?.type === "Car";
-    const isOverACar = overData?.type === "Car";
+    const isActiveACar = activeData?.type === "Task";
+    const isOverACar = overData?.type === "Task";
 
     if (!isActiveACar) return;
 

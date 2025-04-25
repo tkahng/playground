@@ -28,10 +28,10 @@ type TaskCardProps = {
   isOverlay?: boolean;
 };
 
-export type CarType = "Car";
+export type CardType = "Task";
 
 export type CarDragData = {
-  type: CarType;
+  type: CardType;
   car: Task;
 };
 
@@ -46,11 +46,11 @@ export function CarCard({ task, isOverlay }: TaskCardProps) {
   } = useSortable({
     id: task.id,
     data: {
-      type: "Car",
+      type: "Task",
       car: task,
     } satisfies CarDragData,
     attributes: {
-      roleDescription: "Car",
+      roleDescription: "Task",
     },
   });
   const editDialog = useDialog();

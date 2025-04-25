@@ -1,4 +1,4 @@
-import { CarCard, Task } from "@/components/board/CarCard";
+import { CarCard, Task } from "@/components/board/Card";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { CreateProjectTaskDialog } from "@/pages/tasks/task-projects/create-project-task-dialog";
@@ -84,7 +84,7 @@ export const BoardColumn = ({
           <SortableContext items={carIds}>
             {cars.length === 0 ? (
               <div className="flex flex-grow items-center justify-center">
-                <p className="text-gray-400">No cars here.</p>
+                <p className="text-gray-400">No tasks here.</p>
               </div>
             ) : (
               cars.map((car) => <CarCard key={car.id} task={car} />)
