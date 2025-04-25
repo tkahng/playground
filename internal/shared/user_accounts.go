@@ -105,8 +105,8 @@ type UserAccount struct {
 type UserAccountOutput struct {
 	ID                uuid.UUID     `db:"id,pk" json:"id"`
 	UserID            uuid.UUID     `db:"user_id" json:"user_id"`
-	Type              ProviderTypes `db:"type" json:"type"`
-	Provider          Providers     `db:"provider" json:"provider"`
+	Type              ProviderTypes `db:"type" json:"type" enum:"oauth,credentials"`
+	Provider          Providers     `db:"provider" json:"provider" enum:"google,apple,facebook,github,credentials"`
 	ProviderAccountID string        `db:"provider_account_id" json:"provider_account_id"`
 	CreatedAt         time.Time     `db:"created_at" json:"created_at"`
 	UpdatedAt         time.Time     `db:"updated_at" json:"updated_at"`

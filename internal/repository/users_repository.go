@@ -211,3 +211,19 @@ func UpdateUserPassword(ctx context.Context, db bob.Executor, userId uuid.UUID, 
 		Password: omitnull.From(hash),
 	})
 }
+
+func UpdateMe(ctx context.Context, db bob.Executor, userId uuid.UUID, input *shared.UpdateMeInput) error {
+	q := models.Users.Update(
+		models.UpdateWhere.Users.ID.EQ(userId),
+		models.UserSetter{
+			Name:      omitnull.FromPtr(input.Name),
+			Image:     omitnull.FromPtr(input.Image),
+			UpdatedAt: omit.From(time.Now()),
+		}.UpdateMod(),
+	)
+	_, err := q.Exec(ctx, db)
+	if err != nil {
+		return err
+	}
+	return nil
+}

@@ -67,3 +67,8 @@ type UserListParams struct {
 	SortParams
 	Expand []string `query:"expand,omitempty" required:"false" minimum:"1" maximum:"100" enum:"roles,permissions,accounts,subscriptions"`
 }
+
+type UpdateMeInput struct {
+	Name  *string `json:"name"`
+	Image *string `json:"image"`
+}

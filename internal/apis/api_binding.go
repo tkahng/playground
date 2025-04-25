@@ -66,6 +66,7 @@ func BindApis(api huma.API, app core.App) {
 	huma.Register(api, appApi.SignupOperation("/auth/signup"), appApi.SignUp)
 	huma.Register(api, appApi.SigninOperation("/auth/signin"), appApi.SignIn)
 	huma.Register(api, appApi.MeOperation("/auth/me"), appApi.Me)
+	huma.Register(api, appApi.MeUpdateOperation("/auth/me"), appApi.MeUpdate)
 	huma.Register(api, appApi.RefreshTokenOperation("/auth/refresh-token"), appApi.RefreshToken)
 	huma.Register(api, appApi.SignoutOperation("/auth/signout"), appApi.Signout)
 

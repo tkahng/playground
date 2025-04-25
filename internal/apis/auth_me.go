@@ -55,3 +55,33 @@ func (api *Api) Me(ctx context.Context, input *struct{}) (*MeOutput, error) {
 	}, nil
 
 }
+
+func (api *Api) MeUpdateOperation(path string) huma.Operation {
+	return huma.Operation{
+		OperationID: "meUpdate",
+		Method:      http.MethodPut,
+		Path:        path,
+		Summary:     "Me Update",
+		Description: "Me Update",
+		Tags:        []string{"Auth"},
+		Errors:      []int{http.StatusUnauthorized, http.StatusNotFound},
+		Security: []map[string][]string{
+			{shared.BearerAuthSecurityKey: {}},
+		},
+	}
+}
+
+func (api *Api) MeUpdate(ctx context.Context, input *struct {
+	Body shared.UpdateMeInput
+}) (*struct{}, error) {
+	db := api.app.Db()
+	claims := core.GetContextUserClaims(ctx)
+	if claims == nil {
+		return nil, huma.Error404NotFound("User not found")
+	}
+	err := repository.UpdateMe(ctx, db, claims.User.ID, &input.Body)
+	if err != nil {
+		return nil, err
+	}
+	return nil, nil
+}
