@@ -45,13 +45,15 @@ export function ProviderConnectionForm({
     });
     window.location.href = url;
   };
-
-  <Button
-    type="submit"
-    variant="outline"
-    size="icon"
-    onClick={() => onSubmit()}
-  >
-    {providerIcons[providerName]}
-  </Button>;
+  return (
+    // Using a button to trigger the authentication flow
+    <Button
+      type="submit"
+      variant="outline"
+      size="icon"
+      onClick={() => onSubmit()}
+    >
+      {providerIcons[providerName]}
+    </Button>
+  );
 }
