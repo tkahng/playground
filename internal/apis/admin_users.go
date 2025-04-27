@@ -2,7 +2,6 @@ package apis
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"slices"
 	"time"
@@ -131,7 +130,7 @@ type CreateUserInput struct {
 	Name            *string
 	AvatarUrl       *string
 	EmailVerifiedAt *time.Time
-	Password        *string
+	Password        string
 }
 
 func (api *Api) AdminUsersCreate(ctx context.Context, input *struct {
@@ -147,22 +146,19 @@ func (api *Api) AdminUsersCreate(ctx context.Context, input *struct {
 	if existingUser != nil {
 		return nil, huma.Error409Conflict("User already exists")
 	}
-	// if password is not provided, generate a random password
-	if input.Body.Password == nil {
-		// generate random password
-		hash, err := security.CreateHash(uuid.NewString(), argon2id.DefaultParams)
-		if err != nil {
-			return nil, err
-		}
-		input.Body.Password = &hash
+	hash, err := security.CreateHash(input.Body.Password, argon2id.DefaultParams)
+	if err != nil {
+		return nil, huma.Error500InternalServerError("Failed to create user password hash")
 	}
+
 	params := &shared.AuthenticateUserParams{
 		Email:             input.Body.Email,
 		Name:              input.Body.Name,
 		AvatarUrl:         input.Body.AvatarUrl,
 		EmailVerifiedAt:   input.Body.EmailVerifiedAt,
 		Provider:          models.ProvidersCredentials,
-		Password:          input.Body.Password,
+		Password:          &input.Body.Password,
+		HashPassword:      &hash,
 		Type:              models.ProviderTypesCredentials,
 		ProviderAccountID: input.Body.Email,
 	}
@@ -176,7 +172,9 @@ func (api *Api) AdminUsersCreate(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println(account)
+	if account == nil {
+		return nil, huma.Error500InternalServerError("Failed to create user account")
+	}
 	return &struct{ Body *shared.User }{Body: shared.ToUser(user)}, nil
 
 }
