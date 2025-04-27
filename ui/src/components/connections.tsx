@@ -29,14 +29,12 @@ export const providerIcons: Record<ProviderName, React.ReactNode> = {
 
 export function ProviderConnectionForm({
   redirectTo,
-  // type,
   providerName,
 }: {
   redirectTo?: string | null;
   type: "Connect" | "Login" | "Signup";
   providerName: ProviderName;
 }) {
-  // const label = providerLabels[providerName];
   const callbackUrl = new URL(
     window.location.origin + "/auth/callback"
   ).toString();
@@ -48,24 +46,12 @@ export function ProviderConnectionForm({
     window.location.href = url;
   };
 
-  return (
-    // <form action={formAction} method="POST">
-    //   {redirectTo ? (
-    //     <input type="hidden" name="redirectTo" value={redirectTo} />
-    //   ) : null}
-    <Button
-      type="submit"
-      variant="outline"
-      size="icon"
-      onClick={() => onSubmit()}
-    >
-      {/* <span className="inline-flex items-center gap-1.5"> */}
-      {providerIcons[providerName]}
-      {/* <span>
-            {type} with {label}
-          </span> */}
-      {/* </span> */}
-    </Button>
-    // </form>
-  );
+  <Button
+    type="submit"
+    variant="outline"
+    size="icon"
+    onClick={() => onSubmit()}
+  >
+    {providerIcons[providerName]}
+  </Button>;
 }

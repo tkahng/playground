@@ -7,7 +7,7 @@ function TaskLayout() {
       <div className="w-64">
         <TaskProjectSidebar />
       </div>
-      <div className="flex-1">
+      <div className="flex-1 space-y-6 p-12 w-full">
         <Outlet />
       </div>
     </div>

@@ -57,7 +57,7 @@ export default function ProjectEdit() {
   if (!project) return <p>Project not found</p>;
 
   return (
-    <div className="space-y-6 px-12 py-8">
+    <div className="space-y-6 p-12 w-full">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">{project.name}</h1>
         <ProjectEditDialog
@@ -75,13 +75,7 @@ export default function ProjectEdit() {
         Create and manage Roles for your applications. Roles contain collections
         of Permissions and can be assigned to Users.
       </p>
-      <div className="flex flex-row gap-4">
-        <div className="gap-4 flex-1">
-          <div className="flex flex-col">
-            <KanbanBoard cars={project.tasks || []} projectId={projectId!} />
-          </div>
-        </div>
-      </div>
+      <KanbanBoard cars={project.tasks || []} projectId={projectId!} />
     </div>
   );
 }
