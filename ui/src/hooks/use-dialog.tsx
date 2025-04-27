@@ -18,35 +18,14 @@ export type DialogProps = {
 
 export function ConfirmDialog({
   dialogProps,
-  // onClick,
   children,
 }: PropsWithChildren<{
   dialogProps: DialogProps;
-  // onClick: React.MouseEventHandler<HTMLButtonElement>;
 }>) {
   return (
     <Dialog {...dialogProps}>
-      {" "}
       {/* This will contain the open and onOpenChange props */}
-      <DialogContent>
-        {children}
-        {/* <DialogHeader>
-          <DialogTitle>Are you absolutely sure?</DialogTitle>
-        </DialogHeader> */}
-        {/* Dialog Content */}
-        {/* <DialogDescription>This action cannot be undone.</DialogDescription> */}
-        {/* <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={() => dialogProps.onOpenChange(false)}
-          >
-            Cancel
-          </Button>
-          <Button variant="destructive" onClick={onClick}>
-            Delete
-          </Button>
-        </DialogFooter> */}
-      </DialogContent>
+      <DialogContent>{children}</DialogContent>
     </Dialog>
   );
 }
