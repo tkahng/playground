@@ -47,7 +47,7 @@ export function CreateUserDialog() {
         password: values.password,
         email_verified_at: values.email_verified_at
           ? new Date().toISOString()
-          : null,
+          : undefined,
       });
     },
     onSuccess: async () => {
