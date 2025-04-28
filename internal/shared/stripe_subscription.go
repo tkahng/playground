@@ -9,6 +9,7 @@ import (
 	"github.com/tkahng/authgo/internal/db/models"
 )
 
+// enum:"trialing,active,canceled,incomplete,incomplete_expired,past_due,unpaid,paused"
 type StripeSubscriptionStatus string
 
 const (

@@ -4,11 +4,13 @@ import (
 	"context"
 	"slices"
 
+	"github.com/google/uuid"
 	"github.com/stephenafamo/bob"
 	"github.com/stephenafamo/bob/dialect/psql"
 	"github.com/stephenafamo/bob/dialect/psql/sm"
 	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/authgo/internal/tools/mapper"
 )
 
 var (
@@ -227,9 +229,9 @@ func ListCustomerFilterFunc(ctx context.Context, q *psql.ViewQuery[*models.Strip
 
 }
 
-func CountCustomers(ctx context.Context, db bob.Executor, filter *shared.StripePriceListFilter) (int64, error) {
-	q := models.StripePrices.Query()
-	ListPriceFilterFunc(ctx, q, filter)
+func CountCustomers(ctx context.Context, db bob.Executor, filter *shared.StripeCustomerListFilter) (int64, error) {
+	q := models.StripeCustomers.Query()
+	ListCustomerFilterFunc(ctx, q, filter)
 	data, err := q.Count(ctx, db)
 	if err != nil {
 		return 0, err
@@ -278,12 +280,27 @@ func ListSubscriptionFilterFunc(ctx context.Context, q *psql.ViewQuery[*models.S
 		return
 	}
 	if len(filter.Ids) > 0 {
-		ids := ParseUUIDs(filter.Ids)
 		q.Apply(
-			models.SelectWhere.StripeCustomers.ID.In(ids...),
+			models.SelectWhere.StripeSubscriptions.ID.In(filter.Ids...),
 		)
 	}
-
+	if len(filter.Status) > 0 {
+		statuses := mapper.Map(filter.Status, shared.ToModelsStripeSubscriptionStatus)
+		if len(statuses) > 0 {
+			q.Apply(
+				models.SelectWhere.StripeSubscriptions.Status.In(statuses...),
+			)
+		}
+	}
+	if filter.UserID != "" {
+		userID, err := uuid.Parse(filter.UserID)
+		if err != nil {
+			return
+		}
+		q.Apply(
+			models.SelectWhere.StripeSubscriptions.UserID.EQ(userID),
+		)
+	}
 }
 
 func CountSubscriptions(ctx context.Context, db bob.Executor, filter *shared.StripeSubscriptionListFilter) (int64, error) {

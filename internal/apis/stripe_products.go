@@ -64,11 +64,7 @@ func (api *Api) StripeProductsWithPrices(ctx context.Context, inputt *StripeProd
 	return &shared.PaginatedOutput[*shared.StripeProductWithPrices]{
 		Body: shared.PaginatedResponse[*shared.StripeProductWithPrices]{
 			Data: prods,
-			Meta: shared.Meta{
-				Page:    input.Page,
-				PerPage: input.PerPage,
-				Total:   count,
-			},
+			Meta: shared.GenerateMeta(input.PaginatedInput, count),
 		},
 	}, nil
 }

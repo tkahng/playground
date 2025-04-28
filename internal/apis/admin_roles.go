@@ -53,11 +53,7 @@ func (api *Api) AdminRolesList(ctx context.Context, input *struct {
 	return &shared.PaginatedOutput[*shared.RoleWithPermissions]{
 		Body: shared.PaginatedResponse[*shared.RoleWithPermissions]{
 			Data: out,
-			Meta: shared.Meta{
-				Page:    input.PaginatedInput.Page,
-				PerPage: input.PaginatedInput.PerPage,
-				Total:   count,
-			},
+			Meta: shared.GenerateMeta(input.PaginatedInput, count),
 		},
 	}, nil
 

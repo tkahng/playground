@@ -167,11 +167,7 @@ func (api *Api) AdminUserPermissionSourceList(ctx context.Context, input *struct
 		Body: shared.PaginatedResponse[repository.PermissionSource]{
 
 			Data: userPermissionSources,
-			Meta: shared.Meta{
-				Page:    input.PaginatedInput.Page,
-				PerPage: input.PaginatedInput.PerPage,
-				Total:   count,
-			},
+			Meta: shared.GenerateMeta(input.PaginatedInput, count),
 		},
 	}, nil
 }
@@ -208,11 +204,7 @@ func (api *Api) AdminPermissionsList(ctx context.Context, input *struct {
 		Body: shared.PaginatedResponse[*shared.Permission]{
 
 			Data: mapper.Map(permissions, shared.ToPermission),
-			Meta: shared.Meta{
-				Page:    input.PaginatedInput.Page,
-				PerPage: input.PaginatedInput.PerPage,
-				Total:   count,
-			},
+			Meta: shared.GenerateMeta(input.PaginatedInput, count),
 		},
 	}, nil
 

@@ -180,11 +180,7 @@ func (api *Api) MediaList(ctx context.Context, input *shared.MediaListParams) (*
 	return &shared.PaginatedOutput[*shared.Media]{
 		Body: shared.PaginatedResponse[*shared.Media]{
 			Data: data,
-			Meta: shared.Meta{
-				Page:    input.PaginatedInput.Page,
-				PerPage: input.PaginatedInput.PerPage,
-				Total:   count,
-			},
+			Meta: shared.GenerateMeta(input.PaginatedInput, count),
 		},
 	}, nil
 }
