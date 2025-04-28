@@ -208,10 +208,10 @@ func ListRolesFilterFunc(ctx context.Context, q *psql.ViewQuery[*models.Role, mo
 		if filter.Reverse == "product" {
 			q.Apply(
 				sm.LeftJoin(models.ProductRoles.NameAs()).On(
-					models.RoleColumns.ID.EQ(models.UserRoleColumns.RoleID),
+					models.RoleColumns.ID.EQ(models.ProductRoleColumns.RoleID),
 					models.ProductRoleColumns.ProductID.EQ(psql.Arg(filter.ProductId)),
 				),
-				sm.Where(models.UserRoleColumns.RoleID.IsNull()),
+				sm.Where(models.ProductRoleColumns.RoleID.IsNull()),
 			)
 		} else {
 			q.Apply(

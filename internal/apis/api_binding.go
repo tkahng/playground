@@ -253,6 +253,8 @@ func BindApis(api huma.API, app core.App) {
 	huma.Register(adminGroup, appApi.AdminStripeProductsGetOperation("/products/{product-id}"), appApi.AdminStripeProductsGet)
 	// admin stripe products roles create
 	huma.Register(adminGroup, appApi.AdminStripeProductsRolesCreateOperation("/products/{product-id}/roles"), appApi.AdminStripeProductsRolesCreate)
+	// admin stripe products roles delete
+	huma.Register(adminGroup, appApi.AdminStripeProductsRolesDeleteOperation("/products/{product-id}/roles/{role-id}"), appApi.AdminStripeProductsRolesDelete)
 	// admin stripe products with prices
 
 }

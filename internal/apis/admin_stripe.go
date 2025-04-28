@@ -6,6 +6,7 @@ import (
 	"slices"
 
 	"github.com/danielgtaylor/huma/v2"
+	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
@@ -306,6 +307,57 @@ func (api *Api) AdminStripeProductsRolesCreate(ctx context.Context, input *struc
 	}
 
 	err = user.AttachRoles(ctx, db, roles...)
+	if err != nil {
+		return nil, err
+	}
+	return nil, nil
+}
+
+func (api *Api) AdminStripeProductsRolesDeleteOperation(path string) huma.Operation {
+	return huma.Operation{
+		OperationID: "admin-delete-product-roles",
+		Method:      http.MethodDelete,
+		Path:        path,
+		Summary:     "Delete product roles",
+		Description: "Delete product roles",
+		Tags:        []string{"Admin", "Roles", "Product", "Stripe"},
+		Errors:      []int{http.StatusNotFound},
+		Security: []map[string][]string{
+			{shared.BearerAuthSecurityKey: {}},
+		},
+	}
+}
+func (api *Api) AdminStripeProductsRolesDelete(ctx context.Context, input *struct {
+	ProductID string `path:"product-id" required:"true"`
+	RoleID    string `path:"role-id" required:"true" format:"uuid"`
+}) (*struct{}, error) {
+	db := api.app.Db()
+	id := input.ProductID
+	product, err := repository.FindProductByStripeId(ctx, db, id)
+	if err != nil {
+		return nil, err
+	}
+	if product == nil {
+		return nil, huma.Error404NotFound("Product not found")
+	}
+
+	roleId, err := uuid.Parse(input.RoleID)
+	if err != nil {
+		return nil, huma.Error400BadRequest("role_id is not a valid UUID")
+	}
+
+	role, err := repository.FindRoleById(ctx, db, roleId)
+	if err != nil {
+		return nil, err
+	}
+	if role == nil {
+		return nil, huma.Error404NotFound("Role not found")
+	}
+
+	_, err = models.ProductRoles.Delete(
+		models.DeleteWhere.ProductRoles.RoleID.EQ(role.ID),
+		models.DeleteWhere.ProductRoles.ProductID.EQ(id),
+	).Exec(ctx, db)
 	if err != nil {
 		return nil, err
 	}
