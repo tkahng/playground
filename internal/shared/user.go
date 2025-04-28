@@ -8,6 +8,10 @@ import (
 	"github.com/tkahng/authgo/internal/db/models"
 )
 
+const (
+	SuperUserEmail string = "admin@k2dv.io"
+)
+
 type User struct {
 	ID              uuid.UUID  `db:"id,pk" json:"id"`
 	Email           string     `db:"email" json:"email"`

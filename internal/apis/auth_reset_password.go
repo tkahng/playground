@@ -30,8 +30,13 @@ func (api *Api) RequestPasswordResetOperation(path string) huma.Operation {
 
 func (api *Api) RequestPasswordReset(ctx context.Context, input *struct{ Body *RequestPasswordResetInput }) (*RequestPasswordResetOutput, error) {
 	db := api.app.Db()
+	checker := api.app.NewChecker(ctx)
+	err := checker.CannotBeSuperUserEmail(input.Body.Email)
+	if err != nil {
+		return nil, err
+	}
 	action := api.app.NewAuthActions(db)
-	err := action.HandlePasswordResetRequest(ctx, input.Body.Email)
+	err = action.HandlePasswordResetRequest(ctx, input.Body.Email)
 	if err != nil {
 		return nil, err
 	}
@@ -111,12 +116,17 @@ type PasswordResetInput struct {
 
 func (api *Api) ResetPassword(ctx context.Context, input *struct{ Body PasswordResetInput }) (*struct{}, error) {
 	db := api.app.Db()
-	action := api.app.NewAuthActions(db)
 	claims := core.GetContextUserInfo(ctx)
+	checker := api.app.NewChecker(ctx)
+	err := checker.CannotBeSuperUserEmail(claims.User.Email)
+	if err != nil {
+		return nil, err
+	}
+	action := api.app.NewAuthActions(db)
 	if claims == nil {
 		return nil, huma.Error404NotFound("User not found")
 	}
-	err := action.ResetPassword(ctx, claims.User.ID, input.Body.PreviousPassword, input.Body.NewPassword)
+	err = action.ResetPassword(ctx, claims.User.ID, input.Body.PreviousPassword, input.Body.NewPassword)
 	if err != nil {
 		return nil, err
 	}

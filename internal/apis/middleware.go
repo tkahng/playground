@@ -8,7 +8,9 @@ import (
 	"strings"
 
 	"github.com/danielgtaylor/huma/v2"
+	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/core"
+	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
 )
 
@@ -37,6 +39,46 @@ func HumaTokenFromHeader(ctx huma.Context) string {
 var HumaTokenFuncs = []func(huma.Context) string{
 	HumaTokenFromHeader,
 	HumaTokenFromCookie,
+}
+
+func CheckTaskOwnerMiddleware(api huma.API, app core.App) func(ctx huma.Context, next func(huma.Context)) {
+	return func(ctx huma.Context, next func(huma.Context)) {
+		db := app.Db()
+		rawCtx := ctx.Context()
+		taskId := ctx.Param("task-id")
+		if taskId == "" {
+			next(ctx)
+			return
+		}
+		id, err := uuid.Parse(taskId)
+		if err != nil {
+			huma.WriteErr(api, ctx, http.StatusBadRequest, "invalid task id", err)
+			return
+		}
+		task, err := repository.FindTaskByID(rawCtx, db, id)
+		if err != nil {
+			huma.WriteErr(api, ctx, http.StatusInternalServerError, "error getting task", err)
+			return
+		}
+		if task == nil {
+			huma.WriteErr(api, ctx, http.StatusNotFound, "task not found at middleware")
+			return
+		}
+		user := core.GetContextUserInfo(rawCtx)
+		if user == nil {
+			huma.WriteErr(api, ctx, http.StatusUnauthorized, "unauthorized at middleware")
+			return
+		}
+		if task.UserID != user.User.ID {
+			if slices.Contains(user.Permissions, "superuser") {
+				next(ctx)
+				return
+			}
+			huma.WriteErr(api, ctx, http.StatusForbidden, "task user id does not match user id")
+			return
+		}
+		next(ctx)
+	}
 }
 
 func CheckPermissionsMiddleware(api huma.API, permissions ...string) func(ctx huma.Context, next func(huma.Context)) {

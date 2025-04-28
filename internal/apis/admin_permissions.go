@@ -288,8 +288,11 @@ func (api *Api) AdminPermissionsDelete(ctx context.Context, input *struct {
 	if permission == nil {
 		return nil, huma.Error404NotFound("Permission not found")
 	}
-	if permission.Name == shared.PermissionNameAdmin {
-		return nil, huma.Error400BadRequest("Cannot delete admin permission")
+	// Check if the permission is not admin or basic
+	checker := api.app.NewChecker(ctx)
+	err = checker.CannotBeAdminOrBasicName(permission.Name)
+	if err != nil {
+		return nil, err
 	}
 	err = repository.DeletePermission(ctx, db, permission.ID)
 	if err != nil {
@@ -331,6 +334,11 @@ func (api *Api) AdminPermissionsUpdate(ctx context.Context, input *struct {
 	}
 	if permission == nil {
 		return nil, huma.Error404NotFound("Permission not found")
+	}
+	checker := api.app.NewChecker(ctx)
+	err = checker.CannotBeAdminOrBasicName(permission.Name)
+	if err != nil {
+		return nil, err
 	}
 	err = permission.Update(
 		ctx,

@@ -3,15 +3,11 @@ package apis
 import (
 	"context"
 	"fmt"
-	"net/http"
-	"slices"
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/danielgtaylor/huma/v2/sse"
-	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/core"
 	"github.com/tkahng/authgo/internal/db/models"
-	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
 )
 
@@ -55,6 +51,8 @@ func BindApis(api huma.API, app core.App) {
 			},
 		}, nil
 	})
+	checkTaskOwnerMiddleware := CheckTaskOwnerMiddleware(api, app)
+
 	// http://127.0.0.1:8080/auth/callback
 	// huma.Register(api, appApi.AuthMethodsOperation("/auth/methods"), appApi.AuthMethods)
 	// protected test routes -----------------------------------------------------------
@@ -102,43 +100,7 @@ func BindApis(api huma.API, app core.App) {
 
 	// ---- task routes -------------------------------------------------------------------------------------------------
 	taskGroup := huma.NewGroup(api)
-	taskGroup.UseMiddleware(func(ctx huma.Context, next func(huma.Context)) {
-		db := app.Db()
-		rawCtx := ctx.Context()
-		taskId := ctx.Param("task-id")
-		if taskId == "" {
-			next(ctx)
-			return
-		}
-		id, err := uuid.Parse(taskId)
-		if err != nil {
-			huma.WriteErr(api, ctx, http.StatusBadRequest, "invalid task id", err)
-			return
-		}
-		task, err := repository.FindTaskByID(rawCtx, db, id)
-		if err != nil {
-			huma.WriteErr(api, ctx, http.StatusInternalServerError, "error getting task", err)
-			return
-		}
-		if task == nil {
-			huma.WriteErr(api, ctx, http.StatusNotFound, "task not found at middleware")
-			return
-		}
-		user := core.GetContextUserInfo(rawCtx)
-		if user == nil {
-			huma.WriteErr(api, ctx, http.StatusUnauthorized, "unauthorized at middleware")
-			return
-		}
-		if task.UserID != user.User.ID {
-			if slices.Contains(user.Permissions, "superuser") {
-				next(ctx)
-				return
-			}
-			huma.WriteErr(api, ctx, http.StatusForbidden, "task user id does not match user id")
-			return
-		}
-		next(ctx)
-	})
+	taskGroup.UseMiddleware(checkTaskOwnerMiddleware)
 	// task list
 	huma.Register(taskGroup, appApi.TaskListOperation("/tasks"), appApi.TaskList)
 	// task create

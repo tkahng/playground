@@ -146,7 +146,12 @@ func (api *Api) AdminUsersDelete(ctx context.Context, input *struct {
 	ID uuid.UUID `path:"user-id" format:"uuid" required:"true"`
 }) (*struct{}, error) {
 	db := api.app.Db()
-	err := repository.DeleteUsers(ctx, db, input.ID)
+	checker := api.app.NewChecker(ctx)
+	err := checker.CannotBeSuperUserID(input.ID)
+	if err != nil {
+		return nil, err
+	}
+	err = repository.DeleteUsers(ctx, db, input.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -204,7 +209,12 @@ func (api *Api) AdminUsersUpdatePassword(ctx context.Context, input *struct {
 	Body UpdateUserPasswordInput
 }) (*struct{}, error) {
 	db := api.app.Db()
-	err := repository.UpdateUserPassword(ctx, db, input.ID, input.Body.Password)
+	checker := api.app.NewChecker(ctx)
+	err := checker.CannotBeSuperUserID(input.ID)
+	if err != nil {
+		return nil, err
+	}
+	err = repository.UpdateUserPassword(ctx, db, input.ID, input.Body.Password)
 	if err != nil {
 		return nil, err
 	}
