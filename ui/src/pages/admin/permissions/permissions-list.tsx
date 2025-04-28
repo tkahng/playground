@@ -30,7 +30,7 @@ import { NavLink, useNavigate, useSearchParams } from "react-router";
 import { CreatePermissionDialog } from "./create-permission-dialog";
 
 export default function PermissionListPage() {
-  const { user } = useAuthProvider();
+  const { user, checkAuth } = useAuthProvider();
   const [searchParams, setSearchParams] = useSearchParams();
   const pageIndex = parseInt(searchParams.get("page") || "0", 10);
   const pageSize = parseInt(searchParams.get("per_page") || "10", 10);
@@ -51,6 +51,7 @@ export default function PermissionListPage() {
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["permissions-list", pageIndex, pageSize],
     queryFn: async () => {
+      await checkAuth(); // Ensure user is authenticated
       if (!user?.tokens.access_token) {
         throw new Error("Missing access token or role ID");
       }

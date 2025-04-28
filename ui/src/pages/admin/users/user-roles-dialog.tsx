@@ -43,7 +43,7 @@ export function UserRolesDialog({
 }: {
   userDetail: UserDetailWithRoles;
 }) {
-  const { user } = useAuthProvider();
+  const { user, checkAuth } = useAuthProvider();
   const [isDialogOpen, setDialogOpen] = useState(false);
   const queryClient = useQueryClient();
   // const [value, setValue] = useState<Option[]>([]);
@@ -51,6 +51,7 @@ export function UserRolesDialog({
   const { data, isLoading, error } = useQuery({
     queryKey: ["user-roles-reverse", userId],
     queryFn: async () => {
+      await checkAuth(); // Ensure user is authenticated
       if (!user?.tokens.access_token || !userId) {
         throw new Error("Missing access token or role ID");
       }
@@ -65,6 +66,7 @@ export function UserRolesDialog({
   });
   const mutation = useMutation({
     mutationFn: async (values: z.infer<typeof formSchema>) => {
+      await checkAuth(); // Ensure user is authenticated
       if (!user?.tokens.access_token || !userId) {
         throw new Error("Missing access token or role ID");
       }

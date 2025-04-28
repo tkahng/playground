@@ -33,7 +33,7 @@ const formSchema = z.object({
 export default function PermissionEdit() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { user } = useAuthProvider();
+  const { user, checkAuth } = useAuthProvider();
   const { permissionId } = useParams<{ permissionId: string }>();
   const {
     data: permission,
@@ -42,9 +42,11 @@ export default function PermissionEdit() {
   } = useQuery({
     queryKey: ["permission", permissionId],
     queryFn: async () => {
+      await checkAuth(); // Ensure user is authenticated
       if (!user?.tokens.access_token || !permissionId) {
         throw new Error("Missing access token or Permission ID");
       }
+
       return getPermission(user.tokens.access_token, permissionId);
     },
   });

@@ -32,12 +32,13 @@ const formSchema = z.object({
 });
 
 export function CreateRoleDialog() {
-  const { user } = useAuthProvider();
+  const { user, checkAuth } = useAuthProvider();
   const [isDialogOpen, setDialogOpen] = useState(false);
   const queryClient = useQueryClient();
 
   const mutation = useMutation({
     mutationFn: async (values: z.infer<typeof formSchema>) => {
+      await checkAuth(); // Ensure user is authenticated
       if (!user?.tokens.access_token) {
         throw new Error("Missing access token or role ID");
       }

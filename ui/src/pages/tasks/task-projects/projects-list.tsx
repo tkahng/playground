@@ -14,7 +14,7 @@ import { CreateProjectAiDialog } from "./create-project-ai-dialog";
 import { CreateProjectDialog } from "./create-project-dialog";
 
 export default function ProjectListPage() {
-  const { user } = useAuthProvider();
+  const { user, checkAuth } = useAuthProvider();
   const [searchParams] = useSearchParams();
   // const pageIndex = parseInt(searchParams.get("page") || "0", 10);
   const pageSize = parseInt(searchParams.get("per_page") || "10", 10);
@@ -44,6 +44,7 @@ export default function ProjectListPage() {
     queryKey: ["projects-list"],
     initialPageParam: 0,
     queryFn: async ({ pageParam = 10 }) => {
+      await checkAuth(); // Ensure user is authenticated
       if (!user?.tokens.access_token) {
         throw new Error("Missing access token or role ID");
       }

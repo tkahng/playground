@@ -26,7 +26,7 @@ import { NavLink, useNavigate, useSearchParams } from "react-router";
 import { toast } from "sonner";
 
 export default function RolesListPage() {
-  const { user } = useAuthProvider();
+  const { user, checkAuth } = useAuthProvider();
   const [searchParams, setSearchParams] = useSearchParams();
   const pageIndex = parseInt(searchParams.get("page") || "0", 10);
   const pageSize = parseInt(searchParams.get("per_page") || "10", 10);
@@ -47,6 +47,7 @@ export default function RolesListPage() {
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["roles-list"],
     queryFn: async () => {
+      await checkAuth(); // Ensure user is authenticated
       if (!user?.tokens.access_token) {
         throw new Error("Missing access token or role ID");
       }
@@ -62,6 +63,7 @@ export default function RolesListPage() {
   });
   const mutation = useMutation({
     mutationFn: async (roleId: string) => {
+      await checkAuth(); // Ensure user is authenticated
       if (!user?.tokens.access_token) {
         throw new Error("Missing access token or role ID");
       }
