@@ -347,7 +347,7 @@ export const getUserRoles = async (token: string, id: string) => {
   const { data, error } = await client.GET("/api/admin/roles", {
     params: {
       query: {
-        page: 1,
+        page: 0,
         perPage: 50,
         user_id: id,
       },
@@ -392,7 +392,7 @@ export const getUserPermissions = async (
           userId,
         },
         query: {
-          page: 1,
+          page: 0,
           per_page: 50,
           reverse,
         },
@@ -431,7 +431,21 @@ export const getUserPermissions2 = async (token: string, userId: string) => {
   }
   return data;
 };
-
+export const createUser = async (
+  token: string,
+  body: components["schemas"]["CreateUserInput"]
+) => {
+  const { data, error } = await client.POST("/api/admin/users", {
+    body,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  if (error) {
+    throw error;
+  }
+  return data;
+};
 export const getUser = async (token: string, id: string) => {
   const { data, error } = await client.GET("/api/admin/users/{id}", {
     params: {

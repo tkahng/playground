@@ -1139,12 +1139,14 @@ export interface components {
              * @description A URL to the JSON Schema for this object.
              */
             readonly $schema?: string;
-            AvatarUrl: string | null;
-            Email: string;
+            /** Format: uri */
+            avatar_url?: string | null;
+            /** Format: email */
+            email: string;
             /** Format: date-time */
-            EmailVerifiedAt: string | null;
-            Name: string | null;
-            Password: string | null;
+            email_verified_at?: string | null;
+            name?: string | null;
+            password: string;
         };
         ErrorDetail: {
             /** @description Where the error occurred, e.g. 'body.items[3].tags' or 'path.thing-id' */
@@ -1820,7 +1822,7 @@ export interface components {
              * @description A URL to the JSON Schema for this object.
              */
             readonly $schema?: string;
-            Password: string;
+            password: string;
         };
         User: {
             /**
