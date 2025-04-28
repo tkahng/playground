@@ -6,14 +6,12 @@ import (
 	"slices"
 	"time"
 
-	"github.com/alexedwards/argon2id"
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
-	"github.com/tkahng/authgo/internal/tools/security"
 )
 
 func (api *Api) AdminUsersOperation(path string) huma.Operation {
@@ -126,11 +124,11 @@ func (api *Api) AdminUsersCreateOperation(path string) huma.Operation {
 }
 
 type CreateUserInput struct {
-	Email           string
-	Name            *string
-	AvatarUrl       *string
-	EmailVerifiedAt *time.Time
-	Password        string
+	Email           string     `json:"email" required:"true" format:"email" maxLength:"100"`
+	Name            *string    `json:"name" required:"false" maxLength:"100"`
+	AvatarUrl       *string    `json:"avatar_url" required:"false" format:"uri" maxLength:"200"`
+	EmailVerifiedAt *time.Time `json:"email_verified_at" required:"false" format:"date-time"`
+	Password        string     `json:"password" required:"true" minLength:"8" maxLength:"100"`
 }
 
 func (api *Api) AdminUsersCreate(ctx context.Context, input *struct {
@@ -139,6 +137,7 @@ func (api *Api) AdminUsersCreate(ctx context.Context, input *struct {
 	Body *shared.User
 }, error) {
 	db := api.app.Db()
+	action := api.app.NewAuthActions(db)
 	existingUser, err := repository.FindUserByEmail(ctx, db, input.Body.Email)
 	if err != nil {
 		return nil, err
@@ -146,36 +145,15 @@ func (api *Api) AdminUsersCreate(ctx context.Context, input *struct {
 	if existingUser != nil {
 		return nil, huma.Error409Conflict("User already exists")
 	}
-	hash, err := security.CreateHash(input.Body.Password, argon2id.DefaultParams)
-	if err != nil {
-		return nil, huma.Error500InternalServerError("Failed to create user password hash")
-	}
-
-	params := &shared.AuthenticateUserParams{
+	user, err := action.Authenticate(ctx, &shared.AuthenticationInput{
 		Email:             input.Body.Email,
-		Name:              input.Body.Name,
-		AvatarUrl:         input.Body.AvatarUrl,
-		EmailVerifiedAt:   input.Body.EmailVerifiedAt,
-		Provider:          models.ProvidersCredentials,
+		Provider:          shared.ProvidersCredentials,
 		Password:          &input.Body.Password,
-		HashPassword:      &hash,
-		Type:              models.ProviderTypesCredentials,
+		Type:              shared.ProviderTypeCredentials,
 		ProviderAccountID: input.Body.Email,
-	}
-	// create user
-	user, err := repository.CreateUser(ctx, db, params)
-	if err != nil {
-		return nil, err
-	}
-	// create account
-	account, err := repository.CreateAccount(ctx, db, user.ID, params)
-	if err != nil {
-		return nil, err
-	}
-	if account == nil {
-		return nil, huma.Error500InternalServerError("Failed to create user account")
-	}
-	return &struct{ Body *shared.User }{Body: shared.ToUser(user)}, nil
+	})
+
+	return &struct{ Body *shared.User }{Body: user}, nil
 
 }
 
@@ -248,7 +226,7 @@ func (api *Api) AdminUsersUpdatePasswordOperation(path string) huma.Operation {
 }
 
 type UpdateUserPasswordInput struct {
-	Password string
+	Password string `json:"password" required:"true" minLength:"8" maxLength:"100"`
 }
 
 func (api *Api) AdminUsersUpdatePassword(ctx context.Context, input *struct {
