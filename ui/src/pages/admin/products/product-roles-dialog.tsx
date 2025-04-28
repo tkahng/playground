@@ -18,8 +18,8 @@ import {
 } from "@/components/ui/form";
 import MultipleSelector from "@/components/ui/multiple-selector";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { createUserRoles, rolesPaginate } from "@/lib/queries";
-import { UserDetailWithRoles } from "@/schema.types";
+import { adminStripeProductRolesCreate, rolesPaginate } from "@/lib/queries";
+import { ProductWithPrices } from "@/schema.types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
@@ -38,26 +38,26 @@ const formSchema = z.object({
     .min(1),
 });
 
-export function UserRolesDialog({
+export function ProductRolesDialog({
   userDetail,
 }: {
-  userDetail: UserDetailWithRoles;
+  userDetail: ProductWithPrices;
 }) {
   const { user, checkAuth } = useAuthProvider();
   const [isDialogOpen, setDialogOpen] = useState(false);
   const queryClient = useQueryClient();
   // const [value, setValue] = useState<Option[]>([]);
-  const userId = userDetail?.id;
+  const productId = userDetail?.id;
   const { data, isLoading, error } = useQuery({
-    queryKey: ["user-roles-reverse", userId],
+    queryKey: ["product-roles-reverse", productId],
     queryFn: async () => {
       await checkAuth(); // Ensure user is authenticated
-      if (!user?.tokens.access_token || !userId) {
+      if (!user?.tokens.access_token || !productId) {
         throw new Error("Missing access token or role ID");
       }
       const { data } = await rolesPaginate(user.tokens.access_token, {
-        user_id: userId,
-        reverse: "user",
+        product_id: productId,
+        reverse: "product",
         page: 0,
         per_page: 50,
       });
@@ -67,20 +67,20 @@ export function UserRolesDialog({
   const mutation = useMutation({
     mutationFn: async (values: z.infer<typeof formSchema>) => {
       await checkAuth(); // Ensure user is authenticated
-      if (!user?.tokens.access_token || !userId) {
+      if (!user?.tokens.access_token || !productId) {
         throw new Error("Missing access token or role ID");
       }
-      await createUserRoles(user.tokens.access_token, userId, {
+      await adminStripeProductRolesCreate(user.tokens.access_token, productId, {
         role_ids: values.roles.map((role) => role.value),
       });
       setDialogOpen(false);
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({
-        queryKey: ["userInfo", userId],
+        queryKey: ["product", productId],
       });
       await queryClient.invalidateQueries({
-        queryKey: ["user-roles-reverse", userId],
+        queryKey: ["product-roles-reverse", productId],
       });
     },
   });
@@ -120,27 +120,13 @@ export function UserRolesDialog({
         <DialogHeader>
           <DialogTitle>Assign Roles</DialogTitle>
           <DialogDescription>
-            Select the roles you want to assign to this user
+            Select the roles you want to assign to this product.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <div className="grid">
               <div className="space-y-4">
-                {/* <MultipleSelector
-                  value={value}
-                  onChange={setValue}
-                  defaultOptions={data.map((role) => ({
-                    label: role.name,
-                    value: role.id,
-                  }))}
-                  placeholder="Select roles..."
-                  emptyIndicator={
-                    <p className="text-center text-lg leading-10 text-gray-600 dark:text-gray-400">
-                      no results found.
-                    </p>
-                  }
-                />{" "} */}
                 <FormField
                   control={form.control}
                   name="roles"

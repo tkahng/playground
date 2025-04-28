@@ -1196,6 +1196,54 @@ export const adminStripeProduct = async (token: string, id: string) => {
   return data;
 };
 
+export const adminStripeProductRolesCreate = async (
+  token: string,
+  id: string,
+  body: operations["admin-create-product-roles"]["requestBody"]["content"]["application/json"]
+) => {
+  const { data, error } = await client.POST(
+    "/api/admin/products/{product-id}/roles",
+    {
+      params: {
+        path: { "product-id": id },
+      },
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body,
+    }
+  );
+  if (error) {
+    throw error;
+  }
+  return data;
+};
+
+export const adminStripeProductRolesDelete = async (
+  token: string,
+  productId: string,
+  roleId: string
+) => {
+  const { data, error } = await client.DELETE(
+    "/api/admin/products/{product-id}/roles/{role-id}",
+    {
+      params: {
+        path: {
+          "product-id": productId,
+          "role-id": roleId,
+        },
+      },
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+  if (error) {
+    throw error;
+  }
+  return data;
+};
+
 export const adminStripeSubscriptions = async (
   token: string,
   args: operations["admin-stripe-subscriptions"]["parameters"]["query"]

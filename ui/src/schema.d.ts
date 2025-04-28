@@ -113,6 +113,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/products/{product-id}/roles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create product roles
+         * @description Create product roles
+         */
+        post: operations["admin-create-product-roles"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/products/{product-id}/roles/{role-id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete product roles
+         * @description Delete product roles
+         */
+        delete: operations["admin-delete-product-roles"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/roles": {
         parameters: {
             query?: never;
@@ -1624,6 +1664,11 @@ export interface components {
             updated_at: string;
         };
         StripeProductWithData: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
             active: boolean;
             /** Format: date-time */
             created_at: string;
@@ -2371,32 +2416,14 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description No Content */
-            204: {
+            /** @description OK */
+            200: {
                 headers: {
-                    Active?: boolean;
-                    CreatedAt?: string;
-                    Currency?: string;
-                    Description?: string | null;
-                    ID?: string;
-                    Image?: string | null;
-                    Interval?: "day" | "week" | "month" | "year" | null;
-                    IntervalCount?: number | null;
-                    LookupKey?: string | null;
-                    Metadata?: {
-                        [key: string]: string;
-                    };
-                    Name?: string;
-                    Prices?: components["schemas"]["Price"];
-                    ProductID?: string;
-                    Roles?: components["schemas"]["Role"];
-                    TrialPeriodDays?: number | null;
-                    Type?: "one_time" | "recurring";
-                    UnitAmount?: number | null;
-                    UpdatedAt?: string;
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["StripeProductWithData"];
+                };
             };
             /** @description Bad Request */
             400: {
@@ -2436,6 +2463,105 @@ export interface operations {
             };
         };
     };
+    "admin-create-product-roles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                "product-id": string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RoleIdsInput"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "admin-delete-product-roles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                "product-id": string;
+                "role-id": string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
     "admin-roles": {
         parameters: {
             query?: {
@@ -2445,8 +2571,9 @@ export interface operations {
                 ids?: string[] | null;
                 names?: string[] | null;
                 user_id?: string;
-                /** @description When user_id is provided, if this is true, it will return the roles that the user does not have */
-                user_reverse?: boolean;
+                /** @description When true, it will return the roles that do not match the filter criteria */
+                reverse?: "user" | "product";
+                product_id?: string;
                 sort_by?: string;
                 sort_order?: "asc" | "desc";
                 expand?: ("users" | "permissions")[] | null;

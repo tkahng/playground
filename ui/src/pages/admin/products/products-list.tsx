@@ -59,13 +59,9 @@ export default function ProductsListPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Users</h1>
-        {/* <CreateUserDialog /> */}
-      </div>
       <p>
-        Create and manage Users for your applications. Users contain collections
-        of Roles and can be assigned to Applications.
+        Edit product roles and permissions. For more information, visit the
+        stripe dashboard.
       </p>
 
       <DataTable
@@ -113,9 +109,7 @@ export default function ProductsListPage() {
             cell: ({ row }) => {
               return (
                 <div className="flex flex-row gap-2 justify-end">
-                  <SubscriptionEllipsisDropdown
-                    subscriptionId={row.original.id}
-                  />
+                  <ProductEllipsisDropdown productId={row.original.id} />
                 </div>
               );
             },
@@ -131,11 +125,7 @@ export default function ProductsListPage() {
   );
 }
 
-function SubscriptionEllipsisDropdown({
-  subscriptionId,
-}: {
-  subscriptionId: string;
-}) {
+function ProductEllipsisDropdown({ productId }: { productId: string }) {
   // const editDialog = useDialog();
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -151,7 +141,7 @@ function SubscriptionEllipsisDropdown({
           <DropdownMenuItem
             onSelect={() => {
               setDropdownOpen(false);
-              navigate(`${RouteMap.ADMIN_SUBSCRIPTIONS}/${subscriptionId}`);
+              navigate(`${RouteMap.ADMIN_PRODUCTS}/${productId}`);
             }}
           >
             <Button variant="ghost" size="sm">
@@ -162,9 +152,7 @@ function SubscriptionEllipsisDropdown({
           <DropdownMenuItem
             onSelect={() => {
               setDropdownOpen(false);
-              navigate(
-                `${RouteMap.ADMIN_SUBSCRIPTIONS}/${subscriptionId}?tab=roles`
-              );
+              navigate(`${RouteMap.ADMIN_PRODUCTS}/${productId}?tab=roles`);
             }}
           >
             <Button variant="ghost" size="sm">

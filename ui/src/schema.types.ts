@@ -48,8 +48,7 @@ export type UserDetailWithRoles = {
 export type SubscriptionWithPrice =
   components["schemas"]["SubscriptionWithPrice"];
 
-export type ProductWithPrices =
-  components["schemas"]["StripeProductWithPrices"];
+export type ProductWithPrices = components["schemas"]["StripeProductWithData"];
 
 export type Price = components["schemas"]["Price"];
 
