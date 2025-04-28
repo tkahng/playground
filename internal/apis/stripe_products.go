@@ -28,7 +28,7 @@ type StripeProductsWithPricesInput struct {
 	shared.SortParams
 }
 
-func (api *Api) StripeProductsWithPrices(ctx context.Context, inputt *StripeProductsWithPricesInput) (*shared.PaginatedOutput[*shared.StripeProductWithPrices], error) {
+func (api *Api) StripeProductsWithPrices(ctx context.Context, inputt *StripeProductsWithPricesInput) (*shared.PaginatedOutput[*shared.StripeProductWithData], error) {
 	db := api.app.Db()
 	input := &shared.StripeProductListParams{
 		PaginatedInput: inputt.PaginatedInput,
@@ -53,16 +53,16 @@ func (api *Api) StripeProductsWithPrices(ctx context.Context, inputt *StripeProd
 	if err != nil {
 		return nil, err
 	}
-	prods := mapper.Map(users, func(user *models.StripeProduct) *shared.StripeProductWithPrices {
-		return &shared.StripeProductWithPrices{
+	prods := mapper.Map(users, func(user *models.StripeProduct) *shared.StripeProductWithData {
+		return &shared.StripeProductWithData{
 			Product: shared.ModelToProduct(user),
 			Prices:  mapper.Map(user.R.ProductStripePrices, shared.ModelToPrice),
 		}
 
 	})
 
-	return &shared.PaginatedOutput[*shared.StripeProductWithPrices]{
-		Body: shared.PaginatedResponse[*shared.StripeProductWithPrices]{
+	return &shared.PaginatedOutput[*shared.StripeProductWithData]{
+		Body: shared.PaginatedResponse[*shared.StripeProductWithData]{
 			Data: prods,
 			Meta: shared.GenerateMeta(input.PaginatedInput, count),
 		},

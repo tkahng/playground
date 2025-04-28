@@ -30,7 +30,8 @@ func ModelToProduct(product *models.StripeProduct) *Product {
 	}
 }
 
-type StripeProductWithPrices struct {
+type StripeProductWithData struct {
 	*Product
+	Roles  []*Role  `db:"roles" json:"roles,omitempty" required:"false"`
 	Prices []*Price `db:"prices" json:"prices,omitempty" required:"false"`
 }

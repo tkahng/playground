@@ -85,3 +85,64 @@ func (api *Api) AdminStripeSubscriptions(ctx context.Context,
 	}, nil
 
 }
+
+func (api *Api) AdminStripeProductsOperation(path string) huma.Operation {
+	return huma.Operation{
+		OperationID: "admin-stripe-products",
+		Method:      http.MethodGet,
+		Path:        path,
+		Summary:     "Admin stripe products",
+		Description: "List of stripe products",
+		Tags:        []string{"Admin", "Product", "Stripe"},
+		Errors:      []int{http.StatusNotFound},
+		Security: []map[string][]string{
+			{shared.BearerAuthSecurityKey: {}},
+		},
+	}
+}
+func (api *Api) AdminStripeProducts(ctx context.Context,
+	input *shared.StripeProductListParams,
+) (*shared.PaginatedOutput[*shared.StripeProductWithData], error) {
+	db := api.app.Db()
+	products, err := repository.ListProducts(ctx, db, input)
+	if err != nil {
+		return nil, err
+	}
+	if slices.Contains(input.Expand, "prices") {
+		err = products.LoadStripeProductProductStripePrices(ctx, db)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if slices.Contains(input.Expand, "roles") {
+		err = products.LoadStripeProductRoles(ctx, db)
+		if err != nil {
+			return nil, err
+		}
+	}
+	prods := mapper.Map(products, func(p *models.StripeProduct) *shared.StripeProductWithData {
+		spwd := &shared.StripeProductWithData{
+			Product: shared.ModelToProduct(p),
+		}
+		if p.R.ProductStripePrices != nil {
+			// If the product has prices, we map them to the shared model
+			// and include them in the response.
+			spwd.Prices = mapper.Map(p.R.ProductStripePrices, shared.ModelToPrice)
+		}
+		if p.R.Roles != nil {
+			// If the product has prices and we are expanding prices,
+			spwd.Roles = mapper.Map(p.R.Roles, shared.ToRole)
+		}
+		return spwd
+	})
+	count, err := repository.CountProducts(ctx, db, &input.StripeProductListFilter)
+	if err != nil {
+		return nil, err
+	}
+	return &shared.PaginatedOutput[*shared.StripeProductWithData]{
+		Body: shared.PaginatedResponse[*shared.StripeProductWithData]{
+			Data: prods,
+			Meta: shared.GenerateMeta(input.PaginatedInput, count),
+		},
+	}, nil
+}

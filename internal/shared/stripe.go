@@ -20,7 +20,7 @@ type StripeProductListParams struct {
 	PaginatedInput
 	StripeProductListFilter
 	SortParams
-	Expand      []string     `query:"expand,omitempty" required:"false" minimum:"1" maximum:"100" enum:"prices"`
+	Expand      []string     `query:"expand,omitempty" required:"false" minimum:"1" maximum:"100" enum:"prices,roles"`
 	PriceActive ActiveStatus `query:"price_active,omitempty" required:"false" enum:"active,inactive"`
 }
 
@@ -63,5 +63,10 @@ type StripeSubscriptionListParams struct {
 	PaginatedInput
 	StripeSubscriptionListFilter
 	SortParams
+	StripeSubscriptionExpand
+	// Expand []string `query:"expand,omitempty" required:"false" minimum:"1" maximum:"100" enum:"user,price,product"`
+}
+
+type StripeSubscriptionExpand struct {
 	Expand []string `query:"expand,omitempty" required:"false" minimum:"1" maximum:"100" enum:"user,price,product"`
 }
