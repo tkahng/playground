@@ -1,20 +1,9 @@
 import { DataTable } from "@/components/data-table";
-import { RouteMap } from "@/components/route-map";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { adminStripeSubscriptions } from "@/lib/queries";
 import { useQuery } from "@tanstack/react-query";
 import { PaginationState, Updater } from "@tanstack/react-table";
-import { Ellipsis, Pencil } from "lucide-react";
-import { useState } from "react";
-import { NavLink, useNavigate, useSearchParams } from "react-router";
-// import { CreateUserDialog } from "./create-user-dialog";
+import { useSearchParams } from "react-router";
 export default function SubscriptionsListPage() {
   const { user, checkAuth } = useAuthProvider();
 
@@ -59,13 +48,9 @@ export default function SubscriptionsListPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Users</h1>
-        {/* <CreateUserDialog /> */}
-      </div>
       <p>
-        Create and manage Users for your applications. Users contain collections
-        of Roles and can be assigned to Applications.
+        This is a list of subscriptions. For more details, visit the stripe
+        dashboard.
       </p>
 
       <DataTable
@@ -73,16 +58,6 @@ export default function SubscriptionsListPage() {
           {
             accessorKey: "id",
             header: "ID",
-            cell: ({ row }) => {
-              return (
-                <NavLink
-                  to={`${RouteMap.ADMIN_SUBSCRIPTIONS}/${row.original.id}`}
-                  className="hover:underline text-blue-500"
-                >
-                  {row.original.id}
-                </NavLink>
-              );
-            },
           },
           {
             id: "user",
@@ -131,18 +106,6 @@ export default function SubscriptionsListPage() {
               return new Date(row.original.updated_at).toLocaleDateString();
             },
           },
-          {
-            id: "actions",
-            cell: ({ row }) => {
-              return (
-                <div className="flex flex-row gap-2 justify-end">
-                  <SubscriptionEllipsisDropdown
-                    subscriptionId={row.original.id}
-                  />
-                </div>
-              );
-            },
-          },
         ]}
         data={data?.data || []}
         rowCount={data?.meta.total || 0}
@@ -151,52 +114,5 @@ export default function SubscriptionsListPage() {
         paginationEnabled
       />
     </div>
-  );
-}
-
-function SubscriptionEllipsisDropdown({
-  subscriptionId,
-}: {
-  subscriptionId: string;
-}) {
-  // const editDialog = useDialog();
-  const navigate = useNavigate();
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  return (
-    <>
-      <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon">
-            <Ellipsis className="h-4 w-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent>
-          <DropdownMenuItem
-            onSelect={() => {
-              setDropdownOpen(false);
-              navigate(`${RouteMap.ADMIN_SUBSCRIPTIONS}/${subscriptionId}`);
-            }}
-          >
-            <Button variant="ghost" size="sm">
-              <Pencil className="h-4 w-4" />
-              <span>Edit</span>
-            </Button>
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            onSelect={() => {
-              setDropdownOpen(false);
-              navigate(
-                `${RouteMap.ADMIN_SUBSCRIPTIONS}/${subscriptionId}?tab=roles`
-              );
-            }}
-          >
-            <Button variant="ghost" size="sm">
-              <Pencil className="h-4 w-4" />
-              <span>Assign Roles</span>
-            </Button>
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </>
   );
 }

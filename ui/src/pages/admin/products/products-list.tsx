@@ -86,6 +86,7 @@ export default function ProductsListPage() {
           },
           {
             id: "roles",
+            header: "Roles",
             cell: ({ row }) => {
               return row.original.roles?.map((r) => r.name).join(",");
             },
@@ -152,7 +153,7 @@ function ProductEllipsisDropdown({ productId }: { productId: string }) {
           <DropdownMenuItem
             onSelect={() => {
               setDropdownOpen(false);
-              navigate(`${RouteMap.ADMIN_PRODUCTS}/${productId}?tab=roles`);
+              navigate(`${RouteMap.ADMIN_PRODUCTS}/${productId}`);
             }}
           >
             <Button variant="ghost" size="sm">
