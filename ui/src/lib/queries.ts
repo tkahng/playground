@@ -701,9 +701,6 @@ export const getUserSubscriptions = async (token: string) => {
   if (error) {
     throw error;
   }
-  // if !data) {
-  //   throw new Error("No data");
-  // }
   return data;
 };
 

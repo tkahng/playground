@@ -1,9 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { getStats } from "@/lib/queries";
+import { getStats, getUserSubscriptions } from "@/lib/queries";
 import { useQuery } from "@tanstack/react-query";
-import { Cpu, LineChart, Users } from "lucide-react";
+import { CheckCircle, Cpu, Users, XCircle } from "lucide-react";
 
 export default function DashboardPage() {
   const { user, checkAuth } = useAuthProvider();
@@ -15,7 +15,12 @@ export default function DashboardPage() {
         throw new Error("User not found");
       }
       try {
-        return await getStats(user.tokens.access_token);
+        const stats = await getStats(user.tokens.access_token);
+        const subs = await getUserSubscriptions(user.tokens.access_token);
+        return {
+          ...stats,
+          sub: subs,
+        };
       } catch (error) {
         // await checkAuth();
         throw error;
@@ -35,14 +40,32 @@ export default function DashboardPage() {
     <div className="mx-auto px-8 py-8 justify-start items-stretch flex-1 max-w-[1200px]">
       <h1 className="mb-6 text-3xl font-bold">Overview</h1>
       <div className="grid gap-6 md:grid-cols-3 lg:grid-cols-5">
-        <Card className="col-span-3">
-          <CardHeader>
-            <CardTitle>API Usage Over Time</CardTitle>
-          </CardHeader>
-          <CardContent className="pl-2">
-            <LineChart className="h-[200px] w-full" />
-          </CardContent>
-        </Card>
+        <div className="col-span-3 gap-6 grid">
+          <Card>
+            <CardHeader>
+              <CardTitle>Current Plan</CardTitle>
+            </CardHeader>
+            <CardContent className="text-4xl font-bold">
+              {data.sub?.price?.product?.name || "No Plan"}
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Email Verified</CardTitle>
+            </CardHeader>
+            <CardContent className="text-4xl font-bold">
+              {user?.user.email_verified_at ? (
+                <div>
+                  <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-300" />
+                </div>
+              ) : (
+                <div>
+                  <XCircle className="h-8 w-8 text-red-600 dark:text-red-300" />
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
         <div className="grid gap-6 md:grid-rows-1 lg:grid-rows-2 col-span-2">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
