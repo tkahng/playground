@@ -60,13 +60,12 @@ export default function UserListPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Users</h1>
+        <p>
+          Create and manage Users for your applications. Users contain
+          collections of Roles and can be assigned to Applications.
+        </p>
         <CreateUserDialog />
       </div>
-      <p>
-        Create and manage Users for your applications. Users contain collections
-        of Roles and can be assigned to Applications.
-      </p>
 
       <DataTable
         columns={[

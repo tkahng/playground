@@ -88,7 +88,10 @@ export default function PermissionListPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Permissions</h1>
+        <p>
+          Create and manage permissions for your applications. Permissions and
+          can be assigned to Users.
+        </p>
         <CreatePermissionDialog />
       </div>
       <DataTable

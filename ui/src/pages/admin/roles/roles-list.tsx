@@ -91,13 +91,13 @@ export default function RolesListPage() {
     // <div className="flex w-full flex-col items-center justify-center">
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Roles</h1>
+        <p>
+          Create and manage Roles for your applications. Roles contain
+          collections of Permissions and can be assigned to Users.
+        </p>
         <CreateRoleDialog />
       </div>
-      <p>
-        Create and manage Roles for your applications. Roles contain collections
-        of Permissions and can be assigned to Users.
-      </p>
+      <p></p>
       <DataTable
         columns={[
           {
