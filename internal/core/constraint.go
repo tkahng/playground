@@ -16,11 +16,24 @@ type ConstraintChecker interface {
 	CannotBeAdminOrBasicName(permissionName string) error
 	CannotBeAdminOrBasicRoleAndPermissionName(roleName, permissionName string) error
 	CannotBeSuperUserEmailAndRoleName(email, roleName string) error
+	CannotHaveValidSubscription(userId uuid.UUID) error
 }
 
 type ConstraintCheckerService struct {
 	db  bob.Executor
 	ctx context.Context
+}
+
+// CannotHaveValidSubscription implements ConstraintChecker.
+func (c *ConstraintCheckerService) CannotHaveValidSubscription(userId uuid.UUID) error {
+	subscription, err := repository.FindLatestActiveSubscriptionByUserId(c.ctx, c.db, userId)
+	if err != nil {
+		return err
+	}
+	if subscription != nil {
+		return huma.Error400BadRequest("Cannot perform this action on a user with a valid subscription")
+	}
+	return nil
 }
 
 // CannotBeAdminOrBasicName implements ConstraintChecker.

@@ -151,6 +151,11 @@ func (api *Api) AdminUsersDelete(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
+	// Check if the user has any active subscriptions
+	err = checker.CannotHaveValidSubscription(input.ID)
+	if err != nil {
+		return nil, err
+	}
 	err = repository.DeleteUsers(ctx, db, input.ID)
 	if err != nil {
 		return nil, err
