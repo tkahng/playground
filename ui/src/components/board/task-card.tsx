@@ -82,12 +82,12 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
           variant="ghost"
           {...attributes}
           {...listeners}
-          className="p-1 text-secondary-foreground/50 -ml-2 h-auto cursor-grab"
+          className="p-1 -ml-2 h-auto cursor-grab"
         >
           <span className="sr-only">Move car</span>
           <GripVertical />
         </Button>
-        <div className="text-sm text-muted-foreground">
+        <div className="text-sm">
           {task.name}
           <br />
           {task.content}

@@ -75,7 +75,7 @@ export const BoardColumn = ({
         dragging: isOverlay ? "overlay" : isDragging ? "over" : undefined,
       })}
     >
-      <CardHeader className="p-4 font-semibold border-b-2 bg-gray-200 dark:bg-zinc-800 flex flex-row items-center justify-between">
+      <CardHeader className="p-4 font-semibold border-b-2 flex flex-row items-center justify-between">
         <h1>{column.title}</h1>
         <Badge variant="outline">{cars.length}</Badge>
       </CardHeader>
@@ -84,7 +84,7 @@ export const BoardColumn = ({
           <SortableContext items={carIds}>
             {cars.length === 0 ? (
               <div className="flex flex-grow items-center justify-center">
-                <p className="text-gray-400">No tasks here.</p>
+                <p className="">No tasks here.</p>
               </div>
             ) : (
               cars.map((car) => <TaskCard key={car.id} task={car} />)

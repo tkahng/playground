@@ -58,7 +58,7 @@ export default function ProjectEdit() {
   if (!project) return <p>Project not found</p>;
 
   return (
-    <div className="flex-1 space-y-6 w-full">
+    <div className="flex-1 space-y-6 w-full px-8">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">{project.name}</h1>
         <ProjectEditDialog
