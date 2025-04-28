@@ -50,6 +50,17 @@ export const RouteLinks = {
     current: (pathname: string) =>
       pathname.startsWith(RouteMap.ADMIN_PERMISSIONS),
   },
+  ADMIN_DASHBOARD_PRODUCTS: {
+    to: RouteMap.ADMIN_PRODUCTS,
+    title: "Products",
+    current: (pathname: string) => pathname.startsWith(RouteMap.ADMIN_PRODUCTS),
+  },
+  ADMIN_DASHBOARD_SUBSCRIPTIONS: {
+    to: RouteMap.ADMIN_SUBSCRIPTIONS,
+    title: "Subscriptions",
+    current: (pathname: string) =>
+      pathname.startsWith(RouteMap.ADMIN_SUBSCRIPTIONS),
+  },
   PROTECTED: {
     to: RouteMap.PROTECTED,
     title: "Protected",
@@ -78,6 +89,8 @@ export const adminHeaderLinks: LinkDto[] = [
   RouteLinks.ADMIN_DASHBOARD_USERS,
   RouteLinks.ADMIN_DASHBOARD_ROLES,
   RouteLinks.ADMIN_DASHBOARD_PERMISSIONS,
+  RouteLinks.ADMIN_DASHBOARD_PRODUCTS,
+  RouteLinks.ADMIN_DASHBOARD_SUBSCRIPTIONS,
 ];
 
 export const protectedSidebarLinks: LinkDto[] = [

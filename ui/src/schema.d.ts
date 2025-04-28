@@ -73,6 +73,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/products": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Admin stripe products
+         * @description List of stripe products
+         */
+        get: operations["admin-stripe-products"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/products/{product-id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Admin stripe product get
+         * @description Get a stripe product by ID
+         */
+        get: operations["admin-stripe-product-get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/roles": {
         parameters: {
             query?: never;
@@ -181,6 +221,26 @@ export interface paths {
          * @description List of stripe subscriptions
          */
         get: operations["admin-stripe-subscriptions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/subscriptions/{subscription-id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Admin stripe subscription get
+         * @description Get a stripe subscription by ID
+         */
+        get: operations["admin-stripe-subscription-get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1294,13 +1354,13 @@ export interface components {
             data: components["schemas"]["RoleWithPermissions"][] | null;
             meta: components["schemas"]["Meta"];
         };
-        PaginatedResponseStripeProductWithPrices: {
+        PaginatedResponseStripeProductWithData: {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
              */
             readonly $schema?: string;
-            data: components["schemas"]["StripeProductWithPrices"][] | null;
+            data: components["schemas"]["StripeProductWithData"][] | null;
             meta: components["schemas"]["Meta"];
         };
         PaginatedResponseSubscriptionWithData: {
@@ -1563,7 +1623,7 @@ export interface components {
             /** Format: date-time */
             updated_at: string;
         };
-        StripeProductWithPrices: {
+        StripeProductWithData: {
             active: boolean;
             /** Format: date-time */
             created_at: string;
@@ -1575,6 +1635,7 @@ export interface components {
             };
             name: string;
             prices?: components["schemas"]["Price"][] | null;
+            roles?: components["schemas"]["Role"][] | null;
             /** Format: date-time */
             updated_at: string;
         };
@@ -1587,6 +1648,11 @@ export interface components {
             url: string;
         };
         SubscriptionWithData: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
             /** Format: date-time */
             cancel_at: string | null;
             cancel_at_period_end: boolean;
@@ -2235,6 +2301,141 @@ export interface operations {
             };
         };
     };
+    "admin-stripe-products": {
+        parameters: {
+            query?: {
+                page?: number;
+                per_page?: number;
+                q?: string;
+                ids?: string[] | null;
+                active?: "active" | "inactive";
+                sort_by?: string;
+                sort_order?: "asc" | "desc";
+                expand?: ("prices" | "roles")[] | null;
+                price_active?: "active" | "inactive";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponseStripeProductWithData"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "admin-stripe-product-get": {
+        parameters: {
+            query?: {
+                expand?: ("prices" | "roles")[] | null;
+            };
+            header?: never;
+            path: {
+                "product-id": string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    Active?: boolean;
+                    CreatedAt?: string;
+                    Currency?: string;
+                    Description?: string | null;
+                    ID?: string;
+                    Image?: string | null;
+                    Interval?: "day" | "week" | "month" | "year" | null;
+                    IntervalCount?: number | null;
+                    LookupKey?: string | null;
+                    Metadata?: {
+                        [key: string]: string;
+                    };
+                    Name?: string;
+                    Prices?: components["schemas"]["Price"];
+                    ProductID?: string;
+                    Roles?: components["schemas"]["Role"];
+                    TrialPeriodDays?: number | null;
+                    Type?: "one_time" | "recurring";
+                    UnitAmount?: number | null;
+                    UpdatedAt?: string;
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
     "admin-roles": {
         parameters: {
             query?: {
@@ -2655,6 +2856,7 @@ export interface operations {
                 per_page?: number;
                 q?: string;
                 ids?: string[] | null;
+                user_id?: string;
                 status?: ("trialing" | "active" | "canceled" | "incomplete" | "incomplete_expired" | "past_due" | "unpaid" | "paused")[] | null;
                 sort_by?: string;
                 sort_order?: "asc" | "desc";
@@ -2673,6 +2875,66 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PaginatedResponseSubscriptionWithData"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "admin-stripe-subscription-get": {
+        parameters: {
+            query?: {
+                expand?: ("user" | "price" | "product")[] | null;
+            };
+            header?: never;
+            path: {
+                "subscription-id": string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubscriptionWithData"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
                 };
             };
             /** @description Not Found */
@@ -4817,7 +5079,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PaginatedResponseStripeProductWithPrices"];
+                    "application/json": components["schemas"]["PaginatedResponseStripeProductWithData"];
                 };
             };
             /** @description Bad Request */

@@ -35,6 +35,8 @@ import AdminLayout from "./layouts/admin-layout";
 import PageSectionLayout from "./layouts/page-section";
 import PublicLayout from "./layouts/public-layout";
 import NotFoundPage from "./pages/404";
+import ProductsListPage from "./pages/admin/products/products-list";
+import SubscriptionsListPage from "./pages/admin/subscriptions/subscription-list";
 import ConfirmPasswordReset from "./pages/auth/confirm-password-reset";
 import ResetPasswordRequestPage from "./pages/auth/reset-password";
 import NotAuthorizedPage from "./pages/not-authorized";
@@ -154,6 +156,23 @@ function App() {
                 >
                   <Route index element={<PermissionListPage />} />
                   <Route path=":permissionId" element={<PermissionEdit />} />
+                </Route>
+                <Route
+                  path="subscriptions"
+                  element={<PageSectionLayout title="Subscriptions" />}
+                >
+                  <Route index element={<SubscriptionsListPage />} />
+                  <Route
+                    path=":subscription-id"
+                    element={<div>Product Edit</div>}
+                  />
+                </Route>
+                <Route
+                  path="products"
+                  element={<PageSectionLayout title="Products" />}
+                >
+                  <Route index element={<ProductsListPage />} />
+                  <Route path=":product-id" element={<div>Product Edit</div>} />
                 </Route>
               </Route>
             </Route>

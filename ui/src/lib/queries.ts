@@ -1159,3 +1159,78 @@ export const adminResetUserPassword = async (
   }
   return data;
 };
+
+export const adminStripeProducts = async (
+  token: string,
+  args: operations["admin-stripe-products"]["parameters"]["query"]
+) => {
+  const { data, error } = await client.GET("/api/admin/products", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    params: {
+      query: args,
+    },
+  });
+  if (error) {
+    throw error;
+  }
+  return data;
+};
+
+export const adminStripeProduct = async (token: string, id: string) => {
+  const { data, error } = await client.GET("/api/admin/products/{product-id}", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    params: {
+      path: { "product-id": id },
+      query: {
+        expand: ["prices", "roles"],
+      },
+    },
+  });
+  if (error) {
+    throw error;
+  }
+  return data;
+};
+
+export const adminStripeSubscriptions = async (
+  token: string,
+  args: operations["admin-stripe-subscriptions"]["parameters"]["query"]
+) => {
+  const { data, error } = await client.GET("/api/admin/subscriptions", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    params: {
+      query: args,
+    },
+  });
+  if (error) {
+    throw error;
+  }
+  return data;
+};
+
+export const adminStripeSubscription = async (token: string, id: string) => {
+  const { data, error } = await client.GET(
+    "/api/admin/subscriptions/{subscription-id}",
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      params: {
+        path: { "subscription-id": id },
+        query: {
+          expand: ["user", "product", "price"],
+        },
+      },
+    }
+  );
+  if (error) {
+    throw error;
+  }
+  return data;
+};
