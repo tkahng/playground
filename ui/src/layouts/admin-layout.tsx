@@ -6,7 +6,7 @@ import { RouteMap } from "@/components/route-map";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { Outlet } from "react-router";
 
-export default function DashboardLayout({
+export default function AdminLayout({
   headerLinks,
 }: {
   leftLinks?: LinkDto[];
@@ -22,13 +22,13 @@ export default function DashboardLayout({
         {
           to: RouteMap.ADMIN,
           title: "Admin",
-          current: () => false,
+          current: () => true,
         },
       ]
     : [];
   // const dashboard = !isAdminPath
   const links = [
-    { to: RouteMap.DASHBOARD, title: "Dashboard", current: () => true },
+    { to: RouteMap.DASHBOARD, title: "Dashboard", current: () => false },
     ...admin,
   ] as LinkDto[];
   // if (!isAdminPath) {

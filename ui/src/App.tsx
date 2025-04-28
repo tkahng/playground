@@ -25,13 +25,13 @@ import ProRoute from "@/pages/protected-routes/route-pro";
 import BillingSettingPage from "@/pages/settings/billing-settings";
 import AccountSettingsPage from "@/pages/settings/general-settings";
 import { BrowserRouter, Route, Routes } from "react-router";
-import AuthVerify from "./components/auth-verify";
 import {
   adminHeaderLinks,
   authenticatedSubHeaderLinks,
 } from "./components/links";
 import { Providers } from "./components/providers";
 import { RouteMap } from "./components/route-map";
+import AdminLayout from "./layouts/admin-layout";
 import PageSectionLayout from "./layouts/page-section";
 import PublicLayout from "./layouts/public-layout";
 import NotFoundPage from "./pages/404";
@@ -47,7 +47,7 @@ function App() {
     <>
       <Providers>
         <BrowserRouter>
-          <AuthVerify />
+          {/* <AuthVerify /> */}
           <Routes>
             {/* Landing page */}
             <Route element={<RootLayout />}>
@@ -132,9 +132,7 @@ function App() {
             </Route>
 
             <Route path={"/admin"} element={<AdminLayoutBase />}>
-              <Route
-                element={<DashboardLayout headerLinks={adminHeaderLinks} />}
-              >
+              <Route element={<AdminLayout headerLinks={adminHeaderLinks} />}>
                 <Route index element={<Dashboard />} />
                 <Route
                   path="users"

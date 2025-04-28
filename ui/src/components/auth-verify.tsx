@@ -9,10 +9,8 @@ const AuthVerify = () => {
   useEffect(() => {
     if (!isMounted.current) {
       isMounted.current = true;
-      console.log("checkAuth");
       checkAuth()
         .then(() => {
-          console.log("checkAuth done");
           isMounted.current = false;
         })
         .catch(() => {
