@@ -24,6 +24,7 @@ export type Permission = components["schemas"]["Permission"];
 export type UserDetail = components["schemas"]["UserDetail"];
 
 export type UserDetailWithRoles = {
+  accounts: components["schemas"]["UserAccountOutput"][];
   roles: RoleWithPermissions[] | null;
   permissions: {
     created_at: string;

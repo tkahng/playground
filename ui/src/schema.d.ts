@@ -189,6 +189,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/user-accounts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Admin user accounts
+         * @description List of user accounts
+         */
+        get: operations["admin-user-accounts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/users": {
         parameters: {
             query?: never;
@@ -213,7 +233,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/admin/users/{id}": {
+    "/api/admin/users/{user-id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -241,7 +261,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/admin/users/{id}/password": {
+    "/api/admin/users/{user-id}/password": {
         parameters: {
             query?: never;
             header?: never;
@@ -261,31 +281,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/admin/users/{id}/roles": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /**
-         * Update user roles
-         * @description Update user roles
-         */
-        put: operations["admin-update-user-roles"];
-        /**
-         * Create user roles
-         * @description Create user roles
-         */
-        post: operations["admin-create-user-roles"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/admin/users/{userId}/permissions": {
+    "/api/admin/users/{user-id}/permissions": {
         parameters: {
             query?: never;
             header?: never;
@@ -309,7 +305,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/admin/users/{userId}/permissions/{permissionId}": {
+    "/api/admin/users/{user-id}/permissions/{permission-id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -329,7 +325,31 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/admin/users/{userId}/roles/{roleId}": {
+    "/api/admin/users/{user-id}/roles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Update user roles
+         * @description Update user roles
+         */
+        put: operations["admin-update-user-roles"];
+        /**
+         * Create user roles
+         * @description Create user roles
+         */
+        post: operations["admin-create-user-roles"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/users/{user-id}/roles/{role-id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1308,6 +1328,15 @@ export interface components {
              */
             readonly $schema?: string;
             data: components["schemas"]["TaskWithSubtask"][] | null;
+            meta: components["schemas"]["Meta"];
+        };
+        PaginatedResponseUserAccountOutput: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            data: components["schemas"]["UserAccountOutput"][] | null;
             meta: components["schemas"]["Meta"];
         };
         PaginatedResponseUserDetail: {
@@ -2675,6 +2704,63 @@ export interface operations {
             };
         };
     };
+    "admin-user-accounts": {
+        parameters: {
+            query?: {
+                page?: number;
+                per_page?: number;
+                providers?: ("google" | "apple" | "facebook" | "github" | "credentials")[] | null;
+                provider_types?: ("oauth" | "credentials")[] | null;
+                q?: string;
+                ids?: string[] | null;
+                user_id?: string;
+                sort_by?: string;
+                sort_order?: "asc" | "desc";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponseUserAccountOutput"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
     "admin-users": {
         parameters: {
             query?: {
@@ -2789,7 +2875,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                id: string;
+                "user-id": string;
             };
             cookie?: never;
         };
@@ -2838,7 +2924,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                id: string;
+                "user-id": string;
             };
             cookie?: never;
         };
@@ -2889,7 +2975,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                id: string;
+                "user-id": string;
             };
             cookie?: never;
         };
@@ -2936,7 +3022,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                id: string;
+                "user-id": string;
             };
             cookie?: never;
         };
@@ -2982,12 +3068,166 @@ export interface operations {
             };
         };
     };
+    "admin-user-permission-sources": {
+        parameters: {
+            query?: {
+                page?: number;
+                per_page?: number;
+                reverse?: boolean;
+                sort_by?: string;
+                sort_order?: "asc" | "desc";
+            };
+            header?: never;
+            path: {
+                "user-id": string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponsePermissionSource"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "admin-user-permissions-create": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                "user-id": string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Admin-user-permissions-createRequest"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "admin-user-permissions-delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                "user-id": string;
+                "permission-id": string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
     "admin-update-user-roles": {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                id: string;
+                "user-id": string;
             };
             cookie?: never;
         };
@@ -3040,7 +3280,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                id: string;
+                "user-id": string;
             };
             cookie?: never;
         };
@@ -3086,167 +3326,13 @@ export interface operations {
             };
         };
     };
-    "admin-user-permission-sources": {
-        parameters: {
-            query?: {
-                page?: number;
-                per_page?: number;
-                reverse?: boolean;
-                sort_by?: string;
-                sort_order?: "asc" | "desc";
-            };
-            header?: never;
-            path: {
-                userId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaginatedResponsePermissionSource"];
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-            /** @description Unprocessable Entity */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-            /** @description Internal Server Error */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-        };
-    };
-    "admin-user-permissions-create": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                userId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["Admin-user-permissions-createRequest"];
-            };
-        };
-        responses: {
-            /** @description No Content */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-            /** @description Unprocessable Entity */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-            /** @description Internal Server Error */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-        };
-    };
-    "admin-user-permissions-delete": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                userId: string;
-                permissionId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No Content */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-            /** @description Unprocessable Entity */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-            /** @description Internal Server Error */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-        };
-    };
     "admin-user-roles-delete": {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                userId: string;
-                roleId: string;
+                "user-id": string;
+                "role-id": string;
             };
             cookie?: never;
         };
