@@ -38,25 +38,25 @@ export function NexusAILandingHeader({
             : null}
         </div>
         <div className="flex shrink items-center space-x-4">
-          {rightLinks?.length &&
-            rightLinks.length > 0 &&
-            rightLinks.map(({ to, title, current }) => (
-              <Link
-                className={cn(
-                  current
-                    ? current(pathname)
+          {rightLinks?.length && rightLinks.length > 0
+            ? rightLinks.map(({ to, title, current }) => (
+                <Link
+                  className={cn(
+                    current
+                      ? current(pathname)
+                        ? "underline"
+                        : "text-muted-foreground"
+                      : to === pathname
                       ? "underline"
-                      : "text-muted-foreground"
-                    : to === pathname
-                    ? "underline"
-                    : "text-muted-foreground",
-                  "text-sm font-medium underline-offset-4 hover:underline"
-                )}
-                to={to}
-              >
-                {title}
-              </Link>
-            ))}
+                      : "text-muted-foreground",
+                    "text-sm font-medium underline-offset-4 hover:underline"
+                  )}
+                  to={to}
+                >
+                  {title}
+                </Link>
+              ))
+            : null}
           <AuthButton />
         </div>
       </nav>
