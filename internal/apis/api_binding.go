@@ -215,7 +215,7 @@ func BindApis(api huma.API, app core.App) {
 	// admin user permissions delete
 	huma.Register(adminGroup, appApi.AdminUserPermissionsDeleteOperation("/users/{userId}/permissions/{permissionId}"), appApi.AdminUserPermissionsDelete)
 	// admin user accounts list
-	huma.Register(adminGroup, appApi.AdminUserAccountsOperation("/users/{id}/accounts"), appApi.AdminUserAccounts)
+	huma.Register(adminGroup, appApi.AdminUserAccountsOperation("/user-accounts"), appApi.AdminUserAccounts)
 	// admin roles
 	huma.Register(adminGroup, appApi.AdminRolesOperation("/roles"), appApi.AdminRolesList)
 	// admin roles create
