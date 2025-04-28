@@ -124,7 +124,7 @@ func BindApis(api huma.API, app core.App) {
 			huma.WriteErr(api, ctx, http.StatusNotFound, "task not found at middleware")
 			return
 		}
-		user := core.GetContextUserClaims(rawCtx)
+		user := core.GetContextUserInfo(rawCtx)
 		if user == nil {
 			huma.WriteErr(api, ctx, http.StatusUnauthorized, "unauthorized at middleware")
 			return

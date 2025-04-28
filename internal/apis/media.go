@@ -38,7 +38,7 @@ func (api *Api) UploadMedia(ctx context.Context, input *struct {
 	}] `contentType:"multipart/form-data"`
 }) (*struct{}, error) {
 	db := api.app.Db()
-	user := core.GetContextUserClaims(ctx)
+	user := core.GetContextUserInfo(ctx)
 	if user == nil {
 		return nil, huma.Error404NotFound("User not found")
 	}

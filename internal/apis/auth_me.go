@@ -32,7 +32,7 @@ type MeOutput struct {
 
 func (api *Api) Me(ctx context.Context, input *struct{}) (*MeOutput, error) {
 	db := api.app.Db()
-	claims := core.GetContextUserClaims(ctx)
+	claims := core.GetContextUserInfo(ctx)
 	if claims == nil {
 		return nil, huma.Error404NotFound("User not found")
 	}
@@ -75,7 +75,7 @@ func (api *Api) MeUpdate(ctx context.Context, input *struct {
 	Body shared.UpdateMeInput
 }) (*struct{}, error) {
 	db := api.app.Db()
-	claims := core.GetContextUserClaims(ctx)
+	claims := core.GetContextUserInfo(ctx)
 	if claims == nil {
 		return nil, huma.Error404NotFound("User not found")
 	}

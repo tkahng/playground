@@ -33,7 +33,7 @@ func (api *Api) MyStripeSubscriptions(ctx context.Context, input *struct{}) (*st
 		Body *shared.SubscriptionWithPrice `json:"body,omitempty" required:"false"`
 	}{}
 	db := api.app.Db()
-	user := core.GetContextUserClaims(ctx)
+	user := core.GetContextUserInfo(ctx)
 	if user == nil {
 		return nil, huma.Error401Unauthorized("not authorized")
 	}

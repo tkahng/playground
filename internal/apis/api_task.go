@@ -170,7 +170,7 @@ func (api *Api) TaskDelete(ctx context.Context, input *struct {
 	TaskID string `path:"task-id"`
 }) (*struct{}, error) {
 	db := api.app.Db()
-	userInfo := core.GetContextUserClaims(ctx)
+	userInfo := core.GetContextUserInfo(ctx)
 	if userInfo == nil {
 		return nil, huma.Error401Unauthorized("Unauthorized")
 	}
@@ -204,7 +204,7 @@ func (api *Api) TaskGet(ctx context.Context, input *struct {
 	TaskID string `path:"task-id"`
 }) (*TaskResposne, error) {
 	db := api.app.Db()
-	userInfo := core.GetContextUserClaims(ctx)
+	userInfo := core.GetContextUserInfo(ctx)
 	if userInfo == nil {
 		return nil, huma.Error401Unauthorized("Unauthorized")
 	}
