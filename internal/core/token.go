@@ -1,12 +1,9 @@
 package core
 
 import (
-	"net/http"
-
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/shared"
-	"github.com/tkahng/authgo/internal/tools/cookie"
 )
 
 // ----------- Authentication Claims -----------------
@@ -36,14 +33,6 @@ type RefreshTokenPayload struct {
 	UserId uuid.UUID `json:"user_id"`
 	Email  string    `json:"email"`
 	Token  string    `json:"token"`
-}
-
-func CheckTokenType(claims jwt.MapClaims, tokenType shared.TokenType) bool {
-	if claimType, ok := claims["type"].(string); ok && claimType == string(tokenType) {
-		return true
-	} else {
-		return false
-	}
 }
 
 // ----------- Email Verification Claims -----------------
@@ -91,11 +80,4 @@ type ProviderStatePayload struct {
 type PasswordResetClaims struct {
 	jwt.RegisteredClaims
 	OtpPayload
-}
-
-// ---------COOKIES------------
-
-func SetTokenCookies(w http.ResponseWriter, tokens shared.TokenDto, config AuthOptions) {
-	cookie.SetTokenCookie(w, cookie.AccessTokenCookieName, tokens.AccessToken, config.AccessToken.Expires())
-	cookie.SetTokenCookie(w, cookie.RefreshTokenCookieName, tokens.RefreshToken, config.RefreshToken.Expires())
 }
