@@ -42,7 +42,7 @@ export default function TaskProjectSidebar() {
   }
   return (
     <>
-      <nav className="flex flex-col w-64 py-8 space-y-2 justify-start border-r grow-0">
+      <nav className="flex flex-col w-64 space-y-2 justify-start border-r grow-0">
         <div className="flex flex-col pr-4">
           <h3 className="text-md font-medium">Recent Projects</h3>
         </div>
