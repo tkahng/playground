@@ -32,7 +32,7 @@ func ModelToAiUsage(aiUsage *models.AiUsage) *AiUsage {
 type AiUsageListFilter struct {
 	Q      string   `query:"q,omitempty" required:"false"`
 	UserID string   `query:"user_id,omitempty" required:"false" format:"uuid"`
-	Ids    []string `query:"ids,omitempty,explode" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+	Ids    []string `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
 }
 
 type AiUsageListParams struct {

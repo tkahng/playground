@@ -2,6 +2,7 @@ package apis
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"slices"
 
@@ -38,6 +39,7 @@ func (api *Api) AdminUsers(ctx context.Context, input *struct {
 	shared.UserListParams
 }) (*shared.PaginatedOutput[*UserDetail], error) {
 	db := api.app.Db()
+	fmt.Printf("AdminUsers: %v", input.UserListParams)
 	users, err := repository.ListUsers(ctx, db, &input.UserListParams)
 	if err != nil {
 		return nil, err

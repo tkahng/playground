@@ -179,7 +179,7 @@ type UserAccountListFilter struct {
 	Providers     []Providers     `query:"providers,omitempty" required:"false" uniqueItems:"true" minimum:"1" maximum:"100" enum:"google,apple,facebook,github,credentials"`
 	ProviderTypes []ProviderTypes `query:"provider_types,omitempty" required:"false" uniqueItems:"true" minimum:"1" maximum:"100" enum:"oauth,credentials"`
 	Q             string          `query:"q,omitempty" required:"false"`
-	Ids           []string        `query:"ids,omitempty,explode" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+	Ids           []string        `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
 	UserId        string          `query:"user_id,omitempty" required:"false" format:"uuid"`
 }
 type UserAccountListParams struct {
