@@ -120,3 +120,14 @@ type StripePricesWithProduct struct {
 	*Price
 	Product *Product `db:"product" json:"product,omitempty" required:"false"`
 }
+
+type StripePriceListFilter struct {
+	Q      string       `query:"q,omitempty" required:"false"`
+	Ids    []string     `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" uniqueItems:"true"`
+	Active ActiveStatus `query:"active,omitempty" required:"false" enum:"active,inactive"`
+}
+type StripePriceListParams struct {
+	PaginatedInput
+	StripePriceListFilter
+	SortParams
+}

@@ -144,3 +144,26 @@ type SubscriptionWithData struct {
 	Price            *StripePricesWithProduct `json:"price,omitempty" required:"false"`
 	SubscriptionUser *User                    `json:"user,omitempty" required:"false"`
 }
+
+type StripeSubscriptionListFilter struct {
+	Q      string                     `query:"q,omitempty" required:"false"`
+	Ids    []string                   `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+	UserID string                     `query:"user_id,omitempty" required:"false" format:"uuid"`
+	Status []StripeSubscriptionStatus `query:"status,omitempty" required:"false" minimum:"1" maximum:"100" enum:"trialing,active,canceled,incomplete,incomplete_expired,past_due,unpaid,paused"`
+}
+type StripeSubscriptionListParams struct {
+	PaginatedInput
+	StripeSubscriptionListFilter
+	SortParams
+	StripeSubscriptionExpand
+	// Expand []string `query:"expand,omitempty" required:"false" minimum:"1" maximum:"100" enum:"user,price,product"`
+}
+
+type StripeSubscriptionExpand struct {
+	Expand []string `query:"expand,omitempty" required:"false" minimum:"1" maximum:"100" enum:"user,price,product"`
+}
+
+type StripeSubscriptionGetParams struct {
+	SubscriptionID string `path:"subscription-id" json:"subscription_id" required:"true"`
+	StripeSubscriptionExpand
+}

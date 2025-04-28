@@ -245,8 +245,12 @@ func BindApis(api huma.API, app core.App) {
 
 	// admin stripe subscriptions
 	huma.Register(adminGroup, appApi.AdminStripeSubscriptionsOperation("/subscriptions"), appApi.AdminStripeSubscriptions)
+	// admin stripe subscriptions get
+	huma.Register(adminGroup, appApi.AdminStripeSubscriptionsGetOperation("/subscriptions/{subscription-id}"), appApi.AdminStripeSubscriptionsGet)
 	// admin stripe products
 	huma.Register(adminGroup, appApi.AdminStripeProductsOperation("/products"), appApi.AdminStripeProducts)
+	//  admin stripe products get
+	huma.Register(adminGroup, appApi.AdminStripeProductsGetOperation("/products/{product-id}"), appApi.AdminStripeProductsGet)
 	// admin stripe products with prices
 
 }

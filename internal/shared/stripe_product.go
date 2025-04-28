@@ -35,3 +35,26 @@ type StripeProductWithData struct {
 	Roles  []*Role  `db:"roles" json:"roles,omitempty" required:"false"`
 	Prices []*Price `db:"prices" json:"prices,omitempty" required:"false"`
 }
+
+type StripeProductListFilter struct {
+	Q      string       `query:"q,omitempty" required:"false"`
+	Ids    []string     `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100"`
+	Active ActiveStatus `query:"active,omitempty" required:"false" enum:"active,inactive"`
+}
+
+type StripeProductListParams struct {
+	PaginatedInput
+	StripeProductListFilter
+	SortParams
+	StripeProductExpand
+	PriceActive ActiveStatus `query:"price_active,omitempty" required:"false" enum:"active,inactive"`
+}
+
+type StripeProductExpand struct {
+	Expand []string `query:"expand,omitempty" required:"false" minimum:"1" maximum:"100" uniqueItems:"true" enum:"prices,roles"`
+}
+
+type StripeProductGetParams struct {
+	ProductID string `path:"product-id" json:"product_id" required:"true"`
+	StripeProductExpand
+}

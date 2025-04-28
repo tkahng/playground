@@ -86,6 +86,74 @@ func (api *Api) AdminStripeSubscriptions(ctx context.Context,
 
 }
 
+func (api *Api) AdminStripeSubscriptionsGetOperation(path string) huma.Operation {
+	return huma.Operation{
+		OperationID: "admin-stripe-subscription-get",
+		Method:      http.MethodGet,
+		Path:        path,
+		Summary:     "Admin stripe subscription get",
+		Description: "Get a stripe subscription by ID",
+		Tags:        []string{"Admin", "Subscription", "Stripe"},
+		Errors:      []int{http.StatusNotFound, http.StatusBadRequest},
+		Security: []map[string][]string{
+			{shared.BearerAuthSecurityKey: {}},
+		},
+	}
+}
+
+func (api *Api) AdminStripeSubscriptionsGet(ctx context.Context,
+	input *shared.StripeSubscriptionGetParams,
+) (*struct{ Body *shared.SubscriptionWithData }, error) {
+	db := api.app.Db()
+	if input == nil || input.SubscriptionID == "" {
+		return nil, huma.Error400BadRequest("subscription_id is required")
+	}
+	subscription, err := repository.FindSubscriptionById(ctx, db, input.SubscriptionID)
+	if err != nil {
+		return nil, err
+	}
+	if subscription == nil {
+		return nil, huma.Error404NotFound("subscription not found")
+	}
+	if slices.Contains(input.Expand, "user") {
+		err = subscription.LoadStripeSubscriptionUser(ctx, db)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if slices.Contains(input.Expand, "price") {
+		if slices.Contains(input.Expand, "product") {
+
+			err = subscription.LoadStripeSubscriptionPriceStripePrice(ctx, db,
+				models.PreloadStripePriceProductStripeProduct(),
+			)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			err = subscription.LoadStripeSubscriptionPriceStripePrice(ctx, db)
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+	ss := &shared.SubscriptionWithData{
+		Subscription: shared.ModelToSubscription(subscription),
+	}
+	if subscription.R.User != nil {
+		ss.SubscriptionUser = shared.ToUser(subscription.R.User)
+	}
+	if subscription.R.PriceStripePrice != nil {
+		ss.Price = &shared.StripePricesWithProduct{
+			Price: shared.ModelToPrice(subscription.R.PriceStripePrice),
+		}
+		if subscription.R.PriceStripePrice.R.ProductStripeProduct != nil {
+			ss.Price.Product = shared.ModelToProduct(subscription.R.PriceStripePrice.R.ProductStripeProduct)
+		}
+	}
+	return &struct{ Body *shared.SubscriptionWithData }{Body: ss}, nil
+}
+
 func (api *Api) AdminStripeProductsOperation(path string) huma.Operation {
 	return huma.Operation{
 		OperationID: "admin-stripe-products",
@@ -145,4 +213,56 @@ func (api *Api) AdminStripeProducts(ctx context.Context,
 			Meta: shared.GenerateMeta(input.PaginatedInput, count),
 		},
 	}, nil
+}
+
+func (api *Api) AdminStripeProductsGetOperation(path string) huma.Operation {
+	return huma.Operation{
+		OperationID: "admin-stripe-product-get",
+		Method:      http.MethodGet,
+		Path:        path,
+		Summary:     "Admin stripe product get",
+		Description: "Get a stripe product by ID",
+		Tags:        []string{"Admin", "Product", "Stripe"},
+		Errors:      []int{http.StatusNotFound, http.StatusBadRequest},
+		Security: []map[string][]string{
+			{shared.BearerAuthSecurityKey: {}},
+		},
+	}
+}
+func (api *Api) AdminStripeProductsGet(ctx context.Context,
+	input *shared.StripeProductGetParams,
+) (*shared.StripeProductWithData, error) {
+	db := api.app.Db()
+	if input == nil || input.ProductID == "" {
+		return nil, huma.Error400BadRequest("product_id is required")
+	}
+	product, err := repository.FindProductByStripeId(ctx, db, input.ProductID)
+	if err != nil {
+		return nil, err
+	}
+	if product == nil {
+		return nil, huma.Error404NotFound("product not found")
+	}
+	if slices.Contains(input.Expand, "prices") {
+		err = product.LoadStripeProductProductStripePrices(ctx, db)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if slices.Contains(input.Expand, "roles") {
+		err = product.LoadStripeProductRoles(ctx, db)
+		if err != nil {
+			return nil, err
+		}
+	}
+	spwd := &shared.StripeProductWithData{
+		Product: shared.ModelToProduct(product),
+	}
+	if product.R.ProductStripePrices != nil {
+		spwd.Prices = mapper.Map(product.R.ProductStripePrices, shared.ModelToPrice)
+	}
+	if product.R.Roles != nil {
+		spwd.Roles = mapper.Map(product.R.Roles, shared.ToRole)
+	}
+	return spwd, nil
 }

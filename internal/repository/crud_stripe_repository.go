@@ -154,18 +154,18 @@ func ListPriceFilterFunc(ctx context.Context, q *psql.ViewQuery[*models.StripePr
 	if filter.Active != "" {
 		if filter.Active == shared.Active {
 			q.Apply(
-				models.SelectWhere.StripeProducts.Active.EQ(true),
+				models.SelectWhere.StripePrices.Active.EQ(true),
 			)
 		}
 		if filter.Active == shared.Inactive {
 			q.Apply(
-				models.SelectWhere.StripeProducts.Active.EQ(false),
+				models.SelectWhere.StripePrices.Active.EQ(false),
 			)
 		}
 	}
 	if len(filter.Ids) > 0 {
 		q.Apply(
-			models.SelectWhere.StripeProducts.ID.In(filter.Ids...),
+			models.SelectWhere.StripePrices.ID.In(filter.Ids...),
 		)
 	}
 }
