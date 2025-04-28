@@ -193,27 +193,27 @@ func BindApis(api huma.API, app core.App) {
 	//  admin user list
 	huma.Register(adminGroup, appApi.AdminUsersOperation("/users"), appApi.AdminUsers)
 	// admin user get
-	huma.Register(adminGroup, appApi.AdminUsersGetOperation("/users/{id}"), appApi.AdminUsersGet)
+	huma.Register(adminGroup, appApi.AdminUsersGetOperation("/users/{user-id}"), appApi.AdminUsersGet)
 	//  admin user create
 	huma.Register(adminGroup, appApi.AdminUsersCreateOperation("/users"), appApi.AdminUsersCreate)
 	//  admin user delete
-	huma.Register(adminGroup, appApi.AdminUsersDeleteOperation("/users/{id}"), appApi.AdminUsersDelete)
+	huma.Register(adminGroup, appApi.AdminUsersDeleteOperation("/users/{user-id}"), appApi.AdminUsersDelete)
 	//  admin user update
-	huma.Register(adminGroup, appApi.AdminUsersUpdateOperation("/users/{id}"), appApi.AdminUsersUpdate)
+	huma.Register(adminGroup, appApi.AdminUsersUpdateOperation("/users/{user-id}"), appApi.AdminUsersUpdate)
 	//  admin user update password
-	huma.Register(adminGroup, appApi.AdminUsersUpdatePasswordOperation("/users/{id}/password"), appApi.AdminUsersUpdatePassword)
+	huma.Register(adminGroup, appApi.AdminUsersUpdatePasswordOperation("/users/{user-id}/password"), appApi.AdminUsersUpdatePassword)
 	//  admin user update roles
-	huma.Register(adminGroup, appApi.AdminUserRolesUpdateOperation("/users/{id}/roles"), appApi.AdminUserRolesUpdate)
+	huma.Register(adminGroup, appApi.AdminUserRolesUpdateOperation("/users/{user-id}/roles"), appApi.AdminUserRolesUpdate)
 	// admin user create roles
-	huma.Register(adminGroup, appApi.AdminUserRolesCreateOperation("/users/{id}/roles"), appApi.AdminUserRolesCreate)
+	huma.Register(adminGroup, appApi.AdminUserRolesCreateOperation("/users/{user-id}/roles"), appApi.AdminUserRolesCreate)
 	// admin user delete roles
-	huma.Register(adminGroup, appApi.AdminUserRolesDeleteOperation("/users/{userId}/roles/{roleId}"), appApi.AdminUserRolesDelete)
+	huma.Register(adminGroup, appApi.AdminUserRolesDeleteOperation("/users/{user-id}/roles/{role-id}"), appApi.AdminUserRolesDelete)
 	// admin user permission source list
-	huma.Register(adminGroup, appApi.AdminUserPermissionSourceListOperation("/users/{userId}/permissions"), appApi.AdminUserPermissionSourceList)
+	huma.Register(adminGroup, appApi.AdminUserPermissionSourceListOperation("/users/{user-id}/permissions"), appApi.AdminUserPermissionSourceList)
 	// admin user permissions create
-	huma.Register(adminGroup, appApi.AdminUserPermissionsCreateOperation("/users/{userId}/permissions"), appApi.AdminUserPermissionsCreate)
+	huma.Register(adminGroup, appApi.AdminUserPermissionsCreateOperation("/users/{user-id}/permissions"), appApi.AdminUserPermissionsCreate)
 	// admin user permissions delete
-	huma.Register(adminGroup, appApi.AdminUserPermissionsDeleteOperation("/users/{userId}/permissions/{permissionId}"), appApi.AdminUserPermissionsDelete)
+	huma.Register(adminGroup, appApi.AdminUserPermissionsDeleteOperation("/users/{user-id}/permissions/{permission-id}"), appApi.AdminUserPermissionsDelete)
 	// admin user accounts list
 	huma.Register(adminGroup, appApi.AdminUserAccountsOperation("/user-accounts"), appApi.AdminUserAccounts)
 	// admin roles

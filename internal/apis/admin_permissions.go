@@ -30,8 +30,8 @@ func (api *Api) AdminUserPermissionsDeleteOperation(path string) huma.Operation 
 }
 
 func (api *Api) AdminUserPermissionsDelete(ctx context.Context, input *struct {
-	UserId       string `path:"userId" format:"uuid" required:"true"`
-	PermissionId string `path:"permissionId" format:"uuid" required:"true"`
+	UserId       string `path:"user-id" format:"uuid" required:"true"`
+	PermissionId string `path:"permission-id" format:"uuid" required:"true"`
 }) (*struct{}, error) {
 	db := api.app.Db()
 	id, err := uuid.Parse(input.UserId)
@@ -82,7 +82,7 @@ func (api *Api) AdminUserPermissionsCreateOperation(path string) huma.Operation 
 }
 
 func (api *Api) AdminUserPermissionsCreate(ctx context.Context, input *struct {
-	UserId string `path:"userId" format:"uuid" required:"true"`
+	UserId string `path:"user-id" format:"uuid" required:"true"`
 	Body   struct {
 		PermissionIds []string `json:"permission_ids" minimum:"0" maximum:"50" format:"uuid" required:"true"`
 	} `json:"body" required:"true"`

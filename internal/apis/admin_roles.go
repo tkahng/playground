@@ -215,8 +215,8 @@ func (api *Api) AdminUserRolesDeleteOperation(path string) huma.Operation {
 }
 
 func (api *Api) AdminUserRolesDelete(ctx context.Context, input *struct {
-	UserID string `path:"userId" format:"uuid" required:"true"`
-	RoleID string `path:"roleId" format:"uuid" required:"true"`
+	UserID string `path:"user-id" format:"uuid" required:"true"`
+	RoleID string `path:"role-id" format:"uuid" required:"true"`
 }) (*struct{}, error) {
 	db := api.app.Db()
 	id, err := uuid.Parse(input.UserID)
@@ -266,7 +266,7 @@ func (api *Api) AdminUserRolesCreateOperation(path string) huma.Operation {
 }
 
 func (api *Api) AdminUserRolesCreate(ctx context.Context, input *struct {
-	UserID string `path:"id" format:"uuid" required:"true"`
+	UserID string `path:"user-id" format:"uuid" required:"true"`
 	Body   RoleIdsInput
 }) (*struct{}, error) {
 	db := api.app.Db()
@@ -316,7 +316,7 @@ type RoleIdsInput struct {
 }
 
 func (api *Api) AdminUserRolesUpdate(ctx context.Context, input *struct {
-	UserID string       `path:"id" format:"uuid" required:"true"`
+	UserID string       `path:"user-id" format:"uuid" required:"true"`
 	Body   RoleIdsInput `json:"body" required:"true"`
 }) (*shared.PaginatedOutput[*shared.Role], error) {
 	db := api.app.Db()

@@ -1,7 +1,7 @@
 package shared
 
 type UserPermissionsListFilter struct {
-	UserId  string `path:"userId" format:"uuid"`
+	UserId  string `path:"user-id" format:"uuid"`
 	Reverse bool   `query:"reverse,omitempty"`
 }
 type UserPermissionsListParams struct {

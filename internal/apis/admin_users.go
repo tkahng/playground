@@ -141,7 +141,7 @@ func (api *Api) AdminUsersDeleteOperation(path string) huma.Operation {
 }
 
 func (api *Api) AdminUsersDelete(ctx context.Context, input *struct {
-	ID uuid.UUID `path:"id" format:"uuid" required:"true"`
+	ID uuid.UUID `path:"user-id" format:"uuid" required:"true"`
 }) (*struct{}, error) {
 	db := api.app.Db()
 	err := repository.DeleteUsers(ctx, db, input.ID)
@@ -167,7 +167,7 @@ func (api *Api) AdminUsersUpdateOperation(path string) huma.Operation {
 }
 
 func (api *Api) AdminUsersUpdate(ctx context.Context, input *struct {
-	ID   uuid.UUID `path:"id" format:"uuid" required:"true"`
+	ID   uuid.UUID `path:"user-id" format:"uuid" required:"true"`
 	Body shared.UserMutationInput
 }) (*struct{}, error) {
 	db := api.app.Db()
@@ -198,7 +198,7 @@ type UpdateUserPasswordInput struct {
 }
 
 func (api *Api) AdminUsersUpdatePassword(ctx context.Context, input *struct {
-	ID   uuid.UUID `path:"id" format:"uuid" required:"true"`
+	ID   uuid.UUID `path:"user-id" format:"uuid" required:"true"`
 	Body UpdateUserPasswordInput
 }) (*struct{}, error) {
 	db := api.app.Db()
@@ -225,17 +225,10 @@ func (api *Api) AdminUsersGetOperation(path string) huma.Operation {
 }
 
 func (api *Api) AdminUsersGet(ctx context.Context, input *struct {
-	ID uuid.UUID `path:"id" format:"uuid" required:"true"`
+	UserID uuid.UUID `path:"user-id" json:"user_id" format:"uuid" required:"true"`
 }) (*struct{ Body *shared.User }, error) {
 	db := api.app.Db()
-	user, err := repository.FindUserById(ctx, db, input.ID)
-	if err != nil {
-		return nil, err
-	}
-	err = user.LoadUserRoles(ctx,
-		db,
-		models.ThenLoadRolePermissions(),
-	)
+	user, err := repository.FindUserById(ctx, db, input.UserID)
 	if err != nil {
 		return nil, err
 	}
