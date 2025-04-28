@@ -123,16 +123,8 @@ func (api *Api) AdminUsersCreateOperation(path string) huma.Operation {
 	}
 }
 
-type CreateUserInput struct {
-	Email           string     `json:"email" required:"true" format:"email" maxLength:"100"`
-	Name            *string    `json:"name" required:"false" maxLength:"100"`
-	AvatarUrl       *string    `json:"avatar_url" required:"false" format:"uri" maxLength:"200"`
-	EmailVerifiedAt *time.Time `json:"email_verified_at" required:"false" format:"date-time"`
-	Password        string     `json:"password" required:"true" minLength:"8" maxLength:"100"`
-}
-
 func (api *Api) AdminUsersCreate(ctx context.Context, input *struct {
-	Body CreateUserInput
+	Body shared.UserCreateInput
 }) (*struct {
 	Body *shared.User
 }, error) {
@@ -201,7 +193,7 @@ func (api *Api) AdminUsersUpdateOperation(path string) huma.Operation {
 
 func (api *Api) AdminUsersUpdate(ctx context.Context, input *struct {
 	ID   uuid.UUID `path:"id" format:"uuid" required:"true"`
-	Body repository.UpdateUserInput
+	Body shared.UserMutationInput
 }) (*struct{}, error) {
 	db := api.app.Db()
 	err := repository.UpdateUser(ctx, db, input.ID, &input.Body)

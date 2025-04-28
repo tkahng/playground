@@ -159,10 +159,10 @@ func (a *AuthAdapterBase) UnlinkAccount(ctx context.Context, userId uuid.UUID, p
 
 // UpdateUser implements AuthAdapter.
 func (a *AuthAdapterBase) UpdateUser(ctx context.Context, user *shared.User) error {
-	err := repository.UpdateUser(ctx, a.db, user.ID, &repository.UpdateUserInput{
+	err := repository.UpdateUser(ctx, a.db, user.ID, &shared.UserMutationInput{
 		Email:           user.Email,
 		Name:            user.Name,
-		AvatarUrl:       user.Image,
+		Image:           user.Image,
 		EmailVerifiedAt: user.EmailVerifiedAt,
 	})
 	if err != nil {

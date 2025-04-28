@@ -18,6 +18,18 @@ type User struct {
 	UpdatedAt       time.Time  `db:"updated_at" json:"updated_at"`
 }
 
+type UserMutationInput struct {
+	Email           string     `db:"email" json:"email"`
+	EmailVerifiedAt *time.Time `db:"email_verified_at" json:"email_verified_at,omitempty"`
+	Name            *string    `db:"name" json:"name,omitempty"`
+	Image           *string    `db:"image" json:"image,omitempty"`
+}
+
+type UserCreateInput struct {
+	*UserMutationInput
+	Password string `json:"password" required:"true" minLength:"8" maxLength:"100"`
+}
+
 type UserWithAccounts struct {
 	*User
 	Accounts []*UserAccountOutput `json:"accounts"`

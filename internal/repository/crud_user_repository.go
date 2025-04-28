@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"slices"
-	"time"
 
 	"github.com/aarondl/opt/omit"
 	"github.com/aarondl/opt/omitnull"
@@ -128,21 +127,14 @@ func DeleteUsers(ctx context.Context, db bob.Executor, userId uuid.UUID) error {
 	return user.Delete(ctx, db)
 }
 
-type UpdateUserInput struct {
-	Email           string
-	Name            *string
-	AvatarUrl       *string
-	EmailVerifiedAt *time.Time
-}
-
 // update users by id
-func UpdateUser(ctx context.Context, db bob.Executor, userId uuid.UUID, input *UpdateUserInput) error {
+func UpdateUser(ctx context.Context, db bob.Executor, userId uuid.UUID, input *shared.UserMutationInput) error {
 	q := models.Users.Update(
 		models.UpdateWhere.Users.ID.EQ(userId),
 		models.UserSetter{
 			Email:           omit.From(input.Email),
 			Name:            omitnull.FromPtr(input.Name),
-			Image:           omitnull.FromPtr(input.AvatarUrl),
+			Image:           omitnull.FromPtr(input.Image),
 			EmailVerifiedAt: omitnull.FromPtr(input.EmailVerifiedAt),
 		}.UpdateMod(),
 	)
