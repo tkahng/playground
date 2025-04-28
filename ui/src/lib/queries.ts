@@ -433,7 +433,7 @@ export const getUserPermissions2 = async (token: string, userId: string) => {
 };
 export const createUser = async (
   token: string,
-  body: components["schemas"]["CreateUserInput"]
+  body: components["schemas"]["UserCreateInput"]
 ) => {
   const { data, error } = await client.POST("/api/admin/users", {
     body,
@@ -446,6 +446,29 @@ export const createUser = async (
   }
   return data;
 };
+
+export const updateUser = async (
+  token: string,
+  id: string,
+  body: components["schemas"]["UserMutationInput"]
+) => {
+  const { data, error } = await client.PUT("/api/admin/users/{id}", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    params: {
+      path: {
+        id,
+      },
+    },
+    body,
+  });
+  if (error) {
+    throw error;
+  }
+  return data;
+};
+
 export const getUser = async (token: string, id: string) => {
   const { data, error } = await client.GET("/api/admin/users/{id}", {
     params: {

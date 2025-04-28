@@ -19,10 +19,10 @@ type User struct {
 }
 
 type UserMutationInput struct {
-	Email           string     `db:"email" json:"email"`
-	EmailVerifiedAt *time.Time `db:"email_verified_at" json:"email_verified_at,omitempty"`
-	Name            *string    `db:"name" json:"name,omitempty"`
-	Image           *string    `db:"image" json:"image,omitempty"`
+	Email           string     `json:"email" required:"true" format:"email" maxLength:"100"`
+	Name            *string    `json:"name,omitempty" required:"false" maxLength:"100"`
+	Image           *string    `json:"image,omitempty" required:"false" format:"uri" maxLength:"200"`
+	EmailVerifiedAt *time.Time `json:"email_verified_at,omitempty" required:"false" format:"date-time"`
 }
 
 type UserCreateInput struct {

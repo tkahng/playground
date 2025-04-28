@@ -1133,21 +1133,6 @@ export interface components {
              */
             status: "todo" | "in_progress" | "done";
         };
-        CreateUserInput: {
-            /**
-             * Format: uri
-             * @description A URL to the JSON Schema for this object.
-             */
-            readonly $schema?: string;
-            /** Format: uri */
-            avatar_url?: string | null;
-            /** Format: email */
-            email: string;
-            /** Format: date-time */
-            email_verified_at?: string | null;
-            name?: string | null;
-            password: string;
-        };
         ErrorDetail: {
             /** @description Where the error occurred, e.g. 'body.items[3].tags' or 'path.thing-id' */
             location?: string;
@@ -1804,18 +1789,6 @@ export interface components {
             /** @enum {string} */
             status: "todo" | "in_progress" | "done";
         };
-        UpdateUserInput: {
-            /**
-             * Format: uri
-             * @description A URL to the JSON Schema for this object.
-             */
-            readonly $schema?: string;
-            AvatarUrl: string | null;
-            Email: string;
-            /** Format: date-time */
-            EmailVerifiedAt: string | null;
-            Name: string | null;
-        };
         UpdateUserPasswordInput: {
             /**
              * Format: uri
@@ -1854,6 +1827,21 @@ export interface components {
             updated_at: string;
             user_id: string;
         };
+        UserCreateInput: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            /** Format: email */
+            email: string;
+            /** Format: date-time */
+            email_verified_at?: string;
+            /** Format: uri */
+            image?: string;
+            name?: string;
+            password: string;
+        };
         UserDetail: {
             accounts?: components["schemas"]["UserAccountOutput"][] | null;
             /** Format: date-time */
@@ -1879,6 +1867,20 @@ export interface components {
             roles: string[] | null;
             tokens: components["schemas"]["TokenDto"];
             user: components["schemas"]["User"];
+        };
+        UserMutationInput: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            /** Format: email */
+            email: string;
+            /** Format: date-time */
+            email_verified_at?: string;
+            /** Format: uri */
+            image?: string;
+            name?: string;
         };
         UserStats: {
             /**
@@ -2740,7 +2742,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateUserInput"];
+                "application/json": components["schemas"]["UserCreateInput"];
             };
         };
         responses: {
@@ -2842,7 +2844,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["UpdateUserInput"];
+                "application/json": components["schemas"]["UserMutationInput"];
             };
         };
         responses: {
