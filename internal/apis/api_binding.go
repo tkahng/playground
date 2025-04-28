@@ -251,6 +251,8 @@ func BindApis(api huma.API, app core.App) {
 	huma.Register(adminGroup, appApi.AdminStripeProductsOperation("/products"), appApi.AdminStripeProducts)
 	//  admin stripe products get
 	huma.Register(adminGroup, appApi.AdminStripeProductsGetOperation("/products/{product-id}"), appApi.AdminStripeProductsGet)
+	// admin stripe products roles create
+	huma.Register(adminGroup, appApi.AdminStripeProductsRolesCreateOperation("/products/{product-id}/roles"), appApi.AdminStripeProductsRolesCreate)
 	// admin stripe products with prices
 
 }

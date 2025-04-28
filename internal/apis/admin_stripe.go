@@ -231,7 +231,7 @@ func (api *Api) AdminStripeProductsGetOperation(path string) huma.Operation {
 }
 func (api *Api) AdminStripeProductsGet(ctx context.Context,
 	input *shared.StripeProductGetParams,
-) (*shared.StripeProductWithData, error) {
+) (*struct{ Body *shared.StripeProductWithData }, error) {
 	db := api.app.Db()
 	if input == nil || input.ProductID == "" {
 		return nil, huma.Error400BadRequest("product_id is required")
@@ -264,5 +264,50 @@ func (api *Api) AdminStripeProductsGet(ctx context.Context,
 	if product.R.Roles != nil {
 		spwd.Roles = mapper.Map(product.R.Roles, shared.ToRole)
 	}
-	return spwd, nil
+	return &struct{ Body *shared.StripeProductWithData }{
+		Body: spwd,
+	}, nil
+}
+
+func (api *Api) AdminStripeProductsRolesCreateOperation(path string) huma.Operation {
+	return huma.Operation{
+		OperationID: "admin-create-product-roles",
+		Method:      http.MethodPost,
+		Path:        path,
+		Summary:     "Create product roles",
+		Description: "Create product roles",
+		Tags:        []string{"Admin", "Roles", "Product", "Stripe"},
+		Errors:      []int{http.StatusNotFound},
+		Security: []map[string][]string{
+			{shared.BearerAuthSecurityKey: {}},
+		},
+	}
+}
+
+func (api *Api) AdminStripeProductsRolesCreate(ctx context.Context, input *struct {
+	ProductID string `path:"product-id" required:"true"`
+	Body      RoleIdsInput
+}) (*struct{}, error) {
+	db := api.app.Db()
+	id := input.ProductID
+	user, err := repository.FindProductByStripeId(ctx, db, id)
+	if err != nil {
+		return nil, err
+	}
+	if user == nil {
+		return nil, huma.Error404NotFound("Product not found")
+	}
+
+	roleIds := repository.ParseUUIDs(input.Body.RolesIds)
+
+	roles, err := repository.FindRolesByIds(ctx, db, roleIds)
+	if err != nil {
+		return nil, err
+	}
+
+	err = user.AttachRoles(ctx, db, roles...)
+	if err != nil {
+		return nil, err
+	}
+	return nil, nil
 }
