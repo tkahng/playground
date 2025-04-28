@@ -463,7 +463,6 @@ func (app *AuthActionsBase) Authenticate(ctx context.Context, params *shared.Aut
 				return nil, fmt.Errorf("error at hashing password: %w", err)
 			}
 			params.HashPassword = &pw
-			fmt.Println("Hashed password: ", pw)
 		}
 		// link account of requested type
 		newVar := &shared.UserAccount{

@@ -151,6 +151,7 @@ func (api *Api) AdminUsersCreate(ctx context.Context, input *struct {
 		Password:          &input.Body.Password,
 		Type:              shared.ProviderTypeCredentials,
 		ProviderAccountID: input.Body.Email,
+		EmailVerifiedAt:   input.Body.EmailVerifiedAt,
 	})
 
 	return &struct{ Body *shared.User }{Body: user}, nil
