@@ -47,7 +47,7 @@ export function CreateRolePermissionDialog({ roleId }: { roleId: string }) {
         throw new Error("Missing access token or role ID");
       }
       const data = await permissionsPaginate(user.tokens.access_token, {
-        page: 1,
+        page: 0,
         per_page: 50,
         role_id: roleId,
         role_reverse: true,

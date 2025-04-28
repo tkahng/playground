@@ -416,7 +416,7 @@ export const getUserPermissions2 = async (token: string, userId: string) => {
           userId,
         },
         query: {
-          page: 1,
+          page: 0,
           per_page: 50,
           reverse: true,
         },
@@ -497,7 +497,7 @@ export const getUserInfo = async (
       }
     });
     const roles = await rolesPaginate(token, {
-      page: 1,
+      page: 0,
       per_page: 50,
       ids: Array.from(ids),
     });
