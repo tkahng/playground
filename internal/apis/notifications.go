@@ -64,7 +64,7 @@ func (api *Api) NotificationsSsefunc(ctx context.Context, input *struct{},
 
 // func (api *Api) NotificationsList(ctx context.Context, input *struct {
 // 	shared.NotificationsListParams
-// }) (*PaginatedOutput[*models.Notification], error) {
+// }) (*shared.PaginatedOutput[*models.Notification], error) {
 // 	db := api.app.Db()
 // 	notifications, err := repository.ListNotifications(ctx, db, &input.NotificationsListParams)
 // 	if err != nil {
@@ -75,7 +75,7 @@ func (api *Api) NotificationsSsefunc(ctx context.Context, input *struct{},
 // 		return nil, err
 // 	}
 
-// 	return &PaginatedOutput[*models.Notification]{
+// 	return &shared.PaginatedOutput[*models.Notification]{
 // 		Body: shared.PaginatedResponse[*models.Notification]{
 
 // 			Data: notifications,

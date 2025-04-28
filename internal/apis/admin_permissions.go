@@ -134,7 +134,7 @@ func (api *Api) AdminUserPermissionSourceListOperation(path string) huma.Operati
 
 func (api *Api) AdminUserPermissionSourceList(ctx context.Context, input *struct {
 	shared.UserPermissionsListParams
-}) (*PaginatedOutput[repository.PermissionSource], error) {
+}) (*shared.PaginatedOutput[repository.PermissionSource], error) {
 	db := api.app.Db()
 	id, err := uuid.Parse(input.UserId)
 	if err != nil {
@@ -163,7 +163,7 @@ func (api *Api) AdminUserPermissionSourceList(ctx context.Context, input *struct
 			return nil, err
 		}
 	}
-	return &PaginatedOutput[repository.PermissionSource]{
+	return &shared.PaginatedOutput[repository.PermissionSource]{
 		Body: shared.PaginatedResponse[repository.PermissionSource]{
 
 			Data: userPermissionSources,
@@ -193,7 +193,7 @@ func (api *Api) AdminPermissionsListOperation(path string) huma.Operation {
 
 func (api *Api) AdminPermissionsList(ctx context.Context, input *struct {
 	shared.PermissionsListParams
-}) (*PaginatedOutput[*shared.Permission], error) {
+}) (*shared.PaginatedOutput[*shared.Permission], error) {
 	db := api.app.Db()
 	permissions, err := repository.ListPermissions(ctx, db, &input.PermissionsListParams)
 	if err != nil {
@@ -204,7 +204,7 @@ func (api *Api) AdminPermissionsList(ctx context.Context, input *struct {
 		return nil, err
 	}
 
-	return &PaginatedOutput[*shared.Permission]{
+	return &shared.PaginatedOutput[*shared.Permission]{
 		Body: shared.PaginatedResponse[*shared.Permission]{
 
 			Data: mapper.Map(permissions, shared.ToPermission),

@@ -26,9 +26,13 @@ func ListUserFilterFunc(ctx context.Context, q *psql.ViewQuery[*models.User, mod
 		return
 	}
 	if len(filter.Providers) > 0 {
+		var providers []models.Providers
+		for _, p := range filter.Providers {
+			providers = append(providers, shared.ToModelProvider(p))
+		}
 		q.Apply(
 			models.SelectJoins.Users.InnerJoin.UserAccounts(ctx),
-			models.SelectWhere.UserAccounts.Provider.In(filter.Providers...),
+			models.SelectWhere.UserAccounts.Provider.In(providers...),
 			// models.SelectWhere.UserAccounts.Provider.EQ(filter.Provider.MustGet()),
 
 		)

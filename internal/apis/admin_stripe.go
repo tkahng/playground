@@ -35,7 +35,7 @@ type SubscriptionWithData struct {
 
 func (api *Api) AdminStripeSubscriptions(ctx context.Context,
 	input *shared.StripeSubscriptionListParams,
-) (*PaginatedOutput[*SubscriptionWithData], error) {
+) (*shared.PaginatedOutput[*SubscriptionWithData], error) {
 	db := api.app.Db()
 	subscriptions, err := repository.ListSubscriptions(ctx, db, input)
 	if err != nil {
@@ -106,7 +106,7 @@ func (api *Api) AdminStripeSubscriptions(ctx context.Context,
 	if err != nil {
 		return nil, err
 	}
-	return &PaginatedOutput[*SubscriptionWithData]{
+	return &shared.PaginatedOutput[*SubscriptionWithData]{
 		Body: shared.PaginatedResponse[*SubscriptionWithData]{
 			Data: subs,
 			Meta: shared.Meta{

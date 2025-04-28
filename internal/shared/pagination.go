@@ -74,6 +74,9 @@ type MetaLink struct {
 	Next  null.Val[string] `json:"next"`
 	Prev  null.Val[string] `json:"prev"`
 }
+type PaginatedOutput[T any] struct {
+	Body PaginatedResponse[T] `json:"body"`
+}
 
 // meta: {
 // 	current_page: number;

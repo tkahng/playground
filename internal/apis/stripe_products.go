@@ -96,7 +96,7 @@ type StripeProductsWithPricesInput struct {
 	shared.SortParams
 }
 
-func (api *Api) StripeProductsWithPrices(ctx context.Context, inputt *StripeProductsWithPricesInput) (*PaginatedOutput[*StripeProductWithPrices], error) {
+func (api *Api) StripeProductsWithPrices(ctx context.Context, inputt *StripeProductsWithPricesInput) (*shared.PaginatedOutput[*StripeProductWithPrices], error) {
 	db := api.app.Db()
 	input := &shared.StripeProductListParams{
 		PaginatedInput: inputt.PaginatedInput,
@@ -129,7 +129,7 @@ func (api *Api) StripeProductsWithPrices(ctx context.Context, inputt *StripeProd
 
 	})
 
-	return &PaginatedOutput[*StripeProductWithPrices]{
+	return &shared.PaginatedOutput[*StripeProductWithPrices]{
 		Body: shared.PaginatedResponse[*StripeProductWithPrices]{
 			Data: prods,
 			Meta: shared.Meta{

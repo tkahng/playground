@@ -65,7 +65,7 @@ func TestListUsers(t *testing.T) {
 					},
 					UserListFilter: shared.UserListFilter{
 						// Provider: shared.From(models.ProvidersGoogle),
-						Providers: []models.Providers{models.ProvidersGoogle},
+						Providers: []shared.Providers{shared.ProvidersGoogle},
 					},
 				},
 				count: 15,
@@ -85,8 +85,8 @@ func TestListUsers(t *testing.T) {
 					},
 					UserListFilter: shared.UserListFilter{
 						// Provider: shared.From(models.ProvidersCredentials),
-						Providers: []models.Providers{
-							models.ProvidersCredentials,
+						Providers: []shared.Providers{
+							shared.ProvidersCredentials,
 						},
 					},
 				},
@@ -109,8 +109,8 @@ func TestListUsers(t *testing.T) {
 					},
 					UserListFilter: shared.UserListFilter{
 						// Provider: shared.From(models.ProvidersGithub),
-						Providers: []models.Providers{
-							models.ProvidersGithub,
+						Providers: []shared.Providers{
+							shared.ProvidersGithub,
 						},
 					},
 				},

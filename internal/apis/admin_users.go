@@ -4,7 +4,6 @@ import (
 	"context"
 	"net/http"
 	"slices"
-	"time"
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
@@ -29,39 +28,15 @@ func (api *Api) AdminUsersOperation(path string) huma.Operation {
 	}
 }
 
-type PaginatedOutput[T any] struct {
-	Body shared.PaginatedResponse[T] `json:"body"`
-}
-
-type UserAccountDetail struct {
-	ID        uuid.UUID            `db:"id,pk" json:"id"`
-	UserID    uuid.UUID            `db:"user_id" json:"user_id"`
-	Type      models.ProviderTypes `db:"type" json:"type" enum:"oauth,credentials"`
-	Provider  models.Providers     `db:"provider" json:"providers,omitempty" required:"false" enum:"google,apple,facebook,github,credentials"`
-	CreatedAt time.Time            `db:"created_at" json:"created_at"`
-	UpdatedAt time.Time            `db:"updated_at" json:"updated_at"`
-}
-
 type UserDetail struct {
 	*shared.User
 	Roles    []*shared.RoleWithPermissions `json:"roles,omitempty" required:"false"`
 	Accounts []*shared.UserAccountOutput   `json:"accounts,omitempty" required:"false"`
 }
 
-func ToUserAccountDetail(userAccount *models.UserAccount) *UserAccountDetail {
-	return &UserAccountDetail{
-		ID:        userAccount.ID,
-		UserID:    userAccount.UserID,
-		Type:      userAccount.Type,
-		Provider:  userAccount.Provider,
-		CreatedAt: userAccount.CreatedAt,
-		UpdatedAt: userAccount.UpdatedAt,
-	}
-}
-
 func (api *Api) AdminUsers(ctx context.Context, input *struct {
 	shared.UserListParams
-}) (*PaginatedOutput[*UserDetail], error) {
+}) (*shared.PaginatedOutput[*UserDetail], error) {
 	db := api.app.Db()
 	users, err := repository.ListUsers(ctx, db, &input.UserListParams)
 	if err != nil {
@@ -100,7 +75,7 @@ func (api *Api) AdminUsers(ctx context.Context, input *struct {
 		}
 	})
 
-	return &PaginatedOutput[*UserDetail]{
+	return &shared.PaginatedOutput[*UserDetail]{
 		Body: shared.PaginatedResponse[*UserDetail]{
 			Data: info,
 			Meta: shared.GenerateMeta(input.PaginatedInput, count),

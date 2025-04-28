@@ -33,7 +33,7 @@ func (api *Api) AdminRolesOperation(path string) huma.Operation {
 
 func (api *Api) AdminRolesList(ctx context.Context, input *struct {
 	shared.RolesListParams
-}) (*PaginatedOutput[*shared.RoleWithPermissions], error) {
+}) (*shared.PaginatedOutput[*shared.RoleWithPermissions], error) {
 	db := api.app.Db()
 	roles, err := repository.ListRoles(ctx, db, &input.RolesListParams)
 	if err != nil {
@@ -50,7 +50,7 @@ func (api *Api) AdminRolesList(ctx context.Context, input *struct {
 		return nil, err
 	}
 	out := mapper.Map(roles, shared.ToRoleWithPermissions)
-	return &PaginatedOutput[*shared.RoleWithPermissions]{
+	return &shared.PaginatedOutput[*shared.RoleWithPermissions]{
 		Body: shared.PaginatedResponse[*shared.RoleWithPermissions]{
 			Data: out,
 			Meta: shared.Meta{
@@ -318,7 +318,7 @@ type RoleIdsInput struct {
 func (api *Api) AdminUserRolesUpdate(ctx context.Context, input *struct {
 	UserID string       `path:"id" format:"uuid" required:"true"`
 	Body   RoleIdsInput `json:"body" required:"true"`
-}) (*PaginatedOutput[*shared.Role], error) {
+}) (*shared.PaginatedOutput[*shared.Role], error) {
 	db := api.app.Db()
 	id, err := uuid.Parse(input.UserID)
 	if err != nil {
@@ -353,7 +353,7 @@ func (api *Api) AdminUserRolesUpdate(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	output := PaginatedOutput[*shared.Role]{
+	output := shared.PaginatedOutput[*shared.Role]{
 		Body: shared.PaginatedResponse[*shared.Role]{
 			Data: mapper.Map(roles, shared.ToRole),
 		},
