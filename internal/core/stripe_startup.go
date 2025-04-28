@@ -67,12 +67,6 @@ func (srv *StripeService) UpsertPriceProductFromStripe(ctx context.Context, exec
 		fmt.Println(err)
 		return err
 	}
-	// if err := srv.FindAndUpsertAllCustomers(ctx, exec); err != nil {
-	// 	return err
-	// }
-	// if err := srv.FindAndUpsertAllSubscriptions(ctx, exec); err != nil {
-	// 	return err
-	// }
 	return nil
 }
 

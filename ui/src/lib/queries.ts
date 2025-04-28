@@ -343,11 +343,32 @@ export const updatePermission = async (
   }
   return data;
 };
+
+export const getUserAccounts = async (token: string, id: string) => {
+  const { data, error } = await client.GET("/api/admin/user-accounts", {
+    params: {
+      query: {
+        user_id: id,
+        page: 0,
+        per_page: 50,
+      },
+    },
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (error) {
+    throw error;
+  }
+  return data;
+};
+
 export const getUserRoles = async (token: string, id: string) => {
   const { data, error } = await client.GET("/api/admin/roles", {
     params: {
       query: {
-        page: 1,
+        page: 0,
         perPage: 50,
         user_id: id,
       },
@@ -385,14 +406,14 @@ export const getUserPermissions = async (
   reverse: boolean
 ) => {
   const { data, error } = await client.GET(
-    "/api/admin/users/{userId}/permissions",
+    "/api/admin/users/{user-id}/permissions",
     {
       params: {
         path: {
-          userId,
+          "user-id": userId,
         },
         query: {
-          page: 1,
+          page: 0,
           per_page: 50,
           reverse,
         },
@@ -409,14 +430,14 @@ export const getUserPermissions = async (
 };
 export const getUserPermissions2 = async (token: string, userId: string) => {
   const { data, error } = await client.GET(
-    "/api/admin/users/{userId}/permissions",
+    "/api/admin/users/{user-id}/permissions",
     {
       params: {
         path: {
-          userId,
+          "user-id": userId,
         },
         query: {
-          page: 1,
+          page: 0,
           per_page: 50,
           reverse: true,
         },
@@ -431,12 +452,49 @@ export const getUserPermissions2 = async (token: string, userId: string) => {
   }
   return data;
 };
+export const createUser = async (
+  token: string,
+  body: components["schemas"]["UserCreateInput"]
+) => {
+  const { data, error } = await client.POST("/api/admin/users", {
+    body,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  if (error) {
+    throw error;
+  }
+  return data;
+};
 
-export const getUser = async (token: string, id: string) => {
-  const { data, error } = await client.GET("/api/admin/users/{id}", {
+export const updateUser = async (
+  token: string,
+  id: string,
+  body: components["schemas"]["UserMutationInput"]
+) => {
+  const { data, error } = await client.PUT("/api/admin/users/{user-id}", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
     params: {
       path: {
-        id,
+        "user-id": id,
+      },
+    },
+    body,
+  });
+  if (error) {
+    throw error;
+  }
+  return data;
+};
+
+export const getUser = async (token: string, id: string) => {
+  const { data, error } = await client.GET("/api/admin/users/{user-id}", {
+    params: {
+      path: {
+        "user-id": id,
       },
     },
     headers: {
@@ -456,6 +514,7 @@ export const getUserInfo = async (
   const user = await getUser(token, id);
   const userRoles = await getUserRoles(token, id);
   const userPermissions = await getUserPermissions(token, id, false);
+  const accoutns = await getUserAccounts(token, id);
   const userPerms: {
     created_at: string;
     description?: string;
@@ -483,7 +542,7 @@ export const getUserInfo = async (
       }
     });
     const roles = await rolesPaginate(token, {
-      page: 1,
+      page: 0,
       per_page: 50,
       ids: Array.from(ids),
     });
@@ -511,6 +570,7 @@ export const getUserInfo = async (
     ...user,
     roles: userRoles.data,
     permissions: userPerms,
+    accounts: accoutns.data || [],
   };
 };
 
@@ -519,17 +579,20 @@ export const createUserRoles = async (
   id: string,
   body: operations["admin-create-user-roles"]["requestBody"]["content"]["application/json"]
 ) => {
-  const { data, error } = await client.POST(`/api/admin/users/{id}/roles`, {
-    params: {
-      path: {
-        id,
+  const { data, error } = await client.POST(
+    `/api/admin/users/{user-id}/roles`,
+    {
+      params: {
+        path: {
+          "user-id": id,
+        },
       },
-    },
-    body,
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  }); // TODO: add pagination
+      body,
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  ); // TODO: add pagination
   if (error) {
     throw error;
   }
@@ -542,12 +605,12 @@ export const removeUserRole = async (
   roleId: string
 ) => {
   const { data, error } = await client.DELETE(
-    `/api/admin/users/{userId}/roles/{roleId}`,
+    `/api/admin/users/{user-id}/roles/{role-id}`,
     {
       params: {
         path: {
-          userId,
-          roleId,
+          "user-id": userId,
+          "role-id": roleId,
         },
       },
       headers: {
@@ -567,11 +630,11 @@ export const createUserPermissions = async (
   body: operations["admin-user-permissions-create"]["requestBody"]["content"]["application/json"]
 ) => {
   const { data, error } = await client.POST(
-    `/api/admin/users/{userId}/permissions`,
+    `/api/admin/users/{user-id}/permissions`,
     {
       params: {
         path: {
-          userId: id,
+          "user-id": id,
         },
       },
       body,
@@ -592,12 +655,12 @@ export const removeUserPermission = async (
   permissionId: string
 ) => {
   const { data, error } = await client.DELETE(
-    `/api/admin/users/{userId}/permissions/{permissionId}`,
+    `/api/admin/users/{user-id}/permissions/{permission-id}`,
     {
       params: {
         path: {
-          userId,
-          permissionId,
+          "user-id": userId,
+          "permission-id": permissionId,
         },
       },
       headers: {
@@ -1064,6 +1127,156 @@ export const resetPassword = async (
       new_password: newPassword,
     },
   });
+  if (error) {
+    throw error;
+  }
+  return data;
+};
+
+export const adminResetUserPassword = async (
+  token: string,
+  userId: string,
+  newPassword: string
+) => {
+  const { data, error } = await client.PUT(
+    "/api/admin/users/{user-id}/password",
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      params: {
+        path: {
+          "user-id": userId,
+        },
+      },
+      body: {
+        password: newPassword,
+      },
+    }
+  );
+  if (error) {
+    throw error;
+  }
+  return data;
+};
+
+export const adminStripeProducts = async (
+  token: string,
+  args: operations["admin-stripe-products"]["parameters"]["query"]
+) => {
+  const { data, error } = await client.GET("/api/admin/products", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    params: {
+      query: args,
+    },
+  });
+  if (error) {
+    throw error;
+  }
+  return data;
+};
+
+export const adminStripeProduct = async (token: string, id: string) => {
+  const { data, error } = await client.GET("/api/admin/products/{product-id}", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    params: {
+      path: { "product-id": id },
+      query: {
+        expand: ["prices", "roles"],
+      },
+    },
+  });
+  if (error) {
+    throw error;
+  }
+  return data;
+};
+
+export const adminStripeProductRolesCreate = async (
+  token: string,
+  id: string,
+  body: operations["admin-create-product-roles"]["requestBody"]["content"]["application/json"]
+) => {
+  const { data, error } = await client.POST(
+    "/api/admin/products/{product-id}/roles",
+    {
+      params: {
+        path: { "product-id": id },
+      },
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body,
+    }
+  );
+  if (error) {
+    throw error;
+  }
+  return data;
+};
+
+export const adminStripeProductRolesDelete = async (
+  token: string,
+  productId: string,
+  roleId: string
+) => {
+  const { data, error } = await client.DELETE(
+    "/api/admin/products/{product-id}/roles/{role-id}",
+    {
+      params: {
+        path: {
+          "product-id": productId,
+          "role-id": roleId,
+        },
+      },
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+  if (error) {
+    throw error;
+  }
+  return data;
+};
+
+export const adminStripeSubscriptions = async (
+  token: string,
+  args: operations["admin-stripe-subscriptions"]["parameters"]["query"]
+) => {
+  const { data, error } = await client.GET("/api/admin/subscriptions", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    params: {
+      query: args,
+    },
+  });
+  if (error) {
+    throw error;
+  }
+  return data;
+};
+
+export const adminStripeSubscription = async (token: string, id: string) => {
+  const { data, error } = await client.GET(
+    "/api/admin/subscriptions/{subscription-id}",
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      params: {
+        path: { "subscription-id": id },
+        query: {
+          expand: ["user", "product", "price"],
+        },
+      },
+    }
+  );
   if (error) {
     throw error;
   }

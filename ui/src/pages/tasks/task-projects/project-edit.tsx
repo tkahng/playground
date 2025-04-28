@@ -7,7 +7,7 @@ import { useParams } from "react-router";
 import { ProjectEditDialog } from "./edit-project-dialog";
 
 export default function ProjectEdit() {
-  const { user } = useAuthProvider();
+  const { user, checkAuth } = useAuthProvider();
   const { projectId } = useParams<{ projectId: string }>();
   const {
     data: project,
@@ -28,6 +28,7 @@ export default function ProjectEdit() {
     },
     queryKey: ["project-with-tasks", projectId],
     queryFn: async () => {
+      await checkAuth(); // Ensure user is authenticated
       if (!user?.tokens.access_token || !projectId) {
         throw new Error("Missing access token or project ID");
       }
@@ -57,7 +58,7 @@ export default function ProjectEdit() {
   if (!project) return <p>Project not found</p>;
 
   return (
-    <div className="space-y-6 p-12 w-full">
+    <div className="flex-1 space-y-6 w-full">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">{project.name}</h1>
         <ProjectEditDialog

@@ -8,6 +8,10 @@ import (
 	"github.com/tkahng/authgo/internal/db/models"
 )
 
+const (
+	SuperUserEmail string = "admin@k2dv.io"
+)
+
 type User struct {
 	ID              uuid.UUID  `db:"id,pk" json:"id"`
 	Email           string     `db:"email" json:"email"`
@@ -16,6 +20,18 @@ type User struct {
 	Image           *string    `db:"image" json:"image"`
 	CreatedAt       time.Time  `db:"created_at" json:"created_at"`
 	UpdatedAt       time.Time  `db:"updated_at" json:"updated_at"`
+}
+
+type UserMutationInput struct {
+	Email           string     `json:"email" required:"true" format:"email" maxLength:"100"`
+	Name            *string    `json:"name,omitempty" required:"false" maxLength:"100"`
+	Image           *string    `json:"image,omitempty" required:"false" format:"uri" maxLength:"200"`
+	EmailVerifiedAt *time.Time `json:"email_verified_at,omitempty" required:"false" format:"date-time"`
+}
+
+type UserCreateInput struct {
+	*UserMutationInput
+	Password string `json:"password" required:"true" minLength:"8" maxLength:"100"`
 }
 
 type UserWithAccounts struct {
@@ -54,18 +70,18 @@ func ToModelUser(user *User) *models.User {
 }
 
 type UserListFilter struct {
-	Providers []models.Providers `query:"providers,omitempty" required:"false" uniqueItems:"true" minimum:"1" maximum:"100" enum:"google,apple,facebook,github,credentials"`
-	Q         string             `query:"q,omitempty" required:"false"`
-	Ids       []string           `query:"ids,omitempty,explode" required:"false" minimum:"1" maximum:"100" format:"uuid"`
-	Emails    []string           `query:"emails,omitempty" required:"false" minimum:"1" maximum:"100" format:"email"`
-	RoleIds   []string           `query:"role_ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+	Providers []Providers `query:"providers,omitempty" required:"false" uniqueItems:"true" minimum:"1" maximum:"100" enum:"google,apple,facebook,github,credentials"`
+	Q         string      `query:"q,omitempty" required:"false"`
+	Ids       []string    `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+	Emails    []string    `query:"emails,omitempty" required:"false" minimum:"1" maximum:"100" format:"email"`
+	RoleIds   []string    `query:"role_ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
 	// PermissionIds []string           `query:"permission_ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
 }
 type UserListParams struct {
 	PaginatedInput
 	UserListFilter
 	SortParams
-	Expand []string `query:"expand,omitempty" required:"false" minimum:"1" maximum:"100" enum:"roles,permissions,accounts,subscriptions"`
+	Expand []string `query:"expand,omitempty" required:"false" minimum:"1" uniqueItems:"true" enum:"roles,permissions,accounts,subscriptions"`
 }
 
 type UpdateMeInput struct {

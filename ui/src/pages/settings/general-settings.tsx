@@ -22,15 +22,15 @@ import {
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 // import { useNavigate } from "react-router-dom";
 
 const formSchema = z.object({
-  name: z.string().min(1).nullable().optional(),
-  image: z.string().url().nullable().optional(),
+  name: z.string().min(1).optional(),
+  image: z.string().url().optional(),
 });
 
 const resetPasswordSchema = z.object({
@@ -40,10 +40,11 @@ const resetPasswordSchema = z.object({
 
 export default function AccountSettingsPage() {
   const [_, setIsPending] = useState(false);
-  const { user } = useAuthProvider();
+  const { user, checkAuth } = useAuthProvider();
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["auth/me"],
     queryFn: async () => {
+      await checkAuth(); // Ensure user is authenticated
       if (!user) {
         throw new Error("User not found");
       }
@@ -56,6 +57,7 @@ export default function AccountSettingsPage() {
   const queryClient = useQueryClient();
   const mutation = useMutation({
     mutationFn: async (formData: z.infer<typeof formSchema>) => {
+      await checkAuth(); // Ensure user is authenticated
       if (!user) {
         throw new Error("User not found");
       }
@@ -76,6 +78,7 @@ export default function AccountSettingsPage() {
   });
   const resetPasswordMutation = useMutation({
     mutationFn: async (formData: z.infer<typeof resetPasswordSchema>) => {
+      await checkAuth(); // Ensure user is authenticated
       if (!user) {
         throw new Error("User not found");
       }
@@ -107,6 +110,7 @@ export default function AccountSettingsPage() {
   });
   const requestVerificationEmailMutation = useMutation({
     mutationFn: async () => {
+      await checkAuth(); // Ensure user is authenticated
       if (!user) {
         throw new Error("User not found");
       }
@@ -147,8 +151,8 @@ export default function AccountSettingsPage() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: data?.name,
-      image: data?.image,
+      name: data?.name ?? undefined,
+      image: data?.image ?? undefined,
     },
   });
   const onResetPasswordSubmut = (
@@ -159,6 +163,14 @@ export default function AccountSettingsPage() {
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     mutation.mutate(values);
   };
+  useEffect(() => {
+    if (data) {
+      form.reset({
+        name: data.name || "",
+        image: data.image || "",
+      });
+    }
+  }, [data, form.reset]);
   if (isLoading) return <p>Loading...</p>;
   if (isError) return <p>Error: {error.message}</p>;
   if (!data) return <p>User not found</p>;
@@ -199,12 +211,7 @@ export default function AccountSettingsPage() {
                 <FormItem>
                   <FormLabel>Name</FormLabel>
                   <FormControl>
-                    <Input
-                      {...field}
-                      value={field.value ?? undefined}
-                      placeholder="Task Name"
-                      defaultValue={data.name || ""} // Ensure default value is set
-                    />
+                    <Input {...field} placeholder="Name" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -217,12 +224,7 @@ export default function AccountSettingsPage() {
                 <FormItem>
                   <FormLabel>Image</FormLabel>
                   <FormControl>
-                    <Input
-                      {...field}
-                      value={field.value ?? undefined}
-                      placeholder="Image"
-                      defaultValue={data.image || ""} // Ensure default value is set
-                    />
+                    <Input {...field} placeholder="Image" type="url" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -250,10 +252,8 @@ export default function AccountSettingsPage() {
                     <FormControl>
                       <Input
                         {...field}
-                        value={field.value ?? undefined}
                         placeholder="Current Password"
                         type="password"
-                        defaultValue={undefined} // Ensure default value is set
                       />
                     </FormControl>
                     <FormMessage />
@@ -269,10 +269,8 @@ export default function AccountSettingsPage() {
                     <FormControl>
                       <Input
                         {...field}
-                        value={field.value ?? undefined}
                         placeholder="New Password"
                         type="password"
-                        defaultValue={data.image || ""} // Ensure default value is set
                       />
                     </FormControl>
                     <FormMessage />

@@ -27,6 +27,12 @@ type BaseApp struct {
 	logger   *slog.Logger
 	fs       *filesystem.FileSystem
 	mail     mailer.Mailer
+	checker  ConstraintChecker
+}
+
+// Checker implements App.
+func (a *BaseApp) NewChecker(ctx context.Context) ConstraintChecker {
+	return NewConstraintCheckerService(ctx, a.db)
 }
 
 // NewAuthActions implements App.

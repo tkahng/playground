@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation } from "react-router";
 export default function TaskProjectSidebar() {
-  const { user: auth } = useAuthProvider();
+  const { user: auth, checkAuth } = useAuthProvider();
   const { pathname } = useLocation();
   const {
     data: projects,
@@ -18,6 +18,7 @@ export default function TaskProjectSidebar() {
       return data;
     },
     queryFn: async () => {
+      await checkAuth(); // Ensure user is authenticated
       if (!auth?.tokens.access_token) {
         throw new Error("Missing access token or role ID");
       }
@@ -41,7 +42,7 @@ export default function TaskProjectSidebar() {
   }
   return (
     <>
-      <nav className="flex flex-col w-64 py-8 space-y-2 justify-start border-r grow-0">
+      <nav className="flex flex-col w-64 space-y-2 justify-start border-r grow-0">
         <div className="flex flex-col pr-4">
           <h3 className="text-md font-medium">Recent Projects</h3>
         </div>

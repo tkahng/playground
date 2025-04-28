@@ -11,44 +11,60 @@ export const defaultCurrentFunc = (pathname: string, to: string) => {
   return pathname === to;
 };
 
-export const RouteLinks: Record<string, LinkDto> = {
+export const RouteLinks = {
   FEATURES: { to: RouteMap.FEATURES, title: "Features" },
   PRICING: { to: RouteMap.PRICING, title: "Pricing" },
   ABOUT: { to: RouteMap.ABOUT, title: "About" },
   CONTACT: { to: RouteMap.CONTACT, title: "Contact" },
-  DASHBOARD: { to: RouteMap.DASHBOARD, title: "Dashboard" },
+  DASHBOARD: {
+    to: RouteMap.DASHBOARD,
+    title: "Dashboard",
+    current: (pathname: string) => pathname.startsWith(RouteMap.DASHBOARD),
+  },
   DASHBOARD_OVERVIEW: { to: RouteMap.DASHBOARD, title: "Overview" },
   TASK_PROJECTS: { to: RouteMap.TASK_PROJECTS, title: "Projects" },
   SETTINGS: {
     to: RouteMap.SETTINGS,
     title: "Settings",
-    current: (pathname) => pathname.startsWith(RouteMap.SETTINGS),
+    current: (pathname: string) => pathname.startsWith(RouteMap.SETTINGS),
   },
   GENERAL_SETTINGS: { to: RouteMap.SETTINGS, title: "General" },
   BILLING_SETTINGS: { to: RouteMap.BILLING_SETTINGS, title: "Billing" },
   ADMIN: {
     to: RouteMap.ADMIN,
-    title: "Dashboard",
+    title: "Overview",
   },
   ADMIN_DASHBOARD_USERS: {
     to: RouteMap.ADMIN_USERS,
     title: "Users",
-    current: (pathname) => pathname.startsWith(RouteMap.ADMIN_USERS),
+    current: (pathname: string) => pathname.startsWith(RouteMap.ADMIN_USERS),
   },
   ADMIN_DASHBOARD_ROLES: {
     to: RouteMap.ADMIN_ROLES,
     title: "Roles",
-    current: (pathname) => pathname.startsWith(RouteMap.ADMIN_ROLES),
+    current: (pathname: string) => pathname.startsWith(RouteMap.ADMIN_ROLES),
   },
   ADMIN_DASHBOARD_PERMISSIONS: {
     to: RouteMap.ADMIN_PERMISSIONS,
     title: "Permissions",
-    current: (pathname) => pathname.startsWith(RouteMap.ADMIN_PERMISSIONS),
+    current: (pathname: string) =>
+      pathname.startsWith(RouteMap.ADMIN_PERMISSIONS),
+  },
+  ADMIN_DASHBOARD_PRODUCTS: {
+    to: RouteMap.ADMIN_PRODUCTS,
+    title: "Products",
+    current: (pathname: string) => pathname.startsWith(RouteMap.ADMIN_PRODUCTS),
+  },
+  ADMIN_DASHBOARD_SUBSCRIPTIONS: {
+    to: RouteMap.ADMIN_SUBSCRIPTIONS,
+    title: "Subscriptions",
+    current: (pathname: string) =>
+      pathname.startsWith(RouteMap.ADMIN_SUBSCRIPTIONS),
   },
   PROTECTED: {
     to: RouteMap.PROTECTED,
     title: "Protected",
-    current: (pathname) =>
+    current: (pathname: string) =>
       [
         RouteMap.PROTECTED,
         RouteMap.PROTECTED_BASIC,
@@ -73,6 +89,8 @@ export const adminHeaderLinks: LinkDto[] = [
   RouteLinks.ADMIN_DASHBOARD_USERS,
   RouteLinks.ADMIN_DASHBOARD_ROLES,
   RouteLinks.ADMIN_DASHBOARD_PERMISSIONS,
+  RouteLinks.ADMIN_DASHBOARD_PRODUCTS,
+  RouteLinks.ADMIN_DASHBOARD_SUBSCRIPTIONS,
 ];
 
 export const protectedSidebarLinks: LinkDto[] = [

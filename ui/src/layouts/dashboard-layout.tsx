@@ -4,27 +4,40 @@ import { NexusAILandingHeader } from "@/components/nexus-landing-header";
 import { NexusAIMinimalFooter } from "@/components/nexus-minimal-footer";
 import { RouteMap } from "@/components/route-map";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { Outlet, useLocation } from "react-router";
+import { Outlet } from "react-router";
 
 export default function DashboardLayout({
   headerLinks,
 }: {
+  leftLinks?: LinkDto[];
+  rightLinks?: LinkDto[];
   headerLinks?: LinkDto[];
 }) {
   const { user } = useAuthProvider();
-  const { pathname } = useLocation();
+  // const { pathname } = useLocation();
   const isAdmin = user?.roles?.includes("superuser");
-  const isAdminPath = pathname.startsWith(RouteMap.ADMIN);
-
-  const links =
-    isAdmin && !isAdminPath ? [{ to: RouteMap.ADMIN, title: "Admin" }] : [];
+  // const isAdminPath = pathname.startsWith(RouteMap.ADMIN);
+  const admin: LinkDto[] = isAdmin
+    ? [
+        {
+          to: RouteMap.ADMIN,
+          title: "Admin",
+          current: () => false,
+        },
+      ]
+    : [];
+  // const dashboard = !isAdminPath
+  const links = [
+    { to: RouteMap.DASHBOARD, title: "Dashboard", current: () => true },
+    ...admin,
+  ] as LinkDto[];
   // if (!isAdminPath) {
   //   links.push({ to: RouteMap.DASHBOARD, title: "Dashboard" });
   // }
   return (
     <div className="min-h-screen flex flex-col">
       <div className="px-4 md:px-6 lg:px-8 py-2 items-center sticky top-0 z-50 w-full bg-background shadow-sm border-b">
-        <NexusAILandingHeader rightLinks={links.length ? links : undefined} />
+        <NexusAILandingHeader rightLinks={links} />
         {headerLinks && headerLinks.length > 0 && (
           <MainNav links={headerLinks} />
         )}

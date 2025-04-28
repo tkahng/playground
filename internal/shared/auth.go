@@ -37,18 +37,6 @@ type AuthenticationInput struct {
 	RefreshToken      *string
 }
 
-type AuthenticateUserState struct {
-	User    *models.User
-	Account *models.UserAccount
-}
-
-type UserInfoDto struct {
-	User        models.User        `db:"user" json:"user"`
-	Roles       []string           `db:"roles" json:"roles"`
-	Permissions []string           `db:"permissions" json:"permissions"`
-	Providers   []models.Providers `db:"providers" json:"providers"`
-}
-
 type UserInfo struct {
 	User        User        `db:"user" json:"user"`
 	Roles       []string    `db:"roles" json:"roles"`
@@ -70,29 +58,6 @@ func ToModelProvidersArray(providers []Providers) []models.Providers {
 		result = append(result, ToModelProvider(provider))
 	}
 	return result
-}
-func ToUserInfo(user *UserInfoDto) *UserInfo {
-	if user == nil {
-		return nil
-	}
-	return &UserInfo{
-		User:        *ToUser(&user.User),
-		Roles:       user.Roles,
-		Permissions: user.Permissions,
-		Providers:   ToProvidersArray(user.Providers),
-	}
-}
-
-func ToUserInfoDto(user *UserInfo) *UserInfoDto {
-	if user == nil {
-		return nil
-	}
-	return &UserInfoDto{
-		User:        *ToModelUser(&user.User),
-		Roles:       user.Roles,
-		Permissions: user.Permissions,
-		Providers:   ToModelProvidersArray(user.Providers),
-	}
 }
 
 type TokenType string

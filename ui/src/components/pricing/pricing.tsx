@@ -25,7 +25,7 @@ const formSchema = z.object({
 });
 
 export default function Pricing({ products, subscription }: Props) {
-  const { user } = useAuthProvider();
+  const { user, checkAuth } = useAuthProvider();
   const intervals = Array.from(
     new Set(
       products.flatMap((product) =>
@@ -42,6 +42,7 @@ export default function Pricing({ products, subscription }: Props) {
 
   const mutation = useMutation({
     mutationFn: async (values: z.infer<typeof formSchema>) => {
+      await checkAuth(); // Ensure user is authenticated
       setPriceIdLoading(values.price_id);
       if (!user) {
         setPriceIdLoading(undefined);

@@ -50,7 +50,7 @@ export default function RoleEdit() {
   const navigate = useNavigate();
   const { tab, onClick } = useTabs("general");
   const queryClient = useQueryClient();
-  const { user } = useAuthProvider();
+  const { user, checkAuth } = useAuthProvider();
   const { roleId } = useParams<{ roleId: string }>();
   const {
     data: role,
@@ -59,6 +59,7 @@ export default function RoleEdit() {
   } = useQuery({
     queryKey: ["role-with-permission", roleId],
     queryFn: async () => {
+      await checkAuth(); // Ensure user is authenticated
       if (!user?.tokens.access_token || !roleId) {
         throw new Error("Missing access token or role ID");
       }
@@ -66,8 +67,10 @@ export default function RoleEdit() {
     },
   });
   const mutation = useMutation({
-    mutationFn: (values: z.infer<typeof formSchema>) =>
-      updateRole(user!.tokens.access_token, roleId!, values),
+    mutationFn: async (values: z.infer<typeof formSchema>) => {
+      await checkAuth(); // Ensure user is authenticated
+      return updateRole(user!.tokens.access_token, roleId!, values);
+    },
     onSuccess: async () => {
       await queryClient.invalidateQueries({
         queryKey: ["role-with-permission", roleId],
@@ -85,8 +88,14 @@ export default function RoleEdit() {
     },
   });
   const deletePermissionMutation = useMutation({
-    mutationFn: (permissionId: string) =>
-      deleteRolePermission(user!.tokens.access_token, roleId!, permissionId),
+    mutationFn: async (permissionId: string) => {
+      await checkAuth(); // Ensure user is authenticated
+      return deleteRolePermission(
+        user!.tokens.access_token,
+        roleId!,
+        permissionId
+      );
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ["role-with-permission", roleId],

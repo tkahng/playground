@@ -14,8 +14,9 @@ import { PaginationState, Updater } from "@tanstack/react-table";
 import { Ellipsis, Pencil } from "lucide-react";
 import { useState } from "react";
 import { NavLink, useNavigate, useSearchParams } from "react-router";
+import { CreateUserDialog } from "./create-user-dialog";
 export default function UserListPage() {
-  const { user } = useAuthProvider();
+  const { user, checkAuth } = useAuthProvider();
 
   const [searchParams, setSearchParams] = useSearchParams();
   const pageIndex = parseInt(searchParams.get("page") || "0", 10);
@@ -34,12 +35,16 @@ export default function UserListPage() {
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["users-list", pageIndex, pageSize],
     queryFn: async () => {
+      await checkAuth(); // Ensure user is authenticated
       if (!user?.tokens.access_token) {
         throw new Error("Missing access token");
       }
       const data = await userPaginate(user.tokens.access_token, {
         page: pageIndex,
         per_page: pageSize,
+        sort_by: "updated_at",
+        sort_order: "desc",
+        expand: ["roles", "accounts"],
       });
       return data;
     },
@@ -55,12 +60,12 @@ export default function UserListPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Users</h1>
+        <p>
+          Create and manage Users for your applications. Users contain
+          collections of Roles and can be assigned to Applications.
+        </p>
+        <CreateUserDialog />
       </div>
-      <p>
-        Create and manage Users for your applications. Users contain collections
-        of Roles and can be assigned to Applications.
-      </p>
 
       <DataTable
         columns={[
@@ -81,6 +86,50 @@ export default function UserListPage() {
           {
             accessorKey: "name",
             header: "Name",
+          },
+          {
+            accessorKey: "accounts",
+            header: "Accounts",
+            cell: ({ row }) => {
+              return (
+                row.original.accounts
+                  ?.map((account) => account.provider)
+                  .join(", ") || "None"
+              );
+            },
+          },
+          {
+            accessorKey: "roles",
+            header: "Roles",
+            cell: ({ row }) => {
+              return (
+                row.original.roles?.map((role) => role.name).join(", ") ||
+                "None"
+              );
+            },
+          },
+          {
+            accessorKey: "created_at",
+            header: "Created At",
+            cell: ({ row }) => {
+              return new Date(row.original.created_at).toLocaleDateString();
+            },
+          },
+          {
+            accessorKey: "updated_at",
+            header: "Updated At",
+            cell: ({ row }) => {
+              return new Date(row.original.updated_at).toLocaleDateString();
+            },
+          },
+          {
+            accessorKey: "email_verified_at",
+            header: "Email Verified At",
+            cell: ({ row }) => {
+              return row.original.email_verified_at
+                ? new Date(row.original.email_verified_at).toLocaleDateString()
+                : "Not Verified";
+            },
           },
           {
             id: "actions",
@@ -138,17 +187,6 @@ function UserEllipsisDropdown({ userId }: { userId: string }) {
               <span>Assign Roles</span>
             </Button>
           </DropdownMenuItem>
-          {/* <DropdownMenuItem
-            onSelect={() => {
-              setDropdownOpen(false);
-              editDialog.trigger();
-            }}
-          >
-            <Button variant="ghost" size="sm">
-              <Trash className="h-4 w-4" />
-              <span>Remove</span>
-            </Button>
-          </DropdownMenuItem> */}
         </DropdownMenuContent>
       </DropdownMenu>
     </>

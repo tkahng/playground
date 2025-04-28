@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log"
 
+	"github.com/google/uuid"
 	"github.com/stephenafamo/bob"
 	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/repository"
@@ -47,11 +48,7 @@ func (srv *StripeService) UpsertSubscriptionByIds(ctx context.Context, db bob.Ex
 	return nil
 }
 
-func (srv *StripeService) FindOrCreateCustomerFromUser(ctx context.Context, exec bob.Executor, user *models.User) (*models.StripeCustomer, error) {
-	if user == nil {
-		return nil, nil
-	}
-	userId := user.ID
+func (srv *StripeService) FindOrCreateCustomerFromUser(ctx context.Context, exec bob.Executor, userId uuid.UUID, email string) (*models.StripeCustomer, error) {
 	dbCus, err := repository.FindCustomerByUserId(ctx, exec, userId)
 	if err != nil {
 		return nil, err
@@ -59,7 +56,7 @@ func (srv *StripeService) FindOrCreateCustomerFromUser(ctx context.Context, exec
 	if dbCus != nil {
 		return dbCus, nil
 	}
-	stripeCus, err := srv.client.FindOrCreateCustomer(user.Email, userId)
+	stripeCus, err := srv.client.FindOrCreateCustomer(email, userId)
 	if err != nil {
 		return nil, err
 	}
@@ -74,19 +71,26 @@ func (srv *StripeService) FindOrCreateCustomerFromUser(ctx context.Context, exec
 	return repository.FindCustomerByUserId(ctx, exec, userId)
 }
 
-func (srv *StripeService) CreateCheckoutSession(ctx context.Context, db bob.Executor, user *models.User, priceId string) (string, error) {
-	dbcus, err := srv.FindOrCreateCustomerFromUser(ctx, db, user)
+func (srv *StripeService) CreateCheckoutSession(ctx context.Context, db bob.Executor, userId uuid.UUID, priceId string) (string, error) {
+	user, err := repository.FindUserById(ctx, db, userId)
 	if err != nil {
 		return "", err
 	}
-	val, err := repository.FindLatestActiveSubscriptionByUserId(ctx, db, user.ID)
+	if user == nil {
+		return "", errors.New("user not found")
+	}
+	dbcus, err := srv.FindOrCreateCustomerFromUser(ctx, db, user.ID, user.Email)
+	if err != nil {
+		return "", err
+	}
+	val, err := repository.FindLatestActiveSubscriptionByUserId(ctx, db, userId)
 	if err != nil {
 		return "", err
 	}
 	if val != nil {
 		return "", errors.New("user already has a valid subscription")
 	}
-	firstSub, err := repository.IsFirstSubscription(ctx, db, user.ID)
+	firstSub, err := repository.IsFirstSubscription(ctx, db, userId)
 	if err != nil {
 		return "", err
 	}
@@ -108,10 +112,21 @@ func (srv *StripeService) CreateCheckoutSession(ctx context.Context, db bob.Exec
 	return sesh.URL, nil
 }
 
-func (s *StripeService) CreateBillingPortalSession(ctx context.Context, db bob.Executor, user *models.User) (string, error) {
-	dbcus, err := s.FindOrCreateCustomerFromUser(ctx, db, user)
+func (s *StripeService) CreateBillingPortalSession(ctx context.Context, db bob.Executor, userId uuid.UUID) (string, error) {
+	user, err := repository.FindUserById(ctx, db, userId)
 	if err != nil {
 		return "", err
+	}
+	if user == nil {
+		return "", errors.New("user not found")
+	}
+	// find or create customer from user
+	dbcus, err := s.FindOrCreateCustomerFromUser(ctx, db, user.ID, user.Email)
+	if err != nil {
+		return "", err
+	}
+	if dbcus == nil {
+		return "", errors.New("customer not found")
 	}
 	// verify user has a valid subscriptio
 	sub, err := repository.FindLatestActiveSubscriptionByUserId(ctx, db, user.ID)

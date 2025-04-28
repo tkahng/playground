@@ -73,7 +73,7 @@ func (a *TokenAdapterBase) ParseTokenString(token string, config TokenOption, da
 	if err != nil {
 		return fmt.Errorf("error while parsing token string: %w", err)
 	}
-	if !CheckTokenType(claims, config.Type) {
+	if !checkTokenType(claims, config.Type) {
 		return fmt.Errorf("invalid token type")
 	}
 	// Convert the JSON to a struct
@@ -82,6 +82,14 @@ func (a *TokenAdapterBase) ParseTokenString(token string, config TokenOption, da
 		return fmt.Errorf("error at error: %w", err)
 	}
 	return nil
+}
+
+func checkTokenType(claims jwt.MapClaims, tokenType shared.TokenType) bool {
+	if claimType, ok := claims["type"].(string); ok && claimType == string(tokenType) {
+		return true
+	} else {
+		return false
+	}
 }
 
 func (a *TokenAdapterBase) GetToken(ctx context.Context, token string) (*shared.Token, error) {

@@ -33,7 +33,7 @@ func (api *Api) AdminRolesOperation(path string) huma.Operation {
 
 func (api *Api) AdminRolesList(ctx context.Context, input *struct {
 	shared.RolesListParams
-}) (*PaginatedOutput[*shared.RoleWithPermissions], error) {
+}) (*shared.PaginatedOutput[*shared.RoleWithPermissions], error) {
 	db := api.app.Db()
 	roles, err := repository.ListRoles(ctx, db, &input.RolesListParams)
 	if err != nil {
@@ -50,14 +50,10 @@ func (api *Api) AdminRolesList(ctx context.Context, input *struct {
 		return nil, err
 	}
 	out := mapper.Map(roles, shared.ToRoleWithPermissions)
-	return &PaginatedOutput[*shared.RoleWithPermissions]{
+	return &shared.PaginatedOutput[*shared.RoleWithPermissions]{
 		Body: shared.PaginatedResponse[*shared.RoleWithPermissions]{
 			Data: out,
-			Meta: shared.Meta{
-				Page:    input.PaginatedInput.Page,
-				PerPage: input.PaginatedInput.PerPage,
-				Total:   count,
-			},
+			Meta: shared.GenerateMeta(input.PaginatedInput, count),
 		},
 	}, nil
 
@@ -141,8 +137,11 @@ func (api *Api) AdminRolesDelete(ctx context.Context, input *struct {
 	if role == nil {
 		return nil, huma.Error404NotFound("Role not found")
 	}
-	if role.Name == shared.PermissionNameAdmin {
-		return nil, huma.Error400BadRequest("Cannot delete admin role")
+	// Check if the user is trying to delete the admin or basic role
+	checker := api.app.NewChecker(ctx)
+	err = checker.CannotBeAdminOrBasicName(role.Name)
+	if err != nil {
+		return nil, err
 	}
 	err = repository.DeleteRole(ctx, db, role.ID)
 	if err != nil {
@@ -184,6 +183,11 @@ func (api *Api) AdminRolesUpdate(ctx context.Context, input *struct {
 	if role == nil {
 		return nil, huma.Error404NotFound("Role not found")
 	}
+	checker := api.app.NewChecker(ctx)
+	err = checker.CannotBeAdminOrBasicName(role.Name)
+	if err != nil {
+		return nil, err
+	}
 	err = role.Update(
 		ctx,
 		db,
@@ -215,8 +219,8 @@ func (api *Api) AdminUserRolesDeleteOperation(path string) huma.Operation {
 }
 
 func (api *Api) AdminUserRolesDelete(ctx context.Context, input *struct {
-	UserID string `path:"userId" format:"uuid" required:"true"`
-	RoleID string `path:"roleId" format:"uuid" required:"true"`
+	UserID string `path:"user-id" format:"uuid" required:"true"`
+	RoleID string `path:"role-id" format:"uuid" required:"true"`
 }) (*struct{}, error) {
 	db := api.app.Db()
 	id, err := uuid.Parse(input.UserID)
@@ -241,6 +245,13 @@ func (api *Api) AdminUserRolesDelete(ctx context.Context, input *struct {
 	if role == nil {
 		return nil, huma.Error404NotFound("Role not found")
 	}
+	// Check if the user is trying to remove the super user role from their own account
+	checker := api.app.NewChecker(ctx)
+	err = checker.CannotBeSuperUserEmailAndRoleName(user.Email, role.Name)
+	if err != nil {
+		return nil, err
+	}
+
 	_, err = models.UserRoles.Delete(
 		models.DeleteWhere.UserRoles.UserID.EQ(user.ID),
 		models.DeleteWhere.UserRoles.RoleID.EQ(role.ID),
@@ -266,7 +277,7 @@ func (api *Api) AdminUserRolesCreateOperation(path string) huma.Operation {
 }
 
 func (api *Api) AdminUserRolesCreate(ctx context.Context, input *struct {
-	UserID string `path:"id" format:"uuid" required:"true"`
+	UserID string `path:"user-id" format:"uuid" required:"true"`
 	Body   RoleIdsInput
 }) (*struct{}, error) {
 	db := api.app.Db()
@@ -316,9 +327,9 @@ type RoleIdsInput struct {
 }
 
 func (api *Api) AdminUserRolesUpdate(ctx context.Context, input *struct {
-	UserID string       `path:"id" format:"uuid" required:"true"`
+	UserID string       `path:"user-id" format:"uuid" required:"true"`
 	Body   RoleIdsInput `json:"body" required:"true"`
-}) (*PaginatedOutput[*shared.Role], error) {
+}) (*shared.PaginatedOutput[*shared.Role], error) {
 	db := api.app.Db()
 	id, err := uuid.Parse(input.UserID)
 	if err != nil {
@@ -353,7 +364,7 @@ func (api *Api) AdminUserRolesUpdate(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	output := PaginatedOutput[*shared.Role]{
+	output := shared.PaginatedOutput[*shared.Role]{
 		Body: shared.PaginatedResponse[*shared.Role]{
 			Data: mapper.Map(roles, shared.ToRole),
 		},
@@ -565,6 +576,12 @@ func (api *Api) AdminRolesDeletePermissions(ctx context.Context, input *struct {
 	}
 	if permission == nil {
 		return nil, huma.Error404NotFound("Permission not found")
+	}
+	// Check if the user is trying to remove the admin permission from the admin role
+	checker := api.app.NewChecker(ctx)
+	err = checker.CannotBeAdminOrBasicRoleAndPermissionName(role.Name, permission.Name)
+	if err != nil {
+		return nil, err
 	}
 	_, err = models.RolePermissions.Delete(
 		models.DeleteWhere.RolePermissions.RoleID.EQ(role.ID),

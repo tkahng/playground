@@ -189,7 +189,7 @@ func ListRolesFilterFunc(ctx context.Context, q *psql.ViewQuery[*models.Role, mo
 		if err != nil {
 			return
 		}
-		if filter.UserReverse {
+		if filter.Reverse == "user" {
 			q.Apply(
 				sm.LeftJoin(models.UserRoles.NameAs()).On(
 					models.RoleColumns.ID.EQ(models.UserRoleColumns.RoleID),
@@ -201,6 +201,22 @@ func ListRolesFilterFunc(ctx context.Context, q *psql.ViewQuery[*models.Role, mo
 			q.Apply(
 				models.SelectJoins.Roles.InnerJoin.Users(ctx),
 				models.SelectWhere.Users.ID.EQ(id),
+			)
+		}
+	}
+	if filter.ProductId != "" {
+		if filter.Reverse == "product" {
+			q.Apply(
+				sm.LeftJoin(models.ProductRoles.NameAs()).On(
+					models.RoleColumns.ID.EQ(models.ProductRoleColumns.RoleID),
+					models.ProductRoleColumns.ProductID.EQ(psql.Arg(filter.ProductId)),
+				),
+				sm.Where(models.ProductRoleColumns.RoleID.IsNull()),
+			)
+		} else {
+			q.Apply(
+				models.SelectJoins.Roles.InnerJoin.StripeProducts(ctx),
+				models.SelectWhere.StripeProducts.ID.EQ(filter.ProductId),
 			)
 		}
 	}

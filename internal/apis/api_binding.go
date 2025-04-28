@@ -3,15 +3,11 @@ package apis
 import (
 	"context"
 	"fmt"
-	"net/http"
-	"slices"
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/danielgtaylor/huma/v2/sse"
-	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/core"
 	"github.com/tkahng/authgo/internal/db/models"
-	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
 )
 
@@ -55,6 +51,8 @@ func BindApis(api huma.API, app core.App) {
 			},
 		}, nil
 	})
+	checkTaskOwnerMiddleware := CheckTaskOwnerMiddleware(api, app)
+
 	// http://127.0.0.1:8080/auth/callback
 	// huma.Register(api, appApi.AuthMethodsOperation("/auth/methods"), appApi.AuthMethods)
 	// protected test routes -----------------------------------------------------------
@@ -102,43 +100,7 @@ func BindApis(api huma.API, app core.App) {
 
 	// ---- task routes -------------------------------------------------------------------------------------------------
 	taskGroup := huma.NewGroup(api)
-	taskGroup.UseMiddleware(func(ctx huma.Context, next func(huma.Context)) {
-		db := app.Db()
-		rawCtx := ctx.Context()
-		taskId := ctx.Param("task-id")
-		if taskId == "" {
-			next(ctx)
-			return
-		}
-		id, err := uuid.Parse(taskId)
-		if err != nil {
-			huma.WriteErr(api, ctx, http.StatusBadRequest, "invalid task id", err)
-			return
-		}
-		task, err := repository.FindTaskByID(rawCtx, db, id)
-		if err != nil {
-			huma.WriteErr(api, ctx, http.StatusInternalServerError, "error getting task", err)
-			return
-		}
-		if task == nil {
-			huma.WriteErr(api, ctx, http.StatusNotFound, "task not found at middleware")
-			return
-		}
-		user := core.GetContextUserClaims(rawCtx)
-		if user == nil {
-			huma.WriteErr(api, ctx, http.StatusUnauthorized, "unauthorized at middleware")
-			return
-		}
-		if task.UserID != user.User.ID {
-			if slices.Contains(user.Permissions, "superuser") {
-				next(ctx)
-				return
-			}
-			huma.WriteErr(api, ctx, http.StatusForbidden, "task user id does not match user id")
-			return
-		}
-		next(ctx)
-	})
+	taskGroup.UseMiddleware(checkTaskOwnerMiddleware)
 	// task list
 	huma.Register(taskGroup, appApi.TaskListOperation("/tasks"), appApi.TaskList)
 	// task create
@@ -193,27 +155,29 @@ func BindApis(api huma.API, app core.App) {
 	//  admin user list
 	huma.Register(adminGroup, appApi.AdminUsersOperation("/users"), appApi.AdminUsers)
 	// admin user get
-	huma.Register(adminGroup, appApi.AdminUsersGetOperation("/users/{id}"), appApi.AdminUsersGet)
+	huma.Register(adminGroup, appApi.AdminUsersGetOperation("/users/{user-id}"), appApi.AdminUsersGet)
 	//  admin user create
 	huma.Register(adminGroup, appApi.AdminUsersCreateOperation("/users"), appApi.AdminUsersCreate)
 	//  admin user delete
-	huma.Register(adminGroup, appApi.AdminUsersDeleteOperation("/users/{id}"), appApi.AdminUsersDelete)
+	huma.Register(adminGroup, appApi.AdminUsersDeleteOperation("/users/{user-id}"), appApi.AdminUsersDelete)
 	//  admin user update
-	huma.Register(adminGroup, appApi.AdminUsersUpdateOperation("/users/{id}"), appApi.AdminUsersUpdate)
+	huma.Register(adminGroup, appApi.AdminUsersUpdateOperation("/users/{user-id}"), appApi.AdminUsersUpdate)
 	//  admin user update password
-	huma.Register(adminGroup, appApi.AdminUsersUpdatePasswordOperation("/users/{id}/password"), appApi.AdminUsersUpdatePassword)
+	huma.Register(adminGroup, appApi.AdminUsersUpdatePasswordOperation("/users/{user-id}/password"), appApi.AdminUsersUpdatePassword)
 	//  admin user update roles
-	huma.Register(adminGroup, appApi.AdminUserRolesUpdateOperation("/users/{id}/roles"), appApi.AdminUserRolesUpdate)
+	huma.Register(adminGroup, appApi.AdminUserRolesUpdateOperation("/users/{user-id}/roles"), appApi.AdminUserRolesUpdate)
 	// admin user create roles
-	huma.Register(adminGroup, appApi.AdminUserRolesCreateOperation("/users/{id}/roles"), appApi.AdminUserRolesCreate)
+	huma.Register(adminGroup, appApi.AdminUserRolesCreateOperation("/users/{user-id}/roles"), appApi.AdminUserRolesCreate)
 	// admin user delete roles
-	huma.Register(adminGroup, appApi.AdminUserRolesDeleteOperation("/users/{userId}/roles/{roleId}"), appApi.AdminUserRolesDelete)
+	huma.Register(adminGroup, appApi.AdminUserRolesDeleteOperation("/users/{user-id}/roles/{role-id}"), appApi.AdminUserRolesDelete)
 	// admin user permission source list
-	huma.Register(adminGroup, appApi.AdminUserPermissionSourceListOperation("/users/{userId}/permissions"), appApi.AdminUserPermissionSourceList)
+	huma.Register(adminGroup, appApi.AdminUserPermissionSourceListOperation("/users/{user-id}/permissions"), appApi.AdminUserPermissionSourceList)
 	// admin user permissions create
-	huma.Register(adminGroup, appApi.AdminUserPermissionsCreateOperation("/users/{userId}/permissions"), appApi.AdminUserPermissionsCreate)
+	huma.Register(adminGroup, appApi.AdminUserPermissionsCreateOperation("/users/{user-id}/permissions"), appApi.AdminUserPermissionsCreate)
 	// admin user permissions delete
-	huma.Register(adminGroup, appApi.AdminUserPermissionsDeleteOperation("/users/{userId}/permissions/{permissionId}"), appApi.AdminUserPermissionsDelete)
+	huma.Register(adminGroup, appApi.AdminUserPermissionsDeleteOperation("/users/{user-id}/permissions/{permission-id}"), appApi.AdminUserPermissionsDelete)
+	// admin user accounts list
+	huma.Register(adminGroup, appApi.AdminUserAccountsOperation("/user-accounts"), appApi.AdminUserAccounts)
 	// admin roles
 	huma.Register(adminGroup, appApi.AdminRolesOperation("/roles"), appApi.AdminRolesList)
 	// admin roles create
@@ -243,6 +207,17 @@ func BindApis(api huma.API, app core.App) {
 
 	// admin stripe subscriptions
 	huma.Register(adminGroup, appApi.AdminStripeSubscriptionsOperation("/subscriptions"), appApi.AdminStripeSubscriptions)
+	// admin stripe subscriptions get
+	huma.Register(adminGroup, appApi.AdminStripeSubscriptionsGetOperation("/subscriptions/{subscription-id}"), appApi.AdminStripeSubscriptionsGet)
+	// admin stripe products
+	huma.Register(adminGroup, appApi.AdminStripeProductsOperation("/products"), appApi.AdminStripeProducts)
+	//  admin stripe products get
+	huma.Register(adminGroup, appApi.AdminStripeProductsGetOperation("/products/{product-id}"), appApi.AdminStripeProductsGet)
+	// admin stripe products roles create
+	huma.Register(adminGroup, appApi.AdminStripeProductsRolesCreateOperation("/products/{product-id}/roles"), appApi.AdminStripeProductsRolesCreate)
+	// admin stripe products roles delete
+	huma.Register(adminGroup, appApi.AdminStripeProductsRolesDeleteOperation("/products/{product-id}/roles/{role-id}"), appApi.AdminStripeProductsRolesDelete)
+	// admin stripe products with prices
 
 }
 

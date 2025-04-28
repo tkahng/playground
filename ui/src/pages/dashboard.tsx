@@ -6,10 +6,11 @@ import { useQuery } from "@tanstack/react-query";
 import { Cpu, LineChart, Users } from "lucide-react";
 
 export default function DashboardPage() {
-  const { user } = useAuthProvider();
+  const { user, checkAuth } = useAuthProvider();
   const { data, error, isError, isLoading } = useQuery({
     queryKey: ["stats"],
     queryFn: async () => {
+      await checkAuth(); // Ensure user is authenticated
       if (!user) {
         throw new Error("User not found");
       }

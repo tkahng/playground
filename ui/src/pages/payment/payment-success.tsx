@@ -32,7 +32,7 @@ interface PaymentDetails {
   paymentMethod: string;
 }
 export default function PaymentSuccessPage() {
-  const { user } = useAuthProvider();
+  const { user, checkAuth } = useAuthProvider();
   //   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const sessionId = searchParams.get("sessionId");
@@ -40,6 +40,7 @@ export default function PaymentSuccessPage() {
   const { data, isPending, isError, error } = useQuery({
     queryKey: ["subscription-by-session-id", sessionId],
     queryFn: async () => {
+      await checkAuth(); // Ensure user is authenticated
       if (!sessionId) {
         throw new Error("Missing session ID");
       }

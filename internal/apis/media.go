@@ -38,7 +38,7 @@ func (api *Api) UploadMedia(ctx context.Context, input *struct {
 	}] `contentType:"multipart/form-data"`
 }) (*struct{}, error) {
 	db := api.app.Db()
-	user := core.GetContextUserClaims(ctx)
+	user := core.GetContextUserInfo(ctx)
 	if user == nil {
 		return nil, huma.Error404NotFound("User not found")
 	}
@@ -152,7 +152,7 @@ func (api *Api) MedialListOperation(path string /** /media */) huma.Operation {
 	}
 }
 
-func (api *Api) MediaList(ctx context.Context, input *shared.MediaListParams) (*PaginatedOutput[*shared.Media], error) {
+func (api *Api) MediaList(ctx context.Context, input *shared.MediaListParams) (*shared.PaginatedOutput[*shared.Media], error) {
 	db := api.app.Db()
 	medias, err := repository.ListMedia(ctx, db, input)
 	if err != nil {
@@ -177,14 +177,10 @@ func (api *Api) MediaList(ctx context.Context, input *shared.MediaListParams) (*
 		return nil, err
 	}
 
-	return &PaginatedOutput[*shared.Media]{
+	return &shared.PaginatedOutput[*shared.Media]{
 		Body: shared.PaginatedResponse[*shared.Media]{
 			Data: data,
-			Meta: shared.Meta{
-				Page:    input.PaginatedInput.Page,
-				PerPage: input.PaginatedInput.PerPage,
-				Total:   count,
-			},
+			Meta: shared.GenerateMeta(input.PaginatedInput, count),
 		},
 	}, nil
 }

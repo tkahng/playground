@@ -424,15 +424,23 @@ func (app *AuthActionsBase) Authenticate(ctx context.Context, params *shared.Aut
 	if user == nil {
 		fmt.Println("User does not exist, creating user")
 		// is first login
-		isFirstLogin = true
+		if params.EmailVerifiedAt != nil {
+			isFirstLogin = false
+		} else {
+			isFirstLogin = true
+		}
 		user, err = app.authAdapter.CreateUser(ctx, &shared.User{
 			Email:           params.Email,
 			Name:            params.Name,
 			Image:           params.AvatarUrl,
 			EmailVerifiedAt: params.EmailVerifiedAt,
 		})
+
 		if err != nil {
 			return nil, fmt.Errorf("error at creating user: %w", err)
+		}
+		if user == nil {
+			return nil, fmt.Errorf("user not created")
 		}
 		// assign user role
 		err = app.authAdapter.AssignUserRoles(ctx, user.ID, shared.PermissionNameBasic)
@@ -455,7 +463,6 @@ func (app *AuthActionsBase) Authenticate(ctx context.Context, params *shared.Aut
 				return nil, fmt.Errorf("error at hashing password: %w", err)
 			}
 			params.HashPassword = &pw
-			fmt.Println("Hashed password: ", pw)
 		}
 		// link account of requested type
 		newVar := &shared.UserAccount{

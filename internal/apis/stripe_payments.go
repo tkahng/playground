@@ -41,14 +41,14 @@ func (a *Api) StripeCheckoutSessionOperation(path string) huma.Operation {
 
 func (a *Api) StripeCheckoutSession(ctx context.Context, input *StripePaymentInput) (*StripeUrlOutput, error) {
 	db := a.app.Db()
-	info := core.GetContextUserClaims(ctx)
+	info := core.GetContextUserInfo(ctx)
 	if info == nil {
 		return nil, huma.Error403Forbidden("Not authenticated")
 	}
 	user := &info.User
 
 	// return sesh.URL, nil
-	url, err := a.app.Payment().CreateCheckoutSession(ctx, db, user, input.Body.PriceID)
+	url, err := a.app.Payment().CreateCheckoutSession(ctx, db, user.ID, input.Body.PriceID)
 	if err != nil {
 		return nil, err
 	}
@@ -84,11 +84,11 @@ func (a *Api) StripeBillingPortalOperation(path string) huma.Operation {
 
 func (a *Api) StripeBillingPortal(ctx context.Context, input *StripeBillingPortalInput) (*StripeUrlOutput, error) {
 	db := a.app.Db()
-	info := core.GetContextUserClaims(ctx)
+	info := core.GetContextUserInfo(ctx)
 	if info == nil {
 		return nil, huma.Error401Unauthorized("not authorized")
 	}
-	url, err := a.app.Payment().CreateBillingPortalSession(ctx, db, &info.User)
+	url, err := a.app.Payment().CreateBillingPortalSession(ctx, db, info.User.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -103,13 +103,13 @@ func (a *Api) StripeBillingPortal(ctx context.Context, input *StripeBillingPorta
 }
 
 type CheckoutSession struct {
-	ID      string   `json:"id"`
-	Price   *Price   `json:"price"`
-	Product *Product `json:"product"`
+	ID      string          `json:"id"`
+	Price   *shared.Price   `json:"price"`
+	Product *shared.Product `json:"product"`
 }
 
 type CheckoutSessionOutput struct {
-	Body SubscriptionWithPrice
+	Body shared.SubscriptionWithPrice
 }
 
 func (a *Api) StripeCheckoutSessionGetOperation(path string) huma.Operation {
@@ -143,11 +143,11 @@ func (a *Api) StripeCheckoutSessionGet(ctx context.Context, input *StripeCheckou
 	}
 
 	return &CheckoutSessionOutput{
-		Body: SubscriptionWithPrice{
-			Subscription: ModelToSubscription(cs),
-			Price: &StripePricesWithProduct{
-				Price:   ModelToPrice(cs.R.PriceStripePrice),
-				Product: ModelToProduct(cs.R.PriceStripePrice.R.ProductStripeProduct),
+		Body: shared.SubscriptionWithPrice{
+			Subscription: shared.ModelToSubscription(cs),
+			Price: &shared.StripePricesWithProduct{
+				Price:   shared.ModelToPrice(cs.R.PriceStripePrice),
+				Product: shared.ModelToProduct(cs.R.PriceStripePrice.R.ProductStripeProduct),
 			},
 		},
 	}, nil

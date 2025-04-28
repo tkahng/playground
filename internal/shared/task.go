@@ -94,10 +94,10 @@ type CreateTaskWithChildrenDTO struct {
 
 type TaskListFilter struct {
 	Q            string              `query:"q,omitempty" required:"false"`
-	Status       []models.TaskStatus `query:"status,omitempty,explode" required:"false" enum:"todo,in_progress,done"`
+	Status       []models.TaskStatus `query:"status,omitempty" required:"false" enum:"todo,in_progress,done"`
 	ProjectID    string              `query:"project_id,omitempty" required:"false" format:"uuid"`
 	UserID       string              `query:"user_id,omitempty" required:"false" format:"uuid"`
-	Ids          []string            `query:"ids,omitempty,explode" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+	Ids          []string            `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
 	ParentID     string              `query:"parent_id,omitempty" required:"false" format:"uuid"`
 	ParentStatus ParentStatus        `query:"parent_status,omitempty" required:"false" enum:"parent,child"`
 }

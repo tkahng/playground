@@ -1,128 +1,124 @@
 {
-	"folders": [
-		{
-			"name": "internal",
-			"path": "internal"
-		},
-		{
-			"name": "ui",
-			"path": "ui"
-		},
-		{
-			"name": "authgo",
-			"path": "."
-		}
-	],
-	"settings": {
-		"git.ignoredRepositories": [
-			"/opt/homebrew/.git"
-		],
-		"editor.formatOnSave": true,
-		"editor.quickSuggestions": {
-			"strings": true
-		},
-		"files.exclude": {
-			"/opt/homebrew/": true
-		},
-		"explorer.excludeGitIgnore": false,
-		"[go]": {
-			"editor.formatOnSave": true,
-			"editor.codeActionsOnSave": {
-				"source.organizeImports": "always"
-			},
-			"editor.defaultFormatter": "golang.go",
-			"editor.codeLens": true,
-			"editor.codeActionWidget.includeNearbyQuickFixes": true
-		},
-		"go.lintOnSave": "file",
-		"go.lintTool": "golangci-lint",
-		"go.lintFlags": [
-			"--path-mode=abs",
-			"--fast-only"
-		],
-		"go.formatTool": "custom",
-		"go.alternateTools": {
-			"customFormatter": "golangci-lint"
-		},
-		"go.formatFlags": [
-			"fmt",
-			"--stdin"
-		],
-		"editor.linkedEditing": true,
-		"css.customData": [
-			".vscode/tailwindcss.json"
-		],
-		"[sql]": {
-			"editor.formatOnSave": true,
-			"editor.defaultFormatter": "mtxr.sqltools"
-		},
-		"[json]": {
-			"editor.defaultFormatter": "esbenp.prettier-vscode",
-			"editor.formatOnSave": true
-		},
-		"[html]": {
-			"editor.defaultFormatter": "esbenp.prettier-vscode",
-			"editor.formatOnSave": true
-		},
-		"editor.defaultFormatter": "esbenp.prettier-vscode",
-		"editor.formatOnPaste": true,
-		"editor.codeActionsOnSave": {
-			"source.fixAll": "always",
-			"source.organizeImports": "always"
-		},
-		"editor.suggest.showReferences": true,
-		"editor.gotoLocation.multipleTypeDefinitions": "gotoAndPeek",
-		"go.enableCodeLens": {
-			"runtest": true
-		},
-		"go.inlayHints.assignVariableTypes": false,
-		"go.inlayHints.parameterNames": false,
-		"gitlens.codeLens.enabled": false,
-		"typescript.referencesCodeLens.enabled": true,
-		"typescript.implementationsCodeLens.enabled": true,
-		"typescript.implementationsCodeLens.showOnInterfaceMethods": true,
-		"typescript.referencesCodeLens.showOnAllFunctions": true,
-		"files.associations": {
-			"*.css": "tailwindcss",
-			"*.scss": "tailwindcss"
-		},
-		"emmet.includeLanguages": {
-			"templ": "html"
-		},
-		"gopls": {
-			"ui.semanticTokens": true,
-		},
-		"editor.codeLens": true,
-		"[typescript]": {
-			"editor.codeActionsOnSave": {
-				"source.fixAll": "always",
-				"source.organizeImports": "always"
-			},
-			"editor.defaultFormatter": "esbenp.prettier-vscode",
-			"editor.suggest.showReferences": true,
-			"editor.codeLens": true,
-			"editor.gotoLocation.multipleTypeDefinitions": "gotoAndPeek"
-		},
-		"[typescriptreact]": {
-			"editor.codeActionsOnSave": {
-				"source.fixAll": "always",
-				"source.organizeImports": "always"
-			},
-			"editor.defaultFormatter": "esbenp.prettier-vscode",
-			"editor.suggest.showReferences": true,
-			"editor.codeLens": true,
-			"editor.gotoLocation.multipleTypeDefinitions": "gotoAndPeek"
-		},
-		"sqltools.connections": [
-			{
-				"previewLimit": 50,
-				"server": "localhost",
-				"port": 5432,
-				"driver": "PostgreSQL",
-				"name": "authgo",
-				"database": "authgo",
-				"username": "postgres"
-			}
-		],
-	}
+  "folders": [
+    {
+      "name": "internal",
+      "path": "internal"
+    },
+    {
+      "name": "ui",
+      "path": "ui"
+    },
+    {
+      "name": "authgo",
+      "path": "."
+    }
+  ],
+  "settings": {
+    "git.ignoredRepositories": ["/opt/homebrew/.git"],
+    "editor.formatOnSave": true,
+    "editor.quickSuggestions": {
+      "strings": true
+    },
+    "files.exclude": {
+      "/opt/homebrew/": true
+    },
+    "explorer.excludeGitIgnore": false,
+    "[go]": {
+      "editor.formatOnSave": true,
+      "editor.codeActionsOnSave": {
+        "source.organizeImports": "always"
+      },
+      "editor.defaultFormatter": "golang.go",
+      "editor.codeLens": true,
+      "editor.codeActionWidget.includeNearbyQuickFixes": true
+    },
+    "go.lintOnSave": "file",
+    "go.lintTool": "golangci-lint",
+    "go.lintFlags": ["--path-mode=abs", "--fast-only"],
+    "go.formatTool": "custom",
+    "go.alternateTools": {
+      "customFormatter": "golangci-lint"
+    },
+    "go.formatFlags": ["fmt", "--stdin"],
+    "editor.linkedEditing": true,
+    "css.customData": [".vscode/tailwindcss.json"],
+    "[sql]": {
+      "editor.formatOnSave": true,
+      "editor.defaultFormatter": "mtxr.sqltools"
+    },
+    "[json]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode",
+      "editor.formatOnSave": true
+    },
+    "[html]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode",
+      "editor.formatOnSave": true
+    },
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnPaste": true,
+    "editor.codeActionsOnSave": {
+      "source.fixAll": "always",
+      "source.organizeImports": "always"
+    },
+    "editor.suggest.showReferences": true,
+    "editor.gotoLocation.multipleTypeDefinitions": "gotoAndPeek",
+    "go.enableCodeLens": {
+      "runtest": true
+    },
+    "go.inlayHints.assignVariableTypes": false,
+    "go.inlayHints.parameterNames": false,
+    "gitlens.codeLens.enabled": false,
+    "typescript.referencesCodeLens.enabled": true,
+    "typescript.implementationsCodeLens.enabled": true,
+    "typescript.implementationsCodeLens.showOnInterfaceMethods": true,
+    "typescript.referencesCodeLens.showOnAllFunctions": true,
+    "files.associations": {
+      "*.css": "tailwindcss",
+      "*.scss": "tailwindcss"
+    },
+    "emmet.includeLanguages": {
+      "templ": "html"
+    },
+    "gopls": {
+      "ui.semanticTokens": true
+    },
+    "editor.codeLens": true,
+    "[typescript]": {
+      "editor.codeActionsOnSave": {
+        "source.fixAll": "always",
+        "source.organizeImports": "always"
+      },
+      "editor.defaultFormatter": "esbenp.prettier-vscode",
+      "editor.suggest.showReferences": true,
+      "editor.codeLens": true,
+      "editor.gotoLocation.multipleTypeDefinitions": "gotoAndPeek"
+    },
+    "[typescriptreact]": {
+      "editor.codeActionsOnSave": {
+        "source.fixAll": "always",
+        "source.organizeImports": "always"
+      },
+      "editor.defaultFormatter": "esbenp.prettier-vscode",
+      "editor.suggest.showReferences": true,
+      "editor.codeLens": true,
+      "editor.gotoLocation.multipleTypeDefinitions": "gotoAndPeek"
+    },
+    "sqltools.connections": [
+      {
+        "previewLimit": 50,
+        "server": "localhost",
+        "port": 5432,
+        "driver": "PostgreSQL",
+        "name": "authgo",
+        "database": "authgo",
+        "username": "postgres"
+      }
+    ],
+    "github.copilot.enable": {
+      "*": true,
+      "plaintext": false,
+      "markdown": false,
+      "scminput": false
+    }
+  }
 }

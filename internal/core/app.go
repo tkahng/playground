@@ -1,6 +1,8 @@
 package core
 
 import (
+	"context"
+
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stephenafamo/bob"
 	"github.com/tkahng/authgo/internal/conf"
@@ -14,7 +16,7 @@ type App interface {
 	Pool() *pgxpool.Pool
 	Db() *db.Queries
 	Fs() *filesystem.FileSystem
-
+	NewChecker(ctx context.Context) ConstraintChecker
 	Settings() *AppOptions
 	NewMailClient() mailer.Mailer
 	EncryptionEnv() string

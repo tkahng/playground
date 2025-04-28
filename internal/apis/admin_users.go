@@ -5,16 +5,13 @@ import (
 	"fmt"
 	"net/http"
 	"slices"
-	"time"
 
-	"github.com/alexedwards/argon2id"
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
-	"github.com/tkahng/authgo/internal/tools/security"
 )
 
 func (api *Api) AdminUsersOperation(path string) huma.Operation {
@@ -32,40 +29,17 @@ func (api *Api) AdminUsersOperation(path string) huma.Operation {
 	}
 }
 
-type PaginatedOutput[T any] struct {
-	Body shared.PaginatedResponse[T] `json:"body"`
-}
-
-type UserAccountDetail struct {
-	ID        uuid.UUID            `db:"id,pk" json:"id"`
-	UserID    uuid.UUID            `db:"user_id" json:"user_id"`
-	Type      models.ProviderTypes `db:"type" json:"type" enum:"oauth,credentials"`
-	Provider  models.Providers     `db:"provider" json:"providers,omitempty" required:"false" enum:"google,apple,facebook,github,credentials"`
-	CreatedAt time.Time            `db:"created_at" json:"created_at"`
-	UpdatedAt time.Time            `db:"updated_at" json:"updated_at"`
-}
-
 type UserDetail struct {
 	*shared.User
 	Roles    []*shared.RoleWithPermissions `json:"roles,omitempty" required:"false"`
 	Accounts []*shared.UserAccountOutput   `json:"accounts,omitempty" required:"false"`
 }
 
-func ToUserAccountDetail(userAccount *models.UserAccount) *UserAccountDetail {
-	return &UserAccountDetail{
-		ID:        userAccount.ID,
-		UserID:    userAccount.UserID,
-		Type:      userAccount.Type,
-		Provider:  userAccount.Provider,
-		CreatedAt: userAccount.CreatedAt,
-		UpdatedAt: userAccount.UpdatedAt,
-	}
-}
-
 func (api *Api) AdminUsers(ctx context.Context, input *struct {
 	shared.UserListParams
-}) (*PaginatedOutput[*UserDetail], error) {
+}) (*shared.PaginatedOutput[*UserDetail], error) {
 	db := api.app.Db()
+	fmt.Printf("AdminUsers: %v", input.UserListParams)
 	users, err := repository.ListUsers(ctx, db, &input.UserListParams)
 	if err != nil {
 		return nil, err
@@ -103,7 +77,7 @@ func (api *Api) AdminUsers(ctx context.Context, input *struct {
 		}
 	})
 
-	return &PaginatedOutput[*UserDetail]{
+	return &shared.PaginatedOutput[*UserDetail]{
 		Body: shared.PaginatedResponse[*UserDetail]{
 			Data: info,
 			Meta: shared.GenerateMeta(input.PaginatedInput, count),
@@ -126,20 +100,13 @@ func (api *Api) AdminUsersCreateOperation(path string) huma.Operation {
 	}
 }
 
-type CreateUserInput struct {
-	Email           string
-	Name            *string
-	AvatarUrl       *string
-	EmailVerifiedAt *time.Time
-	Password        *string
-}
-
 func (api *Api) AdminUsersCreate(ctx context.Context, input *struct {
-	Body CreateUserInput
+	Body shared.UserCreateInput
 }) (*struct {
 	Body *shared.User
 }, error) {
 	db := api.app.Db()
+	action := api.app.NewAuthActions(db)
 	existingUser, err := repository.FindUserByEmail(ctx, db, input.Body.Email)
 	if err != nil {
 		return nil, err
@@ -147,37 +114,16 @@ func (api *Api) AdminUsersCreate(ctx context.Context, input *struct {
 	if existingUser != nil {
 		return nil, huma.Error409Conflict("User already exists")
 	}
-	// if password is not provided, generate a random password
-	if input.Body.Password == nil {
-		// generate random password
-		hash, err := security.CreateHash(uuid.NewString(), argon2id.DefaultParams)
-		if err != nil {
-			return nil, err
-		}
-		input.Body.Password = &hash
-	}
-	params := &shared.AuthenticateUserParams{
+	user, err := action.Authenticate(ctx, &shared.AuthenticationInput{
 		Email:             input.Body.Email,
-		Name:              input.Body.Name,
-		AvatarUrl:         input.Body.AvatarUrl,
-		EmailVerifiedAt:   input.Body.EmailVerifiedAt,
-		Provider:          models.ProvidersCredentials,
-		Password:          input.Body.Password,
-		Type:              models.ProviderTypesCredentials,
+		Provider:          shared.ProvidersCredentials,
+		Password:          &input.Body.Password,
+		Type:              shared.ProviderTypeCredentials,
 		ProviderAccountID: input.Body.Email,
-	}
-	// create user
-	user, err := repository.CreateUser(ctx, db, params)
-	if err != nil {
-		return nil, err
-	}
-	// create account
-	account, err := repository.CreateAccount(ctx, db, user.ID, params)
-	if err != nil {
-		return nil, err
-	}
-	fmt.Println(account)
-	return &struct{ Body *shared.User }{Body: shared.ToUser(user)}, nil
+		EmailVerifiedAt:   input.Body.EmailVerifiedAt,
+	})
+
+	return &struct{ Body *shared.User }{Body: user}, nil
 
 }
 
@@ -197,10 +143,20 @@ func (api *Api) AdminUsersDeleteOperation(path string) huma.Operation {
 }
 
 func (api *Api) AdminUsersDelete(ctx context.Context, input *struct {
-	ID uuid.UUID `path:"id" format:"uuid" required:"true"`
+	ID uuid.UUID `path:"user-id" format:"uuid" required:"true"`
 }) (*struct{}, error) {
 	db := api.app.Db()
-	err := repository.DeleteUsers(ctx, db, input.ID)
+	checker := api.app.NewChecker(ctx)
+	err := checker.CannotBeSuperUserID(input.ID)
+	if err != nil {
+		return nil, err
+	}
+	// Check if the user has any active subscriptions
+	err = checker.CannotHaveValidSubscription(input.ID)
+	if err != nil {
+		return nil, err
+	}
+	err = repository.DeleteUsers(ctx, db, input.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -223,8 +179,8 @@ func (api *Api) AdminUsersUpdateOperation(path string) huma.Operation {
 }
 
 func (api *Api) AdminUsersUpdate(ctx context.Context, input *struct {
-	ID   uuid.UUID `path:"id" format:"uuid" required:"true"`
-	Body repository.UpdateUserInput
+	ID   uuid.UUID `path:"user-id" format:"uuid" required:"true"`
+	Body shared.UserMutationInput
 }) (*struct{}, error) {
 	db := api.app.Db()
 	err := repository.UpdateUser(ctx, db, input.ID, &input.Body)
@@ -250,15 +206,20 @@ func (api *Api) AdminUsersUpdatePasswordOperation(path string) huma.Operation {
 }
 
 type UpdateUserPasswordInput struct {
-	Password string
+	Password string `json:"password" required:"true" minLength:"8" maxLength:"100"`
 }
 
 func (api *Api) AdminUsersUpdatePassword(ctx context.Context, input *struct {
-	ID   uuid.UUID `path:"id" format:"uuid" required:"true"`
+	ID   uuid.UUID `path:"user-id" format:"uuid" required:"true"`
 	Body UpdateUserPasswordInput
 }) (*struct{}, error) {
 	db := api.app.Db()
-	err := repository.UpdateUserPassword(ctx, db, input.ID, input.Body.Password)
+	checker := api.app.NewChecker(ctx)
+	err := checker.CannotBeSuperUserID(input.ID)
+	if err != nil {
+		return nil, err
+	}
+	err = repository.UpdateUserPassword(ctx, db, input.ID, input.Body.Password)
 	if err != nil {
 		return nil, err
 	}
@@ -281,17 +242,10 @@ func (api *Api) AdminUsersGetOperation(path string) huma.Operation {
 }
 
 func (api *Api) AdminUsersGet(ctx context.Context, input *struct {
-	ID uuid.UUID `path:"id" format:"uuid" required:"true"`
+	UserID uuid.UUID `path:"user-id" json:"user_id" format:"uuid" required:"true"`
 }) (*struct{ Body *shared.User }, error) {
 	db := api.app.Db()
-	user, err := repository.FindUserById(ctx, db, input.ID)
-	if err != nil {
-		return nil, err
-	}
-	err = user.LoadUserRoles(ctx,
-		db,
-		models.ThenLoadRolePermissions(),
-	)
+	user, err := repository.FindUserById(ctx, db, input.UserID)
 	if err != nil {
 		return nil, err
 	}

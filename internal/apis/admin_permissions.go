@@ -30,8 +30,8 @@ func (api *Api) AdminUserPermissionsDeleteOperation(path string) huma.Operation 
 }
 
 func (api *Api) AdminUserPermissionsDelete(ctx context.Context, input *struct {
-	UserId       string `path:"userId" format:"uuid" required:"true"`
-	PermissionId string `path:"permissionId" format:"uuid" required:"true"`
+	UserId       string `path:"user-id" format:"uuid" required:"true"`
+	PermissionId string `path:"permission-id" format:"uuid" required:"true"`
 }) (*struct{}, error) {
 	db := api.app.Db()
 	id, err := uuid.Parse(input.UserId)
@@ -82,7 +82,7 @@ func (api *Api) AdminUserPermissionsCreateOperation(path string) huma.Operation 
 }
 
 func (api *Api) AdminUserPermissionsCreate(ctx context.Context, input *struct {
-	UserId string `path:"userId" format:"uuid" required:"true"`
+	UserId string `path:"user-id" format:"uuid" required:"true"`
 	Body   struct {
 		PermissionIds []string `json:"permission_ids" minimum:"0" maximum:"50" format:"uuid" required:"true"`
 	} `json:"body" required:"true"`
@@ -134,7 +134,7 @@ func (api *Api) AdminUserPermissionSourceListOperation(path string) huma.Operati
 
 func (api *Api) AdminUserPermissionSourceList(ctx context.Context, input *struct {
 	shared.UserPermissionsListParams
-}) (*PaginatedOutput[repository.PermissionSource], error) {
+}) (*shared.PaginatedOutput[repository.PermissionSource], error) {
 	db := api.app.Db()
 	id, err := uuid.Parse(input.UserId)
 	if err != nil {
@@ -163,15 +163,11 @@ func (api *Api) AdminUserPermissionSourceList(ctx context.Context, input *struct
 			return nil, err
 		}
 	}
-	return &PaginatedOutput[repository.PermissionSource]{
+	return &shared.PaginatedOutput[repository.PermissionSource]{
 		Body: shared.PaginatedResponse[repository.PermissionSource]{
 
 			Data: userPermissionSources,
-			Meta: shared.Meta{
-				Page:    input.PaginatedInput.Page,
-				PerPage: input.PaginatedInput.PerPage,
-				Total:   count,
-			},
+			Meta: shared.GenerateMeta(input.PaginatedInput, count),
 		},
 	}, nil
 }
@@ -193,7 +189,7 @@ func (api *Api) AdminPermissionsListOperation(path string) huma.Operation {
 
 func (api *Api) AdminPermissionsList(ctx context.Context, input *struct {
 	shared.PermissionsListParams
-}) (*PaginatedOutput[*shared.Permission], error) {
+}) (*shared.PaginatedOutput[*shared.Permission], error) {
 	db := api.app.Db()
 	permissions, err := repository.ListPermissions(ctx, db, &input.PermissionsListParams)
 	if err != nil {
@@ -204,15 +200,11 @@ func (api *Api) AdminPermissionsList(ctx context.Context, input *struct {
 		return nil, err
 	}
 
-	return &PaginatedOutput[*shared.Permission]{
+	return &shared.PaginatedOutput[*shared.Permission]{
 		Body: shared.PaginatedResponse[*shared.Permission]{
 
 			Data: mapper.Map(permissions, shared.ToPermission),
-			Meta: shared.Meta{
-				Page:    input.PaginatedInput.Page,
-				PerPage: input.PaginatedInput.PerPage,
-				Total:   count,
-			},
+			Meta: shared.GenerateMeta(input.PaginatedInput, count),
 		},
 	}, nil
 
@@ -296,8 +288,11 @@ func (api *Api) AdminPermissionsDelete(ctx context.Context, input *struct {
 	if permission == nil {
 		return nil, huma.Error404NotFound("Permission not found")
 	}
-	if permission.Name == shared.PermissionNameAdmin {
-		return nil, huma.Error400BadRequest("Cannot delete admin permission")
+	// Check if the permission is not admin or basic
+	checker := api.app.NewChecker(ctx)
+	err = checker.CannotBeAdminOrBasicName(permission.Name)
+	if err != nil {
+		return nil, err
 	}
 	err = repository.DeletePermission(ctx, db, permission.ID)
 	if err != nil {
@@ -339,6 +334,11 @@ func (api *Api) AdminPermissionsUpdate(ctx context.Context, input *struct {
 	}
 	if permission == nil {
 		return nil, huma.Error404NotFound("Permission not found")
+	}
+	checker := api.app.NewChecker(ctx)
+	err = checker.CannotBeAdminOrBasicName(permission.Name)
+	if err != nil {
+		return nil, err
 	}
 	err = permission.Update(
 		ctx,

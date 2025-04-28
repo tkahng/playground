@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"slices"
-	"time"
 
 	"github.com/aarondl/opt/omit"
 	"github.com/aarondl/opt/omitnull"
@@ -27,9 +26,13 @@ func ListUserFilterFunc(ctx context.Context, q *psql.ViewQuery[*models.User, mod
 		return
 	}
 	if len(filter.Providers) > 0 {
+		var providers []models.Providers
+		for _, p := range filter.Providers {
+			providers = append(providers, shared.ToModelProvider(p))
+		}
 		q.Apply(
 			models.SelectJoins.Users.InnerJoin.UserAccounts(ctx),
-			models.SelectWhere.UserAccounts.Provider.In(filter.Providers...),
+			models.SelectWhere.UserAccounts.Provider.In(providers...),
 			// models.SelectWhere.UserAccounts.Provider.EQ(filter.Provider.MustGet()),
 
 		)
@@ -128,21 +131,14 @@ func DeleteUsers(ctx context.Context, db bob.Executor, userId uuid.UUID) error {
 	return user.Delete(ctx, db)
 }
 
-type UpdateUserInput struct {
-	Email           string
-	Name            *string
-	AvatarUrl       *string
-	EmailVerifiedAt *time.Time
-}
-
 // update users by id
-func UpdateUser(ctx context.Context, db bob.Executor, userId uuid.UUID, input *UpdateUserInput) error {
+func UpdateUser(ctx context.Context, db bob.Executor, userId uuid.UUID, input *shared.UserMutationInput) error {
 	q := models.Users.Update(
 		models.UpdateWhere.Users.ID.EQ(userId),
 		models.UserSetter{
 			Email:           omit.From(input.Email),
 			Name:            omitnull.FromPtr(input.Name),
-			Image:           omitnull.FromPtr(input.AvatarUrl),
+			Image:           omitnull.FromPtr(input.Image),
 			EmailVerifiedAt: omitnull.FromPtr(input.EmailVerifiedAt),
 		}.UpdateMod(),
 	)

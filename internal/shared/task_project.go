@@ -66,8 +66,8 @@ type UpdateTaskProjectDTO struct {
 type TaskProjectsListFilter struct {
 	Q      string                     `query:"q,omitempty" required:"false"`
 	UserID string                     `query:"user_id,omitempty" required:"false" format:"uuid"`
-	Status []models.TaskProjectStatus `query:"status,omitempty,explode" required:"false" minimum:"1" maximum:"100" enum:"todo,in_progress,done"`
-	Ids    []string                   `query:"ids,omitempty,explode" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+	Status []models.TaskProjectStatus `query:"status,omitempty" required:"false" minimum:"1" maximum:"100" enum:"todo,in_progress,done"`
+	Ids    []string                   `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
 }
 
 type TaskProjectsListParams struct {
