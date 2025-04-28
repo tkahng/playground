@@ -14,6 +14,7 @@ import { PaginationState, Updater } from "@tanstack/react-table";
 import { Ellipsis, Pencil } from "lucide-react";
 import { useState } from "react";
 import { NavLink, useNavigate, useSearchParams } from "react-router";
+import { CreateUserDialog } from "./create-user-dialog";
 export default function UserListPage() {
   const { user } = useAuthProvider();
 
@@ -40,6 +41,8 @@ export default function UserListPage() {
       const data = await userPaginate(user.tokens.access_token, {
         page: pageIndex,
         per_page: pageSize,
+        sort_by: "created_at",
+        sort_order: "desc",
       });
       return data;
     },
@@ -56,6 +59,7 @@ export default function UserListPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Users</h1>
+        <CreateUserDialog />
       </div>
       <p>
         Create and manage Users for your applications. Users contain collections
@@ -81,6 +85,22 @@ export default function UserListPage() {
           {
             accessorKey: "name",
             header: "Name",
+          },
+          {
+            accessorKey: "created_at",
+            header: "Created At",
+            cell: ({ row }) => {
+              return new Date(row.original.created_at).toLocaleDateString();
+            },
+          },
+          {
+            accessorKey: "email_verified_at",
+            header: "Email Verified At",
+            cell: ({ row }) => {
+              return row.original.email_verified_at
+                ? new Date(row.original.email_verified_at).toLocaleDateString()
+                : "Not Verified";
+            },
           },
           {
             id: "actions",
