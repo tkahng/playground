@@ -15,7 +15,7 @@ export const RouteLinks = {
   FEATURES: { to: RouteMap.FEATURES, title: "Features" },
   PRICING: { to: RouteMap.PRICING, title: "Pricing" },
   ABOUT: { to: RouteMap.ABOUT, title: "About" },
-  CONTACT: { to: RouteMap.CONTACT, title: "Contact" },
+  // CONTACT: { to: RouteMap.CONTACT, title: "Contact" },
   DASHBOARD: {
     to: RouteMap.DASHBOARD,
     title: "Dashboard",
@@ -79,7 +79,7 @@ export const landingLinks: LinkDto[] = [
   RouteLinks.FEATURES,
   RouteLinks.PRICING,
   RouteLinks.ABOUT,
-  RouteLinks.CONTACT,
+  // RouteLinks.CONTACT,
 ];
 
 export const adminHeaderLinks: LinkDto[] = [
