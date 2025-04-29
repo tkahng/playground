@@ -19,8 +19,6 @@ var (
 	UserColumnNames = models.Users.Columns().Names()
 )
 
-// func CreateUser(ctx context.Context, db bob.Executor, params *shared.AuthenticateUserParams) (*models.User, error) {
-
 func ListUserFilterFunc(ctx context.Context, q *psql.ViewQuery[*models.User, models.UserSlice], filter *shared.UserListFilter) {
 	if filter == nil {
 		return
@@ -49,13 +47,6 @@ func ListUserFilterFunc(ctx context.Context, q *psql.ViewQuery[*models.User, mod
 		)
 	}
 
-	// if len(filter.PermissionIds) > 0 {
-	// 	var ids = ParseUUIDs(filter.PermissionIds)
-	// 	q.Apply(
-	// 		models.SelectJoins.Users.InnerJoin.Permissions(ctx),
-	// 		models.SelectWhere.Permissions.ID.In(ids...),
-	// 	)
-	// }
 	if len(filter.RoleIds) > 0 {
 		var ids = ParseUUIDs(filter.RoleIds)
 		q.Apply(
@@ -65,7 +56,6 @@ func ListUserFilterFunc(ctx context.Context, q *psql.ViewQuery[*models.User, mod
 	}
 }
 
-// ListUsers implements AdminCrudActions.
 func ListUsers(ctx context.Context, db bob.Executor, input *shared.UserListParams) (models.UserSlice, error) {
 
 	q := models.Users.Query()
@@ -81,6 +71,13 @@ func ListUsers(ctx context.Context, db bob.Executor, input *shared.UserListParam
 	}
 	return data, nil
 }
+
+// ListUsersOrderByFunc applies sorting to the user query based on the input parameters.
+// It first checks if the query or input is nil, returning early if either is true.
+// If no specific sorting column is provided, it defaults to sorting by the CreatedAt
+// and ID columns in descending order. If a valid SortBy column is specified in the input
+// and exists in UserColumnNames, it applies the specified sorting order (either ascending
+// or descending) to that column, followed by sorting by the ID column.
 
 func ListUsersOrderByFunc(ctx context.Context, q *psql.ViewQuery[*models.User, models.UserSlice], input *shared.UserListParams) {
 	if q == nil {
@@ -108,7 +105,11 @@ func ListUsersOrderByFunc(ctx context.Context, q *psql.ViewQuery[*models.User, m
 	}
 }
 
-// CountUsers implements AdminCrudActions.
+// CountUsers returns the number of users in the database that match the given filter.
+//
+// If the filter is nil, it returns the total number of users in the database.
+//
+// The method returns an error if the count operation fails.
 func CountUsers(ctx context.Context, db bob.Executor, filter *shared.UserListFilter) (int64, error) {
 	q := models.Users.Query()
 	ListUserFilterFunc(ctx, q, filter)
@@ -119,7 +120,14 @@ func CountUsers(ctx context.Context, db bob.Executor, filter *shared.UserListFil
 	return data, nil
 }
 
-// delete users
+// DeleteUsers deletes the user with the given ID.
+//
+// It first finds the user and checks if it exists. If the user does not exist,
+// it returns an error. If the user exists, it calls the user's Delete method
+// to delete the user.
+//
+// The method returns an error if the user could not be deleted.
+
 func DeleteUsers(ctx context.Context, db bob.Executor, userId uuid.UUID) error {
 	user, err := models.FindUser(ctx, db, userId)
 	if err != nil {
@@ -131,7 +139,13 @@ func DeleteUsers(ctx context.Context, db bob.Executor, userId uuid.UUID) error {
 	return user.Delete(ctx, db)
 }
 
-// update users by id
+// UpdateUser updates an existing user by id.
+//
+// It only updates the email, name, image, and email_verified_at fields.
+//
+// If the user is not found, it returns an error.
+//
+// It returns an error if the update fails.
 func UpdateUser(ctx context.Context, db bob.Executor, userId uuid.UUID, input *shared.UserMutationInput) error {
 	q := models.Users.Update(
 		models.UpdateWhere.Users.ID.EQ(userId),

@@ -61,63 +61,6 @@ func ListPermissionsFilterFunc(ctx context.Context, q *psql.ViewQuery[*models.Pe
 		)
 	}
 
-	// if len(filter.RoleIds) > 0 {
-	// 	var ids []uuid.UUID = ParseUUIDs(filter.RoleIds)
-	// 	q.Apply(
-	// 		models.SelectJoins.Permissions.InnerJoin.Roles(ctx),
-	// 		models.SelectWhere.Roles.ID.In(ids...),
-	// 	)
-	// }
-	// if filter.UserId != "" {
-	// 	id, err := uuid.Parse(filter.UserId)
-	// 	if err != nil {
-	// 		return
-	// 	}
-	// 	q.Apply(
-	// 		sm.LeftJoin(models.UserPermissions.NameAs()).On(
-	// 			models.PermissionColumns.ID.EQ(models.UserPermissionColumns.PermissionID),
-	// 			models.UserPermissionColumns.UserID.EQ(psql.Arg(id)),
-	// 		),
-	// 		sm.LeftJoin(models.UserRoles.NameAs()).On(
-	// 			models.UserPermissionColumns.UserID.EQ(models.UserRoleColumns.UserID),
-	// 		),
-	// 		sm.LeftJoin(models.Roles.NameAs()).On(
-	// 			models.UserRoleColumns.RoleID.EQ(models.RoleColumns.ID),
-	// 		),
-	// 		sm.LeftJoin(models.RolePermissions.NameAs()).On(
-	// 			models.RoleColumns.ID.EQ(models.RolePermissionColumns.RoleID),
-	// 			models.RolePermissionColumns.PermissionID.EQ(models.PermissionColumns.ID),
-	// 		),
-	// 		sm.GroupBy(
-	// 			models.PermissionColumns.ID),
-	// 		// sm.Where(
-	// 		// 	psql.And(
-	// 		// 		models.UserPermissionColumns.PermissionID.IsNull(),
-	// 		// 		models.RolePermissionColumns.PermissionID.IsNull(),
-	// 		// 	),
-	// 		// ),
-	// 	)
-	// 	if filter.RoleReverse {
-	// 		q.Apply(
-	// 			sm.Where(
-	// 				psql.Or(
-	// 					models.UserPermissionColumns.PermissionID.IsNull(),
-	// 					models.RolePermissionColumns.PermissionID.IsNull(),
-	// 				),
-	// 			),
-	// 		)
-	// 	} else {
-	// 		q.Apply(
-	// 			sm.Where(
-	// 				psql.And(
-	// 					models.UserPermissionColumns.PermissionID.IsNotNull(),
-	// 					models.RolePermissionColumns.PermissionID.IsNotNull(),
-	// 				),
-	// 			),
-	// 		)
-	// 	}
-	// 	return
-	// }
 	if filter.RoleId != "" {
 		id, err := uuid.Parse(filter.RoleId)
 		if err != nil {
@@ -275,24 +218,3 @@ func CountRoles(ctx context.Context, db bob.Executor, filter *shared.RoleListFil
 	}
 	return data, nil
 }
-
-// func ListAssignablePermissionsForRole(ctx context.Context, db bob.Executor, roleId uuid.UUID) ([]*models.Permission, error) {
-// 	q := psql.Select(
-// 		sm.Columns(
-// 			models.PermissionColumns.ID,
-// 			models.PermissionColumns.Name,
-// 			models.PermissionColumns.Description,
-// 			models.PermissionColumns.CreatedAt,
-// 			models.PermissionColumns.UpdatedAt,
-// 		),
-// 		sm.From(models.TableNames.Permissions).As(models.Permissions.Alias()),
-// 		sm.LeftJoin(models.RolePermissions.NameAs()).On(
-// 			models.PermissionColumns.ID.EQ(models.RolePermissionColumns.PermissionID),
-// 			models.RolePermissionColumns.RoleID.EQ(psql.Arg(roleId)),
-// 		),
-// 		sm.Where(models.RolePermissionColumns.PermissionID.IsNull()),
-// 		sm.OrderBy(models.PermissionColumns.Name),
-// 		sm.Limit(2),
-// 		sm.Offset(2),
-// 	)
-// }

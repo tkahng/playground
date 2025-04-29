@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/stephenafamo/bob"
 	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/db/seeders"
@@ -133,6 +134,28 @@ func TestListUsers(t *testing.T) {
 			}
 			if !(len(got) == int(tt.want)) {
 				t.Errorf("ListUsers() = %v, want %v", len(got), tt.want)
+			}
+		})
+	}
+}
+
+func TestDeleteUsers(t *testing.T) {
+	type args struct {
+		ctx    context.Context
+		db     bob.Executor
+		userId uuid.UUID
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := repository.DeleteUsers(tt.args.ctx, tt.args.db, tt.args.userId); (err != nil) != tt.wantErr {
+				t.Errorf("DeleteUsers() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}

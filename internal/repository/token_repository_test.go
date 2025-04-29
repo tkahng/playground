@@ -1,17 +1,12 @@
 package repository_test
 
 import (
-	"context"
 	"testing"
 	"time"
 
-	"github.com/aarondl/opt/omit"
-	"github.com/aarondl/opt/omitnull"
-	"github.com/stephenafamo/bob"
 	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/test"
-	"github.com/tkahng/authgo/internal/tools/security"
 )
 
 func TestCreateToken(t *testing.T) {
@@ -70,16 +65,16 @@ func TestCreateToken(t *testing.T) {
 	}
 }
 
-func randomToken(ctx context.Context, db bob.Executor, email string, tokenType models.TokenTypes, otp string) (*models.Token, error) {
-	token := &models.TokenSetter{
-		Identifier: omit.From(email),
-		Type:       omit.From(tokenType),
-		Token:      omit.From(security.GenerateTokenKey()),
-		Expires:    omit.From(time.Now().Add(time.Duration(259200) * time.Second)),
-		Otp:        omitnull.From(otp),
-	}
-	return models.Tokens.Insert(token).One(ctx, db)
-}
+// func randomToken(ctx context.Context, db bob.Executor, email string, tokenType models.TokenTypes, otp string) (*models.Token, error) {
+// 	token := &models.TokenSetter{
+// 		Identifier: omit.From(email),
+// 		Type:       omit.From(tokenType),
+// 		Token:      omit.From(security.GenerateTokenKey()),
+// 		Expires:    omit.From(time.Now().Add(time.Duration(259200) * time.Second)),
+// 		Otp:        omitnull.From(otp),
+// 	}
+// 	return models.Tokens.Insert(token).One(ctx, db)
+// }
 
 // func TestDeleteTokensByUser(t *testing.T) {
 // 	ctx, dbx, pl := test.DbSetup()

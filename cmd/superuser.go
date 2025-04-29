@@ -27,7 +27,7 @@ var superuserCmd = &cobra.Command{
 
 var superuserCreate = &cobra.Command{
 	Use:     "create",
-	Example: "superuser create test@example.com Password123!",
+	Example: "superuser create admin@k2dv.io Password123!",
 	Short:   "create superuser",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) != 2 {

@@ -92,7 +92,7 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
           <br />
           {task.content}
           <br />
-          {task.order}
+          {/* {task.order} */}
         </div>
       </CardContent>
       <ConfirmDialog dialogProps={editDialog.props}>
