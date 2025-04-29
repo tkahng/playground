@@ -33,6 +33,7 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN  }}
+
       - name: Build image and push to registry
         uses: docker/build-push-action@v4
         with:
@@ -42,12 +43,21 @@ jobs:
           push: true
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
 
-      # - name: Dokploy Deployment
-      #   shell: bash
-      #   with:
-      #     auth_token: ${{ secrets.DOKPLOY_AUTH_TOKEN }}
-      #     application_id: ${{ secrets.DOKPLOY_APPLICATION_ID }}
-      #     dokploy_url: ${{ secrets.DOKPLOY_URL }}
+      # Set up Go environment
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.24.1" # Use Go version 1.23.5
+
+      # Install dependencies
+      - name: Install dependencies
+        run: go mod tidy
+
+      - name: Run Migrations
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: go run . migrate up
+
       - name: Trigger Dokploy deployment
         shell: bash
         env:
