@@ -1279,3 +1279,15 @@ export const adminStripeSubscription = async (token: string, id: string) => {
   }
   return data;
 };
+
+export const deleteUser = async (token: string) => {
+  const { data, error } = await client.DELETE("/api/auth/me", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  if (error) {
+    throw error;
+  }
+  return data;
+};
