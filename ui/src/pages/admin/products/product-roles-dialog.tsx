@@ -132,7 +132,7 @@ export function ProductRolesDialog({
                   name="roles"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Frameworks</FormLabel>
+                      <FormLabel>Roles</FormLabel>
                       <FormControl>
                         <MultipleSelector
                           {...field}
@@ -140,7 +140,7 @@ export function ProductRolesDialog({
                             label: role.name,
                             value: role.id,
                           }))}
-                          placeholder="Select frameworks you like..."
+                          placeholder="Select Roles you like..."
                           emptyIndicator={
                             <p className="text-center text-lg leading-10 text-gray-600 dark:text-gray-400">
                               no results found.

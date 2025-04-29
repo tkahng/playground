@@ -22,7 +22,11 @@ export const RouteLinks = {
     current: (pathname: string) => pathname.startsWith(RouteMap.DASHBOARD),
   },
   DASHBOARD_OVERVIEW: { to: RouteMap.DASHBOARD, title: "Overview" },
-  TASK_PROJECTS: { to: RouteMap.TASK_PROJECTS, title: "Projects" },
+  TASK_PROJECTS: {
+    to: RouteMap.TASK_PROJECTS,
+    title: "Projects",
+    current: (pathname: string) => pathname.startsWith(RouteMap.TASK_PROJECTS),
+  },
   SETTINGS: {
     to: RouteMap.SETTINGS,
     title: "Settings",

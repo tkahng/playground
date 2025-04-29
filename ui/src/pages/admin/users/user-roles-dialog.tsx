@@ -127,26 +127,12 @@ export function UserRolesDialog({
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <div className="grid">
               <div className="space-y-4">
-                {/* <MultipleSelector
-                  value={value}
-                  onChange={setValue}
-                  defaultOptions={data.map((role) => ({
-                    label: role.name,
-                    value: role.id,
-                  }))}
-                  placeholder="Select roles..."
-                  emptyIndicator={
-                    <p className="text-center text-lg leading-10 text-gray-600 dark:text-gray-400">
-                      no results found.
-                    </p>
-                  }
-                />{" "} */}
                 <FormField
                   control={form.control}
                   name="roles"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Frameworks</FormLabel>
+                      <FormLabel>Roles</FormLabel>
                       <FormControl>
                         <MultipleSelector
                           {...field}
@@ -154,7 +140,7 @@ export function UserRolesDialog({
                             label: role.name,
                             value: role.id,
                           }))}
-                          placeholder="Select frameworks you like..."
+                          placeholder="Select roles you like..."
                           emptyIndicator={
                             <p className="text-center text-lg leading-10 text-gray-600 dark:text-gray-400">
                               no results found.

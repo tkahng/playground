@@ -141,7 +141,9 @@ func OAuth2Callback(ctx context.Context, api *Api, input *OAuth2CallbackInput) (
 	} else {
 		redirectUrl = api.app.Cfg().AppConfig.AppUrl
 	}
-	var opts []oauth2.AuthCodeOption
+	var opts []oauth2.AuthCodeOption = []oauth2.AuthCodeOption{
+		oauth2.AccessTypeOffline,
+	}
 
 	if provider.Pkce() {
 		opts = append(opts, oauth2.SetAuthURLParam("code_verifier", parsedState.CodeVerifier))

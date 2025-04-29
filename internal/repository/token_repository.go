@@ -10,7 +10,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/stephenafamo/bob"
 	"github.com/stephenafamo/bob/dialect/psql"
-	"github.com/stephenafamo/bob/dialect/psql/dm"
 	"github.com/stephenafamo/bob/dialect/psql/im"
 	"github.com/tkahng/authgo/internal/db/models"
 )
@@ -49,20 +48,6 @@ func CreateToken(ctx context.Context, db bob.Executor, params *TokenDTO) (*model
 	return models.Tokens.Insert(newVar, im.Returning("*")).One(ctx, db)
 }
 
-func UseToken(ctx context.Context, db bob.Executor, params string) (*models.Token, error) {
-	token, err := models.
-		Tokens.
-		Delete(
-			psql.WhereAnd(
-				models.DeleteWhere.Tokens.Token.EQ(params),
-				models.DeleteWhere.Tokens.Expires.GT(time.Now()),
-			),
-			dm.Returning("*"),
-		).
-		One(ctx, db)
-	return token, err
-}
-
 func DeleteToken(ctx context.Context, db bob.Executor, token string) error {
 	_, err := models.Tokens.Delete(
 		psql.WhereAnd(
@@ -72,6 +57,7 @@ func DeleteToken(ctx context.Context, db bob.Executor, token string) error {
 	).Exec(ctx, db)
 	return err
 }
+
 func GetToken(ctx context.Context, db bob.Executor, token string) (*models.Token, error) {
 	res, err := models.Tokens.Query(
 		models.SelectWhere.Tokens.Token.EQ(token),
@@ -82,20 +68,4 @@ func GetToken(ctx context.Context, db bob.Executor, token string) (*models.Token
 		return nil, err
 	}
 	return res, nil
-}
-
-func DeleteTokensByUser(ctx context.Context, db bob.Executor, params *OtpDto) error {
-	if params == nil {
-		return errors.New("params is nil")
-	}
-	q := models.
-		Tokens.
-		Delete()
-	q.Apply(
-		models.DeleteWhere.Tokens.Identifier.EQ(params.Identifier),
-		models.DeleteWhere.Tokens.Type.EQ(params.Type),
-	)
-	_, err := q.Exec(ctx, db)
-
-	return err
 }

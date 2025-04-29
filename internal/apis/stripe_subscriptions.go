@@ -29,9 +29,7 @@ func (api *Api) MyStripeSubscriptionsOperation(path string) huma.Operation {
 func (api *Api) MyStripeSubscriptions(ctx context.Context, input *struct{}) (*struct {
 	Body *shared.SubscriptionWithPrice `json:"body,omitempty" required:"false"`
 }, error) {
-	output := &struct {
-		Body *shared.SubscriptionWithPrice `json:"body,omitempty" required:"false"`
-	}{}
+
 	db := api.app.Db()
 	user := core.GetContextUserInfo(ctx)
 	if user == nil {
@@ -42,8 +40,11 @@ func (api *Api) MyStripeSubscriptions(ctx context.Context, input *struct{}) (*st
 		return nil, err
 	}
 	if subscriptions == nil {
-		return output, nil
+		return nil, nil
 	}
+	output := &struct {
+		Body *shared.SubscriptionWithPrice `json:"body,omitempty" required:"false"`
+	}{}
 	output.Body = &shared.SubscriptionWithPrice{
 		Subscription: shared.ModelToSubscription(subscriptions),
 	}
