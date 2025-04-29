@@ -19,14 +19,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      # - name: Set up Go
-      #   uses: actions/setup-go@v5
-      #   with:
-      #     go-version: ">=1.24.1"
-
-      # - name: Run Migrations
-      #   run: go run . migrate up
-
       - name: Login to ghcr.io
         uses: docker/login-action@v2
         with:
