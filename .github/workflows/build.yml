@@ -49,9 +49,16 @@ jobs:
         with:
           go-version: "1.24.1" # Use Go version 1.23.5
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.17.0
       # Install dependencies
       - name: Install dependencies
         run: go mod tidy
+
+      - name: Build Admin dashboard UI
+        run: npm --prefix ./ui install && npm --prefix ./ui run build
 
       - name: Run Migrations
         env:
