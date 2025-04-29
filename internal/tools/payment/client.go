@@ -181,7 +181,7 @@ func (s *StripeClient) CreateCheckoutSession(customerId, priceId string, trialDa
 	}
 
 	sessionParams := &stripe.CheckoutSessionParams{
-		AutomaticTax:       &stripe.CheckoutSessionAutomaticTaxParams{
+		AutomaticTax: &stripe.CheckoutSessionAutomaticTaxParams{
 			Enabled: stripe.Bool(true),
 		},
 		Customer:           stripe.String(customerId),
@@ -199,7 +199,7 @@ func (s *StripeClient) CreateCheckoutSession(customerId, priceId string, trialDa
 func (s *StripeClient) CreateBillingPortalSession(customerId string) (*stripe.BillingPortalSession, error) {
 	params := &stripe.BillingPortalSessionParams{
 		Customer:  stripe.String(customerId),
-		ReturnURL: stripe.String(s.config.StripeAppUrl + "/dashboard/subscriptions"),
+		ReturnURL: stripe.String(s.config.StripeAppUrl + "/settings/billing"),
 	}
 	return bs.New(params)
 }
