@@ -9,6 +9,9 @@ import (
 	"github.com/stephenafamo/bob"
 	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/repository"
+	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/authgo/internal/tools/mapper"
+	"github.com/tkahng/authgo/internal/tools/payment"
 	"github.com/tkahng/authgo/internal/types"
 )
 
@@ -136,7 +139,36 @@ func (s *StripeService) CreateBillingPortalSession(ctx context.Context, db bob.E
 	if sub == nil {
 		return "", errors.New("no subscription.  subscribe to access billing portal")
 	}
-	url, err := s.client.CreateBillingPortalSession(dbcus.StripeID)
+	prods, err := repository.ListProducts(ctx, db, &shared.StripeProductListParams{
+		PaginatedInput: shared.PaginatedInput{
+			PerPage: 100,
+		},
+		StripeProductListFilter: shared.StripeProductListFilter{
+			Active: shared.Active,
+		},
+	})
+	if err != nil {
+		return "", err
+	}
+	err = prods.LoadStripeProductProductStripePrices(
+		ctx,
+		db,
+		models.SelectWhere.StripePrices.Active.EQ(true),
+	)
+	if err != nil {
+		return "", err
+	}
+	prodssa := mapper.Map(prods, func(user *models.StripeProduct) *payment.ProductBillingConfigurationInput {
+		return &payment.ProductBillingConfigurationInput{
+			Product: &user.ID,
+			Prices:  mapper.Map(user.R.ProductStripePrices, func(p *models.StripePrice) *string { return &p.ID }),
+		}
+	})
+	config, err := s.client.CreatePortalConfiguration(prodssa...)
+	if err != nil {
+		return "", err
+	}
+	url, err := s.client.CreateBillingPortalSession2(dbcus.StripeID, config)
 	if err != nil {
 		log.Println(err)
 		return "", errors.New("failed to create checkout session")
