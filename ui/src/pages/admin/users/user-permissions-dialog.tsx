@@ -125,7 +125,7 @@ export function UserPermissionDialog({
                   name="permissions"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Frameworks</FormLabel>
+                      <FormLabel>Permissions</FormLabel>
                       <FormControl>
                         <MultipleSelector
                           {...field}
@@ -133,7 +133,7 @@ export function UserPermissionDialog({
                             label: role.name,
                             value: role.id,
                           }))}
-                          placeholder="Select frameworks you like..."
+                          placeholder="Select permissions you like..."
                           emptyIndicator={
                             <p className="text-center text-lg leading-10 text-gray-600 dark:text-gray-400">
                               no results found.
