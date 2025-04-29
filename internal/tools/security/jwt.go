@@ -61,7 +61,7 @@ func MarshalToken[T any](token jwt.MapClaims, obj T) (T, error) {
 // 		return []byte(verificationKey), nil
 // 	})
 // 	if err != nil {
-// 		return nil, fmt.Errorf("Error at error: %w", err)
+// 		return nil, fmt.Errorf("error at error: %w", err)
 // 	}
 
 // 	if claims, ok := parsedToken.Claims.(*TokenClaims); ok && parsedToken.Valid {

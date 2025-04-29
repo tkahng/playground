@@ -45,7 +45,7 @@ func Authenticator(ja core.App) func(http.Handler) http.Handler {
 // 	// user, err := ja.Auth().VerifyCookieTokenStd(w, r)
 // 	// if err != nil {
 // 	// 	fmt.Println(err)
-// 	// 	return nil, fmt.Errorf("Error at error: %w", err)
+// 	// 	return nil, fmt.Errorf("error at error: %w", err)
 // 	// }
 // 	user := models.User{}
 // 	// fmt.Println(user)
