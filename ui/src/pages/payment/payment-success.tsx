@@ -1,4 +1,5 @@
 import { NexusAILandingHeader } from "@/components/nexus-landing-header";
+import { NexusAIMinimalFooter } from "@/components/nexus-minimal-footer";
 import { RouteMap } from "@/components/route-map";
 import { Button } from "@/components/ui/button";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
@@ -49,8 +50,10 @@ export default function PaymentSuccessPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <NexusAILandingHeader />
+    <div className="flex flex-col min-h-screen ">
+      <div className="px-4 md:px-6 lg:px-8 py-2 items-center sticky top-0 z-50 w-full bg-background shadow-sm border-b">
+        <NexusAILandingHeader />
+      </div>
       <main className="flex-1 flex items-center justify-center p-4">
         <div className="max-w-md w-full space-y-8">
           <div className="text-center">
@@ -79,13 +82,7 @@ export default function PaymentSuccessPage() {
           </div>
         </div>
       </main>
-      <footer className="border-t">
-        <div className="container px-4 md:px-6 py-8">
-          <p className="text-xs text-center">
-            © 2023 NexusAI. All rights reserved.
-          </p>
-        </div>
-      </footer>
+      <NexusAIMinimalFooter />
     </div>
   );
 }
