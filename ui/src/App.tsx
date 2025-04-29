@@ -19,9 +19,6 @@ import Features from "@/pages/landing/features";
 import Landing from "@/pages/landing/landing";
 import PricingPage from "@/pages/landing/pricing";
 import PaymentSuccessPage from "@/pages/payment/payment-success";
-import AdvancedRoute from "@/pages/protected-routes/route-advanced";
-import BasicRoute from "@/pages/protected-routes/route-basic";
-import ProRoute from "@/pages/protected-routes/route-pro";
 import BillingSettingPage from "@/pages/settings/billing-settings";
 import AccountSettingsPage from "@/pages/settings/general-settings";
 import { BrowserRouter, Route, Routes } from "react-router";
@@ -41,6 +38,8 @@ import SubscriptionsListPage from "./pages/admin/subscriptions/subscription-list
 import ConfirmPasswordReset from "./pages/auth/confirm-password-reset";
 import ResetPasswordRequestPage from "./pages/auth/reset-password";
 import NotAuthorizedPage from "./pages/not-authorized";
+import ProtectedRouteLayout from "./pages/protected-routes/protected-layout";
+import ProtectedRoutePage from "./pages/protected-routes/protected-route-page";
 import ProtectedRouteIndex from "./pages/protected-routes/route-index";
 import ProjectEdit from "./pages/tasks/task-projects/project-edit";
 import ProjectListPage from "./pages/tasks/task-projects/projects-list";
@@ -115,10 +114,13 @@ function App() {
                 }
               >
                 <Route element={<PageSectionLayout title="Protected" />}>
-                  <Route index element={<ProtectedRouteIndex />} />
-                  <Route path="basic" element={<BasicRoute />} />
-                  <Route path="pro" element={<ProRoute />} />
-                  <Route path="advanced" element={<AdvancedRoute />} />
+                  <Route element={<ProtectedRouteLayout />}>
+                    <Route index element={<ProtectedRouteIndex />} />
+                    <Route
+                      path=":permission"
+                      element={<ProtectedRoutePage />}
+                    />
+                  </Route>
                 </Route>
               </Route>
               <Route

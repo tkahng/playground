@@ -68,13 +68,7 @@ export const RouteLinks = {
   PROTECTED: {
     to: RouteMap.PROTECTED,
     title: "Protected",
-    current: (pathname: string) =>
-      [
-        RouteMap.PROTECTED,
-        RouteMap.PROTECTED_BASIC,
-        RouteMap.PROTECTED_PRO,
-        RouteMap.PROTECTED_ADVANCED,
-      ].includes(pathname),
+    current: (pathname: string) => pathname.startsWith(RouteMap.PROTECTED),
   },
   PROTECTED_BASIC: { to: RouteMap.PROTECTED_BASIC, title: "Basic" },
   PROTECTED_PRO: { to: RouteMap.PROTECTED_PRO, title: "Pro" },

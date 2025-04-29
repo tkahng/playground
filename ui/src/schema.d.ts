@@ -809,7 +809,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/protected/advanced-permission": {
+    "/api/permissions": {
         parameters: {
             query?: never;
             header?: never;
@@ -817,10 +817,10 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Api protected advanced permission
-         * @description Api protected advanced permission
+         * permissions list
+         * @description List of permissions
          */
-        get: operations["api-protected-advanced-permission"];
+        get: operations["permissions-list"];
         put?: never;
         post?: never;
         delete?: never;
@@ -829,7 +829,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/protected/basic-permission": {
+    "/api/protected/{permission-name}": {
         parameters: {
             query?: never;
             header?: never;
@@ -837,30 +837,10 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Api protected basic permission
-         * @description Api protected basic permission
+         * Api protected
+         * @description Api protected
          */
-        get: operations["api-protected-basic-permission"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/protected/pro-permission": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Api protected pro permission
-         * @description Api protected pro permission
-         */
-        get: operations["api-protected-pro-permission"];
+        get: operations["api-protected"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4907,9 +4887,20 @@ export interface operations {
             };
         };
     };
-    "api-protected-advanced-permission": {
+    "permissions-list": {
         parameters: {
-            query?: never;
+            query?: {
+                page?: number;
+                per_page?: number;
+                q?: string;
+                ids?: string[] | null;
+                names?: string[] | null;
+                role_id?: string;
+                /** @description When role_id is provided, if this is true, it will return the permissions that the role does not have */
+                role_reverse?: boolean;
+                sort_by?: string;
+                sort_order?: "asc" | "desc";
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -4922,11 +4913,20 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": string;
+                    "application/json": components["schemas"]["PaginatedResponsePermission"];
                 };
             };
             /** @description Not Found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4945,11 +4945,13 @@ export interface operations {
             };
         };
     };
-    "api-protected-basic-permission": {
+    "api-protected": {
         parameters: {
             query?: never;
             header?: never;
-            path?: never;
+            path: {
+                "permission-name": string;
+            };
             cookie?: never;
         };
         requestBody?: never;
@@ -4972,37 +4974,8 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ErrorModel"];
                 };
             };
-            /** @description Internal Server Error */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-        };
-    };
-    "api-protected-pro-permission": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Not Found */
-            404: {
+            /** @description Unprocessable Entity */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };

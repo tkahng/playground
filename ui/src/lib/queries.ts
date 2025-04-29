@@ -811,59 +811,6 @@ export const confirmVerification = async (token: string, type: string) => {
   }
 };
 
-export const getBasicRoute = async (token: string) => {
-  const { data, error } = await client.GET("/api/protected/basic-permission", {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-  if (error) {
-    throw error;
-  }
-  if (!data) {
-    throw new Error("No data");
-  }
-  return data;
-};
-export const getProRoute = async (token: string) => {
-  const { data, error } = await client.GET("/api/protected/pro-permission", {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-  if (error) {
-    throw error;
-  }
-  if (!data) {
-    throw new Error("No data");
-  }
-  return data;
-};
-export const getAdvancedRoute = async (token: string) => {
-  const { data, error } = await client.GET(
-    "/api/protected/advanced-permission",
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    }
-  );
-  if (error) {
-    throw error;
-  }
-  if (!data) {
-    throw new Error("No data");
-  }
-  return data;
-};
-export const api = {
-  protected: {
-    basic: getBasicRoute,
-    pro: getProRoute,
-    advanced: getAdvancedRoute,
-  },
-};
-
 export const taskProjectList = async (
   token: string,
   args: operations["task-project-list"]["parameters"]["query"]
@@ -1284,6 +1231,38 @@ export const deleteUser = async (token: string) => {
   const { data, error } = await client.DELETE("/api/auth/me", {
     headers: {
       Authorization: `Bearer ${token}`,
+    },
+  });
+  if (error) {
+    throw error;
+  }
+  return data;
+};
+
+export const protectedApi = async (token: string, args: string) => {
+  const { data, error } = await client.GET("/api/protected/{permission-name}", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    params: {
+      path: {
+        "permission-name": args,
+      },
+    },
+  });
+  if (error) {
+    throw error;
+  }
+  return data;
+};
+
+export const permissionsList = async () => {
+  const { data, error } = await client.GET("/api/permissions", {
+    params: {
+      query: {
+        page: 0,
+        perPage: 50,
+      },
     },
   });
   if (error) {
