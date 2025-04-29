@@ -69,12 +69,20 @@ func ToModelUser(user *User) *models.User {
 	}
 }
 
+type EmailVerifiedStatus string
+
+const (
+	Verified   EmailVerifiedStatus = "verified"
+	UnVerified EmailVerifiedStatus = "unverified"
+)
+
 type UserListFilter struct {
-	Providers []Providers `query:"providers,omitempty" required:"false" uniqueItems:"true" minimum:"1" maximum:"100" enum:"google,apple,facebook,github,credentials"`
-	Q         string      `query:"q,omitempty" required:"false"`
-	Ids       []string    `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
-	Emails    []string    `query:"emails,omitempty" required:"false" minimum:"1" maximum:"100" format:"email"`
-	RoleIds   []string    `query:"role_ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+	Providers     []Providers         `query:"providers,omitempty" required:"false" uniqueItems:"true" minimum:"1" maximum:"100" enum:"google,apple,facebook,github,credentials"`
+	Q             string              `query:"q,omitempty" required:"false"`
+	Ids           []string            `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+	Emails        []string            `query:"emails,omitempty" required:"false" minimum:"1" maximum:"100" format:"email"`
+	RoleIds       []string            `query:"role_ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+	EmailVerified EmailVerifiedStatus `query:"email_verified,omitempty" required:"false" enum:"verified,unverified"`
 	// PermissionIds []string           `query:"permission_ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
 }
 type UserListParams struct {

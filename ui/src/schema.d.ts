@@ -3144,6 +3144,7 @@ export interface operations {
                 ids?: string[] | null;
                 emails?: string[] | null;
                 role_ids?: string[] | null;
+                email_verified?: "verified" | "unverified";
                 sort_by?: string;
                 sort_order?: "asc" | "desc";
                 expand?: ("roles" | "permissions" | "accounts" | "subscriptions")[] | null;

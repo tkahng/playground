@@ -32,6 +32,7 @@ import AdminLayout from "./layouts/admin-layout";
 import PageSectionLayout from "./layouts/page-section";
 import PublicLayout from "./layouts/public-layout";
 import NotFoundPage from "./pages/404";
+import AdminDashboardPage from "./pages/admin/admin-dashboard";
 import ProductEditPage from "./pages/admin/products/products-edit";
 import ProductsListPage from "./pages/admin/products/products-list";
 import SubscriptionsListPage from "./pages/admin/subscriptions/subscription-list";
@@ -138,7 +139,7 @@ function App() {
 
             <Route path={"/admin"} element={<AdminLayoutBase />}>
               <Route element={<AdminLayout headerLinks={adminHeaderLinks} />}>
-                <Route index element={<Dashboard />} />
+                <Route index element={<AdminDashboardPage />} />
                 <Route
                   path="users"
                   element={<PageSectionLayout title="Users" />}

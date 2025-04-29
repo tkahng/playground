@@ -23,6 +23,17 @@ func ListUserFilterFunc(ctx context.Context, q *psql.ViewQuery[*models.User, mod
 	if filter == nil {
 		return
 	}
+	if filter.EmailVerified != "" {
+		if filter.EmailVerified == shared.Verified {
+			q.Apply(
+				models.SelectWhere.Users.EmailVerifiedAt.IsNotNull(),
+			)
+		} else if filter.EmailVerified == shared.UnVerified {
+			q.Apply(
+				models.SelectWhere.Users.EmailVerifiedAt.IsNull(),
+			)
+		}
+	}
 	if len(filter.Providers) > 0 {
 		var providers []models.Providers
 		for _, p := range filter.Providers {
