@@ -32,23 +32,21 @@ export default function Features() {
           ]}
         />
         <FeatureCard
-          title="Smart Suggestions"
-          description="Get intelligent recommendations for task prioritization, resource
-          allocation, and timeline adjustments."
+          title="User Management and Security"
+          description="Manage your users with ease"
           items={[
-            "Task prioritization based on deadlines and dependencies",
-            "Resource allocation recommendations to balance workloads",
-            "Early warning system for potential delays or issues",
+            "Customizable user roles and permissions",
+            "Secure user access with authentication and authorization",
+            "Product based access control",
           ]}
         />
         <FeatureCard
-          title="Automated Workflows"
-          description="Set up custom workflows that trigger automatically as tasks
-          progress through different stages."
+          title="Product and subscription integration"
+          description="With Stripe Integration you can connect your products to your subscription plan."
           items={[
-            "Rigorous testing and validation to ensure accuracy and reliability",
-            "Continuous model refinement to improve performance over time",
-            "Human-in-the-loop verification for critical tasks",
+            "Stripe Webhook Integration",
+            "Stripe Subscription Management",
+            "Stripe Billing Portal Integration",
           ]}
         />
       </SecondarySection>
