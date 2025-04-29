@@ -14,6 +14,7 @@ import { Separator } from "@/components/ui/separator";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { GetError } from "@/lib/get-erro";
 import {
+  deleteUser,
   getMe,
   requestVerification,
   resetPassword,
@@ -74,6 +75,31 @@ export default function AccountSettingsPage() {
     },
     onError: (error: any) => {
       toast.error(`Failed to update Profile: ${error.message}`);
+    },
+  });
+  const deleteUserMutation = useMutation({
+    mutationFn: async () => {
+      await checkAuth(); // Ensure user is authenticated
+      if (!user) {
+        throw new Error("User not found");
+      }
+      await deleteUser(user.tokens.access_token);
+    },
+    onError: (error: any) => {
+      const err = GetError(error);
+      if (err) {
+        if (err.errors?.length) {
+          toast.error(`${err.errors[0].message || err.errors[0].value}`);
+        } else if (err.title) toast.error(`${err.detail || err.title}`);
+      } else {
+        toast.error(`Failed to reset password: ${error.message}`);
+      }
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["auth/me"],
+      });
+      toast.success("Account deleted successfully");
     },
   });
   const resetPasswordMutation = useMutation({
@@ -295,7 +321,7 @@ export default function AccountSettingsPage() {
           <Button
             variant="destructive"
             onClick={() => {
-              toast.error("This feature is not implemented yet.");
+              deleteUserMutation.mutate();
             }}
           >
             Delete Account
