@@ -85,3 +85,41 @@ func (api *Api) MeUpdate(ctx context.Context, input *struct {
 	}
 	return nil, nil
 }
+
+func (api *Api) MeDeleteOperation(path string) huma.Operation {
+	return huma.Operation{
+		OperationID: "me-delete",
+		Method:      http.MethodDelete,
+		Path:        path,
+		Summary:     "Me delete",
+		Description: "Me delete",
+		Tags:        []string{"Auth", "Me"},
+		Errors:      []int{http.StatusUnauthorized, http.StatusNotFound},
+		Security: []map[string][]string{
+			{shared.BearerAuthSecurityKey: {}},
+		},
+	}
+}
+
+func (api *Api) MeDelete(ctx context.Context, input *struct{}) (*struct{}, error) {
+	db := api.app.Db()
+	claims := core.GetContextUserInfo(ctx)
+	if claims == nil {
+		return nil, huma.Error404NotFound("User not found")
+	}
+	checker := api.app.NewChecker(ctx)
+	err := checker.CannotBeSuperUserID(claims.User.ID)
+	if err != nil {
+		return nil, err
+	}
+	// Check if the user has any active subscriptions
+	err = checker.CannotHaveValidSubscription(claims.User.ID)
+	if err != nil {
+		return nil, err
+	}
+	err = repository.DeleteUsers(ctx, db, claims.User.ID)
+	if err != nil {
+		return nil, err
+	}
+	return nil, nil
+}
