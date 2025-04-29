@@ -701,7 +701,7 @@ export const getUserSubscriptions = async (token: string) => {
   if (error) {
     throw error;
   }
-  return data;
+  return data ? data : null;
 };
 
 export const getCheckoutSession = async (token: string, id: string) => {
