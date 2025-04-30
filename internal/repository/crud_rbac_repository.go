@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"fmt"
 	"slices"
 
 	"github.com/google/uuid"
@@ -92,6 +93,11 @@ func ListPermissions(ctx context.Context, db bob.Executor, input *shared.Permiss
 	ViewApplyPagination(q, pageInput)
 	ListPermissionsOrderByFunc(ctx, q, input)
 	ListPermissionsFilterFunc(ctx, q, &filter)
+	query, args, err := q.Build(ctx)
+	if err != nil {
+		return nil, err
+	}
+	fmt.Println(query, args)
 	data, err := q.All(ctx, db)
 	if err != nil {
 		return nil, err

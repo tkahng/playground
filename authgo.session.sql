@@ -1,6 +1,16 @@
+EXPLAIN ANALYZE
 SELECT *
-from task_projects
-ORDER BY updated_at DESC;
+FROM users
+WHERE id IN (
+                SELECT user_id
+                FROM user_roles
+                        join roles on user_roles.role_id = roles.id
+                WHERE name = 'superuser' -- WHERE role_id in (
+                        --         SELECT id
+                        --         FROM roles
+                        --         WHERE name = 'superuser'
+                        --     )
+        );
 -- -- I need a query to get a user's total projects count, completed projects count, and total tasks count, completed tasks count.
 -- WITH project_statsec006d55-00f2-4b86-9411-873a22c2c40eAS (
 --     SELECT COUNT(*) as total_projects,

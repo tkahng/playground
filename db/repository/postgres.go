@@ -6,6 +6,9 @@ import (
 	"log/slog"
 	"reflect"
 	"strings"
+
+	"github.com/Masterminds/squirrel"
+	sc "github.com/Masterminds/squirrel"
 )
 
 // PostgresRepository provides CRUD operations for Postgres
@@ -49,29 +52,31 @@ func NewPostgresRepository[Model any](db DBTX) *PostgresRepository[Model] {
 	}
 }
 
-// Get retrieves records from the database based on the provided filters
-func (r *PostgresRepository[Model]) Get(ctx context.Context, where *map[string]any, order *map[string]any, limit *int, skip *int) ([]Model, error) {
-	args := []any{}
-	query := fmt.Sprintf("SELECT %s FROM %s", r.builder.Fields(""), r.builder.Table())
-	if expr := r.builder.Where(where, &args, nil); expr != "" {
-		query += fmt.Sprintf(" WHERE %s", expr)
+func (r *PostgresRepository[Model]) Get(ctx context.Context, where *map[string]any, order *map[string]any, limit *uint64, skip *uint64) ([]Model, error) {
+	// query := fmt.Sprintf("SELECT %s FROM %s", r.builder.Fields(""), r.builder.Table())
+	query := sc.Select(r.builder.Fields("")).From(r.builder.Table())
+	query = r.builder.Where(where, query)
+	// if expr := r.builder.Order(order); expr != "" {
+	// 	query += fmt.Sprintf(" ORDER BY %s", expr)
+	// }
+	query = r.builder.Order(order, query)
+	if limit != nil {
+		query = query.Limit(*limit)
 	}
-	if expr := r.builder.Order(order); expr != "" {
-		query += fmt.Sprintf(" ORDER BY %s", expr)
+	if skip != nil {
+		query = query.Offset(*skip)
 	}
-	if *limit > 0 {
-		query += fmt.Sprintf(" LIMIT %d", *limit)
+	sql, args, err := query.PlaceholderFormat(sc.Dollar).ToSql()
+	if err != nil {
+		slog.Error("Error executing Get query", slog.String("query", sql), slog.Any("args", args), slog.Any("error", err))
+		return nil, err
 	}
-	if *skip > 0 {
-		query += fmt.Sprintf(" OFFSET %d", *skip)
-	}
-
-	slog.Info("Executing Get query", slog.String("query", query), slog.Any("args", args))
+	slog.Info("Executing Get query", slog.String("query", sql), slog.Any("args", args))
 
 	// Execute the query and scan the results
-	result, err := r.builder.Scan(r.db.Query(ctx, query, args...))
+	result, err := r.builder.Scan(r.db.Query(ctx, sql, args...))
 	if err != nil {
-		slog.Error("Error executing Get query", slog.String("query", query), slog.Any("args", args), slog.Any("error", err))
+		slog.Error("Error executing Get query", slog.String("query", sql), slog.Any("args", args), slog.Any("error", err))
 		return nil, err
 	}
 
@@ -88,23 +93,28 @@ func (r *PostgresRepository[Model]) Put(ctx context.Context, models *[]Model) ([
 		slog.Error("Error starting transaction for Put", slog.Any("error", err))
 		return nil, err
 	}
-
+	defer tx.Rollback(ctx)
 	// Update each model in the database
 	for _, model := range *models {
-		args := []any{}
 		where := map[string]any{}
-		query := fmt.Sprintf("UPDATE %s SET %s", r.builder.Table(), r.builder.Set(&model, &args, &where))
-		if expr := r.builder.Where(&where, &args, nil); expr != "" {
-			query += fmt.Sprintf(" WHERE %s", expr)
-		}
-		query += fmt.Sprintf(" RETURNING %s", r.builder.Fields(""))
-
-		slog.Info("Executing Put query", slog.String("query", query), slog.Any("args", args))
-
-		items, err := r.builder.Scan(tx.Query(ctx, query, args...))
+		q := squirrel.Update(r.builder.Table())
+		q = r.builder.Set(&model, nil, &where, q)
+		// query := fmt.Sprintf("UPDATE %s SET %s", r.builder.Table(), r.builder.Set(&model, &args, &where))
+		// if expr := r.builder.Where(&where, &args, nil); expr != "" {
+		// 	query += fmt.Sprintf(" WHERE %s", expr)
+		// }
+		q = r.builder.WhereUpdate(&where, q)
+		// query += fmt.Sprintf(" RETURNING %s", r.builder.Fields(""))
+		sql, args, err := q.PlaceholderFormat(sc.Dollar).ToSql()
 		if err != nil {
-			slog.Error("Error executing Put query", slog.String("query", query), slog.Any("args", args), slog.Any("error", err))
-			tx.Rollback(ctx)
+			slog.Error("Error executing Put query", slog.String("query", sql), slog.Any("args", args), slog.Any("error", err))
+			return nil, err
+		}
+		slog.Info("Executing Put query", slog.String("query", sql), slog.Any("args", args))
+
+		items, err := r.builder.Scan(tx.Query(ctx, sql, args...))
+		if err != nil {
+			slog.Error("Error executing Put query", slog.String("query", sql), slog.Any("args", args), slog.Any("error", err))
 			return nil, err
 		}
 
@@ -143,17 +153,19 @@ func (r *PostgresRepository[Model]) Post(ctx context.Context, models *[]Model) (
 
 // Delete removes records from the database based on the provided filters
 func (r *PostgresRepository[Model]) Delete(ctx context.Context, where *map[string]any) ([]Model, error) {
-	args := []any{}
-	query := fmt.Sprintf("DELETE FROM %s", r.builder.Table())
-	if expr := r.builder.Where(where, &args, nil); expr != "" {
-		query += fmt.Sprintf(" WHERE %s", expr)
+	q := squirrel.Delete(r.builder.Table())
+	q = r.builder.WhereDelete(where, q)
+	query := fmt.Sprintf("RETURNING %s", r.builder.Fields(""))
+	q = q.Suffix(query)
+	sql, args, err := q.PlaceholderFormat(sc.Dollar).ToSql()
+	if err != nil {
+		slog.Error("Error executing Delete query", slog.String("query", sql), slog.Any("args", args), slog.Any("error", err))
+		return nil, err
 	}
-	query += fmt.Sprintf(" RETURNING %s", r.builder.Fields(""))
-
-	slog.Info("Executing Delete query", slog.String("query", query), slog.Any("args", args))
+	slog.Info("Executing Delete query", slog.String("query", sql), slog.Any("args", args))
 
 	// Execute the query and scan the results
-	result, err := r.builder.Scan(r.db.Query(ctx, query, args...))
+	result, err := r.builder.Scan(r.db.Query(ctx, sql, args...))
 	if err != nil {
 		slog.Error("Error executing Delete query", slog.String("query", query), slog.Any("args", args), slog.Any("error", err))
 		return nil, err

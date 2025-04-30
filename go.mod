@@ -52,6 +52,8 @@ require (
 	github.com/googleapis/gax-go/v2 v2.14.1 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.10 // indirect
+	github.com/lann/builder v0.0.0-20180802200727-47ae307949d0 // indirect
+	github.com/lann/ps v0.0.0-20150810152359-62de8c46ede0 // indirect
 	github.com/lib/pq v1.10.9 // indirect
 	github.com/qdm12/reprint v0.0.0-20200326205758-722754a53494 // indirect
 	github.com/spf13/pflag v1.0.6 // indirect
@@ -71,8 +73,10 @@ require (
 )
 
 require (
+	github.com/Masterminds/squirrel v1.5.4
 	github.com/amacneil/dbmate/v2 v2.26.0
 	github.com/caarlos0/env/v11 v11.3.1
+	github.com/ckoliber/gocrud v1.5.0
 	github.com/danielgtaylor/huma/v2 v2.32.0
 	github.com/gabriel-vasile/mimetype v1.4.8
 	github.com/go-chi/httprate v0.15.0
