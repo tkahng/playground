@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 )
 
@@ -231,7 +232,12 @@ func (b *SQLBuilder[Model]) Set(set *Model, args *[]any, where *map[string]any) 
 				case reflect.String:
 					(*where)[field.name] = map[string]any{"_eq": _field.String()}
 				default:
-					panic("Invalid identifier type")
+					u, ok := _field.Interface().(uuid.UUID)
+					if ok {
+						(*where)[field.name] = map[string]any{"_eq": u.String()}
+					} else {
+						panic("Invalid identifier type")
+					}
 				}
 			}
 		} else {
@@ -262,7 +268,10 @@ func (b *SQLBuilder[Model]) Order(order *map[string]any) string {
 
 // Constructs the WHERE clause for a query
 func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any, run func(string) []string) string {
+	fmt.Println("where for ", b.table)
 	if where == nil {
+		slog.Debug("No WHERE clause provided")
+		fmt.Println("No WHERE clause provided")
 		return ""
 	}
 
@@ -313,18 +322,20 @@ func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any, run func(s
 			} else {
 				// Relation field condition detected
 				if relation, ok := b.relations[key]; ok {
+					var builder SQLBuilderInterface
 					// Get the target SQLBuilder for the relation
-					builder := registry[relation.table]
+					if bld, ok := registry[relation.table]; !ok {
+						continue
+					} else {
+						// Get the target SQLBuilder for the relation
+						builder = bld
+					}
 
 					// Construct the sub-query for the related table
 					args_ := []any{}
 					where := item.(map[string]any)
 					var query string
 					if relation.through != "" {
-						fmt.Println("through", relation.through, "throughField", relation.throughField, "dest", relation.dest, "src", relation.src)
-						// "roles on roles.id = user_roles.role_id",
-						// on := builder.Table() + " on " + builder.Table() + "." + b.identifier(relation.endField) + " = " + b.identifier(relation.through) + "." + b.identifier(relation.throughField)
-						// fmt.Println(on)
 						query = fmt.Sprintf(
 							"SELECT %s FROM %s join %s on %s.%s = %s.%s",
 							b.identifier(relation.dest),
@@ -335,12 +346,7 @@ func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any, run func(s
 							b.identifier(relation.through),
 							b.identifier(relation.throughField),
 						)
-						fmt.Println(query)
-						// newQuery = sq.Select(b.identifier(relation.dest)).From(b.identifier(relation.through)).Join(
-						// 	builder.Table() + " on " + builder.Table() + "." + b.identifier(relation.endField) + " = " + b.identifier(relation.through) + "." + b.identifier(relation.throughField),
-						// )
 					} else {
-						// newQuery = sq.Select(b.identifier(relation.dest)).From(builder.Table())
 						query = fmt.Sprintf("SELECT %s FROM %s", b.identifier(relation.dest), builder.Table())
 					}
 					if expr := builder.Where(&where, &args_, run); expr != "" {
@@ -348,12 +354,16 @@ func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any, run func(s
 					}
 
 					if run == nil {
-						// If no run function is provided, sub-query is added to the main query
 						*args = append(*args, args_...)
-						result = append(result, b.operations["_in"](b.identifier(relation.src), query))
+						if inop, ok := b.operations[relation.src+"_in"]; ok {
+							result = append(result, inop(b.identifier(relation.src), query))
+						}
+						// If no run function is provided, sub-query is added to the main query
 					} else {
+						if inop, ok := b.operations[relation.src+"_in"]; ok {
+							result = append(result, inop(b.identifier(relation.src), run(query)...))
+						}
 						// If a run function is provided, sub-query is executed and its result is added to the main query
-						result = append(result, b.operations["_in"](b.identifier(relation.src), run(query)...))
 					}
 				}
 			}
