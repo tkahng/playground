@@ -2,11 +2,12 @@ package repository
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"log/slog"
 	"reflect"
 	"strings"
+
+	"github.com/jackc/pgx/v5"
 )
 
 type Repository[Model any] interface {
@@ -327,7 +328,7 @@ func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any, run func(s
 }
 
 // Scans the rows returned by a query into a slice of Model
-func (b *SQLBuilder[Model]) Scan(rows *sql.Rows, err error) ([]Model, error) {
+func (b *SQLBuilder[Model]) Scan(rows pgx.Rows, err error) ([]Model, error) {
 	if err != nil {
 		slog.Error("Error during query execution", slog.Any("error", err))
 		return nil, err
