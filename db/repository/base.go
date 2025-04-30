@@ -7,7 +7,6 @@ import (
 	"reflect"
 	"strings"
 
-	sq "github.com/Masterminds/squirrel"
 	"github.com/jackc/pgx/v5"
 )
 
@@ -46,8 +45,7 @@ type SQLBuilder[Model any] struct {
 
 type SQLBuilderInterface interface {
 	Table() string
-	Where(where *map[string]any, selq sq.SelectBuilder) sq.SelectBuilder
-	WhereUpdate(where *map[string]any, selq sq.UpdateBuilder) sq.UpdateBuilder
+	Where(where *map[string]any, args *[]any, run func(string) []string) string
 }
 
 var registry = map[string]SQLBuilderInterface{}
@@ -200,9 +198,9 @@ func (b *SQLBuilder[Model]) Values(values *[]Model, args *[]any, keys *[]any) (s
 }
 
 // Constructs the SET clause for an UPDATE query
-func (b *SQLBuilder[Model]) Set(set *Model, args *[]any, where *map[string]any, q sq.UpdateBuilder) sq.UpdateBuilder {
+func (b *SQLBuilder[Model]) Set(set *Model, args *[]any, where *map[string]any) string {
 	if set == nil {
-		return q
+		return ""
 	}
 
 	_value := reflect.ValueOf(*set)
@@ -232,342 +230,138 @@ func (b *SQLBuilder[Model]) Set(set *Model, args *[]any, where *map[string]any, 
 					(*where)[field.name] = map[string]any{"_eq": fmt.Sprintf("%f", _field.Complex())}
 				case reflect.String:
 					(*where)[field.name] = map[string]any{"_eq": _field.String()}
-
 				default:
 					panic("Invalid identifier type")
 				}
 			}
 		} else {
 			// Other fields are added to the SET clause
-			q = q.Set(b.identifier(field.name), _value.Field(field.idx).Interface())
-			// result = append(result, field.name+"="+b.parameter(_value.Field(field.idx), args))
+			result = append(result, field.name+"="+b.parameter(_value.Field(field.idx), args))
 		}
 	}
 
 	slog.Debug("Constructed SET clause", slog.String("set", strings.Join(result, ",")))
-	return q
+	return strings.Join(result, ",")
 }
 
 // Constructs the ORDER BY clause for a query
-func (b *SQLBuilder[Model]) Order(order *map[string]any, query sq.SelectBuilder) sq.SelectBuilder {
+func (b *SQLBuilder[Model]) Order(order *map[string]any) string {
 	if order == nil {
-		return query
+		return ""
 	}
+
 	// Generate the field names for the ORDER BY clause
 	result := []string{}
 	for key, val := range *order {
 		result = append(result, fmt.Sprintf("%s %s", b.identifier(key), val))
 	}
-	slog.Debug("Constructed ORDER BY clause", slog.Any("order", result))
-	query = query.OrderBy(result...)
-	return query
-}
 
-type baba interface {
-	From(from string) baba
-	Columns(columns ...string) baba
+	slog.Debug("Constructed ORDER BY clause", slog.Any("order", result))
+	return strings.Join(result, ",")
 }
 
 // Constructs the WHERE clause for a query
-func (b *SQLBuilder[Model]) Where(where *map[string]any, selq sq.SelectBuilder) sq.SelectBuilder {
-	q := selq
+func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any, run func(string) []string) string {
 	if where == nil {
-		return q
+		return ""
 	}
 
 	// Check for special conditions
 	// _not, _and, and _or are used for logical operations
-	// if item, ok := (*where)["_not"]; ok {
-	// 	expr := item.(map[string]any)
-	// 	query, args, err := b.Where2(&expr, selq)
-	// 	if err != nil {
-	// 		return "", nil, err
-	// 	}
-	// 	return "NOT (" + query + ")", args, nil
-	// } else if items, ok := (*where)["_and"]; ok {
-	// 	result := []string{}
-	// 	for _, item := range items.([]any) {
-	// 		expr := item.(map[string]any)
-	// 		query, args, err := b.Where2(&expr, args, )
-	// 		if err != nil {
-	// 			return "", nil, err
-	// 		}
-	// 		result = append(result, query)
-	// 	}
+	if item, ok := (*where)["_not"]; ok {
+		expr := item.(map[string]any)
 
-	// 	return "(" + strings.Join(result, " AND ") + ")", nil, nil
-	// } else if items, ok := (*where)["_or"]; ok {
-	// 	result := []string{}
-	// 	for _, item := range items.([]any) {
-	// 		expr := item.(map[string]any)
-	// 		result = append(result, b.Where(&expr, args, run))
-	// 	}
+		return "NOT (" + b.Where(&expr, args, run) + ")"
+	} else if items, ok := (*where)["_and"]; ok {
+		result := []string{}
+		for _, item := range items.([]any) {
+			expr := item.(map[string]any)
+			result = append(result, b.Where(&expr, args, run))
+		}
 
-	// 	return "(" + strings.Join(result, " OR ") + ")", nil, nil
-	// }
+		return "(" + strings.Join(result, " AND ") + ")"
+	} else if items, ok := (*where)["_or"]; ok {
+		result := []string{}
+		for _, item := range items.([]any) {
+			expr := item.(map[string]any)
+			result = append(result, b.Where(&expr, args, run))
+		}
+
+		return "(" + strings.Join(result, " OR ") + ")"
+	}
 
 	// Otherwise, construct the WHERE clause based on the field names and operations
 	result := []string{}
 	for key, item := range *where {
-		fmt.Println(key, item)
 		for op, value := range item.(map[string]any) {
-			fmt.Println("operation", key+op)
 			if handler, ok := b.operations[key+op]; ok {
 				// Primitive field condition detected
 				_value := reflect.ValueOf(value)
 
 				if _value.Kind() == reflect.String {
-					qs := handler(b.identifier(key), "?")
-					fmt.Println(qs)
-					// fmt.Println(qs, _value.String())
-					q = q.Where(qs, _value.String())
 					// String values are passed to operation handler as single parameter
-					// result = append(result, handler(b.identifier(key), b.parameter(_value, nil)))
+					result = append(result, handler(b.identifier(key), b.parameter(_value, args)))
 				} else if _value.Kind() == reflect.Slice || _value.Kind() == reflect.Array {
 					// Slice or array values are passed to operation handler as a list of parameters
 					items := []string{}
-					vals := []any{}
 					for i := range _value.Len() {
-						items = append(items, "?")
-						vals = append(vals, _value.Index(i).String())
+						items = append(items, b.parameter(_value.Index(i), args))
 					}
-					qs := handler(b.identifier(key), items...)
 
-					q = q.Where(qs, vals...)
+					result = append(result, handler(b.identifier(key), items...))
 				}
 			} else {
 				// Relation field condition detected
 				if relation, ok := b.relations[key]; ok {
+					// Get the target SQLBuilder for the relation
 					builder := registry[relation.table]
 
-					newWhere := item.(map[string]any)
-					fmt.Println("newWhere", newWhere)
-					var newQuery sq.SelectBuilder
+					// Construct the sub-query for the related table
+					args_ := []any{}
+					where := item.(map[string]any)
+					var query string
 					if relation.through != "" {
 						fmt.Println("through", relation.through, "throughField", relation.throughField, "dest", relation.dest, "src", relation.src)
 						// "roles on roles.id = user_roles.role_id",
-						on := builder.Table() + " on " + builder.Table() + "." + b.identifier(relation.endField) + " = " + b.identifier(relation.through) + "." + b.identifier(relation.throughField)
-						fmt.Println(on)
-						newQuery = sq.Select(b.identifier(relation.dest)).From(b.identifier(relation.through)).Join(
-							builder.Table() + " on " + builder.Table() + "." + b.identifier(relation.endField) + " = " + b.identifier(relation.through) + "." + b.identifier(relation.throughField),
+						// on := builder.Table() + " on " + builder.Table() + "." + b.identifier(relation.endField) + " = " + b.identifier(relation.through) + "." + b.identifier(relation.throughField)
+						// fmt.Println(on)
+						query = fmt.Sprintf(
+							"SELECT %s FROM %s join %s on %s.%s = %s.%s",
+							b.identifier(relation.dest),
+							b.identifier(relation.through),
+							builder.Table(),
+							builder.Table(),
+							b.identifier(relation.endField),
+							b.identifier(relation.through),
+							b.identifier(relation.throughField),
 						)
+						fmt.Println(query)
+						// newQuery = sq.Select(b.identifier(relation.dest)).From(b.identifier(relation.through)).Join(
+						// 	builder.Table() + " on " + builder.Table() + "." + b.identifier(relation.endField) + " = " + b.identifier(relation.through) + "." + b.identifier(relation.throughField),
+						// )
 					} else {
-						newQuery = sq.Select(b.identifier(relation.dest)).From(builder.Table())
+						// newQuery = sq.Select(b.identifier(relation.dest)).From(builder.Table())
+						query = fmt.Sprintf("SELECT %s FROM %s", b.identifier(relation.dest), builder.Table())
 					}
-					newQuery = builder.Where(&newWhere, newQuery)
-					newqs, newqargs, err := newQuery.ToSql()
-					if err != nil {
-						slog.Error("Error during query execution", slog.Any("error", err))
-						return q
+					if expr := builder.Where(&where, &args_, run); expr != "" {
+						query += fmt.Sprintf(" WHERE %s", expr)
 					}
-					q = q.Where(b.identifier(relation.src)+" in ("+newqs+")", newqargs...)
+
+					if run == nil {
+						// If no run function is provided, sub-query is added to the main query
+						*args = append(*args, args_...)
+						result = append(result, b.operations["_in"](b.identifier(relation.src), query))
+					} else {
+						// If a run function is provided, sub-query is executed and its result is added to the main query
+						result = append(result, b.operations["_in"](b.identifier(relation.src), run(query)...))
+					}
 				}
 			}
 		}
 	}
 
 	slog.Debug("Constructed WHERE clause", slog.Any("where", result))
-	return q
-}
-func (b *SQLBuilder[Model]) WhereUpdate(where *map[string]any, selq sq.UpdateBuilder) sq.UpdateBuilder {
-	q := selq
-	if where == nil {
-		return q
-	}
-
-	// Check for special conditions
-	// _not, _and, and _or are used for logical operations
-	// if item, ok := (*where)["_not"]; ok {
-	// 	expr := item.(map[string]any)
-	// 	query, args, err := b.Where2(&expr, selq)
-	// 	if err != nil {
-	// 		return "", nil, err
-	// 	}
-	// 	return "NOT (" + query + ")", args, nil
-	// } else if items, ok := (*where)["_and"]; ok {
-	// 	result := []string{}
-	// 	for _, item := range items.([]any) {
-	// 		expr := item.(map[string]any)
-	// 		query, args, err := b.Where2(&expr, args, )
-	// 		if err != nil {
-	// 			return "", nil, err
-	// 		}
-	// 		result = append(result, query)
-	// 	}
-
-	// 	return "(" + strings.Join(result, " AND ") + ")", nil, nil
-	// } else if items, ok := (*where)["_or"]; ok {
-	// 	result := []string{}
-	// 	for _, item := range items.([]any) {
-	// 		expr := item.(map[string]any)
-	// 		result = append(result, b.Where(&expr, args, run))
-	// 	}
-
-	// 	return "(" + strings.Join(result, " OR ") + ")", nil, nil
-	// }
-
-	// Otherwise, construct the WHERE clause based on the field names and operations
-	result := []string{}
-	for key, item := range *where {
-		fmt.Println(key, item)
-		for op, value := range item.(map[string]any) {
-			fmt.Println("operation", key+op)
-			if handler, ok := b.operations[key+op]; ok {
-				// Primitive field condition detected
-				_value := reflect.ValueOf(value)
-
-				if _value.Kind() == reflect.String {
-					qs := handler(b.identifier(key), "?")
-					fmt.Println(qs)
-					// fmt.Println(qs, _value.String())
-					q = q.Where(qs, _value.String())
-					// String values are passed to operation handler as single parameter
-					// result = append(result, handler(b.identifier(key), b.parameter(_value, nil)))
-				} else if _value.Kind() == reflect.Slice || _value.Kind() == reflect.Array {
-					// Slice or array values are passed to operation handler as a list of parameters
-					items := []string{}
-					vals := []any{}
-					for i := range _value.Len() {
-						items = append(items, "?")
-						vals = append(vals, _value.Index(i).String())
-					}
-					qs := handler(b.identifier(key), items...)
-
-					q = q.Where(qs, vals...)
-				}
-			} else {
-				// Relation field condition detected
-				if relation, ok := b.relations[key]; ok {
-					builder := registry[relation.table]
-
-					newWhere := item.(map[string]any)
-					fmt.Println("newWhere", newWhere)
-					var newQuery sq.SelectBuilder
-					if relation.through != "" {
-						fmt.Println("through", relation.through, "throughField", relation.throughField, "dest", relation.dest, "src", relation.src)
-						// "roles on roles.id = user_roles.role_id",
-						on := builder.Table() + " on " + builder.Table() + "." + b.identifier(relation.endField) + " = " + b.identifier(relation.through) + "." + b.identifier(relation.throughField)
-						fmt.Println(on)
-						newQuery = sq.Select(b.identifier(relation.dest)).From(b.identifier(relation.through)).Join(
-							builder.Table() + " on " + builder.Table() + "." + b.identifier(relation.endField) + " = " + b.identifier(relation.through) + "." + b.identifier(relation.throughField),
-						)
-					} else {
-						newQuery = sq.Select(b.identifier(relation.dest)).From(builder.Table())
-					}
-					newQuery = builder.Where(&newWhere, newQuery)
-					newqs, newqargs, err := newQuery.ToSql()
-					if err != nil {
-						slog.Error("Error during query execution", slog.Any("error", err))
-						return q
-					}
-					q = q.Where(b.identifier(relation.src)+" in ("+newqs+")", newqargs...)
-				}
-			}
-		}
-	}
-
-	slog.Debug("Constructed WHERE clause", slog.Any("where", result))
-	return q
-}
-func (b *SQLBuilder[Model]) WhereDelete(where *map[string]any, selq sq.DeleteBuilder) sq.DeleteBuilder {
-	q := selq
-	if where == nil {
-		return q
-	}
-
-	// Check for special conditions
-	// _not, _and, and _or are used for logical operations
-	// if item, ok := (*where)["_not"]; ok {
-	// 	expr := item.(map[string]any)
-	// 	query, args, err := b.Where2(&expr, selq)
-	// 	if err != nil {
-	// 		return "", nil, err
-	// 	}
-	// 	return "NOT (" + query + ")", args, nil
-	// } else if items, ok := (*where)["_and"]; ok {
-	// 	result := []string{}
-	// 	for _, item := range items.([]any) {
-	// 		expr := item.(map[string]any)
-	// 		query, args, err := b.Where2(&expr, args, )
-	// 		if err != nil {
-	// 			return "", nil, err
-	// 		}
-	// 		result = append(result, query)
-	// 	}
-
-	// 	return "(" + strings.Join(result, " AND ") + ")", nil, nil
-	// } else if items, ok := (*where)["_or"]; ok {
-	// 	result := []string{}
-	// 	for _, item := range items.([]any) {
-	// 		expr := item.(map[string]any)
-	// 		result = append(result, b.Where(&expr, args, run))
-	// 	}
-
-	// 	return "(" + strings.Join(result, " OR ") + ")", nil, nil
-	// }
-
-	// Otherwise, construct the WHERE clause based on the field names and operations
-	result := []string{}
-	for key, item := range *where {
-		fmt.Println(key, item)
-		for op, value := range item.(map[string]any) {
-			fmt.Println("operation", key+op)
-			if handler, ok := b.operations[key+op]; ok {
-				// Primitive field condition detected
-				_value := reflect.ValueOf(value)
-
-				if _value.Kind() == reflect.String {
-					qs := handler(b.identifier(key), "?")
-					fmt.Println(qs)
-					// fmt.Println(qs, _value.String())
-					q = q.Where(qs, _value.String())
-					// String values are passed to operation handler as single parameter
-					// result = append(result, handler(b.identifier(key), b.parameter(_value, nil)))
-				} else if _value.Kind() == reflect.Slice || _value.Kind() == reflect.Array {
-					// Slice or array values are passed to operation handler as a list of parameters
-					items := []string{}
-					vals := []any{}
-					for i := range _value.Len() {
-						items = append(items, "?")
-						vals = append(vals, _value.Index(i).String())
-					}
-					qs := handler(b.identifier(key), items...)
-
-					q = q.Where(qs, vals...)
-				}
-			} else {
-				// Relation field condition detected
-				if relation, ok := b.relations[key]; ok {
-					builder := registry[relation.table]
-
-					newWhere := item.(map[string]any)
-					fmt.Println("newWhere", newWhere)
-					var newQuery sq.SelectBuilder
-					if relation.through != "" {
-						fmt.Println("through", relation.through, "throughField", relation.throughField, "dest", relation.dest, "src", relation.src)
-						// "roles on roles.id = user_roles.role_id",
-						on := builder.Table() + " on " + builder.Table() + "." + b.identifier(relation.endField) + " = " + b.identifier(relation.through) + "." + b.identifier(relation.throughField)
-						fmt.Println(on)
-						newQuery = sq.Select(b.identifier(relation.dest)).From(b.identifier(relation.through)).Join(
-							builder.Table() + " on " + builder.Table() + "." + b.identifier(relation.endField) + " = " + b.identifier(relation.through) + "." + b.identifier(relation.throughField),
-						)
-					} else {
-						newQuery = sq.Select(b.identifier(relation.dest)).From(builder.Table())
-					}
-					newQuery = builder.Where(&newWhere, newQuery)
-					newqs, newqargs, err := newQuery.ToSql()
-					if err != nil {
-						slog.Error("Error during query execution", slog.Any("error", err))
-						return q
-					}
-					q = q.Where(b.identifier(relation.src)+" in ("+newqs+")", newqargs...)
-				}
-			}
-		}
-	}
-
-	slog.Debug("Constructed WHERE clause", slog.Any("where", result))
-	return q
+	return strings.Join(result, " AND ")
 }
 
 // Scans the rows returned by a query into a slice of Model
