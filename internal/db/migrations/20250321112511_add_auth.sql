@@ -11,6 +11,9 @@ create type public.providers as enum (
     'credentials'
 );
 create type public.token_types as enum (
+    'access_token',
+    'recovery_token',
+    'invite_token',
     'reauthentication_token',
     'refresh_token',
     'verification_token',
