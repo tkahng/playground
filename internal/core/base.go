@@ -36,7 +36,7 @@ func (a *BaseApp) NewChecker(ctx context.Context) ConstraintChecker {
 
 // NewAuthActions implements App.
 func (a *BaseApp) NewAuthActions() AuthActions {
-	return NewAuthActions(a.Db(), a.mail, a.settings)
+	return NewAuthActions(a.Pool(), a.mail, a.settings)
 }
 
 func (app *BaseApp) Fs() *filesystem.FileSystem {

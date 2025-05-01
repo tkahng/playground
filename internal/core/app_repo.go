@@ -19,12 +19,12 @@ type AppRepo struct {
 func NewAppRepo(dbx repository.DBTX) *AppRepo {
 	return &AppRepo{
 		dbx:            dbx,
-		user:           repository.NewPostgresRepository[models.User](dbx),
-		role:           repository.NewPostgresRepository[models.Role](dbx),
-		permission:     repository.NewPostgresRepository[models.Permission](dbx),
-		userAccount:    repository.NewPostgresRepository[models.UserAccount](dbx),
-		userRole:       repository.NewPostgresRepository[models.UserRole](dbx),
-		rolePermission: repository.NewPostgresRepository[models.RolePermission](dbx),
-		token:          repository.NewPostgresRepository[models.Token](dbx),
+		user:           repository.NewPostgresRepository[models.User](),
+		role:           repository.NewPostgresRepository[models.Role](),
+		permission:     repository.NewPostgresRepository[models.Permission](),
+		userAccount:    repository.NewPostgresRepository[models.UserAccount](),
+		userRole:       repository.NewPostgresRepository[models.UserRole](),
+		rolePermission: repository.NewPostgresRepository[models.RolePermission](),
+		token:          repository.NewPostgresRepository[models.Token](),
 	}
 }

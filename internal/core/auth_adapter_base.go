@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stephenafamo/scan"
 	"github.com/stephenafamo/scan/pgxscan"
 	"github.com/tkahng/authgo/internal/crud/models"
@@ -36,25 +37,14 @@ func NewAuthAdapter(dbtx crud.DBTX) *AuthAdapterBase {
 }
 
 type AuthAdapterBase struct {
+	db   *pgxpool.Pool
 	repo *AppRepo
 }
-
-// func optionalRow[T any](record *T, err error) (*T, error) {
-// 	if err == nil {
-// 		return record, nil
-// 	} else if errors.Is(err, pgx.ErrNoRows) {
-// 		return nil, nil
-// 	} else if errors.Is(err, sql.ErrNoRows) {
-// 		return nil, nil
-// 	} else {
-// 		return nil, err
-// 	}
-// }
 
 // FindUser implements AuthAdapter.
 func (a *AuthAdapterBase) FindUser(ctx context.Context, where *map[string]any) (*shared.User, error) {
 
-	user, err := a.repo.user.GetOne(ctx, where)
+	user, err := a.repo.user.GetOne(ctx, a.db, where)
 
 	if err != nil {
 		return nil, fmt.Errorf("error getting user: %w", err)
@@ -76,7 +66,7 @@ func (a *AuthAdapterBase) FindUser(ctx context.Context, where *map[string]any) (
 // FindUserAccount implements AuthAdapter.
 func (a *AuthAdapterBase) FindUserAccount(ctx context.Context, where *map[string]any) (*shared.UserAccount, error) {
 
-	account, err := a.repo.userAccount.GetOne(ctx, where)
+	account, err := a.repo.userAccount.GetOne(ctx, a.db, where)
 
 	if err != nil {
 		return nil, fmt.Errorf("error getting user account: %w", err)
@@ -103,7 +93,7 @@ func (a *AuthAdapterBase) FindUserAccount(ctx context.Context, where *map[string
 
 // UpdateUserAccount implements AuthAdapter.
 func (a *AuthAdapterBase) UpdateUserAccount(ctx context.Context, account *shared.UserAccount) error {
-	res, err := a.repo.userAccount.PutOne(ctx, &models.UserAccount{
+	res, err := a.repo.userAccount.PutOne(ctx, a.db, &models.UserAccount{
 		ID:                account.ID,
 		UserID:            account.UserID,
 		Provider:          models.Providers(account.Provider),
@@ -204,7 +194,7 @@ func FindUserWithRolesAndPermissionsByEmail(ctx context.Context, db crud.DBTX, e
 
 // GetUserInfo implements AuthAdapter.
 func (a *AuthAdapterBase) GetUserInfo(ctx context.Context, email string) (*shared.UserInfo, error) {
-	user, err := a.repo.user.GetOne(ctx, &map[string]any{"email": map[string]any{"_eq": email}})
+	user, err := a.repo.user.GetOne(ctx, a.db, &map[string]any{"email": map[string]any{"_eq": email}})
 	if err != nil {
 		return nil, fmt.Errorf("error getting user: %w", err)
 	}
@@ -239,7 +229,7 @@ func (a *AuthAdapterBase) GetUserInfo(ctx context.Context, email string) (*share
 
 // CreateUser implements AuthAdapter.
 func (a *AuthAdapterBase) CreateUser(ctx context.Context, user *shared.User) (*shared.User, error) {
-	res, err := a.repo.user.PostOne(ctx, &models.User{
+	res, err := a.repo.user.PostOne(ctx, a.db, &models.User{
 		Email:           user.Email,
 		Name:            user.Name,
 		Image:           user.Image,
@@ -264,7 +254,7 @@ func (a *AuthAdapterBase) CreateUser(ctx context.Context, user *shared.User) (*s
 
 // DeleteUser implements AuthAdapter.
 func (a *AuthAdapterBase) DeleteUser(ctx context.Context, id uuid.UUID) error {
-	res, err := a.repo.user.Delete(ctx, &map[string]any{
+	res, err := a.repo.user.Delete(ctx, a.db, &map[string]any{
 		"id": map[string]any{"_eq": id.String()},
 	})
 	if err != nil {
@@ -279,23 +269,25 @@ func (a *AuthAdapterBase) LinkAccount(ctx context.Context, account *shared.UserA
 	if account == nil {
 		return errors.New("account is nil")
 	}
-	_, err := a.repo.userAccount.PostOne(ctx, &models.UserAccount{
-		ID:                account.ID,
-		UserID:            account.UserID,
-		Provider:          models.Providers(account.Provider),
-		ProviderAccountID: account.ProviderAccountID,
-		CreatedAt:         account.CreatedAt,
-		UpdatedAt:         account.UpdatedAt,
-		Type:              models.ProviderTypes(account.Type),
-		AccessToken:       account.AccessToken,
-		RefreshToken:      account.RefreshToken,
-		ExpiresAt:         account.ExpiresAt,
-		IDToken:           account.IDToken,
-		Scope:             account.Scope,
-		SessionState:      account.SessionState,
-		TokenType:         account.TokenType,
-		Password:          account.Password,
-	})
+	_, err := a.repo.userAccount.PostOne(ctx,
+		a.db,
+		&models.UserAccount{
+			ID:                account.ID,
+			UserID:            account.UserID,
+			Provider:          models.Providers(account.Provider),
+			ProviderAccountID: account.ProviderAccountID,
+			CreatedAt:         account.CreatedAt,
+			UpdatedAt:         account.UpdatedAt,
+			Type:              models.ProviderTypes(account.Type),
+			AccessToken:       account.AccessToken,
+			RefreshToken:      account.RefreshToken,
+			ExpiresAt:         account.ExpiresAt,
+			IDToken:           account.IDToken,
+			Scope:             account.Scope,
+			SessionState:      account.SessionState,
+			TokenType:         account.TokenType,
+			Password:          account.Password,
+		})
 	if err != nil {
 		return err
 	}
@@ -314,7 +306,7 @@ func (a *AuthAdapterBase) UnlinkAccount(ctx context.Context, userId uuid.UUID, p
 
 // UpdateUser implements AuthAdapter.
 func (a *AuthAdapterBase) UpdateUser(ctx context.Context, user *shared.User) error {
-	_, err := a.repo.user.PutOne(ctx, &models.User{
+	_, err := a.repo.user.PutOne(ctx, a.db, &models.User{
 		ID:              user.ID,
 		Email:           user.Email,
 		Name:            user.Name,
@@ -334,6 +326,7 @@ func (a *AuthAdapterBase) AssignUserRoles(ctx context.Context, userId uuid.UUID,
 	if len(roleNames) > 0 {
 		user, err := a.repo.user.GetOne(
 			ctx,
+			a.db,
 			&map[string]any{
 				"id": map[string]any{
 					"_eq": userId.String(),
@@ -348,6 +341,7 @@ func (a *AuthAdapterBase) AssignUserRoles(ctx context.Context, userId uuid.UUID,
 		}
 		roles, err := a.repo.role.Get(
 			ctx,
+			a.db,
 			&map[string]any{
 				"name": map[string]any{
 					"_in": roleNames,
@@ -368,7 +362,7 @@ func (a *AuthAdapterBase) AssignUserRoles(ctx context.Context, userId uuid.UUID,
 					RoleID: role.ID,
 				})
 			}
-			_, err = a.repo.userRole.Post(ctx, userRoles)
+			_, err = a.repo.userRole.Post(ctx, a.db, userRoles)
 			if err != nil {
 				return fmt.Errorf("error assigning user role while assigning roles: %w", err)
 			}

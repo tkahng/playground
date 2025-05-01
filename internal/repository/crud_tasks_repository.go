@@ -401,6 +401,7 @@ func DefineTaskOrderNumberByStatusCrud(ctx context.Context, repo crud.Repository
 	if position == 0 {
 		res, err := repo.Get(
 			ctx,
+			nil,
 			&map[string]any{
 				"project_id": map[string]any{
 					"_eq": taskProjectId.String(),
@@ -430,6 +431,7 @@ func DefineTaskOrderNumberByStatusCrud(ctx context.Context, repo crud.Repository
 	}
 	ele, err := repo.Get(
 		ctx,
+		nil,
 		&map[string]any{
 			"project_id": map[string]any{
 				"_eq": taskProjectId.String(),
@@ -455,6 +457,7 @@ func DefineTaskOrderNumberByStatusCrud(ctx context.Context, repo crud.Repository
 	if currentOrder > element.Order {
 		sideELe, err := repo.Get(
 			ctx,
+			nil,
 			&map[string]any{
 				"project_id": map[string]any{
 					"_eq": taskProjectId.String(),
@@ -480,6 +483,7 @@ func DefineTaskOrderNumberByStatusCrud(ctx context.Context, repo crud.Repository
 	}
 	sideele, err := repo.Get(
 		ctx,
+		nil,
 		&map[string]any{
 			"project_id": map[string]any{
 				"_eq": taskProjectId.String(),

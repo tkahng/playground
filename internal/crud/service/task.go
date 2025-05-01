@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	"github.com/stephenafamo/bob"
 
 	"github.com/tkahng/authgo/internal/crud/models"
 	"github.com/tkahng/authgo/internal/crud/repository"
@@ -15,8 +14,8 @@ type TaskService struct {
 	taskProject *repository.PostgresRepository[models.TaskProject]
 }
 
-func (service *TaskService) FindTaskByID(ctx context.Context, db bob.Executor, id uuid.UUID) (*models.Task, error) {
-	task, err := service.task.GetOne(ctx, &map[string]any{
+func (service *TaskService) FindTaskByID(ctx context.Context, db repository.DBTX, id uuid.UUID) (*models.Task, error) {
+	task, err := service.task.GetOne(ctx, db, &map[string]any{
 		"id": map[string]any{
 			"_eq": id.String(),
 		},
@@ -24,7 +23,7 @@ func (service *TaskService) FindTaskByID(ctx context.Context, db bob.Executor, i
 	return repository.OptionalRow(task, err)
 }
 
-// func (service *TaskService) FindLastTaskOrder(ctx context.Context, db bob.Executor, taskProjectID uuid.UUID) (float64, error) {
+// func (service *TaskService) FindLastTaskOrder(ctx context.Context, db repository.DBTX, taskProjectID uuid.UUID) (float64, error) {
 // 	task, err := models.Tasks.Query(
 // 		sm.Where(models.TaskColumns.ProjectID.EQ(psql.Arg(taskProjectID))),
 // 		sm.OrderBy(models.TaskColumns.Order).Desc(),
@@ -40,8 +39,8 @@ func (service *TaskService) FindTaskByID(ctx context.Context, db bob.Executor, i
 // 	return task.Order + 1000, nil
 // }
 
-func (service *TaskService) DeleteTask(ctx context.Context, db bob.Executor, taskID uuid.UUID) error {
-	_, err := service.task.Delete(ctx, &map[string]any{
+func (service *TaskService) DeleteTask(ctx context.Context, db repository.DBTX, taskID uuid.UUID) error {
+	_, err := service.task.Delete(ctx, db, &map[string]any{
 		"id": map[string]any{
 			"_eq": taskID.String(),
 		},
@@ -52,16 +51,16 @@ func (service *TaskService) DeleteTask(ctx context.Context, db bob.Executor, tas
 	return nil
 }
 
-func (service *TaskService) FindTaskProjectByID(ctx context.Context, db bob.Executor, id uuid.UUID) (*models.TaskProject, error) {
-	task, err := service.taskProject.GetOne(ctx, &map[string]any{
+func (service *TaskService) FindTaskProjectByID(ctx context.Context, db repository.DBTX, id uuid.UUID) (*models.TaskProject, error) {
+	task, err := service.taskProject.GetOne(ctx, db, &map[string]any{
 		"id": map[string]any{
 			"_eq": id.String(),
 		},
 	})
 	return repository.OptionalRow(task, err)
 }
-func (service *TaskService) DeleteTaskProject(ctx context.Context, db bob.Executor, taskProjectID uuid.UUID) error {
-	_, err := service.taskProject.Delete(ctx, &map[string]any{
+func (service *TaskService) DeleteTaskProject(ctx context.Context, db repository.DBTX, taskProjectID uuid.UUID) error {
+	_, err := service.taskProject.Delete(ctx, db, &map[string]any{
 		"id": map[string]any{
 			"_eq": taskProjectID.String(),
 		},
@@ -158,7 +157,7 @@ func (service *TaskService) DeleteTaskProject(ctx context.Context, db bob.Execut
 // }
 
 // ListTasks implements AdminCrudActions.
-// func (service *TaskService) ListTasks(ctx context.Context, db bob.Executor, input *shared.TaskListParams) ([]*models.Task, error) {
+// func (service *TaskService) ListTasks(ctx context.Context, db repository.DBTX, input *shared.TaskListParams) ([]*models.Task, error) {
 // 	// q := models.Tasks.Query()
 // 	// filter := input.TaskListFilter
 // 	// pageInput := &input.PaginatedInput
@@ -175,7 +174,7 @@ func (service *TaskService) DeleteTaskProject(ctx context.Context, db bob.Execut
 
 // CountTasks implements AdminCrudActions.
 //
-//	func (service *TaskService) CountTasks(ctx context.Context, db bob.Executor, filter *shared.TaskListFilter) (int64, error) {
+//	func (service *TaskService) CountTasks(ctx context.Context, db repository.DBTX, filter *shared.TaskListFilter) (int64, error) {
 //		q := models.Tasks.Query()
 //		ListTasksFilterFunc(ctx, q, filter)
 //		return CountExec(ctx, db, q)
@@ -238,7 +237,7 @@ func (service *TaskService) DeleteTaskProject(ctx context.Context, db bob.Execut
 // }
 
 // ListTaskProjects implements AdminCrudActions.
-// func (service *TaskService) ListTaskProjects(ctx context.Context, db bob.Executor, input *shared.TaskProjectsListParams) (models.TaskProjectSlice, error) {
+// func (service *TaskService) ListTaskProjects(ctx context.Context, db repository.DBTX, input *shared.TaskProjectsListParams) (models.TaskProjectSlice, error) {
 // 	q := models.TaskProjects.Query()
 // 	filter := input.TaskProjectsListFilter
 // 	pageInput := &input.PaginatedInput
@@ -254,7 +253,7 @@ func (service *TaskService) DeleteTaskProject(ctx context.Context, db bob.Execut
 // }
 
 // CountTaskProjects implements AdminCrudActions.
-// func (service *TaskService) CountTaskProjects(ctx context.Context, db bob.Executor, filter *shared.TaskProjectsListFilter) (int64, error) {
+// func (service *TaskService) CountTaskProjects(ctx context.Context, db repository.DBTX, filter *shared.TaskProjectsListFilter) (int64, error) {
 // 	q := models.TaskProjects.Query()
 // 	// ListTaskProjectsFilterFunc(ctx, q, filter)
 // 	data, err := q.Count(ctx, db)
@@ -264,7 +263,7 @@ func (service *TaskService) DeleteTaskProject(ctx context.Context, db bob.Execut
 // 	return data, nil
 // }
 
-// func (service *TaskService) CreateTaskProject(ctx context.Context, db bob.Executor, userID uuid.UUID, input *shared.CreateTaskProjectDTO) (*models.TaskProject, error) {
+// func (service *TaskService) CreateTaskProject(ctx context.Context, db repository.DBTX, userID uuid.UUID, input *shared.CreateTaskProjectDTO) (*models.TaskProject, error) {
 // 	taskProject, err := service.taskProject.PostOne(ctx, &models.TaskProject{
 // 		UserID:      userID,
 // 		Name:        input.Name,
@@ -278,7 +277,7 @@ func (service *TaskService) DeleteTaskProject(ctx context.Context, db bob.Execut
 // 	return taskProject, nil
 // }
 
-// func (service *TaskService) CreateTaskProjectWithTasks(ctx context.Context, db bob.Executor, userID uuid.UUID, input *shared.CreateTaskProjectWithTasksDTO) (*models.TaskProject, error) {
+// func (service *TaskService) CreateTaskProjectWithTasks(ctx context.Context, db repository.DBTX, userID uuid.UUID, input *shared.CreateTaskProjectWithTasksDTO) (*models.TaskProject, error) {
 // 	count, err := service.task.Count(ctx, nil)
 // 	if err != nil {
 // 		return nil, err
@@ -314,7 +313,7 @@ func (service *TaskService) DeleteTaskProject(ctx context.Context, db bob.Execut
 // 	return taskProject, nil
 // }
 
-// func (service *TaskService) CreateTaskWithChildren(ctx context.Context, db bob.Executor, userID uuid.UUID, projectID uuid.UUID, input *shared.CreateTaskWithChildrenDTO) (*models.Task, error) {
+// func (service *TaskService) CreateTaskWithChildren(ctx context.Context, db repository.DBTX, userID uuid.UUID, projectID uuid.UUID, input *shared.CreateTaskWithChildrenDTO) (*models.Task, error) {
 // 	task, err := CreateTask(ctx, db, userID, projectID, &input.CreateTaskBaseDTO)
 // 	if err != nil {
 // 		return nil, err
@@ -328,7 +327,7 @@ func (service *TaskService) DeleteTaskProject(ctx context.Context, db bob.Execut
 // 	return task, nil
 // }
 
-// func (service *TaskService) CreateTask(ctx context.Context, db bob.Executor, userID uuid.UUID, projectID uuid.UUID, input *shared.CreateTaskBaseDTO) (*models.Task, error) {
+// func (service *TaskService) CreateTask(ctx context.Context, db repository.DBTX, userID uuid.UUID, projectID uuid.UUID, input *shared.CreateTaskBaseDTO) (*models.Task, error) {
 // 	setter := models.TaskSetter{
 // 		ProjectID:   omit.From(projectID),
 // 		UserID:      omit.From(userID),
@@ -348,7 +347,7 @@ func (service *TaskService) DeleteTaskProject(ctx context.Context, db bob.Execut
 // 	return task, nil
 // }
 
-// func (service *TaskService) DefineTaskOrderNumberByStatus(ctx context.Context, db bob.Executor, taskId uuid.UUID, taskProjectId uuid.UUID, status models.TaskStatus, currentOrder float64, position int64) (float64, error) {
+// func (service *TaskService) DefineTaskOrderNumberByStatus(ctx context.Context, db repository.DBTX, taskId uuid.UUID, taskProjectId uuid.UUID, status models.TaskStatus, currentOrder float64, position int64) (float64, error) {
 // 	if position == 0 {
 // 		response, err := models.Tasks.Query(
 // 			sm.Where(models.TaskColumns.ProjectID.EQ(psql.Arg(taskProjectId))),
@@ -527,7 +526,7 @@ func (service *TaskService) DeleteTaskProject(ctx context.Context, db bob.Execut
 
 // }
 
-// func (service *TaskService) DefineTaskOrderNumber(ctx context.Context, db bob.Executor, taskId uuid.UUID, taskProjectId uuid.UUID, currentOrder float64, position int64) (float64, error) {
+// func (service *TaskService) DefineTaskOrderNumber(ctx context.Context, db repository.DBTX, taskId uuid.UUID, taskProjectId uuid.UUID, currentOrder float64, position int64) (float64, error) {
 // 	if position == 0 {
 // 		response, err := models.Tasks.Query(
 // 			sm.Where(models.TaskColumns.ProjectID.EQ(psql.Arg(taskProjectId))),
@@ -595,7 +594,7 @@ func (service *TaskService) DeleteTaskProject(ctx context.Context, db bob.Execut
 
 // }
 
-// func (service *TaskService) UpdateTask(ctx context.Context, db bob.Executor, taskID uuid.UUID, input *shared.UpdateTaskBaseDTO) error {
+// func (service *TaskService) UpdateTask(ctx context.Context, db repository.DBTX, taskID uuid.UUID, input *shared.UpdateTaskBaseDTO) error {
 // 	task, err := FindTaskByID(ctx, db, taskID)
 // 	if err != nil {
 // 		return err
@@ -621,7 +620,7 @@ func (service *TaskService) DeleteTaskProject(ctx context.Context, db bob.Execut
 // 	return nil
 // }
 
-// func (service *TaskService) UpdateTaskProjectUpdateDate(ctx context.Context, db bob.Executor, taskProjectID uuid.UUID) error {
+// func (service *TaskService) UpdateTaskProjectUpdateDate(ctx context.Context, db repository.DBTX, taskProjectID uuid.UUID) error {
 // 	q := models.TaskProjects.Update(
 // 		models.UpdateWhere.TaskProjects.ID.EQ(taskProjectID),
 // 		models.TaskProjectSetter{
@@ -635,7 +634,7 @@ func (service *TaskService) DeleteTaskProject(ctx context.Context, db bob.Execut
 // 	return nil
 // }
 
-// func (service *TaskService) UpdateTaskProject(ctx context.Context, db bob.Executor, taskProjectID uuid.UUID, input *shared.UpdateTaskProjectBaseDTO) error {
+// func (service *TaskService) UpdateTaskProject(ctx context.Context, db repository.DBTX, taskProjectID uuid.UUID, input *shared.UpdateTaskProjectBaseDTO) error {
 // 	taskProject, err := FindTaskProjectByID(ctx, db, taskProjectID)
 // 	if err != nil {
 // 		return err
@@ -653,7 +652,7 @@ func (service *TaskService) DeleteTaskProject(ctx context.Context, db bob.Execut
 // 	return nil
 // }
 
-// func (service *TaskService) UpdateTaskPosition(ctx context.Context, db bob.Executor, taskID uuid.UUID, position int64) error {
+// func (service *TaskService) UpdateTaskPosition(ctx context.Context, db repository.DBTX, taskID uuid.UUID, position int64) error {
 // 	task, err := FindTaskByID(ctx, db, taskID)
 // 	if err != nil {
 // 		return err
@@ -679,7 +678,7 @@ func (service *TaskService) DeleteTaskProject(ctx context.Context, db bob.Execut
 // 	return nil
 // }
 
-// func (service *TaskService) UpdateTaskPositionStatus(ctx context.Context, db bob.Executor, taskID uuid.UUID, position int64, status models.TaskStatus) error {
+// func (service *TaskService) UpdateTaskPositionStatus(ctx context.Context, db repository.DBTX, taskID uuid.UUID, position int64, status models.TaskStatus) error {
 // 	task, err := FindTaskByID(ctx, db, taskID)
 // 	if err != nil {
 // 		return err

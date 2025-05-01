@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/tkahng/authgo/internal/crud/models"
 	crud "github.com/tkahng/authgo/internal/crud/repository"
 	"github.com/tkahng/authgo/internal/shared"
@@ -24,6 +25,7 @@ type TokenAdapter interface {
 var _ TokenAdapter = (*TokenAdapterBase)(nil)
 
 type TokenAdapterBase struct {
+	db *pgxpool.Pool
 	// repo repository.AppRepo
 	repo *AppRepo
 }
@@ -97,14 +99,16 @@ func checkTokenType(claims jwt.MapClaims, tokenType shared.TokenType) bool {
 }
 
 func (a *TokenAdapterBase) GetToken(ctx context.Context, token string) (*shared.Token, error) {
-	res, err := a.repo.token.GetOne(ctx, &map[string]any{
-		"token": map[string]any{
-			"_eq": token,
-		},
-		"expires": map[string]any{
-			"_gt": time.Now(),
-		},
-	})
+	res, err := a.repo.token.GetOne(ctx,
+		a.db,
+		&map[string]any{
+			"token": map[string]any{
+				"_eq": token,
+			},
+			"expires": map[string]any{
+				"_gt": time.Now(),
+			},
+		})
 	if err != nil {
 		return nil, fmt.Errorf("error at getting token: %w", err)
 	}
@@ -120,7 +124,7 @@ func (a *TokenAdapterBase) GetToken(ctx context.Context, token string) (*shared.
 }
 
 func (a *TokenAdapterBase) SaveToken(ctx context.Context, token *shared.CreateTokenDTO) error {
-	_, err := a.repo.token.PostOne(ctx, &models.Token{
+	_, err := a.repo.token.PostOne(ctx, a.db, &models.Token{
 		Type:       models.TokenTypes(token.Type),
 		Identifier: token.Identifier,
 		Expires:    token.Expires,
@@ -136,7 +140,7 @@ func (a *TokenAdapterBase) SaveToken(ctx context.Context, token *shared.CreateTo
 }
 
 func (a *TokenAdapterBase) DeleteToken(ctx context.Context, token string) error {
-	_, err := a.repo.token.Delete(ctx, &map[string]any{
+	_, err := a.repo.token.Delete(ctx, a.db, &map[string]any{
 		"token": map[string]any{
 			"_eq": token,
 		},
