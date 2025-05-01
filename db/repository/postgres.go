@@ -6,6 +6,9 @@ import (
 	"log/slog"
 	"reflect"
 	"strings"
+
+	"github.com/stephenafamo/scan"
+	"github.com/stephenafamo/scan/pgxscan"
 )
 
 // PostgresRepository provides CRUD operations for Postgres
@@ -160,4 +163,26 @@ func (r *PostgresRepository[Model]) Delete(ctx context.Context, where *map[strin
 	}
 
 	return result, nil
+}
+
+// Count returns the number of records that match the provided filters
+func (r *PostgresRepository[Model]) Count(ctx context.Context, where *map[string]any) (int64, error) {
+	args := []any{}
+	query := fmt.Sprintf("SELECT COUNT(*) FROM %s", r.builder.Table())
+	if expr := r.builder.Where(where, &args, nil); expr != "" {
+		query += fmt.Sprintf(" WHERE %s", expr)
+	}
+
+	slog.Info("Executing Get query", slog.String("query", query), slog.Any("args", args))
+
+	// Execute the query and scan the results
+	count, err := pgxscan.One(ctx, r.db, scan.SingleColumnMapper[int64], query, args...)
+
+	// result, err := r.builder.Scan(r.db.Query(ctx, query, args...))
+	if err != nil {
+		slog.Error("Error executing Get query", slog.String("query", query), slog.Any("args", args), slog.Any("error", err))
+		return 0, err
+	}
+
+	return count, nil
 }

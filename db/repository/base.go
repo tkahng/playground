@@ -16,6 +16,7 @@ type Repository[Model any] interface {
 	Put(ctx context.Context, models *[]Model) ([]Model, error)
 	Post(ctx context.Context, models *[]Model) ([]Model, error)
 	Delete(ctx context.Context, where *map[string]any) ([]Model, error)
+	Count(ctx context.Context, where *map[string]any) (int64, error)
 }
 
 type Field struct {
