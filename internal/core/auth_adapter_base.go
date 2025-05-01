@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/stephenafamo/bob"
+	crud "github.com/tkahng/authgo/internal/crud/repository"
 	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
 )
@@ -38,7 +39,7 @@ func (a *AuthAdapterBase) UpdateUserAccount(ctx context.Context, account *shared
 	return repository.UpdateUserAccount(ctx, a.db, md)
 }
 
-func NewAuthAdapter(db bob.Executor) *AuthAdapterBase {
+func NewAuthAdapter(db bob.Executor, dbtx crud.DBTX) *AuthAdapterBase {
 	return &AuthAdapterBase{db: db}
 }
 

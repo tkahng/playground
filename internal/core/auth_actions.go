@@ -9,6 +9,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/stephenafamo/bob"
+	crud "github.com/tkahng/authgo/internal/crud/repository"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mailer"
 	"github.com/tkahng/authgo/internal/tools/security"
@@ -154,8 +155,8 @@ func (app *AuthActionsBase) CreateAuthTokensFromEmail(ctx context.Context, email
 	return app.CreateAuthTokens(ctx, user)
 }
 
-func NewAuthActions(db bob.Executor, mailer mailer.Mailer, settings *AppOptions) AuthActions {
-	authAdapter := NewAuthAdapter(db)
+func NewAuthActions(db bob.Executor, dbx crud.DBTX, mailer mailer.Mailer, settings *AppOptions) AuthActions {
+	authAdapter := NewAuthAdapter(db, dbx)
 	authMailer := NewAuthMailer(mailer)
 	tokenAdapter := NewTokenAdapter(db)
 	return &AuthActionsBase{
