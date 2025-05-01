@@ -85,7 +85,6 @@ func InitBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 }
 
 func NewBaseApp(pool *pgxpool.Pool, cfg conf.EnvConfig) *BaseApp {
-	settings := NewSettingsFromConf(&cfg)
 	fs, err := filesystem.NewFileSystem(cfg.StorageConfig)
 	if err != nil {
 		panic(err)
@@ -101,7 +100,7 @@ func NewBaseApp(pool *pgxpool.Pool, cfg conf.EnvConfig) *BaseApp {
 		fs:       fs,
 		pool:     pool,
 		db:       db,
-		settings: settings,
+		settings: NewSettingsFromConf(&cfg),
 		logger:   logger.GetDefaultLogger(slog.LevelInfo),
 		cfg:      &cfg,
 		mail:     mail,

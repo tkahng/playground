@@ -10,9 +10,7 @@ import (
 	"github.com/alexedwards/argon2id"
 	"github.com/google/uuid"
 	"github.com/stephenafamo/bob"
-	"github.com/stephenafamo/bob/dialect/psql"
 	"github.com/stephenafamo/bob/dialect/psql/im"
-	"github.com/stephenafamo/scan"
 	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/security"
@@ -55,14 +53,6 @@ func UpdateUserEmailConfirm(ctx context.Context, db bob.Executor, userId uuid.UU
 	return user, nil
 }
 
-func AssignRoles(ctx context.Context, db bob.Executor, user *models.User, params ...*models.Role) error {
-	return user.AttachRoles(ctx, db, params...)
-}
-
-func AssignPermissions(ctx context.Context, db bob.Executor, user *models.User, params *models.Permission) error {
-	return user.AttachPermissions(ctx, db, params)
-}
-
 func CreateAccount(ctx context.Context, db bob.Executor, userId uuid.UUID, params *shared.AuthenticateUserParams) (*models.UserAccount, error) {
 	r, err := models.UserAccounts.Insert(&models.UserAccountSetter{
 		UserID:            omit.From(userId),
@@ -74,13 +64,6 @@ func CreateAccount(ctx context.Context, db bob.Executor, userId uuid.UUID, param
 		RefreshToken:      omitnull.FromPtr(params.RefreshToken),
 	}, im.Returning("*")).One(ctx, db)
 	return OptionalRow(r, err)
-}
-func FindUserAccountByUserIdAndProvider(ctx context.Context, db bob.Executor, userId uuid.UUID, provider models.Providers) (*models.UserAccount, error) {
-	acc, err := models.UserAccounts.Query(
-		models.SelectWhere.UserAccounts.Provider.EQ(provider),
-		models.SelectWhere.UserAccounts.UserID.EQ(userId),
-	).One(ctx, db)
-	return OptionalRow(acc, err)
 }
 
 const (
@@ -147,17 +130,6 @@ type RolePermissionClaims struct {
 	Providers   []models.Providers `json:"providers" db:"providers"`
 }
 
-func FindUserWithRolesAndPermissionsByEmail(ctx context.Context, db bob.Executor, email string) (*RolePermissionClaims, error) {
-	query := psql.RawQuery(RawGetUserWithAllRolesAndPermissionsByEmail, email)
-
-	res, err := bob.One(ctx, db, query, scan.StructMapper[RolePermissionClaims]())
-	if err != nil {
-		return nil, err
-	}
-
-	return &res, nil
-}
-
 func FindUserByEmail(ctx context.Context, db bob.Executor, email string) (*models.User, error) {
 	a, err := models.Users.Query(models.SelectWhere.Users.Email.EQ(email)).One(ctx, db)
 	return OptionalRow(a, err)
@@ -165,25 +137,6 @@ func FindUserByEmail(ctx context.Context, db bob.Executor, email string) (*model
 func FindUserById(ctx context.Context, db bob.Executor, userId uuid.UUID) (*models.User, error) {
 	a, err := models.Users.Query(models.SelectWhere.Users.ID.EQ(userId)).One(ctx, db)
 	return OptionalRow(a, err)
-}
-
-func UpdateUserAccount(ctx context.Context, db bob.Executor, account *models.UserAccount) error {
-	return account.Update(ctx, db, &models.UserAccountSetter{
-		UserID:            omit.From(account.UserID),
-		Type:              omit.From(account.Type),
-		Provider:          omit.From(account.Provider),
-		ProviderAccountID: omit.From(account.ProviderAccountID),
-		Password:          omitnull.FromNull(account.Password),
-		RefreshToken:      omitnull.FromNull(account.RefreshToken),
-		AccessToken:       omitnull.FromNull(account.AccessToken),
-		ExpiresAt:         omitnull.FromNull(account.ExpiresAt),
-		IDToken:           omitnull.FromNull(account.IDToken),
-		Scope:             omitnull.FromNull(account.Scope),
-		SessionState:      omitnull.FromNull(account.SessionState),
-		TokenType:         omitnull.FromNull(account.TokenType),
-		CreatedAt:         omit.From(account.CreatedAt),
-		UpdatedAt:         omit.From(account.UpdatedAt),
-	})
 }
 
 func UpdateUserPassword(ctx context.Context, db bob.Executor, userId uuid.UUID, password string) error {
