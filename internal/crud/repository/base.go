@@ -13,6 +13,7 @@ import (
 
 type Repository[Model any] interface {
 	Get(ctx context.Context, where *map[string]any, order *map[string]any, limit *int, skip *int) ([]Model, error)
+	GetOne(ctx context.Context, where *map[string]any) (*Model, error)
 	Put(ctx context.Context, models *[]Model) ([]Model, error)
 	Post(ctx context.Context, models *[]Model) ([]Model, error)
 	Delete(ctx context.Context, where *map[string]any) ([]Model, error)
@@ -151,7 +152,7 @@ func (b *SQLBuilder[Model]) Fields(prefix string) string {
 }
 
 // Constructs the VALUES clause for an INSERT query
-func (b *SQLBuilder[Model]) Values(values *[]Model, args *[]any, keys *[]any) (string, string) {
+func (b *SQLBuilder[Model]) Values(values []*Model, args *[]any, keys *[]any) (string, string) {
 	if values == nil {
 		return "", ""
 	}
@@ -173,7 +174,7 @@ func (b *SQLBuilder[Model]) Values(values *[]Model, args *[]any, keys *[]any) (s
 
 	// Generate the field values for the VALUES clause
 	result := []string{}
-	for _, model := range *values {
+	for _, model := range values {
 		_type := reflect.TypeOf(model)
 		_value := reflect.ValueOf(model)
 
@@ -376,7 +377,7 @@ func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any, run func(s
 }
 
 // Scans the rows returned by a query into a slice of Model
-func (b *SQLBuilder[Model]) Scan(rows pgx.Rows, err error) ([]Model, error) {
+func (b *SQLBuilder[Model]) Scan(rows pgx.Rows, err error) ([]*Model, error) {
 	if err != nil {
 		slog.Error("Error during query execution", slog.Any("error", err))
 		return nil, err
@@ -384,7 +385,7 @@ func (b *SQLBuilder[Model]) Scan(rows pgx.Rows, err error) ([]Model, error) {
 	defer rows.Close()
 
 	// Iterate over the rows and scan each one into a Model instance
-	result := []Model{}
+	result := []*Model{}
 	for rows.Next() {
 		var model Model
 		_value := reflect.ValueOf(&model).Elem()
@@ -400,7 +401,7 @@ func (b *SQLBuilder[Model]) Scan(rows pgx.Rows, err error) ([]Model, error) {
 			return nil, err
 		}
 
-		result = append(result, model)
+		result = append(result, &model)
 	}
 
 	if err = rows.Err(); err != nil {

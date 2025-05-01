@@ -19,7 +19,7 @@ type User struct {
 	Roles           []Role        `db:"roles" src:"id" dest:"user_id" table:"roles" through:"user_roles,role_id,id" json:"-"`
 	Permissions     []Permission  `db:"permissions" src:"id" dest:"user_id" table:"permissions" through:"user_permissions,permission_id,id" json:"-"`
 }
-type UserRoles struct {
+type UserRole struct {
 	UserID uuid.UUID `db:"user_id,pk" json:"user_id"`
 	RoleID uuid.UUID `db:"role_id,pk" json:"role_id"`
 }
