@@ -9,6 +9,7 @@ import (
 
 	"github.com/stephenafamo/scan"
 	"github.com/stephenafamo/scan/pgxscan"
+	"github.com/tkahng/authgo/internal/crud/models"
 	"github.com/tkahng/authgo/internal/types"
 )
 
@@ -17,6 +18,8 @@ type PostgresRepository[Model any] struct {
 	db      DBTX
 	builder *SQLBuilder[Model]
 }
+
+var _ Repository[models.User] = (*PostgresRepository[models.User])(nil)
 
 // NewPostgresRepository initializes a new PostgresRepository
 func NewPostgresRepository[Model any](db DBTX) *PostgresRepository[Model] {
