@@ -1,0 +1,86 @@
+package models
+
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
+
+type User struct {
+	_               struct{}      `db:"users" json:"-"`
+	ID              uuid.UUID     `db:"id" json:"id"`
+	Email           string        `db:"email" json:"email"`
+	EmailVerifiedAt *time.Time    `db:"email_verified_at" json:"email_verified_at"`
+	Name            *string       `db:"name" json:"name"`
+	Image           *string       `db:"image" json:"image"`
+	CreatedAt       time.Time     `db:"created_at" json:"created_at"`
+	UpdatedAt       time.Time     `db:"updated_at" json:"updated_at"`
+	Accounts        []UserAccount `db:"accounts" src:"id" dest:"user_id" table:"user_accounts" json:"-"`
+	Roles           []Role        `db:"roles" src:"id" dest:"user_id" table:"roles" through:"user_roles,role_id,id" json:"-"`
+	Permissions     []Permission  `db:"permissions" src:"id" dest:"user_id" table:"permissions" through:"user_permissions,permission_id,id" json:"-"`
+}
+type UserRoles struct {
+	UserID uuid.UUID `db:"user_id,pk" json:"user_id"`
+	RoleID uuid.UUID `db:"role_id,pk" json:"role_id"`
+}
+type Role struct {
+	_           struct{}     `db:"roles" json:"-"`
+	ID          uuid.UUID    `db:"id" json:"id"`
+	Name        string       `db:"name" json:"name"`
+	Description *string      `db:"description" json:"description,omitempty"`
+	CreatedAt   time.Time    `db:"created_at" json:"created_at"`
+	UpdatedAt   time.Time    `db:"updated_at" json:"updated_at"`
+	Permissions []Permission `db:"permissions" src:"id" dest:"role_id" table:"permissions" through:"role_permissions,permission_id,id" json:"-"`
+	Users       []User       `db:"users" src:"id" dest:"role_id" table:"users" through:"user_roles,user_id,id" json:"-"`
+}
+
+type RolePermission struct {
+	RoleID       uuid.UUID `db:"role_id,pk" json:"role_id"`
+	PermissionID uuid.UUID `db:"permission_id,pk" json:"permission_id"`
+}
+
+type Permission struct {
+	_           struct{}  `db:"permissions" json:"-"`
+	ID          uuid.UUID `db:"id" json:"id"`
+	Name        string    `db:"name" json:"name"`
+	Description *string   `db:"description" json:"description,omitempty"`
+	CreatedAt   time.Time `db:"created_at" json:"created_at"`
+	UpdatedAt   time.Time `db:"updated_at" json:"updated_at"`
+}
+
+type ProviderTypes string
+
+const (
+	ProviderTypeOAuth       ProviderTypes = "oauth"
+	ProviderTypeCredentials ProviderTypes = "credentials"
+)
+
+type Providers string
+
+const (
+	ProvidersGoogle      Providers = "google"
+	ProvidersApple       Providers = "apple"
+	ProvidersFacebook    Providers = "facebook"
+	ProvidersGithub      Providers = "github"
+	ProvidersCredentials Providers = "credentials"
+)
+
+type UserAccount struct {
+	_                 struct{}      `db:"user_accounts" json:"-"`
+	ID                uuid.UUID     `db:"id" json:"id"`
+	UserID            uuid.UUID     `db:"user_id" json:"user_id"`
+	Type              ProviderTypes `db:"type" json:"type"`
+	Provider          Providers     `db:"provider" json:"provider"`
+	ProviderAccountID string        `db:"provider_account_id" json:"provider_account_id"`
+	Password          *string       `db:"password" json:"password"`
+	RefreshToken      *string       `db:"refresh_token" json:"refresh_token"`
+	AccessToken       *string       `db:"access_token" json:"access_token"`
+	ExpiresAt         *int64        `db:"expires_at" json:"expires_at"`
+	IDToken           *string       `db:"id_token" json:"id_token"`
+	Scope             *string       `db:"scope" json:"scope"`
+	SessionState      *string       `db:"session_state" json:"session_state"`
+	TokenType         *string       `db:"token_type" json:"token_type"`
+	CreatedAt         time.Time     `db:"created_at" json:"created_at"`
+	UpdatedAt         time.Time     `db:"updated_at" json:"updated_at"`
+	User              User          `db:"users" src:"user_id" dest:"id" table:"users" json:"-"`
+}
