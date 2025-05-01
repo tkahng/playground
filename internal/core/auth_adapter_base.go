@@ -30,6 +30,11 @@ type AuthAdapter interface {
 
 var _ AuthAdapter = (*AuthAdapterBase)(nil)
 
+func NewAuthAdapter(dbtx crud.DBTX) *AuthAdapterBase {
+	appRepo := NewAppRepo(dbtx)
+	return &AuthAdapterBase{repo: appRepo}
+}
+
 type AuthAdapterBase struct {
 	repo *AppRepo
 }
@@ -122,11 +127,6 @@ func (a *AuthAdapterBase) UpdateUserAccount(ctx context.Context, account *shared
 		return fmt.Errorf("user account not found")
 	}
 	return nil
-}
-
-func NewAuthAdapter(dbtx crud.DBTX) *AuthAdapterBase {
-	appRepo := NewAppRepo(dbtx)
-	return &AuthAdapterBase{repo: appRepo}
 }
 
 const (
@@ -275,12 +275,6 @@ func (a *AuthAdapterBase) DeleteUser(ctx context.Context, id uuid.UUID) error {
 	}
 	return nil
 }
-
-// GetUserByAccount implements AuthAdapter.
-
-// GetUserByEmail implements AuthAdapter.
-
-// LinkAccount implements AuthAdapter.
 func (a *AuthAdapterBase) LinkAccount(ctx context.Context, account *shared.UserAccount) error {
 	if account == nil {
 		return errors.New("account is nil")

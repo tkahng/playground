@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/stephenafamo/scan"
 	"github.com/stephenafamo/scan/pgxscan"
 	"github.com/tkahng/authgo/internal/crud/models"
@@ -20,6 +21,13 @@ type PostgresRepository[Model any] struct {
 }
 
 var _ Repository[models.User] = (*PostgresRepository[models.User])(nil)
+
+func (q *PostgresRepository[Model]) WithTx(tx pgx.Tx) *PostgresRepository[Model] {
+	return &PostgresRepository[Model]{
+		db:      tx,
+		builder: q.builder,
+	}
+}
 
 // NewPostgresRepository initializes a new PostgresRepository
 func NewPostgresRepository[Model any](db DBTX) *PostgresRepository[Model] {
@@ -117,11 +125,11 @@ func (r *PostgresRepository[Model]) Put(ctx context.Context, models []Model) ([]
 	result := []*Model{}
 
 	// Begin a transaction
-	tx, err := r.db.Begin(ctx)
-	if err != nil {
-		slog.Error("Error starting transaction for Put", slog.Any("error", err))
-		return nil, err
-	}
+	// tx, err := r.db.Begin(ctx)
+	// if err != nil {
+	// 	slog.Error("Error starting transaction for Put", slog.Any("error", err))
+	// 	return nil, err
+	// }
 
 	// Update each model in the database
 	for _, model := range models {
@@ -135,10 +143,10 @@ func (r *PostgresRepository[Model]) Put(ctx context.Context, models []Model) ([]
 
 		slog.Info("Executing Put query", slog.String("query", query), slog.Any("args", args))
 
-		items, err := pgxscan.All(ctx, tx, scan.StructMapper[*Model](), query, args...)
+		items, err := pgxscan.All(ctx, r.db, scan.StructMapper[*Model](), query, args...)
 		if err != nil {
 			slog.Error("Error executing Put query", slog.String("query", query), slog.Any("args", args), slog.Any("error", err))
-			tx.Rollback(ctx)
+			// tx.Rollback(ctx)
 			return nil, err
 		}
 
@@ -146,10 +154,10 @@ func (r *PostgresRepository[Model]) Put(ctx context.Context, models []Model) ([]
 	}
 
 	// Commit the transaction
-	if err := tx.Commit(ctx); err != nil {
-		slog.Error("Error committing transaction for Put", slog.Any("error", err))
-		return nil, err
-	}
+	// if err := tx.Commit(ctx); err != nil {
+	// 	slog.Error("Error committing transaction for Put", slog.Any("error", err))
+	// 	return nil, err
+	// }
 
 	return result, nil
 }
