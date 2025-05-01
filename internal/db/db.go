@@ -13,12 +13,12 @@ import (
 )
 
 type DBTX interface {
-	Begin(ctx context.Context) (pgx.Tx, error)
+	// Begin(ctx context.Context) (pgx.Tx, error)
 	// BeginTx(ctx context.Context, txOptions pgx.TxOptions) (pgx.Tx, error)
 	Query(ctx context.Context, sql string, arguments ...any) (pgx.Rows, error)
 	QueryRow(ctx context.Context, sql string, arguments ...any) pgx.Row
 	Exec(ctx context.Context, sql string, arguments ...any) (pgconn.CommandTag, error)
-	SendBatch(ctx context.Context, b *pgx.Batch) pgx.BatchResults
+	// SendBatch(ctx context.Context, b *pgx.Batch) pgx.BatchResults
 	// Ping(ctx context.Context) error
 	// Executor() *DbTx
 }
@@ -71,4 +71,8 @@ func (v *Queries) ExecContext(ctx context.Context, query string, args ...any) (s
 	}
 
 	return driver.RowsAffected(tag.RowsAffected()), err
+}
+
+func (v *Queries) Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error) {
+	return v.pool.Query(ctx, sql, args...)
 }
