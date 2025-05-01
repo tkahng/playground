@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/stephenafamo/bob"
 	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/db/models/factory"
 	"github.com/tkahng/authgo/internal/repository"
@@ -26,7 +25,7 @@ func TestUpdateUserEmailConfirm(t *testing.T) {
 	})
 	type args struct {
 		ctx    context.Context
-		db     bob.Executor
+		db     repository.Queryer
 		userId uuid.UUID
 	}
 	tests := []struct {

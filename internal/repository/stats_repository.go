@@ -35,7 +35,7 @@ FROM project_stats ps
     CROSS JOIN task_stats ts;
 	`
 
-func GetUserTaskStats(ctx context.Context, db bob.Executor, userID uuid.UUID) (*shared.TaskStats, error) {
+func GetUserTaskStats(ctx context.Context, db Queryer, userID uuid.UUID) (*shared.TaskStats, error) {
 	query := psql.RawQuery(TaskStatsQuery, userID, userID)
 	res, err := bob.All(ctx, db, query, scan.StructMapper[shared.TaskStats]())
 	if err != nil {

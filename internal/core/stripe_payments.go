@@ -15,7 +15,7 @@ import (
 	"github.com/tkahng/authgo/internal/types"
 )
 
-func (srv *StripeService) FindSubscriptionWithPriceBySessionId(ctx context.Context, db bob.Executor, sessionId string) (*models.StripeSubscription, error) {
+func (srv *StripeService) FindSubscriptionWithPriceBySessionId(ctx context.Context, db repository.Queryer, sessionId string) (*models.StripeSubscription, error) {
 	sub, err := srv.client.FindCheckoutSessionByStripeId(sessionId)
 	if err != nil {
 		return nil, err
@@ -29,7 +29,7 @@ func (srv *StripeService) FindSubscriptionWithPriceBySessionId(ctx context.Conte
 	return repository.FindSubscriptionWithPriceById(ctx, db, sub.Subscription.ID)
 }
 
-func (srv *StripeService) UpsertSubscriptionByIds(ctx context.Context, db bob.Executor, cutomerId, subscriptionId string) error {
+func (srv *StripeService) UpsertSubscriptionByIds(ctx context.Context, db repository.Queryer, cutomerId, subscriptionId string) error {
 	cus, err := repository.FindCustomerByStripeId(ctx, db, cutomerId)
 	if err != nil {
 		return err
@@ -74,7 +74,7 @@ func (srv *StripeService) FindOrCreateCustomerFromUser(ctx context.Context, exec
 	return repository.FindCustomerByUserId(ctx, exec, userId)
 }
 
-func (srv *StripeService) CreateCheckoutSession(ctx context.Context, db bob.Executor, userId uuid.UUID, priceId string) (string, error) {
+func (srv *StripeService) CreateCheckoutSession(ctx context.Context, db repository.Queryer, userId uuid.UUID, priceId string) (string, error) {
 	user, err := repository.FindUserById(ctx, db, userId)
 	if err != nil {
 		return "", err
@@ -115,7 +115,7 @@ func (srv *StripeService) CreateCheckoutSession(ctx context.Context, db bob.Exec
 	return sesh.URL, nil
 }
 
-func (s *StripeService) CreateBillingPortalSession(ctx context.Context, db bob.Executor, userId uuid.UUID) (string, error) {
+func (s *StripeService) CreateBillingPortalSession(ctx context.Context, db repository.Queryer, userId uuid.UUID) (string, error) {
 	user, err := repository.FindUserById(ctx, db, userId)
 	if err != nil {
 		return "", err

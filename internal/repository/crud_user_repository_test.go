@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/stephenafamo/bob"
 	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/db/seeders"
 	"github.com/tkahng/authgo/internal/repository"
@@ -24,7 +23,7 @@ func TestListUsers(t *testing.T) {
 	_ = seeders.UserOauthFactory(ctx, db, 10, models.ProvidersGithub)
 	type args struct {
 		ctx   context.Context
-		db    bob.Executor
+		db    repository.Queryer
 		input *shared.UserListParams
 		count int64
 	}
@@ -142,7 +141,7 @@ func TestListUsers(t *testing.T) {
 func TestDeleteUsers(t *testing.T) {
 	type args struct {
 		ctx    context.Context
-		db     bob.Executor
+		db     repository.Queryer
 		userId uuid.UUID
 	}
 	tests := []struct {

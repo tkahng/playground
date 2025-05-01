@@ -7,7 +7,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
-	"github.com/stephenafamo/bob"
 	"github.com/stephenafamo/bob/dialect/psql"
 	"github.com/stephenafamo/bob/dialect/psql/sm"
 	"github.com/tkahng/authgo/internal/shared"
@@ -33,7 +32,7 @@ func ViewApplyPagination[T any, Ts ~[]T](view *psql.ViewQuery[T, Ts], input *sha
 	)
 }
 
-func CountExec[T any, Ts ~[]T](ctx context.Context, db bob.Executor, v *psql.ViewQuery[T, Ts]) (int64, error) {
+func CountExec[T any, Ts ~[]T](ctx context.Context, db Queryer, v *psql.ViewQuery[T, Ts]) (int64, error) {
 	data, err := v.Count(ctx, db)
 	if err != nil {
 		return 0, err

@@ -5,7 +5,6 @@ import (
 	"slices"
 
 	"github.com/google/uuid"
-	"github.com/stephenafamo/bob"
 	"github.com/stephenafamo/bob/dialect/psql"
 	"github.com/stephenafamo/bob/dialect/psql/sm"
 	"github.com/tkahng/authgo/internal/db/models"
@@ -13,13 +12,13 @@ import (
 )
 
 // CountTasks implements AdminCrudActions.
-func CountAiUsages(ctx context.Context, db bob.Executor, filter *shared.AiUsageListFilter) (int64, error) {
+func CountAiUsages(ctx context.Context, db Queryer, filter *shared.AiUsageListFilter) (int64, error) {
 	q := models.AiUsages.Query()
 	ListAiUsagesFilterFunc(ctx, q, filter)
 	return CountExec(ctx, db, q)
 }
 
-func ListAiUsages(ctx context.Context, db bob.Executor, input *shared.AiUsageListParams) ([]*models.AiUsage, error) {
+func ListAiUsages(ctx context.Context, db Queryer, input *shared.AiUsageListParams) ([]*models.AiUsage, error) {
 	q := models.AiUsages.Query()
 	filter := input.AiUsageListFilter
 	pageInput := &input.PaginatedInput

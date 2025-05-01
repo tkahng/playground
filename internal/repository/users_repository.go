@@ -9,7 +9,6 @@ import (
 	"github.com/aarondl/opt/omitnull"
 	"github.com/alexedwards/argon2id"
 	"github.com/google/uuid"
-	"github.com/stephenafamo/bob"
 	"github.com/stephenafamo/bob/dialect/psql/im"
 	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/shared"
@@ -27,7 +26,7 @@ type RoleDto struct {
 	Permissions []*models.Permission
 }
 
-func CreateUser(ctx context.Context, db bob.Executor, params *shared.AuthenticateUserParams) (*models.User, error) {
+func CreateUser(ctx context.Context, db Queryer, params *shared.AuthenticateUserParams) (*models.User, error) {
 	return models.Users.Insert(&models.UserSetter{
 		Email:           omit.From(params.Email),
 		Name:            omitnull.FromPtr(params.Name),
@@ -36,7 +35,7 @@ func CreateUser(ctx context.Context, db bob.Executor, params *shared.Authenticat
 	}, im.Returning("*")).One(ctx, db)
 }
 
-func UpdateUserEmailConfirm(ctx context.Context, db bob.Executor, userId uuid.UUID, emailVerifiedAt time.Time) (*models.User, error) {
+func UpdateUserEmailConfirm(ctx context.Context, db Queryer, userId uuid.UUID, emailVerifiedAt time.Time) (*models.User, error) {
 	user, err := FindUserById(ctx, db, userId)
 	if err != nil {
 		return nil, err
@@ -53,7 +52,7 @@ func UpdateUserEmailConfirm(ctx context.Context, db bob.Executor, userId uuid.UU
 	return user, nil
 }
 
-func CreateAccount(ctx context.Context, db bob.Executor, userId uuid.UUID, params *shared.AuthenticateUserParams) (*models.UserAccount, error) {
+func CreateAccount(ctx context.Context, db Queryer, userId uuid.UUID, params *shared.AuthenticateUserParams) (*models.UserAccount, error) {
 	r, err := models.UserAccounts.Insert(&models.UserAccountSetter{
 		UserID:            omit.From(userId),
 		Type:              omit.From(params.Type),
@@ -130,16 +129,16 @@ type RolePermissionClaims struct {
 	Providers   []models.Providers `json:"providers" db:"providers"`
 }
 
-func FindUserByEmail(ctx context.Context, db bob.Executor, email string) (*models.User, error) {
+func FindUserByEmail(ctx context.Context, db Queryer, email string) (*models.User, error) {
 	a, err := models.Users.Query(models.SelectWhere.Users.Email.EQ(email)).One(ctx, db)
 	return OptionalRow(a, err)
 }
-func FindUserById(ctx context.Context, db bob.Executor, userId uuid.UUID) (*models.User, error) {
+func FindUserById(ctx context.Context, db Queryer, userId uuid.UUID) (*models.User, error) {
 	a, err := models.Users.Query(models.SelectWhere.Users.ID.EQ(userId)).One(ctx, db)
 	return OptionalRow(a, err)
 }
 
-func UpdateUserPassword(ctx context.Context, db bob.Executor, userId uuid.UUID, password string) error {
+func UpdateUserPassword(ctx context.Context, db Queryer, userId uuid.UUID, password string) error {
 	user, err := models.FindUser(ctx, db, userId)
 	if err != nil {
 		return err
@@ -165,7 +164,7 @@ func UpdateUserPassword(ctx context.Context, db bob.Executor, userId uuid.UUID, 
 	})
 }
 
-func UpdateMe(ctx context.Context, db bob.Executor, userId uuid.UUID, input *shared.UpdateMeInput) error {
+func UpdateMe(ctx context.Context, db Queryer, userId uuid.UUID, input *shared.UpdateMeInput) error {
 	q := models.Users.Update(
 		models.UpdateWhere.Users.ID.EQ(userId),
 		models.UserSetter{

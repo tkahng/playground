@@ -25,6 +25,11 @@ type DBTX interface {
 
 var _ DBTX = (*pgxpool.Pool)(nil)
 
+type Queryer interface {
+	Query(ctx context.Context, sql string, arguments ...any) (pgx.Rows, error)
+	QueryContext(ctx context.Context, query string, args ...any) (scan.Rows, error)
+	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
+}
 type Queries struct {
 	pool DBTX
 }

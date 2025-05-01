@@ -5,7 +5,6 @@ import (
 	"slices"
 
 	"github.com/google/uuid"
-	"github.com/stephenafamo/bob"
 	"github.com/stephenafamo/bob/dialect/psql"
 	"github.com/stephenafamo/bob/dialect/psql/sm"
 	"github.com/tkahng/authgo/internal/db/models"
@@ -20,7 +19,7 @@ var (
 
 // ListUserAccounts implements AdminCrudActions.
 // ListUsers implements AdminCrudActions.
-func ListUserAccounts(ctx context.Context, db bob.Executor, input *shared.UserAccountListParams) (models.UserAccountSlice, error) {
+func ListUserAccounts(ctx context.Context, db Queryer, input *shared.UserAccountListParams) (models.UserAccountSlice, error) {
 
 	q := models.UserAccounts.Query()
 	filter := input.UserAccountListFilter
@@ -61,7 +60,7 @@ func ListUserAccountsOrderByFunc(ctx context.Context, q *psql.ViewQuery[*models.
 	}
 }
 
-// func CreateUser(ctx context.Context, db bob.Executor, params *shared.AuthenticateUserParams) (*models.User, error) {
+// func CreateUser(ctx context.Context, db Queryer, params *shared.AuthenticateUserParams) (*models.User, error) {
 
 func ListUserAccountFilterFunc(ctx context.Context, q *psql.ViewQuery[*models.UserAccount, models.UserAccountSlice], filter *shared.UserAccountListFilter) {
 	if filter == nil {
@@ -103,7 +102,7 @@ func ListUserAccountFilterFunc(ctx context.Context, q *psql.ViewQuery[*models.Us
 }
 
 // CountUsers implements AdminCrudActions.
-func CountUserAccounts(ctx context.Context, db bob.Executor, filter *shared.UserAccountListFilter) (int64, error) {
+func CountUserAccounts(ctx context.Context, db Queryer, filter *shared.UserAccountListFilter) (int64, error) {
 	q := models.UserAccounts.Query()
 	ListUserAccountFilterFunc(ctx, q, filter)
 	data, err := q.Count(ctx, db)

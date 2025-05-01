@@ -3,11 +3,10 @@ package repository
 import (
 	"context"
 
-	"github.com/stephenafamo/bob"
 	"github.com/tkahng/authgo/internal/db/models"
 )
 
-func TruncateModels(ctx context.Context, db bob.Executor) error {
+func TruncateModels(ctx context.Context, db Queryer) error {
 	return ErrorWrapper(ctx, db, false,
 		models.Roles.Delete().Exec,
 		models.Permissions.Delete().Exec,

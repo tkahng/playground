@@ -8,7 +8,6 @@ import (
 	"github.com/aarondl/opt/omit"
 	"github.com/aarondl/opt/omitnull"
 	"github.com/google/uuid"
-	"github.com/stephenafamo/bob"
 	"github.com/stephenafamo/bob/dialect/psql"
 	"github.com/stephenafamo/bob/dialect/psql/sm"
 	"github.com/tkahng/authgo/internal/db/models"
@@ -67,7 +66,7 @@ func ListUserFilterFunc(ctx context.Context, q *psql.ViewQuery[*models.User, mod
 	}
 }
 
-func ListUsers(ctx context.Context, db bob.Executor, input *shared.UserListParams) (models.UserSlice, error) {
+func ListUsers(ctx context.Context, db Queryer, input *shared.UserListParams) (models.UserSlice, error) {
 
 	q := models.Users.Query()
 	filter := input.UserListFilter
@@ -121,7 +120,7 @@ func ListUsersOrderByFunc(ctx context.Context, q *psql.ViewQuery[*models.User, m
 // If the filter is nil, it returns the total number of users in the database.
 //
 // The method returns an error if the count operation fails.
-func CountUsers(ctx context.Context, db bob.Executor, filter *shared.UserListFilter) (int64, error) {
+func CountUsers(ctx context.Context, db Queryer, filter *shared.UserListFilter) (int64, error) {
 	q := models.Users.Query()
 	ListUserFilterFunc(ctx, q, filter)
 	data, err := q.Count(ctx, db)
@@ -139,7 +138,7 @@ func CountUsers(ctx context.Context, db bob.Executor, filter *shared.UserListFil
 //
 // The method returns an error if the user could not be deleted.
 
-func DeleteUsers(ctx context.Context, db bob.Executor, userId uuid.UUID) error {
+func DeleteUsers(ctx context.Context, db Queryer, userId uuid.UUID) error {
 	user, err := models.FindUser(ctx, db, userId)
 	if err != nil {
 		return err
@@ -157,7 +156,7 @@ func DeleteUsers(ctx context.Context, db bob.Executor, userId uuid.UUID) error {
 // If the user is not found, it returns an error.
 //
 // It returns an error if the update fails.
-func UpdateUser(ctx context.Context, db bob.Executor, userId uuid.UUID, input *shared.UserMutationInput) error {
+func UpdateUser(ctx context.Context, db Queryer, userId uuid.UUID, input *shared.UserMutationInput) error {
 	q := models.Users.Update(
 		models.UpdateWhere.Users.ID.EQ(userId),
 		models.UserSetter{

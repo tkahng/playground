@@ -5,7 +5,6 @@ import (
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
-	"github.com/stephenafamo/bob"
 	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
 )
@@ -20,7 +19,7 @@ type ConstraintChecker interface {
 }
 
 type ConstraintCheckerService struct {
-	db  bob.Executor
+	db  repository.Queryer
 	ctx context.Context
 }
 
@@ -61,7 +60,7 @@ func (c *ConstraintCheckerService) CannotBeSuperUserEmailAndRoleName(email strin
 	return nil
 }
 
-func NewConstraintCheckerService(ctx context.Context, db bob.Executor) *ConstraintCheckerService {
+func NewConstraintCheckerService(ctx context.Context, db repository.Queryer) *ConstraintCheckerService {
 	return &ConstraintCheckerService{
 		db:  db,
 		ctx: ctx,
