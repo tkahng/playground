@@ -374,7 +374,7 @@ func (a *AuthAdapterBase) AssignUserRoles(ctx context.Context, userId uuid.UUID,
 					RoleID: role.ID,
 				})
 			}
-			_, err = a.repo.userRole.Post(ctx, &userRoles)
+			_, err = a.repo.userRole.Post(ctx, userRoles)
 			if err != nil {
 				return fmt.Errorf("error assigning user role while assigning roles: %w", err)
 			}

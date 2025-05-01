@@ -14,11 +14,11 @@ import (
 )
 
 type Repository[Model any] interface {
-	Get(ctx context.Context, where *map[string]any, order *map[string]any, limit *int, skip *int) ([]Model, error)
+	Get(ctx context.Context, where *map[string]any, order *map[string]any, limit *int, skip *int) ([]*Model, error)
 	GetOne(ctx context.Context, where *map[string]any) (*Model, error)
-	Put(ctx context.Context, models *[]Model) ([]Model, error)
-	Post(ctx context.Context, models *[]Model) ([]Model, error)
-	Delete(ctx context.Context, where *map[string]any) ([]Model, error)
+	Put(ctx context.Context, models []Model) ([]*Model, error)
+	Post(ctx context.Context, models []Model) ([]*Model, error)
+	Delete(ctx context.Context, where *map[string]any) ([]*Model, error)
 	Count(ctx context.Context, where *map[string]any) (int64, error)
 }
 

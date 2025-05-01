@@ -57,7 +57,7 @@ func NewPostgresRepository[Model any](db DBTX) *PostgresRepository[Model] {
 }
 
 // Get retrieves records from the database based on the provided filters
-func (r *PostgresRepository[Model]) Get(ctx context.Context, where *map[string]any, order *map[string]any, limit *int, skip *int) ([]Model, error) {
+func (r *PostgresRepository[Model]) Get(ctx context.Context, where *map[string]any, order *map[string]any, limit *int, skip *int) ([]*Model, error) {
 	args := []any{}
 	query := fmt.Sprintf("SELECT %s FROM %s", r.builder.Fields(""), r.builder.Table())
 	if expr := r.builder.Where(where, &args, nil); expr != "" {
@@ -76,7 +76,34 @@ func (r *PostgresRepository[Model]) Get(ctx context.Context, where *map[string]a
 	slog.Info("Executing Get query", slog.String("query", query), slog.Any("args", args))
 
 	// Execute the query and scan the results
-	result, err := r.builder.Scan(r.db.Query(ctx, query, args...))
+	result, err := pgxscan.All(ctx, r.db, scan.StructMapper[*Model](), query, args...)
+	if err != nil {
+		slog.Error("Error executing Get query", slog.String("query", query), slog.Any("args", args), slog.Any("error", err))
+		return nil, err
+	}
+
+	return result, nil
+}
+func (r *PostgresRepository[Model]) Get2(ctx context.Context, where *map[string]any, order *map[string]any, limit *int, skip *int) ([]*Model, error) {
+	args := []any{}
+	query := fmt.Sprintf("SELECT %s FROM %s", r.builder.Fields(""), r.builder.Table())
+	if expr := r.builder.Where(where, &args, nil); expr != "" {
+		query += fmt.Sprintf(" WHERE %s", expr)
+	}
+	if expr := r.builder.Order(order); expr != "" {
+		query += fmt.Sprintf(" ORDER BY %s", expr)
+	}
+	if limit != nil {
+		query += fmt.Sprintf(" LIMIT %d", *limit)
+	}
+	if skip != nil {
+		query += fmt.Sprintf(" OFFSET %d", *skip)
+	}
+
+	slog.Info("Executing Get query", slog.String("query", query), slog.Any("args", args))
+	result, err := pgxscan.All(ctx, r.db, scan.StructMapper[*Model](), query, args...)
+	// Execute the query and scan the results
+	// result, err := r.builder.Scan(r.db.Query(ctx, query, args...))
 	if err != nil {
 		slog.Error("Error executing Get query", slog.String("query", query), slog.Any("args", args), slog.Any("error", err))
 		return nil, err
@@ -86,8 +113,8 @@ func (r *PostgresRepository[Model]) Get(ctx context.Context, where *map[string]a
 }
 
 // Put updates existing records in the database
-func (r *PostgresRepository[Model]) Put(ctx context.Context, models *[]Model) ([]Model, error) {
-	result := []Model{}
+func (r *PostgresRepository[Model]) Put(ctx context.Context, models []Model) ([]*Model, error) {
+	result := []*Model{}
 
 	// Begin a transaction
 	tx, err := r.db.Begin(ctx)
@@ -97,7 +124,7 @@ func (r *PostgresRepository[Model]) Put(ctx context.Context, models *[]Model) ([
 	}
 
 	// Update each model in the database
-	for _, model := range *models {
+	for _, model := range models {
 		args := []any{}
 		where := map[string]any{}
 		query := fmt.Sprintf("UPDATE %s SET %s", r.builder.Table(), r.builder.Set(&model, &args, &where))
@@ -108,7 +135,7 @@ func (r *PostgresRepository[Model]) Put(ctx context.Context, models *[]Model) ([
 
 		slog.Info("Executing Put query", slog.String("query", query), slog.Any("args", args))
 
-		items, err := r.builder.Scan(tx.Query(ctx, query, args...))
+		items, err := pgxscan.All(ctx, tx, scan.StructMapper[*Model](), query, args...)
 		if err != nil {
 			slog.Error("Error executing Put query", slog.String("query", query), slog.Any("args", args), slog.Any("error", err))
 			tx.Rollback(ctx)
@@ -131,7 +158,7 @@ func (r *PostgresRepository[Model]) PutOne(ctx context.Context, model *Model) (*
 	if model == nil {
 		return nil, nil
 	}
-	result, err := r.Put(ctx, &[]Model{*model})
+	result, err := r.Put(ctx, []Model{*model})
 	if err != nil {
 		return nil, err
 	}
@@ -139,7 +166,7 @@ func (r *PostgresRepository[Model]) PutOne(ctx context.Context, model *Model) (*
 		return nil, nil
 	}
 	re := result[0]
-	return &re, nil
+	return re, nil
 }
 
 func (r *PostgresRepository[Model]) GetOne(ctx context.Context, where *map[string]any) (*Model, error) {
@@ -151,14 +178,14 @@ func (r *PostgresRepository[Model]) GetOne(ctx context.Context, where *map[strin
 		return nil, nil
 	}
 	re := result[0]
-	return &re, nil
+	return re, nil
 }
 
 // Post inserts new records into the database
-func (r *PostgresRepository[Model]) Post(ctx context.Context, models *[]Model) ([]Model, error) {
+func (r *PostgresRepository[Model]) Post(ctx context.Context, models []Model) ([]*Model, error) {
 	args := []any{}
 	query := fmt.Sprintf("INSERT INTO %s", r.builder.Table())
-	if fields, values := r.builder.Values(models, &args, nil); fields != "" && values != "" {
+	if fields, values := r.builder.Values(&models, &args, nil); fields != "" && values != "" {
 		query += fmt.Sprintf(" (%s) VALUES %s", fields, values)
 	}
 	query += fmt.Sprintf(" RETURNING %s", r.builder.Fields(""))
@@ -166,7 +193,7 @@ func (r *PostgresRepository[Model]) Post(ctx context.Context, models *[]Model) (
 	slog.Info("Executing Post query", slog.String("query", query), slog.Any("args", args))
 
 	// Execute the query and scan the results
-	result, err := r.builder.Scan(r.db.Query(ctx, query, args...))
+	result, err := pgxscan.All(ctx, r.db, scan.StructMapper[*Model](), query, args...)
 	if err != nil {
 		slog.Error("Error executing Post query", slog.String("query", query), slog.Any("args", args), slog.Any("error", err))
 		return nil, err
@@ -177,18 +204,18 @@ func (r *PostgresRepository[Model]) Post(ctx context.Context, models *[]Model) (
 
 // Patch updates existing records in the database
 func (r *PostgresRepository[Model]) PostOne(ctx context.Context, models *Model) (*Model, error) {
-	data, err := r.Post(ctx, &[]Model{*models})
+	data, err := r.Post(ctx, []Model{*models})
 	if err != nil {
 		return nil, err
 	}
 	if len(data) == 0 {
 		return nil, nil
 	}
-	return &data[0], nil
+	return data[0], nil
 }
 
 // Delete removes records from the database based on the provided filters
-func (r *PostgresRepository[Model]) Delete(ctx context.Context, where *map[string]any) ([]Model, error) {
+func (r *PostgresRepository[Model]) Delete(ctx context.Context, where *map[string]any) ([]*Model, error) {
 	args := []any{}
 	query := fmt.Sprintf("DELETE FROM %s", r.builder.Table())
 	if expr := r.builder.Where(where, &args, nil); expr != "" {
@@ -199,7 +226,7 @@ func (r *PostgresRepository[Model]) Delete(ctx context.Context, where *map[strin
 	slog.Info("Executing Delete query", slog.String("query", query), slog.Any("args", args))
 
 	// Execute the query and scan the results
-	result, err := r.builder.Scan(r.db.Query(ctx, query, args...))
+	result, err := pgxscan.All(ctx, r.db, scan.StructMapper[*Model](), query, args...)
 	if err != nil {
 		slog.Error("Error executing Delete query", slog.String("query", query), slog.Any("args", args), slog.Any("error", err))
 		return nil, err
