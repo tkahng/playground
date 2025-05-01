@@ -1,7 +1,7 @@
 .PHONY: bootstrap
 bootstrap:
 	go run . seed roles
-	go run . superuser create tkahng+01@gmail.com Password123! 
+	go run . superuser create admin@k2dv.io Password123! 
 	go run . stripe sync
 	go run . stripe role
 
