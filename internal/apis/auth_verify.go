@@ -44,8 +44,7 @@ func (h *Api) VerifyPost(ctx context.Context, input *struct{ Body *OtpInput }) (
 }
 
 func Verify(api *Api, ctx context.Context, input *OtpInput) (*struct{}, error) {
-	db := api.app.Db()
-	action := api.app.NewAuthActions(db)
+	action := api.app.NewAuthActions()
 	err := action.HandleVerificationToken(ctx, input.Token)
 	if err != nil {
 		return nil, err

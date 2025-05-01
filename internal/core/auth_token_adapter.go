@@ -3,10 +3,11 @@ package core
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/stephenafamo/bob"
-	"github.com/tkahng/authgo/internal/repository"
+	"github.com/tkahng/authgo/internal/crud/models"
+	crud "github.com/tkahng/authgo/internal/crud/repository"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/security"
 )
@@ -23,7 +24,8 @@ type TokenAdapter interface {
 var _ TokenAdapter = (*TokenAdapterBase)(nil)
 
 type TokenAdapterBase struct {
-	db bob.Executor
+	// repo repository.AppRepo
+	repo *AppRepo
 }
 
 // VerifyTokenStorage implements TokenAdapter.
@@ -64,8 +66,10 @@ func (a *TokenAdapterBase) CreateOtpTokenHash(payload *OtpPayload, config TokenO
 
 }
 
-func NewTokenAdapter(db bob.Executor) *TokenAdapterBase {
-	return &TokenAdapterBase{db: db}
+func NewTokenAdapter(dbx crud.DBTX) *TokenAdapterBase {
+	repo := NewAppRepo(dbx)
+	// return &TokenAdapterBase{db: db, repo: repo}
+	return &TokenAdapterBase{repo: repo}
 }
 
 func (a *TokenAdapterBase) ParseTokenString(token string, config TokenOption, data any) error {
@@ -93,24 +97,38 @@ func checkTokenType(claims jwt.MapClaims, tokenType shared.TokenType) bool {
 }
 
 func (a *TokenAdapterBase) GetToken(ctx context.Context, token string) (*shared.Token, error) {
-	res, err := repository.GetToken(ctx, a.db, token)
+	res, err := a.repo.token.GetOne(ctx, &map[string]any{
+		"token": map[string]any{
+			"_eq": token,
+		},
+		"expires": map[string]any{
+			"_gt": time.Now(),
+		},
+	})
 	if err != nil {
 		return nil, fmt.Errorf("error at getting token: %w", err)
 	}
-	return shared.ToToken(res), nil
+	return &shared.Token{
+		Type:       shared.TokenType(res.Type),
+		Identifier: res.Identifier,
+		Expires:    res.Expires,
+		Token:      res.Token,
+		ID:         res.ID,
+		UserID:     res.UserID,
+		Otp:        res.Otp,
+	}, nil
 }
 
 func (a *TokenAdapterBase) SaveToken(ctx context.Context, token *shared.CreateTokenDTO) error {
-	tt := shared.ToModelTokenType(token.Type)
-	_, err := repository.CreateToken(ctx, a.db, &repository.TokenDTO{
-		Type:       tt,
+	_, err := a.repo.token.PostOne(ctx, &models.Token{
+		Type:       models.TokenTypes(token.Type),
 		Identifier: token.Identifier,
 		Expires:    token.Expires,
 		Token:      token.Token,
-		ID:         token.ID,
 		UserID:     token.UserID,
 		Otp:        token.Otp,
 	})
+
 	if err != nil {
 		return fmt.Errorf("error at saving token: %w", err)
 	}
@@ -118,7 +136,11 @@ func (a *TokenAdapterBase) SaveToken(ctx context.Context, token *shared.CreateTo
 }
 
 func (a *TokenAdapterBase) DeleteToken(ctx context.Context, token string) error {
-	err := repository.DeleteToken(ctx, a.db, token)
+	_, err := a.repo.token.Delete(ctx, &map[string]any{
+		"token": map[string]any{
+			"_eq": token,
+		},
+	})
 	if err != nil {
 		return fmt.Errorf("error at deleting token: %w", err)
 	}

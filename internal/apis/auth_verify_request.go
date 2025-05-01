@@ -33,8 +33,7 @@ func (api *Api) RequestVerificationOperation(path string) huma.Operation {
 }
 
 func (api *Api) RequestVerification(ctx context.Context, input *struct{}) (*struct{}, error) {
-	db := api.app.Db()
-	action := api.app.NewAuthActions(db)
+	action := api.app.NewAuthActions()
 	claims := core.GetContextUserInfo(ctx)
 	if claims == nil {
 		return nil, huma.Error404NotFound("User not found")

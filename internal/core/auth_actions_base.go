@@ -8,7 +8,6 @@ import (
 	"github.com/alexedwards/argon2id"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
-	"github.com/stephenafamo/bob"
 	crud "github.com/tkahng/authgo/internal/crud/repository"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mailer"
@@ -26,7 +25,10 @@ type AuthActionsBase struct {
 
 // ResetPassword implements AuthActions.
 func (app *AuthActionsBase) ResetPassword(ctx context.Context, userId uuid.UUID, oldPassword string, newPassword string) error {
-	account, err := app.authAdapter.GetUserAccount(ctx, userId, shared.ProvidersCredentials)
+	account, err := app.authAdapter.FindUserAccount(ctx, &map[string]any{
+		"user_id":  userId.String(),
+		"provider": shared.ProvidersCredentials.String(),
+	})
 	if err != nil {
 		return fmt.Errorf("error getting user account: %w", err)
 	}
@@ -68,14 +70,25 @@ func (app *AuthActionsBase) Signout(ctx context.Context, token string) error {
 
 // HandlePasswordResetRequest implements AuthActions.
 func (app *AuthActionsBase) HandlePasswordResetRequest(ctx context.Context, email string) error {
-	user, err := app.authAdapter.GetUserByEmail(ctx, email)
+	user, err := app.authAdapter.FindUser(
+		ctx,
+		&map[string]any{
+			"email": email,
+		},
+	)
 	if err != nil {
 		return fmt.Errorf("error getting user by email: %w", err)
 	}
 	if user == nil {
 		return fmt.Errorf("user not found")
 	}
-	account, err := app.authAdapter.GetUserAccount(ctx, user.ID, shared.ProvidersCredentials)
+	account, err := app.authAdapter.FindUserAccount(
+		ctx,
+		&map[string]any{
+			"user_id":  user.ID,
+			"provider": shared.ProvidersCredentials,
+		},
+	)
 	if err != nil {
 		return fmt.Errorf("error getting user account: %w", err)
 	}
@@ -103,7 +116,7 @@ func (app *AuthActionsBase) CreateAndPersistStateToken(ctx context.Context, payl
 		ProviderStatePayload: *payload,
 	}
 	dto := &shared.CreateTokenDTO{
-		Type:       shared.StateTokenType,
+		Type:       shared.TokenTypesStateToken,
 		Identifier: payload.Token,
 		Expires:    config.Expires(),
 		Token:      payload.Token,
@@ -129,10 +142,10 @@ func (app *AuthActionsBase) CreateAuthTokensFromEmail(ctx context.Context, email
 	return app.CreateAuthTokens(ctx, user)
 }
 
-func NewAuthActions(db bob.Executor, dbx crud.DBTX, mailer mailer.Mailer, settings *AppOptions) AuthActions {
-	authAdapter := NewAuthAdapter(db, dbx)
+func NewAuthActions(dbx crud.DBTX, mailer mailer.Mailer, settings *AppOptions) AuthActions {
+	authAdapter := NewAuthAdapter(dbx)
 	authMailer := NewAuthMailer(mailer)
-	tokenAdapter := NewTokenAdapter(db)
+	tokenAdapter := NewTokenAdapter(dbx)
 	return &AuthActionsBase{
 		authAdapter:  authAdapter,
 		authMailer:   authMailer,
@@ -145,7 +158,7 @@ func (app *AuthActionsBase) createAuthenticationToken(payload *AuthenticationPay
 		return "", fmt.Errorf("payload is nil")
 	}
 	claims := AuthenticationClaims{
-		Type: shared.AccessTokenType,
+		Type: shared.TokenTypesAccessToken,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: config.ExpiresAt(),
 		},
@@ -163,14 +176,14 @@ func (app *AuthActionsBase) createRefreshToken(ctx context.Context, payload *Ref
 		return "", fmt.Errorf("payload is nil")
 	}
 	claims := RefreshTokenClaims{
-		Type: shared.RefreshTokenType,
+		Type: shared.TokenTypesRefreshToken,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: config.ExpiresAt(),
 		},
 		RefreshTokenPayload: *payload,
 	}
 	dto := &shared.CreateTokenDTO{
-		Type:       shared.RefreshTokenType,
+		Type:       shared.TokenTypesRefreshToken,
 		Identifier: payload.Email,
 		Expires:    config.Expires(),
 		Token:      payload.Token,
@@ -256,14 +269,22 @@ func (app *AuthActionsBase) HandlePasswordResetToken(ctx context.Context, token,
 	if err != nil {
 		return fmt.Errorf("error deleting token: %w", err)
 	}
-	user, err := app.authAdapter.GetUserByEmail(ctx, claims.Email)
+	user, err := app.authAdapter.FindUser(
+		ctx,
+		&map[string]any{
+			"email": claims.Email,
+		},
+	)
 	if err != nil {
 		return fmt.Errorf("error getting user by email: %w", err)
 	}
 	if user == nil {
 		return fmt.Errorf("user not found")
 	}
-	account, err := app.authAdapter.GetUserAccount(ctx, user.ID, shared.ProvidersCredentials)
+	account, err := app.authAdapter.FindUserAccount(ctx, &map[string]any{
+		"user_id":  user.ID.String(),
+		"provider": shared.ProvidersCredentials.String(),
+	})
 	if err != nil {
 		return fmt.Errorf("error getting user account: %w", err)
 	}
@@ -334,7 +355,7 @@ func (app *AuthActionsBase) HandleVerificationToken(ctx context.Context, token s
 	if err != nil {
 		return fmt.Errorf("error deleting token: %w", err)
 	}
-	user, err := app.authAdapter.GetUserByEmail(ctx, claims.Email)
+	user, err := app.authAdapter.FindUser(ctx, &map[string]any{"email": claims.Email})
 	if err != nil {
 		return fmt.Errorf("error getting user info: %w", err)
 	}
@@ -384,13 +405,18 @@ func (app *AuthActionsBase) Authenticate(ctx context.Context, params *shared.Aut
 	var isFirstLogin bool
 	fmt.Println("Authenticate")
 	// get user by email
-	user, err = app.authAdapter.GetUserByEmail(ctx, params.Email)
+	user, err = app.authAdapter.FindUser(ctx, &map[string]any{
+		"email": params.Email,
+	})
 	if err != nil {
 		return nil, fmt.Errorf("error at getting user by email: %w", err)
 	}
 	// if user exists, get user account
 	if user != nil {
-		account, err = app.authAdapter.GetUserAccount(ctx, user.ID, params.Provider)
+		account, err = app.authAdapter.FindUserAccount(ctx, &map[string]any{
+			"user_id":  user.ID,
+			"provider": shared.ProvidersCredentials,
+		})
 		if err != nil {
 			return nil, fmt.Errorf("error at getting user account: %w", err)
 		}
@@ -497,7 +523,11 @@ func (app *AuthActionsBase) CheckUserCredentialsSecurity(ctx context.Context, us
 			// and if incoming request is oauth,
 			if params.Type == shared.ProviderTypeOAuth {
 				//  check if user has a credentials account
-				account, err := app.authAdapter.GetUserAccount(ctx, user.ID, shared.ProvidersCredentials)
+				account, err := app.authAdapter.FindUserAccount(ctx, &map[string]any{
+					"user_id":  user.ID.String(),
+					"provider": shared.ProvidersCredentials.String(),
+				})
+
 				if err != nil {
 					return fmt.Errorf("error loading user accounts: %w", err)
 				}

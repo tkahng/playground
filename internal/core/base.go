@@ -5,7 +5,6 @@ import (
 	"log/slog"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/stephenafamo/bob"
 	"github.com/tkahng/authgo/internal/conf"
 	"github.com/tkahng/authgo/internal/db"
 	"github.com/tkahng/authgo/internal/repository"
@@ -36,8 +35,8 @@ func (a *BaseApp) NewChecker(ctx context.Context) ConstraintChecker {
 }
 
 // NewAuthActions implements App.
-func (a *BaseApp) NewAuthActions(db bob.Executor) AuthActions {
-	return NewAuthActions(db, a.pool, a.mail, a.settings)
+func (a *BaseApp) NewAuthActions() AuthActions {
+	return NewAuthActions(a.pool, a.mail, a.settings)
 }
 
 func (app *BaseApp) Fs() *filesystem.FileSystem {

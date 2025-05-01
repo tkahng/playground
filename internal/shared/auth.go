@@ -63,11 +63,14 @@ func ToModelProvidersArray(providers []Providers) []models.Providers {
 type TokenType string
 
 const (
-	AccessTokenType        TokenType = "access_token"
-	PasswordResetTokenType TokenType = "password_reset_token"
-	VerificationTokenType  TokenType = "verification_token"
-	RefreshTokenType       TokenType = "refresh_token"
-	StateTokenType         TokenType = "state_token"
+	TokenTypesAccessToken           TokenType = "access_token"
+	TokenTypesRecoveryToken         TokenType = "recovery_token"
+	TokenTypesInviteToken           TokenType = "invite_token"
+	TokenTypesReauthenticationToken TokenType = "reauthentication_token"
+	TokenTypesRefreshToken          TokenType = "refresh_token"
+	TokenTypesVerificationToken     TokenType = "verification_token"
+	TokenTypesPasswordResetToken    TokenType = "password_reset_token"
+	TokenTypesStateToken            TokenType = "state_token"
 )
 
 func (t TokenType) String() string {
@@ -75,36 +78,11 @@ func (t TokenType) String() string {
 }
 
 func ToTokenType(t models.TokenTypes) TokenType {
-	switch t {
-	case models.TokenTypesReauthenticationToken:
-		return AccessTokenType
-	case models.TokenTypesRefreshToken:
-		return RefreshTokenType
-	case models.TokenTypesVerificationToken:
-		return VerificationTokenType
-	case models.TokenTypesPasswordResetToken:
-		return PasswordResetTokenType
-	case models.TokenTypesStateToken:
-		return StateTokenType
-	}
-	return AccessTokenType
+	return TokenType(t)
 }
 
 func ToModelTokenType(t TokenType) models.TokenTypes {
-	switch t {
-	// case AccessTokenType:
-	// 	return models.TokenTypesReauthenticationToken
-	case PasswordResetTokenType:
-		return models.TokenTypesPasswordResetToken
-	case VerificationTokenType:
-		return models.TokenTypesVerificationToken
-	case RefreshTokenType:
-		return models.TokenTypesRefreshToken
-	case StateTokenType:
-		return models.TokenTypesStateToken
-	default:
-		return models.TokenTypesReauthenticationToken
-	}
+	return models.TokenTypes(t)
 }
 
 type OAuthProviders string

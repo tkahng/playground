@@ -84,3 +84,29 @@ type UserAccount struct {
 	UpdatedAt         time.Time     `db:"updated_at" json:"updated_at"`
 	User              User          `db:"users" src:"user_id" dest:"id" table:"users" json:"-"`
 }
+
+type Token struct {
+	ID         uuid.UUID  `db:"id,pk" json:"id"`
+	Type       TokenTypes `db:"type" json:"type"`
+	UserID     *uuid.UUID `db:"user_id" json:"user_id"`
+	Otp        *string    `db:"otp" json:"otp"`
+	Identifier string     `db:"identifier" json:"identifier"`
+	Expires    time.Time  `db:"expires" json:"expires"`
+	Token      string     `db:"token" json:"token"`
+	CreatedAt  time.Time  `db:"created_at" json:"created_at"`
+	UpdatedAt  time.Time  `db:"updated_at" json:"updated_at"`
+	User       *User      `db:"users" src:"user_id" dest:"id" table:"users" json:"-"`
+}
+
+type TokenTypes string
+
+const (
+	TokenTypesAccessToken           TokenTypes = "access_token"
+	TokenTypesRecoveryToken         TokenTypes = "recovery_token"
+	TokenTypesInviteToken           TokenTypes = "invite_token"
+	TokenTypesReauthenticationToken TokenTypes = "reauthentication_token"
+	TokenTypesRefreshToken          TokenTypes = "refresh_token"
+	TokenTypesVerificationToken     TokenTypes = "verification_token"
+	TokenTypesPasswordResetToken    TokenTypes = "password_reset_token"
+	TokenTypesStateToken            TokenTypes = "state_token"
+)

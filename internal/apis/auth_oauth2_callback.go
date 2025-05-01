@@ -40,7 +40,7 @@ func (api *Api) OAuth2CallbackPost(ctx context.Context, input *OAuth2CallbackInp
 		return nil, err
 	}
 	q := uri.Query()
-	q.Add(string(shared.RefreshTokenType), dto.Tokens.RefreshToken)
+	q.Add(string(shared.TokenTypesRefreshToken), dto.Tokens.RefreshToken)
 	uri.RawQuery = q.Encode()
 	fmt.Println(uri.String())
 
@@ -89,7 +89,7 @@ func (api *Api) OAuth2CallbackGet(ctx context.Context, input *OAuth2CallbackInpu
 		return nil, err
 	}
 	q := uri.Query()
-	q.Add(string(shared.RefreshTokenType), dto.Tokens.RefreshToken)
+	q.Add(string(shared.TokenTypesRefreshToken), dto.Tokens.RefreshToken)
 	uri.RawQuery = q.Encode()
 	fmt.Println(uri.String())
 
@@ -108,8 +108,7 @@ type CallbackOutput struct {
 
 func OAuth2Callback(ctx context.Context, api *Api, input *OAuth2CallbackInput) (*CallbackOutput, error) {
 	authOpts := api.app.Settings().Auth
-	db := api.app.Db()
-	action := api.app.NewAuthActions(db)
+	action := api.app.NewAuthActions()
 	parsedState, err := action.VerifyStateToken(ctx, input.State)
 	if err != nil {
 		return nil, err
@@ -117,7 +116,7 @@ func OAuth2Callback(ctx context.Context, api *Api, input *OAuth2CallbackInput) (
 	if parsedState == nil {
 		return nil, fmt.Errorf("token not found")
 	}
-	if parsedState.Type != shared.StateTokenType {
+	if parsedState.Type != shared.TokenTypesStateToken {
 		return nil, fmt.Errorf("invalid token type. want verification_token, got  %v", parsedState.Type)
 	}
 	var provider core.ProviderConfig

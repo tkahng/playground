@@ -34,8 +34,7 @@ func (api *Api) SignupOperation(path string) huma.Operation {
 }
 
 func (api *Api) SignUp(ctx context.Context, input *struct{ Body SignupInput }) (*AuthenticatedInfoResponse, error) {
-	db := api.app.Db()
-	action := api.app.NewAuthActions(db)
+	action := api.app.NewAuthActions()
 	password := input.Body.Password.String()
 	params := &shared.AuthenticationInput{
 		Email:             input.Body.Email,

@@ -39,8 +39,7 @@ func (h *Api) OAuth2AuthorizationUrl(ctx context.Context, input *OAuth2Authoriza
 
 	settings := h.app.Settings()
 	conf := h.app.Cfg()
-	db := h.app.Db()
-	action := h.app.NewAuthActions(db)
+	action := h.app.NewAuthActions()
 	redirectTo := input.RedirectTo
 	if redirectTo == "" {
 		redirectTo = conf.AppConfig.AppUrl
@@ -56,7 +55,7 @@ func (h *Api) OAuth2AuthorizationUrl(ctx context.Context, input *OAuth2Authoriza
 		oauth2.AccessTypeOffline,
 	}
 	info := &core.ProviderStatePayload{
-		Type:       shared.StateTokenType,
+		Type:       shared.TokenTypesStateToken,
 		Provider:   input.Provider,
 		RedirectTo: redirectTo,
 		Token:      security.GenerateTokenKey(),

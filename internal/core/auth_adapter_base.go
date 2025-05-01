@@ -4,22 +4,23 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
-	"github.com/stephenafamo/bob"
+	"github.com/stephenafamo/scan"
+	"github.com/stephenafamo/scan/pgxscan"
+	"github.com/tkahng/authgo/internal/crud/models"
 	crud "github.com/tkahng/authgo/internal/crud/repository"
-	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/authgo/internal/types"
 )
 
 type AuthAdapter interface {
-	Db() bob.Executor
 	GetUserInfo(ctx context.Context, email string) (*shared.UserInfo, error)
 	CreateUser(ctx context.Context, user *shared.User) (*shared.User, error)
-	GetUser(ctx context.Context, id uuid.UUID) (*shared.User, error)
 	AssignUserRoles(ctx context.Context, userId uuid.UUID, roleNames ...string) error
-	GetUserByEmail(ctx context.Context, email string) (*shared.User, error)
-	GetUserAccount(ctx context.Context, userId uuid.UUID, provider shared.Providers) (*shared.UserAccount, error)
+	FindUser(ctx context.Context, where *map[string]any) (*shared.User, error)
+	FindUserAccount(ctx context.Context, where *map[string]any) (*shared.UserAccount, error)
 	UpdateUser(ctx context.Context, user *shared.User) error
 	UpdateUserAccount(ctx context.Context, account *shared.UserAccount) error
 	DeleteUser(ctx context.Context, id uuid.UUID) error
@@ -30,27 +31,178 @@ type AuthAdapter interface {
 var _ AuthAdapter = (*AuthAdapterBase)(nil)
 
 type AuthAdapterBase struct {
-	db bob.Executor
+	repo *AppRepo
+}
+
+// func optionalRow[T any](record *T, err error) (*T, error) {
+// 	if err == nil {
+// 		return record, nil
+// 	} else if errors.Is(err, pgx.ErrNoRows) {
+// 		return nil, nil
+// 	} else if errors.Is(err, sql.ErrNoRows) {
+// 		return nil, nil
+// 	} else {
+// 		return nil, err
+// 	}
+// }
+
+// FindUser implements AuthAdapter.
+func (a *AuthAdapterBase) FindUser(ctx context.Context, where *map[string]any) (*shared.User, error) {
+
+	user, err := a.repo.user.GetOne(ctx, where)
+
+	if err != nil {
+		return nil, fmt.Errorf("error getting user: %w", err)
+	}
+
+	return &shared.User{
+		ID:              user.ID,
+		Email:           user.Email,
+		EmailVerifiedAt: user.EmailVerifiedAt,
+		Name:            user.Name,
+		Image:           user.Image,
+		CreatedAt:       user.CreatedAt,
+		UpdatedAt:       user.UpdatedAt,
+	}, nil
+}
+
+// FindUserAccount implements AuthAdapter.
+func (a *AuthAdapterBase) FindUserAccount(ctx context.Context, where *map[string]any) (*shared.UserAccount, error) {
+
+	account, err := a.repo.userAccount.GetOne(ctx, where)
+
+	if err != nil {
+		return nil, fmt.Errorf("error getting user account: %w", err)
+	}
+
+	return &shared.UserAccount{
+		ID:                account.ID,
+		UserID:            account.UserID,
+		Provider:          shared.Providers(account.Provider),
+		ProviderAccountID: account.ProviderAccountID,
+		CreatedAt:         account.CreatedAt,
+		UpdatedAt:         account.UpdatedAt,
+		Type:              shared.ProviderTypes(account.Type),
+		AccessToken:       account.AccessToken,
+		RefreshToken:      account.RefreshToken,
+		ExpiresAt:         account.ExpiresAt,
+		IDToken:           account.IDToken,
+		Scope:             account.Scope,
+		SessionState:      account.SessionState,
+		TokenType:         account.TokenType,
+		Password:          account.Password,
+	}, nil
 }
 
 // UpdateUserAccount implements AuthAdapter.
 func (a *AuthAdapterBase) UpdateUserAccount(ctx context.Context, account *shared.UserAccount) error {
-	md := shared.ToUserAccountModel(account)
-	return repository.UpdateUserAccount(ctx, a.db, md)
+	res, err := a.repo.userAccount.PutOne(ctx, &models.UserAccount{
+		ID:                account.ID,
+		UserID:            account.UserID,
+		Provider:          models.Providers(account.Provider),
+		ProviderAccountID: account.ProviderAccountID,
+		CreatedAt:         account.CreatedAt,
+		UpdatedAt:         account.UpdatedAt,
+		Type:              models.ProviderTypes(account.Type),
+		AccessToken:       account.AccessToken,
+		RefreshToken:      account.RefreshToken,
+		ExpiresAt:         account.ExpiresAt,
+		IDToken:           account.IDToken,
+		Scope:             account.Scope,
+		SessionState:      account.SessionState,
+		TokenType:         account.TokenType,
+		Password:          account.Password,
+	})
+	if err != nil {
+		return fmt.Errorf("error updating user account: %w", err)
+	}
+	if res == nil {
+		return fmt.Errorf("user account not found")
+	}
+	return nil
 }
 
-func NewAuthAdapter(db bob.Executor, dbtx crud.DBTX) *AuthAdapterBase {
-	return &AuthAdapterBase{db: db}
+func NewAuthAdapter(dbtx crud.DBTX) *AuthAdapterBase {
+	appRepo := NewAppRepo(dbtx)
+	return &AuthAdapterBase{repo: appRepo}
 }
 
-func (a *AuthAdapterBase) Db() bob.Executor {
-	return a.db
+const (
+	RawGetUserWithAllRolesAndPermissionsByEmail string = `--sql
+WITH -- Get permissions assigned through roles
+user_role_permissions AS (
+    SELECT ur.user_id AS user_id,
+        p.name AS permission,
+        r.name AS role
+    FROM public.user_roles ur
+        JOIN public.roles r ON ur.role_id = r.id
+        JOIN public.role_permissions rp ON ur.role_id = rp.role_id
+        JOIN public.permissions p ON rp.permission_id = p.id
+),
+user_direct_permissions AS (
+    SELECT up.user_id AS user_id,
+        p.name AS permission,
+        NULL::text AS role
+    FROM public.user_permissions up
+        JOIN public.permissions p ON up.permission_id = p.id
+),
+user_sub_role_permissions AS (
+    SELECT u.id AS user_id,
+        p.name AS permission,
+        r.name AS role
+    FROM public.stripe_subscriptions s
+        JOIN public.users u ON s.user_id = u.id
+        JOIN public.stripe_prices price ON s.price_id = price.id
+        JOIN public.stripe_products product ON price.product_id = product.id
+        JOIN public.product_roles pr ON product.id = pr.product_id
+        JOIN public.roles r ON pr.role_id = r.id
+        JOIN public.role_permissions rp ON r.id = rp.role_id
+        JOIN public.permissions p ON rp.permission_id = p.id
+),
+combined_permissions AS (
+    SELECT *
+    FROM user_role_permissions
+    UNION ALL
+    SELECT *
+    FROM user_direct_permissions
+    UNION ALL
+    SELECT *
+    FROM user_sub_role_permissions
+)
+SELECT u.id AS user_id,
+    u.email AS email,
+    array_remove(ARRAY_AGG(DISTINCT p.role), NULL)::text [] AS roles,
+    array_remove(ARRAY_AGG(DISTINCT p.permission), NULL)::text [] AS permissions,
+    array_remove(ARRAY_AGG(DISTINCT ua.provider), NULL)::public.providers [] AS providers
+FROM public.users u
+    LEFT JOIN combined_permissions p ON u.id = p.user_id
+    LEFT JOIN public.user_accounts ua ON u.id = ua.user_id
+WHERE u.email = $1
+GROUP BY u.id
+LIMIT 1;
+`
+)
+
+type RolePermissionClaims struct {
+	UserID      uuid.UUID          `json:"user_id" db:"user_id"`
+	Email       string             `json:"email" db:"email"`
+	Roles       []string           `json:"roles" db:"roles"`
+	Permissions []string           `json:"permissions" db:"permissions"`
+	Providers   []models.Providers `json:"providers" db:"providers"`
+}
+
+func FindUserWithRolesAndPermissionsByEmail(ctx context.Context, db crud.DBTX, email string) (*RolePermissionClaims, error) {
+	res, err := pgxscan.One(ctx, db, scan.StructMapper[RolePermissionClaims](), RawGetUserWithAllRolesAndPermissionsByEmail, email)
+	if err != nil {
+		return nil, err
+	}
+
+	return &res, nil
 }
 
 // GetUserInfo implements AuthAdapter.
 func (a *AuthAdapterBase) GetUserInfo(ctx context.Context, email string) (*shared.UserInfo, error) {
-	db := a.Db()
-	user, err := a.GetUserByEmail(ctx, email)
+	user, err := a.repo.user.GetOne(ctx, &map[string]any{"email": map[string]any{"_eq": email}})
 	if err != nil {
 		return nil, fmt.Errorf("error getting user: %w", err)
 	}
@@ -58,90 +210,96 @@ func (a *AuthAdapterBase) GetUserInfo(ctx context.Context, email string) (*share
 		return nil, fmt.Errorf("user not found")
 	}
 	result := &shared.UserInfo{
-		User: *user,
+		User: shared.User{
+			ID:              user.ID,
+			Email:           user.Email,
+			EmailVerifiedAt: user.EmailVerifiedAt,
+			Name:            user.Name,
+			Image:           user.Image,
+			CreatedAt:       user.CreatedAt,
+			UpdatedAt:       user.UpdatedAt,
+		},
 	}
-	roles, err := repository.FindUserWithRolesAndPermissionsByEmail(ctx, db, email)
+	roles, err := pgxscan.One(ctx, a.repo.dbx, scan.StructMapper[RolePermissionClaims](), RawGetUserWithAllRolesAndPermissionsByEmail, email)
 	if err != nil {
 		return nil, fmt.Errorf("error getting user roles and permissions: %w", err)
 	}
-	if roles == nil {
-		return result, nil
+	var providers []shared.Providers
+	for _, provider := range roles.Providers {
+		providers = append(providers, shared.Providers(provider))
 	}
-	providers := shared.ToProvidersArray(roles.Providers)
-	return &shared.UserInfo{
-		User:        *user,
-		Roles:       roles.Roles,
-		Permissions: roles.Permissions,
-		Providers:   providers,
-	}, nil
+	result.Roles = roles.Roles
+	result.Permissions = roles.Permissions
+	result.Providers = providers
+
+	return result, nil
 }
 
 // CreateUser implements AuthAdapter.
 func (a *AuthAdapterBase) CreateUser(ctx context.Context, user *shared.User) (*shared.User, error) {
-	res, err := repository.CreateUser(ctx, a.db, &shared.AuthenticateUserParams{
+	res, err := a.repo.user.PostOne(ctx, &models.User{
 		Email:           user.Email,
 		Name:            user.Name,
-		AvatarUrl:       user.Image,
+		Image:           user.Image,
 		EmailVerifiedAt: user.EmailVerifiedAt,
 	})
 	if err != nil {
 		return nil, err
 	}
-	newUser := shared.ToUser(res)
-	return newUser, nil
+	if res == nil {
+		return nil, fmt.Errorf("user not found")
+	}
+	return &shared.User{
+		ID:              res.ID,
+		Email:           res.Email,
+		EmailVerifiedAt: res.EmailVerifiedAt,
+		Name:            res.Name,
+		Image:           res.Image,
+		CreatedAt:       res.CreatedAt,
+		UpdatedAt:       res.UpdatedAt,
+	}, nil
 }
 
 // DeleteUser implements AuthAdapter.
 func (a *AuthAdapterBase) DeleteUser(ctx context.Context, id uuid.UUID) error {
-	panic("unimplemented")
-}
-
-// GetUser implements AuthAdapter.
-func (a *AuthAdapterBase) GetUser(ctx context.Context, id uuid.UUID) (*shared.User, error) {
-	res, err := repository.FindUserById(ctx, a.db, id)
+	res, err := a.repo.user.Delete(ctx, &map[string]any{
+		"id": map[string]any{"_eq": id},
+	})
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return shared.ToUser(res), nil
+	if res == nil {
+		return fmt.Errorf("user not found")
+	}
+	return nil
 }
 
 // GetUserByAccount implements AuthAdapter.
-func (a *AuthAdapterBase) GetUserAccount(ctx context.Context, userId uuid.UUID, provider shared.Providers) (*shared.UserAccount, error) {
-	providerModel := shared.ToModelProvider(provider)
-	res, err := repository.FindUserAccountByUserIdAndProvider(ctx, a.db, userId, providerModel)
-	if err != nil {
-		return nil, err
-	}
-	return shared.ToUserAccount(res), nil
-}
 
 // GetUserByEmail implements AuthAdapter.
-func (a *AuthAdapterBase) GetUserByEmail(ctx context.Context, email string) (*shared.User, error) {
-	res, err := repository.FindUserByEmail(ctx, a.db, email)
-	if err != nil {
-		return nil, err
-	}
-	return shared.ToUser(res), nil
-}
 
 // LinkAccount implements AuthAdapter.
 func (a *AuthAdapterBase) LinkAccount(ctx context.Context, account *shared.UserAccount) error {
 	if account == nil {
 		return errors.New("account is nil")
 	}
-	providerModel := shared.ToModelProvider(account.Provider)
-	providerTypeModel := shared.ToModelProviderType(account.Type)
-	params := &shared.AuthenticateUserParams{}
-	params.UserId = &account.UserID
-	params.Type = providerTypeModel
-	params.Provider = providerModel
-	params.ProviderAccountID = account.ProviderAccountID
-	params.HashPassword = account.Password
-	params.Password = account.Password
-	params.AccessToken = account.AccessToken
-	params.RefreshToken = account.RefreshToken
-
-	_, err := repository.CreateAccount(ctx, a.db, account.UserID, params)
+	_, err := a.repo.userAccount.PostOne(ctx, &models.UserAccount{
+		ID:                account.ID,
+		UserID:            account.UserID,
+		Provider:          models.Providers(account.Provider),
+		ProviderAccountID: account.ProviderAccountID,
+		CreatedAt:         account.CreatedAt,
+		UpdatedAt:         account.UpdatedAt,
+		Type:              models.ProviderTypes(account.Type),
+		AccessToken:       account.AccessToken,
+		RefreshToken:      account.RefreshToken,
+		ExpiresAt:         account.ExpiresAt,
+		IDToken:           account.IDToken,
+		Scope:             account.Scope,
+		SessionState:      account.SessionState,
+		TokenType:         account.TokenType,
+		Password:          account.Password,
+	})
 	if err != nil {
 		return err
 	}
@@ -160,11 +318,14 @@ func (a *AuthAdapterBase) UnlinkAccount(ctx context.Context, userId uuid.UUID, p
 
 // UpdateUser implements AuthAdapter.
 func (a *AuthAdapterBase) UpdateUser(ctx context.Context, user *shared.User) error {
-	err := repository.UpdateUser(ctx, a.db, user.ID, &shared.UserMutationInput{
+	_, err := a.repo.user.PutOne(ctx, &models.User{
+		ID:              user.ID,
 		Email:           user.Email,
 		Name:            user.Name,
 		Image:           user.Image,
 		EmailVerifiedAt: user.EmailVerifiedAt,
+		UpdatedAt:       time.Now(),
+		CreatedAt:       user.CreatedAt,
 	})
 	if err != nil {
 		return err
@@ -175,20 +336,41 @@ func (a *AuthAdapterBase) UpdateUser(ctx context.Context, user *shared.User) err
 // AssignUserRoles implements AuthAdapter.
 func (a *AuthAdapterBase) AssignUserRoles(ctx context.Context, userId uuid.UUID, roleNames ...string) error {
 	if len(roleNames) > 0 {
-		db := a.Db()
-		user, err := repository.FindUserById(ctx, db, userId)
+		user, err := a.repo.user.GetOne(
+			ctx,
+			&map[string]any{
+				"id": userId.String(),
+			},
+		)
 		if err != nil {
 			return fmt.Errorf("error finding user while assigning roles: %w", err)
 		}
 		if user == nil {
 			return fmt.Errorf("user not found while assigning roles")
 		}
-		roles, err := repository.FindRolesByNames(ctx, db, roleNames)
+		roles, err := a.repo.role.Get(
+			ctx,
+			&map[string]any{
+				"name": map[string]any{
+					"_in": roleNames,
+				},
+			},
+			nil,
+			types.Pointer(10),
+			nil,
+		)
 		if err != nil {
 			return fmt.Errorf("error finding user role while assigning roles: %w", err)
 		}
 		if len(roles) > 0 {
-			err = repository.AssignRoles(ctx, db, user, roles...)
+			var userRoles []*models.UserRole
+			for _, role := range roles {
+				userRoles = append(userRoles, &models.UserRole{
+					UserID: user.ID,
+					RoleID: role.ID,
+				})
+			}
+			_, err = a.repo.userRole.Post(ctx, userRoles)
 			if err != nil {
 				return fmt.Errorf("error assigning user role while assigning roles: %w", err)
 			}

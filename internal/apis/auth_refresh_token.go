@@ -24,8 +24,7 @@ type RefreshTokenInput struct {
 }
 
 func (api *Api) RefreshToken(ctx context.Context, input *struct{ Body *RefreshTokenInput }) (*AuthenticatedInfoResponse, error) {
-	db := api.app.Db()
-	action := api.app.NewAuthActions(db)
+	action := api.app.NewAuthActions()
 	claims, err := action.HandleRefreshToken(ctx, input.Body.RefreshToken)
 	if err != nil {
 		return nil, err

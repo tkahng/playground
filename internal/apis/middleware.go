@@ -143,9 +143,8 @@ func RequireAuthMiddleware(api huma.API) func(ctx huma.Context, next func(huma.C
 func AuthMiddleware(api huma.API, app core.App) func(ctx huma.Context, next func(huma.Context)) {
 
 	return func(ctx huma.Context, next func(huma.Context)) {
-		db := app.Db()
 		ctxx := ctx.Context()
-		action := app.NewAuthActions(db)
+		action := app.NewAuthActions()
 		// check if already has user claims
 		if claims := core.GetContextUserInfo(ctxx); claims != nil {
 			log.Println("already has user claims")
