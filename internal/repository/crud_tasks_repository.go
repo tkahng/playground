@@ -14,8 +14,11 @@ import (
 	"github.com/stephenafamo/bob/dialect/psql"
 	"github.com/stephenafamo/bob/dialect/psql/im"
 	"github.com/stephenafamo/bob/dialect/psql/sm"
+	crudModels "github.com/tkahng/authgo/internal/crud/models"
+	crud "github.com/tkahng/authgo/internal/crud/repository"
 	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/authgo/internal/types"
 )
 
 func FindTaskByID(ctx context.Context, db bob.Executor, id uuid.UUID) (*models.Task, error) {
@@ -392,6 +395,128 @@ func DefineTaskOrderNumberByStatus(ctx context.Context, db bob.Executor, taskId 
 		return element.Order + 1000, nil
 	}
 	return (element.Order + sideElements.Order) / 2, nil
+
+}
+func DefineTaskOrderNumberByStatusCrud(ctx context.Context, repo crud.Repository[crudModels.Task], taskId uuid.UUID, taskProjectId uuid.UUID, status models.TaskStatus, currentOrder float64, position int64) (float64, error) {
+	if position == 0 {
+		res, err := repo.Get(
+			ctx,
+			&map[string]any{
+				"project_id": map[string]any{
+					"_eq": taskProjectId.String(),
+				},
+				"status": map[string]any{
+					"_eq": status,
+				},
+			},
+			&map[string]any{
+				"order": "ASC",
+			},
+			types.Pointer(1),
+			nil,
+		)
+		if err != nil {
+			return 0, err
+		}
+		if len(res) == 0 {
+			return 0, nil
+		}
+		response := res[0]
+
+		if response.ID == taskId {
+			return response.Order, nil
+		}
+		return response.Order - 1000, nil
+	}
+	ele, err := repo.Get(
+		ctx,
+		&map[string]any{
+			"project_id": map[string]any{
+				"_eq": taskProjectId.String(),
+			},
+		},
+		&map[string]any{
+			"order": "ASC",
+		},
+		types.Pointer(1),
+		types.Pointer(int(position)),
+	)
+	if err != nil {
+		return 0, err
+	}
+	if len(ele) == 0 {
+		return 0, nil
+	}
+	element := ele[0]
+
+	if element.ID == taskId {
+		return element.Order, nil
+	}
+	if currentOrder > element.Order {
+		sideELe, err := repo.Get(
+			ctx,
+			&map[string]any{
+				"project_id": map[string]any{
+					"_eq": taskProjectId.String(),
+				},
+				"status": map[string]any{
+					"_eq": status,
+				},
+			},
+			&map[string]any{
+				"order": "ASC",
+			},
+			types.Pointer(1),
+			types.Pointer(int(position-1)),
+		)
+		if err != nil {
+			return 0, err
+		}
+		if len(sideELe) == 0 {
+			return element.Order - 1000, nil
+		}
+		sideElements := sideELe[0]
+		return (element.Order + sideElements.Order) / 2, nil
+	}
+	sideele, err := repo.Get(
+		ctx,
+		&map[string]any{
+			"project_id": map[string]any{
+				"_eq": taskProjectId.String(),
+			},
+			"status": map[string]any{
+				"_eq": status,
+			},
+		},
+		&map[string]any{
+			"order": "ASC",
+		},
+		types.Pointer(1),
+		types.Pointer(int(position+1)),
+	)
+	if err != nil {
+		return 0, err
+	}
+	if len(sideele) == 0 {
+		return element.Order + 1000, nil
+	}
+	sideElements := sideele[0]
+	return (element.Order + sideElements.Order) / 2, nil
+	// sideElements, err := models.Tasks.Query(
+	// 	sm.Where(models.TaskColumns.ProjectID.EQ(psql.Arg(taskProjectId))),
+	// 	sm.Where(models.TaskColumns.Status.EQ(psql.Arg(status))),
+	// 	sm.OrderBy(models.TaskColumns.Order).Asc(),
+	// 	sm.Limit(1),
+	// 	sm.Offset(position+1),
+	// ).One(ctx, db)
+	// sideElements, err = OptionalRow(sideElements, err)
+	// if err != nil {
+	// 	return 0, err
+	// }
+	// if sideElements == nil {
+	// 	return element.Order + 1000, nil
+	// }
+	// return (element.Order + sideElements.Order) / 2, nil
 
 }
 

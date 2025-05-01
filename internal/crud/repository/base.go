@@ -2,6 +2,8 @@ package repository
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 	"log/slog"
 	"reflect"
@@ -49,6 +51,18 @@ type SQLBuilder[Model any] struct {
 type SQLBuilderInterface interface {
 	Table() string
 	Where(where *map[string]any, args *[]any, run func(string) []string) string
+}
+
+func OptionalRow[T any](record *T, err error) (*T, error) {
+	if err == nil {
+		return record, nil
+	} else if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil
+	} else if errors.Is(err, sql.ErrNoRows) {
+		return nil, nil
+	} else {
+		return nil, err
+	}
 }
 
 var registry = map[string]SQLBuilderInterface{}
@@ -152,7 +166,7 @@ func (b *SQLBuilder[Model]) Fields(prefix string) string {
 }
 
 // Constructs the VALUES clause for an INSERT query
-func (b *SQLBuilder[Model]) Values(values []*Model, args *[]any, keys *[]any) (string, string) {
+func (b *SQLBuilder[Model]) Values(values *[]Model, args *[]any, keys *[]any) (string, string) {
 	if values == nil {
 		return "", ""
 	}
@@ -174,7 +188,7 @@ func (b *SQLBuilder[Model]) Values(values []*Model, args *[]any, keys *[]any) (s
 
 	// Generate the field values for the VALUES clause
 	result := []string{}
-	for _, model := range values {
+	for _, model := range *values {
 		_type := reflect.TypeOf(model)
 		_value := reflect.ValueOf(model)
 
@@ -304,6 +318,7 @@ func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any, run func(s
 	// Otherwise, construct the WHERE clause based on the field names and operations
 	result := []string{}
 	for key, item := range *where {
+		fmt.Println(key, item)
 		for op, value := range item.(map[string]any) {
 			if handler, ok := b.operations[key+op]; ok {
 				// Primitive field condition detected
@@ -377,7 +392,7 @@ func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any, run func(s
 }
 
 // Scans the rows returned by a query into a slice of Model
-func (b *SQLBuilder[Model]) Scan(rows pgx.Rows, err error) ([]*Model, error) {
+func (b *SQLBuilder[Model]) Scan(rows pgx.Rows, err error) ([]Model, error) {
 	if err != nil {
 		slog.Error("Error during query execution", slog.Any("error", err))
 		return nil, err
@@ -385,7 +400,7 @@ func (b *SQLBuilder[Model]) Scan(rows pgx.Rows, err error) ([]*Model, error) {
 	defer rows.Close()
 
 	// Iterate over the rows and scan each one into a Model instance
-	result := []*Model{}
+	result := []Model{}
 	for rows.Next() {
 		var model Model
 		_value := reflect.ValueOf(&model).Elem()
@@ -401,7 +416,7 @@ func (b *SQLBuilder[Model]) Scan(rows pgx.Rows, err error) ([]*Model, error) {
 			return nil, err
 		}
 
-		result = append(result, &model)
+		result = append(result, model)
 	}
 
 	if err = rows.Err(); err != nil {

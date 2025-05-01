@@ -86,6 +86,7 @@ type UserAccount struct {
 }
 
 type Token struct {
+	_          struct{}   `db:"tokens" json:"-"`
 	ID         uuid.UUID  `db:"id,pk" json:"id"`
 	Type       TokenTypes `db:"type" json:"type"`
 	UserID     *uuid.UUID `db:"user_id" json:"user_id"`
@@ -110,3 +111,46 @@ const (
 	TokenTypesPasswordResetToken    TokenTypes = "password_reset_token"
 	TokenTypesStateToken            TokenTypes = "state_token"
 )
+
+type Task struct {
+	_           struct{}   `db:"tasks" json:"-"`
+	ID          uuid.UUID  `db:"id,pk" json:"id"`
+	UserID      uuid.UUID  `db:"user_id" json:"user_id"`
+	ProjectID   uuid.UUID  `db:"project_id" json:"project_id"`
+	Name        string     `db:"name" json:"name"`
+	Description *string    `db:"description" json:"description"`
+	Status      TaskStatus `db:"status" json:"status" enum:"todo,in_progress,done"`
+	Order       float64    `db:"order" json:"order"`
+	ParentID    *uuid.UUID `db:"parent_id" json:"parent_id"`
+	CreatedAt   time.Time  `db:"created_at" json:"created_at"`
+	UpdatedAt   time.Time  `db:"updated_at" json:"updated_at"`
+}
+
+type TaskProject struct {
+	_           struct{}          `db:"task_projects" json:"-"`
+	ID          uuid.UUID         `db:"id,pk" json:"id"`
+	UserID      uuid.UUID         `db:"user_id" json:"user_id"`
+	Name        string            `db:"name" json:"name"`
+	Description *string           `db:"description" json:"description"`
+	Status      TaskProjectStatus `db:"status" json:"status" enum:"todo,in_progress,done"`
+	Order       float64           `db:"order" json:"order"`
+	CreatedAt   time.Time         `db:"created_at" json:"created_at"`
+	UpdatedAt   time.Time         `db:"updated_at" json:"updated_at"`
+}
+
+const (
+	TaskStatusTodo       TaskStatus = "todo"
+	TaskStatusInProgress TaskStatus = "in_progress"
+	TaskStatusDone       TaskStatus = "done"
+)
+
+type TaskStatus string
+
+// Enum values for TaskProjectStatus
+const (
+	TaskProjectStatusTodo       TaskProjectStatus = "todo"
+	TaskProjectStatusInProgress TaskProjectStatus = "in_progress"
+	TaskProjectStatusDone       TaskProjectStatus = "done"
+)
+
+type TaskProjectStatus string

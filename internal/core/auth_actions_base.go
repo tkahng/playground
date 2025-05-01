@@ -26,8 +26,12 @@ type AuthActionsBase struct {
 // ResetPassword implements AuthActions.
 func (app *AuthActionsBase) ResetPassword(ctx context.Context, userId uuid.UUID, oldPassword string, newPassword string) error {
 	account, err := app.authAdapter.FindUserAccount(ctx, &map[string]any{
-		"user_id":  userId.String(),
-		"provider": shared.ProvidersCredentials.String(),
+		"user_id": map[string]any{
+			"_eq": userId.String(),
+		},
+		"provider": map[string]any{
+			"_eq": shared.ProvidersCredentials.String(),
+		},
 	})
 	if err != nil {
 		return fmt.Errorf("error getting user account: %w", err)
@@ -73,7 +77,9 @@ func (app *AuthActionsBase) HandlePasswordResetRequest(ctx context.Context, emai
 	user, err := app.authAdapter.FindUser(
 		ctx,
 		&map[string]any{
-			"email": email,
+			"email": map[string]any{
+				"_eq": email,
+			},
 		},
 	)
 	if err != nil {
@@ -85,8 +91,12 @@ func (app *AuthActionsBase) HandlePasswordResetRequest(ctx context.Context, emai
 	account, err := app.authAdapter.FindUserAccount(
 		ctx,
 		&map[string]any{
-			"user_id":  user.ID,
-			"provider": shared.ProvidersCredentials,
+			"user_id": map[string]any{
+				"_eq": user.ID.String(),
+			},
+			"provider": map[string]any{
+				"_eq": shared.ProvidersCredentials.String(),
+			},
 		},
 	)
 	if err != nil {
@@ -272,7 +282,9 @@ func (app *AuthActionsBase) HandlePasswordResetToken(ctx context.Context, token,
 	user, err := app.authAdapter.FindUser(
 		ctx,
 		&map[string]any{
-			"email": claims.Email,
+			"email": map[string]any{
+				"_eq": claims.Email,
+			},
 		},
 	)
 	if err != nil {
@@ -282,8 +294,12 @@ func (app *AuthActionsBase) HandlePasswordResetToken(ctx context.Context, token,
 		return fmt.Errorf("user not found")
 	}
 	account, err := app.authAdapter.FindUserAccount(ctx, &map[string]any{
-		"user_id":  user.ID.String(),
-		"provider": shared.ProvidersCredentials.String(),
+		"user_id": map[string]any{
+			"_eq": user.ID.String(),
+		},
+		"provider": map[string]any{
+			"_eq": shared.ProvidersCredentials.String(),
+		},
 	})
 	if err != nil {
 		return fmt.Errorf("error getting user account: %w", err)
@@ -355,7 +371,10 @@ func (app *AuthActionsBase) HandleVerificationToken(ctx context.Context, token s
 	if err != nil {
 		return fmt.Errorf("error deleting token: %w", err)
 	}
-	user, err := app.authAdapter.FindUser(ctx, &map[string]any{"email": claims.Email})
+	user, err := app.authAdapter.FindUser(ctx, &map[string]any{
+		"email": map[string]any{
+			"_eq": claims.Email,
+		}})
 	if err != nil {
 		return fmt.Errorf("error getting user info: %w", err)
 	}
@@ -406,7 +425,9 @@ func (app *AuthActionsBase) Authenticate(ctx context.Context, params *shared.Aut
 	fmt.Println("Authenticate")
 	// get user by email
 	user, err = app.authAdapter.FindUser(ctx, &map[string]any{
-		"email": params.Email,
+		"email": map[string]any{
+			"_eq": params.Email,
+		},
 	})
 	if err != nil {
 		return nil, fmt.Errorf("error at getting user by email: %w", err)
@@ -414,8 +435,12 @@ func (app *AuthActionsBase) Authenticate(ctx context.Context, params *shared.Aut
 	// if user exists, get user account
 	if user != nil {
 		account, err = app.authAdapter.FindUserAccount(ctx, &map[string]any{
-			"user_id":  user.ID,
-			"provider": shared.ProvidersCredentials,
+			"user_id": map[string]any{
+				"_eq": user.ID.String(),
+			},
+			"provider": map[string]any{
+				"_eq": shared.ProvidersCredentials.String(),
+			},
 		})
 		if err != nil {
 			return nil, fmt.Errorf("error at getting user account: %w", err)

@@ -54,7 +54,9 @@ func (a *AuthAdapterBase) FindUser(ctx context.Context, where *map[string]any) (
 	if err != nil {
 		return nil, fmt.Errorf("error getting user: %w", err)
 	}
-
+	if user == nil {
+		return nil, fmt.Errorf("user not found")
+	}
 	return &shared.User{
 		ID:              user.ID,
 		Email:           user.Email,
@@ -263,7 +265,7 @@ func (a *AuthAdapterBase) CreateUser(ctx context.Context, user *shared.User) (*s
 // DeleteUser implements AuthAdapter.
 func (a *AuthAdapterBase) DeleteUser(ctx context.Context, id uuid.UUID) error {
 	res, err := a.repo.user.Delete(ctx, &map[string]any{
-		"id": map[string]any{"_eq": id},
+		"id": map[string]any{"_eq": id.String()},
 	})
 	if err != nil {
 		return err
@@ -339,7 +341,9 @@ func (a *AuthAdapterBase) AssignUserRoles(ctx context.Context, userId uuid.UUID,
 		user, err := a.repo.user.GetOne(
 			ctx,
 			&map[string]any{
-				"id": userId.String(),
+				"id": map[string]any{
+					"_eq": userId.String(),
+				},
 			},
 		)
 		if err != nil {
@@ -363,14 +367,14 @@ func (a *AuthAdapterBase) AssignUserRoles(ctx context.Context, userId uuid.UUID,
 			return fmt.Errorf("error finding user role while assigning roles: %w", err)
 		}
 		if len(roles) > 0 {
-			var userRoles []*models.UserRole
+			var userRoles []models.UserRole
 			for _, role := range roles {
-				userRoles = append(userRoles, &models.UserRole{
+				userRoles = append(userRoles, models.UserRole{
 					UserID: user.ID,
 					RoleID: role.ID,
 				})
 			}
-			_, err = a.repo.userRole.Post(ctx, userRoles)
+			_, err = a.repo.userRole.Post(ctx, &userRoles)
 			if err != nil {
 				return fmt.Errorf("error assigning user role while assigning roles: %w", err)
 			}
