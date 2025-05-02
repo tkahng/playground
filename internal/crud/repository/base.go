@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log/slog"
 	"reflect"
+	"slices"
 	"strings"
 
 	"github.com/google/uuid"
@@ -14,7 +15,7 @@ import (
 )
 
 type Repository[Model any] interface {
-	Get(ctx context.Context, dbx DBTX, where *map[string]any, order *map[string]any, limit *int, skip *int) ([]*Model, error)
+	Get(ctx context.Context, dbx DBTX, where *map[string]any, order *map[string]string, limit *int, skip *int) ([]*Model, error)
 	GetOne(ctx context.Context, dbx DBTX, where *map[string]any) (*Model, error)
 	Put(ctx context.Context, dbx DBTX, models []Model) ([]*Model, error)
 	Post(ctx context.Context, dbx DBTX, models []Model) ([]*Model, error)
@@ -38,14 +39,15 @@ type Relation struct {
 }
 
 type SQLBuilder[Model any] struct {
-	table      string
-	keys       []string
-	fields     []Field
-	relations  map[string]Relation
-	operations map[string]func(string, ...string) string
-	identifier func(string) string
-	parameter  func(reflect.Value, *[]any) string
-	generator  func(reflect.StructField, *[]any) string
+	table       string
+	keys        []string
+	fields      []Field
+	columnNames []string
+	relations   map[string]Relation
+	operations  map[string]func(string, ...string) string
+	identifier  func(string) string
+	parameter   func(reflect.Value, *[]any) string
+	generator   func(reflect.StructField, *[]any) string
 }
 
 type SQLBuilderInterface interface {
@@ -73,6 +75,7 @@ func NewSQLBuilder[Model any](operations map[string]func(string, ...string) stri
 
 	table := strings.ToLower(_type.Name())
 	fields := []Field{}
+	columnNames := []string{}
 	relations := map[string]Relation{}
 	operations_ := map[string]func(string, ...string) string{}
 	for idx := range _type.NumField() {
@@ -109,7 +112,7 @@ func NewSQLBuilder[Model any](operations map[string]func(string, ...string) stri
 					// Primitive fields detected
 					name := strings.Split(tag, ",")[0]
 					fields = append(fields, Field{idx, name})
-
+					columnNames = append(columnNames, name)
 					// Add base operations for the field
 					for key, value := range operations {
 						operations_[name+key] = value
@@ -267,7 +270,7 @@ func (b *SQLBuilder[Model]) Set(set *Model, args *[]any, where *map[string]any) 
 }
 
 // Constructs the ORDER BY clause for a query
-func (b *SQLBuilder[Model]) Order(order *map[string]any) string {
+func (b *SQLBuilder[Model]) Order(order *map[string]string) string {
 	if order == nil {
 		return ""
 	}
@@ -275,7 +278,9 @@ func (b *SQLBuilder[Model]) Order(order *map[string]any) string {
 	// Generate the field names for the ORDER BY clause
 	result := []string{}
 	for key, val := range *order {
-		result = append(result, fmt.Sprintf("%s %s", b.identifier(key), val))
+		if slices.Contains(b.columnNames, key) {
+			result = append(result, fmt.Sprintf("%s %s", b.identifier(key), strings.ToUpper(val)))
+		}
 	}
 
 	slog.Debug("Constructed ORDER BY clause", slog.Any("order", result))

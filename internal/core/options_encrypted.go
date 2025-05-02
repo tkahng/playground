@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/stephenafamo/bob"
 	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/tools/security"
 )
@@ -15,7 +14,7 @@ type EncryptedAuthOptions struct {
 	EncryptedAuthOptions string `form:"encrypted_auth_options" json:"encrypted_auth_options"`
 }
 
-func GetOrSetEncryptedAuthOptions(ctx context.Context, dbx bob.Executor, encryptionKey string) (*AuthOptions, error) {
+func GetOrSetEncryptedAuthOptions(ctx context.Context, dbx queries.Queryer, encryptionKey string) (*AuthOptions, error) {
 	var opts *AuthOptions
 	var encryptedOpts *EncryptedAuthOptions
 	// get the encrypted auth options from the db

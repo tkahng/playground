@@ -13,11 +13,43 @@ import (
 	"github.com/stephenafamo/bob/dialect/psql"
 	"github.com/stephenafamo/bob/dialect/psql/im"
 	"github.com/stephenafamo/scan"
-	"github.com/tkahng/authgo/internal/db"
+	"github.com/tkahng/authgo/internal/crud/crudrepo"
+	crudModels "github.com/tkahng/authgo/internal/crud/models"
 	"github.com/tkahng/authgo/internal/db/models"
 )
 
-func EnsureRoleAndPermissions(ctx context.Context, db *db.Queries, roleName string, permissionNames ...string) error {
+func CreateRolePermissions(ctx context.Context, db Queryer, roleId uuid.UUID, permissionIds ...uuid.UUID) error {
+	var permissions []crudModels.RolePermission
+	for _, perm := range permissionIds {
+		permissions = append(permissions, crudModels.RolePermission{
+			RoleID:       roleId,
+			PermissionID: perm,
+		})
+	}
+
+	_, err := crudrepo.RolePermission.Post(ctx, db, permissions)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func CreateProductRoles(ctx context.Context, db Queryer, productId string, roleIds ...uuid.UUID) error {
+	var roles []crudModels.ProductRole
+	for _, role := range roleIds {
+		roles = append(roles, crudModels.ProductRole{
+			ProductID: productId,
+			RoleID:    role,
+		})
+	}
+	_, err := crudrepo.ProductRole.Post(ctx, db, roles)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func EnsureRoleAndPermissions(ctx context.Context, db Queryer, roleName string, permissionNames ...string) error {
 	// find superuser role
 	role, err := FindOrCreateRole(ctx, db, roleName)
 	if err != nil {
@@ -29,7 +61,7 @@ func EnsureRoleAndPermissions(ctx context.Context, db *db.Queries, roleName stri
 			continue
 		}
 
-		err = role.AttachPermissions(ctx, db, perm)
+		err = CreateRolePermissions(ctx, db, role.ID, perm.ID)
 		if err != nil && !IsUniqConstraintErr(err) {
 			log.Println(err)
 		}
@@ -42,7 +74,7 @@ type CreateRoleDto struct {
 	Description *string `json:"description,omitempty"`
 }
 
-func FindOrCreateRole(ctx context.Context, dbx bob.Executor, roleName string) (*models.Role, error) {
+func FindOrCreateRole(ctx context.Context, dbx Queryer, roleName string) (*crudModels.Role, error) {
 	role, err := FindRoleByName(ctx, dbx, roleName)
 	if err != nil {
 		return nil, err
@@ -56,14 +88,18 @@ func FindOrCreateRole(ctx context.Context, dbx bob.Executor, roleName string) (*
 	return role, nil
 }
 
-func CreateRole(ctx context.Context, dbx bob.Executor, role *CreateRoleDto) (*models.Role, error) {
-	data, err := models.Roles.Insert(
-		&models.RoleSetter{
-			Name:        omit.From(role.Name),
-			Description: omitnull.FromPtr(role.Description),
-		},
-		im.Returning("*"),
-	).One(ctx, dbx)
+func CreateRole(ctx context.Context, dbx Queryer, role *CreateRoleDto) (*crudModels.Role, error) {
+	data, err := crudrepo.Role.PostOne(ctx, dbx, &crudModels.Role{
+		Name:        role.Name,
+		Description: role.Description,
+	})
+	// data, err := models.Roles.Insert(
+	// 	&models.RoleSetter{
+	// 		Name:        omit.From(role.Name),
+	// 		Description: omitnull.FromPtr(role.Description),
+	// 	},
+	// 	im.Returning("*"),
+	// ).One(ctx, dbx)
 	return data, err
 }
 
@@ -72,7 +108,7 @@ type UpdateRoleDto struct {
 	Description *string `json:"description,omitempty"`
 }
 
-func UpdateRole(ctx context.Context, dbx bob.Executor, id uuid.UUID, role *UpdateRoleDto) error {
+func UpdateRole(ctx context.Context, dbx Queryer, id uuid.UUID, role *UpdateRoleDto) error {
 	q := models.Roles.Update(
 		models.UpdateWhere.Roles.ID.EQ(id),
 		models.RoleSetter{
@@ -87,25 +123,34 @@ func UpdateRole(ctx context.Context, dbx bob.Executor, id uuid.UUID, role *Updat
 	return nil
 }
 
-func DeleteRole(ctx context.Context, dbx bob.Executor, id uuid.UUID) error {
+func DeleteRole(ctx context.Context, dbx Queryer, id uuid.UUID) error {
 	_, err := models.Roles.Delete(
 		models.DeleteWhere.Roles.ID.EQ(id),
 	).Exec(ctx, dbx)
 	return err
 }
 
-func FindRolesByNames(ctx context.Context, dbx bob.Executor, params []string) ([]*models.Role, error) {
+func FindRolesByNames(ctx context.Context, dbx Queryer, params []string) ([]*models.Role, error) {
 	return models.Roles.Query(models.SelectWhere.Roles.Name.In(params...)).All(ctx, dbx)
 }
-func FindRolesByIds(ctx context.Context, dbx bob.Executor, params []uuid.UUID) ([]*models.Role, error) {
+func FindRolesByIds(ctx context.Context, dbx Queryer, params []uuid.UUID) ([]*models.Role, error) {
 	return models.Roles.Query(models.SelectWhere.Roles.ID.In(params...)).All(ctx, dbx)
 }
 
-func FindRoleByName(ctx context.Context, dbx bob.Executor, name string) (*models.Role, error) {
-	data, err := models.Roles.Query(models.SelectWhere.Roles.Name.EQ(name)).One(ctx, dbx)
+func FindRoleByName(ctx context.Context, dbx Queryer, name string) (*crudModels.Role, error) {
+	data, err := crudrepo.Role.GetOne(
+		ctx,
+		dbx,
+		&map[string]any{
+			"name": map[string]any{
+				"_eq": name,
+			},
+		},
+	)
+	// data, err := models.Roles.Query(models.SelectWhere.Roles.Name.EQ(name)).One(ctx, dbx)
 	return OptionalRow(data, err)
 }
-func FindRoleById(ctx context.Context, dbx bob.Executor, id uuid.UUID) (*models.Role, error) {
+func FindRoleById(ctx context.Context, dbx Queryer, id uuid.UUID) (*models.Role, error) {
 	data, err := models.Roles.Query(models.SelectWhere.Roles.ID.EQ(id)).One(ctx, dbx)
 	return OptionalRow(data, err)
 }
@@ -115,7 +160,7 @@ type CreatePermissionDto struct {
 	Description *string `json:"description,omitempty"`
 }
 
-func FindOrCreatePermission(ctx context.Context, dbx bob.Executor, permissionName string) (*models.Permission, error) {
+func FindOrCreatePermission(ctx context.Context, dbx Queryer, permissionName string) (*models.Permission, error) {
 	permission, err := FindPermissionByName(ctx, dbx, permissionName)
 	if err != nil {
 		return nil, err
@@ -129,7 +174,7 @@ func FindOrCreatePermission(ctx context.Context, dbx bob.Executor, permissionNam
 	return permission, nil
 }
 
-func CreatePermission(ctx context.Context, dbx bob.Executor, permission *CreatePermissionDto) (*models.Permission, error) {
+func CreatePermission(ctx context.Context, dbx Queryer, permission *CreatePermissionDto) (*models.Permission, error) {
 	data, err := models.Permissions.Insert(
 		&models.PermissionSetter{
 			Name:        omit.From(permission.Name),
@@ -140,27 +185,27 @@ func CreatePermission(ctx context.Context, dbx bob.Executor, permission *CreateP
 	return data, err
 }
 
-func FindPermissionByName(ctx context.Context, dbx bob.Executor, params string) (*models.Permission, error) {
+func FindPermissionByName(ctx context.Context, dbx Queryer, params string) (*models.Permission, error) {
 	data, err := models.Permissions.Query(
 		models.SelectWhere.Permissions.Name.EQ(params),
 	).One(ctx, dbx)
 	return OptionalRow(data, err)
 }
-func FindPermissionsByNames(ctx context.Context, dbx bob.Executor, params []string) ([]*models.Permission, error) {
+func FindPermissionsByNames(ctx context.Context, dbx Queryer, params []string) ([]*models.Permission, error) {
 	return models.Permissions.Query(models.SelectWhere.Permissions.Name.In(params...)).All(ctx, dbx)
 }
-func FindPermissionsByIds(ctx context.Context, dbx bob.Executor, params []uuid.UUID) ([]*models.Permission, error) {
+func FindPermissionsByIds(ctx context.Context, dbx Queryer, params []uuid.UUID) ([]*models.Permission, error) {
 	return models.Permissions.Query(models.SelectWhere.Permissions.ID.In(params...)).All(ctx, dbx)
 }
 
-func DeletePermission(ctx context.Context, dbx bob.Executor, id uuid.UUID) error {
+func DeletePermission(ctx context.Context, dbx Queryer, id uuid.UUID) error {
 	_, err := models.Permissions.Delete(
 		models.DeleteWhere.Permissions.ID.EQ(id),
 	).Exec(ctx, dbx)
 	return err
 }
 
-func FindPermissionById(ctx context.Context, dbx bob.Executor, id uuid.UUID) (*models.Permission, error) {
+func FindPermissionById(ctx context.Context, dbx Queryer, id uuid.UUID) (*models.Permission, error) {
 	data, err := models.Permissions.Query(models.SelectWhere.Permissions.ID.EQ(id)).One(ctx, dbx)
 	return OptionalRow(data, err)
 }
@@ -267,7 +312,7 @@ type PermissionSource struct {
 	IsDirectly  bool             `db:"is_directly_assigned" json:"is_directly_assigned"`
 }
 
-func ListUserPermissionsSource(ctx context.Context, dbx bob.Executor, userId uuid.UUID, limit int64, offset int64) ([]PermissionSource, error) {
+func ListUserPermissionsSource(ctx context.Context, dbx Queryer, userId uuid.UUID, limit int64, offset int64) ([]PermissionSource, error) {
 	q := psql.RawQuery(QueryUserPermissionSource, userId, userId, limit, offset)
 
 	data, err := bob.All(ctx, dbx, q, scan.StructMapper[PermissionSource]())
@@ -278,7 +323,7 @@ func ListUserPermissionsSource(ctx context.Context, dbx bob.Executor, userId uui
 	return data, nil
 }
 
-func CountUserPermissionSource(ctx context.Context, dbx bob.Executor, userId uuid.UUID) (int64, error) {
+func CountUserPermissionSource(ctx context.Context, dbx Queryer, userId uuid.UUID) (int64, error) {
 	q := psql.RawQuery(QueryUserPermissionSourceCount, userId, userId)
 
 	data, err := bob.One(ctx, dbx, q, scan.SingleColumnMapper[int64])
@@ -368,7 +413,7 @@ WHERE cp.id IS NULL;
 ;`
 )
 
-func ListUserNotPermissionsSource(ctx context.Context, dbx bob.Executor, userId uuid.UUID, limit int64, offset int64) ([]PermissionSource, error) {
+func ListUserNotPermissionsSource(ctx context.Context, dbx Queryer, userId uuid.UUID, limit int64, offset int64) ([]PermissionSource, error) {
 	q := psql.RawQuery(getuserNotPermissions, userId, userId, limit, offset)
 
 	res, err := bob.All(ctx, dbx, q, scan.StructMapper[PermissionSource]())
@@ -379,7 +424,7 @@ func ListUserNotPermissionsSource(ctx context.Context, dbx bob.Executor, userId 
 	return res, nil
 }
 
-func CountNotUserPermissionSource(ctx context.Context, dbx bob.Executor, userId uuid.UUID) (int64, error) {
+func CountNotUserPermissionSource(ctx context.Context, dbx Queryer, userId uuid.UUID) (int64, error) {
 	q := psql.RawQuery(getuserNotPermissionCounts, userId, userId)
 
 	data, err := bob.One(ctx, dbx, q, scan.SingleColumnMapper[int64])

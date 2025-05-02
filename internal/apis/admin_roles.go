@@ -103,7 +103,7 @@ func (api *Api) AdminRolesCreate(ctx context.Context, input *struct {
 		return nil, huma.Error500InternalServerError("Failed to create role")
 	}
 	return &struct{ Body shared.Role }{
-		Body: *shared.ToRole(role),
+		Body: *shared.FromCrudRole(role),
 	}, nil
 }
 
@@ -299,8 +299,11 @@ func (api *Api) AdminUserRolesCreate(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-
-	err = user.AttachRoles(ctx, db, roles...)
+	newRoleIds := []uuid.UUID{}
+	for _, role := range roles {
+		newRoleIds = append(newRoleIds, role.ID)
+	}
+	err = queries.CreateUserRoles(ctx, db, user.ID, newRoleIds...)
 	if err != nil {
 		return nil, err
 	}
@@ -360,7 +363,11 @@ func (api *Api) AdminUserRolesUpdate(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	err = user.AttachRoles(ctx, db, roles...)
+	newRoleIds := []uuid.UUID{}
+	for _, role := range roles {
+		newRoleIds = append(newRoleIds, role.ID)
+	}
+	err = queries.CreateUserRoles(ctx, db, user.ID, newRoleIds...)
 	if err != nil {
 		return nil, err
 	}

@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	crudModels "github.com/tkahng/authgo/internal/crud/models"
 	"github.com/tkahng/authgo/internal/db/models"
 )
 
@@ -22,6 +23,15 @@ type Permission struct {
 	UpdatedAt   time.Time `db:"updated_at" json:"updated_at"`
 }
 
+func FromCrudPermission(permission *crudModels.Permission) *Permission {
+	return &Permission{
+		ID:          permission.ID,
+		Name:        permission.Name,
+		Description: permission.Description,
+		CreatedAt:   permission.CreatedAt,
+		UpdatedAt:   permission.UpdatedAt,
+	}
+}
 func ToPermission(permission *models.Permission) *Permission {
 	return &Permission{
 		ID:          permission.ID,

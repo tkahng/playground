@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	crudModels "github.com/tkahng/authgo/internal/crud/models"
 	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 )
@@ -14,6 +15,19 @@ type Role struct {
 	Description *string   `db:"description" json:"description,omitempty"`
 	CreatedAt   time.Time `db:"created_at" json:"created_at"`
 	UpdatedAt   time.Time `db:"updated_at" json:"updated_at"`
+}
+
+func FromCrudRole(role *crudModels.Role) *Role {
+	if role == nil {
+		return nil
+	}
+	return &Role{
+		ID:          role.ID,
+		Name:        role.Name,
+		Description: role.Description,
+		CreatedAt:   role.CreatedAt,
+		UpdatedAt:   role.UpdatedAt,
+	}
 }
 
 func ToRole(role *models.Role) *Role {
@@ -32,6 +46,16 @@ func ToRole(role *models.Role) *Role {
 type RoleWithPermissions struct {
 	*Role
 	Permissions []*Permission `json:"permissions,omitempty" required:"false"`
+}
+
+func FromCrudRoleWithPermissions(role *crudModels.Role, permissions []*crudModels.Permission) *RoleWithPermissions {
+	if role == nil {
+		return nil
+	}
+	return &RoleWithPermissions{
+		Permissions: mapper.Map(permissions, FromCrudPermission),
+		Role:        FromCrudRole(role),
+	}
 }
 
 func ToRoleWithPermissions(role *models.Role) *RoleWithPermissions {

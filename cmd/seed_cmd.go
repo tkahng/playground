@@ -1,18 +1,16 @@
 package cmd
 
 import (
-	"fmt"
 	"log/slog"
 
 	"github.com/spf13/cobra"
 	"github.com/tkahng/authgo/internal/conf"
 	"github.com/tkahng/authgo/internal/db"
-	"github.com/tkahng/authgo/internal/db/seeders"
 	"github.com/tkahng/authgo/internal/queries"
 )
 
 func NewSeedCmd() *cobra.Command {
-	seedCmd.AddCommand(seedRolesCmd, seedUserCmd)
+	seedCmd.AddCommand(seedRolesCmd)
 	return seedCmd
 }
 
@@ -65,34 +63,35 @@ var seedRolesCmd = &cobra.Command{
 		return err
 	},
 }
-var seedUserCmd = &cobra.Command{
-	Use:   "users",
-	Short: "seed users",
-	RunE: func(cmd *cobra.Command, args []string) error {
-		ctx := cmd.Context()
-		conf := conf.GetConfig[conf.DBConfig]()
 
-		pool := db.NewPoolFromConf(ctx, conf)
-		dbx := db.NewQueries(pool)
-		role, err := queries.FindRoleByName(ctx, dbx, "basic")
-		if err != nil {
-			return fmt.Errorf("error at createing users: %w", err)
-		}
+// var seedUserCmd = &cobra.Command{
+// 	Use:   "users",
+// 	Short: "seed users",
+// 	RunE: func(cmd *cobra.Command, args []string) error {
+// 		ctx := cmd.Context()
+// 		conf := conf.GetConfig[conf.DBConfig]()
 
-		_, err = seeders.UserCredentialsRolesFactory(ctx, dbx, 20, role)
-		// err := repository.PopulateRoles(ctx, dbx)
-		if err != nil {
+// 		pool := db.NewPoolFromConf(ctx, conf)
+// 		dbx := db.NewQueries(pool)
+// 		// role, err := queries.FindRoleByName(ctx, dbx, "basic")
+// 		// if err != nil {
+// 		// 	return fmt.Errorf("error at createing users: %w", err)
+// 		// }
 
-			return fmt.Errorf("error at createing users: %w", err)
-		}
-		// err = seeders.UserOauthFactory(ctx, dbx, 10, models.ProvidersGoogle)
-		// if err != nil {
-		// 	return fmt.Errorf("error at createing users: %w", err)
-		// }
-		// err = seeders.UserOauthFactory(ctx, dbx, 10, models.ProvidersGithub)
-		// if err != nil {
-		// 	return fmt.Errorf("error at createing users: %w", err)
-		// }
-		return nil
-	},
-}
+// 		// // _, err = seeders.UserCredentialsRolesFactory(ctx, dbx, 20, role)
+// 		// // err := repository.PopulateRoles(ctx, dbx)
+// 		// if err != nil {
+
+// 		// 	return fmt.Errorf("error at createing users: %w", err)
+// 		// }
+// 		// err = seeders.UserOauthFactory(ctx, dbx, 10, models.ProvidersGoogle)
+// 		// if err != nil {
+// 		// 	return fmt.Errorf("error at createing users: %w", err)
+// 		// }
+// 		// err = seeders.UserOauthFactory(ctx, dbx, 10, models.ProvidersGithub)
+// 		// if err != nil {
+// 		// 	return fmt.Errorf("error at createing users: %w", err)
+// 		// }
+// 		return nil
+// 	},
+// }

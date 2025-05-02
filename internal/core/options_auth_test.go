@@ -5,7 +5,6 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/stephenafamo/bob"
 	"github.com/tkahng/authgo/internal/core"
 	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/test"
@@ -21,7 +20,7 @@ func TestGetOrSetEncryptedAuthOptions(t *testing.T) {
 	})
 	type args struct {
 		ctx           context.Context
-		dbx           bob.Executor
+		dbx           queries.Queryer
 		encryptionKey string
 	}
 	tests := []struct {

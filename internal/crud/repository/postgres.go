@@ -55,7 +55,7 @@ func NewPostgresRepository[Model any]() *PostgresRepository[Model] {
 }
 
 // Get retrieves records from the database based on the provided filters
-func (r *PostgresRepository[Model]) Get(ctx context.Context, db DBTX, where *map[string]any, order *map[string]any, limit *int, skip *int) ([]*Model, error) {
+func (r *PostgresRepository[Model]) Get(ctx context.Context, db DBTX, where *map[string]any, order *map[string]string, limit *int, skip *int) ([]*Model, error) {
 	args := []any{}
 	query := fmt.Sprintf("SELECT %s FROM %s", r.builder.Fields(""), r.builder.Table())
 	if expr := r.builder.Where(where, &args, nil); expr != "" {

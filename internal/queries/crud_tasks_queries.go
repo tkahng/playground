@@ -408,7 +408,7 @@ func DefineTaskOrderNumberByStatusCrud(ctx context.Context, dbx Queryer, taskId 
 					"_eq": status,
 				},
 			},
-			&map[string]any{
+			&map[string]string{
 				"order": "ASC",
 			},
 			types.Pointer(1),
@@ -435,7 +435,7 @@ func DefineTaskOrderNumberByStatusCrud(ctx context.Context, dbx Queryer, taskId 
 				"_eq": taskProjectId.String(),
 			},
 		},
-		&map[string]any{
+		&map[string]string{
 			"order": "ASC",
 		},
 		types.Pointer(1),
@@ -464,7 +464,7 @@ func DefineTaskOrderNumberByStatusCrud(ctx context.Context, dbx Queryer, taskId 
 					"_eq": status,
 				},
 			},
-			&map[string]any{
+			&map[string]string{
 				"order": "ASC",
 			},
 			types.Pointer(1),
@@ -490,7 +490,7 @@ func DefineTaskOrderNumberByStatusCrud(ctx context.Context, dbx Queryer, taskId 
 				"_eq": status,
 			},
 		},
-		&map[string]any{
+		&map[string]string{
 			"order": "ASC",
 		},
 		types.Pointer(1),

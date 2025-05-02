@@ -4,16 +4,18 @@ import (
 	"context"
 	"slices"
 
-	"github.com/google/uuid"
 	"github.com/stephenafamo/bob/dialect/psql"
 	"github.com/stephenafamo/bob/dialect/psql/sm"
+	"github.com/tkahng/authgo/internal/crud/crudrepo"
+	crudmodels "github.com/tkahng/authgo/internal/crud/models"
 	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/authgo/internal/types"
 )
 
 var (
 	// UserColumnNames = models.Users.Columns().Names()
-	UserAccountColumnNames = models.UserAccounts.Columns().Names()
+	UserAccountColumnNames = []string{"id", "user_id", "type", "provider", "provider_account_id", "created_at", "updated_at"}
 	// UserAccountColumnNames = models.UserAccounts.Columns().Names()
 )
 
@@ -34,6 +36,23 @@ func ListUserAccounts(ctx context.Context, db Queryer, input *shared.UserAccount
 	}
 	return data, nil
 }
+func ListUserAccounts2(ctx context.Context, db Queryer, input *shared.UserAccountListParams) ([]*crudmodels.UserAccount, error) {
+	where := UserAccountWhere(&input.UserAccountListFilter)
+	sort := UserAccountOrderBy(&input.SortParams)
+	data, err := crudrepo.UserAccount.Get(
+		ctx,
+		db,
+		where,
+		sort,
+		types.Pointer(int(input.PaginatedInput.Page)),
+		types.Pointer(int(input.PaginatedInput.PerPage)),
+	)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
+}
+
 func ListUserAccountsOrderByFunc(ctx context.Context, q *psql.ViewQuery[*models.UserAccount, models.UserAccountSlice], input *shared.UserAccountListParams) {
 	if q == nil {
 		return
@@ -60,8 +79,54 @@ func ListUserAccountsOrderByFunc(ctx context.Context, q *psql.ViewQuery[*models.
 	}
 }
 
-// func CreateUser(ctx context.Context, db Queryer, params *shared.AuthenticateUserParams) (*models.User, error) {
+func UserAccountOrderBy(params *shared.SortParams) *map[string]string {
+	if params == nil {
+		return nil
+	}
+	if slices.Contains(UserAccountColumnNames, params.SortBy) {
+		return &map[string]string{
+			params.SortBy: params.SortOrder,
+		}
+	}
+	return nil
+}
 
+// func CreateUser(ctx context.Context, db Queryer, params *shared.AuthenticateUserParams) (*models.User, error) {
+func UserAccountWhere(filter *shared.UserAccountListFilter) *map[string]any {
+	where := make(map[string]any)
+	if filter == nil {
+		return &where
+	}
+	if len(filter.Providers) > 0 {
+		var providers []string
+		for _, p := range filter.Providers {
+			providers = append(providers, p.String())
+		}
+		where["provider"] = map[string]any{
+			"_in": providers,
+		}
+	}
+	if len(filter.ProviderTypes) > 0 {
+		var providerTypes []string
+		for _, pt := range filter.ProviderTypes {
+			providerTypes = append(providerTypes, pt.String())
+		}
+		where["type"] = map[string]any{
+			"_in": providerTypes,
+		}
+	}
+	if len(filter.Ids) > 0 {
+		where["id"] = map[string]any{
+			"_in": filter.Ids,
+		}
+	}
+	if len(filter.UserIds) > 0 {
+		where["user_id"] = map[string]any{
+			"_in": filter.UserIds,
+		}
+	}
+	return &where
+}
 func ListUserAccountFilterFunc(ctx context.Context, q *psql.ViewQuery[*models.UserAccount, models.UserAccountSlice], filter *shared.UserAccountListFilter) {
 	if filter == nil {
 		return
@@ -90,13 +155,10 @@ func ListUserAccountFilterFunc(ctx context.Context, q *psql.ViewQuery[*models.Us
 			models.SelectWhere.Users.ID.In(ids...),
 		)
 	}
-	if filter.UserId != "" {
-		id, err := uuid.Parse(filter.UserId)
-		if err != nil {
-			return
-		}
+	if len(filter.UserIds) > 0 {
+		ids := ParseUUIDs(filter.UserIds)
 		q.Apply(
-			models.SelectWhere.UserAccounts.UserID.EQ(id),
+			models.SelectWhere.UserAccounts.UserID.In(ids...),
 		)
 	}
 }

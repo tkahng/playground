@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/stephenafamo/bob"
 	"github.com/tkahng/authgo/internal/conf"
 	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
@@ -32,7 +31,7 @@ func NewStripeService(client *payment.StripeClient) *StripeService {
 	return &StripeService{client: client, logger: slog.Default()}
 }
 
-func (srv *StripeService) SyncRoles(ctx context.Context, exec bob.Executor) error {
+func (srv *StripeService) SyncRoles(ctx context.Context, exec queries.Queryer) error {
 	var err error
 	for productId, role := range shared.StripeRoleMap {
 		err = srv.SyncProductRole(ctx, exec, productId, role)
@@ -40,7 +39,7 @@ func (srv *StripeService) SyncRoles(ctx context.Context, exec bob.Executor) erro
 	return err
 }
 
-func (srv *StripeService) SyncProductRole(ctx context.Context, exec bob.Executor, productId string, roleName string) error {
+func (srv *StripeService) SyncProductRole(ctx context.Context, exec queries.Queryer, productId string, roleName string) error {
 	product, err := queries.FindProductByStripeId(ctx, exec, productId)
 	if err != nil {
 		return err
@@ -55,10 +54,10 @@ func (srv *StripeService) SyncProductRole(ctx context.Context, exec bob.Executor
 	if role == nil {
 		return errors.New("role not found")
 	}
-	return product.AttachRoles(ctx, exec, role)
+	return queries.CreateProductRoles(ctx, exec, product.ID, role.ID)
 }
 
-func (srv *StripeService) UpsertPriceProductFromStripe(ctx context.Context, exec bob.Executor) error {
+func (srv *StripeService) UpsertPriceProductFromStripe(ctx context.Context, exec queries.Queryer) error {
 	if err := srv.FindAndUpsertAllProducts(ctx, exec); err != nil {
 		fmt.Println(err)
 		return err
@@ -70,7 +69,7 @@ func (srv *StripeService) UpsertPriceProductFromStripe(ctx context.Context, exec
 	return nil
 }
 
-func (srv *StripeService) FindAndUpsertAllProducts(ctx context.Context, exec bob.Executor) error {
+func (srv *StripeService) FindAndUpsertAllProducts(ctx context.Context, exec queries.Queryer) error {
 	products, err := srv.client.FindAllProducts()
 	if err != nil {
 		srv.logger.Error("error finding all products", "error", err)
@@ -86,7 +85,7 @@ func (srv *StripeService) FindAndUpsertAllProducts(ctx context.Context, exec bob
 	return nil
 }
 
-func (srv *StripeService) FindAndUpsertAllPrices(ctx context.Context, exec bob.Executor) error {
+func (srv *StripeService) FindAndUpsertAllPrices(ctx context.Context, exec queries.Queryer) error {
 	prices, err := srv.client.FindAllPrices()
 	if err != nil {
 		srv.logger.Error("error finding all prices", "error", err)

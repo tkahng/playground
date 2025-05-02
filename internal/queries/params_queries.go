@@ -16,7 +16,7 @@ type Param[T any] struct {
 	Value types.JSON[T]
 }
 
-func FindParams[T any](ctx context.Context, dbx bob.Executor, key string) (*Param[T], error) {
+func FindParams[T any](ctx context.Context, dbx Queryer, key string) (*Param[T], error) {
 	query := psql.Select(
 		sm.Columns("value"),
 		sm.From("app_params"),
@@ -28,7 +28,7 @@ func FindParams[T any](ctx context.Context, dbx bob.Executor, key string) (*Para
 	return OptionalRow(param, err)
 }
 
-func SetParams[T any](ctx context.Context, dbx bob.Executor, key string, data T) error {
+func SetParams[T any](ctx context.Context, dbx Queryer, key string, data T) error {
 	query := psql.Insert(
 		im.Into("app_params", "name", "value"),
 		im.Values(

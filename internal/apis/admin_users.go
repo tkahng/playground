@@ -249,5 +249,5 @@ func (api *Api) AdminUsersGet(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	return &struct{ Body *shared.User }{Body: shared.ToUser(user)}, nil
+	return &struct{ Body *shared.User }{Body: shared.FromCrudUser(user)}, nil
 }

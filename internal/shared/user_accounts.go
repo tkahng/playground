@@ -5,6 +5,7 @@ import (
 
 	"github.com/aarondl/opt/null"
 	"github.com/google/uuid"
+	crudModels "github.com/tkahng/authgo/internal/crud/models"
 	"github.com/tkahng/authgo/internal/db/models"
 )
 
@@ -129,6 +130,36 @@ func ToUserAccountOutput(u *models.UserAccount) *UserAccountOutput {
 	}
 }
 
+func FromCrudUserAccount(u *crudModels.UserAccount) *UserAccount {
+	if u == nil {
+		return nil
+	}
+	return &UserAccount{
+		ID:                u.ID,
+		UserID:            u.UserID,
+		Type:              ProviderTypes(u.Type),
+		Provider:          Providers(u.Provider),
+		ProviderAccountID: u.ProviderAccountID,
+		CreatedAt:         u.CreatedAt,
+		UpdatedAt:         u.UpdatedAt,
+	}
+}
+
+func FromCrudUserAccountOutput(u *crudModels.UserAccount) *UserAccountOutput {
+	if u == nil {
+		return nil
+	}
+	return &UserAccountOutput{
+		ID:                u.ID,
+		UserID:            u.UserID,
+		Type:              ProviderTypes(u.Type),
+		Provider:          Providers(u.Provider),
+		ProviderAccountID: u.ProviderAccountID,
+		CreatedAt:         u.CreatedAt,
+		UpdatedAt:         u.UpdatedAt,
+	}
+}
+
 func ToUserAccount(u *models.UserAccount) *UserAccount {
 	if u == nil {
 		return nil
@@ -180,7 +211,7 @@ type UserAccountListFilter struct {
 	ProviderTypes []ProviderTypes `query:"provider_types,omitempty" required:"false" uniqueItems:"true" minimum:"1" maximum:"100" enum:"oauth,credentials"`
 	Q             string          `query:"q,omitempty" required:"false"`
 	Ids           []string        `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
-	UserId        string          `query:"user_id,omitempty" required:"false" format:"uuid"`
+	UserIds       []string        `query:"user_ids,omitempty" minimum:"1" maximum:"100" required:"false" format:"uuid"`
 }
 type UserAccountListParams struct {
 	PaginatedInput

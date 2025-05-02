@@ -40,17 +40,16 @@ func (api *Api) Me(ctx context.Context, input *struct{}) (*MeOutput, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = user.LoadUserUserAccounts(
-		ctx,
-		db,
-	)
+	accounts, err := queries.ListUserAccounts2(ctx, db, &shared.UserAccountListParams{
+		UserAccountListFilter: shared.UserAccountListFilter{UserIds: []string{user.ID.String()}},
+	})
 	if err != nil {
 		return nil, err
 	}
 	return &MeOutput{
 		Body: &shared.UserWithAccounts{
-			User:     shared.ToUser(user),
-			Accounts: mapper.Map(user.R.UserAccounts, shared.ToUserAccountOutput),
+			User:     shared.FromCrudUser(user),
+			Accounts: mapper.Map(accounts, shared.FromCrudUserAccountOutput),
 		},
 	}, nil
 

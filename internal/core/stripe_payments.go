@@ -6,7 +6,6 @@ import (
 	"log"
 
 	"github.com/google/uuid"
-	"github.com/stephenafamo/bob"
 	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
@@ -51,7 +50,7 @@ func (srv *StripeService) UpsertSubscriptionByIds(ctx context.Context, db querie
 	return nil
 }
 
-func (srv *StripeService) FindOrCreateCustomerFromUser(ctx context.Context, exec bob.Executor, userId uuid.UUID, email string) (*models.StripeCustomer, error) {
+func (srv *StripeService) FindOrCreateCustomerFromUser(ctx context.Context, exec queries.Queryer, userId uuid.UUID, email string) (*models.StripeCustomer, error) {
 	dbCus, err := queries.FindCustomerByUserId(ctx, exec, userId)
 	if err != nil {
 		return nil, err

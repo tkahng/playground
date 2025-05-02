@@ -23,6 +23,14 @@ type UserRole struct {
 	UserID uuid.UUID `db:"user_id,pk" json:"user_id"`
 	RoleID uuid.UUID `db:"role_id,pk" json:"role_id"`
 }
+type ProductRole struct {
+	ProductID string    `db:"product_id,pk" json:"product_id"`
+	RoleID    uuid.UUID `db:"role_id,pk" json:"role_id"`
+}
+type UserPermission struct {
+	UserID       uuid.UUID `db:"user_id,pk" json:"user_id"`
+	PermissionID uuid.UUID `db:"permission_id,pk" json:"permission_id"`
+}
 type Role struct {
 	_           struct{}     `db:"roles" json:"-"`
 	ID          uuid.UUID    `db:"id" json:"id"`

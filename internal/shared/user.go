@@ -5,6 +5,7 @@ import (
 
 	"github.com/aarondl/opt/null"
 	"github.com/google/uuid"
+	crudModels "github.com/tkahng/authgo/internal/crud/models"
 	"github.com/tkahng/authgo/internal/db/models"
 )
 
@@ -39,6 +40,20 @@ type UserWithAccounts struct {
 	Accounts []*UserAccountOutput `json:"accounts"`
 }
 
+func FromCrudUser(user *crudModels.User) *User {
+	if user == nil {
+		return nil
+	}
+	return &User{
+		ID:              user.ID,
+		Email:           user.Email,
+		EmailVerifiedAt: user.EmailVerifiedAt,
+		Name:            user.Name,
+		Image:           user.Image,
+		CreatedAt:       user.CreatedAt,
+		UpdatedAt:       user.UpdatedAt,
+	}
+}
 func ToUser(user *models.User) *User {
 	if user == nil {
 		return nil
