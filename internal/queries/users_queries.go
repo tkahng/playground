@@ -10,29 +10,42 @@ import (
 	"github.com/alexedwards/argon2id"
 	"github.com/google/uuid"
 	"github.com/stephenafamo/bob/dialect/psql/im"
+	"github.com/tkahng/authgo/internal/crud/crudrepo"
+	crudModels "github.com/tkahng/authgo/internal/crud/models"
 	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/security"
 )
 
-type RolesMap map[string]*models.Role
-
-type PermissionsMap map[string]*models.Permission
-
-type RoleStructTree map[string]RoleDto
-
-type RoleDto struct {
-	Role        *models.Role
-	Permissions []*models.Permission
+func CreateUser(ctx context.Context, db Queryer, params *shared.AuthenticateUserParams) (*crudModels.User, error) {
+	// return models.Users.Insert(&models.UserSetter{
+	// 	Email:           omit.From(params.Email),
+	// 	Name:            omitnull.FromPtr(params.Name),
+	// 	Image:           omitnull.FromPtr(params.AvatarUrl),
+	// 	EmailVerifiedAt: omitnull.FromPtr(params.EmailVerifiedAt),
+	// }, im.Returning("*")).One(ctx, db)
+	return crudrepo.User.PostOne(ctx, db, &crudModels.User{
+		Email:           params.Email,
+		Name:            params.Name,
+		Image:           params.AvatarUrl,
+		EmailVerifiedAt: params.EmailVerifiedAt,
+	})
 }
 
-func CreateUser(ctx context.Context, db Queryer, params *shared.AuthenticateUserParams) (*models.User, error) {
-	return models.Users.Insert(&models.UserSetter{
-		Email:           omit.From(params.Email),
-		Name:            omitnull.FromPtr(params.Name),
-		Image:           omitnull.FromPtr(params.AvatarUrl),
-		EmailVerifiedAt: omitnull.FromPtr(params.EmailVerifiedAt),
-	}, im.Returning("*")).One(ctx, db)
+func CreateUserRoles(ctx context.Context, db Queryer, userId uuid.UUID, roleIds ...uuid.UUID) error {
+	var dtos []crudModels.UserRole
+	for _, id := range roleIds {
+		dtos = append(dtos, crudModels.UserRole{
+			UserID: userId,
+			RoleID: id,
+		})
+	}
+	_, err := crudrepo.UserRole.Post(ctx, db, dtos)
+	return err
+	// return models.UserRoles.Insert(&models.UserRoleSetter{
+	// 	UserID:  omit.From(userId),
+	// 	RoleIDs: omit.From(params.RoleIds),
+	// }).Exec(ctx, db)
 }
 
 func UpdateUserEmailConfirm(ctx context.Context, db Queryer, userId uuid.UUID, emailVerifiedAt time.Time) (*models.User, error) {
@@ -129,8 +142,16 @@ type RolePermissionClaims struct {
 	Providers   []models.Providers `json:"providers" db:"providers"`
 }
 
-func FindUserByEmail(ctx context.Context, db Queryer, email string) (*models.User, error) {
-	a, err := models.Users.Query(models.SelectWhere.Users.Email.EQ(email)).One(ctx, db)
+func FindUserByEmail(ctx context.Context, db Queryer, email string) (*crudModels.User, error) {
+	a, err := crudrepo.User.GetOne(
+		ctx,
+		db,
+		&map[string]any{
+			"email": map[string]any{
+				"_eq": email,
+			},
+		},
+	)
 	return OptionalRow(a, err)
 }
 func FindUserById(ctx context.Context, db Queryer, userId uuid.UUID) (*models.User, error) {

@@ -78,7 +78,7 @@ var superuserCreate = &cobra.Command{
 			}
 		}
 		if user != nil {
-			err = user.AttachRoles(ctx, dbx, role)
+			err = queries.CreateUserRoles(ctx, dbx, user.ID, role.ID)
 			if err != nil {
 				return err
 			}
