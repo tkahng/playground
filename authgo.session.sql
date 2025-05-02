@@ -1,16 +1,40 @@
-EXPLAIN ANALYZE
-SELECT *
-FROM users
-WHERE id IN (
-                SELECT user_id
-                FROM user_roles
-                        join roles on user_roles.role_id = roles.id
-                WHERE name = 'superuser' -- WHERE role_id in (
-                        --         SELECT id
-                        --         FROM roles
-                        --         WHERE name = 'superuser'
-                        --     )
-        );
+SELECT rp.role_id,
+        COALESCE(
+                json_agg(
+                        jsonb_build_object(
+                                'id',
+                                p.id,
+                                'name',
+                                p.name,
+                                'description',
+                                p.description,
+                                'created_at',
+                                p.created_at,
+                                'updated_at',
+                                p.updated_at
+                        )
+                ) FILTER (
+                        WHERE p.id IS NOT NULL
+                ),
+                '[]'
+        ) AS permissions
+FROM public.role_permissions rp
+        LEFT JOIN public.permissions p ON p.id = rp.permission_id
+WHERE rp.role_id IN ()
+GROUP BY rp.role_id;
+-- SELECT role_permissions.role_id,
+--         COALESCE(JSON_AGG(pets), '[]') as permissions 
+-- FROM permissions
+--         LEFT JOIN role_permissions on permissions.id = role_permissions.permission_id
+--         and role_permissions.role_id IN (
+--                 '4f376506-3225-4994-b59f-4a4ee73a40a8',
+--                 '2c477cc6-d2c6-45b2-8fb1-a89ff0106d65'
+--         )
+-- SELECT permissions.*
+-- FROM permissions
+--         LEFT JOIN role_permissions on permissions.id = role_permissions.permission_id
+--         and role_permissions.role_id = 'a0aba2df-8c57-408d-8ccc-21c978bb6fa7' -- WHERE role_permissions.permission_id is null
+-- LIMIT 10 OFFSET 0;
 -- -- I need a query to get a user's total projects count, completed projects count, and total tasks count, completed tasks count.
 -- WITH project_statsec006d55-00f2-4b86-9411-873a22c2c40eAS (
 --     SELECT COUNT(*) as total_projects,

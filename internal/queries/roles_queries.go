@@ -15,7 +15,155 @@ import (
 	"github.com/stephenafamo/scan/pgxscan"
 	crudModels "github.com/tkahng/authgo/internal/crud/crudModels"
 	"github.com/tkahng/authgo/internal/crud/crudrepo"
+	"github.com/tkahng/authgo/internal/shared"
 )
+
+const (
+	GetRolePermissionsQuery = `
+	SELECT rp.role_id as key,
+        COALESCE(
+                json_agg(
+                        jsonb_build_object(
+                                'id',
+                                p.id,
+                                'name',
+                                p.name,
+                                'description',
+                                p.description,
+                                'created_at',
+                                p.created_at,
+                                'updated_at',
+                                p.updated_at
+                        )
+                ) FILTER (
+                        WHERE p.id IS NOT NULL
+                ),
+                '[]'
+        ) AS data
+FROM public.role_permissions rp
+        LEFT JOIN public.permissions p ON p.id = rp.permission_id
+        WHERE rp.role_id = ANY (
+                $1::uuid []
+        )
+GROUP BY rp.role_id;`
+)
+
+func GetRolePermissions(ctx context.Context, db Queryer, roleIds ...uuid.UUID) ([]shared.JoinedResult[*crudModels.Permission, uuid.UUID], error) {
+	// var results []JoinedResult[*crudModels.Permission, uuid.UUID]
+	ids := []string{}
+	for _, id := range roleIds {
+		ids = append(ids, id.String())
+	}
+	data, err := pgxscan.All(
+		ctx,
+		db,
+		scan.StructMapper[shared.JoinedResult[*crudModels.Permission, uuid.UUID]](),
+		GetRolePermissionsQuery,
+		roleIds,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
+}
+
+const (
+	GetUserRolesQuery = `
+	SELECT rp.user_id as key,
+        COALESCE(
+                json_agg(
+                        jsonb_build_object(
+                                'id',
+                                p.id,
+                                'name',
+                                p.name,
+                                'description',
+                                p.description,
+                                'created_at',
+                                p.created_at,
+                                'updated_at',
+                                p.updated_at
+                        )
+                ) FILTER (
+                        WHERE p.id IS NOT NULL
+                ),
+                '[]'
+        ) AS data
+FROM public.user_roles rp
+        LEFT JOIN public.roles p ON p.id = rp.role_id
+        WHERE rp.user_id = ANY (
+                $1::uuid []
+        )
+GROUP BY rp.user_id;`
+)
+
+func GetUserRoles(ctx context.Context, db Queryer, userIds ...uuid.UUID) ([]shared.JoinedResult[*crudModels.Role, uuid.UUID], error) {
+	// var results []JoinedResult[*crudModels.Permission, uuid.UUID]
+	ids := []string{}
+	for _, id := range userIds {
+		ids = append(ids, id.String())
+	}
+	data, err := pgxscan.All(
+		ctx,
+		db,
+		scan.StructMapper[shared.JoinedResult[*crudModels.Role, uuid.UUID]](),
+		GetUserRolesQuery,
+		userIds,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
+}
+
+const (
+	GetUserPermissionsQuery = `
+	SELECT rp.user_id as key,
+        COALESCE(
+                json_agg(
+                        jsonb_build_object(
+                                'id',
+                                p.id,
+                                'name',
+                                p.name,
+                                'description',
+                                p.description,
+                                'created_at',
+                                p.created_at,
+                                'updated_at',
+                                p.updated_at
+                        )
+                ) FILTER (
+                        WHERE p.id IS NOT NULL
+                ),
+                '[]'
+        ) AS data
+FROM public.user_permissions rp
+        LEFT JOIN public.permission p ON p.id = rp.permission_id
+        WHERE rp.user_id = ANY (
+                $1::uuid []
+        )
+GROUP BY rp.user_id;`
+)
+
+func GetUserPermissions(ctx context.Context, db Queryer, userIds ...uuid.UUID) ([]shared.JoinedResult[*crudModels.Permission, uuid.UUID], error) {
+	// var results []JoinedResult[*crudModels.Permission, uuid.UUID]
+	ids := []string{}
+	for _, id := range userIds {
+		ids = append(ids, id.String())
+	}
+	data, err := pgxscan.All(
+		ctx,
+		db,
+		scan.StructMapper[shared.JoinedResult[*crudModels.Permission, uuid.UUID]](),
+		GetUserRolesQuery,
+		userIds,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
+}
 
 func CreateRolePermissions(ctx context.Context, db Queryer, roleId uuid.UUID, permissionIds ...uuid.UUID) error {
 	var permissions []crudModels.RolePermission

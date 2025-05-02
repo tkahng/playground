@@ -8,7 +8,6 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/tkahng/authgo/internal/crud/crudModels"
-	crud "github.com/tkahng/authgo/internal/crud/repository"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/security"
 )
@@ -68,10 +67,12 @@ func (a *TokenAdapterBase) CreateOtpTokenHash(payload *OtpPayload, config TokenO
 
 }
 
-func NewTokenAdapter(dbx crud.DBTX) *TokenAdapterBase {
+func NewTokenAdapter(dbx *pgxpool.Pool) *TokenAdapterBase {
 	repo := NewAppRepo(dbx)
 	// return &TokenAdapterBase{db: db, repo: repo}
-	return &TokenAdapterBase{repo: repo}
+	return &TokenAdapterBase{
+		db:   dbx,
+		repo: repo}
 }
 
 func (a *TokenAdapterBase) ParseTokenString(token string, config TokenOption, data any) error {

@@ -38,17 +38,48 @@ func (api *Api) AdminRolesList(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
+	permissions := make([][]*crudModels.Permission, len(roles))
+	dmap := make(map[uuid.UUID][]*crudModels.Permission)
 	if slices.Contains(input.Expand, "permissions") {
-		err = roles.LoadRolePermissions(ctx, db)
+		roleIds := make([]uuid.UUID, len(roles))
+		for i, role := range roles {
+			roleIds[i] = role.ID
+		}
+		data, err := queries.GetRolePermissions(ctx, db, roleIds...)
+
 		if err != nil {
 			return nil, err
+		}
+
+		for _, item := range data {
+			dmap[item.Key] = item.Data
+		}
+		for i, role := range roles {
+			if v, ok := dmap[role.ID]; ok {
+				permissions[i] = v
+			} else {
+				permissions[i] = nil
+			}
 		}
 	}
 	count, err := queries.CountRoles(ctx, db, &input.RoleListFilter)
 	if err != nil {
 		return nil, err
 	}
-	out := mapper.Map(roles, shared.ToRoleWithPermissions)
+	out := mapper.Map(roles, func(r *crudModels.Role) *shared.RoleWithPermissions {
+		var permissions []*crudModels.Permission
+		if v, ok := dmap[r.ID]; ok {
+			permissions = v
+		}
+		return &shared.RoleWithPermissions{
+			Role: &shared.Role{
+				ID:          r.ID,
+				Name:        r.Name,
+				Description: r.Description,
+			},
+			Permissions: mapper.Map(permissions, shared.FromCrudPermission),
+		}
+	})
 	return &shared.PaginatedOutput[*shared.RoleWithPermissions]{
 		Body: shared.PaginatedResponse[*shared.RoleWithPermissions]{
 			Data: out,

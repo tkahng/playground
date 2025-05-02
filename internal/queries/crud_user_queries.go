@@ -10,6 +10,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/stephenafamo/bob/dialect/psql"
 	"github.com/stephenafamo/bob/dialect/psql/sm"
+	"github.com/tkahng/authgo/internal/crud/crudModels"
+	"github.com/tkahng/authgo/internal/crud/crudrepo"
 	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/shared"
 )
@@ -66,16 +68,77 @@ func ListUserFilterFunc(ctx context.Context, q *psql.ViewQuery[*models.User, mod
 	}
 }
 
-func ListUsers(ctx context.Context, db Queryer, input *shared.UserListParams) (models.UserSlice, error) {
+func ListUsers(ctx context.Context, db Queryer, input *shared.UserListParams) ([]*crudModels.User, error) {
 
-	q := models.Users.Query()
+	// q := models.Users.Query()
 	filter := input.UserListFilter
 	pageInput := &input.PaginatedInput
 
-	ViewApplyPagination(q, pageInput)
-	ListUsersOrderByFunc(ctx, q, input)
-	ListUserFilterFunc(ctx, q, &filter)
-	data, err := q.All(ctx, db)
+	where := map[string]any{}
+	orderBy := map[string]string{}
+	if filter.EmailVerified != "" {
+		if filter.EmailVerified == shared.Verified {
+			where["email_verified_at"] = map[string]any{
+				"_neq": nil,
+			}
+		} else if filter.EmailVerified == shared.UnVerified {
+			where["email_verified_at"] = map[string]any{
+				"_eq": nil,
+			}
+		}
+	}
+	if len(filter.Emails) > 0 {
+		where["email"] = map[string]any{
+			"_in": filter.Emails,
+		}
+	}
+	if len(filter.Ids) > 0 {
+		where["id"] = map[string]any{
+			"_in": filter.Ids,
+		}
+	}
+	if len(filter.Providers) > 0 {
+		var providers []models.Providers
+		for _, p := range filter.Providers {
+			providers = append(providers, shared.ToModelProvider(p))
+		}
+		where["provider"] = map[string]any{
+			"_in": providers,
+		}
+	}
+	if len(filter.RoleIds) > 0 {
+		where["roles"] = map[string]any{
+			"id": map[string]any{
+				"_in": filter.RoleIds,
+			},
+		}
+	}
+	if filter.Q != "" {
+		where["_or"] = []map[string]any{
+			{
+				"email": map[string]any{
+					"_ilike": "%" + filter.Q + "%",
+				},
+			},
+			{
+				"name": map[string]any{
+					"_ilike": "%" + filter.Q + "%",
+				},
+			},
+		}
+	}
+	if input.SortBy != "" {
+		orderBy[input.SortBy] = input.SortOrder
+	}
+	limit, offset := PaginateRepo(pageInput)
+	data, err := crudrepo.User.Get(
+		ctx,
+		db,
+		&where,
+		&orderBy,
+		limit,
+		offset,
+	)
 	if err != nil {
 		return nil, err
 	}

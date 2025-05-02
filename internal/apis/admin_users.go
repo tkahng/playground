@@ -8,7 +8,7 @@ import (
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
-	"github.com/tkahng/authgo/internal/db/models"
+	"github.com/tkahng/authgo/internal/crud/crudModels"
 	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
@@ -48,32 +48,64 @@ func (api *Api) AdminUsers(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-
+	rolesmap := make(map[uuid.UUID][]*crudModels.Role)
+	permsmap := make(map[uuid.UUID][]*crudModels.Permission)
+	accountsmap := make(map[uuid.UUID][]*crudModels.UserAccount)
+	userIds := []uuid.UUID{}
+	userIdsstring := []string{}
+	for _, user := range users {
+		userIds = append(userIds, user.ID)
+		userIdsstring = append(userIdsstring, user.ID.String())
+	}
 	if slices.Contains(input.Expand, "roles") {
-		err = users.LoadUserRoles(ctx, db)
+		roles, err := queries.GetUserRoles(ctx, db, userIds...)
 		if err != nil {
 			return nil, err
+		}
+		for _, role := range roles {
+			rolesmap[role.Key] = role.Data
 		}
 	}
 
 	if slices.Contains(input.Expand, "permissions") {
-		err = users.LoadUserPermissions(ctx, db)
+		perms, err := queries.GetUserPermissions(ctx, db, userIds...)
 		if err != nil {
 			return nil, err
+		}
+		for _, perm := range perms {
+			permsmap[perm.Key] = perm.Data
 		}
 	}
 
 	if slices.Contains(input.Expand, "accounts") {
-		err = users.LoadUserUserAccounts(ctx, db)
+		accounts, err := queries.GetUserAccounts(ctx, db, userIds...)
 		if err != nil {
 			return nil, err
 		}
+		for _, account := range accounts {
+			accountsmap[account.Key] = account.Data
+		}
 	}
-	info := mapper.Map(users, func(user *models.User) *UserDetail {
+	info := mapper.Map(users, func(user *crudModels.User) *UserDetail {
+		var roles []*crudModels.Role
+		if v, ok := rolesmap[user.ID]; ok {
+			roles = v
+		}
+
+		var accounts []*crudModels.UserAccount
+		if v, ok := accountsmap[user.ID]; ok {
+			accounts = v
+		}
 		return &UserDetail{
-			User:     shared.ToUser(user),
-			Roles:    mapper.Map(user.R.Roles, shared.ToRoleWithPermissions),
-			Accounts: mapper.Map(user.R.UserAccounts, shared.ToUserAccountOutput),
+			User: shared.FromCrudUser(user),
+			Roles: mapper.Map(roles, func(role *crudModels.Role) *shared.RoleWithPermissions {
+				var permissions []*crudModels.Permission
+				if v, ok := permsmap[role.ID]; ok {
+					permissions = v
+				}
+				return shared.FromCrudRoleWithPermissions(role, permissions)
+			}),
+			Accounts: mapper.Map(accounts, shared.FromCrudUserAccountOutput),
 		}
 	})
 
@@ -122,7 +154,9 @@ func (api *Api) AdminUsersCreate(ctx context.Context, input *struct {
 		ProviderAccountID: input.Body.Email,
 		EmailVerifiedAt:   input.Body.EmailVerifiedAt,
 	})
-
+	if err != nil {
+		return nil, err
+	}
 	return &struct{ Body *shared.User }{Body: user}, nil
 
 }

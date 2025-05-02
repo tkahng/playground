@@ -176,3 +176,76 @@ func UpdateMe(ctx context.Context, db Queryer, userId uuid.UUID, input *shared.U
 	}
 	return nil
 }
+
+// ID:                u.ID,
+// UserID:            u.UserID,
+// Type:              ToProviderType(u.Type),
+// Provider:          ToProvider(u.Provider),
+// ProviderAccountID: u.ProviderAccountID,
+// CreatedAt:         u.CreatedAt,
+// UpdatedAt:         u.UpdatedAt,
+const (
+	GetUserAccountsQuery = `
+	SELECT p.user_id as key,
+        COALESCE(
+                json_agg(
+                        jsonb_build_object(
+                                'id',
+                                p.id,
+								'type',
+								p.type,
+								'provider',
+								p.provider,
+								'provider_account_id',
+								p.provider_account_id,
+								'password',
+								p.password,
+								'refresh_token',
+								p.refresh_token,
+								'access_token',
+								p.access_token,
+								'expires_at',
+								p.expires_at,
+								'id_token',
+								p.id_token,
+								'scope',
+								p.scope,
+								'session_state',
+								p.session_state,
+								'token_type',
+								p.token_type,
+								'created_at',
+								p.created_at,
+								'updated_at',
+								p.updated_at
+						)
+                ) FILTER (
+                        WHERE p.id IS NOT NULL
+                ),
+                '[]'
+        ) AS data
+FROM public.user_accounts p
+        WHERE p.user_id = ANY (
+                $1::uuid []
+        )
+GROUP BY p.user_id;`
+)
+
+func GetUserAccounts(ctx context.Context, db Queryer, userIds ...uuid.UUID) ([]shared.JoinedResult[*crudModels.UserAccount, uuid.UUID], error) {
+	// var results []JoinedResult[*crudModels.Permission, uuid.UUID]
+	ids := []string{}
+	for _, id := range userIds {
+		ids = append(ids, id.String())
+	}
+	data, err := pgxscan.All(
+		ctx,
+		db,
+		scan.StructMapper[shared.JoinedResult[*crudModels.UserAccount, uuid.UUID]](),
+		GetUserRolesQuery,
+		userIds,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
+}

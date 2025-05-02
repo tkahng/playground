@@ -2,6 +2,7 @@ package apis
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/danielgtaylor/huma/v2"
@@ -192,6 +193,7 @@ func (api *Api) AdminPermissionsList(ctx context.Context, input *struct {
 	shared.PermissionsListParams
 }) (*shared.PaginatedOutput[*shared.Permission], error) {
 	db := api.app.Db()
+	fmt.Println(input)
 	permissions, err := queries.ListPermissions(ctx, db, &input.PermissionsListParams)
 	if err != nil {
 		return nil, err
@@ -204,7 +206,7 @@ func (api *Api) AdminPermissionsList(ctx context.Context, input *struct {
 	return &shared.PaginatedOutput[*shared.Permission]{
 		Body: shared.PaginatedResponse[*shared.Permission]{
 
-			Data: mapper.Map(permissions, shared.ToPermission),
+			Data: mapper.Map(permissions, shared.FromCrudPermission),
 			Meta: shared.GenerateMeta(input.PaginatedInput, count),
 		},
 	}, nil

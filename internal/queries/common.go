@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 
 	"github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
@@ -13,6 +14,7 @@ import (
 	"github.com/stephenafamo/scan"
 	"github.com/stephenafamo/scan/pgxscan"
 	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/authgo/internal/types"
 )
 
 func VarCollect[T any](args ...T) []T {
@@ -46,6 +48,19 @@ func Paginate(q squirrel.SelectBuilder, input *shared.PaginatedInput) squirrel.S
 		input.PerPage = 10
 	}
 	return q.Limit(uint64(input.PerPage)).Offset(uint64((input.Page) * input.PerPage))
+}
+
+func PaginateRepo(input *shared.PaginatedInput) (*int, *int) {
+	if input == nil {
+		input = &shared.PaginatedInput{
+			PerPage: 10,
+			Page:    0,
+		}
+	}
+	if input.PerPage == 0 {
+		input.PerPage = 10
+	}
+	return types.Pointer(int(input.PerPage)), types.Pointer(int((input.Page) * input.PerPage))
 }
 
 func CountExec[T any, Ts ~[]T](ctx context.Context, db Queryer, v *psql.ViewQuery[T, Ts]) (int64, error) {
@@ -88,5 +103,10 @@ func ExecQuery[T any](ctx context.Context, db Queryer, query QueryBuilder) ([]T,
 	if err != nil {
 		return nil, err
 	}
+	fmt.Println(sql, args)
 	return pgxscan.All(ctx, db, scan.StructMapper[T](), sql, args...)
+}
+
+func Identifier(name string) string {
+	return fmt.Sprintf("\"%s\"", name)
 }
