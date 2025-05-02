@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"github.com/stephenafamo/bob"
-	"github.com/tkahng/authgo/internal/repository"
+	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/tools/security"
 )
 
@@ -19,7 +19,7 @@ func GetOrSetEncryptedAuthOptions(ctx context.Context, dbx bob.Executor, encrypt
 	var opts *AuthOptions
 	var encryptedOpts *EncryptedAuthOptions
 	// get the encrypted auth options from the db
-	encryptedParams, err := repository.FindParams[EncryptedAuthOptions](ctx, dbx, EncryptedAuthOptionsKey)
+	encryptedParams, err := queries.FindParams[EncryptedAuthOptions](ctx, dbx, EncryptedAuthOptionsKey)
 	if err != nil {
 		return nil, fmt.Errorf("error getting encrypted auth options from db: %w", err)
 	}
@@ -53,7 +53,7 @@ func GetOrSetEncryptedAuthOptions(ctx context.Context, dbx bob.Executor, encrypt
 		encryptedOpts = &EncryptedAuthOptions{
 			EncryptedAuthOptions: encryptedOptsStr,
 		}
-		err = repository.SetParams(ctx, dbx, EncryptedAuthOptionsKey, encryptedOpts)
+		err = queries.SetParams(ctx, dbx, EncryptedAuthOptionsKey, encryptedOpts)
 		if err != nil {
 			return nil, err
 		}

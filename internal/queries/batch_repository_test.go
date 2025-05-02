@@ -1,4 +1,4 @@
-package repository_test
+package queries_test
 
 import (
 	"context"
@@ -10,7 +10,7 @@ import (
 	"github.com/tkahng/authgo/internal/db"
 	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/db/models/factory"
-	"github.com/tkahng/authgo/internal/repository"
+	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/test"
 )
 
@@ -21,7 +21,7 @@ var (
 func TestExecWrapper(t *testing.T) {
 	ctx, db, pl := test.DbSetup()
 	t.Cleanup(func() {
-		repository.TruncateModels(ctx, db)
+		queries.TruncateModels(ctx, db)
 		pl.Close()
 	})
 	_, err := f.NewUser(factory.UserMods.WithNewRoles(1, factory.RoleMods.WithNewPermissions(1))).Create(ctx, db)
@@ -51,7 +51,7 @@ func TestExecWrapper(t *testing.T) {
 		t.Fatalf("expected 1 permission, got %d", permissions_count)
 	}
 
-	err = repository.ErrorWrapper(ctx, db, true,
+	err = queries.ErrorWrapper(ctx, db, true,
 		models.Users.Delete().Exec,
 		models.Roles.Delete().Exec,
 		models.Permissions.Delete().Exec,
@@ -85,7 +85,7 @@ func TestExecWrapper(t *testing.T) {
 func TestExecWrapperTransaction(t *testing.T) {
 	ctx, dbx, pl := test.DbSetup()
 	t.Cleanup(func() {
-		repository.TruncateModels(ctx, dbx)
+		queries.TruncateModels(ctx, dbx)
 		pl.Close()
 	})
 	_, err := f.NewUser(factory.UserMods.WithNewRoles(1, factory.RoleMods.WithNewPermissions(1))).Create(ctx, dbx)
@@ -100,7 +100,7 @@ func TestExecWrapperTransaction(t *testing.T) {
 	if err != nil {
 		t.Fatal("error counting roles", err)
 	}
-	permissions_count := repository.DefaultCountWrapper(ctx, dbx, models.Permissions.Query().Count)
+	permissions_count := queries.DefaultCountWrapper(ctx, dbx, models.Permissions.Query().Count)
 	if err != nil {
 		t.Fatal("error counting permissions", err)
 	}
@@ -121,7 +121,7 @@ func TestExecWrapperTransaction(t *testing.T) {
 		}
 		defer tx.Rollback(ctx)
 		db := db.NewQueries(tx)
-		err = repository.ErrorWrapper(ctx, db, true,
+		err = queries.ErrorWrapper(ctx, db, true,
 			models.Users.Delete().Exec,
 			models.Roles.Delete().Exec,
 			func(ctx context.Context, exec bob.Executor) (int64, error) {

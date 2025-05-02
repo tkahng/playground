@@ -9,7 +9,7 @@ import (
 	"github.com/tkahng/authgo/internal/conf"
 	"github.com/tkahng/authgo/internal/db"
 	"github.com/tkahng/authgo/internal/db/models"
-	"github.com/tkahng/authgo/internal/repository"
+	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/security"
 	"github.com/tkahng/authgo/internal/types"
@@ -43,16 +43,16 @@ var superuserCreate = &cobra.Command{
 
 		pool := db.NewPoolFromConf(ctx, conf)
 		dbx := db.NewQueries(pool)
-		err := repository.EnsureRoleAndPermissions(ctx, dbx, "superuser", "superuser")
+		err := queries.EnsureRoleAndPermissions(ctx, dbx, "superuser", "superuser")
 		if err != nil {
 			return err
 		}
 
-		user, err := repository.FindUserByEmail(ctx, dbx, args[0])
+		user, err := queries.FindUserByEmail(ctx, dbx, args[0])
 		if err != nil {
 			return err
 		}
-		role, err := repository.FindRoleByName(ctx, dbx, "superuser")
+		role, err := queries.FindRoleByName(ctx, dbx, "superuser")
 		if err != nil {
 			return err
 		}
@@ -68,11 +68,11 @@ var superuserCreate = &cobra.Command{
 				HashPassword:      types.Pointer(hash),
 				Type:              models.ProviderTypesCredentials,
 			}
-			user, err = repository.CreateUser(ctx, dbx, data)
+			user, err = queries.CreateUser(ctx, dbx, data)
 			if err != nil {
 				return err
 			}
-			_, err = repository.CreateAccount(ctx, dbx, user.ID, data)
+			_, err = queries.CreateAccount(ctx, dbx, user.ID, data)
 			if err != nil {
 				return err
 			}

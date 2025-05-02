@@ -7,7 +7,7 @@ import (
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/tkahng/authgo/internal/core"
-	"github.com/tkahng/authgo/internal/repository"
+	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/utils"
 )
@@ -37,7 +37,7 @@ func (a *Api) ApiProtected(ctx context.Context, input *struct {
 		return nil, huma.Error404NotFound("User not found")
 	}
 	utils.PrettyPrintJSON(claims)
-	permission, err := repository.FindPermissionByName(ctx, a.app.Db(), input.PermissionName)
+	permission, err := queries.FindPermissionByName(ctx, a.app.Db(), input.PermissionName)
 	if err != nil {
 		return nil, err
 	}

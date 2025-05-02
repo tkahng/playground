@@ -8,7 +8,7 @@ import (
 
 	"github.com/stephenafamo/bob"
 	"github.com/tkahng/authgo/internal/conf"
-	"github.com/tkahng/authgo/internal/repository"
+	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/payment"
 )
@@ -41,14 +41,14 @@ func (srv *StripeService) SyncRoles(ctx context.Context, exec bob.Executor) erro
 }
 
 func (srv *StripeService) SyncProductRole(ctx context.Context, exec bob.Executor, productId string, roleName string) error {
-	product, err := repository.FindProductByStripeId(ctx, exec, productId)
+	product, err := queries.FindProductByStripeId(ctx, exec, productId)
 	if err != nil {
 		return err
 	}
 	if product == nil {
 		return errors.New("product not found")
 	}
-	role, err := repository.FindRoleByName(ctx, exec, roleName)
+	role, err := queries.FindRoleByName(ctx, exec, roleName)
 	if err != nil {
 		return err
 	}
@@ -77,7 +77,7 @@ func (srv *StripeService) FindAndUpsertAllProducts(ctx context.Context, exec bob
 		return err
 	}
 	for _, product := range products {
-		err = repository.UpsertProductFromStripe(ctx, exec, product)
+		err = queries.UpsertProductFromStripe(ctx, exec, product)
 		if err != nil {
 			srv.logger.Error("error upserting product", "product", product.ID, "error", err)
 			continue
@@ -93,7 +93,7 @@ func (srv *StripeService) FindAndUpsertAllPrices(ctx context.Context, exec bob.E
 		return err
 	}
 	for _, price := range prices {
-		err = repository.UpsertPriceFromStripe(ctx, exec, price)
+		err = queries.UpsertPriceFromStripe(ctx, exec, price)
 		if err != nil {
 			srv.logger.Error("error upserting price", "price", price.ID, "error", err)
 			continue

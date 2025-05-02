@@ -5,7 +5,7 @@ import (
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
-	"github.com/tkahng/authgo/internal/repository"
+	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
 )
 
@@ -19,13 +19,13 @@ type ConstraintChecker interface {
 }
 
 type ConstraintCheckerService struct {
-	db  repository.Queryer
+	db  queries.Queryer
 	ctx context.Context
 }
 
 // CannotHaveValidSubscription implements ConstraintChecker.
 func (c *ConstraintCheckerService) CannotHaveValidSubscription(userId uuid.UUID) error {
-	subscription, err := repository.FindLatestActiveSubscriptionByUserId(c.ctx, c.db, userId)
+	subscription, err := queries.FindLatestActiveSubscriptionByUserId(c.ctx, c.db, userId)
 	if err != nil {
 		return err
 	}
@@ -60,7 +60,7 @@ func (c *ConstraintCheckerService) CannotBeSuperUserEmailAndRoleName(email strin
 	return nil
 }
 
-func NewConstraintCheckerService(ctx context.Context, db repository.Queryer) *ConstraintCheckerService {
+func NewConstraintCheckerService(ctx context.Context, db queries.Queryer) *ConstraintCheckerService {
 	return &ConstraintCheckerService{
 		db:  db,
 		ctx: ctx,
@@ -69,7 +69,7 @@ func NewConstraintCheckerService(ctx context.Context, db repository.Queryer) *Co
 
 // CannotBeSuperUser implements ConstraintChecker.
 func (c *ConstraintCheckerService) CannotBeSuperUserID(userId uuid.UUID) error {
-	user, err := repository.FindUserById(c.ctx, c.db, userId)
+	user, err := queries.FindUserById(c.ctx, c.db, userId)
 	if err != nil {
 		return err
 	}

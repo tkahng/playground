@@ -9,7 +9,7 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/db/models"
-	"github.com/tkahng/authgo/internal/repository"
+	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 )
@@ -40,11 +40,11 @@ func (api *Api) AdminUsers(ctx context.Context, input *struct {
 }) (*shared.PaginatedOutput[*UserDetail], error) {
 	db := api.app.Db()
 	fmt.Printf("AdminUsers: %v", input.UserListParams)
-	users, err := repository.ListUsers(ctx, db, &input.UserListParams)
+	users, err := queries.ListUsers(ctx, db, &input.UserListParams)
 	if err != nil {
 		return nil, err
 	}
-	count, err := repository.CountUsers(ctx, db, &input.UserListFilter)
+	count, err := queries.CountUsers(ctx, db, &input.UserListFilter)
 	if err != nil {
 		return nil, err
 	}
@@ -107,7 +107,7 @@ func (api *Api) AdminUsersCreate(ctx context.Context, input *struct {
 }, error) {
 	db := api.app.Db()
 	action := api.app.NewAuthActions()
-	existingUser, err := repository.FindUserByEmail(ctx, db, input.Body.Email)
+	existingUser, err := queries.FindUserByEmail(ctx, db, input.Body.Email)
 	if err != nil {
 		return nil, err
 	}
@@ -156,7 +156,7 @@ func (api *Api) AdminUsersDelete(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	err = repository.DeleteUsers(ctx, db, input.ID)
+	err = queries.DeleteUsers(ctx, db, input.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -183,7 +183,7 @@ func (api *Api) AdminUsersUpdate(ctx context.Context, input *struct {
 	Body shared.UserMutationInput
 }) (*struct{}, error) {
 	db := api.app.Db()
-	err := repository.UpdateUser(ctx, db, input.ID, &input.Body)
+	err := queries.UpdateUser(ctx, db, input.ID, &input.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -219,7 +219,7 @@ func (api *Api) AdminUsersUpdatePassword(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	err = repository.UpdateUserPassword(ctx, db, input.ID, input.Body.Password)
+	err = queries.UpdateUserPassword(ctx, db, input.ID, input.Body.Password)
 	if err != nil {
 		return nil, err
 	}
@@ -245,7 +245,7 @@ func (api *Api) AdminUsersGet(ctx context.Context, input *struct {
 	UserID uuid.UUID `path:"user-id" json:"user_id" format:"uuid" required:"true"`
 }) (*struct{ Body *shared.User }, error) {
 	db := api.app.Db()
-	user, err := repository.FindUserById(ctx, db, input.UserID)
+	user, err := queries.FindUserById(ctx, db, input.UserID)
 	if err != nil {
 		return nil, err
 	}

@@ -7,7 +7,7 @@ import (
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/tkahng/authgo/internal/core"
-	"github.com/tkahng/authgo/internal/repository"
+	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
 )
 
@@ -36,7 +36,7 @@ func (api *Api) Stats(ctx context.Context, input *struct{}) (*StatsResponse, err
 	if user == nil {
 		return nil, errors.New("user not found")
 	}
-	stats, err := repository.GetUserTaskStats(ctx, db, user.User.ID)
+	stats, err := queries.GetUserTaskStats(ctx, db, user.User.ID)
 	if err != nil {
 		return nil, err
 	}

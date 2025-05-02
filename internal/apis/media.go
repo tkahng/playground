@@ -12,7 +12,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/core"
 	"github.com/tkahng/authgo/internal/db/models"
-	"github.com/tkahng/authgo/internal/repository"
+	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
 )
 
@@ -55,7 +55,7 @@ func (api *Api) UploadMedia(ctx context.Context, input *struct {
 			if err != nil {
 				return nil, err
 			}
-			_, err = repository.CreateMedia(ctx, db, &models.Medium{
+			_, err = queries.CreateMedia(ctx, db, &models.Medium{
 				UserID:           null.From(user.User.ID),
 				Disk:             dto.Disk,
 				Directory:        dto.Directory,
@@ -78,7 +78,7 @@ func (api *Api) UploadMedia(ctx context.Context, input *struct {
 			if err != nil {
 				return nil, err
 			}
-			_, err = repository.CreateMedia(ctx, db, &models.Medium{
+			_, err = queries.CreateMedia(ctx, db, &models.Medium{
 				UserID:           null.From(user.User.ID),
 				Disk:             dto.Disk,
 				Directory:        dto.Directory,
@@ -120,7 +120,7 @@ func (api *Api) GetMedia(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	media, err := repository.FindMediaByID(ctx, db, id)
+	media, err := queries.FindMediaByID(ctx, db, id)
 	if err != nil {
 		return nil, err
 	}
@@ -154,7 +154,7 @@ func (api *Api) MedialListOperation(path string /** /media */) huma.Operation {
 
 func (api *Api) MediaList(ctx context.Context, input *shared.MediaListParams) (*shared.PaginatedOutput[*shared.Media], error) {
 	db := api.app.Db()
-	medias, err := repository.ListMedia(ctx, db, input)
+	medias, err := queries.ListMedia(ctx, db, input)
 	if err != nil {
 		return nil, err
 	}
@@ -172,7 +172,7 @@ func (api *Api) MediaList(ctx context.Context, input *shared.MediaListParams) (*
 			UpdatedAt: media.UpdatedAt,
 		})
 	}
-	count, err := repository.CountMedia(ctx, db, &input.MediaListFilter)
+	count, err := queries.CountMedia(ctx, db, &input.MediaListFilter)
 	if err != nil {
 		return nil, err
 	}

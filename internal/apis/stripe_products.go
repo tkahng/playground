@@ -6,7 +6,7 @@ import (
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/tkahng/authgo/internal/db/models"
-	"github.com/tkahng/authgo/internal/repository"
+	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 )
@@ -37,7 +37,7 @@ func (api *Api) StripeProductsWithPrices(ctx context.Context, inputt *StripeProd
 		},
 		SortParams: inputt.SortParams,
 	}
-	users, err := repository.ListProducts(ctx, db, input)
+	users, err := queries.ListProducts(ctx, db, input)
 	if err != nil {
 		return nil, err
 	}
@@ -49,7 +49,7 @@ func (api *Api) StripeProductsWithPrices(ctx context.Context, inputt *StripeProd
 		return nil, err
 	}
 
-	count, err := repository.CountProducts(ctx, db, &input.StripeProductListFilter)
+	count, err := queries.CountProducts(ctx, db, &input.StripeProductListFilter)
 	if err != nil {
 		return nil, err
 	}

@@ -6,7 +6,7 @@ import (
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/tkahng/authgo/internal/core"
-	"github.com/tkahng/authgo/internal/repository"
+	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 )
@@ -36,7 +36,7 @@ func (api *Api) Me(ctx context.Context, input *struct{}) (*MeOutput, error) {
 	if claims == nil {
 		return nil, huma.Error404NotFound("User not found")
 	}
-	user, err := repository.FindUserById(ctx, db, claims.User.ID)
+	user, err := queries.FindUserById(ctx, db, claims.User.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +79,7 @@ func (api *Api) MeUpdate(ctx context.Context, input *struct {
 	if claims == nil {
 		return nil, huma.Error404NotFound("User not found")
 	}
-	err := repository.UpdateMe(ctx, db, claims.User.ID, &input.Body)
+	err := queries.UpdateMe(ctx, db, claims.User.ID, &input.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -117,7 +117,7 @@ func (api *Api) MeDelete(ctx context.Context, input *struct{}) (*struct{}, error
 	if err != nil {
 		return nil, err
 	}
-	err = repository.DeleteUsers(ctx, db, claims.User.ID)
+	err = queries.DeleteUsers(ctx, db, claims.User.ID)
 	if err != nil {
 		return nil, err
 	}

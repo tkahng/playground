@@ -7,7 +7,7 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/tkahng/authgo/internal/core"
 	"github.com/tkahng/authgo/internal/db/models"
-	"github.com/tkahng/authgo/internal/repository"
+	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
 )
 
@@ -35,7 +35,7 @@ func (api *Api) MyStripeSubscriptions(ctx context.Context, input *struct{}) (*st
 	if user == nil {
 		return nil, huma.Error401Unauthorized("not authorized")
 	}
-	subscriptions, err := repository.FindLatestActiveSubscriptionWithPriceByUserId(ctx, db, user.User.ID)
+	subscriptions, err := queries.FindLatestActiveSubscriptionWithPriceByUserId(ctx, db, user.User.ID)
 	if err != nil {
 		return nil, err
 	}

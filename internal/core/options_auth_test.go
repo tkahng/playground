@@ -7,7 +7,7 @@ import (
 
 	"github.com/stephenafamo/bob"
 	"github.com/tkahng/authgo/internal/core"
-	"github.com/tkahng/authgo/internal/repository"
+	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/test"
 	"github.com/tkahng/authgo/internal/tools/security"
 )
@@ -16,7 +16,7 @@ func TestGetOrSetEncryptedAuthOptions(t *testing.T) {
 	ctx, db, pl := test.DbSetup()
 	encryptionKey := security.RandomString(32)
 	t.Cleanup(func() {
-		repository.TruncateModels(ctx, db)
+		queries.TruncateModels(ctx, db)
 		pl.Close()
 	})
 	type args struct {

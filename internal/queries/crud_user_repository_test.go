@@ -1,4 +1,4 @@
-package repository_test
+package queries_test
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/db/seeders"
-	"github.com/tkahng/authgo/internal/repository"
+	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/test"
 )
@@ -15,7 +15,7 @@ import (
 func TestListUsers(t *testing.T) {
 	ctx, db, pl := test.DbSetup()
 	t.Cleanup(func() {
-		repository.TruncateModels(ctx, db)
+		queries.TruncateModels(ctx, db)
 		pl.Close()
 	})
 	_ = seeders.UserCredentialsFactory(ctx, db, 10)
@@ -23,7 +23,7 @@ func TestListUsers(t *testing.T) {
 	_ = seeders.UserOauthFactory(ctx, db, 10, models.ProvidersGithub)
 	type args struct {
 		ctx   context.Context
-		db    repository.Queryer
+		db    queries.Queryer
 		input *shared.UserListParams
 		count int64
 	}
@@ -126,7 +126,7 @@ func TestListUsers(t *testing.T) {
 			// 	repository.TruncateModels(tt.args.ctx, tt.args.db)
 			// })
 			// f.NewUser().CreateMany(tt.args.ctx, tt.args.db, int(tt.args.count))
-			got, err := repository.ListUsers(tt.args.ctx, tt.args.db, tt.args.input)
+			got, err := queries.ListUsers(tt.args.ctx, tt.args.db, tt.args.input)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ListUsers() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -141,7 +141,7 @@ func TestListUsers(t *testing.T) {
 func TestDeleteUsers(t *testing.T) {
 	type args struct {
 		ctx    context.Context
-		db     repository.Queryer
+		db     queries.Queryer
 		userId uuid.UUID
 	}
 	tests := []struct {
@@ -153,7 +153,7 @@ func TestDeleteUsers(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := repository.DeleteUsers(tt.args.ctx, tt.args.db, tt.args.userId); (err != nil) != tt.wantErr {
+			if err := queries.DeleteUsers(tt.args.ctx, tt.args.db, tt.args.userId); (err != nil) != tt.wantErr {
 				t.Errorf("DeleteUsers() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

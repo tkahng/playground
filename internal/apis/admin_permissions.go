@@ -9,7 +9,7 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/db/models"
-	"github.com/tkahng/authgo/internal/repository"
+	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 )
@@ -38,7 +38,7 @@ func (api *Api) AdminUserPermissionsDelete(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	user, err := repository.FindUserById(ctx, db, id)
+	user, err := queries.FindUserById(ctx, db, id)
 	if err != nil {
 		return nil, err
 	}
@@ -49,7 +49,7 @@ func (api *Api) AdminUserPermissionsDelete(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	permission, err := repository.FindPermissionById(ctx, db, permissionId)
+	permission, err := queries.FindPermissionById(ctx, db, permissionId)
 	if err != nil {
 		return nil, err
 	}
@@ -92,7 +92,7 @@ func (api *Api) AdminUserPermissionsCreate(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	user, err := repository.FindUserById(ctx, db, id)
+	user, err := queries.FindUserById(ctx, db, id)
 	if err != nil {
 		return nil, err
 	}
@@ -100,9 +100,9 @@ func (api *Api) AdminUserPermissionsCreate(ctx context.Context, input *struct {
 		return nil, huma.Error404NotFound("User not found")
 	}
 
-	permissionIds := repository.ParseUUIDs(input.Body.PermissionIds)
+	permissionIds := queries.ParseUUIDs(input.Body.PermissionIds)
 
-	permissions, err := repository.FindPermissionsByIds(ctx, db, permissionIds)
+	permissions, err := queries.FindPermissionsByIds(ctx, db, permissionIds)
 	if err != nil {
 		return nil, err
 	}
@@ -134,7 +134,7 @@ func (api *Api) AdminUserPermissionSourceListOperation(path string) huma.Operati
 
 func (api *Api) AdminUserPermissionSourceList(ctx context.Context, input *struct {
 	shared.UserPermissionsListParams
-}) (*shared.PaginatedOutput[repository.PermissionSource], error) {
+}) (*shared.PaginatedOutput[queries.PermissionSource], error) {
 	db := api.app.Db()
 	id, err := uuid.Parse(input.UserId)
 	if err != nil {
@@ -142,29 +142,29 @@ func (api *Api) AdminUserPermissionSourceList(ctx context.Context, input *struct
 	}
 	limit := input.PerPage
 	offset := input.Page * input.PerPage
-	var userPermissionSources []repository.PermissionSource
+	var userPermissionSources []queries.PermissionSource
 	var count int64
 	if input.Reverse {
-		userPermissionSources, err = repository.ListUserNotPermissionsSource(ctx, db, id, limit, offset)
+		userPermissionSources, err = queries.ListUserNotPermissionsSource(ctx, db, id, limit, offset)
 		if err != nil {
 			return nil, err
 		}
-		count, err = repository.CountNotUserPermissionSource(ctx, db, id)
+		count, err = queries.CountNotUserPermissionSource(ctx, db, id)
 		if err != nil {
 			return nil, err
 		}
 	} else {
-		userPermissionSources, err = repository.ListUserPermissionsSource(ctx, db, id, limit, offset)
+		userPermissionSources, err = queries.ListUserPermissionsSource(ctx, db, id, limit, offset)
 		if err != nil {
 			return nil, err
 		}
-		count, err = repository.CountUserPermissionSource(ctx, db, id)
+		count, err = queries.CountUserPermissionSource(ctx, db, id)
 		if err != nil {
 			return nil, err
 		}
 	}
-	return &shared.PaginatedOutput[repository.PermissionSource]{
-		Body: shared.PaginatedResponse[repository.PermissionSource]{
+	return &shared.PaginatedOutput[queries.PermissionSource]{
+		Body: shared.PaginatedResponse[queries.PermissionSource]{
 
 			Data: userPermissionSources,
 			Meta: shared.GenerateMeta(input.PaginatedInput, count),
@@ -191,11 +191,11 @@ func (api *Api) AdminPermissionsList(ctx context.Context, input *struct {
 	shared.PermissionsListParams
 }) (*shared.PaginatedOutput[*shared.Permission], error) {
 	db := api.app.Db()
-	permissions, err := repository.ListPermissions(ctx, db, &input.PermissionsListParams)
+	permissions, err := queries.ListPermissions(ctx, db, &input.PermissionsListParams)
 	if err != nil {
 		return nil, err
 	}
-	count, err := repository.CountPermissions(ctx, db, &input.PermissionsListFilter)
+	count, err := queries.CountPermissions(ctx, db, &input.PermissionsListFilter)
 	if err != nil {
 		return nil, err
 	}
@@ -234,7 +234,7 @@ func (api *Api) AdminPermissionsCreate(ctx context.Context, input *struct {
 	Body PermissionCreateInput
 }) (*struct{ Body shared.Permission }, error) {
 	db := api.app.Db()
-	perm, err := repository.FindPermissionByName(ctx, db, input.Body.Name)
+	perm, err := queries.FindPermissionByName(ctx, db, input.Body.Name)
 	if err != nil {
 		return nil, err
 
@@ -242,7 +242,7 @@ func (api *Api) AdminPermissionsCreate(ctx context.Context, input *struct {
 	if perm != nil {
 		return nil, huma.Error409Conflict("Permission already exists")
 	}
-	data, err := repository.CreatePermission(ctx, db, &repository.CreatePermissionDto{
+	data, err := queries.CreatePermission(ctx, db, &queries.CreatePermissionDto{
 		Name:        input.Body.Name,
 		Description: input.Body.Description,
 	})
@@ -281,7 +281,7 @@ func (api *Api) AdminPermissionsDelete(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	permission, err := repository.FindPermissionById(ctx, db, id)
+	permission, err := queries.FindPermissionById(ctx, db, id)
 	if err != nil {
 		return nil, err
 	}
@@ -294,7 +294,7 @@ func (api *Api) AdminPermissionsDelete(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	err = repository.DeletePermission(ctx, db, permission.ID)
+	err = queries.DeletePermission(ctx, db, permission.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -328,7 +328,7 @@ func (api *Api) AdminPermissionsUpdate(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	permission, err := repository.FindPermissionById(ctx, db, id)
+	permission, err := queries.FindPermissionById(ctx, db, id)
 	if err != nil {
 		return nil, err
 	}
@@ -381,7 +381,7 @@ func (api *Api) AdminPermissionsGet(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	permission, err := repository.FindPermissionById(ctx, db, id)
+	permission, err := queries.FindPermissionById(ctx, db, id)
 	if err != nil {
 		return nil, err
 	}

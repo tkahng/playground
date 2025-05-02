@@ -10,7 +10,7 @@ import (
 	"github.com/tkahng/authgo/internal/core"
 	"github.com/tkahng/authgo/internal/db"
 	"github.com/tkahng/authgo/internal/db/models"
-	"github.com/tkahng/authgo/internal/repository"
+	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/ai/googleai"
 	"github.com/tkahng/authgo/internal/tools/mapper"
@@ -42,11 +42,11 @@ func (api *Api) TaskProjectList(ctx context.Context, input *shared.TaskProjectsL
 		return nil, huma.Error401Unauthorized("Unauthorized")
 	}
 	input.TaskProjectsListFilter.UserID = userInfo.User.ID.String()
-	taskProject, err := repository.ListTaskProjects(ctx, db, input)
+	taskProject, err := queries.ListTaskProjects(ctx, db, input)
 	if err != nil {
 		return nil, err
 	}
-	total, err := repository.CountTaskProjects(ctx, db, &input.TaskProjectsListFilter)
+	total, err := queries.CountTaskProjects(ctx, db, &input.TaskProjectsListFilter)
 	if err != nil {
 		return nil, err
 	}
@@ -120,7 +120,7 @@ func (api *Api) TaskProjectCreate(ctx context.Context, input *struct {
 }
 
 func createTaskProjectWithTasks(ctx context.Context, db *db.Queries, userId uuid.UUID, input shared.CreateTaskProjectWithTasksDTO) (*models.TaskProject, error) {
-	taskProject, err := repository.CreateTaskProjectWithTasks(ctx, db, userId, &input)
+	taskProject, err := queries.CreateTaskProjectWithTasks(ctx, db, userId, &input)
 	if err != nil {
 		return nil, err
 	}
@@ -217,7 +217,7 @@ func (api *Api) TaskProjectUpdate(ctx context.Context, input *shared.UpdateTaskP
 		return nil, huma.Error400BadRequest("Invalid task project id")
 	}
 	payload := input.Body
-	err = repository.UpdateTaskProject(ctx, db, id, &payload)
+	err = queries.UpdateTaskProject(ctx, db, id, &payload)
 	if err != nil {
 		return nil, err
 	}
@@ -251,7 +251,7 @@ func (api *Api) TaskProjectDelete(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, huma.Error400BadRequest("Invalid task project id")
 	}
-	err = repository.DeleteTaskProject(ctx, db, id)
+	err = queries.DeleteTaskProject(ctx, db, id)
 	if err != nil {
 		return nil, err
 	}
@@ -286,7 +286,7 @@ func (api *Api) TaskProjectGet(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, huma.Error400BadRequest("Invalid task project id")
 	}
-	taskProject, err := repository.FindTaskProjectByID(ctx, db, id)
+	taskProject, err := queries.FindTaskProjectByID(ctx, db, id)
 	if err != nil {
 		return nil, err
 	}
@@ -337,12 +337,12 @@ func (api *Api) TaskProjectTasksCreate(ctx context.Context, input *shared.Create
 		return nil, huma.Error400BadRequest("Invalid task project id")
 	}
 	payload := input.Body
-	order, err := repository.FindLastTaskOrder(ctx, db, id)
+	order, err := queries.FindLastTaskOrder(ctx, db, id)
 	if err != nil {
 		return nil, err
 	}
 	payload.Order = order
-	task, err := repository.CreateTaskWithChildren(ctx, db, userInfo.User.ID, id, &payload)
+	task, err := queries.CreateTaskWithChildren(ctx, db, userInfo.User.ID, id, &payload)
 	if err != nil {
 		return nil, err
 	}

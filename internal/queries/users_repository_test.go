@@ -1,4 +1,4 @@
-package repository_test
+package queries_test
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/db/models/factory"
-	"github.com/tkahng/authgo/internal/repository"
+	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/test"
 )
 
@@ -20,12 +20,12 @@ func TestUpdateUserEmailConfirm(t *testing.T) {
 
 	ctx, dbx, pl := test.DbSetup()
 	t.Cleanup(func() {
-		repository.TruncateModels(ctx, dbx)
+		queries.TruncateModels(ctx, dbx)
 		pl.Close()
 	})
 	type args struct {
 		ctx    context.Context
-		db     repository.Queryer
+		db     queries.Queryer
 		userId uuid.UUID
 	}
 	tests := []struct {
@@ -52,7 +52,7 @@ func TestUpdateUserEmailConfirm(t *testing.T) {
 				factory.UserMods.ID(tt.args.userId),
 				factory.UserMods.RandomEmail(nil),
 			).Create(ctx, dbx)
-			got, err := repository.UpdateUserEmailConfirm(tt.args.ctx, tt.args.db, tt.args.userId, time.Now())
+			got, err := queries.UpdateUserEmailConfirm(tt.args.ctx, tt.args.db, tt.args.userId, time.Now())
 			if (err != nil) != tt.wantErr {
 				t.Errorf("UpdateUserEmailConfirm() error = %v, wantErr %v", err, tt.wantErr)
 				return

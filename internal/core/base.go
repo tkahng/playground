@@ -7,7 +7,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/tkahng/authgo/internal/conf"
 	"github.com/tkahng/authgo/internal/db"
-	"github.com/tkahng/authgo/internal/repository"
+	"github.com/tkahng/authgo/internal/queries"
 
 	"github.com/tkahng/authgo/internal/tools/filesystem"
 	"github.com/tkahng/authgo/internal/tools/logger"
@@ -111,6 +111,6 @@ func NewBaseApp(pool *pgxpool.Pool, cfg conf.EnvConfig) *BaseApp {
 func (app *BaseApp) Bootstrap() {
 	ctx := context.Background()
 	db := app.Db()
-	repository.EnsureRoleAndPermissions(ctx, db, "superuser", "superuser")
-	repository.EnsureRoleAndPermissions(ctx, db, "basic", "basic")
+	queries.EnsureRoleAndPermissions(ctx, db, "superuser", "superuser")
+	queries.EnsureRoleAndPermissions(ctx, db, "basic", "basic")
 }

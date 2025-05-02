@@ -11,7 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/stephenafamo/bob/dialect/psql"
 	"github.com/tkahng/authgo/internal/db/models"
-	"github.com/tkahng/authgo/internal/repository"
+	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 )
@@ -35,7 +35,7 @@ func (api *Api) AdminRolesList(ctx context.Context, input *struct {
 	shared.RolesListParams
 }) (*shared.PaginatedOutput[*shared.RoleWithPermissions], error) {
 	db := api.app.Db()
-	roles, err := repository.ListRoles(ctx, db, &input.RolesListParams)
+	roles, err := queries.ListRoles(ctx, db, &input.RolesListParams)
 	if err != nil {
 		return nil, err
 	}
@@ -45,7 +45,7 @@ func (api *Api) AdminRolesList(ctx context.Context, input *struct {
 			return nil, err
 		}
 	}
-	count, err := repository.CountRoles(ctx, db, &input.RoleListFilter)
+	count, err := queries.CountRoles(ctx, db, &input.RoleListFilter)
 	if err != nil {
 		return nil, err
 	}
@@ -85,14 +85,14 @@ func (api *Api) AdminRolesCreate(ctx context.Context, input *struct {
 	Body shared.Role
 }, error) {
 	db := api.app.Db()
-	data, err := repository.FindRoleByName(ctx, db, input.Body.Name)
+	data, err := queries.FindRoleByName(ctx, db, input.Body.Name)
 	if err != nil {
 		return nil, err
 	}
 	if data != nil {
 		return nil, huma.Error409Conflict("Role already exists")
 	}
-	role, err := repository.CreateRole(ctx, db, &repository.CreateRoleDto{
+	role, err := queries.CreateRole(ctx, db, &queries.CreateRoleDto{
 		Name:        input.Body.Name,
 		Description: input.Body.Description,
 	})
@@ -130,7 +130,7 @@ func (api *Api) AdminRolesDelete(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	role, err := repository.FindRoleById(ctx, db, id)
+	role, err := queries.FindRoleById(ctx, db, id)
 	if err != nil {
 		return nil, err
 	}
@@ -143,7 +143,7 @@ func (api *Api) AdminRolesDelete(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	err = repository.DeleteRole(ctx, db, role.ID)
+	err = queries.DeleteRole(ctx, db, role.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -176,7 +176,7 @@ func (api *Api) AdminRolesUpdate(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	role, err := repository.FindRoleById(ctx, db, id)
+	role, err := queries.FindRoleById(ctx, db, id)
 	if err != nil {
 		return nil, err
 	}
@@ -227,7 +227,7 @@ func (api *Api) AdminUserRolesDelete(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	user, err := repository.FindUserById(ctx, db, id)
+	user, err := queries.FindUserById(ctx, db, id)
 	if err != nil {
 		return nil, err
 	}
@@ -238,7 +238,7 @@ func (api *Api) AdminUserRolesDelete(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	role, err := repository.FindRoleById(ctx, db, roleID)
+	role, err := queries.FindRoleById(ctx, db, roleID)
 	if err != nil {
 		return nil, err
 	}
@@ -285,7 +285,7 @@ func (api *Api) AdminUserRolesCreate(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	user, err := repository.FindUserById(ctx, db, id)
+	user, err := queries.FindUserById(ctx, db, id)
 	if err != nil {
 		return nil, err
 	}
@@ -293,9 +293,9 @@ func (api *Api) AdminUserRolesCreate(ctx context.Context, input *struct {
 		return nil, huma.Error404NotFound("User not found")
 	}
 
-	roleIds := repository.ParseUUIDs(input.Body.RolesIds)
+	roleIds := queries.ParseUUIDs(input.Body.RolesIds)
 
-	roles, err := repository.FindRolesByIds(ctx, db, roleIds)
+	roles, err := queries.FindRolesByIds(ctx, db, roleIds)
 	if err != nil {
 		return nil, err
 	}
@@ -335,7 +335,7 @@ func (api *Api) AdminUserRolesUpdate(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	user, err := repository.FindUserById(ctx, db, id)
+	user, err := queries.FindUserById(ctx, db, id)
 	if err != nil {
 		return nil, err
 	}
@@ -350,7 +350,7 @@ func (api *Api) AdminUserRolesUpdate(ctx context.Context, input *struct {
 		}
 		roleIds[i] = id
 	}
-	roles, err := repository.FindRolesByIds(ctx, db, roleIds)
+	roles, err := queries.FindRolesByIds(ctx, db, roleIds)
 	if err != nil {
 		return nil, err
 	}
@@ -402,7 +402,7 @@ func (api *Api) AdminRolesUpdatePermissions(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	role, err := repository.FindRoleById(ctx, db, id)
+	role, err := queries.FindRoleById(ctx, db, id)
 	if err != nil {
 		return nil, err
 	}
@@ -417,7 +417,7 @@ func (api *Api) AdminRolesUpdatePermissions(ctx context.Context, input *struct {
 		}
 		permissionIds[i] = id
 	}
-	permissions, err := repository.FindPermissionsByIds(ctx, db, permissionIds)
+	permissions, err := queries.FindPermissionsByIds(ctx, db, permissionIds)
 	if err != nil {
 		return nil, err
 	}
@@ -464,7 +464,7 @@ func (api *Api) AdminRolesGet(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	role, err := repository.FindRoleById(ctx, db, id)
+	role, err := queries.FindRoleById(ctx, db, id)
 	if err != nil {
 		return nil, err
 	}
@@ -515,15 +515,15 @@ func (api *Api) AdminRolesCreatePermissions(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	role, err := repository.FindRoleById(ctx, db, id)
+	role, err := queries.FindRoleById(ctx, db, id)
 	if err != nil {
 		return nil, err
 	}
 	if role == nil {
 		return nil, huma.Error404NotFound("Role not found")
 	}
-	permissionIds := repository.ParseUUIDs(input.Body.PermissionIDs)
-	permissions, err := repository.FindPermissionsByIds(ctx, db, permissionIds)
+	permissionIds := queries.ParseUUIDs(input.Body.PermissionIDs)
+	permissions, err := queries.FindPermissionsByIds(ctx, db, permissionIds)
 	if err != nil {
 		return nil, err
 	}
@@ -559,7 +559,7 @@ func (api *Api) AdminRolesDeletePermissions(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	role, err := repository.FindRoleById(ctx, db, id)
+	role, err := queries.FindRoleById(ctx, db, id)
 	if err != nil {
 		return nil, err
 	}
@@ -570,7 +570,7 @@ func (api *Api) AdminRolesDeletePermissions(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	permission, err := repository.FindPermissionById(ctx, db, permissionId)
+	permission, err := queries.FindPermissionById(ctx, db, permissionId)
 	if err != nil {
 		return nil, err
 	}

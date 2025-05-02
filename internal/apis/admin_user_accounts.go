@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/danielgtaylor/huma/v2"
-	"github.com/tkahng/authgo/internal/repository"
+	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 )
@@ -31,11 +31,11 @@ func (api *Api) AdminUserAccounts(ctx context.Context, input *shared.UserAccount
 	}
 	db := api.app.Db()
 
-	data, err := repository.ListUserAccounts(ctx, db, input)
+	data, err := queries.ListUserAccounts(ctx, db, input)
 	if err != nil {
 		return nil, err
 	}
-	count, err := repository.CountUserAccounts(ctx, db, &input.UserAccountListFilter)
+	count, err := queries.CountUserAccounts(ctx, db, &input.UserAccountListFilter)
 	if err != nil {
 		return nil, err
 	}

@@ -10,7 +10,7 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/core"
-	"github.com/tkahng/authgo/internal/repository"
+	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
 )
 
@@ -55,7 +55,7 @@ func CheckTaskOwnerMiddleware(api huma.API, app core.App) func(ctx huma.Context,
 			huma.WriteErr(api, ctx, http.StatusBadRequest, "invalid task id", err)
 			return
 		}
-		task, err := repository.FindTaskByID(rawCtx, db, id)
+		task, err := queries.FindTaskByID(rawCtx, db, id)
 		if err != nil {
 			huma.WriteErr(api, ctx, http.StatusInternalServerError, "error getting task", err)
 			return

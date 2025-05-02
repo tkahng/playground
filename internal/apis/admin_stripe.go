@@ -8,7 +8,7 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/db/models"
-	"github.com/tkahng/authgo/internal/repository"
+	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 )
@@ -32,7 +32,7 @@ func (api *Api) AdminStripeSubscriptions(ctx context.Context,
 	input *shared.StripeSubscriptionListParams,
 ) (*shared.PaginatedOutput[*shared.SubscriptionWithData], error) {
 	db := api.app.Db()
-	subscriptions, err := repository.ListSubscriptions(ctx, db, input)
+	subscriptions, err := queries.ListSubscriptions(ctx, db, input)
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +74,7 @@ func (api *Api) AdminStripeSubscriptions(ctx context.Context,
 		}
 		return ss
 	})
-	count, err := repository.CountSubscriptions(ctx, db, &input.StripeSubscriptionListFilter)
+	count, err := queries.CountSubscriptions(ctx, db, &input.StripeSubscriptionListFilter)
 	if err != nil {
 		return nil, err
 	}
@@ -109,7 +109,7 @@ func (api *Api) AdminStripeSubscriptionsGet(ctx context.Context,
 	if input == nil || input.SubscriptionID == "" {
 		return nil, huma.Error400BadRequest("subscription_id is required")
 	}
-	subscription, err := repository.FindSubscriptionById(ctx, db, input.SubscriptionID)
+	subscription, err := queries.FindSubscriptionById(ctx, db, input.SubscriptionID)
 	if err != nil {
 		return nil, err
 	}
@@ -173,7 +173,7 @@ func (api *Api) AdminStripeProducts(ctx context.Context,
 	input *shared.StripeProductListParams,
 ) (*shared.PaginatedOutput[*shared.StripeProductWithData], error) {
 	db := api.app.Db()
-	products, err := repository.ListProducts(ctx, db, input)
+	products, err := queries.ListProducts(ctx, db, input)
 	if err != nil {
 		return nil, err
 	}
@@ -204,7 +204,7 @@ func (api *Api) AdminStripeProducts(ctx context.Context,
 		}
 		return spwd
 	})
-	count, err := repository.CountProducts(ctx, db, &input.StripeProductListFilter)
+	count, err := queries.CountProducts(ctx, db, &input.StripeProductListFilter)
 	if err != nil {
 		return nil, err
 	}
@@ -237,7 +237,7 @@ func (api *Api) AdminStripeProductsGet(ctx context.Context,
 	if input == nil || input.ProductID == "" {
 		return nil, huma.Error400BadRequest("product_id is required")
 	}
-	product, err := repository.FindProductByStripeId(ctx, db, input.ProductID)
+	product, err := queries.FindProductByStripeId(ctx, db, input.ProductID)
 	if err != nil {
 		return nil, err
 	}
@@ -291,7 +291,7 @@ func (api *Api) AdminStripeProductsRolesCreate(ctx context.Context, input *struc
 }) (*struct{}, error) {
 	db := api.app.Db()
 	id := input.ProductID
-	user, err := repository.FindProductByStripeId(ctx, db, id)
+	user, err := queries.FindProductByStripeId(ctx, db, id)
 	if err != nil {
 		return nil, err
 	}
@@ -299,9 +299,9 @@ func (api *Api) AdminStripeProductsRolesCreate(ctx context.Context, input *struc
 		return nil, huma.Error404NotFound("Product not found")
 	}
 
-	roleIds := repository.ParseUUIDs(input.Body.RolesIds)
+	roleIds := queries.ParseUUIDs(input.Body.RolesIds)
 
-	roles, err := repository.FindRolesByIds(ctx, db, roleIds)
+	roles, err := queries.FindRolesByIds(ctx, db, roleIds)
 	if err != nil {
 		return nil, err
 	}
@@ -333,7 +333,7 @@ func (api *Api) AdminStripeProductsRolesDelete(ctx context.Context, input *struc
 }) (*struct{}, error) {
 	db := api.app.Db()
 	id := input.ProductID
-	product, err := repository.FindProductByStripeId(ctx, db, id)
+	product, err := queries.FindProductByStripeId(ctx, db, id)
 	if err != nil {
 		return nil, err
 	}
@@ -346,7 +346,7 @@ func (api *Api) AdminStripeProductsRolesDelete(ctx context.Context, input *struc
 		return nil, huma.Error400BadRequest("role_id is not a valid UUID")
 	}
 
-	role, err := repository.FindRoleById(ctx, db, roleId)
+	role, err := queries.FindRoleById(ctx, db, roleId)
 	if err != nil {
 		return nil, err
 	}
