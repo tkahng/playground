@@ -13,8 +13,7 @@ import (
 	"github.com/stephenafamo/bob/dialect/psql"
 	"github.com/stephenafamo/bob/dialect/psql/im"
 	"github.com/stephenafamo/bob/dialect/psql/sm"
-	crudModels "github.com/tkahng/authgo/internal/crud/models"
-	crud "github.com/tkahng/authgo/internal/crud/repository"
+	"github.com/tkahng/authgo/internal/crud/crudrepo"
 	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/types"
@@ -396,9 +395,9 @@ func DefineTaskOrderNumberByStatus(ctx context.Context, db Queryer, taskId uuid.
 	return (element.Order + sideElements.Order) / 2, nil
 
 }
-func DefineTaskOrderNumberByStatusCrud(ctx context.Context, repo crud.Repository[crudModels.Task], taskId uuid.UUID, taskProjectId uuid.UUID, status models.TaskStatus, currentOrder float64, position int64) (float64, error) {
+func DefineTaskOrderNumberByStatusCrud(ctx context.Context, dbx Queryer, taskId uuid.UUID, taskProjectId uuid.UUID, status models.TaskStatus, currentOrder float64, position int64) (float64, error) {
 	if position == 0 {
-		res, err := repo.Get(
+		res, err := crudrepo.Task.Get(
 			ctx,
 			nil,
 			&map[string]any{
@@ -428,7 +427,7 @@ func DefineTaskOrderNumberByStatusCrud(ctx context.Context, repo crud.Repository
 		}
 		return response.Order - 1000, nil
 	}
-	ele, err := repo.Get(
+	ele, err := crudrepo.Task.Get(
 		ctx,
 		nil,
 		&map[string]any{
@@ -454,7 +453,7 @@ func DefineTaskOrderNumberByStatusCrud(ctx context.Context, repo crud.Repository
 		return element.Order, nil
 	}
 	if currentOrder > element.Order {
-		sideELe, err := repo.Get(
+		sideELe, err := crudrepo.Task.Get(
 			ctx,
 			nil,
 			&map[string]any{
@@ -480,7 +479,7 @@ func DefineTaskOrderNumberByStatusCrud(ctx context.Context, repo crud.Repository
 		sideElements := sideELe[0]
 		return (element.Order + sideElements.Order) / 2, nil
 	}
-	sideele, err := repo.Get(
+	sideele, err := crudrepo.Task.Get(
 		ctx,
 		nil,
 		&map[string]any{

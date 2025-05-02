@@ -13,16 +13,6 @@ import (
 	"github.com/tkahng/authgo/internal/types"
 )
 
-var (
-	User           = NewPostgresRepository[models.User]()
-	Role           = NewPostgresRepository[models.Role]()
-	Permission     = NewPostgresRepository[models.Permission]()
-	UserAccount    = NewPostgresRepository[models.UserAccount]()
-	UserRole       = NewPostgresRepository[models.UserRole]()
-	RolePermission = NewPostgresRepository[models.RolePermission]()
-	Token          = NewPostgresRepository[models.Token]()
-)
-
 // PostgresRepository provides CRUD operations for Postgres
 type PostgresRepository[Model any] struct {
 	builder *SQLBuilder[Model]
