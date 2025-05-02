@@ -5,7 +5,7 @@ import (
 
 	"github.com/aarondl/opt/null"
 	"github.com/google/uuid"
-	crudModels "github.com/tkahng/authgo/internal/crud/models"
+	crudModels "github.com/tkahng/authgo/internal/crud/crudModels"
 	"github.com/tkahng/authgo/internal/db/models"
 )
 

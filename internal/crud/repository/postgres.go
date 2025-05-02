@@ -9,7 +9,7 @@ import (
 
 	"github.com/stephenafamo/scan"
 	"github.com/stephenafamo/scan/pgxscan"
-	"github.com/tkahng/authgo/internal/crud/models"
+	"github.com/tkahng/authgo/internal/crud/crudModels"
 	"github.com/tkahng/authgo/internal/types"
 )
 
@@ -18,7 +18,7 @@ type PostgresRepository[Model any] struct {
 	builder *SQLBuilder[Model]
 }
 
-var _ Repository[models.User] = (*PostgresRepository[models.User])(nil)
+var _ Repository[crudModels.User] = (*PostgresRepository[crudModels.User])(nil)
 
 // NewPostgresRepository initializes a new PostgresRepository
 func NewPostgresRepository[Model any]() *PostgresRepository[Model] {

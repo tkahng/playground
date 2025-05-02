@@ -10,7 +10,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stephenafamo/scan"
 	"github.com/stephenafamo/scan/pgxscan"
-	"github.com/tkahng/authgo/internal/crud/models"
+	"github.com/tkahng/authgo/internal/crud/crudModels"
 	crud "github.com/tkahng/authgo/internal/crud/repository"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/types"
@@ -93,14 +93,14 @@ func (a *AuthAdapterBase) FindUserAccount(ctx context.Context, where *map[string
 
 // UpdateUserAccount implements AuthAdapter.
 func (a *AuthAdapterBase) UpdateUserAccount(ctx context.Context, account *shared.UserAccount) error {
-	res, err := a.repo.userAccount.PutOne(ctx, a.db, &models.UserAccount{
+	res, err := a.repo.userAccount.PutOne(ctx, a.db, &crudModels.UserAccount{
 		ID:                account.ID,
 		UserID:            account.UserID,
-		Provider:          models.Providers(account.Provider),
+		Provider:          crudModels.Providers(account.Provider),
 		ProviderAccountID: account.ProviderAccountID,
 		CreatedAt:         account.CreatedAt,
 		UpdatedAt:         account.UpdatedAt,
-		Type:              models.ProviderTypes(account.Type),
+		Type:              crudModels.ProviderTypes(account.Type),
 		AccessToken:       account.AccessToken,
 		RefreshToken:      account.RefreshToken,
 		ExpiresAt:         account.ExpiresAt,
@@ -180,7 +180,7 @@ type RolePermissionClaims struct {
 	Email       string             `json:"email" db:"email"`
 	Roles       []string           `json:"roles" db:"roles"`
 	Permissions []string           `json:"permissions" db:"permissions"`
-	Providers   []models.Providers `json:"providers" db:"providers"`
+	Providers   []crudModels.Providers `json:"providers" db:"providers"`
 }
 
 func FindUserWithRolesAndPermissionsByEmail(ctx context.Context, db crud.DBTX, email string) (*RolePermissionClaims, error) {
@@ -229,7 +229,7 @@ func (a *AuthAdapterBase) GetUserInfo(ctx context.Context, email string) (*share
 
 // CreateUser implements AuthAdapter.
 func (a *AuthAdapterBase) CreateUser(ctx context.Context, user *shared.User) (*shared.User, error) {
-	res, err := a.repo.user.PostOne(ctx, a.db, &models.User{
+	res, err := a.repo.user.PostOne(ctx, a.db, &crudModels.User{
 		Email:           user.Email,
 		Name:            user.Name,
 		Image:           user.Image,
@@ -271,14 +271,14 @@ func (a *AuthAdapterBase) LinkAccount(ctx context.Context, account *shared.UserA
 	}
 	_, err := a.repo.userAccount.PostOne(ctx,
 		a.db,
-		&models.UserAccount{
+		&crudModels.UserAccount{
 			ID:                account.ID,
 			UserID:            account.UserID,
-			Provider:          models.Providers(account.Provider),
+			Provider:          crudModels.Providers(account.Provider),
 			ProviderAccountID: account.ProviderAccountID,
 			CreatedAt:         account.CreatedAt,
 			UpdatedAt:         account.UpdatedAt,
-			Type:              models.ProviderTypes(account.Type),
+			Type:              crudModels.ProviderTypes(account.Type),
 			AccessToken:       account.AccessToken,
 			RefreshToken:      account.RefreshToken,
 			ExpiresAt:         account.ExpiresAt,
@@ -306,7 +306,7 @@ func (a *AuthAdapterBase) UnlinkAccount(ctx context.Context, userId uuid.UUID, p
 
 // UpdateUser implements AuthAdapter.
 func (a *AuthAdapterBase) UpdateUser(ctx context.Context, user *shared.User) error {
-	_, err := a.repo.user.PutOne(ctx, a.db, &models.User{
+	_, err := a.repo.user.PutOne(ctx, a.db, &crudModels.User{
 		ID:              user.ID,
 		Email:           user.Email,
 		Name:            user.Name,
@@ -355,9 +355,9 @@ func (a *AuthAdapterBase) AssignUserRoles(ctx context.Context, userId uuid.UUID,
 			return fmt.Errorf("error finding user role while assigning roles: %w", err)
 		}
 		if len(roles) > 0 {
-			var userRoles []models.UserRole
+			var userRoles []crudModels.UserRole
 			for _, role := range roles {
-				userRoles = append(userRoles, models.UserRole{
+				userRoles = append(userRoles, crudModels.UserRole{
 					UserID: user.ID,
 					RoleID: role.ID,
 				})

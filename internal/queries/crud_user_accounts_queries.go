@@ -6,8 +6,8 @@ import (
 
 	"github.com/stephenafamo/bob/dialect/psql"
 	"github.com/stephenafamo/bob/dialect/psql/sm"
+	crudmodels "github.com/tkahng/authgo/internal/crud/crudModels"
 	"github.com/tkahng/authgo/internal/crud/crudrepo"
-	crudmodels "github.com/tkahng/authgo/internal/crud/models"
 	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/types"

@@ -13,8 +13,8 @@ import (
 	"github.com/stephenafamo/bob/dialect/psql"
 	"github.com/stephenafamo/bob/dialect/psql/im"
 	"github.com/stephenafamo/scan"
+	crudModels "github.com/tkahng/authgo/internal/crud/crudModels"
 	"github.com/tkahng/authgo/internal/crud/crudrepo"
-	crudModels "github.com/tkahng/authgo/internal/crud/models"
 	"github.com/tkahng/authgo/internal/db/models"
 )
 

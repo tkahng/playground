@@ -1,20 +1,20 @@
 package crudrepo
 
 import (
-	"github.com/tkahng/authgo/internal/crud/models"
+	"github.com/tkahng/authgo/internal/crud/crudModels"
 	"github.com/tkahng/authgo/internal/crud/repository"
 )
 
 var (
-	User           = repository.NewPostgresRepository[models.User]()
-	Role           = repository.NewPostgresRepository[models.Role]()
-	Permission     = repository.NewPostgresRepository[models.Permission]()
-	UserAccount    = repository.NewPostgresRepository[models.UserAccount]()
-	UserRole       = repository.NewPostgresRepository[models.UserRole]()
-	UserPermission = repository.NewPostgresRepository[models.UserPermission]()
-	RolePermission = repository.NewPostgresRepository[models.RolePermission]()
-	Token          = repository.NewPostgresRepository[models.Token]()
-	TaskProject    = repository.NewPostgresRepository[models.TaskProject]()
-	Task           = repository.NewPostgresRepository[models.Task]()
-	ProductRole    = repository.NewPostgresRepository[models.ProductRole]()
+	User           = repository.NewPostgresRepository[crudModels.User]()
+	Role           = repository.NewPostgresRepository[crudModels.Role]()
+	Permission     = repository.NewPostgresRepository[crudModels.Permission]()
+	UserAccount    = repository.NewPostgresRepository[crudModels.UserAccount]()
+	UserRole       = repository.NewPostgresRepository[crudModels.UserRole]()
+	UserPermission = repository.NewPostgresRepository[crudModels.UserPermission]()
+	RolePermission = repository.NewPostgresRepository[crudModels.RolePermission]()
+	Token          = repository.NewPostgresRepository[crudModels.Token]()
+	TaskProject    = repository.NewPostgresRepository[crudModels.TaskProject]()
+	Task           = repository.NewPostgresRepository[crudModels.Task]()
+	ProductRole    = repository.NewPostgresRepository[crudModels.ProductRole]()
 )

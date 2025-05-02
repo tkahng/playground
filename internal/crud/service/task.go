@@ -5,16 +5,16 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/tkahng/authgo/internal/crud/models"
+	"github.com/tkahng/authgo/internal/crud/crudModels"
 	"github.com/tkahng/authgo/internal/crud/repository"
 )
 
 type TaskService struct {
-	task        *repository.PostgresRepository[models.Task]
-	taskProject *repository.PostgresRepository[models.TaskProject]
+	task        *repository.PostgresRepository[crudModels.Task]
+	taskProject *repository.PostgresRepository[crudModels.TaskProject]
 }
 
-func (service *TaskService) FindTaskByID(ctx context.Context, db repository.DBTX, id uuid.UUID) (*models.Task, error) {
+func (service *TaskService) FindTaskByID(ctx context.Context, db repository.DBTX, id uuid.UUID) (*crudModels.Task, error) {
 	task, err := service.task.GetOne(ctx, db, &map[string]any{
 		"id": map[string]any{
 			"_eq": id.String(),
@@ -51,7 +51,7 @@ func (service *TaskService) DeleteTask(ctx context.Context, db repository.DBTX, 
 	return nil
 }
 
-func (service *TaskService) FindTaskProjectByID(ctx context.Context, db repository.DBTX, id uuid.UUID) (*models.TaskProject, error) {
+func (service *TaskService) FindTaskProjectByID(ctx context.Context, db repository.DBTX, id uuid.UUID) (*crudModels.TaskProject, error) {
 	task, err := service.taskProject.GetOne(ctx, db, &map[string]any{
 		"id": map[string]any{
 			"_eq": id.String(),
