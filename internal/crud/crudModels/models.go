@@ -20,14 +20,17 @@ type User struct {
 	Permissions     []Permission  `db:"permissions" src:"id" dest:"user_id" table:"permissions" through:"user_permissions,permission_id,id" json:"-"`
 }
 type UserRole struct {
+	_      struct{}  `db:"user_roles" json:"-"`
 	UserID uuid.UUID `db:"user_id,pk" json:"user_id"`
 	RoleID uuid.UUID `db:"role_id,pk" json:"role_id"`
 }
 type ProductRole struct {
+	_         struct{}  `db:"product_roles" json:"-"`
 	ProductID string    `db:"product_id,pk" json:"product_id"`
 	RoleID    uuid.UUID `db:"role_id,pk" json:"role_id"`
 }
 type UserPermission struct {
+	_            struct{}  `db:"user_permissions" json:"-"`
 	UserID       uuid.UUID `db:"user_id,pk" json:"user_id"`
 	PermissionID uuid.UUID `db:"permission_id,pk" json:"permission_id"`
 }
@@ -43,6 +46,7 @@ type Role struct {
 }
 
 type RolePermission struct {
+	_            struct{}  `db:"role_permissions" json:"-"`
 	RoleID       uuid.UUID `db:"role_id,pk" json:"role_id"`
 	PermissionID uuid.UUID `db:"permission_id,pk" json:"permission_id"`
 }

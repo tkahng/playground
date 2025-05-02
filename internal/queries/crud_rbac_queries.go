@@ -4,12 +4,18 @@ import (
 	"context"
 	"fmt"
 	"slices"
+	"strings"
 
+	"github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
 	"github.com/stephenafamo/bob/dialect/psql"
 	"github.com/stephenafamo/bob/dialect/psql/sm"
 	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/shared"
+)
+
+var (
+	PermissionColumnNames = []string{"id", "name", "description", "created_at", "updated_at"}
 )
 
 func ListPermissionsOrderByFunc(ctx context.Context, q *psql.ViewQuery[*models.Permission, models.PermissionSlice], input *shared.PermissionsListParams) {
@@ -37,6 +43,22 @@ func ListPermissionsOrderByFunc(ctx context.Context, q *psql.ViewQuery[*models.P
 		}
 		return
 	}
+}
+
+func ListPermissionsOrderByFunc2(input *shared.PermissionsListParams) *map[string]string {
+	var sortMap map[string]string = make(map[string]string)
+	if input == nil || input.SortBy == "" {
+		sortMap["created_at"] = "DESC"
+		sortMap["id"] = "DESC"
+		return &sortMap
+	}
+	if slices.Contains(PermissionColumnNames, input.SortBy) {
+		return &map[string]string{
+			input.SortBy: input.SortOrder,
+		}
+	}
+	return nil
+
 }
 
 func ListPermissionsFilterFunc(ctx context.Context, q *psql.ViewQuery[*models.Permission, models.PermissionSlice], filter *shared.PermissionsListFilter) {
@@ -82,22 +104,143 @@ func ListPermissionsFilterFunc(ctx context.Context, q *psql.ViewQuery[*models.Pe
 		}
 	}
 }
+func ListPermissionsFilterFunc3(sq squirrel.SelectBuilder, filter *shared.PermissionsListFilter) squirrel.SelectBuilder {
+	// where := make(map[string]any)
+	if filter == nil {
+		return sq
+	}
+	if filter.Q != "" {
+		sq = sq.Where(
+			squirrel.Or{
+				squirrel.ILike{"name": "%" + filter.Q + "%"},
+				squirrel.ILike{"description": "%" + filter.Q + "%"},
+			},
+		)
+		// where["_or"] = []map[string]any{
+		// 	{
+		// 		"name": map[string]any{
+		// 			"_ilike": fmt.Sprintf("%%%s%%", filter.Q),
+		// 		},
+		// 	},
+		// 	{
+		// 		"description": map[string]any{
+		// 			"_ilike": fmt.Sprintf("%%%s%%", filter.Q),
+		// 		},
+		// 	},
+		// }
+	}
+	if len(filter.Names) > 0 {
+		sq = sq.Where(squirrel.Eq{"name": filter.Names})
+	}
+	if len(filter.Ids) > 0 {
+		sq = sq.Where(squirrel.Eq{"id": filter.Ids})
+	}
+	// -- FROM public.permissions p
+	// --     LEFT JOIN public.role_permissions rp ON p.id = rp.permission_id
+	// --     AND rp.role_id = 'eb2ad8b3-eac7-4e88-8361-82845cc57624'
+	// -- WHERE rp.permission_id IS NULL
+	if filter.RoleId != "" {
+		// id, err := uuid.Parse(filter.RoleId)
+		// if err != nil {
+		// 	return &where
+		// }
+		if filter.RoleReverse {
+			sq = sq.LeftJoin(
+				"role_permissions" + " on " + "permissions" + "." + "permissions.id" + " = " + "role_permissions" + "." + "permission_id" + " and " + "role_permissions" + "." + "role_id" + " = " + filter.RoleId,
+			)
+
+			// q.Apply(
+			// 	sm.LeftJoin(models.RolePermissions.NameAs()).On(
+			// 		models.PermissionColumns.ID.EQ(models.RolePermissionColumns.PermissionID),
+			// 		models.RolePermissionColumns.RoleID.EQ(psql.Arg(id)),
+			// 	),
+			// 	sm.Where(models.RolePermissionColumns.PermissionID.IsNull()),
+			// )
+		} else {
+			// q.Apply(
+			// 	models.SelectJoins.Permissions.InnerJoin.Roles(ctx),
+			// 	models.SelectWhere.Roles.ID.EQ(id),
+			// )
+			// where["role_id"] = map[string]any{
+			// 	"_eq": filter.RoleId,
+			// }
+		}
+	}
+	return sq
+}
+func ListPermissionsFilterFunc2(filter *shared.PermissionsListFilter) *map[string]any {
+	where := make(map[string]any)
+	if filter == nil {
+		return nil
+	}
+	if filter.Q != "" {
+		where["_or"] = []map[string]any{
+			{
+				"name": map[string]any{
+					"_ilike": fmt.Sprintf("%%%s%%", filter.Q),
+				},
+			},
+			{
+				"description": map[string]any{
+					"_ilike": fmt.Sprintf("%%%s%%", filter.Q),
+				},
+			},
+		}
+	}
+	if len(filter.Names) > 0 {
+		where["name"] = map[string]any{
+			"_in": filter.Names,
+		}
+	}
+	if len(filter.Ids) > 0 {
+		// var ids []uuid.UUID = ParseUUIDs(filter.Ids)
+		// q.Apply(
+		// 	models.SelectWhere.Permissions.ID.In(ids...),
+		// )
+		where["id"] = map[string]any{
+			"_in": filter.Ids,
+		}
+	}
+
+	if filter.RoleId != "" {
+		// id, err := uuid.Parse(filter.RoleId)
+		// if err != nil {
+		// 	return &where
+		// }
+		if filter.RoleReverse {
+			// q.Apply(
+			// 	sm.LeftJoin(models.RolePermissions.NameAs()).On(
+			// 		models.PermissionColumns.ID.EQ(models.RolePermissionColumns.PermissionID),
+			// 		models.RolePermissionColumns.RoleID.EQ(psql.Arg(id)),
+			// 	),
+			// 	sm.Where(models.RolePermissionColumns.PermissionID.IsNull()),
+			// )
+		} else {
+			// q.Apply(
+			// 	models.SelectJoins.Permissions.InnerJoin.Roles(ctx),
+			// 	models.SelectWhere.Roles.ID.EQ(id),
+			// )
+			where["role_id"] = map[string]any{
+				"_eq": filter.RoleId,
+			}
+		}
+	}
+	return &where
+}
 
 // ListPermissions implements AdminCrudActions.
 func ListPermissions(ctx context.Context, db Queryer, input *shared.PermissionsListParams) ([]*models.Permission, error) {
-	q := models.Permissions.Query()
+	q := squirrel.Select("*").From("permissions")
 	filter := input.PermissionsListFilter
 	pageInput := &input.PaginatedInput
 
-	ViewApplyPagination(q, pageInput)
-	ListPermissionsOrderByFunc(ctx, q, input)
-	ListPermissionsFilterFunc(ctx, q, &filter)
-	query, args, err := q.Build(ctx)
-	if err != nil {
-		return nil, err
+	// q = ViewApplyPagination(q, pageInput)
+	q = ListPermissionsFilterFunc3(q, &filter)
+	q = Paginate(q, pageInput)
+	if input.SortBy != "" && input.SortOrder != "" {
+		q = q.OrderBy(input.SortBy + " " + strings.ToUpper(input.SortOrder))
 	}
-	fmt.Println(query, args)
-	data, err := q.All(ctx, db)
+	data, err := ExecQuery[*models.Permission](ctx, db, q)
 	if err != nil {
 		return nil, err
 	}

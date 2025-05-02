@@ -5,11 +5,10 @@ import (
 	"net/http"
 	"slices"
 
-	"github.com/aarondl/opt/omit"
-	"github.com/aarondl/opt/omitnull"
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
-	"github.com/stephenafamo/bob/dialect/psql"
+	"github.com/tkahng/authgo/internal/crud/crudModels"
+	"github.com/tkahng/authgo/internal/crud/crudrepo"
 	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
@@ -188,19 +187,23 @@ func (api *Api) AdminRolesUpdate(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	err = role.Update(
-		ctx,
-		db,
-		&models.RoleSetter{
-			Name:        omit.From(input.Body.Name),
-			Description: omitnull.FromPtr(input.Body.Description),
-		},
-	)
+	err = queries.UpdateRole(ctx, db, role.ID, &queries.UpdateRoleDto{
+		Name:        input.Body.Name,
+		Description: input.Body.Description,
+	})
+	// err = role.Update(
+	// 	ctx,
+	// 	db,
+	// 	&models.RoleSetter{
+	// 		Name:        omit.From(input.Body.Name),
+	// 		Description: omitnull.FromPtr(input.Body.Description),
+	// 	},
+	// )
 	if err != nil {
 		return nil, err
 	}
 	return &struct{ Body *shared.Role }{
-		Body: shared.ToRole(role),
+		Body: shared.FromCrudRole(role),
 	}, nil
 }
 func (api *Api) AdminUserRolesDeleteOperation(path string) huma.Operation {
@@ -373,7 +376,7 @@ func (api *Api) AdminUserRolesUpdate(ctx context.Context, input *struct {
 	}
 	output := shared.PaginatedOutput[*shared.Role]{
 		Body: shared.PaginatedResponse[*shared.Role]{
-			Data: mapper.Map(roles, shared.ToRole),
+			Data: mapper.Map(roles, shared.FromCrudRole),
 		},
 	}
 	return &output, nil
@@ -424,24 +427,16 @@ func (api *Api) AdminRolesUpdatePermissions(ctx context.Context, input *struct {
 		}
 		permissionIds[i] = id
 	}
-	permissions, err := queries.FindPermissionsByIds(ctx, db, permissionIds)
+	err = queries.DeleteRolePermissions(ctx, db, role.ID)
 	if err != nil {
 		return nil, err
 	}
-	_, err = models.RolePermissions.Delete(
-		psql.WhereAnd(
-			models.DeleteWhere.RolePermissions.RoleID.EQ(role.ID),
-		),
-	).Exec(ctx, db)
-	if err != nil {
-		return nil, err
-	}
-	err = role.AttachPermissions(ctx, db, permissions...)
+	err = queries.CreateRolePermissions(ctx, db, role.ID, permissionIds...)
 	if err != nil {
 		return nil, err
 	}
 	return &struct{ Body *shared.Role }{
-		Body: shared.ToRole(role),
+		Body: shared.FromCrudRole(role),
 	}, nil
 }
 
@@ -478,9 +473,23 @@ func (api *Api) AdminRolesGet(ctx context.Context, input *struct {
 	if role == nil {
 		return nil, huma.Error404NotFound("Role not found")
 	}
+	var rolePermissions []*crudModels.Permission
 	if len(input.Expand) > 0 {
 		if slices.Contains(input.Expand, "permissions") {
-			err = role.LoadRolePermissions(ctx, db)
+			rolePermissions, err = crudrepo.Permission.Get(
+				ctx,
+				db,
+				&map[string]any{
+					"role": map[string]any{
+						"id": map[string]any{
+							"_eq": role.ID.String(),
+						},
+					},
+				},
+				nil,
+				nil,
+				nil,
+			)
 			if err != nil {
 				return nil, err
 			}
@@ -493,7 +502,7 @@ func (api *Api) AdminRolesGet(ctx context.Context, input *struct {
 		// }
 	}
 	return &struct{ Body shared.RoleWithPermissions }{
-		Body: *shared.ToRoleWithPermissions(role),
+		Body: *shared.FromCrudRoleWithPermissions(role, rolePermissions),
 	}, nil
 }
 
@@ -530,11 +539,9 @@ func (api *Api) AdminRolesCreatePermissions(ctx context.Context, input *struct {
 		return nil, huma.Error404NotFound("Role not found")
 	}
 	permissionIds := queries.ParseUUIDs(input.Body.PermissionIDs)
-	permissions, err := queries.FindPermissionsByIds(ctx, db, permissionIds)
-	if err != nil {
-		return nil, err
-	}
-	err = role.AttachPermissions(ctx, db, permissions...)
+
+	err = queries.CreateRolePermissions(ctx, db, role.ID, permissionIds...)
+
 	if err != nil {
 		return nil, err
 	}

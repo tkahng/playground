@@ -301,12 +301,7 @@ func (api *Api) AdminStripeProductsRolesCreate(ctx context.Context, input *struc
 
 	roleIds := queries.ParseUUIDs(input.Body.RolesIds)
 
-	roles, err := queries.FindRolesByIds(ctx, db, roleIds)
-	if err != nil {
-		return nil, err
-	}
-
-	err = user.AttachRoles(ctx, db, roles...)
+	err = queries.CreateProductRoles(ctx, db, user.ID, roleIds...)
 	if err != nil {
 		return nil, err
 	}

@@ -31,9 +31,9 @@ type AuthAdapter interface {
 
 var _ AuthAdapter = (*AuthAdapterBase)(nil)
 
-func NewAuthAdapter(dbtx crud.DBTX) *AuthAdapterBase {
+func NewAuthAdapter(dbtx *pgxpool.Pool) *AuthAdapterBase {
 	appRepo := NewAppRepo(dbtx)
-	return &AuthAdapterBase{repo: appRepo}
+	return &AuthAdapterBase{db: dbtx, repo: appRepo}
 }
 
 type AuthAdapterBase struct {
@@ -176,10 +176,10 @@ LIMIT 1;
 )
 
 type RolePermissionClaims struct {
-	UserID      uuid.UUID          `json:"user_id" db:"user_id"`
-	Email       string             `json:"email" db:"email"`
-	Roles       []string           `json:"roles" db:"roles"`
-	Permissions []string           `json:"permissions" db:"permissions"`
+	UserID      uuid.UUID              `json:"user_id" db:"user_id"`
+	Email       string                 `json:"email" db:"email"`
+	Roles       []string               `json:"roles" db:"roles"`
+	Permissions []string               `json:"permissions" db:"permissions"`
 	Providers   []crudModels.Providers `json:"providers" db:"providers"`
 }
 

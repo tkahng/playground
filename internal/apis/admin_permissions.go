@@ -4,8 +4,6 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/aarondl/opt/omit"
-	"github.com/aarondl/opt/omitnull"
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/db/models"
@@ -256,7 +254,7 @@ func (api *Api) AdminPermissionsCreate(ctx context.Context, input *struct {
 		return nil, huma.Error500InternalServerError("Failed to create permission")
 	}
 	return &struct{ Body shared.Permission }{
-		Body: *shared.ToPermission(data),
+		Body: *shared.FromCrudPermission(data),
 	}, nil
 }
 
@@ -343,19 +341,16 @@ func (api *Api) AdminPermissionsUpdate(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	err = permission.Update(
-		ctx,
-		db,
-		&models.PermissionSetter{
-			Name:        omit.From(input.Body.Name),
-			Description: omitnull.FromPtr(input.Description),
-		},
-	)
+	err = queries.UpdatePermission(ctx, db, permission.ID, &queries.UpdatePermissionDto{
+		Name:        input.Body.Name,
+		Description: input.Description,
+	})
+
 	if err != nil {
 		return nil, err
 	}
 	return &struct{ Body shared.Permission }{
-		Body: *shared.ToPermission(permission),
+		Body: *shared.FromCrudPermission(permission),
 	}, nil
 }
 
@@ -392,6 +387,6 @@ func (api *Api) AdminPermissionsGet(ctx context.Context, input *struct {
 		return nil, huma.Error404NotFound("Permission not found")
 	}
 	return &struct{ Body *shared.Permission }{
-		Body: shared.ToPermission(permission),
+		Body: shared.FromCrudPermission(permission),
 	}, nil
 }

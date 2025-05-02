@@ -3,10 +3,14 @@ package queries
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
+	"github.com/Masterminds/squirrel"
 	"github.com/alexedwards/argon2id"
 	"github.com/google/uuid"
+	"github.com/stephenafamo/scan"
+	"github.com/stephenafamo/scan/pgxscan"
 	crudModels "github.com/tkahng/authgo/internal/crud/crudModels"
 	"github.com/tkahng/authgo/internal/crud/crudrepo"
 	"github.com/tkahng/authgo/internal/shared"
@@ -36,8 +40,21 @@ func CreateUserRoles(ctx context.Context, db Queryer, userId uuid.UUID, roleIds 
 			RoleID: id,
 		})
 	}
-	_, err := crudrepo.UserRole.Post(ctx, db, dtos)
-	return err
+	q := squirrel.Insert("user_roles").Columns("user_id", "role_id")
+	for _, perm := range dtos {
+		q = q.Values(perm.UserID, perm.RoleID)
+	}
+	q = q.Suffix("RETURNING *")
+	sql, args, err := q.PlaceholderFormat(squirrel.Dollar).ToSql()
+	if err != nil {
+		return err
+	}
+	fmt.Println(sql, args)
+	_, err = pgxscan.All(ctx, db, scan.StructMapper[crudModels.UserRole](), sql, args...)
+	if err != nil {
+		return err
+	}
+	return nil
 	// return models.UserRoles.Insert(&models.UserRoleSetter{
 	// 	UserID:  omit.From(userId),
 	// 	RoleIDs: omit.From(params.RoleIds),
@@ -51,8 +68,21 @@ func CreateUserPermissions(ctx context.Context, db Queryer, userId uuid.UUID, pe
 			PermissionID: id,
 		})
 	}
-	_, err := crudrepo.UserPermission.Post(ctx, db, dtos)
-	return err
+	q := squirrel.Insert("user_permissions").Columns("user_id", "permission_id")
+	for _, perm := range dtos {
+		q = q.Values(perm.UserID, perm.PermissionID)
+	}
+	q = q.Suffix("RETURNING *")
+	sql, args, err := q.PlaceholderFormat(squirrel.Dollar).ToSql()
+	if err != nil {
+		return err
+	}
+	fmt.Println(sql, args)
+	_, err = pgxscan.All(ctx, db, scan.StructMapper[crudModels.UserPermission](), sql, args...)
+	if err != nil {
+		return err
+	}
+	return nil
 
 }
 
