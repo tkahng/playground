@@ -8,8 +8,8 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jaswdr/faker/v2"
 	"github.com/stephenafamo/scan"
-	"github.com/tkahng/authgo/internal/crud/repository"
 	"github.com/tkahng/authgo/internal/db/models"
+	"github.com/tkahng/authgo/internal/repository"
 )
 
 type Queryer interface {

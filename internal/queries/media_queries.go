@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	"github.com/tkahng/authgo/internal/crud/repository"
 	"github.com/tkahng/authgo/internal/db/models"
+	"github.com/tkahng/authgo/internal/repository"
 )
 
 func CreateMedia(ctx context.Context, exec Queryer, media *models.Medium) (*models.Medium, error) {

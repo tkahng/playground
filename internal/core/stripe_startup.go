@@ -7,8 +7,8 @@ import (
 	"log/slog"
 
 	"github.com/tkahng/authgo/internal/conf"
-	"github.com/tkahng/authgo/internal/crud/repository"
 	"github.com/tkahng/authgo/internal/queries"
+	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/payment"
 )

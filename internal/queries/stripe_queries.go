@@ -8,8 +8,8 @@ import (
 	"github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
 	"github.com/stripe/stripe-go/v82"
-	"github.com/tkahng/authgo/internal/crud/repository"
 	"github.com/tkahng/authgo/internal/db/models"
+	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/types"
 )
 

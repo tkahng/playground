@@ -10,9 +10,9 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stephenafamo/scan"
 	"github.com/stephenafamo/scan/pgxscan"
-	"github.com/tkahng/authgo/internal/crud/repository"
-	crud "github.com/tkahng/authgo/internal/crud/repository"
 	"github.com/tkahng/authgo/internal/db/models"
+	"github.com/tkahng/authgo/internal/repository"
+	crud "github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/types"
 )

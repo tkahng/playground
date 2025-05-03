@@ -3,7 +3,7 @@ package queries
 import (
 	"context"
 
-	"github.com/tkahng/authgo/internal/crud/repository"
+	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 )
 
