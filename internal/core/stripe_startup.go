@@ -7,7 +7,7 @@ import (
 	"log/slog"
 
 	"github.com/tkahng/authgo/internal/conf"
-	"github.com/tkahng/authgo/internal/crud/crudrepo"
+	"github.com/tkahng/authgo/internal/crud/repository"
 	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/payment"
@@ -48,7 +48,7 @@ func (srv *StripeService) SyncProductRole(ctx context.Context, dbx queries.Query
 	if product == nil {
 		return errors.New("product not found")
 	}
-	role, err := crudrepo.Role.GetOne(
+	role, err := repository.Role.GetOne(
 		ctx,
 		dbx,
 		&map[string]any{

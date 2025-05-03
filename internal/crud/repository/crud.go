@@ -1,0 +1,43 @@
+package repository
+
+import "github.com/tkahng/authgo/internal/db/models"
+
+var (
+	UserBuilder               = NewSQLBuilder[models.User]()
+	RoleBuilder               = NewSQLBuilder[models.Role]()
+	PermissionBuilder         = NewSQLBuilder[models.Permission]()
+	UserAccountBuilder        = NewSQLBuilder[models.UserAccount]()
+	UserRoleBuilder           = NewSQLBuilder[models.UserRole]()
+	UserPermissionBuilder     = NewSQLBuilder[models.UserPermission]()
+	RolePermissionBuilder     = NewSQLBuilder[models.RolePermission]()
+	TokenBuilder              = NewSQLBuilder[models.Token]()
+	TaskProjectBuilder        = NewSQLBuilder[models.TaskProject]()
+	TaskBuilder               = NewSQLBuilder[models.Task]()
+	ProductRoleBuilder        = NewSQLBuilder[models.ProductRole]()
+	StripeProductBuilder      = NewSQLBuilder[models.StripeProduct]()
+	StripePriceBuilder        = NewSQLBuilder[models.StripePrice]()
+	StripeCustomerBuilder     = NewSQLBuilder[models.StripeCustomer]()
+	StripeSubscriptionBuilder = NewSQLBuilder[models.StripeSubscription]()
+	MediaBuilder              = NewSQLBuilder[models.Medium]()
+	AiUsageBuilder            = NewSQLBuilder[models.AiUsage]()
+)
+
+var (
+	User               = NewPostgresRepository2(UserBuilder)
+	Role               = NewPostgresRepository2(RoleBuilder)
+	Permission         = NewPostgresRepository2(PermissionBuilder)
+	UserAccount        = NewPostgresRepository2(UserAccountBuilder)
+	UserRole           = NewPostgresRepository2(UserRoleBuilder)
+	UserPermission     = NewPostgresRepository2(UserPermissionBuilder)
+	RolePermission     = NewPostgresRepository2(RolePermissionBuilder)
+	Token              = NewPostgresRepository2(TokenBuilder)
+	TaskProject        = NewPostgresRepository2(TaskProjectBuilder)
+	Task               = NewPostgresRepository2(TaskBuilder)
+	ProductRole        = NewPostgresRepository2(ProductRoleBuilder)
+	StripeProduct      = NewPostgresRepository2(StripeProductBuilder)
+	StripePrice        = NewPostgresRepository2(StripePriceBuilder)
+	StripeCustomer     = NewPostgresRepository2(StripeCustomerBuilder)
+	StripeSubscription = NewPostgresRepository2(StripeSubscriptionBuilder)
+	Media              = NewPostgresRepository2(MediaBuilder)
+	AiUsage            = NewPostgresRepository2(AiUsageBuilder)
+)

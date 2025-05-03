@@ -7,7 +7,7 @@ import (
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/tkahng/authgo/internal/core"
-	"github.com/tkahng/authgo/internal/crud/crudrepo"
+	"github.com/tkahng/authgo/internal/crud/repository"
 	"github.com/tkahng/authgo/internal/shared"
 )
 
@@ -36,7 +36,7 @@ func (a *Api) ApiProtected(ctx context.Context, input *struct {
 		return nil, huma.Error404NotFound("User not found")
 	}
 	dbx := a.app.Db()
-	permission, err := crudrepo.Permission.GetOne(
+	permission, err := repository.Permission.GetOne(
 		ctx,
 		dbx,
 		&map[string]any{

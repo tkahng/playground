@@ -5,7 +5,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/tkahng/authgo/internal/crud/crudrepo"
+	"github.com/tkahng/authgo/internal/crud/repository"
 	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/shared"
 )
@@ -33,7 +33,7 @@ func ListMedia(ctx context.Context, db Queryer, input *shared.MediaListParams) (
 	limit, offset := PaginateRepo(pageInput)
 	where := ListMediaFilterFunc(&filter)
 	order := ListMediaOrderByFunc(input)
-	data, err := crudrepo.Media.Get(
+	data, err := repository.Media.Get(
 		ctx,
 		db,
 		where,
@@ -100,7 +100,7 @@ func ListMediaOrderByFunc(input *shared.MediaListParams) *map[string]string {
 
 func CountMedia(ctx context.Context, db Queryer, input *shared.MediaListFilter) (int64, error) {
 	where := ListMediaFilterFunc(input)
-	c, err := crudrepo.Media.Count(
+	c, err := repository.Media.Count(
 		ctx,
 		db,
 		where,

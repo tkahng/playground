@@ -9,7 +9,7 @@ import (
 	"github.com/Masterminds/squirrel"
 	"github.com/alexedwards/argon2id"
 	"github.com/google/uuid"
-	"github.com/tkahng/authgo/internal/crud/crudrepo"
+	"github.com/tkahng/authgo/internal/crud/repository"
 	crudModels "github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
@@ -17,7 +17,7 @@ import (
 )
 
 func LoadUsersByUserIds(ctx context.Context, db Queryer, userIds ...uuid.UUID) ([]*crudModels.User, error) {
-	users, err := crudrepo.User.Get(
+	users, err := repository.User.Get(
 		ctx,
 		db,
 		&map[string]any{
@@ -47,7 +47,7 @@ func CreateUser(ctx context.Context, db Queryer, params *shared.AuthenticationIn
 	// 	Image:           omitnull.FromPtr(params.AvatarUrl),
 	// 	EmailVerifiedAt: omitnull.FromPtr(params.EmailVerifiedAt),
 	// }, im.Returning("*")).One(ctx, db)
-	return crudrepo.User.PostOne(ctx, db, &crudModels.User{
+	return repository.User.PostOne(ctx, db, &crudModels.User{
 		Email:           params.Email,
 		Name:            params.Name,
 		Image:           params.AvatarUrl,
@@ -110,7 +110,7 @@ func CreateUserPermissions(ctx context.Context, db Queryer, userId uuid.UUID, pe
 }
 
 func CreateAccount(ctx context.Context, db Queryer, userId uuid.UUID, params *shared.AuthenticationInput) (*crudModels.UserAccount, error) {
-	r, err := crudrepo.UserAccount.PostOne(ctx, db, &crudModels.UserAccount{
+	r, err := repository.UserAccount.PostOne(ctx, db, &crudModels.UserAccount{
 		UserID:            userId,
 		Type:              crudModels.ProviderTypes(params.Type),
 		Password:          params.HashPassword,
@@ -123,7 +123,7 @@ func CreateAccount(ctx context.Context, db Queryer, userId uuid.UUID, params *sh
 }
 
 func FindUserByEmail(ctx context.Context, db Queryer, email string) (*crudModels.User, error) {
-	a, err := crudrepo.User.GetOne(
+	a, err := repository.User.GetOne(
 		ctx,
 		db,
 		&map[string]any{
@@ -135,7 +135,7 @@ func FindUserByEmail(ctx context.Context, db Queryer, email string) (*crudModels
 	return OptionalRow(a, err)
 }
 func FindUserById(ctx context.Context, db Queryer, userId uuid.UUID) (*crudModels.User, error) {
-	a, err := crudrepo.User.GetOne(
+	a, err := repository.User.GetOne(
 		ctx,
 		db,
 		&map[string]any{
@@ -148,7 +148,7 @@ func FindUserById(ctx context.Context, db Queryer, userId uuid.UUID) (*crudModel
 }
 
 func UpdateUserPassword(ctx context.Context, db Queryer, userId uuid.UUID, password string) error {
-	account, err := crudrepo.UserAccount.GetOne(
+	account, err := repository.UserAccount.GetOne(
 		ctx,
 		db,
 		&map[string]any{
@@ -171,7 +171,7 @@ func UpdateUserPassword(ctx context.Context, db Queryer, userId uuid.UUID, passw
 		return err
 	}
 	account.Password = &hash
-	_, err = crudrepo.UserAccount.PutOne(
+	_, err = repository.UserAccount.PutOne(
 		ctx,
 		db,
 		account,
@@ -183,7 +183,7 @@ func UpdateUserPassword(ctx context.Context, db Queryer, userId uuid.UUID, passw
 }
 
 func UpdateMe(ctx context.Context, db Queryer, userId uuid.UUID, input *shared.UpdateMeInput) error {
-	_, err := crudrepo.User.PutOne(
+	_, err := repository.User.PutOne(
 		ctx,
 		db,
 		&crudModels.User{
@@ -206,7 +206,7 @@ func GetUserAccounts(ctx context.Context, db Queryer, userIds ...uuid.UUID) ([][
 	for _, id := range userIds {
 		ids = append(ids, id.String())
 	}
-	data, err := crudrepo.UserAccount.Get(
+	data, err := repository.UserAccount.Get(
 		ctx,
 		db,
 		&map[string]any{

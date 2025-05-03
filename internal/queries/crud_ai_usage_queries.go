@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	"github.com/tkahng/authgo/internal/crud/crudrepo"
+	"github.com/tkahng/authgo/internal/crud/repository"
 	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/shared"
 )
@@ -12,7 +12,7 @@ import (
 // CountTasks implements AdminCrudActions.
 func CountAiUsages(ctx context.Context, db Queryer, filter *shared.AiUsageListFilter) (int64, error) {
 	where := ListAiUsagesFilterFunc(filter)
-	return crudrepo.AiUsage.Count(ctx, db, where)
+	return repository.AiUsage.Count(ctx, db, where)
 }
 
 func ListAiUsages(ctx context.Context, db Queryer, input *shared.AiUsageListParams) ([]*models.AiUsage, error) {
@@ -22,7 +22,7 @@ func ListAiUsages(ctx context.Context, db Queryer, input *shared.AiUsageListPara
 	limit, offset := PaginateRepo(pageInput)
 	order := ListAiUsagesOrderByFunc(input)
 	where := ListAiUsagesFilterFunc(&filter)
-	data, err := crudrepo.AiUsage.Get(
+	data, err := repository.AiUsage.Get(
 		ctx,
 		db,
 		where,

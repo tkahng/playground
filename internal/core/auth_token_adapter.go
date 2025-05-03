@@ -7,7 +7,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/tkahng/authgo/internal/crud/crudrepo"
+	"github.com/tkahng/authgo/internal/crud/repository"
 	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/security"
@@ -101,7 +101,7 @@ func checkTokenType(claims jwt.MapClaims, tokenType shared.TokenType) bool {
 }
 
 func (a *TokenAdapterBase) GetToken(ctx context.Context, token string) (*shared.Token, error) {
-	res, err := crudrepo.Token.GetOne(ctx,
+	res, err := repository.Token.GetOne(ctx,
 		a.db,
 		&map[string]any{
 			"token": map[string]any{
@@ -126,7 +126,7 @@ func (a *TokenAdapterBase) GetToken(ctx context.Context, token string) (*shared.
 }
 
 func (a *TokenAdapterBase) SaveToken(ctx context.Context, token *shared.CreateTokenDTO) error {
-	_, err := crudrepo.Token.PostOne(ctx, a.db, &models.Token{
+	_, err := repository.Token.PostOne(ctx, a.db, &models.Token{
 		Type:       models.TokenTypes(token.Type),
 		Identifier: token.Identifier,
 		Expires:    token.Expires,
@@ -142,7 +142,7 @@ func (a *TokenAdapterBase) SaveToken(ctx context.Context, token *shared.CreateTo
 }
 
 func (a *TokenAdapterBase) DeleteToken(ctx context.Context, token string) error {
-	_, err := crudrepo.Token.DeleteReturn(ctx, a.db, &map[string]any{
+	_, err := repository.Token.DeleteReturn(ctx, a.db, &map[string]any{
 		"token": map[string]any{
 			"_eq": token,
 		},

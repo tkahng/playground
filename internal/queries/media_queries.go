@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	"github.com/tkahng/authgo/internal/crud/crudrepo"
+	"github.com/tkahng/authgo/internal/crud/repository"
 	"github.com/tkahng/authgo/internal/db/models"
 )
 
@@ -24,7 +24,7 @@ func CreateMedia(ctx context.Context, exec Queryer, media *models.Medium) (*mode
 	// )
 	// d, err := q.One(ctx, exec)
 	// d, err = OptionalRow(d, err)
-	data, err := crudrepo.Media.PostOne(
+	data, err := repository.Media.PostOne(
 		ctx,
 		exec,
 		media,
@@ -39,7 +39,7 @@ func FindMediaByID(ctx context.Context, exec Queryer, id uuid.UUID) (*models.Med
 	// data, err := models.Media.Query(
 	// 	models.SelectWhere.Media.ID.EQ(id),
 	// ).One(ctx, exec)
-	data, err := crudrepo.Media.GetOne(
+	data, err := repository.Media.GetOne(
 		ctx,
 		exec,
 		&map[string]any{

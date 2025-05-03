@@ -7,7 +7,7 @@ import (
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
-	"github.com/tkahng/authgo/internal/crud/crudrepo"
+	"github.com/tkahng/authgo/internal/crud/repository"
 	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
@@ -286,7 +286,7 @@ func (api *Api) AdminStripeProductsRolesDelete(ctx context.Context, input *struc
 		return nil, huma.Error400BadRequest("role_id is not a valid UUID")
 	}
 
-	role, err := crudrepo.Role.GetOne(ctx, db, &map[string]any{
+	role, err := repository.Role.GetOne(ctx, db, &map[string]any{
 		"id": map[string]any{
 			"_eq": roleId.String(),
 		},
@@ -297,7 +297,7 @@ func (api *Api) AdminStripeProductsRolesDelete(ctx context.Context, input *struc
 	if role == nil {
 		return nil, huma.Error404NotFound("Role not found")
 	}
-	_, err = crudrepo.ProductRole.DeleteReturn(
+	_, err = repository.ProductRole.DeleteReturn(
 		ctx,
 		db,
 		&map[string]any{

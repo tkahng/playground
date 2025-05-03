@@ -10,7 +10,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stephenafamo/scan"
 	"github.com/stephenafamo/scan/pgxscan"
-	"github.com/tkahng/authgo/internal/crud/crudrepo"
+	"github.com/tkahng/authgo/internal/crud/repository"
 	crud "github.com/tkahng/authgo/internal/crud/repository"
 	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/shared"
@@ -43,7 +43,7 @@ type AuthAdapterBase struct {
 // FindUser implements AuthAdapter.
 func (a *AuthAdapterBase) FindUser(ctx context.Context, where *map[string]any) (*shared.User, error) {
 
-	user, err := crudrepo.User.GetOne(ctx, a.db, where)
+	user, err := repository.User.GetOne(ctx, a.db, where)
 
 	if err != nil {
 		return nil, fmt.Errorf("error getting user: %w", err)
@@ -65,7 +65,7 @@ func (a *AuthAdapterBase) FindUser(ctx context.Context, where *map[string]any) (
 // FindUserAccount implements AuthAdapter.
 func (a *AuthAdapterBase) FindUserAccount(ctx context.Context, where *map[string]any) (*shared.UserAccount, error) {
 
-	account, err := crudrepo.UserAccount.GetOne(ctx, a.db, where)
+	account, err := repository.UserAccount.GetOne(ctx, a.db, where)
 
 	if err != nil {
 		return nil, fmt.Errorf("error getting user account: %w", err)
@@ -92,7 +92,7 @@ func (a *AuthAdapterBase) FindUserAccount(ctx context.Context, where *map[string
 
 // UpdateUserAccount implements AuthAdapter.
 func (a *AuthAdapterBase) UpdateUserAccount(ctx context.Context, account *shared.UserAccount) error {
-	res, err := crudrepo.UserAccount.PutOne(ctx, a.db, &models.UserAccount{
+	res, err := repository.UserAccount.PutOne(ctx, a.db, &models.UserAccount{
 		ID:                account.ID,
 		UserID:            account.UserID,
 		Provider:          models.Providers(account.Provider),
@@ -193,7 +193,7 @@ func FindUserWithRolesAndPermissionsByEmail(ctx context.Context, db crud.DBTX, e
 
 // GetUserInfo implements AuthAdapter.
 func (a *AuthAdapterBase) GetUserInfo(ctx context.Context, email string) (*shared.UserInfo, error) {
-	user, err := crudrepo.User.GetOne(ctx, a.db, &map[string]any{"email": map[string]any{"_eq": email}})
+	user, err := repository.User.GetOne(ctx, a.db, &map[string]any{"email": map[string]any{"_eq": email}})
 	if err != nil {
 		return nil, fmt.Errorf("error getting user: %w", err)
 	}
@@ -228,7 +228,7 @@ func (a *AuthAdapterBase) GetUserInfo(ctx context.Context, email string) (*share
 
 // CreateUser implements AuthAdapter.
 func (a *AuthAdapterBase) CreateUser(ctx context.Context, user *shared.User) (*shared.User, error) {
-	res, err := crudrepo.User.PostOne(ctx, a.db, &models.User{
+	res, err := repository.User.PostOne(ctx, a.db, &models.User{
 		Email:           user.Email,
 		Name:            user.Name,
 		Image:           user.Image,
@@ -253,7 +253,7 @@ func (a *AuthAdapterBase) CreateUser(ctx context.Context, user *shared.User) (*s
 
 // DeleteUser implements AuthAdapter.
 func (a *AuthAdapterBase) DeleteUser(ctx context.Context, id uuid.UUID) error {
-	res, err := crudrepo.User.DeleteReturn(ctx, a.db, &map[string]any{
+	res, err := repository.User.DeleteReturn(ctx, a.db, &map[string]any{
 		"id": map[string]any{"_eq": id.String()},
 	})
 	if err != nil {
@@ -268,7 +268,7 @@ func (a *AuthAdapterBase) LinkAccount(ctx context.Context, account *shared.UserA
 	if account == nil {
 		return errors.New("account is nil")
 	}
-	_, err := crudrepo.UserAccount.PostOne(ctx,
+	_, err := repository.UserAccount.PostOne(ctx,
 		a.db,
 		&models.UserAccount{
 			ID:                account.ID,
@@ -305,7 +305,7 @@ func (a *AuthAdapterBase) UnlinkAccount(ctx context.Context, userId uuid.UUID, p
 
 // UpdateUser implements AuthAdapter.
 func (a *AuthAdapterBase) UpdateUser(ctx context.Context, user *shared.User) error {
-	_, err := crudrepo.User.PutOne(ctx, a.db, &models.User{
+	_, err := repository.User.PutOne(ctx, a.db, &models.User{
 		ID:              user.ID,
 		Email:           user.Email,
 		Name:            user.Name,
@@ -323,7 +323,7 @@ func (a *AuthAdapterBase) UpdateUser(ctx context.Context, user *shared.User) err
 // AssignUserRoles implements AuthAdapter.
 func (a *AuthAdapterBase) AssignUserRoles(ctx context.Context, userId uuid.UUID, roleNames ...string) error {
 	if len(roleNames) > 0 {
-		user, err := crudrepo.User.GetOne(
+		user, err := repository.User.GetOne(
 			ctx,
 			a.db,
 			&map[string]any{
@@ -338,7 +338,7 @@ func (a *AuthAdapterBase) AssignUserRoles(ctx context.Context, userId uuid.UUID,
 		if user == nil {
 			return fmt.Errorf("user not found while assigning roles")
 		}
-		roles, err := crudrepo.Role.Get(
+		roles, err := repository.Role.Get(
 			ctx,
 			a.db,
 			&map[string]any{
@@ -361,7 +361,7 @@ func (a *AuthAdapterBase) AssignUserRoles(ctx context.Context, userId uuid.UUID,
 					RoleID: role.ID,
 				})
 			}
-			_, err = crudrepo.UserRole.Post(ctx, a.db, userRoles)
+			_, err = repository.UserRole.Post(ctx, a.db, userRoles)
 			if err != nil {
 				return fmt.Errorf("error assigning user role while assigning roles: %w", err)
 			}

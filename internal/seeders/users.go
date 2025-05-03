@@ -8,7 +8,7 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jaswdr/faker/v2"
 	"github.com/stephenafamo/scan"
-	"github.com/tkahng/authgo/internal/crud/crudrepo"
+	"github.com/tkahng/authgo/internal/crud/repository"
 	"github.com/tkahng/authgo/internal/db/models"
 )
 
@@ -25,7 +25,7 @@ func CreateUserFromEmails(ctx context.Context, dbx Queryer, emails ...string) ([
 		users = append(users, models.User{Email: emails})
 	}
 
-	res, err := crudrepo.User.Post(ctx, dbx, users)
+	res, err := repository.User.Post(ctx, dbx, users)
 	if err != nil {
 		return nil, err
 	}
@@ -41,7 +41,7 @@ func CreateUsers(ctx context.Context, dbx Queryer, count int) ([]*models.User, e
 		}
 		users = append(users, user)
 	}
-	res, err := crudrepo.User.Post(ctx, dbx, users)
+	res, err := repository.User.Post(ctx, dbx, users)
 	if err != nil {
 		return nil, err
 	}
