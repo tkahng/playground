@@ -7,6 +7,7 @@ import (
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
+	"github.com/tkahng/authgo/internal/crud/crudModels"
 	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
@@ -177,30 +178,44 @@ func (api *Api) AdminStripeProducts(ctx context.Context,
 	if err != nil {
 		return nil, err
 	}
+	var roles map[string][]*crudModels.Role = make(map[string][]*crudModels.Role)
+	var prices map[string][]*crudModels.StripePrice = make(map[string][]*crudModels.StripePrice)
+	var productIds []string
+	for _, p := range products {
+		productIds = append(productIds, p.ID)
+	}
 	if slices.Contains(input.Expand, "prices") {
-		err = products.LoadStripeProductProductStripePrices(ctx, db)
+		data, err := queries.LoadProductPrices(ctx, db, productIds...)
 		if err != nil {
 			return nil, err
+		}
+		for _, d := range data {
+			prices[d.Key] = d.Data
 		}
 	}
 	if slices.Contains(input.Expand, "roles") {
-		err = products.LoadStripeProductRoles(ctx, db)
+		data, err := queries.LoadProductRoles(ctx, db, productIds...)
 		if err != nil {
 			return nil, err
 		}
-	}
-	prods := mapper.Map(products, func(p *models.StripeProduct) *shared.StripeProductWithData {
-		spwd := &shared.StripeProductWithData{
-			Product: shared.ModelToProduct(p),
+		for _, d := range data {
+			roles[d.Key] = d.Data
 		}
-		if p.R.ProductStripePrices != nil {
+	}
+	prods := mapper.Map(products, func(p *crudModels.StripeProduct) *shared.StripeProductWithData {
+		spwd := &shared.StripeProductWithData{
+			Product: shared.FromCrudProduct(p),
+		}
+
+		if data, ok := prices[p.ID]; ok {
 			// If the product has prices, we map them to the shared model
 			// and include them in the response.
-			spwd.Prices = mapper.Map(p.R.ProductStripePrices, shared.ModelToPrice)
+			spwd.Prices = mapper.Map(data, shared.FromCrudModel)
 		}
-		if p.R.Roles != nil {
+		if data, ok := roles[p.ID]; ok {
+
 			// If the product has prices and we are expanding prices,
-			spwd.Roles = mapper.Map(p.R.Roles, shared.ToRole)
+			spwd.Roles = mapper.Map(data, shared.FromCrudRole)
 		}
 		return spwd
 	})

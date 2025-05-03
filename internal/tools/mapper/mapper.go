@@ -2,15 +2,17 @@ package mapper
 
 type KeyFn[T any, K comparable] func(T) K
 
-func MapTo[T any, K comparable](records []T, keys []K, keyFn KeyFn[T, K]) []T {
+func MapTo[T any, K comparable](records []T, keys []K, keyFn KeyFn[T, K]) []*T {
 	var m = make(map[K]T)
 	for _, record := range records {
 		m[keyFn(record)] = record
 	}
-	var result []T
+	var result []*T
 	for _, key := range keys {
 		if val, ok := m[key]; ok {
-			result = append(result, val)
+			result = append(result, &val)
+		} else {
+			result = append(result, nil)
 		}
 	}
 
@@ -24,7 +26,11 @@ func MapToMany[T any, K comparable](records []T, keys []K, keyFn KeyFn[T, K]) []
 	}
 	var result [][]T
 	for _, key := range keys {
-		result = append(result, m[key])
+		if val, ok := m[key]; ok {
+			result = append(result, val)
+		} else {
+			result = append(result, nil)
+		}
 	}
 
 	return result
@@ -33,6 +39,13 @@ func Map[T1, T2 any](s []T1, f func(T1) T2) []T2 {
 	r := make([]T2, len(s))
 	for i, v := range s {
 		r[i] = f(v)
+	}
+	return r
+}
+func MapIdx[T1, T2 any](s []T1, f func(int, T1) T2) []T2 {
+	r := make([]T2, len(s))
+	for i, v := range s {
+		r[i] = f(i, v)
 	}
 	return r
 }

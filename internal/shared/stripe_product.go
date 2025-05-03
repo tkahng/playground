@@ -3,6 +3,7 @@ package shared
 import (
 	"time"
 
+	crudModels "github.com/tkahng/authgo/internal/crud/crudModels"
 	"github.com/tkahng/authgo/internal/db/models"
 )
 
@@ -15,6 +16,19 @@ type Product struct {
 	Metadata    map[string]string `db:"metadata" json:"metadata"`
 	CreatedAt   time.Time         `db:"created_at" json:"created_at"`
 	UpdatedAt   time.Time         `db:"updated_at" json:"updated_at"`
+}
+
+func FromCrudProduct(product *crudModels.StripeProduct) *Product {
+	return &Product{
+		ID:          product.ID,
+		Active:      product.Active,
+		Name:        product.Name,
+		Description: product.Description,
+		Image:       product.Image,
+		Metadata:    product.Metadata,
+		CreatedAt:   product.CreatedAt,
+		UpdatedAt:   product.UpdatedAt,
+	}
 }
 
 func ModelToProduct(product *models.StripeProduct) *Product {

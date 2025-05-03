@@ -14,7 +14,7 @@ var (
 	PermissionColumnNames = []string{"id", "name", "description", "created_at", "updated_at"}
 )
 
-func ListPermissionsFilterFunc3(sq squirrel.SelectBuilder, filter *shared.PermissionsListFilter) squirrel.SelectBuilder {
+func ListPermissionsFilterFunc(sq squirrel.SelectBuilder, filter *shared.PermissionsListFilter) squirrel.SelectBuilder {
 	// where := make(map[string]any)
 	if filter == nil {
 		return sq
@@ -115,7 +115,7 @@ func ListPermissions(ctx context.Context, db Queryer, input *shared.PermissionsL
 	pageInput := &input.PaginatedInput
 
 	// q = ViewApplyPagination(q, pageInput)
-	q = ListPermissionsFilterFunc3(q, &filter)
+	q = ListPermissionsFilterFunc(q, &filter)
 	q = Paginate(q, pageInput)
 	if input.SortBy != "" && input.SortOrder != "" {
 		q = q.OrderBy(input.SortBy + " " + strings.ToUpper(input.SortOrder))
@@ -136,7 +136,7 @@ func CountPermissions(ctx context.Context, db Queryer, filter *shared.Permission
 	q := squirrel.Select("COUNT(permissions.*)").From("permissions")
 
 	// q = ViewApplyPagination(q, pageInput)
-	q = ListPermissionsFilterFunc3(q, filter)
+	q = ListPermissionsFilterFunc(q, filter)
 
 	data, err := ExecQuery[CountOutput](ctx, db, q.PlaceholderFormat(squirrel.Dollar))
 	if err != nil {

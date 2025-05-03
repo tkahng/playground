@@ -168,6 +168,7 @@ const (
 type TaskProjectStatus string
 
 type StripeProduct struct {
+	_           struct{}          `db:"stripe_products" json:"-"`
 	ID          string            `db:"id,pk" json:"id"`
 	Active      bool              `db:"active" json:"active"`
 	Name        string            `db:"name" json:"name"`
@@ -176,6 +177,7 @@ type StripeProduct struct {
 	Metadata    map[string]string `db:"metadata" json:"metadata"`
 	CreatedAt   time.Time         `db:"created_at" json:"created_at"`
 	UpdatedAt   time.Time         `db:"updated_at" json:"updated_at"`
+	Prices      []StripePrice     `db:"prices" src:"id" dest:"product_id" table:"stripe_prices" json:"-"`
 }
 
 type StripePricingType string
@@ -199,6 +201,7 @@ const (
 // ToModelsStripePricingPlanInterval converts a StripePricingPlanInterval to models.StripePricingPlanInterval
 
 type StripePrice struct {
+	_               struct{}                   `db:"stripe_prices" json:"-"`
 	ID              string                     `db:"id,pk" json:"id"`
 	ProductID       string                     `db:"product_id" json:"product_id"`
 	LookupKey       *string                    `db:"lookup_key" json:"lookup_key"`
@@ -212,6 +215,7 @@ type StripePrice struct {
 	Metadata        map[string]string          `db:"metadata" json:"metadata"`
 	CreatedAt       time.Time                  `db:"created_at" json:"created_at"`
 	UpdatedAt       time.Time                  `db:"updated_at" json:"updated_at"`
+	Product         StripeProduct              `db:"product" json:"product,omitempty" required:"false"`
 }
 
 // enum:"trialing,active,canceled,incomplete,incomplete_expired,past_due,unpaid,paused"
@@ -229,6 +233,7 @@ const (
 )
 
 type StripeSubscription struct {
+	_                  struct{}                 `db:"stripe_subscriptions" json:"-"`
 	ID                 string                   `db:"id,pk" json:"id"`
 	UserID             uuid.UUID                `db:"user_id" json:"user_id"`
 	Status             StripeSubscriptionStatus `db:"status" json:"status"`
@@ -246,4 +251,14 @@ type StripeSubscription struct {
 	TrialEnd           *time.Time               `db:"trial_end" json:"trial_end"`
 	CreatedAt          time.Time                `db:"created_at" json:"created_at"`
 	UpdatedAt          time.Time                `db:"updated_at" json:"updated_at"`
+}
+
+type StripeCustomer struct {
+	_              struct{}           `db:"stripe_customers" json:"-"`
+	ID             uuid.UUID          `db:"id,pk" json:"id"`
+	StripeID       string             `db:"stripe_id" json:"stripe_id"`
+	BillingAddress *map[string]string `db:"billing_address" json:"billing_address"`
+	PaymentMethod  *map[string]string `db:"payment_method" json:"payment_method"`
+	CreatedAt      time.Time          `db:"created_at" json:"created_at"`
+	UpdatedAt      time.Time          `db:"updated_at" json:"updated_at"`
 }

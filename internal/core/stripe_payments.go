@@ -149,21 +149,36 @@ func (s *StripeService) CreateBillingPortalSession(ctx context.Context, db queri
 	if err != nil {
 		return "", err
 	}
-	err = prods.LoadStripeProductProductStripePrices(
-		ctx,
-		db,
-		models.SelectWhere.StripePrices.Active.EQ(true),
-	)
+	prodIds := make([]string, len(prods))
+	for i, p := range prods {
+		prodIds[i] = p.ID
+	}
+	prices, err := queries.ListPrices(ctx, db, &shared.StripePriceListParams{
+		PaginatedInput: shared.PaginatedInput{
+			PerPage: 100,
+		},
+		StripePriceListFilter: shared.StripePriceListFilter{
+			Active:     shared.Active,
+			ProductIds: prodIds,
+		},
+	})
+	grouped := mapper.MapToMany(prices, prodIds, func(p *models.StripePrice) string { return p.ProductID })
 	if err != nil {
 		return "", err
 	}
-	prodssa := mapper.Map(prods, func(user *models.StripeProduct) *payment.ProductBillingConfigurationInput {
-		return &payment.ProductBillingConfigurationInput{
-			Product: &user.ID,
-			Prices:  mapper.Map(user.R.ProductStripePrices, func(p *models.StripePrice) *string { return &p.ID }),
+	var configurations []*payment.ProductBillingConfigurationInput
+	for i, id := range prods {
+		price := grouped[i]
+		con := &payment.ProductBillingConfigurationInput{
+			Product: &id.ID,
+			Prices: mapper.Map(price, func(p *models.StripePrice) *string {
+				return &p.ID
+			}),
 		}
-	})
-	config, err := s.client.CreatePortalConfiguration(prodssa...)
+		configurations = append(configurations, con)
+	}
+
+	config, err := s.client.CreatePortalConfiguration(configurations...)
 	if err != nil {
 		return "", err
 	}

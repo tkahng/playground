@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/danielgtaylor/huma/v2"
-	"github.com/tkahng/authgo/internal/db/models"
+	"github.com/tkahng/authgo/internal/crud/crudModels"
 	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
@@ -37,14 +37,15 @@ func (api *Api) StripeProductsWithPrices(ctx context.Context, inputt *StripeProd
 		},
 		SortParams: inputt.SortParams,
 	}
-	users, err := queries.ListProducts(ctx, db, input)
+	products, err := queries.ListProducts(ctx, db, input)
 	if err != nil {
 		return nil, err
 	}
-
-	err = users.LoadStripeProductProductStripePrices(ctx, db,
-		models.SelectWhere.StripePrices.Active.EQ(true),
-	)
+	var ids []string
+	for _, u := range products {
+		ids = append(ids, u.ID)
+	}
+	prices, err := queries.LoadProductPrices(ctx, db, ids...)
 	if err != nil {
 		return nil, err
 	}
@@ -53,12 +54,14 @@ func (api *Api) StripeProductsWithPrices(ctx context.Context, inputt *StripeProd
 	if err != nil {
 		return nil, err
 	}
-	prods := mapper.Map(users, func(user *models.StripeProduct) *shared.StripeProductWithData {
-		return &shared.StripeProductWithData{
-			Product: shared.ModelToProduct(user),
-			Prices:  mapper.Map(user.R.ProductStripePrices, shared.ModelToPrice),
+	prods := mapper.MapIdx(products, func(index int, user *crudModels.StripeProduct) *shared.StripeProductWithData {
+		res := &shared.StripeProductWithData{
+			Product: shared.FromCrudProduct(user),
 		}
+		data := prices[index]
+		res.Prices = mapper.Map(data.Data, shared.FromCrudModel)
 
+		return res
 	})
 
 	return &shared.PaginatedOutput[*shared.StripeProductWithData]{

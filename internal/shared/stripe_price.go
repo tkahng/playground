@@ -3,6 +3,7 @@ package shared
 import (
 	"time"
 
+	crudModels "github.com/tkahng/authgo/internal/crud/crudModels"
 	"github.com/tkahng/authgo/internal/db/models"
 	ty "github.com/tkahng/authgo/internal/types"
 )
@@ -98,6 +99,28 @@ type Price struct {
 	UpdatedAt       time.Time                  `db:"updated_at" json:"updated_at"`
 }
 
+func FromCrudModel(price *crudModels.StripePrice) *Price {
+	var interval *StripePricingPlanInterval
+	if price.Interval != nil {
+		interval = ty.Pointer(StripePricingPlanInterval(*price.Interval))
+	}
+	return &Price{
+		ID:              price.ID,
+		ProductID:       price.ProductID,
+		LookupKey:       price.LookupKey,
+		Active:          price.Active,
+		UnitAmount:      price.UnitAmount,
+		Currency:        price.Currency,
+		Type:            StripePricingType(price.Type),
+		Interval:        interval,
+		IntervalCount:   price.IntervalCount,
+		TrialPeriodDays: price.TrialPeriodDays,
+		Metadata:        price.Metadata,
+		CreatedAt:       price.CreatedAt,
+		UpdatedAt:       price.UpdatedAt,
+	}
+}
+
 func ModelToPrice(price *models.StripePrice) *Price {
 	return &Price{
 		ID:              price.ID,
@@ -122,9 +145,10 @@ type StripePricesWithProduct struct {
 }
 
 type StripePriceListFilter struct {
-	Q      string       `query:"q,omitempty" required:"false"`
-	Ids    []string     `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" uniqueItems:"true"`
-	Active ActiveStatus `query:"active,omitempty" required:"false" enum:"active,inactive"`
+	Q          string       `query:"q,omitempty" required:"false"`
+	Ids        []string     `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" uniqueItems:"true"`
+	Active     ActiveStatus `query:"active,omitempty" required:"false" enum:"active,inactive"`
+	ProductIds []string     `query:"product_ids,omitempty" required:"false" minimum:"1" maximum:"100" uniqueItems:"true"`
 }
 type StripePriceListParams struct {
 	PaginatedInput
