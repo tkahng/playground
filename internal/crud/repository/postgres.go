@@ -58,11 +58,15 @@ func NewPostgresRepository[Model any]() *PostgresRepository[Model] {
 func (r *PostgresRepository[Model]) Get(ctx context.Context, db DBTX, where *map[string]any, order *map[string]string, limit *int, skip *int) ([]*Model, error) {
 	args := []any{}
 	query := fmt.Sprintf("SELECT %s FROM %s", r.builder.Fields(""), r.builder.Table())
-	if expr := r.builder.Where(where, &args, nil); expr != "" {
+	expr, err := r.builder.WhereError(where, &args, nil)
+	if err != nil {
+		return nil, err
+	}
+	if expr != "" {
 		query += fmt.Sprintf(" WHERE %s", expr)
 	}
-	if expr := r.builder.Order(order); expr != "" {
-		query += fmt.Sprintf(" ORDER BY %s", expr)
+	if orderexpr := r.builder.Order(order); orderexpr != "" {
+		query += fmt.Sprintf(" ORDER BY %s", orderexpr)
 	}
 	if limit != nil {
 		query += fmt.Sprintf(" LIMIT %d", *limit)
@@ -90,8 +94,14 @@ func (r *PostgresRepository[Model]) Put(ctx context.Context, dbx DBTX, models []
 	for _, model := range models {
 		args := []any{}
 		where := map[string]any{}
-		query := fmt.Sprintf("UPDATE %s SET %s", r.builder.Table(), r.builder.Set(&model, &args, &where))
-		if expr := r.builder.Where(&where, &args, nil); expr != "" {
+		set, err := r.builder.SetError(&model, &args, &where)
+		if err != nil {
+			return nil, err
+		}
+		query := fmt.Sprintf("UPDATE %s SET %s", r.builder.Table(), set)
+		if expr, err := r.builder.WhereError(&where, &args, nil); err != nil {
+			return nil, err
+		} else if expr != "" {
 			query += fmt.Sprintf(" WHERE %s", expr)
 		}
 		query += fmt.Sprintf(" RETURNING %s", r.builder.Fields(""))
@@ -142,7 +152,9 @@ func (r *PostgresRepository[Model]) GetOne(ctx context.Context, dbx DBTX, where 
 func (r *PostgresRepository[Model]) Post(ctx context.Context, dbx DBTX, models []Model) ([]*Model, error) {
 	args := []any{}
 	query := fmt.Sprintf("INSERT INTO %s", r.builder.Table())
-	if fields, values := r.builder.Values(&models, &args, nil); fields != "" && values != "" {
+	if fields, values, err := r.builder.ValuesError(&models, &args, nil); err != nil {
+		return nil, err
+	} else if fields != "" && values != "" {
 		query += fmt.Sprintf(" (%s) VALUES %s", fields, values)
 	}
 	query += fmt.Sprintf(" RETURNING %s", r.builder.Fields(""))
@@ -175,7 +187,9 @@ func (r *PostgresRepository[Model]) PostOne(ctx context.Context, dbx DBTX, model
 func (r *PostgresRepository[Model]) Delete(ctx context.Context, dbx DBTX, where *map[string]any) ([]*Model, error) {
 	args := []any{}
 	query := fmt.Sprintf("DELETE FROM %s", r.builder.Table())
-	if expr := r.builder.Where(where, &args, nil); expr != "" {
+	if expr, err := r.builder.WhereError(where, &args, nil); err != nil {
+		return nil, err
+	} else if expr != "" {
 		query += fmt.Sprintf(" WHERE %s", expr)
 	}
 	query += fmt.Sprintf(" RETURNING %s", r.builder.Fields(""))
@@ -196,7 +210,9 @@ func (r *PostgresRepository[Model]) Delete(ctx context.Context, dbx DBTX, where 
 func (r *PostgresRepository[Model]) Count(ctx context.Context, dbx DBTX, where *map[string]any) (int64, error) {
 	args := []any{}
 	query := fmt.Sprintf("SELECT COUNT(*) FROM %s", r.builder.Table())
-	if expr := r.builder.Where(where, &args, nil); expr != "" {
+	if expr, err := r.builder.WhereError(where, &args, nil); err != nil {
+		return 0, err
+	} else if expr != "" {
 		query += fmt.Sprintf(" WHERE %s", expr)
 	}
 

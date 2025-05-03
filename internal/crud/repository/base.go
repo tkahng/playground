@@ -168,6 +168,22 @@ func (b *SQLBuilder[Model]) Fields(prefix string) string {
 	return strings.Join(result, ",")
 }
 
+func (b *SQLBuilder[Model]) ValuesError(values *[]Model, args *[]any, keys *[]any) (fields string, vals string, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			slog.Error("Error occurred during values generation", slog.Any("error", r),
+				slog.String("table", b.table),
+				slog.Any("values", values),
+				slog.Any("args", args),
+				slog.Any("keys", keys),
+			)
+			err = fmt.Errorf("error generating values for table %s", b.table)
+		}
+	}()
+	fields, vals = b.Values(values, args, keys)
+	return
+}
+
 // Constructs the VALUES clause for an INSERT query
 func (b *SQLBuilder[Model]) Values(values *[]Model, args *[]any, keys *[]any) (string, string) {
 	if values == nil {
@@ -215,6 +231,20 @@ func (b *SQLBuilder[Model]) Values(values *[]Model, args *[]any, keys *[]any) (s
 
 	slog.Debug("Constructed VALUES clause", slog.Any("values", result))
 	return strings.Join(fields, ","), strings.Join(result, ",")
+}
+
+func (b *SQLBuilder[Model]) SetError(set *Model, args *[]any, where *map[string]any) (ret string, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			slog.Error("Error occurred during Set generation", slog.Any("error", r),
+				slog.String("table", b.table),
+				slog.Any("set", set),
+				slog.Any("where", where),
+			)
+			err = fmt.Errorf("error generating Set for table %s", b.table)
+		}
+	}()
+	return b.Set(set, args, where), nil
 }
 
 // Constructs the SET clause for an UPDATE query
@@ -297,7 +327,7 @@ func (b *SQLBuilder[Model]) WhereError(where *map[string]any, args *[]any, run f
 				slog.String("table", b.table),
 				slog.Any("where", where),
 			)
-			err = fmt.Errorf("panic occurred: %v during where generation for table %s", r, b.table)
+			err = fmt.Errorf("error generating where for table %s", b.table)
 		}
 	}()
 	ret = b.Where(where, args, run)
@@ -404,6 +434,8 @@ func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any, run func(s
 						}
 						// If a run function is provided, sub-query is executed and its result is added to the main query
 					}
+				} else {
+					slog.Warn("Unknown field key or operation", slog.Any("field", key), slog.Any("operation", op), slog.Any("table", b.table))
 				}
 			}
 		}

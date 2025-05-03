@@ -487,23 +487,7 @@ func FindPermissionByName(ctx context.Context, dbx Queryer, params string) (*cru
 	)
 	return OptionalRow(data, err)
 }
-func FindPermissionsByNames(ctx context.Context, dbx Queryer, params []string) ([]*crudModels.Permission, error) {
-	return crudrepo.Permission.Get(
-		ctx,
-		dbx,
-		&map[string]any{
-			"name": map[string]any{
-				"_in": params,
-			},
-		},
-		&map[string]string{
-			"name": "asc",
-		},
-		nil,
-		nil,
-	)
-	// return models.Permissions.Query(models.SelectWhere.Permissions.Name.In(params...)).All(ctx, dbx)
-}
+
 func FindPermissionsByIds(ctx context.Context, dbx Queryer, params []uuid.UUID) ([]*crudModels.Permission, error) {
 	newIds := make([]string, len(params))
 	for i, id := range params {

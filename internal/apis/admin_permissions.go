@@ -108,11 +108,7 @@ func (api *Api) AdminUserPermissionsCreate(ctx context.Context, input *struct {
 	if len(permissions) != len(permissionIds) {
 		return nil, huma.Error404NotFound("Permission not found")
 	}
-	newPermissionIds := make([]uuid.UUID, len(permissions))
-	for i, permission := range permissions {
-		newPermissionIds[i] = permission.ID
-	}
-	err = queries.CreateUserPermissions(ctx, db, user.ID, newPermissionIds...)
+	err = queries.CreateUserPermissions(ctx, db, user.ID, permissionIds...)
 	if err != nil {
 		return nil, err
 	}
