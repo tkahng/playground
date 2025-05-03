@@ -8,7 +8,6 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/stephenafamo/bob"
 	"github.com/stephenafamo/scan"
 )
 
@@ -37,8 +36,6 @@ type Queries struct {
 func NewQueries(pool DBTX) *Queries {
 	return &Queries{pool: pool}
 }
-
-var _ bob.Executor = (*Queries)(nil)
 
 type rows struct {
 	pgx.Rows

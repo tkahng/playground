@@ -9,8 +9,6 @@ import (
 	"github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
-	"github.com/stephenafamo/bob/dialect/psql"
-	"github.com/stephenafamo/bob/dialect/psql/sm"
 	"github.com/stephenafamo/scan"
 	"github.com/stephenafamo/scan/pgxscan"
 	"github.com/tkahng/authgo/internal/shared"
@@ -19,22 +17,6 @@ import (
 
 func VarCollect[T any](args ...T) []T {
 	return args
-}
-
-func ViewApplyPagination[T any, Ts ~[]T](view *psql.ViewQuery[T, Ts], input *shared.PaginatedInput) {
-	if input == nil {
-		input = &shared.PaginatedInput{
-			PerPage: 10,
-			Page:    0,
-		}
-	}
-	if input.PerPage == 0 {
-		input.PerPage = 10
-	}
-	view.Apply(
-		sm.Limit(psql.Arg(input.PerPage)),
-		sm.Offset(psql.Arg((input.Page)*input.PerPage)),
-	)
 }
 
 func Paginate(q squirrel.SelectBuilder, input *shared.PaginatedInput) squirrel.SelectBuilder {
@@ -63,13 +45,6 @@ func PaginateRepo(input *shared.PaginatedInput) (*int, *int) {
 	return types.Pointer(int(input.PerPage)), types.Pointer(int((input.Page) * input.PerPage))
 }
 
-func CountExec[T any, Ts ~[]T](ctx context.Context, db Queryer, v *psql.ViewQuery[T, Ts]) (int64, error) {
-	data, err := v.Count(ctx, db)
-	if err != nil {
-		return 0, err
-	}
-	return data, nil
-}
 func OptionalRow[T any](record *T, err error) (*T, error) {
 	if err == nil {
 		return record, nil
@@ -102,7 +77,7 @@ func ReturnFirst[T any](args []*T) *T {
 }
 
 type QueryBuilder interface {
-	ToSql() (string, []interface{}, error)
+	ToSql() (string, []any, error)
 }
 
 func QueryWithBuilder[T any](ctx context.Context, db Queryer, query QueryBuilder) ([]T, error) {
