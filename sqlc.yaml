@@ -3,8 +3,8 @@ sql:
   - engine: postgresql
     database:
       uri: ${DATABASE_URL}
-    queries: "db/queries"
-    schema: "db/migrations"
+    queries: "internal/db/queries"
+    schema: "internal/db/migrations"
     gen:
       go:
         package: "db"
