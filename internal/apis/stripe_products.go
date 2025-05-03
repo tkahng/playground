@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/danielgtaylor/huma/v2"
-	"github.com/tkahng/authgo/internal/crud/crudModels"
+	"github.com/tkahng/authgo/internal/crud/models"
 	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
@@ -67,7 +67,7 @@ func (api *Api) StripeProductsWithPrices(ctx context.Context, inputt *StripeProd
 
 	return &shared.PaginatedOutput[*shared.StripeProductWithData]{
 		Body: shared.PaginatedResponse[*shared.StripeProductWithData]{
-			Data: mapper.Map(products, func(p *crudModels.StripeProduct) *shared.StripeProductWithData {
+			Data: mapper.Map(products, func(p *models.StripeProduct) *shared.StripeProductWithData {
 				return &shared.StripeProductWithData{
 					Product: shared.FromCrudProduct(p),
 					Roles:   mapper.Map(p.Roles, shared.FromCrudRole),

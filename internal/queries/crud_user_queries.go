@@ -7,8 +7,8 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
-	"github.com/tkahng/authgo/internal/crud/crudModels"
 	"github.com/tkahng/authgo/internal/crud/crudrepo"
+	"github.com/tkahng/authgo/internal/crud/models"
 	"github.com/tkahng/authgo/internal/shared"
 )
 
@@ -76,7 +76,7 @@ func ListUserFilterFunc(filter *shared.UserListFilter) *map[string]any {
 	return &where
 }
 
-func ListUsers(ctx context.Context, db Queryer, input *shared.UserListParams) ([]*crudModels.User, error) {
+func ListUsers(ctx context.Context, db Queryer, input *shared.UserListParams) ([]*models.User, error) {
 
 	filter := input.UserListFilter
 	pageInput := &input.PaginatedInput

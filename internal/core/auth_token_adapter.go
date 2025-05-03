@@ -7,8 +7,8 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/tkahng/authgo/internal/crud/crudModels"
 	"github.com/tkahng/authgo/internal/crud/crudrepo"
+	"github.com/tkahng/authgo/internal/crud/models"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/security"
 )
@@ -126,8 +126,8 @@ func (a *TokenAdapterBase) GetToken(ctx context.Context, token string) (*shared.
 }
 
 func (a *TokenAdapterBase) SaveToken(ctx context.Context, token *shared.CreateTokenDTO) error {
-	_, err := crudrepo.Token.PostOne(ctx, a.db, &crudModels.Token{
-		Type:       crudModels.TokenTypes(token.Type),
+	_, err := crudrepo.Token.PostOne(ctx, a.db, &models.Token{
+		Type:       models.TokenTypes(token.Type),
 		Identifier: token.Identifier,
 		Expires:    token.Expires,
 		Token:      token.Token,

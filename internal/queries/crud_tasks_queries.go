@@ -9,8 +9,8 @@ import (
 
 	"github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
-	"github.com/tkahng/authgo/internal/crud/crudModels"
 	"github.com/tkahng/authgo/internal/crud/crudrepo"
+	"github.com/tkahng/authgo/internal/crud/models"
 
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
@@ -27,7 +27,7 @@ WHERE tp.id = ANY ($1::uuid [])
 GROUP BY tp.id;`
 )
 
-func LoadTaskProjectsTasks(ctx context.Context, db Queryer, projectIds ...uuid.UUID) ([][]*crudModels.Task, error) {
+func LoadTaskProjectsTasks(ctx context.Context, db Queryer, projectIds ...uuid.UUID) ([][]*models.Task, error) {
 	tasks, err := crudrepo.Task.Get(
 		ctx,
 		db,
@@ -43,12 +43,12 @@ func LoadTaskProjectsTasks(ctx context.Context, db Queryer, projectIds ...uuid.U
 	if err != nil {
 		return nil, err
 	}
-	return mapper.MapToManyPointer(tasks, projectIds, func(t *crudModels.Task) uuid.UUID {
+	return mapper.MapToManyPointer(tasks, projectIds, func(t *models.Task) uuid.UUID {
 		return t.ProjectID
 	}), nil
 }
 
-func FindTaskByID(ctx context.Context, db Queryer, id uuid.UUID) (*crudModels.Task, error) {
+func FindTaskByID(ctx context.Context, db Queryer, id uuid.UUID) (*models.Task, error) {
 	task, err := crudrepo.Task.GetOne(
 		ctx,
 		db,
@@ -109,7 +109,7 @@ func DeleteTask(ctx context.Context, db Queryer, taskID uuid.UUID) error {
 	return err
 }
 
-func FindTaskProjectByID(ctx context.Context, db Queryer, id uuid.UUID) (*crudModels.TaskProject, error) {
+func FindTaskProjectByID(ctx context.Context, db Queryer, id uuid.UUID) (*models.TaskProject, error) {
 	// task, err := models.FindTaskProject(ctx, db, id)
 	// return OptionalRow(task, err)
 	task, err := crudrepo.TaskProject.GetOne(
@@ -244,7 +244,7 @@ func ListTasksFilterFunc(filter *shared.TaskListFilter) *map[string]any {
 }
 
 // ListTasks implements AdminCrudActions.
-func ListTasks(ctx context.Context, db Queryer, input *shared.TaskListParams) ([]*crudModels.Task, error) {
+func ListTasks(ctx context.Context, db Queryer, input *shared.TaskListParams) ([]*models.Task, error) {
 	filter := input.TaskListFilter
 	pageInput := &input.PaginatedInput
 
@@ -334,7 +334,7 @@ func ListTaskProjectsOrderByFunc(input *shared.TaskProjectsListParams) *map[stri
 }
 
 // ListTaskProjects implements AdminCrudActions.
-func ListTaskProjects(ctx context.Context, db Queryer, input *shared.TaskProjectsListParams) ([]*crudModels.TaskProject, error) {
+func ListTaskProjects(ctx context.Context, db Queryer, input *shared.TaskProjectsListParams) ([]*models.TaskProject, error) {
 	filter := input.TaskProjectsListFilter
 	pageInput := &input.PaginatedInput
 
@@ -361,12 +361,12 @@ func CountTaskProjects(ctx context.Context, db Queryer, filter *shared.TaskProje
 	return crudrepo.TaskProject.Count(ctx, db, where)
 }
 
-func CreateTaskProject(ctx context.Context, db Queryer, userID uuid.UUID, input *shared.CreateTaskProjectDTO) (*crudModels.TaskProject, error) {
-	taskProject := crudModels.TaskProject{
+func CreateTaskProject(ctx context.Context, db Queryer, userID uuid.UUID, input *shared.CreateTaskProjectDTO) (*models.TaskProject, error) {
+	taskProject := models.TaskProject{
 		UserID:      userID,
 		Name:        input.Name,
 		Description: input.Description,
-		Status:      crudModels.TaskProjectStatus(input.Status),
+		Status:      models.TaskProjectStatus(input.Status),
 		Order:       input.Order,
 	}
 	projects, err := crudrepo.TaskProject.PostOne(ctx, db, &taskProject)
@@ -376,7 +376,7 @@ func CreateTaskProject(ctx context.Context, db Queryer, userID uuid.UUID, input 
 	return projects, nil
 }
 
-func CreateTaskProjectWithTasks(ctx context.Context, db Queryer, userID uuid.UUID, input *shared.CreateTaskProjectWithTasksDTO) (*crudModels.TaskProject, error) {
+func CreateTaskProjectWithTasks(ctx context.Context, db Queryer, userID uuid.UUID, input *shared.CreateTaskProjectWithTasksDTO) (*models.TaskProject, error) {
 	count, err := CountTaskProjects(ctx, db, nil)
 	if err != nil {
 		return nil, err
@@ -386,7 +386,7 @@ func CreateTaskProjectWithTasks(ctx context.Context, db Queryer, userID uuid.UUI
 	if err != nil {
 		return nil, err
 	}
-	var tasks []*crudModels.Task
+	var tasks []*models.Task
 	for i, task := range input.Tasks {
 		task.Order = float64(i * 1000)
 		newTask, err := CreateTask(ctx, db, userID, taskProject.ID, &task)
@@ -398,7 +398,7 @@ func CreateTaskProjectWithTasks(ctx context.Context, db Queryer, userID uuid.UUI
 	return taskProject, nil
 }
 
-func CreateTaskWithChildren(ctx context.Context, db Queryer, userID uuid.UUID, projectID uuid.UUID, input *shared.CreateTaskWithChildrenDTO) (*crudModels.Task, error) {
+func CreateTaskWithChildren(ctx context.Context, db Queryer, userID uuid.UUID, projectID uuid.UUID, input *shared.CreateTaskWithChildrenDTO) (*models.Task, error) {
 	task, err := CreateTask(ctx, db, userID, projectID, &input.CreateTaskBaseDTO)
 	if err != nil {
 		return nil, err
@@ -412,13 +412,13 @@ func CreateTaskWithChildren(ctx context.Context, db Queryer, userID uuid.UUID, p
 	return task, nil
 }
 
-func CreateTask(ctx context.Context, db Queryer, userID uuid.UUID, projectID uuid.UUID, input *shared.CreateTaskBaseDTO) (*crudModels.Task, error) {
-	setter := crudModels.Task{
+func CreateTask(ctx context.Context, db Queryer, userID uuid.UUID, projectID uuid.UUID, input *shared.CreateTaskBaseDTO) (*models.Task, error) {
+	setter := models.Task{
 		ProjectID:   projectID,
 		UserID:      userID,
 		Name:        input.Name,
 		Description: input.Description,
-		Status:      crudModels.TaskStatus(input.Status),
+		Status:      models.TaskStatus(input.Status),
 		Order:       input.Order,
 	}
 	task, err := crudrepo.Task.PostOne(ctx, db, &setter)
@@ -502,7 +502,7 @@ func CreateTask(ctx context.Context, db Queryer, userID uuid.UUID, projectID uui
 // 	return (element.Order + sideElements.Order) / 2, nil
 
 // }
-func DefineTaskOrderNumberByStatus(ctx context.Context, dbx Queryer, taskId uuid.UUID, taskProjectId uuid.UUID, status crudModels.TaskStatus, currentOrder float64, position int64) (float64, error) {
+func DefineTaskOrderNumberByStatus(ctx context.Context, dbx Queryer, taskId uuid.UUID, taskProjectId uuid.UUID, status models.TaskStatus, currentOrder float64, position int64) (float64, error) {
 	if position == 0 {
 		res, err := crudrepo.Task.Get(
 			ctx,
@@ -714,7 +714,7 @@ func UpdateTask(ctx context.Context, db Queryer, taskID uuid.UUID, input *shared
 	// }
 	task.Name = input.Name
 	task.Description = input.Description
-	task.Status = crudModels.TaskStatus(input.Status)
+	task.Status = models.TaskStatus(input.Status)
 	task.Order = input.Order
 	task.ParentID = input.ParentID
 	_, err = crudrepo.Task.PutOne(ctx, db, task)
@@ -747,7 +747,7 @@ func UpdateTaskProject(ctx context.Context, db Queryer, taskProjectID uuid.UUID,
 	}
 	taskProject.Name = input.Name
 	taskProject.Description = input.Description
-	taskProject.Status = crudModels.TaskProjectStatus(input.Status)
+	taskProject.Status = models.TaskProjectStatus(input.Status)
 	taskProject.Order = input.Order
 	_, err = crudrepo.TaskProject.PutOne(ctx, db, taskProject)
 	if err != nil {
@@ -781,7 +781,7 @@ func UpdateTaskProject(ctx context.Context, db Queryer, taskProjectID uuid.UUID,
 // 	return nil
 // }
 
-func UpdateTaskPositionStatus(ctx context.Context, db Queryer, taskID uuid.UUID, position int64, status crudModels.TaskStatus) error {
+func UpdateTaskPositionStatus(ctx context.Context, db Queryer, taskID uuid.UUID, position int64, status models.TaskStatus) error {
 	task, err := FindTaskByID(ctx, db, taskID)
 	if err != nil {
 		return err

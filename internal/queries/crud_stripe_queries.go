@@ -6,8 +6,8 @@ import (
 	"strings"
 
 	"github.com/Masterminds/squirrel"
-	"github.com/tkahng/authgo/internal/crud/crudModels"
 	"github.com/tkahng/authgo/internal/crud/crudrepo"
+	"github.com/tkahng/authgo/internal/crud/models"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 )
@@ -69,7 +69,7 @@ var (
 	MetadataIndexName = "metadata.index"
 )
 
-func ListProducts(ctx context.Context, db Queryer, input *shared.StripeProductListParams) ([]*crudModels.StripeProduct, error) {
+func ListProducts(ctx context.Context, db Queryer, input *shared.StripeProductListParams) ([]*models.StripeProduct, error) {
 
 	q := squirrel.Select("stripe_products.*").
 		From("stripe_products")
@@ -78,7 +78,7 @@ func ListProducts(ctx context.Context, db Queryer, input *shared.StripeProductLi
 
 	q = Paginate(q, pageInput)
 	q = ListProductFilterFuncQuery(q, &filter)
-	data, err := QueryWithBuilder[*crudModels.StripeProduct](ctx, db, q.PlaceholderFormat(squirrel.Dollar))
+	data, err := QueryWithBuilder[*models.StripeProduct](ctx, db, q.PlaceholderFormat(squirrel.Dollar))
 	if err != nil {
 		return nil, err
 	}
@@ -115,8 +115,8 @@ FROM public.product_roles rp
 GROUP BY rp.product_id;`
 )
 
-func LoadProductRoles(ctx context.Context, db Queryer, productIds ...string) ([][]*crudModels.Role, error) {
-	data, err := QueryAll[shared.JoinedResult[*crudModels.Role, string]](
+func LoadProductRoles(ctx context.Context, db Queryer, productIds ...string) ([][]*models.Role, error) {
+	data, err := QueryAll[shared.JoinedResult[*models.Role, string]](
 		ctx,
 		db,
 		GetProductRolesQuery,
@@ -125,9 +125,9 @@ func LoadProductRoles(ctx context.Context, db Queryer, productIds ...string) ([]
 	if err != nil {
 		return nil, err
 	}
-	return mapper.Map(mapper.MapTo(data, productIds, func(a shared.JoinedResult[*crudModels.Role, string]) string {
+	return mapper.Map(mapper.MapTo(data, productIds, func(a shared.JoinedResult[*models.Role, string]) string {
 		return a.Key
-	}), func(a *shared.JoinedResult[*crudModels.Role, string]) []*crudModels.Role {
+	}), func(a *shared.JoinedResult[*models.Role, string]) []*models.Role {
 		if a == nil {
 			return nil
 		}
@@ -135,7 +135,7 @@ func LoadProductRoles(ctx context.Context, db Queryer, productIds ...string) ([]
 	}), nil
 }
 
-func LoadeProductPrices(ctx context.Context, db Queryer, where *map[string]any, productIds ...string) ([][]*crudModels.StripePrice, error) {
+func LoadeProductPrices(ctx context.Context, db Queryer, where *map[string]any, productIds ...string) ([][]*models.StripePrice, error) {
 	if where == nil {
 		where = &map[string]any{}
 	}
@@ -153,7 +153,7 @@ func LoadeProductPrices(ctx context.Context, db Queryer, where *map[string]any, 
 	if err != nil {
 		return nil, err
 	}
-	return mapper.MapToManyPointer(prices, productIds, func(t *crudModels.StripePrice) string {
+	return mapper.MapToManyPointer(prices, productIds, func(t *models.StripePrice) string {
 		return t.ProductID
 	}), nil
 }
@@ -209,7 +209,7 @@ func CountProducts(ctx context.Context, db Queryer, filter *shared.StripeProduct
 	return data[0].Count, nil
 }
 
-func ListPrices(ctx context.Context, db Queryer, input *shared.StripePriceListParams) ([]*crudModels.StripePrice, error) {
+func ListPrices(ctx context.Context, db Queryer, input *shared.StripePriceListParams) ([]*models.StripePrice, error) {
 
 	filter := input.StripePriceListFilter
 	pageInput := &input.PaginatedInput
@@ -311,7 +311,7 @@ func CountPrices(ctx context.Context, db Queryer, filter *shared.StripePriceList
 	return data, nil
 }
 
-func ListCustomers(ctx context.Context, db Queryer, input *shared.StripeCustomerListParams) ([]*crudModels.StripeCustomer, error) {
+func ListCustomers(ctx context.Context, db Queryer, input *shared.StripeCustomerListParams) ([]*models.StripeCustomer, error) {
 
 	filter := input.StripeCustomerListFilter
 	pageInput := &input.PaginatedInput
@@ -366,7 +366,7 @@ func CountCustomers(ctx context.Context, db Queryer, filter *shared.StripeCustom
 	return data, nil
 }
 
-func ListSubscriptions(ctx context.Context, db Queryer, input *shared.StripeSubscriptionListParams) ([]*crudModels.StripeSubscription, error) {
+func ListSubscriptions(ctx context.Context, db Queryer, input *shared.StripeSubscriptionListParams) ([]*models.StripeSubscription, error) {
 
 	filter := input.StripeSubscriptionListFilter
 	pageInput := &input.PaginatedInput

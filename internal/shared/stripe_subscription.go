@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/tkahng/authgo/internal/crud/crudModels"
+	"github.com/tkahng/authgo/internal/crud/models"
 )
 
 // enum:"trialing,active,canceled,incomplete,incomplete_expired,past_due,unpaid,paused"
@@ -45,7 +45,7 @@ type SubscriptionWithPrice struct {
 	Price *StripePricesWithProduct `json:"price,omitempty" required:"false"`
 }
 
-func FromCrudToSubWithUserAndPrice(sub *crudModels.SubscriptionWithPrice) *SubscriptionWithData {
+func FromCrudToSubWithUserAndPrice(sub *models.SubscriptionWithPrice) *SubscriptionWithData {
 	return &SubscriptionWithData{
 		Subscription: FromCrudSubscription(&sub.Subscription),
 		Price: &StripePricesWithProduct{
@@ -55,7 +55,7 @@ func FromCrudToSubWithUserAndPrice(sub *crudModels.SubscriptionWithPrice) *Subsc
 	}
 }
 
-func FromCrudSubscription(sub *crudModels.StripeSubscription) *Subscription {
+func FromCrudSubscription(sub *models.StripeSubscription) *Subscription {
 	return &Subscription{
 		ID:                 sub.ID,
 		UserID:             sub.UserID,

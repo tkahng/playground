@@ -8,12 +8,12 @@ import (
 	"github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
 	"github.com/stripe/stripe-go/v82"
-	"github.com/tkahng/authgo/internal/crud/crudModels"
 	"github.com/tkahng/authgo/internal/crud/crudrepo"
+	"github.com/tkahng/authgo/internal/crud/models"
 	"github.com/tkahng/authgo/internal/types"
 )
 
-func FindCustomerByStripeId(ctx context.Context, dbx Queryer, stripeId string) (*crudModels.StripeCustomer, error) {
+func FindCustomerByStripeId(ctx context.Context, dbx Queryer, stripeId string) (*models.StripeCustomer, error) {
 	data, err := crudrepo.StripeCustomer.GetOne(
 		ctx,
 		dbx,
@@ -29,7 +29,7 @@ func FindCustomerByStripeId(ctx context.Context, dbx Queryer, stripeId string) (
 	return OptionalRow(data, err)
 }
 
-func FindCustomerByUserId(ctx context.Context, dbx Queryer, userId uuid.UUID) (*crudModels.StripeCustomer, error) {
+func FindCustomerByUserId(ctx context.Context, dbx Queryer, userId uuid.UUID) (*models.StripeCustomer, error) {
 	data, err := crudrepo.StripeCustomer.GetOne(
 		ctx,
 		dbx,
@@ -42,7 +42,7 @@ func FindCustomerByUserId(ctx context.Context, dbx Queryer, userId uuid.UUID) (*
 	return OptionalRow(data, err)
 }
 
-func FindProductByStripeId(ctx context.Context, dbx Queryer, stripeId string) (*crudModels.StripeProduct, error) {
+func FindProductByStripeId(ctx context.Context, dbx Queryer, stripeId string) (*models.StripeProduct, error) {
 	// data, err := models.StripeProducts.Query(
 	// 	models.SelectWhere.StripeProducts.ID.EQ(stripeId),
 	// ).One(ctx, dbx)
@@ -78,7 +78,7 @@ func UpsertCustomerStripeId(ctx context.Context, dbx Queryer, userId uuid.UUID, 
 	return ExecWithBuilder(ctx, dbx, q.PlaceholderFormat(squirrel.Dollar))
 }
 
-func UpsertProduct(ctx context.Context, dbx Queryer, product *crudModels.StripeProduct) error {
+func UpsertProduct(ctx context.Context, dbx Queryer, product *models.StripeProduct) error {
 	// _, err := models.StripeProducts.Insert(
 	// 	product,
 	// 	im.OnConflict("id").DoUpdate(
@@ -115,7 +115,7 @@ func UpsertProductFromStripe(ctx context.Context, dbx Queryer, product *stripe.P
 	if len(product.Images) > 0 {
 		image = &product.Images[0]
 	}
-	param := &crudModels.StripeProduct{
+	param := &models.StripeProduct{
 		ID:          product.ID,
 		Active:      product.Active,
 		Name:        product.Name,
@@ -126,7 +126,7 @@ func UpsertProductFromStripe(ctx context.Context, dbx Queryer, product *stripe.P
 	return UpsertProduct(ctx, dbx, param)
 }
 
-func UpsertPrice(ctx context.Context, dbx Queryer, price *crudModels.StripePrice) error {
+func UpsertPrice(ctx context.Context, dbx Queryer, price *models.StripePrice) error {
 	// _, err := models.StripePrices.Insert(
 	// 	price,
 	// 	im.OnConflict("id").DoUpdate(
@@ -193,25 +193,25 @@ func UpsertPriceFromStripe(ctx context.Context, dbx Queryer, price *stripe.Price
 	// 	Type:       omit.From(PriceTypeConvert(price.Type)),
 	// 	Metadata:   omit.From(types.NewJSON(price.Metadata)),
 	// }
-	val := &crudModels.StripePrice{
+	val := &models.StripePrice{
 		ID:         price.ID,
 		ProductID:  price.Product.ID,
 		Active:     price.Active,
 		LookupKey:  &price.LookupKey,
 		UnitAmount: &price.UnitAmount,
 		Currency:   string(price.Currency),
-		Type:       crudModels.StripePricingType(price.Type),
+		Type:       models.StripePricingType(price.Type),
 		Metadata:   price.Metadata,
 	}
 	if price.Recurring != nil {
-		*val.Interval = crudModels.StripePricingPlanInterval(price.Recurring.Interval)
+		*val.Interval = models.StripePricingPlanInterval(price.Recurring.Interval)
 		*val.IntervalCount = price.Recurring.IntervalCount
 		*val.TrialPeriodDays = price.Recurring.TrialPeriodDays
 	}
 	return UpsertPrice(ctx, dbx, val)
 }
 
-func UpsertSubscription(ctx context.Context, dbx Queryer, subscription *crudModels.StripeSubscription) error {
+func UpsertSubscription(ctx context.Context, dbx Queryer, subscription *models.StripeSubscription) error {
 	// _, err := models.StripeSubscriptions.Insert(
 	// 	subscription,
 	// 	im.OnConflict("id").DoUpdate(
@@ -325,8 +325,8 @@ func UpsertSubscriptionFromStripe(ctx context.Context, exec Queryer, sub *stripe
 	if item == nil || item.Price == nil {
 		return errors.New("price not found")
 	}
-	status := crudModels.StripeSubscriptionStatus(sub.Status)
-	err := UpsertSubscription(ctx, exec, &crudModels.StripeSubscription{
+	status := models.StripeSubscriptionStatus(sub.Status)
+	err := UpsertSubscription(ctx, exec, &models.StripeSubscription{
 		// ID:                 omit.From(sub.ID),
 		// UserID:             omit.From(userId),
 		// Status:             omit.From(status),
@@ -344,7 +344,7 @@ func UpsertSubscriptionFromStripe(ctx context.Context, exec Queryer, sub *stripe
 		// TrialEnd:           omitnull.From(Int64ToISODate(sub.TrialEnd)),
 		ID:                 sub.ID,
 		UserID:             userId,
-		Status:             crudModels.StripeSubscriptionStatus(status),
+		Status:             models.StripeSubscriptionStatus(status),
 		Metadata:           sub.Metadata,
 		PriceID:            item.Price.ID,
 		Quantity:           item.Quantity,
@@ -365,7 +365,7 @@ func Int64ToISODate(timestamp int64) time.Time {
 	return time.Unix(timestamp, 0)
 }
 
-func FindSubscriptionById(ctx context.Context, dbx Queryer, stripeId string) (*crudModels.StripeSubscription, error) {
+func FindSubscriptionById(ctx context.Context, dbx Queryer, stripeId string) (*models.StripeSubscription, error) {
 	// data, err := models.StripeSubscriptions.Query(
 	// 	models.SelectWhere.StripeSubscriptions.ID.EQ(stripeId),
 	// ).One(ctx, dbx)
@@ -428,14 +428,14 @@ WHERE ss.id = $1
 		`
 )
 
-func FindSubscriptionWithPriceById(ctx context.Context, dbx Queryer, stripeId string) (*crudModels.SubscriptionWithPrice, error) {
+func FindSubscriptionWithPriceById(ctx context.Context, dbx Queryer, stripeId string) (*models.SubscriptionWithPrice, error) {
 	// data, err := models.StripeSubscriptions.Query(
 	// 	models.SelectWhere.StripeSubscriptions.ID.EQ(stripeId),
 	// 	models.PreloadStripeSubscriptionPriceStripePrice(
 	// 		models.PreloadStripePriceProductStripeProduct(),
 	// 	),
 	// ).One(ctx, dbx)
-	data, err := QueryAll[*crudModels.SubscriptionWithPrice](ctx, dbx, GetSubscriptionWithPriceByIdQuery, stripeId)
+	data, err := QueryAll[*models.SubscriptionWithPrice](ctx, dbx, GetSubscriptionWithPriceByIdQuery, stripeId)
 	if err != nil {
 		return nil, err
 	}
@@ -446,7 +446,7 @@ func FindSubscriptionWithPriceById(ctx context.Context, dbx Queryer, stripeId st
 	return first, nil
 }
 
-func FindLatestActiveSubscriptionByUserId(ctx context.Context, dbx Queryer, userId uuid.UUID) (*crudModels.StripeSubscription, error) {
+func FindLatestActiveSubscriptionByUserId(ctx context.Context, dbx Queryer, userId uuid.UUID) (*models.StripeSubscription, error) {
 	// data, err := models.StripeSubscriptions.Query(
 	// 	models.SelectWhere.StripeSubscriptions.UserID.EQ(userId),
 	// 	models.SelectWhere.StripeSubscriptions.Status.In(
@@ -464,8 +464,8 @@ func FindLatestActiveSubscriptionByUserId(ctx context.Context, dbx Queryer, user
 			},
 			"status": map[string]any{
 				"_in": []string{
-					string(crudModels.StripeSubscriptionStatusActive),
-					string(crudModels.StripeSubscriptionStatusTrialing),
+					string(models.StripeSubscriptionStatusActive),
+					string(models.StripeSubscriptionStatusTrialing),
 				},
 			},
 		},
@@ -533,8 +533,8 @@ ORDER BY ss.updated_at DESC;
 		`
 )
 
-func FindLatestActiveSubscriptionWithPriceByUserId(ctx context.Context, dbx Queryer, userId uuid.UUID) (*crudModels.SubscriptionWithPrice, error) {
-	data, err := QueryAll[crudModels.SubscriptionWithPrice](ctx, dbx, GetLatestActiveSubscriptionWithPriceByIdQuery, userId)
+func FindLatestActiveSubscriptionWithPriceByUserId(ctx context.Context, dbx Queryer, userId uuid.UUID) (*models.SubscriptionWithPrice, error) {
+	data, err := QueryAll[models.SubscriptionWithPrice](ctx, dbx, GetLatestActiveSubscriptionWithPriceByIdQuery, userId)
 	if err != nil {
 		return nil, err
 	}
@@ -561,7 +561,7 @@ func IsFirstSubscription(ctx context.Context, dbx Queryer, userId uuid.UUID) (bo
 	// return OptionalRow(data, err)
 }
 
-func FindValidPriceById(ctx context.Context, dbx Queryer, priceId string) (*crudModels.StripePrice, error) {
+func FindValidPriceById(ctx context.Context, dbx Queryer, priceId string) (*models.StripePrice, error) {
 	// data, err := models.StripePrices.Query(
 	// 	models.SelectWhere.StripePrices.ID.EQ(priceId),
 	// 	models.SelectWhere.StripePrices.Type.EQ(models.StripePricingTypeRecurring),
@@ -574,7 +574,7 @@ func FindValidPriceById(ctx context.Context, dbx Queryer, priceId string) (*crud
 				"_eq": priceId,
 			},
 			"type": map[string]any{
-				"_eq": string(crudModels.StripePricingTypeRecurring),
+				"_eq": string(models.StripePricingTypeRecurring),
 			},
 		},
 	)

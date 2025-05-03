@@ -10,8 +10,8 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stephenafamo/scan"
 	"github.com/stephenafamo/scan/pgxscan"
-	"github.com/tkahng/authgo/internal/crud/crudModels"
 	"github.com/tkahng/authgo/internal/crud/crudrepo"
+	"github.com/tkahng/authgo/internal/crud/models"
 	crud "github.com/tkahng/authgo/internal/crud/repository"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/types"
@@ -92,14 +92,14 @@ func (a *AuthAdapterBase) FindUserAccount(ctx context.Context, where *map[string
 
 // UpdateUserAccount implements AuthAdapter.
 func (a *AuthAdapterBase) UpdateUserAccount(ctx context.Context, account *shared.UserAccount) error {
-	res, err := crudrepo.UserAccount.PutOne(ctx, a.db, &crudModels.UserAccount{
+	res, err := crudrepo.UserAccount.PutOne(ctx, a.db, &models.UserAccount{
 		ID:                account.ID,
 		UserID:            account.UserID,
-		Provider:          crudModels.Providers(account.Provider),
+		Provider:          models.Providers(account.Provider),
 		ProviderAccountID: account.ProviderAccountID,
 		CreatedAt:         account.CreatedAt,
 		UpdatedAt:         account.UpdatedAt,
-		Type:              crudModels.ProviderTypes(account.Type),
+		Type:              models.ProviderTypes(account.Type),
 		AccessToken:       account.AccessToken,
 		RefreshToken:      account.RefreshToken,
 		ExpiresAt:         account.ExpiresAt,
@@ -179,7 +179,7 @@ type RolePermissionClaims struct {
 	Email       string                 `json:"email" db:"email"`
 	Roles       []string               `json:"roles" db:"roles"`
 	Permissions []string               `json:"permissions" db:"permissions"`
-	Providers   []crudModels.Providers `json:"providers" db:"providers"`
+	Providers   []models.Providers `json:"providers" db:"providers"`
 }
 
 func FindUserWithRolesAndPermissionsByEmail(ctx context.Context, db crud.DBTX, email string) (*RolePermissionClaims, error) {
@@ -228,7 +228,7 @@ func (a *AuthAdapterBase) GetUserInfo(ctx context.Context, email string) (*share
 
 // CreateUser implements AuthAdapter.
 func (a *AuthAdapterBase) CreateUser(ctx context.Context, user *shared.User) (*shared.User, error) {
-	res, err := crudrepo.User.PostOne(ctx, a.db, &crudModels.User{
+	res, err := crudrepo.User.PostOne(ctx, a.db, &models.User{
 		Email:           user.Email,
 		Name:            user.Name,
 		Image:           user.Image,
@@ -270,14 +270,14 @@ func (a *AuthAdapterBase) LinkAccount(ctx context.Context, account *shared.UserA
 	}
 	_, err := crudrepo.UserAccount.PostOne(ctx,
 		a.db,
-		&crudModels.UserAccount{
+		&models.UserAccount{
 			ID:                account.ID,
 			UserID:            account.UserID,
-			Provider:          crudModels.Providers(account.Provider),
+			Provider:          models.Providers(account.Provider),
 			ProviderAccountID: account.ProviderAccountID,
 			CreatedAt:         account.CreatedAt,
 			UpdatedAt:         account.UpdatedAt,
-			Type:              crudModels.ProviderTypes(account.Type),
+			Type:              models.ProviderTypes(account.Type),
 			AccessToken:       account.AccessToken,
 			RefreshToken:      account.RefreshToken,
 			ExpiresAt:         account.ExpiresAt,
@@ -305,7 +305,7 @@ func (a *AuthAdapterBase) UnlinkAccount(ctx context.Context, userId uuid.UUID, p
 
 // UpdateUser implements AuthAdapter.
 func (a *AuthAdapterBase) UpdateUser(ctx context.Context, user *shared.User) error {
-	_, err := crudrepo.User.PutOne(ctx, a.db, &crudModels.User{
+	_, err := crudrepo.User.PutOne(ctx, a.db, &models.User{
 		ID:              user.ID,
 		Email:           user.Email,
 		Name:            user.Name,
@@ -354,9 +354,9 @@ func (a *AuthAdapterBase) AssignUserRoles(ctx context.Context, userId uuid.UUID,
 			return fmt.Errorf("error finding user role while assigning roles: %w", err)
 		}
 		if len(roles) > 0 {
-			var userRoles []crudModels.UserRole
+			var userRoles []models.UserRole
 			for _, role := range roles {
-				userRoles = append(userRoles, crudModels.UserRole{
+				userRoles = append(userRoles, models.UserRole{
 					UserID: user.ID,
 					RoleID: role.ID,
 				})

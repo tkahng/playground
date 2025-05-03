@@ -3,7 +3,7 @@ package shared
 import (
 	"time"
 
-	crudModels "github.com/tkahng/authgo/internal/crud/crudModels"
+	crudModels "github.com/tkahng/authgo/internal/crud/models"
 	ty "github.com/tkahng/authgo/internal/types"
 )
 

@@ -4,8 +4,8 @@ import (
 	"context"
 	"slices"
 
-	"github.com/tkahng/authgo/internal/crud/crudModels"
 	"github.com/tkahng/authgo/internal/crud/crudrepo"
+	"github.com/tkahng/authgo/internal/crud/models"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/types"
 )
@@ -19,7 +19,7 @@ var (
 // ListUserAccounts implements AdminCrudActions.
 // ListUsers implements AdminCrudActions.
 
-func ListUserAccounts(ctx context.Context, db Queryer, input *shared.UserAccountListParams) ([]*crudModels.UserAccount, error) {
+func ListUserAccounts(ctx context.Context, db Queryer, input *shared.UserAccountListParams) ([]*models.UserAccount, error) {
 	where := UserAccountWhere(&input.UserAccountListFilter)
 	sort := UserAccountOrderBy(&input.SortParams)
 	data, err := crudrepo.UserAccount.Get(

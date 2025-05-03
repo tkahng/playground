@@ -8,8 +8,8 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jaswdr/faker/v2"
 	"github.com/stephenafamo/scan"
-	"github.com/tkahng/authgo/internal/crud/crudModels"
 	"github.com/tkahng/authgo/internal/crud/crudrepo"
+	"github.com/tkahng/authgo/internal/crud/models"
 )
 
 type Queryer interface {
@@ -19,10 +19,10 @@ type Queryer interface {
 	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
 }
 
-func CreateUserFromEmails(ctx context.Context, dbx Queryer, emails ...string) ([]*crudModels.User, error) {
-	var users []crudModels.User
+func CreateUserFromEmails(ctx context.Context, dbx Queryer, emails ...string) ([]*models.User, error) {
+	var users []models.User
 	for _, emails := range emails {
-		users = append(users, crudModels.User{Email: emails})
+		users = append(users, models.User{Email: emails})
 	}
 
 	res, err := crudrepo.User.Post(ctx, dbx, users)
@@ -32,11 +32,11 @@ func CreateUserFromEmails(ctx context.Context, dbx Queryer, emails ...string) ([
 	return res, nil
 }
 
-func CreateUsers(ctx context.Context, dbx Queryer, count int) ([]*crudModels.User, error) {
+func CreateUsers(ctx context.Context, dbx Queryer, count int) ([]*models.User, error) {
 	faker := faker.New().Internet()
-	var users []crudModels.User
+	var users []models.User
 	for i := 0; i < count; i++ {
-		user := crudModels.User{
+		user := models.User{
 			Email: faker.Email(),
 		}
 		users = append(users, user)

@@ -7,7 +7,7 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/core"
-	"github.com/tkahng/authgo/internal/crud/crudModels"
+	"github.com/tkahng/authgo/internal/crud/models"
 	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
@@ -44,10 +44,10 @@ func (api *Api) TaskList(ctx context.Context, input *shared.TaskListParams) (*Ta
 	}
 	return &TaskListResponse{
 		Body: &shared.PaginatedResponse[*shared.TaskWithSubtask]{
-			Data: mapper.Map(tasks, func(task *crudModels.Task) *shared.TaskWithSubtask {
+			Data: mapper.Map(tasks, func(task *models.Task) *shared.TaskWithSubtask {
 				return &shared.TaskWithSubtask{
 					Task: shared.CrudModelToTask(task),
-					Children: mapper.Map(task.Children, func(child *crudModels.Task) *shared.Task {
+					Children: mapper.Map(task.Children, func(child *models.Task) *shared.Task {
 						return shared.CrudModelToTask(child)
 					}),
 				}
@@ -144,7 +144,7 @@ func (api *Api) UpdateTaskPositionStatus(ctx context.Context, input *shared.Task
 	if err != nil {
 		return nil, huma.Error400BadRequest("Invalid task ID")
 	}
-	err = queries.UpdateTaskPositionStatus(ctx, db, id, input.Body.Position, crudModels.TaskStatus(input.Body.Status))
+	err = queries.UpdateTaskPositionStatus(ctx, db, id, input.Body.Position, models.TaskStatus(input.Body.Status))
 	if err != nil {
 		return nil, err
 	}
@@ -219,7 +219,7 @@ func (api *Api) TaskGet(ctx context.Context, input *struct {
 	return &TaskResposne{
 		Body: &shared.TaskWithSubtask{
 			Task: shared.CrudModelToTask(task),
-			Children: mapper.Map(task.Children, func(child *crudModels.Task) *shared.Task {
+			Children: mapper.Map(task.Children, func(child *models.Task) *shared.Task {
 				return shared.CrudModelToTask(child)
 			}),
 		},

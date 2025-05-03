@@ -6,7 +6,7 @@ import (
 	"log"
 
 	"github.com/google/uuid"
-	"github.com/tkahng/authgo/internal/crud/crudModels"
+	"github.com/tkahng/authgo/internal/crud/models"
 	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
@@ -14,7 +14,7 @@ import (
 	"github.com/tkahng/authgo/internal/types"
 )
 
-func (srv *StripeService) FindSubscriptionWithPriceBySessionId(ctx context.Context, db queries.Queryer, sessionId string) (*crudModels.SubscriptionWithPrice, error) {
+func (srv *StripeService) FindSubscriptionWithPriceBySessionId(ctx context.Context, db queries.Queryer, sessionId string) (*models.SubscriptionWithPrice, error) {
 	sub, err := srv.client.FindCheckoutSessionByStripeId(sessionId)
 	if err != nil {
 		return nil, err
@@ -54,7 +54,7 @@ func (srv *StripeService) UpsertSubscriptionByIds(ctx context.Context, db querie
 	return nil
 }
 
-func (srv *StripeService) FindOrCreateCustomerFromUser(ctx context.Context, exec queries.Queryer, userId uuid.UUID, email string) (*crudModels.StripeCustomer, error) {
+func (srv *StripeService) FindOrCreateCustomerFromUser(ctx context.Context, exec queries.Queryer, userId uuid.UUID, email string) (*models.StripeCustomer, error) {
 	dbCus, err := queries.FindCustomerByUserId(ctx, exec, userId)
 	if err != nil {
 		return nil, err
@@ -166,7 +166,7 @@ func (s *StripeService) CreateBillingPortalSession(ctx context.Context, db queri
 			ProductIds: prodIds,
 		},
 	})
-	grouped := mapper.MapToMany(prices, prodIds, func(p *crudModels.StripePrice) string { return p.ProductID })
+	grouped := mapper.MapToMany(prices, prodIds, func(p *models.StripePrice) string { return p.ProductID })
 	if err != nil {
 		return "", err
 	}
@@ -175,7 +175,7 @@ func (s *StripeService) CreateBillingPortalSession(ctx context.Context, db queri
 		price := grouped[i]
 		con := &payment.ProductBillingConfigurationInput{
 			Product: &id.ID,
-			Prices: mapper.Map(price, func(p *crudModels.StripePrice) *string {
+			Prices: mapper.Map(price, func(p *models.StripePrice) *string {
 				return &p.ID
 			}),
 		}

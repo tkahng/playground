@@ -7,7 +7,7 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/danielgtaylor/huma/v2/sse"
 	"github.com/tkahng/authgo/internal/core"
-	"github.com/tkahng/authgo/internal/crud/crudModels"
+	"github.com/tkahng/authgo/internal/crud/models"
 	"github.com/tkahng/authgo/internal/shared"
 )
 
@@ -92,7 +92,7 @@ func BindApis(api huma.API, app core.App) {
 	// ---- notifications
 	sse.Register(authenticatedGroup, appApi.NotificationsSseOperation("/notifications/sse"), map[string]any{
 		// Mapping of event type name to Go struct for that event.
-		"message": crudModels.Notification{},
+		"message": models.Notification{},
 	}, appApi.NotificationsSsefunc)
 	// stats routes -------------------------------------------------------------------------------------------------
 	statsGroup := huma.NewGroup(api)

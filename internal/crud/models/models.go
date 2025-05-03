@@ -1,4 +1,4 @@
-package crudModels
+package models
 
 import (
 	"time"

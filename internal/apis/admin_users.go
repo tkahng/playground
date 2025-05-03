@@ -8,7 +8,7 @@ import (
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
-	"github.com/tkahng/authgo/internal/crud/crudModels"
+	"github.com/tkahng/authgo/internal/crud/models"
 	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
@@ -87,7 +87,7 @@ func (api *Api) AdminUsers(ctx context.Context, input *struct {
 
 	return &shared.PaginatedOutput[*UserDetail]{
 		Body: shared.PaginatedResponse[*UserDetail]{
-			Data: mapper.Map(users, func(user *crudModels.User) *UserDetail {
+			Data: mapper.Map(users, func(user *models.User) *UserDetail {
 				return &UserDetail{
 					User:        shared.FromCrudUser(user),
 					Roles:       mapper.Map(user.Roles, shared.FromCrudRoleWithPermissions),

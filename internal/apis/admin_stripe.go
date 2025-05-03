@@ -7,8 +7,8 @@ import (
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
-	"github.com/tkahng/authgo/internal/crud/crudModels"
 	"github.com/tkahng/authgo/internal/crud/crudrepo"
+	"github.com/tkahng/authgo/internal/crud/models"
 	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
@@ -44,7 +44,7 @@ func (api *Api) AdminStripeSubscriptions(ctx context.Context,
 	}
 	return &shared.PaginatedOutput[*shared.SubscriptionWithData]{
 		Body: shared.PaginatedResponse[*shared.SubscriptionWithData]{
-			Data: mapper.Map(subscriptions, func(sub *crudModels.StripeSubscription) *shared.SubscriptionWithData {
+			Data: mapper.Map(subscriptions, func(sub *models.StripeSubscription) *shared.SubscriptionWithData {
 				return &shared.SubscriptionWithData{
 					Subscription: shared.FromCrudSubscription(sub),
 				}
@@ -110,7 +110,7 @@ func (api *Api) AdminStripeProducts(ctx context.Context,
 	if err != nil {
 		return nil, err
 	}
-	productIds := mapper.Map(products, func(p *crudModels.StripeProduct) string {
+	productIds := mapper.Map(products, func(p *models.StripeProduct) string {
 		return p.ID
 	})
 	if slices.Contains(input.Expand, "prices") {
@@ -143,13 +143,13 @@ func (api *Api) AdminStripeProducts(ctx context.Context,
 	}
 	return &shared.PaginatedOutput[*shared.StripeProductWithData]{
 		Body: shared.PaginatedResponse[*shared.StripeProductWithData]{
-			Data: mapper.Map(products, func(p *crudModels.StripeProduct) *shared.StripeProductWithData {
+			Data: mapper.Map(products, func(p *models.StripeProduct) *shared.StripeProductWithData {
 				return &shared.StripeProductWithData{
 					Product: shared.FromCrudProduct(p),
-					Roles: mapper.Map(p.Roles, func(r *crudModels.Role) *shared.Role {
+					Roles: mapper.Map(p.Roles, func(r *models.Role) *shared.Role {
 						return shared.FromCrudRole(r)
 					}),
-					Prices: mapper.Map(p.Prices, func(p *crudModels.StripePrice) *shared.Price {
+					Prices: mapper.Map(p.Prices, func(p *models.StripePrice) *shared.Price {
 						return shared.FromCrudPrice(p)
 					}),
 				}

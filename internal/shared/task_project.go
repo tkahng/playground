@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/tkahng/authgo/internal/crud/crudModels"
+	"github.com/tkahng/authgo/internal/crud/models"
 )
 
 const (
@@ -39,7 +39,7 @@ type TaskProjectWithTasks struct {
 	Tasks []*TaskWithSubtask `json:"tasks,omitempty" required:"false"`
 }
 
-func CrudToProject(task *crudModels.TaskProject) *TaskProject {
+func CrudToProject(task *models.TaskProject) *TaskProject {
 	if task == nil {
 		return nil
 	}
@@ -55,7 +55,7 @@ func CrudToProject(task *crudModels.TaskProject) *TaskProject {
 	}
 }
 
-func ModelToProject(task *crudModels.TaskProject) *TaskProject {
+func ModelToProject(task *models.TaskProject) *TaskProject {
 	if task == nil {
 		return nil
 	}

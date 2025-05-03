@@ -5,8 +5,8 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/tkahng/authgo/internal/crud/crudModels"
 	"github.com/tkahng/authgo/internal/crud/crudrepo"
+	"github.com/tkahng/authgo/internal/crud/models"
 	"github.com/tkahng/authgo/internal/shared"
 )
 
@@ -26,7 +26,7 @@ var (
 	}
 )
 
-func ListMedia(ctx context.Context, db Queryer, input *shared.MediaListParams) ([]*crudModels.Medium, error) {
+func ListMedia(ctx context.Context, db Queryer, input *shared.MediaListParams) ([]*models.Medium, error) {
 	filter := input.MediaListFilter
 	pageInput := &input.PaginatedInput
 

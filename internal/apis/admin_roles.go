@@ -7,8 +7,8 @@ import (
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
-	"github.com/tkahng/authgo/internal/crud/crudModels"
 	"github.com/tkahng/authgo/internal/crud/crudrepo"
+	"github.com/tkahng/authgo/internal/crud/models"
 	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
@@ -38,7 +38,7 @@ func (api *Api) AdminRolesList(ctx context.Context, input *struct {
 		return nil, err
 	}
 	if slices.Contains(input.Expand, "permissions") {
-		roleIds := mapper.Map(roles, func(r *crudModels.Role) uuid.UUID {
+		roleIds := mapper.Map(roles, func(r *models.Role) uuid.UUID {
 			return r.ID
 		})
 		data, err := queries.LoadRolePermissions(ctx, db, roleIds...)
@@ -56,7 +56,7 @@ func (api *Api) AdminRolesList(ctx context.Context, input *struct {
 	}
 	return &shared.PaginatedOutput[*shared.RoleWithPermissions]{
 		Body: shared.PaginatedResponse[*shared.RoleWithPermissions]{
-			Data: mapper.Map(roles, func(r *crudModels.Role) *shared.RoleWithPermissions {
+			Data: mapper.Map(roles, func(r *models.Role) *shared.RoleWithPermissions {
 				return &shared.RoleWithPermissions{
 					Role:        shared.FromCrudRole(r),
 					Permissions: mapper.Map(r.Permissions, shared.FromCrudPermission),

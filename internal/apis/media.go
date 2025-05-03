@@ -10,7 +10,7 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/core"
-	"github.com/tkahng/authgo/internal/crud/crudModels"
+	"github.com/tkahng/authgo/internal/crud/models"
 	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
 )
@@ -54,7 +54,7 @@ func (api *Api) UploadMedia(ctx context.Context, input *struct {
 			if err != nil {
 				return nil, err
 			}
-			_, err = queries.CreateMedia(ctx, db, &crudModels.Medium{
+			_, err = queries.CreateMedia(ctx, db, &models.Medium{
 				UserID:           &user.User.ID,
 				Disk:             dto.Disk,
 				Directory:        dto.Directory,
@@ -77,7 +77,7 @@ func (api *Api) UploadMedia(ctx context.Context, input *struct {
 			if err != nil {
 				return nil, err
 			}
-			_, err = queries.CreateMedia(ctx, db, &crudModels.Medium{
+			_, err = queries.CreateMedia(ctx, db, &models.Medium{
 				UserID:           &user.User.ID,
 				Disk:             dto.Disk,
 				Directory:        dto.Directory,

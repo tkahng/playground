@@ -4,8 +4,8 @@ import (
 	"context"
 	"strings"
 
-	"github.com/tkahng/authgo/internal/crud/crudModels"
 	"github.com/tkahng/authgo/internal/crud/crudrepo"
+	"github.com/tkahng/authgo/internal/crud/models"
 	"github.com/tkahng/authgo/internal/shared"
 )
 
@@ -15,7 +15,7 @@ func CountAiUsages(ctx context.Context, db Queryer, filter *shared.AiUsageListFi
 	return crudrepo.AiUsage.Count(ctx, db, where)
 }
 
-func ListAiUsages(ctx context.Context, db Queryer, input *shared.AiUsageListParams) ([]*crudModels.AiUsage, error) {
+func ListAiUsages(ctx context.Context, db Queryer, input *shared.AiUsageListParams) ([]*models.AiUsage, error) {
 	filter := input.AiUsageListFilter
 	pageInput := &input.PaginatedInput
 

@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/Masterminds/squirrel"
-	"github.com/tkahng/authgo/internal/crud/crudModels"
+	"github.com/tkahng/authgo/internal/crud/models"
 	"github.com/tkahng/authgo/internal/shared"
 )
 
@@ -109,7 +109,7 @@ func ListPermissionsFilterFunc2(filter *shared.PermissionsListFilter) *map[strin
 }
 
 // ListPermissions implements AdminCrudActions.
-func ListPermissions(ctx context.Context, db Queryer, input *shared.PermissionsListParams) ([]*crudModels.Permission, error) {
+func ListPermissions(ctx context.Context, db Queryer, input *shared.PermissionsListParams) ([]*models.Permission, error) {
 	q := squirrel.Select("permissions.*").From("permissions")
 	filter := input.PermissionsListFilter
 	pageInput := &input.PaginatedInput
@@ -120,7 +120,7 @@ func ListPermissions(ctx context.Context, db Queryer, input *shared.PermissionsL
 	if input.SortBy != "" && input.SortOrder != "" {
 		q = q.OrderBy(input.SortBy + " " + strings.ToUpper(input.SortOrder))
 	}
-	data, err := QueryWithBuilder[*crudModels.Permission](ctx, db, q.PlaceholderFormat(squirrel.Dollar))
+	data, err := QueryWithBuilder[*models.Permission](ctx, db, q.PlaceholderFormat(squirrel.Dollar))
 	if err != nil {
 		return nil, err
 	}
@@ -188,7 +188,7 @@ func ListRolesFilterFuncQuery(sq squirrel.SelectBuilder, filter *shared.RoleList
 }
 
 // ListRoles implements AdminCrudActions.
-func ListRoles(ctx context.Context, db Queryer, input *shared.RolesListParams) ([]*crudModels.Role, error) {
+func ListRoles(ctx context.Context, db Queryer, input *shared.RolesListParams) ([]*models.Role, error) {
 	q := squirrel.Select("roles.*").From("roles")
 	filter := input.RoleListFilter
 	pageInput := &input.PaginatedInput
@@ -199,7 +199,7 @@ func ListRoles(ctx context.Context, db Queryer, input *shared.RolesListParams) (
 	if input.SortBy != "" && input.SortOrder != "" {
 		q = q.OrderBy(input.SortBy + " " + strings.ToUpper(input.SortOrder))
 	}
-	data, err := QueryWithBuilder[*crudModels.Role](ctx, db, q.PlaceholderFormat(squirrel.Dollar))
+	data, err := QueryWithBuilder[*models.Role](ctx, db, q.PlaceholderFormat(squirrel.Dollar))
 	if err != nil {
 		return nil, err
 	}
