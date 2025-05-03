@@ -5,7 +5,6 @@ import (
 
 	"github.com/google/uuid"
 	crudModels "github.com/tkahng/authgo/internal/crud/crudModels"
-	"github.com/tkahng/authgo/internal/db/models"
 )
 
 // enum:oauth,credentials
@@ -18,26 +17,6 @@ const (
 
 func (p ProviderTypes) String() string {
 	return string(p)
-}
-
-func ToProviderType(p models.ProviderTypes) ProviderTypes {
-	switch p {
-	case models.ProviderTypesOauth:
-		return ProviderTypeOAuth
-	case models.ProviderTypesCredentials:
-		return ProviderTypeCredentials
-	}
-	return ProviderTypeCredentials
-}
-
-func ToModelProviderType(p ProviderTypes) models.ProviderTypes {
-	switch p {
-	case ProviderTypeOAuth:
-		return models.ProviderTypesOauth
-	case ProviderTypeCredentials:
-		return models.ProviderTypesCredentials
-	}
-	return models.ProviderTypesCredentials
 }
 
 // enum:google,apple,facebook,github,credentials

@@ -5,7 +5,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/crud/crudModels"
-	"github.com/tkahng/authgo/internal/db/models"
 )
 
 const (
@@ -56,7 +55,7 @@ func CrudToProject(task *crudModels.TaskProject) *TaskProject {
 	}
 }
 
-func ModelToProject(task *models.TaskProject) *TaskProject {
+func ModelToProject(task *crudModels.TaskProject) *TaskProject {
 	if task == nil {
 		return nil
 	}
@@ -64,7 +63,7 @@ func ModelToProject(task *models.TaskProject) *TaskProject {
 		ID:          task.ID,
 		UserID:      task.UserID,
 		Name:        task.Name,
-		Description: task.Description.Ptr(),
+		Description: task.Description,
 		Status:      TaskProjectStatus(task.Status),
 		Order:       task.Order,
 		CreatedAt:   task.CreatedAt,
@@ -73,10 +72,10 @@ func ModelToProject(task *models.TaskProject) *TaskProject {
 }
 
 type CreateTaskProjectDTO struct {
-	Name        string                   `json:"name" required:"true"`
-	Description *string                  `json:"description,omitempty" required:"false"`
-	Status      models.TaskProjectStatus `json:"status" required:"false" enum:"todo,in_progress,done" default:"todo"`
-	Order       float64                  `json:"order,omitempty" required:"false"`
+	Name        string            `json:"name" required:"true"`
+	Description *string           `json:"description,omitempty" required:"false"`
+	Status      TaskProjectStatus `json:"status" required:"false" enum:"todo,in_progress,done" default:"todo"`
+	Order       float64           `json:"order,omitempty" required:"false"`
 }
 
 type CreateTaskProjectWithTasksDTO struct {
@@ -85,11 +84,11 @@ type CreateTaskProjectWithTasksDTO struct {
 }
 
 type UpdateTaskProjectBaseDTO struct {
-	Name        string                   `json:"name" required:"true"`
-	Description *string                  `json:"description,omitempty" required:"false"`
-	Status      models.TaskProjectStatus `json:"status" enum:"todo,in_progress,done"`
-	Order       float64                  `json:"order"`
-	Position    *int64                   `json:"position,omitempty" required:"false"`
+	Name        string            `json:"name" required:"true"`
+	Description *string           `json:"description,omitempty" required:"false"`
+	Status      TaskProjectStatus `json:"status" enum:"todo,in_progress,done"`
+	Order       float64           `json:"order"`
+	Position    *int64            `json:"position,omitempty" required:"false"`
 }
 
 type UpdateTaskProjectDTO struct {
@@ -98,10 +97,10 @@ type UpdateTaskProjectDTO struct {
 }
 
 type TaskProjectsListFilter struct {
-	Q      string                     `query:"q,omitempty" required:"false"`
-	UserID string                     `query:"user_id,omitempty" required:"false" format:"uuid"`
-	Status []models.TaskProjectStatus `query:"status,omitempty" required:"false" minimum:"1" maximum:"100" enum:"todo,in_progress,done"`
-	Ids    []string                   `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+	Q      string              `query:"q,omitempty" required:"false"`
+	UserID string              `query:"user_id,omitempty" required:"false" format:"uuid"`
+	Status []TaskProjectStatus `query:"status,omitempty" required:"false" minimum:"1" maximum:"100" enum:"todo,in_progress,done"`
+	Ids    []string            `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
 }
 
 type TaskProjectsListParams struct {

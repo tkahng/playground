@@ -3,11 +3,9 @@ package queries
 import (
 	"context"
 	"fmt"
-
-	"github.com/stephenafamo/bob"
 )
 
-type Executor[T any] func(ctx context.Context, exec bob.Executor) (T, error)
+type Executor[T any] func(ctx context.Context, exec Queryer) (T, error)
 
 func ErrorWrapper[T any](ctx context.Context, db Queryer, returnFirstErr bool, exec ...Executor[T]) error {
 	var e error

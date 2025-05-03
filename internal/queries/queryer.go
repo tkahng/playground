@@ -10,8 +10,8 @@ import (
 )
 
 type Queryer interface {
-	Query(ctx context.Context, sql string, arguments ...any) (pgx.Rows, error)
 	QueryContext(ctx context.Context, query string, args ...any) (scan.Rows, error)
 	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
+	Query(ctx context.Context, sql string, arguments ...any) (pgx.Rows, error)
 	Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error)
 }

@@ -308,3 +308,15 @@ type AiUsage struct {
 	UpdatedAt        time.Time `db:"updated_at" json:"updated_at"`
 	User             *User     `db:"user" src:"user_id" dest:"id" table:"users" json:"user,omitempty"`
 }
+
+type Notification struct {
+	_         struct{}       `db:"notifications" json:"-"`
+	ID        uuid.UUID      `db:"id,pk" json:"id"`
+	CreatedAt time.Time      `db:"created_at" json:"created_at"`
+	UpdatedAt time.Time      `db:"updated_at" json:"updated_at"`
+	Channel   string         `db:"channel" json:"channel"`
+	UserID    *uuid.UUID     `db:"user_id" json:"user_id"`
+	Content   map[string]any `db:"content" json:"content"`
+	Type      string         `db:"type" json:"type"`
+	User      *User          `db:"user" src:"user_id" dest:"id" table:"users" json:"user,omitempty"`
+}

@@ -40,7 +40,7 @@ func LoadUsersByUserIds(ctx context.Context, db Queryer, userIds ...uuid.UUID) (
 	}), nil
 }
 
-func CreateUser(ctx context.Context, db Queryer, params *shared.AuthenticateUserParams) (*crudModels.User, error) {
+func CreateUser(ctx context.Context, db Queryer, params *shared.AuthenticationInput) (*crudModels.User, error) {
 	// return models.Users.Insert(&models.UserSetter{
 	// 	Email:           omit.From(params.Email),
 	// 	Name:            omitnull.FromPtr(params.Name),
@@ -109,7 +109,7 @@ func CreateUserPermissions(ctx context.Context, db Queryer, userId uuid.UUID, pe
 
 }
 
-func CreateAccount(ctx context.Context, db Queryer, userId uuid.UUID, params *shared.AuthenticateUserParams) (*crudModels.UserAccount, error) {
+func CreateAccount(ctx context.Context, db Queryer, userId uuid.UUID, params *shared.AuthenticationInput) (*crudModels.UserAccount, error) {
 	r, err := crudrepo.UserAccount.PostOne(ctx, db, &crudModels.UserAccount{
 		UserID:            userId,
 		Type:              crudModels.ProviderTypes(params.Type),

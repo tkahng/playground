@@ -10,7 +10,6 @@ import (
 	"github.com/tkahng/authgo/internal/core"
 	"github.com/tkahng/authgo/internal/crud/crudModels"
 	"github.com/tkahng/authgo/internal/db"
-	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/ai/googleai"
@@ -167,13 +166,13 @@ func (api *Api) TaskProjectCreateWithAi(ctx context.Context, input *TaskProjectC
 		CreateTaskProjectDTO: shared.CreateTaskProjectDTO{
 			Name:        taskProjectPlan.Project.Name,
 			Description: &taskProjectPlan.Project.Description,
-			Status:      models.TaskProjectStatusTodo,
+			Status:      shared.TaskProjectStatusTodo,
 		},
 		Tasks: mapper.Map(taskProjectPlan.Tasks, func(task googleai.Task) shared.CreateTaskBaseDTO {
 			return shared.CreateTaskBaseDTO{
 				Name:        task.Name,
 				Description: &task.Description,
-				Status:      models.TaskStatusTodo,
+				Status:      shared.TaskStatusTodo,
 			}
 		}),
 	}

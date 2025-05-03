@@ -9,7 +9,6 @@ import (
 	"github.com/tkahng/authgo/internal/conf"
 	"github.com/tkahng/authgo/internal/crud/crudrepo"
 	"github.com/tkahng/authgo/internal/db"
-	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/security"
@@ -70,12 +69,12 @@ var superuserCreate = &cobra.Command{
 			if err != nil {
 				return err
 			}
-			data := &shared.AuthenticateUserParams{
+			data := &shared.AuthenticationInput{
 				Email:             args[0],
-				Provider:          models.ProvidersCredentials,
+				Provider:          shared.ProvidersCredentials,
 				ProviderAccountID: args[0],
 				HashPassword:      types.Pointer(hash),
-				Type:              models.ProviderTypesCredentials,
+				Type:              shared.ProviderTypeCredentials,
 			}
 			user, err = queries.CreateUser(ctx, dbx, data)
 			if err != nil {

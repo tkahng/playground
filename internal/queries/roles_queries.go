@@ -9,8 +9,6 @@ import (
 	"github.com/Masterminds/squirrel"
 	"github.com/aarondl/opt/null"
 	"github.com/google/uuid"
-	"github.com/stephenafamo/bob"
-	"github.com/stephenafamo/bob/dialect/psql"
 	"github.com/stephenafamo/scan"
 	"github.com/stephenafamo/scan/pgxscan"
 	crudModels "github.com/tkahng/authgo/internal/crud/crudModels"
@@ -635,7 +633,7 @@ role_based_permissions AS (
     FROM public.user_roles ur
         JOIN public.role_permissions rp ON ur.role_id = rp.role_id
         JOIN public.permissions p ON rp.permission_id = p.id
-    WHERE ur.user_id = ?
+    WHERE ur.user_id = $1
 ),
 -- Get permissions assigned directly to user
 direct_permissions AS (
@@ -645,7 +643,7 @@ direct_permissions AS (
         up.user_id AS direct_assignment
     FROM public.user_permissions up
         JOIN public.permissions p ON up.permission_id = p.id
-    WHERE up.user_id = ?
+    WHERE up.user_id = $1
 ),
 -- Combine both sources
 combined_permissions AS (
@@ -670,7 +668,7 @@ WHERE cp.id IS NULL
 GROUP BY p.id
 ORDER BY p.name,
     p.id
-LIMIT ? OFFSET ?;`
+LIMIT $2 OFFSET $3;`
 	getuserNotPermissionCounts = `WITH -- Get permissions assigned through roles
 role_based_permissions AS (
     SELECT p.*,
@@ -679,7 +677,7 @@ role_based_permissions AS (
     FROM public.user_roles ur
         JOIN public.role_permissions rp ON ur.role_id = rp.role_id
         JOIN public.permissions p ON rp.permission_id = p.id
-    WHERE ur.user_id = ?
+    WHERE ur.user_id = $1
 ),
 -- Get permissions assigned directly to user
 direct_permissions AS (
@@ -689,7 +687,7 @@ direct_permissions AS (
         up.user_id AS direct_assignment
     FROM public.user_permissions up
         JOIN public.permissions p ON up.permission_id = p.id
-    WHERE up.user_id = ?
+    WHERE up.user_id = $1
 ),
 -- Combine both sources
 combined_permissions AS (
@@ -707,9 +705,8 @@ WHERE cp.id IS NULL;
 )
 
 func ListUserNotPermissionsSource(ctx context.Context, dbx Queryer, userId uuid.UUID, limit int64, offset int64) ([]PermissionSource, error) {
-	q := psql.RawQuery(getuserNotPermissions, userId, userId, limit, offset)
 
-	res, err := bob.All(ctx, dbx, q, scan.StructMapper[PermissionSource]())
+	res, err := QueryAll[PermissionSource](ctx, dbx, getuserNotPermissions, userId, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -718,9 +715,9 @@ func ListUserNotPermissionsSource(ctx context.Context, dbx Queryer, userId uuid.
 }
 
 func CountNotUserPermissionSource(ctx context.Context, dbx Queryer, userId uuid.UUID) (int64, error) {
-	q := psql.RawQuery(getuserNotPermissionCounts, userId, userId)
+	// q := psql.RawQuery(getuserNotPermissionCounts, userId, userId)
 
-	data, err := bob.One(ctx, dbx, q, scan.SingleColumnMapper[int64])
+	data, err := Count(ctx, dbx, getuserNotPermissionCounts, userId)
 	if err != nil {
 		return 0, err
 	}

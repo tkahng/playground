@@ -5,7 +5,6 @@ import (
 
 	"github.com/google/uuid"
 	crudModels "github.com/tkahng/authgo/internal/crud/crudModels"
-	"github.com/tkahng/authgo/internal/db/models"
 )
 
 type Task struct {
@@ -44,37 +43,19 @@ func CrudModelToTask(task *crudModels.Task) *Task {
 	}
 }
 
-func ModelToTask(task *models.Task) *Task {
-	if task == nil {
-		return nil
-	}
-	return &Task{
-		ID:        task.ID,
-		UserID:    task.UserID,
-		ProjectID: task.ProjectID,
-		Name:      task.Name,
-		// Description: task.Description,
-		// Status:      task.Status,
-		Order: task.Order,
-		// ParentID:    task.ParentID,
-		CreatedAt: task.CreatedAt,
-		UpdatedAt: task.UpdatedAt,
-	}
-}
-
 type CreateTaskBaseDTO struct {
-	Name        string            `json:"name" required:"true"`
-	Description *string           `json:"description,omitempty" required:"false"`
-	Status      models.TaskStatus `json:"status" required:"false" enum:"todo,in_progress,done" default:"todo"`
-	Order       float64           `json:"order,omitempty" required:"false"`
+	Name        string     `json:"name" required:"true"`
+	Description *string    `json:"description,omitempty" required:"false"`
+	Status      TaskStatus `json:"status" required:"false" enum:"todo,in_progress,done" default:"todo"`
+	Order       float64    `json:"order,omitempty" required:"false"`
 }
 
 type UpdateTaskBaseDTO struct {
-	Name        string            `json:"name" required:"true"`
-	Description *string           `json:"description,omitempty"`
-	Status      models.TaskStatus `json:"status" enum:"todo,in_progress,done"`
-	Order       float64           `json:"order"`
-	ParentID    *uuid.UUID        `json:"parent_id,omitempty"`
+	Name        string     `json:"name" required:"true"`
+	Description *string    `json:"description,omitempty"`
+	Status      TaskStatus `json:"status" enum:"todo,in_progress,done"`
+	Order       float64    `json:"order"`
+	ParentID    *uuid.UUID `json:"parent_id,omitempty"`
 }
 
 type UpdateTaskDTO struct {
@@ -112,13 +93,13 @@ type CreateTaskWithChildrenDTO struct {
 }
 
 type TaskListFilter struct {
-	Q            string              `query:"q,omitempty" required:"false"`
-	Status       []models.TaskStatus `query:"status,omitempty" required:"false" enum:"todo,in_progress,done"`
-	ProjectID    string              `query:"project_id,omitempty" required:"false" format:"uuid"`
-	UserID       string              `query:"user_id,omitempty" required:"false" format:"uuid"`
-	Ids          []string            `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
-	ParentID     string              `query:"parent_id,omitempty" required:"false" format:"uuid"`
-	ParentStatus ParentStatus        `query:"parent_status,omitempty" required:"false" enum:"parent,child"`
+	Q            string       `query:"q,omitempty" required:"false"`
+	Status       []TaskStatus `query:"status,omitempty" required:"false" enum:"todo,in_progress,done"`
+	ProjectID    string       `query:"project_id,omitempty" required:"false" format:"uuid"`
+	UserID       string       `query:"user_id,omitempty" required:"false" format:"uuid"`
+	Ids          []string     `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+	ParentID     string       `query:"parent_id,omitempty" required:"false" format:"uuid"`
+	ParentStatus ParentStatus `query:"parent_status,omitempty" required:"false" enum:"parent,child"`
 }
 
 type ParentStatus string

@@ -4,23 +4,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/tkahng/authgo/internal/db/models"
 )
 
-type AuthenticateUserParams struct {
-	Email             string
-	Name              *string
-	AvatarUrl         *string
-	EmailVerifiedAt   *time.Time
-	Provider          models.Providers
-	Password          *string
-	HashPassword      *string
-	Type              models.ProviderTypes
-	ProviderAccountID string
-	UserId            *uuid.UUID
-	AccessToken       *string
-	RefreshToken      *string
-}
 type AuthenticationInput struct {
 	Email             string
 	Name              *string
@@ -41,22 +26,6 @@ type UserInfo struct {
 	Roles       []string    `db:"roles" json:"roles"`
 	Permissions []string    `db:"permissions" json:"permissions"`
 	Providers   []Providers `db:"providers" json:"providers" enum:"google,apple,facebook,github,credentials"`
-}
-
-func ToProvidersArray(providers []models.Providers) []Providers {
-	var result []Providers
-	for _, provider := range providers {
-		result = append(result, Providers(provider))
-	}
-	return result
-}
-
-func ToModelProvidersArray(providers []Providers) []models.Providers {
-	var result []models.Providers
-	for _, provider := range providers {
-		result = append(result, models.Providers(provider))
-	}
-	return result
 }
 
 type TokenType string
@@ -97,11 +66,11 @@ type TokenDto struct {
 }
 
 type AuthenticatedDTO struct {
-	User        *User              `json:"user"`
-	Permissions []string           `json:"permissions"`
-	Roles       []string           `json:"roles"`
-	Providers   []models.Providers `json:"providers"`
-	Tokens      TokenDto           `json:"tokens"` //core.TokenDto `json:"tokens"`
+	User        *User       `json:"user"`
+	Permissions []string    `json:"permissions"`
+	Roles       []string    `json:"roles"`
+	Providers   []Providers `json:"providers"`
+	Tokens      TokenDto    `json:"tokens"` //core.TokenDto `json:"tokens"`
 }
 
 type UserInfoTokens struct {

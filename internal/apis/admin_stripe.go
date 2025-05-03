@@ -309,10 +309,6 @@ func (api *Api) AdminStripeProductsRolesDelete(ctx context.Context, input *struc
 			},
 		},
 	)
-	// _, err = models.ProductRoles.Delete(
-	// 	models.DeleteWhere.ProductRoles.RoleID.EQ(role.ID),
-	// 	models.DeleteWhere.ProductRoles.ProductID.EQ(id),
-	// ).Exec(ctx, db)
 	if err != nil {
 		return nil, err
 	}

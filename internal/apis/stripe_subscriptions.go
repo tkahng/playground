@@ -52,7 +52,6 @@ func (api *Api) MyStripeSubscriptions(ctx context.Context, input *struct{}) (*st
 		},
 	}
 
-	// subscriptions.LoadStripeSubscriptionPriceStripePrice(ctx, db, models.PreloadStripePriceProductStripeProduct())
 	return output, nil
 
 }

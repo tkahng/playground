@@ -4,9 +4,6 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	"github.com/stephenafamo/bob"
-	"github.com/stephenafamo/bob/dialect/psql"
-	"github.com/stephenafamo/scan"
 	"github.com/tkahng/authgo/internal/shared"
 )
 
@@ -17,7 +14,7 @@ WITH project_stats AS (
             WHERE tp.status = 'done'
         ) as completed_projects
     FROM task_projects tp
-    WHERE tp.user_id = ?
+    WHERE tp.user_id = $1
 ),
 task_stats AS (
     SELECT COUNT(*) as total_tasks,
@@ -25,7 +22,7 @@ task_stats AS (
             WHERE t.status = 'done'
         ) as completed_tasks
     FROM tasks t
-    WHERE t.user_id = ?
+    WHERE t.user_id = $1
 )
 SELECT ps.total_projects,
     ps.completed_projects,
@@ -36,8 +33,8 @@ FROM project_stats ps
 	`
 
 func GetUserTaskStats(ctx context.Context, db Queryer, userID uuid.UUID) (*shared.TaskStats, error) {
-	query := psql.RawQuery(TaskStatsQuery, userID, userID)
-	res, err := bob.All(ctx, db, query, scan.StructMapper[shared.TaskStats]())
+	// query := psql.RawQuery(TaskStatsQuery, userID, userID)
+	res, err := QueryAll[shared.TaskStats](ctx, db, TaskStatsQuery, userID)
 	if err != nil {
 		return nil, err
 	}

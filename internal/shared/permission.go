@@ -5,7 +5,6 @@ import (
 
 	"github.com/google/uuid"
 	crudModels "github.com/tkahng/authgo/internal/crud/crudModels"
-	"github.com/tkahng/authgo/internal/db/models"
 )
 
 const (
@@ -28,15 +27,6 @@ func FromCrudPermission(permission *crudModels.Permission) *Permission {
 		ID:          permission.ID,
 		Name:        permission.Name,
 		Description: permission.Description,
-		CreatedAt:   permission.CreatedAt,
-		UpdatedAt:   permission.UpdatedAt,
-	}
-}
-func ToPermission(permission *models.Permission) *Permission {
-	return &Permission{
-		ID:          permission.ID,
-		Name:        permission.Name,
-		Description: permission.Description.Ptr(),
 		CreatedAt:   permission.CreatedAt,
 		UpdatedAt:   permission.UpdatedAt,
 	}

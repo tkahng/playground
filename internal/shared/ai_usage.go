@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/tkahng/authgo/internal/db/models"
 )
 
 type AiUsage struct {
@@ -15,18 +14,6 @@ type AiUsage struct {
 	TotalTokens      int64     `db:"total_tokens" json:"total_tokens"`
 	CreatedAt        time.Time `db:"created_at" json:"created_at"`
 	UpdatedAt        time.Time `db:"updated_at" json:"updated_at"`
-}
-
-func ModelToAiUsage(aiUsage *models.AiUsage) *AiUsage {
-	return &AiUsage{
-		ID:               aiUsage.ID,
-		UserID:           aiUsage.UserID,
-		PromptTokens:     aiUsage.PromptTokens,
-		CompletionTokens: aiUsage.CompletionTokens,
-		TotalTokens:      aiUsage.TotalTokens,
-		CreatedAt:        aiUsage.CreatedAt,
-		UpdatedAt:        aiUsage.UpdatedAt,
-	}
 }
 
 type AiUsageListFilter struct {

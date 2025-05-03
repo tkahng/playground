@@ -4,7 +4,6 @@ import (
 	"time"
 
 	crudModels "github.com/tkahng/authgo/internal/crud/crudModels"
-	"github.com/tkahng/authgo/internal/db/models"
 	ty "github.com/tkahng/authgo/internal/types"
 )
 
@@ -30,23 +29,6 @@ const (
 // ToModelsStripePricingPlanInterval converts a StripePricingPlanInterval to models.StripePricingPlanInterval
 
 // ToStripePricingPlanInterval converts a models.StripePricingPlanInterval to StripePricingPlanInterval
-func ToStripePricingPlanInterval(pt *models.StripePricingPlanInterval) *StripePricingPlanInterval {
-	if pt == nil {
-		return nil
-	}
-	switch *pt {
-	case models.StripePricingPlanIntervalDay:
-		return ty.Pointer(StripePricingPlanIntervalDay)
-	case models.StripePricingPlanIntervalWeek:
-		return ty.Pointer(StripePricingPlanIntervalWeek)
-	case models.StripePricingPlanIntervalMonth:
-		return ty.Pointer(StripePricingPlanIntervalMonth)
-	case models.StripePricingPlanIntervalYear:
-		return ty.Pointer(StripePricingPlanIntervalYear)
-	default:
-		return nil
-	}
-}
 
 type Price struct {
 	ID              string                     `db:"id,pk" json:"id"`

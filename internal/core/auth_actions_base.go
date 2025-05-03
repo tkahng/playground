@@ -538,7 +538,6 @@ func (app *AuthActionsBase) Authenticate(ctx context.Context, params *shared.Aut
 
 func (app *AuthActionsBase) CheckUserCredentialsSecurity(ctx context.Context, user *shared.User, params *shared.AuthenticationInput) error {
 
-	// err := user.LoadUserUserAccounts(ctx, db, models.SelectWhere.UserAccounts.UserID.EQ(user.ID))
 	if user == nil || params == nil {
 		return fmt.Errorf("user not found")
 	}
