@@ -318,5 +318,5 @@ type Notification struct {
 	UserID    *uuid.UUID     `db:"user_id" json:"user_id"`
 	Content   map[string]any `db:"content" json:"content"`
 	Type      string         `db:"type" json:"type"`
-	User      *User          `db:"user" src:"user_id" dest:"id" table:"users" json:"user,omitempty"`
+	// User      *User          `db:"user" src:"user_id" dest:"id" table:"users" json:"user,omitempty"`
 }
