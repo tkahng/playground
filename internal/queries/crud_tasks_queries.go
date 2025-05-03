@@ -10,14 +10,47 @@ import (
 	"github.com/aarondl/opt/omit"
 	"github.com/aarondl/opt/omitnull"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/stephenafamo/bob/dialect/psql"
 	"github.com/stephenafamo/bob/dialect/psql/im"
 	"github.com/stephenafamo/bob/dialect/psql/sm"
+	"github.com/tkahng/authgo/internal/crud/crudModels"
 	"github.com/tkahng/authgo/internal/crud/crudrepo"
 	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/authgo/internal/tools/mapper"
 	"github.com/tkahng/authgo/internal/types"
 )
+
+const (
+	GetTaskProjectsWithUserAndTasksQuery = `
+SELECT 
+		tp.*,
+        to_json(u.*) AS "user",
+        json_agg(to_json(t.*)) AS "tasks"
+FROM public.task_projects tp
+        LEFT JOIN public.users u ON tp.user_id = u.id
+        LEFT JOIN public.tasks t ON tp.id = t.project_id
+WHERE tp.id = ANY (
+               $1::uuid[]
+        )
+GROUP BY tp.id,
+        u.id`
+)
+
+func LoadTaskProjectsUserAndTasks(ctx context.Context, db Queryer, projectIds ...uuid.UUID) ([]*crudModels.TaskProject, error) {
+	rows, err := db.Query(ctx, GetTaskProjectsWithUserAndTasksQuery, projectIds)
+	if err != nil {
+		return nil, err
+	}
+	users, err := pgx.CollectRows(rows, pgx.RowToStructByName[crudModels.TaskProject])
+	if err != nil {
+		return nil, err
+	}
+	return mapper.MapTo(users, projectIds, func(a crudModels.TaskProject) uuid.UUID {
+		return a.ID
+	}), nil
+}
 
 func FindTaskByID(ctx context.Context, db Queryer, id uuid.UUID) (*models.Task, error) {
 	task, err := models.FindTask(ctx, db, id)

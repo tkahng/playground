@@ -89,7 +89,7 @@ func NewSQLBuilder[Model any](operations map[string]func(string, ...string) stri
 		} else {
 			// Other fields are model attributes
 			if tag := _field.Tag.Get("db"); tag != "" {
-				if _field.Tag.Get("json") == "-" {
+				if _field.Tag.Get("table") != "" {
 					// Relation field detected
 					through := _field.Tag.Get("through")
 					throughs := strings.Split(through, ",")

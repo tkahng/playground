@@ -7,7 +7,7 @@ import (
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
-	"github.com/tkahng/authgo/internal/db/models"
+	"github.com/tkahng/authgo/internal/crud/crudrepo"
 	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
@@ -55,10 +55,18 @@ func (api *Api) AdminUserPermissionsDelete(ctx context.Context, input *struct {
 	if permission == nil {
 		return nil, huma.Error404NotFound("Permission not found")
 	}
-	_, err = models.UserPermissions.Delete(
-		models.DeleteWhere.UserPermissions.UserID.EQ(user.ID),
-		models.DeleteWhere.UserPermissions.PermissionID.EQ(permission.ID),
-	).Exec(ctx, db)
+	_, err = crudrepo.UserPermission.Delete(
+		ctx,
+		db,
+		&map[string]any{
+			"user_id": map[string]any{
+				"_eq": id.String(),
+			},
+			"permission_id": map[string]any{
+				"_eq": permissionId.String(),
+			},
+		},
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -232,16 +240,24 @@ type PermissionCreateInput struct {
 func (api *Api) AdminPermissionsCreate(ctx context.Context, input *struct {
 	Body PermissionCreateInput
 }) (*struct{ Body shared.Permission }, error) {
-	db := api.app.Db()
-	perm, err := queries.FindPermissionByName(ctx, db, input.Body.Name)
+	dbx := api.app.Db()
+	permission, err := crudrepo.Permission.GetOne(
+		ctx,
+		dbx,
+		&map[string]any{
+			"name": map[string]any{
+				"_eq": input.Body.Name,
+			},
+		},
+	)
 	if err != nil {
 		return nil, err
 
 	}
-	if perm != nil {
+	if permission != nil {
 		return nil, huma.Error409Conflict("Permission already exists")
 	}
-	data, err := queries.CreatePermission(ctx, db, &queries.CreatePermissionDto{
+	data, err := queries.CreatePermission(ctx, dbx, &queries.CreatePermissionDto{
 		Name:        input.Body.Name,
 		Description: input.Body.Description,
 	})

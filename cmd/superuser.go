@@ -7,6 +7,7 @@ import (
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/spf13/cobra"
 	"github.com/tkahng/authgo/internal/conf"
+	"github.com/tkahng/authgo/internal/crud/crudrepo"
 	"github.com/tkahng/authgo/internal/db"
 	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/queries"
@@ -52,7 +53,15 @@ var superuserCreate = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		role, err := queries.FindRoleByName(ctx, dbx, "superuser")
+		role, err := crudrepo.Role.GetOne(
+			ctx,
+			dbx,
+			&map[string]any{
+				"name": map[string]any{
+					"_eq": "superuser",
+				},
+			},
+		)
 		if err != nil {
 			return err
 		}

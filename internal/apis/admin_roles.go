@@ -9,7 +9,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/crud/crudModels"
 	"github.com/tkahng/authgo/internal/crud/crudrepo"
-	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
@@ -50,11 +49,16 @@ func (api *Api) AdminRolesList(ctx context.Context, input *struct {
 		if err != nil {
 			return nil, err
 		}
-
 		for _, item := range data {
+			if item == nil {
+				continue
+			}
 			dmap[item.Key] = item.Data
 		}
 		for i, role := range roles {
+			if role == nil {
+				continue
+			}
 			if v, ok := dmap[role.ID]; ok {
 				permissions[i] = v
 			} else {
@@ -114,15 +118,23 @@ func (api *Api) AdminRolesCreate(ctx context.Context, input *struct {
 }) (*struct {
 	Body shared.Role
 }, error) {
-	db := api.app.Db()
-	data, err := queries.FindRoleByName(ctx, db, input.Body.Name)
+	dbx := api.app.Db()
+	data, err := crudrepo.Role.GetOne(
+		ctx,
+		dbx,
+		&map[string]any{
+			"name": map[string]any{
+				"_eq": input.Body.Name,
+			},
+		},
+	)
 	if err != nil {
 		return nil, err
 	}
 	if data != nil {
 		return nil, huma.Error409Conflict("Role already exists")
 	}
-	role, err := queries.CreateRole(ctx, db, &queries.CreateRoleDto{
+	role, err := queries.CreateRole(ctx, dbx, &queries.CreateRoleDto{
 		Name:        input.Body.Name,
 		Description: input.Body.Description,
 	})
@@ -160,7 +172,11 @@ func (api *Api) AdminRolesDelete(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	role, err := queries.FindRoleById(ctx, db, id)
+	role, err := crudrepo.Role.GetOne(ctx, db, &map[string]any{
+		"id": map[string]any{
+			"_eq": id.String(),
+		},
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -206,7 +222,11 @@ func (api *Api) AdminRolesUpdate(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	role, err := queries.FindRoleById(ctx, db, id)
+	role, err := crudrepo.Role.GetOne(ctx, db, &map[string]any{
+		"id": map[string]any{
+			"_eq": id.String(),
+		},
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -222,14 +242,7 @@ func (api *Api) AdminRolesUpdate(ctx context.Context, input *struct {
 		Name:        input.Body.Name,
 		Description: input.Body.Description,
 	})
-	// err = role.Update(
-	// 	ctx,
-	// 	db,
-	// 	&models.RoleSetter{
-	// 		Name:        omit.From(input.Body.Name),
-	// 		Description: omitnull.FromPtr(input.Body.Description),
-	// 	},
-	// )
+
 	if err != nil {
 		return nil, err
 	}
@@ -272,7 +285,11 @@ func (api *Api) AdminUserRolesDelete(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	role, err := queries.FindRoleById(ctx, db, roleID)
+	role, err := crudrepo.Role.GetOne(ctx, db, &map[string]any{
+		"id": map[string]any{
+			"_eq": roleID.String(),
+		},
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -286,10 +303,18 @@ func (api *Api) AdminUserRolesDelete(ctx context.Context, input *struct {
 		return nil, err
 	}
 
-	_, err = models.UserRoles.Delete(
-		models.DeleteWhere.UserRoles.UserID.EQ(user.ID),
-		models.DeleteWhere.UserRoles.RoleID.EQ(role.ID),
-	).Exec(ctx, db)
+	_, err = crudrepo.UserRole.Delete(
+		ctx,
+		db,
+		&map[string]any{
+			"user_id": map[string]any{
+				"_eq": id.String(),
+			},
+			"role_id": map[string]any{
+				"_eq": roleID.String(),
+			},
+		},
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -329,7 +354,18 @@ func (api *Api) AdminUserRolesCreate(ctx context.Context, input *struct {
 
 	roleIds := queries.ParseUUIDs(input.Body.RolesIds)
 
-	roles, err := queries.FindRolesByIds(ctx, db, roleIds)
+	roles, err := crudrepo.Role.Get(
+		ctx,
+		db,
+		&map[string]any{
+			"id": map[string]any{
+				"_in": roleIds,
+			},
+		},
+		nil,
+		nil,
+		nil,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -387,13 +423,30 @@ func (api *Api) AdminUserRolesUpdate(ctx context.Context, input *struct {
 		}
 		roleIds[i] = id
 	}
-	roles, err := queries.FindRolesByIds(ctx, db, roleIds)
+	roles, err := crudrepo.Role.Get(
+		ctx,
+		db,
+		&map[string]any{
+			"id": map[string]any{
+				"_in": roleIds,
+			},
+		},
+		nil,
+		nil,
+		nil,
+	)
 	if err != nil {
 		return nil, err
 	}
-	_, err = models.UserRoles.Delete(
-		models.DeleteWhere.UserRoles.UserID.EQ(user.ID),
-	).Exec(ctx, db)
+	_, err = crudrepo.UserRole.Delete(
+		ctx,
+		db,
+		&map[string]any{
+			"user_id": map[string]any{
+				"_eq": id.String(),
+			},
+		},
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -443,7 +496,11 @@ func (api *Api) AdminRolesUpdatePermissions(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	role, err := queries.FindRoleById(ctx, db, id)
+	role, err := crudrepo.Role.GetOne(ctx, db, &map[string]any{
+		"id": map[string]any{
+			"_eq": id.String(),
+		},
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -497,7 +554,11 @@ func (api *Api) AdminRolesGet(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	role, err := queries.FindRoleById(ctx, db, id)
+	role, err := crudrepo.Role.GetOne(ctx, db, &map[string]any{
+		"id": map[string]any{
+			"_eq": id.String(),
+		},
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -562,7 +623,11 @@ func (api *Api) AdminRolesCreatePermissions(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	role, err := queries.FindRoleById(ctx, db, id)
+	role, err := crudrepo.Role.GetOne(ctx, db, &map[string]any{
+		"id": map[string]any{
+			"_eq": id.String(),
+		},
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -604,7 +669,11 @@ func (api *Api) AdminRolesDeletePermissions(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	role, err := queries.FindRoleById(ctx, db, id)
+	role, err := crudrepo.Role.GetOne(ctx, db, &map[string]any{
+		"id": map[string]any{
+			"_eq": id.String(),
+		},
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -628,10 +697,18 @@ func (api *Api) AdminRolesDeletePermissions(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	_, err = models.RolePermissions.Delete(
-		models.DeleteWhere.RolePermissions.RoleID.EQ(role.ID),
-		models.DeleteWhere.RolePermissions.PermissionID.EQ(permission.ID),
-	).Exec(ctx, db)
+	_, err = crudrepo.RolePermission.Delete(
+		ctx,
+		db,
+		&map[string]any{
+			"role_id": map[string]any{
+				"_eq": id.String(),
+			},
+			"permission_id": map[string]any{
+				"_eq": permissionId.String(),
+			},
+		},
+	)
 	if err != nil {
 		return nil, err
 	}

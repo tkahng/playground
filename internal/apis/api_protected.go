@@ -7,9 +7,8 @@ import (
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/tkahng/authgo/internal/core"
-	"github.com/tkahng/authgo/internal/queries"
+	"github.com/tkahng/authgo/internal/crud/crudrepo"
 	"github.com/tkahng/authgo/internal/shared"
-	"github.com/tkahng/authgo/internal/tools/utils"
 )
 
 func (a *Api) ApiProtectedOperation(path string) huma.Operation {
@@ -36,8 +35,16 @@ func (a *Api) ApiProtected(ctx context.Context, input *struct {
 	if claims == nil {
 		return nil, huma.Error404NotFound("User not found")
 	}
-	utils.PrettyPrintJSON(claims)
-	permission, err := queries.FindPermissionByName(ctx, a.app.Db(), input.PermissionName)
+	dbx := a.app.Db()
+	permission, err := crudrepo.Permission.GetOne(
+		ctx,
+		dbx,
+		&map[string]any{
+			"name": map[string]any{
+				"_eq": input.PermissionName,
+			},
+		},
+	)
 	if err != nil {
 		return nil, err
 	}

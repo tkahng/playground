@@ -8,6 +8,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/tkahng/authgo/internal/crud/crudModels"
+	"github.com/tkahng/authgo/internal/crud/crudrepo"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/security"
 )
@@ -26,7 +27,7 @@ var _ TokenAdapter = (*TokenAdapterBase)(nil)
 type TokenAdapterBase struct {
 	db *pgxpool.Pool
 	// repo repository.AppRepo
-	repo *AppRepo
+	// repo *AppRepo
 }
 
 // VerifyTokenStorage implements TokenAdapter.
@@ -68,11 +69,11 @@ func (a *TokenAdapterBase) CreateOtpTokenHash(payload *OtpPayload, config TokenO
 }
 
 func NewTokenAdapter(dbx *pgxpool.Pool) *TokenAdapterBase {
-	repo := NewAppRepo(dbx)
 	// return &TokenAdapterBase{db: db, repo: repo}
 	return &TokenAdapterBase{
-		db:   dbx,
-		repo: repo}
+		db: dbx,
+		// repo: repo
+	}
 }
 
 func (a *TokenAdapterBase) ParseTokenString(token string, config TokenOption, data any) error {
@@ -100,7 +101,7 @@ func checkTokenType(claims jwt.MapClaims, tokenType shared.TokenType) bool {
 }
 
 func (a *TokenAdapterBase) GetToken(ctx context.Context, token string) (*shared.Token, error) {
-	res, err := a.repo.token.GetOne(ctx,
+	res, err := crudrepo.Token.GetOne(ctx,
 		a.db,
 		&map[string]any{
 			"token": map[string]any{
@@ -125,7 +126,7 @@ func (a *TokenAdapterBase) GetToken(ctx context.Context, token string) (*shared.
 }
 
 func (a *TokenAdapterBase) SaveToken(ctx context.Context, token *shared.CreateTokenDTO) error {
-	_, err := a.repo.token.PostOne(ctx, a.db, &crudModels.Token{
+	_, err := crudrepo.Token.PostOne(ctx, a.db, &crudModels.Token{
 		Type:       crudModels.TokenTypes(token.Type),
 		Identifier: token.Identifier,
 		Expires:    token.Expires,
@@ -141,7 +142,7 @@ func (a *TokenAdapterBase) SaveToken(ctx context.Context, token *shared.CreateTo
 }
 
 func (a *TokenAdapterBase) DeleteToken(ctx context.Context, token string) error {
-	_, err := a.repo.token.Delete(ctx, a.db, &map[string]any{
+	_, err := crudrepo.Token.Delete(ctx, a.db, &map[string]any{
 		"token": map[string]any{
 			"_eq": token,
 		},

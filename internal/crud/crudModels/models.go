@@ -1,6 +1,9 @@
 package crudModels
 
 import (
+	"bytes"
+	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -19,20 +22,34 @@ type User struct {
 	Roles           []Role        `db:"roles" src:"id" dest:"user_id" table:"roles" through:"user_roles,role_id,id" json:"-"`
 	Permissions     []Permission  `db:"permissions" src:"id" dest:"user_id" table:"permissions" through:"user_permissions,permission_id,id" json:"-"`
 }
+
+func (j *User) Scan(value any) error {
+	switch x := value.(type) {
+	case string:
+		return json.NewDecoder(bytes.NewBuffer([]byte(x))).Decode(j)
+	case []byte:
+		return json.NewDecoder(bytes.NewBuffer(x)).Decode(j)
+	case nil:
+		return nil
+	default:
+		return fmt.Errorf("cannot scan type %T: %v", value, value)
+	}
+}
+
 type UserRole struct {
 	_      struct{}  `db:"user_roles" json:"-"`
-	UserID uuid.UUID `db:"user_id,pk" json:"user_id"`
-	RoleID uuid.UUID `db:"role_id,pk" json:"role_id"`
+	UserID uuid.UUID `db:"user_id" json:"user_id"`
+	RoleID uuid.UUID `db:"role_id" json:"role_id"`
 }
 type ProductRole struct {
 	_         struct{}  `db:"product_roles" json:"-"`
-	ProductID string    `db:"product_id,pk" json:"product_id"`
-	RoleID    uuid.UUID `db:"role_id,pk" json:"role_id"`
+	ProductID string    `db:"product_id" json:"product_id"`
+	RoleID    uuid.UUID `db:"role_id" json:"role_id"`
 }
 type UserPermission struct {
 	_            struct{}  `db:"user_permissions" json:"-"`
-	UserID       uuid.UUID `db:"user_id,pk" json:"user_id"`
-	PermissionID uuid.UUID `db:"permission_id,pk" json:"permission_id"`
+	UserID       uuid.UUID `db:"user_id" json:"user_id"`
+	PermissionID uuid.UUID `db:"permission_id" json:"permission_id"`
 }
 type Role struct {
 	_           struct{}     `db:"roles" json:"-"`
@@ -47,8 +64,8 @@ type Role struct {
 
 type RolePermission struct {
 	_            struct{}  `db:"role_permissions" json:"-"`
-	RoleID       uuid.UUID `db:"role_id,pk" json:"role_id"`
-	PermissionID uuid.UUID `db:"permission_id,pk" json:"permission_id"`
+	RoleID       uuid.UUID `db:"role_id" json:"role_id"`
+	PermissionID uuid.UUID `db:"permission_id" json:"permission_id"`
 }
 
 type Permission struct {
@@ -99,7 +116,7 @@ type UserAccount struct {
 
 type Token struct {
 	_          struct{}   `db:"tokens" json:"-"`
-	ID         uuid.UUID  `db:"id,pk" json:"id"`
+	ID         uuid.UUID  `db:"id" json:"id"`
 	Type       TokenTypes `db:"type" json:"type"`
 	UserID     *uuid.UUID `db:"user_id" json:"user_id"`
 	Otp        *string    `db:"otp" json:"otp"`
@@ -125,22 +142,25 @@ const (
 )
 
 type Task struct {
-	_           struct{}   `db:"tasks" json:"-"`
-	ID          uuid.UUID  `db:"id,pk" json:"id"`
-	UserID      uuid.UUID  `db:"user_id" json:"user_id"`
-	ProjectID   uuid.UUID  `db:"project_id" json:"project_id"`
-	Name        string     `db:"name" json:"name"`
-	Description *string    `db:"description" json:"description"`
-	Status      TaskStatus `db:"status" json:"status" enum:"todo,in_progress,done"`
-	Order       float64    `db:"order" json:"order"`
-	ParentID    *uuid.UUID `db:"parent_id" json:"parent_id"`
-	CreatedAt   time.Time  `db:"created_at" json:"created_at"`
-	UpdatedAt   time.Time  `db:"updated_at" json:"updated_at"`
+	_           struct{}     `db:"tasks" json:"-"`
+	ID          uuid.UUID    `db:"id" json:"id"`
+	UserID      uuid.UUID    `db:"user_id" json:"user_id"`
+	ProjectID   uuid.UUID    `db:"project_id" json:"project_id"`
+	Name        string       `db:"name" json:"name"`
+	Description *string      `db:"description" json:"description"`
+	Status      TaskStatus   `db:"status" json:"status" enum:"todo,in_progress,done"`
+	Order       float64      `db:"order" json:"order"`
+	ParentID    *uuid.UUID   `db:"parent_id" json:"parent_id"`
+	CreatedAt   time.Time    `db:"created_at" json:"created_at"`
+	UpdatedAt   time.Time    `db:"updated_at" json:"updated_at"`
+	Children    []*Task      `db:"children" src:"id" dest:"parent_id" table:"tasks" json:"children,omitempty"`
+	User        *User        `db:"user" src:"user_id" dest:"id" table:"users" json:"user,omitempty"`
+	Project     *TaskProject `db:"project" src:"project_id" dest:"id" table:"task_projects" json:"project,omitempty"`
 }
 
 type TaskProject struct {
 	_           struct{}          `db:"task_projects" json:"-"`
-	ID          uuid.UUID         `db:"id,pk" json:"id"`
+	ID          uuid.UUID         `db:"id" json:"id"`
 	UserID      uuid.UUID         `db:"user_id" json:"user_id"`
 	Name        string            `db:"name" json:"name"`
 	Description *string           `db:"description" json:"description"`
@@ -148,6 +168,8 @@ type TaskProject struct {
 	Order       float64           `db:"order" json:"order"`
 	CreatedAt   time.Time         `db:"created_at" json:"created_at"`
 	UpdatedAt   time.Time         `db:"updated_at" json:"updated_at"`
+	User        *User             `db:"user" src:"user_id" dest:"id" table:"users" json:"user,omitempty"`
+	Tasks       []*Task           `db:"tasks" src:"id" dest:"project_id" table:"tasks" json:"tasks,omitempty"`
 }
 
 const (
@@ -169,7 +191,7 @@ type TaskProjectStatus string
 
 type StripeProduct struct {
 	_           struct{}          `db:"stripe_products" json:"-"`
-	ID          string            `db:"id,pk" json:"id"`
+	ID          string            `db:"id" json:"id"`
 	Active      bool              `db:"active" json:"active"`
 	Name        string            `db:"name" json:"name"`
 	Description *string           `db:"description" json:"description"`
@@ -202,7 +224,7 @@ const (
 
 type StripePrice struct {
 	_               struct{}                   `db:"stripe_prices" json:"-"`
-	ID              string                     `db:"id,pk" json:"id"`
+	ID              string                     `db:"id" json:"id"`
 	ProductID       string                     `db:"product_id" json:"product_id"`
 	LookupKey       *string                    `db:"lookup_key" json:"lookup_key"`
 	Active          bool                       `db:"active" json:"active"`
@@ -216,6 +238,7 @@ type StripePrice struct {
 	CreatedAt       time.Time                  `db:"created_at" json:"created_at"`
 	UpdatedAt       time.Time                  `db:"updated_at" json:"updated_at"`
 	Product         *StripeProduct             `db:"product" src:"product_id" dest:"id" table:"stripe_products" json:"-"`
+	Subscriptions   []*StripeSubscription      `db:"subscriptions" src:"id" dest:"price_id" table:"stripe_subscriptions" json:"-"`
 }
 
 // enum:"trialing,active,canceled,incomplete,incomplete_expired,past_due,unpaid,paused"
@@ -234,7 +257,7 @@ const (
 
 type StripeSubscription struct {
 	_                  struct{}                 `db:"stripe_subscriptions" json:"-"`
-	ID                 string                   `db:"id,pk" json:"id"`
+	ID                 string                   `db:"id" json:"id"`
 	UserID             uuid.UUID                `db:"user_id" json:"user_id"`
 	Status             StripeSubscriptionStatus `db:"status" json:"status"`
 	Metadata           map[string]string        `db:"metadata" json:"metadata"`
@@ -257,7 +280,7 @@ type StripeSubscription struct {
 
 type StripeCustomer struct {
 	_              struct{}           `db:"stripe_customers" json:"-"`
-	ID             uuid.UUID          `db:"id,pk" json:"id"`
+	ID             uuid.UUID          `db:"id" json:"id"`
 	StripeID       string             `db:"stripe_id" json:"stripe_id"`
 	BillingAddress *map[string]string `db:"billing_address" json:"billing_address"`
 	PaymentMethod  *map[string]string `db:"payment_method" json:"payment_method"`
@@ -273,7 +296,7 @@ type SubscriptionWithPrice struct {
 
 type Medium struct {
 	_                struct{}   `db:"media" json:"-"`
-	ID               uuid.UUID  `db:"id,pk" json:"id"`
+	ID               uuid.UUID  `db:"id" json:"id"`
 	UserID           *uuid.UUID `db:"user_id" json:"user_id"`
 	Disk             string     `db:"disk" json:"disk"`
 	Directory        string     `db:"directory" json:"directory"`

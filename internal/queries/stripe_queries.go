@@ -474,14 +474,14 @@ func FindLatestActiveSubscriptionWithPriceByUserId(ctx context.Context, dbx Quer
 	// 		models.PreloadStripePriceProductStripeProduct(),
 	// 	),
 	// ).One(ctx, dbx)
-	data, err := QueryAll[*crudModels.SubscriptionWithPrice](ctx, dbx, GetLatestActiveSubscriptionWithPriceByIdQuery, userId)
+	data, err := QueryAll[crudModels.SubscriptionWithPrice](ctx, dbx, GetLatestActiveSubscriptionWithPriceByIdQuery, userId)
 	if err != nil {
 		return nil, err
 	}
 	if len(data) == 0 {
 		return nil, nil
 	}
-	return OptionalRow(data[0], err)
+	return OptionalRow(&data[0], err)
 }
 
 func IsFirstSubscription(ctx context.Context, dbx Queryer, userId uuid.UUID) (bool, error) {

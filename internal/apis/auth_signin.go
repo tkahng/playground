@@ -22,7 +22,7 @@ func (api *Api) SigninOperation(path string) huma.Operation {
 }
 
 type SigninDto struct {
-	Email    string                `json:"email" form:"email" format:"email" example:"tkahng+01@gmail.com"`
+	Email    string                `json:"email" form:"email" format:"email" example:"admin@k2dv.io"`
 	Password RequiredPasswordField `json:"password" form:"password" minimum:"8" example:"Password123!"`
 }
 

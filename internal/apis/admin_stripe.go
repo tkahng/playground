@@ -8,7 +8,7 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/crud/crudModels"
-	"github.com/tkahng/authgo/internal/db/models"
+	"github.com/tkahng/authgo/internal/crud/crudrepo"
 	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
@@ -42,44 +42,7 @@ func (api *Api) AdminStripeSubscriptions(ctx context.Context,
 			Subscription: shared.FromCrudSubscription(sub),
 		}
 	})
-	// if slices.Contains(input.Expand, "user") {
-	// 	err = subscriptions.LoadStripeSubscriptionUser(ctx, db)
-	// 	if err != nil {
-	// 		return nil, err
-	// 	}
-	// }
-	// if slices.Contains(input.Expand, "price") {
-	// 	if slices.Contains(input.Expand, "product") {
-	// 		err = subscriptions.LoadStripeSubscriptionPriceStripePrice(ctx, db,
-	// 			models.PreloadStripePriceProductStripeProduct(),
-	// 		)
-	// 		if err != nil {
-	// 			return nil, err
-	// 		}
-	// 	} else {
-	// 		err = subscriptions.LoadStripeSubscriptionPriceStripePrice(ctx, db)
-	// 		if err != nil {
-	// 			return nil, err
-	// 		}
-	// 	}
-	// }
-	// subs := mapper.Map(subscriptions, func(sub *models.StripeSubscription) *shared.SubscriptionWithData {
-	// 	ss := &shared.SubscriptionWithData{
-	// 		Subscription: shared.ModelToSubscription(sub),
-	// 	}
-	// 	if sub.R.User != nil {
-	// 		ss.SubscriptionUser = shared.ToUser(sub.R.User)
-	// 	}
-	// 	if sub.R.PriceStripePrice != nil {
-	// 		ss.Price = &shared.StripePricesWithProduct{
-	// 			Price: shared.ModelToPrice(sub.R.PriceStripePrice),
-	// 		}
-	// 		if sub.R.PriceStripePrice.R.ProductStripeProduct != nil {
-	// 			ss.Price.Product = shared.ModelToProduct(sub.R.PriceStripePrice.R.ProductStripeProduct)
-	// 		}
-	// 	}
-	// 	return ss
-	// })
+
 	count, err := queries.CountSubscriptions(ctx, db, &input.StripeSubscriptionListFilter)
 	if err != nil {
 		return nil, err
@@ -340,18 +303,33 @@ func (api *Api) AdminStripeProductsRolesDelete(ctx context.Context, input *struc
 		return nil, huma.Error400BadRequest("role_id is not a valid UUID")
 	}
 
-	role, err := queries.FindRoleById(ctx, db, roleId)
+	role, err := crudrepo.Role.GetOne(ctx, db, &map[string]any{
+		"id": map[string]any{
+			"_eq": roleId.String(),
+		},
+	})
 	if err != nil {
 		return nil, err
 	}
 	if role == nil {
 		return nil, huma.Error404NotFound("Role not found")
 	}
-
-	_, err = models.ProductRoles.Delete(
-		models.DeleteWhere.ProductRoles.RoleID.EQ(role.ID),
-		models.DeleteWhere.ProductRoles.ProductID.EQ(id),
-	).Exec(ctx, db)
+	_, err = crudrepo.ProductRole.Delete(
+		ctx,
+		db,
+		&map[string]any{
+			"product_id": map[string]any{
+				"_eq": id,
+			},
+			"role_id": map[string]any{
+				"_eq": role.ID.String(),
+			},
+		},
+	)
+	// _, err = models.ProductRoles.Delete(
+	// 	models.DeleteWhere.ProductRoles.RoleID.EQ(role.ID),
+	// 	models.DeleteWhere.ProductRoles.ProductID.EQ(id),
+	// ).Exec(ctx, db)
 	if err != nil {
 		return nil, err
 	}

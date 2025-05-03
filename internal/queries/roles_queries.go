@@ -16,6 +16,7 @@ import (
 	crudModels "github.com/tkahng/authgo/internal/crud/crudModels"
 	"github.com/tkahng/authgo/internal/crud/crudrepo"
 	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/authgo/internal/tools/mapper"
 )
 
 const (
@@ -48,7 +49,7 @@ FROM public.role_permissions rp
 GROUP BY rp.role_id;`
 )
 
-func GetRolePermissions(ctx context.Context, db Queryer, roleIds ...uuid.UUID) ([]shared.JoinedResult[*crudModels.Permission, uuid.UUID], error) {
+func GetRolePermissions(ctx context.Context, db Queryer, roleIds ...uuid.UUID) ([]*shared.JoinedResult[*crudModels.Permission, uuid.UUID], error) {
 	// var results []JoinedResult[*crudModels.Permission, uuid.UUID]
 	ids := []string{}
 	for _, id := range roleIds {
@@ -64,7 +65,10 @@ func GetRolePermissions(ctx context.Context, db Queryer, roleIds ...uuid.UUID) (
 	if err != nil {
 		return nil, err
 	}
-	return data, nil
+	return mapper.MapTo(data, roleIds, func(a shared.JoinedResult[*crudModels.Permission, uuid.UUID]) uuid.UUID {
+		return a.Key
+	}), nil
+	// return data, nil
 }
 
 const (
@@ -242,7 +246,15 @@ type CreateRoleDto struct {
 }
 
 func FindOrCreateRole(ctx context.Context, dbx Queryer, roleName string) (*crudModels.Role, error) {
-	role, err := FindRoleByName(ctx, dbx, roleName)
+	role, err := crudrepo.Role.GetOne(
+		ctx,
+		dbx,
+		&map[string]any{
+			"name": map[string]any{
+				"_eq": roleName,
+			},
+		},
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -364,67 +376,6 @@ func DeleteRole(ctx context.Context, dbx Queryer, id uuid.UUID) error {
 	return err
 }
 
-func FindRolesByNames(ctx context.Context, dbx Queryer, params []string) ([]*crudModels.Role, error) {
-	return crudrepo.Role.Get(
-		ctx,
-		dbx,
-		&map[string]any{
-			"name": map[string]any{
-				"_in": params,
-			},
-		},
-		nil,
-		nil,
-		nil,
-	)
-	// return models.Roles.Query(models.SelectWhere.Roles.Name.In(params...)).All(ctx, dbx)
-}
-func FindRolesByIds(ctx context.Context, dbx Queryer, params []uuid.UUID) ([]*crudModels.Role, error) {
-	newIds := make([]string, len(params))
-	for i, id := range params {
-		newIds[i] = id.String()
-	}
-	return crudrepo.Role.Get(
-		ctx,
-		dbx,
-		&map[string]any{
-			"id": map[string]any{
-				"_in": newIds,
-			},
-		},
-		nil,
-		nil,
-		nil,
-	)
-}
-
-func FindRoleByName(ctx context.Context, dbx Queryer, name string) (*crudModels.Role, error) {
-	data, err := crudrepo.Role.GetOne(
-		ctx,
-		dbx,
-		&map[string]any{
-			"name": map[string]any{
-				"_eq": name,
-			},
-		},
-	)
-	// data, err := models.Roles.Query(models.SelectWhere.Roles.Name.EQ(name)).One(ctx, dbx)
-	return OptionalRow(data, err)
-}
-func FindRoleById(ctx context.Context, dbx Queryer, id uuid.UUID) (*crudModels.Role, error) {
-	// data, err := models.Roles.Query(models.SelectWhere.Roles.ID.EQ(id)).One(ctx, dbx)
-	data, err := crudrepo.Role.GetOne(
-		ctx,
-		dbx,
-		&map[string]any{
-			"id": map[string]any{
-				"_eq": id.String(),
-			},
-		},
-	)
-	return OptionalRow(data, err)
-}
-
 func DeleteRolePermissions(ctx context.Context, dbx Queryer, id uuid.UUID) error {
 	_, err := crudrepo.RolePermission.Delete(
 		ctx,
@@ -444,7 +395,15 @@ type CreatePermissionDto struct {
 }
 
 func FindOrCreatePermission(ctx context.Context, dbx Queryer, permissionName string) (*crudModels.Permission, error) {
-	permission, err := FindPermissionByName(ctx, dbx, permissionName)
+	permission, err := crudrepo.Permission.GetOne(
+		ctx,
+		dbx,
+		&map[string]any{
+			"name": map[string]any{
+				"_eq": permissionName,
+			},
+		},
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -470,22 +429,6 @@ func CreatePermission(ctx context.Context, dbx Queryer, permission *CreatePermis
 	// 	im.Returning("*"),
 	// ).One(ctx, dbx)
 	return data, err
-}
-
-func FindPermissionByName(ctx context.Context, dbx Queryer, params string) (*crudModels.Permission, error) {
-	// data, err := models.Permissions.Query(
-	// 	models.SelectWhere.Permissions.Name.EQ(params),
-	// ).One(ctx, dbx)
-	data, err := crudrepo.Permission.GetOne(
-		ctx,
-		dbx,
-		&map[string]any{
-			"name": map[string]any{
-				"_eq": params,
-			},
-		},
-	)
-	return OptionalRow(data, err)
 }
 
 func FindPermissionsByIds(ctx context.Context, dbx Queryer, params []uuid.UUID) ([]*crudModels.Permission, error) {
