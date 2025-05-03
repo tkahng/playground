@@ -6,6 +6,7 @@ import (
 	"github.com/aarondl/opt/null"
 	"github.com/google/uuid"
 	"github.com/stephenafamo/bob/types"
+	"github.com/tkahng/authgo/internal/crud/crudModels"
 	"github.com/tkahng/authgo/internal/db/models"
 )
 
@@ -91,6 +92,38 @@ type Subscription struct {
 type SubscriptionWithPrice struct {
 	*Subscription
 	Price *StripePricesWithProduct `json:"price,omitempty" required:"false"`
+}
+
+func FromCrudToSubWithUserAndPrice(sub *crudModels.SubscriptionWithPrice) *SubscriptionWithData {
+	return &SubscriptionWithData{
+		Subscription: FromCrudSubscription(&sub.Subscription),
+		Price: &StripePricesWithProduct{
+			Product: FromCrudProduct(&sub.Price.Product),
+			Price:   FromCrudModel(&sub.Price),
+		},
+	}
+}
+
+func FromCrudSubscription(sub *crudModels.StripeSubscription) *Subscription {
+	return &Subscription{
+		ID:                 sub.ID,
+		UserID:             sub.UserID,
+		Status:             StripeSubscriptionStatus(sub.Status),
+		Metadata:           sub.Metadata,
+		PriceID:            sub.PriceID,
+		Quantity:           sub.Quantity,
+		CancelAtPeriodEnd:  sub.CancelAtPeriodEnd,
+		Created:            sub.Created,
+		CurrentPeriodStart: sub.CurrentPeriodStart,
+		CurrentPeriodEnd:   sub.CurrentPeriodEnd,
+		EndedAt:            sub.EndedAt,
+		CancelAt:           sub.CancelAt,
+		CanceledAt:         sub.CanceledAt,
+		TrialStart:         sub.TrialStart,
+		TrialEnd:           sub.TrialEnd,
+		CreatedAt:          sub.CreatedAt,
+		UpdatedAt:          sub.UpdatedAt,
+	}
 }
 
 func ModelToSubscription(md *models.StripeSubscription) *Subscription {

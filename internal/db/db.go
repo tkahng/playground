@@ -81,3 +81,7 @@ func (v *Queries) ExecContext(ctx context.Context, query string, args ...any) (s
 func (v *Queries) Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error) {
 	return v.pool.Query(ctx, sql, args...)
 }
+
+func (v *Queries) Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error) {
+	return v.pool.Exec(ctx, sql, args...)
+}

@@ -1,434 +1,481 @@
-SELECT sp.product_id as key,
-        COALESCE(
-                json_agg(
-                        jsonb_build_object(
-                                'id',
-                                sp.id,
-                                'product_id',
-                                sp.product_id,
-                                'lookup_key',
-                                sp.lookup_key,
-                                'active',
-                                sp.active,
-                                'unit_amount',
-                                sp.unit_amount,
-                                'currency',
-                                sp.currency,
-                                'type',
-                                sp.type,
-                                'interval',
-                                sp.interval,
-                                'interval_count',
-                                sp.interval_count,
-                                'trial_period_days',
-                                sp.trial_period_days,
-                                'created_at',
-                                sp.created_at,
-                                'updated_at',
-                                sp.updated_at
-                        )
-                ),
-                '[]'
-        ) AS prices
-FROM public.stripe_prices sp
-WHERE sp.product_id = ANY ($1::text [])
-GROUP BY sp.product_id;
--- SELECT role_permissions.role_id,
---         COALESCE(JSON_AGG(pets), '[]') as permissions 
--- FROM permissions
---         LEFT JOIN role_permissions on permissions.id = role_permissions.permission_id
---         and role_permissions.role_id IN (
---                 '4f376506-3225-4994-b59f-4a4ee73a40a8',
---                 '2c477cc6-d2c6-45b2-8fb1-a89ff0106d65'
+SELECT price.*,
+        TO_JSON(product.*) AS product
+FROM stripe_prices price
+        LEFT JOIN stripe_products product ON price.product_id = product.id;
+-- INSERT INTO stripe_prices (
+--                 id,
+--                 product_id,
+--                 lookup_key,
+--                 active,
+--                 unit_amount,
+--                 currency,
+--                 type,
+--                 interval,
+--                 interval_count,
+--                 trial_period_days,
+--                 metadata,
+--                 created_at,
+--                 updated_at
 --         )
--- SELECT permissions.*
--- FROM permissions
---         LEFT JOIN role_permissions on permissions.id = role_permissions.permission_id
---         and role_permissions.role_id = 'a0aba2df-8c57-408d-8ccc-21c978bb6fa7' -- WHERE role_permissions.permission_id is null
--- LIMIT 10 OFFSET 0;
--- -- I need a query to get a user's total projects count, completed projects count, and total tasks count, completed tasks count.
--- WITH project_statsec006d55-00f2-4b86-9411-873a22c2c40eAS (
---     SELECT COUNT(*) as total_projects,
---         COUNT(*) FILTER (
---             WHERE tsp.status = 'done'
---         ) as completed_projects
---     FROM task_projects tp
---     WHERE tsp.user_id = 'c7304543-3ceb-47ce-a214-961521d10494'
--- ),
--- task_stats AS (
---     SELECT COUNT(*) as total_tasks,
---         COUNT(*) FILTER (
---             WHERE t.status = 'done'
---         ) as completed_tasks
---     FROM tasks t
---     WHERE t.user_id = 'c7304543-3ceb-47ce-a214-961521d10494'
--- )
--- SELECT sp.total_projects,
---     sp.completed_projects,
---     t.total_tasks,
---     t.completed_tasks
--- FROM project_stats ps
---     CROSS JOIN task_stats t;
--- -- VALUES ('{ "message": "test" }', 'default');
--- WITH -- Get permissions assigned through roles
--- user_role_permissions AS (
---     SELECT ur.user_id AS user_id,
---         sp.name AS permission,
---         r.name AS role
---     FROM public.user_roles ur
---         JOIN public.roles r ON ur.role_id = r.id
---         JOIN public.role_permissions sp ON ur.role_id = ssp.role_id
---         JOIN public.permissions p ON ssp.permission_id = sp.id -- WHERE ur.user_id = '575a9f91-159e-4680-ba8b-3fc4db40d194'
--- ),
--- user_direct_permissions AS (
---     SELECT usp.user_id AS user_id,
---         sp.name AS permission,
---         NULL::text AS role
---     FROM public.user_permissions up
---         JOIN public.permissions p ON usp.permission_id = sp.id
--- ),
--- user_sub_role_permissions AS (
---     SELECT u.id AS user_id,
---         sp.name AS permission,
---         r.name AS role
---     FROM public.stripe_subscriptions s
---         JOIN public.users u ON s.user_id = u.id
---         JOIN public.stripe_prices price ON s.price_id = price.id
---         JOIN public.stripe_products product ON price.product_id = product.id
---         JOIN public.product_roles pr ON product.id = pr.product_id
---         JOIN public.roles r ON pr.role_id = r.id
---         JOIN public.role_permissions sp ON r.id = ssp.role_id
---         JOIN public.permissions p ON ssp.permission_id = sp.id -- WHERE u.id = '575a9f91-159e-4680-ba8b-3fc4db40d194'
--- ),
--- combined_permissions AS (
---     SELECT *
---     FROM user_role_permissions
---     UNION ALL
---     SELECT *
---     FROM user_direct_permissions
---     UNION ALL
---     SELECT *
---     FROM user_sub_role_permissions
--- )
--- SELECT u.id AS user_id,
---     u.email AS email,
---     array_remove(ARRAY_AGG(DISTINCT sp.role), NULL)::text [] AS roles,
---     array_remove(ARRAY_AGG(DISTINCT sp.permission), NULL)::text [] AS permissions,
---     array_remove(ARRAY_AGG(DISTINCT ua.provider), NULL)::public.providers [] AS providers
--- FROM public.users u
---     LEFT JOIN combined_permissions p ON u.id = sp.user_id
---     LEFT JOIN public.user_accounts ua ON u.id = ua.user_id
--- WHERE u.email = 'tkahng+01@gmail.com'
--- GROUP BY u.id
--- LIMIT 1;
--- -- Get permissions assigned directly to user
--- direct_permissions AS (
---     SELECT sp.*,
---         NULL::uuid AS role_id,
---         -- Null indicates not from a role
---         usp.user_id AS direct_assignment
---     FROM public.user_permissions up
---         JOIN public.permissions p ON usp.permission_id = sp.id
---     WHERE usp.user_id = 'bb59e199-8748-43fc-a3e0-407e658234e2'
--- ),
--- -- Combine both sources
--- combined_permissions AS (
---     SELECT *
---     FROM role_based_permissions
---     UNION ALL
---     SELECT *
---     FROM direct_permissions
--- ) -- Final result with aggregated role information
--- -- SELECT sp.id,
---     sp.name,
---     sp.description,
---     sp.created_at,
---     sp.updated_at,
---     -- Array of role IDs that grant this permission (empty if direct)
---     array []::uuid [] AS role_ids,
---     -- Boolean indicating if permission is directly assigned
---     false AS is_directly_assigned
--- SELECT COUNT(DISTINCT sp.id)
--- FROM public.permissions p
---     LEFT JOIN combined_permissions cp ON sp.id = csp.id
--- WHERE csp.id IS NULL;
--- GROUP BY sp.id
--- ORDER BY sp.name,
--- sp.id
--- LIMIT 10 OFFSET 0;
--- SELECT sp.*
--- FROM public.permissions p
--- LEFT JOIN combined_permissions sp ON sp.id = ssp.id
--- WHERE ssp.id IS NULL;
--- SELECT sp.*
--- FROM public.permissions p
---     LEFT JOIN public.user_permissions up ON sp.id = usp.permission_id
---     AND usp.user_id = '4481343d-a744-4685-8586-80df2f6ddf85'
---     LEFT JOIN public.user_roles ur ON usp.user_id = ur.user_id
---     LEFT JOIN public.roles r ON ur.role_id = r.id
---     LEFT JOIN public.role_permissions sp ON r.id = ssp.role_id
---     AND ssp.permission_id = sp.id
--- WHERE usp.permission_id IS NULL
---     AND ssp.permission_id IS NULL
--- GROUP BY sp.id
--- ORDER BY sp.name
--- LIMIT 10 OFFSET 0;
--- GROUP BY sp.id,
---     sp.name,
---     sp.description,
---     sp.created_at,
---     sp.updated_at,
---     ssp.id
--- ORDER BY sp.name,
---     sp.id;
--- WITH -- Get permissions assigned through roles
--- role_based_permissions AS (
---     SELECT sp.*,
---         ssp.role_id,
---         NULL::uuid AS direct_assignment -- Null indicates not directly assigned
---     FROM public.user_roles ur
---         JOIN public.role_permissions sp ON ur.role_id = ssp.role_id
---         JOIN public.permissions p ON ssp.permission_id = sp.id
---     WHERE ur.user_id = '4481343d-a744-4685-8586-80df2f6ddf85'
--- ),
--- -- Get permissions assigned directly to user
--- direct_permissions AS (
---     SELECT sp.*,
---         NULL::uuid AS role_id,
---         -- Null indicates not from a role
---         usp.user_id AS direct_assignment
---     FROM public.user_permissions up
---         JOIN public.permissions p ON usp.permission_id = sp.id
---     WHERE usp.user_id = '4481343d-a744-4685-8586-80df2f6ddf85'
--- ),
--- -- Combine both sources
--- combined_permissions AS (
---     SELECT *
---     FROM role_based_permissions
---     UNION ALL
---     SELECT *
---     FROM direct_permissions
--- ) -- Final result with aggregated role information
--- SELECT sp.id,
---     sp.name,
---     sp.description,
---     sp.created_at,
---     sp.updated_at,
---     -- Array of role IDs that grant this permission (empty if direct)
---     array_remove(array_agg(DISTINCT ssp.role_id), NULL) AS role_ids,
---     -- Boolean indicating if permission is directly assigned
---     bool_or(ssp.direct_assignment IS NOT NULL) AS is_directly_assigned
--- FROM (
---         SELECT DISTINCT id,
---             name,
---             description,
---             created_at,
---             updated_at
---         FROM combined_permissions
---     ) p
---     LEFT JOIN combined_permissions sp ON sp.id = ssp.id
--- GROUP BY sp.id,
---     sp.name,
---     sp.description,
---     sp.created_at,
---     sp.updated_at
--- ORDER BY sp.name,
---     sp.id;
--- SELECT sp.*
--- FROM public.permissions p
---     LEFT JOIN public.role_permissions sp ON sp.id = ssp.permission_id
---     AND ssp.role_id = 'eb2ad8b3-eac7-4e88-8361-82845cc57624'
--- WHERE ssp.permission_id IS NULL
--- ORDER BY sp.name
--- LIMIT 10 OFFSET 0;
--- SELECT COUNT(sp.*)
--- FROM public.permissions p
---     LEFT JOIN public.role_permissions sp ON sp.id = ssp.permission_id
---     AND ssp.role_id = 'eb2ad8b3-eac7-4e88-8361-82845cc57624'
--- WHERE ssp.permission_id IS NULL;
--- WITH RolePermissions AS (
---     SELECT ur.user_id as user_id,
---         ssp.role_id::uuid as role,
---         ssp.permission_id as permission
---     FROM user_roles ur
---         LEFT JOIN roles r ON ur.role_id = r.id
---         LEFT JOIN role_permissions sp ON r.id = ssp.role_id
--- ),
--- Usespermissions AS (
---     SELECT usp.user_id as user_id,
---         NULL::uuid as role,
---         usp.permission_id as permission
---     FROM user_permissions up
--- ),
--- AllPermissions AS(
---     SELECT user_id,
---         role,
---         permission
---     FROM RolePermissions sp
---     UNION
---     SELECT user_id,
---         role,
---         permission
---     FROM Usespermissions up
--- )
--- SELECT user_id,
---     role,
---     permission
--- FROM AllPermissions
--- WHERE user_id = '4481343d-a744-4685-8586-80df2f6ddf85';
--- WITH RolePermissions AS (
---     SELECT u.id as user_id,
---         u.email as email,
---         sp.name as permission,
---         ar.name as role
---     FROM public.permissions p
---         LEFT JOIN public.role_permissions sp ON sp.id = ssp.permission_id
---         LEFT JOIN public.roles ar ON ssp.role_id = ar.id
---         LEFT JOIN public.user_roles ur ON ar.id = ur.role_id
---         LEFT JOIN public.users u ON ur.user_id = u.id
--- ),
--- Usespermissions AS (
---     SELECT u.id as user_id,
---         u.email as email,
---         sp.name as permission,
---         NULL as role
---     FROM public.permissions p
---         LEFT JOIN public.user_permissions up ON sp.id = usp.permission_id
---         LEFT JOIN public.users u ON usp.user_id = u.id
--- ),
--- AllPermissions AS(
---     SELECT user_id,
---         email,
---         role,
---         permission
---     FROM RolePermissions sp
---     UNION
---     SELECT user_id,
---         email,
---         role,
---         permission
---     FROM Usespermissions up
--- )
--- SELECT user_id,
---     email,
---     role,
---     permission
--- FROM AllPermissions
--- WHERE email = 'tkahng+01@gmail.com';
--- SELECT u.id AS user_id,
---     u.email AS email,
---     ar.name AS role,
---     sp.name AS permission,
---     p2.name AS permission2
--- FROM public.users u
---     LEFT JOIN public.user_roles ur ON u.id = ur.user_id
---     LEFT JOIN public.roles ar ON ur.role_id = ar.id
---     LEFT JOIN public.role_permissions sp ON ar.id = ssp.role_id
---     LEFT JOIN public.permissions p ON ssp.permission_id = sp.id
---     LEFT JOIN public.user_permissions up ON u.id = usp.user_id
---     LEFT JOIN public.permissions p2 ON usp.permission_id = p2.id
--- WHERE u.email = 'tkahng+01@gmail.com';
--- )
--- SELECT fa.user_id AS id,
---     to_json(fa.*) AS info
--- FROM FilteredAccounts fa
--- WHERE fa.user_id IN (
---         '7d2574db-bd61-4b68-be42-c5b6d96ff564',
---         '43dddcb1-4ac3-4ce0-bcbd-faa662b25cfc',
---         '35f39cd6-558d-4bd4-ab10-441ac6d90e6a'
---     );
--- SELECT u.id AS user_id,
---     u.email AS email,
---     to_json(u.*) AS user,
---     ARRAY_AGG(DISTINCT ar.name)::text [] AS roles,
---     ARRAY_AGG(DISTINCT sp.name)::text [] AS permissions,
---     ARRAY_AGG(DISTINCT ua.provider)::public.providers [] AS providers
--- FROM public.users u
---     LEFT JOIN public.user_roles ur ON u.id = ur.user_id
---     LEFT JOIN public.roles ar ON ur.role_id = ar.id
---     LEFT JOIN public.role_permissions sp ON ar.id = ssp.role_id
---     LEFT JOIN public.permissions p ON ssp.permission_id = sp.id
---     LEFT JOIN public.user_accounts ua ON u.id = ua.user_id
--- GROUP BY u.id OFFSET 20
--- LIMIT 10;
--- INSERT INTO "roles" AS "roles" (
---         "id",
---         "name",
---         "description",
---         "created_at",
---         "updated_at"
---     )
--- VALUES (DEFAULT, 'hello', DEFAULT, DEFAULT, DEFAULT) ON CONFLICT (name) DO
--- UPDATE
--- SET "created_at" = now()
--- RETURNING *;
--- SELECT to_json(obj) AS user
--- FROM (
---         SELECT u.*,
---             ARRAY_AGG(DISTINCT ar.name)::text [] AS roles,
---             ARRAY_AGG(DISTINCT sp.name)::text [] AS permissions
---         FROM public.users u
---             LEFT JOIN public.user_roles ur ON u.id = ur.user_id
---             LEFT JOIN public.roles ar ON ur.role_id = ar.id
---             LEFT JOIN public.role_permissions sp ON ar.id = ssp.role_id
---             LEFT JOIN public.permissions p ON ssp.permission_id = sp.id
---         WHERE u.email = 'tkahng@gmail.com'
---         GROUP BY u.id
---         LIMIT 1
---     ) AS obj
--- LIMIT 1;
--- SELECT u.*,
---     ARRAY_AGG(DISTINCT ar.name)::text [] AS roles,
---     ARRAY_AGG(DISTINCT sp.name)::text [] AS permissions
--- FROM public.users u
---     LEFT JOIN public.user_roles ur ON u.id = ur.user_id
---     LEFT JOIN public.roles ar ON ur.role_id = ar.id
---     LEFT JOIN public.role_permissions sp ON ar.id = ssp.role_id
---     LEFT JOIN public.permissions p ON ssp.permission_id = sp.id
--- GROUP BY u.id;
--- WITH FilteredAccounts AS (
---     SELECT *
---     FROM public.user_accounts
---     WHERE provider = 'github'
--- )
--- SELECT u.*,
---     a.*
--- FROM public.users u
---     LEFT JOIN FilteredAccounts a ON u.id = a."user_id"
--- WHERE u.email = 'tkahng@gmail.com'
--- LIMIT 1;
--- 
--- INSERT INTO public.user_accounts (
---         "user_id",
---         type,
---         provider,
---         provider_account_id
---     )
 -- VALUES (
---         '6331c5d3-4f7f-4301-b627-07dd8b496535',
---         'credentials',
---         'credentials',
---         'tkahng'
---     )
--- RETURNING *;
--- INSERT INTO public.users (email, name)
--- VALUES ('tkahng@gmail.com', 'tkahng')
--- RETURNING *;
--- SELECT sp.*
--- from roles r
---     LEFT JOIN role_permissions sp ON r.id = ssp.role_id
---     LEFT JOIN permissions p ON ssp.permission_id = sp.id
--- WHERE r.name = 'pro';
--- SELECT r.name,
---     ARRAY_AGG(sp.name)
--- from roles r
---     LEFT JOIN role_permissions sp ON r.id = ssp.role_id
---     LEFT JOIN permissions p ON ssp.permission_id = sp.id
--- WHERE r.name = 'pro'
---     OR r.name = 'admin'
--- GROUP BY r.name;
--- FROM users u
---     LEFT JOIN user_roles ur ON u.id = ur.user_id
---     LEFT JOIN roles ar ON ur.role_id = ar.id
---     LEFT JOIN role_permissions sp ON ar.id = ssp.role_id
---     LEFT JOIN permissions p ON ssp.permission_id = sp.id
+--                 $1,
+--                 $2,
+--                 $3,
+--                 $4,
+--                 $5,
+--                 $6,
+--                 $7,
+--                 $8,
+--                 $9,
+--                 $10,
+--                 $11,
+--                 $12,
+--                 $13
+--         ) ON CONFLICT (id) DO
+-- UPDATE
+-- SET product_id = EXCLUDED.product_id,
+--         lookup_key = EXCLUDED.lookup_key,
+--         active = EXCLUDED.active,
+--         unit_amount = EXCLUDED.unit_amount,
+--         currency = EXCLUDED.currency,
+--         type = EXCLUDED.type,
+--         interval = EXCLUDED.interval,
+--         interval_count = EXCLUDED.interval_count,
+--         trial_period_days = EXCLUDED.trial_period_days,
+--         metadata = EXCLUDED.metadata,
+--         created_at = EXCLUDED.created_at,
+--         updated_at = EXCLUDED.updated_at;
+-- SELECT sp.product_id as key,
+--         COALESCE(
+--                 json_agg(
+--                         jsonb_build_object(
+--                                 'id',
+--                                 sp.id,
+--                                 'product_id',
+--                                 sp.product_id,
+--                                 'lookup_key',
+--                                 sp.lookup_key,
+--                                 'active',
+--                                 sp.active,
+--                                 'unit_amount',
+--                                 sp.unit_amount,
+--                                 'currency',
+--                                 sp.currency,
+--                                 'type',
+--                                 sp.type,
+--                                 'interval',
+--                                 sp.interval,
+--                                 'interval_count',
+--                                 sp.interval_count,
+--                                 'trial_period_days',
+--                                 sp.trial_period_days,
+--                                 'created_at',
+--                                 sp.created_at,
+--                                 'updated_at',
+--                                 sp.updated_at
+--                         )
+--                 ),
+--                 '[]'
+--         ) AS prices
+-- FROM public.stripe_prices sp
+-- WHERE sp.product_id = ANY ($1::text [])
+-- GROUP BY sp.product_id;
+-- -- SELECT role_permissions.role_id,
+-- --         COALESCE(JSON_AGG(pets), '[]') as permissions 
+-- -- FROM permissions
+-- --         LEFT JOIN role_permissions on permissions.id = role_permissions.permission_id
+-- --         and role_permissions.role_id IN (
+-- --                 '4f376506-3225-4994-b59f-4a4ee73a40a8',
+-- --                 '2c477cc6-d2c6-45b2-8fb1-a89ff0106d65'
+-- --         )
+-- -- SELECT permissions.*
+-- -- FROM permissions
+-- --         LEFT JOIN role_permissions on permissions.id = role_permissions.permission_id
+-- --         and role_permissions.role_id = 'a0aba2df-8c57-408d-8ccc-21c978bb6fa7' -- WHERE role_permissions.permission_id is null
+-- -- LIMIT 10 OFFSET 0;
+-- -- -- I need a query to get a user's total projects count, completed projects count, and total tasks count, completed tasks count.
+-- -- WITH project_statsec006d55-00f2-4b86-9411-873a22c2c40eAS (
+-- --     SELECT COUNT(*) as total_projects,
+-- --         COUNT(*) FILTER (
+-- --             WHERE tsp.status = 'done'
+-- --         ) as completed_projects
+-- --     FROM task_projects tp
+-- --     WHERE tsp.user_id = 'c7304543-3ceb-47ce-a214-961521d10494'
+-- -- ),
+-- -- task_stats AS (
+-- --     SELECT COUNT(*) as total_tasks,
+-- --         COUNT(*) FILTER (
+-- --             WHERE t.status = 'done'
+-- --         ) as completed_tasks
+-- --     FROM tasks t
+-- --     WHERE t.user_id = 'c7304543-3ceb-47ce-a214-961521d10494'
+-- -- )
+-- -- SELECT sp.total_projects,
+-- --     sp.completed_projects,
+-- --     t.total_tasks,
+-- --     t.completed_tasks
+-- -- FROM project_stats ps
+-- --     CROSS JOIN task_stats t;
+-- -- -- VALUES ('{ "message": "test" }', 'default');
+-- -- WITH -- Get permissions assigned through roles
+-- -- user_role_permissions AS (
+-- --     SELECT ur.user_id AS user_id,
+-- --         sp.name AS permission,
+-- --         r.name AS role
+-- --     FROM public.user_roles ur
+-- --         JOIN public.roles r ON ur.role_id = r.id
+-- --         JOIN public.role_permissions sp ON ur.role_id = ssp.role_id
+-- --         JOIN public.permissions p ON ssp.permission_id = sp.id -- WHERE ur.user_id = '575a9f91-159e-4680-ba8b-3fc4db40d194'
+-- -- ),
+-- -- user_direct_permissions AS (
+-- --     SELECT usp.user_id AS user_id,
+-- --         sp.name AS permission,
+-- --         NULL::text AS role
+-- --     FROM public.user_permissions up
+-- --         JOIN public.permissions p ON usp.permission_id = sp.id
+-- -- ),
+-- -- user_sub_role_permissions AS (
+-- --     SELECT u.id AS user_id,
+-- --         sp.name AS permission,
+-- --         r.name AS role
+-- --     FROM public.stripe_subscriptions s
+-- --         JOIN public.users u ON s.user_id = u.id
+-- --         JOIN public.stripe_prices price ON s.price_id = price.id
+-- --         JOIN public.stripe_products product ON price.product_id = product.id
+-- --         JOIN public.product_roles pr ON product.id = pr.product_id
+-- --         JOIN public.roles r ON pr.role_id = r.id
+-- --         JOIN public.role_permissions sp ON r.id = ssp.role_id
+-- --         JOIN public.permissions p ON ssp.permission_id = sp.id -- WHERE u.id = '575a9f91-159e-4680-ba8b-3fc4db40d194'
+-- -- ),
+-- -- combined_permissions AS (
+-- --     SELECT *
+-- --     FROM user_role_permissions
+-- --     UNION ALL
+-- --     SELECT *
+-- --     FROM user_direct_permissions
+-- --     UNION ALL
+-- --     SELECT *
+-- --     FROM user_sub_role_permissions
+-- -- )
+-- -- SELECT u.id AS user_id,
+-- --     u.email AS email,
+-- --     array_remove(ARRAY_AGG(DISTINCT sp.role), NULL)::text [] AS roles,
+-- --     array_remove(ARRAY_AGG(DISTINCT sp.permission), NULL)::text [] AS permissions,
+-- --     array_remove(ARRAY_AGG(DISTINCT ua.provider), NULL)::public.providers [] AS providers
+-- -- FROM public.users u
+-- --     LEFT JOIN combined_permissions p ON u.id = sp.user_id
+-- --     LEFT JOIN public.user_accounts ua ON u.id = ua.user_id
+-- -- WHERE u.email = 'tkahng+01@gmail.com'
+-- -- GROUP BY u.id
+-- -- LIMIT 1;
+-- -- -- Get permissions assigned directly to user
+-- -- direct_permissions AS (
+-- --     SELECT sp.*,
+-- --         NULL::uuid AS role_id,
+-- --         -- Null indicates not from a role
+-- --         usp.user_id AS direct_assignment
+-- --     FROM public.user_permissions up
+-- --         JOIN public.permissions p ON usp.permission_id = sp.id
+-- --     WHERE usp.user_id = 'bb59e199-8748-43fc-a3e0-407e658234e2'
+-- -- ),
+-- -- -- Combine both sources
+-- -- combined_permissions AS (
+-- --     SELECT *
+-- --     FROM role_based_permissions
+-- --     UNION ALL
+-- --     SELECT *
+-- --     FROM direct_permissions
+-- -- ) -- Final result with aggregated role information
+-- -- -- SELECT sp.id,
+-- --     sp.name,
+-- --     sp.description,
+-- --     sp.created_at,
+-- --     sp.updated_at,
+-- --     -- Array of role IDs that grant this permission (empty if direct)
+-- --     array []::uuid [] AS role_ids,
+-- --     -- Boolean indicating if permission is directly assigned
+-- --     false AS is_directly_assigned
+-- -- SELECT COUNT(DISTINCT sp.id)
+-- -- FROM public.permissions p
+-- --     LEFT JOIN combined_permissions cp ON sp.id = csp.id
+-- -- WHERE csp.id IS NULL;
+-- -- GROUP BY sp.id
+-- -- ORDER BY sp.name,
+-- -- sp.id
+-- -- LIMIT 10 OFFSET 0;
+-- -- SELECT sp.*
+-- -- FROM public.permissions p
+-- -- LEFT JOIN combined_permissions sp ON sp.id = ssp.id
+-- -- WHERE ssp.id IS NULL;
+-- -- SELECT sp.*
+-- -- FROM public.permissions p
+-- --     LEFT JOIN public.user_permissions up ON sp.id = usp.permission_id
+-- --     AND usp.user_id = '4481343d-a744-4685-8586-80df2f6ddf85'
+-- --     LEFT JOIN public.user_roles ur ON usp.user_id = ur.user_id
+-- --     LEFT JOIN public.roles r ON ur.role_id = r.id
+-- --     LEFT JOIN public.role_permissions sp ON r.id = ssp.role_id
+-- --     AND ssp.permission_id = sp.id
+-- -- WHERE usp.permission_id IS NULL
+-- --     AND ssp.permission_id IS NULL
+-- -- GROUP BY sp.id
+-- -- ORDER BY sp.name
+-- -- LIMIT 10 OFFSET 0;
+-- -- GROUP BY sp.id,
+-- --     sp.name,
+-- --     sp.description,
+-- --     sp.created_at,
+-- --     sp.updated_at,
+-- --     ssp.id
+-- -- ORDER BY sp.name,
+-- --     sp.id;
+-- -- WITH -- Get permissions assigned through roles
+-- -- role_based_permissions AS (
+-- --     SELECT sp.*,
+-- --         ssp.role_id,
+-- --         NULL::uuid AS direct_assignment -- Null indicates not directly assigned
+-- --     FROM public.user_roles ur
+-- --         JOIN public.role_permissions sp ON ur.role_id = ssp.role_id
+-- --         JOIN public.permissions p ON ssp.permission_id = sp.id
+-- --     WHERE ur.user_id = '4481343d-a744-4685-8586-80df2f6ddf85'
+-- -- ),
+-- -- -- Get permissions assigned directly to user
+-- -- direct_permissions AS (
+-- --     SELECT sp.*,
+-- --         NULL::uuid AS role_id,
+-- --         -- Null indicates not from a role
+-- --         usp.user_id AS direct_assignment
+-- --     FROM public.user_permissions up
+-- --         JOIN public.permissions p ON usp.permission_id = sp.id
+-- --     WHERE usp.user_id = '4481343d-a744-4685-8586-80df2f6ddf85'
+-- -- ),
+-- -- -- Combine both sources
+-- -- combined_permissions AS (
+-- --     SELECT *
+-- --     FROM role_based_permissions
+-- --     UNION ALL
+-- --     SELECT *
+-- --     FROM direct_permissions
+-- -- ) -- Final result with aggregated role information
+-- -- SELECT sp.id,
+-- --     sp.name,
+-- --     sp.description,
+-- --     sp.created_at,
+-- --     sp.updated_at,
+-- --     -- Array of role IDs that grant this permission (empty if direct)
+-- --     array_remove(array_agg(DISTINCT ssp.role_id), NULL) AS role_ids,
+-- --     -- Boolean indicating if permission is directly assigned
+-- --     bool_or(ssp.direct_assignment IS NOT NULL) AS is_directly_assigned
+-- -- FROM (
+-- --         SELECT DISTINCT id,
+-- --             name,
+-- --             description,
+-- --             created_at,
+-- --             updated_at
+-- --         FROM combined_permissions
+-- --     ) p
+-- --     LEFT JOIN combined_permissions sp ON sp.id = ssp.id
+-- -- GROUP BY sp.id,
+-- --     sp.name,
+-- --     sp.description,
+-- --     sp.created_at,
+-- --     sp.updated_at
+-- -- ORDER BY sp.name,
+-- --     sp.id;
+-- -- SELECT sp.*
+-- -- FROM public.permissions p
+-- --     LEFT JOIN public.role_permissions sp ON sp.id = ssp.permission_id
+-- --     AND ssp.role_id = 'eb2ad8b3-eac7-4e88-8361-82845cc57624'
+-- -- WHERE ssp.permission_id IS NULL
+-- -- ORDER BY sp.name
+-- -- LIMIT 10 OFFSET 0;
+-- -- SELECT COUNT(sp.*)
+-- -- FROM public.permissions p
+-- --     LEFT JOIN public.role_permissions sp ON sp.id = ssp.permission_id
+-- --     AND ssp.role_id = 'eb2ad8b3-eac7-4e88-8361-82845cc57624'
+-- -- WHERE ssp.permission_id IS NULL;
+-- -- WITH RolePermissions AS (
+-- --     SELECT ur.user_id as user_id,
+-- --         ssp.role_id::uuid as role,
+-- --         ssp.permission_id as permission
+-- --     FROM user_roles ur
+-- --         LEFT JOIN roles r ON ur.role_id = r.id
+-- --         LEFT JOIN role_permissions sp ON r.id = ssp.role_id
+-- -- ),
+-- -- Usespermissions AS (
+-- --     SELECT usp.user_id as user_id,
+-- --         NULL::uuid as role,
+-- --         usp.permission_id as permission
+-- --     FROM user_permissions up
+-- -- ),
+-- -- AllPermissions AS(
+-- --     SELECT user_id,
+-- --         role,
+-- --         permission
+-- --     FROM RolePermissions sp
+-- --     UNION
+-- --     SELECT user_id,
+-- --         role,
+-- --         permission
+-- --     FROM Usespermissions up
+-- -- )
+-- -- SELECT user_id,
+-- --     role,
+-- --     permission
+-- -- FROM AllPermissions
+-- -- WHERE user_id = '4481343d-a744-4685-8586-80df2f6ddf85';
+-- -- WITH RolePermissions AS (
+-- --     SELECT u.id as user_id,
+-- --         u.email as email,
+-- --         sp.name as permission,
+-- --         ar.name as role
+-- --     FROM public.permissions p
+-- --         LEFT JOIN public.role_permissions sp ON sp.id = ssp.permission_id
+-- --         LEFT JOIN public.roles ar ON ssp.role_id = ar.id
+-- --         LEFT JOIN public.user_roles ur ON ar.id = ur.role_id
+-- --         LEFT JOIN public.users u ON ur.user_id = u.id
+-- -- ),
+-- -- Usespermissions AS (
+-- --     SELECT u.id as user_id,
+-- --         u.email as email,
+-- --         sp.name as permission,
+-- --         NULL as role
+-- --     FROM public.permissions p
+-- --         LEFT JOIN public.user_permissions up ON sp.id = usp.permission_id
+-- --         LEFT JOIN public.users u ON usp.user_id = u.id
+-- -- ),
+-- -- AllPermissions AS(
+-- --     SELECT user_id,
+-- --         email,
+-- --         role,
+-- --         permission
+-- --     FROM RolePermissions sp
+-- --     UNION
+-- --     SELECT user_id,
+-- --         email,
+-- --         role,
+-- --         permission
+-- --     FROM Usespermissions up
+-- -- )
+-- -- SELECT user_id,
+-- --     email,
+-- --     role,
+-- --     permission
+-- -- FROM AllPermissions
+-- -- WHERE email = 'tkahng+01@gmail.com';
+-- -- SELECT u.id AS user_id,
+-- --     u.email AS email,
+-- --     ar.name AS role,
+-- --     sp.name AS permission,
+-- --     p2.name AS permission2
+-- -- FROM public.users u
+-- --     LEFT JOIN public.user_roles ur ON u.id = ur.user_id
+-- --     LEFT JOIN public.roles ar ON ur.role_id = ar.id
+-- --     LEFT JOIN public.role_permissions sp ON ar.id = ssp.role_id
+-- --     LEFT JOIN public.permissions p ON ssp.permission_id = sp.id
+-- --     LEFT JOIN public.user_permissions up ON u.id = usp.user_id
+-- --     LEFT JOIN public.permissions p2 ON usp.permission_id = p2.id
+-- -- WHERE u.email = 'tkahng+01@gmail.com';
+-- -- )
+-- -- SELECT fa.user_id AS id,
+-- --     to_json(fa.*) AS info
+-- -- FROM FilteredAccounts fa
+-- -- WHERE fa.user_id IN (
+-- --         '7d2574db-bd61-4b68-be42-c5b6d96ff564',
+-- --         '43dddcb1-4ac3-4ce0-bcbd-faa662b25cfc',
+-- --         '35f39cd6-558d-4bd4-ab10-441ac6d90e6a'
+-- --     );
+-- -- SELECT u.id AS user_id,
+-- --     u.email AS email,
+-- --     to_json(u.*) AS user,
+-- --     ARRAY_AGG(DISTINCT ar.name)::text [] AS roles,
+-- --     ARRAY_AGG(DISTINCT sp.name)::text [] AS permissions,
+-- --     ARRAY_AGG(DISTINCT ua.provider)::public.providers [] AS providers
+-- -- FROM public.users u
+-- --     LEFT JOIN public.user_roles ur ON u.id = ur.user_id
+-- --     LEFT JOIN public.roles ar ON ur.role_id = ar.id
+-- --     LEFT JOIN public.role_permissions sp ON ar.id = ssp.role_id
+-- --     LEFT JOIN public.permissions p ON ssp.permission_id = sp.id
+-- --     LEFT JOIN public.user_accounts ua ON u.id = ua.user_id
+-- -- GROUP BY u.id OFFSET 20
+-- -- LIMIT 10;
+-- -- INSERT INTO "roles" AS "roles" (
+-- --         "id",
+-- --         "name",
+-- --         "description",
+-- --         "created_at",
+-- --         "updated_at"
+-- --     )
+-- -- VALUES (DEFAULT, 'hello', DEFAULT, DEFAULT, DEFAULT) ON CONFLICT (name) DO
+-- -- UPDATE
+-- -- SET "created_at" = now()
+-- -- RETURNING *;
+-- -- SELECT to_json(obj) AS user
+-- -- FROM (
+-- --         SELECT u.*,
+-- --             ARRAY_AGG(DISTINCT ar.name)::text [] AS roles,
+-- --             ARRAY_AGG(DISTINCT sp.name)::text [] AS permissions
+-- --         FROM public.users u
+-- --             LEFT JOIN public.user_roles ur ON u.id = ur.user_id
+-- --             LEFT JOIN public.roles ar ON ur.role_id = ar.id
+-- --             LEFT JOIN public.role_permissions sp ON ar.id = ssp.role_id
+-- --             LEFT JOIN public.permissions p ON ssp.permission_id = sp.id
+-- --         WHERE u.email = 'tkahng@gmail.com'
+-- --         GROUP BY u.id
+-- --         LIMIT 1
+-- --     ) AS obj
+-- -- LIMIT 1;
+-- -- SELECT u.*,
+-- --     ARRAY_AGG(DISTINCT ar.name)::text [] AS roles,
+-- --     ARRAY_AGG(DISTINCT sp.name)::text [] AS permissions
+-- -- FROM public.users u
+-- --     LEFT JOIN public.user_roles ur ON u.id = ur.user_id
+-- --     LEFT JOIN public.roles ar ON ur.role_id = ar.id
+-- --     LEFT JOIN public.role_permissions sp ON ar.id = ssp.role_id
+-- --     LEFT JOIN public.permissions p ON ssp.permission_id = sp.id
+-- -- GROUP BY u.id;
+-- -- WITH FilteredAccounts AS (
+-- --     SELECT *
+-- --     FROM public.user_accounts
+-- --     WHERE provider = 'github'
+-- -- )
+-- -- SELECT u.*,
+-- --     a.*
+-- -- FROM public.users u
+-- --     LEFT JOIN FilteredAccounts a ON u.id = a."user_id"
+-- -- WHERE u.email = 'tkahng@gmail.com'
+-- -- LIMIT 1;
+-- -- 
+-- -- INSERT INTO public.user_accounts (
+-- --         "user_id",
+-- --         type,
+-- --         provider,
+-- --         provider_account_id
+-- --     )
+-- -- VALUES (
+-- --         '6331c5d3-4f7f-4301-b627-07dd8b496535',
+-- --         'credentials',
+-- --         'credentials',
+-- --         'tkahng'
+-- --     )
+-- -- RETURNING *;
+-- -- INSERT INTO public.users (email, name)
+-- -- VALUES ('tkahng@gmail.com', 'tkahng')
+-- -- RETURNING *;
+-- -- SELECT sp.*
+-- -- from roles r
+-- --     LEFT JOIN role_permissions sp ON r.id = ssp.role_id
+-- --     LEFT JOIN permissions p ON ssp.permission_id = sp.id
+-- -- WHERE r.name = 'pro';
+-- -- SELECT r.name,
+-- --     ARRAY_AGG(sp.name)
+-- -- from roles r
+-- --     LEFT JOIN role_permissions sp ON r.id = ssp.role_id
+-- --     LEFT JOIN permissions p ON ssp.permission_id = sp.id
+-- -- WHERE r.name = 'pro'
+-- --     OR r.name = 'admin'
+-- -- GROUP BY r.name;
+-- -- FROM users u
+-- --     LEFT JOIN user_roles ur ON u.id = ur.user_id
+-- --     LEFT JOIN roles ar ON ur.role_id = ar.id
+-- --     LEFT JOIN role_permissions sp ON ar.id = ssp.role_id
+-- --     LEFT JOIN permissions p ON ssp.permission_id = sp.id

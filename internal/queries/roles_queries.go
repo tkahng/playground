@@ -184,7 +184,7 @@ func CreateRolePermissions(ctx context.Context, db Queryer, roleId uuid.UUID, pe
 	// }
 	// fmt.Println(sql, args)
 	// _, err = pgxscan.All(ctx, db, scan.StructMapper[crudModels.RolePermission](), sql, args...)
-	_, err := ExecQuery[crudModels.UserPermission](ctx, db, q.PlaceholderFormat(squirrel.Dollar))
+	_, err := QueryWithBuilder[crudModels.UserPermission](ctx, db, q.PlaceholderFormat(squirrel.Dollar))
 	if err != nil {
 		return err
 	}

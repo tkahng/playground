@@ -262,3 +262,9 @@ type StripeCustomer struct {
 	CreatedAt      time.Time          `db:"created_at" json:"created_at"`
 	UpdatedAt      time.Time          `db:"updated_at" json:"updated_at"`
 }
+
+type SubscriptionWithPrice struct {
+	Price        StripePrice        `json:"price"`
+	Subscription StripeSubscription `json:"subscription"`
+	Product      StripeProduct      `json:"product"`
+}

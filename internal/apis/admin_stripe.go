@@ -110,50 +110,15 @@ func (api *Api) AdminStripeSubscriptionsGet(ctx context.Context,
 	if input == nil || input.SubscriptionID == "" {
 		return nil, huma.Error400BadRequest("subscription_id is required")
 	}
-	subscription, err := queries.FindSubscriptionById(ctx, db, input.SubscriptionID)
+	subscription, err := queries.FindSubscriptionWithPriceById(ctx, db, input.SubscriptionID)
 	if err != nil {
 		return nil, err
 	}
 	if subscription == nil {
-		return nil, huma.Error404NotFound("subscription not found")
+		return nil, nil
 	}
-	if slices.Contains(input.Expand, "user") {
-		err = subscription.LoadStripeSubscriptionUser(ctx, db)
-		if err != nil {
-			return nil, err
-		}
-	}
-	if slices.Contains(input.Expand, "price") {
-		if slices.Contains(input.Expand, "product") {
-
-			err = subscription.LoadStripeSubscriptionPriceStripePrice(ctx, db,
-				models.PreloadStripePriceProductStripeProduct(),
-			)
-			if err != nil {
-				return nil, err
-			}
-		} else {
-			err = subscription.LoadStripeSubscriptionPriceStripePrice(ctx, db)
-			if err != nil {
-				return nil, err
-			}
-		}
-	}
-	ss := &shared.SubscriptionWithData{
-		Subscription: shared.ModelToSubscription(subscription),
-	}
-	if subscription.R.User != nil {
-		ss.SubscriptionUser = shared.ToUser(subscription.R.User)
-	}
-	if subscription.R.PriceStripePrice != nil {
-		ss.Price = &shared.StripePricesWithProduct{
-			Price: shared.ModelToPrice(subscription.R.PriceStripePrice),
-		}
-		if subscription.R.PriceStripePrice.R.ProductStripeProduct != nil {
-			ss.Price.Product = shared.ModelToProduct(subscription.R.PriceStripePrice.R.ProductStripeProduct)
-		}
-	}
-	return &struct{ Body *shared.SubscriptionWithData }{Body: ss}, nil
+	sub := shared.FromCrudToSubWithUserAndPrice(subscription)
+	return &struct{ Body *shared.SubscriptionWithData }{Body: sub}, nil
 }
 
 func (api *Api) AdminStripeProductsOperation(path string) huma.Operation {
@@ -257,28 +222,42 @@ func (api *Api) AdminStripeProductsGet(ctx context.Context,
 		return nil, err
 	}
 	if product == nil {
-		return nil, huma.Error404NotFound("product not found")
+		return nil, nil
 	}
+	var prices []*crudModels.StripePrice
+	var roles []*crudModels.Role
 	if slices.Contains(input.Expand, "prices") {
-		err = product.LoadStripeProductProductStripePrices(ctx, db)
+		pr, err := queries.ListPrices(ctx, db, &shared.StripePriceListParams{
+			StripePriceListFilter: shared.StripePriceListFilter{
+				ProductIds: []string{input.ProductID},
+			},
+			PaginatedInput: shared.PaginatedInput{
+				PerPage: 100,
+			},
+		})
 		if err != nil {
 			return nil, err
 		}
+		prices = pr
 	}
 	if slices.Contains(input.Expand, "roles") {
-		err = product.LoadStripeProductRoles(ctx, db)
+		rl, err := queries.ListRoles(ctx, db, &shared.RolesListParams{
+			PaginatedInput: shared.PaginatedInput{
+				PerPage: 100,
+			},
+			RoleListFilter: shared.RoleListFilter{
+				ProductId: input.ProductID,
+			},
+		})
 		if err != nil {
 			return nil, err
 		}
+		roles = rl
 	}
 	spwd := &shared.StripeProductWithData{
-		Product: shared.ModelToProduct(product),
-	}
-	if product.R.ProductStripePrices != nil {
-		spwd.Prices = mapper.Map(product.R.ProductStripePrices, shared.ModelToPrice)
-	}
-	if product.R.Roles != nil {
-		spwd.Roles = mapper.Map(product.R.Roles, shared.ToRole)
+		Product: shared.FromCrudProduct(product),
+		Roles:   mapper.Map(roles, shared.FromCrudRole),
+		Prices:  mapper.Map(prices, shared.FromCrudModel),
 	}
 	return &struct{ Body *shared.StripeProductWithData }{
 		Body: spwd,
