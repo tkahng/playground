@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"reflect"
-	"strings"
 
 	"github.com/stephenafamo/scan"
 	"github.com/stephenafamo/scan/pgxscan"
@@ -22,36 +20,19 @@ var _ Repository[crudModels.User] = (*PostgresRepository[crudModels.User])(nil)
 
 // NewPostgresRepository initializes a new PostgresRepository
 func NewPostgresRepository[Model any]() *PostgresRepository[Model] {
-	// Define SQL operators and helper functions for query building
-	operations := map[string]func(string, ...string) string{
-		"_eq":     func(key string, values ...string) string { return fmt.Sprintf("%s = %s", key, values[0]) },
-		"_neq":    func(key string, values ...string) string { return fmt.Sprintf("%s != %s", key, values[0]) },
-		"_gt":     func(key string, values ...string) string { return fmt.Sprintf("%s > %s", key, values[0]) },
-		"_gte":    func(key string, values ...string) string { return fmt.Sprintf("%s >= %s", key, values[0]) },
-		"_lt":     func(key string, values ...string) string { return fmt.Sprintf("%s < %s", key, values[0]) },
-		"_lte":    func(key string, values ...string) string { return fmt.Sprintf("%s <= %s", key, values[0]) },
-		"_like":   func(key string, values ...string) string { return fmt.Sprintf("%s LIKE %s", key, values[0]) },
-		"_nlike":  func(key string, values ...string) string { return fmt.Sprintf("%s NOT LIKE %s", key, values[0]) },
-		"_ilike":  func(key string, values ...string) string { return fmt.Sprintf("%s ILIKE %s", key, values[0]) },
-		"_nilike": func(key string, values ...string) string { return fmt.Sprintf("%s NOT ILIKE %s", key, values[0]) },
-		"_in": func(key string, values ...string) string {
-			return fmt.Sprintf("%s IN (%s)", key, strings.Join(values, ","))
-		},
-		"_nin": func(key string, values ...string) string {
-			return fmt.Sprintf("%s NOT IN (%s)", key, strings.Join(values, ","))
-		},
-	}
-	identifier := func(name string) string {
-		return fmt.Sprintf("\"%s\"", name)
-	}
-	parameter := func(value reflect.Value, args *[]any) string {
-		*args = append(*args, value.Interface())
-		return fmt.Sprintf("$%d", len(*args))
-	}
-
 	return &PostgresRepository[Model]{
-		builder: NewSQLBuilder[Model](operations, identifier, parameter, nil),
+		builder: NewSQLBuilder[Model](),
 	}
+}
+func NewPostgresRepository2[Model any](builder *SQLBuilder[Model]) *PostgresRepository[Model] {
+	return &PostgresRepository[Model]{
+		builder: builder,
+	}
+}
+
+func (r *PostgresRepository[Model]) Builder() SQLBuilderInterface {
+	return r.builder
+
 }
 
 // Get retrieves records from the database based on the provided filters

@@ -21,6 +21,7 @@ type Repository[Model any] interface {
 	Post(ctx context.Context, dbx DBTX, models []Model) ([]*Model, error)
 	Delete(ctx context.Context, dbx DBTX, where *map[string]any) ([]*Model, error)
 	Count(ctx context.Context, dbx DBTX, where *map[string]any) (int64, error)
+	Builder() SQLBuilderInterface
 }
 
 type Field struct {
@@ -52,6 +53,7 @@ type SQLBuilder[Model any] struct {
 
 type SQLBuilderInterface interface {
 	Table() string
+	ColumnNames() []string
 	Where(where *map[string]any, args *[]any, run func(string) []string) string
 }
 
@@ -69,7 +71,32 @@ func OptionalRow[T any](record *T, err error) (*T, error) {
 
 var registry = map[string]SQLBuilderInterface{}
 
-func NewSQLBuilder[Model any](operations map[string]func(string, ...string) string, identifier func(string) string, parameter func(reflect.Value, *[]any) string, generator func(reflect.StructField, *[]any) string) *SQLBuilder[Model] {
+func NewSQLBuilder[Model any]() *SQLBuilder[Model] {
+	operations := map[string]func(string, ...string) string{
+		"_eq":     func(key string, values ...string) string { return fmt.Sprintf("%s = %s", key, values[0]) },
+		"_neq":    func(key string, values ...string) string { return fmt.Sprintf("%s != %s", key, values[0]) },
+		"_gt":     func(key string, values ...string) string { return fmt.Sprintf("%s > %s", key, values[0]) },
+		"_gte":    func(key string, values ...string) string { return fmt.Sprintf("%s >= %s", key, values[0]) },
+		"_lt":     func(key string, values ...string) string { return fmt.Sprintf("%s < %s", key, values[0]) },
+		"_lte":    func(key string, values ...string) string { return fmt.Sprintf("%s <= %s", key, values[0]) },
+		"_like":   func(key string, values ...string) string { return fmt.Sprintf("%s LIKE %s", key, values[0]) },
+		"_nlike":  func(key string, values ...string) string { return fmt.Sprintf("%s NOT LIKE %s", key, values[0]) },
+		"_ilike":  func(key string, values ...string) string { return fmt.Sprintf("%s ILIKE %s", key, values[0]) },
+		"_nilike": func(key string, values ...string) string { return fmt.Sprintf("%s NOT ILIKE %s", key, values[0]) },
+		"_in": func(key string, values ...string) string {
+			return fmt.Sprintf("%s IN (%s)", key, strings.Join(values, ","))
+		},
+		"_nin": func(key string, values ...string) string {
+			return fmt.Sprintf("%s NOT IN (%s)", key, strings.Join(values, ","))
+		},
+	}
+	identifier := func(name string) string {
+		return fmt.Sprintf("\"%s\"", name)
+	}
+	parameter := func(value reflect.Value, args *[]any) string {
+		*args = append(*args, value.Interface())
+		return fmt.Sprintf("$%d", len(*args))
+	}
 	// Reflect on the Model type to extract metadata
 	_type := reflect.TypeFor[Model]()
 
@@ -143,12 +170,15 @@ func NewSQLBuilder[Model any](operations map[string]func(string, ...string) stri
 		operations: operations_,
 		identifier: identifier,
 		parameter:  parameter,
-		generator:  generator,
+		generator:  nil,
 	}
 
 	registry[table] = result
 
 	return result
+}
+func (b *SQLBuilder[Model]) ColumnNames() []string {
+	return b.columnNames
 }
 
 // Returns the table name with proper identifier formatting
