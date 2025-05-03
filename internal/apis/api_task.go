@@ -8,7 +8,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/core"
 	"github.com/tkahng/authgo/internal/crud/crudModels"
-	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
@@ -45,11 +44,11 @@ func (api *Api) TaskList(ctx context.Context, input *shared.TaskListParams) (*Ta
 	}
 	return &TaskListResponse{
 		Body: &shared.PaginatedResponse[*shared.TaskWithSubtask]{
-			Data: mapper.Map(tasks, func(task *models.Task) *shared.TaskWithSubtask {
+			Data: mapper.Map(tasks, func(task *crudModels.Task) *shared.TaskWithSubtask {
 				return &shared.TaskWithSubtask{
-					Task: shared.ModelToTask(task),
-					Children: mapper.Map(task.R.ReverseParents, func(child *models.Task) *shared.Task {
-						return shared.ModelToTask(child)
+					Task: shared.CrudModelToTask(task),
+					Children: mapper.Map(task.Children, func(child *crudModels.Task) *shared.Task {
+						return shared.CrudModelToTask(child)
 					}),
 				}
 			}),
@@ -90,36 +89,36 @@ func (api *Api) TaskUpdate(ctx context.Context, input *shared.UpdateTaskDTO) (*s
 	return nil, nil
 }
 
-func (api *Api) UpdateTaskPositionOperation(path string) huma.Operation {
-	return huma.Operation{
-		OperationID: "update-task-position",
-		Method:      http.MethodPut,
-		Path:        path,
-		Summary:     "Update task position",
-		Description: "Update task position",
-		Tags:        []string{"Task"},
-		Errors:      []int{http.StatusNotFound},
-		Security: []map[string][]string{
-			{shared.BearerAuthSecurityKey: {}},
-		},
-	}
-}
+// func (api *Api) UpdateTaskPositionOperation(path string) huma.Operation {
+// 	return huma.Operation{
+// 		OperationID: "update-task-position",
+// 		Method:      http.MethodPut,
+// 		Path:        path,
+// 		Summary:     "Update task position",
+// 		Description: "Update task position",
+// 		Tags:        []string{"Task"},
+// 		Errors:      []int{http.StatusNotFound},
+// 		Security: []map[string][]string{
+// 			{shared.BearerAuthSecurityKey: {}},
+// 		},
+// 	}
+// }
 
-func (api *Api) UpdateTaskPosition(ctx context.Context, input *shared.TaskPositionInput) (*struct{}, error) {
-	if input == nil {
-		return nil, huma.Error400BadRequest("Invalid input")
-	}
-	db := api.app.Db()
-	id, err := uuid.Parse(input.TaskID)
-	if err != nil {
-		return nil, huma.Error400BadRequest("Invalid task ID")
-	}
-	err = queries.UpdateTaskPosition(ctx, db, id, input.Body.Position)
-	if err != nil {
-		return nil, err
-	}
-	return nil, nil
-}
+// func (api *Api) UpdateTaskPosition(ctx context.Context, input *shared.TaskPositionInput) (*struct{}, error) {
+// 	if input == nil {
+// 		return nil, huma.Error400BadRequest("Invalid input")
+// 	}
+// 	db := api.app.Db()
+// 	id, err := uuid.Parse(input.TaskID)
+// 	if err != nil {
+// 		return nil, huma.Error400BadRequest("Invalid task ID")
+// 	}
+// 	err = queries.UpdateTaskPosition(ctx, db, id, input.Body.Position)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	return nil, nil
+// }
 
 func (api *Api) UpdateTaskPositionStatusOperation(path string) huma.Operation {
 	return huma.Operation{

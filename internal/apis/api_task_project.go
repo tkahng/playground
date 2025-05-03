@@ -51,29 +51,26 @@ func (api *Api) TaskProjectList(ctx context.Context, input *shared.TaskProjectsL
 	if err != nil {
 		return nil, err
 	}
+	taskProjectIds := mapper.Map(taskProject, func(taskProject *crudModels.TaskProject) uuid.UUID {
+		return taskProject.ID
+	})
+
 	if input.Expand != nil && slices.Contains(input.Expand, "tasks") {
-		if slices.Contains(input.Expand, "subtasks") {
-			err = taskProject.LoadTaskProjectProjectTasks(ctx, db, models.ThenLoadTaskReverseParents())
-			if err != nil {
-				return nil, err
-			}
-		} else {
-			err = taskProject.LoadTaskProjectProjectTasks(ctx, db)
-			if err != nil {
-				return nil, err
-			}
+		taskProject, err = queries.LoadTaskProjectsUserAndTasks(ctx, db, taskProjectIds...)
+		if err != nil {
+			return nil, err
 		}
 	}
 	return &TaskProjectListResponse{
 		Body: &shared.PaginatedResponse[*shared.TaskProjectWithTasks]{
-			Data: mapper.Map(taskProject, func(taskProject *models.TaskProject) *shared.TaskProjectWithTasks {
+			Data: mapper.Map(taskProject, func(taskProject *crudModels.TaskProject) *shared.TaskProjectWithTasks {
 				return &shared.TaskProjectWithTasks{
-					TaskProject: shared.ModelToProject(taskProject),
-					Tasks: mapper.Map(taskProject.R.ProjectTasks, func(task *models.Task) *shared.TaskWithSubtask {
+					TaskProject: shared.CrudToProject(taskProject),
+					Tasks: mapper.Map(taskProject.Tasks, func(task *crudModels.Task) *shared.TaskWithSubtask {
 						return &shared.TaskWithSubtask{
-							Task: shared.ModelToTask(task),
-							Children: mapper.Map(task.R.ReverseParents, func(child *models.Task) *shared.Task {
-								return shared.ModelToTask(child)
+							Task: shared.CrudModelToTask(task),
+							Children: mapper.Map(task.Children, func(child *crudModels.Task) *shared.Task {
+								return shared.CrudModelToTask(child)
 							}),
 						}
 					}),

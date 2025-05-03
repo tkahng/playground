@@ -4,13 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"slices"
+	"strings"
 	"time"
 
 	"github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
-	"github.com/stephenafamo/bob/dialect/psql"
-	"github.com/stephenafamo/bob/dialect/psql/sm"
 	"github.com/tkahng/authgo/internal/crud/crudModels"
 	"github.com/tkahng/authgo/internal/crud/crudrepo"
 	"github.com/tkahng/authgo/internal/db/models"
@@ -148,101 +146,125 @@ func DeleteTaskProject(ctx context.Context, db Queryer, taskProjectID uuid.UUID)
 	)
 	return err
 }
-func ListTasksOrderByFunc(ctx context.Context, q *psql.ViewQuery[*models.Task, models.TaskSlice], input *shared.TaskListParams) {
-	if q == nil {
-		return
-	}
-	if input == nil || input.SortBy == "" {
-		q.Apply(
-			sm.OrderBy(models.TaskColumns.CreatedAt).Desc(),
-			sm.OrderBy(models.TaskColumns.ID).Desc(),
-		)
-		return
-	}
-	if slices.Contains(models.Tasks.Columns().Names(), input.SortBy) {
-		if input.SortParams.SortOrder == "desc" {
-			q.Apply(
-				sm.OrderBy(psql.Quote(input.SortBy)).Desc(),
-				sm.OrderBy(models.TaskColumns.ID).Desc(),
-			)
-		} else if input.SortParams.SortOrder == "asc" || input.SortParams.SortOrder == "" {
-			q.Apply(
-				sm.OrderBy(psql.Quote(input.SortBy)).Asc(),
-				sm.OrderBy(models.TaskColumns.ID).Asc(),
-			)
-		}
-		return
-	}
+func ListTasksOrderByFunc(input *shared.TaskListParams) *map[string]string {
+	order := map[string]string{}
 
+	if input == nil || input.SortBy == "" || input.SortOrder == "" {
+		return nil
+	}
+	order[input.SortBy] = strings.ToUpper(input.SortOrder)
+	return &order
 }
 
-func ListTasksFilterFunc(ctx context.Context, q *psql.ViewQuery[*models.Task, models.TaskSlice], filter *shared.TaskListFilter) {
+func ListTasksFilterFunc(filter *shared.TaskListFilter) *map[string]any {
 	if filter == nil {
-		return
+		return nil
 	}
+	where := make(map[string]any)
 	if filter.Q != "" {
-		q.Apply(
-			psql.WhereOr(models.SelectWhere.Tasks.Name.ILike("%"+filter.Q+"%"),
-				models.SelectWhere.Tasks.Description.ILike("%"+filter.Q+"%")),
-		)
+		// q.Apply(
+		// 	psql.WhereOr(models.SelectWhere.Tasks.Name.ILike("%"+filter.Q+"%"),
+		// 		models.SelectWhere.Tasks.Description.ILike("%"+filter.Q+"%")),
+		// )
+		where["_or"] = []map[string]any{
+			{
+				"name": map[string]any{
+					"_ilike": "%" + filter.Q + "%",
+				},
+			},
+			{
+				"description": map[string]any{
+					"_ilike": "%" + filter.Q + "%",
+				},
+			},
+		}
 	}
 	if len(filter.Status) > 0 {
-		q.Apply(
-			models.SelectWhere.Tasks.Status.In(filter.Status...),
-		)
+		// q.Apply(
+		// 	models.SelectWhere.Tasks.Status.In(filter.Status...),
+		// )
+		where["status"] = map[string]any{
+			"_in": filter.Status,
+		}
 	}
 	if len(filter.UserID) > 0 {
-		id, err := uuid.Parse(filter.UserID)
-		if err != nil {
-			return
+		// id, err := uuid.Parse(filter.UserID)
+		// if err != nil {
+		// 	return
+		// }
+		// q.Apply(
+		// 	models.SelectWhere.Tasks.UserID.EQ(id),
+		// )
+		where["user_id"] = map[string]any{
+			"_eq": filter.UserID,
 		}
-		q.Apply(
-			models.SelectWhere.Tasks.UserID.EQ(id),
-		)
+
 	}
 
 	if filter.ProjectID != "" {
-		id, err := uuid.Parse(filter.ProjectID)
-		if err != nil {
-			return
+		// id, err := uuid.Parse(filter.ProjectID)
+		// if err != nil {
+		// 	return
+		// }
+		// q.Apply(
+		// 	models.SelectWhere.Tasks.ProjectID.EQ(id),
+		// )
+		where["project_id"] = map[string]any{
+			"_eq": filter.ProjectID,
 		}
-		q.Apply(
-			models.SelectWhere.Tasks.ProjectID.EQ(id),
-		)
 	}
 
 	if len(filter.Ids) > 0 {
-		var ids []uuid.UUID = ParseUUIDs(filter.Ids)
-		q.Apply(
-			models.SelectWhere.Tasks.ID.In(ids...),
-		)
+		// var ids []uuid.UUID = ParseUUIDs(filter.Ids)
+		// q.Apply(
+		// 	models.SelectWhere.Tasks.ID.In(ids...),
+		// )
+		where["id"] = map[string]any{
+			"_in": filter.Ids,
+		}
 	}
 	if filter.ParentID != "" {
-		id, err := uuid.Parse(filter.ParentID)
-		if err != nil {
-			return
+		// id, err := uuid.Parse(filter.ParentID)
+		// if err != nil {
+		// 	return
+		// }
+		// q.Apply(models.SelectWhere.Tasks.ParentID.EQ(id))
+		where["parent_id"] = map[string]any{
+			"_eq": filter.ParentID,
 		}
-		q.Apply(models.SelectWhere.Tasks.ParentID.EQ(id))
 	}
 	if filter.ParentStatus != "" {
 		if filter.ParentStatus == "parent" {
-			q.Apply(models.SelectWhere.Tasks.ParentID.IsNull())
+			// q.Apply(models.SelectWhere.Tasks.ParentID.IsNull())
+			where["parent_id"] = map[string]any{
+				"_eq": "NULL",
+			}
 		} else if filter.ParentStatus == "child" {
-			q.Apply(models.SelectWhere.Tasks.ParentID.IsNotNull())
+			where["parent_id"] = map[string]any{
+				"_neq": "NULL",
+			}
 		}
 	}
+
+	return &where
 }
 
 // ListTasks implements AdminCrudActions.
-func ListTasks(ctx context.Context, db Queryer, input *shared.TaskListParams) ([]*models.Task, error) {
-	q := models.Tasks.Query()
+func ListTasks(ctx context.Context, db Queryer, input *shared.TaskListParams) ([]*crudModels.Task, error) {
 	filter := input.TaskListFilter
 	pageInput := &input.PaginatedInput
 
-	ViewApplyPagination(q, pageInput)
-	ListTasksOrderByFunc(ctx, q, input)
-	ListTasksFilterFunc(ctx, q, &filter)
-	data, err := q.All(ctx, db)
+	iimit, offset := PaginateRepo(pageInput)
+	order := ListTasksOrderByFunc(input)
+	where := ListTasksFilterFunc(&filter)
+	data, err := crudrepo.Task.Get(
+		ctx,
+		db,
+		where,
+		order,
+		iimit,
+		offset,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -251,77 +273,88 @@ func ListTasks(ctx context.Context, db Queryer, input *shared.TaskListParams) ([
 
 // CountTasks implements AdminCrudActions.
 func CountTasks(ctx context.Context, db Queryer, filter *shared.TaskListFilter) (int64, error) {
-	q := models.Tasks.Query()
-	ListTasksFilterFunc(ctx, q, filter)
-	return CountExec(ctx, db, q)
+	where := ListTasksFilterFunc(filter)
+	return crudrepo.Task.Count(ctx, db, where)
 }
-func ListTaskProjectsFilterFunc(ctx context.Context, q *psql.ViewQuery[*models.TaskProject, models.TaskProjectSlice], filter *shared.TaskProjectsListFilter) {
+func ListTaskProjectsFilterFunc(filter *shared.TaskProjectsListFilter) *map[string]any {
 	if filter == nil {
-		return
+		return nil
 	}
+	where := make(map[string]any)
 	if filter.Q != "" {
-		q.Apply(
-			psql.WhereOr(models.SelectWhere.TaskProjects.Name.ILike("%"+filter.Q+"%"),
-				models.SelectWhere.TaskProjects.Description.ILike("%"+filter.Q+"%")),
-		)
+		// q.Apply(
+		// 	psql.WhereOr(models.SelectWhere.TaskProjects.Name.ILike("%"+filter.Q+"%"),
+		// 		models.SelectWhere.TaskProjects.Description.ILike("%"+filter.Q+"%")),
+		// )
+		where["_or"] = []map[string]any{
+			{
+				"name": map[string]any{
+					"_ilike": "%" + filter.Q + "%",
+				},
+			},
+			{
+				"description": map[string]any{
+					"_ilike": "%" + filter.Q + "%",
+				},
+			},
+		}
 	}
 
 	if len(filter.Ids) > 0 {
-		var ids []uuid.UUID = ParseUUIDs(filter.Ids)
-		q.Apply(
-			models.SelectWhere.TaskProjects.ID.In(ids...),
-		)
+		// var ids []uuid.UUID = ParseUUIDs(filter.Ids)
+		// q.Apply(
+		// 	models.SelectWhere.TaskProjects.ID.In(ids...),
+		// )
+		where["id"] = map[string]any{
+			"_in": filter.Ids,
+		}
 	}
 
 	if filter.UserID != "" {
-		id, err := uuid.Parse(filter.UserID)
-		if err != nil {
-			return
+		// id, err := uuid.Parse(filter.UserID)
+		// if err != nil {
+		// 	return
+		// }
+		// q.Apply(
+		// 	models.SelectJoins.TaskProjects.InnerJoin.User(ctx),
+		// 	models.SelectWhere.Users.ID.EQ(id),
+		// )
+		where["user_id"] = map[string]any{
+			"_eq": filter.UserID,
 		}
-		q.Apply(
-			models.SelectJoins.TaskProjects.InnerJoin.User(ctx),
-			models.SelectWhere.Users.ID.EQ(id),
-		)
 	}
+
+	return &where
 }
 
-func ListTaskProjectsOrderByFunc(ctx context.Context, q *psql.ViewQuery[*models.TaskProject, models.TaskProjectSlice], input *shared.TaskProjectsListParams) {
-	if q == nil {
-		return
+func ListTaskProjectsOrderByFunc(input *shared.TaskProjectsListParams) *map[string]string {
+
+	if input == nil || input.SortBy == "" || input.SortOrder == "" {
+		return nil
 	}
-	if input == nil || input.SortBy == "" {
-		q.Apply(
-			sm.OrderBy(models.TaskProjectColumns.CreatedAt).Desc(),
-			sm.OrderBy(models.TaskProjectColumns.ID).Desc(),
-		)
-		return
-	}
-	if slices.Contains(models.TaskProjects.Columns().Names(), input.SortBy) {
-		if input.SortParams.SortOrder == "desc" {
-			q.Apply(
-				sm.OrderBy(psql.Quote(input.SortBy)).Desc(),
-				sm.OrderBy(models.TaskProjectColumns.ID).Desc(),
-			)
-		} else if input.SortParams.SortOrder == "asc" || input.SortParams.SortOrder == "" {
-			q.Apply(
-				sm.OrderBy(psql.Quote(input.SortBy)).Asc(),
-				sm.OrderBy(models.TaskProjectColumns.ID).Asc(),
-			)
-		}
-		return
-	}
+	order := make(map[string]string)
+	// if slices.Contains(models.TaskProjects.Columns().Names(), input.SortBy) {
+	order[input.SortBy] = strings.ToUpper(input.SortOrder)
+	// }
+	return &order
 }
 
 // ListTaskProjects implements AdminCrudActions.
-func ListTaskProjects(ctx context.Context, db Queryer, input *shared.TaskProjectsListParams) (models.TaskProjectSlice, error) {
-	q := models.TaskProjects.Query()
+func ListTaskProjects(ctx context.Context, db Queryer, input *shared.TaskProjectsListParams) ([]*crudModels.TaskProject, error) {
 	filter := input.TaskProjectsListFilter
 	pageInput := &input.PaginatedInput
 
-	ViewApplyPagination(q, pageInput)
-	ListTaskProjectsOrderByFunc(ctx, q, input)
-	ListTaskProjectsFilterFunc(ctx, q, &filter)
-	data, err := q.All(ctx, db)
+	limit, offset := PaginateRepo(pageInput)
+	oredr := ListTaskProjectsOrderByFunc(input)
+	where := ListTaskProjectsFilterFunc(&filter)
+	data, err := crudrepo.TaskProject.Get(
+		ctx,
+		db,
+		where,
+		oredr,
+		limit,
+		offset,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -330,13 +363,8 @@ func ListTaskProjects(ctx context.Context, db Queryer, input *shared.TaskProject
 
 // CountTaskProjects implements AdminCrudActions.
 func CountTaskProjects(ctx context.Context, db Queryer, filter *shared.TaskProjectsListFilter) (int64, error) {
-	q := models.TaskProjects.Query()
-	ListTaskProjectsFilterFunc(ctx, q, filter)
-	data, err := q.Count(ctx, db)
-	if err != nil {
-		return 0, err
-	}
-	return data, nil
+	where := ListTaskProjectsFilterFunc(filter)
+	return crudrepo.TaskProject.Count(ctx, db, where)
 }
 
 func CreateTaskProject(ctx context.Context, db Queryer, userID uuid.UUID, input *shared.CreateTaskProjectDTO) (*crudModels.TaskProject, error) {
@@ -410,77 +438,77 @@ func CreateTask(ctx context.Context, db Queryer, userID uuid.UUID, projectID uui
 	return task, nil
 }
 
-func DefineTaskOrderNumberByStatus(ctx context.Context, db Queryer, taskId uuid.UUID, taskProjectId uuid.UUID, status models.TaskStatus, currentOrder float64, position int64) (float64, error) {
-	if position == 0 {
-		response, err := models.Tasks.Query(
-			sm.Where(models.TaskColumns.ProjectID.EQ(psql.Arg(taskProjectId))),
-			sm.Where(models.TaskColumns.Status.EQ(psql.Arg(status))),
-			sm.OrderBy(models.TaskColumns.Order).Asc(),
-			sm.Limit(1),
-		).One(ctx, db)
-		response, err = OptionalRow(response, err)
-		if err != nil {
-			return 0, err
-		}
-		if response == nil {
-			return 0, nil
-		}
-		if response.ID == taskId {
-			return response.Order, nil
-		}
-		return response.Order - 1000, nil
-	}
-	element, err := models.Tasks.Query(
-		sm.Where(models.TaskColumns.ProjectID.EQ(psql.Arg(taskProjectId))),
-		sm.OrderBy(models.TaskColumns.Order).Asc(),
-		sm.Limit(1),
-		sm.Offset(position),
-	).One(ctx, db)
-	element, err = OptionalRow(element, err)
-	if err != nil {
-		return 0, err
-	}
-	if element == nil {
-		return 0, nil
-	}
-	if element.ID == taskId {
-		return element.Order, nil
-	}
-	if currentOrder > element.Order {
-		sideElements, err := models.Tasks.Query(
-			sm.Where(models.TaskColumns.ProjectID.EQ(psql.Arg(taskProjectId))),
-			sm.Where(models.TaskColumns.Status.EQ(psql.Arg(status))),
-			sm.OrderBy(models.TaskColumns.Order).Asc(),
-			sm.Limit(1),
-			sm.Offset(position-1),
-		).One(ctx, db)
-		sideElements, err = OptionalRow(sideElements, err)
-		if err != nil {
-			return 0, err
-		}
-		if sideElements == nil {
-			return element.Order - 1000, nil
-		}
-		return (element.Order + sideElements.Order) / 2, nil
-	}
-	sideElements, err := models.Tasks.Query(
-		sm.Where(models.TaskColumns.ProjectID.EQ(psql.Arg(taskProjectId))),
-		sm.Where(models.TaskColumns.Status.EQ(psql.Arg(status))),
-		sm.OrderBy(models.TaskColumns.Order).Asc(),
-		sm.Limit(1),
-		sm.Offset(position+1),
-	).One(ctx, db)
-	sideElements, err = OptionalRow(sideElements, err)
-	if err != nil {
-		return 0, err
-	}
-	if sideElements == nil {
-		return element.Order + 1000, nil
-	}
-	return (element.Order + sideElements.Order) / 2, nil
+// func DefineTaskOrderNumberByStatus(ctx context.Context, db Queryer, taskId uuid.UUID, taskProjectId uuid.UUID, status models.TaskStatus, currentOrder float64, position int64) (float64, error) {
+// 	if position == 0 {
+// 		response, err := models.Tasks.Query(
+// 			sm.Where(models.TaskColumns.ProjectID.EQ(psql.Arg(taskProjectId))),
+// 			sm.Where(models.TaskColumns.Status.EQ(psql.Arg(status))),
+// 			sm.OrderBy(models.TaskColumns.Order).Asc(),
+// 			sm.Limit(1),
+// 		).One(ctx, db)
+// 		response, err = OptionalRow(response, err)
+// 		if err != nil {
+// 			return 0, err
+// 		}
+// 		if response == nil {
+// 			return 0, nil
+// 		}
+// 		if response.ID == taskId {
+// 			return response.Order, nil
+// 		}
+// 		return response.Order - 1000, nil
+// 	}
+// 	element, err := models.Tasks.Query(
+// 		sm.Where(models.TaskColumns.ProjectID.EQ(psql.Arg(taskProjectId))),
+// 		sm.OrderBy(models.TaskColumns.Order).Asc(),
+// 		sm.Limit(1),
+// 		sm.Offset(position),
+// 	).One(ctx, db)
+// 	element, err = OptionalRow(element, err)
+// 	if err != nil {
+// 		return 0, err
+// 	}
+// 	if element == nil {
+// 		return 0, nil
+// 	}
+// 	if element.ID == taskId {
+// 		return element.Order, nil
+// 	}
+// 	if currentOrder > element.Order {
+// 		sideElements, err := models.Tasks.Query(
+// 			sm.Where(models.TaskColumns.ProjectID.EQ(psql.Arg(taskProjectId))),
+// 			sm.Where(models.TaskColumns.Status.EQ(psql.Arg(status))),
+// 			sm.OrderBy(models.TaskColumns.Order).Asc(),
+// 			sm.Limit(1),
+// 			sm.Offset(position-1),
+// 		).One(ctx, db)
+// 		sideElements, err = OptionalRow(sideElements, err)
+// 		if err != nil {
+// 			return 0, err
+// 		}
+// 		if sideElements == nil {
+// 			return element.Order - 1000, nil
+// 		}
+// 		return (element.Order + sideElements.Order) / 2, nil
+// 	}
+// 	sideElements, err := models.Tasks.Query(
+// 		sm.Where(models.TaskColumns.ProjectID.EQ(psql.Arg(taskProjectId))),
+// 		sm.Where(models.TaskColumns.Status.EQ(psql.Arg(status))),
+// 		sm.OrderBy(models.TaskColumns.Order).Asc(),
+// 		sm.Limit(1),
+// 		sm.Offset(position+1),
+// 	).One(ctx, db)
+// 	sideElements, err = OptionalRow(sideElements, err)
+// 	if err != nil {
+// 		return 0, err
+// 	}
+// 	if sideElements == nil {
+// 		return element.Order + 1000, nil
+// 	}
+// 	return (element.Order + sideElements.Order) / 2, nil
 
-}
-func DefineTaskOrderNumberByStatusCrud(ctx context.Context, dbx Queryer, taskId uuid.UUID, taskProjectId uuid.UUID, status models.TaskStatus, currentOrder float64, position int64) (float64, error) {
+// }
+func DefineTaskOrderNumberByStatus(ctx context.Context, dbx Queryer, taskId uuid.UUID, taskProjectId uuid.UUID, status models.TaskStatus, currentOrder float64, position int64) (float64, error) {
 	if position == 0 {
 		res, err := crudrepo.Task.Get(
 			ctx,
@@ -607,73 +635,73 @@ func DefineTaskOrderNumberByStatusCrud(ctx context.Context, dbx Queryer, taskId 
 
 }
 
-func DefineTaskOrderNumber(ctx context.Context, db Queryer, taskId uuid.UUID, taskProjectId uuid.UUID, currentOrder float64, position int64) (float64, error) {
-	if position == 0 {
-		response, err := models.Tasks.Query(
-			sm.Where(models.TaskColumns.ProjectID.EQ(psql.Arg(taskProjectId))),
-			sm.OrderBy(models.TaskColumns.Order).Asc(),
-			sm.Limit(1),
-		).One(ctx, db)
-		response, err = OptionalRow(response, err)
-		if err != nil {
-			return 0, err
-		}
-		if response == nil {
-			return 0, nil
-		}
-		if response.ID == taskId {
-			return response.Order, nil
-		}
-		return response.Order - 1000, nil
-	}
-	element, err := models.Tasks.Query(
-		sm.Where(models.TaskColumns.ProjectID.EQ(psql.Arg(taskProjectId))),
-		sm.OrderBy(models.TaskColumns.Order).Asc(),
-		sm.Limit(1),
-		sm.Offset(position),
-	).One(ctx, db)
-	element, err = OptionalRow(element, err)
-	if err != nil {
-		return 0, err
-	}
-	if element == nil {
-		return 0, nil
-	}
-	if element.ID == taskId {
-		return element.Order, nil
-	}
-	if currentOrder > element.Order {
-		sideElements, err := models.Tasks.Query(
-			sm.Where(models.TaskColumns.ProjectID.EQ(psql.Arg(taskProjectId))),
-			sm.OrderBy(models.TaskColumns.Order).Asc(),
-			sm.Limit(1),
-			sm.Offset(position-1),
-		).One(ctx, db)
-		sideElements, err = OptionalRow(sideElements, err)
-		if err != nil {
-			return 0, err
-		}
-		if sideElements == nil {
-			return element.Order - 1000, nil
-		}
-		return (element.Order + sideElements.Order) / 2, nil
-	}
-	sideElements, err := models.Tasks.Query(
-		sm.Where(models.TaskColumns.ProjectID.EQ(psql.Arg(taskProjectId))),
-		sm.OrderBy(models.TaskColumns.Order).Asc(),
-		sm.Limit(1),
-		sm.Offset(position+1),
-	).One(ctx, db)
-	sideElements, err = OptionalRow(sideElements, err)
-	if err != nil {
-		return 0, err
-	}
-	if sideElements == nil {
-		return element.Order + 1000, nil
-	}
-	return (element.Order + sideElements.Order) / 2, nil
+// func DefineTaskOrderNumber(ctx context.Context, db Queryer, taskId uuid.UUID, taskProjectId uuid.UUID, currentOrder float64, position int64) (float64, error) {
+// 	if position == 0 {
+// 		response, err := models.Tasks.Query(
+// 			sm.Where(models.TaskColumns.ProjectID.EQ(psql.Arg(taskProjectId))),
+// 			sm.OrderBy(models.TaskColumns.Order).Asc(),
+// 			sm.Limit(1),
+// 		).One(ctx, db)
+// 		response, err = OptionalRow(response, err)
+// 		if err != nil {
+// 			return 0, err
+// 		}
+// 		if response == nil {
+// 			return 0, nil
+// 		}
+// 		if response.ID == taskId {
+// 			return response.Order, nil
+// 		}
+// 		return response.Order - 1000, nil
+// 	}
+// 	element, err := models.Tasks.Query(
+// 		sm.Where(models.TaskColumns.ProjectID.EQ(psql.Arg(taskProjectId))),
+// 		sm.OrderBy(models.TaskColumns.Order).Asc(),
+// 		sm.Limit(1),
+// 		sm.Offset(position),
+// 	).One(ctx, db)
+// 	element, err = OptionalRow(element, err)
+// 	if err != nil {
+// 		return 0, err
+// 	}
+// 	if element == nil {
+// 		return 0, nil
+// 	}
+// 	if element.ID == taskId {
+// 		return element.Order, nil
+// 	}
+// 	if currentOrder > element.Order {
+// 		sideElements, err := models.Tasks.Query(
+// 			sm.Where(models.TaskColumns.ProjectID.EQ(psql.Arg(taskProjectId))),
+// 			sm.OrderBy(models.TaskColumns.Order).Asc(),
+// 			sm.Limit(1),
+// 			sm.Offset(position-1),
+// 		).One(ctx, db)
+// 		sideElements, err = OptionalRow(sideElements, err)
+// 		if err != nil {
+// 			return 0, err
+// 		}
+// 		if sideElements == nil {
+// 			return element.Order - 1000, nil
+// 		}
+// 		return (element.Order + sideElements.Order) / 2, nil
+// 	}
+// 	sideElements, err := models.Tasks.Query(
+// 		sm.Where(models.TaskColumns.ProjectID.EQ(psql.Arg(taskProjectId))),
+// 		sm.OrderBy(models.TaskColumns.Order).Asc(),
+// 		sm.Limit(1),
+// 		sm.Offset(position+1),
+// 	).One(ctx, db)
+// 	sideElements, err = OptionalRow(sideElements, err)
+// 	if err != nil {
+// 		return 0, err
+// 	}
+// 	if sideElements == nil {
+// 		return element.Order + 1000, nil
+// 	}
+// 	return (element.Order + sideElements.Order) / 2, nil
 
-}
+// }
 
 func UpdateTask(ctx context.Context, db Queryer, taskID uuid.UUID, input *shared.UpdateTaskBaseDTO) error {
 	task, err := FindTaskByID(ctx, db, taskID)
@@ -734,30 +762,30 @@ func UpdateTaskProject(ctx context.Context, db Queryer, taskProjectID uuid.UUID,
 	return nil
 }
 
-func UpdateTaskPosition(ctx context.Context, db Queryer, taskID uuid.UUID, position int64) error {
-	task, err := FindTaskByID(ctx, db, taskID)
-	if err != nil {
-		return err
-	}
-	if task == nil {
-		return errors.New("task not found")
-	}
+// func UpdateTaskPosition(ctx context.Context, db Queryer, taskID uuid.UUID, position int64) error {
+// 	task, err := FindTaskByID(ctx, db, taskID)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	if task == nil {
+// 		return errors.New("task not found")
+// 	}
 
-	order, err := DefineTaskOrderNumber(ctx, db, task.ID, task.ProjectID, task.Order, position)
-	if err != nil {
-		return err
-	}
-	task.Order = order
-	_, err = crudrepo.Task.PutOne(ctx, db, task)
-	if err != nil {
-		return err
-	}
-	err = UpdateTaskProjectUpdateDate(ctx, db, task.ProjectID)
-	if err != nil {
-		return fmt.Errorf("failed to update task project update date: %w", err)
-	}
-	return nil
-}
+// 	order, err := DefineTaskOrderNumber(ctx, db, task.ID, task.ProjectID, task.Order, position)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	task.Order = order
+// 	_, err = crudrepo.Task.PutOne(ctx, db, task)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	err = UpdateTaskProjectUpdateDate(ctx, db, task.ProjectID)
+// 	if err != nil {
+// 		return fmt.Errorf("failed to update task project update date: %w", err)
+// 	}
+// 	return nil
+// }
 
 func UpdateTaskPositionStatus(ctx context.Context, db Queryer, taskID uuid.UUID, position int64, status models.TaskStatus) error {
 	task, err := FindTaskByID(ctx, db, taskID)
