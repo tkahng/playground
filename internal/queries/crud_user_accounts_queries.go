@@ -134,7 +134,7 @@ func ListUserAccountFilterFunc(ctx context.Context, q *psql.ViewQuery[*models.Us
 	if len(filter.Providers) > 0 {
 		var providers []models.Providers
 		for _, p := range filter.Providers {
-			providers = append(providers, shared.ToModelProvider(p))
+			providers = append(providers, models.Providers(p))
 		}
 		q.Apply(
 			models.SelectWhere.UserAccounts.Provider.In(providers...),
@@ -143,7 +143,7 @@ func ListUserAccountFilterFunc(ctx context.Context, q *psql.ViewQuery[*models.Us
 	if len(filter.ProviderTypes) > 0 {
 		var providerTypes []models.ProviderTypes
 		for _, pt := range filter.ProviderTypes {
-			providerTypes = append(providerTypes, shared.ToModelProviderType(pt))
+			providerTypes = append(providerTypes, models.ProviderTypes(pt))
 		}
 		q.Apply(
 			models.SelectWhere.UserAccounts.Type.In(providerTypes...),

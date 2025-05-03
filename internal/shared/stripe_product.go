@@ -4,7 +4,6 @@ import (
 	"time"
 
 	crudModels "github.com/tkahng/authgo/internal/crud/crudModels"
-	"github.com/tkahng/authgo/internal/db/models"
 )
 
 type Product struct {
@@ -26,19 +25,6 @@ func FromCrudProduct(product *crudModels.StripeProduct) *Product {
 		Description: product.Description,
 		Image:       product.Image,
 		Metadata:    product.Metadata,
-		CreatedAt:   product.CreatedAt,
-		UpdatedAt:   product.UpdatedAt,
-	}
-}
-
-func ModelToProduct(product *models.StripeProduct) *Product {
-	return &Product{
-		ID:          product.ID,
-		Active:      product.Active,
-		Name:        product.Name,
-		Description: product.Description.Ptr(),
-		Image:       product.Image.Ptr(),
-		Metadata:    product.Metadata.Val,
 		CreatedAt:   product.CreatedAt,
 		UpdatedAt:   product.UpdatedAt,
 	}
