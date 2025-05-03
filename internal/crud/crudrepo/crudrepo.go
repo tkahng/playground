@@ -22,4 +22,5 @@ var (
 	StripeCustomer     = repository.NewPostgresRepository[crudModels.StripeCustomer]()
 	StripeSubscription = repository.NewPostgresRepository[crudModels.StripeSubscription]()
 	Media              = repository.NewPostgresRepository[crudModels.Medium]()
+	AiUsage            = repository.NewPostgresRepository[crudModels.AiUsage]()
 )

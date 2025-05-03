@@ -4,22 +4,56 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/tkahng/authgo/internal/crud/crudModels"
 	"github.com/tkahng/authgo/internal/db/models"
 )
 
+const (
+	TaskStatusTodo       TaskStatus = "todo"
+	TaskStatusInProgress TaskStatus = "in_progress"
+	TaskStatusDone       TaskStatus = "done"
+)
+
+type TaskStatus string
+
+// Enum values for TaskProjectStatus
+const (
+	TaskProjectStatusTodo       TaskProjectStatus = "todo"
+	TaskProjectStatusInProgress TaskProjectStatus = "in_progress"
+	TaskProjectStatusDone       TaskProjectStatus = "done"
+)
+
+type TaskProjectStatus string
+
 type TaskProject struct {
-	ID          uuid.UUID                `db:"id,pk" json:"id"`
-	UserID      uuid.UUID                `db:"user_id" json:"user_id"`
-	Name        string                   `db:"name" json:"name"`
-	Description *string                  `db:"description" json:"description"`
-	Status      models.TaskProjectStatus `db:"status" json:"status" enum:"todo,in_progress,done"`
-	Order       float64                  `db:"order" json:"order"`
-	CreatedAt   time.Time                `db:"created_at" json:"created_at"`
-	UpdatedAt   time.Time                `db:"updated_at" json:"updated_at"`
+	ID          uuid.UUID         `db:"id,pk" json:"id"`
+	UserID      uuid.UUID         `db:"user_id" json:"user_id"`
+	Name        string            `db:"name" json:"name"`
+	Description *string           `db:"description" json:"description"`
+	Status      TaskProjectStatus `db:"status" json:"status" enum:"todo,in_progress,done"`
+	Order       float64           `db:"order" json:"order"`
+	CreatedAt   time.Time         `db:"created_at" json:"created_at"`
+	UpdatedAt   time.Time         `db:"updated_at" json:"updated_at"`
 }
 type TaskProjectWithTasks struct {
 	*TaskProject
 	Tasks []*TaskWithSubtask `json:"tasks,omitempty" required:"false"`
+}
+
+func CrudToProject(task *crudModels.TaskProject) *TaskProject {
+	if task == nil {
+		return nil
+	}
+	return &TaskProject{
+		ID:          task.ID,
+		UserID:      task.UserID,
+		Name:        task.Name,
+		Description: task.Description,
+		Status:      TaskProjectStatus(task.Status),
+		Order:       task.Order,
+		CreatedAt:   task.CreatedAt,
+		UpdatedAt:   task.UpdatedAt,
+	}
 }
 
 func ModelToProject(task *models.TaskProject) *TaskProject {
@@ -31,7 +65,7 @@ func ModelToProject(task *models.TaskProject) *TaskProject {
 		UserID:      task.UserID,
 		Name:        task.Name,
 		Description: task.Description.Ptr(),
-		Status:      task.Status,
+		Status:      TaskProjectStatus(task.Status),
 		Order:       task.Order,
 		CreatedAt:   task.CreatedAt,
 		UpdatedAt:   task.UpdatedAt,

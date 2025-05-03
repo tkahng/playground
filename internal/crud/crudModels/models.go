@@ -62,6 +62,19 @@ type Role struct {
 	Users       []User       `db:"users" src:"id" dest:"role_id" table:"users" through:"user_roles,user_id,id" json:"-"`
 }
 
+func (j *Role) Scan(value any) error {
+	switch x := value.(type) {
+	case string:
+		return json.NewDecoder(bytes.NewBuffer([]byte(x))).Decode(j)
+	case []byte:
+		return json.NewDecoder(bytes.NewBuffer(x)).Decode(j)
+	case nil:
+		return nil
+	default:
+		return fmt.Errorf("cannot scan type %T: %v", value, value)
+	}
+}
+
 type RolePermission struct {
 	_            struct{}  `db:"role_permissions" json:"-"`
 	RoleID       uuid.UUID `db:"role_id" json:"role_id"`
@@ -75,6 +88,19 @@ type Permission struct {
 	Description *string   `db:"description" json:"description,omitempty"`
 	CreatedAt   time.Time `db:"created_at" json:"created_at"`
 	UpdatedAt   time.Time `db:"updated_at" json:"updated_at"`
+}
+
+func (j *Permission) Scan(value any) error {
+	switch x := value.(type) {
+	case string:
+		return json.NewDecoder(bytes.NewBuffer([]byte(x))).Decode(j)
+	case []byte:
+		return json.NewDecoder(bytes.NewBuffer(x)).Decode(j)
+	case nil:
+		return nil
+	default:
+		return fmt.Errorf("cannot scan type %T: %v", value, value)
+	}
 }
 
 type ProviderTypes string
@@ -114,6 +140,19 @@ type UserAccount struct {
 	User              User          `db:"users" src:"user_id" dest:"id" table:"users" json:"-"`
 }
 
+func (j *UserAccount) Scan(value any) error {
+	switch x := value.(type) {
+	case string:
+		return json.NewDecoder(bytes.NewBuffer([]byte(x))).Decode(j)
+	case []byte:
+		return json.NewDecoder(bytes.NewBuffer(x)).Decode(j)
+	case nil:
+		return nil
+	default:
+		return fmt.Errorf("cannot scan type %T: %v", value, value)
+	}
+}
+
 type Token struct {
 	_          struct{}   `db:"tokens" json:"-"`
 	ID         uuid.UUID  `db:"id" json:"id"`
@@ -126,6 +165,19 @@ type Token struct {
 	CreatedAt  time.Time  `db:"created_at" json:"created_at"`
 	UpdatedAt  time.Time  `db:"updated_at" json:"updated_at"`
 	User       *User      `db:"users" src:"user_id" dest:"id" table:"users" json:"-"`
+}
+
+func (j *Token) Scan(value any) error {
+	switch x := value.(type) {
+	case string:
+		return json.NewDecoder(bytes.NewBuffer([]byte(x))).Decode(j)
+	case []byte:
+		return json.NewDecoder(bytes.NewBuffer(x)).Decode(j)
+	case nil:
+		return nil
+	default:
+		return fmt.Errorf("cannot scan type %T: %v", value, value)
+	}
 }
 
 type TokenTypes string
@@ -172,6 +224,19 @@ type TaskProject struct {
 	Tasks       []*Task           `db:"tasks" src:"id" dest:"project_id" table:"tasks" json:"tasks,omitempty"`
 }
 
+func (j *TaskProject) Scan(value any) error {
+	switch x := value.(type) {
+	case string:
+		return json.NewDecoder(bytes.NewBuffer([]byte(x))).Decode(j)
+	case []byte:
+		return json.NewDecoder(bytes.NewBuffer(x)).Decode(j)
+	case nil:
+		return nil
+	default:
+		return fmt.Errorf("cannot scan type %T: %v", value, value)
+	}
+}
+
 const (
 	TaskStatusTodo       TaskStatus = "todo"
 	TaskStatusInProgress TaskStatus = "in_progress"
@@ -200,6 +265,19 @@ type StripeProduct struct {
 	CreatedAt   time.Time         `db:"created_at" json:"created_at"`
 	UpdatedAt   time.Time         `db:"updated_at" json:"updated_at"`
 	Prices      []*StripePrice    `db:"prices" src:"id" dest:"product_id" table:"stripe_prices" json:"-"`
+}
+
+func (j *StripeProduct) Scan(value any) error {
+	switch x := value.(type) {
+	case string:
+		return json.NewDecoder(bytes.NewBuffer([]byte(x))).Decode(j)
+	case []byte:
+		return json.NewDecoder(bytes.NewBuffer(x)).Decode(j)
+	case nil:
+		return nil
+	default:
+		return fmt.Errorf("cannot scan type %T: %v", value, value)
+	}
 }
 
 type StripePricingType string
@@ -241,6 +319,19 @@ type StripePrice struct {
 	Subscriptions   []*StripeSubscription      `db:"subscriptions" src:"id" dest:"price_id" table:"stripe_subscriptions" json:"-"`
 }
 
+func (j *StripePrice) Scan(value any) error {
+	switch x := value.(type) {
+	case string:
+		return json.NewDecoder(bytes.NewBuffer([]byte(x))).Decode(j)
+	case []byte:
+		return json.NewDecoder(bytes.NewBuffer(x)).Decode(j)
+	case nil:
+		return nil
+	default:
+		return fmt.Errorf("cannot scan type %T: %v", value, value)
+	}
+}
+
 // enum:"trialing,active,canceled,incomplete,incomplete_expired,past_due,unpaid,paused"
 type StripeSubscriptionStatus string
 
@@ -278,6 +369,19 @@ type StripeSubscription struct {
 	Price              *StripePrice             `db:"stripe_prices" src:"price_id" dest:"id" table:"stripe_prices" json:"-"`
 }
 
+func (j *StripeSubscription) Scan(value any) error {
+	switch x := value.(type) {
+	case string:
+		return json.NewDecoder(bytes.NewBuffer([]byte(x))).Decode(j)
+	case []byte:
+		return json.NewDecoder(bytes.NewBuffer(x)).Decode(j)
+	case nil:
+		return nil
+	default:
+		return fmt.Errorf("cannot scan type %T: %v", value, value)
+	}
+}
+
 type StripeCustomer struct {
 	_              struct{}           `db:"stripe_customers" json:"-"`
 	ID             uuid.UUID          `db:"id" json:"id"`
@@ -308,4 +412,16 @@ type Medium struct {
 	CreatedAt        time.Time  `db:"created_at" json:"created_at"`
 	UpdatedAt        time.Time  `db:"updated_at" json:"updated_at"`
 	User             *User      `db:"users" src:"user_id" dest:"id" table:"users" json:"-"`
+}
+
+type AiUsage struct {
+	_                struct{}  `db:"ai_usages" json:"-"`
+	ID               uuid.UUID `db:"id,pk" json:"id"`
+	UserID           uuid.UUID `db:"user_id" json:"user_id"`
+	PromptTokens     int64     `db:"prompt_tokens" json:"prompt_tokens"`
+	CompletionTokens int64     `db:"completion_tokens" json:"completion_tokens"`
+	TotalTokens      int64     `db:"total_tokens" json:"total_tokens"`
+	CreatedAt        time.Time `db:"created_at" json:"created_at"`
+	UpdatedAt        time.Time `db:"updated_at" json:"updated_at"`
+	User             *User     `db:"user" src:"user_id" dest:"id" table:"users" json:"user,omitempty"`
 }

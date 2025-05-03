@@ -549,8 +549,12 @@ func (app *AuthActionsBase) CheckUserCredentialsSecurity(ctx context.Context, us
 			if params.Type == shared.ProviderTypeOAuth {
 				//  check if user has a credentials account
 				account, err := app.authAdapter.FindUserAccount(ctx, &map[string]any{
-					"user_id":  user.ID.String(),
-					"provider": shared.ProvidersCredentials.String(),
+					"user_id": map[string]any{
+						"_eq": user.ID.String(),
+					},
+					"provider": map[string]any{
+						"_eq": shared.ProvidersCredentials.String(),
+					},
 				})
 
 				if err != nil {

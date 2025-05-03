@@ -21,7 +21,7 @@ var (
 
 // ListUserAccounts implements AdminCrudActions.
 // ListUsers implements AdminCrudActions.
-func ListUserAccounts(ctx context.Context, db Queryer, input *shared.UserAccountListParams) (models.UserAccountSlice, error) {
+func ListUserAccounts2(ctx context.Context, db Queryer, input *shared.UserAccountListParams) (models.UserAccountSlice, error) {
 
 	q := models.UserAccounts.Query()
 	filter := input.UserAccountListFilter
@@ -36,7 +36,7 @@ func ListUserAccounts(ctx context.Context, db Queryer, input *shared.UserAccount
 	}
 	return data, nil
 }
-func ListUserAccounts2(ctx context.Context, db Queryer, input *shared.UserAccountListParams) ([]*crudmodels.UserAccount, error) {
+func ListUserAccounts(ctx context.Context, db Queryer, input *shared.UserAccountListParams) ([]*crudmodels.UserAccount, error) {
 	where := UserAccountWhere(&input.UserAccountListFilter)
 	sort := UserAccountOrderBy(&input.SortParams)
 	data, err := crudrepo.UserAccount.Get(

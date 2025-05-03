@@ -7,12 +7,10 @@ import (
 	"slices"
 	"time"
 
-	"github.com/aarondl/opt/omit"
-	"github.com/aarondl/opt/omitnull"
+	"github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/stephenafamo/bob/dialect/psql"
-	"github.com/stephenafamo/bob/dialect/psql/im"
 	"github.com/stephenafamo/bob/dialect/psql/sm"
 	"github.com/tkahng/authgo/internal/crud/crudModels"
 	"github.com/tkahng/authgo/internal/crud/crudrepo"
@@ -52,45 +50,97 @@ func LoadTaskProjectsUserAndTasks(ctx context.Context, db Queryer, projectIds ..
 	}), nil
 }
 
-func FindTaskByID(ctx context.Context, db Queryer, id uuid.UUID) (*models.Task, error) {
-	task, err := models.FindTask(ctx, db, id)
+func FindTaskByID(ctx context.Context, db Queryer, id uuid.UUID) (*crudModels.Task, error) {
+	task, err := crudrepo.Task.GetOne(
+		ctx,
+		db,
+		&map[string]any{
+			"id": map[string]any{
+				"_eq": id.String(),
+			},
+		},
+	)
 	return OptionalRow(task, err)
 }
 
 func FindLastTaskOrder(ctx context.Context, db Queryer, taskProjectID uuid.UUID) (float64, error) {
-	task, err := models.Tasks.Query(
-		sm.Where(models.TaskColumns.ProjectID.EQ(psql.Arg(taskProjectID))),
-		sm.OrderBy(models.TaskColumns.Order).Desc(),
-		sm.Limit(1),
-	).One(ctx, db)
-	task, err = OptionalRow(task, err)
+	// task, err := models.Tasks.Query(
+	// 	sm.Where(models.TaskColumns.ProjectID.EQ(psql.Arg(taskProjectID))),
+	// 	sm.OrderBy(models.TaskColumns.Order).Desc(),
+	// 	sm.Limit(1),
+	// ).One(ctx, db)
+	tasks, err := crudrepo.Task.Get(
+		ctx,
+		db,
+		&map[string]any{
+			"project_id": map[string]any{
+				"_eq": taskProjectID.String(),
+			},
+		},
+		&map[string]string{
+			"order": "DESC",
+		},
+		types.Pointer(1),
+		nil,
+	)
 	if err != nil {
 		return 0, err
 	}
-	if task == nil {
+	if len(tasks) == 0 {
 		return 0, nil
 	}
+	task := tasks[0]
 	return task.Order + 1000, nil
 }
 
 func DeleteTask(ctx context.Context, db Queryer, taskID uuid.UUID) error {
-	task, err := models.FindTask(ctx, db, taskID)
-	if err != nil {
-		return err
-	}
-	return task.Delete(ctx, db)
+	// task, err := models.FindTask(ctx, db, taskID)
+	// if err != nil {
+	// 	return err
+	// }
+	// return task.Delete(ctx, db)
+	_, err := crudrepo.Task.Delete(
+		ctx,
+		db,
+		&map[string]any{
+			"id": map[string]any{
+				"_eq": taskID.String(),
+			},
+		},
+	)
+	return err
 }
 
-func FindTaskProjectByID(ctx context.Context, db Queryer, id uuid.UUID) (*models.TaskProject, error) {
-	task, err := models.FindTaskProject(ctx, db, id)
+func FindTaskProjectByID(ctx context.Context, db Queryer, id uuid.UUID) (*crudModels.TaskProject, error) {
+	// task, err := models.FindTaskProject(ctx, db, id)
+	// return OptionalRow(task, err)
+	task, err := crudrepo.TaskProject.GetOne(
+		ctx,
+		db,
+		&map[string]any{
+			"id": map[string]any{
+				"_eq": id.String(),
+			},
+		},
+	)
 	return OptionalRow(task, err)
 }
 func DeleteTaskProject(ctx context.Context, db Queryer, taskProjectID uuid.UUID) error {
-	taskProject, err := models.FindTaskProject(ctx, db, taskProjectID)
-	if err != nil {
-		return err
-	}
-	return taskProject.Delete(ctx, db)
+	// taskProject, err := models.FindTaskProject(ctx, db, taskProjectID)
+	// if err != nil {
+	// 	return err
+	// }
+	// return taskProject.Delete(ctx, db)
+	_, err := crudrepo.TaskProject.Delete(
+		ctx,
+		db,
+		&map[string]any{
+			"id": map[string]any{
+				"_eq": taskProjectID.String(),
+			},
+		},
+	)
+	return err
 }
 func ListTasksOrderByFunc(ctx context.Context, q *psql.ViewQuery[*models.Task, models.TaskSlice], input *shared.TaskListParams) {
 	if q == nil {
@@ -283,22 +333,22 @@ func CountTaskProjects(ctx context.Context, db Queryer, filter *shared.TaskProje
 	return data, nil
 }
 
-func CreateTaskProject(ctx context.Context, db Queryer, userID uuid.UUID, input *shared.CreateTaskProjectDTO) (*models.TaskProject, error) {
-	taskProject := models.TaskProjectSetter{
-		UserID:      omit.From(userID),
-		Name:        omit.From(input.Name),
-		Description: omitnull.FromPtr(input.Description),
-		Status:      omit.From(input.Status),
-		Order:       omit.From(input.Order),
+func CreateTaskProject(ctx context.Context, db Queryer, userID uuid.UUID, input *shared.CreateTaskProjectDTO) (*crudModels.TaskProject, error) {
+	taskProject := crudModels.TaskProject{
+		UserID:      userID,
+		Name:        input.Name,
+		Description: input.Description,
+		Status:      crudModels.TaskProjectStatus(input.Status),
+		Order:       input.Order,
 	}
-	projects, err := models.TaskProjects.Insert(&taskProject, im.Returning("*")).One(ctx, db)
+	projects, err := crudrepo.TaskProject.PostOne(ctx, db, &taskProject)
 	if err != nil {
 		return nil, err
 	}
 	return projects, nil
 }
 
-func CreateTaskProjectWithTasks(ctx context.Context, db Queryer, userID uuid.UUID, input *shared.CreateTaskProjectWithTasksDTO) (*models.TaskProject, error) {
+func CreateTaskProjectWithTasks(ctx context.Context, db Queryer, userID uuid.UUID, input *shared.CreateTaskProjectWithTasksDTO) (*crudModels.TaskProject, error) {
 	count, err := CountTaskProjects(ctx, db, nil)
 	if err != nil {
 		return nil, err
@@ -308,7 +358,7 @@ func CreateTaskProjectWithTasks(ctx context.Context, db Queryer, userID uuid.UUI
 	if err != nil {
 		return nil, err
 	}
-	var tasks []*models.Task
+	var tasks []*crudModels.Task
 	for i, task := range input.Tasks {
 		task.Order = float64(i * 1000)
 		newTask, err := CreateTask(ctx, db, userID, taskProject.ID, &task)
@@ -317,14 +367,10 @@ func CreateTaskProjectWithTasks(ctx context.Context, db Queryer, userID uuid.UUI
 		}
 		tasks = append(tasks, newTask)
 	}
-	err = taskProject.AttachProjectTasks(ctx, db, tasks...)
-	if err != nil {
-		return nil, err
-	}
 	return taskProject, nil
 }
 
-func CreateTaskWithChildren(ctx context.Context, db Queryer, userID uuid.UUID, projectID uuid.UUID, input *shared.CreateTaskWithChildrenDTO) (*models.Task, error) {
+func CreateTaskWithChildren(ctx context.Context, db Queryer, userID uuid.UUID, projectID uuid.UUID, input *shared.CreateTaskWithChildrenDTO) (*crudModels.Task, error) {
 	task, err := CreateTask(ctx, db, userID, projectID, &input.CreateTaskBaseDTO)
 	if err != nil {
 		return nil, err
@@ -338,16 +384,16 @@ func CreateTaskWithChildren(ctx context.Context, db Queryer, userID uuid.UUID, p
 	return task, nil
 }
 
-func CreateTask(ctx context.Context, db Queryer, userID uuid.UUID, projectID uuid.UUID, input *shared.CreateTaskBaseDTO) (*models.Task, error) {
-	setter := models.TaskSetter{
-		ProjectID:   omit.From(projectID),
-		UserID:      omit.From(userID),
-		Name:        omit.From(input.Name),
-		Description: omitnull.FromPtr(input.Description),
-		Status:      omit.From(input.Status),
-		Order:       omit.From(input.Order),
+func CreateTask(ctx context.Context, db Queryer, userID uuid.UUID, projectID uuid.UUID, input *shared.CreateTaskBaseDTO) (*crudModels.Task, error) {
+	setter := crudModels.Task{
+		ProjectID:   projectID,
+		UserID:      userID,
+		Name:        input.Name,
+		Description: input.Description,
+		Status:      crudModels.TaskStatus(input.Status),
+		Order:       input.Order,
 	}
-	task, err := models.Tasks.Insert(&setter, im.Returning("*")).One(ctx, db)
+	task, err := crudrepo.Task.PostOne(ctx, db, &setter)
 	if err != nil {
 		return nil, err
 	}
@@ -631,14 +677,19 @@ func UpdateTask(ctx context.Context, db Queryer, taskID uuid.UUID, input *shared
 	if task == nil {
 		return errors.New("task not found")
 	}
-	taskSetter := &models.TaskSetter{
-		Name:        omit.From(input.Name),
-		Description: omitnull.FromPtr(input.Description),
-		Status:      omit.From(input.Status),
-		Order:       omit.From(input.Order),
-		ParentID:    omitnull.FromPtr(input.ParentID),
-	}
-	err = task.Update(ctx, db, taskSetter)
+	// taskSetter := &crudModels.Task{
+	// 	Name:        input.Name,
+	// 	Description: input.Description,
+	// 	Status:      input.Status,
+	// 	Order:       input.Order,
+	// 	ParentID:    input.ParentID,
+	// }
+	task.Name = input.Name
+	task.Description = input.Description
+	task.Status = crudModels.TaskStatus(input.Status)
+	task.Order = input.Order
+	task.ParentID = input.ParentID
+	_, err = crudrepo.Task.PutOne(ctx, db, task)
 	if err != nil {
 		return err
 	}
@@ -650,13 +701,11 @@ func UpdateTask(ctx context.Context, db Queryer, taskID uuid.UUID, input *shared
 }
 
 func UpdateTaskProjectUpdateDate(ctx context.Context, db Queryer, taskProjectID uuid.UUID) error {
-	q := models.TaskProjects.Update(
-		models.UpdateWhere.TaskProjects.ID.EQ(taskProjectID),
-		models.TaskProjectSetter{
-			UpdatedAt: omit.From(time.Now()),
-		}.UpdateMod(),
-	)
-	_, err := q.Exec(ctx, db)
+	q := squirrel.Update("task_projects").
+		Where("id = ?", taskProjectID).
+		Set("updated_at", time.Now())
+
+	err := ExecWithBuilder(ctx, db, q.PlaceholderFormat(squirrel.Dollar))
 	if err != nil {
 		return err
 	}
@@ -668,13 +717,11 @@ func UpdateTaskProject(ctx context.Context, db Queryer, taskProjectID uuid.UUID,
 	if err != nil {
 		return err
 	}
-	taskProjectSetter := &models.TaskProjectSetter{
-		Name:        omit.From(input.Name),
-		Description: omitnull.FromPtr(input.Description),
-		Status:      omit.From(input.Status),
-		Order:       omit.From(input.Order),
-	}
-	err = taskProject.Update(ctx, db, taskProjectSetter)
+	taskProject.Name = input.Name
+	taskProject.Description = input.Description
+	taskProject.Status = crudModels.TaskProjectStatus(input.Status)
+	taskProject.Order = input.Order
+	_, err = crudrepo.TaskProject.PutOne(ctx, db, taskProject)
 	if err != nil {
 		return err
 	}
@@ -689,14 +736,13 @@ func UpdateTaskPosition(ctx context.Context, db Queryer, taskID uuid.UUID, posit
 	if task == nil {
 		return errors.New("task not found")
 	}
-	taskSetter := &models.TaskSetter{}
 
 	order, err := DefineTaskOrderNumber(ctx, db, task.ID, task.ProjectID, task.Order, position)
 	if err != nil {
 		return err
 	}
-	taskSetter.Order = omit.From(order)
-	err = task.Update(ctx, db, taskSetter)
+	task.Order = order
+	_, err = crudrepo.Task.PutOne(ctx, db, task)
 	if err != nil {
 		return err
 	}
@@ -715,15 +761,12 @@ func UpdateTaskPositionStatus(ctx context.Context, db Queryer, taskID uuid.UUID,
 	if task == nil {
 		return errors.New("task not found")
 	}
-	taskSetter := &models.TaskSetter{
-		Status: omit.From(status),
-	}
 	order, err := DefineTaskOrderNumberByStatus(ctx, db, task.ID, task.ProjectID, status, task.Order, position)
 	if err != nil {
 		return err
 	}
-	taskSetter.Order = omit.From(order)
-	err = task.Update(ctx, db, taskSetter)
+	task.Order = order
+	_, err = crudrepo.Task.PutOne(ctx, db, task)
 	if err != nil {
 		return err
 	}

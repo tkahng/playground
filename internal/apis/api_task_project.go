@@ -8,6 +8,7 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/core"
+	"github.com/tkahng/authgo/internal/crud/crudModels"
 	"github.com/tkahng/authgo/internal/db"
 	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/queries"
@@ -115,11 +116,11 @@ func (api *Api) TaskProjectCreate(ctx context.Context, input *struct {
 	return &struct {
 		Body *shared.TaskProject
 	}{
-		Body: shared.ModelToProject(taskProject),
+		Body: shared.CrudToProject(taskProject),
 	}, nil
 }
 
-func createTaskProjectWithTasks(ctx context.Context, db *db.Queries, userId uuid.UUID, input shared.CreateTaskProjectWithTasksDTO) (*models.TaskProject, error) {
+func createTaskProjectWithTasks(ctx context.Context, db *db.Queries, userId uuid.UUID, input shared.CreateTaskProjectWithTasksDTO) (*crudModels.TaskProject, error) {
 	taskProject, err := queries.CreateTaskProjectWithTasks(ctx, db, userId, &input)
 	if err != nil {
 		return nil, err
@@ -183,7 +184,7 @@ func (api *Api) TaskProjectCreateWithAi(ctx context.Context, input *TaskProjectC
 	return &struct {
 		Body *shared.TaskProject
 	}{
-		Body: shared.ModelToProject(taskProject),
+		Body: shared.CrudToProject(taskProject),
 	}, nil
 }
 
@@ -291,19 +292,19 @@ func (api *Api) TaskProjectGet(ctx context.Context, input *struct {
 		return nil, err
 	}
 	if input.Expand != nil && slices.Contains(input.Expand, "tasks") {
-		err = taskProject.LoadTaskProjectProjectTasks(ctx, db)
-		if err != nil {
-			return nil, err
-		}
+		// err = taskProject.LoadTaskProjectProjectTasks(ctx, db)
+		// if err != nil {
+		// 	return nil, err
+		// }
 	}
 	return &TaskProjectResponse{
 		Body: &shared.TaskProjectWithTasks{
-			TaskProject: shared.ModelToProject(taskProject),
-			Tasks: mapper.Map(taskProject.R.ProjectTasks, func(task *models.Task) *shared.TaskWithSubtask {
+			TaskProject: shared.CrudToProject(taskProject),
+			Tasks: mapper.Map(taskProject.Tasks, func(task *crudModels.Task) *shared.TaskWithSubtask {
 				return &shared.TaskWithSubtask{
-					Task: shared.ModelToTask(task),
-					Children: mapper.Map(task.R.ReverseParents, func(child *models.Task) *shared.Task {
-						return shared.ModelToTask(child)
+					Task: shared.CrudModelToTask(task),
+					Children: mapper.Map(task.Children, func(child *crudModels.Task) *shared.Task {
+						return shared.CrudModelToTask(child)
 					}),
 				}
 			}),
@@ -348,9 +349,9 @@ func (api *Api) TaskProjectTasksCreate(ctx context.Context, input *shared.Create
 	}
 	return &TaskResposne{
 		Body: &shared.TaskWithSubtask{
-			Task: shared.ModelToTask(task),
-			Children: mapper.Map(task.R.ReverseParents, func(child *models.Task) *shared.Task {
-				return shared.ModelToTask(child)
+			Task: shared.CrudModelToTask(task),
+			Children: mapper.Map(task.Children, func(child *crudModels.Task) *shared.Task {
+				return shared.CrudModelToTask(child)
 			}),
 		},
 	}, nil

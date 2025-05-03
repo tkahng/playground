@@ -7,6 +7,7 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/core"
+	"github.com/tkahng/authgo/internal/crud/crudModels"
 	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
@@ -218,9 +219,9 @@ func (api *Api) TaskGet(ctx context.Context, input *struct {
 	}
 	return &TaskResposne{
 		Body: &shared.TaskWithSubtask{
-			Task: shared.ModelToTask(task),
-			Children: mapper.Map(task.R.ReverseParents, func(child *models.Task) *shared.Task {
-				return shared.ModelToTask(child)
+			Task: shared.CrudModelToTask(task),
+			Children: mapper.Map(task.Children, func(child *crudModels.Task) *shared.Task {
+				return shared.CrudModelToTask(child)
 			}),
 		},
 	}, nil

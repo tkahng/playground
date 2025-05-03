@@ -4,20 +4,21 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	crudModels "github.com/tkahng/authgo/internal/crud/crudModels"
 	"github.com/tkahng/authgo/internal/db/models"
 )
 
 type Task struct {
-	ID          uuid.UUID         `db:"id,pk" json:"id"`
-	UserID      uuid.UUID         `db:"user_id" json:"user_id"`
-	ProjectID   uuid.UUID         `db:"project_id" json:"project_id"`
-	Name        string            `db:"name" json:"name"`
-	Description *string           `db:"description" json:"description"`
-	Status      models.TaskStatus `db:"status" json:"status" enum:"todo,in_progress,done"`
-	Order       float64           `db:"order" json:"order"`
-	ParentID    *uuid.UUID        `db:"parent_id" json:"parent_id"`
-	CreatedAt   time.Time         `db:"created_at" json:"created_at"`
-	UpdatedAt   time.Time         `db:"updated_at" json:"updated_at"`
+	ID          uuid.UUID  `db:"id,pk" json:"id"`
+	UserID      uuid.UUID  `db:"user_id" json:"user_id"`
+	ProjectID   uuid.UUID  `db:"project_id" json:"project_id"`
+	Name        string     `db:"name" json:"name"`
+	Description *string    `db:"description" json:"description"`
+	Status      TaskStatus `db:"status" json:"status" enum:"todo,in_progress,done"`
+	Order       float64    `db:"order" json:"order"`
+	ParentID    *uuid.UUID `db:"parent_id" json:"parent_id"`
+	CreatedAt   time.Time  `db:"created_at" json:"created_at"`
+	UpdatedAt   time.Time  `db:"updated_at" json:"updated_at"`
 }
 
 type TaskWithSubtask struct {
@@ -25,7 +26,7 @@ type TaskWithSubtask struct {
 	Children []*Task `json:"children,omitempty" required:"false"`
 }
 
-func ModelToTask(task *models.Task) *Task {
+func CrudModelToTask(task *crudModels.Task) *Task {
 	if task == nil {
 		return nil
 	}
@@ -34,12 +35,30 @@ func ModelToTask(task *models.Task) *Task {
 		UserID:      task.UserID,
 		ProjectID:   task.ProjectID,
 		Name:        task.Name,
-		Description: task.Description.Ptr(),
-		Status:      task.Status,
+		Description: task.Description,
+		Status:      TaskStatus(task.Status),
 		Order:       task.Order,
-		ParentID:    task.ParentID.Ptr(),
+		ParentID:    task.ParentID,
 		CreatedAt:   task.CreatedAt,
 		UpdatedAt:   task.UpdatedAt,
+	}
+}
+
+func ModelToTask(task *models.Task) *Task {
+	if task == nil {
+		return nil
+	}
+	return &Task{
+		ID:        task.ID,
+		UserID:    task.UserID,
+		ProjectID: task.ProjectID,
+		Name:      task.Name,
+		// Description: task.Description,
+		// Status:      task.Status,
+		Order: task.Order,
+		// ParentID:    task.ParentID,
+		CreatedAt: task.CreatedAt,
+		UpdatedAt: task.UpdatedAt,
 	}
 }
 

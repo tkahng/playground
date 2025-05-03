@@ -40,7 +40,7 @@ func (api *Api) Me(ctx context.Context, input *struct{}) (*MeOutput, error) {
 	if err != nil {
 		return nil, err
 	}
-	accounts, err := queries.ListUserAccounts2(ctx, db, &shared.UserAccountListParams{
+	accounts, err := queries.ListUserAccounts(ctx, db, &shared.UserAccountListParams{
 		UserAccountListFilter: shared.UserAccountListFilter{UserIds: []string{user.ID.String()}},
 	})
 	if err != nil {
