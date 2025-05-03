@@ -111,11 +111,15 @@ func QueryWithBuilder[T any](ctx context.Context, db Queryer, query QueryBuilder
 		return nil, err
 	}
 	fmt.Println(sql, args)
-	return Query[T](ctx, db, sql, args...)
+	return QueryAll[T](ctx, db, sql, args...)
 }
 
-func Query[T any](ctx context.Context, db Queryer, query string, args ...any) ([]T, error) {
+func QueryAll[T any](ctx context.Context, db Queryer, query string, args ...any) ([]T, error) {
 	return pgxscan.All(ctx, db, scan.StructMapper[T](), query, args...)
+}
+
+func QueryOne[T any](ctx context.Context, db Queryer, query string, args ...any) (T, error) {
+	return pgxscan.One(ctx, db, scan.StructMapper[T](), query, args...)
 }
 
 func Exec(ctx context.Context, db Queryer, query string, args ...any) error {

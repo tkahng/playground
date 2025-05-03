@@ -6,14 +6,8 @@ import (
 	"strings"
 
 	"github.com/Masterminds/squirrel"
-	"github.com/google/uuid"
-	"github.com/stephenafamo/bob/dialect/psql"
-	"github.com/stephenafamo/bob/dialect/psql/sm"
-	"github.com/stephenafamo/scan"
-	"github.com/stephenafamo/scan/pgxscan"
 	"github.com/tkahng/authgo/internal/crud/crudModels"
 	"github.com/tkahng/authgo/internal/crud/crudrepo"
-	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 )
@@ -122,10 +116,9 @@ GROUP BY rp.product_id;`
 )
 
 func LoadProductRoles(ctx context.Context, db Queryer, productIds ...string) ([]shared.JoinedResult[*crudModels.Role, string], error) {
-	data, err := pgxscan.All(
+	data, err := QueryAll[shared.JoinedResult[*crudModels.Role, string]](
 		ctx,
 		db,
-		scan.StructMapper[shared.JoinedResult[*crudModels.Role, string]](),
 		GetProductRolesQuery,
 		productIds,
 	)
@@ -175,10 +168,9 @@ GROUP BY sp.product_id;`
 )
 
 func LoadProductPrices(ctx context.Context, db Queryer, productIds ...string) ([]*shared.JoinedResult[*crudModels.StripePrice, string], error) {
-	data, err := pgxscan.All(
+	data, err := QueryAll[shared.JoinedResult[*crudModels.StripePrice, string]](
 		ctx,
 		db,
-		scan.StructMapper[shared.JoinedResult[*crudModels.StripePrice, string]](),
 		GetProductPricesQuery,
 		productIds,
 	)
@@ -191,44 +183,7 @@ func LoadProductPrices(ctx context.Context, db Queryer, productIds ...string) ([
 	}), nil
 }
 
-func ListProductOrderByFunc(ctx context.Context, q *psql.ViewQuery[*models.StripeProduct, models.StripeProductSlice], input *shared.StripeProductListParams) {
-	if q == nil {
-		return
-	}
-	if input == nil {
-		q.Apply(
-			sm.OrderBy("metadata->'index'").Asc(),
-		)
-		return
-	}
-	if input.SortParams.SortBy == "" {
-		q.Apply(
-			sm.OrderBy("metadata->'index'").Asc(),
-		)
-		return
-	}
-	if input.SortBy == MetadataIndexName {
-		q.Apply(
-			sm.OrderBy("metadata->'index'").Asc(),
-		)
-		return
-	} else if slices.Contains(StripeProductColumnNames, input.SortBy) {
-		if input.SortParams.SortOrder == "desc" {
-			q.Apply(
-				sm.OrderBy(input.SortBy).Desc(),
-				sm.OrderBy(models.StripeProductColumns.ID).Desc(),
-			)
-			return
-		} else if input.SortParams.SortOrder == "asc" {
-			q.Apply(
-				sm.OrderBy(input.SortBy).Asc(),
-				sm.OrderBy(models.StripeProductColumns.ID).Asc(),
-			)
-			return
-		}
-	}
-}
-func ListProductOrderByFunc2(q squirrel.SelectBuilder, input *shared.StripeProductListParams) squirrel.SelectBuilder {
+func ListProductOrderByQuery(q squirrel.SelectBuilder, input *shared.StripeProductListParams) squirrel.SelectBuilder {
 	if input == nil {
 		return q
 	}
@@ -259,28 +214,6 @@ func ListProductFilterFuncQuery(q squirrel.SelectBuilder, filter *shared.StripeP
 		q = q.Where("id in (?)", filter.Ids)
 	}
 	return q
-}
-func ListProductFilterFunc(ctx context.Context, q *psql.ViewQuery[*models.StripeProduct, models.StripeProductSlice], filter *shared.StripeProductListFilter) {
-	if filter == nil {
-		return
-	}
-	if filter.Active != "" {
-		if filter.Active == shared.Active {
-			q.Apply(
-				models.SelectWhere.StripeProducts.Active.EQ(true),
-			)
-		}
-		if filter.Active == shared.Inactive {
-			q.Apply(
-				models.SelectWhere.StripeProducts.Active.EQ(false),
-			)
-		}
-	}
-	if len(filter.Ids) > 0 {
-		q.Apply(
-			models.SelectWhere.StripeProducts.ID.In(filter.Ids...),
-		)
-	}
 }
 
 // CountUsers implements AdminCrudActions.
@@ -403,133 +336,121 @@ func CountPrices(ctx context.Context, db Queryer, filter *shared.StripePriceList
 	return data, nil
 }
 
-func ListCustomers(ctx context.Context, db Queryer, input *shared.StripeCustomerListParams) (models.StripeCustomerSlice, error) {
+func ListCustomers(ctx context.Context, db Queryer, input *shared.StripeCustomerListParams) ([]*crudModels.StripeCustomer, error) {
 
-	q := models.StripeCustomers.Query()
 	filter := input.StripeCustomerListFilter
 	pageInput := &input.PaginatedInput
 
-	ViewApplyPagination(q, pageInput)
-	ListCustomerFilterFunc(ctx, q, &filter)
-	StripeCustomerOrderByFunc(ctx, q, input)
-	data, err := q.All(ctx, db)
+	limit, offset := PaginateRepo(pageInput)
+	where := ListCustomerFilterFunc(&filter)
+	order := StripeCustomerOrderByFunc(input)
+	data, err := crudrepo.StripeCustomer.Get(
+		ctx,
+		db,
+		where,
+		order,
+		limit,
+		offset,
+	)
 	if err != nil {
 		return nil, err
 	}
 	return data, nil
 }
 
-func StripeCustomerOrderByFunc(ctx context.Context, q *psql.ViewQuery[*models.StripeCustomer, models.StripeCustomerSlice], input *shared.StripeCustomerListParams) {
+func StripeCustomerOrderByFunc(input *shared.StripeCustomerListParams) *map[string]string {
 	if input == nil {
-		return
+		return nil
 	}
-	if input.SortParams.SortBy == "" {
-		return
-	}
+	order := make(map[string]string)
 	if slices.Contains(StripeCustomerColumnNames, input.SortBy) {
-		var order = sm.OrderBy(input.SortBy)
-		if input.SortParams.SortOrder == "desc" {
-			order = sm.OrderBy(input.SortBy).Desc()
-		} else if input.SortParams.SortOrder == "asc" {
-			order = sm.OrderBy(input.SortBy).Asc()
-		}
-		q.Apply(
-			order,
-		)
+		order[input.SortBy] = strings.ToUpper(input.SortOrder)
 	}
+	return &order
 }
 
-func ListCustomerFilterFunc(ctx context.Context, q *psql.ViewQuery[*models.StripeCustomer, models.StripeCustomerSlice], filter *shared.StripeCustomerListFilter) {
+func ListCustomerFilterFunc(filter *shared.StripeCustomerListFilter) *map[string]any {
 	if filter == nil {
-		return
+		return nil
 	}
+	where := map[string]any{}
 	if len(filter.Ids) > 0 {
-		ids := ParseUUIDs(filter.Ids)
-		q.Apply(
-			models.SelectWhere.StripeCustomers.ID.In(ids...),
-		)
+		where["id"] = map[string]any{
+			"_in": filter.Ids,
+		}
 	}
-
+	return &where
 }
 
 func CountCustomers(ctx context.Context, db Queryer, filter *shared.StripeCustomerListFilter) (int64, error) {
-	q := models.StripeCustomers.Query()
-	ListCustomerFilterFunc(ctx, q, filter)
-	data, err := q.Count(ctx, db)
+	where := ListCustomerFilterFunc(filter)
+	data, err := crudrepo.StripeCustomer.Count(ctx, db, where)
 	if err != nil {
 		return 0, err
 	}
 	return data, nil
 }
 
-func ListSubscriptions(ctx context.Context, db Queryer, input *shared.StripeSubscriptionListParams) (models.StripeSubscriptionSlice, error) {
+func ListSubscriptions(ctx context.Context, db Queryer, input *shared.StripeSubscriptionListParams) ([]*crudModels.StripeSubscription, error) {
 
-	q := models.StripeSubscriptions.Query()
 	filter := input.StripeSubscriptionListFilter
 	pageInput := &input.PaginatedInput
 
-	ViewApplyPagination(q, pageInput)
-	ListSubscriptionFilterFunc(ctx, q, &filter)
-	StripeSubscriptionOrderByFunc(ctx, q, input)
-	data, err := q.All(ctx, db)
+	limit, offset := PaginateRepo(pageInput)
+	where := ListSubscriptionFilterFunc(&filter)
+	order := StripeSubscriptionOrderByFunc(input)
+	data, err := crudrepo.StripeSubscription.Get(
+		ctx,
+		db,
+		where,
+		order,
+		limit,
+		offset,
+	)
 	if err != nil {
 		return nil, err
 	}
 	return data, nil
 }
 
-func StripeSubscriptionOrderByFunc(ctx context.Context, q *psql.ViewQuery[*models.StripeSubscription, models.StripeSubscriptionSlice], input *shared.StripeSubscriptionListParams) {
+func StripeSubscriptionOrderByFunc(input *shared.StripeSubscriptionListParams) *map[string]string {
 	if input == nil {
-		return
+		return nil
 	}
-	if input.SortParams.SortBy == "" {
-		return
-	}
+	order := make(map[string]string)
 	if slices.Contains(StripeSubscriptionColumnNames, input.SortBy) {
-		var order = sm.OrderBy(input.SortBy)
-		if input.SortParams.SortOrder == "desc" {
-			order = sm.OrderBy(input.SortBy).Desc()
-		} else if input.SortParams.SortOrder == "asc" {
-			order = sm.OrderBy(input.SortBy).Asc()
-		}
-		q.Apply(
-			order,
-		)
+		order[input.SortBy] = strings.ToUpper(input.SortOrder)
 	}
+	return &order
 }
 
-func ListSubscriptionFilterFunc(ctx context.Context, q *psql.ViewQuery[*models.StripeSubscription, models.StripeSubscriptionSlice], filter *shared.StripeSubscriptionListFilter) {
+func ListSubscriptionFilterFunc(filter *shared.StripeSubscriptionListFilter) *map[string]any {
 	if filter == nil {
-		return
+		return nil
 	}
+	where := map[string]any{}
 	if len(filter.Ids) > 0 {
-		q.Apply(
-			models.SelectWhere.StripeSubscriptions.ID.In(filter.Ids...),
-		)
+		where["id"] = map[string]any{
+			"_in": filter.Ids,
+		}
 	}
 	if len(filter.Status) > 0 {
-		statuses := mapper.Map(filter.Status, shared.ToModelsStripeSubscriptionStatus)
-		if len(statuses) > 0 {
-			q.Apply(
-				models.SelectWhere.StripeSubscriptions.Status.In(statuses...),
-			)
+		statuses := mapper.Map(filter.Status, func(s shared.StripeSubscriptionStatus) string { return string(s) })
+		where["status"] = map[string]any{
+			"_in": statuses,
 		}
 	}
 	if filter.UserID != "" {
-		userID, err := uuid.Parse(filter.UserID)
-		if err != nil {
-			return
+		where["user_id"] = map[string]any{
+			"_eq": filter.UserID,
 		}
-		q.Apply(
-			models.SelectWhere.StripeSubscriptions.UserID.EQ(userID),
-		)
 	}
+	return &where
 }
 
 func CountSubscriptions(ctx context.Context, db Queryer, filter *shared.StripeSubscriptionListFilter) (int64, error) {
-	q := models.StripeSubscriptions.Query()
-	ListSubscriptionFilterFunc(ctx, q, filter)
-	data, err := q.Count(ctx, db)
+	where := ListSubscriptionFilterFunc(filter)
+	data, err := crudrepo.StripeSubscription.Count(ctx, db, where)
 	if err != nil {
 		return 0, err
 	}

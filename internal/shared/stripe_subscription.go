@@ -98,7 +98,7 @@ func FromCrudToSubWithUserAndPrice(sub *crudModels.SubscriptionWithPrice) *Subsc
 	return &SubscriptionWithData{
 		Subscription: FromCrudSubscription(&sub.Subscription),
 		Price: &StripePricesWithProduct{
-			Product: FromCrudProduct(&sub.Price.Product),
+			Product: FromCrudProduct(&sub.Product),
 			Price:   FromCrudModel(&sub.Price),
 		},
 	}

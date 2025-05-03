@@ -287,6 +287,23 @@ func (b *SQLBuilder[Model]) Order(order *map[string]string) string {
 	return strings.Join(result, ",")
 }
 
+func (b *SQLBuilder[Model]) WhereError(where *map[string]any, args *[]any, run func(string) []string) (ret string, err error) {
+	if where == nil {
+		return "", nil
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			slog.Error("Error occurred during where generation", slog.Any("error", r),
+				slog.String("table", b.table),
+				slog.Any("where", where),
+			)
+			err = fmt.Errorf("panic occurred: %v during where generation for table %s", r, b.table)
+		}
+	}()
+	ret = b.Where(where, args, run)
+	return
+}
+
 // Constructs the WHERE clause for a query
 func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any, run func(string) []string) string {
 	fmt.Println("where for ", b.table)

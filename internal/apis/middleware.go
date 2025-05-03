@@ -14,6 +14,32 @@ import (
 	"github.com/tkahng/authgo/internal/shared"
 )
 
+// func HumaRecoverer(next func(huma.Context)) func(ctx huma.Context, next func(huma.Context)) {
+// 	return func(ctx huma.Context, next func(huma.Context)) {
+// 		defer func() {
+// 			if rvr := recover(); rvr != nil {
+// 				if rvr == http.ErrAbortHandler {
+// 					// we don't recover http.ErrAbortHandler so the response
+// 					// to the client is aborted, this should not be logged
+// 					panic(rvr)
+// 				}
+
+// 				logEntry := GetLogEntry(r)
+// 				if logEntry != nil {
+// 					logEntry.Panic(rvr, debug.Stack())
+// 				} else {
+// 					PrintPrettyStack(rvr)
+// 				}
+
+// 				if r.Header.Get("Connection") != "Upgrade" {
+// 					w.WriteHeader(http.StatusInternalServerError)
+// 				}
+// 			}
+// 		}()
+// 		next(ctx)
+// 	}
+// }
+
 // TokenFromCookie tries to retreive the token string from a cookie named
 // "jwt".
 func HumaTokenFromCookie(ctx huma.Context) string {

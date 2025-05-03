@@ -37,44 +37,49 @@ func (api *Api) AdminStripeSubscriptions(ctx context.Context,
 	if err != nil {
 		return nil, err
 	}
-	if slices.Contains(input.Expand, "user") {
-		err = subscriptions.LoadStripeSubscriptionUser(ctx, db)
-		if err != nil {
-			return nil, err
+	subs := mapper.Map(subscriptions, func(sub *crudModels.StripeSubscription) *shared.SubscriptionWithData {
+		return &shared.SubscriptionWithData{
+			Subscription: shared.FromCrudSubscription(sub),
 		}
-	}
-	if slices.Contains(input.Expand, "price") {
-		if slices.Contains(input.Expand, "product") {
-			err = subscriptions.LoadStripeSubscriptionPriceStripePrice(ctx, db,
-				models.PreloadStripePriceProductStripeProduct(),
-			)
-			if err != nil {
-				return nil, err
-			}
-		} else {
-			err = subscriptions.LoadStripeSubscriptionPriceStripePrice(ctx, db)
-			if err != nil {
-				return nil, err
-			}
-		}
-	}
-	subs := mapper.Map(subscriptions, func(sub *models.StripeSubscription) *shared.SubscriptionWithData {
-		ss := &shared.SubscriptionWithData{
-			Subscription: shared.ModelToSubscription(sub),
-		}
-		if sub.R.User != nil {
-			ss.SubscriptionUser = shared.ToUser(sub.R.User)
-		}
-		if sub.R.PriceStripePrice != nil {
-			ss.Price = &shared.StripePricesWithProduct{
-				Price: shared.ModelToPrice(sub.R.PriceStripePrice),
-			}
-			if sub.R.PriceStripePrice.R.ProductStripeProduct != nil {
-				ss.Price.Product = shared.ModelToProduct(sub.R.PriceStripePrice.R.ProductStripeProduct)
-			}
-		}
-		return ss
 	})
+	// if slices.Contains(input.Expand, "user") {
+	// 	err = subscriptions.LoadStripeSubscriptionUser(ctx, db)
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+	// }
+	// if slices.Contains(input.Expand, "price") {
+	// 	if slices.Contains(input.Expand, "product") {
+	// 		err = subscriptions.LoadStripeSubscriptionPriceStripePrice(ctx, db,
+	// 			models.PreloadStripePriceProductStripeProduct(),
+	// 		)
+	// 		if err != nil {
+	// 			return nil, err
+	// 		}
+	// 	} else {
+	// 		err = subscriptions.LoadStripeSubscriptionPriceStripePrice(ctx, db)
+	// 		if err != nil {
+	// 			return nil, err
+	// 		}
+	// 	}
+	// }
+	// subs := mapper.Map(subscriptions, func(sub *models.StripeSubscription) *shared.SubscriptionWithData {
+	// 	ss := &shared.SubscriptionWithData{
+	// 		Subscription: shared.ModelToSubscription(sub),
+	// 	}
+	// 	if sub.R.User != nil {
+	// 		ss.SubscriptionUser = shared.ToUser(sub.R.User)
+	// 	}
+	// 	if sub.R.PriceStripePrice != nil {
+	// 		ss.Price = &shared.StripePricesWithProduct{
+	// 			Price: shared.ModelToPrice(sub.R.PriceStripePrice),
+	// 		}
+	// 		if sub.R.PriceStripePrice.R.ProductStripeProduct != nil {
+	// 			ss.Price.Product = shared.ModelToProduct(sub.R.PriceStripePrice.R.ProductStripeProduct)
+	// 		}
+	// 	}
+	// 	return ss
+	// })
 	count, err := queries.CountSubscriptions(ctx, db, &input.StripeSubscriptionListFilter)
 	if err != nil {
 		return nil, err

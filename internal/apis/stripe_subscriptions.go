@@ -6,7 +6,6 @@ import (
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/tkahng/authgo/internal/core"
-	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
 )
@@ -46,20 +45,13 @@ func (api *Api) MyStripeSubscriptions(ctx context.Context, input *struct{}) (*st
 		Body *shared.SubscriptionWithPrice `json:"body,omitempty" required:"false"`
 	}{}
 	output.Body = &shared.SubscriptionWithPrice{
-		Subscription: shared.ModelToSubscription(subscriptions),
+		Subscription: shared.FromCrudSubscription(&subscriptions.Subscription),
+		Price: &shared.StripePricesWithProduct{
+			Price:   shared.FromCrudModel(&subscriptions.Price),
+			Product: shared.FromCrudProduct(&subscriptions.Product),
+		},
 	}
-	var price *models.StripePrice
-	var product *models.StripeProduct
-	if subscriptions.R.PriceStripePrice != nil {
-		price = subscriptions.R.PriceStripePrice
-		if price.R.ProductStripeProduct != nil {
-			product = price.R.ProductStripeProduct
-			output.Body.Price = &shared.StripePricesWithProduct{
-				Price:   shared.ModelToPrice(price),
-				Product: shared.ModelToProduct(product),
-			}
-		}
-	}
+
 	// subscriptions.LoadStripeSubscriptionPriceStripePrice(ctx, db, models.PreloadStripePriceProductStripeProduct())
 	return output, nil
 

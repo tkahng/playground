@@ -9,8 +9,6 @@ import (
 	"github.com/Masterminds/squirrel"
 	"github.com/alexedwards/argon2id"
 	"github.com/google/uuid"
-	"github.com/stephenafamo/scan"
-	"github.com/stephenafamo/scan/pgxscan"
 	crudModels "github.com/tkahng/authgo/internal/crud/crudModels"
 	"github.com/tkahng/authgo/internal/crud/crudrepo"
 	"github.com/tkahng/authgo/internal/shared"
@@ -50,7 +48,7 @@ func CreateUserRoles(ctx context.Context, db Queryer, userId uuid.UUID, roleIds 
 		return err
 	}
 	fmt.Println(sql, args)
-	_, err = pgxscan.All(ctx, db, scan.StructMapper[crudModels.UserRole](), sql, args...)
+	_, err = QueryAll[crudModels.UserRole](ctx, db, sql, args...)
 	if err != nil {
 		return err
 	}
@@ -78,7 +76,7 @@ func CreateUserPermissions(ctx context.Context, db Queryer, userId uuid.UUID, pe
 		return err
 	}
 	fmt.Println(sql, args)
-	_, err = pgxscan.All(ctx, db, scan.StructMapper[crudModels.UserPermission](), sql, args...)
+	_, err = QueryAll[crudModels.UserPermission](ctx, db, sql, args...)
 	if err != nil {
 		return err
 	}
@@ -237,10 +235,9 @@ func GetUserAccounts(ctx context.Context, db Queryer, userIds ...uuid.UUID) ([]s
 	for _, id := range userIds {
 		ids = append(ids, id.String())
 	}
-	data, err := pgxscan.All(
+	data, err := QueryAll[shared.JoinedResult[*crudModels.UserAccount, uuid.UUID]](
 		ctx,
 		db,
-		scan.StructMapper[shared.JoinedResult[*crudModels.UserAccount, uuid.UUID]](),
 		GetUserRolesQuery,
 		userIds,
 	)
