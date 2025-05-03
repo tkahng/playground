@@ -9,7 +9,6 @@ import (
 
 	"github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5"
 	"github.com/stephenafamo/bob/dialect/psql"
 	"github.com/stephenafamo/bob/dialect/psql/sm"
 	"github.com/tkahng/authgo/internal/crud/crudModels"
@@ -22,26 +21,33 @@ import (
 
 const (
 	GetTaskProjectsWithUserAndTasksQuery = `
-SELECT 
-		tp.*,
-        to_json(u.*) AS "user",
+SELECT tp.*,
+        u.id AS "user.id",
+        u.email AS "user.email",
+        u.name AS "user.name",
+        u.image AS "user.image",
+        u.email_verified_at AS "user.email_verified_at",
+        u.created_at AS "user.created_at",
+        u.updated_at AS "user.updated_at",
         json_agg(to_json(t.*)) AS "tasks"
 FROM public.task_projects tp
         LEFT JOIN public.users u ON tp.user_id = u.id
         LEFT JOIN public.tasks t ON tp.id = t.project_id
-WHERE tp.id = ANY (
-               $1::uuid[]
-        )
+WHERE tp.id = ANY ($1::uuid [])
 GROUP BY tp.id,
         u.id`
 )
 
 func LoadTaskProjectsUserAndTasks(ctx context.Context, db Queryer, projectIds ...uuid.UUID) ([]*crudModels.TaskProject, error) {
-	rows, err := db.Query(ctx, GetTaskProjectsWithUserAndTasksQuery, projectIds)
-	if err != nil {
-		return nil, err
-	}
-	users, err := pgx.CollectRows(rows, pgx.RowToStructByName[crudModels.TaskProject])
+	// rows, err := db.Query(ctx, GetTaskProjectsWithUserAndTasksQuery, projectIds)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// users, err := pgx.CollectRows(rows, pgx.RowToStructByName[crudModels.TaskProject])
+	// if err != nil {
+	// 	return nil, err
+	// }
+	users, err := QueryAll[crudModels.TaskProject](ctx, db, GetTaskProjectsWithUserAndTasksQuery, projectIds)
 	if err != nil {
 		return nil, err
 	}

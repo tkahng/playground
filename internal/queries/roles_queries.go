@@ -493,7 +493,7 @@ role_based_permissions AS (
     FROM public.user_roles ur
         JOIN public.role_permissions rp ON ur.role_id = rp.role_id
         JOIN public.permissions p ON rp.permission_id = p.id
-    WHERE ur.user_id = ?
+    WHERE ur.user_id = $1
 ),
 -- Get permissions assigned directly to user
 direct_permissions AS (
@@ -503,7 +503,7 @@ direct_permissions AS (
         up.user_id AS direct_assignment
     FROM public.user_permissions up
         JOIN public.permissions p ON up.permission_id = p.id
-    WHERE up.user_id = ?
+    WHERE up.user_id = $1
 ),
 -- Combine both sources
 combined_permissions AS (
@@ -538,8 +538,8 @@ GROUP BY p.id,
     p.updated_at
 ORDER BY p.name,
     p.id
-LIMIT ?
-OFFSET ?
+LIMIT $2
+OFFSET $3
 	;`
 	QueryUserPermissionSourceCount string = `
 WITH -- Get permissions assigned through roles
@@ -550,7 +550,7 @@ role_based_permissions AS (
     FROM public.user_roles ur
         JOIN public.role_permissions rp ON ur.role_id = rp.role_id
         JOIN public.permissions p ON rp.permission_id = p.id
-    WHERE ur.user_id = ?
+    WHERE ur.user_id = $1
 ),
 -- Get permissions assigned directly to user
 direct_permissions AS (
@@ -560,7 +560,7 @@ direct_permissions AS (
         up.user_id AS direct_assignment
     FROM public.user_permissions up
         JOIN public.permissions p ON up.permission_id = p.id
-    WHERE up.user_id = ?
+    WHERE up.user_id = $1
 ),
 -- Combine both sources
 combined_permissions AS (
@@ -586,9 +586,10 @@ type PermissionSource struct {
 }
 
 func ListUserPermissionsSource(ctx context.Context, dbx Queryer, userId uuid.UUID, limit int64, offset int64) ([]PermissionSource, error) {
-	q := psql.RawQuery(QueryUserPermissionSource, userId, userId, limit, offset)
+	// q := psql.RawQuery(QueryUserPermissionSource, userId, userId, limit, offset)
 
-	data, err := bob.All(ctx, dbx, q, scan.StructMapper[PermissionSource]())
+	// data, err := bob.All(ctx, dbx, q, scan.StructMapper[PermissionSource]())
+	data, err := QueryAll[PermissionSource](ctx, dbx, QueryUserPermissionSource, userId, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -597,9 +598,10 @@ func ListUserPermissionsSource(ctx context.Context, dbx Queryer, userId uuid.UUI
 }
 
 func CountUserPermissionSource(ctx context.Context, dbx Queryer, userId uuid.UUID) (int64, error) {
-	q := psql.RawQuery(QueryUserPermissionSourceCount, userId, userId)
+	// q := psql.RawQuery(QueryUserPermissionSourceCount, userId, userId)
 
-	data, err := bob.One(ctx, dbx, q, scan.SingleColumnMapper[int64])
+	// data, err := bob.One(ctx, dbx, q, scan.SingleColumnMapper[int64])
+	data, err := Count(ctx, dbx, QueryUserPermissionSourceCount, userId)
 	if err != nil {
 		return 0, err
 	}

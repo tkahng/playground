@@ -122,6 +122,10 @@ func QueryOne[T any](ctx context.Context, db Queryer, query string, args ...any)
 	return pgxscan.One(ctx, db, scan.StructMapper[T](), query, args...)
 }
 
+func Count(ctx context.Context, db Queryer, query string, args ...any) (int64, error) {
+	return pgxscan.One(ctx, db, scan.SingleColumnMapper[int64], query, args...)
+}
+
 func Exec(ctx context.Context, db Queryer, query string, args ...any) error {
 	_, err := db.Exec(ctx, query, args...)
 	return err
