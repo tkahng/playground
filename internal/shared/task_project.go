@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/tkahng/authgo/internal/db/models"
+	"github.com/tkahng/authgo/internal/models"
 )
 
 const (

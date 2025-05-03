@@ -3,7 +3,7 @@ package shared
 import (
 	"time"
 
-	crudModels "github.com/tkahng/authgo/internal/db/models"
+	crudModels "github.com/tkahng/authgo/internal/models"
 )
 
 type Product struct {

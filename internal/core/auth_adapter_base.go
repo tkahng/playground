@@ -10,7 +10,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stephenafamo/scan"
 	"github.com/stephenafamo/scan/pgxscan"
-	"github.com/tkahng/authgo/internal/db/models"
+	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/repository"
 	crud "github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
@@ -175,10 +175,10 @@ LIMIT 1;
 )
 
 type RolePermissionClaims struct {
-	UserID      uuid.UUID              `json:"user_id" db:"user_id"`
-	Email       string                 `json:"email" db:"email"`
-	Roles       []string               `json:"roles" db:"roles"`
-	Permissions []string               `json:"permissions" db:"permissions"`
+	UserID      uuid.UUID          `json:"user_id" db:"user_id"`
+	Email       string             `json:"email" db:"email"`
+	Roles       []string           `json:"roles" db:"roles"`
+	Permissions []string           `json:"permissions" db:"permissions"`
 	Providers   []models.Providers `json:"providers" db:"providers"`
 }
 

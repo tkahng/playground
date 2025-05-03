@@ -1,6 +1,6 @@
 package repository
 
-import "github.com/tkahng/authgo/internal/db/models"
+import "github.com/tkahng/authgo/internal/models"
 
 var (
 	UserBuilder               = NewSQLBuilder[models.User]()

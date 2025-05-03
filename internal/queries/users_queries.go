@@ -9,7 +9,7 @@ import (
 	"github.com/Masterminds/squirrel"
 	"github.com/alexedwards/argon2id"
 	"github.com/google/uuid"
-	crudModels "github.com/tkahng/authgo/internal/db/models"
+	crudModels "github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"

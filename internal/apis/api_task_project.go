@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/core"
 	"github.com/tkahng/authgo/internal/db"
-	"github.com/tkahng/authgo/internal/db/models"
+	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/ai/googleai"

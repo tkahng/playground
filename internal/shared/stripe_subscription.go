@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/tkahng/authgo/internal/db/models"
+	"github.com/tkahng/authgo/internal/models"
 )
 
 // enum:"trialing,active,canceled,incomplete,incomplete_expired,past_due,unpaid,paused"
