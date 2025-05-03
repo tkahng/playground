@@ -115,7 +115,7 @@ FROM public.product_roles rp
 GROUP BY rp.product_id;`
 )
 
-func LoadProductRoles(ctx context.Context, db Queryer, productIds ...string) ([]shared.JoinedResult[*crudModels.Role, string], error) {
+func LoadProductRoles(ctx context.Context, db Queryer, productIds ...string) ([][]*crudModels.Role, error) {
 	data, err := QueryAll[shared.JoinedResult[*crudModels.Role, string]](
 		ctx,
 		db,
@@ -125,61 +125,36 @@ func LoadProductRoles(ctx context.Context, db Queryer, productIds ...string) ([]
 	if err != nil {
 		return nil, err
 	}
-	return data, nil
+	return mapper.Map(mapper.MapTo(data, productIds, func(a shared.JoinedResult[*crudModels.Role, string]) string {
+		return a.Key
+	}), func(a *shared.JoinedResult[*crudModels.Role, string]) []*crudModels.Role {
+		if a == nil {
+			return nil
+		}
+		return a.Data
+	}), nil
 }
 
-const (
-	GetProductPricesQuery = `
-	SELECT sp.product_id as key,
-        COALESCE(
-                json_agg(
-                        jsonb_build_object(
-                                'id',
-                                sp.id,
-                                'product_id',
-                                sp.product_id,
-                                'lookup_key',
-                                sp.lookup_key,
-                                'active',
-                                sp.active,
-                                'unit_amount',
-                                sp.unit_amount,
-                                'currency',
-                                sp.currency,
-                                'type',
-                                sp.type,
-                                'interval',
-                                sp.interval,
-                                'interval_count',
-                                sp.interval_count,
-                                'trial_period_days',
-                                sp.trial_period_days,
-                                'created_at',
-                                sp.created_at,
-                                'updated_at',
-                                sp.updated_at
-                        )
-                ),
-                '[]'
-        ) AS data
-FROM public.stripe_prices sp
-WHERE sp.product_id = ANY ($1::text [])
-GROUP BY sp.product_id;`
-)
-
-func LoadProductPrices(ctx context.Context, db Queryer, productIds ...string) ([]*shared.JoinedResult[*crudModels.StripePrice, string], error) {
-	data, err := QueryAll[shared.JoinedResult[*crudModels.StripePrice, string]](
+func LoadeProductPrices(ctx context.Context, db Queryer, where *map[string]any, productIds ...string) ([][]*crudModels.StripePrice, error) {
+	if where == nil {
+		where = &map[string]any{}
+	}
+	(*where)["product_id"] = map[string]any{
+		"_in": productIds,
+	}
+	prices, err := crudrepo.StripePrice.Get(
 		ctx,
 		db,
-		GetProductPricesQuery,
-		productIds,
+		where,
+		nil,
+		nil,
+		nil,
 	)
 	if err != nil {
 		return nil, err
 	}
-	// return data, nil
-	return mapper.MapTo(data, productIds, func(a shared.JoinedResult[*crudModels.StripePrice, string]) string {
-		return a.Key
+	return mapper.MapToManyPointer(prices, productIds, func(t *crudModels.StripePrice) string {
+		return t.ProductID
 	}), nil
 }
 

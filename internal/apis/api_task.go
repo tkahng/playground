@@ -144,7 +144,7 @@ func (api *Api) UpdateTaskPositionStatus(ctx context.Context, input *shared.Task
 	if err != nil {
 		return nil, huma.Error400BadRequest("Invalid task ID")
 	}
-	err = queries.UpdateTaskPositionStatus(ctx, db, id, input.Body.Position, input.Body.Status)
+	err = queries.UpdateTaskPositionStatus(ctx, db, id, input.Body.Position, crudModels.TaskStatus(input.Body.Status))
 	if err != nil {
 		return nil, err
 	}

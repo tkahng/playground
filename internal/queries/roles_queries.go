@@ -49,7 +49,7 @@ FROM public.role_permissions rp
 GROUP BY rp.role_id;`
 )
 
-func GetRolePermissions(ctx context.Context, db Queryer, roleIds ...uuid.UUID) ([]*shared.JoinedResult[*crudModels.Permission, uuid.UUID], error) {
+func LoadRolePermissions(ctx context.Context, db Queryer, roleIds ...uuid.UUID) ([][]*crudModels.Permission, error) {
 	// var results []JoinedResult[*crudModels.Permission, uuid.UUID]
 	ids := []string{}
 	for _, id := range roleIds {
@@ -65,10 +65,14 @@ func GetRolePermissions(ctx context.Context, db Queryer, roleIds ...uuid.UUID) (
 	if err != nil {
 		return nil, err
 	}
-	return mapper.MapTo(data, roleIds, func(a shared.JoinedResult[*crudModels.Permission, uuid.UUID]) uuid.UUID {
+	return mapper.Map(mapper.MapTo(data, roleIds, func(a shared.JoinedResult[*crudModels.Permission, uuid.UUID]) uuid.UUID {
 		return a.Key
+	}), func(a *shared.JoinedResult[*crudModels.Permission, uuid.UUID]) []*crudModels.Permission {
+		if a == nil {
+			return nil
+		}
+		return a.Data
 	}), nil
-	// return data, nil
 }
 
 const (
@@ -101,7 +105,7 @@ FROM public.user_roles rp
 GROUP BY rp.user_id;`
 )
 
-func GetUserRoles(ctx context.Context, db Queryer, userIds ...uuid.UUID) ([]shared.JoinedResult[*crudModels.Role, uuid.UUID], error) {
+func GetUserRoles(ctx context.Context, db Queryer, userIds ...uuid.UUID) ([][]*crudModels.Role, error) {
 	// var results []JoinedResult[*crudModels.Permission, uuid.UUID]
 	ids := []string{}
 	for _, id := range userIds {
@@ -117,7 +121,14 @@ func GetUserRoles(ctx context.Context, db Queryer, userIds ...uuid.UUID) ([]shar
 	if err != nil {
 		return nil, err
 	}
-	return data, nil
+	return mapper.Map(mapper.MapTo(data, userIds, func(a shared.JoinedResult[*crudModels.Role, uuid.UUID]) uuid.UUID {
+		return a.Key
+	}), func(a *shared.JoinedResult[*crudModels.Role, uuid.UUID]) []*crudModels.Role {
+		if a == nil {
+			return nil
+		}
+		return a.Data
+	}), nil
 }
 
 const (
@@ -150,7 +161,7 @@ FROM public.user_permissions rp
 GROUP BY rp.user_id;`
 )
 
-func GetUserPermissions(ctx context.Context, db Queryer, userIds ...uuid.UUID) ([]shared.JoinedResult[*crudModels.Permission, uuid.UUID], error) {
+func GetUserPermissions(ctx context.Context, db Queryer, userIds ...uuid.UUID) ([][]*crudModels.Permission, error) {
 	// var results []JoinedResult[*crudModels.Permission, uuid.UUID]
 	ids := []string{}
 	for _, id := range userIds {
@@ -166,7 +177,14 @@ func GetUserPermissions(ctx context.Context, db Queryer, userIds ...uuid.UUID) (
 	if err != nil {
 		return nil, err
 	}
-	return data, nil
+	return mapper.Map(mapper.MapTo(data, userIds, func(a shared.JoinedResult[*crudModels.Permission, uuid.UUID]) uuid.UUID {
+		return a.Key
+	}), func(a *shared.JoinedResult[*crudModels.Permission, uuid.UUID]) []*crudModels.Permission {
+		if a == nil {
+			return nil
+		}
+		return a.Data
+	}), nil
 }
 
 func CreateRolePermissions(ctx context.Context, db Queryer, roleId uuid.UUID, permissionIds ...uuid.UUID) error {
@@ -361,7 +379,7 @@ func UpdatePermission(ctx context.Context, dbx Queryer, id uuid.UUID, roledto *U
 }
 
 func DeleteRole(ctx context.Context, dbx Queryer, id uuid.UUID) error {
-	_, err := crudrepo.Role.Delete(
+	_, err := crudrepo.Role.DeleteReturn(
 		ctx,
 		dbx,
 		&map[string]any{
@@ -377,7 +395,7 @@ func DeleteRole(ctx context.Context, dbx Queryer, id uuid.UUID) error {
 }
 
 func DeleteRolePermissions(ctx context.Context, dbx Queryer, id uuid.UUID) error {
-	_, err := crudrepo.RolePermission.Delete(
+	_, err := crudrepo.RolePermission.DeleteReturn(
 		ctx,
 		dbx,
 		&map[string]any{
@@ -454,7 +472,7 @@ func FindPermissionsByIds(ctx context.Context, dbx Queryer, params []uuid.UUID) 
 }
 
 func DeletePermission(ctx context.Context, dbx Queryer, id uuid.UUID) error {
-	_, err := crudrepo.Permission.Delete(
+	_, err := crudrepo.Permission.DeleteReturn(
 		ctx,
 		dbx,
 		&map[string]any{

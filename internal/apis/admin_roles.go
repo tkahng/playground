@@ -37,56 +37,31 @@ func (api *Api) AdminRolesList(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	permissions := make([][]*crudModels.Permission, len(roles))
-	dmap := make(map[uuid.UUID][]*crudModels.Permission)
 	if slices.Contains(input.Expand, "permissions") {
-		roleIds := make([]uuid.UUID, len(roles))
-		for i, role := range roles {
-			roleIds[i] = role.ID
-		}
-		data, err := queries.GetRolePermissions(ctx, db, roleIds...)
-
+		roleIds := mapper.Map(roles, func(r *crudModels.Role) uuid.UUID {
+			return r.ID
+		})
+		data, err := queries.LoadRolePermissions(ctx, db, roleIds...)
 		if err != nil {
 			return nil, err
 		}
-		for _, item := range data {
-			if item == nil {
-				continue
-			}
-			dmap[item.Key] = item.Data
+		for idx, role := range roles {
+			role.Permissions = data[idx]
 		}
-		for i, role := range roles {
-			if role == nil {
-				continue
-			}
-			if v, ok := dmap[role.ID]; ok {
-				permissions[i] = v
-			} else {
-				permissions[i] = nil
-			}
-		}
+
 	}
 	count, err := queries.CountRoles(ctx, db, &input.RoleListFilter)
 	if err != nil {
 		return nil, err
 	}
-	out := mapper.Map(roles, func(r *crudModels.Role) *shared.RoleWithPermissions {
-		var permissions []*crudModels.Permission
-		if v, ok := dmap[r.ID]; ok {
-			permissions = v
-		}
-		return &shared.RoleWithPermissions{
-			Role: &shared.Role{
-				ID:          r.ID,
-				Name:        r.Name,
-				Description: r.Description,
-			},
-			Permissions: mapper.Map(permissions, shared.FromCrudPermission),
-		}
-	})
 	return &shared.PaginatedOutput[*shared.RoleWithPermissions]{
 		Body: shared.PaginatedResponse[*shared.RoleWithPermissions]{
-			Data: out,
+			Data: mapper.Map(roles, func(r *crudModels.Role) *shared.RoleWithPermissions {
+				return &shared.RoleWithPermissions{
+					Role:        shared.FromCrudRole(r),
+					Permissions: mapper.Map(r.Permissions, shared.FromCrudPermission),
+				}
+			}),
 			Meta: shared.GenerateMeta(input.PaginatedInput, count),
 		},
 	}, nil
@@ -303,7 +278,7 @@ func (api *Api) AdminUserRolesDelete(ctx context.Context, input *struct {
 		return nil, err
 	}
 
-	_, err = crudrepo.UserRole.Delete(
+	_, err = crudrepo.UserRole.DeleteReturn(
 		ctx,
 		db,
 		&map[string]any{
@@ -438,7 +413,7 @@ func (api *Api) AdminUserRolesUpdate(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	_, err = crudrepo.UserRole.Delete(
+	_, err = crudrepo.UserRole.DeleteReturn(
 		ctx,
 		db,
 		&map[string]any{
@@ -565,36 +540,19 @@ func (api *Api) AdminRolesGet(ctx context.Context, input *struct {
 	if role == nil {
 		return nil, huma.Error404NotFound("Role not found")
 	}
-	var rolePermissions []*crudModels.Permission
 	if len(input.Expand) > 0 {
 		if slices.Contains(input.Expand, "permissions") {
-			rolePermissions, err = crudrepo.Permission.Get(
-				ctx,
-				db,
-				&map[string]any{
-					"role": map[string]any{
-						"id": map[string]any{
-							"_eq": role.ID.String(),
-						},
-					},
-				},
-				nil,
-				nil,
-				nil,
-			)
+			rolePermissions, err := queries.LoadRolePermissions(ctx, db, role.ID)
 			if err != nil {
 				return nil, err
 			}
+			if len(rolePermissions) > 0 {
+				role.Permissions = rolePermissions[0]
+			}
 		}
-		// if slices.Contains(input.Expand, "users") {
-		// 	err = role.LoadRoleUsers(ctx, db)
-		// 	if err != nil {
-		// 		return nil, err
-		// 	}
-		// }
 	}
 	return &struct{ Body shared.RoleWithPermissions }{
-		Body: *shared.FromCrudRoleWithPermissions(role, rolePermissions),
+		Body: *shared.FromCrudRoleWithPermissions(role),
 	}, nil
 }
 
@@ -697,7 +655,7 @@ func (api *Api) AdminRolesDeletePermissions(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	_, err = crudrepo.RolePermission.Delete(
+	_, err = crudrepo.RolePermission.DeleteReturn(
 		ctx,
 		db,
 		&map[string]any{

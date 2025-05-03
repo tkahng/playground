@@ -45,7 +45,17 @@ func (api *Api) StripeProductsWithPrices(ctx context.Context, inputt *StripeProd
 	for _, u := range products {
 		ids = append(ids, u.ID)
 	}
-	prices, err := queries.LoadProductPrices(ctx, db, ids...)
+	prices, err := queries.LoadeProductPrices(ctx, db, &map[string]any{
+		"product_id": map[string]any{
+			"_in": ids,
+		},
+	}, ids...)
+	for i, products := range products {
+		price := prices[i]
+		if len(price) > 0 {
+			products.Prices = price
+		}
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -54,19 +64,16 @@ func (api *Api) StripeProductsWithPrices(ctx context.Context, inputt *StripeProd
 	if err != nil {
 		return nil, err
 	}
-	prods := mapper.MapIdx(products, func(index int, user *crudModels.StripeProduct) *shared.StripeProductWithData {
-		res := &shared.StripeProductWithData{
-			Product: shared.FromCrudProduct(user),
-		}
-		data := prices[index]
-		res.Prices = mapper.Map(data.Data, shared.FromCrudModel)
-
-		return res
-	})
 
 	return &shared.PaginatedOutput[*shared.StripeProductWithData]{
 		Body: shared.PaginatedResponse[*shared.StripeProductWithData]{
-			Data: prods,
+			Data: mapper.Map(products, func(p *crudModels.StripeProduct) *shared.StripeProductWithData {
+				return &shared.StripeProductWithData{
+					Product: shared.FromCrudProduct(p),
+					Roles:   mapper.Map(p.Roles, shared.FromCrudRole),
+					Prices:  mapper.Map(p.Prices, shared.FromCrudPrice),
+				}
+			}),
 			Meta: shared.GenerateMeta(input.PaginatedInput, count),
 		},
 	}, nil

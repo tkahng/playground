@@ -34,13 +34,13 @@ type RoleWithPermissions struct {
 	Permissions []*Permission `json:"permissions,omitempty" required:"false"`
 }
 
-func FromCrudRoleWithPermissions(role *crudModels.Role, permissions []*crudModels.Permission) *RoleWithPermissions {
+func FromCrudRoleWithPermissions(role *crudModels.Role) *RoleWithPermissions {
 	if role == nil {
 		return nil
 	}
 	return &RoleWithPermissions{
-		Permissions: mapper.Map(permissions, FromCrudPermission),
 		Role:        FromCrudRole(role),
+		Permissions: mapper.Map(role.Permissions, FromCrudPermission),
 	}
 }
 

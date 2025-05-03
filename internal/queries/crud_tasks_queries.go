@@ -11,46 +11,40 @@ import (
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/crud/crudModels"
 	"github.com/tkahng/authgo/internal/crud/crudrepo"
-	"github.com/tkahng/authgo/internal/db/models"
+
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 	"github.com/tkahng/authgo/internal/types"
 )
 
 const (
-	GetTaskProjectsWithUserAndTasksQuery = `
-SELECT tp.*,
-        u.id AS "user.id",
-        u.email AS "user.email",
-        u.name AS "user.name",
-        u.image AS "user.image",
-        u.email_verified_at AS "user.email_verified_at",
-        u.created_at AS "user.created_at",
-        u.updated_at AS "user.updated_at",
-        json_agg(to_json(t.*)) AS "tasks"
+	LoadTaskProjectsTasksQuery = `
+SELECT tp.id as key,
+        json_agg(to_json(t.*)) AS "data"
 FROM public.task_projects tp
-        LEFT JOIN public.users u ON tp.user_id = u.id
         LEFT JOIN public.tasks t ON tp.id = t.project_id
 WHERE tp.id = ANY ($1::uuid [])
-GROUP BY tp.id,
-        u.id`
+GROUP BY tp.id;`
 )
 
-func LoadTaskProjectsUserAndTasks(ctx context.Context, db Queryer, projectIds ...uuid.UUID) ([]*crudModels.TaskProject, error) {
-	// rows, err := db.Query(ctx, GetTaskProjectsWithUserAndTasksQuery, projectIds)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// users, err := pgx.CollectRows(rows, pgx.RowToStructByName[crudModels.TaskProject])
-	// if err != nil {
-	// 	return nil, err
-	// }
-	users, err := QueryAll[crudModels.TaskProject](ctx, db, GetTaskProjectsWithUserAndTasksQuery, projectIds)
+func LoadTaskProjectsTasks(ctx context.Context, db Queryer, projectIds ...uuid.UUID) ([][]*crudModels.Task, error) {
+	tasks, err := crudrepo.Task.Get(
+		ctx,
+		db,
+		&map[string]any{
+			"project_id": map[string]any{
+				"_in": projectIds,
+			},
+		},
+		nil,
+		nil,
+		nil,
+	)
 	if err != nil {
 		return nil, err
 	}
-	return mapper.MapTo(users, projectIds, func(a crudModels.TaskProject) uuid.UUID {
-		return a.ID
+	return mapper.MapToManyPointer(tasks, projectIds, func(t *crudModels.Task) uuid.UUID {
+		return t.ProjectID
 	}), nil
 }
 
@@ -103,7 +97,7 @@ func DeleteTask(ctx context.Context, db Queryer, taskID uuid.UUID) error {
 	// 	return err
 	// }
 	// return task.Delete(ctx, db)
-	_, err := crudrepo.Task.Delete(
+	_, err := crudrepo.Task.DeleteReturn(
 		ctx,
 		db,
 		&map[string]any{
@@ -135,7 +129,7 @@ func DeleteTaskProject(ctx context.Context, db Queryer, taskProjectID uuid.UUID)
 	// 	return err
 	// }
 	// return taskProject.Delete(ctx, db)
-	_, err := crudrepo.TaskProject.Delete(
+	_, err := crudrepo.TaskProject.DeleteReturn(
 		ctx,
 		db,
 		&map[string]any{
@@ -508,7 +502,7 @@ func CreateTask(ctx context.Context, db Queryer, userID uuid.UUID, projectID uui
 // 	return (element.Order + sideElements.Order) / 2, nil
 
 // }
-func DefineTaskOrderNumberByStatus(ctx context.Context, dbx Queryer, taskId uuid.UUID, taskProjectId uuid.UUID, status models.TaskStatus, currentOrder float64, position int64) (float64, error) {
+func DefineTaskOrderNumberByStatus(ctx context.Context, dbx Queryer, taskId uuid.UUID, taskProjectId uuid.UUID, status crudModels.TaskStatus, currentOrder float64, position int64) (float64, error) {
 	if position == 0 {
 		res, err := crudrepo.Task.Get(
 			ctx,
@@ -787,7 +781,7 @@ func UpdateTaskProject(ctx context.Context, db Queryer, taskProjectID uuid.UUID,
 // 	return nil
 // }
 
-func UpdateTaskPositionStatus(ctx context.Context, db Queryer, taskID uuid.UUID, position int64, status models.TaskStatus) error {
+func UpdateTaskPositionStatus(ctx context.Context, db Queryer, taskID uuid.UUID, position int64, status crudModels.TaskStatus) error {
 	task, err := FindTaskByID(ctx, db, taskID)
 	if err != nil {
 		return err

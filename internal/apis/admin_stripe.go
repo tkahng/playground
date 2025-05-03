@@ -37,11 +37,6 @@ func (api *Api) AdminStripeSubscriptions(ctx context.Context,
 	if err != nil {
 		return nil, err
 	}
-	subs := mapper.Map(subscriptions, func(sub *crudModels.StripeSubscription) *shared.SubscriptionWithData {
-		return &shared.SubscriptionWithData{
-			Subscription: shared.FromCrudSubscription(sub),
-		}
-	})
 
 	count, err := queries.CountSubscriptions(ctx, db, &input.StripeSubscriptionListFilter)
 	if err != nil {
@@ -49,7 +44,11 @@ func (api *Api) AdminStripeSubscriptions(ctx context.Context,
 	}
 	return &shared.PaginatedOutput[*shared.SubscriptionWithData]{
 		Body: shared.PaginatedResponse[*shared.SubscriptionWithData]{
-			Data: subs,
+			Data: mapper.Map(subscriptions, func(sub *crudModels.StripeSubscription) *shared.SubscriptionWithData {
+				return &shared.SubscriptionWithData{
+					Subscription: shared.FromCrudSubscription(sub),
+				}
+			}),
 			Meta: shared.GenerateMeta(input.PaginatedInput, count),
 		},
 	}, nil
@@ -111,19 +110,19 @@ func (api *Api) AdminStripeProducts(ctx context.Context,
 	if err != nil {
 		return nil, err
 	}
-	var roles map[string][]*crudModels.Role = make(map[string][]*crudModels.Role)
-	var prices map[string][]*crudModels.StripePrice = make(map[string][]*crudModels.StripePrice)
-	var productIds []string
-	for _, p := range products {
-		productIds = append(productIds, p.ID)
-	}
+	productIds := mapper.Map(products, func(p *crudModels.StripeProduct) string {
+		return p.ID
+	})
 	if slices.Contains(input.Expand, "prices") {
-		data, err := queries.LoadProductPrices(ctx, db, productIds...)
+		data, err := queries.LoadeProductPrices(ctx, db, nil, productIds...)
 		if err != nil {
 			return nil, err
 		}
-		for _, d := range data {
-			prices[d.Key] = d.Data
+		for idx, products := range products {
+			prices := data[idx]
+			if len(prices) > 0 {
+				products.Prices = prices
+			}
 		}
 	}
 	if slices.Contains(input.Expand, "roles") {
@@ -131,34 +130,30 @@ func (api *Api) AdminStripeProducts(ctx context.Context,
 		if err != nil {
 			return nil, err
 		}
-		for _, d := range data {
-			roles[d.Key] = d.Data
+		for idx, products := range products {
+			roles := data[idx]
+			if len(roles) > 0 {
+				products.Roles = roles
+			}
 		}
 	}
-	prods := mapper.Map(products, func(p *crudModels.StripeProduct) *shared.StripeProductWithData {
-		spwd := &shared.StripeProductWithData{
-			Product: shared.FromCrudProduct(p),
-		}
-
-		if data, ok := prices[p.ID]; ok {
-			// If the product has prices, we map them to the shared model
-			// and include them in the response.
-			spwd.Prices = mapper.Map(data, shared.FromCrudModel)
-		}
-		if data, ok := roles[p.ID]; ok {
-
-			// If the product has prices and we are expanding prices,
-			spwd.Roles = mapper.Map(data, shared.FromCrudRole)
-		}
-		return spwd
-	})
 	count, err := queries.CountProducts(ctx, db, &input.StripeProductListFilter)
 	if err != nil {
 		return nil, err
 	}
 	return &shared.PaginatedOutput[*shared.StripeProductWithData]{
 		Body: shared.PaginatedResponse[*shared.StripeProductWithData]{
-			Data: prods,
+			Data: mapper.Map(products, func(p *crudModels.StripeProduct) *shared.StripeProductWithData {
+				return &shared.StripeProductWithData{
+					Product: shared.FromCrudProduct(p),
+					Roles: mapper.Map(p.Roles, func(r *crudModels.Role) *shared.Role {
+						return shared.FromCrudRole(r)
+					}),
+					Prices: mapper.Map(p.Prices, func(p *crudModels.StripePrice) *shared.Price {
+						return shared.FromCrudPrice(p)
+					}),
+				}
+			}),
 			Meta: shared.GenerateMeta(input.PaginatedInput, count),
 		},
 	}, nil
@@ -192,43 +187,31 @@ func (api *Api) AdminStripeProductsGet(ctx context.Context,
 	if product == nil {
 		return nil, nil
 	}
-	var prices []*crudModels.StripePrice
-	var roles []*crudModels.Role
+
 	if slices.Contains(input.Expand, "prices") {
-		pr, err := queries.ListPrices(ctx, db, &shared.StripePriceListParams{
-			StripePriceListFilter: shared.StripePriceListFilter{
-				ProductIds: []string{input.ProductID},
-			},
-			PaginatedInput: shared.PaginatedInput{
-				PerPage: 100,
-			},
-		})
+		prices, err := queries.LoadeProductPrices(ctx, db, nil, input.ProductID)
 		if err != nil {
 			return nil, err
 		}
-		prices = pr
+		if len(prices) > 0 {
+			product.Prices = prices[0]
+		}
 	}
 	if slices.Contains(input.Expand, "roles") {
-		rl, err := queries.ListRoles(ctx, db, &shared.RolesListParams{
-			PaginatedInput: shared.PaginatedInput{
-				PerPage: 100,
-			},
-			RoleListFilter: shared.RoleListFilter{
-				ProductId: input.ProductID,
-			},
-		})
+		roles, err := queries.LoadProductRoles(ctx, db, input.ProductID)
 		if err != nil {
 			return nil, err
 		}
-		roles = rl
-	}
-	spwd := &shared.StripeProductWithData{
-		Product: shared.FromCrudProduct(product),
-		Roles:   mapper.Map(roles, shared.FromCrudRole),
-		Prices:  mapper.Map(prices, shared.FromCrudModel),
+		if len(roles) > 0 {
+			product.Roles = roles[0]
+		}
 	}
 	return &struct{ Body *shared.StripeProductWithData }{
-		Body: spwd,
+		Body: &shared.StripeProductWithData{
+			Product: shared.FromCrudProduct(product),
+			Roles:   mapper.Map(product.Roles, shared.FromCrudRole),
+			Prices:  mapper.Map(product.Prices, shared.FromCrudPrice),
+		},
 	}, nil
 }
 
@@ -314,7 +297,7 @@ func (api *Api) AdminStripeProductsRolesDelete(ctx context.Context, input *struc
 	if role == nil {
 		return nil, huma.Error404NotFound("Role not found")
 	}
-	_, err = crudrepo.ProductRole.Delete(
+	_, err = crudrepo.ProductRole.DeleteReturn(
 		ctx,
 		db,
 		&map[string]any{

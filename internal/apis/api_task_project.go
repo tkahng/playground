@@ -56,9 +56,12 @@ func (api *Api) TaskProjectList(ctx context.Context, input *shared.TaskProjectsL
 	})
 
 	if input.Expand != nil && slices.Contains(input.Expand, "tasks") {
-		taskProject, err = queries.LoadTaskProjectsUserAndTasks(ctx, db, taskProjectIds...)
+		tasks, err := queries.LoadTaskProjectsTasks(ctx, db, taskProjectIds...)
 		if err != nil {
 			return nil, err
+		}
+		for idx, taskProject := range taskProject {
+			taskProject.Tasks = tasks[idx]
 		}
 	}
 	return &TaskProjectListResponse{
@@ -289,10 +292,13 @@ func (api *Api) TaskProjectGet(ctx context.Context, input *struct {
 		return nil, err
 	}
 	if input.Expand != nil && slices.Contains(input.Expand, "tasks") {
-		// err = taskProject.LoadTaskProjectProjectTasks(ctx, db)
-		// if err != nil {
-		// 	return nil, err
-		// }
+		tasks, err := queries.LoadTaskProjectsTasks(ctx, db, taskProject.ID)
+		if err != nil {
+			return nil, err
+		}
+		if len(tasks) > 0 {
+			taskProject.Tasks = tasks[0]
+		}
 	}
 	return &TaskProjectResponse{
 		Body: &shared.TaskProjectWithTasks{

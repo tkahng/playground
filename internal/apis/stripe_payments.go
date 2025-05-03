@@ -146,7 +146,7 @@ func (a *Api) StripeCheckoutSessionGet(ctx context.Context, input *StripeCheckou
 		Body: shared.SubscriptionWithPrice{
 			Subscription: shared.FromCrudSubscription(&cs.Subscription),
 			Price: &shared.StripePricesWithProduct{
-				Price:   shared.FromCrudModel(&cs.Price),
+				Price:   shared.FromCrudPrice(&cs.Price),
 				Product: shared.FromCrudProduct(&cs.Product),
 			},
 		},

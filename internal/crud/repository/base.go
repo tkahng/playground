@@ -19,7 +19,8 @@ type Repository[Model any] interface {
 	GetOne(ctx context.Context, dbx DBTX, where *map[string]any) (*Model, error)
 	Put(ctx context.Context, dbx DBTX, models []Model) ([]*Model, error)
 	Post(ctx context.Context, dbx DBTX, models []Model) ([]*Model, error)
-	Delete(ctx context.Context, dbx DBTX, where *map[string]any) ([]*Model, error)
+	DeleteReturn(ctx context.Context, dbx DBTX, where *map[string]any) ([]*Model, error)
+	Delete(ctx context.Context, dbx DBTX, where *map[string]any) (int64, error)
 	Count(ctx context.Context, dbx DBTX, where *map[string]any) (int64, error)
 	Builder() SQLBuilderInterface
 }

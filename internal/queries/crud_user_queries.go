@@ -142,7 +142,7 @@ func CountUsers(ctx context.Context, db Queryer, filter *shared.UserListFilter) 
 // The method returns an error if the user could not be deleted.
 
 func DeleteUsers(ctx context.Context, db Queryer, userId uuid.UUID) error {
-	_, err := crudrepo.User.Delete(
+	_, err := crudrepo.User.DeleteReturn(
 		ctx,
 		db,
 		&map[string]any{

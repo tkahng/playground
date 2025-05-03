@@ -253,7 +253,7 @@ func (a *AuthAdapterBase) CreateUser(ctx context.Context, user *shared.User) (*s
 
 // DeleteUser implements AuthAdapter.
 func (a *AuthAdapterBase) DeleteUser(ctx context.Context, id uuid.UUID) error {
-	res, err := crudrepo.User.Delete(ctx, a.db, &map[string]any{
+	res, err := crudrepo.User.DeleteReturn(ctx, a.db, &map[string]any{
 		"id": map[string]any{"_eq": id.String()},
 	})
 	if err != nil {

@@ -142,7 +142,7 @@ func (a *TokenAdapterBase) SaveToken(ctx context.Context, token *shared.CreateTo
 }
 
 func (a *TokenAdapterBase) DeleteToken(ctx context.Context, token string) error {
-	_, err := crudrepo.Token.Delete(ctx, a.db, &map[string]any{
+	_, err := crudrepo.Token.DeleteReturn(ctx, a.db, &map[string]any{
 		"token": map[string]any{
 			"_eq": token,
 		},

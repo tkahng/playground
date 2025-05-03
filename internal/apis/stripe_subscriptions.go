@@ -47,7 +47,7 @@ func (api *Api) MyStripeSubscriptions(ctx context.Context, input *struct{}) (*st
 	output.Body = &shared.SubscriptionWithPrice{
 		Subscription: shared.FromCrudSubscription(&subscriptions.Subscription),
 		Price: &shared.StripePricesWithProduct{
-			Price:   shared.FromCrudModel(&subscriptions.Price),
+			Price:   shared.FromCrudPrice(&subscriptions.Price),
 			Product: shared.FromCrudProduct(&subscriptions.Product),
 		},
 	}

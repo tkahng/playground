@@ -31,8 +31,9 @@ func (api *Api) AdminUsersOperation(path string) huma.Operation {
 
 type UserDetail struct {
 	*shared.User
-	Roles    []*shared.RoleWithPermissions `json:"roles,omitempty" required:"false"`
-	Accounts []*shared.UserAccountOutput   `json:"accounts,omitempty" required:"false"`
+	Roles       []*shared.RoleWithPermissions `json:"roles,omitempty" required:"false"`
+	Accounts    []*shared.UserAccountOutput   `json:"accounts,omitempty" required:"false"`
+	Permissions []*shared.Permission          `json:"permissions,omitempty" required:"false"`
 }
 
 func (api *Api) AdminUsers(ctx context.Context, input *struct {
@@ -48,9 +49,6 @@ func (api *Api) AdminUsers(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	rolesmap := make(map[uuid.UUID][]*crudModels.Role)
-	permsmap := make(map[uuid.UUID][]*crudModels.Permission)
-	accountsmap := make(map[uuid.UUID][]*crudModels.UserAccount)
 	userIds := []uuid.UUID{}
 	userIdsstring := []string{}
 	for _, user := range users {
@@ -62,8 +60,8 @@ func (api *Api) AdminUsers(ctx context.Context, input *struct {
 		if err != nil {
 			return nil, err
 		}
-		for _, role := range roles {
-			rolesmap[role.Key] = role.Data
+		for idx, user := range users {
+			user.Roles = roles[idx]
 		}
 	}
 
@@ -72,8 +70,8 @@ func (api *Api) AdminUsers(ctx context.Context, input *struct {
 		if err != nil {
 			return nil, err
 		}
-		for _, perm := range perms {
-			permsmap[perm.Key] = perm.Data
+		for idx, user := range users {
+			user.Permissions = perms[idx]
 		}
 	}
 
@@ -82,36 +80,21 @@ func (api *Api) AdminUsers(ctx context.Context, input *struct {
 		if err != nil {
 			return nil, err
 		}
-		for _, account := range accounts {
-			accountsmap[account.Key] = account.Data
+		for idx, user := range users {
+			user.Accounts = accounts[idx]
 		}
 	}
-	info := mapper.Map(users, func(user *crudModels.User) *UserDetail {
-		var roles []*crudModels.Role
-		if v, ok := rolesmap[user.ID]; ok {
-			roles = v
-		}
-
-		var accounts []*crudModels.UserAccount
-		if v, ok := accountsmap[user.ID]; ok {
-			accounts = v
-		}
-		return &UserDetail{
-			User: shared.FromCrudUser(user),
-			Roles: mapper.Map(roles, func(role *crudModels.Role) *shared.RoleWithPermissions {
-				var permissions []*crudModels.Permission
-				if v, ok := permsmap[role.ID]; ok {
-					permissions = v
-				}
-				return shared.FromCrudRoleWithPermissions(role, permissions)
-			}),
-			Accounts: mapper.Map(accounts, shared.FromCrudUserAccountOutput),
-		}
-	})
 
 	return &shared.PaginatedOutput[*UserDetail]{
 		Body: shared.PaginatedResponse[*UserDetail]{
-			Data: info,
+			Data: mapper.Map(users, func(user *crudModels.User) *UserDetail {
+				return &UserDetail{
+					User:        shared.FromCrudUser(user),
+					Roles:       mapper.Map(user.Roles, shared.FromCrudRoleWithPermissions),
+					Accounts:    mapper.Map(user.Accounts, shared.FromCrudUserAccountOutput),
+					Permissions: mapper.Map(user.Permissions, shared.FromCrudPermission),
+				}
+			}),
 			Meta: shared.GenerateMeta(input.PaginatedInput, count),
 		},
 	}, nil

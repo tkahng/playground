@@ -55,7 +55,7 @@ func (api *Api) AdminUserPermissionsDelete(ctx context.Context, input *struct {
 	if permission == nil {
 		return nil, huma.Error404NotFound("Permission not found")
 	}
-	_, err = crudrepo.UserPermission.Delete(
+	_, err = crudrepo.UserPermission.DeleteReturn(
 		ctx,
 		db,
 		&map[string]any{

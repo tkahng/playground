@@ -164,8 +164,8 @@ func (r *PostgresRepository[Model]) PostOne(ctx context.Context, dbx DBTX, model
 	return data[0], nil
 }
 
-// Delete removes records from the database based on the provided filters
-func (r *PostgresRepository[Model]) Delete(ctx context.Context, dbx DBTX, where *map[string]any) ([]*Model, error) {
+// DeleteReturn removes records from the database based on the provided filters
+func (r *PostgresRepository[Model]) DeleteReturn(ctx context.Context, dbx DBTX, where *map[string]any) ([]*Model, error) {
 	args := []any{}
 	query := fmt.Sprintf("DELETE FROM %s", r.builder.Table())
 	if expr, err := r.builder.WhereError(where, &args, nil); err != nil {
@@ -185,6 +185,30 @@ func (r *PostgresRepository[Model]) Delete(ctx context.Context, dbx DBTX, where 
 	}
 
 	return result, nil
+}
+
+// DeleteReturn removes records from the database based on the provided filters
+func (r *PostgresRepository[Model]) Delete(ctx context.Context, dbx DBTX, where *map[string]any) (int64, error) {
+	args := []any{}
+	query := fmt.Sprintf("DELETE FROM %s", r.builder.Table())
+	if expr, err := r.builder.WhereError(where, &args, nil); err != nil {
+		return 0, err
+	} else if expr != "" {
+		query += fmt.Sprintf(" WHERE %s", expr)
+	}
+	// query += fmt.Sprintf(" RETURNING %s", r.builder.Fields(""))
+
+	slog.Info("Executing Delete query", slog.String("query", query), slog.Any("args", args))
+
+	// Execute the query and scan the results
+	result, err := dbx.Exec(ctx, query, args...)
+	// result, err := pgxscan.All(ctx, dbx, scan.StructMapper[*Model](), query, args...)
+	if err != nil {
+		slog.Error("Error executing Delete query", slog.String("query", query), slog.Any("args", args), slog.Any("error", err))
+		return 0, err
+	}
+
+	return result.RowsAffected(), nil
 }
 
 // Count returns the number of records that match the provided filters

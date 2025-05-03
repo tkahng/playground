@@ -87,8 +87,8 @@ type TaskPositionDTO struct {
 }
 
 type TaskPositionStatusDTO struct {
-	Position int64             `json:"position" required:"true"`
-	Status   models.TaskStatus `json:"status" required:"true" enum:"todo,in_progress,done"`
+	Position int64      `json:"position" required:"true"`
+	Status   TaskStatus `json:"status" required:"true" enum:"todo,in_progress,done"`
 }
 
 type TaskPositionInput struct {

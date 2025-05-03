@@ -18,6 +18,25 @@ func MapTo[T any, K comparable](records []T, keys []K, keyFn KeyFn[T, K]) []*T {
 
 	return result
 }
+func MapToPointer[T any, K comparable](records []*T, keys []K, keyFn KeyFn[*T, K]) []*T {
+	var m = make(map[K]T)
+	for _, record := range records {
+		if record == nil {
+			continue
+		}
+		m[keyFn(record)] = *record
+	}
+	var result []*T
+	for _, key := range keys {
+		if val, ok := m[key]; ok {
+			result = append(result, &val)
+		} else {
+			result = append(result, nil)
+		}
+	}
+
+	return result
+}
 
 func MapToMany[T any, K comparable](records []T, keys []K, keyFn KeyFn[T, K]) [][]T {
 	var m = make(map[K][]T)
@@ -25,6 +44,22 @@ func MapToMany[T any, K comparable](records []T, keys []K, keyFn KeyFn[T, K]) []
 		m[keyFn(record)] = append(m[keyFn(record)], record)
 	}
 	var result [][]T
+	for _, key := range keys {
+		if val, ok := m[key]; ok {
+			result = append(result, val)
+		} else {
+			result = append(result, nil)
+		}
+	}
+
+	return result
+}
+func MapToManyPointer[T any, K comparable](records []*T, keys []K, keyFn KeyFn[*T, K]) [][]*T {
+	var m = make(map[K][]*T)
+	for _, record := range records {
+		m[keyFn(record)] = append(m[keyFn(record)], record)
+	}
+	var result [][]*T
 	for _, key := range keys {
 		if val, ok := m[key]; ok {
 			result = append(result, val)

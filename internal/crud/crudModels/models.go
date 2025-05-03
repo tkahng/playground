@@ -1,26 +1,25 @@
 package crudModels
 
 import (
-	"bytes"
-	"encoding/json"
-	"fmt"
 	"time"
 
 	"github.com/google/uuid"
 )
 
 type User struct {
-	_               struct{}      `db:"users" json:"-"`
-	ID              uuid.UUID     `db:"id" json:"id"`
-	Email           string        `db:"email" json:"email"`
-	EmailVerifiedAt *time.Time    `db:"email_verified_at" json:"email_verified_at"`
-	Name            *string       `db:"name" json:"name"`
-	Image           *string       `db:"image" json:"image"`
-	CreatedAt       time.Time     `db:"created_at" json:"created_at"`
-	UpdatedAt       time.Time     `db:"updated_at" json:"updated_at"`
-	Accounts        []UserAccount `db:"accounts" src:"id" dest:"user_id" table:"user_accounts" json:"-"`
-	Roles           []Role        `db:"roles" src:"id" dest:"user_id" table:"roles" through:"user_roles,role_id,id" json:"-"`
-	Permissions     []Permission  `db:"permissions" src:"id" dest:"user_id" table:"permissions" through:"user_permissions,permission_id,id" json:"-"`
+	_               struct{}              `db:"users" json:"-"`
+	ID              uuid.UUID             `db:"id" json:"id"`
+	Email           string                `db:"email" json:"email"`
+	EmailVerifiedAt *time.Time            `db:"email_verified_at" json:"email_verified_at"`
+	Name            *string               `db:"name" json:"name"`
+	Image           *string               `db:"image" json:"image"`
+	CreatedAt       time.Time             `db:"created_at" json:"created_at"`
+	UpdatedAt       time.Time             `db:"updated_at" json:"updated_at"`
+	Accounts        []*UserAccount        `db:"accounts" src:"id" dest:"user_id" table:"user_accounts" json:"accounts,omitempty"`
+	Roles           []*Role               `db:"roles" src:"id" dest:"user_id" table:"roles" through:"user_roles,role_id,id" json:"roles,omitempty"`
+	Permissions     []*Permission         `db:"permissions" src:"id" dest:"user_id" table:"permissions" through:"user_permissions,permission_id,id" json:"permissions,omitempty"`
+	AiUsages        []*AiUsage            `db:"ai_usages" src:"id" dest:"user_id" table:"ai_usages" json:"ai_usages,omitempty"`
+	Subscriptions   []*StripeSubscription `db:"subscriptions" src:"id" dest:"user_id" table:"subscriptions" json:"subscriptions,omitempty"`
 }
 
 type UserRole struct {
@@ -39,14 +38,14 @@ type UserPermission struct {
 	PermissionID uuid.UUID `db:"permission_id" json:"permission_id"`
 }
 type Role struct {
-	_           struct{}     `db:"roles" json:"-"`
-	ID          uuid.UUID    `db:"id" json:"id"`
-	Name        string       `db:"name" json:"name"`
-	Description *string      `db:"description" json:"description,omitempty"`
-	CreatedAt   time.Time    `db:"created_at" json:"created_at"`
-	UpdatedAt   time.Time    `db:"updated_at" json:"updated_at"`
-	Permissions []Permission `db:"permissions" src:"id" dest:"role_id" table:"permissions" through:"role_permissions,permission_id,id" json:"-"`
-	Users       []User       `db:"users" src:"id" dest:"role_id" table:"users" through:"user_roles,user_id,id" json:"-"`
+	_           struct{}      `db:"roles" json:"-"`
+	ID          uuid.UUID     `db:"id" json:"id"`
+	Name        string        `db:"name" json:"name"`
+	Description *string       `db:"description" json:"description,omitempty"`
+	CreatedAt   time.Time     `db:"created_at" json:"created_at"`
+	UpdatedAt   time.Time     `db:"updated_at" json:"updated_at"`
+	Permissions []*Permission `db:"permissions" src:"id" dest:"role_id" table:"permissions" through:"role_permissions,permission_id,id" json:"permissions,omitempty"`
+	Users       []*User       `db:"users" src:"id" dest:"role_id" table:"users" through:"user_roles,user_id,id" json:"users,omitempty"`
 }
 
 type RolePermission struct {
@@ -98,7 +97,7 @@ type UserAccount struct {
 	TokenType         *string       `db:"token_type" json:"token_type"`
 	CreatedAt         time.Time     `db:"created_at" json:"created_at"`
 	UpdatedAt         time.Time     `db:"updated_at" json:"updated_at"`
-	User              User          `db:"users" src:"user_id" dest:"id" table:"users" json:"-"`
+	User              *User         `db:"users" src:"user_id" dest:"id" table:"users" json:"user,omitempty"`
 }
 
 type Token struct {
@@ -112,20 +111,7 @@ type Token struct {
 	Token      string     `db:"token" json:"token"`
 	CreatedAt  time.Time  `db:"created_at" json:"created_at"`
 	UpdatedAt  time.Time  `db:"updated_at" json:"updated_at"`
-	User       *User      `db:"users" src:"user_id" dest:"id" table:"users" json:"-"`
-}
-
-func (j *Token) Scan(value any) error {
-	switch x := value.(type) {
-	case string:
-		return json.NewDecoder(bytes.NewBuffer([]byte(x))).Decode(j)
-	case []byte:
-		return json.NewDecoder(bytes.NewBuffer(x)).Decode(j)
-	case nil:
-		return nil
-	default:
-		return fmt.Errorf("cannot scan type %T: %v", value, value)
-	}
+	User       *User      `db:"users" src:"user_id" dest:"id" table:"users" json:"user,omitempty"`
 }
 
 type TokenTypes string
@@ -199,7 +185,8 @@ type StripeProduct struct {
 	Metadata    map[string]string `db:"metadata" json:"metadata"`
 	CreatedAt   time.Time         `db:"created_at" json:"created_at"`
 	UpdatedAt   time.Time         `db:"updated_at" json:"updated_at"`
-	Prices      []*StripePrice    `db:"prices" src:"id" dest:"product_id" table:"stripe_prices" json:"-"`
+	Prices      []*StripePrice    `db:"prices" src:"id" dest:"product_id" table:"stripe_prices" json:"prices,omitempty"`
+	Roles       []*Role           `db:"roles" src:"id" dest:"product_id" table:"roles" through:"product_roles,role_id,id" json:"roles,omitempty"`
 }
 
 type StripePricingType string
@@ -237,8 +224,8 @@ type StripePrice struct {
 	Metadata        map[string]string          `db:"metadata" json:"metadata"`
 	CreatedAt       time.Time                  `db:"created_at" json:"created_at"`
 	UpdatedAt       time.Time                  `db:"updated_at" json:"updated_at"`
-	Product         *StripeProduct             `db:"product" src:"product_id" dest:"id" table:"stripe_products" json:"-"`
-	Subscriptions   []*StripeSubscription      `db:"subscriptions" src:"id" dest:"price_id" table:"stripe_subscriptions" json:"-"`
+	Product         *StripeProduct             `db:"product" src:"product_id" dest:"id" table:"stripe_products" json:"product,omitempty"`
+	Subscriptions   []*StripeSubscription      `db:"subscriptions" src:"id" dest:"price_id" table:"stripe_subscriptions" json:"subscriptions,omitempty"`
 }
 
 // enum:"trialing,active,canceled,incomplete,incomplete_expired,past_due,unpaid,paused"
@@ -275,7 +262,7 @@ type StripeSubscription struct {
 	CreatedAt          time.Time                `db:"created_at" json:"created_at"`
 	UpdatedAt          time.Time                `db:"updated_at" json:"updated_at"`
 	User               *User                    `db:"users" src:"user_id" dest:"id" table:"users" json:"-"`
-	Price              *StripePrice             `db:"stripe_prices" src:"price_id" dest:"id" table:"stripe_prices" json:"-"`
+	Price              *StripePrice             `db:"stripe_prices" src:"price_id" dest:"id" table:"stripe_prices" json:"price,omitempty"`
 }
 
 type StripeCustomer struct {
@@ -307,7 +294,7 @@ type Medium struct {
 	Size             int64      `db:"size" json:"size"`
 	CreatedAt        time.Time  `db:"created_at" json:"created_at"`
 	UpdatedAt        time.Time  `db:"updated_at" json:"updated_at"`
-	User             *User      `db:"users" src:"user_id" dest:"id" table:"users" json:"-"`
+	User             *User      `db:"users" src:"user_id" dest:"id" table:"users" json:"user,omitempty"`
 }
 
 type AiUsage struct {
