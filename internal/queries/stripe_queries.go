@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/stripe/stripe-go/v82"
 	"github.com/tkahng/authgo/internal/crud/crudrepo"
-	"github.com/tkahng/authgo/internal/crud/models"
+	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/types"
 )
 

@@ -1,8 +1,8 @@
 package sqlbuilder
 
 import (
-	"github.com/tkahng/authgo/internal/crud/models"
 	"github.com/tkahng/authgo/internal/crud/repository"
+	"github.com/tkahng/authgo/internal/db/models"
 )
 
 var (

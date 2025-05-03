@@ -9,7 +9,7 @@ import (
 	"github.com/jaswdr/faker/v2"
 	"github.com/stephenafamo/scan"
 	"github.com/tkahng/authgo/internal/crud/crudrepo"
-	"github.com/tkahng/authgo/internal/crud/models"
+	"github.com/tkahng/authgo/internal/db/models"
 )
 
 type Queryer interface {

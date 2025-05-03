@@ -12,7 +12,7 @@ import (
 	"github.com/stephenafamo/scan"
 	"github.com/stephenafamo/scan/pgxscan"
 	"github.com/tkahng/authgo/internal/crud/crudrepo"
-	crudModels "github.com/tkahng/authgo/internal/crud/models"
+	crudModels "github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 )

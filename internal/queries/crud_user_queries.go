@@ -8,7 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/crud/crudrepo"
-	"github.com/tkahng/authgo/internal/crud/models"
+	"github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/shared"
 )
 

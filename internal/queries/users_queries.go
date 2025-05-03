@@ -10,7 +10,7 @@ import (
 	"github.com/alexedwards/argon2id"
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/crud/crudrepo"
-	crudModels "github.com/tkahng/authgo/internal/crud/models"
+	crudModels "github.com/tkahng/authgo/internal/db/models"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 	"github.com/tkahng/authgo/internal/tools/security"
