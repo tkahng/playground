@@ -2,30 +2,54 @@ package db
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-type DBTX interface {
+type Dbx interface {
 	Query(ctx context.Context, sql string, arguments ...any) (pgx.Rows, error)
 	Exec(ctx context.Context, sql string, arguments ...any) (pgconn.CommandTag, error)
+	RunInTransaction(ctx context.Context, fn TxFunc) error
 }
 
-var _ DBTX = (*Queries)(nil)
+var _ Dbx = (*Queries)(nil)
 
 type Queries struct {
-	pool DBTX
+	db *pgxpool.Pool
 }
 
-func NewQueries(pool DBTX) *Queries {
-	return &Queries{pool: pool}
+func NewQueries(pool *pgxpool.Pool) *Queries {
+	return &Queries{db: pool}
 }
 
 func (v *Queries) Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error) {
-	return v.pool.Query(ctx, sql, args...)
+	return v.db.Query(ctx, sql, args...)
 }
 
 func (v *Queries) Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error) {
-	return v.pool.Exec(ctx, sql, args...)
+	return v.db.Exec(ctx, sql, args...)
 }
+
+func (v *Queries) RunInTransaction(ctx context.Context, fn TxFunc) error {
+
+	tx, err := v.db.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("error starting transaction: %w", err)
+	}
+	// Ensure the transaction will be rolled back if not committed
+	defer tx.Rollback(ctx)
+
+	err = fn(&txQueries{db: tx})
+	if err == nil {
+		if err := tx.Commit(ctx); err != nil {
+			return fmt.Errorf("error committing transaction: %w", err)
+		}
+	}
+
+	return err
+}
+
+type TxFunc func(tx Dbx) error

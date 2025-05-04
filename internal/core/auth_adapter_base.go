@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stephenafamo/scan"
 	"github.com/stephenafamo/scan/pgxscan"
+	"github.com/tkahng/authgo/internal/db"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/repository"
 	crud "github.com/tkahng/authgo/internal/repository"
@@ -32,12 +32,12 @@ type AuthAdapter interface {
 
 var _ AuthAdapter = (*AuthAdapterBase)(nil)
 
-func NewAuthAdapter(dbtx *pgxpool.Pool) *AuthAdapterBase {
+func NewAuthAdapter(dbtx *db.Queries) *AuthAdapterBase {
 	return &AuthAdapterBase{db: dbtx}
 }
 
 type AuthAdapterBase struct {
-	db *pgxpool.Pool
+	db *db.Queries
 }
 
 // FindUser implements AuthAdapter.

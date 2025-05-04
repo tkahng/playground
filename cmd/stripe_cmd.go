@@ -25,8 +25,7 @@ var stripeSyncCmd = &cobra.Command{
 		dbconf := conf.GetConfig[conf.DBConfig]()
 		stripeconfig := conf.GetConfig[conf.StripeConfig]()
 
-		pool := db.NewPoolFromConf(ctx, dbconf)
-		dbx := db.NewQueries(pool)
+		dbx := db.CreatePool(ctx, dbconf.DatabaseUrl)
 		service := core.NewStripeServiceFromConf(stripeconfig)
 
 		return service.UpsertPriceProductFromStripe(ctx, dbx)
@@ -41,9 +40,8 @@ var stripeRolesCmd = &cobra.Command{
 		dbconf := conf.GetConfig[conf.DBConfig]()
 		stripeconfig := conf.GetConfig[conf.StripeConfig]()
 
-		pool := db.NewPoolFromConf(ctx, dbconf)
-		db := db.NewQueries(pool)
+		dbx := db.CreatePool(ctx, dbconf.DatabaseUrl)
 		service := core.NewStripeServiceFromConf(stripeconfig)
-		return service.SyncRoles(ctx, db)
+		return service.SyncRoles(ctx, dbx)
 	},
 }

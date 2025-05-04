@@ -8,7 +8,7 @@ import (
 	"github.com/alexedwards/argon2id"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/tkahng/authgo/internal/db"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mailer"
 	"github.com/tkahng/authgo/internal/tools/security"
@@ -152,7 +152,7 @@ func (app *AuthActionsBase) CreateAuthTokensFromEmail(ctx context.Context, email
 	return app.CreateAuthTokens(ctx, user)
 }
 
-func NewAuthActions(dbx *pgxpool.Pool, mailer mailer.Mailer, settings *AppOptions) AuthActions {
+func NewAuthActions(dbx *db.Queries, mailer mailer.Mailer, settings *AppOptions) AuthActions {
 	authAdapter := NewAuthAdapter(dbx)
 	authMailer := NewAuthMailer(mailer)
 	tokenAdapter := NewTokenAdapter(dbx)

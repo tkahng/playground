@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/tkahng/authgo/internal/db"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
@@ -25,7 +25,7 @@ type TokenAdapter interface {
 var _ TokenAdapter = (*TokenAdapterBase)(nil)
 
 type TokenAdapterBase struct {
-	db *pgxpool.Pool
+	db *db.Queries
 	// repo repository.AppRepo
 	// repo *AppRepo
 }
@@ -68,7 +68,7 @@ func (a *TokenAdapterBase) CreateOtpTokenHash(payload *OtpPayload, config TokenO
 
 }
 
-func NewTokenAdapter(dbx *pgxpool.Pool) *TokenAdapterBase {
+func NewTokenAdapter(dbx *db.Queries) *TokenAdapterBase {
 	// return &TokenAdapterBase{db: db, repo: repo}
 	return &TokenAdapterBase{
 		db: dbx,

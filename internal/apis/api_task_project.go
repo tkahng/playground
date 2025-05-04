@@ -119,7 +119,7 @@ func (api *Api) TaskProjectCreate(ctx context.Context, input *struct {
 	}, nil
 }
 
-func createTaskProjectWithTasks(ctx context.Context, db *db.Queries, userId uuid.UUID, input shared.CreateTaskProjectWithTasksDTO) (*models.TaskProject, error) {
+func createTaskProjectWithTasks(ctx context.Context, db db.Dbx, userId uuid.UUID, input shared.CreateTaskProjectWithTasksDTO) (*models.TaskProject, error) {
 	taskProject, err := queries.CreateTaskProjectWithTasks(ctx, db, userId, &input)
 	if err != nil {
 		return nil, err
@@ -143,7 +143,7 @@ func (api *Api) TaskProjectCreateWithAiOperation(path string) huma.Operation {
 }
 
 type TaskProjectCreateWithAiDto struct {
-	Input string `json:"input"`
+	Input string `json:"input" example:"Help me plan a 6 day vacation to Paris"`
 }
 type TaskProjectCreateWithAiInput struct {
 	Body TaskProjectCreateWithAiDto `json:"body"`

@@ -3,31 +3,46 @@ package db
 import (
 	"context"
 	"fmt"
-	"os"
+	"log/slog"
+	"sync"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/tkahng/authgo/internal/conf"
 )
 
-func NewPoolFromConf(ctx context.Context, conf conf.DBConfig) *pgxpool.Pool {
-	return CreatePool(ctx, conf.DatabaseUrl)
+type postgres struct {
+	db *pgxpool.Pool
 }
 
-func CreatePool(ctx context.Context, connString string) *pgxpool.Pool {
-	dbpool, err := getDbPool(ctx, connString)
+var (
+	pgInstance *Queries
+	pgOnce     sync.Once
+)
+
+func newPool(ctx context.Context, connString string) (*Queries, error) {
+	pgOnce.Do(func() {
+		pool, err := getDbPool(ctx, connString)
+		if err != nil {
+			slog.Error("error creating pool.", "error", err)
+		}
+		pgInstance = &Queries{
+			db: pool,
+		}
+	})
+	if pgInstance == nil {
+		return nil, fmt.Errorf("error at error: %w", nil)
+	}
+	return pgInstance, nil
+
+}
+func CreatePool(ctx context.Context, connString string) *Queries {
+	pool, err := newPool(ctx, connString)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Unable to create connection pool: %v\n", err)
+		slog.Error("error creating pool.", "error", err)
 		panic(err)
 	}
-	// if err = dbpool.Ping(ctx); err != nil {
-	// 	panic(err)
-	// } //dbpool.Ping(ctx)
-	// defer dbpool.Close()
-
-	return dbpool
-
+	return pool
 }
 
 func getDbPool(ctx context.Context, connString string) (*pgxpool.Pool, error) {
