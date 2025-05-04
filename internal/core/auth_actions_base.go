@@ -34,15 +34,6 @@ func NewAuthActions(dbx db.Dbx, mailer mailer.Mailer, settings *AppOptions) Auth
 	return actions
 }
 
-// func (app *AuthActionsBase) Db() db.Dbx {
-// 	return app.db
-// }
-
-// func (app *AuthActionsBase) SetDb() db.Dbx {
-// 	return app.authMailer
-// }
-
-// ResetPassword implements AuthActions.
 func (app *AuthActionsBase) ResetPassword(ctx context.Context, userId uuid.UUID, oldPassword string, newPassword string) error {
 	account, err := app.authAdapter.FindUserAccount(ctx, &map[string]any{
 		"user_id": map[string]any{
@@ -431,6 +422,7 @@ func (app *AuthActionsBase) Authenticate(ctx context.Context, params *shared.Aut
 	var err error
 	var isFirstLogin bool
 	fmt.Println("Authenticate")
+
 	// get user by email
 	user, err = app.authAdapter.FindUser(ctx, &map[string]any{
 		"email": map[string]any{
