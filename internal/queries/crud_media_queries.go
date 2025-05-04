@@ -5,6 +5,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/tkahng/authgo/internal/db"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
@@ -26,7 +27,7 @@ var (
 	}
 )
 
-func ListMedia(ctx context.Context, db Queryer, input *shared.MediaListParams) ([]*models.Medium, error) {
+func ListMedia(ctx context.Context, db db.Dbx, input *shared.MediaListParams) ([]*models.Medium, error) {
 	filter := input.MediaListFilter
 	pageInput := &input.PaginatedInput
 
@@ -98,7 +99,7 @@ func ListMediaOrderByFunc(input *shared.MediaListParams) *map[string]string {
 	return &order
 }
 
-func CountMedia(ctx context.Context, db Queryer, input *shared.MediaListFilter) (int64, error) {
+func CountMedia(ctx context.Context, db db.Dbx, input *shared.MediaListFilter) (int64, error) {
 	where := ListMediaFilterFunc(input)
 	c, err := repository.Media.Count(
 		ctx,

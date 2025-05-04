@@ -5,7 +5,7 @@ package core
 // 	EncryptedAuthOptions string `form:"encrypted_auth_options" json:"encrypted_auth_options"`
 // }
 
-// func GetOrSetEncryptedAuthOptions(ctx context.Context, dbx queries.Queryer, encryptionKey string) (*AuthOptions, error) {
+// func GetOrSetEncryptedAuthOptions(ctx context.Context, dbx db.Dbx, encryptionKey string) (*AuthOptions, error) {
 // 	var opts *AuthOptions
 // 	var encryptedOpts *EncryptedAuthOptions
 // 	// get the encrypted auth options from the db

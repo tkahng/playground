@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+	"github.com/tkahng/authgo/internal/db"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
@@ -76,7 +77,7 @@ func ListUserFilterFunc(filter *shared.UserListFilter) *map[string]any {
 	return &where
 }
 
-func ListUsers(ctx context.Context, db Queryer, input *shared.UserListParams) ([]*models.User, error) {
+func ListUsers(ctx context.Context, db db.Dbx, input *shared.UserListParams) ([]*models.User, error) {
 
 	filter := input.UserListFilter
 	pageInput := &input.PaginatedInput
@@ -124,7 +125,7 @@ func ListUsersOrderByFunc(input *shared.UserListParams) *map[string]string {
 // If the filter is nil, it returns the total number of users in the database.
 //
 // The method returns an error if the count operation fails.
-func CountUsers(ctx context.Context, db Queryer, filter *shared.UserListFilter) (int64, error) {
+func CountUsers(ctx context.Context, db db.Dbx, filter *shared.UserListFilter) (int64, error) {
 	where := ListUserFilterFunc(filter)
 	data, err := repository.User.Count(ctx, db, where)
 	if err != nil {
@@ -141,7 +142,7 @@ func CountUsers(ctx context.Context, db Queryer, filter *shared.UserListFilter) 
 //
 // The method returns an error if the user could not be deleted.
 
-func DeleteUsers(ctx context.Context, db Queryer, userId uuid.UUID) error {
+func DeleteUsers(ctx context.Context, db db.Dbx, userId uuid.UUID) error {
 	_, err := repository.User.DeleteReturn(
 		ctx,
 		db,
@@ -164,7 +165,7 @@ func DeleteUsers(ctx context.Context, db Queryer, userId uuid.UUID) error {
 // If the user is not found, it returns an error.
 //
 // It returns an error if the update fails.
-func UpdateUser(ctx context.Context, db Queryer, userId uuid.UUID, input *shared.UserMutationInput) error {
+func UpdateUser(ctx context.Context, db db.Dbx, userId uuid.UUID, input *shared.UserMutationInput) error {
 	user, err := repository.User.GetOne(
 		ctx,
 		db,

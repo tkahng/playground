@@ -4,6 +4,7 @@ import (
 	"context"
 	"slices"
 
+	"github.com/tkahng/authgo/internal/db"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
@@ -19,7 +20,7 @@ var (
 // ListUserAccounts implements AdminCrudActions.
 // ListUsers implements AdminCrudActions.
 
-func ListUserAccounts(ctx context.Context, db Queryer, input *shared.UserAccountListParams) ([]*models.UserAccount, error) {
+func ListUserAccounts(ctx context.Context, db db.Dbx, input *shared.UserAccountListParams) ([]*models.UserAccount, error) {
 	where := UserAccountWhere(&input.UserAccountListFilter)
 	sort := UserAccountOrderBy(&input.SortParams)
 	data, err := repository.UserAccount.Get(
@@ -48,7 +49,7 @@ func UserAccountOrderBy(params *shared.SortParams) *map[string]string {
 	return nil
 }
 
-// func CreateUser(ctx context.Context, db Queryer, params *shared.AuthenticateUserParams) (*models.User, error) {
+// func CreateUser(ctx context.Context, db db.Dbx, params *shared.AuthenticateUserParams) (*models.User, error) {
 func UserAccountWhere(filter *shared.UserAccountListFilter) *map[string]any {
 	where := make(map[string]any)
 	if filter == nil {
@@ -86,7 +87,7 @@ func UserAccountWhere(filter *shared.UserAccountListFilter) *map[string]any {
 }
 
 // CountUsers implements AdminCrudActions.
-func CountUserAccounts(ctx context.Context, db Queryer, filter *shared.UserAccountListFilter) (int64, error) {
+func CountUserAccounts(ctx context.Context, db db.Dbx, filter *shared.UserAccountListFilter) (int64, error) {
 	where := UserAccountWhere(filter)
 	data, err := repository.UserAccount.Count(ctx, db, where)
 	if err != nil {

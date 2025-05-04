@@ -6,6 +6,7 @@ import (
 	"log"
 
 	"github.com/google/uuid"
+	"github.com/tkahng/authgo/internal/db"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
@@ -14,7 +15,7 @@ import (
 	"github.com/tkahng/authgo/internal/types"
 )
 
-func (srv *StripeService) FindSubscriptionWithPriceBySessionId(ctx context.Context, db queries.Queryer, sessionId string) (*models.SubscriptionWithPrice, error) {
+func (srv *StripeService) FindSubscriptionWithPriceBySessionId(ctx context.Context, db db.Dbx, sessionId string) (*models.SubscriptionWithPrice, error) {
 	sub, err := srv.client.FindCheckoutSessionByStripeId(sessionId)
 	if err != nil {
 		return nil, err
@@ -32,7 +33,7 @@ func (srv *StripeService) FindSubscriptionWithPriceBySessionId(ctx context.Conte
 	return data, nil
 }
 
-func (srv *StripeService) UpsertSubscriptionByIds(ctx context.Context, db queries.Queryer, cutomerId, subscriptionId string) error {
+func (srv *StripeService) UpsertSubscriptionByIds(ctx context.Context, db db.Dbx, cutomerId, subscriptionId string) error {
 	cus, err := queries.FindCustomerByStripeId(ctx, db, cutomerId)
 	if err != nil {
 		return err
@@ -54,8 +55,8 @@ func (srv *StripeService) UpsertSubscriptionByIds(ctx context.Context, db querie
 	return nil
 }
 
-func (srv *StripeService) FindOrCreateCustomerFromUser(ctx context.Context, exec queries.Queryer, userId uuid.UUID, email string) (*models.StripeCustomer, error) {
-	dbCus, err := queries.FindCustomerByUserId(ctx, exec, userId)
+func (srv *StripeService) FindOrCreateCustomerFromUser(ctx context.Context, db db.Dbx, userId uuid.UUID, email string) (*models.StripeCustomer, error) {
+	dbCus, err := queries.FindCustomerByUserId(ctx, db, userId)
 	if err != nil {
 		return nil, err
 	}
@@ -70,14 +71,14 @@ func (srv *StripeService) FindOrCreateCustomerFromUser(ctx context.Context, exec
 		return nil, errors.New("failed to find or create customer in stripe")
 	}
 
-	err = queries.UpsertCustomerStripeId(ctx, exec, userId, stripeCus.ID)
+	err = queries.UpsertCustomerStripeId(ctx, db, userId, stripeCus.ID)
 	if err != nil {
 		return nil, err
 	}
-	return queries.FindCustomerByUserId(ctx, exec, userId)
+	return queries.FindCustomerByUserId(ctx, db, userId)
 }
 
-func (srv *StripeService) CreateCheckoutSession(ctx context.Context, db queries.Queryer, userId uuid.UUID, priceId string) (string, error) {
+func (srv *StripeService) CreateCheckoutSession(ctx context.Context, db db.Dbx, userId uuid.UUID, priceId string) (string, error) {
 	user, err := queries.FindUserById(ctx, db, userId)
 	if err != nil {
 		return "", err
@@ -118,7 +119,7 @@ func (srv *StripeService) CreateCheckoutSession(ctx context.Context, db queries.
 	return sesh.URL, nil
 }
 
-func (s *StripeService) CreateBillingPortalSession(ctx context.Context, db queries.Queryer, userId uuid.UUID) (string, error) {
+func (s *StripeService) CreateBillingPortalSession(ctx context.Context, db db.Dbx, userId uuid.UUID) (string, error) {
 	user, err := queries.FindUserById(ctx, db, userId)
 	if err != nil {
 		return "", err

@@ -9,6 +9,7 @@ import (
 	"github.com/Masterminds/squirrel"
 	"github.com/alexedwards/argon2id"
 	"github.com/google/uuid"
+	"github.com/tkahng/authgo/internal/db"
 	crudModels "github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
@@ -16,7 +17,7 @@ import (
 	"github.com/tkahng/authgo/internal/tools/security"
 )
 
-func LoadUsersByUserIds(ctx context.Context, db Queryer, userIds ...uuid.UUID) ([]*crudModels.User, error) {
+func LoadUsersByUserIds(ctx context.Context, db db.Dbx, userIds ...uuid.UUID) ([]*crudModels.User, error) {
 	users, err := repository.User.Get(
 		ctx,
 		db,
@@ -40,7 +41,7 @@ func LoadUsersByUserIds(ctx context.Context, db Queryer, userIds ...uuid.UUID) (
 	}), nil
 }
 
-func CreateUser(ctx context.Context, db Queryer, params *shared.AuthenticationInput) (*crudModels.User, error) {
+func CreateUser(ctx context.Context, db db.Dbx, params *shared.AuthenticationInput) (*crudModels.User, error) {
 	// return models.Users.Insert(&models.UserSetter{
 	// 	Email:           omit.From(params.Email),
 	// 	Name:            omitnull.FromPtr(params.Name),
@@ -55,7 +56,7 @@ func CreateUser(ctx context.Context, db Queryer, params *shared.AuthenticationIn
 	})
 }
 
-func CreateUserRoles(ctx context.Context, db Queryer, userId uuid.UUID, roleIds ...uuid.UUID) error {
+func CreateUserRoles(ctx context.Context, db db.Dbx, userId uuid.UUID, roleIds ...uuid.UUID) error {
 	var dtos []crudModels.UserRole
 	for _, id := range roleIds {
 		dtos = append(dtos, crudModels.UserRole{
@@ -83,7 +84,7 @@ func CreateUserRoles(ctx context.Context, db Queryer, userId uuid.UUID, roleIds 
 	// 	RoleIDs: omit.From(params.RoleIds),
 	// }).Exec(ctx, db)
 }
-func CreateUserPermissions(ctx context.Context, db Queryer, userId uuid.UUID, permissionIds ...uuid.UUID) error {
+func CreateUserPermissions(ctx context.Context, db db.Dbx, userId uuid.UUID, permissionIds ...uuid.UUID) error {
 	var dtos []crudModels.UserPermission
 	for _, id := range permissionIds {
 		dtos = append(dtos, crudModels.UserPermission{
@@ -109,7 +110,7 @@ func CreateUserPermissions(ctx context.Context, db Queryer, userId uuid.UUID, pe
 
 }
 
-func CreateAccount(ctx context.Context, db Queryer, userId uuid.UUID, params *shared.AuthenticationInput) (*crudModels.UserAccount, error) {
+func CreateAccount(ctx context.Context, db db.Dbx, userId uuid.UUID, params *shared.AuthenticationInput) (*crudModels.UserAccount, error) {
 	r, err := repository.UserAccount.PostOne(ctx, db, &crudModels.UserAccount{
 		UserID:            userId,
 		Type:              crudModels.ProviderTypes(params.Type),
@@ -122,7 +123,7 @@ func CreateAccount(ctx context.Context, db Queryer, userId uuid.UUID, params *sh
 	return OptionalRow(r, err)
 }
 
-func FindUserByEmail(ctx context.Context, db Queryer, email string) (*crudModels.User, error) {
+func FindUserByEmail(ctx context.Context, db db.Dbx, email string) (*crudModels.User, error) {
 	a, err := repository.User.GetOne(
 		ctx,
 		db,
@@ -134,7 +135,7 @@ func FindUserByEmail(ctx context.Context, db Queryer, email string) (*crudModels
 	)
 	return OptionalRow(a, err)
 }
-func FindUserById(ctx context.Context, db Queryer, userId uuid.UUID) (*crudModels.User, error) {
+func FindUserById(ctx context.Context, db db.Dbx, userId uuid.UUID) (*crudModels.User, error) {
 	a, err := repository.User.GetOne(
 		ctx,
 		db,
@@ -147,7 +148,7 @@ func FindUserById(ctx context.Context, db Queryer, userId uuid.UUID) (*crudModel
 	return OptionalRow(a, err)
 }
 
-func UpdateUserPassword(ctx context.Context, db Queryer, userId uuid.UUID, password string) error {
+func UpdateUserPassword(ctx context.Context, db db.Dbx, userId uuid.UUID, password string) error {
 	account, err := repository.UserAccount.GetOne(
 		ctx,
 		db,
@@ -182,7 +183,7 @@ func UpdateUserPassword(ctx context.Context, db Queryer, userId uuid.UUID, passw
 	return nil
 }
 
-func UpdateMe(ctx context.Context, db Queryer, userId uuid.UUID, input *shared.UpdateMeInput) error {
+func UpdateMe(ctx context.Context, db db.Dbx, userId uuid.UUID, input *shared.UpdateMeInput) error {
 	_, err := repository.User.PutOne(
 		ctx,
 		db,
@@ -200,7 +201,7 @@ func UpdateMe(ctx context.Context, db Queryer, userId uuid.UUID, input *shared.U
 	return nil
 }
 
-func GetUserAccounts(ctx context.Context, db Queryer, userIds ...uuid.UUID) ([][]*crudModels.UserAccount, error) {
+func GetUserAccounts(ctx context.Context, db db.Dbx, userIds ...uuid.UUID) ([][]*crudModels.UserAccount, error) {
 	// var results []JoinedResult[*crudModels.Permission, uuid.UUID]
 	ids := []string{}
 	for _, id := range userIds {

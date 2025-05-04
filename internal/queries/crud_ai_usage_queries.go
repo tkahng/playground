@@ -4,18 +4,19 @@ import (
 	"context"
 	"strings"
 
+	"github.com/tkahng/authgo/internal/db"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
 )
 
 // CountTasks implements AdminCrudActions.
-func CountAiUsages(ctx context.Context, db Queryer, filter *shared.AiUsageListFilter) (int64, error) {
+func CountAiUsages(ctx context.Context, db db.Dbx, filter *shared.AiUsageListFilter) (int64, error) {
 	where := ListAiUsagesFilterFunc(filter)
 	return repository.AiUsage.Count(ctx, db, where)
 }
 
-func ListAiUsages(ctx context.Context, db Queryer, input *shared.AiUsageListParams) ([]*models.AiUsage, error) {
+func ListAiUsages(ctx context.Context, db db.Dbx, input *shared.AiUsageListParams) ([]*models.AiUsage, error) {
 	filter := input.AiUsageListFilter
 	pageInput := &input.PaginatedInput
 

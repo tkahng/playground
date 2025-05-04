@@ -12,8 +12,10 @@ import (
 type Dbx interface {
 	Query(ctx context.Context, sql string, arguments ...any) (pgx.Rows, error)
 	Exec(ctx context.Context, sql string, arguments ...any) (pgconn.CommandTag, error)
-	RunInTransaction(ctx context.Context, fn TxFunc) error
+	RunInTransaction(ctx context.Context, fn func(Dbx) error) error
 }
+
+// type TxFunc
 
 var _ Dbx = (*Queries)(nil)
 
@@ -33,7 +35,7 @@ func (v *Queries) Exec(ctx context.Context, sql string, args ...any) (pgconn.Com
 	return v.db.Exec(ctx, sql, args...)
 }
 
-func (v *Queries) RunInTransaction(ctx context.Context, fn TxFunc) error {
+func (v *Queries) RunInTransaction(ctx context.Context, fn func(Dbx) error) error {
 
 	tx, err := v.db.Begin(ctx)
 	if err != nil {
@@ -51,5 +53,3 @@ func (v *Queries) RunInTransaction(ctx context.Context, fn TxFunc) error {
 
 	return err
 }
-
-type TxFunc func(tx Dbx) error

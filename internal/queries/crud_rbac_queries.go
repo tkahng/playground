@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/Masterminds/squirrel"
+	"github.com/tkahng/authgo/internal/db"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/shared"
 )
@@ -109,7 +110,7 @@ func ListPermissionsFilterFunc2(filter *shared.PermissionsListFilter) *map[strin
 }
 
 // ListPermissions implements AdminCrudActions.
-func ListPermissions(ctx context.Context, db Queryer, input *shared.PermissionsListParams) ([]*models.Permission, error) {
+func ListPermissions(ctx context.Context, db db.Dbx, input *shared.PermissionsListParams) ([]*models.Permission, error) {
 	q := squirrel.Select("permissions.*").From("permissions")
 	filter := input.PermissionsListFilter
 	pageInput := &input.PaginatedInput
@@ -132,7 +133,7 @@ type CountOutput struct {
 }
 
 // CountPermissions implements AdminCrudActions.
-func CountPermissions(ctx context.Context, db Queryer, filter *shared.PermissionsListFilter) (int64, error) {
+func CountPermissions(ctx context.Context, db db.Dbx, filter *shared.PermissionsListFilter) (int64, error) {
 	q := squirrel.Select("COUNT(permissions.*)").From("permissions")
 
 	// q = ViewApplyPagination(q, pageInput)
@@ -188,7 +189,7 @@ func ListRolesFilterFuncQuery(sq squirrel.SelectBuilder, filter *shared.RoleList
 }
 
 // ListRoles implements AdminCrudActions.
-func ListRoles(ctx context.Context, db Queryer, input *shared.RolesListParams) ([]*models.Role, error) {
+func ListRoles(ctx context.Context, db db.Dbx, input *shared.RolesListParams) ([]*models.Role, error) {
 	q := squirrel.Select("roles.*").From("roles")
 	filter := input.RoleListFilter
 	pageInput := &input.PaginatedInput
@@ -207,7 +208,7 @@ func ListRoles(ctx context.Context, db Queryer, input *shared.RolesListParams) (
 }
 
 // CountRoles implements AdminCrudActions.
-func CountRoles(ctx context.Context, db Queryer, filter *shared.RoleListFilter) (int64, error) {
+func CountRoles(ctx context.Context, db db.Dbx, filter *shared.RoleListFilter) (int64, error) {
 	q := squirrel.Select("COUNT(roles.*)").From("roles")
 
 	// q = ViewApplyPagination(q, pageInput)

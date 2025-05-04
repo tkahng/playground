@@ -8,12 +8,13 @@ import (
 	"github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
 	"github.com/stripe/stripe-go/v82"
+	"github.com/tkahng/authgo/internal/db"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/types"
 )
 
-func FindCustomerByStripeId(ctx context.Context, dbx Queryer, stripeId string) (*models.StripeCustomer, error) {
+func FindCustomerByStripeId(ctx context.Context, dbx db.Dbx, stripeId string) (*models.StripeCustomer, error) {
 	data, err := repository.StripeCustomer.GetOne(
 		ctx,
 		dbx,
@@ -29,7 +30,7 @@ func FindCustomerByStripeId(ctx context.Context, dbx Queryer, stripeId string) (
 	return OptionalRow(data, err)
 }
 
-func FindCustomerByUserId(ctx context.Context, dbx Queryer, userId uuid.UUID) (*models.StripeCustomer, error) {
+func FindCustomerByUserId(ctx context.Context, dbx db.Dbx, userId uuid.UUID) (*models.StripeCustomer, error) {
 	data, err := repository.StripeCustomer.GetOne(
 		ctx,
 		dbx,
@@ -42,7 +43,7 @@ func FindCustomerByUserId(ctx context.Context, dbx Queryer, userId uuid.UUID) (*
 	return OptionalRow(data, err)
 }
 
-func FindProductByStripeId(ctx context.Context, dbx Queryer, stripeId string) (*models.StripeProduct, error) {
+func FindProductByStripeId(ctx context.Context, dbx db.Dbx, stripeId string) (*models.StripeProduct, error) {
 	// data, err := models.StripeProducts.Query(
 	// 	models.SelectWhere.StripeProducts.ID.EQ(stripeId),
 	// ).One(ctx, dbx)
@@ -58,7 +59,7 @@ func FindProductByStripeId(ctx context.Context, dbx Queryer, stripeId string) (*
 	return OptionalRow(data, err)
 }
 
-func UpsertCustomerStripeId(ctx context.Context, dbx Queryer, userId uuid.UUID, stripeCustomerId string) error {
+func UpsertCustomerStripeId(ctx context.Context, dbx db.Dbx, userId uuid.UUID, stripeCustomerId string) error {
 	// _, err := models.StripeCustomers.Insert(
 	// 	&models.StripeCustomerSetter{
 	// 		ID:       omit.From(userId),
@@ -78,7 +79,7 @@ func UpsertCustomerStripeId(ctx context.Context, dbx Queryer, userId uuid.UUID, 
 	return ExecWithBuilder(ctx, dbx, q.PlaceholderFormat(squirrel.Dollar))
 }
 
-func UpsertProduct(ctx context.Context, dbx Queryer, product *models.StripeProduct) error {
+func UpsertProduct(ctx context.Context, dbx db.Dbx, product *models.StripeProduct) error {
 	// _, err := models.StripeProducts.Insert(
 	// 	product,
 	// 	im.OnConflict("id").DoUpdate(
@@ -107,7 +108,7 @@ func UpsertProduct(ctx context.Context, dbx Queryer, product *models.StripeProdu
 	return ExecWithBuilder(ctx, dbx, q.PlaceholderFormat(squirrel.Dollar))
 }
 
-func UpsertProductFromStripe(ctx context.Context, dbx Queryer, product *stripe.Product) error {
+func UpsertProductFromStripe(ctx context.Context, dbx db.Dbx, product *stripe.Product) error {
 	if product == nil {
 		return nil
 	}
@@ -126,7 +127,7 @@ func UpsertProductFromStripe(ctx context.Context, dbx Queryer, product *stripe.P
 	return UpsertProduct(ctx, dbx, param)
 }
 
-func UpsertPrice(ctx context.Context, dbx Queryer, price *models.StripePrice) error {
+func UpsertPrice(ctx context.Context, dbx db.Dbx, price *models.StripePrice) error {
 	// _, err := models.StripePrices.Insert(
 	// 	price,
 	// 	im.OnConflict("id").DoUpdate(
@@ -179,7 +180,7 @@ func UpsertPrice(ctx context.Context, dbx Queryer, price *models.StripePrice) er
 	return ExecWithBuilder(ctx, dbx, q.PlaceholderFormat(squirrel.Dollar))
 }
 
-func UpsertPriceFromStripe(ctx context.Context, dbx Queryer, price *stripe.Price) error {
+func UpsertPriceFromStripe(ctx context.Context, dbx db.Dbx, price *stripe.Price) error {
 	if price == nil {
 		return nil
 	}
@@ -211,7 +212,7 @@ func UpsertPriceFromStripe(ctx context.Context, dbx Queryer, price *stripe.Price
 	return UpsertPrice(ctx, dbx, val)
 }
 
-func UpsertSubscription(ctx context.Context, dbx Queryer, subscription *models.StripeSubscription) error {
+func UpsertSubscription(ctx context.Context, dbx db.Dbx, subscription *models.StripeSubscription) error {
 	// _, err := models.StripeSubscriptions.Insert(
 	// 	subscription,
 	// 	im.OnConflict("id").DoUpdate(
@@ -314,7 +315,7 @@ func UpsertSubscription(ctx context.Context, dbx Queryer, subscription *models.S
 	return ExecWithBuilder(ctx, dbx, q.PlaceholderFormat(squirrel.Dollar))
 }
 
-func UpsertSubscriptionFromStripe(ctx context.Context, exec Queryer, sub *stripe.Subscription, userId uuid.UUID) error {
+func UpsertSubscriptionFromStripe(ctx context.Context, exec db.Dbx, sub *stripe.Subscription, userId uuid.UUID) error {
 	if sub == nil {
 		return nil
 	}
@@ -365,7 +366,7 @@ func Int64ToISODate(timestamp int64) time.Time {
 	return time.Unix(timestamp, 0)
 }
 
-func FindSubscriptionById(ctx context.Context, dbx Queryer, stripeId string) (*models.StripeSubscription, error) {
+func FindSubscriptionById(ctx context.Context, dbx db.Dbx, stripeId string) (*models.StripeSubscription, error) {
 	// data, err := models.StripeSubscriptions.Query(
 	// 	models.SelectWhere.StripeSubscriptions.ID.EQ(stripeId),
 	// ).One(ctx, dbx)
@@ -428,7 +429,7 @@ WHERE ss.id = $1
 		`
 )
 
-func FindSubscriptionWithPriceById(ctx context.Context, dbx Queryer, stripeId string) (*models.SubscriptionWithPrice, error) {
+func FindSubscriptionWithPriceById(ctx context.Context, dbx db.Dbx, stripeId string) (*models.SubscriptionWithPrice, error) {
 	// data, err := models.StripeSubscriptions.Query(
 	// 	models.SelectWhere.StripeSubscriptions.ID.EQ(stripeId),
 	// 	models.PreloadStripeSubscriptionPriceStripePrice(
@@ -446,7 +447,7 @@ func FindSubscriptionWithPriceById(ctx context.Context, dbx Queryer, stripeId st
 	return first, nil
 }
 
-func FindLatestActiveSubscriptionByUserId(ctx context.Context, dbx Queryer, userId uuid.UUID) (*models.StripeSubscription, error) {
+func FindLatestActiveSubscriptionByUserId(ctx context.Context, dbx db.Dbx, userId uuid.UUID) (*models.StripeSubscription, error) {
 	// data, err := models.StripeSubscriptions.Query(
 	// 	models.SelectWhere.StripeSubscriptions.UserID.EQ(userId),
 	// 	models.SelectWhere.StripeSubscriptions.Status.In(
@@ -533,7 +534,7 @@ ORDER BY ss.updated_at DESC;
 		`
 )
 
-func FindLatestActiveSubscriptionWithPriceByUserId(ctx context.Context, dbx Queryer, userId uuid.UUID) (*models.SubscriptionWithPrice, error) {
+func FindLatestActiveSubscriptionWithPriceByUserId(ctx context.Context, dbx db.Dbx, userId uuid.UUID) (*models.SubscriptionWithPrice, error) {
 	data, err := QueryAll[models.SubscriptionWithPrice](ctx, dbx, GetLatestActiveSubscriptionWithPriceByIdQuery, userId)
 	if err != nil {
 		return nil, err
@@ -544,7 +545,7 @@ func FindLatestActiveSubscriptionWithPriceByUserId(ctx context.Context, dbx Quer
 	return OptionalRow(&data[0], err)
 }
 
-func IsFirstSubscription(ctx context.Context, dbx Queryer, userId uuid.UUID) (bool, error) {
+func IsFirstSubscription(ctx context.Context, dbx db.Dbx, userId uuid.UUID) (bool, error) {
 	// data, err := models.StripeSubscriptions.Query(
 	// 	models.SelectWhere.StripeSubscriptions.UserID.EQ(userId),
 	// ).Exists(ctx, dbx)
@@ -561,7 +562,7 @@ func IsFirstSubscription(ctx context.Context, dbx Queryer, userId uuid.UUID) (bo
 	// return OptionalRow(data, err)
 }
 
-func FindValidPriceById(ctx context.Context, dbx Queryer, priceId string) (*models.StripePrice, error) {
+func FindValidPriceById(ctx context.Context, dbx db.Dbx, priceId string) (*models.StripePrice, error) {
 	// data, err := models.StripePrices.Query(
 	// 	models.SelectWhere.StripePrices.ID.EQ(priceId),
 	// 	models.SelectWhere.StripePrices.Type.EQ(models.StripePricingTypeRecurring),

@@ -29,7 +29,7 @@ func (v *txQueries) Exec(ctx context.Context, sql string, args ...any) (pgconn.C
 	return v.db.Exec(ctx, sql, args...)
 }
 
-func (v *txQueries) RunInTransaction(ctx context.Context, fn TxFunc) error {
+func (v *txQueries) RunInTransaction(ctx context.Context, fn func(Dbx) error) error {
 	err := fn(v)
 	return err
 }
