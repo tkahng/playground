@@ -6,7 +6,8 @@ import (
 )
 
 type Log struct {
-	Id        uuid.UUID          `db:"id,pk" json:"id"`
+	_         struct{}           `db:"logs" json:"-"`
+	ID        uuid.UUID          `db:"id,pk" json:"id"`
 	Message   string             `db:"message" json:"message"`
 	Data      types.JSONMap[any] `db:"data" json:"data"`
 	Timestamp string             `db:"timestamp" json:"timestamp"`
