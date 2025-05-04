@@ -3,7 +3,7 @@ package types_test
 import (
 	"testing"
 
-	"github.com/tkahng/authgo/internal/types"
+	"github.com/tkahng/authgo/internal/tools/types"
 )
 
 func TestPointer(t *testing.T) {

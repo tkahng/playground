@@ -15,7 +15,7 @@ import (
 
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
-	"github.com/tkahng/authgo/internal/types"
+	"github.com/tkahng/authgo/internal/tools/types"
 )
 
 const (

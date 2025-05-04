@@ -4,7 +4,7 @@ import (
 	"time"
 
 	crudModels "github.com/tkahng/authgo/internal/models"
-	ty "github.com/tkahng/authgo/internal/types"
+	ty "github.com/tkahng/authgo/internal/tools/types"
 )
 
 type StripePricingType string

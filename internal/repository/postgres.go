@@ -9,7 +9,7 @@ import (
 	"github.com/stephenafamo/scan/pgxscan"
 	"github.com/tkahng/authgo/internal/db"
 	"github.com/tkahng/authgo/internal/models"
-	"github.com/tkahng/authgo/internal/types"
+	"github.com/tkahng/authgo/internal/tools/types"
 )
 
 // PostgresRepository provides CRUD operations for Postgres

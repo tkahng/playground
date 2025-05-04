@@ -4,7 +4,7 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/tkahng/authgo/internal/types"
+	"github.com/tkahng/authgo/internal/tools/types"
 )
 
 // Log is similar to [slog.Record] bit contains the log attributes as

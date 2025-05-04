@@ -13,7 +13,7 @@ import (
 	"github.com/stephenafamo/scan/pgxscan"
 	"github.com/tkahng/authgo/internal/db"
 	"github.com/tkahng/authgo/internal/shared"
-	"github.com/tkahng/authgo/internal/types"
+	"github.com/tkahng/authgo/internal/tools/types"
 )
 
 func VarCollect[T any](args ...T) []T {
