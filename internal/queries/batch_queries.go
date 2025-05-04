@@ -8,7 +8,7 @@ import (
 	"github.com/tkahng/authgo/internal/tools/mapper"
 )
 
-type DelFunc func(ctx context.Context, dbx repository.DBTX, where *map[string]any) (int64, error)
+type DelFunc func(ctx context.Context, dbx db.Dbx, where *map[string]any) (int64, error)
 
 func TruncateModels(ctx context.Context, db db.Dbx) error {
 	return ErrorWrapper(ctx, db, false,

@@ -12,7 +12,6 @@ import (
 	"github.com/tkahng/authgo/internal/db"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/repository"
-	crud "github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/types"
 )
@@ -182,7 +181,7 @@ type RolePermissionClaims struct {
 	Providers   []models.Providers `json:"providers" db:"providers"`
 }
 
-func FindUserWithRolesAndPermissionsByEmail(ctx context.Context, db crud.DBTX, email string) (*RolePermissionClaims, error) {
+func FindUserWithRolesAndPermissionsByEmail(ctx context.Context, db db.Dbx, email string) (*RolePermissionClaims, error) {
 	res, err := pgxscan.One(ctx, db, scan.StructMapper[RolePermissionClaims](), RawGetUserWithAllRolesAndPermissionsByEmail, email)
 	if err != nil {
 		return nil, err

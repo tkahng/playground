@@ -13,12 +13,12 @@ package repository
 
 // // PostgresRepository provides CRUD operations for Postgres
 // type PostgresRepository[Model any] struct {
-// 	db      DBTX
+// 	db      db.Dbx
 // 	builder *SQLBuilder[Model]
 // }
 
 // // NewPostgresRepository initializes a new PostgresRepository
-// func NewPostgresRepository[Model any](db DBTX) *PostgresRepository[Model] {
+// func NewPostgresRepository[Model any](db db.Dbx) *PostgresRepository[Model] {
 // 	// Define SQL operators and helper functions for query building
 // 	operations := map[string]func(string, ...string) string{
 // 		"_eq":     func(key string, values ...string) string { return fmt.Sprintf("%s = %s", key, values[0]) },
