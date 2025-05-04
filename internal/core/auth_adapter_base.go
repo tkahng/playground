@@ -17,7 +17,7 @@ import (
 
 var _ AuthStorage = (*AuthAdapterBase)(nil)
 
-func NewAuthAdapter(dbtx db.Dbx) *AuthAdapterBase {
+func NewAuthStorage(dbtx db.Dbx) *AuthAdapterBase {
 	return &AuthAdapterBase{db: dbtx}
 }
 

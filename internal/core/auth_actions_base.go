@@ -24,10 +24,10 @@ type AuthActionsBase struct {
 
 func NewAuthActions(dbx db.Dbx, mailer mailer.Mailer, settings *AppOptions) AuthActions {
 	actions := &AuthActionsBase{options: settings}
-	authAdapter := NewAuthAdapter(dbx)
-	authMailer := NewAuthMailer(mailer)
-	actions.storage = authAdapter
-	actions.mail = authMailer
+	storage := NewAuthStorage(dbx)
+	mail := NewAuthMailer(mailer)
+	actions.storage = storage
+	actions.mail = mail
 	return actions
 }
 
