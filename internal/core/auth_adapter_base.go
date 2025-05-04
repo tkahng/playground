@@ -31,12 +31,12 @@ type AuthAdapter interface {
 
 var _ AuthAdapter = (*AuthAdapterBase)(nil)
 
-func NewAuthAdapter(dbtx *db.Queries) *AuthAdapterBase {
+func NewAuthAdapter(dbtx db.Dbx) *AuthAdapterBase {
 	return &AuthAdapterBase{db: dbtx}
 }
 
 type AuthAdapterBase struct {
-	db *db.Queries
+	db db.Dbx
 }
 
 // FindUser implements AuthAdapter.

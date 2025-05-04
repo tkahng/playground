@@ -23,6 +23,25 @@ type AuthActionsBase struct {
 	settings     *AppOptions
 }
 
+func NewAuthActions(dbx db.Dbx, mailer mailer.Mailer, settings *AppOptions) AuthActions {
+	actions := &AuthActionsBase{settings: settings}
+	authAdapter := NewAuthAdapter(dbx)
+	tokenAdapter := NewTokenAdapter(dbx)
+	authMailer := NewAuthMailer(mailer)
+	actions.authAdapter = authAdapter
+	actions.authMailer = authMailer
+	actions.tokenAdapter = tokenAdapter
+	return actions
+}
+
+// func (app *AuthActionsBase) Db() db.Dbx {
+// 	return app.db
+// }
+
+// func (app *AuthActionsBase) SetDb() db.Dbx {
+// 	return app.authMailer
+// }
+
 // ResetPassword implements AuthActions.
 func (app *AuthActionsBase) ResetPassword(ctx context.Context, userId uuid.UUID, oldPassword string, newPassword string) error {
 	account, err := app.authAdapter.FindUserAccount(ctx, &map[string]any{
@@ -152,17 +171,6 @@ func (app *AuthActionsBase) CreateAuthTokensFromEmail(ctx context.Context, email
 	return app.CreateAuthTokens(ctx, user)
 }
 
-func NewAuthActions(dbx *db.Queries, mailer mailer.Mailer, settings *AppOptions) AuthActions {
-	authAdapter := NewAuthAdapter(dbx)
-	authMailer := NewAuthMailer(mailer)
-	tokenAdapter := NewTokenAdapter(dbx)
-	return &AuthActionsBase{
-		authAdapter:  authAdapter,
-		authMailer:   authMailer,
-		tokenAdapter: tokenAdapter,
-		settings:     settings,
-	}
-}
 func (app *AuthActionsBase) createAuthenticationToken(payload *AuthenticationPayload, config TokenOption) (string, error) {
 	if payload == nil {
 		return "", fmt.Errorf("payload is nil")

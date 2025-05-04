@@ -24,8 +24,16 @@ type TokenAdapter interface {
 
 var _ TokenAdapter = (*TokenAdapterBase)(nil)
 
+func NewTokenAdapter(dbx db.Dbx) *TokenAdapterBase {
+	// return &TokenAdapterBase{db: db, repo: repo}
+	return &TokenAdapterBase{
+		db: dbx,
+		// repo: repo
+	}
+}
+
 type TokenAdapterBase struct {
-	db *db.Queries
+	db db.Dbx
 	// repo repository.AppRepo
 	// repo *AppRepo
 }
@@ -66,14 +74,6 @@ func (a *TokenAdapterBase) CreateOtpTokenHash(payload *OtpPayload, config TokenO
 	}
 	return token, nil
 
-}
-
-func NewTokenAdapter(dbx *db.Queries) *TokenAdapterBase {
-	// return &TokenAdapterBase{db: db, repo: repo}
-	return &TokenAdapterBase{
-		db: dbx,
-		// repo: repo
-	}
 }
 
 func (a *TokenAdapterBase) ParseTokenString(token string, config TokenOption, data any) error {
