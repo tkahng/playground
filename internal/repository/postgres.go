@@ -20,12 +20,8 @@ type PostgresRepository[Model any] struct {
 var _ Repository[models.User] = (*PostgresRepository[models.User])(nil)
 
 // NewPostgresRepository initializes a new PostgresRepository
-func NewPostgresRepository[Model any]() *PostgresRepository[Model] {
-	return &PostgresRepository[Model]{
-		builder: NewSQLBuilder[Model](),
-	}
-}
-func NewPostgresRepository2[Model any](builder *SQLBuilder[Model]) *PostgresRepository[Model] {
+
+func NewPostgresRepository[Model any](builder *SQLBuilder[Model]) *PostgresRepository[Model] {
 	return &PostgresRepository[Model]{
 		builder: builder,
 	}
