@@ -7,7 +7,7 @@ import (
 	"github.com/tkahng/authgo/internal/shared"
 )
 
-type AuthAdapter interface {
+type AuthStorage interface {
 	GetUserInfo(ctx context.Context, email string) (*shared.UserInfo, error)
 	CreateUser(ctx context.Context, user *shared.User) (*shared.User, error)
 	AssignUserRoles(ctx context.Context, userId uuid.UUID, roleNames ...string) error

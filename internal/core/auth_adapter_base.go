@@ -15,7 +15,7 @@ import (
 	"github.com/tkahng/authgo/internal/tools/types"
 )
 
-var _ AuthAdapter = (*AuthAdapterBase)(nil)
+var _ AuthStorage = (*AuthAdapterBase)(nil)
 
 func NewAuthAdapter(dbtx db.Dbx) *AuthAdapterBase {
 	return &AuthAdapterBase{db: dbtx}

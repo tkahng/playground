@@ -24,4 +24,5 @@ type AuthActions interface {
 	SendOtpEmail(emailType EmailType, ctx context.Context, user *shared.User) error
 	Signout(ctx context.Context, token string) error
 	ResetPassword(ctx context.Context, userId uuid.UUID, oldPassword, newPassword string) error
+	ParseTokenString(tokenString string, config TokenOption, data any) error
 }
