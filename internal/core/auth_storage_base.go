@@ -349,3 +349,10 @@ func (a *AuthAdapterBase) AssignUserRoles(ctx context.Context, userId uuid.UUID,
 	}
 	return nil
 }
+
+func (a *AuthAdapterBase) RunInTransaction(ctx context.Context, fn func(AuthStorage) error) error {
+	return a.db.RunInTransaction(ctx, func(d db.Dbx) error {
+		app := NewAuthStorage(d)
+		return fn(app)
+	})
+}

@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -29,7 +30,25 @@ func (v *txQueries) Exec(ctx context.Context, sql string, args ...any) (pgconn.C
 	return v.db.Exec(ctx, sql, args...)
 }
 
+//	func (v *txQueries) RunInTransaction(ctx context.Context, fn func(Dbx) error) error {
+//		err := fn(v)
+//		return err
+//	}
 func (v *txQueries) RunInTransaction(ctx context.Context, fn func(Dbx) error) error {
-	err := fn(v)
+
+	tx, err := v.db.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("error starting transaction: %w", err)
+	}
+	// Ensure the transaction will be rolled back if not committed
+	defer tx.Rollback(ctx)
+
+	err = fn(&txQueries{db: tx})
+	if err == nil {
+		if err := tx.Commit(ctx); err != nil {
+			return fmt.Errorf("error committing transaction: %w", err)
+		}
+	}
+
 	return err
 }
