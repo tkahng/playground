@@ -6,23 +6,10 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/danielgtaylor/huma/v2"
 	"github.com/tkahng/authgo/internal/core"
 	"github.com/tkahng/authgo/internal/shared"
 	"golang.org/x/oauth2"
 )
-
-func (api *Api) OAuth2CallbackPostOperation(path string) huma.Operation {
-	return huma.Operation{
-		OperationID: "oauth-callback-post",
-		Method:      http.MethodPost,
-		Path:        path,
-		Summary:     "Oauth callback",
-		Description: "Oauth callback",
-		Tags:        []string{"Auth"},
-		Errors:      []int{http.StatusNotFound},
-	}
-}
 
 type OAuth2CallbackPostResponse struct {
 	Body *shared.UserInfoTokens
@@ -54,21 +41,6 @@ type OAuth2CallbackInput struct {
 	Code  string `json:"code" query:"code" required:"true" minLength:"1"`
 	State string `json:"state" query:"state" required:"true" minLength:"1"`
 	// Provider db.AuthProviders `json:"provider" path:"provider"`
-}
-
-func (h *Api) OAuth2CallbackGetOperation(path string) huma.Operation {
-	return huma.Operation{
-		OperationID: "oauth2-callback-get",
-		Method:      http.MethodGet,
-		Path:        path,
-		Summary:     "OAuth2 callback",
-		Description: "Count the number of colors for all themes",
-		Tags:        []string{"Auth"},
-		Errors:      []int{http.StatusNotFound},
-		// Security: []map[string][]string{
-		// 	middleware.BearerAuthSecurity("colors:read"),
-		// },
-	}
 }
 
 type OAuth2CallbackGetResponse struct {
