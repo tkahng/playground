@@ -3,28 +3,11 @@ package apis
 import (
 	"context"
 	"errors"
-	"net/http"
 
-	"github.com/danielgtaylor/huma/v2"
 	"github.com/tkahng/authgo/internal/core"
 	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
 )
-
-func (api *Api) StatsOperation(path string) huma.Operation {
-	return huma.Operation{
-		OperationID: "stats-get",
-		Method:      http.MethodGet,
-		Path:        path,
-		Summary:     "Get stats",
-		Description: "Get stats",
-		Tags:        []string{"Stats"},
-		Errors:      []int{http.StatusNotFound},
-		Security: []map[string][]string{
-			{shared.BearerAuthSecurityKey: {}},
-		},
-	}
-}
 
 type StatsResponse struct {
 	Body *shared.UserStats `json:"body"`

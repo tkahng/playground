@@ -2,7 +2,6 @@ package apis
 
 import (
 	"context"
-	"net/http"
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/tkahng/authgo/internal/core"
@@ -10,21 +9,6 @@ import (
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 )
-
-func (api *Api) MeOperation(path string) huma.Operation {
-	return huma.Operation{
-		OperationID: "me",
-		Method:      http.MethodGet,
-		Path:        path,
-		Summary:     "Me",
-		Description: "Me",
-		Tags:        []string{"Auth"},
-		Errors:      []int{http.StatusUnauthorized, http.StatusNotFound},
-		Security: []map[string][]string{
-			{shared.BearerAuthSecurityKey: {}},
-		},
-	}
-}
 
 type MeOutput struct {
 	Body *shared.UserWithAccounts
@@ -55,21 +39,6 @@ func (api *Api) Me(ctx context.Context, input *struct{}) (*MeOutput, error) {
 
 }
 
-func (api *Api) MeUpdateOperation(path string) huma.Operation {
-	return huma.Operation{
-		OperationID: "meUpdate",
-		Method:      http.MethodPut,
-		Path:        path,
-		Summary:     "Me Update",
-		Description: "Me Update",
-		Tags:        []string{"Auth"},
-		Errors:      []int{http.StatusUnauthorized, http.StatusNotFound},
-		Security: []map[string][]string{
-			{shared.BearerAuthSecurityKey: {}},
-		},
-	}
-}
-
 func (api *Api) MeUpdate(ctx context.Context, input *struct {
 	Body shared.UpdateMeInput
 }) (*struct{}, error) {
@@ -83,21 +52,6 @@ func (api *Api) MeUpdate(ctx context.Context, input *struct {
 		return nil, err
 	}
 	return nil, nil
-}
-
-func (api *Api) MeDeleteOperation(path string) huma.Operation {
-	return huma.Operation{
-		OperationID: "me-delete",
-		Method:      http.MethodDelete,
-		Path:        path,
-		Summary:     "Me delete",
-		Description: "Me delete",
-		Tags:        []string{"Auth", "Me"},
-		Errors:      []int{http.StatusUnauthorized, http.StatusNotFound},
-		Security: []map[string][]string{
-			{shared.BearerAuthSecurityKey: {}},
-		},
-	}
 }
 
 func (api *Api) MeDelete(ctx context.Context, input *struct{}) (*struct{}, error) {

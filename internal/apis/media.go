@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"io"
-	"net/http"
 	"path"
 
 	"github.com/danielgtaylor/huma/v2"
@@ -14,21 +13,6 @@ import (
 	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
 )
-
-func (api *Api) UploadMediaOperation(path string) huma.Operation {
-	return huma.Operation{
-		OperationID: "upload-media",
-		Method:      http.MethodPost,
-		Path:        path,
-		Summary:     "Upload media",
-		Description: "Upload media",
-		Tags:        []string{"Media"},
-		Errors:      []int{http.StatusNotFound, http.StatusBadRequest},
-		Security: []map[string][]string{
-			{shared.BearerAuthSecurityKey: {}},
-		},
-	}
-}
 
 func (api *Api) UploadMedia(ctx context.Context, input *struct {
 	RawBody huma.MultipartFormFiles[struct {
@@ -96,21 +80,6 @@ func (api *Api) UploadMedia(ctx context.Context, input *struct {
 	return nil, nil
 }
 
-func (api *Api) GetMediaOperation(path string /** /media/:id */) huma.Operation {
-	return huma.Operation{
-		OperationID: "get-media",
-		Method:      http.MethodGet,
-		Path:        path,
-		Summary:     "Get media",
-		Description: "Get media",
-		Tags:        []string{"Media"},
-		Errors:      []int{http.StatusNotFound, http.StatusBadRequest},
-		Security: []map[string][]string{
-			{shared.BearerAuthSecurityKey: {}},
-		},
-	}
-}
-
 func (api *Api) GetMedia(ctx context.Context, input *struct {
 	ID string `path:"id" format:"uuid" required:"true" description:"Id of the media"`
 }) (*shared.Media, error) {
@@ -134,21 +103,6 @@ func (api *Api) GetMedia(ctx context.Context, input *struct {
 		CreatedAt: media.CreatedAt,
 		UpdatedAt: media.UpdatedAt,
 	}, nil
-}
-
-func (api *Api) MedialListOperation(path string /** /media */) huma.Operation {
-	return huma.Operation{
-		OperationID: "get-media-list",
-		Method:      http.MethodGet,
-		Path:        path,
-		Summary:     "Get media list",
-		Description: "Get media list",
-		Tags:        []string{"Media"},
-		Errors:      []int{http.StatusNotFound, http.StatusBadRequest},
-		Security: []map[string][]string{
-			{shared.BearerAuthSecurityKey: {}},
-		},
-	}
 }
 
 func (api *Api) MediaList(ctx context.Context, input *shared.MediaListParams) (*shared.PaginatedOutput[*shared.Media], error) {

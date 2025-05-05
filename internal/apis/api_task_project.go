@@ -2,7 +2,6 @@ package apis
 
 import (
 	"context"
-	"net/http"
 	"slices"
 
 	"github.com/danielgtaylor/huma/v2"
@@ -15,21 +14,6 @@ import (
 	"github.com/tkahng/authgo/internal/tools/ai/googleai"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 )
-
-func (api *Api) TaskProjectListOperation(path string) huma.Operation {
-	return huma.Operation{
-		OperationID: "task-project-list",
-		Method:      http.MethodGet,
-		Path:        path,
-		Summary:     "Task project list",
-		Description: "List of task projects",
-		Tags:        []string{"Task"},
-		Errors:      []int{http.StatusNotFound},
-		Security: []map[string][]string{
-			{shared.BearerAuthSecurityKey: {}},
-		},
-	}
-}
 
 type TaskProjectListResponse struct {
 	Body *shared.PaginatedResponse[*shared.TaskProjectWithTasks]
@@ -83,21 +67,6 @@ func (api *Api) TaskProjectList(ctx context.Context, input *shared.TaskProjectsL
 	}, nil
 }
 
-func (api *Api) TaskProjectCreateOperation(path string) huma.Operation {
-	return huma.Operation{
-		OperationID: "task-project-create",
-		Method:      http.MethodPost,
-		Path:        path,
-		Summary:     "Task project create",
-		Description: "Create a new task project",
-		Tags:        []string{"Task"},
-		Errors:      []int{http.StatusNotFound},
-		Security: []map[string][]string{
-			{shared.BearerAuthSecurityKey: {}},
-		},
-	}
-}
-
 func (api *Api) TaskProjectCreate(ctx context.Context, input *struct {
 	Body shared.CreateTaskProjectWithTasksDTO
 }) (*struct {
@@ -125,21 +94,6 @@ func createTaskProjectWithTasks(ctx context.Context, db db.Dbx, userId uuid.UUID
 		return nil, err
 	}
 	return taskProject, nil
-}
-
-func (api *Api) TaskProjectCreateWithAiOperation(path string) huma.Operation {
-	return huma.Operation{
-		OperationID: "task-project-create-with-ai",
-		Method:      http.MethodPost,
-		Path:        path,
-		Summary:     "Task project create with ai",
-		Description: "Create a new task project with ai",
-		Tags:        []string{"Task"},
-		Errors:      []int{http.StatusNotFound},
-		Security: []map[string][]string{
-			{shared.BearerAuthSecurityKey: {}},
-		},
-	}
 }
 
 type TaskProjectCreateWithAiDto struct {
@@ -187,21 +141,6 @@ func (api *Api) TaskProjectCreateWithAi(ctx context.Context, input *TaskProjectC
 	}, nil
 }
 
-func (api *Api) TaskProjectUpdateOperation(path string) huma.Operation {
-	return huma.Operation{
-		OperationID: "task-project-update",
-		Method:      http.MethodPut,
-		Path:        path,
-		Summary:     "Task project update",
-		Description: "Update a task project",
-		Tags:        []string{"Task"},
-		Errors:      []int{http.StatusNotFound},
-		Security: []map[string][]string{
-			{shared.BearerAuthSecurityKey: {}},
-		},
-	}
-}
-
 type TaskProjectResponse struct {
 	Body *shared.TaskProjectWithTasks
 }
@@ -224,21 +163,6 @@ func (api *Api) TaskProjectUpdate(ctx context.Context, input *shared.UpdateTaskP
 	return nil, nil
 }
 
-func (api *Api) TaskProjectDeleteOperation(path string) huma.Operation {
-	return huma.Operation{
-		OperationID: "task-project-delete",
-		Method:      http.MethodDelete,
-		Path:        path,
-		Summary:     "Task project delete",
-		Description: "Delete a task project",
-		Tags:        []string{"Task"},
-		Errors:      []int{http.StatusNotFound},
-		Security: []map[string][]string{
-			{shared.BearerAuthSecurityKey: {}},
-		},
-	}
-}
-
 func (api *Api) TaskProjectDelete(ctx context.Context, input *struct {
 	TaskProjectID string `path:"task-project-id"`
 }) (*struct{}, error) {
@@ -256,21 +180,6 @@ func (api *Api) TaskProjectDelete(ctx context.Context, input *struct {
 		return nil, err
 	}
 	return nil, nil
-}
-
-func (api *Api) TaskProjectGetOperation(path string) huma.Operation {
-	return huma.Operation{
-		OperationID: "task-project-get",
-		Method:      http.MethodGet,
-		Path:        path,
-		Summary:     "Task project get",
-		Description: "Get a task project",
-		Tags:        []string{"Task"},
-		Errors:      []int{http.StatusNotFound},
-		Security: []map[string][]string{
-			{shared.BearerAuthSecurityKey: {}},
-		},
-	}
 }
 
 func (api *Api) TaskProjectGet(ctx context.Context, input *struct {
@@ -312,21 +221,6 @@ func (api *Api) TaskProjectGet(ctx context.Context, input *struct {
 			}),
 		},
 	}, nil
-}
-
-func (api *Api) TaskProjectTasksCreateOperation(path string) huma.Operation {
-	return huma.Operation{
-		OperationID: "task-project-tasks-create",
-		Method:      http.MethodPost,
-		Path:        path,
-		Summary:     "Task project tasks create",
-		Description: "Create a new task project task",
-		Tags:        []string{"Task"},
-		Errors:      []int{http.StatusNotFound},
-		Security: []map[string][]string{
-			{shared.BearerAuthSecurityKey: {}},
-		},
-	}
 }
 
 func (api *Api) TaskProjectTasksCreate(ctx context.Context, input *shared.CreateTaskWithProjectIdInput) (*TaskResposne, error) {

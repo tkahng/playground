@@ -2,29 +2,12 @@ package apis
 
 import (
 	"context"
-	"net/http"
 	"slices"
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/tkahng/authgo/internal/core"
 	"github.com/tkahng/authgo/internal/repository"
-	"github.com/tkahng/authgo/internal/shared"
 )
-
-func (a *Api) ApiProtectedOperation(path string) huma.Operation {
-	return huma.Operation{
-		OperationID: "api-protected",
-		Method:      http.MethodGet,
-		Path:        path,
-		Summary:     "Api protected",
-		Description: "Api protected",
-		Tags:        []string{"Protected"},
-		Errors:      []int{http.StatusNotFound},
-		Security: []map[string][]string{
-			{shared.BearerAuthSecurityKey: {}},
-		},
-	}
-}
 
 func (a *Api) ApiProtected(ctx context.Context, input *struct {
 	PermissionName string `path:"permission-name"`

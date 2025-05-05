@@ -13,21 +13,6 @@ import (
 	"github.com/tkahng/authgo/internal/tools/mapper"
 )
 
-func (api *Api) TaskListOperation(path string) huma.Operation {
-	return huma.Operation{
-		OperationID: "task-list",
-		Method:      http.MethodGet,
-		Path:        path,
-		Summary:     "Task list",
-		Description: "List of tasks",
-		Tags:        []string{"Task"},
-		Errors:      []int{http.StatusNotFound},
-		Security: []map[string][]string{
-			{shared.BearerAuthSecurityKey: {}},
-		},
-	}
-}
-
 type TaskListResponse struct {
 	Body *shared.PaginatedResponse[*shared.TaskWithSubtask]
 }
