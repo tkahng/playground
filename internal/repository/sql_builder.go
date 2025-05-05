@@ -1,7 +1,6 @@
 package repository
 
 import (
-	"database/sql"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -10,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5"
 )
 
 type Field struct {
@@ -45,18 +43,6 @@ type SQLBuilderInterface interface {
 	Table() string
 	ColumnNames() []string
 	Where(where *map[string]any, args *[]any, run func(string) []string) string
-}
-
-func OptionalRow[T any](record *T, err error) (*T, error) {
-	if err == nil {
-		return record, nil
-	} else if errors.Is(err, pgx.ErrNoRows) {
-		return nil, nil
-	} else if errors.Is(err, sql.ErrNoRows) {
-		return nil, nil
-	} else {
-		return nil, err
-	}
 }
 
 var registry = map[string]SQLBuilderInterface{}
