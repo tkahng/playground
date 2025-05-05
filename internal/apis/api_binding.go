@@ -264,14 +264,73 @@ func BindApis(api huma.API, app core.App) {
 	// check password reset -------------------------------------------------------------
 	huma.Register(
 		api,
-		appApi.CheckPasswordResetOperation("/auth/check-password-reset"),
+		huma.Operation{
+			OperationID: "check-password-reset",
+			Method:      http.MethodGet,
+			Path:        "/auth/check-password-reset",
+			Summary:     "Check password reset",
+			Description: "Check password reset",
+			Tags:        []string{"Auth"},
+			Errors:      []int{http.StatusNotFound},
+		},
 		appApi.CheckPasswordResetGet,
 	)
 	// password reset
-	huma.Register(api, appApi.ResetPasswordOperation("/auth/password-reset"), appApi.ResetPassword)
-	huma.Register(api, appApi.OAuth2CallbackGetOperation("/auth/callback"), appApi.OAuth2CallbackGet)
-	huma.Register(api, appApi.OAuth2CallbackPostOperation("/auth/callback"), appApi.OAuth2CallbackPost)
-	huma.Register(api, appApi.OAuth2AuthorizationUrlOperation("/auth/authorization-url"), appApi.OAuth2AuthorizationUrl)
+	huma.Register(
+		api,
+		huma.Operation{
+			OperationID: "reset-password",
+			Method:      http.MethodPost,
+			Path:        "/auth/password-reset",
+			Summary:     "Reset Password",
+			Description: "Reset Password",
+			Tags:        []string{"Auth"},
+			Errors:      []int{http.StatusNotFound},
+		},
+		appApi.ResetPassword,
+	)
+
+	huma.Register(
+		api,
+		huma.Operation{
+			OperationID: "oauth2-callback-get",
+			Method:      http.MethodGet,
+			Path:        "/auth/callback",
+			Summary:     "OAuth2 Callback (GET)",
+			Description: "Handle OAuth2 callback (GET)",
+			Tags:        []string{"Auth", "OAuth2"},
+			Errors:      []int{http.StatusNotFound},
+		},
+		appApi.OAuth2CallbackGet,
+	)
+
+	huma.Register(
+		api,
+		huma.Operation{
+			OperationID: "oauth2-callback-post",
+			Method:      http.MethodPost,
+			Path:        "/auth/callback",
+			Summary:     "OAuth2 Callback (POST)",
+			Description: "Handle OAuth2 callback (POST)",
+			Tags:        []string{"Auth", "OAuth2"},
+			Errors:      []int{http.StatusNotFound},
+		},
+		appApi.OAuth2CallbackPost,
+	)
+
+	huma.Register(
+		api,
+		huma.Operation{
+			OperationID: "oauth2-authorization-url",
+			Method:      http.MethodGet,
+			Path:        "/auth/authorization-url",
+			Summary:     "OAuth2 Authorization URL",
+			Description: "Get OAuth2 authorization URL",
+			Tags:        []string{"Auth", "OAuth2"},
+			Errors:      []int{http.StatusNotFound},
+		},
+		appApi.OAuth2AuthorizationUrl,
+	)
 
 	// authenticated routes ----------------------------------------------------------------------------------------
 	// need to be authenticated to access these routes
@@ -279,11 +338,51 @@ func BindApis(api huma.API, app core.App) {
 	authenticatedGroup := huma.NewGroup(api)
 
 	// ---- Upload File
-	huma.Register(authenticatedGroup, appApi.UploadMediaOperation("/media"), appApi.UploadMedia)
+	huma.Register(
+		authenticatedGroup,
+		huma.Operation{
+			OperationID: "upload-media",
+			Method:      http.MethodPost,
+			Path:        "/media",
+			Summary:     "Upload media",
+			Description: "Upload a media file",
+			Tags:        []string{"Media"},
+			Security:    []map[string][]string{{shared.BearerAuthSecurityKey: {}}},
+			Errors:      []int{http.StatusUnauthorized, http.StatusBadRequest, http.StatusInternalServerError},
+		},
+		appApi.UploadMedia,
+	)
 	// ---- Get Media
-	huma.Register(authenticatedGroup, appApi.GetMediaOperation("/media/{id}"), appApi.GetMedia)
+	huma.Register(
+		authenticatedGroup,
+		huma.Operation{
+			OperationID: "get-media",
+			Method:      http.MethodGet,
+			Path:        "/media/{id}",
+			Summary:     "Get media",
+			Description: "Get a media file by ID",
+			Tags:        []string{"Media"},
+			Security:    []map[string][]string{{shared.BearerAuthSecurityKey: {}}},
+			Errors:      []int{http.StatusUnauthorized, http.StatusNotFound, http.StatusInternalServerError},
+		},
+		appApi.GetMedia,
+	)
 	// ---- Get Media List
-	huma.Register(authenticatedGroup, appApi.MedialListOperation("/media"), appApi.MediaList)
+	huma.Register(
+		authenticatedGroup,
+		huma.Operation{
+			OperationID: "list-media",
+			Method:      http.MethodGet,
+			Path:        "/media",
+			Summary:     "List media",
+			Description: "List all media files for the user",
+			Tags:        []string{"Media"},
+			Security:    []map[string][]string{{shared.BearerAuthSecurityKey: {}}},
+			Errors:      []int{http.StatusUnauthorized, http.StatusInternalServerError},
+		},
+		appApi.MediaList,
+	)
+
 	// ---- notifications
 	sse.Register(authenticatedGroup, appApi.NotificationsSseOperation("/notifications/sse"), map[string]any{
 		// Mapping of event type name to Go struct for that event.

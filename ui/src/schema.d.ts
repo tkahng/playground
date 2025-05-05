@@ -477,8 +477,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * OAuth2 authorization
-         * @description url for oauth2 authorization
+         * OAuth2 Authorization URL
+         * @description Get OAuth2 authorization URL
          */
         get: operations["oauth2-authorization-url"];
         put?: never;
@@ -497,16 +497,16 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * OAuth2 callback
-         * @description Count the number of colors for all themes
+         * OAuth2 Callback (GET)
+         * @description Handle OAuth2 callback (GET)
          */
         get: operations["oauth2-callback-get"];
         put?: never;
         /**
-         * Oauth callback
-         * @description Oauth callback
+         * OAuth2 Callback (POST)
+         * @description Handle OAuth2 callback (POST)
          */
-        post: operations["oauth-callback-post"];
+        post: operations["oauth2-callback-post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -591,8 +591,8 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Reset password
-         * @description Reset password
+         * Reset Password
+         * @description Reset Password
          */
         post: operations["reset-password"];
         delete?: never;
@@ -753,14 +753,14 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get media list
-         * @description Get media list
+         * List media
+         * @description List all media files for the user
          */
-        get: operations["get-media-list"];
+        get: operations["list-media"];
         put?: never;
         /**
          * Upload media
-         * @description Upload media
+         * @description Upload a media file
          */
         post: operations["upload-media"];
         delete?: never;
@@ -778,7 +778,7 @@ export interface paths {
         };
         /**
          * Get media
-         * @description Get media
+         * @description Get a media file by ID
          */
         get: operations["get-media"];
         put?: never;
@@ -3821,7 +3821,7 @@ export interface operations {
             };
         };
     };
-    "oauth-callback-post": {
+    "oauth2-callback-post": {
         parameters: {
             query: {
                 code: string;
@@ -4636,7 +4636,7 @@ export interface operations {
             };
         };
     };
-    "get-media-list": {
+    "list-media": {
         parameters: {
             query?: {
                 page?: number;
@@ -4661,17 +4661,8 @@ export interface operations {
                     "application/json": components["schemas"]["PaginatedResponseMedia"];
                 };
             };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-            /** @description Not Found */
-            404: {
+            /** @description Unauthorized */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4732,8 +4723,8 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ErrorModel"];
                 };
             };
-            /** @description Not Found */
-            404: {
+            /** @description Unauthorized */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4775,8 +4766,8 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Bad Request */
-            400: {
+            /** @description Unauthorized */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };
