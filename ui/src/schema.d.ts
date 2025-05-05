@@ -1129,26 +1129,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/tasks/{task-id}/position": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /**
-         * Update task position
-         * @description Update task position
-         */
-        put: operations["update-task-position"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/tasks/{task-id}/position-status": {
         parameters: {
             query?: never;
@@ -1308,7 +1288,9 @@ export interface components {
         };
         Notification: {
             channel: string;
-            content: string;
+            content: {
+                [key: string]: unknown;
+            };
             /** Format: date-time */
             created_at: string;
             id: string;
@@ -1769,15 +1751,6 @@ export interface components {
             updated_at: string;
             user_id: string;
         };
-        TaskPositionDTO: {
-            /**
-             * Format: uri
-             * @description A URL to the JSON Schema for this object.
-             */
-            readonly $schema?: string;
-            /** Format: int64 */
-            position: number;
-        };
         TaskPositionStatusDTO: {
             /**
              * Format: uri
@@ -1976,6 +1949,7 @@ export interface components {
             id: string;
             image: string | null;
             name: string | null;
+            permissions?: components["schemas"]["Permission"][] | null;
             roles?: components["schemas"]["RoleWithPermissions"][] | null;
             /** Format: date-time */
             updated_at: string;
@@ -3086,7 +3060,7 @@ export interface operations {
                 provider_types?: ("oauth" | "credentials")[] | null;
                 q?: string;
                 ids?: string[] | null;
-                user_id?: string;
+                user_ids?: string[] | null;
                 sort_by?: string;
                 sort_order?: "asc" | "desc";
             };
@@ -5843,57 +5817,6 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
-        responses: {
-            /** @description No Content */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-            /** @description Unprocessable Entity */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-            /** @description Internal Server Error */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-        };
-    };
-    "update-task-position": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                "task-id": string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["TaskPositionDTO"];
-            };
-        };
         responses: {
             /** @description No Content */
             204: {

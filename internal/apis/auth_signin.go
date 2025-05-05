@@ -5,21 +5,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/danielgtaylor/huma/v2"
 	"github.com/tkahng/authgo/internal/shared"
 )
-
-func (api *Api) SigninOperation(path string) huma.Operation {
-	return huma.Operation{
-		OperationID: "signin",
-		Method:      http.MethodPost,
-		Path:        path,
-		Summary:     "Sign in",
-		Description: "Count the number of colors for all themes",
-		Tags:        []string{"Auth"},
-		Errors:      []int{http.StatusNotFound},
-	}
-}
 
 type SigninDto struct {
 	Email    string                `json:"email" form:"email" format:"email" example:"admin@k2dv.io"`

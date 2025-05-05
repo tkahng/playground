@@ -3,6 +3,7 @@ package apis
 import (
 	"context"
 	"fmt"
+	"net/http"
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/danielgtaylor/huma/v2/sse"
@@ -56,23 +57,166 @@ func BindApis(api huma.API, app core.App) {
 	// http://127.0.0.1:8080/auth/callback
 	// huma.Register(api, appApi.AuthMethodsOperation("/auth/methods"), appApi.AuthMethods)
 	// permissions
-	huma.Register(api, appApi.PermissionsListOperation("/permissions"), appApi.PermissionsList)
+	huma.Register(
+		api,
+		huma.Operation{
+			OperationID: "permissions-list",
+			Method:      http.MethodGet,
+			Path:        "/permissions",
+			Summary:     "permissions list",
+			Description: "List of permissions",
+			Tags:        []string{"Permissions"},
+			Errors:      []int{http.StatusNotFound},
+		},
+		appApi.PermissionsList,
+	)
 	// protected test routes -----------------------------------------------------------
-	huma.Register(api, appApi.ApiProtectedOperation("/protected/{permission-name}"), appApi.ApiProtected)
+	huma.Register(
+		api,
+		huma.Operation{
+			OperationID: "api-protected",
+			Method:      http.MethodGet,
+			Path:        "/protected/{permission-name}",
+			Summary:     "Api protected",
+			Description: "Api protected",
+			Tags:        []string{"Protected"},
+			Errors:      []int{http.StatusNotFound},
+			Security:    []map[string][]string{{shared.BearerAuthSecurityKey: {}}},
+		},
+		appApi.ApiProtected,
+	)
 
-	huma.Register(api, appApi.SignupOperation("/auth/signup"), appApi.SignUp)
-	huma.Register(api, appApi.SigninOperation("/auth/signin"), appApi.SignIn)
-	huma.Register(api, appApi.MeOperation("/auth/me"), appApi.Me)
-	huma.Register(api, appApi.MeUpdateOperation("/auth/me"), appApi.MeUpdate)
-	huma.Register(api, appApi.MeDeleteOperation("/auth/me"), appApi.MeDelete)
-	huma.Register(api, appApi.RefreshTokenOperation("/auth/refresh-token"), appApi.RefreshToken)
-	huma.Register(api, appApi.SignoutOperation("/auth/signout"), appApi.Signout)
+	huma.Register(
+		api,
+		huma.Operation{
+			OperationID: "signup",
+			Method:      http.MethodPost,
+			Path:        "/auth/signup",
+			Summary:     "Sign up",
+			Description: "Count the number of colors for all themes",
+			Tags:        []string{"Auth"},
+			Errors:      []int{http.StatusNotFound},
+		},
+		appApi.SignUp,
+	)
+	huma.Register(
+		api,
+		huma.Operation{
+			OperationID: "signin",
+			Method:      http.MethodPost,
+			Path:        "/auth/signin",
+			Summary:     "Sign in",
+			Description: "Count the number of colors for all themes",
+			Tags:        []string{"Auth"},
+			Errors:      []int{http.StatusNotFound},
+		},
+		appApi.SignIn,
+	)
+	huma.Register(
+		api,
+		huma.Operation{
+			OperationID: "me",
+			Method:      http.MethodGet,
+			Path:        "/auth/me",
+			Summary:     "Me",
+			Description: "Me",
+			Tags:        []string{"Auth"},
+			Errors:      []int{http.StatusUnauthorized, http.StatusNotFound},
+			Security: []map[string][]string{
+				{shared.BearerAuthSecurityKey: {}},
+			},
+		},
+		appApi.Me,
+	)
+	huma.Register(
+		api,
+		huma.Operation{
+			OperationID: "meUpdate",
+			Method:      http.MethodPut,
+			Path:        "/auth/me",
+			Summary:     "Me Update",
+			Description: "Me Update",
+			Tags:        []string{"Auth"},
+			Errors:      []int{http.StatusUnauthorized, http.StatusNotFound},
+			Security:    []map[string][]string{{shared.BearerAuthSecurityKey: {}}},
+		},
+		appApi.MeUpdate,
+	)
+	huma.Register(
+		api,
+		huma.Operation{
+			OperationID: "me-delete",
+			Method:      http.MethodDelete,
+			Path:        "/auth/me",
+			Summary:     "Me delete",
+			Description: "Me delete",
+			Tags:        []string{"Auth", "Me"},
+			Errors:      []int{http.StatusUnauthorized, http.StatusNotFound},
+			Security:    []map[string][]string{{shared.BearerAuthSecurityKey: {}}},
+		},
+		appApi.MeDelete,
+	)
+	huma.Register(
+		api,
+		huma.Operation{
+			OperationID: "refresh-token",
+			Method:      http.MethodPost,
+			Path:        "/auth/refresh-token",
+			Summary:     "Refresh token",
+			Description: "Count the number of colors for all themes",
+			Tags:        []string{"Auth"},
+			Errors:      []int{http.StatusNotFound},
+		},
+		appApi.RefreshToken,
+	)
+	huma.Register(
+		api,
+		huma.Operation{
+			OperationID: "signout",
+			Method:      http.MethodPost,
+			Path:        "/auth/signout",
+			Summary:     "Signout",
+			Description: "Signout",
+			Tags:        []string{"Auth"},
+			Errors:      []int{http.StatusUnauthorized, http.StatusNotFound},
+			Security:    []map[string][]string{{shared.BearerAuthSecurityKey: {}}},
+		},
+		appApi.Signout,
+	)
 
-	huma.Register(api, appApi.VerifyOperation("/auth/verify"), appApi.Verify)
-	huma.Register(api, appApi.VerifyPostOperation("/auth/verify"), appApi.VerifyPost)
-	huma.Register(api, appApi.RequestVerificationOperation("/auth/request-verification"), appApi.RequestVerification)
-	huma.Register(api, appApi.RequestPasswordResetOperation("/auth/request-password-reset"), appApi.RequestPasswordReset)
-	huma.Register(api, appApi.ConfirmPasswordResetOperation("/auth/confirm-password-reset"), appApi.ConfirmPasswordReset)
+	huma.Register(
+		api,
+		huma.Operation{
+			OperationID: "verify-get",
+			Method:      http.MethodGet,
+			Path:        "/auth/verify",
+			Summary:     "Verify",
+			Description: "Verify",
+			Tags:        []string{"Auth", "Verify"},
+			Errors:      []int{http.StatusNotFound, http.StatusBadRequest},
+		},
+		appApi.Verify,
+	)
+	huma.Register(
+		api,
+		huma.Operation{OperationID: "verify-post", Method: http.MethodPost, Path: "/auth/verify", Summary: "Verify", Description: "Verify", Tags: []string{"Auth", "Verify"}, Errors: []int{http.StatusNotFound, http.StatusBadRequest}},
+		appApi.VerifyPost,
+	)
+	huma.Register(
+		api,
+		appApi.RequestVerificationOperation("/auth/request-verification"),
+		appApi.RequestVerification,
+	)
+	huma.Register(
+		api,
+		appApi.RequestPasswordResetOperation("/auth/request-password-reset"),
+		appApi.RequestPasswordReset,
+	)
+	huma.Register(
+		api,
+		appApi.ConfirmPasswordResetOperation("/auth/confirm-password-reset"),
+		appApi.ConfirmPasswordReset,
+	)
 	huma.Register(api, appApi.CheckPasswordResetOperation("/auth/check-password-reset"), appApi.CheckPasswordResetGet)
 	// password reset
 	huma.Register(api, appApi.ResetPasswordOperation("/auth/password-reset"), appApi.ResetPassword)
