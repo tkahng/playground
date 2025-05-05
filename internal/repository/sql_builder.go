@@ -29,15 +29,16 @@ type Relation struct {
 }
 
 type SQLBuilder[Model any] struct {
-	table       string
-	keys        []string
-	fields      []Field
-	columnNames []string
-	relations   map[string]Relation
-	operations  map[string]func(string, ...string) string
-	identifier  func(string) string
-	parameter   func(reflect.Value, *[]any) string
-	generator   func(reflect.StructField, *[]any) string
+	table        string
+	keys         []string
+	fields       []Field
+	columnNames  []string
+	relations    map[string]Relation
+	operations   map[string]func(string, ...string) string
+	identifier   func(string) string
+	parameter    func(reflect.Value, *[]any) string
+	generator    func(reflect.StructField, *[]any) (string, error)
+	skipIdInsert bool // Skip inserting the primary key field if it is generated
 }
 
 type SQLBuilderInterface interface {
@@ -60,7 +61,25 @@ func OptionalRow[T any](record *T, err error) (*T, error) {
 
 var registry = map[string]SQLBuilderInterface{}
 
-func NewSQLBuilder[Model any]() *SQLBuilder[Model] {
+type SQLBuilderOptions[Model any] func(*SQLBuilder[Model]) error
+
+func UuidV7Generator[Model any](builder *SQLBuilder[Model]) error {
+	if builder == nil {
+		return errors.New("SQLBuilder cannot be nil")
+	}
+	builder.generator = func(field reflect.StructField, keys *[]any) (string, error) {
+		id, err := uuid.NewV7()
+		if err != nil {
+			slog.Error("Error generating UUID v7", slog.Any("error", err), slog.String("field", field.Name))
+			return "", fmt.Errorf("error generating UUID v7 for field %s: %w", field.Name, err)
+		}
+		return id.String(), nil
+	}
+	slog.Debug("UUID v7 generator set for SQLBuilder", slog.String("table", builder.table))
+	return nil
+}
+
+func NewSQLBuilder[Model any](opts ...SQLBuilderOptions[Model]) *SQLBuilder[Model] {
 	operations := map[string]func(string, ...string) string{
 		"_eq":     func(key string, values ...string) string { return fmt.Sprintf("%s = %s", key, values[0]) },
 		"_neq":    func(key string, values ...string) string { return fmt.Sprintf("%s != %s", key, values[0]) },
@@ -152,14 +171,21 @@ func NewSQLBuilder[Model any]() *SQLBuilder[Model] {
 	slog.Debug("SQLBuilder initialized", slog.String("table", table), slog.Any("fields", fields), slog.Any("relations", relations))
 
 	result := &SQLBuilder[Model]{
-		table:      table,
-		keys:       []string{fields[0].name},
-		fields:     fields,
-		relations:  relations,
-		operations: operations_,
-		identifier: identifier,
-		parameter:  parameter,
-		generator:  nil,
+		table:        table,
+		keys:         []string{fields[0].name},
+		fields:       fields,
+		relations:    relations,
+		operations:   operations_,
+		identifier:   identifier,
+		parameter:    parameter,
+		generator:    nil,
+		skipIdInsert: true,
+	}
+	for _, opt := range opts {
+		if err := opt(result); err != nil {
+			slog.Error("Error applying SQLBuilder option", slog.Any("error", err))
+			panic(fmt.Sprintf("Error applying SQLBuilder option: %v", err))
+		}
 	}
 
 	registry[table] = result
@@ -243,8 +269,17 @@ func (b *SQLBuilder[Model]) Values(values *[]Model, args *[]any, keys *[]any) (f
 				// The first field is the primary key
 				if b.generator != nil {
 					// If a generator function is provided, use it to generate the key
-					items = append(items, b.generator(_type.Field(field.idx), keys))
+					id, err := b.generator(_type.Field(field.idx), keys)
+					if err != nil {
+						return "", "", fmt.Errorf("error generating primary key for field %s: %w", field.name, err)
+					}
+					items = append(items, id)
 				}
+				if b.skipIdInsert {
+					// If skipIdInsert is true, skip inserting the primary key field
+					continue
+				}
+				items = append(items, b.parameter(_value.Field(field.idx), args))
 			} else {
 				if slices.Contains(timestampNames, field.name) {
 					continue // Skip timestamp fields
@@ -274,7 +309,8 @@ func (b *SQLBuilder[Model]) SetError(set *Model, args *[]any, where *map[string]
 			err = fmt.Errorf("error generating Set for table %s", b.table)
 		}
 	}()
-	return b.Set(set, args, where), nil
+	ret = b.Set(set, args, where)
+	return
 }
 
 // Constructs the SET clause for an UPDATE query
