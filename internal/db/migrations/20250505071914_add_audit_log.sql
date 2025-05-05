@@ -10,3 +10,4 @@ CREATE TABLE IF NOT EXISTS audit_log (
     CONSTRAINT fk_audit_log_user FOREIGN KEY (user_id) REFERENCES users (id) ON UPDATE CASCADE ON DELETE CASCADE
 );
 -- migrate:down
+DROP TABLE IF EXISTS audit_log;
