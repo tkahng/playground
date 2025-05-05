@@ -1,7 +1,6 @@
 package repository
 
 import (
-	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -12,19 +11,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
-	"github.com/tkahng/authgo/internal/db"
 )
-
-type Repository[Model any] interface {
-	Get(ctx context.Context, dbx db.Dbx, where *map[string]any, order *map[string]string, limit *int, skip *int) ([]*Model, error)
-	GetOne(ctx context.Context, dbx db.Dbx, where *map[string]any) (*Model, error)
-	Put(ctx context.Context, dbx db.Dbx, models []Model) ([]*Model, error)
-	Post(ctx context.Context, dbx db.Dbx, models []Model) ([]*Model, error)
-	DeleteReturn(ctx context.Context, dbx db.Dbx, where *map[string]any) ([]*Model, error)
-	Delete(ctx context.Context, dbx db.Dbx, where *map[string]any) (int64, error)
-	Count(ctx context.Context, dbx db.Dbx, where *map[string]any) (int64, error)
-	Builder() SQLBuilderInterface
-}
 
 type Field struct {
 	idx  int
@@ -212,28 +199,29 @@ func (b *SQLBuilder[Model]) ValuesError(values *[]Model, args *[]any, keys *[]an
 			err = fmt.Errorf("error generating values for table %s", b.table)
 		}
 	}()
-	fields, vals = b.Values(values, args, keys)
+	fields, vals, err = b.Values(values, args, keys)
 	return
 }
 
 // Constructs the VALUES clause for an INSERT query
-func (b *SQLBuilder[Model]) Values(values *[]Model, args *[]any, keys *[]any) (string, string) {
+func (b *SQLBuilder[Model]) Values(values *[]Model, args *[]any, keys *[]any) (fields string, vals string, err error) {
 	if values == nil {
-		return "", ""
+		err = fmt.Errorf("values cannot be nil")
+		return
 	}
 
 	// Generate the field names for the VALUES clause
-	fields := []string{}
+	fieldsArray := []string{}
 	for idx, field := range b.fields {
 		if idx == 0 {
 			// The first field is the primary key
 			if b.generator != nil {
 				// If a generator function is provided, primary key will be generated
-				fields = append(fields, b.identifier(field.name))
+				fieldsArray = append(fieldsArray, b.identifier(field.name))
 			}
 		} else {
 			// Other fields are added to the VALUES clause
-			fields = append(fields, b.identifier(field.name))
+			fieldsArray = append(fieldsArray, b.identifier(field.name))
 		}
 	}
 
@@ -262,7 +250,9 @@ func (b *SQLBuilder[Model]) Values(values *[]Model, args *[]any, keys *[]any) (s
 	}
 
 	slog.Debug("Constructed VALUES clause", slog.Any("values", result))
-	return strings.Join(fields, ","), strings.Join(result, ",")
+	fields = strings.Join(fieldsArray, ",")
+	vals = strings.Join(result, ",")
+	return fields, vals, nil
 }
 
 func (b *SQLBuilder[Model]) SetError(set *Model, args *[]any, where *map[string]any) (ret string, err error) {
