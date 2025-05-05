@@ -12,19 +12,6 @@ import (
 	"github.com/tkahng/authgo/internal/shared"
 )
 
-func InitApiConfig() huma.Config {
-	config := huma.DefaultConfig("My API", "1.0.0")
-	config.Servers = []*huma.Server{{URL: "http://localhost:8080"}}
-	config.Components.SecuritySchemes = map[string]*huma.SecurityScheme{
-		shared.BearerAuthSecurityKey: {
-			Type:         "http",
-			Scheme:       "bearer",
-			BearerFormat: "JWT",
-		},
-	}
-	return config
-}
-
 func BindMiddlewares(api huma.API, app core.App) {
 	api.UseMiddleware(AuthMiddleware(api, app))
 	api.UseMiddleware(RequireAuthMiddleware(api))

@@ -203,6 +203,8 @@ func (b *SQLBuilder[Model]) ValuesError(values *[]Model, args *[]any, keys *[]an
 	return
 }
 
+var timestampNames = []string{"created_at", "updated_at"}
+
 // Constructs the VALUES clause for an INSERT query
 func (b *SQLBuilder[Model]) Values(values *[]Model, args *[]any, keys *[]any) (fields string, vals string, err error) {
 	if values == nil {
@@ -220,6 +222,9 @@ func (b *SQLBuilder[Model]) Values(values *[]Model, args *[]any, keys *[]any) (f
 				fieldsArray = append(fieldsArray, b.identifier(field.name))
 			}
 		} else {
+			if slices.Contains(timestampNames, field.name) {
+				continue // Skip timestamp fields
+			}
 			// Other fields are added to the VALUES clause
 			fieldsArray = append(fieldsArray, b.identifier(field.name))
 		}
@@ -241,6 +246,9 @@ func (b *SQLBuilder[Model]) Values(values *[]Model, args *[]any, keys *[]any) (f
 					items = append(items, b.generator(_type.Field(field.idx), keys))
 				}
 			} else {
+				if slices.Contains(timestampNames, field.name) {
+					continue // Skip timestamp fields
+				}
 				// Other fields are added to the VALUES clause
 				items = append(items, b.parameter(_value.Field(field.idx), args))
 			}

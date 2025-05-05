@@ -14,12 +14,22 @@ import (
 	"github.com/go-chi/httprate"
 
 	"github.com/go-chi/cors"
+	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/ui"
 )
 
 func NewServer() (http.Handler, huma.API) {
 	var api huma.API
-	config := InitApiConfig()
+	config := huma.DefaultConfig("My API", "1.0.0")
+	config.Servers = []*huma.Server{{URL: "http://localhost:8080"}}
+	config.Components.SecuritySchemes = map[string]*huma.SecurityScheme{
+		shared.BearerAuthSecurityKey: {
+			Type:         "http",
+			Scheme:       "bearer",
+			BearerFormat: "JWT",
+		},
+	}
+
 	// config.DocsPath = ""
 
 	r := chi.NewMux()
