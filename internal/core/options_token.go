@@ -22,34 +22,14 @@ func (c TokenOption) Validate() error {
 	)
 }
 
-func (o *TokenOption) SetClaims(c *jwt.RegisteredClaims) {
-	c.ExpiresAt = o.ExpiresAt()
-}
-
-func (o *TokenOption) SetDto(c *shared.CreateTokenDTO) {
-	c.Expires = o.Expires()
-}
-
-func (c *TokenOption) DurationTime() time.Duration {
+func (c *TokenOption) durationTime() time.Duration {
 	return time.Duration(c.Duration) * time.Second
 }
 
 func (c *TokenOption) ExpiresAt() *jwt.NumericDate {
-	return jwt.NewNumericDate(time.Now().Add(c.DurationTime()))
+	return jwt.NewNumericDate(time.Now().Add(c.durationTime()))
 }
 
 func (c *TokenOption) Expires() time.Time {
-	return time.Now().Add(c.DurationTime())
-}
-
-func DurationTime(c int64) time.Duration {
-	return time.Duration(c) * time.Second
-}
-
-func Expires(c int64) time.Time {
-	return time.Now().Add(DurationTime(c))
-}
-
-func ExpiresAt(c int64) *jwt.NumericDate {
-	return jwt.NewNumericDate(Expires(c))
+	return time.Now().Add(c.durationTime())
 }
