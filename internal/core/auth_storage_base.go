@@ -32,12 +32,15 @@ func (a *AuthAdapterBase) GetToken(ctx context.Context, token string) (*shared.T
 			"token": map[string]any{
 				"_eq": token,
 			},
-			"expires": map[string]any{
-				"_gt": time.Now(),
-			},
 		})
 	if err != nil {
 		return nil, fmt.Errorf("error at getting token: %w", err)
+	}
+	if res == nil {
+		return nil, shared.ErrTokenNotFound
+	}
+	if res.Expires.Before(time.Now()) {
+		return nil, shared.ErrTokenExpired
 	}
 	return &shared.Token{
 		Type:       shared.TokenType(res.Type),
@@ -95,24 +98,25 @@ func (a *AuthAdapterBase) VerifyTokenStorage(ctx context.Context, token string) 
 
 // FindUserByEmail implements AuthAdapter.
 func (a *AuthAdapterBase) FindUserByEmail(ctx context.Context, email string) (*shared.User, error) {
-
+	var u *shared.User
 	user, err := queries.FindUserByEmail(ctx, a.db, email)
 
 	if err != nil {
 		return nil, fmt.Errorf("error getting user: %w", err)
 	}
-	if user == nil {
-		return nil, fmt.Errorf("user not found")
+	if user != nil {
+		u = &shared.User{
+			ID:              user.ID,
+			Email:           user.Email,
+			EmailVerifiedAt: user.EmailVerifiedAt,
+			Name:            user.Name,
+			Image:           user.Image,
+			CreatedAt:       user.CreatedAt,
+			UpdatedAt:       user.UpdatedAt,
+		}
 	}
-	return &shared.User{
-		ID:              user.ID,
-		Email:           user.Email,
-		EmailVerifiedAt: user.EmailVerifiedAt,
-		Name:            user.Name,
-		Image:           user.Image,
-		CreatedAt:       user.CreatedAt,
-		UpdatedAt:       user.UpdatedAt,
-	}, nil
+
+	return u, nil
 }
 
 // FindUserAccountByUserIdAndProvider implements AuthAdapter.
@@ -122,6 +126,9 @@ func (a *AuthAdapterBase) FindUserAccountByUserIdAndProvider(ctx context.Context
 
 	if err != nil {
 		return nil, fmt.Errorf("error getting user account: %w", err)
+	}
+	if account == nil {
+		return nil, nil
 	}
 
 	return &shared.UserAccount{
@@ -145,7 +152,7 @@ func (a *AuthAdapterBase) FindUserAccountByUserIdAndProvider(ctx context.Context
 
 // UpdateUserAccount implements AuthAdapter.
 func (a *AuthAdapterBase) UpdateUserAccount(ctx context.Context, account *shared.UserAccount) error {
-	res, err := repository.UserAccount.PutOne(ctx, a.db, &models.UserAccount{
+	_, err := repository.UserAccount.PutOne(ctx, a.db, &models.UserAccount{
 		ID:                account.ID,
 		UserID:            account.UserID,
 		Provider:          models.Providers(account.Provider),
@@ -165,9 +172,6 @@ func (a *AuthAdapterBase) UpdateUserAccount(ctx context.Context, account *shared
 	if err != nil {
 		return fmt.Errorf("error updating user account: %w", err)
 	}
-	if res == nil {
-		return fmt.Errorf("user account not found")
-	}
 	return nil
 }
 
@@ -178,7 +182,7 @@ func (a *AuthAdapterBase) GetUserInfo(ctx context.Context, email string) (*share
 		return nil, fmt.Errorf("error getting user: %w", err)
 	}
 	if user == nil {
-		return nil, fmt.Errorf("user not found")
+		return nil, shared.ErrUserNotFound
 	}
 	result := &shared.UserInfo{
 		User: shared.User{
@@ -233,14 +237,11 @@ func (a *AuthAdapterBase) CreateUser(ctx context.Context, user *shared.User) (*s
 
 // DeleteUser implements AuthAdapter.
 func (a *AuthAdapterBase) DeleteUser(ctx context.Context, id uuid.UUID) error {
-	res, err := repository.User.DeleteReturn(ctx, a.db, &map[string]any{
+	_, err := repository.User.DeleteReturn(ctx, a.db, &map[string]any{
 		"id": map[string]any{"_eq": id.String()},
 	})
 	if err != nil {
 		return err
-	}
-	if res == nil {
-		return fmt.Errorf("user not found")
 	}
 	return nil
 }
