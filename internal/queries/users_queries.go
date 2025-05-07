@@ -84,6 +84,12 @@ type RolePermissionClaims struct {
 	Providers   []models.Providers `json:"providers" db:"providers"`
 }
 
+// FindUserWithRolesAndPermissionsByEmail retrieves a user's roles and permissions
+// from the database based on their email address.
+// It expects a database connection (or transaction) `db` and the `email` of the user.
+// It returns a pointer to a RolePermissionClaims struct containing the user's
+// roles and permissions, or an error if the user is not found or if any other
+// database error occurs.
 func FindUserWithRolesAndPermissionsByEmail(ctx context.Context, db db.Dbx, email string) (*RolePermissionClaims, error) {
 	res, err := pgxscan.One(ctx, db, scan.StructMapper[RolePermissionClaims](), RawGetUserWithAllRolesAndPermissionsByEmail, email)
 	if err != nil {
