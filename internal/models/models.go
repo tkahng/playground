@@ -6,63 +6,6 @@ import (
 	"github.com/google/uuid"
 )
 
-type User struct {
-	_               struct{}              `db:"users" json:"-"`
-	ID              uuid.UUID             `db:"id" json:"id"`
-	Email           string                `db:"email" json:"email"`
-	EmailVerifiedAt *time.Time            `db:"email_verified_at" json:"email_verified_at"`
-	Name            *string               `db:"name" json:"name"`
-	Image           *string               `db:"image" json:"image"`
-	CreatedAt       time.Time             `db:"created_at" json:"created_at"`
-	UpdatedAt       time.Time             `db:"updated_at" json:"updated_at"`
-	Accounts        []*UserAccount        `db:"accounts" src:"id" dest:"user_id" table:"user_accounts" json:"accounts,omitempty"`
-	Roles           []*Role               `db:"roles" src:"id" dest:"user_id" table:"roles" through:"user_roles,role_id,id" json:"roles,omitempty"`
-	Permissions     []*Permission         `db:"permissions" src:"id" dest:"user_id" table:"permissions" through:"user_permissions,permission_id,id" json:"permissions,omitempty"`
-	AiUsages        []*AiUsage            `db:"ai_usages" src:"id" dest:"user_id" table:"ai_usages" json:"ai_usages,omitempty"`
-	Subscriptions   []*StripeSubscription `db:"subscriptions" src:"id" dest:"user_id" table:"subscriptions" json:"subscriptions,omitempty"`
-}
-
-type UserRole struct {
-	_      struct{}  `db:"user_roles" json:"-"`
-	UserID uuid.UUID `db:"user_id" json:"user_id"`
-	RoleID uuid.UUID `db:"role_id" json:"role_id"`
-}
-type ProductRole struct {
-	_         struct{}  `db:"product_roles" json:"-"`
-	ProductID string    `db:"product_id" json:"product_id"`
-	RoleID    uuid.UUID `db:"role_id" json:"role_id"`
-}
-type UserPermission struct {
-	_            struct{}  `db:"user_permissions" json:"-"`
-	UserID       uuid.UUID `db:"user_id" json:"user_id"`
-	PermissionID uuid.UUID `db:"permission_id" json:"permission_id"`
-}
-type Role struct {
-	_           struct{}      `db:"roles" json:"-"`
-	ID          uuid.UUID     `db:"id" json:"id"`
-	Name        string        `db:"name" json:"name"`
-	Description *string       `db:"description" json:"description,omitempty"`
-	CreatedAt   time.Time     `db:"created_at" json:"created_at"`
-	UpdatedAt   time.Time     `db:"updated_at" json:"updated_at"`
-	Permissions []*Permission `db:"permissions" src:"id" dest:"role_id" table:"permissions" through:"role_permissions,permission_id,id" json:"permissions,omitempty"`
-	Users       []*User       `db:"users" src:"id" dest:"role_id" table:"users" through:"user_roles,user_id,id" json:"users,omitempty"`
-}
-
-type RolePermission struct {
-	_            struct{}  `db:"role_permissions" json:"-"`
-	RoleID       uuid.UUID `db:"role_id" json:"role_id"`
-	PermissionID uuid.UUID `db:"permission_id" json:"permission_id"`
-}
-
-type Permission struct {
-	_           struct{}  `db:"permissions" json:"-"`
-	ID          uuid.UUID `db:"id" json:"id"`
-	Name        string    `db:"name" json:"name"`
-	Description *string   `db:"description" json:"description,omitempty"`
-	CreatedAt   time.Time `db:"created_at" json:"created_at"`
-	UpdatedAt   time.Time `db:"updated_at" json:"updated_at"`
-}
-
 type ProviderTypes string
 
 const (
