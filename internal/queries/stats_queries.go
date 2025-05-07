@@ -34,7 +34,6 @@ FROM project_stats ps
 	`
 
 func GetUserTaskStats(ctx context.Context, db db.Dbx, userID uuid.UUID) (*shared.TaskStats, error) {
-	// query := psql.RawQuery(TaskStatsQuery, userID, userID)
 	res, err := QueryAll[shared.TaskStats](ctx, db, TaskStatsQuery, userID)
 	if err != nil {
 		return nil, err
