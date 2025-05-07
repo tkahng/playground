@@ -20,7 +20,7 @@ var (
 	pgOnce     sync.Once
 )
 
-func newPool(ctx context.Context, connString string) (*Queries, error) {
+func newQueries(ctx context.Context, connString string) (*Queries, error) {
 	pgOnce.Do(func() {
 		pool, err := getDbPool(ctx, connString)
 		if err != nil {
@@ -36,8 +36,8 @@ func newPool(ctx context.Context, connString string) (*Queries, error) {
 	return pgInstance, nil
 
 }
-func CreatePool(ctx context.Context, connString string) *Queries {
-	pool, err := newPool(ctx, connString)
+func CreateQueries(ctx context.Context, connString string) *Queries {
+	pool, err := newQueries(ctx, connString)
 	if err != nil {
 		slog.Error("error creating pool.", "error", err)
 		panic(err)
