@@ -3,9 +3,8 @@ package shared
 import (
 	"time"
 
-	"github.com/aarondl/opt/null"
 	"github.com/google/uuid"
-	"github.com/tkahng/authgo/internal/db/models"
+	crudModels "github.com/tkahng/authgo/internal/models"
 )
 
 const (
@@ -39,31 +38,16 @@ type UserWithAccounts struct {
 	Accounts []*UserAccountOutput `json:"accounts"`
 }
 
-func ToUser(user *models.User) *User {
+func FromCrudUser(user *crudModels.User) *User {
 	if user == nil {
 		return nil
 	}
 	return &User{
 		ID:              user.ID,
 		Email:           user.Email,
-		EmailVerifiedAt: user.EmailVerifiedAt.Ptr(),
-		Name:            user.Name.Ptr(),
-		Image:           user.Image.Ptr(),
-		CreatedAt:       user.CreatedAt,
-		UpdatedAt:       user.UpdatedAt,
-	}
-}
-
-func ToModelUser(user *User) *models.User {
-	if user == nil {
-		return nil
-	}
-	return &models.User{
-		ID:              user.ID,
-		Email:           user.Email,
-		EmailVerifiedAt: null.FromPtr(user.EmailVerifiedAt),
-		Name:            null.FromPtr(user.Name),
-		Image:           null.FromPtr(user.Image),
+		EmailVerifiedAt: user.EmailVerifiedAt,
+		Name:            user.Name,
+		Image:           user.Image,
 		CreatedAt:       user.CreatedAt,
 		UpdatedAt:       user.UpdatedAt,
 	}

@@ -3,25 +3,9 @@ package shared
 import (
 	"time"
 
-	"github.com/aarondl/opt/null"
 	"github.com/google/uuid"
-	"github.com/tkahng/authgo/internal/db/models"
 )
 
-type AuthenticateUserParams struct {
-	Email             string
-	Name              *string
-	AvatarUrl         *string
-	EmailVerifiedAt   *time.Time
-	Provider          models.Providers
-	Password          *string
-	HashPassword      *string
-	Type              models.ProviderTypes
-	ProviderAccountID string
-	UserId            *uuid.UUID
-	AccessToken       *string
-	RefreshToken      *string
-}
 type AuthenticationInput struct {
 	Email             string
 	Name              *string
@@ -44,22 +28,6 @@ type UserInfo struct {
 	Providers   []Providers `db:"providers" json:"providers" enum:"google,apple,facebook,github,credentials"`
 }
 
-func ToProvidersArray(providers []models.Providers) []Providers {
-	var result []Providers
-	for _, provider := range providers {
-		result = append(result, ToProvider(provider))
-	}
-	return result
-}
-
-func ToModelProvidersArray(providers []Providers) []models.Providers {
-	var result []models.Providers
-	for _, provider := range providers {
-		result = append(result, ToModelProvider(provider))
-	}
-	return result
-}
-
 type TokenType string
 
 const (
@@ -75,14 +43,6 @@ const (
 
 func (t TokenType) String() string {
 	return string(t)
-}
-
-func ToTokenType(t models.TokenTypes) TokenType {
-	return TokenType(t)
-}
-
-func ToModelTokenType(t TokenType) models.TokenTypes {
-	return models.TokenTypes(t)
 }
 
 type OAuthProviders string
@@ -106,11 +66,11 @@ type TokenDto struct {
 }
 
 type AuthenticatedDTO struct {
-	User        *User              `json:"user"`
-	Permissions []string           `json:"permissions"`
-	Roles       []string           `json:"roles"`
-	Providers   []models.Providers `json:"providers"`
-	Tokens      TokenDto           `json:"tokens"` //core.TokenDto `json:"tokens"`
+	User        *User       `json:"user"`
+	Permissions []string    `json:"permissions"`
+	Roles       []string    `json:"roles"`
+	Providers   []Providers `json:"providers"`
+	Tokens      TokenDto    `json:"tokens"` //core.TokenDto `json:"tokens"`
 }
 
 type UserInfoTokens struct {
@@ -163,40 +123,6 @@ type Token struct {
 	Token      string     `db:"token" json:"token"`
 	CreatedAt  time.Time  `db:"created_at" json:"created_at"`
 	UpdatedAt  time.Time  `db:"updated_at" json:"updated_at"`
-}
-
-func ToModelToken(dto *Token) *models.Token {
-	if dto == nil {
-		return nil
-	}
-	return &models.Token{
-		ID:         dto.ID,
-		Type:       ToModelTokenType(dto.Type),
-		UserID:     null.FromPtr(dto.UserID),
-		Otp:        null.FromPtr(dto.Otp),
-		Identifier: dto.Identifier,
-		Expires:    dto.Expires,
-		Token:      dto.Token,
-		CreatedAt:  dto.CreatedAt,
-		UpdatedAt:  dto.UpdatedAt,
-	}
-}
-
-func ToToken(model *models.Token) *Token {
-	if model == nil {
-		return nil
-	}
-	return &Token{
-		ID:         model.ID,
-		Type:       ToTokenType(model.Type),
-		UserID:     model.UserID.Ptr(),
-		Otp:        model.Otp.Ptr(),
-		Identifier: model.Identifier,
-		Expires:    model.Expires,
-		Token:      model.Token,
-		CreatedAt:  model.CreatedAt,
-		UpdatedAt:  model.UpdatedAt,
-	}
 }
 
 type PasswordResetInput struct {

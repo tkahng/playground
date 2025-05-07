@@ -15,7 +15,6 @@ require (
 	github.com/jackc/pgx/v5 v5.7.4
 	github.com/jaswdr/faker/v2 v2.4.0
 	github.com/spf13/cobra v1.9.1
-	github.com/stephenafamo/bob v0.34.2
 	github.com/stephenafamo/scan v0.6.2
 	golang.org/x/oauth2 v0.29.0
 	google.golang.org/api v0.231.0
@@ -52,8 +51,9 @@ require (
 	github.com/googleapis/gax-go/v2 v2.14.1 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.10 // indirect
+	github.com/lann/builder v0.0.0-20180802200727-47ae307949d0 // indirect
+	github.com/lann/ps v0.0.0-20150810152359-62de8c46ede0 // indirect
 	github.com/lib/pq v1.10.9 // indirect
-	github.com/qdm12/reprint v0.0.0-20200326205758-722754a53494 // indirect
 	github.com/spf13/pflag v1.0.6 // indirect
 	github.com/zeebo/xxh3 v1.0.2 // indirect
 	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
@@ -71,6 +71,7 @@ require (
 )
 
 require (
+	github.com/Masterminds/squirrel v1.5.4
 	github.com/amacneil/dbmate/v2 v2.27.0
 	github.com/caarlos0/env/v11 v11.3.1
 	github.com/danielgtaylor/huma/v2 v2.32.0
@@ -85,7 +86,6 @@ require (
 	github.com/joho/godotenv v1.5.1
 	github.com/matryer/is v1.4.1
 	github.com/resend/resend-go/v2 v2.18.0
-	github.com/spf13/cast v1.7.1 // indirect
 	github.com/stripe/stripe-go/v82 v82.1.0
 	github.com/wneessen/go-mail v0.6.2
 	golang.org/x/crypto v0.37.0 // indirect

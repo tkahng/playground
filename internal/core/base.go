@@ -4,10 +4,9 @@ import (
 	"context"
 	"log/slog"
 
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/tkahng/authgo/internal/conf"
 	"github.com/tkahng/authgo/internal/db"
-	"github.com/tkahng/authgo/internal/repository"
+	"github.com/tkahng/authgo/internal/queries"
 
 	"github.com/tkahng/authgo/internal/tools/filesystem"
 	"github.com/tkahng/authgo/internal/tools/logger"
@@ -20,13 +19,11 @@ var _ App = (*BaseApp)(nil)
 type BaseApp struct {
 	cfg      *conf.EnvConfig
 	db       *db.Queries
-	pool     *pgxpool.Pool
 	settings *AppOptions
 	payment  *StripeService
 	logger   *slog.Logger
 	fs       *filesystem.FileSystem
 	mail     mailer.Mailer
-	checker  ConstraintChecker
 }
 
 // Checker implements App.
@@ -36,7 +33,7 @@ func (a *BaseApp) NewChecker(ctx context.Context) ConstraintChecker {
 
 // NewAuthActions implements App.
 func (a *BaseApp) NewAuthActions() AuthActions {
-	return NewAuthActions(a.pool, a.mail, a.settings)
+	return NewAuthActions(a.db, a.mail, a.settings)
 }
 
 func (app *BaseApp) Fs() *filesystem.FileSystem {
@@ -48,9 +45,6 @@ func (app *BaseApp) Logger() *slog.Logger {
 }
 func (app *BaseApp) Db() *db.Queries {
 	return app.db
-}
-func (a *BaseApp) Pool() *pgxpool.Pool {
-	return a.pool
 }
 
 // Payment implements App.
@@ -79,12 +73,6 @@ func (app *BaseApp) NewMailClient() mailer.Mailer {
 
 func InitBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 	pool := db.CreatePool(ctx, cfg.Db.DatabaseUrl)
-	app := NewBaseApp(pool, cfg)
-	app.Bootstrap()
-	return app
-}
-
-func NewBaseApp(pool *pgxpool.Pool, cfg conf.EnvConfig) *BaseApp {
 	fs, err := filesystem.NewFileSystem(cfg.StorageConfig)
 	if err != nil {
 		panic(err)
@@ -95,22 +83,22 @@ func NewBaseApp(pool *pgxpool.Pool, cfg conf.EnvConfig) *BaseApp {
 	} else {
 		mail = &mailer.LogMailer{}
 	}
-	db := db.NewQueries(pool)
-	return &BaseApp{
+
+	app := &BaseApp{
 		fs:       fs,
-		pool:     pool,
-		db:       db,
+		db:       pool,
 		settings: NewSettingsFromConf(&cfg),
 		logger:   logger.GetDefaultLogger(slog.LevelInfo),
 		cfg:      &cfg,
 		mail:     mail,
 		payment:  NewStripeService(payment.NewStripeClient(cfg.StripeConfig)),
 	}
+	return app
 }
 
 func (app *BaseApp) Bootstrap() {
 	ctx := context.Background()
 	db := app.Db()
-	repository.EnsureRoleAndPermissions(ctx, db, "superuser", "superuser")
-	repository.EnsureRoleAndPermissions(ctx, db, "basic", "basic")
+	queries.EnsureRoleAndPermissions(ctx, db, "superuser", "superuser")
+	queries.EnsureRoleAndPermissions(ctx, db, "basic", "basic")
 }

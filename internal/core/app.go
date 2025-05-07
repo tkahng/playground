@@ -3,7 +3,6 @@ package core
 import (
 	"context"
 
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/tkahng/authgo/internal/conf"
 	"github.com/tkahng/authgo/internal/db"
 	"github.com/tkahng/authgo/internal/tools/filesystem"
@@ -12,7 +11,6 @@ import (
 
 type App interface {
 	Cfg() *conf.EnvConfig
-	Pool() *pgxpool.Pool
 	Db() *db.Queries
 	Fs() *filesystem.FileSystem
 	NewChecker(ctx context.Context) ConstraintChecker

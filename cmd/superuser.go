@@ -8,11 +8,11 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/tkahng/authgo/internal/conf"
 	"github.com/tkahng/authgo/internal/db"
-	"github.com/tkahng/authgo/internal/db/models"
+	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/security"
-	"github.com/tkahng/authgo/internal/types"
+	"github.com/tkahng/authgo/internal/tools/types"
 )
 
 func NewSuperuserCmd() *cobra.Command {
@@ -41,18 +41,25 @@ var superuserCreate = &cobra.Command{
 		ctx := cmd.Context()
 		conf := conf.GetConfig[conf.DBConfig]()
 
-		pool := db.NewPoolFromConf(ctx, conf)
-		dbx := db.NewQueries(pool)
-		err := repository.EnsureRoleAndPermissions(ctx, dbx, "superuser", "superuser")
+		dbx := db.CreatePool(ctx, conf.DatabaseUrl)
+		err := queries.EnsureRoleAndPermissions(ctx, dbx, "superuser", "superuser")
 		if err != nil {
 			return err
 		}
 
-		user, err := repository.FindUserByEmail(ctx, dbx, args[0])
+		user, err := queries.FindUserByEmail(ctx, dbx, args[0])
 		if err != nil {
 			return err
 		}
-		role, err := repository.FindRoleByName(ctx, dbx, "superuser")
+		role, err := repository.Role.GetOne(
+			ctx,
+			dbx,
+			&map[string]any{
+				"name": map[string]any{
+					"_eq": "superuser",
+				},
+			},
+		)
 		if err != nil {
 			return err
 		}
@@ -61,24 +68,24 @@ var superuserCreate = &cobra.Command{
 			if err != nil {
 				return err
 			}
-			data := &shared.AuthenticateUserParams{
+			data := &shared.AuthenticationInput{
 				Email:             args[0],
-				Provider:          models.ProvidersCredentials,
+				Provider:          shared.ProvidersCredentials,
 				ProviderAccountID: args[0],
 				HashPassword:      types.Pointer(hash),
-				Type:              models.ProviderTypesCredentials,
+				Type:              shared.ProviderTypeCredentials,
 			}
-			user, err = repository.CreateUser(ctx, dbx, data)
+			user, err = queries.CreateUser(ctx, dbx, data)
 			if err != nil {
 				return err
 			}
-			_, err = repository.CreateAccount(ctx, dbx, user.ID, data)
+			_, err = queries.CreateAccount(ctx, dbx, user.ID, data)
 			if err != nil {
 				return err
 			}
 		}
 		if user != nil {
-			err = user.AttachRoles(ctx, dbx, role)
+			err = queries.CreateUserRoles(ctx, dbx, user.ID, role.ID)
 			if err != nil {
 				return err
 			}

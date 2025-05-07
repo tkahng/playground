@@ -2,11 +2,9 @@ package apis
 
 import (
 	"context"
-	"net/http"
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/tkahng/authgo/internal/core"
-	"github.com/tkahng/authgo/internal/shared"
 )
 
 type RequestPasswordResetInput struct {
@@ -14,18 +12,6 @@ type RequestPasswordResetInput struct {
 }
 
 type RequestPasswordResetOutput struct {
-}
-
-func (api *Api) RequestPasswordResetOperation(path string) huma.Operation {
-	return huma.Operation{
-		OperationID: "request-password-reset",
-		Method:      http.MethodPost,
-		Path:        path,
-		Summary:     "Request password reset",
-		Description: "Request password reset",
-		Tags:        []string{"Auth"},
-		Errors:      []int{http.StatusNotFound},
-	}
 }
 
 func (api *Api) RequestPasswordReset(ctx context.Context, input *struct{ Body *RequestPasswordResetInput }) (*RequestPasswordResetOutput, error) {
@@ -43,18 +29,6 @@ func (api *Api) RequestPasswordReset(ctx context.Context, input *struct{ Body *R
 	return nil, nil
 }
 
-func (api *Api) CheckPasswordResetOperation(path string) huma.Operation {
-	return huma.Operation{
-		OperationID: "check-password-reset",
-		Method:      http.MethodGet,
-		Path:        path,
-		Summary:     "Check password reset",
-		Description: "Check password reset",
-		Tags:        []string{"Auth"},
-		Errors:      []int{http.StatusNotFound},
-	}
-}
-
 func (api *Api) CheckPasswordResetGet(ctx context.Context, input *OtpInput) (*struct{}, error) {
 
 	action := api.app.NewAuthActions()
@@ -63,18 +37,6 @@ func (api *Api) CheckPasswordResetGet(ctx context.Context, input *OtpInput) (*st
 		return nil, err
 	}
 	return nil, nil
-}
-
-func (api *Api) ConfirmPasswordResetOperation(path string) huma.Operation {
-	return huma.Operation{
-		OperationID: "confirm-password-reset",
-		Method:      http.MethodPost,
-		Path:        path,
-		Summary:     "Confirm password reset",
-		Description: "Confirm password reset",
-		Tags:        []string{"Auth"},
-		Errors:      []int{http.StatusNotFound},
-	}
 }
 
 type ConfirmPasswordResetInput struct {
@@ -91,21 +53,6 @@ func (api *Api) ConfirmPasswordReset(ctx context.Context, input *struct{ Body *C
 		return nil, err
 	}
 	return nil, nil
-}
-
-func (api *Api) ResetPasswordOperation(path string) huma.Operation {
-	return huma.Operation{
-		OperationID: "reset-password",
-		Method:      http.MethodPost,
-		Path:        path,
-		Summary:     "Reset password",
-		Description: "Reset password",
-		Tags:        []string{"Auth"},
-		Errors:      []int{http.StatusNotFound},
-		Security: []map[string][]string{
-			{shared.BearerAuthSecurityKey: {}},
-		},
-	}
 }
 
 type PasswordResetInput struct {

@@ -21,4 +21,5 @@ func GetDefaultLogger(lvl slog.Level) *slog.Logger {
 			return a
 		},
 	}))
+
 }

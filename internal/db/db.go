@@ -2,73 +2,54 @@ package db
 
 import (
 	"context"
-	"database/sql"
-	"database/sql/driver"
+	"fmt"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/stephenafamo/bob"
-	"github.com/stephenafamo/scan"
 )
 
-type DBTX interface {
-	Begin(ctx context.Context) (pgx.Tx, error)
-	// BeginTx(ctx context.Context, txOptions pgx.TxOptions) (pgx.Tx, error)
+type Dbx interface {
 	Query(ctx context.Context, sql string, arguments ...any) (pgx.Rows, error)
-	QueryRow(ctx context.Context, sql string, arguments ...any) pgx.Row
 	Exec(ctx context.Context, sql string, arguments ...any) (pgconn.CommandTag, error)
-	SendBatch(ctx context.Context, b *pgx.Batch) pgx.BatchResults
-	// Ping(ctx context.Context) error
-	// Executor() *DbTx
+	RunInTransaction(ctx context.Context, fn func(Dbx) error) error
 }
 
-var _ DBTX = (*pgxpool.Pool)(nil)
+// type TxFunc
+
+var _ Dbx = (*Queries)(nil)
 
 type Queries struct {
-	pool DBTX
+	db *pgxpool.Pool
 }
 
-func NewQueries(pool DBTX) *Queries {
-	return &Queries{pool: pool}
+func NewQueries(pool *pgxpool.Pool) *Queries {
+	return &Queries{db: pool}
 }
 
-var _ bob.Executor = (*Queries)(nil)
-
-type rows struct {
-	pgx.Rows
+func (v *Queries) Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error) {
+	return v.db.Query(ctx, sql, args...)
 }
 
-func (r rows) Close() error {
-	r.Rows.Close()
-	return nil
+func (v *Queries) Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error) {
+	return v.db.Exec(ctx, sql, args...)
 }
 
-func (r rows) Columns() ([]string, error) {
-	fields := r.FieldDescriptions()
-	cols := make([]string, len(fields))
+func (v *Queries) RunInTransaction(ctx context.Context, fn func(Dbx) error) error {
 
-	for i, field := range fields {
-		cols[i] = field.Name
-	}
-
-	return cols, nil
-}
-
-func (v *Queries) QueryContext(ctx context.Context, query string, args ...any) (scan.Rows, error) {
-	r, err := v.pool.Query(ctx, query, args...)
+	tx, err := v.db.Begin(ctx)
 	if err != nil {
-		return nil, err
+		return fmt.Errorf("error starting transaction: %w", err)
+	}
+	// Ensure the transaction will be rolled back if not committed
+	defer tx.Rollback(ctx)
+
+	err = fn(&txQueries{db: tx})
+	if err == nil {
+		if err := tx.Commit(ctx); err != nil {
+			return fmt.Errorf("error committing transaction: %w", err)
+		}
 	}
 
-	return rows{r}, nil
-}
-
-func (v *Queries) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
-	tag, err := v.pool.Exec(ctx, query, args...)
-	if err != nil {
-		return nil, err
-	}
-
-	return driver.RowsAffected(tag.RowsAffected()), err
+	return err
 }

@@ -3,9 +3,8 @@ package shared
 import (
 	"time"
 
-	"github.com/aarondl/opt/null"
 	"github.com/google/uuid"
-	"github.com/tkahng/authgo/internal/db/models"
+	crudModels "github.com/tkahng/authgo/internal/models"
 )
 
 // enum:oauth,credentials
@@ -18,26 +17,6 @@ const (
 
 func (p ProviderTypes) String() string {
 	return string(p)
-}
-
-func ToProviderType(p models.ProviderTypes) ProviderTypes {
-	switch p {
-	case models.ProviderTypesOauth:
-		return ProviderTypeOAuth
-	case models.ProviderTypesCredentials:
-		return ProviderTypeCredentials
-	}
-	return ProviderTypeCredentials
-}
-
-func ToModelProviderType(p ProviderTypes) models.ProviderTypes {
-	switch p {
-	case ProviderTypeOAuth:
-		return models.ProviderTypesOauth
-	case ProviderTypeCredentials:
-		return models.ProviderTypesCredentials
-	}
-	return models.ProviderTypesCredentials
 }
 
 // enum:google,apple,facebook,github,credentials
@@ -53,37 +32,6 @@ const (
 
 func (p Providers) String() string {
 	return string(p)
-}
-
-func ToProvider(p models.Providers) Providers {
-	switch p {
-	case models.ProvidersGoogle:
-		return ProvidersGoogle
-	case models.ProvidersApple:
-		return ProvidersApple
-	case models.ProvidersFacebook:
-		return ProvidersFacebook
-	case models.ProvidersGithub:
-		return ProvidersGithub
-	case models.ProvidersCredentials:
-		return ProvidersCredentials
-	default:
-		return ProvidersCredentials
-	}
-}
-
-func ToModelProvider(p Providers) models.Providers {
-	switch p {
-	case ProvidersGoogle:
-		return models.ProvidersGoogle
-	case ProvidersApple:
-		return models.ProvidersApple
-	case ProvidersFacebook:
-		return models.ProvidersFacebook
-	case ProvidersGithub:
-		return models.ProvidersGithub
-	}
-	return models.ProvidersCredentials
 }
 
 type UserAccount struct {
@@ -114,62 +62,31 @@ type UserAccountOutput struct {
 	UpdatedAt         time.Time     `db:"updated_at" json:"updated_at"`
 }
 
-func ToUserAccountOutput(u *models.UserAccount) *UserAccountOutput {
-	if u == nil {
-		return nil
-	}
-	return &UserAccountOutput{
-		ID:                u.ID,
-		UserID:            u.UserID,
-		Type:              ToProviderType(u.Type),
-		Provider:          ToProvider(u.Provider),
-		ProviderAccountID: u.ProviderAccountID,
-		CreatedAt:         u.CreatedAt,
-		UpdatedAt:         u.UpdatedAt,
-	}
-}
-
-func ToUserAccount(u *models.UserAccount) *UserAccount {
+func FromCrudUserAccount(u *crudModels.UserAccount) *UserAccount {
 	if u == nil {
 		return nil
 	}
 	return &UserAccount{
 		ID:                u.ID,
 		UserID:            u.UserID,
-		Type:              ToProviderType(u.Type),
-		Provider:          ToProvider(u.Provider),
+		Type:              ProviderTypes(u.Type),
+		Provider:          Providers(u.Provider),
 		ProviderAccountID: u.ProviderAccountID,
-		Password:          u.Password.Ptr(),
-		RefreshToken:      u.RefreshToken.Ptr(),
-		AccessToken:       u.AccessToken.Ptr(),
-		ExpiresAt:         u.ExpiresAt.Ptr(),
-		IDToken:           u.IDToken.Ptr(),
-		Scope:             u.Scope.Ptr(),
-		SessionState:      u.SessionState.Ptr(),
-		TokenType:         u.TokenType.Ptr(),
 		CreatedAt:         u.CreatedAt,
 		UpdatedAt:         u.UpdatedAt,
 	}
 }
 
-func ToUserAccountModel(u *UserAccount) *models.UserAccount {
+func FromCrudUserAccountOutput(u *crudModels.UserAccount) *UserAccountOutput {
 	if u == nil {
 		return nil
 	}
-	return &models.UserAccount{
+	return &UserAccountOutput{
 		ID:                u.ID,
 		UserID:            u.UserID,
-		Type:              ToModelProviderType(u.Type),
-		Provider:          ToModelProvider(u.Provider),
+		Type:              ProviderTypes(u.Type),
+		Provider:          Providers(u.Provider),
 		ProviderAccountID: u.ProviderAccountID,
-		Password:          null.FromPtr(u.Password),
-		RefreshToken:      null.FromPtr(u.RefreshToken),
-		AccessToken:       null.FromPtr(u.AccessToken),
-		ExpiresAt:         null.FromPtr(u.ExpiresAt),
-		IDToken:           null.FromPtr(u.IDToken),
-		Scope:             null.FromPtr(u.Scope),
-		SessionState:      null.FromPtr(u.SessionState),
-		TokenType:         null.FromPtr(u.TokenType),
 		CreatedAt:         u.CreatedAt,
 		UpdatedAt:         u.UpdatedAt,
 	}
@@ -180,7 +97,7 @@ type UserAccountListFilter struct {
 	ProviderTypes []ProviderTypes `query:"provider_types,omitempty" required:"false" uniqueItems:"true" minimum:"1" maximum:"100" enum:"oauth,credentials"`
 	Q             string          `query:"q,omitempty" required:"false"`
 	Ids           []string        `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
-	UserId        string          `query:"user_id,omitempty" required:"false" format:"uuid"`
+	UserIds       []string        `query:"user_ids,omitempty" minimum:"1" maximum:"100" required:"false" format:"uuid"`
 }
 type UserAccountListParams struct {
 	PaginatedInput

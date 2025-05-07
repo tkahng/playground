@@ -8,8 +8,8 @@ import (
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
-	"github.com/tkahng/authgo/internal/db/models"
-	"github.com/tkahng/authgo/internal/repository"
+	"github.com/tkahng/authgo/internal/models"
+	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 )
@@ -31,8 +31,9 @@ func (api *Api) AdminUsersOperation(path string) huma.Operation {
 
 type UserDetail struct {
 	*shared.User
-	Roles    []*shared.RoleWithPermissions `json:"roles,omitempty" required:"false"`
-	Accounts []*shared.UserAccountOutput   `json:"accounts,omitempty" required:"false"`
+	Roles       []*shared.RoleWithPermissions `json:"roles,omitempty" required:"false"`
+	Accounts    []*shared.UserAccountOutput   `json:"accounts,omitempty" required:"false"`
+	Permissions []*shared.Permission          `json:"permissions,omitempty" required:"false"`
 }
 
 func (api *Api) AdminUsers(ctx context.Context, input *struct {
@@ -40,46 +41,60 @@ func (api *Api) AdminUsers(ctx context.Context, input *struct {
 }) (*shared.PaginatedOutput[*UserDetail], error) {
 	db := api.app.Db()
 	fmt.Printf("AdminUsers: %v", input.UserListParams)
-	users, err := repository.ListUsers(ctx, db, &input.UserListParams)
+	users, err := queries.ListUsers(ctx, db, &input.UserListParams)
 	if err != nil {
 		return nil, err
 	}
-	count, err := repository.CountUsers(ctx, db, &input.UserListFilter)
+	count, err := queries.CountUsers(ctx, db, &input.UserListFilter)
 	if err != nil {
 		return nil, err
 	}
-
+	userIds := []uuid.UUID{}
+	userIdsstring := []string{}
+	for _, user := range users {
+		userIds = append(userIds, user.ID)
+		userIdsstring = append(userIdsstring, user.ID.String())
+	}
 	if slices.Contains(input.Expand, "roles") {
-		err = users.LoadUserRoles(ctx, db)
+		roles, err := queries.GetUserRoles(ctx, db, userIds...)
 		if err != nil {
 			return nil, err
+		}
+		for idx, user := range users {
+			user.Roles = roles[idx]
 		}
 	}
 
 	if slices.Contains(input.Expand, "permissions") {
-		err = users.LoadUserPermissions(ctx, db)
+		perms, err := queries.GetUserPermissions(ctx, db, userIds...)
 		if err != nil {
 			return nil, err
+		}
+		for idx, user := range users {
+			user.Permissions = perms[idx]
 		}
 	}
 
 	if slices.Contains(input.Expand, "accounts") {
-		err = users.LoadUserUserAccounts(ctx, db)
+		accounts, err := queries.GetUserAccounts(ctx, db, userIds...)
 		if err != nil {
 			return nil, err
 		}
-	}
-	info := mapper.Map(users, func(user *models.User) *UserDetail {
-		return &UserDetail{
-			User:     shared.ToUser(user),
-			Roles:    mapper.Map(user.R.Roles, shared.ToRoleWithPermissions),
-			Accounts: mapper.Map(user.R.UserAccounts, shared.ToUserAccountOutput),
+		for idx, user := range users {
+			user.Accounts = accounts[idx]
 		}
-	})
+	}
 
 	return &shared.PaginatedOutput[*UserDetail]{
 		Body: shared.PaginatedResponse[*UserDetail]{
-			Data: info,
+			Data: mapper.Map(users, func(user *models.User) *UserDetail {
+				return &UserDetail{
+					User:        shared.FromCrudUser(user),
+					Roles:       mapper.Map(user.Roles, shared.FromCrudRoleWithPermissions),
+					Accounts:    mapper.Map(user.Accounts, shared.FromCrudUserAccountOutput),
+					Permissions: mapper.Map(user.Permissions, shared.FromCrudPermission),
+				}
+			}),
 			Meta: shared.GenerateMeta(input.PaginatedInput, count),
 		},
 	}, nil
@@ -107,7 +122,7 @@ func (api *Api) AdminUsersCreate(ctx context.Context, input *struct {
 }, error) {
 	db := api.app.Db()
 	action := api.app.NewAuthActions()
-	existingUser, err := repository.FindUserByEmail(ctx, db, input.Body.Email)
+	existingUser, err := queries.FindUserByEmail(ctx, db, input.Body.Email)
 	if err != nil {
 		return nil, err
 	}
@@ -122,7 +137,9 @@ func (api *Api) AdminUsersCreate(ctx context.Context, input *struct {
 		ProviderAccountID: input.Body.Email,
 		EmailVerifiedAt:   input.Body.EmailVerifiedAt,
 	})
-
+	if err != nil {
+		return nil, err
+	}
 	return &struct{ Body *shared.User }{Body: user}, nil
 
 }
@@ -156,7 +173,7 @@ func (api *Api) AdminUsersDelete(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	err = repository.DeleteUsers(ctx, db, input.ID)
+	err = queries.DeleteUsers(ctx, db, input.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -183,7 +200,7 @@ func (api *Api) AdminUsersUpdate(ctx context.Context, input *struct {
 	Body shared.UserMutationInput
 }) (*struct{}, error) {
 	db := api.app.Db()
-	err := repository.UpdateUser(ctx, db, input.ID, &input.Body)
+	err := queries.UpdateUser(ctx, db, input.ID, &input.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -219,7 +236,7 @@ func (api *Api) AdminUsersUpdatePassword(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	err = repository.UpdateUserPassword(ctx, db, input.ID, input.Body.Password)
+	err = queries.UpdateUserPassword(ctx, db, input.ID, input.Body.Password)
 	if err != nil {
 		return nil, err
 	}
@@ -245,9 +262,9 @@ func (api *Api) AdminUsersGet(ctx context.Context, input *struct {
 	UserID uuid.UUID `path:"user-id" json:"user_id" format:"uuid" required:"true"`
 }) (*struct{ Body *shared.User }, error) {
 	db := api.app.Db()
-	user, err := repository.FindUserById(ctx, db, input.UserID)
+	user, err := queries.FindUserById(ctx, db, input.UserID)
 	if err != nil {
 		return nil, err
 	}
-	return &struct{ Body *shared.User }{Body: shared.ToUser(user)}, nil
+	return &struct{ Body *shared.User }{Body: shared.FromCrudUser(user)}, nil
 }

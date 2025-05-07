@@ -5,8 +5,8 @@ import (
 	"net/http"
 
 	"github.com/danielgtaylor/huma/v2"
-	"github.com/tkahng/authgo/internal/db/models"
-	"github.com/tkahng/authgo/internal/repository"
+	"github.com/tkahng/authgo/internal/models"
+	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 )
@@ -37,33 +37,43 @@ func (api *Api) StripeProductsWithPrices(ctx context.Context, inputt *StripeProd
 		},
 		SortParams: inputt.SortParams,
 	}
-	users, err := repository.ListProducts(ctx, db, input)
+	products, err := queries.ListProducts(ctx, db, input)
 	if err != nil {
 		return nil, err
 	}
-
-	err = users.LoadStripeProductProductStripePrices(ctx, db,
-		models.SelectWhere.StripePrices.Active.EQ(true),
-	)
-	if err != nil {
-		return nil, err
+	var ids []string
+	for _, u := range products {
+		ids = append(ids, u.ID)
 	}
-
-	count, err := repository.CountProducts(ctx, db, &input.StripeProductListFilter)
-	if err != nil {
-		return nil, err
-	}
-	prods := mapper.Map(users, func(user *models.StripeProduct) *shared.StripeProductWithData {
-		return &shared.StripeProductWithData{
-			Product: shared.ModelToProduct(user),
-			Prices:  mapper.Map(user.R.ProductStripePrices, shared.ModelToPrice),
+	prices, err := queries.LoadeProductPrices(ctx, db, &map[string]any{
+		"product_id": map[string]any{
+			"_in": ids,
+		},
+	}, ids...)
+	for i, products := range products {
+		price := prices[i]
+		if len(price) > 0 {
+			products.Prices = price
 		}
+	}
+	if err != nil {
+		return nil, err
+	}
 
-	})
+	count, err := queries.CountProducts(ctx, db, &input.StripeProductListFilter)
+	if err != nil {
+		return nil, err
+	}
 
 	return &shared.PaginatedOutput[*shared.StripeProductWithData]{
 		Body: shared.PaginatedResponse[*shared.StripeProductWithData]{
-			Data: prods,
+			Data: mapper.Map(products, func(p *models.StripeProduct) *shared.StripeProductWithData {
+				return &shared.StripeProductWithData{
+					Product: shared.FromCrudProduct(p),
+					Roles:   mapper.Map(p.Roles, shared.FromCrudRole),
+					Prices:  mapper.Map(p.Prices, shared.FromCrudPrice),
+				}
+			}),
 			Meta: shared.GenerateMeta(input.PaginatedInput, count),
 		},
 	}, nil

@@ -3,8 +3,8 @@ package shared
 import (
 	"time"
 
-	"github.com/tkahng/authgo/internal/db/models"
-	ty "github.com/tkahng/authgo/internal/types"
+	crudModels "github.com/tkahng/authgo/internal/models"
+	ty "github.com/tkahng/authgo/internal/tools/types"
 )
 
 type StripePricingType string
@@ -15,28 +15,7 @@ const (
 )
 
 // ToModelsStripePricingType converts a StripePricingType to models.StripePricingType
-func ToModelsStripePricingType(pt StripePricingType) models.StripePricingType {
-	switch pt {
-	case StripePricingTypeOneTime:
-		return models.StripePricingTypeOneTime
-	case StripePricingTypeRecurring:
-		return models.StripePricingTypeRecurring
-	default:
-		return models.StripePricingTypeOneTime
-	}
-}
-
 // ToStripePricingType converts a models.StripePricingType to StripePricingType
-func ToStripePricingType(pt models.StripePricingType) StripePricingType {
-	switch pt {
-	case models.StripePricingTypeOneTime:
-		return StripePricingTypeOneTime
-	case models.StripePricingTypeRecurring:
-		return StripePricingTypeRecurring
-	default:
-		return StripePricingTypeOneTime
-	}
-}
 
 type StripePricingPlanInterval string
 
@@ -48,39 +27,8 @@ const (
 )
 
 // ToModelsStripePricingPlanInterval converts a StripePricingPlanInterval to models.StripePricingPlanInterval
-func ToModelsStripePricingPlanInterval(pt StripePricingPlanInterval) models.StripePricingPlanInterval {
-	switch pt {
-	case StripePricingPlanIntervalDay:
-		return models.StripePricingPlanIntervalDay
-	case StripePricingPlanIntervalWeek:
-		return models.StripePricingPlanIntervalWeek
-	case StripePricingPlanIntervalMonth:
-		return models.StripePricingPlanIntervalMonth
-	case StripePricingPlanIntervalYear:
-		return models.StripePricingPlanIntervalYear
-	default:
-		return models.StripePricingPlanIntervalMonth
-	}
-}
 
 // ToStripePricingPlanInterval converts a models.StripePricingPlanInterval to StripePricingPlanInterval
-func ToStripePricingPlanInterval(pt *models.StripePricingPlanInterval) *StripePricingPlanInterval {
-	if pt == nil {
-		return nil
-	}
-	switch *pt {
-	case models.StripePricingPlanIntervalDay:
-		return ty.Pointer(StripePricingPlanIntervalDay)
-	case models.StripePricingPlanIntervalWeek:
-		return ty.Pointer(StripePricingPlanIntervalWeek)
-	case models.StripePricingPlanIntervalMonth:
-		return ty.Pointer(StripePricingPlanIntervalMonth)
-	case models.StripePricingPlanIntervalYear:
-		return ty.Pointer(StripePricingPlanIntervalYear)
-	default:
-		return nil
-	}
-}
 
 type Price struct {
 	ID              string                     `db:"id,pk" json:"id"`
@@ -98,19 +46,23 @@ type Price struct {
 	UpdatedAt       time.Time                  `db:"updated_at" json:"updated_at"`
 }
 
-func ModelToPrice(price *models.StripePrice) *Price {
+func FromCrudPrice(price *crudModels.StripePrice) *Price {
+	var interval *StripePricingPlanInterval
+	if price.Interval != nil {
+		interval = ty.Pointer(StripePricingPlanInterval(*price.Interval))
+	}
 	return &Price{
 		ID:              price.ID,
 		ProductID:       price.ProductID,
-		LookupKey:       price.LookupKey.Ptr(),
+		LookupKey:       price.LookupKey,
 		Active:          price.Active,
-		UnitAmount:      price.UnitAmount.Ptr(),
+		UnitAmount:      price.UnitAmount,
 		Currency:        price.Currency,
-		Type:            ToStripePricingType(price.Type),
-		Interval:        ToStripePricingPlanInterval(price.Interval.Ptr()),
-		IntervalCount:   price.IntervalCount.Ptr(),
-		TrialPeriodDays: price.TrialPeriodDays.Ptr(),
-		Metadata:        price.Metadata.Val,
+		Type:            StripePricingType(price.Type),
+		Interval:        interval,
+		IntervalCount:   price.IntervalCount,
+		TrialPeriodDays: price.TrialPeriodDays,
+		Metadata:        price.Metadata,
 		CreatedAt:       price.CreatedAt,
 		UpdatedAt:       price.UpdatedAt,
 	}
@@ -122,9 +74,10 @@ type StripePricesWithProduct struct {
 }
 
 type StripePriceListFilter struct {
-	Q      string       `query:"q,omitempty" required:"false"`
-	Ids    []string     `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" uniqueItems:"true"`
-	Active ActiveStatus `query:"active,omitempty" required:"false" enum:"active,inactive"`
+	Q          string       `query:"q,omitempty" required:"false"`
+	Ids        []string     `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" uniqueItems:"true"`
+	Active     ActiveStatus `query:"active,omitempty" required:"false" enum:"active,inactive"`
+	ProductIds []string     `query:"product_ids,omitempty" required:"false" minimum:"1" maximum:"100" uniqueItems:"true"`
 }
 type StripePriceListParams struct {
 	PaginatedInput

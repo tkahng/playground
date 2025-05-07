@@ -12,18 +12,6 @@ import (
 	"golang.org/x/oauth2"
 )
 
-func (h *Api) OAuth2AuthorizationUrlOperation(path string) huma.Operation {
-	return huma.Operation{
-		OperationID: "oauth2-authorization-url",
-		Method:      http.MethodGet,
-		Path:        path,
-		Summary:     "OAuth2 authorization",
-		Description: "url for oauth2 authorization",
-		Tags:        []string{"Auth"},
-		Errors:      []int{http.StatusNotFound},
-	}
-}
-
 type OAuth2AuthorizationUrlInput struct {
 	Provider   shared.OAuthProviders `json:"provider"  query:"provider" form:"provider" enum:"google,github" required:"true"`
 	RedirectTo string                `json:"redirect_to" query:"redirect_to" form:"redirect_to" format:"uri" required:"false"`

@@ -1,18 +1,16 @@
 package cmd
 
 import (
-	"fmt"
 	"log/slog"
 
 	"github.com/spf13/cobra"
 	"github.com/tkahng/authgo/internal/conf"
 	"github.com/tkahng/authgo/internal/db"
-	"github.com/tkahng/authgo/internal/db/seeders"
-	"github.com/tkahng/authgo/internal/repository"
+	"github.com/tkahng/authgo/internal/queries"
 )
 
 func NewSeedCmd() *cobra.Command {
-	seedCmd.AddCommand(seedRolesCmd, seedUserCmd)
+	seedCmd.AddCommand(seedRolesCmd)
 	return seedCmd
 }
 
@@ -28,9 +26,8 @@ var seedRolesCmd = &cobra.Command{
 		ctx := cmd.Context()
 		conf := conf.GetConfig[conf.DBConfig]()
 
-		pool := db.NewPoolFromConf(ctx, conf)
-		dbx := db.NewQueries(pool)
-		err := repository.EnsureRoleAndPermissions(ctx, dbx, "superuser", "superuser", "advanced", "pro", "basic")
+		dbx := db.CreatePool(ctx, conf.DatabaseUrl)
+		err := queries.EnsureRoleAndPermissions(ctx, dbx, "superuser", "superuser", "advanced", "pro", "basic")
 		if err != nil {
 			slog.Error(
 				"error at createing roles",
@@ -38,7 +35,7 @@ var seedRolesCmd = &cobra.Command{
 				"role", "superuser",
 			)
 		}
-		err = repository.EnsureRoleAndPermissions(ctx, dbx, "advanced", "advanced", "pro", "basic")
+		err = queries.EnsureRoleAndPermissions(ctx, dbx, "advanced", "advanced", "pro", "basic")
 		if err != nil {
 			slog.Error(
 				"error at createing roles",
@@ -46,7 +43,7 @@ var seedRolesCmd = &cobra.Command{
 				"role", "basic",
 			)
 		}
-		err = repository.EnsureRoleAndPermissions(ctx, dbx, "pro", "pro", "basic")
+		err = queries.EnsureRoleAndPermissions(ctx, dbx, "pro", "pro", "basic")
 		if err != nil {
 			slog.Error(
 				"error at createing roles",
@@ -54,7 +51,7 @@ var seedRolesCmd = &cobra.Command{
 				"role", "basic",
 			)
 		}
-		err = repository.EnsureRoleAndPermissions(ctx, dbx, "basic", "basic")
+		err = queries.EnsureRoleAndPermissions(ctx, dbx, "basic", "basic")
 		if err != nil {
 			slog.Error(
 				"error at createing roles",
@@ -65,34 +62,35 @@ var seedRolesCmd = &cobra.Command{
 		return err
 	},
 }
-var seedUserCmd = &cobra.Command{
-	Use:   "users",
-	Short: "seed users",
-	RunE: func(cmd *cobra.Command, args []string) error {
-		ctx := cmd.Context()
-		conf := conf.GetConfig[conf.DBConfig]()
 
-		pool := db.NewPoolFromConf(ctx, conf)
-		dbx := db.NewQueries(pool)
-		role, err := repository.FindRoleByName(ctx, dbx, "basic")
-		if err != nil {
-			return fmt.Errorf("error at createing users: %w", err)
-		}
+// var seedUserCmd = &cobra.Command{
+// 	Use:   "users",
+// 	Short: "seed users",
+// 	RunE: func(cmd *cobra.Command, args []string) error {
+// 		ctx := cmd.Context()
+// 		conf := conf.GetConfig[conf.DBConfig]()
 
-		_, err = seeders.UserCredentialsRolesFactory(ctx, dbx, 20, role)
-		// err := repository.PopulateRoles(ctx, dbx)
-		if err != nil {
+// 		pool := db.CreatePool(ctx, conf)
+// 		dbx := db.NewQueries(pool)
+// 		// role, err := queries.FindRoleByName(ctx, dbx, "basic")
+// 		// if err != nil {
+// 		// 	return fmt.Errorf("error at createing users: %w", err)
+// 		// }
 
-			return fmt.Errorf("error at createing users: %w", err)
-		}
-		// err = seeders.UserOauthFactory(ctx, dbx, 10, models.ProvidersGoogle)
-		// if err != nil {
-		// 	return fmt.Errorf("error at createing users: %w", err)
-		// }
-		// err = seeders.UserOauthFactory(ctx, dbx, 10, models.ProvidersGithub)
-		// if err != nil {
-		// 	return fmt.Errorf("error at createing users: %w", err)
-		// }
-		return nil
-	},
-}
+// 		// // _, err = seeders.UserCredentialsRolesFactory(ctx, dbx, 20, role)
+// 		// // err := repository.PopulateRoles(ctx, dbx)
+// 		// if err != nil {
+
+// 		// 	return fmt.Errorf("error at createing users: %w", err)
+// 		// }
+// 		// err = seeders.UserOauthFactory(ctx, dbx, 10, models.ProvidersGoogle)
+// 		// if err != nil {
+// 		// 	return fmt.Errorf("error at createing users: %w", err)
+// 		// }
+// 		// err = seeders.UserOauthFactory(ctx, dbx, 10, models.ProvidersGithub)
+// 		// if err != nil {
+// 		// 	return fmt.Errorf("error at createing users: %w", err)
+// 		// }
+// 		return nil
+// 	},
+// }

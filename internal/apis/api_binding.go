@@ -3,26 +3,14 @@ package apis
 import (
 	"context"
 	"fmt"
+	"net/http"
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/danielgtaylor/huma/v2/sse"
 	"github.com/tkahng/authgo/internal/core"
-	"github.com/tkahng/authgo/internal/db/models"
+	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/shared"
 )
-
-func InitApiConfig() huma.Config {
-	config := huma.DefaultConfig("My API", "1.0.0")
-	config.Servers = []*huma.Server{{URL: "http://localhost:8080"}}
-	config.Components.SecuritySchemes = map[string]*huma.SecurityScheme{
-		shared.BearerAuthSecurityKey: {
-			Type:         "http",
-			Scheme:       "bearer",
-			BearerFormat: "JWT",
-		},
-	}
-	return config
-}
 
 func BindMiddlewares(api huma.API, app core.App) {
 	api.UseMiddleware(AuthMiddleware(api, app))
@@ -51,87 +39,561 @@ func BindApis(api huma.API, app core.App) {
 			},
 		}, nil
 	})
+
 	checkTaskOwnerMiddleware := CheckTaskOwnerMiddleware(api, app)
 
-	// http://127.0.0.1:8080/auth/callback
-	// huma.Register(api, appApi.AuthMethodsOperation("/auth/methods"), appApi.AuthMethods)
-	// permissions
-	huma.Register(api, appApi.PermissionsListOperation("/permissions"), appApi.PermissionsList)
+	//  public list of permissions -----------------------------------------------------------
+	huma.Register(
+		api,
+		huma.Operation{
+			OperationID: "permissions-list",
+			Method:      http.MethodGet,
+			Path:        "/permissions",
+			Summary:     "permissions list",
+			Description: "List of permissions",
+			Tags:        []string{"Permissions"},
+			Errors:      []int{http.StatusNotFound},
+		},
+		appApi.PermissionsList,
+	)
 	// protected test routes -----------------------------------------------------------
-	huma.Register(api, appApi.ApiProtectedOperation("/protected/{permission-name}"), appApi.ApiProtected)
+	huma.Register(
+		api,
+		huma.Operation{
+			OperationID: "api-protected",
+			Method:      http.MethodGet,
+			Path:        "/protected/{permission-name}",
+			Summary:     "Api protected",
+			Description: "Api protected",
+			Tags:        []string{"Protected"},
+			Errors:      []int{http.StatusNotFound},
+			Security:    []map[string][]string{{shared.BearerAuthSecurityKey: {}}},
+		},
+		appApi.ApiProtected,
+	)
 
-	huma.Register(api, appApi.SignupOperation("/auth/signup"), appApi.SignUp)
-	huma.Register(api, appApi.SigninOperation("/auth/signin"), appApi.SignIn)
-	huma.Register(api, appApi.MeOperation("/auth/me"), appApi.Me)
-	huma.Register(api, appApi.MeUpdateOperation("/auth/me"), appApi.MeUpdate)
-	huma.Register(api, appApi.MeDeleteOperation("/auth/me"), appApi.MeDelete)
-	huma.Register(api, appApi.RefreshTokenOperation("/auth/refresh-token"), appApi.RefreshToken)
-	huma.Register(api, appApi.SignoutOperation("/auth/signout"), appApi.Signout)
+	// signup -------------------------------------------------------------
+	huma.Register(
+		api,
+		huma.Operation{
+			OperationID: "signup",
+			Method:      http.MethodPost,
+			Path:        "/auth/signup",
+			Summary:     "Sign up",
+			Description: "Count the number of colors for all themes",
+			Tags:        []string{"Auth"},
+			Errors:      []int{http.StatusNotFound},
+		},
+		appApi.SignUp,
+	)
+	// signin -------------------------------------------------------------
+	huma.Register(
+		api,
+		huma.Operation{
+			OperationID: "signin",
+			Method:      http.MethodPost,
+			Path:        "/auth/signin",
+			Summary:     "Sign in",
+			Description: "Count the number of colors for all themes",
+			Tags:        []string{"Auth"},
+			Errors:      []int{http.StatusNotFound},
+		},
+		appApi.SignIn,
+	)
+	//  me get ---------------------------------------------------------------
+	huma.Register(
+		api,
+		huma.Operation{
+			OperationID: "me",
+			Method:      http.MethodGet,
+			Path:        "/auth/me",
+			Summary:     "Me",
+			Description: "Me",
+			Tags:        []string{"Auth"},
+			Errors:      []int{http.StatusUnauthorized, http.StatusNotFound},
+			Security: []map[string][]string{
+				{shared.BearerAuthSecurityKey: {}},
+			},
+		},
+		appApi.Me,
+	)
+	// me update -------------------------------------------------------------
+	huma.Register(
+		api,
+		huma.Operation{
+			OperationID: "meUpdate",
+			Method:      http.MethodPut,
+			Path:        "/auth/me",
+			Summary:     "Me Update",
+			Description: "Me Update",
+			Tags:        []string{"Auth"},
+			Errors:      []int{http.StatusUnauthorized, http.StatusNotFound},
+			Security:    []map[string][]string{{shared.BearerAuthSecurityKey: {}}},
+		},
+		appApi.MeUpdate,
+	)
+	// me delete -------------------------------------------------------------
+	huma.Register(
+		api,
+		huma.Operation{
+			OperationID: "me-delete",
+			Method:      http.MethodDelete,
+			Path:        "/auth/me",
+			Summary:     "Me delete",
+			Description: "Me delete",
+			Tags:        []string{"Auth", "Me"},
+			Errors:      []int{http.StatusUnauthorized, http.StatusNotFound},
+			Security:    []map[string][]string{{shared.BearerAuthSecurityKey: {}}},
+		},
+		appApi.MeDelete,
+	)
+	// refresh token -------------------------------------------------------------
+	huma.Register(
+		api,
+		huma.Operation{
+			OperationID: "refresh-token",
+			Method:      http.MethodPost,
+			Path:        "/auth/refresh-token",
+			Summary:     "Refresh token",
+			Description: "Count the number of colors for all themes",
+			Tags:        []string{"Auth"},
+			Errors:      []int{http.StatusNotFound},
+		},
+		appApi.RefreshToken,
+	)
+	// signout -------------------------------------------------------------
+	huma.Register(
+		api,
+		huma.Operation{
+			OperationID: "signout",
+			Method:      http.MethodPost,
+			Path:        "/auth/signout",
+			Summary:     "Signout",
+			Description: "Signout",
+			Tags:        []string{"Auth"},
+			Errors:      []int{http.StatusUnauthorized, http.StatusNotFound},
+			Security:    []map[string][]string{{shared.BearerAuthSecurityKey: {}}},
+		},
+		appApi.Signout,
+	)
+	// verify email -------------------------------------------------------------
+	huma.Register(
+		api,
+		huma.Operation{
+			OperationID: "verify-get",
+			Method:      http.MethodGet,
+			Path:        "/auth/verify",
+			Summary:     "Verify",
+			Description: "Verify",
+			Tags:        []string{"Auth", "Verify"},
+			Errors:      []int{http.StatusNotFound, http.StatusBadRequest},
+		},
+		appApi.Verify,
+	)
 
-	huma.Register(api, appApi.VerifyOperation("/auth/verify"), appApi.Verify)
-	huma.Register(api, appApi.VerifyPostOperation("/auth/verify"), appApi.VerifyPost)
-	huma.Register(api, appApi.RequestVerificationOperation("/auth/request-verification"), appApi.RequestVerification)
-	huma.Register(api, appApi.RequestPasswordResetOperation("/auth/request-password-reset"), appApi.RequestPasswordReset)
-	huma.Register(api, appApi.ConfirmPasswordResetOperation("/auth/confirm-password-reset"), appApi.ConfirmPasswordReset)
-	huma.Register(api, appApi.CheckPasswordResetOperation("/auth/check-password-reset"), appApi.CheckPasswordResetGet)
+	// verify email post -------------------------------------------------------------
+	huma.Register(
+		api,
+		huma.Operation{
+			OperationID: "verify-post",
+			Method:      http.MethodPost,
+			Path:        "/auth/verify",
+			Summary:     "Verify",
+			Description: "Verify",
+			Tags:        []string{"Auth", "Verify"},
+			Errors:      []int{http.StatusNotFound, http.StatusBadRequest},
+		},
+		appApi.VerifyPost,
+	)
+	// request verification -------------------------------------------------------------
+	huma.Register(
+		api,
+		huma.Operation{
+			OperationID: "request-verification",
+			Method:      http.MethodPost,
+			Path:        "/auth/request-verification",
+			Summary:     "Email verification request",
+			Description: "Request email verification",
+			Tags:        []string{"Auth", "Verify"},
+			Errors:      []int{http.StatusNotFound},
+			Security:    []map[string][]string{{shared.BearerAuthSecurityKey: {}}},
+		},
+		appApi.RequestVerification,
+	)
+	// request password reset -------------------------------------------------------------
+	huma.Register(
+		api,
+		huma.Operation{
+			OperationID: "request-password-reset",
+			Method:      http.MethodPost,
+			Path:        "/auth/request-password-reset",
+			Summary:     "Request password reset",
+			Description: "Request password reset",
+			Tags:        []string{"Auth"},
+			Errors:      []int{http.StatusNotFound},
+		},
+		appApi.RequestPasswordReset,
+	)
+	// confirm password reset -------------------------------------------------------------
+	huma.Register(
+		api,
+		huma.Operation{
+			OperationID: "confirm-password-reset",
+			Method:      http.MethodPost,
+			Path:        "/auth/confirm-password-reset",
+			Summary:     "Confirm password reset",
+			Description: "Confirm password reset",
+			Tags:        []string{"Auth"},
+			Errors:      []int{http.StatusNotFound},
+		},
+		appApi.ConfirmPasswordReset,
+	)
+	// check password reset -------------------------------------------------------------
+	huma.Register(
+		api,
+		huma.Operation{
+			OperationID: "check-password-reset",
+			Method:      http.MethodGet,
+			Path:        "/auth/check-password-reset",
+			Summary:     "Check password reset",
+			Description: "Check password reset",
+			Tags:        []string{"Auth"},
+			Errors:      []int{http.StatusNotFound},
+		},
+		appApi.CheckPasswordResetGet,
+	)
 	// password reset
-	huma.Register(api, appApi.ResetPasswordOperation("/auth/password-reset"), appApi.ResetPassword)
-	huma.Register(api, appApi.OAuth2CallbackGetOperation("/auth/callback"), appApi.OAuth2CallbackGet)
-	huma.Register(api, appApi.OAuth2CallbackPostOperation("/auth/callback"), appApi.OAuth2CallbackPost)
-	huma.Register(api, appApi.OAuth2AuthorizationUrlOperation("/auth/authorization-url"), appApi.OAuth2AuthorizationUrl)
-	// authenticated routes -----------------------------------------------------------
+	huma.Register(
+		api,
+		huma.Operation{
+			OperationID: "reset-password",
+			Method:      http.MethodPost,
+			Path:        "/auth/password-reset",
+			Summary:     "Reset Password",
+			Description: "Reset Password",
+			Tags:        []string{"Auth"},
+			Errors:      []int{http.StatusNotFound},
+		},
+		appApi.ResetPassword,
+	)
+
+	huma.Register(
+		api,
+		huma.Operation{
+			OperationID: "oauth2-callback-get",
+			Method:      http.MethodGet,
+			Path:        "/auth/callback",
+			Summary:     "OAuth2 Callback (GET)",
+			Description: "Handle OAuth2 callback (GET)",
+			Tags:        []string{"Auth", "OAuth2"},
+			Errors:      []int{http.StatusNotFound},
+		},
+		appApi.OAuth2CallbackGet,
+	)
+
+	huma.Register(
+		api,
+		huma.Operation{
+			OperationID: "oauth2-callback-post",
+			Method:      http.MethodPost,
+			Path:        "/auth/callback",
+			Summary:     "OAuth2 Callback (POST)",
+			Description: "Handle OAuth2 callback (POST)",
+			Tags:        []string{"Auth", "OAuth2"},
+			Errors:      []int{http.StatusNotFound},
+		},
+		appApi.OAuth2CallbackPost,
+	)
+
+	huma.Register(
+		api,
+		huma.Operation{
+			OperationID: "oauth2-authorization-url",
+			Method:      http.MethodGet,
+			Path:        "/auth/authorization-url",
+			Summary:     "OAuth2 Authorization URL",
+			Description: "Get OAuth2 authorization URL",
+			Tags:        []string{"Auth", "OAuth2"},
+			Errors:      []int{http.StatusNotFound},
+		},
+		appApi.OAuth2AuthorizationUrl,
+	)
+
+	// authenticated routes ----------------------------------------------------------------------------------------
+	// need to be authenticated to access these routes
 
 	authenticatedGroup := huma.NewGroup(api)
 
 	// ---- Upload File
-	huma.Register(authenticatedGroup, appApi.UploadMediaOperation("/media"), appApi.UploadMedia)
+	huma.Register(
+		authenticatedGroup,
+		huma.Operation{
+			OperationID: "upload-media",
+			Method:      http.MethodPost,
+			Path:        "/media",
+			Summary:     "Upload media",
+			Description: "Upload a media file",
+			Tags:        []string{"Media"},
+			Security:    []map[string][]string{{shared.BearerAuthSecurityKey: {}}},
+			Errors:      []int{http.StatusUnauthorized, http.StatusBadRequest, http.StatusInternalServerError},
+		},
+		appApi.UploadMedia,
+	)
 	// ---- Get Media
-	huma.Register(authenticatedGroup, appApi.GetMediaOperation("/media/{id}"), appApi.GetMedia)
+	huma.Register(
+		authenticatedGroup,
+		huma.Operation{
+			OperationID: "get-media",
+			Method:      http.MethodGet,
+			Path:        "/media/{id}",
+			Summary:     "Get media",
+			Description: "Get a media file by ID",
+			Tags:        []string{"Media"},
+			Security:    []map[string][]string{{shared.BearerAuthSecurityKey: {}}},
+			Errors:      []int{http.StatusUnauthorized, http.StatusNotFound, http.StatusInternalServerError},
+		},
+		appApi.GetMedia,
+	)
 	// ---- Get Media List
-	huma.Register(authenticatedGroup, appApi.MedialListOperation("/media"), appApi.MediaList)
+	huma.Register(
+		authenticatedGroup,
+		huma.Operation{
+			OperationID: "list-media",
+			Method:      http.MethodGet,
+			Path:        "/media",
+			Summary:     "List media",
+			Description: "List all media files for the user",
+			Tags:        []string{"Media"},
+			Security:    []map[string][]string{{shared.BearerAuthSecurityKey: {}}},
+			Errors:      []int{http.StatusUnauthorized, http.StatusInternalServerError},
+		},
+		appApi.MediaList,
+	)
+
 	// ---- notifications
-	sse.Register(authenticatedGroup, appApi.NotificationsSseOperation("/notifications/sse"), map[string]any{
-		// Mapping of event type name to Go struct for that event.
-		"message": models.Notification{},
-	}, appApi.NotificationsSsefunc)
+	sse.Register(
+		authenticatedGroup,
+		huma.Operation{
+			OperationID: "notifications-sse",
+			Method:      http.MethodGet,
+			Path:        "/notifications/sse",
+			Summary:     "Notifications SSE",
+			Description: "Notifications SSE",
+			Tags:        []string{"Notifications"},
+			Errors:      []int{http.StatusNotFound},
+			Security:    []map[string][]string{{shared.BearerAuthSecurityKey: {}}},
+		}, map[string]any{
+			// Mapping of event type name to Go struct for that event.
+			"message": models.Notification{},
+		},
+		appApi.NotificationsSsefunc)
 	// stats routes -------------------------------------------------------------------------------------------------
 	statsGroup := huma.NewGroup(api)
-	huma.Register(statsGroup, appApi.StatsOperation("/stats"), appApi.Stats)
+	huma.Register(
+		statsGroup,
+		huma.Operation{
+			OperationID: "stats-get",
+			Method:      http.MethodGet,
+			Path:        "/stats",
+			Summary:     "Get stats",
+			Description: "Get stats",
+			Tags:        []string{"Stats"},
+			Errors:      []int{http.StatusNotFound},
+			Security:    []map[string][]string{{shared.BearerAuthSecurityKey: {}}},
+		},
+		appApi.Stats,
+	)
 
 	// ---- task routes -------------------------------------------------------------------------------------------------
 	taskGroup := huma.NewGroup(api)
 	taskGroup.UseMiddleware(checkTaskOwnerMiddleware)
 	// task list
-	huma.Register(taskGroup, appApi.TaskListOperation("/tasks"), appApi.TaskList)
+	huma.Register(
+		taskGroup,
+		huma.Operation{
+			OperationID: "task-list",
+			Method:      http.MethodGet,
+			Path:        "/tasks",
+			Summary:     "Task list",
+			Description: "List of tasks",
+			Tags:        []string{"Task"},
+			Errors:      []int{http.StatusNotFound},
+			Security:    []map[string][]string{{shared.BearerAuthSecurityKey: {}}},
+		},
+		appApi.TaskList,
+	)
 	// task create
 	// huma.Register(taskGroup, appApi.TaskCreateOperation("/task"), appApi.TaskCreate)
 	// task update
-	huma.Register(taskGroup, appApi.TaskUpdateOperation("/tasks/{task-id}"), appApi.TaskUpdate)
+	huma.Register(
+		taskGroup,
+		huma.Operation{
+			OperationID: "task-update",
+			Method:      http.MethodPut,
+			Path:        "/tasks/{task-id}",
+			Summary:     "Task update",
+			Description: "Update a task",
+			Tags:        []string{"Task"},
+			Errors:      []int{http.StatusNotFound},
+			Security:    []map[string][]string{{shared.BearerAuthSecurityKey: {}}},
+		},
+		appApi.TaskUpdate,
+	)
 	// task position
-	huma.Register(taskGroup, appApi.UpdateTaskPositionOperation("/tasks/{task-id}/position"), appApi.UpdateTaskPosition)
+	// huma.Register(taskGroup, appApi.UpdateTaskPositionOperation("/tasks/{task-id}/position"), appApi.UpdateTaskPosition)
 	// task position status
-	huma.Register(taskGroup, appApi.UpdateTaskPositionStatusOperation("/tasks/{task-id}/position-status"), appApi.UpdateTaskPositionStatus)
+	huma.Register(
+		taskGroup,
+		huma.Operation{
+			OperationID: "update-task-position-status",
+			Method:      http.MethodPut,
+			Path:        "/tasks/{task-id}/position-status",
+			Summary:     "Update task position and status",
+			Description: "Update task position and status",
+			Tags:        []string{"Task"},
+			Errors:      []int{http.StatusNotFound},
+			Security:    []map[string][]string{{shared.BearerAuthSecurityKey: {}}},
+		},
+		appApi.UpdateTaskPositionStatus,
+	)
 	// // task delete
-	huma.Register(taskGroup, appApi.TaskDeleteOperation("/tasks/{task-id}"), appApi.TaskDelete)
+	huma.Register(
+		taskGroup,
+		huma.Operation{
+			OperationID: "task-delete",
+			Method:      http.MethodDelete,
+			Path:        "/tasks/{task-id}",
+			Summary:     "Task delete",
+			Description: "Delete a task",
+			Tags:        []string{"Task"},
+			Errors:      []int{http.StatusNotFound},
+			Security:    []map[string][]string{{shared.BearerAuthSecurityKey: {}}},
+		},
+		appApi.TaskDelete,
+	)
 	// // task get
-	huma.Register(taskGroup, appApi.TaskGetOperation("/tasks/{task-id}"), appApi.TaskGet)
+	huma.Register(
+		taskGroup,
+		huma.Operation{
+			OperationID: "task-get",
+			Method:      http.MethodGet,
+			Path:        "/tasks/{task-id}",
+			Summary:     "Task get",
+			Description: "Get a task",
+			Tags:        []string{"Task"},
+			Errors:      []int{http.StatusNotFound},
+			Security:    []map[string][]string{{shared.BearerAuthSecurityKey: {}}},
+		},
+		appApi.TaskGet,
+	)
 
 	// task project routes -------------------------------------------------------------------------------------------------
 	taskProjectGroup := huma.NewGroup(api)
 	// task project list
-	huma.Register(taskProjectGroup, appApi.TaskProjectListOperation("/task-projects"), appApi.TaskProjectList)
+	huma.Register(
+		taskProjectGroup,
+		huma.Operation{
+			OperationID: "task-project-list",
+			Method:      http.MethodGet,
+			Path:        "/task-projects",
+			Summary:     "Task project list",
+			Description: "List of task projects",
+			Tags:        []string{"Task"},
+			Errors:      []int{http.StatusNotFound},
+			Security:    []map[string][]string{{shared.BearerAuthSecurityKey: {}}},
+		},
+		appApi.TaskProjectList,
+	)
 	// task project create
-	huma.Register(taskProjectGroup, appApi.TaskProjectCreateOperation("/task-projects"), appApi.TaskProjectCreate)
+	huma.Register(
+		taskProjectGroup,
+		huma.Operation{
+			OperationID: "task-project-create",
+			Method:      http.MethodPost,
+			Path:        "/task-projects",
+			Summary:     "Task project create",
+			Description: "Create a new task project",
+			Tags:        []string{"Task"},
+			Errors:      []int{http.StatusNotFound},
+			Security:    []map[string][]string{{shared.BearerAuthSecurityKey: {}}},
+		},
+		appApi.TaskProjectCreate,
+	)
 	// task project create with ai
-	huma.Register(taskProjectGroup, appApi.TaskProjectCreateWithAiOperation("/task-projects/ai"), appApi.TaskProjectCreateWithAi)
+	huma.Register(
+		taskProjectGroup,
+		huma.Operation{
+			OperationID: "task-project-create-with-ai",
+			Method:      http.MethodPost,
+			Path:        "/task-projects/ai",
+			Summary:     "Task project create with ai",
+			Description: "Create a new task project with ai",
+			Tags:        []string{"Task"},
+			Errors:      []int{http.StatusNotFound},
+			Security:    []map[string][]string{{shared.BearerAuthSecurityKey: {}}},
+		},
+		appApi.TaskProjectCreateWithAi,
+	)
 	// task project update
-	huma.Register(taskProjectGroup, appApi.TaskProjectUpdateOperation("/task-projects/{task-project-id}"), appApi.TaskProjectUpdate)
+	huma.Register(
+		taskProjectGroup,
+		huma.Operation{
+			OperationID: "task-project-update",
+			Method:      http.MethodPut,
+			Path:        "/task-projects/{task-project-id}",
+			Summary:     "Task project update",
+			Description: "Update a task project",
+			Tags:        []string{"Task"},
+			Errors:      []int{http.StatusNotFound},
+			Security:    []map[string][]string{{shared.BearerAuthSecurityKey: {}}},
+		},
+		appApi.TaskProjectUpdate,
+	)
 	// // task project delete
-	huma.Register(taskProjectGroup, appApi.TaskProjectDeleteOperation("/task-projects/{task-project-id}"), appApi.TaskProjectDelete)
+	huma.Register(
+		taskProjectGroup,
+		huma.Operation{
+			OperationID: "task-project-delete",
+			Method:      http.MethodDelete,
+			Path:        "/task-projects/{task-project-id}",
+			Summary:     "Task project delete",
+			Description: "Delete a task project",
+			Tags:        []string{"Task"},
+			Errors:      []int{http.StatusNotFound},
+			Security:    []map[string][]string{{shared.BearerAuthSecurityKey: {}}},
+		},
+		appApi.TaskProjectDelete,
+	)
 	// // task project get
-	huma.Register(taskProjectGroup, appApi.TaskProjectGetOperation("/task-projects/{task-project-id}"), appApi.TaskProjectGet)
+	huma.Register(
+		taskProjectGroup,
+		huma.Operation{
+			OperationID: "task-project-get",
+			Method:      http.MethodGet,
+			Path:        "/task-projects/{task-project-id}",
+			Summary:     "Task project get",
+			Description: "Get a task project",
+			Tags:        []string{"Task"},
+			Errors:      []int{http.StatusNotFound},
+			Security:    []map[string][]string{{shared.BearerAuthSecurityKey: {}}},
+		},
+		appApi.TaskProjectGet,
+	)
 	// task project tasks create
-	huma.Register(taskProjectGroup, appApi.TaskProjectTasksCreateOperation("/task-projects/{task-project-id}/tasks"), appApi.TaskProjectTasksCreate)
+	huma.Register(
+		taskProjectGroup,
+		huma.Operation{
+			OperationID: "task-project-tasks-create",
+			Method:      http.MethodPost,
+			Path:        "/task-projects/{task-project-id}/tasks",
+			Summary:     "Task project tasks create",
+			Description: "Create a new task project task",
+			Tags:        []string{"Task"},
+			Errors:      []int{http.StatusNotFound},
+			Security:    []map[string][]string{{shared.BearerAuthSecurityKey: {}}},
+		},
+		appApi.TaskProjectTasksCreate,
+	)
 
 	// stripe routes -------------------------------------------------------------------------------------------------
 	stripeGroup := huma.NewGroup(api, "/stripe")

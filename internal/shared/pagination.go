@@ -78,6 +78,11 @@ type PaginatedOutput[T any] struct {
 	Body PaginatedResponse[T] `json:"body"`
 }
 
+type JoinedResult[T any, K any] struct {
+	Key  K   `db:"key"`
+	Data []T `db:"data"`
+}
+
 // meta: {
 // 	current_page: number;
 // 	from: number | null;

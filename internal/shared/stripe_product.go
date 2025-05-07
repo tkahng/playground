@@ -3,7 +3,7 @@ package shared
 import (
 	"time"
 
-	"github.com/tkahng/authgo/internal/db/models"
+	crudModels "github.com/tkahng/authgo/internal/models"
 )
 
 type Product struct {
@@ -17,14 +17,14 @@ type Product struct {
 	UpdatedAt   time.Time         `db:"updated_at" json:"updated_at"`
 }
 
-func ModelToProduct(product *models.StripeProduct) *Product {
+func FromCrudProduct(product *crudModels.StripeProduct) *Product {
 	return &Product{
 		ID:          product.ID,
 		Active:      product.Active,
 		Name:        product.Name,
-		Description: product.Description.Ptr(),
-		Image:       product.Image.Ptr(),
-		Metadata:    product.Metadata.Val,
+		Description: product.Description,
+		Image:       product.Image,
+		Metadata:    product.Metadata,
 		CreatedAt:   product.CreatedAt,
 		UpdatedAt:   product.UpdatedAt,
 	}

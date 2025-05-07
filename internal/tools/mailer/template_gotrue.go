@@ -8,7 +8,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/tkahng/authgo/internal/db/models"
+	"github.com/tkahng/authgo/internal/shared"
 )
 
 type MailRequest struct {
@@ -198,7 +198,7 @@ type CommonParams struct {
 }
 
 // InviteMail sends a invite mail to a new user
-func (m *TemplateMailer) InviteMail(r *http.Request, user *models.User, otp, referrerURL string, externalURL *url.URL) error {
+func (m *TemplateMailer) InviteMail(r *http.Request, user *shared.User, otp, referrerURL string, externalURL *url.URL) error {
 	ConfirmationToken := "dasdssa"
 	path, err := GetPath(m.Config.Mailer.URLPaths.Invite, &EmailParams{
 		Token:      ConfirmationToken,
@@ -233,7 +233,7 @@ func (m *TemplateMailer) InviteMail(r *http.Request, user *models.User, otp, ref
 }
 
 // ConfirmationMail sends a signup confirmation mail to a new user
-func (m *TemplateMailer) ConfirmationMail(r *http.Request, user *models.User, otp, referrerURL string, externalURL *url.URL) error {
+func (m *TemplateMailer) ConfirmationMail(r *http.Request, user *shared.User, otp, referrerURL string, externalURL *url.URL) error {
 	congfs := "dasdssa"
 	path, err := GetPath(m.Config.Mailer.URLPaths.Confirmation, &EmailParams{
 		Token:      congfs,
@@ -267,7 +267,7 @@ func (m *TemplateMailer) ConfirmationMail(r *http.Request, user *models.User, ot
 }
 
 // ReauthenticateMail sends a reauthentication mail to an authenticated user
-func (m *TemplateMailer) ReauthenticateMail(r *http.Request, user *models.User, otp string) error {
+func (m *TemplateMailer) ReauthenticateMail(r *http.Request, user *shared.User, otp string) error {
 	data := map[string]interface{}{
 		"SiteURL": m.Config.SiteURL,
 		"Email":   user.Email,
@@ -288,7 +288,7 @@ func (m *TemplateMailer) ReauthenticateMail(r *http.Request, user *models.User, 
 }
 
 // EmailChangeMail sends an email change confirmation mail to a user
-func (m *TemplateMailer) EmailChangeMail(r *http.Request, user *models.User, otpNew, otpCurrent, referrerURL string, externalURL *url.URL) error {
+func (m *TemplateMailer) EmailChangeMail(r *http.Request, user *shared.User, otpNew, otpCurrent, referrerURL string, externalURL *url.URL) error {
 	type Email struct {
 		Address   string
 		Otp       string
@@ -368,7 +368,7 @@ func (m *TemplateMailer) EmailChangeMail(r *http.Request, user *models.User, otp
 }
 
 // RecoveryMail sends a password recovery mail
-func (m *TemplateMailer) RecoveryMail(r *http.Request, user *models.User, otp, referrerURL string, externalURL *url.URL) error {
+func (m *TemplateMailer) RecoveryMail(r *http.Request, user *shared.User, otp, referrerURL string, externalURL *url.URL) error {
 	path, err := GetPath(m.Config.Mailer.URLPaths.Recovery, &EmailParams{
 		// Token:      user.RecoveryToken,
 		Type:       "recovery",
@@ -400,7 +400,7 @@ func (m *TemplateMailer) RecoveryMail(r *http.Request, user *models.User, otp, r
 }
 
 // MagicLinkMail sends a login link mail
-func (m *TemplateMailer) MagicLinkMail(r *http.Request, user *models.User, otp, referrerURL string, externalURL *url.URL) error {
+func (m *TemplateMailer) MagicLinkMail(r *http.Request, user *shared.User, otp, referrerURL string, externalURL *url.URL) error {
 	path, err := GetPath(m.Config.Mailer.URLPaths.Recovery, &EmailParams{
 		// Token:      user.RecoveryToken,
 		Type:       "magiclink",
@@ -433,7 +433,7 @@ func (m *TemplateMailer) MagicLinkMail(r *http.Request, user *models.User, otp, 
 }
 
 // GetEmailActionLink returns a magiclink, recovery or invite link based on the actionType passed.
-func (m TemplateMailer) GetEmailActionLink(user *models.User, actionType, referrerURL string, externalURL *url.URL) (string, error) {
+func (m TemplateMailer) GetEmailActionLink(user *shared.User, actionType, referrerURL string, externalURL *url.URL) (string, error) {
 	var err error
 	var path *url.URL
 

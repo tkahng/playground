@@ -7,26 +7,11 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/core"
-	"github.com/tkahng/authgo/internal/db/models"
-	"github.com/tkahng/authgo/internal/repository"
+	"github.com/tkahng/authgo/internal/models"
+	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 )
-
-func (api *Api) TaskListOperation(path string) huma.Operation {
-	return huma.Operation{
-		OperationID: "task-list",
-		Method:      http.MethodGet,
-		Path:        path,
-		Summary:     "Task list",
-		Description: "List of tasks",
-		Tags:        []string{"Task"},
-		Errors:      []int{http.StatusNotFound},
-		Security: []map[string][]string{
-			{shared.BearerAuthSecurityKey: {}},
-		},
-	}
-}
 
 type TaskListResponse struct {
 	Body *shared.PaginatedResponse[*shared.TaskWithSubtask]
@@ -34,11 +19,11 @@ type TaskListResponse struct {
 
 func (api *Api) TaskList(ctx context.Context, input *shared.TaskListParams) (*TaskListResponse, error) {
 	db := api.app.Db()
-	tasks, err := repository.ListTasks(ctx, db, input)
+	tasks, err := queries.ListTasks(ctx, db, input)
 	if err != nil {
 		return nil, huma.Error500InternalServerError("error listing tasks", err)
 	}
-	total, err := repository.CountTasks(ctx, db, &input.TaskListFilter)
+	total, err := queries.CountTasks(ctx, db, &input.TaskListFilter)
 	if err != nil {
 		return nil, huma.Error500InternalServerError("error counting tasks", err)
 	}
@@ -46,9 +31,9 @@ func (api *Api) TaskList(ctx context.Context, input *shared.TaskListParams) (*Ta
 		Body: &shared.PaginatedResponse[*shared.TaskWithSubtask]{
 			Data: mapper.Map(tasks, func(task *models.Task) *shared.TaskWithSubtask {
 				return &shared.TaskWithSubtask{
-					Task: shared.ModelToTask(task),
-					Children: mapper.Map(task.R.ReverseParents, func(child *models.Task) *shared.Task {
-						return shared.ModelToTask(child)
+					Task: shared.CrudModelToTask(task),
+					Children: mapper.Map(task.Children, func(child *models.Task) *shared.Task {
+						return shared.CrudModelToTask(child)
 					}),
 				}
 			}),
@@ -82,43 +67,43 @@ func (api *Api) TaskUpdate(ctx context.Context, input *shared.UpdateTaskDTO) (*s
 	if err != nil {
 		return nil, huma.Error400BadRequest("Invalid task ID")
 	}
-	err = repository.UpdateTask(ctx, db, id, &input.Body)
+	err = queries.UpdateTask(ctx, db, id, &input.Body)
 	if err != nil {
 		return nil, err
 	}
 	return nil, nil
 }
 
-func (api *Api) UpdateTaskPositionOperation(path string) huma.Operation {
-	return huma.Operation{
-		OperationID: "update-task-position",
-		Method:      http.MethodPut,
-		Path:        path,
-		Summary:     "Update task position",
-		Description: "Update task position",
-		Tags:        []string{"Task"},
-		Errors:      []int{http.StatusNotFound},
-		Security: []map[string][]string{
-			{shared.BearerAuthSecurityKey: {}},
-		},
-	}
-}
+// func (api *Api) UpdateTaskPositionOperation(path string) huma.Operation {
+// 	return huma.Operation{
+// 		OperationID: "update-task-position",
+// 		Method:      http.MethodPut,
+// 		Path:        path,
+// 		Summary:     "Update task position",
+// 		Description: "Update task position",
+// 		Tags:        []string{"Task"},
+// 		Errors:      []int{http.StatusNotFound},
+// 		Security: []map[string][]string{
+// 			{shared.BearerAuthSecurityKey: {}},
+// 		},
+// 	}
+// }
 
-func (api *Api) UpdateTaskPosition(ctx context.Context, input *shared.TaskPositionInput) (*struct{}, error) {
-	if input == nil {
-		return nil, huma.Error400BadRequest("Invalid input")
-	}
-	db := api.app.Db()
-	id, err := uuid.Parse(input.TaskID)
-	if err != nil {
-		return nil, huma.Error400BadRequest("Invalid task ID")
-	}
-	err = repository.UpdateTaskPosition(ctx, db, id, input.Body.Position)
-	if err != nil {
-		return nil, err
-	}
-	return nil, nil
-}
+// func (api *Api) UpdateTaskPosition(ctx context.Context, input *shared.TaskPositionInput) (*struct{}, error) {
+// 	if input == nil {
+// 		return nil, huma.Error400BadRequest("Invalid input")
+// 	}
+// 	db := api.app.Db()
+// 	id, err := uuid.Parse(input.TaskID)
+// 	if err != nil {
+// 		return nil, huma.Error400BadRequest("Invalid task ID")
+// 	}
+// 	err = queries.UpdateTaskPosition(ctx, db, id, input.Body.Position)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	return nil, nil
+// }
 
 func (api *Api) UpdateTaskPositionStatusOperation(path string) huma.Operation {
 	return huma.Operation{
@@ -144,7 +129,7 @@ func (api *Api) UpdateTaskPositionStatus(ctx context.Context, input *shared.Task
 	if err != nil {
 		return nil, huma.Error400BadRequest("Invalid task ID")
 	}
-	err = repository.UpdateTaskPositionStatus(ctx, db, id, input.Body.Position, input.Body.Status)
+	err = queries.UpdateTaskPositionStatus(ctx, db, id, input.Body.Position, models.TaskStatus(input.Body.Status))
 	if err != nil {
 		return nil, err
 	}
@@ -178,7 +163,7 @@ func (api *Api) TaskDelete(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, huma.Error400BadRequest("Invalid task ID")
 	}
-	err = repository.DeleteTask(ctx, db, id)
+	err = queries.DeleteTask(ctx, db, id)
 	if err != nil {
 		return nil, err
 	}
@@ -212,15 +197,15 @@ func (api *Api) TaskGet(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, huma.Error400BadRequest("Invalid task ID")
 	}
-	task, err := repository.FindTaskByID(ctx, db, id)
+	task, err := queries.FindTaskByID(ctx, db, id)
 	if err != nil {
 		return nil, err
 	}
 	return &TaskResposne{
 		Body: &shared.TaskWithSubtask{
-			Task: shared.ModelToTask(task),
-			Children: mapper.Map(task.R.ReverseParents, func(child *models.Task) *shared.Task {
-				return shared.ModelToTask(child)
+			Task: shared.CrudModelToTask(task),
+			Children: mapper.Map(task.Children, func(child *models.Task) *shared.Task {
+				return shared.CrudModelToTask(child)
 			}),
 		},
 	}, nil

@@ -10,7 +10,7 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/stripe/stripe-go/v82"
 	"github.com/stripe/stripe-go/v82/webhook"
-	"github.com/tkahng/authgo/internal/repository"
+	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/tools/utils"
 )
 
@@ -64,7 +64,7 @@ func (api *Api) StripeWebhook(ctx context.Context, input *StripeWebhookInput) (*
 		if err != nil {
 			return nil, huma.Error400BadRequest("failed to unmarshal product", err)
 		}
-		err = repository.UpsertProductFromStripe(ctx, db, &product)
+		err = queries.UpsertProductFromStripe(ctx, db, &product)
 		if err != nil {
 			return nil, huma.Error400BadRequest("failed to upsert product", err)
 		}
@@ -74,7 +74,7 @@ func (api *Api) StripeWebhook(ctx context.Context, input *StripeWebhookInput) (*
 		if err != nil {
 			return nil, huma.Error400BadRequest("failed to unmarshal price", err)
 		}
-		err = repository.UpsertPriceFromStripe(ctx, db, &price)
+		err = queries.UpsertPriceFromStripe(ctx, db, &price)
 		if err != nil {
 			return nil, huma.Error400BadRequest("failed to upsert price", err)
 		}

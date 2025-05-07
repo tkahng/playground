@@ -80,7 +80,7 @@
       "templ": "html"
     },
     "gopls": {
-      "ui.semanticTokens": true
+      "ui.semanticTokens": false
     },
     "editor.codeLens": true,
     "[typescript]": {
@@ -119,6 +119,7 @@
       "plaintext": false,
       "markdown": false,
       "scminput": false
-    }
+    },
+    "github.copilot.nextEditSuggestions.enabled": true
   }
 }

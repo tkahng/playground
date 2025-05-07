@@ -2,37 +2,9 @@ package apis
 
 import (
 	"context"
-	"net/http"
 
-	"github.com/danielgtaylor/huma/v2"
 	"github.com/danielgtaylor/huma/v2/sse"
-	"github.com/tkahng/authgo/internal/shared"
 )
-
-// import (
-// 	"context"
-// 	"net/http"
-
-// 	"github.com/danielgtaylor/huma/v2"
-// 	"github.com/tkahng/authgo/internal/db/models"
-// 	"github.com/tkahng/authgo/internal/shared"
-// )
-
-func (api *Api) NotificationsSseOperation(path string) huma.Operation {
-	return huma.Operation{
-		OperationID: "notifications-sse",
-		Method:      http.MethodGet,
-		Path:        path,
-		Summary:     "Notifications SSE",
-		Description: "Notifications SSE",
-		Tags:        []string{"Notifications"},
-		Errors:      []int{http.StatusNotFound},
-		Security: []map[string][]string{
-			{shared.BearerAuthSecurityKey: {}},
-		},
-	}
-
-}
 
 func (api *Api) NotificationsSseEvents() map[string]any {
 	// sse.

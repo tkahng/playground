@@ -3,9 +3,7 @@ package apis
 import (
 	"context"
 	"fmt"
-	"net/http"
 
-	"github.com/danielgtaylor/huma/v2"
 	"github.com/tkahng/authgo/internal/shared"
 )
 
@@ -19,18 +17,6 @@ type SignupInput struct {
 	Email    string                `json:"email" form:"email" format:"email" example:"tkahng+01@gmail.com"`
 	Password RequiredPasswordField `json:"password" form:"password" minimum:"8" example:"Password123!"`
 	Name     *string               `json:"name"`
-}
-
-func (api *Api) SignupOperation(path string) huma.Operation {
-	return huma.Operation{
-		OperationID: "signup",
-		Method:      http.MethodPost,
-		Path:        path,
-		Summary:     "Sign up",
-		Description: "Count the number of colors for all themes",
-		Tags:        []string{"Auth"},
-		Errors:      []int{http.StatusNotFound},
-	}
 }
 
 func (api *Api) SignUp(ctx context.Context, input *struct{ Body SignupInput }) (*AuthenticatedInfoResponse, error) {
