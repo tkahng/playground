@@ -43,9 +43,7 @@ func ListAiUsagesOrderByFunc(input *shared.AiUsageListParams) *map[string]string
 		return nil
 	}
 	order := make(map[string]string)
-	// if slices.Contains(models.AiUsages.Columns().Names(), input.SortBy) {
 	order[input.SortBy] = strings.ToUpper(input.SortOrder)
-	// }
 	return &order
 }
 
@@ -54,10 +52,6 @@ func ListAiUsagesFilterFunc(filter *shared.AiUsageListFilter) *map[string]any {
 		return nil
 	}
 	where := make(map[string]any)
-	// if filter.Q != "" {
-
-	// }
-
 	if len(filter.UserID) > 0 {
 		where["user_id"] = map[string]any{
 			"_eq": filter.UserID,

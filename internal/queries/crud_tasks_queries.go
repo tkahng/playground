@@ -63,11 +63,6 @@ func FindTaskByID(ctx context.Context, db db.Dbx, id uuid.UUID) (*models.Task, e
 }
 
 func FindLastTaskOrder(ctx context.Context, db db.Dbx, taskProjectID uuid.UUID) (float64, error) {
-	// task, err := models.Tasks.Query(
-	// 	sm.Where(models.TaskColumns.ProjectID.EQ(psql.Arg(taskProjectID))),
-	// 	sm.OrderBy(models.TaskColumns.Order).Desc(),
-	// 	sm.Limit(1),
-	// ).One(ctx, db)
 	tasks, err := repository.Task.Get(
 		ctx,
 		db,
@@ -93,11 +88,7 @@ func FindLastTaskOrder(ctx context.Context, db db.Dbx, taskProjectID uuid.UUID) 
 }
 
 func DeleteTask(ctx context.Context, db db.Dbx, taskID uuid.UUID) error {
-	// task, err := models.FindTask(ctx, db, taskID)
-	// if err != nil {
-	// 	return err
-	// }
-	// return task.Delete(ctx, db)
+
 	_, err := repository.Task.DeleteReturn(
 		ctx,
 		db,
@@ -111,8 +102,7 @@ func DeleteTask(ctx context.Context, db db.Dbx, taskID uuid.UUID) error {
 }
 
 func FindTaskProjectByID(ctx context.Context, db db.Dbx, id uuid.UUID) (*models.TaskProject, error) {
-	// task, err := models.FindTaskProject(ctx, db, id)
-	// return OptionalRow(task, err)
+
 	task, err := repository.TaskProject.GetOne(
 		ctx,
 		db,

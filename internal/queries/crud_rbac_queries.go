@@ -2,7 +2,6 @@ package queries
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	"github.com/Masterminds/squirrel"
@@ -16,7 +15,6 @@ var (
 )
 
 func ListPermissionsFilterFunc(sq squirrel.SelectBuilder, filter *shared.PermissionsListFilter) squirrel.SelectBuilder {
-	// where := make(map[string]any)
 	if filter == nil {
 		return sq
 	}
@@ -52,61 +50,6 @@ func ListPermissionsFilterFunc(sq squirrel.SelectBuilder, filter *shared.Permiss
 		}
 	}
 	return sq
-}
-func ListPermissionsFilterFunc2(filter *shared.PermissionsListFilter) *map[string]any {
-	where := make(map[string]any)
-	if filter == nil {
-		return nil
-	}
-	if filter.Q != "" {
-		where["_or"] = []map[string]any{
-			{
-				"name": map[string]any{
-					"_ilike": fmt.Sprintf("%%%s%%", filter.Q),
-				},
-			},
-			{
-				"description": map[string]any{
-					"_ilike": fmt.Sprintf("%%%s%%", filter.Q),
-				},
-			},
-		}
-	}
-	if len(filter.Names) > 0 {
-		where["name"] = map[string]any{
-			"_in": filter.Names,
-		}
-	}
-	if len(filter.Ids) > 0 {
-		where["id"] = map[string]any{
-			"_in": filter.Ids,
-		}
-	}
-
-	if filter.RoleId != "" {
-		// id, err := uuid.Parse(filter.RoleId)
-		// if err != nil {
-		// 	return &where
-		// }
-		if filter.RoleReverse {
-			// q.Apply(
-			// 	sm.LeftJoin(models.RolePermissions.NameAs()).On(
-			// 		models.PermissionColumns.ID.EQ(models.RolePermissionColumns.PermissionID),
-			// 		models.RolePermissionColumns.RoleID.EQ(psql.Arg(id)),
-			// 	),
-			// 	sm.Where(models.RolePermissionColumns.PermissionID.IsNull()),
-			// )
-		} else {
-			// q.Apply(
-			// 	models.SelectJoins.Permissions.InnerJoin.Roles(ctx),
-			// 	models.SelectWhere.Roles.ID.EQ(id),
-			// )
-			where["role_id"] = map[string]any{
-				"_eq": filter.RoleId,
-			}
-		}
-	}
-	return &where
 }
 
 // ListPermissions implements AdminCrudActions.

@@ -267,34 +267,26 @@ func ListPriceFilterFuncMap(filter *shared.StripePriceListFilter) *map[string]an
 
 	if filter.Active != "" {
 		if filter.Active == shared.Active {
-			// q.Apply(
-			// 	models.SelectWhere.StripePrices.Active.EQ(true),
-			// )
+
 			param["active"] = map[string]any{
 				"_eq": true,
 			}
 		}
 		if filter.Active == shared.Inactive {
-			// q.Apply(
-			// 	models.SelectWhere.StripePrices.Active.EQ(false),
-			// )
+
 			param["active"] = map[string]any{
 				"_eq": false,
 			}
 		}
 	}
 	if len(filter.Ids) > 0 {
-		// q.Apply(
-		// 	models.SelectWhere.StripePrices.ID.In(filter.Ids...),
-		// )
+
 		param["id"] = map[string]any{
 			"_in": filter.Ids,
 		}
 	}
 	if len(filter.ProductIds) > 0 {
-		// q.Apply(
-		// 	models.SelectWhere.StripePrices.ProductID.In(filter.ProductIds...),
-		// )
+
 		param["product_id"] = map[string]any{
 			"_in": filter.ProductIds,
 		}

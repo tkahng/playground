@@ -24,9 +24,6 @@ func ListUserFilterFunc(filter *shared.UserListFilter) *map[string]any {
 	where := map[string]any{}
 	if filter.EmailVerified != "" {
 		if filter.EmailVerified == shared.Verified {
-			// q.Apply(
-			// 	models.SelectWhere.Users.EmailVerifiedAt.IsNotNull(),
-			// )
 			where["email_verified_at"] = map[string]any{
 				"_neq": nil,
 			}
