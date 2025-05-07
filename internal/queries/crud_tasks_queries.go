@@ -147,10 +147,6 @@ func ListTasksFilterFunc(filter *shared.TaskListFilter) *map[string]any {
 	}
 	where := make(map[string]any)
 	if filter.Q != "" {
-		// q.Apply(
-		// 	psql.WhereOr(models.SelectWhere.Tasks.Name.ILike("%"+filter.Q+"%"),
-		// 		models.SelectWhere.Tasks.Description.ILike("%"+filter.Q+"%")),
-		// )
 		where["_or"] = []map[string]any{
 			{
 				"name": map[string]any{
@@ -165,62 +161,34 @@ func ListTasksFilterFunc(filter *shared.TaskListFilter) *map[string]any {
 		}
 	}
 	if len(filter.Status) > 0 {
-		// q.Apply(
-		// 	models.SelectWhere.Tasks.Status.In(filter.Status...),
-		// )
 		where["status"] = map[string]any{
 			"_in": filter.Status,
 		}
 	}
 	if len(filter.UserID) > 0 {
-		// id, err := uuid.Parse(filter.UserID)
-		// if err != nil {
-		// 	return
-		// }
-		// q.Apply(
-		// 	models.SelectWhere.Tasks.UserID.EQ(id),
-		// )
 		where["user_id"] = map[string]any{
 			"_eq": filter.UserID,
 		}
-
 	}
 
 	if filter.ProjectID != "" {
-		// id, err := uuid.Parse(filter.ProjectID)
-		// if err != nil {
-		// 	return
-		// }
-		// q.Apply(
-		// 	models.SelectWhere.Tasks.ProjectID.EQ(id),
-		// )
 		where["project_id"] = map[string]any{
 			"_eq": filter.ProjectID,
 		}
 	}
 
 	if len(filter.Ids) > 0 {
-		// var ids []uuid.UUID = ParseUUIDs(filter.Ids)
-		// q.Apply(
-		// 	models.SelectWhere.Tasks.ID.In(ids...),
-		// )
 		where["id"] = map[string]any{
 			"_in": filter.Ids,
 		}
 	}
 	if filter.ParentID != "" {
-		// id, err := uuid.Parse(filter.ParentID)
-		// if err != nil {
-		// 	return
-		// }
-		// q.Apply(models.SelectWhere.Tasks.ParentID.EQ(id))
 		where["parent_id"] = map[string]any{
 			"_eq": filter.ParentID,
 		}
 	}
 	if filter.ParentStatus != "" {
 		if filter.ParentStatus == "parent" {
-			// q.Apply(models.SelectWhere.Tasks.ParentID.IsNull())
 			where["parent_id"] = map[string]any{
 				"_eq": "NULL",
 			}
