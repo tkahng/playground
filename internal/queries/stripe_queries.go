@@ -66,9 +66,30 @@ func UpsertCustomerStripeId(ctx context.Context, dbx db.Dbx, userId uuid.UUID, s
 func UpsertProduct(ctx context.Context, dbx db.Dbx, product *models.StripeProduct) error {
 	q := squirrel.
 		Insert("stripe_products").
-		Columns("id", "active", "name", "description", "image", "metadata").
-		Values(product.ID, product.Active, product.Name, product.Description, product.Image, product.Metadata).
-		Suffix(`ON CONFLICT (id) DO UPDATE SET active = EXCLUDED.active, name = EXCLUDED.name, description = EXCLUDED.description, image = EXCLUDED.image, metadata = EXCLUDED.metadata`)
+		Columns(
+			"id",
+			"active",
+			"name",
+			"description",
+			"image",
+			"metadata",
+		).
+		Values(
+			product.ID,
+			product.Active,
+			product.Name,
+			product.Description,
+			product.Image,
+			product.Metadata,
+		).
+		Suffix(`ON CONFLICT (id) DO UPDATE SET 
+						active = EXCLUDED.active, 
+						name = EXCLUDED.name, 
+						description = EXCLUDED.description, 
+						image = EXCLUDED.image, 
+						metadata = EXCLUDED.metadata
+		`,
+		)
 	return ExecWithBuilder(ctx, dbx, q.PlaceholderFormat(squirrel.Dollar))
 }
 
@@ -92,55 +113,47 @@ func UpsertProductFromStripe(ctx context.Context, dbx db.Dbx, product *stripe.Pr
 }
 
 func UpsertPrice(ctx context.Context, dbx db.Dbx, price *models.StripePrice) error {
-	// _, err := models.StripePrices.Insert(
-	// 	price,
-	// 	im.OnConflict("id").DoUpdate(
-	// 		im.SetCol("product_id").To(
-	// 			psql.Raw("EXCLUDED.product_id"),
-	// 		),
-	// 		im.SetCol("lookup_key").To(
-	// 			psql.Raw("EXCLUDED.lookup_key"),
-	// 		),
-	// 		im.SetCol("active").To(
-	// 			psql.Raw("EXCLUDED.active"),
-	// 		),
-	// 		im.SetCol("unit_amount").To(
-	// 			psql.Raw("EXCLUDED.unit_amount"),
-	// 		),
-	// 		im.SetCol("currency").To(
-	// 			psql.Raw("EXCLUDED.currency"),
-	// 		),
-	// 		im.SetCol("type").To(
-	// 			psql.Raw("EXCLUDED.type"),
-	// 		),
-	// 		im.SetCol("interval").To(
-	// 			psql.Raw("EXCLUDED.interval"),
-	// 		),
-	// 		im.SetCol("interval_count").To(
-	// 			psql.Raw("EXCLUDED.interval_count"),
-	// 		),
-	// 		im.SetCol("trial_period_days").To(
-	// 			psql.Raw("EXCLUDED.trial_period_days"),
-	// 		),
-	// 		im.SetCol("metadata").To(
-	// 			psql.Raw("EXCLUDED.metadata"),
-	// 		),
-	// 	),
-	// ).Exec(ctx, dbx)
 	q := squirrel.
 		Insert("stripe_prices").
-		Columns("id", "product_id", "lookup_key", "active", "unit_amount", "currency", "type", "interval", "interval_count", "trial_period_days", "metadata").
-		Values(price.ID, price.ProductID, price.LookupKey, price.Active, price.UnitAmount, price.Currency, price.Type, price.Interval, price.IntervalCount, price.TrialPeriodDays, price.Metadata).
-		Suffix(`ON CONFLICT(id) DO UPDATE SET product_id = EXCLUDED.product_id,
-        lookup_key = EXCLUDED.lookup_key,
-        active = EXCLUDED.active,
-        unit_amount = EXCLUDED.unit_amount,
-        currency = EXCLUDED.currency,
-        type = EXCLUDED.type,
-        interval = EXCLUDED.interval,
-        interval_count = EXCLUDED.interval_count,
-        trial_period_days = EXCLUDED.trial_period_days,
-        metadata = EXCLUDED.metadata`)
+		Columns(
+			"id",
+			"product_id",
+			"lookup_key",
+			"active",
+			"unit_amount",
+			"currency",
+			"type",
+			"interval",
+			"interval_count",
+			"trial_period_days",
+			"metadata",
+		).
+		Values(
+			price.ID,
+			price.ProductID,
+			price.LookupKey,
+			price.Active,
+			price.UnitAmount,
+			price.Currency,
+			price.Type,
+			price.Interval,
+			price.IntervalCount,
+			price.TrialPeriodDays,
+			price.Metadata,
+		).
+		Suffix(`
+		ON CONFLICT(id) DO UPDATE SET 
+			product_id = EXCLUDED.product_id,
+			lookup_key = EXCLUDED.lookup_key,
+			active = EXCLUDED.active,
+			unit_amount = EXCLUDED.unit_amount,
+			currency = EXCLUDED.currency,
+			type = EXCLUDED.type,
+			interval = EXCLUDED.interval,
+			interval_count = EXCLUDED.interval_count,
+			trial_period_days = EXCLUDED.trial_period_days,
+			metadata = EXCLUDED.metadata
+		`)
 	return ExecWithBuilder(ctx, dbx, q.PlaceholderFormat(squirrel.Dollar))
 }
 
