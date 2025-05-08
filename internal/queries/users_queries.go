@@ -234,7 +234,7 @@ func FindUserById(ctx context.Context, db db.Dbx, userId uuid.UUID) (*crudModels
 		db,
 		&map[string]any{
 			"id": map[string]any{
-				"_eq": userId,
+				"_eq": userId.String(),
 			},
 		},
 	)
