@@ -3,6 +3,7 @@ package core
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/alexedwards/argon2id"
@@ -11,6 +12,7 @@ import (
 	"github.com/tkahng/authgo/internal/db"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mailer"
+	"github.com/tkahng/authgo/internal/tools/routine"
 	"github.com/tkahng/authgo/internal/tools/security"
 )
 
@@ -472,17 +474,36 @@ func (app *AuthActionsBase) Authenticate(ctx context.Context, params *shared.Aut
 		// if user is first login, send verification email
 		if isFirstLogin {
 			fmt.Println("User is first login, sending verification email")
-			err = app.SendOtpEmail(EmailTypeVerify, ctx, user)
-			if err != nil {
-				return nil, fmt.Errorf("error at sending verification email: %w", err)
-			}
+			routine.FireAndForget(
+				func() {
+					err = app.SendOtpEmail(EmailTypeVerify, ctx, user)
+					if err != nil {
+						slog.Error(
+							"error sending verification email",
+							slog.Any("error", err),
+							slog.String("email", user.Email),
+							slog.String("userId", user.ID.String()),
+						)
+					}
+				},
+			)
+
 		} else {
 			fmt.Println("User is not first login, checking user credentials security")
 			// if user is not first login, check if user credentials security
-			err = app.CheckUserCredentialsSecurity(ctx, user, params)
-			if err != nil {
-				return nil, fmt.Errorf("error at checking user credentials security: %w", err)
-			}
+			routine.FireAndForget(
+				func() {
+					err = app.CheckUserCredentialsSecurity(ctx, user, params)
+					if err != nil {
+						slog.Error(
+							"error at checking user credentials security",
+							slog.Any("error", err),
+							slog.String("email", user.Email),
+							slog.String("userId", user.ID.String()),
+						)
+					}
+				},
+			)
 		}
 		// return user
 		return user, nil
