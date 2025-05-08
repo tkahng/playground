@@ -205,6 +205,7 @@ func UpsertPriceFromStripe(ctx context.Context, dbx db.Dbx, price *stripe.Price)
 		Metadata:   price.Metadata,
 	}
 	if price.Recurring != nil {
+		// utils.PrettyPrintJSON(price.Recurring)
 		*val.Interval = models.StripePricingPlanInterval(price.Recurring.Interval)
 		*val.IntervalCount = price.Recurring.IntervalCount
 		*val.TrialPeriodDays = price.Recurring.TrialPeriodDays
