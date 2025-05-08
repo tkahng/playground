@@ -476,6 +476,7 @@ func (app *AuthActionsBase) Authenticate(ctx context.Context, params *shared.Aut
 			fmt.Println("User is first login, sending verification email")
 			routine.FireAndForget(
 				func() {
+					ctx := context.Background()
 					err = app.SendOtpEmail(EmailTypeVerify, ctx, user)
 					if err != nil {
 						slog.Error(
@@ -493,6 +494,7 @@ func (app *AuthActionsBase) Authenticate(ctx context.Context, params *shared.Aut
 			// if user is not first login, check if user credentials security
 			routine.FireAndForget(
 				func() {
+					ctx := context.Background()
 					err = app.CheckUserCredentialsSecurity(ctx, user, params)
 					if err != nil {
 						slog.Error(
