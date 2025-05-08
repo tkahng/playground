@@ -139,54 +139,6 @@ func (app *AuthActionsBase) CreateAuthTokensFromEmail(ctx context.Context, email
 	return app.CreateAuthTokens(ctx, user)
 }
 
-func (app *AuthActionsBase) createAuthenticationToken(payload *AuthenticationPayload, config TokenOption) (string, error) {
-	if payload == nil {
-		return "", fmt.Errorf("payload is nil")
-	}
-	claims := AuthenticationClaims{
-		Type: shared.TokenTypesAccessToken,
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: config.ExpiresAt(),
-		},
-		AuthenticationPayload: *payload,
-	}
-	token, err := security.NewJWTWithClaims(claims, config.Secret)
-	if err != nil {
-		return token, fmt.Errorf("error at error: %w", err)
-	}
-
-	return token, nil
-}
-func (app *AuthActionsBase) createRefreshToken(ctx context.Context, payload *RefreshTokenPayload, config TokenOption) (string, error) {
-	if payload == nil {
-		return "", fmt.Errorf("payload is nil")
-	}
-	claims := RefreshTokenClaims{
-		Type: shared.TokenTypesRefreshToken,
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: config.ExpiresAt(),
-		},
-		RefreshTokenPayload: *payload,
-	}
-	dto := &shared.CreateTokenDTO{
-		Type:       shared.TokenTypesRefreshToken,
-		Identifier: payload.Email,
-		Expires:    config.Expires(),
-		Token:      payload.Token,
-		UserID:     &payload.UserId,
-	}
-	token, err := security.NewJWTWithClaims(claims, config.Secret)
-	if err != nil {
-		return token, fmt.Errorf("error at error: %w", err)
-	}
-
-	err = app.storage.SaveToken(ctx, dto)
-	if err != nil {
-		return token, fmt.Errorf("error at error: %w", err)
-	}
-	return token, nil
-}
-
 func (app *AuthActionsBase) CreateAuthTokens(ctx context.Context, payload *shared.UserInfo) (*shared.UserInfoTokens, error) {
 	if payload == nil {
 		return nil, fmt.Errorf("payload is nil")
@@ -194,23 +146,65 @@ func (app *AuthActionsBase) CreateAuthTokens(ctx context.Context, payload *share
 
 	opts := app.options.Auth
 
-	authToken, err := app.createAuthenticationToken(&AuthenticationPayload{
-		UserId:      payload.User.ID,
-		Email:       payload.User.Email,
-		Roles:       payload.Roles,
-		Permissions: payload.Permissions,
-	}, opts.AccessToken)
+	authToken, err := func() (string, error) {
+		claims := AuthenticationClaims{
+			Type: shared.TokenTypesAccessToken,
+			RegisteredClaims: jwt.RegisteredClaims{
+				ExpiresAt: opts.AccessToken.ExpiresAt(),
+			},
+			AuthenticationPayload: AuthenticationPayload{
+				UserId:      payload.User.ID,
+				Email:       payload.User.Email,
+				Roles:       payload.Roles,
+				Permissions: payload.Permissions,
+			},
+		}
+		token, err := security.NewJWTWithClaims(claims, opts.AccessToken.Secret)
+		if err != nil {
+			return token, fmt.Errorf("error at error: %w", err)
+		}
+		return token, nil
+	}()
 	if err != nil {
 		return nil, fmt.Errorf("error creating auth token: %w", err)
 	}
 
 	tokenKey := security.GenerateTokenKey()
 
-	refreshToken, err := app.createRefreshToken(ctx, &RefreshTokenPayload{
-		UserId: payload.User.ID,
-		Email:  payload.User.Email,
-		Token:  tokenKey,
-	}, opts.RefreshToken)
+	refreshToken, err := func() (string, error) {
+		payload := RefreshTokenPayload{
+			UserId: payload.User.ID,
+			Email:  payload.User.Email,
+			Token:  tokenKey,
+		}
+
+		claims := RefreshTokenClaims{
+			Type:                shared.TokenTypesRefreshToken,
+			RegisteredClaims:    jwt.RegisteredClaims{ExpiresAt: opts.RefreshToken.ExpiresAt()},
+			RefreshTokenPayload: payload,
+		}
+
+		token, err := security.NewJWTWithClaims(claims, opts.RefreshToken.Secret)
+		if err != nil {
+			return token, fmt.Errorf("error at error: %w", err)
+		}
+		err = app.storage.SaveToken(
+			ctx,
+			&shared.CreateTokenDTO{
+				Type:       shared.TokenTypesRefreshToken,
+				Identifier: payload.Email,
+				Expires:    opts.RefreshToken.Expires(),
+				Token:      payload.Token,
+				UserID:     &payload.UserId,
+				Otp:        new(string),
+			},
+		)
+		if err != nil {
+			return token, fmt.Errorf("error at error: %w", err)
+		}
+		return token, nil
+	}()
+
 	if err != nil {
 		return nil, fmt.Errorf("error creating refresh token: %w", err)
 	}
@@ -385,7 +379,6 @@ func (app *AuthActionsBase) Authenticate(ctx context.Context, params *shared.Aut
 	var account *shared.UserAccount
 	var err error
 	var isFirstLogin bool
-	fmt.Println("Authenticate")
 
 	// get user by email
 	user, err = app.storage.FindUserByEmail(ctx, params.Email)
