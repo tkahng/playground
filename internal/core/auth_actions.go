@@ -30,7 +30,7 @@ type AuthActions interface {
 	SendOtpEmail(emailType EmailType, ctx context.Context, user *shared.User) error
 	Signout(ctx context.Context, token string) error
 	ResetPassword(ctx context.Context, userId uuid.UUID, oldPassword, newPassword string) error
-	ParseTokenString(tokenString string, config TokenOption, data any) error
+	// ParseTokenString(tokenString string, config TokenOption, data any) error
 }
 
 var _ AuthActions = (*AuthActionsBase)(nil)
@@ -80,7 +80,7 @@ func (app *AuthActionsBase) ResetPassword(ctx context.Context, userId uuid.UUID,
 func (app *AuthActionsBase) Signout(ctx context.Context, token string) error {
 	opts := app.options.Auth
 	var claims RefreshTokenClaims
-	err := app.ParseTokenString(token, opts.RefreshToken, &claims)
+	err := app.parseTokenString(token, opts.RefreshToken, &claims)
 	if err != nil {
 		return fmt.Errorf("error verifying refresh token: %w", err)
 	}
@@ -242,7 +242,7 @@ func (app *AuthActionsBase) CreateAuthTokens(ctx context.Context, payload *share
 func (app *AuthActionsBase) CheckResetPasswordToken(ctx context.Context, tokenHash string) error {
 	opts := app.options.Auth
 	var claims PasswordResetClaims
-	err := app.ParseTokenString(tokenHash, opts.PasswordResetToken, &claims)
+	err := app.parseTokenString(tokenHash, opts.PasswordResetToken, &claims)
 	if err != nil {
 		return fmt.Errorf("error verifying password reset token: %w", err)
 	}
@@ -260,7 +260,7 @@ func (app *AuthActionsBase) CheckResetPasswordToken(ctx context.Context, tokenHa
 func (app *AuthActionsBase) HandlePasswordResetToken(ctx context.Context, token, password string) error {
 	opts := app.options.Auth
 	var claims PasswordResetClaims
-	err := app.ParseTokenString(token, opts.PasswordResetToken, &claims)
+	err := app.parseTokenString(token, opts.PasswordResetToken, &claims)
 	if err != nil {
 		return fmt.Errorf("error verifying password reset token: %w", err)
 	}
@@ -301,7 +301,7 @@ func (app *AuthActionsBase) HandlePasswordResetToken(ctx context.Context, token,
 func (app *AuthActionsBase) VerifyStateToken(ctx context.Context, token string) (*ProviderStateClaims, error) {
 	opts := app.options.Auth
 	var claims ProviderStateClaims
-	err := app.ParseTokenString(token, opts.StateToken, &claims)
+	err := app.parseTokenString(token, opts.StateToken, &claims)
 	if err != nil {
 		return nil, fmt.Errorf("error verifying state token: %w", err)
 	}
@@ -314,7 +314,7 @@ func (app *AuthActionsBase) VerifyStateToken(ctx context.Context, token string) 
 func (app *AuthActionsBase) HandleAccessToken(ctx context.Context, token string) (*shared.UserInfo, error) {
 	opts := app.options.Auth
 	var claims AuthenticationClaims
-	err := app.ParseTokenString(token, opts.AccessToken, &claims)
+	err := app.parseTokenString(token, opts.AccessToken, &claims)
 	if err != nil {
 		return nil, fmt.Errorf("error verifying access token: %w", err)
 	}
@@ -325,7 +325,7 @@ func (app *AuthActionsBase) HandleAccessToken(ctx context.Context, token string)
 func (app *AuthActionsBase) HandleRefreshToken(ctx context.Context, token string) (*shared.UserInfoTokens, error) {
 	opts := app.options.Auth
 	var claims RefreshTokenClaims
-	err := app.ParseTokenString(token, opts.RefreshToken, &claims)
+	err := app.parseTokenString(token, opts.RefreshToken, &claims)
 	if err != nil {
 		return nil, fmt.Errorf("error verifying refresh token: %w", err)
 	}
@@ -384,7 +384,7 @@ func (app *AuthActionsBase) VerifyAndParseOtpToken(ctx context.Context, emailTyp
 	}
 	var err error
 	var claims OtpClaims
-	err = app.ParseTokenString(token, opt, &claims)
+	err = app.parseTokenString(token, opt, &claims)
 	if err != nil {
 		return nil, fmt.Errorf("error at parsing token: %w", err)
 	}
@@ -601,7 +601,7 @@ func (app *AuthActionsBase) SendOtpEmail(emailType EmailType, ctx context.Contex
 	return nil
 }
 
-func (a *AuthActionsBase) ParseTokenString(token string, config TokenOption, data any) error {
+func (a *AuthActionsBase) parseTokenString(token string, config TokenOption, data any) error {
 	claims, err := security.ParseJWTMapClaims(token, config.Secret)
 	if err != nil {
 		return fmt.Errorf("error while parsing token string: %w", err)
