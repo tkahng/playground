@@ -233,6 +233,12 @@ func (b *SQLBuilder[Model]) Values(values *[]Model, args *[]any, keys *[]any) (f
 				// If a generator function is provided, primary key will be generated
 				fieldsArray = append(fieldsArray, b.identifier(field.name))
 			}
+			if b.skipIdInsert {
+				// If skipIdInsert is true, skip inserting the primary key field
+				continue
+			}
+			// Otherwise, add the primary key field to the VALUES clause
+			fieldsArray = append(fieldsArray, b.identifier(field.name))
 		} else {
 			if slices.Contains(timestampNames, field.name) {
 				continue // Skip timestamp fields

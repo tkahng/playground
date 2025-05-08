@@ -3,11 +3,16 @@ package repository
 import "github.com/tkahng/authgo/internal/models"
 
 var (
-	UserBuilder               = NewSQLBuilder[models.User]()
-	RoleBuilder               = NewSQLBuilder[models.Role]()
-	PermissionBuilder         = NewSQLBuilder[models.Permission]()
-	UserAccountBuilder        = NewSQLBuilder[models.UserAccount]()
-	UserRoleBuilder           = NewSQLBuilder[models.UserRole]()
+	UserBuilder        = NewSQLBuilder[models.User]()
+	RoleBuilder        = NewSQLBuilder[models.Role]()
+	PermissionBuilder  = NewSQLBuilder[models.Permission]()
+	UserAccountBuilder = NewSQLBuilder[models.UserAccount]()
+	UserRoleBuilder    = NewSQLBuilder(
+		func(s *SQLBuilder[models.UserRole]) error {
+			s.skipIdInsert = false
+			return nil
+		},
+	)
 	UserPermissionBuilder     = NewSQLBuilder[models.UserPermission]()
 	RolePermissionBuilder     = NewSQLBuilder[models.RolePermission]()
 	TokenBuilder              = NewSQLBuilder[models.Token]()
