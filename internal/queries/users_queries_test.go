@@ -415,3 +415,70 @@ func TestFindUserById(t *testing.T) {
 		return errors.New("rollback transaction")
 	})
 }
+func TestUpdateUserPassword(t *testing.T) {
+	ctx, dbx := test.DbSetup()
+
+	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+		// Create test user
+		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
+			Email: "test@example.com",
+		})
+		if err != nil {
+			t.Fatalf("failed to create user: %v", err)
+		}
+
+		// Create credentials account
+		_, err = queries.CreateAccount(ctx, dbxx, user.ID, &shared.AuthenticationInput{
+			Type:              shared.ProviderTypeCredentials,
+			Provider:          shared.ProvidersCredentials,
+			ProviderAccountID: "test-account",
+			HashPassword:      types.Pointer("initial-password"),
+		})
+		if err != nil {
+			t.Fatalf("failed to create account: %v", err)
+		}
+
+		type args struct {
+			ctx      context.Context
+			db       db.Dbx
+			userId   uuid.UUID
+			password string
+		}
+		tests := []struct {
+			name    string
+			args    args
+			wantErr bool
+		}{
+			{
+				name: "update existing user password",
+				args: args{
+					ctx:      ctx,
+					db:       dbxx,
+					userId:   user.ID,
+					password: "new-password",
+				},
+				wantErr: false,
+			},
+			{
+				name: "update password for non-existent user",
+				args: args{
+					ctx:      ctx,
+					db:       dbxx,
+					userId:   uuid.New(),
+					password: "new-password",
+				},
+				wantErr: true,
+			},
+		}
+
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				err := queries.UpdateUserPassword(tt.args.ctx, tt.args.db, tt.args.userId, tt.args.password)
+				if (err != nil) != tt.wantErr {
+					t.Errorf("UpdateUserPassword() error = %v, wantErr %v", err, tt.wantErr)
+				}
+			})
+		}
+		return errors.New("rollback transaction")
+	})
+}

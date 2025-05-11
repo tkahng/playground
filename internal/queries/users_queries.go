@@ -241,10 +241,10 @@ func UpdateUserPassword(ctx context.Context, db db.Dbx, userId uuid.UUID, passwo
 		db,
 		&map[string]any{
 			"user_id": map[string]any{
-				"_eq": userId,
+				"_eq": userId.String(),
 			},
 			"provider": map[string]any{
-				"_eq": crudModels.ProvidersCredentials,
+				"_eq": string(crudModels.ProvidersCredentials),
 			},
 		},
 	)
