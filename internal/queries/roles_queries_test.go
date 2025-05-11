@@ -210,10 +210,6 @@ func TestGetUserPermissions(t *testing.T) {
 func TestCreateRolePermissions(t *testing.T) {
 	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
-		err := queries.EnsureRoleAndPermissions(ctx, dbxx, "basic", "basic")
-		if err != nil {
-			t.Fatalf("failed to ensure role and permissions: %v", err)
-		}
 		role, err := queries.FindOrCreateRole(ctx, dbxx, "basic")
 		if err != nil {
 			t.Fatalf("failed to find or create role: %v", err)
