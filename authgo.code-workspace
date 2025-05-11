@@ -112,6 +112,15 @@
         "name": "authgo",
         "database": "authgo",
         "username": "postgres"
+      },
+      {
+        "previewLimit": 50,
+        "server": "localhost",
+        "port": 5432,
+        "driver": "PostgreSQL",
+        "name": "authgo_test",
+        "database": "authgo_test",
+        "username": "postgres"
       }
     ],
     "github.copilot.enable": {
