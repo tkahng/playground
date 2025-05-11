@@ -198,6 +198,58 @@ func TestGetUserPermissions(t *testing.T) {
 				if !reflect.DeepEqual(len(got[0]), len(tt.want[0])) {
 					t.Errorf("GetUserPermissions() = %v, want %v", len(got[0]), len(tt.want[0]))
 				}
+				if !reflect.DeepEqual(got[0][0].Name, tt.want[0][0].Name) {
+					t.Errorf("GetUserPermissions() = %v, want %v", got[0][0].Name, tt.want[0][0].Name)
+				}
+			})
+		}
+		return errors.New("rollback")
+	})
+}
+
+func TestCreateRolePermissions(t *testing.T) {
+	ctx, dbx := test.DbSetup()
+	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+		err := queries.EnsureRoleAndPermissions(ctx, dbxx, "basic", "basic")
+		if err != nil {
+			t.Fatalf("failed to ensure role and permissions: %v", err)
+		}
+		role, err := queries.FindOrCreateRole(ctx, dbxx, "basic")
+		if err != nil {
+			t.Fatalf("failed to find or create role: %v", err)
+		}
+		permission, err := queries.FindOrCreatePermission(ctx, dbxx, "basic")
+		if err != nil {
+			t.Fatalf("failed to find or create permission: %v", err)
+		}
+
+		type args struct {
+			ctx           context.Context
+			db            db.Dbx
+			roleId        uuid.UUID
+			permissionIds []uuid.UUID
+		}
+		tests := []struct {
+			name    string
+			args    args
+			wantErr bool
+		}{
+			{
+				name: "create role permission",
+				args: args{
+					ctx:           ctx,
+					db:            dbxx,
+					roleId:        role.ID,
+					permissionIds: []uuid.UUID{permission.ID},
+				},
+				wantErr: false,
+			},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				if err := queries.CreateRolePermissions(tt.args.ctx, tt.args.db, tt.args.roleId, tt.args.permissionIds...); (err != nil) != tt.wantErr {
+					t.Errorf("CreateRolePermissions() error = %v, wantErr %v", err, tt.wantErr)
+				}
 			})
 		}
 		return errors.New("rollback")
