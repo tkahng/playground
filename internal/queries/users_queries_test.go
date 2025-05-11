@@ -112,3 +112,52 @@ func TestCreateUserRoles(t *testing.T) {
 		return errors.New("test error")
 	})
 }
+
+func TestCreateUserPermissions(t *testing.T) {
+	ctx, dbx := test.DbSetup()
+	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+		// Create a user
+		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
+			Email: "tkahng@gmail.com",
+		})
+		if err != nil {
+			t.Errorf("failed to create user: %v", err)
+			return err
+		}
+		permission, err := queries.FindOrCreatePermission(ctx, dbxx, "basic")
+		if err != nil {
+			t.Errorf("failed to create role: %v", err)
+			return err
+		}
+		type args struct {
+			ctx           context.Context
+			db            db.Dbx
+			userId        uuid.UUID
+			permissionIds []uuid.UUID
+		}
+		tests := []struct {
+			name    string
+			args    args
+			wantErr bool
+		}{
+			{
+				name: "create user permissions",
+				args: args{
+					ctx:           ctx,
+					db:            dbxx,
+					userId:        user.ID,
+					permissionIds: []uuid.UUID{permission.ID},
+				},
+				wantErr: false,
+			},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				if err := queries.CreateUserPermissions(tt.args.ctx, tt.args.db, tt.args.userId, tt.args.permissionIds...); (err != nil) != tt.wantErr {
+					t.Errorf("CreateUserPermissions() error = %v, wantErr %v", err, tt.wantErr)
+				}
+			})
+		}
+		return errors.New("test error")
+	})
+}
