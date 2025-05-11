@@ -274,3 +274,144 @@ func TestCreateAccount(t *testing.T) {
 		return errors.New("rollback transaction")
 	})
 }
+func TestFindUserByEmail(t *testing.T) {
+	ctx, dbx := test.DbSetup()
+
+	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+		// Create a test user first
+		testUser, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
+			Email: "test@example.com",
+			Name:  types.Pointer("Test User"),
+		})
+		if err != nil {
+			t.Fatalf("failed to create test user: %v", err)
+		}
+
+		type args struct {
+			ctx   context.Context
+			db    db.Dbx
+			email string
+		}
+		tests := []struct {
+			name    string
+			args    args
+			want    *crudModels.User
+			wantErr bool
+		}{
+			{
+				name: "find existing user",
+				args: args{
+					ctx:   ctx,
+					db:    dbxx,
+					email: "test@example.com",
+				},
+				want:    testUser,
+				wantErr: false,
+			},
+			{
+				name: "user not found",
+				args: args{
+					ctx:   ctx,
+					db:    dbxx,
+					email: "nonexistent@example.com",
+				},
+				want:    nil,
+				wantErr: false,
+			},
+		}
+
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				got, err := queries.FindUserByEmail(tt.args.ctx, tt.args.db, tt.args.email)
+				if (err != nil) != tt.wantErr {
+					t.Errorf("FindUserByEmail() error = %v, wantErr %v", err, tt.wantErr)
+					return
+				}
+				if tt.want == nil && got != nil {
+					t.Errorf("FindUserByEmail() = %v, want nil", got)
+				}
+				if tt.want != nil && got != nil {
+					if !reflect.DeepEqual(got.Email, tt.want.Email) {
+						t.Errorf("FindUserByEmail() Email = %v, want %v", got.Email, tt.want.Email)
+					}
+					if !reflect.DeepEqual(got.Name, tt.want.Name) {
+						t.Errorf("FindUserByEmail() Name = %v, want %v", got.Name, tt.want.Name)
+					}
+				}
+			})
+		}
+		return errors.New("rollback transaction")
+	})
+}
+func TestFindUserById(t *testing.T) {
+	ctx, dbx := test.DbSetup()
+
+	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+		// Create a test user first
+		testUser, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
+			Email: "test@example.com",
+			Name:  types.Pointer("Test User"),
+		})
+		if err != nil {
+			t.Fatalf("failed to create test user: %v", err)
+		}
+
+		type args struct {
+			ctx    context.Context
+			db     db.Dbx
+			userId uuid.UUID
+		}
+		tests := []struct {
+			name    string
+			args    args
+			want    *crudModels.User
+			wantErr bool
+		}{
+			{
+				name: "find existing user",
+				args: args{
+					ctx:    ctx,
+					db:     dbxx,
+					userId: testUser.ID,
+				},
+				want:    testUser,
+				wantErr: false,
+			},
+			{
+				name: "user not found",
+				args: args{
+					ctx:    ctx,
+					db:     dbxx,
+					userId: uuid.New(),
+				},
+				want:    nil,
+				wantErr: false,
+			},
+		}
+
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				got, err := queries.FindUserById(tt.args.ctx, tt.args.db, tt.args.userId)
+				if (err != nil) != tt.wantErr {
+					t.Errorf("FindUserById() error = %v, wantErr %v", err, tt.wantErr)
+					return
+				}
+				if tt.want == nil && got != nil {
+					t.Errorf("FindUserById() = %v, want nil", got)
+				}
+				if tt.want != nil && got != nil {
+					if !reflect.DeepEqual(got.ID, tt.want.ID) {
+						t.Errorf("FindUserById() ID = %v, want %v", got.ID, tt.want.ID)
+					}
+					if !reflect.DeepEqual(got.Email, tt.want.Email) {
+						t.Errorf("FindUserById() Email = %v, want %v", got.Email, tt.want.Email)
+					}
+					if !reflect.DeepEqual(got.Name, tt.want.Name) {
+						t.Errorf("FindUserById() Name = %v, want %v", got.Name, tt.want.Name)
+					}
+				}
+			})
+		}
+		return errors.New("rollback transaction")
+	})
+}
