@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/db"
 	crudModels "github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/queries"
@@ -61,4 +62,53 @@ func TestCreateUser(t *testing.T) {
 		return errors.New("test error")
 	})
 
+}
+
+func TestCreateUserRoles(t *testing.T) {
+	ctx, dbx := test.DbSetup()
+	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+		// Create a user
+		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
+			Email: "tkahng@gmail.com",
+		})
+		if err != nil {
+			t.Errorf("failed to create user: %v", err)
+			return err
+		}
+		role, err := queries.FindOrCreateRole(ctx, dbxx, "basic")
+		if err != nil {
+			t.Errorf("failed to create role: %v", err)
+			return err
+		}
+		type args struct {
+			ctx     context.Context
+			db      db.Dbx
+			userId  uuid.UUID
+			roleIds []uuid.UUID
+		}
+		tests := []struct {
+			name    string
+			args    args
+			wantErr bool
+		}{
+			{
+				name: "create user roles",
+				args: args{
+					ctx:     ctx,
+					db:      dbxx,
+					userId:  user.ID,
+					roleIds: []uuid.UUID{role.ID},
+				},
+				wantErr: false,
+			},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				if err := queries.CreateUserRoles(tt.args.ctx, tt.args.db, tt.args.userId, tt.args.roleIds...); (err != nil) != tt.wantErr {
+					t.Errorf("createUserRoles() error = %v, wantErr %v", err, tt.wantErr)
+				}
+			})
+		}
+		return errors.New("test error")
+	})
 }
