@@ -135,12 +135,6 @@ func LoadUsersByUserIds(ctx context.Context, db db.Dbx, userIds ...uuid.UUID) ([
 }
 
 func CreateUser(ctx context.Context, db db.Dbx, params *shared.AuthenticationInput) (*crudModels.User, error) {
-	// return models.Users.Insert(&models.UserSetter{
-	// 	Email:           omit.From(params.Email),
-	// 	Name:            omitnull.FromPtr(params.Name),
-	// 	Image:           omitnull.FromPtr(params.AvatarUrl),
-	// 	EmailVerifiedAt: omitnull.FromPtr(params.EmailVerifiedAt),
-	// }, im.Returning("*")).One(ctx, db)
 	return repository.User.PostOne(ctx, db, &crudModels.User{
 		Email:           params.Email,
 		Name:            params.Name,
