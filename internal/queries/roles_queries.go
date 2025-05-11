@@ -196,12 +196,6 @@ func CreateRolePermissions(ctx context.Context, db db.Dbx, roleId uuid.UUID, per
 		q = q.Values(perm.RoleID, perm.PermissionID)
 	}
 	q = q.Suffix("RETURNING *")
-	// sql, args, err := q.PlaceholderFormat(squirrel.Dollar).ToSql()
-	// if err != nil {
-	// 	return err
-	// }
-	// fmt.Println(sql, args)
-	// _, err = pgxscan.All(ctx, db, scan.StructMapper[crudModels.RolePermission](), sql, args...)
 	_, err := QueryWithBuilder[crudModels.RolePermission](ctx, db, q.PlaceholderFormat(squirrel.Dollar))
 	if err != nil {
 		return err

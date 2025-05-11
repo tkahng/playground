@@ -251,3 +251,53 @@ func TestCreateRolePermissions(t *testing.T) {
 		return errors.New("rollback")
 	})
 }
+func TestCreateProductRoles(t *testing.T) {
+	ctx, dbx := test.DbSetup()
+	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+		role, err := queries.FindOrCreateRole(ctx, dbxx, "basic")
+		if err != nil {
+			t.Fatalf("failed to find or create role: %v", err)
+		}
+		err = queries.UpsertProduct(ctx, dbxx, &crudModels.StripeProduct{
+			ID:          "stripe-product-id",
+			Active:      true,
+			Name:        "Test Product",
+			Description: new(string),
+			Image:       new(string),
+			Metadata:    map[string]string{},
+		})
+		if err != nil {
+			t.Fatalf("failed to upsert product: %v", err)
+		}
+		type args struct {
+			ctx       context.Context
+			db        db.Dbx
+			productId string
+			roleIds   []uuid.UUID
+		}
+		tests := []struct {
+			name    string
+			args    args
+			wantErr bool
+		}{
+			{
+				name: "create product role",
+				args: args{
+					ctx:       ctx,
+					db:        dbxx,
+					productId: "stripe-product-id",
+					roleIds:   []uuid.UUID{role.ID},
+				},
+				wantErr: false,
+			},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				if err := queries.CreateProductRoles(tt.args.ctx, tt.args.db, tt.args.productId, tt.args.roleIds...); (err != nil) != tt.wantErr {
+					t.Errorf("CreateProductRoles() error = %v, wantErr %v", err, tt.wantErr)
+				}
+			})
+		}
+		return errors.New("rollback")
+	})
+}
