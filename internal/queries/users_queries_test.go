@@ -560,3 +560,121 @@ func TestUpdateMe(t *testing.T) {
 		return errors.New("rollback transaction")
 	})
 }
+func TestGetUserAccounts(t *testing.T) {
+	ctx, dbx := test.DbSetup()
+
+	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+		// Create test users
+		user1, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
+			Email: "user1@example.com",
+		})
+		if err != nil {
+			t.Fatalf("failed to create test user 1: %v", err)
+		}
+
+		user2, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
+			Email: "user2@example.com",
+		})
+		if err != nil {
+			t.Fatalf("failed to create test user 2: %v", err)
+		}
+
+		// Create accounts for user1
+		_, err = queries.CreateAccount(ctx, dbxx, user1.ID, &shared.AuthenticationInput{
+			Type:              shared.ProviderTypeCredentials,
+			Provider:          shared.ProvidersCredentials,
+			ProviderAccountID: "credentials-1",
+		})
+		if err != nil {
+			t.Fatalf("failed to create account for user 1: %v", err)
+		}
+
+		_, err = queries.CreateAccount(ctx, dbxx, user1.ID, &shared.AuthenticationInput{
+			Type:              shared.ProviderTypeOAuth,
+			Provider:          shared.ProvidersGoogle,
+			ProviderAccountID: "google-1",
+		})
+		if err != nil {
+			t.Fatalf("failed to create second account for user 1: %v", err)
+		}
+
+		// Create account for user2
+		_, err = queries.CreateAccount(ctx, dbxx, user2.ID, &shared.AuthenticationInput{
+			Type:              shared.ProviderTypeCredentials,
+			Provider:          shared.ProvidersCredentials,
+			ProviderAccountID: "credentials-2",
+		})
+		if err != nil {
+			t.Fatalf("failed to create account for user 2: %v", err)
+		}
+
+		type args struct {
+			ctx     context.Context
+			db      db.Dbx
+			userIds []uuid.UUID
+		}
+		tests := []struct {
+			name    string
+			args    args
+			want    int
+			wantErr bool
+		}{
+			{
+				name: "get accounts for single user with multiple accounts",
+				args: args{
+					ctx:     ctx,
+					db:      dbxx,
+					userIds: []uuid.UUID{user1.ID},
+				},
+				want:    2,
+				wantErr: false,
+			},
+			{
+				name: "get accounts for multiple users",
+				args: args{
+					ctx:     ctx,
+					db:      dbxx,
+					userIds: []uuid.UUID{user1.ID, user2.ID},
+				},
+				want:    3,
+				wantErr: false,
+			},
+			{
+				name: "get accounts for non-existent user",
+				args: args{
+					ctx:     ctx,
+					db:      dbxx,
+					userIds: []uuid.UUID{uuid.New()},
+				},
+				want:    0,
+				wantErr: false,
+			},
+		}
+
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				got, err := queries.GetUserAccounts(tt.args.ctx, tt.args.db, tt.args.userIds...)
+				if (err != nil) != tt.wantErr {
+					t.Errorf("GetUserAccounts() error = %v, wantErr %v", err, tt.wantErr)
+					return
+				}
+
+				if !tt.wantErr {
+					if len(got) != len(tt.args.userIds) {
+						t.Errorf("GetUserAccounts() returned wrong number of user slices = %v, want %v", len(got), len(tt.args.userIds))
+					}
+
+					totalAccounts := 0
+					for _, accounts := range got {
+						totalAccounts += len(accounts)
+					}
+
+					if tt.want != totalAccounts {
+						t.Errorf("GetUserAccounts() returned wrong total number of accounts = %v, want %v", totalAccounts, tt.want)
+					}
+				}
+			})
+		}
+		return errors.New("rollback transaction")
+	})
+}
