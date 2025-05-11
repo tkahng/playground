@@ -132,7 +132,7 @@ func GetUserRoles(ctx context.Context, db db.Dbx, userIds ...uuid.UUID) ([][]*cr
 
 const (
 	GetUserPermissionsQuery = `
-	SELECT rp.user_id as key,
+SELECT rp.user_id as key,
         COALESCE(
                 json_agg(
                         jsonb_build_object(
@@ -153,15 +153,12 @@ const (
                 '[]'
         ) AS data
 FROM public.user_permissions rp
-        LEFT JOIN public.permission p ON p.id = rp.permission_id
-        WHERE rp.user_id = ANY (
-                $1::uuid []
-        )
+        LEFT JOIN public.permissions p ON p.id = rp.permission_id
+WHERE rp.user_id = ANY ($1::uuid [])
 GROUP BY rp.user_id;`
 )
 
 func GetUserPermissions(ctx context.Context, db db.Dbx, userIds ...uuid.UUID) ([][]*crudModels.Permission, error) {
-	// var results []JoinedResult[*crudModels.Permission, uuid.UUID]
 	ids := []string{}
 	for _, id := range userIds {
 		ids = append(ids, id.String())
@@ -170,7 +167,7 @@ func GetUserPermissions(ctx context.Context, db db.Dbx, userIds ...uuid.UUID) ([
 		ctx,
 		db,
 		scan.StructMapper[shared.JoinedResult[*crudModels.Permission, uuid.UUID]](),
-		GetUserRolesQuery,
+		GetUserPermissionsQuery,
 		userIds,
 	)
 	if err != nil {

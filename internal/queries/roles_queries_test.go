@@ -19,11 +19,11 @@ func TestLoadRolePermissions(t *testing.T) {
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		err := queries.EnsureRoleAndPermissions(ctx, dbxx, "basic", "basic")
 		if err != nil {
-			return err
+			t.Fatalf("failed to ensure role and permissions: %v", err)
 		}
 		role, err := queries.FindOrCreateRole(ctx, dbxx, "basic")
 		if err != nil {
-			return err
+			t.Fatalf("failed to find or create role: %v", err)
 		}
 		type args struct {
 			ctx     context.Context
@@ -133,6 +133,70 @@ func TestGetUserRoles(t *testing.T) {
 				}
 				if !reflect.DeepEqual(got[0][0].Name, tt.want[0][0].Name) {
 					t.Errorf("GetUserRoles() = %v, want %v", got[0][0].Name, tt.want[0][0].Name)
+				}
+			})
+		}
+		return errors.New("rollback")
+	})
+}
+func TestGetUserPermissions(t *testing.T) {
+	ctx, dbx := test.DbSetup()
+	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+		permission, err := queries.FindOrCreatePermission(ctx, dbxx, "basic")
+		if err != nil {
+			t.Fatalf("failed to find or create permission: %v", err)
+		}
+		user, err := queries.CreateUser(
+			ctx,
+			dbxx,
+			&shared.AuthenticationInput{
+				Email: "test@test.com",
+			},
+		)
+		if err != nil {
+			return err
+		}
+		err = queries.CreateUserPermissions(ctx, dbxx, user.ID, permission.ID)
+		if err != nil {
+			return err
+		}
+		type args struct {
+			ctx     context.Context
+			db      db.Dbx
+			userIds []uuid.UUID
+		}
+		tests := []struct {
+			name    string
+			args    args
+			want    [][]*crudModels.Permission
+			wantErr bool
+		}{
+			{
+				name: "get user permissions",
+				args: args{
+					ctx:     ctx,
+					db:      dbxx,
+					userIds: []uuid.UUID{user.ID},
+				},
+				want: [][]*crudModels.Permission{
+					{
+						{
+							Name: "basic",
+						},
+					},
+				},
+				wantErr: false,
+			},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				got, err := queries.GetUserPermissions(tt.args.ctx, tt.args.db, tt.args.userIds...)
+				if (err != nil) != tt.wantErr {
+					t.Errorf("GetUserPermissions() error = %v, wantErr %v", err, tt.wantErr)
+					return
+				}
+				if !reflect.DeepEqual(len(got[0]), len(tt.want[0])) {
+					t.Errorf("GetUserPermissions() = %v, want %v", len(got[0]), len(tt.want[0]))
 				}
 			})
 		}
