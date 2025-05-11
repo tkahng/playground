@@ -482,3 +482,81 @@ func TestUpdateUserPassword(t *testing.T) {
 		return errors.New("rollback transaction")
 	})
 }
+func TestUpdateMe(t *testing.T) {
+	ctx, dbx := test.DbSetup()
+
+	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+		// Create test user first
+		testUser, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
+			Email: "test@example.com",
+			Name:  types.Pointer("Original Name"),
+		})
+		if err != nil {
+			t.Fatalf("failed to create test user: %v", err)
+		}
+
+		type args struct {
+			ctx    context.Context
+			db     db.Dbx
+			userId uuid.UUID
+			input  *shared.UpdateMeInput
+		}
+		tests := []struct {
+			name    string
+			args    args
+			wantErr bool
+		}{
+			{
+				name: "update existing user",
+				args: args{
+					ctx:    ctx,
+					db:     dbxx,
+					userId: testUser.ID,
+					input: &shared.UpdateMeInput{
+						Name:  types.Pointer("Updated Name"),
+						Image: types.Pointer("new-image.jpg"),
+					},
+				},
+				wantErr: false,
+			},
+			{
+				name: "update non-existent user",
+				args: args{
+					ctx:    ctx,
+					db:     dbxx,
+					userId: uuid.New(),
+					input: &shared.UpdateMeInput{
+						Name:  types.Pointer("Updated Name"),
+						Image: types.Pointer("new-image.jpg"),
+					},
+				},
+				wantErr: true,
+			},
+		}
+
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				err := queries.UpdateMe(tt.args.ctx, tt.args.db, tt.args.userId, tt.args.input)
+				if (err != nil) != tt.wantErr {
+					t.Errorf("UpdateMe() error = %v, wantErr %v", err, tt.wantErr)
+				}
+
+				if !tt.wantErr {
+					// Verify the update
+					updatedUser, err := queries.FindUserById(tt.args.ctx, tt.args.db, tt.args.userId)
+					if err != nil {
+						t.Errorf("Failed to fetch updated user: %v", err)
+						return
+					}
+					if !reflect.DeepEqual(updatedUser.Name, tt.args.input.Name) {
+						t.Errorf("UpdateMe() Name = %v, want %v", updatedUser.Name, tt.args.input.Name)
+					}
+					if !reflect.DeepEqual(updatedUser.Image, tt.args.input.Image) {
+						t.Errorf("UpdateMe() Image = %v, want %v", updatedUser.Image, tt.args.input.Image)
+					}
+				}
+			})
+		}
+		return errors.New("rollback transaction")
+	})
+}

@@ -271,7 +271,22 @@ func UpdateUserPassword(ctx context.Context, db db.Dbx, userId uuid.UUID, passwo
 }
 
 func UpdateMe(ctx context.Context, db db.Dbx, userId uuid.UUID, input *shared.UpdateMeInput) error {
-	_, err := repository.User.PutOne(
+	user, err := repository.User.GetOne(
+		ctx,
+		db,
+		&map[string]any{
+			"id": map[string]any{
+				"_eq": userId.String(),
+			},
+		},
+	)
+	if err != nil {
+		return err
+	}
+	if user == nil {
+		return errors.New("user not found")
+	}
+	_, err = repository.User.PutOne(
 		ctx,
 		db,
 		&crudModels.User{
