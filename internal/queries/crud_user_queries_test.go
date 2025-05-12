@@ -14,6 +14,7 @@ import (
 	"github.com/tkahng/authgo/internal/seeders"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/test"
+	"github.com/tkahng/authgo/internal/tools/types"
 	"github.com/tkahng/authgo/internal/tools/utils"
 )
 
@@ -221,6 +222,52 @@ func TestDeleteUsers(t *testing.T) {
 				err := queries.DeleteUsers(ctx, dbxx, tt.userId)
 				if (err != nil) != tt.wantErr {
 					t.Errorf("DeleteUsers() error = %v, wantErr %v", err, tt.wantErr)
+				}
+			})
+		}
+		return test.EndTestErr
+	})
+}
+func TestUpdateUser(t *testing.T) {
+	ctx, dbx := test.DbSetup()
+	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+		faker := faker.New().Internet()
+		users, err := seeders.CreateUserWithAccountAndRole(ctx, dbxx, 1, models.ProvidersGoogle, "basic", faker)
+		if err != nil {
+			t.Fatalf("failed to create users: %v", err)
+		}
+
+		tests := []struct {
+			name    string
+			userId  uuid.UUID
+			input   *shared.UserMutationInput
+			wantErr bool
+		}{
+			{
+				name:   "update existing user",
+				userId: users[0].ID,
+				input: &shared.UserMutationInput{
+					Email: "updated@example.com",
+					Name:  types.Pointer("Updated Name"),
+					Image: types.Pointer("updated-image.jpg"),
+				},
+				wantErr: false,
+			},
+			{
+				name:   "update non-existent user",
+				userId: uuid.New(),
+				input: &shared.UserMutationInput{
+					Email: "nonexistent@example.com",
+				},
+				wantErr: true,
+			},
+		}
+
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				err := queries.UpdateUser(ctx, dbxx, tt.userId, tt.input)
+				if (err != nil) != tt.wantErr {
+					t.Errorf("UpdateUser() error = %v, wantErr %v", err, tt.wantErr)
 				}
 			})
 		}
