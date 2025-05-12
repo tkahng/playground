@@ -1112,3 +1112,99 @@ func TestFindPermissionById(t *testing.T) {
 		return errors.New("rollback")
 	})
 }
+func TestListUserPermissionsSource(t *testing.T) {
+	ctx, dbx := test.DbSetup()
+	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+		// Create test user
+		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
+			Email: "test@test.com",
+		})
+		if err != nil {
+			t.Fatalf("failed to create test user: %v", err)
+		}
+
+		// Create test role and permission
+		role, err := queries.CreateRole(ctx, dbxx, &queries.CreateRoleDto{
+			Name: "test_role",
+		})
+		if err != nil {
+			t.Fatalf("failed to create test role: %v", err)
+		}
+
+		perm, err := queries.CreatePermission(ctx, dbxx, &queries.CreatePermissionDto{
+			Name: "test_permission",
+		})
+		if err != nil {
+			t.Fatalf("failed to create test permission: %v", err)
+		}
+
+		// Assign role to user and permission to role
+		err = queries.CreateUserRoles(ctx, dbxx, user.ID, role.ID)
+		if err != nil {
+			t.Fatalf("failed to assign role to user: %v", err)
+		}
+
+		err = queries.CreateRolePermissions(ctx, dbxx, role.ID, perm.ID)
+		if err != nil {
+			t.Fatalf("failed to assign permission to role: %v", err)
+		}
+
+		type args struct {
+			ctx    context.Context
+			dbx    db.Dbx
+			userId uuid.UUID
+			limit  int64
+			offset int64
+		}
+		tests := []struct {
+			name    string
+			args    args
+			want    int
+			wantErr bool
+		}{
+			{
+				name: "list user permissions with valid user",
+				args: args{
+					ctx:    ctx,
+					dbx:    dbxx,
+					userId: user.ID,
+					limit:  10,
+					offset: 0,
+				},
+				want:    1,
+				wantErr: false,
+			},
+			{
+				name: "list permissions for non-existent user",
+				args: args{
+					ctx:    ctx,
+					dbx:    dbxx,
+					userId: uuid.New(),
+					limit:  10,
+					offset: 0,
+				},
+				want:    0,
+				wantErr: false,
+			},
+		}
+
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				got, err := queries.ListUserPermissionsSource(tt.args.ctx, tt.args.dbx, tt.args.userId, tt.args.limit, tt.args.offset)
+				if (err != nil) != tt.wantErr {
+					t.Errorf("ListUserPermissionsSource() error = %v, wantErr %v", err, tt.wantErr)
+					return
+				}
+				if len(got) != tt.want {
+					t.Errorf("ListUserPermissionsSource() got %v permissions, want %v", len(got), tt.want)
+				}
+				if tt.want > 0 {
+					if got[0].Name != "test_permission" {
+						t.Errorf("ListUserPermissionsSource() got permission name = %v, want %v", got[0].Name, "test_permission")
+					}
+				}
+			})
+		}
+		return errors.New("rollback")
+	})
+}
