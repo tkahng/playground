@@ -4,11 +4,13 @@ import (
 	"context"
 	"errors"
 
+	"github.com/google/uuid"
 	"github.com/jaswdr/faker/v2"
 	"github.com/tkahng/authgo/internal/db"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/repository"
+	"github.com/tkahng/authgo/internal/tools/types"
 )
 
 func CreateUserFromEmails(ctx context.Context, dbx db.Dbx, emails ...string) ([]*models.User, error) {
@@ -103,4 +105,41 @@ func CreateUserWithAccountAndRole(ctx context.Context, dbx db.Dbx, count int, pr
 		return nil, err
 	}
 	return users, nil
+}
+
+func CreateStripeProductPrices(ctx context.Context, dbx db.Dbx, count int) ([]*models.StripeProduct, error) {
+	var products []models.StripeProduct
+	for range count {
+		uid := uuid.NewString()
+		product := models.StripeProduct{
+			ID:       uid,
+			Name:     uid,
+			Active:   true,
+			Metadata: map[string]string{"key": "value"},
+		}
+		products = append(products, product)
+	}
+	res, err := repository.StripeProduct.Post(ctx, dbx, products)
+	if err != nil {
+		return nil, err
+	}
+	var prices []models.StripePrice
+	for _, product := range res {
+		price := models.StripePrice{
+			ID:         uuid.NewString(),
+			ProductID:  product.ID,
+			UnitAmount: types.Pointer(int64(1000)),
+			Currency:   "usd",
+			Active:     true,
+			Type:       models.StripePricingTypeRecurring,
+			Interval:   types.Pointer(models.StripePricingPlanIntervalDay),
+			Metadata:   map[string]string{"key": "value"},
+		}
+		prices = append(prices, price)
+	}
+	_, err = repository.StripePrice.Post(ctx, dbx, prices)
+	if err != nil {
+		return nil, err
+	}
+	return res, nil
 }
