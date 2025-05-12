@@ -197,3 +197,60 @@ func TestLoadProductPrices(t *testing.T) {
 		return test.EndTestErr
 	})
 }
+func TestCountProducts(t *testing.T) {
+	ctx, dbx := test.DbSetup()
+	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+		_, err := seeders.CreateStripeProductPrices(ctx, dbxx, 5)
+		if err != nil {
+			t.Fatalf("failed to create stripe products: %v", err)
+		}
+
+		type args struct {
+			ctx    context.Context
+			db     db.Dbx
+			filter *shared.StripeProductListFilter
+		}
+		tests := []struct {
+			name    string
+			args    args
+			want    int64
+			wantErr bool
+		}{
+			{
+				name: "Count all products",
+				args: args{
+					ctx:    ctx,
+					db:     dbxx,
+					filter: &shared.StripeProductListFilter{},
+				},
+				want:    5,
+				wantErr: false,
+			},
+			{
+				name: "Count active products",
+				args: args{
+					ctx: ctx,
+					db:  dbxx,
+					filter: &shared.StripeProductListFilter{
+						Active: shared.Active,
+					},
+				},
+				want:    5,
+				wantErr: false,
+			},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				got, err := queries.CountProducts(tt.args.ctx, tt.args.db, tt.args.filter)
+				if (err != nil) != tt.wantErr {
+					t.Errorf("CountProducts() error = %v, wantErr %v", err, tt.wantErr)
+					return
+				}
+				if got != tt.want {
+					t.Errorf("CountProducts() got = %v, want %v", got, tt.want)
+				}
+			})
+		}
+		return test.EndTestErr
+	})
+}
