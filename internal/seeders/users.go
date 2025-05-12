@@ -137,9 +137,17 @@ func CreateStripeProductPrices(ctx context.Context, dbx db.Dbx, count int) ([]*m
 		}
 		prices = append(prices, price)
 	}
-	_, err = repository.StripePrice.Post(ctx, dbx, prices)
+	newPrices, err := repository.StripePrice.Post(ctx, dbx, prices)
 	if err != nil {
 		return nil, err
 	}
+	for _, prod := range res {
+		for _, price := range newPrices {
+			if prod.ID == price.ProductID {
+				prod.Prices = append(prod.Prices, price)
+			}
+		}
+	}
+
 	return res, nil
 }
