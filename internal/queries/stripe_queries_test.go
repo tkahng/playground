@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
+	"github.com/stripe/stripe-go/v82"
 	"github.com/tkahng/authgo/internal/db"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/queries"
@@ -271,6 +272,178 @@ func TestUpsertCustomerStripeId(t *testing.T) {
 				}
 				if customer.StripeID != tt.args.stripeCustomerId {
 					t.Errorf("Customer stripe ID = %v, want %v", customer.StripeID, tt.args.stripeCustomerId)
+				}
+			})
+		}
+		return test.EndTestErr
+	})
+}
+func TestUpsertProduct(t *testing.T) {
+	ctx, dbx := test.DbSetup()
+	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+		description := "Test Description"
+		image := "test-image.jpg"
+		metadata := map[string]string{"key": "value"}
+
+		type args struct {
+			ctx     context.Context
+			dbx     db.Dbx
+			product *models.StripeProduct
+		}
+		tests := []struct {
+			name    string
+			args    args
+			wantErr bool
+		}{
+			{
+				name: "insert new product",
+				args: args{
+					ctx: ctx,
+					dbx: dbxx,
+					product: &models.StripeProduct{
+						ID:          "prod_test123",
+						Active:      true,
+						Name:        "Test Product",
+						Description: &description,
+						Image:       &image,
+						Metadata:    metadata,
+					},
+				},
+				wantErr: false,
+			},
+			{
+				name: "update existing product",
+				args: args{
+					ctx: ctx,
+					dbx: dbxx,
+					product: &models.StripeProduct{
+						ID:          "prod_test123",
+						Active:      false,
+						Name:        "Updated Product",
+						Description: &description,
+						Image:       &image,
+						Metadata:    metadata,
+					},
+				},
+				wantErr: false,
+			},
+		}
+
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				err := queries.UpsertProduct(tt.args.ctx, tt.args.dbx, tt.args.product)
+				if (err != nil) != tt.wantErr {
+					t.Errorf("UpsertProduct() error = %v, wantErr %v", err, tt.wantErr)
+					return
+				}
+
+				// Verify product was created/updated
+				product, err := queries.FindProductByStripeId(tt.args.ctx, tt.args.dbx, tt.args.product.ID)
+				if err != nil {
+					t.Errorf("Failed to verify product: %v", err)
+					return
+				}
+				if product.Name != tt.args.product.Name {
+					t.Errorf("Product name = %v, want %v", product.Name, tt.args.product.Name)
+				}
+				if product.Active != tt.args.product.Active {
+					t.Errorf("Product active = %v, want %v", product.Active, tt.args.product.Active)
+				}
+			})
+		}
+		return test.EndTestErr
+	})
+}
+func TestUpsertProductFromStripe(t *testing.T) {
+	ctx, dbx := test.DbSetup()
+	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+		type args struct {
+			ctx     context.Context
+			dbx     db.Dbx
+			product *stripe.Product
+		}
+
+		description := "Test Description"
+		images := []string{"test-image.jpg"}
+		metadata := map[string]string{"key": "value"}
+
+		tests := []struct {
+			name    string
+			args    args
+			wantErr bool
+		}{
+			{
+				name: "nil product",
+				args: args{
+					ctx:     ctx,
+					dbx:     dbxx,
+					product: nil,
+				},
+				wantErr: false,
+			},
+			{
+				name: "valid product",
+				args: args{
+					ctx: ctx,
+					dbx: dbxx,
+					product: &stripe.Product{
+						ID:          "prod_test123",
+						Active:      true,
+						Name:        "Test Product",
+						Description: description,
+						Images:      images,
+						Metadata:    metadata,
+					},
+				},
+				wantErr: false,
+			},
+			{
+				name: "product without image",
+				args: args{
+					ctx: ctx,
+					dbx: dbxx,
+					product: &stripe.Product{
+						ID:          "prod_test456",
+						Active:      true,
+						Name:        "Test Product No Image",
+						Description: description,
+						Images:      []string{},
+						Metadata:    metadata,
+					},
+				},
+				wantErr: false,
+			},
+		}
+
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				err := queries.UpsertProductFromStripe(tt.args.ctx, tt.args.dbx, tt.args.product)
+				if (err != nil) != tt.wantErr {
+					t.Errorf("UpsertProductFromStripe() error = %v, wantErr %v", err, tt.wantErr)
+					return
+				}
+
+				if tt.args.product != nil {
+					// Verify product was created/updated
+					product, err := queries.FindProductByStripeId(tt.args.ctx, tt.args.dbx, tt.args.product.ID)
+					if err != nil {
+						t.Errorf("Failed to verify product: %v", err)
+						return
+					}
+					if product.Name != tt.args.product.Name {
+						t.Errorf("Product name = %v, want %v", product.Name, tt.args.product.Name)
+					}
+					if product.Active != tt.args.product.Active {
+						t.Errorf("Product active = %v, want %v", product.Active, tt.args.product.Active)
+					}
+					if *product.Description != tt.args.product.Description {
+						t.Errorf("Product description = %v, want %v", *product.Description, tt.args.product.Description)
+					}
+					if len(tt.args.product.Images) > 0 {
+						if *product.Image != tt.args.product.Images[0] {
+							t.Errorf("Product image = %v, want %v", *product.Image, tt.args.product.Images[0])
+						}
+					}
 				}
 			})
 		}
