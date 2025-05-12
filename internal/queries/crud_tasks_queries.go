@@ -230,10 +230,6 @@ func ListTaskProjectsFilterFunc(filter *shared.TaskProjectsListFilter) *map[stri
 	}
 	where := make(map[string]any)
 	if filter.Q != "" {
-		// q.Apply(
-		// 	psql.WhereOr(models.SelectWhere.TaskProjects.Name.ILike("%"+filter.Q+"%"),
-		// 		models.SelectWhere.TaskProjects.Description.ILike("%"+filter.Q+"%")),
-		// )
 		where["_or"] = []map[string]any{
 			{
 				"name": map[string]any{
@@ -249,24 +245,12 @@ func ListTaskProjectsFilterFunc(filter *shared.TaskProjectsListFilter) *map[stri
 	}
 
 	if len(filter.Ids) > 0 {
-		// var ids []uuid.UUID = ParseUUIDs(filter.Ids)
-		// q.Apply(
-		// 	models.SelectWhere.TaskProjects.ID.In(ids...),
-		// )
 		where["id"] = map[string]any{
 			"_in": filter.Ids,
 		}
 	}
 
 	if filter.UserID != "" {
-		// id, err := uuid.Parse(filter.UserID)
-		// if err != nil {
-		// 	return
-		// }
-		// q.Apply(
-		// 	models.SelectJoins.TaskProjects.InnerJoin.User(ctx),
-		// 	models.SelectWhere.Users.ID.EQ(id),
-		// )
 		where["user_id"] = map[string]any{
 			"_eq": filter.UserID,
 		}
@@ -281,9 +265,7 @@ func ListTaskProjectsOrderByFunc(input *shared.TaskProjectsListParams) *map[stri
 		return nil
 	}
 	order := make(map[string]string)
-	// if slices.Contains(models.TaskProjects.Columns().Names(), input.SortBy) {
 	order[input.SortBy] = strings.ToUpper(input.SortOrder)
-	// }
 	return &order
 }
 
