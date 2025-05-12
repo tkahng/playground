@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/db"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/queries"
@@ -73,6 +74,73 @@ func TestFindCustomerByStripeId(t *testing.T) {
 				}
 				if !reflect.DeepEqual(got.StripeID, tt.want.StripeID) {
 					t.Errorf("FindCustomerByStripeId() got = %v, want %v", got.StripeID, tt.want.StripeID)
+				}
+			})
+		}
+		return test.EndTestErr
+	})
+}
+func TestFindCustomerByUserId(t *testing.T) {
+	ctx, dbx := test.DbSetup()
+	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+		stripeId := "cus_test123"
+		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
+			Email: "test@example.com",
+		})
+		if err != nil {
+			t.Fatalf("failed to create user: %v", err)
+		}
+
+		err = queries.UpsertCustomerStripeId(ctx, dbxx, user.ID, stripeId)
+		if err != nil {
+			t.Fatalf("failed to upsert customer stripe id: %v", err)
+		}
+
+		customer, err := queries.FindCustomerByUserId(ctx, dbxx, user.ID)
+		if err != nil {
+			t.Fatalf("failed to find customer by user id: %v", err)
+		}
+		if customer == nil {
+			t.Fatalf("expected customer to be found, got nil")
+		}
+
+		type args struct {
+			ctx    context.Context
+			dbx    db.Dbx
+			userId uuid.UUID
+		}
+		tests := []struct {
+			name    string
+			args    args
+			want    *models.StripeCustomer
+			wantErr bool
+		}{
+			{
+				name: "valid user id",
+				args: args{
+					ctx:    ctx,
+					dbx:    dbxx,
+					userId: user.ID,
+				},
+				want: &models.StripeCustomer{
+					ID:       user.ID,
+					StripeID: stripeId,
+				},
+				wantErr: false,
+			},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				got, err := queries.FindCustomerByUserId(tt.args.ctx, tt.args.dbx, tt.args.userId)
+				if (err != nil) != tt.wantErr {
+					t.Errorf("FindCustomerByUserId() error = %v, wantErr %v", err, tt.wantErr)
+					return
+				}
+				if !reflect.DeepEqual(got.ID, tt.want.ID) {
+					t.Errorf("FindCustomerByUserId() got = %v, want %v", got.ID, tt.want.ID)
+				}
+				if !reflect.DeepEqual(got.StripeID, tt.want.StripeID) {
+					t.Errorf("FindCustomerByUserId() got = %v, want %v", got.StripeID, tt.want.StripeID)
 				}
 			})
 		}
