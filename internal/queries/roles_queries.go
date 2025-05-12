@@ -338,14 +338,6 @@ func UpdatePermission(ctx context.Context, dbx db.Dbx, id uuid.UUID, roledto *Up
 	permission.Description = roledto.Description
 	_, err = repository.Permission.PutOne(ctx, dbx, permission)
 
-	// q := models.Roles.Update(
-	// 	models.UpdateWhere.Roles.ID.EQ(id),
-	// 	models.RoleSetter{
-	// 		Name:        omit.From(roledto.Name),
-	// 		Description: omitnull.FromPtr(roledto.Description),
-	// 	}.UpdateMod(),
-	// )
-	// _, err := q.Exec(ctx, dbx)
 	if err != nil {
 		return err
 	}
@@ -358,7 +350,7 @@ func DeleteRole(ctx context.Context, dbx db.Dbx, id uuid.UUID) error {
 		dbx,
 		&map[string]any{
 			"id": map[string]any{
-				"_eq": id,
+				"_eq": id.String(),
 			},
 		},
 	)
@@ -413,13 +405,6 @@ func CreatePermission(ctx context.Context, dbx db.Dbx, permission *CreatePermiss
 		Name:        permission.Name,
 		Description: permission.Description,
 	})
-	// data, err := models.Permissions.Insert(
-	// 	&models.PermissionSetter{
-	// 		Name:        omit.From(permission.Name),
-	// 		Description: omitnull.FromPtr(permission.Description),
-	// 	},
-	// 	im.Returning("*"),
-	// ).One(ctx, dbx)
 	return data, err
 }
 
@@ -455,9 +440,6 @@ func DeletePermission(ctx context.Context, dbx db.Dbx, id uuid.UUID) error {
 			},
 		},
 	)
-	// _, err := models.Permissions.Delete(
-	// 	models.DeleteWhere.Permissions.ID.EQ(id),
-	// ).Exec(ctx, dbx)
 	return err
 }
 
@@ -471,7 +453,6 @@ func FindPermissionById(ctx context.Context, dbx db.Dbx, id uuid.UUID) (*crudMod
 			},
 		},
 	)
-	// data, err := models.Permissions.Query(models.SelectWhere.Permissions.ID.EQ(id)).One(ctx, dbx)
 	return OptionalRow(data, err)
 }
 

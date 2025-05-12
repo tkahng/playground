@@ -557,3 +557,85 @@ func TestUpdateRole(t *testing.T) {
 		return errors.New("rollback")
 	})
 }
+func TestUpdatePermission(t *testing.T) {
+	ctx, dbx := test.DbSetup()
+	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+		// Create initial permission to update
+		permission, err := queries.CreatePermission(ctx, dbxx, &queries.CreatePermissionDto{
+			Name: "initial_permission",
+		})
+		if err != nil {
+			t.Fatalf("failed to create initial permission: %v", err)
+		}
+
+		description := "updated description"
+
+		type args struct {
+			ctx     context.Context
+			dbx     db.Dbx
+			id      uuid.UUID
+			roledto *queries.UpdatePermissionDto
+		}
+		tests := []struct {
+			name    string
+			args    args
+			wantErr bool
+		}{
+			{
+				name: "update existing permission",
+				args: args{
+					ctx: ctx,
+					dbx: dbxx,
+					id:  permission.ID,
+					roledto: &queries.UpdatePermissionDto{
+						Name:        "updated_permission",
+						Description: &description,
+					},
+				},
+				wantErr: false,
+			},
+			{
+				name: "update non-existent permission",
+				args: args{
+					ctx: ctx,
+					dbx: dbxx,
+					id:  uuid.New(),
+					roledto: &queries.UpdatePermissionDto{
+						Name: "test_permission",
+					},
+				},
+				wantErr: false,
+			},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				err := queries.UpdatePermission(tt.args.ctx, tt.args.dbx, tt.args.id, tt.args.roledto)
+				if (err != nil) != tt.wantErr {
+					t.Errorf("UpdatePermission() error = %v, wantErr %v", err, tt.wantErr)
+					return
+				}
+
+				if tt.name == "update existing permission" {
+					// Verify the update
+					updatedPermission, err := repository.Permission.GetOne(ctx, tt.args.dbx,
+						&map[string]any{
+							"id": map[string]any{
+								"_eq": tt.args.id.String(),
+							},
+						})
+					if err != nil {
+						t.Errorf("Failed to get updated permission: %v", err)
+						return
+					}
+					if updatedPermission.Name != tt.args.roledto.Name {
+						t.Errorf("Permission name = %v, want %v", updatedPermission.Name, tt.args.roledto.Name)
+					}
+					if *updatedPermission.Description != *tt.args.roledto.Description {
+						t.Errorf("Permission description = %v, want %v", *updatedPermission.Description, *tt.args.roledto.Description)
+					}
+				}
+			})
+		}
+		return errors.New("rollback")
+	})
+}
