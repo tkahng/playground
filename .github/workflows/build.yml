@@ -1,5 +1,5 @@
 # For more details, read this: https://coolify.io/docs/github-actions
-name: Build and te
+name: Build and test
 on:
   push:
     branches: ["develop"]
