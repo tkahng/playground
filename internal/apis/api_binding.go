@@ -598,58 +598,231 @@ func BindApis(api huma.API, app core.App) {
 	// stripe routes -------------------------------------------------------------------------------------------------
 	stripeGroup := huma.NewGroup(api, "/stripe")
 	// stripe my subscriptions
-	huma.Register(stripeGroup, appApi.MyStripeSubscriptionsOperation("/my-subscriptions"), appApi.MyStripeSubscriptions)
+	huma.Register(
+		stripeGroup,
+		huma.Operation{
+			OperationID: "stripe-my-subscriptions",
+			Method:      http.MethodGet,
+			Path:        "/my-subscriptions",
+			Summary:     "stripe-my-subscriptions",
+			Description: "stripe-my-subscriptions",
+			Tags:        []string{"Payment", "Stripe", "Subscriptions"},
+			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+		},
+		appApi.MyStripeSubscriptions,
+	)
 	// stripe webhook
-	huma.Register(stripeGroup, appApi.StripeWebhookOperation("/webhook"), appApi.StripeWebhook)
+	huma.Register(
+		stripeGroup,
+		appApi.StripeWebhookOperation("/webhook"),
+		appApi.StripeWebhook,
+	)
 	// stripe products with prices
-	huma.Register(stripeGroup, appApi.StripeProductsWithPricesOperation("/products"), appApi.StripeProductsWithPrices)
+	huma.Register(
+		stripeGroup,
+		appApi.StripeProductsWithPricesOperation("/products"),
+		appApi.StripeProductsWithPrices,
+	)
 	// stripe billing portal
-	huma.Register(stripeGroup, appApi.StripeBillingPortalOperation("/billing-portal"), appApi.StripeBillingPortal)
+	huma.Register(
+		stripeGroup,
+		appApi.StripeBillingPortalOperation("/billing-portal"),
+		appApi.StripeBillingPortal,
+	)
 	//  stripe checkout session
-	huma.Register(stripeGroup, appApi.StripeCheckoutSessionOperation("/checkout-session"), appApi.StripeCheckoutSession)
+	huma.Register(
+		stripeGroup,
+		appApi.StripeCheckoutSessionOperation("/checkout-session"),
+		appApi.StripeCheckoutSession,
+	)
 	//  stripe get checkout session by checkoutSessionId
-	huma.Register(stripeGroup, appApi.StripeCheckoutSessionGetOperation("/checkout-session/{checkoutSessionId}"), appApi.StripeCheckoutSessionGet)
+	huma.Register(
+		stripeGroup,
+		appApi.StripeCheckoutSessionGetOperation("/checkout-session/{checkoutSessionId}"),
+		appApi.StripeCheckoutSessionGet,
+	)
 
 	//  admin routes ----------------------------------------------------------------------------
 	adminGroup := huma.NewGroup(api, "/admin")
 	//  admin middleware
 	adminGroup.UseMiddleware(CheckPermissionsMiddleware(api, "superuser"))
 	//  admin user list
-	huma.Register(adminGroup, appApi.AdminUsersOperation("/users"), appApi.AdminUsers)
+	huma.Register(
+		adminGroup,
+		huma.Operation{
+			OperationID: "admin-users",
+			Method:      http.MethodGet,
+			Path:        "/users",
+			Summary:     "Admin users",
+			Description: "List of users",
+			Tags:        []string{"Users", "Admin"},
+			Errors:      []int{http.StatusNotFound},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+		},
+		appApi.AdminUsers,
+	)
 	// admin user get
-	huma.Register(adminGroup, appApi.AdminUsersGetOperation("/users/{user-id}"), appApi.AdminUsersGet)
+	huma.Register(
+		adminGroup,
+		appApi.AdminUsersGetOperation("/users/{user-id}"),
+		appApi.AdminUsersGet,
+	)
 	//  admin user create
-	huma.Register(adminGroup, appApi.AdminUsersCreateOperation("/users"), appApi.AdminUsersCreate)
+	huma.Register(
+		adminGroup,
+		appApi.AdminUsersCreateOperation("/users"),
+		appApi.AdminUsersCreate,
+	)
 	//  admin user delete
-	huma.Register(adminGroup, appApi.AdminUsersDeleteOperation("/users/{user-id}"), appApi.AdminUsersDelete)
+	huma.Register(
+		adminGroup,
+		appApi.AdminUsersDeleteOperation("/users/{user-id}"),
+		appApi.AdminUsersDelete,
+	)
 	//  admin user update
-	huma.Register(adminGroup, appApi.AdminUsersUpdateOperation("/users/{user-id}"), appApi.AdminUsersUpdate)
+	huma.Register(
+		adminGroup,
+		appApi.AdminUsersUpdateOperation("/users/{user-id}"),
+		appApi.AdminUsersUpdate,
+	)
 	//  admin user update password
-	huma.Register(adminGroup, appApi.AdminUsersUpdatePasswordOperation("/users/{user-id}/password"), appApi.AdminUsersUpdatePassword)
+	huma.Register(
+		adminGroup,
+		appApi.AdminUsersUpdatePasswordOperation("/users/{user-id}/password"),
+		appApi.AdminUsersUpdatePassword,
+	)
 	//  admin user update roles
-	huma.Register(adminGroup, appApi.AdminUserRolesUpdateOperation("/users/{user-id}/roles"), appApi.AdminUserRolesUpdate)
+	huma.Register(
+		adminGroup,
+		appApi.AdminUserRolesUpdateOperation("/users/{user-id}/roles"),
+		appApi.AdminUserRolesUpdate,
+	)
 	// admin user create roles
-	huma.Register(adminGroup, appApi.AdminUserRolesCreateOperation("/users/{user-id}/roles"), appApi.AdminUserRolesCreate)
+	huma.Register(
+		adminGroup,
+		appApi.AdminUserRolesCreateOperation("/users/{user-id}/roles"),
+		appApi.AdminUserRolesCreate,
+	)
 	// admin user delete roles
-	huma.Register(adminGroup, appApi.AdminUserRolesDeleteOperation("/users/{user-id}/roles/{role-id}"), appApi.AdminUserRolesDelete)
+	huma.Register(
+		adminGroup,
+		appApi.AdminUserRolesDeleteOperation("/users/{user-id}/roles/{role-id}"),
+		appApi.AdminUserRolesDelete,
+	)
 	// admin user permission source list
-	huma.Register(adminGroup, appApi.AdminUserPermissionSourceListOperation("/users/{user-id}/permissions"), appApi.AdminUserPermissionSourceList)
+	huma.Register(
+		adminGroup,
+		appApi.AdminUserPermissionSourceListOperation("/users/{user-id}/permissions"),
+		appApi.AdminUserPermissionSourceList,
+	)
 	// admin user permissions create
-	huma.Register(adminGroup, appApi.AdminUserPermissionsCreateOperation("/users/{user-id}/permissions"), appApi.AdminUserPermissionsCreate)
+	huma.Register(
+		adminGroup,
+		appApi.AdminUserPermissionsCreateOperation("/users/{user-id}/permissions"),
+		appApi.AdminUserPermissionsCreate,
+	)
 	// admin user permissions delete
-	huma.Register(adminGroup, appApi.AdminUserPermissionsDeleteOperation("/users/{user-id}/permissions/{permission-id}"), appApi.AdminUserPermissionsDelete)
+	huma.Register(
+		adminGroup,
+		appApi.AdminUserPermissionsDeleteOperation("/users/{user-id}/permissions/{permission-id}"),
+		appApi.AdminUserPermissionsDelete,
+	)
 	// admin user accounts list
-	huma.Register(adminGroup, appApi.AdminUserAccountsOperation("/user-accounts"), appApi.AdminUserAccounts)
+	huma.Register(
+		adminGroup,
+		appApi.AdminUserAccountsOperation("/user-accounts"),
+		appApi.AdminUserAccounts,
+	)
 	// admin roles
-	huma.Register(adminGroup, appApi.AdminRolesOperation("/roles"), appApi.AdminRolesList)
+	huma.Register(
+		adminGroup,
+		huma.Operation{
+			OperationID: "admin-roles",
+			Method:      http.MethodGet,
+			Path:        "/roles",
+			Summary:     "Admin roles",
+			Description: "List of roles",
+			Tags:        []string{"Admin", "Roles"},
+			Errors:      []int{http.StatusNotFound},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+		},
+		appApi.AdminRolesList,
+	)
 	// admin roles create
-	huma.Register(adminGroup, appApi.AdminRolesCreateOperation("/roles"), appApi.AdminRolesCreate)
+	huma.Register(
+		adminGroup,
+		huma.Operation{
+			OperationID: "admin-roles-create",
+			Method:      http.MethodPost,
+			Path:        "/roles",
+			Summary:     "Create role",
+			Description: "Create role",
+			Tags:        []string{"Admin", "Roles"},
+			Errors:      []int{http.StatusNotFound},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+		},
+		appApi.AdminRolesCreate,
+	)
 	// admin roles update
-	huma.Register(adminGroup, appApi.AdminRolesUpdateOperation("/roles/{id}"), appApi.AdminRolesUpdate)
+	huma.Register(
+		adminGroup,
+		huma.Operation{
+			OperationID: "admin-roles-update",
+			Method:      http.MethodPut,
+			Path:        "/roles/{id}",
+			Summary:     "Update role",
+			Description: "Update role",
+			Tags:        []string{"Admin", "Roles"},
+			Errors:      []int{http.StatusNotFound},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+		},
+		appApi.AdminRolesUpdate,
+	)
 	// admin role get
-	huma.Register(adminGroup, appApi.AdminRolesGetOperation("/roles/{id}"), appApi.AdminRolesGet)
+	huma.Register(
+		adminGroup,
+		huma.Operation{
+			OperationID: "admin-roles-get",
+			Method:      http.MethodGet,
+			Path:        "/roles/{id}",
+			Summary:     "Get role",
+			Description: "Get role",
+			Tags:        []string{"Admin", "Roles"},
+			Errors:      []int{http.StatusNotFound},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+		},
+		appApi.AdminRolesGet,
+	)
 	// admin roles update permissions
-	huma.Register(adminGroup, appApi.AdminRolesUpdatePermissionsOperation("/roles/{id}/permissions"), appApi.AdminRolesUpdatePermissions)
+	huma.Register(
+		adminGroup,
+		huma.Operation{
+			OperationID: "admin-roles-update-permissions",
+			Method:      http.MethodPut,
+			Path:        "/roles/{id}/permissions",
+			Summary:     "Update role permissions",
+			Description: "Update role permissions",
+			Tags:        []string{"Admin", "Roles"},
+			Errors:      []int{http.StatusNotFound},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+		},
+		appApi.AdminRolesUpdatePermissions,
+	)
 	// admin roles create permissions
 	huma.Register(adminGroup, appApi.AdminRolesCreatePermissionsOperation("/roles/{id}/permissions"), appApi.AdminRolesCreatePermissions)
 	// admin roles delete permissions
