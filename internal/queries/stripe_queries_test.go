@@ -1201,3 +1201,138 @@ func TestFindSubscriptionWithPriceById(t *testing.T) {
 		return test.EndTestErr
 	})
 }
+func TestFindLatestActiveSubscriptionByUserId(t *testing.T) {
+	ctx, dbx := test.DbSetup()
+	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+		// Create test user
+		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
+			Email: "test@example.com",
+		})
+		if err != nil {
+			t.Fatalf("failed to create user: %v", err)
+		}
+
+		// Create test product and price
+		product := &models.StripeProduct{
+			ID:       "prod_test123",
+			Active:   true,
+			Name:     "Test Product",
+			Metadata: map[string]string{"key": "value"},
+		}
+		err = queries.UpsertProduct(ctx, dbxx, product)
+		if err != nil {
+			t.Fatalf("failed to create test product: %v", err)
+		}
+
+		price := &models.StripePrice{
+			ID:        "price_test123",
+			ProductID: product.ID,
+			Active:    true,
+			Currency:  "usd",
+			Type:      models.StripePricingTypeRecurring,
+			Metadata:  map[string]string{"key": "value"},
+		}
+		err = queries.UpsertPrice(ctx, dbxx, price)
+		if err != nil {
+			t.Fatalf("failed to create test price: %v", err)
+		}
+
+		// Create test subscriptions
+		activeSub := &models.StripeSubscription{
+			ID:                 "sub_active",
+			UserID:             user.ID,
+			Status:             models.StripeSubscriptionStatusActive,
+			PriceID:            price.ID,
+			Quantity:           1,
+			CancelAtPeriodEnd:  false,
+			Created:            time.Now(),
+			CurrentPeriodStart: time.Now(),
+			CurrentPeriodEnd:   time.Now().Add(30 * 24 * time.Hour),
+			Metadata:           map[string]string{"key": "value"},
+		}
+
+		canceledSub := &models.StripeSubscription{
+			ID:                 "sub_canceled",
+			UserID:             user.ID,
+			Status:             models.StripeSubscriptionStatusCanceled,
+			PriceID:            price.ID,
+			Quantity:           1,
+			CancelAtPeriodEnd:  true,
+			Created:            time.Now(),
+			CurrentPeriodStart: time.Now(),
+			CurrentPeriodEnd:   time.Now().Add(30 * 24 * time.Hour),
+			Metadata:           map[string]string{"key": "value"},
+		}
+
+		// Insert subscriptions in different order
+		for _, sub := range []*models.StripeSubscription{canceledSub, activeSub} {
+			err = queries.UpsertSubscription(ctx, dbxx, sub)
+			if err != nil {
+				t.Fatalf("failed to create test subscription: %v", err)
+			}
+		}
+
+		type args struct {
+			ctx    context.Context
+			dbx    db.Dbx
+			userId uuid.UUID
+		}
+		tests := []struct {
+			name    string
+			args    args
+			want    *models.StripeSubscription
+			wantErr bool
+		}{
+			{
+				name: "user with active subscription",
+				args: args{
+					ctx:    ctx,
+					dbx:    dbxx,
+					userId: user.ID,
+				},
+				want:    activeSub, // Should get latest active subscription
+				wantErr: false,
+			},
+			{
+				name: "non-existent user",
+				args: args{
+					ctx:    ctx,
+					dbx:    dbxx,
+					userId: uuid.New(),
+				},
+				want:    nil,
+				wantErr: false,
+			},
+		}
+
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				got, err := queries.FindLatestActiveSubscriptionByUserId(tt.args.ctx, tt.args.dbx, tt.args.userId)
+				if (err != nil) != tt.wantErr {
+					t.Errorf("FindLatestActiveSubscriptionByUserId() error = %v, wantErr %v", err, tt.wantErr)
+					return
+				}
+				if tt.want == nil {
+					if got != nil {
+						t.Errorf("FindLatestActiveSubscriptionByUserId() = %v, want nil", got)
+					}
+					return
+				}
+				if got == nil {
+					t.Errorf("FindLatestActiveSubscriptionByUserId() = nil, want %v", tt.want)
+					return
+				}
+				if got.ID != tt.want.ID {
+					t.Errorf("FindLatestActiveSubscriptionByUserId() got ID = %v, want %v", got.ID, tt.want.ID)
+				}
+				if got.Status != tt.want.Status {
+					t.Errorf("FindLatestActiveSubscriptionByUserId() got Status = %v, want %v", got.Status, tt.want.Status)
+				}
+				if got.UserID != tt.want.UserID {
+					t.Errorf("FindLatestActiveSubscriptionByUserId() got UserID = %v, want %v", got.UserID, tt.want.UserID)
+				}
+			})
+		}
+		return test.EndTestErr
+	})
+}
