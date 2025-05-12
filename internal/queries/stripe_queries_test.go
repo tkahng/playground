@@ -4,6 +4,7 @@ import (
 	"context"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/stripe/stripe-go/v82"
@@ -683,6 +684,134 @@ func TestUpsertPriceFromStripe(t *testing.T) {
 							t.Errorf("Price interval = %v, want %v", *price.Interval, tt.args.price.Recurring.Interval)
 						}
 					}
+				}
+			})
+		}
+		return test.EndTestErr
+	})
+}
+
+func TestUpsertSubscription(t *testing.T) {
+	ctx, dbx := test.DbSetup()
+	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
+			Email: "test@example.com",
+		})
+		if err != nil {
+			t.Fatalf("failed to create user: %v", err)
+		}
+		if user == nil {
+			t.Fatalf("expected user to be created, got nil")
+		}
+		userId := user.ID
+		now := time.Now()
+
+		// Create test product and price first
+		product := &models.StripeProduct{
+			ID:       "prod_test123",
+			Active:   true,
+			Name:     "Test Product",
+			Metadata: map[string]string{"key": "value"},
+		}
+		err = queries.UpsertProduct(ctx, dbxx, product)
+		if err != nil {
+			t.Fatalf("failed to create test product: %v", err)
+		}
+
+		price := &models.StripePrice{
+			ID:        "price_test123",
+			ProductID: product.ID,
+			Active:    true,
+			Currency:  "usd",
+			Type:      models.StripePricingTypeRecurring,
+			Metadata:  map[string]string{"key": "value"},
+		}
+		err = queries.UpsertPrice(ctx, dbxx, price)
+		if err != nil {
+			t.Fatalf("failed to create test price: %v", err)
+		}
+
+		type args struct {
+			ctx          context.Context
+			dbx          db.Dbx
+			subscription *models.StripeSubscription
+		}
+		tests := []struct {
+			name    string
+			args    args
+			wantErr bool
+		}{
+			{
+				name: "insert new subscription",
+				args: args{
+					ctx: ctx,
+					dbx: dbxx,
+					subscription: &models.StripeSubscription{
+						ID:                 "sub_test123",
+						UserID:             userId,
+						Status:             models.StripeSubscriptionStatusActive,
+						PriceID:            price.ID,
+						Quantity:           1,
+						CancelAtPeriodEnd:  false,
+						Created:            now,
+						CurrentPeriodStart: now,
+						CurrentPeriodEnd:   now.Add(30 * 24 * time.Hour),
+						Metadata:           map[string]string{"key": "value"},
+					},
+				},
+				wantErr: false,
+			},
+			{
+				name: "update existing subscription",
+				args: args{
+					ctx: ctx,
+					dbx: dbxx,
+					subscription: &models.StripeSubscription{
+						ID:                 "sub_test123",
+						UserID:             userId,
+						Status:             models.StripeSubscriptionStatusCanceled,
+						PriceID:            price.ID,
+						Quantity:           2,
+						CancelAtPeriodEnd:  true,
+						Created:            now,
+						CurrentPeriodStart: now,
+						CurrentPeriodEnd:   now.Add(30 * 24 * time.Hour),
+						CanceledAt:         &now,
+						Metadata:           map[string]string{"key": "updated"},
+					},
+				},
+				wantErr: false,
+			},
+		}
+
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				err := queries.UpsertSubscription(tt.args.ctx, tt.args.dbx, tt.args.subscription)
+				if (err != nil) != tt.wantErr {
+					t.Errorf("UpsertSubscription() error = %v, wantErr %v", err, tt.wantErr)
+					return
+				}
+
+				// Verify subscription was created/updated
+				sub, err := queries.FindSubscriptionById(tt.args.ctx, tt.args.dbx, tt.args.subscription.ID)
+				if err != nil {
+					t.Errorf("Failed to verify subscription: %v", err)
+					return
+				}
+				if sub.ID != tt.args.subscription.ID {
+					t.Errorf("Subscription ID = %v, want %v", sub.ID, tt.args.subscription.ID)
+				}
+				if sub.Status != tt.args.subscription.Status {
+					t.Errorf("Subscription status = %v, want %v", sub.Status, tt.args.subscription.Status)
+				}
+				if sub.PriceID != tt.args.subscription.PriceID {
+					t.Errorf("Subscription price_id = %v, want %v", sub.PriceID, tt.args.subscription.PriceID)
+				}
+				if sub.Quantity != tt.args.subscription.Quantity {
+					t.Errorf("Subscription quantity = %v, want %v", sub.Quantity, tt.args.subscription.Quantity)
+				}
+				if sub.CancelAtPeriodEnd != tt.args.subscription.CancelAtPeriodEnd {
+					t.Errorf("Subscription cancel_at_period_end = %v, want %v", sub.CancelAtPeriodEnd, tt.args.subscription.CancelAtPeriodEnd)
 				}
 			})
 		}
