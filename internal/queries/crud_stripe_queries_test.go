@@ -5,7 +5,9 @@ import (
 	"testing"
 
 	"github.com/tkahng/authgo/internal/db"
+	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/queries"
+	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/seeders"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/test"
@@ -541,6 +543,241 @@ func TestCountCustomers(t *testing.T) {
 				}
 				if got != tt.want {
 					t.Errorf("CountCustomers() got = %v, want %v", got, tt.want)
+				}
+			})
+		}
+		return test.EndTestErr
+	})
+}
+func TestListSubscriptions(t *testing.T) {
+	ctx, dbx := test.DbSetup()
+	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+		// Create test user
+		user, err := queries.CreateUser(
+			ctx,
+			dbxx,
+			&shared.AuthenticationInput{
+				Email: "sub@test.com",
+			},
+		)
+		if err != nil {
+			t.Fatalf("failed to create user: %v", err)
+		}
+
+		// Create test subscription
+		_, err = seeders.CreateStripeProductPrices(ctx, dbxx, 1)
+		if err != nil {
+			t.Fatalf("failed to create subscription: %v", err)
+		}
+		price, err := repository.StripePrice.GetOne(
+			ctx,
+			dbxx,
+			nil,
+		)
+		if err != nil {
+			t.Fatalf("failed to get price: %v", err)
+		}
+		subscription := &models.StripeSubscription{
+			UserID:  user.ID,
+			ID:      "sub_test",
+			PriceID: price.ID,
+			Status:  models.StripeSubscriptionStatusActive,
+			Metadata: map[string]string{
+				"key": "value",
+			},
+			Quantity:           1,
+			CancelAtPeriodEnd:  false,
+			CurrentPeriodStart: queries.Int64ToISODate(0),
+			CurrentPeriodEnd:   queries.Int64ToISODate(0),
+			CreatedAt:          queries.Int64ToISODate(0),
+			UpdatedAt:          queries.Int64ToISODate(0),
+		}
+		err = queries.UpsertSubscription(
+			ctx,
+			dbxx,
+			subscription,
+		)
+		if err != nil {
+			t.Fatalf("failed to create stripe subscription: %v", err)
+		}
+		type args struct {
+			ctx   context.Context
+			db    db.Dbx
+			input *shared.StripeSubscriptionListParams
+		}
+		tests := []struct {
+			name      string
+			args      args
+			wantCount int
+			wantErr   bool
+		}{
+			{
+				name: "List all subscriptions",
+				args: args{
+					ctx:   ctx,
+					db:    dbxx,
+					input: &shared.StripeSubscriptionListParams{},
+				},
+				wantCount: 1,
+				wantErr:   false,
+			},
+			{
+				name: "List with filter by user ID",
+				args: args{
+					ctx: ctx,
+					db:  dbxx,
+					input: &shared.StripeSubscriptionListParams{
+						StripeSubscriptionListFilter: shared.StripeSubscriptionListFilter{
+							UserID: user.ID.String(),
+						},
+					},
+				},
+				wantCount: 1,
+				wantErr:   false,
+			},
+			{
+				name: "List with pagination",
+				args: args{
+					ctx: ctx,
+					db:  dbxx,
+					input: &shared.StripeSubscriptionListParams{
+						PaginatedInput: shared.PaginatedInput{
+							Page:    0,
+							PerPage: 10,
+						},
+					},
+				},
+				wantCount: 1,
+				wantErr:   false,
+			},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				got, err := queries.ListSubscriptions(tt.args.ctx, tt.args.db, tt.args.input)
+				if (err != nil) != tt.wantErr {
+					t.Errorf("ListSubscriptions() error = %v, wantErr %v", err, tt.wantErr)
+					return
+				}
+				if len(got) != tt.wantCount {
+					t.Errorf("ListSubscriptions() got = %v, want %v", len(got), tt.wantCount)
+				}
+				if len(got) > 0 {
+					if got[0].Status == "" {
+						t.Errorf("ListSubscriptions() got = %v, want %v", got[0].Status, "not empty")
+					}
+				}
+			})
+		}
+		return test.EndTestErr
+	})
+}
+func TestCountSubscriptions(t *testing.T) {
+	ctx, dbx := test.DbSetup()
+	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+		// Create test user
+		user, err := queries.CreateUser(
+			ctx,
+			dbxx,
+			&shared.AuthenticationInput{
+				Email: "sub@test.com",
+			},
+		)
+		if err != nil {
+			t.Fatalf("failed to create user: %v", err)
+		}
+
+		// Create test subscription
+		_, err = seeders.CreateStripeProductPrices(ctx, dbxx, 1)
+		if err != nil {
+			t.Fatalf("failed to create subscription: %v", err)
+		}
+		price, err := repository.StripePrice.GetOne(
+			ctx,
+			dbxx,
+			nil,
+		)
+		if err != nil {
+			t.Fatalf("failed to get price: %v", err)
+		}
+		subscription := &models.StripeSubscription{
+			UserID:  user.ID,
+			ID:      "sub_test",
+			PriceID: price.ID,
+			Status:  models.StripeSubscriptionStatusActive,
+			Metadata: map[string]string{
+				"key": "value",
+			},
+			Quantity:           1,
+			CancelAtPeriodEnd:  false,
+			CurrentPeriodStart: queries.Int64ToISODate(0),
+			CurrentPeriodEnd:   queries.Int64ToISODate(0),
+			CreatedAt:          queries.Int64ToISODate(0),
+			UpdatedAt:          queries.Int64ToISODate(0),
+		}
+		err = queries.UpsertSubscription(
+			ctx,
+			dbxx,
+			subscription,
+		)
+		if err != nil {
+			t.Fatalf("failed to create stripe subscription: %v", err)
+		}
+
+		type args struct {
+			ctx    context.Context
+			db     db.Dbx
+			filter *shared.StripeSubscriptionListFilter
+		}
+		tests := []struct {
+			name    string
+			args    args
+			want    int64
+			wantErr bool
+		}{
+			{
+				name: "Count all subscriptions",
+				args: args{
+					ctx:    ctx,
+					db:     dbxx,
+					filter: &shared.StripeSubscriptionListFilter{},
+				},
+				want:    1,
+				wantErr: false,
+			},
+			{
+				name: "Count with filter by user ID",
+				args: args{
+					ctx: ctx,
+					db:  dbxx,
+					filter: &shared.StripeSubscriptionListFilter{
+						UserID: user.ID.String(),
+					},
+				},
+				want:    1,
+				wantErr: false,
+			},
+			{
+				name: "Count with filter by status",
+				args: args{
+					ctx: ctx,
+					db:  dbxx,
+					filter: &shared.StripeSubscriptionListFilter{
+						Status: []shared.StripeSubscriptionStatus{shared.StripeSubscriptionStatusActive},
+					},
+				},
+				want:    1,
+				wantErr: false,
+			},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				got, err := queries.CountSubscriptions(tt.args.ctx, tt.args.db, tt.args.filter)
+				if (err != nil) != tt.wantErr {
+					t.Errorf("CountSubscriptions() error = %v, wantErr %v", err, tt.wantErr)
+					return
+				}
+				if got != tt.want {
+					t.Errorf("CountSubscriptions() got = %v, want %v", got, tt.want)
 				}
 			})
 		}
