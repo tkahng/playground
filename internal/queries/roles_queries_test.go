@@ -10,6 +10,7 @@ import (
 	"github.com/tkahng/authgo/internal/db"
 	crudModels "github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/queries"
+	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/test"
 )
@@ -295,6 +296,74 @@ func TestCreateProductRoles(t *testing.T) {
 			t.Run(tt.name, func(t *testing.T) {
 				if err := queries.CreateProductRoles(tt.args.ctx, tt.args.db, tt.args.productId, tt.args.roleIds...); (err != nil) != tt.wantErr {
 					t.Errorf("CreateProductRoles() error = %v, wantErr %v", err, tt.wantErr)
+				}
+			})
+		}
+		return errors.New("rollback")
+	})
+}
+func TestEnsureRoleAndPermissions(t *testing.T) {
+	ctx, dbx := test.DbSetup()
+	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+		type args struct {
+			ctx             context.Context
+			db              db.Dbx
+			roleName        string
+			permissionNames []string
+		}
+		tests := []struct {
+			name    string
+			args    args
+			wantErr bool
+		}{
+			{
+				name: "ensure role and permission",
+				args: args{
+					ctx:             ctx,
+					db:              dbxx,
+					roleName:        "test_role",
+					permissionNames: []string{"test_permission"},
+				},
+				wantErr: false,
+			},
+			{
+				name: "ensure role with multiple permissions",
+				args: args{
+					ctx:             ctx,
+					db:              dbxx,
+					roleName:        "test_role_2",
+					permissionNames: []string{"perm_1", "perm_2", "perm_3"},
+				},
+				wantErr: false,
+			},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				if err := queries.EnsureRoleAndPermissions(tt.args.ctx, tt.args.db, tt.args.roleName, tt.args.permissionNames...); (err != nil) != tt.wantErr {
+					t.Errorf("EnsureRoleAndPermissions() error = %v, wantErr %v", err, tt.wantErr)
+				}
+
+				// Verify role was created
+				role, err := repository.Role.GetOne(ctx, tt.args.db,
+					&map[string]any{
+						"name": map[string]any{
+							"_eq": tt.args.roleName,
+						},
+					})
+				if err != nil {
+					t.Errorf("Failed to find created role: %v", err)
+				}
+				if role.Name != tt.args.roleName {
+					t.Errorf("Role name = %v, want %v", role.Name, tt.args.roleName)
+				}
+
+				// Verify permissions were created and assigned
+				perms, err := queries.LoadRolePermissions(tt.args.ctx, tt.args.db, role.ID)
+				if err != nil {
+					t.Errorf("Failed to load role permissions: %v", err)
+				}
+				if len(perms[0]) != len(tt.args.permissionNames) {
+					t.Errorf("Got %v permissions, want %v", len(perms[0]), len(tt.args.permissionNames))
 				}
 			})
 		}
