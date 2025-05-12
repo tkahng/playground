@@ -145,7 +145,7 @@ func CountUsers(ctx context.Context, db db.Dbx, filter *shared.UserListFilter) (
 // The method returns an error if the user could not be deleted.
 
 func DeleteUsers(ctx context.Context, db db.Dbx, userId uuid.UUID) error {
-	_, err := repository.User.DeleteReturn(
+	_, err := repository.User.Delete(
 		ctx,
 		db,
 		&map[string]any{

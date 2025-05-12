@@ -370,7 +370,7 @@ func UpdatePermission(ctx context.Context, dbx db.Dbx, id uuid.UUID, roledto *Up
 }
 
 func DeleteRole(ctx context.Context, dbx db.Dbx, id uuid.UUID) error {
-	_, err := repository.Role.DeleteReturn(
+	_, err := repository.Role.Delete(
 		ctx,
 		dbx,
 		&map[string]any{
@@ -383,7 +383,7 @@ func DeleteRole(ctx context.Context, dbx db.Dbx, id uuid.UUID) error {
 }
 
 func DeleteRolePermissions(ctx context.Context, dbx db.Dbx, id uuid.UUID) error {
-	_, err := repository.RolePermission.DeleteReturn(
+	_, err := repository.RolePermission.Delete(
 		ctx,
 		dbx,
 		&map[string]any{
@@ -455,7 +455,7 @@ func FindPermissionsByIds(ctx context.Context, dbx db.Dbx, params []uuid.UUID) (
 }
 
 func DeletePermission(ctx context.Context, dbx db.Dbx, id uuid.UUID) error {
-	_, err := repository.Permission.DeleteReturn(
+	_, err := repository.Permission.Delete(
 		ctx,
 		dbx,
 		&map[string]any{

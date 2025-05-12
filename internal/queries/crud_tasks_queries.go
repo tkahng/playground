@@ -89,7 +89,7 @@ func FindLastTaskOrder(ctx context.Context, db db.Dbx, taskProjectID uuid.UUID) 
 
 func DeleteTask(ctx context.Context, db db.Dbx, taskID uuid.UUID) error {
 
-	_, err := repository.Task.DeleteReturn(
+	_, err := repository.Task.Delete(
 		ctx,
 		db,
 		&map[string]any{
@@ -115,7 +115,7 @@ func FindTaskProjectByID(ctx context.Context, db db.Dbx, id uuid.UUID) (*models.
 	return OptionalRow(task, err)
 }
 func DeleteTaskProject(ctx context.Context, db db.Dbx, taskProjectID uuid.UUID) error {
-	_, err := repository.TaskProject.DeleteReturn(
+	_, err := repository.TaskProject.Delete(
 		ctx,
 		db,
 		&map[string]any{

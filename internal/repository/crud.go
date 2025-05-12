@@ -13,8 +13,18 @@ var (
 			return nil
 		},
 	)
-	UserPermissionBuilder    = NewSQLBuilder[models.UserPermission]()
-	RolePermissionBuilder    = NewSQLBuilder[models.RolePermission]()
+	UserPermissionBuilder = NewSQLBuilder(
+		func(s *SQLBuilder[models.UserPermission]) error {
+			s.skipIdInsert = false
+			return nil
+		},
+	)
+	RolePermissionBuilder = NewSQLBuilder(
+		func(s *SQLBuilder[models.RolePermission]) error {
+			s.skipIdInsert = false
+			return nil
+		},
+	)
 	TokenBuilder             = NewSQLBuilder[models.Token]()
 	TaskProjectBuilder       = NewSQLBuilder[models.TaskProject]()
 	TaskBuilder              = NewSQLBuilder[models.Task]()
