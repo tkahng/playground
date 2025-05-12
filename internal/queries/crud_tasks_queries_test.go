@@ -1419,3 +1419,120 @@ func TestUpdateTaskProject(t *testing.T) {
 		return test.EndTestErr
 	})
 }
+func TestUpdateTaskPositionStatus(t *testing.T) {
+	ctx, dbx := test.DbSetup()
+	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
+			Email: "tkahng@gmail.com",
+		})
+		if err != nil {
+			t.Fatalf("failed to create user: %v", err)
+		}
+		taskProject, err := queries.CreateTaskProject(ctx, dbxx, user.ID, &shared.CreateTaskProjectDTO{
+			Name:   "Test Project",
+			Status: shared.TaskProjectStatusDone,
+		})
+		if err != nil {
+			t.Fatalf("failed to create task project: %v", err)
+		}
+
+		task1, err := queries.CreateTask(ctx, dbxx, user.ID, taskProject.ID, &shared.CreateTaskBaseDTO{
+			Name:   "Task 1",
+			Status: shared.TaskStatusDone,
+			Order:  0,
+		})
+		if err != nil {
+			t.Fatalf("failed to create task: %v", err)
+		}
+
+		task2, err := queries.CreateTask(ctx, dbxx, user.ID, taskProject.ID, &shared.CreateTaskBaseDTO{
+			Name:   "Task 2",
+			Status: shared.TaskStatusDone,
+			Order:  1000,
+		})
+		if err != nil {
+			t.Fatalf("failed to create task: %v", err)
+		}
+
+		type args struct {
+			ctx      context.Context
+			db       db.Dbx
+			taskID   uuid.UUID
+			position int64
+			status   models.TaskStatus
+		}
+		tests := []struct {
+			name    string
+			args    args
+			wantErr bool
+		}{
+			{
+				name: "update task position status successfully",
+				args: args{
+					ctx:      ctx,
+					db:       dbxx,
+					taskID:   task1.ID,
+					position: 1,
+					status:   models.TaskStatusDone,
+				},
+				wantErr: false,
+			},
+			{
+				name: "update non-existing task position status",
+				args: args{
+					ctx:      ctx,
+					db:       dbxx,
+					taskID:   uuid.New(),
+					position: 0,
+					status:   models.TaskStatusDone,
+				},
+				wantErr: true,
+			},
+			{
+				name: "move task to first position",
+				args: args{
+					ctx:      ctx,
+					db:       dbxx,
+					taskID:   task2.ID,
+					position: 0,
+					status:   models.TaskStatusDone,
+				},
+				wantErr: false,
+			},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				err := queries.UpdateTaskPositionStatus(tt.args.ctx, tt.args.db, tt.args.taskID, tt.args.position, tt.args.status)
+				if (err != nil) != tt.wantErr {
+					t.Errorf("UpdateTaskPositionStatus() error = %v, wantErr %v", err, tt.wantErr)
+					return
+				}
+
+				if !tt.wantErr {
+					// Verify task was updated
+					updatedTask, err := queries.FindTaskByID(tt.args.ctx, tt.args.db, tt.args.taskID)
+					if err != nil {
+						t.Errorf("Failed to get updated task: %v", err)
+						return
+					}
+
+					if updatedTask.Status != tt.args.status {
+						t.Errorf("Task status not updated. got = %v, want %v", updatedTask.Status, tt.args.status)
+					}
+
+					// Get task project to verify update date
+					taskProject, err := queries.FindTaskProjectByID(tt.args.ctx, tt.args.db, updatedTask.ProjectID)
+					if err != nil {
+						t.Errorf("Failed to get task project: %v", err)
+						return
+					}
+
+					if taskProject.UpdatedAt.IsZero() {
+						t.Error("Task project update date not updated")
+					}
+				}
+			})
+		}
+		return test.EndTestErr
+	})
+}
