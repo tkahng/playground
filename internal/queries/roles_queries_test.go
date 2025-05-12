@@ -1293,3 +1293,119 @@ func TestCountUserPermissionSource(t *testing.T) {
 		return errors.New("rollback")
 	})
 }
+func TestListUserNotPermissionsSource(t *testing.T) {
+	ctx, dbx := test.DbSetup()
+	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+		// Create test user
+		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
+			Email: "test@test.com",
+		})
+		if err != nil {
+			t.Fatalf("failed to create test user: %v", err)
+		}
+
+		// Create test role and permission that will be assigned
+		role, err := queries.CreateRole(ctx, dbxx, &queries.CreateRoleDto{
+			Name: "test_role",
+		})
+		if err != nil {
+			t.Fatalf("failed to create test role: %v", err)
+		}
+
+		assignedPerm, err := queries.CreatePermission(ctx, dbxx, &queries.CreatePermissionDto{
+			Name: "assigned_permission",
+		})
+		if err != nil {
+			t.Fatalf("failed to create assigned permission: %v", err)
+		}
+
+		// Create an unassigned permission
+		unassignedPerm, err := queries.CreatePermission(ctx, dbxx, &queries.CreatePermissionDto{
+			Name: "unassigned_permission",
+		})
+		if err != nil {
+			t.Fatalf("failed to create unassigned permission: %v", err)
+		}
+
+		// Assign role to user and permission to role
+		err = queries.CreateUserRoles(ctx, dbxx, user.ID, role.ID)
+		if err != nil {
+			t.Fatalf("failed to assign role to user: %v", err)
+		}
+
+		err = queries.CreateRolePermissions(ctx, dbxx, role.ID, assignedPerm.ID)
+		if err != nil {
+			t.Fatalf("failed to assign permission to role: %v", err)
+		}
+
+		type args struct {
+			ctx    context.Context
+			dbx    db.Dbx
+			userId uuid.UUID
+			limit  int64
+			offset int64
+		}
+		tests := []struct {
+			name    string
+			args    args
+			want    int
+			wantErr bool
+		}{
+			{
+				name: "list unassigned permissions for user",
+				args: args{
+					ctx:    ctx,
+					dbx:    dbxx,
+					userId: user.ID,
+					limit:  10,
+					offset: 0,
+				},
+				want:    1,
+				wantErr: false,
+			},
+			{
+				name: "list with non-existent user",
+				args: args{
+					ctx:    ctx,
+					dbx:    dbxx,
+					userId: uuid.New(),
+					limit:  10,
+					offset: 0,
+				},
+				want:    2,
+				wantErr: false,
+			},
+			{
+				name: "list with zero limit",
+				args: args{
+					ctx:    ctx,
+					dbx:    dbxx,
+					userId: user.ID,
+					limit:  0,
+					offset: 0,
+				},
+				want:    0,
+				wantErr: false,
+			},
+		}
+
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				got, err := queries.ListUserNotPermissionsSource(tt.args.ctx, tt.args.dbx, tt.args.userId, tt.args.limit, tt.args.offset)
+				if (err != nil) != tt.wantErr {
+					t.Errorf("ListUserNotPermissionsSource() error = %v, wantErr %v", err, tt.wantErr)
+					return
+				}
+				if len(got) != tt.want {
+					t.Errorf("ListUserNotPermissionsSource() got %v permissions, want %v", len(got), tt.want)
+				}
+				if tt.name == "list unassigned permissions for user" && len(got) > 0 {
+					if got[0].Name != unassignedPerm.Name {
+						t.Errorf("ListUserNotPermissionsSource() got permission name = %v, want %v", got[0].Name, unassignedPerm.Name)
+					}
+				}
+			})
+		}
+		return errors.New("rollback")
+	})
+}
