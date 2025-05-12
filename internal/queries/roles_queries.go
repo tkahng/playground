@@ -641,10 +641,12 @@ func CountUserPermissionSource(ctx context.Context, dbx db.Dbx, userId uuid.UUID
 }
 
 const (
-	getuserNotPermissions = `WITH -- Get permissions assigned through roles
+	getuserNotPermissions = `
+	WITH -- Get permissions assigned through roles
 role_based_permissions AS (
     SELECT p.*,
         rp.role_id,
+		NULL::text as product_id,
         NULL::uuid AS direct_assignment -- Null indicates not directly assigned
     FROM public.user_roles ur
         JOIN public.role_permissions rp ON ur.role_id = rp.role_id
@@ -655,11 +657,26 @@ role_based_permissions AS (
 direct_permissions AS (
     SELECT p.*,
         NULL::uuid AS role_id,
+		NULL::text as product_id,
         -- Null indicates not from a role
         up.user_id AS direct_assignment
     FROM public.user_permissions up
         JOIN public.permissions p ON up.permission_id = p.id
     WHERE up.user_id = $1
+),
+-- Get permissions assigned through products
+product_permissions AS (
+	SELECT p.*,
+        NULL::uuid AS role_id,
+        sprice.product_id AS product_id,
+        NULL::uuid AS direct_assignment -- Null indicates not directly assigned
+FROM public.stripe_subscriptions ss
+        JOIN public.stripe_prices sprice ON ss.price_id = sprice.id
+        JOIN public.stripe_products sproduct ON sprice.product_id = sproduct.id
+        JOIN public.product_permissions pr ON sproduct.id = pr.product_id
+        JOIN public.permissions p ON pr.permission_id = p.id
+WHERE ss.user_id = $1
+        AND ss.status IN ('active', 'trialing')
 ),
 -- Combine both sources
 combined_permissions AS (
@@ -668,6 +685,9 @@ combined_permissions AS (
     UNION ALL
     SELECT *
     FROM direct_permissions
+	UNION ALL
+	SELECT *
+	FROM product_permissions
 ) -- Final result with aggregated role information
 SELECT p.id,
     p.name,
@@ -676,6 +696,8 @@ SELECT p.id,
     p.updated_at,
     -- Array of role IDs that grant this permission (empty if direct)
     array []::uuid [] AS role_ids,
+	-- Array of product IDs that grant this permission (empty if direct)
+	array []::text [] AS product_ids,
     -- Boolean indicating if permission is directly assigned
     false AS is_directly_assigned
 FROM public.permissions p
@@ -685,10 +707,13 @@ GROUP BY p.id
 ORDER BY p.name,
     p.id
 LIMIT $2 OFFSET $3;`
-	getuserNotPermissionCounts = `WITH -- Get permissions assigned through roles
+
+	getuserNotPermissionCounts = `
+	WITH -- Get permissions assigned through roles
 role_based_permissions AS (
     SELECT p.*,
         rp.role_id,
+		NULL::text as product_id,
         NULL::uuid AS direct_assignment -- Null indicates not directly assigned
     FROM public.user_roles ur
         JOIN public.role_permissions rp ON ur.role_id = rp.role_id
@@ -699,11 +724,26 @@ role_based_permissions AS (
 direct_permissions AS (
     SELECT p.*,
         NULL::uuid AS role_id,
+		NULL::text as product_id,
         -- Null indicates not from a role
         up.user_id AS direct_assignment
     FROM public.user_permissions up
         JOIN public.permissions p ON up.permission_id = p.id
     WHERE up.user_id = $1
+),
+-- Get permissions assigned through products
+product_permissions AS (
+	SELECT p.*,
+        NULL::uuid AS role_id,
+        sprice.product_id AS product_id,
+        NULL::uuid AS direct_assignment -- Null indicates not directly assigned
+FROM public.stripe_subscriptions ss
+        JOIN public.stripe_prices sprice ON ss.price_id = sprice.id
+        JOIN public.stripe_products sproduct ON sprice.product_id = sproduct.id
+        JOIN public.product_permissions pr ON sproduct.id = pr.product_id
+        JOIN public.permissions p ON pr.permission_id = p.id
+WHERE ss.user_id = $1
+        AND ss.status IN ('active', 'trialing')
 ),
 -- Combine both sources
 combined_permissions AS (
@@ -712,12 +752,14 @@ combined_permissions AS (
     UNION ALL
     SELECT *
     FROM direct_permissions
+    UNION ALL
+    SELECT *
+    FROM product_permissions
 ) -- Final result with aggregated role information
 SELECT COUNT(DISTINCT p.id)
 FROM public.permissions p
     LEFT JOIN combined_permissions cp ON p.id = cp.id
-WHERE cp.id IS NULL;
-;`
+WHERE cp.id IS NULL;`
 )
 
 func ListUserNotPermissionsSource(ctx context.Context, dbx db.Dbx, userId uuid.UUID, limit int64, offset int64) ([]PermissionSource, error) {
