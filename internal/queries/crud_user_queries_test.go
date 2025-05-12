@@ -124,3 +124,73 @@ func TestListUsers(t *testing.T) {
 		return test.EndTestErr
 	})
 }
+func TestCountUsers(t *testing.T) {
+	ctx, dbx := test.DbSetup()
+	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+		faker := faker.New().Internet()
+		_, err := seeders.CreateUserWithAccountAndRole(ctx, dbxx, 5, models.ProvidersGoogle, "superuser", faker)
+		if err != nil {
+			t.Fatalf("failed to create users: %v", err)
+		}
+		_, err = seeders.CreateUserWithAccountAndRole(ctx, dbxx, 5, models.ProvidersCredentials, "basic", faker)
+		if err != nil {
+			t.Fatalf("failed to create users: %v", err)
+		}
+		_, err = seeders.CreateUserWithAccountAndRole(ctx, dbxx, 5, models.ProvidersGithub, "pro", faker)
+		if err != nil {
+			t.Fatalf("failed to create users: %v", err)
+		}
+
+		tests := []struct {
+			name    string
+			filter  *shared.UserListFilter
+			want    int64
+			wantErr bool
+		}{
+			{
+				name: "count google users",
+				filter: &shared.UserListFilter{
+					Providers: []shared.Providers{shared.ProvidersGoogle},
+				},
+				want:    5,
+				wantErr: false,
+			},
+			{
+				name: "count credentials users",
+				filter: &shared.UserListFilter{
+					Providers: []shared.Providers{shared.ProvidersCredentials},
+				},
+				want:    5,
+				wantErr: false,
+			},
+			{
+				name: "count github users",
+				filter: &shared.UserListFilter{
+					Providers: []shared.Providers{shared.ProvidersGithub},
+				},
+				want:    5,
+				wantErr: false,
+			},
+			{
+				name:    "count all users",
+				filter:  nil,
+				want:    15,
+				wantErr: false,
+			},
+		}
+
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				got, err := queries.CountUsers(ctx, dbxx, tt.filter)
+				if (err != nil) != tt.wantErr {
+					t.Errorf("CountUsers() error = %v, wantErr %v", err, tt.wantErr)
+					return
+				}
+				if got != tt.want {
+					t.Errorf("CountUsers() = %v, want %v", got, tt.want)
+				}
+			})
+		}
+		return test.EndTestErr
+	})
+}
