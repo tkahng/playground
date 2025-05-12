@@ -868,3 +868,99 @@ func TestCreateTaskProject(t *testing.T) {
 		return test.EndTestErr
 	})
 }
+func TestCreateTaskProjectWithTasks(t *testing.T) {
+	ctx, dbx := test.DbSetup()
+	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
+			Email: "tkahng@gmail.com",
+		})
+		if err != nil {
+			t.Fatalf("failed to create user: %v", err)
+		}
+
+		type args struct {
+			ctx    context.Context
+			db     db.Dbx
+			userID uuid.UUID
+			input  *shared.CreateTaskProjectWithTasksDTO
+		}
+		tests := []struct {
+			name    string
+			args    args
+			want    *models.TaskProject
+			wantErr bool
+		}{
+			{
+				name: "create task project with tasks successfully",
+				args: args{
+					ctx:    ctx,
+					db:     dbxx,
+					userID: user.ID,
+					input: &shared.CreateTaskProjectWithTasksDTO{
+						CreateTaskProjectDTO: shared.CreateTaskProjectDTO{
+							Name:        "Test Project",
+							Description: types.Pointer("Test Description"),
+							Status:      shared.TaskProjectStatusDone,
+						},
+						Tasks: []shared.CreateTaskBaseDTO{
+							{
+								Name:        "Test Task 1",
+								Description: types.Pointer("Test Description 1"),
+								Status:      shared.TaskStatusDone,
+							},
+							{
+								Name:        "Test Task 2",
+								Description: types.Pointer("Test Description 2"),
+								Status:      shared.TaskStatusDone,
+							},
+						},
+					},
+				},
+				want: &models.TaskProject{
+					UserID:      user.ID,
+					Name:        "Test Project",
+					Description: types.Pointer("Test Description"),
+					Status:      models.TaskProjectStatusDone,
+				},
+				wantErr: false,
+			},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				got, err := queries.CreateTaskProjectWithTasks(tt.args.ctx, tt.args.db, tt.args.userID, tt.args.input)
+				if (err != nil) != tt.wantErr {
+					t.Errorf("CreateTaskProjectWithTasks() error = %v, wantErr %v", err, tt.wantErr)
+					return
+				}
+				if tt.want != nil {
+					if !reflect.DeepEqual(got.Name, tt.want.Name) {
+						t.Errorf("CreateTaskProjectWithTasks() Name = %v, want %v", got.Name, tt.want.Name)
+					}
+					if !reflect.DeepEqual(got.Description, tt.want.Description) {
+						t.Errorf("CreateTaskProjectWithTasks() Description = %v, want %v", got.Description, tt.want.Description)
+					}
+					if !reflect.DeepEqual(got.Status, tt.want.Status) {
+						t.Errorf("CreateTaskProjectWithTasks() Status = %v, want %v", got.Status, tt.want.Status)
+					}
+					if !reflect.DeepEqual(got.UserID, tt.want.UserID) {
+						t.Errorf("CreateTaskProjectWithTasks() UserID = %v, want %v", got.UserID, tt.want.UserID)
+					}
+
+					// Verify tasks were created
+					tasks, err := queries.ListTasks(tt.args.ctx, tt.args.db, &shared.TaskListParams{
+						TaskListFilter: shared.TaskListFilter{
+							ProjectID: got.ID.String(),
+						},
+					})
+					if err != nil {
+						t.Errorf("Failed to list tasks: %v", err)
+					}
+					if len(tasks) != len(tt.args.input.Tasks) {
+						t.Errorf("Expected %d tasks, got %d", len(tt.args.input.Tasks), len(tasks))
+					}
+				}
+			})
+		}
+		return test.EndTestErr
+	})
+}
