@@ -71,11 +71,16 @@ func ListUserFilterFunc(filter *shared.UserListFilter) *map[string]any {
 			},
 		}
 	}
+	if len(where) == 0 {
+		return nil
+	}
 	return &where
 }
 
 func ListUsers(ctx context.Context, db db.Dbx, input *shared.UserListParams) ([]*models.User, error) {
-
+	if input == nil {
+		input = &shared.UserListParams{}
+	}
 	filter := input.UserListFilter
 	pageInput := &input.PaginatedInput
 
