@@ -14,21 +14,6 @@ import (
 	"github.com/tkahng/authgo/internal/tools/mapper"
 )
 
-func (api *Api) AdminRolesOperation(path string) huma.Operation {
-	return huma.Operation{
-		OperationID: "admin-roles",
-		Method:      http.MethodGet,
-		Path:        path,
-		Summary:     "Admin roles",
-		Description: "List of roles",
-		Tags:        []string{"Admin", "Roles"},
-		Errors:      []int{http.StatusNotFound},
-		Security: []map[string][]string{
-			{shared.BearerAuthSecurityKey: {}},
-		},
-	}
-}
-
 func (api *Api) AdminRolesList(ctx context.Context, input *struct {
 	shared.RolesListParams
 }) (*shared.PaginatedOutput[*shared.RoleWithPermissions], error) {

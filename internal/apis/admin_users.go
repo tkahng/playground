@@ -14,21 +14,6 @@ import (
 	"github.com/tkahng/authgo/internal/tools/mapper"
 )
 
-func (api *Api) AdminUsersOperation(path string) huma.Operation {
-	return huma.Operation{
-		OperationID: "admin-users",
-		Method:      http.MethodGet,
-		Path:        path,
-		Summary:     "Admin users",
-		Description: "List of users",
-		Tags:        []string{"Users", "Admin"},
-		Errors:      []int{http.StatusNotFound},
-		Security: []map[string][]string{
-			{shared.BearerAuthSecurityKey: {}},
-		},
-	}
-}
-
 type UserDetail struct {
 	*shared.User
 	Roles       []*shared.RoleWithPermissions `json:"roles,omitempty" required:"false"`

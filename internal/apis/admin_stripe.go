@@ -14,21 +14,6 @@ import (
 	"github.com/tkahng/authgo/internal/tools/mapper"
 )
 
-func (api *Api) AdminStripeSubscriptionsOperation(path string) huma.Operation {
-	return huma.Operation{
-		OperationID: "admin-stripe-subscriptions",
-		Method:      http.MethodGet,
-		Path:        path,
-		Summary:     "Admin stripe subscriptions",
-		Description: "List of stripe subscriptions",
-		Tags:        []string{"Admin", "Subscription", "Stripe"},
-		Errors:      []int{http.StatusNotFound},
-		Security: []map[string][]string{
-			{shared.BearerAuthSecurityKey: {}},
-		},
-	}
-}
-
 func (api *Api) AdminStripeSubscriptions(ctx context.Context,
 	input *shared.StripeSubscriptionListParams,
 ) (*shared.PaginatedOutput[*shared.SubscriptionWithData], error) {
@@ -55,21 +40,6 @@ func (api *Api) AdminStripeSubscriptions(ctx context.Context,
 
 }
 
-func (api *Api) AdminStripeSubscriptionsGetOperation(path string) huma.Operation {
-	return huma.Operation{
-		OperationID: "admin-stripe-subscription-get",
-		Method:      http.MethodGet,
-		Path:        path,
-		Summary:     "Admin stripe subscription get",
-		Description: "Get a stripe subscription by ID",
-		Tags:        []string{"Admin", "Subscription", "Stripe"},
-		Errors:      []int{http.StatusNotFound, http.StatusBadRequest},
-		Security: []map[string][]string{
-			{shared.BearerAuthSecurityKey: {}},
-		},
-	}
-}
-
 func (api *Api) AdminStripeSubscriptionsGet(ctx context.Context,
 	input *shared.StripeSubscriptionGetParams,
 ) (*struct{ Body *shared.SubscriptionWithData }, error) {
@@ -88,20 +58,6 @@ func (api *Api) AdminStripeSubscriptionsGet(ctx context.Context,
 	return &struct{ Body *shared.SubscriptionWithData }{Body: sub}, nil
 }
 
-func (api *Api) AdminStripeProductsOperation(path string) huma.Operation {
-	return huma.Operation{
-		OperationID: "admin-stripe-products",
-		Method:      http.MethodGet,
-		Path:        path,
-		Summary:     "Admin stripe products",
-		Description: "List of stripe products",
-		Tags:        []string{"Admin", "Product", "Stripe"},
-		Errors:      []int{http.StatusNotFound},
-		Security: []map[string][]string{
-			{shared.BearerAuthSecurityKey: {}},
-		},
-	}
-}
 func (api *Api) AdminStripeProducts(ctx context.Context,
 	input *shared.StripeProductListParams,
 ) (*shared.PaginatedOutput[*shared.StripeProductWithData], error) {
@@ -159,20 +115,6 @@ func (api *Api) AdminStripeProducts(ctx context.Context,
 	}, nil
 }
 
-func (api *Api) AdminStripeProductsGetOperation(path string) huma.Operation {
-	return huma.Operation{
-		OperationID: "admin-stripe-product-get",
-		Method:      http.MethodGet,
-		Path:        path,
-		Summary:     "Admin stripe product get",
-		Description: "Get a stripe product by ID",
-		Tags:        []string{"Admin", "Product", "Stripe"},
-		Errors:      []int{http.StatusNotFound, http.StatusBadRequest},
-		Security: []map[string][]string{
-			{shared.BearerAuthSecurityKey: {}},
-		},
-	}
-}
 func (api *Api) AdminStripeProductsGet(ctx context.Context,
 	input *shared.StripeProductGetParams,
 ) (*struct{ Body *shared.StripeProductWithData }, error) {
