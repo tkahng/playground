@@ -475,3 +475,75 @@ func TestListCustomers(t *testing.T) {
 		return test.EndTestErr
 	})
 }
+func TestCountCustomers(t *testing.T) {
+	ctx, dbx := test.DbSetup()
+	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+		user, err := queries.CreateUser(
+			ctx,
+			dbxx,
+			&shared.AuthenticationInput{
+				Email: "customer@test.com",
+			},
+		)
+		if err != nil {
+			t.Fatalf("failed to create user: %v", err)
+		}
+		err = queries.UpsertCustomerStripeId(
+			ctx,
+			dbxx,
+			user.ID,
+			"cus_test",
+		)
+		if err != nil {
+			t.Fatalf("failed to create stripe customers: %v", err)
+		}
+
+		type args struct {
+			ctx    context.Context
+			db     db.Dbx
+			filter *shared.StripeCustomerListFilter
+		}
+		tests := []struct {
+			name    string
+			args    args
+			want    int64
+			wantErr bool
+		}{
+			{
+				name: "Count all customers",
+				args: args{
+					ctx:    ctx,
+					db:     dbxx,
+					filter: &shared.StripeCustomerListFilter{},
+				},
+				want:    1,
+				wantErr: false,
+			},
+			{
+				name: "Count with filter by IDs",
+				args: args{
+					ctx: ctx,
+					db:  dbxx,
+					filter: &shared.StripeCustomerListFilter{
+						Ids: []string{user.ID.String()},
+					},
+				},
+				want:    1,
+				wantErr: false,
+			},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				got, err := queries.CountCustomers(tt.args.ctx, tt.args.db, tt.args.filter)
+				if (err != nil) != tt.wantErr {
+					t.Errorf("CountCustomers() error = %v, wantErr %v", err, tt.wantErr)
+					return
+				}
+				if got != tt.want {
+					t.Errorf("CountCustomers() got = %v, want %v", got, tt.want)
+				}
+			})
+		}
+		return test.EndTestErr
+	})
+}
