@@ -681,6 +681,9 @@ func UpdateTaskProject(ctx context.Context, db db.Dbx, taskProjectID uuid.UUID, 
 	if err != nil {
 		return err
 	}
+	if taskProject == nil {
+		return errors.New("task project not found")
+	}
 	taskProject.Name = input.Name
 	taskProject.Description = input.Description
 	taskProject.Status = models.TaskProjectStatus(input.Status)

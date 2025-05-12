@@ -1269,3 +1269,153 @@ func TestUpdateTask(t *testing.T) {
 		return test.EndTestErr
 	})
 }
+func TestUpdateTaskProjectUpdateDate(t *testing.T) {
+	ctx, dbx := test.DbSetup()
+	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
+			Email: "tkahng@gmail.com",
+		})
+		if err != nil {
+			t.Fatalf("failed to create user: %v", err)
+		}
+		taskProject, err := queries.CreateTaskProject(ctx, dbxx, user.ID, &shared.CreateTaskProjectDTO{
+			Name:   "Test Project",
+			Status: shared.TaskProjectStatusDone,
+		})
+		if err != nil {
+			t.Fatalf("failed to create task project: %v", err)
+		}
+
+		type args struct {
+			ctx           context.Context
+			db            db.Dbx
+			taskProjectID uuid.UUID
+		}
+		tests := []struct {
+			name    string
+			args    args
+			wantErr bool
+		}{
+			{
+				name: "update task project date successfully",
+				args: args{
+					ctx:           ctx,
+					db:            dbxx,
+					taskProjectID: taskProject.ID,
+				},
+				wantErr: false,
+			},
+			{
+				name: "update non-existing task project date",
+				args: args{
+					ctx:           ctx,
+					db:            dbxx,
+					taskProjectID: uuid.New(),
+				},
+				wantErr: false,
+			},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				err := queries.UpdateTaskProjectUpdateDate(tt.args.ctx, tt.args.db, tt.args.taskProjectID)
+				if (err != nil) != tt.wantErr {
+					t.Errorf("UpdateTaskProjectUpdateDate() error = %v, wantErr %v", err, tt.wantErr)
+					return
+				}
+			})
+		}
+		return test.EndTestErr
+	})
+}
+func TestUpdateTaskProject(t *testing.T) {
+	ctx, dbx := test.DbSetup()
+	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
+			Email: "tkahng@gmail.com",
+		})
+		if err != nil {
+			t.Fatalf("failed to create user: %v", err)
+		}
+		taskProject, err := queries.CreateTaskProject(ctx, dbxx, user.ID, &shared.CreateTaskProjectDTO{
+			Name:        "Test Project",
+			Description: types.Pointer("Test Description"),
+			Status:      shared.TaskProjectStatusDone,
+			Order:       1000,
+		})
+		if err != nil {
+			t.Fatalf("failed to create task project: %v", err)
+		}
+
+		type args struct {
+			ctx           context.Context
+			db            db.Dbx
+			taskProjectID uuid.UUID
+			input         *shared.UpdateTaskProjectBaseDTO
+		}
+		tests := []struct {
+			name    string
+			args    args
+			wantErr bool
+		}{
+			{
+				name: "update task project successfully",
+				args: args{
+					ctx:           ctx,
+					db:            dbxx,
+					taskProjectID: taskProject.ID,
+					input: &shared.UpdateTaskProjectBaseDTO{
+						Name:        "Updated Project",
+						Description: types.Pointer("Updated Description"),
+						Status:      shared.TaskProjectStatusInProgress,
+						Order:       2000,
+					},
+				},
+				wantErr: false,
+			},
+			{
+				name: "update non-existing task project",
+				args: args{
+					ctx:           ctx,
+					db:            dbxx,
+					taskProjectID: uuid.New(),
+					input: &shared.UpdateTaskProjectBaseDTO{
+						Name:   "Updated Project",
+						Status: shared.TaskProjectStatusInProgress,
+					},
+				},
+				wantErr: true,
+			},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				err := queries.UpdateTaskProject(tt.args.ctx, tt.args.db, tt.args.taskProjectID, tt.args.input)
+				if (err != nil) != tt.wantErr {
+					t.Errorf("UpdateTaskProject() error = %v, wantErr %v", err, tt.wantErr)
+					return
+				}
+
+				if !tt.wantErr {
+					// Verify task project was updated
+					updatedProject, err := queries.FindTaskProjectByID(tt.args.ctx, tt.args.db, tt.args.taskProjectID)
+					if err != nil {
+						t.Errorf("Failed to get updated task project: %v", err)
+						return
+					}
+					if updatedProject.Name != tt.args.input.Name {
+						t.Errorf("Task project name not updated. got = %v, want %v", updatedProject.Name, tt.args.input.Name)
+					}
+					if *updatedProject.Description != *tt.args.input.Description {
+						t.Errorf("Task project description not updated. got = %v, want %v", *updatedProject.Description, *tt.args.input.Description)
+					}
+					if updatedProject.Status != models.TaskProjectStatus(tt.args.input.Status) {
+						t.Errorf("Task project status not updated. got = %v, want %v", updatedProject.Status, tt.args.input.Status)
+					}
+					if updatedProject.Order != tt.args.input.Order {
+						t.Errorf("Task project order not updated. got = %v, want %v", updatedProject.Order, tt.args.input.Order)
+					}
+				}
+			})
+		}
+		return test.EndTestErr
+	})
+}
