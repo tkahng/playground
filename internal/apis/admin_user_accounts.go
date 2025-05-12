@@ -2,28 +2,11 @@ package apis
 
 import (
 	"context"
-	"net/http"
 
-	"github.com/danielgtaylor/huma/v2"
 	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 )
-
-func (api *Api) AdminUserAccountsOperation(path string) huma.Operation {
-	return huma.Operation{
-		OperationID: "admin-user-accounts",
-		Method:      http.MethodGet,
-		Path:        path,
-		Summary:     "Admin user accounts",
-		Description: "List of user accounts",
-		Tags:        []string{"User Accounts", "Admin"},
-		Errors:      []int{http.StatusNotFound},
-		Security: []map[string][]string{
-			{shared.BearerAuthSecurityKey: {}},
-		},
-	}
-}
 
 func (api *Api) AdminUserAccounts(ctx context.Context, input *shared.UserAccountListParams) (*shared.PaginatedOutput[*shared.UserAccountOutput], error) {
 	if input == nil {
