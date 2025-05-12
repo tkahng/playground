@@ -254,3 +254,85 @@ func TestCountProducts(t *testing.T) {
 		return test.EndTestErr
 	})
 }
+func TestListPrices(t *testing.T) {
+	ctx, dbx := test.DbSetup()
+	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+		_, err := seeders.CreateStripeProductPrices(ctx, dbxx, 2) // Create 2 products with prices
+		if err != nil {
+			t.Fatalf("failed to create stripe products and prices: %v", err)
+		}
+
+		type args struct {
+			ctx   context.Context
+			db    db.Dbx
+			input *shared.StripePriceListParams
+		}
+		tests := []struct {
+			name      string
+			args      args
+			wantCount int
+			wantErr   bool
+		}{
+			{
+				name: "List all prices",
+				args: args{
+					ctx:   ctx,
+					db:    dbxx,
+					input: &shared.StripePriceListParams{},
+				},
+				wantCount: 2,
+				wantErr:   false,
+			},
+			{
+				name: "List with filter active prices",
+				args: args{
+					ctx: ctx,
+					db:  dbxx,
+					input: &shared.StripePriceListParams{
+						StripePriceListFilter: shared.StripePriceListFilter{
+							Active: shared.Active,
+						},
+					},
+				},
+				wantCount: 2,
+				wantErr:   false,
+			},
+			{
+				name: "List with pagination",
+				args: args{
+					ctx: ctx,
+					db:  dbxx,
+					input: &shared.StripePriceListParams{
+						PaginatedInput: shared.PaginatedInput{
+							Page:    0,
+							PerPage: 10,
+						},
+					},
+				},
+				wantCount: 2,
+				wantErr:   false,
+			},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				got, err := queries.ListPrices(tt.args.ctx, tt.args.db, tt.args.input)
+				if (err != nil) != tt.wantErr {
+					t.Errorf("ListPrices() error = %v, wantErr %v", err, tt.wantErr)
+					return
+				}
+				if len(got) != tt.wantCount {
+					t.Errorf("ListPrices() got = %v, want %v", len(got), tt.wantCount)
+				}
+				if len(got) > 0 {
+					if got[0].ID == "" {
+						t.Errorf("ListPrices() got = %v, want %v", got[0].ID, "not empty")
+					}
+					if got[0].ProductID == "" {
+						t.Errorf("ListPrices() got = %v, want %v", got[0].ProductID, "not empty")
+					}
+				}
+			})
+		}
+		return test.EndTestErr
+	})
+}
