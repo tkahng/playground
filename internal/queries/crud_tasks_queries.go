@@ -115,11 +115,6 @@ func FindTaskProjectByID(ctx context.Context, db db.Dbx, id uuid.UUID) (*models.
 	return OptionalRow(task, err)
 }
 func DeleteTaskProject(ctx context.Context, db db.Dbx, taskProjectID uuid.UUID) error {
-	// taskProject, err := models.FindTaskProject(ctx, db, taskProjectID)
-	// if err != nil {
-	// 	return err
-	// }
-	// return taskProject.Delete(ctx, db)
 	_, err := repository.TaskProject.DeleteReturn(
 		ctx,
 		db,

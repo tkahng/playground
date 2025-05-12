@@ -261,3 +261,195 @@ func TestFindLastTaskOrder(t *testing.T) {
 		return test.EndTestErr
 	})
 }
+func TestDeleteTask(t *testing.T) {
+	ctx, dbx := test.DbSetup()
+	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
+			Email: "tkahng@gmail.com",
+		})
+		if err != nil {
+			t.Fatalf("failed to create user: %v", err)
+		}
+		taskProject, err := queries.CreateTaskProject(ctx, dbxx, user.ID, &shared.CreateTaskProjectDTO{
+			Name:   "Test Project",
+			Status: shared.TaskProjectStatusDone,
+		})
+		if err != nil {
+			t.Fatalf("failed to create task project: %v", err)
+		}
+		task, err := queries.CreateTask(ctx, dbxx, user.ID, taskProject.ID, &shared.CreateTaskBaseDTO{
+			Name:   "Test Task",
+			Status: shared.TaskStatusDone,
+		})
+		if err != nil {
+			t.Fatalf("failed to create task: %v", err)
+		}
+
+		type args struct {
+			ctx    context.Context
+			db     db.Dbx
+			taskID uuid.UUID
+		}
+		tests := []struct {
+			name    string
+			args    args
+			wantErr bool
+		}{
+			{
+				name: "delete existing task",
+				args: args{
+					ctx:    ctx,
+					db:     dbxx,
+					taskID: task.ID,
+				},
+				wantErr: false,
+			},
+			{
+				name: "delete non-existing task",
+				args: args{
+					ctx:    ctx,
+					db:     dbxx,
+					taskID: uuid.New(),
+				},
+				wantErr: false,
+			},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				if err := queries.DeleteTask(tt.args.ctx, tt.args.db, tt.args.taskID); (err != nil) != tt.wantErr {
+					t.Errorf("DeleteTask() error = %v, wantErr %v", err, tt.wantErr)
+				}
+			})
+		}
+		return test.EndTestErr
+	})
+}
+func TestFindTaskProjectByID(t *testing.T) {
+	ctx, dbx := test.DbSetup()
+	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
+			Email: "tkahng@gmail.com",
+		})
+		if err != nil {
+			t.Fatalf("failed to create user: %v", err)
+		}
+		taskProject, err := queries.CreateTaskProject(ctx, dbxx, user.ID, &shared.CreateTaskProjectDTO{
+			Name:   "Test Project",
+			Status: shared.TaskProjectStatusDone,
+		})
+		if err != nil {
+			t.Fatalf("failed to create task project: %v", err)
+		}
+
+		type args struct {
+			ctx context.Context
+			db  db.Dbx
+			id  uuid.UUID
+		}
+		tests := []struct {
+			name    string
+			args    args
+			want    *models.TaskProject
+			wantErr bool
+		}{
+			{
+				name: "find existing task project",
+				args: args{
+					ctx: ctx,
+					db:  dbxx,
+					id:  taskProject.ID,
+				},
+				want:    taskProject,
+				wantErr: false,
+			},
+			{
+				name: "find non-existing task project",
+				args: args{
+					ctx: ctx,
+					db:  dbxx,
+					id:  uuid.New(),
+				},
+				want:    nil,
+				wantErr: false,
+			},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				got, err := queries.FindTaskProjectByID(tt.args.ctx, tt.args.db, tt.args.id)
+				if (err != nil) != tt.wantErr {
+					t.Errorf("FindTaskProjectByID() error = %v, wantErr %v", err, tt.wantErr)
+					return
+				}
+				if tt.want == nil {
+					if got != nil {
+						t.Errorf("FindTaskProjectByID() = %v, want nil", got)
+					}
+					return
+				}
+				if !reflect.DeepEqual(got.ID, tt.want.ID) {
+					t.Errorf("FindTaskProjectByID() = %v, want %v", got.ID, tt.want.ID)
+				}
+				if !reflect.DeepEqual(got.Name, tt.want.Name) {
+					t.Errorf("FindTaskProjectByID() = %v, want %v", got.Name, tt.want.Name)
+				}
+			})
+		}
+		return test.EndTestErr
+	})
+}
+func TestDeleteTaskProject(t *testing.T) {
+	ctx, dbx := test.DbSetup()
+	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
+			Email: "tkahng@gmail.com",
+		})
+		if err != nil {
+			t.Fatalf("failed to create user: %v", err)
+		}
+		taskProject, err := queries.CreateTaskProject(ctx, dbxx, user.ID, &shared.CreateTaskProjectDTO{
+			Name:   "Test Project",
+			Status: shared.TaskProjectStatusDone,
+		})
+		if err != nil {
+			t.Fatalf("failed to create task project: %v", err)
+		}
+
+		type args struct {
+			ctx           context.Context
+			db            db.Dbx
+			taskProjectID uuid.UUID
+		}
+		tests := []struct {
+			name    string
+			args    args
+			wantErr bool
+		}{
+			{
+				name: "delete existing task project",
+				args: args{
+					ctx:           ctx,
+					db:            dbxx,
+					taskProjectID: taskProject.ID,
+				},
+				wantErr: false,
+			},
+			{
+				name: "delete non-existing task project",
+				args: args{
+					ctx:           ctx,
+					db:            dbxx,
+					taskProjectID: uuid.New(),
+				},
+				wantErr: false,
+			},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				if err := queries.DeleteTaskProject(tt.args.ctx, tt.args.db, tt.args.taskProjectID); (err != nil) != tt.wantErr {
+					t.Errorf("DeleteTaskProject() error = %v, wantErr %v", err, tt.wantErr)
+				}
+			})
+		}
+		return test.EndTestErr
+	})
+}
