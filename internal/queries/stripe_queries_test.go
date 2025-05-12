@@ -212,3 +212,68 @@ func TestFindProductByStripeId(t *testing.T) {
 		return test.EndTestErr
 	})
 }
+func TestUpsertCustomerStripeId(t *testing.T) {
+	ctx, dbx := test.DbSetup()
+	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
+			Email: "test@example.com",
+		})
+		if err != nil {
+			t.Fatalf("failed to create user: %v", err)
+		}
+
+		type args struct {
+			ctx              context.Context
+			dbx              db.Dbx
+			userId           uuid.UUID
+			stripeCustomerId string
+		}
+		tests := []struct {
+			name    string
+			args    args
+			wantErr bool
+		}{
+			{
+				name: "insert new customer",
+				args: args{
+					ctx:              ctx,
+					dbx:              dbxx,
+					userId:           user.ID,
+					stripeCustomerId: "cus_test123",
+				},
+				wantErr: false,
+			},
+			{
+				name: "update existing customer",
+				args: args{
+					ctx:              ctx,
+					dbx:              dbxx,
+					userId:           user.ID,
+					stripeCustomerId: "cus_test456",
+				},
+				wantErr: false,
+			},
+		}
+
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				err := queries.UpsertCustomerStripeId(tt.args.ctx, tt.args.dbx, tt.args.userId, tt.args.stripeCustomerId)
+				if (err != nil) != tt.wantErr {
+					t.Errorf("UpsertCustomerStripeId() error = %v, wantErr %v", err, tt.wantErr)
+					return
+				}
+
+				// Verify customer was created/updated
+				customer, err := queries.FindCustomerByUserId(tt.args.ctx, tt.args.dbx, tt.args.userId)
+				if err != nil {
+					t.Errorf("Failed to verify customer: %v", err)
+					return
+				}
+				if customer.StripeID != tt.args.stripeCustomerId {
+					t.Errorf("Customer stripe ID = %v, want %v", customer.StripeID, tt.args.stripeCustomerId)
+				}
+			})
+		}
+		return test.EndTestErr
+	})
+}
