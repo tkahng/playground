@@ -370,3 +370,53 @@ func TestEnsureRoleAndPermissions(t *testing.T) {
 		return errors.New("rollback")
 	})
 }
+func TestFindOrCreateRole(t *testing.T) {
+	ctx, dbx := test.DbSetup()
+	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+		type args struct {
+			ctx      context.Context
+			db       db.Dbx
+			roleName string
+		}
+		tests := []struct {
+			name    string
+			args    args
+			want    string
+			wantErr bool
+		}{
+			{
+				name: "create new role",
+				args: args{
+					ctx:      ctx,
+					db:       dbxx,
+					roleName: "test_role",
+				},
+				want:    "test_role",
+				wantErr: false,
+			},
+			{
+				name: "find existing role",
+				args: args{
+					ctx:      ctx,
+					db:       dbxx,
+					roleName: "test_role",
+				},
+				want:    "test_role",
+				wantErr: false,
+			},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				got, err := queries.FindOrCreateRole(tt.args.ctx, tt.args.db, tt.args.roleName)
+				if (err != nil) != tt.wantErr {
+					t.Errorf("FindOrCreateRole() error = %v, wantErr %v", err, tt.wantErr)
+					return
+				}
+				if got.Name != tt.want {
+					t.Errorf("FindOrCreateRole() = %v, want %v", got.Name, tt.want)
+				}
+			})
+		}
+		return errors.New("rollback")
+	})
+}
