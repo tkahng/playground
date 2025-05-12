@@ -818,3 +818,144 @@ func TestUpsertSubscription(t *testing.T) {
 		return test.EndTestErr
 	})
 }
+
+func TestUpsertSubscriptionFromStripe(t *testing.T) {
+	ctx, dbx := test.DbSetup()
+	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
+			Email: "test@example.com",
+		})
+		if err != nil {
+			t.Fatalf("failed to create user: %v", err)
+		}
+
+		// Create test product and price first
+		product := &models.StripeProduct{
+			ID:       "prod_test123",
+			Active:   true,
+			Name:     "Test Product",
+			Metadata: map[string]string{"key": "value"},
+		}
+		err = queries.UpsertProduct(ctx, dbxx, product)
+		if err != nil {
+			t.Fatalf("failed to create test product: %v", err)
+		}
+
+		price := &models.StripePrice{
+			ID:        "price_test123",
+			ProductID: product.ID,
+			Active:    true,
+			Currency:  "usd",
+			Type:      models.StripePricingTypeRecurring,
+			Metadata:  map[string]string{"key": "value"},
+		}
+		err = queries.UpsertPrice(ctx, dbxx, price)
+		if err != nil {
+			t.Fatalf("failed to create test price: %v", err)
+		}
+
+		timestamp := time.Now().Unix()
+
+		type args struct {
+			ctx    context.Context
+			dbx    db.Dbx
+			sub    *stripe.Subscription
+			userId uuid.UUID
+		}
+		tests := []struct {
+			name    string
+			args    args
+			wantErr bool
+		}{
+			{
+				name: "nil subscription",
+				args: args{
+					ctx:    ctx,
+					dbx:    dbxx,
+					sub:    nil,
+					userId: user.ID,
+				},
+				wantErr: false,
+			},
+			{
+				name: "subscription without items",
+				args: args{
+					ctx: ctx,
+					dbx: dbxx,
+					sub: &stripe.Subscription{
+						ID:     "sub_test123",
+						Status: "active",
+						Items:  &stripe.SubscriptionItemList{},
+					},
+					userId: user.ID,
+				},
+				wantErr: true,
+			},
+			{
+				name: "valid subscription",
+				args: args{
+					ctx: ctx,
+					dbx: dbxx,
+					sub: &stripe.Subscription{
+						ID:                "sub_test456",
+						Status:            "active",
+						Created:           timestamp,
+						CancelAtPeriodEnd: false,
+						EndedAt:           timestamp,
+						CancelAt:          timestamp,
+						CanceledAt:        timestamp,
+						TrialStart:        timestamp,
+						TrialEnd:          timestamp,
+						Metadata:          map[string]string{"key": "value"},
+						Items: &stripe.SubscriptionItemList{
+							Data: []*stripe.SubscriptionItem{
+								{
+									Price:              &stripe.Price{ID: price.ID},
+									Quantity:           1,
+									CurrentPeriodStart: timestamp,
+									CurrentPeriodEnd:   timestamp,
+								},
+							},
+						},
+					},
+					userId: user.ID,
+				},
+				wantErr: false,
+			},
+		}
+
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				err := queries.UpsertSubscriptionFromStripe(tt.args.ctx, tt.args.dbx, tt.args.sub, tt.args.userId)
+				if (err != nil) != tt.wantErr {
+					t.Errorf("UpsertSubscriptionFromStripe() error = %v, wantErr %v", err, tt.wantErr)
+					return
+				}
+
+				if tt.args.sub != nil && !tt.wantErr {
+					// Verify subscription was created/updated
+					sub, err := queries.FindSubscriptionById(tt.args.ctx, tt.args.dbx, tt.args.sub.ID)
+					if err != nil {
+						t.Errorf("Failed to verify subscription: %v", err)
+						return
+					}
+					if sub.ID != tt.args.sub.ID {
+						t.Errorf("Subscription ID = %v, want %v", sub.ID, tt.args.sub.ID)
+					}
+					if sub.Status != models.StripeSubscriptionStatus(tt.args.sub.Status) {
+						t.Errorf("Subscription status = %v, want %v", sub.Status, tt.args.sub.Status)
+					}
+					if len(tt.args.sub.Items.Data) > 0 {
+						if sub.PriceID != tt.args.sub.Items.Data[0].Price.ID {
+							t.Errorf("Subscription price_id = %v, want %v", sub.PriceID, tt.args.sub.Items.Data[0].Price.ID)
+						}
+						if sub.Quantity != tt.args.sub.Items.Data[0].Quantity {
+							t.Errorf("Subscription quantity = %v, want %v", sub.Quantity, tt.args.sub.Items.Data[0].Quantity)
+						}
+					}
+				}
+			})
+		}
+		return test.EndTestErr
+	})
+}
