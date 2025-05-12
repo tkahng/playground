@@ -13,7 +13,6 @@ import (
 	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/test"
-	"github.com/tkahng/authgo/internal/tools/utils"
 )
 
 func TestFindCustomerByStripeId(t *testing.T) {
@@ -641,7 +640,6 @@ func TestUpsertPriceFromStripe(t *testing.T) {
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				err := queries.UpsertPriceFromStripe(tt.args.ctx, tt.args.dbx, tt.args.price)
-				utils.PrettyPrintJSON(err)
 				if (err != nil) != tt.wantErr {
 					t.Errorf("UpsertPriceFromStripe() error = %v, wantErr %v", err, tt.wantErr)
 					return
@@ -668,7 +666,6 @@ func TestUpsertPriceFromStripe(t *testing.T) {
 					}
 					if tt.args.price.Product != nil {
 						if price.ProductID != tt.args.price.Product.ID {
-							utils.PrettyPrintJSON(price)
 							t.Errorf("Price product_id = %v, want %v", price.ProductID, tt.args.price.Product.ID)
 						}
 					}
