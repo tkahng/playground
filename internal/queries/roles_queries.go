@@ -228,6 +228,31 @@ func CreateProductRoles(ctx context.Context, db db.Dbx, productId string, roleId
 	return nil
 }
 
+func CreateProductPermissions(ctx context.Context, db db.Dbx, productId string, permissionIds ...uuid.UUID) error {
+	var permissions []crudModels.ProductPermission
+	for _, permissionId := range permissionIds {
+		permissions = append(permissions, crudModels.ProductPermission{
+			ProductID:    productId,
+			PermissionID: permissionId,
+		})
+	}
+	q := squirrel.Insert("product_permissions").Columns("product_id", "permission_id")
+	for _, perm := range permissions {
+		q = q.Values(perm.ProductID, perm.PermissionID)
+	}
+	q = q.Suffix("RETURNING *")
+	sql, args, err := q.PlaceholderFormat(squirrel.Dollar).ToSql()
+	if err != nil {
+		return err
+	}
+	fmt.Println(sql, args)
+	_, err = pgxscan.All(ctx, db, scan.StructMapper[crudModels.ProductPermission](), sql, args...)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func EnsureRoleAndPermissions(ctx context.Context, db db.Dbx, roleName string, permissionNames ...string) error {
 	// find superuser role
 	role, err := FindOrCreateRole(ctx, db, roleName)
@@ -461,6 +486,7 @@ WITH -- Get permissions assigned through roles
 role_based_permissions AS (
     SELECT p.*,
         rp.role_id,
+		NULL::text as product_id,
         NULL::uuid AS direct_assignment -- Null indicates not directly assigned
     FROM public.user_roles ur
         JOIN public.role_permissions rp ON ur.role_id = rp.role_id
@@ -471,11 +497,26 @@ role_based_permissions AS (
 direct_permissions AS (
     SELECT p.*,
         NULL::uuid AS role_id,
+		NULL::text as product_id,
         -- Null indicates not from a role
         up.user_id AS direct_assignment
     FROM public.user_permissions up
         JOIN public.permissions p ON up.permission_id = p.id
     WHERE up.user_id = $1
+),
+-- Get permissions assigned through products
+product_permissions AS (
+	SELECT p.*,
+        NULL::uuid AS role_id,
+        sprice.product_id AS product_id,
+        NULL::uuid AS direct_assignment -- Null indicates not directly assigned
+FROM public.stripe_subscriptions ss
+        JOIN public.stripe_prices sprice ON ss.price_id = sprice.id
+        JOIN public.stripe_products sproduct ON sprice.product_id = sproduct.id
+        JOIN public.product_permissions pr ON sproduct.id = pr.product_id
+        JOIN public.permissions p ON pr.permission_id = p.id
+WHERE ss.user_id = $1
+        AND ss.status IN ('active', 'trialing')
 ),
 -- Combine both sources
 combined_permissions AS (
@@ -484,6 +525,9 @@ combined_permissions AS (
     UNION ALL
     SELECT *
     FROM direct_permissions
+	UNION ALL
+    SELECT *
+    FROM product_permissions
 ) -- Final result with aggregated role information
 SELECT p.id,
     p.name,
@@ -492,6 +536,8 @@ SELECT p.id,
     p.updated_at,
     -- Array of role IDs that grant this permission (empty if direct)
     array_remove(array_agg(DISTINCT rp.role_id), NULL) AS role_ids,
+	-- Array of product IDs that grant this permission (empty if direct)
+	array_remove(array_agg(DISTINCT rp.product_id), NULL) AS product_ids,
     -- Boolean indicating if permission is directly assigned
     bool_or(rp.direct_assignment IS NOT NULL) AS is_directly_assigned
 FROM (
@@ -518,6 +564,7 @@ WITH -- Get permissions assigned through roles
 role_based_permissions AS (
     SELECT p.*,
         rp.role_id,
+		NULL::text as product_id,
         NULL::uuid AS direct_assignment -- Null indicates not directly assigned
     FROM public.user_roles ur
         JOIN public.role_permissions rp ON ur.role_id = rp.role_id
@@ -528,11 +575,26 @@ role_based_permissions AS (
 direct_permissions AS (
     SELECT p.*,
         NULL::uuid AS role_id,
+		NULL::text as product_id,
         -- Null indicates not from a role
         up.user_id AS direct_assignment
     FROM public.user_permissions up
         JOIN public.permissions p ON up.permission_id = p.id
     WHERE up.user_id = $1
+),
+-- Get permissions assigned through products
+product_permissions AS (
+	SELECT p.*,
+        NULL::uuid AS role_id,
+        sprice.product_id AS product_id,
+        NULL::uuid AS direct_assignment -- Null indicates not directly assigned
+FROM public.stripe_subscriptions ss
+        JOIN public.stripe_prices sprice ON ss.price_id = sprice.id
+        JOIN public.stripe_products sproduct ON sprice.product_id = sproduct.id
+        JOIN public.product_permissions pr ON sproduct.id = pr.product_id
+        JOIN public.permissions p ON pr.permission_id = p.id
+WHERE ss.user_id = $1
+        AND ss.status IN ('active', 'trialing')
 ),
 -- Combine both sources
 combined_permissions AS (
@@ -541,6 +603,9 @@ combined_permissions AS (
     UNION ALL
     SELECT *
     FROM direct_permissions
+    UNION ALL
+    SELECT *
+    FROM product_permissions
 ) -- Final result with aggregated role information
 SELECT COUNT(DISTINCT id)
 FROM combined_permissions
@@ -554,6 +619,7 @@ type PermissionSource struct {
 	CreatedAt   time.Time        `db:"created_at" json:"created_at"`
 	UpdatedAt   time.Time        `db:"updated_at" json:"updated_at"`
 	RoleIDs     []uuid.UUID      `db:"role_ids" json:"role_ids"`
+	ProductIDs  []string         `db:"product_ids" json:"product_ids"`
 	IsDirectly  bool             `db:"is_directly_assigned" json:"is_directly_assigned"`
 }
 

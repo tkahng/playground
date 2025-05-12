@@ -42,6 +42,6 @@ var stripeRolesCmd = &cobra.Command{
 
 		dbx := db.CreateQueries(ctx, dbconf.DatabaseUrl)
 		service := core.NewStripeServiceFromConf(stripeconfig)
-		return service.SyncRoles(ctx, dbx)
+		return service.SyncPerms(ctx, dbx)
 	},
 }

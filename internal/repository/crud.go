@@ -13,13 +13,24 @@ var (
 			return nil
 		},
 	)
-	UserPermissionBuilder = NewSQLBuilder[models.UserPermission]()
-	RolePermissionBuilder = NewSQLBuilder[models.RolePermission]()
-	TokenBuilder          = NewSQLBuilder[models.Token]()
-	TaskProjectBuilder    = NewSQLBuilder[models.TaskProject]()
-	TaskBuilder           = NewSQLBuilder[models.Task]()
-	ProductRoleBuilder    = NewSQLBuilder[models.ProductRole]()
-	StripeProductBuilder  = NewSQLBuilder(
+	UserPermissionBuilder    = NewSQLBuilder[models.UserPermission]()
+	RolePermissionBuilder    = NewSQLBuilder[models.RolePermission]()
+	TokenBuilder             = NewSQLBuilder[models.Token]()
+	TaskProjectBuilder       = NewSQLBuilder[models.TaskProject]()
+	TaskBuilder              = NewSQLBuilder[models.Task]()
+	ProductPermissionBuilder = NewSQLBuilder(
+		func(s *SQLBuilder[models.ProductPermission]) error {
+			s.skipIdInsert = false
+			return nil
+		},
+	)
+	ProductRoleBuilder = NewSQLBuilder(
+		func(s *SQLBuilder[models.ProductRole]) error {
+			s.skipIdInsert = false
+			return nil
+		},
+	)
+	StripeProductBuilder = NewSQLBuilder(
 		func(s *SQLBuilder[models.StripeProduct]) error {
 			s.skipIdInsert = false
 			return nil

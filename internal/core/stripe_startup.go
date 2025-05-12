@@ -41,6 +41,14 @@ func (srv *StripeService) SyncRoles(ctx context.Context, dbx db.Dbx) error {
 	return err
 }
 
+func (srv *StripeService) SyncPerms(ctx context.Context, dbx db.Dbx) error {
+	var err error
+	for productId, role := range shared.StripeRoleMap {
+		err = srv.SyncProductPerms(ctx, dbx, productId, role)
+	}
+	return err
+}
+
 func (srv *StripeService) SyncProductRole(ctx context.Context, dbx db.Dbx, productId string, roleName string) error {
 	product, err := queries.FindProductByStripeId(ctx, dbx, productId)
 	if err != nil {
@@ -65,6 +73,32 @@ func (srv *StripeService) SyncProductRole(ctx context.Context, dbx db.Dbx, produ
 		return errors.New("role not found")
 	}
 	return queries.CreateProductRoles(ctx, dbx, product.ID, role.ID)
+}
+
+func (srv *StripeService) SyncProductPerms(ctx context.Context, dbx db.Dbx, productId string, permName string) error {
+	product, err := queries.FindProductByStripeId(ctx, dbx, productId)
+	if err != nil {
+		return err
+	}
+	if product == nil {
+		return errors.New("product not found")
+	}
+	perm, err := repository.Permission.GetOne(
+		ctx,
+		dbx,
+		&map[string]any{
+			"name": map[string]any{
+				"_eq": permName,
+			},
+		},
+	)
+	if err != nil {
+		return err
+	}
+	if perm == nil {
+		return errors.New("permission not found")
+	}
+	return queries.CreateProductPermissions(ctx, dbx, product.ID, perm.ID)
 }
 
 func (srv *StripeService) UpsertPriceProductFromStripe(ctx context.Context, dbx db.Dbx) error {
