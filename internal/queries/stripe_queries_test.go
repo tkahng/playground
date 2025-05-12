@@ -450,3 +450,108 @@ func TestUpsertProductFromStripe(t *testing.T) {
 		return test.EndTestErr
 	})
 }
+
+func TestUpsertPrice(t *testing.T) {
+	ctx, dbx := test.DbSetup()
+	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+		// Create a test product first
+		product := &models.StripeProduct{
+			ID:       "prod_test123",
+			Active:   true,
+			Name:     "Test Product",
+			Metadata: map[string]string{"key": "value"},
+		}
+		err := queries.UpsertProduct(ctx, dbxx, product)
+		if err != nil {
+			t.Fatalf("failed to create test product: %v", err)
+		}
+
+		lookupKey := "test_key"
+		unitAmount := int64(1000)
+		interval := models.StripePricingPlanIntervalMonth
+		intervalCount := int64(1)
+		trialDays := int64(7)
+		metadata := map[string]string{"key": "value"}
+
+		type args struct {
+			ctx   context.Context
+			dbx   db.Dbx
+			price *models.StripePrice
+		}
+		tests := []struct {
+			name    string
+			args    args
+			wantErr bool
+		}{
+			{
+				name: "insert new price",
+				args: args{
+					ctx: ctx,
+					dbx: dbxx,
+					price: &models.StripePrice{
+						ID:              "price_test123",
+						ProductID:       product.ID,
+						LookupKey:       &lookupKey,
+						Active:          true,
+						UnitAmount:      &unitAmount,
+						Currency:        "usd",
+						Type:            models.StripePricingTypeRecurring,
+						Interval:        &interval,
+						IntervalCount:   &intervalCount,
+						TrialPeriodDays: &trialDays,
+						Metadata:        metadata,
+					},
+				},
+				wantErr: false,
+			},
+			{
+				name: "update existing price",
+				args: args{
+					ctx: ctx,
+					dbx: dbxx,
+					price: &models.StripePrice{
+						ID:              "price_test123",
+						ProductID:       product.ID,
+						LookupKey:       &lookupKey,
+						Active:          false,
+						UnitAmount:      &unitAmount,
+						Currency:        "eur",
+						Type:            models.StripePricingTypeRecurring,
+						Interval:        &interval,
+						IntervalCount:   &intervalCount,
+						TrialPeriodDays: &trialDays,
+						Metadata:        metadata,
+					},
+				},
+				wantErr: false,
+			},
+		}
+
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				err := queries.UpsertPrice(tt.args.ctx, tt.args.dbx, tt.args.price)
+				if (err != nil) != tt.wantErr {
+					t.Errorf("UpsertPrice() error = %v, wantErr %v", err, tt.wantErr)
+					return
+				}
+
+				// Verify price was created/updated
+				price, err := queries.FindValidPriceById(tt.args.ctx, tt.args.dbx, tt.args.price.ID)
+				if err != nil {
+					t.Errorf("Failed to verify price: %v", err)
+					return
+				}
+				if price.ProductID != tt.args.price.ProductID {
+					t.Errorf("Price product_id = %v, want %v", price.ProductID, tt.args.price.ProductID)
+				}
+				if price.Active != tt.args.price.Active {
+					t.Errorf("Price active = %v, want %v", price.Active, tt.args.price.Active)
+				}
+				if price.Currency != tt.args.price.Currency {
+					t.Errorf("Price currency = %v, want %v", price.Currency, tt.args.price.Currency)
+				}
+			})
+		}
+		return test.EndTestErr
+	})
+}
