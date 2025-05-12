@@ -959,3 +959,120 @@ func TestUpsertSubscriptionFromStripe(t *testing.T) {
 		return test.EndTestErr
 	})
 }
+func TestFindSubscriptionById(t *testing.T) {
+	ctx, dbx := test.DbSetup()
+	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+		// Create test user
+		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
+			Email: "test@example.com",
+		})
+		if err != nil {
+			t.Fatalf("failed to create user: %v", err)
+		}
+
+		product := &models.StripeProduct{
+			ID:       "prod_test123",
+			Active:   true,
+			Name:     "Test Product",
+			Metadata: map[string]string{"key": "value"},
+		}
+		err = queries.UpsertProduct(ctx, dbxx, product)
+		if err != nil {
+			t.Fatalf("failed to create test product: %v", err)
+		}
+		price := &models.StripePrice{
+			ID:        "price_test123",
+			ProductID: product.ID,
+			Active:    true,
+			Currency:  "usd",
+			Type:      models.StripePricingTypeRecurring,
+			Metadata:  map[string]string{"key": "value"},
+		}
+		err = queries.UpsertPrice(ctx, dbxx, price)
+		if err != nil {
+			t.Fatalf("failed to create test price: %v", err)
+		}
+
+		// Create test subscription
+		testSub := &models.StripeSubscription{
+			ID:                 "sub_test123",
+			UserID:             user.ID,
+			Status:             models.StripeSubscriptionStatusActive,
+			PriceID:            price.ID,
+			Quantity:           1,
+			CancelAtPeriodEnd:  false,
+			Created:            time.Now(),
+			CurrentPeriodStart: time.Now(),
+			CurrentPeriodEnd:   time.Now().Add(30 * 24 * time.Hour),
+			Metadata:           map[string]string{"key": "value"},
+		}
+
+		err = queries.UpsertSubscription(ctx, dbxx, testSub)
+		if err != nil {
+			t.Fatalf("failed to create test subscription: %v", err)
+		}
+
+		type args struct {
+			ctx      context.Context
+			dbx      db.Dbx
+			stripeId string
+		}
+		tests := []struct {
+			name    string
+			args    args
+			want    *models.StripeSubscription
+			wantErr bool
+		}{
+			{
+				name: "existing subscription",
+				args: args{
+					ctx:      ctx,
+					dbx:      dbxx,
+					stripeId: testSub.ID,
+				},
+				want:    testSub,
+				wantErr: false,
+			},
+			{
+				name: "non-existent subscription",
+				args: args{
+					ctx:      ctx,
+					dbx:      dbxx,
+					stripeId: "sub_nonexistent",
+				},
+				want:    nil,
+				wantErr: false,
+			},
+		}
+
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				got, err := queries.FindSubscriptionById(tt.args.ctx, tt.args.dbx, tt.args.stripeId)
+				if (err != nil) != tt.wantErr {
+					t.Errorf("FindSubscriptionById() error = %v, wantErr %v", err, tt.wantErr)
+					return
+				}
+				if tt.want == nil {
+					if got != nil {
+						t.Errorf("FindSubscriptionById() = %v, want nil", got)
+					}
+					return
+				}
+				if got == nil {
+					t.Errorf("FindSubscriptionById() = nil, want %v", tt.want)
+					return
+				}
+				if got.ID != tt.want.ID {
+					t.Errorf("FindSubscriptionById() got ID = %v, want %v", got.ID, tt.want.ID)
+				}
+				if got.Status != tt.want.Status {
+					t.Errorf("FindSubscriptionById() got Status = %v, want %v", got.Status, tt.want.Status)
+				}
+				if got.PriceID != tt.want.PriceID {
+					t.Errorf("FindSubscriptionById() got PriceID = %v, want %v", got.PriceID, tt.want.PriceID)
+				}
+			})
+		}
+		return test.EndTestErr
+	})
+}
