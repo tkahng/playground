@@ -10,8 +10,10 @@ import (
 	"github.com/tkahng/authgo/internal/db"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/queries"
+	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/test"
+	"github.com/tkahng/authgo/internal/tools/utils"
 )
 
 func TestFindCustomerByStripeId(t *testing.T) {
@@ -549,6 +551,141 @@ func TestUpsertPrice(t *testing.T) {
 				}
 				if price.Currency != tt.args.price.Currency {
 					t.Errorf("Price currency = %v, want %v", price.Currency, tt.args.price.Currency)
+				}
+			})
+		}
+		return test.EndTestErr
+	})
+}
+func TestUpsertPriceFromStripe(t *testing.T) {
+	ctx, dbx := test.DbSetup()
+	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+		// Create a test product first
+		meta := map[string]string{"key": "value"}
+		product := &models.StripeProduct{
+			ID:       "prod_test123",
+			Active:   true,
+			Name:     "Test Product",
+			Metadata: meta,
+		}
+		err := queries.UpsertProduct(ctx, dbxx, product)
+		if err != nil {
+			t.Fatalf("failed to create test product: %v", err)
+		}
+
+		unitAmount := int64(1000)
+		recurring := &stripe.PriceRecurring{
+			Interval:        "month",
+			IntervalCount:   1,
+			TrialPeriodDays: 7,
+		}
+
+		type args struct {
+			ctx   context.Context
+			dbx   db.Dbx
+			price *stripe.Price
+		}
+		tests := []struct {
+			name    string
+			args    args
+			wantErr bool
+		}{
+			{
+				name: "nil price",
+				args: args{
+					ctx:   ctx,
+					dbx:   dbxx,
+					price: nil,
+				},
+				wantErr: false,
+			},
+			{
+				name: "valid price with recurring",
+				args: args{
+					ctx: ctx,
+					dbx: dbxx,
+					price: &stripe.Price{
+						ID:         "price_test123",
+						Product:    &stripe.Product{ID: product.ID},
+						Active:     true,
+						LookupKey:  "test_key_1",
+						UnitAmount: unitAmount,
+						Currency:   "usd",
+						Type:       "recurring",
+						Recurring:  recurring,
+						Metadata:   meta,
+					},
+				},
+				wantErr: false,
+			},
+			{
+				name: "price without recurring",
+				args: args{
+					ctx: ctx,
+					dbx: dbxx,
+					price: &stripe.Price{
+						ID:         "price_test456",
+						Product:    &stripe.Product{ID: product.ID},
+						Active:     true,
+						LookupKey:  "test_key_2",
+						UnitAmount: unitAmount,
+						Currency:   "usd",
+						Type:       "one_time",
+						Metadata:   meta,
+					},
+				},
+				wantErr: false,
+			},
+		}
+
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				err := queries.UpsertPriceFromStripe(tt.args.ctx, tt.args.dbx, tt.args.price)
+				utils.PrettyPrintJSON(err)
+				if (err != nil) != tt.wantErr {
+					t.Errorf("UpsertPriceFromStripe() error = %v, wantErr %v", err, tt.wantErr)
+					return
+				}
+
+				if tt.args.price != nil {
+					// Verify price was created/updated
+					price, err := repository.StripePrice.GetOne(
+						ctx,
+						dbxx,
+						&map[string]any{
+							"id": map[string]any{
+								"eq": tt.args.price.ID,
+							},
+						},
+					)
+					if err != nil {
+						t.Errorf("Failed to verify price: %v", err)
+						return
+					}
+					if price == nil {
+						t.Errorf("Price not found in database")
+						return
+					}
+					if tt.args.price.Product != nil {
+						if price.ProductID != tt.args.price.Product.ID {
+							utils.PrettyPrintJSON(price)
+							t.Errorf("Price product_id = %v, want %v", price.ProductID, tt.args.price.Product.ID)
+						}
+					}
+					if price.Active != tt.args.price.Active {
+						t.Errorf("Price active = %v, want %v", price.Active, tt.args.price.Active)
+					}
+					if *price.UnitAmount != tt.args.price.UnitAmount {
+						t.Errorf("Price unit_amount = %v, want %v", *price.UnitAmount, tt.args.price.UnitAmount)
+					}
+					if price.Currency != string(tt.args.price.Currency) {
+						t.Errorf("Price currency = %v, want %v", price.Currency, tt.args.price.Currency)
+					}
+					if tt.args.price.Recurring != nil {
+						if *price.Interval != models.StripePricingPlanInterval(tt.args.price.Recurring.Interval) {
+							t.Errorf("Price interval = %v, want %v", *price.Interval, tt.args.price.Recurring.Interval)
+						}
+					}
 				}
 			})
 		}

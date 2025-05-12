@@ -12,7 +12,6 @@ import (
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/tools/types"
-	"github.com/tkahng/authgo/internal/tools/utils"
 )
 
 func FindCustomerByStripeId(ctx context.Context, dbx db.Dbx, stripeId string) (*models.StripeCustomer, error) {
@@ -174,7 +173,6 @@ func UpsertPriceFromStripe(ctx context.Context, dbx db.Dbx, price *stripe.Price)
 	}
 	if price.Recurring != nil {
 		recur := price.Recurring
-		utils.PrettyPrintJSON(recur)
 		val.Interval = types.Pointer(models.StripePricingPlanInterval(recur.Interval))
 		val.IntervalCount = types.Pointer(recur.IntervalCount)
 		val.TrialPeriodDays = types.Pointer(recur.TrialPeriodDays)
