@@ -1409,3 +1409,96 @@ func TestListUserNotPermissionsSource(t *testing.T) {
 		return errors.New("rollback")
 	})
 }
+func TestCountNotUserPermissionSource(t *testing.T) {
+	ctx, dbx := test.DbSetup()
+	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+		// Create test user
+		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
+			Email: "test@test.com",
+		})
+		if err != nil {
+			t.Fatalf("failed to create test user: %v", err)
+		}
+
+		// Create test role and permission that will be assigned
+		role, err := queries.CreateRole(ctx, dbxx, &queries.CreateRoleDto{
+			Name: "test_role",
+		})
+		if err != nil {
+			t.Fatalf("failed to create test role: %v", err)
+		}
+
+		assignedPerm, err := queries.CreatePermission(ctx, dbxx, &queries.CreatePermissionDto{
+			Name: "assigned_permission",
+		})
+		if err != nil {
+			t.Fatalf("failed to create assigned permission: %v", err)
+		}
+
+		// Create an unassigned permission
+		_, err = queries.CreatePermission(ctx, dbxx, &queries.CreatePermissionDto{
+			Name: "unassigned_permission",
+		})
+		if err != nil {
+			t.Fatalf("failed to create unassigned permission: %v", err)
+		}
+
+		// Assign role to user and permission to role
+		err = queries.CreateUserRoles(ctx, dbxx, user.ID, role.ID)
+		if err != nil {
+			t.Fatalf("failed to assign role to user: %v", err)
+		}
+
+		err = queries.CreateRolePermissions(ctx, dbxx, role.ID, assignedPerm.ID)
+		if err != nil {
+			t.Fatalf("failed to assign permission to role: %v", err)
+		}
+
+		type args struct {
+			ctx    context.Context
+			dbx    db.Dbx
+			userId uuid.UUID
+		}
+		tests := []struct {
+			name    string
+			args    args
+			want    int64
+			wantErr bool
+		}{
+			{
+				name: "count unassigned permissions for user",
+				args: args{
+					ctx:    ctx,
+					dbx:    dbxx,
+					userId: user.ID,
+				},
+				want:    1,
+				wantErr: false,
+			},
+			{
+				name: "count with non-existent user",
+				args: args{
+					ctx:    ctx,
+					dbx:    dbxx,
+					userId: uuid.New(),
+				},
+				want:    2,
+				wantErr: false,
+			},
+		}
+
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				got, err := queries.CountNotUserPermissionSource(tt.args.ctx, tt.args.dbx, tt.args.userId)
+				if (err != nil) != tt.wantErr {
+					t.Errorf("CountNotUserPermissionSource() error = %v, wantErr %v", err, tt.wantErr)
+					return
+				}
+				if got != tt.want {
+					t.Errorf("CountNotUserPermissionSource() = %v, want %v", got, tt.want)
+				}
+			})
+		}
+		return errors.New("rollback")
+	})
+}
