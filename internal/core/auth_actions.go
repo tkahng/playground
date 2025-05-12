@@ -141,12 +141,12 @@ func (app *AuthActionsBase) CreateAndPersistStateToken(ctx context.Context, payl
 	}
 	token, err := security.NewJWTWithClaims(claims, config.Secret)
 	if err != nil {
-		return token, fmt.Errorf("error at error: %w", err)
+		return token, err
 	}
 
 	err = app.storage.SaveToken(ctx, dto)
 	if err != nil {
-		return token, fmt.Errorf("error at error: %w", err)
+		return token, err
 	}
 	return token, nil
 }
@@ -155,7 +155,7 @@ func (app *AuthActionsBase) CreateAndPersistStateToken(ctx context.Context, payl
 func (app *AuthActionsBase) CreateAuthTokensFromEmail(ctx context.Context, email string) (*shared.UserInfoTokens, error) {
 	user, err := app.storage.GetUserInfo(ctx, email)
 	if err != nil {
-		return nil, fmt.Errorf("error at getting user by email: %w", err)
+		return nil, err
 	}
 	return app.CreateAuthTokens(ctx, user)
 }
@@ -182,12 +182,12 @@ func (app *AuthActionsBase) CreateAuthTokens(ctx context.Context, payload *share
 		}
 		token, err := security.NewJWTWithClaims(claims, opts.AccessToken.Secret)
 		if err != nil {
-			return token, fmt.Errorf("error at error: %w", err)
+			return token, err
 		}
 		return token, nil
 	}()
 	if err != nil {
-		return nil, fmt.Errorf("error creating auth token: %w", err)
+		return nil, err
 	}
 
 	tokenKey := security.GenerateTokenKey()
@@ -207,7 +207,7 @@ func (app *AuthActionsBase) CreateAuthTokens(ctx context.Context, payload *share
 
 		token, err := security.NewJWTWithClaims(claims, opts.RefreshToken.Secret)
 		if err != nil {
-			return token, fmt.Errorf("error at error: %w", err)
+			return token, err
 		}
 		err = app.storage.SaveToken(
 			ctx,
@@ -221,13 +221,13 @@ func (app *AuthActionsBase) CreateAuthTokens(ctx context.Context, payload *share
 			},
 		)
 		if err != nil {
-			return token, fmt.Errorf("error at error: %w", err)
+			return token, err
 		}
 		return token, nil
 	}()
 
 	if err != nil {
-		return nil, fmt.Errorf("error creating refresh token: %w", err)
+		return nil, err
 	}
 	return &shared.UserInfoTokens{
 		UserInfo: *payload,
@@ -250,7 +250,7 @@ func (app *AuthActionsBase) CheckResetPasswordToken(ctx context.Context, tokenHa
 	}
 	token, err := app.storage.GetToken(ctx, claims.Token)
 	if err != nil {
-		return fmt.Errorf("error getting token: %w", err)
+		return err
 	}
 	if token == nil {
 		return fmt.Errorf("token not found")
@@ -337,7 +337,7 @@ func (app *AuthActionsBase) HandleRefreshToken(ctx context.Context, token string
 	}
 	info, err := app.storage.GetUserInfo(ctx, claims.Email)
 	if err != nil {
-		return nil, fmt.Errorf("error getting user info: %w", err)
+		return nil, err
 	}
 
 	return app.CreateAuthTokens(ctx, info)
@@ -632,7 +632,7 @@ func (a *AuthActionsBase) parseTokenString(token string, config TokenOption, dat
 	if claimType, ok := claims["type"].(string); ok && claimType == string(config.Type) {
 		_, err = security.MarshalToken(claims, data)
 		if err != nil {
-			return fmt.Errorf("error at error: %w", err)
+			return err
 		}
 		return nil
 	}

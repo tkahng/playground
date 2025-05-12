@@ -84,7 +84,7 @@ func (a *AuthAdapterBase) DeleteToken(ctx context.Context, token string) error {
 func (a *AuthAdapterBase) VerifyTokenStorage(ctx context.Context, token string) error {
 	res, err := a.GetToken(ctx, token)
 	if err != nil {
-		return fmt.Errorf("error at getting token: %w", err)
+		return err
 	}
 	if res == nil {
 		return fmt.Errorf("token not found")

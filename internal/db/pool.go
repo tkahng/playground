@@ -49,18 +49,18 @@ func getDbPool(ctx context.Context, connString string) (*pgxpool.Pool, error) {
 	// Set up a new pool with the custom types and the config.
 	config, err := pgxpool.ParseConfig(connString)
 	if err != nil {
-		return nil, fmt.Errorf("error at error: %w", err)
+		return nil, err
 	}
 	dbpool, err := pgxpool.NewWithConfig(ctx, config)
 
 	if err != nil {
-		return nil, fmt.Errorf("error at error: %w", err)
+		return nil, err
 	}
 
 	// Collect the custom data types once, store them in memory, and register them for every future connection.
 	customTypes, err := getCustomDataTypes(ctx, dbpool)
 	if err != nil {
-		return nil, fmt.Errorf("error at error: %w", err)
+		return nil, err
 	}
 	config.AfterConnect = func(ctx context.Context, conn *pgx.Conn) error {
 		// var err error
@@ -94,7 +94,7 @@ func getCustomDataTypes(ctx context.Context, pool *pgxpool.Pool) ([]*pgtype.Type
 	conn, err := pool.Acquire(ctx)
 	defer conn.Release()
 	if err != nil {
-		return nil, fmt.Errorf("error at error: %w", err)
+		return nil, err
 	}
 
 	dataTypeNames := []string{

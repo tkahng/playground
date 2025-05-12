@@ -3,7 +3,6 @@ package security
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -49,7 +48,7 @@ func MarshalToken[T any](token jwt.MapClaims, obj T) (T, error) {
 	jsonData := utils.MarshalJSONByte(token)
 	obja := obj
 	if err := json.Unmarshal(jsonData, obja); err != nil {
-		return obja, fmt.Errorf("error at error: %w", err)
+		return obja, err
 	}
 	return obja, nil
 }
@@ -61,7 +60,7 @@ func MarshalToken[T any](token jwt.MapClaims, obj T) (T, error) {
 // 		return []byte(verificationKey), nil
 // 	})
 // 	if err != nil {
-// 		return nil, fmt.Errorf("error at error: %w", err)
+// 		return nil, err
 // 	}
 
 // 	if claims, ok := parsedToken.Claims.(*TokenClaims); ok && parsedToken.Valid {

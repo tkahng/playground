@@ -44,7 +44,7 @@ var upCmd = &cobra.Command{
 		fmt.Println("Migrations:")
 		migrations, err := db.FindMigrations()
 		if err != nil {
-			return fmt.Errorf("error at error: %w", err)
+			return err
 		}
 		for _, m := range migrations {
 			fmt.Println(m.Version, m.FilePath)
@@ -52,7 +52,7 @@ var upCmd = &cobra.Command{
 		fmt.Println("\nApplying...")
 		err = db.CreateAndMigrate()
 		if err != nil {
-			return fmt.Errorf("error at error: %w", err)
+			return err
 		}
 		return nil
 
@@ -73,7 +73,7 @@ var resetCmd = &cobra.Command{
 		fmt.Println("Migrations:")
 		migrations, err := db.FindMigrations()
 		if err != nil {
-			return fmt.Errorf("error at error: %w", err)
+			return err
 		}
 		for _, m := range migrations {
 			fmt.Println(m.Version, m.FilePath)
@@ -81,11 +81,11 @@ var resetCmd = &cobra.Command{
 		fmt.Println("\nApplying...")
 		err = db.Drop()
 		if err != nil {
-			return fmt.Errorf("error at error: %w", err)
+			return err
 		}
 		err = db.CreateAndMigrate()
 		if err != nil {
-			return fmt.Errorf("error at error: %w", err)
+			return err
 		}
 		return nil
 	},
