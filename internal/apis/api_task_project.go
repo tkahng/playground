@@ -7,7 +7,6 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/core"
-	"github.com/tkahng/authgo/internal/db"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
@@ -77,7 +76,7 @@ func (api *Api) TaskProjectCreate(ctx context.Context, input *struct {
 		return nil, huma.Error401Unauthorized("Unauthorized")
 	}
 	db := api.app.Db()
-	taskProject, err := createTaskProjectWithTasks(ctx, db, userInfo.User.ID, input.Body)
+	taskProject, err := queries.CreateTaskProjectWithTasks(ctx, db, userInfo.User.ID, &input.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -86,14 +85,6 @@ func (api *Api) TaskProjectCreate(ctx context.Context, input *struct {
 	}{
 		Body: shared.CrudToProject(taskProject),
 	}, nil
-}
-
-func createTaskProjectWithTasks(ctx context.Context, db db.Dbx, userId uuid.UUID, input shared.CreateTaskProjectWithTasksDTO) (*models.TaskProject, error) {
-	taskProject, err := queries.CreateTaskProjectWithTasks(ctx, db, userId, &input)
-	if err != nil {
-		return nil, err
-	}
-	return taskProject, nil
 }
 
 type TaskProjectCreateWithAiDto struct {
@@ -130,7 +121,7 @@ func (api *Api) TaskProjectCreateWithAi(ctx context.Context, input *TaskProjectC
 			}
 		}),
 	}
-	taskProject, err := createTaskProjectWithTasks(ctx, db, userInfo.User.ID, args)
+	taskProject, err := queries.CreateTaskProjectWithTasks(ctx, db, userInfo.User.ID, &args)
 	if err != nil {
 		return nil, err
 	}

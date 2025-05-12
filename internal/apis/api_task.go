@@ -2,7 +2,6 @@ package apis
 
 import (
 	"context"
-	"net/http"
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
@@ -46,21 +45,6 @@ type TaskResposne struct {
 	Body *shared.TaskWithSubtask
 }
 
-func (api *Api) TaskUpdateOperation(path string) huma.Operation {
-	return huma.Operation{
-		OperationID: "task-update",
-		Method:      http.MethodPut,
-		Path:        path,
-		Summary:     "Task update",
-		Description: "Update a task",
-		Tags:        []string{"Task"},
-		Errors:      []int{http.StatusNotFound},
-		Security: []map[string][]string{
-			{shared.BearerAuthSecurityKey: {}},
-		},
-	}
-}
-
 func (api *Api) TaskUpdate(ctx context.Context, input *shared.UpdateTaskDTO) (*struct{}, error) {
 	db := api.app.Db()
 	id, err := uuid.Parse(input.TaskID)
@@ -73,21 +57,6 @@ func (api *Api) TaskUpdate(ctx context.Context, input *shared.UpdateTaskDTO) (*s
 	}
 	return nil, nil
 }
-
-// func (api *Api) UpdateTaskPositionOperation(path string) huma.Operation {
-// 	return huma.Operation{
-// 		OperationID: "update-task-position",
-// 		Method:      http.MethodPut,
-// 		Path:        path,
-// 		Summary:     "Update task position",
-// 		Description: "Update task position",
-// 		Tags:        []string{"Task"},
-// 		Errors:      []int{http.StatusNotFound},
-// 		Security: []map[string][]string{
-// 			{shared.BearerAuthSecurityKey: {}},
-// 		},
-// 	}
-// }
 
 // func (api *Api) UpdateTaskPosition(ctx context.Context, input *shared.TaskPositionInput) (*struct{}, error) {
 // 	if input == nil {
@@ -105,21 +74,6 @@ func (api *Api) TaskUpdate(ctx context.Context, input *shared.UpdateTaskDTO) (*s
 // 	return nil, nil
 // }
 
-func (api *Api) UpdateTaskPositionStatusOperation(path string) huma.Operation {
-	return huma.Operation{
-		OperationID: "update-task-position-status",
-		Method:      http.MethodPut,
-		Path:        path,
-		Summary:     "Update task position and status",
-		Description: "Update task position and status",
-		Tags:        []string{"Task"},
-		Errors:      []int{http.StatusNotFound},
-		Security: []map[string][]string{
-			{shared.BearerAuthSecurityKey: {}},
-		},
-	}
-}
-
 func (api *Api) UpdateTaskPositionStatus(ctx context.Context, input *shared.TaskPositionStatusInput) (*struct{}, error) {
 	if input == nil {
 		return nil, huma.Error400BadRequest("Invalid input")
@@ -134,21 +88,6 @@ func (api *Api) UpdateTaskPositionStatus(ctx context.Context, input *shared.Task
 		return nil, err
 	}
 	return nil, nil
-}
-
-func (api *Api) TaskDeleteOperation(path string) huma.Operation {
-	return huma.Operation{
-		OperationID: "task-delete",
-		Method:      http.MethodDelete,
-		Path:        path,
-		Summary:     "Task delete",
-		Description: "Delete a task",
-		Tags:        []string{"Task"},
-		Errors:      []int{http.StatusNotFound},
-		Security: []map[string][]string{
-			{shared.BearerAuthSecurityKey: {}},
-		},
-	}
 }
 
 func (api *Api) TaskDelete(ctx context.Context, input *struct {
@@ -168,21 +107,6 @@ func (api *Api) TaskDelete(ctx context.Context, input *struct {
 		return nil, err
 	}
 	return nil, nil
-}
-
-func (api *Api) TaskGetOperation(path string) huma.Operation {
-	return huma.Operation{
-		OperationID: "task-get",
-		Method:      http.MethodGet,
-		Path:        path,
-		Summary:     "Task get",
-		Description: "Get a task",
-		Tags:        []string{"Task"},
-		Errors:      []int{http.StatusNotFound},
-		Security: []map[string][]string{
-			{shared.BearerAuthSecurityKey: {}},
-		},
-	}
 }
 
 func (api *Api) TaskGet(ctx context.Context, input *struct {

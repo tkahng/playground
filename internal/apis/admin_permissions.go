@@ -3,7 +3,6 @@ package apis
 import (
 	"context"
 	"fmt"
-	"net/http"
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
@@ -12,21 +11,6 @@ import (
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 )
-
-func (api *Api) AdminUserPermissionsDeleteOperation(path string) huma.Operation {
-	return huma.Operation{
-		OperationID: "admin-user-permissions-delete",
-		Method:      http.MethodDelete,
-		Path:        path,
-		Summary:     "Delete user permission",
-		Description: "Delete user permission",
-		Tags:        []string{"Admin", "Permissions", "User"},
-		Errors:      []int{http.StatusNotFound},
-		Security: []map[string][]string{
-			{shared.BearerAuthSecurityKey: {}},
-		},
-	}
-}
 
 func (api *Api) AdminUserPermissionsDelete(ctx context.Context, input *struct {
 	UserId       string `path:"user-id" format:"uuid" required:"true"`
@@ -73,21 +57,6 @@ func (api *Api) AdminUserPermissionsDelete(ctx context.Context, input *struct {
 	return nil, nil
 }
 
-func (api *Api) AdminUserPermissionsCreateOperation(path string) huma.Operation {
-	return huma.Operation{
-		OperationID: "admin-user-permissions-create",
-		Method:      http.MethodPost,
-		Path:        path,
-		Summary:     "Create user permission",
-		Description: "Create user permission",
-		Tags:        []string{"Admin", "Permissions", "User"},
-		Errors:      []int{http.StatusNotFound},
-		Security: []map[string][]string{
-			{shared.BearerAuthSecurityKey: {}},
-		},
-	}
-}
-
 func (api *Api) AdminUserPermissionsCreate(ctx context.Context, input *struct {
 	UserId string `path:"user-id" format:"uuid" required:"true"`
 	Body   struct {
@@ -121,21 +90,6 @@ func (api *Api) AdminUserPermissionsCreate(ctx context.Context, input *struct {
 		return nil, err
 	}
 	return nil, nil
-}
-
-func (api *Api) AdminUserPermissionSourceListOperation(path string) huma.Operation {
-	return huma.Operation{
-		OperationID: "admin-user-permission-sources",
-		Method:      http.MethodGet,
-		Path:        path,
-		Summary:     "Admin user permission sources",
-		Description: "List of permission sources",
-		Tags:        []string{"Admin", "Permissions", "User"},
-		Errors:      []int{http.StatusNotFound},
-		Security: []map[string][]string{
-			{shared.BearerAuthSecurityKey: {}},
-		},
-	}
 }
 
 func (api *Api) AdminUserPermissionSourceList(ctx context.Context, input *struct {
@@ -178,21 +132,6 @@ func (api *Api) AdminUserPermissionSourceList(ctx context.Context, input *struct
 	}, nil
 }
 
-func (api *Api) AdminPermissionsListOperation(path string) huma.Operation {
-	return huma.Operation{
-		OperationID: "admin-permissions",
-		Method:      http.MethodGet,
-		Path:        path,
-		Summary:     "Admin permissions",
-		Description: "List of permissions",
-		Tags:        []string{"Admin", "Permissions"},
-		Errors:      []int{http.StatusNotFound},
-		Security: []map[string][]string{
-			{shared.BearerAuthSecurityKey: {}},
-		},
-	}
-}
-
 func (api *Api) AdminPermissionsList(ctx context.Context, input *struct {
 	shared.PermissionsListParams
 }) (*shared.PaginatedOutput[*shared.Permission], error) {
@@ -215,21 +154,6 @@ func (api *Api) AdminPermissionsList(ctx context.Context, input *struct {
 		},
 	}, nil
 
-}
-
-func (api *Api) AdminPermissionsCreateOperation(path string) huma.Operation {
-	return huma.Operation{
-		OperationID: "admin-permissions-create",
-		Method:      http.MethodPost,
-		Path:        path,
-		Summary:     "Create permission",
-		Description: "Create permission",
-		Tags:        []string{"Admin", "Permissions"},
-		Errors:      []int{http.StatusNotFound},
-		Security: []map[string][]string{
-			{shared.BearerAuthSecurityKey: {}},
-		},
-	}
 }
 
 type PermissionCreateInput struct {
@@ -272,21 +196,6 @@ func (api *Api) AdminPermissionsCreate(ctx context.Context, input *struct {
 	}, nil
 }
 
-func (api *Api) AdminPermissionsDeleteOperation(path string) huma.Operation {
-	return huma.Operation{
-		OperationID: "admin-permissions-delete",
-		Method:      http.MethodDelete,
-		Path:        path,
-		Summary:     "Delete permission",
-		Description: "Delete permission",
-		Tags:        []string{"Admin", "Permissions"},
-		Errors:      []int{http.StatusNotFound},
-		Security: []map[string][]string{
-			{shared.BearerAuthSecurityKey: {}},
-		},
-	}
-}
-
 func (api *Api) AdminPermissionsDelete(ctx context.Context, input *struct {
 	ID string `path:"id" format:"uuid" required:"true"`
 }) (*struct {
@@ -314,21 +223,6 @@ func (api *Api) AdminPermissionsDelete(ctx context.Context, input *struct {
 		return nil, err
 	}
 	return nil, nil
-}
-
-func (api *Api) AdminPermissionsUpdateOperation(path string) huma.Operation {
-	return huma.Operation{
-		OperationID: "admin-permissions-update",
-		Method:      http.MethodPut,
-		Path:        path,
-		Summary:     "Update permission",
-		Description: "Update permission",
-		Tags:        []string{"Admin", "Permissions"},
-		Errors:      []int{http.StatusNotFound},
-		Security: []map[string][]string{
-			{shared.BearerAuthSecurityKey: {}},
-		},
-	}
 }
 
 func (api *Api) AdminPermissionsUpdate(ctx context.Context, input *struct {
@@ -366,21 +260,6 @@ func (api *Api) AdminPermissionsUpdate(ctx context.Context, input *struct {
 	return &struct{ Body shared.Permission }{
 		Body: *shared.FromCrudPermission(permission),
 	}, nil
-}
-
-func (api *Api) AdminPermissionsGetOperation(path string) huma.Operation {
-	return huma.Operation{
-		OperationID: "admin-permissions-get",
-		Method:      http.MethodGet,
-		Path:        path,
-		Summary:     "Get permission",
-		Description: "Get permission",
-		Tags:        []string{"Admin", "Permissions"},
-		Errors:      []int{http.StatusNotFound},
-		Security: []map[string][]string{
-			{shared.BearerAuthSecurityKey: {}},
-		},
-	}
 }
 
 func (api *Api) AdminPermissionsGet(ctx context.Context, input *struct {

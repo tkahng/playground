@@ -24,9 +24,6 @@ func FindCustomerByStripeId(ctx context.Context, dbx db.Dbx, stripeId string) (*
 			},
 		},
 	)
-	// data, err := crudModels.StripeCustomers.Query(
-	// 	models.SelectWhere.StripeCustomers.StripeID.EQ(stripeId),
-	// ).One(ctx, dbx)
 	return OptionalRow(data, err)
 }
 
@@ -44,9 +41,6 @@ func FindCustomerByUserId(ctx context.Context, dbx db.Dbx, userId uuid.UUID) (*m
 }
 
 func FindProductByStripeId(ctx context.Context, dbx db.Dbx, stripeId string) (*models.StripeProduct, error) {
-	// data, err := models.StripeProducts.Query(
-	// 	models.SelectWhere.StripeProducts.ID.EQ(stripeId),
-	// ).One(ctx, dbx)
 	data, err := repository.StripeProduct.GetOne(
 		ctx,
 		dbx,
@@ -60,17 +54,6 @@ func FindProductByStripeId(ctx context.Context, dbx db.Dbx, stripeId string) (*m
 }
 
 func UpsertCustomerStripeId(ctx context.Context, dbx db.Dbx, userId uuid.UUID, stripeCustomerId string) error {
-	// _, err := models.StripeCustomers.Insert(
-	// 	&models.StripeCustomerSetter{
-	// 		ID:       omit.From(userId),
-	// 		StripeID: omit.From(stripeCustomerId),
-	// 	},
-	// 	im.OnConflict("id").DoUpdate(
-	// 		im.SetCol("stripe_id").To(
-	// 			psql.Raw("EXCLUDED.stripe_id"),
-	// 		),
-	// 	),
-	// ).Exec(ctx, dbx)
 	q := squirrel.
 		Insert("stripe_customers").
 		Columns("id", "stripe_id").
@@ -80,31 +63,32 @@ func UpsertCustomerStripeId(ctx context.Context, dbx db.Dbx, userId uuid.UUID, s
 }
 
 func UpsertProduct(ctx context.Context, dbx db.Dbx, product *models.StripeProduct) error {
-	// _, err := models.StripeProducts.Insert(
-	// 	product,
-	// 	im.OnConflict("id").DoUpdate(
-	// 		im.SetCol("active").To(
-	// 			psql.Raw("EXCLUDED.active"),
-	// 		),
-	// 		im.SetCol("name").To(
-	// 			psql.Raw("EXCLUDED.name"),
-	// 		),
-	// 		im.SetCol("description").To(
-	// 			psql.Raw("EXCLUDED.description"),
-	// 		),
-	// 		im.SetCol("image").To(
-	// 			psql.Raw("EXCLUDED.image"),
-	// 		),
-	// 		im.SetCol("metadata").To(
-	// 			psql.Raw("EXCLUDED.metadata"),
-	// 		),
-	// 	),
-	// ).Exec(ctx, dbx)
 	q := squirrel.
 		Insert("stripe_products").
-		Columns("id", "active", "name", "description", "image", "metadata").
-		Values(product.ID, product.Active, product.Name, product.Description, product.Image, product.Metadata).
-		Suffix(`ON CONFLICT (id) DO UPDATE SET active = EXCLUDED.active, name = EXCLUDED.name, description = EXCLUDED.description, image = EXCLUDED.image, metadata = EXCLUDED.metadata`)
+		Columns(
+			"id",
+			"active",
+			"name",
+			"description",
+			"image",
+			"metadata",
+		).
+		Values(
+			product.ID,
+			product.Active,
+			product.Name,
+			product.Description,
+			product.Image,
+			product.Metadata,
+		).
+		Suffix(`ON CONFLICT (id) DO UPDATE SET 
+						active = EXCLUDED.active, 
+						name = EXCLUDED.name, 
+						description = EXCLUDED.description, 
+						image = EXCLUDED.image, 
+						metadata = EXCLUDED.metadata
+		`,
+		)
 	return ExecWithBuilder(ctx, dbx, q.PlaceholderFormat(squirrel.Dollar))
 }
 
@@ -128,55 +112,47 @@ func UpsertProductFromStripe(ctx context.Context, dbx db.Dbx, product *stripe.Pr
 }
 
 func UpsertPrice(ctx context.Context, dbx db.Dbx, price *models.StripePrice) error {
-	// _, err := models.StripePrices.Insert(
-	// 	price,
-	// 	im.OnConflict("id").DoUpdate(
-	// 		im.SetCol("product_id").To(
-	// 			psql.Raw("EXCLUDED.product_id"),
-	// 		),
-	// 		im.SetCol("lookup_key").To(
-	// 			psql.Raw("EXCLUDED.lookup_key"),
-	// 		),
-	// 		im.SetCol("active").To(
-	// 			psql.Raw("EXCLUDED.active"),
-	// 		),
-	// 		im.SetCol("unit_amount").To(
-	// 			psql.Raw("EXCLUDED.unit_amount"),
-	// 		),
-	// 		im.SetCol("currency").To(
-	// 			psql.Raw("EXCLUDED.currency"),
-	// 		),
-	// 		im.SetCol("type").To(
-	// 			psql.Raw("EXCLUDED.type"),
-	// 		),
-	// 		im.SetCol("interval").To(
-	// 			psql.Raw("EXCLUDED.interval"),
-	// 		),
-	// 		im.SetCol("interval_count").To(
-	// 			psql.Raw("EXCLUDED.interval_count"),
-	// 		),
-	// 		im.SetCol("trial_period_days").To(
-	// 			psql.Raw("EXCLUDED.trial_period_days"),
-	// 		),
-	// 		im.SetCol("metadata").To(
-	// 			psql.Raw("EXCLUDED.metadata"),
-	// 		),
-	// 	),
-	// ).Exec(ctx, dbx)
 	q := squirrel.
 		Insert("stripe_prices").
-		Columns("id", "product_id", "lookup_key", "active", "unit_amount", "currency", "type", "interval", "interval_count", "trial_period_days", "metadata").
-		Values(price.ID, price.ProductID, price.LookupKey, price.Active, price.UnitAmount, price.Currency, price.Type, price.Interval, price.IntervalCount, price.TrialPeriodDays, price.Metadata).
-		Suffix(`ON CONFLICT(id) DO UPDATE SET product_id = EXCLUDED.product_id,
-        lookup_key = EXCLUDED.lookup_key,
-        active = EXCLUDED.active,
-        unit_amount = EXCLUDED.unit_amount,
-        currency = EXCLUDED.currency,
-        type = EXCLUDED.type,
-        interval = EXCLUDED.interval,
-        interval_count = EXCLUDED.interval_count,
-        trial_period_days = EXCLUDED.trial_period_days,
-        metadata = EXCLUDED.metadata`)
+		Columns(
+			"id",
+			"product_id",
+			"lookup_key",
+			"active",
+			"unit_amount",
+			"currency",
+			"type",
+			"interval",
+			"interval_count",
+			"trial_period_days",
+			"metadata",
+		).
+		Values(
+			price.ID,
+			price.ProductID,
+			price.LookupKey,
+			price.Active,
+			price.UnitAmount,
+			price.Currency,
+			price.Type,
+			price.Interval,
+			price.IntervalCount,
+			price.TrialPeriodDays,
+			price.Metadata,
+		).
+		Suffix(`
+		ON CONFLICT(id) DO UPDATE SET 
+			product_id = EXCLUDED.product_id,
+			lookup_key = EXCLUDED.lookup_key,
+			active = EXCLUDED.active,
+			unit_amount = EXCLUDED.unit_amount,
+			currency = EXCLUDED.currency,
+			type = EXCLUDED.type,
+			interval = EXCLUDED.interval,
+			interval_count = EXCLUDED.interval_count,
+			trial_period_days = EXCLUDED.trial_period_days,
+			metadata = EXCLUDED.metadata
+		`)
 	return ExecWithBuilder(ctx, dbx, q.PlaceholderFormat(squirrel.Dollar))
 }
 
@@ -184,16 +160,7 @@ func UpsertPriceFromStripe(ctx context.Context, dbx db.Dbx, price *stripe.Price)
 	if price == nil {
 		return nil
 	}
-	// param := &models.StripePriceSetter{
-	// 	ID:         omit.From(price.ID),
-	// 	ProductID:  omit.From(price.Product.ID),
-	// 	Active:     omit.From(price.Active),
-	// 	LookupKey:  omitnull.From(price.LookupKey),
-	// 	UnitAmount: omitnull.From(price.UnitAmount),
-	// 	Currency:   omit.From(string(price.Currency)),
-	// 	Type:       omit.From(PriceTypeConvert(price.Type)),
-	// 	Metadata:   omit.From(types.NewJSON(price.Metadata)),
-	// }
+
 	val := &models.StripePrice{
 		ID:         price.ID,
 		ProductID:  price.Product.ID,
@@ -205,61 +172,15 @@ func UpsertPriceFromStripe(ctx context.Context, dbx db.Dbx, price *stripe.Price)
 		Metadata:   price.Metadata,
 	}
 	if price.Recurring != nil {
-		*val.Interval = models.StripePricingPlanInterval(price.Recurring.Interval)
-		*val.IntervalCount = price.Recurring.IntervalCount
-		*val.TrialPeriodDays = price.Recurring.TrialPeriodDays
+		recur := price.Recurring
+		val.Interval = types.Pointer(models.StripePricingPlanInterval(recur.Interval))
+		val.IntervalCount = types.Pointer(recur.IntervalCount)
+		val.TrialPeriodDays = types.Pointer(recur.TrialPeriodDays)
 	}
 	return UpsertPrice(ctx, dbx, val)
 }
 
 func UpsertSubscription(ctx context.Context, dbx db.Dbx, subscription *models.StripeSubscription) error {
-	// _, err := models.StripeSubscriptions.Insert(
-	// 	subscription,
-	// 	im.OnConflict("id").DoUpdate(
-	// im.SetCol("user_id").To(
-	// 	psql.Raw("EXCLUDED.user_id"),
-	// ),
-	// im.SetCol("status").To(
-	// 	psql.Raw("EXCLUDED.status"),
-	// ),
-	// im.SetCol("metadata").To(
-	// 	psql.Raw("EXCLUDED.metadata"),
-	// ),
-	// im.SetCol("price_id").To(
-	// 	psql.Raw("EXCLUDED.price_id"),
-	// ),
-	// im.SetCol("quantity").To(
-	// 	psql.Raw("EXCLUDED.quantity"),
-	// ),
-	// im.SetCol("cancel_at_period_end").To(
-	// 	psql.Raw("EXCLUDED.cancel_at_period_end"),
-	// ),
-	// im.SetCol("created").To(
-	// 	psql.Raw("EXCLUDED.created"),
-	// ),
-	// im.SetCol("current_period_start").To(
-	// 	psql.Raw("EXCLUDED.current_period_start"),
-	// ),
-	// im.SetCol("current_period_end").To(
-	// 	psql.Raw("EXCLUDED.current_period_end"),
-	// ),
-	// im.SetCol("ended_at").To(
-	// 	psql.Raw("EXCLUDED.ended_at"),
-	// ),
-	// im.SetCol("cancel_at").To(
-	// 	psql.Raw("EXCLUDED.cancel_at"),
-	// ),
-	// im.SetCol("canceled_at").To(
-	// 	psql.Raw("EXCLUDED.canceled_at"),
-	// ),
-	// im.SetCol("trial_start").To(
-	// 	psql.Raw("EXCLUDED.trial_start"),
-	// ),
-	// im.SetCol("trial_end").To(
-	// 	psql.Raw("EXCLUDED.trial_end"),
-	// ),
-	// 	),
-	// ).Exec(ctx, dbx)
 	q := squirrel.
 		Insert("stripe_subscriptions").
 		Columns(
@@ -328,21 +249,6 @@ func UpsertSubscriptionFromStripe(ctx context.Context, exec db.Dbx, sub *stripe.
 	}
 	status := models.StripeSubscriptionStatus(sub.Status)
 	err := UpsertSubscription(ctx, exec, &models.StripeSubscription{
-		// ID:                 omit.From(sub.ID),
-		// UserID:             omit.From(userId),
-		// Status:             omit.From(status),
-		// Metadata:           omit.From(types.NewJSON(sub.Metadata)),
-		// PriceID:            omit.From(item.Price.ID),
-		// Quantity:           omit.From(item.Quantity),
-		// CancelAtPeriodEnd:  omit.From(sub.CancelAtPeriodEnd),
-		// Created:            omit.From(Int64ToISODate(sub.Created)),
-		// CurrentPeriodStart: omit.From(Int64ToISODate(item.CurrentPeriodStart)),
-		// CurrentPeriodEnd:   omit.From(Int64ToISODate(item.CurrentPeriodEnd)),
-		// EndedAt:            omitnull.From(Int64ToISODate(sub.EndedAt)),
-		// CancelAt:           omitnull.From(Int64ToISODate(sub.CancelAt)),
-		// CanceledAt:         omitnull.From(Int64ToISODate(sub.CanceledAt)),
-		// TrialStart:         omitnull.From(Int64ToISODate(sub.TrialStart)),
-		// TrialEnd:           omitnull.From(Int64ToISODate(sub.TrialEnd)),
 		ID:                 sub.ID,
 		UserID:             userId,
 		Status:             models.StripeSubscriptionStatus(status),
@@ -367,9 +273,6 @@ func Int64ToISODate(timestamp int64) time.Time {
 }
 
 func FindSubscriptionById(ctx context.Context, dbx db.Dbx, stripeId string) (*models.StripeSubscription, error) {
-	// data, err := models.StripeSubscriptions.Query(
-	// 	models.SelectWhere.StripeSubscriptions.ID.EQ(stripeId),
-	// ).One(ctx, dbx)
 	data, err := repository.StripeSubscription.GetOne(
 		ctx,
 		dbx,
@@ -430,32 +333,18 @@ WHERE ss.id = $1
 )
 
 func FindSubscriptionWithPriceById(ctx context.Context, dbx db.Dbx, stripeId string) (*models.SubscriptionWithPrice, error) {
-	// data, err := models.StripeSubscriptions.Query(
-	// 	models.SelectWhere.StripeSubscriptions.ID.EQ(stripeId),
-	// 	models.PreloadStripeSubscriptionPriceStripePrice(
-	// 		models.PreloadStripePriceProductStripeProduct(),
-	// 	),
-	// ).One(ctx, dbx)
 	data, err := QueryAll[*models.SubscriptionWithPrice](ctx, dbx, GetSubscriptionWithPriceByIdQuery, stripeId)
 	if err != nil {
 		return nil, err
 	}
-	first := ReturnFirst(data)
-	if first == nil {
-		return nil, nil
+	var first *models.SubscriptionWithPrice
+	if len(data) > 0 {
+		first = data[0]
 	}
 	return first, nil
 }
 
 func FindLatestActiveSubscriptionByUserId(ctx context.Context, dbx db.Dbx, userId uuid.UUID) (*models.StripeSubscription, error) {
-	// data, err := models.StripeSubscriptions.Query(
-	// 	models.SelectWhere.StripeSubscriptions.UserID.EQ(userId),
-	// 	models.SelectWhere.StripeSubscriptions.Status.In(
-	// 		models.StripeSubscriptionStatusActive,
-	// 		models.StripeSubscriptionStatusTrialing,
-	// 	),
-	// 	sm.OrderBy(models.StripeSubscriptionColumns.Created).Desc(),
-	// ).One(ctx, dbx)
 	data, err := repository.StripeSubscription.Get(
 		ctx,
 		dbx,
@@ -546,9 +435,6 @@ func FindLatestActiveSubscriptionWithPriceByUserId(ctx context.Context, dbx db.D
 }
 
 func IsFirstSubscription(ctx context.Context, dbx db.Dbx, userId uuid.UUID) (bool, error) {
-	// data, err := models.StripeSubscriptions.Query(
-	// 	models.SelectWhere.StripeSubscriptions.UserID.EQ(userId),
-	// ).Exists(ctx, dbx)
 	data, err := repository.StripeSubscription.Count(
 		ctx,
 		dbx,
@@ -559,14 +445,9 @@ func IsFirstSubscription(ctx context.Context, dbx db.Dbx, userId uuid.UUID) (boo
 		},
 	)
 	return data > 0, err
-	// return OptionalRow(data, err)
 }
 
 func FindValidPriceById(ctx context.Context, dbx db.Dbx, priceId string) (*models.StripePrice, error) {
-	// data, err := models.StripePrices.Query(
-	// 	models.SelectWhere.StripePrices.ID.EQ(priceId),
-	// 	models.SelectWhere.StripePrices.Type.EQ(models.StripePricingTypeRecurring),
-	// ).One(ctx, dbx)
 	data, err := repository.StripePrice.GetOne(
 		ctx,
 		dbx,

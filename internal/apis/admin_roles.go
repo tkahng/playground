@@ -2,7 +2,6 @@ package apis
 
 import (
 	"context"
-	"net/http"
 	"slices"
 
 	"github.com/danielgtaylor/huma/v2"
@@ -13,21 +12,6 @@ import (
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 )
-
-func (api *Api) AdminRolesOperation(path string) huma.Operation {
-	return huma.Operation{
-		OperationID: "admin-roles",
-		Method:      http.MethodGet,
-		Path:        path,
-		Summary:     "Admin roles",
-		Description: "List of roles",
-		Tags:        []string{"Admin", "Roles"},
-		Errors:      []int{http.StatusNotFound},
-		Security: []map[string][]string{
-			{shared.BearerAuthSecurityKey: {}},
-		},
-	}
-}
 
 func (api *Api) AdminRolesList(ctx context.Context, input *struct {
 	shared.RolesListParams
@@ -66,21 +50,6 @@ func (api *Api) AdminRolesList(ctx context.Context, input *struct {
 		},
 	}, nil
 
-}
-
-func (api *Api) AdminRolesCreateOperation(path string) huma.Operation {
-	return huma.Operation{
-		OperationID: "admin-roles-create",
-		Method:      http.MethodPost,
-		Path:        path,
-		Summary:     "Create role",
-		Description: "Create role",
-		Tags:        []string{"Admin", "Roles"},
-		Errors:      []int{http.StatusNotFound},
-		Security: []map[string][]string{
-			{shared.BearerAuthSecurityKey: {}},
-		},
-	}
 }
 
 type RoleCreateInput struct {
@@ -124,21 +93,6 @@ func (api *Api) AdminRolesCreate(ctx context.Context, input *struct {
 	}, nil
 }
 
-func (api *Api) AdminRolesDeleteOperation(path string) huma.Operation {
-	return huma.Operation{
-		OperationID: "admin-roles-delete",
-		Method:      http.MethodDelete,
-		Path:        path,
-		Summary:     "Delete role",
-		Description: "Delete role",
-		Tags:        []string{"Admin", "Roles"},
-		Errors:      []int{http.StatusNotFound},
-		Security: []map[string][]string{
-			{shared.BearerAuthSecurityKey: {}},
-		},
-	}
-}
-
 func (api *Api) AdminRolesDelete(ctx context.Context, input *struct {
 	RoleID string `path:"id" format:"uuid" required:"true"`
 }) (*struct{}, error) {
@@ -169,21 +123,6 @@ func (api *Api) AdminRolesDelete(ctx context.Context, input *struct {
 		return nil, err
 	}
 	return nil, nil
-}
-
-func (api *Api) AdminRolesUpdateOperation(path string) huma.Operation {
-	return huma.Operation{
-		OperationID: "admin-roles-update",
-		Method:      http.MethodPut,
-		Path:        path,
-		Summary:     "Update role",
-		Description: "Update role",
-		Tags:        []string{"Admin", "Roles"},
-		Errors:      []int{http.StatusNotFound},
-		Security: []map[string][]string{
-			{shared.BearerAuthSecurityKey: {}},
-		},
-	}
 }
 
 func (api *Api) AdminRolesUpdate(ctx context.Context, input *struct {
@@ -225,21 +164,6 @@ func (api *Api) AdminRolesUpdate(ctx context.Context, input *struct {
 		Body: shared.FromCrudRole(role),
 	}, nil
 }
-func (api *Api) AdminUserRolesDeleteOperation(path string) huma.Operation {
-	return huma.Operation{
-		OperationID: "admin-user-roles-delete",
-		Method:      http.MethodDelete,
-		Path:        path,
-		Summary:     "Delete user roles",
-		Description: "Delete user roles",
-		Tags:        []string{"Admin", "Roles", "User"},
-		Errors:      []int{http.StatusNotFound},
-		Security: []map[string][]string{
-			{shared.BearerAuthSecurityKey: {}},
-		},
-	}
-}
-
 func (api *Api) AdminUserRolesDelete(ctx context.Context, input *struct {
 	UserID string `path:"user-id" format:"uuid" required:"true"`
 	RoleID string `path:"role-id" format:"uuid" required:"true"`
@@ -295,21 +219,6 @@ func (api *Api) AdminUserRolesDelete(ctx context.Context, input *struct {
 	}
 	return nil, nil
 }
-func (api *Api) AdminUserRolesCreateOperation(path string) huma.Operation {
-	return huma.Operation{
-		OperationID: "admin-create-user-roles",
-		Method:      http.MethodPost,
-		Path:        path,
-		Summary:     "Create user roles",
-		Description: "Create user roles",
-		Tags:        []string{"Admin", "Roles", "User"},
-		Errors:      []int{http.StatusNotFound},
-		Security: []map[string][]string{
-			{shared.BearerAuthSecurityKey: {}},
-		},
-	}
-}
-
 func (api *Api) AdminUserRolesCreate(ctx context.Context, input *struct {
 	UserID string `path:"user-id" format:"uuid" required:"true"`
 	Body   RoleIdsInput
@@ -353,21 +262,6 @@ func (api *Api) AdminUserRolesCreate(ctx context.Context, input *struct {
 		return nil, err
 	}
 	return nil, nil
-}
-
-func (api *Api) AdminUserRolesUpdateOperation(path string) huma.Operation {
-	return huma.Operation{
-		OperationID: "admin-update-user-roles",
-		Method:      http.MethodPut,
-		Path:        path,
-		Summary:     "Update user roles",
-		Description: "Update user roles",
-		Tags:        []string{"Admin", "Roles"},
-		Errors:      []int{http.StatusNotFound},
-		Security: []map[string][]string{
-			{shared.BearerAuthSecurityKey: {}},
-		},
-	}
 }
 
 type RoleIdsInput struct {
@@ -441,21 +335,6 @@ func (api *Api) AdminUserRolesUpdate(ctx context.Context, input *struct {
 	return &output, nil
 }
 
-func (api *Api) AdminRolesUpdatePermissionsOperation(path string) huma.Operation {
-	return huma.Operation{
-		OperationID: "admin-roles-update-permissions",
-		Method:      http.MethodPut,
-		Path:        path,
-		Summary:     "Update role permissions",
-		Description: "Update role permissions",
-		Tags:        []string{"Admin", "Roles"},
-		Errors:      []int{http.StatusNotFound},
-		Security: []map[string][]string{
-			{shared.BearerAuthSecurityKey: {}},
-		},
-	}
-}
-
 type RolePermissionsUpdateInput struct {
 	PermissionIDs []string `json:"permission_ids" minimum:"0" maximum:"100" format:"uuid" required:"true"`
 }
@@ -503,21 +382,6 @@ func (api *Api) AdminRolesUpdatePermissions(ctx context.Context, input *struct {
 	}, nil
 }
 
-func (api *Api) AdminRolesGetOperation(path string) huma.Operation {
-	return huma.Operation{
-		OperationID: "admin-roles-get",
-		Method:      http.MethodGet,
-		Path:        path,
-		Summary:     "Get role",
-		Description: "Get role",
-		Tags:        []string{"Admin", "Roles"},
-		Errors:      []int{http.StatusNotFound},
-		Security: []map[string][]string{
-			{shared.BearerAuthSecurityKey: {}},
-		},
-	}
-}
-
 func (api *Api) AdminRolesGet(ctx context.Context, input *struct {
 	RoleID string   `path:"id" format:"uuid" required:"true"`
 	Expand []string `query:"expand" required:"false" minimum:"1" maximum:"100" enum:"permissions"`
@@ -556,21 +420,6 @@ func (api *Api) AdminRolesGet(ctx context.Context, input *struct {
 	}, nil
 }
 
-func (api *Api) AdminRolesCreatePermissionsOperation(path string) huma.Operation {
-	return huma.Operation{
-		OperationID: "admin-roles-create-permissions",
-		Method:      http.MethodPost,
-		Path:        path,
-		Summary:     "Create role permissions",
-		Description: "Create role permissions",
-		Tags:        []string{"Admin", "Roles", "Permissions"},
-		Errors:      []int{http.StatusNotFound},
-		Security: []map[string][]string{
-			{shared.BearerAuthSecurityKey: {}},
-		},
-	}
-}
-
 func (api *Api) AdminRolesCreatePermissions(ctx context.Context, input *struct {
 	RoleID string `path:"id" format:"uuid" required:"true"`
 	Body   RolePermissionsUpdateInput
@@ -600,21 +449,6 @@ func (api *Api) AdminRolesCreatePermissions(ctx context.Context, input *struct {
 		return nil, err
 	}
 	return nil, nil
-}
-
-func (api *Api) AdminRolesDeletePermissionsOperation(path string) huma.Operation {
-	return huma.Operation{
-		OperationID: "admin-roles-delete-permissions",
-		Method:      http.MethodDelete,
-		Path:        path,
-		Summary:     "Delete role permissions",
-		Description: "Delete role permissions",
-		Tags:        []string{"Admin", "Roles", "Permissions"},
-		Errors:      []int{http.StatusNotFound},
-		Security: []map[string][]string{
-			{shared.BearerAuthSecurityKey: {}},
-		},
-	}
 }
 
 func (api *Api) AdminRolesDeletePermissions(ctx context.Context, input *struct {

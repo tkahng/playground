@@ -2,7 +2,6 @@ package apis
 
 import (
 	"context"
-	"net/http"
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/tkahng/authgo/internal/core"
@@ -21,21 +20,6 @@ type StripeUrlOutput struct {
 	// HxResponseHeaders
 	Body struct {
 		Url string `json:"url"`
-	}
-}
-
-func (a *Api) StripeCheckoutSessionOperation(path string) huma.Operation {
-	return huma.Operation{
-		OperationID: "create-checkout-session",
-		Method:      http.MethodPost,
-		Path:        path,
-		Summary:     "create checkout session",
-		Description: "create checkout session",
-		Tags:        []string{"Payment", "Stripe", "Checkout Session"},
-		Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
-		Security: []map[string][]string{
-			{shared.BearerAuthSecurityKey: {}},
-		},
 	}
 }
 
@@ -67,21 +51,6 @@ type StripeBillingPortalInput struct {
 	// Body StripePaymentPayload
 }
 
-func (a *Api) StripeBillingPortalOperation(path string) huma.Operation {
-	return huma.Operation{
-		OperationID: "stripe-billing-portal",
-		Method:      http.MethodPost,
-		Path:        path,
-		Summary:     "billing-portal",
-		Description: "billing-portals",
-		Tags:        []string{"Payment", "Billing Portal", "Stripe"},
-		Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
-		Security: []map[string][]string{
-			{shared.BearerAuthSecurityKey: {}},
-		},
-	}
-}
-
 func (a *Api) StripeBillingPortal(ctx context.Context, input *StripeBillingPortalInput) (*StripeUrlOutput, error) {
 	db := a.app.Db()
 	info := core.GetContextUserInfo(ctx)
@@ -110,21 +79,6 @@ type CheckoutSession struct {
 
 type CheckoutSessionOutput struct {
 	Body shared.SubscriptionWithPrice
-}
-
-func (a *Api) StripeCheckoutSessionGetOperation(path string) huma.Operation {
-	return huma.Operation{
-		OperationID: "get-checkout-session",
-		Method:      http.MethodGet,
-		Path:        path,
-		Summary:     "get checkout session",
-		Description: "get checkout session",
-		Tags:        []string{"Payment", "Stripe", "Checkout Session"},
-		Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
-		Security: []map[string][]string{
-			{shared.BearerAuthSecurityKey: {}},
-		},
-	}
 }
 
 type StripeCheckoutSessionInput struct {

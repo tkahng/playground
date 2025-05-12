@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"os"
 
 	"github.com/danielgtaylor/huma/v2"
@@ -17,18 +16,6 @@ import (
 type StripeWebhookInput struct {
 	Signature string `header:"Stripe-Signature"`
 	RawBody   []byte
-}
-
-func (api *Api) StripeWebhookOperation(path string) huma.Operation {
-	return huma.Operation{
-		OperationID: "stripe-webhook",
-		Method:      http.MethodPost,
-		Path:        path,
-		Summary:     "webhook",
-		Description: "Webhook for stripe",
-		Tags:        []string{"Payment", "Stripe", "Webhook"},
-		Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
-	}
 }
 
 func (api *Api) StripeWebhook(ctx context.Context, input *StripeWebhookInput) (*struct{}, error) {

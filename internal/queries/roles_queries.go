@@ -2,11 +2,9 @@ package queries
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"time"
 
-	"github.com/Masterminds/squirrel"
 	"github.com/aarondl/opt/null"
 	"github.com/google/uuid"
 	"github.com/stephenafamo/scan"
@@ -132,7 +130,7 @@ func GetUserRoles(ctx context.Context, db db.Dbx, userIds ...uuid.UUID) ([][]*cr
 
 const (
 	GetUserPermissionsQuery = `
-	SELECT rp.user_id as key,
+SELECT rp.user_id as key,
         COALESCE(
                 json_agg(
                         jsonb_build_object(
@@ -153,15 +151,12 @@ const (
                 '[]'
         ) AS data
 FROM public.user_permissions rp
-        LEFT JOIN public.permission p ON p.id = rp.permission_id
-        WHERE rp.user_id = ANY (
-                $1::uuid []
-        )
+        LEFT JOIN public.permissions p ON p.id = rp.permission_id
+WHERE rp.user_id = ANY ($1::uuid [])
 GROUP BY rp.user_id;`
 )
 
 func GetUserPermissions(ctx context.Context, db db.Dbx, userIds ...uuid.UUID) ([][]*crudModels.Permission, error) {
-	// var results []JoinedResult[*crudModels.Permission, uuid.UUID]
 	ids := []string{}
 	for _, id := range userIds {
 		ids = append(ids, id.String())
@@ -170,7 +165,7 @@ func GetUserPermissions(ctx context.Context, db db.Dbx, userIds ...uuid.UUID) ([
 		ctx,
 		db,
 		scan.StructMapper[shared.JoinedResult[*crudModels.Permission, uuid.UUID]](),
-		GetUserRolesQuery,
+		GetUserPermissionsQuery,
 		userIds,
 	)
 	if err != nil {
@@ -194,18 +189,13 @@ func CreateRolePermissions(ctx context.Context, db db.Dbx, roleId uuid.UUID, per
 			PermissionID: perm,
 		})
 	}
-	q := squirrel.Insert("role_permissions").Columns("role_id", "permission_id")
-	for _, perm := range permissions {
-		q = q.Values(perm.RoleID, perm.PermissionID)
-	}
-	q = q.Suffix("RETURNING *")
-	// sql, args, err := q.PlaceholderFormat(squirrel.Dollar).ToSql()
-	// if err != nil {
-	// 	return err
+	// q := squirrel.Insert("role_permissions").Columns("role_id", "permission_id")
+	// for _, perm := range permissions {
+	// 	q = q.Values(perm.RoleID, perm.PermissionID)
 	// }
-	// fmt.Println(sql, args)
-	// _, err = pgxscan.All(ctx, db, scan.StructMapper[crudModels.RolePermission](), sql, args...)
-	_, err := QueryWithBuilder[crudModels.UserPermission](ctx, db, q.PlaceholderFormat(squirrel.Dollar))
+	// q = q.Suffix("RETURNING *")
+	// _, err := QueryWithBuilder[crudModels.RolePermission](ctx, db, q.PlaceholderFormat(squirrel.Dollar))
+	_, err := repository.RolePermission.Post(ctx, db, permissions)
 	if err != nil {
 		return err
 	}
@@ -220,17 +210,52 @@ func CreateProductRoles(ctx context.Context, db db.Dbx, productId string, roleId
 			RoleID:    role,
 		})
 	}
-	q := squirrel.Insert("product_roles").Columns("product_id", "role_id")
-	for _, perm := range roles {
-		q = q.Values(perm.ProductID, perm.RoleID)
-	}
-	q = q.Suffix("RETURNING *")
-	sql, args, err := q.PlaceholderFormat(squirrel.Dollar).ToSql()
+	_, err := repository.ProductRole.Post(ctx, db, roles)
 	if err != nil {
 		return err
 	}
-	fmt.Println(sql, args)
-	_, err = pgxscan.All(ctx, db, scan.StructMapper[crudModels.ProductRole](), sql, args...)
+	return nil
+	// q := squirrel.Insert("product_roles").Columns("product_id", "role_id")
+	// for _, perm := range roles {
+	// 	q = q.Values(perm.ProductID, perm.RoleID)
+	// }
+	// q = q.Suffix("RETURNING *")
+	// sql, args, err := q.PlaceholderFormat(squirrel.Dollar).ToSql()
+	// if err != nil {
+	// 	return err
+	// }
+	// fmt.Println(sql, args)
+	// _, err = pgxscan.All(ctx, db, scan.StructMapper[crudModels.ProductRole](), sql, args...)
+	// if err != nil {
+	// 	return err
+	// }
+	// return nil
+}
+
+func CreateProductPermissions(ctx context.Context, db db.Dbx, productId string, permissionIds ...uuid.UUID) error {
+	var permissions []crudModels.ProductPermission
+	for _, permissionId := range permissionIds {
+		permissions = append(permissions, crudModels.ProductPermission{
+			ProductID:    productId,
+			PermissionID: permissionId,
+		})
+	}
+	_, err := repository.ProductPermission.Post(
+		ctx,
+		db,
+		permissions,
+	)
+	// q := squirrel.Insert("product_permissions").Columns("product_id", "permission_id")
+	// for _, perm := range permissions {
+	// 	q = q.Values(perm.ProductID, perm.PermissionID)
+	// }
+	// q = q.Suffix("RETURNING *")
+	// sql, args, err := q.PlaceholderFormat(squirrel.Dollar).ToSql()
+	// if err != nil {
+	// 	return err
+	// }
+	// fmt.Println(sql, args)
+	// _, err = pgxscan.All(ctx, db, scan.StructMapper[crudModels.ProductPermission](), sql, args...)
 	if err != nil {
 		return err
 	}
@@ -289,13 +314,6 @@ func CreateRole(ctx context.Context, dbx db.Dbx, role *CreateRoleDto) (*crudMode
 		Name:        role.Name,
 		Description: role.Description,
 	})
-	// data, err := models.Roles.Insert(
-	// 	&models.RoleSetter{
-	// 		Name:        omit.From(role.Name),
-	// 		Description: omitnull.FromPtr(role.Description),
-	// 	},
-	// 	im.Returning("*"),
-	// ).One(ctx, dbx)
 	return data, err
 }
 
@@ -310,7 +328,7 @@ func UpdateRole(ctx context.Context, dbx db.Dbx, id uuid.UUID, roledto *UpdateRo
 		dbx,
 		&map[string]any{
 			"id": map[string]any{
-				"_eq": id,
+				"_eq": id.String(),
 			},
 		},
 	)
@@ -323,15 +341,6 @@ func UpdateRole(ctx context.Context, dbx db.Dbx, id uuid.UUID, roledto *UpdateRo
 	role.Name = roledto.Name
 	role.Description = roledto.Description
 	_, err = repository.Role.PutOne(ctx, dbx, role)
-
-	// q := models.Roles.Update(
-	// 	models.UpdateWhere.Roles.ID.EQ(id),
-	// 	models.RoleSetter{
-	// 		Name:        omit.From(roledto.Name),
-	// 		Description: omitnull.FromPtr(roledto.Description),
-	// 	}.UpdateMod(),
-	// )
-	// _, err := q.Exec(ctx, dbx)
 	if err != nil {
 		return err
 	}
@@ -363,14 +372,6 @@ func UpdatePermission(ctx context.Context, dbx db.Dbx, id uuid.UUID, roledto *Up
 	permission.Description = roledto.Description
 	_, err = repository.Permission.PutOne(ctx, dbx, permission)
 
-	// q := models.Roles.Update(
-	// 	models.UpdateWhere.Roles.ID.EQ(id),
-	// 	models.RoleSetter{
-	// 		Name:        omit.From(roledto.Name),
-	// 		Description: omitnull.FromPtr(roledto.Description),
-	// 	}.UpdateMod(),
-	// )
-	// _, err := q.Exec(ctx, dbx)
 	if err != nil {
 		return err
 	}
@@ -378,23 +379,20 @@ func UpdatePermission(ctx context.Context, dbx db.Dbx, id uuid.UUID, roledto *Up
 }
 
 func DeleteRole(ctx context.Context, dbx db.Dbx, id uuid.UUID) error {
-	_, err := repository.Role.DeleteReturn(
+	_, err := repository.Role.Delete(
 		ctx,
 		dbx,
 		&map[string]any{
 			"id": map[string]any{
-				"_eq": id,
+				"_eq": id.String(),
 			},
 		},
 	)
-	// _, err := models.Roles.Delete(
-	// 	models.DeleteWhere.Roles.ID.EQ(id),
-	// ).Exec(ctx, dbx)
 	return err
 }
 
 func DeleteRolePermissions(ctx context.Context, dbx db.Dbx, id uuid.UUID) error {
-	_, err := repository.RolePermission.DeleteReturn(
+	_, err := repository.RolePermission.Delete(
 		ctx,
 		dbx,
 		&map[string]any{
@@ -438,17 +436,13 @@ func CreatePermission(ctx context.Context, dbx db.Dbx, permission *CreatePermiss
 		Name:        permission.Name,
 		Description: permission.Description,
 	})
-	// data, err := models.Permissions.Insert(
-	// 	&models.PermissionSetter{
-	// 		Name:        omit.From(permission.Name),
-	// 		Description: omitnull.FromPtr(permission.Description),
-	// 	},
-	// 	im.Returning("*"),
-	// ).One(ctx, dbx)
 	return data, err
 }
 
 func FindPermissionsByIds(ctx context.Context, dbx db.Dbx, params []uuid.UUID) ([]*crudModels.Permission, error) {
+	if len(params) == 0 {
+		return nil, nil
+	}
 	newIds := make([]string, len(params))
 	for i, id := range params {
 		newIds[i] = id.String()
@@ -467,11 +461,10 @@ func FindPermissionsByIds(ctx context.Context, dbx db.Dbx, params []uuid.UUID) (
 		nil,
 		nil,
 	)
-	// return models.Permissions.Query(models.SelectWhere.Permissions.ID.In(params...)).All(ctx, dbx)
 }
 
 func DeletePermission(ctx context.Context, dbx db.Dbx, id uuid.UUID) error {
-	_, err := repository.Permission.DeleteReturn(
+	_, err := repository.Permission.Delete(
 		ctx,
 		dbx,
 		&map[string]any{
@@ -480,9 +473,6 @@ func DeletePermission(ctx context.Context, dbx db.Dbx, id uuid.UUID) error {
 			},
 		},
 	)
-	// _, err := models.Permissions.Delete(
-	// 	models.DeleteWhere.Permissions.ID.EQ(id),
-	// ).Exec(ctx, dbx)
 	return err
 }
 
@@ -496,7 +486,6 @@ func FindPermissionById(ctx context.Context, dbx db.Dbx, id uuid.UUID) (*crudMod
 			},
 		},
 	)
-	// data, err := models.Permissions.Query(models.SelectWhere.Permissions.ID.EQ(id)).One(ctx, dbx)
 	return OptionalRow(data, err)
 }
 
@@ -506,6 +495,7 @@ WITH -- Get permissions assigned through roles
 role_based_permissions AS (
     SELECT p.*,
         rp.role_id,
+		NULL::text as product_id,
         NULL::uuid AS direct_assignment -- Null indicates not directly assigned
     FROM public.user_roles ur
         JOIN public.role_permissions rp ON ur.role_id = rp.role_id
@@ -516,11 +506,26 @@ role_based_permissions AS (
 direct_permissions AS (
     SELECT p.*,
         NULL::uuid AS role_id,
+		NULL::text as product_id,
         -- Null indicates not from a role
         up.user_id AS direct_assignment
     FROM public.user_permissions up
         JOIN public.permissions p ON up.permission_id = p.id
     WHERE up.user_id = $1
+),
+-- Get permissions assigned through products
+product_permissions AS (
+	SELECT p.*,
+        NULL::uuid AS role_id,
+        sprice.product_id AS product_id,
+        NULL::uuid AS direct_assignment -- Null indicates not directly assigned
+FROM public.stripe_subscriptions ss
+        JOIN public.stripe_prices sprice ON ss.price_id = sprice.id
+        JOIN public.stripe_products sproduct ON sprice.product_id = sproduct.id
+        JOIN public.product_permissions pr ON sproduct.id = pr.product_id
+        JOIN public.permissions p ON pr.permission_id = p.id
+WHERE ss.user_id = $1
+        AND ss.status IN ('active', 'trialing')
 ),
 -- Combine both sources
 combined_permissions AS (
@@ -529,6 +534,9 @@ combined_permissions AS (
     UNION ALL
     SELECT *
     FROM direct_permissions
+	UNION ALL
+    SELECT *
+    FROM product_permissions
 ) -- Final result with aggregated role information
 SELECT p.id,
     p.name,
@@ -537,6 +545,8 @@ SELECT p.id,
     p.updated_at,
     -- Array of role IDs that grant this permission (empty if direct)
     array_remove(array_agg(DISTINCT rp.role_id), NULL) AS role_ids,
+	-- Array of product IDs that grant this permission (empty if direct)
+	array_remove(array_agg(DISTINCT rp.product_id), NULL) AS product_ids,
     -- Boolean indicating if permission is directly assigned
     bool_or(rp.direct_assignment IS NOT NULL) AS is_directly_assigned
 FROM (
@@ -563,6 +573,7 @@ WITH -- Get permissions assigned through roles
 role_based_permissions AS (
     SELECT p.*,
         rp.role_id,
+		NULL::text as product_id,
         NULL::uuid AS direct_assignment -- Null indicates not directly assigned
     FROM public.user_roles ur
         JOIN public.role_permissions rp ON ur.role_id = rp.role_id
@@ -573,11 +584,26 @@ role_based_permissions AS (
 direct_permissions AS (
     SELECT p.*,
         NULL::uuid AS role_id,
+		NULL::text as product_id,
         -- Null indicates not from a role
         up.user_id AS direct_assignment
     FROM public.user_permissions up
         JOIN public.permissions p ON up.permission_id = p.id
     WHERE up.user_id = $1
+),
+-- Get permissions assigned through products
+product_permissions AS (
+	SELECT p.*,
+        NULL::uuid AS role_id,
+        sprice.product_id AS product_id,
+        NULL::uuid AS direct_assignment -- Null indicates not directly assigned
+FROM public.stripe_subscriptions ss
+        JOIN public.stripe_prices sprice ON ss.price_id = sprice.id
+        JOIN public.stripe_products sproduct ON sprice.product_id = sproduct.id
+        JOIN public.product_permissions pr ON sproduct.id = pr.product_id
+        JOIN public.permissions p ON pr.permission_id = p.id
+WHERE ss.user_id = $1
+        AND ss.status IN ('active', 'trialing')
 ),
 -- Combine both sources
 combined_permissions AS (
@@ -586,6 +612,9 @@ combined_permissions AS (
     UNION ALL
     SELECT *
     FROM direct_permissions
+    UNION ALL
+    SELECT *
+    FROM product_permissions
 ) -- Final result with aggregated role information
 SELECT COUNT(DISTINCT id)
 FROM combined_permissions
@@ -599,13 +628,11 @@ type PermissionSource struct {
 	CreatedAt   time.Time        `db:"created_at" json:"created_at"`
 	UpdatedAt   time.Time        `db:"updated_at" json:"updated_at"`
 	RoleIDs     []uuid.UUID      `db:"role_ids" json:"role_ids"`
+	ProductIDs  []string         `db:"product_ids" json:"product_ids"`
 	IsDirectly  bool             `db:"is_directly_assigned" json:"is_directly_assigned"`
 }
 
 func ListUserPermissionsSource(ctx context.Context, dbx db.Dbx, userId uuid.UUID, limit int64, offset int64) ([]PermissionSource, error) {
-	// q := psql.RawQuery(QueryUserPermissionSource, userId, userId, limit, offset)
-
-	// data, err := bob.All(ctx, dbx, q, scan.StructMapper[PermissionSource]())
 	data, err := QueryAll[PermissionSource](ctx, dbx, QueryUserPermissionSource, userId, limit, offset)
 	if err != nil {
 		return nil, err
@@ -615,9 +642,6 @@ func ListUserPermissionsSource(ctx context.Context, dbx db.Dbx, userId uuid.UUID
 }
 
 func CountUserPermissionSource(ctx context.Context, dbx db.Dbx, userId uuid.UUID) (int64, error) {
-	// q := psql.RawQuery(QueryUserPermissionSourceCount, userId, userId)
-
-	// data, err := bob.One(ctx, dbx, q, scan.SingleColumnMapper[int64])
 	data, err := Count(ctx, dbx, QueryUserPermissionSourceCount, userId)
 	if err != nil {
 		return 0, err
@@ -626,10 +650,12 @@ func CountUserPermissionSource(ctx context.Context, dbx db.Dbx, userId uuid.UUID
 }
 
 const (
-	getuserNotPermissions = `WITH -- Get permissions assigned through roles
+	getuserNotPermissions = `
+	WITH -- Get permissions assigned through roles
 role_based_permissions AS (
     SELECT p.*,
         rp.role_id,
+		NULL::text as product_id,
         NULL::uuid AS direct_assignment -- Null indicates not directly assigned
     FROM public.user_roles ur
         JOIN public.role_permissions rp ON ur.role_id = rp.role_id
@@ -640,11 +666,26 @@ role_based_permissions AS (
 direct_permissions AS (
     SELECT p.*,
         NULL::uuid AS role_id,
+		NULL::text as product_id,
         -- Null indicates not from a role
         up.user_id AS direct_assignment
     FROM public.user_permissions up
         JOIN public.permissions p ON up.permission_id = p.id
     WHERE up.user_id = $1
+),
+-- Get permissions assigned through products
+product_permissions AS (
+	SELECT p.*,
+        NULL::uuid AS role_id,
+        sprice.product_id AS product_id,
+        NULL::uuid AS direct_assignment -- Null indicates not directly assigned
+FROM public.stripe_subscriptions ss
+        JOIN public.stripe_prices sprice ON ss.price_id = sprice.id
+        JOIN public.stripe_products sproduct ON sprice.product_id = sproduct.id
+        JOIN public.product_permissions pr ON sproduct.id = pr.product_id
+        JOIN public.permissions p ON pr.permission_id = p.id
+WHERE ss.user_id = $1
+        AND ss.status IN ('active', 'trialing')
 ),
 -- Combine both sources
 combined_permissions AS (
@@ -653,6 +694,9 @@ combined_permissions AS (
     UNION ALL
     SELECT *
     FROM direct_permissions
+	UNION ALL
+	SELECT *
+	FROM product_permissions
 ) -- Final result with aggregated role information
 SELECT p.id,
     p.name,
@@ -661,6 +705,8 @@ SELECT p.id,
     p.updated_at,
     -- Array of role IDs that grant this permission (empty if direct)
     array []::uuid [] AS role_ids,
+	-- Array of product IDs that grant this permission (empty if direct)
+	array []::text [] AS product_ids,
     -- Boolean indicating if permission is directly assigned
     false AS is_directly_assigned
 FROM public.permissions p
@@ -670,10 +716,13 @@ GROUP BY p.id
 ORDER BY p.name,
     p.id
 LIMIT $2 OFFSET $3;`
-	getuserNotPermissionCounts = `WITH -- Get permissions assigned through roles
+
+	getuserNotPermissionCounts = `
+	WITH -- Get permissions assigned through roles
 role_based_permissions AS (
     SELECT p.*,
         rp.role_id,
+		NULL::text as product_id,
         NULL::uuid AS direct_assignment -- Null indicates not directly assigned
     FROM public.user_roles ur
         JOIN public.role_permissions rp ON ur.role_id = rp.role_id
@@ -684,11 +733,26 @@ role_based_permissions AS (
 direct_permissions AS (
     SELECT p.*,
         NULL::uuid AS role_id,
+		NULL::text as product_id,
         -- Null indicates not from a role
         up.user_id AS direct_assignment
     FROM public.user_permissions up
         JOIN public.permissions p ON up.permission_id = p.id
     WHERE up.user_id = $1
+),
+-- Get permissions assigned through products
+product_permissions AS (
+	SELECT p.*,
+        NULL::uuid AS role_id,
+        sprice.product_id AS product_id,
+        NULL::uuid AS direct_assignment -- Null indicates not directly assigned
+FROM public.stripe_subscriptions ss
+        JOIN public.stripe_prices sprice ON ss.price_id = sprice.id
+        JOIN public.stripe_products sproduct ON sprice.product_id = sproduct.id
+        JOIN public.product_permissions pr ON sproduct.id = pr.product_id
+        JOIN public.permissions p ON pr.permission_id = p.id
+WHERE ss.user_id = $1
+        AND ss.status IN ('active', 'trialing')
 ),
 -- Combine both sources
 combined_permissions AS (
@@ -697,12 +761,14 @@ combined_permissions AS (
     UNION ALL
     SELECT *
     FROM direct_permissions
+    UNION ALL
+    SELECT *
+    FROM product_permissions
 ) -- Final result with aggregated role information
 SELECT COUNT(DISTINCT p.id)
 FROM public.permissions p
     LEFT JOIN combined_permissions cp ON p.id = cp.id
-WHERE cp.id IS NULL;
-;`
+WHERE cp.id IS NULL;`
 )
 
 func ListUserNotPermissionsSource(ctx context.Context, dbx db.Dbx, userId uuid.UUID, limit int64, offset int64) ([]PermissionSource, error) {

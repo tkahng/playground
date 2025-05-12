@@ -111,7 +111,7 @@ const (
 FROM public.product_roles rp
         LEFT JOIN public.roles p ON p.id = rp.role_id
         WHERE rp.product_id	 = ANY (
-                $1::uuid []
+                $1::text []
         )
 GROUP BY rp.product_id;`
 )
@@ -136,7 +136,7 @@ func LoadProductRoles(ctx context.Context, db db.Dbx, productIds ...string) ([][
 	}), nil
 }
 
-func LoadeProductPrices(ctx context.Context, db db.Dbx, where *map[string]any, productIds ...string) ([][]*models.StripePrice, error) {
+func LoadProductPrices(ctx context.Context, db db.Dbx, where *map[string]any, productIds ...string) ([][]*models.StripePrice, error) {
 	if where == nil {
 		where = &map[string]any{}
 	}
@@ -267,34 +267,26 @@ func ListPriceFilterFuncMap(filter *shared.StripePriceListFilter) *map[string]an
 
 	if filter.Active != "" {
 		if filter.Active == shared.Active {
-			// q.Apply(
-			// 	models.SelectWhere.StripePrices.Active.EQ(true),
-			// )
+
 			param["active"] = map[string]any{
 				"_eq": true,
 			}
 		}
 		if filter.Active == shared.Inactive {
-			// q.Apply(
-			// 	models.SelectWhere.StripePrices.Active.EQ(false),
-			// )
+
 			param["active"] = map[string]any{
 				"_eq": false,
 			}
 		}
 	}
 	if len(filter.Ids) > 0 {
-		// q.Apply(
-		// 	models.SelectWhere.StripePrices.ID.In(filter.Ids...),
-		// )
+
 		param["id"] = map[string]any{
 			"_in": filter.Ids,
 		}
 	}
 	if len(filter.ProductIds) > 0 {
-		// q.Apply(
-		// 	models.SelectWhere.StripePrices.ProductID.In(filter.ProductIds...),
-		// )
+
 		param["product_id"] = map[string]any{
 			"_in": filter.ProductIds,
 		}

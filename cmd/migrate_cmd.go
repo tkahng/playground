@@ -11,14 +11,10 @@ import (
 	database "github.com/tkahng/authgo/internal/db"
 )
 
-func init() {
-	migrateCmd.AddCommand(upCmd)
-	migrateCmd.AddCommand(resetCmd)
-}
-
 func NewMigrateCmd() *cobra.Command {
 
 	migrateCmd.AddCommand(upCmd)
+	migrateCmd.AddCommand(testUpCmd)
 	migrateCmd.AddCommand(resetCmd)
 	return migrateCmd
 
@@ -34,30 +30,42 @@ var upCmd = &cobra.Command{
 	Short: "migrate up",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		cfg := conf.GetConfig[conf.DBConfig]()
-		u, err := url.Parse(cfg.DatabaseUrl)
-		if err != nil {
-			return err
-		}
-		db := dbmate.New(u)
-		db.FS = database.Migrations
-		db.MigrationsDir = []string{"./migrations"}
-		fmt.Println("Migrations:")
-		migrations, err := db.FindMigrations()
-		if err != nil {
-			return fmt.Errorf("error at error: %w", err)
-		}
-		for _, m := range migrations {
-			fmt.Println(m.Version, m.FilePath)
-		}
-		fmt.Println("\nApplying...")
-		err = db.CreateAndMigrate()
-		if err != nil {
-			return fmt.Errorf("error at error: %w", err)
-		}
-		return nil
-
+		return migrate(cfg.DatabaseUrl)
 	},
 }
+
+var testUpCmd = &cobra.Command{
+	Use:   "testup",
+	Short: "migrate testup",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return migrate("postgres://postgres:postgres@localhost:5432/authgo_test?sslmode=disable")
+	},
+}
+
+func migrate(uri string) error {
+	u, err := url.Parse(uri)
+	if err != nil {
+		return err
+	}
+	db := dbmate.New(u)
+	db.FS = database.Migrations
+	db.MigrationsDir = []string{"./migrations"}
+	fmt.Println("Migrations:")
+	migrations, err := db.FindMigrations()
+	if err != nil {
+		return err
+	}
+	for _, m := range migrations {
+		fmt.Println(m.Version, m.FilePath)
+	}
+	fmt.Println("\nApplying...")
+	err = db.CreateAndMigrate()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 var resetCmd = &cobra.Command{
 	Use:   "reset",
 	Short: "migrate reset",
@@ -73,7 +81,7 @@ var resetCmd = &cobra.Command{
 		fmt.Println("Migrations:")
 		migrations, err := db.FindMigrations()
 		if err != nil {
-			return fmt.Errorf("error at error: %w", err)
+			return err
 		}
 		for _, m := range migrations {
 			fmt.Println(m.Version, m.FilePath)
@@ -81,11 +89,11 @@ var resetCmd = &cobra.Command{
 		fmt.Println("\nApplying...")
 		err = db.Drop()
 		if err != nil {
-			return fmt.Errorf("error at error: %w", err)
+			return err
 		}
 		err = db.CreateAndMigrate()
 		if err != nil {
-			return fmt.Errorf("error at error: %w", err)
+			return err
 		}
 		return nil
 	},

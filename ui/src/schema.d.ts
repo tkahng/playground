@@ -1453,6 +1453,7 @@ export interface components {
             id: string;
             is_directly_assigned: boolean;
             name: string;
+            product_ids: string[] | null;
             role_ids: string[] | null;
             /** Format: date-time */
             updated_at: string;

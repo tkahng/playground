@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"errors"
+	"slices"
 
 	"github.com/alexedwards/argon2id"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
@@ -41,7 +42,7 @@ var superuserCreate = &cobra.Command{
 		ctx := cmd.Context()
 		conf := conf.GetConfig[conf.DBConfig]()
 
-		dbx := db.CreatePool(ctx, conf.DatabaseUrl)
+		dbx := db.CreateQueries(ctx, conf.DatabaseUrl)
 		err := queries.EnsureRoleAndPermissions(ctx, dbx, "superuser", "superuser")
 		if err != nil {
 			return err
@@ -85,9 +86,15 @@ var superuserCreate = &cobra.Command{
 			}
 		}
 		if user != nil {
-			err = queries.CreateUserRoles(ctx, dbx, user.ID, role.ID)
+			claims, err := queries.FindUserWithRolesAndPermissionsByEmail(ctx, dbx, args[0])
 			if err != nil {
 				return err
+			}
+			if !slices.Contains(claims.Roles, "superuser") {
+				err = queries.CreateUserRoles(ctx, dbx, user.ID, role.ID)
+				if err != nil {
+					return err
+				}
 			}
 		}
 		return nil

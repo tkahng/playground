@@ -25,3 +25,9 @@ type Permission struct {
 	CreatedAt   time.Time `db:"created_at" json:"created_at"`
 	UpdatedAt   time.Time `db:"updated_at" json:"updated_at"`
 }
+
+type ProductPermission struct {
+	_            struct{}  `db:"product_permissions" json:"-"`
+	ProductID    string    `db:"product_id" json:"product_id"`
+	PermissionID uuid.UUID `db:"permission_id" json:"permission_id"`
+}

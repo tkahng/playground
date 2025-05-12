@@ -63,11 +63,6 @@ func FindTaskByID(ctx context.Context, db db.Dbx, id uuid.UUID) (*models.Task, e
 }
 
 func FindLastTaskOrder(ctx context.Context, db db.Dbx, taskProjectID uuid.UUID) (float64, error) {
-	// task, err := models.Tasks.Query(
-	// 	sm.Where(models.TaskColumns.ProjectID.EQ(psql.Arg(taskProjectID))),
-	// 	sm.OrderBy(models.TaskColumns.Order).Desc(),
-	// 	sm.Limit(1),
-	// ).One(ctx, db)
 	tasks, err := repository.Task.Get(
 		ctx,
 		db,
@@ -93,12 +88,8 @@ func FindLastTaskOrder(ctx context.Context, db db.Dbx, taskProjectID uuid.UUID) 
 }
 
 func DeleteTask(ctx context.Context, db db.Dbx, taskID uuid.UUID) error {
-	// task, err := models.FindTask(ctx, db, taskID)
-	// if err != nil {
-	// 	return err
-	// }
-	// return task.Delete(ctx, db)
-	_, err := repository.Task.DeleteReturn(
+
+	_, err := repository.Task.Delete(
 		ctx,
 		db,
 		&map[string]any{
@@ -111,8 +102,7 @@ func DeleteTask(ctx context.Context, db db.Dbx, taskID uuid.UUID) error {
 }
 
 func FindTaskProjectByID(ctx context.Context, db db.Dbx, id uuid.UUID) (*models.TaskProject, error) {
-	// task, err := models.FindTaskProject(ctx, db, id)
-	// return OptionalRow(task, err)
+
 	task, err := repository.TaskProject.GetOne(
 		ctx,
 		db,
@@ -125,12 +115,7 @@ func FindTaskProjectByID(ctx context.Context, db db.Dbx, id uuid.UUID) (*models.
 	return OptionalRow(task, err)
 }
 func DeleteTaskProject(ctx context.Context, db db.Dbx, taskProjectID uuid.UUID) error {
-	// taskProject, err := models.FindTaskProject(ctx, db, taskProjectID)
-	// if err != nil {
-	// 	return err
-	// }
-	// return taskProject.Delete(ctx, db)
-	_, err := repository.TaskProject.DeleteReturn(
+	_, err := repository.TaskProject.Delete(
 		ctx,
 		db,
 		&map[string]any{
@@ -157,10 +142,6 @@ func ListTasksFilterFunc(filter *shared.TaskListFilter) *map[string]any {
 	}
 	where := make(map[string]any)
 	if filter.Q != "" {
-		// q.Apply(
-		// 	psql.WhereOr(models.SelectWhere.Tasks.Name.ILike("%"+filter.Q+"%"),
-		// 		models.SelectWhere.Tasks.Description.ILike("%"+filter.Q+"%")),
-		// )
 		where["_or"] = []map[string]any{
 			{
 				"name": map[string]any{
@@ -175,62 +156,34 @@ func ListTasksFilterFunc(filter *shared.TaskListFilter) *map[string]any {
 		}
 	}
 	if len(filter.Status) > 0 {
-		// q.Apply(
-		// 	models.SelectWhere.Tasks.Status.In(filter.Status...),
-		// )
 		where["status"] = map[string]any{
 			"_in": filter.Status,
 		}
 	}
 	if len(filter.UserID) > 0 {
-		// id, err := uuid.Parse(filter.UserID)
-		// if err != nil {
-		// 	return
-		// }
-		// q.Apply(
-		// 	models.SelectWhere.Tasks.UserID.EQ(id),
-		// )
 		where["user_id"] = map[string]any{
 			"_eq": filter.UserID,
 		}
-
 	}
 
 	if filter.ProjectID != "" {
-		// id, err := uuid.Parse(filter.ProjectID)
-		// if err != nil {
-		// 	return
-		// }
-		// q.Apply(
-		// 	models.SelectWhere.Tasks.ProjectID.EQ(id),
-		// )
 		where["project_id"] = map[string]any{
 			"_eq": filter.ProjectID,
 		}
 	}
 
 	if len(filter.Ids) > 0 {
-		// var ids []uuid.UUID = ParseUUIDs(filter.Ids)
-		// q.Apply(
-		// 	models.SelectWhere.Tasks.ID.In(ids...),
-		// )
 		where["id"] = map[string]any{
 			"_in": filter.Ids,
 		}
 	}
 	if filter.ParentID != "" {
-		// id, err := uuid.Parse(filter.ParentID)
-		// if err != nil {
-		// 	return
-		// }
-		// q.Apply(models.SelectWhere.Tasks.ParentID.EQ(id))
 		where["parent_id"] = map[string]any{
 			"_eq": filter.ParentID,
 		}
 	}
 	if filter.ParentStatus != "" {
 		if filter.ParentStatus == "parent" {
-			// q.Apply(models.SelectWhere.Tasks.ParentID.IsNull())
 			where["parent_id"] = map[string]any{
 				"_eq": "NULL",
 			}
@@ -277,10 +230,6 @@ func ListTaskProjectsFilterFunc(filter *shared.TaskProjectsListFilter) *map[stri
 	}
 	where := make(map[string]any)
 	if filter.Q != "" {
-		// q.Apply(
-		// 	psql.WhereOr(models.SelectWhere.TaskProjects.Name.ILike("%"+filter.Q+"%"),
-		// 		models.SelectWhere.TaskProjects.Description.ILike("%"+filter.Q+"%")),
-		// )
 		where["_or"] = []map[string]any{
 			{
 				"name": map[string]any{
@@ -296,24 +245,12 @@ func ListTaskProjectsFilterFunc(filter *shared.TaskProjectsListFilter) *map[stri
 	}
 
 	if len(filter.Ids) > 0 {
-		// var ids []uuid.UUID = ParseUUIDs(filter.Ids)
-		// q.Apply(
-		// 	models.SelectWhere.TaskProjects.ID.In(ids...),
-		// )
 		where["id"] = map[string]any{
 			"_in": filter.Ids,
 		}
 	}
 
 	if filter.UserID != "" {
-		// id, err := uuid.Parse(filter.UserID)
-		// if err != nil {
-		// 	return
-		// }
-		// q.Apply(
-		// 	models.SelectJoins.TaskProjects.InnerJoin.User(ctx),
-		// 	models.SelectWhere.Users.ID.EQ(id),
-		// )
 		where["user_id"] = map[string]any{
 			"_eq": filter.UserID,
 		}
@@ -328,9 +265,7 @@ func ListTaskProjectsOrderByFunc(input *shared.TaskProjectsListParams) *map[stri
 		return nil
 	}
 	order := make(map[string]string)
-	// if slices.Contains(models.TaskProjects.Columns().Names(), input.SortBy) {
 	order[input.SortBy] = strings.ToUpper(input.SortOrder)
-	// }
 	return &order
 }
 
@@ -507,7 +442,7 @@ func DefineTaskOrderNumberByStatus(ctx context.Context, dbx db.Dbx, taskId uuid.
 	if position == 0 {
 		res, err := repository.Task.Get(
 			ctx,
-			nil,
+			dbx,
 			&map[string]any{
 				"project_id": map[string]any{
 					"_eq": taskProjectId.String(),
@@ -537,7 +472,7 @@ func DefineTaskOrderNumberByStatus(ctx context.Context, dbx db.Dbx, taskId uuid.
 	}
 	ele, err := repository.Task.Get(
 		ctx,
-		nil,
+		dbx,
 		&map[string]any{
 			"project_id": map[string]any{
 				"_eq": taskProjectId.String(),
@@ -563,7 +498,7 @@ func DefineTaskOrderNumberByStatus(ctx context.Context, dbx db.Dbx, taskId uuid.
 	if currentOrder > element.Order {
 		sideELe, err := repository.Task.Get(
 			ctx,
-			nil,
+			dbx,
 			&map[string]any{
 				"project_id": map[string]any{
 					"_eq": taskProjectId.String(),
@@ -589,7 +524,7 @@ func DefineTaskOrderNumberByStatus(ctx context.Context, dbx db.Dbx, taskId uuid.
 	}
 	sideele, err := repository.Task.Get(
 		ctx,
-		nil,
+		dbx,
 		&map[string]any{
 			"project_id": map[string]any{
 				"_eq": taskProjectId.String(),
@@ -745,6 +680,9 @@ func UpdateTaskProject(ctx context.Context, db db.Dbx, taskProjectID uuid.UUID, 
 	taskProject, err := FindTaskProjectByID(ctx, db, taskProjectID)
 	if err != nil {
 		return err
+	}
+	if taskProject == nil {
+		return errors.New("task project not found")
 	}
 	taskProject.Name = input.Name
 	taskProject.Description = input.Description

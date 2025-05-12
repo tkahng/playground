@@ -3,10 +3,8 @@ package queries
 import (
 	"context"
 	"errors"
-	"fmt"
 	"time"
 
-	"github.com/Masterminds/squirrel"
 	"github.com/alexedwards/argon2id"
 	"github.com/google/uuid"
 	"github.com/stephenafamo/scan"
@@ -84,6 +82,12 @@ type RolePermissionClaims struct {
 	Providers   []models.Providers `json:"providers" db:"providers"`
 }
 
+// FindUserWithRolesAndPermissionsByEmail retrieves a user's roles and permissions
+// from the database based on their email address.
+// It expects a database connection (or transaction) `db` and the `email` of the user.
+// It returns a pointer to a RolePermissionClaims struct containing the user's
+// roles and permissions, or an error if the user is not found or if any other
+// database error occurs.
 func FindUserWithRolesAndPermissionsByEmail(ctx context.Context, db db.Dbx, email string) (*RolePermissionClaims, error) {
 	res, err := pgxscan.One(ctx, db, scan.StructMapper[RolePermissionClaims](), RawGetUserWithAllRolesAndPermissionsByEmail, email)
 	if err != nil {
@@ -129,12 +133,6 @@ func LoadUsersByUserIds(ctx context.Context, db db.Dbx, userIds ...uuid.UUID) ([
 }
 
 func CreateUser(ctx context.Context, db db.Dbx, params *shared.AuthenticationInput) (*crudModels.User, error) {
-	// return models.Users.Insert(&models.UserSetter{
-	// 	Email:           omit.From(params.Email),
-	// 	Name:            omitnull.FromPtr(params.Name),
-	// 	Image:           omitnull.FromPtr(params.AvatarUrl),
-	// 	EmailVerifiedAt: omitnull.FromPtr(params.EmailVerifiedAt),
-	// }, im.Returning("*")).One(ctx, db)
 	return repository.User.PostOne(ctx, db, &crudModels.User{
 		Email:           params.Email,
 		Name:            params.Name,
@@ -151,25 +149,16 @@ func CreateUserRoles(ctx context.Context, db db.Dbx, userId uuid.UUID, roleIds .
 			RoleID: id,
 		})
 	}
-	q := squirrel.Insert("user_roles").Columns("user_id", "role_id")
-	for _, perm := range dtos {
-		q = q.Values(perm.UserID, perm.RoleID)
-	}
-	q = q.Suffix("RETURNING *")
-	sql, args, err := q.PlaceholderFormat(squirrel.Dollar).ToSql()
+	_, err := repository.UserRole.Post(
+		ctx,
+		db,
+		dtos,
+	)
 	if err != nil {
-		return err
-	}
-	fmt.Println(sql, args)
-	_, err = QueryAll[crudModels.UserRole](ctx, db, sql, args...)
-	if err != nil {
+
 		return err
 	}
 	return nil
-	// return models.UserRoles.Insert(&models.UserRoleSetter{
-	// 	UserID:  omit.From(userId),
-	// 	RoleIDs: omit.From(params.RoleIds),
-	// }).Exec(ctx, db)
 }
 func CreateUserPermissions(ctx context.Context, db db.Dbx, userId uuid.UUID, permissionIds ...uuid.UUID) error {
 	var dtos []crudModels.UserPermission
@@ -179,22 +168,15 @@ func CreateUserPermissions(ctx context.Context, db db.Dbx, userId uuid.UUID, per
 			PermissionID: id,
 		})
 	}
-	q := squirrel.Insert("user_permissions").Columns("user_id", "permission_id")
-	for _, perm := range dtos {
-		q = q.Values(perm.UserID, perm.PermissionID)
-	}
-	q = q.Suffix("RETURNING *")
-	sql, args, err := q.PlaceholderFormat(squirrel.Dollar).ToSql()
-	if err != nil {
-		return err
-	}
-	fmt.Println(sql, args)
-	_, err = QueryAll[crudModels.UserPermission](ctx, db, sql, args...)
+	_, err := repository.UserPermission.Post(
+		ctx,
+		db,
+		dtos,
+	)
 	if err != nil {
 		return err
 	}
 	return nil
-
 }
 
 func CreateAccount(ctx context.Context, db db.Dbx, userId uuid.UUID, params *shared.AuthenticationInput) (*crudModels.UserAccount, error) {
@@ -228,7 +210,7 @@ func FindUserById(ctx context.Context, db db.Dbx, userId uuid.UUID) (*crudModels
 		db,
 		&map[string]any{
 			"id": map[string]any{
-				"_eq": userId,
+				"_eq": userId.String(),
 			},
 		},
 	)
@@ -241,10 +223,10 @@ func UpdateUserPassword(ctx context.Context, db db.Dbx, userId uuid.UUID, passwo
 		db,
 		&map[string]any{
 			"user_id": map[string]any{
-				"_eq": userId,
+				"_eq": userId.String(),
 			},
 			"provider": map[string]any{
-				"_eq": crudModels.ProvidersCredentials,
+				"_eq": string(crudModels.ProvidersCredentials),
 			},
 		},
 	)
@@ -271,7 +253,22 @@ func UpdateUserPassword(ctx context.Context, db db.Dbx, userId uuid.UUID, passwo
 }
 
 func UpdateMe(ctx context.Context, db db.Dbx, userId uuid.UUID, input *shared.UpdateMeInput) error {
-	_, err := repository.User.PutOne(
+	user, err := repository.User.GetOne(
+		ctx,
+		db,
+		&map[string]any{
+			"id": map[string]any{
+				"_eq": userId.String(),
+			},
+		},
+	)
+	if err != nil {
+		return err
+	}
+	if user == nil {
+		return errors.New("user not found")
+	}
+	_, err = repository.User.PutOne(
 		ctx,
 		db,
 		&crudModels.User{

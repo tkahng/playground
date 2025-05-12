@@ -3,7 +3,6 @@ package apis
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"slices"
 
 	"github.com/danielgtaylor/huma/v2"
@@ -13,21 +12,6 @@ import (
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 )
-
-func (api *Api) AdminUsersOperation(path string) huma.Operation {
-	return huma.Operation{
-		OperationID: "admin-users",
-		Method:      http.MethodGet,
-		Path:        path,
-		Summary:     "Admin users",
-		Description: "List of users",
-		Tags:        []string{"Users", "Admin"},
-		Errors:      []int{http.StatusNotFound},
-		Security: []map[string][]string{
-			{shared.BearerAuthSecurityKey: {}},
-		},
-	}
-}
 
 type UserDetail struct {
 	*shared.User
@@ -100,21 +84,6 @@ func (api *Api) AdminUsers(ctx context.Context, input *struct {
 	}, nil
 }
 
-func (api *Api) AdminUsersCreateOperation(path string) huma.Operation {
-	return huma.Operation{
-		OperationID: "admin-users-create",
-		Method:      http.MethodPost,
-		Path:        path,
-		Summary:     "Create user",
-		Description: "Create user",
-		Tags:        []string{"Users", "Admin"},
-		Errors:      []int{http.StatusNotFound},
-		Security: []map[string][]string{
-			{shared.BearerAuthSecurityKey: {}},
-		},
-	}
-}
-
 func (api *Api) AdminUsersCreate(ctx context.Context, input *struct {
 	Body shared.UserCreateInput
 }) (*struct {
@@ -144,21 +113,6 @@ func (api *Api) AdminUsersCreate(ctx context.Context, input *struct {
 
 }
 
-func (api *Api) AdminUsersDeleteOperation(path string) huma.Operation {
-	return huma.Operation{
-		OperationID: "admin-users-delete",
-		Method:      http.MethodDelete,
-		Path:        path,
-		Summary:     "Delete user",
-		Description: "Delete user",
-		Tags:        []string{"Admin", "Users"},
-		Errors:      []int{http.StatusNotFound},
-		Security: []map[string][]string{
-			{shared.BearerAuthSecurityKey: {}},
-		},
-	}
-}
-
 func (api *Api) AdminUsersDelete(ctx context.Context, input *struct {
 	ID uuid.UUID `path:"user-id" format:"uuid" required:"true"`
 }) (*struct{}, error) {
@@ -180,21 +134,6 @@ func (api *Api) AdminUsersDelete(ctx context.Context, input *struct {
 	return nil, nil
 }
 
-func (api *Api) AdminUsersUpdateOperation(path string) huma.Operation {
-	return huma.Operation{
-		OperationID: "admin-users-update",
-		Method:      http.MethodPut,
-		Path:        path,
-		Summary:     "Update user",
-		Description: "Update user",
-		Tags:        []string{"Admin", "Users"},
-		Errors:      []int{http.StatusNotFound},
-		Security: []map[string][]string{
-			{shared.BearerAuthSecurityKey: {}},
-		},
-	}
-}
-
 func (api *Api) AdminUsersUpdate(ctx context.Context, input *struct {
 	ID   uuid.UUID `path:"user-id" format:"uuid" required:"true"`
 	Body shared.UserMutationInput
@@ -205,21 +144,6 @@ func (api *Api) AdminUsersUpdate(ctx context.Context, input *struct {
 		return nil, err
 	}
 	return nil, nil
-}
-
-func (api *Api) AdminUsersUpdatePasswordOperation(path string) huma.Operation {
-	return huma.Operation{
-		OperationID: "admin-users-update-password",
-		Method:      http.MethodPut,
-		Path:        path,
-		Summary:     "Update user password",
-		Description: "Update user password",
-		Tags:        []string{"Admin", "Users"},
-		Errors:      []int{http.StatusNotFound},
-		Security: []map[string][]string{
-			{shared.BearerAuthSecurityKey: {}},
-		},
-	}
 }
 
 type UpdateUserPasswordInput struct {
@@ -241,21 +165,6 @@ func (api *Api) AdminUsersUpdatePassword(ctx context.Context, input *struct {
 		return nil, err
 	}
 	return nil, nil
-}
-
-func (api *Api) AdminUsersGetOperation(path string) huma.Operation {
-	return huma.Operation{
-		OperationID: "admin-user-get",
-		Method:      http.MethodGet,
-		Path:        path,
-		Summary:     "Get user",
-		Description: "Get user",
-		Tags:        []string{"Admin", "Users"},
-		Errors:      []int{http.StatusNotFound},
-		Security: []map[string][]string{
-			{shared.BearerAuthSecurityKey: {}},
-		},
-	}
 }
 
 func (api *Api) AdminUsersGet(ctx context.Context, input *struct {

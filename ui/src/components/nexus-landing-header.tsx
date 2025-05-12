@@ -20,6 +20,7 @@ export function NexusAILandingHeader({
           {leftLinks?.length
             ? leftLinks.map(({ to, title, current }) => (
                 <Link
+                  key={to}
                   className={cn(
                     current
                       ? current(pathname)

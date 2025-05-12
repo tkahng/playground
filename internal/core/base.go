@@ -72,7 +72,7 @@ func (app *BaseApp) NewMailClient() mailer.Mailer {
 }
 
 func InitBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
-	pool := db.CreatePool(ctx, cfg.Db.DatabaseUrl)
+	pool := db.CreateQueries(ctx, cfg.Db.DatabaseUrl)
 	fs, err := filesystem.NewFileSystem(cfg.StorageConfig)
 	if err != nil {
 		panic(err)

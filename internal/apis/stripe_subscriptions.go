@@ -2,28 +2,12 @@ package apis
 
 import (
 	"context"
-	"net/http"
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/tkahng/authgo/internal/core"
 	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
 )
-
-func (api *Api) MyStripeSubscriptionsOperation(path string) huma.Operation {
-	return huma.Operation{
-		OperationID: "stripe-my-subscriptions",
-		Method:      http.MethodGet,
-		Path:        path,
-		Summary:     "stripe-my-subscriptions",
-		Description: "stripe-my-subscriptions",
-		Tags:        []string{"Payment", "Stripe", "Subscriptions"},
-		Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
-		Security: []map[string][]string{
-			{shared.BearerAuthSecurityKey: {}},
-		},
-	}
-}
 
 func (api *Api) MyStripeSubscriptions(ctx context.Context, input *struct{}) (*struct {
 	Body *shared.SubscriptionWithPrice `json:"body,omitempty" required:"false"`

@@ -36,7 +36,7 @@ func TestNotifier(t *testing.T) {
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
 	wg := sync.WaitGroup{}
-	pool, err := testPool("postgresql://postgres:postgres@localhost:5432")
+	pool, err := testPool("postgres://postgres:postgres@localhost:5432/authgo_test?sslmode=disable")
 	is.NoErr(err)
 
 	li := NewListener(pool)

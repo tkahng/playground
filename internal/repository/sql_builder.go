@@ -233,6 +233,12 @@ func (b *SQLBuilder[Model]) Values(values *[]Model, args *[]any, keys *[]any) (f
 				// If a generator function is provided, primary key will be generated
 				fieldsArray = append(fieldsArray, b.identifier(field.name))
 			}
+			if b.skipIdInsert {
+				// If skipIdInsert is true, skip inserting the primary key field
+				continue
+			}
+			// Otherwise, add the primary key field to the VALUES clause
+			fieldsArray = append(fieldsArray, b.identifier(field.name))
 		} else {
 			if slices.Contains(timestampNames, field.name) {
 				continue // Skip timestamp fields
@@ -259,7 +265,7 @@ func (b *SQLBuilder[Model]) Values(values *[]Model, args *[]any, keys *[]any) (f
 					if err != nil {
 						return "", "", fmt.Errorf("error generating primary key for field %s: %w", field.name, err)
 					}
-					items = append(items, id)
+					items = append(items, b.parameter(reflect.ValueOf(id), args))
 				}
 				if b.skipIdInsert {
 					// If skipIdInsert is true, skip inserting the primary key field
@@ -343,7 +349,7 @@ func (b *SQLBuilder[Model]) Set(set *Model, args *[]any, where *map[string]any) 
 			}
 		} else {
 			// Other fields are added to the SET clause
-			result = append(result, field.name+"="+b.parameter(_value.Field(field.idx), args))
+			result = append(result, b.identifier(field.name)+"="+b.parameter(_value.Field(field.idx), args))
 		}
 	}
 

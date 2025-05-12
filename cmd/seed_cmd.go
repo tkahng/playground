@@ -26,7 +26,7 @@ var seedRolesCmd = &cobra.Command{
 		ctx := cmd.Context()
 		conf := conf.GetConfig[conf.DBConfig]()
 
-		dbx := db.CreatePool(ctx, conf.DatabaseUrl)
+		dbx := db.CreateQueries(ctx, conf.DatabaseUrl)
 		err := queries.EnsureRoleAndPermissions(ctx, dbx, "superuser", "superuser", "advanced", "pro", "basic")
 		if err != nil {
 			slog.Error(
