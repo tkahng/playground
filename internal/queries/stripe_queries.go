@@ -435,9 +435,6 @@ func FindLatestActiveSubscriptionWithPriceByUserId(ctx context.Context, dbx db.D
 }
 
 func IsFirstSubscription(ctx context.Context, dbx db.Dbx, userId uuid.UUID) (bool, error) {
-	// data, err := models.StripeSubscriptions.Query(
-	// 	models.SelectWhere.StripeSubscriptions.UserID.EQ(userId),
-	// ).Exists(ctx, dbx)
 	data, err := repository.StripeSubscription.Count(
 		ctx,
 		dbx,
@@ -448,14 +445,9 @@ func IsFirstSubscription(ctx context.Context, dbx db.Dbx, userId uuid.UUID) (boo
 		},
 	)
 	return data > 0, err
-	// return OptionalRow(data, err)
 }
 
 func FindValidPriceById(ctx context.Context, dbx db.Dbx, priceId string) (*models.StripePrice, error) {
-	// data, err := models.StripePrices.Query(
-	// 	models.SelectWhere.StripePrices.ID.EQ(priceId),
-	// 	models.SelectWhere.StripePrices.Type.EQ(models.StripePricingTypeRecurring),
-	// ).One(ctx, dbx)
 	data, err := repository.StripePrice.GetOne(
 		ctx,
 		dbx,
