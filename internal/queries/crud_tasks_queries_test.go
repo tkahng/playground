@@ -12,6 +12,7 @@ import (
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/test"
 	"github.com/tkahng/authgo/internal/tools/types"
+	"github.com/tkahng/authgo/internal/tools/utils"
 )
 
 func TestLoadTaskProjectsTasks(t *testing.T) {
@@ -1045,6 +1046,123 @@ func TestCreateTask(t *testing.T) {
 					if !reflect.DeepEqual(got.ProjectID, tt.want.ProjectID) {
 						t.Errorf("CreateTask() ProjectID = %v, want %v", got.ProjectID, tt.want.ProjectID)
 					}
+				}
+			})
+		}
+		return test.EndTestErr
+	})
+}
+func TestDefineTaskOrderNumberByStatus(t *testing.T) {
+	ctx, dbx := test.DbSetup()
+	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
+			Email: "tkahng@gmail.com",
+		})
+		if err != nil {
+			t.Fatalf("failed to create user: %v", err)
+		}
+		taskProject, err := queries.CreateTaskProject(ctx, dbxx, user.ID, &shared.CreateTaskProjectDTO{
+			Name:   "Test Project",
+			Status: shared.TaskProjectStatusDone,
+		})
+		if err != nil {
+			t.Fatalf("failed to create task project: %v", err)
+		}
+
+		task1, err := queries.CreateTask(ctx, dbxx, user.ID, taskProject.ID, &shared.CreateTaskBaseDTO{
+			Name:   "Task 1",
+			Status: shared.TaskStatusDone,
+			Order:  0,
+		})
+		if err != nil {
+			t.Fatalf("failed to create task: %v", err)
+		}
+		utils.PrettyPrintJSON(task1)
+		task2, err := queries.CreateTask(ctx, dbxx, user.ID, taskProject.ID, &shared.CreateTaskBaseDTO{
+			Name:   "Task 2",
+			Status: shared.TaskStatusDone,
+			Order:  1000,
+		})
+		if err != nil {
+			t.Fatalf("failed to create task: %v", err)
+		}
+		utils.PrettyPrintJSON(task2)
+		task3, err := queries.CreateTask(ctx, dbxx, user.ID, taskProject.ID, &shared.CreateTaskBaseDTO{
+			Name:   "Task 3",
+			Status: shared.TaskStatusDone,
+			Order:  2000,
+		})
+		if err != nil {
+			t.Fatalf("failed to create task: %v", err)
+		}
+		utils.PrettyPrintJSON(task3)
+		type args struct {
+			ctx           context.Context
+			db            db.Dbx
+			taskId        uuid.UUID
+			taskProjectId uuid.UUID
+			status        models.TaskStatus
+			currentOrder  float64
+			position      int64
+		}
+		tests := []struct {
+			name    string
+			args    args
+			want    float64
+			wantErr bool
+		}{
+			{
+				name: "get order for first position",
+				args: args{
+					ctx:           ctx,
+					db:            dbxx,
+					taskId:        task1.ID,
+					taskProjectId: taskProject.ID,
+					status:        models.TaskStatusDone,
+					currentOrder:  0,
+					position:      0,
+				},
+				want:    0,
+				wantErr: false,
+			},
+			{
+				name: "move second to first position",
+				args: args{
+					ctx:           ctx,
+					db:            dbxx,
+					taskId:        task2.ID,
+					taskProjectId: taskProject.ID,
+					status:        models.TaskStatusDone,
+					currentOrder:  1000,
+					position:      0,
+				},
+				want:    -1000,
+				wantErr: false,
+			},
+			{
+				name: "move first to last position",
+				args: args{
+					ctx:           ctx,
+					db:            dbxx,
+					taskId:        task1.ID,
+					taskProjectId: taskProject.ID,
+					status:        models.TaskStatusDone,
+					currentOrder:  0,
+					position:      2,
+				},
+				want:    3000,
+				wantErr: false,
+			},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				got, err := queries.DefineTaskOrderNumberByStatus(tt.args.ctx, tt.args.db, tt.args.taskId, tt.args.taskProjectId, tt.args.status, tt.args.currentOrder, tt.args.position)
+				if (err != nil) != tt.wantErr {
+					t.Errorf("DefineTaskOrderNumberByStatus() error = %v, wantErr %v", err, tt.wantErr)
+					return
+				}
+				if got != tt.want {
+					t.Errorf("DefineTaskOrderNumberByStatus() = %v, want %v", got, tt.want)
 				}
 			})
 		}

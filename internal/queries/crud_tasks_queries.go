@@ -442,7 +442,7 @@ func DefineTaskOrderNumberByStatus(ctx context.Context, dbx db.Dbx, taskId uuid.
 	if position == 0 {
 		res, err := repository.Task.Get(
 			ctx,
-			nil,
+			dbx,
 			&map[string]any{
 				"project_id": map[string]any{
 					"_eq": taskProjectId.String(),
@@ -472,7 +472,7 @@ func DefineTaskOrderNumberByStatus(ctx context.Context, dbx db.Dbx, taskId uuid.
 	}
 	ele, err := repository.Task.Get(
 		ctx,
-		nil,
+		dbx,
 		&map[string]any{
 			"project_id": map[string]any{
 				"_eq": taskProjectId.String(),
@@ -498,7 +498,7 @@ func DefineTaskOrderNumberByStatus(ctx context.Context, dbx db.Dbx, taskId uuid.
 	if currentOrder > element.Order {
 		sideELe, err := repository.Task.Get(
 			ctx,
-			nil,
+			dbx,
 			&map[string]any{
 				"project_id": map[string]any{
 					"_eq": taskProjectId.String(),
@@ -524,7 +524,7 @@ func DefineTaskOrderNumberByStatus(ctx context.Context, dbx db.Dbx, taskId uuid.
 	}
 	sideele, err := repository.Task.Get(
 		ctx,
-		nil,
+		dbx,
 		&map[string]any{
 			"project_id": map[string]any{
 				"_eq": taskProjectId.String(),
