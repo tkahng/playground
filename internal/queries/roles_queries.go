@@ -558,9 +558,6 @@ type PermissionSource struct {
 }
 
 func ListUserPermissionsSource(ctx context.Context, dbx db.Dbx, userId uuid.UUID, limit int64, offset int64) ([]PermissionSource, error) {
-	// q := psql.RawQuery(QueryUserPermissionSource, userId, userId, limit, offset)
-
-	// data, err := bob.All(ctx, dbx, q, scan.StructMapper[PermissionSource]())
 	data, err := QueryAll[PermissionSource](ctx, dbx, QueryUserPermissionSource, userId, limit, offset)
 	if err != nil {
 		return nil, err
@@ -570,9 +567,6 @@ func ListUserPermissionsSource(ctx context.Context, dbx db.Dbx, userId uuid.UUID
 }
 
 func CountUserPermissionSource(ctx context.Context, dbx db.Dbx, userId uuid.UUID) (int64, error) {
-	// q := psql.RawQuery(QueryUserPermissionSourceCount, userId, userId)
-
-	// data, err := bob.One(ctx, dbx, q, scan.SingleColumnMapper[int64])
 	data, err := Count(ctx, dbx, QueryUserPermissionSourceCount, userId)
 	if err != nil {
 		return 0, err
