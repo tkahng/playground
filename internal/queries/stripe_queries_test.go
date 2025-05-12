@@ -1579,3 +1579,120 @@ func TestIsFirstSubscription(t *testing.T) {
 		return test.EndTestErr
 	})
 }
+func TestFindValidPriceById(t *testing.T) {
+	ctx, dbx := test.DbSetup()
+	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+		// Create test product first
+		product := &models.StripeProduct{
+			ID:       "prod_test123",
+			Active:   true,
+			Name:     "Test Product",
+			Metadata: map[string]string{"key": "value"},
+		}
+		err := queries.UpsertProduct(ctx, dbxx, product)
+		if err != nil {
+			t.Fatalf("failed to create test product: %v", err)
+		}
+
+		// Create recurring price
+		recurringPrice := &models.StripePrice{
+			ID:        "price_recurring",
+			ProductID: product.ID,
+			Active:    true,
+			Currency:  "usd",
+			Type:      models.StripePricingTypeRecurring,
+			Metadata:  map[string]string{"key": "value"},
+		}
+		err = queries.UpsertPrice(ctx, dbxx, recurringPrice)
+		if err != nil {
+			t.Fatalf("failed to create recurring price: %v", err)
+		}
+
+		// Create one-time price
+		oneTimePrice := &models.StripePrice{
+			ID:        "price_onetime",
+			ProductID: product.ID,
+			Active:    true,
+			Currency:  "usd",
+			Type:      models.StripePricingTypeOneTime,
+			Metadata:  map[string]string{"key": "value"},
+		}
+		err = queries.UpsertPrice(ctx, dbxx, oneTimePrice)
+		if err != nil {
+			t.Fatalf("failed to create one-time price: %v", err)
+		}
+
+		type args struct {
+			ctx     context.Context
+			dbx     db.Dbx
+			priceId string
+		}
+		tests := []struct {
+			name    string
+			args    args
+			want    *models.StripePrice
+			wantErr bool
+		}{
+			{
+				name: "valid recurring price",
+				args: args{
+					ctx:     ctx,
+					dbx:     dbxx,
+					priceId: recurringPrice.ID,
+				},
+				want:    recurringPrice,
+				wantErr: false,
+			},
+			{
+				name: "non-recurring price",
+				args: args{
+					ctx:     ctx,
+					dbx:     dbxx,
+					priceId: oneTimePrice.ID,
+				},
+				want:    nil,
+				wantErr: false,
+			},
+			{
+				name: "non-existent price",
+				args: args{
+					ctx:     ctx,
+					dbx:     dbxx,
+					priceId: "price_nonexistent",
+				},
+				want:    nil,
+				wantErr: false,
+			},
+		}
+
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				got, err := queries.FindValidPriceById(tt.args.ctx, tt.args.dbx, tt.args.priceId)
+				if (err != nil) != tt.wantErr {
+					t.Errorf("FindValidPriceById() error = %v, wantErr %v", err, tt.wantErr)
+					return
+				}
+				if tt.want == nil {
+					if got != nil {
+						t.Errorf("FindValidPriceById() = %v, want nil", got)
+					}
+					return
+				}
+				if got == nil {
+					t.Errorf("FindValidPriceById() = nil, want %v", tt.want)
+					return
+				}
+				if got.ID != tt.want.ID {
+					t.Errorf("FindValidPriceById() got ID = %v, want %v", got.ID, tt.want.ID)
+				}
+				if got.Type != tt.want.Type {
+					t.Errorf("FindValidPriceById() got Type = %v, want %v", got.Type, tt.want.Type)
+				}
+				if got.ProductID != tt.want.ProductID {
+					t.Errorf("FindValidPriceById() got ProductID = %v, want %v", got.ProductID, tt.want.ProductID)
+				}
+			})
+		}
+		return test.EndTestErr
+	})
+}
