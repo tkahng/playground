@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/jaswdr/faker/v2"
 	"github.com/tkahng/authgo/internal/db"
 	"github.com/tkahng/authgo/internal/models"
@@ -188,6 +189,38 @@ func TestCountUsers(t *testing.T) {
 				}
 				if got != tt.want {
 					t.Errorf("CountUsers() = %v, want %v", got, tt.want)
+				}
+			})
+		}
+		return test.EndTestErr
+	})
+}
+func TestDeleteUsers(t *testing.T) {
+	ctx, dbx := test.DbSetup()
+	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+		faker := faker.New().Internet()
+		users, err := seeders.CreateUserWithAccountAndRole(ctx, dbxx, 1, models.ProvidersGoogle, "basic", faker)
+		if err != nil {
+			t.Fatalf("failed to create users: %v", err)
+		}
+
+		tests := []struct {
+			name    string
+			userId  uuid.UUID
+			wantErr bool
+		}{
+			{
+				name:    "delete existing user",
+				userId:  users[0].ID,
+				wantErr: false,
+			},
+		}
+
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				err := queries.DeleteUsers(ctx, dbxx, tt.userId)
+				if (err != nil) != tt.wantErr {
+					t.Errorf("DeleteUsers() error = %v, wantErr %v", err, tt.wantErr)
 				}
 			})
 		}

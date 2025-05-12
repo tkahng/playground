@@ -150,7 +150,7 @@ func DeleteUsers(ctx context.Context, db db.Dbx, userId uuid.UUID) error {
 		db,
 		&map[string]any{
 			"id": map[string]any{
-				"_eq": userId,
+				"_eq": userId.String(),
 			},
 		},
 	)
