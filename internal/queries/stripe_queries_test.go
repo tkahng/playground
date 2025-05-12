@@ -147,3 +147,68 @@ func TestFindCustomerByUserId(t *testing.T) {
 		return test.EndTestErr
 	})
 }
+func TestFindProductByStripeId(t *testing.T) {
+	ctx, dbx := test.DbSetup()
+	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+		stripeId := "prod_test123"
+		product := &models.StripeProduct{
+			ID:          stripeId,
+			Active:      true,
+			Name:        "Test Product",
+			Description: nil,
+			Image:       nil,
+			Metadata:    map[string]string{"key": "value"},
+		}
+
+		err := queries.UpsertProduct(ctx, dbxx, product)
+		if err != nil {
+			t.Fatalf("failed to upsert product: %v", err)
+		}
+
+		type args struct {
+			ctx      context.Context
+			dbx      db.Dbx
+			stripeId string
+		}
+		tests := []struct {
+			name    string
+			args    args
+			want    *models.StripeProduct
+			wantErr bool
+		}{
+			{
+				name: "valid stripe id",
+				args: args{
+					ctx:      ctx,
+					dbx:      dbxx,
+					stripeId: stripeId,
+				},
+				want: &models.StripeProduct{
+					ID:     stripeId,
+					Active: true,
+					Name:   "Test Product",
+				},
+				wantErr: false,
+			},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				got, err := queries.FindProductByStripeId(tt.args.ctx, tt.args.dbx, tt.args.stripeId)
+				if (err != nil) != tt.wantErr {
+					t.Errorf("FindProductByStripeId() error = %v, wantErr %v", err, tt.wantErr)
+					return
+				}
+				if !reflect.DeepEqual(got.ID, tt.want.ID) {
+					t.Errorf("FindProductByStripeId() got = %v, want %v", got.ID, tt.want.ID)
+				}
+				if !reflect.DeepEqual(got.Active, tt.want.Active) {
+					t.Errorf("FindProductByStripeId() got = %v, want %v", got.Active, tt.want.Active)
+				}
+				if !reflect.DeepEqual(got.Name, tt.want.Name) {
+					t.Errorf("FindProductByStripeId() got = %v, want %v", got.Name, tt.want.Name)
+				}
+			})
+		}
+		return test.EndTestErr
+	})
+}
