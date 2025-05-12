@@ -111,7 +111,7 @@ const (
 FROM public.product_roles rp
         LEFT JOIN public.roles p ON p.id = rp.role_id
         WHERE rp.product_id	 = ANY (
-                $1::uuid []
+                $1::text []
         )
 GROUP BY rp.product_id;`
 )
