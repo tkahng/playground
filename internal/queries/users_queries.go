@@ -3,10 +3,8 @@ package queries
 import (
 	"context"
 	"errors"
-	"fmt"
 	"time"
 
-	"github.com/Masterminds/squirrel"
 	"github.com/alexedwards/argon2id"
 	"github.com/google/uuid"
 	"github.com/stephenafamo/scan"
@@ -151,25 +149,16 @@ func CreateUserRoles(ctx context.Context, db db.Dbx, userId uuid.UUID, roleIds .
 			RoleID: id,
 		})
 	}
-	q := squirrel.Insert("user_roles").Columns("user_id", "role_id")
-	for _, perm := range dtos {
-		q = q.Values(perm.UserID, perm.RoleID)
-	}
-	q = q.Suffix("RETURNING *")
-	sql, args, err := q.PlaceholderFormat(squirrel.Dollar).ToSql()
+	_, err := repository.UserRole.Post(
+		ctx,
+		db,
+		dtos,
+	)
 	if err != nil {
-		return err
-	}
-	fmt.Println(sql, args)
-	_, err = QueryAll[crudModels.UserRole](ctx, db, sql, args...)
-	if err != nil {
+
 		return err
 	}
 	return nil
-	// return models.UserRoles.Insert(&models.UserRoleSetter{
-	// 	UserID:  omit.From(userId),
-	// 	RoleIDs: omit.From(params.RoleIds),
-	// }).Exec(ctx, db)
 }
 func CreateUserPermissions(ctx context.Context, db db.Dbx, userId uuid.UUID, permissionIds ...uuid.UUID) error {
 	var dtos []crudModels.UserPermission
@@ -179,22 +168,15 @@ func CreateUserPermissions(ctx context.Context, db db.Dbx, userId uuid.UUID, per
 			PermissionID: id,
 		})
 	}
-	q := squirrel.Insert("user_permissions").Columns("user_id", "permission_id")
-	for _, perm := range dtos {
-		q = q.Values(perm.UserID, perm.PermissionID)
-	}
-	q = q.Suffix("RETURNING *")
-	sql, args, err := q.PlaceholderFormat(squirrel.Dollar).ToSql()
-	if err != nil {
-		return err
-	}
-	fmt.Println(sql, args)
-	_, err = QueryAll[crudModels.UserPermission](ctx, db, sql, args...)
+	_, err := repository.UserPermission.Post(
+		ctx,
+		db,
+		dtos,
+	)
 	if err != nil {
 		return err
 	}
 	return nil
-
 }
 
 func CreateAccount(ctx context.Context, db db.Dbx, userId uuid.UUID, params *shared.AuthenticationInput) (*crudModels.UserAccount, error) {

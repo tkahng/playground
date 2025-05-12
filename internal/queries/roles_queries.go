@@ -2,11 +2,9 @@ package queries
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"time"
 
-	"github.com/Masterminds/squirrel"
 	"github.com/aarondl/opt/null"
 	"github.com/google/uuid"
 	"github.com/stephenafamo/scan"
@@ -191,12 +189,13 @@ func CreateRolePermissions(ctx context.Context, db db.Dbx, roleId uuid.UUID, per
 			PermissionID: perm,
 		})
 	}
-	q := squirrel.Insert("role_permissions").Columns("role_id", "permission_id")
-	for _, perm := range permissions {
-		q = q.Values(perm.RoleID, perm.PermissionID)
-	}
-	q = q.Suffix("RETURNING *")
-	_, err := QueryWithBuilder[crudModels.RolePermission](ctx, db, q.PlaceholderFormat(squirrel.Dollar))
+	// q := squirrel.Insert("role_permissions").Columns("role_id", "permission_id")
+	// for _, perm := range permissions {
+	// 	q = q.Values(perm.RoleID, perm.PermissionID)
+	// }
+	// q = q.Suffix("RETURNING *")
+	// _, err := QueryWithBuilder[crudModels.RolePermission](ctx, db, q.PlaceholderFormat(squirrel.Dollar))
+	_, err := repository.RolePermission.Post(ctx, db, permissions)
 	if err != nil {
 		return err
 	}
@@ -211,21 +210,26 @@ func CreateProductRoles(ctx context.Context, db db.Dbx, productId string, roleId
 			RoleID:    role,
 		})
 	}
-	q := squirrel.Insert("product_roles").Columns("product_id", "role_id")
-	for _, perm := range roles {
-		q = q.Values(perm.ProductID, perm.RoleID)
-	}
-	q = q.Suffix("RETURNING *")
-	sql, args, err := q.PlaceholderFormat(squirrel.Dollar).ToSql()
-	if err != nil {
-		return err
-	}
-	fmt.Println(sql, args)
-	_, err = pgxscan.All(ctx, db, scan.StructMapper[crudModels.ProductRole](), sql, args...)
+	_, err := repository.ProductRole.Post(ctx, db, roles)
 	if err != nil {
 		return err
 	}
 	return nil
+	// q := squirrel.Insert("product_roles").Columns("product_id", "role_id")
+	// for _, perm := range roles {
+	// 	q = q.Values(perm.ProductID, perm.RoleID)
+	// }
+	// q = q.Suffix("RETURNING *")
+	// sql, args, err := q.PlaceholderFormat(squirrel.Dollar).ToSql()
+	// if err != nil {
+	// 	return err
+	// }
+	// fmt.Println(sql, args)
+	// _, err = pgxscan.All(ctx, db, scan.StructMapper[crudModels.ProductRole](), sql, args...)
+	// if err != nil {
+	// 	return err
+	// }
+	// return nil
 }
 
 func CreateProductPermissions(ctx context.Context, db db.Dbx, productId string, permissionIds ...uuid.UUID) error {
@@ -236,17 +240,22 @@ func CreateProductPermissions(ctx context.Context, db db.Dbx, productId string, 
 			PermissionID: permissionId,
 		})
 	}
-	q := squirrel.Insert("product_permissions").Columns("product_id", "permission_id")
-	for _, perm := range permissions {
-		q = q.Values(perm.ProductID, perm.PermissionID)
-	}
-	q = q.Suffix("RETURNING *")
-	sql, args, err := q.PlaceholderFormat(squirrel.Dollar).ToSql()
-	if err != nil {
-		return err
-	}
-	fmt.Println(sql, args)
-	_, err = pgxscan.All(ctx, db, scan.StructMapper[crudModels.ProductPermission](), sql, args...)
+	_, err := repository.ProductPermission.Post(
+		ctx,
+		db,
+		permissions,
+	)
+	// q := squirrel.Insert("product_permissions").Columns("product_id", "permission_id")
+	// for _, perm := range permissions {
+	// 	q = q.Values(perm.ProductID, perm.PermissionID)
+	// }
+	// q = q.Suffix("RETURNING *")
+	// sql, args, err := q.PlaceholderFormat(squirrel.Dollar).ToSql()
+	// if err != nil {
+	// 	return err
+	// }
+	// fmt.Println(sql, args)
+	// _, err = pgxscan.All(ctx, db, scan.StructMapper[crudModels.ProductPermission](), sql, args...)
 	if err != nil {
 		return err
 	}

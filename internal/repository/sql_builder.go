@@ -265,7 +265,7 @@ func (b *SQLBuilder[Model]) Values(values *[]Model, args *[]any, keys *[]any) (f
 					if err != nil {
 						return "", "", fmt.Errorf("error generating primary key for field %s: %w", field.name, err)
 					}
-					items = append(items, id)
+					items = append(items, b.parameter(reflect.ValueOf(id), args))
 				}
 				if b.skipIdInsert {
 					// If skipIdInsert is true, skip inserting the primary key field
