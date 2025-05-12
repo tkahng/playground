@@ -74,20 +74,20 @@ func (api *Api) TaskUpdate(ctx context.Context, input *shared.UpdateTaskDTO) (*s
 	return nil, nil
 }
 
-// func (api *Api) UpdateTaskPositionOperation(path string) huma.Operation {
-// 	return huma.Operation{
-// 		OperationID: "update-task-position",
-// 		Method:      http.MethodPut,
-// 		Path:        path,
-// 		Summary:     "Update task position",
-// 		Description: "Update task position",
-// 		Tags:        []string{"Task"},
-// 		Errors:      []int{http.StatusNotFound},
-// 		Security: []map[string][]string{
-// 			{shared.BearerAuthSecurityKey: {}},
-// 		},
-// 	}
-// }
+func (api *Api) UpdateTaskPositionOperation(path string) huma.Operation {
+	return huma.Operation{
+		OperationID: "update-task-position",
+		Method:      http.MethodPut,
+		Path:        path,
+		Summary:     "Update task position",
+		Description: "Update task position",
+		Tags:        []string{"Task"},
+		Errors:      []int{http.StatusNotFound},
+		Security: []map[string][]string{
+			{shared.BearerAuthSecurityKey: {}},
+		},
+	}
+}
 
 // func (api *Api) UpdateTaskPosition(ctx context.Context, input *shared.TaskPositionInput) (*struct{}, error) {
 // 	if input == nil {

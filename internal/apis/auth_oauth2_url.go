@@ -3,9 +3,7 @@ package apis
 import (
 	"context"
 	"fmt"
-	"net/http"
 
-	"github.com/danielgtaylor/huma/v2"
 	"github.com/tkahng/authgo/internal/core"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/security"
@@ -72,18 +70,6 @@ func (h *Api) OAuth2AuthorizationUrl(ctx context.Context, input *OAuth2Authoriza
 		},
 	}, nil
 
-}
-
-func (h *Api) OAuth2AuthorizationUrlsOperation(path string) huma.Operation {
-	return huma.Operation{
-		OperationID: "oauth2-authorization-urls",
-		Method:      http.MethodGet,
-		Path:        path,
-		Summary:     "OAuth2 authorization",
-		Description: "List of auth urls",
-		Tags:        []string{"Auth"},
-		Errors:      []int{http.StatusNotFound},
-	}
 }
 
 type SkipTakeDTO struct {

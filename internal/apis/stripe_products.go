@@ -2,26 +2,12 @@ package apis
 
 import (
 	"context"
-	"net/http"
 
-	"github.com/danielgtaylor/huma/v2"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 )
-
-func (api *Api) StripeProductsWithPricesOperation(path string) huma.Operation {
-	return huma.Operation{
-		OperationID: "stripe-products-with-prices",
-		Method:      http.MethodGet,
-		Path:        path,
-		Summary:     "stripe-products-with-prices",
-		Description: "stripe-products-with-prices",
-		Tags:        []string{"Payment", "Stripe", "Products"},
-		Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
-	}
-}
 
 type StripeProductsWithPricesInput struct {
 	shared.PaginatedInput

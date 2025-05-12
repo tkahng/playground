@@ -24,21 +24,6 @@ type StripeUrlOutput struct {
 	}
 }
 
-func (a *Api) StripeCheckoutSessionOperation(path string) huma.Operation {
-	return huma.Operation{
-		OperationID: "create-checkout-session",
-		Method:      http.MethodPost,
-		Path:        path,
-		Summary:     "create checkout session",
-		Description: "create checkout session",
-		Tags:        []string{"Payment", "Stripe", "Checkout Session"},
-		Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
-		Security: []map[string][]string{
-			{shared.BearerAuthSecurityKey: {}},
-		},
-	}
-}
-
 func (a *Api) StripeCheckoutSession(ctx context.Context, input *StripePaymentInput) (*StripeUrlOutput, error) {
 	db := a.app.Db()
 	info := core.GetContextUserInfo(ctx)
@@ -65,21 +50,6 @@ func (a *Api) StripeCheckoutSession(ctx context.Context, input *StripePaymentInp
 type StripeBillingPortalInput struct {
 	// HxRequestHeaders
 	// Body StripePaymentPayload
-}
-
-func (a *Api) StripeBillingPortalOperation(path string) huma.Operation {
-	return huma.Operation{
-		OperationID: "stripe-billing-portal",
-		Method:      http.MethodPost,
-		Path:        path,
-		Summary:     "billing-portal",
-		Description: "billing-portals",
-		Tags:        []string{"Payment", "Billing Portal", "Stripe"},
-		Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
-		Security: []map[string][]string{
-			{shared.BearerAuthSecurityKey: {}},
-		},
-	}
 }
 
 func (a *Api) StripeBillingPortal(ctx context.Context, input *StripeBillingPortalInput) (*StripeUrlOutput, error) {
