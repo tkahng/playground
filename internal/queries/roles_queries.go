@@ -280,13 +280,6 @@ func CreateRole(ctx context.Context, dbx db.Dbx, role *CreateRoleDto) (*crudMode
 		Name:        role.Name,
 		Description: role.Description,
 	})
-	// data, err := models.Roles.Insert(
-	// 	&models.RoleSetter{
-	// 		Name:        omit.From(role.Name),
-	// 		Description: omitnull.FromPtr(role.Description),
-	// 	},
-	// 	im.Returning("*"),
-	// ).One(ctx, dbx)
 	return data, err
 }
 
@@ -301,7 +294,7 @@ func UpdateRole(ctx context.Context, dbx db.Dbx, id uuid.UUID, roledto *UpdateRo
 		dbx,
 		&map[string]any{
 			"id": map[string]any{
-				"_eq": id,
+				"_eq": id.String(),
 			},
 		},
 	)
@@ -314,15 +307,6 @@ func UpdateRole(ctx context.Context, dbx db.Dbx, id uuid.UUID, roledto *UpdateRo
 	role.Name = roledto.Name
 	role.Description = roledto.Description
 	_, err = repository.Role.PutOne(ctx, dbx, role)
-
-	// q := models.Roles.Update(
-	// 	models.UpdateWhere.Roles.ID.EQ(id),
-	// 	models.RoleSetter{
-	// 		Name:        omit.From(roledto.Name),
-	// 		Description: omitnull.FromPtr(roledto.Description),
-	// 	}.UpdateMod(),
-	// )
-	// _, err := q.Exec(ctx, dbx)
 	if err != nil {
 		return err
 	}

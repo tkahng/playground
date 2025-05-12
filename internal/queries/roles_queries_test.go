@@ -420,3 +420,140 @@ func TestFindOrCreateRole(t *testing.T) {
 		return errors.New("rollback")
 	})
 }
+func TestCreateRole(t *testing.T) {
+	ctx, dbx := test.DbSetup()
+	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+		type args struct {
+			ctx  context.Context
+			dbx  db.Dbx
+			role *queries.CreateRoleDto
+		}
+		tests := []struct {
+			name    string
+			args    args
+			want    string
+			wantErr bool
+		}{
+			{
+				name: "create role with name only",
+				args: args{
+					ctx: ctx,
+					dbx: dbxx,
+					role: &queries.CreateRoleDto{
+						Name: "test_role",
+					},
+				},
+				want:    "test_role",
+				wantErr: false,
+			},
+			{
+				name: "create role with description",
+				args: args{
+					ctx: ctx,
+					dbx: dbxx,
+					role: &queries.CreateRoleDto{
+						Name:        "test_role_2",
+						Description: new(string),
+					},
+				},
+				want:    "test_role_2",
+				wantErr: false,
+			},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				got, err := queries.CreateRole(tt.args.ctx, tt.args.dbx, tt.args.role)
+				if (err != nil) != tt.wantErr {
+					t.Errorf("CreateRole() error = %v, wantErr %v", err, tt.wantErr)
+					return
+				}
+				if got.Name != tt.want {
+					t.Errorf("CreateRole() = %v, want %v", got.Name, tt.want)
+				}
+			})
+		}
+		return errors.New("rollback")
+	})
+}
+func TestUpdateRole(t *testing.T) {
+	ctx, dbx := test.DbSetup()
+	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+		// Create initial role to update
+		role, err := queries.CreateRole(ctx, dbxx, &queries.CreateRoleDto{
+			Name: "initial_role",
+		})
+		if err != nil {
+			t.Fatalf("failed to create initial role: %v", err)
+		}
+
+		description := "updated description"
+
+		type args struct {
+			ctx     context.Context
+			dbx     db.Dbx
+			id      uuid.UUID
+			roledto *queries.UpdateRoleDto
+		}
+		tests := []struct {
+			name    string
+			args    args
+			wantErr bool
+		}{
+			{
+				name: "update existing role",
+				args: args{
+					ctx: ctx,
+					dbx: dbxx,
+					id:  role.ID,
+					roledto: &queries.UpdateRoleDto{
+						Name:        "updated_role",
+						Description: &description,
+					},
+				},
+				wantErr: false,
+			},
+			{
+				name: "update non-existent role",
+				args: args{
+					ctx: ctx,
+					dbx: dbxx,
+					id:  uuid.New(),
+					roledto: &queries.UpdateRoleDto{
+						Name: "test_role",
+					},
+				},
+				wantErr: false,
+			},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				err := queries.UpdateRole(tt.args.ctx, tt.args.dbx, tt.args.id, tt.args.roledto)
+				if (err != nil) != tt.wantErr {
+					t.Errorf("UpdateRole() error = %v, wantErr %v", err, tt.wantErr)
+					return
+				}
+
+				if tt.name == "update existing role" {
+					// Verify the update
+					updatedRole, err := repository.Role.GetOne(ctx, tt.args.dbx,
+						&map[string]any{
+							"id": map[string]any{
+								"_eq": tt.args.id.String(),
+							},
+						})
+					if err != nil {
+						t.Errorf("Failed to get updated role: %v", err)
+						return
+					}
+					if updatedRole.Name != tt.args.roledto.Name {
+						t.Errorf("Role name = %v, want %v", updatedRole.Name, tt.args.roledto.Name)
+					}
+					if *updatedRole.Description != *tt.args.roledto.Description {
+						t.Errorf("Role description = %v, want %v", *updatedRole.Description, *tt.args.roledto.Description)
+					}
+				}
+			})
+		}
+		return errors.New("rollback")
+	})
+}
