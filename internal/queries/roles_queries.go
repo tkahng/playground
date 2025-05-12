@@ -406,6 +406,9 @@ func CreatePermission(ctx context.Context, dbx db.Dbx, permission *CreatePermiss
 }
 
 func FindPermissionsByIds(ctx context.Context, dbx db.Dbx, params []uuid.UUID) ([]*crudModels.Permission, error) {
+	if len(params) == 0 {
+		return nil, nil
+	}
 	newIds := make([]string, len(params))
 	for i, id := range params {
 		newIds[i] = id.String()
@@ -424,7 +427,6 @@ func FindPermissionsByIds(ctx context.Context, dbx db.Dbx, params []uuid.UUID) (
 		nil,
 		nil,
 	)
-	// return models.Permissions.Query(models.SelectWhere.Permissions.ID.In(params...)).All(ctx, dbx)
 }
 
 func DeletePermission(ctx context.Context, dbx db.Dbx, id uuid.UUID) error {
