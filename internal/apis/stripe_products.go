@@ -45,7 +45,7 @@ func (api *Api) StripeProductsWithPrices(ctx context.Context, inputt *StripeProd
 	for _, u := range products {
 		ids = append(ids, u.ID)
 	}
-	prices, err := queries.LoadeProductPrices(ctx, db, &map[string]any{
+	prices, err := queries.LoadProductPrices(ctx, db, &map[string]any{
 		"product_id": map[string]any{
 			"_in": ids,
 		},

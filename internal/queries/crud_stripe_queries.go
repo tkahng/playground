@@ -136,7 +136,7 @@ func LoadProductRoles(ctx context.Context, db db.Dbx, productIds ...string) ([][
 	}), nil
 }
 
-func LoadeProductPrices(ctx context.Context, db db.Dbx, where *map[string]any, productIds ...string) ([][]*models.StripePrice, error) {
+func LoadProductPrices(ctx context.Context, db db.Dbx, where *map[string]any, productIds ...string) ([][]*models.StripePrice, error) {
 	if where == nil {
 		where = &map[string]any{}
 	}

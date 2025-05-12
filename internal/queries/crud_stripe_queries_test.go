@@ -130,3 +130,70 @@ func TestLoadProductRoles(t *testing.T) {
 		return test.EndTestErr
 	})
 }
+func TestLoadProductPrices(t *testing.T) {
+	ctx, dbx := test.DbSetup()
+	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+		products, err := seeders.CreateStripeProductPrices(ctx, dbxx, 2)
+		if err != nil {
+			t.Fatalf("failed to create stripe products: %v", err)
+		}
+
+		productIds := []string{products[0].ID, products[1].ID}
+
+		type args struct {
+			ctx        context.Context
+			db         db.Dbx
+			where      *map[string]any
+			productIds []string
+		}
+		tests := []struct {
+			name      string
+			args      args
+			wantCount []int
+			wantErr   bool
+		}{
+			{
+				name: "Load product prices",
+				args: args{
+					ctx:        ctx,
+					db:         dbxx,
+					where:      nil,
+					productIds: productIds,
+				},
+				wantCount: []int{1, 1}, // Each product has 1 price
+				wantErr:   false,
+			},
+			{
+				name: "Load with where condition",
+				args: args{
+					ctx: ctx,
+					db:  dbxx,
+					where: &map[string]any{
+						"active": map[string]any{
+							"_eq": true,
+						},
+					},
+					productIds: productIds,
+				},
+				wantCount: []int{1, 1},
+				wantErr:   false,
+			},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				got, err := queries.LoadProductPrices(tt.args.ctx, tt.args.db, tt.args.where, tt.args.productIds...)
+				if (err != nil) != tt.wantErr {
+					t.Errorf("LoadeProductPrices() error = %v, wantErr %v", err, tt.wantErr)
+					return
+				}
+				for i, prices := range got {
+					count := tt.wantCount[i]
+					if len(prices) != count {
+						t.Errorf("LoadeProductPrices() got = %v, want %v", len(prices), count)
+					}
+				}
+			})
+		}
+		return test.EndTestErr
+	})
+}

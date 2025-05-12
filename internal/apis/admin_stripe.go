@@ -114,7 +114,7 @@ func (api *Api) AdminStripeProducts(ctx context.Context,
 		return p.ID
 	})
 	if slices.Contains(input.Expand, "prices") {
-		data, err := queries.LoadeProductPrices(ctx, db, nil, productIds...)
+		data, err := queries.LoadProductPrices(ctx, db, nil, productIds...)
 		if err != nil {
 			return nil, err
 		}
@@ -189,7 +189,7 @@ func (api *Api) AdminStripeProductsGet(ctx context.Context,
 	}
 
 	if slices.Contains(input.Expand, "prices") {
-		prices, err := queries.LoadeProductPrices(ctx, db, nil, input.ProductID)
+		prices, err := queries.LoadProductPrices(ctx, db, nil, input.ProductID)
 		if err != nil {
 			return nil, err
 		}
