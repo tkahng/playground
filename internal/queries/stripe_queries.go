@@ -337,9 +337,9 @@ func FindSubscriptionWithPriceById(ctx context.Context, dbx db.Dbx, stripeId str
 	if err != nil {
 		return nil, err
 	}
-	first := ReturnFirst(data)
-	if first == nil {
-		return nil, nil
+	var first *models.SubscriptionWithPrice
+	if len(data) > 0 {
+		first = data[0]
 	}
 	return first, nil
 }
