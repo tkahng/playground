@@ -1169,3 +1169,103 @@ func TestDefineTaskOrderNumberByStatus(t *testing.T) {
 		return test.EndTestErr
 	})
 }
+func TestUpdateTask(t *testing.T) {
+	ctx, dbx := test.DbSetup()
+	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
+			Email: "tkahng@gmail.com",
+		})
+		if err != nil {
+			t.Fatalf("failed to create user: %v", err)
+		}
+		taskProject, err := queries.CreateTaskProject(ctx, dbxx, user.ID, &shared.CreateTaskProjectDTO{
+			Name:   "Test Project",
+			Status: shared.TaskProjectStatusDone,
+		})
+		if err != nil {
+			t.Fatalf("failed to create task project: %v", err)
+		}
+		task, err := queries.CreateTask(ctx, dbxx, user.ID, taskProject.ID, &shared.CreateTaskBaseDTO{
+			Name:        "Test Task",
+			Description: types.Pointer("Test Description"),
+			Status:      shared.TaskStatusDone,
+			Order:       1000,
+		})
+		if err != nil {
+			t.Fatalf("failed to create task: %v", err)
+		}
+
+		type args struct {
+			ctx    context.Context
+			db     db.Dbx
+			taskID uuid.UUID
+			input  *shared.UpdateTaskBaseDTO
+		}
+		tests := []struct {
+			name    string
+			args    args
+			wantErr bool
+		}{
+			{
+				name: "update task successfully",
+				args: args{
+					ctx:    ctx,
+					db:     dbxx,
+					taskID: task.ID,
+					input: &shared.UpdateTaskBaseDTO{
+						Name:        "Updated Task",
+						Description: types.Pointer("Updated Description"),
+						Status:      shared.TaskStatusInProgress,
+						Order:       2000,
+						ParentID:    nil,
+					},
+				},
+				wantErr: false,
+			},
+			{
+				name: "update non-existing task",
+				args: args{
+					ctx:    ctx,
+					db:     dbxx,
+					taskID: uuid.New(),
+					input: &shared.UpdateTaskBaseDTO{
+						Name:   "Updated Task",
+						Status: shared.TaskStatusInProgress,
+					},
+				},
+				wantErr: true,
+			},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				err := queries.UpdateTask(tt.args.ctx, tt.args.db, tt.args.taskID, tt.args.input)
+				if (err != nil) != tt.wantErr {
+					t.Errorf("UpdateTask() error = %v, wantErr %v", err, tt.wantErr)
+					return
+				}
+
+				if !tt.wantErr {
+					// Verify task was updated
+					updatedTask, err := queries.FindTaskByID(tt.args.ctx, tt.args.db, tt.args.taskID)
+					if err != nil {
+						t.Errorf("Failed to get updated task: %v", err)
+						return
+					}
+					if updatedTask.Name != tt.args.input.Name {
+						t.Errorf("Task name not updated. got = %v, want %v", updatedTask.Name, tt.args.input.Name)
+					}
+					if *updatedTask.Description != *tt.args.input.Description {
+						t.Errorf("Task description not updated. got = %v, want %v", *updatedTask.Description, *tt.args.input.Description)
+					}
+					if updatedTask.Status != models.TaskStatus(tt.args.input.Status) {
+						t.Errorf("Task status not updated. got = %v, want %v", updatedTask.Status, tt.args.input.Status)
+					}
+					if updatedTask.Order != tt.args.input.Order {
+						t.Errorf("Task order not updated. got = %v, want %v", updatedTask.Order, tt.args.input.Order)
+					}
+				}
+			})
+		}
+		return test.EndTestErr
+	})
+}

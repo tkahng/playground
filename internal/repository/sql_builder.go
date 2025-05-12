@@ -349,7 +349,7 @@ func (b *SQLBuilder[Model]) Set(set *Model, args *[]any, where *map[string]any) 
 			}
 		} else {
 			// Other fields are added to the SET clause
-			result = append(result, field.name+"="+b.parameter(_value.Field(field.idx), args))
+			result = append(result, b.identifier(field.name)+"="+b.parameter(_value.Field(field.idx), args))
 		}
 	}
 
