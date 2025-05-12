@@ -964,3 +964,90 @@ func TestCreateTaskProjectWithTasks(t *testing.T) {
 		return test.EndTestErr
 	})
 }
+func TestCreateTask(t *testing.T) {
+	ctx, dbx := test.DbSetup()
+	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
+			Email: "tkahng@gmail.com",
+		})
+		if err != nil {
+			t.Fatalf("failed to create user: %v", err)
+		}
+		taskProject, err := queries.CreateTaskProject(ctx, dbxx, user.ID, &shared.CreateTaskProjectDTO{
+			Name:   "Test Project",
+			Status: shared.TaskProjectStatusDone,
+		})
+		if err != nil {
+			t.Fatalf("failed to create task project: %v", err)
+		}
+
+		type args struct {
+			ctx       context.Context
+			db        db.Dbx
+			userID    uuid.UUID
+			projectID uuid.UUID
+			input     *shared.CreateTaskBaseDTO
+		}
+		tests := []struct {
+			name    string
+			args    args
+			want    *models.Task
+			wantErr bool
+		}{
+			{
+				name: "create task successfully",
+				args: args{
+					ctx:       ctx,
+					db:        dbxx,
+					userID:    user.ID,
+					projectID: taskProject.ID,
+					input: &shared.CreateTaskBaseDTO{
+						Name:        "Test Task",
+						Description: types.Pointer("Test Description"),
+						Status:      shared.TaskStatusDone,
+						Order:       1000,
+					},
+				},
+				want: &models.Task{
+					UserID:      user.ID,
+					ProjectID:   taskProject.ID,
+					Name:        "Test Task",
+					Description: types.Pointer("Test Description"),
+					Status:      models.TaskStatusDone,
+					Order:       1000,
+				},
+				wantErr: false,
+			},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				got, err := queries.CreateTask(tt.args.ctx, tt.args.db, tt.args.userID, tt.args.projectID, tt.args.input)
+				if (err != nil) != tt.wantErr {
+					t.Errorf("CreateTask() error = %v, wantErr %v", err, tt.wantErr)
+					return
+				}
+				if tt.want != nil {
+					if !reflect.DeepEqual(got.Name, tt.want.Name) {
+						t.Errorf("CreateTask() Name = %v, want %v", got.Name, tt.want.Name)
+					}
+					if !reflect.DeepEqual(got.Description, tt.want.Description) {
+						t.Errorf("CreateTask() Description = %v, want %v", got.Description, tt.want.Description)
+					}
+					if !reflect.DeepEqual(got.Status, tt.want.Status) {
+						t.Errorf("CreateTask() Status = %v, want %v", got.Status, tt.want.Status)
+					}
+					if !reflect.DeepEqual(got.Order, tt.want.Order) {
+						t.Errorf("CreateTask() Order = %v, want %v", got.Order, tt.want.Order)
+					}
+					if !reflect.DeepEqual(got.UserID, tt.want.UserID) {
+						t.Errorf("CreateTask() UserID = %v, want %v", got.UserID, tt.want.UserID)
+					}
+					if !reflect.DeepEqual(got.ProjectID, tt.want.ProjectID) {
+						t.Errorf("CreateTask() ProjectID = %v, want %v", got.ProjectID, tt.want.ProjectID)
+					}
+				}
+			})
+		}
+		return test.EndTestErr
+	})
+}
