@@ -9,20 +9,6 @@ import (
 	"github.com/tkahng/authgo/internal/shared"
 )
 
-func (api *Api) GetAppSettingsOperation(path string) huma.Operation {
-	return huma.Operation{
-		OperationID: "app-settings-get",
-		Method:      http.MethodGet,
-		Path:        path,
-		Summary:     "App settings",
-		Description: "App settings",
-		Tags:        []string{"Admin", "Settings"},
-		Security: []map[string][]string{
-			{shared.BearerAuthSecurityKey: {}},
-		},
-	}
-}
-
 type AppSettingsout struct {
 	Body *core.AppOptions
 }

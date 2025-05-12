@@ -2,7 +2,6 @@ package apis
 
 import (
 	"context"
-	"net/http"
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/tkahng/authgo/internal/core"
@@ -80,21 +79,6 @@ type CheckoutSession struct {
 
 type CheckoutSessionOutput struct {
 	Body shared.SubscriptionWithPrice
-}
-
-func (a *Api) StripeCheckoutSessionGetOperation(path string) huma.Operation {
-	return huma.Operation{
-		OperationID: "get-checkout-session",
-		Method:      http.MethodGet,
-		Path:        path,
-		Summary:     "get checkout session",
-		Description: "get checkout session",
-		Tags:        []string{"Payment", "Stripe", "Checkout Session"},
-		Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
-		Security: []map[string][]string{
-			{shared.BearerAuthSecurityKey: {}},
-		},
-	}
 }
 
 type StripeCheckoutSessionInput struct {

@@ -85,21 +85,6 @@ func (api *Api) AdminUsers(ctx context.Context, input *struct {
 	}, nil
 }
 
-func (api *Api) AdminUsersCreateOperation(path string) huma.Operation {
-	return huma.Operation{
-		OperationID: "admin-users-create",
-		Method:      http.MethodPost,
-		Path:        path,
-		Summary:     "Create user",
-		Description: "Create user",
-		Tags:        []string{"Users", "Admin"},
-		Errors:      []int{http.StatusNotFound},
-		Security: []map[string][]string{
-			{shared.BearerAuthSecurityKey: {}},
-		},
-	}
-}
-
 func (api *Api) AdminUsersCreate(ctx context.Context, input *struct {
 	Body shared.UserCreateInput
 }) (*struct {

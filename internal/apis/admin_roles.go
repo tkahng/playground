@@ -53,21 +53,6 @@ func (api *Api) AdminRolesList(ctx context.Context, input *struct {
 
 }
 
-func (api *Api) AdminRolesCreateOperation(path string) huma.Operation {
-	return huma.Operation{
-		OperationID: "admin-roles-create",
-		Method:      http.MethodPost,
-		Path:        path,
-		Summary:     "Create role",
-		Description: "Create role",
-		Tags:        []string{"Admin", "Roles"},
-		Errors:      []int{http.StatusNotFound},
-		Security: []map[string][]string{
-			{shared.BearerAuthSecurityKey: {}},
-		},
-	}
-}
-
 type RoleCreateInput struct {
 	Name        string  `json:"name" required:"true"`
 	Description *string `json:"description,omitempty"`
