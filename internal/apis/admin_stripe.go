@@ -2,7 +2,6 @@ package apis
 
 import (
 	"context"
-	"net/http"
 	"slices"
 
 	"github.com/danielgtaylor/huma/v2"
@@ -157,21 +156,6 @@ func (api *Api) AdminStripeProductsGet(ctx context.Context,
 	}, nil
 }
 
-func (api *Api) AdminStripeProductsRolesCreateOperation(path string) huma.Operation {
-	return huma.Operation{
-		OperationID: "admin-create-product-roles",
-		Method:      http.MethodPost,
-		Path:        path,
-		Summary:     "Create product roles",
-		Description: "Create product roles",
-		Tags:        []string{"Admin", "Roles", "Product", "Stripe"},
-		Errors:      []int{http.StatusNotFound},
-		Security: []map[string][]string{
-			{shared.BearerAuthSecurityKey: {}},
-		},
-	}
-}
-
 func (api *Api) AdminStripeProductsRolesCreate(ctx context.Context, input *struct {
 	ProductID string `path:"product-id" required:"true"`
 	Body      RoleIdsInput
@@ -195,20 +179,6 @@ func (api *Api) AdminStripeProductsRolesCreate(ctx context.Context, input *struc
 	return nil, nil
 }
 
-func (api *Api) AdminStripeProductsRolesDeleteOperation(path string) huma.Operation {
-	return huma.Operation{
-		OperationID: "admin-delete-product-roles",
-		Method:      http.MethodDelete,
-		Path:        path,
-		Summary:     "Delete product roles",
-		Description: "Delete product roles",
-		Tags:        []string{"Admin", "Roles", "Product", "Stripe"},
-		Errors:      []int{http.StatusNotFound},
-		Security: []map[string][]string{
-			{shared.BearerAuthSecurityKey: {}},
-		},
-	}
-}
 func (api *Api) AdminStripeProductsRolesDelete(ctx context.Context, input *struct {
 	ProductID string `path:"product-id" required:"true"`
 	RoleID    string `path:"role-id" required:"true" format:"uuid"`
