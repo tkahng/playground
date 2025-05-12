@@ -109,7 +109,7 @@ func TestCreateUserRoles(t *testing.T) {
 				}
 			})
 		}
-		return errors.New("test error")
+		return test.EndTestErr
 	})
 }
 
@@ -158,7 +158,7 @@ func TestCreateUserPermissions(t *testing.T) {
 				}
 			})
 		}
-		return errors.New("test error")
+		return test.EndTestErr
 	})
 }
 
@@ -271,7 +271,7 @@ func TestCreateAccount(t *testing.T) {
 				}
 			})
 		}
-		return errors.New("rollback transaction")
+		return test.EndTestErr
 	})
 }
 func TestFindUserByEmail(t *testing.T) {
@@ -340,7 +340,7 @@ func TestFindUserByEmail(t *testing.T) {
 				}
 			})
 		}
-		return errors.New("rollback transaction")
+		return test.EndTestErr
 	})
 }
 func TestFindUserById(t *testing.T) {
@@ -412,7 +412,7 @@ func TestFindUserById(t *testing.T) {
 				}
 			})
 		}
-		return errors.New("rollback transaction")
+		return test.EndTestErr
 	})
 }
 func TestUpdateUserPassword(t *testing.T) {
@@ -479,7 +479,7 @@ func TestUpdateUserPassword(t *testing.T) {
 				}
 			})
 		}
-		return errors.New("rollback transaction")
+		return test.EndTestErr
 	})
 }
 func TestUpdateMe(t *testing.T) {
@@ -557,7 +557,7 @@ func TestUpdateMe(t *testing.T) {
 				}
 			})
 		}
-		return errors.New("rollback transaction")
+		return test.EndTestErr
 	})
 }
 func TestGetUserAccounts(t *testing.T) {
@@ -675,6 +675,6 @@ func TestGetUserAccounts(t *testing.T) {
 				}
 			})
 		}
-		return errors.New("rollback transaction")
+		return test.EndTestErr
 	})
 }

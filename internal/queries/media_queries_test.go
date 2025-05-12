@@ -2,7 +2,6 @@ package queries_test
 
 import (
 	"context"
-	"errors"
 	"reflect"
 	"testing"
 
@@ -96,7 +95,7 @@ func TestCreateMedia(t *testing.T) {
 				}
 			})
 		}
-		return errors.New("Rollback transaction")
+		return test.EndTestErr
 	})
 }
 
@@ -180,6 +179,6 @@ func TestFindMediaByID(t *testing.T) {
 				}
 			})
 		}
-		return errors.New("Rollback transaction")
+		return test.EndTestErr
 	})
 }

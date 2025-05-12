@@ -2,12 +2,14 @@ package test
 
 import (
 	"context"
+	"errors"
 	"sync"
 
 	"github.com/tkahng/authgo/internal/db"
 )
 
 var (
+	EndTestErr  = errors.New("end test. rollback transaction")
 	ctxInstance context.Context
 	ctxOnce     sync.Once
 	dbx         *db.Queries

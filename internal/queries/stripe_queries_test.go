@@ -1,0 +1,81 @@
+package queries_test
+
+import (
+	"context"
+	"reflect"
+	"testing"
+
+	"github.com/tkahng/authgo/internal/db"
+	"github.com/tkahng/authgo/internal/models"
+	"github.com/tkahng/authgo/internal/queries"
+	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/authgo/internal/test"
+)
+
+func TestFindCustomerByStripeId(t *testing.T) {
+	ctx, dbx := test.DbSetup()
+	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+		stripeId := "cus_test123"
+		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
+			Email: "test@example.com",
+		})
+		if err != nil {
+			t.Fatalf("failed to create user: %v", err)
+		}
+		err = queries.UpsertCustomerStripeId(ctx, dbxx, user.ID, stripeId)
+		if err != nil {
+			t.Fatalf("failed to upsert customer stripe id: %v", err)
+		}
+		customer, err := queries.FindCustomerByStripeId(ctx, dbxx, stripeId)
+		if err != nil {
+			t.Fatalf("failed to find customer by stripe id: %v", err)
+		}
+		if customer == nil {
+			t.Fatalf("expected customer to be found, got nil")
+		}
+		if customer.StripeID != stripeId {
+			t.Fatalf("expected stripe id %s, got %s", stripeId, customer.StripeID)
+		}
+		type args struct {
+			ctx      context.Context
+			dbx      db.Dbx
+			stripeId string
+		}
+		tests := []struct {
+			name    string
+			args    args
+			want    *models.StripeCustomer
+			wantErr bool
+		}{
+			{
+				name: "valid stripe id",
+				args: args{
+					ctx:      ctx,
+					dbx:      dbxx,
+					stripeId: stripeId,
+				},
+				want: &models.StripeCustomer{
+					StripeID: stripeId,
+					ID:       user.ID,
+				},
+				wantErr: false,
+			},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				got, err := queries.FindCustomerByStripeId(tt.args.ctx, tt.args.dbx, tt.args.stripeId)
+				if (err != nil) != tt.wantErr {
+					t.Errorf("FindCustomerByStripeId() error = %v, wantErr %v", err, tt.wantErr)
+					return
+				}
+				if !reflect.DeepEqual(got.ID, tt.want.ID) {
+					t.Errorf("FindCustomerByStripeId() got = %v, want %v", got.ID, tt.want.ID)
+				}
+				if !reflect.DeepEqual(got.StripeID, tt.want.StripeID) {
+					t.Errorf("FindCustomerByStripeId() got = %v, want %v", got.StripeID, tt.want.StripeID)
+				}
+			})
+		}
+		return test.EndTestErr
+	})
+}

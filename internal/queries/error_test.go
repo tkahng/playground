@@ -58,6 +58,6 @@ func TestIsUniqConstraintErr(t *testing.T) {
 				}
 			})
 		}
-		return errors.New("Rollback transaction")
+		return test.EndTestErr
 	})
 }
