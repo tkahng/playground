@@ -639,3 +639,71 @@ func TestUpdatePermission(t *testing.T) {
 		return errors.New("rollback")
 	})
 }
+func TestDeleteRole(t *testing.T) {
+	ctx, dbx := test.DbSetup()
+	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+		// Create a role to delete
+		role, err := queries.CreateRole(ctx, dbxx, &queries.CreateRoleDto{
+			Name: "role_to_delete",
+		})
+		if err != nil {
+			t.Fatalf("failed to create test role: %v", err)
+		}
+
+		type args struct {
+			ctx context.Context
+			dbx db.Dbx
+			id  uuid.UUID
+		}
+		tests := []struct {
+			name    string
+			args    args
+			wantErr bool
+		}{
+			{
+				name: "delete existing role",
+				args: args{
+					ctx: ctx,
+					dbx: dbxx,
+					id:  role.ID,
+				},
+				wantErr: false,
+			},
+			{
+				name: "delete non-existent role",
+				args: args{
+					ctx: ctx,
+					dbx: dbxx,
+					id:  uuid.New(),
+				},
+				wantErr: false,
+			},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				err := queries.DeleteRole(tt.args.ctx, tt.args.dbx, tt.args.id)
+				if (err != nil) != tt.wantErr {
+					t.Errorf("DeleteRole() error = %v, wantErr %v", err, tt.wantErr)
+				}
+
+				if tt.name == "delete existing role" {
+					// Verify the role was deleted
+					deletedRole, err := repository.Role.GetOne(ctx, tt.args.dbx,
+						&map[string]any{
+							"id": map[string]any{
+								"_eq": tt.args.id.String(),
+							},
+						})
+					if err != nil {
+						t.Errorf("Failed to check deleted role: %v", err)
+						return
+					}
+					if deletedRole != nil {
+						t.Errorf("Role still exists after deletion")
+					}
+				}
+			})
+		}
+		return errors.New("rollback")
+	})
+}

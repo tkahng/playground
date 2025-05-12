@@ -354,9 +354,6 @@ func DeleteRole(ctx context.Context, dbx db.Dbx, id uuid.UUID) error {
 			},
 		},
 	)
-	// _, err := models.Roles.Delete(
-	// 	models.DeleteWhere.Roles.ID.EQ(id),
-	// ).Exec(ctx, dbx)
 	return err
 }
 
