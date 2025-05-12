@@ -453,3 +453,107 @@ func TestDeleteTaskProject(t *testing.T) {
 		return test.EndTestErr
 	})
 }
+func TestListTasks(t *testing.T) {
+	ctx, dbx := test.DbSetup()
+	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
+			Email: "tkahng@gmail.com",
+		})
+		if err != nil {
+			t.Fatalf("failed to create user: %v", err)
+		}
+		taskProject, err := queries.CreateTaskProject(ctx, dbxx, user.ID, &shared.CreateTaskProjectDTO{
+			Name:   "Test Project",
+			Status: shared.TaskProjectStatusDone,
+		})
+		if err != nil {
+			t.Fatalf("failed to create task project: %v", err)
+		}
+		task, err := queries.CreateTask(ctx, dbxx, user.ID, taskProject.ID, &shared.CreateTaskBaseDTO{
+			Name:   "Test Task",
+			Status: shared.TaskStatusDone,
+		})
+		if err != nil {
+			t.Fatalf("failed to create task: %v", err)
+		}
+
+		type args struct {
+			ctx   context.Context
+			db    db.Dbx
+			input *shared.TaskListParams
+		}
+		tests := []struct {
+			name      string
+			args      args
+			wantCount int
+			wantErr   bool
+		}{
+			{
+				name: "list tasks with filter",
+				args: args{
+					ctx: ctx,
+					db:  dbxx,
+					input: &shared.TaskListParams{
+						TaskListFilter: shared.TaskListFilter{
+							ProjectID: taskProject.ID.String(),
+							Status: []shared.TaskStatus{
+								shared.TaskStatusDone,
+							},
+						},
+						PaginatedInput: shared.PaginatedInput{
+							Page:    0,
+							PerPage: 10,
+						},
+					},
+				},
+				wantCount: 1,
+				wantErr:   false,
+			},
+			{
+				name: "list tasks without filter",
+				args: args{
+					ctx: ctx,
+					db:  dbxx,
+					input: &shared.TaskListParams{
+						PaginatedInput: shared.PaginatedInput{
+							Page:    0,
+							PerPage: 10,
+						},
+					},
+				},
+				wantCount: 1,
+				wantErr:   false,
+			},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				got, err := queries.ListTasks(
+					tt.args.ctx,
+					tt.args.db,
+					tt.args.input,
+				)
+				if (err != nil) != tt.wantErr {
+					t.Errorf(
+						"ListTasks() error = %v, wantErr %v",
+						err,
+						tt.wantErr,
+					)
+					return
+				}
+				if len(got) != tt.wantCount {
+					t.Errorf("ListTasks() got length = %v, want length %v", len(got), tt.wantCount)
+					return
+				}
+				if len(got) > 0 {
+					if !reflect.DeepEqual(got[0].ID, task.ID) {
+						t.Errorf("ListTasks() = %v, want %v", got[0].ID, task.ID)
+					}
+					if !reflect.DeepEqual(got[0].Name, task.Name) {
+						t.Errorf("ListTasks() = %v, want %v", got[0].Name, task.Name)
+					}
+				}
+			})
+		}
+		return test.EndTestErr
+	})
+}
