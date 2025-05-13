@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/conf"
 	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/authgo/internal/tools/mailer"
 
 	"github.com/stretchr/testify/mock"
 )
@@ -139,3 +140,21 @@ func (m *mockPasswordManager) VerifyPassword(hashedPassword string, password str
 }
 
 var _ PasswordManager = (*mockPasswordManager)(nil)
+
+type mockEmailSender struct {
+	mock.Mock
+}
+
+// Client implements AuthMailer.
+func (m *mockEmailSender) Client() mailer.Mailer {
+	args := m.Called()
+	return args.Get(0).(*mailer.LogMailer)
+}
+
+// SendOtpEmail implements AuthMailer.
+func (m *mockEmailSender) SendOtpEmail(emailType EmailType, tokenHash string, payload *OtpPayload, config *conf.AppOptions) error {
+	args := m.Called(emailType, tokenHash, payload, config)
+	return args.Error(0)
+}
+
+var _ AuthMailer = (*mockEmailSender)(nil)
