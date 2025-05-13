@@ -28,11 +28,7 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
+      - uses: actions/checkout@v4
       # Set up Go environment
       - name: Set up Go
         uses: actions/setup-go@v4
@@ -47,7 +43,7 @@ jobs:
 
       - name: Run tests
         run: go test -v ./... -race --cover -coverprofile=coverage.out
-  
+
   # setup:
   #   runs-on: ubuntu-latest
   #   steps:
@@ -72,7 +68,6 @@ jobs:
 
   #     - name: Build Admin dashboard UI
   #       run: npm --prefix ./ui install && npm --prefix ./ui run build
-
 
   build:
     runs-on: ubuntu-latest
