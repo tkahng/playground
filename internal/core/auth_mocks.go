@@ -5,13 +5,34 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
-	"github.com/stretchr/testify/mock"
 	"github.com/tkahng/authgo/internal/shared"
+
+	"github.com/stretchr/testify/mock"
 )
+
+type mockTokenManager struct {
+	mock.Mock
+}
+
+var _ TokenManager = (*mockTokenManager)(nil)
+
+// CreateJwtToken implements TokenManager.
+func (m *mockTokenManager) CreateJwtToken(payload jwt.Claims, signingKey string) (string, error) {
+	args := m.Called(payload, signingKey)
+	return args.String(0), args.Error(1)
+}
+
+// ParseToken implements TokenManager.
+func (m *mockTokenManager) ParseToken(token string, config TokenOption, data any) error {
+	args := m.Called(token, config, data)
+	return args.Error(0)
+}
 
 type mockAuthStorage struct {
 	mock.Mock
 }
+
+var _ AuthStorage = (*mockAuthStorage)(nil)
 
 // AssignUserRoles implements AuthStorage.
 func (m *mockAuthStorage) AssignUserRoles(ctx context.Context, userId uuid.UUID, roleNames ...string) error {
@@ -85,8 +106,6 @@ func (m *mockAuthStorage) UpdateUserAccount(ctx context.Context, account *shared
 	return args.Error(0)
 }
 
-var _ AuthStorage = (*mockAuthStorage)(nil)
-
 func (m *mockAuthStorage) VerifyTokenStorage(ctx context.Context, token string) error {
 	args := m.Called(ctx, token)
 	return args.Error(0)
@@ -96,21 +115,3 @@ func (m *mockAuthStorage) GetUserInfo(ctx context.Context, email string) (*share
 	args := m.Called(ctx, email)
 	return args.Get(0).(*shared.UserInfo), args.Error(1)
 }
-
-type mockTokenManager struct {
-	mock.Mock
-}
-
-// CreateJwtToken implements TokenManager.
-func (m *mockTokenManager) CreateJwtToken(payload jwt.Claims, signingKey string) (string, error) {
-	args := m.Called(payload, signingKey)
-	return args.String(0), args.Error(1)
-}
-
-// ParseToken implements TokenManager.
-func (m *mockTokenManager) ParseToken(token string, config TokenOption, data any) error {
-	args := m.Called(token, config, data)
-	return args.Error(0)
-}
-
-var _ TokenManager = (*mockTokenManager)(nil)
