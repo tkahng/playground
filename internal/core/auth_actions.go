@@ -224,7 +224,6 @@ func (app *AuthActionsBase) CreateAuthTokens(ctx context.Context, payload *share
 				Expires:    opts.RefreshToken.Expires(),
 				Token:      payload.Token,
 				UserID:     &payload.UserId,
-				Otp:        new(string),
 			},
 		)
 		if err != nil {
