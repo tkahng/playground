@@ -38,17 +38,24 @@ type AuthActions interface {
 var _ AuthActions = (*AuthActionsBase)(nil)
 
 type AuthActionsBase struct {
-	storage AuthStorage
-	mail    AuthMailer
-	options *AppOptions
+	storage  AuthStorage
+	mail     AuthMailer
+	token    TokenManager
+	password PasswordManager
+	options  *AppOptions
 }
 
 func NewAuthActions(dbx db.Dbx, mailer mailer.Mailer, settings *AppOptions) AuthActions {
 	actions := &AuthActionsBase{options: settings}
 	storage := NewAuthStorage(dbx)
+	tokenManager := NewTokenManager()
+	password := NewPasswordManager()
 	mail := NewAuthMailer(mailer)
 	actions.storage = storage
 	actions.mail = mail
+	actions.token = tokenManager
+	actions.password = password
+
 	return actions
 }
 
@@ -61,12 +68,12 @@ func (app *AuthActionsBase) ResetPassword(ctx context.Context, userId uuid.UUID,
 		return fmt.Errorf("user account not found")
 	}
 
-	if match, err := security.ComparePasswordAndHash(oldPassword, *account.Password); err != nil {
+	if match, err := app.password.VerifyPassword(oldPassword, *account.Password); err != nil {
 		return fmt.Errorf("error at comparing password: %w", err)
 	} else if !match {
 		return fmt.Errorf("password is incorrect")
 	}
-	hash, err := security.CreateHash(newPassword, argon2id.DefaultParams)
+	hash, err := app.password.HashPassword(newPassword)
 	if err != nil {
 		return fmt.Errorf("error at hashing password: %w", err)
 	}
@@ -82,7 +89,7 @@ func (app *AuthActionsBase) ResetPassword(ctx context.Context, userId uuid.UUID,
 func (app *AuthActionsBase) Signout(ctx context.Context, token string) error {
 	opts := app.options.Auth
 	var claims RefreshTokenClaims
-	err := app.parseTokenString(token, opts.RefreshToken, &claims)
+	err := app.token.ParseToken(token, opts.RefreshToken, &claims)
 	if err != nil {
 		return fmt.Errorf("error verifying refresh token: %w", err)
 	}
@@ -139,7 +146,7 @@ func (app *AuthActionsBase) CreateAndPersistStateToken(ctx context.Context, payl
 		Expires:    config.Expires(),
 		Token:      payload.Token,
 	}
-	token, err := security.NewJWTWithClaims(claims, config.Secret)
+	token, err := app.token.CreateJwtToken(claims, config.Secret)
 	if err != nil {
 		return token, err
 	}
@@ -180,7 +187,7 @@ func (app *AuthActionsBase) CreateAuthTokens(ctx context.Context, payload *share
 				Permissions: payload.Permissions,
 			},
 		}
-		token, err := security.NewJWTWithClaims(claims, opts.AccessToken.Secret)
+		token, err := app.token.CreateJwtToken(claims, opts.AccessToken.Secret)
 		if err != nil {
 			return token, err
 		}
@@ -205,7 +212,7 @@ func (app *AuthActionsBase) CreateAuthTokens(ctx context.Context, payload *share
 			RefreshTokenPayload: payload,
 		}
 
-		token, err := security.NewJWTWithClaims(claims, opts.RefreshToken.Secret)
+		token, err := app.token.CreateJwtToken(claims, opts.RefreshToken.Secret)
 		if err != nil {
 			return token, err
 		}
@@ -244,7 +251,7 @@ func (app *AuthActionsBase) CreateAuthTokens(ctx context.Context, payload *share
 func (app *AuthActionsBase) CheckResetPasswordToken(ctx context.Context, tokenHash string) error {
 	opts := app.options.Auth
 	var claims PasswordResetClaims
-	err := app.parseTokenString(tokenHash, opts.PasswordResetToken, &claims)
+	err := app.token.ParseToken(tokenHash, opts.PasswordResetToken, &claims)
 	if err != nil {
 		return fmt.Errorf("error verifying password reset token: %w", err)
 	}
@@ -262,7 +269,7 @@ func (app *AuthActionsBase) CheckResetPasswordToken(ctx context.Context, tokenHa
 func (app *AuthActionsBase) HandlePasswordResetToken(ctx context.Context, token, password string) error {
 	opts := app.options.Auth
 	var claims PasswordResetClaims
-	err := app.parseTokenString(token, opts.PasswordResetToken, &claims)
+	err := app.token.ParseToken(token, opts.PasswordResetToken, &claims)
 	if err != nil {
 		return fmt.Errorf("error verifying password reset token: %w", err)
 	}
@@ -288,7 +295,7 @@ func (app *AuthActionsBase) HandlePasswordResetToken(ctx context.Context, token,
 	if account == nil {
 		return fmt.Errorf("user account not found")
 	}
-	hash, err := security.CreateHash(password, argon2id.DefaultParams)
+	hash, err := app.password.HashPassword(password)
 	if err != nil {
 		return fmt.Errorf("error at hashing password: %w", err)
 	}
@@ -303,7 +310,7 @@ func (app *AuthActionsBase) HandlePasswordResetToken(ctx context.Context, token,
 func (app *AuthActionsBase) VerifyStateToken(ctx context.Context, token string) (*ProviderStateClaims, error) {
 	opts := app.options.Auth
 	var claims ProviderStateClaims
-	err := app.parseTokenString(token, opts.StateToken, &claims)
+	err := app.token.ParseToken(token, opts.StateToken, &claims)
 	if err != nil {
 		return nil, fmt.Errorf("error verifying state token: %w", err)
 	}
@@ -316,7 +323,7 @@ func (app *AuthActionsBase) VerifyStateToken(ctx context.Context, token string) 
 func (app *AuthActionsBase) HandleAccessToken(ctx context.Context, token string) (*shared.UserInfo, error) {
 	opts := app.options.Auth
 	var claims AuthenticationClaims
-	err := app.parseTokenString(token, opts.AccessToken, &claims)
+	err := app.token.ParseToken(token, opts.AccessToken, &claims)
 	if err != nil {
 		return nil, fmt.Errorf("error verifying access token: %w", err)
 	}
@@ -327,7 +334,7 @@ func (app *AuthActionsBase) HandleAccessToken(ctx context.Context, token string)
 func (app *AuthActionsBase) HandleRefreshToken(ctx context.Context, token string) (*shared.UserInfoTokens, error) {
 	opts := app.options.Auth
 	var claims RefreshTokenClaims
-	err := app.parseTokenString(token, opts.RefreshToken, &claims)
+	err := app.token.ParseToken(token, opts.RefreshToken, &claims)
 	if err != nil {
 		return nil, fmt.Errorf("error verifying refresh token: %w", err)
 	}
@@ -386,7 +393,7 @@ func (app *AuthActionsBase) VerifyAndParseOtpToken(ctx context.Context, emailTyp
 	}
 	var err error
 	var claims OtpClaims
-	err = app.parseTokenString(token, opt, &claims)
+	err = app.token.ParseToken(token, opt, &claims)
 	if err != nil {
 		return nil, fmt.Errorf("error at parsing token: %w", err)
 	}
@@ -515,7 +522,7 @@ func (app *AuthActionsBase) Authenticate(ctx context.Context, params *shared.Aut
 		if params.Password == nil || account.Password == nil {
 			return nil, fmt.Errorf("password or account password is nil")
 		}
-		if match, err := security.ComparePasswordAndHash(*params.Password, *account.Password); err != nil {
+		if match, err := app.password.VerifyPassword(*params.Password, *account.Password); err != nil {
 			return nil, fmt.Errorf("error at comparing password: %w", err)
 		} else if !match {
 			return nil, fmt.Errorf("password is incorrect")
@@ -543,7 +550,7 @@ func (app *AuthActionsBase) CheckUserCredentialsSecurity(ctx context.Context, us
 				if account != nil {
 					// if user has a credentials account, send security password reset email
 					randomPassword := security.RandomString(20)
-					hash, err := security.CreateHash(randomPassword, argon2id.DefaultParams)
+					hash, err := app.password.HashPassword(randomPassword)
 					if err != nil {
 						return fmt.Errorf("error at hashing password: %w", err)
 					}
@@ -624,23 +631,7 @@ func (app *AuthActionsBase) SendOtpEmail(emailType EmailType, ctx context.Contex
 	return nil
 }
 
-func (a *AuthActionsBase) parseTokenString(token string, config TokenOption, data any) error {
-	claims, err := security.ParseJWTMapClaims(token, config.Secret)
-	if err != nil {
-		return fmt.Errorf("error while parsing token string: %w", err)
-	}
-	if claimType, ok := claims["type"].(string); ok && claimType == string(config.Type) {
-		_, err = security.MarshalToken(claims, data)
-		if err != nil {
-			return err
-		}
-		return nil
-	}
-	return fmt.Errorf("invalid token type")
-	// Convert the JSON to a struct
-}
-
-func (a *AuthActionsBase) CreateOtpTokenHash(payload *OtpPayload, config TokenOption) (string, error) {
+func (app *AuthActionsBase) CreateOtpTokenHash(payload *OtpPayload, config TokenOption) (string, error) {
 	if payload == nil {
 		return "", fmt.Errorf("payload is nil")
 	}
@@ -650,7 +641,7 @@ func (a *AuthActionsBase) CreateOtpTokenHash(payload *OtpPayload, config TokenOp
 		},
 		OtpPayload: *payload,
 	}
-	token, err := security.NewJWTWithClaims(claims, config.Secret)
+	token, err := app.token.CreateJwtToken(claims, config.Secret)
 	if err != nil {
 		return "", fmt.Errorf("error at creating verification token: %w", err)
 	}
