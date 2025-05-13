@@ -12,6 +12,7 @@ import (
 )
 
 func TestListPermissions(t *testing.T) {
+	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(tx db.Dbx) error {
 		err := queries.EnsureRoleAndPermissions(
@@ -73,6 +74,7 @@ func TestListPermissions(t *testing.T) {
 	})
 }
 func TestCountPermissions(t *testing.T) {
+	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(tx db.Dbx) error {
 		err := queries.EnsureRoleAndPermissions(
@@ -137,6 +139,7 @@ func TestCountPermissions(t *testing.T) {
 	})
 }
 func TestListRoles(t *testing.T) {
+	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(tx db.Dbx) error {
 		err := queries.EnsureRoleAndPermissions(
@@ -197,6 +200,7 @@ func TestListRoles(t *testing.T) {
 	})
 }
 func TestCountRoles(t *testing.T) {
+	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(tx db.Dbx) error {
 		err := queries.EnsureRoleAndPermissions(

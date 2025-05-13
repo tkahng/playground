@@ -16,7 +16,8 @@ import (
 )
 
 func TestLoadRolePermissions(t *testing.T) {
-	ctx, dbx := test.DbSetup()
+	test.Short(t)
+ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		err := queries.EnsureRoleAndPermissions(ctx, dbxx, "basic", "basic")
 		if err != nil {
@@ -70,7 +71,8 @@ func TestLoadRolePermissions(t *testing.T) {
 	})
 }
 func TestGetUserRoles(t *testing.T) {
-	ctx, dbx := test.DbSetup()
+	test.Short(t)
+ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		err := queries.EnsureRoleAndPermissions(ctx, dbxx, "basic", "basic")
 		if err != nil {
@@ -141,7 +143,8 @@ func TestGetUserRoles(t *testing.T) {
 	})
 }
 func TestGetUserPermissions(t *testing.T) {
-	ctx, dbx := test.DbSetup()
+	test.Short(t)
+ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		permission, err := queries.FindOrCreatePermission(ctx, dbxx, "basic")
 		if err != nil {
@@ -209,7 +212,8 @@ func TestGetUserPermissions(t *testing.T) {
 }
 
 func TestCreateRolePermissions(t *testing.T) {
-	ctx, dbx := test.DbSetup()
+	test.Short(t)
+ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		role, err := queries.FindOrCreateRole(ctx, dbxx, "basic")
 		if err != nil {
@@ -253,7 +257,8 @@ func TestCreateRolePermissions(t *testing.T) {
 	})
 }
 func TestCreateProductRoles(t *testing.T) {
-	ctx, dbx := test.DbSetup()
+	test.Short(t)
+ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		role, err := queries.FindOrCreateRole(ctx, dbxx, "basic")
 		if err != nil {
@@ -303,7 +308,8 @@ func TestCreateProductRoles(t *testing.T) {
 	})
 }
 func TestEnsureRoleAndPermissions(t *testing.T) {
-	ctx, dbx := test.DbSetup()
+	test.Short(t)
+ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		type args struct {
 			ctx             context.Context
@@ -371,7 +377,8 @@ func TestEnsureRoleAndPermissions(t *testing.T) {
 	})
 }
 func TestFindOrCreateRole(t *testing.T) {
-	ctx, dbx := test.DbSetup()
+	test.Short(t)
+ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		type args struct {
 			ctx      context.Context
@@ -421,7 +428,8 @@ func TestFindOrCreateRole(t *testing.T) {
 	})
 }
 func TestCreateRole(t *testing.T) {
-	ctx, dbx := test.DbSetup()
+	test.Short(t)
+ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		type args struct {
 			ctx  context.Context
@@ -476,7 +484,8 @@ func TestCreateRole(t *testing.T) {
 	})
 }
 func TestUpdateRole(t *testing.T) {
-	ctx, dbx := test.DbSetup()
+	test.Short(t)
+ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		// Create initial role to update
 		role, err := queries.CreateRole(ctx, dbxx, &queries.CreateRoleDto{
@@ -558,7 +567,8 @@ func TestUpdateRole(t *testing.T) {
 	})
 }
 func TestUpdatePermission(t *testing.T) {
-	ctx, dbx := test.DbSetup()
+	test.Short(t)
+ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		// Create initial permission to update
 		permission, err := queries.CreatePermission(ctx, dbxx, &queries.CreatePermissionDto{
@@ -640,7 +650,8 @@ func TestUpdatePermission(t *testing.T) {
 	})
 }
 func TestDeleteRole(t *testing.T) {
-	ctx, dbx := test.DbSetup()
+	test.Short(t)
+ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		// Create a role to delete
 		role, err := queries.CreateRole(ctx, dbxx, &queries.CreateRoleDto{
@@ -708,7 +719,8 @@ func TestDeleteRole(t *testing.T) {
 	})
 }
 func TestDeleteRolePermissions(t *testing.T) {
-	ctx, dbx := test.DbSetup()
+	test.Short(t)
+ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		// Create a role and permission to test deletion
 		role, err := queries.CreateRole(ctx, dbxx, &queries.CreateRoleDto{
@@ -784,7 +796,8 @@ func TestDeleteRolePermissions(t *testing.T) {
 	})
 }
 func TestFindOrCreatePermission(t *testing.T) {
-	ctx, dbx := test.DbSetup()
+	test.Short(t)
+ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		type args struct {
 			ctx            context.Context
@@ -834,7 +847,8 @@ func TestFindOrCreatePermission(t *testing.T) {
 	})
 }
 func TestCreatePermission(t *testing.T) {
-	ctx, dbx := test.DbSetup()
+	test.Short(t)
+ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		description := "test description"
 
@@ -896,7 +910,8 @@ func TestCreatePermission(t *testing.T) {
 	})
 }
 func TestFindPermissionsByIds(t *testing.T) {
-	ctx, dbx := test.DbSetup()
+	test.Short(t)
+ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		// Create test permissions
 		perm1, err := queries.CreatePermission(ctx, dbxx, &queries.CreatePermissionDto{
@@ -991,7 +1006,8 @@ func TestFindPermissionsByIds(t *testing.T) {
 	})
 }
 func TestDeletePermission(t *testing.T) {
-	ctx, dbx := test.DbSetup()
+	test.Short(t)
+ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		// Create a permission to delete
 		permission, err := queries.CreatePermission(ctx, dbxx, &queries.CreatePermissionDto{
@@ -1050,7 +1066,8 @@ func TestDeletePermission(t *testing.T) {
 	})
 }
 func TestFindPermissionById(t *testing.T) {
-	ctx, dbx := test.DbSetup()
+	test.Short(t)
+ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		// Create a test permission to find
 		permission, err := queries.CreatePermission(ctx, dbxx, &queries.CreatePermissionDto{
@@ -1113,7 +1130,8 @@ func TestFindPermissionById(t *testing.T) {
 	})
 }
 func TestListUserPermissionsSource(t *testing.T) {
-	ctx, dbx := test.DbSetup()
+	test.Short(t)
+ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		// Create test user
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
@@ -1209,7 +1227,8 @@ func TestListUserPermissionsSource(t *testing.T) {
 	})
 }
 func TestCountUserPermissionSource(t *testing.T) {
-	ctx, dbx := test.DbSetup()
+	test.Short(t)
+ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		// Create test user
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
@@ -1294,7 +1313,8 @@ func TestCountUserPermissionSource(t *testing.T) {
 	})
 }
 func TestListUserNotPermissionsSource(t *testing.T) {
-	ctx, dbx := test.DbSetup()
+	test.Short(t)
+ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		// Create test user
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
@@ -1410,7 +1430,8 @@ func TestListUserNotPermissionsSource(t *testing.T) {
 	})
 }
 func TestCountNotUserPermissionSource(t *testing.T) {
-	ctx, dbx := test.DbSetup()
+	test.Short(t)
+ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		// Create test user
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{

@@ -16,7 +16,8 @@ import (
 )
 
 func TestCreateUser(t *testing.T) {
-	ctx, dbx := test.DbSetup()
+	test.Short(t)
+ctx, dbx := test.DbSetup()
 
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		type args struct {
@@ -65,7 +66,8 @@ func TestCreateUser(t *testing.T) {
 }
 
 func TestCreateUserRoles(t *testing.T) {
-	ctx, dbx := test.DbSetup()
+	test.Short(t)
+ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		// Create a user
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
@@ -114,7 +116,8 @@ func TestCreateUserRoles(t *testing.T) {
 }
 
 func TestCreateUserPermissions(t *testing.T) {
-	ctx, dbx := test.DbSetup()
+	test.Short(t)
+ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		// Create a user
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
@@ -163,7 +166,8 @@ func TestCreateUserPermissions(t *testing.T) {
 }
 
 func TestCreateAccount(t *testing.T) {
-	ctx, dbx := test.DbSetup()
+	test.Short(t)
+ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		// Create a user
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
@@ -275,7 +279,8 @@ func TestCreateAccount(t *testing.T) {
 	})
 }
 func TestFindUserByEmail(t *testing.T) {
-	ctx, dbx := test.DbSetup()
+	test.Short(t)
+ctx, dbx := test.DbSetup()
 
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		// Create a test user first
@@ -344,7 +349,8 @@ func TestFindUserByEmail(t *testing.T) {
 	})
 }
 func TestFindUserById(t *testing.T) {
-	ctx, dbx := test.DbSetup()
+	test.Short(t)
+ctx, dbx := test.DbSetup()
 
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		// Create a test user first
@@ -416,7 +422,8 @@ func TestFindUserById(t *testing.T) {
 	})
 }
 func TestUpdateUserPassword(t *testing.T) {
-	ctx, dbx := test.DbSetup()
+	test.Short(t)
+ctx, dbx := test.DbSetup()
 
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		// Create test user
@@ -483,7 +490,8 @@ func TestUpdateUserPassword(t *testing.T) {
 	})
 }
 func TestUpdateMe(t *testing.T) {
-	ctx, dbx := test.DbSetup()
+	test.Short(t)
+ctx, dbx := test.DbSetup()
 
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		// Create test user first
@@ -561,7 +569,8 @@ func TestUpdateMe(t *testing.T) {
 	})
 }
 func TestGetUserAccounts(t *testing.T) {
-	ctx, dbx := test.DbSetup()
+	test.Short(t)
+ctx, dbx := test.DbSetup()
 
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		// Create test users

@@ -17,7 +17,8 @@ import (
 )
 
 func TestFindCustomerByStripeId(t *testing.T) {
-	ctx, dbx := test.DbSetup()
+	test.Short(t)
+ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		stripeId := "cus_test123"
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
@@ -84,7 +85,8 @@ func TestFindCustomerByStripeId(t *testing.T) {
 	})
 }
 func TestFindCustomerByUserId(t *testing.T) {
-	ctx, dbx := test.DbSetup()
+	test.Short(t)
+ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		stripeId := "cus_test123"
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
@@ -151,7 +153,8 @@ func TestFindCustomerByUserId(t *testing.T) {
 	})
 }
 func TestFindProductByStripeId(t *testing.T) {
-	ctx, dbx := test.DbSetup()
+	test.Short(t)
+ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		stripeId := "prod_test123"
 		product := &models.StripeProduct{
@@ -216,7 +219,8 @@ func TestFindProductByStripeId(t *testing.T) {
 	})
 }
 func TestUpsertCustomerStripeId(t *testing.T) {
-	ctx, dbx := test.DbSetup()
+	test.Short(t)
+ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 			Email: "test@example.com",
@@ -281,7 +285,8 @@ func TestUpsertCustomerStripeId(t *testing.T) {
 	})
 }
 func TestUpsertProduct(t *testing.T) {
-	ctx, dbx := test.DbSetup()
+	test.Short(t)
+ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		description := "Test Description"
 		image := "test-image.jpg"
@@ -357,7 +362,8 @@ func TestUpsertProduct(t *testing.T) {
 	})
 }
 func TestUpsertProductFromStripe(t *testing.T) {
-	ctx, dbx := test.DbSetup()
+	test.Short(t)
+ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		type args struct {
 			ctx     context.Context
@@ -454,7 +460,8 @@ func TestUpsertProductFromStripe(t *testing.T) {
 }
 
 func TestUpsertPrice(t *testing.T) {
-	ctx, dbx := test.DbSetup()
+	test.Short(t)
+ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		// Create a test product first
 		product := &models.StripeProduct{
@@ -558,7 +565,8 @@ func TestUpsertPrice(t *testing.T) {
 	})
 }
 func TestUpsertPriceFromStripe(t *testing.T) {
-	ctx, dbx := test.DbSetup()
+	test.Short(t)
+ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		// Create a test product first
 		meta := map[string]string{"key": "value"}
@@ -692,7 +700,8 @@ func TestUpsertPriceFromStripe(t *testing.T) {
 }
 
 func TestUpsertSubscription(t *testing.T) {
-	ctx, dbx := test.DbSetup()
+	test.Short(t)
+ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 			Email: "test@example.com",
@@ -820,7 +829,8 @@ func TestUpsertSubscription(t *testing.T) {
 }
 
 func TestUpsertSubscriptionFromStripe(t *testing.T) {
-	ctx, dbx := test.DbSetup()
+	test.Short(t)
+ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 			Email: "test@example.com",
@@ -960,7 +970,8 @@ func TestUpsertSubscriptionFromStripe(t *testing.T) {
 	})
 }
 func TestFindSubscriptionById(t *testing.T) {
-	ctx, dbx := test.DbSetup()
+	test.Short(t)
+ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		// Create test user
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
@@ -1077,7 +1088,8 @@ func TestFindSubscriptionById(t *testing.T) {
 	})
 }
 func TestFindSubscriptionWithPriceById(t *testing.T) {
-	ctx, dbx := test.DbSetup()
+	test.Short(t)
+ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		// Create test user
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
@@ -1202,7 +1214,8 @@ func TestFindSubscriptionWithPriceById(t *testing.T) {
 	})
 }
 func TestFindLatestActiveSubscriptionByUserId(t *testing.T) {
-	ctx, dbx := test.DbSetup()
+	test.Short(t)
+ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		// Create test user
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
@@ -1337,7 +1350,8 @@ func TestFindLatestActiveSubscriptionByUserId(t *testing.T) {
 	})
 }
 func TestFindLatestActiveSubscriptionWithPriceByUserId(t *testing.T) {
-	ctx, dbx := test.DbSetup()
+	test.Short(t)
+ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		// Create test user
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
@@ -1464,7 +1478,8 @@ func TestFindLatestActiveSubscriptionWithPriceByUserId(t *testing.T) {
 	})
 }
 func TestIsFirstSubscription(t *testing.T) {
-	ctx, dbx := test.DbSetup()
+	test.Short(t)
+ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		// Create test user
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
@@ -1580,7 +1595,8 @@ func TestIsFirstSubscription(t *testing.T) {
 	})
 }
 func TestFindValidPriceById(t *testing.T) {
-	ctx, dbx := test.DbSetup()
+	test.Short(t)
+ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		// Create test product first
 		product := &models.StripeProduct{
