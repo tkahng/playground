@@ -90,7 +90,7 @@ func (api *Api) AdminUsersCreate(ctx context.Context, input *struct {
 	Body *shared.User
 }, error) {
 	db := api.app.Db()
-	action := api.app.NewAuthActions()
+	action := api.app.Auth()
 	existingUser, err := queries.FindUserByEmail(ctx, db, input.Body.Email)
 	if err != nil {
 		return nil, err

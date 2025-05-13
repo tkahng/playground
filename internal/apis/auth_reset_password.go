@@ -21,7 +21,7 @@ func (api *Api) RequestPasswordReset(ctx context.Context, input *struct{ Body *R
 	if err != nil {
 		return nil, err
 	}
-	action := api.app.NewAuthActions()
+	action := api.app.Auth()
 	err = action.HandlePasswordResetRequest(ctx, input.Body.Email)
 	if err != nil {
 		return nil, err
@@ -31,7 +31,7 @@ func (api *Api) RequestPasswordReset(ctx context.Context, input *struct{ Body *R
 
 func (api *Api) CheckPasswordResetGet(ctx context.Context, input *OtpInput) (*struct{}, error) {
 
-	action := api.app.NewAuthActions()
+	action := api.app.Auth()
 	err := action.CheckResetPasswordToken(ctx, input.Token)
 	if err != nil {
 		return nil, err
@@ -47,7 +47,7 @@ type ConfirmPasswordResetInput struct {
 
 func (api *Api) ConfirmPasswordReset(ctx context.Context, input *struct{ Body *ConfirmPasswordResetInput }) (*RequestPasswordResetOutput, error) {
 
-	action := api.app.NewAuthActions()
+	action := api.app.Auth()
 	err := action.HandlePasswordResetToken(ctx, input.Body.Token, input.Body.Password)
 	if err != nil {
 		return nil, err
@@ -68,7 +68,7 @@ func (api *Api) ResetPassword(ctx context.Context, input *struct{ Body PasswordR
 	if err != nil {
 		return nil, err
 	}
-	action := api.app.NewAuthActions()
+	action := api.app.Auth()
 	if claims == nil {
 		return nil, huma.Error404NotFound("User not found")
 	}

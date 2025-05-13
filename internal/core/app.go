@@ -11,7 +11,7 @@ import (
 
 type App interface {
 	Cfg() *conf.EnvConfig
-	Db() *db.Queries
+	Db() db.Dbx
 	Fs() *filesystem.FileSystem
 	NewChecker(ctx context.Context) ConstraintChecker
 	Settings() *conf.AppOptions
@@ -20,5 +20,5 @@ type App interface {
 
 	Payment() *StripeService
 
-	NewAuthActions() Authenticator
+	Auth() Authenticator
 }

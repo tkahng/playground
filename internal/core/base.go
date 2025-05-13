@@ -31,8 +31,8 @@ func (a *BaseApp) NewChecker(ctx context.Context) ConstraintChecker {
 	return NewConstraintCheckerService(ctx, a.db)
 }
 
-// NewAuthActions implements App.
-func (a *BaseApp) NewAuthActions() Authenticator {
+// Auth implements App.
+func (a *BaseApp) Auth() Authenticator {
 	return NewAuthActions(a.db, a.mail, a.settings)
 }
 
@@ -43,7 +43,7 @@ func (app *BaseApp) Fs() *filesystem.FileSystem {
 func (app *BaseApp) Logger() *slog.Logger {
 	return app.logger
 }
-func (app *BaseApp) Db() *db.Queries {
+func (app *BaseApp) Db() db.Dbx {
 	return app.db
 }
 

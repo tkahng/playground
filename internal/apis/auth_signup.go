@@ -20,7 +20,7 @@ type SignupInput struct {
 }
 
 func (api *Api) SignUp(ctx context.Context, input *struct{ Body SignupInput }) (*AuthenticatedInfoResponse, error) {
-	action := api.app.NewAuthActions()
+	action := api.app.Auth()
 	password := input.Body.Password.String()
 	params := &shared.AuthenticationInput{
 		Email:             input.Body.Email,

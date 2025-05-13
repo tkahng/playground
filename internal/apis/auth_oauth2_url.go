@@ -25,7 +25,7 @@ type OAuth2AuthorizationUrlOutput struct {
 func (h *Api) OAuth2AuthorizationUrl(ctx context.Context, input *OAuth2AuthorizationUrlInput) (*OAuth2AuthorizationUrlOutput, error) {
 
 	conf := h.app.Cfg()
-	action := h.app.NewAuthActions()
+	action := h.app.Auth()
 	redirectTo := input.RedirectTo
 	if redirectTo == "" {
 		redirectTo = conf.AppConfig.AppUrl
