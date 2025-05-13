@@ -91,8 +91,25 @@ jobs:
           push: true
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
 
-  deploy:
+  migrate:
     needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.24.1" # Use Go version 1.23.5
+
+      - name: Run Migrations
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: go run . migrate up
+
+  deploy:
+    needs: migrate
     runs-on: ubuntu-latest
     steps:
       - name: Trigger Dokploy deployment
