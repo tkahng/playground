@@ -16,21 +16,22 @@ import (
 
 type StripeService struct {
 	logger *slog.Logger
-	client *payment.StripeClient
+	client payment.PaymentClient
+	store  PaymentStore
 }
 
 func (srv *StripeService) Logger() *slog.Logger {
 	return srv.logger
 }
 
-func (srv *StripeService) Client() *payment.StripeClient {
+func (srv *StripeService) Client() payment.PaymentClient {
 	return srv.client
 }
 func NewStripeServiceFromConf(conf conf.StripeConfig) *StripeService {
 	return &StripeService{client: payment.NewStripeClient(conf), logger: slog.Default()}
 }
-func NewStripeService(client *payment.StripeClient) *StripeService {
-	return &StripeService{client: client, logger: slog.Default()}
+func NewStripeService(client payment.PaymentClient, store PaymentStore) *StripeService {
+	return &StripeService{client: client, logger: slog.Default(), store: store}
 }
 
 func (srv *StripeService) SyncRoles(ctx context.Context, dbx db.Dbx) error {
@@ -50,7 +51,7 @@ func (srv *StripeService) SyncPerms(ctx context.Context, dbx db.Dbx) error {
 }
 
 func (srv *StripeService) SyncProductRole(ctx context.Context, dbx db.Dbx, productId string, roleName string) error {
-	product, err := queries.FindProductByStripeId(ctx, dbx, productId)
+	product, err := srv.store.FindProductByStripeId(ctx, dbx, productId)
 	if err != nil {
 		return err
 	}
@@ -76,7 +77,7 @@ func (srv *StripeService) SyncProductRole(ctx context.Context, dbx db.Dbx, produ
 }
 
 func (srv *StripeService) SyncProductPerms(ctx context.Context, dbx db.Dbx, productId string, permName string) error {
-	product, err := queries.FindProductByStripeId(ctx, dbx, productId)
+	product, err := srv.store.FindProductByStripeId(ctx, dbx, productId)
 	if err != nil {
 		return err
 	}

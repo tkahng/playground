@@ -83,7 +83,9 @@ func InitBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 	} else {
 		mail = &mailer.LogMailer{}
 	}
-
+	store := NewStripeStore()
+	stripeClient := payment.NewStripeClient(cfg.StripeConfig)
+	stripeService := NewStripeService(stripeClient, store)
 	app := &BaseApp{
 		fs:       fs,
 		db:       pool,
@@ -91,7 +93,7 @@ func InitBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 		logger:   logger.GetDefaultLogger(slog.LevelInfo),
 		cfg:      &cfg,
 		mail:     mail,
-		payment:  NewStripeService(payment.NewStripeClient(cfg.StripeConfig)),
+		payment:  stripeService,
 	}
 	return app
 }

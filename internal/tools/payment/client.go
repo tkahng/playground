@@ -16,6 +16,25 @@ import (
 	"github.com/tkahng/authgo/internal/conf"
 )
 
+type PaymentClient interface {
+	Config() *conf.StripeConfig
+	CreateBillingPortalSession(customerId string) (*stripe.BillingPortalSession, error)
+	CreateBillingPortalSession2(customerId string, configurationId string) (*stripe.BillingPortalSession, error)
+	CreateCheckoutSession(customerId string, priceId string, trialDays *int64) (*stripe.CheckoutSession, error)
+	CreateCustomer(email string, userId string) (*stripe.Customer, error)
+	CreatePortalConfiguration(input ...*ProductBillingConfigurationInput) (string, error)
+	FindAllCustomers() ([]*stripe.Customer, error)
+	FindAllPrices() ([]*stripe.Price, error)
+	FindAllProducts() ([]*stripe.Product, error)
+	FindAllSubscriptions() ([]*stripe.Subscription, error)
+	FindCheckoutSessionByStripeId(stripeId string) (*stripe.CheckoutSession, error)
+	FindCustomerByEmail(email string) (*stripe.Customer, error)
+	FindCustomerByEmailAndUserId(email string, userId string) (*stripe.Customer, error)
+	FindCustomerByStripeId(stripeId string) (*stripe.Customer, error)
+	FindOrCreateCustomer(email string, userId uuid.UUID) (*stripe.Customer, error)
+	FindSubscriptionByStripeId(stripeId string) (*stripe.Subscription, error)
+}
+
 const (
 	StripeProductProID      string = "prod_pro"
 	StripeProductAdvancedID string = "prod_advanced"
@@ -25,7 +44,7 @@ type StripeClient struct {
 	config *conf.StripeConfig
 }
 
-func NewStripeClient(bld conf.StripeConfig) *StripeClient {
+func NewStripeClient(bld conf.StripeConfig) PaymentClient {
 	cfg := &bld
 	stripe.Key = cfg.ApiKey
 	payment := &StripeClient{config: cfg}
