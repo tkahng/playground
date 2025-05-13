@@ -3,6 +3,7 @@ package core
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/google/uuid"
@@ -92,6 +93,104 @@ func TestHandleRefreshToken(t *testing.T) {
 			}
 
 			mockToken.AssertExpectations(t)
+			mockStorage.AssertExpectations(t)
+		})
+	}
+}
+func TestResetPassword(t *testing.T) {
+	ctx := context.Background()
+	mockStorage := new(mockAuthStorage)
+	passwordManager := NewPasswordManager()
+	app := &AuthActionsBase{
+		storage:  mockStorage,
+		password: passwordManager,
+	}
+
+	testUserId := uuid.New()
+	testOldPassword := "oldPassword123"
+	testNewPassword := "newPassword123"
+	testHashedPassword, err := passwordManager.HashPassword(testOldPassword)
+	if err != nil {
+		t.Fatalf("failed to hash password: %v", err)
+	}
+	// Simulate the hashed password for the new password
+	// In a real scenario, you would hash the new password as well
+	// but here we are just checking the flow
+	// so we can use a dummy value
+	// for the new hashed password
+	testNewHashedPassword, err := passwordManager.HashPassword(testNewPassword)
+	if err != nil {
+		t.Fatalf("failed to hash password: %v", err)
+	}
+	fmt.Println("testHashedPassword", testHashedPassword)
+	fmt.Println("testNewHashedPassword", testNewHashedPassword)
+
+	testCases := []struct {
+		name          string
+		userId        uuid.UUID
+		oldPassword   string
+		newPassword   string
+		setupMocks    func()
+		expectedError bool
+	}{
+		{
+			name:        "successful password reset",
+			userId:      testUserId,
+			oldPassword: testOldPassword,
+			newPassword: testNewPassword,
+			setupMocks: func() {
+				mockStorage.On("FindUserAccountByUserIdAndProvider", ctx, testUserId, shared.ProvidersCredentials).
+					Return(&shared.UserAccount{
+						Password: &testHashedPassword,
+						UserID:   testUserId,
+						Provider: shared.ProvidersCredentials,
+						Type:     shared.ProviderTypeCredentials,
+					}, nil)
+				mockStorage.On("UpdateUserAccount", ctx, mock.Anything).Return(nil)
+			},
+			expectedError: false,
+		},
+		{
+			name:        "user account not found",
+			userId:      testUserId,
+			oldPassword: testOldPassword,
+			newPassword: testNewPassword,
+			setupMocks: func() {
+				mockStorage.On("FindUserAccountByUserIdAndProvider", ctx, testUserId, shared.ProvidersCredentials).
+					Return(nil, nil)
+			},
+			expectedError: true,
+		},
+		{
+			name:        "incorrect old password",
+			userId:      testUserId,
+			oldPassword: "wrongPassword",
+			newPassword: testNewPassword,
+			setupMocks: func() {
+				mockStorage.On("FindUserAccountByUserIdAndProvider", ctx, testUserId, shared.ProvidersCredentials).
+					Return(&shared.UserAccount{Password: &testHashedPassword}, nil)
+			},
+			expectedError: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			mockStorage.ExpectedCalls = nil
+			mockStorage.Calls = nil
+
+			if tc.setupMocks != nil {
+				tc.setupMocks()
+			}
+
+			err := app.ResetPassword(ctx, tc.userId, tc.oldPassword, tc.newPassword)
+
+			if tc.expectedError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+
 			mockStorage.AssertExpectations(t)
 		})
 	}

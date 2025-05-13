@@ -8,7 +8,6 @@ import (
 )
 
 type TokenManager interface {
-	// AuthenticationClaims()
 	ParseToken(token string, config TokenOption, data any) error
 	CreateJwtToken(payload jwt.Claims, signingKey string) (string, error)
 }

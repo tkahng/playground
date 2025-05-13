@@ -38,7 +38,7 @@ type AuthActions interface {
 var _ AuthActions = (*AuthActionsBase)(nil)
 
 type AuthActionsBase struct {
-	storage  AuthStorage
+	storage  AuthStore
 	mail     AuthMailer
 	token    TokenManager
 	password PasswordManager
@@ -47,7 +47,7 @@ type AuthActionsBase struct {
 
 func NewAuthActions(dbx db.Dbx, mailer mailer.Mailer, settings *AppOptions) AuthActions {
 	actions := &AuthActionsBase{options: settings}
-	storage := NewAuthStorage(dbx)
+	storage := NewAuthStore(dbx)
 	tokenManager := NewTokenManager()
 	password := NewPasswordManager()
 	mail := NewAuthMailer(mailer)

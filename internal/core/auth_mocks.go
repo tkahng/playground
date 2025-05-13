@@ -32,7 +32,7 @@ type mockAuthStorage struct {
 	mock.Mock
 }
 
-var _ AuthStorage = (*mockAuthStorage)(nil)
+var _ AuthStore = (*mockAuthStorage)(nil)
 
 // AssignUserRoles implements AuthStorage.
 func (m *mockAuthStorage) AssignUserRoles(ctx context.Context, userId uuid.UUID, roleNames ...string) error {
@@ -61,7 +61,12 @@ func (m *mockAuthStorage) DeleteUser(ctx context.Context, id uuid.UUID) error {
 // FindUserAccountByUserIdAndProvider implements AuthStorage.
 func (m *mockAuthStorage) FindUserAccountByUserIdAndProvider(ctx context.Context, userId uuid.UUID, provider shared.Providers) (*shared.UserAccount, error) {
 	args := m.Called(ctx, userId, provider)
-	return args.Get(0).(*shared.UserAccount), args.Error(1)
+	var userAccount *shared.UserAccount
+	if args.Get(0) != nil {
+		userAccount = args.Get(0).(*shared.UserAccount)
+	}
+
+	return userAccount, args.Error(1)
 }
 
 // FindUserByEmail implements AuthStorage.
@@ -115,3 +120,21 @@ func (m *mockAuthStorage) GetUserInfo(ctx context.Context, email string) (*share
 	args := m.Called(ctx, email)
 	return args.Get(0).(*shared.UserInfo), args.Error(1)
 }
+
+type mockPasswordManager struct {
+	mock.Mock
+}
+
+// HashPassword implements PasswordManager.
+func (m *mockPasswordManager) HashPassword(password string) (string, error) {
+	args := m.Called(password)
+	return args.String(0), args.Error(1)
+}
+
+// VerifyPassword implements PasswordManager.
+func (m *mockPasswordManager) VerifyPassword(hashedPassword string, password string) (match bool, err error) {
+	args := m.Called(hashedPassword, password)
+	return args.Bool(0), args.Error(1)
+}
+
+var _ PasswordManager = (*mockPasswordManager)(nil)
