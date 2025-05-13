@@ -2,8 +2,6 @@ package shared
 
 import (
 	"math"
-
-	"github.com/aarondl/opt/null"
 )
 
 // ProvidersGoogle      Providers = "google"
@@ -69,10 +67,10 @@ type Link struct {
 	Active bool    `json:"active"`
 }
 type MetaLink struct {
-	First null.Val[string] `json:"first"`
-	Last  null.Val[string] `json:"last"`
-	Next  null.Val[string] `json:"next"`
-	Prev  null.Val[string] `json:"prev"`
+	First *string `json:"first"`
+	Last  *string `json:"last"`
+	Next  *string `json:"next"`
+	Prev  *string `json:"prev"`
 }
 type PaginatedOutput[T any] struct {
 	Body PaginatedResponse[T] `json:"body"`

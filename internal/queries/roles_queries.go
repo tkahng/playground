@@ -5,7 +5,6 @@ import (
 	"log"
 	"time"
 
-	"github.com/aarondl/opt/null"
 	"github.com/google/uuid"
 	"github.com/stephenafamo/scan"
 	"github.com/stephenafamo/scan/pgxscan"
@@ -622,14 +621,14 @@ FROM combined_permissions
 )
 
 type PermissionSource struct {
-	ID          uuid.UUID        `db:"id,pk" json:"id"`
-	Name        string           `db:"name" json:"name"`
-	Description null.Val[string] `db:"description" json:"description"`
-	CreatedAt   time.Time        `db:"created_at" json:"created_at"`
-	UpdatedAt   time.Time        `db:"updated_at" json:"updated_at"`
-	RoleIDs     []uuid.UUID      `db:"role_ids" json:"role_ids"`
-	ProductIDs  []string         `db:"product_ids" json:"product_ids"`
-	IsDirectly  bool             `db:"is_directly_assigned" json:"is_directly_assigned"`
+	ID          uuid.UUID   `db:"id,pk" json:"id"`
+	Name        string      `db:"name" json:"name"`
+	Description *string     `db:"description" json:"description"`
+	CreatedAt   time.Time   `db:"created_at" json:"created_at"`
+	UpdatedAt   time.Time   `db:"updated_at" json:"updated_at"`
+	RoleIDs     []uuid.UUID `db:"role_ids" json:"role_ids"`
+	ProductIDs  []string    `db:"product_ids" json:"product_ids"`
+	IsDirectly  bool        `db:"is_directly_assigned" json:"is_directly_assigned"`
 }
 
 func ListUserPermissionsSource(ctx context.Context, dbx db.Dbx, userId uuid.UUID, limit int64, offset int64) ([]PermissionSource, error) {
