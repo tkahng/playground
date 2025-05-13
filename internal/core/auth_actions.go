@@ -9,6 +9,7 @@ import (
 	"github.com/alexedwards/argon2id"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
+	"github.com/tkahng/authgo/internal/conf"
 	"github.com/tkahng/authgo/internal/db"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mailer"
@@ -16,7 +17,7 @@ import (
 	"github.com/tkahng/authgo/internal/tools/security"
 )
 
-type AuthActions interface {
+type Authenticator interface {
 	HandlePasswordResetRequest(ctx context.Context, email string) error
 	HandleAccessToken(ctx context.Context, token string) (*shared.UserInfo, error)
 	HandleRefreshToken(ctx context.Context, token string) (*shared.UserInfoTokens, error)
@@ -35,18 +36,18 @@ type AuthActions interface {
 	// ParseTokenString(tokenString string, config TokenOption, data any) error
 }
 
-var _ AuthActions = (*AuthActionsBase)(nil)
+var _ Authenticator = (*BaseAuth)(nil)
 
-type AuthActionsBase struct {
+type BaseAuth struct {
 	storage  AuthStore
 	mail     AuthMailer
 	token    TokenManager
 	password PasswordManager
-	options  *AppOptions
+	options  *conf.AppOptions
 }
 
-func NewAuthActions(dbx db.Dbx, mailer mailer.Mailer, settings *AppOptions) AuthActions {
-	actions := &AuthActionsBase{options: settings}
+func NewAuthActions(dbx db.Dbx, mailer mailer.Mailer, settings *conf.AppOptions) Authenticator {
+	actions := &BaseAuth{options: settings}
 	storage := NewAuthStore(dbx)
 	tokenManager := NewTokenManager()
 	password := NewPasswordManager()
@@ -59,7 +60,7 @@ func NewAuthActions(dbx db.Dbx, mailer mailer.Mailer, settings *AppOptions) Auth
 	return actions
 }
 
-func (app *AuthActionsBase) ResetPassword(ctx context.Context, userId uuid.UUID, oldPassword string, newPassword string) error {
+func (app *BaseAuth) ResetPassword(ctx context.Context, userId uuid.UUID, oldPassword string, newPassword string) error {
 	account, err := app.storage.FindUserAccountByUserIdAndProvider(ctx, userId, shared.ProvidersCredentials)
 	if err != nil {
 		return fmt.Errorf("error getting user account: %w", err)
@@ -86,7 +87,7 @@ func (app *AuthActionsBase) ResetPassword(ctx context.Context, userId uuid.UUID,
 }
 
 // Signout implements AuthActions.
-func (app *AuthActionsBase) Signout(ctx context.Context, token string) error {
+func (app *BaseAuth) Signout(ctx context.Context, token string) error {
 	opts := app.options.Auth
 	var claims RefreshTokenClaims
 	err := app.token.ParseToken(token, opts.RefreshToken, &claims)
@@ -101,7 +102,7 @@ func (app *AuthActionsBase) Signout(ctx context.Context, token string) error {
 }
 
 // HandlePasswordResetRequest implements AuthActions.
-func (app *AuthActionsBase) HandlePasswordResetRequest(ctx context.Context, email string) error {
+func (app *BaseAuth) HandlePasswordResetRequest(ctx context.Context, email string) error {
 	user, err := app.storage.FindUserByEmail(
 		ctx,
 		email,
@@ -129,7 +130,7 @@ func (app *AuthActionsBase) HandlePasswordResetRequest(ctx context.Context, emai
 }
 
 // CreateAndPersistStateToken implements AuthActions.
-func (app *AuthActionsBase) CreateAndPersistStateToken(ctx context.Context, payload *ProviderStatePayload) (string, error) {
+func (app *BaseAuth) CreateAndPersistStateToken(ctx context.Context, payload *ProviderStatePayload) (string, error) {
 	if payload == nil {
 		return "", fmt.Errorf("payload is nil")
 	}
@@ -159,7 +160,7 @@ func (app *AuthActionsBase) CreateAndPersistStateToken(ctx context.Context, payl
 }
 
 // CreateAuthTokensFromEmail implements AuthActions.
-func (app *AuthActionsBase) CreateAuthTokensFromEmail(ctx context.Context, email string) (*shared.UserInfoTokens, error) {
+func (app *BaseAuth) CreateAuthTokensFromEmail(ctx context.Context, email string) (*shared.UserInfoTokens, error) {
 	user, err := app.storage.GetUserInfo(ctx, email)
 	if err != nil {
 		return nil, err
@@ -167,7 +168,7 @@ func (app *AuthActionsBase) CreateAuthTokensFromEmail(ctx context.Context, email
 	return app.CreateAuthTokens(ctx, user)
 }
 
-func (app *AuthActionsBase) CreateAuthTokens(ctx context.Context, payload *shared.UserInfo) (*shared.UserInfoTokens, error) {
+func (app *BaseAuth) CreateAuthTokens(ctx context.Context, payload *shared.UserInfo) (*shared.UserInfoTokens, error) {
 	if payload == nil {
 		return nil, fmt.Errorf("payload is nil")
 	}
@@ -247,7 +248,7 @@ func (app *AuthActionsBase) CreateAuthTokens(ctx context.Context, payload *share
 }
 
 // CheckResetPasswordToken implements AuthActions.
-func (app *AuthActionsBase) CheckResetPasswordToken(ctx context.Context, tokenHash string) error {
+func (app *BaseAuth) CheckResetPasswordToken(ctx context.Context, tokenHash string) error {
 	opts := app.options.Auth
 	var claims PasswordResetClaims
 	err := app.token.ParseToken(tokenHash, opts.PasswordResetToken, &claims)
@@ -265,7 +266,7 @@ func (app *AuthActionsBase) CheckResetPasswordToken(ctx context.Context, tokenHa
 }
 
 // HandlePasswordResetToken implements AuthActions.
-func (app *AuthActionsBase) HandlePasswordResetToken(ctx context.Context, token, password string) error {
+func (app *BaseAuth) HandlePasswordResetToken(ctx context.Context, token, password string) error {
 	opts := app.options.Auth
 	var claims PasswordResetClaims
 	err := app.token.ParseToken(token, opts.PasswordResetToken, &claims)
@@ -306,7 +307,7 @@ func (app *AuthActionsBase) HandlePasswordResetToken(ctx context.Context, token,
 	return nil
 
 }
-func (app *AuthActionsBase) VerifyStateToken(ctx context.Context, token string) (*ProviderStateClaims, error) {
+func (app *BaseAuth) VerifyStateToken(ctx context.Context, token string) (*ProviderStateClaims, error) {
 	opts := app.options.Auth
 	var claims ProviderStateClaims
 	err := app.token.ParseToken(token, opts.StateToken, &claims)
@@ -319,7 +320,7 @@ func (app *AuthActionsBase) VerifyStateToken(ctx context.Context, token string) 
 	}
 	return &claims, nil
 }
-func (app *AuthActionsBase) HandleAccessToken(ctx context.Context, token string) (*shared.UserInfo, error) {
+func (app *BaseAuth) HandleAccessToken(ctx context.Context, token string) (*shared.UserInfo, error) {
 	opts := app.options.Auth
 	var claims AuthenticationClaims
 	err := app.token.ParseToken(token, opts.AccessToken, &claims)
@@ -330,7 +331,7 @@ func (app *AuthActionsBase) HandleAccessToken(ctx context.Context, token string)
 }
 
 // HandleRefreshToken implements AuthActions.
-func (app *AuthActionsBase) HandleRefreshToken(ctx context.Context, token string) (*shared.UserInfoTokens, error) {
+func (app *BaseAuth) HandleRefreshToken(ctx context.Context, token string) (*shared.UserInfoTokens, error) {
 	opts := app.options.Auth
 	var claims RefreshTokenClaims
 	err := app.token.ParseToken(token, opts.RefreshToken, &claims)
@@ -349,7 +350,7 @@ func (app *AuthActionsBase) HandleRefreshToken(ctx context.Context, token string
 	return app.CreateAuthTokens(ctx, info)
 }
 
-func (app *AuthActionsBase) HandleVerificationToken(ctx context.Context, token string) error {
+func (app *BaseAuth) HandleVerificationToken(ctx context.Context, token string) error {
 	claims, err := app.VerifyAndParseOtpToken(ctx, EmailTypeVerify, token)
 	if err != nil {
 		return fmt.Errorf("error verifying verification token: %w", err)
@@ -378,8 +379,8 @@ func (app *AuthActionsBase) HandleVerificationToken(ctx context.Context, token s
 }
 
 // VerifyAndUseVerificationToken implements AuthActions.
-func (app *AuthActionsBase) VerifyAndParseOtpToken(ctx context.Context, emailType EmailType, token string) (*OtpClaims, error) {
-	var opt TokenOption
+func (app *BaseAuth) VerifyAndParseOtpToken(ctx context.Context, emailType EmailType, token string) (*OtpClaims, error) {
+	var opt conf.TokenOption
 	switch emailType {
 	case EmailTypeVerify:
 		opt = app.options.Auth.VerificationToken
@@ -401,7 +402,7 @@ func (app *AuthActionsBase) VerifyAndParseOtpToken(ctx context.Context, emailTyp
 
 // methods
 
-func (app *AuthActionsBase) Authenticate(ctx context.Context, params *shared.AuthenticationInput) (*shared.User, error) {
+func (app *BaseAuth) Authenticate(ctx context.Context, params *shared.AuthenticationInput) (*shared.User, error) {
 	var user *shared.User
 	var account *shared.UserAccount
 	var err error
@@ -530,7 +531,7 @@ func (app *AuthActionsBase) Authenticate(ctx context.Context, params *shared.Aut
 	return user, nil
 }
 
-func (app *AuthActionsBase) CheckUserCredentialsSecurity(ctx context.Context, user *shared.User, params *shared.AuthenticationInput) error {
+func (app *BaseAuth) CheckUserCredentialsSecurity(ctx context.Context, user *shared.User, params *shared.AuthenticationInput) error {
 
 	if user == nil || params == nil {
 		return fmt.Errorf("user not found")
@@ -575,8 +576,8 @@ func (app *AuthActionsBase) CheckUserCredentialsSecurity(ctx context.Context, us
 }
 
 // SendOtpEmail creates and saves a new otp token and sends it to the user's email
-func (app *AuthActionsBase) SendOtpEmail(emailType EmailType, ctx context.Context, user *shared.User) error {
-	var opts TokenOption
+func (app *BaseAuth) SendOtpEmail(emailType EmailType, ctx context.Context, user *shared.User) error {
+	var opts conf.TokenOption
 	switch emailType {
 	case EmailTypeVerify:
 		opts = app.options.Auth.VerificationToken
@@ -601,7 +602,7 @@ func (app *AuthActionsBase) SendOtpEmail(emailType EmailType, ctx context.Contex
 		Email:      email,
 		Token:      tokenKey,
 		Otp:        otp,
-		RedirectTo: app.options.Meta.AppURL,
+		RedirectTo: app.options.Meta.AppUrl,
 	}
 
 	tokenHash, err := app.CreateOtpTokenHash(&payload, opts)
@@ -630,7 +631,7 @@ func (app *AuthActionsBase) SendOtpEmail(emailType EmailType, ctx context.Contex
 	return nil
 }
 
-func (app *AuthActionsBase) CreateOtpTokenHash(payload *OtpPayload, config TokenOption) (string, error) {
+func (app *BaseAuth) CreateOtpTokenHash(payload *OtpPayload, config conf.TokenOption) (string, error) {
 	if payload == nil {
 		return "", fmt.Errorf("payload is nil")
 	}

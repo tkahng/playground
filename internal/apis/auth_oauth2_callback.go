@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/tkahng/authgo/internal/core"
+	"github.com/tkahng/authgo/internal/auth"
 	"github.com/tkahng/authgo/internal/shared"
 	"golang.org/x/oauth2"
 )
@@ -79,7 +79,6 @@ type CallbackOutput struct {
 }
 
 func OAuth2Callback(ctx context.Context, api *Api, input *OAuth2CallbackInput) (*CallbackOutput, error) {
-	authOpts := api.app.Settings().Auth
 	action := api.app.NewAuthActions()
 	parsedState, err := action.VerifyStateToken(ctx, input.State)
 	if err != nil {
@@ -91,12 +90,13 @@ func OAuth2Callback(ctx context.Context, api *Api, input *OAuth2CallbackInput) (
 	if parsedState.Type != shared.TokenTypesStateToken {
 		return nil, fmt.Errorf("invalid token type. want verification_token, got  %v", parsedState.Type)
 	}
-	var provider core.ProviderConfig
+	var provider auth.ProviderConfig
 	switch parsedState.Provider {
 	case shared.OAuthProvidersGithub:
-		provider = &authOpts.OAuth2Config.Github
+		provider = auth.NewProviderByName(auth.NameGithub)
+
 	case shared.OAuthProvidersGoogle:
-		provider = &authOpts.OAuth2Config.Google
+		provider = auth.NewProviderByName(auth.NameGoogle)
 	default:
 		return nil, fmt.Errorf("invalid provider %v", parsedState.Provider)
 	}

@@ -14,11 +14,11 @@ type App interface {
 	Db() *db.Queries
 	Fs() *filesystem.FileSystem
 	NewChecker(ctx context.Context) ConstraintChecker
-	Settings() *AppOptions
+	Settings() *conf.AppOptions
 	NewMailClient() mailer.Mailer
 	EncryptionEnv() string
 
 	Payment() *StripeService
 
-	NewAuthActions() AuthActions
+	NewAuthActions() Authenticator
 }

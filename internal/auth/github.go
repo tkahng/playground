@@ -1,4 +1,4 @@
-package core
+package auth
 
 import (
 	"context"
@@ -6,9 +6,31 @@ import (
 	"io"
 	"strconv"
 
-	"github.com/tkahng/authgo/internal/auth"
 	"golang.org/x/oauth2"
 )
+
+// func init() {
+// 	Providers[NameGithub] = wrapFactory(NewGithubProvider)
+// }
+
+// func NewGithubProvider() *GithubConfig {
+// 	return &GithubConfig{OAuth2ProviderConfig{
+// 		// ctx:         context.Background(),
+// 		// displayName: "GitHub",
+// 		// pkce:        true, // technically is not supported yet but it is safe as the PKCE params are just ignored
+// 		// scopes:      []string{"read:user", "user:email"},
+// 		// authURL:     github.Endpoint.AuthURL,
+// 		// tokenURL:    github.Endpoint.TokenURL,
+// 		// userInfoURL: "https://api.github.com/user",
+// 		Name:        "GitHub",
+// 		Enabled:     true,
+// 		PKCE:        true, // technically is not supported yet but it is safe as the PKCE params are just ignored
+// 		Scopes:      []string{"read:user", "user:email"},
+// 		AuthURL:     github.Endpoint.AuthURL,
+// 		TokenURL:    github.Endpoint.TokenURL,
+// 		UserInfoURL: "https://api.github.com/user",
+// 	}}
+// }
 
 type GithubConfig struct {
 	OAuth2ProviderConfig
@@ -21,7 +43,7 @@ func (p *GithubConfig) Active() bool {
 }
 
 // FetchAuthUser implements Provider.FetchAuthUser() interface method.
-func (p *GithubConfig) FetchAuthUser(ctx context.Context, token *oauth2.Token) (*auth.AuthUser, error) {
+func (p *GithubConfig) FetchAuthUser(ctx context.Context, token *oauth2.Token) (*AuthUser, error) {
 	data, err := p.FetchRawUserInfo(ctx, token)
 
 	if err != nil {
@@ -43,7 +65,7 @@ func (p *GithubConfig) FetchAuthUser(ctx context.Context, token *oauth2.Token) (
 		return nil, err
 	}
 
-	user := &auth.AuthUser{
+	user := &AuthUser{
 		Id:           strconv.FormatInt(extracted.Id, 10),
 		Name:         extracted.Name,
 		Username:     extracted.Login,

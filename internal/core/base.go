@@ -19,7 +19,7 @@ var _ App = (*BaseApp)(nil)
 type BaseApp struct {
 	cfg      *conf.EnvConfig
 	db       *db.Queries
-	settings *AppOptions
+	settings *conf.AppOptions
 	payment  *StripeService
 	logger   *slog.Logger
 	fs       *filesystem.FileSystem
@@ -32,7 +32,7 @@ func (a *BaseApp) NewChecker(ctx context.Context) ConstraintChecker {
 }
 
 // NewAuthActions implements App.
-func (a *BaseApp) NewAuthActions() AuthActions {
+func (a *BaseApp) NewAuthActions() Authenticator {
 	return NewAuthActions(a.db, a.mail, a.settings)
 }
 
@@ -53,7 +53,7 @@ func (a *BaseApp) Payment() *StripeService {
 }
 
 // Settings implements App.
-func (a *BaseApp) Settings() *AppOptions {
+func (a *BaseApp) Settings() *conf.AppOptions {
 	return a.settings
 }
 
@@ -87,7 +87,7 @@ func InitBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 	app := &BaseApp{
 		fs:       fs,
 		db:       pool,
-		settings: NewSettingsFromConf(&cfg),
+		settings: cfg.ToSettings(),
 		logger:   logger.GetDefaultLogger(slog.LevelInfo),
 		cfg:      &cfg,
 		mail:     mail,

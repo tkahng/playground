@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/tkahng/authgo/internal/conf"
 	"github.com/tkahng/authgo/internal/shared"
 )
 
@@ -16,12 +17,12 @@ func TestHandleRefreshToken(t *testing.T) {
 	ctx := context.Background()
 	mockStorage := new(mockAuthStorage)
 	mockToken := new(mockTokenManager)
-	app := &AuthActionsBase{
+	app := &BaseAuth{
 		token:   mockToken,
 		storage: mockStorage,
-		options: &AppOptions{
-			Auth: AuthOptions{
-				RefreshToken: TokenOption{
+		options: &conf.AppOptions{
+			Auth: conf.AuthOptions{
+				RefreshToken: conf.TokenOption{
 					Type:     shared.TokenTypesRefreshToken,
 					Secret:   string(shared.TokenTypesRefreshToken),
 					Duration: 604800, // 7days
@@ -101,7 +102,7 @@ func TestResetPassword(t *testing.T) {
 	ctx := context.Background()
 	mockStorage := new(mockAuthStorage)
 	passwordManager := NewPasswordManager()
-	app := &AuthActionsBase{
+	app := &BaseAuth{
 		storage:  mockStorage,
 		password: passwordManager,
 	}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/tkahng/authgo/internal/auth"
 	"github.com/tkahng/authgo/internal/core"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/security"
@@ -23,16 +24,15 @@ type OAuth2AuthorizationUrlOutput struct {
 
 func (h *Api) OAuth2AuthorizationUrl(ctx context.Context, input *OAuth2AuthorizationUrlInput) (*OAuth2AuthorizationUrlOutput, error) {
 
-	settings := h.app.Settings()
 	conf := h.app.Cfg()
 	action := h.app.NewAuthActions()
 	redirectTo := input.RedirectTo
 	if redirectTo == "" {
 		redirectTo = conf.AppConfig.AppUrl
 	}
-	provider, err := settings.Auth.OAuth2Config.GetProvider(string(input.Provider))
-	if err != nil {
-		return nil, err
+	provider := auth.NewProviderByName(string(input.Provider))
+	if provider == nil {
+		return nil, fmt.Errorf("provider %v not found", input.Provider)
 	}
 	if !provider.Active() {
 		return nil, fmt.Errorf("provider %v is not enabled", input.Provider)
@@ -70,19 +70,4 @@ func (h *Api) OAuth2AuthorizationUrl(ctx context.Context, input *OAuth2Authoriza
 		},
 	}, nil
 
-}
-
-type SkipTakeDTO struct {
-	Skip int `json:"skip" default:"0" minimum:"0" required:"false"`
-	Take int `json:"take" default:"10" minimum:"1" maximum:"50" required:"false"`
-}
-
-type PageMetaDTO struct {
-	TotalCount int  `json:"total_count" default:"0" minimum:"0"`
-	HasMore    bool `json:"has_more" default:"false"`
-}
-
-type OrderByDTO struct {
-	OrderBy string `json:"order_by" default:"created_at" required:"false"`
-	Sort    string `json:"sort" default:"asc" required:"false" enum:"asc,desc"`
 }

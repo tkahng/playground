@@ -5,6 +5,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
+	"github.com/tkahng/authgo/internal/conf"
 	"github.com/tkahng/authgo/internal/shared"
 
 	"github.com/stretchr/testify/mock"
@@ -23,7 +24,7 @@ func (m *mockTokenManager) CreateJwtToken(payload jwt.Claims, signingKey string)
 }
 
 // ParseToken implements TokenManager.
-func (m *mockTokenManager) ParseToken(token string, config TokenOption, data any) error {
+func (m *mockTokenManager) ParseToken(token string, config conf.TokenOption, data any) error {
 	args := m.Called(token, config, data)
 	return args.Error(0)
 }
