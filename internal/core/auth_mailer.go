@@ -5,12 +5,13 @@ import (
 	"net/url"
 
 	"github.com/tkahng/authgo/internal/conf"
+	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mailer"
 )
 
 type AuthMailer interface {
 	Client() mailer.Mailer
-	SendOtpEmail(emailType EmailType, tokenHash string, payload *OtpPayload, config *conf.AppOptions) error
+	SendOtpEmail(emailType EmailType, tokenHash string, payload *shared.OtpPayload, config *conf.AppOptions) error
 }
 
 type EmailType string
@@ -55,7 +56,7 @@ type AuthMailerBase struct {
 }
 
 // SendOtpEmail implements AuthMailer.
-func (a *AuthMailerBase) SendOtpEmail(emailType EmailType, tokenHash string, payload *OtpPayload, config *conf.AppOptions) error {
+func (a *AuthMailerBase) SendOtpEmail(emailType EmailType, tokenHash string, payload *shared.OtpPayload, config *conf.AppOptions) error {
 	if payload == nil {
 		return fmt.Errorf("payload is nil")
 	}

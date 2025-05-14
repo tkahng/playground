@@ -19,6 +19,7 @@ type ProviderConfig interface {
 	FetchAuthUser(ctx context.Context, token *oauth2.Token) (*AuthUser, error)
 	FetchRawUserInfo(ctx context.Context, token *oauth2.Token) ([]byte, error)
 	FetchToken(ctx context.Context, code string, opts ...oauth2.AuthCodeOption) (*oauth2.Token, error)
+	FetchTokenOptions(verifier string) []oauth2.AuthCodeOption
 }
 
 // func
@@ -96,6 +97,17 @@ func (p *OAuth2ProviderConfig) oauth2Config() *oauth2.Config {
 			TokenURL: p.TokenURL,
 		},
 	}
+}
+
+func (p *OAuth2ProviderConfig) FetchTokenOptions(verifier string) []oauth2.AuthCodeOption {
+	var opts []oauth2.AuthCodeOption = []oauth2.AuthCodeOption{
+		oauth2.AccessTypeOffline,
+	}
+
+	if p.Pkce() {
+		opts = append(opts, oauth2.SetAuthURLParam("code_verifier", verifier))
+	}
+	return opts
 }
 
 // BuildAuthURL implements Provider.BuildAuthURL() interface method.

@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/tkahng/authgo/internal/auth/oauth"
-	"github.com/tkahng/authgo/internal/core"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/security"
 	"golang.org/x/oauth2"
@@ -40,7 +39,7 @@ func (h *Api) OAuth2AuthorizationUrl(ctx context.Context, input *OAuth2Authoriza
 	urlOpts := []oauth2.AuthCodeOption{
 		oauth2.AccessTypeOffline,
 	}
-	info := &core.ProviderStatePayload{
+	info := &shared.ProviderStatePayload{
 		Type:       shared.TokenTypesStateToken,
 		Provider:   input.Provider,
 		RedirectTo: redirectTo,
