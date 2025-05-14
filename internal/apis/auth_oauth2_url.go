@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/tkahng/authgo/internal/auth"
+	"github.com/tkahng/authgo/internal/auth/oauth"
 	"github.com/tkahng/authgo/internal/core"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/security"
@@ -30,7 +30,7 @@ func (h *Api) OAuth2AuthorizationUrl(ctx context.Context, input *OAuth2Authoriza
 	if redirectTo == "" {
 		redirectTo = conf.AppConfig.AppUrl
 	}
-	provider := auth.NewProviderByName(string(input.Provider))
+	provider := oauth.NewProviderByName(string(input.Provider))
 	if provider == nil {
 		return nil, fmt.Errorf("provider %v not found", input.Provider)
 	}
