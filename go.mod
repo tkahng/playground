@@ -88,7 +88,6 @@ require (
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
 	github.com/jackc/puddle/v2 v2.2.2 // indirect
 	github.com/joho/godotenv v1.5.1
-	github.com/matryer/is v1.4.1
 	github.com/resend/resend-go/v2 v2.18.0
 	github.com/stripe/stripe-go/v82 v82.1.0
 	github.com/wneessen/go-mail v0.6.2
