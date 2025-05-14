@@ -4,9 +4,9 @@ import (
 	"context"
 	"slices"
 
+	"github.com/tkahng/authgo/internal/crudrepo"
 	"github.com/tkahng/authgo/internal/db"
 	"github.com/tkahng/authgo/internal/models"
-	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/types"
 )
@@ -23,7 +23,7 @@ var (
 func ListUserAccounts(ctx context.Context, db db.Dbx, input *shared.UserAccountListParams) ([]*models.UserAccount, error) {
 	where := UserAccountWhere(&input.UserAccountListFilter)
 	sort := UserAccountOrderBy(&input.SortParams)
-	data, err := repository.UserAccount.Get(
+	data, err := crudrepo.UserAccount.Get(
 		ctx,
 		db,
 		where,
@@ -89,7 +89,7 @@ func UserAccountWhere(filter *shared.UserAccountListFilter) *map[string]any {
 // CountUsers implements AdminCrudActions.
 func CountUserAccounts(ctx context.Context, db db.Dbx, filter *shared.UserAccountListFilter) (int64, error) {
 	where := UserAccountWhere(filter)
-	data, err := repository.UserAccount.Count(ctx, db, where)
+	data, err := crudrepo.UserAccount.Count(ctx, db, where)
 	if err != nil {
 		return 0, err
 	}

@@ -10,7 +10,8 @@ import (
 )
 
 func TestIsUniqConstraintErr(t *testing.T) {
-	ctx, dbx := test.DbSetup()
+	test.Short(t)
+ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		// _, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 		// 	Email: "test@example.com",

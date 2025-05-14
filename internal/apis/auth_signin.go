@@ -21,7 +21,7 @@ type AuthenticatedInfoResponse struct {
 }
 
 func (api *Api) SignIn(ctx context.Context, input *struct{ Body *SigninDto }) (*AuthenticatedInfoResponse, error) {
-	action := api.app.NewAuthActions()
+	action := api.app.Auth()
 	password := input.Body.Password.String()
 	params := &shared.AuthenticationInput{
 		Email:             input.Body.Email,

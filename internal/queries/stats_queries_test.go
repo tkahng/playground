@@ -15,7 +15,8 @@ import (
 
 func TestGetUserTaskStats(t *testing.T) {
 
-	ctx, dbx := test.DbSetup()
+	test.Short(t)
+ctx, dbx := test.DbSetup()
 
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{

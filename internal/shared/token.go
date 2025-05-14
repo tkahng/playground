@@ -1,16 +1,15 @@
-package core
+package shared
 
 import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
-	"github.com/tkahng/authgo/internal/shared"
 )
 
 // ----------- Authentication Claims -----------------
 
 type AuthenticationClaims struct {
 	jwt.RegisteredClaims
-	Type shared.TokenType `json:"type"`
+	Type TokenType `json:"type"`
 	AuthenticationPayload
 }
 
@@ -25,7 +24,7 @@ type AuthenticationPayload struct {
 
 type RefreshTokenClaims struct {
 	jwt.RegisteredClaims
-	Type shared.TokenType `json:"type"`
+	Type TokenType `json:"type"`
 	RefreshTokenPayload
 }
 
@@ -48,12 +47,12 @@ type EmailVerificationClaims struct {
 }
 
 type OtpPayload struct {
-	UserId     uuid.UUID        `json:"user_id,omitempty"`
-	Email      string           `json:"email,omitempty"`
-	Token      string           `json:"token"`
-	Type       shared.TokenType `json:"type"`
-	Otp        string           `json:"otp,omitempty"`
-	RedirectTo string           `json:"redirect_to,omitempty"`
+	UserId     uuid.UUID `json:"user_id,omitempty"`
+	Email      string    `json:"email,omitempty"`
+	Token      string    `json:"token"`
+	Type       TokenType `json:"type"`
+	Otp        string    `json:"otp,omitempty"`
+	RedirectTo string    `json:"redirect_to,omitempty"`
 }
 
 // ----------- Provider State Claims -----------------
@@ -66,13 +65,13 @@ type ProviderStateClaims struct {
 type ProviderStatePayload struct {
 	// UserId              uuid.UUID        `json:"user_id,omitempty"`
 	// Email               string           `json:"email,omitempty"`
-	Token               string                `json:"token"`
-	Type                shared.TokenType      `json:"type"`
-	Provider            shared.OAuthProviders `json:"provider"`
-	CodeVerifier        string                `json:"code_verifier,omitempty"`
-	CodeChallenge       string                `json:"code_challenge,omitempty"`
-	CodeChallengeMethod string                `json:"code_challenge_method,omitempty"`
-	RedirectTo          string                `json:"redirect_to,omitempty"`
+	Token               string         `json:"token"`
+	Type                TokenType      `json:"type"`
+	Provider            OAuthProviders `json:"provider"`
+	CodeVerifier        string         `json:"code_verifier,omitempty"`
+	CodeChallenge       string         `json:"code_challenge,omitempty"`
+	CodeChallengeMethod string         `json:"code_challenge_method,omitempty"`
+	RedirectTo          string         `json:"redirect_to,omitempty"`
 }
 
 // ----------- Password Reset Claims -----------------

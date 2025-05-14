@@ -8,10 +8,10 @@ import (
 	"github.com/tkahng/authgo/internal/db"
 	"github.com/tkahng/authgo/internal/queries"
 
+	"github.com/tkahng/authgo/internal/payment"
 	"github.com/tkahng/authgo/internal/tools/filesystem"
 	"github.com/tkahng/authgo/internal/tools/logger"
 	"github.com/tkahng/authgo/internal/tools/mailer"
-	"github.com/tkahng/authgo/internal/tools/payment"
 )
 
 var _ App = (*BaseApp)(nil)
@@ -19,8 +19,8 @@ var _ App = (*BaseApp)(nil)
 type BaseApp struct {
 	cfg      *conf.EnvConfig
 	db       *db.Queries
-	settings *AppOptions
-	payment  *StripeService
+	settings *conf.AppOptions
+	payment  *payment.StripeService
 	logger   *slog.Logger
 	fs       *filesystem.FileSystem
 	mail     mailer.Mailer
@@ -31,8 +31,8 @@ func (a *BaseApp) NewChecker(ctx context.Context) ConstraintChecker {
 	return NewConstraintCheckerService(ctx, a.db)
 }
 
-// NewAuthActions implements App.
-func (a *BaseApp) NewAuthActions() AuthActions {
+// Auth implements App.
+func (a *BaseApp) Auth() Authenticator {
 	return NewAuthActions(a.db, a.mail, a.settings)
 }
 
@@ -43,17 +43,17 @@ func (app *BaseApp) Fs() *filesystem.FileSystem {
 func (app *BaseApp) Logger() *slog.Logger {
 	return app.logger
 }
-func (app *BaseApp) Db() *db.Queries {
+func (app *BaseApp) Db() db.Dbx {
 	return app.db
 }
 
 // Payment implements App.
-func (a *BaseApp) Payment() *StripeService {
+func (a *BaseApp) Payment() *payment.StripeService {
 	return a.payment
 }
 
 // Settings implements App.
-func (a *BaseApp) Settings() *AppOptions {
+func (a *BaseApp) Settings() *conf.AppOptions {
 	return a.settings
 }
 
@@ -83,15 +83,17 @@ func InitBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 	} else {
 		mail = &mailer.LogMailer{}
 	}
-
+	store := payment.NewStripeStore()
+	stripeClient := payment.NewStripeClient(cfg.StripeConfig)
+	stripeService := payment.NewStripeService(stripeClient, store)
 	app := &BaseApp{
 		fs:       fs,
 		db:       pool,
-		settings: NewSettingsFromConf(&cfg),
+		settings: cfg.ToSettings(),
 		logger:   logger.GetDefaultLogger(slog.LevelInfo),
 		cfg:      &cfg,
 		mail:     mail,
-		payment:  NewStripeService(payment.NewStripeClient(cfg.StripeConfig)),
+		payment:  stripeService,
 	}
 	return app
 }

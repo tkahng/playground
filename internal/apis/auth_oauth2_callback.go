@@ -6,9 +6,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/tkahng/authgo/internal/core"
 	"github.com/tkahng/authgo/internal/shared"
-	"golang.org/x/oauth2"
 )
 
 type OAuth2CallbackPostResponse struct {
@@ -79,8 +77,7 @@ type CallbackOutput struct {
 }
 
 func OAuth2Callback(ctx context.Context, api *Api, input *OAuth2CallbackInput) (*CallbackOutput, error) {
-	authOpts := api.app.Settings().Auth
-	action := api.app.NewAuthActions()
+	action := api.app.Auth()
 	parsedState, err := action.VerifyStateToken(ctx, input.State)
 	if err != nil {
 		return nil, err
@@ -91,45 +88,9 @@ func OAuth2Callback(ctx context.Context, api *Api, input *OAuth2CallbackInput) (
 	if parsedState.Type != shared.TokenTypesStateToken {
 		return nil, fmt.Errorf("invalid token type. want verification_token, got  %v", parsedState.Type)
 	}
-	var provider core.ProviderConfig
-	switch parsedState.Provider {
-	case shared.OAuthProvidersGithub:
-		provider = &authOpts.OAuth2Config.Github
-	case shared.OAuthProvidersGoogle:
-		provider = &authOpts.OAuth2Config.Google
-	default:
-		return nil, fmt.Errorf("invalid provider %v", parsedState.Provider)
-	}
-	if provider == nil {
-		return nil, fmt.Errorf("invalid provider %v", parsedState.Provider)
-	}
-	if !provider.Active() {
-		return nil, fmt.Errorf("provider %v is not enabled", parsedState.Provider)
-	}
-	var redirectUrl string
-	if parsedState.RedirectTo != "" {
-		redirectUrl = parsedState.RedirectTo
-	} else {
-		redirectUrl = api.app.Cfg().AppConfig.AppUrl
-	}
-	var opts []oauth2.AuthCodeOption = []oauth2.AuthCodeOption{
-		oauth2.AccessTypeOffline,
-	}
-
-	if provider.Pkce() {
-		opts = append(opts, oauth2.SetAuthURLParam("code_verifier", parsedState.CodeVerifier))
-	}
-
-	// fetch token
-	token, err := provider.FetchToken(ctx, input.Code, opts...)
+	authUser, err := action.FetchAuthUser(ctx, input.Code, parsedState)
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch OAuth2 token. %w", err)
-	}
-
-	// fetch external auth user
-	authUser, err := provider.FetchAuthUser(ctx, token)
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch OAuth2 user. %w", err)
+		return nil, fmt.Errorf("error at Oatuh2Callback: %w", err)
 	}
 	var prv shared.Providers
 	switch parsedState.Provider {
@@ -160,6 +121,6 @@ func OAuth2Callback(ctx context.Context, api *Api, input *OAuth2CallbackInput) (
 	}
 	return &CallbackOutput{
 		UserInfoTokens: *dto,
-		RedirectTo:     redirectUrl,
+		RedirectTo:     parsedState.RedirectTo,
 	}, nil
 }

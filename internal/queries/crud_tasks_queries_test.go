@@ -16,7 +16,8 @@ import (
 )
 
 func TestLoadTaskProjectsTasks(t *testing.T) {
-	ctx, dbx := test.DbSetup()
+	test.Short(t)
+ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 			Email: "tkahng@gmail.com",
@@ -96,7 +97,8 @@ func TestLoadTaskProjectsTasks(t *testing.T) {
 	})
 }
 func TestFindTaskByID(t *testing.T) {
-	ctx, dbx := test.DbSetup()
+	test.Short(t)
+ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 			Email: "tkahng@gmail.com",
@@ -176,7 +178,8 @@ func TestFindTaskByID(t *testing.T) {
 	})
 }
 func TestFindLastTaskOrder(t *testing.T) {
-	ctx, dbx := test.DbSetup()
+	test.Short(t)
+ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		user, err := queries.CreateUser(
 			ctx,
@@ -264,7 +267,8 @@ func TestFindLastTaskOrder(t *testing.T) {
 	})
 }
 func TestDeleteTask(t *testing.T) {
-	ctx, dbx := test.DbSetup()
+	test.Short(t)
+ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 			Email: "tkahng@gmail.com",
@@ -327,7 +331,8 @@ func TestDeleteTask(t *testing.T) {
 	})
 }
 func TestFindTaskProjectByID(t *testing.T) {
-	ctx, dbx := test.DbSetup()
+	test.Short(t)
+ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 			Email: "tkahng@gmail.com",
@@ -400,7 +405,8 @@ func TestFindTaskProjectByID(t *testing.T) {
 	})
 }
 func TestDeleteTaskProject(t *testing.T) {
-	ctx, dbx := test.DbSetup()
+	test.Short(t)
+ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 			Email: "tkahng@gmail.com",
@@ -456,7 +462,8 @@ func TestDeleteTaskProject(t *testing.T) {
 	})
 }
 func TestListTasks(t *testing.T) {
-	ctx, dbx := test.DbSetup()
+	test.Short(t)
+ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 			Email: "tkahng@gmail.com",
@@ -560,7 +567,8 @@ func TestListTasks(t *testing.T) {
 	})
 }
 func TestCountTasks(t *testing.T) {
-	ctx, dbx := test.DbSetup()
+	test.Short(t)
+ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 			Email: "tkahng@gmail.com",
@@ -636,7 +644,8 @@ func TestCountTasks(t *testing.T) {
 	})
 }
 func TestListTaskProjects(t *testing.T) {
-	ctx, dbx := test.DbSetup()
+	test.Short(t)
+ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 			Email: "tkahng@gmail.com",
@@ -730,7 +739,8 @@ func TestListTaskProjects(t *testing.T) {
 	})
 }
 func TestCountTaskProjects(t *testing.T) {
-	ctx, dbx := test.DbSetup()
+	test.Short(t)
+ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 			Email: "tkahng@gmail.com",
@@ -796,7 +806,8 @@ func TestCountTaskProjects(t *testing.T) {
 	})
 }
 func TestCreateTaskProject(t *testing.T) {
-	ctx, dbx := test.DbSetup()
+	test.Short(t)
+ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 			Email: "tkahng@gmail.com",
@@ -870,7 +881,8 @@ func TestCreateTaskProject(t *testing.T) {
 	})
 }
 func TestCreateTaskProjectWithTasks(t *testing.T) {
-	ctx, dbx := test.DbSetup()
+	test.Short(t)
+ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 			Email: "tkahng@gmail.com",
@@ -966,7 +978,8 @@ func TestCreateTaskProjectWithTasks(t *testing.T) {
 	})
 }
 func TestCreateTask(t *testing.T) {
-	ctx, dbx := test.DbSetup()
+	test.Short(t)
+ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 			Email: "tkahng@gmail.com",
@@ -1053,7 +1066,8 @@ func TestCreateTask(t *testing.T) {
 	})
 }
 func TestDefineTaskOrderNumberByStatus(t *testing.T) {
-	ctx, dbx := test.DbSetup()
+	test.Short(t)
+ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 			Email: "tkahng@gmail.com",
@@ -1170,7 +1184,8 @@ func TestDefineTaskOrderNumberByStatus(t *testing.T) {
 	})
 }
 func TestUpdateTask(t *testing.T) {
-	ctx, dbx := test.DbSetup()
+	test.Short(t)
+ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 			Email: "tkahng@gmail.com",
@@ -1270,7 +1285,8 @@ func TestUpdateTask(t *testing.T) {
 	})
 }
 func TestUpdateTaskProjectUpdateDate(t *testing.T) {
-	ctx, dbx := test.DbSetup()
+	test.Short(t)
+ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 			Email: "tkahng@gmail.com",
@@ -1328,7 +1344,8 @@ func TestUpdateTaskProjectUpdateDate(t *testing.T) {
 	})
 }
 func TestUpdateTaskProject(t *testing.T) {
-	ctx, dbx := test.DbSetup()
+	test.Short(t)
+ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 			Email: "tkahng@gmail.com",
@@ -1420,7 +1437,8 @@ func TestUpdateTaskProject(t *testing.T) {
 	})
 }
 func TestUpdateTaskPositionStatus(t *testing.T) {
-	ctx, dbx := test.DbSetup()
+	test.Short(t)
+ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 			Email: "tkahng@gmail.com",

@@ -3,8 +3,8 @@ package queries
 import (
 	"context"
 
+	"github.com/tkahng/authgo/internal/crudrepo"
 	"github.com/tkahng/authgo/internal/db"
-	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 )
 
@@ -13,11 +13,11 @@ type DelFunc func(ctx context.Context, dbx db.Dbx, where *map[string]any) (int64
 func TruncateModels(ctx context.Context, db db.Dbx) error {
 	return ErrorWrapper(ctx, db, false,
 		Convert(
-			repository.User.Delete,
-			repository.Role.Delete,
-			repository.Permission.Delete,
-			repository.UserPermission.Delete,
-			repository.UserRole.Delete,
+			crudrepo.User.Delete,
+			crudrepo.Role.Delete,
+			crudrepo.Permission.Delete,
+			crudrepo.UserPermission.Delete,
+			crudrepo.UserRole.Delete,
 		)...,
 	)
 }

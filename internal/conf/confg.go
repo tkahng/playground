@@ -79,6 +79,24 @@ type EnvConfig struct {
 	AiConfig
 }
 
+func (c *EnvConfig) ToSettings() *AppOptions {
+	return &AppOptions{
+		Auth: NewTokenOptions(),
+		Meta: c.AppConfig,
+	}
+}
+
+type Config struct {
+	Meta    AppConfig
+	Db      DBConfig
+	OAuth   OAuth2Config
+	Resend  ResendConfig
+	Smtp    SmtpConfig
+	Stripe  StripeConfig
+	Storage StorageConfig
+	Ai      AiConfig
+}
+
 func AppConfigGetter() EnvConfig {
 	var config EnvConfig
 	if err := env.ParseWithOptions(&config, env.Options{

@@ -1,15 +1,11 @@
-package core
+package oauth
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
 
-	validation "github.com/go-ozzo/ozzo-validation/v4"
-	"github.com/go-ozzo/ozzo-validation/v4/is"
-	"github.com/tkahng/authgo/internal/auth"
 	"github.com/tkahng/authgo/internal/conf"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/github"
@@ -20,85 +16,58 @@ type ProviderConfig interface {
 	Active() bool
 	BuildAuthURL(state string, opts ...oauth2.AuthCodeOption) string
 	Client(ctx context.Context, token *oauth2.Token) *http.Client
-	FetchAuthUser(ctx context.Context, token *oauth2.Token) (*auth.AuthUser, error)
+	FetchAuthUser(ctx context.Context, token *oauth2.Token) (*AuthUser, error)
 	FetchRawUserInfo(ctx context.Context, token *oauth2.Token) ([]byte, error)
 	FetchToken(ctx context.Context, code string, opts ...oauth2.AuthCodeOption) (*oauth2.Token, error)
+	FetchTokenOptions(verifier string) []oauth2.AuthCodeOption
 }
 
 // func
 
-func OAuth2ConfigFromEnv(cfg conf.EnvConfig) OAuth2Config {
-	var conf = OAuth2Config{}
-	var githubConf GithubConfig
-	var googleConf GoogleConfig
+func OAuth2ConfigFromEnv(cfg conf.EnvConfig) {
 	if cfg.GithubClientId != "" && cfg.GithubClientSecret != "" {
-		githubConf = GithubConfig{
-			OAuth2ProviderConfig: OAuth2ProviderConfig{
-				ClientID:     cfg.GithubClientId,
-				ClientSecret: cfg.GithubClientSecret,
-				Name:         "GitHub",
-				Enabled:      true,
-				PKCE:         true, // technically is not supported yet but it is safe as the PKCE params are just ignored
-				Scopes:       []string{"read:user", "user:email"},
-				AuthURL:      github.Endpoint.AuthURL,
-				TokenURL:     github.Endpoint.TokenURL,
-				UserInfoURL:  "https://api.github.com/user",
-				RedirectURL:  cfg.AppConfig.AppUrl + cfg.OAuth2Config.AuthCallback,
-			},
-		}
-	} else {
-		githubConf = GithubConfig{}
+		Providers[NameGithub] = wrapFactory(func() ProviderConfig {
+			return &GithubConfig{
+				OAuth2ProviderConfig{
+					ClientID:     cfg.GithubClientId,
+					ClientSecret: cfg.GithubClientSecret,
+					Name:         "GitHub",
+					Enabled:      true,
+					PKCE:         true, // technically is not supported yet but it is safe as the PKCE params are just ignored
+					Scopes:       []string{"read:user", "user:email"},
+					AuthURL:      github.Endpoint.AuthURL,
+					TokenURL:     github.Endpoint.TokenURL,
+					UserInfoURL:  "https://api.github.com/user",
+					RedirectURL:  cfg.AppConfig.AppUrl + cfg.OAuth2Config.AuthCallback,
+				},
+			}
+		})
+
 	}
 	if cfg.GoogleClientId != "" && cfg.GoogleClientSecret != "" {
-		googleConf = GoogleConfig{
-			OAuth2ProviderConfig: OAuth2ProviderConfig{
-				Name:         "Google",
-				ClientID:     cfg.GoogleClientId,
-				ClientSecret: cfg.GoogleClientSecret,
-				Enabled:      true,
-				PKCE:         true,
-				Scopes: []string{
-					"https://www.googleapis.com/auth/userinfo.profile",
-					"https://www.googleapis.com/auth/userinfo.email",
-				},
-				AuthURL:     "https://accounts.google.com/o/oauth2/v2/auth",
-				TokenURL:    "https://oauth2.googleapis.com/token",
-				UserInfoURL: "https://www.googleapis.com/oauth2/v3/userinfo",
-				RedirectURL: cfg.AppConfig.AppUrl + cfg.OAuth2Config.AuthCallback,
-			}}
-	} else {
-		googleConf = GoogleConfig{}
+		Providers[NameGoogle] = wrapFactory(func() ProviderConfig {
+			return &GoogleConfig{
+				OAuth2ProviderConfig: OAuth2ProviderConfig{
+					Name:         "Google",
+					ClientID:     cfg.GoogleClientId,
+					ClientSecret: cfg.GoogleClientSecret,
+					Enabled:      true,
+					PKCE:         true,
+					Scopes: []string{
+						"https://www.googleapis.com/auth/userinfo.profile",
+						"https://www.googleapis.com/auth/userinfo.email",
+					},
+					AuthURL:     "https://accounts.google.com/o/oauth2/v2/auth",
+					TokenURL:    "https://oauth2.googleapis.com/token",
+					UserInfoURL: "https://www.googleapis.com/oauth2/v3/userinfo",
+					RedirectURL: cfg.AppConfig.AppUrl + cfg.OAuth2Config.AuthCallback,
+				}}
+		})
 	}
-	conf.Google = googleConf
-	conf.Github = githubConf
-	return conf
-}
-
-type OAuth2Config struct {
-	Google GoogleConfig
-	Github GithubConfig
 }
 
 const NameGithub = "github"
 const NameGoogle = "google"
-
-func (c *OAuth2Config) GetProvider(name string) (ProviderConfig, error) {
-	switch name {
-	case NameGoogle:
-		return &c.Google, nil
-	case NameGithub:
-		return &c.Github, nil
-	default:
-		return nil, errors.New("Missing provider " + string(name))
-	}
-}
-
-func (c OAuth2Config) Validate() error {
-	return validation.ValidateStruct(&c,
-		validation.Field(&c.Google),
-		validation.Field(&c.Github),
-	)
-}
 
 type OAuth2ProviderConfig struct {
 	ClientID     string
@@ -111,27 +80,10 @@ type OAuth2ProviderConfig struct {
 	Name         string
 	Scopes       []string
 	RedirectURL  string
-	// extra       map[string]any
 }
 
 func (c OAuth2ProviderConfig) Pkce() bool {
 	return c.PKCE
-}
-
-func (c OAuth2ProviderConfig) Validate() error {
-	if !c.Enabled {
-		return nil
-	}
-	return validation.ValidateStruct(&c,
-		validation.Field(&c.Name, validation.Required),
-		validation.Field(&c.ClientID, validation.Required),
-		validation.Field(&c.ClientSecret, validation.Required),
-		validation.Field(&c.Name, validation.Required),
-		validation.Field(&c.AuthURL, is.URL),
-		validation.Field(&c.TokenURL, is.URL),
-		validation.Field(&c.UserInfoURL, is.URL),
-		validation.Field(&c.RedirectURL, is.URL),
-	)
 }
 
 func (p *OAuth2ProviderConfig) oauth2Config() *oauth2.Config {
@@ -145,6 +97,17 @@ func (p *OAuth2ProviderConfig) oauth2Config() *oauth2.Config {
 			TokenURL: p.TokenURL,
 		},
 	}
+}
+
+func (p *OAuth2ProviderConfig) FetchTokenOptions(verifier string) []oauth2.AuthCodeOption {
+	var opts []oauth2.AuthCodeOption = []oauth2.AuthCodeOption{
+		oauth2.AccessTypeOffline,
+	}
+
+	if p.Pkce() {
+		opts = append(opts, oauth2.SetAuthURLParam("code_verifier", verifier))
+	}
+	return opts
 }
 
 // BuildAuthURL implements Provider.BuildAuthURL() interface method.

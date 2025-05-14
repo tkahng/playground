@@ -7,15 +7,15 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/tkahng/authgo/internal/crudrepo"
 	"github.com/tkahng/authgo/internal/db"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/queries"
-	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/types"
 )
 
-type AuthStorage interface {
+type AuthStore interface {
 	GetUserInfo(ctx context.Context, email string) (*shared.UserInfo, error)
 	CreateUser(ctx context.Context, user *shared.User) (*shared.User, error)
 	AssignUserRoles(ctx context.Context, userId uuid.UUID, roleNames ...string) error
@@ -32,18 +32,18 @@ type AuthStorage interface {
 	DeleteToken(ctx context.Context, token string) error
 }
 
-var _ AuthStorage = (*AuthAdapterBase)(nil)
+var _ AuthStore = (*BaseAuthStore)(nil)
 
-func NewAuthStorage(dbtx db.Dbx) *AuthAdapterBase {
-	return &AuthAdapterBase{db: dbtx}
+func NewAuthStore(dbtx db.Dbx) *BaseAuthStore {
+	return &BaseAuthStore{db: dbtx}
 }
 
-type AuthAdapterBase struct {
+type BaseAuthStore struct {
 	db db.Dbx
 }
 
-func (a *AuthAdapterBase) GetToken(ctx context.Context, token string) (*shared.Token, error) {
-	res, err := repository.Token.GetOne(ctx,
+func (a *BaseAuthStore) GetToken(ctx context.Context, token string) (*shared.Token, error) {
+	res, err := crudrepo.Token.GetOne(ctx,
 		a.db,
 		&map[string]any{
 			"token": map[string]any{
@@ -70,8 +70,8 @@ func (a *AuthAdapterBase) GetToken(ctx context.Context, token string) (*shared.T
 	}, nil
 }
 
-func (a *AuthAdapterBase) SaveToken(ctx context.Context, token *shared.CreateTokenDTO) error {
-	_, err := repository.Token.PostOne(ctx, a.db, &models.Token{
+func (a *BaseAuthStore) SaveToken(ctx context.Context, token *shared.CreateTokenDTO) error {
+	_, err := crudrepo.Token.PostOne(ctx, a.db, &models.Token{
 		Type:       models.TokenTypes(token.Type),
 		Identifier: token.Identifier,
 		Expires:    token.Expires,
@@ -86,8 +86,8 @@ func (a *AuthAdapterBase) SaveToken(ctx context.Context, token *shared.CreateTok
 	return nil
 }
 
-func (a *AuthAdapterBase) DeleteToken(ctx context.Context, token string) error {
-	_, err := repository.Token.DeleteReturn(ctx, a.db, &map[string]any{
+func (a *BaseAuthStore) DeleteToken(ctx context.Context, token string) error {
+	_, err := crudrepo.Token.DeleteReturn(ctx, a.db, &map[string]any{
 		"token": map[string]any{
 			"_eq": token,
 		},
@@ -98,7 +98,7 @@ func (a *AuthAdapterBase) DeleteToken(ctx context.Context, token string) error {
 	return nil
 }
 
-func (a *AuthAdapterBase) VerifyTokenStorage(ctx context.Context, token string) error {
+func (a *BaseAuthStore) VerifyTokenStorage(ctx context.Context, token string) error {
 	res, err := a.GetToken(ctx, token)
 	if err != nil {
 		return err
@@ -114,7 +114,7 @@ func (a *AuthAdapterBase) VerifyTokenStorage(ctx context.Context, token string) 
 }
 
 // FindUserByEmail implements AuthAdapter.
-func (a *AuthAdapterBase) FindUserByEmail(ctx context.Context, email string) (*shared.User, error) {
+func (a *BaseAuthStore) FindUserByEmail(ctx context.Context, email string) (*shared.User, error) {
 	var u *shared.User
 	user, err := queries.FindUserByEmail(ctx, a.db, email)
 
@@ -137,7 +137,7 @@ func (a *AuthAdapterBase) FindUserByEmail(ctx context.Context, email string) (*s
 }
 
 // FindUserAccountByUserIdAndProvider implements AuthAdapter.
-func (a *AuthAdapterBase) FindUserAccountByUserIdAndProvider(ctx context.Context, userId uuid.UUID, provider shared.Providers) (*shared.UserAccount, error) {
+func (a *BaseAuthStore) FindUserAccountByUserIdAndProvider(ctx context.Context, userId uuid.UUID, provider shared.Providers) (*shared.UserAccount, error) {
 
 	account, err := queries.FindUserAccountByUserIdAndProvider(ctx, a.db, userId, provider)
 
@@ -168,8 +168,8 @@ func (a *AuthAdapterBase) FindUserAccountByUserIdAndProvider(ctx context.Context
 }
 
 // UpdateUserAccount implements AuthAdapter.
-func (a *AuthAdapterBase) UpdateUserAccount(ctx context.Context, account *shared.UserAccount) error {
-	_, err := repository.UserAccount.PutOne(ctx, a.db, &models.UserAccount{
+func (a *BaseAuthStore) UpdateUserAccount(ctx context.Context, account *shared.UserAccount) error {
+	_, err := crudrepo.UserAccount.PutOne(ctx, a.db, &models.UserAccount{
 		ID:                account.ID,
 		UserID:            account.UserID,
 		Provider:          models.Providers(account.Provider),
@@ -193,8 +193,8 @@ func (a *AuthAdapterBase) UpdateUserAccount(ctx context.Context, account *shared
 }
 
 // GetUserInfo implements AuthAdapter.
-func (a *AuthAdapterBase) GetUserInfo(ctx context.Context, email string) (*shared.UserInfo, error) {
-	user, err := repository.User.GetOne(ctx, a.db, &map[string]any{"email": map[string]any{"_eq": email}})
+func (a *BaseAuthStore) GetUserInfo(ctx context.Context, email string) (*shared.UserInfo, error) {
+	user, err := crudrepo.User.GetOne(ctx, a.db, &map[string]any{"email": map[string]any{"_eq": email}})
 	if err != nil {
 		return nil, fmt.Errorf("error getting user: %w", err)
 	}
@@ -228,8 +228,8 @@ func (a *AuthAdapterBase) GetUserInfo(ctx context.Context, email string) (*share
 }
 
 // CreateUser implements AuthAdapter.
-func (a *AuthAdapterBase) CreateUser(ctx context.Context, user *shared.User) (*shared.User, error) {
-	res, err := repository.User.PostOne(ctx, a.db, &models.User{
+func (a *BaseAuthStore) CreateUser(ctx context.Context, user *shared.User) (*shared.User, error) {
+	res, err := crudrepo.User.PostOne(ctx, a.db, &models.User{
 		Email:           user.Email,
 		Name:            user.Name,
 		Image:           user.Image,
@@ -253,8 +253,8 @@ func (a *AuthAdapterBase) CreateUser(ctx context.Context, user *shared.User) (*s
 }
 
 // DeleteUser implements AuthAdapter.
-func (a *AuthAdapterBase) DeleteUser(ctx context.Context, id uuid.UUID) error {
-	_, err := repository.User.DeleteReturn(ctx, a.db, &map[string]any{
+func (a *BaseAuthStore) DeleteUser(ctx context.Context, id uuid.UUID) error {
+	_, err := crudrepo.User.DeleteReturn(ctx, a.db, &map[string]any{
 		"id": map[string]any{"_eq": id.String()},
 	})
 	if err != nil {
@@ -262,11 +262,11 @@ func (a *AuthAdapterBase) DeleteUser(ctx context.Context, id uuid.UUID) error {
 	}
 	return nil
 }
-func (a *AuthAdapterBase) LinkAccount(ctx context.Context, account *shared.UserAccount) error {
+func (a *BaseAuthStore) LinkAccount(ctx context.Context, account *shared.UserAccount) error {
 	if account == nil {
 		return errors.New("account is nil")
 	}
-	_, err := repository.UserAccount.PostOne(ctx,
+	_, err := crudrepo.UserAccount.PostOne(ctx,
 		a.db,
 		&models.UserAccount{
 			ID:                account.ID,
@@ -292,7 +292,7 @@ func (a *AuthAdapterBase) LinkAccount(ctx context.Context, account *shared.UserA
 }
 
 // UnlinkAccount implements AuthAdapter.
-func (a *AuthAdapterBase) UnlinkAccount(ctx context.Context, userId uuid.UUID, provider shared.Providers) error {
+func (a *BaseAuthStore) UnlinkAccount(ctx context.Context, userId uuid.UUID, provider shared.Providers) error {
 	// providerModel := shared.ToModelProvider(provider)
 	// _, err := repository.DeleteAccount(ctx, a.db, userId, providerModel)
 	// if err != nil {
@@ -302,8 +302,8 @@ func (a *AuthAdapterBase) UnlinkAccount(ctx context.Context, userId uuid.UUID, p
 }
 
 // UpdateUser implements AuthAdapter.
-func (a *AuthAdapterBase) UpdateUser(ctx context.Context, user *shared.User) error {
-	_, err := repository.User.PutOne(ctx, a.db, &models.User{
+func (a *BaseAuthStore) UpdateUser(ctx context.Context, user *shared.User) error {
+	_, err := crudrepo.User.PutOne(ctx, a.db, &models.User{
 		ID:              user.ID,
 		Email:           user.Email,
 		Name:            user.Name,
@@ -319,9 +319,9 @@ func (a *AuthAdapterBase) UpdateUser(ctx context.Context, user *shared.User) err
 }
 
 // AssignUserRoles implements AuthAdapter.
-func (a *AuthAdapterBase) AssignUserRoles(ctx context.Context, userId uuid.UUID, roleNames ...string) error {
+func (a *BaseAuthStore) AssignUserRoles(ctx context.Context, userId uuid.UUID, roleNames ...string) error {
 	if len(roleNames) > 0 {
-		user, err := repository.User.GetOne(
+		user, err := crudrepo.User.GetOne(
 			ctx,
 			a.db,
 			&map[string]any{
@@ -336,7 +336,7 @@ func (a *AuthAdapterBase) AssignUserRoles(ctx context.Context, userId uuid.UUID,
 		if user == nil {
 			return fmt.Errorf("user not found while assigning roles")
 		}
-		roles, err := repository.Role.Get(
+		roles, err := crudrepo.Role.Get(
 			ctx,
 			a.db,
 			&map[string]any{
@@ -369,7 +369,7 @@ func (a *AuthAdapterBase) AssignUserRoles(ctx context.Context, userId uuid.UUID,
 					RoleID: role.ID,
 				})
 			}
-			_, err = repository.UserRole.Post(ctx, a.db, userRoles)
+			_, err = crudrepo.UserRole.Post(ctx, a.db, userRoles)
 			if err != nil {
 				return fmt.Errorf("error assigning user role while assigning roles: %w", err)
 			}
@@ -378,9 +378,9 @@ func (a *AuthAdapterBase) AssignUserRoles(ctx context.Context, userId uuid.UUID,
 	return nil
 }
 
-func (a *AuthAdapterBase) RunInTransaction(ctx context.Context, fn func(AuthStorage) error) error {
+func (a *BaseAuthStore) RunInTransaction(ctx context.Context, fn func(AuthStore) error) error {
 	return a.db.RunInTransaction(ctx, func(d db.Dbx) error {
-		app := NewAuthStorage(d)
+		app := NewAuthStore(d)
 		return fn(app)
 	})
 }

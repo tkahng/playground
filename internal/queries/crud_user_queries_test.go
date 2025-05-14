@@ -19,7 +19,8 @@ import (
 )
 
 func TestListUsers(t *testing.T) {
-	ctx, dbx := test.DbSetup()
+	test.Short(t)
+ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		faker := faker.New().Internet()
 		users1, err := seeders.CreateUserWithAccountAndRole(ctx, dbxx, 5, models.ProvidersGoogle, "superuser", faker)
@@ -127,7 +128,8 @@ func TestListUsers(t *testing.T) {
 	})
 }
 func TestCountUsers(t *testing.T) {
-	ctx, dbx := test.DbSetup()
+	test.Short(t)
+ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		faker := faker.New().Internet()
 		_, err := seeders.CreateUserWithAccountAndRole(ctx, dbxx, 5, models.ProvidersGoogle, "superuser", faker)
@@ -197,7 +199,8 @@ func TestCountUsers(t *testing.T) {
 	})
 }
 func TestDeleteUsers(t *testing.T) {
-	ctx, dbx := test.DbSetup()
+	test.Short(t)
+ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		faker := faker.New().Internet()
 		users, err := seeders.CreateUserWithAccountAndRole(ctx, dbxx, 1, models.ProvidersGoogle, "basic", faker)
@@ -229,7 +232,8 @@ func TestDeleteUsers(t *testing.T) {
 	})
 }
 func TestUpdateUser(t *testing.T) {
-	ctx, dbx := test.DbSetup()
+	test.Short(t)
+ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		faker := faker.New().Internet()
 		users, err := seeders.CreateUserWithAccountAndRole(ctx, dbxx, 1, models.ProvidersGoogle, "basic", faker)

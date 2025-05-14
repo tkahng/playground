@@ -16,6 +16,20 @@ import (
 	"github.com/tkahng/authgo/internal/conf"
 )
 
+type PaymentClient interface {
+	Config() *conf.StripeConfig
+	CreateBillingPortalSession(customerId string, configurationId string) (*stripe.BillingPortalSession, error)
+	CreateCheckoutSession(customerId string, priceId string, trialDays *int64) (*stripe.CheckoutSession, error)
+	CreateCustomer(email string, userId string) (*stripe.Customer, error)
+	CreatePortalConfiguration(input ...*ProductBillingConfigurationInput) (string, error)
+	FindAllPrices() ([]*stripe.Price, error)
+	FindAllProducts() ([]*stripe.Product, error)
+	FindCheckoutSessionByStripeId(stripeId string) (*stripe.CheckoutSession, error)
+	// FindCustomerByEmailAndUserId(email string, userId string) (*stripe.Customer, error)
+	FindOrCreateCustomer(email string, userId uuid.UUID) (*stripe.Customer, error)
+	FindSubscriptionByStripeId(stripeId string) (*stripe.Subscription, error)
+}
+
 const (
 	StripeProductProID      string = "prod_pro"
 	StripeProductAdvancedID string = "prod_advanced"
@@ -25,10 +39,9 @@ type StripeClient struct {
 	config *conf.StripeConfig
 }
 
-func NewStripeClient(bld conf.StripeConfig) *StripeClient {
-	cfg := &bld
-	stripe.Key = cfg.ApiKey
-	payment := &StripeClient{config: cfg}
+func NewStripeClient(bld conf.StripeConfig) PaymentClient {
+	stripe.Key = bld.ApiKey
+	payment := &StripeClient{config: &bld}
 	return payment
 }
 
@@ -46,25 +59,7 @@ func (s *StripeClient) CreateCustomer(email string, userId string) (*stripe.Cust
 	return customer.New(params)
 }
 
-// method to find customer
-func (s *StripeClient) FindCustomerByEmail(email string) (*stripe.Customer, error) {
-	var cs *stripe.Customer
-	params := &stripe.CustomerListParams{
-		Email: stripe.String(email),
-		ListParams: stripe.ListParams{
-			Limit: stripe.Int64(1),
-		},
-	}
-	list := customer.List(params)
-	for list.Next() {
-		cs = list.Customer()
-		break
-	}
-
-	return cs, nil
-}
-
-func (client *StripeClient) FindCustomerByEmailAndUserId(email string, userId string) (*stripe.Customer, error) {
+func (client *StripeClient) findCustomerByEmailAndUserId(email string, userId string) (*stripe.Customer, error) {
 	var cs *stripe.Customer
 	params := &stripe.CustomerSearchParams{
 		SearchParams: stripe.SearchParams{
@@ -79,21 +74,6 @@ func (client *StripeClient) FindCustomerByEmailAndUserId(email string, userId st
 		break
 	}
 	return cs, nil
-}
-
-func (s *StripeClient) FindAllCustomers() ([]*stripe.Customer, error) {
-	var data []*stripe.Customer
-	params := &stripe.CustomerListParams{}
-	list := customer.List(params)
-	for list.Next() {
-		prod := list.Customer()
-		if prod != nil {
-			data = append(data, prod)
-		}
-
-	}
-
-	return data, nil
 }
 
 func (s *StripeClient) FindAllProducts() ([]*stripe.Product, error) {
@@ -126,28 +106,8 @@ func (s *StripeClient) FindAllPrices() ([]*stripe.Price, error) {
 	return data, nil
 }
 
-func (s *StripeClient) FindAllSubscriptions() ([]*stripe.Subscription, error) {
-	var data []*stripe.Subscription
-	params := &stripe.SubscriptionListParams{}
-	list := subscription.List(params)
-	for list.Next() {
-		prod := list.Subscription()
-		if prod != nil {
-			data = append(data, prod)
-		}
-
-	}
-
-	return data, nil
-}
-
-func (s *StripeClient) FindCustomerByStripeId(stripeId string) (*stripe.Customer, error) {
-	params := &stripe.CustomerParams{}
-	return customer.Get(stripeId, params)
-}
-
 func (s *StripeClient) FindOrCreateCustomer(email string, userId uuid.UUID) (*stripe.Customer, error) {
-	cs, _ := s.FindCustomerByEmailAndUserId(email, userId.String())
+	cs, _ := s.findCustomerByEmailAndUserId(email, userId.String())
 	if cs == nil {
 		return s.CreateCustomer(email, userId.String())
 	}
@@ -196,14 +156,6 @@ func (s *StripeClient) CreateCheckoutSession(customerId, priceId string, trialDa
 		SubscriptionData: subscriptionParams,
 	}
 	return session.New(sessionParams)
-}
-
-func (s *StripeClient) CreateBillingPortalSession(customerId string) (*stripe.BillingPortalSession, error) {
-	params := &stripe.BillingPortalSessionParams{
-		Customer:  stripe.String(customerId),
-		ReturnURL: stripe.String(s.config.StripeAppUrl + "/settings/billing"),
-	}
-	return bs.New(params)
 }
 
 type ProductBillingConfigurationInput struct {
@@ -262,7 +214,7 @@ func (a *StripeClient) CreatePortalConfiguration(input ...*ProductBillingConfigu
 	return result.ID, nil
 }
 
-func (s *StripeClient) CreateBillingPortalSession2(customerId string, configurationId string) (*stripe.BillingPortalSession, error) {
+func (s *StripeClient) CreateBillingPortalSession(customerId string, configurationId string) (*stripe.BillingPortalSession, error) {
 	params := &stripe.BillingPortalSessionParams{
 		Configuration: stripe.String(configurationId),
 		Customer:      stripe.String(customerId),

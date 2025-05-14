@@ -170,7 +170,7 @@ func AuthMiddleware(api huma.API, app core.App) func(ctx huma.Context, next func
 
 	return func(ctx huma.Context, next func(huma.Context)) {
 		ctxx := ctx.Context()
-		action := app.NewAuthActions()
+		action := app.Auth()
 		// check if already has user claims
 		if claims := core.GetContextUserInfo(ctxx); claims != nil {
 			log.Println("already has user claims")

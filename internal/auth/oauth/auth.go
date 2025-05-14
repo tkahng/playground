@@ -1,9 +1,35 @@
-package auth
+package oauth
 
 import (
 	"encoding/json"
 	"time"
 )
+
+// wrapFactory is a helper that wraps a Provider specific factory
+// function and returns its result as Provider interface.
+func wrapFactory[T ProviderConfig](factory func() T) ProviderFactoryFunc {
+	return func() ProviderConfig {
+		return factory()
+	}
+}
+
+// ProviderFactoryFunc defines a function for initializing a new OAuth2 provider.
+type ProviderFactoryFunc func() ProviderConfig
+
+// Providers defines a map with all of the available OAuth2 providers.
+//
+// To register a new provider append a new entry in the map.
+var Providers = map[string]ProviderFactoryFunc{}
+
+// NewProviderByName returns a new preconfigured provider instance by its name identifier.
+func NewProviderByName(name string) ProviderConfig {
+	factory, ok := Providers[name]
+	if !ok {
+		return nil
+	}
+
+	return factory()
+}
 
 // AuthUser defines a standardized OAuth2 user data structure.
 type AuthUser struct {

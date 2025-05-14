@@ -6,8 +6,8 @@ import (
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
+	"github.com/tkahng/authgo/internal/crudrepo"
 	"github.com/tkahng/authgo/internal/queries"
-	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 )
@@ -39,7 +39,7 @@ func (api *Api) AdminUserPermissionsDelete(ctx context.Context, input *struct {
 	if permission == nil {
 		return nil, huma.Error404NotFound("Permission not found")
 	}
-	_, err = repository.UserPermission.DeleteReturn(
+	_, err = crudrepo.UserPermission.DeleteReturn(
 		ctx,
 		db,
 		&map[string]any{
@@ -165,7 +165,7 @@ func (api *Api) AdminPermissionsCreate(ctx context.Context, input *struct {
 	Body PermissionCreateInput
 }) (*struct{ Body shared.Permission }, error) {
 	dbx := api.app.Db()
-	permission, err := repository.Permission.GetOne(
+	permission, err := crudrepo.Permission.GetOne(
 		ctx,
 		dbx,
 		&map[string]any{

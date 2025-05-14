@@ -3,11 +3,11 @@ package apis
 import (
 	"context"
 
-	"github.com/tkahng/authgo/internal/core"
+	"github.com/tkahng/authgo/internal/conf"
 )
 
 type AppSettingsout struct {
-	Body *core.AppOptions
+	Body *conf.AppOptions
 }
 
 func (api *Api) GetAppSettings(context context.Context, input *struct{}) (*AppSettingsout, error) {
@@ -17,5 +17,5 @@ func (api *Api) GetAppSettings(context context.Context, input *struct{}) (*AppSe
 }
 
 type AppSettingsInput struct {
-	Body core.AppOptions
+	Body *conf.AppOptions
 }

@@ -6,9 +6,9 @@ import (
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
+	"github.com/tkahng/authgo/internal/crudrepo"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/queries"
-	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 )
@@ -63,7 +63,7 @@ func (api *Api) AdminRolesCreate(ctx context.Context, input *struct {
 	Body shared.Role
 }, error) {
 	dbx := api.app.Db()
-	data, err := repository.Role.GetOne(
+	data, err := crudrepo.Role.GetOne(
 		ctx,
 		dbx,
 		&map[string]any{
@@ -101,7 +101,7 @@ func (api *Api) AdminRolesDelete(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	role, err := repository.Role.GetOne(ctx, db, &map[string]any{
+	role, err := crudrepo.Role.GetOne(ctx, db, &map[string]any{
 		"id": map[string]any{
 			"_eq": id.String(),
 		},
@@ -136,7 +136,7 @@ func (api *Api) AdminRolesUpdate(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	role, err := repository.Role.GetOne(ctx, db, &map[string]any{
+	role, err := crudrepo.Role.GetOne(ctx, db, &map[string]any{
 		"id": map[string]any{
 			"_eq": id.String(),
 		},
@@ -184,7 +184,7 @@ func (api *Api) AdminUserRolesDelete(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	role, err := repository.Role.GetOne(ctx, db, &map[string]any{
+	role, err := crudrepo.Role.GetOne(ctx, db, &map[string]any{
 		"id": map[string]any{
 			"_eq": roleID.String(),
 		},
@@ -202,7 +202,7 @@ func (api *Api) AdminUserRolesDelete(ctx context.Context, input *struct {
 		return nil, err
 	}
 
-	_, err = repository.UserRole.DeleteReturn(
+	_, err = crudrepo.UserRole.DeleteReturn(
 		ctx,
 		db,
 		&map[string]any{
@@ -238,7 +238,7 @@ func (api *Api) AdminUserRolesCreate(ctx context.Context, input *struct {
 
 	roleIds := queries.ParseUUIDs(input.Body.RolesIds)
 
-	roles, err := repository.Role.Get(
+	roles, err := crudrepo.Role.Get(
 		ctx,
 		db,
 		&map[string]any{
@@ -292,7 +292,7 @@ func (api *Api) AdminUserRolesUpdate(ctx context.Context, input *struct {
 		}
 		roleIds[i] = id
 	}
-	roles, err := repository.Role.Get(
+	roles, err := crudrepo.Role.Get(
 		ctx,
 		db,
 		&map[string]any{
@@ -307,7 +307,7 @@ func (api *Api) AdminUserRolesUpdate(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	_, err = repository.UserRole.DeleteReturn(
+	_, err = crudrepo.UserRole.DeleteReturn(
 		ctx,
 		db,
 		&map[string]any{
@@ -350,7 +350,7 @@ func (api *Api) AdminRolesUpdatePermissions(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	role, err := repository.Role.GetOne(ctx, db, &map[string]any{
+	role, err := crudrepo.Role.GetOne(ctx, db, &map[string]any{
 		"id": map[string]any{
 			"_eq": id.String(),
 		},
@@ -393,7 +393,7 @@ func (api *Api) AdminRolesGet(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	role, err := repository.Role.GetOne(ctx, db, &map[string]any{
+	role, err := crudrepo.Role.GetOne(ctx, db, &map[string]any{
 		"id": map[string]any{
 			"_eq": id.String(),
 		},
@@ -430,7 +430,7 @@ func (api *Api) AdminRolesCreatePermissions(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	role, err := repository.Role.GetOne(ctx, db, &map[string]any{
+	role, err := crudrepo.Role.GetOne(ctx, db, &map[string]any{
 		"id": map[string]any{
 			"_eq": id.String(),
 		},
@@ -461,7 +461,7 @@ func (api *Api) AdminRolesDeletePermissions(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	role, err := repository.Role.GetOne(ctx, db, &map[string]any{
+	role, err := crudrepo.Role.GetOne(ctx, db, &map[string]any{
 		"id": map[string]any{
 			"_eq": id.String(),
 		},
@@ -489,7 +489,7 @@ func (api *Api) AdminRolesDeletePermissions(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	_, err = repository.RolePermission.DeleteReturn(
+	_, err = crudrepo.RolePermission.DeleteReturn(
 		ctx,
 		db,
 		&map[string]any{
