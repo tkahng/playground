@@ -5,9 +5,9 @@ import (
 
 	"github.com/tkahng/authgo/internal/conf"
 	"github.com/tkahng/authgo/internal/db"
+	"github.com/tkahng/authgo/internal/payment"
 	"github.com/tkahng/authgo/internal/tools/filesystem"
 	"github.com/tkahng/authgo/internal/tools/mailer"
-	"github.com/tkahng/authgo/internal/tools/payment"
 )
 
 type App interface {
