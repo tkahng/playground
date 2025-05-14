@@ -26,8 +26,8 @@ type PaymentService interface {
 	FindSubscriptionWithPriceBySessionId(ctx context.Context, dbx db.Dbx, sessionId string) (*models.SubscriptionWithPrice, error)
 	// Logger() *slog.Logger
 	SyncPerms(ctx context.Context, dbx db.Dbx) error
-	SyncProductPerms(ctx context.Context, dbx db.Dbx, productId string, permName string) error
-	SyncProductRole(ctx context.Context, dbx db.Dbx, productId string, roleName string) error
+	// SyncProductPerms(ctx context.Context, dbx db.Dbx, productId string, permName string) error
+	// SyncProductRole(ctx context.Context, dbx db.Dbx, productId string, roleName string) error
 	SyncRoles(ctx context.Context, dbx db.Dbx) error
 	UpsertPriceProductFromStripe(ctx context.Context, dbx db.Dbx) error
 	UpsertSubscriptionByIds(ctx context.Context, dbx db.Dbx, cutomerId string, subscriptionId string) error
@@ -54,7 +54,24 @@ func NewStripeService(client PaymentClient, store PaymentStore) *StripeService {
 func (srv *StripeService) SyncRoles(ctx context.Context, dbx db.Dbx) error {
 	var err error
 	for productId, role := range shared.StripeRoleMap {
-		err = srv.SyncProductRole(ctx, dbx, productId, role)
+		err = func() error {
+			var roleName string = role
+			product, err := srv.store.FindProductByStripeId(ctx, dbx, productId)
+			if err != nil {
+				return err
+			}
+			if product == nil {
+				return errors.New("product not found")
+			}
+			role, err := srv.store.FindRoleByName(ctx, dbx, roleName)
+			if err != nil {
+				return err
+			}
+			if role == nil {
+				return errors.New("role not found")
+			}
+			return srv.store.CreateProductRoles(ctx, dbx, product.ID, role.ID)
+		}()
 	}
 	return err
 }
@@ -62,46 +79,62 @@ func (srv *StripeService) SyncRoles(ctx context.Context, dbx db.Dbx) error {
 func (srv *StripeService) SyncPerms(ctx context.Context, dbx db.Dbx) error {
 	var err error
 	for productId, role := range shared.StripeRoleMap {
-		err = srv.SyncProductPerms(ctx, dbx, productId, role)
+		err = func() error {
+			product, err := srv.store.FindProductByStripeId(ctx, dbx, productId)
+			if err != nil {
+				return err
+			}
+			if product == nil {
+				return errors.New("product not found")
+			}
+			perm, err := srv.store.FindPermissionByName(ctx, dbx, role)
+			if err != nil {
+				return err
+			}
+			if perm == nil {
+				return errors.New("permission not found")
+			}
+			return srv.store.CreateProductPermissions(ctx, dbx, product.ID, perm.ID)
+		}()
 	}
 	return err
 }
 
-func (srv *StripeService) SyncProductRole(ctx context.Context, dbx db.Dbx, productId string, roleName string) error {
-	product, err := srv.store.FindProductByStripeId(ctx, dbx, productId)
-	if err != nil {
-		return err
-	}
-	if product == nil {
-		return errors.New("product not found")
-	}
-	role, err := srv.store.FindRoleByName(ctx, dbx, roleName)
-	if err != nil {
-		return err
-	}
-	if role == nil {
-		return errors.New("role not found")
-	}
-	return srv.store.CreateProductRoles(ctx, dbx, product.ID, role.ID)
-}
+// func (srv *StripeService) SyncProductRole(ctx context.Context, dbx db.Dbx, productId string, roleName string) error {
+// 	product, err := srv.store.FindProductByStripeId(ctx, dbx, productId)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	if product == nil {
+// 		return errors.New("product not found")
+// 	}
+// 	role, err := srv.store.FindRoleByName(ctx, dbx, roleName)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	if role == nil {
+// 		return errors.New("role not found")
+// 	}
+// 	return srv.store.CreateProductRoles(ctx, dbx, product.ID, role.ID)
+// }
 
-func (srv *StripeService) SyncProductPerms(ctx context.Context, dbx db.Dbx, productId string, permName string) error {
-	product, err := srv.store.FindProductByStripeId(ctx, dbx, productId)
-	if err != nil {
-		return err
-	}
-	if product == nil {
-		return errors.New("product not found")
-	}
-	perm, err := srv.store.FindPermissionByName(ctx, dbx, permName)
-	if err != nil {
-		return err
-	}
-	if perm == nil {
-		return errors.New("permission not found")
-	}
-	return srv.store.CreateProductPermissions(ctx, dbx, product.ID, perm.ID)
-}
+// func (srv *StripeService) SyncProductPerms(ctx context.Context, dbx db.Dbx, productId string, permName string) error {
+// 	product, err := srv.store.FindProductByStripeId(ctx, dbx, productId)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	if product == nil {
+// 		return errors.New("product not found")
+// 	}
+// 	perm, err := srv.store.FindPermissionByName(ctx, dbx, permName)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	if perm == nil {
+// 		return errors.New("permission not found")
+// 	}
+// 	return srv.store.CreateProductPermissions(ctx, dbx, product.ID, perm.ID)
+// }
 
 func (srv *StripeService) UpsertPriceProductFromStripe(ctx context.Context, dbx db.Dbx) error {
 	if err := srv.FindAndUpsertAllProducts(ctx, dbx); err != nil {
