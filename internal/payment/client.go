@@ -22,14 +22,10 @@ type PaymentClient interface {
 	CreateCheckoutSession(customerId string, priceId string, trialDays *int64) (*stripe.CheckoutSession, error)
 	CreateCustomer(email string, userId string) (*stripe.Customer, error)
 	CreatePortalConfiguration(input ...*ProductBillingConfigurationInput) (string, error)
-	FindAllCustomers() ([]*stripe.Customer, error)
 	FindAllPrices() ([]*stripe.Price, error)
 	FindAllProducts() ([]*stripe.Product, error)
-	FindAllSubscriptions() ([]*stripe.Subscription, error)
 	FindCheckoutSessionByStripeId(stripeId string) (*stripe.CheckoutSession, error)
-	FindCustomerByEmail(email string) (*stripe.Customer, error)
 	FindCustomerByEmailAndUserId(email string, userId string) (*stripe.Customer, error)
-	FindCustomerByStripeId(stripeId string) (*stripe.Customer, error)
 	FindOrCreateCustomer(email string, userId uuid.UUID) (*stripe.Customer, error)
 	FindSubscriptionByStripeId(stripeId string) (*stripe.Subscription, error)
 }
@@ -64,24 +60,6 @@ func (s *StripeClient) CreateCustomer(email string, userId string) (*stripe.Cust
 	return customer.New(params)
 }
 
-// method to find customer
-func (s *StripeClient) FindCustomerByEmail(email string) (*stripe.Customer, error) {
-	var cs *stripe.Customer
-	params := &stripe.CustomerListParams{
-		Email: stripe.String(email),
-		ListParams: stripe.ListParams{
-			Limit: stripe.Int64(1),
-		},
-	}
-	list := customer.List(params)
-	for list.Next() {
-		cs = list.Customer()
-		break
-	}
-
-	return cs, nil
-}
-
 func (client *StripeClient) FindCustomerByEmailAndUserId(email string, userId string) (*stripe.Customer, error) {
 	var cs *stripe.Customer
 	params := &stripe.CustomerSearchParams{
@@ -97,21 +75,6 @@ func (client *StripeClient) FindCustomerByEmailAndUserId(email string, userId st
 		break
 	}
 	return cs, nil
-}
-
-func (s *StripeClient) FindAllCustomers() ([]*stripe.Customer, error) {
-	var data []*stripe.Customer
-	params := &stripe.CustomerListParams{}
-	list := customer.List(params)
-	for list.Next() {
-		prod := list.Customer()
-		if prod != nil {
-			data = append(data, prod)
-		}
-
-	}
-
-	return data, nil
 }
 
 func (s *StripeClient) FindAllProducts() ([]*stripe.Product, error) {
@@ -142,26 +105,6 @@ func (s *StripeClient) FindAllPrices() ([]*stripe.Price, error) {
 	}
 
 	return data, nil
-}
-
-func (s *StripeClient) FindAllSubscriptions() ([]*stripe.Subscription, error) {
-	var data []*stripe.Subscription
-	params := &stripe.SubscriptionListParams{}
-	list := subscription.List(params)
-	for list.Next() {
-		prod := list.Subscription()
-		if prod != nil {
-			data = append(data, prod)
-		}
-
-	}
-
-	return data, nil
-}
-
-func (s *StripeClient) FindCustomerByStripeId(stripeId string) (*stripe.Customer, error) {
-	params := &stripe.CustomerParams{}
-	return customer.Get(stripeId, params)
 }
 
 func (s *StripeClient) FindOrCreateCustomer(email string, userId uuid.UUID) (*stripe.Customer, error) {
