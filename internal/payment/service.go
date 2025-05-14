@@ -18,11 +18,30 @@ import (
 	"github.com/tkahng/authgo/internal/tools/types"
 )
 
+type PaymentService interface {
+	Client() PaymentClient
+	CreateBillingPortalSession(ctx context.Context, db db.Dbx, userId uuid.UUID) (string, error)
+	CreateCheckoutSession(ctx context.Context, db db.Dbx, userId uuid.UUID, priceId string) (string, error)
+	FindAndUpsertAllPrices(ctx context.Context, dbx db.Dbx) error
+	FindAndUpsertAllProducts(ctx context.Context, dbx db.Dbx) error
+	FindOrCreateCustomerFromUser(ctx context.Context, db db.Dbx, userId uuid.UUID, email string) (*models.StripeCustomer, error)
+	FindSubscriptionWithPriceBySessionId(ctx context.Context, db db.Dbx, sessionId string) (*models.SubscriptionWithPrice, error)
+	Logger() *slog.Logger
+	SyncPerms(ctx context.Context, dbx db.Dbx) error
+	SyncProductPerms(ctx context.Context, dbx db.Dbx, productId string, permName string) error
+	SyncProductRole(ctx context.Context, dbx db.Dbx, productId string, roleName string) error
+	SyncRoles(ctx context.Context, dbx db.Dbx) error
+	UpsertPriceProductFromStripe(ctx context.Context, dbx db.Dbx) error
+	UpsertSubscriptionByIds(ctx context.Context, db db.Dbx, cutomerId string, subscriptionId string) error
+}
+
 type StripeService struct {
 	logger *slog.Logger
 	client PaymentClient
 	store  PaymentStore
 }
+
+var _ PaymentService = (*StripeService)(nil)
 
 func (srv *StripeService) Logger() *slog.Logger {
 	return srv.logger
