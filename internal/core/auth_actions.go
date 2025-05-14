@@ -9,6 +9,7 @@ import (
 	"github.com/alexedwards/argon2id"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
+	"github.com/tkahng/authgo/internal/auth/oauth"
 	"github.com/tkahng/authgo/internal/conf"
 	"github.com/tkahng/authgo/internal/db"
 	"github.com/tkahng/authgo/internal/shared"
@@ -25,8 +26,9 @@ type Authenticator interface {
 	HandlePasswordResetToken(ctx context.Context, token, password string) error
 	CheckResetPasswordToken(ctx context.Context, token string) error
 	VerifyStateToken(ctx context.Context, token string) (*shared.ProviderStateClaims, error)
-	VerifyAndParseOtpToken(ctx context.Context, emailType EmailType, token string) (*shared.OtpClaims, error)
 	CreateAndPersistStateToken(ctx context.Context, payload *shared.ProviderStatePayload) (string, error)
+	FetchAuthUser(ctx context.Context, code string, parsedState *shared.ProviderStateClaims) (*oauth.AuthUser, error)
+	VerifyAndParseOtpToken(ctx context.Context, emailType EmailType, token string) (*shared.OtpClaims, error)
 	Authenticate(ctx context.Context, params *shared.AuthenticationInput) (*shared.User, error)
 	// CreateAuthTokens(ctx context.Context, payload *shared.UserInfo) (*shared.UserInfoTokens, error)
 	CreateAuthTokensFromEmail(ctx context.Context, email string) (*shared.UserInfoTokens, error)
@@ -44,6 +46,36 @@ type BaseAuth struct {
 	token    TokenManager
 	password PasswordManager
 	options  *conf.AppOptions
+}
+
+// FetchAuthUser implements Authenticator.
+func (app *BaseAuth) FetchAuthUser(ctx context.Context, code string, parsedState *shared.ProviderStateClaims) (*oauth.AuthUser, error) {
+	var provider oauth.ProviderConfig
+	switch parsedState.Provider {
+	case shared.OAuthProvidersGithub:
+		provider = oauth.NewProviderByName(oauth.NameGithub)
+	case shared.OAuthProvidersGoogle:
+		provider = oauth.NewProviderByName(oauth.NameGoogle)
+	default:
+		return nil, fmt.Errorf("invalid provider %v", parsedState.Provider)
+	}
+	if !provider.Active() {
+		return nil, fmt.Errorf("provider %v is not enabled", parsedState.Provider)
+	}
+	opts := provider.FetchTokenOptions(parsedState.CodeVerifier)
+
+	// fetch token
+	token, err := provider.FetchToken(ctx, code, opts...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch OAuth2 token. %w", err)
+	}
+
+	// fetch external auth user
+	authUser, err := provider.FetchAuthUser(ctx, token)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch OAuth2 user. %w", err)
+	}
+	return authUser, nil
 }
 
 func NewAuthActions(dbx db.Dbx, mailer mailer.Mailer, settings *conf.AppOptions) Authenticator {

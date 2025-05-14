@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/tkahng/authgo/internal/auth/oauth"
 	"github.com/tkahng/authgo/internal/shared"
 )
 
@@ -89,9 +88,9 @@ func OAuth2Callback(ctx context.Context, api *Api, input *OAuth2CallbackInput) (
 	if parsedState.Type != shared.TokenTypesStateToken {
 		return nil, fmt.Errorf("invalid token type. want verification_token, got  %v", parsedState.Type)
 	}
-	redirectUrl, authUser, shouldReturn, result, err := api.newFunction(ctx, input.Code, parsedState)
-	if shouldReturn {
-		return result, err
+	authUser, err := action.FetchAuthUser(ctx, input.Code, parsedState)
+	if err != nil {
+		return nil, fmt.Errorf("error at Oatuh2Callback: %w", err)
 	}
 	var prv shared.Providers
 	switch parsedState.Provider {
@@ -122,45 +121,6 @@ func OAuth2Callback(ctx context.Context, api *Api, input *OAuth2CallbackInput) (
 	}
 	return &CallbackOutput{
 		UserInfoTokens: *dto,
-		RedirectTo:     redirectUrl,
+		RedirectTo:     parsedState.RedirectTo,
 	}, nil
-}
-
-func (api *Api) newFunction(ctx context.Context, code string, parsedState *shared.ProviderStateClaims) (string, *oauth.AuthUser, bool, *CallbackOutput, error) {
-	var provider oauth.ProviderConfig
-	switch parsedState.Provider {
-	case shared.OAuthProvidersGithub:
-		provider = oauth.NewProviderByName(oauth.NameGithub)
-
-	case shared.OAuthProvidersGoogle:
-		provider = oauth.NewProviderByName(oauth.NameGoogle)
-	default:
-		return "", nil, true, nil, fmt.Errorf("invalid provider %v", parsedState.Provider)
-	}
-	if provider == nil {
-		return "", nil, true, nil, fmt.Errorf("invalid provider %v", parsedState.Provider)
-	}
-	if !provider.Active() {
-		return "", nil, true, nil, fmt.Errorf("provider %v is not enabled", parsedState.Provider)
-	}
-	var redirectUrl string
-	if parsedState.RedirectTo != "" {
-		redirectUrl = parsedState.RedirectTo
-	} else {
-		redirectUrl = api.app.Cfg().AppConfig.AppUrl
-	}
-	opts := provider.FetchTokenOptions(parsedState.CodeVerifier)
-
-	// fetch token
-	token, err := provider.FetchToken(ctx, code, opts...)
-	if err != nil {
-		return "", nil, true, nil, fmt.Errorf("failed to fetch OAuth2 token. %w", err)
-	}
-
-	// fetch external auth user
-	authUser, err := provider.FetchAuthUser(ctx, token)
-	if err != nil {
-		return "", nil, true, nil, fmt.Errorf("failed to fetch OAuth2 user. %w", err)
-	}
-	return redirectUrl, authUser, false, nil, nil
 }
