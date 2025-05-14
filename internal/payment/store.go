@@ -18,6 +18,10 @@ type PaymentStore interface {
 	FindCustomerByUserId(ctx context.Context, dbx db.Dbx, userId uuid.UUID) (*models.StripeCustomer, error)
 	UpsertSubscriptionFromStripe(ctx context.Context, dbx db.Dbx, sub *stripe.Subscription, userId uuid.UUID) error
 	UpsertCustomerStripeId(ctx context.Context, dbx db.Dbx, userId uuid.UUID, stripeCustomerId string) error
+	UpsertProductFromStripe(ctx context.Context, dbx db.Dbx, product *stripe.Product) error
+	UpsertPriceFromStripe(ctx context.Context, dbx db.Dbx, price *stripe.Price) error
+	CreateProductRoles(ctx context.Context, db db.Dbx, productId string, roleIds ...uuid.UUID) error
+	CreateProductPermissions(ctx context.Context, db db.Dbx, productId string, permissionIds ...uuid.UUID) error
 	FindUserById(ctx context.Context, dbx db.Dbx, userId uuid.UUID) (*models.User, error)
 	FindLatestActiveSubscriptionByUserId(ctx context.Context, dbx db.Dbx, userId uuid.UUID) (*models.StripeSubscription, error)
 	IsFirstSubscription(ctx context.Context, dbx db.Dbx, userId uuid.UUID) (bool, error)
@@ -29,10 +33,30 @@ type PaymentStore interface {
 type StripeStore struct {
 }
 
+// CreateProductPermissions implements PaymentStore.
+func (s *StripeStore) CreateProductPermissions(ctx context.Context, db db.Dbx, productId string, permissionIds ...uuid.UUID) error {
+	return queries.CreateProductPermissions(ctx, db, productId, permissionIds...)
+}
+
 var _ PaymentStore = (*StripeStore)(nil)
 
 func NewStripeStore() *StripeStore {
 	return &StripeStore{}
+}
+
+// CreateProductRoles implements PaymentStore.
+func (s *StripeStore) CreateProductRoles(ctx context.Context, db db.Dbx, productId string, roleIds ...uuid.UUID) error {
+	return queries.CreateProductRoles(ctx, db, productId, roleIds...)
+}
+
+// UpsertPriceFromStripe implements PaymentStore.
+func (s *StripeStore) UpsertPriceFromStripe(ctx context.Context, dbx db.Dbx, price *stripe.Price) error {
+	return queries.UpsertPriceFromStripe(ctx, dbx, price)
+}
+
+// UpsertProductFromStripe implements PaymentStore.
+func (s *StripeStore) UpsertProductFromStripe(ctx context.Context, dbx db.Dbx, product *stripe.Product) error {
+	return queries.UpsertProductFromStripe(ctx, dbx, product)
 }
 
 // FindCustomerByStripeId implements PaymentStore.

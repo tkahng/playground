@@ -25,7 +25,7 @@ type PaymentClient interface {
 	FindAllPrices() ([]*stripe.Price, error)
 	FindAllProducts() ([]*stripe.Product, error)
 	FindCheckoutSessionByStripeId(stripeId string) (*stripe.CheckoutSession, error)
-	FindCustomerByEmailAndUserId(email string, userId string) (*stripe.Customer, error)
+	// FindCustomerByEmailAndUserId(email string, userId string) (*stripe.Customer, error)
 	FindOrCreateCustomer(email string, userId uuid.UUID) (*stripe.Customer, error)
 	FindSubscriptionByStripeId(stripeId string) (*stripe.Subscription, error)
 }
@@ -59,7 +59,7 @@ func (s *StripeClient) CreateCustomer(email string, userId string) (*stripe.Cust
 	return customer.New(params)
 }
 
-func (client *StripeClient) FindCustomerByEmailAndUserId(email string, userId string) (*stripe.Customer, error) {
+func (client *StripeClient) findCustomerByEmailAndUserId(email string, userId string) (*stripe.Customer, error) {
 	var cs *stripe.Customer
 	params := &stripe.CustomerSearchParams{
 		SearchParams: stripe.SearchParams{
@@ -107,7 +107,7 @@ func (s *StripeClient) FindAllPrices() ([]*stripe.Price, error) {
 }
 
 func (s *StripeClient) FindOrCreateCustomer(email string, userId uuid.UUID) (*stripe.Customer, error) {
-	cs, _ := s.FindCustomerByEmailAndUserId(email, userId.String())
+	cs, _ := s.findCustomerByEmailAndUserId(email, userId.String())
 	if cs == nil {
 		return s.CreateCustomer(email, userId.String())
 	}

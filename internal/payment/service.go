@@ -12,7 +12,6 @@ import (
 	"github.com/tkahng/authgo/internal/crudrepo"
 	"github.com/tkahng/authgo/internal/db"
 	"github.com/tkahng/authgo/internal/models"
-	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 	"github.com/tkahng/authgo/internal/tools/types"
@@ -92,7 +91,7 @@ func (srv *StripeService) SyncProductRole(ctx context.Context, dbx db.Dbx, produ
 	if role == nil {
 		return errors.New("role not found")
 	}
-	return queries.CreateProductRoles(ctx, dbx, product.ID, role.ID)
+	return srv.store.CreateProductRoles(ctx, dbx, product.ID, role.ID)
 }
 
 func (srv *StripeService) SyncProductPerms(ctx context.Context, dbx db.Dbx, productId string, permName string) error {
@@ -118,7 +117,7 @@ func (srv *StripeService) SyncProductPerms(ctx context.Context, dbx db.Dbx, prod
 	if perm == nil {
 		return errors.New("permission not found")
 	}
-	return queries.CreateProductPermissions(ctx, dbx, product.ID, perm.ID)
+	return srv.store.CreateProductPermissions(ctx, dbx, product.ID, perm.ID)
 }
 
 func (srv *StripeService) UpsertPriceProductFromStripe(ctx context.Context, dbx db.Dbx) error {
@@ -140,7 +139,7 @@ func (srv *StripeService) FindAndUpsertAllProducts(ctx context.Context, dbx db.D
 		return err
 	}
 	for _, product := range products {
-		err = queries.UpsertProductFromStripe(ctx, dbx, product)
+		err = srv.store.UpsertProductFromStripe(ctx, dbx, product)
 		if err != nil {
 			srv.logger.Error("error upserting product", "product", product.ID, "error", err)
 			continue
@@ -156,7 +155,7 @@ func (srv *StripeService) FindAndUpsertAllPrices(ctx context.Context, dbx db.Dbx
 		return err
 	}
 	for _, price := range prices {
-		err = queries.UpsertPriceFromStripe(ctx, dbx, price)
+		err = srv.store.UpsertPriceFromStripe(ctx, dbx, price)
 		if err != nil {
 			srv.logger.Error("error upserting price", "price", price.ID, "error", err)
 			continue
