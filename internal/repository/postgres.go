@@ -12,28 +12,28 @@ import (
 	"github.com/tkahng/authgo/internal/tools/types"
 )
 
-// PostgresRepository provides CRUD operations for Postgres
-type PostgresRepository[Model any] struct {
+// PostgresCrudRepo provides CRUD operations for Postgres
+type PostgresCrudRepo[Model any] struct {
 	builder *SQLBuilder[Model]
 }
 
-var _ Repository[models.User] = (*PostgresRepository[models.User])(nil)
+var _ CrudRepo[models.User] = (*PostgresCrudRepo[models.User])(nil)
 
 // NewPostgresRepository initializes a new PostgresRepository
 
-func NewPostgresRepository[Model any](builder *SQLBuilder[Model]) *PostgresRepository[Model] {
-	return &PostgresRepository[Model]{
+func NewPostgresRepository[Model any](builder *SQLBuilder[Model]) *PostgresCrudRepo[Model] {
+	return &PostgresCrudRepo[Model]{
 		builder: builder,
 	}
 }
 
-func (r *PostgresRepository[Model]) Builder() SQLBuilderInterface {
+func (r *PostgresCrudRepo[Model]) Builder() SQLBuilderInterface {
 	return r.builder
 
 }
 
 // Get retrieves records from the database based on the provided filters
-func (r *PostgresRepository[Model]) Get(ctx context.Context, db db.Dbx, where *map[string]any, order *map[string]string, limit *int, skip *int) ([]*Model, error) {
+func (r *PostgresCrudRepo[Model]) Get(ctx context.Context, db db.Dbx, where *map[string]any, order *map[string]string, limit *int, skip *int) ([]*Model, error) {
 	args := []any{}
 	query := fmt.Sprintf("SELECT %s FROM %s", r.builder.Fields(""), r.builder.Table())
 	expr, err := r.builder.WhereError(where, &args, nil)
@@ -64,7 +64,7 @@ func (r *PostgresRepository[Model]) Get(ctx context.Context, db db.Dbx, where *m
 }
 
 // Put updates existing records in the database
-func (r *PostgresRepository[Model]) Put(ctx context.Context, dbx db.Dbx, models []Model) ([]*Model, error) {
+func (r *PostgresCrudRepo[Model]) Put(ctx context.Context, dbx db.Dbx, models []Model) ([]*Model, error) {
 	result := []*Model{}
 
 	for _, model := range models {
@@ -94,7 +94,7 @@ func (r *PostgresRepository[Model]) Put(ctx context.Context, dbx db.Dbx, models 
 	return result, nil
 }
 
-func (r *PostgresRepository[Model]) PutOne(ctx context.Context, dbx db.Dbx, model *Model) (*Model, error) {
+func (r *PostgresCrudRepo[Model]) PutOne(ctx context.Context, dbx db.Dbx, model *Model) (*Model, error) {
 	if model == nil {
 		return nil, nil
 	}
@@ -109,7 +109,7 @@ func (r *PostgresRepository[Model]) PutOne(ctx context.Context, dbx db.Dbx, mode
 	return re, nil
 }
 
-func (r *PostgresRepository[Model]) GetOne(ctx context.Context, dbx db.Dbx, where *map[string]any) (*Model, error) {
+func (r *PostgresCrudRepo[Model]) GetOne(ctx context.Context, dbx db.Dbx, where *map[string]any) (*Model, error) {
 	result, err := r.Get(ctx, dbx, where, nil, types.Pointer(1), nil)
 	if err != nil {
 		return nil, err
@@ -122,7 +122,7 @@ func (r *PostgresRepository[Model]) GetOne(ctx context.Context, dbx db.Dbx, wher
 }
 
 // Post inserts new records into the database
-func (r *PostgresRepository[Model]) Post(ctx context.Context, dbx db.Dbx, models []Model) ([]*Model, error) {
+func (r *PostgresCrudRepo[Model]) Post(ctx context.Context, dbx db.Dbx, models []Model) ([]*Model, error) {
 	args := []any{}
 	query := fmt.Sprintf("INSERT INTO %s", r.builder.Table())
 	if fields, values, err := r.builder.ValuesError(&models, &args, nil); err != nil {
@@ -143,7 +143,7 @@ func (r *PostgresRepository[Model]) Post(ctx context.Context, dbx db.Dbx, models
 }
 
 // Patch updates existing records in the database
-func (r *PostgresRepository[Model]) PostOne(ctx context.Context, dbx db.Dbx, models *Model) (*Model, error) {
+func (r *PostgresCrudRepo[Model]) PostOne(ctx context.Context, dbx db.Dbx, models *Model) (*Model, error) {
 	data, err := r.Post(ctx, dbx, []Model{*models})
 	if err != nil {
 		return nil, err
@@ -155,7 +155,7 @@ func (r *PostgresRepository[Model]) PostOne(ctx context.Context, dbx db.Dbx, mod
 }
 
 // DeleteReturn removes records from the database based on the provided filters
-func (r *PostgresRepository[Model]) DeleteReturn(ctx context.Context, dbx db.Dbx, where *map[string]any) ([]*Model, error) {
+func (r *PostgresCrudRepo[Model]) DeleteReturn(ctx context.Context, dbx db.Dbx, where *map[string]any) ([]*Model, error) {
 	args := []any{}
 	query := fmt.Sprintf("DELETE FROM %s", r.builder.Table())
 	if expr, err := r.builder.WhereError(where, &args, nil); err != nil {
@@ -176,7 +176,7 @@ func (r *PostgresRepository[Model]) DeleteReturn(ctx context.Context, dbx db.Dbx
 }
 
 // DeleteReturn removes records from the database based on the provided filters
-func (r *PostgresRepository[Model]) Delete(ctx context.Context, dbx db.Dbx, where *map[string]any) (int64, error) {
+func (r *PostgresCrudRepo[Model]) Delete(ctx context.Context, dbx db.Dbx, where *map[string]any) (int64, error) {
 	args := []any{}
 	query := fmt.Sprintf("DELETE FROM %s", r.builder.Table())
 	if expr, err := r.builder.WhereError(where, &args, nil); err != nil {
@@ -198,7 +198,7 @@ func (r *PostgresRepository[Model]) Delete(ctx context.Context, dbx db.Dbx, wher
 }
 
 // Count returns the number of records that match the provided filters
-func (r *PostgresRepository[Model]) Count(ctx context.Context, dbx db.Dbx, where *map[string]any) (int64, error) {
+func (r *PostgresCrudRepo[Model]) Count(ctx context.Context, dbx db.Dbx, where *map[string]any) (int64, error) {
 	args := []any{}
 	query := fmt.Sprintf("SELECT COUNT(*) FROM %s", r.builder.Table())
 	if expr, err := r.builder.WhereError(where, &args, nil); err != nil {

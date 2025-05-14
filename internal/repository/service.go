@@ -19,7 +19,7 @@ type DbService[Model any] interface {
 
 var _ DbService[any] = (*PostgresDbService[any])(nil)
 
-func NewPostgresDbService[Model any](db func() db.Dbx, repo Repository[Model]) *PostgresDbService[Model] {
+func NewPostgresDbService[Model any](db func() db.Dbx, repo CrudRepo[Model]) *PostgresDbService[Model] {
 	return &PostgresDbService[Model]{
 		db:   db,
 		repo: repo,
@@ -28,7 +28,7 @@ func NewPostgresDbService[Model any](db func() db.Dbx, repo Repository[Model]) *
 
 type PostgresDbService[Model any] struct {
 	db   func() db.Dbx
-	repo Repository[Model]
+	repo CrudRepo[Model]
 }
 
 // Builder implements DbService.
