@@ -3,8 +3,8 @@ package cmd
 import (
 	"github.com/spf13/cobra"
 	"github.com/tkahng/authgo/internal/conf"
-	"github.com/tkahng/authgo/internal/core"
 	"github.com/tkahng/authgo/internal/db"
+	"github.com/tkahng/authgo/internal/payment"
 )
 
 func NewStripeCmd() *cobra.Command {
@@ -26,7 +26,7 @@ var stripeSyncCmd = &cobra.Command{
 		stripeconfig := conf.GetConfig[conf.StripeConfig]()
 
 		dbx := db.CreateQueries(ctx, dbconf.DatabaseUrl)
-		service := core.NewStripeServiceFromConf(stripeconfig)
+		service := payment.NewStripeServiceFromConf(stripeconfig)
 
 		return service.UpsertPriceProductFromStripe(ctx, dbx)
 	},
@@ -41,7 +41,7 @@ var stripeRolesCmd = &cobra.Command{
 		stripeconfig := conf.GetConfig[conf.StripeConfig]()
 
 		dbx := db.CreateQueries(ctx, dbconf.DatabaseUrl)
-		service := core.NewStripeServiceFromConf(stripeconfig)
+		service := payment.NewStripeServiceFromConf(stripeconfig)
 		return service.SyncPerms(ctx, dbx)
 	},
 }

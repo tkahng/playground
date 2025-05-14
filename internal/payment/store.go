@@ -29,6 +29,12 @@ type PaymentStore interface {
 type StripeStore struct {
 }
 
+var _ PaymentStore = (*StripeStore)(nil)
+
+func NewStripeStore() *StripeStore {
+	return &StripeStore{}
+}
+
 // FindCustomerByStripeId implements PaymentStore.
 func (s *StripeStore) FindCustomerByStripeId(ctx context.Context, dbx db.Dbx, stripeId string) (*models.StripeCustomer, error) {
 	return queries.FindCustomerByStripeId(ctx, dbx, stripeId)
@@ -87,10 +93,4 @@ func (s *StripeStore) UpsertCustomerStripeId(ctx context.Context, dbx db.Dbx, us
 // UpsertSubscriptionFromStripe implements PaymentStore.
 func (s *StripeStore) UpsertSubscriptionFromStripe(ctx context.Context, dbx db.Dbx, sub *stripe.Subscription, userId uuid.UUID) error {
 	return queries.UpsertSubscriptionFromStripe(ctx, dbx, sub, userId)
-}
-
-var _ PaymentStore = (*StripeStore)(nil)
-
-func NewStripeStore() *StripeStore {
-	return &StripeStore{}
 }

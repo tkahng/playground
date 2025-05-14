@@ -40,9 +40,8 @@ type StripeClient struct {
 }
 
 func NewStripeClient(bld conf.StripeConfig) PaymentClient {
-	cfg := &bld
-	stripe.Key = cfg.ApiKey
-	payment := &StripeClient{config: cfg}
+	stripe.Key = bld.ApiKey
+	payment := &StripeClient{config: &bld}
 	return payment
 }
 
