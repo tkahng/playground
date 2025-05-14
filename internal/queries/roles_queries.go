@@ -487,6 +487,31 @@ func FindPermissionById(ctx context.Context, dbx db.Dbx, id uuid.UUID) (*crudMod
 	)
 	return OptionalRow(data, err)
 }
+func FindPermissionByName(ctx context.Context, dbx db.Dbx, name string) (*crudModels.Permission, error) {
+	data, err := crudrepo.Permission.GetOne(
+		ctx,
+		dbx,
+		&map[string]any{
+			"name": map[string]any{
+				"_eq": name,
+			},
+		},
+	)
+	return OptionalRow(data, err)
+}
+
+func FindRoleByName(ctx context.Context, dbx db.Dbx, name string) (*crudModels.Role, error) {
+	data, err := crudrepo.Role.GetOne(
+		ctx,
+		dbx,
+		&map[string]any{
+			"name": map[string]any{
+				"_eq": name,
+			},
+		},
+	)
+	return OptionalRow(data, err)
+}
 
 const (
 	QueryUserPermissionSource string = `

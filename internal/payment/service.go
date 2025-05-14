@@ -9,7 +9,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/conf"
-	"github.com/tkahng/authgo/internal/crudrepo"
 	"github.com/tkahng/authgo/internal/db"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/shared"
@@ -76,15 +75,7 @@ func (srv *StripeService) SyncProductRole(ctx context.Context, dbx db.Dbx, produ
 	if product == nil {
 		return errors.New("product not found")
 	}
-	role, err := crudrepo.Role.GetOne(
-		ctx,
-		dbx,
-		&map[string]any{
-			"name": map[string]any{
-				"_eq": roleName,
-			},
-		},
-	)
+	role, err := srv.store.FindRoleByName(ctx, dbx, roleName)
 	if err != nil {
 		return err
 	}
@@ -102,15 +93,7 @@ func (srv *StripeService) SyncProductPerms(ctx context.Context, dbx db.Dbx, prod
 	if product == nil {
 		return errors.New("product not found")
 	}
-	perm, err := crudrepo.Permission.GetOne(
-		ctx,
-		dbx,
-		&map[string]any{
-			"name": map[string]any{
-				"_eq": permName,
-			},
-		},
-	)
+	perm, err := srv.store.FindPermissionByName(ctx, dbx, permName)
 	if err != nil {
 		return err
 	}

@@ -16,6 +16,8 @@ type PaymentStore interface {
 	FindProductByStripeId(ctx context.Context, dbx db.Dbx, productId string) (*models.StripeProduct, error)
 	FindCustomerByStripeId(ctx context.Context, dbx db.Dbx, stripeId string) (*models.StripeCustomer, error)
 	FindCustomerByUserId(ctx context.Context, dbx db.Dbx, userId uuid.UUID) (*models.StripeCustomer, error)
+	FindPermissionByName(ctx context.Context, dbx db.Dbx, name string) (*models.Permission, error)
+	FindRoleByName(ctx context.Context, dbx db.Dbx, name string) (*models.Role, error)
 	UpsertSubscriptionFromStripe(ctx context.Context, dbx db.Dbx, sub *stripe.Subscription, userId uuid.UUID) error
 	UpsertCustomerStripeId(ctx context.Context, dbx db.Dbx, userId uuid.UUID, stripeCustomerId string) error
 	UpsertProductFromStripe(ctx context.Context, dbx db.Dbx, product *stripe.Product) error
@@ -31,6 +33,16 @@ type PaymentStore interface {
 }
 
 type StripeStore struct {
+}
+
+// FindRoleByName implements PaymentStore.
+func (s *StripeStore) FindRoleByName(ctx context.Context, dbx db.Dbx, name string) (*models.Role, error) {
+	return queries.FindRoleByName(ctx, dbx, name)
+}
+
+// FindPermissionByName implements PaymentStore.
+func (s *StripeStore) FindPermissionByName(ctx context.Context, dbx db.Dbx, name string) (*models.Permission, error) {
+	return queries.FindPermissionByName(ctx, dbx, name)
 }
 
 // CreateProductPermissions implements PaymentStore.
