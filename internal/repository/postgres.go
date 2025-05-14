@@ -53,12 +53,10 @@ func (r *PostgresRepository[Model]) Get(ctx context.Context, db db.Dbx, where *m
 		query += fmt.Sprintf(" OFFSET %d", *skip)
 	}
 
-	slog.Info("Executing Get query", slog.String("query", query), slog.Any("args", args))
-
 	// Execute the query and scan the results
 	result, err := pgxscan.All(ctx, db, scan.StructMapper[*Model](), query, args...)
 	if err != nil {
-		slog.Error("Error executing Get query", slog.String("query", query), slog.Any("args", args), slog.Any("error", err))
+		slog.ErrorContext(ctx, "Error executing Get query", slog.String("query", query), slog.Any("args", args), slog.Any("error", err))
 		return nil, err
 	}
 
@@ -84,12 +82,9 @@ func (r *PostgresRepository[Model]) Put(ctx context.Context, dbx db.Dbx, models 
 		}
 		query += fmt.Sprintf(" RETURNING %s", r.builder.Fields(""))
 
-		slog.Info("Executing Put query", slog.String("query", query), slog.Any("args", args))
-
 		items, err := pgxscan.All(ctx, dbx, scan.StructMapper[*Model](), query, args...)
 		if err != nil {
-			slog.Error("Error executing Put query", slog.String("query", query), slog.Any("args", args), slog.Any("error", err))
-			// tx.Rollback(ctx)
+			slog.ErrorContext(ctx, "Error executing Put query", slog.String("query", query), slog.Any("args", args), slog.Any("error", err))
 			return nil, err
 		}
 
@@ -137,12 +132,10 @@ func (r *PostgresRepository[Model]) Post(ctx context.Context, dbx db.Dbx, models
 	}
 	query += fmt.Sprintf(" RETURNING %s", r.builder.Fields(""))
 
-	slog.Info("Executing Post query", slog.String("query", query), slog.Any("args", args))
-
 	// Execute the query and scan the results
 	result, err := pgxscan.All(ctx, dbx, scan.StructMapper[*Model](), query, args...)
 	if err != nil {
-		slog.Error("Error executing Post query", slog.String("query", query), slog.Any("args", args), slog.Any("error", err))
+		slog.ErrorContext(ctx, "Error executing Post query", slog.String("query", query), slog.Any("args", args), slog.Any("error", err))
 		return nil, err
 	}
 
@@ -172,12 +165,10 @@ func (r *PostgresRepository[Model]) DeleteReturn(ctx context.Context, dbx db.Dbx
 	}
 	query += fmt.Sprintf(" RETURNING %s", r.builder.Fields(""))
 
-	slog.Info("Executing Delete query", slog.String("query", query), slog.Any("args", args))
-
 	// Execute the query and scan the results
 	result, err := pgxscan.All(ctx, dbx, scan.StructMapper[*Model](), query, args...)
 	if err != nil {
-		slog.Error("Error executing Delete query", slog.String("query", query), slog.Any("args", args), slog.Any("error", err))
+		slog.ErrorContext(ctx, "Error executing Delete query", slog.String("query", query), slog.Any("args", args), slog.Any("error", err))
 		return nil, err
 	}
 
@@ -195,13 +186,11 @@ func (r *PostgresRepository[Model]) Delete(ctx context.Context, dbx db.Dbx, wher
 	}
 	// query += fmt.Sprintf(" RETURNING %s", r.builder.Fields(""))
 
-	slog.Info("Executing Delete query", slog.String("query", query), slog.Any("args", args))
-
 	// Execute the query and scan the results
 	result, err := dbx.Exec(ctx, query, args...)
 	// result, err := pgxscan.All(ctx, dbx, scan.StructMapper[*Model](), query, args...)
 	if err != nil {
-		slog.Error("Error executing Delete query", slog.String("query", query), slog.Any("args", args), slog.Any("error", err))
+		slog.ErrorContext(ctx, "Error executing Delete query", slog.String("query", query), slog.Any("args", args), slog.Any("error", err))
 		return 0, err
 	}
 
@@ -218,14 +207,12 @@ func (r *PostgresRepository[Model]) Count(ctx context.Context, dbx db.Dbx, where
 		query += fmt.Sprintf(" WHERE %s", expr)
 	}
 
-	slog.Info("Executing Get query", slog.String("query", query), slog.Any("args", args))
-
 	// Execute the query and scan the results
 	count, err := pgxscan.One(ctx, dbx, scan.SingleColumnMapper[int64], query, args...)
 
 	// result, err := r.builder.Scan(dbx.Query(ctx, query, args...))
 	if err != nil {
-		slog.Error("Error executing Get query", slog.String("query", query), slog.Any("args", args), slog.Any("error", err))
+		slog.ErrorContext(ctx, "Error executing Get query", slog.String("query", query), slog.Any("args", args), slog.Any("error", err))
 		return 0, err
 	}
 

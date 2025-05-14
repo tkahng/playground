@@ -61,7 +61,6 @@ func UuidV7Generator[Model any](builder *SQLBuilder[Model]) error {
 		}
 		return id.String(), nil
 	}
-	slog.Debug("UUID v7 generator set for SQLBuilder", slog.String("table", builder.table))
 	return nil
 }
 
@@ -154,8 +153,6 @@ func NewSQLBuilder[Model any](opts ...SQLBuilderOptions[Model]) *SQLBuilder[Mode
 		}
 	}
 
-	slog.Debug("SQLBuilder initialized", slog.String("table", table), slog.Any("fields", fields), slog.Any("relations", relations))
-
 	result := &SQLBuilder[Model]{
 		table:        table,
 		keys:         []string{fields[0].name},
@@ -184,7 +181,6 @@ func (b *SQLBuilder[Model]) ColumnNames() []string {
 
 // Returns the table name with proper identifier formatting
 func (b *SQLBuilder[Model]) Table() string {
-	slog.Debug("Fetching table name", slog.String("table", b.table))
 	return b.identifier(b.table)
 }
 
@@ -195,7 +191,6 @@ func (b *SQLBuilder[Model]) Fields(prefix string) string {
 		result = append(result, prefix+b.identifier(field.name))
 	}
 
-	slog.Debug("Fetching fields", slog.Any("fields", result))
 	return strings.Join(result, ",")
 }
 
@@ -284,7 +279,6 @@ func (b *SQLBuilder[Model]) Values(values *[]Model, args *[]any, keys *[]any) (f
 		result = append(result, "("+strings.Join(items, ",")+")")
 	}
 
-	slog.Debug("Constructed VALUES clause", slog.Any("values", result))
 	fields = strings.Join(fieldsArray, ",")
 	vals = strings.Join(result, ",")
 	return fields, vals, nil
@@ -353,7 +347,6 @@ func (b *SQLBuilder[Model]) Set(set *Model, args *[]any, where *map[string]any) 
 		}
 	}
 
-	slog.Debug("Constructed SET clause", slog.String("set", strings.Join(result, ",")))
 	return strings.Join(result, ",")
 }
 
@@ -371,7 +364,6 @@ func (b *SQLBuilder[Model]) Order(order *map[string]string) string {
 		}
 	}
 
-	slog.Debug("Constructed ORDER BY clause", slog.Any("order", result))
 	return strings.Join(result, ",")
 }
 
@@ -394,10 +386,7 @@ func (b *SQLBuilder[Model]) WhereError(where *map[string]any, args *[]any, run f
 
 // Constructs the WHERE clause for a query
 func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any, run func(string) []string) string {
-	fmt.Println("where for ", b.table)
 	if where == nil {
-		slog.Debug("No WHERE clause provided")
-		fmt.Println("No WHERE clause provided")
 		return ""
 	}
 
@@ -492,13 +481,10 @@ func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any, run func(s
 						}
 						// If a run function is provided, sub-query is executed and its result is added to the main query
 					}
-				} else {
-					slog.Warn("Unknown field key or operation", slog.Any("field", key), slog.Any("operation", op), slog.Any("table", b.table))
 				}
 			}
 		}
 	}
 
-	slog.Debug("Constructed WHERE clause", slog.Any("where", result))
 	return strings.Join(result, " AND ")
 }
