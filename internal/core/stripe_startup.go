@@ -1,4 +1,4 @@
-package payment
+package core
 
 import (
 	"context"
@@ -12,48 +12,30 @@ import (
 	"github.com/tkahng/authgo/internal/crudrepo"
 	"github.com/tkahng/authgo/internal/db"
 	"github.com/tkahng/authgo/internal/models"
+	"github.com/tkahng/authgo/internal/payment"
 	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 	"github.com/tkahng/authgo/internal/tools/types"
 )
 
-type PaymentService interface {
-	Client() PaymentClient
-	CreateBillingPortalSession(ctx context.Context, db db.Dbx, userId uuid.UUID) (string, error)
-	CreateCheckoutSession(ctx context.Context, db db.Dbx, userId uuid.UUID, priceId string) (string, error)
-	FindAndUpsertAllPrices(ctx context.Context, dbx db.Dbx) error
-	FindAndUpsertAllProducts(ctx context.Context, dbx db.Dbx) error
-	FindOrCreateCustomerFromUser(ctx context.Context, db db.Dbx, userId uuid.UUID, email string) (*models.StripeCustomer, error)
-	FindSubscriptionWithPriceBySessionId(ctx context.Context, db db.Dbx, sessionId string) (*models.SubscriptionWithPrice, error)
-	Logger() *slog.Logger
-	SyncPerms(ctx context.Context, dbx db.Dbx) error
-	SyncProductPerms(ctx context.Context, dbx db.Dbx, productId string, permName string) error
-	SyncProductRole(ctx context.Context, dbx db.Dbx, productId string, roleName string) error
-	SyncRoles(ctx context.Context, dbx db.Dbx) error
-	UpsertPriceProductFromStripe(ctx context.Context, dbx db.Dbx) error
-	UpsertSubscriptionByIds(ctx context.Context, db db.Dbx, cutomerId string, subscriptionId string) error
-}
-
 type StripeService struct {
 	logger *slog.Logger
-	client PaymentClient
-	store  PaymentStore
+	client payment.PaymentClient
+	store  payment.PaymentStore
 }
-
-var _ PaymentService = (*StripeService)(nil)
 
 func (srv *StripeService) Logger() *slog.Logger {
 	return srv.logger
 }
 
-func (srv *StripeService) Client() PaymentClient {
+func (srv *StripeService) Client() payment.PaymentClient {
 	return srv.client
 }
 func NewStripeServiceFromConf(conf conf.StripeConfig) *StripeService {
-	return &StripeService{client: NewStripeClient(conf), logger: slog.Default()}
+	return &StripeService{client: payment.NewStripeClient(conf), logger: slog.Default()}
 }
-func NewStripeService(client PaymentClient, store PaymentStore) *StripeService {
+func NewStripeService(client payment.PaymentClient, store payment.PaymentStore) *StripeService {
 	return &StripeService{client: client, logger: slog.Default(), store: store}
 }
 
@@ -325,10 +307,10 @@ func (s *StripeService) CreateBillingPortalSession(ctx context.Context, db db.Db
 	if err != nil {
 		return "", err
 	}
-	var configurations []*ProductBillingConfigurationInput
+	var configurations []*payment.ProductBillingConfigurationInput
 	for i, id := range prods {
 		price := grouped[i]
-		con := &ProductBillingConfigurationInput{
+		con := &payment.ProductBillingConfigurationInput{
 			Product: &id.ID,
 			Prices: mapper.Map(price, func(p *models.StripePrice) *string {
 				return &p.ID

@@ -7,10 +7,10 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
+	"github.com/tkahng/authgo/internal/crudrepo"
 	"github.com/tkahng/authgo/internal/db"
 	crudModels "github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/queries"
-	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/test"
 )
@@ -350,7 +350,7 @@ ctx, dbx := test.DbSetup()
 				}
 
 				// Verify role was created
-				role, err := repository.Role.GetOne(ctx, tt.args.db,
+				role, err := crudrepo.Role.GetOne(ctx, tt.args.db,
 					&map[string]any{
 						"name": map[string]any{
 							"_eq": tt.args.roleName,
@@ -544,7 +544,7 @@ ctx, dbx := test.DbSetup()
 
 				if tt.name == "update existing role" {
 					// Verify the update
-					updatedRole, err := repository.Role.GetOne(ctx, tt.args.dbx,
+					updatedRole, err := crudrepo.Role.GetOne(ctx, tt.args.dbx,
 						&map[string]any{
 							"id": map[string]any{
 								"_eq": tt.args.id.String(),
@@ -627,7 +627,7 @@ ctx, dbx := test.DbSetup()
 
 				if tt.name == "update existing permission" {
 					// Verify the update
-					updatedPermission, err := repository.Permission.GetOne(ctx, tt.args.dbx,
+					updatedPermission, err := crudrepo.Permission.GetOne(ctx, tt.args.dbx,
 						&map[string]any{
 							"id": map[string]any{
 								"_eq": tt.args.id.String(),
@@ -699,7 +699,7 @@ ctx, dbx := test.DbSetup()
 
 				if tt.name == "delete existing role" {
 					// Verify the role was deleted
-					deletedRole, err := repository.Role.GetOne(ctx, tt.args.dbx,
+					deletedRole, err := crudrepo.Role.GetOne(ctx, tt.args.dbx,
 						&map[string]any{
 							"id": map[string]any{
 								"_eq": tt.args.id.String(),
@@ -1046,7 +1046,7 @@ ctx, dbx := test.DbSetup()
 
 				if tt.name == "delete existing permission" {
 					// Verify the permission was deleted
-					deletedPermission, err := repository.Permission.GetOne(ctx, tt.args.dbx,
+					deletedPermission, err := crudrepo.Permission.GetOne(ctx, tt.args.dbx,
 						&map[string]any{
 							"id": map[string]any{
 								"_eq": tt.args.id.String(),

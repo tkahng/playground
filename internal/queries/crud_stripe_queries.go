@@ -6,9 +6,9 @@ import (
 	"strings"
 
 	"github.com/Masterminds/squirrel"
+	"github.com/tkahng/authgo/internal/crudrepo"
 	"github.com/tkahng/authgo/internal/db"
 	"github.com/tkahng/authgo/internal/models"
-	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 )
@@ -143,7 +143,7 @@ func LoadProductPrices(ctx context.Context, db db.Dbx, where *map[string]any, pr
 	(*where)["product_id"] = map[string]any{
 		"_in": productIds,
 	}
-	prices, err := repository.StripePrice.Get(
+	prices, err := crudrepo.StripePrice.Get(
 		ctx,
 		db,
 		where,
@@ -219,7 +219,7 @@ func ListPrices(ctx context.Context, db db.Dbx, input *shared.StripePriceListPar
 	param := ListPriceFilterFuncMap(&filter)
 	sort := ListPriceOrderByMap(input)
 
-	data, err := repository.StripePrice.Get(
+	data, err := crudrepo.StripePrice.Get(
 		ctx,
 		db,
 		param,
@@ -297,7 +297,7 @@ func ListPriceFilterFuncMap(filter *shared.StripePriceListFilter) *map[string]an
 
 func CountPrices(ctx context.Context, db db.Dbx, filter *shared.StripePriceListFilter) (int64, error) {
 	filermap := ListPriceFilterFuncMap(filter)
-	data, err := repository.StripePrice.Count(ctx, db, filermap)
+	data, err := crudrepo.StripePrice.Count(ctx, db, filermap)
 	if err != nil {
 		return 0, err
 	}
@@ -312,7 +312,7 @@ func ListCustomers(ctx context.Context, db db.Dbx, input *shared.StripeCustomerL
 	limit, offset := PaginateRepo(pageInput)
 	where := ListCustomerFilterFunc(&filter)
 	order := StripeCustomerOrderByFunc(input)
-	data, err := repository.StripeCustomer.Get(
+	data, err := crudrepo.StripeCustomer.Get(
 		ctx,
 		db,
 		where,
@@ -352,7 +352,7 @@ func ListCustomerFilterFunc(filter *shared.StripeCustomerListFilter) *map[string
 
 func CountCustomers(ctx context.Context, db db.Dbx, filter *shared.StripeCustomerListFilter) (int64, error) {
 	where := ListCustomerFilterFunc(filter)
-	data, err := repository.StripeCustomer.Count(ctx, db, where)
+	data, err := crudrepo.StripeCustomer.Count(ctx, db, where)
 	if err != nil {
 		return 0, err
 	}
@@ -367,7 +367,7 @@ func ListSubscriptions(ctx context.Context, db db.Dbx, input *shared.StripeSubsc
 	limit, offset := PaginateRepo(pageInput)
 	where := ListSubscriptionFilterFunc(&filter)
 	order := StripeSubscriptionOrderByFunc(input)
-	data, err := repository.StripeSubscription.Get(
+	data, err := crudrepo.StripeSubscription.Get(
 		ctx,
 		db,
 		where,
@@ -418,7 +418,7 @@ func ListSubscriptionFilterFunc(filter *shared.StripeSubscriptionListFilter) *ma
 
 func CountSubscriptions(ctx context.Context, db db.Dbx, filter *shared.StripeSubscriptionListFilter) (int64, error) {
 	where := ListSubscriptionFilterFunc(filter)
-	data, err := repository.StripeSubscription.Count(ctx, db, where)
+	data, err := crudrepo.StripeSubscription.Count(ctx, db, where)
 	if err != nil {
 		return 0, err
 	}

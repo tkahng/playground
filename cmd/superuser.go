@@ -8,9 +8,9 @@ import (
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/spf13/cobra"
 	"github.com/tkahng/authgo/internal/conf"
+	"github.com/tkahng/authgo/internal/crudrepo"
 	"github.com/tkahng/authgo/internal/db"
 	"github.com/tkahng/authgo/internal/queries"
-	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/security"
 	"github.com/tkahng/authgo/internal/tools/types"
@@ -52,7 +52,7 @@ var superuserCreate = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		role, err := repository.Role.GetOne(
+		role, err := crudrepo.Role.GetOne(
 			ctx,
 			dbx,
 			&map[string]any{

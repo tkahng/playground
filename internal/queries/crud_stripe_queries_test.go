@@ -4,10 +4,10 @@ import (
 	"context"
 	"testing"
 
+	"github.com/tkahng/authgo/internal/crudrepo"
 	"github.com/tkahng/authgo/internal/db"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/queries"
-	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/seeders"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/test"
@@ -578,7 +578,7 @@ ctx, dbx := test.DbSetup()
 		if err != nil {
 			t.Fatalf("failed to create subscription: %v", err)
 		}
-		price, err := repository.StripePrice.GetOne(
+		price, err := crudrepo.StripePrice.GetOne(
 			ctx,
 			dbxx,
 			nil,
@@ -701,7 +701,7 @@ ctx, dbx := test.DbSetup()
 		if err != nil {
 			t.Fatalf("failed to create subscription: %v", err)
 		}
-		price, err := repository.StripePrice.GetOne(
+		price, err := crudrepo.StripePrice.GetOne(
 			ctx,
 			dbxx,
 			nil,

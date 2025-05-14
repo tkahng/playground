@@ -1,4 +1,4 @@
-package repository
+package crudrepo
 
 import (
 	"github.com/tkahng/authgo/internal/models"

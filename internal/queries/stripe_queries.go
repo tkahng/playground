@@ -8,14 +8,14 @@ import (
 	"github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
 	"github.com/stripe/stripe-go/v82"
+	"github.com/tkahng/authgo/internal/crudrepo"
 	"github.com/tkahng/authgo/internal/db"
 	"github.com/tkahng/authgo/internal/models"
-	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/tools/types"
 )
 
 func FindCustomerByStripeId(ctx context.Context, dbx db.Dbx, stripeId string) (*models.StripeCustomer, error) {
-	data, err := repository.StripeCustomer.GetOne(
+	data, err := crudrepo.StripeCustomer.GetOne(
 		ctx,
 		dbx,
 		&map[string]any{
@@ -28,7 +28,7 @@ func FindCustomerByStripeId(ctx context.Context, dbx db.Dbx, stripeId string) (*
 }
 
 func FindCustomerByUserId(ctx context.Context, dbx db.Dbx, userId uuid.UUID) (*models.StripeCustomer, error) {
-	data, err := repository.StripeCustomer.GetOne(
+	data, err := crudrepo.StripeCustomer.GetOne(
 		ctx,
 		dbx,
 		&map[string]any{
@@ -41,7 +41,7 @@ func FindCustomerByUserId(ctx context.Context, dbx db.Dbx, userId uuid.UUID) (*m
 }
 
 func FindProductByStripeId(ctx context.Context, dbx db.Dbx, stripeId string) (*models.StripeProduct, error) {
-	data, err := repository.StripeProduct.GetOne(
+	data, err := crudrepo.StripeProduct.GetOne(
 		ctx,
 		dbx,
 		&map[string]any{
@@ -273,7 +273,7 @@ func Int64ToISODate(timestamp int64) time.Time {
 }
 
 func FindSubscriptionById(ctx context.Context, dbx db.Dbx, stripeId string) (*models.StripeSubscription, error) {
-	data, err := repository.StripeSubscription.GetOne(
+	data, err := crudrepo.StripeSubscription.GetOne(
 		ctx,
 		dbx,
 		&map[string]any{
@@ -345,7 +345,7 @@ func FindSubscriptionWithPriceById(ctx context.Context, dbx db.Dbx, stripeId str
 }
 
 func FindLatestActiveSubscriptionByUserId(ctx context.Context, dbx db.Dbx, userId uuid.UUID) (*models.StripeSubscription, error) {
-	data, err := repository.StripeSubscription.Get(
+	data, err := crudrepo.StripeSubscription.Get(
 		ctx,
 		dbx,
 		&map[string]any{
@@ -435,7 +435,7 @@ func FindLatestActiveSubscriptionWithPriceByUserId(ctx context.Context, dbx db.D
 }
 
 func IsFirstSubscription(ctx context.Context, dbx db.Dbx, userId uuid.UUID) (bool, error) {
-	data, err := repository.StripeSubscription.Count(
+	data, err := crudrepo.StripeSubscription.Count(
 		ctx,
 		dbx,
 		&map[string]any{
@@ -448,7 +448,7 @@ func IsFirstSubscription(ctx context.Context, dbx db.Dbx, userId uuid.UUID) (boo
 }
 
 func FindValidPriceById(ctx context.Context, dbx db.Dbx, priceId string) (*models.StripePrice, error) {
-	data, err := repository.StripePrice.GetOne(
+	data, err := crudrepo.StripePrice.GetOne(
 		ctx,
 		dbx,
 		&map[string]any{

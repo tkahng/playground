@@ -7,10 +7,10 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/tkahng/authgo/internal/crudrepo"
 	"github.com/tkahng/authgo/internal/db"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/queries"
-	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/types"
 )
@@ -43,7 +43,7 @@ type BaseAuthStore struct {
 }
 
 func (a *BaseAuthStore) GetToken(ctx context.Context, token string) (*shared.Token, error) {
-	res, err := repository.Token.GetOne(ctx,
+	res, err := crudrepo.Token.GetOne(ctx,
 		a.db,
 		&map[string]any{
 			"token": map[string]any{
@@ -71,7 +71,7 @@ func (a *BaseAuthStore) GetToken(ctx context.Context, token string) (*shared.Tok
 }
 
 func (a *BaseAuthStore) SaveToken(ctx context.Context, token *shared.CreateTokenDTO) error {
-	_, err := repository.Token.PostOne(ctx, a.db, &models.Token{
+	_, err := crudrepo.Token.PostOne(ctx, a.db, &models.Token{
 		Type:       models.TokenTypes(token.Type),
 		Identifier: token.Identifier,
 		Expires:    token.Expires,
@@ -87,7 +87,7 @@ func (a *BaseAuthStore) SaveToken(ctx context.Context, token *shared.CreateToken
 }
 
 func (a *BaseAuthStore) DeleteToken(ctx context.Context, token string) error {
-	_, err := repository.Token.DeleteReturn(ctx, a.db, &map[string]any{
+	_, err := crudrepo.Token.DeleteReturn(ctx, a.db, &map[string]any{
 		"token": map[string]any{
 			"_eq": token,
 		},
@@ -169,7 +169,7 @@ func (a *BaseAuthStore) FindUserAccountByUserIdAndProvider(ctx context.Context, 
 
 // UpdateUserAccount implements AuthAdapter.
 func (a *BaseAuthStore) UpdateUserAccount(ctx context.Context, account *shared.UserAccount) error {
-	_, err := repository.UserAccount.PutOne(ctx, a.db, &models.UserAccount{
+	_, err := crudrepo.UserAccount.PutOne(ctx, a.db, &models.UserAccount{
 		ID:                account.ID,
 		UserID:            account.UserID,
 		Provider:          models.Providers(account.Provider),
@@ -194,7 +194,7 @@ func (a *BaseAuthStore) UpdateUserAccount(ctx context.Context, account *shared.U
 
 // GetUserInfo implements AuthAdapter.
 func (a *BaseAuthStore) GetUserInfo(ctx context.Context, email string) (*shared.UserInfo, error) {
-	user, err := repository.User.GetOne(ctx, a.db, &map[string]any{"email": map[string]any{"_eq": email}})
+	user, err := crudrepo.User.GetOne(ctx, a.db, &map[string]any{"email": map[string]any{"_eq": email}})
 	if err != nil {
 		return nil, fmt.Errorf("error getting user: %w", err)
 	}
@@ -229,7 +229,7 @@ func (a *BaseAuthStore) GetUserInfo(ctx context.Context, email string) (*shared.
 
 // CreateUser implements AuthAdapter.
 func (a *BaseAuthStore) CreateUser(ctx context.Context, user *shared.User) (*shared.User, error) {
-	res, err := repository.User.PostOne(ctx, a.db, &models.User{
+	res, err := crudrepo.User.PostOne(ctx, a.db, &models.User{
 		Email:           user.Email,
 		Name:            user.Name,
 		Image:           user.Image,
@@ -254,7 +254,7 @@ func (a *BaseAuthStore) CreateUser(ctx context.Context, user *shared.User) (*sha
 
 // DeleteUser implements AuthAdapter.
 func (a *BaseAuthStore) DeleteUser(ctx context.Context, id uuid.UUID) error {
-	_, err := repository.User.DeleteReturn(ctx, a.db, &map[string]any{
+	_, err := crudrepo.User.DeleteReturn(ctx, a.db, &map[string]any{
 		"id": map[string]any{"_eq": id.String()},
 	})
 	if err != nil {
@@ -266,7 +266,7 @@ func (a *BaseAuthStore) LinkAccount(ctx context.Context, account *shared.UserAcc
 	if account == nil {
 		return errors.New("account is nil")
 	}
-	_, err := repository.UserAccount.PostOne(ctx,
+	_, err := crudrepo.UserAccount.PostOne(ctx,
 		a.db,
 		&models.UserAccount{
 			ID:                account.ID,
@@ -303,7 +303,7 @@ func (a *BaseAuthStore) UnlinkAccount(ctx context.Context, userId uuid.UUID, pro
 
 // UpdateUser implements AuthAdapter.
 func (a *BaseAuthStore) UpdateUser(ctx context.Context, user *shared.User) error {
-	_, err := repository.User.PutOne(ctx, a.db, &models.User{
+	_, err := crudrepo.User.PutOne(ctx, a.db, &models.User{
 		ID:              user.ID,
 		Email:           user.Email,
 		Name:            user.Name,
@@ -321,7 +321,7 @@ func (a *BaseAuthStore) UpdateUser(ctx context.Context, user *shared.User) error
 // AssignUserRoles implements AuthAdapter.
 func (a *BaseAuthStore) AssignUserRoles(ctx context.Context, userId uuid.UUID, roleNames ...string) error {
 	if len(roleNames) > 0 {
-		user, err := repository.User.GetOne(
+		user, err := crudrepo.User.GetOne(
 			ctx,
 			a.db,
 			&map[string]any{
@@ -336,7 +336,7 @@ func (a *BaseAuthStore) AssignUserRoles(ctx context.Context, userId uuid.UUID, r
 		if user == nil {
 			return fmt.Errorf("user not found while assigning roles")
 		}
-		roles, err := repository.Role.Get(
+		roles, err := crudrepo.Role.Get(
 			ctx,
 			a.db,
 			&map[string]any{
@@ -369,7 +369,7 @@ func (a *BaseAuthStore) AssignUserRoles(ctx context.Context, userId uuid.UUID, r
 					RoleID: role.ID,
 				})
 			}
-			_, err = repository.UserRole.Post(ctx, a.db, userRoles)
+			_, err = crudrepo.UserRole.Post(ctx, a.db, userRoles)
 			if err != nil {
 				return fmt.Errorf("error assigning user role while assigning roles: %w", err)
 			}

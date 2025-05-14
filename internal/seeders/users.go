@@ -6,10 +6,10 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jaswdr/faker/v2"
+	"github.com/tkahng/authgo/internal/crudrepo"
 	"github.com/tkahng/authgo/internal/db"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/queries"
-	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/tools/types"
 )
 
@@ -19,7 +19,7 @@ func CreateUserFromEmails(ctx context.Context, dbx db.Dbx, emails ...string) ([]
 		users = append(users, models.User{Email: emails})
 	}
 
-	res, err := repository.User.Post(ctx, dbx, users)
+	res, err := crudrepo.User.Post(ctx, dbx, users)
 	if err != nil {
 		return nil, err
 	}
@@ -35,7 +35,7 @@ func CreateUsers(ctx context.Context, dbx db.Dbx, count int) ([]*models.User, er
 		}
 		users = append(users, user)
 	}
-	res, err := repository.User.Post(ctx, dbx, users)
+	res, err := crudrepo.User.Post(ctx, dbx, users)
 	if err != nil {
 		return nil, err
 	}
@@ -63,7 +63,7 @@ func CreateUserWithAccountAndRole(ctx context.Context, dbx db.Dbx, count int, pr
 		}
 		usersdto = append(usersdto, user)
 	}
-	users, err := repository.User.Post(ctx, dbx, usersdto)
+	users, err := crudrepo.User.Post(ctx, dbx, usersdto)
 	if err != nil {
 		return nil, err
 	}
@@ -96,11 +96,11 @@ func CreateUserWithAccountAndRole(ctx context.Context, dbx db.Dbx, count int, pr
 		userRoles = append(userRoles, userRole)
 	}
 
-	_, err = repository.UserAccount.Post(ctx, dbx, accountsDto)
+	_, err = crudrepo.UserAccount.Post(ctx, dbx, accountsDto)
 	if err != nil {
 		return nil, err
 	}
-	_, err = repository.UserRole.Post(ctx, dbx, userRoles)
+	_, err = crudrepo.UserRole.Post(ctx, dbx, userRoles)
 	if err != nil {
 		return nil, err
 	}
@@ -119,7 +119,7 @@ func CreateStripeProductPrices(ctx context.Context, dbx db.Dbx, count int) ([]*m
 		}
 		products = append(products, product)
 	}
-	res, err := repository.StripeProduct.Post(ctx, dbx, products)
+	res, err := crudrepo.StripeProduct.Post(ctx, dbx, products)
 	if err != nil {
 		return nil, err
 	}
@@ -137,7 +137,7 @@ func CreateStripeProductPrices(ctx context.Context, dbx db.Dbx, count int) ([]*m
 		}
 		prices = append(prices, price)
 	}
-	newPrices, err := repository.StripePrice.Post(ctx, dbx, prices)
+	newPrices, err := crudrepo.StripePrice.Post(ctx, dbx, prices)
 	if err != nil {
 		return nil, err
 	}

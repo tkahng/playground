@@ -7,9 +7,9 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+	"github.com/tkahng/authgo/internal/crudrepo"
 	"github.com/tkahng/authgo/internal/db"
 	"github.com/tkahng/authgo/internal/models"
-	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
 )
 
@@ -88,7 +88,7 @@ func ListUsers(ctx context.Context, db db.Dbx, input *shared.UserListParams) ([]
 	orderBy := ListUsersOrderByFunc(input)
 
 	limit, offset := PaginateRepo(pageInput)
-	data, err := repository.User.Get(
+	data, err := crudrepo.User.Get(
 		ctx,
 		db,
 		where,
@@ -129,7 +129,7 @@ func ListUsersOrderByFunc(input *shared.UserListParams) *map[string]string {
 // The method returns an error if the count operation fails.
 func CountUsers(ctx context.Context, db db.Dbx, filter *shared.UserListFilter) (int64, error) {
 	where := ListUserFilterFunc(filter)
-	data, err := repository.User.Count(ctx, db, where)
+	data, err := crudrepo.User.Count(ctx, db, where)
 	if err != nil {
 		return 0, err
 	}
@@ -145,7 +145,7 @@ func CountUsers(ctx context.Context, db db.Dbx, filter *shared.UserListFilter) (
 // The method returns an error if the user could not be deleted.
 
 func DeleteUsers(ctx context.Context, db db.Dbx, userId uuid.UUID) error {
-	_, err := repository.User.Delete(
+	_, err := crudrepo.User.Delete(
 		ctx,
 		db,
 		&map[string]any{
@@ -168,7 +168,7 @@ func DeleteUsers(ctx context.Context, db db.Dbx, userId uuid.UUID) error {
 //
 // It returns an error if the update fails.
 func UpdateUser(ctx context.Context, db db.Dbx, userId uuid.UUID, input *shared.UserMutationInput) error {
-	user, err := repository.User.GetOne(
+	user, err := crudrepo.User.GetOne(
 		ctx,
 		db,
 		&map[string]any{
@@ -187,7 +187,7 @@ func UpdateUser(ctx context.Context, db db.Dbx, userId uuid.UUID, input *shared.
 	user.Name = input.Name
 	user.Image = input.Image
 	user.EmailVerifiedAt = input.EmailVerifiedAt
-	_, err = repository.User.PutOne(
+	_, err = crudrepo.User.PutOne(
 		ctx,
 		db,
 		user,

@@ -8,10 +8,10 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/stripe/stripe-go/v82"
+	"github.com/tkahng/authgo/internal/crudrepo"
 	"github.com/tkahng/authgo/internal/db"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/queries"
-	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/test"
 )
@@ -656,7 +656,7 @@ ctx, dbx := test.DbSetup()
 
 				if tt.args.price != nil {
 					// Verify price was created/updated
-					price, err := repository.StripePrice.GetOne(
+					price, err := crudrepo.StripePrice.GetOne(
 						ctx,
 						dbxx,
 						&map[string]any{
