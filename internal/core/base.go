@@ -20,7 +20,7 @@ type BaseApp struct {
 	cfg      *conf.EnvConfig
 	db       *db.Queries
 	settings *conf.AppOptions
-	payment  *StripeService
+	payment  *payment.StripeService
 	logger   *slog.Logger
 	fs       *filesystem.FileSystem
 	mail     mailer.Mailer
@@ -48,7 +48,7 @@ func (app *BaseApp) Db() db.Dbx {
 }
 
 // Payment implements App.
-func (a *BaseApp) Payment() *StripeService {
+func (a *BaseApp) Payment() *payment.StripeService {
 	return a.payment
 }
 
@@ -83,9 +83,9 @@ func InitBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 	} else {
 		mail = &mailer.LogMailer{}
 	}
-	store := NewStripeStore()
+	store := payment.NewStripeStore()
 	stripeClient := payment.NewStripeClient(cfg.StripeConfig)
-	stripeService := NewStripeService(stripeClient, store)
+	stripeService := payment.NewStripeService(stripeClient, store)
 	app := &BaseApp{
 		fs:       fs,
 		db:       pool,

@@ -18,8 +18,7 @@ import (
 
 type PaymentClient interface {
 	Config() *conf.StripeConfig
-	CreateBillingPortalSession(customerId string) (*stripe.BillingPortalSession, error)
-	CreateBillingPortalSession2(customerId string, configurationId string) (*stripe.BillingPortalSession, error)
+	CreateBillingPortalSession(customerId string, configurationId string) (*stripe.BillingPortalSession, error)
 	CreateCheckoutSession(customerId string, priceId string, trialDays *int64) (*stripe.CheckoutSession, error)
 	CreateCustomer(email string, userId string) (*stripe.Customer, error)
 	CreatePortalConfiguration(input ...*ProductBillingConfigurationInput) (string, error)
@@ -217,14 +216,6 @@ func (s *StripeClient) CreateCheckoutSession(customerId, priceId string, trialDa
 	return session.New(sessionParams)
 }
 
-func (s *StripeClient) CreateBillingPortalSession(customerId string) (*stripe.BillingPortalSession, error) {
-	params := &stripe.BillingPortalSessionParams{
-		Customer:  stripe.String(customerId),
-		ReturnURL: stripe.String(s.config.StripeAppUrl + "/settings/billing"),
-	}
-	return bs.New(params)
-}
-
 type ProductBillingConfigurationInput struct {
 	// The list of price IDs for the product that a subscription can be updated to.
 	Prices []*string `form:"prices"`
@@ -281,7 +272,7 @@ func (a *StripeClient) CreatePortalConfiguration(input ...*ProductBillingConfigu
 	return result.ID, nil
 }
 
-func (s *StripeClient) CreateBillingPortalSession2(customerId string, configurationId string) (*stripe.BillingPortalSession, error) {
+func (s *StripeClient) CreateBillingPortalSession(customerId string, configurationId string) (*stripe.BillingPortalSession, error) {
 	params := &stripe.BillingPortalSessionParams{
 		Configuration: stripe.String(configurationId),
 		Customer:      stripe.String(customerId),

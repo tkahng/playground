@@ -7,6 +7,7 @@ import (
 	"github.com/tkahng/authgo/internal/db"
 	"github.com/tkahng/authgo/internal/tools/filesystem"
 	"github.com/tkahng/authgo/internal/tools/mailer"
+	"github.com/tkahng/authgo/internal/tools/payment"
 )
 
 type App interface {
@@ -18,7 +19,7 @@ type App interface {
 	NewMailClient() mailer.Mailer
 	EncryptionEnv() string
 
-	Payment() *StripeService
+	Payment() *payment.StripeService
 
 	Auth() Authenticator
 }
