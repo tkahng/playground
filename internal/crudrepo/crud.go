@@ -86,6 +86,15 @@ var (
 	AiUsageBuilder = NewSQLBuilder[models.AiUsage](
 		UuidV7Generator,
 	)
+	TeamBuilder = NewSQLBuilder[models.Team](
+		UuidV7Generator,
+	)
+	TeamMemberBuilder = NewSQLBuilder[models.TeamMember](
+		UuidV7Generator,
+	)
+	TeamInvitationBuilder = NewSQLBuilder[models.TeamInvitation](
+		UuidV7Generator,
+	)
 )
 
 var (
@@ -107,4 +116,7 @@ var (
 	StripeSubscription = NewPostgresRepository(StripeSubscriptionBuilder)
 	Media              = NewPostgresRepository(MediaBuilder)
 	AiUsage            = NewPostgresRepository(AiUsageBuilder)
+	Team               = NewPostgresRepository(TeamBuilder)
+	TeamMember         = NewPostgresRepository(TeamMemberBuilder)
+	TeamInvitation     = NewPostgresRepository(TeamInvitationBuilder)
 )
