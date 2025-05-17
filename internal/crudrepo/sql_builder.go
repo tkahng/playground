@@ -155,6 +155,7 @@ func NewSQLBuilder[Model any](opts ...SQLBuilderOptions[Model]) *SQLBuilder[Mode
 
 	result := &SQLBuilder[Model]{
 		table:        table,
+		columnNames:  columnNames,
 		keys:         []string{fields[0].name},
 		fields:       fields,
 		relations:    relations,
@@ -352,12 +353,14 @@ func (b *SQLBuilder[Model]) Set(set *Model, args *[]any, where *map[string]any) 
 
 // Constructs the ORDER BY clause for a query
 func (b *SQLBuilder[Model]) Order(order *map[string]string) string {
+	fmt.Println("order", order)
 	if order == nil {
 		return ""
 	}
 
 	// Generate the field names for the ORDER BY clause
 	result := []string{}
+	fmt.Println("columnnames", b.columnNames)
 	for key, val := range *order {
 		if slices.Contains(b.columnNames, key) {
 			result = append(result, fmt.Sprintf("%s %s", b.identifier(key), strings.ToUpper(val)))
