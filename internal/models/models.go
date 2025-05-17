@@ -189,7 +189,7 @@ const (
 type StripeSubscription struct {
 	_                  struct{}                 `db:"stripe_subscriptions" json:"-"`
 	ID                 string                   `db:"id" json:"id"`
-	UserID             uuid.UUID                `db:"user_id" json:"user_id"`
+	UserID             *uuid.UUID               `db:"user_id" json:"user_id"`
 	Status             StripeSubscriptionStatus `db:"status" json:"status"`
 	Metadata           map[string]string        `db:"metadata" json:"metadata"`
 	PriceID            string                   `db:"price_id" json:"price_id"`
@@ -205,6 +205,7 @@ type StripeSubscription struct {
 	TrialEnd           *time.Time               `db:"trial_end" json:"trial_end"`
 	CreatedAt          time.Time                `db:"created_at" json:"created_at"`
 	UpdatedAt          time.Time                `db:"updated_at" json:"updated_at"`
+	TeamID             *uuid.UUID               `db:"team_id" json:"team_id"`
 	User               *User                    `db:"users" src:"user_id" dest:"id" table:"users" json:"-"`
 	Price              *StripePrice             `db:"stripe_prices" src:"price_id" dest:"id" table:"stripe_prices" json:"price,omitempty"`
 }
