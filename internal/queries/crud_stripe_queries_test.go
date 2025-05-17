@@ -11,11 +11,12 @@ import (
 	"github.com/tkahng/authgo/internal/seeders"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/test"
+	"github.com/tkahng/authgo/internal/tools/types"
 )
 
 func TestListProducts(t *testing.T) {
 	test.Short(t)
-ctx, dbx := test.DbSetup()
+	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		_, err := seeders.CreateStripeProductPrices(ctx, dbxx, 5)
 		if err != nil {
@@ -68,7 +69,7 @@ ctx, dbx := test.DbSetup()
 }
 func TestLoadProductRoles(t *testing.T) {
 	test.Short(t)
-ctx, dbx := test.DbSetup()
+	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		products, err := seeders.CreateStripeProductPrices(ctx, dbxx, 2)
 		if err != nil {
@@ -136,7 +137,7 @@ ctx, dbx := test.DbSetup()
 }
 func TestLoadProductPrices(t *testing.T) {
 	test.Short(t)
-ctx, dbx := test.DbSetup()
+	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		products, err := seeders.CreateStripeProductPrices(ctx, dbxx, 2)
 		if err != nil {
@@ -204,7 +205,7 @@ ctx, dbx := test.DbSetup()
 }
 func TestCountProducts(t *testing.T) {
 	test.Short(t)
-ctx, dbx := test.DbSetup()
+	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		_, err := seeders.CreateStripeProductPrices(ctx, dbxx, 5)
 		if err != nil {
@@ -262,7 +263,7 @@ ctx, dbx := test.DbSetup()
 }
 func TestListPrices(t *testing.T) {
 	test.Short(t)
-ctx, dbx := test.DbSetup()
+	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		_, err := seeders.CreateStripeProductPrices(ctx, dbxx, 2) // Create 2 products with prices
 		if err != nil {
@@ -345,7 +346,7 @@ ctx, dbx := test.DbSetup()
 }
 func TestCountPrices(t *testing.T) {
 	test.Short(t)
-ctx, dbx := test.DbSetup()
+	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		_, err := seeders.CreateStripeProductPrices(ctx, dbxx, 2) // Create 2 products with prices
 		if err != nil {
@@ -403,7 +404,7 @@ ctx, dbx := test.DbSetup()
 }
 func TestListCustomers(t *testing.T) {
 	test.Short(t)
-ctx, dbx := test.DbSetup()
+	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		user, err := queries.CreateUser(
 			ctx,
@@ -486,7 +487,7 @@ ctx, dbx := test.DbSetup()
 }
 func TestCountCustomers(t *testing.T) {
 	test.Short(t)
-ctx, dbx := test.DbSetup()
+	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		user, err := queries.CreateUser(
 			ctx,
@@ -559,7 +560,7 @@ ctx, dbx := test.DbSetup()
 }
 func TestListSubscriptions(t *testing.T) {
 	test.Short(t)
-ctx, dbx := test.DbSetup()
+	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		// Create test user
 		user, err := queries.CreateUser(
@@ -587,7 +588,7 @@ ctx, dbx := test.DbSetup()
 			t.Fatalf("failed to get price: %v", err)
 		}
 		subscription := &models.StripeSubscription{
-			UserID:  user.ID,
+			// UserID:  user.ID,
 			ID:      "sub_test",
 			PriceID: price.ID,
 			Status:  models.StripeSubscriptionStatusActive,
@@ -682,7 +683,7 @@ ctx, dbx := test.DbSetup()
 }
 func TestCountSubscriptions(t *testing.T) {
 	test.Short(t)
-ctx, dbx := test.DbSetup()
+	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		// Create test user
 		user, err := queries.CreateUser(
@@ -710,7 +711,7 @@ ctx, dbx := test.DbSetup()
 			t.Fatalf("failed to get price: %v", err)
 		}
 		subscription := &models.StripeSubscription{
-			UserID:  user.ID,
+			UserID:  types.Pointer(user.ID),
 			ID:      "sub_test",
 			PriceID: price.ID,
 			Status:  models.StripeSubscriptionStatusActive,

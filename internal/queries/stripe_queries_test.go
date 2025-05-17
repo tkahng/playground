@@ -14,11 +14,12 @@ import (
 	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/test"
+	"github.com/tkahng/authgo/internal/tools/types"
 )
 
 func TestFindCustomerByStripeId(t *testing.T) {
 	test.Short(t)
-ctx, dbx := test.DbSetup()
+	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		stripeId := "cus_test123"
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
@@ -86,7 +87,7 @@ ctx, dbx := test.DbSetup()
 }
 func TestFindCustomerByUserId(t *testing.T) {
 	test.Short(t)
-ctx, dbx := test.DbSetup()
+	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		stripeId := "cus_test123"
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
@@ -154,7 +155,7 @@ ctx, dbx := test.DbSetup()
 }
 func TestFindProductByStripeId(t *testing.T) {
 	test.Short(t)
-ctx, dbx := test.DbSetup()
+	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		stripeId := "prod_test123"
 		product := &models.StripeProduct{
@@ -220,7 +221,7 @@ ctx, dbx := test.DbSetup()
 }
 func TestUpsertCustomerStripeId(t *testing.T) {
 	test.Short(t)
-ctx, dbx := test.DbSetup()
+	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 			Email: "test@example.com",
@@ -286,7 +287,7 @@ ctx, dbx := test.DbSetup()
 }
 func TestUpsertProduct(t *testing.T) {
 	test.Short(t)
-ctx, dbx := test.DbSetup()
+	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		description := "Test Description"
 		image := "test-image.jpg"
@@ -363,7 +364,7 @@ ctx, dbx := test.DbSetup()
 }
 func TestUpsertProductFromStripe(t *testing.T) {
 	test.Short(t)
-ctx, dbx := test.DbSetup()
+	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		type args struct {
 			ctx     context.Context
@@ -461,7 +462,7 @@ ctx, dbx := test.DbSetup()
 
 func TestUpsertPrice(t *testing.T) {
 	test.Short(t)
-ctx, dbx := test.DbSetup()
+	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		// Create a test product first
 		product := &models.StripeProduct{
@@ -566,7 +567,7 @@ ctx, dbx := test.DbSetup()
 }
 func TestUpsertPriceFromStripe(t *testing.T) {
 	test.Short(t)
-ctx, dbx := test.DbSetup()
+	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		// Create a test product first
 		meta := map[string]string{"key": "value"}
@@ -701,7 +702,7 @@ ctx, dbx := test.DbSetup()
 
 func TestUpsertSubscription(t *testing.T) {
 	test.Short(t)
-ctx, dbx := test.DbSetup()
+	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 			Email: "test@example.com",
@@ -757,7 +758,7 @@ ctx, dbx := test.DbSetup()
 					dbx: dbxx,
 					subscription: &models.StripeSubscription{
 						ID:                 "sub_test123",
-						UserID:             userId,
+						UserID:             nil,
 						Status:             models.StripeSubscriptionStatusActive,
 						PriceID:            price.ID,
 						Quantity:           1,
@@ -777,7 +778,7 @@ ctx, dbx := test.DbSetup()
 					dbx: dbxx,
 					subscription: &models.StripeSubscription{
 						ID:                 "sub_test123",
-						UserID:             userId,
+						UserID:             types.Pointer(userId),
 						Status:             models.StripeSubscriptionStatusCanceled,
 						PriceID:            price.ID,
 						Quantity:           2,
@@ -830,7 +831,7 @@ ctx, dbx := test.DbSetup()
 
 func TestUpsertSubscriptionFromStripe(t *testing.T) {
 	test.Short(t)
-ctx, dbx := test.DbSetup()
+	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 			Email: "test@example.com",
@@ -971,7 +972,7 @@ ctx, dbx := test.DbSetup()
 }
 func TestFindSubscriptionById(t *testing.T) {
 	test.Short(t)
-ctx, dbx := test.DbSetup()
+	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		// Create test user
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
@@ -1007,7 +1008,7 @@ ctx, dbx := test.DbSetup()
 		// Create test subscription
 		testSub := &models.StripeSubscription{
 			ID:                 "sub_test123",
-			UserID:             user.ID,
+			UserID:             types.Pointer(user.ID),
 			Status:             models.StripeSubscriptionStatusActive,
 			PriceID:            price.ID,
 			Quantity:           1,
@@ -1089,7 +1090,7 @@ ctx, dbx := test.DbSetup()
 }
 func TestFindSubscriptionWithPriceById(t *testing.T) {
 	test.Short(t)
-ctx, dbx := test.DbSetup()
+	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		// Create test user
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
@@ -1125,7 +1126,7 @@ ctx, dbx := test.DbSetup()
 		// Create test subscription
 		testSub := &models.StripeSubscription{
 			ID:                 "sub_test123",
-			UserID:             user.ID,
+			UserID:             types.Pointer(user.ID),
 			Status:             models.StripeSubscriptionStatusActive,
 			PriceID:            price.ID,
 			Quantity:           1,
@@ -1215,7 +1216,7 @@ ctx, dbx := test.DbSetup()
 }
 func TestFindLatestActiveSubscriptionByUserId(t *testing.T) {
 	test.Short(t)
-ctx, dbx := test.DbSetup()
+	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		// Create test user
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
@@ -1253,7 +1254,7 @@ ctx, dbx := test.DbSetup()
 		// Create test subscriptions
 		activeSub := &models.StripeSubscription{
 			ID:                 "sub_active",
-			UserID:             user.ID,
+			UserID:             types.Pointer(user.ID),
 			Status:             models.StripeSubscriptionStatusActive,
 			PriceID:            price.ID,
 			Quantity:           1,
@@ -1266,7 +1267,7 @@ ctx, dbx := test.DbSetup()
 
 		canceledSub := &models.StripeSubscription{
 			ID:                 "sub_canceled",
-			UserID:             user.ID,
+			UserID:             types.Pointer(user.ID),
 			Status:             models.StripeSubscriptionStatusCanceled,
 			PriceID:            price.ID,
 			Quantity:           1,
@@ -1351,7 +1352,7 @@ ctx, dbx := test.DbSetup()
 }
 func TestFindLatestActiveSubscriptionWithPriceByUserId(t *testing.T) {
 	test.Short(t)
-ctx, dbx := test.DbSetup()
+	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		// Create test user
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
@@ -1390,7 +1391,7 @@ ctx, dbx := test.DbSetup()
 		// Create active subscription
 		activeSub := &models.StripeSubscription{
 			ID:                 "sub_active",
-			UserID:             user.ID,
+			UserID:             types.Pointer(user.ID),
 			Status:             models.StripeSubscriptionStatusActive,
 			PriceID:            price.ID,
 			Quantity:           1,
@@ -1479,7 +1480,7 @@ ctx, dbx := test.DbSetup()
 }
 func TestIsFirstSubscription(t *testing.T) {
 	test.Short(t)
-ctx, dbx := test.DbSetup()
+	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		// Create test user
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
@@ -1548,7 +1549,7 @@ ctx, dbx := test.DbSetup()
 				setup: func() error {
 					subscription := &models.StripeSubscription{
 						ID:                 "sub_test123",
-						UserID:             user.ID,
+						UserID:             types.Pointer(user.ID),
 						Status:             models.StripeSubscriptionStatusActive,
 						PriceID:            price.ID,
 						Quantity:           1,
@@ -1596,7 +1597,7 @@ ctx, dbx := test.DbSetup()
 }
 func TestFindValidPriceById(t *testing.T) {
 	test.Short(t)
-ctx, dbx := test.DbSetup()
+	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
 		// Create test product first
 		product := &models.StripeProduct{

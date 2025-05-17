@@ -13,6 +13,7 @@ import (
 	"github.com/tkahng/authgo/internal/seeders"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/test"
+	"github.com/tkahng/authgo/internal/tools/types"
 )
 
 func TestConstraintCheckerService_CannotHaveValidSubscription(t *testing.T) {
@@ -34,7 +35,7 @@ func TestConstraintCheckerService_CannotHaveValidSubscription(t *testing.T) {
 			tx,
 			&models.StripeSubscription{
 				ID:      "sub_123",
-				UserID:  user.ID,
+				UserID:  types.Pointer(user.ID),
 				PriceID: prods[0].Prices[0].ID,
 				Status:  models.StripeSubscriptionStatusActive,
 				Metadata: map[string]string{

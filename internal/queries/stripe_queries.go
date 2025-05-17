@@ -250,7 +250,7 @@ func UpsertSubscriptionFromStripe(ctx context.Context, exec db.Dbx, sub *stripe.
 	status := models.StripeSubscriptionStatus(sub.Status)
 	err := UpsertSubscription(ctx, exec, &models.StripeSubscription{
 		ID:                 sub.ID,
-		UserID:             userId,
+		UserID:             types.Pointer(userId),
 		Status:             models.StripeSubscriptionStatus(status),
 		Metadata:           sub.Metadata,
 		PriceID:            item.Price.ID,
@@ -286,7 +286,7 @@ func FindSubscriptionById(ctx context.Context, dbx db.Dbx, stripeId string) (*mo
 }
 
 const (
-	GetSubscriptionWithPriceByIdQuery = `
+	getSubscriptionWithPriceByIdQuery = `
 SELECT ss.id AS "subscription.id",
         ss.user_id AS "subscription.user_id",
         ss.status AS "subscription.status",
@@ -333,7 +333,7 @@ WHERE ss.id = $1
 )
 
 func FindSubscriptionWithPriceById(ctx context.Context, dbx db.Dbx, stripeId string) (*models.SubscriptionWithPrice, error) {
-	data, err := QueryAll[*models.SubscriptionWithPrice](ctx, dbx, GetSubscriptionWithPriceByIdQuery, stripeId)
+	data, err := QueryAll[*models.SubscriptionWithPrice](ctx, dbx, getSubscriptionWithPriceByIdQuery, stripeId)
 	if err != nil {
 		return nil, err
 	}
