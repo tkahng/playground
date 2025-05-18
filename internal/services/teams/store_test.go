@@ -1,4 +1,4 @@
-package queries_test
+package teams_test
 
 import (
 	"errors"
@@ -10,6 +10,7 @@ import (
 	"github.com/tkahng/authgo/internal/db"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/queries"
+	"github.com/tkahng/authgo/internal/services/teams"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/test"
 )
@@ -24,8 +25,8 @@ func TestCreateTeamFromUser(t *testing.T) {
 		if err != nil {
 			t.Fatalf("CreateUser() error = %v", err)
 		}
-		teamQueries := &queries.TeamQueries{}
-		team, err := teamQueries.CreateTeamFromUser(ctx, dbxx, user)
+		teamStore := teams.NewPostgresTeamStore(dbxx)
+		team, err := teamStore.CreateTeamFromUser(ctx, user)
 		if err != nil {
 			t.Fatalf("CreateTeamFromUser() error = %v", err)
 		}
@@ -43,8 +44,8 @@ func TestCreateTeam(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
-		teamQueries := &queries.TeamQueries{}
-		team, err := teamQueries.CreateTeam(ctx, dbxx, "Test Team", nil)
+		teamQueries := teams.NewPostgresTeamStore(dbxx)
+		team, err := teamQueries.CreateTeam(ctx, "Test Team", nil)
 		if err != nil {
 			t.Fatalf("CreateTeam() error = %v", err)
 		}
@@ -59,14 +60,14 @@ func TestUpdateTeam(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
-		teamQueries := &queries.TeamQueries{}
-		team, err := teamQueries.CreateTeam(ctx, dbxx, "Old Name", nil)
+		teamQueries := teams.NewPostgresTeamStore(dbxx)
+		team, err := teamQueries.CreateTeam(ctx, "Old Name", nil)
 		if err != nil {
 			t.Fatalf("CreateTeam() error = %v", err)
 		}
 		newName := "Updated Name"
 		stripeID := "cus_123"
-		updated, err := teamQueries.UpdateTeam(ctx, dbxx, team.ID, newName, &stripeID)
+		updated, err := teamQueries.UpdateTeam(ctx, team.ID, newName, &stripeID)
 		if err != nil {
 			t.Fatalf("UpdateTeam() error = %v", err)
 		}
@@ -81,12 +82,13 @@ func TestDeleteTeam(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
-		teamQueries := &queries.TeamQueries{}
-		team, err := teamQueries.CreateTeam(ctx, dbxx, "ToDelete", nil)
+		teamQueries := teams.NewPostgresTeamStore(dbxx)
+		// Create a team to delete
+		team, err := teamQueries.CreateTeam(ctx, "ToDelete", nil)
 		if err != nil {
 			t.Fatalf("CreateTeam() error = %v", err)
 		}
-		err = teamQueries.DeleteTeam(ctx, dbxx, team.ID)
+		err = teamQueries.DeleteTeam(ctx, team.ID)
 		if err != nil {
 			t.Errorf("DeleteTeam() error = %v", err)
 		}
@@ -98,12 +100,12 @@ func TestFindTeamByID(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
-		teamQueries := &queries.TeamQueries{}
-		team, err := teamQueries.CreateTeam(ctx, dbxx, "FindMe", nil)
+		teamQueries := teams.NewPostgresTeamStore(dbxx)
+		team, err := teamQueries.CreateTeam(ctx, "FindMe", nil)
 		if err != nil {
 			t.Fatalf("CreateTeam() error = %v", err)
 		}
-		found, err := teamQueries.FindTeamByID(ctx, dbxx, team.ID)
+		found, err := teamQueries.FindTeamByID(ctx, team.ID)
 		if err != nil {
 			t.Fatalf("FindTeamByID() error = %v", err)
 		}
@@ -118,8 +120,8 @@ func TestCreateTeamMember(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
-		teamQueries := &queries.TeamQueries{}
-		team, err := teamQueries.CreateTeam(ctx, dbxx, "TeamWithMember", nil)
+		teamQueries := teams.NewPostgresTeamStore(dbxx)
+		team, err := teamQueries.CreateTeam(ctx, "TeamWithMember", nil)
 		if err != nil {
 			t.Fatalf("CreateTeam() error = %v", err)
 		}
@@ -130,7 +132,7 @@ func TestCreateTeamMember(t *testing.T) {
 			t.Fatalf("CreateUser() error = %v", err)
 		}
 		userID := user.ID
-		member, err := teamQueries.CreateTeamMember(ctx, dbxx, team.ID, userID, models.TeamMemberRoleMember)
+		member, err := teamQueries.CreateTeamMember(ctx, team.ID, userID, models.TeamMemberRoleMember)
 		if err != nil {
 			t.Fatalf("CreateTeamMember() error = %v", err)
 		}
@@ -145,8 +147,8 @@ func TestFindTeamMembersByUserID(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
-		teamQueries := &queries.TeamQueries{}
-		team, err := teamQueries.CreateTeam(ctx, dbxx, "TeamForMembers", nil)
+		teamQueries := teams.NewPostgresTeamStore(dbxx)
+		team, err := teamQueries.CreateTeam(ctx, "TeamForMembers", nil)
 		if err != nil {
 			t.Fatalf("CreateTeam() error = %v", err)
 		}
@@ -157,11 +159,11 @@ func TestFindTeamMembersByUserID(t *testing.T) {
 			t.Fatalf("CreateUser() error = %v", err)
 		}
 		userID := user.ID
-		_, err = teamQueries.CreateTeamMember(ctx, dbxx, team.ID, userID, models.TeamMemberRoleMember)
+		_, err = teamQueries.CreateTeamMember(ctx, team.ID, userID, models.TeamMemberRoleMember)
 		if err != nil {
 			t.Fatalf("CreateTeamMember() error = %v", err)
 		}
-		members, err := teamQueries.FindTeamMembersByUserID(ctx, dbxx, userID)
+		members, err := teamQueries.FindTeamMembersByUserID(ctx, userID)
 		if err != nil {
 			t.Fatalf("FindTeamMembersByUserID() error = %v", err)
 		}
@@ -176,12 +178,12 @@ func TestFindLatestTeamMemberByUserID(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
-		teamQueries := &queries.TeamQueries{}
-		team1, err := teamQueries.CreateTeam(ctx, dbxx, "team1", nil)
+		teamQueries := teams.NewPostgresTeamStore(dbxx)
+		team1, err := teamQueries.CreateTeam(ctx, "team1", nil)
 		if err != nil {
 			t.Fatalf("CreateTeam() error = %v", err)
 		}
-		team2, err := teamQueries.CreateTeam(ctx, dbxx, "team2", nil)
+		team2, err := teamQueries.CreateTeam(ctx, "team2", nil)
 		if err != nil {
 			t.Fatalf("CreateTeam() error = %v", err)
 		}
@@ -192,20 +194,20 @@ func TestFindLatestTeamMemberByUserID(t *testing.T) {
 			t.Fatalf("CreateUser() error = %v", err)
 		}
 		userID := user.ID
-		teamMember1, err := teamQueries.CreateTeamMember(ctx, dbxx, team1.ID, userID, models.TeamMemberRoleMember)
+		teamMember1, err := teamQueries.CreateTeamMember(ctx, team1.ID, userID, models.TeamMemberRoleMember)
 		if err != nil {
 			t.Fatalf("CreateTeamMember() error = %v", err)
 		}
-		teamMember2, err := teamQueries.CreateTeamMember(ctx, dbxx, team2.ID, userID, models.TeamMemberRoleMember)
+		teamMember2, err := teamQueries.CreateTeamMember(ctx, team2.ID, userID, models.TeamMemberRoleMember)
 		if err != nil {
 			t.Fatalf("CreateTeamMember() error = %v", err)
 		}
 		time.Sleep(time.Millisecond * 10)
-		err = teamQueries.UpdateTeamMemberUpdatedAt(ctx, dbxx, teamMember1.ID)
+		err = teamQueries.UpdateTeamMemberUpdatedAt(ctx, teamMember1.ID)
 		if err != nil {
 			t.Fatalf("UpdateTeamMemberUpdatedAt() error = %v", err)
 		}
-		latest, err := teamQueries.FindLatestTeamMemberByUserID(ctx, dbxx, userID)
+		latest, err := teamQueries.FindLatestTeamMemberByUserID(ctx, userID)
 		if err != nil {
 			t.Fatalf("FindLatestTeamMemberByUserID() error = %v", err)
 		}
@@ -216,11 +218,11 @@ func TestFindLatestTeamMemberByUserID(t *testing.T) {
 			t.Errorf("FindLatestTeamMemberByUserID() = %v, want teamMember1 ID %v", latest.ID, teamMember1.ID)
 		}
 		time.Sleep(time.Millisecond * 10)
-		err = teamQueries.UpdateTeamMemberUpdatedAt(ctx, dbxx, teamMember2.ID)
+		err = teamQueries.UpdateTeamMemberUpdatedAt(ctx, teamMember2.ID)
 		if err != nil {
 			t.Fatalf("UpdateTeamMemberUpdatedAt() error = %v", err)
 		}
-		latest, err = teamQueries.FindLatestTeamMemberByUserID(ctx, dbxx, userID)
+		latest, err = teamQueries.FindLatestTeamMemberByUserID(ctx, userID)
 		if err != nil {
 			t.Fatalf("FindLatestTeamMemberByUserID() error = %v", err)
 		}
@@ -253,8 +255,8 @@ func TestUpdateTeamMemberUpdatedAt(t *testing.T) {
 	})
 
 	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
-		teamQueries := &queries.TeamQueries{}
-		team, err := teamQueries.CreateTeam(ctx, dbxx, "UpdateMemberTeam", nil)
+		teamQueries := teams.NewPostgresTeamStore(dbxx)
+		team, err := teamQueries.CreateTeam(ctx, "UpdateMemberTeam", nil)
 		if err != nil {
 			t.Fatalf("CreateTeam() error = %v", err)
 		}
@@ -264,7 +266,7 @@ func TestUpdateTeamMemberUpdatedAt(t *testing.T) {
 		if err != nil {
 			t.Fatalf("CreateUser() error = %v", err)
 		}
-		member, err := teamQueries.CreateTeamMember(ctx, dbxx, team.ID, user.ID, models.TeamMemberRoleMember)
+		member, err := teamQueries.CreateTeamMember(ctx, team.ID, user.ID, models.TeamMemberRoleMember)
 		if err != nil {
 			t.Fatalf("CreateTeamMember() error = %v", err)
 		}
@@ -274,7 +276,10 @@ func TestUpdateTeamMemberUpdatedAt(t *testing.T) {
 		// Sleep to ensure updated_at will be different
 		time.Sleep(time.Second * 1)
 
-		err = teamQueries.UpdateTeamMemberUpdatedAt(ctx, dbxx, member.ID)
+		err = teamQueries.UpdateTeamMemberUpdatedAt(ctx, member.ID)
+		if err != nil {
+			t.Fatalf("UpdateTeamMemberUpdatedAt() error = %v", err)
+		}
 		if err != nil {
 			t.Fatalf("UpdateTeamMemberUpdatedAt() error = %v", err)
 		}
