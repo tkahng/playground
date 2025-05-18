@@ -8,7 +8,7 @@ import (
 	"github.com/tkahng/authgo/internal/db"
 	"github.com/tkahng/authgo/internal/queries"
 
-	"github.com/tkahng/authgo/internal/payment"
+	"github.com/tkahng/authgo/internal/services/payment"
 	"github.com/tkahng/authgo/internal/tools/filesystem"
 	"github.com/tkahng/authgo/internal/tools/logger"
 	"github.com/tkahng/authgo/internal/tools/mailer"
