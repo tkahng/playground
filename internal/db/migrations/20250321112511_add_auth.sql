@@ -39,7 +39,7 @@ create table if not exists public.tokens (
     )
 );
 CREATE TRIGGER handle_tokens_updated_at before
-update on public.tokens for each row execute procedure moddatetime(updated_at);
+update on public.tokens for each row execute procedure set_current_timestamp_updated_at();
 -- -------------- USER ACCOUNTS TABLE START -----------------------------------------------------------------------
 create table if not exists public.user_accounts (
     id uuid primary key default gen_random_uuid(),
@@ -74,7 +74,7 @@ create table if not exists public.user_accounts (
     constraint user_accounts_user_id_provider_unique unique ("user_id", provider)
 );
 CREATE TRIGGER handle_user_accounts_updated_at before
-update on public.user_accounts for each row execute procedure moddatetime(updated_at);
+update on public.user_accounts for each row execute procedure set_current_timestamp_updated_at();
 -- -------------- USER SESSIONS TABLE START -----------------------------------------------------------------------
 create table if not exists public.user_sessions (
     id uuid primary key default gen_random_uuid(),
@@ -86,7 +86,7 @@ create table if not exists public.user_sessions (
     constraint user_sessions_token_not_empty check (not_empty("session_token"))
 );
 CREATE TRIGGER handle_user_sessions_updated_at before
-update on public.user_sessions for each row execute procedure moddatetime(updated_at);
+update on public.user_sessions for each row execute procedure set_current_timestamp_updated_at();
 -- migrate:down
 drop trigger if exists handle_user_sessions_updated_at on public.user_sessions;
 alter table public.user_sessions drop constraint if exists user_sessions_token_not_empty;

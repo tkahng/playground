@@ -15,7 +15,7 @@ create table if not exists public.media (
         constraint media_disk_directory_filename_extension unique(disk, directory, filename, extension)
 );
 CREATE TRIGGER handle_media_updated_at before
-update on public.media for each row execute procedure moddatetime(updated_at);
+update on public.media for each row execute procedure set_current_timestamp_updated_at();
 -- migrate:down
 drop trigger if exists handle_media_updated_at on public.media;
 drop table if exists public.media;

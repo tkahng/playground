@@ -1,8 +1,10 @@
 -- migrate:up
---------------- MODDATETIME START -----------------------------------------------------------------------
-create extension if not exists moddatetime;
-
-
+CREATE FUNCTION set_current_timestamp_updated_at() RETURNS TRIGGER AS $$
+DECLARE _new record;
+BEGIN _new := NEW;
+_new."updated_at" = clock_timestamp();
+RETURN _new;
+END;
+$$ LANGUAGE plpgsql;
 -- migrate:down
-
-drop extension if exists moddatetime;
+DROP FUNCTION IF EXISTS set_current_timestamp_updated_at();

@@ -17,7 +17,7 @@ create table if not exists public.task_projects (
 );
 -- project table updated_at trigger  ----------------------------------------------------------------------
 create trigger handle_task_projects_updated_at before
-update on public.task_projects for each row execute procedure moddatetime(updated_at);
+update on public.task_projects for each row execute procedure set_current_timestamp_updated_at();
 -- tasks status ----------------------------------------------------------------------
 create type "task_status" as enum ('todo', 'in_progress', 'done');
 -- tasks table  ----------------------------------------------------------------------
@@ -29,13 +29,14 @@ create table if not exists public.tasks (
     description text,
     status task_status not null default 'todo',
     "order" double precision not null default 0.0,
-    parent_id uuid references public.tasks on delete set null on update cascade,
-    created_at timestamptz not null default now(),
-    updated_at timestamptz not null default now()
+    parent_id uuid references public.tasks on delete
+    set null on update cascade,
+        created_at timestamptz not null default now(),
+        updated_at timestamptz not null default now()
 );
 -- tasks table updated_at trigger  ----------------------------------------------------------------------
 create trigger handle_tasks_updated_at before
-update on public.tasks for each row execute procedure moddatetime(updated_at);
+update on public.tasks for each row execute procedure set_current_timestamp_updated_at();
 ------------------------------
 ------------------------------
 ------------------------------

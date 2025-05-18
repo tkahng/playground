@@ -7,7 +7,7 @@ create table if not exists public.app_params (
     updated_at timestamptz not null default now()
 );
 CREATE TRIGGER handle_app_params_updated_at before
-update on public.app_params for each row execute procedure moddatetime(updated_at);
+update on public.app_params for each row execute procedure set_current_timestamp_updated_at();
 -- migrate:down
 drop table if exists public.app_params;
 drop trigger if exists handle_app_params_updated_at on public.app_params;

@@ -38,17 +38,7 @@ CREATE TABLE IF NOT EXISTS team_invitations (
     updated_at timestamptz not null default now(),
     constraint team_invitations_email_team_id unique (email, team_id)
 );
--- change stripe_subscription table refrences
-ALTER TABLE public.stripe_subscriptions
-ALTER COLUMN user_id DROP NOT NULL;
-ALTER TABLE public.stripe_subscriptions
-ADD COLUMN team_id uuid REFERENCES public.teams ON DELETE CASCADE ON UPDATE CASCADE;
 -- migrate:down
--- subscriptions table  ----------------------------------------------------------------------
-ALTER TABLE public.stripe_subscriptions DROP COLUMN team_id;
-ALTER TABLE public.stripe_subscriptions
-ALTER COLUMN user_id
-SET NOT NULL;
 -- team invitation table ------------------------------------------------------
 drop table if exists public.team_invitations;
 -- team invitation status enum ------------------------------------------------

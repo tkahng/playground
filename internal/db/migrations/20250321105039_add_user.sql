@@ -11,7 +11,7 @@ create table if not exists public.users (
 );
 -- this trigger will set the "updated_at" column to the current timestamptz for every update
 CREATE TRIGGER handle_users_updated_at before
-update on public.users for each row execute procedure moddatetime(updated_at);
+update on public.users for each row execute procedure set_current_timestamp_updated_at();
 -- migrate:down
 drop trigger if exists handle_users_updated_at on public.users;
 -- Drop the users table

@@ -13,7 +13,7 @@ CREATE TABLE if not exists public.roles (
     updated_at timestamptz not null default now()
 );
 CREATE TRIGGER handle_roles_updated_at before
-update on public.roles for each row execute procedure moddatetime(updated_at);
+update on public.roles for each row execute procedure set_current_timestamp_updated_at();
 -- permissions
 CREATE TABLE if not exists public.permissions (
     id uuid primary key default gen_random_uuid(),
@@ -28,7 +28,7 @@ CREATE TABLE if not exists public.permissions (
     updated_at timestamptz not null default now()
 );
 CREATE TRIGGER handle_permissions_updated_at before
-update on public.permissions for each row execute procedure moddatetime(updated_at);
+update on public.permissions for each row execute procedure set_current_timestamp_updated_at();
 -- user roles
 CREATE TABLE if not exists public.user_roles (
     user_id uuid references public.users on delete cascade on update cascade not null,
