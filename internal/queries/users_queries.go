@@ -37,28 +37,28 @@ user_direct_permissions AS (
     FROM public.user_permissions up
         JOIN public.permissions p ON up.permission_id = p.id
 ),
-user_sub_role_permissions AS (
-    SELECT u.id AS user_id,
-        p.name AS permission,
-        r.name AS role
-    FROM public.stripe_subscriptions s
-        JOIN public.users u ON s.user_id = u.id
-        JOIN public.stripe_prices price ON s.price_id = price.id
-        JOIN public.stripe_products product ON price.product_id = product.id
-        JOIN public.product_roles pr ON product.id = pr.product_id
-        JOIN public.roles r ON pr.role_id = r.id
-        JOIN public.role_permissions rp ON r.id = rp.role_id
-        JOIN public.permissions p ON rp.permission_id = p.id
-),
+-- user_sub_role_permissions AS (
+--     SELECT u.id AS user_id,
+--         p.name AS permission,
+--         r.name AS role
+--     FROM public.stripe_subscriptions s
+--         JOIN public.users u ON s.user_id = u.id
+--         JOIN public.stripe_prices price ON s.price_id = price.id
+--         JOIN public.stripe_products product ON price.product_id = product.id
+--         JOIN public.product_roles pr ON product.id = pr.product_id
+--         JOIN public.roles r ON pr.role_id = r.id
+--         JOIN public.role_permissions rp ON r.id = rp.role_id
+--         JOIN public.permissions p ON rp.permission_id = p.id
+-- ),
 combined_permissions AS (
     SELECT *
     FROM user_role_permissions
     UNION ALL
     SELECT *
     FROM user_direct_permissions
-    UNION ALL
-    SELECT *
-    FROM user_sub_role_permissions
+    -- UNION ALL
+    -- SELECT *
+    -- FROM user_sub_role_permissions
 )
 SELECT u.id AS user_id,
     u.email AS email,
