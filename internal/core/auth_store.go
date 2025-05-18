@@ -351,16 +351,6 @@ func (a *BaseAuthStore) AssignUserRoles(ctx context.Context, userId uuid.UUID, r
 		if err != nil {
 			return fmt.Errorf("error finding user role while assigning roles: %w", err)
 		}
-		// if len(roles) > 0 {
-		// 	// var rolesIDs []uuid.UUID
-		// 	// for _, role := range roles {
-		// 	// 	rolesIDs = append(rolesIDs, role.ID)
-		// 	// }
-		// 	// err = queries.CreateUserRoles(ctx, a.db, user.ID, rolesIDs...)
-		// 	// if err != nil {
-		// 	// 	return fmt.Errorf("error assigning user role while assigning roles: %w", err)
-		// 	// }
-		// }
 		if len(roles) > 0 {
 			var userRoles []models.UserRole
 			for _, role := range roles {

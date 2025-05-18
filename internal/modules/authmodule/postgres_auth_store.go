@@ -2,348 +2,98 @@ package authmodule
 
 import (
 	"context"
-	"errors"
-	"fmt"
-	"time"
 
 	"github.com/google/uuid"
-	"github.com/tkahng/authgo/internal/crudrepo"
-	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
-	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
-	"github.com/tkahng/authgo/internal/tools/types"
 )
 
 var _ AuthStore = (*PostgresAuthStore)(nil)
 
-func NewAuthStore(dbtx database.Dbx) *PostgresAuthStore {
-	return &PostgresAuthStore{db: dbtx}
+func NewAuthStore(
+	tokenStore TokenStore,
+	userStore UserStore,
+	accountStore UserAccountStore,
+) AuthStore {
+	return &PostgresAuthStore{
+		tokenStore:   tokenStore,
+		userStore:    userStore,
+		accountStore: accountStore,
+	}
 }
 
 type PostgresAuthStore struct {
-	db database.Dbx
+	tokenStore   TokenStore
+	userStore    UserStore
+	accountStore UserAccountStore
 }
 
-func (a *PostgresAuthStore) GetToken(ctx context.Context, token string) (*models.Token, error) {
-	res, err := crudrepo.Token.GetOne(ctx,
-		a.db,
-		&map[string]any{
-			"token": map[string]any{
-				"_eq": token,
-			},
-		})
-	if err != nil {
-		return nil, fmt.Errorf("error at getting token: %w", err)
-	}
-	if res == nil {
-		return nil, shared.ErrTokenNotFound
-	}
-	if res.Expires.Before(time.Now()) {
-		return nil, shared.ErrTokenExpired
-	}
-	return res, nil
-}
-
-func (a *PostgresAuthStore) SaveToken(ctx context.Context, token *shared.CreateTokenDTO) error {
-	_, err := crudrepo.Token.PostOne(ctx, a.db, &models.Token{
-		Type:       models.TokenTypes(token.Type),
-		Identifier: token.Identifier,
-		Expires:    token.Expires,
-		Token:      token.Token,
-		UserID:     token.UserID,
-		Otp:        token.Otp,
-	})
-
-	if err != nil {
-		return fmt.Errorf("error at saving token: %w", err)
-	}
-	return nil
-}
-
-func (a *PostgresAuthStore) DeleteToken(ctx context.Context, token string) error {
-	_, err := crudrepo.Token.DeleteReturn(ctx, a.db, &map[string]any{
-		"token": map[string]any{
-			"_eq": token,
-		},
-	})
-	if err != nil {
-		return fmt.Errorf("error at deleting token: %w", err)
-	}
-	return nil
-}
-
-func (a *PostgresAuthStore) VerifyTokenStorage(ctx context.Context, token string) error {
-	res, err := a.GetToken(ctx, token)
-	if err != nil {
-		return err
-	}
-	if res == nil {
-		return fmt.Errorf("token not found")
-	}
-	err = a.DeleteToken(ctx, token)
-	if err != nil {
-		return fmt.Errorf("error at deleting token: %w", err)
-	}
-	return nil
-}
-
-// FindUserByEmail implements AuthAdapter.
-func (a *PostgresAuthStore) FindUserByEmail(ctx context.Context, email string) (*models.User, error) {
-	user, err := crudrepo.User.GetOne(
-		ctx,
-		a.db,
-		&map[string]any{
-			"email": map[string]any{
-				"_eq": email,
-			},
-		},
-	)
-	return database.OptionalRow(user, err)
-}
-
-// FindUserAccountByUserIdAndProvider implements AuthAdapter.
-func (a *PostgresAuthStore) FindUserAccountByUserIdAndProvider(ctx context.Context, userId uuid.UUID, provider models.Providers) (*models.UserAccount, error) {
-
-	account, err := crudrepo.UserAccount.GetOne(
-		ctx,
-		a.db,
-		&map[string]any{
-			"user_id":  map[string]any{"_eq": userId.String()},
-			"provider": map[string]any{"_eq": shared.Providers(provider).String()},
-		},
-	)
-
-	if err != nil {
-		return nil, fmt.Errorf("error getting user account: %w", err)
-	}
-	if account == nil {
-		return nil, nil
-	}
-
-	return &models.UserAccount{
-		ID:                account.ID,
-		UserID:            account.UserID,
-		Provider:          models.Providers(account.Provider),
-		ProviderAccountID: account.ProviderAccountID,
-		CreatedAt:         account.CreatedAt,
-		UpdatedAt:         account.UpdatedAt,
-		Type:              models.ProviderTypes(account.Type),
-		AccessToken:       account.AccessToken,
-		RefreshToken:      account.RefreshToken,
-		ExpiresAt:         account.ExpiresAt,
-		IDToken:           account.IDToken,
-		Scope:             account.Scope,
-		SessionState:      account.SessionState,
-		TokenType:         account.TokenType,
-		Password:          account.Password,
-	}, nil
-}
-
-// UpdateUserAccount implements AuthAdapter.
-func (a *PostgresAuthStore) UpdateUserAccount(ctx context.Context, account *models.UserAccount) error {
-	_, err := crudrepo.UserAccount.PutOne(ctx, a.db, &models.UserAccount{
-		ID:                account.ID,
-		UserID:            account.UserID,
-		Provider:          models.Providers(account.Provider),
-		ProviderAccountID: account.ProviderAccountID,
-		CreatedAt:         account.CreatedAt,
-		UpdatedAt:         account.UpdatedAt,
-		Type:              models.ProviderTypes(account.Type),
-		AccessToken:       account.AccessToken,
-		RefreshToken:      account.RefreshToken,
-		ExpiresAt:         account.ExpiresAt,
-		IDToken:           account.IDToken,
-		Scope:             account.Scope,
-		SessionState:      account.SessionState,
-		TokenType:         account.TokenType,
-		Password:          account.Password,
-	})
-	if err != nil {
-		return fmt.Errorf("error updating user account: %w", err)
-	}
-	return nil
-}
-
-// GetUserInfo implements AuthAdapter.
-func (a *PostgresAuthStore) GetUserInfo(ctx context.Context, email string) (*shared.UserInfo, error) {
-	user, err := crudrepo.User.GetOne(ctx, a.db, &map[string]any{"email": map[string]any{"_eq": email}})
-	if err != nil {
-		return nil, fmt.Errorf("error getting user: %w", err)
-	}
-	if user == nil {
-		return nil, shared.ErrUserNotFound
-	}
-	result := &shared.UserInfo{
-		User: shared.User{
-			ID:              user.ID,
-			Email:           user.Email,
-			EmailVerifiedAt: user.EmailVerifiedAt,
-			Name:            user.Name,
-			Image:           user.Image,
-			CreatedAt:       user.CreatedAt,
-			UpdatedAt:       user.UpdatedAt,
-		},
-	}
-	roles, err := queries.FindUserWithRolesAndPermissionsByEmail(ctx, a.db, email)
-	if err != nil {
-		return nil, fmt.Errorf("error getting user roles and permissions: %w", err)
-	}
-	var providers []shared.Providers
-	for _, provider := range roles.Providers {
-		providers = append(providers, shared.Providers(provider))
-	}
-	result.Roles = roles.Roles
-	result.Permissions = roles.Permissions
-	result.Providers = providers
-
-	return result, nil
-}
-
-// CreateUser implements AuthAdapter.
-func (a *PostgresAuthStore) CreateUser(ctx context.Context, user *models.User) (*models.User, error) {
-	res, err := crudrepo.User.PostOne(ctx, a.db, &models.User{
-		Email:           user.Email,
-		Name:            user.Name,
-		Image:           user.Image,
-		EmailVerifiedAt: user.EmailVerifiedAt,
-	})
-	if err != nil {
-		return nil, err
-	}
-	if res == nil {
-		return nil, fmt.Errorf("user not found")
-	}
-	return &models.User{
-		ID:              res.ID,
-		Email:           res.Email,
-		EmailVerifiedAt: res.EmailVerifiedAt,
-		Name:            res.Name,
-		Image:           res.Image,
-		CreatedAt:       res.CreatedAt,
-		UpdatedAt:       res.UpdatedAt,
-	}, nil
-}
-
-// DeleteUser implements AuthAdapter.
-func (a *PostgresAuthStore) DeleteUser(ctx context.Context, id uuid.UUID) error {
-	_, err := crudrepo.User.DeleteReturn(ctx, a.db, &map[string]any{
-		"id": map[string]any{"_eq": id.String()},
-	})
-	if err != nil {
-		return err
-	}
-	return nil
-}
-func (a *PostgresAuthStore) LinkAccount(ctx context.Context, account *models.UserAccount) error {
-	if account == nil {
-		return errors.New("account is nil")
-	}
-	_, err := crudrepo.UserAccount.PostOne(ctx,
-		a.db,
-		&models.UserAccount{
-			ID:                account.ID,
-			UserID:            account.UserID,
-			Provider:          models.Providers(account.Provider),
-			ProviderAccountID: account.ProviderAccountID,
-			CreatedAt:         account.CreatedAt,
-			UpdatedAt:         account.UpdatedAt,
-			Type:              models.ProviderTypes(account.Type),
-			AccessToken:       account.AccessToken,
-			RefreshToken:      account.RefreshToken,
-			ExpiresAt:         account.ExpiresAt,
-			IDToken:           account.IDToken,
-			Scope:             account.Scope,
-			SessionState:      account.SessionState,
-			TokenType:         account.TokenType,
-			Password:          account.Password,
-		})
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-// UnlinkAccount implements AuthAdapter.
-func (a *PostgresAuthStore) UnlinkAccount(ctx context.Context, userId uuid.UUID, provider models.Providers) error {
-	// providerModel := models.ToModelProvider(provider)
-	// _, err := repository.DeleteAccount(ctx, a.db, userId, providerModel)
-	// if err != nil {
-	// 	return err
-	// }
-	return nil
-}
-
-// UpdateUser implements AuthAdapter.
-func (a *PostgresAuthStore) UpdateUser(ctx context.Context, user *models.User) error {
-	_, err := crudrepo.User.PutOne(ctx, a.db, &models.User{
-		ID:              user.ID,
-		Email:           user.Email,
-		Name:            user.Name,
-		Image:           user.Image,
-		EmailVerifiedAt: user.EmailVerifiedAt,
-		UpdatedAt:       time.Now(),
-		CreatedAt:       user.CreatedAt,
-	})
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-// AssignUserRoles implements AuthAdapter.
+// AssignUserRoles implements AuthStore.
 func (a *PostgresAuthStore) AssignUserRoles(ctx context.Context, userId uuid.UUID, roleNames ...string) error {
-	if len(roleNames) > 0 {
-		user, err := crudrepo.User.GetOne(
-			ctx,
-			a.db,
-			&map[string]any{
-				"id": map[string]any{
-					"_eq": userId.String(),
-				},
-			},
-		)
-		if err != nil {
-			return fmt.Errorf("error finding user while assigning roles: %w", err)
-		}
-		if user == nil {
-			return fmt.Errorf("user not found while assigning roles")
-		}
-		roles, err := crudrepo.Role.Get(
-			ctx,
-			a.db,
-			&map[string]any{
-				"name": map[string]any{
-					"_in": roleNames,
-				},
-			},
-			nil,
-			types.Pointer(10),
-			nil,
-		)
-		if err != nil {
-			return fmt.Errorf("error finding user role while assigning roles: %w", err)
-		}
-		if len(roles) > 0 {
-			var userRoles []models.UserRole
-			for _, role := range roles {
-				userRoles = append(userRoles, models.UserRole{
-					UserID: user.ID,
-					RoleID: role.ID,
-				})
-			}
-			_, err = crudrepo.UserRole.Post(ctx, a.db, userRoles)
-			if err != nil {
-				return fmt.Errorf("error assigning user role while assigning roles: %w", err)
-			}
-		}
-	}
-	return nil
+	return a.userStore.AssignUserRoles(ctx, userId, roleNames...)
 }
 
-func (a *PostgresAuthStore) RunInTransaction(ctx context.Context, fn func(AuthStore) error) error {
-	return a.db.RunInTransaction(ctx, func(d database.Dbx) error {
-		app := NewAuthStore(d)
-		return fn(app)
-	})
+// CreateUser implements AuthStore.
+func (a *PostgresAuthStore) CreateUser(ctx context.Context, user *models.User) (*models.User, error) {
+	return a.userStore.CreateUser(ctx, user)
+}
+
+// DeleteUser implements AuthStore.
+func (a *PostgresAuthStore) DeleteUser(ctx context.Context, id uuid.UUID) error {
+	return a.userStore.DeleteUser(ctx, id)
+}
+
+// FindUserAccountByUserIdAndProvider implements AuthStore.
+func (a *PostgresAuthStore) FindUserAccountByUserIdAndProvider(ctx context.Context, userId uuid.UUID, provider models.Providers) (*models.UserAccount, error) {
+	return a.accountStore.FindUserAccountByUserIdAndProvider(ctx, userId, provider)
+}
+
+// FindUserByEmail implements AuthStore.
+func (a *PostgresAuthStore) FindUserByEmail(ctx context.Context, email string) (*models.User, error) {
+	return a.userStore.FindUserByEmail(ctx, email)
+}
+
+// GetUserInfo implements AuthStore.
+func (a *PostgresAuthStore) GetUserInfo(ctx context.Context, email string) (*shared.UserInfo, error) {
+	return a.userStore.GetUserInfo(ctx, email)
+}
+
+// LinkAccount implements AuthStore.
+func (a *PostgresAuthStore) LinkAccount(ctx context.Context, account *models.UserAccount) error {
+	return a.accountStore.LinkAccount(ctx, account)
+}
+
+// UnlinkAccount implements AuthStore.
+func (a *PostgresAuthStore) UnlinkAccount(ctx context.Context, userId uuid.UUID, provider models.Providers) error {
+	return a.accountStore.UnlinkAccount(ctx, userId, provider)
+}
+
+// UpdateUser implements AuthStore.
+func (a *PostgresAuthStore) UpdateUser(ctx context.Context, user *models.User) error {
+	return a.userStore.UpdateUser(ctx, user)
+}
+
+// UpdateUserAccount implements AuthStore.
+func (a *PostgresAuthStore) UpdateUserAccount(ctx context.Context, account *models.UserAccount) error {
+	return a.accountStore.UpdateUserAccount(ctx, account)
+}
+
+// DeleteToken implements AuthStore.
+func (a *PostgresAuthStore) DeleteToken(ctx context.Context, token string) error {
+	return a.tokenStore.DeleteToken(ctx, token)
+}
+
+// GetToken implements AuthStore.
+func (a *PostgresAuthStore) GetToken(ctx context.Context, token string) (*models.Token, error) {
+	return a.tokenStore.GetToken(ctx, token)
+}
+
+// SaveToken implements AuthStore.
+func (a *PostgresAuthStore) SaveToken(ctx context.Context, token *shared.CreateTokenDTO) error {
+	return a.tokenStore.SaveToken(ctx, token)
+}
+
+// VerifyTokenStorage implements AuthStore.
+func (a *PostgresAuthStore) VerifyTokenStorage(ctx context.Context, token string) error {
+	return a.tokenStore.VerifyTokenStorage(ctx, token)
 }

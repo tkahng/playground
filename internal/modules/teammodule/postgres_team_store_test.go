@@ -11,7 +11,6 @@ import (
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/modules/teammodule"
 	"github.com/tkahng/authgo/internal/modules/usermodule"
-	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/test"
 )
 
@@ -20,7 +19,7 @@ func TestCreateTeamFromUser(t *testing.T) {
 	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		userStore := usermodule.NewPostgresUserStore(dbxx)
-		user, err := userStore.CreateUser(ctx, &shared.AuthenticationInput{
+		user, err := userStore.CreateUser(ctx, &models.User{
 			Email: "test@example.com",
 		})
 		if err != nil {
@@ -127,7 +126,7 @@ func TestCreateTeamMember(t *testing.T) {
 		if err != nil {
 			t.Fatalf("CreateTeam() error = %v", err)
 		}
-		user, err := userStore.CreateUser(ctx, &shared.AuthenticationInput{
+		user, err := userStore.CreateUser(ctx, &models.User{
 			Email: "testuser@example.com",
 		})
 		if err != nil {
@@ -155,7 +154,7 @@ func TestFindTeamMembersByUserID(t *testing.T) {
 		if err != nil {
 			t.Fatalf("CreateTeam() error = %v", err)
 		}
-		user, err := userStore.CreateUser(ctx, &shared.AuthenticationInput{
+		user, err := userStore.CreateUser(ctx, &models.User{
 			Email: "tkahng@gmail.com",
 		})
 		if err != nil {
@@ -191,7 +190,7 @@ func TestFindLatestTeamMemberByUserID(t *testing.T) {
 		if err != nil {
 			t.Fatalf("CreateTeam() error = %v", err)
 		}
-		user, err := userStore.CreateUser(ctx, &shared.AuthenticationInput{
+		user, err := userStore.CreateUser(ctx, &models.User{
 			Email: "testuser@example.com",
 		})
 		if err != nil {
@@ -266,7 +265,7 @@ func TestUpdateTeamMemberUpdatedAt(t *testing.T) {
 		if err != nil {
 			t.Fatalf("CreateTeam() error = %v", err)
 		}
-		user, err := userStore.CreateUser(ctx, &shared.AuthenticationInput{
+		user, err := userStore.CreateUser(ctx, &models.User{
 			Email: "updatemember@example.com",
 		})
 		if err != nil {

@@ -11,10 +11,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/auth/oauth"
 	"github.com/tkahng/authgo/internal/conf"
-	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/shared"
-	"github.com/tkahng/authgo/internal/tools/mailer"
 	"github.com/tkahng/authgo/internal/tools/routine"
 	"github.com/tkahng/authgo/internal/tools/security"
 )
@@ -47,6 +45,24 @@ type authService struct {
 	options   *conf.AppOptions
 }
 
+func NewAuthService(
+	opts *conf.AppOptions,
+	authStore AuthStore,
+	mail AuthMailer,
+	token TokenService,
+	password PasswordService,
+) AuthService {
+	authService := &authService{
+		authStore: authStore,
+		mail:      mail,
+		token:     token,
+		password:  password,
+		options:   opts,
+	}
+
+	return authService
+}
+
 // FetchAuthUser implements Authenticator.
 func (app *authService) FetchAuthUser(ctx context.Context, code string, parsedState *shared.ProviderStateClaims) (*oauth.AuthUser, error) {
 	var provider oauth.ProviderConfig
@@ -75,20 +91,6 @@ func (app *authService) FetchAuthUser(ctx context.Context, code string, parsedSt
 		return nil, fmt.Errorf("failed to fetch OAuth2 user. %w", err)
 	}
 	return authUser, nil
-}
-
-func NewAuthActions(dbx database.Dbx, mailer mailer.Mailer, settings *conf.AppOptions) AuthService {
-	actions := &authService{options: settings}
-	storage := NewAuthStore(dbx)
-	tokenManager := NewTokenService()
-	password := NewPasswordService()
-	mail := NewAuthMailer(mailer, settings)
-	actions.authStore = storage
-	actions.mail = mail
-	actions.token = tokenManager
-	actions.password = password
-
-	return actions
 }
 
 func (app *authService) ResetPassword(ctx context.Context, userId uuid.UUID, oldPassword string, newPassword string) error {
