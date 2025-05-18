@@ -153,8 +153,8 @@ func (m *mockEmailSender) Client() mailer.Mailer {
 }
 
 // SendOtpEmail implements AuthMailer.
-func (m *mockEmailSender) SendOtpEmail(emailType EmailType, tokenHash string, payload *shared.OtpPayload, config *conf.AppOptions) error {
-	args := m.Called(emailType, tokenHash, payload, config)
+func (m *mockEmailSender) SendOtpEmail(emailType EmailType, tokenHash string, payload *shared.OtpPayload) error {
+	args := m.Called(emailType, tokenHash, payload)
 	return args.Error(0)
 }
 

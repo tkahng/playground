@@ -6,6 +6,7 @@ import (
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/modules/paymentmodule"
 	"github.com/tkahng/authgo/internal/modules/rbacmodule"
+	"github.com/tkahng/authgo/internal/modules/teammodule"
 )
 
 func NewStripeCmd() *cobra.Command {
@@ -30,7 +31,8 @@ var stripeSyncCmd = &cobra.Command{
 		store := paymentmodule.NewPostgresPaymentStore(dbx)
 		client := paymentmodule.NewPaymentClient(stripeconfig)
 		rbacStore := rbacmodule.NewPostgresRBACStore(dbx)
-		service := paymentmodule.NewPaymentService(client, store, rbacStore)
+		teamStore := teammodule.NewPostgresTeamStore(dbx)
+		service := paymentmodule.NewPaymentService(client, store, rbacStore, teamStore)
 
 		return service.UpsertPriceProductFromStripe(ctx)
 	},
@@ -48,7 +50,9 @@ var stripeRolesCmd = &cobra.Command{
 		store := paymentmodule.NewPostgresPaymentStore(dbx)
 		client := paymentmodule.NewPaymentClient(stripeconfig)
 		rbacStore := rbacmodule.NewPostgresRBACStore(dbx)
-		service := paymentmodule.NewPaymentService(client, store, rbacStore)
+		teamStore := teammodule.NewPostgresTeamStore(dbx)
+		// Create the payment service
+		service := paymentmodule.NewPaymentService(client, store, rbacStore, teamStore)
 		return service.SyncPerms(ctx)
 	},
 }

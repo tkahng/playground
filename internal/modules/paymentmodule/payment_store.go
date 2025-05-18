@@ -36,5 +36,5 @@ type RBACStore interface {
 	CreateProductPermissions(ctx context.Context, productId string, permissionIds ...uuid.UUID) error
 }
 type TeamStore interface {
-	FindTeamById(ctx context.Context, teamId uuid.UUID) (*models.Team, error)
+	FindTeamByID(ctx context.Context, teamId uuid.UUID) (*models.Team, error)
 }

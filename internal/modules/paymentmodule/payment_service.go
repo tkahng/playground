@@ -46,8 +46,14 @@ func (srv *StripeService) Client() PaymentClient {
 	return srv.client
 }
 
-func NewPaymentService(client PaymentClient, paymentStore PaymentStore, rbacStore RBACStore) PaymentService {
-	return &StripeService{client: client, logger: slog.Default(), paymentStore: paymentStore, rbacStore: rbacStore}
+func NewPaymentService(client PaymentClient, paymentStore PaymentStore, rbacStore RBACStore, teamStore TeamStore) PaymentService {
+	return &StripeService{
+		client:       client,
+		logger:       slog.Default(),
+		paymentStore: paymentStore,
+		rbacStore:    rbacStore,
+		teamStore:    teamStore,
+	}
 }
 
 func (srv *StripeService) SyncPerms(ctx context.Context) error {
@@ -200,7 +206,7 @@ func (srv *StripeService) FindOrCreateCustomerFromUser(ctx context.Context, user
 }
 
 func (srv *StripeService) CreateCheckoutSession(ctx context.Context, userId uuid.UUID, priceId string) (string, error) {
-	team, err := srv.teamStore.FindTeamById(ctx, userId)
+	team, err := srv.teamStore.FindTeamByID(ctx, userId)
 	if err != nil {
 		return "", err
 	}
@@ -242,7 +248,7 @@ func (srv *StripeService) CreateCheckoutSession(ctx context.Context, userId uuid
 }
 
 func (srv *StripeService) CreateBillingPortalSession(ctx context.Context, userId uuid.UUID) (string, error) {
-	team, err := srv.teamStore.FindTeamById(ctx, userId)
+	team, err := srv.teamStore.FindTeamByID(ctx, userId)
 	if err != nil {
 		return "", err
 	}

@@ -82,7 +82,7 @@ func NewAuthActions(dbx database.Dbx, mailer mailer.Mailer, settings *conf.AppOp
 	storage := NewAuthStore(dbx)
 	tokenManager := NewTokenService()
 	password := NewPasswordService()
-	mail := NewAuthMailer(mailer)
+	mail := NewAuthMailer(mailer, settings)
 	actions.authStore = storage
 	actions.mail = mail
 	actions.token = tokenManager
@@ -655,7 +655,7 @@ func (app *authService) SendOtpEmail(emailType EmailType, ctx context.Context, u
 		return fmt.Errorf("error at creating verification token: %w", err)
 	}
 
-	err = app.mail.SendOtpEmail(emailType, tokenHash, &payload, app.options)
+	err = app.mail.SendOtpEmail(emailType, tokenHash, &payload)
 	if err != nil {
 		return fmt.Errorf("error at sending verification email: %w", err)
 	}

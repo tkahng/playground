@@ -11,7 +11,7 @@ import (
 
 type AuthMailer interface {
 	Client() mailer.Mailer
-	SendOtpEmail(emailType EmailType, tokenHash string, payload *shared.OtpPayload, config *conf.AppOptions) error
+	SendOtpEmail(emailType EmailType, tokenHash string, payload *shared.OtpPayload) error
 }
 
 type EmailType string
@@ -49,20 +49,23 @@ var (
 	}
 )
 
-var _ AuthMailer = (*AuthMailerBase)(nil)
+var _ AuthMailer = (*authMailer)(nil)
 
-type AuthMailerBase struct {
+type authMailer struct {
 	mailer mailer.Mailer
+	opts   *conf.AppOptions
+}
+
+func NewAuthMailer(mailer mailer.Mailer, opts *conf.AppOptions) AuthMailer {
+	return &authMailer{mailer: mailer, opts: opts}
 }
 
 // SendOtpEmail implements AuthMailer.
-func (a *AuthMailerBase) SendOtpEmail(emailType EmailType, tokenHash string, payload *shared.OtpPayload, config *conf.AppOptions) error {
+func (a *authMailer) SendOtpEmail(emailType EmailType, tokenHash string, payload *shared.OtpPayload) error {
 	if payload == nil {
 		return fmt.Errorf("payload is nil")
 	}
-	if config == nil {
-		return fmt.Errorf("config is nil")
-	}
+
 	var params SendMailParams
 	var ok bool
 	if params, ok = EmailPathMap[emailType]; !ok {
@@ -76,7 +79,7 @@ func (a *AuthMailerBase) SendOtpEmail(emailType EmailType, tokenHash string, pay
 	if err != nil {
 		return err
 	}
-	appUrl, err := url.Parse(config.Meta.AppUrl)
+	appUrl, err := url.Parse(a.opts.Meta.AppUrl)
 	if err != nil {
 		return err
 	}
@@ -90,18 +93,14 @@ func (a *AuthMailerBase) SendOtpEmail(emailType EmailType, tokenHash string, pay
 	}
 	bodyStr := mailer.GetTemplate("body", params.Template, param)
 	mailParams := &mailer.Message{
-		From:    config.Meta.SenderAddress,
+		From:    a.opts.Meta.SenderAddress,
 		To:      payload.Email,
-		Subject: fmt.Sprintf(params.Subject, config.Meta.AppName),
+		Subject: fmt.Sprintf(params.Subject, a.opts.Meta.AppName),
 		Body:    bodyStr,
 	}
 	return a.Client().Send(mailParams)
 }
 
-func NewAuthMailer(mailer mailer.Mailer) *AuthMailerBase {
-	return &AuthMailerBase{mailer: mailer}
-}
-
-func (a *AuthMailerBase) Client() mailer.Mailer {
+func (a *authMailer) Client() mailer.Mailer {
 	return a.mailer
 }
