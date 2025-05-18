@@ -17,17 +17,17 @@ import (
 	"github.com/tkahng/authgo/internal/tools/utils"
 )
 
-type PosrgresStripeStore struct {
+type PosrgresPaymentStore struct {
 	db database.Dbx
 }
 
-func NewPostgresPaymentStore(db database.Dbx) *PosrgresStripeStore {
-	return &PosrgresStripeStore{db: db}
+func NewPostgresPaymentStore(db database.Dbx) *PosrgresPaymentStore {
+	return &PosrgresPaymentStore{db: db}
 }
 
-var _ PaymentStore = (*PosrgresStripeStore)(nil)
+var _ PaymentStore = (*PosrgresPaymentStore)(nil)
 
-func (s *PosrgresStripeStore) UpsertPriceFromStripe(ctx context.Context, price *stripe.Price) error {
+func (s *PosrgresPaymentStore) UpsertPriceFromStripe(ctx context.Context, price *stripe.Price) error {
 	if price == nil {
 		return nil
 	}
@@ -41,7 +41,7 @@ func (s *PosrgresStripeStore) UpsertPriceFromStripe(ctx context.Context, price *
 	return s.UpsertPrice(ctx, val)
 }
 
-func (s *PosrgresStripeStore) UpsertPrice(ctx context.Context, price *models.StripePrice) error {
+func (s *PosrgresPaymentStore) UpsertPrice(ctx context.Context, price *models.StripePrice) error {
 	var dbx database.Dbx = s.db
 	q := squirrel.Insert("stripe_prices").Columns("id", "product_id", "lookup_key", "active", "unit_amount", "currency", "type", "interval", "interval_count", "trial_period_days", "metadata").Values(price.ID, price.ProductID, price.LookupKey, price.Active, price.UnitAmount, price.Currency, price.Type, price.Interval, price.IntervalCount, price.TrialPeriodDays, price.Metadata).Suffix(`
 		ON CONFLICT(id) DO UPDATE SET 
@@ -60,7 +60,7 @@ func (s *PosrgresStripeStore) UpsertPrice(ctx context.Context, price *models.Str
 }
 
 // UpsertProductFromStripe implements PaymentStore.
-func (s *PosrgresStripeStore) UpsertProductFromStripe(ctx context.Context, product *stripe.Product) error {
+func (s *PosrgresPaymentStore) UpsertProductFromStripe(ctx context.Context, product *stripe.Product) error {
 	if product == nil {
 		return nil
 	}
@@ -79,7 +79,7 @@ func (s *PosrgresStripeStore) UpsertProductFromStripe(ctx context.Context, produ
 	return s.UpsertProduct(ctx, param)
 }
 
-func (s *PosrgresStripeStore) UpsertProduct(ctx context.Context, product *models.StripeProduct) error {
+func (s *PosrgresPaymentStore) UpsertProduct(ctx context.Context, product *models.StripeProduct) error {
 	var dbx database.Dbx = s.db
 	q := squirrel.Insert("stripe_products").
 		Columns(
@@ -108,7 +108,7 @@ func (s *PosrgresStripeStore) UpsertProduct(ctx context.Context, product *models
 }
 
 // FindCustomerByStripeId implements PaymentStore.
-func (s *PosrgresStripeStore) FindCustomerByStripeId(ctx context.Context, stripeId string) (*models.StripeCustomer, error) {
+func (s *PosrgresPaymentStore) FindCustomerByStripeId(ctx context.Context, stripeId string) (*models.StripeCustomer, error) {
 	data, err := crudrepo.StripeCustomer.GetOne(
 		ctx,
 		s.db,
@@ -118,7 +118,7 @@ func (s *PosrgresStripeStore) FindCustomerByStripeId(ctx context.Context, stripe
 }
 
 // FindCustomerByUserId implements PaymentStore.
-func (s *PosrgresStripeStore) FindCustomerByUserId(ctx context.Context, userId uuid.UUID) (*models.StripeCustomer, error) {
+func (s *PosrgresPaymentStore) FindCustomerByUserId(ctx context.Context, userId uuid.UUID) (*models.StripeCustomer, error) {
 	data, err := crudrepo.StripeCustomer.GetOne(
 		ctx,
 		s.db,
@@ -128,7 +128,7 @@ func (s *PosrgresStripeStore) FindCustomerByUserId(ctx context.Context, userId u
 }
 
 // FindLatestActiveSubscriptionByTeamId implements PaymentStore.
-func (s *PosrgresStripeStore) FindLatestActiveSubscriptionByTeamId(ctx context.Context, teamId uuid.UUID) (*models.StripeSubscription, error) {
+func (s *PosrgresPaymentStore) FindLatestActiveSubscriptionByTeamId(ctx context.Context, teamId uuid.UUID) (*models.StripeSubscription, error) {
 	data, err := crudrepo.StripeSubscription.Get(
 		ctx,
 		s.db,
@@ -153,7 +153,7 @@ func (s *PosrgresStripeStore) FindLatestActiveSubscriptionByTeamId(ctx context.C
 }
 
 // FindProductByStripeId implements PaymentStore.
-func (s *PosrgresStripeStore) FindProductByStripeId(ctx context.Context, productId string) (*models.StripeProduct, error) {
+func (s *PosrgresPaymentStore) FindProductByStripeId(ctx context.Context, productId string) (*models.StripeProduct, error) {
 	data, err := crudrepo.StripeProduct.GetOne(
 		ctx,
 		s.db,
@@ -214,7 +214,7 @@ WHERE ss.id = $1
 )
 
 // FindSubscriptionWithPriceById implements PaymentStore.
-func (s *PosrgresStripeStore) FindSubscriptionWithPriceById(ctx context.Context, stripeId string) (*models.SubscriptionWithPrice, error) {
+func (s *PosrgresPaymentStore) FindSubscriptionWithPriceById(ctx context.Context, stripeId string) (*models.SubscriptionWithPrice, error) {
 	data, err := database.QueryAll[*models.SubscriptionWithPrice](ctx, s.db, getSubscriptionWithPriceByIdQuery, stripeId)
 	if err != nil {
 		return nil, err
@@ -227,7 +227,7 @@ func (s *PosrgresStripeStore) FindSubscriptionWithPriceById(ctx context.Context,
 }
 
 // FindTeamById implements PaymentStore.
-func (s *PosrgresStripeStore) FindTeamById(ctx context.Context, teamId uuid.UUID) (*models.Team, error) {
+func (s *PosrgresPaymentStore) FindTeamById(ctx context.Context, teamId uuid.UUID) (*models.Team, error) {
 	return crudrepo.Team.GetOne(
 		ctx,
 		s.db,
@@ -240,7 +240,7 @@ func (s *PosrgresStripeStore) FindTeamById(ctx context.Context, teamId uuid.UUID
 }
 
 // FindValidPriceById implements PaymentStore.
-func (s *PosrgresStripeStore) FindValidPriceById(ctx context.Context, priceId string) (*models.StripePrice, error) {
+func (s *PosrgresPaymentStore) FindValidPriceById(ctx context.Context, priceId string) (*models.StripePrice, error) {
 	data, err := crudrepo.StripePrice.GetOne(
 		ctx,
 		s.db,
@@ -257,7 +257,7 @@ func (s *PosrgresStripeStore) FindValidPriceById(ctx context.Context, priceId st
 }
 
 // IsFirstSubscription implements PaymentStore.
-func (s *PosrgresStripeStore) IsFirstSubscription(ctx context.Context, userId uuid.UUID) (bool, error) {
+func (s *PosrgresPaymentStore) IsFirstSubscription(ctx context.Context, userId uuid.UUID) (bool, error) {
 	data, err := crudrepo.StripeSubscription.Count(
 		ctx,
 		s.db,
@@ -271,7 +271,7 @@ func (s *PosrgresStripeStore) IsFirstSubscription(ctx context.Context, userId uu
 }
 
 // ListPrices implements PaymentStore.
-func (s *PosrgresStripeStore) ListPrices(ctx context.Context, input *shared.StripePriceListParams) ([]*models.StripePrice, error) {
+func (s *PosrgresPaymentStore) ListPrices(ctx context.Context, input *shared.StripePriceListParams) ([]*models.StripePrice, error) {
 	var dbx database.Dbx = s.db
 	filter := input.StripePriceListFilter
 	pageInput := &input.PaginatedInput
@@ -293,13 +293,13 @@ func (s *PosrgresStripeStore) ListPrices(ctx context.Context, input *shared.Stri
 }
 
 // ListProducts implements PaymentStore.
-func (s *PosrgresStripeStore) ListProducts(ctx context.Context, input *shared.StripeProductListParams) ([]*models.StripeProduct, error) {
+func (s *PosrgresPaymentStore) ListProducts(ctx context.Context, input *shared.StripeProductListParams) ([]*models.StripeProduct, error) {
 	var dbx database.Dbx = s.db
 	q := squirrel.Select("stripe_products.*").From("stripe_products")
 	filter := input.StripeProductListFilter
 	pageInput := &input.PaginatedInput
 	q = database.Paginate(q, pageInput)
-	q = queries.ListProductFilterFuncQuery(q, &filter)
+	q = listProductFilterFuncQuery(q, &filter)
 	data, err := database.QueryWithBuilder[*models.StripeProduct](
 		ctx,
 		dbx,
@@ -311,15 +311,33 @@ func (s *PosrgresStripeStore) ListProducts(ctx context.Context, input *shared.St
 	return data, nil
 }
 
+func listProductFilterFuncQuery(q squirrel.SelectBuilder, filter *shared.StripeProductListFilter) squirrel.SelectBuilder {
+	if filter == nil {
+		return q
+	}
+	if filter.Active != "" {
+		if filter.Active == shared.Active {
+			q = q.Where("active = ?", true)
+		}
+		if filter.Active == shared.Inactive {
+			q = q.Where("active = ?", false)
+		}
+	}
+	if len(filter.Ids) > 0 {
+		q = q.Where("id in (?)", filter.Ids)
+	}
+	return q
+}
+
 // UpsertCustomerStripeId implements PaymentStore.
-func (s *PosrgresStripeStore) UpsertCustomerStripeId(ctx context.Context, userId uuid.UUID, stripeCustomerId string) error {
+func (s *PosrgresPaymentStore) UpsertCustomerStripeId(ctx context.Context, userId uuid.UUID, stripeCustomerId string) error {
 	var dbx database.Dbx = s.db
 	q := squirrel.Insert("stripe_customers").Columns("id", "stripe_id").Values(userId, stripeCustomerId).Suffix(`ON CONFLICT (id) DO UPDATE SET stripe_id = EXCLUDED.stripe_id`)
 	return database.ExecWithBuilder(ctx, dbx, q.PlaceholderFormat(squirrel.Dollar))
 }
 
 // UpsertSubscriptionFromStripe implements PaymentStore.
-func (s *PosrgresStripeStore) UpsertSubscriptionFromStripe(ctx context.Context, sub *stripe.Subscription, userId uuid.UUID) error {
+func (s *PosrgresPaymentStore) UpsertSubscriptionFromStripe(ctx context.Context, sub *stripe.Subscription, userId uuid.UUID) error {
 	if sub == nil {
 		return nil
 	}
@@ -354,7 +372,7 @@ func (s *PosrgresStripeStore) UpsertSubscriptionFromStripe(ctx context.Context, 
 	return err
 }
 
-func (s *PosrgresStripeStore) UpsertSubscription(ctx context.Context, sub *models.StripeSubscription) error {
+func (s *PosrgresPaymentStore) UpsertSubscription(ctx context.Context, sub *models.StripeSubscription) error {
 	err := queries.UpsertSubscription(
 		ctx,
 		s.db,
