@@ -8,8 +8,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
-	"github.com/tkahng/authgo/internal/services/payment"
-	"github.com/tkahng/authgo/internal/services/rbac"
+	"github.com/tkahng/authgo/internal/modules/payment"
+	"github.com/tkahng/authgo/internal/modules/rbac"
 	"github.com/tkahng/authgo/internal/test"
 )
 

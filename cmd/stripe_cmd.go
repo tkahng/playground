@@ -4,8 +4,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/tkahng/authgo/internal/conf"
 	"github.com/tkahng/authgo/internal/database"
-	"github.com/tkahng/authgo/internal/services/payment"
-	"github.com/tkahng/authgo/internal/services/rbac"
+	"github.com/tkahng/authgo/internal/modules/payment"
+	"github.com/tkahng/authgo/internal/modules/rbac"
 )
 
 func NewStripeCmd() *cobra.Command {
