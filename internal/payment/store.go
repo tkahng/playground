@@ -5,6 +5,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/stripe/stripe-go/v82"
+	"github.com/tkahng/authgo/internal/crudrepo"
 	"github.com/tkahng/authgo/internal/db"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/queries"
@@ -98,7 +99,15 @@ func (s *StripeStore) FindSubscriptionWithPriceById(ctx context.Context, dbx db.
 
 // FindTeamById implements PaymentStore.
 func (s *StripeStore) FindTeamById(ctx context.Context, dbx db.Dbx, teamId uuid.UUID) (*models.Team, error) {
-	return queries.FindTeamByID(ctx, dbx, teamId)
+	return crudrepo.Team.GetOne(
+		ctx,
+		dbx,
+		&map[string]any{
+			"id": map[string]any{
+				"_eq": teamId.String(),
+			},
+		},
+	)
 }
 
 // FindValidPriceById implements PaymentStore.

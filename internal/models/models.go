@@ -206,7 +206,7 @@ type StripeSubscription struct {
 	TrialEnd           *time.Time               `db:"trial_end" json:"trial_end"`
 	CreatedAt          time.Time                `db:"created_at" json:"created_at"`
 	UpdatedAt          time.Time                `db:"updated_at" json:"updated_at"`
-	User               *User                    `db:"users" src:"user_id" dest:"id" table:"users" json:"-"`
+	Team               *Team                    `db:"teams" src:"team_id" dest:"id" table:"teams" json:"team,omitempty"`
 	Price              *StripePrice             `db:"stripe_prices" src:"price_id" dest:"id" table:"stripe_prices" json:"price,omitempty"`
 }
 
