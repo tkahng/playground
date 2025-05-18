@@ -11,6 +11,7 @@ import (
 	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
+	"github.com/tkahng/authgo/internal/tools/utils"
 )
 
 func (api *Api) AdminRolesList(ctx context.Context, input *struct {
@@ -236,7 +237,7 @@ func (api *Api) AdminUserRolesCreate(ctx context.Context, input *struct {
 		return nil, huma.Error404NotFound("User not found")
 	}
 
-	roleIds := queries.ParseUUIDs(input.Body.RolesIds)
+	roleIds := utils.ParseValidUUIDs(input.Body.RolesIds)
 
 	roles, err := crudrepo.Role.Get(
 		ctx,
@@ -441,7 +442,7 @@ func (api *Api) AdminRolesCreatePermissions(ctx context.Context, input *struct {
 	if role == nil {
 		return nil, huma.Error404NotFound("Role not found")
 	}
-	permissionIds := queries.ParseUUIDs(input.Body.PermissionIDs)
+	permissionIds := utils.ParseValidUUIDs(input.Body.PermissionIDs)
 
 	err = queries.CreateRolePermissions(ctx, db, role.ID, permissionIds...)
 

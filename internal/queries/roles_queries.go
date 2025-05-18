@@ -485,7 +485,7 @@ func FindPermissionById(ctx context.Context, dbx database.Dbx, id uuid.UUID) (*c
 			},
 		},
 	)
-	return OptionalRow(data, err)
+	return database.OptionalRow(data, err)
 }
 func FindPermissionByName(ctx context.Context, dbx database.Dbx, name string) (*crudModels.Permission, error) {
 	data, err := crudrepo.Permission.GetOne(
@@ -497,7 +497,7 @@ func FindPermissionByName(ctx context.Context, dbx database.Dbx, name string) (*
 			},
 		},
 	)
-	return OptionalRow(data, err)
+	return database.OptionalRow(data, err)
 }
 
 func FindRoleByName(ctx context.Context, dbx database.Dbx, name string) (*crudModels.Role, error) {
@@ -510,7 +510,7 @@ func FindRoleByName(ctx context.Context, dbx database.Dbx, name string) (*crudMo
 			},
 		},
 	)
-	return OptionalRow(data, err)
+	return database.OptionalRow(data, err)
 }
 
 const (
@@ -657,7 +657,7 @@ type PermissionSource struct {
 }
 
 func ListUserPermissionsSource(ctx context.Context, dbx database.Dbx, userId uuid.UUID, limit int64, offset int64) ([]PermissionSource, error) {
-	data, err := QueryAll[PermissionSource](ctx, dbx, QueryUserPermissionSource, userId, limit, offset)
+	data, err := database.QueryAll[PermissionSource](ctx, dbx, QueryUserPermissionSource, userId, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -666,7 +666,7 @@ func ListUserPermissionsSource(ctx context.Context, dbx database.Dbx, userId uui
 }
 
 func CountUserPermissionSource(ctx context.Context, dbx database.Dbx, userId uuid.UUID) (int64, error) {
-	data, err := Count(ctx, dbx, QueryUserPermissionSourceCount, userId)
+	data, err := database.Count(ctx, dbx, QueryUserPermissionSourceCount, userId)
 	if err != nil {
 		return 0, err
 	}
@@ -797,7 +797,7 @@ WHERE cp.id IS NULL;`
 
 func ListUserNotPermissionsSource(ctx context.Context, dbx database.Dbx, userId uuid.UUID, limit int64, offset int64) ([]PermissionSource, error) {
 
-	res, err := QueryAll[PermissionSource](ctx, dbx, getuserNotPermissions, userId, limit, offset)
+	res, err := database.QueryAll[PermissionSource](ctx, dbx, getuserNotPermissions, userId, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -808,7 +808,7 @@ func ListUserNotPermissionsSource(ctx context.Context, dbx database.Dbx, userId 
 func CountNotUserPermissionSource(ctx context.Context, dbx database.Dbx, userId uuid.UUID) (int64, error) {
 	// q := psql.RawQuery(getuserNotPermissionCounts, userId, userId)
 
-	data, err := Count(ctx, dbx, getuserNotPermissionCounts, userId)
+	data, err := database.Count(ctx, dbx, getuserNotPermissionCounts, userId)
 	if err != nil {
 		return 0, err
 	}

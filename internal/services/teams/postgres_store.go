@@ -9,7 +9,6 @@ import (
 	"github.com/tkahng/authgo/internal/crudrepo"
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
-	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/tools/types"
 )
 
@@ -50,7 +49,7 @@ func (q *PostgresTeamStore) UpdateTeamMemberUpdatedAt(ctx context.Context, teamM
 		Where("id = ?", teamMemberId).
 		Set("updated_at", time.Now())
 
-	err := queries.ExecWithBuilder(ctx, q.db, qquery.PlaceholderFormat(squirrel.Dollar))
+	err := database.ExecWithBuilder(ctx, q.db, qquery.PlaceholderFormat(squirrel.Dollar))
 	if err != nil {
 		return err
 	}

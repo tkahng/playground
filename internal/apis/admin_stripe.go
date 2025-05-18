@@ -11,6 +11,7 @@ import (
 	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
+	"github.com/tkahng/authgo/internal/tools/utils"
 )
 
 func (api *Api) AdminStripeSubscriptions(ctx context.Context,
@@ -170,7 +171,7 @@ func (api *Api) AdminStripeProductsRolesCreate(ctx context.Context, input *struc
 		return nil, huma.Error404NotFound("Product not found")
 	}
 
-	roleIds := queries.ParseUUIDs(input.Body.RolesIds)
+	roleIds := utils.ParseValidUUIDs(input.Body.RolesIds)
 
 	err = queries.CreateProductRoles(ctx, db, user.ID, roleIds...)
 	if err != nil {

@@ -24,7 +24,7 @@ func FindCustomerByStripeId(ctx context.Context, dbx database.Dbx, stripeId stri
 			},
 		},
 	)
-	return OptionalRow(data, err)
+	return database.OptionalRow(data, err)
 }
 
 func FindCustomerByUserId(ctx context.Context, dbx database.Dbx, userId uuid.UUID) (*models.StripeCustomer, error) {
@@ -37,7 +37,7 @@ func FindCustomerByUserId(ctx context.Context, dbx database.Dbx, userId uuid.UUI
 			},
 		},
 	)
-	return OptionalRow(data, err)
+	return database.OptionalRow(data, err)
 }
 
 func FindProductByStripeId(ctx context.Context, dbx database.Dbx, stripeId string) (*models.StripeProduct, error) {
@@ -50,7 +50,7 @@ func FindProductByStripeId(ctx context.Context, dbx database.Dbx, stripeId strin
 			},
 		},
 	)
-	return OptionalRow(data, err)
+	return database.OptionalRow(data, err)
 }
 
 func UpsertCustomerStripeId(ctx context.Context, dbx database.Dbx, userId uuid.UUID, stripeCustomerId string) error {
@@ -59,7 +59,7 @@ func UpsertCustomerStripeId(ctx context.Context, dbx database.Dbx, userId uuid.U
 		Columns("id", "stripe_id").
 		Values(userId, stripeCustomerId).
 		Suffix(`ON CONFLICT (id) DO UPDATE SET stripe_id = EXCLUDED.stripe_id`)
-	return ExecWithBuilder(ctx, dbx, q.PlaceholderFormat(squirrel.Dollar))
+	return database.ExecWithBuilder(ctx, dbx, q.PlaceholderFormat(squirrel.Dollar))
 }
 
 func UpsertProduct(ctx context.Context, dbx database.Dbx, product *models.StripeProduct) error {
@@ -89,7 +89,7 @@ func UpsertProduct(ctx context.Context, dbx database.Dbx, product *models.Stripe
 						metadata = EXCLUDED.metadata
 		`,
 		)
-	return ExecWithBuilder(ctx, dbx, q.PlaceholderFormat(squirrel.Dollar))
+	return database.ExecWithBuilder(ctx, dbx, q.PlaceholderFormat(squirrel.Dollar))
 }
 
 func UpsertProductFromStripe(ctx context.Context, dbx database.Dbx, product *stripe.Product) error {
@@ -153,7 +153,7 @@ func UpsertPrice(ctx context.Context, dbx database.Dbx, price *models.StripePric
 			trial_period_days = EXCLUDED.trial_period_days,
 			metadata = EXCLUDED.metadata
 		`)
-	return ExecWithBuilder(ctx, dbx, q.PlaceholderFormat(squirrel.Dollar))
+	return database.ExecWithBuilder(ctx, dbx, q.PlaceholderFormat(squirrel.Dollar))
 }
 
 func UpsertPriceFromStripe(ctx context.Context, dbx database.Dbx, price *stripe.Price) error {
@@ -233,7 +233,7 @@ func UpsertSubscription(ctx context.Context, dbx database.Dbx, subscription *mod
 			"trial_end = EXCLUDED.trial_end",
 	)
 
-	return ExecWithBuilder(ctx, dbx, q.PlaceholderFormat(squirrel.Dollar))
+	return database.ExecWithBuilder(ctx, dbx, q.PlaceholderFormat(squirrel.Dollar))
 }
 
 func UpsertSubscriptionFromStripe(ctx context.Context, exec database.Dbx, sub *stripe.Subscription, teamId uuid.UUID) error {
@@ -282,7 +282,7 @@ func FindSubscriptionById(ctx context.Context, dbx database.Dbx, stripeId string
 			},
 		},
 	)
-	return OptionalRow(data, err)
+	return database.OptionalRow(data, err)
 }
 
 const (
@@ -333,7 +333,7 @@ WHERE ss.id = $1
 )
 
 func FindSubscriptionWithPriceById(ctx context.Context, dbx database.Dbx, stripeId string) (*models.SubscriptionWithPrice, error) {
-	data, err := QueryAll[*models.SubscriptionWithPrice](ctx, dbx, GetSubscriptionWithPriceByIdQuery, stripeId)
+	data, err := database.QueryAll[*models.SubscriptionWithPrice](ctx, dbx, GetSubscriptionWithPriceByIdQuery, stripeId)
 	if err != nil {
 		return nil, err
 	}
@@ -371,7 +371,7 @@ func FindLatestActiveSubscriptionByTeamId(ctx context.Context, dbx database.Dbx,
 	if len(data) == 0 {
 		return nil, nil
 	}
-	return OptionalRow(data[0], err)
+	return database.OptionalRow(data[0], err)
 }
 
 const (
@@ -424,14 +424,14 @@ ORDER BY ss.updated_at DESC;
 )
 
 func FindLatestActiveSubscriptionWithPriceByUserId(ctx context.Context, dbx database.Dbx, userId uuid.UUID) (*models.SubscriptionWithPrice, error) {
-	data, err := QueryAll[models.SubscriptionWithPrice](ctx, dbx, GetLatestActiveSubscriptionWithPriceByIdQuery, userId)
+	data, err := database.QueryAll[models.SubscriptionWithPrice](ctx, dbx, GetLatestActiveSubscriptionWithPriceByIdQuery, userId)
 	if err != nil {
 		return nil, err
 	}
 	if len(data) == 0 {
 		return nil, nil
 	}
-	return OptionalRow(&data[0], err)
+	return database.OptionalRow(&data[0], err)
 }
 
 func IsFirstSubscription(ctx context.Context, dbx database.Dbx, teamId uuid.UUID) (bool, error) {

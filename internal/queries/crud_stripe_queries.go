@@ -79,7 +79,7 @@ func ListProducts(ctx context.Context, dbx database.Dbx, input *shared.StripePro
 
 	q = database.Paginate(q, pageInput)
 	q = ListProductFilterFuncQuery(q, &filter)
-	data, err := QueryWithBuilder[*models.StripeProduct](ctx, dbx, q.PlaceholderFormat(squirrel.Dollar))
+	data, err := database.QueryWithBuilder[*models.StripeProduct](ctx, dbx, q.PlaceholderFormat(squirrel.Dollar))
 	if err != nil {
 		return nil, err
 	}
@@ -117,7 +117,7 @@ GROUP BY rp.product_id;`
 )
 
 func LoadProductRoles(ctx context.Context, db database.Dbx, productIds ...string) ([][]*models.Role, error) {
-	data, err := QueryAll[shared.JoinedResult[*models.Role, string]](
+	data, err := database.QueryAll[shared.JoinedResult[*models.Role, string]](
 		ctx,
 		db,
 		GetProductRolesQuery,
@@ -198,7 +198,7 @@ func CountProducts(ctx context.Context, db database.Dbx, filter *shared.StripePr
 		From("stripe_products")
 
 	q = ListProductFilterFuncQuery(q, filter)
-	data, err := QueryWithBuilder[CountOutput](ctx, db, q.PlaceholderFormat(squirrel.Dollar))
+	data, err := database.QueryWithBuilder[CountOutput](ctx, db, q.PlaceholderFormat(squirrel.Dollar))
 
 	if err != nil {
 		return 0, err

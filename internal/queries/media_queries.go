@@ -31,5 +31,5 @@ func FindMediaByID(ctx context.Context, exec database.Dbx, id uuid.UUID) (*model
 			},
 		},
 	)
-	return OptionalRow(data, err)
+	return database.OptionalRow(data, err)
 }

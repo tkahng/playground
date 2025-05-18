@@ -61,7 +61,7 @@ func FindTaskByID(ctx context.Context, dbx database.Dbx, id uuid.UUID) (*models.
 			},
 		},
 	)
-	return OptionalRow(task, err)
+	return database.OptionalRow(task, err)
 }
 
 func FindLastTaskOrder(ctx context.Context, dbx database.Dbx, taskProjectID uuid.UUID) (float64, error) {
@@ -114,7 +114,7 @@ func FindTaskProjectByID(ctx context.Context, dbx database.Dbx, id uuid.UUID) (*
 			},
 		},
 	)
-	return OptionalRow(task, err)
+	return database.OptionalRow(task, err)
 }
 func DeleteTaskProject(ctx context.Context, db database.Dbx, taskProjectID uuid.UUID) error {
 	_, err := crudrepo.TaskProject.Delete(
@@ -378,7 +378,7 @@ func CreateTask(ctx context.Context, db database.Dbx, userID uuid.UUID, projectI
 // 			sm.OrderBy(models.TaskColumns.Order).Asc(),
 // 			sm.Limit(1),
 // 		).One(ctx, db)
-// 		response, err = OptionalRow(response, err)
+// 		response, err = database.OptionalRow(response, err)
 // 		if err != nil {
 // 			return 0, err
 // 		}
@@ -396,7 +396,7 @@ func CreateTask(ctx context.Context, db database.Dbx, userID uuid.UUID, projectI
 // 		sm.Limit(1),
 // 		sm.Offset(position),
 // 	).One(ctx, db)
-// 	element, err = OptionalRow(element, err)
+// 	element, err = database.OptionalRow(element, err)
 // 	if err != nil {
 // 		return 0, err
 // 	}
@@ -414,7 +414,7 @@ func CreateTask(ctx context.Context, db database.Dbx, userID uuid.UUID, projectI
 // 			sm.Limit(1),
 // 			sm.Offset(position-1),
 // 		).One(ctx, db)
-// 		sideElements, err = OptionalRow(sideElements, err)
+// 		sideElements, err = database.OptionalRow(sideElements, err)
 // 		if err != nil {
 // 			return 0, err
 // 		}
@@ -430,7 +430,7 @@ func CreateTask(ctx context.Context, db database.Dbx, userID uuid.UUID, projectI
 // 		sm.Limit(1),
 // 		sm.Offset(position+1),
 // 	).One(ctx, db)
-// 	sideElements, err = OptionalRow(sideElements, err)
+// 	sideElements, err = database.OptionalRow(sideElements, err)
 // 	if err != nil {
 // 		return 0, err
 // 	}
@@ -556,7 +556,7 @@ func DefineTaskOrderNumberByStatus(ctx context.Context, dbx database.Dbx, taskId
 	// 	sm.Limit(1),
 	// 	sm.Offset(position+1),
 	// ).One(ctx, db)
-	// sideElements, err = OptionalRow(sideElements, err)
+	// sideElements, err = database.OptionalRow(sideElements, err)
 	// if err != nil {
 	// 	return 0, err
 	// }
@@ -574,7 +574,7 @@ func DefineTaskOrderNumberByStatus(ctx context.Context, dbx database.Dbx, taskId
 // 			sm.OrderBy(models.TaskColumns.Order).Asc(),
 // 			sm.Limit(1),
 // 		).One(ctx, db)
-// 		response, err = OptionalRow(response, err)
+// 		response, err = database.OptionalRow(response, err)
 // 		if err != nil {
 // 			return 0, err
 // 		}
@@ -592,7 +592,7 @@ func DefineTaskOrderNumberByStatus(ctx context.Context, dbx database.Dbx, taskId
 // 		sm.Limit(1),
 // 		sm.Offset(position),
 // 	).One(ctx, db)
-// 	element, err = OptionalRow(element, err)
+// 	element, err = database.OptionalRow(element, err)
 // 	if err != nil {
 // 		return 0, err
 // 	}
@@ -609,7 +609,7 @@ func DefineTaskOrderNumberByStatus(ctx context.Context, dbx database.Dbx, taskId
 // 			sm.Limit(1),
 // 			sm.Offset(position-1),
 // 		).One(ctx, db)
-// 		sideElements, err = OptionalRow(sideElements, err)
+// 		sideElements, err = database.OptionalRow(sideElements, err)
 // 		if err != nil {
 // 			return 0, err
 // 		}
@@ -624,7 +624,7 @@ func DefineTaskOrderNumberByStatus(ctx context.Context, dbx database.Dbx, taskId
 // 		sm.Limit(1),
 // 		sm.Offset(position+1),
 // 	).One(ctx, db)
-// 	sideElements, err = OptionalRow(sideElements, err)
+// 	sideElements, err = database.OptionalRow(sideElements, err)
 // 	if err != nil {
 // 		return 0, err
 // 	}
@@ -671,7 +671,7 @@ func UpdateTaskProjectUpdateDate(ctx context.Context, db database.Dbx, taskProje
 		Where("id = ?", taskProjectID).
 		Set("updated_at", time.Now())
 
-	err := ExecWithBuilder(ctx, db, q.PlaceholderFormat(squirrel.Dollar))
+	err := database.ExecWithBuilder(ctx, db, q.PlaceholderFormat(squirrel.Dollar))
 	if err != nil {
 		return err
 	}

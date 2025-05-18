@@ -64,7 +64,7 @@ func ListPermissions(ctx context.Context, dbx database.Dbx, input *shared.Permis
 	if input.SortBy != "" && input.SortOrder != "" {
 		q = q.OrderBy(input.SortBy + " " + strings.ToUpper(input.SortOrder))
 	}
-	data, err := QueryWithBuilder[*models.Permission](ctx, dbx, q.PlaceholderFormat(squirrel.Dollar))
+	data, err := database.QueryWithBuilder[*models.Permission](ctx, dbx, q.PlaceholderFormat(squirrel.Dollar))
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +82,7 @@ func CountPermissions(ctx context.Context, db database.Dbx, filter *shared.Permi
 	// q = ViewApplyPagination(q, pageInput)
 	q = ListPermissionsFilterFunc(q, filter)
 
-	data, err := QueryWithBuilder[CountOutput](ctx, db, q.PlaceholderFormat(squirrel.Dollar))
+	data, err := database.QueryWithBuilder[CountOutput](ctx, db, q.PlaceholderFormat(squirrel.Dollar))
 	if err != nil {
 		return 0, err
 	}
@@ -143,7 +143,7 @@ func ListRoles(ctx context.Context, dbx database.Dbx, input *shared.RolesListPar
 	if input.SortBy != "" && input.SortOrder != "" {
 		q = q.OrderBy(input.SortBy + " " + strings.ToUpper(input.SortOrder))
 	}
-	data, err := QueryWithBuilder[*models.Role](ctx, dbx, q.PlaceholderFormat(squirrel.Dollar))
+	data, err := database.QueryWithBuilder[*models.Role](ctx, dbx, q.PlaceholderFormat(squirrel.Dollar))
 	if err != nil {
 		return nil, err
 	}
@@ -157,7 +157,7 @@ func CountRoles(ctx context.Context, db database.Dbx, filter *shared.RoleListFil
 	// q = ViewApplyPagination(q, pageInput)
 	q = ListRolesFilterFuncQuery(q, filter)
 
-	data, err := QueryWithBuilder[CountOutput](ctx, db, q.PlaceholderFormat(squirrel.Dollar))
+	data, err := database.QueryWithBuilder[CountOutput](ctx, db, q.PlaceholderFormat(squirrel.Dollar))
 	if err != nil {
 		return 0, err
 	}

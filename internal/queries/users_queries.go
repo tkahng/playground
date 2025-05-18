@@ -189,7 +189,7 @@ func CreateAccount(ctx context.Context, db database.Dbx, userId uuid.UUID, param
 		AccessToken:       params.AccessToken,
 		RefreshToken:      params.RefreshToken,
 	})
-	return OptionalRow(r, err)
+	return database.OptionalRow(r, err)
 }
 
 func FindUserByEmail(ctx context.Context, db database.Dbx, email string) (*crudModels.User, error) {
@@ -202,7 +202,7 @@ func FindUserByEmail(ctx context.Context, db database.Dbx, email string) (*crudM
 			},
 		},
 	)
-	return OptionalRow(a, err)
+	return database.OptionalRow(a, err)
 }
 func FindUserById(ctx context.Context, db database.Dbx, userId uuid.UUID) (*crudModels.User, error) {
 	a, err := crudrepo.User.GetOne(
@@ -214,7 +214,7 @@ func FindUserById(ctx context.Context, db database.Dbx, userId uuid.UUID) (*crud
 			},
 		},
 	)
-	return OptionalRow(a, err)
+	return database.OptionalRow(a, err)
 }
 
 func UpdateUserPassword(ctx context.Context, db database.Dbx, userId uuid.UUID, password string) error {

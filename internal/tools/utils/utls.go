@@ -3,6 +3,8 @@ package utils
 import (
 	"encoding/json"
 	"fmt"
+
+	"github.com/google/uuid"
 )
 
 func MarshalJSONByte[T any](v T) []byte {
@@ -26,4 +28,16 @@ func UnmarshalJSON[T any](r []byte) (T, error) {
 func PrettyPrintJSON[T any](v T) {
 	jsonData, _ := json.MarshalIndent(v, "", "  ")
 	println(string(jsonData))
+}
+
+func ParseValidUUIDs(ids []string) []uuid.UUID {
+	var uuids []uuid.UUID
+	for _, id := range ids {
+		parsed, err := uuid.Parse(id)
+		if err != nil {
+			continue
+		}
+		uuids = append(uuids, parsed)
+	}
+	return uuids
 }

@@ -91,7 +91,7 @@ func (s *PosrgresStripeStore) UpsertPrice(ctx context.Context, price *models.Str
 			trial_period_days = EXCLUDED.trial_period_days,
 			metadata = EXCLUDED.metadata
 		`)
-	return queries.ExecWithBuilder(ctx, dbx, q.PlaceholderFormat(squirrel.Dollar))
+	return database.ExecWithBuilder(ctx, dbx, q.PlaceholderFormat(squirrel.Dollar))
 }
 
 // UpsertProductFromStripe implements PaymentStore.
@@ -139,7 +139,7 @@ func (s *PosrgresStripeStore) UpsertProduct(ctx context.Context, product *models
 						image = EXCLUDED.image, 
 						metadata = EXCLUDED.metadata
 		`)
-	return queries.ExecWithBuilder(ctx, dbx, q.PlaceholderFormat(squirrel.Dollar))
+	return database.ExecWithBuilder(ctx, dbx, q.PlaceholderFormat(squirrel.Dollar))
 }
 
 // FindCustomerByStripeId implements PaymentStore.
@@ -250,7 +250,7 @@ WHERE ss.id = $1
 
 // FindSubscriptionWithPriceById implements PaymentStore.
 func (s *PosrgresStripeStore) FindSubscriptionWithPriceById(ctx context.Context, stripeId string) (*models.SubscriptionWithPrice, error) {
-	data, err := queries.QueryAll[*models.SubscriptionWithPrice](ctx, s.db, getSubscriptionWithPriceByIdQuery, stripeId)
+	data, err := database.QueryAll[*models.SubscriptionWithPrice](ctx, s.db, getSubscriptionWithPriceByIdQuery, stripeId)
 	if err != nil {
 		return nil, err
 	}
@@ -335,7 +335,7 @@ func (s *PosrgresStripeStore) ListProducts(ctx context.Context, input *shared.St
 	pageInput := &input.PaginatedInput
 	q = database.Paginate(q, pageInput)
 	q = queries.ListProductFilterFuncQuery(q, &filter)
-	data, err := queries.QueryWithBuilder[*models.StripeProduct](
+	data, err := database.QueryWithBuilder[*models.StripeProduct](
 		ctx,
 		dbx,
 		q.PlaceholderFormat(squirrel.Dollar),
@@ -350,7 +350,7 @@ func (s *PosrgresStripeStore) ListProducts(ctx context.Context, input *shared.St
 func (s *PosrgresStripeStore) UpsertCustomerStripeId(ctx context.Context, userId uuid.UUID, stripeCustomerId string) error {
 	var dbx database.Dbx = s.db
 	q := squirrel.Insert("stripe_customers").Columns("id", "stripe_id").Values(userId, stripeCustomerId).Suffix(`ON CONFLICT (id) DO UPDATE SET stripe_id = EXCLUDED.stripe_id`)
-	return queries.ExecWithBuilder(ctx, dbx, q.PlaceholderFormat(squirrel.Dollar))
+	return database.ExecWithBuilder(ctx, dbx, q.PlaceholderFormat(squirrel.Dollar))
 }
 
 // UpsertSubscriptionFromStripe implements PaymentStore.

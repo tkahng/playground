@@ -10,6 +10,7 @@ import (
 	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
+	"github.com/tkahng/authgo/internal/tools/utils"
 )
 
 func (api *Api) AdminUserPermissionsDelete(ctx context.Context, input *struct {
@@ -76,7 +77,7 @@ func (api *Api) AdminUserPermissionsCreate(ctx context.Context, input *struct {
 		return nil, huma.Error404NotFound("User not found")
 	}
 
-	permissionIds := queries.ParseUUIDs(input.Body.PermissionIds)
+	permissionIds := utils.ParseValidUUIDs(input.Body.PermissionIds)
 
 	permissions, err := queries.FindPermissionsByIds(ctx, db, permissionIds)
 	if err != nil {
