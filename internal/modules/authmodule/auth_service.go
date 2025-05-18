@@ -127,9 +127,13 @@ func (app *authService) Signout(ctx context.Context, token string) error {
 	if err != nil {
 		return fmt.Errorf("error verifying refresh token: %w", err)
 	}
-	err = app.authStore.VerifyTokenStorage(ctx, claims.Token)
+	_, err = app.authStore.GetToken(ctx, token) // corrected 'tokne' to 'token'
 	if err != nil {
-		return fmt.Errorf("error deleting token: %w", err)
+		return err
+	}
+	err = app.authStore.DeleteToken(ctx, token) // corrected to use 'app.token'
+	if err != nil {
+		return fmt.Errorf("error at deleting token: %w", err)
 	}
 	return nil
 }
@@ -306,7 +310,11 @@ func (app *authService) HandlePasswordResetToken(ctx context.Context, token, pas
 	if err != nil {
 		return fmt.Errorf("error verifying password reset token: %w", err)
 	}
-	err = app.authStore.VerifyTokenStorage(ctx, claims.Token)
+	_, err = app.authStore.GetToken(ctx, token) // corrected 'tokne' to 'token'
+	if err != nil {
+		return err
+	}
+	err = app.authStore.DeleteToken(ctx, token) // corrected to use 'app.token'
 	if err != nil {
 		return fmt.Errorf("error deleting token: %w", err)
 	}
@@ -347,7 +355,11 @@ func (app *authService) VerifyStateToken(ctx context.Context, token string) (*sh
 	if err != nil {
 		return nil, fmt.Errorf("error verifying state token: %w", err)
 	}
-	err = app.authStore.VerifyTokenStorage(ctx, claims.Token)
+	_, err = app.authStore.GetToken(ctx, token) // corrected 'tokne' to 'token'
+	if err != nil {
+		return nil, err
+	}
+	err = app.authStore.DeleteToken(ctx, token) // corrected to use 'app.token'
 	if err != nil {
 		return nil, fmt.Errorf("error deleting token: %w", err)
 	}
@@ -371,7 +383,11 @@ func (app *authService) HandleRefreshToken(ctx context.Context, token string) (*
 	if err != nil {
 		return nil, fmt.Errorf("error verifying refresh token: %w", err)
 	}
-	err = app.authStore.VerifyTokenStorage(ctx, claims.Token)
+	_, err = app.authStore.GetToken(ctx, claims.Token)
+	if err != nil {
+		return nil, fmt.Errorf("error getting token: %w", err) // corrected to return nil before the error
+	}
+	err = app.authStore.DeleteToken(ctx, claims.Token)
 	if err != nil {
 		return nil, fmt.Errorf("error deleting token: %w", err)
 	}
@@ -388,7 +404,11 @@ func (app *authService) HandleVerificationToken(ctx context.Context, token strin
 	if err != nil {
 		return fmt.Errorf("error verifying verification token: %w", err)
 	}
-	err = app.authStore.VerifyTokenStorage(ctx, claims.Token)
+	_, err = app.authStore.GetToken(ctx, claims.Token)
+	if err != nil {
+		return fmt.Errorf("error getting token: %w", err)
+	}
+	err = app.authStore.DeleteToken(ctx, claims.Token)
 	if err != nil {
 		return fmt.Errorf("error deleting token: %w", err)
 	}

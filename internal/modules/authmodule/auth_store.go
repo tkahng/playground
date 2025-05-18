@@ -24,7 +24,6 @@ type UserStore interface {
 }
 
 type TokenStore interface {
-	VerifyTokenStorage(ctx context.Context, token string) error
 	GetToken(ctx context.Context, token string) (*models.Token, error)
 	SaveToken(ctx context.Context, token *shared.CreateTokenDTO) error
 	DeleteToken(ctx context.Context, token string) error

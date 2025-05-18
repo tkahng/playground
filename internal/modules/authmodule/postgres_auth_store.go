@@ -93,7 +93,7 @@ func (a *PostgresAuthStore) SaveToken(ctx context.Context, token *shared.CreateT
 	return a.tokenStore.SaveToken(ctx, token)
 }
 
-// VerifyTokenStorage implements AuthStore.
-func (a *PostgresAuthStore) VerifyTokenStorage(ctx context.Context, token string) error {
-	return a.tokenStore.VerifyTokenStorage(ctx, token)
-}
+// // VerifyTokenStorage implements AuthStore.
+// func (a *PostgresAuthStore) VerifyTokenStorage(ctx context.Context, token string) error {
+// 	return a.tokenStore.VerifyTokenStorage(ctx, token)
+// }
