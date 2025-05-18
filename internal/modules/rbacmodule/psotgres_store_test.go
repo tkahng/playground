@@ -1,4 +1,4 @@
-package rbac_test
+package rbacmodule_test
 
 import (
 	"context"
@@ -8,8 +8,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
-	"github.com/tkahng/authgo/internal/modules/payment"
-	"github.com/tkahng/authgo/internal/modules/rbac"
+	"github.com/tkahng/authgo/internal/modules/paymentmodule"
+	"github.com/tkahng/authgo/internal/modules/rbacmodule"
 	"github.com/tkahng/authgo/internal/test"
 )
 
@@ -17,8 +17,8 @@ func TestCreateProductPermissions(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
-		rbacStore := rbac.NewPostgresRBACStore(dbxx)
-		paymentStore := payment.NewPostgresPaymentStore(dbxx)
+		rbacStore := rbacmodule.NewPostgresRBACStore(dbxx)
+		paymentStore := paymentmodule.NewPostgresPaymentStore(dbxx)
 		permission, err := rbacStore.FindOrCreatePermission(ctx, "basic")
 		if err != nil {
 			t.Fatalf("failed to find or create permission: %v", err)

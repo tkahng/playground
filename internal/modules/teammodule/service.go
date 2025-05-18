@@ -1,4 +1,4 @@
-package teamservice
+package teammodule
 
 import (
 	"context"

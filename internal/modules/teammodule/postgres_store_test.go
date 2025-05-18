@@ -1,4 +1,4 @@
-package teamservice_test
+package teammodule_test
 
 import (
 	"errors"
@@ -9,7 +9,7 @@ import (
 	"github.com/tkahng/authgo/internal/crudrepo"
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
-	"github.com/tkahng/authgo/internal/modules/teamservice"
+	"github.com/tkahng/authgo/internal/modules/teammodule"
 	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/test"
@@ -25,7 +25,7 @@ func TestCreateTeamFromUser(t *testing.T) {
 		if err != nil {
 			t.Fatalf("CreateUser() error = %v", err)
 		}
-		teamStore := teamservice.NewPostgresTeamStore(dbxx)
+		teamStore := teammodule.NewPostgresTeamStore(dbxx)
 		team, err := teamStore.CreateTeamFromUser(ctx, user)
 		if err != nil {
 			t.Fatalf("CreateTeamFromUser() error = %v", err)
@@ -44,7 +44,7 @@ func TestCreateTeam(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
-		teamStore := teamservice.NewPostgresTeamStore(dbxx)
+		teamStore := teammodule.NewPostgresTeamStore(dbxx)
 		team, err := teamStore.CreateTeam(ctx, "Test Team", nil)
 		if err != nil {
 			t.Fatalf("CreateTeam() error = %v", err)
@@ -60,7 +60,7 @@ func TestUpdateTeam(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
-		teamStore := teamservice.NewPostgresTeamStore(dbxx)
+		teamStore := teammodule.NewPostgresTeamStore(dbxx)
 		team, err := teamStore.CreateTeam(ctx, "Old Name", nil)
 		if err != nil {
 			t.Fatalf("CreateTeam() error = %v", err)
@@ -82,7 +82,7 @@ func TestDeleteTeam(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
-		teamStore := teamservice.NewPostgresTeamStore(dbxx)
+		teamStore := teammodule.NewPostgresTeamStore(dbxx)
 		// Create a team to delete
 		team, err := teamStore.CreateTeam(ctx, "ToDelete", nil)
 		if err != nil {
@@ -100,7 +100,7 @@ func TestFindTeamByID(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
-		teamStore := teamservice.NewPostgresTeamStore(dbxx)
+		teamStore := teammodule.NewPostgresTeamStore(dbxx)
 		team, err := teamStore.CreateTeam(ctx, "FindMe", nil)
 		if err != nil {
 			t.Fatalf("CreateTeam() error = %v", err)
@@ -120,7 +120,7 @@ func TestCreateTeamMember(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
-		teamStore := teamservice.NewPostgresTeamStore(dbxx)
+		teamStore := teammodule.NewPostgresTeamStore(dbxx)
 		team, err := teamStore.CreateTeam(ctx, "TeamWithMember", nil)
 		if err != nil {
 			t.Fatalf("CreateTeam() error = %v", err)
@@ -147,7 +147,7 @@ func TestFindTeamMembersByUserID(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
-		teamStore := teamservice.NewPostgresTeamStore(dbxx)
+		teamStore := teammodule.NewPostgresTeamStore(dbxx)
 		team, err := teamStore.CreateTeam(ctx, "TeamForMembers", nil)
 		if err != nil {
 			t.Fatalf("CreateTeam() error = %v", err)
@@ -178,7 +178,7 @@ func TestFindLatestTeamMemberByUserID(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
-		teamStore := teamservice.NewPostgresTeamStore(dbxx)
+		teamStore := teammodule.NewPostgresTeamStore(dbxx)
 		team1, err := teamStore.CreateTeam(ctx, "team1", nil)
 		if err != nil {
 			t.Fatalf("CreateTeam() error = %v", err)
@@ -255,7 +255,7 @@ func TestUpdateTeamMemberUpdatedAt(t *testing.T) {
 	})
 
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
-		teamStore := teamservice.NewPostgresTeamStore(dbxx)
+		teamStore := teammodule.NewPostgresTeamStore(dbxx)
 		team, err := teamStore.CreateTeam(ctx, "UpdateMemberTeam", nil)
 		if err != nil {
 			t.Fatalf("CreateTeam() error = %v", err)

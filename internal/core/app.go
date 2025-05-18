@@ -5,7 +5,7 @@ import (
 
 	"github.com/tkahng/authgo/internal/conf"
 	"github.com/tkahng/authgo/internal/database"
-	"github.com/tkahng/authgo/internal/modules/payment"
+	"github.com/tkahng/authgo/internal/modules/paymentmodule"
 	"github.com/tkahng/authgo/internal/tools/filesystem"
 	"github.com/tkahng/authgo/internal/tools/mailer"
 )
@@ -19,7 +19,7 @@ type App interface {
 	NewMailClient() mailer.Mailer
 	EncryptionEnv() string
 
-	Payment() payment.PaymentService
+	Payment() paymentmodule.PaymentService
 
 	Auth() Authenticator
 }

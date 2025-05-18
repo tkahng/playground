@@ -8,8 +8,8 @@ import (
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/queries"
 
-	"github.com/tkahng/authgo/internal/modules/payment"
-	"github.com/tkahng/authgo/internal/modules/rbac"
+	"github.com/tkahng/authgo/internal/modules/paymentmodule"
+	"github.com/tkahng/authgo/internal/modules/rbacmodule"
 	"github.com/tkahng/authgo/internal/tools/filesystem"
 	"github.com/tkahng/authgo/internal/tools/logger"
 	"github.com/tkahng/authgo/internal/tools/mailer"
@@ -21,7 +21,7 @@ type BaseApp struct {
 	cfg      *conf.EnvConfig
 	db       *database.Queries
 	settings *conf.AppOptions
-	payment  payment.PaymentService
+	payment  paymentmodule.PaymentService
 	logger   *slog.Logger
 	fs       *filesystem.FileSystem
 	mail     mailer.Mailer
@@ -49,7 +49,7 @@ func (app *BaseApp) Db() database.Dbx {
 }
 
 // Payment implements App.
-func (a *BaseApp) Payment() payment.PaymentService {
+func (a *BaseApp) Payment() paymentmodule.PaymentService {
 	return a.payment
 }
 
@@ -84,12 +84,12 @@ func InitBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 	} else {
 		mail = &mailer.LogMailer{}
 	}
-	store := payment.NewPostgresPaymentStore(pool)
-	stripeClient := payment.NewPaymentClient(cfg.StripeConfig)
+	store := paymentmodule.NewPostgresPaymentStore(pool)
+	stripeClient := paymentmodule.NewPaymentClient(cfg.StripeConfig)
 
-	rbacStore := rbac.NewPostgresRBACStore(pool)
+	rbacStore := rbacmodule.NewPostgresRBACStore(pool)
 
-	stripeService := payment.NewPaymentService(stripeClient, store, rbacStore)
+	stripeService := paymentmodule.NewPaymentService(stripeClient, store, rbacStore)
 	app := &BaseApp{
 		fs:       fs,
 		db:       pool,
