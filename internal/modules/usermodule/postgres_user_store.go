@@ -14,6 +14,20 @@ type PostgresUserStore struct {
 	db database.Dbx
 }
 
+// FindUserByEmail implements UserStore.
+func (p *PostgresUserStore) FindUserByEmail(ctx context.Context, email string) (*models.User, error) {
+	a, err := crudrepo.User.GetOne(
+		ctx,
+		p.db,
+		&map[string]any{
+			"email": map[string]any{
+				"_eq": email,
+			},
+		},
+	)
+	return database.OptionalRow(a, err)
+}
+
 // CreateUser implements UserStore.
 func (p *PostgresUserStore) CreateUser(ctx context.Context, params *shared.AuthenticationInput) (*models.User, error) {
 	return crudrepo.User.PostOne(

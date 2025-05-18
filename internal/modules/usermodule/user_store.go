@@ -9,4 +9,5 @@ import (
 
 type UserStore interface {
 	CreateUser(ctx context.Context, params *shared.AuthenticationInput) (*models.User, error)
+	FindUserByEmail(ctx context.Context, email string) (*models.User, error)
 }

@@ -36,6 +36,7 @@ type StripeService struct {
 	client       PaymentClient
 	paymentStore PaymentStore
 	rbacStore    RBACStore
+	teamStore    TeamStore
 	db           database.Dbx
 }
 
@@ -199,7 +200,7 @@ func (srv *StripeService) FindOrCreateCustomerFromUser(ctx context.Context, user
 }
 
 func (srv *StripeService) CreateCheckoutSession(ctx context.Context, userId uuid.UUID, priceId string) (string, error) {
-	team, err := srv.paymentStore.FindTeamById(ctx, userId)
+	team, err := srv.teamStore.FindTeamById(ctx, userId)
 	if err != nil {
 		return "", err
 	}
@@ -241,7 +242,7 @@ func (srv *StripeService) CreateCheckoutSession(ctx context.Context, userId uuid
 }
 
 func (srv *StripeService) CreateBillingPortalSession(ctx context.Context, userId uuid.UUID) (string, error) {
-	team, err := srv.paymentStore.FindTeamById(ctx, userId)
+	team, err := srv.teamStore.FindTeamById(ctx, userId)
 	if err != nil {
 		return "", err
 	}

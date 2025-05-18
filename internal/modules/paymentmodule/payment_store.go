@@ -23,7 +23,7 @@ type PaymentStore interface {
 	UpsertProduct(ctx context.Context, product *models.StripeProduct) error
 	UpsertPriceFromStripe(ctx context.Context, price *stripe.Price) error
 	UpsertPrice(ctx context.Context, price *models.StripePrice) error
-	FindTeamById(ctx context.Context, teamId uuid.UUID) (*models.Team, error)
+	// FindTeamById(ctx context.Context, teamId uuid.UUID) (*models.Team, error)
 	FindLatestActiveSubscriptionByTeamId(ctx context.Context, teamId uuid.UUID) (*models.StripeSubscription, error)
 	IsFirstSubscription(ctx context.Context, teamId uuid.UUID) (bool, error)
 	FindValidPriceById(ctx context.Context, priceId string) (*models.StripePrice, error)
@@ -34,4 +34,7 @@ type PaymentStore interface {
 type RBACStore interface {
 	FindPermissionByName(ctx context.Context, name string) (*models.Permission, error)
 	CreateProductPermissions(ctx context.Context, productId string, permissionIds ...uuid.UUID) error
+}
+type TeamStore interface {
+	FindTeamById(ctx context.Context, teamId uuid.UUID) (*models.Team, error)
 }

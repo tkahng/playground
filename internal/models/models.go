@@ -13,6 +13,10 @@ const (
 	ProviderTypeCredentials ProviderTypes = "credentials"
 )
 
+func (p ProviderTypes) String() string {
+	return string(p)
+}
+
 type Providers string
 
 const (
@@ -22,6 +26,10 @@ const (
 	ProvidersGithub      Providers = "github"
 	ProvidersCredentials Providers = "credentials"
 )
+
+func (p Providers) String() string {
+	return string(p)
+}
 
 type UserAccount struct {
 	_                 struct{}      `db:"user_accounts" json:"-"`
