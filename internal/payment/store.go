@@ -24,9 +24,9 @@ type PaymentStore interface {
 	UpsertPriceFromStripe(ctx context.Context, dbx db.Dbx, price *stripe.Price) error
 	CreateProductRoles(ctx context.Context, db db.Dbx, productId string, roleIds ...uuid.UUID) error
 	CreateProductPermissions(ctx context.Context, db db.Dbx, productId string, permissionIds ...uuid.UUID) error
-	FindUserById(ctx context.Context, dbx db.Dbx, userId uuid.UUID) (*models.User, error)
-	FindLatestActiveSubscriptionByUserId(ctx context.Context, dbx db.Dbx, userId uuid.UUID) (*models.StripeSubscription, error)
-	IsFirstSubscription(ctx context.Context, dbx db.Dbx, userId uuid.UUID) (bool, error)
+	FindTeamById(ctx context.Context, dbx db.Dbx, teamId uuid.UUID) (*models.Team, error)
+	FindLatestActiveSubscriptionByTeamId(ctx context.Context, dbx db.Dbx, teamId uuid.UUID) (*models.StripeSubscription, error)
+	IsFirstSubscription(ctx context.Context, dbx db.Dbx, teamId uuid.UUID) (bool, error)
 	FindValidPriceById(ctx context.Context, dbx db.Dbx, priceId string) (*models.StripePrice, error)
 	ListProducts(ctx context.Context, dbx db.Dbx, input *shared.StripeProductListParams) ([]*models.StripeProduct, error)
 	ListPrices(ctx context.Context, dbx db.Dbx, input *shared.StripePriceListParams) ([]*models.StripePrice, error)
@@ -81,9 +81,9 @@ func (s *StripeStore) FindCustomerByUserId(ctx context.Context, dbx db.Dbx, user
 	return queries.FindCustomerByUserId(ctx, dbx, userId)
 }
 
-// FindLatestActiveSubscriptionByUserId implements PaymentStore.
-func (s *StripeStore) FindLatestActiveSubscriptionByUserId(ctx context.Context, dbx db.Dbx, userId uuid.UUID) (*models.StripeSubscription, error) {
-	return queries.FindLatestActiveSubscriptionByUserId(ctx, dbx, userId)
+// FindLatestActiveSubscriptionByTeamId implements PaymentStore.
+func (s *StripeStore) FindLatestActiveSubscriptionByTeamId(ctx context.Context, dbx db.Dbx, teamId uuid.UUID) (*models.StripeSubscription, error) {
+	return queries.FindLatestActiveSubscriptionByTeamId(ctx, dbx, teamId)
 }
 
 // FindProductByStripeId implements PaymentStore.
@@ -96,9 +96,9 @@ func (s *StripeStore) FindSubscriptionWithPriceById(ctx context.Context, dbx db.
 	return queries.FindSubscriptionWithPriceById(ctx, dbx, stripeId)
 }
 
-// FindUserById implements PaymentStore.
-func (s *StripeStore) FindUserById(ctx context.Context, dbx db.Dbx, userId uuid.UUID) (*models.User, error) {
-	return queries.FindUserById(ctx, dbx, userId)
+// FindTeamById implements PaymentStore.
+func (s *StripeStore) FindTeamById(ctx context.Context, dbx db.Dbx, teamId uuid.UUID) (*models.Team, error) {
+	return queries.FindTeamByID(ctx, dbx, teamId)
 }
 
 // FindValidPriceById implements PaymentStore.

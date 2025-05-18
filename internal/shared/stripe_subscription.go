@@ -22,8 +22,9 @@ const (
 )
 
 type Subscription struct {
-	ID                 string                   `db:"id,pk" json:"id"`
-	UserID             *uuid.UUID               `db:"user_id" json:"user_id"`
+	ID string `db:"id,pk" json:"id"`
+	// UserID             *uuid.UUID               `db:"user_id" json:"user_id"`
+	TeamID             uuid.UUID                `db:"team_id" json:"team_id"`
 	Status             StripeSubscriptionStatus `db:"status" json:"status"`
 	Metadata           map[string]string        `db:"metadata" json:"metadata"`
 	PriceID            string                   `db:"price_id" json:"price_id"`
@@ -39,7 +40,6 @@ type Subscription struct {
 	TrialEnd           *time.Time               `db:"trial_end" json:"trial_end"`
 	CreatedAt          time.Time                `db:"created_at" json:"created_at"`
 	UpdatedAt          time.Time                `db:"updated_at" json:"updated_at"`
-	TeamID             *uuid.UUID               `db:"team_id" json:"team_id"`
 }
 type SubscriptionWithPrice struct {
 	*Subscription
@@ -58,8 +58,9 @@ func FromCrudToSubWithUserAndPrice(sub *models.SubscriptionWithPrice) *Subscript
 
 func FromCrudSubscription(sub *models.StripeSubscription) *Subscription {
 	return &Subscription{
-		ID:                 sub.ID,
-		UserID:             sub.UserID,
+		ID:     sub.ID,
+		TeamID: sub.TeamID,
+		// UserID:             sub.UserID,
 		Status:             StripeSubscriptionStatus(sub.Status),
 		Metadata:           sub.Metadata,
 		PriceID:            sub.PriceID,
@@ -75,7 +76,6 @@ func FromCrudSubscription(sub *models.StripeSubscription) *Subscription {
 		TrialEnd:           sub.TrialEnd,
 		CreatedAt:          sub.CreatedAt,
 		UpdatedAt:          sub.UpdatedAt,
-		TeamID:             sub.TeamID,
 	}
 }
 

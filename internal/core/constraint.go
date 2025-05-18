@@ -26,7 +26,7 @@ type ConstraintCheckerService struct {
 
 // CannotHaveValidSubscription implements ConstraintChecker.
 func (c *ConstraintCheckerService) CannotHaveValidSubscription(userId uuid.UUID) error {
-	subscription, err := queries.FindLatestActiveSubscriptionByUserId(c.ctx, c.db, userId)
+	subscription, err := queries.FindLatestActiveSubscriptionByTeamId(c.ctx, c.db, userId)
 	if err != nil {
 		return err
 	}

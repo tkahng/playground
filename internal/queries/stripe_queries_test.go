@@ -14,7 +14,6 @@ import (
 	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/test"
-	"github.com/tkahng/authgo/internal/tools/types"
 )
 
 func TestFindCustomerByStripeId(t *testing.T) {
@@ -713,7 +712,14 @@ func TestUpsertSubscription(t *testing.T) {
 		if user == nil {
 			t.Fatalf("expected user to be created, got nil")
 		}
-		userId := user.ID
+		team, err := queries.CreateTeamFromUser(ctx, dbxx, user)
+		if err != nil {
+			t.Fatalf("failed to create team from user: %v", err)
+		}
+		if team == nil {
+			t.Fatalf("expected team to be created, got nil")
+		}
+		teamId := team.ID
 		now := time.Now()
 
 		// Create test product and price first
@@ -758,7 +764,7 @@ func TestUpsertSubscription(t *testing.T) {
 					dbx: dbxx,
 					subscription: &models.StripeSubscription{
 						ID:                 "sub_test123",
-						UserID:             nil,
+						TeamID:             teamId,
 						Status:             models.StripeSubscriptionStatusActive,
 						PriceID:            price.ID,
 						Quantity:           1,
@@ -778,7 +784,7 @@ func TestUpsertSubscription(t *testing.T) {
 					dbx: dbxx,
 					subscription: &models.StripeSubscription{
 						ID:                 "sub_test123",
-						UserID:             types.Pointer(userId),
+						TeamID:             teamId,
 						Status:             models.StripeSubscriptionStatusCanceled,
 						PriceID:            price.ID,
 						Quantity:           2,
@@ -981,7 +987,14 @@ func TestFindSubscriptionById(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to create user: %v", err)
 		}
-
+		team, err := queries.CreateTeamFromUser(ctx, dbxx, user)
+		if err != nil {
+			t.Fatalf("failed to create team from user: %v", err)
+		}
+		if team == nil {
+			t.Fatalf("expected team to be created, got nil")
+		}
+		teamId := team.ID
 		product := &models.StripeProduct{
 			ID:       "prod_test123",
 			Active:   true,
@@ -1008,7 +1021,7 @@ func TestFindSubscriptionById(t *testing.T) {
 		// Create test subscription
 		testSub := &models.StripeSubscription{
 			ID:                 "sub_test123",
-			UserID:             types.Pointer(user.ID),
+			TeamID:             teamId,
 			Status:             models.StripeSubscriptionStatusActive,
 			PriceID:            price.ID,
 			Quantity:           1,
@@ -1099,7 +1112,14 @@ func TestFindSubscriptionWithPriceById(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to create user: %v", err)
 		}
-
+		team, err := queries.CreateTeamFromUser(ctx, dbxx, user)
+		if err != nil {
+			t.Fatalf("failed to create team from user: %v", err)
+		}
+		if team == nil {
+			t.Fatalf("expected team to be created, got nil")
+		}
+		teamId := team.ID
 		product := &models.StripeProduct{
 			ID:       "prod_test123",
 			Active:   true,
@@ -1126,7 +1146,7 @@ func TestFindSubscriptionWithPriceById(t *testing.T) {
 		// Create test subscription
 		testSub := &models.StripeSubscription{
 			ID:                 "sub_test123",
-			UserID:             types.Pointer(user.ID),
+			TeamID:             teamId,
 			Status:             models.StripeSubscriptionStatusActive,
 			PriceID:            price.ID,
 			Quantity:           1,
@@ -1225,7 +1245,14 @@ func TestFindLatestActiveSubscriptionByUserId(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to create user: %v", err)
 		}
-
+		team, err := queries.CreateTeamFromUser(ctx, dbxx, user)
+		if err != nil {
+			t.Fatalf("failed to create team from user: %v", err)
+		}
+		if team == nil {
+			t.Fatalf("expected team to be created, got nil")
+		}
+		teamId := team.ID
 		// Create test product and price
 		product := &models.StripeProduct{
 			ID:       "prod_test123",
@@ -1254,7 +1281,7 @@ func TestFindLatestActiveSubscriptionByUserId(t *testing.T) {
 		// Create test subscriptions
 		activeSub := &models.StripeSubscription{
 			ID:                 "sub_active",
-			UserID:             types.Pointer(user.ID),
+			TeamID:             teamId,
 			Status:             models.StripeSubscriptionStatusActive,
 			PriceID:            price.ID,
 			Quantity:           1,
@@ -1267,7 +1294,7 @@ func TestFindLatestActiveSubscriptionByUserId(t *testing.T) {
 
 		canceledSub := &models.StripeSubscription{
 			ID:                 "sub_canceled",
-			UserID:             types.Pointer(user.ID),
+			TeamID:             teamId,
 			Status:             models.StripeSubscriptionStatusCanceled,
 			PriceID:            price.ID,
 			Quantity:           1,
@@ -1321,7 +1348,7 @@ func TestFindLatestActiveSubscriptionByUserId(t *testing.T) {
 
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				got, err := queries.FindLatestActiveSubscriptionByUserId(tt.args.ctx, tt.args.dbx, tt.args.userId)
+				got, err := queries.FindLatestActiveSubscriptionByTeamId(tt.args.ctx, tt.args.dbx, tt.args.userId)
 				if (err != nil) != tt.wantErr {
 					t.Errorf("FindLatestActiveSubscriptionByUserId() error = %v, wantErr %v", err, tt.wantErr)
 					return
@@ -1342,8 +1369,8 @@ func TestFindLatestActiveSubscriptionByUserId(t *testing.T) {
 				if got.Status != tt.want.Status {
 					t.Errorf("FindLatestActiveSubscriptionByUserId() got Status = %v, want %v", got.Status, tt.want.Status)
 				}
-				if got.UserID != tt.want.UserID {
-					t.Errorf("FindLatestActiveSubscriptionByUserId() got UserID = %v, want %v", got.UserID, tt.want.UserID)
+				if got.TeamID != tt.want.TeamID {
+					t.Errorf("FindLatestActiveSubscriptionByUserId() got TeamID = %v, want %v", got.TeamID, tt.want.TeamID)
 				}
 			})
 		}
@@ -1361,7 +1388,14 @@ func TestFindLatestActiveSubscriptionWithPriceByUserId(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to create user: %v", err)
 		}
-
+		team, err := queries.CreateTeamFromUser(ctx, dbxx, user)
+		if err != nil {
+			t.Fatalf("failed to create team from user: %v", err)
+		}
+		if team == nil {
+			t.Fatalf("expected team to be created, got nil")
+		}
+		teamId := team.ID
 		// Create test product
 		product := &models.StripeProduct{
 			ID:       "prod_test123",
@@ -1391,7 +1425,7 @@ func TestFindLatestActiveSubscriptionWithPriceByUserId(t *testing.T) {
 		// Create active subscription
 		activeSub := &models.StripeSubscription{
 			ID:                 "sub_active",
-			UserID:             types.Pointer(user.ID),
+			TeamID:             teamId,
 			Status:             models.StripeSubscriptionStatusActive,
 			PriceID:            price.ID,
 			Quantity:           1,
@@ -1489,7 +1523,14 @@ func TestIsFirstSubscription(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to create user: %v", err)
 		}
-
+		team, err := queries.CreateTeamFromUser(ctx, dbxx, user)
+		if err != nil {
+			t.Fatalf("failed to create team from user: %v", err)
+		}
+		if team == nil {
+			t.Fatalf("expected team to be created, got nil")
+		}
+		teamId := team.ID
 		// Create test product and price
 		product := &models.StripeProduct{
 			ID:       "prod_test123",
@@ -1549,7 +1590,7 @@ func TestIsFirstSubscription(t *testing.T) {
 				setup: func() error {
 					subscription := &models.StripeSubscription{
 						ID:                 "sub_test123",
-						UserID:             types.Pointer(user.ID),
+						TeamID:             teamId,
 						Status:             models.StripeSubscriptionStatusActive,
 						PriceID:            price.ID,
 						Quantity:           1,

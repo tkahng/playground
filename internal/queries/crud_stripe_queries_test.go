@@ -11,7 +11,6 @@ import (
 	"github.com/tkahng/authgo/internal/seeders"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/test"
-	"github.com/tkahng/authgo/internal/tools/types"
 )
 
 func TestListProducts(t *testing.T) {
@@ -696,7 +695,14 @@ func TestCountSubscriptions(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to create user: %v", err)
 		}
-
+		team, err := queries.CreateTeamFromUser(ctx, dbxx, user)
+		if err != nil {
+			t.Fatalf("failed to create team from user: %v", err)
+		}
+		if team == nil {
+			t.Fatalf("expected team to be created, got nil")
+		}
+		teamId := team.ID
 		// Create test subscription
 		_, err = seeders.CreateStripeProductPrices(ctx, dbxx, 1)
 		if err != nil {
@@ -711,7 +717,7 @@ func TestCountSubscriptions(t *testing.T) {
 			t.Fatalf("failed to get price: %v", err)
 		}
 		subscription := &models.StripeSubscription{
-			UserID:  types.Pointer(user.ID),
+			TeamID:  teamId,
 			ID:      "sub_test",
 			PriceID: price.ID,
 			Status:  models.StripeSubscriptionStatusActive,

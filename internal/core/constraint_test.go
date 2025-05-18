@@ -13,7 +13,6 @@ import (
 	"github.com/tkahng/authgo/internal/seeders"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/test"
-	"github.com/tkahng/authgo/internal/tools/types"
 )
 
 func TestConstraintCheckerService_CannotHaveValidSubscription(t *testing.T) {
@@ -26,6 +25,14 @@ func TestConstraintCheckerService_CannotHaveValidSubscription(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to create user: %v", err)
 		}
+		team, err := queries.CreateTeamFromUser(ctx, tx, user)
+		if err != nil {
+			t.Fatalf("failed to create team from user: %v", err)
+		}
+		if team == nil {
+			t.Fatalf("expected team to be created, got nil")
+		}
+		teamId := team.ID
 		prods, err := seeders.CreateStripeProductPrices(ctx, tx, 1)
 		if err != nil {
 			t.Fatalf("failed to create product prices: %v", err)
@@ -35,7 +42,7 @@ func TestConstraintCheckerService_CannotHaveValidSubscription(t *testing.T) {
 			tx,
 			&models.StripeSubscription{
 				ID:      "sub_123",
-				UserID:  types.Pointer(user.ID),
+				TeamID:  teamId,
 				PriceID: prods[0].Prices[0].ID,
 				Status:  models.StripeSubscriptionStatusActive,
 				Metadata: map[string]string{

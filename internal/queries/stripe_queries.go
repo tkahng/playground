@@ -185,7 +185,7 @@ func UpsertSubscription(ctx context.Context, dbx db.Dbx, subscription *models.St
 		Insert("stripe_subscriptions").
 		Columns(
 			"id",
-			"user_id",
+			"team_id",
 			"status",
 			"metadata",
 			"price_id",
@@ -201,7 +201,7 @@ func UpsertSubscription(ctx context.Context, dbx db.Dbx, subscription *models.St
 			"trial_end",
 		).Values(
 		subscription.ID,
-		subscription.UserID,
+		subscription.TeamID,
 		subscription.Status,
 		subscription.Metadata,
 		subscription.PriceID,
@@ -236,7 +236,7 @@ func UpsertSubscription(ctx context.Context, dbx db.Dbx, subscription *models.St
 	return ExecWithBuilder(ctx, dbx, q.PlaceholderFormat(squirrel.Dollar))
 }
 
-func UpsertSubscriptionFromStripe(ctx context.Context, exec db.Dbx, sub *stripe.Subscription, userId uuid.UUID) error {
+func UpsertSubscriptionFromStripe(ctx context.Context, exec db.Dbx, sub *stripe.Subscription, teamId uuid.UUID) error {
 	if sub == nil {
 		return nil
 	}
@@ -250,7 +250,7 @@ func UpsertSubscriptionFromStripe(ctx context.Context, exec db.Dbx, sub *stripe.
 	status := models.StripeSubscriptionStatus(sub.Status)
 	err := UpsertSubscription(ctx, exec, &models.StripeSubscription{
 		ID:                 sub.ID,
-		UserID:             types.Pointer(userId),
+		TeamID:             teamId,
 		Status:             models.StripeSubscriptionStatus(status),
 		Metadata:           sub.Metadata,
 		PriceID:            item.Price.ID,
@@ -344,13 +344,13 @@ func FindSubscriptionWithPriceById(ctx context.Context, dbx db.Dbx, stripeId str
 	return first, nil
 }
 
-func FindLatestActiveSubscriptionByUserId(ctx context.Context, dbx db.Dbx, userId uuid.UUID) (*models.StripeSubscription, error) {
+func FindLatestActiveSubscriptionByTeamId(ctx context.Context, dbx db.Dbx, teamId uuid.UUID) (*models.StripeSubscription, error) {
 	data, err := crudrepo.StripeSubscription.Get(
 		ctx,
 		dbx,
 		&map[string]any{
-			"user_id": map[string]any{
-				"_eq": userId.String(),
+			"team_id": map[string]any{
+				"_eq": teamId.String(),
 			},
 			"status": map[string]any{
 				"_in": []string{
@@ -434,13 +434,13 @@ func FindLatestActiveSubscriptionWithPriceByUserId(ctx context.Context, dbx db.D
 	return OptionalRow(&data[0], err)
 }
 
-func IsFirstSubscription(ctx context.Context, dbx db.Dbx, userId uuid.UUID) (bool, error) {
+func IsFirstSubscription(ctx context.Context, dbx db.Dbx, teamId uuid.UUID) (bool, error) {
 	data, err := crudrepo.StripeSubscription.Count(
 		ctx,
 		dbx,
 		&map[string]any{
-			"user_id": map[string]any{
-				"_eq": userId.String(),
+			"team_id": map[string]any{
+				"_eq": teamId.String(),
 			},
 		},
 	)

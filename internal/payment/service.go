@@ -244,25 +244,26 @@ func (srv *StripeService) FindOrCreateCustomerFromUser(ctx context.Context, dbx 
 }
 
 func (srv *StripeService) CreateCheckoutSession(ctx context.Context, dbx db.Dbx, userId uuid.UUID, priceId string) (string, error) {
-	user, err := srv.store.FindUserById(ctx, dbx, userId)
+	team, err := srv.store.FindTeamById(ctx, dbx, userId)
 	if err != nil {
 		return "", err
 	}
-	if user == nil {
+	if team == nil {
 		return "", errors.New("user not found")
 	}
-	dbcus, err := srv.FindOrCreateCustomerFromUser(ctx, dbx, user.ID, user.Email)
-	if err != nil {
-		return "", err
+	if team.StripeCustomerID == nil {
+		return "", errors.New("team does not have a stripe customer id")
 	}
-	val, err := srv.store.FindLatestActiveSubscriptionByUserId(ctx, dbx, userId)
+	customer_stripe_id := *team.StripeCustomerID
+
+	val, err := srv.store.FindLatestActiveSubscriptionByTeamId(ctx, dbx, userId)
 	if err != nil {
 		return "", err
 	}
 	if val != nil {
 		return "", errors.New("user already has a valid subscription")
 	}
-	firstSub, err := srv.store.IsFirstSubscription(ctx, dbx, userId)
+	firstSub, err := srv.store.IsFirstSubscription(ctx, dbx, team.ID)
 	if err != nil {
 		return "", err
 	}
@@ -277,7 +278,7 @@ func (srv *StripeService) CreateCheckoutSession(ctx context.Context, dbx db.Dbx,
 	if valPrice == nil {
 		return "", errors.New("price is not valid")
 	}
-	sesh, err := srv.client.CreateCheckoutSession(dbcus.StripeID, priceId, trialDays)
+	sesh, err := srv.client.CreateCheckoutSession(customer_stripe_id, priceId, trialDays)
 	if err != nil {
 		return "", err
 	}
@@ -285,23 +286,24 @@ func (srv *StripeService) CreateCheckoutSession(ctx context.Context, dbx db.Dbx,
 }
 
 func (s *StripeService) CreateBillingPortalSession(ctx context.Context, dbx db.Dbx, userId uuid.UUID) (string, error) {
-	user, err := s.store.FindUserById(ctx, dbx, userId)
+	team, err := s.store.FindTeamById(ctx, dbx, userId)
 	if err != nil {
 		return "", err
 	}
-	if user == nil {
+	if team == nil {
 		return "", errors.New("user not found")
 	}
+	stripe_customer_id := *team.StripeCustomerID
 	// find or create customer from user
-	dbcus, err := s.FindOrCreateCustomerFromUser(ctx, dbx, user.ID, user.Email)
-	if err != nil {
-		return "", err
-	}
-	if dbcus == nil {
-		return "", errors.New("customer not found")
-	}
+	// dbcus, err := s.FindOrCreateCustomerFromUser(ctx, dbx, team.ID, team.Email)
+	// if err != nil {
+	// 	return "", err
+	// }
+	// if dbcus == nil {
+	// 	return "", errors.New("customer not found")
+	// }
 	// verify user has a valid subscriptio
-	sub, err := s.store.FindLatestActiveSubscriptionByUserId(ctx, dbx, user.ID)
+	sub, err := s.store.FindLatestActiveSubscriptionByTeamId(ctx, dbx, team.ID)
 	if err != nil {
 		return "", err
 	}
@@ -352,7 +354,7 @@ func (s *StripeService) CreateBillingPortalSession(ctx context.Context, dbx db.D
 	if err != nil {
 		return "", err
 	}
-	url, err := s.client.CreateBillingPortalSession(dbcus.StripeID, config)
+	url, err := s.client.CreateBillingPortalSession(stripe_customer_id, config)
 	if err != nil {
 		log.Println(err)
 		return "", errors.New("failed to create checkout session")
