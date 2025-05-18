@@ -20,7 +20,7 @@ type BaseApp struct {
 	cfg      *conf.EnvConfig
 	db       *db.Queries
 	settings *conf.AppOptions
-	payment  *payment.StripeService
+	payment  payment.PaymentService
 	logger   *slog.Logger
 	fs       *filesystem.FileSystem
 	mail     mailer.Mailer
@@ -48,7 +48,7 @@ func (app *BaseApp) Db() db.Dbx {
 }
 
 // Payment implements App.
-func (a *BaseApp) Payment() *payment.StripeService {
+func (a *BaseApp) Payment() payment.PaymentService {
 	return a.payment
 }
 

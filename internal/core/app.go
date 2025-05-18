@@ -19,7 +19,7 @@ type App interface {
 	NewMailClient() mailer.Mailer
 	EncryptionEnv() string
 
-	Payment() *payment.StripeService
+	Payment() payment.PaymentService
 
 	Auth() Authenticator
 }
