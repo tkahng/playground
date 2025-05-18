@@ -11,7 +11,6 @@ import (
 	"github.com/stripe/stripe-go/v82"
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
-	"github.com/tkahng/authgo/internal/services/rbac"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 	"github.com/tkahng/authgo/internal/tools/types"
@@ -36,7 +35,7 @@ type StripeService struct {
 	logger       *slog.Logger
 	client       PaymentClient
 	paymentStore PaymentStore
-	rbacStore    rbac.RBACStore
+	rbacStore    RBACStore
 	db           database.Dbx
 }
 
@@ -46,7 +45,7 @@ func (srv *StripeService) Client() PaymentClient {
 	return srv.client
 }
 
-func NewPaymentService(client PaymentClient, paymentStore PaymentStore, rbacStore rbac.RBACStore) PaymentService {
+func NewPaymentService(client PaymentClient, paymentStore PaymentStore, rbacStore RBACStore) PaymentService {
 	return &StripeService{client: client, logger: slog.Default(), paymentStore: paymentStore, rbacStore: rbacStore}
 }
 

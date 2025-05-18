@@ -26,10 +26,6 @@ func NewPostgresPaymentStore(db database.Dbx) *PosrgresStripeStore {
 
 var _ PaymentStore = (*PosrgresStripeStore)(nil)
 
-// CreateProductRoles implements PaymentStore.
-//
-
-// UpsertPriceFromStripe implements PaymentStore.
 func (s *PosrgresStripeStore) UpsertPriceFromStripe(ctx context.Context, price *stripe.Price) error {
 	if price == nil {
 		return nil

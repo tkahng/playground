@@ -30,3 +30,8 @@ type PaymentStore interface {
 	ListProducts(ctx context.Context, input *shared.StripeProductListParams) ([]*models.StripeProduct, error)
 	ListPrices(ctx context.Context, input *shared.StripePriceListParams) ([]*models.StripePrice, error)
 }
+
+type RBACStore interface {
+	FindPermissionByName(ctx context.Context, name string) (*models.Permission, error)
+	CreateProductPermissions(ctx context.Context, productId string, permissionIds ...uuid.UUID) error
+}
