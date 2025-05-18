@@ -408,6 +408,13 @@ type CreatePermissionDto struct {
 	Description *string `json:"description,omitempty"`
 }
 
+func CreatePermission(ctx context.Context, dbx database.Dbx, permission *CreatePermissionDto) (*crudModels.Permission, error) {
+	data, err := crudrepo.Permission.PostOne(ctx, dbx, &crudModels.Permission{
+		Name:        permission.Name,
+		Description: permission.Description,
+	})
+	return data, err
+}
 func FindOrCreatePermission(ctx context.Context, dbx database.Dbx, permissionName string) (*crudModels.Permission, error) {
 	permission, err := crudrepo.Permission.GetOne(
 		ctx,
@@ -428,14 +435,6 @@ func FindOrCreatePermission(ctx context.Context, dbx database.Dbx, permissionNam
 		}
 	}
 	return permission, nil
-}
-
-func CreatePermission(ctx context.Context, dbx database.Dbx, permission *CreatePermissionDto) (*crudModels.Permission, error) {
-	data, err := crudrepo.Permission.PostOne(ctx, dbx, &crudModels.Permission{
-		Name:        permission.Name,
-		Description: permission.Description,
-	})
-	return data, err
 }
 
 func FindPermissionsByIds(ctx context.Context, dbx database.Dbx, params []uuid.UUID) ([]*crudModels.Permission, error) {

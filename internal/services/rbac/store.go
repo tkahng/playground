@@ -10,8 +10,10 @@ import (
 )
 
 type RBACStore interface {
-	FindPermissionByName(ctx context.Context, name string) (*models.Permission, error)
+	CreatePermission(ctx context.Context, name string, description *string) (*models.Permission, error)
 	CreateProductPermissions(ctx context.Context, productId string, permissionIds ...uuid.UUID) error
+	FindPermissionByName(ctx context.Context, name string) (*models.Permission, error)
+	FindOrCreatePermission(ctx context.Context, permissionName string) (*models.Permission, error)
 }
 
 type PostgresRBACStore struct {
@@ -59,4 +61,37 @@ func (p *PostgresRBACStore) FindPermissionByName(ctx context.Context, name strin
 		},
 	)
 	return database.OptionalRow(data, err)
+}
+
+func (p *PostgresRBACStore) FindOrCreatePermission(ctx context.Context, permissionName string) (*models.Permission, error) {
+	permission, err := crudrepo.Permission.GetOne(
+		ctx,
+		p.db,
+		&map[string]any{
+			"name": map[string]any{
+				"_eq": permissionName,
+			},
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	if permission == nil {
+		permission, err = p.CreatePermission(ctx, permissionName, nil)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return permission, nil
+}
+
+func (p *PostgresRBACStore) CreatePermission(ctx context.Context, name string, description *string) (*models.Permission, error) {
+	data, err := crudrepo.Permission.PostOne(ctx, p.db, &models.Permission{
+		Name:        name,
+		Description: description,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
 }
