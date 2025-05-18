@@ -10,7 +10,7 @@ import (
 	"github.com/stephenafamo/scan"
 	"github.com/stephenafamo/scan/pgxscan"
 	"github.com/tkahng/authgo/internal/crudrepo"
-	"github.com/tkahng/authgo/internal/db"
+	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
 	crudModels "github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/shared"
@@ -88,7 +88,7 @@ type RolePermissionClaims struct {
 // It returns a pointer to a RolePermissionClaims struct containing the user's
 // roles and permissions, or an error if the user is not found or if any other
 // database error occurs.
-func FindUserWithRolesAndPermissionsByEmail(ctx context.Context, db db.Dbx, email string) (*RolePermissionClaims, error) {
+func FindUserWithRolesAndPermissionsByEmail(ctx context.Context, db database.Dbx, email string) (*RolePermissionClaims, error) {
 	res, err := pgxscan.One(ctx, db, scan.StructMapper[RolePermissionClaims](), RawGetUserWithAllRolesAndPermissionsByEmail, email)
 	if err != nil {
 		return nil, err
@@ -97,7 +97,7 @@ func FindUserWithRolesAndPermissionsByEmail(ctx context.Context, db db.Dbx, emai
 	return &res, nil
 }
 
-func FindUserAccountByUserIdAndProvider(ctx context.Context, db db.Dbx, userId uuid.UUID, provider shared.Providers) (*crudModels.UserAccount, error) {
+func FindUserAccountByUserIdAndProvider(ctx context.Context, db database.Dbx, userId uuid.UUID, provider shared.Providers) (*crudModels.UserAccount, error) {
 	return crudrepo.UserAccount.GetOne(ctx, db, &map[string]any{
 		"user_id": map[string]any{
 			"_eq": userId.String(),
@@ -108,7 +108,7 @@ func FindUserAccountByUserIdAndProvider(ctx context.Context, db db.Dbx, userId u
 	})
 }
 
-func LoadUsersByUserIds(ctx context.Context, db db.Dbx, userIds ...uuid.UUID) ([]*crudModels.User, error) {
+func LoadUsersByUserIds(ctx context.Context, db database.Dbx, userIds ...uuid.UUID) ([]*crudModels.User, error) {
 	users, err := crudrepo.User.Get(
 		ctx,
 		db,
@@ -132,7 +132,7 @@ func LoadUsersByUserIds(ctx context.Context, db db.Dbx, userIds ...uuid.UUID) ([
 	}), nil
 }
 
-func CreateUser(ctx context.Context, db db.Dbx, params *shared.AuthenticationInput) (*crudModels.User, error) {
+func CreateUser(ctx context.Context, db database.Dbx, params *shared.AuthenticationInput) (*crudModels.User, error) {
 	return crudrepo.User.PostOne(ctx, db, &crudModels.User{
 		Email:           params.Email,
 		Name:            params.Name,
@@ -141,7 +141,7 @@ func CreateUser(ctx context.Context, db db.Dbx, params *shared.AuthenticationInp
 	})
 }
 
-func CreateUserRoles(ctx context.Context, db db.Dbx, userId uuid.UUID, roleIds ...uuid.UUID) error {
+func CreateUserRoles(ctx context.Context, db database.Dbx, userId uuid.UUID, roleIds ...uuid.UUID) error {
 	var dtos []crudModels.UserRole
 	for _, id := range roleIds {
 		dtos = append(dtos, crudModels.UserRole{
@@ -160,7 +160,7 @@ func CreateUserRoles(ctx context.Context, db db.Dbx, userId uuid.UUID, roleIds .
 	}
 	return nil
 }
-func CreateUserPermissions(ctx context.Context, db db.Dbx, userId uuid.UUID, permissionIds ...uuid.UUID) error {
+func CreateUserPermissions(ctx context.Context, db database.Dbx, userId uuid.UUID, permissionIds ...uuid.UUID) error {
 	var dtos []crudModels.UserPermission
 	for _, id := range permissionIds {
 		dtos = append(dtos, crudModels.UserPermission{
@@ -179,7 +179,7 @@ func CreateUserPermissions(ctx context.Context, db db.Dbx, userId uuid.UUID, per
 	return nil
 }
 
-func CreateAccount(ctx context.Context, db db.Dbx, userId uuid.UUID, params *shared.AuthenticationInput) (*crudModels.UserAccount, error) {
+func CreateAccount(ctx context.Context, db database.Dbx, userId uuid.UUID, params *shared.AuthenticationInput) (*crudModels.UserAccount, error) {
 	r, err := crudrepo.UserAccount.PostOne(ctx, db, &crudModels.UserAccount{
 		UserID:            userId,
 		Type:              crudModels.ProviderTypes(params.Type),
@@ -192,7 +192,7 @@ func CreateAccount(ctx context.Context, db db.Dbx, userId uuid.UUID, params *sha
 	return OptionalRow(r, err)
 }
 
-func FindUserByEmail(ctx context.Context, db db.Dbx, email string) (*crudModels.User, error) {
+func FindUserByEmail(ctx context.Context, db database.Dbx, email string) (*crudModels.User, error) {
 	a, err := crudrepo.User.GetOne(
 		ctx,
 		db,
@@ -204,7 +204,7 @@ func FindUserByEmail(ctx context.Context, db db.Dbx, email string) (*crudModels.
 	)
 	return OptionalRow(a, err)
 }
-func FindUserById(ctx context.Context, db db.Dbx, userId uuid.UUID) (*crudModels.User, error) {
+func FindUserById(ctx context.Context, db database.Dbx, userId uuid.UUID) (*crudModels.User, error) {
 	a, err := crudrepo.User.GetOne(
 		ctx,
 		db,
@@ -217,7 +217,7 @@ func FindUserById(ctx context.Context, db db.Dbx, userId uuid.UUID) (*crudModels
 	return OptionalRow(a, err)
 }
 
-func UpdateUserPassword(ctx context.Context, db db.Dbx, userId uuid.UUID, password string) error {
+func UpdateUserPassword(ctx context.Context, db database.Dbx, userId uuid.UUID, password string) error {
 	account, err := crudrepo.UserAccount.GetOne(
 		ctx,
 		db,
@@ -252,7 +252,7 @@ func UpdateUserPassword(ctx context.Context, db db.Dbx, userId uuid.UUID, passwo
 	return nil
 }
 
-func UpdateMe(ctx context.Context, db db.Dbx, userId uuid.UUID, input *shared.UpdateMeInput) error {
+func UpdateMe(ctx context.Context, db database.Dbx, userId uuid.UUID, input *shared.UpdateMeInput) error {
 	user, err := crudrepo.User.GetOne(
 		ctx,
 		db,
@@ -285,7 +285,7 @@ func UpdateMe(ctx context.Context, db db.Dbx, userId uuid.UUID, input *shared.Up
 	return nil
 }
 
-func GetUserAccounts(ctx context.Context, db db.Dbx, userIds ...uuid.UUID) ([][]*crudModels.UserAccount, error) {
+func GetUserAccounts(ctx context.Context, db database.Dbx, userIds ...uuid.UUID) ([][]*crudModels.UserAccount, error) {
 	// var results []JoinedResult[*crudModels.Permission, uuid.UUID]
 	ids := []string{}
 	for _, id := range userIds {

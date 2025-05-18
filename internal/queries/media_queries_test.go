@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/tkahng/authgo/internal/db"
+	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
@@ -16,7 +16,7 @@ import (
 func TestCreateMedia(t *testing.T) {
 	test.Short(t)
 ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 			Email: "test@example.com",
 		})
@@ -25,7 +25,7 @@ ctx, dbx := test.DbSetup()
 		}
 		type args struct {
 			ctx   context.Context
-			exec  db.Dbx
+			exec  database.Dbx
 			media *models.Medium
 		}
 		tests := []struct {
@@ -103,7 +103,7 @@ ctx, dbx := test.DbSetup()
 func TestFindMediaByID(t *testing.T) {
 	test.Short(t)
 ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 			Email: "test@example.com",
 		})
@@ -127,7 +127,7 @@ ctx, dbx := test.DbSetup()
 
 		type args struct {
 			ctx  context.Context
-			exec db.Dbx
+			exec database.Dbx
 			id   uuid.UUID
 		}
 		tests := []struct {

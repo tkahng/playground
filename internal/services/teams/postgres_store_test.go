@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/tkahng/authgo/internal/crudrepo"
-	"github.com/tkahng/authgo/internal/db"
+	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/services/teams"
@@ -18,7 +18,7 @@ import (
 func TestCreateTeamFromUser(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 			Email: "test@example.com",
 		})
@@ -43,7 +43,7 @@ func TestCreateTeamFromUser(t *testing.T) {
 func TestCreateTeam(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		teamQueries := teams.NewPostgresTeamStore(dbxx)
 		team, err := teamQueries.CreateTeam(ctx, "Test Team", nil)
 		if err != nil {
@@ -59,7 +59,7 @@ func TestCreateTeam(t *testing.T) {
 func TestUpdateTeam(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		teamQueries := teams.NewPostgresTeamStore(dbxx)
 		team, err := teamQueries.CreateTeam(ctx, "Old Name", nil)
 		if err != nil {
@@ -81,7 +81,7 @@ func TestUpdateTeam(t *testing.T) {
 func TestDeleteTeam(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		teamQueries := teams.NewPostgresTeamStore(dbxx)
 		// Create a team to delete
 		team, err := teamQueries.CreateTeam(ctx, "ToDelete", nil)
@@ -99,7 +99,7 @@ func TestDeleteTeam(t *testing.T) {
 func TestFindTeamByID(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		teamQueries := teams.NewPostgresTeamStore(dbxx)
 		team, err := teamQueries.CreateTeam(ctx, "FindMe", nil)
 		if err != nil {
@@ -119,7 +119,7 @@ func TestFindTeamByID(t *testing.T) {
 func TestCreateTeamMember(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		teamQueries := teams.NewPostgresTeamStore(dbxx)
 		team, err := teamQueries.CreateTeam(ctx, "TeamWithMember", nil)
 		if err != nil {
@@ -146,7 +146,7 @@ func TestCreateTeamMember(t *testing.T) {
 func TestFindTeamMembersByUserID(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		teamQueries := teams.NewPostgresTeamStore(dbxx)
 		team, err := teamQueries.CreateTeam(ctx, "TeamForMembers", nil)
 		if err != nil {
@@ -177,7 +177,7 @@ func TestFindTeamMembersByUserID(t *testing.T) {
 func TestFindLatestTeamMemberByUserID(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		teamQueries := teams.NewPostgresTeamStore(dbxx)
 		team1, err := teamQueries.CreateTeam(ctx, "team1", nil)
 		if err != nil {
@@ -254,7 +254,7 @@ func TestUpdateTeamMemberUpdatedAt(t *testing.T) {
 		}
 	})
 
-	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		teamQueries := teams.NewPostgresTeamStore(dbxx)
 		team, err := teamQueries.CreateTeam(ctx, "UpdateMemberTeam", nil)
 		if err != nil {

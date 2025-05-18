@@ -8,7 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/crudrepo"
-	"github.com/tkahng/authgo/internal/db"
+	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/shared"
 )
@@ -77,7 +77,7 @@ func ListUserFilterFunc(filter *shared.UserListFilter) *map[string]any {
 	return &where
 }
 
-func ListUsers(ctx context.Context, dbx db.Dbx, input *shared.UserListParams) ([]*models.User, error) {
+func ListUsers(ctx context.Context, dbx database.Dbx, input *shared.UserListParams) ([]*models.User, error) {
 	if input == nil {
 		input = &shared.UserListParams{}
 	}
@@ -87,7 +87,7 @@ func ListUsers(ctx context.Context, dbx db.Dbx, input *shared.UserListParams) ([
 	where := ListUserFilterFunc(&filter)
 	orderBy := ListUsersOrderByFunc(input)
 
-	limit, offset := db.PaginateRepo(pageInput)
+	limit, offset := database.PaginateRepo(pageInput)
 	data, err := crudrepo.User.Get(
 		ctx,
 		dbx,
@@ -127,7 +127,7 @@ func ListUsersOrderByFunc(input *shared.UserListParams) *map[string]string {
 // If the filter is nil, it returns the total number of users in the database.
 //
 // The method returns an error if the count operation fails.
-func CountUsers(ctx context.Context, db db.Dbx, filter *shared.UserListFilter) (int64, error) {
+func CountUsers(ctx context.Context, db database.Dbx, filter *shared.UserListFilter) (int64, error) {
 	where := ListUserFilterFunc(filter)
 	data, err := crudrepo.User.Count(ctx, db, where)
 	if err != nil {
@@ -144,7 +144,7 @@ func CountUsers(ctx context.Context, db db.Dbx, filter *shared.UserListFilter) (
 //
 // The method returns an error if the user could not be deleted.
 
-func DeleteUsers(ctx context.Context, db db.Dbx, userId uuid.UUID) error {
+func DeleteUsers(ctx context.Context, db database.Dbx, userId uuid.UUID) error {
 	_, err := crudrepo.User.Delete(
 		ctx,
 		db,
@@ -167,7 +167,7 @@ func DeleteUsers(ctx context.Context, db db.Dbx, userId uuid.UUID) error {
 // If the user is not found, it returns an error.
 //
 // It returns an error if the update fails.
-func UpdateUser(ctx context.Context, db db.Dbx, userId uuid.UUID, input *shared.UserMutationInput) error {
+func UpdateUser(ctx context.Context, db database.Dbx, userId uuid.UUID, input *shared.UserMutationInput) error {
 	user, err := crudrepo.User.GetOne(
 		ctx,
 		db,

@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/stripe/stripe-go/v82"
 	"github.com/tkahng/authgo/internal/crudrepo"
-	"github.com/tkahng/authgo/internal/db"
+	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
@@ -17,10 +17,10 @@ import (
 )
 
 type PosrgresStripeStore struct {
-	db db.Dbx
+	db database.Dbx
 }
 
-func NewPostgresPaymentStore(db db.Dbx) *PosrgresStripeStore {
+func NewPostgresPaymentStore(db database.Dbx) *PosrgresStripeStore {
 	return &PosrgresStripeStore{db: db}
 }
 
@@ -43,7 +43,7 @@ var _ PaymentStore = (*PosrgresStripeStore)(nil)
 
 // CreateProductRoles implements PaymentStore.
 func (s *PosrgresStripeStore) CreateProductRoles(ctx context.Context, productId string, roleIds ...uuid.UUID) error {
-	var db db.Dbx = s.db
+	var db database.Dbx = s.db
 	var roles []models.ProductRole
 	for _, role := range roleIds {
 		roles = append(
@@ -77,7 +77,7 @@ func (s *PosrgresStripeStore) UpsertPriceFromStripe(ctx context.Context, price *
 }
 
 func (s *PosrgresStripeStore) UpsertPrice(ctx context.Context, price *models.StripePrice) error {
-	var dbx db.Dbx = s.db
+	var dbx database.Dbx = s.db
 	q := squirrel.Insert("stripe_prices").Columns("id", "product_id", "lookup_key", "active", "unit_amount", "currency", "type", "interval", "interval_count", "trial_period_days", "metadata").Values(price.ID, price.ProductID, price.LookupKey, price.Active, price.UnitAmount, price.Currency, price.Type, price.Interval, price.IntervalCount, price.TrialPeriodDays, price.Metadata).Suffix(`
 		ON CONFLICT(id) DO UPDATE SET 
 			product_id = EXCLUDED.product_id,
@@ -115,7 +115,7 @@ func (s *PosrgresStripeStore) UpsertProductFromStripe(ctx context.Context, produ
 }
 
 func (s *PosrgresStripeStore) UpsertProduct(ctx context.Context, product *models.StripeProduct) error {
-	var dbx db.Dbx = s.db
+	var dbx database.Dbx = s.db
 	q := squirrel.Insert("stripe_products").
 		Columns(
 			"id",
@@ -149,7 +149,7 @@ func (s *PosrgresStripeStore) FindCustomerByStripeId(ctx context.Context, stripe
 		s.db,
 		&map[string]any{"stripe_id": map[string]any{"_eq": stripeId}},
 	)
-	return db.OptionalRow(data, err)
+	return database.OptionalRow(data, err)
 }
 
 // FindCustomerByUserId implements PaymentStore.
@@ -159,7 +159,7 @@ func (s *PosrgresStripeStore) FindCustomerByUserId(ctx context.Context, userId u
 		s.db,
 		&map[string]any{"id": map[string]any{"_eq": userId.String()}},
 	)
-	return db.OptionalRow(data, err)
+	return database.OptionalRow(data, err)
 }
 
 // FindLatestActiveSubscriptionByTeamId implements PaymentStore.
@@ -184,7 +184,7 @@ func (s *PosrgresStripeStore) FindLatestActiveSubscriptionByTeamId(ctx context.C
 	if len(data) == 0 {
 		return nil, nil
 	}
-	return db.OptionalRow(data[0], err)
+	return database.OptionalRow(data[0], err)
 }
 
 // FindProductByStripeId implements PaymentStore.
@@ -198,7 +198,7 @@ func (s *PosrgresStripeStore) FindProductByStripeId(ctx context.Context, product
 			},
 		},
 	)
-	return db.OptionalRow(data, err)
+	return database.OptionalRow(data, err)
 }
 
 const (
@@ -307,10 +307,10 @@ func (s *PosrgresStripeStore) IsFirstSubscription(ctx context.Context, userId uu
 
 // ListPrices implements PaymentStore.
 func (s *PosrgresStripeStore) ListPrices(ctx context.Context, input *shared.StripePriceListParams) ([]*models.StripePrice, error) {
-	var dbx db.Dbx = s.db
+	var dbx database.Dbx = s.db
 	filter := input.StripePriceListFilter
 	pageInput := &input.PaginatedInput
-	limit, offset := db.PaginateRepo(pageInput)
+	limit, offset := database.PaginateRepo(pageInput)
 	param := queries.ListPriceFilterFuncMap(&filter)
 	sort := queries.ListPriceOrderByMap(input)
 	data, err := crudrepo.StripePrice.Get(
@@ -329,11 +329,11 @@ func (s *PosrgresStripeStore) ListPrices(ctx context.Context, input *shared.Stri
 
 // ListProducts implements PaymentStore.
 func (s *PosrgresStripeStore) ListProducts(ctx context.Context, input *shared.StripeProductListParams) ([]*models.StripeProduct, error) {
-	var dbx db.Dbx = s.db
+	var dbx database.Dbx = s.db
 	q := squirrel.Select("stripe_products.*").From("stripe_products")
 	filter := input.StripeProductListFilter
 	pageInput := &input.PaginatedInput
-	q = db.Paginate(q, pageInput)
+	q = database.Paginate(q, pageInput)
 	q = queries.ListProductFilterFuncQuery(q, &filter)
 	data, err := queries.QueryWithBuilder[*models.StripeProduct](
 		ctx,
@@ -348,7 +348,7 @@ func (s *PosrgresStripeStore) ListProducts(ctx context.Context, input *shared.St
 
 // UpsertCustomerStripeId implements PaymentStore.
 func (s *PosrgresStripeStore) UpsertCustomerStripeId(ctx context.Context, userId uuid.UUID, stripeCustomerId string) error {
-	var dbx db.Dbx = s.db
+	var dbx database.Dbx = s.db
 	q := squirrel.Insert("stripe_customers").Columns("id", "stripe_id").Values(userId, stripeCustomerId).Suffix(`ON CONFLICT (id) DO UPDATE SET stripe_id = EXCLUDED.stripe_id`)
 	return queries.ExecWithBuilder(ctx, dbx, q.PlaceholderFormat(squirrel.Dollar))
 }

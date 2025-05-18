@@ -5,20 +5,20 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/tkahng/authgo/internal/db"
+	"github.com/tkahng/authgo/internal/database"
 )
 
 var (
 	EndTestErr  = errors.New("end test. rollback transaction")
 	ctxInstance context.Context
 	ctxOnce     sync.Once
-	dbx         *db.Queries
+	dbx         *database.Queries
 )
 
-func DbSetup() (context.Context, *db.Queries) {
+func DbSetup() (context.Context, *database.Queries) {
 	ctxOnce.Do(func() {
 		ctxInstance = context.Background()
-		dbx = db.CreateQueries(ctxInstance, "postgres://postgres:postgres@localhost:5432/authgo_test?sslmode=disable")
+		dbx = database.CreateQueries(ctxInstance, "postgres://postgres:postgres@localhost:5432/authgo_test?sslmode=disable")
 	})
 	return ctxInstance, dbx
 }

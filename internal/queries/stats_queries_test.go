@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/tkahng/authgo/internal/db"
+	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/test"
@@ -18,7 +18,7 @@ func TestGetUserTaskStats(t *testing.T) {
 	test.Short(t)
 ctx, dbx := test.DbSetup()
 
-	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 			Email: "tkahng@gmail.com",
 		})
@@ -41,7 +41,7 @@ ctx, dbx := test.DbSetup()
 		}
 		type args struct {
 			ctx    context.Context
-			db     db.Dbx
+			db     database.Dbx
 			userID uuid.UUID
 		}
 		tests := []struct {

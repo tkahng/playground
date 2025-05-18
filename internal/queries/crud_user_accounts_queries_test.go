@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/jaswdr/faker/v2"
-	"github.com/tkahng/authgo/internal/db"
+	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/seeders"
@@ -17,7 +17,7 @@ import (
 func TestListUserAccounts(t *testing.T) {
 	test.Short(t)
 ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		faker := faker.New().Internet()
 		_, err := seeders.CreateUserWithAccountAndRole(ctx, dbxx, 5, models.ProvidersGoogle, "basic", faker)
 		if err != nil {
@@ -30,7 +30,7 @@ ctx, dbx := test.DbSetup()
 
 		type args struct {
 			ctx   context.Context
-			db    db.Dbx
+			db    database.Dbx
 			input *shared.UserAccountListParams
 		}
 		tests := []struct {
@@ -93,7 +93,7 @@ ctx, dbx := test.DbSetup()
 func TestCountUserAccounts(t *testing.T) {
 	test.Short(t)
 ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		faker := faker.New().Internet()
 		_, err := seeders.CreateUserWithAccountAndRole(ctx, dbxx, 5, models.ProvidersGoogle, "basic", faker)
 		if err != nil {
@@ -106,7 +106,7 @@ ctx, dbx := test.DbSetup()
 
 		type args struct {
 			ctx    context.Context
-			db     db.Dbx
+			db     database.Dbx
 			filter *shared.UserAccountListFilter
 		}
 		tests := []struct {

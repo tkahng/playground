@@ -5,7 +5,7 @@ import (
 	"log/slog"
 
 	"github.com/tkahng/authgo/internal/conf"
-	"github.com/tkahng/authgo/internal/db"
+	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/queries"
 
 	"github.com/tkahng/authgo/internal/services/payment"
@@ -18,7 +18,7 @@ var _ App = (*BaseApp)(nil)
 
 type BaseApp struct {
 	cfg      *conf.EnvConfig
-	db       *db.Queries
+	db       *database.Queries
 	settings *conf.AppOptions
 	payment  payment.PaymentService
 	logger   *slog.Logger
@@ -43,7 +43,7 @@ func (app *BaseApp) Fs() *filesystem.FileSystem {
 func (app *BaseApp) Logger() *slog.Logger {
 	return app.logger
 }
-func (app *BaseApp) Db() db.Dbx {
+func (app *BaseApp) Db() database.Dbx {
 	return app.db
 }
 
@@ -72,7 +72,7 @@ func (app *BaseApp) NewMailClient() mailer.Mailer {
 }
 
 func InitBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
-	pool := db.CreateQueries(ctx, cfg.Db.DatabaseUrl)
+	pool := database.CreateQueries(ctx, cfg.Db.DatabaseUrl)
 	fs, err := filesystem.NewFileSystem(cfg.StorageConfig)
 	if err != nil {
 		panic(err)

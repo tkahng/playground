@@ -8,7 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/crudrepo"
-	"github.com/tkahng/authgo/internal/db"
+	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
@@ -34,12 +34,12 @@ type AuthStore interface {
 
 var _ AuthStore = (*BaseAuthStore)(nil)
 
-func NewAuthStore(dbtx db.Dbx) *BaseAuthStore {
+func NewAuthStore(dbtx database.Dbx) *BaseAuthStore {
 	return &BaseAuthStore{db: dbtx}
 }
 
 type BaseAuthStore struct {
-	db db.Dbx
+	db database.Dbx
 }
 
 func (a *BaseAuthStore) GetToken(ctx context.Context, token string) (*shared.Token, error) {
@@ -379,7 +379,7 @@ func (a *BaseAuthStore) AssignUserRoles(ctx context.Context, userId uuid.UUID, r
 }
 
 func (a *BaseAuthStore) RunInTransaction(ctx context.Context, fn func(AuthStore) error) error {
-	return a.db.RunInTransaction(ctx, func(d db.Dbx) error {
+	return a.db.RunInTransaction(ctx, func(d database.Dbx) error {
 		app := NewAuthStore(d)
 		return fn(app)
 	})

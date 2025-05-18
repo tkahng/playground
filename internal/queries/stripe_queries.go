@@ -9,12 +9,12 @@ import (
 	"github.com/google/uuid"
 	"github.com/stripe/stripe-go/v82"
 	"github.com/tkahng/authgo/internal/crudrepo"
-	"github.com/tkahng/authgo/internal/db"
+	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/tools/types"
 )
 
-func FindCustomerByStripeId(ctx context.Context, dbx db.Dbx, stripeId string) (*models.StripeCustomer, error) {
+func FindCustomerByStripeId(ctx context.Context, dbx database.Dbx, stripeId string) (*models.StripeCustomer, error) {
 	data, err := crudrepo.StripeCustomer.GetOne(
 		ctx,
 		dbx,
@@ -27,7 +27,7 @@ func FindCustomerByStripeId(ctx context.Context, dbx db.Dbx, stripeId string) (*
 	return OptionalRow(data, err)
 }
 
-func FindCustomerByUserId(ctx context.Context, dbx db.Dbx, userId uuid.UUID) (*models.StripeCustomer, error) {
+func FindCustomerByUserId(ctx context.Context, dbx database.Dbx, userId uuid.UUID) (*models.StripeCustomer, error) {
 	data, err := crudrepo.StripeCustomer.GetOne(
 		ctx,
 		dbx,
@@ -40,7 +40,7 @@ func FindCustomerByUserId(ctx context.Context, dbx db.Dbx, userId uuid.UUID) (*m
 	return OptionalRow(data, err)
 }
 
-func FindProductByStripeId(ctx context.Context, dbx db.Dbx, stripeId string) (*models.StripeProduct, error) {
+func FindProductByStripeId(ctx context.Context, dbx database.Dbx, stripeId string) (*models.StripeProduct, error) {
 	data, err := crudrepo.StripeProduct.GetOne(
 		ctx,
 		dbx,
@@ -53,7 +53,7 @@ func FindProductByStripeId(ctx context.Context, dbx db.Dbx, stripeId string) (*m
 	return OptionalRow(data, err)
 }
 
-func UpsertCustomerStripeId(ctx context.Context, dbx db.Dbx, userId uuid.UUID, stripeCustomerId string) error {
+func UpsertCustomerStripeId(ctx context.Context, dbx database.Dbx, userId uuid.UUID, stripeCustomerId string) error {
 	q := squirrel.
 		Insert("stripe_customers").
 		Columns("id", "stripe_id").
@@ -62,7 +62,7 @@ func UpsertCustomerStripeId(ctx context.Context, dbx db.Dbx, userId uuid.UUID, s
 	return ExecWithBuilder(ctx, dbx, q.PlaceholderFormat(squirrel.Dollar))
 }
 
-func UpsertProduct(ctx context.Context, dbx db.Dbx, product *models.StripeProduct) error {
+func UpsertProduct(ctx context.Context, dbx database.Dbx, product *models.StripeProduct) error {
 	q := squirrel.
 		Insert("stripe_products").
 		Columns(
@@ -92,7 +92,7 @@ func UpsertProduct(ctx context.Context, dbx db.Dbx, product *models.StripeProduc
 	return ExecWithBuilder(ctx, dbx, q.PlaceholderFormat(squirrel.Dollar))
 }
 
-func UpsertProductFromStripe(ctx context.Context, dbx db.Dbx, product *stripe.Product) error {
+func UpsertProductFromStripe(ctx context.Context, dbx database.Dbx, product *stripe.Product) error {
 	if product == nil {
 		return nil
 	}
@@ -111,7 +111,7 @@ func UpsertProductFromStripe(ctx context.Context, dbx db.Dbx, product *stripe.Pr
 	return UpsertProduct(ctx, dbx, param)
 }
 
-func UpsertPrice(ctx context.Context, dbx db.Dbx, price *models.StripePrice) error {
+func UpsertPrice(ctx context.Context, dbx database.Dbx, price *models.StripePrice) error {
 	q := squirrel.
 		Insert("stripe_prices").
 		Columns(
@@ -156,7 +156,7 @@ func UpsertPrice(ctx context.Context, dbx db.Dbx, price *models.StripePrice) err
 	return ExecWithBuilder(ctx, dbx, q.PlaceholderFormat(squirrel.Dollar))
 }
 
-func UpsertPriceFromStripe(ctx context.Context, dbx db.Dbx, price *stripe.Price) error {
+func UpsertPriceFromStripe(ctx context.Context, dbx database.Dbx, price *stripe.Price) error {
 	if price == nil {
 		return nil
 	}
@@ -180,7 +180,7 @@ func UpsertPriceFromStripe(ctx context.Context, dbx db.Dbx, price *stripe.Price)
 	return UpsertPrice(ctx, dbx, val)
 }
 
-func UpsertSubscription(ctx context.Context, dbx db.Dbx, subscription *models.StripeSubscription) error {
+func UpsertSubscription(ctx context.Context, dbx database.Dbx, subscription *models.StripeSubscription) error {
 	q := squirrel.
 		Insert("stripe_subscriptions").
 		Columns(
@@ -236,7 +236,7 @@ func UpsertSubscription(ctx context.Context, dbx db.Dbx, subscription *models.St
 	return ExecWithBuilder(ctx, dbx, q.PlaceholderFormat(squirrel.Dollar))
 }
 
-func UpsertSubscriptionFromStripe(ctx context.Context, exec db.Dbx, sub *stripe.Subscription, teamId uuid.UUID) error {
+func UpsertSubscriptionFromStripe(ctx context.Context, exec database.Dbx, sub *stripe.Subscription, teamId uuid.UUID) error {
 	if sub == nil {
 		return nil
 	}
@@ -272,7 +272,7 @@ func Int64ToISODate(timestamp int64) time.Time {
 	return time.Unix(timestamp, 0)
 }
 
-func FindSubscriptionById(ctx context.Context, dbx db.Dbx, stripeId string) (*models.StripeSubscription, error) {
+func FindSubscriptionById(ctx context.Context, dbx database.Dbx, stripeId string) (*models.StripeSubscription, error) {
 	data, err := crudrepo.StripeSubscription.GetOne(
 		ctx,
 		dbx,
@@ -332,7 +332,7 @@ WHERE ss.id = $1
 		`
 )
 
-func FindSubscriptionWithPriceById(ctx context.Context, dbx db.Dbx, stripeId string) (*models.SubscriptionWithPrice, error) {
+func FindSubscriptionWithPriceById(ctx context.Context, dbx database.Dbx, stripeId string) (*models.SubscriptionWithPrice, error) {
 	data, err := QueryAll[*models.SubscriptionWithPrice](ctx, dbx, GetSubscriptionWithPriceByIdQuery, stripeId)
 	if err != nil {
 		return nil, err
@@ -344,7 +344,7 @@ func FindSubscriptionWithPriceById(ctx context.Context, dbx db.Dbx, stripeId str
 	return first, nil
 }
 
-func FindLatestActiveSubscriptionByTeamId(ctx context.Context, dbx db.Dbx, teamId uuid.UUID) (*models.StripeSubscription, error) {
+func FindLatestActiveSubscriptionByTeamId(ctx context.Context, dbx database.Dbx, teamId uuid.UUID) (*models.StripeSubscription, error) {
 	data, err := crudrepo.StripeSubscription.Get(
 		ctx,
 		dbx,
@@ -423,7 +423,7 @@ ORDER BY ss.updated_at DESC;
 		`
 )
 
-func FindLatestActiveSubscriptionWithPriceByUserId(ctx context.Context, dbx db.Dbx, userId uuid.UUID) (*models.SubscriptionWithPrice, error) {
+func FindLatestActiveSubscriptionWithPriceByUserId(ctx context.Context, dbx database.Dbx, userId uuid.UUID) (*models.SubscriptionWithPrice, error) {
 	data, err := QueryAll[models.SubscriptionWithPrice](ctx, dbx, GetLatestActiveSubscriptionWithPriceByIdQuery, userId)
 	if err != nil {
 		return nil, err
@@ -434,7 +434,7 @@ func FindLatestActiveSubscriptionWithPriceByUserId(ctx context.Context, dbx db.D
 	return OptionalRow(&data[0], err)
 }
 
-func IsFirstSubscription(ctx context.Context, dbx db.Dbx, teamId uuid.UUID) (bool, error) {
+func IsFirstSubscription(ctx context.Context, dbx database.Dbx, teamId uuid.UUID) (bool, error) {
 	data, err := crudrepo.StripeSubscription.Count(
 		ctx,
 		dbx,
@@ -447,7 +447,7 @@ func IsFirstSubscription(ctx context.Context, dbx db.Dbx, teamId uuid.UUID) (boo
 	return data > 0, err
 }
 
-func FindValidPriceById(ctx context.Context, dbx db.Dbx, priceId string) (*models.StripePrice, error) {
+func FindValidPriceById(ctx context.Context, dbx database.Dbx, priceId string) (*models.StripePrice, error) {
 	data, err := crudrepo.StripePrice.GetOne(
 		ctx,
 		dbx,

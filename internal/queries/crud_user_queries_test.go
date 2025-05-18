@@ -8,7 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jaswdr/faker/v2"
-	"github.com/tkahng/authgo/internal/db"
+	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/seeders"
@@ -21,7 +21,7 @@ import (
 func TestListUsers(t *testing.T) {
 	test.Short(t)
 ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		faker := faker.New().Internet()
 		users1, err := seeders.CreateUserWithAccountAndRole(ctx, dbxx, 5, models.ProvidersGoogle, "superuser", faker)
 		if err != nil {
@@ -38,7 +38,7 @@ ctx, dbx := test.DbSetup()
 		}
 		type args struct {
 			ctx   context.Context
-			db    db.Dbx
+			db    database.Dbx
 			input *shared.UserListParams
 		}
 		tests := []struct {
@@ -130,7 +130,7 @@ ctx, dbx := test.DbSetup()
 func TestCountUsers(t *testing.T) {
 	test.Short(t)
 ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		faker := faker.New().Internet()
 		_, err := seeders.CreateUserWithAccountAndRole(ctx, dbxx, 5, models.ProvidersGoogle, "superuser", faker)
 		if err != nil {
@@ -201,7 +201,7 @@ ctx, dbx := test.DbSetup()
 func TestDeleteUsers(t *testing.T) {
 	test.Short(t)
 ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		faker := faker.New().Internet()
 		users, err := seeders.CreateUserWithAccountAndRole(ctx, dbxx, 1, models.ProvidersGoogle, "basic", faker)
 		if err != nil {
@@ -234,7 +234,7 @@ ctx, dbx := test.DbSetup()
 func TestUpdateUser(t *testing.T) {
 	test.Short(t)
 ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		faker := faker.New().Internet()
 		users, err := seeders.CreateUserWithAccountAndRole(ctx, dbxx, 1, models.ProvidersGoogle, "basic", faker)
 		if err != nil {

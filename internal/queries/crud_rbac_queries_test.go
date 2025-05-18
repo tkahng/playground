@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/tkahng/authgo/internal/db"
+	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/test"
@@ -14,7 +14,7 @@ import (
 func TestListPermissions(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(tx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(tx database.Dbx) error {
 		err := queries.EnsureRoleAndPermissions(
 			ctx,
 			tx,
@@ -27,7 +27,7 @@ func TestListPermissions(t *testing.T) {
 		}
 		type args struct {
 			ctx   context.Context
-			db    db.Dbx
+			db    database.Dbx
 			input *shared.PermissionsListParams
 		}
 		tests := []struct {
@@ -76,7 +76,7 @@ func TestListPermissions(t *testing.T) {
 func TestCountPermissions(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(tx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(tx database.Dbx) error {
 		err := queries.EnsureRoleAndPermissions(
 			ctx,
 			tx,
@@ -141,7 +141,7 @@ func TestCountPermissions(t *testing.T) {
 func TestListRoles(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(tx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(tx database.Dbx) error {
 		err := queries.EnsureRoleAndPermissions(
 			ctx,
 			tx,
@@ -154,7 +154,7 @@ func TestListRoles(t *testing.T) {
 		}
 		type args struct {
 			ctx   context.Context
-			db    db.Dbx
+			db    database.Dbx
 			input *shared.RolesListParams
 		}
 		tests := []struct {
@@ -202,7 +202,7 @@ func TestListRoles(t *testing.T) {
 func TestCountRoles(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(tx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(tx database.Dbx) error {
 		err := queries.EnsureRoleAndPermissions(
 			ctx,
 			tx,

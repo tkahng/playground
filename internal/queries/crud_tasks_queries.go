@@ -10,7 +10,7 @@ import (
 	"github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/crudrepo"
-	"github.com/tkahng/authgo/internal/db"
+	"github.com/tkahng/authgo/internal/database"
 
 	// database "github.com/tkahng/authgo/internal/db"
 	"github.com/tkahng/authgo/internal/models"
@@ -30,7 +30,7 @@ WHERE tp.id = ANY ($1::uuid [])
 GROUP BY tp.id;`
 )
 
-func LoadTaskProjectsTasks(ctx context.Context, dbx db.Dbx, projectIds ...uuid.UUID) ([][]*models.Task, error) {
+func LoadTaskProjectsTasks(ctx context.Context, dbx database.Dbx, projectIds ...uuid.UUID) ([][]*models.Task, error) {
 	tasks, err := crudrepo.Task.Get(
 		ctx,
 		dbx,
@@ -51,7 +51,7 @@ func LoadTaskProjectsTasks(ctx context.Context, dbx db.Dbx, projectIds ...uuid.U
 	}), nil
 }
 
-func FindTaskByID(ctx context.Context, dbx db.Dbx, id uuid.UUID) (*models.Task, error) {
+func FindTaskByID(ctx context.Context, dbx database.Dbx, id uuid.UUID) (*models.Task, error) {
 	task, err := crudrepo.Task.GetOne(
 		ctx,
 		dbx,
@@ -64,7 +64,7 @@ func FindTaskByID(ctx context.Context, dbx db.Dbx, id uuid.UUID) (*models.Task, 
 	return OptionalRow(task, err)
 }
 
-func FindLastTaskOrder(ctx context.Context, dbx db.Dbx, taskProjectID uuid.UUID) (float64, error) {
+func FindLastTaskOrder(ctx context.Context, dbx database.Dbx, taskProjectID uuid.UUID) (float64, error) {
 	tasks, err := crudrepo.Task.Get(
 		ctx,
 		dbx,
@@ -89,7 +89,7 @@ func FindLastTaskOrder(ctx context.Context, dbx db.Dbx, taskProjectID uuid.UUID)
 	return task.Order + 1000, nil
 }
 
-func DeleteTask(ctx context.Context, dbx db.Dbx, taskID uuid.UUID) error {
+func DeleteTask(ctx context.Context, dbx database.Dbx, taskID uuid.UUID) error {
 
 	_, err := crudrepo.Task.Delete(
 		ctx,
@@ -103,7 +103,7 @@ func DeleteTask(ctx context.Context, dbx db.Dbx, taskID uuid.UUID) error {
 	return err
 }
 
-func FindTaskProjectByID(ctx context.Context, dbx db.Dbx, id uuid.UUID) (*models.TaskProject, error) {
+func FindTaskProjectByID(ctx context.Context, dbx database.Dbx, id uuid.UUID) (*models.TaskProject, error) {
 
 	task, err := crudrepo.TaskProject.GetOne(
 		ctx,
@@ -116,7 +116,7 @@ func FindTaskProjectByID(ctx context.Context, dbx db.Dbx, id uuid.UUID) (*models
 	)
 	return OptionalRow(task, err)
 }
-func DeleteTaskProject(ctx context.Context, db db.Dbx, taskProjectID uuid.UUID) error {
+func DeleteTaskProject(ctx context.Context, db database.Dbx, taskProjectID uuid.UUID) error {
 	_, err := crudrepo.TaskProject.Delete(
 		ctx,
 		db,
@@ -200,11 +200,11 @@ func ListTasksFilterFunc(filter *shared.TaskListFilter) *map[string]any {
 }
 
 // ListTasks implements AdminCrudActions.
-func ListTasks(ctx context.Context, dbx db.Dbx, input *shared.TaskListParams) ([]*models.Task, error) {
+func ListTasks(ctx context.Context, dbx database.Dbx, input *shared.TaskListParams) ([]*models.Task, error) {
 	filter := input.TaskListFilter
 	pageInput := &input.PaginatedInput
 
-	iimit, offset := db.PaginateRepo(pageInput)
+	iimit, offset := database.PaginateRepo(pageInput)
 	order := ListTasksOrderByFunc(input)
 	where := ListTasksFilterFunc(&filter)
 	data, err := crudrepo.Task.Get(
@@ -222,7 +222,7 @@ func ListTasks(ctx context.Context, dbx db.Dbx, input *shared.TaskListParams) ([
 }
 
 // CountTasks implements AdminCrudActions.
-func CountTasks(ctx context.Context, db db.Dbx, filter *shared.TaskListFilter) (int64, error) {
+func CountTasks(ctx context.Context, db database.Dbx, filter *shared.TaskListFilter) (int64, error) {
 	where := ListTasksFilterFunc(filter)
 	return crudrepo.Task.Count(ctx, db, where)
 }
@@ -272,11 +272,11 @@ func ListTaskProjectsOrderByFunc(input *shared.TaskProjectsListParams) *map[stri
 }
 
 // ListTaskProjects implements AdminCrudActions.
-func ListTaskProjects(ctx context.Context, dbx db.Dbx, input *shared.TaskProjectsListParams) ([]*models.TaskProject, error) {
+func ListTaskProjects(ctx context.Context, dbx database.Dbx, input *shared.TaskProjectsListParams) ([]*models.TaskProject, error) {
 	filter := input.TaskProjectsListFilter
 	pageInput := &input.PaginatedInput
 
-	limit, offset := db.PaginateRepo(pageInput)
+	limit, offset := database.PaginateRepo(pageInput)
 	oredr := ListTaskProjectsOrderByFunc(input)
 	where := ListTaskProjectsFilterFunc(&filter)
 	data, err := crudrepo.TaskProject.Get(
@@ -294,12 +294,12 @@ func ListTaskProjects(ctx context.Context, dbx db.Dbx, input *shared.TaskProject
 }
 
 // CountTaskProjects implements AdminCrudActions.
-func CountTaskProjects(ctx context.Context, db db.Dbx, filter *shared.TaskProjectsListFilter) (int64, error) {
+func CountTaskProjects(ctx context.Context, db database.Dbx, filter *shared.TaskProjectsListFilter) (int64, error) {
 	where := ListTaskProjectsFilterFunc(filter)
 	return crudrepo.TaskProject.Count(ctx, db, where)
 }
 
-func CreateTaskProject(ctx context.Context, db db.Dbx, userID uuid.UUID, input *shared.CreateTaskProjectDTO) (*models.TaskProject, error) {
+func CreateTaskProject(ctx context.Context, db database.Dbx, userID uuid.UUID, input *shared.CreateTaskProjectDTO) (*models.TaskProject, error) {
 	taskProject := models.TaskProject{
 		UserID:      userID,
 		Name:        input.Name,
@@ -314,7 +314,7 @@ func CreateTaskProject(ctx context.Context, db db.Dbx, userID uuid.UUID, input *
 	return projects, nil
 }
 
-func CreateTaskProjectWithTasks(ctx context.Context, db db.Dbx, userID uuid.UUID, input *shared.CreateTaskProjectWithTasksDTO) (*models.TaskProject, error) {
+func CreateTaskProjectWithTasks(ctx context.Context, db database.Dbx, userID uuid.UUID, input *shared.CreateTaskProjectWithTasksDTO) (*models.TaskProject, error) {
 	count, err := CountTaskProjects(ctx, db, nil)
 	if err != nil {
 		return nil, err
@@ -336,7 +336,7 @@ func CreateTaskProjectWithTasks(ctx context.Context, db db.Dbx, userID uuid.UUID
 	return taskProject, nil
 }
 
-func CreateTaskWithChildren(ctx context.Context, db db.Dbx, userID uuid.UUID, projectID uuid.UUID, input *shared.CreateTaskWithChildrenDTO) (*models.Task, error) {
+func CreateTaskWithChildren(ctx context.Context, db database.Dbx, userID uuid.UUID, projectID uuid.UUID, input *shared.CreateTaskWithChildrenDTO) (*models.Task, error) {
 	task, err := CreateTask(ctx, db, userID, projectID, &input.CreateTaskBaseDTO)
 	if err != nil {
 		return nil, err
@@ -350,7 +350,7 @@ func CreateTaskWithChildren(ctx context.Context, db db.Dbx, userID uuid.UUID, pr
 	return task, nil
 }
 
-func CreateTask(ctx context.Context, db db.Dbx, userID uuid.UUID, projectID uuid.UUID, input *shared.CreateTaskBaseDTO) (*models.Task, error) {
+func CreateTask(ctx context.Context, db database.Dbx, userID uuid.UUID, projectID uuid.UUID, input *shared.CreateTaskBaseDTO) (*models.Task, error) {
 	setter := models.Task{
 		ProjectID:   projectID,
 		UserID:      userID,
@@ -440,7 +440,7 @@ func CreateTask(ctx context.Context, db db.Dbx, userID uuid.UUID, projectID uuid
 // 	return (element.Order + sideElements.Order) / 2, nil
 
 // }
-func DefineTaskOrderNumberByStatus(ctx context.Context, dbx db.Dbx, taskId uuid.UUID, taskProjectId uuid.UUID, status models.TaskStatus, currentOrder float64, position int64) (float64, error) {
+func DefineTaskOrderNumberByStatus(ctx context.Context, dbx database.Dbx, taskId uuid.UUID, taskProjectId uuid.UUID, status models.TaskStatus, currentOrder float64, position int64) (float64, error) {
 	if position == 0 {
 		res, err := crudrepo.Task.Get(
 			ctx,
@@ -635,7 +635,7 @@ func DefineTaskOrderNumberByStatus(ctx context.Context, dbx db.Dbx, taskId uuid.
 
 // }
 
-func UpdateTask(ctx context.Context, db db.Dbx, taskID uuid.UUID, input *shared.UpdateTaskBaseDTO) error {
+func UpdateTask(ctx context.Context, db database.Dbx, taskID uuid.UUID, input *shared.UpdateTaskBaseDTO) error {
 	task, err := FindTaskByID(ctx, db, taskID)
 	if err != nil {
 		return err
@@ -666,7 +666,7 @@ func UpdateTask(ctx context.Context, db db.Dbx, taskID uuid.UUID, input *shared.
 	return nil
 }
 
-func UpdateTaskProjectUpdateDate(ctx context.Context, db db.Dbx, taskProjectID uuid.UUID) error {
+func UpdateTaskProjectUpdateDate(ctx context.Context, db database.Dbx, taskProjectID uuid.UUID) error {
 	q := squirrel.Update("task_projects").
 		Where("id = ?", taskProjectID).
 		Set("updated_at", time.Now())
@@ -678,7 +678,7 @@ func UpdateTaskProjectUpdateDate(ctx context.Context, db db.Dbx, taskProjectID u
 	return nil
 }
 
-func UpdateTaskProject(ctx context.Context, db db.Dbx, taskProjectID uuid.UUID, input *shared.UpdateTaskProjectBaseDTO) error {
+func UpdateTaskProject(ctx context.Context, db database.Dbx, taskProjectID uuid.UUID, input *shared.UpdateTaskProjectBaseDTO) error {
 	taskProject, err := FindTaskProjectByID(ctx, db, taskProjectID)
 	if err != nil {
 		return err
@@ -722,7 +722,7 @@ func UpdateTaskProject(ctx context.Context, db db.Dbx, taskProjectID uuid.UUID, 
 // 	return nil
 // }
 
-func UpdateTaskPositionStatus(ctx context.Context, db db.Dbx, taskID uuid.UUID, position int64, status models.TaskStatus) error {
+func UpdateTaskPositionStatus(ctx context.Context, db database.Dbx, taskID uuid.UUID, position int64, status models.TaskStatus) error {
 	task, err := FindTaskByID(ctx, db, taskID)
 	if err != nil {
 		return err

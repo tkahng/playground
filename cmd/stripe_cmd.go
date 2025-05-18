@@ -3,7 +3,7 @@ package cmd
 import (
 	"github.com/spf13/cobra"
 	"github.com/tkahng/authgo/internal/conf"
-	"github.com/tkahng/authgo/internal/db"
+	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/services/payment"
 )
 
@@ -25,7 +25,7 @@ var stripeSyncCmd = &cobra.Command{
 		dbconf := conf.GetConfig[conf.DBConfig]()
 		stripeconfig := conf.GetConfig[conf.StripeConfig]()
 
-		dbx := db.CreateQueries(ctx, dbconf.DatabaseUrl)
+		dbx := database.CreateQueries(ctx, dbconf.DatabaseUrl)
 		store := payment.NewPostgresPaymentStore(dbx)
 		client := payment.NewPaymentClient(stripeconfig)
 		service := payment.NewPaymentService(client, store)
@@ -42,7 +42,7 @@ var stripeRolesCmd = &cobra.Command{
 		dbconf := conf.GetConfig[conf.DBConfig]()
 		stripeconfig := conf.GetConfig[conf.StripeConfig]()
 
-		dbx := db.CreateQueries(ctx, dbconf.DatabaseUrl)
+		dbx := database.CreateQueries(ctx, dbconf.DatabaseUrl)
 		store := payment.NewPostgresPaymentStore(dbx)
 		client := payment.NewPaymentClient(stripeconfig)
 		service := payment.NewPaymentService(client, store)

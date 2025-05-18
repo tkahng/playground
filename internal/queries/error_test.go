@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/tkahng/authgo/internal/db"
+	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/test"
 )
@@ -12,7 +12,7 @@ import (
 func TestIsUniqConstraintErr(t *testing.T) {
 	test.Short(t)
 ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		// _, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 		// 	Email: "test@example.com",
 		// })

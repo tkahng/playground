@@ -11,7 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/auth/oauth"
 	"github.com/tkahng/authgo/internal/conf"
-	"github.com/tkahng/authgo/internal/db"
+	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mailer"
 	"github.com/tkahng/authgo/internal/tools/routine"
@@ -78,7 +78,7 @@ func (app *BaseAuth) FetchAuthUser(ctx context.Context, code string, parsedState
 	return authUser, nil
 }
 
-func NewAuthActions(dbx db.Dbx, mailer mailer.Mailer, settings *conf.AppOptions) Authenticator {
+func NewAuthActions(dbx database.Dbx, mailer mailer.Mailer, settings *conf.AppOptions) Authenticator {
 	actions := &BaseAuth{options: settings}
 	storage := NewAuthStore(dbx)
 	tokenManager := NewTokenManager()

@@ -3,7 +3,7 @@ package crudrepo
 import (
 	"context"
 
-	"github.com/tkahng/authgo/internal/db"
+	"github.com/tkahng/authgo/internal/database"
 )
 
 type DbService[Model any] interface {
@@ -19,7 +19,7 @@ type DbService[Model any] interface {
 
 var _ DbService[any] = (*PostgresDbService[any])(nil)
 
-func NewPostgresDbService[Model any](db func() db.Dbx, repo CrudRepo[Model]) *PostgresDbService[Model] {
+func NewPostgresDbService[Model any](db func() database.Dbx, repo CrudRepo[Model]) *PostgresDbService[Model] {
 	return &PostgresDbService[Model]{
 		db:   db,
 		repo: repo,
@@ -27,7 +27,7 @@ func NewPostgresDbService[Model any](db func() db.Dbx, repo CrudRepo[Model]) *Po
 }
 
 type PostgresDbService[Model any] struct {
-	db   func() db.Dbx
+	db   func() database.Dbx
 	repo CrudRepo[Model]
 }
 

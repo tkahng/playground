@@ -8,7 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/crudrepo"
-	"github.com/tkahng/authgo/internal/db"
+	"github.com/tkahng/authgo/internal/database"
 	crudModels "github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
@@ -18,7 +18,7 @@ import (
 func TestLoadRolePermissions(t *testing.T) {
 	test.Short(t)
 ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		err := queries.EnsureRoleAndPermissions(ctx, dbxx, "basic", "basic")
 		if err != nil {
 			t.Fatalf("failed to ensure role and permissions: %v", err)
@@ -29,7 +29,7 @@ ctx, dbx := test.DbSetup()
 		}
 		type args struct {
 			ctx     context.Context
-			db      db.Dbx
+			db      database.Dbx
 			roleIds []uuid.UUID
 		}
 		tests := []struct {
@@ -73,7 +73,7 @@ ctx, dbx := test.DbSetup()
 func TestGetUserRoles(t *testing.T) {
 	test.Short(t)
 ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		err := queries.EnsureRoleAndPermissions(ctx, dbxx, "basic", "basic")
 		if err != nil {
 			return err
@@ -101,7 +101,7 @@ ctx, dbx := test.DbSetup()
 
 		type args struct {
 			ctx     context.Context
-			db      db.Dbx
+			db      database.Dbx
 			userIds []uuid.UUID
 		}
 		tests := []struct {
@@ -145,7 +145,7 @@ ctx, dbx := test.DbSetup()
 func TestGetUserPermissions(t *testing.T) {
 	test.Short(t)
 ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		permission, err := queries.FindOrCreatePermission(ctx, dbxx, "basic")
 		if err != nil {
 			t.Fatalf("failed to find or create permission: %v", err)
@@ -166,7 +166,7 @@ ctx, dbx := test.DbSetup()
 		}
 		type args struct {
 			ctx     context.Context
-			db      db.Dbx
+			db      database.Dbx
 			userIds []uuid.UUID
 		}
 		tests := []struct {
@@ -214,7 +214,7 @@ ctx, dbx := test.DbSetup()
 func TestCreateRolePermissions(t *testing.T) {
 	test.Short(t)
 ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		role, err := queries.FindOrCreateRole(ctx, dbxx, "basic")
 		if err != nil {
 			t.Fatalf("failed to find or create role: %v", err)
@@ -226,7 +226,7 @@ ctx, dbx := test.DbSetup()
 
 		type args struct {
 			ctx           context.Context
-			db            db.Dbx
+			db            database.Dbx
 			roleId        uuid.UUID
 			permissionIds []uuid.UUID
 		}
@@ -259,7 +259,7 @@ ctx, dbx := test.DbSetup()
 func TestCreateProductRoles(t *testing.T) {
 	test.Short(t)
 ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		role, err := queries.FindOrCreateRole(ctx, dbxx, "basic")
 		if err != nil {
 			t.Fatalf("failed to find or create role: %v", err)
@@ -277,7 +277,7 @@ ctx, dbx := test.DbSetup()
 		}
 		type args struct {
 			ctx       context.Context
-			db        db.Dbx
+			db        database.Dbx
 			productId string
 			roleIds   []uuid.UUID
 		}
@@ -310,10 +310,10 @@ ctx, dbx := test.DbSetup()
 func TestEnsureRoleAndPermissions(t *testing.T) {
 	test.Short(t)
 ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		type args struct {
 			ctx             context.Context
-			db              db.Dbx
+			db              database.Dbx
 			roleName        string
 			permissionNames []string
 		}
@@ -379,10 +379,10 @@ ctx, dbx := test.DbSetup()
 func TestFindOrCreateRole(t *testing.T) {
 	test.Short(t)
 ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		type args struct {
 			ctx      context.Context
-			db       db.Dbx
+			db       database.Dbx
 			roleName string
 		}
 		tests := []struct {
@@ -430,10 +430,10 @@ ctx, dbx := test.DbSetup()
 func TestCreateRole(t *testing.T) {
 	test.Short(t)
 ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		type args struct {
 			ctx  context.Context
-			dbx  db.Dbx
+			dbx  database.Dbx
 			role *queries.CreateRoleDto
 		}
 		tests := []struct {
@@ -486,7 +486,7 @@ ctx, dbx := test.DbSetup()
 func TestUpdateRole(t *testing.T) {
 	test.Short(t)
 ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		// Create initial role to update
 		role, err := queries.CreateRole(ctx, dbxx, &queries.CreateRoleDto{
 			Name: "initial_role",
@@ -499,7 +499,7 @@ ctx, dbx := test.DbSetup()
 
 		type args struct {
 			ctx     context.Context
-			dbx     db.Dbx
+			dbx     database.Dbx
 			id      uuid.UUID
 			roledto *queries.UpdateRoleDto
 		}
@@ -569,7 +569,7 @@ ctx, dbx := test.DbSetup()
 func TestUpdatePermission(t *testing.T) {
 	test.Short(t)
 ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		// Create initial permission to update
 		permission, err := queries.CreatePermission(ctx, dbxx, &queries.CreatePermissionDto{
 			Name: "initial_permission",
@@ -582,7 +582,7 @@ ctx, dbx := test.DbSetup()
 
 		type args struct {
 			ctx     context.Context
-			dbx     db.Dbx
+			dbx     database.Dbx
 			id      uuid.UUID
 			roledto *queries.UpdatePermissionDto
 		}
@@ -652,7 +652,7 @@ ctx, dbx := test.DbSetup()
 func TestDeleteRole(t *testing.T) {
 	test.Short(t)
 ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		// Create a role to delete
 		role, err := queries.CreateRole(ctx, dbxx, &queries.CreateRoleDto{
 			Name: "role_to_delete",
@@ -663,7 +663,7 @@ ctx, dbx := test.DbSetup()
 
 		type args struct {
 			ctx context.Context
-			dbx db.Dbx
+			dbx database.Dbx
 			id  uuid.UUID
 		}
 		tests := []struct {
@@ -721,7 +721,7 @@ ctx, dbx := test.DbSetup()
 func TestDeleteRolePermissions(t *testing.T) {
 	test.Short(t)
 ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		// Create a role and permission to test deletion
 		role, err := queries.CreateRole(ctx, dbxx, &queries.CreateRoleDto{
 			Name: "role_for_permissions",
@@ -745,7 +745,7 @@ ctx, dbx := test.DbSetup()
 
 		type args struct {
 			ctx context.Context
-			dbx db.Dbx
+			dbx database.Dbx
 			id  uuid.UUID
 		}
 		tests := []struct {
@@ -798,10 +798,10 @@ ctx, dbx := test.DbSetup()
 func TestFindOrCreatePermission(t *testing.T) {
 	test.Short(t)
 ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		type args struct {
 			ctx            context.Context
-			db             db.Dbx
+			db             database.Dbx
 			permissionName string
 		}
 		tests := []struct {
@@ -849,12 +849,12 @@ ctx, dbx := test.DbSetup()
 func TestCreatePermission(t *testing.T) {
 	test.Short(t)
 ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		description := "test description"
 
 		type args struct {
 			ctx        context.Context
-			dbx        db.Dbx
+			dbx        database.Dbx
 			permission *queries.CreatePermissionDto
 		}
 		tests := []struct {
@@ -912,7 +912,7 @@ ctx, dbx := test.DbSetup()
 func TestFindPermissionsByIds(t *testing.T) {
 	test.Short(t)
 ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		// Create test permissions
 		perm1, err := queries.CreatePermission(ctx, dbxx, &queries.CreatePermissionDto{
 			Name: "test_perm_1",
@@ -930,7 +930,7 @@ ctx, dbx := test.DbSetup()
 
 		type args struct {
 			ctx    context.Context
-			dbx    db.Dbx
+			dbx    database.Dbx
 			params []uuid.UUID
 		}
 		tests := []struct {
@@ -1008,7 +1008,7 @@ ctx, dbx := test.DbSetup()
 func TestDeletePermission(t *testing.T) {
 	test.Short(t)
 ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		// Create a permission to delete
 		permission, err := queries.CreatePermission(ctx, dbxx, &queries.CreatePermissionDto{
 			Name: "permission_to_delete",
@@ -1019,7 +1019,7 @@ ctx, dbx := test.DbSetup()
 
 		type args struct {
 			ctx context.Context
-			dbx db.Dbx
+			dbx database.Dbx
 			id  uuid.UUID
 		}
 		tests := []struct {
@@ -1068,7 +1068,7 @@ ctx, dbx := test.DbSetup()
 func TestFindPermissionById(t *testing.T) {
 	test.Short(t)
 ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		// Create a test permission to find
 		permission, err := queries.CreatePermission(ctx, dbxx, &queries.CreatePermissionDto{
 			Name: "test_permission",
@@ -1079,7 +1079,7 @@ ctx, dbx := test.DbSetup()
 
 		type args struct {
 			ctx context.Context
-			dbx db.Dbx
+			dbx database.Dbx
 			id  uuid.UUID
 		}
 		tests := []struct {
@@ -1132,7 +1132,7 @@ ctx, dbx := test.DbSetup()
 func TestListUserPermissionsSource(t *testing.T) {
 	test.Short(t)
 ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		// Create test user
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 			Email: "test@test.com",
@@ -1169,7 +1169,7 @@ ctx, dbx := test.DbSetup()
 
 		type args struct {
 			ctx    context.Context
-			dbx    db.Dbx
+			dbx    database.Dbx
 			userId uuid.UUID
 			limit  int64
 			offset int64
@@ -1229,7 +1229,7 @@ ctx, dbx := test.DbSetup()
 func TestCountUserPermissionSource(t *testing.T) {
 	test.Short(t)
 ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		// Create test user
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 			Email: "test@test.com",
@@ -1266,7 +1266,7 @@ ctx, dbx := test.DbSetup()
 
 		type args struct {
 			ctx    context.Context
-			dbx    db.Dbx
+			dbx    database.Dbx
 			userId uuid.UUID
 		}
 		tests := []struct {
@@ -1315,7 +1315,7 @@ ctx, dbx := test.DbSetup()
 func TestListUserNotPermissionsSource(t *testing.T) {
 	test.Short(t)
 ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		// Create test user
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 			Email: "test@test.com",
@@ -1360,7 +1360,7 @@ ctx, dbx := test.DbSetup()
 
 		type args struct {
 			ctx    context.Context
-			dbx    db.Dbx
+			dbx    database.Dbx
 			userId uuid.UUID
 			limit  int64
 			offset int64
@@ -1432,7 +1432,7 @@ ctx, dbx := test.DbSetup()
 func TestCountNotUserPermissionSource(t *testing.T) {
 	test.Short(t)
 ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		// Create test user
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 			Email: "test@test.com",
@@ -1477,7 +1477,7 @@ ctx, dbx := test.DbSetup()
 
 		type args struct {
 			ctx    context.Context
-			dbx    db.Dbx
+			dbx    database.Dbx
 			userId uuid.UUID
 		}
 		tests := []struct {

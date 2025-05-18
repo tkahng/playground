@@ -9,7 +9,7 @@ import (
 	"github.com/stephenafamo/scan"
 	"github.com/stephenafamo/scan/pgxscan"
 	"github.com/tkahng/authgo/internal/crudrepo"
-	"github.com/tkahng/authgo/internal/db"
+	"github.com/tkahng/authgo/internal/database"
 	crudModels "github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
@@ -45,7 +45,7 @@ FROM public.role_permissions rp
 GROUP BY rp.role_id;`
 )
 
-func LoadRolePermissions(ctx context.Context, db db.Dbx, roleIds ...uuid.UUID) ([][]*crudModels.Permission, error) {
+func LoadRolePermissions(ctx context.Context, db database.Dbx, roleIds ...uuid.UUID) ([][]*crudModels.Permission, error) {
 	// var results []JoinedResult[*crudModels.Permission, uuid.UUID]
 	ids := []string{}
 	for _, id := range roleIds {
@@ -101,7 +101,7 @@ FROM public.user_roles rp
 GROUP BY rp.user_id;`
 )
 
-func GetUserRoles(ctx context.Context, db db.Dbx, userIds ...uuid.UUID) ([][]*crudModels.Role, error) {
+func GetUserRoles(ctx context.Context, db database.Dbx, userIds ...uuid.UUID) ([][]*crudModels.Role, error) {
 	// var results []JoinedResult[*crudModels.Permission, uuid.UUID]
 	ids := []string{}
 	for _, id := range userIds {
@@ -155,7 +155,7 @@ WHERE rp.user_id = ANY ($1::uuid [])
 GROUP BY rp.user_id;`
 )
 
-func GetUserPermissions(ctx context.Context, db db.Dbx, userIds ...uuid.UUID) ([][]*crudModels.Permission, error) {
+func GetUserPermissions(ctx context.Context, db database.Dbx, userIds ...uuid.UUID) ([][]*crudModels.Permission, error) {
 	ids := []string{}
 	for _, id := range userIds {
 		ids = append(ids, id.String())
@@ -180,7 +180,7 @@ func GetUserPermissions(ctx context.Context, db db.Dbx, userIds ...uuid.UUID) ([
 	}), nil
 }
 
-func CreateRolePermissions(ctx context.Context, db db.Dbx, roleId uuid.UUID, permissionIds ...uuid.UUID) error {
+func CreateRolePermissions(ctx context.Context, db database.Dbx, roleId uuid.UUID, permissionIds ...uuid.UUID) error {
 	var permissions []crudModels.RolePermission
 	for _, perm := range permissionIds {
 		permissions = append(permissions, crudModels.RolePermission{
@@ -201,7 +201,7 @@ func CreateRolePermissions(ctx context.Context, db db.Dbx, roleId uuid.UUID, per
 	return nil
 }
 
-func CreateProductRoles(ctx context.Context, db db.Dbx, productId string, roleIds ...uuid.UUID) error {
+func CreateProductRoles(ctx context.Context, db database.Dbx, productId string, roleIds ...uuid.UUID) error {
 	var roles []crudModels.ProductRole
 	for _, role := range roleIds {
 		roles = append(roles, crudModels.ProductRole{
@@ -231,7 +231,7 @@ func CreateProductRoles(ctx context.Context, db db.Dbx, productId string, roleId
 	// return nil
 }
 
-func CreateProductPermissions(ctx context.Context, db db.Dbx, productId string, permissionIds ...uuid.UUID) error {
+func CreateProductPermissions(ctx context.Context, db database.Dbx, productId string, permissionIds ...uuid.UUID) error {
 	var permissions []crudModels.ProductPermission
 	for _, permissionId := range permissionIds {
 		permissions = append(permissions, crudModels.ProductPermission{
@@ -261,7 +261,7 @@ func CreateProductPermissions(ctx context.Context, db db.Dbx, productId string, 
 	return nil
 }
 
-func EnsureRoleAndPermissions(ctx context.Context, db db.Dbx, roleName string, permissionNames ...string) error {
+func EnsureRoleAndPermissions(ctx context.Context, db database.Dbx, roleName string, permissionNames ...string) error {
 	// find superuser role
 	role, err := FindOrCreateRole(ctx, db, roleName)
 	if err != nil {
@@ -286,7 +286,7 @@ type CreateRoleDto struct {
 	Description *string `json:"description,omitempty"`
 }
 
-func FindOrCreateRole(ctx context.Context, dbx db.Dbx, roleName string) (*crudModels.Role, error) {
+func FindOrCreateRole(ctx context.Context, dbx database.Dbx, roleName string) (*crudModels.Role, error) {
 	role, err := crudrepo.Role.GetOne(
 		ctx,
 		dbx,
@@ -308,7 +308,7 @@ func FindOrCreateRole(ctx context.Context, dbx db.Dbx, roleName string) (*crudMo
 	return role, nil
 }
 
-func CreateRole(ctx context.Context, dbx db.Dbx, role *CreateRoleDto) (*crudModels.Role, error) {
+func CreateRole(ctx context.Context, dbx database.Dbx, role *CreateRoleDto) (*crudModels.Role, error) {
 	data, err := crudrepo.Role.PostOne(ctx, dbx, &crudModels.Role{
 		Name:        role.Name,
 		Description: role.Description,
@@ -321,7 +321,7 @@ type UpdateRoleDto struct {
 	Description *string `json:"description,omitempty"`
 }
 
-func UpdateRole(ctx context.Context, dbx db.Dbx, id uuid.UUID, roledto *UpdateRoleDto) error {
+func UpdateRole(ctx context.Context, dbx database.Dbx, id uuid.UUID, roledto *UpdateRoleDto) error {
 	role, err := crudrepo.Role.GetOne(
 		ctx,
 		dbx,
@@ -351,7 +351,7 @@ type UpdatePermissionDto struct {
 	Description *string `json:"description,omitempty"`
 }
 
-func UpdatePermission(ctx context.Context, dbx db.Dbx, id uuid.UUID, roledto *UpdatePermissionDto) error {
+func UpdatePermission(ctx context.Context, dbx database.Dbx, id uuid.UUID, roledto *UpdatePermissionDto) error {
 	permission, err := crudrepo.Permission.GetOne(
 		ctx,
 		dbx,
@@ -377,7 +377,7 @@ func UpdatePermission(ctx context.Context, dbx db.Dbx, id uuid.UUID, roledto *Up
 	return nil
 }
 
-func DeleteRole(ctx context.Context, dbx db.Dbx, id uuid.UUID) error {
+func DeleteRole(ctx context.Context, dbx database.Dbx, id uuid.UUID) error {
 	_, err := crudrepo.Role.Delete(
 		ctx,
 		dbx,
@@ -390,7 +390,7 @@ func DeleteRole(ctx context.Context, dbx db.Dbx, id uuid.UUID) error {
 	return err
 }
 
-func DeleteRolePermissions(ctx context.Context, dbx db.Dbx, id uuid.UUID) error {
+func DeleteRolePermissions(ctx context.Context, dbx database.Dbx, id uuid.UUID) error {
 	_, err := crudrepo.RolePermission.Delete(
 		ctx,
 		dbx,
@@ -408,7 +408,7 @@ type CreatePermissionDto struct {
 	Description *string `json:"description,omitempty"`
 }
 
-func FindOrCreatePermission(ctx context.Context, dbx db.Dbx, permissionName string) (*crudModels.Permission, error) {
+func FindOrCreatePermission(ctx context.Context, dbx database.Dbx, permissionName string) (*crudModels.Permission, error) {
 	permission, err := crudrepo.Permission.GetOne(
 		ctx,
 		dbx,
@@ -430,7 +430,7 @@ func FindOrCreatePermission(ctx context.Context, dbx db.Dbx, permissionName stri
 	return permission, nil
 }
 
-func CreatePermission(ctx context.Context, dbx db.Dbx, permission *CreatePermissionDto) (*crudModels.Permission, error) {
+func CreatePermission(ctx context.Context, dbx database.Dbx, permission *CreatePermissionDto) (*crudModels.Permission, error) {
 	data, err := crudrepo.Permission.PostOne(ctx, dbx, &crudModels.Permission{
 		Name:        permission.Name,
 		Description: permission.Description,
@@ -438,7 +438,7 @@ func CreatePermission(ctx context.Context, dbx db.Dbx, permission *CreatePermiss
 	return data, err
 }
 
-func FindPermissionsByIds(ctx context.Context, dbx db.Dbx, params []uuid.UUID) ([]*crudModels.Permission, error) {
+func FindPermissionsByIds(ctx context.Context, dbx database.Dbx, params []uuid.UUID) ([]*crudModels.Permission, error) {
 	if len(params) == 0 {
 		return nil, nil
 	}
@@ -462,7 +462,7 @@ func FindPermissionsByIds(ctx context.Context, dbx db.Dbx, params []uuid.UUID) (
 	)
 }
 
-func DeletePermission(ctx context.Context, dbx db.Dbx, id uuid.UUID) error {
+func DeletePermission(ctx context.Context, dbx database.Dbx, id uuid.UUID) error {
 	_, err := crudrepo.Permission.Delete(
 		ctx,
 		dbx,
@@ -475,7 +475,7 @@ func DeletePermission(ctx context.Context, dbx db.Dbx, id uuid.UUID) error {
 	return err
 }
 
-func FindPermissionById(ctx context.Context, dbx db.Dbx, id uuid.UUID) (*crudModels.Permission, error) {
+func FindPermissionById(ctx context.Context, dbx database.Dbx, id uuid.UUID) (*crudModels.Permission, error) {
 	data, err := crudrepo.Permission.GetOne(
 		ctx,
 		dbx,
@@ -487,7 +487,7 @@ func FindPermissionById(ctx context.Context, dbx db.Dbx, id uuid.UUID) (*crudMod
 	)
 	return OptionalRow(data, err)
 }
-func FindPermissionByName(ctx context.Context, dbx db.Dbx, name string) (*crudModels.Permission, error) {
+func FindPermissionByName(ctx context.Context, dbx database.Dbx, name string) (*crudModels.Permission, error) {
 	data, err := crudrepo.Permission.GetOne(
 		ctx,
 		dbx,
@@ -500,7 +500,7 @@ func FindPermissionByName(ctx context.Context, dbx db.Dbx, name string) (*crudMo
 	return OptionalRow(data, err)
 }
 
-func FindRoleByName(ctx context.Context, dbx db.Dbx, name string) (*crudModels.Role, error) {
+func FindRoleByName(ctx context.Context, dbx database.Dbx, name string) (*crudModels.Role, error) {
 	data, err := crudrepo.Role.GetOne(
 		ctx,
 		dbx,
@@ -656,7 +656,7 @@ type PermissionSource struct {
 	IsDirectly  bool        `db:"is_directly_assigned" json:"is_directly_assigned"`
 }
 
-func ListUserPermissionsSource(ctx context.Context, dbx db.Dbx, userId uuid.UUID, limit int64, offset int64) ([]PermissionSource, error) {
+func ListUserPermissionsSource(ctx context.Context, dbx database.Dbx, userId uuid.UUID, limit int64, offset int64) ([]PermissionSource, error) {
 	data, err := QueryAll[PermissionSource](ctx, dbx, QueryUserPermissionSource, userId, limit, offset)
 	if err != nil {
 		return nil, err
@@ -665,7 +665,7 @@ func ListUserPermissionsSource(ctx context.Context, dbx db.Dbx, userId uuid.UUID
 	return data, nil
 }
 
-func CountUserPermissionSource(ctx context.Context, dbx db.Dbx, userId uuid.UUID) (int64, error) {
+func CountUserPermissionSource(ctx context.Context, dbx database.Dbx, userId uuid.UUID) (int64, error) {
 	data, err := Count(ctx, dbx, QueryUserPermissionSourceCount, userId)
 	if err != nil {
 		return 0, err
@@ -795,7 +795,7 @@ FROM public.permissions p
 WHERE cp.id IS NULL;`
 )
 
-func ListUserNotPermissionsSource(ctx context.Context, dbx db.Dbx, userId uuid.UUID, limit int64, offset int64) ([]PermissionSource, error) {
+func ListUserNotPermissionsSource(ctx context.Context, dbx database.Dbx, userId uuid.UUID, limit int64, offset int64) ([]PermissionSource, error) {
 
 	res, err := QueryAll[PermissionSource](ctx, dbx, getuserNotPermissions, userId, limit, offset)
 	if err != nil {
@@ -805,7 +805,7 @@ func ListUserNotPermissionsSource(ctx context.Context, dbx db.Dbx, userId uuid.U
 	return res, nil
 }
 
-func CountNotUserPermissionSource(ctx context.Context, dbx db.Dbx, userId uuid.UUID) (int64, error) {
+func CountNotUserPermissionSource(ctx context.Context, dbx database.Dbx, userId uuid.UUID) (int64, error) {
 	// q := psql.RawQuery(getuserNotPermissionCounts, userId, userId)
 
 	data, err := Count(ctx, dbx, getuserNotPermissionCounts, userId)

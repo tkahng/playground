@@ -7,17 +7,17 @@ import (
 	"github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/crudrepo"
-	"github.com/tkahng/authgo/internal/db"
+	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/tools/types"
 )
 
 type PostgresTeamStore struct {
-	db db.Dbx
+	db database.Dbx
 }
 
-func NewPostgresTeamStore(db db.Dbx) TeamStore {
+func NewPostgresTeamStore(db database.Dbx) TeamStore {
 	return &PostgresTeamStore{
 		db: db,
 	}

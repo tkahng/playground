@@ -7,7 +7,7 @@ import (
 
 	"github.com/Masterminds/squirrel"
 	"github.com/tkahng/authgo/internal/crudrepo"
-	"github.com/tkahng/authgo/internal/db"
+	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
@@ -70,14 +70,14 @@ var (
 	MetadataIndexName = "metadata.index"
 )
 
-func ListProducts(ctx context.Context, dbx db.Dbx, input *shared.StripeProductListParams) ([]*models.StripeProduct, error) {
+func ListProducts(ctx context.Context, dbx database.Dbx, input *shared.StripeProductListParams) ([]*models.StripeProduct, error) {
 
 	q := squirrel.Select("stripe_products.*").
 		From("stripe_products")
 	filter := input.StripeProductListFilter
 	pageInput := &input.PaginatedInput
 
-	q = db.Paginate(q, pageInput)
+	q = database.Paginate(q, pageInput)
 	q = ListProductFilterFuncQuery(q, &filter)
 	data, err := QueryWithBuilder[*models.StripeProduct](ctx, dbx, q.PlaceholderFormat(squirrel.Dollar))
 	if err != nil {
@@ -116,7 +116,7 @@ FROM public.product_roles rp
 GROUP BY rp.product_id;`
 )
 
-func LoadProductRoles(ctx context.Context, db db.Dbx, productIds ...string) ([][]*models.Role, error) {
+func LoadProductRoles(ctx context.Context, db database.Dbx, productIds ...string) ([][]*models.Role, error) {
 	data, err := QueryAll[shared.JoinedResult[*models.Role, string]](
 		ctx,
 		db,
@@ -136,7 +136,7 @@ func LoadProductRoles(ctx context.Context, db db.Dbx, productIds ...string) ([][
 	}), nil
 }
 
-func LoadProductPrices(ctx context.Context, db db.Dbx, where *map[string]any, productIds ...string) ([][]*models.StripePrice, error) {
+func LoadProductPrices(ctx context.Context, db database.Dbx, where *map[string]any, productIds ...string) ([][]*models.StripePrice, error) {
 	if where == nil {
 		where = &map[string]any{}
 	}
@@ -193,7 +193,7 @@ func ListProductFilterFuncQuery(q squirrel.SelectBuilder, filter *shared.StripeP
 }
 
 // CountUsers implements AdminCrudActions.
-func CountProducts(ctx context.Context, db db.Dbx, filter *shared.StripeProductListFilter) (int64, error) {
+func CountProducts(ctx context.Context, db database.Dbx, filter *shared.StripeProductListFilter) (int64, error) {
 	q := squirrel.Select("COUNT(stripe_products.*)").
 		From("stripe_products")
 
@@ -210,12 +210,12 @@ func CountProducts(ctx context.Context, db db.Dbx, filter *shared.StripeProductL
 	return data[0].Count, nil
 }
 
-func ListPrices(ctx context.Context, dbx db.Dbx, input *shared.StripePriceListParams) ([]*models.StripePrice, error) {
+func ListPrices(ctx context.Context, dbx database.Dbx, input *shared.StripePriceListParams) ([]*models.StripePrice, error) {
 
 	filter := input.StripePriceListFilter
 	pageInput := &input.PaginatedInput
 
-	limit, offset := db.PaginateRepo(pageInput)
+	limit, offset := database.PaginateRepo(pageInput)
 	param := ListPriceFilterFuncMap(&filter)
 	sort := ListPriceOrderByMap(input)
 
@@ -295,7 +295,7 @@ func ListPriceFilterFuncMap(filter *shared.StripePriceListFilter) *map[string]an
 	return &param
 }
 
-func CountPrices(ctx context.Context, db db.Dbx, filter *shared.StripePriceListFilter) (int64, error) {
+func CountPrices(ctx context.Context, db database.Dbx, filter *shared.StripePriceListFilter) (int64, error) {
 	filermap := ListPriceFilterFuncMap(filter)
 	data, err := crudrepo.StripePrice.Count(ctx, db, filermap)
 	if err != nil {
@@ -304,12 +304,12 @@ func CountPrices(ctx context.Context, db db.Dbx, filter *shared.StripePriceListF
 	return data, nil
 }
 
-func ListCustomers(ctx context.Context, dbx db.Dbx, input *shared.StripeCustomerListParams) ([]*models.StripeCustomer, error) {
+func ListCustomers(ctx context.Context, dbx database.Dbx, input *shared.StripeCustomerListParams) ([]*models.StripeCustomer, error) {
 
 	filter := input.StripeCustomerListFilter
 	pageInput := &input.PaginatedInput
 
-	limit, offset := db.PaginateRepo(pageInput)
+	limit, offset := database.PaginateRepo(pageInput)
 	where := ListCustomerFilterFunc(&filter)
 	order := StripeCustomerOrderByFunc(input)
 	data, err := crudrepo.StripeCustomer.Get(
@@ -350,7 +350,7 @@ func ListCustomerFilterFunc(filter *shared.StripeCustomerListFilter) *map[string
 	return &where
 }
 
-func CountCustomers(ctx context.Context, db db.Dbx, filter *shared.StripeCustomerListFilter) (int64, error) {
+func CountCustomers(ctx context.Context, db database.Dbx, filter *shared.StripeCustomerListFilter) (int64, error) {
 	where := ListCustomerFilterFunc(filter)
 	data, err := crudrepo.StripeCustomer.Count(ctx, db, where)
 	if err != nil {
@@ -359,12 +359,12 @@ func CountCustomers(ctx context.Context, db db.Dbx, filter *shared.StripeCustome
 	return data, nil
 }
 
-func ListSubscriptions(ctx context.Context, dbx db.Dbx, input *shared.StripeSubscriptionListParams) ([]*models.StripeSubscription, error) {
+func ListSubscriptions(ctx context.Context, dbx database.Dbx, input *shared.StripeSubscriptionListParams) ([]*models.StripeSubscription, error) {
 
 	filter := input.StripeSubscriptionListFilter
 	pageInput := &input.PaginatedInput
 
-	limit, offset := db.PaginateRepo(pageInput)
+	limit, offset := database.PaginateRepo(pageInput)
 	where := ListSubscriptionFilterFunc(&filter)
 	order := StripeSubscriptionOrderByFunc(input)
 	data, err := crudrepo.StripeSubscription.Get(
@@ -416,7 +416,7 @@ func ListSubscriptionFilterFunc(filter *shared.StripeSubscriptionListFilter) *ma
 	return &where
 }
 
-func CountSubscriptions(ctx context.Context, db db.Dbx, filter *shared.StripeSubscriptionListFilter) (int64, error) {
+func CountSubscriptions(ctx context.Context, db database.Dbx, filter *shared.StripeSubscriptionListFilter) (int64, error) {
 	where := ListSubscriptionFilterFunc(filter)
 	data, err := crudrepo.StripeSubscription.Count(ctx, db, where)
 	if err != nil {

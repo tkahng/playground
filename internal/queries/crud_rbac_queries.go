@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/Masterminds/squirrel"
-	"github.com/tkahng/authgo/internal/db"
+	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/shared"
 )
@@ -53,14 +53,14 @@ func ListPermissionsFilterFunc(sq squirrel.SelectBuilder, filter *shared.Permiss
 }
 
 // ListPermissions implements AdminCrudActions.
-func ListPermissions(ctx context.Context, dbx db.Dbx, input *shared.PermissionsListParams) ([]*models.Permission, error) {
+func ListPermissions(ctx context.Context, dbx database.Dbx, input *shared.PermissionsListParams) ([]*models.Permission, error) {
 	q := squirrel.Select("permissions.*").From("permissions")
 	filter := input.PermissionsListFilter
 	pageInput := &input.PaginatedInput
 
 	// q = ViewApplyPagination(q, pageInput)
 	q = ListPermissionsFilterFunc(q, &filter)
-	q = db.Paginate(q, pageInput)
+	q = database.Paginate(q, pageInput)
 	if input.SortBy != "" && input.SortOrder != "" {
 		q = q.OrderBy(input.SortBy + " " + strings.ToUpper(input.SortOrder))
 	}
@@ -76,7 +76,7 @@ type CountOutput struct {
 }
 
 // CountPermissions implements AdminCrudActions.
-func CountPermissions(ctx context.Context, db db.Dbx, filter *shared.PermissionsListFilter) (int64, error) {
+func CountPermissions(ctx context.Context, db database.Dbx, filter *shared.PermissionsListFilter) (int64, error) {
 	q := squirrel.Select("COUNT(permissions.*)").From("permissions")
 
 	// q = ViewApplyPagination(q, pageInput)
@@ -132,14 +132,14 @@ func ListRolesFilterFuncQuery(sq squirrel.SelectBuilder, filter *shared.RoleList
 }
 
 // ListRoles implements AdminCrudActions.
-func ListRoles(ctx context.Context, dbx db.Dbx, input *shared.RolesListParams) ([]*models.Role, error) {
+func ListRoles(ctx context.Context, dbx database.Dbx, input *shared.RolesListParams) ([]*models.Role, error) {
 	q := squirrel.Select("roles.*").From("roles")
 	filter := input.RoleListFilter
 	pageInput := &input.PaginatedInput
 
 	// q = ViewApplyPagination(q, pageInput)
 	q = ListRolesFilterFuncQuery(q, &filter)
-	q = db.Paginate(q, pageInput)
+	q = database.Paginate(q, pageInput)
 	if input.SortBy != "" && input.SortOrder != "" {
 		q = q.OrderBy(input.SortBy + " " + strings.ToUpper(input.SortOrder))
 	}
@@ -151,7 +151,7 @@ func ListRoles(ctx context.Context, dbx db.Dbx, input *shared.RolesListParams) (
 }
 
 // CountRoles implements AdminCrudActions.
-func CountRoles(ctx context.Context, db db.Dbx, filter *shared.RoleListFilter) (int64, error) {
+func CountRoles(ctx context.Context, db database.Dbx, filter *shared.RoleListFilter) (int64, error) {
 	q := squirrel.Select("COUNT(roles.*)").From("roles")
 
 	// q = ViewApplyPagination(q, pageInput)

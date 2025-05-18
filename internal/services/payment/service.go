@@ -9,7 +9,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/stripe/stripe-go/v82"
-	"github.com/tkahng/authgo/internal/db"
+	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
@@ -36,7 +36,7 @@ type StripeService struct {
 	logger       *slog.Logger
 	client       PaymentClient
 	paymentStore PaymentStore
-	db           db.Dbx
+	db           database.Dbx
 }
 
 var _ PaymentService = (*StripeService)(nil)

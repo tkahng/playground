@@ -10,7 +10,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/stephenafamo/scan"
 	"github.com/stephenafamo/scan/pgxscan"
-	"github.com/tkahng/authgo/internal/db"
+	"github.com/tkahng/authgo/internal/database"
 )
 
 func VarCollect[T any](args ...T) []T {
@@ -78,7 +78,7 @@ type QueryBuilder interface {
 	ToSql() (string, []any, error)
 }
 
-func QueryWithBuilder[T any](ctx context.Context, db db.Dbx, query QueryBuilder) ([]T, error) {
+func QueryWithBuilder[T any](ctx context.Context, db database.Dbx, query QueryBuilder) ([]T, error) {
 	sql, args, err := query.ToSql()
 	if err != nil {
 		return nil, err
@@ -87,24 +87,24 @@ func QueryWithBuilder[T any](ctx context.Context, db db.Dbx, query QueryBuilder)
 	return QueryAll[T](ctx, db, sql, args...)
 }
 
-func QueryAll[T any](ctx context.Context, db db.Dbx, query string, args ...any) ([]T, error) {
+func QueryAll[T any](ctx context.Context, db database.Dbx, query string, args ...any) ([]T, error) {
 	return pgxscan.All(ctx, db, scan.StructMapper[T](), query, args...)
 }
 
-func QueryOne[T any](ctx context.Context, db db.Dbx, query string, args ...any) (T, error) {
+func QueryOne[T any](ctx context.Context, db database.Dbx, query string, args ...any) (T, error) {
 	return pgxscan.One(ctx, db, scan.StructMapper[T](), query, args...)
 }
 
-func Count(ctx context.Context, db db.Dbx, query string, args ...any) (int64, error) {
+func Count(ctx context.Context, db database.Dbx, query string, args ...any) (int64, error) {
 	return pgxscan.One(ctx, db, scan.SingleColumnMapper[int64], query, args...)
 }
 
-func Exec(ctx context.Context, db db.Dbx, query string, args ...any) error {
+func Exec(ctx context.Context, db database.Dbx, query string, args ...any) error {
 	_, err := db.Exec(ctx, query, args...)
 	return err
 }
 
-func ExecWithBuilder(ctx context.Context, db db.Dbx, query QueryBuilder) error {
+func ExecWithBuilder(ctx context.Context, db database.Dbx, query QueryBuilder) error {
 	sql, args, err := query.ToSql()
 	if err != nil {
 		return err

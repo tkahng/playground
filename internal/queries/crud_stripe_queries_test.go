@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/tkahng/authgo/internal/crudrepo"
-	"github.com/tkahng/authgo/internal/db"
+	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/seeders"
@@ -16,14 +16,14 @@ import (
 func TestListProducts(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		_, err := seeders.CreateStripeProductPrices(ctx, dbxx, 5)
 		if err != nil {
 			t.Fatalf("failed to create stripe products: %v", err)
 		}
 		type args struct {
 			ctx   context.Context
-			db    db.Dbx
+			db    database.Dbx
 			input *shared.StripeProductListParams
 		}
 		tests := []struct {
@@ -69,7 +69,7 @@ func TestListProducts(t *testing.T) {
 func TestLoadProductRoles(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		products, err := seeders.CreateStripeProductPrices(ctx, dbxx, 2)
 		if err != nil {
 			t.Fatalf("failed to create stripe products: %v", err)
@@ -96,7 +96,7 @@ func TestLoadProductRoles(t *testing.T) {
 
 		type args struct {
 			ctx        context.Context
-			db         db.Dbx
+			db         database.Dbx
 			productIds []string
 		}
 		tests := []struct {
@@ -137,7 +137,7 @@ func TestLoadProductRoles(t *testing.T) {
 func TestLoadProductPrices(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		products, err := seeders.CreateStripeProductPrices(ctx, dbxx, 2)
 		if err != nil {
 			t.Fatalf("failed to create stripe products: %v", err)
@@ -147,7 +147,7 @@ func TestLoadProductPrices(t *testing.T) {
 
 		type args struct {
 			ctx        context.Context
-			db         db.Dbx
+			db         database.Dbx
 			where      *map[string]any
 			productIds []string
 		}
@@ -205,7 +205,7 @@ func TestLoadProductPrices(t *testing.T) {
 func TestCountProducts(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		_, err := seeders.CreateStripeProductPrices(ctx, dbxx, 5)
 		if err != nil {
 			t.Fatalf("failed to create stripe products: %v", err)
@@ -213,7 +213,7 @@ func TestCountProducts(t *testing.T) {
 
 		type args struct {
 			ctx    context.Context
-			db     db.Dbx
+			db     database.Dbx
 			filter *shared.StripeProductListFilter
 		}
 		tests := []struct {
@@ -263,7 +263,7 @@ func TestCountProducts(t *testing.T) {
 func TestListPrices(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		_, err := seeders.CreateStripeProductPrices(ctx, dbxx, 2) // Create 2 products with prices
 		if err != nil {
 			t.Fatalf("failed to create stripe products and prices: %v", err)
@@ -271,7 +271,7 @@ func TestListPrices(t *testing.T) {
 
 		type args struct {
 			ctx   context.Context
-			db    db.Dbx
+			db    database.Dbx
 			input *shared.StripePriceListParams
 		}
 		tests := []struct {
@@ -346,7 +346,7 @@ func TestListPrices(t *testing.T) {
 func TestCountPrices(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		_, err := seeders.CreateStripeProductPrices(ctx, dbxx, 2) // Create 2 products with prices
 		if err != nil {
 			t.Fatalf("failed to create stripe products and prices: %v", err)
@@ -354,7 +354,7 @@ func TestCountPrices(t *testing.T) {
 
 		type args struct {
 			ctx    context.Context
-			db     db.Dbx
+			db     database.Dbx
 			filter *shared.StripePriceListFilter
 		}
 		tests := []struct {
@@ -404,7 +404,7 @@ func TestCountPrices(t *testing.T) {
 func TestListCustomers(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		user, err := queries.CreateUser(
 			ctx,
 			dbxx,
@@ -428,7 +428,7 @@ func TestListCustomers(t *testing.T) {
 
 		type args struct {
 			ctx   context.Context
-			db    db.Dbx
+			db    database.Dbx
 			input *shared.StripeCustomerListParams
 		}
 		tests := []struct {
@@ -487,7 +487,7 @@ func TestListCustomers(t *testing.T) {
 func TestCountCustomers(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		user, err := queries.CreateUser(
 			ctx,
 			dbxx,
@@ -510,7 +510,7 @@ func TestCountCustomers(t *testing.T) {
 
 		type args struct {
 			ctx    context.Context
-			db     db.Dbx
+			db     database.Dbx
 			filter *shared.StripeCustomerListFilter
 		}
 		tests := []struct {
@@ -560,7 +560,7 @@ func TestCountCustomers(t *testing.T) {
 func TestListSubscriptions(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		// Create test user
 		user, err := queries.CreateUser(
 			ctx,
@@ -611,7 +611,7 @@ func TestListSubscriptions(t *testing.T) {
 		}
 		type args struct {
 			ctx   context.Context
-			db    db.Dbx
+			db    database.Dbx
 			input *shared.StripeSubscriptionListParams
 		}
 		tests := []struct {
@@ -683,7 +683,7 @@ func TestListSubscriptions(t *testing.T) {
 func TestCountSubscriptions(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		// Create test user
 		user, err := queries.CreateUser(
 			ctx,
@@ -742,7 +742,7 @@ func TestCountSubscriptions(t *testing.T) {
 
 		type args struct {
 			ctx    context.Context
-			db     db.Dbx
+			db     database.Dbx
 			filter *shared.StripeSubscriptionListFilter
 		}
 		tests := []struct {

@@ -5,11 +5,11 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/crudrepo"
-	"github.com/tkahng/authgo/internal/db"
+	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
 )
 
-func CreateTeamFromUser(ctx context.Context, dbx db.Dbx, user *models.User) (*models.TeamMember, error) {
+func CreateTeamFromUser(ctx context.Context, dbx database.Dbx, user *models.User) (*models.TeamMember, error) {
 	team, err := func() (*models.Team, error) {
 		teamModel := &models.Team{
 			Name:             user.Email,

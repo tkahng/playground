@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/tkahng/authgo/internal/db"
+	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
@@ -18,7 +18,7 @@ import (
 func TestLoadTaskProjectsTasks(t *testing.T) {
 	test.Short(t)
 ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 			Email: "tkahng@gmail.com",
 		})
@@ -41,7 +41,7 @@ ctx, dbx := test.DbSetup()
 		}
 		type args struct {
 			ctx        context.Context
-			db         db.Dbx
+			db         database.Dbx
 			projectIds []uuid.UUID
 		}
 		tests := []struct {
@@ -99,7 +99,7 @@ ctx, dbx := test.DbSetup()
 func TestFindTaskByID(t *testing.T) {
 	test.Short(t)
 ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 			Email: "tkahng@gmail.com",
 		})
@@ -123,7 +123,7 @@ ctx, dbx := test.DbSetup()
 
 		type args struct {
 			ctx context.Context
-			db  db.Dbx
+			db  database.Dbx
 			id  uuid.UUID
 		}
 		tests := []struct {
@@ -180,7 +180,7 @@ ctx, dbx := test.DbSetup()
 func TestFindLastTaskOrder(t *testing.T) {
 	test.Short(t)
 ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		user, err := queries.CreateUser(
 			ctx,
 			dbxx,
@@ -221,7 +221,7 @@ ctx, dbx := test.DbSetup()
 
 		type args struct {
 			ctx           context.Context
-			db            db.Dbx
+			db            database.Dbx
 			taskProjectID uuid.UUID
 		}
 		tests := []struct {
@@ -269,7 +269,7 @@ ctx, dbx := test.DbSetup()
 func TestDeleteTask(t *testing.T) {
 	test.Short(t)
 ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 			Email: "tkahng@gmail.com",
 		})
@@ -293,7 +293,7 @@ ctx, dbx := test.DbSetup()
 
 		type args struct {
 			ctx    context.Context
-			db     db.Dbx
+			db     database.Dbx
 			taskID uuid.UUID
 		}
 		tests := []struct {
@@ -333,7 +333,7 @@ ctx, dbx := test.DbSetup()
 func TestFindTaskProjectByID(t *testing.T) {
 	test.Short(t)
 ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 			Email: "tkahng@gmail.com",
 		})
@@ -350,7 +350,7 @@ ctx, dbx := test.DbSetup()
 
 		type args struct {
 			ctx context.Context
-			db  db.Dbx
+			db  database.Dbx
 			id  uuid.UUID
 		}
 		tests := []struct {
@@ -407,7 +407,7 @@ ctx, dbx := test.DbSetup()
 func TestDeleteTaskProject(t *testing.T) {
 	test.Short(t)
 ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 			Email: "tkahng@gmail.com",
 		})
@@ -424,7 +424,7 @@ ctx, dbx := test.DbSetup()
 
 		type args struct {
 			ctx           context.Context
-			db            db.Dbx
+			db            database.Dbx
 			taskProjectID uuid.UUID
 		}
 		tests := []struct {
@@ -464,7 +464,7 @@ ctx, dbx := test.DbSetup()
 func TestListTasks(t *testing.T) {
 	test.Short(t)
 ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 			Email: "tkahng@gmail.com",
 		})
@@ -488,7 +488,7 @@ ctx, dbx := test.DbSetup()
 
 		type args struct {
 			ctx   context.Context
-			db    db.Dbx
+			db    database.Dbx
 			input *shared.TaskListParams
 		}
 		tests := []struct {
@@ -569,7 +569,7 @@ ctx, dbx := test.DbSetup()
 func TestCountTasks(t *testing.T) {
 	test.Short(t)
 ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 			Email: "tkahng@gmail.com",
 		})
@@ -593,7 +593,7 @@ ctx, dbx := test.DbSetup()
 
 		type args struct {
 			ctx    context.Context
-			db     db.Dbx
+			db     database.Dbx
 			filter *shared.TaskListFilter
 		}
 		tests := []struct {
@@ -646,7 +646,7 @@ ctx, dbx := test.DbSetup()
 func TestListTaskProjects(t *testing.T) {
 	test.Short(t)
 ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 			Email: "tkahng@gmail.com",
 		})
@@ -663,7 +663,7 @@ ctx, dbx := test.DbSetup()
 
 		type args struct {
 			ctx   context.Context
-			db    db.Dbx
+			db    database.Dbx
 			input *shared.TaskProjectsListParams
 		}
 		tests := []struct {
@@ -741,7 +741,7 @@ ctx, dbx := test.DbSetup()
 func TestCountTaskProjects(t *testing.T) {
 	test.Short(t)
 ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 			Email: "tkahng@gmail.com",
 		})
@@ -758,7 +758,7 @@ ctx, dbx := test.DbSetup()
 
 		type args struct {
 			ctx    context.Context
-			db     db.Dbx
+			db     database.Dbx
 			filter *shared.TaskProjectsListFilter
 		}
 		tests := []struct {
@@ -808,7 +808,7 @@ ctx, dbx := test.DbSetup()
 func TestCreateTaskProject(t *testing.T) {
 	test.Short(t)
 ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 			Email: "tkahng@gmail.com",
 		})
@@ -818,7 +818,7 @@ ctx, dbx := test.DbSetup()
 
 		type args struct {
 			ctx    context.Context
-			db     db.Dbx
+			db     database.Dbx
 			userID uuid.UUID
 			input  *shared.CreateTaskProjectDTO
 		}
@@ -883,7 +883,7 @@ ctx, dbx := test.DbSetup()
 func TestCreateTaskProjectWithTasks(t *testing.T) {
 	test.Short(t)
 ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 			Email: "tkahng@gmail.com",
 		})
@@ -893,7 +893,7 @@ ctx, dbx := test.DbSetup()
 
 		type args struct {
 			ctx    context.Context
-			db     db.Dbx
+			db     database.Dbx
 			userID uuid.UUID
 			input  *shared.CreateTaskProjectWithTasksDTO
 		}
@@ -980,7 +980,7 @@ ctx, dbx := test.DbSetup()
 func TestCreateTask(t *testing.T) {
 	test.Short(t)
 ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 			Email: "tkahng@gmail.com",
 		})
@@ -997,7 +997,7 @@ ctx, dbx := test.DbSetup()
 
 		type args struct {
 			ctx       context.Context
-			db        db.Dbx
+			db        database.Dbx
 			userID    uuid.UUID
 			projectID uuid.UUID
 			input     *shared.CreateTaskBaseDTO
@@ -1068,7 +1068,7 @@ ctx, dbx := test.DbSetup()
 func TestDefineTaskOrderNumberByStatus(t *testing.T) {
 	test.Short(t)
 ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 			Email: "tkahng@gmail.com",
 		})
@@ -1112,7 +1112,7 @@ ctx, dbx := test.DbSetup()
 		utils.PrettyPrintJSON(task3)
 		type args struct {
 			ctx           context.Context
-			db            db.Dbx
+			db            database.Dbx
 			taskId        uuid.UUID
 			taskProjectId uuid.UUID
 			status        models.TaskStatus
@@ -1186,7 +1186,7 @@ ctx, dbx := test.DbSetup()
 func TestUpdateTask(t *testing.T) {
 	test.Short(t)
 ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 			Email: "tkahng@gmail.com",
 		})
@@ -1212,7 +1212,7 @@ ctx, dbx := test.DbSetup()
 
 		type args struct {
 			ctx    context.Context
-			db     db.Dbx
+			db     database.Dbx
 			taskID uuid.UUID
 			input  *shared.UpdateTaskBaseDTO
 		}
@@ -1287,7 +1287,7 @@ ctx, dbx := test.DbSetup()
 func TestUpdateTaskProjectUpdateDate(t *testing.T) {
 	test.Short(t)
 ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 			Email: "tkahng@gmail.com",
 		})
@@ -1304,7 +1304,7 @@ ctx, dbx := test.DbSetup()
 
 		type args struct {
 			ctx           context.Context
-			db            db.Dbx
+			db            database.Dbx
 			taskProjectID uuid.UUID
 		}
 		tests := []struct {
@@ -1346,7 +1346,7 @@ ctx, dbx := test.DbSetup()
 func TestUpdateTaskProject(t *testing.T) {
 	test.Short(t)
 ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 			Email: "tkahng@gmail.com",
 		})
@@ -1365,7 +1365,7 @@ ctx, dbx := test.DbSetup()
 
 		type args struct {
 			ctx           context.Context
-			db            db.Dbx
+			db            database.Dbx
 			taskProjectID uuid.UUID
 			input         *shared.UpdateTaskProjectBaseDTO
 		}
@@ -1439,7 +1439,7 @@ ctx, dbx := test.DbSetup()
 func TestUpdateTaskPositionStatus(t *testing.T) {
 	test.Short(t)
 ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 			Email: "tkahng@gmail.com",
 		})
@@ -1474,7 +1474,7 @@ ctx, dbx := test.DbSetup()
 
 		type args struct {
 			ctx      context.Context
-			db       db.Dbx
+			db       database.Dbx
 			taskID   uuid.UUID
 			position int64
 			status   models.TaskStatus

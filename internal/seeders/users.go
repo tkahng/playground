@@ -7,13 +7,13 @@ import (
 	"github.com/google/uuid"
 	"github.com/jaswdr/faker/v2"
 	"github.com/tkahng/authgo/internal/crudrepo"
-	"github.com/tkahng/authgo/internal/db"
+	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/tools/types"
 )
 
-func CreateUserFromEmails(ctx context.Context, dbx db.Dbx, emails ...string) ([]*models.User, error) {
+func CreateUserFromEmails(ctx context.Context, dbx database.Dbx, emails ...string) ([]*models.User, error) {
 	var users []models.User
 	for _, emails := range emails {
 		users = append(users, models.User{Email: emails})
@@ -26,7 +26,7 @@ func CreateUserFromEmails(ctx context.Context, dbx db.Dbx, emails ...string) ([]
 	return res, nil
 }
 
-func CreateUsers(ctx context.Context, dbx db.Dbx, count int) ([]*models.User, error) {
+func CreateUsers(ctx context.Context, dbx database.Dbx, count int) ([]*models.User, error) {
 	faker := faker.New().Internet()
 	var users []models.User
 	for i := 0; i < count; i++ {
@@ -47,7 +47,7 @@ type CreateUserDto struct {
 	Provider models.Providers
 }
 
-func CreateUserWithAccountAndRole(ctx context.Context, dbx db.Dbx, count int, provider models.Providers, roleName string, faker faker.Internet) ([]*models.User, error) {
+func CreateUserWithAccountAndRole(ctx context.Context, dbx database.Dbx, count int, provider models.Providers, roleName string, faker faker.Internet) ([]*models.User, error) {
 	role, err := queries.FindOrCreateRole(ctx, dbx, roleName)
 	if err != nil {
 		return nil, err
@@ -107,7 +107,7 @@ func CreateUserWithAccountAndRole(ctx context.Context, dbx db.Dbx, count int, pr
 	return users, nil
 }
 
-func CreateStripeProductPrices(ctx context.Context, dbx db.Dbx, count int) ([]*models.StripeProduct, error) {
+func CreateStripeProductPrices(ctx context.Context, dbx database.Dbx, count int) ([]*models.StripeProduct, error) {
 	var products []models.StripeProduct
 	for range count {
 		uid := uuid.NewString()

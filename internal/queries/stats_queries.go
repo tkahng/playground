@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	"github.com/tkahng/authgo/internal/db"
+	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/shared"
 )
 
@@ -33,7 +33,7 @@ FROM project_stats ps
     CROSS JOIN task_stats ts;
 	`
 
-func GetUserTaskStats(ctx context.Context, db db.Dbx, userID uuid.UUID) (*shared.TaskStats, error) {
+func GetUserTaskStats(ctx context.Context, db database.Dbx, userID uuid.UUID) (*shared.TaskStats, error) {
 	res, err := QueryAll[shared.TaskStats](ctx, db, TaskStatsQuery, userID)
 	if err != nil {
 		return nil, err

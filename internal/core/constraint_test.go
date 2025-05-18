@@ -7,7 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/core"
-	"github.com/tkahng/authgo/internal/db"
+	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/seeders"
@@ -18,7 +18,7 @@ import (
 func TestConstraintCheckerService_CannotHaveValidSubscription(t *testing.T) {
 	ctx, dbx := test.DbSetup()
 
-	dbx.RunInTransaction(ctx, func(tx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(tx database.Dbx) error {
 		user, err := queries.CreateUser(ctx, tx, &shared.AuthenticationInput{
 			Email: "test@example.com",
 		})
@@ -56,7 +56,7 @@ func TestConstraintCheckerService_CannotHaveValidSubscription(t *testing.T) {
 			t.Fatalf("failed to upsert subscription: %v", err)
 		}
 		type fields struct {
-			db  db.Dbx
+			db  database.Dbx
 			ctx context.Context
 		}
 		type args struct {
@@ -93,7 +93,7 @@ func TestConstraintCheckerService_CannotBeAdminOrBasicName(t *testing.T) {
 	ctx, dbx := test.DbSetup()
 
 	type fields struct {
-		db  db.Dbx
+		db  database.Dbx
 		ctx context.Context
 	}
 	type args struct {
@@ -141,7 +141,7 @@ func TestConstraintCheckerService_CannotBeAdminOrBasicRoleAndPermissionName(t *t
 	ctx, dbx := test.DbSetup()
 
 	type fields struct {
-		db  db.Dbx
+		db  database.Dbx
 		ctx context.Context
 	}
 	type args struct {
@@ -208,7 +208,7 @@ func TestConstraintCheckerService_CannotBeSuperUserEmailAndRoleName(t *testing.T
 	ctx, dbx := test.DbSetup()
 
 	type fields struct {
-		db  db.Dbx
+		db  database.Dbx
 		ctx context.Context
 	}
 	type args struct {
@@ -274,7 +274,7 @@ func TestConstraintCheckerService_CannotBeSuperUserEmailAndRoleName(t *testing.T
 func TestConstraintCheckerService_CannotBeSuperUserID(t *testing.T) {
 	ctx, dbx := test.DbSetup()
 
-	dbx.RunInTransaction(ctx, func(tx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(tx database.Dbx) error {
 		err := queries.EnsureRoleAndPermissions(
 			ctx,
 			tx,
@@ -323,7 +323,7 @@ func TestConstraintCheckerService_CannotBeSuperUserID(t *testing.T) {
 			t.Fatalf("failed to create user roles: %v", err)
 		}
 		type fields struct {
-			db  db.Dbx
+			db  database.Dbx
 			ctx context.Context
 		}
 		type args struct {
@@ -373,7 +373,7 @@ func TestConstraintCheckerService_CannotBeSuperUserEmail(t *testing.T) {
 	ctx, dbx := test.DbSetup()
 
 	type fields struct {
-		db  db.Dbx
+		db  database.Dbx
 		ctx context.Context
 	}
 	type args struct {

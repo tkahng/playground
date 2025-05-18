@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/tkahng/authgo/internal/db"
+	"github.com/tkahng/authgo/internal/database"
 	crudModels "github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
@@ -19,10 +19,10 @@ func TestCreateUser(t *testing.T) {
 	test.Short(t)
 ctx, dbx := test.DbSetup()
 
-	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		type args struct {
 			ctx    context.Context
-			db     db.Dbx
+			db     database.Dbx
 			params *shared.AuthenticationInput
 		}
 		tests := []struct {
@@ -68,7 +68,7 @@ ctx, dbx := test.DbSetup()
 func TestCreateUserRoles(t *testing.T) {
 	test.Short(t)
 ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		// Create a user
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 			Email: "tkahng@gmail.com",
@@ -84,7 +84,7 @@ ctx, dbx := test.DbSetup()
 		}
 		type args struct {
 			ctx     context.Context
-			db      db.Dbx
+			db      database.Dbx
 			userId  uuid.UUID
 			roleIds []uuid.UUID
 		}
@@ -118,7 +118,7 @@ ctx, dbx := test.DbSetup()
 func TestCreateUserPermissions(t *testing.T) {
 	test.Short(t)
 ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		// Create a user
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 			Email: "tkahng@gmail.com",
@@ -134,7 +134,7 @@ ctx, dbx := test.DbSetup()
 		}
 		type args struct {
 			ctx           context.Context
-			db            db.Dbx
+			db            database.Dbx
 			userId        uuid.UUID
 			permissionIds []uuid.UUID
 		}
@@ -168,7 +168,7 @@ ctx, dbx := test.DbSetup()
 func TestCreateAccount(t *testing.T) {
 	test.Short(t)
 ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		// Create a user
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 			Email: "testuser@example.com",
@@ -180,7 +180,7 @@ ctx, dbx := test.DbSetup()
 
 		type args struct {
 			ctx    context.Context
-			db     db.Dbx
+			db     database.Dbx
 			userId uuid.UUID
 			params *shared.AuthenticationInput
 		}
@@ -282,7 +282,7 @@ func TestFindUserByEmail(t *testing.T) {
 	test.Short(t)
 ctx, dbx := test.DbSetup()
 
-	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		// Create a test user first
 		testUser, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 			Email: "test@example.com",
@@ -294,7 +294,7 @@ ctx, dbx := test.DbSetup()
 
 		type args struct {
 			ctx   context.Context
-			db    db.Dbx
+			db    database.Dbx
 			email string
 		}
 		tests := []struct {
@@ -352,7 +352,7 @@ func TestFindUserById(t *testing.T) {
 	test.Short(t)
 ctx, dbx := test.DbSetup()
 
-	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		// Create a test user first
 		testUser, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 			Email: "test@example.com",
@@ -364,7 +364,7 @@ ctx, dbx := test.DbSetup()
 
 		type args struct {
 			ctx    context.Context
-			db     db.Dbx
+			db     database.Dbx
 			userId uuid.UUID
 		}
 		tests := []struct {
@@ -425,7 +425,7 @@ func TestUpdateUserPassword(t *testing.T) {
 	test.Short(t)
 ctx, dbx := test.DbSetup()
 
-	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		// Create test user
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 			Email: "test@example.com",
@@ -447,7 +447,7 @@ ctx, dbx := test.DbSetup()
 
 		type args struct {
 			ctx      context.Context
-			db       db.Dbx
+			db       database.Dbx
 			userId   uuid.UUID
 			password string
 		}
@@ -493,7 +493,7 @@ func TestUpdateMe(t *testing.T) {
 	test.Short(t)
 ctx, dbx := test.DbSetup()
 
-	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		// Create test user first
 		testUser, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 			Email: "test@example.com",
@@ -505,7 +505,7 @@ ctx, dbx := test.DbSetup()
 
 		type args struct {
 			ctx    context.Context
-			db     db.Dbx
+			db     database.Dbx
 			userId uuid.UUID
 			input  *shared.UpdateMeInput
 		}
@@ -572,7 +572,7 @@ func TestGetUserAccounts(t *testing.T) {
 	test.Short(t)
 ctx, dbx := test.DbSetup()
 
-	dbx.RunInTransaction(ctx, func(dbxx db.Dbx) error {
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		// Create test users
 		user1, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 			Email: "user1@example.com",
@@ -619,7 +619,7 @@ ctx, dbx := test.DbSetup()
 
 		type args struct {
 			ctx     context.Context
-			db      db.Dbx
+			db      database.Dbx
 			userIds []uuid.UUID
 		}
 		tests := []struct {
