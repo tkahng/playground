@@ -39,7 +39,7 @@ type StripeClient struct {
 	config *conf.StripeConfig
 }
 
-func NewStripeClient(bld conf.StripeConfig) PaymentClient {
+func NewPaymentClient(bld conf.StripeConfig) PaymentClient {
 	stripe.Key = bld.ApiKey
 	payment := &StripeClient{config: &bld}
 	return payment

@@ -83,9 +83,9 @@ func InitBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 	} else {
 		mail = &mailer.LogMailer{}
 	}
-	store := payment.NewStripeStore()
-	stripeClient := payment.NewStripeClient(cfg.StripeConfig)
-	stripeService := payment.NewStripeService(stripeClient, store)
+	store := payment.NewPostgresPaymentStore(pool)
+	stripeClient := payment.NewPaymentClient(cfg.StripeConfig)
+	stripeService := payment.NewPaymentService(stripeClient, store)
 	app := &BaseApp{
 		fs:       fs,
 		db:       pool,

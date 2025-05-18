@@ -9,7 +9,6 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/stripe/stripe-go/v82"
 	"github.com/stripe/stripe-go/v82/webhook"
-	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/tools/utils"
 )
 
@@ -43,7 +42,6 @@ func (api *Api) StripeWebhook(ctx context.Context, input *StripeWebhookInput) (*
 		fmt.Fprintf(os.Stderr, "⚠️  Webhook signature verification failed. %v\n", err)
 		return nil, huma.Error400BadRequest(err.Error())
 	}
-	db := api.app.Db()
 	payment := api.app.Payment()
 	switch event.Type {
 	case stripe.EventTypeProductCreated, stripe.EventTypeProductUpdated:
@@ -51,7 +49,7 @@ func (api *Api) StripeWebhook(ctx context.Context, input *StripeWebhookInput) (*
 		if err != nil {
 			return nil, huma.Error400BadRequest("failed to unmarshal product", err)
 		}
-		err = queries.UpsertProductFromStripe(ctx, db, &product)
+		err = payment.UpsertProductFromStripe(ctx, &product)
 		if err != nil {
 			return nil, huma.Error400BadRequest("failed to upsert product", err)
 		}
@@ -61,7 +59,7 @@ func (api *Api) StripeWebhook(ctx context.Context, input *StripeWebhookInput) (*
 		if err != nil {
 			return nil, huma.Error400BadRequest("failed to unmarshal price", err)
 		}
-		err = queries.UpsertPriceFromStripe(ctx, db, &price)
+		err = payment.UpsertPriceFromStripe(ctx, &price)
 		if err != nil {
 			return nil, huma.Error400BadRequest("failed to upsert price", err)
 		}
@@ -71,7 +69,7 @@ func (api *Api) StripeWebhook(ctx context.Context, input *StripeWebhookInput) (*
 		if err != nil {
 			return nil, huma.Error400BadRequest("failed to unmarshal session", err)
 		}
-		err = payment.UpsertSubscriptionByIds(ctx, db, session.Customer.ID, session.Subscription.ID)
+		err = payment.UpsertSubscriptionByIds(ctx, session.Customer.ID, session.Subscription.ID)
 		if err != nil {
 			return nil, huma.Error400BadRequest("failed to upsert checkout session complete", err)
 		}
@@ -81,7 +79,7 @@ func (api *Api) StripeWebhook(ctx context.Context, input *StripeWebhookInput) (*
 		if err != nil {
 			return nil, huma.Error400BadRequest("failed to unmarshal subscription", err)
 		}
-		err = payment.UpsertSubscriptionByIds(ctx, db, subscription.Customer.ID, subscription.ID)
+		err = payment.UpsertSubscriptionByIds(ctx, subscription.Customer.ID, subscription.ID)
 		if err != nil {
 			return nil, huma.Error400BadRequest("failed to upsert subscription", err)
 		}

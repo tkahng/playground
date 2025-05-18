@@ -24,7 +24,6 @@ type StripeUrlOutput struct {
 }
 
 func (a *Api) StripeCheckoutSession(ctx context.Context, input *StripePaymentInput) (*StripeUrlOutput, error) {
-	db := a.app.Db()
 	info := core.GetContextUserInfo(ctx)
 	if info == nil {
 		return nil, huma.Error403Forbidden("Not authenticated")
@@ -32,7 +31,7 @@ func (a *Api) StripeCheckoutSession(ctx context.Context, input *StripePaymentInp
 	user := &info.User
 
 	// return sesh.URL, nil
-	url, err := a.app.Payment().CreateCheckoutSession(ctx, db, user.ID, input.Body.PriceID)
+	url, err := a.app.Payment().CreateCheckoutSession(ctx, user.ID, input.Body.PriceID)
 	if err != nil {
 		return nil, err
 	}
@@ -52,12 +51,12 @@ type StripeBillingPortalInput struct {
 }
 
 func (a *Api) StripeBillingPortal(ctx context.Context, input *StripeBillingPortalInput) (*StripeUrlOutput, error) {
-	db := a.app.Db()
+
 	info := core.GetContextUserInfo(ctx)
 	if info == nil {
 		return nil, huma.Error401Unauthorized("not authorized")
 	}
-	url, err := a.app.Payment().CreateBillingPortalSession(ctx, db, info.User.ID)
+	url, err := a.app.Payment().CreateBillingPortalSession(ctx, info.User.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -86,9 +85,9 @@ type StripeCheckoutSessionInput struct {
 }
 
 func (a *Api) StripeCheckoutSessionGet(ctx context.Context, input *StripeCheckoutSessionInput) (*CheckoutSessionOutput, error) {
-	db := a.app.Db()
+
 	payment := a.app.Payment()
-	cs, err := payment.FindSubscriptionWithPriceBySessionId(ctx, db, input.CheckoutSessionID)
+	cs, err := payment.FindSubscriptionWithPriceBySessionId(ctx, input.CheckoutSessionID)
 	if err != nil {
 		return nil, err
 	}

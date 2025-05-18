@@ -8,7 +8,7 @@ import (
 	"log/slog"
 
 	"github.com/google/uuid"
-	"github.com/tkahng/authgo/internal/conf"
+	"github.com/stripe/stripe-go/v82"
 	"github.com/tkahng/authgo/internal/db"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/shared"
@@ -18,22 +18,25 @@ import (
 
 type PaymentService interface {
 	Client() PaymentClient
-	CreateBillingPortalSession(ctx context.Context, dbx db.Dbx, userId uuid.UUID) (string, error)
-	CreateCheckoutSession(ctx context.Context, dbx db.Dbx, userId uuid.UUID, priceId string) (string, error)
-	FindAndUpsertAllPrices(ctx context.Context, dbx db.Dbx) error
-	FindAndUpsertAllProducts(ctx context.Context, dbx db.Dbx) error
-	FindOrCreateCustomerFromUser(ctx context.Context, dbx db.Dbx, userId uuid.UUID, email string) (*models.StripeCustomer, error)
-	FindSubscriptionWithPriceBySessionId(ctx context.Context, dbx db.Dbx, sessionId string) (*models.SubscriptionWithPrice, error)
-	SyncPerms(ctx context.Context, dbx db.Dbx) error
-	SyncRoles(ctx context.Context, dbx db.Dbx) error
-	UpsertPriceProductFromStripe(ctx context.Context, dbx db.Dbx) error
-	UpsertSubscriptionByIds(ctx context.Context, dbx db.Dbx, cutomerId string, subscriptionId string) error
+	CreateBillingPortalSession(ctx context.Context, userId uuid.UUID) (string, error)
+	CreateCheckoutSession(ctx context.Context, userId uuid.UUID, priceId string) (string, error)
+	FindAndUpsertAllPrices(ctx context.Context) error
+	FindAndUpsertAllProducts(ctx context.Context) error
+	FindOrCreateCustomerFromUser(ctx context.Context, userId uuid.UUID, email string) (*models.StripeCustomer, error)
+	FindSubscriptionWithPriceBySessionId(ctx context.Context, sessionId string) (*models.SubscriptionWithPrice, error)
+	SyncPerms(ctx context.Context) error
+	SyncRoles(ctx context.Context) error
+	UpsertPriceProductFromStripe(ctx context.Context) error
+	UpsertSubscriptionByIds(ctx context.Context, cutomerId string, subscriptionId string) error
+	UpsertProductFromStripe(ctx context.Context, product *stripe.Product) error
+	UpsertPriceFromStripe(ctx context.Context, price *stripe.Price) error
 }
 
 type StripeService struct {
 	logger       *slog.Logger
 	client       PaymentClient
 	paymentStore PaymentStore
+	db           db.Dbx
 }
 
 var _ PaymentService = (*StripeService)(nil)
@@ -41,82 +44,80 @@ var _ PaymentService = (*StripeService)(nil)
 func (srv *StripeService) Client() PaymentClient {
 	return srv.client
 }
-func NewStripeServiceFromConf(conf conf.StripeConfig) *StripeService {
-	return &StripeService{client: NewStripeClient(conf), logger: slog.Default(), paymentStore: NewStripeStore()}
-}
-func NewStripeService(client PaymentClient, store PaymentStore) *StripeService {
+
+func NewPaymentService(client PaymentClient, store PaymentStore) PaymentService {
 	return &StripeService{client: client, logger: slog.Default(), paymentStore: store}
 }
 
-func (srv *StripeService) SyncRoles(ctx context.Context, dbx db.Dbx) error {
+func (srv *StripeService) SyncRoles(ctx context.Context) error {
 	var err error
 	for productId, role := range shared.StripeRoleMap {
 		err = func() error {
 			var roleName string = role
-			product, err := srv.paymentStore.FindProductByStripeId(ctx, dbx, productId)
+			product, err := srv.paymentStore.FindProductByStripeId(ctx, productId)
 			if err != nil {
 				return err
 			}
 			if product == nil {
 				return errors.New("product not found")
 			}
-			role, err := srv.paymentStore.FindRoleByName(ctx, dbx, roleName)
+			role, err := srv.paymentStore.FindRoleByName(ctx, roleName)
 			if err != nil {
 				return err
 			}
 			if role == nil {
 				return errors.New("role not found")
 			}
-			return srv.paymentStore.CreateProductRoles(ctx, dbx, product.ID, role.ID)
+			return srv.paymentStore.CreateProductRoles(ctx, product.ID, role.ID)
 		}()
 	}
 	return err
 }
 
-func (srv *StripeService) SyncPerms(ctx context.Context, dbx db.Dbx) error {
+func (srv *StripeService) SyncPerms(ctx context.Context) error {
 	var err error
 	for productId, role := range shared.StripeRoleMap {
 		err = func() error {
-			product, err := srv.paymentStore.FindProductByStripeId(ctx, dbx, productId)
+			product, err := srv.paymentStore.FindProductByStripeId(ctx, productId)
 			if err != nil {
 				return err
 			}
 			if product == nil {
 				return errors.New("product not found")
 			}
-			perm, err := srv.paymentStore.FindPermissionByName(ctx, dbx, role)
+			perm, err := srv.paymentStore.FindPermissionByName(ctx, role)
 			if err != nil {
 				return err
 			}
 			if perm == nil {
 				return errors.New("permission not found")
 			}
-			return srv.paymentStore.CreateProductPermissions(ctx, dbx, product.ID, perm.ID)
+			return srv.paymentStore.CreateProductPermissions(ctx, product.ID, perm.ID)
 		}()
 	}
 	return err
 }
 
-func (srv *StripeService) UpsertPriceProductFromStripe(ctx context.Context, dbx db.Dbx) error {
-	if err := srv.FindAndUpsertAllProducts(ctx, dbx); err != nil {
+func (srv *StripeService) UpsertPriceProductFromStripe(ctx context.Context) error {
+	if err := srv.FindAndUpsertAllProducts(ctx); err != nil {
 		fmt.Println(err)
 		return err
 	}
-	if err := srv.FindAndUpsertAllPrices(ctx, dbx); err != nil {
+	if err := srv.FindAndUpsertAllPrices(ctx); err != nil {
 		fmt.Println(err)
 		return err
 	}
 	return nil
 }
 
-func (srv *StripeService) FindAndUpsertAllProducts(ctx context.Context, dbx db.Dbx) error {
+func (srv *StripeService) FindAndUpsertAllProducts(ctx context.Context) error {
 	products, err := srv.client.FindAllProducts()
 	if err != nil {
 		srv.logger.Error("error finding all products", "error", err)
 		return err
 	}
 	for _, product := range products {
-		err = srv.paymentStore.UpsertProductFromStripe(ctx, dbx, product)
+		err = srv.paymentStore.UpsertProductFromStripe(ctx, product)
 		if err != nil {
 			srv.logger.Error("error upserting product", "product", product.ID, "error", err)
 			continue
@@ -125,14 +126,32 @@ func (srv *StripeService) FindAndUpsertAllProducts(ctx context.Context, dbx db.D
 	return nil
 }
 
-func (srv *StripeService) FindAndUpsertAllPrices(ctx context.Context, dbx db.Dbx) error {
+func (srv *StripeService) UpsertProductFromStripe(ctx context.Context, product *stripe.Product) error {
+	err := srv.paymentStore.UpsertProductFromStripe(ctx, product)
+	if err != nil {
+		srv.logger.Error("error upserting product", "product", product.ID, "error", err)
+		return err
+	}
+	return nil
+}
+
+func (srv *StripeService) UpsertPriceFromStripe(ctx context.Context, price *stripe.Price) error {
+	err := srv.paymentStore.UpsertPriceFromStripe(ctx, price)
+	if err != nil {
+		srv.logger.Error("error upserting price", "price", price.ID, "error", err)
+		return err
+	}
+	return nil
+}
+
+func (srv *StripeService) FindAndUpsertAllPrices(ctx context.Context) error {
 	prices, err := srv.client.FindAllPrices()
 	if err != nil {
 		srv.logger.Error("error finding all prices", "error", err)
 		return err
 	}
 	for _, price := range prices {
-		err = srv.paymentStore.UpsertPriceFromStripe(ctx, dbx, price)
+		err = srv.paymentStore.UpsertPriceFromStripe(ctx, price)
 		if err != nil {
 			srv.logger.Error("error upserting price", "price", price.ID, "error", err)
 			continue
@@ -141,7 +160,7 @@ func (srv *StripeService) FindAndUpsertAllPrices(ctx context.Context, dbx db.Dbx
 	return nil
 }
 
-func (srv *StripeService) FindSubscriptionWithPriceBySessionId(ctx context.Context, dbx db.Dbx, sessionId string) (*models.SubscriptionWithPrice, error) {
+func (srv *StripeService) FindSubscriptionWithPriceBySessionId(ctx context.Context, sessionId string) (*models.SubscriptionWithPrice, error) {
 	sub, err := srv.client.FindCheckoutSessionByStripeId(sessionId)
 	if err != nil {
 		return nil, err
@@ -152,15 +171,15 @@ func (srv *StripeService) FindSubscriptionWithPriceBySessionId(ctx context.Conte
 	if sub.Subscription == nil {
 		return nil, errors.New("subscription not found")
 	}
-	data, err := srv.paymentStore.FindSubscriptionWithPriceById(ctx, dbx, sub.Subscription.ID)
+	data, err := srv.paymentStore.FindSubscriptionWithPriceById(ctx, sub.Subscription.ID)
 	if err != nil {
 		return nil, err
 	}
 	return data, nil
 }
 
-func (srv *StripeService) UpsertSubscriptionByIds(ctx context.Context, dbx db.Dbx, cutomerId, subscriptionId string) error {
-	cus, err := srv.paymentStore.FindCustomerByStripeId(ctx, dbx, cutomerId)
+func (srv *StripeService) UpsertSubscriptionByIds(ctx context.Context, cutomerId, subscriptionId string) error {
+	cus, err := srv.paymentStore.FindCustomerByStripeId(ctx, cutomerId)
 	if err != nil {
 		return err
 	}
@@ -174,15 +193,15 @@ func (srv *StripeService) UpsertSubscriptionByIds(ctx context.Context, dbx db.Db
 	if sub == nil {
 		return errors.New("subscription not found")
 	}
-	err = srv.paymentStore.UpsertSubscriptionFromStripe(ctx, dbx, sub, cus.ID)
+	err = srv.paymentStore.UpsertSubscriptionFromStripe(ctx, sub, cus.ID)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (srv *StripeService) FindOrCreateCustomerFromUser(ctx context.Context, dbx db.Dbx, userId uuid.UUID, email string) (*models.StripeCustomer, error) {
-	dbCus, err := srv.paymentStore.FindCustomerByUserId(ctx, dbx, userId)
+func (srv *StripeService) FindOrCreateCustomerFromUser(ctx context.Context, userId uuid.UUID, email string) (*models.StripeCustomer, error) {
+	dbCus, err := srv.paymentStore.FindCustomerByUserId(ctx, userId)
 	if err != nil {
 		return nil, err
 	}
@@ -197,15 +216,15 @@ func (srv *StripeService) FindOrCreateCustomerFromUser(ctx context.Context, dbx 
 		return nil, errors.New("failed to find or create customer in stripe")
 	}
 
-	err = srv.paymentStore.UpsertCustomerStripeId(ctx, dbx, userId, stripeCus.ID)
+	err = srv.paymentStore.UpsertCustomerStripeId(ctx, userId, stripeCus.ID)
 	if err != nil {
 		return nil, err
 	}
-	return srv.paymentStore.FindCustomerByUserId(ctx, dbx, userId)
+	return srv.paymentStore.FindCustomerByUserId(ctx, userId)
 }
 
-func (srv *StripeService) CreateCheckoutSession(ctx context.Context, dbx db.Dbx, userId uuid.UUID, priceId string) (string, error) {
-	team, err := srv.paymentStore.FindTeamById(ctx, dbx, userId)
+func (srv *StripeService) CreateCheckoutSession(ctx context.Context, userId uuid.UUID, priceId string) (string, error) {
+	team, err := srv.paymentStore.FindTeamById(ctx, userId)
 	if err != nil {
 		return "", err
 	}
@@ -217,14 +236,14 @@ func (srv *StripeService) CreateCheckoutSession(ctx context.Context, dbx db.Dbx,
 	}
 	customer_stripe_id := *team.StripeCustomerID
 
-	val, err := srv.paymentStore.FindLatestActiveSubscriptionByTeamId(ctx, dbx, userId)
+	val, err := srv.paymentStore.FindLatestActiveSubscriptionByTeamId(ctx, userId)
 	if err != nil {
 		return "", err
 	}
 	if val != nil {
 		return "", errors.New("user already has a valid subscription")
 	}
-	firstSub, err := srv.paymentStore.IsFirstSubscription(ctx, dbx, team.ID)
+	firstSub, err := srv.paymentStore.IsFirstSubscription(ctx, team.ID)
 	if err != nil {
 		return "", err
 	}
@@ -232,7 +251,7 @@ func (srv *StripeService) CreateCheckoutSession(ctx context.Context, dbx db.Dbx,
 	if firstSub {
 		trialDays = types.Pointer(int64(14))
 	}
-	valPrice, err := srv.paymentStore.FindValidPriceById(ctx, dbx, priceId)
+	valPrice, err := srv.paymentStore.FindValidPriceById(ctx, priceId)
 	if err != nil {
 		return "", err
 	}
@@ -246,8 +265,8 @@ func (srv *StripeService) CreateCheckoutSession(ctx context.Context, dbx db.Dbx,
 	return sesh.URL, nil
 }
 
-func (s *StripeService) CreateBillingPortalSession(ctx context.Context, dbx db.Dbx, userId uuid.UUID) (string, error) {
-	team, err := s.paymentStore.FindTeamById(ctx, dbx, userId)
+func (srv *StripeService) CreateBillingPortalSession(ctx context.Context, userId uuid.UUID) (string, error) {
+	team, err := srv.paymentStore.FindTeamById(ctx, userId)
 	if err != nil {
 		return "", err
 	}
@@ -256,7 +275,7 @@ func (s *StripeService) CreateBillingPortalSession(ctx context.Context, dbx db.D
 	}
 	stripe_customer_id := *team.StripeCustomerID
 	// find or create customer from user
-	// dbcus, err := s.FindOrCreateCustomerFromUser(ctx, dbx, team.ID, team.Email)
+	// dbcus, err := s.FindOrCreateCustomerFromUser(ctx,  team.ID, team.Email)
 	// if err != nil {
 	// 	return "", err
 	// }
@@ -264,14 +283,14 @@ func (s *StripeService) CreateBillingPortalSession(ctx context.Context, dbx db.D
 	// 	return "", errors.New("customer not found")
 	// }
 	// verify user has a valid subscriptio
-	sub, err := s.paymentStore.FindLatestActiveSubscriptionByTeamId(ctx, dbx, team.ID)
+	sub, err := srv.paymentStore.FindLatestActiveSubscriptionByTeamId(ctx, team.ID)
 	if err != nil {
 		return "", err
 	}
 	if sub == nil {
 		return "", errors.New("no subscription.  subscribe to access billing portal")
 	}
-	prods, err := s.paymentStore.ListProducts(ctx, dbx, &shared.StripeProductListParams{
+	prods, err := srv.paymentStore.ListProducts(ctx, &shared.StripeProductListParams{
 		PaginatedInput: shared.PaginatedInput{
 			PerPage: 100,
 		},
@@ -286,7 +305,7 @@ func (s *StripeService) CreateBillingPortalSession(ctx context.Context, dbx db.D
 	for i, p := range prods {
 		prodIds[i] = p.ID
 	}
-	prices, err := s.paymentStore.ListPrices(ctx, dbx, &shared.StripePriceListParams{
+	prices, err := srv.paymentStore.ListPrices(ctx, &shared.StripePriceListParams{
 		PaginatedInput: shared.PaginatedInput{
 			PerPage: 100,
 		},
@@ -311,11 +330,11 @@ func (s *StripeService) CreateBillingPortalSession(ctx context.Context, dbx db.D
 		configurations = append(configurations, con)
 	}
 
-	config, err := s.client.CreatePortalConfiguration(configurations...)
+	config, err := srv.client.CreatePortalConfiguration(configurations...)
 	if err != nil {
 		return "", err
 	}
-	url, err := s.client.CreateBillingPortalSession(stripe_customer_id, config)
+	url, err := srv.client.CreateBillingPortalSession(stripe_customer_id, config)
 	if err != nil {
 		log.Println(err)
 		return "", errors.New("failed to create checkout session")

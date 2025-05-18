@@ -16,6 +16,10 @@ type PosrgresStripeStore struct {
 	db db.Dbx
 }
 
+func NewPostgresPaymentStore(db db.Dbx) *PosrgresStripeStore {
+	return &PosrgresStripeStore{db: db}
+}
+
 // FindRoleByName implements PaymentStore.
 func (s *PosrgresStripeStore) FindRoleByName(ctx context.Context, name string) (*models.Role, error) {
 	return queries.FindRoleByName(ctx, s.db, name)
@@ -31,11 +35,7 @@ func (s *PosrgresStripeStore) CreateProductPermissions(ctx context.Context, prod
 	return queries.CreateProductPermissions(ctx, s.db, productId, permissionIds...)
 }
 
-var _ PaymentStore2 = (*PosrgresStripeStore)(nil)
-
-func NewPostgresStripeStore() *PosrgresStripeStore {
-	return &PosrgresStripeStore{}
-}
+var _ PaymentStore = (*PosrgresStripeStore)(nil)
 
 // CreateProductRoles implements PaymentStore.
 func (s *PosrgresStripeStore) CreateProductRoles(ctx context.Context, productId string, roleIds ...uuid.UUID) error {
