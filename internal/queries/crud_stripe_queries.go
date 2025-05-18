@@ -70,16 +70,16 @@ var (
 	MetadataIndexName = "metadata.index"
 )
 
-func ListProducts(ctx context.Context, db db.Dbx, input *shared.StripeProductListParams) ([]*models.StripeProduct, error) {
+func ListProducts(ctx context.Context, dbx db.Dbx, input *shared.StripeProductListParams) ([]*models.StripeProduct, error) {
 
 	q := squirrel.Select("stripe_products.*").
 		From("stripe_products")
 	filter := input.StripeProductListFilter
 	pageInput := &input.PaginatedInput
 
-	q = Paginate(q, pageInput)
+	q = db.Paginate(q, pageInput)
 	q = ListProductFilterFuncQuery(q, &filter)
-	data, err := QueryWithBuilder[*models.StripeProduct](ctx, db, q.PlaceholderFormat(squirrel.Dollar))
+	data, err := QueryWithBuilder[*models.StripeProduct](ctx, dbx, q.PlaceholderFormat(squirrel.Dollar))
 	if err != nil {
 		return nil, err
 	}
@@ -210,18 +210,18 @@ func CountProducts(ctx context.Context, db db.Dbx, filter *shared.StripeProductL
 	return data[0].Count, nil
 }
 
-func ListPrices(ctx context.Context, db db.Dbx, input *shared.StripePriceListParams) ([]*models.StripePrice, error) {
+func ListPrices(ctx context.Context, dbx db.Dbx, input *shared.StripePriceListParams) ([]*models.StripePrice, error) {
 
 	filter := input.StripePriceListFilter
 	pageInput := &input.PaginatedInput
 
-	limit, offset := PaginateRepo(pageInput)
+	limit, offset := db.PaginateRepo(pageInput)
 	param := ListPriceFilterFuncMap(&filter)
 	sort := ListPriceOrderByMap(input)
 
 	data, err := crudrepo.StripePrice.Get(
 		ctx,
-		db,
+		dbx,
 		param,
 		sort,
 		limit,
@@ -304,17 +304,17 @@ func CountPrices(ctx context.Context, db db.Dbx, filter *shared.StripePriceListF
 	return data, nil
 }
 
-func ListCustomers(ctx context.Context, db db.Dbx, input *shared.StripeCustomerListParams) ([]*models.StripeCustomer, error) {
+func ListCustomers(ctx context.Context, dbx db.Dbx, input *shared.StripeCustomerListParams) ([]*models.StripeCustomer, error) {
 
 	filter := input.StripeCustomerListFilter
 	pageInput := &input.PaginatedInput
 
-	limit, offset := PaginateRepo(pageInput)
+	limit, offset := db.PaginateRepo(pageInput)
 	where := ListCustomerFilterFunc(&filter)
 	order := StripeCustomerOrderByFunc(input)
 	data, err := crudrepo.StripeCustomer.Get(
 		ctx,
-		db,
+		dbx,
 		where,
 		order,
 		limit,
@@ -359,17 +359,17 @@ func CountCustomers(ctx context.Context, db db.Dbx, filter *shared.StripeCustome
 	return data, nil
 }
 
-func ListSubscriptions(ctx context.Context, db db.Dbx, input *shared.StripeSubscriptionListParams) ([]*models.StripeSubscription, error) {
+func ListSubscriptions(ctx context.Context, dbx db.Dbx, input *shared.StripeSubscriptionListParams) ([]*models.StripeSubscription, error) {
 
 	filter := input.StripeSubscriptionListFilter
 	pageInput := &input.PaginatedInput
 
-	limit, offset := PaginateRepo(pageInput)
+	limit, offset := db.PaginateRepo(pageInput)
 	where := ListSubscriptionFilterFunc(&filter)
 	order := StripeSubscriptionOrderByFunc(input)
 	data, err := crudrepo.StripeSubscription.Get(
 		ctx,
-		db,
+		dbx,
 		where,
 		order,
 		limit,

@@ -77,7 +77,7 @@ func ListUserFilterFunc(filter *shared.UserListFilter) *map[string]any {
 	return &where
 }
 
-func ListUsers(ctx context.Context, db db.Dbx, input *shared.UserListParams) ([]*models.User, error) {
+func ListUsers(ctx context.Context, dbx db.Dbx, input *shared.UserListParams) ([]*models.User, error) {
 	if input == nil {
 		input = &shared.UserListParams{}
 	}
@@ -87,10 +87,10 @@ func ListUsers(ctx context.Context, db db.Dbx, input *shared.UserListParams) ([]
 	where := ListUserFilterFunc(&filter)
 	orderBy := ListUsersOrderByFunc(input)
 
-	limit, offset := PaginateRepo(pageInput)
+	limit, offset := db.PaginateRepo(pageInput)
 	data, err := crudrepo.User.Get(
 		ctx,
-		db,
+		dbx,
 		where,
 		orderBy,
 		limit,

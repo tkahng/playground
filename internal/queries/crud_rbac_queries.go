@@ -53,18 +53,18 @@ func ListPermissionsFilterFunc(sq squirrel.SelectBuilder, filter *shared.Permiss
 }
 
 // ListPermissions implements AdminCrudActions.
-func ListPermissions(ctx context.Context, db db.Dbx, input *shared.PermissionsListParams) ([]*models.Permission, error) {
+func ListPermissions(ctx context.Context, dbx db.Dbx, input *shared.PermissionsListParams) ([]*models.Permission, error) {
 	q := squirrel.Select("permissions.*").From("permissions")
 	filter := input.PermissionsListFilter
 	pageInput := &input.PaginatedInput
 
 	// q = ViewApplyPagination(q, pageInput)
 	q = ListPermissionsFilterFunc(q, &filter)
-	q = Paginate(q, pageInput)
+	q = db.Paginate(q, pageInput)
 	if input.SortBy != "" && input.SortOrder != "" {
 		q = q.OrderBy(input.SortBy + " " + strings.ToUpper(input.SortOrder))
 	}
-	data, err := QueryWithBuilder[*models.Permission](ctx, db, q.PlaceholderFormat(squirrel.Dollar))
+	data, err := QueryWithBuilder[*models.Permission](ctx, dbx, q.PlaceholderFormat(squirrel.Dollar))
 	if err != nil {
 		return nil, err
 	}
@@ -132,18 +132,18 @@ func ListRolesFilterFuncQuery(sq squirrel.SelectBuilder, filter *shared.RoleList
 }
 
 // ListRoles implements AdminCrudActions.
-func ListRoles(ctx context.Context, db db.Dbx, input *shared.RolesListParams) ([]*models.Role, error) {
+func ListRoles(ctx context.Context, dbx db.Dbx, input *shared.RolesListParams) ([]*models.Role, error) {
 	q := squirrel.Select("roles.*").From("roles")
 	filter := input.RoleListFilter
 	pageInput := &input.PaginatedInput
 
 	// q = ViewApplyPagination(q, pageInput)
 	q = ListRolesFilterFuncQuery(q, &filter)
-	q = Paginate(q, pageInput)
+	q = db.Paginate(q, pageInput)
 	if input.SortBy != "" && input.SortOrder != "" {
 		q = q.OrderBy(input.SortBy + " " + strings.ToUpper(input.SortOrder))
 	}
-	data, err := QueryWithBuilder[*models.Role](ctx, db, q.PlaceholderFormat(squirrel.Dollar))
+	data, err := QueryWithBuilder[*models.Role](ctx, dbx, q.PlaceholderFormat(squirrel.Dollar))
 	if err != nil {
 		return nil, err
 	}

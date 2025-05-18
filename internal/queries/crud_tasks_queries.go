@@ -11,6 +11,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/crudrepo"
 	"github.com/tkahng/authgo/internal/db"
+
+	// database "github.com/tkahng/authgo/internal/db"
 	"github.com/tkahng/authgo/internal/models"
 
 	"github.com/tkahng/authgo/internal/shared"
@@ -28,10 +30,10 @@ WHERE tp.id = ANY ($1::uuid [])
 GROUP BY tp.id;`
 )
 
-func LoadTaskProjectsTasks(ctx context.Context, db db.Dbx, projectIds ...uuid.UUID) ([][]*models.Task, error) {
+func LoadTaskProjectsTasks(ctx context.Context, dbx db.Dbx, projectIds ...uuid.UUID) ([][]*models.Task, error) {
 	tasks, err := crudrepo.Task.Get(
 		ctx,
-		db,
+		dbx,
 		&map[string]any{
 			"project_id": map[string]any{
 				"_in": projectIds,
@@ -49,10 +51,10 @@ func LoadTaskProjectsTasks(ctx context.Context, db db.Dbx, projectIds ...uuid.UU
 	}), nil
 }
 
-func FindTaskByID(ctx context.Context, db db.Dbx, id uuid.UUID) (*models.Task, error) {
+func FindTaskByID(ctx context.Context, dbx db.Dbx, id uuid.UUID) (*models.Task, error) {
 	task, err := crudrepo.Task.GetOne(
 		ctx,
-		db,
+		dbx,
 		&map[string]any{
 			"id": map[string]any{
 				"_eq": id.String(),
@@ -62,10 +64,10 @@ func FindTaskByID(ctx context.Context, db db.Dbx, id uuid.UUID) (*models.Task, e
 	return OptionalRow(task, err)
 }
 
-func FindLastTaskOrder(ctx context.Context, db db.Dbx, taskProjectID uuid.UUID) (float64, error) {
+func FindLastTaskOrder(ctx context.Context, dbx db.Dbx, taskProjectID uuid.UUID) (float64, error) {
 	tasks, err := crudrepo.Task.Get(
 		ctx,
-		db,
+		dbx,
 		&map[string]any{
 			"project_id": map[string]any{
 				"_eq": taskProjectID.String(),
@@ -87,11 +89,11 @@ func FindLastTaskOrder(ctx context.Context, db db.Dbx, taskProjectID uuid.UUID) 
 	return task.Order + 1000, nil
 }
 
-func DeleteTask(ctx context.Context, db db.Dbx, taskID uuid.UUID) error {
+func DeleteTask(ctx context.Context, dbx db.Dbx, taskID uuid.UUID) error {
 
 	_, err := crudrepo.Task.Delete(
 		ctx,
-		db,
+		dbx,
 		&map[string]any{
 			"id": map[string]any{
 				"_eq": taskID.String(),
@@ -101,11 +103,11 @@ func DeleteTask(ctx context.Context, db db.Dbx, taskID uuid.UUID) error {
 	return err
 }
 
-func FindTaskProjectByID(ctx context.Context, db db.Dbx, id uuid.UUID) (*models.TaskProject, error) {
+func FindTaskProjectByID(ctx context.Context, dbx db.Dbx, id uuid.UUID) (*models.TaskProject, error) {
 
 	task, err := crudrepo.TaskProject.GetOne(
 		ctx,
-		db,
+		dbx,
 		&map[string]any{
 			"id": map[string]any{
 				"_eq": id.String(),
@@ -198,16 +200,16 @@ func ListTasksFilterFunc(filter *shared.TaskListFilter) *map[string]any {
 }
 
 // ListTasks implements AdminCrudActions.
-func ListTasks(ctx context.Context, db db.Dbx, input *shared.TaskListParams) ([]*models.Task, error) {
+func ListTasks(ctx context.Context, dbx db.Dbx, input *shared.TaskListParams) ([]*models.Task, error) {
 	filter := input.TaskListFilter
 	pageInput := &input.PaginatedInput
 
-	iimit, offset := PaginateRepo(pageInput)
+	iimit, offset := db.PaginateRepo(pageInput)
 	order := ListTasksOrderByFunc(input)
 	where := ListTasksFilterFunc(&filter)
 	data, err := crudrepo.Task.Get(
 		ctx,
-		db,
+		dbx,
 		where,
 		order,
 		iimit,
@@ -270,16 +272,16 @@ func ListTaskProjectsOrderByFunc(input *shared.TaskProjectsListParams) *map[stri
 }
 
 // ListTaskProjects implements AdminCrudActions.
-func ListTaskProjects(ctx context.Context, db db.Dbx, input *shared.TaskProjectsListParams) ([]*models.TaskProject, error) {
+func ListTaskProjects(ctx context.Context, dbx db.Dbx, input *shared.TaskProjectsListParams) ([]*models.TaskProject, error) {
 	filter := input.TaskProjectsListFilter
 	pageInput := &input.PaginatedInput
 
-	limit, offset := PaginateRepo(pageInput)
+	limit, offset := db.PaginateRepo(pageInput)
 	oredr := ListTaskProjectsOrderByFunc(input)
 	where := ListTaskProjectsFilterFunc(&filter)
 	data, err := crudrepo.TaskProject.Get(
 		ctx,
-		db,
+		dbx,
 		where,
 		oredr,
 		limit,

@@ -286,7 +286,7 @@ func FindSubscriptionById(ctx context.Context, dbx db.Dbx, stripeId string) (*mo
 }
 
 const (
-	getSubscriptionWithPriceByIdQuery = `
+	GetSubscriptionWithPriceByIdQuery = `
 SELECT ss.id AS "subscription.id",
         ss.user_id AS "subscription.user_id",
         ss.status AS "subscription.status",
@@ -333,7 +333,7 @@ WHERE ss.id = $1
 )
 
 func FindSubscriptionWithPriceById(ctx context.Context, dbx db.Dbx, stripeId string) (*models.SubscriptionWithPrice, error) {
-	data, err := QueryAll[*models.SubscriptionWithPrice](ctx, dbx, getSubscriptionWithPriceByIdQuery, stripeId)
+	data, err := QueryAll[*models.SubscriptionWithPrice](ctx, dbx, GetSubscriptionWithPriceByIdQuery, stripeId)
 	if err != nil {
 		return nil, err
 	}

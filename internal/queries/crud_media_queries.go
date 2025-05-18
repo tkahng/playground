@@ -27,16 +27,16 @@ var (
 	}
 )
 
-func ListMedia(ctx context.Context, db db.Dbx, input *shared.MediaListParams) ([]*models.Medium, error) {
+func ListMedia(ctx context.Context, dbx db.Dbx, input *shared.MediaListParams) ([]*models.Medium, error) {
 	filter := input.MediaListFilter
 	pageInput := &input.PaginatedInput
 
-	limit, offset := PaginateRepo(pageInput)
+	limit, offset := db.PaginateRepo(pageInput)
 	where := ListMediaFilterFunc(&filter)
 	order := ListMediaOrderByFunc(input)
 	data, err := crudrepo.Media.Get(
 		ctx,
-		db,
+		dbx,
 		where,
 		order,
 		limit,

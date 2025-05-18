@@ -16,16 +16,16 @@ func CountAiUsages(ctx context.Context, db db.Dbx, filter *shared.AiUsageListFil
 	return crudrepo.AiUsage.Count(ctx, db, where)
 }
 
-func ListAiUsages(ctx context.Context, db db.Dbx, input *shared.AiUsageListParams) ([]*models.AiUsage, error) {
+func ListAiUsages(ctx context.Context, dbx db.Dbx, input *shared.AiUsageListParams) ([]*models.AiUsage, error) {
 	filter := input.AiUsageListFilter
 	pageInput := &input.PaginatedInput
 
-	limit, offset := PaginateRepo(pageInput)
+	limit, offset := db.PaginateRepo(pageInput)
 	order := ListAiUsagesOrderByFunc(input)
 	where := ListAiUsagesFilterFunc(&filter)
 	data, err := crudrepo.AiUsage.Get(
 		ctx,
-		db,
+		dbx,
 		where,
 		order,
 		limit,
