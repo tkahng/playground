@@ -3,6 +3,7 @@ package utils
 import (
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -40,4 +41,8 @@ func ParseValidUUIDs(ids []string) []uuid.UUID {
 		uuids = append(uuids, parsed)
 	}
 	return uuids
+}
+
+func Int64ToISODate(timestamp int64) time.Time {
+	return time.Unix(timestamp, 0)
 }

@@ -17,19 +17,19 @@ type teamService struct {
 }
 
 // SelectMembershipByTeamID implements TeamService.
-func (t *teamService) SelectMembershipByTeamID(ctx context.Context, userId uuid.UUID, teamId uuid.UUID) (*models.TeamMember, error) {
-	team, err := t.teamStore.FindTeamMemberByUserAndTeamID(ctx, userId, teamId)
+func (t *teamService) SelectMembershipByTeamID(ctx context.Context, teamId, userId uuid.UUID) (*models.TeamMember, error) {
+	member, err := t.teamStore.FindTeamMemberByUserAndTeamID(ctx, teamId, userId)
 	if err != nil {
 		return nil, err
 	}
-	if team == nil {
+	if member == nil {
 		return nil, nil
 	}
-	err = t.teamStore.UpdateTeamMemberUpdatedAt(ctx, team.ID)
+	err = t.teamStore.UpdateTeamMemberUpdatedAt(ctx, member.ID)
 	if err != nil {
 		return nil, err
 	}
-	return team, nil
+	return member, nil
 }
 
 func (t *teamService) GetLastMembershipByUserID(ctx context.Context, userId uuid.UUID) (*models.TeamMember, error) {

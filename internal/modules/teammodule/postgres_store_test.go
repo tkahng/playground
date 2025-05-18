@@ -10,7 +10,7 @@ import (
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/modules/teammodule"
-	"github.com/tkahng/authgo/internal/queries"
+	"github.com/tkahng/authgo/internal/modules/usermodule"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/test"
 )
@@ -19,7 +19,8 @@ func TestCreateTeamFromUser(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
-		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
+		userStore := usermodule.NewPostgresUserStore(dbxx)
+		user, err := userStore.CreateUser(ctx, &shared.AuthenticationInput{
 			Email: "test@example.com",
 		})
 		if err != nil {
@@ -121,11 +122,12 @@ func TestCreateTeamMember(t *testing.T) {
 	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		teamStore := teammodule.NewPostgresTeamStore(dbxx)
+		userStore := usermodule.NewPostgresUserStore(dbxx)
 		team, err := teamStore.CreateTeam(ctx, "TeamWithMember", nil)
 		if err != nil {
 			t.Fatalf("CreateTeam() error = %v", err)
 		}
-		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
+		user, err := userStore.CreateUser(ctx, &shared.AuthenticationInput{
 			Email: "testuser@example.com",
 		})
 		if err != nil {
@@ -148,11 +150,12 @@ func TestFindTeamMembersByUserID(t *testing.T) {
 	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		teamStore := teammodule.NewPostgresTeamStore(dbxx)
+		userStore := usermodule.NewPostgresUserStore(dbxx)
 		team, err := teamStore.CreateTeam(ctx, "TeamForMembers", nil)
 		if err != nil {
 			t.Fatalf("CreateTeam() error = %v", err)
 		}
-		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
+		user, err := userStore.CreateUser(ctx, &shared.AuthenticationInput{
 			Email: "tkahng@gmail.com",
 		})
 		if err != nil {
@@ -179,6 +182,7 @@ func TestFindLatestTeamMemberByUserID(t *testing.T) {
 	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		teamStore := teammodule.NewPostgresTeamStore(dbxx)
+		userStore := usermodule.NewPostgresUserStore(dbxx)
 		team1, err := teamStore.CreateTeam(ctx, "team1", nil)
 		if err != nil {
 			t.Fatalf("CreateTeam() error = %v", err)
@@ -187,7 +191,7 @@ func TestFindLatestTeamMemberByUserID(t *testing.T) {
 		if err != nil {
 			t.Fatalf("CreateTeam() error = %v", err)
 		}
-		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
+		user, err := userStore.CreateUser(ctx, &shared.AuthenticationInput{
 			Email: "testuser@example.com",
 		})
 		if err != nil {
@@ -256,11 +260,13 @@ func TestUpdateTeamMemberUpdatedAt(t *testing.T) {
 
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		teamStore := teammodule.NewPostgresTeamStore(dbxx)
+		userStore := usermodule.NewPostgresUserStore(dbxx)
+
 		team, err := teamStore.CreateTeam(ctx, "UpdateMemberTeam", nil)
 		if err != nil {
 			t.Fatalf("CreateTeam() error = %v", err)
 		}
-		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
+		user, err := userStore.CreateUser(ctx, &shared.AuthenticationInput{
 			Email: "updatemember@example.com",
 		})
 		if err != nil {
@@ -285,15 +291,7 @@ func TestUpdateTeamMemberUpdatedAt(t *testing.T) {
 		}
 
 		// Fetch the member again to check updated_at
-		updated, err := crudrepo.TeamMember.GetOne(
-			ctx,
-			dbxx,
-			&map[string]any{
-				"id": map[string]any{
-					"_eq": member.ID.String(),
-				},
-			},
-		)
+		updated, err := teamStore.FindTeamMemberByUserAndTeamID(ctx, team.ID, user.ID)
 		if err != nil {
 			t.Fatalf("GetOne() error = %v", err)
 		}

@@ -14,6 +14,7 @@ import (
 	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/types"
+	"github.com/tkahng/authgo/internal/tools/utils"
 )
 
 type PosrgresStripeStore struct {
@@ -340,14 +341,14 @@ func (s *PosrgresStripeStore) UpsertSubscriptionFromStripe(ctx context.Context, 
 			PriceID:            item.Price.ID,
 			Quantity:           item.Quantity,
 			CancelAtPeriodEnd:  sub.CancelAtPeriodEnd,
-			Created:            queries.Int64ToISODate(sub.Created),
-			CurrentPeriodStart: queries.Int64ToISODate(item.CurrentPeriodStart),
-			CurrentPeriodEnd:   queries.Int64ToISODate(item.CurrentPeriodEnd),
-			EndedAt:            types.Pointer(queries.Int64ToISODate(sub.EndedAt)),
-			CancelAt:           types.Pointer(queries.Int64ToISODate(sub.CancelAt)),
-			CanceledAt:         types.Pointer(queries.Int64ToISODate(sub.CanceledAt)),
-			TrialStart:         types.Pointer(queries.Int64ToISODate(sub.TrialStart)),
-			TrialEnd:           types.Pointer(queries.Int64ToISODate(sub.TrialEnd)),
+			Created:            utils.Int64ToISODate(sub.Created),
+			CurrentPeriodStart: utils.Int64ToISODate(item.CurrentPeriodStart),
+			CurrentPeriodEnd:   utils.Int64ToISODate(item.CurrentPeriodEnd),
+			EndedAt:            types.Pointer(utils.Int64ToISODate(sub.EndedAt)),
+			CancelAt:           types.Pointer(utils.Int64ToISODate(sub.CancelAt)),
+			CanceledAt:         types.Pointer(utils.Int64ToISODate(sub.CanceledAt)),
+			TrialStart:         types.Pointer(utils.Int64ToISODate(sub.TrialStart)),
+			TrialEnd:           types.Pointer(utils.Int64ToISODate(sub.TrialEnd)),
 		},
 	)
 	return err

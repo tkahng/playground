@@ -3,15 +3,16 @@ package queries
 import (
 	"context"
 	"errors"
-	"time"
 
 	"github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
 	"github.com/stripe/stripe-go/v82"
 	"github.com/tkahng/authgo/internal/crudrepo"
 	"github.com/tkahng/authgo/internal/database"
+
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/tools/types"
+	"github.com/tkahng/authgo/internal/tools/utils"
 )
 
 func FindCustomerByStripeId(ctx context.Context, dbx database.Dbx, stripeId string) (*models.StripeCustomer, error) {
@@ -256,20 +257,16 @@ func UpsertSubscriptionFromStripe(ctx context.Context, exec database.Dbx, sub *s
 		PriceID:            item.Price.ID,
 		Quantity:           item.Quantity,
 		CancelAtPeriodEnd:  sub.CancelAtPeriodEnd,
-		Created:            Int64ToISODate(sub.Created),
-		CurrentPeriodStart: Int64ToISODate(item.CurrentPeriodStart),
-		CurrentPeriodEnd:   Int64ToISODate(item.CurrentPeriodEnd),
-		EndedAt:            types.Pointer(Int64ToISODate(sub.EndedAt)),
-		CancelAt:           types.Pointer(Int64ToISODate(sub.CancelAt)),
-		CanceledAt:         types.Pointer(Int64ToISODate(sub.CanceledAt)),
-		TrialStart:         types.Pointer(Int64ToISODate(sub.TrialStart)),
-		TrialEnd:           types.Pointer(Int64ToISODate(sub.TrialEnd)),
+		Created:            utils.Int64ToISODate(sub.Created),
+		CurrentPeriodStart: utils.Int64ToISODate(item.CurrentPeriodStart),
+		CurrentPeriodEnd:   utils.Int64ToISODate(item.CurrentPeriodEnd),
+		EndedAt:            types.Pointer(utils.Int64ToISODate(sub.EndedAt)),
+		CancelAt:           types.Pointer(utils.Int64ToISODate(sub.CancelAt)),
+		CanceledAt:         types.Pointer(utils.Int64ToISODate(sub.CanceledAt)),
+		TrialStart:         types.Pointer(utils.Int64ToISODate(sub.TrialStart)),
+		TrialEnd:           types.Pointer(utils.Int64ToISODate(sub.TrialEnd)),
 	})
 	return err
-}
-
-func Int64ToISODate(timestamp int64) time.Time {
-	return time.Unix(timestamp, 0)
 }
 
 func FindSubscriptionById(ctx context.Context, dbx database.Dbx, stripeId string) (*models.StripeSubscription, error) {

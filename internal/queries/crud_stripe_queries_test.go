@@ -10,6 +10,8 @@ import (
 	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/seeders"
 	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/authgo/internal/tools/utils"
+
 	"github.com/tkahng/authgo/internal/test"
 )
 
@@ -596,10 +598,10 @@ func TestListSubscriptions(t *testing.T) {
 			},
 			Quantity:           1,
 			CancelAtPeriodEnd:  false,
-			CurrentPeriodStart: queries.Int64ToISODate(0),
-			CurrentPeriodEnd:   queries.Int64ToISODate(0),
-			CreatedAt:          queries.Int64ToISODate(0),
-			UpdatedAt:          queries.Int64ToISODate(0),
+			CurrentPeriodStart: utils.Int64ToISODate(0),
+			CurrentPeriodEnd:   utils.Int64ToISODate(0),
+			CreatedAt:          utils.Int64ToISODate(0),
+			UpdatedAt:          utils.Int64ToISODate(0),
 		}
 		err = queries.UpsertSubscription(
 			ctx,
@@ -726,10 +728,10 @@ func TestCountSubscriptions(t *testing.T) {
 			},
 			Quantity:           1,
 			CancelAtPeriodEnd:  false,
-			CurrentPeriodStart: queries.Int64ToISODate(0),
-			CurrentPeriodEnd:   queries.Int64ToISODate(0),
-			CreatedAt:          queries.Int64ToISODate(0),
-			UpdatedAt:          queries.Int64ToISODate(0),
+			CurrentPeriodStart: utils.Int64ToISODate(0),
+			CurrentPeriodEnd:   utils.Int64ToISODate(0),
+			CreatedAt:          utils.Int64ToISODate(0),
+			UpdatedAt:          utils.Int64ToISODate(0),
 		}
 		err = queries.UpsertSubscription(
 			ctx,

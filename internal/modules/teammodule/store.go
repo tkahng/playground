@@ -15,7 +15,7 @@ type TeamStore interface {
 	UpdateTeam(ctx context.Context, teamId uuid.UUID, name string, stripeCustomerId *string) (*models.Team, error)
 	DeleteTeam(ctx context.Context, teamId uuid.UUID) error
 	FindTeamMembersByUserID(ctx context.Context, userId uuid.UUID) ([]*models.TeamMember, error)
-	FindTeamMemberByUserAndTeamID(ctx context.Context, userId, teamId uuid.UUID) (*models.TeamMember, error)
+	FindTeamMemberByUserAndTeamID(ctx context.Context, teamId uuid.UUID, userId uuid.UUID) (*models.TeamMember, error)
 	FindLatestTeamMemberByUserID(ctx context.Context, userId uuid.UUID) (*models.TeamMember, error)
 	CreateTeamMember(ctx context.Context, teamId, userId uuid.UUID, role models.TeamMemberRole) (*models.TeamMember, error)
 	UpdateTeamMemberUpdatedAt(ctx context.Context, teamMemberId uuid.UUID) error
