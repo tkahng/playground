@@ -10,12 +10,12 @@ import (
 )
 
 type PaymentStore interface {
+	// FindPermissionByName(ctx context.Context, name string) (*models.Permission, error)
+	// CreateProductPermissions(ctx context.Context, productId string, permissionIds ...uuid.UUID) error
 	FindSubscriptionWithPriceById(ctx context.Context, stripeId string) (*models.SubscriptionWithPrice, error)
 	FindProductByStripeId(ctx context.Context, productId string) (*models.StripeProduct, error)
 	FindCustomerByStripeId(ctx context.Context, stripeId string) (*models.StripeCustomer, error)
 	FindCustomerByUserId(ctx context.Context, userId uuid.UUID) (*models.StripeCustomer, error)
-	FindPermissionByName(ctx context.Context, name string) (*models.Permission, error)
-	FindRoleByName(ctx context.Context, name string) (*models.Role, error)
 	UpsertSubscriptionFromStripe(ctx context.Context, sub *stripe.Subscription, userId uuid.UUID) error
 	UpsertSubscription(ctx context.Context, sub *models.StripeSubscription) error
 	UpsertCustomerStripeId(ctx context.Context, userId uuid.UUID, stripeCustomerId string) error
@@ -23,8 +23,6 @@ type PaymentStore interface {
 	UpsertProduct(ctx context.Context, product *models.StripeProduct) error
 	UpsertPriceFromStripe(ctx context.Context, price *stripe.Price) error
 	UpsertPrice(ctx context.Context, price *models.StripePrice) error
-	CreateProductRoles(ctx context.Context, productId string, roleIds ...uuid.UUID) error
-	CreateProductPermissions(ctx context.Context, productId string, permissionIds ...uuid.UUID) error
 	FindTeamById(ctx context.Context, teamId uuid.UUID) (*models.Team, error)
 	FindLatestActiveSubscriptionByTeamId(ctx context.Context, teamId uuid.UUID) (*models.StripeSubscription, error)
 	IsFirstSubscription(ctx context.Context, teamId uuid.UUID) (bool, error)

@@ -11,6 +11,7 @@ import (
 	"github.com/stripe/stripe-go/v82"
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
+	"github.com/tkahng/authgo/internal/services/rbac"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 	"github.com/tkahng/authgo/internal/tools/types"
@@ -25,7 +26,6 @@ type PaymentService interface {
 	FindOrCreateCustomerFromUser(ctx context.Context, userId uuid.UUID, email string) (*models.StripeCustomer, error)
 	FindSubscriptionWithPriceBySessionId(ctx context.Context, sessionId string) (*models.SubscriptionWithPrice, error)
 	SyncPerms(ctx context.Context) error
-	SyncRoles(ctx context.Context) error
 	UpsertPriceProductFromStripe(ctx context.Context) error
 	UpsertSubscriptionByIds(ctx context.Context, cutomerId string, subscriptionId string) error
 	UpsertProductFromStripe(ctx context.Context, product *stripe.Product) error
@@ -36,6 +36,7 @@ type StripeService struct {
 	logger       *slog.Logger
 	client       PaymentClient
 	paymentStore PaymentStore
+	rbacStore    rbac.RBACStore
 	db           database.Dbx
 }
 
@@ -45,33 +46,8 @@ func (srv *StripeService) Client() PaymentClient {
 	return srv.client
 }
 
-func NewPaymentService(client PaymentClient, store PaymentStore) PaymentService {
-	return &StripeService{client: client, logger: slog.Default(), paymentStore: store}
-}
-
-func (srv *StripeService) SyncRoles(ctx context.Context) error {
-	var err error
-	for productId, role := range shared.StripeRoleMap {
-		err = func() error {
-			var roleName string = role
-			product, err := srv.paymentStore.FindProductByStripeId(ctx, productId)
-			if err != nil {
-				return err
-			}
-			if product == nil {
-				return errors.New("product not found")
-			}
-			role, err := srv.paymentStore.FindRoleByName(ctx, roleName)
-			if err != nil {
-				return err
-			}
-			if role == nil {
-				return errors.New("role not found")
-			}
-			return srv.paymentStore.CreateProductRoles(ctx, product.ID, role.ID)
-		}()
-	}
-	return err
+func NewPaymentService(client PaymentClient, paymentStore PaymentStore, rbacStore rbac.RBACStore) PaymentService {
+	return &StripeService{client: client, logger: slog.Default(), paymentStore: paymentStore, rbacStore: rbacStore}
 }
 
 func (srv *StripeService) SyncPerms(ctx context.Context) error {
@@ -85,14 +61,14 @@ func (srv *StripeService) SyncPerms(ctx context.Context) error {
 			if product == nil {
 				return errors.New("product not found")
 			}
-			perm, err := srv.paymentStore.FindPermissionByName(ctx, role)
+			perm, err := srv.rbacStore.FindPermissionByName(ctx, role)
 			if err != nil {
 				return err
 			}
 			if perm == nil {
 				return errors.New("permission not found")
 			}
-			return srv.paymentStore.CreateProductPermissions(ctx, product.ID, perm.ID)
+			return srv.rbacStore.CreateProductPermissions(ctx, product.ID, perm.ID)
 		}()
 	}
 	return err

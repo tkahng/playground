@@ -24,42 +24,10 @@ func NewPostgresPaymentStore(db database.Dbx) *PosrgresStripeStore {
 	return &PosrgresStripeStore{db: db}
 }
 
-// FindRoleByName implements PaymentStore.
-func (s *PosrgresStripeStore) FindRoleByName(ctx context.Context, name string) (*models.Role, error) {
-	return queries.FindRoleByName(ctx, s.db, name)
-}
-
-// FindPermissionByName implements PaymentStore.
-func (s *PosrgresStripeStore) FindPermissionByName(ctx context.Context, name string) (*models.Permission, error) {
-	return queries.FindPermissionByName(ctx, s.db, name)
-}
-
-// CreateProductPermissions implements PaymentStore.
-func (s *PosrgresStripeStore) CreateProductPermissions(ctx context.Context, productId string, permissionIds ...uuid.UUID) error {
-	return queries.CreateProductPermissions(ctx, s.db, productId, permissionIds...)
-}
-
 var _ PaymentStore = (*PosrgresStripeStore)(nil)
 
 // CreateProductRoles implements PaymentStore.
-func (s *PosrgresStripeStore) CreateProductRoles(ctx context.Context, productId string, roleIds ...uuid.UUID) error {
-	var db database.Dbx = s.db
-	var roles []models.ProductRole
-	for _, role := range roleIds {
-		roles = append(
-			roles,
-			models.ProductRole{
-				ProductID: productId,
-				RoleID:    role,
-			},
-		)
-	}
-	_, err := crudrepo.ProductRole.Post(ctx, db, roles)
-	if err != nil {
-		return err
-	}
-	return nil
-}
+//
 
 // UpsertPriceFromStripe implements PaymentStore.
 func (s *PosrgresStripeStore) UpsertPriceFromStripe(ctx context.Context, price *stripe.Price) error {

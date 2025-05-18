@@ -9,6 +9,7 @@ import (
 	"github.com/tkahng/authgo/internal/queries"
 
 	"github.com/tkahng/authgo/internal/services/payment"
+	"github.com/tkahng/authgo/internal/services/rbac"
 	"github.com/tkahng/authgo/internal/tools/filesystem"
 	"github.com/tkahng/authgo/internal/tools/logger"
 	"github.com/tkahng/authgo/internal/tools/mailer"
@@ -85,7 +86,10 @@ func InitBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 	}
 	store := payment.NewPostgresPaymentStore(pool)
 	stripeClient := payment.NewPaymentClient(cfg.StripeConfig)
-	stripeService := payment.NewPaymentService(stripeClient, store)
+
+	rbacStore := rbac.NewPostgresRBACStore(pool)
+
+	stripeService := payment.NewPaymentService(stripeClient, store, rbacStore)
 	app := &BaseApp{
 		fs:       fs,
 		db:       pool,
