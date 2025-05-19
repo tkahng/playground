@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/danielgtaylor/huma/v2"
-	"github.com/tkahng/authgo/internal/core"
+	"github.com/tkahng/authgo/internal/contextstore"
 	"github.com/tkahng/authgo/internal/shared"
 )
 
@@ -24,7 +24,7 @@ type StripeUrlOutput struct {
 }
 
 func (a *Api) StripeCheckoutSession(ctx context.Context, input *StripePaymentInput) (*StripeUrlOutput, error) {
-	info := core.GetContextUserInfo(ctx)
+	info := contextstore.GetContextUserInfo(ctx)
 	if info == nil {
 		return nil, huma.Error403Forbidden("Not authenticated")
 	}
@@ -52,7 +52,7 @@ type StripeBillingPortalInput struct {
 
 func (a *Api) StripeBillingPortal(ctx context.Context, input *StripeBillingPortalInput) (*StripeUrlOutput, error) {
 
-	info := core.GetContextUserInfo(ctx)
+	info := contextstore.GetContextUserInfo(ctx)
 	if info == nil {
 		return nil, huma.Error401Unauthorized("not authorized")
 	}

@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/danielgtaylor/huma/v2"
-	"github.com/tkahng/authgo/internal/core"
+	"github.com/tkahng/authgo/internal/contextstore"
 	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
@@ -16,7 +16,7 @@ type MeOutput struct {
 
 func (api *Api) Me(ctx context.Context, input *struct{}) (*MeOutput, error) {
 	db := api.app.Db()
-	claims := core.GetContextUserInfo(ctx)
+	claims := contextstore.GetContextUserInfo(ctx)
 	if claims == nil {
 		return nil, huma.Error404NotFound("User not found")
 	}
@@ -43,7 +43,7 @@ func (api *Api) MeUpdate(ctx context.Context, input *struct {
 	Body shared.UpdateMeInput
 }) (*struct{}, error) {
 	db := api.app.Db()
-	claims := core.GetContextUserInfo(ctx)
+	claims := contextstore.GetContextUserInfo(ctx)
 	if claims == nil {
 		return nil, huma.Error404NotFound("User not found")
 	}
@@ -56,7 +56,7 @@ func (api *Api) MeUpdate(ctx context.Context, input *struct {
 
 func (api *Api) MeDelete(ctx context.Context, input *struct{}) (*struct{}, error) {
 	db := api.app.Db()
-	claims := core.GetContextUserInfo(ctx)
+	claims := contextstore.GetContextUserInfo(ctx)
 	if claims == nil {
 		return nil, huma.Error404NotFound("User not found")
 	}

@@ -5,7 +5,7 @@ import (
 	"slices"
 
 	"github.com/danielgtaylor/huma/v2"
-	"github.com/tkahng/authgo/internal/core"
+	"github.com/tkahng/authgo/internal/contextstore"
 	"github.com/tkahng/authgo/internal/crudrepo"
 )
 
@@ -14,7 +14,7 @@ func (a *Api) ApiProtected(ctx context.Context, input *struct {
 }) (*struct {
 	Body string
 }, error) {
-	claims := core.GetContextUserInfo(ctx)
+	claims := contextstore.GetContextUserInfo(ctx)
 	if claims == nil {
 		return nil, huma.Error404NotFound("User not found")
 	}

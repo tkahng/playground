@@ -8,7 +8,7 @@ import (
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
-	"github.com/tkahng/authgo/internal/core"
+	"github.com/tkahng/authgo/internal/contextstore"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
@@ -21,7 +21,7 @@ func (api *Api) UploadMedia(ctx context.Context, input *struct {
 	}] `contentType:"multipart/form-data"`
 }) (*struct{}, error) {
 	db := api.app.Db()
-	user := core.GetContextUserInfo(ctx)
+	user := contextstore.GetContextUserInfo(ctx)
 	if user == nil {
 		return nil, huma.Error404NotFound("User not found")
 	}

@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/tkahng/authgo/internal/core"
+	"github.com/tkahng/authgo/internal/contextstore"
 	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
 )
@@ -15,7 +15,7 @@ type StatsResponse struct {
 
 func (api *Api) Stats(ctx context.Context, input *struct{}) (*StatsResponse, error) {
 	db := api.app.Db()
-	user := core.GetContextUserInfo(ctx)
+	user := contextstore.GetContextUserInfo(ctx)
 	if user == nil {
 		return nil, errors.New("user not found")
 	}

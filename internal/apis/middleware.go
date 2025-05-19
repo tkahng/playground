@@ -9,6 +9,7 @@ import (
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
+	"github.com/tkahng/authgo/internal/contextstore"
 	"github.com/tkahng/authgo/internal/core"
 	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
@@ -90,7 +91,7 @@ func CheckTaskOwnerMiddleware(api huma.API, app core.App) func(ctx huma.Context,
 			huma.WriteErr(api, ctx, http.StatusNotFound, "task not found at middleware")
 			return
 		}
-		user := core.GetContextUserInfo(rawCtx)
+		user := contextstore.GetContextUserInfo(rawCtx)
 		if user == nil {
 			huma.WriteErr(api, ctx, http.StatusUnauthorized, "unauthorized at middleware")
 			return
@@ -110,7 +111,7 @@ func CheckTaskOwnerMiddleware(api huma.API, app core.App) func(ctx huma.Context,
 func CheckPermissionsMiddleware(api huma.API, permissions ...string) func(ctx huma.Context, next func(huma.Context)) {
 	return func(ctx huma.Context, next func(huma.Context)) {
 
-		if claims := core.GetContextUserInfo(ctx.Context()); claims != nil {
+		if claims := contextstore.GetContextUserInfo(ctx.Context()); claims != nil {
 			if len(permissions) == 0 {
 				next(ctx)
 				return
@@ -148,7 +149,7 @@ func RequireAuthMiddleware(api huma.API) func(ctx huma.Context, next func(huma.C
 			return
 		}
 
-		c := core.GetContextUserInfo(ctx.Context())
+		c := contextstore.GetContextUserInfo(ctx.Context())
 		if c != nil {
 			if len(anyOfNeededScopes) == 0 {
 				next(ctx)
@@ -172,7 +173,7 @@ func AuthMiddleware(api huma.API, app core.App) func(ctx huma.Context, next func
 		ctxx := ctx.Context()
 		action := app.Auth()
 		// check if already has user claims
-		if claims := core.GetContextUserInfo(ctxx); claims != nil {
+		if claims := contextstore.GetContextUserInfo(ctxx); claims != nil {
 			log.Println("already has user claims")
 			next(ctx)
 			return
@@ -194,7 +195,7 @@ func AuthMiddleware(api huma.API, app core.App) func(ctx huma.Context, next func
 			next(ctx)
 			return
 		}
-		ctxx = core.SetContextUserInfo(ctxx, user)
+		ctxx = contextstore.SetContextUserInfo(ctxx, user)
 		ctx = huma.WithContext(ctx, ctxx)
 
 		next(ctx)

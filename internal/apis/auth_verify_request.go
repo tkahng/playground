@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/danielgtaylor/huma/v2"
-	"github.com/tkahng/authgo/internal/core"
+	"github.com/tkahng/authgo/internal/contextstore"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/services"
 )
@@ -19,7 +19,7 @@ type EmailVerificationRequestInput struct {
 
 func (api *Api) RequestVerification(ctx context.Context, input *struct{}) (*struct{}, error) {
 	action := api.app.Auth()
-	claims := core.GetContextUserInfo(ctx)
+	claims := contextstore.GetContextUserInfo(ctx)
 	if claims == nil {
 		return nil, huma.Error404NotFound("User not found")
 	}

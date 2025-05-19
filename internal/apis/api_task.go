@@ -5,7 +5,7 @@ import (
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
-	"github.com/tkahng/authgo/internal/core"
+	"github.com/tkahng/authgo/internal/contextstore"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
@@ -94,7 +94,7 @@ func (api *Api) TaskDelete(ctx context.Context, input *struct {
 	TaskID string `path:"task-id"`
 }) (*struct{}, error) {
 	db := api.app.Db()
-	userInfo := core.GetContextUserInfo(ctx)
+	userInfo := contextstore.GetContextUserInfo(ctx)
 	if userInfo == nil {
 		return nil, huma.Error401Unauthorized("Unauthorized")
 	}
@@ -113,7 +113,7 @@ func (api *Api) TaskGet(ctx context.Context, input *struct {
 	TaskID string `path:"task-id"`
 }) (*TaskResposne, error) {
 	db := api.app.Db()
-	userInfo := core.GetContextUserInfo(ctx)
+	userInfo := contextstore.GetContextUserInfo(ctx)
 	if userInfo == nil {
 		return nil, huma.Error401Unauthorized("Unauthorized")
 	}

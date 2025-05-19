@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/danielgtaylor/huma/v2"
-	"github.com/tkahng/authgo/internal/core"
+	"github.com/tkahng/authgo/internal/contextstore"
 )
 
 type RequestPasswordResetInput struct {
@@ -62,7 +62,7 @@ type PasswordResetInput struct {
 
 func (api *Api) ResetPassword(ctx context.Context, input *struct{ Body PasswordResetInput }) (*struct{}, error) {
 
-	claims := core.GetContextUserInfo(ctx)
+	claims := contextstore.GetContextUserInfo(ctx)
 	checker := api.app.NewChecker(ctx)
 	err := checker.CannotBeSuperUserEmail(claims.User.Email)
 	if err != nil {
