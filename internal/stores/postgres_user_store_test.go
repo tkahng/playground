@@ -4,6 +4,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/stores"
@@ -78,6 +79,34 @@ func TestPostgresUserStore_CRUD(t *testing.T) {
 			t.Errorf("User should be deleted, got = %v", deleted)
 		}
 
+		return errors.New("rollback")
+	})
+}
+
+func TestPostgresUserStore_LoadUsersByUserIds(t *testing.T) {
+	test.Short(t)
+	ctx, dbx := test.DbSetup()
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+		store := stores.NewPostgresUserStore(dbxx)
+		user1, err := store.CreateUser(ctx, &models.User{Email: "loaduser1@example.com"})
+		if err != nil {
+			t.Fatalf("CreateUser() error = %v", err)
+		}
+		user2, err := store.CreateUser(ctx, &models.User{Email: "loaduser2@example.com"})
+		if err != nil {
+			t.Fatalf("CreateUser() error = %v", err)
+		}
+		ids := []uuid.UUID{user1.ID, user2.ID}
+		users, err := store.LoadUsersByUserIds(ctx, ids...)
+		if err != nil {
+			t.Fatalf("LoadUsersByUserIds() error = %v", err)
+		}
+		if len(users) != 2 {
+			t.Errorf("LoadUsersByUserIds() = %v, want 2 users", len(users))
+		}
+		if users[0] == nil || users[1] == nil {
+			t.Errorf("Expected non-nil users, got: %v", users)
+		}
 		return errors.New("rollback")
 	})
 }

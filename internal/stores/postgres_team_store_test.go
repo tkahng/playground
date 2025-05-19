@@ -510,3 +510,49 @@ func TestPostgresInvitationStore_CRUD(t *testing.T) {
 		return errors.New("rollback")
 	})
 }
+
+func TestPostgresTeamStore_FindTeamByStripeCustomerId(t *testing.T) {
+	test.Short(t)
+	ctx, dbx := test.DbSetup()
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+		teamStore := stores.NewPostgresTeamStore(dbxx)
+		stripeID := "cus_test_123"
+		team, err := teamStore.CreateTeam(ctx, "StripeTeam", "stripe-team-slug", &stripeID)
+		if err != nil {
+			t.Fatalf("CreateTeam() error = %v", err)
+		}
+		found, err := teamStore.FindTeamByStripeCustomerId(ctx, stripeID)
+		if err != nil {
+			t.Fatalf("FindTeamByStripeCustomerId() error = %v", err)
+		}
+		if found == nil || found.ID != team.ID {
+			t.Errorf("FindTeamByStripeCustomerId() = %v, want %v", found, team.ID)
+		}
+		return errors.New("rollback")
+	})
+}
+
+func TestPostgresTeamStore_UpsertTeamCustomerStripeId(t *testing.T) {
+	test.Short(t)
+	ctx, dbx := test.DbSetup()
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+		teamStore := stores.NewPostgresTeamStore(dbxx)
+		team, err := teamStore.CreateTeam(ctx, "UpsertStripeTeam", "upsert-stripe-team-slug", nil)
+		if err != nil {
+			t.Fatalf("CreateTeam() error = %v", err)
+		}
+		stripeID := "cus_upsert_456"
+		err = teamStore.UpsertTeamCustomerStripeId(ctx, team.ID, &stripeID)
+		if err != nil {
+			t.Fatalf("UpsertTeamCustomerStripeId() error = %v", err)
+		}
+		updated, err := teamStore.FindTeamByID(ctx, team.ID)
+		if err != nil {
+			t.Fatalf("FindTeamByID() error = %v", err)
+		}
+		if updated.StripeCustomerID == nil || *updated.StripeCustomerID != stripeID {
+			t.Errorf("UpsertTeamCustomerStripeId() did not update StripeCustomerID: got %v", updated.StripeCustomerID)
+		}
+		return errors.New("rollback")
+	})
+}
