@@ -11,7 +11,6 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	"github.com/tkahng/authgo/internal/conf"
-	"github.com/tkahng/authgo/internal/modules/securitymodule"
 	"github.com/tkahng/authgo/internal/shared"
 )
 
@@ -103,7 +102,7 @@ func TestHandleRefreshToken(t *testing.T) {
 func TestResetPassword(t *testing.T) {
 	ctx := context.Background()
 	mockStorage := new(mockAuthStore)
-	passwordManager := securitymodule.NewPasswordService()
+	passwordManager := NewPasswordService()
 	app := &authService{
 		authStore: mockStorage,
 		password:  passwordManager,

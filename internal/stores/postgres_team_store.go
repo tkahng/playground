@@ -45,9 +45,10 @@ func (q *PostgresTeamStore) FindTeamMemberByUserAndTeamID(ctx context.Context, u
 }
 
 // UpdateTeamMemberUpdatedAt implements TeamQueryer.
-func (q *PostgresTeamStore) UpdateTeamMemberUpdatedAt(ctx context.Context, teamMemberId uuid.UUID) error {
+func (q *PostgresTeamStore) UpdateTeamMemberUpdatedAt(ctx context.Context, teamId, userId uuid.UUID) error {
 	qquery := squirrel.Update("team_members").
-		Where("id = ?", teamMemberId).
+		Where("team_id = ?", teamId).
+		Where("user_id = ?", userId).
 		Set("updated_at", time.Now())
 
 	err := database.ExecWithBuilder(ctx, q.db, qquery.PlaceholderFormat(squirrel.Dollar))

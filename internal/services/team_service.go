@@ -22,7 +22,7 @@ type TeamStore interface {
 	FindTeamMemberByUserAndTeamID(ctx context.Context, teamId uuid.UUID, userId uuid.UUID) (*models.TeamMember, error)
 	FindLatestTeamMemberByUserID(ctx context.Context, userId uuid.UUID) (*models.TeamMember, error)
 	CreateTeamMember(ctx context.Context, teamId, userId uuid.UUID, role models.TeamMemberRole) (*models.TeamMember, error)
-	UpdateTeamMemberUpdatedAt(ctx context.Context, teamMemberId uuid.UUID) error
+	UpdateTeamMemberUpdatedAt(ctx context.Context, teamId, userId uuid.UUID) error
 }
 
 type teamService struct {
@@ -38,7 +38,7 @@ func (t *teamService) SelectMembershipByTeamID(ctx context.Context, teamId, user
 	if member == nil {
 		return nil, nil
 	}
-	err = t.teamStore.UpdateTeamMemberUpdatedAt(ctx, member.ID)
+	err = t.teamStore.UpdateTeamMemberUpdatedAt(ctx, teamId, member.ID)
 	if err != nil {
 		return nil, err
 	}

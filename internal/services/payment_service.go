@@ -11,24 +11,21 @@ import (
 	"github.com/stripe/stripe-go/v82"
 	"github.com/tkahng/authgo/internal/conf"
 	"github.com/tkahng/authgo/internal/models"
+
+	// "github.com/tkahng/authgo/internal/modules/paymentmodule/client"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 	"github.com/tkahng/authgo/internal/tools/types"
 )
 
-type ProductBillingConfigurationInput struct {
-	// The list of price IDs for the product that a subscription can be updated to.
-	Prices []*string `form:"prices"`
-	// The product id.
-	Product *string `form:"product"`
-}
+// var NewPaymentClient = client.NewPaymentClient
 
 type PaymentClient interface {
 	Config() *conf.StripeConfig
 	CreateBillingPortalSession(customerId string, configurationId string) (*stripe.BillingPortalSession, error)
 	CreateCheckoutSession(customerId string, priceId string, trialDays *int64) (*stripe.CheckoutSession, error)
 	CreateCustomer(email string, userId string) (*stripe.Customer, error)
-	CreatePortalConfiguration(input ...*ProductBillingConfigurationInput) (string, error)
+	CreatePortalConfiguration(input ...*stripe.BillingPortalConfigurationFeaturesSubscriptionUpdateProductParams) (string, error)
 	FindAllPrices() ([]*stripe.Price, error)
 	FindAllProducts() ([]*stripe.Product, error)
 	FindCheckoutSessionByStripeId(stripeId string) (*stripe.CheckoutSession, error)
@@ -344,10 +341,10 @@ func (srv *StripeService) CreateBillingPortalSession(ctx context.Context, userId
 	if err != nil {
 		return "", err
 	}
-	var configurations []*ProductBillingConfigurationInput
+	var configurations []*stripe.BillingPortalConfigurationFeaturesSubscriptionUpdateProductParams
 	for i, id := range prods {
 		price := grouped[i]
-		con := &ProductBillingConfigurationInput{
+		con := &stripe.BillingPortalConfigurationFeaturesSubscriptionUpdateProductParams{
 			Product: &id.ID,
 			Prices: mapper.Map(price, func(p *models.StripePrice) *string {
 				return &p.ID

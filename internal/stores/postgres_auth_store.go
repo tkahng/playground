@@ -2,7 +2,7 @@ package stores
 
 import (
 	"github.com/tkahng/authgo/internal/database"
-	"github.com/tkahng/authgo/internal/services"
+	"github.com/tkahng/authgo/internal/modules/authmodule"
 )
 
 type PostgresAuthStore struct {
@@ -19,4 +19,4 @@ func NewPostgresAuthStore(db database.Dbx) *PostgresAuthStore {
 	}
 }
 
-var _ services.AuthStore = (*PostgresAuthStore)(nil)
+var _ authmodule.AuthStore = (*PostgresAuthStore)(nil)

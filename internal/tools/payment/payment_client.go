@@ -1,4 +1,4 @@
-package paymentmodule
+package payment
 
 import (
 	"errors"
@@ -139,14 +139,7 @@ func (s *StripeClient) CreateCheckoutSession(customerId, priceId string, trialDa
 	return session.New(sessionParams)
 }
 
-type ProductBillingConfigurationInput struct {
-	// The list of price IDs for the product that a subscription can be updated to.
-	Prices []*string `form:"prices"`
-	// The product id.
-	Product *string `form:"product"`
-}
-
-func (a *StripeClient) CreatePortalConfiguration(input ...*ProductBillingConfigurationInput) (string, error) {
+func (a *StripeClient) CreatePortalConfiguration(input ...*stripe.BillingPortalConfigurationFeaturesSubscriptionUpdateProductParams) (string, error) {
 	var prods []*stripe.BillingPortalConfigurationFeaturesSubscriptionUpdateProductParams
 	for _, i := range input {
 		prods = append(prods, &stripe.BillingPortalConfigurationFeaturesSubscriptionUpdateProductParams{

@@ -7,13 +7,13 @@ import (
 	"github.com/tkahng/authgo/internal/conf"
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/queries"
+	"github.com/tkahng/authgo/internal/services"
 	"github.com/tkahng/authgo/internal/stores"
 
-	"github.com/tkahng/authgo/internal/modules/authmodule"
-	"github.com/tkahng/authgo/internal/modules/paymentmodule"
 	"github.com/tkahng/authgo/internal/tools/filesystem"
 	"github.com/tkahng/authgo/internal/tools/logger"
 	"github.com/tkahng/authgo/internal/tools/mailer"
+	"github.com/tkahng/authgo/internal/tools/payment"
 )
 
 var _ App = (*BaseApp)(nil)
@@ -22,11 +22,11 @@ type BaseApp struct {
 	cfg      *conf.EnvConfig
 	db       *database.Queries
 	settings *conf.AppOptions
-	payment  paymentmodule.PaymentService
+	payment  services.PaymentService
 	logger   *slog.Logger
 	fs       *filesystem.FileSystem
 	mail     mailer.Mailer
-	auth     authmodule.AuthService
+	auth     services.AuthService
 }
 
 // Checker implements App.
@@ -35,7 +35,7 @@ func (a *BaseApp) NewChecker(ctx context.Context) ConstraintChecker {
 }
 
 // Auth implements App.
-func (a *BaseApp) Auth() authmodule.AuthService {
+func (a *BaseApp) Auth() services.AuthService {
 	return a.auth
 }
 
@@ -51,7 +51,7 @@ func (app *BaseApp) Db() database.Dbx {
 }
 
 // Payment implements App.
-func (a *BaseApp) Payment() paymentmodule.PaymentService {
+func (a *BaseApp) Payment() services.PaymentService {
 	return a.payment
 }
 
@@ -87,9 +87,9 @@ func InitBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 		mail = &mailer.LogMailer{}
 	}
 	paymentStore := stores.NewPostgresPaymentStore(pool)
-	paymentClient := paymentmodule.NewPaymentClient(cfg.StripeConfig)
+	paymentClient := payment.NewPaymentClient(cfg.StripeConfig)
 
-	stripeService := paymentmodule.NewPaymentService(
+	stripeService := services.NewPaymentService(
 		paymentClient,
 		paymentStore,
 	)

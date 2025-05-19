@@ -205,7 +205,7 @@ func TestFindLatestTeamMemberByUserID(t *testing.T) {
 			t.Fatalf("CreateTeamMember() error = %v", err)
 		}
 		time.Sleep(time.Millisecond * 10)
-		err = teamStore.UpdateTeamMemberUpdatedAt(ctx, teamMember1.ID)
+		err = teamStore.UpdateTeamMemberUpdatedAt(ctx, teamMember1.TeamID, userID)
 		if err != nil {
 			t.Fatalf("UpdateTeamMemberUpdatedAt() error = %v", err)
 		}
@@ -220,7 +220,7 @@ func TestFindLatestTeamMemberByUserID(t *testing.T) {
 			t.Errorf("FindLatestTeamMemberByUserID() = %v, want teamMember1 ID %v", latest.ID, teamMember1.ID)
 		}
 		time.Sleep(time.Millisecond * 10)
-		err = teamStore.UpdateTeamMemberUpdatedAt(ctx, teamMember2.ID)
+		err = teamStore.UpdateTeamMemberUpdatedAt(ctx, teamMember1.TeamID, userID)
 		if err != nil {
 			t.Fatalf("UpdateTeamMemberUpdatedAt() error = %v", err)
 		}
@@ -280,7 +280,7 @@ func TestUpdateTeamMemberUpdatedAt(t *testing.T) {
 		// Sleep to ensure updated_at will be different
 		time.Sleep(time.Second * 1)
 
-		err = teamStore.UpdateTeamMemberUpdatedAt(ctx, member.ID)
+		err = teamStore.UpdateTeamMemberUpdatedAt(ctx, team.ID, user.ID)
 		if err != nil {
 			t.Fatalf("UpdateTeamMemberUpdatedAt() error = %v", err)
 		}
