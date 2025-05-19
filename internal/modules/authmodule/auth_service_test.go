@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	"github.com/tkahng/authgo/internal/conf"
+	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/modules/securitymodule"
 	"github.com/tkahng/authgo/internal/shared"
 )
@@ -45,7 +46,11 @@ func TestHandleRefreshToken(t *testing.T) {
 			setupMocks: func() {
 				mockToken.On("ParseToken", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 				mockToken.On("CreateJwtToken", mock.Anything, mock.Anything).Return("new.valid.token.here", nil)
-				mockStorage.On("VerifyTokenStorage", ctx, mock.Anything).Return(nil)
+				mockStorage.On("GetToken", ctx, mock.Anything).Return(&models.Token{
+					Type:  models.TokenTypesRefreshToken,
+					Token: "valid.token.here",
+				}, nil)
+				mockStorage.On("DeleteToken", ctx, mock.Anything).Return(nil)
 				mockStorage.On("GetUserInfo", ctx, mock.Anything).Return(&shared.UserInfo{
 					User: shared.User{
 						ID:    uuid.New(),
@@ -142,12 +147,12 @@ func TestResetPassword(t *testing.T) {
 			oldPassword: testOldPassword,
 			newPassword: testNewPassword,
 			setupMocks: func() {
-				mockStorage.On("FindUserAccountByUserIdAndProvider", ctx, testUserId, shared.ProvidersCredentials).
-					Return(&shared.UserAccount{
+				mockStorage.On("FindUserAccountByUserIdAndProvider", ctx, testUserId, models.ProvidersCredentials).
+					Return(&models.UserAccount{
 						Password: &testHashedPassword,
 						UserID:   testUserId,
-						Provider: shared.ProvidersCredentials,
-						Type:     shared.ProviderTypeCredentials,
+						Provider: models.ProvidersCredentials,
+						Type:     models.ProviderTypeCredentials,
 					}, nil)
 				mockStorage.On("UpdateUserAccount", ctx, mock.Anything).Return(nil)
 			},
@@ -159,7 +164,7 @@ func TestResetPassword(t *testing.T) {
 			oldPassword: testOldPassword,
 			newPassword: testNewPassword,
 			setupMocks: func() {
-				mockStorage.On("FindUserAccountByUserIdAndProvider", ctx, testUserId, shared.ProvidersCredentials).
+				mockStorage.On("FindUserAccountByUserIdAndProvider", ctx, testUserId, models.ProvidersCredentials).
 					Return(nil, nil)
 			},
 			expectedError: true,
@@ -170,8 +175,8 @@ func TestResetPassword(t *testing.T) {
 			oldPassword: "wrongPassword",
 			newPassword: testNewPassword,
 			setupMocks: func() {
-				mockStorage.On("FindUserAccountByUserIdAndProvider", ctx, testUserId, shared.ProvidersCredentials).
-					Return(&shared.UserAccount{Password: &testHashedPassword}, nil)
+				mockStorage.On("FindUserAccountByUserIdAndProvider", ctx, testUserId, models.ProvidersCredentials).
+					Return(&models.UserAccount{Password: &testHashedPassword}, nil)
 			},
 			expectedError: true,
 		},
