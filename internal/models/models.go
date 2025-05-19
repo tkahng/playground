@@ -201,6 +201,7 @@ type StripeSubscription struct {
 	TeamID             uuid.UUID                `db:"team_id" json:"team_id"`
 	Status             StripeSubscriptionStatus `db:"status" json:"status"`
 	Metadata           map[string]string        `db:"metadata" json:"metadata"`
+	ItemID             string                   `db:"item_id" json:"item_id"`
 	PriceID            string                   `db:"price_id" json:"price_id"`
 	Quantity           int64                    `db:"quantity" json:"quantity"`
 	CancelAtPeriodEnd  bool                     `db:"cancel_at_period_end" json:"cancel_at_period_end"`

@@ -12,11 +12,22 @@ import (
 	"github.com/stripe/stripe-go/v82/price"
 	"github.com/stripe/stripe-go/v82/product"
 	"github.com/stripe/stripe-go/v82/subscription"
+	"github.com/stripe/stripe-go/v82/subscriptionitem"
 	"github.com/tkahng/authgo/internal/conf"
 )
 
 type StripeClient struct {
 	config *conf.StripeConfig
+}
+
+// UpdateItemQuantity implements services.PaymentClient.
+func (s *StripeClient) UpdateItemQuantity(itemId string, priceId string, count int64) (*stripe.SubscriptionItem, error) {
+	params := &stripe.SubscriptionItemParams{
+		Quantity: stripe.Int64(count),
+		Price:    stripe.String(priceId),
+	}
+	params.AddExpand("subscription")
+	return subscriptionitem.Update(itemId, params)
 }
 
 func NewPaymentClient(bld conf.StripeConfig) *StripeClient {
@@ -109,11 +120,11 @@ func (s *StripeClient) FindCheckoutSessionByStripeId(stripeId string) (*stripe.C
 	return session.Get(stripeId, params)
 }
 
-func (s *StripeClient) CreateCheckoutSession(customerId, priceId string, trialDays *int64) (*stripe.CheckoutSession, error) {
+func (s *StripeClient) CreateCheckoutSession(customerId, priceId string, quantity int64, trialDays *int64) (*stripe.CheckoutSession, error) {
 	lineParams := []*stripe.CheckoutSessionLineItemParams{
 		{
 			Price:    stripe.String(priceId),
-			Quantity: stripe.Int64(1),
+			Quantity: stripe.Int64(quantity),
 		},
 	}
 	customerUpdateParams := &stripe.CheckoutSessionCustomerUpdateParams{

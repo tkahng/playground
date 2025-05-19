@@ -23,7 +23,7 @@ import (
 type PaymentClient interface {
 	Config() *conf.StripeConfig
 	CreateBillingPortalSession(customerId string, configurationId string) (*stripe.BillingPortalSession, error)
-	CreateCheckoutSession(customerId string, priceId string, trialDays *int64) (*stripe.CheckoutSession, error)
+	CreateCheckoutSession(customerId string, priceId string, quantity int64, trialDays *int64) (*stripe.CheckoutSession, error)
 	CreateCustomer(email string, name string) (*stripe.Customer, error)
 	CreatePortalConfiguration(input ...*stripe.BillingPortalConfigurationFeaturesSubscriptionUpdateProductParams) (string, error)
 	FindAllPrices() ([]*stripe.Price, error)
@@ -33,12 +33,14 @@ type PaymentClient interface {
 	FindOrCreateCustomer(email string, name string) (*stripe.Customer, error)
 	FindSubscriptionByStripeId(stripeId string) (*stripe.Subscription, error)
 	UpdateCustomer(customerId string, params *stripe.CustomerParams) (*stripe.Customer, error)
+	UpdateItemQuantity(itemId string, priceId string, count int64) (*stripe.SubscriptionItem, error)
 }
 
 type PaymentStore interface {
 	// team methods
 	// FindTeamByID(ctx context.Context, teamId uuid.UUID) (*models.Team, error)
 	FindTeamByStripeCustomerId(ctx context.Context, stripeCustomerId string) (*models.Team, error)
+	CountTeamMembers(ctx context.Context, teamId uuid.UUID) (int64, error)
 	UpsertTeamCustomerStripeId(ctx context.Context, teamId uuid.UUID, stripeCustomerId *string) error
 	// permission methods
 	FindPermissionByName(ctx context.Context, name string) (*models.Permission, error)
@@ -46,8 +48,10 @@ type PaymentStore interface {
 
 	// payment methods
 	FindSubscriptionWithPriceById(ctx context.Context, stripeId string) (*models.SubscriptionWithPrice, error)
+	FindLatestActiveSubscriptionWithPriceByTeamId(ctx context.Context, teamId uuid.UUID) (*models.SubscriptionWithPrice, error)
 	FindProductByStripeId(ctx context.Context, productId string) (*models.StripeProduct, error)
 	// FindCustomerByStripeId(ctx context.Context, stripeId string) (*models.StripeCustomer, error)
+	FindLatestActiveSubscriptionByTeamId(ctx context.Context, teamId uuid.UUID) (*models.StripeSubscription, error)
 	// FindCustomerByUserId(ctx context.Context, userId uuid.UUID) (*models.StripeCustomer, error)
 	UpsertSubscriptionFromStripe(ctx context.Context, sub *stripe.Subscription, userId uuid.UUID) error
 	UpsertSubscription(ctx context.Context, sub *models.StripeSubscription) error
@@ -55,7 +59,6 @@ type PaymentStore interface {
 	UpsertProduct(ctx context.Context, product *models.StripeProduct) error
 	UpsertPriceFromStripe(ctx context.Context, price *stripe.Price) error
 	UpsertPrice(ctx context.Context, price *models.StripePrice) error
-	FindLatestActiveSubscriptionByTeamId(ctx context.Context, teamId uuid.UUID) (*models.StripeSubscription, error)
 	IsFirstSubscription(ctx context.Context, teamId uuid.UUID) (bool, error)
 	FindValidPriceById(ctx context.Context, priceId string) (*models.StripePrice, error)
 	ListProducts(ctx context.Context, input *shared.StripeProductListParams) ([]*models.StripeProduct, error)
@@ -63,6 +66,7 @@ type PaymentStore interface {
 }
 type PaymentService interface {
 	Client() PaymentClient
+	Store() PaymentStore
 	CreateBillingPortalSession(ctx context.Context, stripeCustomerId string) (string, error)
 	CreateCheckoutSession(ctx context.Context, stripeCustomerId string, priceId string) (string, error)
 	FindAndUpsertAllPrices(ctx context.Context) error
@@ -74,12 +78,39 @@ type PaymentService interface {
 	UpsertSubscriptionByIds(ctx context.Context, cutomerId string, subscriptionId string) error
 	UpsertProductFromStripe(ctx context.Context, product *stripe.Product) error
 	UpsertPriceFromStripe(ctx context.Context, price *stripe.Price) error
+	VerifyAndUpdateTeamSubscriptionQuantity(ctx context.Context, teamId uuid.UUID) error
 }
 
 type StripeService struct {
 	logger       *slog.Logger
 	client       PaymentClient
 	paymentStore PaymentStore
+}
+
+// VerifyAndUpdateTeamSubscriptionQuantity implements PaymentService.
+func (srv *StripeService) VerifyAndUpdateTeamSubscriptionQuantity(ctx context.Context, teamId uuid.UUID) error {
+	sub, err := srv.paymentStore.FindLatestActiveSubscriptionByTeamId(ctx, teamId)
+	if err != nil {
+		return err
+	}
+	if sub == nil {
+		return errors.New("no subscription")
+	}
+	count, err := srv.paymentStore.CountTeamMembers(ctx, teamId)
+	if err != nil {
+		return err
+	}
+	if count == 0 {
+		return nil
+	}
+	if sub.Quantity != count {
+		_, err := srv.client.UpdateItemQuantity(sub.ItemID, sub.PriceID, count)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+	return nil
 }
 
 var _ PaymentService = (*StripeService)(nil)
@@ -97,6 +128,10 @@ func NewPaymentService(
 		logger:       slog.Default(),
 		paymentStore: paymentStore,
 	}
+}
+
+func (srv *StripeService) Store() PaymentStore {
+	return srv.paymentStore
 }
 
 func (srv *StripeService) SyncPerms(ctx context.Context) error {
@@ -267,6 +302,10 @@ func (srv *StripeService) CreateCheckoutSession(ctx context.Context, stripeCusto
 	if team == nil {
 		return "", errors.New("team not found")
 	}
+	count, err := srv.paymentStore.CountTeamMembers(ctx, team.ID)
+	if err != nil {
+		return "", err
+	}
 	val, err := srv.paymentStore.FindLatestActiveSubscriptionByTeamId(ctx, team.ID)
 	if err != nil {
 		return "", err
@@ -289,7 +328,7 @@ func (srv *StripeService) CreateCheckoutSession(ctx context.Context, stripeCusto
 	if valPrice == nil {
 		return "", errors.New("price is not valid")
 	}
-	sesh, err := srv.client.CreateCheckoutSession(customer_stripe_id, priceId, trialDays)
+	sesh, err := srv.client.CreateCheckoutSession(customer_stripe_id, priceId, count, trialDays)
 	if err != nil {
 		return "", err
 	}

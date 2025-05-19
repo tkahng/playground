@@ -48,13 +48,15 @@ type TeamInvitation struct {
 }
 
 type TeamMember struct {
-	_         struct{}       `db:"team_members" json:"-"`
-	ID        uuid.UUID      `db:"id" json:"id"`
-	TeamID    uuid.UUID      `db:"team_id" json:"team_id"`
-	UserID    *uuid.UUID     `db:"user_id" json:"user_id"`
-	Role      TeamMemberRole `db:"role" json:"role"`
-	CreatedAt time.Time      `db:"created_at" json:"created_at"`
-	UpdatedAt time.Time      `db:"updated_at" json:"updated_at"`
-	Team      *Team          `db:"team" src:"team_id" dest:"id" table:"team" json:"team,omitempty"`
-	User      *User          `db:"user" src:"user_id" dest:"id" table:"users" json:"user,omitempty"`
+	_              struct{}       `db:"team_members" json:"-"`
+	ID             uuid.UUID      `db:"id" json:"id"`
+	TeamID         uuid.UUID      `db:"team_id" json:"team_id"`
+	UserID         *uuid.UUID     `db:"user_id" json:"user_id"`
+	Active         bool           `db:"active" json:"active"`
+	Role           TeamMemberRole `db:"role" json:"role"`
+	LastSelectedAt time.Time      `db:"last_selected_at" json:"last_selected_at"`
+	CreatedAt      time.Time      `db:"created_at" json:"created_at"`
+	UpdatedAt      time.Time      `db:"updated_at" json:"updated_at"`
+	Team           *Team          `db:"team" src:"team_id" dest:"id" table:"team" json:"team,omitempty"`
+	User           *User          `db:"user" src:"user_id" dest:"id" table:"users" json:"user,omitempty"`
 }

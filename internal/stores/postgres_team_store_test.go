@@ -179,7 +179,7 @@ func TestFindLatestTeamMemberByUserID(t *testing.T) {
 			t.Fatalf("CreateTeamMember() error = %v", err)
 		}
 		time.Sleep(time.Millisecond * 10)
-		err = teamStore.UpdateTeamMemberUpdatedAt(ctx, teamMember1.TeamID, userID)
+		err = teamStore.UpdateTeamMemberSelectedAt(ctx, teamMember1.TeamID, userID)
 		if err != nil {
 			t.Fatalf("UpdateTeamMemberUpdatedAt() error = %v", err)
 		}
@@ -194,7 +194,7 @@ func TestFindLatestTeamMemberByUserID(t *testing.T) {
 			t.Errorf("FindLatestTeamMemberByUserID() = %v, want teamMember1 ID %v", latest.ID, teamMember1.ID)
 		}
 		time.Sleep(time.Millisecond * 10)
-		err = teamStore.UpdateTeamMemberUpdatedAt(ctx, teamMember1.TeamID, userID)
+		err = teamStore.UpdateTeamMemberSelectedAt(ctx, teamMember1.TeamID, userID)
 		if err != nil {
 			t.Fatalf("UpdateTeamMemberUpdatedAt() error = %v", err)
 		}
@@ -254,7 +254,7 @@ func TestUpdateTeamMemberUpdatedAt(t *testing.T) {
 		// Sleep to ensure updated_at will be different
 		time.Sleep(time.Second * 1)
 
-		err = teamStore.UpdateTeamMemberUpdatedAt(ctx, team.ID, user.ID)
+		err = teamStore.UpdateTeamMemberSelectedAt(ctx, team.ID, user.ID)
 		if err != nil {
 			t.Fatalf("UpdateTeamMemberUpdatedAt() error = %v", err)
 		}
@@ -276,6 +276,53 @@ func TestUpdateTeamMemberUpdatedAt(t *testing.T) {
 				original,
 				updated.UpdatedAt,
 			)
+		}
+		return errors.New("rollback")
+	})
+}
+func TestUpdateTeamMemberSelectedAt(t *testing.T) {
+	test.Short(t)
+	ctx, dbx := test.DbSetup()
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+		teamStore := stores.NewPostgresTeamStore(dbxx)
+		userStore := stores.NewPostgresUserStore(dbxx)
+
+		// Create team and user
+		team, err := teamStore.CreateTeam(ctx, "SelectedAtTeam", nil)
+		if err != nil {
+			t.Fatalf("CreateTeam() error = %v", err)
+		}
+		user, err := userStore.CreateUser(ctx, &models.User{
+			Email: "selectedat@example.com",
+		})
+		if err != nil {
+			t.Fatalf("CreateUser() error = %v", err)
+		}
+		member, err := teamStore.CreateTeamMember(ctx, team.ID, user.ID, models.TeamMemberRoleMember)
+		if err != nil {
+			t.Fatalf("CreateTeamMember() error = %v", err)
+		}
+		original := member.LastSelectedAt
+		// Call UpdateTeamMemberSelectedAt
+		err = teamStore.UpdateTeamMemberSelectedAt(ctx, team.ID, user.ID)
+		if err != nil {
+			t.Fatalf("UpdateTeamMemberSelectedAt() error = %v", err)
+		}
+
+		// Fetch the member again and check last_selected_at
+		updated, err := teamStore.FindTeamMemberByTeamAndUserId(ctx, team.ID, user.ID)
+		if err != nil {
+			t.Fatalf("FindTeamMemberByTeamAndUserId() error = %v", err)
+		}
+		if updated == nil {
+			t.Fatalf("Updated member not found")
+		}
+		if updated.LastSelectedAt.IsZero() {
+			t.Errorf("Expected LastSelectedAt to be set, got zero value")
+		}
+		// Should be within a reasonable time window (2s)
+		if !updated.LastSelectedAt.After(original) {
+			t.Errorf("LastSelectedAt not updated recently: %v", updated.LastSelectedAt)
 		}
 		return errors.New("rollback")
 	})

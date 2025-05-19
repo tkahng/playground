@@ -9,12 +9,16 @@ import (
 )
 
 type TeamService interface {
-	SelectMembershipByTeamID(ctx context.Context, userId uuid.UUID, teamId uuid.UUID) (*models.TeamMember, error)
-	GetLastMembershipByUserID(ctx context.Context, userId uuid.UUID) (*models.TeamMember, error)
+	Store() TeamStore
+	SetLastSelectedTeamMember(ctx context.Context, userId uuid.UUID, teamId uuid.UUID) (*models.TeamMember, error)
+	GetLastSelectedTeamMember(ctx context.Context, userId uuid.UUID) (*models.TeamMember, error)
 	FindTeamInfo(ctx context.Context, teamId, userId uuid.UUID) (*shared.TeamInfo, error)
+	FindLatestTeamInfo(ctx context.Context, userId uuid.UUID) (*shared.TeamInfo, error)
 }
 
 type TeamStore interface {
+	CountTeamMembers(ctx context.Context, teamId uuid.UUID) (int64, error)
+
 	FindTeamByStripeCustomerId(ctx context.Context, stripeCustomerId string) (*models.Team, error)
 	// CreateTeamFromUser(ctx context.Context, user *models.User) (*models.Team, error)
 	FindTeamByID(ctx context.Context, teamId uuid.UUID) (*models.Team, error)
@@ -25,15 +29,20 @@ type TeamStore interface {
 	FindTeamMemberByTeamAndUserId(ctx context.Context, teamId uuid.UUID, userId uuid.UUID) (*models.TeamMember, error)
 	FindLatestTeamMemberByUserID(ctx context.Context, userId uuid.UUID) (*models.TeamMember, error)
 	CreateTeamMember(ctx context.Context, teamId, userId uuid.UUID, role models.TeamMemberRole) (*models.TeamMember, error)
-	UpdateTeamMemberUpdatedAt(ctx context.Context, teamId, userId uuid.UUID) error
+	UpdateTeamMember(ctx context.Context, member *models.TeamMember) (*models.TeamMember, error)
+	UpdateTeamMemberSelectedAt(ctx context.Context, teamId, userId uuid.UUID) error
 }
 
 type teamService struct {
 	teamStore TeamStore
 }
 
-// SelectMembershipByTeamID implements TeamService.
-func (t *teamService) SelectMembershipByTeamID(ctx context.Context, teamId, userId uuid.UUID) (*models.TeamMember, error) {
+func (t *teamService) Store() TeamStore {
+	return t.teamStore
+}
+
+// SetLastSelectedTeamMember implements TeamService.
+func (t *teamService) SetLastSelectedTeamMember(ctx context.Context, teamId, userId uuid.UUID) (*models.TeamMember, error) {
 	member, err := t.teamStore.FindTeamMemberByTeamAndUserId(ctx, teamId, userId)
 	if err != nil {
 		return nil, err
@@ -41,14 +50,14 @@ func (t *teamService) SelectMembershipByTeamID(ctx context.Context, teamId, user
 	if member == nil {
 		return nil, nil
 	}
-	err = t.teamStore.UpdateTeamMemberUpdatedAt(ctx, teamId, member.ID)
+	err = t.teamStore.UpdateTeamMemberSelectedAt(ctx, teamId, member.ID)
 	if err != nil {
 		return nil, err
 	}
 	return member, nil
 }
 
-func (t *teamService) GetLastMembershipByUserID(ctx context.Context, userId uuid.UUID) (*models.TeamMember, error) {
+func (t *teamService) GetLastSelectedTeamMember(ctx context.Context, userId uuid.UUID) (*models.TeamMember, error) {
 	team, err := t.teamStore.FindLatestTeamMemberByUserID(ctx, userId)
 	if err != nil {
 		return nil, err
@@ -68,6 +77,27 @@ func (t *teamService) FindTeamInfo(ctx context.Context, teamId, userId uuid.UUID
 		return nil, err
 	}
 	if member == nil {
+		return nil, nil
+	}
+	return &shared.TeamInfo{
+		Team:   *team,
+		Member: *member,
+	}, nil
+}
+
+func (t *teamService) FindLatestTeamInfo(ctx context.Context, userId uuid.UUID) (*shared.TeamInfo, error) {
+	member, err := t.teamStore.FindLatestTeamMemberByUserID(ctx, userId)
+	if err != nil {
+		return nil, err
+	}
+	if member == nil {
+		return nil, nil
+	}
+	team, err := t.teamStore.FindTeamByID(ctx, member.TeamID)
+	if err != nil {
+		return nil, err
+	}
+	if team == nil {
 		return nil, nil
 	}
 	return &shared.TeamInfo{

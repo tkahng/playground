@@ -17,7 +17,9 @@ CREATE TABLE IF NOT EXISTS team_members (
     team_id uuid NOT NULL REFERENCES teams(id) ON DELETE CASCADE ON UPDATE CASCADE,
     user_id uuid REFERENCES users(id) ON DELETE
     SET NULL ON UPDATE CASCADE,
+        active boolean NOT NULL DEFAULT true,
         role team_member_role NOT NULL,
+        last_selected_at timestamptz not null default now(),
         created_at timestamptz not null default now(),
         updated_at timestamptz not null default now(),
         constraint team_members_user_id_team_id unique (user_id, team_id)

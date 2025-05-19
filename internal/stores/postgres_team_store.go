@@ -17,6 +17,36 @@ type PostgresTeamStore struct {
 	db database.Dbx
 }
 
+// UpdateTeamMember implements services.TeamStore.
+func (s *PostgresTeamStore) UpdateTeamMember(ctx context.Context, member *models.TeamMember) (*models.TeamMember, error) {
+	newMember, err := crudrepo.TeamMember.PutOne(
+		ctx,
+		s.db,
+		member,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return newMember, nil
+}
+
+// CountTeamMembers implements services.TeamStore.
+func (s *PostgresTeamStore) CountTeamMembers(ctx context.Context, teamId uuid.UUID) (int64, error) {
+	c, err := crudrepo.TeamMember.Count(
+		ctx,
+		s.db,
+		&map[string]any{
+			"team_id": map[string]any{
+				"_eq": teamId.String(),
+			},
+		},
+	)
+	if err != nil {
+		return 0, err
+	}
+	return c, nil
+}
+
 func NewPostgresTeamStore(db database.Dbx) *PostgresTeamStore {
 	return &PostgresTeamStore{
 		db: db,
@@ -55,12 +85,12 @@ func (q *PostgresTeamStore) FindTeamMemberByTeamAndUserId(ctx context.Context, t
 	return teamMember, nil
 }
 
-// UpdateTeamMemberUpdatedAt implements TeamQueryer.
-func (q *PostgresTeamStore) UpdateTeamMemberUpdatedAt(ctx context.Context, teamId, userId uuid.UUID) error {
+// UpdateTeamMemberSelectedAt implements TeamQueryer.
+func (q *PostgresTeamStore) UpdateTeamMemberSelectedAt(ctx context.Context, teamId, userId uuid.UUID) error {
 	qquery := squirrel.Update("team_members").
 		Where("team_id = ?", teamId).
 		Where("user_id = ?", userId).
-		Set("updated_at", time.Now())
+		Set("last_selected_at", time.Now())
 
 	err := database.ExecWithBuilder(ctx, q.db, qquery.PlaceholderFormat(squirrel.Dollar))
 	if err != nil {
@@ -80,7 +110,7 @@ func (q *PostgresTeamStore) FindLatestTeamMemberByUserID(ctx context.Context, us
 			},
 		},
 		&map[string]string{
-			"updated_at": "DESC",
+			"last_selected_at": "DESC",
 		},
 		types.Pointer(1),
 		nil,
@@ -135,7 +165,7 @@ func (q *PostgresTeamStore) FindTeamMembersByUserID(ctx context.Context, userId 
 			},
 		},
 		&map[string]string{
-			"updated_at": "DESC",
+			"last_selected_at": "DESC",
 		},
 		nil,
 		nil,
@@ -173,20 +203,6 @@ func (s *PostgresTeamStore) UpsertTeamCustomerStripeId(ctx context.Context, team
 	return database.ExecWithBuilder(ctx, dbx, q.PlaceholderFormat(squirrel.Dollar))
 }
 
-// func (q *PostgresTeamStore) CreateTeamFromUser(ctx context.Context, user *models.User) (*models.Team, error) {
-// 	team, err := q.CreateTeam(ctx, user.Email, nil)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	teamMember, err := q.CreateTeamMember(ctx, team.ID, user.ID, models.TeamMemberRoleAdmin)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	team.Members = []*models.TeamMember{teamMember}
-// 	teamMember.Team = team
-// 	return team, nil
-// }
-
 func (q *PostgresTeamStore) CreateTeam(ctx context.Context, name string, stripeCustomerId *string) (*models.Team, error) {
 	teamModel := &models.Team{
 		Name:             name,
@@ -208,6 +224,7 @@ func (q *PostgresTeamStore) CreateTeamMember(ctx context.Context, teamId, userId
 		TeamID: teamId,
 		UserID: &userId,
 		Role:   role,
+		Active: true,
 	}
 	return crudrepo.TeamMember.PostOne(
 		ctx,

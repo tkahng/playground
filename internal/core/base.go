@@ -27,6 +27,11 @@ type BaseApp struct {
 	fs       *filesystem.FileSystem
 	mail     mailer.Mailer
 	auth     services.AuthService
+	team     services.TeamService
+}
+
+func (app *BaseApp) Team() services.TeamService {
+	return app.team
 }
 
 // Checker implements App.

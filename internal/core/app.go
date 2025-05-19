@@ -22,4 +22,6 @@ type App interface {
 	Payment() services.PaymentService
 
 	Auth() services.AuthService
+
+	Team() services.TeamService
 }

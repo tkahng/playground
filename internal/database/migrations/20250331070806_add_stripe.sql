@@ -92,6 +92,7 @@ create table public.stripe_subscriptions (
     status public.stripe_subscription_status not null,
     -- Set of key-value pairs, used to store additional information about the object in a structured format.
     metadata jsonb not null,
+    item_id text not null,
     price_id text not null references public.stripe_prices,
     -- item_id text not null,
     -- Quantity multiplied by the unit amount of the price creates the amount of the subscription. Can be used to charge multiple seats.

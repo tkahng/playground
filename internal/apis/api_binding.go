@@ -41,6 +41,8 @@ func BindApis(api huma.API, app core.App) {
 	})
 
 	checkTaskOwnerMiddleware := CheckTaskOwnerMiddleware(api, app)
+	latestTeamMiddleware := LatestTeamMiddleware(api, app)
+	// requireAdminTeamMemberMiddleware := RequireTeamMemberRolesMiddleware(api, models.TeamMemberRoleAdmin)
 
 	//  public list of permissions -----------------------------------------------------------
 	huma.Register(
@@ -596,6 +598,7 @@ func BindApis(api huma.API, app core.App) {
 	)
 
 	// stripe routes -------------------------------------------------------------------------------------------------
+
 	stripeGroup := huma.NewGroup(api, "/stripe")
 	// stripe my subscriptions
 	huma.Register(
@@ -611,6 +614,9 @@ func BindApis(api huma.API, app core.App) {
 			Security: []map[string][]string{{
 				shared.BearerAuthSecurityKey: {},
 			}},
+			Middlewares: huma.Middlewares{
+				latestTeamMiddleware,
+			},
 		},
 		appApi.MyStripeSubscriptions,
 	)
@@ -654,6 +660,9 @@ func BindApis(api huma.API, app core.App) {
 			Tags:        []string{"Payment", "Billing Portal", "Stripe"},
 			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
 			Security:    []map[string][]string{{shared.BearerAuthSecurityKey: {}}},
+			Middlewares: huma.Middlewares{
+				latestTeamMiddleware,
+			},
 		},
 		appApi.StripeBillingPortal,
 	)
@@ -669,6 +678,9 @@ func BindApis(api huma.API, app core.App) {
 			Tags:        []string{"Payment", "Stripe", "Checkout Session"},
 			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
 			Security:    []map[string][]string{{shared.BearerAuthSecurityKey: {}}},
+			Middlewares: huma.Middlewares{
+				RequireTeamMemberRolesMiddleware(stripeGroup, models.TeamMemberRoleAdmin),
+			},
 		},
 		appApi.StripeCheckoutSession,
 	)
