@@ -68,12 +68,12 @@ type TeamInvitationStore interface {
 	) ([]*models.TeamInvitation, error)
 }
 
-type invitationService struct {
+type InnvitationService struct {
 	store TeamInvitationStore
 }
 
 // AcceptInvitation implements TeamInvitationService.
-func (i *invitationService) AcceptInvitation(ctx context.Context, invitationToken string, userId uuid.UUID) error {
+func (i *InnvitationService) AcceptInvitation(ctx context.Context, invitationToken string, userId uuid.UUID) error {
 	invite, err := i.store.FindInvitationByToken(ctx, invitationToken)
 	if err != nil {
 		return err
@@ -107,7 +107,7 @@ func (i *invitationService) AcceptInvitation(ctx context.Context, invitationToke
 }
 
 // CreateInvitation implements TeamInvitationService.
-func (i *invitationService) CreateInvitation(
+func (i *InnvitationService) CreateInvitation(
 	ctx context.Context,
 	teamId uuid.UUID,
 	userId uuid.UUID,
@@ -127,6 +127,9 @@ func (i *invitationService) CreateInvitation(
 	if err != nil {
 		return err
 	}
+	if member == nil {
+		return fmt.Errorf("user is not a member of the team")
+	}
 	invitation.InviterMemberID = member.ID
 	invitation.ExpiresAt = time.Now().Add(24 * time.Hour)
 	invitation.CreatedAt = time.Now()
@@ -136,7 +139,7 @@ func (i *invitationService) CreateInvitation(
 }
 
 // FindInvitations implements TeamInvitationService.
-func (i *invitationService) FindInvitations(ctx context.Context, teamId uuid.UUID) ([]*models.TeamInvitation, error) {
+func (i *InnvitationService) FindInvitations(ctx context.Context, teamId uuid.UUID) ([]*models.TeamInvitation, error) {
 	invitations, err := i.store.FindTeamInvitations(ctx, teamId)
 	if err != nil {
 		return nil, err
@@ -145,7 +148,7 @@ func (i *invitationService) FindInvitations(ctx context.Context, teamId uuid.UUI
 }
 
 // RejectInvitation implements TeamInvitationService.
-func (i *invitationService) RejectInvitation(ctx context.Context, invitationToken string, userId uuid.UUID) error {
+func (i *InnvitationService) RejectInvitation(ctx context.Context, invitationToken string, userId uuid.UUID) error {
 	invite, err := i.store.FindInvitationByToken(ctx, invitationToken)
 	if err != nil {
 		return err
@@ -168,7 +171,7 @@ func (i *invitationService) RejectInvitation(ctx context.Context, invitationToke
 }
 
 func NewInvitationService(store TeamInvitationStore) TeamInvitationService {
-	return &invitationService{
+	return &InnvitationService{
 		store: store,
 	}
 }
