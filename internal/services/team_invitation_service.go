@@ -8,9 +8,9 @@ import (
 )
 
 type TeamInvitationService interface {
-	SendInvitationMail(
-		ctx context.Context,
-	)
+	// SendInvitationMail(
+	// 	ctx context.Context,
+	// )
 	CreateInvitation(
 		ctx context.Context,
 		teamId uuid.UUID,
@@ -35,10 +35,6 @@ type TeamInvitationService interface {
 }
 
 type TeamInvitationStore interface {
-	GetInvitationByID(
-		ctx context.Context,
-		invitationId uuid.UUID,
-	) (*models.TeamInvitation, error)
 	CreateInvitation(
 		ctx context.Context,
 		invitation *models.TeamInvitation,
@@ -51,6 +47,10 @@ type TeamInvitationStore interface {
 		ctx context.Context,
 		token string,
 	) (*models.TeamInvitation, error)
+	FindInvitationByID(
+		ctx context.Context,
+		invitationId uuid.UUID,
+	) (*models.TeamInvitation, error)
 	FindTeamInvitations(
 		ctx context.Context,
 		teamId uuid.UUID,
@@ -59,4 +59,30 @@ type TeamInvitationStore interface {
 
 type invitationService struct {
 	store TeamInvitationStore
+}
+
+// AcceptInvitation implements TeamInvitationService.
+func (i *invitationService) AcceptInvitation(ctx context.Context, invitationToken string, userId uuid.UUID) error {
+	panic("unimplemented")
+}
+
+// CreateInvitation implements TeamInvitationService.
+func (i *invitationService) CreateInvitation(ctx context.Context, teamId uuid.UUID, userId uuid.UUID, email string, role models.TeamMemberRole) error {
+	panic("unimplemented")
+}
+
+// FindInvitations implements TeamInvitationService.
+func (i *invitationService) FindInvitations(ctx context.Context, teamId uuid.UUID) ([]*models.TeamInvitation, error) {
+	panic("unimplemented")
+}
+
+// RejectInvitation implements TeamInvitationService.
+func (i *invitationService) RejectInvitation(ctx context.Context, invitationToken string, userId uuid.UUID) error {
+	panic("unimplemented")
+}
+
+func NewInvitationService(store TeamInvitationStore) TeamInvitationService {
+	return &invitationService{
+		store: store,
+	}
 }
