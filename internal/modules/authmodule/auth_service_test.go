@@ -16,8 +16,8 @@ import (
 
 func TestHandleRefreshToken(t *testing.T) {
 	ctx := context.Background()
-	mockStorage := new(mockAuthStorage)
-	mockToken := new(mockTokenManager)
+	mockStorage := new(mockAuthStore)
+	mockToken := new(mockJwtService)
 	app := &authService{
 		token:   mockToken,
 		authStore: mockStorage,
@@ -101,7 +101,7 @@ func TestHandleRefreshToken(t *testing.T) {
 }
 func TestResetPassword(t *testing.T) {
 	ctx := context.Background()
-	mockStorage := new(mockAuthStorage)
+	mockStorage := new(mockAuthStore)
 	passwordManager := NewPasswordService()
 	app := &authService{
 		authStore:  mockStorage,

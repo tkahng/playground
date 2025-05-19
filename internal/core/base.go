@@ -8,6 +8,7 @@ import (
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/queries"
 
+	"github.com/tkahng/authgo/internal/modules/authmodule"
 	"github.com/tkahng/authgo/internal/modules/paymentmodule"
 	"github.com/tkahng/authgo/internal/modules/rbacmodule"
 	"github.com/tkahng/authgo/internal/modules/teammodule"
@@ -26,6 +27,7 @@ type BaseApp struct {
 	logger   *slog.Logger
 	fs       *filesystem.FileSystem
 	mail     mailer.Mailer
+	auth     authmodule.AuthService
 }
 
 // Checker implements App.
@@ -34,8 +36,8 @@ func (a *BaseApp) NewChecker(ctx context.Context) ConstraintChecker {
 }
 
 // Auth implements App.
-func (a *BaseApp) Auth() Authenticator {
-	return NewAuthActions(a.db, a.mail, a.settings)
+func (a *BaseApp) Auth() authmodule.AuthService {
+	return a.auth
 }
 
 func (app *BaseApp) Fs() *filesystem.FileSystem {

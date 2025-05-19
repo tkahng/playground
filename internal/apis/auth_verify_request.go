@@ -5,6 +5,8 @@ import (
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/tkahng/authgo/internal/core"
+	"github.com/tkahng/authgo/internal/models"
+	"github.com/tkahng/authgo/internal/modules/authmodule"
 )
 
 type EmailVerificationInput struct {
@@ -24,7 +26,16 @@ func (api *Api) RequestVerification(ctx context.Context, input *struct{}) (*stru
 	if claims.User.EmailVerifiedAt != nil {
 		return nil, huma.Error404NotFound("Email already verified")
 	}
-	err := action.SendOtpEmail(core.EmailTypeVerify, ctx, &claims.User)
+	// user :=
+	err := action.SendOtpEmail(authmodule.EmailTypeVerify, ctx, &models.User{
+		ID:              claims.User.ID,
+		Email:           claims.User.Email,
+		EmailVerifiedAt: claims.User.EmailVerifiedAt,
+		Name:            claims.User.Name,
+		Image:           claims.User.Image,
+		CreatedAt:       claims.User.CreatedAt,
+		UpdatedAt:       claims.User.UpdatedAt,
+	})
 	if err != nil {
 		return nil, err
 	}

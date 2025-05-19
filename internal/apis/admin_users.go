@@ -109,7 +109,11 @@ func (api *Api) AdminUsersCreate(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	return &struct{ Body *shared.User }{Body: user}, nil
+	return &struct {
+		Body *shared.User
+	}{
+		Body: shared.FromCrudUser(user),
+	}, nil
 
 }
 
