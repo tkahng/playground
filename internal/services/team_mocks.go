@@ -297,6 +297,12 @@ func (m *mockTeamInvitationStore) CreateInvitation(ctx context.Context, invitati
 	return args.Error(0)
 }
 
+// UpdateInvitation implements TeamInvitationStore.
+func (m *mockTeamInvitationStore) UpdateInvitation(ctx context.Context, invitation *models.TeamInvitation) error {
+	args := m.Called(ctx, invitation)
+	return args.Error(0)
+}
+
 // FindInvitationByID implements TeamInvitationStore.
 func (m *mockTeamInvitationStore) FindInvitationByID(ctx context.Context, invitationId uuid.UUID) (*models.TeamInvitation, error) {
 	args := m.Called(ctx, invitationId)
@@ -317,11 +323,4 @@ func (m *mockTeamInvitationStore) FindInvitationByToken(ctx context.Context, tok
 	return invitation, args.Error(1)
 }
 
-// UpdateInvitation implements TeamInvitationStore.
-func (m *mockTeamInvitationStore) UpdateInvitation(ctx context.Context, invitation *models.TeamInvitation) error {
-	args := m.Called(ctx, invitation)
-	return args.Error(0)
-}
-
-// CreateInvitation implements TeamInvitationStore.
 var _ TeamInvitationStore = (*mockTeamInvitationStore)(nil)

@@ -1,0 +1,313 @@
+package services
+
+import (
+	"context"
+	"errors"
+	"testing"
+
+	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+	stripe "github.com/stripe/stripe-go/v82"
+	"github.com/tkahng/authgo/internal/conf"
+	"github.com/tkahng/authgo/internal/models"
+	"github.com/tkahng/authgo/internal/shared"
+)
+
+type mockPaymentStore struct{ mock.Mock }
+
+// CreateProductPermissions implements PaymentStore.
+func (m *mockPaymentStore) CreateProductPermissions(ctx context.Context, productId string, permissionIds ...uuid.UUID) error {
+	args := m.Called(ctx, productId, permissionIds)
+	return args.Error(0)
+}
+
+// FindLatestActiveSubscriptionWithPriceByTeamId implements PaymentStore.
+func (m *mockPaymentStore) FindLatestActiveSubscriptionWithPriceByTeamId(ctx context.Context, teamId uuid.UUID) (*models.SubscriptionWithPrice, error) {
+	args := m.Called(ctx, teamId)
+	if args.Get(0) != nil {
+		return args.Get(0).(*models.SubscriptionWithPrice), args.Error(1)
+	}
+	return nil, args.Error(1)
+}
+
+// FindPermissionByName implements PaymentStore.
+func (m *mockPaymentStore) FindPermissionByName(ctx context.Context, name string) (*models.Permission, error) {
+	args := m.Called(ctx, name)
+	if args.Get(0) != nil {
+		return args.Get(0).(*models.Permission), args.Error(1)
+	}
+	return nil, args.Error(1)
+}
+
+// FindProductByStripeId implements PaymentStore.
+func (m *mockPaymentStore) FindProductByStripeId(ctx context.Context, productId string) (*models.StripeProduct, error) {
+	args := m.Called(ctx, productId)
+	if args.Get(0) != nil {
+		return args.Get(0).(*models.StripeProduct), args.Error(1)
+	}
+	return nil, args.Error(1)
+}
+
+// FindSubscriptionWithPriceById implements PaymentStore.
+func (m *mockPaymentStore) FindSubscriptionWithPriceById(ctx context.Context, stripeId string) (*models.SubscriptionWithPrice, error) {
+	args := m.Called(ctx, stripeId)
+	if args.Get(0) != nil {
+		return args.Get(0).(*models.SubscriptionWithPrice), args.Error(1)
+	}
+	return nil, args.Error(1)
+}
+
+// FindTeamByStripeCustomerId implements PaymentStore.
+func (m *mockPaymentStore) FindTeamByStripeCustomerId(ctx context.Context, stripeCustomerId string) (*models.Team, error) {
+	args := m.Called(ctx, stripeCustomerId)
+	if args.Get(0) != nil {
+		return args.Get(0).(*models.Team), args.Error(1)
+	}
+	return nil, args.Error(1)
+}
+
+// FindValidPriceById implements PaymentStore.
+func (m *mockPaymentStore) FindValidPriceById(ctx context.Context, priceId string) (*models.StripePrice, error) {
+	args := m.Called(ctx, priceId)
+	if args.Get(0) != nil {
+		return args.Get(0).(*models.StripePrice), args.Error(1)
+	}
+	return nil, args.Error(1)
+}
+
+// IsFirstSubscription implements PaymentStore.
+func (m *mockPaymentStore) IsFirstSubscription(ctx context.Context, teamId uuid.UUID) (bool, error) {
+	args := m.Called(ctx, teamId)
+	return args.Get(0).(bool), args.Error(1)
+}
+
+// ListPrices implements PaymentStore.
+func (m *mockPaymentStore) ListPrices(ctx context.Context, input *shared.StripePriceListParams) ([]*models.StripePrice, error) {
+	args := m.Called(ctx, input)
+	if args.Get(0) != nil {
+		return args.Get(0).([]*models.StripePrice), args.Error(1)
+	}
+	return nil, args.Error(1)
+}
+
+// ListProducts implements PaymentStore.
+func (m *mockPaymentStore) ListProducts(ctx context.Context, input *shared.StripeProductListParams) ([]*models.StripeProduct, error) {
+	args := m.Called(ctx, input)
+	if args.Get(0) != nil {
+		return args.Get(0).([]*models.StripeProduct), args.Error(1)
+	}
+	return nil, args.Error(1)
+}
+
+// UpsertPrice implements PaymentStore.
+func (m *mockPaymentStore) UpsertPrice(ctx context.Context, price *models.StripePrice) error {
+	args := m.Called(ctx, price)
+	return args.Error(0)
+}
+
+// UpsertPriceFromStripe implements PaymentStore.
+func (m *mockPaymentStore) UpsertPriceFromStripe(ctx context.Context, price *stripe.Price) error {
+	args := m.Called(ctx, price)
+	return args.Error(0)
+}
+
+// UpsertProduct implements PaymentStore.
+func (m *mockPaymentStore) UpsertProduct(ctx context.Context, product *models.StripeProduct) error {
+	args := m.Called(ctx, product)
+	return args.Error(0)
+}
+
+// UpsertProductFromStripe implements PaymentStore.
+func (m *mockPaymentStore) UpsertProductFromStripe(ctx context.Context, product *stripe.Product) error {
+	args := m.Called(ctx, product)
+	return args.Error(0)
+}
+
+// UpsertSubscription implements PaymentStore.
+func (m *mockPaymentStore) UpsertSubscription(ctx context.Context, sub *models.StripeSubscription) error {
+	args := m.Called(ctx, sub)
+	return args.Error(0)
+}
+
+// UpsertSubscriptionFromStripe implements PaymentStore.
+func (m *mockPaymentStore) UpsertSubscriptionFromStripe(ctx context.Context, sub *stripe.Subscription, userId uuid.UUID) error {
+	args := m.Called(ctx, sub, userId)
+	return args.Error(0)
+}
+
+// UpsertTeamCustomerStripeId implements PaymentStore.
+func (m *mockPaymentStore) UpsertTeamCustomerStripeId(ctx context.Context, teamId uuid.UUID, stripeCustomerId *string) error {
+	args := m.Called(ctx, teamId, stripeCustomerId)
+	return args.Error(0)
+}
+
+var _ PaymentStore = (*mockPaymentStore)(nil)
+
+type mockPaymentClient struct{ mock.Mock }
+
+// Config implements PaymentClient.
+func (m *mockPaymentClient) Config() *conf.StripeConfig {
+	args := m.Called()
+	if args.Get(0) != nil {
+		return args.Get(0).(*conf.StripeConfig)
+	}
+	return nil
+}
+
+// CreateBillingPortalSession implements PaymentClient.
+func (m *mockPaymentClient) CreateBillingPortalSession(customerId string, configurationId string) (*stripe.BillingPortalSession, error) {
+	args := m.Called(customerId, configurationId)
+	if args.Get(0) != nil {
+		return args.Get(0).(*stripe.BillingPortalSession), args.Error(1)
+	}
+	return nil, args.Error(1)
+}
+
+// CreateCheckoutSession implements PaymentClient.
+func (m *mockPaymentClient) CreateCheckoutSession(customerId string, priceId string, quantity int64, trialDays *int64) (*stripe.CheckoutSession, error) {
+	args := m.Called(customerId, priceId, quantity, trialDays)
+	if args.Get(0) != nil {
+		return args.Get(0).(*stripe.CheckoutSession), args.Error(1)
+	}
+	return nil, args.Error(1)
+}
+
+// CreateCustomer implements PaymentClient.
+func (m *mockPaymentClient) CreateCustomer(email string, name string) (*stripe.Customer, error) {
+	args := m.Called(email, name)
+	if args.Get(0) != nil {
+		return args.Get(0).(*stripe.Customer), args.Error(1)
+	}
+	return nil, args.Error(1)
+}
+
+// CreatePortalConfiguration implements PaymentClient.
+func (m *mockPaymentClient) CreatePortalConfiguration(input ...*stripe.BillingPortalConfigurationFeaturesSubscriptionUpdateProductParams) (string, error) {
+	args := m.Called(input)
+	return args.String(0), args.Error(1)
+}
+
+// FindAllPrices implements PaymentClient.
+func (m *mockPaymentClient) FindAllPrices() ([]*stripe.Price, error) {
+	args := m.Called()
+	if args.Get(0) != nil {
+		return args.Get(0).([]*stripe.Price), args.Error(1)
+	}
+	return nil, args.Error(1)
+}
+
+// FindAllProducts implements PaymentClient.
+func (m *mockPaymentClient) FindAllProducts() ([]*stripe.Product, error) {
+	args := m.Called()
+	if args.Get(0) != nil {
+		return args.Get(0).([]*stripe.Product), args.Error(1)
+	}
+	return nil, args.Error(1)
+}
+
+// FindCheckoutSessionByStripeId implements PaymentClient.
+func (m *mockPaymentClient) FindCheckoutSessionByStripeId(stripeId string) (*stripe.CheckoutSession, error) {
+	args := m.Called(stripeId)
+	if args.Get(0) != nil {
+		return args.Get(0).(*stripe.CheckoutSession), args.Error(1)
+	}
+	return nil, args.Error(1)
+}
+
+// FindOrCreateCustomer implements PaymentClient.
+func (m *mockPaymentClient) FindOrCreateCustomer(email string, name string) (*stripe.Customer, error) {
+	args := m.Called(email, name)
+	if args.Get(0) != nil {
+		return args.Get(0).(*stripe.Customer), args.Error(1)
+	}
+	return nil, args.Error(1)
+}
+
+// FindSubscriptionByStripeId implements PaymentClient.
+func (m *mockPaymentClient) FindSubscriptionByStripeId(stripeId string) (*stripe.Subscription, error) {
+	args := m.Called(stripeId)
+	if args.Get(0) != nil {
+		return args.Get(0).(*stripe.Subscription), args.Error(1)
+	}
+	return nil, args.Error(1)
+}
+
+// UpdateCustomer implements PaymentClient.
+func (m *mockPaymentClient) UpdateCustomer(customerId string, params *stripe.CustomerParams) (*stripe.Customer, error) {
+	args := m.Called(customerId, params)
+	if args.Get(0) != nil {
+		return args.Get(0).(*stripe.Customer), args.Error(1)
+	}
+	return nil, args.Error(1)
+}
+
+// UpdateItemQuantity implements PaymentClient.
+func (m *mockPaymentClient) UpdateItemQuantity(itemId string, priceId string, count int64) (*stripe.SubscriptionItem, error) {
+	args := m.Called(itemId, priceId, count)
+	if args.Get(0) != nil {
+		return args.Get(0).(*stripe.SubscriptionItem), args.Error(1)
+	}
+	return nil, args.Error(1)
+}
+
+var _ PaymentClient = (*mockPaymentClient)(nil)
+
+func (m *mockPaymentStore) FindLatestActiveSubscriptionByTeamId(ctx context.Context, teamId uuid.UUID) (*models.StripeSubscription, error) {
+	args := m.Called(ctx, teamId)
+	if args.Get(0) != nil {
+		return args.Get(0).(*models.StripeSubscription), args.Error(1)
+	}
+	return nil, args.Error(1)
+}
+func (m *mockPaymentStore) CountTeamMembers(ctx context.Context, teamId uuid.UUID) (int64, error) {
+	args := m.Called(ctx, teamId)
+	return args.Get(0).(int64), args.Error(1)
+}
+
+// ...other methods can be added as needed...
+
+// ...other methods can be added as needed...
+
+func TestStripeService_VerifyAndUpdateTeamSubscriptionQuantity(t *testing.T) {
+	ctx := context.Background()
+	teamId := uuid.New()
+	store := new(mockPaymentStore)
+	client := new(mockPaymentClient)
+	sub := &models.StripeSubscription{ItemID: "item1", PriceID: "price1", Quantity: 2}
+
+	service := &StripeService{paymentStore: store, client: client}
+
+	t.Run("updates quantity if different", func(t *testing.T) {
+		store.On("FindLatestActiveSubscriptionByTeamId", ctx, teamId).Return(sub, nil)
+		store.On("CountTeamMembers", ctx, teamId).Return(int64(3), nil)
+		client.On("UpdateItemQuantity", sub.ItemID, sub.PriceID, int64(3)).Return(nil, nil)
+		err := service.VerifyAndUpdateTeamSubscriptionQuantity(ctx, teamId)
+		assert.NoError(t, err)
+		store.AssertExpectations(t)
+		client.AssertExpectations(t)
+	})
+
+	t.Run("no update if quantity matches", func(t *testing.T) {
+		store.On("FindLatestActiveSubscriptionByTeamId", ctx, teamId).Return(sub, nil)
+		store.On("CountTeamMembers", ctx, teamId).Return(int64(2), nil)
+		err := service.VerifyAndUpdateTeamSubscriptionQuantity(ctx, teamId)
+		assert.NoError(t, err)
+		store.AssertExpectations(t)
+	})
+
+	t.Run("returns error if no subscription", func(t *testing.T) {
+		store.On("FindLatestActiveSubscriptionByTeamId", ctx, teamId).Return(nil, nil)
+		err := service.VerifyAndUpdateTeamSubscriptionQuantity(ctx, teamId)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "no subscription")
+		store.AssertExpectations(t)
+	})
+
+	t.Run("returns error if store fails", func(t *testing.T) {
+		store.On("FindLatestActiveSubscriptionByTeamId", ctx, teamId).Return(nil, errors.New("db error"))
+		err := service.VerifyAndUpdateTeamSubscriptionQuantity(ctx, teamId)
+		assert.Error(t, err)
+		store.AssertExpectations(t)
+	})
+}
