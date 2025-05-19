@@ -24,6 +24,11 @@ const DefaultInviteMail = `<h2>You have been invited</h2>
 <p><a href="{{ .ConfirmationURL }}">Accept the invite</a></p>
 <p>Alternatively, enter the code: {{ .Token }}</p>`
 
+const DefaultTeamInviteMail = `<h2>You have been invited</h2>
+<p>You have been invited to joint team {{ .TeamName }} on {{ .SiteURL }}. Follow this link to accept the invite:</p>
+<p><a href="{{ .ConfirmationURL }}">Accept the invite</a></p>
+<p>Alternatively, enter the code: {{ .Token }}</p>`
+
 const DefaultConfirmationMail = `<h2>Confirm your email</h2>
 
 <p>Follow this link to confirm your email:</p>

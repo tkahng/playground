@@ -17,6 +17,26 @@ type PostgresTeamStore struct {
 	db database.Dbx
 }
 
+// DeleteTeamMember implements services.TeamStore.
+func (s *PostgresTeamStore) DeleteTeamMember(ctx context.Context, teamId uuid.UUID, userId uuid.UUID) error {
+	_, err := crudrepo.TeamMember.Delete(
+		ctx,
+		s.db,
+		&map[string]any{
+			"team_id": map[string]any{
+				"_eq": teamId.String(),
+			},
+			"user_id": map[string]any{
+				"_eq": userId.String(),
+			},
+		},
+	)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // CheckTeamSlug implements services.TeamStore.
 func (s *PostgresTeamStore) CheckTeamSlug(ctx context.Context, slug string) (bool, error) {
 	team, err := crudrepo.Team.GetOne(
@@ -73,6 +93,7 @@ func NewPostgresTeamStore(db database.Dbx) *PostgresTeamStore {
 	}
 }
 
+// var _ services.TeamInvitationStore = &PostgresTeamStore{}
 var _ services.TeamStore = &PostgresTeamStore{}
 
 func (s *PostgresTeamStore) FindTeamByStripeCustomerId(ctx context.Context, stripeCustomerId string) (*models.Team, error) {

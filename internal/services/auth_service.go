@@ -671,6 +671,8 @@ const (
 	EmailTypeVerify                EmailType = "verify"
 	EmailTypeConfirmPasswordReset  EmailType = "confirm-password-reset"
 	EmailTypeSecurityPasswordReset EmailType = "security-password-reset"
+	EmailTypeTeamInvite            EmailType = "team-invite"
+	EmailTypeInvite                EmailType = "invite"
 )
 
 type SendMailParams struct {

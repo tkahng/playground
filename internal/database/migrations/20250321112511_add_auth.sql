@@ -14,6 +14,7 @@ create type public.token_types as enum (
     'access_token',
     'recovery_token',
     'invite_token',
+    'team_invite_token',
     'reauthentication_token',
     'refresh_token',
     'verification_token',

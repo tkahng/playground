@@ -14,13 +14,13 @@ type TeamService interface {
 	GetActiveTeam(ctx context.Context, userId uuid.UUID) (*models.TeamMember, error)
 	FindTeamInfo(ctx context.Context, teamId, userId uuid.UUID) (*shared.TeamInfo, error)
 	FindLatestTeamInfo(ctx context.Context, userId uuid.UUID) (*shared.TeamInfo, error)
+	AddMember(ctx context.Context, teamId, userId uuid.UUID, role models.TeamMemberRole) (*models.TeamMember, error)
+	RemoveMember(ctx context.Context, teamId, userId uuid.UUID) error
 }
 
 type TeamStore interface {
 	CountTeamMembers(ctx context.Context, teamId uuid.UUID) (int64, error)
-
 	FindTeamByStripeCustomerId(ctx context.Context, stripeCustomerId string) (*models.Team, error)
-	// CreateTeamFromUser(ctx context.Context, user *models.User) (*models.Team, error)
 	FindTeamByID(ctx context.Context, teamId uuid.UUID) (*models.Team, error)
 	CreateTeam(ctx context.Context, name string, slug string, stripeCustomerId *string) (*models.Team, error)
 	CheckTeamSlug(ctx context.Context, slug string) (bool, error)
@@ -30,12 +30,31 @@ type TeamStore interface {
 	FindTeamMemberByTeamAndUserId(ctx context.Context, teamId uuid.UUID, userId uuid.UUID) (*models.TeamMember, error)
 	FindLatestTeamMemberByUserID(ctx context.Context, userId uuid.UUID) (*models.TeamMember, error)
 	CreateTeamMember(ctx context.Context, teamId, userId uuid.UUID, role models.TeamMemberRole) (*models.TeamMember, error)
+	DeleteTeamMember(ctx context.Context, teamId, userId uuid.UUID) error
 	UpdateTeamMember(ctx context.Context, member *models.TeamMember) (*models.TeamMember, error)
 	UpdateTeamMemberSelectedAt(ctx context.Context, teamId, userId uuid.UUID) error
 }
 
 type teamService struct {
 	teamStore TeamStore
+}
+
+// AddMember implements TeamService.
+func (t *teamService) AddMember(ctx context.Context, teamId uuid.UUID, userId uuid.UUID, role models.TeamMemberRole) (*models.TeamMember, error) {
+	member, err := t.teamStore.CreateTeamMember(ctx, teamId, userId, role)
+	if err != nil {
+		return nil, err
+	}
+	return member, nil
+}
+
+// RemoveMember implements TeamService.
+func (t *teamService) RemoveMember(ctx context.Context, teamId uuid.UUID, userId uuid.UUID) error {
+	err := t.teamStore.DeleteTeamMember(ctx, teamId, userId)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (t *teamService) Store() TeamStore {
