@@ -46,7 +46,7 @@ func TestTeamService_AddMember_Error(t *testing.T) {
 	role := models.TeamMemberRoleMember
 
 	expectedErr := errors.New("failed to create member")
-	mockStore.On("CreateTeamMember", ctx, teamID, userID, role).Return(&models.TeamMember{}, expectedErr)
+	mockStore.On("CreateTeamMember", ctx, teamID, userID, role).Return(nil, expectedErr)
 
 	member, err := service.AddMember(ctx, teamID, userID, role)
 	assert.Nil(t, member)

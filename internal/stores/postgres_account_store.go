@@ -76,3 +76,12 @@ func (u *PostgresAccountStore) UpdateUserAccount(ctx context.Context, account *m
 	}
 	return nil
 }
+
+func (u *PostgresAccountStore) CreateUserAccount(ctx context.Context, account *models.UserAccount) (*models.UserAccount, error) {
+
+	createdAccount, err := crudrepo.UserAccount.PostOne(ctx, u.db, account)
+	if err != nil {
+		return nil, fmt.Errorf("error creating user account: %w", err)
+	}
+	return createdAccount, nil
+}

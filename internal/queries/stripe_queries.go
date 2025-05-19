@@ -189,6 +189,7 @@ func UpsertSubscription(ctx context.Context, dbx database.Dbx, subscription *mod
 			"team_id",
 			"status",
 			"metadata",
+			"item_id",
 			"price_id",
 			"quantity",
 			"cancel_at_period_end",
@@ -205,6 +206,7 @@ func UpsertSubscription(ctx context.Context, dbx database.Dbx, subscription *mod
 		subscription.TeamID,
 		subscription.Status,
 		subscription.Metadata,
+		subscription.ItemID,
 		subscription.PriceID,
 		subscription.Quantity,
 		subscription.CancelAtPeriodEnd,
@@ -218,9 +220,10 @@ func UpsertSubscription(ctx context.Context, dbx database.Dbx, subscription *mod
 		subscription.TrialEnd,
 	).Suffix(
 		"ON CONFLICT (id) DO UPDATE SET " +
-			"user_id = EXCLUDED.user_id," +
+			"team_id = EXCLUDED.team_id," +
 			"status = EXCLUDED.status," +
 			"metadata = EXCLUDED.metadata," +
+			"item_id = EXCLUDED.item_id," +
 			"price_id = EXCLUDED.price_id," +
 			"quantity = EXCLUDED.quantity," +
 			"cancel_at_period_end = EXCLUDED.cancel_at_period_end," +
@@ -254,6 +257,7 @@ func UpsertSubscriptionFromStripe(ctx context.Context, exec database.Dbx, sub *s
 		TeamID:             teamId,
 		Status:             models.StripeSubscriptionStatus(status),
 		Metadata:           sub.Metadata,
+		ItemID:             item.ID,
 		PriceID:            item.Price.ID,
 		Quantity:           item.Quantity,
 		CancelAtPeriodEnd:  sub.CancelAtPeriodEnd,
@@ -285,9 +289,10 @@ func FindSubscriptionById(ctx context.Context, dbx database.Dbx, stripeId string
 const (
 	GetSubscriptionWithPriceByIdQuery = `
 SELECT ss.id AS "subscription.id",
-        ss.user_id AS "subscription.user_id",
+        ss.team_id AS "subscription.team_id",
         ss.status AS "subscription.status",
         ss.metadata AS "subscription.metadata",
+		ss.item_id AS "subscription.item_id",
         ss.price_id AS "subscription.price_id",
         ss.quantity AS "subscription.quantity",
         ss.cancel_at_period_end AS "subscription.cancel_at_period_end",
@@ -374,9 +379,10 @@ func FindLatestActiveSubscriptionByTeamId(ctx context.Context, dbx database.Dbx,
 const (
 	GetLatestActiveSubscriptionWithPriceByIdQuery = `
 SELECT ss.id AS "subscription.id",
-        ss.user_id AS "subscription.user_id",
+        ss.team_id AS "subscription.team_id",
         ss.status AS "subscription.status",
-        ss.metadata AS "subscription.metadata",
+        ss.metadata AS "subscription.metadata",	
+		ss.item_id AS "subscription.item_id",
         ss.price_id AS "subscription.price_id",
         ss.quantity AS "subscription.quantity",
         ss.cancel_at_period_end AS "subscription.cancel_at_period_end",
@@ -414,7 +420,7 @@ SELECT ss.id AS "subscription.id",
 FROM public.stripe_subscriptions ss
         JOIN public.stripe_prices sp ON ss.price_id = sp.id
         JOIN public.stripe_products p ON sp.product_id = p.id
-WHERE ss.user_id = $1
+WHERE ss.team_id = $1
         AND ss.status IN ('active', 'trialing')
 ORDER BY ss.updated_at DESC;
 		`

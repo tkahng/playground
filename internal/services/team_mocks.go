@@ -16,25 +16,41 @@ type mockTeamService struct {
 // AddMember implements TeamService.
 func (m *mockTeamService) AddMember(ctx context.Context, teamId uuid.UUID, userId uuid.UUID, role models.TeamMemberRole) (*models.TeamMember, error) {
 	args := m.Called(ctx, teamId, userId, role)
-	return args.Get(0).(*models.TeamMember), args.Error(1)
+	var member *models.TeamMember
+	if args.Get(0) != nil {
+		member = args.Get(0).(*models.TeamMember)
+	}
+	return member, args.Error(1)
 }
 
 // FindLatestTeamInfo implements TeamService.
 func (m *mockTeamService) FindLatestTeamInfo(ctx context.Context, userId uuid.UUID) (*shared.TeamInfo, error) {
 	args := m.Called(ctx, userId)
-	return args.Get(0).(*shared.TeamInfo), args.Error(1)
+	var info *shared.TeamInfo
+	if args.Get(0) != nil {
+		info = args.Get(0).(*shared.TeamInfo)
+	}
+	return info, args.Error(1)
 }
 
 // FindTeamInfo implements TeamService.
 func (m *mockTeamService) FindTeamInfo(ctx context.Context, teamId uuid.UUID, userId uuid.UUID) (*shared.TeamInfo, error) {
 	args := m.Called(ctx, teamId, userId)
-	return args.Get(0).(*shared.TeamInfo), args.Error(1)
+	var info *shared.TeamInfo
+	if args.Get(0) != nil {
+		info = args.Get(0).(*shared.TeamInfo)
+	}
+	return info, args.Error(1)
 }
 
 // GetActiveTeam implements TeamService.
 func (m *mockTeamService) GetActiveTeam(ctx context.Context, userId uuid.UUID) (*models.TeamMember, error) {
 	args := m.Called(ctx, userId)
-	return args.Get(0).(*models.TeamMember), args.Error(1)
+	var member *models.TeamMember
+	if args.Get(0) != nil {
+		member = args.Get(0).(*models.TeamMember)
+	}
+	return member, args.Error(1)
 }
 
 // RemoveMember implements TeamService.
@@ -46,7 +62,11 @@ func (m *mockTeamService) RemoveMember(ctx context.Context, teamId uuid.UUID, us
 // SetActiveTeam implements TeamService.
 func (m *mockTeamService) SetActiveTeam(ctx context.Context, userId uuid.UUID, teamId uuid.UUID) (*models.TeamMember, error) {
 	args := m.Called(ctx, userId, teamId)
-	return args.Get(0).(*models.TeamMember), args.Error(1)
+	var member *models.TeamMember
+	if args.Get(0) != nil {
+		member = args.Get(0).(*models.TeamMember)
+	}
+	return member, args.Error(1)
 }
 
 // Store implements TeamService.
@@ -70,19 +90,31 @@ func (m *mockTeamStore) CheckTeamSlug(ctx context.Context, slug string) (bool, e
 // CountTeamMembers implements TeamStore.
 func (m *mockTeamStore) CountTeamMembers(ctx context.Context, teamId uuid.UUID) (int64, error) {
 	args := m.Called(ctx, teamId)
-	return args.Get(0).(int64), args.Error(1)
+	var count int64
+	if args.Get(0) != nil {
+		count = args.Get(0).(int64)
+	}
+	return count, args.Error(1)
 }
 
 // CreateTeam implements TeamStore.
 func (m *mockTeamStore) CreateTeam(ctx context.Context, name string, slug string, stripeCustomerId *string) (*models.Team, error) {
 	args := m.Called(ctx, name, slug, stripeCustomerId)
-	return args.Get(0).(*models.Team), args.Error(1)
+	var team *models.Team
+	if args.Get(0) != nil {
+		team = args.Get(0).(*models.Team)
+	}
+	return team, args.Error(1)
 }
 
 // CreateTeamMember implements TeamStore.
 func (m *mockTeamStore) CreateTeamMember(ctx context.Context, teamId uuid.UUID, userId uuid.UUID, role models.TeamMemberRole) (*models.TeamMember, error) {
 	args := m.Called(ctx, teamId, userId, role)
-	return args.Get(0).(*models.TeamMember), args.Error(1)
+	var member *models.TeamMember
+	if args.Get(0) != nil {
+		member = args.Get(0).(*models.TeamMember)
+	}
+	return member, args.Error(1)
 }
 
 // DeleteTeam implements TeamStore.
@@ -99,45 +131,72 @@ func (m *mockTeamStore) DeleteTeamMember(ctx context.Context, teamId uuid.UUID, 
 
 // FindLatestTeamMemberByUserID implements TeamStore.
 func (m *mockTeamStore) FindLatestTeamMemberByUserID(ctx context.Context, userId uuid.UUID) (*models.TeamMember, error) {
-
 	args := m.Called(ctx, userId)
-	return args.Get(0).(*models.TeamMember), args.Error(1)
+	var member *models.TeamMember
+	if args.Get(0) != nil {
+		member = args.Get(0).(*models.TeamMember)
+	}
+	return member, args.Error(1)
 }
 
 // FindTeamByID implements TeamStore.
 func (m *mockTeamStore) FindTeamByID(ctx context.Context, teamId uuid.UUID) (*models.Team, error) {
 	args := m.Called(ctx, teamId)
-	return args.Get(0).(*models.Team), args.Error(1)
+	var team *models.Team
+	if args.Get(0) != nil {
+		team = args.Get(0).(*models.Team)
+	}
+	return team, args.Error(1)
 }
 
 // FindTeamByStripeCustomerId implements TeamStore.
 func (m *mockTeamStore) FindTeamByStripeCustomerId(ctx context.Context, stripeCustomerId string) (*models.Team, error) {
 	args := m.Called(ctx, stripeCustomerId)
-	return args.Get(0).(*models.Team), args.Error(1)
+	var team *models.Team
+	if args.Get(0) != nil {
+		team = args.Get(0).(*models.Team)
+	}
+	return team, args.Error(1)
 }
 
 // FindTeamMemberByTeamAndUserId implements TeamStore.
 func (m *mockTeamStore) FindTeamMemberByTeamAndUserId(ctx context.Context, teamId uuid.UUID, userId uuid.UUID) (*models.TeamMember, error) {
 	args := m.Called(ctx, teamId, userId)
-	return args.Get(0).(*models.TeamMember), args.Error(1)
+	var member *models.TeamMember
+	if args.Get(0) != nil {
+		member = args.Get(0).(*models.TeamMember)
+	}
+	return member, args.Error(1)
 }
 
 // FindTeamMembersByUserID implements TeamStore.
 func (m *mockTeamStore) FindTeamMembersByUserID(ctx context.Context, userId uuid.UUID) ([]*models.TeamMember, error) {
 	args := m.Called(ctx, userId)
-	return args.Get(0).([]*models.TeamMember), args.Error(1)
+	var members []*models.TeamMember
+	if args.Get(0) != nil {
+		members = args.Get(0).([]*models.TeamMember)
+	}
+	return members, args.Error(1)
 }
 
 // UpdateTeam implements TeamStore.
 func (m *mockTeamStore) UpdateTeam(ctx context.Context, teamId uuid.UUID, name string, stripeCustomerId *string) (*models.Team, error) {
 	args := m.Called(ctx, teamId, name, stripeCustomerId)
-	return args.Get(0).(*models.Team), args.Error(1)
+	var team *models.Team
+	if args.Get(0) != nil {
+		team = args.Get(0).(*models.Team)
+	}
+	return team, args.Error(1)
 }
 
 // UpdateTeamMember implements TeamStore.
 func (m *mockTeamStore) UpdateTeamMember(ctx context.Context, member *models.TeamMember) (*models.TeamMember, error) {
 	args := m.Called(ctx, member)
-	return args.Get(0).(*models.TeamMember), args.Error(1)
+	var updated *models.TeamMember
+	if args.Get(0) != nil {
+		updated = args.Get(0).(*models.TeamMember)
+	}
+	return updated, args.Error(1)
 }
 
 // UpdateTeamMemberSelectedAt implements TeamStore.
@@ -167,7 +226,11 @@ func (m *mockTeamInvitationService) CreateInvitation(ctx context.Context, teamId
 // FindInvitations implements TeamInvitationService.
 func (m *mockTeamInvitationService) FindInvitations(ctx context.Context, teamId uuid.UUID) ([]*models.TeamInvitation, error) {
 	args := m.Called(ctx, teamId)
-	return args.Get(0).([]*models.TeamInvitation), args.Error(1)
+	var invitations []*models.TeamInvitation
+	if args.Get(0) != nil {
+		invitations = args.Get(0).([]*models.TeamInvitation)
+	}
+	return invitations, args.Error(1)
 }
 
 // RejectInvitation implements TeamInvitationService.
@@ -185,7 +248,11 @@ type mockTeamInvitationStore struct {
 // CreateTeamMember implements TeamInvitationStore.
 func (m *mockTeamInvitationStore) CreateTeamMember(ctx context.Context, teamId uuid.UUID, userId uuid.UUID, role models.TeamMemberRole) (*models.TeamMember, error) {
 	args := m.Called(ctx, teamId, userId, role)
-	return args.Get(0).(*models.TeamMember), args.Error(1)
+	var member *models.TeamMember
+	if args.Get(0) != nil {
+		member = args.Get(0).(*models.TeamMember)
+	}
+	return member, args.Error(1)
 }
 
 // DeleteTeamMember implements TeamInvitationStore.
@@ -197,19 +264,31 @@ func (m *mockTeamInvitationStore) DeleteTeamMember(ctx context.Context, teamId u
 // FindTeamMemberByTeamAndUserId implements TeamInvitationStore.
 func (m *mockTeamInvitationStore) FindTeamMemberByTeamAndUserId(ctx context.Context, teamId uuid.UUID, userId uuid.UUID) (*models.TeamMember, error) {
 	args := m.Called(ctx, teamId, userId)
-	return args.Get(0).(*models.TeamMember), args.Error(1)
+	var member *models.TeamMember
+	if args.Get(0) != nil {
+		member = args.Get(0).(*models.TeamMember)
+	}
+	return member, args.Error(1)
 }
 
 // FindUserByID implements TeamInvitationStore.
 func (m *mockTeamInvitationStore) FindUserByID(ctx context.Context, userId uuid.UUID) (*models.User, error) {
 	args := m.Called(ctx, userId)
-	return args.Get(0).(*models.User), args.Error(1)
+	var user *models.User
+	if args.Get(0) != nil {
+		user = args.Get(0).(*models.User)
+	}
+	return user, args.Error(1)
 }
 
 // FindTeamInvitations implements TeamInvitationStore.
 func (m *mockTeamInvitationStore) FindTeamInvitations(ctx context.Context, teamId uuid.UUID) ([]*models.TeamInvitation, error) {
 	args := m.Called(ctx, teamId)
-	return args.Get(0).([]*models.TeamInvitation), args.Error(1)
+	var invitations []*models.TeamInvitation
+	if args.Get(0) != nil {
+		invitations = args.Get(0).([]*models.TeamInvitation)
+	}
+	return invitations, args.Error(1)
 }
 
 // CreateInvitation implements TeamInvitationStore.
@@ -221,13 +300,21 @@ func (m *mockTeamInvitationStore) CreateInvitation(ctx context.Context, invitati
 // FindInvitationByID implements TeamInvitationStore.
 func (m *mockTeamInvitationStore) FindInvitationByID(ctx context.Context, invitationId uuid.UUID) (*models.TeamInvitation, error) {
 	args := m.Called(ctx, invitationId)
-	return args.Get(0).(*models.TeamInvitation), args.Error(1)
+	var invitation *models.TeamInvitation
+	if args.Get(0) != nil {
+		invitation = args.Get(0).(*models.TeamInvitation)
+	}
+	return invitation, args.Error(1)
 }
 
 // FindInvitationByToken implements TeamInvitationStore.
 func (m *mockTeamInvitationStore) FindInvitationByToken(ctx context.Context, token string) (*models.TeamInvitation, error) {
 	args := m.Called(ctx, token)
-	return args.Get(0).(*models.TeamInvitation), args.Error(1)
+	var invitation *models.TeamInvitation
+	if args.Get(0) != nil {
+		invitation = args.Get(0).(*models.TeamInvitation)
+	}
+	return invitation, args.Error(1)
 }
 
 // UpdateInvitation implements TeamInvitationStore.

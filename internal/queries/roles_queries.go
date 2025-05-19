@@ -537,19 +537,19 @@ direct_permissions AS (
     WHERE up.user_id = $1
 ),
 -- Get permissions assigned through products
-product_permissions AS (
-	SELECT p.*,
-        NULL::uuid AS role_id,
-        sprice.product_id AS product_id,
-        NULL::uuid AS direct_assignment -- Null indicates not directly assigned
-FROM public.stripe_subscriptions ss
-        JOIN public.stripe_prices sprice ON ss.price_id = sprice.id
-        JOIN public.stripe_products sproduct ON sprice.product_id = sproduct.id
-        JOIN public.product_permissions pr ON sproduct.id = pr.product_id
-        JOIN public.permissions p ON pr.permission_id = p.id
-WHERE ss.user_id = $1
-        AND ss.status IN ('active', 'trialing')
-),
+-- product_permissions AS (
+-- 	SELECT p.*,
+--         NULL::uuid AS role_id,
+--         sprice.product_id AS product_id,
+--         NULL::uuid AS direct_assignment -- Null indicates not directly assigned
+-- FROM public.stripe_subscriptions ss
+--         JOIN public.stripe_prices sprice ON ss.price_id = sprice.id
+--         JOIN public.stripe_products sproduct ON sprice.product_id = sproduct.id
+--         JOIN public.product_permissions pr ON sproduct.id = pr.product_id
+--         JOIN public.permissions p ON pr.permission_id = p.id
+-- WHERE ss.user_id = $1
+--         AND ss.status IN ('active', 'trialing')
+-- ),
 -- Combine both sources
 combined_permissions AS (
     SELECT *
@@ -557,9 +557,9 @@ combined_permissions AS (
     UNION ALL
     SELECT *
     FROM direct_permissions
-	UNION ALL
-    SELECT *
-    FROM product_permissions
+	-- UNION ALL
+    -- SELECT *
+    -- FROM product_permissions
 ) -- Final result with aggregated role information
 SELECT p.id,
     p.name,
@@ -615,19 +615,19 @@ direct_permissions AS (
     WHERE up.user_id = $1
 ),
 -- Get permissions assigned through products
-product_permissions AS (
-	SELECT p.*,
-        NULL::uuid AS role_id,
-        sprice.product_id AS product_id,
-        NULL::uuid AS direct_assignment -- Null indicates not directly assigned
-FROM public.stripe_subscriptions ss
-        JOIN public.stripe_prices sprice ON ss.price_id = sprice.id
-        JOIN public.stripe_products sproduct ON sprice.product_id = sproduct.id
-        JOIN public.product_permissions pr ON sproduct.id = pr.product_id
-        JOIN public.permissions p ON pr.permission_id = p.id
-WHERE ss.user_id = $1
-        AND ss.status IN ('active', 'trialing')
-),
+-- product_permissions AS (
+-- 	SELECT p.*,
+--         NULL::uuid AS role_id,
+--         sprice.product_id AS product_id,
+--         NULL::uuid AS direct_assignment -- Null indicates not directly assigned
+-- FROM public.stripe_subscriptions ss
+--         JOIN public.stripe_prices sprice ON ss.price_id = sprice.id
+--         JOIN public.stripe_products sproduct ON sprice.product_id = sproduct.id
+--         JOIN public.product_permissions pr ON sproduct.id = pr.product_id
+--         JOIN public.permissions p ON pr.permission_id = p.id
+-- WHERE ss.user_id = $1
+--         AND ss.status IN ('active', 'trialing')
+-- ),
 -- Combine both sources
 combined_permissions AS (
     SELECT *
@@ -635,9 +635,9 @@ combined_permissions AS (
     UNION ALL
     SELECT *
     FROM direct_permissions
-    UNION ALL
-    SELECT *
-    FROM product_permissions
+    -- UNION ALL
+    -- SELECT *
+    -- FROM product_permissions
 ) -- Final result with aggregated role information
 SELECT COUNT(DISTINCT id)
 FROM combined_permissions
@@ -697,19 +697,19 @@ direct_permissions AS (
     WHERE up.user_id = $1
 ),
 -- Get permissions assigned through products
-product_permissions AS (
-	SELECT p.*,
-        NULL::uuid AS role_id,
-        sprice.product_id AS product_id,
-        NULL::uuid AS direct_assignment -- Null indicates not directly assigned
-FROM public.stripe_subscriptions ss
-        JOIN public.stripe_prices sprice ON ss.price_id = sprice.id
-        JOIN public.stripe_products sproduct ON sprice.product_id = sproduct.id
-        JOIN public.product_permissions pr ON sproduct.id = pr.product_id
-        JOIN public.permissions p ON pr.permission_id = p.id
-WHERE ss.user_id = $1
-        AND ss.status IN ('active', 'trialing')
-),
+-- product_permissions AS (
+-- 	SELECT p.*,
+--         NULL::uuid AS role_id,
+--         sprice.product_id AS product_id,
+--         NULL::uuid AS direct_assignment -- Null indicates not directly assigned
+-- FROM public.stripe_subscriptions ss
+--         JOIN public.stripe_prices sprice ON ss.price_id = sprice.id
+--         JOIN public.stripe_products sproduct ON sprice.product_id = sproduct.id
+--         JOIN public.product_permissions pr ON sproduct.id = pr.product_id
+--         JOIN public.permissions p ON pr.permission_id = p.id
+-- WHERE ss.user_id = $1
+--         AND ss.status IN ('active', 'trialing')
+-- ),
 -- Combine both sources
 combined_permissions AS (
     SELECT *
@@ -717,9 +717,9 @@ combined_permissions AS (
     UNION ALL
     SELECT *
     FROM direct_permissions
-	UNION ALL
-	SELECT *
-	FROM product_permissions
+	-- UNION ALL
+	-- SELECT *
+	-- FROM product_permissions
 ) -- Final result with aggregated role information
 SELECT p.id,
     p.name,
@@ -764,19 +764,19 @@ direct_permissions AS (
     WHERE up.user_id = $1
 ),
 -- Get permissions assigned through products
-product_permissions AS (
-	SELECT p.*,
-        NULL::uuid AS role_id,
-        sprice.product_id AS product_id,
-        NULL::uuid AS direct_assignment -- Null indicates not directly assigned
-FROM public.stripe_subscriptions ss
-        JOIN public.stripe_prices sprice ON ss.price_id = sprice.id
-        JOIN public.stripe_products sproduct ON sprice.product_id = sproduct.id
-        JOIN public.product_permissions pr ON sproduct.id = pr.product_id
-        JOIN public.permissions p ON pr.permission_id = p.id
-WHERE ss.user_id = $1
-        AND ss.status IN ('active', 'trialing')
-),
+-- product_permissions AS (
+-- 	SELECT p.*,
+--         NULL::uuid AS role_id,
+--         sprice.product_id AS product_id,
+--         NULL::uuid AS direct_assignment -- Null indicates not directly assigned
+-- FROM public.stripe_subscriptions ss
+--         JOIN public.stripe_prices sprice ON ss.price_id = sprice.id
+--         JOIN public.stripe_products sproduct ON sprice.product_id = sproduct.id
+--         JOIN public.product_permissions pr ON sproduct.id = pr.product_id
+--         JOIN public.permissions p ON pr.permission_id = p.id
+-- WHERE ss.user_id = $1
+--         AND ss.status IN ('active', 'trialing')
+-- ),
 -- Combine both sources
 combined_permissions AS (
     SELECT *
@@ -784,9 +784,9 @@ combined_permissions AS (
     UNION ALL
     SELECT *
     FROM direct_permissions
-    UNION ALL
-    SELECT *
-    FROM product_permissions
+    -- UNION ALL
+    -- SELECT *
+    -- FROM product_permissions
 ) -- Final result with aggregated role information
 SELECT COUNT(DISTINCT p.id)
 FROM public.permissions p

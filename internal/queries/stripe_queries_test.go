@@ -719,7 +719,7 @@ func TestUpsertSubscription(t *testing.T) {
 		if team == nil {
 			t.Fatalf("expected team to be created, got nil")
 		}
-		teamId := team.ID
+		teamId := team.TeamID
 		now := time.Now()
 
 		// Create test product and price first
@@ -845,7 +845,14 @@ func TestUpsertSubscriptionFromStripe(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to create user: %v", err)
 		}
-
+		team, err := queries.CreateTeamFromUser(ctx, dbxx, user)
+		if err != nil {
+			t.Fatalf("failed to create team from user: %v", err)
+		}
+		if team == nil {
+			t.Fatalf("expected team to be created, got nil")
+		}
+		teamId := team.TeamID
 		// Create test product and price first
 		product := &models.StripeProduct{
 			ID:       "prod_test123",
@@ -877,7 +884,7 @@ func TestUpsertSubscriptionFromStripe(t *testing.T) {
 			ctx    context.Context
 			dbx    database.Dbx
 			sub    *stripe.Subscription
-			userId uuid.UUID
+			teamId uuid.UUID
 		}
 		tests := []struct {
 			name    string
@@ -890,7 +897,7 @@ func TestUpsertSubscriptionFromStripe(t *testing.T) {
 					ctx:    ctx,
 					dbx:    dbxx,
 					sub:    nil,
-					userId: user.ID,
+					teamId: teamId,
 				},
 				wantErr: false,
 			},
@@ -904,7 +911,7 @@ func TestUpsertSubscriptionFromStripe(t *testing.T) {
 						Status: "active",
 						Items:  &stripe.SubscriptionItemList{},
 					},
-					userId: user.ID,
+					teamId: team.TeamID,
 				},
 				wantErr: true,
 			},
@@ -935,7 +942,7 @@ func TestUpsertSubscriptionFromStripe(t *testing.T) {
 							},
 						},
 					},
-					userId: user.ID,
+					teamId: team.TeamID,
 				},
 				wantErr: false,
 			},
@@ -943,7 +950,7 @@ func TestUpsertSubscriptionFromStripe(t *testing.T) {
 
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				err := queries.UpsertSubscriptionFromStripe(tt.args.ctx, tt.args.dbx, tt.args.sub, tt.args.userId)
+				err := queries.UpsertSubscriptionFromStripe(tt.args.ctx, tt.args.dbx, tt.args.sub, tt.args.teamId)
 				if (err != nil) != tt.wantErr {
 					t.Errorf("UpsertSubscriptionFromStripe() error = %v, wantErr %v", err, tt.wantErr)
 					return
@@ -994,7 +1001,7 @@ func TestFindSubscriptionById(t *testing.T) {
 		if team == nil {
 			t.Fatalf("expected team to be created, got nil")
 		}
-		teamId := team.ID
+		teamId := team.TeamID
 		product := &models.StripeProduct{
 			ID:       "prod_test123",
 			Active:   true,
@@ -1119,7 +1126,7 @@ func TestFindSubscriptionWithPriceById(t *testing.T) {
 		if team == nil {
 			t.Fatalf("expected team to be created, got nil")
 		}
-		teamId := team.ID
+		teamId := team.TeamID
 		product := &models.StripeProduct{
 			ID:       "prod_test123",
 			Active:   true,
@@ -1252,7 +1259,7 @@ func TestFindLatestActiveSubscriptionByUserId(t *testing.T) {
 		if team == nil {
 			t.Fatalf("expected team to be created, got nil")
 		}
-		teamId := team.ID
+		teamId := team.TeamID
 		// Create test product and price
 		product := &models.StripeProduct{
 			ID:       "prod_test123",
@@ -1395,7 +1402,7 @@ func TestFindLatestActiveSubscriptionWithPriceByUserId(t *testing.T) {
 		if team == nil {
 			t.Fatalf("expected team to be created, got nil")
 		}
-		teamId := team.ID
+		teamId := team.TeamID
 		// Create test product
 		product := &models.StripeProduct{
 			ID:       "prod_test123",
@@ -1530,7 +1537,7 @@ func TestIsFirstSubscription(t *testing.T) {
 		if team == nil {
 			t.Fatalf("expected team to be created, got nil")
 		}
-		teamId := team.ID
+		teamId := team.TeamID
 		// Create test product and price
 		product := &models.StripeProduct{
 			ID:       "prod_test123",

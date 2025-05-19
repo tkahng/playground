@@ -32,7 +32,7 @@ func TestConstraintCheckerService_CannotHaveValidSubscription(t *testing.T) {
 		if team == nil {
 			t.Fatalf("expected team to be created, got nil")
 		}
-		teamId := team.ID
+		teamId := team.TeamID
 		prods, err := seeders.CreateStripeProductPrices(ctx, tx, 1)
 		if err != nil {
 			t.Fatalf("failed to create product prices: %v", err)

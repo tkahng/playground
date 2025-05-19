@@ -4,7 +4,6 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
@@ -15,14 +14,26 @@ func TestPostgresAccountStore_CRUD(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+		userStore := NewPostgresUserStore(dbxx)
+		user, err := userStore.CreateUser(ctx, &models.User{
+			Email: "test@example.com",
+		})
+		assert.NoError(t, err)
+		userID := user.ID
 		store := NewPostgresUserAccountStore(dbxx)
-		userID := uuid.New()
 		account := &models.UserAccount{
 			UserID:            userID,
 			Provider:          models.ProvidersGoogle,
 			Type:              "oauth",
 			ProviderAccountID: "google-123",
 		}
+		// account, err := store.CreateUserAccount(ctx, &models.UserAccount{
+		// 	UserID:            userID,
+		// 	Provider:          models.ProvidersGoogle,
+		// 	Type:              "oauth",
+		// 	ProviderAccountID: "google-123",
+		// })
+		assert.NoError(t, err)
 
 		t.Run("LinkAccount", func(t *testing.T) {
 			err := store.LinkAccount(ctx, account)
@@ -37,6 +48,8 @@ func TestPostgresAccountStore_CRUD(t *testing.T) {
 		})
 
 		t.Run("UpdateUserAccount", func(t *testing.T) {
+			account, err = store.FindUserAccountByUserIdAndProvider(ctx, userID, models.ProvidersGoogle)
+			assert.NoError(t, err)
 			account.ProviderAccountID = "google-456"
 			err := store.UpdateUserAccount(ctx, account)
 			assert.NoError(t, err)

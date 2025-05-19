@@ -34,7 +34,7 @@ func TestGetUserTaskStats(t *testing.T) {
 			Name:     "Test Project",
 			Status:   shared.TaskProjectStatusDone,
 			TeamID:   member.TeamID,
-			MemberID: user.ID,
+			MemberID: member.ID,
 		})
 		if err != nil {
 			t.Fatalf("failed to create task project: %v", err)
@@ -43,7 +43,7 @@ func TestGetUserTaskStats(t *testing.T) {
 			Name:      "Test Task",
 			Status:    shared.TaskStatusDone,
 			TeamID:    member.TeamID,
-			CreatedBy: user.ID,
+			CreatedBy: member.ID,
 		})
 		if err != nil {
 			t.Fatalf("failed to create task: %v", err)

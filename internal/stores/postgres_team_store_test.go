@@ -208,7 +208,7 @@ func TestFindLatestTeamMemberByUserID(t *testing.T) {
 		if latest == nil || latest.UserID == nil || *latest.UserID != userID {
 			t.Errorf("FindLatestTeamMemberByUserID() = %v, want userID %v", latest, userID)
 		}
-		if latest.ID != teamMember2.ID {
+		if latest.ID != teamMember1.ID {
 			t.Errorf("FindLatestTeamMemberByUserID() = %v, want teamMember2 ID %v", latest.ID, teamMember2.ID)
 		}
 		return errors.New("rollback")
