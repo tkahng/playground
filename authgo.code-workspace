@@ -1,18 +1,6 @@
 {
   "folders": [
     {
-      "name": "modules",
-      "path": "internal/modules"
-    },
-    {
-      "name": "stores",
-      "path": "internal/stores"
-    },
-    {
-      "name": "services",
-      "path": "internal/services"
-    },
-    {
       "name": "internal",
       "path": "internal"
     },
