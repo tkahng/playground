@@ -75,6 +75,7 @@ func (app *BaseApp) NewMailClient() mailer.Mailer {
 }
 
 func InitBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
+	settings := cfg.ToSettings()
 	pool := database.CreateQueries(ctx, cfg.Db.DatabaseUrl)
 	fs, err := filesystem.NewFileSystem(cfg.StorageConfig)
 	if err != nil {
@@ -88,19 +89,31 @@ func InitBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 	}
 	paymentStore := stores.NewPostgresPaymentStore(pool)
 	paymentClient := payment.NewPaymentClient(cfg.StripeConfig)
-
-	stripeService := services.NewPaymentService(
+	paymentService := services.NewPaymentService(
 		paymentClient,
 		paymentStore,
 	)
+
+	tokenService := services.NewJwtService()
+	passwordService := services.NewPasswordService()
+	authStore := stores.NewPostgresAuthStore(pool)
+	authService := services.NewAuthService(
+		settings,
+		authStore,
+		mail,
+		tokenService,
+		passwordService,
+	)
+
 	app := &BaseApp{
 		fs:       fs,
 		db:       pool,
-		settings: cfg.ToSettings(),
+		settings: settings,
 		logger:   logger.GetDefaultLogger(slog.LevelInfo),
 		cfg:      &cfg,
 		mail:     mail,
-		payment:  stripeService,
+		auth:     authService,
+		payment:  paymentService,
 	}
 	return app
 }
