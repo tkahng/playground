@@ -19,7 +19,7 @@ func (p *PostgresInvitationStore) FindTeamInvitations(ctx context.Context, teamI
 		ctx,
 		p.db,
 		&map[string]any{
-			"team_id": &map[string]any{
+			"team_id": map[string]any{
 				"_eq": teamId.String(),
 			},
 		},
@@ -41,7 +41,7 @@ func (p *PostgresInvitationStore) FindInvitationByID(ctx context.Context, invita
 		ctx,
 		p.db,
 		&map[string]any{
-			"id": &map[string]any{
+			"id": map[string]any{
 				"_eq": invitationId.String(),
 			},
 		},
@@ -58,7 +58,7 @@ func (p *PostgresInvitationStore) FindInvitationByToken(ctx context.Context, tok
 		ctx,
 		p.db,
 		&map[string]any{
-			"token": &map[string]any{
+			"token": map[string]any{
 				"_eq": token,
 			},
 		},
@@ -85,7 +85,7 @@ func (p *PostgresInvitationStore) GetInvitationByID(ctx context.Context, invitat
 		ctx,
 		p.db,
 		&map[string]any{
-			"id": &map[string]any{
+			"id": map[string]any{
 				"_eq": invitationId.String(),
 			},
 		},
