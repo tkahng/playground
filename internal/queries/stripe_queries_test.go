@@ -1336,7 +1336,7 @@ func TestFindLatestActiveSubscriptionByUserId(t *testing.T) {
 				args: args{
 					ctx:    ctx,
 					dbx:    dbxx,
-					userId: user.ID,
+					userId: teamId,
 				},
 				want:    activeSub, // Should get latest active subscription
 				wantErr: false,
@@ -1463,7 +1463,7 @@ func TestFindLatestActiveSubscriptionWithPriceByUserId(t *testing.T) {
 				args: args{
 					ctx:    ctx,
 					dbx:    dbxx,
-					userId: user.ID,
+					userId: teamId,
 				},
 				wantErr: false,
 				check: func(t *testing.T, got *models.SubscriptionWithPrice, err error) {
@@ -1566,7 +1566,7 @@ func TestIsFirstSubscription(t *testing.T) {
 		type args struct {
 			ctx    context.Context
 			dbx    database.Dbx
-			userId uuid.UUID
+			teamId uuid.UUID
 		}
 		tests := []struct {
 			name    string
@@ -1580,7 +1580,7 @@ func TestIsFirstSubscription(t *testing.T) {
 				args: args{
 					ctx:    ctx,
 					dbx:    dbxx,
-					userId: user.ID,
+					teamId: teamId,
 				},
 				want:    false,
 				wantErr: false,
@@ -1590,7 +1590,7 @@ func TestIsFirstSubscription(t *testing.T) {
 				args: args{
 					ctx:    ctx,
 					dbx:    dbxx,
-					userId: user.ID,
+					teamId: teamId,
 				},
 				want:    true,
 				wantErr: false,
@@ -1615,7 +1615,7 @@ func TestIsFirstSubscription(t *testing.T) {
 				args: args{
 					ctx:    ctx,
 					dbx:    dbxx,
-					userId: uuid.New(),
+					teamId: uuid.New(),
 				},
 				want:    false,
 				wantErr: false,
@@ -1630,7 +1630,7 @@ func TestIsFirstSubscription(t *testing.T) {
 					}
 				}
 
-				got, err := queries.IsFirstSubscription(tt.args.ctx, tt.args.dbx, tt.args.userId)
+				got, err := queries.IsFirstSubscription(tt.args.ctx, tt.args.dbx, tt.args.teamId)
 				if (err != nil) != tt.wantErr {
 					t.Errorf("IsFirstSubscription() error = %v, wantErr %v", err, tt.wantErr)
 					return
