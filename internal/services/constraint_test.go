@@ -71,7 +71,7 @@ func TestConstraintCheckerService_CannotHaveValidSubscription(t *testing.T) {
 			{
 				name:    "valid user",
 				fields:  fields{db: tx, ctx: ctx},
-				args:    args{userId: user.ID},
+				args:    args{userId: teamId},
 				wantErr: true,
 			},
 		}
