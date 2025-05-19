@@ -9,6 +9,7 @@ import (
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/authgo/internal/tools/mapper"
 	"github.com/tkahng/authgo/internal/tools/types"
 
 	"github.com/stephenafamo/scan"
@@ -237,4 +238,28 @@ func (p *PostgresUserStore) CreateUser(ctx context.Context, user *models.User) (
 		p.db,
 		user,
 	)
+}
+
+func (p *PostgresUserStore) LoadUsersByUserIds(ctx context.Context, userIds ...uuid.UUID) ([]*models.User, error) {
+	users, err := crudrepo.User.Get(
+		ctx,
+		p.db,
+		&map[string]any{
+			"id": map[string]any{
+				"_in": userIds,
+			},
+		},
+		nil,
+		nil,
+		nil,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return mapper.MapToPointer(users, userIds, func(a *models.User) uuid.UUID {
+		if a == nil {
+			return uuid.UUID{}
+		}
+		return a.ID
+	}), nil
 }
