@@ -42,7 +42,7 @@ var _ AuthService = (*authService)(nil)
 type authService struct {
 	authStore AuthStore
 	mail      mailer.Mailer
-	token     TokenService
+	token     JwtService
 	password  PasswordService
 	options   *conf.AppOptions
 }
@@ -51,7 +51,7 @@ func NewAuthService(
 	opts *conf.AppOptions,
 	authStore AuthStore,
 	mail mailer.Mailer,
-	token TokenService,
+	token JwtService,
 	password PasswordService,
 ) AuthService {
 	authService := &authService{
@@ -649,6 +649,21 @@ var (
 		},
 	}
 )
+
+type EmailType string
+
+const (
+	EmailTypeVerify                EmailType = "verify"
+	EmailTypeConfirmPasswordReset  EmailType = "confirm-password-reset"
+	EmailTypeSecurityPasswordReset EmailType = "security-password-reset"
+)
+
+type SendMailParams struct {
+	Subject      string
+	Type         string
+	TemplatePath string
+	Template     string
+}
 
 // SendOtpEmail creates and saves a new otp token and sends it to the user's email
 func (app *authService) SendOtpEmail(emailType EmailType, ctx context.Context, user *models.User) error {

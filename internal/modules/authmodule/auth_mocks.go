@@ -8,7 +8,6 @@ import (
 	"github.com/tkahng/authgo/internal/conf"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/shared"
-	"github.com/tkahng/authgo/internal/tools/mailer"
 
 	"github.com/stretchr/testify/mock"
 )
@@ -17,7 +16,7 @@ type mockTokenManager struct {
 	mock.Mock
 }
 
-var _ TokenService = (*mockTokenManager)(nil)
+var _ JwtService = (*mockTokenManager)(nil)
 
 // CreateJwtToken implements TokenManager.
 func (m *mockTokenManager) CreateJwtToken(payload jwt.Claims, signingKey string) (string, error) {
@@ -142,20 +141,20 @@ func (m *mockPasswordManager) VerifyPassword(hashedPassword string, password str
 
 var _ PasswordService = (*mockPasswordManager)(nil)
 
-type mockEmailSender struct {
-	mock.Mock
-}
+// type mockEmailSender struct {
+// 	mock.Mock
+// }
 
-// Client implements AuthMailer.
-func (m *mockEmailSender) Client() mailer.Mailer {
-	args := m.Called()
-	return args.Get(0).(*mailer.LogMailer)
-}
+// // Client implements AuthMailer.
+// func (m *mockEmailSender) Client() mailer.Mailer {
+// 	args := m.Called()
+// 	return args.Get(0).(*mailer.LogMailer)
+// }
 
-// SendOtpEmail implements AuthMailer.
-func (m *mockEmailSender) SendOtpEmail(emailType EmailType, tokenHash string, payload *shared.OtpPayload) error {
-	args := m.Called(emailType, tokenHash, payload)
-	return args.Error(0)
-}
+// // SendOtpEmail implements AuthMailer.
+// func (m *mockEmailSender) SendOtpEmail(emailType EmailType, tokenHash string, payload *shared.OtpPayload) error {
+// 	args := m.Called(emailType, tokenHash, payload)
+// 	return args.Error(0)
+// }
 
-var _ AuthMailer = (*mockEmailSender)(nil)
+// var _ AuthMailer = (*mockEmailSender)(nil)

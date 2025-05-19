@@ -8,19 +8,19 @@ import (
 	"github.com/tkahng/authgo/internal/tools/security"
 )
 
-type TokenService interface {
+type JwtService interface {
 	ParseToken(token string, config conf.TokenOption, data any) error
 	CreateJwtToken(payload jwt.Claims, signingKey string) (string, error)
 }
 
-type tokenService struct {
+type jwtService struct {
 }
 
-func NewTokenService() TokenService {
-	return &tokenService{}
+func NewJwtService() JwtService {
+	return &jwtService{}
 }
 
-func (tm *tokenService) ParseToken(token string, config conf.TokenOption, data any) error {
+func (tm *jwtService) ParseToken(token string, config conf.TokenOption, data any) error {
 	claims, err := security.ParseJWTMapClaims(token, config.Secret)
 	if err != nil {
 		return fmt.Errorf("error while parsing token string: %w", err)
@@ -35,6 +35,6 @@ func (tm *tokenService) ParseToken(token string, config conf.TokenOption, data a
 	return fmt.Errorf("invalid token type")
 }
 
-func (tm *tokenService) CreateJwtToken(payload jwt.Claims, signingKey string) (string, error) {
+func (tm *jwtService) CreateJwtToken(payload jwt.Claims, signingKey string) (string, error) {
 	return security.NewJWTWithClaims(payload, signingKey)
 }
