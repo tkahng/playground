@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"net/url"
 	"time"
 
 	"github.com/alexedwards/argon2id"
@@ -13,6 +14,7 @@ import (
 	"github.com/tkahng/authgo/internal/conf"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/authgo/internal/tools/mailer"
 	"github.com/tkahng/authgo/internal/tools/routine"
 	"github.com/tkahng/authgo/internal/tools/security"
 )
@@ -39,7 +41,7 @@ var _ AuthService = (*authService)(nil)
 
 type authService struct {
 	authStore AuthStore
-	mail      AuthMailer
+	mail      mailer.Mailer
 	token     TokenService
 	password  PasswordService
 	options   *conf.AppOptions
@@ -48,7 +50,7 @@ type authService struct {
 func NewAuthService(
 	opts *conf.AppOptions,
 	authStore AuthStore,
-	mail AuthMailer,
+	mail mailer.Mailer,
 	token TokenService,
 	password PasswordService,
 ) AuthService {
@@ -628,26 +630,47 @@ func (app *authService) CheckUserCredentialsSecurity(ctx context.Context, user *
 	return nil
 }
 
+var (
+	EmailPathMap = map[EmailType]SendMailParams{
+		EmailTypeVerify: {
+			Subject:      "%s - Verify your email address",
+			TemplatePath: "/api/auth/verify",
+			Template:     mailer.DefaultConfirmationMail,
+		},
+		EmailTypeConfirmPasswordReset: {
+			Subject:      "%s - Confirm your password reset",
+			TemplatePath: "/password-reset",
+			Template:     mailer.DefaultRecoveryMail,
+		},
+		EmailTypeSecurityPasswordReset: {
+			Subject:      "%s - Reset your password",
+			TemplatePath: "/password-reset",
+			Template:     mailer.DefaultSecurityPasswordResetMail,
+		},
+	}
+)
+
 // SendOtpEmail creates and saves a new otp token and sends it to the user's email
 func (app *authService) SendOtpEmail(emailType EmailType, ctx context.Context, user *models.User) error {
-	var opts conf.TokenOption
+	appOpts := app.options.Meta
+	var tokenOpts conf.TokenOption
 	switch emailType {
 	case EmailTypeVerify:
-		opts = app.options.Auth.VerificationToken
+		tokenOpts = app.options.Auth.VerificationToken
 	case EmailTypeSecurityPasswordReset:
-		opts = app.options.Auth.PasswordResetToken
+		tokenOpts = app.options.Auth.PasswordResetToken
 	case EmailTypeConfirmPasswordReset:
-		opts = app.options.Auth.PasswordResetToken
+		tokenOpts = app.options.Auth.PasswordResetToken
 	default:
 		return fmt.Errorf("invalid email type")
 	}
 
 	tokenKey := security.GenerateTokenKey()
 	otp := security.GenerateOtp(6)
-	expires := opts.ExpiresAt()
+	expires := tokenOpts.ExpiresAt()
 	userId := user.ID
 	email := user.Email
-	ttype := opts.Type
+	ttype := tokenOpts.Type
 
 	payload := shared.OtpPayload{
 		Type:       ttype,
@@ -658,7 +681,7 @@ func (app *authService) SendOtpEmail(emailType EmailType, ctx context.Context, u
 		RedirectTo: app.options.Meta.AppUrl,
 	}
 
-	tokenHash, err := app.CreateOtpTokenHash(&payload, opts)
+	tokenHash, err := app.CreateOtpTokenHash(&payload, tokenOpts)
 	if err != nil {
 		return fmt.Errorf("error at creating verification token: %w", err)
 	}
@@ -677,11 +700,45 @@ func (app *authService) SendOtpEmail(emailType EmailType, ctx context.Context, u
 		return fmt.Errorf("error at creating verification token: %w", err)
 	}
 
-	err = app.mail.SendOtpEmail(emailType, tokenHash, &payload)
-	if err != nil {
-		return fmt.Errorf("error at sending verification email: %w", err)
+	// err = app.mail.SendOtpEmail(emailType, tokenHash, &payload)
+	// if payload == nil {
+	// 	return fmt.Errorf("payload is nil")
+	// }
+
+	var params SendMailParams
+	var ok bool
+	if params, ok = EmailPathMap[emailType]; !ok {
+		return fmt.Errorf("email type not found")
 	}
-	return nil
+	path, err := mailer.GetPath(params.TemplatePath, &mailer.EmailParams{
+		Token:      tokenHash,
+		Type:       string(payload.Type),
+		RedirectTo: payload.RedirectTo,
+	})
+	if err != nil {
+		return err
+	}
+	appUrl, err := url.Parse(appOpts.AppUrl)
+	if err != nil {
+		return err
+	}
+	param := &mailer.CommonParams{
+		SiteURL:         appUrl.String(),
+		ConfirmationURL: appUrl.ResolveReference(path).String(),
+		Email:           payload.Email,
+		Token:           payload.Otp,
+		TokenHash:       tokenHash,
+		RedirectTo:      payload.RedirectTo,
+	}
+	bodyStr := mailer.GetTemplate("body", params.Template, param)
+	mailParams := &mailer.Message{
+		From:    appOpts.SenderAddress,
+		To:      payload.Email,
+		Subject: fmt.Sprintf(params.Subject, appOpts.AppName),
+		Body:    bodyStr,
+	}
+	return app.mail.Send(mailParams)
+
 }
 
 func (app *authService) CreateOtpTokenHash(payload *shared.OtpPayload, config conf.TokenOption) (string, error) {

@@ -29,25 +29,25 @@ type SendMailParams struct {
 	Template     string
 }
 
-var (
-	EmailPathMap = map[EmailType]SendMailParams{
-		EmailTypeVerify: {
-			Subject:      "%s - Verify your email address",
-			TemplatePath: "/api/auth/verify",
-			Template:     mailer.DefaultConfirmationMail,
-		},
-		EmailTypeConfirmPasswordReset: {
-			Subject:      "%s - Confirm your password reset",
-			TemplatePath: "/password-reset",
-			Template:     mailer.DefaultRecoveryMail,
-		},
-		EmailTypeSecurityPasswordReset: {
-			Subject:      "%s - Reset your password",
-			TemplatePath: "/password-reset",
-			Template:     mailer.DefaultSecurityPasswordResetMail,
-		},
-	}
-)
+// var (
+// 	EmailPathMap = map[EmailType]SendMailParams{
+// 		EmailTypeVerify: {
+// 			Subject:      "%s - Verify your email address",
+// 			TemplatePath: "/api/auth/verify",
+// 			Template:     mailer.DefaultConfirmationMail,
+// 		},
+// 		EmailTypeConfirmPasswordReset: {
+// 			Subject:      "%s - Confirm your password reset",
+// 			TemplatePath: "/password-reset",
+// 			Template:     mailer.DefaultRecoveryMail,
+// 		},
+// 		EmailTypeSecurityPasswordReset: {
+// 			Subject:      "%s - Reset your password",
+// 			TemplatePath: "/password-reset",
+// 			Template:     mailer.DefaultSecurityPasswordResetMail,
+// 		},
+// 	}
+// )
 
 var _ AuthMailer = (*authMailer)(nil)
 
