@@ -2,6 +2,7 @@ package stores
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/Masterminds/squirrel"
@@ -70,7 +71,12 @@ func (p *PostgresTeamStore) FindInvitationByID(ctx context.Context, invitationId
 	if err != nil {
 		return nil, err
 	}
-	if !invitation.ExpiresAt.Before(time.Now()) {
+	if invitation == nil {
+		return nil, nil
+	}
+	if invitation.ExpiresAt.Before(time.Now()) {
+		fmt.Println("Invitation expired")
+		fmt.Println(invitation.ExpiresAt)
 		return nil, shared.ErrTokenExpired
 	}
 	return invitation, nil
@@ -90,7 +96,12 @@ func (p *PostgresTeamStore) FindInvitationByToken(ctx context.Context, token str
 	if err != nil {
 		return nil, err
 	}
-	if !invitation.ExpiresAt.Before(time.Now()) {
+	if invitation == nil {
+		return nil, nil
+	}
+	if invitation.ExpiresAt.Before(time.Now()) {
+		fmt.Println("Invitation expired")
+		fmt.Println(invitation.ExpiresAt)
 		return nil, shared.ErrTokenExpired
 	}
 	return invitation, nil
@@ -120,7 +131,10 @@ func (p *PostgresTeamStore) GetInvitationByID(ctx context.Context, invitationId 
 	if err != nil {
 		return nil, err
 	}
-	if !invitation.ExpiresAt.Before(time.Now()) {
+	if invitation == nil {
+		return nil, nil
+	}
+	if invitation.ExpiresAt.Before(time.Now()) {
 		return nil, shared.ErrTokenExpired
 	}
 	return invitation, nil
