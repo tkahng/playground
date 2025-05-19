@@ -28,5 +28,5 @@ func (b *passwordService) HashPassword(password string) (string, error) {
 
 // VerifyPassword implements PasswordManager.
 func (b *passwordService) VerifyPassword(hashedPassword string, password string) (bool, error) {
-	return security.ComparePasswordAndHash(hashedPassword, password)
+	return security.ComparePasswordAndHash(password, hashedPassword)
 }
