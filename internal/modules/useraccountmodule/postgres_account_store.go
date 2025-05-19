@@ -17,7 +17,7 @@ type userAccountStore struct {
 
 var _ UserAccountStore = (*userAccountStore)(nil)
 
-func NewUserAccountStore(db database.Dbx) UserAccountStore {
+func NewPostgresUserAccountStore(db database.Dbx) UserAccountStore {
 	return &userAccountStore{
 		db: db,
 	}

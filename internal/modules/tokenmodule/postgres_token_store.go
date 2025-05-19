@@ -17,7 +17,7 @@ type tokenStore struct {
 
 var _ TokenStore = (*tokenStore)(nil)
 
-func NewTokenStore(db database.Dbx) TokenStore {
+func NewPostgresTokenStore(db database.Dbx) TokenStore {
 	return &tokenStore{
 		db: db,
 	}
