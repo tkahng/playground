@@ -1,9 +1,8 @@
 package modules
 
 import (
-	"log/slog"
-
 	"github.com/tkahng/authgo/internal/database"
+	"github.com/tkahng/authgo/internal/modules/authmodule"
 	"github.com/tkahng/authgo/internal/modules/paymentmodule"
 	"github.com/tkahng/authgo/internal/modules/rbacmodule"
 	"github.com/tkahng/authgo/internal/modules/teammodule"
@@ -19,15 +18,28 @@ type Stores struct {
 	Token   tokenmodule.TokenStore
 	Account useraccountmodule.UserAccountStore
 	User    usermodule.UserStore
+	Auth    authmodule.AuthStore
 }
 
-func NewStores(dbx database.Dbx, logger *slog.Logger) *Stores {
+func NewPostgresStores(dbx database.Dbx) *Stores {
+	payment := paymentmodule.NewPostgresPaymentStore(dbx)
+	rbac := rbacmodule.NewPostgresRBACStore(dbx)
+	team := teammodule.NewPostgresTeamStore(dbx)
+	token := tokenmodule.NewPostgresTokenStore(dbx)
+	account := useraccountmodule.NewPostgresUserAccountStore(dbx)
+	user := usermodule.NewPostgresUserStore(dbx)
+	auth := authmodule.NewAuthStore(
+		token,
+		user,
+		account,
+	)
 	return &Stores{
-		Payment: paymentmodule.NewPostgresPaymentStore(dbx),
-		Rbac:    rbacmodule.NewPostgresRBACStore(dbx),
-		Team:    teammodule.NewPostgresTeamStore(dbx),
-		Token:   tokenmodule.NewPostgresTokenStore(dbx),
-		Account: useraccountmodule.NewPostgresUserAccountStore(dbx),
-		User:    usermodule.NewPostgresUserStore(dbx),
+		Payment: payment,
+		Rbac:    rbac,
+		Team:    team,
+		Token:   token,
+		Account: account,
+		User:    user,
+		Auth:    auth,
 	}
 }

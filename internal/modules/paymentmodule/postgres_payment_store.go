@@ -21,6 +21,15 @@ type PosrgresPaymentStore struct {
 	db database.Dbx
 }
 
+type PgPaymentStore struct {
+	*PosrgresPaymentStore
+}
+
+type Store struct {
+	*PgrbacStore
+	*PgPaymentStore
+}
+
 func NewPostgresPaymentStore(db database.Dbx) *PosrgresPaymentStore {
 	return &PosrgresPaymentStore{db: db}
 }

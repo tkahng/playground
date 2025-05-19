@@ -46,7 +46,12 @@ func (srv *StripeService) Client() PaymentClient {
 	return srv.client
 }
 
-func NewPaymentService(client PaymentClient, paymentStore PaymentStore, rbacStore RBACStore, teamStore TeamStore) PaymentService {
+func NewPaymentService(
+	client PaymentClient,
+	paymentStore PaymentStore,
+	rbacStore RBACStore,
+	teamStore TeamStore,
+) PaymentService {
 	return &StripeService{
 		client:       client,
 		logger:       slog.Default(),
