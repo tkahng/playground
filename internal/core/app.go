@@ -14,7 +14,7 @@ type App interface {
 	Cfg() *conf.EnvConfig
 	Db() database.Dbx
 	Fs() *filesystem.FileSystem
-	NewChecker(ctx context.Context) ConstraintChecker
+	NewChecker(ctx context.Context) services.ConstraintChecker
 	Settings() *conf.AppOptions
 	NewMailClient() mailer.Mailer
 	EncryptionEnv() string

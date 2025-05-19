@@ -35,8 +35,8 @@ func (app *BaseApp) Team() services.TeamService {
 }
 
 // Checker implements App.
-func (a *BaseApp) NewChecker(ctx context.Context) ConstraintChecker {
-	return NewConstraintCheckerService(ctx, a.db)
+func (a *BaseApp) NewChecker(ctx context.Context) services.ConstraintChecker {
+	return services.NewConstraintCheckerService(ctx, a.db)
 }
 
 // Auth implements App.

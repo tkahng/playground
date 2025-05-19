@@ -1,4 +1,4 @@
-package core_test
+package services_test
 
 import (
 	"context"
@@ -6,11 +6,11 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/tkahng/authgo/internal/core"
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/seeders"
+	"github.com/tkahng/authgo/internal/services"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/test"
 )
@@ -77,7 +77,7 @@ func TestConstraintCheckerService_CannotHaveValidSubscription(t *testing.T) {
 		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				c := core.NewConstraintCheckerService(tt.fields.ctx, tt.fields.db)
+				c := services.NewConstraintCheckerService(tt.fields.ctx, tt.fields.db)
 				if err := c.CannotHaveValidSubscription(tt.args.userId); (err != nil) != tt.wantErr {
 					t.Errorf("ConstraintCheckerService.CannotHaveValidSubscription() error = %v, wantErr %v", err, tt.wantErr)
 					if err.Error() != "Cannot perform this action on a user with a valid subscription" {
@@ -126,7 +126,7 @@ func TestConstraintCheckerService_CannotBeAdminOrBasicName(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c := core.NewConstraintCheckerService(tt.fields.ctx, tt.fields.db)
+			c := services.NewConstraintCheckerService(tt.fields.ctx, tt.fields.db)
 			err := c.CannotBeAdminOrBasicName(tt.args.permissionName)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ConstraintCheckerService.CannotBeAdminOrBasicName() error = %v, wantErr %v", err, tt.wantErr)
@@ -193,7 +193,7 @@ func TestConstraintCheckerService_CannotBeAdminOrBasicRoleAndPermissionName(t *t
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c := core.NewConstraintCheckerService(tt.fields.ctx, tt.fields.db)
+			c := services.NewConstraintCheckerService(tt.fields.ctx, tt.fields.db)
 			err := c.CannotBeAdminOrBasicRoleAndPermissionName(tt.args.roleName, tt.args.permissionName)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ConstraintCheckerService.CannotBeAdminOrBasicRoleAndPermissionName() error = %v, wantErr %v", err, tt.wantErr)
@@ -260,7 +260,7 @@ func TestConstraintCheckerService_CannotBeSuperUserEmailAndRoleName(t *testing.T
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c := core.NewConstraintCheckerService(tt.fields.ctx, tt.fields.db)
+			c := services.NewConstraintCheckerService(tt.fields.ctx, tt.fields.db)
 			err := c.CannotBeSuperUserEmailAndRoleName(tt.args.email, tt.args.roleName)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ConstraintCheckerService.CannotBeSuperUserEmailAndRoleName() error = %v, wantErr %v", err, tt.wantErr)
@@ -356,7 +356,7 @@ func TestConstraintCheckerService_CannotBeSuperUserID(t *testing.T) {
 		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				c := core.NewConstraintCheckerService(tt.fields.ctx, tt.fields.db)
+				c := services.NewConstraintCheckerService(tt.fields.ctx, tt.fields.db)
 				err := c.CannotBeSuperUserID(tt.args.userId)
 				if (err != nil) != tt.wantErr {
 					t.Errorf("ConstraintCheckerService.CannotBeSuperUserID() error = %v, wantErr %v", err, tt.wantErr)
@@ -404,7 +404,7 @@ func TestConstraintCheckerService_CannotBeSuperUserEmail(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c := core.NewConstraintCheckerService(tt.fields.ctx, tt.fields.db)
+			c := services.NewConstraintCheckerService(tt.fields.ctx, tt.fields.db)
 			err := c.CannotBeSuperUserEmail(tt.args.email)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ConstraintCheckerService.CannotBeSuperUserEmail() error = %v, wantErr %v", err, tt.wantErr)
