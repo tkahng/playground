@@ -17,6 +17,26 @@ type PostgresTeamStore struct {
 	db database.Dbx
 }
 
+// CheckTeamSlug implements services.TeamStore.
+func (s *PostgresTeamStore) CheckTeamSlug(ctx context.Context, slug string) (bool, error) {
+	team, err := crudrepo.Team.GetOne(
+		ctx,
+		s.db,
+		&map[string]any{
+			"slug": map[string]any{
+				"_eq": slug,
+			},
+		},
+	)
+	if err != nil {
+		return false, err
+	}
+	if team == nil {
+		return true, nil
+	}
+	return false, nil
+}
+
 // UpdateTeamMember implements services.TeamStore.
 func (s *PostgresTeamStore) UpdateTeamMember(ctx context.Context, member *models.TeamMember) (*models.TeamMember, error) {
 	newMember, err := crudrepo.TeamMember.PutOne(
@@ -203,9 +223,10 @@ func (s *PostgresTeamStore) UpsertTeamCustomerStripeId(ctx context.Context, team
 	return database.ExecWithBuilder(ctx, dbx, q.PlaceholderFormat(squirrel.Dollar))
 }
 
-func (q *PostgresTeamStore) CreateTeam(ctx context.Context, name string, stripeCustomerId *string) (*models.Team, error) {
+func (q *PostgresTeamStore) CreateTeam(ctx context.Context, name string, slug string, stripeCustomerId *string) (*models.Team, error) {
 	teamModel := &models.Team{
 		Name:             name,
+		Slug:             slug,
 		StripeCustomerID: stripeCustomerId,
 	}
 	team, err := crudrepo.Team.PostOne(

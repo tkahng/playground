@@ -1,11 +1,14 @@
 package stores_test
 
 import (
+	"context"
 	"errors"
 	"log/slog"
+	"reflect"
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/crudrepo"
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
@@ -18,7 +21,7 @@ func TestCreateTeam(t *testing.T) {
 	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		teamStore := stores.NewPostgresTeamStore(dbxx)
-		team, err := teamStore.CreateTeam(ctx, "Test Team", nil)
+		team, err := teamStore.CreateTeam(ctx, "Test Team", "test-team-slug", nil)
 		if err != nil {
 			t.Fatalf("CreateTeam() error = %v", err)
 		}
@@ -34,7 +37,7 @@ func TestUpdateTeam(t *testing.T) {
 	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		teamStore := stores.NewPostgresTeamStore(dbxx)
-		team, err := teamStore.CreateTeam(ctx, "Old Name", nil)
+		team, err := teamStore.CreateTeam(ctx, "Old Name", "old-name-slug", nil)
 		if err != nil {
 			t.Fatalf("CreateTeam() error = %v", err)
 		}
@@ -57,7 +60,7 @@ func TestDeleteTeam(t *testing.T) {
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		teamStore := stores.NewPostgresTeamStore(dbxx)
 		// Create a team to delete
-		team, err := teamStore.CreateTeam(ctx, "ToDelete", nil)
+		team, err := teamStore.CreateTeam(ctx, "ToDelete", "to-delete-slug", nil)
 		if err != nil {
 			t.Fatalf("CreateTeam() error = %v", err)
 		}
@@ -74,7 +77,7 @@ func TestFindTeamByID(t *testing.T) {
 	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		teamStore := stores.NewPostgresTeamStore(dbxx)
-		team, err := teamStore.CreateTeam(ctx, "FindMe", nil)
+		team, err := teamStore.CreateTeam(ctx, "FindMe", "find-me-slug", nil)
 		if err != nil {
 			t.Fatalf("CreateTeam() error = %v", err)
 		}
@@ -95,7 +98,7 @@ func TestCreateTeamMember(t *testing.T) {
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		teamStore := stores.NewPostgresTeamStore(dbxx)
 		userStore := stores.NewPostgresUserStore(dbxx)
-		team, err := teamStore.CreateTeam(ctx, "TeamWithMember", nil)
+		team, err := teamStore.CreateTeam(ctx, "TeamWithMember", "team-with-member-slug", nil)
 		if err != nil {
 			t.Fatalf("CreateTeam() error = %v", err)
 		}
@@ -123,7 +126,7 @@ func TestFindTeamMembersByUserID(t *testing.T) {
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		teamStore := stores.NewPostgresTeamStore(dbxx)
 		userStore := stores.NewPostgresUserStore(dbxx)
-		team, err := teamStore.CreateTeam(ctx, "TeamForMembers", nil)
+		team, err := teamStore.CreateTeam(ctx, "TeamForMembers", "team-for-members-slug", nil)
 		if err != nil {
 			t.Fatalf("CreateTeam() error = %v", err)
 		}
@@ -155,11 +158,11 @@ func TestFindLatestTeamMemberByUserID(t *testing.T) {
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		teamStore := stores.NewPostgresTeamStore(dbxx)
 		userStore := stores.NewPostgresUserStore(dbxx)
-		team1, err := teamStore.CreateTeam(ctx, "team1", nil)
+		team1, err := teamStore.CreateTeam(ctx, "team1", "team1-slug", nil)
 		if err != nil {
 			t.Fatalf("CreateTeam() error = %v", err)
 		}
-		team2, err := teamStore.CreateTeam(ctx, "team2", nil)
+		team2, err := teamStore.CreateTeam(ctx, "team2", "team2-slug", nil)
 		if err != nil {
 			t.Fatalf("CreateTeam() error = %v", err)
 		}
@@ -234,7 +237,7 @@ func TestUpdateTeamMemberUpdatedAt(t *testing.T) {
 		teamStore := stores.NewPostgresTeamStore(dbxx)
 		userStore := stores.NewPostgresUserStore(dbxx)
 
-		team, err := teamStore.CreateTeam(ctx, "UpdateMemberTeam", nil)
+		team, err := teamStore.CreateTeam(ctx, "UpdateMemberTeam", "update-member-team-slug", nil)
 		if err != nil {
 			t.Fatalf("CreateTeam() error = %v", err)
 		}
@@ -288,7 +291,7 @@ func TestUpdateTeamMemberSelectedAt(t *testing.T) {
 		userStore := stores.NewPostgresUserStore(dbxx)
 
 		// Create team and user
-		team, err := teamStore.CreateTeam(ctx, "SelectedAtTeam", nil)
+		team, err := teamStore.CreateTeam(ctx, "SelectedAtTeam", "selected-at-team-slug", nil)
 		if err != nil {
 			t.Fatalf("CreateTeam() error = %v", err)
 		}
@@ -326,4 +329,100 @@ func TestUpdateTeamMemberSelectedAt(t *testing.T) {
 		}
 		return errors.New("rollback")
 	})
+}
+
+func TestPostgresTeamStore_CheckTeamSlug(t *testing.T) {
+	type fields struct {
+		db database.Dbx
+	}
+	type args struct {
+		ctx  context.Context
+		slug string
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    bool
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := stores.NewPostgresTeamStore(tt.fields.db)
+			got, err := s.CheckTeamSlug(tt.args.ctx, tt.args.slug)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("PostgresTeamStore.CheckTeamSlug() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("PostgresTeamStore.CheckTeamSlug() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestPostgresTeamStore_UpdateTeamMember(t *testing.T) {
+	type fields struct {
+		db database.Dbx
+	}
+	type args struct {
+		ctx    context.Context
+		member *models.TeamMember
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    *models.TeamMember
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := stores.NewPostgresTeamStore(tt.fields.db)
+			got, err := s.UpdateTeamMember(tt.args.ctx, tt.args.member)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("PostgresTeamStore.UpdateTeamMember() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("PostgresTeamStore.UpdateTeamMember() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestPostgresTeamStore_CountTeamMembers(t *testing.T) {
+	type fields struct {
+		db database.Dbx
+	}
+	type args struct {
+		ctx    context.Context
+		teamId uuid.UUID
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    int64
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := stores.NewPostgresTeamStore(tt.fields.db)
+			got, err := s.CountTeamMembers(tt.args.ctx, tt.args.teamId)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("PostgresTeamStore.CountTeamMembers() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("PostgresTeamStore.CountTeamMembers() = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }
