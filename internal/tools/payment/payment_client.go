@@ -26,7 +26,7 @@ func (s *StripeClient) UpdateItemQuantity(itemId string, priceId string, count i
 		Quantity: stripe.Int64(count),
 		Price:    stripe.String(priceId),
 	}
-	params.AddExpand("subscription")
+	// params.AddExpand("subscription")
 	return subscriptionitem.Update(itemId, params)
 }
 
