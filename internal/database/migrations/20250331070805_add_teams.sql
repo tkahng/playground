@@ -32,7 +32,7 @@ create type team_invitation_status as enum ('pending', 'accepted', 'declined', '
 CREATE TABLE IF NOT EXISTS team_invitations (
     id uuid primary key default gen_random_uuid(),
     team_id uuid NOT NULL REFERENCES teams(id) ON DELETE CASCADE ON UPDATE CASCADE,
-    invited_by uuid NOT NULL REFERENCES team_members(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    inviter_member_id uuid NOT NULL REFERENCES team_members(id) ON DELETE CASCADE ON UPDATE CASCADE,
     email text NOT NULL,
     role team_member_role NOT NULL,
     token text NOT NULL UNIQUE,

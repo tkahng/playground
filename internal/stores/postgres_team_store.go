@@ -10,11 +10,134 @@ import (
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/services"
+	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/types"
 )
 
 type PostgresTeamStore struct {
 	db database.Dbx
+}
+
+// FindUserByID implements services.TeamInvitationStore.
+func (p *PostgresTeamStore) FindUserByID(ctx context.Context, userId uuid.UUID) (*models.User, error) {
+	user, err := crudrepo.User.GetOne(
+		ctx,
+		p.db,
+		&map[string]any{
+			"id": map[string]any{
+				"_eq": userId.String(),
+			},
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
+}
+
+func (p *PostgresTeamStore) FindTeamInvitations(ctx context.Context, teamId uuid.UUID) ([]*models.TeamInvitation, error) {
+	invitations, err := crudrepo.TeamInvitation.Get(
+		ctx,
+		p.db,
+		&map[string]any{
+			"team_id": map[string]any{
+				"_eq": teamId.String(),
+			},
+		},
+		&map[string]string{
+			"created_at": "desc",
+		},
+		nil,
+		nil,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return invitations, nil
+}
+
+// FindInvitationByID implements services.TeamInvitationStore.
+func (p *PostgresTeamStore) FindInvitationByID(ctx context.Context, invitationId uuid.UUID) (*models.TeamInvitation, error) {
+	invitation, err := crudrepo.TeamInvitation.GetOne(
+		ctx,
+		p.db,
+		&map[string]any{
+			"id": map[string]any{
+				"_eq": invitationId.String(),
+			},
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	if !invitation.ExpiresAt.Before(time.Now()) {
+		return nil, shared.ErrTokenExpired
+	}
+	return invitation, nil
+}
+
+// FindInvitationByToken implements services.TeamInvitationStore.
+func (p *PostgresTeamStore) FindInvitationByToken(ctx context.Context, token string) (*models.TeamInvitation, error) {
+	invitation, err := crudrepo.TeamInvitation.GetOne(
+		ctx,
+		p.db,
+		&map[string]any{
+			"token": map[string]any{
+				"_eq": token,
+			},
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	if !invitation.ExpiresAt.Before(time.Now()) {
+		return nil, shared.ErrTokenExpired
+	}
+	return invitation, nil
+}
+
+// CreateInvitation implements services.TeamInvitationStore.
+func (p *PostgresTeamStore) CreateInvitation(ctx context.Context, invitation *models.TeamInvitation) error {
+	_, err := crudrepo.TeamInvitation.PostOne(
+		ctx,
+		p.db,
+		invitation,
+	)
+	return err
+}
+
+// GetInvitationByID implements services.TeamInvitationStore.
+func (p *PostgresTeamStore) GetInvitationByID(ctx context.Context, invitationId uuid.UUID) (*models.TeamInvitation, error) {
+	invitation, err := crudrepo.TeamInvitation.GetOne(
+		ctx,
+		p.db,
+		&map[string]any{
+			"id": map[string]any{
+				"_eq": invitationId.String(),
+			},
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	if !invitation.ExpiresAt.Before(time.Now()) {
+		return nil, shared.ErrTokenExpired
+	}
+	return invitation, nil
+}
+
+// UpdateInvitation implements services.TeamInvitationStore.
+func (p *PostgresTeamStore) UpdateInvitation(ctx context.Context, invitation *models.TeamInvitation) error {
+	_, err := crudrepo.TeamInvitation.PutOne(
+		ctx,
+		p.db,
+		invitation,
+	)
+
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // DeleteTeamMember implements services.TeamStore.
@@ -95,6 +218,7 @@ func NewPostgresTeamStore(db database.Dbx) *PostgresTeamStore {
 
 // var _ services.TeamInvitationStore = &PostgresTeamStore{}
 var _ services.TeamStore = &PostgresTeamStore{}
+var _ services.TeamInvitationStore = &PostgresTeamStore{}
 
 func (s *PostgresTeamStore) FindTeamByStripeCustomerId(ctx context.Context, stripeCustomerId string) (*models.Team, error) {
 	data, err := crudrepo.Team.GetOne(
