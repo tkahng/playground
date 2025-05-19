@@ -20,6 +20,12 @@ type PostgresUserStore struct {
 	db database.Dbx
 }
 
+func NewPostgresUserStore(db database.Dbx) *PostgresUserStore {
+	return &PostgresUserStore{
+		db: db,
+	}
+}
+
 // AssignUserRoles implements UserStore.
 func (a *PostgresUserStore) AssignUserRoles(ctx context.Context, userId uuid.UUID, roleNames ...string) error {
 	if len(roleNames) > 0 {
@@ -208,14 +214,6 @@ func (p *PostgresUserStore) UpdateUser(ctx context.Context, user *models.User) e
 		return err
 	}
 	return nil
-}
-
-// var _ UserStore = (*PostgresUserStore)(nil)
-
-func NewPostgresUserStore(db database.Dbx) *PostgresUserStore {
-	return &PostgresUserStore{
-		db: db,
-	}
 }
 
 // FindUserByEmail implements UserStore.
