@@ -78,31 +78,6 @@ type UserInfoTokens struct {
 	Tokens TokenDto `json:"tokens"`
 }
 
-type RecordOAuth2LoginForm struct {
-	// collection *core.Collection
-
-	// Additional data that will be used for creating a new auth record
-	// if an existing OAuth2 account doesn't exist.
-	CreateData map[string]any `form:"createData" json:"createData"`
-
-	// The name of the OAuth2 client provider (eg. "google")
-	Provider string `form:"provider" json:"provider"`
-
-	// The authorization code returned from the initial request.
-	Code string `form:"code" json:"code"`
-
-	// The optional PKCE code verifier as part of the code_challenge sent with the initial request.
-	CodeVerifier string `form:"codeVerifier" json:"codeVerifier"`
-
-	// The redirect url sent with the initial request.
-	RedirectURL string `form:"redirectURL" json:"redirectURL"`
-
-	// @todo
-	// deprecated: use RedirectURL instead
-	// RedirectUrl will be removed after dropping v0.22 support
-	RedirectUrl string `form:"redirectUrl" json:"redirectUrl"`
-}
-
 type CreateTokenDTO struct {
 	Type       TokenType  `db:"type" json:"type"`
 	Identifier string     `db:"identifier" json:"identifier"`
