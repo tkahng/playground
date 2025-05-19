@@ -7,7 +7,6 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/alexedwards/argon2id"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/auth/oauth"
@@ -52,9 +51,9 @@ type AuthStore interface {
 	UnlinkAccount(ctx context.Context, userId uuid.UUID, provider models.Providers) error
 }
 
-var _ AuthService = (*authService)(nil)
+var _ AuthService = (*BaseAuthService)(nil)
 
-type authService struct {
+type BaseAuthService struct {
 	authStore AuthStore
 	mail      mailer.Mailer
 	token     JwtService
@@ -69,7 +68,7 @@ func NewAuthService(
 	token JwtService,
 	password PasswordService,
 ) AuthService {
-	authService := &authService{
+	authService := &BaseAuthService{
 		authStore: authStore,
 		mail:      mail,
 		token:     token,
@@ -81,7 +80,7 @@ func NewAuthService(
 }
 
 // FetchAuthUser implements Authenticator.
-func (app *authService) FetchAuthUser(ctx context.Context, code string, parsedState *shared.ProviderStateClaims) (*oauth.AuthUser, error) {
+func (app *BaseAuthService) FetchAuthUser(ctx context.Context, code string, parsedState *shared.ProviderStateClaims) (*oauth.AuthUser, error) {
 	var provider oauth.ProviderConfig
 	switch parsedState.Provider {
 	case shared.OAuthProvidersGithub:
@@ -110,7 +109,7 @@ func (app *authService) FetchAuthUser(ctx context.Context, code string, parsedSt
 	return authUser, nil
 }
 
-func (app *authService) ResetPassword(ctx context.Context, userId uuid.UUID, oldPassword string, newPassword string) error {
+func (app *BaseAuthService) ResetPassword(ctx context.Context, userId uuid.UUID, oldPassword string, newPassword string) error {
 	account, err := app.authStore.FindUserAccountByUserIdAndProvider(ctx, userId, models.ProvidersCredentials)
 	if err != nil {
 		return fmt.Errorf("error getting user account: %w", err)
@@ -119,7 +118,7 @@ func (app *authService) ResetPassword(ctx context.Context, userId uuid.UUID, old
 		return fmt.Errorf("user account not found")
 	}
 
-	if match, err := app.password.VerifyPassword(oldPassword, *account.Password); err != nil {
+	if match, err := app.password.VerifyPassword(*account.Password, oldPassword); err != nil {
 		return fmt.Errorf("error at comparing password: %w", err)
 	} else if !match {
 		return fmt.Errorf("password is incorrect")
@@ -137,7 +136,7 @@ func (app *authService) ResetPassword(ctx context.Context, userId uuid.UUID, old
 }
 
 // Signout implements AuthActions.
-func (app *authService) Signout(ctx context.Context, token string) error {
+func (app *BaseAuthService) Signout(ctx context.Context, token string) error {
 	opts := app.options.Auth
 	var claims shared.RefreshTokenClaims
 	err := app.token.ParseToken(token, opts.RefreshToken, &claims)
@@ -156,7 +155,7 @@ func (app *authService) Signout(ctx context.Context, token string) error {
 }
 
 // HandlePasswordResetRequest implements AuthActions.
-func (app *authService) HandlePasswordResetRequest(ctx context.Context, email string) error {
+func (app *BaseAuthService) HandlePasswordResetRequest(ctx context.Context, email string) error {
 	user, err := app.authStore.FindUserByEmail(
 		ctx,
 		email,
@@ -184,7 +183,7 @@ func (app *authService) HandlePasswordResetRequest(ctx context.Context, email st
 }
 
 // CreateAndPersistStateToken implements AuthActions.
-func (app *authService) CreateAndPersistStateToken(ctx context.Context, payload *shared.ProviderStatePayload) (string, error) {
+func (app *BaseAuthService) CreateAndPersistStateToken(ctx context.Context, payload *shared.ProviderStatePayload) (string, error) {
 	if payload == nil {
 		return "", fmt.Errorf("payload is nil")
 	}
@@ -214,7 +213,7 @@ func (app *authService) CreateAndPersistStateToken(ctx context.Context, payload 
 }
 
 // CreateAuthTokensFromEmail implements AuthActions.
-func (app *authService) CreateAuthTokensFromEmail(ctx context.Context, email string) (*shared.UserInfoTokens, error) {
+func (app *BaseAuthService) CreateAuthTokensFromEmail(ctx context.Context, email string) (*shared.UserInfoTokens, error) {
 	user, err := app.authStore.GetUserInfo(ctx, email)
 	if err != nil {
 		return nil, err
@@ -222,7 +221,7 @@ func (app *authService) CreateAuthTokensFromEmail(ctx context.Context, email str
 	return app.CreateAuthTokens(ctx, user)
 }
 
-func (app *authService) CreateAuthTokens(ctx context.Context, payload *shared.UserInfo) (*shared.UserInfoTokens, error) {
+func (app *BaseAuthService) CreateAuthTokens(ctx context.Context, payload *shared.UserInfo) (*shared.UserInfoTokens, error) {
 	if payload == nil {
 		return nil, fmt.Errorf("payload is nil")
 	}
@@ -302,7 +301,7 @@ func (app *authService) CreateAuthTokens(ctx context.Context, payload *shared.Us
 }
 
 // CheckResetPasswordToken implements AuthActions.
-func (app *authService) CheckResetPasswordToken(ctx context.Context, tokenHash string) error {
+func (app *BaseAuthService) CheckResetPasswordToken(ctx context.Context, tokenHash string) error {
 	opts := app.options.Auth
 	var claims shared.PasswordResetClaims
 	err := app.token.ParseToken(tokenHash, opts.PasswordResetToken, &claims)
@@ -320,7 +319,7 @@ func (app *authService) CheckResetPasswordToken(ctx context.Context, tokenHash s
 }
 
 // HandlePasswordResetToken implements AuthActions.
-func (app *authService) HandlePasswordResetToken(ctx context.Context, token, password string) error {
+func (app *BaseAuthService) HandlePasswordResetToken(ctx context.Context, token, password string) error {
 	opts := app.options.Auth
 	var claims shared.PasswordResetClaims
 	err := app.token.ParseToken(token, opts.PasswordResetToken, &claims)
@@ -365,7 +364,7 @@ func (app *authService) HandlePasswordResetToken(ctx context.Context, token, pas
 	return nil
 
 }
-func (app *authService) VerifyStateToken(ctx context.Context, token string) (*shared.ProviderStateClaims, error) {
+func (app *BaseAuthService) VerifyStateToken(ctx context.Context, token string) (*shared.ProviderStateClaims, error) {
 	opts := app.options.Auth
 	var claims shared.ProviderStateClaims
 	err := app.token.ParseToken(token, opts.StateToken, &claims)
@@ -382,7 +381,7 @@ func (app *authService) VerifyStateToken(ctx context.Context, token string) (*sh
 	}
 	return &claims, nil
 }
-func (app *authService) HandleAccessToken(ctx context.Context, token string) (*shared.UserInfo, error) {
+func (app *BaseAuthService) HandleAccessToken(ctx context.Context, token string) (*shared.UserInfo, error) {
 	opts := app.options.Auth
 	var claims shared.AuthenticationClaims
 	err := app.token.ParseToken(token, opts.AccessToken, &claims)
@@ -393,7 +392,7 @@ func (app *authService) HandleAccessToken(ctx context.Context, token string) (*s
 }
 
 // HandleRefreshToken implements AuthActions.
-func (app *authService) HandleRefreshToken(ctx context.Context, token string) (*shared.UserInfoTokens, error) {
+func (app *BaseAuthService) HandleRefreshToken(ctx context.Context, token string) (*shared.UserInfoTokens, error) {
 	opts := app.options.Auth
 	var claims shared.RefreshTokenClaims
 	err := app.token.ParseToken(token, opts.RefreshToken, &claims)
@@ -416,7 +415,7 @@ func (app *authService) HandleRefreshToken(ctx context.Context, token string) (*
 	return app.CreateAuthTokens(ctx, info)
 }
 
-func (app *authService) HandleVerificationToken(ctx context.Context, token string) error {
+func (app *BaseAuthService) HandleVerificationToken(ctx context.Context, token string) error {
 	claims, err := app.VerifyAndParseOtpToken(ctx, EmailTypeVerify, token)
 	if err != nil {
 		return fmt.Errorf("error verifying verification token: %w", err)
@@ -449,7 +448,7 @@ func (app *authService) HandleVerificationToken(ctx context.Context, token strin
 }
 
 // VerifyAndUseVerificationToken implements AuthActions.
-func (app *authService) VerifyAndParseOtpToken(ctx context.Context, emailType EmailType, token string) (*shared.OtpClaims, error) {
+func (app *BaseAuthService) VerifyAndParseOtpToken(ctx context.Context, emailType EmailType, token string) (*shared.OtpClaims, error) {
 	var opt conf.TokenOption
 	switch emailType {
 	case EmailTypeVerify:
@@ -472,7 +471,7 @@ func (app *authService) VerifyAndParseOtpToken(ctx context.Context, emailType Em
 
 // methods
 
-func (app *authService) Authenticate(ctx context.Context, params *shared.AuthenticationInput) (*models.User, error) {
+func (app *BaseAuthService) Authenticate(ctx context.Context, params *shared.AuthenticationInput) (*models.User, error) {
 	var user *models.User
 	var account *models.UserAccount
 	var err error
@@ -528,7 +527,7 @@ func (app *authService) Authenticate(ctx context.Context, params *shared.Authent
 			if params.Password == nil {
 				return nil, fmt.Errorf("password is nil")
 			}
-			pw, err := security.CreateHash(*params.Password, argon2id.DefaultParams)
+			pw, err := app.password.HashPassword(*params.Password)
 			if err != nil {
 				return nil, fmt.Errorf("error at hashing password: %w", err)
 			}
@@ -592,7 +591,7 @@ func (app *authService) Authenticate(ctx context.Context, params *shared.Authent
 		if params.Password == nil || account.Password == nil {
 			return nil, fmt.Errorf("password or account password is nil")
 		}
-		if match, err := app.password.VerifyPassword(*params.Password, *account.Password); err != nil {
+		if match, err := app.password.VerifyPassword(*account.Password, *params.Password); err != nil {
 			return nil, fmt.Errorf("error at comparing password: %w", err)
 		} else if !match {
 			return nil, fmt.Errorf("password is incorrect")
@@ -601,7 +600,7 @@ func (app *authService) Authenticate(ctx context.Context, params *shared.Authent
 	return user, nil
 }
 
-func (app *authService) CheckUserCredentialsSecurity(ctx context.Context, user *models.User, params *shared.AuthenticationInput) error {
+func (app *BaseAuthService) CheckUserCredentialsSecurity(ctx context.Context, user *models.User, params *shared.AuthenticationInput) error {
 
 	if user == nil || params == nil {
 		return fmt.Errorf("user not found")
@@ -645,36 +644,6 @@ func (app *authService) CheckUserCredentialsSecurity(ctx context.Context, user *
 	return nil
 }
 
-var (
-	EmailPathMap = map[EmailType]SendMailParams{
-		EmailTypeVerify: {
-			Subject:      "%s - Verify your email address",
-			TemplatePath: "/api/auth/verify",
-			Template:     mailer.DefaultConfirmationMail,
-		},
-		EmailTypeConfirmPasswordReset: {
-			Subject:      "%s - Confirm your password reset",
-			TemplatePath: "/password-reset",
-			Template:     mailer.DefaultRecoveryMail,
-		},
-		EmailTypeSecurityPasswordReset: {
-			Subject:      "%s - Reset your password",
-			TemplatePath: "/password-reset",
-			Template:     mailer.DefaultSecurityPasswordResetMail,
-		},
-	}
-)
-
-type EmailType string
-
-const (
-	EmailTypeVerify                EmailType = "verify"
-	EmailTypeConfirmPasswordReset  EmailType = "confirm-password-reset"
-	EmailTypeSecurityPasswordReset EmailType = "security-password-reset"
-	EmailTypeTeamInvite            EmailType = "team-invite"
-	EmailTypeInvite                EmailType = "invite"
-)
-
 type SendMailParams struct {
 	Subject      string
 	Type         string
@@ -683,7 +652,7 @@ type SendMailParams struct {
 }
 
 // SendOtpEmail creates and saves a new otp token and sends it to the user's email
-func (app *authService) SendOtpEmail(emailType EmailType, ctx context.Context, user *models.User) error {
+func (app *BaseAuthService) SendOtpEmail(emailType EmailType, ctx context.Context, user *models.User) error {
 	appOpts := app.options.Meta
 	var tokenOpts conf.TokenOption
 	switch emailType {
@@ -773,7 +742,7 @@ func (app *authService) SendOtpEmail(emailType EmailType, ctx context.Context, u
 
 }
 
-func (app *authService) CreateOtpTokenHash(payload *shared.OtpPayload, config conf.TokenOption) (string, error) {
+func (app *BaseAuthService) CreateOtpTokenHash(payload *shared.OtpPayload, config conf.TokenOption) (string, error) {
 	if payload == nil {
 		return "", fmt.Errorf("payload is nil")
 	}

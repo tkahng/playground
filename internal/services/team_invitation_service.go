@@ -11,9 +11,6 @@ import (
 )
 
 type TeamInvitationService interface {
-	// SendInvitationMail(
-	// 	ctx context.Context,
-	// )
 	CreateInvitation(
 		ctx context.Context,
 		teamId uuid.UUID,
@@ -21,6 +18,11 @@ type TeamInvitationService interface {
 		email string,
 		role models.TeamMemberRole,
 	) error
+	CheckValidInvitation(
+		ctx context.Context,
+		invitationToken string,
+		userId uuid.UUID,
+	) (bool, error)
 	AcceptInvitation(
 		ctx context.Context,
 		invitationToken string,
@@ -70,6 +72,39 @@ type TeamInvitationStore interface {
 
 type InnvitationService struct {
 	store TeamInvitationStore
+}
+
+// CheckValidInvitation implements TeamInvitationService.
+func (i *InnvitationService) CheckValidInvitation(ctx context.Context, invitationToken string, userId uuid.UUID) (bool, error) {
+	invite, err := i.store.FindInvitationByToken(ctx, invitationToken)
+	if err != nil {
+		return false, err
+	}
+	if invite == nil {
+		return false, fmt.Errorf("invitation not found")
+	}
+	user, err := i.store.FindUserByID(ctx, userId)
+	if err != nil {
+		return false, err
+	}
+	if user == nil {
+		return false, fmt.Errorf("user not found")
+	}
+	if invite.Email != user.Email {
+		return false, fmt.Errorf("user does not match invitation")
+	}
+	if invite.Status != models.TeamInvitationStatusPending {
+		return false, fmt.Errorf("invitation is not pending")
+	}
+	return true, nil
+}
+
+var _ TeamInvitationService = (*InnvitationService)(nil)
+
+func NewInvitationService(store TeamInvitationStore) TeamInvitationService {
+	return &InnvitationService{
+		store: store,
+	}
 }
 
 // AcceptInvitation implements TeamInvitationService.
@@ -168,10 +203,4 @@ func (i *InnvitationService) RejectInvitation(ctx context.Context, invitationTok
 	}
 	invite.Status = models.TeamInvitationStatusDeclined
 	return nil
-}
-
-func NewInvitationService(store TeamInvitationStore) TeamInvitationService {
-	return &InnvitationService{
-		store: store,
-	}
 }

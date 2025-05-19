@@ -6,7 +6,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/shared"
-	"github.com/tkahng/authgo/internal/tools/mailer"
 )
 
 type TeamService interface {
@@ -132,13 +131,3 @@ func NewTeamService(store TeamStore) TeamService {
 		teamStore: store,
 	}
 }
-
-var (
-	TeamEmailPathMap = map[EmailType]SendMailParams{
-		EmailTypeTeamInvite: {
-			Subject:      "%s - You are invited to join a team",
-			TemplatePath: "/team-invitation",
-			Template:     mailer.DefaultTeamInviteMail,
-		},
-	}
-)

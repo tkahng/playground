@@ -45,7 +45,11 @@ func (m *mockAuthStore) AssignUserRoles(ctx context.Context, userId uuid.UUID, r
 // CreateUser implements AuthStorage.
 func (m *mockAuthStore) CreateUser(ctx context.Context, user *models.User) (*models.User, error) {
 	args := m.Called(ctx, user)
-	return args.Get(0).(*models.User), args.Error(1)
+	var createdUser *models.User
+	if args.Get(0) != nil {
+		createdUser = args.Get(0).(*models.User)
+	}
+	return createdUser, args.Error(1)
 }
 
 // DeleteToken implements AuthStorage.
@@ -74,13 +78,22 @@ func (m *mockAuthStore) FindUserAccountByUserIdAndProvider(ctx context.Context, 
 // FindUserByEmail implements AuthStorage.
 func (m *mockAuthStore) FindUserByEmail(ctx context.Context, email string) (*models.User, error) {
 	args := m.Called(ctx, email)
-	return args.Get(0).(*models.User), args.Error(1)
+	var user *models.User
+	if args.Get(0) != nil {
+		user = args.Get(0).(*models.User)
+	}
+	return user, args.Error(1)
 }
 
 // GetToken implements AuthStorage.
 func (m *mockAuthStore) GetToken(ctx context.Context, token string) (*models.Token, error) {
 	args := m.Called(ctx, token)
-	return args.Get(0).(*models.Token), args.Error(1)
+	var tokenModel *models.Token
+	if args.Get(0) != nil {
+		tokenModel = args.Get(0).(*models.Token)
+	}
+	return tokenModel, args.Error(1)
+
 }
 
 // LinkAccount implements AuthStorage.
@@ -120,7 +133,11 @@ func (m *mockAuthStore) VerifyTokenStorage(ctx context.Context, token string) er
 
 func (m *mockAuthStore) GetUserInfo(ctx context.Context, email string) (*shared.UserInfo, error) {
 	args := m.Called(ctx, email)
-	return args.Get(0).(*shared.UserInfo), args.Error(1)
+	var userInfo *shared.UserInfo
+	if args.Get(0) != nil {
+		userInfo = args.Get(0).(*shared.UserInfo)
+	}
+	return userInfo, args.Error(1)
 }
 
 type mockPasswordService struct {

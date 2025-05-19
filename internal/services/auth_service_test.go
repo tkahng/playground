@@ -19,7 +19,7 @@ func TestHandleRefreshToken(t *testing.T) {
 	ctx := context.Background()
 	mockStorage := new(mockAuthStore)
 	mockToken := new(mockJwtService)
-	app := &authService{
+	app := &BaseAuthService{
 		token:     mockToken,
 		authStore: mockStorage,
 		options: &conf.AppOptions{
@@ -109,7 +109,7 @@ func TestResetPassword(t *testing.T) {
 	ctx := context.Background()
 	mockStorage := new(mockAuthStore)
 	passwordManager := NewPasswordService()
-	app := &authService{
+	app := &BaseAuthService{
 		authStore: mockStorage,
 		password:  passwordManager,
 	}
@@ -200,6 +200,122 @@ func TestResetPassword(t *testing.T) {
 			}
 
 			mockStorage.AssertExpectations(t)
+		})
+	}
+}
+
+func TestAuthenticate(t *testing.T) {
+	ctx := context.Background()
+	mockStorage := new(mockAuthStore)
+	mockToken := new(mockJwtService)
+	mockPassword := new(mockPasswordService)
+	app := &BaseAuthService{
+		authStore: mockStorage,
+		token:     mockToken,
+		password:  mockPassword,
+	}
+
+	testUserId := uuid.New()
+	testEmail := "test@example.com"
+	testPasswordStr := "password123"
+	testHashedPassword := "hashedPassword123"
+
+	testCases := []struct {
+		name          string
+		input         *shared.AuthenticationInput
+		setupMocks    func()
+		expectedError bool
+	}{
+		{
+			name: "user does not exist, create user and account",
+			input: &shared.AuthenticationInput{
+				Email:    testEmail,
+				Password: &testPasswordStr,
+				Type:     shared.ProviderTypeCredentials,
+			},
+			setupMocks: func() {
+				mockStorage.On("FindUserByEmail", ctx, testEmail).Return(nil, nil)
+				mockStorage.On("CreateUser", ctx, mock.Anything).Return(&models.User{ID: testUserId, Email: testEmail}, nil)
+				mockStorage.On("AssignUserRoles", ctx, testUserId, mock.Anything).Return(nil)
+				mockPassword.On("HashPassword", testPasswordStr).Return(testHashedPassword, nil)
+				mockStorage.On("LinkAccount", ctx, mock.Anything).Return(nil)
+				// mockStorage.On("FindUserAccountByUserIdAndProvider", ctx, testUserId, models.ProvidersCredentials).Return(nil, nil)
+				// mockPassword.On("HashPassword", mock.Anything).Return(testHashedPassword, nil)
+				// mockPassword.On("UpdateUserAccount", ctx, mock.Anything).Return(nil)
+				// mockStorage.On("SaveToken", ctx, mock.Anything).Return(nil)
+			},
+			expectedError: false,
+		},
+		{
+			name: "user exists, account exists, correct password",
+			input: &shared.AuthenticationInput{
+				Email:    testEmail,
+				Password: &testPasswordStr,
+				Type:     shared.ProviderTypeCredentials,
+			},
+			setupMocks: func() {
+				mockStorage.On("FindUserByEmail", ctx, testEmail).Return(&models.User{ID: testUserId, Email: testEmail}, nil)
+				mockStorage.On("FindUserAccountByUserIdAndProvider", ctx, testUserId, models.ProvidersCredentials).
+					Return(&models.UserAccount{Password: &testHashedPassword}, nil)
+				mockPassword.On("VerifyPassword", testHashedPassword, testPasswordStr).Return(true, nil)
+			},
+			expectedError: false,
+		},
+		{
+			name: "user exists, account exists, incorrect password",
+			input: &shared.AuthenticationInput{
+				Email:    testEmail,
+				Password: &testPasswordStr,
+				Type:     shared.ProviderTypeCredentials,
+			},
+			setupMocks: func() {
+				mockStorage.On("FindUserByEmail", ctx, testEmail).Return(&models.User{ID: testUserId, Email: testEmail}, nil)
+				mockStorage.On("FindUserAccountByUserIdAndProvider", ctx, testUserId, models.ProvidersCredentials).
+					Return(&models.UserAccount{Password: &testHashedPassword}, nil)
+				mockPassword.On("VerifyPassword", testHashedPassword, testPasswordStr).Return(false, nil)
+			},
+			expectedError: true,
+		},
+		{
+			name: "user exists, account does not exist, create account",
+			input: &shared.AuthenticationInput{
+				Email:    testEmail,
+				Password: &testPasswordStr,
+				Type:     shared.ProviderTypeCredentials,
+			},
+			setupMocks: func() {
+				mockStorage.On("FindUserByEmail", ctx, testEmail).Return(&models.User{ID: testUserId, Email: testEmail}, nil)
+				mockStorage.On("FindUserAccountByUserIdAndProvider", ctx, testUserId, models.ProvidersCredentials).Return(nil, nil)
+				mockPassword.On("HashPassword", testPasswordStr).Return(testHashedPassword, nil)
+				mockStorage.On("LinkAccount", ctx, mock.Anything).Return(nil)
+			},
+			expectedError: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			mockStorage.ExpectedCalls = nil
+			mockStorage.Calls = nil
+			mockPassword.ExpectedCalls = nil
+			mockPassword.Calls = nil
+
+			if tc.setupMocks != nil {
+				tc.setupMocks()
+			}
+
+			result, err := app.Authenticate(ctx, tc.input)
+
+			if tc.expectedError {
+				assert.Error(t, err)
+				assert.Nil(t, result)
+			} else {
+				assert.NoError(t, err)
+				assert.NotNil(t, result)
+			}
+
+			mockStorage.AssertExpectations(t)
+			mockPassword.AssertExpectations(t)
 		})
 	}
 }
