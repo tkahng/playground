@@ -16,25 +16,6 @@ import (
 	"github.com/tkahng/authgo/internal/conf"
 )
 
-type PaymentClient interface {
-	Config() *conf.StripeConfig
-	CreateBillingPortalSession(customerId string, configurationId string) (*stripe.BillingPortalSession, error)
-	CreateCheckoutSession(customerId string, priceId string, trialDays *int64) (*stripe.CheckoutSession, error)
-	CreateCustomer(email string, userId string) (*stripe.Customer, error)
-	CreatePortalConfiguration(input ...*ProductBillingConfigurationInput) (string, error)
-	FindAllPrices() ([]*stripe.Price, error)
-	FindAllProducts() ([]*stripe.Product, error)
-	FindCheckoutSessionByStripeId(stripeId string) (*stripe.CheckoutSession, error)
-	// FindCustomerByEmailAndUserId(email string, userId string) (*stripe.Customer, error)
-	FindOrCreateCustomer(email string, userId uuid.UUID) (*stripe.Customer, error)
-	FindSubscriptionByStripeId(stripeId string) (*stripe.Subscription, error)
-}
-
-const (
-	StripeProductProID      string = "prod_pro"
-	StripeProductAdvancedID string = "prod_advanced"
-)
-
 type StripeClient struct {
 	config *conf.StripeConfig
 }
@@ -156,13 +137,6 @@ func (s *StripeClient) CreateCheckoutSession(customerId, priceId string, trialDa
 		SubscriptionData: subscriptionParams,
 	}
 	return session.New(sessionParams)
-}
-
-type ProductBillingConfigurationInput struct {
-	// The list of price IDs for the product that a subscription can be updated to.
-	Prices []*string `form:"prices"`
-	// The product id.
-	Product *string `form:"product"`
 }
 
 func (a *StripeClient) CreatePortalConfiguration(input ...*ProductBillingConfigurationInput) (string, error) {

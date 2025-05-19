@@ -9,13 +9,59 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/stripe/stripe-go/v82"
-	"github.com/tkahng/authgo/internal/database"
+	"github.com/tkahng/authgo/internal/conf"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 	"github.com/tkahng/authgo/internal/tools/types"
 )
 
+type ProductBillingConfigurationInput struct {
+	// The list of price IDs for the product that a subscription can be updated to.
+	Prices []*string `form:"prices"`
+	// The product id.
+	Product *string `form:"product"`
+}
+
+type PaymentClient interface {
+	Config() *conf.StripeConfig
+	CreateBillingPortalSession(customerId string, configurationId string) (*stripe.BillingPortalSession, error)
+	CreateCheckoutSession(customerId string, priceId string, trialDays *int64) (*stripe.CheckoutSession, error)
+	CreateCustomer(email string, userId string) (*stripe.Customer, error)
+	CreatePortalConfiguration(input ...*ProductBillingConfigurationInput) (string, error)
+	FindAllPrices() ([]*stripe.Price, error)
+	FindAllProducts() ([]*stripe.Product, error)
+	FindCheckoutSessionByStripeId(stripeId string) (*stripe.CheckoutSession, error)
+	// FindCustomerByEmailAndUserId(email string, userId string) (*stripe.Customer, error)
+	FindOrCreateCustomer(email string, userId uuid.UUID) (*stripe.Customer, error)
+	FindSubscriptionByStripeId(stripeId string) (*stripe.Subscription, error)
+}
+
+type PaymentStore interface {
+	// team methods
+	FindTeamByID(ctx context.Context, teamId uuid.UUID) (*models.Team, error)
+	// permission methods
+	FindPermissionByName(ctx context.Context, name string) (*models.Permission, error)
+	CreateProductPermissions(ctx context.Context, productId string, permissionIds ...uuid.UUID) error
+
+	// payment methods
+	FindSubscriptionWithPriceById(ctx context.Context, stripeId string) (*models.SubscriptionWithPrice, error)
+	FindProductByStripeId(ctx context.Context, productId string) (*models.StripeProduct, error)
+	FindCustomerByStripeId(ctx context.Context, stripeId string) (*models.StripeCustomer, error)
+	FindCustomerByUserId(ctx context.Context, userId uuid.UUID) (*models.StripeCustomer, error)
+	UpsertSubscriptionFromStripe(ctx context.Context, sub *stripe.Subscription, userId uuid.UUID) error
+	UpsertSubscription(ctx context.Context, sub *models.StripeSubscription) error
+	UpsertCustomerStripeId(ctx context.Context, userId uuid.UUID, stripeCustomerId string) error
+	UpsertProductFromStripe(ctx context.Context, product *stripe.Product) error
+	UpsertProduct(ctx context.Context, product *models.StripeProduct) error
+	UpsertPriceFromStripe(ctx context.Context, price *stripe.Price) error
+	UpsertPrice(ctx context.Context, price *models.StripePrice) error
+	FindLatestActiveSubscriptionByTeamId(ctx context.Context, teamId uuid.UUID) (*models.StripeSubscription, error)
+	IsFirstSubscription(ctx context.Context, teamId uuid.UUID) (bool, error)
+	FindValidPriceById(ctx context.Context, priceId string) (*models.StripePrice, error)
+	ListProducts(ctx context.Context, input *shared.StripeProductListParams) ([]*models.StripeProduct, error)
+	ListPrices(ctx context.Context, input *shared.StripePriceListParams) ([]*models.StripePrice, error)
+}
 type PaymentService interface {
 	Client() PaymentClient
 	CreateBillingPortalSession(ctx context.Context, userId uuid.UUID) (string, error)
@@ -35,9 +81,6 @@ type StripeService struct {
 	logger       *slog.Logger
 	client       PaymentClient
 	paymentStore PaymentStore
-	rbacStore    RBACStore
-	teamStore    TeamStore
-	db           database.Dbx
 }
 
 var _ PaymentService = (*StripeService)(nil)
@@ -49,15 +92,11 @@ func (srv *StripeService) Client() PaymentClient {
 func NewPaymentService(
 	client PaymentClient,
 	paymentStore PaymentStore,
-	rbacStore RBACStore,
-	teamStore TeamStore,
 ) PaymentService {
 	return &StripeService{
 		client:       client,
 		logger:       slog.Default(),
 		paymentStore: paymentStore,
-		rbacStore:    rbacStore,
-		teamStore:    teamStore,
 	}
 }
 
@@ -72,14 +111,14 @@ func (srv *StripeService) SyncPerms(ctx context.Context) error {
 			if product == nil {
 				return errors.New("product not found")
 			}
-			perm, err := srv.rbacStore.FindPermissionByName(ctx, role)
+			perm, err := srv.paymentStore.FindPermissionByName(ctx, role)
 			if err != nil {
 				return err
 			}
 			if perm == nil {
 				return errors.New("permission not found")
 			}
-			return srv.rbacStore.CreateProductPermissions(ctx, product.ID, perm.ID)
+			return srv.paymentStore.CreateProductPermissions(ctx, product.ID, perm.ID)
 		}()
 	}
 	return err
@@ -211,7 +250,7 @@ func (srv *StripeService) FindOrCreateCustomerFromUser(ctx context.Context, user
 }
 
 func (srv *StripeService) CreateCheckoutSession(ctx context.Context, userId uuid.UUID, priceId string) (string, error) {
-	team, err := srv.teamStore.FindTeamByID(ctx, userId)
+	team, err := srv.paymentStore.FindTeamByID(ctx, userId)
 	if err != nil {
 		return "", err
 	}
@@ -253,7 +292,7 @@ func (srv *StripeService) CreateCheckoutSession(ctx context.Context, userId uuid
 }
 
 func (srv *StripeService) CreateBillingPortalSession(ctx context.Context, userId uuid.UUID) (string, error) {
-	team, err := srv.teamStore.FindTeamByID(ctx, userId)
+	team, err := srv.paymentStore.FindTeamByID(ctx, userId)
 	if err != nil {
 		return "", err
 	}

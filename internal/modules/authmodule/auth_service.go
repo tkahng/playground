@@ -36,6 +36,29 @@ type AuthService interface {
 	Signout(ctx context.Context, token string) error
 	ResetPassword(ctx context.Context, userId uuid.UUID, oldPassword, newPassword string) error
 }
+type AuthStore interface {
+	GetUserInfo(ctx context.Context, email string) (*shared.UserInfo, error)
+	CreateUser(ctx context.Context, user *models.User) (*models.User, error)
+	AssignUserRoles(ctx context.Context, userId uuid.UUID, roleNames ...string) error
+	FindUserByEmail(ctx context.Context, email string) (*models.User, error)
+	UpdateUser(ctx context.Context, user *models.User) error
+	DeleteUser(ctx context.Context, id uuid.UUID) error
+	GetToken(ctx context.Context, token string) (*models.Token, error)
+	SaveToken(ctx context.Context, token *shared.CreateTokenDTO) error
+	DeleteToken(ctx context.Context, token string) error
+	FindUserAccountByUserIdAndProvider(ctx context.Context, userId uuid.UUID, provider models.Providers) (*models.UserAccount, error)
+	UpdateUserAccount(ctx context.Context, account *models.UserAccount) error
+	LinkAccount(ctx context.Context, account *models.UserAccount) error
+	UnlinkAccount(ctx context.Context, userId uuid.UUID, provider models.Providers) error
+}
+type JwtService interface {
+	ParseToken(token string, config conf.TokenOption, data any) error
+	CreateJwtToken(payload jwt.Claims, signingKey string) (string, error)
+}
+type PasswordService interface {
+	HashPassword(password string) (string, error)
+	VerifyPassword(hashedPassword, password string) (match bool, err error)
+}
 
 var _ AuthService = (*authService)(nil)
 

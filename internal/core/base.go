@@ -7,11 +7,10 @@ import (
 	"github.com/tkahng/authgo/internal/conf"
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/queries"
+	"github.com/tkahng/authgo/internal/stores"
 
 	"github.com/tkahng/authgo/internal/modules/authmodule"
 	"github.com/tkahng/authgo/internal/modules/paymentmodule"
-	"github.com/tkahng/authgo/internal/modules/rbacmodule"
-	"github.com/tkahng/authgo/internal/modules/teammodule"
 	"github.com/tkahng/authgo/internal/tools/filesystem"
 	"github.com/tkahng/authgo/internal/tools/logger"
 	"github.com/tkahng/authgo/internal/tools/mailer"
@@ -87,16 +86,12 @@ func InitBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 	} else {
 		mail = &mailer.LogMailer{}
 	}
-	paymentStore := paymentmodule.NewPostgresPaymentStore(pool)
+	paymentStore := stores.NewPostgresPaymentStore(pool)
 	paymentClient := paymentmodule.NewPaymentClient(cfg.StripeConfig)
 
-	rbacStore := rbacmodule.NewPostgresRBACStore(pool)
-	teamStore := teammodule.NewPostgresTeamStore(pool)
 	stripeService := paymentmodule.NewPaymentService(
 		paymentClient,
 		paymentStore,
-		rbacStore,
-		teamStore,
 	)
 	app := &BaseApp{
 		fs:       fs,
