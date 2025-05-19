@@ -353,14 +353,14 @@ func (b *SQLBuilder[Model]) Set(set *Model, args *[]any, where *map[string]any) 
 
 // Constructs the ORDER BY clause for a query
 func (b *SQLBuilder[Model]) Order(order *map[string]string) string {
-	fmt.Println("order", order)
+	// fmt.Println("order", order)
 	if order == nil {
 		return ""
 	}
 
 	// Generate the field names for the ORDER BY clause
 	result := []string{}
-	fmt.Println("columnnames", b.columnNames)
+	// fmt.Println("columnnames", b.columnNames)
 	for key, val := range *order {
 		if slices.Contains(b.columnNames, key) {
 			result = append(result, fmt.Sprintf("%s %s", b.identifier(key), strings.ToUpper(val)))
@@ -420,7 +420,7 @@ func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any, run func(s
 	// Otherwise, construct the WHERE clause based on the field names and operations
 	result := []string{}
 	for key, item := range *where {
-		fmt.Println(key, item)
+		// fmt.Println(key, item)
 		for op, value := range item.(map[string]any) {
 			if handler, ok := b.operations[key+op]; ok {
 				// Primitive field condition detected
