@@ -25,7 +25,18 @@ func NewPostgresTeamStore(db database.Dbx) *PostgresTeamStore {
 
 var _ services.TeamStore = &PostgresTeamStore{}
 
-func (q *PostgresTeamStore) FindTeamMemberByUserAndTeamID(ctx context.Context, userId, teamId uuid.UUID) (*models.TeamMember, error) {
+func (s *PostgresTeamStore) FindTeamByStripeCustomerId(ctx context.Context, stripeCustomerId string) (*models.Team, error) {
+	data, err := crudrepo.Team.GetOne(
+		ctx,
+		s.db,
+		&map[string]any{
+			"stripe_customer_id": map[string]any{"_eq": stripeCustomerId},
+		},
+	)
+	return database.OptionalRow(data, err)
+}
+
+func (q *PostgresTeamStore) FindTeamMemberByTeamAndUserId(ctx context.Context, teamId, userId uuid.UUID) (*models.TeamMember, error) {
 	teamMember, err := crudrepo.TeamMember.GetOne(
 		ctx,
 		q.db,
@@ -154,19 +165,27 @@ func (q *PostgresTeamStore) UpdateTeam(ctx context.Context, teamId uuid.UUID, na
 	return team, nil
 }
 
-func (q *PostgresTeamStore) CreateTeamFromUser(ctx context.Context, user *models.User) (*models.Team, error) {
-	team, err := q.CreateTeam(ctx, user.Email, nil)
-	if err != nil {
-		return nil, err
-	}
-	teamMember, err := q.CreateTeamMember(ctx, team.ID, user.ID, models.TeamMemberRoleAdmin)
-	if err != nil {
-		return nil, err
-	}
-	team.Members = []*models.TeamMember{teamMember}
-	teamMember.Team = team
-	return team, nil
+func (s *PostgresTeamStore) UpsertTeamCustomerStripeId(ctx context.Context, teamId uuid.UUID, stripeCustomerId *string) error {
+	var dbx database.Dbx = s.db
+	q := squirrel.Update("teams").
+		Set("stripe_customer_id", stripeCustomerId).
+		Where("id = ?", teamId)
+	return database.ExecWithBuilder(ctx, dbx, q.PlaceholderFormat(squirrel.Dollar))
 }
+
+// func (q *PostgresTeamStore) CreateTeamFromUser(ctx context.Context, user *models.User) (*models.Team, error) {
+// 	team, err := q.CreateTeam(ctx, user.Email, nil)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	teamMember, err := q.CreateTeamMember(ctx, team.ID, user.ID, models.TeamMemberRoleAdmin)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	team.Members = []*models.TeamMember{teamMember}
+// 	teamMember.Team = team
+// 	return team, nil
+// }
 
 func (q *PostgresTeamStore) CreateTeam(ctx context.Context, name string, stripeCustomerId *string) (*models.Team, error) {
 	teamModel := &models.Team{

@@ -243,19 +243,6 @@ func (s *PostgresStripeStore) FindSubscriptionWithPriceById(ctx context.Context,
 	return first, nil
 }
 
-// FindTeamById implements PaymentStore.
-func (s *PostgresStripeStore) FindTeamById(ctx context.Context, teamId uuid.UUID) (*models.Team, error) {
-	return crudrepo.Team.GetOne(
-		ctx,
-		s.db,
-		&map[string]any{
-			"id": map[string]any{
-				"_eq": teamId.String(),
-			},
-		},
-	)
-}
-
 // FindValidPriceById implements PaymentStore.
 func (s *PostgresStripeStore) FindValidPriceById(ctx context.Context, priceId string) (*models.StripePrice, error) {
 	data, err := crudrepo.StripePrice.GetOne(
@@ -346,15 +333,8 @@ func listProductFilterFuncQuery(q squirrel.SelectBuilder, filter *shared.StripeP
 	return q
 }
 
-// UpsertCustomerStripeId implements PaymentStore.
-func (s *PostgresStripeStore) UpsertCustomerStripeId(ctx context.Context, userId uuid.UUID, stripeCustomerId string) error {
-	var dbx database.Dbx = s.db
-	q := squirrel.Insert("stripe_customers").Columns("id", "stripe_id").Values(userId, stripeCustomerId).Suffix(`ON CONFLICT (id) DO UPDATE SET stripe_id = EXCLUDED.stripe_id`)
-	return database.ExecWithBuilder(ctx, dbx, q.PlaceholderFormat(squirrel.Dollar))
-}
-
 // UpsertSubscriptionFromStripe implements PaymentStore.
-func (s *PostgresStripeStore) UpsertSubscriptionFromStripe(ctx context.Context, sub *stripe.Subscription, userId uuid.UUID) error {
+func (s *PostgresStripeStore) UpsertSubscriptionFromStripe(ctx context.Context, sub *stripe.Subscription, teamId uuid.UUID) error {
 	if sub == nil {
 		return nil
 	}
@@ -370,7 +350,7 @@ func (s *PostgresStripeStore) UpsertSubscriptionFromStripe(ctx context.Context, 
 		ctx,
 		&models.StripeSubscription{
 			ID:                 sub.ID,
-			TeamID:             userId,
+			TeamID:             teamId,
 			Status:             models.StripeSubscriptionStatus(status),
 			Metadata:           sub.Metadata,
 			PriceID:            item.Price.ID,
@@ -390,10 +370,53 @@ func (s *PostgresStripeStore) UpsertSubscriptionFromStripe(ctx context.Context, 
 }
 
 func (s *PostgresStripeStore) UpsertSubscription(ctx context.Context, sub *models.StripeSubscription) error {
-	err := queries.UpsertSubscription(
-		ctx,
-		s.db,
-		sub,
-	)
-	return err
+	q := squirrel.Insert("stripe_subscriptions").
+		Columns(
+			"id",
+			"team_id",
+			"status",
+			"metadata",
+			"price_id",
+			"quantity",
+			"cancel_at_period_end",
+			"created",
+			"current_period_start",
+			"current_period_end",
+			"ended_at",
+			"cancel_at",
+			"canceled_at",
+			"trial_start",
+			"trial_end",
+		).Values(
+		sub.ID,
+		sub.TeamID,
+		sub.Status,
+		sub.Metadata,
+		sub.PriceID,
+		sub.Quantity,
+		sub.CancelAtPeriodEnd,
+		sub.Created,
+		sub.CurrentPeriodStart,
+		sub.CurrentPeriodEnd,
+		sub.EndedAt,
+		sub.CancelAt,
+		sub.CanceledAt,
+		sub.TrialStart,
+		sub.TrialEnd,
+	).Suffix("ON CONFLICT (id) DO UPDATE SET " +
+		"team_id = EXCLUDED.team_id," +
+		"status = EXCLUDED.status," +
+		"metadata = EXCLUDED.metadata," +
+		"price_id = EXCLUDED.price_id," +
+		"quantity = EXCLUDED.quantity," +
+		"cancel_at_period_end = EXCLUDED.cancel_at_period_end," +
+		"created = EXCLUDED.created," +
+		"current_period_start = EXCLUDED.current_period_start," +
+		"current_period_end = EXCLUDED.current_period_end," +
+		"ended_at = EXCLUDED.ended_at," +
+		"cancel_at = EXCLUDED.cancel_at," +
+		"canceled_at = EXCLUDED.canceled_at," +
+		"trial_start = EXCLUDED.trial_start," +
+		"trial_end = EXCLUDED.trial_end")
+	return database.ExecWithBuilder(ctx, s.db, q.PlaceholderFormat(squirrel.Dollar))
 }

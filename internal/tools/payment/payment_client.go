@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/google/uuid"
 	"github.com/stripe/stripe-go/v82"
 	"github.com/stripe/stripe-go/v82/billingportal/configuration"
 	bs "github.com/stripe/stripe-go/v82/billingportal/session"
@@ -26,25 +25,27 @@ func NewPaymentClient(bld conf.StripeConfig) *StripeClient {
 	return payment
 }
 
+func (s *StripeClient) UpdateCustomer(customerId string, params *stripe.CustomerParams) (*stripe.Customer, error) {
+	return customer.Update(customerId, params)
+}
+
 func (s *StripeClient) Config() *conf.StripeConfig {
 	return s.config
 }
 
-func (s *StripeClient) CreateCustomer(email string, userId string) (*stripe.Customer, error) {
+func (s *StripeClient) CreateCustomer(email string, name string) (*stripe.Customer, error) {
 	params := &stripe.CustomerParams{
+		Name:  stripe.String(name),
 		Email: stripe.String(email),
-		Metadata: map[string]string{
-			"user_id": userId,
-		},
 	}
 	return customer.New(params)
 }
 
-func (client *StripeClient) findCustomerByEmailAndUserId(email string, userId string) (*stripe.Customer, error) {
+func (client *StripeClient) findCustomerByEmailAndUserId(email string, name string) (*stripe.Customer, error) {
 	var cs *stripe.Customer
 	params := &stripe.CustomerSearchParams{
 		SearchParams: stripe.SearchParams{
-			Query: fmt.Sprintf("email:'%s' AND metadata['user_id']:'%s'", email, userId),
+			Query: fmt.Sprintf("email:'%s' AND name:'%s'", email, name),
 			Limit: stripe.Int64(1),
 		},
 	}
@@ -87,10 +88,10 @@ func (s *StripeClient) FindAllPrices() ([]*stripe.Price, error) {
 	return data, nil
 }
 
-func (s *StripeClient) FindOrCreateCustomer(email string, userId uuid.UUID) (*stripe.Customer, error) {
-	cs, _ := s.findCustomerByEmailAndUserId(email, userId.String())
+func (s *StripeClient) FindOrCreateCustomer(email string, name string) (*stripe.Customer, error) {
+	cs, _ := s.findCustomerByEmailAndUserId(email, name)
 	if cs == nil {
-		return s.CreateCustomer(email, userId.String())
+		return s.CreateCustomer(email, name)
 	}
 	return cs, nil
 }

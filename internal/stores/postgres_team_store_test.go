@@ -13,32 +13,6 @@ import (
 	"github.com/tkahng/authgo/internal/test"
 )
 
-func TestCreateTeamFromUser(t *testing.T) {
-	test.Short(t)
-	ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
-		userStore := stores.NewPostgresUserStore(dbxx)
-		user, err := userStore.CreateUser(ctx, &models.User{
-			Email: "test@example.com",
-		})
-		if err != nil {
-			t.Fatalf("CreateUser() error = %v", err)
-		}
-		teamStore := stores.NewPostgresTeamStore(dbxx)
-		team, err := teamStore.CreateTeamFromUser(ctx, user)
-		if err != nil {
-			t.Fatalf("CreateTeamFromUser() error = %v", err)
-		}
-		if team == nil || team.Name != user.Email {
-			t.Errorf("CreateTeamFromUser() = %v, want team with name %v", team, user.Email)
-		}
-		if len(team.Members) != 1 || team.Members[0].UserID == nil || *team.Members[0].UserID != user.ID {
-			t.Errorf("CreateTeamFromUser() did not create correct team member")
-		}
-		return errors.New("rollback")
-	})
-}
-
 func TestCreateTeam(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
@@ -289,7 +263,7 @@ func TestUpdateTeamMemberUpdatedAt(t *testing.T) {
 		}
 
 		// Fetch the member again to check updated_at
-		updated, err := teamStore.FindTeamMemberByUserAndTeamID(ctx, team.ID, user.ID)
+		updated, err := teamStore.FindTeamMemberByTeamAndUserId(ctx, team.ID, user.ID)
 		if err != nil {
 			t.Fatalf("GetOne() error = %v", err)
 		}

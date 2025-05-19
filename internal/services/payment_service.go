@@ -24,19 +24,22 @@ type PaymentClient interface {
 	Config() *conf.StripeConfig
 	CreateBillingPortalSession(customerId string, configurationId string) (*stripe.BillingPortalSession, error)
 	CreateCheckoutSession(customerId string, priceId string, trialDays *int64) (*stripe.CheckoutSession, error)
-	CreateCustomer(email string, userId string) (*stripe.Customer, error)
+	CreateCustomer(email string, name string) (*stripe.Customer, error)
 	CreatePortalConfiguration(input ...*stripe.BillingPortalConfigurationFeaturesSubscriptionUpdateProductParams) (string, error)
 	FindAllPrices() ([]*stripe.Price, error)
 	FindAllProducts() ([]*stripe.Product, error)
 	FindCheckoutSessionByStripeId(stripeId string) (*stripe.CheckoutSession, error)
 	// FindCustomerByEmailAndUserId(email string, userId string) (*stripe.Customer, error)
-	FindOrCreateCustomer(email string, userId uuid.UUID) (*stripe.Customer, error)
+	FindOrCreateCustomer(email string, name string) (*stripe.Customer, error)
 	FindSubscriptionByStripeId(stripeId string) (*stripe.Subscription, error)
+	UpdateCustomer(customerId string, params *stripe.CustomerParams) (*stripe.Customer, error)
 }
 
 type PaymentStore interface {
 	// team methods
-	FindTeamByID(ctx context.Context, teamId uuid.UUID) (*models.Team, error)
+	// FindTeamByID(ctx context.Context, teamId uuid.UUID) (*models.Team, error)
+	FindTeamByStripeCustomerId(ctx context.Context, stripeCustomerId string) (*models.Team, error)
+	UpsertTeamCustomerStripeId(ctx context.Context, teamId uuid.UUID, stripeCustomerId *string) error
 	// permission methods
 	FindPermissionByName(ctx context.Context, name string) (*models.Permission, error)
 	CreateProductPermissions(ctx context.Context, productId string, permissionIds ...uuid.UUID) error
@@ -44,11 +47,10 @@ type PaymentStore interface {
 	// payment methods
 	FindSubscriptionWithPriceById(ctx context.Context, stripeId string) (*models.SubscriptionWithPrice, error)
 	FindProductByStripeId(ctx context.Context, productId string) (*models.StripeProduct, error)
-	FindCustomerByStripeId(ctx context.Context, stripeId string) (*models.StripeCustomer, error)
-	FindCustomerByUserId(ctx context.Context, userId uuid.UUID) (*models.StripeCustomer, error)
+	// FindCustomerByStripeId(ctx context.Context, stripeId string) (*models.StripeCustomer, error)
+	// FindCustomerByUserId(ctx context.Context, userId uuid.UUID) (*models.StripeCustomer, error)
 	UpsertSubscriptionFromStripe(ctx context.Context, sub *stripe.Subscription, userId uuid.UUID) error
 	UpsertSubscription(ctx context.Context, sub *models.StripeSubscription) error
-	UpsertCustomerStripeId(ctx context.Context, userId uuid.UUID, stripeCustomerId string) error
 	UpsertProductFromStripe(ctx context.Context, product *stripe.Product) error
 	UpsertProduct(ctx context.Context, product *models.StripeProduct) error
 	UpsertPriceFromStripe(ctx context.Context, price *stripe.Price) error
@@ -61,11 +63,11 @@ type PaymentStore interface {
 }
 type PaymentService interface {
 	Client() PaymentClient
-	CreateBillingPortalSession(ctx context.Context, userId uuid.UUID) (string, error)
-	CreateCheckoutSession(ctx context.Context, userId uuid.UUID, priceId string) (string, error)
+	CreateBillingPortalSession(ctx context.Context, stripeCustomerId string) (string, error)
+	CreateCheckoutSession(ctx context.Context, stripeCustomerId string, priceId string) (string, error)
 	FindAndUpsertAllPrices(ctx context.Context) error
 	FindAndUpsertAllProducts(ctx context.Context) error
-	FindOrCreateCustomerFromUser(ctx context.Context, userId uuid.UUID, email string) (*models.StripeCustomer, error)
+	// FindOrCreateCustomerFromUser(ctx context.Context, userId uuid.UUID, email string) (*models.StripeCustomer, error)
 	FindSubscriptionWithPriceBySessionId(ctx context.Context, sessionId string) (*models.SubscriptionWithPrice, error)
 	SyncPerms(ctx context.Context) error
 	UpsertPriceProductFromStripe(ctx context.Context) error
@@ -202,12 +204,12 @@ func (srv *StripeService) FindSubscriptionWithPriceBySessionId(ctx context.Conte
 }
 
 func (srv *StripeService) UpsertSubscriptionByIds(ctx context.Context, cutomerId, subscriptionId string) error {
-	cus, err := srv.paymentStore.FindCustomerByStripeId(ctx, cutomerId)
+	team, err := srv.paymentStore.FindTeamByStripeCustomerId(ctx, cutomerId)
 	if err != nil {
 		return err
 	}
-	if cus == nil {
-		return errors.New("customer not found")
+	if team == nil {
+		return errors.New("team not found")
 	}
 	sub, err := srv.client.FindSubscriptionByStripeId(subscriptionId)
 	if err != nil {
@@ -216,50 +218,56 @@ func (srv *StripeService) UpsertSubscriptionByIds(ctx context.Context, cutomerId
 	if sub == nil {
 		return errors.New("subscription not found")
 	}
-	err = srv.paymentStore.UpsertSubscriptionFromStripe(ctx, sub, cus.ID)
+	err = srv.paymentStore.UpsertSubscriptionFromStripe(ctx, sub, team.ID)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (srv *StripeService) FindOrCreateCustomerFromUser(ctx context.Context, userId uuid.UUID, email string) (*models.StripeCustomer, error) {
-	dbCus, err := srv.paymentStore.FindCustomerByUserId(ctx, userId)
-	if err != nil {
-		return nil, err
-	}
-	if dbCus != nil {
-		return dbCus, nil
-	}
-	stripeCus, err := srv.client.FindOrCreateCustomer(email, userId)
-	if err != nil {
-		return nil, err
-	}
-	if stripeCus == nil {
-		return nil, errors.New("failed to find or create customer in stripe")
-	}
+// func (srv *StripeService) FindOrCreateCustomerFromUser(ctx context.Context, userId uuid.UUID, email string) (*models.StripeCustomer, error) {
+// 	dbCus, err := srv.paymentStore.FindCustomerByUserId(ctx, userId)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	if dbCus != nil {
+// 		return dbCus, nil
+// 	}
+// 	stripeCus, err := srv.client.FindOrCreateCustomer(email, email)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	if stripeCus == nil {
+// 		return nil, errors.New("failed to find or create customer in stripe")
+// 	}
 
-	err = srv.paymentStore.UpsertCustomerStripeId(ctx, userId, stripeCus.ID)
-	if err != nil {
-		return nil, err
-	}
-	return srv.paymentStore.FindCustomerByUserId(ctx, userId)
-}
+// 	err = srv.paymentStore.UpsertCustomerStripeId(ctx, userId, stripeCus.ID)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	return srv.paymentStore.FindCustomerByUserId(ctx, userId)
+// }
 
-func (srv *StripeService) CreateCheckoutSession(ctx context.Context, userId uuid.UUID, priceId string) (string, error) {
-	team, err := srv.paymentStore.FindTeamByID(ctx, userId)
+func (srv *StripeService) CreateCheckoutSession(ctx context.Context, stripeCustomerId string, priceId string) (string, error) {
+	// team, err := srv.paymentStore.FindTeamByID(ctx, userId)
+	// if err != nil {
+	// 	return "", err
+	// }
+	// if team == nil {
+	// 	return "", errors.New("user not found")
+	// }
+	// if team.StripeCustomerID == nil {
+	// 	return "", errors.New("team does not have a stripe customer id")
+	// }
+	customer_stripe_id := stripeCustomerId
+	team, err := srv.paymentStore.FindTeamByStripeCustomerId(ctx, customer_stripe_id)
 	if err != nil {
 		return "", err
 	}
 	if team == nil {
-		return "", errors.New("user not found")
+		return "", errors.New("team not found")
 	}
-	if team.StripeCustomerID == nil {
-		return "", errors.New("team does not have a stripe customer id")
-	}
-	customer_stripe_id := *team.StripeCustomerID
-
-	val, err := srv.paymentStore.FindLatestActiveSubscriptionByTeamId(ctx, userId)
+	val, err := srv.paymentStore.FindLatestActiveSubscriptionByTeamId(ctx, team.ID)
 	if err != nil {
 		return "", err
 	}
@@ -288,24 +296,16 @@ func (srv *StripeService) CreateCheckoutSession(ctx context.Context, userId uuid
 	return sesh.URL, nil
 }
 
-func (srv *StripeService) CreateBillingPortalSession(ctx context.Context, userId uuid.UUID) (string, error) {
-	team, err := srv.paymentStore.FindTeamByID(ctx, userId)
+func (srv *StripeService) CreateBillingPortalSession(ctx context.Context, stripeCustomerId string) (string, error) {
+	team, err := srv.paymentStore.FindTeamByStripeCustomerId(ctx, stripeCustomerId)
 	if err != nil {
 		return "", err
 	}
 	if team == nil {
-		return "", errors.New("user not found")
+		return "", errors.New("team not found")
 	}
 	stripe_customer_id := *team.StripeCustomerID
-	// find or create customer from user
-	// dbcus, err := s.FindOrCreateCustomerFromUser(ctx,  team.ID, team.Email)
-	// if err != nil {
-	// 	return "", err
-	// }
-	// if dbcus == nil {
-	// 	return "", errors.New("customer not found")
-	// }
-	// verify user has a valid subscriptio
+
 	sub, err := srv.paymentStore.FindLatestActiveSubscriptionByTeamId(ctx, team.ID)
 	if err != nil {
 		return "", err

@@ -28,10 +28,17 @@ func (a *Api) StripeCheckoutSession(ctx context.Context, input *StripePaymentInp
 	if info == nil {
 		return nil, huma.Error403Forbidden("Not authenticated")
 	}
-	user := &info.User
+
+	team := contextstore.GetContextSelectedTeam(ctx)
+	if team == nil {
+		return nil, huma.Error400BadRequest("No team selected")
+	}
+	if team.StripeCustomerID == nil {
+		return nil, huma.Error400BadRequest("No stripe customer id")
+	}
 
 	// return sesh.URL, nil
-	url, err := a.app.Payment().CreateCheckoutSession(ctx, user.ID, input.Body.PriceID)
+	url, err := a.app.Payment().CreateCheckoutSession(ctx, *team.StripeCustomerID, input.Body.PriceID)
 	if err != nil {
 		return nil, err
 	}
@@ -52,11 +59,14 @@ type StripeBillingPortalInput struct {
 
 func (a *Api) StripeBillingPortal(ctx context.Context, input *StripeBillingPortalInput) (*StripeUrlOutput, error) {
 
-	info := contextstore.GetContextUserInfo(ctx)
-	if info == nil {
+	team := contextstore.GetContextSelectedTeam(ctx)
+	if team == nil {
 		return nil, huma.Error401Unauthorized("not authorized")
 	}
-	url, err := a.app.Payment().CreateBillingPortalSession(ctx, info.User.ID)
+	if team.StripeCustomerID == nil {
+		return nil, huma.Error400BadRequest("No stripe customer id")
+	}
+	url, err := a.app.Payment().CreateBillingPortalSession(ctx, *team.StripeCustomerID)
 	if err != nil {
 		return nil, err
 	}
