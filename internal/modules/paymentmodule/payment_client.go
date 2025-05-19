@@ -20,7 +20,7 @@ type StripeClient struct {
 	config *conf.StripeConfig
 }
 
-func NewPaymentClient(bld conf.StripeConfig) PaymentClient {
+func NewPaymentClient(bld conf.StripeConfig) *StripeClient {
 	stripe.Key = bld.ApiKey
 	payment := &StripeClient{config: &bld}
 	return payment
@@ -137,6 +137,13 @@ func (s *StripeClient) CreateCheckoutSession(customerId, priceId string, trialDa
 		SubscriptionData: subscriptionParams,
 	}
 	return session.New(sessionParams)
+}
+
+type ProductBillingConfigurationInput struct {
+	// The list of price IDs for the product that a subscription can be updated to.
+	Prices []*string `form:"prices"`
+	// The product id.
+	Product *string `form:"product"`
 }
 
 func (a *StripeClient) CreatePortalConfiguration(input ...*ProductBillingConfigurationInput) (string, error) {

@@ -11,17 +11,14 @@ import (
 	"github.com/stripe/stripe-go/v82"
 	"github.com/tkahng/authgo/internal/conf"
 	"github.com/tkahng/authgo/internal/models"
+
+	// "github.com/tkahng/authgo/internal/modules/paymentmodule/client"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 	"github.com/tkahng/authgo/internal/tools/types"
 )
 
-type ProductBillingConfigurationInput struct {
-	// The list of price IDs for the product that a subscription can be updated to.
-	Prices []*string `form:"prices"`
-	// The product id.
-	Product *string `form:"product"`
-}
+// var NewPaymentClient = client.NewPaymentClient
 
 type PaymentClient interface {
 	Config() *conf.StripeConfig
