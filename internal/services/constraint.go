@@ -11,22 +11,21 @@ import (
 )
 
 type ConstraintChecker interface {
-	CannotBeSuperUserID(userId uuid.UUID) error
-	CannotBeSuperUserEmail(email string) error
-	CannotBeAdminOrBasicName(permissionName string) error
-	CannotBeAdminOrBasicRoleAndPermissionName(roleName, permissionName string) error
-	CannotBeSuperUserEmailAndRoleName(email, roleName string) error
-	CannotHaveValidSubscription(userId uuid.UUID) error
+	CannotBeSuperUserID(ctx context.Context, userId uuid.UUID) error
+	CannotBeSuperUserEmail(ctx context.Context, email string) error
+	CannotBeAdminOrBasicName(ctx context.Context, permissionName string) error
+	CannotBeAdminOrBasicRoleAndPermissionName(ctx context.Context, roleName, permissionName string) error
+	CannotBeSuperUserEmailAndRoleName(ctx context.Context, email, roleName string) error
+	CannotHaveValidSubscription(ctx context.Context, userId uuid.UUID) error
 }
 
 type ConstraintCheckerService struct {
-	db  database.Dbx
-	ctx context.Context
+	db database.Dbx
 }
 
 // CannotHaveValidSubscription implements ConstraintChecker.
-func (c *ConstraintCheckerService) CannotHaveValidSubscription(userId uuid.UUID) error {
-	subscription, err := queries.FindLatestActiveSubscriptionByTeamId(c.ctx, c.db, userId)
+func (c *ConstraintCheckerService) CannotHaveValidSubscription(ctx context.Context, userId uuid.UUID) error {
+	subscription, err := queries.FindLatestActiveSubscriptionByTeamId(ctx, c.db, userId)
 	if err != nil {
 		return err
 	}
@@ -37,7 +36,7 @@ func (c *ConstraintCheckerService) CannotHaveValidSubscription(userId uuid.UUID)
 }
 
 // CannotBeAdminOrBasicName implements ConstraintChecker.
-func (c *ConstraintCheckerService) CannotBeAdminOrBasicName(permissionName string) error {
+func (c *ConstraintCheckerService) CannotBeAdminOrBasicName(ctx context.Context, permissionName string) error {
 	if permissionName == shared.PermissionNameAdmin || permissionName == shared.PermissionNameBasic {
 		return huma.Error400BadRequest("Cannot perform this action on the admin or basic permission")
 	}
@@ -45,7 +44,7 @@ func (c *ConstraintCheckerService) CannotBeAdminOrBasicName(permissionName strin
 }
 
 // CannotBeAdminOrBasicRoleAndPermissionName implements ConstraintChecker.
-func (c *ConstraintCheckerService) CannotBeAdminOrBasicRoleAndPermissionName(roleName string, permissionName string) error {
+func (c *ConstraintCheckerService) CannotBeAdminOrBasicRoleAndPermissionName(ctx context.Context, roleName string, permissionName string) error {
 	if (roleName == shared.PermissionNameAdmin && permissionName == shared.PermissionNameAdmin) ||
 		(roleName == shared.PermissionNameBasic && permissionName == shared.PermissionNameBasic) {
 		return huma.Error400BadRequest("Cannot perform this action on the admin role and permission")
@@ -54,7 +53,7 @@ func (c *ConstraintCheckerService) CannotBeAdminOrBasicRoleAndPermissionName(rol
 }
 
 // CannotBeSuperUserEmailAndRoleName implements ConstraintChecker.
-func (c *ConstraintCheckerService) CannotBeSuperUserEmailAndRoleName(email string, roleName string) error {
+func (c *ConstraintCheckerService) CannotBeSuperUserEmailAndRoleName(ctx context.Context, email string, roleName string) error {
 	if email == shared.SuperUserEmail && roleName == shared.PermissionNameAdmin {
 		return huma.Error400BadRequest("Cannot perform this action on the super user email and admin role")
 	}
@@ -63,14 +62,13 @@ func (c *ConstraintCheckerService) CannotBeSuperUserEmailAndRoleName(email strin
 
 func NewConstraintCheckerService(ctx context.Context, db database.Dbx) *ConstraintCheckerService {
 	return &ConstraintCheckerService{
-		db:  db,
-		ctx: ctx,
+		db: db,
 	}
 }
 
 // CannotBeSuperUser implements ConstraintChecker.
-func (c *ConstraintCheckerService) CannotBeSuperUserID(userId uuid.UUID) error {
-	user, err := queries.FindUserById(c.ctx, c.db, userId)
+func (c *ConstraintCheckerService) CannotBeSuperUserID(ctx context.Context, userId uuid.UUID) error {
+	user, err := queries.FindUserById(ctx, c.db, userId)
 	if err != nil {
 		return err
 	}
@@ -82,7 +80,7 @@ func (c *ConstraintCheckerService) CannotBeSuperUserID(userId uuid.UUID) error {
 	}
 	return nil
 }
-func (c *ConstraintCheckerService) CannotBeSuperUserEmail(email string) error {
+func (c *ConstraintCheckerService) CannotBeSuperUserEmail(ctx context.Context, email string) error {
 	if email == shared.SuperUserEmail {
 		return huma.Error400BadRequest("Cannot perform this action on the super user")
 	}

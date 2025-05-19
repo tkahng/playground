@@ -115,7 +115,7 @@ func (api *Api) AdminRolesDelete(ctx context.Context, input *struct {
 	}
 	// Check if the user is trying to delete the admin or basic role
 	checker := api.app.NewChecker(ctx)
-	err = checker.CannotBeAdminOrBasicName(role.Name)
+	err = checker.CannotBeAdminOrBasicName(ctx, role.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -149,7 +149,7 @@ func (api *Api) AdminRolesUpdate(ctx context.Context, input *struct {
 		return nil, huma.Error404NotFound("Role not found")
 	}
 	checker := api.app.NewChecker(ctx)
-	err = checker.CannotBeAdminOrBasicName(role.Name)
+	err = checker.CannotBeAdminOrBasicName(ctx, role.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -198,7 +198,7 @@ func (api *Api) AdminUserRolesDelete(ctx context.Context, input *struct {
 	}
 	// Check if the user is trying to remove the super user role from their own account
 	checker := api.app.NewChecker(ctx)
-	err = checker.CannotBeSuperUserEmailAndRoleName(user.Email, role.Name)
+	err = checker.CannotBeSuperUserEmailAndRoleName(ctx, user.Email, role.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -486,7 +486,7 @@ func (api *Api) AdminRolesDeletePermissions(ctx context.Context, input *struct {
 	}
 	// Check if the user is trying to remove the admin permission from the admin role
 	checker := api.app.NewChecker(ctx)
-	err = checker.CannotBeAdminOrBasicRoleAndPermissionName(role.Name, permission.Name)
+	err = checker.CannotBeAdminOrBasicRoleAndPermissionName(ctx, role.Name, permission.Name)
 	if err != nil {
 		return nil, err
 	}

@@ -215,7 +215,7 @@ func (api *Api) AdminPermissionsDelete(ctx context.Context, input *struct {
 	}
 	// Check if the permission is not admin or basic
 	checker := api.app.NewChecker(ctx)
-	err = checker.CannotBeAdminOrBasicName(permission.Name)
+	err = checker.CannotBeAdminOrBasicName(ctx, permission.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -246,7 +246,7 @@ func (api *Api) AdminPermissionsUpdate(ctx context.Context, input *struct {
 		return nil, huma.Error404NotFound("Permission not found")
 	}
 	checker := api.app.NewChecker(ctx)
-	err = checker.CannotBeAdminOrBasicName(permission.Name)
+	err = checker.CannotBeAdminOrBasicName(ctx, permission.Name)
 	if err != nil {
 		return nil, err
 	}

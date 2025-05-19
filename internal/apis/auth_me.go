@@ -61,12 +61,12 @@ func (api *Api) MeDelete(ctx context.Context, input *struct{}) (*struct{}, error
 		return nil, huma.Error404NotFound("User not found")
 	}
 	checker := api.app.NewChecker(ctx)
-	err := checker.CannotBeSuperUserID(claims.User.ID)
+	err := checker.CannotBeSuperUserID(ctx, claims.User.ID)
 	if err != nil {
 		return nil, err
 	}
 	// Check if the user has any active subscriptions
-	err = checker.CannotHaveValidSubscription(claims.User.ID)
+	err = checker.CannotHaveValidSubscription(ctx, claims.User.ID)
 	if err != nil {
 		return nil, err
 	}
