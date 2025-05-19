@@ -16,25 +16,34 @@ import (
 func TestGetUserTaskStats(t *testing.T) {
 
 	test.Short(t)
-ctx, dbx := test.DbSetup()
+	ctx, dbx := test.DbSetup()
 
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 			Email: "tkahng@gmail.com",
 		})
+
 		if err != nil {
 			t.Fatalf("failed to create user: %v", err)
 		}
-		taskProject, err := queries.CreateTaskProject(ctx, dbxx, user.ID, &shared.CreateTaskProjectDTO{
-			Name:   "Test Project",
-			Status: shared.TaskProjectStatusDone,
+		member, err := queries.CreateTeamFromUser(ctx, dbxx, user)
+		if err != nil {
+			t.Fatalf("failed to create team from user: %v", err)
+		}
+		taskProject, err := queries.CreateTaskProject(ctx, dbxx, &shared.CreateTaskProjectDTO{
+			Name:     "Test Project",
+			Status:   shared.TaskProjectStatusDone,
+			TeamID:   member.TeamID,
+			MemberID: user.ID,
 		})
 		if err != nil {
 			t.Fatalf("failed to create task project: %v", err)
 		}
-		_, err = queries.CreateTask(ctx, dbxx, user.ID, taskProject.ID, &shared.CreateTaskBaseDTO{
-			Name:   "Test Task",
-			Status: shared.TaskStatusDone,
+		_, err = queries.CreateTask(ctx, dbxx, taskProject.ID, &shared.CreateTaskBaseDTO{
+			Name:      "Test Task",
+			Status:    shared.TaskStatusDone,
+			TeamID:    member.TeamID,
+			CreatedBy: user.ID,
 		})
 		if err != nil {
 			t.Fatalf("failed to create task: %v", err)

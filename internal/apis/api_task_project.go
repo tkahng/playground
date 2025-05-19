@@ -76,7 +76,7 @@ func (api *Api) TaskProjectCreate(ctx context.Context, input *struct {
 		return nil, huma.Error401Unauthorized("Unauthorized")
 	}
 	db := api.app.Db()
-	taskProject, err := queries.CreateTaskProjectWithTasks(ctx, db, userInfo.User.ID, &input.Body)
+	taskProject, err := queries.CreateTaskProjectWithTasks(ctx, db, &input.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -101,6 +101,10 @@ func (api *Api) TaskProjectCreateWithAi(ctx context.Context, input *TaskProjectC
 	if userInfo == nil {
 		return nil, huma.Error401Unauthorized("Unauthorized")
 	}
+	teamInfo := contextstore.GetContextTeamInfo(ctx)
+	if teamInfo == nil {
+		return nil, huma.Error401Unauthorized("no team info")
+	}
 	db := api.app.Db()
 	aiService := googleai.NewAiService(ctx, api.app.Cfg().AiConfig)
 	taskProjectPlan, err := aiService.GenerateProjectPlan(ctx, input.Body.Input)
@@ -112,16 +116,20 @@ func (api *Api) TaskProjectCreateWithAi(ctx context.Context, input *TaskProjectC
 			Name:        taskProjectPlan.Project.Name,
 			Description: &taskProjectPlan.Project.Description,
 			Status:      shared.TaskProjectStatusTodo,
+			TeamID:      teamInfo.Member.TeamID,
+			MemberID:    teamInfo.Member.ID,
 		},
 		Tasks: mapper.Map(taskProjectPlan.Tasks, func(task googleai.Task) shared.CreateTaskBaseDTO {
 			return shared.CreateTaskBaseDTO{
 				Name:        task.Name,
 				Description: &task.Description,
 				Status:      shared.TaskStatusTodo,
+				CreatedBy:   teamInfo.Member.ID,
+				TeamID:      teamInfo.Member.TeamID,
 			}
 		}),
 	}
-	taskProject, err := queries.CreateTaskProjectWithTasks(ctx, db, userInfo.User.ID, &args)
+	taskProject, err := queries.CreateTaskProjectWithTasks(ctx, db, &args)
 	if err != nil {
 		return nil, err
 	}
@@ -219,6 +227,10 @@ func (api *Api) TaskProjectTasksCreate(ctx context.Context, input *shared.Create
 	if userInfo == nil {
 		return nil, huma.Error401Unauthorized("Unauthorized")
 	}
+	teamInfo := contextstore.GetContextTeamInfo(ctx)
+	if teamInfo == nil {
+		return nil, huma.Error401Unauthorized("no team info")
+	}
 	db := api.app.Db()
 	id, err := uuid.Parse(input.TaskProjectID)
 	if err != nil {
@@ -230,7 +242,9 @@ func (api *Api) TaskProjectTasksCreate(ctx context.Context, input *shared.Create
 		return nil, err
 	}
 	payload.Order = order
-	task, err := queries.CreateTaskWithChildren(ctx, db, userInfo.User.ID, id, &payload)
+	payload.CreatedBy = teamInfo.Member.ID
+	payload.TeamID = teamInfo.Member.TeamID
+	task, err := queries.CreateTaskWithChildren(ctx, db, id, &payload)
 	if err != nil {
 		return nil, err
 	}

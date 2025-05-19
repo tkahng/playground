@@ -299,9 +299,11 @@ func CountTaskProjects(ctx context.Context, db database.Dbx, filter *shared.Task
 	return crudrepo.TaskProject.Count(ctx, db, where)
 }
 
-func CreateTaskProject(ctx context.Context, db database.Dbx, userID uuid.UUID, input *shared.CreateTaskProjectDTO) (*models.TaskProject, error) {
+func CreateTaskProject(ctx context.Context, db database.Dbx, input *shared.CreateTaskProjectDTO) (*models.TaskProject, error) {
 	taskProject := models.TaskProject{
-		UserID:      userID,
+		// UserID:      input.UserID,
+		TeamID:      input.TeamID,
+		CreatedBy:   input.MemberID,
 		Name:        input.Name,
 		Description: input.Description,
 		Status:      models.TaskProjectStatus(input.Status),
@@ -314,20 +316,22 @@ func CreateTaskProject(ctx context.Context, db database.Dbx, userID uuid.UUID, i
 	return projects, nil
 }
 
-func CreateTaskProjectWithTasks(ctx context.Context, db database.Dbx, userID uuid.UUID, input *shared.CreateTaskProjectWithTasksDTO) (*models.TaskProject, error) {
+func CreateTaskProjectWithTasks(ctx context.Context, db database.Dbx, input *shared.CreateTaskProjectWithTasksDTO) (*models.TaskProject, error) {
 	count, err := CountTaskProjects(ctx, db, nil)
 	if err != nil {
 		return nil, err
 	}
 	input.CreateTaskProjectDTO.Order = float64(count * 1000)
-	taskProject, err := CreateTaskProject(ctx, db, userID, &input.CreateTaskProjectDTO)
+	taskProject, err := CreateTaskProject(ctx, db, &input.CreateTaskProjectDTO)
 	if err != nil {
 		return nil, err
 	}
 	var tasks []*models.Task
 	for i, task := range input.Tasks {
+		task.CreatedBy = input.CreateTaskProjectDTO.MemberID
+		task.TeamID = input.CreateTaskProjectDTO.TeamID
 		task.Order = float64(i * 1000)
-		newTask, err := CreateTask(ctx, db, userID, taskProject.ID, &task)
+		newTask, err := CreateTask(ctx, db, taskProject.ID, &task)
 		if err != nil {
 			return nil, err
 		}
@@ -336,8 +340,8 @@ func CreateTaskProjectWithTasks(ctx context.Context, db database.Dbx, userID uui
 	return taskProject, nil
 }
 
-func CreateTaskWithChildren(ctx context.Context, db database.Dbx, userID uuid.UUID, projectID uuid.UUID, input *shared.CreateTaskWithChildrenDTO) (*models.Task, error) {
-	task, err := CreateTask(ctx, db, userID, projectID, &input.CreateTaskBaseDTO)
+func CreateTaskWithChildren(ctx context.Context, db database.Dbx, projectID uuid.UUID, input *shared.CreateTaskWithChildrenDTO) (*models.Task, error) {
+	task, err := CreateTask(ctx, db, projectID, &input.CreateTaskBaseDTO)
 	if err != nil {
 		return nil, err
 	}
@@ -350,10 +354,12 @@ func CreateTaskWithChildren(ctx context.Context, db database.Dbx, userID uuid.UU
 	return task, nil
 }
 
-func CreateTask(ctx context.Context, db database.Dbx, userID uuid.UUID, projectID uuid.UUID, input *shared.CreateTaskBaseDTO) (*models.Task, error) {
+func CreateTask(ctx context.Context, db database.Dbx, projectID uuid.UUID, input *shared.CreateTaskBaseDTO) (*models.Task, error) {
 	setter := models.Task{
-		ProjectID:   projectID,
-		UserID:      userID,
+		ProjectID: projectID,
+		// UserID:      userID,
+		CreatedBy:   input.CreatedBy,
+		TeamID:      input.TeamID,
 		Name:        input.Name,
 		Description: input.Description,
 		Status:      models.TaskStatus(input.Status),

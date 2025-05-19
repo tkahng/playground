@@ -10,6 +10,7 @@ type Team struct {
 	_                struct{}      `db:"teams" json:"-"`
 	ID               uuid.UUID     `db:"id" json:"id"`
 	Name             string        `db:"name" json:"name"`
+	Slug             string        `db:"slug" json:"slug"`
 	StripeCustomerID *string       `db:"stripe_customer_id" json:"stripe_customer_id"`
 	CreatedAt        time.Time     `db:"created_at" json:"created_at"`
 	UpdatedAt        time.Time     `db:"updated_at" json:"updated_at"`
@@ -19,7 +20,7 @@ type Team struct {
 type TeamMemberRole string
 
 const (
-	TeamMemberRoleAdmin  TeamMemberRole = "admin"
+	TeamMemberRoleAdmin  TeamMemberRole = "owner"
 	TeamMemberRoleMember TeamMemberRole = "member"
 	TeamMemberRoleGuest  TeamMemberRole = "guest"
 )
@@ -30,6 +31,7 @@ const (
 	TeamInvitationStatusPending  TeamInvitationStatus = "pending"
 	TeamInvitationStatusAccepted TeamInvitationStatus = "accepted"
 	TeamInvitationStatusDeclined TeamInvitationStatus = "declined"
+	TeamInvitationStatusCanceled TeamInvitationStatus = "canceled"
 )
 
 type TeamInvitation struct {
@@ -40,7 +42,8 @@ type TeamInvitation struct {
 	Email         string               `db:"email" json:"email"`
 	Role          TeamMemberRole       `db:"role" json:"role"`
 	Token         string               `db:"token" json:"token"`
-	Status        TeamInvitationStatus `db:"status" json:"status"`
+	Status        TeamInvitationStatus `db:"status" json:"status" enum:"pending,accepted,declined,canceled"`
+	ExpiresAt     time.Time            `db:"expires_at" json:"expires_at"`
 	CreatedAt     time.Time            `db:"created_at" json:"created_at"`
 	UpdatedAt     time.Time            `db:"updated_at" json:"updated_at"`
 	Team          *Team                `db:"team" src:"team_id" dest:"id" table:"teams" json:"team,omitempty"`
@@ -53,7 +56,7 @@ type TeamMember struct {
 	TeamID         uuid.UUID      `db:"team_id" json:"team_id"`
 	UserID         *uuid.UUID     `db:"user_id" json:"user_id"`
 	Active         bool           `db:"active" json:"active"`
-	Role           TeamMemberRole `db:"role" json:"role"`
+	Role           TeamMemberRole `db:"role" json:"role" enum:"owner,member,guest"`
 	LastSelectedAt time.Time      `db:"last_selected_at" json:"last_selected_at"`
 	CreatedAt      time.Time      `db:"created_at" json:"created_at"`
 	UpdatedAt      time.Time      `db:"updated_at" json:"updated_at"`

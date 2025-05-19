@@ -7,7 +7,8 @@ create type "task_project_status" as enum ('todo', 'in_progress', 'done');
 -- project table  ----------------------------------------------------------------------
 create table if not exists public.task_projects (
     id uuid primary key default gen_random_uuid(),
-    user_id uuid not null references public.users on delete cascade on update cascade,
+    team_id uuid not null references public.teams on delete cascade on update cascade,
+    created_by uuid not null references public.team_members on delete cascade on update cascade,
     name text not null,
     description text,
     status task_project_status not null default 'todo',
@@ -23,7 +24,9 @@ create type "task_status" as enum ('todo', 'in_progress', 'done');
 -- tasks table  ----------------------------------------------------------------------
 create table if not exists public.tasks (
     id uuid primary key default gen_random_uuid(),
-    user_id uuid not null references public.users on delete cascade on update cascade,
+    -- user_id uuid not null references public.users on delete cascade on update cascade,
+    team_id uuid not null references public.teams on delete cascade on update cascade,
+    created_by uuid not null references public.team_members on delete cascade on update cascade,
     project_id uuid not null references public.task_projects on delete cascade on update cascade,
     name text not null,
     description text,

@@ -8,8 +8,10 @@ import (
 )
 
 type Task struct {
-	ID          uuid.UUID  `db:"id,pk" json:"id"`
-	UserID      uuid.UUID  `db:"user_id" json:"user_id"`
+	ID uuid.UUID `db:"id,pk" json:"id"`
+	// UserID      uuid.UUID  `db:"user_id" json:"user_id"`
+	CreatedBy   uuid.UUID  `db:"created_by" json:"created_by"`
+	TeamID      uuid.UUID  `db:"team_id" json:"team_id"`
 	ProjectID   uuid.UUID  `db:"project_id" json:"project_id"`
 	Name        string     `db:"name" json:"name"`
 	Description *string    `db:"description" json:"description"`
@@ -30,8 +32,10 @@ func CrudModelToTask(task *crudModels.Task) *Task {
 		return nil
 	}
 	return &Task{
-		ID:          task.ID,
-		UserID:      task.UserID,
+		ID: task.ID,
+		// UserID:      task.UserID,
+		CreatedBy:   task.CreatedBy,
+		TeamID:      task.TeamID,
 		ProjectID:   task.ProjectID,
 		Name:        task.Name,
 		Description: task.Description,
@@ -44,6 +48,8 @@ func CrudModelToTask(task *crudModels.Task) *Task {
 }
 
 type CreateTaskBaseDTO struct {
+	CreatedBy   uuid.UUID  `db:"created_by" json:"created_by"`
+	TeamID      uuid.UUID  `db:"team_id" json:"team_id"`
 	Name        string     `json:"name" required:"true"`
 	Description *string    `json:"description,omitempty" required:"false"`
 	Status      TaskStatus `json:"status" required:"false" enum:"todo,in_progress,done" default:"todo"`

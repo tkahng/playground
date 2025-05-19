@@ -79,9 +79,11 @@ const (
 )
 
 type Task struct {
-	_           struct{}     `db:"tasks" json:"-"`
-	ID          uuid.UUID    `db:"id" json:"id"`
-	UserID      uuid.UUID    `db:"user_id" json:"user_id"`
+	_         struct{}  `db:"tasks" json:"-"`
+	ID        uuid.UUID `db:"id" json:"id"`
+	CreatedBy uuid.UUID `db:"created_by" json:"created_by"`
+	TeamID    uuid.UUID `db:"team_id" json:"team_id"`
+	// UserID      uuid.UUID    `db:"user_id" json:"user_id"`
 	ProjectID   uuid.UUID    `db:"project_id" json:"project_id"`
 	Name        string       `db:"name" json:"name"`
 	Description *string      `db:"description" json:"description"`
@@ -96,9 +98,11 @@ type Task struct {
 }
 
 type TaskProject struct {
-	_           struct{}          `db:"task_projects" json:"-"`
-	ID          uuid.UUID         `db:"id" json:"id"`
-	UserID      uuid.UUID         `db:"user_id" json:"user_id"`
+	_         struct{}  `db:"task_projects" json:"-"`
+	ID        uuid.UUID `db:"id" json:"id"`
+	CreatedBy uuid.UUID `db:"created_by" json:"created_by"`
+	TeamID    uuid.UUID `db:"team_id" json:"team_id"`
+	// UserID      uuid.UUID         `db:"user_id" json:"user_id"`
 	Name        string            `db:"name" json:"name"`
 	Description *string           `db:"description" json:"description"`
 	Status      TaskProjectStatus `db:"status" json:"status" enum:"todo,in_progress,done"`

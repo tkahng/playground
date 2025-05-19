@@ -93,13 +93,18 @@ func CheckTaskOwnerMiddleware(api huma.API, app core.App) func(ctx huma.Context,
 			huma.WriteErr(api, ctx, http.StatusNotFound, "task not found at middleware")
 			return
 		}
-		user := contextstore.GetContextUserInfo(rawCtx)
-		if user == nil {
+		userInfo := contextstore.GetContextUserInfo(rawCtx)
+		if userInfo == nil {
 			huma.WriteErr(api, ctx, http.StatusUnauthorized, "unauthorized at middleware")
 			return
 		}
-		if task.UserID != user.User.ID {
-			if slices.Contains(user.Permissions, "superuser") {
+		teamInfo := contextstore.GetContextTeamInfo(rawCtx)
+		if teamInfo == nil {
+			huma.WriteErr(api, ctx, http.StatusUnauthorized, "unauthorized at middleware")
+			return
+		}
+		if task.CreatedBy != teamInfo.Member.ID {
+			if slices.Contains(userInfo.Permissions, "superuser") {
 				next(ctx)
 				return
 			}

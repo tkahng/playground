@@ -13,6 +13,7 @@ func CreateTeamFromUser(ctx context.Context, dbx database.Dbx, user *models.User
 	team, err := func() (*models.Team, error) {
 		teamModel := &models.Team{
 			Name:             user.Email,
+			Slug:             user.Email,
 			StripeCustomerID: nil,
 		}
 		team, err := crudrepo.Team.PostOne(

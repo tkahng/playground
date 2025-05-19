@@ -3,6 +3,7 @@
 CREATE TABLE IF NOT EXISTS teams (
     id uuid primary key default gen_random_uuid(),
     name VARCHAR(255) NOT NULL,
+    slug VARCHAR(255) NOT NULL UNIQUE,
     stripe_customer_id TEXT UNIQUE,
     created_at timestamptz not null default now(),
     updated_at timestamptz not null default now()
@@ -10,7 +11,7 @@ CREATE TABLE IF NOT EXISTS teams (
 create trigger handle_teams_updated_at before
 update on public.teams for each row execute procedure set_current_timestamp_updated_at();
 -- team member roles enum ------------------------------------------------
-CREATE TYPE team_member_role AS ENUM ('admin', 'member', 'guest');
+CREATE TYPE team_member_role AS ENUM ('owner', 'member', 'guest');
 -- team members table ------------------------------------------------------
 CREATE TABLE IF NOT EXISTS team_members (
     id uuid primary key default gen_random_uuid(),
@@ -27,7 +28,7 @@ CREATE TABLE IF NOT EXISTS team_members (
 CREATE TRIGGER handle_team_members_updated_at BEFORE
 UPDATE ON public.team_members FOR EACH ROW EXECUTE PROCEDURE set_current_timestamp_updated_at();
 -- team invitation table ------------------------------------------------------
-create type team_invitation_status as enum ('pending', 'accepted', 'declined');
+create type team_invitation_status as enum ('pending', 'accepted', 'declined', 'cancelled');
 CREATE TABLE IF NOT EXISTS team_invitations (
     id uuid primary key default gen_random_uuid(),
     team_id uuid NOT NULL REFERENCES teams(id) ON DELETE CASCADE ON UPDATE CASCADE,
@@ -36,6 +37,7 @@ CREATE TABLE IF NOT EXISTS team_invitations (
     role team_member_role NOT NULL,
     token text NOT NULL UNIQUE,
     "status" team_invitation_status DEFAULT 'pending' NOT NULL,
+    expires_at timestamptz NOT NULL,
     created_at timestamptz not null default now(),
     updated_at timestamptz not null default now(),
     constraint team_invitations_email_team_id unique (email, team_id)

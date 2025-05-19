@@ -25,8 +25,10 @@ const (
 type TaskProjectStatus string
 
 type TaskProject struct {
-	ID          uuid.UUID         `db:"id,pk" json:"id"`
-	UserID      uuid.UUID         `db:"user_id" json:"user_id"`
+	ID uuid.UUID `db:"id,pk" json:"id"`
+	// UserID      uuid.UUID         `db:"user_id" json:"user_id"`
+	CreatedBy   uuid.UUID         `db:"created_by" json:"created_by"`
+	TeamID      uuid.UUID         `db:"team_id" json:"team_id"`
 	Name        string            `db:"name" json:"name"`
 	Description *string           `db:"description" json:"description"`
 	Status      TaskProjectStatus `db:"status" json:"status" enum:"todo,in_progress,done"`
@@ -44,8 +46,10 @@ func CrudToProject(task *models.TaskProject) *TaskProject {
 		return nil
 	}
 	return &TaskProject{
-		ID:          task.ID,
-		UserID:      task.UserID,
+		ID: task.ID,
+		// UserID:      task.UserID,
+		CreatedBy:   task.CreatedBy,
+		TeamID:      task.TeamID,
 		Name:        task.Name,
 		Description: task.Description,
 		Status:      TaskProjectStatus(task.Status),
@@ -60,8 +64,10 @@ func ModelToProject(task *models.TaskProject) *TaskProject {
 		return nil
 	}
 	return &TaskProject{
-		ID:          task.ID,
-		UserID:      task.UserID,
+		ID: task.ID,
+		// UserID:      task.UserID,
+		CreatedBy:   task.CreatedBy,
+		TeamID:      task.TeamID,
 		Name:        task.Name,
 		Description: task.Description,
 		Status:      TaskProjectStatus(task.Status),
@@ -72,6 +78,8 @@ func ModelToProject(task *models.TaskProject) *TaskProject {
 }
 
 type CreateTaskProjectDTO struct {
+	TeamID      uuid.UUID         `json:"team_id" required:"true" format:"uuid"`
+	MemberID    uuid.UUID         `json:"member_id" required:"true" format:"uuid"`
 	Name        string            `json:"name" required:"true"`
 	Description *string           `json:"description,omitempty" required:"false"`
 	Status      TaskProjectStatus `json:"status" required:"false" enum:"todo,in_progress,done" default:"todo"`
