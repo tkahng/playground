@@ -22,6 +22,7 @@ func TestConstraintCheckerService_CannotHaveValidSubscription(t *testing.T) {
 	dbx.RunInTransaction(ctx, func(tx database.Dbx) error {
 		userStore := stores.NewPostgresUserStore(tx)
 		paymentStore := stores.NewPostgresStripeStore(tx)
+		constraintStore := stores.NewPostgresConstraintStore(tx)
 
 		user, err := userStore.CreateUser(ctx, &models.User{
 			Email: "test@example.com",
@@ -84,7 +85,7 @@ func TestConstraintCheckerService_CannotHaveValidSubscription(t *testing.T) {
 		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				c := services.NewConstraintCheckerService(userStore, paymentStore)
+				c := services.NewConstraintCheckerService(constraintStore)
 				if err := c.CannotHaveValidUserSubscription(tt.fields.ctx, tt.args.userId); (err != nil) != tt.wantErr {
 					t.Errorf("ConstraintCheckerService.CannotHaveValidSubscription() error = %v, wantErr %v", err, tt.wantErr)
 					if err.Error() != "Cannot perform this action on a user with a valid subscription" {
@@ -98,8 +99,7 @@ func TestConstraintCheckerService_CannotHaveValidSubscription(t *testing.T) {
 }
 func TestConstraintCheckerService_CannotBeAdminOrBasicName(t *testing.T) {
 	ctx, dbx := test.DbSetup()
-	userStore := stores.NewPostgresUserStore(dbx)
-	paymentStore := stores.NewPostgresStripeStore(dbx)
+	checkerStore := stores.NewPostgresConstraintStore(dbx)
 	type fields struct {
 		db  database.Dbx
 		ctx context.Context
@@ -134,7 +134,7 @@ func TestConstraintCheckerService_CannotBeAdminOrBasicName(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c := services.NewConstraintCheckerService(userStore, paymentStore)
+			c := services.NewConstraintCheckerService(checkerStore)
 			err := c.CannotBeAdminOrBasicName(tt.fields.ctx, tt.args.permissionName)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ConstraintCheckerService.CannotBeAdminOrBasicName() error = %v, wantErr %v", err, tt.wantErr)
@@ -147,8 +147,8 @@ func TestConstraintCheckerService_CannotBeAdminOrBasicName(t *testing.T) {
 }
 func TestConstraintCheckerService_CannotBeAdminOrBasicRoleAndPermissionName(t *testing.T) {
 	ctx, dbx := test.DbSetup()
-	userStore := stores.NewPostgresUserStore(dbx)
-	stripeStore := stores.NewPostgresStripeStore(dbx)
+	checkerStore := stores.NewPostgresConstraintStore(dbx)
+
 	type fields struct {
 		db  database.Dbx
 		ctx context.Context
@@ -202,7 +202,7 @@ func TestConstraintCheckerService_CannotBeAdminOrBasicRoleAndPermissionName(t *t
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c := services.NewConstraintCheckerService(userStore, stripeStore)
+			c := services.NewConstraintCheckerService(checkerStore)
 			err := c.CannotBeAdminOrBasicRoleAndPermissionName(tt.fields.ctx, tt.args.roleName, tt.args.permissionName)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ConstraintCheckerService.CannotBeAdminOrBasicRoleAndPermissionName() error = %v, wantErr %v", err, tt.wantErr)
@@ -215,8 +215,8 @@ func TestConstraintCheckerService_CannotBeAdminOrBasicRoleAndPermissionName(t *t
 }
 func TestConstraintCheckerService_CannotBeSuperUserEmailAndRoleName(t *testing.T) {
 	ctx, dbx := test.DbSetup()
-	userStore := stores.NewPostgresUserStore(dbx)
-	paymentStore := stores.NewPostgresStripeStore(dbx)
+	checkerStore := stores.NewPostgresConstraintStore(dbx)
+
 	type fields struct {
 		db  database.Dbx
 		ctx context.Context
@@ -270,7 +270,7 @@ func TestConstraintCheckerService_CannotBeSuperUserEmailAndRoleName(t *testing.T
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c := services.NewConstraintCheckerService(userStore, paymentStore)
+			c := services.NewConstraintCheckerService(checkerStore)
 			err := c.CannotBeSuperUserEmailAndRoleName(tt.fields.ctx, tt.args.email, tt.args.roleName)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ConstraintCheckerService.CannotBeSuperUserEmailAndRoleName() error = %v, wantErr %v", err, tt.wantErr)
@@ -287,7 +287,8 @@ func TestConstraintCheckerService_CannotBeSuperUserID(t *testing.T) {
 	dbx.RunInTransaction(ctx, func(tx database.Dbx) error {
 		rbacStore := stores.NewPostgresRBACStore(tx)
 		userStore := stores.NewPostgresUserStore(tx)
-		stripeStore := stores.NewPostgresStripeStore(tx)
+		checkerStore := stores.NewPostgresConstraintStore(dbx)
+
 		err := rbacStore.EnsureRoleAndPermissions(
 			ctx,
 			shared.PermissionNameAdmin,
@@ -367,7 +368,7 @@ func TestConstraintCheckerService_CannotBeSuperUserID(t *testing.T) {
 		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				c := services.NewConstraintCheckerService(userStore, stripeStore)
+				c := services.NewConstraintCheckerService(checkerStore)
 				err := c.CannotBeSuperUserID(tt.fields.ctx, tt.args.userId)
 				if (err != nil) != tt.wantErr {
 					t.Errorf("ConstraintCheckerService.CannotBeSuperUserID() error = %v, wantErr %v", err, tt.wantErr)
@@ -382,8 +383,7 @@ func TestConstraintCheckerService_CannotBeSuperUserID(t *testing.T) {
 }
 func TestConstraintCheckerService_CannotBeSuperUserEmail(t *testing.T) {
 	ctx, dbx := test.DbSetup()
-	userStore := stores.NewPostgresUserStore(dbx)
-	stripeStore := stores.NewPostgresStripeStore(dbx)
+	checkerStore := stores.NewPostgresConstraintStore(dbx)
 
 	type fields struct {
 		db  database.Dbx
@@ -417,7 +417,7 @@ func TestConstraintCheckerService_CannotBeSuperUserEmail(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c := services.NewConstraintCheckerService(userStore, stripeStore)
+			c := services.NewConstraintCheckerService(checkerStore)
 			err := c.CannotBeSuperUserEmail(tt.fields.ctx, tt.args.email)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ConstraintCheckerService.CannotBeSuperUserEmail() error = %v, wantErr %v", err, tt.wantErr)

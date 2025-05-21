@@ -13,7 +13,7 @@ type ConstraintCheckerUserStore interface {
 	// GetUserInfo(ctx context.Context, email string) (*shared.UserInfo, error)
 	// CreateUser(ctx context.Context, user *models.User) (*models.User, error)
 	// AssignUserRoles(ctx context.Context, userId uuid.UUID, roleNames ...string) error
-	FindUserByEmail(ctx context.Context, email string) (*models.User, error)
+	// FindUserByEmail(ctx context.Context, email string) (*models.User, error)
 	FindUserById(ctx context.Context, userId uuid.UUID) (*models.User, error)
 	// UpdateUser(ctx context.Context, user *models.User) error
 	// DeleteUser(ctx context.Context, id uuid.UUID) error
@@ -23,13 +23,17 @@ type ConstraintCheckerPaymentStore interface {
 	FindLatestActiveSubscriptionByTeamId(ctx context.Context, teamId uuid.UUID) (*models.StripeSubscription, error)
 }
 
+type ConstaintCheckerStore interface {
+	// FindUserByEmail(ctx context.Context, email string) (*models.User, error)
+	FindUserById(ctx context.Context, userId uuid.UUID) (*models.User, error)
+	FindLatestActiveSubscriptionByUserId(ctx context.Context, userId uuid.UUID) (*models.StripeSubscription, error)
+}
+
 func NewConstraintCheckerService(
-	userStore ConstraintCheckerUserStore,
-	stripeStore ConstraintCheckerPaymentStore,
+	store ConstaintCheckerStore,
 ) *ConstraintCheckerService {
 	return &ConstraintCheckerService{
-		userStore:    userStore,
-		paymentStore: stripeStore,
+		store: store,
 	}
 }
 
@@ -43,14 +47,12 @@ type ConstraintChecker interface {
 }
 
 type ConstraintCheckerService struct {
-	userStore    ConstraintCheckerUserStore
-	paymentStore ConstraintCheckerPaymentStore
-	// db        database.Dbx
+	store ConstaintCheckerStore
 }
 
 // CannotHaveValidUserSubscription implements ConstraintChecker.
 func (c *ConstraintCheckerService) CannotHaveValidUserSubscription(ctx context.Context, userId uuid.UUID) error {
-	subscription, err := c.paymentStore.FindLatestActiveSubscriptionByTeamId(ctx, userId)
+	subscription, err := c.store.FindLatestActiveSubscriptionByUserId(ctx, userId)
 	if err != nil {
 		return err
 	}
@@ -87,7 +89,7 @@ func (c *ConstraintCheckerService) CannotBeSuperUserEmailAndRoleName(ctx context
 
 // CannotBeSuperUser implements ConstraintChecker.
 func (c *ConstraintCheckerService) CannotBeSuperUserID(ctx context.Context, userId uuid.UUID) error {
-	user, err := c.userStore.FindUserById(ctx, userId)
+	user, err := c.store.FindUserById(ctx, userId)
 	if err != nil {
 		return err
 	}
