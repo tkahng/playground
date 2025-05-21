@@ -85,7 +85,7 @@ func TestConstraintCheckerService_CannotHaveValidSubscription(t *testing.T) {
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				c := services.NewConstraintCheckerService(userStore, paymentStore)
-				if err := c.CannotHaveValidSubscription(tt.fields.ctx, tt.args.userId); (err != nil) != tt.wantErr {
+				if err := c.CannotHaveValidUserSubscription(tt.fields.ctx, tt.args.userId); (err != nil) != tt.wantErr {
 					t.Errorf("ConstraintCheckerService.CannotHaveValidSubscription() error = %v, wantErr %v", err, tt.wantErr)
 					if err.Error() != "Cannot perform this action on a user with a valid subscription" {
 						t.Errorf("unexpected error message: %v", err.Error())

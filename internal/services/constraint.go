@@ -39,7 +39,7 @@ type ConstraintChecker interface {
 	CannotBeAdminOrBasicName(ctx context.Context, permissionName string) error
 	CannotBeAdminOrBasicRoleAndPermissionName(ctx context.Context, roleName, permissionName string) error
 	CannotBeSuperUserEmailAndRoleName(ctx context.Context, email, roleName string) error
-	CannotHaveValidSubscription(ctx context.Context, userId uuid.UUID) error
+	CannotHaveValidUserSubscription(ctx context.Context, userId uuid.UUID) error
 }
 
 type ConstraintCheckerService struct {
@@ -48,8 +48,8 @@ type ConstraintCheckerService struct {
 	// db        database.Dbx
 }
 
-// CannotHaveValidSubscription implements ConstraintChecker.
-func (c *ConstraintCheckerService) CannotHaveValidSubscription(ctx context.Context, userId uuid.UUID) error {
+// CannotHaveValidUserSubscription implements ConstraintChecker.
+func (c *ConstraintCheckerService) CannotHaveValidUserSubscription(ctx context.Context, userId uuid.UUID) error {
 	subscription, err := c.paymentStore.FindLatestActiveSubscriptionByTeamId(ctx, userId)
 	if err != nil {
 		return err

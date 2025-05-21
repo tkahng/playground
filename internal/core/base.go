@@ -28,6 +28,7 @@ type BaseApp struct {
 	mail     mailer.Mailer
 	auth     services.AuthService
 	team     services.TeamService
+	checker  services.ConstraintChecker
 }
 
 func (app *BaseApp) Team() services.TeamService {
@@ -35,8 +36,8 @@ func (app *BaseApp) Team() services.TeamService {
 }
 
 // Checker implements App.
-func (a *BaseApp) NewChecker(ctx context.Context) services.ConstraintChecker {
-	return services.NewConstraintCheckerService(ctx, a.db)
+func (a *BaseApp) Checker() services.ConstraintChecker {
+	return a.checker
 }
 
 // Auth implements App.
@@ -92,6 +93,7 @@ func InitBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 	} else {
 		mail = &mailer.LogMailer{}
 	}
+	userStore := stores.NewPostgresUserStore(pool)
 	paymentStore := stores.NewPostgresPaymentStore(pool)
 	paymentClient := payment.NewPaymentClient(cfg.StripeConfig)
 	paymentService := services.NewPaymentService(
@@ -109,6 +111,10 @@ func InitBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 		tokenService,
 		passwordService,
 	)
+	checker := services.NewConstraintCheckerService(
+		userStore,
+		paymentStore,
+	)
 
 	app := &BaseApp{
 		fs:       fs,
@@ -119,6 +125,7 @@ func InitBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 		mail:     mail,
 		auth:     authService,
 		payment:  paymentService,
+		checker:  checker,
 	}
 	return app
 }

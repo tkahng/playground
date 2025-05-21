@@ -219,7 +219,7 @@ func (s *PostgresStripeStore) FindProductByStripeId(ctx context.Context, product
 const (
 	getSubscriptionWithPriceByIdQuery = `
 SELECT ss.id AS "subscription.id",
-        ss.team_id AS "subscription.team_id",
+        ss.stripe_customer_id AS "subscription.stripe_customer_id",
         ss.status AS "subscription.status",
         ss.metadata AS "subscription.metadata",
 		ss.item_id AS "subscription.item_id",
@@ -356,13 +356,13 @@ func (s *PostgresStripeStore) FindValidPriceById(ctx context.Context, priceId st
 }
 
 // IsFirstSubscription implements PaymentStore.
-func (s *PostgresStripeStore) IsFirstSubscription(ctx context.Context, teamId uuid.UUID) (bool, error) {
+func (s *PostgresStripeStore) IsFirstSubscription(ctx context.Context, customerID string) (bool, error) {
 	data, err := crudrepo.StripeSubscription.Count(
 		ctx,
 		s.db,
 		&map[string]any{
-			"team_id": map[string]any{
-				"_eq": teamId.String(),
+			"stripe_customer_id": map[string]any{
+				"_eq": customerID,
 			},
 		},
 	)
@@ -429,7 +429,7 @@ func listProductFilterFuncQuery(q squirrel.SelectBuilder, filter *shared.StripeP
 }
 
 // UpsertSubscriptionFromStripe implements PaymentStore.
-func (s *PostgresStripeStore) UpsertSubscriptionFromStripe(ctx context.Context, sub *stripe.Subscription, teamId uuid.UUID) error {
+func (s *PostgresStripeStore) UpsertSubscriptionFromStripe(ctx context.Context, sub *stripe.Subscription) error {
 	if sub == nil {
 		return nil
 	}

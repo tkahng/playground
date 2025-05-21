@@ -121,13 +121,13 @@ func (api *Api) AdminUsersDelete(ctx context.Context, input *struct {
 	ID uuid.UUID `path:"user-id" format:"uuid" required:"true"`
 }) (*struct{}, error) {
 	db := api.app.Db()
-	checker := api.app.NewChecker(ctx)
+	checker := api.app.Checker()
 	err := checker.CannotBeSuperUserID(ctx, input.ID)
 	if err != nil {
 		return nil, err
 	}
 	// Check if the user has any active subscriptions
-	err = checker.CannotHaveValidSubscription(ctx, input.ID)
+	err = checker.CannotHaveValidUserSubscription(ctx, input.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -159,7 +159,7 @@ func (api *Api) AdminUsersUpdatePassword(ctx context.Context, input *struct {
 	Body UpdateUserPasswordInput
 }) (*struct{}, error) {
 	db := api.app.Db()
-	checker := api.app.NewChecker(ctx)
+	checker := api.app.Checker()
 	err := checker.CannotBeSuperUserID(ctx, input.ID)
 	if err != nil {
 		return nil, err

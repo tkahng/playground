@@ -9,7 +9,8 @@ import (
 )
 
 type StripePaymentPayload struct {
-	PriceID string `json:"price_id"`
+	StripeCustomerID string `json:"stripe_customer_id"`
+	PriceID          string `json:"price_id"`
 }
 type StripePaymentInput struct {
 	// HxRequestHeaders
@@ -29,16 +30,16 @@ func (a *Api) StripeCheckoutSession(ctx context.Context, input *StripePaymentInp
 		return nil, huma.Error403Forbidden("Not authenticated")
 	}
 
-	team := contextstore.GetContextSelectedTeam(ctx)
-	if team == nil {
-		return nil, huma.Error400BadRequest("No team selected")
-	}
-	if team.StripeCustomerID == nil {
-		return nil, huma.Error400BadRequest("No stripe customer id")
-	}
+	// team := contextstore.GetContextSelectedTeam(ctx)
+	// if team == nil {
+	// 	return nil, huma.Error400BadRequest("No team selected")
+	// }
+	// if team.StripeCustomerID == nil {
+	// 	return nil, huma.Error400BadRequest("No stripe customer id")
+	// }
 
 	// return sesh.URL, nil
-	url, err := a.app.Payment().CreateCheckoutSession(ctx, *team.StripeCustomerID, input.Body.PriceID)
+	url, err := a.app.Payment().CreateCheckoutSession(ctx, input.Body.StripeCustomerID, input.Body.PriceID)
 	if err != nil {
 		return nil, err
 	}
@@ -52,21 +53,24 @@ func (a *Api) StripeCheckoutSession(ctx context.Context, input *StripePaymentInp
 
 }
 
+type StripeBillingPortalBody struct {
+	StripeCustomerID string `json:"stripe_customer_id"`
+}
 type StripeBillingPortalInput struct {
 	// HxRequestHeaders
-	// Body StripePaymentPayload
+	Body StripeBillingPortalBody
 }
 
 func (a *Api) StripeBillingPortal(ctx context.Context, input *StripeBillingPortalInput) (*StripeUrlOutput, error) {
 
-	team := contextstore.GetContextSelectedTeam(ctx)
-	if team == nil {
-		return nil, huma.Error401Unauthorized("not authorized")
-	}
-	if team.StripeCustomerID == nil {
-		return nil, huma.Error400BadRequest("No stripe customer id")
-	}
-	url, err := a.app.Payment().CreateBillingPortalSession(ctx, *team.StripeCustomerID)
+	// team := contextstore.GetContextSelectedTeam(ctx)
+	// if team == nil {
+	// 	return nil, huma.Error401Unauthorized("not authorized")
+	// }
+	// if team.StripeCustomerID == nil {
+	// 	return nil, huma.Error400BadRequest("No stripe customer id")
+	// }
+	url, err := a.app.Payment().CreateBillingPortalSession(ctx, input.Body.StripeCustomerID)
 	if err != nil {
 		return nil, err
 	}

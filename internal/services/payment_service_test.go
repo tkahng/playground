@@ -101,8 +101,8 @@ func (m *mockPaymentStore) FindValidPriceById(ctx context.Context, priceId strin
 }
 
 // IsFirstSubscription implements PaymentStore.
-func (m *mockPaymentStore) IsFirstSubscription(ctx context.Context, teamId uuid.UUID) (bool, error) {
-	args := m.Called(ctx, teamId)
+func (m *mockPaymentStore) IsFirstSubscription(ctx context.Context, customerId string) (bool, error) {
+	args := m.Called(ctx, customerId)
 	return args.Get(0).(bool), args.Error(1)
 }
 
@@ -155,8 +155,8 @@ func (m *mockPaymentStore) UpsertSubscription(ctx context.Context, sub *models.S
 }
 
 // UpsertSubscriptionFromStripe implements PaymentStore.
-func (m *mockPaymentStore) UpsertSubscriptionFromStripe(ctx context.Context, sub *stripe.Subscription, userId uuid.UUID) error {
-	args := m.Called(ctx, sub, userId)
+func (m *mockPaymentStore) UpsertSubscriptionFromStripe(ctx context.Context, sub *stripe.Subscription) error {
+	args := m.Called(ctx, sub)
 	return args.Error(0)
 }
 

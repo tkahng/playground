@@ -1,8 +1,6 @@
 package core
 
 import (
-	"context"
-
 	"github.com/tkahng/authgo/internal/conf"
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/services"
@@ -14,7 +12,6 @@ type App interface {
 	Cfg() *conf.EnvConfig
 	Db() database.Dbx
 	Fs() *filesystem.FileSystem
-	NewChecker(ctx context.Context) services.ConstraintChecker
 	Settings() *conf.AppOptions
 	NewMailClient() mailer.Mailer
 	EncryptionEnv() string
@@ -24,4 +21,6 @@ type App interface {
 	Auth() services.AuthService
 
 	Team() services.TeamService
+
+	Checker() services.ConstraintChecker
 }

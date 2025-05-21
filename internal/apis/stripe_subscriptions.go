@@ -5,7 +5,9 @@ import (
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/tkahng/authgo/internal/contextstore"
+	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/authgo/internal/tools/types"
 )
 
 func (api *Api) MyStripeSubscriptions(ctx context.Context, input *struct{}) (*struct {
@@ -23,7 +25,16 @@ func (api *Api) MyStripeSubscriptions(ctx context.Context, input *struct{}) (*st
 	if member == nil {
 		return nil, huma.Error400BadRequest("No team selected")
 	}
-	subscriptions, err := api.app.Payment().Store().FindLatestActiveSubscriptionWithPriceByTeamId(ctx, member.TeamID)
+	customer, err := api.app.Payment().Store().FindCustomer(ctx, &models.StripeCustomer{
+		TeamID: types.Pointer(member.TeamID),
+	})
+	if err != nil {
+		return nil, err
+	}
+	if customer == nil {
+		return nil, huma.Error400BadRequest("No stripe customer id")
+	}
+	subscriptions, err := api.app.Payment().Store().FindLatestActiveSubscriptionWithPriceByCustomerId(ctx, customer.ID)
 	if err != nil {
 		return nil, err
 	}

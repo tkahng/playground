@@ -9,6 +9,10 @@
       "path": "internal/stores"
     },
     {
+      "name": "queries",
+      "path": "internal/queries"
+    },
+    {
       "name": "internal",
       "path": "internal"
     },
