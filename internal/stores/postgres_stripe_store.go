@@ -297,7 +297,7 @@ func (s *PostgresStripeStore) FindLatestActiveSubscriptionWithPriceByCustomerId(
 	if len(data) == 0 {
 		return nil, nil
 	}
-	return database.OptionalRow(&data[0], err)
+	return &data[0], err
 }
 
 // FindValidPriceById implements PaymentStore.

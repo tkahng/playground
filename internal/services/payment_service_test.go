@@ -12,6 +12,7 @@ import (
 	"github.com/tkahng/authgo/internal/conf"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/authgo/internal/tools/types"
 )
 
 type mockPaymentStore struct{ mock.Mock }
@@ -192,7 +193,7 @@ func (m *mockPaymentClient) CreateCheckoutSession(customerId string, priceId str
 }
 
 // CreateCustomer implements PaymentClient.
-func (m *mockPaymentClient) CreateCustomer(email string, name string) (*stripe.Customer, error) {
+func (m *mockPaymentClient) CreateCustomer(email string, name *string) (*stripe.Customer, error) {
 	args := m.Called(email, name)
 	if args.Get(0) != nil {
 		return args.Get(0).(*stripe.Customer), args.Error(1)
@@ -234,7 +235,7 @@ func (m *mockPaymentClient) FindCheckoutSessionByStripeId(stripeId string) (*str
 }
 
 // FindOrCreateCustomer implements PaymentClient.
-func (m *mockPaymentClient) FindOrCreateCustomer(email string, name string) (*stripe.Customer, error) {
+func (m *mockPaymentClient) FindOrCreateCustomer(email string, name *string) (*stripe.Customer, error) {
 	args := m.Called(email, name)
 	if args.Get(0) != nil {
 		return args.Get(0).(*stripe.Customer), args.Error(1)
@@ -290,14 +291,37 @@ func (m *mockPaymentStore) CountTeamMembers(ctx context.Context, teamId uuid.UUI
 func TestStripeService_VerifyAndUpdateTeamSubscriptionQuantity(t *testing.T) {
 	ctx := context.Background()
 	teamId := uuid.New()
-	store := new(mockPaymentStore)
-	client := new(mockPaymentClient)
-	sub := &models.StripeSubscription{ItemID: "item1", PriceID: "price1", Quantity: 2}
+	customer := &models.StripeCustomer{
+		ID:           "stripe_customer",
+		TeamID:       types.Pointer(teamId),
+		CustomerType: models.StripeCustomerTypeTeam,
+	}
 
-	service := &StripeService{paymentStore: store, client: client}
+	product := &models.StripeProduct{
+		ID: "product1",
+	}
+	price := &models.StripePrice{
+		ID:        "price1",
+		ProductID: "product1",
+	}
+	sub := &models.StripeSubscription{
+		ItemID:           "item1",
+		PriceID:          "price1",
+		Quantity:         2,
+		StripeCustomerID: customer.ID,
+	}
+	subwithprice := &models.SubscriptionWithPrice{
+		Price:        *price,
+		Product:      *product,
+		Subscription: *sub,
+	}
 
 	t.Run("updates quantity if different", func(t *testing.T) {
-		store.On("FindLatestActiveSubscriptionByTeamId", ctx, teamId).Return(sub, nil)
+		store := new(mockPaymentStore)
+		client := new(mockPaymentClient)
+		service := &StripeService{paymentStore: store, client: client}
+		store.On("FindCustomer", ctx, mock.Anything).Return(customer, nil)
+		store.On("FindLatestActiveSubscriptionWithPriceByCustomerId", ctx, customer.ID).Return(subwithprice, nil)
 		store.On("CountTeamMembers", ctx, teamId).Return(int64(3), nil)
 		client.On("UpdateItemQuantity", sub.ItemID, sub.PriceID, int64(3)).Return(nil, nil)
 		err := service.VerifyAndUpdateTeamSubscriptionQuantity(ctx, teamId)
@@ -307,7 +331,11 @@ func TestStripeService_VerifyAndUpdateTeamSubscriptionQuantity(t *testing.T) {
 	})
 
 	t.Run("no update if quantity matches", func(t *testing.T) {
-		store.On("FindLatestActiveSubscriptionByTeamId", ctx, teamId).Return(sub, nil)
+		store := new(mockPaymentStore)
+		client := new(mockPaymentClient)
+		service := &StripeService{paymentStore: store, client: client}
+		store.On("FindCustomer", ctx, mock.Anything).Return(customer, nil)
+		store.On("FindLatestActiveSubscriptionWithPriceByCustomerId", ctx, customer.ID).Return(subwithprice, nil)
 		store.On("CountTeamMembers", ctx, teamId).Return(int64(2), nil)
 		err := service.VerifyAndUpdateTeamSubscriptionQuantity(ctx, teamId)
 		assert.NoError(t, err)
@@ -315,7 +343,11 @@ func TestStripeService_VerifyAndUpdateTeamSubscriptionQuantity(t *testing.T) {
 	})
 
 	t.Run("returns error if no subscription", func(t *testing.T) {
-		store.On("FindLatestActiveSubscriptionByTeamId", ctx, teamId).Return(nil, nil)
+		store := new(mockPaymentStore)
+		client := new(mockPaymentClient)
+		service := &StripeService{paymentStore: store, client: client}
+		store.On("FindCustomer", ctx, mock.Anything).Return(customer, nil)
+		store.On("FindLatestActiveSubscriptionWithPriceByCustomerId", ctx, customer.ID).Return(nil, nil)
 		err := service.VerifyAndUpdateTeamSubscriptionQuantity(ctx, teamId)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "no subscription")
@@ -323,7 +355,10 @@ func TestStripeService_VerifyAndUpdateTeamSubscriptionQuantity(t *testing.T) {
 	})
 
 	t.Run("returns error if store fails", func(t *testing.T) {
-		store.On("FindLatestActiveSubscriptionByTeamId", ctx, teamId).Return(nil, errors.New("db error"))
+		store := new(mockPaymentStore)
+		client := new(mockPaymentClient)
+		service := &StripeService{paymentStore: store, client: client}
+		store.On("FindCustomer", ctx, mock.Anything).Return(nil, errors.New("db error"))
 		err := service.VerifyAndUpdateTeamSubscriptionQuantity(ctx, teamId)
 		assert.Error(t, err)
 		store.AssertExpectations(t)

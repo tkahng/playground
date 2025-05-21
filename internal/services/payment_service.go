@@ -90,7 +90,6 @@ type PaymentService interface {
 	// customer methods
 	CreateUserCustomer(ctx context.Context, user *models.User) (*models.StripeCustomer, error)
 	CreateTeamCustomer(ctx context.Context, team *models.Team, user *models.User) (*models.StripeCustomer, error)
-	CreateCustomer(ctx context.Context, customer *models.StripeCustomer) (*models.StripeCustomer, error)
 
 	FindCustomerByUser(ctx context.Context, userId uuid.UUID) (*models.StripeCustomer, error)
 	FindCustomerByTeam(ctx context.Context, teamId uuid.UUID) (*models.StripeCustomer, error)
@@ -111,16 +110,14 @@ type StripeService struct {
 	paymentStore PaymentStore
 }
 
-// CreateCustomer implements PaymentService.
-func (srv *StripeService) CreateCustomer(ctx context.Context, customer *models.StripeCustomer) (*models.StripeCustomer, error) {
-	panic("unimplemented")
-}
-
 // CreateTeamCustomer implements PaymentService.
 func (srv *StripeService) CreateTeamCustomer(ctx context.Context, team *models.Team, user *models.User) (*models.StripeCustomer, error) {
 	customer, err := srv.client.CreateCustomer(user.Email, user.Name)
 	if err != nil {
 		return nil, err
+	}
+	if customer == nil {
+		return nil, errors.New("no customer found")
 	}
 	stripeCustomer := &models.StripeCustomer{
 		ID:           customer.ID,
@@ -137,6 +134,9 @@ func (srv *StripeService) CreateUserCustomer(ctx context.Context, user *models.U
 	customer, err := srv.client.CreateCustomer(user.Email, user.Name)
 	if err != nil {
 		return nil, err
+	}
+	if customer == nil {
+		return nil, errors.New("no customer found")
 	}
 	stripeCustomer := &models.StripeCustomer{
 		ID:           customer.ID,
