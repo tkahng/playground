@@ -27,6 +27,18 @@ func NewPostgresUserStore(db database.Dbx) *PostgresUserStore {
 	}
 }
 
+func (p *PostgresUserStore) FindUserById(ctx context.Context, userId uuid.UUID) (*models.User, error) {
+	return crudrepo.User.GetOne(
+		ctx,
+		p.db,
+		&map[string]any{
+			"id": map[string]any{
+				"_eq": userId.String(),
+			},
+		},
+	)
+}
+
 // AssignUserRoles implements UserStore.
 func (a *PostgresUserStore) AssignUserRoles(ctx context.Context, userId uuid.UUID, roleNames ...string) error {
 	if len(roleNames) > 0 {

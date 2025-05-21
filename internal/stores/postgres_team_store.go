@@ -19,6 +19,35 @@ type PostgresTeamStore struct {
 	db database.Dbx
 }
 
+func (p *PostgresTeamStore) CreateTeamFromUser(ctx context.Context, user *models.User) (*models.TeamMember, error) {
+	team, err := crudrepo.Team.PostOne(
+		ctx,
+		p.db,
+		&models.Team{
+			Name: user.Email,
+			Slug: user.Email,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	teamMember, err := crudrepo.TeamMember.PostOne(
+		ctx,
+		p.db,
+		&models.TeamMember{
+			TeamID: team.ID,
+			UserID: types.Pointer(user.ID),
+			Role:   models.TeamMemberRoleAdmin,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	teamMember.Team = team
+	teamMember.User = user
+	return teamMember, nil
+}
+
 // FindUserByID implements services.TeamInvitationStore.
 func (p *PostgresTeamStore) FindUserByID(ctx context.Context, userId uuid.UUID) (*models.User, error) {
 	user, err := crudrepo.User.GetOne(
@@ -239,7 +268,11 @@ func (s *PostgresTeamStore) FindTeamByStripeCustomerId(ctx context.Context, stri
 		ctx,
 		s.db,
 		&map[string]any{
-			"stripe_customer_id": map[string]any{"_eq": stripeCustomerId},
+			"stripe_customer": map[string]any{
+				"id": map[string]any{
+					"_eq": stripeCustomerId,
+				},
+			},
 		},
 	)
 	return database.OptionalRow(data, err)
@@ -356,12 +389,12 @@ func (q *PostgresTeamStore) FindTeamMembersByUserID(ctx context.Context, userId 
 }
 
 // UpdateTeam implements TeamQueryer.
-func (q *PostgresTeamStore) UpdateTeam(ctx context.Context, teamId uuid.UUID, name string, stripeCustomerId *string) (*models.Team, error) {
+func (q *PostgresTeamStore) UpdateTeam(ctx context.Context, teamId uuid.UUID, name string) (*models.Team, error) {
 	team := &models.Team{
-		ID:               teamId,
-		Name:             name,
-		StripeCustomerID: stripeCustomerId,
-		UpdatedAt:        time.Now(),
+		ID:   teamId,
+		Name: name,
+		// StripeCustomerID: stripeCustomerId,
+		UpdatedAt: time.Now(),
 	}
 	_, err := crudrepo.Team.PutOne(
 		ctx,
@@ -374,19 +407,10 @@ func (q *PostgresTeamStore) UpdateTeam(ctx context.Context, teamId uuid.UUID, na
 	return team, nil
 }
 
-func (s *PostgresTeamStore) UpsertTeamCustomerStripeId(ctx context.Context, teamId uuid.UUID, stripeCustomerId *string) error {
-	var dbx database.Dbx = s.db
-	q := squirrel.Update("teams").
-		Set("stripe_customer_id", stripeCustomerId).
-		Where("id = ?", teamId)
-	return database.ExecWithBuilder(ctx, dbx, q.PlaceholderFormat(squirrel.Dollar))
-}
-
-func (q *PostgresTeamStore) CreateTeam(ctx context.Context, name string, slug string, stripeCustomerId *string) (*models.Team, error) {
+func (q *PostgresTeamStore) CreateTeam(ctx context.Context, name string, slug string) (*models.Team, error) {
 	teamModel := &models.Team{
-		Name:             name,
-		Slug:             slug,
-		StripeCustomerID: stripeCustomerId,
+		Name: name,
+		Slug: slug,
 	}
 	team, err := crudrepo.Team.PostOne(
 		ctx,

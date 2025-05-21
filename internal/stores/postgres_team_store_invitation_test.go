@@ -30,7 +30,7 @@ func TestPostgresTeamStore_InvitationCRUD(t *testing.T) {
 		}
 
 		// Create team and member
-		team, err := store.CreateTeam(ctx, "InviteTeam", "invite-team-slug", nil)
+		team, err := store.CreateTeam(ctx, "InviteTeam", "invite-team-slug")
 		if err != nil {
 			t.Fatalf("CreateTeam() error = %v", err)
 		}

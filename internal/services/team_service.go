@@ -22,9 +22,9 @@ type TeamStore interface {
 	CountTeamMembers(ctx context.Context, teamId uuid.UUID) (int64, error)
 	FindTeamByStripeCustomerId(ctx context.Context, stripeCustomerId string) (*models.Team, error)
 	FindTeamByID(ctx context.Context, teamId uuid.UUID) (*models.Team, error)
-	CreateTeam(ctx context.Context, name string, slug string, stripeCustomerId *string) (*models.Team, error)
+	CreateTeam(ctx context.Context, name string, slug string) (*models.Team, error)
 	CheckTeamSlug(ctx context.Context, slug string) (bool, error)
-	UpdateTeam(ctx context.Context, teamId uuid.UUID, name string, stripeCustomerId *string) (*models.Team, error)
+	UpdateTeam(ctx context.Context, teamId uuid.UUID, name string) (*models.Team, error)
 	DeleteTeam(ctx context.Context, teamId uuid.UUID) error
 	FindTeamMembersByUserID(ctx context.Context, userId uuid.UUID) ([]*models.TeamMember, error)
 	FindTeamMemberByTeamAndUserId(ctx context.Context, teamId uuid.UUID, userId uuid.UUID) (*models.TeamMember, error)

@@ -25,6 +25,7 @@ type Subscription struct {
 	ID string `db:"id,pk" json:"id"`
 	// UserID             *uuid.UUID               `db:"user_id" json:"user_id"`
 	TeamID             uuid.UUID                `db:"team_id" json:"team_id"`
+	StripeCustomerID   string                   `db:"stripe_customer_id" json:"stripe_customer_id"`
 	Status             StripeSubscriptionStatus `db:"status" json:"status"`
 	Metadata           map[string]string        `db:"metadata" json:"metadata"`
 	PriceID            string                   `db:"price_id" json:"price_id"`
@@ -58,9 +59,8 @@ func FromCrudToSubWithUserAndPrice(sub *models.SubscriptionWithPrice) *Subscript
 
 func FromCrudSubscription(sub *models.StripeSubscription) *Subscription {
 	return &Subscription{
-		ID:     sub.ID,
-		TeamID: sub.TeamID,
-		// UserID:             sub.UserID,
+		ID:                 sub.ID,
+		StripeCustomerID:   sub.StripeCustomerID,
 		Status:             StripeSubscriptionStatus(sub.Status),
 		Metadata:           sub.Metadata,
 		PriceID:            sub.PriceID,

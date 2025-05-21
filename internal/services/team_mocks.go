@@ -98,8 +98,8 @@ func (m *mockTeamStore) CountTeamMembers(ctx context.Context, teamId uuid.UUID) 
 }
 
 // CreateTeam implements TeamStore.
-func (m *mockTeamStore) CreateTeam(ctx context.Context, name string, slug string, stripeCustomerId *string) (*models.Team, error) {
-	args := m.Called(ctx, name, slug, stripeCustomerId)
+func (m *mockTeamStore) CreateTeam(ctx context.Context, name string, slug string) (*models.Team, error) {
+	args := m.Called(ctx, name, slug)
 	var team *models.Team
 	if args.Get(0) != nil {
 		team = args.Get(0).(*models.Team)
@@ -180,8 +180,8 @@ func (m *mockTeamStore) FindTeamMembersByUserID(ctx context.Context, userId uuid
 }
 
 // UpdateTeam implements TeamStore.
-func (m *mockTeamStore) UpdateTeam(ctx context.Context, teamId uuid.UUID, name string, stripeCustomerId *string) (*models.Team, error) {
-	args := m.Called(ctx, teamId, name, stripeCustomerId)
+func (m *mockTeamStore) UpdateTeam(ctx context.Context, teamId uuid.UUID, name string) (*models.Team, error) {
+	args := m.Called(ctx, teamId, name)
 	var team *models.Team
 	if args.Get(0) != nil {
 		team = args.Get(0).(*models.Team)

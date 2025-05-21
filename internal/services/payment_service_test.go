@@ -16,15 +16,39 @@ import (
 
 type mockPaymentStore struct{ mock.Mock }
 
+// UpsertCustomerStripeId implements PaymentStore.
+func (m *mockPaymentStore) UpsertCustomerStripeId(ctx context.Context, customer *models.StripeCustomer) error {
+	args := m.Called(ctx, customer)
+	return args.Error(0)
+}
+
+// CreateCustomer implements PaymentStore.
+func (m *mockPaymentStore) CreateCustomer(ctx context.Context, customer *models.StripeCustomer) (*models.StripeCustomer, error) {
+	args := m.Called(ctx, customer)
+	if args.Get(0) != nil {
+		return args.Get(0).(*models.StripeCustomer), args.Error(1)
+	}
+	return nil, args.Error(1)
+}
+
+// FindCustomer implements PaymentStore.
+func (m *mockPaymentStore) FindCustomer(ctx context.Context, customer *models.StripeCustomer) (*models.StripeCustomer, error) {
+	args := m.Called(ctx, customer)
+	if args.Get(0) != nil {
+		return args.Get(0).(*models.StripeCustomer), args.Error(1)
+	}
+	return nil, args.Error(1)
+}
+
 // CreateProductPermissions implements PaymentStore.
 func (m *mockPaymentStore) CreateProductPermissions(ctx context.Context, productId string, permissionIds ...uuid.UUID) error {
 	args := m.Called(ctx, productId, permissionIds)
 	return args.Error(0)
 }
 
-// FindLatestActiveSubscriptionWithPriceByTeamId implements PaymentStore.
-func (m *mockPaymentStore) FindLatestActiveSubscriptionWithPriceByTeamId(ctx context.Context, teamId uuid.UUID) (*models.SubscriptionWithPrice, error) {
-	args := m.Called(ctx, teamId)
+// FindLatestActiveSubscriptionWithPriceByCustomerId implements PaymentStore.
+func (m *mockPaymentStore) FindLatestActiveSubscriptionWithPriceByCustomerId(ctx context.Context, customerId string) (*models.SubscriptionWithPrice, error) {
+	args := m.Called(ctx, customerId)
 	if args.Get(0) != nil {
 		return args.Get(0).(*models.SubscriptionWithPrice), args.Error(1)
 	}
@@ -133,12 +157,6 @@ func (m *mockPaymentStore) UpsertSubscription(ctx context.Context, sub *models.S
 // UpsertSubscriptionFromStripe implements PaymentStore.
 func (m *mockPaymentStore) UpsertSubscriptionFromStripe(ctx context.Context, sub *stripe.Subscription, userId uuid.UUID) error {
 	args := m.Called(ctx, sub, userId)
-	return args.Error(0)
-}
-
-// UpsertTeamCustomerStripeId implements PaymentStore.
-func (m *mockPaymentStore) UpsertTeamCustomerStripeId(ctx context.Context, teamId uuid.UUID, stripeCustomerId *string) error {
-	args := m.Called(ctx, teamId, stripeCustomerId)
 	return args.Error(0)
 }
 

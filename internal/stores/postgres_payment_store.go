@@ -43,12 +43,36 @@ func NewPostgresPaymentStore(db database.Dbx) *PaymentStore {
 }
 
 var _ services.PaymentStore = (*PaymentStore)(nil)
+var _ services.PaymentStripeStore = (*PostgresStripeStore)(nil)
+var _ services.PaymentTeamStore = (*PostgresTeamStore)(nil)
+var _ services.PaymentRbacStore = (*PostgresRBACStore)(nil)
+
+// UpsertCustomerStripeId implements services.PaymentStripeStore.
+func (s *PostgresStripeStore) UpsertCustomerStripeId(ctx context.Context, customer *models.StripeCustomer) error {
+	panic("unimplemented")
+}
+
+func (s *PostgresStripeStore) CreateCustomer(ctx context.Context, customer *models.StripeCustomer) (*models.StripeCustomer, error) {
+	if customer == nil {
+		return nil, errors.New("customer is nil")
+	}
+	return crudrepo.StripeCustomer.PostOne(ctx, s.db, customer)
+}
 
 func (s *PostgresStripeStore) UpsertPriceFromStripe(ctx context.Context, price *stripe.Price) error {
 	if price == nil {
 		return nil
 	}
-	val := &models.StripePrice{ID: price.ID, ProductID: price.Product.ID, Active: price.Active, LookupKey: &price.LookupKey, UnitAmount: &price.UnitAmount, Currency: string(price.Currency), Type: models.StripePricingType(price.Type), Metadata: price.Metadata}
+	val := &models.StripePrice{
+		ID:         price.ID,
+		ProductID:  price.Product.ID,
+		Active:     price.Active,
+		LookupKey:  &price.LookupKey,
+		UnitAmount: &price.UnitAmount,
+		Currency:   string(price.Currency),
+		Type:       models.StripePricingType(price.Type),
+		Metadata:   price.Metadata,
+	}
 	if price.Recurring != nil {
 		recur := price.Recurring
 		val.Interval = types.Pointer(models.StripePricingPlanInterval(recur.Interval))
@@ -124,26 +148,31 @@ func (s *PostgresStripeStore) UpsertProduct(ctx context.Context, product *models
 	return database.ExecWithBuilder(ctx, dbx, q.PlaceholderFormat(squirrel.Dollar))
 }
 
-// FindCustomerByStripeId implements PaymentStore.
-func (s *PostgresStripeStore) FindCustomerByStripeId(ctx context.Context, stripeId string) (*models.StripeCustomer, error) {
+// FindCustomer implements PaymentStore.
+func (s *PostgresStripeStore) FindCustomer(ctx context.Context, customer *models.StripeCustomer) (*models.StripeCustomer, error) {
+	if customer == nil {
+		return nil, nil
+	}
+	where := map[string]any{}
+	if customer.ID != "" {
+		where["id"] = map[string]any{
+			"_eq": customer.ID,
+		}
+	}
+	if customer.TeamID != nil {
+		where["team_id"] = map[string]any{
+			"_eq": customer.TeamID.String(),
+		}
+	}
+	if customer.UserID != nil {
+		where["user_id"] = map[string]any{
+			"_eq": customer.UserID.String(),
+		}
+	}
 	data, err := crudrepo.StripeCustomer.GetOne(
 		ctx,
 		s.db,
-		&map[string]any{"stripe_id": map[string]any{"_eq": stripeId}},
-	)
-	return database.OptionalRow(data, err)
-}
-
-// FindCustomerByUserId implements PaymentStore.
-func (s *PostgresStripeStore) FindCustomerByUserId(ctx context.Context, userId uuid.UUID) (*models.StripeCustomer, error) {
-	data, err := crudrepo.StripeCustomer.GetOne(
-		ctx,
-		s.db,
-		&map[string]any{
-			"id": map[string]any{
-				"_eq": userId.String(),
-			},
-		},
+		&where,
 	)
 	return database.OptionalRow(data, err)
 }
@@ -249,9 +278,9 @@ func (s *PostgresStripeStore) FindSubscriptionWithPriceById(ctx context.Context,
 }
 
 const (
-	GetLatestActiveSubscriptionWithPriceByIdQuery = `
+	GetLatestActiveSubscriptionWithPriceByCustomerIdQuery = `
 SELECT ss.id AS "subscription.id",
-        ss.team_id AS "subscription.team_id",
+        ss.stripe_customer_id AS "subscription.stripe_customer_id",
         ss.status AS "subscription.status",
         ss.metadata AS "subscription.metadata",
 		ss.item_id AS "subscription.item_id",
@@ -292,14 +321,14 @@ SELECT ss.id AS "subscription.id",
 FROM public.stripe_subscriptions ss
         JOIN public.stripe_prices sp ON ss.price_id = sp.id
         JOIN public.stripe_products p ON sp.product_id = p.id
-WHERE ss.team_id = $1
+WHERE ss.stripe_customer_id = $1
         AND ss.status IN ('active', 'trialing')
-ORDER BY ss.updated_at DESC;
+ORDER BY ss.created_at DESC;
 		`
 )
 
-func (s *PostgresStripeStore) FindLatestActiveSubscriptionWithPriceByTeamId(ctx context.Context, teamId uuid.UUID) (*models.SubscriptionWithPrice, error) {
-	data, err := database.QueryAll[models.SubscriptionWithPrice](ctx, s.db, GetLatestActiveSubscriptionWithPriceByIdQuery, teamId)
+func (s *PostgresStripeStore) FindLatestActiveSubscriptionWithPriceByCustomerId(ctx context.Context, customerId string) (*models.SubscriptionWithPrice, error) {
+	data, err := database.QueryAll[models.SubscriptionWithPrice](ctx, s.db, GetLatestActiveSubscriptionWithPriceByCustomerIdQuery, customerId)
 	if err != nil {
 		return nil, err
 	}
@@ -405,18 +434,22 @@ func (s *PostgresStripeStore) UpsertSubscriptionFromStripe(ctx context.Context, 
 		return nil
 	}
 	var item *stripe.SubscriptionItem
+	var customer *stripe.Customer = sub.Customer
 	if len(sub.Items.Data) > 0 {
 		item = sub.Items.Data[0]
 	}
 	if item == nil || item.Price == nil {
 		return errors.New("price not found")
 	}
+	if customer == nil {
+		return errors.New("customer not found")
+	}
 	status := models.StripeSubscriptionStatus(sub.Status)
 	err := s.UpsertSubscription(
 		ctx,
 		&models.StripeSubscription{
 			ID:                 sub.ID,
-			TeamID:             teamId,
+			StripeCustomerID:   customer.ID,
 			Status:             models.StripeSubscriptionStatus(status),
 			Metadata:           sub.Metadata,
 			ItemID:             item.ID,
@@ -441,6 +474,7 @@ func (s *PostgresStripeStore) UpsertSubscription(ctx context.Context, sub *model
 		Columns(
 			"id",
 			"team_id",
+			"stripe_customer_id",
 			"status",
 			"metadata",
 			"item_id",
@@ -457,7 +491,7 @@ func (s *PostgresStripeStore) UpsertSubscription(ctx context.Context, sub *model
 			"trial_end",
 		).Values(
 		sub.ID,
-		sub.TeamID,
+		sub.StripeCustomerID,
 		sub.Status,
 		sub.Metadata,
 		sub.ItemID,

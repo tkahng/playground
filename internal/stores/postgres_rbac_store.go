@@ -144,6 +144,26 @@ func (p *PostgresRBACStore) CreateUserPermissions(ctx context.Context, db databa
 	return nil
 }
 
+func (p *PostgresRBACStore) CreateUserRoles(ctx context.Context, userId uuid.UUID, roleIds ...uuid.UUID) error {
+	var dtos []models.UserRole
+	for _, id := range roleIds {
+		dtos = append(dtos, models.UserRole{
+			UserID: userId,
+			RoleID: id,
+		})
+	}
+	_, err := crudrepo.UserRole.Post(
+		ctx,
+		p.db,
+		dtos,
+	)
+	if err != nil {
+
+		return err
+	}
+	return nil
+}
+
 // FindPermissionByName implements RBACStore.
 func (p *PostgresRBACStore) FindPermissionByName(ctx context.Context, name string) (*models.Permission, error) {
 	data, err := crudrepo.Permission.GetOne(

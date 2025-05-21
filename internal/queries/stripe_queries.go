@@ -186,7 +186,7 @@ func UpsertSubscription(ctx context.Context, dbx database.Dbx, subscription *mod
 		Insert("stripe_subscriptions").
 		Columns(
 			"id",
-			"team_id",
+			"stripe_customer_id",
 			"status",
 			"metadata",
 			"item_id",
@@ -203,7 +203,7 @@ func UpsertSubscription(ctx context.Context, dbx database.Dbx, subscription *mod
 			"trial_end",
 		).Values(
 		subscription.ID,
-		subscription.TeamID,
+		subscription.StripeCustomerID,
 		subscription.Status,
 		subscription.Metadata,
 		subscription.ItemID,
@@ -220,7 +220,7 @@ func UpsertSubscription(ctx context.Context, dbx database.Dbx, subscription *mod
 		subscription.TrialEnd,
 	).Suffix(
 		"ON CONFLICT (id) DO UPDATE SET " +
-			"team_id = EXCLUDED.team_id," +
+			"stripe_customer_id = EXCLUDED.stripe_customer_id," +
 			"status = EXCLUDED.status," +
 			"metadata = EXCLUDED.metadata," +
 			"item_id = EXCLUDED.item_id," +
@@ -240,7 +240,7 @@ func UpsertSubscription(ctx context.Context, dbx database.Dbx, subscription *mod
 	return database.ExecWithBuilder(ctx, dbx, q.PlaceholderFormat(squirrel.Dollar))
 }
 
-func UpsertSubscriptionFromStripe(ctx context.Context, exec database.Dbx, sub *stripe.Subscription, teamId uuid.UUID) error {
+func UpsertSubscriptionFromStripe(ctx context.Context, exec database.Dbx, sub *stripe.Subscription) error {
 	if sub == nil {
 		return nil
 	}
@@ -254,7 +254,7 @@ func UpsertSubscriptionFromStripe(ctx context.Context, exec database.Dbx, sub *s
 	status := models.StripeSubscriptionStatus(sub.Status)
 	err := UpsertSubscription(ctx, exec, &models.StripeSubscription{
 		ID:                 sub.ID,
-		TeamID:             teamId,
+		StripeCustomerID:   sub.Customer.ID,
 		Status:             models.StripeSubscriptionStatus(status),
 		Metadata:           sub.Metadata,
 		ItemID:             item.ID,

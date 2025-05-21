@@ -14,6 +14,7 @@ import (
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/stores"
 	"github.com/tkahng/authgo/internal/test"
+	"github.com/tkahng/authgo/internal/tools/types"
 )
 
 func TestCreateTeam(t *testing.T) {
@@ -21,7 +22,7 @@ func TestCreateTeam(t *testing.T) {
 	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		teamStore := stores.NewPostgresTeamStore(dbxx)
-		team, err := teamStore.CreateTeam(ctx, "Test Team", "test-team-slug", nil)
+		team, err := teamStore.CreateTeam(ctx, "Test Team", "test-team-slug")
 		if err != nil {
 			t.Fatalf("CreateTeam() error = %v", err)
 		}
@@ -37,18 +38,17 @@ func TestUpdateTeam(t *testing.T) {
 	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		teamStore := stores.NewPostgresTeamStore(dbxx)
-		team, err := teamStore.CreateTeam(ctx, "Old Name", "old-name-slug", nil)
+		team, err := teamStore.CreateTeam(ctx, "Old Name", "old-name-slug")
 		if err != nil {
 			t.Fatalf("CreateTeam() error = %v", err)
 		}
 		newName := "Updated Name"
-		stripeID := "cus_123"
-		updated, err := teamStore.UpdateTeam(ctx, team.ID, newName, &stripeID)
+		updated, err := teamStore.UpdateTeam(ctx, team.ID, newName)
 		if err != nil {
 			t.Fatalf("UpdateTeam() error = %v", err)
 		}
-		if updated.Name != newName || updated.StripeCustomerID == nil || *updated.StripeCustomerID != stripeID {
-			t.Errorf("UpdateTeam() = %v, want name %v and stripeID %v", updated, newName, stripeID)
+		if updated.Name != newName {
+			t.Errorf("UpdateTeam() = %v, want name %v", updated, newName)
 		}
 		return errors.New("rollback")
 	})
@@ -60,7 +60,7 @@ func TestDeleteTeam(t *testing.T) {
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		teamStore := stores.NewPostgresTeamStore(dbxx)
 		// Create a team to delete
-		team, err := teamStore.CreateTeam(ctx, "ToDelete", "to-delete-slug", nil)
+		team, err := teamStore.CreateTeam(ctx, "ToDelete", "to-delete-slug")
 		if err != nil {
 			t.Fatalf("CreateTeam() error = %v", err)
 		}
@@ -77,7 +77,7 @@ func TestFindTeamByID(t *testing.T) {
 	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		teamStore := stores.NewPostgresTeamStore(dbxx)
-		team, err := teamStore.CreateTeam(ctx, "FindMe", "find-me-slug", nil)
+		team, err := teamStore.CreateTeam(ctx, "FindMe", "find-me-slug")
 		if err != nil {
 			t.Fatalf("CreateTeam() error = %v", err)
 		}
@@ -98,7 +98,7 @@ func TestCreateTeamMember(t *testing.T) {
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		teamStore := stores.NewPostgresTeamStore(dbxx)
 		userStore := stores.NewPostgresUserStore(dbxx)
-		team, err := teamStore.CreateTeam(ctx, "TeamWithMember", "team-with-member-slug", nil)
+		team, err := teamStore.CreateTeam(ctx, "TeamWithMember", "team-with-member-slug")
 		if err != nil {
 			t.Fatalf("CreateTeam() error = %v", err)
 		}
@@ -126,7 +126,7 @@ func TestFindTeamMembersByUserID(t *testing.T) {
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		teamStore := stores.NewPostgresTeamStore(dbxx)
 		userStore := stores.NewPostgresUserStore(dbxx)
-		team, err := teamStore.CreateTeam(ctx, "TeamForMembers", "team-for-members-slug", nil)
+		team, err := teamStore.CreateTeam(ctx, "TeamForMembers", "team-for-members-slug")
 		if err != nil {
 			t.Fatalf("CreateTeam() error = %v", err)
 		}
@@ -158,11 +158,11 @@ func TestFindLatestTeamMemberByUserID(t *testing.T) {
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		teamStore := stores.NewPostgresTeamStore(dbxx)
 		userStore := stores.NewPostgresUserStore(dbxx)
-		team1, err := teamStore.CreateTeam(ctx, "team1", "team1-slug", nil)
+		team1, err := teamStore.CreateTeam(ctx, "team1", "team1-slug")
 		if err != nil {
 			t.Fatalf("CreateTeam() error = %v", err)
 		}
-		team2, err := teamStore.CreateTeam(ctx, "team2", "team2-slug", nil)
+		team2, err := teamStore.CreateTeam(ctx, "team2", "team2-slug")
 		if err != nil {
 			t.Fatalf("CreateTeam() error = %v", err)
 		}
@@ -237,7 +237,7 @@ func TestUpdateTeamMemberUpdatedAt(t *testing.T) {
 		teamStore := stores.NewPostgresTeamStore(dbxx)
 		userStore := stores.NewPostgresUserStore(dbxx)
 
-		team, err := teamStore.CreateTeam(ctx, "UpdateMemberTeam", "update-member-team-slug", nil)
+		team, err := teamStore.CreateTeam(ctx, "UpdateMemberTeam", "update-member-team-slug")
 		if err != nil {
 			t.Fatalf("CreateTeam() error = %v", err)
 		}
@@ -291,7 +291,7 @@ func TestUpdateTeamMemberSelectedAt(t *testing.T) {
 		userStore := stores.NewPostgresUserStore(dbxx)
 
 		// Create team and user
-		team, err := teamStore.CreateTeam(ctx, "SelectedAtTeam", "selected-at-team-slug", nil)
+		team, err := teamStore.CreateTeam(ctx, "SelectedAtTeam", "selected-at-team-slug")
 		if err != nil {
 			t.Fatalf("CreateTeam() error = %v", err)
 		}
@@ -435,7 +435,7 @@ func TestPostgresInvitationStore_CRUD(t *testing.T) {
 		userStore := stores.NewPostgresUserStore(dbxx)
 
 		// Create team and user
-		team, err := teamStore.CreateTeam(ctx, "InviteTeam", "invite-team-slug", nil)
+		team, err := teamStore.CreateTeam(ctx, "InviteTeam", "invite-team-slug")
 		if err != nil {
 			t.Fatalf("CreateTeam() error = %v", err)
 		}
@@ -517,9 +517,21 @@ func TestPostgresTeamStore_FindTeamByStripeCustomerId(t *testing.T) {
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		teamStore := stores.NewPostgresTeamStore(dbxx)
 		stripeID := "cus_test_123"
-		team, err := teamStore.CreateTeam(ctx, "StripeTeam", "stripe-team-slug", &stripeID)
+		team, err := teamStore.CreateTeam(ctx, "StripeTeam", "stripe-team-slug")
 		if err != nil {
 			t.Fatalf("CreateTeam() error = %v", err)
+		}
+		customerStore := stores.NewPostgresStripeStore(dbxx)
+		customer, err := customerStore.CreateCustomer(ctx, &models.StripeCustomer{
+			ID:           stripeID,
+			TeamID:       types.Pointer(team.ID),
+			CustomerType: models.StripeCustomerTypeTeam,
+		})
+		if err != nil {
+			t.Fatalf("CreateCustomer() error = %v", err)
+		}
+		if customer == nil || customer.ID != stripeID {
+			t.Errorf("CreateCustomer() = %v, want ID %v", customer, stripeID)
 		}
 		found, err := teamStore.FindTeamByStripeCustomerId(ctx, stripeID)
 		if err != nil {
@@ -527,31 +539,6 @@ func TestPostgresTeamStore_FindTeamByStripeCustomerId(t *testing.T) {
 		}
 		if found == nil || found.ID != team.ID {
 			t.Errorf("FindTeamByStripeCustomerId() = %v, want %v", found, team.ID)
-		}
-		return errors.New("rollback")
-	})
-}
-
-func TestPostgresTeamStore_UpsertTeamCustomerStripeId(t *testing.T) {
-	test.Short(t)
-	ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
-		teamStore := stores.NewPostgresTeamStore(dbxx)
-		team, err := teamStore.CreateTeam(ctx, "UpsertStripeTeam", "upsert-stripe-team-slug", nil)
-		if err != nil {
-			t.Fatalf("CreateTeam() error = %v", err)
-		}
-		stripeID := "cus_upsert_456"
-		err = teamStore.UpsertTeamCustomerStripeId(ctx, team.ID, &stripeID)
-		if err != nil {
-			t.Fatalf("UpsertTeamCustomerStripeId() error = %v", err)
-		}
-		updated, err := teamStore.FindTeamByID(ctx, team.ID)
-		if err != nil {
-			t.Fatalf("FindTeamByID() error = %v", err)
-		}
-		if updated.StripeCustomerID == nil || *updated.StripeCustomerID != stripeID {
-			t.Errorf("UpsertTeamCustomerStripeId() did not update StripeCustomerID: got %v", updated.StripeCustomerID)
 		}
 		return errors.New("rollback")
 	})

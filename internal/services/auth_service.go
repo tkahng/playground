@@ -35,13 +35,37 @@ type AuthService interface {
 	Signout(ctx context.Context, token string) error
 	ResetPassword(ctx context.Context, userId uuid.UUID, oldPassword, newPassword string) error
 }
-type AuthStore interface {
+
+type AuthAccountStore interface {
+	FindUserAccountByUserIdAndProvider(ctx context.Context, userId uuid.UUID, provider models.Providers) (*models.UserAccount, error)
+	UpdateUserAccount(ctx context.Context, account *models.UserAccount) error
+	LinkAccount(ctx context.Context, account *models.UserAccount) error
+	UnlinkAccount(ctx context.Context, userId uuid.UUID, provider models.Providers) error
+}
+
+type AuthUserStore interface {
 	GetUserInfo(ctx context.Context, email string) (*shared.UserInfo, error)
 	CreateUser(ctx context.Context, user *models.User) (*models.User, error)
 	AssignUserRoles(ctx context.Context, userId uuid.UUID, roleNames ...string) error
 	FindUserByEmail(ctx context.Context, email string) (*models.User, error)
 	UpdateUser(ctx context.Context, user *models.User) error
 	DeleteUser(ctx context.Context, id uuid.UUID) error
+}
+
+type AuthTokenStore interface {
+	GetToken(ctx context.Context, token string) (*models.Token, error)
+	SaveToken(ctx context.Context, token *shared.CreateTokenDTO) error
+	DeleteToken(ctx context.Context, token string) error
+}
+
+type AuthStore interface {
+	// GetUserInfo(ctx context.Context, email string) (*shared.UserInfo, error)
+	// CreateUser(ctx context.Context, user *models.User) (*models.User, error)
+	// AssignUserRoles(ctx context.Context, userId uuid.UUID, roleNames ...string) error
+	// FindUserByEmail(ctx context.Context, email string) (*models.User, error)
+	// UpdateUser(ctx context.Context, user *models.User) error
+	// DeleteUser(ctx context.Context, id uuid.UUID) error
+	AuthUserStore
 	GetToken(ctx context.Context, token string) (*models.Token, error)
 	SaveToken(ctx context.Context, token *shared.CreateTokenDTO) error
 	DeleteToken(ctx context.Context, token string) error

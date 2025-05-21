@@ -5,10 +5,33 @@ import (
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
-	"github.com/tkahng/authgo/internal/database"
-	"github.com/tkahng/authgo/internal/queries"
+	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/shared"
 )
+
+type ConstraintCheckerUserStore interface {
+	// GetUserInfo(ctx context.Context, email string) (*shared.UserInfo, error)
+	// CreateUser(ctx context.Context, user *models.User) (*models.User, error)
+	// AssignUserRoles(ctx context.Context, userId uuid.UUID, roleNames ...string) error
+	FindUserByEmail(ctx context.Context, email string) (*models.User, error)
+	FindUserById(ctx context.Context, userId uuid.UUID) (*models.User, error)
+	// UpdateUser(ctx context.Context, user *models.User) error
+	// DeleteUser(ctx context.Context, id uuid.UUID) error
+}
+
+type ConstraintCheckerPaymentStore interface {
+	FindLatestActiveSubscriptionByTeamId(ctx context.Context, teamId uuid.UUID) (*models.StripeSubscription, error)
+}
+
+func NewConstraintCheckerService(
+	userStore ConstraintCheckerUserStore,
+	stripeStore ConstraintCheckerPaymentStore,
+) *ConstraintCheckerService {
+	return &ConstraintCheckerService{
+		userStore:    userStore,
+		paymentStore: stripeStore,
+	}
+}
 
 type ConstraintChecker interface {
 	CannotBeSuperUserID(ctx context.Context, userId uuid.UUID) error
@@ -20,12 +43,14 @@ type ConstraintChecker interface {
 }
 
 type ConstraintCheckerService struct {
-	db database.Dbx
+	userStore    ConstraintCheckerUserStore
+	paymentStore ConstraintCheckerPaymentStore
+	// db        database.Dbx
 }
 
 // CannotHaveValidSubscription implements ConstraintChecker.
 func (c *ConstraintCheckerService) CannotHaveValidSubscription(ctx context.Context, userId uuid.UUID) error {
-	subscription, err := queries.FindLatestActiveSubscriptionByTeamId(ctx, c.db, userId)
+	subscription, err := c.paymentStore.FindLatestActiveSubscriptionByTeamId(ctx, userId)
 	if err != nil {
 		return err
 	}
@@ -60,15 +85,9 @@ func (c *ConstraintCheckerService) CannotBeSuperUserEmailAndRoleName(ctx context
 	return nil
 }
 
-func NewConstraintCheckerService(ctx context.Context, db database.Dbx) *ConstraintCheckerService {
-	return &ConstraintCheckerService{
-		db: db,
-	}
-}
-
 // CannotBeSuperUser implements ConstraintChecker.
 func (c *ConstraintCheckerService) CannotBeSuperUserID(ctx context.Context, userId uuid.UUID) error {
-	user, err := queries.FindUserById(ctx, c.db, userId)
+	user, err := c.userStore.FindUserById(ctx, userId)
 	if err != nil {
 		return err
 	}

@@ -65,3 +65,55 @@ func TestCreateProductPermissions(t *testing.T) {
 		return errors.New("rollback")
 	})
 }
+
+func TestCreateUserRoles(t *testing.T) {
+	test.Short(t)
+	ctx, dbx := test.DbSetup()
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+		userStore := stores.NewPostgresUserStore(dbxx)
+		rbacStore := stores.NewPostgresRBACStore(dbxx)
+		// Create a user
+		user, err := userStore.CreateUser(ctx, &models.User{
+			Email: "tkahng@gmail.com",
+		})
+		if err != nil {
+			t.Errorf("failed to create user: %v", err)
+			return err
+		}
+		role, err := rbacStore.FindOrCreateRole(ctx, "basic")
+		if err != nil {
+			t.Errorf("failed to create role: %v", err)
+			return err
+		}
+		type args struct {
+			ctx     context.Context
+			db      database.Dbx
+			userId  uuid.UUID
+			roleIds []uuid.UUID
+		}
+		tests := []struct {
+			name    string
+			args    args
+			wantErr bool
+		}{
+			{
+				name: "create user roles",
+				args: args{
+					ctx:     ctx,
+					db:      dbxx,
+					userId:  user.ID,
+					roleIds: []uuid.UUID{role.ID},
+				},
+				wantErr: false,
+			},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				if err := rbacStore.CreateUserRoles(tt.args.ctx, tt.args.userId, tt.args.roleIds...); (err != nil) != tt.wantErr {
+					t.Errorf("createUserRoles() error = %v, wantErr %v", err, tt.wantErr)
+				}
+			})
+		}
+		return test.EndTestErr
+	})
+}
