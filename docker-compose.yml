@@ -1,31 +1,42 @@
 services:
+  # db:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile.database
+  #   # container_name: postgres_with_postgis_pgvector
+  #   platform: linux/arm64
+  #   restart: always
+  #   environment:
+  #     - POSTGRES_USER=${POSTGRES_USER}
+  #     - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+  #     - POSTGRES_DB=${POSTGRES_DB}
+  #   ports:
+  #     - "5432:5432"
+  #   volumes:
+  #     - postgres-data:/var/lib/postgresql/data
   db:
-    build:
-      context: .
-      dockerfile: Dockerfile.database
-    # container_name: postgres_with_postgis_pgvector
+    image: supabase/postgres:17.4.1.035
+    container_name: supabase-db
     platform: linux/arm64
-    restart: always
-    environment:
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=${POSTGRES_DB}
     ports:
       - "5432:5432"
+    # command: postgres -c config_file=/etc/postgresql/postgresql.conf 
     volumes:
-      - postgres-data:/var/lib/postgresql/data
-
-  app:
-    depends_on:
-      - db
-    image: authgo
-    build:
-      context: .
-      dockerfile: ./Dockerfile
-    ports:
-      - 8080:8080
+      - postgres-data-17:/var/lib/postgresql/data
     env_file:
       - .env
 
+  # app:
+  #   depends_on:
+  #     - db
+  #   image: authgo
+  #   build:
+  #     context: .
+  #     dockerfile: ./Dockerfile
+  #   ports:
+  #     - 8080:8080
+  #   env_file:
+  #     - .env
+
 volumes:
-  postgres-data:
+  postgres-data-17:
