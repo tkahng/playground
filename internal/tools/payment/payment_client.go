@@ -44,21 +44,31 @@ func (s *StripeClient) Config() *conf.StripeConfig {
 	return s.config
 }
 
-func (s *StripeClient) CreateCustomer(email string, name string) (*stripe.Customer, error) {
+func (s *StripeClient) CreateCustomer(email string, name *string) (*stripe.Customer, error) {
 	params := &stripe.CustomerParams{
-		Name:  stripe.String(name),
+		Name:  name,
 		Email: stripe.String(email),
 	}
 	return customer.New(params)
 }
 
-func (client *StripeClient) findCustomerByEmailAndUserId(email string, name string) (*stripe.Customer, error) {
+func (client *StripeClient) findCustomerByEmailAndUserId(email string, name *string) (*stripe.Customer, error) {
 	var cs *stripe.Customer
-	params := &stripe.CustomerSearchParams{
-		SearchParams: stripe.SearchParams{
-			Query: fmt.Sprintf("email:'%s' AND name:'%s'", email, name),
-			Limit: stripe.Int64(1),
-		},
+	var params *stripe.CustomerSearchParams
+	if name == nil {
+		params = &stripe.CustomerSearchParams{
+			SearchParams: stripe.SearchParams{
+				Query: fmt.Sprintf("email:'%s'", email),
+				Limit: stripe.Int64(1),
+			},
+		}
+	} else {
+		params = &stripe.CustomerSearchParams{
+			SearchParams: stripe.SearchParams{
+				Query: fmt.Sprintf("email:'%s' AND name:'%s'", email, *name),
+				Limit: stripe.Int64(1),
+			},
+		}
 	}
 	result := customer.Search(params)
 
@@ -99,7 +109,7 @@ func (s *StripeClient) FindAllPrices() ([]*stripe.Price, error) {
 	return data, nil
 }
 
-func (s *StripeClient) FindOrCreateCustomer(email string, name string) (*stripe.Customer, error) {
+func (s *StripeClient) FindOrCreateCustomer(email string, name *string) (*stripe.Customer, error) {
 	cs, _ := s.findCustomerByEmailAndUserId(email, name)
 	if cs == nil {
 		return s.CreateCustomer(email, name)

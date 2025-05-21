@@ -24,13 +24,13 @@ type PaymentClient interface {
 	Config() *conf.StripeConfig
 	CreateBillingPortalSession(customerId string, configurationId string) (*stripe.BillingPortalSession, error)
 	CreateCheckoutSession(customerId string, priceId string, quantity int64, trialDays *int64) (*stripe.CheckoutSession, error)
-	CreateCustomer(email string, name string) (*stripe.Customer, error)
+	CreateCustomer(email string, name *string) (*stripe.Customer, error)
 	CreatePortalConfiguration(input ...*stripe.BillingPortalConfigurationFeaturesSubscriptionUpdateProductParams) (string, error)
 	FindAllPrices() ([]*stripe.Price, error)
 	FindAllProducts() ([]*stripe.Product, error)
 	FindCheckoutSessionByStripeId(stripeId string) (*stripe.CheckoutSession, error)
 	// FindCustomerByEmailAndUserId(email string, userId string) (*stripe.Customer, error)
-	FindOrCreateCustomer(email string, name string) (*stripe.Customer, error)
+	FindOrCreateCustomer(email string, name *string) (*stripe.Customer, error)
 	FindSubscriptionByStripeId(stripeId string) (*stripe.Subscription, error)
 	UpdateCustomer(customerId string, params *stripe.CustomerParams) (*stripe.Customer, error)
 	UpdateItemQuantity(itemId string, priceId string, count int64) (*stripe.SubscriptionItem, error)
@@ -38,10 +38,8 @@ type PaymentClient interface {
 
 type PaymentTeamStore interface {
 	// team methods
-	// FindTeamByID(ctx context.Context, teamId uuid.UUID) (*models.Team, error)
 	FindTeamByStripeCustomerId(ctx context.Context, stripeCustomerId string) (*models.Team, error)
 	CountTeamMembers(ctx context.Context, teamId uuid.UUID) (int64, error)
-	// UpsertTeamCustomerStripeId(ctx context.Context, teamId uuid.UUID, stripeCustomerId *string) error
 }
 
 type PaymentRbacStore interface {
@@ -57,10 +55,7 @@ type PaymentStripeStore interface {
 	// customer methods
 	FindCustomer(ctx context.Context, customer *models.StripeCustomer) (*models.StripeCustomer, error)
 	CreateCustomer(ctx context.Context, customer *models.StripeCustomer) (*models.StripeCustomer, error)
-	UpsertCustomerStripeId(ctx context.Context, customer *models.StripeCustomer) error
-	// subscription methods
-	FindLatestActiveSubscriptionByTeamId(ctx context.Context, teamId uuid.UUID) (*models.StripeSubscription, error)
-	// FindCustomerByUserId(ctx context.Context, userId uuid.UUID) (*models.StripeCustomer, error)
+
 	UpsertSubscriptionFromStripe(ctx context.Context, sub *stripe.Subscription) error
 	UpsertSubscription(ctx context.Context, sub *models.StripeSubscription) error
 	UpsertProductFromStripe(ctx context.Context, product *stripe.Product) error
@@ -93,10 +88,16 @@ type PaymentService interface {
 	FindAndUpsertAllPrices(ctx context.Context) error
 	FindAndUpsertAllProducts(ctx context.Context) error
 	// customer methods
+	CreateUserCustomer(ctx context.Context, user *models.User) (*models.StripeCustomer, error)
+	CreateTeamCustomer(ctx context.Context, team *models.Team, user *models.User) (*models.StripeCustomer, error)
+	CreateCustomer(ctx context.Context, customer *models.StripeCustomer) (*models.StripeCustomer, error)
+
+	FindCustomerByUser(ctx context.Context, userId uuid.UUID) (*models.StripeCustomer, error)
+	FindCustomerByTeam(ctx context.Context, teamId uuid.UUID) (*models.StripeCustomer, error)
+
 	CreateBillingPortalSession(ctx context.Context, stripeCustomerId string) (string, error)
 	CreateCheckoutSession(ctx context.Context, stripeCustomerId string, priceId string) (string, error)
 
-	// FindOrCreateCustomerFromUser(ctx context.Context, userId uuid.UUID, email string) (*models.StripeCustomer, error)
 	FindSubscriptionWithPriceBySessionId(ctx context.Context, sessionId string) (*models.SubscriptionWithPrice, error)
 
 	UpsertSubscriptionByIds(ctx context.Context, cutomerId string, subscriptionId string) error
@@ -108,6 +109,63 @@ type StripeService struct {
 	logger       *slog.Logger
 	client       PaymentClient
 	paymentStore PaymentStore
+}
+
+// CreateCustomer implements PaymentService.
+func (srv *StripeService) CreateCustomer(ctx context.Context, customer *models.StripeCustomer) (*models.StripeCustomer, error) {
+	panic("unimplemented")
+}
+
+// CreateTeamCustomer implements PaymentService.
+func (srv *StripeService) CreateTeamCustomer(ctx context.Context, team *models.Team, user *models.User) (*models.StripeCustomer, error) {
+	customer, err := srv.client.CreateCustomer(user.Email, user.Name)
+	if err != nil {
+		return nil, err
+	}
+	stripeCustomer := &models.StripeCustomer{
+		ID:           customer.ID,
+		Email:        customer.Email,
+		Name:         user.Name,
+		TeamID:       types.Pointer(team.ID),
+		CustomerType: models.StripeCustomerTypeTeam,
+	}
+	return srv.paymentStore.CreateCustomer(ctx, stripeCustomer)
+}
+
+// CreateUserCustomer implements PaymentService.
+func (srv *StripeService) CreateUserCustomer(ctx context.Context, user *models.User) (*models.StripeCustomer, error) {
+	customer, err := srv.client.CreateCustomer(user.Email, user.Name)
+	if err != nil {
+		return nil, err
+	}
+	stripeCustomer := &models.StripeCustomer{
+		ID:           customer.ID,
+		Email:        customer.Email,
+		Name:         user.Name,
+		UserID:       types.Pointer(user.ID),
+		CustomerType: models.StripeCustomerTypeUser,
+	}
+	return srv.paymentStore.CreateCustomer(ctx, stripeCustomer)
+}
+
+// FindCustomerByTeam implements PaymentService.
+func (srv *StripeService) FindCustomerByTeam(ctx context.Context, teamId uuid.UUID) (*models.StripeCustomer, error) {
+	return srv.paymentStore.FindCustomer(
+		ctx,
+		&models.StripeCustomer{
+			TeamID: types.Pointer(teamId),
+		},
+	)
+}
+
+// FindCustomerByUser implements PaymentService.
+func (srv *StripeService) FindCustomerByUser(ctx context.Context, userId uuid.UUID) (*models.StripeCustomer, error) {
+	return srv.paymentStore.FindCustomer(
+		ctx,
+		&models.StripeCustomer{
+			UserID: types.Pointer(userId),
+		},
+	)
 }
 
 // VerifyAndUpdateTeamSubscriptionQuantity implements PaymentService.

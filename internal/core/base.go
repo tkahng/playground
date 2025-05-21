@@ -93,7 +93,7 @@ func InitBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 	} else {
 		mail = &mailer.LogMailer{}
 	}
-	userStore := stores.NewPostgresUserStore(pool)
+	// userStore := stores.NewPostgresUserStore(pool)
 	paymentStore := stores.NewPostgresPaymentStore(pool)
 	paymentClient := payment.NewPaymentClient(cfg.StripeConfig)
 	paymentService := services.NewPaymentService(
@@ -111,9 +111,9 @@ func InitBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 		tokenService,
 		passwordService,
 	)
+	checkerStore := stores.NewPostgresConstraintStore(pool)
 	checker := services.NewConstraintCheckerService(
-		userStore,
-		paymentStore,
+		checkerStore,
 	)
 
 	app := &BaseApp{

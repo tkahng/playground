@@ -32,8 +32,9 @@ func TestConstraintCheckerService_CannotHaveValidSubscription(t *testing.T) {
 		}
 
 		customer, err := paymentStore.CreateCustomer(ctx, &models.StripeCustomer{
-			UserID: types.Pointer(user.ID),
-			Email:  user.Email,
+			UserID:       types.Pointer(user.ID),
+			Email:        user.Email,
+			CustomerType: models.StripeCustomerTypeUser,
 		})
 		if err != nil {
 			t.Fatalf("failed to create customer: %v", err)

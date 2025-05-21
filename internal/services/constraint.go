@@ -9,22 +9,7 @@ import (
 	"github.com/tkahng/authgo/internal/shared"
 )
 
-type ConstraintCheckerUserStore interface {
-	// GetUserInfo(ctx context.Context, email string) (*shared.UserInfo, error)
-	// CreateUser(ctx context.Context, user *models.User) (*models.User, error)
-	// AssignUserRoles(ctx context.Context, userId uuid.UUID, roleNames ...string) error
-	// FindUserByEmail(ctx context.Context, email string) (*models.User, error)
-	FindUserById(ctx context.Context, userId uuid.UUID) (*models.User, error)
-	// UpdateUser(ctx context.Context, user *models.User) error
-	// DeleteUser(ctx context.Context, id uuid.UUID) error
-}
-
-type ConstraintCheckerPaymentStore interface {
-	FindLatestActiveSubscriptionByTeamId(ctx context.Context, teamId uuid.UUID) (*models.StripeSubscription, error)
-}
-
 type ConstaintCheckerStore interface {
-	// FindUserByEmail(ctx context.Context, email string) (*models.User, error)
 	FindUserById(ctx context.Context, userId uuid.UUID) (*models.User, error)
 	FindLatestActiveSubscriptionByUserId(ctx context.Context, userId uuid.UUID) (*models.StripeSubscription, error)
 }
