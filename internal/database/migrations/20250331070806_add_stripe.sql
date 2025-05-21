@@ -1,15 +1,34 @@
 -- migrate:up
+-- enum for stripe_customer_types. 'user' or 'team'
+create type public.stripe_customer_type as enum ('user', 'team');
 create table public.stripe_customers (
     -- UUID from auth.users
-    id uuid references public.users on delete cascade on update cascade not null primary key,
-    -- The user's customer ID in Stripe. User must not be able to update this.
-    stripe_id text not null unique,
+    -- id uuid references public.users on delete cascade on update cascade not null primary key,
+    id text primary key,
+    -- -- The user's customer ID in Stripe. User must not be able to update this.
+    -- stripe_id text not null unique,
+    email text not null,
+    name text,
+    -- The type of customer, either 'user' or 'team'.
+    customer_type public.stripe_customer_type not null,
+    user_id uuid unique references public.users on delete cascade on update cascade,
+    team_id uuid unique references public.teams on delete cascade on update cascade,
     -- The customer's billing address, stored in JSON format.
     billing_address jsonb,
     -- Stores your customer's payment instruments.
     payment_method jsonb,
     created_at timestamptz not null default now(),
-    updated_at timestamptz not null default now()
+    updated_at timestamptz not null default now(),
+    CONSTRAINT stripe_customers_only_one_reference_check CHECK (
+        (
+            user_id IS NOT NULL
+            AND team_id IS NULL
+        )
+        OR (
+            user_id IS NULL
+            AND team_id IS NOT NULL
+        )
+    )
 );
 CREATE TRIGGER handle_stripe_customers_updated_at before
 update on public.stripe_customers for each row execute procedure set_current_timestamp_updated_at();
@@ -86,8 +105,9 @@ create type public.stripe_subscription_status as enum (
 create table public.stripe_subscriptions (
     -- Subscription ID from Stripe, e.g. sub_1234.
     id text primary key,
+    stripe_customer_id text not null references public.stripe_customers,
     -- user_id uuid references public.users on delete cascade on update cascade not null,
-    team_id uuid references public.teams on delete cascade on update cascade not null,
+    -- team_id uuid references public.teams on delete cascade on update cascade not null,
     -- The status of the subscription object, one of stripe_subscription_status type above.
     status public.stripe_subscription_status not null,
     -- Set of key-value pairs, used to store additional information about the object in a structured format.
@@ -162,3 +182,5 @@ DROP TABLE IF EXISTS public.stripe_products;
 -- Drop the stripe_customers table
 DROP TRIGGER IF EXISTS handle_stripe_customers_updated_at on public.stripe_customers;
 DROP TABLE IF EXISTS public.stripe_customers;
+-- Drop the stripe_customer_type type
+DROP TYPE IF EXISTS public.stripe_customer_type;

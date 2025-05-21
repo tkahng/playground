@@ -4,7 +4,6 @@ CREATE TABLE IF NOT EXISTS teams (
     id uuid primary key default gen_random_uuid(),
     name VARCHAR(255) NOT NULL,
     slug VARCHAR(255) NOT NULL UNIQUE,
-    stripe_customer_id TEXT UNIQUE,
     created_at timestamptz not null default now(),
     updated_at timestamptz not null default now()
 );
@@ -20,6 +19,7 @@ CREATE TABLE IF NOT EXISTS team_members (
     SET NULL ON UPDATE CASCADE,
         active boolean NOT NULL DEFAULT true,
         role team_member_role NOT NULL,
+        has_billing_access boolean NOT NULL DEFAULT false,
         last_selected_at timestamptz not null default now(),
         created_at timestamptz not null default now(),
         updated_at timestamptz not null default now(),
