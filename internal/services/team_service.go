@@ -18,8 +18,13 @@ type TeamService interface {
 	AddMember(ctx context.Context, teamId, userId uuid.UUID, role models.TeamMemberRole) (*models.TeamMember, error)
 	RemoveMember(ctx context.Context, teamId, userId uuid.UUID) error
 	CreateTeam(ctx context.Context, name string, slug string, userId uuid.UUID) (*shared.TeamInfo, error)
+	UpdateTeam(ctx context.Context, teamId uuid.UUID, name string) (*models.Team, error)
+	DeleteTeam(ctx context.Context, teamId uuid.UUID, userId uuid.UUID) error
 }
 
+type TeamStripeStore interface {
+	FindLatestActiveSubscriptionWithPriceByCustomerId(ctx context.Context, customerId string) (*models.SubscriptionWithPrice, error)
+}
 type TeamStore interface {
 	CreateTeamWithOwnerMember(ctx context.Context, name string, slug string, userId uuid.UUID) (*shared.TeamInfo, error)
 	CountTeamMembers(ctx context.Context, teamId uuid.UUID) (int64, error)
@@ -38,8 +43,47 @@ type TeamStore interface {
 	UpdateTeamMemberSelectedAt(ctx context.Context, teamId, userId uuid.UUID) error
 }
 
+type TeamServiceStore interface {
+	TeamStore
+	TeamStripeStore
+}
+
 type teamService struct {
-	teamStore TeamStore
+	teamStore TeamServiceStore
+}
+
+func NewTeamService(store TeamServiceStore) TeamService {
+	return &teamService{
+		teamStore: store,
+	}
+}
+
+// DeleteTeam implements TeamService.
+func (t *teamService) DeleteTeam(ctx context.Context, teamId uuid.UUID, userId uuid.UUID) error {
+	teamInfo, err := t.FindTeamInfo(ctx, teamId, userId)
+	if err != nil {
+		return err
+	}
+	if teamInfo == nil {
+		return errors.New("team member not found")
+	}
+	if teamInfo.Member.Role != models.TeamMemberRoleOwner {
+		return errors.New("only owner can delete team")
+	}
+
+	return nil
+}
+
+// UpdateTeam implements TeamService.
+func (t *teamService) UpdateTeam(ctx context.Context, teamId uuid.UUID, name string) (*models.Team, error) {
+	team, err := t.teamStore.UpdateTeam(ctx, teamId, name)
+	if err != nil {
+		return nil, err
+	}
+	if team == nil {
+		return nil, errors.New("team not found")
+	}
+	return team, nil
 }
 
 // CreateTeam implements TeamService.
@@ -146,10 +190,4 @@ func (t *teamService) FindLatestTeamInfo(ctx context.Context, userId uuid.UUID) 
 		Team:   *team,
 		Member: *member,
 	}, nil
-}
-
-func NewTeamService(store TeamStore) TeamService {
-	return &teamService{
-		teamStore: store,
-	}
 }

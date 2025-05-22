@@ -15,6 +15,25 @@ import (
 	"github.com/tkahng/authgo/internal/tools/types"
 )
 
+type PostgresTeamServiceStore struct {
+	*PostgresTeamStore
+	*PostgresStripeStore
+}
+
+func NewPostgresTeamServiceStore(db database.Dbx) *PostgresTeamServiceStore {
+	return &PostgresTeamServiceStore{
+		PostgresTeamStore:   NewPostgresTeamStore(db),
+		PostgresStripeStore: NewPostgresStripeStore(db),
+	}
+}
+
+func (p *PostgresTeamServiceStore) WithTx(tx database.Dbx) *PostgresTeamServiceStore {
+	return &PostgresTeamServiceStore{
+		PostgresTeamStore:   p.PostgresTeamStore.WithTx(tx),
+		PostgresStripeStore: p.PostgresStripeStore.WithTx(tx),
+	}
+}
+
 type PostgresTeamStore struct {
 	db database.Dbx
 }

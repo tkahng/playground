@@ -30,6 +30,12 @@ type PostgresStripeStore struct {
 	db database.Dbx
 }
 
+func (s *PostgresStripeStore) WithTx(tx database.Dbx) *PostgresStripeStore {
+	return &PostgresStripeStore{
+		db: tx,
+	}
+}
+
 func (s *PostgresStripeStore) CreateCustomer(ctx context.Context, customer *models.StripeCustomer) (*models.StripeCustomer, error) {
 	if customer == nil {
 		return nil, errors.New("customer is nil")

@@ -179,13 +179,46 @@ func NewBApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 	checker := services.NewConstraintCheckerService(
 		checkerStore,
 	)
+
+	teamStore := stores.NewPostgresTeamServiceStore(pool)
+	teamService := services.NewTeamService(teamStore)
 	l := logger.GetDefaultLogger(slog.LevelInfo)
 
-	app := NewApp(fs, pool, settings, l, cfg, mail, authService, paymentService, checker, rbacService, userService, userAccountService, taskService)
+	app := NewApp(
+		fs,
+		pool,
+		settings,
+		l,
+		cfg,
+		mail,
+		authService,
+		paymentService,
+		checker,
+		rbacService,
+		userService,
+		userAccountService,
+		taskService,
+		teamService,
+	)
 	return app
 }
 
-func NewApp(fs *filesystem.FileSystem, pool *database.Queries, settings *conf.AppOptions, logger *slog.Logger, cfg conf.EnvConfig, mail mailer.Mailer, authService services.AuthService, paymentService services.PaymentService, checker *services.ConstraintCheckerService, rbacService services.RBACService, userService services.UserService, userAccountService services.UserAccountService, taskService services.TaskService) *BaseApp {
+func NewApp(
+	fs *filesystem.FileSystem,
+	pool *database.Queries,
+	settings *conf.AppOptions,
+	logger *slog.Logger,
+	cfg conf.EnvConfig,
+	mail mailer.Mailer,
+	authService services.AuthService,
+	paymentService services.PaymentService,
+	checker *services.ConstraintCheckerService,
+	rbacService services.RBACService,
+	userService services.UserService,
+	userAccountService services.UserAccountService,
+	taskService services.TaskService,
+	teamService services.TeamService,
+) *BaseApp {
 	app := &BaseApp{
 		fs:       fs,
 		db:       pool,
@@ -200,6 +233,7 @@ func NewApp(fs *filesystem.FileSystem, pool *database.Queries, settings *conf.Ap
 		user:     userService,
 		userAcc:  userAccountService,
 		task:     taskService,
+		team:     teamService,
 	}
 	return app
 }

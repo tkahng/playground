@@ -13,6 +13,22 @@ type mockTeamService struct {
 	mock.Mock
 }
 
+// DeleteTeam implements TeamService.
+func (m *mockTeamService) DeleteTeam(ctx context.Context, teamId uuid.UUID, userId uuid.UUID) error {
+	args := m.Called(ctx, teamId, userId)
+	return args.Error(0)
+}
+
+// UpdateTeam implements TeamService.
+func (m *mockTeamService) UpdateTeam(ctx context.Context, teamId uuid.UUID, name string) (*models.Team, error) {
+	args := m.Called(ctx, teamId, name)
+	var team *models.Team
+	if args.Get(0) != nil {
+		team = args.Get(0).(*models.Team)
+	}
+	return team, args.Error(1)
+}
+
 // CreateTeam implements TeamService.
 func (m *mockTeamService) CreateTeam(ctx context.Context, name string, slug string, userId uuid.UUID) (*shared.TeamInfo, error) {
 	args := m.Called(ctx, name, slug, userId)
@@ -89,6 +105,16 @@ var _ TeamService = (*mockTeamService)(nil)
 
 type mockTeamStore struct {
 	mock.Mock
+}
+
+// FindLatestActiveSubscriptionWithPriceByCustomerId implements TeamServiceStore.
+func (m *mockTeamStore) FindLatestActiveSubscriptionWithPriceByCustomerId(ctx context.Context, customerId string) (*models.SubscriptionWithPrice, error) {
+	args := m.Called(ctx, customerId)
+	var subscription *models.SubscriptionWithPrice
+	if args.Get(0) != nil {
+		subscription = args.Get(0).(*models.SubscriptionWithPrice)
+	}
+	return subscription, args.Error(1)
 }
 
 // CreateTeamWithOwnerMember implements TeamStore.
@@ -225,7 +251,7 @@ func (m *mockTeamStore) UpdateTeamMemberSelectedAt(ctx context.Context, teamId u
 	return args.Error(0)
 }
 
-var _ TeamStore = (*mockTeamStore)(nil)
+var _ TeamServiceStore = (*mockTeamStore)(nil)
 
 type mockTeamInvitationService struct {
 	mock.Mock
