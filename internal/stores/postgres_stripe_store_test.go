@@ -4,7 +4,9 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
+	"github.com/stripe/stripe-go/v82"
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/shared"
@@ -239,6 +241,227 @@ func TestPostgresStripeStore_ProductAndPrice(t *testing.T) {
 			t.Errorf("ListPrices() = %v, want at least 1", prices)
 		}
 
+		return errors.New("rollback")
+	})
+}
+
+func TestPostgresStripeStore_UpsertProductAndPriceFromStripe(t *testing.T) {
+	test.Short(t)
+	ctx, dbx := test.DbSetup()
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+		store := stores.NewPostgresStripeStore(dbxx)
+		stripeProduct := &stripe.Product{
+			ID:          "prod_stripe_1",
+			Active:      true,
+			Name:        "Stripe Product",
+			Description: "Stripe Desc",
+			Images:      []string{"img1.jpg"},
+			Metadata:    map[string]string{"foo": "bar"},
+		}
+		err := store.UpsertProductFromStripe(ctx, stripeProduct)
+		if err != nil {
+			t.Fatalf("UpsertProductFromStripe() error = %v", err)
+		}
+		found, err := store.FindProductByStripeId(ctx, stripeProduct.ID)
+		if err != nil || found == nil || found.ID != stripeProduct.ID {
+			t.Errorf("FindProductByStripeId() = %v, err = %v", found, err)
+		}
+
+		stripePrice := &stripe.Price{
+			ID:         "price_stripe_1",
+			Product:    &stripe.Product{ID: stripeProduct.ID},
+			Active:     true,
+			LookupKey:  "lookup_1",
+			UnitAmount: 5000,
+			Currency:   "usd",
+			Type:       "recurring",
+			Metadata:   map[string]string{"foo": "bar"},
+			Recurring: &stripe.PriceRecurring{
+				Interval:        "month",
+				IntervalCount:   1,
+				TrialPeriodDays: 14,
+			},
+		}
+		err = store.UpsertPriceFromStripe(ctx, stripePrice)
+		if err != nil {
+			t.Fatalf("UpsertPriceFromStripe() error = %v", err)
+		}
+		return errors.New("rollback")
+	})
+}
+
+func TestPostgresStripeStore_FindCustomer(t *testing.T) {
+	test.Short(t)
+	ctx, dbx := test.DbSetup()
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+		userStore := stores.NewPostgresUserStore(dbxx)
+		user, err := userStore.CreateUser(ctx, &models.User{Email: "findcustomer@example.com"})
+		if err != nil {
+			t.Fatalf("CreateUser() error = %v", err)
+		}
+		store := stores.NewPostgresStripeStore(dbxx)
+		customer := &models.StripeCustomer{
+			ID:           "cus_find_1",
+			UserID:       types.Pointer(user.ID),
+			Email:        user.Email,
+			CustomerType: models.StripeCustomerTypeUser,
+		}
+		_, err = store.CreateCustomer(ctx, customer)
+		if err != nil {
+			t.Fatalf("CreateCustomer() error = %v", err)
+		}
+		found, err := store.FindCustomer(ctx, &models.StripeCustomer{ID: "cus_find_1"})
+		if err != nil || found == nil || found.ID != "cus_find_1" {
+			t.Errorf("FindCustomer() = %v, err = %v", found, err)
+		}
+		return errors.New("rollback")
+	})
+}
+
+func TestPostgresStripeStore_SubscriptionQueries(t *testing.T) {
+	test.Short(t)
+	ctx, dbx := test.DbSetup()
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+		store := stores.NewPostgresStripeStore(dbxx)
+		userStore := stores.NewPostgresUserStore(dbxx)
+		user, err := userStore.CreateUser(ctx, &models.User{Email: "sub@example.com"})
+		if err != nil {
+			t.Fatalf("CreateUser() error = %v", err)
+		}
+		// Insert product and price
+		product := &models.StripeProduct{ID: "prod_sub_1", Active: true, Name: "Sub Product", Metadata: map[string]string{}}
+		err = store.UpsertProduct(ctx, product)
+		if err != nil {
+			t.Fatalf("UpsertProduct() error = %v", err)
+		}
+		price := &models.StripePrice{
+			ID:         "price_sub_1",
+			ProductID:  product.ID,
+			Active:     true,
+			UnitAmount: types.Pointer(int64(2000)),
+			Currency:   "usd",
+			Type:       models.StripePricingTypeRecurring,
+			Metadata:   map[string]string{},
+		}
+		err = store.UpsertPrice(ctx, price)
+		if err != nil {
+			t.Fatalf("UpsertPrice() error = %v", err)
+		}
+		// Insert customer
+		customer := &models.StripeCustomer{
+			ID:           "cus_sub_1",
+			Email:        "sub@example.com",
+			CustomerType: models.StripeCustomerTypeUser,
+			UserID:       types.Pointer(user.ID),
+		}
+		_, err = store.CreateCustomer(ctx, customer)
+		if err != nil {
+			t.Fatalf("CreateCustomer() error = %v", err)
+		}
+		// Insert subscription
+		sub := &models.StripeSubscription{
+			ID:                 "sub_1",
+			StripeCustomerID:   customer.ID,
+			Status:             models.StripeSubscriptionStatusActive,
+			Metadata:           map[string]string{},
+			ItemID:             "item_1",
+			PriceID:            price.ID,
+			Quantity:           1,
+			CancelAtPeriodEnd:  false,
+			Created:            time.Now(),
+			CurrentPeriodStart: time.Now(),
+			CurrentPeriodEnd:   time.Now().Add(30 * 24 * time.Hour),
+		}
+		err = store.UpsertSubscription(ctx, sub)
+		if err != nil {
+			t.Fatalf("UpsertSubscription() error = %v", err)
+		}
+		// FindSubscriptionWithPriceById
+		withPrice, err := store.FindSubscriptionWithPriceById(ctx, "sub_1")
+		if err != nil || withPrice == nil || withPrice.Subscription.ID != "sub_1" {
+			t.Errorf("FindSubscriptionWithPriceById() = %v, err = %v", withPrice, err)
+		}
+		// FindLatestActiveSubscriptionWithPriceByCustomerId
+		latest, err := store.FindLatestActiveSubscriptionWithPriceByCustomerId(ctx, customer.ID)
+		if err != nil || latest == nil || latest.Subscription.ID != "sub_1" {
+			t.Errorf("FindLatestActiveSubscriptionWithPriceByCustomerId() = %v, err = %v", latest, err)
+		}
+		// IsFirstSubscription
+		isFirst, err := store.IsFirstSubscription(ctx, customer.ID)
+		if err != nil {
+			t.Errorf("IsFirstSubscription() error = %v", err)
+		}
+		if !isFirst {
+			t.Errorf("IsFirstSubscription() = %v, want true", isFirst)
+		}
+		return errors.New("rollback")
+	})
+}
+
+func TestPostgresStripeStore_UpsertSubscriptionFromStripe(t *testing.T) {
+	test.Short(t)
+	ctx, dbx := test.DbSetup()
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+		store := stores.NewPostgresStripeStore(dbxx)
+		userStore := stores.NewPostgresUserStore(dbxx)
+		user, err := userStore.CreateUser(ctx, &models.User{Email: "sub@example.com"})
+		if err != nil {
+			t.Fatalf("CreateUser() error = %v", err)
+		}
+		// Insert product and price
+		product := &models.StripeProduct{ID: "prod_stripe_sub", Active: true, Name: "StripeSubProduct", Metadata: map[string]string{}}
+		err = store.UpsertProduct(ctx, product)
+		if err != nil {
+			t.Fatalf("UpsertProduct() error = %v", err)
+		}
+		price := &models.StripePrice{
+			ID:         "price_stripe_sub",
+			ProductID:  product.ID,
+			Active:     true,
+			UnitAmount: types.Pointer(int64(3000)),
+			Currency:   "usd",
+			Type:       models.StripePricingTypeRecurring,
+			Metadata:   map[string]string{},
+		}
+		err = store.UpsertPrice(ctx, price)
+		if err != nil {
+			t.Fatalf("UpsertPrice() error = %v", err)
+		}
+		// Insert customer
+		customer := &models.StripeCustomer{
+			ID:           "cus_stripe_sub",
+			Email:        "stripe_sub@example.com",
+			CustomerType: models.StripeCustomerTypeUser,
+			UserID:       types.Pointer(user.ID),
+		}
+		_, err = store.CreateCustomer(ctx, customer)
+		if err != nil {
+			t.Fatalf("CreateCustomer() error = %v", err)
+		}
+		// UpsertSubscriptionFromStripe
+		stripeSub := &stripe.Subscription{
+			ID:       "sub_stripe_1",
+			Customer: &stripe.Customer{ID: customer.ID},
+			Status:   stripe.SubscriptionStatusActive,
+			Metadata: map[string]string{},
+			Items: &stripe.SubscriptionItemList{
+				Data: []*stripe.SubscriptionItem{
+					{
+						ID:                 "item_stripe_1",
+						Price:              &stripe.Price{ID: price.ID},
+						Quantity:           1,
+						CurrentPeriodStart: time.Now().Unix(),
+						CurrentPeriodEnd:   time.Now().Add(30 * 24 * time.Hour).Unix(),
+					},
+				},
+			},
+			CancelAtPeriodEnd: false,
+			Created:           time.Now().Unix(),
+		}
+		err = store.UpsertSubscriptionFromStripe(ctx, stripeSub)
+		if err != nil {
+			t.Fatalf("UpsertSubscriptionFromStripe() error = %v", err)
+		}
 		return errors.New("rollback")
 	})
 }
