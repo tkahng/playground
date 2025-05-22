@@ -19,8 +19,8 @@ import (
 
 func TestHandleRefreshToken(t *testing.T) {
 	ctx := context.Background()
-	mockStorage := new(mockAuthStore)
-	mockToken := new(mockJwtService)
+	mockStorage := new(MockAuthStore)
+	mockToken := new(MockJwtService)
 	app := &BaseAuthService{
 		token:     mockToken,
 		authStore: mockStorage,
@@ -109,7 +109,7 @@ func TestHandleRefreshToken(t *testing.T) {
 }
 func TestResetPassword(t *testing.T) {
 	ctx := context.Background()
-	mockStorage := new(mockAuthStore)
+	mockStorage := new(MockAuthStore)
 	passwordManager := NewPasswordService()
 	app := &BaseAuthService{
 		authStore: mockStorage,
@@ -208,10 +208,10 @@ func TestResetPassword(t *testing.T) {
 
 func TestAuthenticate(t *testing.T) {
 	ctx := context.Background()
-	mockStorage := new(mockAuthStore)
+	mockStorage := new(MockAuthStore)
 	mockToken := NewJwtService()
-	mockPassword := new(mockPasswordService)
-	mockMailService := &mockMailService{
+	mockPassword := new(MockPasswordService)
+	mockMailService := &MockMailService{
 		delegate: NewMailService(&mailer.LogMailer{}),
 	}
 	settings := (&conf.EnvConfig{
