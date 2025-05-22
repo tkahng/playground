@@ -288,7 +288,7 @@ func TestConstraintCheckerService_CannotBeSuperUserID(t *testing.T) {
 	dbx.RunInTransaction(ctx, func(tx database.Dbx) error {
 		rbacStore := stores.NewPostgresRBACStore(tx)
 		userStore := stores.NewPostgresUserStore(tx)
-		checkerStore := stores.NewPostgresConstraintStore(dbx)
+		checkerStore := stores.NewPostgresConstraintStore(tx)
 
 		err := rbacStore.EnsureRoleAndPermissions(
 			ctx,
