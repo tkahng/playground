@@ -7,6 +7,7 @@ import (
 
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
+	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/stores"
 	"github.com/tkahng/authgo/internal/test"
 	"github.com/tkahng/authgo/internal/tools/types"
@@ -161,6 +162,83 @@ func TestPostgresStripeStore_CreateCustomer(t *testing.T) {
 				}
 			})
 		}
+		return errors.New("rollback")
+	})
+}
+
+func TestPostgresStripeStore_ProductAndPrice(t *testing.T) {
+	test.Short(t)
+	ctx, dbx := test.DbSetup()
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+		store := stores.NewPostgresStripeStore(dbxx)
+
+		// UpsertProduct
+		product := &models.StripeProduct{
+			ID:     "prod_123",
+			Active: true,
+			Name:   "Test Product",
+			Metadata: map[string]string{
+				"key1": "value1",
+			},
+		}
+		err := store.UpsertProduct(ctx, product)
+		if err != nil {
+			t.Fatalf("UpsertProduct() error = %v", err)
+		}
+
+		// FindProductByStripeId
+		found, err := store.FindProductByStripeId(ctx, "prod_123")
+		if err != nil {
+			t.Fatalf("FindProductByStripeId() error = %v", err)
+		}
+		if found == nil || found.ID != product.ID {
+			t.Errorf("FindProductByStripeId() = %v, want %v", found, product.ID)
+		}
+
+		// UpsertPrice
+		price := &models.StripePrice{
+			ID:         "price_123",
+			ProductID:  product.ID,
+			Active:     true,
+			UnitAmount: types.Pointer(int64(1000)),
+			Currency:   "usd",
+			Type:       models.StripePricingTypeRecurring,
+			Metadata: map[string]string{
+				"key1": "value1",
+			},
+		}
+		err = store.UpsertPrice(ctx, price)
+		if err != nil {
+			t.Fatalf("UpsertPrice() error = %v", err)
+		}
+
+		// FindValidPriceById
+		validPrice, err := store.FindValidPriceById(ctx, "price_123")
+		if err != nil {
+			t.Fatalf("FindValidPriceById() error = %v", err)
+		}
+		if validPrice == nil || validPrice.ID != price.ID {
+			t.Errorf("FindValidPriceById() = %v, want %v", validPrice, price.ID)
+		}
+
+		// ListProducts
+		products, err := store.ListProducts(ctx, &shared.StripeProductListParams{})
+		if err != nil {
+			t.Fatalf("ListProducts() error = %v", err)
+		}
+		if len(products) == 0 {
+			t.Errorf("ListProducts() = %v, want at least 1", products)
+		}
+
+		// ListPrices
+		prices, err := store.ListPrices(ctx, &shared.StripePriceListParams{})
+		if err != nil {
+			t.Fatalf("ListPrices() error = %v", err)
+		}
+		if len(prices) == 0 {
+			t.Errorf("ListPrices() = %v, want at least 1", prices)
+		}
+
 		return errors.New("rollback")
 	})
 }
