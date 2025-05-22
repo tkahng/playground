@@ -30,10 +30,10 @@ func FromCrudProduct(product *crudModels.StripeProduct) *Product {
 	}
 }
 
-type StripeProductWithData struct {
+type StripeProductWitPermission struct {
 	*Product
-	Roles  []*Role  `db:"roles" json:"roles,omitempty" required:"false"`
-	Prices []*Price `db:"prices" json:"prices,omitempty" required:"false"`
+	Permissions []*Permission `db:"permissions" json:"permissions,omitempty" required:"false"`
+	Prices      []*Price      `db:"prices" json:"prices,omitempty" required:"false"`
 }
 
 type StripeProductListFilter struct {
@@ -51,7 +51,7 @@ type StripeProductListParams struct {
 }
 
 type StripeProductExpand struct {
-	Expand []string `query:"expand,omitempty" required:"false" minimum:"1" maximum:"100" uniqueItems:"true" enum:"prices,roles"`
+	Expand []string `query:"expand,omitempty" required:"false" minimum:"1" maximum:"100" uniqueItems:"true" enum:"prices,permissions"`
 }
 
 type StripeProductGetParams struct {

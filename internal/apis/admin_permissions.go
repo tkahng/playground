@@ -6,7 +6,6 @@ import (
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
-	"github.com/tkahng/authgo/internal/crudrepo"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 	"github.com/tkahng/authgo/internal/tools/utils"
@@ -151,17 +150,8 @@ type PermissionCreateInput struct {
 func (api *Api) AdminPermissionsCreate(ctx context.Context, input *struct {
 	Body PermissionCreateInput
 }) (*struct{ Body shared.Permission }, error) {
-	dbx := api.app.Db()
 	store := api.app.Rbac().Store()
-	permission, err := crudrepo.Permission.GetOne(
-		ctx,
-		dbx,
-		&map[string]any{
-			"name": map[string]any{
-				"_eq": input.Body.Name,
-			},
-		},
-	)
+	permission, err := store.FindPermissionByName(ctx, input.Body.Name)
 	if err != nil {
 		return nil, err
 

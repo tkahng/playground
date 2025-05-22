@@ -40,6 +40,8 @@ type RBACStore interface {
 	FindRoleByName(ctx context.Context, name string) (*models.Role, error)
 	FindRolesByIds(ctx context.Context, params []uuid.UUID) ([]*models.Role, error)
 	DeleteRolePermissions(ctx context.Context, roleId uuid.UUID, permissionIds ...uuid.UUID) error
+	LoadProductPermissions(ctx context.Context, productIds ...string) ([][]*models.Permission, error)
+	DeleteProductRoles(ctx context.Context, productId string, roleIds ...uuid.UUID) error
 }
 
 type RBACService interface {

@@ -13,7 +13,7 @@ type StripeProductsWithPricesInput struct {
 	shared.SortParams
 }
 
-func (api *Api) StripeProductsWithPrices(ctx context.Context, inputt *StripeProductsWithPricesInput) (*shared.PaginatedOutput[*shared.StripeProductWithData], error) {
+func (api *Api) StripeProductsWithPrices(ctx context.Context, inputt *StripeProductsWithPricesInput) (*shared.PaginatedOutput[*shared.StripeProductWitPermission], error) {
 	input := &shared.StripeProductListParams{
 		PaginatedInput: inputt.PaginatedInput,
 		StripeProductListFilter: shared.StripeProductListFilter{
@@ -49,13 +49,13 @@ func (api *Api) StripeProductsWithPrices(ctx context.Context, inputt *StripeProd
 		return nil, err
 	}
 
-	return &shared.PaginatedOutput[*shared.StripeProductWithData]{
-		Body: shared.PaginatedResponse[*shared.StripeProductWithData]{
-			Data: mapper.Map(products, func(p *models.StripeProduct) *shared.StripeProductWithData {
-				return &shared.StripeProductWithData{
-					Product: shared.FromCrudProduct(p),
-					Roles:   mapper.Map(p.Roles, shared.FromCrudRole),
-					Prices:  mapper.Map(p.Prices, shared.FromCrudPrice),
+	return &shared.PaginatedOutput[*shared.StripeProductWitPermission]{
+		Body: shared.PaginatedResponse[*shared.StripeProductWitPermission]{
+			Data: mapper.Map(products, func(p *models.StripeProduct) *shared.StripeProductWitPermission {
+				return &shared.StripeProductWitPermission{
+					Product:     shared.FromCrudProduct(p),
+					Permissions: mapper.Map(p.Permissions, shared.FromCrudPermission),
+					Prices:      mapper.Map(p.Prices, shared.FromCrudPrice),
 				}
 			}),
 			Meta: shared.GenerateMeta(input.PaginatedInput, count),

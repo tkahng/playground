@@ -6,9 +6,7 @@ import (
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
-	"github.com/tkahng/authgo/internal/crudrepo"
 	"github.com/tkahng/authgo/internal/models"
-	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 	"github.com/tkahng/authgo/internal/tools/utils"
@@ -289,16 +287,11 @@ func (api *Api) AdminRolesGet(ctx context.Context, input *struct {
 }) (*struct {
 	Body shared.RoleWithPermissions
 }, error) {
-	db := api.app.Db()
 	id, err := uuid.Parse(input.RoleID)
 	if err != nil {
 		return nil, err
 	}
-	role, err := crudrepo.Role.GetOne(ctx, db, &map[string]any{
-		"id": map[string]any{
-			"_eq": id.String(),
-		},
-	})
+	role, err := api.app.Rbac().Store().FindRoleById(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -307,7 +300,7 @@ func (api *Api) AdminRolesGet(ctx context.Context, input *struct {
 	}
 	if len(input.Expand) > 0 {
 		if slices.Contains(input.Expand, "permissions") {
-			rolePermissions, err := queries.LoadRolePermissions(ctx, db, role.ID)
+			rolePermissions, err := api.app.Rbac().Store().LoadRolePermissions(ctx, role.ID)
 			if err != nil {
 				return nil, err
 			}
