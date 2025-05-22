@@ -3,13 +3,13 @@ package services
 import (
 	"errors"
 
-	"github.com/tkahng/authgo/internal/conf"
 	"github.com/tkahng/authgo/internal/tools/mailer"
 )
 
 var (
 	TeamEmailPathMap = map[EmailType]mailer.SendMailParams{
 		EmailTypeTeamInvite: {
+			Type:         string(EmailTypeTeamInvite),
 			Subject:      "%s - You are invited to join a team",
 			TemplatePath: "/team-invitation",
 			Template:     mailer.DefaultTeamInviteMail,
@@ -20,16 +20,19 @@ var (
 var (
 	EmailPathMap = map[EmailType]mailer.SendMailParams{
 		EmailTypeVerify: {
+			Type:         string(EmailTypeVerify),
 			Subject:      "%s - Verify your email address",
 			TemplatePath: "/api/auth/verify",
 			Template:     mailer.DefaultConfirmationMail,
 		},
 		EmailTypeConfirmPasswordReset: {
+			Type:         string(EmailTypeConfirmPasswordReset),
 			Subject:      "%s - Confirm your password reset",
 			TemplatePath: "/password-reset",
 			Template:     mailer.DefaultRecoveryMail,
 		},
 		EmailTypeSecurityPasswordReset: {
+			Type:         string(EmailTypeSecurityPasswordReset),
 			Subject:      "%s - Reset your password",
 			TemplatePath: "/password-reset",
 			Template:     mailer.DefaultSecurityPasswordResetMail,
@@ -52,8 +55,7 @@ type MailService interface {
 }
 
 type mailService struct {
-	mailer  mailer.Mailer
-	options *conf.AppOptions
+	mailer mailer.Mailer
 }
 
 func (m *mailService) SendMail(params *mailer.AllEmailParams) error {

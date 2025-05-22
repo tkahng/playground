@@ -14,6 +14,7 @@ import (
 	"github.com/tkahng/authgo/internal/conf"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/authgo/internal/tools/mailer"
 )
 
 func TestHandleRefreshToken(t *testing.T) {
@@ -208,8 +209,18 @@ func TestResetPassword(t *testing.T) {
 func TestAuthenticate(t *testing.T) {
 	ctx := context.Background()
 	mockStorage := new(mockAuthStore)
-	mockToken := new(mockJwtService)
+	mockToken := NewJwtService()
 	mockPassword := new(mockPasswordService)
+	mockMailService := &mockMailService{
+		delegate: NewMailService(&mailer.LogMailer{}),
+	}
+	settings := (&conf.EnvConfig{
+		AppConfig: conf.AppConfig{
+			AppUrl:        "http://localhost:8080",
+			AppName:       "TestApp",
+			SenderAddress: "tkahng@gmail.com",
+		},
+	}).ToSettings()
 	wg := new(sync.WaitGroup)
 	mockRoutineService := new(mockRoutineService)
 	mockRoutineService.wg = wg
@@ -218,6 +229,8 @@ func TestAuthenticate(t *testing.T) {
 		token:         mockToken,
 		password:      mockPassword,
 		WorkerService: mockRoutineService,
+		mail:          mockMailService,
+		options:       settings,
 	}
 
 	testUserId := uuid.New()
@@ -230,6 +243,8 @@ func TestAuthenticate(t *testing.T) {
 		input         *shared.AuthenticationInput
 		setupMocks    func()
 		expectedError bool
+		checkMail     bool
+		checkWant     *mailer.AllEmailParams
 	}{
 		{
 			name: "user does not exist, create user and account",
@@ -239,16 +254,29 @@ func TestAuthenticate(t *testing.T) {
 				Type:     shared.ProviderTypeCredentials,
 			},
 			setupMocks: func() {
+				mockStorage.On("FindUserByEmail", ctx, testEmail).Return(nil, nil)
 				mockStorage.On("CreateUser", ctx, mock.Anything).Return(&models.User{ID: testUserId, Email: testEmail}, nil)
 				mockStorage.On("AssignUserRoles", ctx, testUserId, mock.Anything).Return(nil)
 				mockPassword.On("HashPassword", testPasswordStr).Return(testHashedPassword, nil)
 				mockStorage.On("LinkAccount", ctx, mock.Anything).Return(nil)
+				mockStorage.On("SaveToken", ctx, mock.Anything).Return(nil)
 				// mockStorage.On("FindUserAccountByUserIdAndProvider", ctx, testUserId, models.ProvidersCredentials).Return(nil, nil)
 				// mockPassword.On("HashPassword", mock.Anything).Return(testHashedPassword, nil)
 				// mockPassword.On("UpdateUserAccount", ctx, mock.Anything).Return(nil)
 				// mockStorage.On("SaveToken", ctx, mock.Anything).Return(nil)
 			},
 			expectedError: false,
+			checkMail:     true,
+			checkWant: &mailer.AllEmailParams{
+				SendMailParams: &mailer.SendMailParams{
+					Type: string(EmailTypeVerify),
+				},
+				Message: &mailer.Message{
+					From:    settings.Meta.SenderAddress,
+					To:      testEmail,
+					Subject: "TestApp - Verify your email address",
+				},
+			},
 		},
 		{
 			name: "user exists, account exists, correct password",
@@ -292,8 +320,10 @@ func TestAuthenticate(t *testing.T) {
 				mockStorage.On("FindUserAccountByUserIdAndProvider", ctx, testUserId, models.ProvidersCredentials).Return(nil, nil)
 				mockPassword.On("HashPassword", testPasswordStr).Return(testHashedPassword, nil)
 				mockStorage.On("LinkAccount", ctx, mock.Anything).Return(nil)
+				// mockStorage.On("FindUserAccountByUserIdAndProvider", ctx, testUserId, models.ProvidersCredentials).Return(nil)
 			},
 			expectedError: false,
+			// checkMail:     true,
 		},
 	}
 
@@ -303,6 +333,7 @@ func TestAuthenticate(t *testing.T) {
 			mockStorage.Calls = nil
 			mockPassword.ExpectedCalls = nil
 			mockPassword.Calls = nil
+			mockMailService.param = nil
 
 			if tc.setupMocks != nil {
 				tc.setupMocks()
@@ -317,6 +348,13 @@ func TestAuthenticate(t *testing.T) {
 				assert.NoError(t, err)
 				assert.NotNil(t, result)
 			}
+			if tc.checkMail {
+				param := mockMailService.param
+				assert.NotNil(t, param)
+				assert.Equal(t, param.Message.To, testEmail)
+				assert.Equal(t, param.SendMailParams.Type, tc.checkWant.SendMailParams.Type)
+			}
+
 			mockStorage.AssertExpectations(t)
 			mockPassword.AssertExpectations(t)
 		})

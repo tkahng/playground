@@ -8,6 +8,7 @@ import (
 	"github.com/tkahng/authgo/internal/conf"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/authgo/internal/tools/mailer"
 
 	"github.com/stretchr/testify/mock"
 )
@@ -157,3 +158,16 @@ func (m *mockPasswordService) VerifyPassword(hashedPassword string, password str
 }
 
 var _ PasswordService = (*mockPasswordService)(nil)
+
+type mockMailService struct {
+	delegate MailService
+	param    *mailer.AllEmailParams
+}
+
+// SendMail implements MailService.
+func (m *mockMailService) SendMail(params *mailer.AllEmailParams) error {
+	m.param = params
+	return m.delegate.SendMail(params)
+}
+
+var _ MailService = (*mockMailService)(nil)
