@@ -34,7 +34,7 @@ func CreateTeamFromUser(ctx context.Context, dbx database.Dbx, user *models.User
 		teamMember := &models.TeamMember{
 			TeamID: team.ID,
 			UserID: &userId,
-			Role:   models.TeamMemberRoleAdmin,
+			Role:   models.TeamMemberRoleOwner,
 		}
 		return crudrepo.TeamMember.PostOne(
 			ctx,

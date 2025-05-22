@@ -9,8 +9,8 @@ import (
 )
 
 type StripePaymentPayload struct {
-	StripeCustomerID string `json:"stripe_customer_id"`
-	PriceID          string `json:"price_id"`
+	// StripeCustomerID string `json:"stripe_customer_id"`
+	PriceID string `json:"price_id"`
 }
 type StripePaymentInput struct {
 	// HxRequestHeaders
@@ -25,21 +25,14 @@ type StripeUrlOutput struct {
 }
 
 func (a *Api) StripeCheckoutSession(ctx context.Context, input *StripePaymentInput) (*StripeUrlOutput, error) {
-	info := contextstore.GetContextUserInfo(ctx)
-	if info == nil {
-		return nil, huma.Error403Forbidden("Not authenticated")
+	customer := contextstore.GetContextCurrentCustomer(ctx)
+	if customer == nil {
+		return nil, huma.Error403Forbidden("No customer found")
 	}
-
-	// team := contextstore.GetContextSelectedTeam(ctx)
-	// if team == nil {
-	// 	return nil, huma.Error400BadRequest("No team selected")
-	// }
-	// if team.StripeCustomerID == nil {
-	// 	return nil, huma.Error400BadRequest("No stripe customer id")
-	// }
-
-	// return sesh.URL, nil
-	url, err := a.app.Payment().CreateCheckoutSession(ctx, input.Body.StripeCustomerID, input.Body.PriceID)
+	if input.Body.PriceID == "" {
+		return nil, huma.Error400BadRequest("Price ID is required")
+	}
+	url, err := a.app.Payment().CreateCheckoutSession(ctx, customer.ID, input.Body.PriceID)
 	if err != nil {
 		return nil, err
 	}
@@ -54,23 +47,18 @@ func (a *Api) StripeCheckoutSession(ctx context.Context, input *StripePaymentInp
 }
 
 type StripeBillingPortalBody struct {
-	StripeCustomerID string `json:"stripe_customer_id"`
 }
 type StripeBillingPortalInput struct {
 	// HxRequestHeaders
 	Body StripeBillingPortalBody
 }
 
-func (a *Api) StripeBillingPortal(ctx context.Context, input *StripeBillingPortalInput) (*StripeUrlOutput, error) {
-
-	// team := contextstore.GetContextSelectedTeam(ctx)
-	// if team == nil {
-	// 	return nil, huma.Error401Unauthorized("not authorized")
-	// }
-	// if team.StripeCustomerID == nil {
-	// 	return nil, huma.Error400BadRequest("No stripe customer id")
-	// }
-	url, err := a.app.Payment().CreateBillingPortalSession(ctx, input.Body.StripeCustomerID)
+func (a *Api) StripeBillingPortal(ctx context.Context, input *struct{}) (*StripeUrlOutput, error) {
+	customer := contextstore.GetContextCurrentCustomer(ctx)
+	if customer == nil {
+		return nil, huma.Error403Forbidden("No customer found")
+	}
+	url, err := a.app.Payment().CreateBillingPortalSession(ctx, customer.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -82,12 +70,6 @@ func (a *Api) StripeBillingPortal(ctx context.Context, input *StripeBillingPorta
 		},
 	}, nil
 
-}
-
-type CheckoutSession struct {
-	ID      string          `json:"id"`
-	Price   *shared.Price   `json:"price"`
-	Product *shared.Product `json:"product"`
 }
 
 type CheckoutSessionOutput struct {

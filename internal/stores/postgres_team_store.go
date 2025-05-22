@@ -37,7 +37,7 @@ func (p *PostgresTeamStore) CreateTeamFromUser(ctx context.Context, user *models
 		&models.TeamMember{
 			TeamID: team.ID,
 			UserID: types.Pointer(user.ID),
-			Role:   models.TeamMemberRoleAdmin,
+			Role:   models.TeamMemberRoleOwner,
 		},
 	)
 	if err != nil {

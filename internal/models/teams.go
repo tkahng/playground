@@ -21,7 +21,7 @@ type Team struct {
 type TeamMemberRole string
 
 const (
-	TeamMemberRoleAdmin  TeamMemberRole = "owner"
+	TeamMemberRoleOwner  TeamMemberRole = "owner"
 	TeamMemberRoleMember TeamMemberRole = "member"
 	TeamMemberRoleGuest  TeamMemberRole = "guest"
 )

@@ -95,7 +95,7 @@ func TeamInfoFromParamMiddleware(api huma.API, app core.App) func(ctx huma.Conte
 			return
 		}
 		if teamInfo == nil {
-			huma.WriteErr(api, ctx, http.StatusNotFound, "team not found at middleware")
+			next(ctx)
 			return
 		}
 		ctxx := contextstore.SetContextTeamInfo(rawCtx, teamInfo)
@@ -123,14 +123,88 @@ func RequireTeamMemberRolesMiddleware(api huma.API, roles ...models.TeamMemberRo
 	}
 }
 
-func RequireSelectedCustomerMiddleware(api huma.API, app core.App) func(ctx huma.Context, next func(huma.Context)) {
+func SelectCustomerFromTeamMiddleware(api huma.API, app core.App) func(ctx huma.Context, next func(huma.Context)) {
 	return func(ctx huma.Context, next func(huma.Context)) {
 		rawCtx := ctx.Context()
-		customerInfo := contextstore.GetContextCurrentCustomer(rawCtx)
-		if customerInfo == nil {
-			huma.WriteErr(api, ctx, http.StatusUnauthorized, "unauthorized at middleware")
+
+		teamInfo := contextstore.GetContextTeamInfo(rawCtx)
+		if teamInfo == nil {
+			huma.WriteErr(api, ctx, http.StatusForbidden, "no team info found")
 			return
 		}
+		if teamInfo.Member.Role != models.TeamMemberRoleOwner {
+			huma.WriteErr(api, ctx, http.StatusForbidden, "not a team owner")
+			return
+		}
+		customer, err := app.Payment().FindCustomerByTeam(rawCtx, teamInfo.Team.ID)
+		if err != nil {
+			huma.WriteErr(api, ctx, http.StatusInternalServerError, "error getting customer", err)
+			return
+		}
+		if customer == nil {
+			userInfo := contextstore.GetContextUserInfo(rawCtx)
+			if userInfo == nil {
+				huma.WriteErr(api, ctx, http.StatusForbidden, "no user info found")
+				return
+			}
+			customer, err = app.Payment().CreateTeamCustomer(rawCtx, &teamInfo.Team, &models.User{
+				ID:    userInfo.User.ID,
+				Name:  userInfo.User.Name,
+				Email: userInfo.User.Email,
+			})
+			if err != nil {
+				huma.WriteErr(api, ctx, http.StatusInternalServerError, "error creating customer", err)
+				return
+			}
+			if customer == nil {
+				huma.WriteErr(api, ctx, http.StatusInternalServerError, "error creating customer")
+				return
+			}
+			ctxx := contextstore.SetContextCurrentCustomer(rawCtx, customer)
+			ctx = huma.WithContext(ctx, ctxx)
+			next(ctx)
+			return
+		}
+		ctxx := contextstore.SetContextCurrentCustomer(rawCtx, customer)
+		ctx = huma.WithContext(ctx, ctxx)
+		next(ctx)
+	}
+}
+
+func SelectCustomerFromUserMiddleware(api huma.API, app core.App) func(ctx huma.Context, next func(huma.Context)) {
+	return func(ctx huma.Context, next func(huma.Context)) {
+		rawCtx := ctx.Context()
+		userInfo := contextstore.GetContextUserInfo(rawCtx)
+		if userInfo == nil {
+			huma.WriteErr(api, ctx, http.StatusForbidden, "no user info found")
+			return
+		}
+		customer, err := app.Payment().FindCustomerByUser(rawCtx, userInfo.User.ID)
+		if err != nil {
+			huma.WriteErr(api, ctx, http.StatusInternalServerError, "error getting customer", err)
+			return
+		}
+		if customer == nil {
+			customer, err = app.Payment().CreateUserCustomer(rawCtx, &models.User{
+				ID:    userInfo.User.ID,
+				Name:  userInfo.User.Name,
+				Email: userInfo.User.Email,
+			})
+			if err != nil {
+				huma.WriteErr(api, ctx, http.StatusInternalServerError, "error creating customer", err)
+				return
+			}
+			if customer == nil {
+				huma.WriteErr(api, ctx, http.StatusInternalServerError, "error creating customer")
+				return
+			}
+			ctxx := contextstore.SetContextCurrentCustomer(rawCtx, customer)
+			ctx = huma.WithContext(ctx, ctxx)
+			next(ctx)
+			return
+		}
+		ctxx := contextstore.SetContextCurrentCustomer(rawCtx, customer)
+		ctx = huma.WithContext(ctx, ctxx)
 		next(ctx)
 	}
 }

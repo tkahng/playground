@@ -114,7 +114,7 @@ type StripeService struct {
 
 // CreateTeamCustomer implements PaymentService.
 func (srv *StripeService) CreateTeamCustomer(ctx context.Context, team *models.Team, user *models.User) (*models.StripeCustomer, error) {
-	customer, err := srv.client.CreateCustomer(user.Email, user.Name)
+	customer, err := srv.client.CreateCustomer(user.Email, &team.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -124,7 +124,7 @@ func (srv *StripeService) CreateTeamCustomer(ctx context.Context, team *models.T
 	stripeCustomer := &models.StripeCustomer{
 		ID:           customer.ID,
 		Email:        customer.Email,
-		Name:         user.Name,
+		Name:         &team.Name,
 		TeamID:       types.Pointer(team.ID),
 		CustomerType: models.StripeCustomerTypeTeam,
 	}
