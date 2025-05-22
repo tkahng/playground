@@ -9,7 +9,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
-	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/stores"
 	"github.com/tkahng/authgo/internal/test"
@@ -19,9 +18,9 @@ func TestListPermissions(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(tx database.Dbx) error {
-		err := queries.EnsureRoleAndPermissions(
+		rbacstore := stores.NewPostgresRBACStore(tx)
+		err := rbacstore.EnsureRoleAndPermissions(
 			ctx,
-			tx,
 			shared.PermissionNameAdmin,
 			shared.PermissionNameAdmin,
 			shared.PermissionNameBasic,
@@ -83,9 +82,9 @@ func TestCountPermissions(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(tx database.Dbx) error {
-		err := queries.EnsureRoleAndPermissions(
+		rbacstore := stores.NewPostgresRBACStore(tx)
+		err := rbacstore.EnsureRoleAndPermissions(
 			ctx,
-			tx,
 			shared.PermissionNameAdmin,
 			shared.PermissionNameAdmin,
 			shared.PermissionNameBasic,
@@ -150,9 +149,10 @@ func TestListRoles(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(tx database.Dbx) error {
-		err := queries.EnsureRoleAndPermissions(
+		// Create test roles and permissions
+		rbacstore := stores.NewPostgresRBACStore(tx)
+		err := rbacstore.EnsureRoleAndPermissions(
 			ctx,
-			tx,
 			shared.PermissionNameAdmin,
 			shared.PermissionNameAdmin,
 			shared.PermissionNameBasic,
@@ -213,9 +213,9 @@ func TestCountRoles(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(tx database.Dbx) error {
-		err := queries.EnsureRoleAndPermissions(
+		rbacstore := stores.NewPostgresRBACStore(tx)
+		err := rbacstore.EnsureRoleAndPermissions(
 			ctx,
-			tx,
 			shared.PermissionNameAdmin,
 			shared.PermissionNameAdmin,
 			shared.PermissionNameBasic,
@@ -224,9 +224,8 @@ func TestCountRoles(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to ensure role and permissions: %v", err)
 		}
-		err = queries.EnsureRoleAndPermissions(
+		err = rbacstore.EnsureRoleAndPermissions(
 			ctx,
-			tx,
 			shared.PermissionNameBasic,
 			shared.PermissionNameBasic,
 		)
@@ -290,16 +289,14 @@ func TestFindPermissionsByIds(t *testing.T) {
 	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		// Create test permissions
-		perm1, err := queries.CreatePermission(ctx, dbxx, &queries.CreatePermissionDto{
-			Name: "test_perm_1",
-		})
+		rbacstore := stores.NewPostgresRBACStore(dbxx)
+		// userstore := stores.NewPostgresUserStore(dbxx)
+		perm1, err := rbacstore.CreatePermission(ctx, "test_perm_1", nil)
 		if err != nil {
 			t.Fatalf("failed to create test permission 1: %v", err)
 		}
 
-		perm2, err := queries.CreatePermission(ctx, dbxx, &queries.CreatePermissionDto{
-			Name: "test_perm_2",
-		})
+		perm2, err := rbacstore.CreatePermission(ctx, "test_perm_2", nil)
 		if err != nil {
 			t.Fatalf("failed to create test permission 2: %v", err)
 		}
@@ -387,8 +384,10 @@ func TestListUserPermissionsSource(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+		userStore := stores.NewPostgresUserStore(dbxx)
+		rbacStore := stores.NewPostgresRBACStore(dbxx)
 		// Create test user
-		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
+		user, err := userStore.CreateUser(ctx, &models.User{
 			Email: "test@test.com",
 		})
 		if err != nil {
@@ -396,27 +395,25 @@ func TestListUserPermissionsSource(t *testing.T) {
 		}
 
 		// Create test role and permission
-		role, err := queries.CreateRole(ctx, dbxx, &queries.CreateRoleDto{
+		role, err := rbacStore.CreateRole(ctx, &shared.CreateRoleDto{
 			Name: "test_role",
 		})
 		if err != nil {
 			t.Fatalf("failed to create test role: %v", err)
 		}
 
-		perm, err := queries.CreatePermission(ctx, dbxx, &queries.CreatePermissionDto{
-			Name: "test_permission",
-		})
+		perm, err := rbacStore.CreatePermission(ctx, "test_permission", nil)
 		if err != nil {
 			t.Fatalf("failed to create test permission: %v", err)
 		}
 
 		// Assign role to user and permission to role
-		err = queries.CreateUserRoles(ctx, dbxx, user.ID, role.ID)
+		err = rbacStore.CreateUserRoles(ctx, user.ID, role.ID)
 		if err != nil {
 			t.Fatalf("failed to assign role to user: %v", err)
 		}
 
-		err = queries.CreateRolePermissions(ctx, dbxx, role.ID, perm.ID)
+		err = rbacStore.CreateRolePermissions(ctx, role.ID, perm.ID)
 		if err != nil {
 			t.Fatalf("failed to assign permission to role: %v", err)
 		}
@@ -487,8 +484,10 @@ func TestCountUserPermissionSource(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+		rbacstore := stores.NewPostgresRBACStore(dbxx)
+		userstore := stores.NewPostgresUserStore(dbxx)
 		// Create test user
-		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
+		user, err := userstore.CreateUser(ctx, &models.User{
 			Email: "test@test.com",
 		})
 		if err != nil {
@@ -496,27 +495,25 @@ func TestCountUserPermissionSource(t *testing.T) {
 		}
 
 		// Create test role and permission
-		role, err := queries.CreateRole(ctx, dbxx, &queries.CreateRoleDto{
+		role, err := rbacstore.CreateRole(ctx, &shared.CreateRoleDto{
 			Name: "test_role",
 		})
 		if err != nil {
 			t.Fatalf("failed to create test role: %v", err)
 		}
 
-		perm, err := queries.CreatePermission(ctx, dbxx, &queries.CreatePermissionDto{
-			Name: "test_permission",
-		})
+		perm, err := rbacstore.CreatePermission(ctx, "test_permission", nil)
 		if err != nil {
 			t.Fatalf("failed to create test permission: %v", err)
 		}
 
 		// Assign role to user and permission to role
-		err = queries.CreateUserRoles(ctx, dbxx, user.ID, role.ID)
+		err = rbacstore.CreateUserRoles(ctx, user.ID, role.ID)
 		if err != nil {
 			t.Fatalf("failed to assign role to user: %v", err)
 		}
 
-		err = queries.CreateRolePermissions(ctx, dbxx, role.ID, perm.ID)
+		err = rbacstore.CreateRolePermissions(ctx, role.ID, perm.ID)
 		if err != nil {
 			t.Fatalf("failed to assign permission to role: %v", err)
 		}
@@ -575,7 +572,9 @@ func TestListUserNotPermissionsSource(t *testing.T) {
 	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		// Create test user
-		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
+		userstore := stores.NewPostgresUserStore(dbxx)
+		rbacstore := stores.NewPostgresRBACStore(dbxx)
+		user, err := userstore.CreateUser(ctx, &models.User{
 			Email: "test@test.com",
 		})
 		if err != nil {
@@ -583,35 +582,31 @@ func TestListUserNotPermissionsSource(t *testing.T) {
 		}
 
 		// Create test role and permission that will be assigned
-		role, err := queries.CreateRole(ctx, dbxx, &queries.CreateRoleDto{
+		role, err := rbacstore.CreateRole(ctx, &shared.CreateRoleDto{
 			Name: "test_role",
 		})
 		if err != nil {
 			t.Fatalf("failed to create test role: %v", err)
 		}
 
-		assignedPerm, err := queries.CreatePermission(ctx, dbxx, &queries.CreatePermissionDto{
-			Name: "assigned_permission",
-		})
+		assignedPerm, err := rbacstore.CreatePermission(ctx, "assigned_permission", nil)
 		if err != nil {
 			t.Fatalf("failed to create assigned permission: %v", err)
 		}
 
 		// Create an unassigned permission
-		unassignedPerm, err := queries.CreatePermission(ctx, dbxx, &queries.CreatePermissionDto{
-			Name: "unassigned_permission",
-		})
+		unassignedPerm, err := rbacstore.CreatePermission(ctx, "unassigned_permission", nil)
 		if err != nil {
 			t.Fatalf("failed to create unassigned permission: %v", err)
 		}
 
 		// Assign role to user and permission to role
-		err = queries.CreateUserRoles(ctx, dbxx, user.ID, role.ID)
+		err = rbacstore.CreateUserRoles(ctx, user.ID, role.ID)
 		if err != nil {
 			t.Fatalf("failed to assign role to user: %v", err)
 		}
 
-		err = queries.CreateRolePermissions(ctx, dbxx, role.ID, assignedPerm.ID)
+		err = rbacstore.CreateRolePermissions(ctx, role.ID, assignedPerm.ID)
 		if err != nil {
 			t.Fatalf("failed to assign permission to role: %v", err)
 		}
@@ -693,7 +688,9 @@ func TestCountNotUserPermissionSource(t *testing.T) {
 	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		// Create test user
-		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
+		userstore := stores.NewPostgresUserStore(dbxx)
+		rbacstore := stores.NewPostgresRBACStore(dbxx)
+		user, err := userstore.CreateUser(ctx, &models.User{
 			Email: "test@test.com",
 		})
 		if err != nil {
@@ -701,35 +698,31 @@ func TestCountNotUserPermissionSource(t *testing.T) {
 		}
 
 		// Create test role and permission that will be assigned
-		role, err := queries.CreateRole(ctx, dbxx, &queries.CreateRoleDto{
+		role, err := rbacstore.CreateRole(ctx, &shared.CreateRoleDto{
 			Name: "test_role",
 		})
 		if err != nil {
 			t.Fatalf("failed to create test role: %v", err)
 		}
 
-		assignedPerm, err := queries.CreatePermission(ctx, dbxx, &queries.CreatePermissionDto{
-			Name: "assigned_permission",
-		})
+		assignedPerm, err := rbacstore.CreatePermission(ctx, "assigned_permission", nil)
 		if err != nil {
 			t.Fatalf("failed to create assigned permission: %v", err)
 		}
 
 		// Create an unassigned permission
-		_, err = queries.CreatePermission(ctx, dbxx, &queries.CreatePermissionDto{
-			Name: "unassigned_permission",
-		})
+		_, err = rbacstore.CreatePermission(ctx, "unassigned_permission", nil)
 		if err != nil {
 			t.Fatalf("failed to create unassigned permission: %v", err)
 		}
 
 		// Assign role to user and permission to role
-		err = queries.CreateUserRoles(ctx, dbxx, user.ID, role.ID)
+		err = rbacstore.CreateUserRoles(ctx, user.ID, role.ID)
 		if err != nil {
 			t.Fatalf("failed to assign role to user: %v", err)
 		}
 
-		err = queries.CreateRolePermissions(ctx, dbxx, role.ID, assignedPerm.ID)
+		err = rbacstore.CreateRolePermissions(ctx, role.ID, assignedPerm.ID)
 		if err != nil {
 			t.Fatalf("failed to assign permission to role: %v", err)
 		}
