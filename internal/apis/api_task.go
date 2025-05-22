@@ -7,7 +7,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/contextstore"
 	"github.com/tkahng/authgo/internal/models"
-	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 )
@@ -17,12 +16,12 @@ type TaskListResponse struct {
 }
 
 func (api *Api) TaskList(ctx context.Context, input *shared.TaskListParams) (*TaskListResponse, error) {
-	db := api.app.Db()
-	tasks, err := queries.ListTasks(ctx, db, input)
+
+	tasks, err := api.app.Task().Store().ListTasks(ctx, input)
 	if err != nil {
 		return nil, huma.Error500InternalServerError("error listing tasks", err)
 	}
-	total, err := queries.CountTasks(ctx, db, &input.TaskListFilter)
+	total, err := api.app.Task().Store().CountTasks(ctx, &input.TaskListFilter)
 	if err != nil {
 		return nil, huma.Error500InternalServerError("error counting tasks", err)
 	}
@@ -46,12 +45,12 @@ type TaskResposne struct {
 }
 
 func (api *Api) TaskUpdate(ctx context.Context, input *shared.UpdateTaskDTO) (*struct{}, error) {
-	db := api.app.Db()
+
 	id, err := uuid.Parse(input.TaskID)
 	if err != nil {
 		return nil, huma.Error400BadRequest("Invalid task ID")
 	}
-	err = queries.UpdateTask(ctx, db, id, &input.Body)
+	err = api.app.Task().Store().UpdateTask(ctx, id, &input.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -62,12 +61,12 @@ func (api *Api) TaskUpdate(ctx context.Context, input *shared.UpdateTaskDTO) (*s
 // 	if input == nil {
 // 		return nil, huma.Error400BadRequest("Invalid input")
 // 	}
-// 	db := api.app.Db()
+//
 // 	id, err := uuid.Parse(input.TaskID)
 // 	if err != nil {
 // 		return nil, huma.Error400BadRequest("Invalid task ID")
 // 	}
-// 	err = queries.UpdateTaskPosition(ctx, db, id, input.Body.Position)
+// 	err = queries.UpdateTaskPosition(ctx, id, input.Body.Position)
 // 	if err != nil {
 // 		return nil, err
 // 	}
@@ -78,12 +77,12 @@ func (api *Api) UpdateTaskPositionStatus(ctx context.Context, input *shared.Task
 	if input == nil {
 		return nil, huma.Error400BadRequest("Invalid input")
 	}
-	db := api.app.Db()
+
 	id, err := uuid.Parse(input.TaskID)
 	if err != nil {
 		return nil, huma.Error400BadRequest("Invalid task ID")
 	}
-	err = queries.UpdateTaskPositionStatus(ctx, db, id, input.Body.Position, models.TaskStatus(input.Body.Status))
+	err = api.app.Task().Store().UpdateTaskPositionStatus(ctx, id, input.Body.Position, models.TaskStatus(input.Body.Status))
 	if err != nil {
 		return nil, err
 	}
@@ -93,7 +92,7 @@ func (api *Api) UpdateTaskPositionStatus(ctx context.Context, input *shared.Task
 func (api *Api) TaskDelete(ctx context.Context, input *struct {
 	TaskID string `path:"task-id"`
 }) (*struct{}, error) {
-	db := api.app.Db()
+
 	userInfo := contextstore.GetContextUserInfo(ctx)
 	if userInfo == nil {
 		return nil, huma.Error401Unauthorized("Unauthorized")
@@ -102,7 +101,7 @@ func (api *Api) TaskDelete(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, huma.Error400BadRequest("Invalid task ID")
 	}
-	err = queries.DeleteTask(ctx, db, id)
+	err = api.app.Task().Store().DeleteTask(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -112,7 +111,7 @@ func (api *Api) TaskDelete(ctx context.Context, input *struct {
 func (api *Api) TaskGet(ctx context.Context, input *struct {
 	TaskID string `path:"task-id"`
 }) (*TaskResposne, error) {
-	db := api.app.Db()
+
 	userInfo := contextstore.GetContextUserInfo(ctx)
 	if userInfo == nil {
 		return nil, huma.Error401Unauthorized("Unauthorized")
@@ -121,7 +120,7 @@ func (api *Api) TaskGet(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, huma.Error400BadRequest("Invalid task ID")
 	}
-	task, err := queries.FindTaskByID(ctx, db, id)
+	task, err := api.app.Task().Store().FindTaskByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}

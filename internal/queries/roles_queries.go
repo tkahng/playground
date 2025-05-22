@@ -200,36 +200,6 @@ func CreateRolePermissions(ctx context.Context, db database.Dbx, roleId uuid.UUI
 	return nil
 }
 
-func CreateProductRoles(ctx context.Context, db database.Dbx, productId string, roleIds ...uuid.UUID) error {
-	var roles []crudModels.ProductRole
-	for _, role := range roleIds {
-		roles = append(roles, crudModels.ProductRole{
-			ProductID: productId,
-			RoleID:    role,
-		})
-	}
-	_, err := crudrepo.ProductRole.Post(ctx, db, roles)
-	if err != nil {
-		return err
-	}
-	return nil
-	// q := squirrel.Insert("product_roles").Columns("product_id", "role_id")
-	// for _, perm := range roles {
-	// 	q = q.Values(perm.ProductID, perm.RoleID)
-	// }
-	// q = q.Suffix("RETURNING *")
-	// sql, args, err := q.PlaceholderFormat(squirrel.Dollar).ToSql()
-	// if err != nil {
-	// 	return err
-	// }
-	// fmt.Println(sql, args)
-	// _, err = pgxscan.All(ctx, db, scan.StructMapper[crudModels.ProductRole](), sql, args...)
-	// if err != nil {
-	// 	return err
-	// }
-	// return nil
-}
-
 func CreateProductPermissions(ctx context.Context, db database.Dbx, productId string, permissionIds ...uuid.UUID) error {
 	var permissions []crudModels.ProductPermission
 	for _, permissionId := range permissionIds {

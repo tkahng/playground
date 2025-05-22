@@ -13,7 +13,6 @@ import (
 	"github.com/tkahng/authgo/internal/contextstore"
 	"github.com/tkahng/authgo/internal/core"
 	"github.com/tkahng/authgo/internal/models"
-	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
 )
 
@@ -211,7 +210,6 @@ func SelectCustomerFromUserMiddleware(api huma.API, app core.App) func(ctx huma.
 
 func CheckTaskOwnerMiddleware(api huma.API, app core.App) func(ctx huma.Context, next func(huma.Context)) {
 	return func(ctx huma.Context, next func(huma.Context)) {
-		db := app.Db()
 		rawCtx := ctx.Context()
 		taskId := ctx.Param("task-id")
 		if taskId == "" {
@@ -223,7 +221,7 @@ func CheckTaskOwnerMiddleware(api huma.API, app core.App) func(ctx huma.Context,
 			huma.WriteErr(api, ctx, http.StatusBadRequest, "invalid task id", err)
 			return
 		}
-		task, err := queries.FindTaskByID(rawCtx, db, id)
+		task, err := app.Task().Store().FindTaskByID(rawCtx, id)
 		if err != nil {
 			huma.WriteErr(api, ctx, http.StatusInternalServerError, "error getting task", err)
 			return

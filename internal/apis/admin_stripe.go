@@ -8,7 +8,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/crudrepo"
 	"github.com/tkahng/authgo/internal/models"
-	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 	"github.com/tkahng/authgo/internal/tools/utils"
@@ -17,13 +16,12 @@ import (
 func (api *Api) AdminStripeSubscriptions(ctx context.Context,
 	input *shared.StripeSubscriptionListParams,
 ) (*shared.PaginatedOutput[*shared.SubscriptionWithData], error) {
-	db := api.app.Db()
-	subscriptions, err := queries.ListSubscriptions(ctx, db, input)
+	subscriptions, err := api.app.Payment().Store().ListSubscriptions(ctx, input)
 	if err != nil {
 		return nil, err
 	}
 
-	count, err := queries.CountSubscriptions(ctx, db, &input.StripeSubscriptionListFilter)
+	count, err := api.app.Payment().Store().CountSubscriptions(ctx, &input.StripeSubscriptionListFilter)
 	if err != nil {
 		return nil, err
 	}
@@ -43,11 +41,10 @@ func (api *Api) AdminStripeSubscriptions(ctx context.Context,
 func (api *Api) AdminStripeSubscriptionsGet(ctx context.Context,
 	input *shared.StripeSubscriptionGetParams,
 ) (*struct{ Body *shared.SubscriptionWithData }, error) {
-	db := api.app.Db()
 	if input == nil || input.SubscriptionID == "" {
 		return nil, huma.Error400BadRequest("subscription_id is required")
 	}
-	subscription, err := queries.FindSubscriptionWithPriceById(ctx, db, input.SubscriptionID)
+	subscription, err := api.app.Payment().Store().FindSubscriptionWithPriceById(ctx, input.SubscriptionID)
 	if err != nil {
 		return nil, err
 	}
@@ -61,8 +58,8 @@ func (api *Api) AdminStripeSubscriptionsGet(ctx context.Context,
 func (api *Api) AdminStripeProducts(ctx context.Context,
 	input *shared.StripeProductListParams,
 ) (*shared.PaginatedOutput[*shared.StripeProductWithData], error) {
-	db := api.app.Db()
-	products, err := queries.ListProducts(ctx, db, input)
+
+	products, err := api.app.Payment().Store().ListProducts(ctx, input)
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +67,7 @@ func (api *Api) AdminStripeProducts(ctx context.Context,
 		return p.ID
 	})
 	if slices.Contains(input.Expand, "prices") {
-		data, err := queries.LoadProductPrices(ctx, db, nil, productIds...)
+		data, err := api.app.Payment().Store().LoadProductPrices(ctx, nil, productIds...)
 		if err != nil {
 			return nil, err
 		}
@@ -82,7 +79,7 @@ func (api *Api) AdminStripeProducts(ctx context.Context,
 		}
 	}
 	if slices.Contains(input.Expand, "roles") {
-		data, err := queries.LoadProductRoles(ctx, db, productIds...)
+		data, err := api.app.Payment().Store().LoadProductRoles(ctx, productIds...)
 		if err != nil {
 			return nil, err
 		}
@@ -93,7 +90,7 @@ func (api *Api) AdminStripeProducts(ctx context.Context,
 			}
 		}
 	}
-	count, err := queries.CountProducts(ctx, db, &input.StripeProductListFilter)
+	count, err := api.app.Payment().Store().CountProducts(ctx, &input.StripeProductListFilter)
 	if err != nil {
 		return nil, err
 	}
@@ -118,11 +115,11 @@ func (api *Api) AdminStripeProducts(ctx context.Context,
 func (api *Api) AdminStripeProductsGet(ctx context.Context,
 	input *shared.StripeProductGetParams,
 ) (*struct{ Body *shared.StripeProductWithData }, error) {
-	db := api.app.Db()
+
 	if input == nil || input.ProductID == "" {
 		return nil, huma.Error400BadRequest("product_id is required")
 	}
-	product, err := queries.FindProductByStripeId(ctx, db, input.ProductID)
+	product, err := api.app.Payment().Store().FindProductByStripeId(ctx, input.ProductID)
 	if err != nil {
 		return nil, err
 	}
@@ -131,7 +128,7 @@ func (api *Api) AdminStripeProductsGet(ctx context.Context,
 	}
 
 	if slices.Contains(input.Expand, "prices") {
-		prices, err := queries.LoadProductPrices(ctx, db, nil, input.ProductID)
+		prices, err := api.app.Payment().Store().LoadProductPrices(ctx, nil, input.ProductID)
 		if err != nil {
 			return nil, err
 		}
@@ -140,7 +137,7 @@ func (api *Api) AdminStripeProductsGet(ctx context.Context,
 		}
 	}
 	if slices.Contains(input.Expand, "roles") {
-		roles, err := queries.LoadProductRoles(ctx, db, input.ProductID)
+		roles, err := api.app.Payment().Store().LoadProductRoles(ctx, input.ProductID)
 		if err != nil {
 			return nil, err
 		}
@@ -161,9 +158,9 @@ func (api *Api) AdminStripeProductsRolesCreate(ctx context.Context, input *struc
 	ProductID string `path:"product-id" required:"true"`
 	Body      RoleIdsInput
 }) (*struct{}, error) {
-	db := api.app.Db()
+
 	id := input.ProductID
-	user, err := queries.FindProductByStripeId(ctx, db, id)
+	user, err := api.app.Payment().Store().FindProductByStripeId(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -173,7 +170,7 @@ func (api *Api) AdminStripeProductsRolesCreate(ctx context.Context, input *struc
 
 	roleIds := utils.ParseValidUUIDs(input.Body.RolesIds)
 
-	err = queries.CreateProductRoles(ctx, db, user.ID, roleIds...)
+	err = api.app.Payment().Store().CreateProductRoles(ctx, user.ID, roleIds...)
 	if err != nil {
 		return nil, err
 	}
@@ -186,7 +183,7 @@ func (api *Api) AdminStripeProductsRolesDelete(ctx context.Context, input *struc
 }) (*struct{}, error) {
 	db := api.app.Db()
 	id := input.ProductID
-	product, err := queries.FindProductByStripeId(ctx, db, id)
+	product, err := api.app.Payment().Store().FindProductByStripeId(ctx, id)
 	if err != nil {
 		return nil, err
 	}

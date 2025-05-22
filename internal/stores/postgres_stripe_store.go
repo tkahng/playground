@@ -3,13 +3,14 @@ package stores
 import (
 	"context"
 	"errors"
+	"slices"
+	"strings"
 
 	"github.com/Masterminds/squirrel"
 	"github.com/stripe/stripe-go/v82"
 	"github.com/tkahng/authgo/internal/crudrepo"
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
-	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/services"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
@@ -338,8 +339,8 @@ func (s *PostgresStripeStore) ListPrices(ctx context.Context, input *shared.Stri
 	filter := input.StripePriceListFilter
 	pageInput := &input.PaginatedInput
 	limit, offset := database.PaginateRepo(pageInput)
-	param := queries.ListPriceFilterFuncMap(&filter)
-	sort := queries.ListPriceOrderByMap(input)
+	param := ListPriceFilterFuncMap(&filter)
+	sort := ListPriceOrderByMap(input)
 	data, err := crudrepo.StripePrice.Get(
 		ctx,
 		dbx,
@@ -355,23 +356,6 @@ func (s *PostgresStripeStore) ListPrices(ctx context.Context, input *shared.Stri
 }
 
 // ListProducts implements PaymentStore.
-func (s *PostgresStripeStore) ListProducts(ctx context.Context, input *shared.StripeProductListParams) ([]*models.StripeProduct, error) {
-	var dbx database.Dbx = s.db
-	q := squirrel.Select("stripe_products.*").From("stripe_products")
-	filter := input.StripeProductListFilter
-	pageInput := &input.PaginatedInput
-	q = database.Paginate(q, pageInput)
-	q = listProductFilterFuncQuery(q, &filter)
-	data, err := database.QueryWithBuilder[*models.StripeProduct](
-		ctx,
-		dbx,
-		q.PlaceholderFormat(squirrel.Dollar),
-	)
-	if err != nil {
-		return nil, err
-	}
-	return data, nil
-}
 
 type CountOutput struct {
 	Count int64
@@ -529,4 +513,351 @@ func (s *PostgresStripeStore) LoadProductPrices(ctx context.Context, where *map[
 	return mapper.MapToManyPointer(prices, productIds, func(t *models.StripePrice) string {
 		return t.ProductID
 	}), nil
+}
+
+var (
+	StripeProductColumnNames = []string{
+		"id",
+		"active",
+		"name",
+		"description",
+		"image",
+		"metadata",
+		"created_at",
+		"updated_at",
+	}
+	StripePriceColumnNames = []string{
+		"id",
+		"product_id",
+		"lookup_key",
+		"active",
+		"unit_amount",
+		"currency",
+		"type",
+		"interval",
+		"interval_count",
+		"trial_period_days",
+		"metadata",
+		"created_at",
+		"updated_at",
+	}
+	StripeCustomerColumnNames = []string{
+		"id",
+		"stripe_id",
+		"billing_address",
+		"payment_method",
+		"created_at",
+		"updated_at",
+	}
+	StripeSubscriptionColumnNames = []string{
+		"id",
+		"status",
+		"user_id",
+		"metadata",
+		"stripe_id",
+		"price_id",
+		"quantity",
+		"cancel_at_period_end",
+		"created",
+		"current_period_start",
+		"current_period_end",
+		"ended_at",
+		"cancel_at",
+		"canceled_at",
+		"trial_start",
+		"trial_end",
+		"created_at",
+		"updated_at",
+	}
+	MetadataIndexName = "metadata.index"
+)
+
+func (s *PostgresStripeStore) ListProducts(ctx context.Context, input *shared.StripeProductListParams) ([]*models.StripeProduct, error) {
+	q := squirrel.Select("stripe_products.*").
+		From("stripe_products")
+	filter := input.StripeProductListFilter
+	pageInput := &input.PaginatedInput
+
+	q = database.Paginate(q, pageInput)
+	q = ListProductFilterFuncQuery(q, &filter)
+	data, err := database.QueryWithBuilder[*models.StripeProduct](ctx, s.db, q.PlaceholderFormat(squirrel.Dollar))
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
+}
+
+const (
+	GetProductRolesQuery = `
+	SELECT rp.product_id as key,
+        COALESCE(
+                json_agg(
+                        jsonb_build_object(
+                                'id',
+                                p.id,
+                                'name',
+                                p.name,
+                                'description',
+                                p.description,
+                                'created_at',
+                                p.created_at,
+                                'updated_at',
+                                p.updated_at
+                        )
+                ) FILTER (
+                        WHERE p.id IS NOT NULL
+                ),
+                '[]'
+        ) AS data
+FROM public.product_roles rp
+        LEFT JOIN public.roles p ON p.id = rp.role_id
+        WHERE rp.product_id	 = ANY (
+                $1::text []
+        )
+GROUP BY rp.product_id;`
+)
+
+func (s *PostgresStripeStore) LoadProductRoles(ctx context.Context, productIds ...string) ([][]*models.Role, error) {
+	data, err := database.QueryAll[shared.JoinedResult[*models.Role, string]](
+		ctx,
+		s.db,
+		GetProductRolesQuery,
+		productIds,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return mapper.Map(mapper.MapTo(data, productIds, func(a shared.JoinedResult[*models.Role, string]) string {
+		return a.Key
+	}), func(a *shared.JoinedResult[*models.Role, string]) []*models.Role {
+		if a == nil {
+			return nil
+		}
+		return a.Data
+	}), nil
+}
+
+func ListProductOrderByQuery(q squirrel.SelectBuilder, input *shared.StripeProductListParams) squirrel.SelectBuilder {
+	if input == nil {
+		return q
+	}
+	if input.SortParams.SortBy == "" {
+		q = q.OrderBy("metadata->'index'" + " " + strings.ToUpper(input.SortOrder))
+	}
+	if input.SortBy == MetadataIndexName {
+		q = q.OrderBy("metadata->'index'" + " " + strings.ToUpper(input.SortOrder))
+	} else if slices.Contains(StripeProductColumnNames, input.SortBy) {
+		q = q.OrderBy(input.SortBy + " " + strings.ToUpper(input.SortOrder))
+	}
+	return q
+}
+
+func ListProductFilterFuncQuery(q squirrel.SelectBuilder, filter *shared.StripeProductListFilter) squirrel.SelectBuilder {
+	if filter == nil {
+		return q
+	}
+	if filter.Active != "" {
+		if filter.Active == shared.Active {
+			q = q.Where("active = ?", true)
+		}
+		if filter.Active == shared.Inactive {
+			q = q.Where("active = ?", false)
+		}
+	}
+	if len(filter.Ids) > 0 {
+		q = q.Where("id in (?)", filter.Ids)
+	}
+	return q
+}
+
+func ListPriceOrderByMap(input *shared.StripePriceListParams) *map[string]string {
+	if input == nil {
+		return nil
+	}
+	if input.SortParams.SortBy == "" {
+		return nil
+	}
+	return &map[string]string{
+		input.SortParams.SortBy: input.SortParams.SortOrder,
+	}
+}
+
+func ListPriceFilterFuncMap(filter *shared.StripePriceListFilter) *map[string]any {
+	if filter == nil {
+		return nil
+	}
+	param := map[string]any{}
+	if filter.Q != "" {
+		param["_or"] = []map[string]any{
+			{
+				"name": map[string]any{
+					"_ilike": "%" + filter.Q + "%",
+				},
+			},
+			{
+				"description": map[string]any{
+					"_ilike": "%" + filter.Q + "%",
+				},
+			},
+		}
+	}
+
+	if filter.Active != "" {
+		if filter.Active == shared.Active {
+
+			param["active"] = map[string]any{
+				"_eq": true,
+			}
+		}
+		if filter.Active == shared.Inactive {
+
+			param["active"] = map[string]any{
+				"_eq": false,
+			}
+		}
+	}
+	if len(filter.Ids) > 0 {
+
+		param["id"] = map[string]any{
+			"_in": filter.Ids,
+		}
+	}
+	if len(filter.ProductIds) > 0 {
+
+		param["product_id"] = map[string]any{
+			"_in": filter.ProductIds,
+		}
+	}
+
+	return &param
+}
+
+func (s *PostgresStripeStore) CountPrices(ctx context.Context, filter *shared.StripePriceListFilter) (int64, error) {
+	filermap := ListPriceFilterFuncMap(filter)
+	data, err := crudrepo.StripePrice.Count(ctx, s.db, filermap)
+	if err != nil {
+		return 0, err
+	}
+	return data, nil
+}
+
+func (s *PostgresStripeStore) ListCustomers(ctx context.Context, input *shared.StripeCustomerListParams) ([]*models.StripeCustomer, error) {
+
+	filter := input.StripeCustomerListFilter
+	pageInput := &input.PaginatedInput
+
+	limit, offset := database.PaginateRepo(pageInput)
+	where := ListCustomerFilterFunc(&filter)
+	order := StripeCustomerOrderByFunc(input)
+	data, err := crudrepo.StripeCustomer.Get(
+		ctx,
+		s.db,
+		where,
+		order,
+		limit,
+		offset,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
+}
+
+func StripeCustomerOrderByFunc(input *shared.StripeCustomerListParams) *map[string]string {
+	if input == nil {
+		return nil
+	}
+	order := make(map[string]string)
+	if slices.Contains(StripeCustomerColumnNames, input.SortBy) {
+		order[input.SortBy] = strings.ToUpper(input.SortOrder)
+	}
+	return &order
+}
+
+func ListCustomerFilterFunc(filter *shared.StripeCustomerListFilter) *map[string]any {
+	if filter == nil {
+		return nil
+	}
+	where := map[string]any{}
+	if len(filter.Ids) > 0 {
+		where["id"] = map[string]any{
+			"_in": filter.Ids,
+		}
+	}
+	return &where
+}
+
+func (s *PostgresStripeStore) CountCustomers(ctx context.Context, filter *shared.StripeCustomerListFilter) (int64, error) {
+	where := ListCustomerFilterFunc(filter)
+	data, err := crudrepo.StripeCustomer.Count(ctx, s.db, where)
+	if err != nil {
+		return 0, err
+	}
+	return data, nil
+}
+
+func (s *PostgresStripeStore) ListSubscriptions(ctx context.Context, input *shared.StripeSubscriptionListParams) ([]*models.StripeSubscription, error) {
+
+	filter := input.StripeSubscriptionListFilter
+	pageInput := &input.PaginatedInput
+
+	limit, offset := database.PaginateRepo(pageInput)
+	where := ListSubscriptionFilterFunc(&filter)
+	order := StripeSubscriptionOrderByFunc(input)
+	data, err := crudrepo.StripeSubscription.Get(
+		ctx,
+		s.db,
+		where,
+		order,
+		limit,
+		offset,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
+}
+
+func StripeSubscriptionOrderByFunc(input *shared.StripeSubscriptionListParams) *map[string]string {
+	if input == nil {
+		return nil
+	}
+	order := make(map[string]string)
+	if slices.Contains(StripeSubscriptionColumnNames, input.SortBy) {
+		order[input.SortBy] = strings.ToUpper(input.SortOrder)
+	}
+	return &order
+}
+
+func ListSubscriptionFilterFunc(filter *shared.StripeSubscriptionListFilter) *map[string]any {
+	if filter == nil {
+		return nil
+	}
+	where := map[string]any{}
+	if len(filter.Ids) > 0 {
+		where["id"] = map[string]any{
+			"_in": filter.Ids,
+		}
+	}
+	if len(filter.Status) > 0 {
+		statuses := mapper.Map(filter.Status, func(s shared.StripeSubscriptionStatus) string { return string(s) })
+		where["status"] = map[string]any{
+			"_in": statuses,
+		}
+	}
+	if filter.UserID != "" {
+		where["user_id"] = map[string]any{
+			"_eq": filter.UserID,
+		}
+	}
+	return &where
+}
+
+func (s *PostgresStripeStore) CountSubscriptions(ctx context.Context, filter *shared.StripeSubscriptionListFilter) (int64, error) {
+	where := ListSubscriptionFilterFunc(filter)
+	data, err := crudrepo.StripeSubscription.Count(ctx, s.db, where)
+	if err != nil {
+		return 0, err
+	}
+	return data, nil
 }

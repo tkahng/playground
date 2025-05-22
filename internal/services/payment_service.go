@@ -46,28 +46,33 @@ type PaymentRbacStore interface {
 	// permission methods
 	FindPermissionByName(ctx context.Context, name string) (*models.Permission, error)
 	CreateProductPermissions(ctx context.Context, productId string, permissionIds ...uuid.UUID) error
+	CreateProductRoles(ctx context.Context, productId string, roleIds ...uuid.UUID) error
 }
 
 type PaymentStripeStore interface {
+	CountCustomers(ctx context.Context, filter *shared.StripeCustomerListFilter) (int64, error)
+	CountPrices(ctx context.Context, filter *shared.StripePriceListFilter) (int64, error)
 	CountProducts(ctx context.Context, filter *shared.StripeProductListFilter) (int64, error)
-	LoadProductPrices(ctx context.Context, where *map[string]any, productIds ...string) ([][]*models.StripePrice, error)
-	FindSubscriptionWithPriceById(ctx context.Context, stripeId string) (*models.SubscriptionWithPrice, error)
+	CountSubscriptions(ctx context.Context, filter *shared.StripeSubscriptionListFilter) (int64, error)
+	CreateCustomer(ctx context.Context, customer *models.StripeCustomer) (*models.StripeCustomer, error)
+	FindCustomer(ctx context.Context, customer *models.StripeCustomer) (*models.StripeCustomer, error)
 	FindLatestActiveSubscriptionWithPriceByCustomerId(ctx context.Context, customerId string) (*models.SubscriptionWithPrice, error)
 	FindProductByStripeId(ctx context.Context, productId string) (*models.StripeProduct, error)
-	// customer methods
-	FindCustomer(ctx context.Context, customer *models.StripeCustomer) (*models.StripeCustomer, error)
-	CreateCustomer(ctx context.Context, customer *models.StripeCustomer) (*models.StripeCustomer, error)
-
-	UpsertSubscriptionFromStripe(ctx context.Context, sub *stripe.Subscription) error
-	UpsertSubscription(ctx context.Context, sub *models.StripeSubscription) error
-	UpsertProductFromStripe(ctx context.Context, product *stripe.Product) error
-	UpsertProduct(ctx context.Context, product *models.StripeProduct) error
-	UpsertPriceFromStripe(ctx context.Context, price *stripe.Price) error
-	UpsertPrice(ctx context.Context, price *models.StripePrice) error
-	IsFirstSubscription(ctx context.Context, customerId string) (bool, error)
+	FindSubscriptionWithPriceById(ctx context.Context, subscriptionId string) (*models.SubscriptionWithPrice, error)
 	FindValidPriceById(ctx context.Context, priceId string) (*models.StripePrice, error)
-	ListProducts(ctx context.Context, input *shared.StripeProductListParams) ([]*models.StripeProduct, error)
+	IsFirstSubscription(ctx context.Context, customerID string) (bool, error)
+	ListCustomers(ctx context.Context, input *shared.StripeCustomerListParams) ([]*models.StripeCustomer, error)
 	ListPrices(ctx context.Context, input *shared.StripePriceListParams) ([]*models.StripePrice, error)
+	ListProducts(ctx context.Context, input *shared.StripeProductListParams) ([]*models.StripeProduct, error)
+	ListSubscriptions(ctx context.Context, input *shared.StripeSubscriptionListParams) ([]*models.StripeSubscription, error)
+	LoadProductPrices(ctx context.Context, where *map[string]any, productIds ...string) ([][]*models.StripePrice, error)
+	LoadProductRoles(ctx context.Context, productIds ...string) ([][]*models.Role, error)
+	UpsertPrice(ctx context.Context, price *models.StripePrice) error
+	UpsertPriceFromStripe(ctx context.Context, price *stripe.Price) error
+	UpsertProduct(ctx context.Context, product *models.StripeProduct) error
+	UpsertProductFromStripe(ctx context.Context, product *stripe.Product) error
+	UpsertSubscription(ctx context.Context, sub *models.StripeSubscription) error
+	UpsertSubscriptionFromStripe(ctx context.Context, sub *stripe.Subscription) error
 }
 
 type PaymentStore interface {

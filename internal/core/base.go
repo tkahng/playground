@@ -31,6 +31,11 @@ type BaseApp struct {
 	checker  services.ConstraintChecker
 	rbac     services.RBACService
 	user     services.UserService
+	task     services.TaskService
+}
+
+func (app *BaseApp) Task() services.TaskService {
+	return app.task
 }
 
 // User implements App.
@@ -109,6 +114,8 @@ func InitBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 	userService := services.NewUserService(userStore)
 	rbac := stores.NewPostgresRBACStore(pool)
 	rbacService := services.NewRBACService(rbac)
+	taskStore := stores.NewTaskStore(pool)
+	taskService := services.NewTaskService(taskStore)
 	paymentStore := stores.NewPostgresPaymentStore(pool)
 	paymentClient := payment.NewPaymentClient(cfg.StripeConfig)
 	paymentService := services.NewPaymentService(
@@ -146,6 +153,7 @@ func InitBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 		checker:  checker,
 		rbac:     rbacService,
 		user:     userService,
+		task:     taskService,
 	}
 	return app
 }

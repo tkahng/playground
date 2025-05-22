@@ -25,4 +25,6 @@ type App interface {
 	Team() services.TeamService
 
 	Checker() services.ConstraintChecker
+
+	Task() services.TaskService
 }

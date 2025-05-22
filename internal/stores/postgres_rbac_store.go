@@ -32,6 +32,22 @@ func NewPostgresRBACStore(db database.Dbx) *PostgresRBACStore {
 	}
 }
 
+func (s *PostgresRBACStore) CreateProductRoles(ctx context.Context, productId string, roleIds ...uuid.UUID) error {
+	var roles []models.ProductRole
+	for _, role := range roleIds {
+		roles = append(roles, models.ProductRole{
+			ProductID: productId,
+			RoleID:    role,
+		})
+	}
+	_, err := crudrepo.ProductRole.Post(ctx, s.db, roles)
+	if err != nil {
+		return err
+	}
+	return nil
+
+}
+
 func (a *PostgresRBACStore) FindPermissionById(ctx context.Context, id uuid.UUID) (*models.Permission, error) {
 	data, err := crudrepo.Permission.GetOne(
 		ctx,

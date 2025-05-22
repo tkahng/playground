@@ -17,6 +17,57 @@ import (
 
 type mockPaymentStore struct{ mock.Mock }
 
+// CreateProductRoles implements PaymentStore.
+func (m *mockPaymentStore) CreateProductRoles(ctx context.Context, productId string, roleIds ...uuid.UUID) error {
+	args := m.Called(ctx, productId, roleIds)
+	return args.Error(0)
+}
+
+// CountCustomers implements PaymentStore.
+func (m *mockPaymentStore) CountCustomers(ctx context.Context, filter *shared.StripeCustomerListFilter) (int64, error) {
+	args := m.Called(ctx, filter)
+	return args.Get(0).(int64), args.Error(1)
+}
+
+// CountPrices implements PaymentStore.
+func (m *mockPaymentStore) CountPrices(ctx context.Context, filter *shared.StripePriceListFilter) (int64, error) {
+	args := m.Called(ctx, filter)
+	return args.Get(0).(int64), args.Error(1)
+}
+
+// CountSubscriptions implements PaymentStore.
+func (m *mockPaymentStore) CountSubscriptions(ctx context.Context, filter *shared.StripeSubscriptionListFilter) (int64, error) {
+	args := m.Called(ctx, filter)
+	return args.Get(0).(int64), args.Error(1)
+}
+
+// ListCustomers implements PaymentStore.
+func (m *mockPaymentStore) ListCustomers(ctx context.Context, input *shared.StripeCustomerListParams) ([]*models.StripeCustomer, error) {
+	args := m.Called(ctx, input)
+	if args.Get(0) != nil {
+		return args.Get(0).([]*models.StripeCustomer), args.Error(1)
+	}
+	return nil, args.Error(1)
+}
+
+// ListSubscriptions implements PaymentStore.
+func (m *mockPaymentStore) ListSubscriptions(ctx context.Context, input *shared.StripeSubscriptionListParams) ([]*models.StripeSubscription, error) {
+	args := m.Called(ctx, input)
+	if args.Get(0) != nil {
+		return args.Get(0).([]*models.StripeSubscription), args.Error(1)
+	}
+	return nil, args.Error(1)
+}
+
+// LoadProductRoles implements PaymentStore.
+func (m *mockPaymentStore) LoadProductRoles(ctx context.Context, productIds ...string) ([][]*models.Role, error) {
+	args := m.Called(ctx, productIds)
+	if args.Get(0) != nil {
+		return args.Get(0).([][]*models.Role), args.Error(1)
+	}
+	return nil, args.Error(1)
+}
+
 // CountProducts implements PaymentStore.
 func (m *mockPaymentStore) CountProducts(ctx context.Context, filter *shared.StripeProductListFilter) (int64, error) {
 	args := m.Called(ctx, filter)

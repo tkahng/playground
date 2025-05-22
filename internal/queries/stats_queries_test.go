@@ -10,6 +10,7 @@ import (
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/authgo/internal/stores"
 	"github.com/tkahng/authgo/internal/test"
 )
 
@@ -19,6 +20,7 @@ func TestGetUserTaskStats(t *testing.T) {
 	ctx, dbx := test.DbSetup()
 
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+		taskStore := stores.NewTaskStore(dbxx)
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 			Email: "tkahng@gmail.com",
 		})
@@ -30,7 +32,7 @@ func TestGetUserTaskStats(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to create team from user: %v", err)
 		}
-		taskProject, err := queries.CreateTaskProject(ctx, dbxx, &shared.CreateTaskProjectDTO{
+		taskProject, err := taskStore.CreateTaskProject(ctx, &shared.CreateTaskProjectDTO{
 			Name:     "Test Project",
 			Status:   shared.TaskProjectStatusDone,
 			TeamID:   member.TeamID,
@@ -39,7 +41,7 @@ func TestGetUserTaskStats(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to create task project: %v", err)
 		}
-		_, err = queries.CreateTask(ctx, dbxx, taskProject.ID, &shared.CreateTaskBaseDTO{
+		_, err = taskStore.CreateTask(ctx, taskProject.ID, &shared.CreateTaskBaseDTO{
 			Name:      "Test Task",
 			Status:    shared.TaskStatusDone,
 			TeamID:    member.TeamID,

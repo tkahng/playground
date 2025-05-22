@@ -8,7 +8,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/contextstore"
 	"github.com/tkahng/authgo/internal/models"
-	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/ai/googleai"
 	"github.com/tkahng/authgo/internal/tools/mapper"
@@ -19,17 +18,17 @@ type TaskProjectListResponse struct {
 }
 
 func (api *Api) TaskProjectList(ctx context.Context, input *shared.TaskProjectsListParams) (*TaskProjectListResponse, error) {
-	db := api.app.Db()
+
 	userInfo := contextstore.GetContextUserInfo(ctx)
 	if userInfo == nil {
 		return nil, huma.Error401Unauthorized("Unauthorized")
 	}
 	input.TaskProjectsListFilter.UserID = userInfo.User.ID.String()
-	taskProject, err := queries.ListTaskProjects(ctx, db, input)
+	taskProject, err := api.app.Task().Store().ListTaskProjects(ctx, input)
 	if err != nil {
 		return nil, err
 	}
-	total, err := queries.CountTaskProjects(ctx, db, &input.TaskProjectsListFilter)
+	total, err := api.app.Task().Store().CountTaskProjects(ctx, &input.TaskProjectsListFilter)
 	if err != nil {
 		return nil, err
 	}
@@ -38,7 +37,7 @@ func (api *Api) TaskProjectList(ctx context.Context, input *shared.TaskProjectsL
 	})
 
 	if input.Expand != nil && slices.Contains(input.Expand, "tasks") {
-		tasks, err := queries.LoadTaskProjectsTasks(ctx, db, taskProjectIds...)
+		tasks, err := api.app.Task().Store().LoadTaskProjectsTasks(ctx, taskProjectIds...)
 		if err != nil {
 			return nil, err
 		}
@@ -75,8 +74,8 @@ func (api *Api) TaskProjectCreate(ctx context.Context, input *struct {
 	if userInfo == nil {
 		return nil, huma.Error401Unauthorized("Unauthorized")
 	}
-	db := api.app.Db()
-	taskProject, err := queries.CreateTaskProjectWithTasks(ctx, db, &input.Body)
+
+	taskProject, err := api.app.Task().Store().CreateTaskProjectWithTasks(ctx, &input.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -105,7 +104,7 @@ func (api *Api) TaskProjectCreateWithAi(ctx context.Context, input *TaskProjectC
 	if teamInfo == nil {
 		return nil, huma.Error401Unauthorized("no team info")
 	}
-	db := api.app.Db()
+
 	aiService := googleai.NewAiService(ctx, api.app.Cfg().AiConfig)
 	taskProjectPlan, err := aiService.GenerateProjectPlan(ctx, input.Body.Input)
 	if err != nil {
@@ -129,7 +128,7 @@ func (api *Api) TaskProjectCreateWithAi(ctx context.Context, input *TaskProjectC
 			}
 		}),
 	}
-	taskProject, err := queries.CreateTaskProjectWithTasks(ctx, db, &args)
+	taskProject, err := api.app.Task().Store().CreateTaskProjectWithTasks(ctx, &args)
 	if err != nil {
 		return nil, err
 	}
@@ -149,13 +148,13 @@ func (api *Api) TaskProjectUpdate(ctx context.Context, input *shared.UpdateTaskP
 	if userInfo == nil {
 		return nil, huma.Error401Unauthorized("Unauthorized")
 	}
-	db := api.app.Db()
+
 	id, err := uuid.Parse(input.TaskProjectID)
 	if err != nil {
 		return nil, huma.Error400BadRequest("Invalid task project id")
 	}
 	payload := input.Body
-	err = queries.UpdateTaskProject(ctx, db, id, &payload)
+	err = api.app.Task().Store().UpdateTaskProject(ctx, id, &payload)
 	if err != nil {
 		return nil, err
 	}
@@ -169,12 +168,12 @@ func (api *Api) TaskProjectDelete(ctx context.Context, input *struct {
 	if userInfo == nil {
 		return nil, huma.Error401Unauthorized("Unauthorized")
 	}
-	db := api.app.Db()
+
 	id, err := uuid.Parse(input.TaskProjectID)
 	if err != nil {
 		return nil, huma.Error400BadRequest("Invalid task project id")
 	}
-	err = queries.DeleteTaskProject(ctx, db, id)
+	err = api.app.Task().Store().DeleteTaskProject(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -189,17 +188,17 @@ func (api *Api) TaskProjectGet(ctx context.Context, input *struct {
 	if userInfo == nil {
 		return nil, huma.Error401Unauthorized("Unauthorized")
 	}
-	db := api.app.Db()
+
 	id, err := uuid.Parse(input.TaskProjectID)
 	if err != nil {
 		return nil, huma.Error400BadRequest("Invalid task project id")
 	}
-	taskProject, err := queries.FindTaskProjectByID(ctx, db, id)
+	taskProject, err := api.app.Task().Store().FindTaskProjectByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 	if input.Expand != nil && slices.Contains(input.Expand, "tasks") {
-		tasks, err := queries.LoadTaskProjectsTasks(ctx, db, taskProject.ID)
+		tasks, err := api.app.Task().Store().LoadTaskProjectsTasks(ctx, taskProject.ID)
 		if err != nil {
 			return nil, err
 		}
@@ -231,20 +230,20 @@ func (api *Api) TaskProjectTasksCreate(ctx context.Context, input *shared.Create
 	if teamInfo == nil {
 		return nil, huma.Error401Unauthorized("no team info")
 	}
-	db := api.app.Db()
+
 	id, err := uuid.Parse(input.TaskProjectID)
 	if err != nil {
 		return nil, huma.Error400BadRequest("Invalid task project id")
 	}
 	payload := input.Body
-	order, err := queries.FindLastTaskOrder(ctx, db, id)
+	order, err := api.app.Task().Store().FindLastTaskOrder(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 	payload.Order = order
 	payload.CreatedBy = teamInfo.Member.ID
 	payload.TeamID = teamInfo.Member.TeamID
-	task, err := queries.CreateTaskWithChildren(ctx, db, id, &payload)
+	task, err := api.app.Task().Store().CreateTaskWithChildren(ctx, id, &payload)
 	if err != nil {
 		return nil, err
 	}
