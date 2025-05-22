@@ -762,20 +762,3 @@ func (app *BaseAuthService) GetSendMailParams(emailType EmailType, tokenHash str
 	}
 	return allEmailParams, nil
 }
-
-func (app *BaseAuthService) CreateOtpTokenHash(payload *shared.OtpPayload, config conf.TokenOption) (string, error) {
-	if payload == nil {
-		return "", fmt.Errorf("payload is nil")
-	}
-	claims := shared.OtpClaims{
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: config.ExpiresAt(),
-		},
-		OtpPayload: *payload,
-	}
-	token, err := app.token.CreateJwtToken(claims, config.Secret)
-	if err != nil {
-		return "", fmt.Errorf("error at creating verification token: %w", err)
-	}
-	return token, nil
-}
