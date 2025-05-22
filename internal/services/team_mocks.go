@@ -312,6 +312,16 @@ type mockTeamInvitationStore struct {
 	mock.Mock
 }
 
+// FindTeamByID implements TeamInvitationStore.
+func (m *mockTeamInvitationStore) FindTeamByID(ctx context.Context, teamId uuid.UUID) (*models.Team, error) {
+	args := m.Called(ctx, teamId)
+	var team *models.Team
+	if args.Get(0) != nil {
+		team = args.Get(0).(*models.Team)
+	}
+	return team, args.Error(1)
+}
+
 // FindPendingInvitation implements TeamInvitationStore.
 func (m *mockTeamInvitationStore) FindPendingInvitation(ctx context.Context, teamId uuid.UUID, email string) (*models.TeamInvitation, error) {
 	args := m.Called(ctx, teamId, email)

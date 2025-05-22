@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/url"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/conf"
@@ -59,6 +58,7 @@ type TeamInvitationService interface {
 }
 
 type TeamInvitationStore interface {
+	FindTeamByID(ctx context.Context, teamId uuid.UUID) (*models.Team, error)
 	CreateTeamMember(ctx context.Context, teamId, userId uuid.UUID, role models.TeamMemberRole, hasBillingAccess bool) (*models.TeamMember, error)
 	DeleteTeamMember(ctx context.Context, teamId, userId uuid.UUID) error
 	FindTeamMemberByTeamAndUserId(
@@ -156,11 +156,17 @@ func (i *InvitationService) SendInvitationEmail(ctx context.Context, params *Tea
 
 var _ TeamInvitationService = (*InvitationService)(nil)
 
-func NewInvitationService(store TeamInvitationStore, mailer MailService, settings conf.AppOptions) TeamInvitationService {
+func NewInvitationService(
+	store TeamInvitationStore,
+	mailer MailService,
+	settings conf.AppOptions,
+	workerService WorkerService,
+) TeamInvitationService {
 	return &InvitationService{
-		store:    store,
-		mailer:   mailer,
-		settings: settings,
+		WorkerService: workerService,
+		store:         store,
+		mailer:        mailer,
+		settings:      settings,
 	}
 }
 
@@ -227,47 +233,75 @@ func (i *InvitationService) AcceptInvitation(ctx context.Context, invitationToke
 func (i *InvitationService) CreateInvitation(
 	ctx context.Context,
 	teamId uuid.UUID,
-	userId uuid.UUID,
-	email string,
+	invitingUserId uuid.UUID,
+	inviteeEmail string,
 	role models.TeamMemberRole,
 	resend bool,
 ) error {
-	token := security.GenerateTokenKey()
 
-	var invitation = &models.TeamInvitation{
-		TeamID: teamId,
-		Email:  email,
-		Role:   role,
-		Token:  token,
-		Status: models.TeamInvitationStatusPending,
-	}
-	member, err := i.store.FindTeamMemberByTeamAndUserId(ctx, teamId, userId)
+	member, err := i.store.FindTeamMemberByTeamAndUserId(ctx, teamId, invitingUserId)
 	if err != nil {
 		return err
 	}
 	if member == nil {
 		return fmt.Errorf("user is not a member of the team")
 	}
-	invitation.InviterMemberID = member.ID
-	invitation.ExpiresAt = time.Now().Add(24 * time.Hour)
-	invitation.CreatedAt = time.Now()
-	invitation.UpdatedAt = time.Now()
-
-	err = i.store.CreateInvitation(ctx, invitation)
+	if user, err := i.store.FindUserByID(ctx, invitingUserId); err != nil {
+		return err
+	} else if user == nil {
+		return fmt.Errorf("user not found")
+	} else {
+		member.User = user
+	}
+	if team, err := i.store.FindTeamByID(ctx, teamId); err != nil {
+		return err
+	} else if team == nil {
+		return fmt.Errorf("team not found")
+	} else {
+		member.Team = team
+	}
+	invitation := new(models.TeamInvitation)
+	existingInvite, err := i.store.FindPendingInvitation(ctx, teamId, inviteeEmail)
 	if err != nil {
 		return err
 	}
+	if existingInvite == nil {
+		token := security.GenerateTokenKey()
+		invitation.Status = models.TeamInvitationStatusPending
+		invitation.Token = token
+		invitation.Email = inviteeEmail
+		invitation.Role = role
+		invitation.TeamID = teamId
+		invitation.InviterMemberID = member.ID
+		invitation.ExpiresAt = i.settings.Auth.InviteToken.Expires()
+		err = i.store.CreateInvitation(ctx, invitation)
+		if err != nil {
+			return err
+		}
+	} else {
+		if !resend {
+			return fmt.Errorf("invitation already exists")
+		}
+		existingInvite.Status = models.TeamInvitationStatusPending
+		existingInvite.Role = role
+		existingInvite.ExpiresAt = i.settings.Auth.InviteToken.Expires()
+		err = i.store.UpdateInvitation(ctx, existingInvite)
+		if err != nil {
+			return err
+		}
+		invitation = existingInvite
+	}
+
 	i.FireAndForget(
 		func() {
 			ctx := context.Background()
-			params := &TeamInvitationMailParams{
-				Email: invitation.Email,
-				// InvitedByEmail:  invitation.InviterMemberID,
-				TeamName:        member.Team.Name,
-				TokenHash:       token,
-				ConfirmationURL: "",
-			}
-			err := i.SendInvitationEmail(ctx, params)
+
+			err := i.SendInvitationEmail(ctx, &TeamInvitationMailParams{
+				Email:          invitation.Email,
+				InvitedByEmail: member.User.Email,
+				TeamName:       member.Team.Name,
+				TokenHash:      invitation.Token,
+			})
 			if err != nil {
 				fmt.Printf("failed to send invitation email: %v", err)
 			}
