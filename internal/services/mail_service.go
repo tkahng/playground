@@ -1,9 +1,14 @@
 package services
 
-import "github.com/tkahng/authgo/internal/tools/mailer"
+import (
+	"errors"
+
+	"github.com/tkahng/authgo/internal/conf"
+	"github.com/tkahng/authgo/internal/tools/mailer"
+)
 
 var (
-	TeamEmailPathMap = map[EmailType]SendMailParams{
+	TeamEmailPathMap = map[EmailType]mailer.SendMailParams{
 		EmailTypeTeamInvite: {
 			Subject:      "%s - You are invited to join a team",
 			TemplatePath: "/team-invitation",
@@ -13,7 +18,7 @@ var (
 )
 
 var (
-	EmailPathMap = map[EmailType]SendMailParams{
+	EmailPathMap = map[EmailType]mailer.SendMailParams{
 		EmailTypeVerify: {
 			Subject:      "%s - Verify your email address",
 			TemplatePath: "/api/auth/verify",
@@ -41,3 +46,27 @@ const (
 	EmailTypeTeamInvite            EmailType = "team-invite"
 	EmailTypeInvite                EmailType = "invite"
 )
+
+type MailService interface {
+	SendMail(params *mailer.AllEmailParams) error
+}
+
+type mailService struct {
+	mailer  mailer.Mailer
+	options *conf.AppOptions
+}
+
+func (m *mailService) SendMail(params *mailer.AllEmailParams) error {
+	if params == nil || params.Message == nil {
+		return errors.New("params or message is nil")
+	}
+	return m.mailer.Send(params.Message)
+}
+
+var _ MailService = (*mailService)(nil)
+
+func NewMailService(mailer mailer.Mailer) MailService {
+	return &mailService{
+		mailer: mailer,
+	}
+}

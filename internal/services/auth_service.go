@@ -14,11 +14,11 @@ import (
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mailer"
-	"github.com/tkahng/authgo/internal/tools/routine"
 	"github.com/tkahng/authgo/internal/tools/security"
 )
 
 type AuthService interface {
+	WorkerService
 	HandlePasswordResetRequest(ctx context.Context, email string) error
 	HandleAccessToken(ctx context.Context, token string) (*shared.UserInfo, error)
 	HandleRefreshToken(ctx context.Context, token string) (*shared.UserInfoTokens, error)
@@ -78,8 +78,9 @@ type AuthStore interface {
 var _ AuthService = (*BaseAuthService)(nil)
 
 type BaseAuthService struct {
+	WorkerService
 	authStore AuthStore
-	mail      mailer.Mailer
+	mail      MailService
 	token     JwtService
 	password  PasswordService
 	options   *conf.AppOptions
@@ -88,16 +89,18 @@ type BaseAuthService struct {
 func NewAuthService(
 	opts *conf.AppOptions,
 	authStore AuthStore,
-	mail mailer.Mailer,
+	mail MailService,
 	token JwtService,
 	password PasswordService,
+	workerService WorkerService,
 ) AuthService {
 	authService := &BaseAuthService{
-		authStore: authStore,
-		mail:      mail,
-		token:     token,
-		password:  password,
-		options:   opts,
+		WorkerService: workerService,
+		authStore:     authStore,
+		mail:          mail,
+		token:         token,
+		password:      password,
+		options:       opts,
 	}
 
 	return authService
@@ -574,7 +577,7 @@ func (app *BaseAuthService) Authenticate(ctx context.Context, params *shared.Aut
 		// if user is first login, send verification email
 		if isFirstLogin {
 			fmt.Println("User is first login, sending verification email")
-			routine.FireAndForget(
+			app.FireAndForget(
 				func() {
 					ctx := context.Background()
 					err = app.SendOtpEmail(EmailTypeVerify, ctx, user)
@@ -592,7 +595,7 @@ func (app *BaseAuthService) Authenticate(ctx context.Context, params *shared.Aut
 		} else {
 			fmt.Println("User is not first login, checking user credentials security")
 			// if user is not first login, check if user credentials security
-			routine.FireAndForget(
+			app.FireAndForget(
 				func() {
 					ctx := context.Background()
 					err = app.CheckUserCredentialsSecurity(ctx, user, params)
@@ -668,13 +671,6 @@ func (app *BaseAuthService) CheckUserCredentialsSecurity(ctx context.Context, us
 	return nil
 }
 
-type SendMailParams struct {
-	Subject      string
-	Type         string
-	TemplatePath string
-	Template     string
-}
-
 // SendOtpEmail creates and saves a new otp token and sends it to the user's email
 func (app *BaseAuthService) SendOtpEmail(emailType EmailType, ctx context.Context, user *models.User) error {
 	appOpts := app.options.Meta
@@ -690,33 +686,30 @@ func (app *BaseAuthService) SendOtpEmail(emailType EmailType, ctx context.Contex
 		return fmt.Errorf("invalid email type")
 	}
 
-	tokenKey := security.GenerateTokenKey()
-	otp := security.GenerateOtp(6)
-	expires := tokenOpts.ExpiresAt()
-	userId := user.ID
-	email := user.Email
-	ttype := tokenOpts.Type
-
-	payload := shared.OtpPayload{
-		Type:       ttype,
-		UserId:     userId,
-		Email:      email,
-		Token:      tokenKey,
-		Otp:        otp,
-		RedirectTo: app.options.Meta.AppUrl,
+	claims := shared.OtpClaims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: tokenOpts.ExpiresAt(),
+		},
+		OtpPayload: shared.OtpPayload{
+			Type:       tokenOpts.Type,
+			UserId:     user.ID,
+			Email:      user.Email,
+			Token:      security.GenerateTokenKey(),
+			Otp:        security.GenerateOtp(6),
+			RedirectTo: appOpts.AppUrl,
+		},
 	}
-
-	tokenHash, err := app.CreateOtpTokenHash(&payload, tokenOpts)
+	tokenHash, err := app.token.CreateJwtToken(claims, tokenOpts.Secret)
 	if err != nil {
 		return fmt.Errorf("error at creating verification token: %w", err)
 	}
 
 	dto := &shared.CreateTokenDTO{
-		Expires:    expires.Time,
-		Token:      tokenKey,
-		Type:       ttype,
-		Identifier: email,
-		UserID:     &userId,
+		Expires:    claims.ExpiresAt.Time,
+		Token:      claims.Token,
+		Type:       claims.Type,
+		Identifier: claims.Email,
+		UserID:     &claims.UserId,
 	}
 
 	err = app.authStore.SaveToken(ctx, dto)
@@ -725,45 +718,49 @@ func (app *BaseAuthService) SendOtpEmail(emailType EmailType, ctx context.Contex
 		return fmt.Errorf("error at creating verification token: %w", err)
 	}
 
-	// err = app.mail.SendOtpEmail(emailType, tokenHash, &payload)
-	// if payload == nil {
-	// 	return fmt.Errorf("payload is nil")
-	// }
-
-	var params SendMailParams
-	var ok bool
-	if params, ok = EmailPathMap[emailType]; !ok {
-		return fmt.Errorf("email type not found")
-	}
-	path, err := mailer.GetPath(params.TemplatePath, &mailer.EmailParams{
-		Token:      tokenHash,
-		Type:       string(payload.Type),
-		RedirectTo: payload.RedirectTo,
-	})
+	sendMailParams, err := app.GetSendMailParams(emailType, tokenHash, claims)
 	if err != nil {
-		return err
+		return fmt.Errorf("error at getting send mail params: %w", err)
+	}
+
+	return app.mail.SendMail(sendMailParams)
+}
+
+func (app *BaseAuthService) GetSendMailParams(emailType EmailType, tokenHash string, claims shared.OtpClaims) (*mailer.AllEmailParams, error) {
+	appOpts := app.options.Meta
+	var sendMailParams mailer.SendMailParams
+	var ok bool
+	if sendMailParams, ok = EmailPathMap[emailType]; !ok {
+		return nil, fmt.Errorf("email type not found")
+	}
+	path, err := mailer.GetPathParams(sendMailParams.TemplatePath, tokenHash, string(claims.Type), claims.RedirectTo)
+	if err != nil {
+		return nil, err
 	}
 	appUrl, err := url.Parse(appOpts.AppUrl)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	param := &mailer.CommonParams{
+	common := &mailer.CommonParams{
 		SiteURL:         appUrl.String(),
 		ConfirmationURL: appUrl.ResolveReference(path).String(),
-		Email:           payload.Email,
-		Token:           payload.Otp,
+		Email:           claims.Email,
+		Token:           claims.Otp,
 		TokenHash:       tokenHash,
-		RedirectTo:      payload.RedirectTo,
+		RedirectTo:      claims.RedirectTo,
 	}
-	bodyStr := mailer.GetTemplate("body", params.Template, param)
-	mailParams := &mailer.Message{
+	message := &mailer.Message{
 		From:    appOpts.SenderAddress,
-		To:      payload.Email,
-		Subject: fmt.Sprintf(params.Subject, appOpts.AppName),
-		Body:    bodyStr,
+		To:      common.Email,
+		Subject: fmt.Sprintf(sendMailParams.Subject, appOpts.AppName),
+		Body:    mailer.GetTemplate("body", sendMailParams.Template, common),
 	}
-	return app.mail.Send(mailParams)
-
+	allEmailParams := &mailer.AllEmailParams{
+		SendMailParams: &sendMailParams,
+		CommonParams:   common,
+		Message:        message,
+	}
+	return allEmailParams, nil
 }
 
 func (app *BaseAuthService) CreateOtpTokenHash(payload *shared.OtpPayload, config conf.TokenOption) (string, error) {
@@ -781,5 +778,4 @@ func (app *BaseAuthService) CreateOtpTokenHash(payload *shared.OtpPayload, confi
 		return "", fmt.Errorf("error at creating verification token: %w", err)
 	}
 	return token, nil
-
 }

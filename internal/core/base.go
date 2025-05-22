@@ -104,12 +104,15 @@ func InitBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 	tokenService := services.NewJwtService()
 	passwordService := services.NewPasswordService()
 	authStore := stores.NewPostgresAuthStore(pool)
+	workerService := services.NewWorkerService()
+	authMailService := services.NewMailService(mail)
 	authService := services.NewAuthService(
 		settings,
 		authStore,
-		mail,
+		authMailService,
 		tokenService,
 		passwordService,
+		workerService,
 	)
 	checkerStore := stores.NewPostgresConstraintStore(pool)
 	checker := services.NewConstraintCheckerService(

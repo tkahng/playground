@@ -2,10 +2,78 @@ package mailer
 
 import (
 	"bytes"
+	"fmt"
 	"html/template"
 	"log"
+	"net/url"
+	"strings"
 )
 
+type SendMailParams struct {
+	Subject      string
+	Type         string
+	TemplatePath string
+	Template     string
+}
+type EmailParams struct {
+	Token      string
+	Type       string
+	RedirectTo string
+}
+
+type CommonParams struct {
+	SiteURL         string `json:"site_url"`
+	ConfirmationURL string `json:"confirmation_url"`
+	Email           string `json:"email"`
+	Token           string `json:"token"`
+	TokenHash       string `json:"token_hash"`
+	RedirectTo      string `json:"redirect_to"`
+}
+
+type AllEmailParams struct {
+	*SendMailParams
+	*CommonParams
+	*Message
+}
+
+func GetPathParams(filepath string, token, tokenType, redirectTo string) (*url.URL, error) {
+	path := &url.URL{}
+	if filepath != "" {
+		if p, err := url.Parse(filepath); err != nil {
+			return nil, err
+		} else {
+			path = p
+		}
+	}
+	path.RawQuery = fmt.Sprintf("token=%s&type=%s&redirect_to=%s", url.QueryEscape(token), url.QueryEscape(tokenType), encodeRedirectURL(redirectTo))
+	return path, nil
+}
+
+func GetPath(filepath string, params *EmailParams) (*url.URL, error) {
+	path := &url.URL{}
+	if filepath != "" {
+		if p, err := url.Parse(filepath); err != nil {
+			return nil, err
+		} else {
+			path = p
+		}
+	}
+	if params != nil {
+		path.RawQuery = fmt.Sprintf("token=%s&type=%s&redirect_to=%s", url.QueryEscape(params.Token), url.QueryEscape(params.Type), encodeRedirectURL(params.RedirectTo))
+	}
+	return path, nil
+}
+func encodeRedirectURL(referrerURL string) string {
+	if len(referrerURL) > 0 {
+		if strings.ContainsAny(referrerURL, "&=#") {
+			// if the string contains &, = or # it has not been URL
+			// encoded by the caller, which means it should be URL
+			// encoded by us otherwise, it should be taken as-is
+			referrerURL = url.QueryEscape(referrerURL)
+		}
+	}
+	return referrerURL
+}
 func GetTemplate(name string, mailTemplate string, params *CommonParams) string {
 	tmpl, err := template.New("body").Parse(mailTemplate)
 	if err != nil {

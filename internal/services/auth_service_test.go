@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
 	"testing"
 
 	"github.com/google/uuid"
@@ -209,10 +210,14 @@ func TestAuthenticate(t *testing.T) {
 	mockStorage := new(mockAuthStore)
 	mockToken := new(mockJwtService)
 	mockPassword := new(mockPasswordService)
+	wg := new(sync.WaitGroup)
+	mockRoutineService := new(mockRoutineService)
+	mockRoutineService.wg = wg
 	app := &BaseAuthService{
-		authStore: mockStorage,
-		token:     mockToken,
-		password:  mockPassword,
+		authStore:     mockStorage,
+		token:         mockToken,
+		password:      mockPassword,
+		WorkerService: mockRoutineService,
 	}
 
 	testUserId := uuid.New()
@@ -234,7 +239,6 @@ func TestAuthenticate(t *testing.T) {
 				Type:     shared.ProviderTypeCredentials,
 			},
 			setupMocks: func() {
-				mockStorage.On("FindUserByEmail", ctx, testEmail).Return(nil, nil)
 				mockStorage.On("CreateUser", ctx, mock.Anything).Return(&models.User{ID: testUserId, Email: testEmail}, nil)
 				mockStorage.On("AssignUserRoles", ctx, testUserId, mock.Anything).Return(nil)
 				mockPassword.On("HashPassword", testPasswordStr).Return(testHashedPassword, nil)
@@ -305,7 +309,7 @@ func TestAuthenticate(t *testing.T) {
 			}
 
 			result, err := app.Authenticate(ctx, tc.input)
-
+			wg.Wait()
 			if tc.expectedError {
 				assert.Error(t, err)
 				assert.Nil(t, result)
@@ -313,7 +317,6 @@ func TestAuthenticate(t *testing.T) {
 				assert.NoError(t, err)
 				assert.NotNil(t, result)
 			}
-
 			mockStorage.AssertExpectations(t)
 			mockPassword.AssertExpectations(t)
 		})
