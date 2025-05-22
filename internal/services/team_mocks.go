@@ -40,8 +40,8 @@ func (m *mockTeamService) CreateTeam(ctx context.Context, name string, slug stri
 }
 
 // AddMember implements TeamService.
-func (m *mockTeamService) AddMember(ctx context.Context, teamId uuid.UUID, userId uuid.UUID, role models.TeamMemberRole) (*models.TeamMember, error) {
-	args := m.Called(ctx, teamId, userId, role)
+func (m *mockTeamService) AddMember(ctx context.Context, teamId uuid.UUID, userId uuid.UUID, role models.TeamMemberRole, hasBillingAccess bool) (*models.TeamMember, error) {
+	args := m.Called(ctx, teamId, userId, role, hasBillingAccess)
 	var member *models.TeamMember
 	if args.Get(0) != nil {
 		member = args.Get(0).(*models.TeamMember)
