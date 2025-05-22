@@ -138,6 +138,12 @@ func (i *InvitationService) SendInvitationEmail(ctx context.Context, params *Tea
 	params.ConfirmationURL = confUrl
 	body := mailer.GetTemplate("body", string(mailer.DefaultTeamInviteMail), params)
 	param := &mailer.AllEmailParams{}
+	param.CommonParams = &mailer.CommonParams{
+		ConfirmationURL: params.ConfirmationURL,
+		Email:           params.Email,
+		SiteURL:         i.settings.Meta.AppUrl,
+		Token:           params.TokenHash,
+	}
 	param.Message = &mailer.Message{
 		To:      params.Email,
 		Subject: fmt.Sprintf("Invitation to join %s", params.TeamName),
