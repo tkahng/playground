@@ -23,6 +23,7 @@ type TeamInvitationMailParams struct {
 }
 
 type TeamInvitationService interface {
+	WorkerService
 	CreateInvitation(
 		ctx context.Context,
 		teamId uuid.UUID,
@@ -94,6 +95,7 @@ type TeamInvitationStore interface {
 }
 
 type InvitationService struct {
+	WorkerService
 	mailer   MailService
 	store    TeamInvitationStore
 	settings conf.AppOptions
@@ -251,7 +253,27 @@ func (i *InvitationService) CreateInvitation(
 	invitation.CreatedAt = time.Now()
 	invitation.UpdatedAt = time.Now()
 
-	return i.store.CreateInvitation(ctx, invitation)
+	err = i.store.CreateInvitation(ctx, invitation)
+	if err != nil {
+		return err
+	}
+	i.FireAndForget(
+		func() {
+			ctx := context.Background()
+			params := &TeamInvitationMailParams{
+				Email: invitation.Email,
+				// InvitedByEmail:  invitation.InviterMemberID,
+				TeamName:        member.Team.Name,
+				TokenHash:       token,
+				ConfirmationURL: "",
+			}
+			err := i.SendInvitationEmail(ctx, params)
+			if err != nil {
+				fmt.Printf("failed to send invitation email: %v", err)
+			}
+		},
+	)
+	return nil
 }
 
 // FindInvitations implements TeamInvitationService.

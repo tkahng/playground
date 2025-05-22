@@ -257,6 +257,11 @@ type mockTeamInvitationService struct {
 	mock.Mock
 }
 
+// FireAndForget implements TeamInvitationService.
+func (m *mockTeamInvitationService) FireAndForget(f func()) {
+	panic("unimplemented")
+}
+
 // SendInvitationEmail implements TeamInvitationService.
 func (m *mockTeamInvitationService) SendInvitationEmail(ctx context.Context, params *TeamInvitationMailParams) error {
 	args := m.Called(ctx, params)
