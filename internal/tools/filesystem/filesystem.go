@@ -21,7 +21,12 @@ import (
 	"github.com/gabriel-vasile/mimetype"
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/conf"
+	"github.com/tkahng/authgo/internal/shared"
 )
+
+type StorageClient interface {
+	PutObject(ctx context.Context, params *awss3.PutObjectInput, optFns ...func(*awss3.Options)) (*awss3.PutObjectOutput, error)
+}
 
 type FileSystem struct {
 	client *awss3.Client
@@ -107,7 +112,7 @@ func Snakecase(str string) string {
 	return strings.ToLower(result.String())
 }
 
-func (fs *FileSystem) NewFileFromURL(ctx context.Context, url string) (*FileDto, error) {
+func (fs *FileSystem) NewFileFromURL(ctx context.Context, url string) (*shared.FileDto, error) {
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return nil, err
@@ -129,21 +134,10 @@ func (fs *FileSystem) NewFileFromURL(ctx context.Context, url string) (*FileDto,
 		return nil, err
 	}
 
-	return fs.NewFileFromBytes2(ctx, buf.Bytes(), path.Base(url))
+	return fs.NewFileFromBytes(ctx, buf.Bytes(), path.Base(url))
 }
 
-type FileDto struct {
-	ID           uuid.UUID `json:"id"`
-	Disk         string    `db:"disk" json:"disk"`
-	Directory    string    `db:"directory" json:"directory"`
-	Filename     string    `db:"filename" json:"filename"`
-	OriginalName string    `db:"original_name" json:"original_name"`
-	Extension    string    `db:"extension" json:"extension"`
-	MimeType     string    `db:"mime_type" json:"mime_type"`
-	Size         int64     `db:"size" json:"size"`
-}
-
-func (fs *FileSystem) NewFileFromBytes2(ctx context.Context, b []byte, name string) (*FileDto, error) {
+func (fs *FileSystem) NewFileFromBytes(ctx context.Context, b []byte, name string) (*shared.FileDto, error) {
 	id := uuid.New()
 	size := len(b)
 	if size == 0 {
@@ -163,7 +157,7 @@ func (fs *FileSystem) NewFileFromBytes2(ctx context.Context, b []byte, name stri
 		return nil, err
 	}
 
-	dto := &FileDto{
+	dto := &shared.FileDto{
 		ID:           id,
 		Disk:         fs.cfg.BucketName,
 		Directory:    path.Dir(key),

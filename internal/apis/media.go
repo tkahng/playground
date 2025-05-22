@@ -34,7 +34,7 @@ func (api *Api) UploadMedia(ctx context.Context, input *struct {
 				return nil, err
 			}
 
-			dto, err := api.app.Fs().NewFileFromBytes2(ctx, buf.Bytes(), file.Filename)
+			dto, err := api.app.Fs().NewFileFromBytes(ctx, buf.Bytes(), file.Filename)
 			if err != nil {
 				return nil, err
 			}
