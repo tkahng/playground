@@ -17,8 +17,8 @@ import (
 func (api *Api) AdminRolesList(ctx context.Context, input *struct {
 	shared.RolesListParams
 }) (*shared.PaginatedOutput[*shared.RoleWithPermissions], error) {
-	db := api.app.Db()
-	roles, err := queries.ListRoles(ctx, db, &input.RolesListParams)
+	store := api.app.Rbac().Store()
+	roles, err := store.ListRoles(ctx, &input.RolesListParams)
 	if err != nil {
 		return nil, err
 	}
@@ -26,7 +26,8 @@ func (api *Api) AdminRolesList(ctx context.Context, input *struct {
 		roleIds := mapper.Map(roles, func(r *models.Role) uuid.UUID {
 			return r.ID
 		})
-		data, err := queries.LoadRolePermissions(ctx, db, roleIds...)
+
+		data, err := store.LoadRolePermissions(ctx, roleIds...)
 		if err != nil {
 			return nil, err
 		}
@@ -35,7 +36,7 @@ func (api *Api) AdminRolesList(ctx context.Context, input *struct {
 		}
 
 	}
-	count, err := queries.CountRoles(ctx, db, &input.RoleListFilter)
+	count, err := store.CountRoles(ctx, &input.RoleListFilter)
 	if err != nil {
 		return nil, err
 	}

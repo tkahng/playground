@@ -7,7 +7,6 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/crudrepo"
-	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 	"github.com/tkahng/authgo/internal/tools/utils"
@@ -17,12 +16,12 @@ func (api *Api) AdminUserPermissionsDelete(ctx context.Context, input *struct {
 	UserId       string `path:"user-id" format:"uuid" required:"true"`
 	PermissionId string `path:"permission-id" format:"uuid" required:"true"`
 }) (*struct{}, error) {
-	db := api.app.Db()
+
 	id, err := uuid.Parse(input.UserId)
 	if err != nil {
 		return nil, err
 	}
-	user, err := queries.FindUserById(ctx, db, id)
+	user, err := api.app.User().Store().FindUserById(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -33,25 +32,14 @@ func (api *Api) AdminUserPermissionsDelete(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	permission, err := queries.FindPermissionById(ctx, db, permissionId)
+	permission, err := api.app.Rbac().Store().FindPermissionById(ctx, permissionId)
 	if err != nil {
 		return nil, err
 	}
 	if permission == nil {
 		return nil, huma.Error404NotFound("Permission not found")
 	}
-	_, err = crudrepo.UserPermission.DeleteReturn(
-		ctx,
-		db,
-		&map[string]any{
-			"user_id": map[string]any{
-				"_eq": id.String(),
-			},
-			"permission_id": map[string]any{
-				"_eq": permissionId.String(),
-			},
-		},
-	)
+	err = api.app.Rbac().Store().DeletePermission(ctx, permission.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -64,12 +52,11 @@ func (api *Api) AdminUserPermissionsCreate(ctx context.Context, input *struct {
 		PermissionIds []string `json:"permission_ids" minimum:"0" maximum:"50" format:"uuid" required:"true"`
 	} `json:"body" required:"true"`
 }) (*struct{}, error) {
-	db := api.app.Db()
 	id, err := uuid.Parse(input.UserId)
 	if err != nil {
 		return nil, err
 	}
-	user, err := queries.FindUserById(ctx, db, id)
+	user, err := api.app.User().Store().FindUserById(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -79,14 +66,14 @@ func (api *Api) AdminUserPermissionsCreate(ctx context.Context, input *struct {
 
 	permissionIds := utils.ParseValidUUIDs(input.Body.PermissionIds)
 
-	permissions, err := queries.FindPermissionsByIds(ctx, db, permissionIds)
+	permissions, err := api.app.Rbac().Store().FindPermissionsByIds(ctx, permissionIds)
 	if err != nil {
 		return nil, err
 	}
 	if len(permissions) != len(permissionIds) {
 		return nil, huma.Error404NotFound("Permission not found")
 	}
-	err = queries.CreateUserPermissions(ctx, db, user.ID, permissionIds...)
+	err = api.app.Rbac().Store().CreateUserPermissions(ctx, user.ID, permissionIds...)
 	if err != nil {
 		return nil, err
 	}
@@ -95,37 +82,36 @@ func (api *Api) AdminUserPermissionsCreate(ctx context.Context, input *struct {
 
 func (api *Api) AdminUserPermissionSourceList(ctx context.Context, input *struct {
 	shared.UserPermissionsListParams
-}) (*shared.PaginatedOutput[queries.PermissionSource], error) {
-	db := api.app.Db()
+}) (*shared.PaginatedOutput[shared.PermissionSource], error) {
 	id, err := uuid.Parse(input.UserId)
 	if err != nil {
 		return nil, err
 	}
 	limit := input.PerPage
 	offset := input.Page * input.PerPage
-	var userPermissionSources []queries.PermissionSource
+	var userPermissionSources []shared.PermissionSource
 	var count int64
 	if input.Reverse {
-		userPermissionSources, err = queries.ListUserNotPermissionsSource(ctx, db, id, limit, offset)
+		userPermissionSources, err = api.app.Rbac().Store().ListUserNotPermissionsSource(ctx, id, limit, offset)
 		if err != nil {
 			return nil, err
 		}
-		count, err = queries.CountNotUserPermissionSource(ctx, db, id)
+		count, err = api.app.Rbac().Store().CountNotUserPermissionSource(ctx, id)
 		if err != nil {
 			return nil, err
 		}
 	} else {
-		userPermissionSources, err = queries.ListUserPermissionsSource(ctx, db, id, limit, offset)
+		userPermissionSources, err = api.app.Rbac().Store().ListUserPermissionsSource(ctx, id, limit, offset)
 		if err != nil {
 			return nil, err
 		}
-		count, err = queries.CountUserPermissionSource(ctx, db, id)
+		count, err = api.app.Rbac().Store().CountUserPermissionSource(ctx, id)
 		if err != nil {
 			return nil, err
 		}
 	}
-	return &shared.PaginatedOutput[queries.PermissionSource]{
-		Body: shared.PaginatedResponse[queries.PermissionSource]{
+	return &shared.PaginatedOutput[shared.PermissionSource]{
+		Body: shared.PaginatedResponse[shared.PermissionSource]{
 
 			Data: userPermissionSources,
 			Meta: shared.GenerateMeta(input.PaginatedInput, count),
@@ -136,13 +122,13 @@ func (api *Api) AdminUserPermissionSourceList(ctx context.Context, input *struct
 func (api *Api) AdminPermissionsList(ctx context.Context, input *struct {
 	shared.PermissionsListParams
 }) (*shared.PaginatedOutput[*shared.Permission], error) {
-	db := api.app.Db()
+	store := api.app.Rbac().Store()
 	fmt.Println(input)
-	permissions, err := queries.ListPermissions(ctx, db, &input.PermissionsListParams)
+	permissions, err := store.ListPermissions(ctx, &input.PermissionsListParams)
 	if err != nil {
 		return nil, err
 	}
-	count, err := queries.CountPermissions(ctx, db, &input.PermissionsListFilter)
+	count, err := store.CountPermissions(ctx, &input.PermissionsListFilter)
 	if err != nil {
 		return nil, err
 	}
@@ -166,6 +152,7 @@ func (api *Api) AdminPermissionsCreate(ctx context.Context, input *struct {
 	Body PermissionCreateInput
 }) (*struct{ Body shared.Permission }, error) {
 	dbx := api.app.Db()
+	store := api.app.Rbac().Store()
 	permission, err := crudrepo.Permission.GetOne(
 		ctx,
 		dbx,
@@ -182,10 +169,7 @@ func (api *Api) AdminPermissionsCreate(ctx context.Context, input *struct {
 	if permission != nil {
 		return nil, huma.Error409Conflict("Permission already exists")
 	}
-	data, err := queries.CreatePermission(ctx, dbx, &queries.CreatePermissionDto{
-		Name:        input.Body.Name,
-		Description: input.Body.Description,
-	})
+	data, err := store.CreatePermission(ctx, input.Body.Name, input.Body.Description)
 	if err != nil {
 		return nil, err
 	}
@@ -201,12 +185,12 @@ func (api *Api) AdminPermissionsDelete(ctx context.Context, input *struct {
 	ID string `path:"id" format:"uuid" required:"true"`
 }) (*struct {
 }, error) {
-	db := api.app.Db()
+	store := api.app.Rbac().Store()
 	id, err := uuid.Parse(input.ID)
 	if err != nil {
 		return nil, err
 	}
-	permission, err := queries.FindPermissionById(ctx, db, id)
+	permission, err := store.FindPermissionById(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -219,7 +203,7 @@ func (api *Api) AdminPermissionsDelete(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	err = queries.DeletePermission(ctx, db, permission.ID)
+	err = store.DeletePermission(ctx, permission.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -233,12 +217,12 @@ func (api *Api) AdminPermissionsUpdate(ctx context.Context, input *struct {
 }) (*struct {
 	Body shared.Permission
 }, error) {
-	db := api.app.Db()
+	store := api.app.Rbac().Store()
 	id, err := uuid.Parse(input.ID)
 	if err != nil {
 		return nil, err
 	}
-	permission, err := queries.FindPermissionById(ctx, db, id)
+	permission, err := store.FindPermissionById(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -250,7 +234,7 @@ func (api *Api) AdminPermissionsUpdate(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	err = queries.UpdatePermission(ctx, db, permission.ID, &queries.UpdatePermissionDto{
+	err = store.UpdatePermission(ctx, permission.ID, &shared.UpdatePermissionDto{
 		Name:        input.Body.Name,
 		Description: input.Description,
 	})
@@ -268,12 +252,11 @@ func (api *Api) AdminPermissionsGet(ctx context.Context, input *struct {
 }) (*struct {
 	Body *shared.Permission
 }, error) {
-	db := api.app.Db()
 	id, err := uuid.Parse(input.ID)
 	if err != nil {
 		return nil, err
 	}
-	permission, err := queries.FindPermissionById(ctx, db, id)
+	permission, err := api.app.Rbac().Store().FindPermissionById(ctx, id)
 	if err != nil {
 		return nil, err
 	}

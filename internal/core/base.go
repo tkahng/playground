@@ -29,6 +29,18 @@ type BaseApp struct {
 	auth     services.AuthService
 	team     services.TeamService
 	checker  services.ConstraintChecker
+	rbac     services.RBACService
+	user     services.UserService
+}
+
+// User implements App.
+func (app *BaseApp) User() services.UserService {
+	return app.user
+}
+
+// Rbac implements App.
+func (app *BaseApp) Rbac() services.RBACService {
+	return app.rbac
 }
 
 func (app *BaseApp) Team() services.TeamService {
@@ -93,7 +105,10 @@ func InitBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 	} else {
 		mail = &mailer.LogMailer{}
 	}
-	// userStore := stores.NewPostgresUserStore(pool)
+	userStore := stores.NewPostgresUserStore(pool)
+	userService := services.NewUserService(userStore)
+	rbac := stores.NewPostgresRBACStore(pool)
+	rbacService := services.NewRBACService(rbac)
 	paymentStore := stores.NewPostgresPaymentStore(pool)
 	paymentClient := payment.NewPaymentClient(cfg.StripeConfig)
 	paymentService := services.NewPaymentService(
@@ -129,6 +144,8 @@ func InitBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 		auth:     authService,
 		payment:  paymentService,
 		checker:  checker,
+		rbac:     rbacService,
+		user:     userService,
 	}
 	return app
 }

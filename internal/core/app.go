@@ -16,6 +16,8 @@ type App interface {
 	NewMailClient() mailer.Mailer
 	EncryptionEnv() string
 
+	Rbac() services.RBACService
+	User() services.UserService
 	Payment() services.PaymentService
 
 	Auth() services.AuthService

@@ -3,7 +3,6 @@ package apis
 import (
 	"context"
 
-	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 )
@@ -11,12 +10,11 @@ import (
 func (api *Api) PermissionsList(ctx context.Context, input *struct {
 	shared.PermissionsListParams
 }) (*shared.PaginatedOutput[*shared.Permission], error) {
-	db := api.app.Db()
-	permissions, err := queries.ListPermissions(ctx, db, &input.PermissionsListParams)
+	permissions, err := api.app.Rbac().Store().ListPermissions(ctx, &input.PermissionsListParams)
 	if err != nil {
 		return nil, err
 	}
-	count, err := queries.CountPermissions(ctx, db, &input.PermissionsListFilter)
+	count, err := api.app.Rbac().Store().CountPermissions(ctx, &input.PermissionsListFilter)
 	if err != nil {
 		return nil, err
 	}

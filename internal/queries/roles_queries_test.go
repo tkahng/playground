@@ -17,7 +17,7 @@ import (
 
 func TestLoadRolePermissions(t *testing.T) {
 	test.Short(t)
-ctx, dbx := test.DbSetup()
+	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		err := queries.EnsureRoleAndPermissions(ctx, dbxx, "basic", "basic")
 		if err != nil {
@@ -72,7 +72,7 @@ ctx, dbx := test.DbSetup()
 }
 func TestGetUserRoles(t *testing.T) {
 	test.Short(t)
-ctx, dbx := test.DbSetup()
+	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		err := queries.EnsureRoleAndPermissions(ctx, dbxx, "basic", "basic")
 		if err != nil {
@@ -144,7 +144,7 @@ ctx, dbx := test.DbSetup()
 }
 func TestGetUserPermissions(t *testing.T) {
 	test.Short(t)
-ctx, dbx := test.DbSetup()
+	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		permission, err := queries.FindOrCreatePermission(ctx, dbxx, "basic")
 		if err != nil {
@@ -213,7 +213,7 @@ ctx, dbx := test.DbSetup()
 
 func TestCreateRolePermissions(t *testing.T) {
 	test.Short(t)
-ctx, dbx := test.DbSetup()
+	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		role, err := queries.FindOrCreateRole(ctx, dbxx, "basic")
 		if err != nil {
@@ -258,7 +258,7 @@ ctx, dbx := test.DbSetup()
 }
 func TestCreateProductRoles(t *testing.T) {
 	test.Short(t)
-ctx, dbx := test.DbSetup()
+	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		role, err := queries.FindOrCreateRole(ctx, dbxx, "basic")
 		if err != nil {
@@ -309,7 +309,7 @@ ctx, dbx := test.DbSetup()
 }
 func TestEnsureRoleAndPermissions(t *testing.T) {
 	test.Short(t)
-ctx, dbx := test.DbSetup()
+	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		type args struct {
 			ctx             context.Context
@@ -378,7 +378,7 @@ ctx, dbx := test.DbSetup()
 }
 func TestFindOrCreateRole(t *testing.T) {
 	test.Short(t)
-ctx, dbx := test.DbSetup()
+	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		type args struct {
 			ctx      context.Context
@@ -429,7 +429,7 @@ ctx, dbx := test.DbSetup()
 }
 func TestCreateRole(t *testing.T) {
 	test.Short(t)
-ctx, dbx := test.DbSetup()
+	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		type args struct {
 			ctx  context.Context
@@ -485,7 +485,7 @@ ctx, dbx := test.DbSetup()
 }
 func TestUpdateRole(t *testing.T) {
 	test.Short(t)
-ctx, dbx := test.DbSetup()
+	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		// Create initial role to update
 		role, err := queries.CreateRole(ctx, dbxx, &queries.CreateRoleDto{
@@ -568,7 +568,7 @@ ctx, dbx := test.DbSetup()
 }
 func TestUpdatePermission(t *testing.T) {
 	test.Short(t)
-ctx, dbx := test.DbSetup()
+	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		// Create initial permission to update
 		permission, err := queries.CreatePermission(ctx, dbxx, &queries.CreatePermissionDto{
@@ -651,7 +651,7 @@ ctx, dbx := test.DbSetup()
 }
 func TestDeleteRole(t *testing.T) {
 	test.Short(t)
-ctx, dbx := test.DbSetup()
+	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		// Create a role to delete
 		role, err := queries.CreateRole(ctx, dbxx, &queries.CreateRoleDto{
@@ -720,7 +720,7 @@ ctx, dbx := test.DbSetup()
 }
 func TestDeleteRolePermissions(t *testing.T) {
 	test.Short(t)
-ctx, dbx := test.DbSetup()
+	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		// Create a role and permission to test deletion
 		role, err := queries.CreateRole(ctx, dbxx, &queries.CreateRoleDto{
@@ -797,7 +797,7 @@ ctx, dbx := test.DbSetup()
 }
 func TestFindOrCreatePermission(t *testing.T) {
 	test.Short(t)
-ctx, dbx := test.DbSetup()
+	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		type args struct {
 			ctx            context.Context
@@ -848,7 +848,7 @@ ctx, dbx := test.DbSetup()
 }
 func TestCreatePermission(t *testing.T) {
 	test.Short(t)
-ctx, dbx := test.DbSetup()
+	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		description := "test description"
 
@@ -909,105 +909,10 @@ ctx, dbx := test.DbSetup()
 		return errors.New("rollback")
 	})
 }
-func TestFindPermissionsByIds(t *testing.T) {
-	test.Short(t)
-ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
-		// Create test permissions
-		perm1, err := queries.CreatePermission(ctx, dbxx, &queries.CreatePermissionDto{
-			Name: "test_perm_1",
-		})
-		if err != nil {
-			t.Fatalf("failed to create test permission 1: %v", err)
-		}
 
-		perm2, err := queries.CreatePermission(ctx, dbxx, &queries.CreatePermissionDto{
-			Name: "test_perm_2",
-		})
-		if err != nil {
-			t.Fatalf("failed to create test permission 2: %v", err)
-		}
-
-		type args struct {
-			ctx    context.Context
-			dbx    database.Dbx
-			params []uuid.UUID
-		}
-		tests := []struct {
-			name    string
-			args    args
-			want    int
-			wantErr bool
-		}{
-			{
-				name: "find multiple permissions by ids",
-				args: args{
-					ctx:    ctx,
-					dbx:    dbxx,
-					params: []uuid.UUID{perm1.ID, perm2.ID},
-				},
-				want:    2,
-				wantErr: false,
-			},
-			{
-				name: "find single permission by id",
-				args: args{
-					ctx:    ctx,
-					dbx:    dbxx,
-					params: []uuid.UUID{perm1.ID},
-				},
-				want:    1,
-				wantErr: false,
-			},
-			{
-				name: "find with non-existent ids",
-				args: args{
-					ctx:    ctx,
-					dbx:    dbxx,
-					params: []uuid.UUID{uuid.New()},
-				},
-				want:    0,
-				wantErr: false,
-			},
-			{
-				name: "find with empty id list",
-				args: args{
-					ctx:    ctx,
-					dbx:    dbxx,
-					params: []uuid.UUID{},
-				},
-				want:    0,
-				wantErr: false,
-			},
-		}
-
-		for _, tt := range tests {
-			t.Run(tt.name, func(t *testing.T) {
-				got, err := queries.FindPermissionsByIds(tt.args.ctx, tt.args.dbx, tt.args.params)
-				if (err != nil) != tt.wantErr {
-					t.Errorf("FindPermissionsByIds() error = %v, wantErr %v", err, tt.wantErr)
-					return
-				}
-				if len(got) != tt.want {
-					t.Errorf("FindPermissionsByIds() got %v permissions, want %v", len(got), tt.want)
-				}
-
-				// For cases with expected results, verify permissions are returned in ascending name order
-				if len(got) > 1 {
-					for i := 1; i < len(got); i++ {
-						if got[i-1].Name > got[i].Name {
-							t.Errorf("FindPermissionsByIds() results not sorted by name in ascending order")
-						}
-					}
-				}
-			})
-		}
-		return errors.New("rollback")
-	})
-}
 func TestDeletePermission(t *testing.T) {
 	test.Short(t)
-ctx, dbx := test.DbSetup()
+	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		// Create a permission to delete
 		permission, err := queries.CreatePermission(ctx, dbxx, &queries.CreatePermissionDto{
@@ -1067,7 +972,7 @@ ctx, dbx := test.DbSetup()
 }
 func TestFindPermissionById(t *testing.T) {
 	test.Short(t)
-ctx, dbx := test.DbSetup()
+	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		// Create a test permission to find
 		permission, err := queries.CreatePermission(ctx, dbxx, &queries.CreatePermissionDto{
@@ -1123,400 +1028,6 @@ ctx, dbx := test.DbSetup()
 					t.Errorf("FindPermissionById() = nil, want %v", tt.want)
 				} else if tt.want != nil && got != nil && got.ID != tt.want.ID {
 					t.Errorf("FindPermissionById() = %v, want %v", got.ID, tt.want.ID)
-				}
-			})
-		}
-		return errors.New("rollback")
-	})
-}
-func TestListUserPermissionsSource(t *testing.T) {
-	test.Short(t)
-ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
-		// Create test user
-		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
-			Email: "test@test.com",
-		})
-		if err != nil {
-			t.Fatalf("failed to create test user: %v", err)
-		}
-
-		// Create test role and permission
-		role, err := queries.CreateRole(ctx, dbxx, &queries.CreateRoleDto{
-			Name: "test_role",
-		})
-		if err != nil {
-			t.Fatalf("failed to create test role: %v", err)
-		}
-
-		perm, err := queries.CreatePermission(ctx, dbxx, &queries.CreatePermissionDto{
-			Name: "test_permission",
-		})
-		if err != nil {
-			t.Fatalf("failed to create test permission: %v", err)
-		}
-
-		// Assign role to user and permission to role
-		err = queries.CreateUserRoles(ctx, dbxx, user.ID, role.ID)
-		if err != nil {
-			t.Fatalf("failed to assign role to user: %v", err)
-		}
-
-		err = queries.CreateRolePermissions(ctx, dbxx, role.ID, perm.ID)
-		if err != nil {
-			t.Fatalf("failed to assign permission to role: %v", err)
-		}
-
-		type args struct {
-			ctx    context.Context
-			dbx    database.Dbx
-			userId uuid.UUID
-			limit  int64
-			offset int64
-		}
-		tests := []struct {
-			name    string
-			args    args
-			want    int
-			wantErr bool
-		}{
-			{
-				name: "list user permissions with valid user",
-				args: args{
-					ctx:    ctx,
-					dbx:    dbxx,
-					userId: user.ID,
-					limit:  10,
-					offset: 0,
-				},
-				want:    1,
-				wantErr: false,
-			},
-			{
-				name: "list permissions for non-existent user",
-				args: args{
-					ctx:    ctx,
-					dbx:    dbxx,
-					userId: uuid.New(),
-					limit:  10,
-					offset: 0,
-				},
-				want:    0,
-				wantErr: false,
-			},
-		}
-
-		for _, tt := range tests {
-			t.Run(tt.name, func(t *testing.T) {
-				got, err := queries.ListUserPermissionsSource(tt.args.ctx, tt.args.dbx, tt.args.userId, tt.args.limit, tt.args.offset)
-				if (err != nil) != tt.wantErr {
-					t.Errorf("ListUserPermissionsSource() error = %v, wantErr %v", err, tt.wantErr)
-					return
-				}
-				if len(got) != tt.want {
-					t.Errorf("ListUserPermissionsSource() got %v permissions, want %v", len(got), tt.want)
-				}
-				if tt.want > 0 {
-					if got[0].Name != "test_permission" {
-						t.Errorf("ListUserPermissionsSource() got permission name = %v, want %v", got[0].Name, "test_permission")
-					}
-				}
-			})
-		}
-		return errors.New("rollback")
-	})
-}
-func TestCountUserPermissionSource(t *testing.T) {
-	test.Short(t)
-ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
-		// Create test user
-		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
-			Email: "test@test.com",
-		})
-		if err != nil {
-			t.Fatalf("failed to create test user: %v", err)
-		}
-
-		// Create test role and permission
-		role, err := queries.CreateRole(ctx, dbxx, &queries.CreateRoleDto{
-			Name: "test_role",
-		})
-		if err != nil {
-			t.Fatalf("failed to create test role: %v", err)
-		}
-
-		perm, err := queries.CreatePermission(ctx, dbxx, &queries.CreatePermissionDto{
-			Name: "test_permission",
-		})
-		if err != nil {
-			t.Fatalf("failed to create test permission: %v", err)
-		}
-
-		// Assign role to user and permission to role
-		err = queries.CreateUserRoles(ctx, dbxx, user.ID, role.ID)
-		if err != nil {
-			t.Fatalf("failed to assign role to user: %v", err)
-		}
-
-		err = queries.CreateRolePermissions(ctx, dbxx, role.ID, perm.ID)
-		if err != nil {
-			t.Fatalf("failed to assign permission to role: %v", err)
-		}
-
-		type args struct {
-			ctx    context.Context
-			dbx    database.Dbx
-			userId uuid.UUID
-		}
-		tests := []struct {
-			name    string
-			args    args
-			want    int64
-			wantErr bool
-		}{
-			{
-				name: "count permissions for user with permissions",
-				args: args{
-					ctx:    ctx,
-					dbx:    dbxx,
-					userId: user.ID,
-				},
-				want:    1,
-				wantErr: false,
-			},
-			{
-				name: "count permissions for non-existent user",
-				args: args{
-					ctx:    ctx,
-					dbx:    dbxx,
-					userId: uuid.New(),
-				},
-				want:    0,
-				wantErr: false,
-			},
-		}
-
-		for _, tt := range tests {
-			t.Run(tt.name, func(t *testing.T) {
-				got, err := queries.CountUserPermissionSource(tt.args.ctx, tt.args.dbx, tt.args.userId)
-				if (err != nil) != tt.wantErr {
-					t.Errorf("CountUserPermissionSource() error = %v, wantErr %v", err, tt.wantErr)
-					return
-				}
-				if got != tt.want {
-					t.Errorf("CountUserPermissionSource() = %v, want %v", got, tt.want)
-				}
-			})
-		}
-		return errors.New("rollback")
-	})
-}
-func TestListUserNotPermissionsSource(t *testing.T) {
-	test.Short(t)
-ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
-		// Create test user
-		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
-			Email: "test@test.com",
-		})
-		if err != nil {
-			t.Fatalf("failed to create test user: %v", err)
-		}
-
-		// Create test role and permission that will be assigned
-		role, err := queries.CreateRole(ctx, dbxx, &queries.CreateRoleDto{
-			Name: "test_role",
-		})
-		if err != nil {
-			t.Fatalf("failed to create test role: %v", err)
-		}
-
-		assignedPerm, err := queries.CreatePermission(ctx, dbxx, &queries.CreatePermissionDto{
-			Name: "assigned_permission",
-		})
-		if err != nil {
-			t.Fatalf("failed to create assigned permission: %v", err)
-		}
-
-		// Create an unassigned permission
-		unassignedPerm, err := queries.CreatePermission(ctx, dbxx, &queries.CreatePermissionDto{
-			Name: "unassigned_permission",
-		})
-		if err != nil {
-			t.Fatalf("failed to create unassigned permission: %v", err)
-		}
-
-		// Assign role to user and permission to role
-		err = queries.CreateUserRoles(ctx, dbxx, user.ID, role.ID)
-		if err != nil {
-			t.Fatalf("failed to assign role to user: %v", err)
-		}
-
-		err = queries.CreateRolePermissions(ctx, dbxx, role.ID, assignedPerm.ID)
-		if err != nil {
-			t.Fatalf("failed to assign permission to role: %v", err)
-		}
-
-		type args struct {
-			ctx    context.Context
-			dbx    database.Dbx
-			userId uuid.UUID
-			limit  int64
-			offset int64
-		}
-		tests := []struct {
-			name    string
-			args    args
-			want    int
-			wantErr bool
-		}{
-			{
-				name: "list unassigned permissions for user",
-				args: args{
-					ctx:    ctx,
-					dbx:    dbxx,
-					userId: user.ID,
-					limit:  10,
-					offset: 0,
-				},
-				want:    1,
-				wantErr: false,
-			},
-			{
-				name: "list with non-existent user",
-				args: args{
-					ctx:    ctx,
-					dbx:    dbxx,
-					userId: uuid.New(),
-					limit:  10,
-					offset: 0,
-				},
-				want:    2,
-				wantErr: false,
-			},
-			{
-				name: "list with zero limit",
-				args: args{
-					ctx:    ctx,
-					dbx:    dbxx,
-					userId: user.ID,
-					limit:  0,
-					offset: 0,
-				},
-				want:    0,
-				wantErr: false,
-			},
-		}
-
-		for _, tt := range tests {
-			t.Run(tt.name, func(t *testing.T) {
-				got, err := queries.ListUserNotPermissionsSource(tt.args.ctx, tt.args.dbx, tt.args.userId, tt.args.limit, tt.args.offset)
-				if (err != nil) != tt.wantErr {
-					t.Errorf("ListUserNotPermissionsSource() error = %v, wantErr %v", err, tt.wantErr)
-					return
-				}
-				if len(got) != tt.want {
-					t.Errorf("ListUserNotPermissionsSource() got %v permissions, want %v", len(got), tt.want)
-				}
-				if tt.name == "list unassigned permissions for user" && len(got) > 0 {
-					if got[0].Name != unassignedPerm.Name {
-						t.Errorf("ListUserNotPermissionsSource() got permission name = %v, want %v", got[0].Name, unassignedPerm.Name)
-					}
-				}
-			})
-		}
-		return errors.New("rollback")
-	})
-}
-func TestCountNotUserPermissionSource(t *testing.T) {
-	test.Short(t)
-ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
-		// Create test user
-		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
-			Email: "test@test.com",
-		})
-		if err != nil {
-			t.Fatalf("failed to create test user: %v", err)
-		}
-
-		// Create test role and permission that will be assigned
-		role, err := queries.CreateRole(ctx, dbxx, &queries.CreateRoleDto{
-			Name: "test_role",
-		})
-		if err != nil {
-			t.Fatalf("failed to create test role: %v", err)
-		}
-
-		assignedPerm, err := queries.CreatePermission(ctx, dbxx, &queries.CreatePermissionDto{
-			Name: "assigned_permission",
-		})
-		if err != nil {
-			t.Fatalf("failed to create assigned permission: %v", err)
-		}
-
-		// Create an unassigned permission
-		_, err = queries.CreatePermission(ctx, dbxx, &queries.CreatePermissionDto{
-			Name: "unassigned_permission",
-		})
-		if err != nil {
-			t.Fatalf("failed to create unassigned permission: %v", err)
-		}
-
-		// Assign role to user and permission to role
-		err = queries.CreateUserRoles(ctx, dbxx, user.ID, role.ID)
-		if err != nil {
-			t.Fatalf("failed to assign role to user: %v", err)
-		}
-
-		err = queries.CreateRolePermissions(ctx, dbxx, role.ID, assignedPerm.ID)
-		if err != nil {
-			t.Fatalf("failed to assign permission to role: %v", err)
-		}
-
-		type args struct {
-			ctx    context.Context
-			dbx    database.Dbx
-			userId uuid.UUID
-		}
-		tests := []struct {
-			name    string
-			args    args
-			want    int64
-			wantErr bool
-		}{
-			{
-				name: "count unassigned permissions for user",
-				args: args{
-					ctx:    ctx,
-					dbx:    dbxx,
-					userId: user.ID,
-				},
-				want:    1,
-				wantErr: false,
-			},
-			{
-				name: "count with non-existent user",
-				args: args{
-					ctx:    ctx,
-					dbx:    dbxx,
-					userId: uuid.New(),
-				},
-				want:    2,
-				wantErr: false,
-			},
-		}
-
-		for _, tt := range tests {
-			t.Run(tt.name, func(t *testing.T) {
-				got, err := queries.CountNotUserPermissionSource(tt.args.ctx, tt.args.dbx, tt.args.userId)
-				if (err != nil) != tt.wantErr {
-					t.Errorf("CountNotUserPermissionSource() error = %v, wantErr %v", err, tt.wantErr)
-					return
-				}
-				if got != tt.want {
-					t.Errorf("CountNotUserPermissionSource() = %v, want %v", got, tt.want)
 				}
 			})
 		}

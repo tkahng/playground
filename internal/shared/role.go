@@ -8,6 +8,20 @@ import (
 	"github.com/tkahng/authgo/internal/tools/mapper"
 )
 
+type CreateRoleDto struct {
+	Name        string  `json:"name"`
+	Description *string `json:"description,omitempty"`
+}
+type UpdateRoleDto struct {
+	Name        string  `json:"name"`
+	Description *string `json:"description,omitempty"`
+}
+
+type UpdatePermissionDto struct {
+	Name        string  `json:"name"`
+	Description *string `json:"description,omitempty"`
+}
+
 type Role struct {
 	ID          uuid.UUID `db:"id" json:"id"`
 	Name        string    `db:"name" json:"name"`
@@ -57,4 +71,15 @@ type RolesListParams struct {
 	RoleListFilter
 	SortParams
 	Expand []string `query:"expand,omitempty" required:"false" minimum:"1" maximum:"100" enum:"users,permissions"`
+}
+
+type PermissionSource struct {
+	ID          uuid.UUID   `db:"id,pk" json:"id"`
+	Name        string      `db:"name" json:"name"`
+	Description *string     `db:"description" json:"description"`
+	CreatedAt   time.Time   `db:"created_at" json:"created_at"`
+	UpdatedAt   time.Time   `db:"updated_at" json:"updated_at"`
+	RoleIDs     []uuid.UUID `db:"role_ids" json:"role_ids"`
+	ProductIDs  []string    `db:"product_ids" json:"product_ids"`
+	IsDirectly  bool        `db:"is_directly_assigned" json:"is_directly_assigned"`
 }
