@@ -9,6 +9,12 @@ type MockMailService struct {
 	param    *mailer.AllEmailParams
 }
 
+func NewMockMailService() *MockMailService {
+	return &MockMailService{
+		delegate: NewMailService(&mailer.LogMailer{}),
+	}
+}
+
 // SendMail implements MailService.
 func (m *MockMailService) SendMail(params *mailer.AllEmailParams) error {
 	m.param = params

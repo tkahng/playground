@@ -257,6 +257,12 @@ type mockTeamInvitationService struct {
 	mock.Mock
 }
 
+// SendInvitationEmail implements TeamInvitationService.
+func (m *mockTeamInvitationService) SendInvitationEmail(ctx context.Context, params *TeamInvitationMailParams) error {
+	args := m.Called(ctx, params)
+	return args.Error(0)
+}
+
 // CheckValidInvitation implements TeamInvitationService.
 func (m *mockTeamInvitationService) CheckValidInvitation(ctx context.Context, invitationToken string, userId uuid.UUID) (bool, error) {
 	args := m.Called(ctx, invitationToken, userId)

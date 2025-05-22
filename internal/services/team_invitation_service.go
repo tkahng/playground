@@ -3,13 +3,24 @@ package services
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/conf"
 	"github.com/tkahng/authgo/internal/models"
+	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/authgo/internal/tools/mailer"
 	"github.com/tkahng/authgo/internal/tools/security"
 )
+
+type TeamInvitationMailParams struct {
+	Email           string
+	InvitedByEmail  string
+	TeamName        string
+	TokenHash       string
+	ConfirmationURL string
+}
 
 type TeamInvitationService interface {
 	CreateInvitation(
@@ -39,6 +50,11 @@ type TeamInvitationService interface {
 		ctx context.Context,
 		teamId uuid.UUID,
 	) ([]*models.TeamInvitation, error)
+
+	SendInvitationEmail(
+		ctx context.Context,
+		params *TeamInvitationMailParams,
+	) error
 }
 
 type TeamInvitationStore interface {
@@ -78,8 +94,66 @@ type TeamInvitationStore interface {
 }
 
 type InvitationService struct {
-	store     TeamInvitationStore
-	tokenOpts conf.TokenOption
+	mailer   MailService
+	store    TeamInvitationStore
+	settings conf.AppOptions
+}
+
+func (i *InvitationService) CreateConfirmationUrl(tokenhash string) (string, error) {
+	path, err := mailer.GetPathParams(
+		"/team-invitation",
+		tokenhash,
+		string(shared.TokenTypesInviteToken),
+		i.settings.Meta.AppUrl,
+	)
+	if err != nil {
+		return "", err
+	}
+	appUrl, err := url.Parse(i.settings.Meta.AppUrl)
+	if err != nil {
+		return "", err
+	}
+	return appUrl.ResolveReference(path).String(), nil
+}
+
+// SendInvitationEmail implements TeamInvitationService.
+func (i *InvitationService) SendInvitationEmail(ctx context.Context, params *TeamInvitationMailParams) error {
+	if params == nil {
+		return fmt.Errorf("params is nil")
+	}
+	if params.Email == "" {
+		return fmt.Errorf("email is empty")
+	}
+	if params.TeamName == "" {
+		return fmt.Errorf("team name is empty")
+	}
+	if params.ConfirmationURL == "" {
+		return fmt.Errorf("confirmation URL is empty")
+	}
+
+	confUrl, err := i.CreateConfirmationUrl(params.TokenHash)
+	if err != nil {
+		return err
+	}
+	params.ConfirmationURL = confUrl
+	body := mailer.GetTemplate("body", string(mailer.DefaultTeamInviteMail), params)
+	param := &mailer.AllEmailParams{}
+	param.Message = &mailer.Message{
+		To:      params.Email,
+		Subject: fmt.Sprintf("Invitation to join %s", params.TeamName),
+		Body:    body,
+	}
+	return i.mailer.SendMail(param)
+}
+
+var _ TeamInvitationService = (*InvitationService)(nil)
+
+func NewInvitationService(store TeamInvitationStore, mailer MailService, settings conf.AppOptions) TeamInvitationService {
+	return &InvitationService{
+		store:    store,
+		mailer:   mailer,
+		settings: settings,
+	}
 }
 
 // CheckValidInvitation implements TeamInvitationService.
@@ -105,14 +179,6 @@ func (i *InvitationService) CheckValidInvitation(ctx context.Context, invitation
 		return false, fmt.Errorf("invitation is not pending")
 	}
 	return true, nil
-}
-
-var _ TeamInvitationService = (*InvitationService)(nil)
-
-func NewInvitationService(store TeamInvitationStore, opts conf.TokenOption) TeamInvitationService {
-	return &InvitationService{
-		store: store,
-	}
 }
 
 // AcceptInvitation implements TeamInvitationService.

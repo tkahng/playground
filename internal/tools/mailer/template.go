@@ -36,6 +36,19 @@ type AllEmailParams struct {
 	*Message
 }
 
+func GenerateConfirmationURL(base string, path string, token, tokenType, redirectTo string) (string, error) {
+	parsedURL, err := url.Parse(base)
+	if err != nil {
+		return "", err
+	}
+	parsedURL.Path = path
+	params, err := GetPathParams(parsedURL.String(), token, tokenType, redirectTo)
+	if err != nil {
+		return "", err
+	}
+	return parsedURL.ResolveReference(params).String(), nil
+}
+
 func GetPathParams(filepath string, token, tokenType, redirectTo string) (*url.URL, error) {
 	path := &url.URL{}
 	if filepath != "" {
@@ -49,20 +62,6 @@ func GetPathParams(filepath string, token, tokenType, redirectTo string) (*url.U
 	return path, nil
 }
 
-func GetPath(filepath string, params *EmailParams) (*url.URL, error) {
-	path := &url.URL{}
-	if filepath != "" {
-		if p, err := url.Parse(filepath); err != nil {
-			return nil, err
-		} else {
-			path = p
-		}
-	}
-	if params != nil {
-		path.RawQuery = fmt.Sprintf("token=%s&type=%s&redirect_to=%s", url.QueryEscape(params.Token), url.QueryEscape(params.Type), encodeRedirectURL(params.RedirectTo))
-	}
-	return path, nil
-}
 func encodeRedirectURL(referrerURL string) string {
 	if len(referrerURL) > 0 {
 		if strings.ContainsAny(referrerURL, "&=#") {
@@ -74,8 +73,8 @@ func encodeRedirectURL(referrerURL string) string {
 	}
 	return referrerURL
 }
-func GetTemplate(name string, mailTemplate string, params *CommonParams) string {
-	tmpl, err := template.New("body").Parse(mailTemplate)
+func GetTemplate[T any](name string, mailTemplate string, params T) string {
+	tmpl, err := template.New(name).Parse(mailTemplate)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -93,9 +92,8 @@ const DefaultInviteMail = `<h2>You have been invited</h2>
 <p>Alternatively, enter the code: {{ .Token }}</p>`
 
 const DefaultTeamInviteMail = `<h2>You have been invited</h2>
-<p>You have been invited to joint team {{ .TeamName }} on {{ .SiteURL }}. Follow this link to accept the invite:</p>
-<p><a href="{{ .ConfirmationURL }}">Accept the invite</a></p>
-<p>Alternatively, enter the code: {{ .Token }}</p>`
+<p>You have been invited to joint team {{ .TeamName }} by {{ .InvitedByEmail }}. Follow this link to accept the invite:</p>
+<p><a href="{{ .ConfirmationURL }}">Accept the invite</a></p>`
 
 const DefaultConfirmationMail = `<h2>Confirm your email</h2>
 

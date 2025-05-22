@@ -116,3 +116,8 @@ func GetConfig[T any]() T {
 	}
 	return config
 }
+
+func NewSettings() *AppOptions {
+	config := new(EnvConfig)
+	return config.ToSettings()
+}

@@ -9,12 +9,14 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/tkahng/authgo/internal/conf"
 	"github.com/tkahng/authgo/internal/models"
+	"github.com/tkahng/authgo/internal/tools/mailer"
 )
 
 func TestNewInvitationService(t *testing.T) {
 	mockStore := &mockTeamInvitationStore{}
-	opts := conf.NewTokenOptions()
-	service := NewInvitationService(mockStore, opts.InviteToken)
+	opts := conf.NewSettings()
+
+	service := NewInvitationService(mockStore, NewMailService(&mailer.LogMailer{}), *opts)
 
 	assert.NotNil(t, service, "NewInvitationService should not return nil")
 }
@@ -22,8 +24,9 @@ func TestNewInvitationService(t *testing.T) {
 func TestInvitationService_CreateInvitation(t *testing.T) {
 	ctx := context.Background()
 	store := new(mockTeamInvitationStore)
-	opts := conf.NewTokenOptions()
-	service := NewInvitationService(store, opts.InviteToken)
+	opts := conf.NewSettings()
+	mailService := NewMockMailService()
+	service := NewInvitationService(store, mailService, *opts)
 	teamId := uuid.New()
 	userId := uuid.New()
 	member := &models.TeamMember{ID: uuid.New()}
@@ -37,8 +40,9 @@ func TestInvitationService_CreateInvitation(t *testing.T) {
 func TestInvitationService_CreateInvitation_NotMember(t *testing.T) {
 	ctx := context.Background()
 	store := new(mockTeamInvitationStore)
-	opts := conf.NewTokenOptions()
-	service := NewInvitationService(store, opts.InviteToken)
+	opts := conf.NewSettings()
+	mailService := NewMockMailService()
+	service := NewInvitationService(store, mailService, *opts)
 	teamId := uuid.New()
 	userId := uuid.New()
 	store.On("FindTeamMemberByTeamAndUserId", ctx, teamId, userId).Return((*models.TeamMember)(nil), nil)
@@ -50,8 +54,9 @@ func TestInvitationService_CreateInvitation_NotMember(t *testing.T) {
 func TestInvitationService_AcceptInvitation(t *testing.T) {
 	ctx := context.Background()
 	store := new(mockTeamInvitationStore)
-	opts := conf.NewTokenOptions()
-	service := NewInvitationService(store, opts.InviteToken)
+	opts := conf.NewSettings()
+	mailService := NewMockMailService()
+	service := NewInvitationService(store, mailService, *opts)
 	teamId := uuid.New()
 	userId := uuid.New()
 	invitation := &models.TeamInvitation{
@@ -63,7 +68,7 @@ func TestInvitationService_AcceptInvitation(t *testing.T) {
 	user := &models.User{ID: userId, Email: "test@example.com"}
 	store.On("FindInvitationByToken", ctx, "token").Return(invitation, nil)
 	store.On("FindUserByID", ctx, userId).Return(user, nil)
-	store.On("CreateTeamMember", ctx, teamId, userId, models.TeamMemberRoleMember).Return(&models.TeamMember{}, nil)
+	store.On("CreateTeamMember", ctx, teamId, userId, models.TeamMemberRoleMember, false).Return(&models.TeamMember{}, nil)
 	store.On("UpdateInvitation", ctx, invitation).Return(nil)
 	err := service.AcceptInvitation(ctx, "token", userId)
 	assert.NoError(t, err)
@@ -73,8 +78,9 @@ func TestInvitationService_AcceptInvitation(t *testing.T) {
 func TestInvitationService_AcceptInvitation_UserMismatch(t *testing.T) {
 	ctx := context.Background()
 	store := new(mockTeamInvitationStore)
-	opts := conf.NewTokenOptions()
-	service := NewInvitationService(store, opts.InviteToken)
+	opts := conf.NewSettings()
+	mailService := NewMockMailService()
+	service := NewInvitationService(store, mailService, *opts)
 	teamId := uuid.New()
 	userId := uuid.New()
 	invitation := &models.TeamInvitation{
@@ -93,8 +99,9 @@ func TestInvitationService_AcceptInvitation_UserMismatch(t *testing.T) {
 func TestInvitationService_RejectInvitation(t *testing.T) {
 	ctx := context.Background()
 	store := new(mockTeamInvitationStore)
-	opts := conf.NewTokenOptions()
-	service := NewInvitationService(store, opts.InviteToken)
+	opts := conf.NewSettings()
+	mailService := NewMockMailService()
+	service := NewInvitationService(store, mailService, *opts)
 	teamId := uuid.New()
 	userId := uuid.New()
 	invitation := &models.TeamInvitation{
@@ -113,8 +120,9 @@ func TestInvitationService_RejectInvitation(t *testing.T) {
 func TestInvitationService_FindInvitations(t *testing.T) {
 	ctx := context.Background()
 	store := new(mockTeamInvitationStore)
-	opts := conf.NewTokenOptions()
-	service := NewInvitationService(store, opts.InviteToken)
+	opts := conf.NewSettings()
+	mailService := NewMockMailService()
+	service := NewInvitationService(store, mailService, *opts)
 	teamId := uuid.New()
 	invitations := []*models.TeamInvitation{{TeamID: teamId, Email: "test@example.com"}}
 	store.On("FindTeamInvitations", ctx, teamId).Return(invitations, nil)
