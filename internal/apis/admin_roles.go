@@ -64,23 +64,14 @@ func (api *Api) AdminRolesCreate(ctx context.Context, input *struct {
 }) (*struct {
 	Body shared.Role
 }, error) {
-	dbx := api.app.Db()
-	data, err := crudrepo.Role.GetOne(
-		ctx,
-		dbx,
-		&map[string]any{
-			"name": map[string]any{
-				"_eq": input.Body.Name,
-			},
-		},
-	)
+	data, err := api.app.Rbac().Store().FindRoleByName(ctx, input.Body.Name)
 	if err != nil {
 		return nil, err
 	}
 	if data != nil {
 		return nil, huma.Error409Conflict("Role already exists")
 	}
-	role, err := queries.CreateRole(ctx, dbx, &queries.CreateRoleDto{
+	role, err := api.app.Rbac().Store().CreateRole(ctx, &shared.CreateRoleDto{
 		Name:        input.Body.Name,
 		Description: input.Body.Description,
 	})
@@ -98,16 +89,11 @@ func (api *Api) AdminRolesCreate(ctx context.Context, input *struct {
 func (api *Api) AdminRolesDelete(ctx context.Context, input *struct {
 	RoleID string `path:"id" format:"uuid" required:"true"`
 }) (*struct{}, error) {
-	db := api.app.Db()
 	id, err := uuid.Parse(input.RoleID)
 	if err != nil {
 		return nil, err
 	}
-	role, err := crudrepo.Role.GetOne(ctx, db, &map[string]any{
-		"id": map[string]any{
-			"_eq": id.String(),
-		},
-	})
+	role, err := api.app.Rbac().Store().FindRoleById(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -120,7 +106,7 @@ func (api *Api) AdminRolesDelete(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	err = queries.DeleteRole(ctx, db, role.ID)
+	err = api.app.Rbac().Store().DeleteRole(ctx, role.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -133,16 +119,11 @@ func (api *Api) AdminRolesUpdate(ctx context.Context, input *struct {
 }) (*struct {
 	Body *shared.Role
 }, error) {
-	db := api.app.Db()
 	id, err := uuid.Parse(input.RoleID)
 	if err != nil {
 		return nil, err
 	}
-	role, err := crudrepo.Role.GetOne(ctx, db, &map[string]any{
-		"id": map[string]any{
-			"_eq": id.String(),
-		},
-	})
+	role, err := api.app.Rbac().Store().FindRoleById(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -154,7 +135,7 @@ func (api *Api) AdminRolesUpdate(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	err = queries.UpdateRole(ctx, db, role.ID, &queries.UpdateRoleDto{
+	err = api.app.Rbac().Store().UpdateRole(ctx, role.ID, &shared.UpdateRoleDto{
 		Name:        input.Body.Name,
 		Description: input.Body.Description,
 	})
@@ -170,12 +151,11 @@ func (api *Api) AdminUserRolesDelete(ctx context.Context, input *struct {
 	UserID string `path:"user-id" format:"uuid" required:"true"`
 	RoleID string `path:"role-id" format:"uuid" required:"true"`
 }) (*struct{}, error) {
-	db := api.app.Db()
 	id, err := uuid.Parse(input.UserID)
 	if err != nil {
 		return nil, err
 	}
-	user, err := queries.FindUserById(ctx, db, id)
+	user, err := api.app.User().Store().FindUserById(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -186,11 +166,7 @@ func (api *Api) AdminUserRolesDelete(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	role, err := crudrepo.Role.GetOne(ctx, db, &map[string]any{
-		"id": map[string]any{
-			"_eq": roleID.String(),
-		},
-	})
+	role, err := api.app.Rbac().Store().FindRoleById(ctx, roleID)
 	if err != nil {
 		return nil, err
 	}
@@ -204,18 +180,7 @@ func (api *Api) AdminUserRolesDelete(ctx context.Context, input *struct {
 		return nil, err
 	}
 
-	_, err = crudrepo.UserRole.DeleteReturn(
-		ctx,
-		db,
-		&map[string]any{
-			"user_id": map[string]any{
-				"_eq": id.String(),
-			},
-			"role_id": map[string]any{
-				"_eq": roleID.String(),
-			},
-		},
-	)
+	err = api.app.Rbac().Store().DeleteUserRole(ctx, user.ID, role.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -225,12 +190,11 @@ func (api *Api) AdminUserRolesCreate(ctx context.Context, input *struct {
 	UserID string `path:"user-id" format:"uuid" required:"true"`
 	Body   RoleIdsInput
 }) (*struct{}, error) {
-	db := api.app.Db()
 	id, err := uuid.Parse(input.UserID)
 	if err != nil {
 		return nil, err
 	}
-	user, err := queries.FindUserById(ctx, db, id)
+	user, err := api.app.User().Store().FindUserById(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -240,18 +204,7 @@ func (api *Api) AdminUserRolesCreate(ctx context.Context, input *struct {
 
 	roleIds := utils.ParseValidUUIDs(input.Body.RolesIds)
 
-	roles, err := crudrepo.Role.Get(
-		ctx,
-		db,
-		&map[string]any{
-			"id": map[string]any{
-				"_in": roleIds,
-			},
-		},
-		nil,
-		nil,
-		nil,
-	)
+	roles, err := api.app.Rbac().Store().FindRolesByIds(ctx, roleIds)
 	if err != nil {
 		return nil, err
 	}
@@ -259,7 +212,7 @@ func (api *Api) AdminUserRolesCreate(ctx context.Context, input *struct {
 	for _, role := range roles {
 		newRoleIds = append(newRoleIds, role.ID)
 	}
-	err = queries.CreateUserRoles(ctx, db, user.ID, newRoleIds...)
+	err = api.app.Rbac().Store().CreateUserRoles(ctx, user.ID, newRoleIds...)
 	if err != nil {
 		return nil, err
 	}
@@ -270,118 +223,64 @@ type RoleIdsInput struct {
 	RolesIds []string `json:"role_ids" minimum:"1" maximum:"100" format:"uuid" required:"true"`
 }
 
-func (api *Api) AdminUserRolesUpdate(ctx context.Context, input *struct {
-	UserID string       `path:"user-id" format:"uuid" required:"true"`
-	Body   RoleIdsInput `json:"body" required:"true"`
-}) (*shared.PaginatedOutput[*shared.Role], error) {
-	db := api.app.Db()
-	id, err := uuid.Parse(input.UserID)
-	if err != nil {
-		return nil, err
-	}
-	user, err := queries.FindUserById(ctx, db, id)
-	if err != nil {
-		return nil, err
-	}
-	if user == nil {
-		return nil, huma.Error404NotFound("User not found")
-	}
-	roleIds := make([]uuid.UUID, len(input.Body.RolesIds))
-	for i, id := range input.Body.RolesIds {
-		id, err := uuid.Parse(id)
-		if err != nil {
-			return nil, err
-		}
-		roleIds[i] = id
-	}
-	roles, err := crudrepo.Role.Get(
-		ctx,
-		db,
-		&map[string]any{
-			"id": map[string]any{
-				"_in": roleIds,
-			},
-		},
-		nil,
-		nil,
-		nil,
-	)
-	if err != nil {
-		return nil, err
-	}
-	_, err = crudrepo.UserRole.DeleteReturn(
-		ctx,
-		db,
-		&map[string]any{
-			"user_id": map[string]any{
-				"_eq": id.String(),
-			},
-		},
-	)
-	if err != nil {
-		return nil, err
-	}
-	newRoleIds := []uuid.UUID{}
-	for _, role := range roles {
-		newRoleIds = append(newRoleIds, role.ID)
-	}
-	err = queries.CreateUserRoles(ctx, db, user.ID, newRoleIds...)
-	if err != nil {
-		return nil, err
-	}
-	output := shared.PaginatedOutput[*shared.Role]{
-		Body: shared.PaginatedResponse[*shared.Role]{
-			Data: mapper.Map(roles, shared.FromCrudRole),
-		},
-	}
-	return &output, nil
-}
+// func (api *Api) AdminUserRolesUpdate(ctx context.Context, input *struct {
+// 	UserID string       `path:"user-id" format:"uuid" required:"true"`
+// 	Body   RoleIdsInput `json:"body" required:"true"`
+// }) (*shared.PaginatedOutput[*shared.Role], error) {
+// 	db := api.app.Db()
+// 	id, err := uuid.Parse(input.UserID)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	user, err := api.app.User().Store().FindUserById(ctx, id)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	if user == nil {
+// 		return nil, huma.Error404NotFound("User not found")
+// 	}
+// 	roleIds := make([]uuid.UUID, len(input.Body.RolesIds))
+// 	for i, id := range input.Body.RolesIds {
+// 		id, err := uuid.Parse(id)
+// 		if err != nil {
+// 			return nil, err
+// 		}
+// 		roleIds[i] = id
+// 	}
+// 	roles, err := api.app.Rbac().Store().FindRolesByIds(ctx, roleIds)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	_, err = crudrepo.UserRole.DeleteReturn(
+// 		ctx,
+// 		db,
+// 		&map[string]any{
+// 			"user_id": map[string]any{
+// 				"_eq": id.String(),
+// 			},
+// 		},
+// 	)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	newRoleIds := []uuid.UUID{}
+// 	for _, role := range roles {
+// 		newRoleIds = append(newRoleIds, role.ID)
+// 	}
+// 	err = api.app.Rbac().Store().CreateUserRoles(ctx, user.ID, newRoleIds...)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	output := shared.PaginatedOutput[*shared.Role]{
+// 		Body: shared.PaginatedResponse[*shared.Role]{
+// 			Data: mapper.Map(roles, shared.FromCrudRole),
+// 		},
+// 	}
+// 	return &output, nil
+// }
 
 type RolePermissionsUpdateInput struct {
 	PermissionIDs []string `json:"permission_ids" minimum:"0" maximum:"100" format:"uuid" required:"true"`
-}
-
-func (api *Api) AdminRolesUpdatePermissions(ctx context.Context, input *struct {
-	RoleID string `path:"id" format:"uuid" required:"true"`
-	Body   RolePermissionsUpdateInput
-}) (*struct {
-	Body *shared.Role
-}, error) {
-	db := api.app.Db()
-	id, err := uuid.Parse(input.RoleID)
-	if err != nil {
-		return nil, err
-	}
-	role, err := crudrepo.Role.GetOne(ctx, db, &map[string]any{
-		"id": map[string]any{
-			"_eq": id.String(),
-		},
-	})
-	if err != nil {
-		return nil, err
-	}
-	if role == nil {
-		return nil, huma.Error404NotFound("Role not found")
-	}
-	permissionIds := make([]uuid.UUID, len(input.Body.PermissionIDs))
-	for i, id := range input.Body.PermissionIDs {
-		id, err := uuid.Parse(id)
-		if err != nil {
-			continue
-		}
-		permissionIds[i] = id
-	}
-	err = queries.DeleteRolePermissions(ctx, db, role.ID)
-	if err != nil {
-		return nil, err
-	}
-	err = queries.CreateRolePermissions(ctx, db, role.ID, permissionIds...)
-	if err != nil {
-		return nil, err
-	}
-	return &struct{ Body *shared.Role }{
-		Body: shared.FromCrudRole(role),
-	}, nil
 }
 
 func (api *Api) AdminRolesGet(ctx context.Context, input *struct {
@@ -427,16 +326,11 @@ func (api *Api) AdminRolesCreatePermissions(ctx context.Context, input *struct {
 	Body   RolePermissionsUpdateInput
 }) (*struct {
 }, error) {
-	db := api.app.Db()
 	id, err := uuid.Parse(input.RoleID)
 	if err != nil {
 		return nil, err
 	}
-	role, err := crudrepo.Role.GetOne(ctx, db, &map[string]any{
-		"id": map[string]any{
-			"_eq": id.String(),
-		},
-	})
+	role, err := api.app.Rbac().Store().FindRoleById(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -445,7 +339,7 @@ func (api *Api) AdminRolesCreatePermissions(ctx context.Context, input *struct {
 	}
 	permissionIds := utils.ParseValidUUIDs(input.Body.PermissionIDs)
 
-	err = queries.CreateRolePermissions(ctx, db, role.ID, permissionIds...)
+	err = api.app.Rbac().Store().CreateRolePermissions(ctx, role.ID, permissionIds...)
 
 	if err != nil {
 		return nil, err
@@ -458,16 +352,11 @@ func (api *Api) AdminRolesDeletePermissions(ctx context.Context, input *struct {
 	PermissionId string `path:"permissionId" format:"uuid" required:"true"`
 }) (*struct {
 }, error) {
-	db := api.app.Db()
 	id, err := uuid.Parse(input.RoleId)
 	if err != nil {
 		return nil, err
 	}
-	role, err := crudrepo.Role.GetOne(ctx, db, &map[string]any{
-		"id": map[string]any{
-			"_eq": id.String(),
-		},
-	})
+	role, err := api.app.Rbac().Store().FindRoleById(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -478,7 +367,7 @@ func (api *Api) AdminRolesDeletePermissions(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	permission, err := queries.FindPermissionById(ctx, db, permissionId)
+	permission, err := api.app.Rbac().Store().FindPermissionById(ctx, permissionId)
 	if err != nil {
 		return nil, err
 	}
@@ -491,18 +380,7 @@ func (api *Api) AdminRolesDeletePermissions(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	_, err = crudrepo.RolePermission.DeleteReturn(
-		ctx,
-		db,
-		&map[string]any{
-			"role_id": map[string]any{
-				"_eq": id.String(),
-			},
-			"permission_id": map[string]any{
-				"_eq": permissionId.String(),
-			},
-		},
-	)
+	err = api.app.Rbac().Store().DeleteRolePermissions(ctx, role.ID, permission.ID)
 	if err != nil {
 		return nil, err
 	}

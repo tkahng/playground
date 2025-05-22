@@ -22,7 +22,7 @@ type RBACStore interface {
 	CreateUserRoles(ctx context.Context, userId uuid.UUID, roleIds ...uuid.UUID) error
 	DeletePermission(ctx context.Context, id uuid.UUID) error
 	DeleteRole(ctx context.Context, id uuid.UUID) error
-	DeleteRolePermissions(ctx context.Context, id uuid.UUID) error
+	DeleteUserRole(ctx context.Context, userId, roleId uuid.UUID) error
 	EnsureRoleAndPermissions(ctx context.Context, roleName string, permissionNames ...string) error
 	FindOrCreatePermission(ctx context.Context, permissionName string) (*models.Permission, error)
 	FindOrCreateRole(ctx context.Context, roleName string) (*models.Role, error)
@@ -36,6 +36,10 @@ type RBACStore interface {
 	LoadRolePermissions(ctx context.Context, roleIds ...uuid.UUID) ([][]*models.Permission, error)
 	UpdatePermission(ctx context.Context, id uuid.UUID, roledto *shared.UpdatePermissionDto) error
 	UpdateRole(ctx context.Context, id uuid.UUID, roledto *shared.UpdateRoleDto) error
+	FindRoleById(ctx context.Context, id uuid.UUID) (*models.Role, error)
+	FindRoleByName(ctx context.Context, name string) (*models.Role, error)
+	FindRolesByIds(ctx context.Context, params []uuid.UUID) ([]*models.Role, error)
+	DeleteRolePermissions(ctx context.Context, roleId uuid.UUID, permissionIds ...uuid.UUID) error
 }
 
 type RBACService interface {

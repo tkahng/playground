@@ -359,19 +359,6 @@ func DeleteRole(ctx context.Context, dbx database.Dbx, id uuid.UUID) error {
 	return err
 }
 
-func DeleteRolePermissions(ctx context.Context, dbx database.Dbx, id uuid.UUID) error {
-	_, err := crudrepo.RolePermission.Delete(
-		ctx,
-		dbx,
-		&map[string]any{
-			"role_id": map[string]any{
-				"_eq": id.String(),
-			},
-		},
-	)
-	return err
-}
-
 type CreatePermissionDto struct {
 	Name        string  `json:"name"`
 	Description *string `json:"description,omitempty"`

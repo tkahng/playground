@@ -32,6 +32,30 @@ func NewPostgresRBACStore(db database.Dbx) *PostgresRBACStore {
 	}
 }
 
+func (s *PostgresRBACStore) FindRolesByIds(ctx context.Context, params []uuid.UUID) ([]*models.Role, error) {
+	if len(params) == 0 {
+		return nil, nil
+	}
+	newIds := make([]string, len(params))
+	for i, id := range params {
+		newIds[i] = id.String()
+	}
+	return crudrepo.Role.Get(
+		ctx,
+		s.db,
+		&map[string]any{
+			"id": map[string]any{
+				"_in": newIds,
+			},
+		},
+		&map[string]string{
+			"name": "asc",
+		},
+		nil,
+		nil,
+	)
+}
+
 func (s *PostgresRBACStore) CreateProductRoles(ctx context.Context, productId string, roleIds ...uuid.UUID) error {
 	var roles []models.ProductRole
 	for _, role := range roleIds {
@@ -59,6 +83,26 @@ func (a *PostgresRBACStore) FindPermissionById(ctx context.Context, id uuid.UUID
 		},
 	)
 	return database.OptionalRow(data, err)
+}
+
+func (a *PostgresRBACStore) FindRoleById(ctx context.Context, id uuid.UUID) (*models.Role, error) {
+	return crudrepo.Role.GetOne(ctx, a.db, &map[string]any{
+		"id": map[string]any{
+			"_eq": id.String(),
+		},
+	})
+}
+
+func (a *PostgresRBACStore) FindRoleByName(ctx context.Context, name string) (*models.Role, error) {
+	return crudrepo.Role.GetOne(
+		ctx,
+		a.db,
+		&map[string]any{
+			"name": map[string]any{
+				"_eq": name,
+			},
+		},
+	)
 }
 
 // var _ RBACStore = &PostgresRBACStore{}
@@ -349,13 +393,16 @@ func (p *PostgresRBACStore) CreateRolePermissions(ctx context.Context, roleId uu
 	return nil
 }
 
-func (p *PostgresRBACStore) DeleteRolePermissions(ctx context.Context, id uuid.UUID) error {
+func (p *PostgresRBACStore) DeleteUserRole(ctx context.Context, userId, roleId uuid.UUID) error {
 	_, err := crudrepo.RolePermission.Delete(
 		ctx,
 		p.db,
 		&map[string]any{
 			"role_id": map[string]any{
-				"_eq": id.String(),
+				"_eq": roleId.String(),
+			},
+			"user_id": map[string]any{
+				"_eq": userId.String(),
 			},
 		},
 	)
@@ -452,6 +499,29 @@ FROM public.role_permissions rp
         )
 GROUP BY rp.role_id;`
 )
+
+func (p *PostgresRBACStore) DeleteRolePermissions(ctx context.Context, roleId uuid.UUID, permissionIds ...uuid.UUID) error {
+	if len(permissionIds) == 0 {
+		return nil
+	}
+	var ids []string
+	for _, id := range permissionIds {
+		ids = append(ids, id.String())
+	}
+	_, err := crudrepo.RolePermission.Delete(
+		ctx,
+		p.db,
+		&map[string]any{
+			"role_id": map[string]any{
+				"_eq": roleId.String(),
+			},
+			"permission_id": map[string]any{
+				"_in": ids,
+			},
+		},
+	)
+	return err
+}
 
 func (p *PostgresRBACStore) LoadRolePermissions(ctx context.Context, roleIds ...uuid.UUID) ([][]*models.Permission, error) {
 	// var results []JoinedResult[*crudModels.Permission, uuid.UUID]

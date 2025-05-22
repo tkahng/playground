@@ -114,22 +114,22 @@ func BindAdminApi(api huma.API, appApi *Api) {
 		appApi.AdminUsersUpdatePassword,
 	)
 	//  admin user update roles
-	huma.Register(
-		adminGroup,
-		huma.Operation{
-			OperationID: "admin-update-user-roles",
-			Method:      http.MethodPut,
-			Path:        "/users/{user-id}/roles",
-			Summary:     "Update user roles",
-			Description: "Update user roles",
-			Tags:        []string{"Admin", "Roles"},
-			Errors:      []int{http.StatusNotFound},
-			Security: []map[string][]string{{
-				shared.BearerAuthSecurityKey: {},
-			}},
-		},
-		appApi.AdminUserRolesUpdate,
-	)
+	// huma.Register(
+	// 	adminGroup,
+	// 	huma.Operation{
+	// 		OperationID: "admin-update-user-roles",
+	// 		Method:      http.MethodPut,
+	// 		Path:        "/users/{user-id}/roles",
+	// 		Summary:     "Update user roles",
+	// 		Description: "Update user roles",
+	// 		Tags:        []string{"Admin", "Roles"},
+	// 		Errors:      []int{http.StatusNotFound},
+	// 		Security: []map[string][]string{{
+	// 			shared.BearerAuthSecurityKey: {},
+	// 		}},
+	// 	},
+	// 	appApi.AdminUserRolesUpdate,
+	// )
 	// admin user create roles
 	huma.Register(
 		adminGroup,
@@ -301,22 +301,22 @@ func BindAdminApi(api huma.API, appApi *Api) {
 		appApi.AdminRolesGet,
 	)
 	// admin roles update permissions
-	huma.Register(
-		adminGroup,
-		huma.Operation{
-			OperationID: "admin-roles-update-permissions",
-			Method:      http.MethodPut,
-			Path:        "/roles/{id}/permissions",
-			Summary:     "Update role permissions",
-			Description: "Update role permissions",
-			Tags:        []string{"Admin", "Roles"},
-			Errors:      []int{http.StatusNotFound},
-			Security: []map[string][]string{{
-				shared.BearerAuthSecurityKey: {},
-			}},
-		},
-		appApi.AdminRolesUpdatePermissions,
-	)
+	// huma.Register(
+	// 	adminGroup,
+	// 	huma.Operation{
+	// 		OperationID: "admin-roles-update-permissions",
+	// 		Method:      http.MethodPut,
+	// 		Path:        "/roles/{id}/permissions",
+	// 		Summary:     "Update role permissions",
+	// 		Description: "Update role permissions",
+	// 		Tags:        []string{"Admin", "Roles"},
+	// 		Errors:      []int{http.StatusNotFound},
+	// 		Security: []map[string][]string{{
+	// 			shared.BearerAuthSecurityKey: {},
+	// 		}},
+	// 	},
+	// 	appApi.AdminRolesUpdatePermissions,
+	// )
 	// admin roles create permissions
 	huma.Register(
 		adminGroup,
