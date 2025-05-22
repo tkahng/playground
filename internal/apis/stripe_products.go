@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/tkahng/authgo/internal/models"
-	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 )
@@ -15,7 +14,6 @@ type StripeProductsWithPricesInput struct {
 }
 
 func (api *Api) StripeProductsWithPrices(ctx context.Context, inputt *StripeProductsWithPricesInput) (*shared.PaginatedOutput[*shared.StripeProductWithData], error) {
-	db := api.app.Db()
 	input := &shared.StripeProductListParams{
 		PaginatedInput: inputt.PaginatedInput,
 		StripeProductListFilter: shared.StripeProductListFilter{
@@ -23,7 +21,7 @@ func (api *Api) StripeProductsWithPrices(ctx context.Context, inputt *StripeProd
 		},
 		SortParams: inputt.SortParams,
 	}
-	products, err := queries.ListProducts(ctx, db, input)
+	products, err := api.app.Payment().Store().ListProducts(ctx, input)
 	if err != nil {
 		return nil, err
 	}
@@ -31,22 +29,22 @@ func (api *Api) StripeProductsWithPrices(ctx context.Context, inputt *StripeProd
 	for _, u := range products {
 		ids = append(ids, u.ID)
 	}
-	prices, err := queries.LoadProductPrices(ctx, db, &map[string]any{
+	prices, err := api.app.Payment().Store().LoadProductPrices(ctx, &map[string]any{
 		"product_id": map[string]any{
 			"_in": ids,
 		},
 	}, ids...)
+	if err != nil {
+		return nil, err
+	}
 	for i, products := range products {
 		price := prices[i]
 		if len(price) > 0 {
 			products.Prices = price
 		}
 	}
-	if err != nil {
-		return nil, err
-	}
 
-	count, err := queries.CountProducts(ctx, db, &input.StripeProductListFilter)
+	count, err := api.app.Payment().Store().CountProducts(ctx, &input.StripeProductListFilter)
 	if err != nil {
 		return nil, err
 	}

@@ -70,6 +70,71 @@ var HumaTokenFuncs = []func(huma.Context) string{
 	HumaTokenFromCookie,
 }
 
+// func
+func TeamInfoFromParamMiddleware(api huma.API, app core.App) func(ctx huma.Context, next func(huma.Context)) {
+	return func(ctx huma.Context, next func(huma.Context)) {
+		rawCtx := ctx.Context()
+		userInfo := contextstore.GetContextUserInfo(rawCtx)
+		if userInfo == nil {
+			next(ctx)
+			return
+		}
+		teamId := ctx.Param("team-id")
+		if teamId == "" {
+			next(ctx)
+			return
+		}
+		id, err := uuid.Parse(teamId)
+		if err != nil {
+			huma.WriteErr(api, ctx, http.StatusBadRequest, "invalid team id", err)
+			return
+		}
+		teamInfo, err := app.Team().FindTeamInfo(rawCtx, id, userInfo.User.ID)
+		if err != nil {
+			huma.WriteErr(api, ctx, http.StatusInternalServerError, "error getting team info", err)
+			return
+		}
+		if teamInfo == nil {
+			huma.WriteErr(api, ctx, http.StatusNotFound, "team not found at middleware")
+			return
+		}
+		ctxx := contextstore.SetContextTeamInfo(rawCtx, teamInfo)
+		ctx = huma.WithContext(ctx, ctxx)
+		next(ctx)
+	}
+}
+
+func RequireTeamMemberRolesMiddleware(api huma.API, roles ...models.TeamMemberRole) func(ctx huma.Context, next func(huma.Context)) {
+	return func(ctx huma.Context, next func(huma.Context)) {
+		rawctx := ctx.Context()
+		if info := contextstore.GetContextTeamInfo(rawctx); info != nil {
+			if slices.Contains(roles, info.Member.Role) {
+				next(ctx)
+				return
+			}
+		} else {
+			huma.WriteErr(
+				api,
+				ctx,
+				http.StatusForbidden,
+				fmt.Sprintf("You do not have the required team member roles: %v", roles),
+			)
+		}
+	}
+}
+
+func RequireSelectedCustomerMiddleware(api huma.API, app core.App) func(ctx huma.Context, next func(huma.Context)) {
+	return func(ctx huma.Context, next func(huma.Context)) {
+		rawCtx := ctx.Context()
+		customerInfo := contextstore.GetContextCurrentCustomer(rawCtx)
+		if customerInfo == nil {
+			huma.WriteErr(api, ctx, http.StatusUnauthorized, "unauthorized at middleware")
+			return
+		}
+		next(ctx)
+	}
+}
+
 func CheckTaskOwnerMiddleware(api huma.API, app core.App) func(ctx huma.Context, next func(huma.Context)) {
 	return func(ctx huma.Context, next func(huma.Context)) {
 		db := app.Db()
@@ -170,58 +235,6 @@ func RequireAuthMiddleware(api huma.API) func(ctx huma.Context, next func(huma.C
 			}
 		}
 		huma.WriteErr(api, ctx, http.StatusForbidden, "Forbidden")
-	}
-}
-
-func TeamInfoFromParamMiddleware(api huma.API, app core.App) func(ctx huma.Context, next func(huma.Context)) {
-	return func(ctx huma.Context, next func(huma.Context)) {
-		rawCtx := ctx.Context()
-		userInfo := contextstore.GetContextUserInfo(rawCtx)
-		if userInfo == nil {
-			next(ctx)
-			return
-		}
-		teamId := ctx.Param("team-id")
-		if teamId == "" {
-			next(ctx)
-			return
-		}
-		id, err := uuid.Parse(teamId)
-		if err != nil {
-			huma.WriteErr(api, ctx, http.StatusBadRequest, "invalid team id", err)
-			return
-		}
-		teamInfo, err := app.Team().FindTeamInfo(rawCtx, id, userInfo.User.ID)
-		if err != nil {
-			huma.WriteErr(api, ctx, http.StatusInternalServerError, "error getting team info", err)
-			return
-		}
-		if teamInfo == nil {
-			huma.WriteErr(api, ctx, http.StatusNotFound, "team not found at middleware")
-			return
-		}
-		ctxx := contextstore.SetContextTeamInfo(rawCtx, teamInfo)
-		ctx = huma.WithContext(ctx, ctxx)
-		next(ctx)
-	}
-}
-
-func RequireTeamMemberRolesMiddleware(api huma.API, roles ...models.TeamMemberRole) func(ctx huma.Context, next func(huma.Context)) {
-	return func(ctx huma.Context, next func(huma.Context)) {
-		rawctx := ctx.Context()
-		if info := contextstore.GetContextTeamInfo(rawctx); info != nil {
-			if slices.Contains(roles, info.Member.Role) {
-				next(ctx)
-				return
-			}
-		} else {
-			huma.WriteErr(
-				api,
-				ctx,
-				http.StatusForbidden,
-				fmt.Sprintf("You do not have the required team member roles: %v", roles),
-			)
-		}
 	}
 }
 

@@ -49,6 +49,8 @@ type PaymentRbacStore interface {
 }
 
 type PaymentStripeStore interface {
+	CountProducts(ctx context.Context, filter *shared.StripeProductListFilter) (int64, error)
+	LoadProductPrices(ctx context.Context, where *map[string]any, productIds ...string) ([][]*models.StripePrice, error)
 	FindSubscriptionWithPriceById(ctx context.Context, stripeId string) (*models.SubscriptionWithPrice, error)
 	FindLatestActiveSubscriptionWithPriceByCustomerId(ctx context.Context, customerId string) (*models.SubscriptionWithPrice, error)
 	FindProductByStripeId(ctx context.Context, productId string) (*models.StripeProduct, error)

@@ -12,6 +12,7 @@ import (
 	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/services"
 	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/authgo/internal/tools/mapper"
 	"github.com/tkahng/authgo/internal/tools/types"
 	"github.com/tkahng/authgo/internal/tools/utils"
 )
@@ -372,6 +373,27 @@ func (s *PostgresStripeStore) ListProducts(ctx context.Context, input *shared.St
 	return data, nil
 }
 
+type CountOutput struct {
+	Count int64
+}
+
+func (s *PostgresStripeStore) CountProducts(ctx context.Context, filter *shared.StripeProductListFilter) (int64, error) {
+	q := squirrel.Select("COUNT(stripe_products.*)").
+		From("stripe_products")
+
+	q = listProductFilterFuncQuery(q, filter)
+	data, err := database.QueryWithBuilder[CountOutput](ctx, s.db, q.PlaceholderFormat(squirrel.Dollar))
+
+	if err != nil {
+		return 0, err
+	}
+	if len(data) == 0 {
+		return 0, nil
+	}
+
+	return data[0].Count, nil
+}
+
 func listProductFilterFuncQuery(q squirrel.SelectBuilder, filter *shared.StripeProductListFilter) squirrel.SelectBuilder {
 	if filter == nil {
 		return q
@@ -484,4 +506,27 @@ func (s *PostgresStripeStore) UpsertSubscription(ctx context.Context, sub *model
 		"trial_start = EXCLUDED.trial_start," +
 		"trial_end = EXCLUDED.trial_end")
 	return database.ExecWithBuilder(ctx, s.db, q.PlaceholderFormat(squirrel.Dollar))
+}
+
+func (s *PostgresStripeStore) LoadProductPrices(ctx context.Context, where *map[string]any, productIds ...string) ([][]*models.StripePrice, error) {
+	if where == nil {
+		where = &map[string]any{}
+	}
+	(*where)["product_id"] = map[string]any{
+		"_in": productIds,
+	}
+	prices, err := crudrepo.StripePrice.Get(
+		ctx,
+		s.db,
+		where,
+		nil,
+		nil,
+		nil,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return mapper.MapToManyPointer(prices, productIds, func(t *models.StripePrice) string {
+		return t.ProductID
+	}), nil
 }

@@ -41,7 +41,7 @@ func BindApis(api huma.API, app core.App) {
 	})
 
 	checkTaskOwnerMiddleware := CheckTaskOwnerMiddleware(api, app)
-	latestTeamMiddleware := LatestTeamMiddleware(api, app)
+
 	// requireAdminTeamMemberMiddleware := RequireTeamMemberRolesMiddleware(api, models.TeamMemberRoleAdmin)
 
 	//  public list of permissions -----------------------------------------------------------
@@ -609,16 +609,13 @@ func BindApis(api huma.API, app core.App) {
 			Path:        "/my-subscriptions",
 			Summary:     "stripe-my-subscriptions",
 			Description: "stripe-my-subscriptions",
-			Tags:        []string{"Payment", "Stripe", "Subscriptions"},
+			Tags:        []string{"Stripe", "Subscriptions"},
 			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
 			Security: []map[string][]string{{
 				shared.BearerAuthSecurityKey: {},
 			}},
-			Middlewares: huma.Middlewares{
-				latestTeamMiddleware,
-			},
 		},
-		appApi.MyStripeSubscriptions,
+		appApi.GetStripeSubscriptions,
 	)
 	// stripe webhook
 	huma.Register(
@@ -629,7 +626,7 @@ func BindApis(api huma.API, app core.App) {
 			Path:        "/webhook",
 			Summary:     "webhook",
 			Description: "Webhook for stripe",
-			Tags:        []string{"Payment", "Stripe", "Webhook"},
+			Tags:        []string{"Stripe", "Webhook"},
 			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
 		},
 		appApi.StripeWebhook,
@@ -643,7 +640,7 @@ func BindApis(api huma.API, app core.App) {
 			Path:        "/products",
 			Summary:     "stripe-products-with-prices",
 			Description: "stripe-products-with-prices",
-			Tags:        []string{"Payment", "Stripe", "Products"},
+			Tags:        []string{"Stripe", "Products"},
 			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
 		},
 		appApi.StripeProductsWithPrices,
@@ -657,12 +654,9 @@ func BindApis(api huma.API, app core.App) {
 			Path:        "/billing-portal",
 			Summary:     "billing-portal",
 			Description: "billing-portals",
-			Tags:        []string{"Payment", "Billing Portal", "Stripe"},
+			Tags:        []string{"Stripe", "Billing Portal"},
 			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
 			Security:    []map[string][]string{{shared.BearerAuthSecurityKey: {}}},
-			Middlewares: huma.Middlewares{
-				latestTeamMiddleware,
-			},
 		},
 		appApi.StripeBillingPortal,
 	)
@@ -675,12 +669,9 @@ func BindApis(api huma.API, app core.App) {
 			Path:        "/checkout-session",
 			Summary:     "create checkout session",
 			Description: "create checkout session",
-			Tags:        []string{"Payment", "Stripe", "Checkout Session"},
+			Tags:        []string{"Stripe", "Checkout Session"},
 			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
 			Security:    []map[string][]string{{shared.BearerAuthSecurityKey: {}}},
-			Middlewares: huma.Middlewares{
-				RequireTeamMemberRolesMiddleware(stripeGroup, models.TeamMemberRoleAdmin),
-			},
 		},
 		appApi.StripeCheckoutSession,
 	)
@@ -693,7 +684,7 @@ func BindApis(api huma.API, app core.App) {
 			Path:        "/checkout-session/{checkoutSessionId}",
 			Summary:     "get checkout session",
 			Description: "get checkout session",
-			Tags:        []string{"Payment", "Stripe", "Checkout Session"},
+			Tags:        []string{"Stripe", "Checkout Session"},
 			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
 			Security:    []map[string][]string{{shared.BearerAuthSecurityKey: {}}},
 		},

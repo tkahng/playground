@@ -6,8 +6,6 @@ import (
 	"github.com/tkahng/authgo/internal/shared"
 )
 
-type ContextKey string
-
 const (
 	ContextKeyStripeCustomer ContextKey = "stripe_customer"
 	ContextKeyUserInfo       ContextKey = "user_info"

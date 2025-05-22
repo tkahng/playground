@@ -17,6 +17,21 @@ import (
 
 type mockPaymentStore struct{ mock.Mock }
 
+// CountProducts implements PaymentStore.
+func (m *mockPaymentStore) CountProducts(ctx context.Context, filter *shared.StripeProductListFilter) (int64, error) {
+	args := m.Called(ctx, filter)
+	return args.Get(0).(int64), args.Error(1)
+}
+
+// LoadProductPrices implements PaymentStore.
+func (m *mockPaymentStore) LoadProductPrices(ctx context.Context, where *map[string]any, productIds ...string) ([][]*models.StripePrice, error) {
+	args := m.Called(ctx, where, productIds)
+	if args.Get(0) != nil {
+		return args.Get(0).([][]*models.StripePrice), args.Error(1)
+	}
+	return nil, args.Error(1)
+}
+
 // UpsertCustomerStripeId implements PaymentStore.
 func (m *mockPaymentStore) UpsertCustomerStripeId(ctx context.Context, customer *models.StripeCustomer) error {
 	args := m.Called(ctx, customer)
