@@ -14,6 +14,12 @@ type MediaStore struct {
 	dbx database.Dbx
 }
 
+func (s *MediaStore) WithTx(tx database.Dbx) services.MediaStore {
+	return &MediaStore{
+		dbx: tx,
+	}
+}
+
 var _ services.MediaStore = (*MediaStore)(nil)
 
 func NewMediaStore(dbx database.Dbx) services.MediaStore {

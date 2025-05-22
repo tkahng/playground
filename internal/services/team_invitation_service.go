@@ -40,7 +40,7 @@ type TeamInvitationService interface {
 }
 
 type TeamInvitationStore interface {
-	CreateTeamMember(ctx context.Context, teamId, userId uuid.UUID, role models.TeamMemberRole) (*models.TeamMember, error)
+	CreateTeamMember(ctx context.Context, teamId, userId uuid.UUID, role models.TeamMemberRole, hasBillingAccess bool) (*models.TeamMember, error)
 	DeleteTeamMember(ctx context.Context, teamId, userId uuid.UUID) error
 	FindTeamMemberByTeamAndUserId(
 		ctx context.Context,
@@ -70,12 +70,12 @@ type TeamInvitationStore interface {
 	) ([]*models.TeamInvitation, error)
 }
 
-type InnvitationService struct {
+type InvitationService struct {
 	store TeamInvitationStore
 }
 
 // CheckValidInvitation implements TeamInvitationService.
-func (i *InnvitationService) CheckValidInvitation(ctx context.Context, invitationToken string, userId uuid.UUID) (bool, error) {
+func (i *InvitationService) CheckValidInvitation(ctx context.Context, invitationToken string, userId uuid.UUID) (bool, error) {
 	invite, err := i.store.FindInvitationByToken(ctx, invitationToken)
 	if err != nil {
 		return false, err
@@ -99,16 +99,16 @@ func (i *InnvitationService) CheckValidInvitation(ctx context.Context, invitatio
 	return true, nil
 }
 
-var _ TeamInvitationService = (*InnvitationService)(nil)
+var _ TeamInvitationService = (*InvitationService)(nil)
 
 func NewInvitationService(store TeamInvitationStore) TeamInvitationService {
-	return &InnvitationService{
+	return &InvitationService{
 		store: store,
 	}
 }
 
 // AcceptInvitation implements TeamInvitationService.
-func (i *InnvitationService) AcceptInvitation(ctx context.Context, invitationToken string, userId uuid.UUID) error {
+func (i *InvitationService) AcceptInvitation(ctx context.Context, invitationToken string, userId uuid.UUID) error {
 	invite, err := i.store.FindInvitationByToken(ctx, invitationToken)
 	if err != nil {
 		return err
@@ -130,7 +130,7 @@ func (i *InnvitationService) AcceptInvitation(ctx context.Context, invitationTok
 		return fmt.Errorf("invitation is not pending")
 	}
 	invite.Status = models.TeamInvitationStatusAccepted
-	_, err = i.store.CreateTeamMember(ctx, invite.TeamID, user.ID, invite.Role)
+	_, err = i.store.CreateTeamMember(ctx, invite.TeamID, user.ID, invite.Role, false)
 	if err != nil {
 		return err
 	}
@@ -142,7 +142,7 @@ func (i *InnvitationService) AcceptInvitation(ctx context.Context, invitationTok
 }
 
 // CreateInvitation implements TeamInvitationService.
-func (i *InnvitationService) CreateInvitation(
+func (i *InvitationService) CreateInvitation(
 	ctx context.Context,
 	teamId uuid.UUID,
 	userId uuid.UUID,
@@ -174,7 +174,7 @@ func (i *InnvitationService) CreateInvitation(
 }
 
 // FindInvitations implements TeamInvitationService.
-func (i *InnvitationService) FindInvitations(ctx context.Context, teamId uuid.UUID) ([]*models.TeamInvitation, error) {
+func (i *InvitationService) FindInvitations(ctx context.Context, teamId uuid.UUID) ([]*models.TeamInvitation, error) {
 	invitations, err := i.store.FindTeamInvitations(ctx, teamId)
 	if err != nil {
 		return nil, err
@@ -183,7 +183,7 @@ func (i *InnvitationService) FindInvitations(ctx context.Context, teamId uuid.UU
 }
 
 // RejectInvitation implements TeamInvitationService.
-func (i *InnvitationService) RejectInvitation(ctx context.Context, invitationToken string, userId uuid.UUID) error {
+func (i *InvitationService) RejectInvitation(ctx context.Context, invitationToken string, userId uuid.UUID) error {
 	invite, err := i.store.FindInvitationByToken(ctx, invitationToken)
 	if err != nil {
 		return err

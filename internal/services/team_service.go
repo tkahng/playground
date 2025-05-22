@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"errors"
 
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/models"
@@ -16,9 +17,11 @@ type TeamService interface {
 	FindLatestTeamInfo(ctx context.Context, userId uuid.UUID) (*shared.TeamInfo, error)
 	AddMember(ctx context.Context, teamId, userId uuid.UUID, role models.TeamMemberRole) (*models.TeamMember, error)
 	RemoveMember(ctx context.Context, teamId, userId uuid.UUID) error
+	CreateTeam(ctx context.Context, name string, slug string, userId uuid.UUID) (*shared.TeamInfo, error)
 }
 
 type TeamStore interface {
+	CreateTeamWithOwnerMember(ctx context.Context, name string, slug string, userId uuid.UUID) (*shared.TeamInfo, error)
 	CountTeamMembers(ctx context.Context, teamId uuid.UUID) (int64, error)
 	FindTeamByStripeCustomerId(ctx context.Context, stripeCustomerId string) (*models.Team, error)
 	FindTeamByID(ctx context.Context, teamId uuid.UUID) (*models.Team, error)
@@ -29,7 +32,7 @@ type TeamStore interface {
 	FindTeamMembersByUserID(ctx context.Context, userId uuid.UUID) ([]*models.TeamMember, error)
 	FindTeamMemberByTeamAndUserId(ctx context.Context, teamId uuid.UUID, userId uuid.UUID) (*models.TeamMember, error)
 	FindLatestTeamMemberByUserID(ctx context.Context, userId uuid.UUID) (*models.TeamMember, error)
-	CreateTeamMember(ctx context.Context, teamId, userId uuid.UUID, role models.TeamMemberRole) (*models.TeamMember, error)
+	CreateTeamMember(ctx context.Context, teamId, userId uuid.UUID, role models.TeamMemberRole, hasBillingAccess bool) (*models.TeamMember, error)
 	DeleteTeamMember(ctx context.Context, teamId, userId uuid.UUID) error
 	UpdateTeamMember(ctx context.Context, member *models.TeamMember) (*models.TeamMember, error)
 	UpdateTeamMemberSelectedAt(ctx context.Context, teamId, userId uuid.UUID) error
@@ -39,9 +42,28 @@ type teamService struct {
 	teamStore TeamStore
 }
 
+// CreateTeam implements TeamService.
+func (t *teamService) CreateTeam(ctx context.Context, name string, slug string, userId uuid.UUID) (*shared.TeamInfo, error) {
+	check, err := t.teamStore.CheckTeamSlug(ctx, slug)
+	if err != nil {
+		return nil, err
+	}
+	if !check {
+		return nil, errors.New("team slug already exists")
+	}
+	teaminfo, err := t.teamStore.CreateTeamWithOwnerMember(ctx, name, slug, userId)
+	if err != nil {
+		return nil, err
+	}
+	if teaminfo == nil {
+		return nil, errors.New("team not found")
+	}
+	return teaminfo, nil
+}
+
 // AddMember implements TeamService.
 func (t *teamService) AddMember(ctx context.Context, teamId uuid.UUID, userId uuid.UUID, role models.TeamMemberRole) (*models.TeamMember, error) {
-	member, err := t.teamStore.CreateTeamMember(ctx, teamId, userId, role)
+	member, err := t.teamStore.CreateTeamMember(ctx, teamId, userId, role, false)
 	if err != nil {
 		return nil, err
 	}

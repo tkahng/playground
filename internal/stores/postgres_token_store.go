@@ -20,6 +20,11 @@ func NewPostgresTokenStore(db database.Dbx) *PostgresTokenStore {
 		db: db,
 	}
 }
+func (p *PostgresTokenStore) WithTx(tx database.Dbx) *PostgresTokenStore {
+	return &PostgresTokenStore{
+		db: tx,
+	}
+}
 
 // var _ services. = &PostgresTokenStore{}
 

@@ -13,6 +13,16 @@ type mockTeamService struct {
 	mock.Mock
 }
 
+// CreateTeam implements TeamService.
+func (m *mockTeamService) CreateTeam(ctx context.Context, name string, slug string, userId uuid.UUID) (*shared.TeamInfo, error) {
+	args := m.Called(ctx, name, slug, userId)
+	var teamInfo *shared.TeamInfo
+	if args.Get(0) != nil {
+		teamInfo = args.Get(0).(*shared.TeamInfo)
+	}
+	return teamInfo, args.Error(1)
+}
+
 // AddMember implements TeamService.
 func (m *mockTeamService) AddMember(ctx context.Context, teamId uuid.UUID, userId uuid.UUID, role models.TeamMemberRole) (*models.TeamMember, error) {
 	args := m.Called(ctx, teamId, userId, role)
@@ -81,6 +91,16 @@ type mockTeamStore struct {
 	mock.Mock
 }
 
+// CreateTeamWithOwnerMember implements TeamStore.
+func (m *mockTeamStore) CreateTeamWithOwnerMember(ctx context.Context, name string, slug string, userId uuid.UUID) (*shared.TeamInfo, error) {
+	args := m.Called(ctx, name, slug, userId)
+	var teamInfo *shared.TeamInfo
+	if args.Get(0) != nil {
+		teamInfo = args.Get(0).(*shared.TeamInfo)
+	}
+	return teamInfo, args.Error(1)
+}
+
 // CheckTeamSlug implements TeamStore.
 func (m *mockTeamStore) CheckTeamSlug(ctx context.Context, slug string) (bool, error) {
 	args := m.Called(ctx, slug)
@@ -108,8 +128,8 @@ func (m *mockTeamStore) CreateTeam(ctx context.Context, name string, slug string
 }
 
 // CreateTeamMember implements TeamStore.
-func (m *mockTeamStore) CreateTeamMember(ctx context.Context, teamId uuid.UUID, userId uuid.UUID, role models.TeamMemberRole) (*models.TeamMember, error) {
-	args := m.Called(ctx, teamId, userId, role)
+func (m *mockTeamStore) CreateTeamMember(ctx context.Context, teamId uuid.UUID, userId uuid.UUID, role models.TeamMemberRole, hasBillingAccess bool) (*models.TeamMember, error) {
+	args := m.Called(ctx, teamId, userId, role, hasBillingAccess)
 	var member *models.TeamMember
 	if args.Get(0) != nil {
 		member = args.Get(0).(*models.TeamMember)
@@ -256,8 +276,8 @@ type mockTeamInvitationStore struct {
 }
 
 // CreateTeamMember implements TeamInvitationStore.
-func (m *mockTeamInvitationStore) CreateTeamMember(ctx context.Context, teamId uuid.UUID, userId uuid.UUID, role models.TeamMemberRole) (*models.TeamMember, error) {
-	args := m.Called(ctx, teamId, userId, role)
+func (m *mockTeamInvitationStore) CreateTeamMember(ctx context.Context, teamId uuid.UUID, userId uuid.UUID, role models.TeamMemberRole, hasBillingAccess bool) (*models.TeamMember, error) {
+	args := m.Called(ctx, teamId, userId, role, hasBillingAccess)
 	var member *models.TeamMember
 	if args.Get(0) != nil {
 		member = args.Get(0).(*models.TeamMember)

@@ -21,6 +21,12 @@ type PostgresUserStore struct {
 	db database.Dbx
 }
 
+func (p *PostgresUserStore) WithTx(tx database.Dbx) *PostgresUserStore {
+	return &PostgresUserStore{
+		db: tx,
+	}
+}
+
 func NewPostgresUserStore(db database.Dbx) *PostgresUserStore {
 	return &PostgresUserStore{
 		db: db,

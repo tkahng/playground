@@ -109,7 +109,7 @@ func TestCreateTeamMember(t *testing.T) {
 			t.Fatalf("CreateUser() error = %v", err)
 		}
 		userID := user.ID
-		member, err := teamStore.CreateTeamMember(ctx, team.ID, userID, models.TeamMemberRoleMember)
+		member, err := teamStore.CreateTeamMember(ctx, team.ID, userID, models.TeamMemberRoleMember, true)
 		if err != nil {
 			t.Fatalf("CreateTeamMember() error = %v", err)
 		}
@@ -137,7 +137,7 @@ func TestFindTeamMembersByUserID(t *testing.T) {
 			t.Fatalf("CreateUser() error = %v", err)
 		}
 		userID := user.ID
-		_, err = teamStore.CreateTeamMember(ctx, team.ID, userID, models.TeamMemberRoleMember)
+		_, err = teamStore.CreateTeamMember(ctx, team.ID, userID, models.TeamMemberRoleMember, true)
 		if err != nil {
 			t.Fatalf("CreateTeamMember() error = %v", err)
 		}
@@ -173,11 +173,11 @@ func TestFindLatestTeamMemberByUserID(t *testing.T) {
 			t.Fatalf("CreateUser() error = %v", err)
 		}
 		userID := user.ID
-		teamMember1, err := teamStore.CreateTeamMember(ctx, team1.ID, userID, models.TeamMemberRoleMember)
+		teamMember1, err := teamStore.CreateTeamMember(ctx, team1.ID, userID, models.TeamMemberRoleMember, true)
 		if err != nil {
 			t.Fatalf("CreateTeamMember() error = %v", err)
 		}
-		teamMember2, err := teamStore.CreateTeamMember(ctx, team2.ID, userID, models.TeamMemberRoleMember)
+		teamMember2, err := teamStore.CreateTeamMember(ctx, team2.ID, userID, models.TeamMemberRoleMember, true)
 		if err != nil {
 			t.Fatalf("CreateTeamMember() error = %v", err)
 		}
@@ -247,7 +247,7 @@ func TestUpdateTeamMemberUpdatedAt(t *testing.T) {
 		if err != nil {
 			t.Fatalf("CreateUser() error = %v", err)
 		}
-		member, err := teamStore.CreateTeamMember(ctx, team.ID, user.ID, models.TeamMemberRoleMember)
+		member, err := teamStore.CreateTeamMember(ctx, team.ID, user.ID, models.TeamMemberRoleMember, true)
 		if err != nil {
 			t.Fatalf("CreateTeamMember() error = %v", err)
 		}
@@ -301,7 +301,7 @@ func TestUpdateTeamMemberSelectedAt(t *testing.T) {
 		if err != nil {
 			t.Fatalf("CreateUser() error = %v", err)
 		}
-		member, err := teamStore.CreateTeamMember(ctx, team.ID, user.ID, models.TeamMemberRoleMember)
+		member, err := teamStore.CreateTeamMember(ctx, team.ID, user.ID, models.TeamMemberRoleMember, true)
 		if err != nil {
 			t.Fatalf("CreateTeamMember() error = %v", err)
 		}
@@ -443,7 +443,7 @@ func TestPostgresInvitationStore_CRUD(t *testing.T) {
 		if err != nil {
 			t.Fatalf("CreateUser() error = %v", err)
 		}
-		member, err := teamStore.CreateTeamMember(ctx, team.ID, user.ID, models.TeamMemberRole("owner"))
+		member, err := teamStore.CreateTeamMember(ctx, team.ID, user.ID, models.TeamMemberRole("owner"), true)
 		if err != nil {
 			t.Fatalf("CreateTeamMember() error = %v", err)
 		}

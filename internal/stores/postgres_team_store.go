@@ -19,6 +19,48 @@ type PostgresTeamStore struct {
 	db database.Dbx
 }
 
+func NewPostgresTeamStore(db database.Dbx) *PostgresTeamStore {
+	return &PostgresTeamStore{
+		db: db,
+	}
+}
+func (p *PostgresTeamStore) WithTx(tx database.Dbx) *PostgresTeamStore {
+	return &PostgresTeamStore{
+		db: tx,
+	}
+}
+
+// CreateTeamWithOwnerMember implements services.TeamStore.
+func (p *PostgresTeamStore) CreateTeamWithOwnerMember(ctx context.Context, name string, slug string, userId uuid.UUID) (*shared.TeamInfo, error) {
+	var teamInfo *shared.TeamInfo
+	p.db.RunInTransaction(
+		ctx,
+		func(d database.Dbx) error {
+			store := p.WithTx(d)
+			team, err := store.CreateTeam(ctx, name, slug)
+			if err != nil {
+				return err
+			}
+			if team == nil {
+				return fmt.Errorf("team not found")
+			}
+			teamMember, err := store.CreateTeamMember(ctx, team.ID, userId, models.TeamMemberRoleOwner, true)
+			if err != nil {
+				return err
+			}
+			if teamMember == nil {
+				return fmt.Errorf("team member not found")
+			}
+			teamInfo = &shared.TeamInfo{
+				Team:   *team,
+				Member: *teamMember,
+			}
+			return nil
+		},
+	)
+	return teamInfo, nil
+}
+
 func (p *PostgresTeamStore) CreateTeamFromUser(ctx context.Context, user *models.User) (*models.TeamMember, error) {
 	team, err := crudrepo.Team.PostOne(
 		ctx,
@@ -253,12 +295,6 @@ func (s *PostgresTeamStore) CountTeamMembers(ctx context.Context, teamId uuid.UU
 	return c, nil
 }
 
-func NewPostgresTeamStore(db database.Dbx) *PostgresTeamStore {
-	return &PostgresTeamStore{
-		db: db,
-	}
-}
-
 // var _ services.TeamInvitationStore = &PostgresTeamStore{}
 var _ services.TeamStore = &PostgresTeamStore{}
 var _ services.TeamInvitationStore = &PostgresTeamStore{}
@@ -423,12 +459,13 @@ func (q *PostgresTeamStore) CreateTeam(ctx context.Context, name string, slug st
 	return team, nil
 }
 
-func (q *PostgresTeamStore) CreateTeamMember(ctx context.Context, teamId, userId uuid.UUID, role models.TeamMemberRole) (*models.TeamMember, error) {
+func (q *PostgresTeamStore) CreateTeamMember(ctx context.Context, teamId, userId uuid.UUID, role models.TeamMemberRole, hasBillingAccess bool) (*models.TeamMember, error) {
 	teamMember := &models.TeamMember{
-		TeamID: teamId,
-		UserID: &userId,
-		Role:   role,
-		Active: true,
+		TeamID:           teamId,
+		UserID:           &userId,
+		Role:             role,
+		Active:           true,
+		HasBillingAccess: hasBillingAccess,
 	}
 	return crudrepo.TeamMember.PostOne(
 		ctx,
