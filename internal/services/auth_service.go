@@ -15,6 +15,7 @@ import (
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mailer"
 	"github.com/tkahng/authgo/internal/tools/security"
+	"golang.org/x/oauth2"
 )
 
 type AuthService interface {
@@ -26,6 +27,7 @@ type AuthService interface {
 	HandlePasswordResetToken(ctx context.Context, token, password string) error
 	CheckResetPasswordToken(ctx context.Context, token string) error
 	VerifyStateToken(ctx context.Context, token string) (*shared.ProviderStateClaims, error)
+	CreateOAuthUrl(ctx context.Context, provider shared.Providers, redirectUrl string) (string, error)
 	CreateAndPersistStateToken(ctx context.Context, payload *shared.ProviderStatePayload) (string, error)
 	FetchAuthUser(ctx context.Context, code string, parsedState *shared.ProviderStateClaims) (*oauth.AuthUser, error)
 	VerifyAndParseOtpToken(ctx context.Context, emailType EmailType, token string) (*shared.OtpClaims, error)
@@ -59,20 +61,9 @@ type AuthTokenStore interface {
 }
 
 type AuthStore interface {
-	// GetUserInfo(ctx context.Context, email string) (*shared.UserInfo, error)
-	// CreateUser(ctx context.Context, user *models.User) (*models.User, error)
-	// AssignUserRoles(ctx context.Context, userId uuid.UUID, roleNames ...string) error
-	// FindUserByEmail(ctx context.Context, email string) (*models.User, error)
-	// UpdateUser(ctx context.Context, user *models.User) error
-	// DeleteUser(ctx context.Context, id uuid.UUID) error
 	AuthUserStore
-	GetToken(ctx context.Context, token string) (*models.Token, error)
-	SaveToken(ctx context.Context, token *shared.CreateTokenDTO) error
-	DeleteToken(ctx context.Context, token string) error
-	FindUserAccountByUserIdAndProvider(ctx context.Context, userId uuid.UUID, provider models.Providers) (*models.UserAccount, error)
-	UpdateUserAccount(ctx context.Context, account *models.UserAccount) error
-	LinkAccount(ctx context.Context, account *models.UserAccount) error
-	UnlinkAccount(ctx context.Context, userId uuid.UUID, provider models.Providers) error
+	AuthAccountStore
+	AuthTokenStore
 }
 
 var _ AuthService = (*BaseAuthService)(nil)
@@ -85,6 +76,53 @@ type BaseAuthService struct {
 	password  PasswordService
 	options   *conf.AppOptions
 }
+
+// CreateOAuthUrl implements AuthService.
+func (app *BaseAuthService) CreateOAuthUrl(ctx context.Context, providerName shared.Providers, redirectUrl string) (string, error) {
+	action := app
+	redirectTo := redirectUrl
+	if redirectTo == "" {
+		redirectTo = app.options.Meta.AppUrl
+	}
+	provider := oauth.NewProviderByName(string(providerName))
+	if provider == nil {
+		return "", fmt.Errorf("provider %v not found", providerName)
+	}
+	if !provider.Active() {
+		return "", fmt.Errorf("provider %v is not enabled", providerName)
+	}
+	urlOpts := []oauth2.AuthCodeOption{
+		oauth2.AccessTypeOffline,
+	}
+	info := &shared.ProviderStatePayload{
+		Type:       shared.TokenTypesStateToken,
+		Provider:   providerName,
+		RedirectTo: redirectTo,
+		Token:      security.GenerateTokenKey(),
+	}
+	if provider.Pkce() {
+
+		info.CodeVerifier = security.RandomString(43)
+		info.CodeChallenge = security.S256Challenge(info.CodeVerifier)
+		info.CodeChallengeMethod = "S256"
+		urlOpts = append(urlOpts,
+			oauth2.SetAuthURLParam("code_challenge", info.CodeChallenge),
+			oauth2.SetAuthURLParam("code_challenge_method", info.CodeChallengeMethod),
+		)
+	}
+	state, err := action.CreateAndPersistStateToken(ctx, info)
+	if err != nil {
+		return "", err
+	}
+	res := provider.BuildAuthURL(state, urlOpts...)
+	if res == "" {
+		return "", fmt.Errorf("error at building auth url")
+	}
+	return res, nil
+}
+
+// FireAndForget implements AuthService.
+// Subtle: this method shadows the method (WorkerService).FireAndForget of BaseAuthService.WorkerService.
 
 func NewAuthService(
 	opts *conf.AppOptions,
@@ -108,14 +146,9 @@ func NewAuthService(
 
 // FetchAuthUser implements Authenticator.
 func (app *BaseAuthService) FetchAuthUser(ctx context.Context, code string, parsedState *shared.ProviderStateClaims) (*oauth.AuthUser, error) {
-	var provider oauth.ProviderConfig
-	switch parsedState.Provider {
-	case shared.OAuthProvidersGithub:
-		provider = oauth.NewProviderByName(oauth.NameGithub)
-	case shared.OAuthProvidersGoogle:
-		provider = oauth.NewProviderByName(oauth.NameGoogle)
-	default:
-		return nil, fmt.Errorf("invalid provider %v", parsedState.Provider)
+	var provider oauth.ProviderConfig = oauth.NewProviderByName(string(parsedState.Provider))
+	if provider == nil {
+		return nil, fmt.Errorf("provider %v not found", parsedState.Provider)
 	}
 	if !provider.Active() {
 		return nil, fmt.Errorf("provider %v is not enabled", parsedState.Provider)

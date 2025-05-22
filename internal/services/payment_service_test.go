@@ -299,10 +299,6 @@ func (m *mockPaymentStore) CountTeamMembers(ctx context.Context, teamId uuid.UUI
 	return args.Get(0).(int64), args.Error(1)
 }
 
-// ...other methods can be added as needed...
-
-// ...other methods can be added as needed...
-
 func TestStripeService_VerifyAndUpdateTeamSubscriptionQuantity(t *testing.T) {
 	ctx := context.Background()
 	teamId := uuid.New()

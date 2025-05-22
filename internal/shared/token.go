@@ -65,13 +65,13 @@ type ProviderStateClaims struct {
 type ProviderStatePayload struct {
 	// UserId              uuid.UUID        `json:"user_id,omitempty"`
 	// Email               string           `json:"email,omitempty"`
-	Token               string         `json:"token"`
-	Type                TokenType      `json:"type"`
-	Provider            OAuthProviders `json:"provider"`
-	CodeVerifier        string         `json:"code_verifier,omitempty"`
-	CodeChallenge       string         `json:"code_challenge,omitempty"`
-	CodeChallengeMethod string         `json:"code_challenge_method,omitempty"`
-	RedirectTo          string         `json:"redirect_to,omitempty"`
+	Token               string    `json:"token"`
+	Type                TokenType `json:"type"`
+	Provider            Providers `json:"provider"`
+	CodeVerifier        string    `json:"code_verifier,omitempty"`
+	CodeChallenge       string    `json:"code_challenge,omitempty"`
+	CodeChallengeMethod string    `json:"code_challenge_method,omitempty"`
+	RedirectTo          string    `json:"redirect_to,omitempty"`
 }
 
 // ----------- Password Reset Claims -----------------

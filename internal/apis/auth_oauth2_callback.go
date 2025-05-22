@@ -92,19 +92,12 @@ func OAuth2Callback(ctx context.Context, api *Api, input *OAuth2CallbackInput) (
 	if err != nil {
 		return nil, fmt.Errorf("error at Oatuh2Callback: %w", err)
 	}
-	var prv shared.Providers
-	switch parsedState.Provider {
-	case shared.OAuthProvidersGithub:
-		prv = shared.ProvidersGithub
-	case shared.OAuthProvidersGoogle:
-		prv = shared.ProvidersGoogle
-	}
 	params := &shared.AuthenticationInput{
 		AvatarUrl:         &authUser.AvatarURL,
 		Email:             authUser.Email,
 		Name:              &authUser.Username,
 		EmailVerifiedAt:   &authUser.Expiry,
-		Provider:          prv,
+		Provider:          parsedState.Provider,
 		Type:              shared.ProviderTypeOAuth,
 		ProviderAccountID: authUser.Id,
 		AccessToken:       &authUser.AccessToken,
