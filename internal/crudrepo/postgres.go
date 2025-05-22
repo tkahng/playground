@@ -54,6 +54,7 @@ func (r *PostgresCrudRepo[Model]) Get(ctx context.Context, db database.Dbx, wher
 	}
 
 	// Execute the query and scan the results
+	fmt.Println("query", query, "args", args)
 	result, err := pgxscan.All(ctx, db, scan.StructMapper[*Model](), query, args...)
 	if err != nil {
 		slog.ErrorContext(ctx, "Error executing Get query", slog.String("query", query), slog.Any("args", args), slog.Any("error", err))

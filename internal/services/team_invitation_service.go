@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/tkahng/authgo/internal/conf"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/tools/security"
 )
@@ -17,6 +18,7 @@ type TeamInvitationService interface {
 		userId uuid.UUID,
 		email string,
 		role models.TeamMemberRole,
+		resend bool,
 	) error
 	CheckValidInvitation(
 		ctx context.Context,
@@ -68,10 +70,16 @@ type TeamInvitationStore interface {
 		ctx context.Context,
 		teamId uuid.UUID,
 	) ([]*models.TeamInvitation, error)
+	FindPendingInvitation(
+		ctx context.Context,
+		teamId uuid.UUID,
+		email string,
+	) (*models.TeamInvitation, error)
 }
 
 type InvitationService struct {
-	store TeamInvitationStore
+	store     TeamInvitationStore
+	tokenOpts conf.TokenOption
 }
 
 // CheckValidInvitation implements TeamInvitationService.
@@ -101,7 +109,7 @@ func (i *InvitationService) CheckValidInvitation(ctx context.Context, invitation
 
 var _ TeamInvitationService = (*InvitationService)(nil)
 
-func NewInvitationService(store TeamInvitationStore) TeamInvitationService {
+func NewInvitationService(store TeamInvitationStore, opts conf.TokenOption) TeamInvitationService {
 	return &InvitationService{
 		store: store,
 	}
@@ -148,6 +156,7 @@ func (i *InvitationService) CreateInvitation(
 	userId uuid.UUID,
 	email string,
 	role models.TeamMemberRole,
+	resend bool,
 ) error {
 	token := security.GenerateTokenKey()
 

@@ -274,8 +274,8 @@ func (m *mockTeamInvitationService) AcceptInvitation(ctx context.Context, invita
 }
 
 // CreateInvitation implements TeamInvitationService.
-func (m *mockTeamInvitationService) CreateInvitation(ctx context.Context, teamId uuid.UUID, userId uuid.UUID, email string, role models.TeamMemberRole) error {
-	args := m.Called(ctx, teamId, userId, email, role)
+func (m *mockTeamInvitationService) CreateInvitation(ctx context.Context, teamId uuid.UUID, userId uuid.UUID, email string, role models.TeamMemberRole, resend bool) error {
+	args := m.Called(ctx, teamId, userId, email, role, resend)
 	return args.Error(0)
 }
 
@@ -299,6 +299,16 @@ var _ TeamInvitationService = (*mockTeamInvitationService)(nil)
 
 type mockTeamInvitationStore struct {
 	mock.Mock
+}
+
+// FindPendingInvitation implements TeamInvitationStore.
+func (m *mockTeamInvitationStore) FindPendingInvitation(ctx context.Context, teamId uuid.UUID, email string) (*models.TeamInvitation, error) {
+	args := m.Called(ctx, teamId, email)
+	var invitation *models.TeamInvitation
+	if args.Get(0) != nil {
+		invitation = args.Get(0).(*models.TeamInvitation)
+	}
+	return invitation, args.Error(1)
 }
 
 // CreateTeamMember implements TeamInvitationStore.

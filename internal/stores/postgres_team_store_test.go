@@ -543,3 +543,101 @@ func TestPostgresTeamStore_FindTeamByStripeCustomerId(t *testing.T) {
 		return errors.New("rollback")
 	})
 }
+func TestPostgresTeamStore_FindPendingInvitation(t *testing.T) {
+	test.Short(t)
+	ctx, dbx := test.DbSetup()
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+		teamStore := stores.NewPostgresTeamStore(dbxx)
+		userStore := stores.NewPostgresUserStore(dbxx)
+
+		// Create team and user
+		team, err := teamStore.CreateTeam(ctx, "PendingInviteTeam", "pending-invite-team-slug")
+		if err != nil {
+			t.Fatalf("CreateTeam() error = %v", err)
+		}
+		user, err := userStore.CreateUser(ctx, &models.User{
+			Email: "pendinginvite@example.com",
+		})
+		if err != nil {
+			t.Fatalf("CreateUser() error = %v", err)
+		}
+		member, err := teamStore.CreateTeamMember(ctx, team.ID, user.ID, models.TeamMemberRoleOwner, true)
+		if err != nil {
+			t.Fatalf("CreateTeamMember() error = %v", err)
+		}
+
+		// Create a pending invitation
+		token := uuid.NewString()
+		expiresAt := time.Now().Add(1 * time.Hour)
+		invitation := &models.TeamInvitation{
+			TeamID:          team.ID,
+			InviterMemberID: member.ID,
+			Email:           "invitee-pending@example.com",
+			Role:            models.TeamMemberRoleMember,
+			Token:           token,
+			Status:          models.TeamInvitationStatusPending,
+			ExpiresAt:       expiresAt,
+		}
+		err = teamStore.CreateInvitation(ctx, invitation)
+		if err != nil {
+			t.Fatalf("CreateInvitation() error = %v", err)
+		}
+
+		// Should find the pending invitation
+		found, err := teamStore.FindPendingInvitation(ctx, team.ID, "invitee-pending@example.com")
+		if err != nil {
+			t.Fatalf("FindPendingInvitation() error = %v", err)
+		}
+		if found == nil || found.Email != "invitee-pending@example.com" {
+			t.Errorf("FindPendingInvitation() = %v, want email %v", found, "invitee-pending@example.com")
+		}
+
+		// Create an expired invitation
+		expiredInvitation := &models.TeamInvitation{
+			TeamID:          team.ID,
+			InviterMemberID: member.ID,
+			Email:           "expired@example.com",
+			Role:            models.TeamMemberRoleMember,
+			Token:           uuid.NewString(),
+			Status:          models.TeamInvitationStatusPending,
+			ExpiresAt:       time.Now().Add(-1 * time.Hour),
+		}
+		err = teamStore.CreateInvitation(ctx, expiredInvitation)
+		if err != nil {
+			t.Fatalf("CreateInvitation() error = %v", err)
+		}
+
+		// Should not find the expired invitation
+		expired, err := teamStore.FindPendingInvitation(ctx, team.ID, "expired@example.com")
+		if err != nil {
+			t.Fatalf("FindPendingInvitation() error = %v", err)
+		}
+		if expired != nil {
+			t.Errorf("Expected no pending invitation for expired, got %v", expired)
+		}
+
+		// Should not find for wrong email
+		notFound, err := teamStore.FindPendingInvitation(ctx, team.ID, "notfound@example.com")
+		if err != nil {
+			t.Fatalf("FindPendingInvitation() error = %v", err)
+		}
+		if notFound != nil {
+			t.Errorf("Expected nil for not found email, got %v", notFound)
+		}
+
+		// Should not find for wrong team
+		otherTeam, err := teamStore.CreateTeam(ctx, "OtherTeam", "other-team-slug")
+		if err != nil {
+			t.Fatalf("CreateTeam() error = %v", err)
+		}
+		other, err := teamStore.FindPendingInvitation(ctx, otherTeam.ID, "invitee-pending@example.com")
+		if err != nil {
+			t.Fatalf("FindPendingInvitation() error = %v", err)
+		}
+		if other != nil {
+			t.Errorf("Expected nil for other team, got %v", other)
+		}
+
+		return errors.New("rollback")
+	})
+}

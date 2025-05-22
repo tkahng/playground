@@ -31,6 +31,7 @@ type AuthOptions struct {
 	VerificationToken  TokenOption `form:"verification_token" json:"verification_token"`
 	RefreshToken       TokenOption `form:"refresh_token" json:"refresh_token"`
 	StateToken         TokenOption `form:"state_token" json:"state_token"`
+	InviteToken        TokenOption `form:"invite_token" json:"invite_token"`
 }
 
 func NewTokenOptions() AuthOptions {
@@ -59,6 +60,11 @@ func NewTokenOptions() AuthOptions {
 			Type:     shared.TokenTypesStateToken,
 			Secret:   string(shared.TokenTypesStateToken),
 			Duration: 1800, // 30min
+		},
+		InviteToken: TokenOption{
+			Type:     shared.TokenTypesInviteToken,
+			Secret:   string(shared.TokenTypesInviteToken),
+			Duration: 604800, // 7days
 		},
 	}
 }

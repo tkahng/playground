@@ -38,6 +38,32 @@ type PostgresTeamStore struct {
 	db database.Dbx
 }
 
+// FindPendingInvitation implements services.TeamInvitationStore.
+func (p *PostgresTeamStore) FindPendingInvitation(ctx context.Context, teamId uuid.UUID, email string) (*models.TeamInvitation, error) {
+	invitation, err := crudrepo.TeamInvitation.GetOne(
+		ctx,
+		p.db,
+		&map[string]any{
+			"team_id": map[string]any{
+				"_eq": teamId.String(),
+			},
+			"email": map[string]any{
+				"_eq": email,
+			},
+			"status": map[string]any{
+				"_eq": string(models.TeamInvitationStatusPending),
+			},
+			"expires_at": map[string]any{
+				"_gt": time.Now().Format(time.RFC3339Nano),
+			},
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return invitation, nil
+}
+
 func NewPostgresTeamStore(db database.Dbx) *PostgresTeamStore {
 	return &PostgresTeamStore{
 		db: db,
