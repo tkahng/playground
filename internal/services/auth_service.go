@@ -79,7 +79,6 @@ type BaseAuthService struct {
 
 // CreateOAuthUrl implements AuthService.
 func (app *BaseAuthService) CreateOAuthUrl(ctx context.Context, providerName shared.Providers, redirectUrl string) (string, error) {
-	action := app
 	redirectTo := redirectUrl
 	if redirectTo == "" {
 		redirectTo = app.options.Meta.AppUrl
@@ -110,7 +109,7 @@ func (app *BaseAuthService) CreateOAuthUrl(ctx context.Context, providerName sha
 			oauth2.SetAuthURLParam("code_challenge_method", info.CodeChallengeMethod),
 		)
 	}
-	state, err := action.CreateAndPersistStateToken(ctx, info)
+	state, err := app.CreateAndPersistStateToken(ctx, info)
 	if err != nil {
 		return "", err
 	}
