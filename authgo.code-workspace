@@ -139,7 +139,8 @@
       "*": true,
       "plaintext": false,
       "markdown": false,
-      "scminput": false
+      "scminput": false,
+      "go": true
     },
     "github.copilot.nextEditSuggestions.enabled": true
   }
