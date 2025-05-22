@@ -41,9 +41,10 @@ func run(ctx context.Context) error {
 	ctx, cancel := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM, syscall.SIGHUP, syscall.SIGINT)
 	defer cancel()
 	opts := conf.AppConfigGetter()
-	app := core.InitBaseApp(ctx, opts)
+	app := core.NewBApp(ctx, opts)
+	appApi := apis.NewApi(app)
 	srv, api := apis.NewServer()
-	apis.AddRoutes(api, app)
+	apis.AddRoutes(api, appApi)
 	if port == 0 {
 		port = 8080
 	}

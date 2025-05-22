@@ -25,10 +25,7 @@ type IndexOutput struct {
 	Body IndexOutputBody `json:"body"`
 }
 
-func BindApis(api huma.API, app core.App) {
-	appApi := &Api{
-		app: app,
-	}
+func BindApis(api huma.API, appApi *Api) {
 	huma.Get(api, "/", func(ctx context.Context, input *struct {
 		Page shared.OmittableNullable[string] `query:"page" required:"false"`
 	}) (*IndexOutput, error) {
@@ -113,7 +110,7 @@ func BindApis(api huma.API, app core.App) {
 
 }
 
-func AddRoutes(api huma.API, app core.App) {
-	BindMiddlewares(api, app)
-	BindApis(api, app)
+func AddRoutes(api huma.API, appApi *Api) {
+	BindMiddlewares(api, appApi.app)
+	BindApis(api, appApi)
 }

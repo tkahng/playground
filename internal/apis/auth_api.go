@@ -3,13 +3,8 @@ package apis
 import (
 	"net/http"
 
-	"github.com/tkahng/authgo/internal/core"
 	"github.com/tkahng/authgo/internal/shared"
 )
-
-type Api struct {
-	app core.App
-}
 
 type SetCookieOutput struct {
 	SetCookie []http.Cookie `header:"Set-Cookie"`

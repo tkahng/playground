@@ -16,6 +16,37 @@ import (
 	"github.com/tkahng/authgo/internal/tools/payment"
 )
 
+type AppFactory interface {
+	New(
+		fs *filesystem.FileSystem,
+		pool *database.Queries,
+		settings *conf.AppOptions,
+		cfg conf.EnvConfig,
+		mail mailer.Mailer,
+		authService services.AuthService,
+		paymentService services.PaymentService,
+		checker *services.ConstraintCheckerService,
+		rbacService services.RBACService,
+		userService services.UserService,
+		userAccountService services.UserAccountService,
+		taskService services.TaskService,
+	) *BaseApp
+}
+type NewAppFunc func(
+	fs *filesystem.FileSystem,
+	pool *database.Queries,
+	settings *conf.AppOptions,
+	cfg conf.EnvConfig,
+	mail mailer.Mailer,
+	authService services.AuthService,
+	paymentService services.PaymentService,
+	checker *services.ConstraintCheckerService,
+	rbacService services.RBACService,
+	userService services.UserService,
+	userAccountService services.UserAccountService,
+	taskService services.TaskService,
+) *BaseApp
+
 var _ App = (*BaseApp)(nil)
 
 type BaseApp struct {
@@ -103,7 +134,7 @@ func (app *BaseApp) NewMailClient() mailer.Mailer {
 	return app.mail
 }
 
-func InitBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
+func NewBApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 	settings := cfg.ToSettings()
 	pool := database.CreateQueries(ctx, cfg.Db.DatabaseUrl)
 	fs, err := filesystem.NewFileSystem(cfg.StorageConfig)
@@ -148,12 +179,18 @@ func InitBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 	checker := services.NewConstraintCheckerService(
 		checkerStore,
 	)
+	l := logger.GetDefaultLogger(slog.LevelInfo)
 
+	app := NewApp(fs, pool, settings, l, cfg, mail, authService, paymentService, checker, rbacService, userService, userAccountService, taskService)
+	return app
+}
+
+func NewApp(fs *filesystem.FileSystem, pool *database.Queries, settings *conf.AppOptions, logger *slog.Logger, cfg conf.EnvConfig, mail mailer.Mailer, authService services.AuthService, paymentService services.PaymentService, checker *services.ConstraintCheckerService, rbacService services.RBACService, userService services.UserService, userAccountService services.UserAccountService, taskService services.TaskService) *BaseApp {
 	app := &BaseApp{
 		fs:       fs,
 		db:       pool,
 		settings: settings,
-		logger:   logger.GetDefaultLogger(slog.LevelInfo),
+		logger:   logger,
 		cfg:      &cfg,
 		mail:     mail,
 		auth:     authService,
