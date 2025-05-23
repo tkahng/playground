@@ -19,7 +19,7 @@ func (api *Api) Stats(ctx context.Context, input *struct{}) (*StatsResponse, err
 	if user == nil {
 		return nil, errors.New("user not found")
 	}
-	stats, err := queries.GetUserTaskStats(ctx, db, user.User.ID)
+	stats, err := queries.GetTeamTaskStats(ctx, db, user.User.ID)
 	if err != nil {
 		return nil, err
 	}

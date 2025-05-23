@@ -15,7 +15,7 @@ WITH project_stats AS (
             WHERE tp.status = 'done'
         ) as completed_projects
     FROM task_projects tp
-    WHERE tp.user_id = $1
+    WHERE tp.team_id = $1
 ),
 task_stats AS (
     SELECT COUNT(*) as total_tasks,
@@ -23,7 +23,7 @@ task_stats AS (
             WHERE t.status = 'done'
         ) as completed_tasks
     FROM tasks t
-    WHERE t.user_id = $1
+    WHERE t.team_id = $1
 )
 SELECT ps.total_projects,
     ps.completed_projects,
@@ -33,8 +33,8 @@ FROM project_stats ps
     CROSS JOIN task_stats ts;
 	`
 
-func GetUserTaskStats(ctx context.Context, db database.Dbx, userID uuid.UUID) (*shared.TaskStats, error) {
-	res, err := database.QueryAll[shared.TaskStats](ctx, db, TaskStatsQuery, userID)
+func GetTeamTaskStats(ctx context.Context, db database.Dbx, teamId uuid.UUID) (*shared.TaskStats, error) {
+	res, err := database.QueryAll[shared.TaskStats](ctx, db, TaskStatsQuery, teamId)
 	if err != nil {
 		return nil, err
 	}

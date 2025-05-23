@@ -6,7 +6,7 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 )
 
-func TestBindTeamsApi(t *testing.T) {
+func TestCreateTeamApi(t *testing.T) {
 	type args struct {
 		api    huma.API
 		appApi *Api

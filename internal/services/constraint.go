@@ -110,7 +110,7 @@ func (c *ConstraintCheckerService) CannotBeSuperUserID(ctx context.Context, user
 		return false, err
 	}
 	if user == nil {
-		return false, huma.Error400BadRequest("User not found")
+		return true, nil
 	}
 	if user.Email == shared.SuperUserEmail {
 		return false, huma.Error400BadRequest("Cannot perform this action on the super user")

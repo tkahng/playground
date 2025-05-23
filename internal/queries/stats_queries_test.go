@@ -65,7 +65,7 @@ func TestGetUserTaskStats(t *testing.T) {
 		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				got, err := queries.GetUserTaskStats(tt.args.ctx, tt.args.db, tt.args.userID)
+				got, err := queries.GetTeamTaskStats(tt.args.ctx, tt.args.db, tt.args.userID)
 				if (err != nil) != tt.wantErr {
 					t.Errorf("GetUserTaskStats() error = %v, wantErr %v", err, tt.wantErr)
 					return
