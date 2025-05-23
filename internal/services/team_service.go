@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/authgo/internal/tools/mapper"
 )
 
 type TeamService interface {
@@ -21,6 +22,7 @@ type TeamService interface {
 	CreateTeam(ctx context.Context, name string, slug string, userId uuid.UUID) (*shared.TeamInfo, error)
 	UpdateTeam(ctx context.Context, teamId uuid.UUID, name string) (*models.Team, error)
 	DeleteTeam(ctx context.Context, teamId uuid.UUID, userId uuid.UUID) error
+	FindTeamMembersByUserID(ctx context.Context, userId uuid.UUID, paginate *shared.PaginatedInput) ([]*models.TeamMember, error)
 }
 
 type TeamStripeStore interface {
@@ -32,6 +34,7 @@ type TeamStore interface {
 	CountTeamMembers(ctx context.Context, teamId uuid.UUID) (int64, error)
 	FindTeamByStripeCustomerId(ctx context.Context, stripeCustomerId string) (*models.Team, error)
 	FindTeamByID(ctx context.Context, teamId uuid.UUID) (*models.Team, error)
+	LoadTeamsByIds(ctx context.Context, teamIds ...uuid.UUID) ([]*models.Team, error)
 	CreateTeam(ctx context.Context, name string, slug string) (*models.Team, error)
 	CheckTeamSlug(ctx context.Context, slug string) (bool, error)
 	UpdateTeam(ctx context.Context, teamId uuid.UUID, name string) (*models.Team, error)
@@ -53,6 +56,31 @@ type TeamServiceStore interface {
 
 type teamService struct {
 	teamStore TeamServiceStore
+}
+
+// FindTeamMembersByUserID implements TeamService.
+func (t *teamService) FindTeamMembersByUserID(ctx context.Context, userId uuid.UUID, paginate *shared.PaginatedInput) ([]*models.TeamMember, error) {
+	members, err := t.teamStore.FindTeamMembersByUserID(ctx, userId, paginate)
+	if err != nil {
+		return nil, err
+	}
+	if members == nil {
+		return nil, nil
+	}
+	teamIds := mapper.Map(members, func(member *models.TeamMember) uuid.UUID {
+		return member.TeamID
+	})
+	teams, err := t.teamStore.LoadTeamsByIds(ctx, teamIds...)
+	if err != nil {
+		return nil, err
+	}
+	for idx, member := range members {
+		team := teams[idx]
+		if team != nil {
+			member.Team = team
+		}
+	}
+	return members, nil
 }
 
 func NewTeamService(store TeamServiceStore) TeamService {

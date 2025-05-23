@@ -13,6 +13,16 @@ type mockTeamService struct {
 	mock.Mock
 }
 
+// FindTeamMembersByUserID implements TeamService.
+func (m *mockTeamService) FindTeamMembersByUserID(ctx context.Context, userId uuid.UUID, paginate *shared.PaginatedInput) ([]*models.TeamMember, error) {
+	args := m.Called(ctx, userId, paginate)
+	var members []*models.TeamMember
+	if args.Get(0) != nil {
+		members = args.Get(0).([]*models.TeamMember)
+	}
+	return members, args.Error(1)
+}
+
 // LeaveTeam implements TeamService.
 func (m *mockTeamService) LeaveTeam(ctx context.Context, teamId uuid.UUID, userId uuid.UUID) error {
 	args := m.Called(ctx, teamId, userId)
@@ -111,6 +121,16 @@ var _ TeamService = (*mockTeamService)(nil)
 
 type mockTeamStore struct {
 	mock.Mock
+}
+
+// LoadTeamsByIds implements TeamServiceStore.
+func (m *mockTeamStore) LoadTeamsByIds(ctx context.Context, teamIds ...uuid.UUID) ([]*models.Team, error) {
+	args := m.Called(ctx, teamIds)
+	var teams []*models.Team
+	if args.Get(0) != nil {
+		teams = args.Get(0).([]*models.Team)
+	}
+	return teams, args.Error(1)
 }
 
 // CountTeamMembersByUserID implements TeamServiceStore.

@@ -48,7 +48,7 @@ func (api *Api) CreateTeam(
 	}, nil
 }
 
-func (api *Api) GetUserTeams(
+func (api *Api) GetUserTeamMembers(
 	ctx context.Context,
 	input *shared.PaginatedInput,
 ) (
@@ -59,7 +59,7 @@ func (api *Api) GetUserTeams(
 	if info == nil {
 		return nil, huma.Error401Unauthorized("unauthorized")
 	}
-	teams, err := api.app.Team().Store().FindTeamMembersByUserID(ctx, info.User.ID, input)
+	teams, err := api.app.Team().FindTeamMembersByUserID(ctx, info.User.ID, input)
 	if err != nil {
 		return nil, err
 	}

@@ -12,6 +12,7 @@ import (
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/services"
 	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/authgo/internal/tools/mapper"
 	"github.com/tkahng/authgo/internal/tools/types"
 )
 
@@ -36,6 +37,35 @@ func (p *PostgresTeamServiceStore) WithTx(tx database.Dbx) *PostgresTeamServiceS
 
 type PostgresTeamStore struct {
 	db database.Dbx
+}
+
+// LoadTeamsByIds implements services.TeamStore.
+func (p *PostgresTeamStore) LoadTeamsByIds(ctx context.Context, teamIds ...uuid.UUID) ([]*models.Team, error) {
+	var ids []string
+	for _, id := range teamIds {
+		ids = append(ids, id.String())
+	}
+	teams, err := crudrepo.Team.Get(
+		ctx,
+		p.db,
+		&map[string]any{
+			"id": map[string]any{
+				"_in": ids,
+			},
+		},
+		nil,
+		nil,
+		nil,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return mapper.MapTo(mapper.Map(teams, func(t *models.Team) models.Team {
+		return *t
+	}), teamIds, func(t models.Team) uuid.UUID {
+		return t.ID
+	}), nil
 }
 
 // FindPendingInvitation implements services.TeamInvitationStore.
