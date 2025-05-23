@@ -262,9 +262,9 @@ func ListTaskProjectsFilterFunc(filter *shared.TaskProjectsListFilter) *map[stri
 		}
 	}
 
-	if filter.UserID != "" {
+	if filter.TeamID != "" {
 		where["user_id"] = map[string]any{
-			"_eq": filter.UserID,
+			"_eq": filter.TeamID,
 		}
 	}
 

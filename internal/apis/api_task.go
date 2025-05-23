@@ -12,7 +12,7 @@ import (
 )
 
 type TaskListResponse struct {
-	Body *shared.PaginatedResponse[*shared.TaskWithSubtask]
+	Body *shared.PaginatedResponse[*shared.Task]
 }
 
 func (api *Api) TaskList(ctx context.Context, input *shared.TaskListParams) (*TaskListResponse, error) {
@@ -26,14 +26,9 @@ func (api *Api) TaskList(ctx context.Context, input *shared.TaskListParams) (*Ta
 		return nil, huma.Error500InternalServerError("error counting tasks", err)
 	}
 	return &TaskListResponse{
-		Body: &shared.PaginatedResponse[*shared.TaskWithSubtask]{
-			Data: mapper.Map(tasks, func(task *models.Task) *shared.TaskWithSubtask {
-				return &shared.TaskWithSubtask{
-					Task: shared.FromModelTask(task),
-					Children: mapper.Map(task.Children, func(child *models.Task) *shared.Task {
-						return shared.FromModelTask(child)
-					}),
-				}
+		Body: &shared.PaginatedResponse[*shared.Task]{
+			Data: mapper.Map(tasks, func(task *models.Task) *shared.Task {
+				return shared.FromModelTask(task)
 			}),
 			Meta: shared.GenerateMeta(&input.PaginatedInput, total),
 		},
@@ -41,7 +36,7 @@ func (api *Api) TaskList(ctx context.Context, input *shared.TaskListParams) (*Ta
 }
 
 type TaskResposne struct {
-	Body *shared.TaskWithSubtask
+	Body *shared.Task
 }
 
 func (api *Api) TaskUpdate(ctx context.Context, input *shared.UpdateTaskDTO) (*struct{}, error) {
@@ -125,11 +120,6 @@ func (api *Api) TaskGet(ctx context.Context, input *struct {
 		return nil, err
 	}
 	return &TaskResposne{
-		Body: &shared.TaskWithSubtask{
-			Task: shared.FromModelTask(task),
-			Children: mapper.Map(task.Children, func(child *models.Task) *shared.Task {
-				return shared.FromModelTask(child)
-			}),
-		},
+		Body: shared.FromModelTask(task),
 	}, nil
 }

@@ -5,26 +5,30 @@ import (
 
 	"github.com/google/uuid"
 	crudModels "github.com/tkahng/authgo/internal/models"
+	"github.com/tkahng/authgo/internal/tools/mapper"
 )
 
 type Task struct {
-	ID uuid.UUID `db:"id,pk" json:"id"`
-	// UserID      uuid.UUID  `db:"user_id" json:"user_id"`
-	CreatedBy   uuid.UUID  `db:"created_by" json:"created_by"`
-	TeamID      uuid.UUID  `db:"team_id" json:"team_id"`
-	ProjectID   uuid.UUID  `db:"project_id" json:"project_id"`
-	Name        string     `db:"name" json:"name"`
-	Description *string    `db:"description" json:"description"`
-	Status      TaskStatus `db:"status" json:"status" enum:"todo,in_progress,done"`
-	Order       float64    `db:"order" json:"order"`
-	ParentID    *uuid.UUID `db:"parent_id" json:"parent_id"`
-	CreatedAt   time.Time  `db:"created_at" json:"created_at"`
-	UpdatedAt   time.Time  `db:"updated_at" json:"updated_at"`
-}
-
-type TaskWithSubtask struct {
-	*Task
-	Children []*Task `json:"children,omitempty" required:"false"`
+	_               struct{}     `db:"tasks" json:"-"`
+	ID              uuid.UUID    `db:"id" json:"id"`
+	CreatedBy       uuid.UUID    `db:"created_by" json:"created_by"`
+	TeamID          uuid.UUID    `db:"team_id" json:"team_id"`
+	ProjectID       uuid.UUID    `db:"project_id" json:"project_id"`
+	Name            string       `db:"name" json:"name"`
+	Description     *string      `db:"description" json:"description"`
+	Status          TaskStatus   `db:"status" json:"status" enum:"todo,in_progress,done"`
+	StartAt         *time.Time   `db:"start_at" json:"start_at,omitempty" required:"false"`
+	EndAt           *time.Time   `db:"end_at" json:"end_at,omitempty" required:"false"`
+	AssigneeID      *uuid.UUID   `db:"assignee_id" json:"assignee_id,omitempty"`
+	AssignerID      *uuid.UUID   `db:"assigner_id" json:"assigner_id,omitempty"`
+	Order           float64      `db:"order" json:"order"`
+	ParentID        *uuid.UUID   `db:"parent_id" json:"parent_id"`
+	CreatedAt       time.Time    `db:"created_at" json:"created_at"`
+	UpdatedAt       time.Time    `db:"updated_at" json:"updated_at"`
+	Children        []*Task      `db:"children" src:"id" dest:"parent_id" table:"tasks" json:"children,omitempty"`
+	CreatedByMember *TeamMember  `db:"created_by_member" src:"created_by" dest:"id" table:"team_members" json:"created_by_member,omitempty"`
+	Team            *Team        `db:"team" src:"team_id" dest:"id" table:"teams" json:"team,omitempty"`
+	Project         *TaskProject `db:"project" src:"project_id" dest:"id" table:"task_projects" json:"project,omitempty"`
 }
 
 func FromModelTask(task *crudModels.Task) *Task {
@@ -32,18 +36,25 @@ func FromModelTask(task *crudModels.Task) *Task {
 		return nil
 	}
 	return &Task{
-		ID: task.ID,
-		// UserID:      task.UserID,
-		CreatedBy:   task.CreatedBy,
-		TeamID:      task.TeamID,
-		ProjectID:   task.ProjectID,
-		Name:        task.Name,
-		Description: task.Description,
-		Status:      TaskStatus(task.Status),
-		Order:       task.Order,
-		ParentID:    task.ParentID,
-		CreatedAt:   task.CreatedAt,
-		UpdatedAt:   task.UpdatedAt,
+		ID:              task.ID,
+		CreatedBy:       task.CreatedBy,
+		TeamID:          task.TeamID,
+		ProjectID:       task.ProjectID,
+		Name:            task.Name,
+		Description:     task.Description,
+		Status:          TaskStatus(task.Status),
+		StartAt:         task.StartAt,
+		EndAt:           task.EndAt,
+		AssigneeID:      task.AssigneeID,
+		AssignerID:      task.AssignerID,
+		Order:           task.Order,
+		ParentID:        task.ParentID,
+		CreatedAt:       task.CreatedAt,
+		UpdatedAt:       task.UpdatedAt,
+		Children:        mapper.Map(task.Children, FromModelTask),
+		CreatedByMember: FromTeamMemberModel(task.CreatedByMember),
+		Team:            FromTeamModel(task.Team),
+		Project:         FromModelProject(task.Project),
 	}
 }
 

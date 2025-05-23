@@ -14,7 +14,7 @@ import (
 )
 
 type TaskProjectListResponse struct {
-	Body *shared.PaginatedResponse[*shared.TaskProjectWithTasks]
+	Body *shared.PaginatedResponse[*shared.TaskProject]
 }
 
 func (api *Api) TaskProjectList(ctx context.Context, input *shared.TaskProjectsListParams) (*TaskProjectListResponse, error) {
@@ -23,7 +23,7 @@ func (api *Api) TaskProjectList(ctx context.Context, input *shared.TaskProjectsL
 	if userInfo == nil {
 		return nil, huma.Error401Unauthorized("Unauthorized")
 	}
-	input.TaskProjectsListFilter.UserID = userInfo.User.ID.String()
+	input.TaskProjectsListFilter.TeamID = userInfo.User.ID.String()
 	taskProject, err := api.app.Task().Store().ListTaskProjects(ctx, input)
 	if err != nil {
 		return nil, err
@@ -46,19 +46,9 @@ func (api *Api) TaskProjectList(ctx context.Context, input *shared.TaskProjectsL
 		}
 	}
 	return &TaskProjectListResponse{
-		Body: &shared.PaginatedResponse[*shared.TaskProjectWithTasks]{
-			Data: mapper.Map(taskProject, func(taskProject *models.TaskProject) *shared.TaskProjectWithTasks {
-				return &shared.TaskProjectWithTasks{
-					TaskProject: shared.FromModelProject(taskProject),
-					Tasks: mapper.Map(taskProject.Tasks, func(task *models.Task) *shared.TaskWithSubtask {
-						return &shared.TaskWithSubtask{
-							Task: shared.FromModelTask(task),
-							Children: mapper.Map(task.Children, func(child *models.Task) *shared.Task {
-								return shared.FromModelTask(child)
-							}),
-						}
-					}),
-				}
+		Body: &shared.PaginatedResponse[*shared.TaskProject]{
+			Data: mapper.Map(taskProject, func(taskProject *models.TaskProject) *shared.TaskProject {
+				return shared.FromModelProject(taskProject)
 			}),
 			Meta: shared.GenerateMeta(&input.PaginatedInput, total),
 		},
@@ -140,7 +130,7 @@ func (api *Api) TaskProjectCreateWithAi(ctx context.Context, input *TaskProjectC
 }
 
 type TaskProjectResponse struct {
-	Body *shared.TaskProjectWithTasks
+	Body *shared.TaskProject
 }
 
 func (api *Api) TaskProjectUpdate(ctx context.Context, input *shared.UpdateTaskProjectDTO) (*struct{}, error) {
@@ -207,17 +197,7 @@ func (api *Api) TaskProjectGet(ctx context.Context, input *struct {
 		}
 	}
 	return &TaskProjectResponse{
-		Body: &shared.TaskProjectWithTasks{
-			TaskProject: shared.FromModelProject(taskProject),
-			Tasks: mapper.Map(taskProject.Tasks, func(task *models.Task) *shared.TaskWithSubtask {
-				return &shared.TaskWithSubtask{
-					Task: shared.FromModelTask(task),
-					Children: mapper.Map(task.Children, func(child *models.Task) *shared.Task {
-						return shared.FromModelTask(child)
-					}),
-				}
-			}),
-		},
+		Body: shared.FromModelProject(taskProject),
 	}, nil
 }
 
@@ -248,11 +228,6 @@ func (api *Api) TaskProjectTasksCreate(ctx context.Context, input *shared.Create
 		return nil, err
 	}
 	return &TaskResposne{
-		Body: &shared.TaskWithSubtask{
-			Task: shared.FromModelTask(task),
-			Children: mapper.Map(task.Children, func(child *models.Task) *shared.Task {
-				return shared.FromModelTask(child)
-			}),
-		},
+		Body: shared.FromModelTask(task),
 	}, nil
 }
