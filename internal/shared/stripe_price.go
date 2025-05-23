@@ -46,7 +46,7 @@ type Price struct {
 	UpdatedAt       time.Time                  `db:"updated_at" json:"updated_at"`
 }
 
-func FromCrudPrice(price *crudModels.StripePrice) *Price {
+func FromModelPrice(price *crudModels.StripePrice) *Price {
 	var interval *StripePricingPlanInterval
 	if price.Interval != nil {
 		interval = ty.Pointer(StripePricingPlanInterval(*price.Interval))

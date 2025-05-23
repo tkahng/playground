@@ -73,13 +73,13 @@ func (api *Api) AdminUsers(ctx context.Context, input *struct {
 		Body: shared.PaginatedResponse[*UserDetail]{
 			Data: mapper.Map(users, func(user *models.User) *UserDetail {
 				return &UserDetail{
-					User:        shared.FromCrudUser(user),
-					Roles:       mapper.Map(user.Roles, shared.FromCrudRoleWithPermissions),
-					Accounts:    mapper.Map(user.Accounts, shared.FromCrudUserAccountOutput),
-					Permissions: mapper.Map(user.Permissions, shared.FromCrudPermission),
+					User:        shared.FromUserModel(user),
+					Roles:       mapper.Map(user.Roles, shared.FromModelRoleWithPermissions),
+					Accounts:    mapper.Map(user.Accounts, shared.FromModelUserAccountOutput),
+					Permissions: mapper.Map(user.Permissions, shared.FromModelPermission),
 				}
 			}),
-			Meta: shared.GenerateMeta(input.PaginatedInput, count),
+			Meta: shared.GenerateMeta(&input.PaginatedInput, count),
 		},
 	}, nil
 }
@@ -112,7 +112,7 @@ func (api *Api) AdminUsersCreate(ctx context.Context, input *struct {
 	return &struct {
 		Body *shared.User
 	}{
-		Body: shared.FromCrudUser(user),
+		Body: shared.FromUserModel(user),
 	}, nil
 
 }
@@ -179,5 +179,5 @@ func (api *Api) AdminUsersGet(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	return &struct{ Body *shared.User }{Body: shared.FromCrudUser(user)}, nil
+	return &struct{ Body *shared.User }{Body: shared.FromUserModel(user)}, nil
 }

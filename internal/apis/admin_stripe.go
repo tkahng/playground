@@ -28,10 +28,10 @@ func (api *Api) AdminStripeSubscriptions(ctx context.Context,
 		Body: shared.PaginatedResponse[*shared.SubscriptionWithData]{
 			Data: mapper.Map(subscriptions, func(sub *models.StripeSubscription) *shared.SubscriptionWithData {
 				return &shared.SubscriptionWithData{
-					Subscription: shared.FromCrudSubscription(sub),
+					Subscription: shared.FromModelSubscription(sub),
 				}
 			}),
-			Meta: shared.GenerateMeta(input.PaginatedInput, count),
+			Meta: shared.GenerateMeta(&input.PaginatedInput, count),
 		},
 	}, nil
 
@@ -50,7 +50,7 @@ func (api *Api) AdminStripeSubscriptionsGet(ctx context.Context,
 	if subscription == nil {
 		return nil, nil
 	}
-	sub := shared.FromCrudToSubWithUserAndPrice(subscription)
+	sub := shared.FromModelToSubWithUserAndPrice(subscription)
 	return &struct{ Body *shared.SubscriptionWithData }{Body: sub}, nil
 }
 
@@ -97,16 +97,16 @@ func (api *Api) AdminStripeProducts(ctx context.Context,
 		Body: shared.PaginatedResponse[*shared.StripeProductWitPermission]{
 			Data: mapper.Map(products, func(p *models.StripeProduct) *shared.StripeProductWitPermission {
 				return &shared.StripeProductWitPermission{
-					Product: shared.FromCrudProduct(p),
+					Product: shared.FromModelProduct(p),
 					Permissions: mapper.Map(p.Permissions, func(r *models.Permission) *shared.Permission {
-						return shared.FromCrudPermission(r)
+						return shared.FromModelPermission(r)
 					}),
 					Prices: mapper.Map(p.Prices, func(p *models.StripePrice) *shared.Price {
-						return shared.FromCrudPrice(p)
+						return shared.FromModelPrice(p)
 					}),
 				}
 			}),
-			Meta: shared.GenerateMeta(input.PaginatedInput, count),
+			Meta: shared.GenerateMeta(&input.PaginatedInput, count),
 		},
 	}, nil
 }
@@ -150,9 +150,9 @@ func (api *Api) AdminStripeProductsGet(ctx context.Context,
 		Body *shared.StripeProductWitPermission
 	}{
 		Body: &shared.StripeProductWitPermission{
-			Product:     shared.FromCrudProduct(product),
-			Permissions: mapper.Map(product.Permissions, shared.FromCrudPermission),
-			Prices:      mapper.Map(product.Prices, shared.FromCrudPrice),
+			Product:     shared.FromModelProduct(product),
+			Permissions: mapper.Map(product.Permissions, shared.FromModelPermission),
+			Prices:      mapper.Map(product.Prices, shared.FromModelPrice),
 		},
 	}, nil
 }

@@ -141,7 +141,7 @@ func TestFindTeamMembersByUserID(t *testing.T) {
 		if err != nil {
 			t.Fatalf("CreateTeamMember() error = %v", err)
 		}
-		members, err := teamStore.FindTeamMembersByUserID(ctx, userID)
+		members, err := teamStore.FindTeamMembersByUserID(ctx, userID, nil)
 		if err != nil {
 			t.Fatalf("FindTeamMembersByUserID() error = %v", err)
 		}

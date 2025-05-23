@@ -36,7 +36,8 @@ type TeamStore interface {
 	CheckTeamSlug(ctx context.Context, slug string) (bool, error)
 	UpdateTeam(ctx context.Context, teamId uuid.UUID, name string) (*models.Team, error)
 	DeleteTeam(ctx context.Context, teamId uuid.UUID) error
-	FindTeamMembersByUserID(ctx context.Context, userId uuid.UUID) ([]*models.TeamMember, error)
+	CountTeamMembersByUserID(ctx context.Context, userId uuid.UUID) (int64, error)
+	FindTeamMembersByUserID(ctx context.Context, userId uuid.UUID, paginate *shared.PaginatedInput) ([]*models.TeamMember, error)
 	FindTeamMemberByTeamAndUserId(ctx context.Context, teamId uuid.UUID, userId uuid.UUID) (*models.TeamMember, error)
 	FindLatestTeamMemberByUserID(ctx context.Context, userId uuid.UUID) (*models.TeamMember, error)
 	CreateTeamMember(ctx context.Context, teamId, userId uuid.UUID, role models.TeamMemberRole, hasBillingAccess bool) (*models.TeamMember, error)

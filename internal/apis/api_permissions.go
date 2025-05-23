@@ -22,8 +22,8 @@ func (api *Api) PermissionsList(ctx context.Context, input *struct {
 	return &shared.PaginatedOutput[*shared.Permission]{
 		Body: shared.PaginatedResponse[*shared.Permission]{
 
-			Data: mapper.Map(permissions, shared.FromCrudPermission),
-			Meta: shared.GenerateMeta(input.PaginatedInput, count),
+			Data: mapper.Map(permissions, shared.FromModelPermission),
+			Meta: shared.GenerateMeta(&input.PaginatedInput, count),
 		},
 	}, nil
 

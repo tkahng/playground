@@ -42,11 +42,11 @@ func (api *Api) AdminRolesList(ctx context.Context, input *struct {
 		Body: shared.PaginatedResponse[*shared.RoleWithPermissions]{
 			Data: mapper.Map(roles, func(r *models.Role) *shared.RoleWithPermissions {
 				return &shared.RoleWithPermissions{
-					Role:        shared.FromCrudRole(r),
-					Permissions: mapper.Map(r.Permissions, shared.FromCrudPermission),
+					Role:        shared.FromModelRole(r),
+					Permissions: mapper.Map(r.Permissions, shared.FromModelPermission),
 				}
 			}),
-			Meta: shared.GenerateMeta(input.PaginatedInput, count),
+			Meta: shared.GenerateMeta(&input.PaginatedInput, count),
 		},
 	}, nil
 
@@ -80,7 +80,7 @@ func (api *Api) AdminRolesCreate(ctx context.Context, input *struct {
 		return nil, huma.Error500InternalServerError("Failed to create role")
 	}
 	return &struct{ Body shared.Role }{
-		Body: *shared.FromCrudRole(role),
+		Body: *shared.FromModelRole(role),
 	}, nil
 }
 
@@ -142,7 +142,7 @@ func (api *Api) AdminRolesUpdate(ctx context.Context, input *struct {
 		return nil, err
 	}
 	return &struct{ Body *shared.Role }{
-		Body: shared.FromCrudRole(role),
+		Body: shared.FromModelRole(role),
 	}, nil
 }
 func (api *Api) AdminUserRolesDelete(ctx context.Context, input *struct {
@@ -310,7 +310,7 @@ func (api *Api) AdminRolesGet(ctx context.Context, input *struct {
 		}
 	}
 	return &struct{ Body shared.RoleWithPermissions }{
-		Body: *shared.FromCrudRoleWithPermissions(role),
+		Body: *shared.FromModelRoleWithPermissions(role),
 	}, nil
 }
 

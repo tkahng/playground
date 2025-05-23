@@ -22,8 +22,8 @@ func (api *Api) AdminUserAccounts(ctx context.Context, input *shared.UserAccount
 	}
 	return &shared.PaginatedOutput[*shared.UserAccountOutput]{
 		Body: shared.PaginatedResponse[*shared.UserAccountOutput]{
-			Data: mapper.Map(data, shared.FromCrudUserAccountOutput),
-			Meta: shared.GenerateMeta(input.PaginatedInput, count),
+			Data: mapper.Map(data, shared.FromModelUserAccountOutput),
+			Meta: shared.GenerateMeta(&input.PaginatedInput, count),
 		},
 	}, nil
 }

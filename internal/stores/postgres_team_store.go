@@ -474,7 +474,8 @@ func (q *PostgresTeamStore) FindTeamByID(ctx context.Context, teamId uuid.UUID) 
 }
 
 // FindTeamMembersByUserID implements TeamQueryer.
-func (q *PostgresTeamStore) FindTeamMembersByUserID(ctx context.Context, userId uuid.UUID) ([]*models.TeamMember, error) {
+func (q *PostgresTeamStore) FindTeamMembersByUserID(ctx context.Context, userId uuid.UUID, paginate *shared.PaginatedInput) ([]*models.TeamMember, error) {
+	limit, offset := database.PaginateRepo(paginate)
 	teamMembers, err := crudrepo.TeamMember.Get(
 		ctx,
 		q.db,
@@ -482,17 +483,39 @@ func (q *PostgresTeamStore) FindTeamMembersByUserID(ctx context.Context, userId 
 			"user_id": map[string]any{
 				"_eq": userId.String(),
 			},
+			"active": map[string]any{
+				"_eq": true,
+			},
 		},
 		&map[string]string{
 			"last_selected_at": "DESC",
 		},
-		nil,
-		nil,
+		limit,
+		offset,
 	)
 	if err != nil {
 		return nil, err
 	}
 	return teamMembers, nil
+}
+
+func (q *PostgresTeamStore) CountTeamMembersByUserID(ctx context.Context, userId uuid.UUID) (int64, error) {
+	c, err := crudrepo.TeamMember.Count(
+		ctx,
+		q.db,
+		&map[string]any{
+			"user_id": map[string]any{
+				"_eq": userId.String(),
+			},
+			"active": map[string]any{
+				"_eq": true,
+			},
+		},
+	)
+	if err != nil {
+		return 0, err
+	}
+	return c, nil
 }
 
 // UpdateTeam implements TeamQueryer.

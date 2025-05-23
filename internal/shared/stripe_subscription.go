@@ -3,7 +3,6 @@ package shared
 import (
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/models"
 )
 
@@ -22,12 +21,14 @@ const (
 )
 
 type Subscription struct {
-	ID string `db:"id,pk" json:"id"`
+	_                struct{} `db:"stripe_subscriptions" json:"-"`
+	ID               string   `db:"id" json:"id"`
+	StripeCustomerID string   `db:"stripe_customer_id" json:"stripe_customer_id"`
 	// UserID             *uuid.UUID               `db:"user_id" json:"user_id"`
-	TeamID             uuid.UUID                `db:"team_id" json:"team_id"`
-	StripeCustomerID   string                   `db:"stripe_customer_id" json:"stripe_customer_id"`
+	// TeamID             uuid.UUID                `db:"team_id" json:"team_id"`
 	Status             StripeSubscriptionStatus `db:"status" json:"status"`
 	Metadata           map[string]string        `db:"metadata" json:"metadata"`
+	ItemID             string                   `db:"item_id" json:"item_id"`
 	PriceID            string                   `db:"price_id" json:"price_id"`
 	Quantity           int64                    `db:"quantity" json:"quantity"`
 	CancelAtPeriodEnd  bool                     `db:"cancel_at_period_end" json:"cancel_at_period_end"`
@@ -41,23 +42,25 @@ type Subscription struct {
 	TrialEnd           *time.Time               `db:"trial_end" json:"trial_end"`
 	CreatedAt          time.Time                `db:"created_at" json:"created_at"`
 	UpdatedAt          time.Time                `db:"updated_at" json:"updated_at"`
+	Team               *Team                    `db:"teams" src:"team_id" dest:"id" table:"teams" json:"team,omitempty"`
+	Price              *Price                   `db:"stripe_prices" src:"price_id" dest:"id" table:"stripe_prices" json:"price,omitempty"`
 }
 type SubscriptionWithPrice struct {
 	*Subscription
 	Price *StripePricesWithProduct `json:"price,omitempty" required:"false"`
 }
 
-func FromCrudToSubWithUserAndPrice(sub *models.SubscriptionWithPrice) *SubscriptionWithData {
+func FromModelToSubWithUserAndPrice(sub *models.SubscriptionWithPrice) *SubscriptionWithData {
 	return &SubscriptionWithData{
-		Subscription: FromCrudSubscription(&sub.Subscription),
+		Subscription: FromModelSubscription(&sub.Subscription),
 		Price: &StripePricesWithProduct{
-			Product: FromCrudProduct(&sub.Product),
-			Price:   FromCrudPrice(&sub.Price),
+			Product: FromModelProduct(&sub.Product),
+			Price:   FromModelPrice(&sub.Price),
 		},
 	}
 }
 
-func FromCrudSubscription(sub *models.StripeSubscription) *Subscription {
+func FromModelSubscription(sub *models.StripeSubscription) *Subscription {
 	return &Subscription{
 		ID:                 sub.ID,
 		StripeCustomerID:   sub.StripeCustomerID,

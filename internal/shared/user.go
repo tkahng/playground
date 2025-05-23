@@ -38,7 +38,7 @@ type UserWithAccounts struct {
 	Accounts []*UserAccountOutput `json:"accounts"`
 }
 
-func FromCrudUser(user *crudModels.User) *User {
+func FromUserModel(user *crudModels.User) *User {
 	if user == nil {
 		return nil
 	}

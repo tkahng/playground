@@ -29,13 +29,13 @@ func (api *Api) TaskList(ctx context.Context, input *shared.TaskListParams) (*Ta
 		Body: &shared.PaginatedResponse[*shared.TaskWithSubtask]{
 			Data: mapper.Map(tasks, func(task *models.Task) *shared.TaskWithSubtask {
 				return &shared.TaskWithSubtask{
-					Task: shared.CrudModelToTask(task),
+					Task: shared.FromModelTask(task),
 					Children: mapper.Map(task.Children, func(child *models.Task) *shared.Task {
-						return shared.CrudModelToTask(child)
+						return shared.FromModelTask(child)
 					}),
 				}
 			}),
-			Meta: shared.GenerateMeta(input.PaginatedInput, total),
+			Meta: shared.GenerateMeta(&input.PaginatedInput, total),
 		},
 	}, nil
 }
@@ -126,9 +126,9 @@ func (api *Api) TaskGet(ctx context.Context, input *struct {
 	}
 	return &TaskResposne{
 		Body: &shared.TaskWithSubtask{
-			Task: shared.CrudModelToTask(task),
+			Task: shared.FromModelTask(task),
 			Children: mapper.Map(task.Children, func(child *models.Task) *shared.Task {
-				return shared.CrudModelToTask(child)
+				return shared.FromModelTask(child)
 			}),
 		},
 	}, nil

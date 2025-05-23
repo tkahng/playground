@@ -113,6 +113,16 @@ type mockTeamStore struct {
 	mock.Mock
 }
 
+// CountTeamMembersByUserID implements TeamServiceStore.
+func (m *mockTeamStore) CountTeamMembersByUserID(ctx context.Context, userId uuid.UUID) (int64, error) {
+	args := m.Called(ctx, userId)
+	var count int64
+	if args.Get(0) != nil {
+		count = args.Get(0).(int64)
+	}
+	return count, args.Error(1)
+}
+
 // CountOwnerTeamMembers implements TeamServiceStore.
 func (m *mockTeamStore) CountOwnerTeamMembers(ctx context.Context, teamId uuid.UUID) (int64, error) {
 	args := m.Called(ctx, teamId)
@@ -232,7 +242,7 @@ func (m *mockTeamStore) FindTeamMemberByTeamAndUserId(ctx context.Context, teamI
 }
 
 // FindTeamMembersByUserID implements TeamStore.
-func (m *mockTeamStore) FindTeamMembersByUserID(ctx context.Context, userId uuid.UUID) ([]*models.TeamMember, error) {
+func (m *mockTeamStore) FindTeamMembersByUserID(ctx context.Context, userId uuid.UUID, pageinate *shared.PaginatedInput) ([]*models.TeamMember, error) {
 	args := m.Called(ctx, userId)
 	var members []*models.TeamMember
 	if args.Get(0) != nil {
@@ -376,6 +386,7 @@ func (m *mockTeamInvitationStore) DeleteTeamMember(ctx context.Context, teamId u
 // FindTeamMemberByTeamAndUserId implements TeamInvitationStore.
 func (m *mockTeamInvitationStore) FindTeamMemberByTeamAndUserId(ctx context.Context, teamId uuid.UUID, userId uuid.UUID) (*models.TeamMember, error) {
 	args := m.Called(ctx, teamId, userId)
+
 	var member *models.TeamMember
 	if args.Get(0) != nil {
 		member = args.Get(0).(*models.TeamMember)

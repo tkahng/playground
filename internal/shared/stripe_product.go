@@ -17,7 +17,7 @@ type Product struct {
 	UpdatedAt   time.Time         `db:"updated_at" json:"updated_at"`
 }
 
-func FromCrudProduct(product *crudModels.StripeProduct) *Product {
+func FromModelProduct(product *crudModels.StripeProduct) *Product {
 	return &Product{
 		ID:          product.ID,
 		Active:      product.Active,

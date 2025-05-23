@@ -33,7 +33,7 @@ type Meta struct {
 	HasMore  bool   `json:"has_more"`
 }
 
-func GenerateMeta(input PaginatedInput, total int64) Meta {
+func GenerateMeta(input *PaginatedInput, total int64) Meta {
 	var meta Meta = Meta{
 		Page:    input.Page,
 		PerPage: input.PerPage,

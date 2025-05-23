@@ -27,7 +27,7 @@ type TaskWithSubtask struct {
 	Children []*Task `json:"children,omitempty" required:"false"`
 }
 
-func CrudModelToTask(task *crudModels.Task) *Task {
+func FromModelTask(task *crudModels.Task) *Task {
 	if task == nil {
 		return nil
 	}

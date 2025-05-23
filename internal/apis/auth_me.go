@@ -35,8 +35,8 @@ func (api *Api) Me(ctx context.Context, input *struct{}) (*MeOutput, error) {
 
 	return &MeOutput{
 		Body: &shared.UserWithAccounts{
-			User:     shared.FromCrudUser(user),
-			Accounts: mapper.Map(acc, shared.FromCrudUserAccountOutput),
+			User:     shared.FromUserModel(user),
+			Accounts: mapper.Map(acc, shared.FromModelUserAccountOutput),
 		},
 	}, nil
 

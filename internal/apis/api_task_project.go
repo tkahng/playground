@@ -49,18 +49,18 @@ func (api *Api) TaskProjectList(ctx context.Context, input *shared.TaskProjectsL
 		Body: &shared.PaginatedResponse[*shared.TaskProjectWithTasks]{
 			Data: mapper.Map(taskProject, func(taskProject *models.TaskProject) *shared.TaskProjectWithTasks {
 				return &shared.TaskProjectWithTasks{
-					TaskProject: shared.CrudToProject(taskProject),
+					TaskProject: shared.FromModelProject(taskProject),
 					Tasks: mapper.Map(taskProject.Tasks, func(task *models.Task) *shared.TaskWithSubtask {
 						return &shared.TaskWithSubtask{
-							Task: shared.CrudModelToTask(task),
+							Task: shared.FromModelTask(task),
 							Children: mapper.Map(task.Children, func(child *models.Task) *shared.Task {
-								return shared.CrudModelToTask(child)
+								return shared.FromModelTask(child)
 							}),
 						}
 					}),
 				}
 			}),
-			Meta: shared.GenerateMeta(input.PaginatedInput, total),
+			Meta: shared.GenerateMeta(&input.PaginatedInput, total),
 		},
 	}, nil
 }
@@ -82,7 +82,7 @@ func (api *Api) TaskProjectCreate(ctx context.Context, input *struct {
 	return &struct {
 		Body *shared.TaskProject
 	}{
-		Body: shared.CrudToProject(taskProject),
+		Body: shared.FromModelProject(taskProject),
 	}, nil
 }
 
@@ -135,7 +135,7 @@ func (api *Api) TaskProjectCreateWithAi(ctx context.Context, input *TaskProjectC
 	return &struct {
 		Body *shared.TaskProject
 	}{
-		Body: shared.CrudToProject(taskProject),
+		Body: shared.FromModelProject(taskProject),
 	}, nil
 }
 
@@ -208,12 +208,12 @@ func (api *Api) TaskProjectGet(ctx context.Context, input *struct {
 	}
 	return &TaskProjectResponse{
 		Body: &shared.TaskProjectWithTasks{
-			TaskProject: shared.CrudToProject(taskProject),
+			TaskProject: shared.FromModelProject(taskProject),
 			Tasks: mapper.Map(taskProject.Tasks, func(task *models.Task) *shared.TaskWithSubtask {
 				return &shared.TaskWithSubtask{
-					Task: shared.CrudModelToTask(task),
+					Task: shared.FromModelTask(task),
 					Children: mapper.Map(task.Children, func(child *models.Task) *shared.Task {
-						return shared.CrudModelToTask(child)
+						return shared.FromModelTask(child)
 					}),
 				}
 			}),
@@ -249,9 +249,9 @@ func (api *Api) TaskProjectTasksCreate(ctx context.Context, input *shared.Create
 	}
 	return &TaskResposne{
 		Body: &shared.TaskWithSubtask{
-			Task: shared.CrudModelToTask(task),
+			Task: shared.FromModelTask(task),
 			Children: mapper.Map(task.Children, func(child *models.Task) *shared.Task {
-				return shared.CrudModelToTask(child)
+				return shared.FromModelTask(child)
 			}),
 		},
 	}, nil

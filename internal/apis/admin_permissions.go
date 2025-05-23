@@ -113,7 +113,7 @@ func (api *Api) AdminUserPermissionSourceList(ctx context.Context, input *struct
 		Body: shared.PaginatedResponse[shared.PermissionSource]{
 
 			Data: userPermissionSources,
-			Meta: shared.GenerateMeta(input.PaginatedInput, count),
+			Meta: shared.GenerateMeta(&input.PaginatedInput, count),
 		},
 	}, nil
 }
@@ -135,8 +135,8 @@ func (api *Api) AdminPermissionsList(ctx context.Context, input *struct {
 	return &shared.PaginatedOutput[*shared.Permission]{
 		Body: shared.PaginatedResponse[*shared.Permission]{
 
-			Data: mapper.Map(permissions, shared.FromCrudPermission),
-			Meta: shared.GenerateMeta(input.PaginatedInput, count),
+			Data: mapper.Map(permissions, shared.FromModelPermission),
+			Meta: shared.GenerateMeta(&input.PaginatedInput, count),
 		},
 	}, nil
 
@@ -167,7 +167,7 @@ func (api *Api) AdminPermissionsCreate(ctx context.Context, input *struct {
 		return nil, huma.Error500InternalServerError("Failed to create permission")
 	}
 	return &struct{ Body shared.Permission }{
-		Body: *shared.FromCrudPermission(data),
+		Body: *shared.FromModelPermission(data),
 	}, nil
 }
 
@@ -233,7 +233,7 @@ func (api *Api) AdminPermissionsUpdate(ctx context.Context, input *struct {
 		return nil, err
 	}
 	return &struct{ Body shared.Permission }{
-		Body: *shared.FromCrudPermission(permission),
+		Body: *shared.FromModelPermission(permission),
 	}, nil
 }
 
@@ -254,6 +254,6 @@ func (api *Api) AdminPermissionsGet(ctx context.Context, input *struct {
 		return nil, huma.Error404NotFound("Permission not found")
 	}
 	return &struct{ Body *shared.Permission }{
-		Body: shared.FromCrudPermission(permission),
+		Body: shared.FromModelPermission(permission),
 	}, nil
 }

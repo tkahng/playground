@@ -30,7 +30,7 @@ type Role struct {
 	UpdatedAt   time.Time `db:"updated_at" json:"updated_at"`
 }
 
-func FromCrudRole(role *crudModels.Role) *Role {
+func FromModelRole(role *crudModels.Role) *Role {
 	if role == nil {
 		return nil
 	}
@@ -48,13 +48,13 @@ type RoleWithPermissions struct {
 	Permissions []*Permission `json:"permissions,omitempty" required:"false"`
 }
 
-func FromCrudRoleWithPermissions(role *crudModels.Role) *RoleWithPermissions {
+func FromModelRoleWithPermissions(role *crudModels.Role) *RoleWithPermissions {
 	if role == nil {
 		return nil
 	}
 	return &RoleWithPermissions{
-		Role:        FromCrudRole(role),
-		Permissions: mapper.Map(role.Permissions, FromCrudPermission),
+		Role:        FromModelRole(role),
+		Permissions: mapper.Map(role.Permissions, FromModelPermission),
 	}
 }
 

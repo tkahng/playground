@@ -28,10 +28,10 @@ func (api *Api) GetStripeSubscriptions(ctx context.Context, input *struct{}) (*s
 		Body *shared.SubscriptionWithPrice `json:"body,omitempty" required:"false"`
 	}{}
 	output.Body = &shared.SubscriptionWithPrice{
-		Subscription: shared.FromCrudSubscription(&subscriptions.Subscription),
+		Subscription: shared.FromModelSubscription(&subscriptions.Subscription),
 		Price: &shared.StripePricesWithProduct{
-			Price:   shared.FromCrudPrice(&subscriptions.Price),
-			Product: shared.FromCrudProduct(&subscriptions.Product),
+			Price:   shared.FromModelPrice(&subscriptions.Price),
+			Product: shared.FromModelProduct(&subscriptions.Product),
 		},
 	}
 

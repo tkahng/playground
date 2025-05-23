@@ -41,31 +41,13 @@ type TaskProjectWithTasks struct {
 	Tasks []*TaskWithSubtask `json:"tasks,omitempty" required:"false"`
 }
 
-func CrudToProject(task *models.TaskProject) *TaskProject {
+func FromModelProject(task *models.TaskProject) *TaskProject {
 	if task == nil {
 		return nil
 	}
 	return &TaskProject{
 		ID: task.ID,
-		// UserID:      task.UserID,
-		CreatedBy:   task.CreatedBy,
-		TeamID:      task.TeamID,
-		Name:        task.Name,
-		Description: task.Description,
-		Status:      TaskProjectStatus(task.Status),
-		Order:       task.Order,
-		CreatedAt:   task.CreatedAt,
-		UpdatedAt:   task.UpdatedAt,
-	}
-}
 
-func ModelToProject(task *models.TaskProject) *TaskProject {
-	if task == nil {
-		return nil
-	}
-	return &TaskProject{
-		ID: task.ID,
-		// UserID:      task.UserID,
 		CreatedBy:   task.CreatedBy,
 		TeamID:      task.TeamID,
 		Name:        task.Name,

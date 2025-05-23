@@ -53,12 +53,12 @@ func (api *Api) StripeProductsWithPrices(ctx context.Context, inputt *StripeProd
 		Body: shared.PaginatedResponse[*shared.StripeProductWitPermission]{
 			Data: mapper.Map(products, func(p *models.StripeProduct) *shared.StripeProductWitPermission {
 				return &shared.StripeProductWitPermission{
-					Product:     shared.FromCrudProduct(p),
-					Permissions: mapper.Map(p.Permissions, shared.FromCrudPermission),
-					Prices:      mapper.Map(p.Prices, shared.FromCrudPrice),
+					Product:     shared.FromModelProduct(p),
+					Permissions: mapper.Map(p.Permissions, shared.FromModelPermission),
+					Prices:      mapper.Map(p.Prices, shared.FromModelPrice),
 				}
 			}),
-			Meta: shared.GenerateMeta(input.PaginatedInput, count),
+			Meta: shared.GenerateMeta(&input.PaginatedInput, count),
 		},
 	}, nil
 }

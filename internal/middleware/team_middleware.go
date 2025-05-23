@@ -50,6 +50,10 @@ func RequireTeamMemberRolesMiddleware(api huma.API, roles ...models.TeamMemberRo
 	return func(ctx huma.Context, next func(huma.Context)) {
 		rawctx := ctx.Context()
 		if info := contextstore.GetContextTeamInfo(rawctx); info != nil {
+			if len(roles) == 0 {
+				next(ctx)
+				return
+			}
 			if slices.Contains(roles, info.Member.Role) {
 				next(ctx)
 				return

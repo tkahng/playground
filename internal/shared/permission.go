@@ -22,7 +22,7 @@ type Permission struct {
 	UpdatedAt   time.Time `db:"updated_at" json:"updated_at"`
 }
 
-func FromCrudPermission(permission *crudModels.Permission) *Permission {
+func FromModelPermission(permission *crudModels.Permission) *Permission {
 	return &Permission{
 		ID:          permission.ID,
 		Name:        permission.Name,

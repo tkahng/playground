@@ -62,7 +62,7 @@ type UserAccountOutput struct {
 	UpdatedAt         time.Time     `db:"updated_at" json:"updated_at"`
 }
 
-func FromCrudUserAccount(u *crudModels.UserAccount) *UserAccount {
+func FromModelUserAccount(u *crudModels.UserAccount) *UserAccount {
 	if u == nil {
 		return nil
 	}
@@ -77,7 +77,7 @@ func FromCrudUserAccount(u *crudModels.UserAccount) *UserAccount {
 	}
 }
 
-func FromCrudUserAccountOutput(u *crudModels.UserAccount) *UserAccountOutput {
+func FromModelUserAccountOutput(u *crudModels.UserAccount) *UserAccountOutput {
 	if u == nil {
 		return nil
 	}

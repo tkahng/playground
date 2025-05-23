@@ -93,10 +93,10 @@ func (a *Api) StripeCheckoutSessionGet(ctx context.Context, input *StripeCheckou
 
 	return &CheckoutSessionOutput{
 		Body: shared.SubscriptionWithPrice{
-			Subscription: shared.FromCrudSubscription(&cs.Subscription),
+			Subscription: shared.FromModelSubscription(&cs.Subscription),
 			Price: &shared.StripePricesWithProduct{
-				Price:   shared.FromCrudPrice(&cs.Price),
-				Product: shared.FromCrudProduct(&cs.Product),
+				Price:   shared.FromModelPrice(&cs.Price),
+				Product: shared.FromModelProduct(&cs.Product),
 			},
 		},
 	}, nil
