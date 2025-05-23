@@ -19,6 +19,10 @@ import (
 )
 
 type AuthService interface {
+	Password() PasswordService
+	Token() JwtService
+	Mail() MailService
+	Store() AuthStore
 	HandlePasswordResetRequest(ctx context.Context, email string) error
 	HandleAccessToken(ctx context.Context, token string) (*shared.UserInfo, error)
 	HandleRefreshToken(ctx context.Context, token string) (*shared.UserInfoTokens, error)
@@ -74,6 +78,26 @@ type BaseAuthService struct {
 	token     JwtService
 	password  PasswordService
 	options   *conf.AppOptions
+}
+
+// Mail implements AuthService.
+func (app *BaseAuthService) Mail() MailService {
+	return app.mail
+}
+
+// Password implements AuthService.
+func (app *BaseAuthService) Password() PasswordService {
+	return app.password
+}
+
+// Store implements AuthService.
+func (app *BaseAuthService) Store() AuthStore {
+	return app.authStore
+}
+
+// Token implements AuthService.
+func (app *BaseAuthService) Token() JwtService {
+	return app.token
 }
 
 // CreateOAuthUrl implements AuthService.
@@ -582,17 +606,22 @@ func (app *BaseAuthService) Authenticate(ctx context.Context, params *shared.Aut
 		// from within this block, we should return and not continue to next block
 		// if type is credentials, hash password and set params
 		if params.Type == shared.ProviderTypeCredentials {
-			if params.Password == nil {
-				return nil, fmt.Errorf("password is nil")
+			if params.HashPassword == nil {
+				if params.Password == nil {
+					return nil, fmt.Errorf("password is nil")
+				}
+				if pw, err := app.password.HashPassword(*params.Password); err != nil {
+					return nil, fmt.Errorf("error at hashing password: %w", err)
+				} else {
+					params.HashPassword = &pw
+				}
+				if params.HashPassword == nil {
+					return nil, fmt.Errorf("password is nil")
+				}
 			}
-			pw, err := app.password.HashPassword(*params.Password)
-			if err != nil {
-				return nil, fmt.Errorf("error at hashing password: %w", err)
-			}
-			params.HashPassword = &pw
 		}
 		// link account of requested type
-		newVar := &models.UserAccount{
+		err = app.authStore.LinkAccount(ctx, &models.UserAccount{
 			UserID:            user.ID,
 			Type:              models.ProviderTypes(params.Type),
 			Provider:          models.Providers(params.Provider),
@@ -600,18 +629,19 @@ func (app *BaseAuthService) Authenticate(ctx context.Context, params *shared.Aut
 			Password:          params.HashPassword,
 			AccessToken:       params.AccessToken,
 			RefreshToken:      params.RefreshToken,
-		}
-		err = app.authStore.LinkAccount(ctx, newVar)
+		})
 		if err != nil {
 			return nil, fmt.Errorf("error at linking account: %w", err)
 		}
 		// if user is first login, send verification email
-		if isFirstLogin {
-			fmt.Println("User is first login, sending verification email")
-			app.routine.FireAndForget(
-				func() {
-					ctx := context.Background()
-					err = app.SendOtpEmail(EmailTypeVerify, ctx, user)
+
+		// if user is not first login, check if user credentials security
+		app.routine.FireAndForget(
+			func() {
+				ctx := context.Background()
+				if isFirstLogin {
+					fmt.Println("User is first login, sending verification email")
+					err := app.SendOtpEmail(EmailTypeVerify, ctx, user)
 					if err != nil {
 						slog.Error(
 							"error sending verification email",
@@ -620,16 +650,9 @@ func (app *BaseAuthService) Authenticate(ctx context.Context, params *shared.Aut
 							slog.String("userId", user.ID.String()),
 						)
 					}
-				},
-			)
-
-		} else {
-			fmt.Println("User is not first login, checking user credentials security")
-			// if user is not first login, check if user credentials security
-			app.routine.FireAndForget(
-				func() {
-					ctx := context.Background()
-					err = app.CheckUserCredentialsSecurity(ctx, user, params)
+				} else {
+					fmt.Println("User is not first login, checking user credentials security")
+					err := app.CheckUserCredentialsSecurity(ctx, user, params)
 					if err != nil {
 						slog.Error(
 							"error at checking user credentials security",
@@ -638,9 +661,10 @@ func (app *BaseAuthService) Authenticate(ctx context.Context, params *shared.Aut
 							slog.String("userId", user.ID.String()),
 						)
 					}
-				},
-			)
-		}
+				}
+			},
+		)
+
 		// return user
 		return user, nil
 	}

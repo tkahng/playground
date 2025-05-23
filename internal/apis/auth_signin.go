@@ -23,10 +23,14 @@ type AuthenticatedInfoResponse struct {
 func (api *Api) SignIn(ctx context.Context, input *struct{ Body *SigninDto }) (*AuthenticatedInfoResponse, error) {
 	action := api.app.Auth()
 	password := input.Body.Password.String()
+	hash, err := action.Password().HashPassword(password)
+	if err != nil {
+		return nil, fmt.Errorf("error hashing password: %w", err)
+	}
 	params := &shared.AuthenticationInput{
 		Email:             input.Body.Email,
 		Provider:          shared.ProvidersCredentials,
-		Password:          &password,
+		Password:          &hash,
 		Type:              shared.ProviderTypeCredentials,
 		ProviderAccountID: input.Body.Email,
 	}

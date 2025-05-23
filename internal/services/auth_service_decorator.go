@@ -11,6 +11,10 @@ import (
 
 type AuthServiceDecorator struct {
 	delegate                       BaseAuthService
+	MailFunc                       func() MailService
+	PasswordFunc                   func() PasswordService
+	StoreFunc                      func() AuthStore
+	TokenFunc                      func() JwtService
 	CreateOAuthUrlFunc             func(ctx context.Context, provider shared.Providers, redirectUrl string) (string, error)
 	AuthenticateFunc               func(ctx context.Context, params *shared.AuthenticationInput) (*models.User, error)
 	CheckResetPasswordTokenFunc    func(ctx context.Context, token string) error
@@ -28,6 +32,38 @@ type AuthServiceDecorator struct {
 	CreateAuthTokensFromEmailFunc  func(ctx context.Context, email string) (*shared.UserInfoTokens, error)
 	FetchAuthUserFunc              func(ctx context.Context, code string, parsedState *shared.ProviderStateClaims) (*oauth.AuthUser, error)
 	FireAndForgetFunc              func(f func())
+}
+
+// Mail implements AuthService.
+func (a *AuthServiceDecorator) Mail() MailService {
+	if a.MailFunc != nil {
+		return a.MailFunc()
+	}
+	return a.delegate.Mail()
+}
+
+// Password implements AuthService.
+func (a *AuthServiceDecorator) Password() PasswordService {
+	if a.PasswordFunc != nil {
+		return a.PasswordFunc()
+	}
+	return a.delegate.Password()
+}
+
+// Store implements AuthService.
+func (a *AuthServiceDecorator) Store() AuthStore {
+	if a.StoreFunc != nil {
+		return a.StoreFunc()
+	}
+	return a.delegate.Store()
+}
+
+// Token implements AuthService.
+func (a *AuthServiceDecorator) Token() JwtService {
+	if a.TokenFunc != nil {
+		return a.TokenFunc()
+	}
+	return a.delegate.Token()
 }
 
 // CreateOAuthUrl implements AuthService.
