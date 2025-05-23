@@ -34,9 +34,5 @@ func NewRoutineServiceDecorator() *RoutineServiceDecorator {
 }
 
 func (r *RoutineServiceDecorator) FireAndForget(f func()) {
-	if r.FireAndForgetFunc != nil {
-		r.FireAndForgetFunc(f, r.Wg)
-	} else {
-		routine.FireAndForget(f, r.Wg)
-	}
+	routine.FireAndForget(f, r.Wg)
 }

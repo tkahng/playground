@@ -674,10 +674,12 @@ func (app *BaseAuthService) Authenticate(ctx context.Context, params *shared.Aut
 	}
 	// if user exists, but requested account type does not exist, Create UserAccount  of requested type ----------------------------------------------------------------------------------------------------
 	if account == nil {
+		fmt.Println("User exists, but account does not exist")
 		var checkCredential bool
 		var reset bool
 		if user.EmailVerifiedAt == nil && params.EmailVerifiedAt != nil {
 			if params.Type == shared.ProviderTypeOAuth {
+				fmt.Println("User has a credentials account, with new oauth. resetting checkCredential")
 				checkCredential = true
 			}
 		}
@@ -692,7 +694,7 @@ func (app *BaseAuthService) Authenticate(ctx context.Context, params *shared.Aut
 					return fmt.Errorf("account not created")
 				}
 				if checkCredential {
-					fmt.Println("checking user credentials security")
+					slog.Info("User has a credentials account, resetting password")
 					reset, err = app.UpdateUserVerifiedOrResetPassword(ctx, store, user, params)
 					if err != nil {
 						app.logger.Error(
@@ -711,10 +713,11 @@ func (app *BaseAuthService) Authenticate(ctx context.Context, params *shared.Aut
 			return nil, fmt.Errorf("error at creating user account: %w", err)
 		}
 		if reset {
+			fmt.Println("User has a credentials account, sending security password reset email")
 			app.routine.FireAndForget(
 				func() {
 					ctx := context.Background()
-					fmt.Println("User is first login, sending security password reset email")
+					fmt.Println("sending security password reset email")
 					err := app.SendOtpEmail(EmailTypeSecurityPasswordReset, ctx, user)
 					if err != nil {
 						app.logger.Error(
@@ -754,6 +757,7 @@ func (app *BaseAuthService) UpdateUserVerifiedOrResetPassword(ctx context.Contex
 		return false, fmt.Errorf("user not found")
 	}
 	reset := false
+	fmt.Println("setting reset to false")
 	// if user is not verified,
 	if user.EmailVerifiedAt == nil {
 		if params.EmailVerifiedAt != nil {
@@ -766,6 +770,7 @@ func (app *BaseAuthService) UpdateUserVerifiedOrResetPassword(ctx context.Contex
 					return false, fmt.Errorf("error loading user accounts: %w", err)
 				}
 				if account != nil {
+					fmt.Println("User has a credentials account, resetting password")
 					// if user has a credentials account, send security password reset email
 					randomPassword := security.RandomString(20)
 					hash, err := app.password.HashPassword(randomPassword)
@@ -778,17 +783,20 @@ func (app *BaseAuthService) UpdateUserVerifiedOrResetPassword(ctx context.Contex
 						return false, fmt.Errorf("error updating user password: %w", err)
 					}
 					reset = true
+					fmt.Println("setting reset to true")
 					// err = app.SendOtpEmail(EmailTypeSecurityPasswordReset, ctx, user)
 					// if err != nil {
 					// 	return fmt.Errorf("error sending password reset email: %w", err)
 					// }
 				}
 			}
+			fmt.Println("updating user email verified at")
 			user.EmailVerifiedAt = params.EmailVerifiedAt
 			err := store.UpdateUser(ctx, user)
 			if err != nil {
 				return false, fmt.Errorf("error updating user email confirmation: %w", err)
 			}
+			return true, nil
 		}
 	}
 	return reset, nil

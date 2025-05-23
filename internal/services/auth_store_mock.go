@@ -29,7 +29,7 @@ func (m *MockAuthStore) WithTx(dbx database.Dbx) AuthStore {
 func (m *MockAuthStore) RunInTransaction(ctx context.Context, fn func(store AuthStore) error) error {
 	// args := m.Called(ctx, fn)
 	if m.Tx != nil {
-		m.TxErr = fn(m.Tx)
+		m.TxErr = fn(m)
 	}
 	return m.TxErr
 }
