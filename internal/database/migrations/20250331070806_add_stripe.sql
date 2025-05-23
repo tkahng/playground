@@ -22,11 +22,13 @@ create table public.stripe_customers (
     CONSTRAINT stripe_customers_only_one_reference_check CHECK (
         (
             user_id IS NOT NULL
+            AND customer_type = 'user'
             AND team_id IS NULL
         )
         OR (
             user_id IS NULL
             AND team_id IS NOT NULL
+            AND customer_type = 'team'
         )
     )
 );
