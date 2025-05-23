@@ -2,17 +2,17 @@ package services
 
 import "github.com/tkahng/authgo/internal/tools/routine"
 
-type WorkerService interface {
+type RoutineService interface {
 	FireAndForget(f func())
 }
 
-type workerService struct {
+type routineService struct {
 }
 
-func NewWorkerService() WorkerService {
-	return &workerService{}
+func NewRoutineService() RoutineService {
+	return &routineService{}
 }
 
-func (w *workerService) FireAndForget(f func()) {
+func (w *routineService) FireAndForget(f func()) {
 	routine.FireAndForget(f)
 }

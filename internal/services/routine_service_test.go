@@ -6,10 +6,10 @@ import (
 	"github.com/tkahng/authgo/internal/tools/routine"
 )
 
-type mockRoutineService struct{ wg *sync.WaitGroup }
+type MockRoutineService struct{ Wg *sync.WaitGroup }
 
-var _ WorkerService = (*mockRoutineService)(nil)
+var _ RoutineService = (*MockRoutineService)(nil)
 
-func (m *mockRoutineService) FireAndForget(f func()) {
-	routine.FireAndForget(f, m.wg)
+func (m *MockRoutineService) FireAndForget(f func()) {
+	routine.FireAndForget(f, m.Wg)
 }

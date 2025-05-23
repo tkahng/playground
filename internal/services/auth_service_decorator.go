@@ -84,7 +84,7 @@ func (a *AuthServiceDecorator) FireAndForget(f func()) {
 		a.FireAndForgetFunc(f)
 		return
 	}
-	a.delegate.FireAndForget(f)
+	a.delegate.routine.FireAndForget(f)
 }
 
 // HandleAccessToken implements AuthService.

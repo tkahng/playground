@@ -165,7 +165,7 @@ func NewBApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 	tokenService := services.NewJwtService()
 	passwordService := services.NewPasswordService()
 	authStore := stores.NewPostgresAuthStore(pool)
-	workerService := services.NewWorkerService()
+	workerService := services.NewRoutineService()
 	authMailService := services.NewMailService(mail)
 	authService := services.NewAuthService(
 		settings,

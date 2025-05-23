@@ -22,7 +22,6 @@ type TeamInvitationMailParams struct {
 }
 
 type TeamInvitationService interface {
-	WorkerService
 	CreateInvitation(
 		ctx context.Context,
 		teamId uuid.UUID,
@@ -103,7 +102,7 @@ type TeamInvitationStore interface {
 }
 
 type InvitationService struct {
-	WorkerService
+	routine  RoutineService
 	mailer   MailService
 	store    TeamInvitationStore
 	settings conf.AppOptions
@@ -165,13 +164,13 @@ func NewInvitationService(
 	store TeamInvitationStore,
 	mailer MailService,
 	settings conf.AppOptions,
-	workerService WorkerService,
+	workerService RoutineService,
 ) TeamInvitationService {
 	return &InvitationService{
-		WorkerService: workerService,
-		store:         store,
-		mailer:        mailer,
-		settings:      settings,
+		routine:  workerService,
+		store:    store,
+		mailer:   mailer,
+		settings: settings,
 	}
 }
 func (i *InvitationService) CancelInvitation(
@@ -335,7 +334,7 @@ func (i *InvitationService) CreateInvitation(
 		invitation = existingInvite
 	}
 
-	i.FireAndForget(
+	i.routine.FireAndForget(
 		func() {
 			ctx := context.Background()
 

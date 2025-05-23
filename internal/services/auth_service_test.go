@@ -222,15 +222,15 @@ func TestAuthenticate(t *testing.T) {
 		},
 	}).ToSettings()
 	wg := new(sync.WaitGroup)
-	mockRoutineService := new(mockRoutineService)
-	mockRoutineService.wg = wg
+	mockRoutineService := new(MockRoutineService)
+	mockRoutineService.Wg = wg
 	app := &BaseAuthService{
-		authStore:     mockStorage,
-		token:         mockToken,
-		password:      mockPassword,
-		WorkerService: mockRoutineService,
-		mail:          mockMailService,
-		options:       settings,
+		authStore: mockStorage,
+		token:     mockToken,
+		password:  mockPassword,
+		routine:   mockRoutineService,
+		mail:      mockMailService,
+		options:   settings,
 	}
 
 	testUserId := uuid.New()

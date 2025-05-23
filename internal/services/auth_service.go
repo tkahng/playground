@@ -19,7 +19,6 @@ import (
 )
 
 type AuthService interface {
-	WorkerService
 	HandlePasswordResetRequest(ctx context.Context, email string) error
 	HandleAccessToken(ctx context.Context, token string) (*shared.UserInfo, error)
 	HandleRefreshToken(ctx context.Context, token string) (*shared.UserInfoTokens, error)
@@ -69,7 +68,7 @@ type AuthStore interface {
 var _ AuthService = (*BaseAuthService)(nil)
 
 type BaseAuthService struct {
-	WorkerService
+	routine   RoutineService
 	authStore AuthStore
 	mail      MailService
 	token     JwtService
@@ -129,15 +128,15 @@ func NewAuthService(
 	mail MailService,
 	token JwtService,
 	password PasswordService,
-	workerService WorkerService,
+	workerService RoutineService,
 ) AuthService {
 	authService := &BaseAuthService{
-		WorkerService: workerService,
-		authStore:     authStore,
-		mail:          mail,
-		token:         token,
-		password:      password,
-		options:       opts,
+		routine:   workerService,
+		authStore: authStore,
+		mail:      mail,
+		token:     token,
+		password:  password,
+		options:   opts,
 	}
 
 	return authService
@@ -609,7 +608,7 @@ func (app *BaseAuthService) Authenticate(ctx context.Context, params *shared.Aut
 		// if user is first login, send verification email
 		if isFirstLogin {
 			fmt.Println("User is first login, sending verification email")
-			app.FireAndForget(
+			app.routine.FireAndForget(
 				func() {
 					ctx := context.Background()
 					err = app.SendOtpEmail(EmailTypeVerify, ctx, user)
@@ -627,7 +626,7 @@ func (app *BaseAuthService) Authenticate(ctx context.Context, params *shared.Aut
 		} else {
 			fmt.Println("User is not first login, checking user credentials security")
 			// if user is not first login, check if user credentials security
-			app.FireAndForget(
+			app.routine.FireAndForget(
 				func() {
 					ctx := context.Background()
 					err = app.CheckUserCredentialsSecurity(ctx, user, params)

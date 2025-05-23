@@ -17,8 +17,8 @@ func TestNewInvitationService(t *testing.T) {
 	mockStore := &mockTeamInvitationStore{}
 	opts := conf.NewSettings()
 	wg := new(sync.WaitGroup)
-	mockRoutineService := new(mockRoutineService)
-	mockRoutineService.wg = wg
+	mockRoutineService := new(MockRoutineService)
+	mockRoutineService.Wg = wg
 	service := NewInvitationService(mockStore, NewMailService(&mailer.LogMailer{}), *opts, mockRoutineService)
 
 	assert.NotNil(t, service, "NewInvitationService should not return nil")
@@ -30,8 +30,8 @@ func TestInvitationService_CreateInvitation(t *testing.T) {
 	opts := conf.NewSettings()
 	mailService := NewMockMailService()
 	wg := new(sync.WaitGroup)
-	mockRoutineService := new(mockRoutineService)
-	mockRoutineService.wg = wg
+	mockRoutineService := new(MockRoutineService)
+	mockRoutineService.Wg = wg
 	service := NewInvitationService(store, mailService, *opts, mockRoutineService)
 	member := &models.TeamMember{ID: uuid.New()}
 	inviteeEmail := "invitee@example.com"
@@ -57,8 +57,8 @@ func TestInvitationService_CreateInvitation_NotMember(t *testing.T) {
 	opts := conf.NewSettings()
 	mailService := NewMockMailService()
 	wg := new(sync.WaitGroup)
-	mockRoutineService := new(mockRoutineService)
-	mockRoutineService.wg = wg
+	mockRoutineService := new(MockRoutineService)
+	mockRoutineService.Wg = wg
 	service := NewInvitationService(store, mailService, *opts, mockRoutineService)
 	teamId := uuid.New()
 	userId := uuid.New()
@@ -74,8 +74,8 @@ func TestInvitationService_AcceptInvitation(t *testing.T) {
 	opts := conf.NewSettings()
 	mailService := NewMockMailService()
 	wg := new(sync.WaitGroup)
-	mockRoutineService := new(mockRoutineService)
-	mockRoutineService.wg = wg
+	mockRoutineService := new(MockRoutineService)
+	mockRoutineService.Wg = wg
 	// Mock the mail service
 	service := NewInvitationService(store, mailService, *opts, mockRoutineService)
 	teamId := uuid.New()
@@ -102,8 +102,8 @@ func TestInvitationService_AcceptInvitation_UserMismatch(t *testing.T) {
 	opts := conf.NewSettings()
 	mailService := NewMockMailService()
 	wg := new(sync.WaitGroup)
-	mockRoutineService := new(mockRoutineService)
-	mockRoutineService.wg = wg
+	mockRoutineService := new(MockRoutineService)
+	mockRoutineService.Wg = wg
 	service := NewInvitationService(store, mailService, *opts, mockRoutineService)
 	teamId := uuid.New()
 	userId := uuid.New()
@@ -126,8 +126,8 @@ func TestInvitationService_RejectInvitation(t *testing.T) {
 	opts := conf.NewSettings()
 	mailService := NewMockMailService()
 	wg := new(sync.WaitGroup)
-	mockRoutineService := new(mockRoutineService)
-	mockRoutineService.wg = wg
+	mockRoutineService := new(MockRoutineService)
+	mockRoutineService.Wg = wg
 	service := NewInvitationService(store, mailService, *opts, mockRoutineService)
 	teamId := uuid.New()
 	userId := uuid.New()
@@ -150,8 +150,8 @@ func TestInvitationService_FindInvitations(t *testing.T) {
 	opts := conf.NewSettings()
 	mailService := NewMockMailService()
 	wg := new(sync.WaitGroup)
-	mockRoutineService := new(mockRoutineService)
-	mockRoutineService.wg = wg
+	mockRoutineService := new(MockRoutineService)
+	mockRoutineService.Wg = wg
 	service := NewInvitationService(store, mailService, *opts, mockRoutineService)
 	teamId := uuid.New()
 	invitations := []*models.TeamInvitation{{TeamID: teamId, Email: "test@example.com"}}
@@ -166,8 +166,8 @@ func TestInvitationService_CancelInvitation_Success(t *testing.T) {
 	opts := conf.NewSettings()
 	mailService := NewMockMailService()
 	wg := new(sync.WaitGroup)
-	mockRoutineService := new(mockRoutineService)
-	mockRoutineService.wg = wg
+	mockRoutineService := new(MockRoutineService)
+	mockRoutineService.Wg = wg
 	service := NewInvitationService(store, mailService, *opts, mockRoutineService)
 
 	teamId := uuid.New()
@@ -199,8 +199,8 @@ func TestInvitationService_CancelInvitation_NotMember(t *testing.T) {
 	opts := conf.NewSettings()
 	mailService := NewMockMailService()
 	wg := new(sync.WaitGroup)
-	mockRoutineService := new(mockRoutineService)
-	mockRoutineService.wg = wg
+	mockRoutineService := new(MockRoutineService)
+	mockRoutineService.Wg = wg
 	service := NewInvitationService(store, mailService, *opts, mockRoutineService)
 
 	teamId := uuid.New()
@@ -220,8 +220,8 @@ func TestInvitationService_CancelInvitation_NotOwner(t *testing.T) {
 	opts := conf.NewSettings()
 	mailService := NewMockMailService()
 	wg := new(sync.WaitGroup)
-	mockRoutineService := new(mockRoutineService)
-	mockRoutineService.wg = wg
+	mockRoutineService := new(MockRoutineService)
+	mockRoutineService.Wg = wg
 	service := NewInvitationService(store, mailService, *opts, mockRoutineService)
 
 	teamId := uuid.New()
@@ -245,8 +245,8 @@ func TestInvitationService_CancelInvitation_InvitationNotFound(t *testing.T) {
 	opts := conf.NewSettings()
 	mailService := NewMockMailService()
 	wg := new(sync.WaitGroup)
-	mockRoutineService := new(mockRoutineService)
-	mockRoutineService.wg = wg
+	mockRoutineService := new(MockRoutineService)
+	mockRoutineService.Wg = wg
 	service := NewInvitationService(store, mailService, *opts, mockRoutineService)
 
 	teamId := uuid.New()
@@ -271,8 +271,8 @@ func TestInvitationService_CancelInvitation_InvitationTeamMismatch(t *testing.T)
 	opts := conf.NewSettings()
 	mailService := NewMockMailService()
 	wg := new(sync.WaitGroup)
-	mockRoutineService := new(mockRoutineService)
-	mockRoutineService.wg = wg
+	mockRoutineService := new(MockRoutineService)
+	mockRoutineService.Wg = wg
 	service := NewInvitationService(store, mailService, *opts, mockRoutineService)
 
 	teamId := uuid.New()
@@ -302,8 +302,8 @@ func TestInvitationService_CancelInvitation_FindTeamMemberError(t *testing.T) {
 	opts := conf.NewSettings()
 	mailService := NewMockMailService()
 	wg := new(sync.WaitGroup)
-	mockRoutineService := new(mockRoutineService)
-	mockRoutineService.wg = wg
+	mockRoutineService := new(MockRoutineService)
+	mockRoutineService.Wg = wg
 	service := NewInvitationService(store, mailService, *opts, mockRoutineService)
 
 	teamId := uuid.New()
@@ -323,8 +323,8 @@ func TestInvitationService_CancelInvitation_FindInvitationError(t *testing.T) {
 	opts := conf.NewSettings()
 	mailService := NewMockMailService()
 	wg := new(sync.WaitGroup)
-	mockRoutineService := new(mockRoutineService)
-	mockRoutineService.wg = wg
+	mockRoutineService := new(MockRoutineService)
+	mockRoutineService.Wg = wg
 	service := NewInvitationService(store, mailService, *opts, mockRoutineService)
 
 	teamId := uuid.New()
@@ -349,8 +349,8 @@ func TestInvitationService_CancelInvitation_UpdateInvitationError(t *testing.T) 
 	opts := conf.NewSettings()
 	mailService := NewMockMailService()
 	wg := new(sync.WaitGroup)
-	mockRoutineService := new(mockRoutineService)
-	mockRoutineService.wg = wg
+	mockRoutineService := new(MockRoutineService)
+	mockRoutineService.Wg = wg
 	service := NewInvitationService(store, mailService, *opts, mockRoutineService)
 
 	teamId := uuid.New()
@@ -380,8 +380,8 @@ func TestInvitationService_CheckValidInvitation_Success(t *testing.T) {
 	opts := conf.NewSettings()
 	mailService := NewMockMailService()
 	wg := new(sync.WaitGroup)
-	mockRoutineService := new(mockRoutineService)
-	mockRoutineService.wg = wg
+	mockRoutineService := new(MockRoutineService)
+	mockRoutineService.Wg = wg
 	service := NewInvitationService(store, mailService, *opts, mockRoutineService)
 
 	userId := uuid.New()
@@ -409,8 +409,8 @@ func TestInvitationService_CheckValidInvitation_InvitationNotFound(t *testing.T)
 	opts := conf.NewSettings()
 	mailService := NewMockMailService()
 	wg := new(sync.WaitGroup)
-	mockRoutineService := new(mockRoutineService)
-	mockRoutineService.wg = wg
+	mockRoutineService := new(MockRoutineService)
+	mockRoutineService.Wg = wg
 	service := NewInvitationService(store, mailService, *opts, mockRoutineService)
 
 	userId := uuid.New()
@@ -430,8 +430,8 @@ func TestInvitationService_CheckValidInvitation_FindInvitationError(t *testing.T
 	opts := conf.NewSettings()
 	mailService := NewMockMailService()
 	wg := new(sync.WaitGroup)
-	mockRoutineService := new(mockRoutineService)
-	mockRoutineService.wg = wg
+	mockRoutineService := new(MockRoutineService)
+	mockRoutineService.Wg = wg
 	service := NewInvitationService(store, mailService, *opts, mockRoutineService)
 
 	userId := uuid.New()
@@ -450,8 +450,8 @@ func TestInvitationService_CheckValidInvitation_UserNotFound(t *testing.T) {
 	opts := conf.NewSettings()
 	mailService := NewMockMailService()
 	wg := new(sync.WaitGroup)
-	mockRoutineService := new(mockRoutineService)
-	mockRoutineService.wg = wg
+	mockRoutineService := new(MockRoutineService)
+	mockRoutineService.Wg = wg
 	service := NewInvitationService(store, mailService, *opts, mockRoutineService)
 
 	userId := uuid.New()
@@ -476,8 +476,8 @@ func TestInvitationService_CheckValidInvitation_FindUserError(t *testing.T) {
 	opts := conf.NewSettings()
 	mailService := NewMockMailService()
 	wg := new(sync.WaitGroup)
-	mockRoutineService := new(mockRoutineService)
-	mockRoutineService.wg = wg
+	mockRoutineService := new(MockRoutineService)
+	mockRoutineService.Wg = wg
 	service := NewInvitationService(store, mailService, *opts, mockRoutineService)
 
 	userId := uuid.New()
@@ -501,8 +501,8 @@ func TestInvitationService_CheckValidInvitation_UserEmailMismatch(t *testing.T) 
 	opts := conf.NewSettings()
 	mailService := NewMockMailService()
 	wg := new(sync.WaitGroup)
-	mockRoutineService := new(mockRoutineService)
-	mockRoutineService.wg = wg
+	mockRoutineService := new(MockRoutineService)
+	mockRoutineService.Wg = wg
 	service := NewInvitationService(store, mailService, *opts, mockRoutineService)
 
 	userId := uuid.New()
@@ -531,8 +531,8 @@ func TestInvitationService_CheckValidInvitation_InvitationNotPending(t *testing.
 	opts := conf.NewSettings()
 	mailService := NewMockMailService()
 	wg := new(sync.WaitGroup)
-	mockRoutineService := new(mockRoutineService)
-	mockRoutineService.wg = wg
+	mockRoutineService := new(MockRoutineService)
+	mockRoutineService.Wg = wg
 	service := NewInvitationService(store, mailService, *opts, mockRoutineService)
 
 	userId := uuid.New()
@@ -560,8 +560,8 @@ func TestInvitationService_AcceptInvitation_Success(t *testing.T) {
 	opts := conf.NewSettings()
 	mailService := NewMockMailService()
 	wg := new(sync.WaitGroup)
-	mockRoutineService := new(mockRoutineService)
-	mockRoutineService.wg = wg
+	mockRoutineService := new(MockRoutineService)
+	mockRoutineService.Wg = wg
 	service := NewInvitationService(store, mailService, *opts, mockRoutineService)
 
 	teamId := uuid.New()
@@ -590,8 +590,8 @@ func TestInvitationService_AcceptInvitation_InvitationNotFound(t *testing.T) {
 	opts := conf.NewSettings()
 	mailService := NewMockMailService()
 	wg := new(sync.WaitGroup)
-	mockRoutineService := new(mockRoutineService)
-	mockRoutineService.wg = wg
+	mockRoutineService := new(MockRoutineService)
+	mockRoutineService.Wg = wg
 	service := NewInvitationService(store, mailService, *opts, mockRoutineService)
 
 	userId := uuid.New()
@@ -608,8 +608,8 @@ func TestInvitationService_AcceptInvitation_FindInvitationError(t *testing.T) {
 	opts := conf.NewSettings()
 	mailService := NewMockMailService()
 	wg := new(sync.WaitGroup)
-	mockRoutineService := new(mockRoutineService)
-	mockRoutineService.wg = wg
+	mockRoutineService := new(MockRoutineService)
+	mockRoutineService.Wg = wg
 	service := NewInvitationService(store, mailService, *opts, mockRoutineService)
 
 	userId := uuid.New()
@@ -626,8 +626,8 @@ func TestInvitationService_AcceptInvitation_UserNotFound(t *testing.T) {
 	opts := conf.NewSettings()
 	mailService := NewMockMailService()
 	wg := new(sync.WaitGroup)
-	mockRoutineService := new(mockRoutineService)
-	mockRoutineService.wg = wg
+	mockRoutineService := new(MockRoutineService)
+	mockRoutineService.Wg = wg
 	service := NewInvitationService(store, mailService, *opts, mockRoutineService)
 
 	teamId := uuid.New()
@@ -652,8 +652,8 @@ func TestInvitationService_AcceptInvitation_FindUserError(t *testing.T) {
 	opts := conf.NewSettings()
 	mailService := NewMockMailService()
 	wg := new(sync.WaitGroup)
-	mockRoutineService := new(mockRoutineService)
-	mockRoutineService.wg = wg
+	mockRoutineService := new(MockRoutineService)
+	mockRoutineService.Wg = wg
 	service := NewInvitationService(store, mailService, *opts, mockRoutineService)
 
 	teamId := uuid.New()
@@ -678,8 +678,8 @@ func TestInvitationService_AcceptInvitation_UserEmailMismatch(t *testing.T) {
 	opts := conf.NewSettings()
 	mailService := NewMockMailService()
 	wg := new(sync.WaitGroup)
-	mockRoutineService := new(mockRoutineService)
-	mockRoutineService.wg = wg
+	mockRoutineService := new(MockRoutineService)
+	mockRoutineService.Wg = wg
 	service := NewInvitationService(store, mailService, *opts, mockRoutineService)
 
 	teamId := uuid.New()
@@ -705,8 +705,8 @@ func TestInvitationService_AcceptInvitation_InvitationNotPending(t *testing.T) {
 	opts := conf.NewSettings()
 	mailService := NewMockMailService()
 	wg := new(sync.WaitGroup)
-	mockRoutineService := new(mockRoutineService)
-	mockRoutineService.wg = wg
+	mockRoutineService := new(MockRoutineService)
+	mockRoutineService.Wg = wg
 	service := NewInvitationService(store, mailService, *opts, mockRoutineService)
 
 	teamId := uuid.New()
@@ -732,8 +732,8 @@ func TestInvitationService_AcceptInvitation_CreateTeamMemberError(t *testing.T) 
 	opts := conf.NewSettings()
 	mailService := NewMockMailService()
 	wg := new(sync.WaitGroup)
-	mockRoutineService := new(mockRoutineService)
-	mockRoutineService.wg = wg
+	mockRoutineService := new(MockRoutineService)
+	mockRoutineService.Wg = wg
 	service := NewInvitationService(store, mailService, *opts, mockRoutineService)
 
 	teamId := uuid.New()
@@ -761,8 +761,8 @@ func TestInvitationService_AcceptInvitation_UpdateInvitationError(t *testing.T) 
 	opts := conf.NewSettings()
 	mailService := NewMockMailService()
 	wg := new(sync.WaitGroup)
-	mockRoutineService := new(mockRoutineService)
-	mockRoutineService.wg = wg
+	mockRoutineService := new(MockRoutineService)
+	mockRoutineService.Wg = wg
 	service := NewInvitationService(store, mailService, *opts, mockRoutineService)
 
 	teamId := uuid.New()
@@ -790,8 +790,8 @@ func TestInvitationService_CreateInvitation_NewInvite_Success(t *testing.T) {
 	opts := conf.NewSettings()
 	mailService := NewMockMailService()
 	wg := new(sync.WaitGroup)
-	mockRoutineService := new(mockRoutineService)
-	mockRoutineService.wg = wg
+	mockRoutineService := new(MockRoutineService)
+	mockRoutineService.Wg = wg
 	service := NewInvitationService(store, mailService, *opts, mockRoutineService)
 
 	teamId := uuid.New()
@@ -821,8 +821,8 @@ func TestInvitationService_CreateInvitation_ExistingInvite_Resend_Success(t *tes
 	opts := conf.NewSettings()
 	mailService := NewMockMailService()
 	wg := new(sync.WaitGroup)
-	mockRoutineService := new(mockRoutineService)
-	mockRoutineService.wg = wg
+	mockRoutineService := new(MockRoutineService)
+	mockRoutineService.Wg = wg
 	service := NewInvitationService(store, mailService, *opts, mockRoutineService)
 
 	teamId := uuid.New()
@@ -853,8 +853,8 @@ func TestInvitationService_CreateInvitation_ExistingInvite_NoResend_Error(t *tes
 	opts := conf.NewSettings()
 	mailService := NewMockMailService()
 	wg := new(sync.WaitGroup)
-	mockRoutineService := new(mockRoutineService)
-	mockRoutineService.wg = wg
+	mockRoutineService := new(MockRoutineService)
+	mockRoutineService.Wg = wg
 	service := NewInvitationService(store, mailService, *opts, mockRoutineService)
 
 	teamId := uuid.New()
@@ -884,8 +884,8 @@ func TestInvitationService_CreateInvitation_FindTeamMemberError(t *testing.T) {
 	opts := conf.NewSettings()
 	mailService := NewMockMailService()
 	wg := new(sync.WaitGroup)
-	mockRoutineService := new(mockRoutineService)
-	mockRoutineService.wg = wg
+	mockRoutineService := new(MockRoutineService)
+	mockRoutineService.Wg = wg
 	service := NewInvitationService(store, mailService, *opts, mockRoutineService)
 
 	teamId := uuid.New()
@@ -906,8 +906,8 @@ func TestInvitationService_CreateInvitation_UserNotMember_Error(t *testing.T) {
 	opts := conf.NewSettings()
 	mailService := NewMockMailService()
 	wg := new(sync.WaitGroup)
-	mockRoutineService := new(mockRoutineService)
-	mockRoutineService.wg = wg
+	mockRoutineService := new(MockRoutineService)
+	mockRoutineService.Wg = wg
 	service := NewInvitationService(store, mailService, *opts, mockRoutineService)
 
 	teamId := uuid.New()
@@ -928,8 +928,8 @@ func TestInvitationService_CreateInvitation_FindUserByID_Error(t *testing.T) {
 	opts := conf.NewSettings()
 	mailService := NewMockMailService()
 	wg := new(sync.WaitGroup)
-	mockRoutineService := new(mockRoutineService)
-	mockRoutineService.wg = wg
+	mockRoutineService := new(MockRoutineService)
+	mockRoutineService.Wg = wg
 	service := NewInvitationService(store, mailService, *opts, mockRoutineService)
 
 	teamId := uuid.New()
@@ -952,8 +952,8 @@ func TestInvitationService_CreateInvitation_UserNotFound_Error(t *testing.T) {
 	opts := conf.NewSettings()
 	mailService := NewMockMailService()
 	wg := new(sync.WaitGroup)
-	mockRoutineService := new(mockRoutineService)
-	mockRoutineService.wg = wg
+	mockRoutineService := new(MockRoutineService)
+	mockRoutineService.Wg = wg
 	service := NewInvitationService(store, mailService, *opts, mockRoutineService)
 
 	teamId := uuid.New()
@@ -976,8 +976,8 @@ func TestInvitationService_CreateInvitation_FindTeamByID_Error(t *testing.T) {
 	opts := conf.NewSettings()
 	mailService := NewMockMailService()
 	wg := new(sync.WaitGroup)
-	mockRoutineService := new(mockRoutineService)
-	mockRoutineService.wg = wg
+	mockRoutineService := new(MockRoutineService)
+	mockRoutineService.Wg = wg
 	service := NewInvitationService(store, mailService, *opts, mockRoutineService)
 
 	teamId := uuid.New()
@@ -1002,8 +1002,8 @@ func TestInvitationService_CreateInvitation_TeamNotFound_Error(t *testing.T) {
 	opts := conf.NewSettings()
 	mailService := NewMockMailService()
 	wg := new(sync.WaitGroup)
-	mockRoutineService := new(mockRoutineService)
-	mockRoutineService.wg = wg
+	mockRoutineService := new(MockRoutineService)
+	mockRoutineService.Wg = wg
 	service := NewInvitationService(store, mailService, *opts, mockRoutineService)
 
 	teamId := uuid.New()
@@ -1028,8 +1028,8 @@ func TestInvitationService_CreateInvitation_FindPendingInvitation_Error(t *testi
 	opts := conf.NewSettings()
 	mailService := NewMockMailService()
 	wg := new(sync.WaitGroup)
-	mockRoutineService := new(mockRoutineService)
-	mockRoutineService.wg = wg
+	mockRoutineService := new(MockRoutineService)
+	mockRoutineService.Wg = wg
 	service := NewInvitationService(store, mailService, *opts, mockRoutineService)
 
 	teamId := uuid.New()
@@ -1057,8 +1057,8 @@ func TestInvitationService_CreateInvitation_CreateInvitation_Error(t *testing.T)
 	opts := conf.NewSettings()
 	mailService := NewMockMailService()
 	wg := new(sync.WaitGroup)
-	mockRoutineService := new(mockRoutineService)
-	mockRoutineService.wg = wg
+	mockRoutineService := new(MockRoutineService)
+	mockRoutineService.Wg = wg
 	service := NewInvitationService(store, mailService, *opts, mockRoutineService)
 
 	teamId := uuid.New()
@@ -1087,8 +1087,8 @@ func TestInvitationService_CreateInvitation_UpdateInvitation_Error(t *testing.T)
 	opts := conf.NewSettings()
 	mailService := NewMockMailService()
 	wg := new(sync.WaitGroup)
-	mockRoutineService := new(mockRoutineService)
-	mockRoutineService.wg = wg
+	mockRoutineService := new(MockRoutineService)
+	mockRoutineService.Wg = wg
 	service := NewInvitationService(store, mailService, *opts, mockRoutineService)
 
 	teamId := uuid.New()
@@ -1117,8 +1117,8 @@ func TestInvitationService_FindInvitations_Success(t *testing.T) {
 	opts := conf.NewSettings()
 	mailService := NewMockMailService()
 	wg := new(sync.WaitGroup)
-	mockRoutineService := new(mockRoutineService)
-	mockRoutineService.wg = wg
+	mockRoutineService := new(MockRoutineService)
+	mockRoutineService.Wg = wg
 	service := NewInvitationService(store, mailService, *opts, mockRoutineService)
 
 	teamId := uuid.New()
@@ -1140,8 +1140,8 @@ func TestInvitationService_FindInvitations_Error(t *testing.T) {
 	opts := conf.NewSettings()
 	mailService := NewMockMailService()
 	wg := new(sync.WaitGroup)
-	mockRoutineService := new(mockRoutineService)
-	mockRoutineService.wg = wg
+	mockRoutineService := new(MockRoutineService)
+	mockRoutineService.Wg = wg
 	service := NewInvitationService(store, mailService, *opts, mockRoutineService)
 
 	teamId := uuid.New()
@@ -1159,8 +1159,8 @@ func TestInvitationService_RejectInvitation_Success(t *testing.T) {
 	opts := conf.NewSettings()
 	mailService := NewMockMailService()
 	wg := new(sync.WaitGroup)
-	mockRoutineService := new(mockRoutineService)
-	mockRoutineService.wg = wg
+	mockRoutineService := new(MockRoutineService)
+	mockRoutineService.Wg = wg
 	service := NewInvitationService(store, mailService, *opts, mockRoutineService)
 
 	userId := uuid.New()
@@ -1189,8 +1189,8 @@ func TestInvitationService_RejectInvitation_InvitationNotFound(t *testing.T) {
 	opts := conf.NewSettings()
 	mailService := NewMockMailService()
 	wg := new(sync.WaitGroup)
-	mockRoutineService := new(mockRoutineService)
-	mockRoutineService.wg = wg
+	mockRoutineService := new(MockRoutineService)
+	mockRoutineService.Wg = wg
 	service := NewInvitationService(store, mailService, *opts, mockRoutineService)
 
 	userId := uuid.New()
@@ -1210,8 +1210,8 @@ func TestInvitationService_RejectInvitation_FindInvitationError(t *testing.T) {
 	opts := conf.NewSettings()
 	mailService := NewMockMailService()
 	wg := new(sync.WaitGroup)
-	mockRoutineService := new(mockRoutineService)
-	mockRoutineService.wg = wg
+	mockRoutineService := new(MockRoutineService)
+	mockRoutineService.Wg = wg
 	service := NewInvitationService(store, mailService, *opts, mockRoutineService)
 
 	userId := uuid.New()
@@ -1231,8 +1231,8 @@ func TestInvitationService_RejectInvitation_UserNotFound(t *testing.T) {
 	opts := conf.NewSettings()
 	mailService := NewMockMailService()
 	wg := new(sync.WaitGroup)
-	mockRoutineService := new(mockRoutineService)
-	mockRoutineService.wg = wg
+	mockRoutineService := new(MockRoutineService)
+	mockRoutineService.Wg = wg
 	service := NewInvitationService(store, mailService, *opts, mockRoutineService)
 
 	userId := uuid.New()
@@ -1257,8 +1257,8 @@ func TestInvitationService_RejectInvitation_FindUserError(t *testing.T) {
 	opts := conf.NewSettings()
 	mailService := NewMockMailService()
 	wg := new(sync.WaitGroup)
-	mockRoutineService := new(mockRoutineService)
-	mockRoutineService.wg = wg
+	mockRoutineService := new(MockRoutineService)
+	mockRoutineService.Wg = wg
 	service := NewInvitationService(store, mailService, *opts, mockRoutineService)
 
 	userId := uuid.New()
@@ -1283,8 +1283,8 @@ func TestInvitationService_RejectInvitation_UserEmailMismatch(t *testing.T) {
 	opts := conf.NewSettings()
 	mailService := NewMockMailService()
 	wg := new(sync.WaitGroup)
-	mockRoutineService := new(mockRoutineService)
-	mockRoutineService.wg = wg
+	mockRoutineService := new(MockRoutineService)
+	mockRoutineService.Wg = wg
 	service := NewInvitationService(store, mailService, *opts, mockRoutineService)
 
 	userId := uuid.New()

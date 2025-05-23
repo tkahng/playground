@@ -23,7 +23,7 @@ func TestStripeService_CreateTeamCustomer(t *testing.T) {
 	created := &models.StripeCustomer{ID: customer.ID, Email: customer.Email, Name: &team.Name, TeamID: types.Pointer(team.ID), CustomerType: models.StripeCustomerTypeTeam}
 
 	t.Run("success", func(t *testing.T) {
-		store := new(mockPaymentStore)
+		store := new(MockPaymentStore)
 		client := new(mockPaymentClient)
 		service := &StripeService{paymentStore: store, client: client}
 		client.On("CreateCustomer", user.Email, &team.Name).Return(customer, nil)
@@ -36,7 +36,7 @@ func TestStripeService_CreateTeamCustomer(t *testing.T) {
 	})
 
 	t.Run("client error", func(t *testing.T) {
-		store := new(mockPaymentStore)
+		store := new(MockPaymentStore)
 		client := new(mockPaymentClient)
 		service := &StripeService{paymentStore: store, client: client}
 		client.On("CreateCustomer", user.Email, &team.Name).Return(nil, errors.New("stripe error"))
@@ -47,7 +47,7 @@ func TestStripeService_CreateTeamCustomer(t *testing.T) {
 	})
 
 	t.Run("nil customer", func(t *testing.T) {
-		store := new(mockPaymentStore)
+		store := new(MockPaymentStore)
 		client := new(mockPaymentClient)
 		service := &StripeService{paymentStore: store, client: client}
 		client.On("CreateCustomer", user.Email, &team.Name).Return(nil, nil)
@@ -66,7 +66,7 @@ func TestStripeService_CreateUserCustomer(t *testing.T) {
 	created := &models.StripeCustomer{ID: customer.ID, Email: customer.Email, Name: user.Name, UserID: types.Pointer(user.ID), CustomerType: models.StripeCustomerTypeUser}
 
 	t.Run("success", func(t *testing.T) {
-		store := new(mockPaymentStore)
+		store := new(MockPaymentStore)
 		client := new(mockPaymentClient)
 		service := &StripeService{paymentStore: store, client: client}
 		client.On("CreateCustomer", user.Email, user.Name).Return(customer, nil)
@@ -79,7 +79,7 @@ func TestStripeService_CreateUserCustomer(t *testing.T) {
 	})
 
 	t.Run("client error", func(t *testing.T) {
-		store := new(mockPaymentStore)
+		store := new(MockPaymentStore)
 		client := new(mockPaymentClient)
 		service := &StripeService{paymentStore: store, client: client}
 		client.On("CreateCustomer", user.Email, user.Name).Return(nil, errors.New("stripe error"))
@@ -90,7 +90,7 @@ func TestStripeService_CreateUserCustomer(t *testing.T) {
 	})
 
 	t.Run("nil customer", func(t *testing.T) {
-		store := new(mockPaymentStore)
+		store := new(MockPaymentStore)
 		client := new(mockPaymentClient)
 		service := &StripeService{paymentStore: store, client: client}
 		client.On("CreateCustomer", user.Email, user.Name).Return(nil, nil)
@@ -108,7 +108,7 @@ func TestStripeService_FindCustomerByTeam(t *testing.T) {
 	customer := &models.StripeCustomer{ID: "cus_789", TeamID: types.Pointer(teamId)}
 
 	t.Run("success", func(t *testing.T) {
-		store := new(mockPaymentStore)
+		store := new(MockPaymentStore)
 		client := new(mockPaymentClient)
 		service := &StripeService{paymentStore: store, client: client}
 		store.On("FindCustomer", ctx, mock.AnythingOfType("*models.StripeCustomer")).Return(customer, nil)
@@ -119,7 +119,7 @@ func TestStripeService_FindCustomerByTeam(t *testing.T) {
 	})
 
 	t.Run("store error", func(t *testing.T) {
-		store := new(mockPaymentStore)
+		store := new(MockPaymentStore)
 		client := new(mockPaymentClient)
 		service := &StripeService{paymentStore: store, client: client}
 		store.On("FindCustomer", ctx, mock.AnythingOfType("*models.StripeCustomer")).Return(nil, errors.New("db error"))
@@ -136,7 +136,7 @@ func TestStripeService_FindCustomerByUser(t *testing.T) {
 	customer := &models.StripeCustomer{ID: "cus_101", UserID: types.Pointer(userId)}
 
 	t.Run("success", func(t *testing.T) {
-		store := new(mockPaymentStore)
+		store := new(MockPaymentStore)
 		client := new(mockPaymentClient)
 		service := &StripeService{paymentStore: store, client: client}
 		store.On("FindCustomer", ctx, mock.AnythingOfType("*models.StripeCustomer")).Return(customer, nil)
@@ -147,7 +147,7 @@ func TestStripeService_FindCustomerByUser(t *testing.T) {
 	})
 
 	t.Run("store error", func(t *testing.T) {
-		store := new(mockPaymentStore)
+		store := new(MockPaymentStore)
 		client := new(mockPaymentClient)
 		service := &StripeService{paymentStore: store, client: client}
 		store.On("FindCustomer", ctx, mock.AnythingOfType("*models.StripeCustomer")).Return(nil, errors.New("db error"))
@@ -180,7 +180,7 @@ func TestStripeService_VerifyAndUpdateTeamSubscriptionQuantity(t *testing.T) {
 	}
 
 	t.Run("updates quantity if different", func(t *testing.T) {
-		store := new(mockPaymentStore)
+		store := new(MockPaymentStore)
 		client := new(mockPaymentClient)
 		service := &StripeService{paymentStore: store, client: client}
 		store.On("FindCustomer", ctx, mock.Anything).Return(customer, nil)
@@ -194,7 +194,7 @@ func TestStripeService_VerifyAndUpdateTeamSubscriptionQuantity(t *testing.T) {
 	})
 
 	t.Run("no update if quantity matches", func(t *testing.T) {
-		store := new(mockPaymentStore)
+		store := new(MockPaymentStore)
 		client := new(mockPaymentClient)
 		service := &StripeService{paymentStore: store, client: client}
 		store.On("FindCustomer", ctx, mock.Anything).Return(customer, nil)
@@ -206,7 +206,7 @@ func TestStripeService_VerifyAndUpdateTeamSubscriptionQuantity(t *testing.T) {
 	})
 
 	t.Run("returns error if no subscription", func(t *testing.T) {
-		store := new(mockPaymentStore)
+		store := new(MockPaymentStore)
 		client := new(mockPaymentClient)
 		service := &StripeService{paymentStore: store, client: client}
 		store.On("FindCustomer", ctx, mock.Anything).Return(customer, nil)
@@ -218,7 +218,7 @@ func TestStripeService_VerifyAndUpdateTeamSubscriptionQuantity(t *testing.T) {
 	})
 
 	t.Run("returns error if store fails", func(t *testing.T) {
-		store := new(mockPaymentStore)
+		store := new(MockPaymentStore)
 		client := new(mockPaymentClient)
 		service := &StripeService{paymentStore: store, client: client}
 		store.On("FindCustomer", ctx, mock.Anything).Return(nil, errors.New("db error"))
@@ -228,7 +228,7 @@ func TestStripeService_VerifyAndUpdateTeamSubscriptionQuantity(t *testing.T) {
 	})
 
 	t.Run("returns error if no customer", func(t *testing.T) {
-		store := new(mockPaymentStore)
+		store := new(MockPaymentStore)
 		client := new(mockPaymentClient)
 		service := &StripeService{paymentStore: store, client: client}
 		store.On("FindCustomer", ctx, mock.Anything).Return(nil, nil)
@@ -239,7 +239,7 @@ func TestStripeService_VerifyAndUpdateTeamSubscriptionQuantity(t *testing.T) {
 	})
 
 	t.Run("returns error if CountTeamMembers fails", func(t *testing.T) {
-		store := new(mockPaymentStore)
+		store := new(MockPaymentStore)
 		client := new(mockPaymentClient)
 		service := &StripeService{paymentStore: store, client: client}
 		store.On("FindCustomer", ctx, mock.Anything).Return(customer, nil)
@@ -251,7 +251,7 @@ func TestStripeService_VerifyAndUpdateTeamSubscriptionQuantity(t *testing.T) {
 	})
 
 	t.Run("returns nil if team member count is zero", func(t *testing.T) {
-		store := new(mockPaymentStore)
+		store := new(MockPaymentStore)
 		client := new(mockPaymentClient)
 		service := &StripeService{paymentStore: store, client: client}
 		store.On("FindCustomer", ctx, mock.Anything).Return(customer, nil)
@@ -263,7 +263,7 @@ func TestStripeService_VerifyAndUpdateTeamSubscriptionQuantity(t *testing.T) {
 	})
 
 	t.Run("returns error if UpdateItemQuantity fails", func(t *testing.T) {
-		store := new(mockPaymentStore)
+		store := new(MockPaymentStore)
 		client := new(mockPaymentClient)
 		service := &StripeService{paymentStore: store, client: client}
 		store.On("FindCustomer", ctx, mock.Anything).Return(customer, nil)
