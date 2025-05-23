@@ -13,6 +13,27 @@ import (
 	"github.com/tkahng/authgo/internal/models"
 )
 
+func TeamCanDeleteMiddleware(api huma.API, app core.App) func(ctx huma.Context, next func(huma.Context)) {
+	return func(ctx huma.Context, next func(huma.Context)) {
+		rawCtx := ctx.Context()
+		teamInfo := contextstore.GetContextTeamInfo(rawCtx)
+		if teamInfo == nil {
+			huma.WriteErr(api, ctx, http.StatusForbidden, "missing team membership", nil)
+			return
+		}
+		err := app.Checker().TeamCannotHaveValidSubscription(rawCtx, teamInfo.Team.ID)
+		if err != nil {
+			huma.WriteErr(api, ctx, http.StatusInternalServerError, "error checking if team can be deleted", err)
+			return
+		}
+		// if !canDelete {
+		// 	huma.WriteErr(api, ctx, http.StatusForbidden, "you are not allowed to delete this team", nil)
+		// 	return
+		// }
+		next(ctx)
+	}
+}
+
 func TeamInfoFromParamMiddleware(api huma.API, app core.App) func(ctx huma.Context, next func(huma.Context)) {
 	return func(ctx huma.Context, next func(huma.Context)) {
 		rawCtx := ctx.Context()
@@ -28,7 +49,7 @@ func TeamInfoFromParamMiddleware(api huma.API, app core.App) func(ctx huma.Conte
 		}
 		id, err := uuid.Parse(teamId)
 		if err != nil {
-			huma.WriteErr(api, ctx, http.StatusBadRequest, "invalid team id", err)
+			huma.WriteErr(api, ctx, http.StatusBadRequest, "error parsing team id", err)
 			return
 		}
 		teamInfo, err := app.Team().FindTeamInfo(rawCtx, id, userInfo.User.ID)
@@ -37,6 +58,7 @@ func TeamInfoFromParamMiddleware(api huma.API, app core.App) func(ctx huma.Conte
 			return
 		}
 		if teamInfo == nil {
+			// huma.WriteErr(api, ctx, http.StatusNotFound, "team not found. you might not be a member of this team or it might not exist", nil)
 			next(ctx)
 			return
 		}

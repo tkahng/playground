@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/danielgtaylor/huma/v2"
+	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/contextstore"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
@@ -48,6 +49,24 @@ func (api *Api) CreateTeam(
 	}, nil
 }
 
+func (api *Api) CheckTeamSlug(
+	ctx context.Context,
+	input *struct {
+		Body struct {
+			Slug string `json:"slug" required:"true"`
+		} `json:"body" required:"true"`
+	},
+) (
+	*bool,
+	error,
+) {
+	exists, err := api.app.Team().Store().CheckTeamSlug(ctx, input.Body.Slug)
+	if err != nil {
+		return nil, err
+	}
+	return &exists, nil
+}
+
 func (api *Api) GetUserTeamMembers(
 	ctx context.Context,
 	input *shared.PaginatedInput,
@@ -77,4 +96,81 @@ func (api *Api) GetUserTeamMembers(
 		},
 	}, nil
 
+}
+
+func (api *Api) UpdateTeam(
+	ctx context.Context,
+	input *struct {
+		TeamID string `path:"team-id" required:"true"`
+		Body   struct {
+			Name string `json:"name" required:"true"`
+		} `json:"body" required:"true"`
+	},
+) (
+	*TeamOutput,
+	error,
+) {
+	info := contextstore.GetContextTeamInfo(ctx)
+	if info == nil {
+		return nil, huma.Error401Unauthorized("unauthorized")
+	}
+	team, err := api.app.Team().UpdateTeam(ctx, info.Team.ID, input.Body.Name)
+	if err != nil {
+		return nil, err
+	}
+	if team == nil {
+		return nil, huma.Error500InternalServerError("team not found")
+	}
+	return &TeamOutput{
+		Body: shared.FromTeamModel(team),
+	}, nil
+}
+
+func (api *Api) DeleteTeam(
+	ctx context.Context,
+	input *struct {
+		TeamID string `path:"team-id" required:"true"`
+	},
+) (
+	*TeamOutput,
+	error,
+) {
+	info := contextstore.GetContextTeamInfo(ctx)
+	if info == nil {
+		return nil, huma.Error401Unauthorized("unauthorized")
+	}
+	err := api.app.Team().DeleteTeam(ctx, info.Team.ID, info.User.ID)
+	if err != nil {
+		return nil, err
+	}
+	return nil, nil
+}
+
+func (api *Api) GetTeam(
+	ctx context.Context,
+	input *struct {
+		TeamID string `path:"team-id" required:"true"`
+	},
+) (
+	*TeamOutput,
+	error,
+) {
+	info := contextstore.GetContextUserInfo(ctx)
+	if info == nil {
+		return nil, huma.Error401Unauthorized("unauthorized")
+	}
+	uid, err := uuid.Parse(input.TeamID)
+	if err != nil {
+		return nil, huma.Error400BadRequest("invalid team ID")
+	}
+	team, err := api.app.Team().Store().FindTeamByID(ctx, uid)
+	if err != nil {
+		return nil, err
+	}
+	if team == nil {
+		return nil, huma.Error500InternalServerError("team not found")
+	}
+	return &TeamOutput{
+		Body: shared.FromTeamModel(team),
+	}, nil
 }
