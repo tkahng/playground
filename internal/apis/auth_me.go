@@ -64,14 +64,20 @@ func (api *Api) MeDelete(ctx context.Context, input *struct{}) (*struct{}, error
 		return nil, huma.Error404NotFound("User not found")
 	}
 	checker := api.app.Checker()
-	err := checker.CannotBeSuperUserID(ctx, claims.User.ID)
+	ok, err := checker.CannotBeSuperUserID(ctx, claims.User.ID)
 	if err != nil {
 		return nil, err
 	}
+	if !ok {
+		return nil, huma.Error403Forbidden("You cannot delete the super user")
+	}
 	// Check if the user has any active subscriptions
-	err = checker.CannotHaveValidUserSubscription(ctx, claims.User.ID)
+	ok, err = checker.CannotHaveValidUserSubscription(ctx, claims.User.ID)
 	if err != nil {
 		return nil, err
+	}
+	if !ok {
+		return nil, huma.Error403Forbidden("You cannot delete a user with active subscriptions")
 	}
 	err = queries.DeleteUsers(ctx, db, claims.User.ID)
 	if err != nil {

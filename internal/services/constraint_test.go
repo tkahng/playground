@@ -87,11 +87,18 @@ func TestConstraintCheckerService_CannotHaveValidSubscription(t *testing.T) {
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				c := services.NewConstraintCheckerService(constraintStore)
-				if err := c.CannotHaveValidUserSubscription(tt.fields.ctx, tt.args.userId); (err != nil) != tt.wantErr {
+				ok, err := c.CannotHaveValidUserSubscription(tt.fields.ctx, tt.args.userId)
+				if (err != nil) != tt.wantErr {
 					t.Errorf("ConstraintCheckerService.CannotHaveValidSubscription() error = %v, wantErr %v", err, tt.wantErr)
-					if err.Error() != "Cannot perform this action on a user with a valid subscription" {
+					if err != nil && err.Error() != "Cannot perform this action on a user with a valid subscription" {
 						t.Errorf("unexpected error message: %v", err.Error())
 					}
+				}
+				if tt.wantErr && ok {
+					t.Errorf("expected ok to be false when wantErr is true")
+				}
+				if !tt.wantErr && !ok {
+					t.Errorf("expected ok to be true when wantErr is false")
 				}
 			})
 		}
@@ -136,12 +143,18 @@ func TestConstraintCheckerService_CannotBeAdminOrBasicName(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c := services.NewConstraintCheckerService(checkerStore)
-			err := c.CannotBeAdminOrBasicName(tt.fields.ctx, tt.args.permissionName)
+			ok, err := c.CannotBeAdminOrBasicName(tt.fields.ctx, tt.args.permissionName)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ConstraintCheckerService.CannotBeAdminOrBasicName() error = %v, wantErr %v", err, tt.wantErr)
 			}
-			if tt.wantErr && err.Error() != "Cannot perform this action on the admin or basic permission" {
+			if tt.wantErr && err != nil && err.Error() != "Cannot perform this action on the admin or basic permission" {
 				t.Errorf("unexpected error message: %v", err.Error())
+			}
+			if tt.wantErr && ok {
+				t.Errorf("expected ok to be false when wantErr is true")
+			}
+			if !tt.wantErr && !ok {
+				t.Errorf("expected ok to be true when wantErr is false")
 			}
 		})
 	}
@@ -204,12 +217,18 @@ func TestConstraintCheckerService_CannotBeAdminOrBasicRoleAndPermissionName(t *t
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c := services.NewConstraintCheckerService(checkerStore)
-			err := c.CannotBeAdminOrBasicRoleAndPermissionName(tt.fields.ctx, tt.args.roleName, tt.args.permissionName)
+			ok, err := c.CannotBeAdminOrBasicRoleAndPermissionName(tt.fields.ctx, tt.args.roleName, tt.args.permissionName)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ConstraintCheckerService.CannotBeAdminOrBasicRoleAndPermissionName() error = %v, wantErr %v", err, tt.wantErr)
 			}
-			if tt.wantErr && err.Error() != "Cannot perform this action on the admin role and permission" {
+			if tt.wantErr && err != nil && err.Error() != "Cannot perform this action on the admin role and permission" {
 				t.Errorf("unexpected error message: %v", err.Error())
+			}
+			if tt.wantErr && ok {
+				t.Errorf("expected ok to be false when wantErr is true")
+			}
+			if !tt.wantErr && !ok {
+				t.Errorf("expected ok to be true when wantErr is false")
 			}
 		})
 	}
@@ -272,12 +291,18 @@ func TestConstraintCheckerService_CannotBeSuperUserEmailAndRoleName(t *testing.T
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c := services.NewConstraintCheckerService(checkerStore)
-			err := c.CannotBeSuperUserEmailAndRoleName(tt.fields.ctx, tt.args.email, tt.args.roleName)
+			ok, err := c.CannotBeSuperUserEmailAndRoleName(tt.fields.ctx, tt.args.email, tt.args.roleName)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ConstraintCheckerService.CannotBeSuperUserEmailAndRoleName() error = %v, wantErr %v", err, tt.wantErr)
 			}
-			if tt.wantErr && err.Error() != "Cannot perform this action on the super user email and admin role" {
+			if tt.wantErr && err != nil && err.Error() != "Cannot perform this action on the super user email and admin role" {
 				t.Errorf("unexpected error message: %v", err.Error())
+			}
+			if tt.wantErr && ok {
+				t.Errorf("expected ok to be false when wantErr is true")
+			}
+			if !tt.wantErr && !ok {
+				t.Errorf("expected ok to be true when wantErr is false")
 			}
 		})
 	}
@@ -370,12 +395,18 @@ func TestConstraintCheckerService_CannotBeSuperUserID(t *testing.T) {
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				c := services.NewConstraintCheckerService(checkerStore)
-				err := c.CannotBeSuperUserID(tt.fields.ctx, tt.args.userId)
+				ok, err := c.CannotBeSuperUserID(tt.fields.ctx, tt.args.userId)
 				if (err != nil) != tt.wantErr {
 					t.Errorf("ConstraintCheckerService.CannotBeSuperUserID() error = %v, wantErr %v", err, tt.wantErr)
 				}
-				if tt.wantErr && err.Error() != "Cannot perform this action on the super user" {
+				if tt.wantErr && err != nil && err.Error() != "Cannot perform this action on the super user" {
 					t.Errorf("unexpected error message: %v", err.Error())
+				}
+				if tt.wantErr && ok {
+					t.Errorf("expected ok to be false when wantErr is true")
+				}
+				if !tt.wantErr && !ok {
+					t.Errorf("expected ok to be true when wantErr is false")
 				}
 			})
 		}
@@ -419,12 +450,18 @@ func TestConstraintCheckerService_CannotBeSuperUserEmail(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c := services.NewConstraintCheckerService(checkerStore)
-			err := c.CannotBeSuperUserEmail(tt.fields.ctx, tt.args.email)
+			ok, err := c.CannotBeSuperUserEmail(tt.fields.ctx, tt.args.email)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ConstraintCheckerService.CannotBeSuperUserEmail() error = %v, wantErr %v", err, tt.wantErr)
 			}
-			if tt.wantErr && err.Error() != "Cannot perform this action on the super user" {
+			if tt.wantErr && err != nil && err.Error() != "Cannot perform this action on the super user" {
 				t.Errorf("unexpected error message: %v", err.Error())
+			}
+			if tt.wantErr && ok {
+				t.Errorf("expected ok to be false when wantErr is true")
+			}
+			if !tt.wantErr && !ok {
+				t.Errorf("expected ok to be true when wantErr is false")
 			}
 		})
 	}

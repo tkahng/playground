@@ -193,7 +193,7 @@ func NewBApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 		mail,
 		authService,
 		paymentService,
-		checker,
+		checker, // pass as ConstraintChecker
 		rbacService,
 		userService,
 		userAccountService,
@@ -212,7 +212,7 @@ func NewApp(
 	mail mailer.Mailer,
 	authService services.AuthService,
 	paymentService services.PaymentService,
-	checker *services.ConstraintCheckerService,
+	checker services.ConstraintChecker,
 	rbacService services.RBACService,
 	userService services.UserService,
 	userAccountService services.UserAccountService,

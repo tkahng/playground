@@ -21,15 +21,15 @@ func TeamCanDeleteMiddleware(api huma.API, app core.App) func(ctx huma.Context, 
 			huma.WriteErr(api, ctx, http.StatusForbidden, "missing team membership", nil)
 			return
 		}
-		err := app.Checker().TeamCannotHaveValidSubscription(rawCtx, teamInfo.Team.ID)
+		can, err := app.Checker().TeamCannotHaveValidSubscription(rawCtx, teamInfo.Team.ID)
 		if err != nil {
 			huma.WriteErr(api, ctx, http.StatusInternalServerError, "error checking if team can be deleted", err)
 			return
 		}
-		// if !canDelete {
-		// 	huma.WriteErr(api, ctx, http.StatusForbidden, "you are not allowed to delete this team", nil)
-		// 	return
-		// }
+		if !can {
+			huma.WriteErr(api, ctx, http.StatusForbidden, "you are not allowed to delete this team", nil)
+			return
+		}
 		next(ctx)
 	}
 }

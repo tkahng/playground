@@ -100,9 +100,12 @@ func (api *Api) AdminRolesDelete(ctx context.Context, input *struct {
 	}
 	// Check if the user is trying to delete the admin or basic role
 	checker := api.app.Checker()
-	err = checker.CannotBeAdminOrBasicName(ctx, role.Name)
+	ok, err := checker.CannotBeAdminOrBasicName(ctx, role.Name)
 	if err != nil {
 		return nil, err
+	}
+	if !ok {
+		return nil, huma.Error400BadRequest("Cannot delete the admin or basic role")
 	}
 	err = api.app.Rbac().Store().DeleteRole(ctx, role.ID)
 	if err != nil {
@@ -129,9 +132,12 @@ func (api *Api) AdminRolesUpdate(ctx context.Context, input *struct {
 		return nil, huma.Error404NotFound("Role not found")
 	}
 	checker := api.app.Checker()
-	err = checker.CannotBeAdminOrBasicName(ctx, role.Name)
+	ok, err := checker.CannotBeAdminOrBasicName(ctx, role.Name)
 	if err != nil {
 		return nil, err
+	}
+	if !ok {
+		return nil, huma.Error400BadRequest("Cannot update the admin or basic role")
 	}
 	err = api.app.Rbac().Store().UpdateRole(ctx, role.ID, &shared.UpdateRoleDto{
 		Name:        input.Body.Name,
@@ -173,9 +179,12 @@ func (api *Api) AdminUserRolesDelete(ctx context.Context, input *struct {
 	}
 	// Check if the user is trying to remove the super user role from their own account
 	checker := api.app.Checker()
-	err = checker.CannotBeSuperUserEmailAndRoleName(ctx, user.Email, role.Name)
+	ok, err := checker.CannotBeSuperUserEmailAndRoleName(ctx, user.Email, role.Name)
 	if err != nil {
 		return nil, err
+	}
+	if !ok {
+		return nil, huma.Error400BadRequest("Cannot remove the super user role from your own account")
 	}
 
 	err = api.app.Rbac().Store().DeleteUserRole(ctx, user.ID, role.ID)
@@ -369,9 +378,12 @@ func (api *Api) AdminRolesDeletePermissions(ctx context.Context, input *struct {
 	}
 	// Check if the user is trying to remove the admin permission from the admin role
 	checker := api.app.Checker()
-	err = checker.CannotBeAdminOrBasicRoleAndPermissionName(ctx, role.Name, permission.Name)
+	ok, err := checker.CannotBeAdminOrBasicRoleAndPermissionName(ctx, role.Name, permission.Name)
 	if err != nil {
 		return nil, err
+	}
+	if !ok {
+		return nil, huma.Error400BadRequest("Cannot remove the admin permission from the admin role")
 	}
 	err = api.app.Rbac().Store().DeleteRolePermissions(ctx, role.ID, permission.ID)
 	if err != nil {

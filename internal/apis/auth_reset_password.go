@@ -17,9 +17,12 @@ type RequestPasswordResetOutput struct {
 func (api *Api) RequestPasswordReset(ctx context.Context, input *struct{ Body *RequestPasswordResetInput }) (*RequestPasswordResetOutput, error) {
 
 	checker := api.app.Checker()
-	err := checker.CannotBeSuperUserEmail(ctx, input.Body.Email)
+	ok, err := checker.CannotBeSuperUserEmail(ctx, input.Body.Email)
 	if err != nil {
 		return nil, err
+	}
+	if ok {
+		return nil, huma.Error400BadRequest("Cannot reset password for super user")
 	}
 	action := api.app.Auth()
 	err = action.HandlePasswordResetRequest(ctx, input.Body.Email)
@@ -64,9 +67,12 @@ func (api *Api) ResetPassword(ctx context.Context, input *struct{ Body PasswordR
 
 	claims := contextstore.GetContextUserInfo(ctx)
 	checker := api.app.Checker()
-	err := checker.CannotBeSuperUserEmail(ctx, claims.User.Email)
+	ok, err := checker.CannotBeSuperUserEmail(ctx, claims.User.Email)
 	if err != nil {
 		return nil, err
+	}
+	if ok {
+		return nil, huma.Error400BadRequest("Cannot reset password for super user")
 	}
 	action := api.app.Auth()
 	if claims == nil {

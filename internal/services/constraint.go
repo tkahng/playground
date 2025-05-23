@@ -25,14 +25,14 @@ func NewConstraintCheckerService(
 }
 
 type ConstraintChecker interface {
-	CannotBeSuperUserID(ctx context.Context, userId uuid.UUID) error
-	CannotBeSuperUserEmail(ctx context.Context, email string) error
-	CannotBeAdminOrBasicName(ctx context.Context, permissionName string) error
-	CannotBeAdminOrBasicRoleAndPermissionName(ctx context.Context, roleName, permissionName string) error
-	CannotBeSuperUserEmailAndRoleName(ctx context.Context, email, roleName string) error
-	CannotHaveValidUserSubscription(ctx context.Context, userId uuid.UUID) error
-	TeamCannotHaveValidSubscription(ctx context.Context, teamId uuid.UUID) error
-	EmailMustBeVerified(ctx context.Context, email string) error
+	CannotBeSuperUserID(ctx context.Context, userId uuid.UUID) (bool, error)
+	CannotBeSuperUserEmail(ctx context.Context, email string) (bool, error)
+	CannotBeAdminOrBasicName(ctx context.Context, permissionName string) (bool, error)
+	CannotBeAdminOrBasicRoleAndPermissionName(ctx context.Context, roleName, permissionName string) (bool, error)
+	CannotBeSuperUserEmailAndRoleName(ctx context.Context, email, roleName string) (bool, error)
+	CannotHaveValidUserSubscription(ctx context.Context, userId uuid.UUID) (bool, error)
+	TeamCannotHaveValidSubscription(ctx context.Context, teamId uuid.UUID) (bool, error)
+	EmailMustBeVerified(ctx context.Context, email string) (bool, error)
 }
 
 type ConstraintCheckerService struct {
@@ -40,88 +40,89 @@ type ConstraintCheckerService struct {
 }
 
 // EmailMustBeVerified implements ConstraintChecker.
-func (c *ConstraintCheckerService) EmailMustBeVerified(ctx context.Context, email string) error {
+func (c *ConstraintCheckerService) EmailMustBeVerified(ctx context.Context, email string) (bool, error) {
 	user, err := c.store.FindUserByEmail(ctx, email)
 	if err != nil {
-		return err
+		return false, err
 	}
 	if user == nil {
-		return nil // No user found, so no constraint violation
+		return false, huma.Error400BadRequest("User not found")
 	}
 	if user.EmailVerifiedAt == nil {
-		return huma.Error400BadRequest("Email must be verified")
+		return false, huma.Error400BadRequest("Email must be verified")
 	}
-	return nil
+	return true, nil
 }
 
 // TeamCannotHaveValidSubscription implements ConstraintChecker.
-func (c *ConstraintCheckerService) TeamCannotHaveValidSubscription(ctx context.Context, teamId uuid.UUID) error {
+func (c *ConstraintCheckerService) TeamCannotHaveValidSubscription(ctx context.Context, teamId uuid.UUID) (bool, error) {
 	subscription, err := c.store.FindLatestActiveSubscriptionByTeamId(ctx, teamId)
 	if err != nil {
-		return err
+		return false, err
 	}
 	if subscription != nil {
-		return huma.Error400BadRequest("Cannot perform this action on a team with a valid subscription")
+		return false, huma.Error400BadRequest("Cannot perform this action on a team with a valid subscription")
 	}
-	return nil
+	return true, nil
 }
 
 // CannotHaveValidUserSubscription implements ConstraintChecker.
-func (c *ConstraintCheckerService) CannotHaveValidUserSubscription(ctx context.Context, userId uuid.UUID) error {
+func (c *ConstraintCheckerService) CannotHaveValidUserSubscription(ctx context.Context, userId uuid.UUID) (bool, error) {
 	subscription, err := c.store.FindLatestActiveSubscriptionByUserId(ctx, userId)
 	if err != nil {
-		return err
+		return false, err
 	}
 	if subscription != nil {
-		return huma.Error400BadRequest("Cannot perform this action on a user with a valid subscription")
+		return false, huma.Error400BadRequest("Cannot perform this action on a user with a valid subscription")
 	}
-	return nil
+	return true, nil
 }
 
 // CannotBeAdminOrBasicName implements ConstraintChecker.
-func (c *ConstraintCheckerService) CannotBeAdminOrBasicName(ctx context.Context, permissionName string) error {
+func (c *ConstraintCheckerService) CannotBeAdminOrBasicName(ctx context.Context, permissionName string) (bool, error) {
 	if permissionName == shared.PermissionNameAdmin || permissionName == shared.PermissionNameBasic {
-		return huma.Error400BadRequest("Cannot perform this action on the admin or basic permission")
+		return false, huma.Error400BadRequest("Cannot perform this action on the admin or basic permission")
 	}
-	return nil
+	return true, nil
 }
 
 // CannotBeAdminOrBasicRoleAndPermissionName implements ConstraintChecker.
-func (c *ConstraintCheckerService) CannotBeAdminOrBasicRoleAndPermissionName(ctx context.Context, roleName string, permissionName string) error {
+func (c *ConstraintCheckerService) CannotBeAdminOrBasicRoleAndPermissionName(ctx context.Context, roleName string, permissionName string) (bool, error) {
 	if (roleName == shared.PermissionNameAdmin && permissionName == shared.PermissionNameAdmin) ||
 		(roleName == shared.PermissionNameBasic && permissionName == shared.PermissionNameBasic) {
-		return huma.Error400BadRequest("Cannot perform this action on the admin role and permission")
+		return false, huma.Error400BadRequest("Cannot perform this action on the admin role and permission")
 	}
-	return nil
+	return true, nil
 }
 
 // CannotBeSuperUserEmailAndRoleName implements ConstraintChecker.
-func (c *ConstraintCheckerService) CannotBeSuperUserEmailAndRoleName(ctx context.Context, email string, roleName string) error {
+func (c *ConstraintCheckerService) CannotBeSuperUserEmailAndRoleName(ctx context.Context, email string, roleName string) (bool, error) {
 	if email == shared.SuperUserEmail && roleName == shared.PermissionNameAdmin {
-		return huma.Error400BadRequest("Cannot perform this action on the super user email and admin role")
+		return false, huma.Error400BadRequest("Cannot perform this action on the super user email and admin role")
 	}
-	return nil
+	return true, nil
 }
 
-// CannotBeSuperUser implements ConstraintChecker.
-func (c *ConstraintCheckerService) CannotBeSuperUserID(ctx context.Context, userId uuid.UUID) error {
+// CannotBeSuperUserID implements ConstraintChecker.
+func (c *ConstraintCheckerService) CannotBeSuperUserID(ctx context.Context, userId uuid.UUID) (bool, error) {
 	user, err := c.store.FindUserById(ctx, userId)
 	if err != nil {
-		return err
+		return false, err
 	}
 	if user == nil {
-		return nil // No user found, so no constraint violation
+		return false, huma.Error400BadRequest("User not found")
 	}
 	if user.Email == shared.SuperUserEmail {
-		return huma.Error400BadRequest("Cannot perform this action on the super user")
+		return false, huma.Error400BadRequest("Cannot perform this action on the super user")
 	}
-	return nil
+	return true, nil
 }
-func (c *ConstraintCheckerService) CannotBeSuperUserEmail(ctx context.Context, email string) error {
+
+func (c *ConstraintCheckerService) CannotBeSuperUserEmail(ctx context.Context, email string) (bool, error) {
 	if email == shared.SuperUserEmail {
-		return huma.Error400BadRequest("Cannot perform this action on the super user")
+		return false, huma.Error400BadRequest("Cannot perform this action on the super user")
 	}
-	return nil
+	return true, nil
 }
 
 var _ ConstraintChecker = (*ConstraintCheckerService)(nil)

@@ -122,14 +122,20 @@ func (api *Api) AdminUsersDelete(ctx context.Context, input *struct {
 }) (*struct{}, error) {
 	db := api.app.Db()
 	checker := api.app.Checker()
-	err := checker.CannotBeSuperUserID(ctx, input.ID)
+	ok, err := checker.CannotBeSuperUserID(ctx, input.ID)
 	if err != nil {
 		return nil, err
 	}
+	if !ok {
+		return nil, huma.Error400BadRequest("Cannot delete super user")
+	}
 	// Check if the user has any active subscriptions
-	err = checker.CannotHaveValidUserSubscription(ctx, input.ID)
+	ok, err = checker.CannotHaveValidUserSubscription(ctx, input.ID)
 	if err != nil {
 		return nil, err
+	}
+	if !ok {
+		return nil, huma.Error400BadRequest("Cannot delete user with active subscription")
 	}
 	err = queries.DeleteUsers(ctx, db, input.ID)
 	if err != nil {
@@ -160,9 +166,12 @@ func (api *Api) AdminUsersUpdatePassword(ctx context.Context, input *struct {
 }) (*struct{}, error) {
 	db := api.app.Db()
 	checker := api.app.Checker()
-	err := checker.CannotBeSuperUserID(ctx, input.ID)
+	ok, err := checker.CannotBeSuperUserID(ctx, input.ID)
 	if err != nil {
 		return nil, err
+	}
+	if !ok {
+		return nil, huma.Error400BadRequest("Cannot update super user password")
 	}
 	err = queries.UpdateUserPassword(ctx, db, input.ID, input.Body.Password)
 	if err != nil {
