@@ -215,11 +215,16 @@ type AuthStoreDecorator struct {
 	FindUserByEmailFunc                    func(ctx context.Context, email string) (*models.User, error)
 	GetTokenFunc                           func(ctx context.Context, token string) (*models.Token, error)
 	GetUserInfoFunc                        func(ctx context.Context, email string) (*shared.UserInfo, error)
-	LinkAccountFunc                        func(ctx context.Context, account *models.UserAccount) error
+	LinkAccountFunc                        func(ctx context.Context, account *models.UserAccount) (*models.UserAccount, error)
 	SaveTokenFunc                          func(ctx context.Context, token *shared.CreateTokenDTO) error
 	UnlinkAccountFunc                      func(ctx context.Context, userId uuid.UUID, provider models.Providers) error
 	UpdateUserFunc                         func(ctx context.Context, user *models.User) error
 	UpdateUserAccountFunc                  func(ctx context.Context, account *models.UserAccount) error
+}
+
+// RunInTransaction implements AuthStore.
+func (a *AuthStoreDecorator) RunInTransaction(ctx context.Context, fn func(store AuthStore) error) error {
+	panic("unimplemented")
 }
 
 // AssignUserRoles implements AuthStore.
@@ -264,42 +269,66 @@ func (a *AuthStoreDecorator) FindUserAccountByUserIdAndProvider(ctx context.Cont
 
 // FindUserByEmail implements AuthStore.
 func (a *AuthStoreDecorator) FindUserByEmail(ctx context.Context, email string) (*models.User, error) {
-	panic("unimplemented")
+	if a.FindUserByEmailFunc != nil {
+		return a.FindUserByEmailFunc(ctx, email)
+	}
+	return a.delegate.FindUserByEmail(ctx, email)
 }
 
 // GetToken implements AuthStore.
 func (a *AuthStoreDecorator) GetToken(ctx context.Context, token string) (*models.Token, error) {
-	panic("unimplemented")
+	if a.GetTokenFunc != nil {
+		return a.GetTokenFunc(ctx, token)
+	}
+	return a.delegate.GetToken(ctx, token)
 }
 
 // GetUserInfo implements AuthStore.
 func (a *AuthStoreDecorator) GetUserInfo(ctx context.Context, email string) (*shared.UserInfo, error) {
-	panic("unimplemented")
+	if a.GetUserInfoFunc != nil {
+		return a.GetUserInfoFunc(ctx, email)
+	}
+	return a.delegate.GetUserInfo(ctx, email)
 }
 
 // LinkAccount implements AuthStore.
-func (a *AuthStoreDecorator) LinkAccount(ctx context.Context, account *models.UserAccount) error {
-	panic("unimplemented")
+func (a *AuthStoreDecorator) LinkAccount(ctx context.Context, account *models.UserAccount) (*models.UserAccount, error) {
+	if a.LinkAccountFunc != nil {
+		return a.LinkAccountFunc(ctx, account)
+	}
+	return a.delegate.LinkAccount(ctx, account)
 }
 
 // SaveToken implements AuthStore.
 func (a *AuthStoreDecorator) SaveToken(ctx context.Context, token *shared.CreateTokenDTO) error {
-	panic("unimplemented")
+	if a.SaveTokenFunc != nil {
+		return a.SaveTokenFunc(ctx, token)
+	}
+	return a.delegate.SaveToken(ctx, token)
 }
 
 // UnlinkAccount implements AuthStore.
 func (a *AuthStoreDecorator) UnlinkAccount(ctx context.Context, userId uuid.UUID, provider models.Providers) error {
-	panic("unimplemented")
+	if a.UnlinkAccountFunc != nil {
+		return a.UnlinkAccountFunc(ctx, userId, provider)
+	}
+	return a.delegate.UnlinkAccount(ctx, userId, provider)
 }
 
 // UpdateUser implements AuthStore.
 func (a *AuthStoreDecorator) UpdateUser(ctx context.Context, user *models.User) error {
-	panic("unimplemented")
+	if a.UpdateUserFunc != nil {
+		return a.UpdateUserFunc(ctx, user)
+	}
+	return a.delegate.UpdateUser(ctx, user)
 }
 
 // UpdateUserAccount implements AuthStore.
 func (a *AuthStoreDecorator) UpdateUserAccount(ctx context.Context, account *models.UserAccount) error {
-	panic("unimplemented")
+	if a.UpdateUserAccountFunc != nil {
+		return a.UpdateUserAccountFunc(ctx, account)
+	}
+	return a.delegate.UpdateUserAccount(ctx, account)
 }
 
 var _ AuthStore = (*AuthStoreDecorator)(nil)

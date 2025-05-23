@@ -13,6 +13,12 @@ type MockAuthStore struct {
 	mock.Mock
 }
 
+// RunInTransaction implements AuthStore.
+func (m *MockAuthStore) RunInTransaction(ctx context.Context, fn func(store AuthStore) error) error {
+	args := m.Called(ctx, fn)
+	return args.Error(0)
+}
+
 var _ AuthStore = (*MockAuthStore)(nil)
 
 // AssignUserRoles implements AuthStorage.
@@ -76,9 +82,13 @@ func (m *MockAuthStore) GetToken(ctx context.Context, token string) (*models.Tok
 }
 
 // LinkAccount implements AuthStorage.
-func (m *MockAuthStore) LinkAccount(ctx context.Context, account *models.UserAccount) error {
+func (m *MockAuthStore) LinkAccount(ctx context.Context, account *models.UserAccount) (*models.UserAccount, error) {
 	args := m.Called(ctx, account)
-	return args.Error(0)
+	var linkedAccount *models.UserAccount
+	if args.Get(0) != nil {
+		linkedAccount = args.Get(0).(*models.UserAccount)
+	}
+	return linkedAccount, args.Error(1)
 }
 
 // SaveToken implements AuthStorage.

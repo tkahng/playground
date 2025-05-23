@@ -36,8 +36,9 @@ func TestPostgresAccountStore_CRUD(t *testing.T) {
 		assert.NoError(t, err)
 
 		t.Run("LinkAccount", func(t *testing.T) {
-			err := store.LinkAccount(ctx, account)
+			linkedAccount, err := store.LinkAccount(ctx, account)
 			assert.NoError(t, err)
+			assert.NotNil(t, linkedAccount)
 		})
 
 		t.Run("FindUserAccountByUserIdAndProvider", func(t *testing.T) {
@@ -67,8 +68,9 @@ func TestPostgresAccountStore_CRUD(t *testing.T) {
 		})
 
 		t.Run("LinkAccount_nil", func(t *testing.T) {
-			err := store.LinkAccount(ctx, nil)
+			linkedAccount, err := store.LinkAccount(ctx, nil)
 			assert.Error(t, err)
+			assert.Nil(t, linkedAccount)
 		})
 
 		return errors.New("rollback")
@@ -87,9 +89,10 @@ func TestPostgresAccountStore_GetUserAccounts(t *testing.T) {
 		assert.NoError(t, err)
 		acc1 := &models.UserAccount{UserID: user1.ID, Provider: models.ProvidersGoogle, Type: "oauth", ProviderAccountID: "g1"}
 		acc2 := &models.UserAccount{UserID: user2.ID, Provider: models.ProvidersGoogle, Type: "oauth", ProviderAccountID: "g2"}
-		err = store.LinkAccount(ctx, acc1)
+		linkedAccount, err := store.LinkAccount(ctx, acc1)
 		assert.NoError(t, err)
-		err = store.LinkAccount(ctx, acc2)
+		assert.NotNil(t, linkedAccount)
+		_, err = store.LinkAccount(ctx, acc2)
 		assert.NoError(t, err)
 		results, err := store.GetUserAccounts(ctx, user1.ID, user2.ID)
 		assert.NoError(t, err)
@@ -109,8 +112,9 @@ func TestPostgresAccountStore_UpdateUserPassword(t *testing.T) {
 		user, err := userStore.CreateUser(ctx, &models.User{Email: "pwuser@example.com"})
 		assert.NoError(t, err)
 		acc := &models.UserAccount{UserID: user.ID, Provider: models.ProvidersCredentials, Type: "credentials", ProviderAccountID: "pwuser"}
-		err = store.LinkAccount(ctx, acc)
+		linkedAccount, err := store.LinkAccount(ctx, acc)
 		assert.NoError(t, err)
+		assert.NotNil(t, linkedAccount)
 		newPassword := "newpassword123"
 		err = store.UpdateUserPassword(ctx, user.ID, newPassword)
 		assert.NoError(t, err)

@@ -138,6 +138,8 @@ func NewBApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 	settings := cfg.ToSettings()
 	pool := database.CreateQueries(ctx, cfg.Db.DatabaseUrl)
 	fs, err := filesystem.NewFileSystem(cfg.StorageConfig)
+	l := logger.GetDefaultLogger(slog.LevelInfo)
+
 	if err != nil {
 		panic(err)
 	}
@@ -174,6 +176,7 @@ func NewBApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 		tokenService,
 		passwordService,
 		workerService,
+		l,
 	)
 	checkerStore := stores.NewPostgresConstraintStore(pool)
 	checker := services.NewConstraintCheckerService(
@@ -182,7 +185,6 @@ func NewBApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 
 	teamStore := stores.NewPostgresTeamServiceStore(pool)
 	teamService := services.NewTeamService(teamStore)
-	l := logger.GetDefaultLogger(slog.LevelInfo)
 
 	app := NewApp(
 		fs,

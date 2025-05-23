@@ -44,7 +44,7 @@ type AuthService interface {
 type AuthAccountStore interface {
 	FindUserAccountByUserIdAndProvider(ctx context.Context, userId uuid.UUID, provider models.Providers) (*models.UserAccount, error)
 	UpdateUserAccount(ctx context.Context, account *models.UserAccount) error
-	LinkAccount(ctx context.Context, account *models.UserAccount) error
+	LinkAccount(ctx context.Context, account *models.UserAccount) (*models.UserAccount, error)
 	UnlinkAccount(ctx context.Context, userId uuid.UUID, provider models.Providers) error
 }
 
@@ -64,6 +64,7 @@ type AuthTokenStore interface {
 }
 
 type AuthStore interface {
+	RunInTransaction(ctx context.Context, fn func(store AuthStore) error) error
 	AuthUserStore
 	AuthAccountStore
 	AuthTokenStore
@@ -78,6 +79,7 @@ type BaseAuthService struct {
 	token     JwtService
 	password  PasswordService
 	options   *conf.AppOptions
+	logger    *slog.Logger
 }
 
 // Mail implements AuthService.
@@ -153,6 +155,7 @@ func NewAuthService(
 	token JwtService,
 	password PasswordService,
 	workerService RoutineService,
+	logger *slog.Logger,
 ) AuthService {
 	authService := &BaseAuthService{
 		routine:   workerService,
@@ -161,6 +164,7 @@ func NewAuthService(
 		token:     token,
 		password:  password,
 		options:   opts,
+		logger:    logger,
 	}
 
 	return authService
@@ -553,11 +557,64 @@ func (app *BaseAuthService) VerifyAndParseOtpToken(ctx context.Context, emailTyp
 
 // methods
 
+func (app *BaseAuthService) CreateUser(ctx context.Context, store AuthStore, params *shared.AuthenticationInput) (*models.User, error) {
+	fmt.Println("User does not exist, creating user")
+	// is first login
+	// if params.EmailVerifiedAt != nil {
+	// 	isFirstLogin = false
+	// } else {
+	// 	isFirstLogin = true
+	// }
+	user, err := store.CreateUser(ctx, &models.User{
+		Email:           params.Email,
+		Name:            params.Name,
+		Image:           params.AvatarUrl,
+		EmailVerifiedAt: params.EmailVerifiedAt,
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("error at creating user: %w", err)
+	}
+	if user == nil {
+		return nil, fmt.Errorf("user not created")
+	}
+	params.UserId = &user.ID
+	return user, nil
+}
+
+func (app *BaseAuthService) CreateAccount(ctx context.Context, store AuthStore, user *models.User, params *shared.AuthenticationInput) (*models.UserAccount, error) {
+	fmt.Println("Account does not exist, creating account")
+	if params.Type == shared.ProviderTypeCredentials {
+		if params.HashPassword == nil {
+			if params.Password == nil {
+				return nil, fmt.Errorf("password is nil")
+			}
+			if pw, err := app.password.HashPassword(*params.Password); err != nil {
+				return nil, fmt.Errorf("error at hashing password: %w", err)
+			} else {
+				params.HashPassword = &pw
+			}
+			if params.HashPassword == nil {
+				return nil, fmt.Errorf("password is nil")
+			}
+		}
+	}
+	// link account of requested type
+	return store.LinkAccount(ctx, &models.UserAccount{
+		UserID:            user.ID,
+		Type:              models.ProviderTypes(params.Type),
+		Provider:          models.Providers(params.Provider),
+		ProviderAccountID: params.ProviderAccountID,
+		Password:          params.HashPassword,
+		AccessToken:       params.AccessToken,
+		RefreshToken:      params.RefreshToken,
+	})
+}
+
 func (app *BaseAuthService) Authenticate(ctx context.Context, params *shared.AuthenticationInput) (*models.User, error) {
 	var user *models.User
 	var account *models.UserAccount
 	var err error
-	var isFirstLogin bool
 
 	// get user by email
 	user, err = app.authStore.FindUserByEmail(ctx, params.Email)
@@ -571,101 +628,104 @@ func (app *BaseAuthService) Authenticate(ctx context.Context, params *shared.Aut
 			return nil, fmt.Errorf("error at getting user account: %w", err)
 		}
 	}
-	// if user does not exist, Create User and continue to create UserAccount ----------------------------------------------------------------------------------------------------
-	if user == nil {
-		fmt.Println("User does not exist, creating user")
-		// is first login
-		if params.EmailVerifiedAt != nil {
-			isFirstLogin = false
-		} else {
-			isFirstLogin = true
-		}
-		user, err = app.authStore.CreateUser(ctx, &models.User{
-			Email:           params.Email,
-			Name:            params.Name,
-			Image:           params.AvatarUrl,
-			EmailVerifiedAt: params.EmailVerifiedAt,
-		})
 
+	// if user does not exist, Create User and UserAccount ----------------------------------------------------------------------------------------------------
+	if user == nil {
+		err = app.authStore.RunInTransaction(
+			ctx,
+			func(store AuthStore) error {
+				user, err = app.CreateUser(ctx, store, params)
+				if err != nil {
+					return err
+				}
+				if user == nil {
+					return fmt.Errorf("user not created")
+				}
+				account, err = app.CreateAccount(ctx, store, user, params)
+				if err != nil {
+					return err
+				}
+				if account == nil {
+					return fmt.Errorf("account not created")
+				}
+				return nil
+			},
+		)
 		if err != nil {
 			return nil, fmt.Errorf("error at creating user: %w", err)
 		}
-		if user == nil {
-			return nil, fmt.Errorf("user not created")
-		}
-		// assign user role
-		err = app.authStore.AssignUserRoles(ctx, user.ID, shared.PermissionNameBasic)
-		if err != nil {
-			return nil, fmt.Errorf("error at assigning user role: %w", err)
-		}
-		// if all is good, we should have a user but no account
-	}
-	// if user exists, but requested account type does not exist, Create UserAccount  of requested type ----------------------------------------------------------------------------------------------------
-	if account == nil {
-		fmt.Println("Account does not exist, creating account")
-		// from within this block, we should return and not continue to next block
-		// if type is credentials, hash password and set params
-		if params.Type == shared.ProviderTypeCredentials {
-			if params.HashPassword == nil {
-				if params.Password == nil {
-					return nil, fmt.Errorf("password is nil")
-				}
-				if pw, err := app.password.HashPassword(*params.Password); err != nil {
-					return nil, fmt.Errorf("error at hashing password: %w", err)
-				} else {
-					params.HashPassword = &pw
-				}
-				if params.HashPassword == nil {
-					return nil, fmt.Errorf("password is nil")
-				}
-			}
-		}
-		// link account of requested type
-		err = app.authStore.LinkAccount(ctx, &models.UserAccount{
-			UserID:            user.ID,
-			Type:              models.ProviderTypes(params.Type),
-			Provider:          models.Providers(params.Provider),
-			ProviderAccountID: params.ProviderAccountID,
-			Password:          params.HashPassword,
-			AccessToken:       params.AccessToken,
-			RefreshToken:      params.RefreshToken,
-		})
-		if err != nil {
-			return nil, fmt.Errorf("error at linking account: %w", err)
-		}
-		// if user is first login, send verification email
-
-		// if user is not first login, check if user credentials security
 		app.routine.FireAndForget(
 			func() {
 				ctx := context.Background()
-				if isFirstLogin {
-					fmt.Println("User is first login, sending verification email")
-					err := app.SendOtpEmail(EmailTypeVerify, ctx, user)
+				fmt.Println("User is first login, sending verification email")
+				err := app.SendOtpEmail(EmailTypeVerify, ctx, user)
+				if err != nil {
+					app.logger.Error(
+						"error sending verification email",
+						slog.Any("error", err),
+						slog.String("email", user.Email),
+						slog.String("userId", user.ID.String()),
+					)
+				}
+			},
+		)
+		return user, nil
+	}
+	// if user exists, but requested account type does not exist, Create UserAccount  of requested type ----------------------------------------------------------------------------------------------------
+	if account == nil {
+		var checkCredential bool
+		var reset bool
+		if user.EmailVerifiedAt == nil && params.EmailVerifiedAt != nil {
+			if params.Type == shared.ProviderTypeOAuth {
+				checkCredential = true
+			}
+		}
+		err = app.authStore.RunInTransaction(
+			ctx,
+			func(store AuthStore) error {
+				account, err = app.CreateAccount(ctx, store, user, params)
+				if err != nil {
+					return fmt.Errorf("error at linking account: %w", err)
+				}
+				if account == nil {
+					return fmt.Errorf("account not created")
+				}
+				if checkCredential {
+					fmt.Println("checking user credentials security")
+					reset, err = app.UpdateUserVerifiedOrResetPassword(ctx, store, user, params)
 					if err != nil {
-						slog.Error(
-							"error sending verification email",
-							slog.Any("error", err),
-							slog.String("email", user.Email),
-							slog.String("userId", user.ID.String()),
-						)
-					}
-				} else {
-					fmt.Println("User is not first login, checking user credentials security")
-					err := app.CheckUserCredentialsSecurity(ctx, user, params)
-					if err != nil {
-						slog.Error(
+						app.logger.Error(
 							"error at checking user credentials security",
 							slog.Any("error", err),
 							slog.String("email", user.Email),
 							slog.String("userId", user.ID.String()),
 						)
+						return err
 					}
 				}
+				return nil
 			},
 		)
-
-		// return user
+		if err != nil {
+			return nil, fmt.Errorf("error at creating user account: %w", err)
+		}
+		if reset {
+			app.routine.FireAndForget(
+				func() {
+					ctx := context.Background()
+					fmt.Println("User is first login, sending security password reset email")
+					err := app.SendOtpEmail(EmailTypeSecurityPasswordReset, ctx, user)
+					if err != nil {
+						app.logger.Error(
+							"error sending security password reset email",
+							slog.Any("error", err),
+							slog.String("email", user.Email),
+							slog.String("userId", user.ID.String()),
+						)
+					}
+				},
+			)
+		}
 		return user, nil
 	}
 	// if user exists and account exists, check if password is correct  or check if provider key is correct ----------------------------------------------------------------------------------------------------
@@ -682,48 +742,55 @@ func (app *BaseAuthService) Authenticate(ctx context.Context, params *shared.Aut
 	return user, nil
 }
 
-func (app *BaseAuthService) CheckUserCredentialsSecurity(ctx context.Context, user *models.User, params *shared.AuthenticationInput) error {
+func newFunction(ctx context.Context, err error, app *BaseAuthService, user *models.User) error {
+	err = app.authStore.AssignUserRoles(ctx, user.ID, shared.PermissionNameBasic)
+	return err
+}
+
+func (app *BaseAuthService) UpdateUserVerifiedOrResetPassword(ctx context.Context, store AuthStore, user *models.User, params *shared.AuthenticationInput) (bool, error) {
 
 	if user == nil || params == nil {
-		return fmt.Errorf("user not found")
+		return false, fmt.Errorf("user not found")
 	}
+	reset := false
 	// if user is not verified,
 	if user.EmailVerifiedAt == nil {
 		if params.EmailVerifiedAt != nil {
 			// and if incoming request is oauth,
 			if params.Type == shared.ProviderTypeOAuth {
 				//  check if user has a credentials account
-				account, err := app.authStore.FindUserAccountByUserIdAndProvider(ctx, user.ID, models.ProvidersCredentials)
+				account, err := store.FindUserAccountByUserIdAndProvider(ctx, user.ID, models.ProvidersCredentials)
 
 				if err != nil {
-					return fmt.Errorf("error loading user accounts: %w", err)
+					return false, fmt.Errorf("error loading user accounts: %w", err)
 				}
 				if account != nil {
 					// if user has a credentials account, send security password reset email
 					randomPassword := security.RandomString(20)
 					hash, err := app.password.HashPassword(randomPassword)
 					if err != nil {
-						return fmt.Errorf("error at hashing password: %w", err)
+						return false, fmt.Errorf("error at hashing password: %w", err)
 					}
 					account.Password = &hash
-					err = app.authStore.UpdateUserAccount(ctx, account)
+					err = store.UpdateUserAccount(ctx, account)
 					if err != nil {
-						return fmt.Errorf("error updating user password: %w", err)
+						return false, fmt.Errorf("error updating user password: %w", err)
 					}
-					err = app.SendOtpEmail(EmailTypeSecurityPasswordReset, ctx, user)
-					if err != nil {
-						return fmt.Errorf("error sending password reset email: %w", err)
-					}
+					reset = true
+					// err = app.SendOtpEmail(EmailTypeSecurityPasswordReset, ctx, user)
+					// if err != nil {
+					// 	return fmt.Errorf("error sending password reset email: %w", err)
+					// }
 				}
 			}
 			user.EmailVerifiedAt = params.EmailVerifiedAt
-			err := app.authStore.UpdateUser(ctx, user)
+			err := store.UpdateUser(ctx, user)
 			if err != nil {
-				return fmt.Errorf("error updating user email confirmation: %w", err)
+				return false, fmt.Errorf("error updating user email confirmation: %w", err)
 			}
 		}
 	}
-	return nil
+	return reset, nil
 }
 
 // SendOtpEmail creates and saves a new otp token and sends it to the user's email

@@ -21,6 +21,11 @@ type PostgresAccountStore struct {
 	db database.Dbx
 }
 
+// CreateUserAccount implements services.UserAccountStore.
+func (u *PostgresAccountStore) CreateUserAccount(ctx context.Context, account *models.UserAccount) (*models.UserAccount, error) {
+	panic("unimplemented")
+}
+
 func NewPostgresUserAccountStore(db database.Dbx) *PostgresAccountStore {
 	return &PostgresAccountStore{
 		db: db,
@@ -125,18 +130,15 @@ func (u *PostgresAccountStore) FindUserAccountByUserIdAndProvider(ctx context.Co
 }
 
 // LinkAccount implements UserAccountStore.
-func (u *PostgresAccountStore) LinkAccount(ctx context.Context, account *models.UserAccount) error {
+func (u *PostgresAccountStore) LinkAccount(ctx context.Context, account *models.UserAccount) (*models.UserAccount, error) {
 	if account == nil {
-		return errors.New("account is nil")
+		return nil, errors.New("account is nil")
 	}
-	_, err := crudrepo.UserAccount.PostOne(ctx,
-		u.db,
-		account,
-	)
+	createdAccount, err := crudrepo.UserAccount.PostOne(ctx, u.db, account)
 	if err != nil {
-		return err
+		return nil, fmt.Errorf("error creating user account: %w", err)
 	}
-	return nil
+	return createdAccount, nil
 }
 
 // UnlinkAccount implements UserAccountStore.
@@ -166,15 +168,6 @@ func (u *PostgresAccountStore) UpdateUserAccount(ctx context.Context, account *m
 		return fmt.Errorf("error updating user account: %w", err)
 	}
 	return nil
-}
-
-func (u *PostgresAccountStore) CreateUserAccount(ctx context.Context, account *models.UserAccount) (*models.UserAccount, error) {
-
-	createdAccount, err := crudrepo.UserAccount.PostOne(ctx, u.db, account)
-	if err != nil {
-		return nil, fmt.Errorf("error creating user account: %w", err)
-	}
-	return createdAccount, nil
 }
 
 func (u *PostgresAccountStore) GetUserAccounts(ctx context.Context, userIds ...uuid.UUID) ([][]*models.UserAccount, error) {
