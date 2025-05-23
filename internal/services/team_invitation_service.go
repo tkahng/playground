@@ -187,6 +187,9 @@ func (i *InvitationService) CancelInvitation(
 	if member == nil {
 		return fmt.Errorf("user is not a member of the team")
 	}
+	if member.Role != models.TeamMemberRoleOwner {
+		return fmt.Errorf("user is not an owner of the team")
+	}
 	invitation, err := i.store.FindInvitationByID(ctx, invitationId)
 	if err != nil {
 		return err
@@ -197,10 +200,9 @@ func (i *InvitationService) CancelInvitation(
 	if invitation.TeamID != teamId {
 		return fmt.Errorf("invitation does not match team")
 	}
-	if invitation.InviterMemberID != member.ID {
-		return fmt.Errorf("user is not the inviter")
-	}
-	return i.store.DeleteTeamMember(ctx, teamId, userId)
+	invitation.Status = models.TeamInvitationStatusCanceled
+
+	return i.store.UpdateInvitation(ctx, invitation)
 }
 
 // CheckValidInvitation implements TeamInvitationService.

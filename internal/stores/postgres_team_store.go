@@ -160,6 +160,12 @@ func (p *PostgresTeamStore) FindTeamInvitations(ctx context.Context, teamId uuid
 			"team_id": map[string]any{
 				"_eq": teamId.String(),
 			},
+			"status": map[string]any{
+				"_eq": string(models.TeamInvitationStatusPending),
+			},
+			"expires_at": map[string]any{
+				"_gt": time.Now().Format(time.RFC3339Nano),
+			},
 		},
 		&map[string]string{
 			"created_at": "desc",
