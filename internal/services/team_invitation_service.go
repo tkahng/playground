@@ -33,19 +33,27 @@ type TeamInvitationService interface {
 	) error
 	CheckValidInvitation(
 		ctx context.Context,
-		invitationToken string,
 		userId uuid.UUID,
+		invitationToken string,
 	) (bool, error)
 	AcceptInvitation(
 		ctx context.Context,
-		invitationToken string,
 		userId uuid.UUID,
+		invitationToken string,
 	) error
 	RejectInvitation(
 		ctx context.Context,
-		invitationToken string,
 		userId uuid.UUID,
+		invitationToken string,
 	) error
+
+	CancelInvitation(
+		ctx context.Context,
+		teamId uuid.UUID,
+		userId uuid.UUID,
+		invitationId uuid.UUID,
+	) error
+
 	FindInvitations(
 		ctx context.Context,
 		teamId uuid.UUID,
@@ -99,7 +107,6 @@ type InvitationService struct {
 	mailer   MailService
 	store    TeamInvitationStore
 	settings conf.AppOptions
-	jwt      JwtService
 }
 
 func (i *InvitationService) CreateConfirmationUrl(tokenhash string) (string, error) {
@@ -159,19 +166,49 @@ func NewInvitationService(
 	mailer MailService,
 	settings conf.AppOptions,
 	workerService WorkerService,
-	jwt JwtService,
 ) TeamInvitationService {
 	return &InvitationService{
 		WorkerService: workerService,
 		store:         store,
 		mailer:        mailer,
 		settings:      settings,
-		jwt:           jwt,
 	}
+}
+func (i *InvitationService) CancelInvitation(
+	ctx context.Context,
+	teamId uuid.UUID,
+	userId uuid.UUID,
+	invitationId uuid.UUID,
+) error {
+	member, err := i.store.FindTeamMemberByTeamAndUserId(ctx, teamId, userId)
+	if err != nil {
+		return err
+	}
+	if member == nil {
+		return fmt.Errorf("user is not a member of the team")
+	}
+	invitation, err := i.store.FindInvitationByID(ctx, invitationId)
+	if err != nil {
+		return err
+	}
+	if invitation == nil {
+		return fmt.Errorf("invitation not found")
+	}
+	if invitation.TeamID != teamId {
+		return fmt.Errorf("invitation does not match team")
+	}
+	if invitation.InviterMemberID != member.ID {
+		return fmt.Errorf("user is not the inviter")
+	}
+	return i.store.DeleteTeamMember(ctx, teamId, userId)
 }
 
 // CheckValidInvitation implements TeamInvitationService.
-func (i *InvitationService) CheckValidInvitation(ctx context.Context, invitationToken string, userId uuid.UUID) (bool, error) {
+func (i *InvitationService) CheckValidInvitation(
+	ctx context.Context,
+	userId uuid.UUID,
+	invitationToken string,
+) (bool, error) {
 	invite, err := i.store.FindInvitationByToken(ctx, invitationToken)
 	if err != nil {
 		return false, err
@@ -196,7 +233,11 @@ func (i *InvitationService) CheckValidInvitation(ctx context.Context, invitation
 }
 
 // AcceptInvitation implements TeamInvitationService.
-func (i *InvitationService) AcceptInvitation(ctx context.Context, invitationToken string, userId uuid.UUID) error {
+func (i *InvitationService) AcceptInvitation(
+	ctx context.Context,
+	userId uuid.UUID,
+	invitationToken string,
+) error {
 	invite, err := i.store.FindInvitationByToken(ctx, invitationToken)
 	if err != nil {
 		return err
@@ -320,7 +361,7 @@ func (i *InvitationService) FindInvitations(ctx context.Context, teamId uuid.UUI
 }
 
 // RejectInvitation implements TeamInvitationService.
-func (i *InvitationService) RejectInvitation(ctx context.Context, invitationToken string, userId uuid.UUID) error {
+func (i *InvitationService) RejectInvitation(ctx context.Context, userId uuid.UUID, invitationToken string) error {
 	invite, err := i.store.FindInvitationByToken(ctx, invitationToken)
 	if err != nil {
 		return err

@@ -19,8 +19,7 @@ func TestNewInvitationService(t *testing.T) {
 	wg := new(sync.WaitGroup)
 	mockRoutineService := new(mockRoutineService)
 	mockRoutineService.wg = wg
-	jwtService := NewJwtServiceDecorator()
-	service := NewInvitationService(mockStore, NewMailService(&mailer.LogMailer{}), *opts, mockRoutineService, jwtService)
+	service := NewInvitationService(mockStore, NewMailService(&mailer.LogMailer{}), *opts, mockRoutineService)
 
 	assert.NotNil(t, service, "NewInvitationService should not return nil")
 }
@@ -33,8 +32,7 @@ func TestInvitationService_CreateInvitation(t *testing.T) {
 	wg := new(sync.WaitGroup)
 	mockRoutineService := new(mockRoutineService)
 	mockRoutineService.wg = wg
-	jwtService := NewJwtServiceDecorator()
-	service := NewInvitationService(store, mailService, *opts, mockRoutineService, jwtService)
+	service := NewInvitationService(store, mailService, *opts, mockRoutineService)
 	member := &models.TeamMember{ID: uuid.New()}
 	inviteeEmail := "invitee@example.com"
 	invitingUser := &models.User{ID: uuid.New(), Email: "inviting@example.com"}
@@ -61,8 +59,7 @@ func TestInvitationService_CreateInvitation_NotMember(t *testing.T) {
 	wg := new(sync.WaitGroup)
 	mockRoutineService := new(mockRoutineService)
 	mockRoutineService.wg = wg
-	jwtService := NewJwtServiceDecorator()
-	service := NewInvitationService(store, mailService, *opts, mockRoutineService, jwtService)
+	service := NewInvitationService(store, mailService, *opts, mockRoutineService)
 	teamId := uuid.New()
 	userId := uuid.New()
 	store.On("FindTeamMemberByTeamAndUserId", ctx, teamId, userId).Return((*models.TeamMember)(nil), nil)
@@ -79,9 +76,8 @@ func TestInvitationService_AcceptInvitation(t *testing.T) {
 	wg := new(sync.WaitGroup)
 	mockRoutineService := new(mockRoutineService)
 	mockRoutineService.wg = wg
-	jwtService := NewJwtServiceDecorator()
 	// Mock the mail service
-	service := NewInvitationService(store, mailService, *opts, mockRoutineService, jwtService)
+	service := NewInvitationService(store, mailService, *opts, mockRoutineService)
 	teamId := uuid.New()
 	userId := uuid.New()
 	invitation := &models.TeamInvitation{
@@ -95,7 +91,7 @@ func TestInvitationService_AcceptInvitation(t *testing.T) {
 	store.On("FindUserByID", ctx, userId).Return(user, nil)
 	store.On("CreateTeamMember", ctx, teamId, userId, models.TeamMemberRoleMember, false).Return(&models.TeamMember{}, nil)
 	store.On("UpdateInvitation", ctx, invitation).Return(nil)
-	err := service.AcceptInvitation(ctx, "token", userId)
+	err := service.AcceptInvitation(ctx, userId, "token")
 	assert.NoError(t, err)
 	assert.Equal(t, models.TeamInvitationStatusAccepted, invitation.Status)
 }
@@ -108,8 +104,7 @@ func TestInvitationService_AcceptInvitation_UserMismatch(t *testing.T) {
 	wg := new(sync.WaitGroup)
 	mockRoutineService := new(mockRoutineService)
 	mockRoutineService.wg = wg
-	jwtService := NewJwtServiceDecorator()
-	service := NewInvitationService(store, mailService, *opts, mockRoutineService, jwtService)
+	service := NewInvitationService(store, mailService, *opts, mockRoutineService)
 	teamId := uuid.New()
 	userId := uuid.New()
 	invitation := &models.TeamInvitation{
@@ -120,7 +115,7 @@ func TestInvitationService_AcceptInvitation_UserMismatch(t *testing.T) {
 	user := &models.User{ID: userId, Email: "other@example.com"}
 	store.On("FindInvitationByToken", ctx, "token").Return(invitation, nil)
 	store.On("FindUserByID", ctx, userId).Return(user, nil)
-	err := service.AcceptInvitation(ctx, "token", userId)
+	err := service.AcceptInvitation(ctx, userId, "token")
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "does not match invitation")
 }
@@ -133,8 +128,7 @@ func TestInvitationService_RejectInvitation(t *testing.T) {
 	wg := new(sync.WaitGroup)
 	mockRoutineService := new(mockRoutineService)
 	mockRoutineService.wg = wg
-	jwtService := NewJwtServiceDecorator()
-	service := NewInvitationService(store, mailService, *opts, mockRoutineService, jwtService)
+	service := NewInvitationService(store, mailService, *opts, mockRoutineService)
 	teamId := uuid.New()
 	userId := uuid.New()
 	invitation := &models.TeamInvitation{
@@ -145,7 +139,7 @@ func TestInvitationService_RejectInvitation(t *testing.T) {
 	user := &models.User{ID: userId, Email: "test@example.com"}
 	store.On("FindInvitationByToken", ctx, "token").Return(invitation, nil)
 	store.On("FindUserByID", ctx, userId).Return(user, nil)
-	err := service.RejectInvitation(ctx, "token", userId)
+	err := service.RejectInvitation(ctx, userId, "token")
 	assert.NoError(t, err)
 	assert.Equal(t, models.TeamInvitationStatusDeclined, invitation.Status)
 }
@@ -158,8 +152,7 @@ func TestInvitationService_FindInvitations(t *testing.T) {
 	wg := new(sync.WaitGroup)
 	mockRoutineService := new(mockRoutineService)
 	mockRoutineService.wg = wg
-	jwtService := NewJwtServiceDecorator()
-	service := NewInvitationService(store, mailService, *opts, mockRoutineService, jwtService)
+	service := NewInvitationService(store, mailService, *opts, mockRoutineService)
 	teamId := uuid.New()
 	invitations := []*models.TeamInvitation{{TeamID: teamId, Email: "test@example.com"}}
 	store.On("FindTeamInvitations", ctx, teamId).Return(invitations, nil)

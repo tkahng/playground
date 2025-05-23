@@ -257,9 +257,18 @@ type mockTeamInvitationService struct {
 	mock.Mock
 }
 
+// CancelInvitation implements TeamInvitationService.
+func (m *mockTeamInvitationService) CancelInvitation(ctx context.Context, teamId uuid.UUID, userId uuid.UUID, invitationId uuid.UUID) error {
+	args := m.Called(ctx, teamId, userId, invitationId)
+	return args.Error(0)
+}
+
 // FireAndForget implements TeamInvitationService.
 func (m *mockTeamInvitationService) FireAndForget(f func()) {
-	panic("unimplemented")
+	args := m.Called(f)
+	if args.Get(0) != nil {
+		f()
+	}
 }
 
 // SendInvitationEmail implements TeamInvitationService.
@@ -269,7 +278,7 @@ func (m *mockTeamInvitationService) SendInvitationEmail(ctx context.Context, par
 }
 
 // CheckValidInvitation implements TeamInvitationService.
-func (m *mockTeamInvitationService) CheckValidInvitation(ctx context.Context, invitationToken string, userId uuid.UUID) (bool, error) {
+func (m *mockTeamInvitationService) CheckValidInvitation(ctx context.Context, userId uuid.UUID, invitationToken string) (bool, error) {
 	args := m.Called(ctx, invitationToken, userId)
 	var valid bool
 	if args.Get(0) != nil {
@@ -279,7 +288,7 @@ func (m *mockTeamInvitationService) CheckValidInvitation(ctx context.Context, in
 }
 
 // AcceptInvitation implements TeamInvitationService.
-func (m *mockTeamInvitationService) AcceptInvitation(ctx context.Context, invitationToken string, userId uuid.UUID) error {
+func (m *mockTeamInvitationService) AcceptInvitation(ctx context.Context, userId uuid.UUID, invitationToken string) error {
 	args := m.Called(ctx, invitationToken, userId)
 	return args.Error(0)
 }
@@ -301,8 +310,8 @@ func (m *mockTeamInvitationService) FindInvitations(ctx context.Context, teamId 
 }
 
 // RejectInvitation implements TeamInvitationService.
-func (m *mockTeamInvitationService) RejectInvitation(ctx context.Context, invitationToken string, userId uuid.UUID) error {
-	args := m.Called(ctx, invitationToken, userId)
+func (m *mockTeamInvitationService) RejectInvitation(ctx context.Context, userId uuid.UUID, invitationToken string) error {
+	args := m.Called(ctx, userId, invitationToken)
 	return args.Error(0)
 }
 

@@ -28,6 +28,7 @@ type UserInfo struct {
 	Providers   []Providers `db:"providers" json:"providers" enum:"google,apple,facebook,github,credentials"`
 }
 
+// Providers is the type of authentication providers. enum:access_token,recovery_token,invite_token,reauthentication_token,refresh_token,verification_token,password_reset_token
 type TokenType string
 
 const (
