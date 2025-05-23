@@ -5,12 +5,22 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/mock"
+	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/shared"
 )
 
 type MockAuthStore struct {
 	mock.Mock
+}
+
+// WithTx implements AuthStore.
+func (m *MockAuthStore) WithTx(dbx database.Dbx) AuthStore {
+	args := m.Called(dbx)
+	if args.Get(0) != nil {
+		return args.Get(0).(AuthStore)
+	}
+	return nil
 }
 
 // RunInTransaction implements AuthStore.

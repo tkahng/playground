@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/auth/oauth"
 	"github.com/tkahng/authgo/internal/conf"
+	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mailer"
@@ -64,6 +65,7 @@ type AuthTokenStore interface {
 }
 
 type AuthStore interface {
+	WithTx(dbx database.Dbx) AuthStore
 	RunInTransaction(ctx context.Context, fn func(store AuthStore) error) error
 	AuthUserStore
 	AuthAccountStore
@@ -742,10 +744,10 @@ func (app *BaseAuthService) Authenticate(ctx context.Context, params *shared.Aut
 	return user, nil
 }
 
-func newFunction(ctx context.Context, err error, app *BaseAuthService, user *models.User) error {
-	err = app.authStore.AssignUserRoles(ctx, user.ID, shared.PermissionNameBasic)
-	return err
-}
+// func newFunction(ctx context.Context, err error, app *BaseAuthService, user *models.User) error {
+// 	err = app.authStore.AssignUserRoles(ctx, user.ID, shared.PermissionNameBasic)
+// 	return err
+// }
 
 func (app *BaseAuthService) UpdateUserVerifiedOrResetPassword(ctx context.Context, store AuthStore, user *models.User, params *shared.AuthenticationInput) (bool, error) {
 
