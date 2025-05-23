@@ -69,6 +69,7 @@ func NewPostgresTeamStore(db database.Dbx) *PostgresTeamStore {
 		db: db,
 	}
 }
+
 func (p *PostgresTeamStore) WithTx(tx database.Dbx) *PostgresTeamStore {
 	return &PostgresTeamStore{
 		db: tx,
@@ -78,7 +79,7 @@ func (p *PostgresTeamStore) WithTx(tx database.Dbx) *PostgresTeamStore {
 // CreateTeamWithOwnerMember implements services.TeamStore.
 func (p *PostgresTeamStore) CreateTeamWithOwnerMember(ctx context.Context, name string, slug string, userId uuid.UUID) (*shared.TeamInfo, error) {
 	var teamInfo *shared.TeamInfo
-	p.db.RunInTransaction(
+	err := p.db.RunInTransaction(
 		ctx,
 		func(d database.Dbx) error {
 			store := p.WithTx(d)
@@ -103,6 +104,9 @@ func (p *PostgresTeamStore) CreateTeamWithOwnerMember(ctx context.Context, name 
 			return nil
 		},
 	)
+	if err != nil {
+		return nil, err
+	}
 	return teamInfo, nil
 }
 

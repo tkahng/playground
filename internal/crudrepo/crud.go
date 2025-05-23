@@ -95,6 +95,12 @@ var (
 	TeamInvitationBuilder = NewSQLBuilder[models.TeamInvitation](
 		UuidV7Generator,
 	)
+	NotificationBuilder = NewSQLBuilder[models.Notification](
+		UuidV7Generator,
+	)
+	JobBuilder = NewSQLBuilder[models.Job](
+		UuidV7Generator,
+	)
 )
 
 var (
@@ -119,4 +125,6 @@ var (
 	Team               = NewPostgresRepository(TeamBuilder)
 	TeamMember         = NewPostgresRepository(TeamMemberBuilder)
 	TeamInvitation     = NewPostgresRepository(TeamInvitationBuilder)
+	Notification       = NewPostgresRepository(NotificationBuilder)
+	Job                = NewPostgresRepository(JobBuilder)
 )
