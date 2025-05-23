@@ -99,6 +99,7 @@ type InvitationService struct {
 	mailer   MailService
 	store    TeamInvitationStore
 	settings conf.AppOptions
+	jwt      JwtService
 }
 
 func (i *InvitationService) CreateConfirmationUrl(tokenhash string) (string, error) {
@@ -129,9 +130,6 @@ func (i *InvitationService) SendInvitationEmail(ctx context.Context, params *Tea
 	if params.TeamName == "" {
 		return fmt.Errorf("team name is empty")
 	}
-	if params.ConfirmationURL == "" {
-		return fmt.Errorf("confirmation URL is empty")
-	}
 
 	confUrl, err := i.CreateConfirmationUrl(params.TokenHash)
 	if err != nil {
@@ -161,12 +159,14 @@ func NewInvitationService(
 	mailer MailService,
 	settings conf.AppOptions,
 	workerService WorkerService,
+	jwt JwtService,
 ) TeamInvitationService {
 	return &InvitationService{
 		WorkerService: workerService,
 		store:         store,
 		mailer:        mailer,
 		settings:      settings,
+		jwt:           jwt,
 	}
 }
 
