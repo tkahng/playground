@@ -7,14 +7,14 @@ import (
 )
 
 const (
-	ContextKeyCurrentCustomer ContextKey = "current_customer"
+	contextKeyCurrentCustomer contextKey = "current_customer"
 )
 
 func SetContextCurrentCustomer(ctx context.Context, customer *models.StripeCustomer) context.Context {
-	return context.WithValue(ctx, ContextKeyCurrentCustomer, customer)
+	return context.WithValue(ctx, contextKeyCurrentCustomer, customer)
 }
 func GetContextCurrentCustomer(ctx context.Context) *models.StripeCustomer {
-	if customer, ok := ctx.Value(ContextKeyCurrentCustomer).(*models.StripeCustomer); ok {
+	if customer, ok := ctx.Value(contextKeyCurrentCustomer).(*models.StripeCustomer); ok {
 		return customer
 	} else {
 		return nil

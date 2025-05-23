@@ -1,3 +1,3 @@
 package contextstore
 
-type ContextKey string
+type contextKey string
