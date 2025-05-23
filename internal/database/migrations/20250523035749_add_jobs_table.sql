@@ -4,14 +4,14 @@ CREATE TABLE public.jobs (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     type TEXT NOT NULL,
     unique_key TEXT,
-    payload JSONB,
+    payload JSONB NOT NULL DEFAULT '{}'::jsonb,
     status public.job_status NOT NULL DEFAULT 'pending',
-    run_after TIMESTAMPTZ DEFAULT now(),
-    attempts INT DEFAULT 0,
-    max_attempts INT DEFAULT 3,
+    run_after TIMESTAMPTZ NOT NULL DEFAULT now(),
+    attempts INT NOT NULL DEFAULT 0,
+    max_attempts INT NOT NULL DEFAULT 3,
     last_error TEXT,
-    created_at TIMESTAMPTZ DEFAULT now(),
-    updated_at TIMESTAMPTZ DEFAULT now()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE TRIGGER handle_jobs_updated_at BEFORE
 UPDATE ON public.jobs FOR EACH ROW EXECUTE PROCEDURE set_current_timestamp_updated_at();
