@@ -1,6 +1,10 @@
 {
   "folders": [
     {
+      "name": "jobs",
+      "path": "internal/jobs"
+    },
+    {
       "name": "services",
       "path": "internal/services"
     },
