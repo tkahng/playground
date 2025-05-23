@@ -13,6 +13,7 @@ func BindTeamsApi(api huma.API, appApi *Api) {
 	teamInfoMiddleware := middleware.TeamInfoFromParamMiddleware(api, appApi.app)
 	requireMember := middleware.RequireTeamMemberRolesMiddleware(api)
 	requiredOwnerMember := middleware.RequireTeamMemberRolesMiddleware(api, models.TeamMemberRoleOwner)
+	checkTeamDelete := middleware.TeamCanDeleteMiddleware(api, appApi.app)
 	teamsGroup := huma.NewGroup(api)
 	// teamsGroup.UseMiddleware(
 	// 	teamInfoMiddleware,
@@ -114,6 +115,7 @@ func BindTeamsApi(api huma.API, appApi *Api) {
 			Middlewares: huma.Middlewares{
 				teamInfoMiddleware,
 				requiredOwnerMember,
+				checkTeamDelete,
 			},
 		},
 		appApi.DeleteTeam,
