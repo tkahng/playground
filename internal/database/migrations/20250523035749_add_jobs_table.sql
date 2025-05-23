@@ -2,7 +2,7 @@
 create type public.job_status AS ENUM ('pending', 'processing', 'done', 'failed');
 CREATE TABLE public.jobs (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    type TEXT NOT NULL,
+    kind TEXT NOT NULL,
     unique_key TEXT,
     payload JSONB NOT NULL DEFAULT '{}'::jsonb,
     status public.job_status NOT NULL DEFAULT 'pending',
@@ -10,16 +10,16 @@ CREATE TABLE public.jobs (
     attempts INT NOT NULL DEFAULT 0,
     max_attempts INT NOT NULL DEFAULT 3,
     last_error TEXT,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp()
 );
 CREATE TRIGGER handle_jobs_updated_at BEFORE
 UPDATE ON public.jobs FOR EACH ROW EXECUTE PROCEDURE set_current_timestamp_updated_at();
 CREATE UNIQUE INDEX uniq_jobs_active_key ON public.jobs (unique_key)
 WHERE status IN ('pending', 'processing');
-CREATE INDEX idx_jobs_status_run_after ON public.jobs (status, run_after);
+CREATE INDEX jobs_polling_idx ON public.jobs (status, run_after, attempts);
 -- migrate:down
-DROP INDEX IF EXISTS idx_jobs_status_run_after;
+DROP INDEX IF EXISTS jobs_polling_idx;
 DROP INDEX IF EXISTS uniq_jobs_active_key;
 DROP TRIGGER IF EXISTS handle_jobs_updated_at ON public.jobs;
 DROP TABLE IF EXISTS public.jobs;
