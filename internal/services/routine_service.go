@@ -1,6 +1,10 @@
 package services
 
-import "github.com/tkahng/authgo/internal/tools/routine"
+import (
+	"sync"
+
+	"github.com/tkahng/authgo/internal/tools/routine"
+)
 
 type RoutineService interface {
 	FireAndForget(f func())
@@ -15,4 +19,24 @@ func NewRoutineService() RoutineService {
 
 func (w *routineService) FireAndForget(f func()) {
 	routine.FireAndForget(f)
+}
+
+type RoutineServiceDecorator struct {
+	Delegate          RoutineService
+	Wg                *sync.WaitGroup
+	FireAndForgetFunc func(f func(), wg ...*sync.WaitGroup)
+}
+
+func NewRoutineServiceDecorator() *RoutineServiceDecorator {
+	return &RoutineServiceDecorator{
+		Delegate: NewRoutineService(),
+	}
+}
+
+func (r *RoutineServiceDecorator) FireAndForget(f func()) {
+	if r.FireAndForgetFunc != nil {
+		r.FireAndForgetFunc(f, r.Wg)
+	} else {
+		routine.FireAndForget(f, r.Wg)
+	}
 }

@@ -561,12 +561,6 @@ func (app *BaseAuthService) VerifyAndParseOtpToken(ctx context.Context, emailTyp
 
 func (app *BaseAuthService) CreateUser(ctx context.Context, store AuthStore, params *shared.AuthenticationInput) (*models.User, error) {
 	fmt.Println("User does not exist, creating user")
-	// is first login
-	// if params.EmailVerifiedAt != nil {
-	// 	isFirstLogin = false
-	// } else {
-	// 	isFirstLogin = true
-	// }
 	user, err := store.CreateUser(ctx, &models.User{
 		Email:           params.Email,
 		Name:            params.Name,
@@ -656,21 +650,26 @@ func (app *BaseAuthService) Authenticate(ctx context.Context, params *shared.Aut
 		if err != nil {
 			return nil, fmt.Errorf("error at creating user: %w", err)
 		}
-		app.routine.FireAndForget(
-			func() {
-				ctx := context.Background()
-				fmt.Println("User is first login, sending verification email")
-				err := app.SendOtpEmail(EmailTypeVerify, ctx, user)
-				if err != nil {
-					app.logger.Error(
-						"error sending verification email",
-						slog.Any("error", err),
-						slog.String("email", user.Email),
-						slog.String("userId", user.ID.String()),
-					)
-				}
-			},
-		)
+		if user == nil {
+			return nil, fmt.Errorf("user not created")
+		}
+		if user.EmailVerifiedAt == nil {
+			app.routine.FireAndForget(
+				func() {
+					ctx := context.Background()
+					fmt.Println("User is first login, sending verification email")
+					err := app.SendOtpEmail(EmailTypeVerify, ctx, user)
+					if err != nil {
+						app.logger.Error(
+							"error sending verification email",
+							slog.Any("error", err),
+							slog.String("email", user.Email),
+							slog.String("userId", user.ID.String()),
+						)
+					}
+				},
+			)
+		}
 		return user, nil
 	}
 	// if user exists, but requested account type does not exist, Create UserAccount  of requested type ----------------------------------------------------------------------------------------------------

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -15,6 +16,7 @@ import (
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mailer"
+	"github.com/tkahng/authgo/internal/tools/types"
 )
 
 func TestHandleRefreshToken(t *testing.T) {
@@ -209,6 +211,8 @@ func TestResetPassword(t *testing.T) {
 func TestAuthenticate(t *testing.T) {
 	ctx := context.Background()
 	mockStorage := new(MockAuthStore)
+	mockStorage2 := new(MockAuthStore)
+	mockStorage.Tx = mockStorage2
 	mockToken := NewJwtService()
 	mockPassword := new(MockPasswordService)
 	mockMailService := &MockMailService{
@@ -222,7 +226,7 @@ func TestAuthenticate(t *testing.T) {
 		},
 	}).ToSettings()
 	wg := new(sync.WaitGroup)
-	mockRoutineService := new(MockRoutineService)
+	mockRoutineService := NewRoutineServiceDecorator()
 	mockRoutineService.Wg = wg
 	app := &BaseAuthService{
 		authStore: mockStorage,
@@ -255,10 +259,17 @@ func TestAuthenticate(t *testing.T) {
 			},
 			setupMocks: func() {
 				mockStorage.On("FindUserByEmail", ctx, testEmail).Return(nil, nil)
-				mockStorage.On("CreateUser", ctx, mock.Anything).Return(&models.User{ID: testUserId, Email: testEmail}, nil)
-				mockStorage.On("AssignUserRoles", ctx, testUserId, mock.Anything).Return(nil)
+				// mockStorage.On("RunInTransaction", ctx, mock.Anything).Return(nil)
+				// mockStorage.On("WithTx", ctx, mock.Anything).Return(mockStorage2)
+				mockStorage2.On("CreateUser", ctx, mock.Anything).Return(&models.User{ID: testUserId, Email: testEmail}, nil)
+				// mockStorage.On("AssignUserRoles", ctx, testUserId, mock.Anything).Return(nil)
 				mockPassword.On("HashPassword", testPasswordStr).Return(testHashedPassword, nil)
-				mockStorage.On("LinkAccount", ctx, mock.Anything).Return(nil)
+				mockStorage2.On("LinkAccount", ctx, mock.Anything).Return(&models.UserAccount{
+					Password: &testHashedPassword,
+					UserID:   testUserId,
+					Provider: models.ProvidersCredentials,
+					Type:     models.ProviderTypeCredentials,
+				}, nil)
 				mockStorage.On("SaveToken", ctx, mock.Anything).Return(nil)
 				// mockStorage.On("FindUserAccountByUserIdAndProvider", ctx, testUserId, models.ProvidersCredentials).Return(nil, nil)
 				// mockPassword.On("HashPassword", mock.Anything).Return(testHashedPassword, nil)
@@ -319,11 +330,56 @@ func TestAuthenticate(t *testing.T) {
 				mockStorage.On("FindUserByEmail", ctx, testEmail).Return(&models.User{ID: testUserId, Email: testEmail}, nil)
 				mockStorage.On("FindUserAccountByUserIdAndProvider", ctx, testUserId, models.ProvidersCredentials).Return(nil, nil)
 				mockPassword.On("HashPassword", testPasswordStr).Return(testHashedPassword, nil)
-				mockStorage.On("LinkAccount", ctx, mock.Anything).Return(nil)
+				mockStorage2.On("LinkAccount", ctx, mock.Anything).Return(&models.UserAccount{
+					Password: &testHashedPassword,
+					UserID:   testUserId,
+					Provider: models.ProvidersCredentials,
+					Type:     models.ProviderTypeCredentials,
+				}, nil)
 				// mockStorage.On("FindUserAccountByUserIdAndProvider", ctx, testUserId, models.ProvidersCredentials).Return(nil)
 			},
 			expectedError: false,
 			// checkMail:     true,
+		},
+		{
+			name: "user exists, account does not exist, create account password reset",
+			input: &shared.AuthenticationInput{
+				Email:           testEmail,
+				Provider:        shared.Providers(models.ProvidersGoogle),
+				Type:            shared.ProviderTypeOAuth,
+				EmailVerifiedAt: types.Pointer(time.Now()),
+			},
+			setupMocks: func() {
+				mockStorage.On("FindUserByEmail", ctx, testEmail).Return(&models.User{ID: testUserId, Email: testEmail}, nil)
+				mockStorage.On("FindUserAccountByUserIdAndProvider", ctx, testUserId, models.ProvidersGoogle).Return(nil, nil)
+				// mockPassword.On("HashPassword", testPasswordStr).Return(testHashedPassword, nil)
+				mockStorage2.On("LinkAccount", ctx, mock.Anything).Return(&models.UserAccount{
+					UserID:   testUserId,
+					Provider: models.ProvidersGoogle,
+					Type:     models.ProviderTypeOAuth,
+				}, nil)
+				mockStorage2.On("FindUserAccountByUserIdAndProvider", ctx, testUserId, models.ProvidersCredentials).Return(&models.UserAccount{
+					Password: &testHashedPassword,
+					UserID:   testUserId,
+					Provider: models.ProvidersCredentials,
+					Type:     models.ProviderTypeCredentials,
+				}, nil)
+				mockPassword.On("HashPassword", testPasswordStr).Return(testHashedPassword, nil)
+				mockStorage2.On("UpdateUserAccount", ctx, mock.Anything).Return(nil)
+				mockStorage2.On("UpdateUser", ctx, mock.Anything).Return(nil)
+				mockStorage.On("SaveToken", ctx, mock.Anything).Return(nil)
+			},
+			expectedError: false,
+			checkMail:     true,
+			checkWant: &mailer.AllEmailParams{
+				SendMailParams: &mailer.SendMailParams{
+					Type: string(EmailTypeSecurityPasswordReset),
+				},
+				Message: &mailer.Message{
+					From: settings.Meta.SenderAddress,
+					To:   testEmail,
+				},
+			},
 		},
 	}
 
@@ -331,6 +387,8 @@ func TestAuthenticate(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			mockStorage.ExpectedCalls = nil
 			mockStorage.Calls = nil
+			mockStorage2.ExpectedCalls = nil
+			mockStorage2.Calls = nil
 			mockPassword.ExpectedCalls = nil
 			mockPassword.Calls = nil
 			mockMailService.param = nil

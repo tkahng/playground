@@ -12,6 +12,8 @@ import (
 
 type MockAuthStore struct {
 	mock.Mock
+	Tx    *MockAuthStore
+	TxErr error
 }
 
 // WithTx implements AuthStore.
@@ -25,8 +27,11 @@ func (m *MockAuthStore) WithTx(dbx database.Dbx) AuthStore {
 
 // RunInTransaction implements AuthStore.
 func (m *MockAuthStore) RunInTransaction(ctx context.Context, fn func(store AuthStore) error) error {
-	args := m.Called(ctx, fn)
-	return args.Error(0)
+	// args := m.Called(ctx, fn)
+	if m.Tx != nil {
+		m.TxErr = fn(m.Tx)
+	}
+	return m.TxErr
 }
 
 var _ AuthStore = (*MockAuthStore)(nil)
