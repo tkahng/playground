@@ -4,13 +4,14 @@ import (
 	"net/http"
 
 	"github.com/danielgtaylor/huma/v2"
+	"github.com/tkahng/authgo/internal/middleware"
 	"github.com/tkahng/authgo/internal/shared"
 )
 
 func BindStripeApi(api huma.API, appApi *Api) {
-	teamInfoMiddleware := TeamInfoFromParamMiddleware(api, appApi.app)
-	selectCustomerFromUserMiddleware := SelectCustomerFromUserMiddleware(api, appApi.app)
-	selectCustomerFromTeamMiddleware := SelectCustomerFromTeamMiddleware(api, appApi.app)
+	teamInfoMiddleware := middleware.TeamInfoFromParamMiddleware(api, appApi.app)
+	selectCustomerFromUserMiddleware := middleware.SelectCustomerFromUserMiddleware(api, appApi.app)
+	selectCustomerFromTeamMiddleware := middleware.SelectCustomerFromTeamMiddleware(api, appApi.app)
 	stripeGroup := huma.NewGroup(api)
 
 	// stripe webhook

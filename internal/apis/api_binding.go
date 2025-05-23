@@ -8,13 +8,14 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/danielgtaylor/huma/v2/sse"
 	"github.com/tkahng/authgo/internal/core"
+	"github.com/tkahng/authgo/internal/middleware"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/shared"
 )
 
 func BindMiddlewares(api huma.API, app core.App) {
-	api.UseMiddleware(AuthMiddleware(api, app))
-	api.UseMiddleware(RequireAuthMiddleware(api))
+	api.UseMiddleware(middleware.AuthMiddleware(api, app))
+	api.UseMiddleware(middleware.RequireAuthMiddleware(api))
 }
 
 type IndexOutputBody struct {

@@ -2,10 +2,11 @@ package apis
 
 import (
 	"github.com/danielgtaylor/huma/v2"
+	"github.com/tkahng/authgo/internal/middleware"
 )
 
 func BindTeamsApi(api huma.API, appApi *Api) {
-	teamInfoMiddleware := TeamInfoFromParamMiddleware(api, appApi.app)
+	teamInfoMiddleware := middleware.TeamInfoFromParamMiddleware(api, appApi.app)
 
 	teamsGroup := huma.NewGroup(api)
 

@@ -4,11 +4,12 @@ import (
 	"net/http"
 
 	"github.com/danielgtaylor/huma/v2"
+	"github.com/tkahng/authgo/internal/middleware"
 	"github.com/tkahng/authgo/internal/shared"
 )
 
 func BindTaskApi(api huma.API, appApi *Api) {
-	checkTaskOwnerMiddleware := CheckTaskOwnerMiddleware(api, appApi.app)
+	checkTaskOwnerMiddleware := middleware.CheckTaskOwnerMiddleware(api, appApi.app)
 	taskGroup := huma.NewGroup(api)
 	taskGroup.UseMiddleware(checkTaskOwnerMiddleware)
 	// task list
