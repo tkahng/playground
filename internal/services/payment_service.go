@@ -117,6 +117,19 @@ type StripeService struct {
 	paymentStore PaymentStore
 }
 
+var _ PaymentService = (*StripeService)(nil)
+
+func NewPaymentService(
+	client PaymentClient,
+	paymentStore PaymentStore,
+) PaymentService {
+	return &StripeService{
+		client:       client,
+		logger:       slog.Default(),
+		paymentStore: paymentStore,
+	}
+}
+
 // CreateTeamCustomer implements PaymentService.
 func (srv *StripeService) CreateTeamCustomer(ctx context.Context, team *models.Team, user *models.User) (*models.StripeCustomer, error) {
 	customer, err := srv.client.CreateCustomer(user.Email, &team.Name)
@@ -211,21 +224,8 @@ func (srv *StripeService) VerifyAndUpdateTeamSubscriptionQuantity(ctx context.Co
 	return nil
 }
 
-var _ PaymentService = (*StripeService)(nil)
-
 func (srv *StripeService) Client() PaymentClient {
 	return srv.client
-}
-
-func NewPaymentService(
-	client PaymentClient,
-	paymentStore PaymentStore,
-) PaymentService {
-	return &StripeService{
-		client:       client,
-		logger:       slog.Default(),
-		paymentStore: paymentStore,
-	}
 }
 
 func (srv *StripeService) Store() PaymentStore {
