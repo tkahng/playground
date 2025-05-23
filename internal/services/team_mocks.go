@@ -13,6 +13,12 @@ type mockTeamService struct {
 	mock.Mock
 }
 
+// LeaveTeam implements TeamService.
+func (m *mockTeamService) LeaveTeam(ctx context.Context, teamId uuid.UUID, userId uuid.UUID) error {
+	args := m.Called(ctx, teamId, userId)
+	return args.Error(0)
+}
+
 // DeleteTeam implements TeamService.
 func (m *mockTeamService) DeleteTeam(ctx context.Context, teamId uuid.UUID, userId uuid.UUID) error {
 	args := m.Called(ctx, teamId, userId)
@@ -105,6 +111,16 @@ var _ TeamService = (*mockTeamService)(nil)
 
 type mockTeamStore struct {
 	mock.Mock
+}
+
+// CountOwnerTeamMembers implements TeamServiceStore.
+func (m *mockTeamStore) CountOwnerTeamMembers(ctx context.Context, teamId uuid.UUID) (int64, error) {
+	args := m.Called(ctx, teamId)
+	var count int64
+	if args.Get(0) != nil {
+		count = args.Get(0).(int64)
+	}
+	return count, args.Error(1)
 }
 
 // FindLatestActiveSubscriptionWithPriceByCustomerId implements TeamServiceStore.

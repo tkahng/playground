@@ -17,6 +17,7 @@ type TeamService interface {
 	FindLatestTeamInfo(ctx context.Context, userId uuid.UUID) (*shared.TeamInfo, error)
 	AddMember(ctx context.Context, teamId, userId uuid.UUID, role models.TeamMemberRole, hasBillingAccess bool) (*models.TeamMember, error)
 	RemoveMember(ctx context.Context, teamId, userId uuid.UUID) error
+	LeaveTeam(ctx context.Context, teamId, userId uuid.UUID) error
 	CreateTeam(ctx context.Context, name string, slug string, userId uuid.UUID) (*shared.TeamInfo, error)
 	UpdateTeam(ctx context.Context, teamId uuid.UUID, name string) (*models.Team, error)
 	DeleteTeam(ctx context.Context, teamId uuid.UUID, userId uuid.UUID) error
@@ -27,6 +28,7 @@ type TeamStripeStore interface {
 }
 type TeamStore interface {
 	CreateTeamWithOwnerMember(ctx context.Context, name string, slug string, userId uuid.UUID) (*shared.TeamInfo, error)
+	CountOwnerTeamMembers(ctx context.Context, teamId uuid.UUID) (int64, error)
 	CountTeamMembers(ctx context.Context, teamId uuid.UUID) (int64, error)
 	FindTeamByStripeCustomerId(ctx context.Context, stripeCustomerId string) (*models.Team, error)
 	FindTeamByID(ctx context.Context, teamId uuid.UUID) (*models.Team, error)
@@ -56,6 +58,31 @@ func NewTeamService(store TeamServiceStore) TeamService {
 	return &teamService{
 		teamStore: store,
 	}
+}
+
+// LeaveTeam implements TeamService.
+func (t *teamService) LeaveTeam(ctx context.Context, teamId uuid.UUID, userId uuid.UUID) error {
+	teamInfo, err := t.FindTeamInfo(ctx, teamId, userId)
+	if err != nil {
+		return err
+	}
+	if teamInfo == nil {
+		return errors.New("team member not found")
+	}
+	if teamInfo.Member.Role == models.TeamMemberRoleOwner {
+		count, err := t.teamStore.CountOwnerTeamMembers(ctx, teamId)
+		if err != nil {
+			return err
+		}
+		if count == 1 {
+			return errors.New("owner cannot leave team")
+		}
+	}
+	err = t.teamStore.DeleteTeamMember(ctx, teamId, userId)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // DeleteTeam implements TeamService.

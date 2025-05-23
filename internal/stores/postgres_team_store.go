@@ -330,6 +330,26 @@ func (s *PostgresTeamStore) UpdateTeamMember(ctx context.Context, member *models
 }
 
 // CountTeamMembers implements services.TeamStore.
+func (s *PostgresTeamStore) CountOwnerTeamMembers(ctx context.Context, teamId uuid.UUID) (int64, error) {
+	c, err := crudrepo.TeamMember.Count(
+		ctx,
+		s.db,
+		&map[string]any{
+			"team_id": map[string]any{
+				"_eq": teamId.String(),
+			},
+			"role": map[string]any{
+				"_eq": string(models.TeamMemberRoleOwner),
+			},
+		},
+	)
+	if err != nil {
+		return 0, err
+	}
+	return c, nil
+}
+
+// CountTeamMembers implements services.TeamStore.
 func (s *PostgresTeamStore) CountTeamMembers(ctx context.Context, teamId uuid.UUID) (int64, error) {
 	c, err := crudrepo.TeamMember.Count(
 		ctx,
