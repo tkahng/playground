@@ -23,6 +23,10 @@ type Queries struct {
 	db *pgxpool.Pool
 }
 
+func (v *Queries) Pool() *pgxpool.Pool {
+	return v.db
+}
+
 func NewQueries(pool *pgxpool.Pool) *Queries {
 	return &Queries{db: pool}
 }
