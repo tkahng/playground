@@ -14,6 +14,16 @@ type txQueries struct {
 	db pgx.Tx
 }
 
+// Begin implements Dbx.
+func (v *txQueries) Begin(ctx context.Context) (pgx.Tx, error) {
+	return v.db.Begin(ctx)
+}
+
+// SendBatch implements Dbx.
+func (v *txQueries) SendBatch(ctx context.Context, b *pgx.Batch) pgx.BatchResults {
+	return v.db.SendBatch(ctx, b)
+}
+
 func (v *txQueries) Commit(ctx context.Context) error {
 	return v.db.Commit(ctx)
 }

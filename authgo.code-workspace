@@ -9,6 +9,10 @@
       "path": "internal/services"
     },
     {
+      "name": "core",
+      "path": "internal/core"
+    },
+    {
       "name": "stores",
       "path": "internal/stores"
     },

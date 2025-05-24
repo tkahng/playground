@@ -10,15 +10,21 @@ import (
 
 type App interface {
 	Cfg() *conf.EnvConfig
+
 	Db() database.Dbx
+
 	Fs() *filesystem.FileSystem
+
 	Settings() *conf.AppOptions
-	NewMailClient() mailer.Mailer
-	EncryptionEnv() string
+
+	Mailer() mailer.Mailer
 
 	Rbac() services.RBACService
+
 	User() services.UserService
+
 	UserAccount() services.UserAccountService
+
 	Payment() services.PaymentService
 
 	Auth() services.AuthService

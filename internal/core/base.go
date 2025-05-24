@@ -120,17 +120,12 @@ func (a *BaseApp) Settings() *conf.AppOptions {
 	return a.settings
 }
 
-// EncryptionEnv implements App.
-func (app *BaseApp) EncryptionEnv() string {
-	return app.cfg.EncryptionKey
-}
-
 func (app *BaseApp) Cfg() *conf.EnvConfig {
 	return app.cfg
 }
 
-// NewMailClient implements App.
-func (app *BaseApp) NewMailClient() mailer.Mailer {
+// Mailer implements App.
+func (app *BaseApp) Mailer() mailer.Mailer {
 	return app.mail
 }
 

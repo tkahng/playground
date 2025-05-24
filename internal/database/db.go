@@ -10,6 +10,8 @@ import (
 )
 
 type Dbx interface {
+	SendBatch(ctx context.Context, b *pgx.Batch) pgx.BatchResults
+	Begin(ctx context.Context) (pgx.Tx, error)
 	Query(ctx context.Context, sql string, arguments ...any) (pgx.Rows, error)
 	Exec(ctx context.Context, sql string, arguments ...any) (pgconn.CommandTag, error)
 	RunInTransaction(ctx context.Context, fn func(Dbx) error) error
@@ -21,6 +23,16 @@ var _ Dbx = (*Queries)(nil)
 
 type Queries struct {
 	db *pgxpool.Pool
+}
+
+// Begin implements Dbx.
+func (v *Queries) Begin(ctx context.Context) (pgx.Tx, error) {
+	return v.db.Begin(ctx)
+}
+
+// SendBatch implements Dbx.
+func (v *Queries) SendBatch(ctx context.Context, b *pgx.Batch) pgx.BatchResults {
+	return v.db.SendBatch(ctx, b)
 }
 
 func (v *Queries) Pool() *pgxpool.Pool {
