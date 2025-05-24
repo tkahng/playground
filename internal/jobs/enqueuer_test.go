@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/tkahng/authgo/internal/jobs"
@@ -26,16 +25,15 @@ func TestEnqueuer(t *testing.T) {
 			job := testJob{Message: "hello"}
 			runAfter := time.Now().Add(1 * time.Hour)
 
-			id, err := enqueuer.Enqueue(ctx, job, nil, runAfter, 3)
+			err := enqueuer.Enqueue(ctx, job, nil, runAfter, 3)
 			assert.NoError(t, err)
-			assert.NotEqual(t, uuid.Nil, id)
 
 			// Verify job was inserted
 			var storedJob jobs.JobRow
 			err = tx.QueryRow(ctx, `
 			SELECT id, kind, payload, status, run_after, attempts, max_attempts
-			FROM jobs WHERE id = $1
-		`, id).Scan(
+			FROM jobs WHERE kind = $1
+		`, job.Kind()).Scan(
 				&storedJob.ID, &storedJob.Kind, &storedJob.Payload,
 				&storedJob.Status, &storedJob.RunAfter,
 				&storedJob.Attempts, &storedJob.MaxAttempts,
@@ -56,17 +54,16 @@ func TestEnqueuer(t *testing.T) {
 			job := testJob{Message: "unique"}
 
 			// First insert
-			id1, err := enqueuer.Enqueue(ctx, job, &uniqueKey, time.Now(), 1)
+			err := enqueuer.Enqueue(ctx, job, &uniqueKey, time.Now(), 1)
 			assert.NoError(t, err)
 
 			// Second insert should update existing
-			id2, err := enqueuer.Enqueue(ctx, testJob{Message: "updated"}, &uniqueKey, time.Now(), 1)
+			err = enqueuer.Enqueue(ctx, testJob{Message: "updated"}, &uniqueKey, time.Now(), 1)
 			assert.NoError(t, err)
-			assert.Equal(t, id1, id2, "should return same ID for same unique key")
 
 			// Verify payload was updated
 			var payload []byte
-			err = tx.QueryRow(ctx, "SELECT payload FROM jobs WHERE id = $1", id1).Scan(&payload)
+			err = tx.QueryRow(ctx, "SELECT payload FROM jobs WHERE unique_key = $1", uniqueKey).Scan(&payload)
 			assert.NoError(t, err)
 			assert.Contains(t, string(payload), `"updated"`)
 		})

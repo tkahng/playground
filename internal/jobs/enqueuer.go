@@ -50,16 +50,16 @@ type EnqueueParams struct {
 const maxBatchSize = 1000
 
 // Enqueue adds a single job to the queue
-func (e *DBEnqueuer) Enqueue(ctx context.Context, args JobArgs, uniqueKey *string, runAfter time.Time, maxAttempts int) (uuid.UUID, error) {
+func (e *DBEnqueuer) Enqueue(ctx context.Context, args JobArgs, uniqueKey *string, runAfter time.Time, maxAttempts int) error {
 	payload, err := json.Marshal(args)
 	if err != nil {
-		return uuid.Nil, fmt.Errorf("marshal args: %w", err)
+		return fmt.Errorf("marshal args: %w", err)
 	}
 
 	// Generate time-ordered UUIDv7 for better database performance
 	id, err := uuid.NewV7()
 	if err != nil {
-		return uuid.Nil, fmt.Errorf("generate uuid: %w", err)
+		return fmt.Errorf("generate uuid: %w", err)
 	}
 
 	_, err = e.db.Exec(ctx, `
@@ -73,7 +73,7 @@ func (e *DBEnqueuer) Enqueue(ctx context.Context, args JobArgs, uniqueKey *strin
 			updated_at = clock_timestamp()
 	`, id, args.Kind(), uniqueKey, payload, runAfter, maxAttempts)
 
-	return id, err
+	return err
 }
 
 // EnqueueMany efficiently processes multiple jobs in batches
