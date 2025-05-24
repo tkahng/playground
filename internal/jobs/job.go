@@ -150,13 +150,20 @@ func ServeWithPoller(ctx context.Context, poller *Poller) error {
 }
 
 type pollerOpts struct {
-	Timeout time.Duration
+	Interval time.Duration
+	Timeout  time.Duration
 }
 type PollerOptsFunc func(*pollerOpts)
 
 func WithTimeout(timeout time.Duration) PollerOptsFunc {
 	return func(opts *pollerOpts) {
 		opts.Timeout = timeout
+	}
+}
+
+func WithInterval(interval time.Duration) PollerOptsFunc {
+	return func(opts *pollerOpts) {
+		opts.Interval = interval
 	}
 }
 
@@ -167,11 +174,14 @@ type Poller struct {
 	opts       pollerOpts
 }
 
-func NewPoller(store JobStore, dispatcher Dispatcher, interval time.Duration, opts ...PollerOptsFunc) *Poller {
+func NewPoller(store JobStore, dispatcher Dispatcher, opts ...PollerOptsFunc) *Poller {
 	p := &Poller{
 		Store:      store,
 		Dispatcher: dispatcher,
-		Interval:   interval,
+		opts: pollerOpts{
+			Interval: 1 * time.Second,
+			Timeout:  30 * time.Second,
+		},
 	}
 	for _, opt := range opts {
 		opt(&p.opts)
@@ -222,7 +232,7 @@ func (p *Poller) pollOnce(ctx context.Context) error {
 	jobCtx, cancel := context.WithTimeout(
 		ctx,
 		p.opts.Timeout,
-	) // Still consider making this configurable
+	)
 	defer cancel()
 
 	dispatchErr := p.Dispatcher.Dispatch(jobCtx, &row)
