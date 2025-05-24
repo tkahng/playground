@@ -2,6 +2,7 @@ package jobs
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"math"
 	"os"
@@ -9,8 +10,21 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"golang.org/x/sync/errgroup"
 )
+
+func ServeWithPoller(ctx context.Context, poller *Poller) error {
+	ctx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	g, ctx := errgroup.WithContext(ctx)
+	g.Go(func() error {
+		return poller.Run(ctx)
+	})
+
+	return g.Wait()
+}
 
 type Poller struct {
 	Store      *JobStore
@@ -35,46 +49,36 @@ func (p *Poller) Run(ctx context.Context) error {
 }
 
 func (p *Poller) pollOnce(ctx context.Context) error {
-	jobs, err := p.Store.ClaimPendingJobs(ctx, 10)
+	tx, err := p.Store.DB.BeginTx(ctx, pgx.TxOptions{})
 	if err != nil {
-		return err
+		return fmt.Errorf("begin tx: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	jobs, err := p.Store.ClaimPendingJobs(ctx, tx, 10)
+	if err != nil {
+		return fmt.Errorf("claim jobs: %w", err)
 	}
 
 	for _, row := range jobs {
-		row := row // capture for closure
-		go func() {
-			ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+		row := row
+		func() {
+			jobCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
 			defer cancel()
 
-			err := p.Dispatcher.Dispatch(ctx, &row)
+			err := p.Dispatcher.Dispatch(jobCtx, &row)
 			if err != nil {
 				if row.Attempts >= row.MaxAttempts {
-					_ = p.Store.MarkFailed(ctx, row.ID, err.Error())
+					_ = p.Store.MarkFailed(ctx, tx, row.ID, err.Error())
 				} else {
 					delay := time.Duration(math.Pow(2, float64(row.Attempts))) * time.Second
-					_ = p.Store.RescheduleJob(ctx, row.ID, delay)
+					_ = p.Store.RescheduleJob(ctx, tx, row.ID, delay)
 				}
 			} else {
-				_ = p.Store.MarkDone(ctx, row.ID)
+				_ = p.Store.MarkDone(ctx, tx, row.ID)
 			}
 		}()
 	}
 
-	return nil
-}
-
-func ServeWithPoller(ctx context.Context, poller *Poller) error {
-	ctx, cancel := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
-	defer cancel()
-
-	g, ctx := errgroup.WithContext(ctx)
-	g.Go(func() error {
-		return poller.Run(ctx)
-	})
-
-	if err := g.Wait(); err != nil {
-		log.Printf("graceful shutdown: %v", err)
-		return err
-	}
-	return nil
+	return tx.Commit(ctx)
 }
