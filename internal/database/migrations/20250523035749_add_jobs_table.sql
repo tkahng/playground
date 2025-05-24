@@ -13,14 +13,11 @@ CREATE TABLE public.jobs (
     created_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp()
 );
-CREATE TRIGGER handle_jobs_updated_at BEFORE
-UPDATE ON public.jobs FOR EACH ROW EXECUTE PROCEDURE set_current_timestamp_updated_at();
 CREATE UNIQUE INDEX uniq_jobs_active_key ON public.jobs (unique_key)
 WHERE status IN ('pending', 'processing');
 CREATE INDEX jobs_polling_idx ON public.jobs (status, run_after, attempts);
 -- migrate:down
 DROP INDEX IF EXISTS jobs_polling_idx;
 DROP INDEX IF EXISTS uniq_jobs_active_key;
-DROP TRIGGER IF EXISTS handle_jobs_updated_at ON public.jobs;
 DROP TABLE IF EXISTS public.jobs;
 DROP TYPE IF EXISTS public.job_status;
