@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"log/slog"
 	"math"
 	"os"
@@ -124,16 +123,16 @@ func (d *dispatcher) Dispatch(ctx context.Context, row *JobRow) error {
 func execute[T JobArgs](ctx context.Context, worker Worker[T], job *Job[T]) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
-			log.Printf("panic in job kind=%s: %v\n%s", job.Args.Kind(), r, debug.Stack())
+			slog.ErrorContext(ctx, "panic in job", "kind", job.Args.Kind(), "panic_recover", r, slog.Any("stack", string(debug.Stack())))
 			err = fmt.Errorf("panic: %v", r)
 		}
 	}()
-	log.Printf("start job kind=%s id=%s", job.Args.Kind(), job.ID)
+	slog.InfoContext(ctx, "start job", "kind", job.Args.Kind(), "id", job.ID)
 	err = worker.Work(ctx, job)
 	if err != nil {
-		log.Printf("fail job kind=%s id=%s err=%v", job.Args.Kind(), job.ID, err)
+		slog.ErrorContext(ctx, "fail job", "kind", job.Args.Kind(), "id", job.ID, "error", err)
 	} else {
-		log.Printf("done job kind=%s id=%s", job.Args.Kind(), job.ID)
+		slog.InfoContext(ctx, "done job", "kind", job.Args.Kind(), "id", job.ID)
 	}
 	return err
 }
@@ -168,7 +167,7 @@ type Poller struct {
 	opts       pollerOpts
 }
 
-func NewPoller(store *DbJobStore, dispatcher Dispatcher, interval time.Duration, opts ...PollerOptsFunc) *Poller {
+func NewPoller(store JobStore, dispatcher Dispatcher, interval time.Duration, opts ...PollerOptsFunc) *Poller {
 	p := &Poller{
 		Store:      store,
 		Dispatcher: dispatcher,
@@ -190,16 +189,16 @@ func (p *Poller) Run(ctx context.Context) error {
 			return ctx.Err()
 		case <-ticker.C:
 			if err := p.pollOnce(ctx); err != nil {
-				log.Printf("poller error: %v", err)
+				slog.ErrorContext(ctx, "poller error", "error", err)
 			}
 		}
 	}
 }
 
 func (p *Poller) pollOnce(ctx context.Context) error {
-	tx, err := p.Store.Begin(ctx)
-	if err != nil {
-		return fmt.Errorf("begin tx: %w", err)
+	tx, txErr := p.Store.Begin(ctx)
+	if txErr != nil {
+		return fmt.Errorf("begin tx: %w", txErr)
 	}
 	defer tx.Rollback(ctx) // Always defer rollback; commit will override
 
@@ -215,33 +214,36 @@ func (p *Poller) pollOnce(ctx context.Context) error {
 	}
 
 	row := jobs[0] // Get the single claimed job
+	timeout := p.opts.Timeout
+	if timeout == 0 { // Provide a default if not set by options
+		timeout = 30 * time.Second
+	}
 
-	const newConst = 30 * time.Second
 	jobCtx, cancel := context.WithTimeout(
 		ctx,
-		newConst,
+		p.opts.Timeout,
 	) // Still consider making this configurable
 	defer cancel()
 
 	dispatchErr := p.Dispatcher.Dispatch(jobCtx, &row)
 	if dispatchErr != nil {
-		slog.ErrorContext(ctx, "there was an error dispatching the job. will attempt to reschedule or mark as failed", slog.Any("error", err), slog.String("job_id", row.ID.String()))
+		slog.ErrorContext(ctx, "there was an error dispatching the job. will attempt to reschedule or mark as failed", slog.Any("error", dispatchErr), slog.String("job_id", row.ID.String()))
 		if row.Attempts >= row.MaxAttempts {
-			if err := p.Store.MarkFailed(ctx, tx, row.ID, dispatchErr.Error()); err != nil {
-				slog.ErrorContext(ctx, "Error marking job as failed (and rolling back)", slog.Any("error", err), slog.String("job_id", row.ID.String()))
-				return fmt.Errorf("failed to mark job %s as failed: %w", row.ID, err)
+			if markFailedErr := p.Store.MarkFailed(ctx, tx, row.ID, dispatchErr.Error()); markFailedErr != nil {
+				slog.ErrorContext(ctx, "Error marking job as failed (and rolling back)", slog.Any("error", markFailedErr), slog.String("job_id", row.ID.String()))
+				return fmt.Errorf("failed to mark job %s as failed: %w", row.ID, markFailedErr)
 			}
 		} else {
 			delay := time.Duration(math.Pow(2, float64(row.Attempts))) * time.Second
-			if err := p.Store.RescheduleJob(ctx, tx, row.ID, delay); err != nil {
-				slog.ErrorContext(ctx, "Error rescheduling job (and rolling back)", slog.Any("error", err), slog.String("job_id", row.ID.String()))
-				return fmt.Errorf("failed to reschedule job %s: %w", row.ID, err)
+			if rescheduleErr := p.Store.RescheduleJob(ctx, tx, row.ID, delay); rescheduleErr != nil {
+				slog.ErrorContext(ctx, "Error rescheduling job (and rolling back)", slog.Any("error", rescheduleErr), slog.String("job_id", row.ID.String()))
+				return fmt.Errorf("failed to reschedule job %s: %w", row.ID, rescheduleErr)
 			}
 		}
 	} else {
-		if err := p.Store.MarkDone(ctx, tx, row.ID); err != nil {
-			slog.ErrorContext(ctx, "Error marking job as done (and rolling back)", slog.Any("error", err), slog.String("job_id", row.ID.String()))
-			return fmt.Errorf("failed to mark job %s as done: %w", row.ID, err)
+		if markDoneErr := p.Store.MarkDone(ctx, tx, row.ID); markDoneErr != nil {
+			slog.ErrorContext(ctx, "Error marking job as done (and rolling back)", slog.Any("error", markDoneErr), slog.String("job_id", row.ID.String()))
+			return fmt.Errorf("failed to mark job %s as done: %w", row.ID, markDoneErr)
 		}
 	}
 
@@ -474,7 +476,7 @@ func (e *DBEnqueuer) executeBatch(ctx context.Context, tx pgx.Tx, batch *pgx.Bat
 	defer br.Close()
 
 	// Verify all operations completed successfully
-	for i := 0; i < expectedResults; i++ {
+	for i := range expectedResults {
 		_, err := br.Exec()
 		if err != nil {
 			return fmt.Errorf("job %d in batch: %w", i, err)
