@@ -11,10 +11,6 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-type postgres struct {
-	db *pgxpool.Pool
-}
-
 var (
 	pgInstance *Queries
 	pgOnce     sync.Once

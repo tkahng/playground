@@ -8,13 +8,19 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jackc/pgx/v5/pgconn"
 )
+
+type Db interface {
+	SendBatch(ctx context.Context, b *pgx.Batch) pgx.BatchResults
+	Exec(ctx context.Context, sql string, arguments ...any) (pgconn.CommandTag, error)
+	Begin(ctx context.Context) (pgx.Tx, error)
+}
 
 // Enqueuer provides methods for adding jobs to the queue
 type Enqueuer interface {
 	// Enqueue adds a single job to the queue and returns its time-ordered UUIDv7
-	Enqueue(ctx context.Context, args JobArgs, uniqueKey *string, runAfter time.Time, maxAttempts int) (uuid.UUID, error)
+	Enqueue(ctx context.Context, args JobArgs, uniqueKey *string, runAfter time.Time, maxAttempts int) error
 
 	// EnqueueMany efficiently adds multiple jobs in batches using transactions
 	// Processes jobs in chunks to prevent overwhelming the database
@@ -23,11 +29,11 @@ type Enqueuer interface {
 
 // DBEnqueuer implements Enqueuer using a PostgreSQL connection pool
 type DBEnqueuer struct {
-	db *pgxpool.Pool
+	db Db
 }
 
 // NewDBEnqueuer creates a new database-backed job enqueuer
-func NewDBEnqueuer(db *pgxpool.Pool) *DBEnqueuer {
+func NewDBEnqueuer(db Db) *DBEnqueuer {
 	return &DBEnqueuer{db: db}
 }
 
@@ -93,7 +99,7 @@ func (e *DBEnqueuer) EnqueueMany(ctx context.Context, jobs ...EnqueueParams) err
 
 // processBatch handles a single chunk of jobs in a transaction
 func (e *DBEnqueuer) processBatch(ctx context.Context, jobs []EnqueueParams) error {
-	tx, err := e.db.BeginTx(ctx, pgx.TxOptions{})
+	tx, err := e.db.Begin(ctx)
 	if err != nil {
 		return fmt.Errorf("begin transaction: %w", err)
 	}

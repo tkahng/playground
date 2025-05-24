@@ -14,7 +14,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -172,7 +171,7 @@ func (p *Poller) Run(ctx context.Context) error {
 }
 
 func (p *Poller) pollOnce(ctx context.Context) error {
-	tx, err := p.Store.DB.BeginTx(ctx, pgx.TxOptions{})
+	tx, err := p.Store.DB.Begin(ctx)
 	if err != nil {
 		return fmt.Errorf("begin tx: %w", err)
 	}
@@ -207,7 +206,7 @@ func (p *Poller) pollOnce(ctx context.Context) error {
 }
 
 type JobStore struct {
-	DB *pgxpool.Pool
+	DB Db
 }
 
 // func (s *JobStore) Enqueue(ctx context.Context, args JobArgs, uniqueKey *string, runAfter time.Time, maxAttempts int) error {
