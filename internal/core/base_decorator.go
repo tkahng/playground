@@ -14,21 +14,16 @@ import (
 	"github.com/tkahng/authgo/internal/tools/payment"
 )
 
-func NewDecorator(ctx context.Context, cfg conf.EnvConfig, pool *database.Queries) *BaseApp {
+func NewDecorator(ctx context.Context, cfg conf.EnvConfig, pool *database.Queries) *BaseAppDecorator {
 	settings := cfg.ToSettings()
 
 	fs, err := filesystem.NewFileSystem(cfg.StorageConfig)
-	l := logger.GetDefaultLogger(slog.LevelInfo)
-
 	if err != nil {
 		panic(err)
 	}
-	var mail mailer.Mailer
-	if cfg.ResendConfig.ResendApiKey != "" {
-		mail = mailer.NewResendMailer(cfg.ResendConfig)
-	} else {
-		mail = &mailer.LogMailer{}
-	}
+	l := logger.GetDefaultLogger(slog.LevelInfo)
+
+	var mail mailer.Mailer = &mailer.LogMailer{}
 	userStore := stores.NewPostgresUserStore(pool)
 	userService := services.NewUserService(userStore)
 	userAccountStore := stores.NewPostgresUserAccountStore(pool)
@@ -82,7 +77,7 @@ func NewDecorator(ctx context.Context, cfg conf.EnvConfig, pool *database.Querie
 		taskService,
 		teamService,
 	)
-	return app
+	return &BaseAppDecorator{app: app}
 }
 
 type BaseAppDecorator struct {

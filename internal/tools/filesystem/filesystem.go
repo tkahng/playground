@@ -44,8 +44,7 @@ type S3FileSystem struct {
 	cfg           conf.StorageConfig
 }
 
-func (fs *S3FileSystem) NewFile(ctx context.Context, authority string, key string, file io.Reader) error {
-	// Read content into memory or directly stream it
+func (fs *S3FileSystem) PutFile(ctx context.Context, authority string, key string, file io.Reader) error {
 
 	_, err := fs.storageClient.PutObject(ctx, &awss3.PutObjectInput{
 		Bucket: aws.String(fs.cfg.BucketName),
@@ -124,7 +123,7 @@ func Snakecase(str string) string {
 	return strings.ToLower(result.String())
 }
 
-func (fs *S3FileSystem) NewFileFromURL(ctx context.Context, url string) (*shared.FileDto, error) {
+func (fs *S3FileSystem) PutNewFileFromURL(ctx context.Context, url string) (*shared.FileDto, error) {
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return nil, err
@@ -146,10 +145,10 @@ func (fs *S3FileSystem) NewFileFromURL(ctx context.Context, url string) (*shared
 		return nil, err
 	}
 
-	return fs.NewFileFromBytes(ctx, buf.Bytes(), path.Base(url))
+	return fs.PutFileFromBytes(ctx, buf.Bytes(), path.Base(url))
 }
 
-func (fs *S3FileSystem) NewFileFromBytes(ctx context.Context, b []byte, name string) (*shared.FileDto, error) {
+func (fs *S3FileSystem) PutFileFromBytes(ctx context.Context, b []byte, name string) (*shared.FileDto, error) {
 	id := uuid.New()
 	size := len(b)
 	if size == 0 {
@@ -164,7 +163,7 @@ func (fs *S3FileSystem) NewFileFromBytes(ctx context.Context, b []byte, name str
 	}
 	key := "media/" + id.String() + ext
 
-	err := fs.NewFile(ctx, fs.cfg.BucketName, key, bytes.NewReader(b))
+	err := fs.PutFile(ctx, fs.cfg.BucketName, key, bytes.NewReader(b))
 	if err != nil {
 		return nil, err
 	}
