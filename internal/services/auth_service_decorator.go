@@ -2,16 +2,18 @@ package services
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/auth/oauth"
+	"github.com/tkahng/authgo/internal/conf"
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/shared"
 )
 
 type AuthServiceDecorator struct {
-	delegate                       BaseAuthService
+	Delegate                       *BaseAuthService
 	MailFunc                       func() MailService
 	PasswordFunc                   func() PasswordService
 	StoreFunc                      func() AuthStore
@@ -32,15 +34,38 @@ type AuthServiceDecorator struct {
 	CreateAndPersistStateTokenFunc func(ctx context.Context, payload *shared.ProviderStatePayload) (string, error)
 	CreateAuthTokensFromEmailFunc  func(ctx context.Context, email string) (*shared.UserInfoTokens, error)
 	FetchAuthUserFunc              func(ctx context.Context, code string, parsedState *shared.ProviderStateClaims) (*oauth.AuthUser, error)
-	FireAndForgetFunc              func(f func())
 }
+
+func NewAuthServiceDecorator(
+	opts *conf.AppOptions,
+	authStore AuthStore,
+	mail MailService,
+	token JwtService,
+	password PasswordService,
+	workerService RoutineService,
+	logger *slog.Logger,
+) AuthService {
+	authService := &AuthServiceDecorator{}
+	authService.Delegate = &BaseAuthService{
+		routine:   workerService,
+		authStore: authStore,
+		mail:      mail,
+		token:     token,
+		password:  password,
+		options:   opts,
+		logger:    logger,
+	}
+	return authService
+}
+
+var _ AuthService = (*AuthServiceDecorator)(nil)
 
 // Mail implements AuthService.
 func (a *AuthServiceDecorator) Mail() MailService {
 	if a.MailFunc != nil {
 		return a.MailFunc()
 	}
-	return a.delegate.Mail()
+	return a.Delegate.Mail()
 }
 
 // Password implements AuthService.
@@ -48,7 +73,7 @@ func (a *AuthServiceDecorator) Password() PasswordService {
 	if a.PasswordFunc != nil {
 		return a.PasswordFunc()
 	}
-	return a.delegate.Password()
+	return a.Delegate.Password()
 }
 
 // Store implements AuthService.
@@ -56,7 +81,7 @@ func (a *AuthServiceDecorator) Store() AuthStore {
 	if a.StoreFunc != nil {
 		return a.StoreFunc()
 	}
-	return a.delegate.Store()
+	return a.Delegate.Store()
 }
 
 // Token implements AuthService.
@@ -64,7 +89,7 @@ func (a *AuthServiceDecorator) Token() JwtService {
 	if a.TokenFunc != nil {
 		return a.TokenFunc()
 	}
-	return a.delegate.Token()
+	return a.Delegate.Token()
 }
 
 // CreateOAuthUrl implements AuthService.
@@ -72,7 +97,7 @@ func (a *AuthServiceDecorator) CreateOAuthUrl(ctx context.Context, provider shar
 	if a.CreateOAuthUrlFunc != nil {
 		return a.CreateOAuthUrlFunc(ctx, provider, redirectUrl)
 	}
-	return a.delegate.CreateOAuthUrl(ctx, provider, redirectUrl)
+	return a.Delegate.CreateOAuthUrl(ctx, provider, redirectUrl)
 }
 
 // Authenticate implements AuthService.
@@ -80,7 +105,7 @@ func (a *AuthServiceDecorator) Authenticate(ctx context.Context, params *shared.
 	if a.AuthenticateFunc != nil {
 		return a.AuthenticateFunc(ctx, params)
 	}
-	return a.delegate.Authenticate(ctx, params)
+	return a.Delegate.Authenticate(ctx, params)
 }
 
 // CheckResetPasswordToken implements AuthService.
@@ -88,7 +113,7 @@ func (a *AuthServiceDecorator) CheckResetPasswordToken(ctx context.Context, toke
 	if a.CheckResetPasswordTokenFunc != nil {
 		return a.CheckResetPasswordTokenFunc(ctx, token)
 	}
-	return a.delegate.CheckResetPasswordToken(ctx, token)
+	return a.Delegate.CheckResetPasswordToken(ctx, token)
 }
 
 // CreateAndPersistStateToken implements AuthService.
@@ -96,7 +121,7 @@ func (a *AuthServiceDecorator) CreateAndPersistStateToken(ctx context.Context, p
 	if a.CreateAndPersistStateTokenFunc != nil {
 		return a.CreateAndPersistStateTokenFunc(ctx, payload)
 	}
-	return a.delegate.CreateAndPersistStateToken(ctx, payload)
+	return a.Delegate.CreateAndPersistStateToken(ctx, payload)
 }
 
 // CreateAuthTokensFromEmail implements AuthService.
@@ -104,7 +129,7 @@ func (a *AuthServiceDecorator) CreateAuthTokensFromEmail(ctx context.Context, em
 	if a.CreateAuthTokensFromEmailFunc != nil {
 		return a.CreateAuthTokensFromEmailFunc(ctx, email)
 	}
-	return a.delegate.CreateAuthTokensFromEmail(ctx, email)
+	return a.Delegate.CreateAuthTokensFromEmail(ctx, email)
 }
 
 // FetchAuthUser implements AuthService.
@@ -112,16 +137,7 @@ func (a *AuthServiceDecorator) FetchAuthUser(ctx context.Context, code string, p
 	if a.FetchAuthUserFunc != nil {
 		return a.FetchAuthUserFunc(ctx, code, parsedState)
 	}
-	return a.delegate.FetchAuthUser(ctx, code, parsedState)
-}
-
-// FireAndForget implements AuthService.
-func (a *AuthServiceDecorator) FireAndForget(f func()) {
-	if a.FireAndForgetFunc != nil {
-		a.FireAndForgetFunc(f)
-		return
-	}
-	a.delegate.routine.FireAndForget(f)
+	return a.Delegate.FetchAuthUser(ctx, code, parsedState)
 }
 
 // HandleAccessToken implements AuthService.
@@ -129,7 +145,7 @@ func (a *AuthServiceDecorator) HandleAccessToken(ctx context.Context, token stri
 	if a.HandleAccessTokenFunc != nil {
 		return a.HandleAccessTokenFunc(ctx, token)
 	}
-	return a.delegate.HandleAccessToken(ctx, token)
+	return a.Delegate.HandleAccessToken(ctx, token)
 }
 
 // HandlePasswordResetRequest implements AuthService.
@@ -137,7 +153,7 @@ func (a *AuthServiceDecorator) HandlePasswordResetRequest(ctx context.Context, e
 	if a.HandlePasswordResetRequestFunc != nil {
 		return a.HandlePasswordResetRequestFunc(ctx, email)
 	}
-	return a.delegate.HandlePasswordResetRequest(ctx, email)
+	return a.Delegate.HandlePasswordResetRequest(ctx, email)
 }
 
 // HandlePasswordResetToken implements AuthService.
@@ -145,7 +161,7 @@ func (a *AuthServiceDecorator) HandlePasswordResetToken(ctx context.Context, tok
 	if a.HandlePasswordResetTokenFunc != nil {
 		return a.HandlePasswordResetTokenFunc(ctx, token, password)
 	}
-	return a.delegate.HandlePasswordResetToken(ctx, token, password)
+	return a.Delegate.HandlePasswordResetToken(ctx, token, password)
 }
 
 // HandleRefreshToken implements AuthService.
@@ -153,7 +169,7 @@ func (a *AuthServiceDecorator) HandleRefreshToken(ctx context.Context, token str
 	if a.HandleRefreshTokenFunc != nil {
 		return a.HandleRefreshTokenFunc(ctx, token)
 	}
-	return a.delegate.HandleRefreshToken(ctx, token)
+	return a.Delegate.HandleRefreshToken(ctx, token)
 }
 
 // HandleVerificationToken implements AuthService.
@@ -161,7 +177,7 @@ func (a *AuthServiceDecorator) HandleVerificationToken(ctx context.Context, toke
 	if a.HandleVerificationTokenFunc != nil {
 		return a.HandleVerificationTokenFunc(ctx, token)
 	}
-	return a.delegate.HandleVerificationToken(ctx, token)
+	return a.Delegate.HandleVerificationToken(ctx, token)
 }
 
 // ResetPassword implements AuthService.
@@ -169,7 +185,7 @@ func (a *AuthServiceDecorator) ResetPassword(ctx context.Context, userId uuid.UU
 	if a.ResetPasswordFunc != nil {
 		return a.ResetPasswordFunc(ctx, userId, oldPassword, newPassword)
 	}
-	return a.delegate.ResetPassword(ctx, userId, oldPassword, newPassword)
+	return a.Delegate.ResetPassword(ctx, userId, oldPassword, newPassword)
 }
 
 // SendOtpEmail implements AuthService.
@@ -177,7 +193,7 @@ func (a *AuthServiceDecorator) SendOtpEmail(emailType EmailType, ctx context.Con
 	if a.SendOtpEmailFunc != nil {
 		return a.SendOtpEmailFunc(emailType, ctx, user)
 	}
-	return a.delegate.SendOtpEmail(emailType, ctx, user)
+	return a.Delegate.SendOtpEmail(emailType, ctx, user)
 }
 
 // Signout implements AuthService.
@@ -185,7 +201,7 @@ func (a *AuthServiceDecorator) Signout(ctx context.Context, token string) error 
 	if a.SignoutFunc != nil {
 		return a.SignoutFunc(ctx, token)
 	}
-	return a.delegate.Signout(ctx, token)
+	return a.Delegate.Signout(ctx, token)
 }
 
 // VerifyAndParseOtpToken implements AuthService.
@@ -193,7 +209,7 @@ func (a *AuthServiceDecorator) VerifyAndParseOtpToken(ctx context.Context, email
 	if a.VerifyAndParseOtpTokenFunc != nil {
 		return a.VerifyAndParseOtpTokenFunc(ctx, emailType, token)
 	}
-	return a.delegate.VerifyAndParseOtpToken(ctx, emailType, token)
+	return a.Delegate.VerifyAndParseOtpToken(ctx, emailType, token)
 }
 
 // VerifyStateToken implements AuthService.
@@ -201,10 +217,8 @@ func (a *AuthServiceDecorator) VerifyStateToken(ctx context.Context, token strin
 	if a.VerifyStateTokenFunc != nil {
 		return a.VerifyStateTokenFunc(ctx, token)
 	}
-	return a.delegate.VerifyStateToken(ctx, token)
+	return a.Delegate.VerifyStateToken(ctx, token)
 }
-
-var _ AuthService = (*AuthServiceDecorator)(nil)
 
 type AuthStoreDecorator struct {
 	Delegate                               AuthStore
@@ -247,7 +261,10 @@ func (a *AuthStoreDecorator) WithTx(dbx database.Dbx) AuthStore {
 
 // RunInTransaction implements AuthStore.
 func (a *AuthStoreDecorator) RunInTransaction(ctx context.Context, fn func(store AuthStore) error) error {
-	panic("unimplemented")
+	if a.RunInTransactionFunc != nil {
+		return a.RunInTransactionFunc(ctx, fn)
+	}
+	return a.Delegate.RunInTransaction(ctx, fn)
 }
 
 // AssignUserRoles implements AuthStore.

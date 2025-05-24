@@ -17,40 +17,39 @@ import (
 func NewDecorator(ctx context.Context, cfg conf.EnvConfig, pool *database.Queries) *BaseAppDecorator {
 	settings := cfg.ToSettings()
 
-	fs, err := filesystem.NewFileSystem(cfg.StorageConfig)
-	if err != nil {
-		panic(err)
-	}
+	fs := filesystem.NewMockFileSystem(cfg.StorageConfig)
+
 	l := logger.GetDefaultLogger(slog.LevelInfo)
 
 	var mail mailer.Mailer = &mailer.LogMailer{}
+	authMailService := services.NewMailService(mail)
 	userStore := stores.NewPostgresUserStore(pool)
-	userService := services.NewUserService(userStore)
-	userAccountStore := stores.NewPostgresUserAccountStore(pool)
-	userAccountService := services.NewUserAccountService(userAccountStore)
 	rbac := stores.NewPostgresRBACStore(pool)
-	rbacService := services.NewRBACService(rbac)
 	taskStore := stores.NewTaskStore(pool)
-	taskService := services.NewTaskService(taskStore)
 	paymentStore := stores.NewPostgresPaymentStore(pool)
+	authStore := stores.NewPostgresAuthStore(pool)
+	userAccountStore := stores.NewPostgresUserAccountStore(pool)
+	userService := services.NewUserService(userStore)
+	userAccountService := services.NewUserAccountService(userAccountStore)
+	rbacService := services.NewRBACService(rbac)
+	taskService := services.NewTaskService(taskStore)
 	paymentClient := payment.NewPaymentClient(cfg.StripeConfig)
 	paymentService := services.NewPaymentService(
 		paymentClient,
 		paymentStore,
 	)
 
-	tokenService := services.NewJwtService()
+	tokenService := services.NewJwtServiceDecorator()
 	passwordService := services.NewPasswordService()
-	authStore := stores.NewPostgresAuthStore(pool)
-	workerService := services.NewRoutineService()
-	authMailService := services.NewMailService(mail)
-	authService := services.NewAuthService(
+	routine := services.NewRoutineServiceDecorator()
+
+	authService := services.NewAuthServiceDecorator(
 		settings,
 		authStore,
 		authMailService,
 		tokenService,
 		passwordService,
-		workerService,
+		routine,
 		l,
 	)
 	checkerStore := stores.NewPostgresConstraintStore(pool)
