@@ -1,9 +1,14 @@
-FROM kartoza/postgis:16-3.4
+ARG POSTGRES_VERSION=17
+FROM postgres:${POSTGRES_VERSION}
 
-# Install pgvector extension
+ARG POSTGRES_VERSION=17
 RUN apt-get update && \
-    apt-get install -y postgresql-server-dev-17 git build-essential && \
-    git clone --branch v0.8.0 https://github.com/pgvector/pgvector.git /pgvector && \
-    cd /pgvector && make && make install && \
-    rm -rf /pgvector && \
-    apt-get remove -y build-essential git && apt-get autoremove -y && apt-get clean
+    apt-get install -y --no-install-recommends \
+    postgresql-contrib \
+    postgresql-${POSTGRES_VERSION}-pgvector \
+    postgresql-${POSTGRES_VERSION}-postgis-3 \
+    postgresql-${POSTGRES_VERSION}-postgis-3-scripts \
+    postgis && \
+    && rm -rf /var/lib/apt/lists/*
+
+EXPOSE 5432
