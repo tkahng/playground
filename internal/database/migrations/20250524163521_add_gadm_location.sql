@@ -9,4 +9,7 @@ CREATE TABLE public.gadm_boundaries (
     level INT,
     geom GEOMETRY(MULTIPOLYGON, 4326)
 );
+CREATE INDEX if not exists gadm_boundaries_gist ON public.gadm_boundaries USING GIST (geom);
 -- migrate:down
+DROP INDEX if exists gadm_boundaries_gist;
+DROP TABLE public.gadm_boundaries;
