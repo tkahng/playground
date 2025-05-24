@@ -74,7 +74,6 @@ func TeamInfoFromParamMiddleware(api huma.API, app core.App) func(ctx huma.Conte
 			return
 		}
 		if teamInfo == nil {
-			// huma.WriteErr(api, ctx, http.StatusNotFound, "team not found. you might not be a member of this team or it might not exist", nil)
 			next(ctx)
 			return
 		}

@@ -16,9 +16,6 @@ func BindTeamsApi(api huma.API, appApi *Api) {
 	checkTeamDelete := middleware.TeamCanDeleteMiddleware(api, appApi.app)
 	emailVerified := middleware.EmailVerifiedMiddleware(api)
 	teamsGroup := huma.NewGroup(api)
-	// teamsGroup.UseMiddleware(
-	// 	teamInfoMiddleware,
-	// )
 
 	// check team slug
 	huma.Register(

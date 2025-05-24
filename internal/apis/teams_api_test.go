@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"github.com/danielgtaylor/huma/v2/humatest"
+	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
 	"github.com/tkahng/authgo/internal/apis"
 	"github.com/tkahng/authgo/internal/conf"
 	"github.com/tkahng/authgo/internal/core"
@@ -17,6 +19,26 @@ import (
 	"github.com/tkahng/authgo/internal/test"
 )
 
+func createTeamAndMember(app core.App, user *shared.User, teamName string) (*shared.TeamInfo, error) {
+
+	team, err := app.Team().Store().CreateTeam(context.Background(), teamName, strings.TrimSpace(teamName))
+	if err != nil {
+		return nil, err
+	}
+	member, err := app.Team().Store().CreateTeamMember(context.Background(), team.ID, user.ID, models.TeamMemberRoleOwner, true)
+	if err != nil {
+		return nil, err
+	}
+	return &shared.TeamInfo{
+		Team: *team,
+		User: models.User{
+			ID:              user.ID,
+			Name:            user.Name,
+			EmailVerifiedAt: user.EmailVerifiedAt,
+		},
+		Member: *member,
+	}, nil
+}
 func createVerifiedUser(app core.App) (*shared.UserInfo, error) {
 	nw := time.Now()
 	user, err := app.User().Store().CreateUser(context.Background(), &models.User{
@@ -118,7 +140,6 @@ func TestTeamSlug(t *testing.T) {
 
 func TestCreateTeam(t *testing.T) {
 	test.DbSetup()
-
 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
 		cfg := conf.ZeroEnvConfig()
 		app := core.NewDecorator(ctx, cfg, db)
@@ -160,4 +181,98 @@ func TestCreateTeam(t *testing.T) {
 		}
 
 	})
+}
+func TestGetTeam_unauthorized(t *testing.T) {
+	test.DbSetup()
+	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
+
+		cfg := conf.ZeroEnvConfig()
+		app := core.NewDecorator(ctx, cfg, db)
+		appApi := apis.NewApi(app)
+		_, api := humatest.New(t)
+		apis.AddRoutes(api, appApi)
+
+		t.Run("Unauthorized access", func(t *testing.T) {
+			resp := api.Get("/teams/"+uuid.NewString(), "")
+			if resp.Code == 200 {
+				t.Fatalf("Unexpected response: %s", resp.Body.String())
+			}
+		})
+	},
+	)
+}
+
+func TestGetTeam_invalidID(t *testing.T) {
+	test.DbSetup()
+	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
+
+		cfg := conf.ZeroEnvConfig()
+		app := core.NewDecorator(ctx, cfg, db)
+		appApi := apis.NewApi(app)
+		_, api := humatest.New(t)
+		apis.AddRoutes(api, appApi)
+		user, err := createVerifiedUser(app)
+		if err != nil {
+			t.Errorf("Error creating user: %v", err)
+			return
+		}
+		// team, err := createTeamAndMember(app, &user.User, "test team")
+		// if err != nil {
+		// 	t.Errorf("Error creating user: %v", err)
+		// 	return
+		// }
+		teamIdString := uuid.NewString()
+		// team, err :=
+		tokensVerifiedTokens, err := app.Auth().CreateAuthTokensFromEmail(context.Background(), user.User.Email)
+		if err != nil {
+			t.Errorf("Error creating auth tokens: %v", err)
+			return
+		}
+		VerifiedHeader := fmt.Sprintf("Authorization: Bearer %s", tokensVerifiedTokens.Tokens.AccessToken)
+
+		resp := api.Get("/teams/"+teamIdString+"23", VerifiedHeader)
+		if resp.Code == 200 {
+			t.Fatalf("Unexpected response: %s", resp.Body.String())
+		}
+		assert.Equal(t, 400, resp.Code)
+		assert.Contains(t, resp.Body.String(), "invalid UUID format")
+	},
+	)
+
+}
+
+func TestGetTeam_success(t *testing.T) {
+	test.DbSetup()
+	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
+
+		cfg := conf.ZeroEnvConfig()
+		app := core.NewDecorator(ctx, cfg, db)
+		appApi := apis.NewApi(app)
+		_, api := humatest.New(t)
+		apis.AddRoutes(api, appApi)
+		user, err := createVerifiedUser(app)
+		if err != nil {
+			t.Errorf("Error creating user: %v", err)
+			return
+		}
+		team, err := createTeamAndMember(app, &user.User, "test team")
+		if err != nil {
+			t.Errorf("Error creating user: %v", err)
+			return
+		}
+		teamIdString := team.Team.ID.String()
+		// team, err :=
+		tokensVerifiedTokens, err := app.Auth().CreateAuthTokensFromEmail(context.Background(), user.User.Email)
+		if err != nil {
+			t.Errorf("Error creating auth tokens: %v", err)
+			return
+		}
+		VerifiedHeader := fmt.Sprintf("Authorization: Bearer %s", tokensVerifiedTokens.Tokens.AccessToken)
+		resp := api.Get("/teams/"+teamIdString, VerifiedHeader)
+		if resp.Code != 200 {
+			t.Fatalf("Unexpected response: %s", resp.Body.String())
+		}
+	},
+	)
+
 }

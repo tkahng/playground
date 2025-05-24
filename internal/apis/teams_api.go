@@ -182,7 +182,7 @@ func (api *Api) GetTeam(
 		return nil, err
 	}
 	if team == nil {
-		return nil, huma.Error500InternalServerError("team not found")
+		return nil, huma.Error404NotFound("team not found")
 	}
 	return &TeamOutput{
 		Body: shared.FromTeamModel(team),
