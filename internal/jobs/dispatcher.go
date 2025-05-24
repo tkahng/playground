@@ -7,21 +7,13 @@ import (
 )
 
 type Dispatcher struct {
-	handlers map[string]func(ctx context.Context, row *JobRow) error
+	handlers map[string]func(context.Context, *JobRow) error
 }
 
 func NewDispatcher() *Dispatcher {
 	return &Dispatcher{
 		handlers: make(map[string]func(context.Context, *JobRow) error),
 	}
-}
-
-func (d *Dispatcher) Dispatch(ctx context.Context, row *JobRow) error {
-	handler, ok := d.handlers[row.Kind]
-	if !ok {
-		return fmt.Errorf("no handler for kind: %s", row.Kind)
-	}
-	return handler(ctx, row)
 }
 
 func RegisterWorker[T JobArgs](d *Dispatcher, worker Worker[T]) {
@@ -38,4 +30,12 @@ func RegisterWorker[T JobArgs](d *Dispatcher, worker Worker[T]) {
 		job := &Job[T]{JobRow: row, Args: args}
 		return Execute(ctx, worker, job)
 	}
+}
+
+func (d *Dispatcher) Dispatch(ctx context.Context, row *JobRow) error {
+	handler, ok := d.handlers[row.Kind]
+	if !ok {
+		return fmt.Errorf("no handler for job kind \"%s\"", row.Kind)
+	}
+	return handler(ctx, row)
 }
