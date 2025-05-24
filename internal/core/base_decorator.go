@@ -11,7 +11,6 @@ import (
 	"github.com/tkahng/authgo/internal/tools/filesystem"
 	"github.com/tkahng/authgo/internal/tools/logger"
 	"github.com/tkahng/authgo/internal/tools/mailer"
-	"github.com/tkahng/authgo/internal/tools/payment"
 )
 
 func NewDecorator(ctx context.Context, cfg conf.EnvConfig, pool *database.Queries) *BaseAppDecorator {
@@ -33,7 +32,7 @@ func NewDecorator(ctx context.Context, cfg conf.EnvConfig, pool *database.Querie
 	userAccountService := services.NewUserAccountService(userAccountStore)
 	rbacService := services.NewRBACService(rbac)
 	taskService := services.NewTaskService(taskStore)
-	paymentClient := payment.NewPaymentClient(cfg.StripeConfig)
+	paymentClient := services.NewTestPaymentClient()
 	paymentService := services.NewPaymentService(
 		paymentClient,
 		paymentStore,

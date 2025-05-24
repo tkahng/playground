@@ -13,11 +13,11 @@ type JwtService interface {
 	CreateJwtToken(payload jwt.Claims, signingKey string) (string, error)
 }
 
-type jwtService struct {
-}
-
 func NewJwtService() JwtService {
 	return &jwtService{}
+}
+
+type jwtService struct {
 }
 
 func (tm *jwtService) ParseToken(token string, config conf.TokenOption, data any) error {
