@@ -41,7 +41,7 @@ func run(ctx context.Context) error {
 	ctx, cancel := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM, syscall.SIGHUP, syscall.SIGINT)
 	defer cancel()
 	opts := conf.AppConfigGetter()
-	app := core.NewBApp(ctx, opts)
+	app := core.NewBaseApp(ctx, opts)
 	appApi := apis.NewApi(app)
 	srv, api := apis.NewServer()
 	apis.AddRoutes(api, appApi)

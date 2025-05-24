@@ -18,7 +18,7 @@ import (
 
 type AppFactory interface {
 	New(
-		fs *filesystem.FileSystem,
+		fs filesystem.FileSystem,
 		pool *database.Queries,
 		settings *conf.AppOptions,
 		cfg conf.EnvConfig,
@@ -33,7 +33,7 @@ type AppFactory interface {
 	) *BaseApp
 }
 type NewAppFunc func(
-	fs *filesystem.FileSystem,
+	fs filesystem.FileSystem,
 	pool *database.Queries,
 	settings *conf.AppOptions,
 	cfg conf.EnvConfig,
@@ -55,7 +55,7 @@ type BaseApp struct {
 	settings *conf.AppOptions
 	payment  services.PaymentService
 	logger   *slog.Logger
-	fs       *filesystem.FileSystem
+	fs       filesystem.FileSystem
 	mail     mailer.Mailer
 	auth     services.AuthService
 	team     services.TeamService
@@ -99,7 +99,7 @@ func (a *BaseApp) Auth() services.AuthService {
 	return a.auth
 }
 
-func (app *BaseApp) Fs() *filesystem.FileSystem {
+func (app *BaseApp) Fs() filesystem.FileSystem {
 	return app.fs
 }
 
@@ -129,7 +129,7 @@ func (app *BaseApp) Mailer() mailer.Mailer {
 	return app.mail
 }
 
-func NewBApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
+func NewBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 	settings := cfg.ToSettings()
 	pool := database.CreateQueries(ctx, cfg.Db.DatabaseUrl)
 	fs, err := filesystem.NewFileSystem(cfg.StorageConfig)
@@ -201,7 +201,7 @@ func NewBApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 }
 
 func NewApp(
-	fs *filesystem.FileSystem,
+	fs filesystem.FileSystem,
 	pool *database.Queries,
 	settings *conf.AppOptions,
 	logger *slog.Logger,

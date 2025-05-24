@@ -15,6 +15,7 @@ import (
 	"unicode"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
+	v4 "github.com/aws/aws-sdk-go-v2/aws/signer/v4"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	awss3 "github.com/aws/aws-sdk-go-v2/service/s3"
@@ -28,15 +29,25 @@ type StorageClient interface {
 	PutObject(ctx context.Context, params *awss3.PutObjectInput, optFns ...func(*awss3.Options)) (*awss3.PutObjectOutput, error)
 }
 
-type FileSystem struct {
-	client *awss3.Client
-	cfg    conf.StorageConfig
+type PresignClient interface {
+	PresignGetObject(ctx context.Context, params *awss3.GetObjectInput, optFns ...func(*awss3.PresignOptions)) (*v4.PresignedHTTPRequest, error)
 }
 
-func (fs *FileSystem) NewFile(ctx context.Context, authority string, key string, file io.Reader) error {
+type HttpRequestDoer interface {
+	Do(req *http.Request) (*http.Response, error)
+}
+
+type S3FileSystem struct {
+	httpClient    HttpRequestDoer
+	storageClient StorageClient
+	presignClient PresignClient
+	cfg           conf.StorageConfig
+}
+
+func (fs *S3FileSystem) NewFile(ctx context.Context, authority string, key string, file io.Reader) error {
 	// Read content into memory or directly stream it
 
-	_, err := fs.client.PutObject(ctx, &awss3.PutObjectInput{
+	_, err := fs.storageClient.PutObject(ctx, &awss3.PutObjectInput{
 		Bucket: aws.String(fs.cfg.BucketName),
 		Key:    aws.String(key),
 		Body:   file,
@@ -44,7 +55,7 @@ func (fs *FileSystem) NewFile(ctx context.Context, authority string, key string,
 	return err
 }
 
-func NewFileSystem(cfg conf.StorageConfig) (*FileSystem, error) {
+func NewFileSystem(cfg conf.StorageConfig) (FileSystem, error) {
 	config, err := config.LoadDefaultConfig(context.TODO(),
 		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(cfg.ClientId, cfg.ClientSecret, "")),
 		config.WithRegion(cfg.Region),
@@ -58,18 +69,19 @@ func NewFileSystem(cfg conf.StorageConfig) (*FileSystem, error) {
 		o.UsePathStyle = true
 	})
 
-	return &FileSystem{
-		client: client,
-		cfg:    cfg,
+	presignClient := awss3.NewPresignClient(client)
+	httpClient := http.DefaultClient
+	return &S3FileSystem{
+		storageClient: client,
+		cfg:           cfg,
+		presignClient: presignClient,
+		httpClient:    httpClient,
 	}, nil
 }
 
-func (fs *FileSystem) GeneratePresignedURL(ctx context.Context, bucket, key string) (string, error) {
-	client := fs.client
+func (fs *S3FileSystem) GeneratePresignedURL(ctx context.Context, bucket, key string) (string, error) {
 
-	presignClient := awss3.NewPresignClient(client)
-
-	presignResult, err := presignClient.PresignGetObject(ctx, &awss3.GetObjectInput{
+	presignResult, err := fs.presignClient.PresignGetObject(ctx, &awss3.GetObjectInput{
 		Bucket: aws.String(bucket),
 		Key:    aws.String(key),
 	}, awss3.WithPresignExpires(10*time.Minute))
@@ -112,7 +124,7 @@ func Snakecase(str string) string {
 	return strings.ToLower(result.String())
 }
 
-func (fs *FileSystem) NewFileFromURL(ctx context.Context, url string) (*shared.FileDto, error) {
+func (fs *S3FileSystem) NewFileFromURL(ctx context.Context, url string) (*shared.FileDto, error) {
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return nil, err
@@ -137,7 +149,7 @@ func (fs *FileSystem) NewFileFromURL(ctx context.Context, url string) (*shared.F
 	return fs.NewFileFromBytes(ctx, buf.Bytes(), path.Base(url))
 }
 
-func (fs *FileSystem) NewFileFromBytes(ctx context.Context, b []byte, name string) (*shared.FileDto, error) {
+func (fs *S3FileSystem) NewFileFromBytes(ctx context.Context, b []byte, name string) (*shared.FileDto, error) {
 	id := uuid.New()
 	size := len(b)
 	if size == 0 {

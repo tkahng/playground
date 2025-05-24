@@ -13,7 +13,7 @@ type App interface {
 
 	Db() database.Dbx
 
-	Fs() *filesystem.FileSystem
+	Fs() filesystem.FileSystem
 
 	Settings() *conf.AppOptions
 
