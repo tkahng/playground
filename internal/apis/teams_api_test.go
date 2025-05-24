@@ -74,6 +74,48 @@ func TestGetGreeting(t *testing.T) {
 	}
 }
 
+func TestTeamSlug(t *testing.T) {
+	test.DbSetup()
+	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
+		_, api := humatest.New(t)
+		cfg := conf.ZeroEnvConfig()
+		app := core.NewDecorator(ctx, cfg, db)
+		appApi := apis.NewApi(app)
+		apis.AddRoutes(api, appApi)
+		user, err := createVerifiedUser(app)
+		if err != nil {
+			t.Errorf("Error creating user: %v", err)
+			return
+		}
+		tokensVerifiedTokens, err := app.Auth().CreateAuthTokensFromEmail(context.Background(), user.User.Email)
+		if err != nil {
+			t.Errorf("Error creating auth tokens: %v", err)
+			return
+		}
+		_, err = app.Team().Store().CreateTeam(context.Background(), "test team",
+			"public")
+		VerifiedHeader := fmt.Sprintf("Authorization: Bearer %s", tokensVerifiedTokens.Tokens.AccessToken)
+		resp := api.Post("/teams/check-slug", VerifiedHeader, struct {
+			Slug string `json:"slug" required:"true"`
+		}{
+			Slug: "public",
+		},
+		)
+		if resp.Code != 200 {
+			t.Fatalf("Unexpected response: %s", resp.Body.String())
+		}
+		resp2 := api.Post("/teams/check-slug", VerifiedHeader, struct {
+			Slug string `json:"slug" required:"true"`
+		}{
+			Slug: "baba",
+		},
+		)
+		if !strings.Contains(resp2.Body.String(), "true") {
+			t.Fatalf("Unexpected response: %s", resp2.Body.String())
+		}
+	})
+}
+
 func TestCreateTeam(t *testing.T) {
 	test.DbSetup()
 
