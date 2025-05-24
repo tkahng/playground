@@ -5,6 +5,10 @@
       "path": "internal/jobs"
     },
     {
+      "name": "cmd",
+      "path": "cmd"
+    },
+    {
       "name": "services",
       "path": "internal/services"
     },
