@@ -74,6 +74,9 @@ func BindApis(api huma.API, appApi *Api) {
 	// ---- Upload File
 	BindMediaApi(api, appApi)
 
+	// ---- Teams
+	BindTeamsApi(api, appApi)
+
 	// ---- notifications
 	// sse.Register(
 	// 	api,

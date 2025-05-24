@@ -14,6 +14,7 @@ func BindTeamsApi(api huma.API, appApi *Api) {
 	requireMember := middleware.RequireTeamMemberRolesMiddleware(api)
 	requiredOwnerMember := middleware.RequireTeamMemberRolesMiddleware(api, models.TeamMemberRoleOwner)
 	checkTeamDelete := middleware.TeamCanDeleteMiddleware(api, appApi.app)
+	emailVerified := middleware.EmailVerifiedMiddleware(api)
 	teamsGroup := huma.NewGroup(api)
 	// teamsGroup.UseMiddleware(
 	// 	teamInfoMiddleware,
@@ -51,6 +52,9 @@ func BindTeamsApi(api huma.API, appApi *Api) {
 			Security: []map[string][]string{{
 				shared.BearerAuthSecurityKey: {},
 			}},
+			Middlewares: huma.Middlewares{
+				emailVerified,
+			},
 		},
 		appApi.CreateTeam,
 	)

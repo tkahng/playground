@@ -57,14 +57,28 @@ func (api *Api) CheckTeamSlug(
 		} `json:"body" required:"true"`
 	},
 ) (
-	*bool,
+	*struct {
+		Body struct {
+			Exists bool `json:"exists"`
+		}
+	},
 	error,
 ) {
 	exists, err := api.app.Team().Store().CheckTeamSlug(ctx, input.Body.Slug)
 	if err != nil {
 		return nil, err
 	}
-	return &exists, nil
+	return &struct {
+		Body struct {
+			Exists bool "json:\"exists\""
+		}
+	}{
+		Body: struct {
+			Exists bool `json:"exists"`
+		}{
+			Exists: exists,
+		},
+	}, nil
 }
 
 func (api *Api) GetUserTeamMembers(

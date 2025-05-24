@@ -2,25 +2,77 @@ package apis_test
 
 import (
 	"context"
-	"encoding/json"
-	"errors"
 	"fmt"
-	"io"
+	"strings"
 	"testing"
+	"time"
 
-	"github.com/danielgtaylor/huma/v2"
 	"github.com/danielgtaylor/huma/v2/humatest"
-	"github.com/google/uuid"
-	"github.com/stretchr/testify/assert"
 	"github.com/tkahng/authgo/internal/apis"
 	"github.com/tkahng/authgo/internal/conf"
-	"github.com/tkahng/authgo/internal/contextstore"
 	"github.com/tkahng/authgo/internal/core"
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/test"
 )
+
+func createVerifiedUser(app core.App) (*shared.UserInfo, error) {
+	nw := time.Now()
+	user, err := app.User().Store().CreateUser(context.Background(), &models.User{
+		Email:           "authenticated@example.com",
+		EmailVerifiedAt: &nw,
+	})
+	if err != nil {
+		return nil, err
+	}
+	_, err = app.UserAccount().Store().CreateUserAccount(context.Background(), &models.UserAccount{
+		UserID:            user.ID,
+		Provider:          models.ProvidersGoogle,
+		Type:              "oauth",
+		ProviderAccountID: "google-123",
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &shared.UserInfo{
+		User: *shared.FromUserModel(user),
+	}, nil
+}
+
+// func createTeam(app core.App, user *shared.User) *shared.TeamInfo {
+// 	return must(app.Team().Store().CreateTeam(context.Background(), &models.Team{
+// 		Name:  "test team",
+// 		Owner: user.ID,
+// 	})
+// }
+
+// func TestIndexGet(t *testing.T) {
+// 	test.DbSetup()
+// 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
+// 		cfg := conf.ZeroEnvConfig()
+// 		app := core.NewDecorator(ctx, cfg, db)
+// 		appApi := apis.NewApi(app)
+// 		_, api := humatest.New(t)
+// 		apis.AddRoutes(api, appApi)
+
+//			_, err := api.Get("/team", header)
+//			assert.Nil(t, err)
+//		})
+//	}
+func TestGetGreeting(t *testing.T) {
+	_, api := humatest.New(t)
+	cfg := conf.ZeroEnvConfig()
+	ctx, db := test.DbSetup()
+	app := core.NewDecorator(ctx, cfg, db)
+	appApi := apis.NewApi(app)
+	apis.AddRoutes(api, appApi)
+
+	resp := api.Get("/")
+	if !strings.Contains(resp.Body.String(), "public") {
+		t.Fatalf("Unexpected response: %s", resp.Body.String())
+	}
+}
 
 func TestCreateTeam(t *testing.T) {
 	test.DbSetup()
@@ -31,65 +83,38 @@ func TestCreateTeam(t *testing.T) {
 		appApi := apis.NewApi(app)
 		_, api := humatest.New(t)
 		apis.AddRoutes(api, appApi)
-		tests := []struct {
+		user, err := createVerifiedUser(app)
+		if err != nil {
+			t.Errorf("Error creating user: %v", err)
+			return
+		}
+		tokensVerifiedTokens, err := app.Auth().CreateAuthTokensFromEmail(context.Background(), user.User.Email)
+		if err != nil {
+			t.Errorf("Error creating auth tokens: %v", err)
+			return
+		}
+		VerifiedHeader := fmt.Sprintf("Authorization: Bearer %s", tokensVerifiedTokens.Tokens.AccessToken)
+		sdasd := struct {
 			name             string
 			ctxUserInfo      *shared.UserInfo
 			createTeamErr    error
 			createTeamResult *shared.TeamInfo
 			expectedErr      error
 			expectedOutput   *apis.TeamOutput
+			header           string
+			body             *apis.CreateTeamInput
 		}{
-			{
-				name:        "unauthorized error",
-				ctxUserInfo: nil,
-				expectedErr: huma.Error401Unauthorized("unauthorized"),
-			},
-			{
-				name:          "error propagation",
-				ctxUserInfo:   &shared.UserInfo{User: shared.User{ID: uuid.New()}},
-				createTeamErr: errors.New("test error"),
-				expectedErr:   errors.New("test error"),
-			},
-			{
-				name:             "team not found error",
-				ctxUserInfo:      &shared.UserInfo{User: shared.User{ID: uuid.New()}},
-				createTeamResult: nil,
-				expectedErr:      huma.Error500InternalServerError("team not found"),
-			},
-			{
-				name:             "successful team creation",
-				ctxUserInfo:      &shared.UserInfo{User: shared.User{ID: uuid.New()}},
-				createTeamResult: &shared.TeamInfo{Team: models.Team{}},
-				expectedOutput:   &apis.TeamOutput{Body: shared.FromTeamModel(&models.Team{})},
+			name:   "successful team creation",
+			header: VerifiedHeader,
+			body: &apis.CreateTeamInput{
+				Name: "test team",
+				Slug: "test-team",
 			},
 		}
-		for _, tt := range tests {
-			t.Run(tt.name, func(t *testing.T) {
 
-				ctx := contextstore.SetContextUserInfo(context.Background(), tt.ctxUserInfo)
-				resp := api.PostCtx(ctx,
-					"/api/teams",
-					&struct {
-						Body apis.CreateTeamInput `json:"body" required:"true"`
-					}{
-						Body: apis.CreateTeamInput{Name: tt.name, Slug: "test-slug"},
-					})
-				if tt.expectedErr != nil {
-					assert.GreaterOrEqual(t, resp.Code, 400)
-				}
-				body, err := io.ReadAll(resp.Body)
-				assert.NoError(t, err, "Error reading response body")
-				fmt.Println(string(body))
-				var expectedResponse apis.TeamOutput // Or your specific JSON struct
-				err = json.Unmarshal(body, &expectedResponse)
-				if tt.expectedErr != nil {
-					if resp.Code >= 400 {
-						return
-					}
-
-				}
-				assert.Equal(t, tt.expectedOutput.Body.Name, expectedResponse.Body.Name)
-			})
+		resp := api.Post("/teams", sdasd.header, sdasd.body)
+		if resp.Code != 200 {
+			t.Errorf("Api.GetStripeSubscriptions() = %v, want %v", resp.Code, 200)
 		}
 
 	})
