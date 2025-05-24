@@ -51,7 +51,7 @@ var _ App = (*BaseApp)(nil)
 
 type BaseApp struct {
 	cfg      *conf.EnvConfig
-	db       *database.Queries
+	db       database.Dbx
 	settings *conf.AppOptions
 	payment  services.PaymentService
 	logger   *slog.Logger
@@ -202,7 +202,7 @@ func NewBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 
 func NewApp(
 	fs filesystem.FileSystem,
-	pool *database.Queries,
+	pool database.Dbx,
 	settings *conf.AppOptions,
 	logger *slog.Logger,
 	cfg conf.EnvConfig,

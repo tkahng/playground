@@ -6,7 +6,6 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/jackc/pgx/v5"
 	"github.com/tkahng/authgo/internal/database"
 )
 
@@ -25,7 +24,7 @@ func DbSetup() (context.Context, *database.Queries) {
 	return ctxInstance, dbx
 }
 
-func WithTx(t *testing.T, fn func(ctx context.Context, db pgx.Tx)) {
+func WithTx(t *testing.T, fn func(ctx context.Context, db database.Dbx)) {
 	ctx := context.Background()
 	tx, err := dbx.Pool().Begin(ctx)
 	if err != nil {
@@ -39,5 +38,5 @@ func WithTx(t *testing.T, fn func(ctx context.Context, db pgx.Tx)) {
 			t.Fatal(err)
 		}
 	}()
-	fn(ctx, tx)
+	fn(ctx, database.NewTxQueries(tx))
 }

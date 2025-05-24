@@ -16,6 +16,7 @@ import (
 func AuthMiddleware(api huma.API, app core.App) func(ctx huma.Context, next func(huma.Context)) {
 
 	return func(ctx huma.Context, next func(huma.Context)) {
+		fmt.Println("AuthMiddleware")
 		ctxx := ctx.Context()
 		// check if already has user claims
 		if claims := contextstore.GetContextUserInfo(ctxx); claims != nil {
@@ -49,6 +50,7 @@ func AuthMiddleware(api huma.API, app core.App) func(ctx huma.Context, next func
 
 func RequireAuthMiddleware(api huma.API) func(ctx huma.Context, next func(huma.Context)) {
 	return func(ctx huma.Context, next func(huma.Context)) {
+		fmt.Println("RequireAuthMiddleware")
 		if ctx.Operation().Security == nil {
 			next(ctx)
 			return

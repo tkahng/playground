@@ -13,7 +13,7 @@ import (
 	"github.com/tkahng/authgo/internal/tools/mailer"
 )
 
-func NewDecorator(ctx context.Context, cfg conf.EnvConfig, pool *database.Queries) *BaseAppDecorator {
+func NewDecorator(ctx context.Context, cfg conf.EnvConfig, pool database.Dbx) *BaseAppDecorator {
 	settings := cfg.ToSettings()
 
 	fs := filesystem.NewMockFileSystem(cfg.StorageConfig)

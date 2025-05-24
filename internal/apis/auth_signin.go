@@ -30,7 +30,8 @@ func (api *Api) SignIn(ctx context.Context, input *struct{ Body *SigninDto }) (*
 	params := &shared.AuthenticationInput{
 		Email:             input.Body.Email,
 		Provider:          shared.ProvidersCredentials,
-		Password:          &hash,
+		Password:          &password,
+		HashPassword:      &hash,
 		Type:              shared.ProviderTypeCredentials,
 		ProviderAccountID: input.Body.Email,
 	}

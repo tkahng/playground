@@ -15,6 +15,7 @@ type Dbx interface {
 	Query(ctx context.Context, sql string, arguments ...any) (pgx.Rows, error)
 	Exec(ctx context.Context, sql string, arguments ...any) (pgconn.CommandTag, error)
 	RunInTransaction(ctx context.Context, fn func(Dbx) error) error
+	QueryRow(ctx context.Context, sql string, arguments ...any) pgx.Row
 }
 
 // type TxFunc
@@ -23,6 +24,10 @@ var _ Dbx = (*Queries)(nil)
 
 type Queries struct {
 	db *pgxpool.Pool
+}
+
+func (v *Queries) QueryRow(ctx context.Context, sql string, args ...any) pgx.Row {
+	return v.db.QueryRow(ctx, sql, args...)
 }
 
 // Begin implements Dbx.

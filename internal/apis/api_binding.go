@@ -6,10 +6,8 @@ import (
 	"net/http"
 
 	"github.com/danielgtaylor/huma/v2"
-	"github.com/danielgtaylor/huma/v2/sse"
 	"github.com/tkahng/authgo/internal/core"
 	"github.com/tkahng/authgo/internal/middleware"
-	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/shared"
 )
 
@@ -77,24 +75,24 @@ func BindApis(api huma.API, appApi *Api) {
 	BindMediaApi(api, appApi)
 
 	// ---- notifications
-	sse.Register(
-		api,
-		huma.Operation{
-			OperationID: "notifications-sse",
-			Method:      http.MethodGet,
-			Path:        "/notifications/sse",
-			Summary:     "Notifications SSE",
-			Description: "Notifications SSE",
-			Tags:        []string{"Notifications"},
-			Errors:      []int{http.StatusNotFound},
-			Security: []map[string][]string{{
-				shared.BearerAuthSecurityKey: {},
-			}},
-		}, map[string]any{
-			// Mapping of event type name to Go struct for that event.
-			"message": models.Notification{},
-		},
-		appApi.NotificationsSsefunc)
+	// sse.Register(
+	// 	api,
+	// 	huma.Operation{
+	// 		OperationID: "notifications-sse",
+	// 		Method:      http.MethodGet,
+	// 		Path:        "/notifications/sse",
+	// 		Summary:     "Notifications SSE",
+	// 		Description: "Notifications SSE",
+	// 		Tags:        []string{"Notifications"},
+	// 		Errors:      []int{http.StatusNotFound},
+	// 		Security: []map[string][]string{{
+	// 			shared.BearerAuthSecurityKey: {},
+	// 		}},
+	// 	}, map[string]any{
+	// 		// Mapping of event type name to Go struct for that event.
+	// 		"message": models.Notification{},
+	// 	},
+	// 	appApi.NotificationsSsefunc)
 	// stats routes -------------------------------------------------------------------------------------------------
 	BindStatsApi(api, appApi)
 

@@ -69,6 +69,10 @@ type Options struct {
 	Port int    `doc:"Port to listen on." short:"p" default:"8080"`
 }
 
+func ZeroEnvConfig() EnvConfig {
+	return EnvConfig{}
+}
+
 type EnvConfig struct {
 	Db DBConfig
 	AppConfig

@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jackc/pgx/v5"
 	"github.com/stretchr/testify/assert"
+	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/jobs"
 	"github.com/tkahng/authgo/internal/test"
 )
@@ -20,7 +20,7 @@ func (j testJob) Kind() string { return "test_job" }
 func TestEnqueuer(t *testing.T) {
 	test.DbSetup()
 	t.Run("Enqueue single job", func(t *testing.T) {
-		test.WithTx(t, func(ctx context.Context, tx pgx.Tx) {
+		test.WithTx(t, func(ctx context.Context, tx database.Dbx) {
 			enqueuer := jobs.NewDBEnqueuer(tx)
 			job := testJob{Message: "hello"}
 			runAfter := time.Now().Add(1 * time.Hour)
@@ -46,8 +46,7 @@ func TestEnqueuer(t *testing.T) {
 	})
 
 	t.Run("Enqueue with unique key", func(t *testing.T) {
-		test.WithTx(t, func(ctx context.Context, tx pgx.Tx) {
-			defer tx.Rollback(ctx)
+		test.WithTx(t, func(ctx context.Context, tx database.Dbx) {
 			enqueuer := jobs.NewDBEnqueuer(tx)
 
 			uniqueKey := "unique_123"
@@ -70,7 +69,7 @@ func TestEnqueuer(t *testing.T) {
 	})
 
 	t.Run("EnqueueMany batch insert", func(t *testing.T) {
-		test.WithTx(t, func(ctx context.Context, tx pgx.Tx) {
+		test.WithTx(t, func(ctx context.Context, tx database.Dbx) {
 			enqueuer := jobs.NewDBEnqueuer(tx)
 
 			jobs := []jobs.EnqueueParams{

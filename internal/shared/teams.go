@@ -14,8 +14,6 @@ type TeamInfo struct {
 	Member models.TeamMember `json:"member"`
 }
 
-type tdsa = models.Team
-
 type TeamMemberRole string
 
 const (

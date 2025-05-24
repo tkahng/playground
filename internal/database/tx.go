@@ -14,6 +14,11 @@ type txQueries struct {
 	db pgx.Tx
 }
 
+// QueryRow implements Dbx.
+func (v *txQueries) QueryRow(ctx context.Context, sql string, arguments ...any) pgx.Row {
+	return v.db.QueryRow(ctx, sql, arguments...)
+}
+
 // Begin implements Dbx.
 func (v *txQueries) Begin(ctx context.Context) (pgx.Tx, error) {
 	return v.db.Begin(ctx)

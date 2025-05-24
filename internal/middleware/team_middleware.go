@@ -35,6 +35,7 @@ func TeamCanDeleteMiddleware(api huma.API, app core.App) func(ctx huma.Context, 
 }
 
 func TeamInfoFromParamMiddleware(api huma.API, app core.App) func(ctx huma.Context, next func(huma.Context)) {
+
 	return func(ctx huma.Context, next func(huma.Context)) {
 		rawCtx := ctx.Context()
 		userInfo := contextstore.GetContextUserInfo(rawCtx)
