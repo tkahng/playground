@@ -18,7 +18,7 @@ create table if not exists public.task_projects (
     set null on update cascade,
         assigner_id uuid references public.team_members on delete
     set null on update cascade,
-        "order" double precision not null default 0.0,
+        rank double precision not null default 0.0,
         created_at timestamptz not null default now(),
         updated_at timestamptz not null default now()
 );
@@ -43,7 +43,7 @@ create table if not exists public.tasks (
     set null on update cascade,
         assigner_id uuid references public.team_members on delete
     set null on update cascade,
-        "order" double precision not null default 0.0,
+        rank double precision not null default 0.0,
         parent_id uuid references public.tasks on delete
     set null on update cascade,
         created_at timestamptz not null default now(),

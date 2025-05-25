@@ -37,7 +37,7 @@ type TaskProject struct {
 	EndAt           *time.Time        `db:"end_at" json:"end_at,omitempty" required:"false"`
 	AssigneeID      *uuid.UUID        `db:"assignee_id" json:"assignee_id,omitempty"`
 	AssignerID      *uuid.UUID        `db:"assigner_id" json:"assigner_id,omitempty"`
-	Order           float64           `db:"order" json:"order"`
+	Rank            float64           `db:"rank" json:"rank"`
 	CreatedAt       time.Time         `db:"created_at" json:"created_at"`
 	UpdatedAt       time.Time         `db:"updated_at" json:"updated_at"`
 	CreatedByMember *TeamMember       `db:"created_by_member" src:"created_by" dest:"id" table:"team_members" json:"created_by_member,omitempty"`
@@ -60,7 +60,7 @@ func FromModelProject(task *models.TaskProject) *TaskProject {
 		EndAt:           task.EndAt,
 		AssigneeID:      task.AssigneeID,
 		AssignerID:      task.AssignerID,
-		Order:           task.Order,
+		Rank:            task.Rank,
 		CreatedAt:       task.CreatedAt,
 		UpdatedAt:       task.UpdatedAt,
 		CreatedByMember: FromTeamMemberModel(task.CreatedByMember),
@@ -75,7 +75,7 @@ type CreateTaskProjectDTO struct {
 	Name        string            `json:"name" required:"true"`
 	Description *string           `json:"description,omitempty" required:"false"`
 	Status      TaskProjectStatus `json:"status" required:"false" enum:"todo,in_progress,done" default:"todo"`
-	Order       float64           `json:"order,omitempty" required:"false"`
+	Rank        float64           `json:"rank,omitempty" required:"false"`
 }
 
 type CreateTaskProjectWithTasksDTO struct {
@@ -87,7 +87,7 @@ type UpdateTaskProjectBaseDTO struct {
 	Name        string            `json:"name" required:"true"`
 	Description *string           `json:"description,omitempty" required:"false"`
 	Status      TaskProjectStatus `json:"status" enum:"todo,in_progress,done"`
-	Order       float64           `json:"order"`
+	Rank        float64           `json:"rank"`
 	Position    *int64            `json:"position,omitempty" required:"false"`
 }
 

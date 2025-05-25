@@ -21,7 +21,7 @@ type Task struct {
 	EndAt           *time.Time   `db:"end_at" json:"end_at,omitempty" required:"false"`
 	AssigneeID      *uuid.UUID   `db:"assignee_id" json:"assignee_id,omitempty"`
 	AssignerID      *uuid.UUID   `db:"assigner_id" json:"assigner_id,omitempty"`
-	Order           float64      `db:"order" json:"order"`
+	Rank            float64      `db:"rank" json:"rank"`
 	ParentID        *uuid.UUID   `db:"parent_id" json:"parent_id"`
 	CreatedAt       time.Time    `db:"created_at" json:"created_at"`
 	UpdatedAt       time.Time    `db:"updated_at" json:"updated_at"`
@@ -47,7 +47,7 @@ func FromModelTask(task *crudModels.Task) *Task {
 		EndAt:           task.EndAt,
 		AssigneeID:      task.AssigneeID,
 		AssignerID:      task.AssignerID,
-		Order:           task.Order,
+		Rank:            task.Rank,
 		ParentID:        task.ParentID,
 		CreatedAt:       task.CreatedAt,
 		UpdatedAt:       task.UpdatedAt,
@@ -64,14 +64,14 @@ type CreateTaskBaseDTO struct {
 	Name        string     `json:"name" required:"true"`
 	Description *string    `json:"description,omitempty" required:"false"`
 	Status      TaskStatus `json:"status" required:"false" enum:"todo,in_progress,done" default:"todo"`
-	Order       float64    `json:"order,omitempty" required:"false"`
+	Rank        float64    `json:"rank,omitempty" required:"false"`
 }
 
 type UpdateTaskBaseDTO struct {
 	Name        string     `json:"name" required:"true"`
 	Description *string    `json:"description,omitempty"`
 	Status      TaskStatus `json:"status" enum:"todo,in_progress,done"`
-	Order       float64    `json:"order"`
+	Rank        float64    `json:"rank"`
 	ParentID    *uuid.UUID `json:"parent_id,omitempty"`
 }
 

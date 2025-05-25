@@ -40,7 +40,7 @@ type Task struct {
 	EndAt           *time.Time   `db:"end_at" json:"end_at,omitempty" required:"false"`
 	AssigneeID      *uuid.UUID   `db:"assignee_id" json:"assignee_id,omitempty"`
 	AssignerID      *uuid.UUID   `db:"assigner_id" json:"assigner_id,omitempty"`
-	Order           float64      `db:"order" json:"order"`
+	Rank            float64      `db:"rank" json:"rank"`
 	ParentID        *uuid.UUID   `db:"parent_id" json:"parent_id"`
 	CreatedAt       time.Time    `db:"created_at" json:"created_at"`
 	UpdatedAt       time.Time    `db:"updated_at" json:"updated_at"`
@@ -62,7 +62,7 @@ type TaskProject struct {
 	EndAt           *time.Time        `db:"end_at" json:"end_at,omitempty" required:"false"`
 	AssigneeID      *uuid.UUID        `db:"assignee_id" json:"assignee_id,omitempty"`
 	AssignerID      *uuid.UUID        `db:"assigner_id" json:"assigner_id,omitempty"`
-	Order           float64           `db:"order" json:"order"`
+	Rank            float64           `db:"rank" json:"rank"`
 	CreatedAt       time.Time         `db:"created_at" json:"created_at"`
 	UpdatedAt       time.Time         `db:"updated_at" json:"updated_at"`
 	CreatedByMember *TeamMember       `db:"created_by_member" src:"created_by" dest:"id" table:"team_members" json:"created_by_member,omitempty"`
