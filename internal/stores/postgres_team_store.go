@@ -39,6 +39,85 @@ type PostgresTeamStore struct {
 	db database.Dbx
 }
 
+// FindTeam implements services.TeamStore.
+func (p *PostgresTeamStore) FindTeam(ctx context.Context, team *models.Team) (*models.Team, error) {
+	if team == nil {
+		return nil, nil
+	}
+	where := map[string]any{}
+	if team.ID != uuid.Nil {
+		where["id"] = map[string]any{
+			"_eq": team.ID.String(),
+		}
+	}
+
+	if team.Slug != "" {
+		where["slug"] = map[string]any{
+			"_eq": team.Slug,
+		}
+	}
+	if team.Name != "" {
+		where["name"] = map[string]any{
+			"_eq": team.Name,
+		}
+	}
+	if team.StripeCustomer != nil {
+		if team.StripeCustomer.ID != "" {
+			where["stripe_customer"] = map[string]any{
+				"id": map[string]any{
+					"_eq": team.StripeCustomer.ID,
+				},
+			}
+		}
+	}
+	team, err := crudrepo.Team.GetOne(
+		ctx,
+		p.db,
+		&where,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return team, nil
+}
+
+// FindTeamMember implements services.TeamStore.
+func (p *PostgresTeamStore) FindTeamMember(ctx context.Context, member *models.TeamMember) (*models.TeamMember, error) {
+	if member == nil {
+		return nil, nil
+	}
+	where := map[string]any{}
+	if member.ID != uuid.Nil {
+		where["id"] = map[string]any{
+			"_eq": member.ID.String(),
+		}
+	}
+	if member.TeamID != uuid.Nil {
+		where["team_id"] = map[string]any{
+			"_eq": member.TeamID.String(),
+		}
+	}
+	if member.UserID != nil {
+		where["user_id"] = map[string]any{
+			"_eq": member.UserID.String(),
+		}
+	}
+	if member.Role != "" {
+		where["role"] = map[string]any{
+			"_eq": member.Role,
+		}
+	}
+	member, err := crudrepo.TeamMember.GetOne(
+		ctx,
+		p.db,
+		&where,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return member, nil
+}
+
 // LoadTeamsByIds implements services.TeamStore.
 func (p *PostgresTeamStore) LoadTeamsByIds(ctx context.Context, teamIds ...uuid.UUID) ([]*models.Team, error) {
 	var ids []string

@@ -33,6 +33,24 @@ type TeamStoreDecorator struct {
 	DeleteTeamFunc                 func(ctx context.Context, teamId uuid.UUID) error
 	FindTeamByIDFunc               func(ctx context.Context, teamId uuid.UUID) (*models.Team, error)
 	FindTeamByStripeCustomerIdFunc func(ctx context.Context, stripeCustomerId string) (*models.Team, error)
+	FindTeamFunc                   func(ctx context.Context, team *models.Team) (*models.Team, error)
+	FindTeamMemberFunc             func(ctx context.Context, member *models.TeamMember) (*models.TeamMember, error)
+}
+
+// FindTeam implements services.TeamStore.
+func (p *TeamStoreDecorator) FindTeam(ctx context.Context, team *models.Team) (*models.Team, error) {
+	if p.FindTeamFunc != nil {
+		return p.FindTeamFunc(ctx, team)
+	}
+	return p.Delegate.FindTeam(ctx, team)
+}
+
+// FindTeamMember implements services.TeamStore.
+func (p *TeamStoreDecorator) FindTeamMember(ctx context.Context, member *models.TeamMember) (*models.TeamMember, error) {
+	if p.FindTeamMemberFunc != nil {
+		return p.FindTeamMemberFunc(ctx, member)
+	}
+	return p.Delegate.FindTeamMember(ctx, member)
 }
 
 func NewTeamStoreDecorator(delegate *PostgresTeamStore) *TeamStoreDecorator {
