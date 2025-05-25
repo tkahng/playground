@@ -1,3 +1,0 @@
-SELECT *
-FROM roles
-ORDER BY id ASC

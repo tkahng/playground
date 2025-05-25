@@ -1,44 +1,12 @@
 {
   "folders": [
     {
-      "name": "jobs",
-      "path": "internal/jobs"
-    },
-    {
       "name": "internal",
       "path": "internal"
     },
     {
       "name": "cmd",
       "path": "cmd"
-    },
-    {
-      "name": "services",
-      "path": "internal/services"
-    },
-    {
-      "name": "core",
-      "path": "internal/core"
-    },
-    {
-      "name": "stores",
-      "path": "internal/stores"
-    },
-    {
-      "name": "apis",
-      "path": "internal/apis"
-    },
-    {
-      "name": "middleware",
-      "path": "internal/middleware"
-    },
-    {
-      "name": "test",
-      "path": "internal/test"
-    },
-    {
-      "name": "queries",
-      "path": "internal/queries"
     },
     {
       "name": "ui",
