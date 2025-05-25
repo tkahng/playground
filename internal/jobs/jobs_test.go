@@ -29,16 +29,6 @@ func TestEnqueuer(t *testing.T) {
 
 			err := enqueuer.Enqueue(ctx, job, nil, runAfter, 3)
 			assert.NoError(t, err)
-			// Verify job was inserted
-			// 	var storedJob jobs.JobRow
-			// 	err = tx.QueryRow(ctx, `
-			// 	SELECT id, kind, payload, status, run_after, attempts, max_attempts
-			// 	FROM jobs WHERE kind = $1
-			// `, job.Kind()).Scan(
-			// 		&storedJob.ID, &storedJob.Kind, &storedJob.Payload,
-			// 		&storedJob.Status, &storedJob.RunAfter,
-			// 		&storedJob.Attempts, &storedJob.MaxAttempts,
-			// 	)
 			storedJob, err := crudrepo.Job.GetOne(ctx, tx, &map[string]any{
 				"kind": map[string]any{
 					"_eq": job.Kind(),
@@ -67,10 +57,13 @@ func TestEnqueuer(t *testing.T) {
 			assert.NoError(t, err)
 
 			// Verify payload was updated
-			var payload []byte
-			err = tx.QueryRow(ctx, "SELECT payload FROM jobs WHERE unique_key = $1", uniqueKey).Scan(&payload)
+			queryJob, err := crudrepo.Job.GetOne(ctx, tx, &map[string]any{
+				"unique_key": map[string]any{
+					"_eq": uniqueKey,
+				},
+			})
 			assert.NoError(t, err)
-			assert.Contains(t, string(payload), `"updated"`)
+			assert.Contains(t, string(queryJob.Payload), `"updated"`)
 		})
 	})
 
@@ -95,10 +88,13 @@ func TestEnqueuer(t *testing.T) {
 			err := enqueuer.EnqueueMany(ctx, jobs...)
 			assert.NoError(t, err)
 
-			var count int
-			err = tx.QueryRow(ctx, "SELECT COUNT(*) FROM jobs").Scan(&count)
+			count, err := crudrepo.Job.Count(
+				ctx,
+				tx,
+				nil,
+			)
 			assert.NoError(t, err)
-			assert.Equal(t, 2, count)
+			assert.Equal(t, int64(2), count)
 		})
 	})
 }

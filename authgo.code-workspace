@@ -166,6 +166,10 @@
       "scminput": false,
       "go": true
     },
-    "github.copilot.nextEditSuggestions.enabled": true
+    "github.copilot.nextEditSuggestions.enabled": true,
+    "go.coverMode": "atomic",
+    "go.coverOnSingleTestFile": true,
+    "go.coverOnSingleTest": true,
+    "go.coverShowCounts": true
   }
 }

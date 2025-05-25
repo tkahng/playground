@@ -131,22 +131,21 @@ type pollerOpts struct {
 }
 type PollerOptsFunc func(*pollerOpts)
 
-func WithTimeout(timeout time.Duration) PollerOptsFunc {
+func WithTimeout(timeout int64) PollerOptsFunc {
 	return func(opts *pollerOpts) {
-		opts.Timeout = timeout
+		opts.Timeout = time.Duration(timeout) * time.Second
 	}
 }
 
-func WithInterval(interval time.Duration) PollerOptsFunc {
+func WithInterval(interval int64) PollerOptsFunc {
 	return func(opts *pollerOpts) {
-		opts.Interval = interval
+		opts.Interval = time.Duration(interval) * time.Second
 	}
 }
 
 type Poller struct {
 	Store      JobStore
 	Dispatcher Dispatcher
-	Interval   time.Duration
 	opts       pollerOpts
 }
 
@@ -155,7 +154,7 @@ func NewPoller(store JobStore, dispatcher Dispatcher, opts ...PollerOptsFunc) *P
 		Store:      store,
 		Dispatcher: dispatcher,
 		opts: pollerOpts{
-			Interval: 1 * time.Second,
+			Interval: 5 * time.Second,
 			Timeout:  30 * time.Second,
 		},
 	}
@@ -166,7 +165,7 @@ func NewPoller(store JobStore, dispatcher Dispatcher, opts ...PollerOptsFunc) *P
 }
 
 func (p *Poller) Run(ctx context.Context) error {
-	ticker := time.NewTicker(p.Interval)
+	ticker := time.NewTicker(p.opts.Interval)
 	defer ticker.Stop()
 
 	for {
