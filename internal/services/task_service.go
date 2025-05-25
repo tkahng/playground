@@ -18,7 +18,6 @@ type TaskStore interface {
 	FindLastTaskRank(ctx context.Context, taskProjectID uuid.UUID) (float64, error)
 	FindTaskByID(ctx context.Context, id uuid.UUID) (*models.Task, error)
 	ListTasks(ctx context.Context, input *shared.TaskListParams) ([]*models.Task, error)
-	FindAndUpdateTask(ctx context.Context, taskID uuid.UUID, input *shared.UpdateTaskBaseDTO) error
 	UpdateTask(ctx context.Context, task *models.Task) error
 
 	CalculateTaskRankStatus(ctx context.Context, taskId uuid.UUID, taskProjectId uuid.UUID, status models.TaskStatus, currentRank float64, position int64) (float64, error)
@@ -42,11 +41,39 @@ type TaskStore interface {
 
 type TaskService interface {
 	Store() TaskStore
+	FindAndUpdateTask(ctx context.Context, taskID uuid.UUID, input *shared.UpdateTaskBaseDTO) error
+
 	CreateTaskWithChildren(ctx context.Context, projectID uuid.UUID, input *shared.CreateTaskWithChildrenDTO) (*models.Task, error)
 	UpdateTaskRankStatus(ctx context.Context, taskID uuid.UUID, position int64, status models.TaskStatus) error
 }
 type taskService struct {
 	store TaskStore
+}
+
+// FindAndUpdateTask implements TaskService.
+func (s *taskService) FindAndUpdateTask(ctx context.Context, taskID uuid.UUID, input *shared.UpdateTaskBaseDTO) error {
+	task, err := s.store.FindTaskByID(ctx, taskID)
+	if err != nil {
+		return err
+	}
+	if task == nil {
+		return errors.New("task not found")
+	}
+
+	task.Name = input.Name
+	task.Description = input.Description
+	task.Status = models.TaskStatus(input.Status)
+	task.Rank = input.Rank
+	task.ParentID = input.ParentID
+	err = s.store.UpdateTask(ctx, task)
+	if err != nil {
+		return err
+	}
+	err = s.store.UpdateTaskProjectUpdateDate(ctx, task.ProjectID)
+	if err != nil {
+		return fmt.Errorf("failed to update task project update date: %w", err)
+	}
+	return nil
 }
 
 func (s *taskService) UpdateTaskRankStatus(ctx context.Context, taskID uuid.UUID, position int64, status models.TaskStatus) error {

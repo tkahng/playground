@@ -45,7 +45,7 @@ func (api *Api) TaskUpdate(ctx context.Context, input *shared.UpdateTaskDTO) (*s
 	if err != nil {
 		return nil, huma.Error400BadRequest("Invalid task ID")
 	}
-	err = api.app.Task().Store().FindAndUpdateTask(ctx, id, &input.Body)
+	err = api.app.Task().FindAndUpdateTask(ctx, id, &input.Body)
 	if err != nil {
 		return nil, err
 	}

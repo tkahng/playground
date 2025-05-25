@@ -553,31 +553,6 @@ func (s *taskStore) CalculateTaskRankStatus(ctx context.Context, taskId uuid.UUI
 
 }
 
-func (s *taskStore) FindAndUpdateTask(ctx context.Context, taskID uuid.UUID, input *shared.UpdateTaskBaseDTO) error {
-	task, err := s.FindTaskByID(ctx, taskID)
-	if err != nil {
-		return err
-	}
-	if task == nil {
-		return errors.New("task not found")
-	}
-
-	task.Name = input.Name
-	task.Description = input.Description
-	task.Status = models.TaskStatus(input.Status)
-	task.Rank = input.Rank
-	task.ParentID = input.ParentID
-	_, err = crudrepo.Task.PutOne(ctx, s.db, task)
-	if err != nil {
-		return err
-	}
-	err = s.UpdateTaskProjectUpdateDate(ctx, task.ProjectID)
-	if err != nil {
-		return fmt.Errorf("failed to update task project update date: %w", err)
-	}
-	return nil
-}
-
 func (s *taskStore) UpdateTaskProjectUpdateDate(ctx context.Context, taskProjectID uuid.UUID) error {
 	q := squirrel.Update("task_projects").
 		Where("id = ?", taskProjectID).
