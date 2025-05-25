@@ -61,27 +61,27 @@ func createVerifiedUser(app core.App) (*shared.UserInfo, error) {
 		User: *shared.FromUserModel(user),
 	}, nil
 }
+func createUnverifiedUser(app *core.BaseAppDecorator) (*shared.UserInfo, error) {
+	user, err := app.User().Store().CreateUser(context.Background(), &models.User{
+		Email: "authenticated@example.com",
+	})
+	if err != nil {
+		return nil, err
+	}
+	_, err = app.UserAccount().Store().CreateUserAccount(context.Background(), &models.UserAccount{
+		UserID:            user.ID,
+		Provider:          models.ProvidersGoogle,
+		Type:              "oauth",
+		ProviderAccountID: "google-123",
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &shared.UserInfo{
+		User: *shared.FromUserModel(user),
+	}, nil
+}
 
-// func createTeam(app core.App, user *shared.User) *shared.TeamInfo {
-// 	return must(app.Team().Store().CreateTeam(context.Background(), &models.Team{
-// 		Name:  "test team",
-// 		Owner: user.ID,
-// 	})
-// }
-
-// func TestIndexGet(t *testing.T) {
-// 	test.DbSetup()
-// 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
-// 		cfg := conf.ZeroEnvConfig()
-// 		app := core.NewDecorator(ctx, cfg, db)
-// 		appApi := apis.NewApi(app)
-// 		_, api := humatest.New(t)
-// 		apis.AddRoutes(api, appApi)
-
-//			_, err := api.Get("/team", header)
-//			assert.Nil(t, err)
-//		})
-//	}
 func TestGetGreeting(t *testing.T) {
 	_, api := humatest.New(t)
 	cfg := conf.ZeroEnvConfig()
@@ -274,4 +274,38 @@ func TestGetTeam_success(t *testing.T) {
 	},
 	)
 
+}
+
+func TestCreateTeam_emailNotVerified(t *testing.T) {
+	test.DbSetup()
+	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
+
+		cfg := conf.ZeroEnvConfig()
+		app := core.NewDecorator(ctx, cfg, db)
+		appApi := apis.NewApi(app)
+		_, api := humatest.New(t)
+		apis.AddRoutes(api, appApi)
+		user, err := createUnverifiedUser(app)
+		if err != nil {
+			t.Errorf("Error creating user: %v", err)
+			return
+		}
+		// create
+		tokensVerifiedTokens, err := app.Auth().CreateAuthTokensFromEmail(ctx, user.User.Email)
+		if err != nil {
+			t.Errorf("Error creating auth tokens: %v", err)
+			return
+		}
+		VerifiedHeader := fmt.Sprintf("Authorization: Bearer %s", tokensVerifiedTokens.Tokens.AccessToken)
+		resp := api.Post("/teams", VerifiedHeader, &apis.CreateTeamInput{
+			Name: "test team",
+			Slug: "test-team",
+		})
+		if resp.Code == 200 {
+			t.Fatalf("Unexpected response: %s", resp.Body.String())
+		}
+		assert.Equal(t, 401, resp.Code)
+		assert.Contains(t, resp.Body.String(), "email not verified")
+	},
+	)
 }
