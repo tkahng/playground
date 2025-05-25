@@ -11,7 +11,6 @@ import (
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/stores"
 	"github.com/tkahng/authgo/internal/test"
-	"github.com/tkahng/authgo/internal/tools/utils"
 )
 
 func TestDefineTaskOrderNumberByStatus(t *testing.T) {
@@ -55,7 +54,6 @@ func TestDefineTaskOrderNumberByStatus(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to create task: %v", err)
 		}
-		utils.PrettyPrintJSON(task1)
 		task2, err := taskStore.CreateTask(ctx, &models.Task{
 			Name:      "Task 2",
 			Status:    models.TaskStatusDone,
@@ -67,7 +65,6 @@ func TestDefineTaskOrderNumberByStatus(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to create task: %v", err)
 		}
-		utils.PrettyPrintJSON(task2)
 		task3, err := taskStore.CreateTask(ctx, &models.Task{
 			Name:      "Task 3",
 			Status:    models.TaskStatusDone,
@@ -76,10 +73,9 @@ func TestDefineTaskOrderNumberByStatus(t *testing.T) {
 			TeamID:    member.TeamID,
 			CreatedBy: member.ID,
 		})
-		if err != nil {
+		if err != nil || task3 == nil {
 			t.Fatalf("failed to create task: %v", err)
 		}
-		utils.PrettyPrintJSON(task3)
 		type args struct {
 			ctx           context.Context
 			db            database.Dbx

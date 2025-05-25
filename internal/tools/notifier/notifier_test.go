@@ -7,8 +7,8 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/matryer/is"
+	"github.com/tkahng/authgo/internal/test"
 )
 
 // NB: these tests assume you have a postgres server listening on localhost:5432
@@ -18,29 +18,17 @@ import (
 // docker run --rm --name postgres -p 5432:5432 \
 // -e POSTGRES_PASSWORD=postgres postgres
 
-func testPool(url string) (*pgxpool.Pool, error) {
-	ctx := context.Background()
-	pool, err := pgxpool.New(ctx, url)
-	if err != nil {
-		return nil, err
-	}
-	if err = pool.Ping(ctx); err != nil {
-		return nil, err
-	}
-	return pool, nil
-}
-
 func TestNotifier(t *testing.T) {
+	ctx, dbx := test.DbSetup()
 	is := is.New(t)
 	l := slog.New(slog.NewJSONHandler(os.Stdout, nil))
-	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
 	wg := sync.WaitGroup{}
-	pool, err := testPool("postgres://postgres:postgres@localhost:5432/authgo_test?sslmode=disable")
-	is.NoErr(err)
+	// pool, err := testPool("postgres://postgres:postgres@localhost:5432/authgo_test?sslmode=disable")
+	// is.NoErr(err)
 
-	li := NewListener(pool)
-	err = li.Connect(ctx)
+	li := NewListener(dbx.Pool())
+	err := li.Connect(ctx)
 	is.NoErr(err)
 
 	n := NewNotifier(l, li)
@@ -51,7 +39,7 @@ func TestNotifier(t *testing.T) {
 	}()
 	sub := n.Listen("foo")
 
-	conn, err := pool.Acquire(ctx)
+	conn, err := dbx.Pool().Acquire(ctx)
 	wg.Add(1)
 	go func() {
 		<-sub.EstablishedC()

@@ -20,14 +20,14 @@ import (
 
 func TestListUsers(t *testing.T) {
 	test.Short(t)
-ctx, dbx := test.DbSetup()
+	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		faker := faker.New().Internet()
 		users1, err := seeders.CreateUserWithAccountAndRole(ctx, dbxx, 5, models.ProvidersGoogle, "superuser", faker)
 		if err != nil {
 			t.Fatalf("failed to create users: %v", err)
 		}
-		fmt.Println("users1", len(users1))
+		fmt.Println(len(users1))
 		_, err = seeders.CreateUserWithAccountAndRole(ctx, dbxx, 5, models.ProvidersCredentials, "basic", faker)
 		if err != nil {
 			t.Fatalf("failed to create users: %v", err)
@@ -129,7 +129,7 @@ ctx, dbx := test.DbSetup()
 }
 func TestCountUsers(t *testing.T) {
 	test.Short(t)
-ctx, dbx := test.DbSetup()
+	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		faker := faker.New().Internet()
 		_, err := seeders.CreateUserWithAccountAndRole(ctx, dbxx, 5, models.ProvidersGoogle, "superuser", faker)
@@ -200,7 +200,7 @@ ctx, dbx := test.DbSetup()
 }
 func TestDeleteUsers(t *testing.T) {
 	test.Short(t)
-ctx, dbx := test.DbSetup()
+	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		faker := faker.New().Internet()
 		users, err := seeders.CreateUserWithAccountAndRole(ctx, dbxx, 1, models.ProvidersGoogle, "basic", faker)
@@ -233,7 +233,7 @@ ctx, dbx := test.DbSetup()
 }
 func TestUpdateUser(t *testing.T) {
 	test.Short(t)
-ctx, dbx := test.DbSetup()
+	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		faker := faker.New().Internet()
 		users, err := seeders.CreateUserWithAccountAndRole(ctx, dbxx, 1, models.ProvidersGoogle, "basic", faker)
