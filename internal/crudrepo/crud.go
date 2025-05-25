@@ -98,7 +98,7 @@ var (
 	NotificationBuilder = NewSQLBuilder[models.Notification](
 		UuidV7Generator,
 	)
-	JobBuilder = NewSQLBuilder[models.Job](
+	JobBuilder = NewSQLBuilder[models.JobRow](
 		UuidV7Generator,
 	)
 )

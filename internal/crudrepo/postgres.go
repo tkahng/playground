@@ -36,7 +36,7 @@ func (r *PostgresCrudRepo[Model]) Builder() SQLBuilderInterface {
 func (r *PostgresCrudRepo[Model]) Get(ctx context.Context, db database.Dbx, where *map[string]any, order *map[string]string, limit *int, skip *int) ([]*Model, error) {
 	args := []any{}
 	query := fmt.Sprintf("SELECT %s FROM %s", r.builder.Fields(""), r.builder.Table())
-	expr, err := r.builder.WhereError(where, &args, nil)
+	expr, err := r.builder.WhereError(ctx, where, &args, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +76,7 @@ func (r *PostgresCrudRepo[Model]) Put(ctx context.Context, dbx database.Dbx, mod
 			return nil, err
 		}
 		query := fmt.Sprintf("UPDATE %s SET %s", r.builder.Table(), set)
-		if expr, err := r.builder.WhereError(&where, &args, nil); err != nil {
+		if expr, err := r.builder.WhereError(ctx, &where, &args, nil); err != nil {
 			return nil, err
 		} else if expr != "" {
 			query += fmt.Sprintf(" WHERE %s", expr)
@@ -159,7 +159,7 @@ func (r *PostgresCrudRepo[Model]) PostOne(ctx context.Context, dbx database.Dbx,
 func (r *PostgresCrudRepo[Model]) DeleteReturn(ctx context.Context, dbx database.Dbx, where *map[string]any) ([]*Model, error) {
 	args := []any{}
 	query := fmt.Sprintf("DELETE FROM %s", r.builder.Table())
-	if expr, err := r.builder.WhereError(where, &args, nil); err != nil {
+	if expr, err := r.builder.WhereError(ctx, where, &args, nil); err != nil {
 		return nil, err
 	} else if expr != "" {
 		query += fmt.Sprintf(" WHERE %s", expr)
@@ -180,7 +180,7 @@ func (r *PostgresCrudRepo[Model]) DeleteReturn(ctx context.Context, dbx database
 func (r *PostgresCrudRepo[Model]) Delete(ctx context.Context, dbx database.Dbx, where *map[string]any) (int64, error) {
 	args := []any{}
 	query := fmt.Sprintf("DELETE FROM %s", r.builder.Table())
-	if expr, err := r.builder.WhereError(where, &args, nil); err != nil {
+	if expr, err := r.builder.WhereError(ctx, where, &args, nil); err != nil {
 		return 0, err
 	} else if expr != "" {
 		query += fmt.Sprintf(" WHERE %s", expr)
@@ -202,7 +202,7 @@ func (r *PostgresCrudRepo[Model]) Delete(ctx context.Context, dbx database.Dbx, 
 func (r *PostgresCrudRepo[Model]) Count(ctx context.Context, dbx database.Dbx, where *map[string]any) (int64, error) {
 	args := []any{}
 	query := fmt.Sprintf("SELECT COUNT(*) FROM %s", r.builder.Table())
-	if expr, err := r.builder.WhereError(where, &args, nil); err != nil {
+	if expr, err := r.builder.WhereError(ctx, where, &args, nil); err != nil {
 		return 0, err
 	} else if expr != "" {
 		query += fmt.Sprintf(" WHERE %s", expr)

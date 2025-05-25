@@ -15,38 +15,14 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/tkahng/authgo/internal/models"
 	"golang.org/x/sync/errgroup"
 )
-
-// 'pending', 'processing', 'done', 'failed'
-type JobStatus string
-
-const (
-	JobStatusPending    JobStatus = "pending"
-	JobStatusProcessing JobStatus = "processing"
-	JobStatusDone       JobStatus = "done"
-	JobStatusFailed     JobStatus = "failed"
-)
-
-type JobRow struct {
-	_           struct{}  `db:"jobs" json:"-"`
-	ID          uuid.UUID `db:"id" json:"id"`
-	Kind        string    `db:"kind" json:"kind"`
-	UniqueKey   *string   `db:"unique_key" json:"unique_key"`
-	Payload     []byte    `db:"payload" json:"payload"`
-	Status      JobStatus `db:"status" json:"status"`
-	RunAfter    time.Time `db:"run_after" json:"run_after"`
-	Attempts    int64     `db:"attempts" json:"attempts"`
-	MaxAttempts int64     `db:"max_attempts" json:"max_attempts"`
-	LastError   *string   `db:"last_error" json:"last_error"`
-	CreatedAt   time.Time `db:"created_at" json:"created_at"`
-	UpdatedAt   time.Time `db:"updated_at" json:"updated_at"`
-}
 
 // Job represents a single unit of work, holding both the arguments and
 // information for a job with args of type T.
 type Job[T JobArgs] struct {
-	*JobRow
+	*models.JobRow
 
 	// Args are the arguments for the job.
 	Args T
@@ -73,18 +49,18 @@ type JobArgs interface {
 // Dispatcher routes jobs to their appropriate handlers based on job kind.
 type Dispatcher interface {
 	// Dispatch executes the job with the appropriate handler.
-	Dispatch(ctx context.Context, row *JobRow) error
+	Dispatch(ctx context.Context, row *models.JobRow) error
 
 	// SetHandler registers a handler for a specific job kind.
 	// Panics if a handler is already registered for the kind.
-	SetHandler(kind string, handler func(context.Context, *JobRow) error)
+	SetHandler(kind string, handler func(context.Context, *models.JobRow) error)
 }
 
 type dispatcher struct {
-	handlers map[string]func(context.Context, *JobRow) error
+	handlers map[string]func(context.Context, *models.JobRow) error
 }
 
-func (d *dispatcher) SetHandler(kind string, handler func(context.Context, *JobRow) error) {
+func (d *dispatcher) SetHandler(kind string, handler func(context.Context, *models.JobRow) error) {
 	if _, exists := d.handlers[kind]; exists {
 		panic("duplicate worker kind: " + kind)
 	}
@@ -93,7 +69,7 @@ func (d *dispatcher) SetHandler(kind string, handler func(context.Context, *JobR
 
 func NewDispatcher() Dispatcher {
 	return &dispatcher{
-		handlers: make(map[string]func(context.Context, *JobRow) error),
+		handlers: make(map[string]func(context.Context, *models.JobRow) error),
 	}
 }
 
@@ -102,7 +78,7 @@ func RegisterWorker[T JobArgs](d *dispatcher, worker Worker[T]) {
 	kind := zero.Kind()
 	d.SetHandler(
 		kind,
-		func(ctx context.Context, row *JobRow) error {
+		func(ctx context.Context, row *models.JobRow) error {
 			var args T
 			if err := json.Unmarshal(row.Payload, &args); err != nil {
 				return fmt.Errorf("unmarshal payload: %w", err)
@@ -112,7 +88,7 @@ func RegisterWorker[T JobArgs](d *dispatcher, worker Worker[T]) {
 	)
 }
 
-func (d *dispatcher) Dispatch(ctx context.Context, row *JobRow) error {
+func (d *dispatcher) Dispatch(ctx context.Context, row *models.JobRow) error {
 	handler, ok := d.handlers[row.Kind]
 	if !ok {
 		return fmt.Errorf("no handler registered for kind: %s", row.Kind)
@@ -262,7 +238,7 @@ func (p *Poller) pollOnce(ctx context.Context) error {
 
 type JobStore interface {
 	Begin(ctx context.Context) (pgx.Tx, error)
-	ClaimPendingJobs(ctx context.Context, tx pgx.Tx, limit int) ([]JobRow, error)
+	ClaimPendingJobs(ctx context.Context, tx pgx.Tx, limit int) ([]models.JobRow, error)
 	MarkDone(ctx context.Context, tx pgx.Tx, id uuid.UUID) error
 	MarkFailed(ctx context.Context, tx pgx.Tx, id uuid.UUID, reason string) error
 	RescheduleJob(ctx context.Context, tx pgx.Tx, id uuid.UUID, delay time.Duration) error
@@ -271,11 +247,16 @@ type DbJobStore struct {
 	DB Db
 }
 
+func NewDbJobStore(db Db) *DbJobStore {
+	return &DbJobStore{
+		DB: db,
+	}
+}
 func (s *DbJobStore) Begin(ctx context.Context) (pgx.Tx, error) {
 	return s.DB.Begin(ctx)
 }
 
-func (s *DbJobStore) ClaimPendingJobs(ctx context.Context, tx pgx.Tx, limit int) ([]JobRow, error) {
+func (s *DbJobStore) ClaimPendingJobs(ctx context.Context, tx pgx.Tx, limit int) ([]models.JobRow, error) {
 	rows, err := tx.Query(ctx, `
 		UPDATE jobs SET status='processing', updated_at=clock_timestamp(), attempts=attempts+1
 		WHERE id IN (
@@ -292,9 +273,9 @@ func (s *DbJobStore) ClaimPendingJobs(ctx context.Context, tx pgx.Tx, limit int)
 	}
 	defer rows.Close()
 
-	var jobs []JobRow
+	var jobs []models.JobRow
 	for rows.Next() {
-		var row JobRow
+		var row models.JobRow
 		if err := rows.Scan(
 			&row.ID, &row.Kind, &row.UniqueKey, &row.Payload, &row.Status, &row.RunAfter,
 			&row.Attempts, &row.MaxAttempts, &row.LastError, &row.CreatedAt, &row.UpdatedAt,

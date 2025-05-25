@@ -1,6 +1,7 @@
 package crudrepo
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -370,17 +371,17 @@ func (b *SQLBuilder[Model]) Order(order *map[string]string) string {
 	return strings.Join(result, ",")
 }
 
-func (b *SQLBuilder[Model]) WhereError(where *map[string]any, args *[]any, run func(string) []string) (ret string, err error) {
+func (b *SQLBuilder[Model]) WhereError(ctx context.Context, where *map[string]any, args *[]any, run func(string) []string) (ret string, err error) {
 	if where == nil {
 		return "", nil
 	}
 	defer func() {
 		if r := recover(); r != nil {
-			slog.Error("Error occurred during where generation", slog.Any("error", r),
+			slog.ErrorContext(ctx, "Error occurred during where generation", slog.Any("error", r),
 				slog.String("table", b.table),
 				slog.Any("where", where),
 			)
-			err = fmt.Errorf("error generating where for table %s", b.table)
+			err = fmt.Errorf("error generating where for table %s. check your filters", b.table)
 		}
 	}()
 	ret = b.Where(where, args, run)

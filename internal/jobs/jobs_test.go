@@ -6,8 +6,10 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/tkahng/authgo/internal/crudrepo"
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/jobs"
+	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/test"
 )
 
@@ -27,19 +29,23 @@ func TestEnqueuer(t *testing.T) {
 
 			err := enqueuer.Enqueue(ctx, job, nil, runAfter, 3)
 			assert.NoError(t, err)
-
 			// Verify job was inserted
-			var storedJob jobs.JobRow
-			err = tx.QueryRow(ctx, `
-			SELECT id, kind, payload, status, run_after, attempts, max_attempts
-			FROM jobs WHERE kind = $1
-		`, job.Kind()).Scan(
-				&storedJob.ID, &storedJob.Kind, &storedJob.Payload,
-				&storedJob.Status, &storedJob.RunAfter,
-				&storedJob.Attempts, &storedJob.MaxAttempts,
-			)
+			// 	var storedJob jobs.JobRow
+			// 	err = tx.QueryRow(ctx, `
+			// 	SELECT id, kind, payload, status, run_after, attempts, max_attempts
+			// 	FROM jobs WHERE kind = $1
+			// `, job.Kind()).Scan(
+			// 		&storedJob.ID, &storedJob.Kind, &storedJob.Payload,
+			// 		&storedJob.Status, &storedJob.RunAfter,
+			// 		&storedJob.Attempts, &storedJob.MaxAttempts,
+			// 	)
+			storedJob, err := crudrepo.Job.GetOne(ctx, tx, &map[string]any{
+				"kind": map[string]any{
+					"_eq": job.Kind(),
+				},
+			})
 			assert.NoError(t, err)
-			assert.Equal(t, jobs.JobStatusPending, storedJob.Status)
+			assert.Equal(t, models.JobStatusPending, storedJob.Status)
 			assert.Equal(t, int64(0), storedJob.Attempts)
 			assert.Equal(t, int64(3), storedJob.MaxAttempts)
 		})
