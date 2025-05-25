@@ -52,22 +52,6 @@ func (api *Api) TaskUpdate(ctx context.Context, input *shared.UpdateTaskDTO) (*s
 	return nil, nil
 }
 
-// func (api *Api) UpdateTaskPosition(ctx context.Context, input *shared.TaskPositionInput) (*struct{}, error) {
-// 	if input == nil {
-// 		return nil, huma.Error400BadRequest("Invalid input")
-// 	}
-//
-// 	id, err := uuid.Parse(input.TaskID)
-// 	if err != nil {
-// 		return nil, huma.Error400BadRequest("Invalid task ID")
-// 	}
-// 	err = queries.UpdateTaskPosition(ctx, id, input.Body.Position)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	return nil, nil
-// }
-
 func (api *Api) UpdateTaskPositionStatus(ctx context.Context, input *shared.TaskPositionStatusInput) (*struct{}, error) {
 	if input == nil {
 		return nil, huma.Error400BadRequest("Invalid input")
