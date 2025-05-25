@@ -5,6 +5,10 @@
       "path": "internal/jobs"
     },
     {
+      "name": "internal",
+      "path": "internal"
+    },
+    {
       "name": "cmd",
       "path": "cmd"
     },
@@ -35,10 +39,6 @@
     {
       "name": "queries",
       "path": "internal/queries"
-    },
-    {
-      "name": "internal",
-      "path": "internal"
     },
     {
       "name": "ui",

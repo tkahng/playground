@@ -216,14 +216,14 @@ func (api *Api) TaskProjectTasksCreate(ctx context.Context, input *shared.Create
 		return nil, huma.Error400BadRequest("Invalid task project id")
 	}
 	payload := input.Body
-	order, err := api.app.Task().Store().FindLastTaskOrder(ctx, id)
+	order, err := api.app.Task().Store().FindLastTaskRank(ctx, id)
 	if err != nil {
 		return nil, err
 	}
-	payload.Order = order
+	payload.Rank = order
 	payload.CreatedBy = teamInfo.Member.ID
 	payload.TeamID = teamInfo.Member.TeamID
-	task, err := api.app.Task().Store().CreateTaskWithChildren(ctx, id, &payload)
+	task, err := api.app.Task().CreateTaskWithChildren(ctx, id, &payload)
 	if err != nil {
 		return nil, err
 	}

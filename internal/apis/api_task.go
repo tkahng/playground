@@ -45,7 +45,7 @@ func (api *Api) TaskUpdate(ctx context.Context, input *shared.UpdateTaskDTO) (*s
 	if err != nil {
 		return nil, huma.Error400BadRequest("Invalid task ID")
 	}
-	err = api.app.Task().Store().UpdateTask(ctx, id, &input.Body)
+	err = api.app.Task().Store().FindAndUpdateTask(ctx, id, &input.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +77,7 @@ func (api *Api) UpdateTaskPositionStatus(ctx context.Context, input *shared.Task
 	if err != nil {
 		return nil, huma.Error400BadRequest("Invalid task ID")
 	}
-	err = api.app.Task().Store().UpdateTaskPositionStatus(ctx, id, input.Body.Position, models.TaskStatus(input.Body.Status))
+	err = api.app.Task().UpdateTaskRankStatus(ctx, id, input.Body.Position, models.TaskStatus(input.Body.Status))
 	if err != nil {
 		return nil, err
 	}

@@ -22,6 +22,75 @@ type taskStore struct {
 	db database.Dbx
 }
 
+// UpdateTask implements services.TaskStore.
+func (s *taskStore) UpdateTask(ctx context.Context, task *models.Task) error {
+	_, err := crudrepo.Task.PutOne(ctx, s.db, task)
+	return err
+}
+
+func (s *taskStore) CountItems(ctx context.Context, projectID uuid.UUID, status models.TaskStatus, excludeID uuid.UUID) (int64, error) {
+	var count int64
+	query := `
+		SELECT COUNT(*) 
+		FROM tasks 
+		WHERE project_id = $1 AND status = $2 AND id != $3
+	`
+	err := s.db.QueryRow(ctx, query, projectID, status, excludeID).Scan(&count)
+	return count, err
+}
+
+func (s *taskStore) GetTaskFirstPosition(ctx context.Context, projectID uuid.UUID, status models.TaskStatus, excludeID uuid.UUID) (float64, error) {
+	var rank float64
+	query := `
+		SELECT rank 
+		FROM tasks 
+		WHERE project_id = $1 AND status = $2 AND id != $3
+		ORDER BY rank ASC 
+		LIMIT 1
+	`
+	err := s.db.QueryRow(ctx, query, projectID, status, excludeID).Scan(&rank)
+	return rank, err
+}
+
+func (s *taskStore) GetTaskLastPosition(ctx context.Context, projectID uuid.UUID, status models.TaskStatus, excludeID uuid.UUID) (float64, error) {
+	var rank float64
+	query := `
+		SELECT rank 
+		FROM tasks 
+		WHERE project_id = $1 AND status = $2 AND id != $3
+		ORDER BY rank DESC 
+		LIMIT 1
+	`
+	err := s.db.QueryRow(ctx, query, projectID, status, excludeID).Scan(&rank)
+	return rank, err
+}
+
+func (s *taskStore) GetTaskPositions(ctx context.Context, projectID uuid.UUID, status models.TaskStatus, excludeID uuid.UUID, offset int64) ([]float64, error) {
+	query := `
+		SELECT rank 
+		FROM tasks 
+		WHERE project_id = $1 AND status = $2 AND id != $3
+		ORDER BY rank ASC 
+		LIMIT $4 OFFSET $5
+	`
+
+	rows, err := s.db.Query(ctx, query, projectID, status, excludeID, 2, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var ranks []float64
+	for rows.Next() {
+		var pos float64
+		if err := rows.Scan(&pos); err != nil {
+			return nil, err
+		}
+		ranks = append(ranks, pos)
+	}
+
+	return ranks, rows.Err()
+}
 func NewTaskStore(db database.Dbx) *taskStore {
 	return &taskStore{
 		db: db,
@@ -74,7 +143,7 @@ func (s *taskStore) FindTaskByID(ctx context.Context, id uuid.UUID) (*models.Tas
 	return database.OptionalRow(task, err)
 }
 
-func (s *taskStore) FindLastTaskOrder(ctx context.Context, taskProjectID uuid.UUID) (float64, error) {
+func (s *taskStore) FindLastTaskRank(ctx context.Context, taskProjectID uuid.UUID) (float64, error) {
 	tasks, err := crudrepo.Task.Get(
 		ctx,
 		s.db,
@@ -84,7 +153,7 @@ func (s *taskStore) FindLastTaskOrder(ctx context.Context, taskProjectID uuid.UU
 			},
 		},
 		&map[string]string{
-			"order": "DESC",
+			"rank": "DESC",
 		},
 		types.Pointer(1),
 		nil,
@@ -96,7 +165,7 @@ func (s *taskStore) FindLastTaskOrder(ctx context.Context, taskProjectID uuid.UU
 		return 0, nil
 	}
 	task := tasks[0]
-	return task.Order + 1000, nil
+	return task.Rank + 1000, nil
 }
 
 func (s *taskStore) DeleteTask(ctx context.Context, taskID uuid.UUID) error {
@@ -317,7 +386,7 @@ func (s *taskStore) CreateTaskProject(ctx context.Context, input *shared.CreateT
 		Name:        input.Name,
 		Description: input.Description,
 		Status:      models.TaskProjectStatus(input.Status),
-		Order:       input.Order,
+		Rank:        input.Rank,
 	}
 	projects, err := crudrepo.TaskProject.PostOne(ctx, s.db, &taskProject)
 	if err != nil {
@@ -331,7 +400,7 @@ func (s *taskStore) CreateTaskProjectWithTasks(ctx context.Context, input *share
 	if err != nil {
 		return nil, err
 	}
-	input.CreateTaskProjectDTO.Order = float64(count * 1000)
+	input.CreateTaskProjectDTO.Rank = float64(count * 1000)
 	taskProject, err := s.CreateTaskProject(ctx, &input.CreateTaskProjectDTO)
 	if err != nil {
 		return nil, err
@@ -340,7 +409,7 @@ func (s *taskStore) CreateTaskProjectWithTasks(ctx context.Context, input *share
 	for i, task := range input.Tasks {
 		task.CreatedBy = input.CreateTaskProjectDTO.MemberID
 		task.TeamID = input.CreateTaskProjectDTO.TeamID
-		task.Order = float64(i * 1000)
+		task.Rank = float64(i * 1000)
 		newTask, err := s.CreateTask(ctx, taskProject.ID, &task)
 		if err != nil {
 			return nil, err
@@ -348,20 +417,6 @@ func (s *taskStore) CreateTaskProjectWithTasks(ctx context.Context, input *share
 		tasks = append(tasks, newTask)
 	}
 	return taskProject, nil
-}
-
-func (s *taskStore) CreateTaskWithChildren(ctx context.Context, projectID uuid.UUID, input *shared.CreateTaskWithChildrenDTO) (*models.Task, error) {
-	task, err := s.CreateTask(ctx, projectID, &input.CreateTaskBaseDTO)
-	if err != nil {
-		return nil, err
-	}
-	// for _, child := range input.Children {
-	// 	childTask, err := CreateTask(ctx, userID, projectID, &child)
-	// 	if err != nil {
-	// 		return nil, err
-	// 	}
-	// }
-	return task, nil
 }
 
 func (s *taskStore) CreateTask(ctx context.Context, projectID uuid.UUID, input *shared.CreateTaskBaseDTO) (*models.Task, error) {
@@ -373,7 +428,7 @@ func (s *taskStore) CreateTask(ctx context.Context, projectID uuid.UUID, input *
 		Name:        input.Name,
 		Description: input.Description,
 		Status:      models.TaskStatus(input.Status),
-		Order:       input.Order,
+		Rank:        input.Rank,
 	}
 	task, err := crudrepo.Task.PostOne(ctx, s.db, &setter)
 	if err != nil {
@@ -386,77 +441,7 @@ func (s *taskStore) CreateTask(ctx context.Context, projectID uuid.UUID, input *
 	return task, nil
 }
 
-// func DefineTaskOrderNumberByStatus(ctx context.Context, db db.s.db, taskId uuid.UUID, taskProjectId uuid.UUID, status models.TaskStatus, currentOrder float64, position int64) (float64, error) {
-// 	if position == 0 {
-// 		response, err := models.Tasks.Query(
-// 			sm.Where(models.TaskColumns.ProjectID.EQ(psql.Arg(taskProjectId))),
-// 			sm.Where(models.TaskColumns.Status.EQ(psql.Arg(status))),
-// 			sm.OrderBy(models.TaskColumns.Order).Asc(),
-// 			sm.Limit(1),
-// 		).One(ctx, db)
-// 		response, err = database.OptionalRow(response, err)
-// 		if err != nil {
-// 			return 0, err
-// 		}
-// 		if response == nil {
-// 			return 0, nil
-// 		}
-// 		if response.ID == taskId {
-// 			return response.Order, nil
-// 		}
-// 		return response.Order - 1000, nil
-// 	}
-// 	element, err := models.Tasks.Query(
-// 		sm.Where(models.TaskColumns.ProjectID.EQ(psql.Arg(taskProjectId))),
-// 		sm.OrderBy(models.TaskColumns.Order).Asc(),
-// 		sm.Limit(1),
-// 		sm.Offset(position),
-// 	).One(ctx, db)
-// 	element, err = database.OptionalRow(element, err)
-// 	if err != nil {
-// 		return 0, err
-// 	}
-// 	if element == nil {
-// 		return 0, nil
-// 	}
-// 	if element.ID == taskId {
-// 		return element.Order, nil
-// 	}
-// 	if currentOrder > element.Order {
-// 		sideElements, err := models.Tasks.Query(
-// 			sm.Where(models.TaskColumns.ProjectID.EQ(psql.Arg(taskProjectId))),
-// 			sm.Where(models.TaskColumns.Status.EQ(psql.Arg(status))),
-// 			sm.OrderBy(models.TaskColumns.Order).Asc(),
-// 			sm.Limit(1),
-// 			sm.Offset(position-1),
-// 		).One(ctx, db)
-// 		sideElements, err = database.OptionalRow(sideElements, err)
-// 		if err != nil {
-// 			return 0, err
-// 		}
-// 		if sideElements == nil {
-// 			return element.Order - 1000, nil
-// 		}
-// 		return (element.Order + sideElements.Order) / 2, nil
-// 	}
-// 	sideElements, err := models.Tasks.Query(
-// 		sm.Where(models.TaskColumns.ProjectID.EQ(psql.Arg(taskProjectId))),
-// 		sm.Where(models.TaskColumns.Status.EQ(psql.Arg(status))),
-// 		sm.OrderBy(models.TaskColumns.Order).Asc(),
-// 		sm.Limit(1),
-// 		sm.Offset(position+1),
-// 	).One(ctx, db)
-// 	sideElements, err = database.OptionalRow(sideElements, err)
-// 	if err != nil {
-// 		return 0, err
-// 	}
-// 	if sideElements == nil {
-// 		return element.Order + 1000, nil
-// 	}
-// 	return (element.Order + sideElements.Order) / 2, nil
-
-// }
-func (s *taskStore) DefineTaskOrderNumberByStatus(ctx context.Context, taskId uuid.UUID, taskProjectId uuid.UUID, status models.TaskStatus, currentOrder float64, position int64) (float64, error) {
+func (s *taskStore) CalculateTaskRankStatus(ctx context.Context, taskId uuid.UUID, taskProjectId uuid.UUID, status models.TaskStatus, currentRank float64, position int64) (float64, error) {
 	if position == 0 {
 		res, err := crudrepo.Task.Get(
 			ctx,
@@ -484,9 +469,9 @@ func (s *taskStore) DefineTaskOrderNumberByStatus(ctx context.Context, taskId uu
 		response := res[0]
 
 		if response.ID == taskId {
-			return response.Order, nil
+			return response.Rank, nil
 		}
-		return response.Order - 1000, nil
+		return response.Rank - 1000, nil
 	}
 	ele, err := crudrepo.Task.Get(
 		ctx,
@@ -511,9 +496,9 @@ func (s *taskStore) DefineTaskOrderNumberByStatus(ctx context.Context, taskId uu
 	element := ele[0]
 
 	if element.ID == taskId {
-		return element.Order, nil
+		return element.Rank, nil
 	}
-	if currentOrder > element.Order {
+	if currentRank > element.Rank {
 		sideELe, err := crudrepo.Task.Get(
 			ctx,
 			s.db,
@@ -535,10 +520,10 @@ func (s *taskStore) DefineTaskOrderNumberByStatus(ctx context.Context, taskId uu
 			return 0, err
 		}
 		if len(sideELe) == 0 {
-			return element.Order - 1000, nil
+			return element.Rank - 1000, nil
 		}
 		sideElements := sideELe[0]
-		return (element.Order + sideElements.Order) / 2, nil
+		return (element.Rank + sideElements.Rank) / 2, nil
 	}
 	sideele, err := crudrepo.Task.Get(
 		ctx,
@@ -561,97 +546,14 @@ func (s *taskStore) DefineTaskOrderNumberByStatus(ctx context.Context, taskId uu
 		return 0, err
 	}
 	if len(sideele) == 0 {
-		return element.Order + 1000, nil
+		return element.Rank + 1000, nil
 	}
 	sideElements := sideele[0]
-	return (element.Order + sideElements.Order) / 2, nil
-	// sideElements, err := models.Tasks.Query(
-	// 	sm.Where(models.TaskColumns.ProjectID.EQ(psql.Arg(taskProjectId))),
-	// 	sm.Where(models.TaskColumns.Status.EQ(psql.Arg(status))),
-	// 	sm.OrderBy(models.TaskColumns.Order).Asc(),
-	// 	sm.Limit(1),
-	// 	sm.Offset(position+1),
-	// ).One(ctx, db)
-	// sideElements, err = database.OptionalRow(sideElements, err)
-	// if err != nil {
-	// 	return 0, err
-	// }
-	// if sideElements == nil {
-	// 	return element.Order + 1000, nil
-	// }
-	// return (element.Order + sideElements.Order) / 2, nil
+	return (element.Rank + sideElements.Rank) / 2, nil
 
 }
 
-// func DefineTaskOrderNumber(ctx context.Context, db db.s.db, taskId uuid.UUID, taskProjectId uuid.UUID, currentOrder float64, position int64) (float64, error) {
-// 	if position == 0 {
-// 		response, err := models.Tasks.Query(
-// 			sm.Where(models.TaskColumns.ProjectID.EQ(psql.Arg(taskProjectId))),
-// 			sm.OrderBy(models.TaskColumns.Order).Asc(),
-// 			sm.Limit(1),
-// 		).One(ctx, db)
-// 		response, err = database.OptionalRow(response, err)
-// 		if err != nil {
-// 			return 0, err
-// 		}
-// 		if response == nil {
-// 			return 0, nil
-// 		}
-// 		if response.ID == taskId {
-// 			return response.Order, nil
-// 		}
-// 		return response.Order - 1000, nil
-// 	}
-// 	element, err := models.Tasks.Query(
-// 		sm.Where(models.TaskColumns.ProjectID.EQ(psql.Arg(taskProjectId))),
-// 		sm.OrderBy(models.TaskColumns.Order).Asc(),
-// 		sm.Limit(1),
-// 		sm.Offset(position),
-// 	).One(ctx, db)
-// 	element, err = database.OptionalRow(element, err)
-// 	if err != nil {
-// 		return 0, err
-// 	}
-// 	if element == nil {
-// 		return 0, nil
-// 	}
-// 	if element.ID == taskId {
-// 		return element.Order, nil
-// 	}
-// 	if currentOrder > element.Order {
-// 		sideElements, err := models.Tasks.Query(
-// 			sm.Where(models.TaskColumns.ProjectID.EQ(psql.Arg(taskProjectId))),
-// 			sm.OrderBy(models.TaskColumns.Order).Asc(),
-// 			sm.Limit(1),
-// 			sm.Offset(position-1),
-// 		).One(ctx, db)
-// 		sideElements, err = database.OptionalRow(sideElements, err)
-// 		if err != nil {
-// 			return 0, err
-// 		}
-// 		if sideElements == nil {
-// 			return element.Order - 1000, nil
-// 		}
-// 		return (element.Order + sideElements.Order) / 2, nil
-// 	}
-// 	sideElements, err := models.Tasks.Query(
-// 		sm.Where(models.TaskColumns.ProjectID.EQ(psql.Arg(taskProjectId))),
-// 		sm.OrderBy(models.TaskColumns.Order).Asc(),
-// 		sm.Limit(1),
-// 		sm.Offset(position+1),
-// 	).One(ctx, db)
-// 	sideElements, err = database.OptionalRow(sideElements, err)
-// 	if err != nil {
-// 		return 0, err
-// 	}
-// 	if sideElements == nil {
-// 		return element.Order + 1000, nil
-// 	}
-// 	return (element.Order + sideElements.Order) / 2, nil
-
-// }
-
-func (s *taskStore) UpdateTask(ctx context.Context, taskID uuid.UUID, input *shared.UpdateTaskBaseDTO) error {
+func (s *taskStore) FindAndUpdateTask(ctx context.Context, taskID uuid.UUID, input *shared.UpdateTaskBaseDTO) error {
 	task, err := s.FindTaskByID(ctx, taskID)
 	if err != nil {
 		return err
@@ -659,17 +561,11 @@ func (s *taskStore) UpdateTask(ctx context.Context, taskID uuid.UUID, input *sha
 	if task == nil {
 		return errors.New("task not found")
 	}
-	// taskSetter := &crudModels.Task{
-	// 	Name:        input.Name,
-	// 	Description: input.Description,
-	// 	Status:      input.Status,
-	// 	Order:       input.Order,
-	// 	ParentID:    input.ParentID,
-	// }
+
 	task.Name = input.Name
 	task.Description = input.Description
 	task.Status = models.TaskStatus(input.Status)
-	task.Order = input.Order
+	task.Rank = input.Rank
 	task.ParentID = input.ParentID
 	_, err = crudrepo.Task.PutOne(ctx, s.db, task)
 	if err != nil {
@@ -705,7 +601,7 @@ func (s *taskStore) UpdateTaskProject(ctx context.Context, taskProjectID uuid.UU
 	taskProject.Name = input.Name
 	taskProject.Description = input.Description
 	taskProject.Status = models.TaskProjectStatus(input.Status)
-	taskProject.Order = input.Order
+	taskProject.Rank = input.Rank
 	_, err = crudrepo.TaskProject.PutOne(ctx, s.db, taskProject)
 	if err != nil {
 		return err
@@ -713,32 +609,7 @@ func (s *taskStore) UpdateTaskProject(ctx context.Context, taskProjectID uuid.UU
 	return nil
 }
 
-// func UpdateTaskPosition(ctx context.Context, db db.s.db, taskID uuid.UUID, position int64) error {
-// 	task, err := FindTaskByID(ctx, taskID)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	if task == nil {
-// 		return errors.New("task not found")
-// 	}
-
-// 	order, err := DefineTaskOrderNumber(ctx, task.ID, task.ProjectID, task.Order, position)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	task.Order = order
-// 	_, err = repository.Task.PutOne(ctx, task)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	err = UpdateTaskProjectUpdateDate(ctx, task.ProjectID)
-// 	if err != nil {
-// 		return fmt.Errorf("failed to update task project update date: %w", err)
-// 	}
-// 	return nil
-// }
-
-func (s *taskStore) UpdateTaskPositionStatus(ctx context.Context, taskID uuid.UUID, position int64, status models.TaskStatus) error {
+func (s *taskStore) UpdateTaskRankStatus(ctx context.Context, taskID uuid.UUID, position int64, status models.TaskStatus) error {
 	task, err := s.FindTaskByID(ctx, taskID)
 	if err != nil {
 		return err
@@ -746,11 +617,11 @@ func (s *taskStore) UpdateTaskPositionStatus(ctx context.Context, taskID uuid.UU
 	if task == nil {
 		return errors.New("task not found")
 	}
-	order, err := s.DefineTaskOrderNumberByStatus(ctx, task.ID, task.ProjectID, status, task.Order, position)
+	rank, err := s.CalculateTaskRankStatus(ctx, task.ID, task.ProjectID, status, task.Rank, position)
 	if err != nil {
 		return err
 	}
-	task.Order = order
+	task.Rank = rank
 	_, err = crudrepo.Task.PutOne(ctx, s.db, task)
 	if err != nil {
 		return err
