@@ -15,14 +15,17 @@ services:
   #   volumes:
   #     - postgres-data:/var/lib/postgresql/data
   db:
-    image: supabase/postgres:17.4.1.035
-    container_name: supabase-db
+    # image: tkahng/postgres:17
+    build:
+      context: .
+      dockerfile: Dockerfile.database
+    container_name: database
     platform: linux/arm64
     ports:
       - "5432:5432"
     # command: postgres -c config_file=/etc/postgresql/postgresql.conf 
     volumes:
-      - postgres-data-17:/var/lib/postgresql/data
+      - postgres-data:/var/lib/postgresql/data
     env_file:
       - .env
 
@@ -39,4 +42,4 @@ services:
   #     - .env
 
 volumes:
-  postgres-data-17:
+  postgres-data:

@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
+	"log/slog"
 	"math"
 	"os"
 	"os/signal"
@@ -14,6 +14,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -122,16 +123,16 @@ func (d *dispatcher) Dispatch(ctx context.Context, row *JobRow) error {
 func execute[T JobArgs](ctx context.Context, worker Worker[T], job *Job[T]) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
-			log.Printf("panic in job kind=%s: %v\n%s", job.Args.Kind(), r, debug.Stack())
+			slog.ErrorContext(ctx, "panic in job", "kind", job.Args.Kind(), "panic_recover", r, slog.Any("stack", string(debug.Stack())))
 			err = fmt.Errorf("panic: %v", r)
 		}
 	}()
-	log.Printf("start job kind=%s id=%s", job.Args.Kind(), job.ID)
+	slog.InfoContext(ctx, "start job", "kind", job.Args.Kind(), "id", job.ID)
 	err = worker.Work(ctx, job)
 	if err != nil {
-		log.Printf("fail job kind=%s id=%s err=%v", job.Args.Kind(), job.ID, err)
+		slog.ErrorContext(ctx, "fail job", "kind", job.Args.Kind(), "id", job.ID, "error", err)
 	} else {
-		log.Printf("done job kind=%s id=%s", job.Args.Kind(), job.ID)
+		slog.InfoContext(ctx, "done job", "kind", job.Args.Kind(), "id", job.ID)
 	}
 	return err
 }
@@ -148,10 +149,44 @@ func ServeWithPoller(ctx context.Context, poller *Poller) error {
 	return g.Wait()
 }
 
+type pollerOpts struct {
+	Interval time.Duration
+	Timeout  time.Duration
+}
+type PollerOptsFunc func(*pollerOpts)
+
+func WithTimeout(timeout time.Duration) PollerOptsFunc {
+	return func(opts *pollerOpts) {
+		opts.Timeout = timeout
+	}
+}
+
+func WithInterval(interval time.Duration) PollerOptsFunc {
+	return func(opts *pollerOpts) {
+		opts.Interval = interval
+	}
+}
+
 type Poller struct {
-	Store      *JobStore
+	Store      JobStore
 	Dispatcher Dispatcher
 	Interval   time.Duration
+	opts       pollerOpts
+}
+
+func NewPoller(store JobStore, dispatcher Dispatcher, opts ...PollerOptsFunc) *Poller {
+	p := &Poller{
+		Store:      store,
+		Dispatcher: dispatcher,
+		opts: pollerOpts{
+			Interval: 1 * time.Second,
+			Timeout:  30 * time.Second,
+		},
+	}
+	for _, opt := range opts {
+		opt(&p.opts)
+	}
+	return p
 }
 
 func (p *Poller) Run(ctx context.Context) error {
@@ -164,70 +199,83 @@ func (p *Poller) Run(ctx context.Context) error {
 			return ctx.Err()
 		case <-ticker.C:
 			if err := p.pollOnce(ctx); err != nil {
-				log.Printf("poller error: %v", err)
+				slog.ErrorContext(ctx, "poller error", "error", err)
 			}
 		}
 	}
 }
 
 func (p *Poller) pollOnce(ctx context.Context) error {
-	tx, err := p.Store.DB.Begin(ctx)
-	if err != nil {
-		return fmt.Errorf("begin tx: %w", err)
+	tx, txErr := p.Store.Begin(ctx)
+	if txErr != nil {
+		return fmt.Errorf("begin tx: %w", txErr)
 	}
-	defer tx.Rollback(ctx)
+	defer tx.Rollback(ctx) // Always defer rollback; commit will override
 
-	jobs, err := p.Store.ClaimPendingJobs(ctx, tx, 10)
+	// Claim only one job
+	jobs, err := p.Store.ClaimPendingJobs(ctx, tx, 1) // LIMIT to 1
 	if err != nil {
 		return fmt.Errorf("claim jobs: %w", err)
 	}
 
-	for _, row := range jobs {
-		row := row
-		func() {
-			jobCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
-			defer cancel()
+	if len(jobs) == 0 {
+		// No jobs to process, commit and return
+		return tx.Commit(ctx) // Commit an empty transaction to avoid erroring if there are no jobs
+	}
 
-			err := p.Dispatcher.Dispatch(jobCtx, &row)
-			if err != nil {
-				if row.Attempts >= row.MaxAttempts {
-					_ = p.Store.MarkFailed(ctx, tx, row.ID, err.Error())
-				} else {
-					delay := time.Duration(math.Pow(2, float64(row.Attempts))) * time.Second
-					_ = p.Store.RescheduleJob(ctx, tx, row.ID, delay)
-				}
-			} else {
-				_ = p.Store.MarkDone(ctx, tx, row.ID)
+	row := jobs[0] // Get the single claimed job
+	timeout := p.opts.Timeout
+	if timeout == 0 { // Provide a default if not set by options
+		timeout = 30 * time.Second
+	}
+
+	jobCtx, cancel := context.WithTimeout(
+		ctx,
+		p.opts.Timeout,
+	)
+	defer cancel()
+
+	dispatchErr := p.Dispatcher.Dispatch(jobCtx, &row)
+	if dispatchErr != nil {
+		slog.ErrorContext(ctx, "there was an error dispatching the job. will attempt to reschedule or mark as failed", slog.Any("error", dispatchErr), slog.String("job_id", row.ID.String()))
+		if row.Attempts >= row.MaxAttempts {
+			if markFailedErr := p.Store.MarkFailed(ctx, tx, row.ID, dispatchErr.Error()); markFailedErr != nil {
+				slog.ErrorContext(ctx, "Error marking job as failed (and rolling back)", slog.Any("error", markFailedErr), slog.String("job_id", row.ID.String()))
+				return fmt.Errorf("failed to mark job %s as failed: %w", row.ID, markFailedErr)
 			}
-		}()
+		} else {
+			delay := time.Duration(math.Pow(2, float64(row.Attempts))) * time.Second
+			if rescheduleErr := p.Store.RescheduleJob(ctx, tx, row.ID, delay); rescheduleErr != nil {
+				slog.ErrorContext(ctx, "Error rescheduling job (and rolling back)", slog.Any("error", rescheduleErr), slog.String("job_id", row.ID.String()))
+				return fmt.Errorf("failed to reschedule job %s: %w", row.ID, rescheduleErr)
+			}
+		}
+	} else {
+		if markDoneErr := p.Store.MarkDone(ctx, tx, row.ID); markDoneErr != nil {
+			slog.ErrorContext(ctx, "Error marking job as done (and rolling back)", slog.Any("error", markDoneErr), slog.String("job_id", row.ID.String()))
+			return fmt.Errorf("failed to mark job %s as done: %w", row.ID, markDoneErr)
+		}
 	}
 
 	return tx.Commit(ctx)
 }
 
-type JobStore struct {
+type JobStore interface {
+	Begin(ctx context.Context) (pgx.Tx, error)
+	ClaimPendingJobs(ctx context.Context, tx pgx.Tx, limit int) ([]JobRow, error)
+	MarkDone(ctx context.Context, tx pgx.Tx, id uuid.UUID) error
+	MarkFailed(ctx context.Context, tx pgx.Tx, id uuid.UUID, reason string) error
+	RescheduleJob(ctx context.Context, tx pgx.Tx, id uuid.UUID, delay time.Duration) error
+}
+type DbJobStore struct {
 	DB Db
 }
 
-// func (s *JobStore) Enqueue(ctx context.Context, args JobArgs, uniqueKey *string, runAfter time.Time, maxAttempts int) error {
-// 	payload, err := json.Marshal(args)
-// 	if err != nil {
-// 		return fmt.Errorf("marshal args: %w", err)
-// 	}
-// 	_, err = s.DB.Exec(ctx, `
-// 		INSERT INTO jobs (id, kind, unique_key, payload, status, run_after, attempts, max_attempts, created_at, updated_at)
-// 		VALUES ($1, $2, $3, $4, 'pending', $5, 0, $6, clock_timestamp(), clock_timestamp())
-// 		ON CONFLICT (unique_key)
-// 		WHERE status IN ('pending', 'processing')
-// 		DO UPDATE SET
-// 			payload = EXCLUDED.payload,
-// 			run_after = EXCLUDED.run_after,
-// 			updated_at = clock_timestamp()
-// 	`, uuid.New(), args.Kind(), uniqueKey, payload, runAfter, maxAttempts)
-// 	return err
-// }
+func (s *DbJobStore) Begin(ctx context.Context) (pgx.Tx, error) {
+	return s.DB.Begin(ctx)
+}
 
-func (s *JobStore) ClaimPendingJobs(ctx context.Context, tx pgx.Tx, limit int) ([]JobRow, error) {
+func (s *DbJobStore) ClaimPendingJobs(ctx context.Context, tx pgx.Tx, limit int) ([]JobRow, error) {
 	rows, err := tx.Query(ctx, `
 		UPDATE jobs SET status='processing', updated_at=clock_timestamp(), attempts=attempts+1
 		WHERE id IN (
@@ -258,14 +306,14 @@ func (s *JobStore) ClaimPendingJobs(ctx context.Context, tx pgx.Tx, limit int) (
 	return jobs, rows.Err()
 }
 
-func (s *JobStore) MarkDone(ctx context.Context, tx pgx.Tx, id uuid.UUID) error {
+func (s *DbJobStore) MarkDone(ctx context.Context, tx pgx.Tx, id uuid.UUID) error {
 	_, err := tx.Exec(ctx, `
 		UPDATE jobs SET status='done', updated_at=clock_timestamp() WHERE id=$1
 	`, id)
 	return err
 }
 
-func (s *JobStore) MarkFailed(ctx context.Context, tx pgx.Tx, id uuid.UUID, reason string) error {
+func (s *DbJobStore) MarkFailed(ctx context.Context, tx pgx.Tx, id uuid.UUID, reason string) error {
 	_, err := tx.Exec(ctx, `
 		UPDATE jobs SET status='failed', last_error=$2, updated_at=clock_timestamp()
 		WHERE id=$1 AND attempts >= max_attempts
@@ -273,7 +321,7 @@ func (s *JobStore) MarkFailed(ctx context.Context, tx pgx.Tx, id uuid.UUID, reas
 	return err
 }
 
-func (s *JobStore) RescheduleJob(ctx context.Context, tx pgx.Tx, id uuid.UUID, delay time.Duration) error {
+func (s *DbJobStore) RescheduleJob(ctx context.Context, tx pgx.Tx, id uuid.UUID, delay time.Duration) error {
 	_, err := tx.Exec(ctx, `
 		UPDATE jobs SET run_after = clock_timestamp() + $2, updated_at = clock_timestamp(), status = 'pending'
 		WHERE id = $1
@@ -296,4 +344,154 @@ type Worker[T JobArgs] interface {
 	// running job that does not respect context cancellation, other than
 	// terminating the process.
 	Work(ctx context.Context, job *Job[T]) error
+}
+
+type Db interface {
+	SendBatch(ctx context.Context, b *pgx.Batch) pgx.BatchResults
+	Exec(ctx context.Context, sql string, arguments ...any) (pgconn.CommandTag, error)
+	Begin(ctx context.Context) (pgx.Tx, error)
+}
+
+// Enqueuer provides methods for adding jobs to the queue
+type Enqueuer interface {
+	// Enqueue adds a single job to the queue and returns its time-ordered UUIDv7
+	Enqueue(ctx context.Context, args JobArgs, uniqueKey *string, runAfter time.Time, maxAttempts int) error
+
+	// EnqueueMany efficiently adds multiple jobs in batches using transactions
+	// Processes jobs in chunks to prevent overwhelming the database
+	EnqueueMany(ctx context.Context, jobs ...EnqueueParams) error
+}
+
+// DBEnqueuer implements Enqueuer using a PostgreSQL connection pool
+type DBEnqueuer struct {
+	db Db
+}
+
+// NewDBEnqueuer creates a new database-backed job enqueuer
+func NewDBEnqueuer(db Db) *DBEnqueuer {
+	return &DBEnqueuer{db: db}
+}
+
+// EnqueueParams contains all parameters needed to enqueue a job
+type EnqueueParams struct {
+	Args        JobArgs   // Job arguments (must implement JobArgs interface)
+	UniqueKey   *string   // Optional unique key for deduplication
+	RunAfter    time.Time // When the job should become available for processing
+	MaxAttempts int       // Maximum number of attempts before marking as failed
+}
+
+// maxBatchSize defines how many jobs to insert in a single database operation
+// Adjust based on your database's performance characteristics
+const maxBatchSize = 1000
+
+// Enqueue adds a single job to the queue
+func (e *DBEnqueuer) Enqueue(ctx context.Context, args JobArgs, uniqueKey *string, runAfter time.Time, maxAttempts int) error {
+	payload, err := json.Marshal(args)
+	if err != nil {
+		return fmt.Errorf("marshal args: %w", err)
+	}
+
+	// Generate time-ordered UUIDv7 for better database performance
+	id, err := uuid.NewV7()
+	if err != nil {
+		return fmt.Errorf("generate uuid: %w", err)
+	}
+
+	_, err = e.db.Exec(ctx, `
+		INSERT INTO jobs (id, kind, unique_key, payload, status, run_after, attempts, max_attempts, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, 'pending', $5, 0, $6, clock_timestamp(), clock_timestamp())
+		ON CONFLICT (unique_key)
+		WHERE status IN ('pending', 'processing')
+		DO UPDATE SET
+			payload = EXCLUDED.payload,
+			run_after = EXCLUDED.run_after,
+			updated_at = clock_timestamp()
+	`, id, args.Kind(), uniqueKey, payload, runAfter, maxAttempts)
+
+	return err
+}
+
+// EnqueueMany efficiently processes multiple jobs in batches
+func (e *DBEnqueuer) EnqueueMany(ctx context.Context, jobs ...EnqueueParams) error {
+	if len(jobs) == 0 {
+		return nil
+	}
+
+	// Process in chunks to prevent overwhelming the database
+	for i := 0; i < len(jobs); i += maxBatchSize {
+		end := min(i+maxBatchSize, len(jobs))
+
+		if err := e.processBatch(ctx, jobs[i:end]); err != nil {
+			return fmt.Errorf("batch %d-%d: %w", i, end, err)
+		}
+	}
+
+	return nil
+}
+
+// processBatch handles a single chunk of jobs in a transaction
+func (e *DBEnqueuer) processBatch(ctx context.Context, jobs []EnqueueParams) error {
+	tx, err := e.db.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("begin transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	batch := &pgx.Batch{}
+
+	// Prepare all insert statements for this batch
+	for _, job := range jobs {
+		if err := e.addJobToBatch(batch, job); err != nil {
+			return err
+		}
+	}
+
+	// Execute the batch and check for errors
+	if err := e.executeBatch(ctx, tx, batch, len(jobs)); err != nil {
+		return err
+	}
+
+	return tx.Commit(ctx)
+}
+
+// addJobToBatch adds a single job to the batch operation
+func (e *DBEnqueuer) addJobToBatch(batch *pgx.Batch, job EnqueueParams) error {
+	payload, err := json.Marshal(job.Args)
+	if err != nil {
+		return fmt.Errorf("marshal args: %w", err)
+	}
+
+	id, err := uuid.NewV7()
+	if err != nil {
+		return fmt.Errorf("generate uuid: %w", err)
+	}
+
+	batch.Queue(`
+		INSERT INTO jobs (id, kind, unique_key, payload, status, run_after, attempts, max_attempts, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, 'pending', $5, 0, $6, clock_timestamp(), clock_timestamp())
+		ON CONFLICT (unique_key)
+		WHERE status IN ('pending', 'processing')
+		DO UPDATE SET
+			payload = EXCLUDED.payload,
+			run_after = EXCLUDED.run_after,
+			updated_at = clock_timestamp()
+	`, id, job.Args.Kind(), job.UniqueKey, payload, job.RunAfter, job.MaxAttempts)
+
+	return nil
+}
+
+// executeBatch sends the batch to the database and verifies all operations succeeded
+func (e *DBEnqueuer) executeBatch(ctx context.Context, tx pgx.Tx, batch *pgx.Batch, expectedResults int) error {
+	br := tx.SendBatch(ctx, batch)
+	defer br.Close()
+
+	// Verify all operations completed successfully
+	for i := range expectedResults {
+		_, err := br.Exec()
+		if err != nil {
+			return fmt.Errorf("job %d in batch: %w", i, err)
+		}
+	}
+
+	return nil
 }
