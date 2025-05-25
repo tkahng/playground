@@ -41,11 +41,9 @@ func TestGetUserTaskStats(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to create task project: %v", err)
 		}
-		_, err = taskStore.CreateTask(ctx, taskProject.ID, &shared.CreateTaskBaseDTO{
-			Name:      "Test Task",
-			Status:    shared.TaskStatusDone,
-			TeamID:    member.TeamID,
-			CreatedBy: member.ID,
+		_, err = taskStore.CreateTask(ctx, member.TeamID, taskProject.ID, member.ID, &shared.CreateTaskProjectTaskDTO{
+			Name:   "Test Task",
+			Status: shared.TaskStatusDone,
 		})
 		if err != nil {
 			t.Fatalf("failed to create task: %v", err)

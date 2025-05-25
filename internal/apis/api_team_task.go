@@ -15,13 +15,28 @@ type TaskListResponse struct {
 	Body *shared.PaginatedResponse[*shared.Task]
 }
 
-func (api *Api) TaskList(ctx context.Context, input *shared.TaskListParams) (*TaskListResponse, error) {
+func (api *Api) TeamTaskList(ctx context.Context, input *shared.TeamTaskListParams) (*TaskListResponse, error) {
 
-	tasks, err := api.app.Task().Store().ListTasks(ctx, input)
+	teamInfo := contextstore.GetContextTeamInfo(ctx)
+	if teamInfo == nil {
+		return nil, huma.Error401Unauthorized("Unauthorized")
+	}
+	newInput := shared.TaskListParams{}
+	newInput.SortParams = input.SortParams
+	newInput.PaginatedInput = input.PaginatedInput
+	newInput.TaskListFilter = shared.TaskListFilter{
+		ProjectID: input.ProjectID,
+		Status:    input.TeamTaskListFilter.Status,
+		Ids:       input.TeamTaskListFilter.Ids,
+		Q:         input.TeamTaskListFilter.Q,
+		TeamID:    teamInfo.Team.ID.String(),
+		ParentID:  input.TeamTaskListFilter.ParentID,
+	}
+	tasks, err := api.app.Task().Store().ListTasks(ctx, &newInput)
 	if err != nil {
 		return nil, huma.Error500InternalServerError("error listing tasks", err)
 	}
-	total, err := api.app.Task().Store().CountTasks(ctx, &input.TaskListFilter)
+	total, err := api.app.Task().Store().CountTasks(ctx, &newInput.TaskListFilter)
 	if err != nil {
 		return nil, huma.Error500InternalServerError("error counting tasks", err)
 	}
@@ -39,7 +54,7 @@ type TaskResposne struct {
 	Body *shared.Task
 }
 
-func (api *Api) TaskUpdate(ctx context.Context, input *shared.UpdateTaskDTO) (*struct{}, error) {
+func (api *Api) TaskUpdate(ctx context.Context, input *shared.UpdateTaskInput) (*struct{}, error) {
 
 	id, err := uuid.Parse(input.TaskID)
 	if err != nil {

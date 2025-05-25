@@ -49,6 +49,90 @@ func TeamCanDeleteMiddleware(api huma.API, app core.App) func(ctx huma.Context, 
 	}
 }
 
+func TeamInfoFromTaskMiddleware(api huma.API, app core.App) func(ctx huma.Context, next func(huma.Context)) {
+	return func(ctx huma.Context, next func(huma.Context)) {
+		rawCtx := ctx.Context()
+		userInfo := contextstore.GetContextUserInfo(rawCtx)
+		if userInfo == nil {
+			huma.WriteErr(api, ctx, http.StatusUnauthorized, "unauthorized at middleware", nil)
+			return
+		}
+		taskId := ctx.Param("task-id")
+		if taskId == "" {
+			next(ctx)
+			return
+		}
+		parsedTaskId, err := uuid.Parse(taskId)
+		if err != nil {
+			huma.WriteErr(api, ctx, http.StatusBadRequest, "error parsing task id", err)
+			return
+		}
+		task, err := app.Task().Store().FindTaskByID(rawCtx, parsedTaskId)
+		if err != nil {
+			huma.WriteErr(api, ctx, http.StatusInternalServerError, "error getting task", err)
+			return
+		}
+		if task == nil {
+			huma.WriteErr(api, ctx, http.StatusNotFound, "task not found", nil)
+			return
+		}
+		teamInfo, err := app.Team().FindTeamInfo(rawCtx, task.TeamID, userInfo.User.ID)
+		if err != nil {
+			huma.WriteErr(api, ctx, http.StatusInternalServerError, "error getting team info", err)
+			return
+		}
+		if teamInfo == nil {
+			huma.WriteErr(api, ctx, http.StatusNotFound, "team not found", nil)
+			return
+		}
+		ctxx := contextstore.SetContextTeamInfo(rawCtx, teamInfo)
+		ctx = huma.WithContext(ctx, ctxx)
+		next(ctx)
+	}
+}
+
+func TeamInfoFromTaskProjectMiddleware(api huma.API, app core.App) func(ctx huma.Context, next func(huma.Context)) {
+	return func(ctx huma.Context, next func(huma.Context)) {
+		rawCtx := ctx.Context()
+		userInfo := contextstore.GetContextUserInfo(rawCtx)
+		if userInfo == nil {
+			huma.WriteErr(api, ctx, http.StatusUnauthorized, "unauthorized at middleware", nil)
+			return
+		}
+		projectId := ctx.Param("task-project-id")
+		if projectId == "" {
+			next(ctx)
+			return
+		}
+		parsedProjectID, err := uuid.Parse(projectId)
+		if err != nil {
+			huma.WriteErr(api, ctx, http.StatusBadRequest, "error parsing project id", err)
+			return
+		}
+		project, err := app.Task().Store().FindTaskProjectByID(rawCtx, parsedProjectID)
+		if err != nil {
+			huma.WriteErr(api, ctx, http.StatusInternalServerError, "error getting project", err)
+			return
+		}
+		if project == nil {
+			huma.WriteErr(api, ctx, http.StatusNotFound, "project not found", nil)
+			return
+		}
+		teamInfo, err := app.Team().FindTeamInfo(rawCtx, project.TeamID, userInfo.User.ID)
+		if err != nil {
+			huma.WriteErr(api, ctx, http.StatusInternalServerError, "error getting team info", err)
+			return
+		}
+		if teamInfo == nil {
+			huma.WriteErr(api, ctx, http.StatusNotFound, "team not found", nil)
+			return
+		}
+		ctxx := contextstore.SetContextTeamInfo(rawCtx, teamInfo)
+		ctx = huma.WithContext(ctx, ctxx)
+		next(ctx)
+	}
+}
+
 func TeamInfoFromParamMiddleware(api huma.API, app core.App) func(ctx huma.Context, next func(huma.Context)) {
 
 	return func(ctx huma.Context, next func(huma.Context)) {

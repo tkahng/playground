@@ -13,7 +13,7 @@ import (
 type TaskStore interface {
 	// task methods
 	CountTasks(ctx context.Context, filter *shared.TaskListFilter) (int64, error)
-	CreateTask(ctx context.Context, projectID uuid.UUID, input *shared.CreateTaskBaseDTO) (*models.Task, error)
+	CreateTask(ctx context.Context, teamID uuid.UUID, projectID uuid.UUID, memberID uuid.UUID, input *shared.CreateTaskProjectTaskDTO) (*models.Task, error)
 	DeleteTask(ctx context.Context, taskID uuid.UUID) error
 	FindLastTaskRank(ctx context.Context, taskProjectID uuid.UUID) (float64, error)
 	FindTaskByID(ctx context.Context, id uuid.UUID) (*models.Task, error)
@@ -41,9 +41,9 @@ type TaskStore interface {
 
 type TaskService interface {
 	Store() TaskStore
-	FindAndUpdateTask(ctx context.Context, taskID uuid.UUID, input *shared.UpdateTaskBaseDTO) error
+	FindAndUpdateTask(ctx context.Context, taskID uuid.UUID, input *shared.UpdateTaskDto) error
 
-	CreateTaskWithChildren(ctx context.Context, projectID uuid.UUID, input *shared.CreateTaskWithChildrenDTO) (*models.Task, error)
+	CreateTaskWithChildren(ctx context.Context, teamID uuid.UUID, projectID uuid.UUID, memberID uuid.UUID, input *shared.CreateTaskWithChildrenDTO) (*models.Task, error)
 	UpdateTaskRankStatus(ctx context.Context, taskID uuid.UUID, position int64, status models.TaskStatus) error
 }
 type taskService struct {
@@ -51,7 +51,7 @@ type taskService struct {
 }
 
 // FindAndUpdateTask implements TaskService.
-func (s *taskService) FindAndUpdateTask(ctx context.Context, taskID uuid.UUID, input *shared.UpdateTaskBaseDTO) error {
+func (s *taskService) FindAndUpdateTask(ctx context.Context, taskID uuid.UUID, input *shared.UpdateTaskDto) error {
 	task, err := s.store.FindTaskByID(ctx, taskID)
 	if err != nil {
 		return err
@@ -142,8 +142,8 @@ func (s *taskService) CalculateNewPosition(ctx context.Context, groupID uuid.UUI
 }
 
 // CreateTaskWithChildren implements TaskService.
-func (t *taskService) CreateTaskWithChildren(ctx context.Context, projectID uuid.UUID, input *shared.CreateTaskWithChildrenDTO) (*models.Task, error) {
-	task, err := t.store.CreateTask(ctx, projectID, &input.CreateTaskBaseDTO)
+func (t *taskService) CreateTaskWithChildren(ctx context.Context, teamId uuid.UUID, projectID uuid.UUID, memberID uuid.UUID, input *shared.CreateTaskWithChildrenDTO) (*models.Task, error) {
+	task, err := t.store.CreateTask(ctx, teamId, projectID, memberID, &input.CreateTaskProjectTaskDTO)
 	if err != nil {
 		return nil, err
 	}

@@ -17,18 +17,26 @@ type TaskProjectListResponse struct {
 	Body *shared.PaginatedResponse[*shared.TaskProject]
 }
 
-func (api *Api) TaskProjectList(ctx context.Context, input *shared.TaskProjectsListParams) (*TaskProjectListResponse, error) {
+func (api *Api) TeamTaskProjectList(ctx context.Context, input *shared.TeamTaskProjectsListParams) (*TaskProjectListResponse, error) {
 
-	userInfo := contextstore.GetContextUserInfo(ctx)
-	if userInfo == nil {
+	teamInfo := contextstore.GetContextTeamInfo(ctx)
+	if teamInfo == nil {
 		return nil, huma.Error401Unauthorized("Unauthorized")
 	}
-	input.TaskProjectsListFilter.TeamID = userInfo.User.ID.String()
-	taskProject, err := api.app.Task().Store().ListTaskProjects(ctx, input)
+	newInput := shared.TaskProjectsListParams{}
+	newInput.SortParams = input.SortParams
+	newInput.PaginatedInput = input.PaginatedInput
+	newInput.TaskProjectsListFilter = shared.TaskProjectsListFilter{
+		TeamID: teamInfo.Team.ID.String(),
+		Status: input.TeamTaskProjectsListFilter.Status,
+		Ids:    input.TeamTaskProjectsListFilter.Ids,
+		Q:      input.TeamTaskProjectsListFilter.Q,
+	}
+	taskProject, err := api.app.Task().Store().ListTaskProjects(ctx, &newInput)
 	if err != nil {
 		return nil, err
 	}
-	total, err := api.app.Task().Store().CountTaskProjects(ctx, &input.TaskProjectsListFilter)
+	total, err := api.app.Task().Store().CountTaskProjects(ctx, &newInput.TaskProjectsListFilter)
 	if err != nil {
 		return nil, err
 	}
@@ -55,9 +63,7 @@ func (api *Api) TaskProjectList(ctx context.Context, input *shared.TaskProjectsL
 	}, nil
 }
 
-func (api *Api) TaskProjectCreate(ctx context.Context, input *struct {
-	Body shared.CreateTaskProjectWithTasksDTO
-}) (*struct {
+func (api *Api) TeamTaskProjectCreate(ctx context.Context, input *shared.CreateTaskProjectWithTasksInput) (*struct {
 	Body *shared.TaskProject
 }, error) {
 	userInfo := contextstore.GetContextUserInfo(ctx)
@@ -80,16 +86,13 @@ type TaskProjectCreateWithAiDto struct {
 	Input string `json:"input" example:"Help me plan a 6 day vacation to Paris"`
 }
 type TaskProjectCreateWithAiInput struct {
-	Body TaskProjectCreateWithAiDto `json:"body"`
+	TeamID string                     `json:"team_id" path:"team-id" required:"true" format:"uuid"`
+	Body   TaskProjectCreateWithAiDto `json:"body"`
 }
 
-func (api *Api) TaskProjectCreateWithAi(ctx context.Context, input *TaskProjectCreateWithAiInput) (*struct {
+func (api *Api) TeamTaskProjectCreateWithAi(ctx context.Context, input *TaskProjectCreateWithAiInput) (*struct {
 	Body *shared.TaskProject
 }, error) {
-	userInfo := contextstore.GetContextUserInfo(ctx)
-	if userInfo == nil {
-		return nil, huma.Error401Unauthorized("Unauthorized")
-	}
 	teamInfo := contextstore.GetContextTeamInfo(ctx)
 	if teamInfo == nil {
 		return nil, huma.Error401Unauthorized("no team info")
@@ -108,13 +111,11 @@ func (api *Api) TaskProjectCreateWithAi(ctx context.Context, input *TaskProjectC
 			TeamID:      teamInfo.Member.TeamID,
 			MemberID:    teamInfo.Member.ID,
 		},
-		Tasks: mapper.Map(taskProjectPlan.Tasks, func(task googleai.Task) shared.CreateTaskBaseDTO {
-			return shared.CreateTaskBaseDTO{
+		Tasks: mapper.Map(taskProjectPlan.Tasks, func(task googleai.Task) shared.CreateTaskProjectTaskDTO {
+			return shared.CreateTaskProjectTaskDTO{
 				Name:        task.Name,
 				Description: &task.Description,
 				Status:      shared.TaskStatusTodo,
-				CreatedBy:   teamInfo.Member.ID,
-				TeamID:      teamInfo.Member.TeamID,
 			}
 		}),
 	}
@@ -133,7 +134,7 @@ type TaskProjectResponse struct {
 	Body *shared.TaskProject
 }
 
-func (api *Api) TaskProjectUpdate(ctx context.Context, input *shared.UpdateTaskProjectDTO) (*struct{}, error) {
+func (api *Api) TeamTaskProjectUpdate(ctx context.Context, input *shared.UpdateTaskProjectDTO) (*struct{}, error) {
 	userInfo := contextstore.GetContextUserInfo(ctx)
 	if userInfo == nil {
 		return nil, huma.Error401Unauthorized("Unauthorized")
@@ -151,7 +152,7 @@ func (api *Api) TaskProjectUpdate(ctx context.Context, input *shared.UpdateTaskP
 	return nil, nil
 }
 
-func (api *Api) TaskProjectDelete(ctx context.Context, input *struct {
+func (api *Api) TeamTaskProjectDelete(ctx context.Context, input *struct {
 	TaskProjectID string `path:"task-project-id"`
 }) (*struct{}, error) {
 	userInfo := contextstore.GetContextUserInfo(ctx)
@@ -170,7 +171,7 @@ func (api *Api) TaskProjectDelete(ctx context.Context, input *struct {
 	return nil, nil
 }
 
-func (api *Api) TaskProjectGet(ctx context.Context, input *struct {
+func (api *Api) TeamTaskProjectGet(ctx context.Context, input *struct {
 	TaskProjectID string   `path:"task-project-id" json:"task_project_id" required:"true" format:"uuid"`
 	Expand        []string `query:"expand,omitempty" required:"false" minimum:"1" maximum:"100" enum:"tasks"`
 }) (*TaskProjectResponse, error) {
@@ -201,7 +202,7 @@ func (api *Api) TaskProjectGet(ctx context.Context, input *struct {
 	}, nil
 }
 
-func (api *Api) TaskProjectTasksCreate(ctx context.Context, input *shared.CreateTaskWithProjectIdInput) (*TaskResposne, error) {
+func (api *Api) TeamTaskProjectTasksCreate(ctx context.Context, input *shared.CreateTaskWithProjectIdInput) (*TaskResposne, error) {
 	userInfo := contextstore.GetContextUserInfo(ctx)
 	if userInfo == nil {
 		return nil, huma.Error401Unauthorized("Unauthorized")
@@ -221,9 +222,7 @@ func (api *Api) TaskProjectTasksCreate(ctx context.Context, input *shared.Create
 		return nil, err
 	}
 	payload.Rank = order
-	payload.CreatedBy = teamInfo.Member.ID
-	payload.TeamID = teamInfo.Member.TeamID
-	task, err := api.app.Task().CreateTaskWithChildren(ctx, id, &payload)
+	task, err := api.app.Task().CreateTaskWithChildren(ctx, teamInfo.Member.TeamID, id, teamInfo.Member.ID, &payload)
 	if err != nil {
 		return nil, err
 	}

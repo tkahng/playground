@@ -241,9 +241,9 @@ func ListTasksFilterFunc(filter *shared.TaskListFilter) *map[string]any {
 			"_in": filter.Status,
 		}
 	}
-	if len(filter.UserID) > 0 {
-		where["user_id"] = map[string]any{
-			"_eq": filter.UserID,
+	if len(filter.CreatedBy) > 0 {
+		where["created_by"] = map[string]any{
+			"_eq": filter.CreatedBy,
 		}
 	}
 
@@ -407,10 +407,8 @@ func (s *taskStore) CreateTaskProjectWithTasks(ctx context.Context, input *share
 	}
 	var tasks []*models.Task
 	for i, task := range input.Tasks {
-		task.CreatedBy = input.CreateTaskProjectDTO.MemberID
-		task.TeamID = input.CreateTaskProjectDTO.TeamID
 		task.Rank = float64(i * 1000)
-		newTask, err := s.CreateTask(ctx, taskProject.ID, &task)
+		newTask, err := s.CreateTask(ctx, taskProject.TeamID, taskProject.ID, input.CreateTaskProjectDTO.MemberID, &task)
 		if err != nil {
 			return nil, err
 		}
@@ -419,12 +417,11 @@ func (s *taskStore) CreateTaskProjectWithTasks(ctx context.Context, input *share
 	return taskProject, nil
 }
 
-func (s *taskStore) CreateTask(ctx context.Context, projectID uuid.UUID, input *shared.CreateTaskBaseDTO) (*models.Task, error) {
+func (s *taskStore) CreateTask(ctx context.Context, teamID uuid.UUID, projectID uuid.UUID, memberID uuid.UUID, input *shared.CreateTaskProjectTaskDTO) (*models.Task, error) {
 	setter := models.Task{
-		ProjectID: projectID,
-		// UserID:      userID,
-		CreatedBy:   input.CreatedBy,
-		TeamID:      input.TeamID,
+		ProjectID:   projectID,
+		CreatedBy:   memberID,
+		TeamID:      teamID,
 		Name:        input.Name,
 		Description: input.Description,
 		Status:      models.TaskStatus(input.Status),
@@ -440,6 +437,28 @@ func (s *taskStore) CreateTask(ctx context.Context, projectID uuid.UUID, input *
 	}
 	return task, nil
 }
+
+// func (s *taskStore) CreateTask(ctx context.Context, projectID uuid.UUID, input *shared.CreateTaskProjectTaskDTO) (*models.Task, error) {
+// 	setter := models.Task{
+// 		ProjectID: projectID,
+// 		// UserID:      userID,
+// 		CreatedBy:   input.CreatedBy,
+// 		TeamID:      input.TeamID,
+// 		Name:        input.Name,
+// 		Description: input.Description,
+// 		Status:      models.TaskStatus(input.Status),
+// 		Rank:        input.Rank,
+// 	}
+// 	task, err := crudrepo.Task.PostOne(ctx, s.db, &setter)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	err = s.UpdateTaskProjectUpdateDate(ctx, task.ProjectID)
+// 	if err != nil {
+// 		return nil, fmt.Errorf("failed to update task project update date: %w", err)
+// 	}
+// 	return task, nil
+// }
 
 func (s *taskStore) CalculateTaskRankStatus(ctx context.Context, taskId uuid.UUID, taskProjectId uuid.UUID, status models.TaskStatus, currentRank float64, position int64) (float64, error) {
 	if position == 0 {

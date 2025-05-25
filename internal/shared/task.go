@@ -58,16 +58,14 @@ func FromModelTask(task *crudModels.Task) *Task {
 	}
 }
 
-type CreateTaskBaseDTO struct {
-	CreatedBy   uuid.UUID  `db:"created_by" json:"created_by"`
-	TeamID      uuid.UUID  `db:"team_id" json:"team_id"`
+type CreateTaskProjectTaskDTO struct {
 	Name        string     `json:"name" required:"true"`
 	Description *string    `json:"description,omitempty" required:"false"`
 	Status      TaskStatus `json:"status" required:"false" enum:"todo,in_progress,done" default:"todo"`
 	Rank        float64    `json:"rank,omitempty" required:"false"`
 }
 
-type UpdateTaskBaseDTO struct {
+type UpdateTaskDto struct {
 	Name        string     `json:"name" required:"true"`
 	Description *string    `json:"description,omitempty"`
 	Status      TaskStatus `json:"status" enum:"todo,in_progress,done"`
@@ -75,23 +73,14 @@ type UpdateTaskBaseDTO struct {
 	ParentID    *uuid.UUID `json:"parent_id,omitempty"`
 }
 
-type UpdateTaskDTO struct {
-	Body   UpdateTaskBaseDTO
+type UpdateTaskInput struct {
+	Body   UpdateTaskDto
 	TaskID string `path:"task-id" json:"task_id" required:"true" format:"uuid"`
-}
-
-type TaskPositionDTO struct {
-	Position int64 `json:"position" required:"true"`
 }
 
 type TaskPositionStatusDTO struct {
 	Position int64      `json:"position" required:"true"`
 	Status   TaskStatus `json:"status" required:"true" enum:"todo,in_progress,done"`
-}
-
-type TaskPositionInput struct {
-	TaskID string `path:"task-id" json:"task_id" required:"true" format:"uuid"`
-	Body   TaskPositionDTO
 }
 
 type TaskPositionStatusInput struct {
@@ -105,15 +94,25 @@ type CreateTaskWithProjectIdInput struct {
 }
 
 type CreateTaskWithChildrenDTO struct {
-	CreateTaskBaseDTO
-	Children []CreateTaskBaseDTO `json:"children,omitempty" required:"false"`
+	CreateTaskProjectTaskDTO
+	Children []CreateTaskProjectTaskDTO `json:"children,omitempty" required:"false"`
 }
 
 type TaskListFilter struct {
 	Q            string       `query:"q,omitempty" required:"false"`
 	Status       []TaskStatus `query:"status,omitempty" required:"false" enum:"todo,in_progress,done"`
 	ProjectID    string       `query:"project_id,omitempty" required:"false" format:"uuid"`
-	UserID       string       `query:"user_id,omitempty" required:"false" format:"uuid"`
+	TeamID       string       `query:"team_id,omitempty" required:"false" format:"uuid"`
+	CreatedBy    string       `query:"created_by,omitempty" required:"false" format:"uuid"`
+	Ids          []string     `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+	ParentID     string       `query:"parent_id,omitempty" required:"false" format:"uuid"`
+	ParentStatus ParentStatus `query:"parent_status,omitempty" required:"false" enum:"parent,child"`
+}
+
+type TeamTaskListFilter struct {
+	Q            string       `query:"q,omitempty" required:"false"`
+	Status       []TaskStatus `query:"status,omitempty" required:"false" enum:"todo,in_progress,done"`
+	CreatedBy    string       `query:"created_by,omitempty" required:"false" format:"uuid"`
 	Ids          []string     `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
 	ParentID     string       `query:"parent_id,omitempty" required:"false" format:"uuid"`
 	ParentStatus ParentStatus `query:"parent_status,omitempty" required:"false" enum:"parent,child"`
@@ -129,6 +128,14 @@ const (
 type TaskListParams struct {
 	PaginatedInput
 	TaskListFilter
+	SortParams
+	Expand []string `query:"expand,omitempty" required:"false" minimum:"1" maximum:"100" enum:"subtasks"`
+}
+
+type TeamTaskListParams struct {
+	ProjectID string `path:"project-id" json:"project_id" required:"true" format:"uuid"`
+	PaginatedInput
+	TeamTaskListFilter
 	SortParams
 	Expand []string `query:"expand,omitempty" required:"false" minimum:"1" maximum:"100" enum:"subtasks"`
 }
