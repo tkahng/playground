@@ -282,18 +282,17 @@ func (app *BaseAuthService) CreateAndPersistStateToken(ctx context.Context, payl
 		},
 		ProviderStatePayload: *payload,
 	}
-	dto := &shared.CreateTokenDTO{
-		Type:       shared.TokenTypesStateToken,
-		Identifier: payload.Token,
-		Expires:    config.Expires(),
-		Token:      payload.Token,
-	}
 	token, err := app.token.CreateJwtToken(claims, config.Secret)
 	if err != nil {
 		return token, err
 	}
 
-	err = app.authStore.SaveToken(ctx, dto)
+	err = app.authStore.SaveToken(ctx, &shared.CreateTokenDTO{
+		Type:       shared.TokenTypesStateToken,
+		Identifier: payload.Token,
+		Expires:    config.Expires(),
+		Token:      payload.Token,
+	})
 	if err != nil {
 		return token, err
 	}
@@ -342,16 +341,15 @@ func (app *BaseAuthService) CreateAuthTokens(ctx context.Context, payload *share
 	tokenKey := security.GenerateTokenKey()
 
 	refreshToken, err := func() (string, error) {
-		payload := shared.RefreshTokenPayload{
-			UserId: payload.User.ID,
-			Email:  payload.User.Email,
-			Token:  tokenKey,
-		}
 
 		claims := shared.RefreshTokenClaims{
-			Type:                shared.TokenTypesRefreshToken,
-			RegisteredClaims:    jwt.RegisteredClaims{ExpiresAt: opts.RefreshToken.ExpiresAt()},
-			RefreshTokenPayload: payload,
+			Type:             shared.TokenTypesRefreshToken,
+			RegisteredClaims: jwt.RegisteredClaims{ExpiresAt: opts.RefreshToken.ExpiresAt()},
+			RefreshTokenPayload: shared.RefreshTokenPayload{
+				UserId: payload.User.ID,
+				Email:  payload.User.Email,
+				Token:  tokenKey,
+			},
 		}
 
 		token, err := app.token.CreateJwtToken(claims, opts.RefreshToken.Secret)
@@ -362,10 +360,10 @@ func (app *BaseAuthService) CreateAuthTokens(ctx context.Context, payload *share
 			ctx,
 			&shared.CreateTokenDTO{
 				Type:       shared.TokenTypesRefreshToken,
-				Identifier: payload.Email,
+				Identifier: claims.Email,
 				Expires:    opts.RefreshToken.Expires(),
-				Token:      payload.Token,
-				UserID:     &payload.UserId,
+				Token:      claims.Token,
+				UserID:     &claims.UserId,
 			},
 		)
 		if err != nil {
