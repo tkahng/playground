@@ -138,7 +138,7 @@ func TestTeamSlug(t *testing.T) {
 	})
 }
 
-func TestCreateTeam(t *testing.T) {
+func TestCreateTeam_SuccessfulCreation(t *testing.T) {
 	test.DbSetup()
 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
 		cfg := conf.ZeroEnvConfig()
@@ -158,7 +158,7 @@ func TestCreateTeam(t *testing.T) {
 		}
 		VerifiedHeader := fmt.Sprintf("Authorization: Bearer %s", tokensVerifiedTokens.Tokens.AccessToken)
 		sdasd := struct {
-			name             string
+			Name             string
 			ctxUserInfo      *shared.UserInfo
 			createTeamErr    error
 			createTeamResult *shared.TeamInfo
@@ -167,7 +167,6 @@ func TestCreateTeam(t *testing.T) {
 			header           string
 			body             *apis.CreateTeamInput
 		}{
-			name:   "successful team creation",
 			header: VerifiedHeader,
 			body: &apis.CreateTeamInput{
 				Name: "test team",

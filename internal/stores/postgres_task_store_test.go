@@ -246,6 +246,8 @@ func TestFindLastTaskOrder(t *testing.T) {
 				Status:    models.TaskStatusDone,
 				Rank:      1000,
 				ProjectID: taskProject.ID,
+				TeamID:    member.TeamID,
+				CreatedBy: member.ID,
 			},
 		)
 		if err != nil {
@@ -331,6 +333,8 @@ func TestDeleteTask(t *testing.T) {
 			Status:    models.TaskStatusDone,
 			Rank:      1000,
 			ProjectID: taskProject.ID,
+			CreatedBy: member.ID,
+			TeamID:    member.TeamID,
 		})
 		if err != nil {
 			t.Fatalf("failed to create task: %v", err)
@@ -554,6 +558,7 @@ func TestListTasks(t *testing.T) {
 			Name:        "Test Task",
 			Description: nil,
 			Status:      models.TaskStatusDone,
+			ProjectID:   taskProject.ID,
 			TeamID:      member.TeamID,
 			CreatedBy:   member.ID,
 		})
@@ -667,6 +672,7 @@ func TestCountTasks(t *testing.T) {
 			Name:        "Test Task",
 			Description: nil,
 			Status:      models.TaskStatusDone,
+			ProjectID:   taskProject.ID,
 			TeamID:      member.TeamID,
 			CreatedBy:   member.ID,
 		})
