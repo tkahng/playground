@@ -181,82 +181,105 @@ func (p *Poller) Run(ctx context.Context) error {
 }
 
 func (p *Poller) pollOnce(ctx context.Context) error {
-	tx, txErr := p.Store.Begin(ctx)
-	if txErr != nil {
-		return fmt.Errorf("begin tx: %w", txErr)
-	}
-	defer tx.Rollback(ctx) // Always defer rollback; commit will override
-
-	// Claim only one job
-	jobs, err := p.Store.ClaimPendingJobs(ctx, tx, 1) // LIMIT to 1
-	if err != nil {
-		return fmt.Errorf("claim jobs: %w", err)
-	}
-
-	if len(jobs) == 0 {
-		// No jobs to process, commit and return
-		return tx.Commit(ctx) // Commit an empty transaction to avoid erroring if there are no jobs
-	}
-
-	row := jobs[0] // Get the single claimed job
-	timeout := p.opts.Timeout
-	if timeout == 0 { // Provide a default if not set by options
-		timeout = 30 * time.Second
-	}
-
-	jobCtx, cancel := context.WithTimeout(
+	return p.Store.RunInTx(
 		ctx,
-		p.opts.Timeout,
+		func(js JobStore) error {
+			// tx, txErr := p.Store.Begin(ctx)
+			// if txErr != nil {
+			// 	return fmt.Errorf("begin tx: %w", txErr)
+			// }
+			// defer tx.Rollback(ctx) // Always defer rollback; commit will override
+
+			// Claim only one job
+			jobs, err := js.ClaimPendingJobs(ctx, 1) // LIMIT to 1
+			if err != nil {
+				return fmt.Errorf("claim jobs: %w", err)
+			}
+
+			if len(jobs) == 0 {
+				// No jobs to process, commit and return
+				return nil // Commit an empty transaction to avoid erroring if there are no jobs
+			}
+
+			row := jobs[0] // Get the single claimed job
+			timeout := p.opts.Timeout
+			if timeout == 0 { // Provide a default if not set by options
+				timeout = 30 * time.Second
+			}
+
+			jobCtx, cancel := context.WithTimeout(
+				ctx,
+				p.opts.Timeout,
+			)
+			defer cancel()
+
+			dispatchErr := p.Dispatcher.Dispatch(jobCtx, &row)
+			if dispatchErr != nil {
+				slog.ErrorContext(ctx, "there was an error dispatching the job. will attempt to reschedule or mark as failed", slog.Any("error", dispatchErr), slog.String("job_id", row.ID.String()))
+				if row.Attempts >= row.MaxAttempts {
+					if markFailedErr := p.Store.MarkFailed(ctx, row.ID, dispatchErr.Error()); markFailedErr != nil {
+						slog.ErrorContext(ctx, "Error marking job as failed (and rolling back)", slog.Any("error", markFailedErr), slog.String("job_id", row.ID.String()))
+						return fmt.Errorf("failed to mark job %s as failed: %w", row.ID, markFailedErr)
+					}
+				} else {
+					delay := time.Duration(math.Pow(2, float64(row.Attempts))) * time.Second
+					if rescheduleErr := p.Store.RescheduleJob(ctx, row.ID, delay); rescheduleErr != nil {
+						slog.ErrorContext(ctx, "Error rescheduling job (and rolling back)", slog.Any("error", rescheduleErr), slog.String("job_id", row.ID.String()))
+						return fmt.Errorf("failed to reschedule job %s: %w", row.ID, rescheduleErr)
+					}
+				}
+			} else {
+				if markDoneErr := p.Store.MarkDone(ctx, row.ID); markDoneErr != nil {
+					slog.ErrorContext(ctx, "Error marking job as done (and rolling back)", slog.Any("error", markDoneErr), slog.String("job_id", row.ID.String()))
+					return fmt.Errorf("failed to mark job %s as done: %w", row.ID, markDoneErr)
+				}
+			}
+
+			return nil
+		},
 	)
-	defer cancel()
-
-	dispatchErr := p.Dispatcher.Dispatch(jobCtx, &row)
-	if dispatchErr != nil {
-		slog.ErrorContext(ctx, "there was an error dispatching the job. will attempt to reschedule or mark as failed", slog.Any("error", dispatchErr), slog.String("job_id", row.ID.String()))
-		if row.Attempts >= row.MaxAttempts {
-			if markFailedErr := p.Store.MarkFailed(ctx, tx, row.ID, dispatchErr.Error()); markFailedErr != nil {
-				slog.ErrorContext(ctx, "Error marking job as failed (and rolling back)", slog.Any("error", markFailedErr), slog.String("job_id", row.ID.String()))
-				return fmt.Errorf("failed to mark job %s as failed: %w", row.ID, markFailedErr)
-			}
-		} else {
-			delay := time.Duration(math.Pow(2, float64(row.Attempts))) * time.Second
-			if rescheduleErr := p.Store.RescheduleJob(ctx, tx, row.ID, delay); rescheduleErr != nil {
-				slog.ErrorContext(ctx, "Error rescheduling job (and rolling back)", slog.Any("error", rescheduleErr), slog.String("job_id", row.ID.String()))
-				return fmt.Errorf("failed to reschedule job %s: %w", row.ID, rescheduleErr)
-			}
-		}
-	} else {
-		if markDoneErr := p.Store.MarkDone(ctx, tx, row.ID); markDoneErr != nil {
-			slog.ErrorContext(ctx, "Error marking job as done (and rolling back)", slog.Any("error", markDoneErr), slog.String("job_id", row.ID.String()))
-			return fmt.Errorf("failed to mark job %s as done: %w", row.ID, markDoneErr)
-		}
-	}
-
-	return tx.Commit(ctx)
 }
 
 type JobStore interface {
 	Begin(ctx context.Context) (pgx.Tx, error)
-	ClaimPendingJobs(ctx context.Context, tx pgx.Tx, limit int) ([]models.JobRow, error)
-	MarkDone(ctx context.Context, tx pgx.Tx, id uuid.UUID) error
-	MarkFailed(ctx context.Context, tx pgx.Tx, id uuid.UUID, reason string) error
-	RescheduleJob(ctx context.Context, tx pgx.Tx, id uuid.UUID, delay time.Duration) error
+	ClaimPendingJobs(ctx context.Context, limit int) ([]models.JobRow, error)
+	MarkDone(ctx context.Context, id uuid.UUID) error
+	MarkFailed(ctx context.Context, id uuid.UUID, reason string) error
+	RescheduleJob(ctx context.Context, id uuid.UUID, delay time.Duration) error
+	RunInTx(ctx context.Context, fn func(JobStore) error) error
 }
 type DbJobStore struct {
-	DB Db
+	db Db
+}
+
+func (s *DbJobStore) RunInTx(ctx context.Context, fn func(JobStore) error) error {
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("begin transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	err = fn(&DbJobStore{db: tx})
+	if err == nil {
+		if err := tx.Commit(ctx); err != nil {
+			return fmt.Errorf("commit transaction: %w", err)
+		}
+	}
+
+	return err
 }
 
 func NewDbJobStore(db Db) *DbJobStore {
 	return &DbJobStore{
-		DB: db,
+		db: db,
 	}
 }
 func (s *DbJobStore) Begin(ctx context.Context) (pgx.Tx, error) {
-	return s.DB.Begin(ctx)
+	return s.db.Begin(ctx)
 }
 
-func (s *DbJobStore) ClaimPendingJobs(ctx context.Context, tx pgx.Tx, limit int) ([]models.JobRow, error) {
-	rows, err := tx.Query(ctx, `
+func (s *DbJobStore) ClaimPendingJobs(ctx context.Context, limit int) ([]models.JobRow, error) {
+	rows, err := s.db.Query(ctx, `
 		UPDATE jobs SET status='processing', updated_at=clock_timestamp(), attempts=attempts+1
 		WHERE id IN (
 			SELECT id FROM jobs
@@ -286,23 +309,23 @@ func (s *DbJobStore) ClaimPendingJobs(ctx context.Context, tx pgx.Tx, limit int)
 	return jobs, rows.Err()
 }
 
-func (s *DbJobStore) MarkDone(ctx context.Context, tx pgx.Tx, id uuid.UUID) error {
-	_, err := tx.Exec(ctx, `
+func (s *DbJobStore) MarkDone(ctx context.Context, id uuid.UUID) error {
+	_, err := s.db.Exec(ctx, `
 		UPDATE jobs SET status='done', updated_at=clock_timestamp() WHERE id=$1
 	`, id)
 	return err
 }
 
-func (s *DbJobStore) MarkFailed(ctx context.Context, tx pgx.Tx, id uuid.UUID, reason string) error {
-	_, err := tx.Exec(ctx, `
+func (s *DbJobStore) MarkFailed(ctx context.Context, id uuid.UUID, reason string) error {
+	_, err := s.db.Exec(ctx, `
 		UPDATE jobs SET status='failed', last_error=$2, updated_at=clock_timestamp()
 		WHERE id=$1 AND attempts >= max_attempts
 	`, id, reason)
 	return err
 }
 
-func (s *DbJobStore) RescheduleJob(ctx context.Context, tx pgx.Tx, id uuid.UUID, delay time.Duration) error {
-	_, err := tx.Exec(ctx, `
+func (s *DbJobStore) RescheduleJob(ctx context.Context, id uuid.UUID, delay time.Duration) error {
+	_, err := s.db.Exec(ctx, `
 		UPDATE jobs SET run_after = clock_timestamp() + $2, updated_at = clock_timestamp(), status = 'pending'
 		WHERE id = $1
 	`, id, delay)
@@ -330,6 +353,7 @@ type Db interface {
 	SendBatch(ctx context.Context, b *pgx.Batch) pgx.BatchResults
 	Exec(ctx context.Context, sql string, arguments ...any) (pgconn.CommandTag, error)
 	Begin(ctx context.Context) (pgx.Tx, error)
+	Query(ctx context.Context, sql string, arguments ...any) (pgx.Rows, error)
 }
 
 // Enqueuer provides methods for adding jobs to the queue
