@@ -102,6 +102,7 @@ func (p *OAuth2ProviderConfig) oauth2Config() *oauth2.Config {
 func (p *OAuth2ProviderConfig) FetchTokenOptions(verifier string) []oauth2.AuthCodeOption {
 	var opts []oauth2.AuthCodeOption = []oauth2.AuthCodeOption{
 		oauth2.AccessTypeOffline,
+		oauth2.ApprovalForce,
 	}
 
 	if p.Pkce() {
