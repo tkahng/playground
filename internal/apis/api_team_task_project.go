@@ -212,20 +212,21 @@ func (api *Api) TeamTaskProjectTasksCreate(ctx context.Context, input *shared.Cr
 		return nil, huma.Error401Unauthorized("no team info")
 	}
 
-	id, err := uuid.Parse(input.TaskProjectID)
+	parsedProjectID, err := uuid.Parse(input.TaskProjectID)
 	if err != nil {
 		return nil, huma.Error400BadRequest("Invalid task project id")
 	}
 	payload := input.Body
-	order, err := api.app.Task().Store().FindLastTaskRank(ctx, id)
+	order, err := api.app.Task().Store().FindLastTaskRank(ctx, parsedProjectID)
 	if err != nil {
 		return nil, err
 	}
 	payload.Rank = order
-	task, err := api.app.Task().CreateTaskWithChildren(ctx, teamInfo.Member.TeamID, id, teamInfo.Member.ID, &payload)
+	task, err := api.app.Task().CreateTaskWithChildren(ctx, teamInfo.Member.TeamID, parsedProjectID, teamInfo.Member.ID, &payload)
 	if err != nil {
 		return nil, err
 	}
+	err = api.app.Task().Store().UpdateTaskProjectUpdateDate(ctx, parsedProjectID)
 	return &TaskResposne{
 		Body: shared.FromModelTask(task),
 	}, nil

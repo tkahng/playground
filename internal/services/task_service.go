@@ -11,14 +11,17 @@ import (
 )
 
 type TaskStore interface {
+	CreateTask(ctx context.Context, task *models.Task) (*models.Task, error)
+	FindTask(ctx context.Context, task *models.Task) (*models.Task, error)
+	UpdateTask(ctx context.Context, task *models.Task) error
+	// UpdateTask(ctx context.Context, task *models.Task) error
 	// task methods
 	CountTasks(ctx context.Context, filter *shared.TaskListFilter) (int64, error)
-	CreateTask(ctx context.Context, teamID uuid.UUID, projectID uuid.UUID, memberID uuid.UUID, input *shared.CreateTaskProjectTaskDTO) (*models.Task, error)
+	CreateTaskFromInput(ctx context.Context, teamID uuid.UUID, projectID uuid.UUID, memberID uuid.UUID, input *shared.CreateTaskProjectTaskDTO) (*models.Task, error)
 	DeleteTask(ctx context.Context, taskID uuid.UUID) error
 	FindLastTaskRank(ctx context.Context, taskProjectID uuid.UUID) (float64, error)
 	FindTaskByID(ctx context.Context, id uuid.UUID) (*models.Task, error)
 	ListTasks(ctx context.Context, input *shared.TaskListParams) ([]*models.Task, error)
-	UpdateTask(ctx context.Context, task *models.Task) error
 
 	CalculateTaskRankStatus(ctx context.Context, taskId uuid.UUID, taskProjectId uuid.UUID, status models.TaskStatus, currentRank float64, position int64) (float64, error)
 	UpdateTaskRankStatus(ctx context.Context, taskID uuid.UUID, position int64, status models.TaskStatus) error
@@ -45,6 +48,7 @@ type TaskService interface {
 
 	CreateTaskWithChildren(ctx context.Context, teamID uuid.UUID, projectID uuid.UUID, memberID uuid.UUID, input *shared.CreateTaskWithChildrenDTO) (*models.Task, error)
 	UpdateTaskRankStatus(ctx context.Context, taskID uuid.UUID, position int64, status models.TaskStatus) error
+	CalculateNewPosition(ctx context.Context, groupID uuid.UUID, status models.TaskStatus, targetIndex int64, excludeID uuid.UUID) (float64, error)
 }
 type taskService struct {
 	store TaskStore
@@ -52,7 +56,7 @@ type taskService struct {
 
 // FindAndUpdateTask implements TaskService.
 func (s *taskService) FindAndUpdateTask(ctx context.Context, taskID uuid.UUID, input *shared.UpdateTaskDto) error {
-	task, err := s.store.FindTaskByID(ctx, taskID)
+	task, err := s.store.FindTask(ctx, &models.Task{ID: taskID})
 	if err != nil {
 		return err
 	}
@@ -143,7 +147,7 @@ func (s *taskService) CalculateNewPosition(ctx context.Context, groupID uuid.UUI
 
 // CreateTaskWithChildren implements TaskService.
 func (t *taskService) CreateTaskWithChildren(ctx context.Context, teamId uuid.UUID, projectID uuid.UUID, memberID uuid.UUID, input *shared.CreateTaskWithChildrenDTO) (*models.Task, error) {
-	task, err := t.store.CreateTask(ctx, teamId, projectID, memberID, &input.CreateTaskProjectTaskDTO)
+	task, err := t.store.CreateTaskFromInput(ctx, teamId, projectID, memberID, &input.CreateTaskProjectTaskDTO)
 	if err != nil {
 		return nil, err
 	}

@@ -22,6 +22,67 @@ type taskStore struct {
 	db database.Dbx
 }
 
+// CreateTask implements services.TaskStore.
+func (s *taskStore) CreateTask(ctx context.Context, task *models.Task) (*models.Task, error) {
+	return crudrepo.Task.PostOne(ctx, s.db, task)
+}
+
+// FindTask implements services.TaskStore.
+func (s *taskStore) FindTask(ctx context.Context, task *models.Task) (*models.Task, error) {
+
+	where := s.TaskWhere(task)
+
+	return crudrepo.Task.GetOne(ctx, s.db, where)
+}
+
+func (*taskStore) TaskWhere(task *models.Task) *map[string]any {
+	if task == nil {
+		return nil
+	}
+	where := map[string]any{}
+	if task.ID != uuid.Nil {
+		where["id"] = map[string]any{
+			"_eq": task.ID.String(),
+		}
+	}
+	if task.ProjectID != uuid.Nil {
+		where["project_id"] = map[string]any{
+			"_eq": task.ProjectID.String(),
+		}
+	}
+	if task.TeamID != uuid.Nil {
+		where["team_id"] = map[string]any{
+			"_eq": task.TeamID.String(),
+		}
+	}
+	if task.CreatedBy != uuid.Nil {
+		where["created_by"] = map[string]any{
+			"_eq": task.CreatedBy.String(),
+		}
+	}
+	if task.Status != "" {
+		where["status"] = map[string]any{
+			"_eq": task.Status,
+		}
+	}
+	if task.Name != "" {
+		where["name"] = map[string]any{
+			"_like": fmt.Sprintf("%%%s%%", task.Name),
+		}
+	}
+	if task.Description != nil {
+		where["description"] = map[string]any{
+			"_like": fmt.Sprintf("%%%s%%", *task.Description),
+		}
+	}
+	if task.ParentID != nil {
+		where["parent_id"] = map[string]any{
+			"_eq": task.ParentID.String(),
+		}
+	}
+	return &where
+}
+
 // UpdateTask implements services.TaskStore.
 func (s *taskStore) UpdateTask(ctx context.Context, task *models.Task) error {
 	_, err := crudrepo.Task.PutOne(ctx, s.db, task)
@@ -408,7 +469,7 @@ func (s *taskStore) CreateTaskProjectWithTasks(ctx context.Context, input *share
 	var tasks []*models.Task
 	for i, task := range input.Tasks {
 		task.Rank = float64(i * 1000)
-		newTask, err := s.CreateTask(ctx, taskProject.TeamID, taskProject.ID, input.CreateTaskProjectDTO.MemberID, &task)
+		newTask, err := s.CreateTaskFromInput(ctx, taskProject.TeamID, taskProject.ID, input.CreateTaskProjectDTO.MemberID, &task)
 		if err != nil {
 			return nil, err
 		}
@@ -417,7 +478,7 @@ func (s *taskStore) CreateTaskProjectWithTasks(ctx context.Context, input *share
 	return taskProject, nil
 }
 
-func (s *taskStore) CreateTask(ctx context.Context, teamID uuid.UUID, projectID uuid.UUID, memberID uuid.UUID, input *shared.CreateTaskProjectTaskDTO) (*models.Task, error) {
+func (s *taskStore) CreateTaskFromInput(ctx context.Context, teamID uuid.UUID, projectID uuid.UUID, memberID uuid.UUID, input *shared.CreateTaskProjectTaskDTO) (*models.Task, error) {
 	setter := models.Task{
 		ProjectID:   projectID,
 		CreatedBy:   memberID,
@@ -427,38 +488,12 @@ func (s *taskStore) CreateTask(ctx context.Context, teamID uuid.UUID, projectID 
 		Status:      models.TaskStatus(input.Status),
 		Rank:        input.Rank,
 	}
-	task, err := crudrepo.Task.PostOne(ctx, s.db, &setter)
+	task, err := s.CreateTask(ctx, &setter)
 	if err != nil {
 		return nil, err
 	}
-	err = s.UpdateTaskProjectUpdateDate(ctx, task.ProjectID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to update task project update date: %w", err)
-	}
 	return task, nil
 }
-
-// func (s *taskStore) CreateTask(ctx context.Context, projectID uuid.UUID, input *shared.CreateTaskProjectTaskDTO) (*models.Task, error) {
-// 	setter := models.Task{
-// 		ProjectID: projectID,
-// 		// UserID:      userID,
-// 		CreatedBy:   input.CreatedBy,
-// 		TeamID:      input.TeamID,
-// 		Name:        input.Name,
-// 		Description: input.Description,
-// 		Status:      models.TaskStatus(input.Status),
-// 		Rank:        input.Rank,
-// 	}
-// 	task, err := crudrepo.Task.PostOne(ctx, s.db, &setter)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	err = s.UpdateTaskProjectUpdateDate(ctx, task.ProjectID)
-// 	if err != nil {
-// 		return nil, fmt.Errorf("failed to update task project update date: %w", err)
-// 	}
-// 	return task, nil
-// }
 
 func (s *taskStore) CalculateTaskRankStatus(ctx context.Context, taskId uuid.UUID, taskProjectId uuid.UUID, status models.TaskStatus, currentRank float64, position int64) (float64, error) {
 	if position == 0 {
