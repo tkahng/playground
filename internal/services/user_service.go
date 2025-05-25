@@ -12,7 +12,6 @@ type UserStore interface {
 	AssignUserRoles(ctx context.Context, userId uuid.UUID, roleNames ...string) error
 	CreateUser(ctx context.Context, user *models.User) (*models.User, error)
 	DeleteUser(ctx context.Context, userId uuid.UUID) error
-	FindUserByEmail(ctx context.Context, email string) (*models.User, error)
 	FindUserById(ctx context.Context, userId uuid.UUID) (*models.User, error)
 	GetUserInfo(ctx context.Context, email string) (*shared.UserInfo, error)
 	LoadUsersByUserIds(ctx context.Context, userIds ...uuid.UUID) ([]*models.User, error)

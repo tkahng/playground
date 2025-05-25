@@ -33,14 +33,55 @@ func NewPostgresUserStore(db database.Dbx) *PostgresUserStore {
 	}
 }
 
-func (p *PostgresUserStore) FindUserById(ctx context.Context, userId uuid.UUID) (*models.User, error) {
+func (*PostgresUserStore) UserWhere(user *models.User) *map[string]any {
+	if user == nil {
+		return nil
+	}
+	where := map[string]any{}
+	if user.ID != uuid.Nil {
+		where["id"] = map[string]any{
+			"_eq": user.ID.String(),
+		}
+	}
+	if user.Name != nil {
+		where["name"] = map[string]any{
+			"_like": fmt.Sprintf("%%%s%%", *user.Name),
+		}
+	}
+	if user.Email != "" {
+		where["email"] = map[string]any{
+			"_eq": user.Email,
+		}
+	}
+	if user.EmailVerifiedAt != nil {
+		if user.EmailVerifiedAt.IsZero() {
+			where["email_verified_at"] = map[string]any{
+				"_neq": nil,
+			}
+		} else {
+			where["email_verified_at"] = map[string]any{
+				"_gte": user.EmailVerifiedAt.Format(time.RFC3339Nano),
+			}
+		}
+	}
+
+	return &where
+}
+
+func (s *PostgresUserStore) FindUser(ctx context.Context, user *models.User) (*models.User, error) {
+	where := s.UserWhere(user)
 	return crudrepo.User.GetOne(
 		ctx,
-		p.db,
-		&map[string]any{
-			"id": map[string]any{
-				"_eq": userId.String(),
-			},
+		s.db,
+		where,
+	)
+}
+
+func (p *PostgresUserStore) FindUserById(ctx context.Context, userId uuid.UUID) (*models.User, error) {
+	return p.FindUser(
+		ctx,
+		&models.User{
+			ID: userId,
 		},
 	)
 }
@@ -236,18 +277,6 @@ func (p *PostgresUserStore) UpdateUser(ctx context.Context, user *models.User) e
 }
 
 // FindUserByEmail implements UserStore.
-func (p *PostgresUserStore) FindUserByEmail(ctx context.Context, email string) (*models.User, error) {
-	a, err := crudrepo.User.GetOne(
-		ctx,
-		p.db,
-		&map[string]any{
-			"email": map[string]any{
-				"_eq": email,
-			},
-		},
-	)
-	return database.OptionalRow(a, err)
-}
 
 // CreateUser implements UserStore.
 func (p *PostgresUserStore) CreateUser(ctx context.Context, user *models.User) (*models.User, error) {

@@ -259,7 +259,7 @@ func TestAuthenticate(t *testing.T) {
 				Type:     shared.ProviderTypeCredentials,
 			},
 			setupMocks: func() {
-				mockStorage.On("FindUserByEmail", ctx, testEmail).Return(nil, nil)
+				mockStorage.On("FindUser", ctx, mock.Anything).Return(nil, nil)
 				// mockStorage.On("RunInTransaction", ctx, mock.Anything).Return(nil)
 				// mockStorage.On("WithTx", ctx, mock.Anything).Return(mockStorage2)
 				mockStorage.On("CreateUser", ctx, mock.Anything).Return(&models.User{ID: testUserId, Email: testEmail}, nil)
@@ -298,7 +298,7 @@ func TestAuthenticate(t *testing.T) {
 				Type:     shared.ProviderTypeCredentials,
 			},
 			setupMocks: func() {
-				mockStorage.On("FindUserByEmail", ctx, testEmail).Return(&models.User{ID: testUserId, Email: testEmail}, nil)
+				mockStorage.On("FindUser", ctx, mock.Anything).Return(&models.User{ID: testUserId, Email: testEmail}, nil)
 				mockStorage.On("FindUserAccountByUserIdAndProvider", ctx, testUserId, models.ProvidersCredentials).
 					Return(&models.UserAccount{Password: &testHashedPassword}, nil)
 				mockPassword.On("VerifyPassword", testHashedPassword, testPasswordStr).Return(true, nil)
@@ -313,7 +313,7 @@ func TestAuthenticate(t *testing.T) {
 				Type:     shared.ProviderTypeCredentials,
 			},
 			setupMocks: func() {
-				mockStorage.On("FindUserByEmail", ctx, testEmail).Return(&models.User{ID: testUserId, Email: testEmail}, nil)
+				mockStorage.On("FindUser", ctx, mock.Anything).Return(&models.User{ID: testUserId, Email: testEmail}, nil)
 				mockStorage.On("FindUserAccountByUserIdAndProvider", ctx, testUserId, models.ProvidersCredentials).
 					Return(&models.UserAccount{Password: &testHashedPassword}, nil)
 				mockPassword.On("VerifyPassword", testHashedPassword, testPasswordStr).Return(false, nil)
@@ -328,7 +328,7 @@ func TestAuthenticate(t *testing.T) {
 				Type:     shared.ProviderTypeCredentials,
 			},
 			setupMocks: func() {
-				mockStorage.On("FindUserByEmail", ctx, testEmail).Return(&models.User{ID: testUserId, Email: testEmail}, nil)
+				mockStorage.On("FindUser", ctx, mock.Anything).Return(&models.User{ID: testUserId, Email: testEmail}, nil)
 				mockStorage.On("FindUserAccountByUserIdAndProvider", ctx, testUserId, models.ProvidersCredentials).Return(nil, nil)
 				mockPassword.On("HashPassword", testPasswordStr).Return(testHashedPassword, nil)
 				mockStorage.On("LinkAccount", ctx, mock.Anything).Return(&models.UserAccount{
@@ -349,7 +349,7 @@ func TestAuthenticate(t *testing.T) {
 				EmailVerifiedAt: types.Pointer(time.Now()),
 			},
 			setupMocks: func() {
-				mockStorage.On("FindUserByEmail", ctx, testEmail).Return(&models.User{ID: testUserId, Email: testEmail}, nil)
+				mockStorage.On("FindUser", ctx, mock.Anything).Return(&models.User{ID: testUserId, Email: testEmail}, nil)
 				mockStorage.On("FindUserAccountByUserIdAndProvider", ctx, testUserId, mock.Anything).Return(nil, nil)
 
 				mockStorage.On("LinkAccount", ctx, mock.Anything).Return(&models.UserAccount{

@@ -227,7 +227,6 @@ type AuthStoreDecorator struct {
 	DeleteTokenFunc                        func(ctx context.Context, token string) error
 	DeleteUserFunc                         func(ctx context.Context, id uuid.UUID) error
 	FindUserAccountByUserIdAndProviderFunc func(ctx context.Context, userId uuid.UUID, provider models.Providers) (*models.UserAccount, error)
-	FindUserByEmailFunc                    func(ctx context.Context, email string) (*models.User, error)
 	GetTokenFunc                           func(ctx context.Context, token string) (*models.Token, error)
 	GetUserInfoFunc                        func(ctx context.Context, email string) (*shared.UserInfo, error)
 	LinkAccountFunc                        func(ctx context.Context, account *models.UserAccount) (*models.UserAccount, error)
@@ -236,6 +235,15 @@ type AuthStoreDecorator struct {
 	UpdateUserFunc                         func(ctx context.Context, user *models.User) error
 	UpdateUserAccountFunc                  func(ctx context.Context, account *models.UserAccount) error
 	RunInTransactionFunc                   func(ctx context.Context, fn func(store AuthStore) error) error
+	FindUserFunc                           func(ctx context.Context, user *models.User) (*models.User, error)
+}
+
+// FindUser implements AuthStore.
+func (a *AuthStoreDecorator) FindUser(ctx context.Context, user *models.User) (*models.User, error) {
+	if a.FindUserFunc != nil {
+		return a.FindUserFunc(ctx, user)
+	}
+	return a.Delegate.FindUser(ctx, user)
 }
 
 // WithTx implements AuthStore.
@@ -247,7 +255,6 @@ func (a *AuthStoreDecorator) WithTx(dbx database.Dbx) AuthStore {
 		DeleteTokenFunc:                        a.DeleteTokenFunc,
 		DeleteUserFunc:                         a.DeleteUserFunc,
 		FindUserAccountByUserIdAndProviderFunc: a.FindUserAccountByUserIdAndProviderFunc,
-		FindUserByEmailFunc:                    a.FindUserByEmailFunc,
 		GetTokenFunc:                           a.GetTokenFunc,
 		GetUserInfoFunc:                        a.GetUserInfoFunc,
 		LinkAccountFunc:                        a.LinkAccountFunc,
@@ -308,12 +315,6 @@ func (a *AuthStoreDecorator) FindUserAccountByUserIdAndProvider(ctx context.Cont
 }
 
 // FindUserByEmail implements AuthStore.
-func (a *AuthStoreDecorator) FindUserByEmail(ctx context.Context, email string) (*models.User, error) {
-	if a.FindUserByEmailFunc != nil {
-		return a.FindUserByEmailFunc(ctx, email)
-	}
-	return a.Delegate.FindUserByEmail(ctx, email)
-}
 
 // GetToken implements AuthStore.
 func (a *AuthStoreDecorator) GetToken(ctx context.Context, token string) (*models.Token, error) {
@@ -331,12 +332,12 @@ func (a *AuthStoreDecorator) GetUserInfo(ctx context.Context, email string) (*sh
 	return a.Delegate.GetUserInfo(ctx, email)
 }
 
-// LinkAccount implements AuthStore.
-func (a *AuthStoreDecorator) LinkAccount(ctx context.Context, account *models.UserAccount) (*models.UserAccount, error) {
+// CreateUserAccount implements AuthStore.
+func (a *AuthStoreDecorator) CreateUserAccount(ctx context.Context, account *models.UserAccount) (*models.UserAccount, error) {
 	if a.LinkAccountFunc != nil {
 		return a.LinkAccountFunc(ctx, account)
 	}
-	return a.Delegate.LinkAccount(ctx, account)
+	return a.Delegate.CreateUserAccount(ctx, account)
 }
 
 // SaveToken implements AuthStore.

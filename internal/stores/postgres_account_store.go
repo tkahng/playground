@@ -22,16 +22,6 @@ type PostgresAccountStore struct {
 }
 
 // CreateUserAccount implements services.UserAccountStore.
-func (u *PostgresAccountStore) CreateUserAccount(ctx context.Context, account *models.UserAccount) (*models.UserAccount, error) {
-	if account == nil {
-		return nil, errors.New("account is nil")
-	}
-	createdAccount, err := crudrepo.UserAccount.PostOne(ctx, u.db, account)
-	if err != nil {
-		return nil, fmt.Errorf("error creating user account: %w", err)
-	}
-	return createdAccount, nil
-}
 
 func NewPostgresUserAccountStore(db database.Dbx) *PostgresAccountStore {
 	return &PostgresAccountStore{
@@ -136,8 +126,8 @@ func (u *PostgresAccountStore) FindUserAccountByUserIdAndProvider(ctx context.Co
 	})
 }
 
-// LinkAccount implements UserAccountStore.
-func (u *PostgresAccountStore) LinkAccount(ctx context.Context, account *models.UserAccount) (*models.UserAccount, error) {
+// CreateUserAccount implements UserAccountStore.
+func (u *PostgresAccountStore) CreateUserAccount(ctx context.Context, account *models.UserAccount) (*models.UserAccount, error) {
 	if account == nil {
 		return nil, errors.New("account is nil")
 	}

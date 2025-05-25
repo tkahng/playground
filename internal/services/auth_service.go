@@ -45,7 +45,7 @@ type AuthService interface {
 type AuthAccountStore interface {
 	FindUserAccountByUserIdAndProvider(ctx context.Context, userId uuid.UUID, provider models.Providers) (*models.UserAccount, error)
 	UpdateUserAccount(ctx context.Context, account *models.UserAccount) error
-	LinkAccount(ctx context.Context, account *models.UserAccount) (*models.UserAccount, error)
+	CreateUserAccount(ctx context.Context, account *models.UserAccount) (*models.UserAccount, error)
 	UnlinkAccount(ctx context.Context, userId uuid.UUID, provider models.Providers) error
 }
 
@@ -53,9 +53,9 @@ type AuthUserStore interface {
 	GetUserInfo(ctx context.Context, email string) (*shared.UserInfo, error)
 	CreateUser(ctx context.Context, user *models.User) (*models.User, error)
 	AssignUserRoles(ctx context.Context, userId uuid.UUID, roleNames ...string) error
-	FindUserByEmail(ctx context.Context, email string) (*models.User, error)
 	UpdateUser(ctx context.Context, user *models.User) error
 	DeleteUser(ctx context.Context, id uuid.UUID) error
+	FindUser(ctx context.Context, user *models.User) (*models.User, error)
 }
 
 type AuthTokenStore interface {
@@ -244,9 +244,12 @@ func (app *BaseAuthService) Signout(ctx context.Context, token string) error {
 
 // HandlePasswordResetRequest implements AuthActions.
 func (app *BaseAuthService) HandlePasswordResetRequest(ctx context.Context, email string) error {
-	user, err := app.authStore.FindUserByEmail(
+
+	user, err := app.authStore.FindUser(
 		ctx,
-		email,
+		&models.User{
+			Email: email,
+		},
 	)
 	if err != nil {
 		return fmt.Errorf("error getting user by email: %w", err)
@@ -420,9 +423,12 @@ func (app *BaseAuthService) HandlePasswordResetToken(ctx context.Context, token,
 	if err != nil {
 		return fmt.Errorf("error deleting token: %w", err)
 	}
-	user, err := app.authStore.FindUserByEmail(
+
+	user, err := app.authStore.FindUser(
 		ctx,
-		claims.Email,
+		&models.User{
+			Email: claims.Email,
+		},
 	)
 	if err != nil {
 		return fmt.Errorf("error getting user by email: %w", err)
@@ -514,7 +520,12 @@ func (app *BaseAuthService) HandleVerificationToken(ctx context.Context, token s
 	if err != nil {
 		return fmt.Errorf("error deleting token: %w", err)
 	}
-	user, err := app.authStore.FindUserByEmail(ctx, claims.Email)
+	user, err := app.authStore.FindUser(
+		ctx,
+		&models.User{
+			Email: claims.Email,
+		},
+	)
 	if err != nil {
 		return fmt.Errorf("error getting user info: %w", err)
 	}
@@ -594,7 +605,7 @@ func (app *BaseAuthService) CreateAccount(ctx context.Context, store AuthStore, 
 		}
 	}
 	// link account of requested type
-	return store.LinkAccount(ctx, &models.UserAccount{
+	return store.CreateUserAccount(ctx, &models.UserAccount{
 		UserID:            user.ID,
 		Type:              models.ProviderTypes(params.Type),
 		Provider:          models.Providers(params.Provider),
@@ -610,8 +621,12 @@ func (app *BaseAuthService) Authenticate(ctx context.Context, params *shared.Aut
 	var account *models.UserAccount
 	var err error
 
-	// get user by email
-	user, err = app.authStore.FindUserByEmail(ctx, params.Email)
+	user, err = app.authStore.FindUser(
+		ctx,
+		&models.User{
+			Email: params.Email,
+		},
+	)
 	if err != nil {
 		return nil, fmt.Errorf("error at getting user by email: %w", err)
 	}

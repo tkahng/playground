@@ -8,10 +8,10 @@ import (
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/spf13/cobra"
 	"github.com/tkahng/authgo/internal/conf"
-	"github.com/tkahng/authgo/internal/crudrepo"
 	"github.com/tkahng/authgo/internal/database"
+	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/queries"
-	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/authgo/internal/stores"
 	"github.com/tkahng/authgo/internal/tools/security"
 	"github.com/tkahng/authgo/internal/tools/types"
 )
@@ -40,27 +40,23 @@ var superuserCreate = &cobra.Command{
 		}
 
 		ctx := cmd.Context()
-		conf := conf.GetConfig[conf.DBConfig]()
+		confdb := conf.GetConfig[conf.DBConfig]()
 
-		dbx := database.CreateQueries(ctx, conf.DatabaseUrl)
-		err := queries.EnsureRoleAndPermissions(ctx, dbx, "superuser", "superuser")
+		dbx := database.CreateQueries(ctx, confdb.DatabaseUrl)
+		userStore := stores.NewPostgresUserStore(dbx)
+		authStore := stores.NewPostgresAuthStore(dbx)
+
+		rbacStore := stores.NewPostgresRBACStore(dbx)
+		err := rbacStore.EnsureRoleAndPermissions(ctx, "superuser", "superuser")
 		if err != nil {
 			return err
 		}
 
-		user, err := queries.FindUserByEmail(ctx, dbx, args[0])
+		user, err := userStore.FindUser(ctx, &models.User{Email: args[0]})
 		if err != nil {
 			return err
 		}
-		role, err := crudrepo.Role.GetOne(
-			ctx,
-			dbx,
-			&map[string]any{
-				"name": map[string]any{
-					"_eq": "superuser",
-				},
-			},
-		)
+		role, err := rbacStore.FindRoleByName(ctx, "superuser")
 		if err != nil {
 			return err
 		}
@@ -69,18 +65,20 @@ var superuserCreate = &cobra.Command{
 			if err != nil {
 				return err
 			}
-			data := &shared.AuthenticationInput{
-				Email:             args[0],
-				Provider:          shared.ProvidersCredentials,
-				ProviderAccountID: args[0],
-				HashPassword:      types.Pointer(hash),
-				Type:              shared.ProviderTypeCredentials,
-			}
-			user, err = queries.CreateUser(ctx, dbx, data)
+			user, err = authStore.CreateUser(ctx, &models.User{
+				Email: args[0],
+			})
 			if err != nil {
 				return err
 			}
-			_, err = queries.CreateAccount(ctx, dbx, user.ID, data)
+			account := &models.UserAccount{
+				Provider:          models.ProvidersCredentials,
+				ProviderAccountID: args[0],
+				UserID:            user.ID,
+				Type:              models.ProviderTypeCredentials,
+				Password:          types.Pointer(hash),
+			}
+			_, err = authStore.CreateUserAccount(ctx, account)
 			if err != nil {
 				return err
 			}

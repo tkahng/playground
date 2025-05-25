@@ -1,7 +1,10 @@
 package stores_test
 
 import (
+	"context"
 	"errors"
+	"fmt"
+	"reflect"
 	"testing"
 
 	"github.com/google/uuid"
@@ -31,7 +34,9 @@ func TestPostgresUserStore_CRUD(t *testing.T) {
 		}
 
 		// FindUserByEmail
-		found, err := store.FindUserByEmail(ctx, email)
+		found, err := store.FindUser(ctx, &models.User{
+			Email: email,
+		})
 		if err != nil || found == nil || found.ID != user.ID {
 			t.Errorf("FindUserByEmail() = %v, err = %v", found, err)
 		}
@@ -71,7 +76,9 @@ func TestPostgresUserStore_CRUD(t *testing.T) {
 		if err != nil {
 			t.Errorf("DeleteUser() error = %v", err)
 		}
-		deleted, err := store.FindUserByEmail(ctx, email)
+		deleted, err := store.FindUser(ctx, &models.User{
+			Email: email,
+		})
 		if err != nil {
 			t.Errorf("FindUserByEmail() after delete error = %v", err)
 		}
@@ -113,4 +120,92 @@ func TestPostgresUserStore_LoadUsersByUserIds(t *testing.T) {
 
 func ptrString(s string) *string {
 	return &s
+}
+
+func TestPostgresUserStore_FindUserById(t *testing.T) {
+	test.Short(t)
+	ctx, dbx := test.DbSetup()
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+		p := stores.NewPostgresUserStore(dbxx)
+		ids := []uuid.UUID{}
+		users := []*models.User{}
+		type fields struct {
+			db database.Dbx
+		}
+		type args struct {
+			ctx    context.Context
+			userId uuid.UUID
+		}
+		tests := []struct {
+			name    string
+			fields  fields
+			args    args
+			want    *models.User
+			wantErr bool
+		}{}
+		for i := range 10 {
+			user, err := p.CreateUser(
+				ctx,
+				&models.User{Email: fmt.Sprintf("testuser%d@example.com", i)},
+			)
+			if err != nil {
+				t.Fatalf("CreateUser() error = %v", err)
+			}
+			ids = append(ids, user.ID)
+			users = append(users, user)
+			tests = append(tests, struct {
+				name    string
+				fields  fields
+				args    args
+				want    *models.User
+				wantErr bool
+			}{
+				name: fmt.Sprintf("FindUserById-%s", user.ID.String()),
+				fields: fields{
+					db: dbxx,
+				},
+				args: args{
+					ctx:    ctx,
+					userId: user.ID,
+				},
+				want:    user,
+				wantErr: false,
+			})
+		}
+
+		tests = append(tests, struct {
+			name    string
+			fields  fields
+			args    args
+			want    *models.User
+			wantErr bool
+		}{
+			name: "NotFound",
+			fields: fields{
+				db: dbxx,
+			},
+			args: args{
+				ctx:    ctx,
+				userId: uuid.New(),
+			},
+			want:    nil,
+			wantErr: false,
+		})
+
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				p := stores.NewPostgresUserStore(tt.fields.db)
+				got, err := p.FindUserById(tt.args.ctx, tt.args.userId)
+				if (err != nil) != tt.wantErr {
+					t.Errorf("PostgresUserStore.FindUserById() error = %v, wantErr %v", err, tt.wantErr)
+					return
+				}
+				if !reflect.DeepEqual(got, tt.want) {
+					t.Errorf("PostgresUserStore.FindUserById() = %v, want %v", got, tt.want)
+				}
+			})
+		}
+
+		return errors.New("rollback")
+	})
 }

@@ -16,6 +16,16 @@ type MockAuthStore struct {
 	TxErr error
 }
 
+// FindUser implements AuthStore.
+func (m *MockAuthStore) FindUser(ctx context.Context, user *models.User) (*models.User, error) {
+	args := m.Called(ctx, user)
+	var foundUser *models.User
+	if args.Get(0) != nil {
+		foundUser = args.Get(0).(*models.User)
+	}
+	return foundUser, args.Error(1)
+}
+
 // WithTx implements AuthStore.
 func (m *MockAuthStore) WithTx(dbx database.Dbx) AuthStore {
 	args := m.Called(dbx)
@@ -96,8 +106,8 @@ func (m *MockAuthStore) GetToken(ctx context.Context, token string) (*models.Tok
 
 }
 
-// LinkAccount implements AuthStorage.
-func (m *MockAuthStore) LinkAccount(ctx context.Context, account *models.UserAccount) (*models.UserAccount, error) {
+// CreateUserAccount implements AuthStorage.
+func (m *MockAuthStore) CreateUserAccount(ctx context.Context, account *models.UserAccount) (*models.UserAccount, error) {
 	args := m.Called(ctx, account)
 	var linkedAccount *models.UserAccount
 	if args.Get(0) != nil {
