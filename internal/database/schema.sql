@@ -474,8 +474,8 @@ CREATE TABLE public.task_projects (
     start_at timestamp with time zone,
     end_at timestamp with time zone,
     assignee_id uuid,
-    assigner_id uuid,
-    "order" double precision DEFAULT 0.0 NOT NULL,
+    reporter_id uuid,
+    rank double precision DEFAULT 0.0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
@@ -496,8 +496,8 @@ CREATE TABLE public.tasks (
     start_at timestamp with time zone,
     end_at timestamp with time zone,
     assignee_id uuid,
-    assigner_id uuid,
-    "order" double precision DEFAULT 0.0 NOT NULL,
+    reporter_id uuid,
+    rank double precision DEFAULT 0.0 NOT NULL,
     parent_id uuid,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL
@@ -1292,19 +1292,19 @@ ALTER TABLE ONLY public.task_projects
 
 
 --
--- Name: task_projects task_projects_assigner_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.task_projects
-    ADD CONSTRAINT task_projects_assigner_id_fkey FOREIGN KEY (assigner_id) REFERENCES public.team_members(id) ON UPDATE CASCADE ON DELETE SET NULL;
-
-
---
 -- Name: task_projects task_projects_created_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.task_projects
     ADD CONSTRAINT task_projects_created_by_fkey FOREIGN KEY (created_by) REFERENCES public.team_members(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: task_projects task_projects_reporter_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.task_projects
+    ADD CONSTRAINT task_projects_reporter_id_fkey FOREIGN KEY (reporter_id) REFERENCES public.team_members(id) ON UPDATE CASCADE ON DELETE SET NULL;
 
 
 --
@@ -1321,14 +1321,6 @@ ALTER TABLE ONLY public.task_projects
 
 ALTER TABLE ONLY public.tasks
     ADD CONSTRAINT tasks_assignee_id_fkey FOREIGN KEY (assignee_id) REFERENCES public.team_members(id) ON UPDATE CASCADE ON DELETE SET NULL;
-
-
---
--- Name: tasks tasks_assigner_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.tasks
-    ADD CONSTRAINT tasks_assigner_id_fkey FOREIGN KEY (assigner_id) REFERENCES public.team_members(id) ON UPDATE CASCADE ON DELETE SET NULL;
 
 
 --
@@ -1353,6 +1345,14 @@ ALTER TABLE ONLY public.tasks
 
 ALTER TABLE ONLY public.tasks
     ADD CONSTRAINT tasks_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.task_projects(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: tasks tasks_reporter_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.tasks
+    ADD CONSTRAINT tasks_reporter_id_fkey FOREIGN KEY (reporter_id) REFERENCES public.team_members(id) ON UPDATE CASCADE ON DELETE SET NULL;
 
 
 --
