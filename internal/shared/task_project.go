@@ -119,7 +119,7 @@ type TaskProjectsListParams struct {
 	Expand []string `query:"expand,omitempty" required:"false" minimum:"1" maximum:"100" enum:"tasks,subtasks"`
 }
 type TeamTaskProjectsListParams struct {
-	TeamID string `path:"team-id,omitempty" required:"false" format:"uuid"`
+	TeamID string `path:"team-id" required:"true" format:"uuid"`
 	PaginatedInput
 	TeamTaskProjectsListFilter
 	SortParams
