@@ -2,6 +2,7 @@ package stores
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/crudrepo"
@@ -27,29 +28,58 @@ func (s *PostgresNotificationStore) CreateNotification(ctx context.Context, noti
 	)
 }
 
-func (s *PostgresNotificationStore) CreateManyNotifications(ctx context.Context, notifications []*models.Notification) ([]*models.Notification, error) {
-	var items []models.Notification
-	for _, item := range notifications {
-		if item == nil {
-			continue
-		}
-		items = append(items, *item)
-	}
+func (s *PostgresNotificationStore) CreateManyNotifications(ctx context.Context, notifications []models.Notification) ([]*models.Notification, error) {
 	return crudrepo.Notification.Post(
 		ctx,
 		s.db,
-		items,
+		notifications,
 	)
 }
 
-func (s *PostgresNotificationStore) GetNotification(ctx context.Context, notificationId uuid.UUID) (*models.Notification, error) {
+func (s *PostgresNotificationStore) FindNotification(ctx context.Context, args *models.Notification) (*models.Notification, error) {
+	if args == nil {
+		return nil, nil
+	}
+	where := map[string]any{}
+	if args.ID != uuid.Nil {
+		where["id"] = map[string]any{
+			"_eq": args.ID.String(),
+		}
+	}
+	if args.UserID != nil {
+		where["user_id"] = map[string]any{
+			"_eq": args.UserID.String(),
+		}
+	}
+	if args.TeamID != nil {
+		where["team_id"] = map[string]any{
+			"_eq": args.TeamID.String(),
+		}
+	}
+	if args.TeamMemberID != nil {
+		where["team_member_id"] = map[string]any{
+			"_eq": args.TeamMemberID.String(),
+		}
+	}
+	if args.Type != "" {
+		where["type"] = map[string]any{
+			"_eq": args.Type,
+		}
+	}
+	if args.Channel != "" {
+		where["channel"] = map[string]any{
+			"_eq": args.Channel,
+		}
+	}
+	if args.ReadAt != nil {
+		where["read_at"] = map[string]any{
+			"_gte": args.ReadAt.Format(time.RFC3339Nano),
+		}
+	}
+
 	return crudrepo.Notification.GetOne(
 		ctx,
 		s.db,
-		&map[string]any{
-			"id": map[string]any{
-				"_eq": notificationId.String(),
-			},
-		},
+		&where,
 	)
 }

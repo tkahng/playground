@@ -371,6 +371,10 @@ type DBEnqueuer struct {
 	db Db
 }
 
+func WithTx(db Db) Enqueuer {
+	return &DBEnqueuer{db: db}
+}
+
 // NewDBEnqueuer creates a new database-backed job enqueuer
 func NewDBEnqueuer(db Db) *DBEnqueuer {
 	return &DBEnqueuer{db: db}
