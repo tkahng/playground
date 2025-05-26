@@ -40,7 +40,7 @@ const resetPasswordSchema = z.object({
 });
 
 export default function AccountSettingsPage() {
-  const [_, setIsPending] = useState(false);
+  const [, setIsPending] = useState(false);
   const { user, checkAuth } = useAuthProvider();
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["auth/me"],
@@ -73,7 +73,7 @@ export default function AccountSettingsPage() {
       });
       toast.success("Profile updated successfully");
     },
-    onError: (error: any) => {
+    onError: (error) => {
       toast.error(`Failed to update Profile: ${error.message}`);
     },
   });
@@ -85,7 +85,7 @@ export default function AccountSettingsPage() {
       }
       await deleteUser(user.tokens.access_token);
     },
-    onError: (error: any) => {
+    onError: (error) => {
       const err = GetError(error);
       if (err) {
         if (err.errors?.length) {
@@ -115,7 +115,7 @@ export default function AccountSettingsPage() {
       );
       toast.success("Password reset successfully");
     },
-    onError: (error: any) => {
+    onError: (error) => {
       const err = GetError(error);
       if (err) {
         if (err.errors?.length) {
@@ -149,7 +149,7 @@ export default function AccountSettingsPage() {
       });
       toast.success("Verification email sent successfully");
     },
-    onError: (error: any) => {
+    onError: (error) => {
       setIsPending(false);
       const err = GetError(error);
       if (err) {

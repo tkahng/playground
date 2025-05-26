@@ -16,9 +16,7 @@ export default function PricingPage() {
       await checkAuth(); // Ensure user is authenticated
       let userSubs = null;
       if (user) {
-        try {
-          userSubs = await getUserSubscriptions(user.tokens.access_token);
-        } catch (error) {}
+        userSubs = await getUserSubscriptions(user.tokens.access_token);
       }
       const products = await getProductsWithPrices();
       return { products, userSubs };

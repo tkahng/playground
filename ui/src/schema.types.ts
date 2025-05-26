@@ -2,11 +2,10 @@ import { components } from "@/schema";
 
 export type SigninInput = components["schemas"]["SigninDto"];
 
-export type AuthenticatedDTO = components["schemas"]["UserInfoTokens"];
+export type UserInfoTokens = components["schemas"]["UserInfoTokens"];
 export type SignupInput = components["schemas"]["SignupInput"];
 
 export type RefreshTokenInput = components["schemas"]["RefreshTokenInput"];
-export type RefreshTokenOutput = components["schemas"]["UserInfoTokens"];
 
 export type User = components["schemas"]["User"];
 
@@ -65,6 +64,6 @@ export type TeamMember = components["schemas"]["TeamMember"];
 export type Team = components["schemas"]["Team"];
 
 export type TeamMemberState = {
-  currentMember: Team | null;
+  currentMember: TeamMember | null;
   members: TeamMember[];
 };

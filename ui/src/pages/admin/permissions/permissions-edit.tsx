@@ -64,7 +64,7 @@ export default function PermissionEdit() {
       form.reset(updatedRole);
       toast.success("Permission updated!");
     },
-    onError: (err: any) => {
+    onError: (err) => {
       toast.error(`Failed to update Permission: ${err.message}`);
     },
   });

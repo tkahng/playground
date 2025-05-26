@@ -25,7 +25,7 @@ export default function RootLayout() {
     if (user && pathname === RouteMap.HOME) {
       navigate(RouteMap.DASHBOARD);
     }
-  }, [user, pathname]);
+  }, [user, pathname, navigate]);
   return (
     <>
       <div className="relative flex min-h-screen flex-col">

@@ -14,28 +14,24 @@ export default function AdminDashboardPage() {
       if (!user) {
         throw new Error("User not found");
       }
-      try {
-        const stats = await getStats(user.tokens.access_token);
-        const subs = await getUserSubscriptions(user.tokens.access_token);
-        const users = await userPaginate(user.tokens.access_token, {
-          page: 0,
-          per_page: 1,
-        });
-        const VerifiedUsers = await userPaginate(user.tokens.access_token, {
-          page: 0,
-          per_page: 1,
-          email_verified: "verified",
-        });
-        return {
-          ...stats,
-          sub: subs,
-          userCount: users.meta.total,
-          verifiedUserCount: VerifiedUsers.meta.total,
-        };
-      } catch (error) {
-        // await checkAuth();
-        throw error;
-      }
+
+      const stats = await getStats(user.tokens.access_token);
+      const subs = await getUserSubscriptions(user.tokens.access_token);
+      const users = await userPaginate(user.tokens.access_token, {
+        page: 0,
+        per_page: 1,
+      });
+      const VerifiedUsers = await userPaginate(user.tokens.access_token, {
+        page: 0,
+        per_page: 1,
+        email_verified: "verified",
+      });
+      return {
+        ...stats,
+        sub: subs,
+        userCount: users.meta.total,
+        verifiedUserCount: VerifiedUsers.meta.total,
+      };
     },
   });
   if (isLoading) {

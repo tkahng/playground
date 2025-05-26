@@ -18,7 +18,7 @@ interface Props {
 
 type BillingInterval = "lifetime" | "year" | "month";
 
-const formSchema = z.object({
+export const formSchema = z.object({
   price_id: z.string().min(2, {
     message: "name must be at least 2 characters.",
   }),

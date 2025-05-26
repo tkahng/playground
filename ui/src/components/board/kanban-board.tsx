@@ -121,16 +121,13 @@ export function KanbanBoard(props: { cars: Task[]; projectId: string }) {
   };
 
   // Helper function to flatten nested columns
-  const flattenColumns = useCallback(
-    (cols: NestedColumn[]): Column[] => {
-      return cols.flatMap((col) =>
-        col.children
-          ? [{ id: col.id, title: col.title }, ...flattenColumns(col.children)]
-          : [col]
-      );
-    },
-    [cars]
-  );
+  const flattenColumns = useCallback((cols: NestedColumn[]): Column[] => {
+    return cols.flatMap((col) =>
+      col.children
+        ? [{ id: col.id, title: col.title }, ...flattenColumns(col.children)]
+        : [col]
+    );
+  }, []);
 
   const flatColumns = useMemo(
     () => flattenColumns(columns),

@@ -39,12 +39,4 @@ export const TeamMemberProvider = ({
   );
 };
 
-export const useTeamMemberContext = () => {
-  const context = useContext(TeamMemberContext);
-  if (!context) {
-    throw new Error(
-      "useTeamMemberContext must be used within a TeamMemberProvider"
-    );
-  }
-  return context;
-};
+export const useTeamMemberContext = () => useContext(TeamMemberContext);

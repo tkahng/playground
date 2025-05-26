@@ -17,7 +17,7 @@ const AuthVerify = () => {
           isMounted.current = false;
         });
     }
-  }, [location]);
+  }, [location, checkAuth]);
   return null;
 };
 

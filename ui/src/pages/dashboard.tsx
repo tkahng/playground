@@ -14,17 +14,13 @@ export default function DashboardPage() {
       if (!user) {
         throw new Error("User not found");
       }
-      try {
-        const stats = await getStats(user.tokens.access_token);
-        const subs = await getUserSubscriptions(user.tokens.access_token);
-        return {
-          ...stats,
-          sub: subs,
-        };
-      } catch (error) {
-        // await checkAuth();
-        throw error;
-      }
+
+      const stats = await getStats(user.tokens.access_token);
+      const subs = await getUserSubscriptions(user.tokens.access_token);
+      return {
+        ...stats,
+        sub: subs,
+      };
     },
   });
   if (isLoading) {

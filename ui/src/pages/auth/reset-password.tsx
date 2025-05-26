@@ -81,8 +81,7 @@ export default function ResetPasswordRequestPage() {
 
     try {
       mutation.mutate(email);
-    } catch (error) {
-    } finally {
+    } catch {
       setIsLoading(false);
     }
   };

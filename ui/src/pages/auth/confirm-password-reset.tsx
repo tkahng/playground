@@ -31,7 +31,7 @@ import {
 import { useEffect, useState } from "react";
 import { z } from "zod";
 
-const formSchema = z.object({
+export const resetPasswordSchema = z.object({
   password: z.string().min(8),
   confirmPassword: z.string().min(8),
   token: z.string().min(1),
@@ -89,7 +89,7 @@ export default function ResetPasswordPage() {
   };
 
   const mutation = useMutation({
-    mutationFn: async (data: z.infer<typeof formSchema>) => {
+    mutationFn: async (data: z.infer<typeof resetPasswordSchema>) => {
       return await confirmPasswordReset(
         data.token,
         data.password,
@@ -135,19 +135,11 @@ export default function ResetPasswordPage() {
 
     setIsSubmitting(true);
 
-    try {
-      mutation.mutate({
-        token,
-        password,
-        confirmPassword,
-      });
-    } catch (err) {
-      setError(
-        "Failed to reset password. Please try again or request a new reset link."
-      );
-    } finally {
-      setIsSubmitting(false);
-    }
+    mutation.mutate({
+      token,
+      password,
+      confirmPassword,
+    });
   };
 
   useEffect(() => {

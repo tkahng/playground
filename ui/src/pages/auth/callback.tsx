@@ -44,7 +44,7 @@ export default function CallbackComponent() {
           });
       }
     }
-  }, [navigate]);
+  }, [auth, navigate]);
 
   return (
     <div>

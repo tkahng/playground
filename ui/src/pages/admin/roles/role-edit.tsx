@@ -83,7 +83,7 @@ export default function RoleEdit() {
       form.reset(updatedRole);
       toast.success("Role updated!");
     },
-    onError: (err: any) => {
+    onError: (err) => {
       toast.error(`Failed to update role: ${err.message}`);
     },
   });
@@ -102,7 +102,7 @@ export default function RoleEdit() {
       });
       toast.success("Permission deleted!");
     },
-    onError: (err: any) => {
+    onError: (err) => {
       toast.error(`Failed to delete permission: ${err.message}`);
     },
   });

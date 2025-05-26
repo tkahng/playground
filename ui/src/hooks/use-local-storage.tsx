@@ -14,6 +14,7 @@ export function useLocalStorage<T>(
         return defaultValue;
       }
     } catch (err) {
+      console.log(err);
       return defaultValue;
     }
   });
