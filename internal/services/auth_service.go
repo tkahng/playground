@@ -178,6 +178,22 @@ func (app *BaseAuthService) CreateOAuthUrl(ctx context.Context, providerName sha
 // Subtle: this method shadows the method (WorkerService).FireAndForget of BaseAuthService.WorkerService.
 // SendOtpEmail creates and saves a new otp token and sends it to the user's email
 func (app *BaseAuthService) SendOtpEmail(emailType mailer.EmailType, ctx context.Context, user *models.User) error {
+	if app.options == nil {
+		return fmt.Errorf("app options is nil")
+	}
+	if app.token == nil {
+		return fmt.Errorf("token service is nil")
+	}
+	if app.authStore == nil {
+		return fmt.Errorf("auth store is nil")
+	}
+	if app.mail == nil {
+		return fmt.Errorf("mail service is nil")
+	}
+	if user == nil {
+		return fmt.Errorf("user is nil")
+	}
+
 	appOpts := app.options.Meta
 	var tokenOpts conf.TokenOption
 	switch emailType {
@@ -208,7 +224,6 @@ func (app *BaseAuthService) SendOtpEmail(emailType mailer.EmailType, ctx context
 	if err != nil {
 		return fmt.Errorf("error at creating verification token: %w", err)
 	}
-
 	dto := &shared.CreateTokenDTO{
 		Expires:    claims.ExpiresAt.Time,
 		Token:      claims.Token,
@@ -218,7 +233,6 @@ func (app *BaseAuthService) SendOtpEmail(emailType mailer.EmailType, ctx context
 	}
 
 	err = app.authStore.SaveToken(ctx, dto)
-
 	if err != nil {
 		return fmt.Errorf("error at creating verification token: %w", err)
 	}

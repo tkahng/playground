@@ -7,6 +7,9 @@ import (
 type MockMailService struct {
 	delegate MailService
 	param    *mailer.AllEmailParams
+
+	// Add a function field to override SendMail behavior
+	SendMailOverride func(params *mailer.AllEmailParams) error
 }
 
 func NewMockMailService() *MockMailService {
@@ -17,6 +20,9 @@ func NewMockMailService() *MockMailService {
 
 // SendMail implements MailService.
 func (m *MockMailService) SendMail(params *mailer.AllEmailParams) error {
+	if m.SendMailOverride != nil {
+		return m.SendMailOverride(params)
+	}
 	m.param = params
 	return m.delegate.SendMail(params)
 }

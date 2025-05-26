@@ -11,6 +11,7 @@ import (
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mailer"
+	"github.com/tkahng/authgo/internal/tools/utils"
 )
 
 type OtpEmailJobArgs struct {
@@ -68,6 +69,7 @@ func NewOtpEmailWorker(user UserFinder, mail OtpMail) jobs.Worker[OtpEmailJobArg
 // Work implements jobs.Worker.
 func (w *otpMailWorker) Work(ctx context.Context, job *jobs.Job[OtpEmailJobArgs]) error {
 	fmt.Println("otp mail")
+	utils.PrettyPrintJSON(job)
 	user, err := w.user.FindUser(ctx, &models.User{ID: job.Args.UserID})
 	if err != nil {
 		slog.ErrorContext(

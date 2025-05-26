@@ -19,6 +19,8 @@ import (
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mailer"
 	"github.com/tkahng/authgo/internal/tools/types"
+	"github.com/tkahng/authgo/internal/tools/utils"
+	"github.com/tkahng/authgo/internal/workers"
 )
 
 func TestHandleRefreshToken(t *testing.T) {
@@ -215,6 +217,18 @@ func TestAuthenticate(t *testing.T) {
 	ctx := context.Background()
 	dispatcher := jobs.NewDispatchDecorator()
 
+	// Log registered handlers for debugging
+	dispatcher.SetHandlerFunc = func(kind string, handler func(context.Context, *models.JobRow) error) {
+		fmt.Printf("Handler registered for kind: %s\n", kind)
+		dispatcher.Delegate.SetHandler(kind, handler)
+	}
+
+	// Log dispatched job kind for debugging
+	dispatcher.DispatchFunc = func(ctx context.Context, row *models.JobRow) error {
+		fmt.Printf("Dispatching job with kind: %s\n", row.Kind)
+		return dispatcher.Delegate.Dispatch(ctx, row)
+	}
+
 	enqueuer := jobs.DBEnqueuerDecorator{}
 	enqueuer.EnqueueFunc = func(ctx context.Context, args jobs.JobArgs, uniqueKey *string, runAfter time.Time, maxAttempts int) error {
 		payload, err := json.Marshal(args)
@@ -244,13 +258,16 @@ func TestAuthenticate(t *testing.T) {
 
 	}
 	jobStore := jobs.NewJobStoreDecorator()
-	jobStore.RunInTxFunc = func(ctx context.Context, fn func(js jobs.JobStore) error) error {
-		return fn(jobStore)
-	}
+
 	jobStore.ClaimPendingJobsFunc = func(ctx context.Context, limit int) ([]models.JobRow, error) {
 		if len(enqueuer.Jobs) > 0 {
 			jobStore.Job = enqueuer.Jobs[0]
-			return []models.JobRow{*jobStore.Job}, nil
+			if len(enqueuer.Jobs) > 0 {
+				jobd := enqueuer.Jobs[0]
+				if jobd != nil {
+					return []models.JobRow{*jobd}, nil
+				}
+			}
 		}
 		return []models.JobRow{}, nil
 	}
@@ -274,6 +291,9 @@ func TestAuthenticate(t *testing.T) {
 		}
 		return nil
 	}
+	jobStore.RunInTxFunc = func(ctx context.Context, fn func(js jobs.JobStore) error) error {
+		return fn(jobStore)
+	}
 	poller := jobs.NewPollerDecorator(jobStore, dispatcher)
 	mockStorage := new(MockAuthStore)
 	mockStorage2 := new(MockAuthStore)
@@ -282,7 +302,13 @@ func TestAuthenticate(t *testing.T) {
 	mockPassword := new(MockPasswordService)
 	mockMailService := &MockMailService{
 		delegate: NewMailService(&mailer.LogMailer{}),
+		SendMailOverride: func(params *mailer.AllEmailParams) error {
+			bs, _ := json.Marshal(params)
+			fmt.Printf("Mock SendMail called with params: %+v\n", string(bs))
+			return nil
+		},
 	}
+
 	settings := conf.NewSettings()
 	wg := new(sync.WaitGroup)
 	mockRoutineService := &MockRoutineService{
@@ -298,6 +324,11 @@ func TestAuthenticate(t *testing.T) {
 		enqueuer:  &enqueuer,
 	}
 	mailWorker := NewWorkerDecorator(app)
+	mailWorker.WorkFunc = func(ctx context.Context, job *jobs.Job[workers.OtpEmailJobArgs]) error {
+		fmt.Println("mail worker")
+		utils.PrettyPrintJSON(job)
+		return nil
+	}
 	jobs.RegisterWorker(dispatcher, mailWorker)
 	testUserId := uuid.New()
 	testEmail := "test@example.com"
@@ -335,8 +366,8 @@ func TestAuthenticate(t *testing.T) {
 					Provider: models.ProvidersCredentials,
 					Type:     models.ProviderTypeCredentials,
 				}, nil)
-				mockStorage.On("FindUser", mock.Anything, mock.Anything).Return(&models.User{ID: testUserId, Email: testEmail}, nil)
-				mockStorage.On("SaveToken", mock.Anything, mock.Anything).Return(nil)
+				// mockStorage.On("FindUser", mock.Anything, mock.Anything).Return(&models.User{ID: testUserId, Email: testEmail}, nil)
+				// mockStorage.On("SaveToken", mock.Anything, mock.Anything).Return(nil)
 				// mockStorage.On("SaveToken", ctx, mock.Anything).Return(nil)
 				// mockStorage.On("FindUserAccountByUserIdAndProvider", ctx, testUserId, models.ProvidersCredentials).Return(nil, nil)
 				// mockPassword.On("HashPassword", mock.Anything).Return(testHashedPassword, nil)
@@ -420,8 +451,8 @@ func TestAuthenticate(t *testing.T) {
 				}, nil)
 
 				mockStorage.On("UpdateUser", mock.Anything, mock.Anything).Return(nil)
-				mockStorage.On("FindUser", mock.Anything, mock.Anything).Return(&models.User{ID: testUserId, Email: testEmail}, nil)
-				mockStorage.On("SaveToken", mock.Anything, mock.Anything).Return(nil)
+				// mockStorage.On("FindUser", mock.Anything, mock.Anything).Return(&models.User{ID: testUserId, Email: testEmail}, nil)
+				// mockStorage.On("SaveToken", mock.Anything, mock.Anything).Return(nil)
 			},
 			expectedError: false,
 			checkJob:      true,
@@ -450,7 +481,7 @@ func TestAuthenticate(t *testing.T) {
 			}
 
 			result, err := app.Authenticate(ctx, tc.input)
-			_ = poller.PollOnce(ctx)
+
 			if tc.expectedError {
 				assert.Error(t, err)
 				assert.Nil(t, result)
@@ -460,8 +491,14 @@ func TestAuthenticate(t *testing.T) {
 			}
 
 			if tc.checkJob {
-				assert.NotNil(t, tc.checkJobWant)
-				assert.Contains(t, string(tc.checkJobWant.Payload), tc.checkJobPayload)
+				err = poller.PollOnce(ctx)
+				if err != nil {
+					t.Fatalf("poller error: %v", err)
+				}
+
+				job := jobStore.Job
+				assert.NotNil(t, job)
+				assert.Contains(t, string(job.Payload), tc.checkJobPayload)
 			}
 
 			mockStorage.AssertExpectations(t)

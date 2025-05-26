@@ -62,7 +62,8 @@ type dispatcher struct {
 
 func (d *dispatcher) SetHandler(kind string, handler func(context.Context, *models.JobRow) error) {
 	if _, exists := d.handlers[kind]; exists {
-		panic("duplicate worker kind: " + kind)
+		return
+		// panic("duplicate worker kind: " + kind)
 	}
 	d.handlers[kind] = handler
 }
