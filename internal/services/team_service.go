@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"errors"
+	"log/slog"
 
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/models"
@@ -125,6 +126,7 @@ func (t *teamService) DeleteTeam(ctx context.Context, teamId uuid.UUID, userId u
 		return err
 	}
 	if teamInfo == nil {
+		slog.ErrorContext(ctx, "team member not found")
 		return errors.New("team member not found")
 	}
 	if teamInfo.Member.Role != models.TeamMemberRoleOwner {
@@ -211,6 +213,7 @@ func (t *teamService) GetActiveTeam(ctx context.Context, userId uuid.UUID) (*mod
 	return team, nil
 }
 func (t *teamService) FindTeamInfo(ctx context.Context, teamId, userId uuid.UUID) (*shared.TeamInfo, error) {
+	slog.InfoContext(ctx, "FindTeamInfo", "teamId", teamId, "userId", userId)
 	team, err := t.teamStore.FindTeamByID(ctx, teamId)
 	if err != nil {
 		return nil, err

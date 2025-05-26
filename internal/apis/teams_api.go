@@ -112,14 +112,16 @@ func (api *Api) GetUserTeamMembers(
 
 }
 
+type UpdateTeamInput struct {
+	TeamID string `path:"team-id" required:"true"`
+	Body   struct {
+		Name string `json:"name" required:"true"`
+	} `json:"body" required:"true"`
+}
+
 func (api *Api) UpdateTeam(
 	ctx context.Context,
-	input *struct {
-		TeamID string `path:"team-id" required:"true"`
-		Body   struct {
-			Name string `json:"name" required:"true"`
-		} `json:"body" required:"true"`
-	},
+	input *UpdateTeamInput,
 ) (
 	*TeamOutput,
 	error,
@@ -153,7 +155,7 @@ func (api *Api) DeleteTeam(
 	if info == nil {
 		return nil, huma.Error401Unauthorized("unauthorized")
 	}
-	err := api.app.Team().DeleteTeam(ctx, info.Team.ID, info.User.ID)
+	err := api.app.Team().DeleteTeam(ctx, info.Team.ID, *info.Member.UserID)
 	if err != nil {
 		return nil, err
 	}

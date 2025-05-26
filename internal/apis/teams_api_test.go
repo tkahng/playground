@@ -138,49 +138,6 @@ func TestTeamSlug(t *testing.T) {
 	})
 }
 
-func TestCreateTeam_SuccessfulCreation(t *testing.T) {
-	test.DbSetup()
-	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
-		cfg := conf.ZeroEnvConfig()
-		app := core.NewDecorator(ctx, cfg, db)
-		appApi := apis.NewApi(app)
-		_, api := humatest.New(t)
-		apis.AddRoutes(api, appApi)
-		user, err := createVerifiedUser(app)
-		if err != nil {
-			t.Errorf("Error creating user: %v", err)
-			return
-		}
-		tokensVerifiedTokens, err := app.Auth().CreateAuthTokensFromEmail(context.Background(), user.User.Email)
-		if err != nil {
-			t.Errorf("Error creating auth tokens: %v", err)
-			return
-		}
-		VerifiedHeader := fmt.Sprintf("Authorization: Bearer %s", tokensVerifiedTokens.Tokens.AccessToken)
-		sdasd := struct {
-			Name             string
-			ctxUserInfo      *shared.UserInfo
-			createTeamErr    error
-			createTeamResult *shared.TeamInfo
-			expectedErr      error
-			expectedOutput   *apis.TeamOutput
-			header           string
-			body             *apis.CreateTeamInput
-		}{
-			header: VerifiedHeader,
-			body: &apis.CreateTeamInput{
-				Name: "test team",
-				Slug: "test-team",
-			},
-		}
-
-		resp := api.Post("/teams", sdasd.header, sdasd.body)
-		if resp.Code != 200 {
-			t.Errorf("Api.GetStripeSubscriptions() = %v, want %v", resp.Code, 200)
-		}
-
-	})
-}
 func TestGetTeam_unauthorized(t *testing.T) {
 	test.DbSetup()
 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
@@ -215,13 +172,8 @@ func TestGetTeam_invalidID(t *testing.T) {
 			t.Errorf("Error creating user: %v", err)
 			return
 		}
-		// team, err := createTeamAndMember(app, &user.User, "test team")
-		// if err != nil {
-		// 	t.Errorf("Error creating user: %v", err)
-		// 	return
-		// }
+
 		teamIdString := uuid.NewString()
-		// team, err :=
 		tokensVerifiedTokens, err := app.Auth().CreateAuthTokensFromEmail(context.Background(), user.User.Email)
 		if err != nil {
 			t.Errorf("Error creating auth tokens: %v", err)
@@ -275,6 +227,49 @@ func TestGetTeam_success(t *testing.T) {
 	)
 
 }
+func TestCreateTeam_SuccessfulCreation(t *testing.T) {
+	test.DbSetup()
+	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
+		cfg := conf.ZeroEnvConfig()
+		app := core.NewDecorator(ctx, cfg, db)
+		appApi := apis.NewApi(app)
+		_, api := humatest.New(t)
+		apis.AddRoutes(api, appApi)
+		user, err := createVerifiedUser(app)
+		if err != nil {
+			t.Errorf("Error creating user: %v", err)
+			return
+		}
+		tokensVerifiedTokens, err := app.Auth().CreateAuthTokensFromEmail(context.Background(), user.User.Email)
+		if err != nil {
+			t.Errorf("Error creating auth tokens: %v", err)
+			return
+		}
+		VerifiedHeader := fmt.Sprintf("Authorization: Bearer %s", tokensVerifiedTokens.Tokens.AccessToken)
+		sdasd := struct {
+			Name             string
+			ctxUserInfo      *shared.UserInfo
+			createTeamErr    error
+			createTeamResult *shared.TeamInfo
+			expectedErr      error
+			expectedOutput   *apis.TeamOutput
+			header           string
+			body             *apis.CreateTeamInput
+		}{
+			header: VerifiedHeader,
+			body: &apis.CreateTeamInput{
+				Name: "test team",
+				Slug: "test-team",
+			},
+		}
+
+		resp := api.Post("/teams", sdasd.header, sdasd.body)
+		if resp.Code != 200 {
+			t.Errorf("Api.GetStripeSubscriptions() = %v, want %v", resp.Code, 200)
+		}
+
+	})
+}
 
 func TestCreateTeam_emailNotVerified(t *testing.T) {
 	test.DbSetup()
@@ -308,4 +303,239 @@ func TestCreateTeam_emailNotVerified(t *testing.T) {
 		assert.Contains(t, resp.Body.String(), "email not verified")
 	},
 	)
+}
+
+// test team update api when not owner and fail
+func TestUpdateTeam_failedNotOwner(t *testing.T) {
+	test.DbSetup()
+	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
+		cfg := conf.ZeroEnvConfig()
+		app := core.NewDecorator(ctx, cfg, db)
+
+		appApi := apis.NewApi(app)
+		_, api := humatest.New(t)
+		apis.AddRoutes(api, appApi)
+		user1, err := app.User().Store().CreateUser(
+			ctx,
+			&models.User{
+				Email: "user1@example",
+			},
+		)
+		if err != nil {
+			t.Errorf("Error creating user: %v", err)
+			return
+		}
+
+		member1, err := app.Team().Store().CreateTeamWithOwnerMember(
+			ctx,
+			"test team",
+			"test-team",
+			user1.ID,
+		)
+		if err != nil {
+			t.Errorf("Error creating user: %v", err)
+			return
+		}
+		user2, err := app.User().Store().CreateUser(
+			ctx,
+			&models.User{
+				Email: "user2@example",
+			},
+		)
+		if err != nil {
+			t.Errorf("Error creating user: %v", err)
+			return
+		}
+		member2, err := app.Team().Store().CreateTeamMember(
+			ctx,
+			member1.Team.ID,
+			user2.ID,
+			models.TeamMemberRoleMember,
+			false,
+		)
+		if member2 == nil {
+			t.Errorf("Error creating user: %v", err)
+			return
+		}
+		// create
+		tokensVerifiedTokens, err := app.Auth().CreateAuthTokensFromEmail(ctx, user2.Email)
+		if err != nil {
+			t.Errorf("Error creating auth tokens: %v", err)
+			return
+		}
+		VerifiedHeader := fmt.Sprintf("Authorization: Bearer %s", tokensVerifiedTokens.Tokens.AccessToken)
+		resp := api.Put("/teams/"+member1.Team.ID.String(), VerifiedHeader, &apis.UpdateTeamInput{
+			TeamID: member1.Team.ID.String(),
+			Body: struct {
+				Name string "json:\"name\" required:\"true\""
+			}{Name: "test team"},
+		})
+		if resp.Code == 200 {
+			t.Fatalf("Unexpected response: %s", resp.Body.String())
+		}
+		assert.Equal(t, 403, resp.Code)
+		assert.Contains(t, resp.Body.String(), "You do not have the required team member role")
+	})
+}
+
+func TestUpdateTeam_successOwner(t *testing.T) {
+	test.DbSetup()
+	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
+		cfg := conf.ZeroEnvConfig()
+		app := core.NewDecorator(ctx, cfg, db)
+
+		appApi := apis.NewApi(app)
+		_, api := humatest.New(t)
+		apis.AddRoutes(api, appApi)
+		user1, err := app.User().Store().CreateUser(
+			ctx,
+			&models.User{
+				Email: "user1@example",
+			},
+		)
+		if err != nil {
+			t.Errorf("Error creating user: %v", err)
+			return
+		}
+
+		member1, err := app.Team().Store().CreateTeamWithOwnerMember(
+			ctx,
+			"test team",
+			"test-team",
+			user1.ID,
+		)
+		if err != nil {
+			t.Errorf("Error creating user: %v", err)
+			return
+		}
+
+		// create
+		tokensVerifiedTokens, err := app.Auth().CreateAuthTokensFromEmail(ctx, user1.Email)
+		if err != nil {
+			t.Errorf("Error creating auth tokens: %v", err)
+			return
+		}
+		VerifiedHeader := fmt.Sprintf("Authorization: Bearer %s", tokensVerifiedTokens.Tokens.AccessToken)
+		resp := api.Put("/teams/"+member1.Team.ID.String(), VerifiedHeader, apis.UpdateTeamInput{
+			TeamID: member1.Team.ID.String(),
+			Body: struct {
+				Name string "json:\"name\" required:\"true\""
+			}{Name: "test team"},
+		}.Body)
+		if resp.Code != 200 {
+			t.Fatalf("Unexpected response: %s", resp.Body.String())
+		}
+	})
+}
+
+func TestDeleteTeam_successOwner(t *testing.T) {
+	test.DbSetup()
+	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
+		cfg := conf.ZeroEnvConfig()
+		app := core.NewDecorator(ctx, cfg, db)
+
+		appApi := apis.NewApi(app)
+		_, api := humatest.New(t)
+		apis.AddRoutes(api, appApi)
+		user1, err := app.User().Store().CreateUser(
+			ctx,
+			&models.User{
+				Email: "user1@example",
+			},
+		)
+		if err != nil {
+			t.Errorf("Error creating user: %v", err)
+			return
+		}
+
+		member1, err := app.Team().Store().CreateTeamWithOwnerMember(
+			ctx,
+			"test team",
+			"test-team",
+			user1.ID,
+		)
+		if err != nil {
+			t.Errorf("Error creating user: %v", err)
+			return
+		}
+
+		// create
+		tokensVerifiedTokens, err := app.Auth().CreateAuthTokensFromEmail(ctx, user1.Email)
+		if err != nil {
+			t.Errorf("Error creating auth tokens: %v", err)
+			return
+		}
+		VerifiedHeader := fmt.Sprintf("Authorization: Bearer %s", tokensVerifiedTokens.Tokens.AccessToken)
+		resp := api.Delete("/teams/"+member1.Team.ID.String(), VerifiedHeader)
+		if resp.Code != 200 {
+			t.Fatalf("Unexpected response: %s", resp.Body.String())
+		}
+	})
+}
+func TestDeleteTeam_failNonOwner(t *testing.T) {
+	test.DbSetup()
+	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
+		cfg := conf.ZeroEnvConfig()
+		app := core.NewDecorator(ctx, cfg, db)
+
+		appApi := apis.NewApi(app)
+		_, api := humatest.New(t)
+		apis.AddRoutes(api, appApi)
+		user1, err := app.User().Store().CreateUser(
+			ctx,
+			&models.User{
+				Email: "user1@example",
+			},
+		)
+		if err != nil {
+			t.Errorf("Error creating user: %v", err)
+			return
+		}
+
+		member1, err := app.Team().Store().CreateTeamWithOwnerMember(
+			ctx,
+			"test team",
+			"test-team",
+			user1.ID,
+		)
+		if err != nil {
+			t.Errorf("Error creating user: %v", err)
+			return
+		}
+		user2, err := app.User().Store().CreateUser(
+			ctx,
+			&models.User{
+				Email: "user2@example",
+			},
+		)
+		if err != nil {
+			t.Errorf("Error creating user: %v", err)
+			return
+		}
+		member2, err := app.Team().Store().CreateTeamMember(
+			ctx,
+			member1.Team.ID,
+			user2.ID,
+			models.TeamMemberRoleMember,
+			false,
+		)
+		if member2 == nil {
+			t.Errorf("Error creating user: %v", err)
+			return
+		}
+		// create
+		tokensVerifiedTokens, err := app.Auth().CreateAuthTokensFromEmail(ctx, user2.Email)
+		if err != nil {
+			t.Errorf("Error creating auth tokens: %v", err)
+			return
+		}
+		VerifiedHeader := fmt.Sprintf("Authorization: Bearer %s", tokensVerifiedTokens.Tokens.AccessToken)
+		resp := api.Delete("/teams/"+member1.Team.ID.String(), VerifiedHeader)
+		if resp.Code != 403 {
+			t.Fatalf("Unexpected response: %s", resp.Body.String())
+		}
+		if !strings.Contains(resp.Body.String(), "You do not have the required team member role") {
+			t.Fatalf("Unexpected response: %s", resp.Body.String())
+		}
+	})
 }

@@ -85,6 +85,15 @@ func TeamInfoFromTaskMiddleware(api huma.API, app core.App) func(ctx huma.Contex
 			huma.WriteErr(api, ctx, http.StatusNotFound, "team not found", nil)
 			return
 		}
+		teamInfo.User = models.User{
+			ID:              userInfo.User.ID,
+			Name:            userInfo.User.Name,
+			EmailVerifiedAt: userInfo.User.EmailVerifiedAt,
+			CreatedAt:       userInfo.User.CreatedAt,
+			UpdatedAt:       userInfo.User.UpdatedAt,
+			Email:           userInfo.User.Email,
+			Image:           userInfo.User.Image,
+		}
 		ctxx := contextstore.SetContextTeamInfo(rawCtx, teamInfo)
 		ctx = huma.WithContext(ctx, ctxx)
 		next(ctx)
@@ -127,6 +136,15 @@ func TeamInfoFromTaskProjectMiddleware(api huma.API, app core.App) func(ctx huma
 			huma.WriteErr(api, ctx, http.StatusNotFound, "team not found", nil)
 			return
 		}
+		teamInfo.User = models.User{
+			ID:              userInfo.User.ID,
+			Name:            userInfo.User.Name,
+			EmailVerifiedAt: userInfo.User.EmailVerifiedAt,
+			CreatedAt:       userInfo.User.CreatedAt,
+			UpdatedAt:       userInfo.User.UpdatedAt,
+			Email:           userInfo.User.Email,
+			Image:           userInfo.User.Image,
+		}
 		ctxx := contextstore.SetContextTeamInfo(rawCtx, teamInfo)
 		ctx = huma.WithContext(ctx, ctxx)
 		next(ctx)
@@ -161,6 +179,15 @@ func TeamInfoFromParamMiddleware(api huma.API, app core.App) func(ctx huma.Conte
 			next(ctx)
 			return
 		}
+		teamInfo.User = models.User{
+			ID:              userInfo.User.ID,
+			Name:            userInfo.User.Name,
+			EmailVerifiedAt: userInfo.User.EmailVerifiedAt,
+			CreatedAt:       userInfo.User.CreatedAt,
+			UpdatedAt:       userInfo.User.UpdatedAt,
+			Email:           userInfo.User.Email,
+			Image:           userInfo.User.Image,
+		}
 		ctxx := contextstore.SetContextTeamInfo(rawCtx, teamInfo)
 		ctx = huma.WithContext(ctx, ctxx)
 		next(ctx)
@@ -171,6 +198,7 @@ func RequireTeamMemberRolesMiddleware(api huma.API, roles ...models.TeamMemberRo
 	return func(ctx huma.Context, next func(huma.Context)) {
 		rawctx := ctx.Context()
 		if info := contextstore.GetContextTeamInfo(rawctx); info != nil {
+			fmt.Println("role", info.Member.Role)
 			if len(roles) == 0 {
 				next(ctx)
 				return
@@ -179,6 +207,12 @@ func RequireTeamMemberRolesMiddleware(api huma.API, roles ...models.TeamMemberRo
 				next(ctx)
 				return
 			}
+			huma.WriteErr(
+				api,
+				ctx,
+				http.StatusForbidden,
+				fmt.Sprintf("You do not have the required team member role: %v", info.Member.Role),
+			)
 		} else {
 			huma.WriteErr(
 				api,
@@ -193,17 +227,17 @@ func RequireTeamMemberRolesMiddleware(api huma.API, roles ...models.TeamMemberRo
 func LatestTeamMiddleware(api huma.API, app core.App) func(ctx huma.Context, next func(huma.Context)) {
 	return func(ctx huma.Context, next func(huma.Context)) {
 		rawCtx := ctx.Context()
-		user := contextstore.GetContextUserInfo(rawCtx)
-		if user == nil {
+		userInfo := contextstore.GetContextUserInfo(rawCtx)
+		if userInfo == nil {
 			next(ctx)
 			return
 		}
-		info, err := app.Team().FindLatestTeamInfo(rawCtx, user.User.ID)
+		info, err := app.Team().FindLatestTeamInfo(rawCtx, userInfo.User.ID)
 		if err != nil {
 			slog.ErrorContext(
 				rawCtx,
 				"error getting team info",
-				slog.String("user_id", user.User.ID.String()),
+				slog.String("user_id", userInfo.User.ID.String()),
 				slog.Any("error", err),
 			)
 			next(ctx)
@@ -212,6 +246,15 @@ func LatestTeamMiddleware(api huma.API, app core.App) func(ctx huma.Context, nex
 		if info == nil {
 			next(ctx)
 			return
+		}
+		info.User = models.User{
+			ID:              userInfo.User.ID,
+			Name:            userInfo.User.Name,
+			EmailVerifiedAt: userInfo.User.EmailVerifiedAt,
+			CreatedAt:       userInfo.User.CreatedAt,
+			UpdatedAt:       userInfo.User.UpdatedAt,
+			Email:           userInfo.User.Email,
+			Image:           userInfo.User.Image,
 		}
 		ctxx := contextstore.SetContextTeamInfo(rawCtx, info)
 		ctx = huma.WithContext(ctx, ctxx)
