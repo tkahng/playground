@@ -9,10 +9,6 @@
       "path": "cmd"
     },
     {
-      "name": "ui",
-      "path": "ui"
-    },
-    {
       "name": "authgo",
       "path": "."
     }
@@ -24,6 +20,7 @@
       "strings": true
     },
     "files.exclude": {
+      "ui": true,
       "/opt/homebrew/": true
     },
     "explorer.excludeGitIgnore": false,
