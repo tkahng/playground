@@ -67,7 +67,7 @@ func NewOtpEmailWorker(user UserFinder, mail OtpMail) jobs.Worker[OtpEmailJobArg
 
 // Work implements jobs.Worker.
 func (w *otpMailWorker) Work(ctx context.Context, job *jobs.Job[OtpEmailJobArgs]) error {
-	fmt.Println("sending security password reset email")
+	fmt.Println("otp mail")
 	user, err := w.user.FindUser(ctx, &models.User{ID: job.Args.UserID})
 	if err != nil {
 		slog.ErrorContext(
@@ -75,6 +75,7 @@ func (w *otpMailWorker) Work(ctx context.Context, job *jobs.Job[OtpEmailJobArgs]
 			"error getting user",
 			slog.Any("error", err),
 			slog.String("email", user.Email),
+			slog.String("emailType", job.Args.Type),
 			slog.String("userId", user.ID.String()),
 		)
 		return err
@@ -83,9 +84,10 @@ func (w *otpMailWorker) Work(ctx context.Context, job *jobs.Job[OtpEmailJobArgs]
 	if err != nil {
 		slog.ErrorContext(
 			ctx,
-			"error sending security password reset email",
+			"error sending email",
 			slog.Any("error", err),
 			slog.String("email", user.Email),
+			slog.String("emailType", job.Args.Type),
 			slog.String("userId", user.ID.String()),
 		)
 		return err

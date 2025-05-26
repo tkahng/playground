@@ -103,7 +103,10 @@ func execute[T JobArgs](ctx context.Context, worker Worker[T], job *Job[T]) (err
 			err = fmt.Errorf("panic: %v", r)
 		}
 	}()
-	slog.InfoContext(ctx, "start job", "kind", job.Args.Kind(), "id", job.ID)
+	slog.InfoContext(ctx, "start job", "kind", job.Args.Kind(), "id", job.ID, slog.Any("args", job.Args))
+	if worker == nil {
+		return fmt.Errorf("no worker registered for kind: %s", job.Args.Kind())
+	}
 	err = worker.Work(ctx, job)
 	if err != nil {
 		slog.ErrorContext(ctx, "fail job", "kind", job.Args.Kind(), "id", job.ID, "error", err)

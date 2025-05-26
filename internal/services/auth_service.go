@@ -771,7 +771,7 @@ func (app *BaseAuthService) Authenticate(ctx context.Context, params *shared.Aut
 				},
 				nil,
 				time.Now(),
-				3,
+				1,
 			)
 			// app.routine.FireAndForget(
 			// 	func() {
@@ -833,21 +833,31 @@ func (app *BaseAuthService) Authenticate(ctx context.Context, params *shared.Aut
 		}
 		if reset {
 			fmt.Println("User has a credentials account, sending security password reset email")
-			app.routine.FireAndForget(
-				func() {
-					ctx := context.Background()
-					fmt.Println("sending security password reset email")
-					err := app.SendOtpEmail(mailer.EmailTypeSecurityPasswordReset, ctx, user)
-					if err != nil {
-						app.logger.Error(
-							"error sending security password reset email",
-							slog.Any("error", err),
-							slog.String("email", user.Email),
-							slog.String("userId", user.ID.String()),
-						)
-					}
+			err = app.enqueuer.Enqueue(
+				ctx,
+				workers.OtpEmailJobArgs{
+					Type:   mailer.EmailTypeSecurityPasswordReset,
+					UserID: user.ID,
 				},
+				nil,
+				time.Now(),
+				1,
 			)
+			// app.routine.FireAndForget(
+			// 	func() {
+			// 		ctx := context.Background()
+			// 		fmt.Println("sending security password reset email")
+			// 		err := app.SendOtpEmail(mailer.EmailTypeSecurityPasswordReset, ctx, user)
+			// 		if err != nil {
+			// 			app.logger.Error(
+			// 				"error sending security password reset email",
+			// 				slog.Any("error", err),
+			// 				slog.String("email", user.Email),
+			// 				slog.String("userId", user.ID.String()),
+			// 			)
+			// 		}
+			// 	},
+			// )
 		}
 		return user, nil
 	}
