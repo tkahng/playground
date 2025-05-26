@@ -125,7 +125,7 @@ func BindStripeApi(api huma.API, appApi *Api) {
 		huma.Operation{
 			OperationID: "team-subscriptions-active",
 			Method:      http.MethodGet,
-			Path:        "/team/{team-id}/subscriptions/active",
+			Path:        "/teams/{team-id}/subscriptions/active",
 			Summary:     "team-subscriptions-active",
 			Description: "get active team subscriptions",
 			Tags:        []string{"Stripe", "Subscriptions", "Team"},
@@ -146,7 +146,7 @@ func BindStripeApi(api huma.API, appApi *Api) {
 		huma.Operation{
 			OperationID: "stripe-billing-portal-team",
 			Method:      http.MethodPost,
-			Path:        "/team/{team-id}/subscriptions/billing-portals",
+			Path:        "/teams/{team-id}/subscriptions/billing-portals",
 			Summary:     "create team billing-portal",
 			Description: "billing-portals",
 			Tags:        []string{"Subscriptions", "Billing Portal", "Team"},
@@ -165,7 +165,7 @@ func BindStripeApi(api huma.API, appApi *Api) {
 		huma.Operation{
 			OperationID: "create-checkout-session-team",
 			Method:      http.MethodPost,
-			Path:        "/team/{team-id}/subscriptions/checkout-session",
+			Path:        "/teams/{team-id}/subscriptions/checkout-session",
 			Summary:     "create team checkout session",
 			Description: "user create checkout session",
 			Tags:        []string{"Subscriptions", "Checkout Session", "Team"},
