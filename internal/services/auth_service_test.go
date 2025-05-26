@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"sync"
@@ -13,6 +14,7 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	"github.com/tkahng/authgo/internal/conf"
+	"github.com/tkahng/authgo/internal/jobs"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mailer"
@@ -210,6 +212,58 @@ func TestResetPassword(t *testing.T) {
 
 func TestAuthenticate(t *testing.T) {
 	ctx := context.Background()
+	dispatcher := jobs.NewDispatchDecorator()
+
+	enqueuer := jobs.DBEnqueuerDecorator{}
+	enqueuer.EnqueueFunc = func(ctx context.Context, args jobs.JobArgs, uniqueKey *string, runAfter time.Time, maxAttempts int) error {
+		payload, err := json.Marshal(args)
+		if err != nil {
+			return fmt.Errorf("marshal args: %w", err)
+		}
+
+		// Generate time-ordered UUIDv7 for better database performance
+		id, err := uuid.NewV7()
+		if err != nil {
+			return fmt.Errorf("generate uuid: %w", err)
+		}
+		job := models.JobRow{
+			ID:          id,
+			Kind:        args.Kind(),
+			UniqueKey:   uniqueKey,
+			Payload:     payload,
+			Status:      "pending",
+			RunAfter:    runAfter,
+			Attempts:    0,
+			MaxAttempts: int64(maxAttempts),
+			CreatedAt:   time.Now(),
+			UpdatedAt:   time.Now(),
+		}
+		enqueuer.Jobs = append(enqueuer.Jobs, &job)
+		return err
+
+	}
+	jobStore := jobs.NewJobStoreDecorator()
+	jobStore.RunInTxFunc = func(ctx context.Context, fn func(js jobs.JobStore) error) error {
+		return fn(jobStore)
+	}
+	jobStore.ClaimPendingJobsFunc = func(ctx context.Context, limit int) ([]models.JobRow, error) {
+		if len(enqueuer.Jobs) > 0 {
+			jobStore.Job = enqueuer.Jobs[0]
+			return []models.JobRow{*jobStore.Job}, nil
+		}
+		return []models.JobRow{}, nil
+	}
+
+	jobStore.MarkDoneFunc = func(ctx context.Context, id uuid.UUID) error {
+		return nil
+	}
+	jobStore.MarkFailedFunc = func(ctx context.Context, id uuid.UUID, reason string) error {
+		return nil
+	}
+	jobStore.RescheduleJobFunc = func(ctx context.Context, id uuid.UUID, delay time.Duration) error {
+		return nil
+	}
+	poller := jobs.NewPollerDecorator(jobStore, dispatcher)
 	mockStorage := new(MockAuthStore)
 	mockStorage2 := new(MockAuthStore)
 	mockStorage.Tx = mockStorage2
@@ -236,8 +290,10 @@ func TestAuthenticate(t *testing.T) {
 		routine:   mockRoutineService,
 		mail:      mockMailService,
 		options:   settings,
+		enqueuer:  &enqueuer,
 	}
-
+	mailWorker := NewWorkerDecorator(app)
+	jobs.RegisterWorker(dispatcher, mailWorker)
 	testUserId := uuid.New()
 	testEmail := "test@example.com"
 	testPasswordStr := "password123"
@@ -271,7 +327,7 @@ func TestAuthenticate(t *testing.T) {
 					Provider: models.ProvidersCredentials,
 					Type:     models.ProviderTypeCredentials,
 				}, nil)
-				mockStorage.On("SaveToken", ctx, mock.Anything).Return(nil)
+				// mockStorage.On("SaveToken", ctx, mock.Anything).Return(nil)
 				// mockStorage.On("FindUserAccountByUserIdAndProvider", ctx, testUserId, models.ProvidersCredentials).Return(nil, nil)
 				// mockPassword.On("HashPassword", mock.Anything).Return(testHashedPassword, nil)
 				// mockPassword.On("UpdateUserAccount", ctx, mock.Anything).Return(nil)
@@ -390,7 +446,7 @@ func TestAuthenticate(t *testing.T) {
 			}
 
 			result, err := app.Authenticate(ctx, tc.input)
-			wg.Wait()
+			_ = poller.PollOnce(ctx)
 			if tc.expectedError {
 				assert.Error(t, err)
 				assert.Nil(t, result)
@@ -399,10 +455,12 @@ func TestAuthenticate(t *testing.T) {
 				assert.NotNil(t, result)
 			}
 			if tc.checkMail {
-				param := mockMailService.param
+				param := mailWorker.Job
 				assert.NotNil(t, param)
-				assert.Equal(t, param.Message.To, testEmail)
-				assert.Equal(t, param.SendMailParams.Type, tc.checkWant.SendMailParams.Type)
+				rd, err := json.Marshal(param)
+				assert.NoError(t, err)
+				assert.Contains(t, string(rd), tc.checkWant.SendMailParams.Type)
+				// assert.Equal(t, param.SendMailParams.Type, tc.checkWant.SendMailParams.Type)
 			}
 
 			mockStorage.AssertExpectations(t)

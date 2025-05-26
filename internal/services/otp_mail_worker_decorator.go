@@ -8,6 +8,7 @@ import (
 )
 
 type WorkerDecorator[T jobs.JobArgs] struct {
+	Job      *jobs.Job[T]
 	Delegate jobs.Worker[T]
 	WorkFunc func(ctx context.Context, job *jobs.Job[T]) error
 }
@@ -21,6 +22,7 @@ func NewWorkerDecorator(authService AuthService) *WorkerDecorator[workers.OtpEma
 
 // Work implements jobs.Worker.
 func (w *WorkerDecorator[T]) Work(ctx context.Context, job *jobs.Job[T]) error {
+	w.Job = job
 	if w.WorkFunc == nil {
 		return w.Delegate.Work(ctx, job)
 	}

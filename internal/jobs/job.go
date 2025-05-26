@@ -184,11 +184,6 @@ func (p *Poller) pollOnce(ctx context.Context) error {
 	return p.Store.RunInTx(
 		ctx,
 		func(js JobStore) error {
-			// tx, txErr := p.Store.Begin(ctx)
-			// if txErr != nil {
-			// 	return fmt.Errorf("begin tx: %w", txErr)
-			// }
-			// defer tx.Rollback(ctx) // Always defer rollback; commit will override
 
 			// Claim only one job
 			jobs, err := js.ClaimPendingJobs(ctx, 1) // LIMIT to 1
@@ -217,19 +212,19 @@ func (p *Poller) pollOnce(ctx context.Context) error {
 			if dispatchErr != nil {
 				slog.ErrorContext(ctx, "there was an error dispatching the job. will attempt to reschedule or mark as failed", slog.Any("error", dispatchErr), slog.String("job_id", row.ID.String()))
 				if row.Attempts >= row.MaxAttempts {
-					if markFailedErr := p.Store.MarkFailed(ctx, row.ID, dispatchErr.Error()); markFailedErr != nil {
+					if markFailedErr := js.MarkFailed(ctx, row.ID, dispatchErr.Error()); markFailedErr != nil {
 						slog.ErrorContext(ctx, "Error marking job as failed (and rolling back)", slog.Any("error", markFailedErr), slog.String("job_id", row.ID.String()))
 						return fmt.Errorf("failed to mark job %s as failed: %w", row.ID, markFailedErr)
 					}
 				} else {
 					delay := time.Duration(math.Pow(2, float64(row.Attempts))) * time.Second
-					if rescheduleErr := p.Store.RescheduleJob(ctx, row.ID, delay); rescheduleErr != nil {
+					if rescheduleErr := js.RescheduleJob(ctx, row.ID, delay); rescheduleErr != nil {
 						slog.ErrorContext(ctx, "Error rescheduling job (and rolling back)", slog.Any("error", rescheduleErr), slog.String("job_id", row.ID.String()))
 						return fmt.Errorf("failed to reschedule job %s: %w", row.ID, rescheduleErr)
 					}
 				}
 			} else {
-				if markDoneErr := p.Store.MarkDone(ctx, row.ID); markDoneErr != nil {
+				if markDoneErr := js.MarkDone(ctx, row.ID); markDoneErr != nil {
 					slog.ErrorContext(ctx, "Error marking job as done (and rolling back)", slog.Any("error", markDoneErr), slog.String("job_id", row.ID.String()))
 					return fmt.Errorf("failed to mark job %s as done: %w", row.ID, markDoneErr)
 				}
@@ -241,7 +236,6 @@ func (p *Poller) pollOnce(ctx context.Context) error {
 }
 
 type JobStore interface {
-	Begin(ctx context.Context) (pgx.Tx, error)
 	ClaimPendingJobs(ctx context.Context, limit int) ([]models.JobRow, error)
 	MarkDone(ctx context.Context, id uuid.UUID) error
 	MarkFailed(ctx context.Context, id uuid.UUID, reason string) error
@@ -370,35 +364,6 @@ type Enqueuer interface {
 type DBEnqueuer struct {
 	db Db
 }
-
-type DBEnqueuerDecorator struct {
-	Args            []JobArgs
-	Delegate        Enqueuer
-	EnqueueFunc     func(ctx context.Context, args JobArgs, uniqueKey *string, runAfter time.Time, maxAttempts int) error
-	EnqueueManyFunc func(ctx context.Context, jobs ...EnqueueParams) error
-}
-
-// Enqueue implements Enqueuer.
-func (d *DBEnqueuerDecorator) Enqueue(ctx context.Context, args JobArgs, uniqueKey *string, runAfter time.Time, maxAttempts int) error {
-	d.Args = append(d.Args, args)
-	if d.EnqueueFunc != nil {
-		return d.EnqueueFunc(ctx, args, uniqueKey, runAfter, maxAttempts)
-	}
-	return d.Delegate.Enqueue(ctx, args, uniqueKey, runAfter, maxAttempts)
-}
-
-// EnqueueMany implements Enqueuer.
-func (d *DBEnqueuerDecorator) EnqueueMany(ctx context.Context, jobs ...EnqueueParams) error {
-	for _, job := range jobs {
-		d.Args = append(d.Args, job.Args)
-	}
-	if d.EnqueueManyFunc != nil {
-		return d.EnqueueManyFunc(ctx, jobs...)
-	}
-	return d.Delegate.EnqueueMany(ctx, jobs...)
-}
-
-var _ Enqueuer = &DBEnqueuerDecorator{}
 
 func WithTx(db Db) Enqueuer {
 	return &DBEnqueuer{db: db}
