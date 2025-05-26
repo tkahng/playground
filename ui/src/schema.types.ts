@@ -28,7 +28,7 @@ export type UserDetailWithRoles = {
   roles: RoleWithPermissions[] | null;
   permissions: {
     created_at: string;
-    description?: string;
+    description?: string | null;
     id: string;
     is_directly_assigned: boolean;
     name: string;
@@ -48,7 +48,8 @@ export type UserDetailWithRoles = {
 export type SubscriptionWithPrice =
   components["schemas"]["SubscriptionWithPrice"];
 
-export type ProductWithPrices = components["schemas"]["StripeProductWithData"];
+export type ProductWithPrices =
+  components["schemas"]["StripeProductWitPermission"];
 
 export type Price = components["schemas"]["Price"];
 
@@ -59,3 +60,11 @@ export type ErrorModel = components["schemas"]["ErrorModel"];
 export type TaskStatus = components["schemas"]["Task"]["status"];
 
 export type UserWithAccounts = components["schemas"]["UserWithAccounts"];
+
+export type TeamMember = components["schemas"]["TeamMember"];
+export type Team = components["schemas"]["Team"];
+
+export type TeamMemberState = {
+  currentMember: Team | null;
+  members: TeamMember[];
+};

@@ -517,7 +517,7 @@ export const getUserInfo = async (
   const accoutns = await getUserAccounts(token, id);
   const userPerms: {
     created_at: string;
-    description?: string;
+    description: string | null;
     id: string;
     is_directly_assigned: boolean;
     name: string;
@@ -693,7 +693,7 @@ export const getProductsWithPrices = async (token?: string) => {
 };
 
 export const getUserSubscriptions = async (token: string) => {
-  const { data, error } = await client.GET("/api/stripe/my-subscriptions", {
+  const { data, error } = await client.GET("/api/subscriptions/active", {
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -706,7 +706,7 @@ export const getUserSubscriptions = async (token: string) => {
 
 export const getCheckoutSession = async (token: string, id: string) => {
   const { data, error } = await client.GET(
-    "/api/stripe/checkout-session/{checkoutSessionId}",
+    "/api/subscriptions/checkout-session/{checkoutSessionId}",
     {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -731,7 +731,7 @@ export const createCheckoutSession = async (
   token: string,
   { price_id }: { price_id: string }
 ) => {
-  const { data, error } = await client.POST("/api/stripe/checkout-session", {
+  const { data, error } = await client.POST("/api/subscriptions/checkout-session", {
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -749,7 +749,7 @@ export const createCheckoutSession = async (
 };
 
 export const createBillingPortalSession = async (token: string) => {
-  const { data, error } = await client.POST("/api/stripe/billing-portal", {
+  const { data, error } = await client.POST("/api/subscriptions/billing-portals", {
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -813,13 +813,17 @@ export const confirmVerification = async (token: string, type: string) => {
 
 export const taskProjectList = async (
   token: string,
+  teamId: string,
   args: operations["task-project-list"]["parameters"]["query"]
 ) => {
-  const { data, error } = await client.GET("/api/task-projects", {
+  const { data, error } = await client.GET("/api/teams/{team-id}/task-projects", {
     headers: {
       Authorization: `Bearer ${token}`,
     },
     params: {
+      path: {
+        "team-id": teamId,
+      },
       query: args,
     },
   });
@@ -860,11 +864,17 @@ export const taskProjectGet = async (token: string, id: string) => {
 
 export const taskProjectCreate = async (
   token: string,
+  teamId: string,
   args: operations["task-project-create"]["requestBody"]["content"]["application/json"]
 ) => {
-  const { data, error } = await client.POST("/api/task-projects", {
+  const { data, error } = await client.POST("/api/teams/{team-id}/task-projects", {
     headers: {
       Authorization: `Bearer ${token}`,
+    },
+    params: {
+      path: {
+        "team-id": teamId,
+      },
     },
     body: args,
   });
@@ -879,11 +889,17 @@ export const taskProjectCreate = async (
 
 export const taskProjectCreateWithAi = async (
   token: string,
+  teamId: string,
   args: operations["task-project-create-with-ai"]["requestBody"]["content"]["application/json"]
 ) => {
-  const { data, error } = await client.POST("/api/task-projects/ai", {
+  const { data, error } = await client.POST("/api/teams/{team-id}/task-projects/ai", {
     headers: {
       Authorization: `Bearer ${token}`,
+    },
+    params: {
+      path: {
+        "team-id": teamId,
+      },
     },
     body: args,
   });
@@ -898,13 +914,18 @@ export const taskProjectCreateWithAi = async (
 
 export const taskList = async (
   token: string,
+  taskProjectId: string,
   args: operations["task-list"]["parameters"]["query"]
 ) => {
-  const { data, error } = await client.GET("/api/tasks", {
+  const { data, error } = await client.GET("/api/task-projects/{task-project-id}/tasks", {
     headers: {
       Authorization: `Bearer ${token}`,
     },
     params: {
+      path: {
+       "task-project-id": taskProjectId,
+      },
+
       query: args,
     },
   });
@@ -923,7 +944,7 @@ export const createTask = async (
   args: operations["task-project-tasks-create"]["requestBody"]["content"]["application/json"]
 ) => {
   const { data, error } = await client.POST(
-    "/api/task-projects/{task-project-id}/tasks",
+    "/api/task-projects/{task-project-id}",
     {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -1130,7 +1151,7 @@ export const adminStripeProduct = async (token: string, id: string) => {
     params: {
       path: { "product-id": id },
       query: {
-        expand: ["prices", "roles"],
+        expand: ["prices", "permissions"],
       },
     },
   });

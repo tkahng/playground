@@ -111,7 +111,7 @@ export default function ProductEditPage() {
             },
           },
         ]}
-        data={data?.roles || []}
+        data={data?.permissions || []}
       />
     </div>
   );
