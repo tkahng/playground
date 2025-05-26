@@ -371,6 +371,35 @@ type DBEnqueuer struct {
 	db Db
 }
 
+type DBEnqueuerDecorator struct {
+	Args            []JobArgs
+	Delegate        Enqueuer
+	EnqueueFunc     func(ctx context.Context, args JobArgs, uniqueKey *string, runAfter time.Time, maxAttempts int) error
+	EnqueueManyFunc func(ctx context.Context, jobs ...EnqueueParams) error
+}
+
+// Enqueue implements Enqueuer.
+func (d *DBEnqueuerDecorator) Enqueue(ctx context.Context, args JobArgs, uniqueKey *string, runAfter time.Time, maxAttempts int) error {
+	d.Args = append(d.Args, args)
+	if d.EnqueueFunc != nil {
+		return d.EnqueueFunc(ctx, args, uniqueKey, runAfter, maxAttempts)
+	}
+	return d.Delegate.Enqueue(ctx, args, uniqueKey, runAfter, maxAttempts)
+}
+
+// EnqueueMany implements Enqueuer.
+func (d *DBEnqueuerDecorator) EnqueueMany(ctx context.Context, jobs ...EnqueueParams) error {
+	for _, job := range jobs {
+		d.Args = append(d.Args, job.Args)
+	}
+	if d.EnqueueManyFunc != nil {
+		return d.EnqueueManyFunc(ctx, jobs...)
+	}
+	return d.Delegate.EnqueueMany(ctx, jobs...)
+}
+
+var _ Enqueuer = &DBEnqueuerDecorator{}
+
 func WithTx(db Db) Enqueuer {
 	return &DBEnqueuer{db: db}
 }

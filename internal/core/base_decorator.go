@@ -6,6 +6,7 @@ import (
 
 	"github.com/tkahng/authgo/internal/conf"
 	"github.com/tkahng/authgo/internal/database"
+	"github.com/tkahng/authgo/internal/jobs"
 	"github.com/tkahng/authgo/internal/services"
 	"github.com/tkahng/authgo/internal/stores"
 	"github.com/tkahng/authgo/internal/tools/filesystem"
@@ -19,7 +20,7 @@ func NewDecorator(ctx context.Context, cfg conf.EnvConfig, pool database.Dbx) *B
 	fs := filesystem.NewMockFileSystem(cfg.StorageConfig)
 
 	l := logger.GetDefaultLogger(slog.LevelInfo)
-
+	enqueuer := jobs.NewDBEnqueuer(pool)
 	var mail mailer.Mailer = &mailer.LogMailer{}
 	authMailService := services.NewMailService(mail)
 	userStore := stores.NewPostgresUserStore(pool)
@@ -50,6 +51,7 @@ func NewDecorator(ctx context.Context, cfg conf.EnvConfig, pool database.Dbx) *B
 		passwordService,
 		routine,
 		l,
+		enqueuer,
 	)
 	checkerStore := stores.NewPostgresConstraintStore(pool)
 	checker := services.NewConstraintCheckerService(

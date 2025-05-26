@@ -12,19 +12,19 @@ type WorkerDecorator[T jobs.JobArgs] struct {
 	WorkFunc func(ctx context.Context, job *jobs.Job[T]) error
 }
 
+func NewWorkerDecorator(authService AuthService) *WorkerDecorator[workers.OtpEmailJobArgs] {
+	worker := workers.NewOtpEmailWorker(authService.Store(), authService)
+	return &WorkerDecorator[workers.OtpEmailJobArgs]{
+		Delegate: worker,
+	}
+}
+
 // Work implements jobs.Worker.
 func (w *WorkerDecorator[T]) Work(ctx context.Context, job *jobs.Job[T]) error {
-
+	if w.WorkFunc == nil {
+		return w.Delegate.Work(ctx, job)
+	}
 	return w.WorkFunc(ctx, job)
 }
 
 var _ jobs.Worker[workers.OtpEmailJobArgs] = (*WorkerDecorator[workers.OtpEmailJobArgs])(nil)
-
-// Work implements jobs.Worker.
-func RegisterMailWorker(
-	dispatcher jobs.Dispatcher,
-	authService AuthService,
-) {
-	worker := workers.NewOtpEmailWorker(authService.Store(), authService)
-	jobs.RegisterWorker(dispatcher, worker)
-}

@@ -8,6 +8,7 @@ import (
 	"github.com/tkahng/authgo/internal/auth/oauth"
 	"github.com/tkahng/authgo/internal/conf"
 	"github.com/tkahng/authgo/internal/database"
+	"github.com/tkahng/authgo/internal/jobs"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mailer"
@@ -45,6 +46,7 @@ func NewAuthServiceDecorator(
 	password PasswordService,
 	workerService RoutineService,
 	logger *slog.Logger,
+	enqueuer jobs.Enqueuer,
 ) AuthService {
 	authService := &AuthServiceDecorator{}
 	authService.Delegate = &BaseAuthService{
@@ -55,6 +57,7 @@ func NewAuthServiceDecorator(
 		password:  password,
 		options:   opts,
 		logger:    logger,
+		enqueuer:  enqueuer,
 	}
 	return authService
 }
