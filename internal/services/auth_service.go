@@ -17,7 +17,6 @@ import (
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mailer"
 	"github.com/tkahng/authgo/internal/tools/security"
-	"github.com/tkahng/authgo/internal/workers"
 	"golang.org/x/oauth2"
 )
 
@@ -777,31 +776,31 @@ func (app *BaseAuthService) Authenticate(ctx context.Context, params *shared.Aut
 			return nil, fmt.Errorf("user not created")
 		}
 		if user.EmailVerifiedAt == nil {
-			err = app.enqueuer.Enqueue(
-				ctx,
-				workers.OtpEmailJobArgs{
-					Type:   mailer.EmailTypeVerify,
-					UserID: user.ID,
-				},
-				nil,
-				time.Now(),
-				1,
-			)
-			// app.routine.FireAndForget(
-			// 	func() {
-			// 		ctx := context.Background()
-			// 		fmt.Println("User is first login, sending verification email")
-			// 		err := app.SendOtpEmail(EmailTypeVerify, ctx, user)
-			// 		if err != nil {
-			// 			app.logger.Error(
-			// 				"error sending verification email",
-			// 				slog.Any("error", err),
-			// 				slog.String("email", user.Email),
-			// 				slog.String("userId", user.ID.String()),
-			// 			)
-			// 		}
+			// err = app.enqueuer.Enqueue(
+			// 	ctx,
+			// 	workers.OtpEmailJobArgs{
+			// 		Type:   mailer.EmailTypeVerify,
+			// 		UserID: user.ID,
 			// 	},
+			// 	nil,
+			// 	time.Now(),
+			// 	1,
 			// )
+			app.routine.FireAndForget(
+				func() {
+					ctx := context.Background()
+					fmt.Println("User is first login, sending verification email")
+					err := app.SendOtpEmail(mailer.EmailTypeVerify, ctx, user)
+					if err != nil {
+						app.logger.Error(
+							"error sending verification email",
+							slog.Any("error", err),
+							slog.String("email", user.Email),
+							slog.String("userId", user.ID.String()),
+						)
+					}
+				},
+			)
 		}
 		return user, nil
 	}
@@ -847,31 +846,31 @@ func (app *BaseAuthService) Authenticate(ctx context.Context, params *shared.Aut
 		}
 		if reset {
 			fmt.Println("User has a credentials account, sending security password reset email")
-			err = app.enqueuer.Enqueue(
-				ctx,
-				workers.OtpEmailJobArgs{
-					Type:   mailer.EmailTypeSecurityPasswordReset,
-					UserID: user.ID,
-				},
-				nil,
-				time.Now(),
-				1,
-			)
-			// app.routine.FireAndForget(
-			// 	func() {
-			// 		ctx := context.Background()
-			// 		fmt.Println("sending security password reset email")
-			// 		err := app.SendOtpEmail(mailer.EmailTypeSecurityPasswordReset, ctx, user)
-			// 		if err != nil {
-			// 			app.logger.Error(
-			// 				"error sending security password reset email",
-			// 				slog.Any("error", err),
-			// 				slog.String("email", user.Email),
-			// 				slog.String("userId", user.ID.String()),
-			// 			)
-			// 		}
+			// err = app.enqueuer.Enqueue(
+			// 	ctx,
+			// 	workers.OtpEmailJobArgs{
+			// 		Type:   mailer.EmailTypeSecurityPasswordReset,
+			// 		UserID: user.ID,
 			// 	},
+			// 	nil,
+			// 	time.Now(),
+			// 	1,
 			// )
+			app.routine.FireAndForget(
+				func() {
+					ctx := context.Background()
+					fmt.Println("sending security password reset email")
+					err := app.SendOtpEmail(mailer.EmailTypeSecurityPasswordReset, ctx, user)
+					if err != nil {
+						app.logger.Error(
+							"error sending security password reset email",
+							slog.Any("error", err),
+							slog.String("email", user.Email),
+							slog.String("userId", user.ID.String()),
+						)
+					}
+				},
+			)
 		}
 		return user, nil
 	}
