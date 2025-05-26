@@ -6,6 +6,7 @@ import (
 
 	"github.com/tkahng/authgo/internal/conf"
 	"github.com/tkahng/authgo/internal/database"
+	"github.com/tkahng/authgo/internal/jobs"
 	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/services"
 	"github.com/tkahng/authgo/internal/stores"
@@ -144,14 +145,21 @@ func NewBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 	} else {
 		mail = &mailer.LogMailer{}
 	}
+
+	enqueuer := jobs.NewDBEnqueuer(pool)
+
 	userStore := stores.NewPostgresUserStore(pool)
 	userService := services.NewUserService(userStore)
+
 	userAccountStore := stores.NewPostgresUserAccountStore(pool)
 	userAccountService := services.NewUserAccountService(userAccountStore)
+
 	rbac := stores.NewPostgresRBACStore(pool)
 	rbacService := services.NewRBACService(rbac)
+
 	taskStore := stores.NewTaskStore(pool)
 	taskService := services.NewTaskService(taskStore)
+
 	paymentStore := stores.NewPostgresPaymentStore(pool)
 	paymentClient := payment.NewPaymentClient(cfg.StripeConfig)
 	paymentService := services.NewPaymentService(
@@ -161,8 +169,9 @@ func NewBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 
 	tokenService := services.NewJwtService()
 	passwordService := services.NewPasswordService()
+
 	authStore := stores.NewPostgresAuthStore(pool)
-	workerService := services.NewRoutineService()
+	routineService := services.NewRoutineService()
 	authMailService := services.NewMailService(mail)
 	authService := services.NewAuthService(
 		settings,
@@ -170,8 +179,9 @@ func NewBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 		authMailService,
 		tokenService,
 		passwordService,
-		workerService,
+		routineService,
 		l,
+		enqueuer,
 	)
 	checkerStore := stores.NewPostgresConstraintStore(pool)
 	checker := services.NewConstraintCheckerService(

@@ -10,6 +10,7 @@ import (
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/authgo/internal/tools/mailer"
 )
 
 type AuthServiceDecorator struct {
@@ -28,8 +29,8 @@ type AuthServiceDecorator struct {
 	HandleVerificationTokenFunc    func(ctx context.Context, token string) error
 	SignoutFunc                    func(ctx context.Context, token string) error
 	ResetPasswordFunc              func(ctx context.Context, userId uuid.UUID, oldPassword string, newPassword string) error
-	SendOtpEmailFunc               func(emailType EmailType, ctx context.Context, user *models.User) error
-	VerifyAndParseOtpTokenFunc     func(ctx context.Context, emailType EmailType, token string) (*shared.OtpClaims, error)
+	SendOtpEmailFunc               func(emailType mailer.EmailType, ctx context.Context, user *models.User) error
+	VerifyAndParseOtpTokenFunc     func(ctx context.Context, emailType mailer.EmailType, token string) (*shared.OtpClaims, error)
 	VerifyStateTokenFunc           func(ctx context.Context, token string) (*shared.ProviderStateClaims, error)
 	CreateAndPersistStateTokenFunc func(ctx context.Context, payload *shared.ProviderStatePayload) (string, error)
 	CreateAuthTokensFromEmailFunc  func(ctx context.Context, email string) (*shared.UserInfoTokens, error)
@@ -189,7 +190,7 @@ func (a *AuthServiceDecorator) ResetPassword(ctx context.Context, userId uuid.UU
 }
 
 // SendOtpEmail implements AuthService.
-func (a *AuthServiceDecorator) SendOtpEmail(emailType EmailType, ctx context.Context, user *models.User) error {
+func (a *AuthServiceDecorator) SendOtpEmail(emailType mailer.EmailType, ctx context.Context, user *models.User) error {
 	if a.SendOtpEmailFunc != nil {
 		return a.SendOtpEmailFunc(emailType, ctx, user)
 	}
@@ -205,7 +206,7 @@ func (a *AuthServiceDecorator) Signout(ctx context.Context, token string) error 
 }
 
 // VerifyAndParseOtpToken implements AuthService.
-func (a *AuthServiceDecorator) VerifyAndParseOtpToken(ctx context.Context, emailType EmailType, token string) (*shared.OtpClaims, error) {
+func (a *AuthServiceDecorator) VerifyAndParseOtpToken(ctx context.Context, emailType mailer.EmailType, token string) (*shared.OtpClaims, error) {
 	if a.VerifyAndParseOtpTokenFunc != nil {
 		return a.VerifyAndParseOtpTokenFunc(ctx, emailType, token)
 	}

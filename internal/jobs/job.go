@@ -73,7 +73,7 @@ func NewDispatcher() Dispatcher {
 	}
 }
 
-func RegisterWorker[T JobArgs](d *dispatcher, worker Worker[T]) {
+func RegisterWorker[T JobArgs](d Dispatcher, worker Worker[T]) {
 	var zero T
 	kind := zero.Kind()
 	d.SetHandler(

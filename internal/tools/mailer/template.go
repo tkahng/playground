@@ -9,6 +9,50 @@ import (
 	"strings"
 )
 
+type EmailType = string
+
+const (
+	EmailTypeVerify                EmailType = "verify"
+	EmailTypeConfirmPasswordReset  EmailType = "confirm-password-reset"
+	EmailTypeSecurityPasswordReset EmailType = "security-password-reset"
+	EmailTypeTeamInvite            EmailType = "team-invite"
+	EmailTypeInvite                EmailType = "invite"
+)
+
+var (
+	TeamEmailPathMap = map[EmailType]SendMailParams{
+		EmailTypeTeamInvite: {
+			Type:         EmailTypeTeamInvite,
+			Subject:      "%s - You are invited to join a team",
+			TemplatePath: "/team-invitation",
+			Template:     DefaultTeamInviteMail,
+		},
+	}
+)
+
+var (
+	EmailPathMap = map[EmailType]SendMailParams{
+		EmailTypeVerify: {
+			Type:         EmailTypeVerify,
+			Subject:      "%s - Verify your email address",
+			TemplatePath: "/api/auth/verify",
+			Template:     DefaultConfirmationMail,
+		},
+		EmailTypeConfirmPasswordReset: {
+			Type:         EmailTypeConfirmPasswordReset,
+			Subject:      "%s - Confirm your password reset",
+			TemplatePath: "/password-reset",
+			Template:     DefaultRecoveryMail,
+		},
+		EmailTypeSecurityPasswordReset: {
+			Type:         EmailTypeSecurityPasswordReset,
+			Subject:      "%s - Reset your password",
+			TemplatePath: "/password-reset",
+			Template:     DefaultSecurityPasswordResetMail,
+		},
+	}
+)
+
 type SendMailParams struct {
 	Subject      string
 	Type         string

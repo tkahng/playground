@@ -281,7 +281,7 @@ func TestAuthenticate(t *testing.T) {
 			checkMail:     true,
 			checkWant: &mailer.AllEmailParams{
 				SendMailParams: &mailer.SendMailParams{
-					Type: string(EmailTypeVerify),
+					Type: string(mailer.EmailTypeVerify),
 				},
 				Message: &mailer.Message{
 					From:    settings.Meta.SenderAddress,
@@ -365,7 +365,7 @@ func TestAuthenticate(t *testing.T) {
 			checkMail:     false,
 			checkWant: &mailer.AllEmailParams{
 				SendMailParams: &mailer.SendMailParams{
-					Type: string(EmailTypeSecurityPasswordReset),
+					Type: string(mailer.EmailTypeSecurityPasswordReset),
 				},
 				Message: &mailer.Message{
 					From: settings.Meta.SenderAddress,
