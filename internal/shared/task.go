@@ -137,7 +137,7 @@ type TaskListParams struct {
 }
 
 type TeamTaskListParams struct {
-	ProjectID string `path:"project-id" json:"project_id" required:"true" format:"uuid"`
+	ProjectID string `path:"task-project-id" json:"project_id" required:"true" format:"uuid"`
 	PaginatedInput
 	TeamTaskListFilter
 	SortParams

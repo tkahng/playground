@@ -16,7 +16,24 @@ func BindTeamsApi(api huma.API, appApi *Api) {
 	checkTeamDelete := middleware.TeamCanDeleteMiddleware(api, appApi.app)
 	emailVerified := middleware.EmailVerifiedMiddleware(api)
 	teamsGroup := huma.NewGroup(api)
-
+	// get team members
+	//  /api/team-members
+	huma.Register(
+		teamsGroup,
+		huma.Operation{
+			OperationID: "get-team-members",
+			Method:      http.MethodGet,
+			Path:        "/team-members",
+			Summary:     "get-team-members",
+			Description: "get all team members",
+			Tags:        []string{"Teams"},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+			Errors: []int{http.StatusInternalServerError, http.StatusBadRequest},
+		},
+		appApi.GetUserTeamMembers,
+	)
 	// check team slug
 	huma.Register(
 		teamsGroup,
