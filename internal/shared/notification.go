@@ -14,6 +14,7 @@ type Notification struct {
 	UpdatedAt    time.Time      `db:"updated_at" json:"updated_at"`
 	ReadAt       *time.Time     `db:"read_at" json:"read_at,omitempty"`
 	Channel      string         `db:"channel" json:"channel"`
+	Payload      []byte         `db:"payload" json:"payload"`
 	UserID       *uuid.UUID     `db:"user_id" json:"user_id,omitempty"`
 	TeamMemberID *uuid.UUID     `db:"team_member_id" json:"team_member_id,omitempty"`
 	TeamID       *uuid.UUID     `db:"team_id" json:"team_id,omitempty"`

@@ -6,6 +6,7 @@ CREATE TABLE "notifications" (
     "updated_at" timestamptz NOT NULL DEFAULT now(),
     "read_at" timestamptz,
     "channel" text not null,
+    "payload" jsonb not null,
     "user_id" uuid,
     "team_member_id" uuid,
     "team_id" uuid,
