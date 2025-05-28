@@ -75,7 +75,7 @@ export function CreateProjectTaskDialog({
       });
       toast.success("Task created successfully");
     },
-    onError: (error: any) => {
+    onError: (error) => {
       toast.error(`Failed to create task: ${error.message}`);
     },
   });

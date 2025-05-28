@@ -82,7 +82,7 @@ export default function PermissionEdit() {
     if (permission) {
       form.reset(permission);
     }
-  }, [permission, form.reset]);
+  }, [permission, form.reset, form]);
   if (!user) {
     navigate(RouteMap.SIGNIN);
   }

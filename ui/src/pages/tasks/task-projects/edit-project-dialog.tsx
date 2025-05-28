@@ -38,7 +38,7 @@ const formSchema = z.object({
   name: z.string().min(1),
   description: z.string().min(0).optional(),
   status: z.enum(["todo", "in_progress", "done"]),
-  order: z.number(),
+  rank: z.number(),
 });
 
 export function ProjectEditDialog({
@@ -49,7 +49,7 @@ export function ProjectEditDialog({
     name: string;
     description: string;
     status: TaskStatus;
-    order: number;
+    rank: number;
   };
 }) {
   const { user, checkAuth } = useAuthProvider();
@@ -62,7 +62,7 @@ export function ProjectEditDialog({
       name: project.name,
       description: project.description,
       status: project.status,
-      order: project.order,
+      rank: project.rank,
     },
   });
 
@@ -84,7 +84,7 @@ export function ProjectEditDialog({
       });
       toast.success("Project updated successfully");
     },
-    onError: (error: any) => {
+    onError: (error) => {
       toast.error(`Failed to update project: ${error.message}`);
     },
   });
@@ -167,15 +167,15 @@ export function ProjectEditDialog({
                 />
                 <FormField
                   control={form.control}
-                  name="order"
+                  name="rank"
                   render={({ field }) => (
                     <FormItem hidden>
-                      <FormLabel>Order</FormLabel>
+                      <FormLabel>Rank</FormLabel>
                       <FormControl>
                         <Input
                           {...field}
-                          placeholder="Project Order"
-                          defaultValue={project.order}
+                          placeholder="Project Rank"
+                          defaultValue={project.rank}
                         />
                       </FormControl>
                       <FormMessage />

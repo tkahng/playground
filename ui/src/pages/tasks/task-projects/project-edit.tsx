@@ -19,7 +19,7 @@ export default function ProjectEdit() {
         ...data,
         tasks: data.tasks?.map((task) => ({
           name: task.name,
-          order: task.order,
+          rank: task.rank,
           columnId: task.status as "todo" | "done" | "in_progress",
           content: task.description,
           id: task.id,
@@ -32,24 +32,16 @@ export default function ProjectEdit() {
       if (!user?.tokens.access_token || !projectId) {
         throw new Error("Missing access token or project ID");
       }
-      try {
-        const project = await taskProjectGet(
-          user.tokens.access_token,
-          projectId
-        );
-        const tasks = await taskList(user.tokens.access_token, {
-          project_id: projectId,
-          sort_by: "order",
-          sort_order: "asc",
-          per_page: 50,
-        });
-        return {
-          ...project,
-          tasks: tasks.data,
-        };
-      } catch (error) {
-        throw error;
-      }
+      const project = await taskProjectGet(user.tokens.access_token, projectId);
+      const tasks = await taskList(user.tokens.access_token, projectId, {
+        sort_by: "order",
+        sort_order: "asc",
+        per_page: 50,
+      });
+      return {
+        ...project,
+        tasks: tasks.data,
+      };
     },
   });
 
@@ -66,7 +58,7 @@ export default function ProjectEdit() {
             description: project.description || "",
             id: project.id,
             name: project.name,
-            order: project.order,
+            rank: project.rank,
             status: project.status as TaskStatus,
           }}
         />
