@@ -190,3 +190,48 @@ func (api *Api) GetTeam(
 		Body: shared.FromTeamModel(team),
 	}, nil
 }
+
+type SetCurrentTeamInput struct {
+	TeamID string `json:"team_id" required:"true"`
+}
+
+func (api *Api) SetCurrentTeam(
+	ctx context.Context,
+	input *struct {
+		Body SetCurrentTeamInput `json:"body" required:"true"`
+	},
+) (
+	*struct {
+		Body struct {
+			Success bool `json:"success"`
+		}
+	},
+	error,
+) {
+	info := contextstore.GetContextUserInfo(ctx)
+	if info == nil {
+		return nil, huma.Error401Unauthorized("unauthorized")
+	}
+	passedTeamID, err := uuid.Parse(input.Body.TeamID)
+	if err != nil {
+		return nil, huma.Error400BadRequest("invalid team ID")
+	}
+	teamMember, err := api.app.Team().SetActiveTeam(ctx, info.User.ID, passedTeamID)
+	if err != nil {
+		return nil, err
+	}
+	if teamMember == nil {
+		return nil, huma.Error404NotFound("team not found")
+	}
+	return &struct {
+		Body struct {
+			Success bool `json:"success"`
+		}
+	}{
+		Body: struct {
+			Success bool `json:"success"`
+		}{
+			Success: true,
+		},
+	}, nil
+}
