@@ -1,11 +1,12 @@
 // react context for TeamMemberState
 import { useLocalStorage } from "@/hooks/use-local-storage";
-import { TeamMemberState } from "@/schema.types";
+import { TeamMember } from "@/schema.types";
 import React, { createContext, useContext } from "react";
 
 type TeamMemberContextType = {
-  state: TeamMemberState;
-  setCurrentMember: (member: TeamMemberState["currentMember"]) => void;
+  currentMember: TeamMember | null;
+  members: TeamMember[];
+  setCurrentMember: (member: TeamMember | null) => void;
 };
 
 const TeamMemberContext = createContext<TeamMemberContextType | undefined>(
@@ -17,23 +18,20 @@ export const TeamMemberProvider = ({
 }: {
   children: React.ReactNode;
 }) => {
-  const [state, setState] = useLocalStorage<TeamMemberState>(
-    "teamMemberState",
-    {
-      currentMember: null,
-      members: [],
-    }
+  const [member, setMember] = useLocalStorage<TeamMember | null>(
+    "currentMember",
+    null
   );
-
-  const setCurrentMember = (member: TeamMemberState["currentMember"]) => {
-    setState({
-      ...state,
-      currentMember: member,
-    });
-  };
+  const [members, setMembers] = useLocalStorage<TeamMember[]>(
+    "teamMembers",
+    []
+  );
+  const values = React.useMemo(() => {
+    return {};
+  }, []);
 
   return (
-    <TeamMemberContext.Provider value={{ state, setCurrentMember }}>
+    <TeamMemberContext.Provider value={values}>
       {children}
     </TeamMemberContext.Provider>
   );
