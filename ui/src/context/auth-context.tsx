@@ -1,3 +1,4 @@
+import { useLocalStorage } from "@/hooks/use-local-storage";
 import { refreshToken, signIn } from "@/lib/queries";
 import { SigninInput, SignupInput, UserInfoTokens } from "@/schema.types";
 import { jwtDecode } from "jwt-decode";
@@ -36,7 +37,10 @@ export const AuthContext = React.createContext<AuthContextType>({
 export const AuthProvider: React.FC<{
   children: React.ReactNode;
 }> = ({ children }) => {
-  const [user, setUser] = React.useState<UserInfoTokens | null>(null);
+  const [user, setUser] = useLocalStorage<UserInfoTokens | null>(
+    "currentMember",
+    null
+  );
   const values = React.useMemo(() => {
     const signUp = async (args: SignupInput): Promise<UserInfoTokens> => {
       const data = await signIn(args);
@@ -103,7 +107,7 @@ export const AuthProvider: React.FC<{
       getOrRefreshToken,
       checkAuth,
     };
-  }, [user]);
+  }, [setUser, user]);
 
   return <AuthContext.Provider value={values}>{children}</AuthContext.Provider>;
 };

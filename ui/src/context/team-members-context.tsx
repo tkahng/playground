@@ -5,13 +5,15 @@ import React, { createContext, useContext } from "react";
 
 type TeamMemberContextType = {
   currentMember: TeamMember | null;
-  members: TeamMember[];
-  setCurrentMember: (member: TeamMember | null) => void;
+  setMember: (member: TeamMember | null) => void;
 };
 
-const TeamMemberContext = createContext<TeamMemberContextType | undefined>(
-  undefined
-);
+const TeamMemberContext = createContext<TeamMemberContextType>({
+  currentMember: null,
+  setMember: () => {
+    throw new Error("setMember function is not implemented");
+  },
+});
 
 export const TeamMemberProvider = ({
   children,
@@ -22,13 +24,13 @@ export const TeamMemberProvider = ({
     "currentMember",
     null
   );
-  const [members, setMembers] = useLocalStorage<TeamMember[]>(
-    "teamMembers",
-    []
-  );
+
   const values = React.useMemo(() => {
-    return {};
-  }, []);
+    return {
+      currentMember: member,
+      setMember,
+    };
+  }, [member, setMember]);
 
   return (
     <TeamMemberContext.Provider value={values}>

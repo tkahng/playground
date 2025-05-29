@@ -1307,3 +1307,15 @@ export const permissionsList = async () => {
   }
   return data;
 };
+
+export const getUserTeamMembers = async (token: string) => {
+  const { data, error } = await client.GET("/api/team-members", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  if (error) {
+    throw error;
+  }
+  return data;
+};
