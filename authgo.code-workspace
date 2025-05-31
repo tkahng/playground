@@ -5,6 +5,10 @@
       "path": "internal"
     },
     {
+      "name": "ui",
+      "path": "ui"
+    },
+    {
       "name": "cmd",
       "path": "cmd"
     },
