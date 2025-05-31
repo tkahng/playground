@@ -118,11 +118,7 @@ type TeamMemberOutput struct {
 
 func (api *Api) GetActiveTeamMember(
 	ctx context.Context,
-	input *struct {
-		Body struct {
-			IncludeMembers bool `json:"include_members"`
-		} `json:"body" required:"true"`
-	},
+	input *struct{},
 ) (
 	*TeamMemberOutput,
 	error,

@@ -48,10 +48,6 @@ func BindTeamsApi(api huma.API, appApi *Api) {
 			Security: []map[string][]string{{
 				shared.BearerAuthSecurityKey: {},
 			}},
-			Middlewares: huma.Middlewares{
-				teamInfoMiddleware,
-				requireMember,
-			},
 		},
 		appApi.GetActiveTeamMember,
 	)
