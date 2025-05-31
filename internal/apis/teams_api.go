@@ -112,6 +112,37 @@ func (api *Api) GetUserTeamMembers(
 
 }
 
+type TeamMemberOutput struct {
+	Body *shared.TeamMember `json:"body"`
+}
+
+func (api *Api) GetUserLatestTeam(
+	ctx context.Context,
+	input *struct {
+		Body struct {
+			IncludeMembers bool `json:"include_members"`
+		} `json:"body" required:"true"`
+	},
+) (
+	*TeamMemberOutput,
+	error,
+) {
+	info := contextstore.GetContextUserInfo(ctx)
+	if info == nil {
+		return nil, huma.Error401Unauthorized("unauthorized")
+	}
+	team, err := api.app.Team().GetActiveTeamMember(ctx, info.User.ID)
+	if err != nil {
+		return nil, err
+	}
+	if team == nil {
+		return nil, huma.Error404NotFound("team not found")
+	}
+	return &TeamMemberOutput{
+		Body: shared.FromTeamMemberModel(team),
+	}, nil
+}
+
 type UpdateTeamInput struct {
 	TeamID string `path:"team-id" required:"true"`
 	Body   struct {
@@ -216,7 +247,7 @@ func (api *Api) SetCurrentTeam(
 	if err != nil {
 		return nil, huma.Error400BadRequest("invalid team ID")
 	}
-	teamMember, err := api.app.Team().SetActiveTeam(ctx, info.User.ID, passedTeamID)
+	teamMember, err := api.app.Team().SetActiveTeamMember(ctx, info.User.ID, passedTeamID)
 	if err != nil {
 		return nil, err
 	}

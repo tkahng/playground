@@ -13,8 +13,8 @@ import (
 
 type TeamService interface {
 	Store() TeamStore
-	SetActiveTeam(ctx context.Context, userId uuid.UUID, teamId uuid.UUID) (*models.TeamMember, error)
-	GetActiveTeam(ctx context.Context, userId uuid.UUID) (*models.TeamMember, error)
+	SetActiveTeamMember(ctx context.Context, userId uuid.UUID, teamId uuid.UUID) (*models.TeamMember, error)
+	GetActiveTeamMember(ctx context.Context, userId uuid.UUID) (*models.TeamMember, error)
 	FindTeamInfo(ctx context.Context, teamId, userId uuid.UUID) (*shared.TeamInfo, error)
 	FindLatestTeamInfo(ctx context.Context, userId uuid.UUID) (*shared.TeamInfo, error)
 	AddMember(ctx context.Context, teamId, userId uuid.UUID, role models.TeamMemberRole, hasBillingAccess bool) (*models.TeamMember, error)
@@ -189,8 +189,8 @@ func (t *teamService) Store() TeamStore {
 	return t.teamStore
 }
 
-// SetActiveTeam implements TeamService.
-func (t *teamService) SetActiveTeam(ctx context.Context, teamId, userId uuid.UUID) (*models.TeamMember, error) {
+// SetActiveTeamMember impleements TeamService.
+func (t *teamService) SetActiveTeamMember(ctx context.Context, teamId, userId uuid.UUID) (*models.TeamMember, error) {
 	member, err := t.teamStore.FindTeamMemberByTeamAndUserId(ctx, teamId, userId)
 	if err != nil {
 		return nil, err
@@ -205,7 +205,7 @@ func (t *teamService) SetActiveTeam(ctx context.Context, teamId, userId uuid.UUI
 	return member, nil
 }
 
-func (t *teamService) GetActiveTeam(ctx context.Context, userId uuid.UUID) (*models.TeamMember, error) {
+func (t *teamService) GetActiveTeamMember(ctx context.Context, userId uuid.UUID) (*models.TeamMember, error) {
 	team, err := t.teamStore.FindLatestTeamMemberByUserID(ctx, userId)
 	if err != nil {
 		return nil, err

@@ -85,8 +85,8 @@ func (m *mockTeamService) FindTeamInfo(ctx context.Context, teamId uuid.UUID, us
 	return info, args.Error(1)
 }
 
-// GetActiveTeam implements TeamService.
-func (m *mockTeamService) GetActiveTeam(ctx context.Context, userId uuid.UUID) (*models.TeamMember, error) {
+// GetActiveTeamMember implements TeamService.
+func (m *mockTeamService) GetActiveTeamMember(ctx context.Context, userId uuid.UUID) (*models.TeamMember, error) {
 	args := m.Called(ctx, userId)
 	var member *models.TeamMember
 	if args.Get(0) != nil {
@@ -101,8 +101,8 @@ func (m *mockTeamService) RemoveMember(ctx context.Context, teamId uuid.UUID, us
 	return args.Error(0)
 }
 
-// SetActiveTeam implements TeamService.
-func (m *mockTeamService) SetActiveTeam(ctx context.Context, userId uuid.UUID, teamId uuid.UUID) (*models.TeamMember, error) {
+// SetActiveTeamMember implements TeamService.
+func (m *mockTeamService) SetActiveTeamMember(ctx context.Context, userId uuid.UUID, teamId uuid.UUID) (*models.TeamMember, error) {
 	args := m.Called(ctx, userId, teamId)
 	var member *models.TeamMember
 	if args.Get(0) != nil {
