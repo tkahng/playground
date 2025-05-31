@@ -116,7 +116,7 @@ type TeamMemberOutput struct {
 	Body *shared.TeamMember `json:"body"`
 }
 
-func (api *Api) GetUserLatestTeam(
+func (api *Api) GetActiveTeamMember(
 	ctx context.Context,
 	input *struct {
 		Body struct {

@@ -34,6 +34,27 @@ func BindTeamsApi(api huma.API, appApi *Api) {
 		},
 		appApi.GetUserTeamMembers,
 	)
+
+	huma.Register(
+		teamsGroup,
+		huma.Operation{
+			OperationID: "get-active-team-member",
+			Method:      http.MethodGet,
+			Path:        "/team-members/active",
+			Summary:     "get-active-team-member",
+			Description: "get the active team member by team ID and user ID",
+			Tags:        []string{"Teams"},
+			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+			Middlewares: huma.Middlewares{
+				teamInfoMiddleware,
+				requireMember,
+			},
+		},
+		appApi.GetActiveTeamMember,
+	)
 	// check team slug
 	huma.Register(
 		teamsGroup,
@@ -138,4 +159,5 @@ func BindTeamsApi(api huma.API, appApi *Api) {
 		},
 		appApi.DeleteTeam,
 	)
+
 }
