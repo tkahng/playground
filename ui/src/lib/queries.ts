@@ -1319,3 +1319,15 @@ export const getUserTeamMembers = async (token: string) => {
   }
   return data;
 };
+
+export const getActiveTeamMember = async (token: string) => {
+  const { data, error } = await client.GET("/api/team-members/active", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  if (error) {
+    throw error;
+  }
+  return data;
+};
