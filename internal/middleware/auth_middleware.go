@@ -12,6 +12,22 @@ import (
 	"github.com/tkahng/authgo/internal/shared"
 )
 
+func EmailVerifiedMiddleware(api huma.API) func(ctx huma.Context, next func(huma.Context)) {
+	return func(ctx huma.Context, next func(huma.Context)) {
+		rawCtx := ctx.Context()
+		userInfo := contextstore.GetContextUserInfo(rawCtx)
+		if userInfo == nil {
+			huma.WriteErr(api, ctx, http.StatusUnauthorized, "unauthorized", nil)
+			return
+		}
+		if userInfo.User.EmailVerifiedAt == nil {
+			huma.WriteErr(api, ctx, http.StatusUnauthorized, "email not verified", nil)
+			return
+		}
+		next(ctx)
+	}
+}
+
 // Auth creates a middleware that will authorize requests based on the required scopes for the operation.
 func AuthMiddleware(api huma.API, app core.App) func(ctx huma.Context, next func(huma.Context)) {
 
