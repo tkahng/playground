@@ -17,6 +17,7 @@ import (
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/test"
+	"github.com/tkahng/authgo/internal/tools/utils"
 )
 
 func createTeamAndMember(app core.App, user *shared.User, teamName string) (*shared.TeamInfo, error) {
@@ -536,6 +537,61 @@ func TestDeleteTeam_failNonOwner(t *testing.T) {
 		}
 		if !strings.Contains(resp.Body.String(), "You do not have the required team member role") {
 			t.Fatalf("Unexpected response: %s", resp.Body.String())
+		}
+	})
+}
+
+func TestGetActiveTeamMember_success(t *testing.T) {
+	test.DbSetup()
+	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
+		cfg := conf.ZeroEnvConfig()
+		app := core.NewDecorator(ctx, cfg, db)
+
+		appApi := apis.NewApi(app)
+		_, api := humatest.New(t)
+		apis.AddRoutes(api, appApi)
+		user1, err := app.User().Store().CreateUser(
+			ctx,
+			&models.User{
+				Email: "user1@example",
+			},
+		)
+		if err != nil {
+			t.Errorf("Error creating user: %v", err)
+			return
+		}
+
+		member1, err := app.Team().Store().CreateTeamWithOwnerMember(
+			ctx,
+			"test team",
+			"test-team",
+			user1.ID,
+		)
+		if err != nil {
+			t.Errorf("Error creating user: %v", err)
+			return
+		}
+		if member1 == nil {
+			t.Errorf("Error creating user: %v", err)
+			return
+		}
+
+		tokensVerifiedTokens, err := app.Auth().CreateAuthTokensFromEmail(ctx, user1.Email)
+		if err != nil {
+			t.Errorf("Error creating auth tokens: %v", err)
+			return
+		}
+		VerifiedHeader := fmt.Sprintf("Authorization: Bearer %s", tokensVerifiedTokens.Tokens.AccessToken)
+		resp := api.Get("/team-members/active", VerifiedHeader)
+		if resp.Code != 200 {
+			t.Fatalf("Unexpected response: %s", resp.Body.String())
+		}
+		obj, err := utils.UnmarshalJSON[models.TeamMember](resp.Body.Bytes())
+		if err != nil {
+			t.Fatalf("error marshaling response: %v", err)
+		}
+		if obj.ID != member1.Member.ID {
+			t.Fatalf("wrong member id. expected: %v, got: %v", member1.Member.ID, obj.ID)
 		}
 	})
 }
