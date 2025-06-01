@@ -595,3 +595,36 @@ func TestGetActiveTeamMember_success(t *testing.T) {
 		}
 	})
 }
+
+func TestGetActiveTeamMember_nomember(t *testing.T) {
+	test.DbSetup()
+	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
+		cfg := conf.ZeroEnvConfig()
+		app := core.NewDecorator(ctx, cfg, db)
+
+		appApi := apis.NewApi(app)
+		_, api := humatest.New(t)
+		apis.AddRoutes(api, appApi)
+		user1, err := app.User().Store().CreateUser(
+			ctx,
+			&models.User{
+				Email: "user1@example",
+			},
+		)
+		if err != nil {
+			t.Errorf("Error creating user: %v", err)
+			return
+		}
+
+		tokensVerifiedTokens, err := app.Auth().CreateAuthTokensFromEmail(ctx, user1.Email)
+		if err != nil {
+			t.Errorf("Error creating auth tokens: %v", err)
+			return
+		}
+		VerifiedHeader := fmt.Sprintf("Authorization: Bearer %s", tokensVerifiedTokens.Tokens.AccessToken)
+		resp := api.Get("/team-members/active", VerifiedHeader)
+		if resp.Code != 404 {
+			t.Fatalf("Unexpected response: %s", resp.Body.String())
+		}
+	})
+}
