@@ -53,7 +53,7 @@ export default function RoleEdit() {
   const { user, checkAuth } = useAuthProvider();
   const { roleId } = useParams<{ roleId: string }>();
   const {
-    data: role,
+    data,
     isLoading: loading,
     error,
   } = useQuery({
@@ -109,8 +109,8 @@ export default function RoleEdit() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: role?.name || "",
-      description: role?.description || "",
+      name: data?.name || "",
+      description: data?.description || "",
     },
   });
   function onSubmit(values: z.infer<typeof formSchema>) {
@@ -120,16 +120,16 @@ export default function RoleEdit() {
     deletePermissionMutation.mutate(permissionId);
   };
   useEffect(() => {
-    if (role) {
-      form.reset(role);
+    if (data) {
+      form.reset(data);
     }
-  }, [role, form.reset]);
+  }, [data, form]);
   if (!user) {
     navigate(RouteMap.SIGNIN);
   }
   if (loading) return <p>Loading...</p>;
   if (error) return <p>Error: {error.message}</p>;
-  if (!role) return <p>Role not found</p>;
+  if (!data) return <p>Role not found</p>;
 
   return (
     // <div className="h-full px-4 py-6 lg:px-8 space-y-6">
@@ -141,7 +141,7 @@ export default function RoleEdit() {
         <ChevronLeft className="h-4 w-4" />
         Back to roles
       </Link>
-      <h1 className="text-2xl font-bold">{role.name}</h1>
+      <h1 className="text-2xl font-bold">{data.name}</h1>
       <Tabs value={tab} onValueChange={onClick} className="h-full space-y-6">
         <TabsList>
           <TabsTrigger value="general">General</TabsTrigger>
@@ -222,7 +222,7 @@ export default function RoleEdit() {
                 },
               },
             ]}
-            data={role.permissions || []}
+            data={data.permissions || []}
           />
         </TabsContent>
       </Tabs>

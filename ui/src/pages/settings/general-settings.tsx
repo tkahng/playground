@@ -196,7 +196,7 @@ export default function AccountSettingsPage() {
         image: data.image || "",
       });
     }
-  }, [data, form.reset]);
+  }, [data, form]);
   if (isLoading) return <p>Loading...</p>;
   if (isError) return <p>Error: {error.message}</p>;
   if (!data) return <p>User not found</p>;

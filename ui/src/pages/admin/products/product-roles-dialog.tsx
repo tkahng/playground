@@ -98,7 +98,7 @@ export function ProductRolesDialog({
     if (data) {
       form.reset({ roles: [] });
     }
-  }, [data, form.reset]);
+  }, [data, form]);
 
   if (isLoading) {
     return <div>Loading...</div>;

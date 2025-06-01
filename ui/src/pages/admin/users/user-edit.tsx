@@ -210,7 +210,7 @@ export default function UserEdit() {
         email_verified_at: !!data.email_verified_at,
       });
     }
-  }, [data, form.reset]);
+  }, [data, form]);
 
   if (loading) {
     return <div>Loading...</div>;

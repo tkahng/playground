@@ -91,7 +91,7 @@ export function CreateRolePermissionDialog({ roleId }: { roleId: string }) {
     if (data) {
       form.reset({ permissions: [] });
     }
-  }, [data, form.reset]);
+  }, [data, form]);
 
   if (isLoading) {
     return <div>Loading...</div>;

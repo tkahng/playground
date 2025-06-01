@@ -95,7 +95,7 @@ export function UserPermissionDialog({
     if (data) {
       form.reset({ permissions: [] });
     }
-  }, [data, form.reset]);
+  }, [data, form]);
 
   if (isLoading) {
     return <div>Loading...</div>;
