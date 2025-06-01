@@ -1,5 +1,6 @@
 import { DataTable } from "@/components/data-table";
 import { RouteMap } from "@/components/route-map";
+import { useTeamMemberContext } from "@/context/team-members-context";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { taskProjectList } from "@/lib/queries";
 import { useQuery } from "@tanstack/react-query";
@@ -10,6 +11,7 @@ import { CreateProjectDialog } from "./create-project-dialog";
 
 export default function ProjectListPage() {
   const { user, checkAuth } = useAuthProvider();
+  const { currentMember } = useTeamMemberContext();
   const [searchParams, setSearchParams] = useSearchParams();
   const pageIndex = parseInt(searchParams.get("page") || "0", 10);
   const pageSize = parseInt(searchParams.get("per_page") || "10", 10);
@@ -34,12 +36,19 @@ export default function ProjectListPage() {
       if (!user?.tokens.access_token) {
         throw new Error("Missing access token or role ID");
       }
-      const data = await taskProjectList(user.tokens.access_token, {
-        page: pageIndex,
-        per_page: pageSize,
-        sort_by: "updated_at",
-        sort_order: "desc",
-      });
+      if (!currentMember?.team_id) {
+        throw new Error("Current team member team ID is required");
+      }
+      const data = await taskProjectList(
+        user.tokens.access_token,
+        currentMember?.team_id,
+        {
+          page: pageIndex,
+          per_page: pageSize,
+          sort_by: "updated_at",
+          sort_order: "desc",
+        }
+      );
 
       return data;
     },

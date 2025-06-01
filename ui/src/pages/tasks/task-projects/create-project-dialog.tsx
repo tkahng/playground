@@ -24,6 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useTeamMemberContext } from "@/context/team-members-context";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { taskProjectCreate } from "@/lib/queries";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -41,6 +42,7 @@ const formSchema = z.object({
 
 export function CreateProjectDialog() {
   const { user, checkAuth } = useAuthProvider();
+  const { currentMember } = useTeamMemberContext();
   const [isDialogOpen, setDialogOpen] = useState(false);
   const queryClient = useQueryClient();
 
@@ -50,7 +52,14 @@ export function CreateProjectDialog() {
       if (!user?.tokens.access_token) {
         throw new Error("Missing access token or role ID");
       }
-      await taskProjectCreate(user.tokens.access_token, values);
+      if (!currentMember?.team_id) {
+        throw new Error("Current team member team ID is required");
+      }
+      await taskProjectCreate(user.tokens.access_token, currentMember.team_id, {
+        ...values,
+        member_id: currentMember.id,
+        team_id: currentMember.team_id,
+      });
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({
