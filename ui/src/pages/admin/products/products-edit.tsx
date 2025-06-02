@@ -21,14 +21,13 @@ import { toast } from "sonner";
 import { ProductRolesDialog } from "./product-roles-dialog";
 
 export default function ProductEditPage() {
-  const { user, checkAuth } = useAuthProvider();
+  const { user } = useAuthProvider();
 
   const queryClient = useQueryClient();
   const { productId } = useParams<{ productId: string }>();
   const { data, isError, isLoading, error } = useQuery({
     queryKey: ["product", productId],
     queryFn: async () => {
-      await checkAuth(); // Ensure user is authenticated
       if (!user?.tokens.access_token || !productId) {
         throw new Error("Missing access token");
       }
@@ -37,7 +36,6 @@ export default function ProductEditPage() {
   });
   const deleteProductRolesMutation = useMutation({
     mutationFn: async (roleid: string) => {
-      await checkAuth(); // Ensure user is authenticated
       if (!user?.tokens.access_token || !productId) {
         throw new Error("Missing access token");
       }

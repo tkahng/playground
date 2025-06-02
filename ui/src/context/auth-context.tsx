@@ -106,7 +106,7 @@ export const AuthProvider: React.FC<{
       getOrRefreshToken,
       checkAuth,
     };
-  }, [user]);
+  }, [user, setUser]);
 
   return <AuthContext.Provider value={values}>{children}</AuthContext.Provider>;
 };

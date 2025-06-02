@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useParams } from "react-router";
 
 export default function ProtectedRoutePage() {
-  const { user, checkAuth } = useAuthProvider();
+  const { user } = useAuthProvider();
   const { permission } = useParams<{ permission: string }>();
   console.log("permission", permission);
   const { data, isPending, isError, error } = useQuery({

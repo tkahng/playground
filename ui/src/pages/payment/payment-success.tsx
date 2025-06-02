@@ -18,14 +18,13 @@ import { Link, useSearchParams } from "react-router";
 //   paymentMethod: string;
 // }
 export default function PaymentSuccessPage() {
-  const { user, checkAuth } = useAuthProvider();
+  const { user } = useAuthProvider();
   //   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const sessionId = searchParams.get("sessionId");
   const { data, isPending, isError, error } = useQuery({
     queryKey: ["subscription-by-session-id", sessionId],
     queryFn: async () => {
-      await checkAuth(); // Ensure user is authenticated
       if (!sessionId) {
         throw new Error("Missing session ID");
       }

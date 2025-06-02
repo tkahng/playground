@@ -43,7 +43,7 @@ export function ProductRolesDialog({
 }: {
   userDetail: ProductWithPrices;
 }) {
-  const { user, checkAuth } = useAuthProvider();
+  const { user } = useAuthProvider();
   const [isDialogOpen, setDialogOpen] = useState(false);
   const queryClient = useQueryClient();
   // const [value, setValue] = useState<Option[]>([]);
@@ -51,7 +51,6 @@ export function ProductRolesDialog({
   const { data, isLoading, error } = useQuery({
     queryKey: ["product-roles-reverse", productId],
     queryFn: async () => {
-      await checkAuth(); // Ensure user is authenticated
       if (!user?.tokens.access_token || !productId) {
         throw new Error("Missing access token or role ID");
       }
@@ -66,7 +65,6 @@ export function ProductRolesDialog({
   });
   const mutation = useMutation({
     mutationFn: async (values: z.infer<typeof formSchema>) => {
-      await checkAuth(); // Ensure user is authenticated
       if (!user?.tokens.access_token || !productId) {
         throw new Error("Missing access token or role ID");
       }

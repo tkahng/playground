@@ -16,7 +16,7 @@ import { useState } from "react";
 import { NavLink, useNavigate, useSearchParams } from "react-router";
 // import { CreateUserDialog } from "./create-user-dialog";
 export default function ProductsListPage() {
-  const { user, checkAuth } = useAuthProvider();
+  const { user } = useAuthProvider();
 
   const [searchParams, setSearchParams] = useSearchParams();
   const pageIndex = parseInt(searchParams.get("page") || "0", 10);
@@ -35,7 +35,6 @@ export default function ProductsListPage() {
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["products-list", pageIndex, pageSize],
     queryFn: async () => {
-      await checkAuth(); // Ensure user is authenticated
       if (!user?.tokens.access_token) {
         throw new Error("Missing access token");
       }

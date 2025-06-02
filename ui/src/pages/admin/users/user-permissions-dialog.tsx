@@ -43,14 +43,13 @@ export function UserPermissionDialog({
 }: {
   userDetail: UserDetailWithRoles;
 }) {
-  const { user, checkAuth } = useAuthProvider();
+  const { user } = useAuthProvider();
   const [isDialogOpen, setDialogOpen] = useState(false);
   const queryClient = useQueryClient();
   const userId = userDetail?.id;
   const { data, isLoading, error } = useQuery({
     queryKey: ["user-permissions-reverse", userId],
     queryFn: async () => {
-      await checkAuth(); // Ensure user is authenticated
       if (!user?.tokens.access_token || !userId) {
         throw new Error("Missing access token or role ID");
       }
@@ -63,7 +62,6 @@ export function UserPermissionDialog({
   });
   const mutation = useMutation({
     mutationFn: async (values: z.infer<typeof formSchema>) => {
-      await checkAuth(); // Ensure user is authenticated
       if (!user?.tokens.access_token || !userId) {
         throw new Error("Missing access token or role ID");
       }

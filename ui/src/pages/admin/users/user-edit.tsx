@@ -56,7 +56,7 @@ export default function UserEdit() {
   // const navigate = useNavigate();
   const { tab, onClick } = useTabs("profile");
   const queryClient = useQueryClient();
-  const { user, checkAuth } = useAuthProvider();
+  const { user } = useAuthProvider();
   const { userId } = useParams<{ userId: string }>();
   const {
     data,
@@ -65,7 +65,6 @@ export default function UserEdit() {
   } = useQuery({
     queryKey: ["userInfo", userId],
     queryFn: async () => {
-      await checkAuth(); // Ensure user is authenticated
       if (!user?.tokens.access_token || !userId) {
         throw new Error("Missing access token or role ID");
       }
@@ -74,7 +73,6 @@ export default function UserEdit() {
   });
   const userUpdateMutation = useMutation({
     mutationFn: async (values: z.infer<typeof formSchema>) => {
-      await checkAuth(); // Ensure user is authenticated
       if (!user?.tokens.access_token || !userId) {
         throw new Error("Missing access token or user ID");
       }
@@ -116,8 +114,6 @@ export default function UserEdit() {
 
   const resetPasswordMutation = useMutation({
     mutationFn: async (values: z.infer<typeof updatePasswordSchema>) => {
-      await checkAuth(); // Ensure user is authenticated
-
       if (!credentialsAccount) {
         throw new Error("No credentials account found");
       }
@@ -159,8 +155,6 @@ export default function UserEdit() {
   }
   const deleteUserRoleMutation = useMutation({
     mutationFn: async (roleId: string) => {
-      await checkAuth(); // Ensure user is authenticated
-
       if (!user?.tokens.access_token || !userId) {
         throw new Error("Missing access token or role ID");
       }
@@ -179,8 +173,6 @@ export default function UserEdit() {
   });
   const deleteUserPermissionMutation = useMutation({
     mutationFn: async (permissionId: string) => {
-      await checkAuth(); // Ensure user is authenticated
-
       if (!user?.tokens.access_token || !userId) {
         throw new Error("Missing access token or role ID");
       }

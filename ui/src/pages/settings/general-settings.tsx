@@ -41,11 +41,10 @@ const resetPasswordSchema = z.object({
 
 export default function AccountSettingsPage() {
   const [, setIsPending] = useState(false);
-  const { user, checkAuth } = useAuthProvider();
+  const { user } = useAuthProvider();
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["auth/me"],
     queryFn: async () => {
-      await checkAuth(); // Ensure user is authenticated
       if (!user) {
         throw new Error("User not found");
       }
@@ -58,7 +57,6 @@ export default function AccountSettingsPage() {
   const queryClient = useQueryClient();
   const mutation = useMutation({
     mutationFn: async (formData: z.infer<typeof formSchema>) => {
-      await checkAuth(); // Ensure user is authenticated
       if (!user) {
         throw new Error("User not found");
       }
@@ -79,7 +77,6 @@ export default function AccountSettingsPage() {
   });
   const deleteUserMutation = useMutation({
     mutationFn: async () => {
-      await checkAuth(); // Ensure user is authenticated
       if (!user) {
         throw new Error("User not found");
       }
@@ -104,7 +101,6 @@ export default function AccountSettingsPage() {
   });
   const resetPasswordMutation = useMutation({
     mutationFn: async (formData: z.infer<typeof resetPasswordSchema>) => {
-      await checkAuth(); // Ensure user is authenticated
       if (!user) {
         throw new Error("User not found");
       }
@@ -136,7 +132,6 @@ export default function AccountSettingsPage() {
   });
   const requestVerificationEmailMutation = useMutation({
     mutationFn: async () => {
-      await checkAuth(); // Ensure user is authenticated
       if (!user) {
         throw new Error("User not found");
       }

@@ -9,7 +9,7 @@ import { CreateProjectAiDialog } from "./create-project-ai-dialog";
 import { CreateProjectDialog } from "./create-project-dialog";
 
 export default function ProjectListPage() {
-  const { user, checkAuth } = useAuthProvider();
+  const { user } = useAuthProvider();
   const [searchParams, setSearchParams] = useSearchParams();
   const { teamSlug } = useParams<{ teamSlug: string }>();
   const pageIndex = parseInt(searchParams.get("page") || "0", 10);
@@ -45,7 +45,6 @@ export default function ProjectListPage() {
   const { data, error, isError, isLoading } = useQuery({
     queryKey: ["projects-list", pageIndex, pageSize],
     queryFn: async () => {
-      await checkAuth(); // Ensure user is authenticated
       if (!user?.tokens.access_token) {
         throw new Error("Missing access token or role ID");
       }

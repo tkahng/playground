@@ -1,4 +1,5 @@
 import { useAuthProvider } from "@/hooks/use-auth-provider";
+import { useEffect, useRef } from "react";
 import {
   createSearchParams,
   Navigate,
@@ -8,7 +9,20 @@ import {
 
 export default function AuthenticatedLayoutBase() {
   const location = useLocation();
-  const { user } = useAuthProvider();
+  const { user, checkAuth } = useAuthProvider();
+  const isMounted = useRef(false);
+  useEffect(() => {
+    if (!isMounted.current) {
+      isMounted.current = true;
+      checkAuth()
+        .then(() => {
+          isMounted.current = false;
+        })
+        .catch(() => {
+          isMounted.current = false;
+        });
+    }
+  }, [location, checkAuth, user]);
 
   if (!user) {
     return (

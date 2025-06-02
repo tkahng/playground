@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { PaginationState, Updater } from "@tanstack/react-table";
 import { useSearchParams } from "react-router";
 export default function SubscriptionsListPage() {
-  const { user, checkAuth } = useAuthProvider();
+  const { user } = useAuthProvider();
 
   const [searchParams, setSearchParams] = useSearchParams();
   const pageIndex = parseInt(searchParams.get("page") || "0", 10);
@@ -24,7 +24,6 @@ export default function SubscriptionsListPage() {
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["subscription-list", pageIndex, pageSize],
     queryFn: async () => {
-      await checkAuth(); // Ensure user is authenticated
       if (!user?.tokens.access_token) {
         throw new Error("Missing access token");
       }
