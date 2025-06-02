@@ -1357,3 +1357,18 @@ export const getUserTeams = async (token: string) => {
   }
   return data;
 };
+
+export const getTeamBySlug = async (token: string, slug: string) => {
+  const { data, error } = await client.GET("/api/teams/slug/{slug}", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    params: {
+      path: { "team-slug": slug },
+    },
+  });
+  if (error) {
+    throw error;
+  }
+  return data;
+};

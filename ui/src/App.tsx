@@ -31,7 +31,6 @@ import { RouteMap } from "./components/route-map";
 import AdminLayout from "./layouts/admin-layout";
 import PageSectionLayout from "./layouts/page-section";
 import PublicLayout from "./layouts/public-layout";
-import TeamsLayoutBase from "./layouts/teams-layout-base";
 import NotFoundPage from "./pages/404";
 import AdminDashboardPage from "./pages/admin/admin-dashboard";
 import ProductEditPage from "./pages/admin/products/products-edit";
@@ -85,31 +84,40 @@ function App() {
 
             <Route element={<AuthenticatedLayoutBase />}>
               <Route path={RouteMap.TEAM_LIST} element={<TeamListPage />} />
-            </Route>
-            <Route element={<TeamsLayoutBase />}>
               <Route path={RouteMap.PAYMENT}>
                 {/* /payment/success?sessionId */}
                 <Route path="success" element={<PaymentSuccessPage />} />
               </Route>
+              {/* <Route path={`${RouteMap.TEAM_LIST}/:teamSlug`} element={<TeamsLayout />} /> */}
+            </Route>
+            <Route element={<AuthenticatedLayoutBase />}>
               <Route
                 element={
                   <DashboardLayout headerLinks={authenticatedSubHeaderLinks} />
                 }
-                path={RouteMap.DASHBOARD}
               >
-                <Route index element={<Dashboard />} />
+                <Route
+                  path={`${RouteMap.TEAM_LIST_SLUG}/dashboard`}
+                  element={<Dashboard />}
+                />
               </Route>
 
               <Route
-                path={RouteMap.TASK_PROJECTS}
+                // path={RouteMap.TASK_PROJECTS}
                 element={
                   <DashboardLayout headerLinks={authenticatedSubHeaderLinks} />
                 }
               >
                 <Route element={<PageSectionLayout title="Projects" />}>
                   <Route element={<TaskLayout />}>
-                    <Route index element={<ProjectListPage />} />
-                    <Route path=":projectId" element={<ProjectEdit />} />
+                    <Route
+                      path={`${RouteMap.TEAM_LIST_SLUG}/projects`}
+                      element={<ProjectListPage />}
+                    />
+                    <Route
+                      path={`${RouteMap.TEAM_LIST_SLUG}/projects/:projectId`}
+                      element={<ProjectEdit />}
+                    />
                   </Route>
                 </Route>
               </Route>

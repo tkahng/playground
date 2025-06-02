@@ -52,7 +52,7 @@ export function ProjectEditDialog({
     rank: number;
   };
 }) {
-  const { user, checkAuth } = useAuthProvider();
+  const { user } = useAuthProvider();
   const [isDialogOpen, setDialogOpen] = useState(false);
   const queryClient = useQueryClient();
 
@@ -68,7 +68,6 @@ export function ProjectEditDialog({
 
   const mutation = useMutation({
     mutationFn: async (values: z.infer<typeof formSchema>) => {
-      await checkAuth(); // Ensure user is authenticated
       if (!user?.tokens.access_token) {
         throw new Error("Missing access token");
       }

@@ -1,14 +1,17 @@
 import { KanbanBoard } from "@/components/board/kanban-board";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { taskList, taskProjectGet } from "@/lib/queries";
+import { getTeamBySlug, taskList, taskProjectGet } from "@/lib/queries";
 import { TaskStatus } from "@/schema.types";
 import { useQuery } from "@tanstack/react-query";
 import { useParams } from "react-router";
 import { ProjectEditDialog } from "./edit-project-dialog";
 
 export default function ProjectEdit() {
-  const { user, checkAuth } = useAuthProvider();
-  const { projectId } = useParams<{ projectId: string }>();
+  const { user } = useAuthProvider();
+  const { projectId, teamSlug } = useParams<{
+    projectId: string;
+    teamSlug: string;
+  }>();
   const {
     data: project,
     isLoading: loading,
@@ -28,9 +31,15 @@ export default function ProjectEdit() {
     },
     queryKey: ["project-with-tasks", projectId],
     queryFn: async () => {
-      await checkAuth(); // Ensure user is authenticated
       if (!user?.tokens.access_token || !projectId) {
         throw new Error("Missing access token or project ID");
+      }
+      if (!teamSlug) {
+        throw new Error("Current team member team ID is required");
+      }
+      const team = await getTeamBySlug(user.tokens.access_token, teamSlug);
+      if (!team) {
+        throw new Error("Team not found");
       }
       const project = await taskProjectGet(user.tokens.access_token, projectId);
       const tasks = await taskList(user.tokens.access_token, projectId, {

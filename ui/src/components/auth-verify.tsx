@@ -1,10 +1,11 @@
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { useEffect, useRef } from "react";
-import { useLocation } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 
 const AuthVerify = () => {
   const location = useLocation();
-  const { checkAuth } = useAuthProvider();
+  const navigate = useNavigate();
+  const { user, checkAuth } = useAuthProvider();
   const isMounted = useRef(false);
   useEffect(() => {
     if (!isMounted.current) {
@@ -18,6 +19,9 @@ const AuthVerify = () => {
         });
     }
   }, [location, checkAuth]);
+  if (!user) {
+    navigate("/signin");
+  }
   return null;
 };
 

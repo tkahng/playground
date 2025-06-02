@@ -27,9 +27,11 @@ export const RouteMap = {
   PROTECTED_PRO: "/protected/pro",
   PROTECTED_ADVANCED: "/protected/advanced",
   DASHBOARD_KANBAN: "/kanban",
+
   TASK_PROJECTS: "/projects",
   TASKS_HOME: "/tasks",
   PAYMENT: "/payment",
 
   TEAM_LIST: "/teams",
+  TEAM_LIST_SLUG: "/teams/:teamSlug",
 };

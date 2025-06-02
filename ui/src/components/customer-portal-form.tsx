@@ -14,7 +14,7 @@ interface Props {
 
 export default function CustomerPortalForm({ subscription }: Props) {
   //   const router = useRouter();
-  const { user, checkAuth } = useAuthProvider();
+  const { user } = useAuthProvider();
   // const { pathname: currentPath } = useLocation();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -27,7 +27,6 @@ export default function CustomerPortalForm({ subscription }: Props) {
     }).format((subscription?.price?.unit_amount || 0) / 100);
 
   const handleStripePortalRequest = async () => {
-    await checkAuth(); // Ensure user is authenticated
     setIsSubmitting(true);
     if (!user) {
       setIsSubmitting(false);

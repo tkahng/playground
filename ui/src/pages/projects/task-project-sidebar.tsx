@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation } from "react-router";
 export default function TaskProjectSidebar() {
-  const { user: auth, checkAuth } = useAuthProvider();
+  const { user: auth } = useAuthProvider();
   const { team: currentTeam } = useTeamContext();
   const { pathname } = useLocation();
   const {
@@ -20,7 +20,6 @@ export default function TaskProjectSidebar() {
       return data;
     },
     queryFn: async () => {
-      await checkAuth(); // Ensure user is authenticated
       if (!auth?.tokens.access_token) {
         throw new Error("Missing access token or role ID");
       }

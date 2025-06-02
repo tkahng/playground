@@ -1,18 +1,17 @@
 import { DataTable } from "@/components/data-table";
 import { RouteMap } from "@/components/route-map";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { useTeamContext } from "@/hooks/use-team-context";
-import { taskProjectList } from "@/lib/queries";
+import { getTeamBySlug, taskProjectList } from "@/lib/queries";
 import { useQuery } from "@tanstack/react-query";
 import { PaginationState, Updater } from "@tanstack/react-table";
-import { NavLink, useSearchParams } from "react-router";
+import { NavLink, useParams, useSearchParams } from "react-router";
 import { CreateProjectAiDialog } from "./create-project-ai-dialog";
 import { CreateProjectDialog } from "./create-project-dialog";
 
 export default function ProjectListPage() {
   const { user, checkAuth } = useAuthProvider();
-  const { team: currentTeam } = useTeamContext();
   const [searchParams, setSearchParams] = useSearchParams();
+  const { teamSlug } = useParams<{ teamSlug: string }>();
   const pageIndex = parseInt(searchParams.get("page") || "0", 10);
   const pageSize = parseInt(searchParams.get("per_page") || "10", 10);
   // const queryClient = useQueryClient();
@@ -28,7 +27,21 @@ export default function ProjectListPage() {
       });
     }
   };
+  const { data: team } = useQuery({
+    queryKey: ["team-by-slug"],
+    queryFn: async () => {
+      if (!user?.tokens.access_token) {
+        throw new Error("Missing access token");
+      }
+      if (!teamSlug) {
+        throw new Error("Team slug is required");
+      }
+      const response = await getTeamBySlug(user.tokens.access_token, teamSlug);
 
+      return response;
+    },
+  });
+  const teamId = team?.id;
   const { data, error, isError, isLoading } = useQuery({
     queryKey: ["projects-list", pageIndex, pageSize],
     queryFn: async () => {
@@ -36,22 +49,19 @@ export default function ProjectListPage() {
       if (!user?.tokens.access_token) {
         throw new Error("Missing access token or role ID");
       }
-      if (!currentTeam?.id) {
+      if (!teamId) {
         throw new Error("Current team member team ID is required");
       }
-      const data = await taskProjectList(
-        user.tokens.access_token,
-        currentTeam?.id,
-        {
-          page: pageIndex,
-          per_page: pageSize,
-          sort_by: "updated_at",
-          sort_order: "desc",
-        }
-      );
+      const data = await taskProjectList(user.tokens.access_token, teamId, {
+        page: pageIndex,
+        per_page: pageSize,
+        sort_by: "updated_at",
+        sort_order: "desc",
+      });
 
       return data;
     },
+    enabled: !!user?.tokens.access_token && !!teamId,
   });
   if (isLoading) {
     return <div>Loading...</div>;
