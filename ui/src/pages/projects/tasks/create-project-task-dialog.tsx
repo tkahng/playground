@@ -46,7 +46,7 @@ export function CreateProjectTaskDialog({
   projectId: string;
   status: "todo" | "in_progress" | "done";
 }) {
-  const { user, checkAuth } = useAuthProvider();
+  const { user } = useAuthProvider();
   const [isDialogOpen, setDialogOpen] = useState(false);
   const queryClient = useQueryClient();
   // const navigate = useNavigate();
@@ -62,7 +62,6 @@ export function CreateProjectTaskDialog({
 
   const mutation = useMutation({
     mutationFn: async (values: z.infer<typeof formSchema>) => {
-      await checkAuth(); // Ensure user is authenticated
       if (!user?.tokens.access_token) {
         throw new Error("Missing access token");
       }
