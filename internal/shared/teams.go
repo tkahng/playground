@@ -85,3 +85,20 @@ type TeamMemberListInput struct {
 	PaginatedInput
 	SortParams
 }
+
+type ListTeamsFilter struct {
+	Q string `query:"q"`
+	// Active ActiveStatus `query:"active"`
+	UserID string `query:"user_id"`
+}
+
+type ListTeamsParams struct {
+	ListTeamsFilter
+	PaginatedInput
+	SortParams
+}
+
+type UserListTeamsParams struct {
+	PaginatedInput
+	SortParams
+}

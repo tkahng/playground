@@ -69,6 +69,24 @@ func BindTeamsApi(api huma.API, appApi *Api) {
 		appApi.CheckTeamSlug,
 	)
 
+	// get user teams
+	huma.Register(
+		teamsGroup,
+		huma.Operation{
+			OperationID: "get-user-teams",
+			Method:      http.MethodGet,
+			Path:        "/teams",
+			Summary:     "get-user-teams",
+			Description: "get all teams for a user",
+			Tags:        []string{"Teams"},
+			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+		},
+		appApi.GetUserTeams,
+	)
+
 	// create team
 	huma.Register(
 		teamsGroup,

@@ -109,7 +109,46 @@ func (api *Api) GetUserTeamMembers(
 			Meta: shared.GenerateMeta(&input.PaginatedInput, count),
 		},
 	}, nil
+}
 
+func (api *Api) GetUserTeams(
+	ctx context.Context,
+	input *shared.UserListTeamsParams,
+) (
+	*shared.PaginatedOutput[*shared.Team],
+	error,
+) {
+	info := contextstore.GetContextUserInfo(ctx)
+	if info == nil {
+		return nil, huma.Error401Unauthorized("unauthorized")
+	}
+	params := &shared.ListTeamsParams{
+		ListTeamsFilter: shared.ListTeamsFilter{
+			UserID: info.User.ID.String(),
+		},
+	}
+	if input != nil {
+		params.PaginatedInput = input.PaginatedInput
+		params.SortParams = input.SortParams
+	}
+
+	teams, err := api.app.Team().Store().ListTeams(ctx, params)
+	if err != nil {
+		return nil, err
+	}
+	if len(teams) == 0 {
+		return nil, huma.Error500InternalServerError("teams not found")
+	}
+	count, err := api.app.Team().Store().CountTeams(ctx, params)
+	if err != nil {
+		return nil, err
+	}
+	return &shared.PaginatedOutput[*shared.Team]{
+		Body: shared.PaginatedResponse[*shared.Team]{
+			Data: mapper.Map(teams, shared.FromTeamModel),
+			Meta: shared.GenerateMeta(&input.PaginatedInput, count),
+		},
+	}, nil
 }
 
 type TeamMemberOutput struct {

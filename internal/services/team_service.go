@@ -30,6 +30,9 @@ type TeamStripeStore interface {
 	FindLatestActiveSubscriptionWithPriceByCustomerId(ctx context.Context, customerId string) (*models.SubscriptionWithPrice, error)
 }
 type TeamStore interface {
+	// find team
+	ListTeams(ctx context.Context, params *shared.ListTeamsParams) ([]*models.Team, error)
+	CountTeams(ctx context.Context, params *shared.ListTeamsParams) (int64, error)
 	CreateTeamWithOwnerMember(ctx context.Context, name string, slug string, userId uuid.UUID) (*shared.TeamInfo, error)
 	CountOwnerTeamMembers(ctx context.Context, teamId uuid.UUID) (int64, error)
 	CountTeamMembers(ctx context.Context, teamId uuid.UUID) (int64, error)

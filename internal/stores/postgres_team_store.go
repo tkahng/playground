@@ -685,3 +685,68 @@ func (q *PostgresTeamStore) CreateTeamMember(ctx context.Context, teamId, userId
 		teamMember,
 	)
 }
+
+func (q *PostgresTeamStore) ListTeams(ctx context.Context, params *shared.ListTeamsParams) ([]*models.Team, error) {
+	// Build the query
+	if params == nil {
+		params = &shared.ListTeamsParams{}
+	}
+	if params.UserID != "" && params.SortBy == "team_members.last_selected_at" {
+		return nil, fmt.Errorf("cannot sort by team_members.last_selected_at without filtering by user_id")
+	}
+	limit, offset := database.PaginateRepo(&params.PaginatedInput)
+	qs := squirrel.Select("teams.*").From("teams")
+	qs = listTeamsFilter(qs, params)
+	qs = listTeamsOrderBy(qs, params)
+	qs = qs.Limit(uint64(*limit)).Offset(uint64(*offset))
+	teams, err := database.QueryWithBuilder[*models.Team](ctx, q.db, qs.PlaceholderFormat(squirrel.Dollar))
+	if err != nil {
+		return nil, err
+	}
+	return teams, nil
+}
+
+func (q *PostgresTeamStore) CountTeams(ctx context.Context, params *shared.ListTeamsParams) (int64, error) {
+	qs := squirrel.Select("COUNT(teams.*)").From("teams")
+	qs = listTeamsFilter(qs, params)
+	count, err := database.QueryWithBuilder[CountOutput](ctx, q.db, qs.PlaceholderFormat(squirrel.Dollar))
+	if err != nil {
+		return 0, err
+	}
+	if len(count) == 0 {
+		return 0, nil
+	}
+	return count[0].Count, nil
+}
+
+func listTeamsFilter(qs squirrel.SelectBuilder, params *shared.ListTeamsParams) squirrel.SelectBuilder {
+	if params == nil {
+		return qs
+	}
+	if params.Q != "" {
+		qs = qs.Where(
+			squirrel.Or{
+				squirrel.ILike{"name": "%" + params.Q + "%"},
+				squirrel.ILike{"slug": "%" + params.Q + "%"},
+			},
+		)
+	}
+	if params.UserID != "" {
+		qs = qs.Join("team_members ON teams.id = team_members.team_id").
+			Where(squirrel.Eq{"team_members.user_id": params.UserID})
+	}
+	return qs
+}
+
+func listTeamsOrderBy(qs squirrel.SelectBuilder, params *shared.ListTeamsParams) squirrel.SelectBuilder {
+	if params.SortParams.SortBy != "" && params.SortParams.SortOrder != "" {
+		if params.SortParams.SortBy == "team_members.last_selected_at" {
+			qs = qs.OrderBy("team_members.last_selected_at " + strings.ToUpper(params.SortParams.SortOrder))
+		} else if slices.Contains(crudrepo.TeamBuilder.ColumnNames(), params.SortParams.SortBy) {
+			qs = qs.OrderBy(params.SortParams.SortBy + " " + strings.ToUpper(params.SortParams.SortOrder))
+		}
+	} else {
+		qs = qs.OrderBy("created_at DESC")
+	}
+	return qs
+}

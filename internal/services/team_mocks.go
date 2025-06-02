@@ -123,6 +123,26 @@ type mockTeamStore struct {
 	mock.Mock
 }
 
+// CountTeams implements TeamServiceStore.
+func (m *mockTeamStore) CountTeams(ctx context.Context, params *shared.ListTeamsParams) (int64, error) {
+	args := m.Called(ctx, params)
+	var count int64
+	if args.Get(0) != nil {
+		count = args.Get(0).(int64)
+	}
+	return count, args.Error(1)
+}
+
+// ListTeams implements TeamServiceStore.
+func (m *mockTeamStore) ListTeams(ctx context.Context, params *shared.ListTeamsParams) ([]*models.Team, error) {
+	args := m.Called(ctx, params)
+	var teams []*models.Team
+	if args.Get(0) != nil {
+		teams = args.Get(0).([]*models.Team)
+	}
+	return teams, args.Error(1)
+}
+
 // FindUserByID implements TeamServiceStore.
 func (m *mockTeamStore) FindUserByID(ctx context.Context, userId uuid.UUID) (*models.User, error) {
 	args := m.Called(ctx, userId)

@@ -16,26 +16,48 @@ type PaymentStoreDecorator struct {
 }
 
 type TeamStoreDecorator struct {
-	Delegate                       *PostgresTeamStore
-	CheckTeamSlugFunc              func(ctx context.Context, slug string) (bool, error)
-	CountOwnerTeamMembersFunc      func(ctx context.Context, teamId uuid.UUID) (int64, error)
-	CountTeamMembersFunc           func(ctx context.Context, teamId uuid.UUID) (int64, error)
-	CountTeamMembersByUserIDFunc   func(ctx context.Context, userId uuid.UUID) (int64, error)
-	CreateTeamFunc                 func(ctx context.Context, name string, slug string) (*models.Team, error)
-	CreateTeamMemberFunc           func(ctx context.Context, teamId uuid.UUID, userId uuid.UUID, role models.TeamMemberRole, hasBillingAccess bool) (*models.TeamMember, error)
-	DeleteTeamMemberFunc           func(ctx context.Context, teamId uuid.UUID, userId uuid.UUID) error
-	GetTeamFunc                    func(ctx context.Context, teamId uuid.UUID) (*models.Team, error)
-	GetTeamBySlugFunc              func(ctx context.Context, slug string) (*models.Team, error)
-	GetTeamMembersFunc             func(ctx context.Context, teamId uuid.UUID) ([]*models.TeamMember, error)
-	GetTeamMembersByUserIDFunc     func(ctx context.Context, userId uuid.UUID) ([]*models.TeamMember, error)
-	UpdateTeamFunc                 func(ctx context.Context, teamId uuid.UUID, team *models.Team) error
-	CreateTeamWithOwnerMemberFunc  func(ctx context.Context, name string, slug string, userId uuid.UUID) (*shared.TeamInfo, error)
-	DeleteTeamFunc                 func(ctx context.Context, teamId uuid.UUID) error
-	FindTeamByIDFunc               func(ctx context.Context, teamId uuid.UUID) (*models.Team, error)
-	FindTeamByStripeCustomerIdFunc func(ctx context.Context, stripeCustomerId string) (*models.Team, error)
-	FindTeamFunc                   func(ctx context.Context, team *models.Team) (*models.Team, error)
-	FindTeamMemberFunc             func(ctx context.Context, member *models.TeamMember) (*models.TeamMember, error)
-	FindUserByIDFunc               func(ctx context.Context, userId uuid.UUID) (*models.User, error)
+	Delegate                         *PostgresTeamStore
+	CheckTeamSlugFunc                func(ctx context.Context, slug string) (bool, error)
+	CountOwnerTeamMembersFunc        func(ctx context.Context, teamId uuid.UUID) (int64, error)
+	CountTeamMembersFunc             func(ctx context.Context, teamId uuid.UUID) (int64, error)
+	CountTeamMembersByUserIDFunc     func(ctx context.Context, userId uuid.UUID) (int64, error)
+	CreateTeamFunc                   func(ctx context.Context, name string, slug string) (*models.Team, error)
+	CreateTeamMemberFunc             func(ctx context.Context, teamId uuid.UUID, userId uuid.UUID, role models.TeamMemberRole, hasBillingAccess bool) (*models.TeamMember, error)
+	DeleteTeamMemberFunc             func(ctx context.Context, teamId uuid.UUID, userId uuid.UUID) error
+	GetTeamFunc                      func(ctx context.Context, teamId uuid.UUID) (*models.Team, error)
+	GetTeamBySlugFunc                func(ctx context.Context, slug string) (*models.Team, error)
+	GetTeamMembersFunc               func(ctx context.Context, teamId uuid.UUID) ([]*models.TeamMember, error)
+	GetTeamMembersByUserIDFunc       func(ctx context.Context, userId uuid.UUID) ([]*models.TeamMember, error)
+	UpdateTeamFunc                   func(ctx context.Context, teamId uuid.UUID, name string) (*models.Team, error)
+	CreateTeamWithOwnerMemberFunc    func(ctx context.Context, name string, slug string, userId uuid.UUID) (*shared.TeamInfo, error)
+	DeleteTeamFunc                   func(ctx context.Context, teamId uuid.UUID) error
+	FindTeamByIDFunc                 func(ctx context.Context, teamId uuid.UUID) (*models.Team, error)
+	FindTeamByStripeCustomerIdFunc   func(ctx context.Context, stripeCustomerId string) (*models.Team, error)
+	FindTeamFunc                     func(ctx context.Context, team *models.Team) (*models.Team, error)
+	FindTeamMemberFunc               func(ctx context.Context, member *models.TeamMember) (*models.TeamMember, error)
+	FindUserByIDFunc                 func(ctx context.Context, userId uuid.UUID) (*models.User, error)
+	CountTeamsFunc                   func(ctx context.Context, params *shared.ListTeamsParams) (int64, error)
+	ListTeamsFunc                    func(ctx context.Context, params *shared.ListTeamsParams) ([]*models.Team, error)
+	FindLatestTeamMemberByUserIDFunc func(ctx context.Context, userId uuid.UUID) (*models.TeamMember, error)
+	LoadTeamsByIdsFunc               func(ctx context.Context, teamIds ...uuid.UUID) ([]*models.Team, error)
+	UpdateTeamMemberFunc             func(ctx context.Context, member *models.TeamMember) (*models.TeamMember, error)
+	UpdateTeamMemberSelectedAtFunc   func(ctx context.Context, teamId uuid.UUID, userId uuid.UUID) error
+}
+
+// CountTeams implements services.TeamStore.
+func (p *TeamStoreDecorator) CountTeams(ctx context.Context, params *shared.ListTeamsParams) (int64, error) {
+	if p.CountTeamsFunc != nil {
+		return p.CountTeamsFunc(ctx, params)
+	}
+	return p.Delegate.CountTeams(ctx, params)
+}
+
+// ListTeams implements services.TeamStore.
+func (p *TeamStoreDecorator) ListTeams(ctx context.Context, params *shared.ListTeamsParams) ([]*models.Team, error) {
+	if p.ListTeamsFunc != nil {
+		return p.ListTeamsFunc(ctx, params)
+	}
+	return p.Delegate.ListTeams(ctx, params)
 }
 
 // FindUserByID implements services.TeamStore.
@@ -142,6 +164,9 @@ func (p *TeamStoreDecorator) DeleteTeamMember(ctx context.Context, teamId uuid.U
 
 // FindLatestTeamMemberByUserID implements services.TeamStore.
 func (p *TeamStoreDecorator) FindLatestTeamMemberByUserID(ctx context.Context, userId uuid.UUID) (*models.TeamMember, error) {
+	if p.FindLatestTeamMemberByUserIDFunc != nil {
+		return p.FindLatestTeamMemberByUserIDFunc(ctx, userId)
+	}
 	return p.Delegate.FindLatestTeamMemberByUserID(ctx, userId)
 }
 
@@ -168,26 +193,41 @@ func (p *TeamStoreDecorator) FindTeamMemberByTeamAndUserId(ctx context.Context, 
 
 // FindTeamMembersByUserID implements services.TeamStore.
 func (p *TeamStoreDecorator) FindTeamMembersByUserID(ctx context.Context, userId uuid.UUID, paginate *shared.TeamMemberListInput) ([]*models.TeamMember, error) {
+	if p.GetTeamMembersByUserIDFunc != nil {
+		return p.GetTeamMembersByUserIDFunc(ctx, userId)
+	}
 	return p.Delegate.FindTeamMembersByUserID(ctx, userId, paginate)
 }
 
 // LoadTeamsByIds implements services.TeamStore.
 func (p *TeamStoreDecorator) LoadTeamsByIds(ctx context.Context, teamIds ...uuid.UUID) ([]*models.Team, error) {
+	if p.LoadTeamsByIdsFunc != nil {
+		return p.LoadTeamsByIdsFunc(ctx, teamIds...)
+	}
 	return p.Delegate.LoadTeamsByIds(ctx, teamIds...)
 }
 
 // UpdateTeam implements services.TeamStore.
 func (p *TeamStoreDecorator) UpdateTeam(ctx context.Context, teamId uuid.UUID, name string) (*models.Team, error) {
+	if p.UpdateTeamFunc != nil {
+		return p.UpdateTeamFunc(ctx, teamId, name)
+	}
 	return p.Delegate.UpdateTeam(ctx, teamId, name)
 }
 
 // UpdateTeamMember implements services.TeamStore.
 func (p *TeamStoreDecorator) UpdateTeamMember(ctx context.Context, member *models.TeamMember) (*models.TeamMember, error) {
+	if p.UpdateTeamMemberFunc != nil {
+		return p.UpdateTeamMemberFunc(ctx, member)
+	}
 	return p.Delegate.UpdateTeamMember(ctx, member)
 }
 
 // UpdateTeamMemberSelectedAt implements services.TeamStore.
 func (p *TeamStoreDecorator) UpdateTeamMemberSelectedAt(ctx context.Context, teamId uuid.UUID, userId uuid.UUID) error {
+	if p.UpdateTeamMemberSelectedAtFunc != nil {
+		return p.UpdateTeamMemberSelectedAtFunc(ctx, teamId, userId)
+	}
 	return p.Delegate.UpdateTeamMemberSelectedAt(ctx, teamId, userId)
 }
 
