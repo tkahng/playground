@@ -63,15 +63,39 @@ func (api *Api) TeamTaskProjectList(ctx context.Context, input *shared.TeamTaskP
 	}, nil
 }
 
-func (api *Api) TeamTaskProjectCreate(ctx context.Context, input *shared.CreateTaskProjectWithTasksInput) (*struct {
-	Body *shared.TaskProject
-}, error) {
-	userInfo := contextstore.GetContextUserInfo(ctx)
-	if userInfo == nil {
+func (api *Api) TeamTaskProjectCreate(
+	ctx context.Context,
+	input *shared.CreateTaskProjectWithTasksInput,
+) (
+	*struct {
+		Body *shared.TaskProject
+	},
+	error,
+) {
+	if input == nil {
+		return nil, huma.Error400BadRequest("Input cannot be nil")
+	}
+	parsedTeamID, err := uuid.Parse(input.TeamID)
+	if err != nil {
+		return nil, huma.Error400BadRequest("Invalid team id")
+	}
+
+	teamInfo := contextstore.GetContextTeamInfo(ctx)
+	if teamInfo == nil {
 		return nil, huma.Error401Unauthorized("Unauthorized")
 	}
 
-	taskProject, err := api.app.Task().Store().CreateTaskProjectWithTasks(ctx, &input.Body)
+	taskProject, err := api.app.Task().Store().CreateTaskProjectWithTasks(ctx, &shared.CreateTaskProjectWithTasksDTO{
+		CreateTaskProjectDTO: shared.CreateTaskProjectDTO{
+			TeamID:      parsedTeamID,
+			MemberID:    teamInfo.Member.ID,
+			Name:        input.Body.Name,
+			Description: input.Body.Description,
+			Status:      input.Body.Status,
+			Rank:        input.Body.Rank,
+		},
+		Tasks: input.Body.Tasks,
+	})
 	if err != nil {
 		return nil, err
 	}

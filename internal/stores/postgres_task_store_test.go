@@ -42,11 +42,11 @@ func TestLoadTaskProjectsTasks(t *testing.T) {
 			t.Fatalf("failed to create task project: %v", err)
 		}
 		tasks, err := taskStore.CreateTask(ctx, &models.Task{
-			Name:      "Test Task",
-			Status:    models.TaskStatusDone,
-			CreatedBy: member.ID,
-			ProjectID: taskProject.ID,
-			TeamID:    member.TeamID,
+			Name:              "Test Task",
+			Status:            models.TaskStatusDone,
+			CreatedByMemberID: types.Pointer(member.ID),
+			ProjectID:         taskProject.ID,
+			TeamID:            member.TeamID,
 		})
 		if err != nil {
 			t.Fatalf("failed to create task: %v", err)
@@ -74,14 +74,14 @@ func TestLoadTaskProjectsTasks(t *testing.T) {
 				want: [][]*models.Task{
 					{
 						{
-							ID:        tasks.ID,
-							Name:      tasks.Name,
-							Status:    tasks.Status,
-							ProjectID: tasks.ProjectID,
-							CreatedBy: tasks.CreatedBy,
-							TeamID:    tasks.TeamID,
-							CreatedAt: tasks.CreatedAt,
-							UpdatedAt: tasks.UpdatedAt,
+							ID:                tasks.ID,
+							Name:              tasks.Name,
+							Status:            tasks.Status,
+							ProjectID:         tasks.ProjectID,
+							CreatedByMemberID: tasks.CreatedByMemberID,
+							TeamID:            tasks.TeamID,
+							CreatedAt:         tasks.CreatedAt,
+							UpdatedAt:         tasks.UpdatedAt,
 						},
 					},
 				},
@@ -139,11 +139,11 @@ func TestFindTaskByID(t *testing.T) {
 			t.Fatalf("failed to create task project: %v", err)
 		}
 		task, err := taskStore.CreateTask(ctx, &models.Task{
-			Name:      "Test Task",
-			Status:    models.TaskStatusDone,
-			CreatedBy: member.ID,
-			TeamID:    member.TeamID,
-			ProjectID: taskProject.ID,
+			Name:              "Test Task",
+			Status:            models.TaskStatusDone,
+			CreatedByMemberID: types.Pointer(member.ID),
+			TeamID:            member.TeamID,
+			ProjectID:         taskProject.ID,
 		})
 		if err != nil {
 			t.Fatalf("failed to create task: %v", err)
@@ -242,12 +242,12 @@ func TestFindLastTaskOrder(t *testing.T) {
 		_, err = taskStore.CreateTask(
 			ctx,
 			&models.Task{
-				Name:      "Test Task 1",
-				Status:    models.TaskStatusDone,
-				Rank:      1000,
-				ProjectID: taskProject.ID,
-				TeamID:    member.TeamID,
-				CreatedBy: member.ID,
+				Name:              "Test Task 1",
+				Status:            models.TaskStatusDone,
+				Rank:              1000,
+				ProjectID:         taskProject.ID,
+				TeamID:            member.TeamID,
+				CreatedByMemberID: types.Pointer(member.ID),
 			},
 		)
 		if err != nil {
@@ -329,12 +329,12 @@ func TestDeleteTask(t *testing.T) {
 		}
 
 		task, err := taskStore.CreateTask(ctx, &models.Task{
-			Name:      "Test Task 1",
-			Status:    models.TaskStatusDone,
-			Rank:      1000,
-			ProjectID: taskProject.ID,
-			CreatedBy: member.ID,
-			TeamID:    member.TeamID,
+			Name:              "Test Task 1",
+			Status:            models.TaskStatusDone,
+			Rank:              1000,
+			ProjectID:         taskProject.ID,
+			CreatedByMemberID: types.Pointer(member.ID),
+			TeamID:            member.TeamID,
 		})
 		if err != nil {
 			t.Fatalf("failed to create task: %v", err)
@@ -555,12 +555,12 @@ func TestListTasks(t *testing.T) {
 			t.Fatalf("failed to create task project: %v", err)
 		}
 		task, err := taskStore.CreateTask(ctx, &models.Task{
-			Name:        "Test Task",
-			Description: nil,
-			Status:      models.TaskStatusDone,
-			ProjectID:   taskProject.ID,
-			TeamID:      member.TeamID,
-			CreatedBy:   member.ID,
+			Name:              "Test Task",
+			Description:       nil,
+			Status:            models.TaskStatusDone,
+			ProjectID:         taskProject.ID,
+			TeamID:            member.TeamID,
+			CreatedByMemberID: types.Pointer(member.ID),
 		})
 		if err != nil {
 			t.Fatalf("failed to create task: %v", err)
@@ -669,12 +669,12 @@ func TestCountTasks(t *testing.T) {
 			t.Fatalf("failed to create task project: %v", err)
 		}
 		_, err = taskStore.CreateTask(ctx, &models.Task{
-			Name:        "Test Task",
-			Description: nil,
-			Status:      models.TaskStatusDone,
-			ProjectID:   taskProject.ID,
-			TeamID:      member.TeamID,
-			CreatedBy:   member.ID,
+			Name:              "Test Task",
+			Description:       nil,
+			Status:            models.TaskStatusDone,
+			ProjectID:         taskProject.ID,
+			TeamID:            member.TeamID,
+			CreatedByMemberID: types.Pointer(member.ID),
 		})
 		if err != nil {
 			t.Fatalf("failed to create task: %v", err)
@@ -955,12 +955,12 @@ func TestCreateTaskProject(t *testing.T) {
 				},
 				want: &models.TaskProject{
 					// UserID:      user.ID,
-					Name:        "Test Project",
-					Description: types.Pointer("Test Description"),
-					Status:      models.TaskProjectStatusDone,
-					Rank:        1000,
-					TeamID:      member.TeamID,
-					CreatedBy:   member.ID,
+					Name:              "Test Project",
+					Description:       types.Pointer("Test Description"),
+					Status:            models.TaskProjectStatusDone,
+					Rank:              1000,
+					TeamID:            member.TeamID,
+					CreatedByMemberID: types.Pointer(member.ID),
 				},
 				wantErr: false,
 			},

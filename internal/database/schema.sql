@@ -288,6 +288,7 @@ CREATE TABLE public.notifications (
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     read_at timestamp with time zone,
     channel text NOT NULL,
+    payload jsonb NOT NULL,
     user_id uuid,
     team_member_id uuid,
     team_id uuid,
@@ -467,7 +468,7 @@ CREATE TABLE public.stripe_webhook_events (
 CREATE TABLE public.task_projects (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     team_id uuid NOT NULL,
-    created_by uuid NOT NULL,
+    created_by_member_id uuid,
     name text NOT NULL,
     description text,
     status public.task_project_status DEFAULT 'todo'::public.task_project_status NOT NULL,
@@ -488,7 +489,7 @@ CREATE TABLE public.task_projects (
 CREATE TABLE public.tasks (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     team_id uuid NOT NULL,
-    created_by uuid NOT NULL,
+    created_by_member_id uuid,
     project_id uuid NOT NULL,
     name text NOT NULL,
     description text,
@@ -1292,11 +1293,11 @@ ALTER TABLE ONLY public.task_projects
 
 
 --
--- Name: task_projects task_projects_created_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: task_projects task_projects_created_by_member_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.task_projects
-    ADD CONSTRAINT task_projects_created_by_fkey FOREIGN KEY (created_by) REFERENCES public.team_members(id) ON UPDATE CASCADE ON DELETE CASCADE;
+    ADD CONSTRAINT task_projects_created_by_member_id_fkey FOREIGN KEY (created_by_member_id) REFERENCES public.team_members(id) ON UPDATE CASCADE ON DELETE SET NULL;
 
 
 --
@@ -1324,11 +1325,11 @@ ALTER TABLE ONLY public.tasks
 
 
 --
--- Name: tasks tasks_created_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: tasks tasks_created_by_member_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.tasks
-    ADD CONSTRAINT tasks_created_by_fkey FOREIGN KEY (created_by) REFERENCES public.team_members(id) ON UPDATE CASCADE ON DELETE CASCADE;
+    ADD CONSTRAINT tasks_created_by_member_id_fkey FOREIGN KEY (created_by_member_id) REFERENCES public.team_members(id) ON UPDATE CASCADE ON DELETE SET NULL;
 
 
 --

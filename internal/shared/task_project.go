@@ -26,23 +26,23 @@ const (
 type TaskProjectStatus string
 
 type TaskProject struct {
-	_               struct{}          `db:"task_projects" json:"-"`
-	ID              uuid.UUID         `db:"id" json:"id"`
-	CreatedBy       uuid.UUID         `db:"created_by" json:"created_by"`
-	TeamID          uuid.UUID         `db:"team_id" json:"team_id"`
-	Name            string            `db:"name" json:"name"`
-	Description     *string           `db:"description" json:"description"`
-	Status          TaskProjectStatus `db:"status" json:"status" enum:"todo,in_progress,done"`
-	StartAt         *time.Time        `db:"start_at" json:"start_at,omitempty" required:"false"`
-	EndAt           *time.Time        `db:"end_at" json:"end_at,omitempty" required:"false"`
-	AssigneeID      *uuid.UUID        `db:"assignee_id" json:"assignee_id,omitempty"`
-	ReporterID      *uuid.UUID        `db:"reporter_id" json:"reporter_id,omitempty"`
-	Rank            float64           `db:"rank" json:"rank"`
-	CreatedAt       time.Time         `db:"created_at" json:"created_at"`
-	UpdatedAt       time.Time         `db:"updated_at" json:"updated_at"`
-	CreatedByMember *TeamMember       `db:"created_by_member" src:"created_by" dest:"id" table:"team_members" json:"created_by_member,omitempty"`
-	Team            *Team             `db:"team" src:"team_id" dest:"id" table:"teams" json:"team,omitempty"`
-	Tasks           []*Task           `db:"tasks" src:"id" dest:"project_id" table:"tasks" json:"tasks,omitempty"`
+	_                 struct{}          `db:"task_projects" json:"-"`
+	ID                uuid.UUID         `db:"id" json:"id"`
+	CreatedByMemberID *uuid.UUID        `db:"created_by_member_id" json:"created_by_member_id"`
+	TeamID            uuid.UUID         `db:"team_id" json:"team_id"`
+	Name              string            `db:"name" json:"name"`
+	Description       *string           `db:"description" json:"description"`
+	Status            TaskProjectStatus `db:"status" json:"status" enum:"todo,in_progress,done"`
+	StartAt           *time.Time        `db:"start_at" json:"start_at,omitempty" required:"false"`
+	EndAt             *time.Time        `db:"end_at" json:"end_at,omitempty" required:"false"`
+	AssigneeID        *uuid.UUID        `db:"assignee_id" json:"assignee_id,omitempty"`
+	ReporterID        *uuid.UUID        `db:"reporter_id" json:"reporter_id,omitempty"`
+	Rank              float64           `db:"rank" json:"rank"`
+	CreatedAt         time.Time         `db:"created_at" json:"created_at"`
+	UpdatedAt         time.Time         `db:"updated_at" json:"updated_at"`
+	CreatedByMember   *TeamMember       `db:"created_by_member" src:"created_by_member_id" dest:"id" table:"team_members" json:"created_by_member,omitempty"`
+	Team              *Team             `db:"team" src:"team_id" dest:"id" table:"teams" json:"team,omitempty"`
+	Tasks             []*Task           `db:"tasks" src:"id" dest:"project_id" table:"tasks" json:"tasks,omitempty"`
 }
 
 func FromModelProject(task *models.TaskProject) *TaskProject {
@@ -50,22 +50,22 @@ func FromModelProject(task *models.TaskProject) *TaskProject {
 		return nil
 	}
 	return &TaskProject{
-		ID:              task.ID,
-		CreatedBy:       task.CreatedBy,
-		TeamID:          task.TeamID,
-		Name:            task.Name,
-		Description:     task.Description,
-		Status:          TaskProjectStatus(task.Status),
-		StartAt:         task.StartAt,
-		EndAt:           task.EndAt,
-		AssigneeID:      task.AssigneeID,
-		ReporterID:      task.ReporterID,
-		Rank:            task.Rank,
-		CreatedAt:       task.CreatedAt,
-		UpdatedAt:       task.UpdatedAt,
-		CreatedByMember: FromTeamMemberModel(task.CreatedByMember),
-		Team:            FromTeamModel(task.Team),
-		Tasks:           mapper.Map(task.Tasks, FromModelTask),
+		ID:                task.ID,
+		CreatedByMemberID: task.CreatedByMemberID,
+		TeamID:            task.TeamID,
+		Name:              task.Name,
+		Description:       task.Description,
+		Status:            TaskProjectStatus(task.Status),
+		StartAt:           task.StartAt,
+		EndAt:             task.EndAt,
+		AssigneeID:        task.AssigneeID,
+		ReporterID:        task.ReporterID,
+		Rank:              task.Rank,
+		CreatedAt:         task.CreatedAt,
+		UpdatedAt:         task.UpdatedAt,
+		CreatedByMember:   FromTeamMemberModel(task.CreatedByMember),
+		Team:              FromTeamModel(task.Team),
+		Tasks:             mapper.Map(task.Tasks, FromModelTask),
 	}
 }
 
@@ -82,9 +82,20 @@ type CreateTaskProjectWithTasksDTO struct {
 	CreateTaskProjectDTO
 	Tasks []CreateTaskProjectTaskDTO `json:"tasks,omitempty" required:"false"`
 }
+type CreateTaskProjectWithoutTeamDTO struct {
+	Name        string            `json:"name" required:"true"`
+	Description *string           `json:"description,omitempty" required:"false"`
+	Status      TaskProjectStatus `json:"status" required:"false" enum:"todo,in_progress,done" default:"todo"`
+	Rank        float64           `json:"rank,omitempty" required:"false"`
+}
+
+type CreateTaskProjectWithoutTeamWithTasks struct {
+	CreateTaskProjectWithoutTeamDTO
+	Tasks []CreateTaskProjectTaskDTO `json:"tasks,omitempty" required:"false"`
+}
 type CreateTaskProjectWithTasksInput struct {
 	TeamID string `json:"team_id" path:"team-id" required:"true" format:"uuid"`
-	Body   CreateTaskProjectWithTasksDTO
+	Body   CreateTaskProjectWithoutTeamWithTasks
 }
 
 type UpdateTaskProjectBaseDTO struct {

@@ -55,9 +55,9 @@ func (*taskStore) TaskWhere(task *models.Task) *map[string]any {
 			"_eq": task.TeamID.String(),
 		}
 	}
-	if task.CreatedBy != uuid.Nil {
-		where["created_by"] = map[string]any{
-			"_eq": task.CreatedBy.String(),
+	if task.CreatedByMemberID != nil {
+		where["created_by_member_id"] = map[string]any{
+			"_eq": task.CreatedByMemberID.String(),
 		}
 	}
 	if task.Status != "" {
@@ -302,9 +302,9 @@ func ListTasksFilterFunc(filter *shared.TaskListFilter) *map[string]any {
 			"_in": filter.Status,
 		}
 	}
-	if len(filter.CreatedBy) > 0 {
-		where["created_by"] = map[string]any{
-			"_eq": filter.CreatedBy,
+	if len(filter.CreatedByMemberID) > 0 {
+		where["created_by_member_id"] = map[string]any{
+			"_eq": filter.CreatedByMemberID,
 		}
 	}
 
@@ -441,13 +441,12 @@ func (s *taskStore) CountTaskProjects(ctx context.Context, filter *shared.TaskPr
 
 func (s *taskStore) CreateTaskProject(ctx context.Context, input *shared.CreateTaskProjectDTO) (*models.TaskProject, error) {
 	taskProject := models.TaskProject{
-		// UserID:      input.UserID,
-		TeamID:      input.TeamID,
-		CreatedBy:   input.MemberID,
-		Name:        input.Name,
-		Description: input.Description,
-		Status:      models.TaskProjectStatus(input.Status),
-		Rank:        input.Rank,
+		TeamID:            input.TeamID,
+		CreatedByMemberID: &input.MemberID,
+		Name:              input.Name,
+		Description:       input.Description,
+		Status:            models.TaskProjectStatus(input.Status),
+		Rank:              input.Rank,
 	}
 	projects, err := crudrepo.TaskProject.PostOne(ctx, s.db, &taskProject)
 	if err != nil {
@@ -480,13 +479,13 @@ func (s *taskStore) CreateTaskProjectWithTasks(ctx context.Context, input *share
 
 func (s *taskStore) CreateTaskFromInput(ctx context.Context, teamID uuid.UUID, projectID uuid.UUID, memberID uuid.UUID, input *shared.CreateTaskProjectTaskDTO) (*models.Task, error) {
 	setter := models.Task{
-		ProjectID:   projectID,
-		CreatedBy:   memberID,
-		TeamID:      teamID,
-		Name:        input.Name,
-		Description: input.Description,
-		Status:      models.TaskStatus(input.Status),
-		Rank:        input.Rank,
+		ProjectID:         projectID,
+		CreatedByMemberID: &memberID,
+		TeamID:            teamID,
+		Name:              input.Name,
+		Description:       input.Description,
+		Status:            models.TaskStatus(input.Status),
+		Rank:              input.Rank,
 	}
 	task, err := s.CreateTask(ctx, &setter)
 	if err != nil {

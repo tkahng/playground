@@ -5,6 +5,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/models"
+	"github.com/tkahng/authgo/internal/tools/types"
 )
 
 func Test_taskStore_TaskWhere(t *testing.T) {
@@ -56,14 +57,14 @@ func Test_taskStore_TaskWhere(t *testing.T) {
 			},
 		},
 		{
-			name: "created_by",
+			name: "created_by_member_id",
 			args: args{
 				Task: &models.Task{
-					CreatedBy: uuid.New(),
+					CreatedByMemberID: types.Pointer(uuid.New()),
 				},
 			},
 			want: &map[string]any{
-				"created_by": uuid.New(),
+				"created_by_member_id": uuid.New(),
 			},
 		},
 		{
@@ -145,9 +146,9 @@ func Test_taskStore_TaskWhere(t *testing.T) {
 							t.Errorf("have key %v, but have %v", k, tt.args.Task.ID)
 						}
 					}
-					if k == "created_by" {
-						if tt.args.Task.CreatedBy == uuid.Nil {
-							t.Errorf("have key %v, but have %v", k, tt.args.Task.CreatedBy)
+					if k == "created_by_member_id" {
+						if tt.args.Task.CreatedByMemberID == nil {
+							t.Errorf("have key %v, but have %v", k, tt.args.Task.CreatedByMemberID)
 						}
 					}
 					if k == "team_id" {

@@ -8,13 +8,14 @@ create type "task_project_status" as enum ('todo', 'in_progress', 'done');
 create table if not exists public.task_projects (
     id uuid primary key default gen_random_uuid(),
     team_id uuid not null references public.teams on delete cascade on update cascade,
-    created_by uuid not null references public.team_members on delete cascade on update cascade,
-    name text not null,
-    description text,
-    status task_project_status not null default 'todo',
-    start_at timestamptz,
-    end_at timestamptz,
-    assignee_id uuid references public.team_members on delete
+    created_by_member_id uuid references public.team_members on delete
+    set null on update cascade,
+        name text not null,
+        description text,
+        status task_project_status not null default 'todo',
+        start_at timestamptz,
+        end_at timestamptz,
+        assignee_id uuid references public.team_members on delete
     set null on update cascade,
         reporter_id uuid references public.team_members on delete
     set null on update cascade,
@@ -32,14 +33,15 @@ create table if not exists public.tasks (
     id uuid primary key default gen_random_uuid(),
     -- user_id uuid not null references public.users on delete cascade on update cascade,
     team_id uuid not null references public.teams on delete cascade on update cascade,
-    created_by uuid not null references public.team_members on delete cascade on update cascade,
-    project_id uuid not null references public.task_projects on delete cascade on update cascade,
-    name text not null,
-    description text,
-    status task_status not null default 'todo',
-    start_at timestamptz,
-    end_at timestamptz,
-    assignee_id uuid references public.team_members on delete
+    created_by_member_id uuid references public.team_members on delete
+    set null on update cascade,
+        project_id uuid not null references public.task_projects on delete cascade on update cascade,
+        name text not null,
+        description text,
+        status task_status not null default 'todo',
+        start_at timestamptz,
+        end_at timestamptz,
+        assignee_id uuid references public.team_members on delete
     set null on update cascade,
         reporter_id uuid references public.team_members on delete
     set null on update cascade,

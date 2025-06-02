@@ -11,6 +11,7 @@ import (
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/stores"
 	"github.com/tkahng/authgo/internal/test"
+	"github.com/tkahng/authgo/internal/tools/types"
 )
 
 func TestDefineTaskOrderNumberByStatus(t *testing.T) {
@@ -44,34 +45,34 @@ func TestDefineTaskOrderNumberByStatus(t *testing.T) {
 		}
 
 		task1, err := taskStore.CreateTask(ctx, &models.Task{
-			Name:      "Task 1",
-			Status:    models.TaskStatusDone,
-			Rank:      1000,
-			TeamID:    member.TeamID,
-			ProjectID: taskProject.ID,
-			CreatedBy: member.ID,
+			Name:              "Task 1",
+			Status:            models.TaskStatusDone,
+			Rank:              1000,
+			TeamID:            member.TeamID,
+			ProjectID:         taskProject.ID,
+			CreatedByMemberID: types.Pointer(member.ID),
 		})
 		if err != nil {
 			t.Fatalf("failed to create task: %v", err)
 		}
 		task2, err := taskStore.CreateTask(ctx, &models.Task{
-			Name:      "Task 2",
-			Status:    models.TaskStatusDone,
-			Rank:      2000,
-			TeamID:    member.TeamID,
-			ProjectID: taskProject.ID,
-			CreatedBy: member.ID,
+			Name:              "Task 2",
+			Status:            models.TaskStatusDone,
+			Rank:              2000,
+			TeamID:            member.TeamID,
+			ProjectID:         taskProject.ID,
+			CreatedByMemberID: types.Pointer(member.ID),
 		})
 		if err != nil {
 			t.Fatalf("failed to create task: %v", err)
 		}
 		task3, err := taskStore.CreateTask(ctx, &models.Task{
-			Name:      "Task 3",
-			Status:    models.TaskStatusDone,
-			Rank:      3000,
-			ProjectID: taskProject.ID,
-			TeamID:    member.TeamID,
-			CreatedBy: member.ID,
+			Name:              "Task 3",
+			Status:            models.TaskStatusDone,
+			Rank:              3000,
+			ProjectID:         taskProject.ID,
+			TeamID:            member.TeamID,
+			CreatedByMemberID: types.Pointer(member.ID),
 		})
 		if err != nil || task3 == nil {
 			t.Fatalf("failed to create task: %v", err)

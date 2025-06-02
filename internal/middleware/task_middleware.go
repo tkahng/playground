@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"net/http"
-	"slices"
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
@@ -42,14 +41,14 @@ func CheckTaskOwnerMiddleware(api huma.API, app core.App) func(ctx huma.Context,
 			huma.WriteErr(api, ctx, http.StatusUnauthorized, "unauthorized at middleware")
 			return
 		}
-		if task.CreatedBy != teamInfo.Member.ID {
-			if slices.Contains(userInfo.Permissions, "superuser") {
-				next(ctx)
-				return
-			}
-			huma.WriteErr(api, ctx, http.StatusForbidden, "task user id does not match user id")
-			return
-		}
+		// if task.CreatedByMemberID != teamInfo.Member.ID {
+		// 	if slices.Contains(userInfo.Permissions, "superuser") {
+		// 		next(ctx)
+		// 		return
+		// 	}
+		// 	huma.WriteErr(api, ctx, http.StatusForbidden, "task user id does not match user id")
+		// 	return
+		// }
 		next(ctx)
 	}
 }

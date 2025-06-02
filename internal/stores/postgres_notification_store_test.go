@@ -24,6 +24,7 @@ func TestPostgresNotificationStore_CreateNotification(t *testing.T) {
 			Type:      "test-type",
 			CreatedAt: time.Now(),
 			Metadata:  map[string]any{"test": "test"},
+			Payload:   []byte("{\"key\": \"value\"}"),
 		}
 
 		got, err := store.CreateNotification(ctx, notification)
@@ -44,6 +45,7 @@ func TestPostgresNotificationStore_CreateManyNotifications(t *testing.T) {
 				Type:      "type-1",
 				CreatedAt: time.Now(),
 				Metadata:  map[string]any{"test": "test"},
+				Payload:   []byte("{\"key\": \"value\"}"),
 			},
 			{
 				ID:        uuid.New(),
@@ -51,6 +53,7 @@ func TestPostgresNotificationStore_CreateManyNotifications(t *testing.T) {
 				Type:      "type-2",
 				CreatedAt: time.Now(),
 				Metadata:  map[string]any{"test": "test"},
+				Payload:   []byte("{\"key\": \"value\"}"),
 			},
 		}
 
@@ -76,6 +79,7 @@ func TestPostgresNotificationStore_FindNotification(t *testing.T) {
 			Type:      "find-type",
 			CreatedAt: time.Now(),
 			Metadata:  map[string]any{"test": "test"},
+			Payload:   []byte("{\"key\": \"value\"}"),
 		}
 		_, err := store.CreateNotification(ctx, notification)
 		assert.NoError(t, err)
