@@ -67,7 +67,10 @@ func (s *taskService) FindAndUpdateTask(ctx context.Context, taskID uuid.UUID, i
 	task.Name = input.Name
 	task.Description = input.Description
 	task.Status = models.TaskStatus(input.Status)
-	task.Rank = input.Rank
+	task.StartAt = input.StartAt
+	task.EndAt = input.EndAt
+	task.AssigneeID = input.AssigneeID
+	task.ReporterID = input.ReporterID
 	task.ParentID = input.ParentID
 	err = s.store.UpdateTask(ctx, task)
 	if err != nil {

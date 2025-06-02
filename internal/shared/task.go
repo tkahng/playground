@@ -66,15 +66,14 @@ type CreateTaskProjectTaskDTO struct {
 }
 
 type UpdateTaskDto struct {
-	Name        string     `json:"name" required:"true"`
-	Description *string    `json:"description,omitempty"`
-	Status      TaskStatus `json:"status" enum:"todo,in_progress,done"`
-	Rank        float64    `json:"rank"`
-	StartAt     *time.Time `json:"start_at,omitempty" required:"false"`
-	EndAt       *time.Time `json:"end_at,omitempty" required:"false"`
-	AssigneeID  *uuid.UUID `json:"assignee_id,omitempty" required:"false"`
-	ReporterID  *uuid.UUID `json:"reporter_id,omitempty" required:"false"`
-	ParentID    *uuid.UUID `json:"parent_id,omitempty"`
+	Name        string     `db:"name" json:"name"`
+	Description *string    `db:"description" json:"description"`
+	Status      TaskStatus `db:"status" json:"status" enum:"todo,in_progress,done"`
+	StartAt     *time.Time `db:"start_at" json:"start_at" nullable:"true"`
+	EndAt       *time.Time `db:"end_at" json:"end_at" nullable:"true"`
+	AssigneeID  *uuid.UUID `db:"assignee_id" json:"assignee_id" nullable:"true"`
+	ReporterID  *uuid.UUID `db:"reporter_id" json:"reporter_id" nullable:"true"`
+	ParentID    *uuid.UUID `db:"parent_id" json:"parent_id" nullable:"true"`
 }
 
 type UpdateTaskInput struct {

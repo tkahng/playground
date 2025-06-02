@@ -2025,17 +2025,15 @@ export interface components {
              * @description A URL to the JSON Schema for this object.
              */
             readonly $schema?: string;
-            assignee_id?: string;
-            description?: string;
+            assignee_id: string | null;
+            description: string | null;
             /** Format: date-time */
-            end_at?: string;
+            end_at: string | null;
             name: string;
-            parent_id?: string;
-            /** Format: double */
-            rank: number;
-            reporter_id?: string;
+            parent_id: string | null;
+            reporter_id: string | null;
             /** Format: date-time */
-            start_at?: string;
+            start_at: string | null;
             /** @enum {string} */
             status: "todo" | "in_progress" | "done";
         };

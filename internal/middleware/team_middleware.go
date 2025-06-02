@@ -13,7 +13,7 @@ import (
 	"github.com/tkahng/authgo/internal/models"
 )
 
-func TeamCanDeleteMiddleware(api huma.API, app core.App) func(ctx huma.Context, next func(huma.Context)) {
+func TeamCanDelete(api huma.API, app core.App) func(ctx huma.Context, next func(huma.Context)) {
 	return func(ctx huma.Context, next func(huma.Context)) {
 		rawCtx := ctx.Context()
 		teamInfo := contextstore.GetContextTeamInfo(rawCtx)
@@ -34,7 +34,7 @@ func TeamCanDeleteMiddleware(api huma.API, app core.App) func(ctx huma.Context, 
 	}
 }
 
-func TeamInfoFromTaskMiddleware(api huma.API, app core.App) func(ctx huma.Context, next func(huma.Context)) {
+func TeamInfoFromTask(api huma.API, app core.App) func(ctx huma.Context, next func(huma.Context)) {
 	return func(ctx huma.Context, next func(huma.Context)) {
 		rawCtx := ctx.Context()
 		userInfo := contextstore.GetContextUserInfo(rawCtx)
@@ -44,7 +44,7 @@ func TeamInfoFromTaskMiddleware(api huma.API, app core.App) func(ctx huma.Contex
 		}
 		taskId := ctx.Param("task-id")
 		if taskId == "" {
-			next(ctx)
+			huma.WriteErr(api, ctx, http.StatusBadRequest, "task id is required", nil)
 			return
 		}
 		parsedTaskId, err := uuid.Parse(taskId)
@@ -85,7 +85,7 @@ func TeamInfoFromTaskMiddleware(api huma.API, app core.App) func(ctx huma.Contex
 	}
 }
 
-func TeamInfoFromTaskProjectMiddleware(api huma.API, app core.App) func(ctx huma.Context, next func(huma.Context)) {
+func TeamInfoFromTaskProject(api huma.API, app core.App) func(ctx huma.Context, next func(huma.Context)) {
 	return func(ctx huma.Context, next func(huma.Context)) {
 		rawCtx := ctx.Context()
 		userInfo := contextstore.GetContextUserInfo(rawCtx)
@@ -136,18 +136,17 @@ func TeamInfoFromTaskProjectMiddleware(api huma.API, app core.App) func(ctx huma
 	}
 }
 
-func TeamInfoFromParamMiddleware(api huma.API, app core.App) func(ctx huma.Context, next func(huma.Context)) {
-
+func TeamInfoFromParam(api huma.API, app core.App) func(ctx huma.Context, next func(huma.Context)) {
 	return func(ctx huma.Context, next func(huma.Context)) {
 		rawCtx := ctx.Context()
 		userInfo := contextstore.GetContextUserInfo(rawCtx)
 		if userInfo == nil {
-			next(ctx)
+			huma.WriteErr(api, ctx, http.StatusUnauthorized, "unauthorized at middleware", nil)
 			return
 		}
 		teamId := ctx.Param("team-id")
 		if teamId == "" {
-			next(ctx)
+			huma.WriteErr(api, ctx, http.StatusBadRequest, "team id is required", nil)
 			return
 		}
 		id, err := uuid.Parse(teamId)

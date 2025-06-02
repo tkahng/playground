@@ -9,7 +9,7 @@ import (
 )
 
 func BindStripeApi(api huma.API, appApi *Api) {
-	teamInfoMiddleware := middleware.TeamInfoFromParamMiddleware(api, appApi.app)
+	teamInfoMiddleware := middleware.TeamInfoFromParam(api, appApi.app)
 	selectCustomerFromUserMiddleware := middleware.SelectCustomerFromUserMiddleware(api, appApi.app)
 	selectCustomerFromTeamMiddleware := middleware.SelectCustomerFromTeamMiddleware(api, appApi.app)
 	stripeGroup := huma.NewGroup(api)
