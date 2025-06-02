@@ -1,13 +1,13 @@
 import { Separator } from "@/components/ui/separator";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { useTeamMemberContext } from "@/hooks/use-team-context";
+import { useTeamContext } from "@/hooks/use-team-context";
 import { taskProjectList } from "@/lib/queries";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation } from "react-router";
 export default function TaskProjectSidebar() {
   const { user: auth, checkAuth } = useAuthProvider();
-  const { currentTeam } = useTeamMemberContext();
+  const { team: currentTeam } = useTeamContext();
   const { pathname } = useLocation();
   const {
     data: projects,

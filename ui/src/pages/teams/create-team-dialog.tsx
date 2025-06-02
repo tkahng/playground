@@ -18,8 +18,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { useTeamContext } from "@/hooks/use-team-context";
-import { taskProjectCreateWithAi } from "@/lib/queries";
+import { createTeam } from "@/lib/team-queries";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -28,36 +27,28 @@ import { toast } from "sonner";
 import { z } from "zod";
 
 const formSchema = z.object({
-  input: z.string().min(1),
+  name: z.string().min(1, "Team name is required"),
+  slug: z.string().min(1, "Team slug is required"),
 });
 
-export function CreateProjectAiDialog() {
-  const { user, checkAuth } = useAuthProvider();
-  const { team: currentTeam } = useTeamContext();
+export function CreateTeamDialog() {
+  const { user } = useAuthProvider();
   const [isDialogOpen, setDialogOpen] = useState(false);
   const queryClient = useQueryClient();
 
   const mutation = useMutation({
     mutationFn: async (values: z.infer<typeof formSchema>) => {
-      await checkAuth(); // Ensure user is authenticated
       if (!user?.tokens.access_token) {
-        throw new Error("Missing access token or role ID");
+        throw new Error("Missing access token or user ID");
       }
-      if (!currentTeam?.id) {
-        throw new Error("Current team member team ID is required");
-      }
-      await taskProjectCreateWithAi(
-        user.tokens.access_token,
-        currentTeam.id,
-        values
-      );
+      await createTeam(user.tokens.access_token, values);
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({
-        queryKey: ["projects-list"],
+        queryKey: ["user-teams-list"],
       });
       setDialogOpen(false);
-      toast.success("Project created successfully");
+      toast.success("Team created successfully");
     },
     onError: (error) => {
       toast.error(error.message);
@@ -66,7 +57,8 @@ export function CreateProjectAiDialog() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      input: "",
+      name: "",
+      slug: "",
     },
   });
 
@@ -77,27 +69,38 @@ export function CreateProjectAiDialog() {
   return (
     <Dialog open={isDialogOpen} onOpenChange={setDialogOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline">Create Project with AI</Button>
+        <Button variant="outline">Create Team</Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Create Project with AI</DialogTitle>
-          <DialogDescription>
-            Create a new project to manage tasks and projects.
-          </DialogDescription>
+          <DialogTitle>Create Team</DialogTitle>
+          <DialogDescription>Create a new team.</DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-            <div className="grid gap-4 py-4">
-              <div className="w-full px-10">
+          <form onSubmit={form.handleSubmit(onSubmit)}>
+            <div className="grid">
+              <div className="space-y-4">
                 <FormField
                   control={form.control}
-                  name="input"
+                  name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Project Name</FormLabel>
+                      <FormLabel>Name</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="Project Name" />
+                        <Input {...field} placeholder="Name" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="slug"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Slug</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="Slug" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -105,7 +108,7 @@ export function CreateProjectAiDialog() {
                 />
 
                 <DialogFooter>
-                  <Button type="submit">Create Project</Button>
+                  <Button type="submit">Create Team</Button>
                 </DialogFooter>
               </div>
             </div>

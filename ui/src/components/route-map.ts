@@ -30,4 +30,6 @@ export const RouteMap = {
   TASK_PROJECTS: "/projects",
   TASKS_HOME: "/tasks",
   PAYMENT: "/payment",
+
+  TEAM_LIST: "/teams",
 };

@@ -38,7 +38,7 @@ export const AuthProvider: React.FC<{
   children: React.ReactNode;
 }> = ({ children }) => {
   const [user, setUser] = useLocalStorage<UserInfoTokens | null>(
-    "currentMember",
+    "currentUser",
     null
   );
   const values = React.useMemo(() => {
@@ -106,7 +106,7 @@ export const AuthProvider: React.FC<{
       getOrRefreshToken,
       checkAuth,
     };
-  }, [setUser, user]);
+  }, [user]);
 
   return <AuthContext.Provider value={values}>{children}</AuthContext.Provider>;
 };

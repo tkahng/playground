@@ -1,4 +1,5 @@
 import { useAuthProvider } from "@/hooks/use-auth-provider";
+import { useTeamContext } from "@/hooks/use-team-context";
 import {
   createSearchParams,
   Navigate,
@@ -6,9 +7,10 @@ import {
   useLocation,
 } from "react-router";
 
-export default function () {
+export default function TeamsLayoutBase() {
   const location = useLocation();
   const { user } = useAuthProvider();
+  const { team } = useTeamContext();
 
   if (!user) {
     return (
@@ -22,5 +24,17 @@ export default function () {
       />
     );
   }
-  return <Outlet context={{ user }} />;
+  if (!team) {
+    return (
+      <Navigate
+        to={{
+          pathname: "/teams",
+          search: createSearchParams({
+            redirect_to: location.pathname + location.search,
+          }).toString(),
+        }}
+      />
+    );
+  }
+  return <Outlet context={{ user, team }} />;
 }

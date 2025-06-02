@@ -1,7 +1,7 @@
 import { DataTable } from "@/components/data-table";
 import { RouteMap } from "@/components/route-map";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { useTeamMemberContext } from "@/hooks/use-team-context";
+import { useTeamContext } from "@/hooks/use-team-context";
 import { taskProjectList } from "@/lib/queries";
 import { useQuery } from "@tanstack/react-query";
 import { PaginationState, Updater } from "@tanstack/react-table";
@@ -11,7 +11,7 @@ import { CreateProjectDialog } from "./create-project-dialog";
 
 export default function ProjectListPage() {
   const { user, checkAuth } = useAuthProvider();
-  const { currentTeam } = useTeamMemberContext();
+  const { team: currentTeam } = useTeamContext();
   const [searchParams, setSearchParams] = useSearchParams();
   const pageIndex = parseInt(searchParams.get("page") || "0", 10);
   const pageSize = parseInt(searchParams.get("per_page") || "10", 10);
