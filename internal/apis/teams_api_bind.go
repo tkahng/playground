@@ -11,6 +11,7 @@ import (
 
 func BindTeamsApi(api huma.API, appApi *Api) {
 	teamInfoMiddleware := middleware.TeamInfoFromParam(api, appApi.app)
+	teamInfoSlugMiddleware := middleware.TeamInfoFromTeamSlug(api, appApi.app)
 	requireMember := middleware.RequireTeamMemberRolesMiddleware(api)
 	requiredOwnerMember := middleware.RequireTeamMemberRolesMiddleware(api, models.TeamMemberRoleOwner)
 	checkTeamDelete := middleware.TeamCanDelete(api, appApi.app)
@@ -128,7 +129,26 @@ func BindTeamsApi(api huma.API, appApi *Api) {
 		},
 		appApi.GetTeam,
 	)
-
+	// get team by slug
+	huma.Register(
+		teamsGroup,
+		huma.Operation{
+			OperationID: "get-team-by-slug",
+			Method:      http.MethodGet,
+			Path:        "/teams/slug/{slug}",
+			Summary:     "get-team-by-slug",
+			Description: "get a team by slug",
+			Tags:        []string{"Teams"},
+			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+			Middlewares: huma.Middlewares{
+				teamInfoSlugMiddleware,
+			},
+		},
+		appApi.FindTeamBySlug,
+	)
 	// update team
 	huma.Register(
 		teamsGroup,

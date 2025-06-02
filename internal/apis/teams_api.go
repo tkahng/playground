@@ -151,6 +151,31 @@ func (api *Api) GetUserTeams(
 	}, nil
 }
 
+func (api *Api) FindTeamBySlug(
+	ctx context.Context,
+	input *struct {
+		Slug string `path:"team-slug" required:"true"`
+	},
+) (
+	*TeamOutput,
+	error,
+) {
+	info := contextstore.GetContextUserInfo(ctx)
+	if info == nil {
+		return nil, huma.Error401Unauthorized("unauthorized")
+	}
+	team, err := api.app.Team().Store().FindTeamBySlug(ctx, input.Slug)
+	if err != nil {
+		return nil, err
+	}
+	if team == nil {
+		return nil, huma.Error404NotFound("team not found")
+	}
+	return &TeamOutput{
+		Body: shared.FromTeamModel(team),
+	}, nil
+}
+
 type TeamMemberOutput struct {
 	Body *shared.TeamMember `json:"body"`
 }

@@ -70,15 +70,7 @@ func TeamInfoFromTask(api huma.API, app core.App) func(ctx huma.Context, next fu
 			huma.WriteErr(api, ctx, http.StatusNotFound, "team not found", nil)
 			return
 		}
-		teamInfo.User = models.User{
-			ID:              userInfo.User.ID,
-			Name:            userInfo.User.Name,
-			EmailVerifiedAt: userInfo.User.EmailVerifiedAt,
-			CreatedAt:       userInfo.User.CreatedAt,
-			UpdatedAt:       userInfo.User.UpdatedAt,
-			Email:           userInfo.User.Email,
-			Image:           userInfo.User.Image,
-		}
+
 		ctxx := contextstore.SetContextTeamInfo(rawCtx, teamInfo)
 		ctx = huma.WithContext(ctx, ctxx)
 		next(ctx)
@@ -121,15 +113,36 @@ func TeamInfoFromTaskProject(api huma.API, app core.App) func(ctx huma.Context, 
 			huma.WriteErr(api, ctx, http.StatusNotFound, "team not found", nil)
 			return
 		}
-		teamInfo.User = models.User{
-			ID:              userInfo.User.ID,
-			Name:            userInfo.User.Name,
-			EmailVerifiedAt: userInfo.User.EmailVerifiedAt,
-			CreatedAt:       userInfo.User.CreatedAt,
-			UpdatedAt:       userInfo.User.UpdatedAt,
-			Email:           userInfo.User.Email,
-			Image:           userInfo.User.Image,
+
+		ctxx := contextstore.SetContextTeamInfo(rawCtx, teamInfo)
+		ctx = huma.WithContext(ctx, ctxx)
+		next(ctx)
+	}
+}
+
+func TeamInfoFromTeamSlug(api huma.API, app core.App) func(ctx huma.Context, next func(huma.Context)) {
+	return func(ctx huma.Context, next func(huma.Context)) {
+		rawCtx := ctx.Context()
+		userInfo := contextstore.GetContextUserInfo(rawCtx)
+		if userInfo == nil {
+			huma.WriteErr(api, ctx, http.StatusUnauthorized, "unauthorized at middleware", nil)
+			return
 		}
+		teamSlug := ctx.Param("team-slug")
+		if teamSlug == "" {
+			huma.WriteErr(api, ctx, http.StatusBadRequest, "team slug is required", nil)
+			return
+		}
+		teamInfo, err := app.Team().FindTeamInfoBySlug(rawCtx, teamSlug, userInfo.User.ID)
+		if err != nil {
+			huma.WriteErr(api, ctx, http.StatusInternalServerError, "error getting team info", err)
+			return
+		}
+		if teamInfo == nil {
+			huma.WriteErr(api, ctx, http.StatusNotFound, "team not found", nil)
+			return
+		}
+
 		ctxx := contextstore.SetContextTeamInfo(rawCtx, teamInfo)
 		ctx = huma.WithContext(ctx, ctxx)
 		next(ctx)
@@ -160,18 +173,10 @@ func TeamInfoFromParam(api huma.API, app core.App) func(ctx huma.Context, next f
 			return
 		}
 		if teamInfo == nil {
-			next(ctx)
+			huma.WriteErr(api, ctx, http.StatusNotFound, "team not found", nil)
 			return
 		}
-		teamInfo.User = models.User{
-			ID:              userInfo.User.ID,
-			Name:            userInfo.User.Name,
-			EmailVerifiedAt: userInfo.User.EmailVerifiedAt,
-			CreatedAt:       userInfo.User.CreatedAt,
-			UpdatedAt:       userInfo.User.UpdatedAt,
-			Email:           userInfo.User.Email,
-			Image:           userInfo.User.Image,
-		}
+
 		ctxx := contextstore.SetContextTeamInfo(rawCtx, teamInfo)
 		ctx = huma.WithContext(ctx, ctxx)
 		next(ctx)
@@ -231,15 +236,7 @@ func LatestTeamMiddleware(api huma.API, app core.App) func(ctx huma.Context, nex
 			next(ctx)
 			return
 		}
-		info.User = models.User{
-			ID:              userInfo.User.ID,
-			Name:            userInfo.User.Name,
-			EmailVerifiedAt: userInfo.User.EmailVerifiedAt,
-			CreatedAt:       userInfo.User.CreatedAt,
-			UpdatedAt:       userInfo.User.UpdatedAt,
-			Email:           userInfo.User.Email,
-			Image:           userInfo.User.Image,
-		}
+
 		ctxx := contextstore.SetContextTeamInfo(rawCtx, info)
 		ctx = huma.WithContext(ctx, ctxx)
 		next(ctx)

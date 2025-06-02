@@ -589,6 +589,18 @@ func (q *PostgresTeamStore) FindTeamByID(ctx context.Context, teamId uuid.UUID) 
 	)
 }
 
+func (q *PostgresTeamStore) FindTeamBySlug(ctx context.Context, slug string) (*models.Team, error) {
+	return crudrepo.Team.GetOne(
+		ctx,
+		q.db,
+		&map[string]any{
+			"slug": map[string]any{
+				"_eq": slug,
+			},
+		},
+	)
+}
+
 // FindTeamMembersByUserID implements TeamQueryer.
 func (q *PostgresTeamStore) FindTeamMembersByUserID(ctx context.Context, userId uuid.UUID, paginate *shared.TeamMemberListInput) ([]*models.TeamMember, error) {
 	limit, offset := database.PaginateRepo(&paginate.PaginatedInput)

@@ -42,6 +42,15 @@ type TeamStoreDecorator struct {
 	LoadTeamsByIdsFunc               func(ctx context.Context, teamIds ...uuid.UUID) ([]*models.Team, error)
 	UpdateTeamMemberFunc             func(ctx context.Context, member *models.TeamMember) (*models.TeamMember, error)
 	UpdateTeamMemberSelectedAtFunc   func(ctx context.Context, teamId uuid.UUID, userId uuid.UUID) error
+	FindTeamBySlugFunc               func(ctx context.Context, slug string) (*models.Team, error)
+}
+
+// FindTeamBySlug implements services.TeamStore.
+func (p *TeamStoreDecorator) FindTeamBySlug(ctx context.Context, slug string) (*models.Team, error) {
+	if p.FindTeamBySlugFunc != nil {
+		return p.FindTeamBySlugFunc(ctx, slug)
+	}
+	return p.Delegate.FindTeamBySlug(ctx, slug)
 }
 
 // CountTeams implements services.TeamStore.

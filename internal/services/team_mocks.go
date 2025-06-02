@@ -13,6 +13,16 @@ type mockTeamService struct {
 	mock.Mock
 }
 
+// FindTeamInfoBySlug implements TeamService.
+func (m *mockTeamService) FindTeamInfoBySlug(ctx context.Context, slug string, userId uuid.UUID) (*shared.TeamInfo, error) {
+	args := m.Called(ctx, slug, userId)
+	var info *shared.TeamInfo
+	if args.Get(0) != nil {
+		info = args.Get(0).(*shared.TeamInfo)
+	}
+	return info, args.Error(1)
+}
+
 // FindTeamMembersByUserID implements TeamService.
 func (m *mockTeamService) FindTeamMembersByUserID(ctx context.Context, userId uuid.UUID, paginate *shared.TeamMemberListInput) ([]*models.TeamMember, error) {
 	args := m.Called(ctx, userId, paginate)
@@ -121,6 +131,16 @@ var _ TeamService = (*mockTeamService)(nil)
 
 type mockTeamStore struct {
 	mock.Mock
+}
+
+// FindTeamBySlug implements TeamServiceStore.
+func (m *mockTeamStore) FindTeamBySlug(ctx context.Context, slug string) (*models.Team, error) {
+	args := m.Called(ctx, slug)
+	var team *models.Team
+	if args.Get(0) != nil {
+		team = args.Get(0).(*models.Team)
+	}
+	return team, args.Error(1)
 }
 
 // CountTeams implements TeamServiceStore.

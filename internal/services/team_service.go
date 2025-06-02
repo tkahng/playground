@@ -16,6 +16,7 @@ type TeamService interface {
 	SetActiveTeamMember(ctx context.Context, userId uuid.UUID, teamId uuid.UUID) (*models.TeamMember, error)
 	GetActiveTeamMember(ctx context.Context, userId uuid.UUID) (*models.TeamMember, error)
 	FindTeamInfo(ctx context.Context, teamId, userId uuid.UUID) (*shared.TeamInfo, error)
+	FindTeamInfoBySlug(ctx context.Context, slug string, userId uuid.UUID) (*shared.TeamInfo, error)
 	FindLatestTeamInfo(ctx context.Context, userId uuid.UUID) (*shared.TeamInfo, error)
 	AddMember(ctx context.Context, teamId, userId uuid.UUID, role models.TeamMemberRole, hasBillingAccess bool) (*models.TeamMember, error)
 	RemoveMember(ctx context.Context, teamId, userId uuid.UUID) error
@@ -38,6 +39,7 @@ type TeamStore interface {
 	CountTeamMembers(ctx context.Context, teamId uuid.UUID) (int64, error)
 	FindTeamByStripeCustomerId(ctx context.Context, stripeCustomerId string) (*models.Team, error)
 	FindTeamByID(ctx context.Context, teamId uuid.UUID) (*models.Team, error)
+	FindTeamBySlug(ctx context.Context, slug string) (*models.Team, error)
 
 	LoadTeamsByIds(ctx context.Context, teamIds ...uuid.UUID) ([]*models.Team, error)
 	CreateTeam(ctx context.Context, name string, slug string) (*models.Team, error)
@@ -249,7 +251,45 @@ func (t *teamService) FindTeamInfo(ctx context.Context, teamId, userId uuid.UUID
 	}, nil
 }
 
+func (t *teamService) FindTeamInfoBySlug(ctx context.Context, slug string, userId uuid.UUID) (*shared.TeamInfo, error) {
+	slog.InfoContext(ctx, "FindTeamInfoBySlug", "slug", slug, "userId", userId)
+	user, err := t.teamStore.FindUserByID(ctx, userId)
+	if err != nil {
+		return nil, err
+	}
+	if user == nil {
+		return nil, errors.New("user not found")
+	}
+	team, err := t.teamStore.FindTeamBySlug(ctx, slug)
+	if err != nil {
+		return nil, err
+	}
+	if team == nil {
+		return nil, nil
+	}
+	member, err := t.teamStore.FindTeamMemberByTeamAndUserId(ctx, team.ID, userId)
+	if err != nil {
+		return nil, err
+	}
+	if member == nil {
+		return nil, nil
+	}
+
+	return &shared.TeamInfo{
+		Team:   *team,
+		Member: *member,
+		User:   *user,
+	}, nil
+}
+
 func (t *teamService) FindLatestTeamInfo(ctx context.Context, userId uuid.UUID) (*shared.TeamInfo, error) {
+	user, err := t.teamStore.FindUserByID(ctx, userId)
+	if err != nil {
+		return nil, err
+	}
+	if user == nil {
+		return nil, errors.New("user not found")
+	}
 	member, err := t.teamStore.FindLatestTeamMemberByUserID(ctx, userId)
 	if err != nil {
 		return nil, err
@@ -267,5 +307,6 @@ func (t *teamService) FindLatestTeamInfo(ctx context.Context, userId uuid.UUID) 
 	return &shared.TeamInfo{
 		Team:   *team,
 		Member: *member,
+		User:   *user,
 	}, nil
 }

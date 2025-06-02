@@ -856,3 +856,36 @@ func TestPostgresTeamStore_CountTeams(t *testing.T) {
 		return errors.New("rollback")
 	})
 }
+func TestPostgresTeamStore_FindTeamBySlug(t *testing.T) {
+	test.Short(t)
+	ctx, dbx := test.DbSetup()
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+		teamStore := stores.NewPostgresTeamStore(dbxx)
+
+		// Create a team with a unique slug
+		team, err := teamStore.CreateTeam(ctx, "SlugTeam", "unique-slug-123")
+		if err != nil {
+			t.Fatalf("CreateTeam() error = %v", err)
+		}
+
+		// Should find the team by slug
+		found, err := teamStore.FindTeamBySlug(ctx, "unique-slug-123")
+		if err != nil {
+			t.Fatalf("FindTeamBySlug() error = %v", err)
+		}
+		if found == nil || found.ID != team.ID {
+			t.Errorf("FindTeamBySlug() = %v, want ID %v", found, team.ID)
+		}
+
+		// Should return nil for non-existent slug
+		notFound, err := teamStore.FindTeamBySlug(ctx, "non-existent-slug")
+		if err != nil {
+			t.Fatalf("FindTeamBySlug(non-existent) error = %v", err)
+		}
+		if notFound != nil {
+			t.Errorf("FindTeamBySlug(non-existent) = %v, want nil", notFound)
+		}
+
+		return errors.New("rollback")
+	})
+}
