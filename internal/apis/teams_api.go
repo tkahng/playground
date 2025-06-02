@@ -96,7 +96,7 @@ func (api *Api) GetUserTeamMembers(
 	if err != nil {
 		return nil, err
 	}
-	if teams == nil {
+	if len(teams) == 0 {
 		return nil, huma.Error500InternalServerError("teams not found")
 	}
 	count, err := api.app.Team().Store().CountTeamMembersByUserID(ctx, info.User.ID)
