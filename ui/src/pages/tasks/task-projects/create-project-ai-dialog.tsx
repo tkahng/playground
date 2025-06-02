@@ -17,8 +17,8 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { useTeamMemberContext } from "@/context/team-members-context";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
+import { useTeamMemberContext } from "@/hooks/use-team-context";
 import { taskProjectCreateWithAi } from "@/lib/queries";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -33,7 +33,7 @@ const formSchema = z.object({
 
 export function CreateProjectAiDialog() {
   const { user, checkAuth } = useAuthProvider();
-  const { currentMember } = useTeamMemberContext();
+  const { currentTeam } = useTeamMemberContext();
   const [isDialogOpen, setDialogOpen] = useState(false);
   const queryClient = useQueryClient();
 
@@ -43,12 +43,12 @@ export function CreateProjectAiDialog() {
       if (!user?.tokens.access_token) {
         throw new Error("Missing access token or role ID");
       }
-      if (!currentMember?.team_id) {
+      if (!currentTeam?.id) {
         throw new Error("Current team member team ID is required");
       }
       await taskProjectCreateWithAi(
         user.tokens.access_token,
-        currentMember.team_id,
+        currentTeam.id,
         values
       );
     },

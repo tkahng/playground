@@ -1,13 +1,13 @@
 import { Separator } from "@/components/ui/separator";
-import { useTeamMemberContext } from "@/context/team-members-context";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
+import { useTeamMemberContext } from "@/hooks/use-team-context";
 import { taskProjectList } from "@/lib/queries";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation } from "react-router";
 export default function TaskProjectSidebar() {
   const { user: auth, checkAuth } = useAuthProvider();
-  const { currentMember } = useTeamMemberContext();
+  const { currentTeam } = useTeamMemberContext();
   const { pathname } = useLocation();
   const {
     data: projects,
@@ -24,12 +24,12 @@ export default function TaskProjectSidebar() {
       if (!auth?.tokens.access_token) {
         throw new Error("Missing access token or role ID");
       }
-      if (!currentMember?.team_id) {
+      if (!currentTeam?.id) {
         throw new Error("Current team member team ID is required");
       }
       const data = await taskProjectList(
         auth.tokens.access_token,
-        currentMember.team_id,
+        currentTeam.id,
         {
           page: 0,
           per_page: 5,

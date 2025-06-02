@@ -6,7 +6,7 @@ import React from "react";
 
 export interface AuthContextType {
   user: UserInfoTokens | null;
-  setUser: (user: UserInfoTokens | null) => void;
+  // setUser: (user: UserInfoTokens | null) => void;
   signUp: (args: SignupInput) => Promise<UserInfoTokens>;
   login: (args: SigninInput) => Promise<UserInfoTokens>;
   logout: () => Promise<void>;
@@ -16,7 +16,7 @@ export interface AuthContextType {
 
 export const AuthContext = React.createContext<AuthContextType>({
   user: null,
-  setUser: () => {},
+  // setUser: () => {},
   signUp: async () => {
     throw new Error("Not implemented");
   },
@@ -101,7 +101,6 @@ export const AuthProvider: React.FC<{
     return {
       user,
       signUp,
-      setUser,
       login,
       logout,
       getOrRefreshToken,
