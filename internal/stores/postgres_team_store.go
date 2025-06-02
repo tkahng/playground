@@ -3,6 +3,7 @@ package stores
 import (
 	"context"
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/Masterminds/squirrel"
@@ -591,7 +592,7 @@ func (q *PostgresTeamStore) FindTeamByID(ctx context.Context, teamId uuid.UUID) 
 func (q *PostgresTeamStore) FindTeamMembersByUserID(ctx context.Context, userId uuid.UUID, paginate *shared.TeamMemberListInput) ([]*models.TeamMember, error) {
 	limit, offset := database.PaginateRepo(&paginate.PaginatedInput)
 	orderby := make(map[string]string)
-	if paginate.SortBy != "" && paginate.SortOrder != "" {
+	if paginate.SortBy != "" && paginate.SortOrder != "" && slices.Contains(crudrepo.TeamMemberBuilder.ColumnNames(), paginate.SortBy) {
 		orderby[paginate.SortBy] = paginate.SortOrder
 	} else {
 		orderby["last_selected_at"] = "DESC"
