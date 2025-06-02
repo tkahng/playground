@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/Masterminds/squirrel"
@@ -597,24 +598,22 @@ func (q *PostgresTeamStore) FindTeamMembersByUserID(ctx context.Context, userId 
 	} else {
 		orderby["last_selected_at"] = "DESC"
 	}
-	teamMembers, err := crudrepo.TeamMember.Get(
-		ctx,
-		q.db,
-		&map[string]any{
-			"user_id": map[string]any{
-				"_eq": userId.String(),
-			},
-			"active": map[string]any{
-				"_eq": true,
-			},
-		},
-		&orderby,
-		limit,
-		offset,
-	)
+	qs := squirrel.Select("team_members.*").From("team_members")
+	qs = qs.Where(squirrel.Eq{"user_id": userId})
+	qs = qs.Where(squirrel.Eq{"active": true})
+	if paginate.SortBy == "team.name" {
+		qs = qs.Join("teams on team_members.team_id = teams.id").OrderBy("teams.name " + strings.ToUpper(paginate.SortOrder))
+	} else if slices.Contains(crudrepo.TeamMemberBuilder.ColumnNames(), paginate.SortBy) {
+		qs = qs.OrderBy(paginate.SortBy + " " + strings.ToUpper(paginate.SortOrder))
+	} else {
+		qs = qs.OrderBy("last_selected_at DESC")
+	}
+	qs = qs.Limit(uint64(*limit)).Offset(uint64(*offset))
+	teamMembers, err := database.QueryWithBuilder[*models.TeamMember](ctx, q.db, qs.PlaceholderFormat(squirrel.Dollar))
 	if err != nil {
 		return nil, err
 	}
+
 	return teamMembers, nil
 }
 
