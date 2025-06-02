@@ -18,7 +18,7 @@ export default function TeamsLayout() {
         throw new Error("Team slug is required");
       }
       const response = await getTeamBySlug(user.tokens.access_token, teamSlug);
-      setTeam(response);
+      setTeam(response.team);
       return response;
     },
   });

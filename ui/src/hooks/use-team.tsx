@@ -42,13 +42,13 @@ export function useTeam(): {
       }
       const response = await getTeamBySlug(user.tokens.access_token, teamSlug);
       if (!team) {
-        setTeam(response);
+        setTeam(response.team);
       }
       return response;
     },
   });
   return {
-    team: data || team,
+    team: data?.team || team,
     isLoading,
     error: error as Error | null,
   };

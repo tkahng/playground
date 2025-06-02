@@ -2014,6 +2014,16 @@ export interface components {
             /** Format: date-time */
             updated_at: string;
         };
+        TeamInfo: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            member: components["schemas"]["TeamMember"];
+            team: components["schemas"]["Team"];
+            user: components["schemas"]["User"];
+        };
         TeamMember: {
             /**
              * Format: uri
@@ -6051,7 +6061,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Team"];
+                    "application/json": components["schemas"]["TeamInfo"];
                 };
             };
             /** @description Bad Request */
