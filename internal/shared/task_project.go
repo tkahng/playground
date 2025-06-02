@@ -28,15 +28,15 @@ type TaskProjectStatus string
 type TaskProject struct {
 	_                 struct{}          `db:"task_projects" json:"-"`
 	ID                uuid.UUID         `db:"id" json:"id"`
-	CreatedByMemberID *uuid.UUID        `db:"created_by_member_id" json:"created_by_member_id"`
+	CreatedByMemberID *uuid.UUID        `db:"created_by_member_id" json:"created_by_member_id" nullable:"true"`
 	TeamID            uuid.UUID         `db:"team_id" json:"team_id"`
 	Name              string            `db:"name" json:"name"`
 	Description       *string           `db:"description" json:"description"`
 	Status            TaskProjectStatus `db:"status" json:"status" enum:"todo,in_progress,done"`
-	StartAt           *time.Time        `db:"start_at" json:"start_at,omitempty" required:"false"`
-	EndAt             *time.Time        `db:"end_at" json:"end_at,omitempty" required:"false"`
-	AssigneeID        *uuid.UUID        `db:"assignee_id" json:"assignee_id,omitempty"`
-	ReporterID        *uuid.UUID        `db:"reporter_id" json:"reporter_id,omitempty"`
+	StartAt           *time.Time        `db:"start_at" json:"start_at" nullable:"true"`
+	EndAt             *time.Time        `db:"end_at" json:"end_at" nullable:"true"`
+	AssigneeID        *uuid.UUID        `db:"assignee_id" json:"assignee_id" nullable:"true"`
+	ReporterID        *uuid.UUID        `db:"reporter_id" json:"reporter_id" nullable:"true"`
 	Rank              float64           `db:"rank" json:"rank"`
 	CreatedAt         time.Time         `db:"created_at" json:"created_at"`
 	UpdatedAt         time.Time         `db:"updated_at" json:"updated_at"`
