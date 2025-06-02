@@ -1,15 +1,13 @@
-import { TeamContext } from "@/context/team-context";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { useLocalStorage } from "@/hooks/use-local-storage";
+import { useTeamContext } from "@/hooks/use-team-context";
 import { getTeamBySlug } from "@/lib/queries";
-import { Team } from "@/schema.types";
 import { useQuery } from "@tanstack/react-query";
 import { Navigate, Outlet, useParams } from "react-router";
 
 export default function TeamsLayout() {
   const { user } = useAuthProvider();
   const { teamSlug } = useParams<{ teamSlug: string }>();
-  const [, setTeam] = useLocalStorage<Team | null>("currentTeam", null);
+  const { team, setTeam } = useTeamContext();
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["team-by-slug"],
     queryFn: async () => {
@@ -52,8 +50,8 @@ export default function TeamsLayout() {
   }
 
   return (
-    <TeamContext.Provider value={{ team: data || null }}>
-      <Outlet context={{ team: data }} />
-    </TeamContext.Provider>
+    // <TeamContext.Provider value={{ team: data || null }}>
+    <Outlet context={{ team: team }} />
+    // </TeamContext.Provider>
   );
 }
