@@ -1313,6 +1313,12 @@ export const getUserTeamMembers = async (token: string) => {
     headers: {
       Authorization: `Bearer ${token}`,
     },
+    params: {
+      query: {
+        sort_by: "team.name",
+        sort_order: "asc",
+      },
+    },
   });
   if (error) {
     throw error;
@@ -1324,6 +1330,26 @@ export const getActiveTeamMember = async (token: string) => {
   const { data, error } = await client.GET("/api/team-members/active", {
     headers: {
       Authorization: `Bearer ${token}`,
+    },
+  });
+  if (error) {
+    throw error;
+  }
+  return data;
+};
+
+export const getUserTeams = async (token: string) => {
+  const { data, error } = await client.GET("/api/teams", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    params: {
+      query: {
+        page: 0,
+        per_page: 50,
+        sort_by: "name",
+        sort_order: "asc",
+      },
     },
   });
   if (error) {

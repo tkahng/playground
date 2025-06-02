@@ -1108,7 +1108,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /**
+         * get-user-teams
+         * @description get all teams for a user
+         */
+        get: operations["get-user-teams"];
         put?: never;
         /**
          * create-team
@@ -1521,6 +1525,15 @@ export interface components {
              */
             readonly $schema?: string;
             data: components["schemas"]["TaskProject"][] | null;
+            meta: components["schemas"]["Meta"];
+        };
+        PaginatedResponseTeam: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            data: components["schemas"]["Team"][] | null;
             meta: components["schemas"]["Meta"];
         };
         PaginatedResponseTeamMember: {
@@ -5762,6 +5775,8 @@ export interface operations {
             query?: {
                 page?: number;
                 per_page?: number;
+                sort_by?: string;
+                sort_order?: "asc" | "desc";
             };
             header?: never;
             path?: never;
@@ -5827,6 +5842,58 @@ export interface operations {
             };
             /** @description Bad Request */
             400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "get-user-teams": {
+        parameters: {
+            query?: {
+                page?: number;
+                per_page?: number;
+                sort_by?: string;
+                sort_order?: "asc" | "desc";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponseTeam"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };
