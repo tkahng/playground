@@ -67,7 +67,7 @@ func TestTeamService_CreateTeam_Success(t *testing.T) {
 	// Team slug is available
 	mockStore.On("CheckTeamSlug", ctx, slug).Return(true, nil)
 
-	expectedTeamInfo := &shared.TeamInfo{}
+	expectedTeamInfo := &shared.TeamInfoModel{}
 	mockStore.On("CreateTeamWithOwnerMember", ctx, name, slug, userID).Return(expectedTeamInfo, nil)
 
 	teamInfo, err := service.CreateTeam(ctx, name, slug, userID)

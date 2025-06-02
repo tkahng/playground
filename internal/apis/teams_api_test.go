@@ -20,7 +20,7 @@ import (
 	"github.com/tkahng/authgo/internal/tools/utils"
 )
 
-func createTeamAndMember(app core.App, user *shared.User, teamName string) (*shared.TeamInfo, error) {
+func createTeamAndMember(app core.App, user *shared.User, teamName string) (*shared.TeamInfoModel, error) {
 
 	team, err := app.Team().Store().CreateTeam(context.Background(), teamName, strings.TrimSpace(teamName))
 	if err != nil {
@@ -30,7 +30,7 @@ func createTeamAndMember(app core.App, user *shared.User, teamName string) (*sha
 	if err != nil {
 		return nil, err
 	}
-	return &shared.TeamInfo{
+	return &shared.TeamInfoModel{
 		Team: *team,
 		User: models.User{
 			ID:              user.ID,
@@ -251,7 +251,7 @@ func TestCreateTeam_SuccessfulCreation(t *testing.T) {
 			Name             string
 			ctxUserInfo      *shared.UserInfo
 			createTeamErr    error
-			createTeamResult *shared.TeamInfo
+			createTeamResult *shared.TeamInfoModel
 			expectedErr      error
 			expectedOutput   *apis.TeamOutput
 			header           string

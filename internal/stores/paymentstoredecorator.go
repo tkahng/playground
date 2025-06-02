@@ -29,7 +29,7 @@ type TeamStoreDecorator struct {
 	GetTeamMembersFunc               func(ctx context.Context, teamId uuid.UUID) ([]*models.TeamMember, error)
 	GetTeamMembersByUserIDFunc       func(ctx context.Context, userId uuid.UUID) ([]*models.TeamMember, error)
 	UpdateTeamFunc                   func(ctx context.Context, teamId uuid.UUID, name string) (*models.Team, error)
-	CreateTeamWithOwnerMemberFunc    func(ctx context.Context, name string, slug string, userId uuid.UUID) (*shared.TeamInfo, error)
+	CreateTeamWithOwnerMemberFunc    func(ctx context.Context, name string, slug string, userId uuid.UUID) (*shared.TeamInfoModel, error)
 	DeleteTeamFunc                   func(ctx context.Context, teamId uuid.UUID) error
 	FindTeamByIDFunc                 func(ctx context.Context, teamId uuid.UUID) (*models.Team, error)
 	FindTeamByStripeCustomerIdFunc   func(ctx context.Context, stripeCustomerId string) (*models.Team, error)
@@ -148,7 +148,7 @@ func (p *TeamStoreDecorator) CreateTeamMember(ctx context.Context, teamId uuid.U
 }
 
 // CreateTeamWithOwnerMember implements services.TeamStore.
-func (p *TeamStoreDecorator) CreateTeamWithOwnerMember(ctx context.Context, name string, slug string, userId uuid.UUID) (*shared.TeamInfo, error) {
+func (p *TeamStoreDecorator) CreateTeamWithOwnerMember(ctx context.Context, name string, slug string, userId uuid.UUID) (*shared.TeamInfoModel, error) {
 	if p.CreateTeamWithOwnerMemberFunc != nil {
 		return p.CreateTeamWithOwnerMemberFunc(ctx, name, slug, userId)
 	}

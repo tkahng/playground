@@ -147,7 +147,7 @@ func BindTeamsApi(api huma.API, appApi *Api) {
 				teamInfoSlugMiddleware,
 			},
 		},
-		appApi.FindTeamBySlug,
+		appApi.FindTeamInfoBySlug,
 	)
 	// update team
 	huma.Register(

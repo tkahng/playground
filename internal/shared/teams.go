@@ -8,10 +8,16 @@ import (
 	"github.com/tkahng/authgo/internal/tools/mapper"
 )
 
-type TeamInfo struct {
+type TeamInfoModel struct {
 	User   models.User       `json:"user"`
 	Team   models.Team       `json:"team"`
 	Member models.TeamMember `json:"member"`
+}
+
+type TeamInfo struct {
+	User   User       `json:"user"`
+	Team   Team       `json:"team"`
+	Member TeamMember `json:"member"`
 }
 
 type TeamMemberRole string

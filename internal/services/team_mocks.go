@@ -14,11 +14,11 @@ type mockTeamService struct {
 }
 
 // FindTeamInfoBySlug implements TeamService.
-func (m *mockTeamService) FindTeamInfoBySlug(ctx context.Context, slug string, userId uuid.UUID) (*shared.TeamInfo, error) {
+func (m *mockTeamService) FindTeamInfoBySlug(ctx context.Context, slug string, userId uuid.UUID) (*shared.TeamInfoModel, error) {
 	args := m.Called(ctx, slug, userId)
-	var info *shared.TeamInfo
+	var info *shared.TeamInfoModel
 	if args.Get(0) != nil {
-		info = args.Get(0).(*shared.TeamInfo)
+		info = args.Get(0).(*shared.TeamInfoModel)
 	}
 	return info, args.Error(1)
 }
@@ -56,11 +56,11 @@ func (m *mockTeamService) UpdateTeam(ctx context.Context, teamId uuid.UUID, name
 }
 
 // CreateTeam implements TeamService.
-func (m *mockTeamService) CreateTeam(ctx context.Context, name string, slug string, userId uuid.UUID) (*shared.TeamInfo, error) {
+func (m *mockTeamService) CreateTeam(ctx context.Context, name string, slug string, userId uuid.UUID) (*shared.TeamInfoModel, error) {
 	args := m.Called(ctx, name, slug, userId)
-	var teamInfo *shared.TeamInfo
+	var teamInfo *shared.TeamInfoModel
 	if args.Get(0) != nil {
-		teamInfo = args.Get(0).(*shared.TeamInfo)
+		teamInfo = args.Get(0).(*shared.TeamInfoModel)
 	}
 	return teamInfo, args.Error(1)
 }
@@ -76,21 +76,21 @@ func (m *mockTeamService) AddMember(ctx context.Context, teamId uuid.UUID, userI
 }
 
 // FindLatestTeamInfo implements TeamService.
-func (m *mockTeamService) FindLatestTeamInfo(ctx context.Context, userId uuid.UUID) (*shared.TeamInfo, error) {
+func (m *mockTeamService) FindLatestTeamInfo(ctx context.Context, userId uuid.UUID) (*shared.TeamInfoModel, error) {
 	args := m.Called(ctx, userId)
-	var info *shared.TeamInfo
+	var info *shared.TeamInfoModel
 	if args.Get(0) != nil {
-		info = args.Get(0).(*shared.TeamInfo)
+		info = args.Get(0).(*shared.TeamInfoModel)
 	}
 	return info, args.Error(1)
 }
 
 // FindTeamInfo implements TeamService.
-func (m *mockTeamService) FindTeamInfo(ctx context.Context, teamId uuid.UUID, userId uuid.UUID) (*shared.TeamInfo, error) {
+func (m *mockTeamService) FindTeamInfo(ctx context.Context, teamId uuid.UUID, userId uuid.UUID) (*shared.TeamInfoModel, error) {
 	args := m.Called(ctx, teamId, userId)
-	var info *shared.TeamInfo
+	var info *shared.TeamInfoModel
 	if args.Get(0) != nil {
-		info = args.Get(0).(*shared.TeamInfo)
+		info = args.Get(0).(*shared.TeamInfoModel)
 	}
 	return info, args.Error(1)
 }
@@ -234,11 +234,11 @@ func (m *mockTeamStore) FindLatestActiveSubscriptionWithPriceByCustomerId(ctx co
 }
 
 // CreateTeamWithOwnerMember implements TeamStore.
-func (m *mockTeamStore) CreateTeamWithOwnerMember(ctx context.Context, name string, slug string, userId uuid.UUID) (*shared.TeamInfo, error) {
+func (m *mockTeamStore) CreateTeamWithOwnerMember(ctx context.Context, name string, slug string, userId uuid.UUID) (*shared.TeamInfoModel, error) {
 	args := m.Called(ctx, name, slug, userId)
-	var teamInfo *shared.TeamInfo
+	var teamInfo *shared.TeamInfoModel
 	if args.Get(0) != nil {
-		teamInfo = args.Get(0).(*shared.TeamInfo)
+		teamInfo = args.Get(0).(*shared.TeamInfoModel)
 	}
 	return teamInfo, args.Error(1)
 }

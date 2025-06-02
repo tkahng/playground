@@ -18,6 +18,9 @@ type CreateTeamInput struct {
 type TeamOutput struct {
 	Body *shared.Team `json:"body"`
 }
+type TeamInfoOutput struct {
+	Body *shared.TeamInfo `json:"body"`
+}
 
 func (api *Api) CreateTeam(
 	ctx context.Context,
@@ -151,28 +154,25 @@ func (api *Api) GetUserTeams(
 	}, nil
 }
 
-func (api *Api) FindTeamBySlug(
+func (api *Api) FindTeamInfoBySlug(
 	ctx context.Context,
 	input *struct {
 		Slug string `path:"team-slug" required:"true"`
 	},
 ) (
-	*TeamOutput,
+	*TeamInfoOutput,
 	error,
 ) {
-	info := contextstore.GetContextUserInfo(ctx)
+	info := contextstore.GetContextTeamInfo(ctx)
 	if info == nil {
 		return nil, huma.Error401Unauthorized("unauthorized")
 	}
-	team, err := api.app.Team().Store().FindTeamBySlug(ctx, input.Slug)
-	if err != nil {
-		return nil, err
-	}
-	if team == nil {
-		return nil, huma.Error404NotFound("team not found")
-	}
-	return &TeamOutput{
-		Body: shared.FromTeamModel(team),
+	return &TeamInfoOutput{
+		Body: &shared.TeamInfo{
+			Team:   *shared.FromTeamModel(&info.Team),
+			Member: *shared.FromTeamMemberModel(&info.Member),
+			User:   *shared.FromUserModel(&info.User),
+		},
 	}, nil
 }
 

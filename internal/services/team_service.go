@@ -15,13 +15,13 @@ type TeamService interface {
 	Store() TeamStore
 	SetActiveTeamMember(ctx context.Context, userId uuid.UUID, teamId uuid.UUID) (*models.TeamMember, error)
 	GetActiveTeamMember(ctx context.Context, userId uuid.UUID) (*models.TeamMember, error)
-	FindTeamInfo(ctx context.Context, teamId, userId uuid.UUID) (*shared.TeamInfo, error)
-	FindTeamInfoBySlug(ctx context.Context, slug string, userId uuid.UUID) (*shared.TeamInfo, error)
-	FindLatestTeamInfo(ctx context.Context, userId uuid.UUID) (*shared.TeamInfo, error)
+	FindTeamInfo(ctx context.Context, teamId, userId uuid.UUID) (*shared.TeamInfoModel, error)
+	FindTeamInfoBySlug(ctx context.Context, slug string, userId uuid.UUID) (*shared.TeamInfoModel, error)
+	FindLatestTeamInfo(ctx context.Context, userId uuid.UUID) (*shared.TeamInfoModel, error)
 	AddMember(ctx context.Context, teamId, userId uuid.UUID, role models.TeamMemberRole, hasBillingAccess bool) (*models.TeamMember, error)
 	RemoveMember(ctx context.Context, teamId, userId uuid.UUID) error
 	LeaveTeam(ctx context.Context, teamId, userId uuid.UUID) error
-	CreateTeam(ctx context.Context, name string, slug string, userId uuid.UUID) (*shared.TeamInfo, error)
+	CreateTeam(ctx context.Context, name string, slug string, userId uuid.UUID) (*shared.TeamInfoModel, error)
 	UpdateTeam(ctx context.Context, teamId uuid.UUID, name string) (*models.Team, error)
 	DeleteTeam(ctx context.Context, teamId uuid.UUID, userId uuid.UUID) error
 	FindTeamMembersByUserID(ctx context.Context, userId uuid.UUID, paginate *shared.TeamMemberListInput) ([]*models.TeamMember, error)
@@ -34,7 +34,7 @@ type TeamStore interface {
 	// find team
 	ListTeams(ctx context.Context, params *shared.ListTeamsParams) ([]*models.Team, error)
 	CountTeams(ctx context.Context, params *shared.ListTeamsParams) (int64, error)
-	CreateTeamWithOwnerMember(ctx context.Context, name string, slug string, userId uuid.UUID) (*shared.TeamInfo, error)
+	CreateTeamWithOwnerMember(ctx context.Context, name string, slug string, userId uuid.UUID) (*shared.TeamInfoModel, error)
 	CountOwnerTeamMembers(ctx context.Context, teamId uuid.UUID) (int64, error)
 	CountTeamMembers(ctx context.Context, teamId uuid.UUID) (int64, error)
 	FindTeamByStripeCustomerId(ctx context.Context, stripeCustomerId string) (*models.Team, error)
@@ -157,7 +157,7 @@ func (t *teamService) UpdateTeam(ctx context.Context, teamId uuid.UUID, name str
 }
 
 // CreateTeam implements TeamService.
-func (t *teamService) CreateTeam(ctx context.Context, name string, slug string, userId uuid.UUID) (*shared.TeamInfo, error) {
+func (t *teamService) CreateTeam(ctx context.Context, name string, slug string, userId uuid.UUID) (*shared.TeamInfoModel, error) {
 	check, err := t.teamStore.CheckTeamSlug(ctx, slug)
 	if err != nil {
 		return nil, err
@@ -220,7 +220,7 @@ func (t *teamService) GetActiveTeamMember(ctx context.Context, userId uuid.UUID)
 	}
 	return team, nil
 }
-func (t *teamService) FindTeamInfo(ctx context.Context, teamId, userId uuid.UUID) (*shared.TeamInfo, error) {
+func (t *teamService) FindTeamInfo(ctx context.Context, teamId, userId uuid.UUID) (*shared.TeamInfoModel, error) {
 	slog.InfoContext(ctx, "FindTeamInfo", "teamId", teamId, "userId", userId)
 	user, err := t.teamStore.FindUserByID(ctx, userId)
 	if err != nil {
@@ -244,14 +244,14 @@ func (t *teamService) FindTeamInfo(ctx context.Context, teamId, userId uuid.UUID
 		return nil, nil
 	}
 
-	return &shared.TeamInfo{
+	return &shared.TeamInfoModel{
 		Team:   *team,
 		Member: *member,
 		User:   *user,
 	}, nil
 }
 
-func (t *teamService) FindTeamInfoBySlug(ctx context.Context, slug string, userId uuid.UUID) (*shared.TeamInfo, error) {
+func (t *teamService) FindTeamInfoBySlug(ctx context.Context, slug string, userId uuid.UUID) (*shared.TeamInfoModel, error) {
 	slog.InfoContext(ctx, "FindTeamInfoBySlug", "slug", slug, "userId", userId)
 	user, err := t.teamStore.FindUserByID(ctx, userId)
 	if err != nil {
@@ -275,14 +275,14 @@ func (t *teamService) FindTeamInfoBySlug(ctx context.Context, slug string, userI
 		return nil, nil
 	}
 
-	return &shared.TeamInfo{
+	return &shared.TeamInfoModel{
 		Team:   *team,
 		Member: *member,
 		User:   *user,
 	}, nil
 }
 
-func (t *teamService) FindLatestTeamInfo(ctx context.Context, userId uuid.UUID) (*shared.TeamInfo, error) {
+func (t *teamService) FindLatestTeamInfo(ctx context.Context, userId uuid.UUID) (*shared.TeamInfoModel, error) {
 	user, err := t.teamStore.FindUserByID(ctx, userId)
 	if err != nil {
 		return nil, err
@@ -304,7 +304,7 @@ func (t *teamService) FindLatestTeamInfo(ctx context.Context, userId uuid.UUID) 
 	if team == nil {
 		return nil, nil
 	}
-	return &shared.TeamInfo{
+	return &shared.TeamInfoModel{
 		Team:   *team,
 		Member: *member,
 		User:   *user,

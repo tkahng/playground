@@ -188,8 +188,8 @@ func (p *PostgresTeamStore) WithTx(tx database.Dbx) *PostgresTeamStore {
 }
 
 // CreateTeamWithOwnerMember implements services.TeamStore.
-func (p *PostgresTeamStore) CreateTeamWithOwnerMember(ctx context.Context, name string, slug string, userId uuid.UUID) (*shared.TeamInfo, error) {
-	var teamInfo *shared.TeamInfo
+func (p *PostgresTeamStore) CreateTeamWithOwnerMember(ctx context.Context, name string, slug string, userId uuid.UUID) (*shared.TeamInfoModel, error) {
+	var teamInfo *shared.TeamInfoModel
 	err := p.db.RunInTransaction(
 		ctx,
 		func(d database.Dbx) error {
@@ -208,7 +208,7 @@ func (p *PostgresTeamStore) CreateTeamWithOwnerMember(ctx context.Context, name 
 			if teamMember == nil {
 				return fmt.Errorf("team member not found")
 			}
-			teamInfo = &shared.TeamInfo{
+			teamInfo = &shared.TeamInfoModel{
 				Team:   *team,
 				Member: *teamMember,
 			}
