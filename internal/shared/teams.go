@@ -80,3 +80,8 @@ func FromTeamMemberModel(member *models.TeamMember) *TeamMember {
 		User:             FromUserModel(member.User),
 	}
 }
+
+type TeamMemberListInput struct {
+	PaginatedInput
+	SortParams
+}

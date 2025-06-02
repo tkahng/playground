@@ -14,7 +14,7 @@ type mockTeamService struct {
 }
 
 // FindTeamMembersByUserID implements TeamService.
-func (m *mockTeamService) FindTeamMembersByUserID(ctx context.Context, userId uuid.UUID, paginate *shared.PaginatedInput) ([]*models.TeamMember, error) {
+func (m *mockTeamService) FindTeamMembersByUserID(ctx context.Context, userId uuid.UUID, paginate *shared.TeamMemberListInput) ([]*models.TeamMember, error) {
 	args := m.Called(ctx, userId, paginate)
 	var members []*models.TeamMember
 	if args.Get(0) != nil {
@@ -292,8 +292,8 @@ func (m *mockTeamStore) FindTeamMemberByTeamAndUserId(ctx context.Context, teamI
 }
 
 // FindTeamMembersByUserID implements TeamStore.
-func (m *mockTeamStore) FindTeamMembersByUserID(ctx context.Context, userId uuid.UUID, pageinate *shared.PaginatedInput) ([]*models.TeamMember, error) {
-	args := m.Called(ctx, userId)
+func (m *mockTeamStore) FindTeamMembersByUserID(ctx context.Context, userId uuid.UUID, paginate *shared.TeamMemberListInput) ([]*models.TeamMember, error) {
+	args := m.Called(ctx, userId, paginate)
 	var members []*models.TeamMember
 	if args.Get(0) != nil {
 		members = args.Get(0).([]*models.TeamMember)

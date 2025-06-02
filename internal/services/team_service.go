@@ -23,7 +23,7 @@ type TeamService interface {
 	CreateTeam(ctx context.Context, name string, slug string, userId uuid.UUID) (*shared.TeamInfo, error)
 	UpdateTeam(ctx context.Context, teamId uuid.UUID, name string) (*models.Team, error)
 	DeleteTeam(ctx context.Context, teamId uuid.UUID, userId uuid.UUID) error
-	FindTeamMembersByUserID(ctx context.Context, userId uuid.UUID, paginate *shared.PaginatedInput) ([]*models.TeamMember, error)
+	FindTeamMembersByUserID(ctx context.Context, userId uuid.UUID, paginate *shared.TeamMemberListInput) ([]*models.TeamMember, error)
 }
 
 type TeamStripeStore interface {
@@ -44,7 +44,7 @@ type TeamStore interface {
 	CountTeamMembersByUserID(ctx context.Context, userId uuid.UUID) (int64, error)
 	// find team members
 	FindTeamMember(ctx context.Context, member *models.TeamMember) (*models.TeamMember, error)
-	FindTeamMembersByUserID(ctx context.Context, userId uuid.UUID, paginate *shared.PaginatedInput) ([]*models.TeamMember, error)
+	FindTeamMembersByUserID(ctx context.Context, userId uuid.UUID, paginate *shared.TeamMemberListInput) ([]*models.TeamMember, error)
 	FindTeamMemberByTeamAndUserId(ctx context.Context, teamId uuid.UUID, userId uuid.UUID) (*models.TeamMember, error)
 	FindLatestTeamMemberByUserID(ctx context.Context, userId uuid.UUID) (*models.TeamMember, error)
 
@@ -67,7 +67,7 @@ type teamService struct {
 }
 
 // FindTeamMembersByUserID implements TeamService.
-func (t *teamService) FindTeamMembersByUserID(ctx context.Context, userId uuid.UUID, paginate *shared.PaginatedInput) ([]*models.TeamMember, error) {
+func (t *teamService) FindTeamMembersByUserID(ctx context.Context, userId uuid.UUID, paginate *shared.TeamMemberListInput) ([]*models.TeamMember, error) {
 	members, err := t.teamStore.FindTeamMembersByUserID(ctx, userId, paginate)
 	if err != nil {
 		return nil, err

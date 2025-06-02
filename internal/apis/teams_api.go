@@ -83,7 +83,7 @@ func (api *Api) CheckTeamSlug(
 
 func (api *Api) GetUserTeamMembers(
 	ctx context.Context,
-	input *shared.PaginatedInput,
+	input *shared.TeamMemberListInput,
 ) (
 	*shared.PaginatedOutput[*shared.TeamMember],
 	error,
@@ -106,7 +106,7 @@ func (api *Api) GetUserTeamMembers(
 	return &shared.PaginatedOutput[*shared.TeamMember]{
 		Body: shared.PaginatedResponse[*shared.TeamMember]{
 			Data: mapper.Map(teams, shared.FromTeamMemberModel),
-			Meta: shared.GenerateMeta(input, count),
+			Meta: shared.GenerateMeta(&input.PaginatedInput, count),
 		},
 	}, nil
 

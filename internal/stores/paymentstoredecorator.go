@@ -167,7 +167,7 @@ func (p *TeamStoreDecorator) FindTeamMemberByTeamAndUserId(ctx context.Context, 
 }
 
 // FindTeamMembersByUserID implements services.TeamStore.
-func (p *TeamStoreDecorator) FindTeamMembersByUserID(ctx context.Context, userId uuid.UUID, paginate *shared.PaginatedInput) ([]*models.TeamMember, error) {
+func (p *TeamStoreDecorator) FindTeamMembersByUserID(ctx context.Context, userId uuid.UUID, paginate *shared.TeamMemberListInput) ([]*models.TeamMember, error) {
 	return p.Delegate.FindTeamMembersByUserID(ctx, userId, paginate)
 }
 

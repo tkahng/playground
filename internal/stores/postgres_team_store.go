@@ -588,8 +588,14 @@ func (q *PostgresTeamStore) FindTeamByID(ctx context.Context, teamId uuid.UUID) 
 }
 
 // FindTeamMembersByUserID implements TeamQueryer.
-func (q *PostgresTeamStore) FindTeamMembersByUserID(ctx context.Context, userId uuid.UUID, paginate *shared.PaginatedInput) ([]*models.TeamMember, error) {
-	limit, offset := database.PaginateRepo(paginate)
+func (q *PostgresTeamStore) FindTeamMembersByUserID(ctx context.Context, userId uuid.UUID, paginate *shared.TeamMemberListInput) ([]*models.TeamMember, error) {
+	limit, offset := database.PaginateRepo(&paginate.PaginatedInput)
+	orderby := make(map[string]string)
+	if paginate.SortBy != "" && paginate.SortOrder != "" {
+		orderby[paginate.SortBy] = paginate.SortOrder
+	} else {
+		orderby["last_selected_at"] = "DESC"
+	}
 	teamMembers, err := crudrepo.TeamMember.Get(
 		ctx,
 		q.db,
@@ -601,9 +607,7 @@ func (q *PostgresTeamStore) FindTeamMembersByUserID(ctx context.Context, userId 
 				"_eq": true,
 			},
 		},
-		&map[string]string{
-			"last_selected_at": "DESC",
-		},
+		&orderby,
 		limit,
 		offset,
 	)

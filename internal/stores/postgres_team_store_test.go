@@ -12,6 +12,7 @@ import (
 	"github.com/tkahng/authgo/internal/crudrepo"
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
+	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/stores"
 	"github.com/tkahng/authgo/internal/test"
 	"github.com/tkahng/authgo/internal/tools/types"
@@ -141,7 +142,7 @@ func TestFindTeamMembersByUserID(t *testing.T) {
 		if err != nil {
 			t.Fatalf("CreateTeamMember() error = %v", err)
 		}
-		members, err := teamStore.FindTeamMembersByUserID(ctx, userID, nil)
+		members, err := teamStore.FindTeamMembersByUserID(ctx, userID, &shared.TeamMemberListInput{})
 		if err != nil {
 			t.Fatalf("FindTeamMembersByUserID() error = %v", err)
 		}
