@@ -1,7 +1,7 @@
 import { Task, TaskCard } from "@/components/board/task-card";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { CreateProjectTaskDialog } from "@/pages/tasks/task-projects/create-project-task-dialog";
+import { CreateProjectTaskDialog } from "@/pages/projects/tasks/create-project-task-dialog";
 import { useDndContext, type UniqueIdentifier } from "@dnd-kit/core";
 import { SortableContext, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";

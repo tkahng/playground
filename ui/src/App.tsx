@@ -39,12 +39,12 @@ import SubscriptionsListPage from "./pages/admin/subscriptions/subscription-list
 import ConfirmPasswordReset from "./pages/auth/confirm-password-reset";
 import ResetPasswordRequestPage from "./pages/auth/reset-password";
 import NotAuthorizedPage from "./pages/not-authorized";
+import ProjectEdit from "./pages/projects/project-edit";
+import ProjectListPage from "./pages/projects/projects-list";
+import TaskLayout from "./pages/projects/task-layout";
 import ProtectedRouteLayout from "./pages/protected-routes/protected-layout";
 import ProtectedRoutePage from "./pages/protected-routes/protected-route-page";
 import ProtectedRouteIndex from "./pages/protected-routes/route-index";
-import ProjectEdit from "./pages/tasks/task-projects/project-edit";
-import ProjectListPage from "./pages/tasks/task-projects/projects-list";
-import TaskLayout from "./pages/tasks/task-projects/task-layout";
 function App() {
   return (
     <>
