@@ -44,7 +44,7 @@ export default function ProductsListPage() {
         per_page: pageSize,
         sort_by: "updated_at",
         sort_order: "desc",
-        expand: ["prices", "roles"],
+        expand: ["prices", "permissions"],
       });
       return data;
     },
@@ -85,10 +85,10 @@ export default function ProductsListPage() {
             header: "Active",
           },
           {
-            id: "roles",
-            header: "Roles",
+            id: "permissions",
+            header: "Permissions",
             cell: ({ row }) => {
-              return row.original.roles?.map((r) => r.name).join(",");
+              return row.original.permissions?.map((r) => r.name).join(",");
             },
           },
           {

@@ -55,11 +55,11 @@ export function CreateProjectDialog() {
       if (!currentMember?.team_id) {
         throw new Error("Current team member team ID is required");
       }
-      await taskProjectCreate(user.tokens.access_token, currentMember.team_id, {
-        ...values,
-        member_id: currentMember.id,
-        team_id: currentMember.team_id,
-      });
+      await taskProjectCreate(
+        user.tokens.access_token,
+        currentMember.team_id,
+        values
+      );
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({

@@ -1323,15 +1323,13 @@ export interface components {
              */
             status: "todo" | "in_progress" | "done";
         };
-        CreateTaskProjectWithTasksDTO: {
+        CreateTaskProjectWithoutTeamWithTasks: {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
              */
             readonly $schema?: string;
             description?: string;
-            /** Format: uuid */
-            member_id: string;
             name: string;
             /** Format: double */
             rank?: number;
@@ -1341,8 +1339,6 @@ export interface components {
              */
             status: "todo" | "in_progress" | "done";
             tasks?: components["schemas"]["CreateTaskProjectTaskDTO"][] | null;
-            /** Format: uuid */
-            team_id: string;
         };
         CreateTaskWithChildrenDTO: {
             /**
@@ -1886,25 +1882,25 @@ export interface components {
              * @description A URL to the JSON Schema for this object.
              */
             readonly $schema?: string;
-            assignee_id?: string;
+            assignee_id: string | null;
             children?: components["schemas"]["Task"][] | null;
             /** Format: date-time */
             created_at: string;
-            created_by: string;
             created_by_member?: components["schemas"]["TeamMember"];
+            created_by_member_id: string | null;
             description: string | null;
             /** Format: date-time */
-            end_at?: string;
+            end_at: string | null;
             id: string;
             name: string;
-            parent_id: string;
+            parent_id: string | null;
             project?: components["schemas"]["TaskProject"];
             project_id: string;
             /** Format: double */
             rank: number;
-            reporter_id?: string;
+            reporter_id: string | null;
             /** Format: date-time */
-            start_at?: string;
+            start_at: string | null;
             /** @enum {string} */
             status: "todo" | "in_progress" | "done";
             team?: components["schemas"]["Team"];
@@ -1929,21 +1925,21 @@ export interface components {
              * @description A URL to the JSON Schema for this object.
              */
             readonly $schema?: string;
-            assignee_id?: string;
+            assignee_id: string | null;
             /** Format: date-time */
             created_at: string;
-            created_by: string;
             created_by_member?: components["schemas"]["TeamMember"];
+            created_by_member_id: string | null;
             description: string | null;
             /** Format: date-time */
-            end_at?: string;
+            end_at: string | null;
             id: string;
             name: string;
             /** Format: double */
             rank: number;
-            reporter_id?: string;
+            reporter_id: string | null;
             /** Format: date-time */
-            start_at?: string;
+            start_at: string | null;
             /** @enum {string} */
             status: "todo" | "in_progress" | "done";
             tasks?: components["schemas"]["Task"][] | null;
@@ -6300,7 +6296,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateTaskProjectWithTasksDTO"];
+                "application/json": components["schemas"]["CreateTaskProjectWithoutTeamWithTasks"];
             };
         };
         responses: {
