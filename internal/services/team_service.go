@@ -52,6 +52,9 @@ type TeamStore interface {
 	DeleteTeamMember(ctx context.Context, teamId, userId uuid.UUID) error
 	UpdateTeamMember(ctx context.Context, member *models.TeamMember) (*models.TeamMember, error)
 	UpdateTeamMemberSelectedAt(ctx context.Context, teamId, userId uuid.UUID) error
+
+	// misc methods
+	FindUserByID(ctx context.Context, userId uuid.UUID) (*models.User, error)
 }
 
 type TeamServiceStore interface {
@@ -214,6 +217,13 @@ func (t *teamService) GetActiveTeamMember(ctx context.Context, userId uuid.UUID)
 }
 func (t *teamService) FindTeamInfo(ctx context.Context, teamId, userId uuid.UUID) (*shared.TeamInfo, error) {
 	slog.InfoContext(ctx, "FindTeamInfo", "teamId", teamId, "userId", userId)
+	user, err := t.teamStore.FindUserByID(ctx, userId)
+	if err != nil {
+		return nil, err
+	}
+	if user == nil {
+		return nil, errors.New("user not found")
+	}
 	team, err := t.teamStore.FindTeamByID(ctx, teamId)
 	if err != nil {
 		return nil, err
@@ -228,9 +238,11 @@ func (t *teamService) FindTeamInfo(ctx context.Context, teamId, userId uuid.UUID
 	if member == nil {
 		return nil, nil
 	}
+
 	return &shared.TeamInfo{
 		Team:   *team,
 		Member: *member,
+		User:   *user,
 	}, nil
 }
 

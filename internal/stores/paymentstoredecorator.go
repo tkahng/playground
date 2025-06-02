@@ -35,6 +35,15 @@ type TeamStoreDecorator struct {
 	FindTeamByStripeCustomerIdFunc func(ctx context.Context, stripeCustomerId string) (*models.Team, error)
 	FindTeamFunc                   func(ctx context.Context, team *models.Team) (*models.Team, error)
 	FindTeamMemberFunc             func(ctx context.Context, member *models.TeamMember) (*models.TeamMember, error)
+	FindUserByIDFunc               func(ctx context.Context, userId uuid.UUID) (*models.User, error)
+}
+
+// FindUserByID implements services.TeamStore.
+func (p *TeamStoreDecorator) FindUserByID(ctx context.Context, userId uuid.UUID) (*models.User, error) {
+	if p.FindUserByIDFunc != nil {
+		return p.FindUserByIDFunc(ctx, userId)
+	}
+	return p.Delegate.FindUserByID(ctx, userId)
 }
 
 // FindTeam implements services.TeamStore.
