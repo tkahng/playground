@@ -46,13 +46,13 @@ func SelectCustomerFromTeamMiddleware(api huma.API, app core.App) func(ctx huma.
 				huma.WriteErr(api, ctx, http.StatusInternalServerError, "error creating customer")
 				return
 			}
-			ctxx := contextstore.SetContextCurrentCustomer(rawCtx, customer)
-			ctx = huma.WithContext(ctx, ctxx)
+			newCtx := contextstore.SetContextCurrentCustomer(rawCtx, customer)
+			ctx = huma.WithContext(ctx, newCtx)
 			next(ctx)
 			return
 		}
-		ctxx := contextstore.SetContextCurrentCustomer(rawCtx, customer)
-		ctx = huma.WithContext(ctx, ctxx)
+		newCtx := contextstore.SetContextCurrentCustomer(rawCtx, customer)
+		ctx = huma.WithContext(ctx, newCtx)
 		next(ctx)
 	}
 }
@@ -84,13 +84,13 @@ func SelectCustomerFromUserMiddleware(api huma.API, app core.App) func(ctx huma.
 				huma.WriteErr(api, ctx, http.StatusInternalServerError, "error creating customer")
 				return
 			}
-			ctxx := contextstore.SetContextCurrentCustomer(rawCtx, customer)
-			ctx = huma.WithContext(ctx, ctxx)
+			newCtx := contextstore.SetContextCurrentCustomer(rawCtx, customer)
+			ctx = huma.WithContext(ctx, newCtx)
 			next(ctx)
 			return
 		}
-		ctxx := contextstore.SetContextCurrentCustomer(rawCtx, customer)
-		ctx = huma.WithContext(ctx, ctxx)
+		newCtx := contextstore.SetContextCurrentCustomer(rawCtx, customer)
+		ctx = huma.WithContext(ctx, newCtx)
 		next(ctx)
 	}
 }
