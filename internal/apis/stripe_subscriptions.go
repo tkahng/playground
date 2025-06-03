@@ -21,12 +21,13 @@ func (api *Api) GetStripeSubscriptions(ctx context.Context, input *struct{}) (*s
 	if err != nil {
 		return nil, err
 	}
-	if subscriptions == nil {
-		return nil, nil
-	}
 	output := &struct {
 		Body *shared.SubscriptionWithPrice `json:"body,omitempty" required:"false"`
 	}{}
+
+	if subscriptions == nil {
+		return output, nil
+	}
 	output.Body = &shared.SubscriptionWithPrice{
 		Subscription: shared.FromModelSubscription(&subscriptions.Subscription),
 		Price: &shared.StripePricesWithProduct{

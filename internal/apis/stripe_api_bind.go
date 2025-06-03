@@ -57,9 +57,6 @@ func BindStripeApi(api huma.API, appApi *Api) {
 			Security: []map[string][]string{{
 				shared.BearerAuthSecurityKey: {},
 			}},
-			// Middlewares: huma.Middlewares{
-			// 	selectCustomerFromUserMiddleware,
-			// },
 		},
 		appApi.StripeCheckoutSessionGet,
 	)
