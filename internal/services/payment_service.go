@@ -12,13 +12,10 @@ import (
 	"github.com/tkahng/authgo/internal/conf"
 	"github.com/tkahng/authgo/internal/models"
 
-	// "github.com/tkahng/authgo/internal/modules/paymentmodule/client"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 	"github.com/tkahng/authgo/internal/tools/types"
 )
-
-// var NewPaymentClient = client.NewPaymentClient
 
 type PaymentClient interface {
 	Config() *conf.StripeConfig
@@ -29,7 +26,6 @@ type PaymentClient interface {
 	FindAllPrices() ([]*stripe.Price, error)
 	FindAllProducts() ([]*stripe.Product, error)
 	FindCheckoutSessionByStripeId(stripeId string) (*stripe.CheckoutSession, error)
-	// FindCustomerByEmailAndUserId(email string, userId string) (*stripe.Customer, error)
 	FindOrCreateCustomer(email string, name *string) (*stripe.Customer, error)
 	FindSubscriptionByStripeId(stripeId string) (*stripe.Subscription, error)
 	UpdateCustomer(customerId string, params *stripe.CustomerParams) (*stripe.Customer, error)
@@ -234,7 +230,7 @@ func (srv *StripeService) Store() PaymentStore {
 
 func (srv *StripeService) SyncPerms(ctx context.Context) error {
 	var err error
-	for productId, role := range shared.StripeRoleMap {
+	for productId, permission := range shared.StripeProductPermissionMap {
 		err = func() error {
 			product, err := srv.paymentStore.FindProductByStripeId(ctx, productId)
 			if err != nil {
@@ -243,7 +239,7 @@ func (srv *StripeService) SyncPerms(ctx context.Context) error {
 			if product == nil {
 				return errors.New("product not found")
 			}
-			perm, err := srv.paymentStore.FindPermissionByName(ctx, role)
+			perm, err := srv.paymentStore.FindPermissionByName(ctx, permission)
 			if err != nil {
 				return err
 			}
@@ -423,9 +419,8 @@ func (srv *StripeService) CreateBillingPortalSession(ctx context.Context, stripe
 	if team == nil {
 		return "", errors.New("team not found")
 	}
-	stripe_customer_id := stripeCustomerId
 
-	sub, err := srv.paymentStore.FindLatestActiveSubscriptionWithPriceByCustomerId(ctx, stripe_customer_id)
+	sub, err := srv.paymentStore.FindLatestActiveSubscriptionWithPriceByCustomerId(ctx, stripeCustomerId)
 	if err != nil {
 		return "", err
 	}
@@ -476,7 +471,7 @@ func (srv *StripeService) CreateBillingPortalSession(ctx context.Context, stripe
 	if err != nil {
 		return "", err
 	}
-	url, err := srv.client.CreateBillingPortalSession(stripe_customer_id, config)
+	url, err := srv.client.CreateBillingPortalSession(stripeCustomerId, config)
 	if err != nil {
 		log.Println(err)
 		return "", errors.New("failed to create checkout session")

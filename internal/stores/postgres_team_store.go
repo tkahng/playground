@@ -2,6 +2,7 @@ package stores
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"slices"
 	"strings"
@@ -42,7 +43,7 @@ type PostgresTeamStore struct {
 }
 
 // FindTeam implements services.TeamStore.
-func (p *PostgresTeamStore) FindTeam(ctx context.Context, team *models.Team) (*models.Team, error) {
+func (s *PostgresTeamStore) FindTeam(ctx context.Context, team *models.Team) (*models.Team, error) {
 	if team == nil {
 		return nil, nil
 	}
@@ -74,7 +75,7 @@ func (p *PostgresTeamStore) FindTeam(ctx context.Context, team *models.Team) (*m
 	}
 	team, err := crudrepo.Team.GetOne(
 		ctx,
-		p.db,
+		s.db,
 		&where,
 	)
 	if err != nil {
@@ -84,7 +85,7 @@ func (p *PostgresTeamStore) FindTeam(ctx context.Context, team *models.Team) (*m
 }
 
 // FindTeamMember implements services.TeamStore.
-func (p *PostgresTeamStore) FindTeamMember(ctx context.Context, member *models.TeamMember) (*models.TeamMember, error) {
+func (s *PostgresTeamStore) FindTeamMember(ctx context.Context, member *models.TeamMember) (*models.TeamMember, error) {
 	if member == nil {
 		return nil, nil
 	}
@@ -111,7 +112,7 @@ func (p *PostgresTeamStore) FindTeamMember(ctx context.Context, member *models.T
 	}
 	member, err := crudrepo.TeamMember.GetOne(
 		ctx,
-		p.db,
+		s.db,
 		&where,
 	)
 	if err != nil {
@@ -121,14 +122,14 @@ func (p *PostgresTeamStore) FindTeamMember(ctx context.Context, member *models.T
 }
 
 // LoadTeamsByIds implements services.TeamStore.
-func (p *PostgresTeamStore) LoadTeamsByIds(ctx context.Context, teamIds ...uuid.UUID) ([]*models.Team, error) {
+func (s *PostgresTeamStore) LoadTeamsByIds(ctx context.Context, teamIds ...uuid.UUID) ([]*models.Team, error) {
 	var ids []string
 	for _, id := range teamIds {
 		ids = append(ids, id.String())
 	}
 	teams, err := crudrepo.Team.Get(
 		ctx,
-		p.db,
+		s.db,
 		&map[string]any{
 			"id": map[string]any{
 				"_in": ids,
@@ -150,10 +151,10 @@ func (p *PostgresTeamStore) LoadTeamsByIds(ctx context.Context, teamIds ...uuid.
 }
 
 // FindPendingInvitation implements services.TeamInvitationStore.
-func (p *PostgresTeamStore) FindPendingInvitation(ctx context.Context, teamId uuid.UUID, email string) (*models.TeamInvitation, error) {
+func (s *PostgresTeamStore) FindPendingInvitation(ctx context.Context, teamId uuid.UUID, email string) (*models.TeamInvitation, error) {
 	invitation, err := crudrepo.TeamInvitation.GetOne(
 		ctx,
-		p.db,
+		s.db,
 		&map[string]any{
 			"team_id": map[string]any{
 				"_eq": teamId.String(),
@@ -181,19 +182,19 @@ func NewPostgresTeamStore(db database.Dbx) *PostgresTeamStore {
 	}
 }
 
-func (p *PostgresTeamStore) WithTx(tx database.Dbx) *PostgresTeamStore {
+func (s *PostgresTeamStore) WithTx(tx database.Dbx) *PostgresTeamStore {
 	return &PostgresTeamStore{
 		db: tx,
 	}
 }
 
 // CreateTeamWithOwnerMember implements services.TeamStore.
-func (p *PostgresTeamStore) CreateTeamWithOwnerMember(ctx context.Context, name string, slug string, userId uuid.UUID) (*shared.TeamInfoModel, error) {
+func (s *PostgresTeamStore) CreateTeamWithOwnerMember(ctx context.Context, name string, slug string, userId uuid.UUID) (*shared.TeamInfoModel, error) {
 	var teamInfo *shared.TeamInfoModel
-	err := p.db.RunInTransaction(
+	err := s.db.RunInTransaction(
 		ctx,
 		func(d database.Dbx) error {
-			store := p.WithTx(d)
+			store := s.WithTx(d)
 			team, err := store.CreateTeam(ctx, name, slug)
 			if err != nil {
 				return err
@@ -221,10 +222,10 @@ func (p *PostgresTeamStore) CreateTeamWithOwnerMember(ctx context.Context, name 
 	return teamInfo, nil
 }
 
-func (p *PostgresTeamStore) CreateTeamFromUser(ctx context.Context, user *models.User) (*models.TeamMember, error) {
+func (s *PostgresTeamStore) CreateTeamFromUser(ctx context.Context, user *models.User) (*models.TeamMember, error) {
 	team, err := crudrepo.Team.PostOne(
 		ctx,
-		p.db,
+		s.db,
 		&models.Team{
 			Name: user.Email,
 			Slug: user.Email,
@@ -233,9 +234,12 @@ func (p *PostgresTeamStore) CreateTeamFromUser(ctx context.Context, user *models
 	if err != nil {
 		return nil, err
 	}
+	if team == nil {
+		return nil, errors.New("team not found")
+	}
 	teamMember, err := crudrepo.TeamMember.PostOne(
 		ctx,
-		p.db,
+		s.db,
 		&models.TeamMember{
 			TeamID:           team.ID,
 			UserID:           types.Pointer(user.ID),
@@ -246,16 +250,19 @@ func (p *PostgresTeamStore) CreateTeamFromUser(ctx context.Context, user *models
 	if err != nil {
 		return nil, err
 	}
+	if teamMember == nil {
+		return nil, errors.New("team member not found")
+	}
 	teamMember.Team = team
 	teamMember.User = user
 	return teamMember, nil
 }
 
 // FindUserByID implements services.TeamInvitationStore.
-func (p *PostgresTeamStore) FindUserByID(ctx context.Context, userId uuid.UUID) (*models.User, error) {
+func (s *PostgresTeamStore) FindUserByID(ctx context.Context, userId uuid.UUID) (*models.User, error) {
 	user, err := crudrepo.User.GetOne(
 		ctx,
-		p.db,
+		s.db,
 		&map[string]any{
 			"id": map[string]any{
 				"_eq": userId.String(),
@@ -268,10 +275,10 @@ func (p *PostgresTeamStore) FindUserByID(ctx context.Context, userId uuid.UUID) 
 	return user, nil
 }
 
-func (p *PostgresTeamStore) FindTeamInvitations(ctx context.Context, teamId uuid.UUID) ([]*models.TeamInvitation, error) {
+func (s *PostgresTeamStore) FindTeamInvitations(ctx context.Context, teamId uuid.UUID) ([]*models.TeamInvitation, error) {
 	invitations, err := crudrepo.TeamInvitation.Get(
 		ctx,
-		p.db,
+		s.db,
 		&map[string]any{
 			"team_id": map[string]any{
 				"_eq": teamId.String(),
@@ -296,10 +303,10 @@ func (p *PostgresTeamStore) FindTeamInvitations(ctx context.Context, teamId uuid
 }
 
 // FindInvitationByID implements services.TeamInvitationStore.
-func (p *PostgresTeamStore) FindInvitationByID(ctx context.Context, invitationId uuid.UUID) (*models.TeamInvitation, error) {
+func (s *PostgresTeamStore) FindInvitationByID(ctx context.Context, invitationId uuid.UUID) (*models.TeamInvitation, error) {
 	invitation, err := crudrepo.TeamInvitation.GetOne(
 		ctx,
-		p.db,
+		s.db,
 		&map[string]any{
 			"id": map[string]any{
 				"_eq": invitationId.String(),
@@ -321,10 +328,10 @@ func (p *PostgresTeamStore) FindInvitationByID(ctx context.Context, invitationId
 }
 
 // FindInvitationByToken implements services.TeamInvitationStore.
-func (p *PostgresTeamStore) FindInvitationByToken(ctx context.Context, token string) (*models.TeamInvitation, error) {
+func (s *PostgresTeamStore) FindInvitationByToken(ctx context.Context, token string) (*models.TeamInvitation, error) {
 	invitation, err := crudrepo.TeamInvitation.GetOne(
 		ctx,
-		p.db,
+		s.db,
 		&map[string]any{
 			"token": map[string]any{
 				"_eq": token,
@@ -346,20 +353,20 @@ func (p *PostgresTeamStore) FindInvitationByToken(ctx context.Context, token str
 }
 
 // CreateInvitation implements services.TeamInvitationStore.
-func (p *PostgresTeamStore) CreateInvitation(ctx context.Context, invitation *models.TeamInvitation) error {
+func (s *PostgresTeamStore) CreateInvitation(ctx context.Context, invitation *models.TeamInvitation) error {
 	_, err := crudrepo.TeamInvitation.PostOne(
 		ctx,
-		p.db,
+		s.db,
 		invitation,
 	)
 	return err
 }
 
 // GetInvitationByID implements services.TeamInvitationStore.
-func (p *PostgresTeamStore) GetInvitationByID(ctx context.Context, invitationId uuid.UUID) (*models.TeamInvitation, error) {
+func (s *PostgresTeamStore) GetInvitationByID(ctx context.Context, invitationId uuid.UUID) (*models.TeamInvitation, error) {
 	invitation, err := crudrepo.TeamInvitation.GetOne(
 		ctx,
-		p.db,
+		s.db,
 		&map[string]any{
 			"id": map[string]any{
 				"_eq": invitationId.String(),
@@ -379,10 +386,10 @@ func (p *PostgresTeamStore) GetInvitationByID(ctx context.Context, invitationId 
 }
 
 // UpdateInvitation implements services.TeamInvitationStore.
-func (p *PostgresTeamStore) UpdateInvitation(ctx context.Context, invitation *models.TeamInvitation) error {
+func (s *PostgresTeamStore) UpdateInvitation(ctx context.Context, invitation *models.TeamInvitation) error {
 	_, err := crudrepo.TeamInvitation.PutOne(
 		ctx,
-		p.db,
+		s.db,
 		invitation,
 	)
 
@@ -445,7 +452,7 @@ func (s *PostgresTeamStore) UpdateTeamMember(ctx context.Context, member *models
 	return newMember, nil
 }
 
-// CountTeamMembers implements services.TeamStore.
+// CountOwnerTeamMembers implements services.TeamStore.
 func (s *PostgresTeamStore) CountOwnerTeamMembers(ctx context.Context, teamId uuid.UUID) (int64, error) {
 	c, err := crudrepo.TeamMember.Count(
 		ctx,
@@ -501,10 +508,10 @@ func (s *PostgresTeamStore) FindTeamByStripeCustomerId(ctx context.Context, stri
 	return database.OptionalRow(data, err)
 }
 
-func (q *PostgresTeamStore) FindTeamMemberByTeamAndUserId(ctx context.Context, teamId, userId uuid.UUID) (*models.TeamMember, error) {
+func (s *PostgresTeamStore) FindTeamMemberByTeamAndUserId(ctx context.Context, teamId, userId uuid.UUID) (*models.TeamMember, error) {
 	teamMember, err := crudrepo.TeamMember.GetOne(
 		ctx,
-		q.db,
+		s.db,
 		&map[string]any{
 			"user_id": map[string]any{
 				"_eq": userId.String(),
@@ -521,13 +528,13 @@ func (q *PostgresTeamStore) FindTeamMemberByTeamAndUserId(ctx context.Context, t
 }
 
 // UpdateTeamMemberSelectedAt implements TeamQueryer.
-func (q *PostgresTeamStore) UpdateTeamMemberSelectedAt(ctx context.Context, teamId, userId uuid.UUID) error {
+func (s *PostgresTeamStore) UpdateTeamMemberSelectedAt(ctx context.Context, teamId, userId uuid.UUID) error {
 	qquery := squirrel.Update("team_members").
 		Where("team_id = ?", teamId).
 		Where("user_id = ?", userId).
 		Set("last_selected_at", time.Now())
 
-	err := database.ExecWithBuilder(ctx, q.db, qquery.PlaceholderFormat(squirrel.Dollar))
+	err := database.ExecWithBuilder(ctx, s.db, qquery.PlaceholderFormat(squirrel.Dollar))
 	if err != nil {
 		return err
 	}
@@ -535,10 +542,10 @@ func (q *PostgresTeamStore) UpdateTeamMemberSelectedAt(ctx context.Context, team
 }
 
 // FindLatestTeamMemberByUserID implements TeamQueryer.
-func (q *PostgresTeamStore) FindLatestTeamMemberByUserID(ctx context.Context, userId uuid.UUID) (*models.TeamMember, error) {
+func (s *PostgresTeamStore) FindLatestTeamMemberByUserID(ctx context.Context, userId uuid.UUID) (*models.TeamMember, error) {
 	teamMember, err := crudrepo.TeamMember.Get(
 		ctx,
-		q.db,
+		s.db,
 		&map[string]any{
 			"user_id": map[string]any{
 				"_eq": userId.String(),
@@ -560,10 +567,10 @@ func (q *PostgresTeamStore) FindLatestTeamMemberByUserID(ctx context.Context, us
 }
 
 // DeleteTeam implements TeamQueryer.
-func (q *PostgresTeamStore) DeleteTeam(ctx context.Context, teamId uuid.UUID) error {
+func (s *PostgresTeamStore) DeleteTeam(ctx context.Context, teamId uuid.UUID) error {
 	_, err := crudrepo.Team.Delete(
 		ctx,
-		q.db,
+		s.db,
 		&map[string]any{
 			"id": map[string]any{
 				"_eq": teamId.String(),
@@ -577,10 +584,10 @@ func (q *PostgresTeamStore) DeleteTeam(ctx context.Context, teamId uuid.UUID) er
 }
 
 // FindTeamByID implements TeamQueryer.
-func (q *PostgresTeamStore) FindTeamByID(ctx context.Context, teamId uuid.UUID) (*models.Team, error) {
+func (s *PostgresTeamStore) FindTeamByID(ctx context.Context, teamId uuid.UUID) (*models.Team, error) {
 	return crudrepo.Team.GetOne(
 		ctx,
-		q.db,
+		s.db,
 		&map[string]any{
 			"id": map[string]any{
 				"_eq": teamId.String(),
@@ -589,10 +596,10 @@ func (q *PostgresTeamStore) FindTeamByID(ctx context.Context, teamId uuid.UUID) 
 	)
 }
 
-func (q *PostgresTeamStore) FindTeamBySlug(ctx context.Context, slug string) (*models.Team, error) {
+func (s *PostgresTeamStore) FindTeamBySlug(ctx context.Context, slug string) (*models.Team, error) {
 	return crudrepo.Team.GetOne(
 		ctx,
-		q.db,
+		s.db,
 		&map[string]any{
 			"slug": map[string]any{
 				"_eq": slug,
@@ -602,7 +609,7 @@ func (q *PostgresTeamStore) FindTeamBySlug(ctx context.Context, slug string) (*m
 }
 
 // FindTeamMembersByUserID implements TeamQueryer.
-func (q *PostgresTeamStore) FindTeamMembersByUserID(ctx context.Context, userId uuid.UUID, paginate *shared.TeamMemberListInput) ([]*models.TeamMember, error) {
+func (s *PostgresTeamStore) FindTeamMembersByUserID(ctx context.Context, userId uuid.UUID, paginate *shared.TeamMemberListInput) ([]*models.TeamMember, error) {
 	limit, offset := database.PaginateRepo(&paginate.PaginatedInput)
 	orderby := make(map[string]string)
 	if paginate.SortBy != "" && paginate.SortOrder != "" && slices.Contains(crudrepo.TeamMemberBuilder.ColumnNames(), paginate.SortBy) {
@@ -621,7 +628,7 @@ func (q *PostgresTeamStore) FindTeamMembersByUserID(ctx context.Context, userId 
 		qs = qs.OrderBy("last_selected_at DESC")
 	}
 	qs = qs.Limit(uint64(*limit)).Offset(uint64(*offset))
-	teamMembers, err := database.QueryWithBuilder[*models.TeamMember](ctx, q.db, qs.PlaceholderFormat(squirrel.Dollar))
+	teamMembers, err := database.QueryWithBuilder[*models.TeamMember](ctx, s.db, qs.PlaceholderFormat(squirrel.Dollar))
 	if err != nil {
 		return nil, err
 	}
@@ -629,10 +636,10 @@ func (q *PostgresTeamStore) FindTeamMembersByUserID(ctx context.Context, userId 
 	return teamMembers, nil
 }
 
-func (q *PostgresTeamStore) CountTeamMembersByUserID(ctx context.Context, userId uuid.UUID) (int64, error) {
+func (s *PostgresTeamStore) CountTeamMembersByUserID(ctx context.Context, userId uuid.UUID) (int64, error) {
 	c, err := crudrepo.TeamMember.Count(
 		ctx,
-		q.db,
+		s.db,
 		&map[string]any{
 			"user_id": map[string]any{
 				"_eq": userId.String(),
@@ -649,7 +656,7 @@ func (q *PostgresTeamStore) CountTeamMembersByUserID(ctx context.Context, userId
 }
 
 // UpdateTeam implements TeamQueryer.
-func (q *PostgresTeamStore) UpdateTeam(ctx context.Context, teamId uuid.UUID, name string) (*models.Team, error) {
+func (s *PostgresTeamStore) UpdateTeam(ctx context.Context, teamId uuid.UUID, name string) (*models.Team, error) {
 	team := &models.Team{
 		ID:   teamId,
 		Name: name,
@@ -658,7 +665,7 @@ func (q *PostgresTeamStore) UpdateTeam(ctx context.Context, teamId uuid.UUID, na
 	}
 	_, err := crudrepo.Team.PutOne(
 		ctx,
-		q.db,
+		s.db,
 		team,
 	)
 	if err != nil {
@@ -667,14 +674,14 @@ func (q *PostgresTeamStore) UpdateTeam(ctx context.Context, teamId uuid.UUID, na
 	return team, nil
 }
 
-func (q *PostgresTeamStore) CreateTeam(ctx context.Context, name string, slug string) (*models.Team, error) {
+func (s *PostgresTeamStore) CreateTeam(ctx context.Context, name string, slug string) (*models.Team, error) {
 	teamModel := &models.Team{
 		Name: name,
 		Slug: slug,
 	}
 	team, err := crudrepo.Team.PostOne(
 		ctx,
-		q.db,
+		s.db,
 		teamModel,
 	)
 	if err != nil {
@@ -683,7 +690,7 @@ func (q *PostgresTeamStore) CreateTeam(ctx context.Context, name string, slug st
 	return team, nil
 }
 
-func (q *PostgresTeamStore) CreateTeamMember(ctx context.Context, teamId, userId uuid.UUID, role models.TeamMemberRole, hasBillingAccess bool) (*models.TeamMember, error) {
+func (s *PostgresTeamStore) CreateTeamMember(ctx context.Context, teamId, userId uuid.UUID, role models.TeamMemberRole, hasBillingAccess bool) (*models.TeamMember, error) {
 	teamMember := &models.TeamMember{
 		TeamID:           teamId,
 		UserID:           &userId,
@@ -693,12 +700,12 @@ func (q *PostgresTeamStore) CreateTeamMember(ctx context.Context, teamId, userId
 	}
 	return crudrepo.TeamMember.PostOne(
 		ctx,
-		q.db,
+		s.db,
 		teamMember,
 	)
 }
 
-func (q *PostgresTeamStore) ListTeams(ctx context.Context, params *shared.ListTeamsParams) ([]*models.Team, error) {
+func (s *PostgresTeamStore) ListTeams(ctx context.Context, params *shared.ListTeamsParams) ([]*models.Team, error) {
 	// Build the query
 	if params == nil {
 		params = &shared.ListTeamsParams{}
@@ -711,17 +718,17 @@ func (q *PostgresTeamStore) ListTeams(ctx context.Context, params *shared.ListTe
 	qs = listTeamsFilter(qs, params)
 	qs = listTeamsOrderBy(qs, params)
 	qs = qs.Limit(uint64(*limit)).Offset(uint64(*offset))
-	teams, err := database.QueryWithBuilder[*models.Team](ctx, q.db, qs.PlaceholderFormat(squirrel.Dollar))
+	teams, err := database.QueryWithBuilder[*models.Team](ctx, s.db, qs.PlaceholderFormat(squirrel.Dollar))
 	if err != nil {
 		return nil, err
 	}
 	return teams, nil
 }
 
-func (q *PostgresTeamStore) CountTeams(ctx context.Context, params *shared.ListTeamsParams) (int64, error) {
+func (s *PostgresTeamStore) CountTeams(ctx context.Context, params *shared.ListTeamsParams) (int64, error) {
 	qs := squirrel.Select("COUNT(teams.*)").From("teams")
 	qs = listTeamsFilter(qs, params)
-	count, err := database.QueryWithBuilder[CountOutput](ctx, q.db, qs.PlaceholderFormat(squirrel.Dollar))
+	count, err := database.QueryWithBuilder[CountOutput](ctx, s.db, qs.PlaceholderFormat(squirrel.Dollar))
 	if err != nil {
 		return 0, err
 	}

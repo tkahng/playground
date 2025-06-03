@@ -55,7 +55,7 @@ func (fs *S3FileSystem) PutFile(ctx context.Context, authority string, key strin
 }
 
 func NewFileSystem(cfg conf.StorageConfig) (FileSystem, error) {
-	config, err := config.LoadDefaultConfig(context.TODO(),
+	newConfig, err := config.LoadDefaultConfig(context.TODO(),
 		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(cfg.ClientId, cfg.ClientSecret, "")),
 		config.WithRegion(cfg.Region),
 	)
@@ -63,7 +63,7 @@ func NewFileSystem(cfg conf.StorageConfig) (FileSystem, error) {
 		log.Fatal(err)
 	}
 
-	client := awss3.NewFromConfig(config, func(o *awss3.Options) {
+	client := awss3.NewFromConfig(newConfig, func(o *awss3.Options) {
 		o.BaseEndpoint = aws.String(cfg.EndpointUrl)
 		o.UsePathStyle = true
 	})

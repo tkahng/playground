@@ -21,7 +21,7 @@ type StripeClient struct {
 }
 
 // UpdateItemQuantity implements services.PaymentClient.
-func (s *StripeClient) UpdateItemQuantity(itemId string, priceId string, count int64) (*stripe.SubscriptionItem, error) {
+func (c *StripeClient) UpdateItemQuantity(itemId string, priceId string, count int64) (*stripe.SubscriptionItem, error) {
 	params := &stripe.SubscriptionItemParams{
 		Quantity: stripe.Int64(count),
 		Price:    stripe.String(priceId),
@@ -36,15 +36,15 @@ func NewPaymentClient(bld conf.StripeConfig) *StripeClient {
 	return payment
 }
 
-func (s *StripeClient) UpdateCustomer(customerId string, params *stripe.CustomerParams) (*stripe.Customer, error) {
+func (c *StripeClient) UpdateCustomer(customerId string, params *stripe.CustomerParams) (*stripe.Customer, error) {
 	return customer.Update(customerId, params)
 }
 
-func (s *StripeClient) Config() *conf.StripeConfig {
-	return s.config
+func (c *StripeClient) Config() *conf.StripeConfig {
+	return c.config
 }
 
-func (s *StripeClient) CreateCustomer(email string, name *string) (*stripe.Customer, error) {
+func (c *StripeClient) CreateCustomer(email string, name *string) (*stripe.Customer, error) {
 	params := &stripe.CustomerParams{
 		Name:  name,
 		Email: stripe.String(email),
@@ -52,7 +52,7 @@ func (s *StripeClient) CreateCustomer(email string, name *string) (*stripe.Custo
 	return customer.New(params)
 }
 
-func (client *StripeClient) findCustomerByEmailAndUserId(email string, name *string) (*stripe.Customer, error) {
+func (c *StripeClient) findCustomerByEmailAndUserId(email string, name *string) (*stripe.Customer, error) {
 	var cs *stripe.Customer
 	var params *stripe.CustomerSearchParams
 	if name == nil {
@@ -79,7 +79,7 @@ func (client *StripeClient) findCustomerByEmailAndUserId(email string, name *str
 	return cs, nil
 }
 
-func (s *StripeClient) FindAllProducts() ([]*stripe.Product, error) {
+func (c *StripeClient) FindAllProducts() ([]*stripe.Product, error) {
 	var data []*stripe.Product
 	params := &stripe.ProductListParams{}
 	list := product.List(params)
@@ -94,7 +94,7 @@ func (s *StripeClient) FindAllProducts() ([]*stripe.Product, error) {
 	return data, nil
 }
 
-func (s *StripeClient) FindAllPrices() ([]*stripe.Price, error) {
+func (c *StripeClient) FindAllPrices() ([]*stripe.Price, error) {
 	var data []*stripe.Price
 	params := &stripe.PriceListParams{}
 	list := price.List(params)
@@ -109,28 +109,28 @@ func (s *StripeClient) FindAllPrices() ([]*stripe.Price, error) {
 	return data, nil
 }
 
-func (s *StripeClient) FindOrCreateCustomer(email string, name *string) (*stripe.Customer, error) {
-	cs, _ := s.findCustomerByEmailAndUserId(email, name)
+func (c *StripeClient) FindOrCreateCustomer(email string, name *string) (*stripe.Customer, error) {
+	cs, _ := c.findCustomerByEmailAndUserId(email, name)
 	if cs == nil {
-		return s.CreateCustomer(email, name)
+		return c.CreateCustomer(email, name)
 	}
 	return cs, nil
 }
 
 // find stripe subscription by stripe id
-func (s *StripeClient) FindSubscriptionByStripeId(stripeId string) (*stripe.Subscription, error) {
+func (c *StripeClient) FindSubscriptionByStripeId(stripeId string) (*stripe.Subscription, error) {
 	params := &stripe.SubscriptionParams{}
 	params.AddExpand("default_payment_method")
 	return subscription.Get(stripeId, params)
 }
 
 // find stripe subscription by stripe id
-func (s *StripeClient) FindCheckoutSessionByStripeId(stripeId string) (*stripe.CheckoutSession, error) {
+func (c *StripeClient) FindCheckoutSessionByStripeId(stripeId string) (*stripe.CheckoutSession, error) {
 	params := &stripe.CheckoutSessionParams{}
 	return session.Get(stripeId, params)
 }
 
-func (s *StripeClient) CreateCheckoutSession(customerId, priceId string, quantity int64, trialDays *int64) (*stripe.CheckoutSession, error) {
+func (c *StripeClient) CreateCheckoutSession(customerId, priceId string, quantity int64, trialDays *int64) (*stripe.CheckoutSession, error) {
 	lineParams := []*stripe.CheckoutSessionLineItemParams{
 		{
 			Price:    stripe.String(priceId),
@@ -153,15 +153,15 @@ func (s *StripeClient) CreateCheckoutSession(customerId, priceId string, quantit
 		PaymentMethodTypes: stripe.StringSlice([]string{"card"}),
 		CustomerUpdate:     customerUpdateParams,
 		Mode:               stripe.String("subscription"),
-		SuccessURL:         stripe.String(s.config.StripeAppUrl + "/payment/success?sessionId={CHECKOUT_SESSION_ID}"),
-		// CancelURL:          stripe.String(s.config.AppUrl + "/payment/cancel"),
+		SuccessURL:         stripe.String(c.config.StripeAppUrl + "/payment/success?sessionId={CHECKOUT_SESSION_ID}"),
+		// CancelURL:          stripe.String(c.config.AppUrl + "/payment/cancel"),
 		LineItems:        lineParams,
 		SubscriptionData: subscriptionParams,
 	}
 	return session.New(sessionParams)
 }
 
-func (a *StripeClient) CreatePortalConfiguration(input ...*stripe.BillingPortalConfigurationFeaturesSubscriptionUpdateProductParams) (string, error) {
+func (c *StripeClient) CreatePortalConfiguration(input ...*stripe.BillingPortalConfigurationFeaturesSubscriptionUpdateProductParams) (string, error) {
 	var prods []*stripe.BillingPortalConfigurationFeaturesSubscriptionUpdateProductParams
 	for _, i := range input {
 		prods = append(prods, &stripe.BillingPortalConfigurationFeaturesSubscriptionUpdateProductParams{
@@ -210,11 +210,11 @@ func (a *StripeClient) CreatePortalConfiguration(input ...*stripe.BillingPortalC
 	return result.ID, nil
 }
 
-func (s *StripeClient) CreateBillingPortalSession(customerId string, configurationId string) (*stripe.BillingPortalSession, error) {
+func (c *StripeClient) CreateBillingPortalSession(customerId string, configurationId string) (*stripe.BillingPortalSession, error) {
 	params := &stripe.BillingPortalSessionParams{
 		Configuration: stripe.String(configurationId),
 		Customer:      stripe.String(customerId),
-		ReturnURL:     stripe.String(s.config.StripeAppUrl + "/settings/billing"),
+		ReturnURL:     stripe.String(c.config.StripeAppUrl + "/settings/billing"),
 	}
 	return bs.New(params)
 }

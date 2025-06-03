@@ -22,17 +22,17 @@ func TestListUsers(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
-		faker := faker.New().Internet()
-		users1, err := seeders.CreateUserWithAccountAndRole(ctx, dbxx, 5, models.ProvidersGoogle, "superuser", faker)
+		internet := faker.New().Internet()
+		users1, err := seeders.CreateUserWithAccountAndRole(ctx, dbxx, 5, models.ProvidersGoogle, "superuser", internet)
 		if err != nil {
 			t.Fatalf("failed to create users: %v", err)
 		}
 		fmt.Println(len(users1))
-		_, err = seeders.CreateUserWithAccountAndRole(ctx, dbxx, 5, models.ProvidersCredentials, "basic", faker)
+		_, err = seeders.CreateUserWithAccountAndRole(ctx, dbxx, 5, models.ProvidersCredentials, "basic", internet)
 		if err != nil {
 			t.Fatalf("failed to create users: %v", err)
 		}
-		_, err = seeders.CreateUserWithAccountAndRole(ctx, dbxx, 5, models.ProvidersGithub, "pro", faker)
+		_, err = seeders.CreateUserWithAccountAndRole(ctx, dbxx, 5, models.ProvidersGithub, "pro", internet)
 		if err != nil {
 			t.Fatalf("failed to create users: %v", err)
 		}
@@ -131,16 +131,16 @@ func TestCountUsers(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
-		faker := faker.New().Internet()
-		_, err := seeders.CreateUserWithAccountAndRole(ctx, dbxx, 5, models.ProvidersGoogle, "superuser", faker)
+		internet := faker.New().Internet()
+		_, err := seeders.CreateUserWithAccountAndRole(ctx, dbxx, 5, models.ProvidersGoogle, "superuser", internet)
 		if err != nil {
 			t.Fatalf("failed to create users: %v", err)
 		}
-		_, err = seeders.CreateUserWithAccountAndRole(ctx, dbxx, 5, models.ProvidersCredentials, "basic", faker)
+		_, err = seeders.CreateUserWithAccountAndRole(ctx, dbxx, 5, models.ProvidersCredentials, "basic", internet)
 		if err != nil {
 			t.Fatalf("failed to create users: %v", err)
 		}
-		_, err = seeders.CreateUserWithAccountAndRole(ctx, dbxx, 5, models.ProvidersGithub, "pro", faker)
+		_, err = seeders.CreateUserWithAccountAndRole(ctx, dbxx, 5, models.ProvidersGithub, "pro", internet)
 		if err != nil {
 			t.Fatalf("failed to create users: %v", err)
 		}
@@ -202,8 +202,8 @@ func TestDeleteUsers(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
-		faker := faker.New().Internet()
-		users, err := seeders.CreateUserWithAccountAndRole(ctx, dbxx, 1, models.ProvidersGoogle, "basic", faker)
+		internet := faker.New().Internet()
+		users, err := seeders.CreateUserWithAccountAndRole(ctx, dbxx, 1, models.ProvidersGoogle, "basic", internet)
 		if err != nil {
 			t.Fatalf("failed to create users: %v", err)
 		}
@@ -235,8 +235,8 @@ func TestUpdateUser(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
-		faker := faker.New().Internet()
-		users, err := seeders.CreateUserWithAccountAndRole(ctx, dbxx, 1, models.ProvidersGoogle, "basic", faker)
+		internet := faker.New().Internet()
+		users, err := seeders.CreateUserWithAccountAndRole(ctx, dbxx, 1, models.ProvidersGoogle, "basic", internet)
 		if err != nil {
 			t.Fatalf("failed to create users: %v", err)
 		}

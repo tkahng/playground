@@ -66,6 +66,9 @@ type PasswordResetInput struct {
 func (api *Api) ResetPassword(ctx context.Context, input *struct{ Body PasswordResetInput }) (*struct{}, error) {
 
 	claims := contextstore.GetContextUserInfo(ctx)
+	if claims == nil {
+		return nil, huma.Error404NotFound("User not found")
+	}
 	checker := api.app.Checker()
 	ok, err := checker.CannotBeSuperUserEmail(ctx, claims.User.Email)
 	if err != nil {
@@ -75,9 +78,6 @@ func (api *Api) ResetPassword(ctx context.Context, input *struct{ Body PasswordR
 		return nil, huma.Error400BadRequest("Cannot reset password for super user")
 	}
 	action := api.app.Auth()
-	if claims == nil {
-		return nil, huma.Error404NotFound("User not found")
-	}
 	err = action.ResetPassword(ctx, claims.User.ID, input.Body.PreviousPassword, input.Body.NewPassword)
 	if err != nil {
 		return nil, err

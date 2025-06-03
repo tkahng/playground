@@ -2,6 +2,7 @@ package queries
 
 import (
 	"context"
+	"errors"
 	"log"
 
 	"github.com/google/uuid"
@@ -46,7 +47,7 @@ GROUP BY rp.role_id;`
 
 func LoadRolePermissions(ctx context.Context, db database.Dbx, roleIds ...uuid.UUID) ([][]*crudModels.Permission, error) {
 	// var results []JoinedResult[*crudModels.Permission, uuid.UUID]
-	ids := []string{}
+	var ids []string
 	for _, id := range roleIds {
 		ids = append(ids, id.String())
 	}
@@ -102,7 +103,7 @@ GROUP BY rp.user_id;`
 
 func GetUserRoles(ctx context.Context, db database.Dbx, userIds ...uuid.UUID) ([][]*crudModels.Role, error) {
 	// var results []JoinedResult[*crudModels.Permission, uuid.UUID]
-	ids := []string{}
+	var ids []string
 	for _, id := range userIds {
 		ids = append(ids, id.String())
 	}
@@ -155,7 +156,7 @@ GROUP BY rp.user_id;`
 )
 
 func GetUserPermissions(ctx context.Context, db database.Dbx, userIds ...uuid.UUID) ([][]*crudModels.Permission, error) {
-	ids := []string{}
+	var ids []string
 	for _, id := range userIds {
 		ids = append(ids, id.String())
 	}
@@ -236,12 +237,17 @@ func EnsureRoleAndPermissions(ctx context.Context, db database.Dbx, roleName str
 	if err != nil {
 		return err
 	}
+	if role == nil {
+		return errors.New("role not found")
+	}
 	for _, permissionName := range permissionNames {
 		perm, err := FindOrCreatePermission(ctx, db, permissionName)
 		if err != nil {
 			continue
 		}
-
+		if perm == nil {
+			continue
+		}
 		err = CreateRolePermissions(ctx, db, role.ID, perm.ID)
 		if err != nil && !IsUniqConstraintErr(err) {
 			log.Println(err)

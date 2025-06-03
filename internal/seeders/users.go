@@ -27,11 +27,11 @@ func CreateUserFromEmails(ctx context.Context, dbx database.Dbx, emails ...strin
 }
 
 func CreateUsers(ctx context.Context, dbx database.Dbx, count int) ([]*models.User, error) {
-	faker := faker.New().Internet()
+	internet := faker.New().Internet()
 	var users []models.User
 	for i := 0; i < count; i++ {
 		user := models.User{
-			Email: faker.Email(),
+			Email: internet.Email(),
 		}
 		users = append(users, user)
 	}

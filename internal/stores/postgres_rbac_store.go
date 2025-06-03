@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"log/slog"
 	"strings"
 
 	"github.com/Masterminds/squirrel"
@@ -489,9 +490,12 @@ func (p *PostgresRBACStore) EnsureRoleAndPermissions(ctx context.Context, roleNa
 	for _, permissionName := range permissionNames {
 		perm, err := p.FindOrCreatePermission(ctx, permissionName)
 		if err != nil {
+			slog.ErrorContext(ctx, "error finding or creating permission", "name", permissionName, "error", err)
 			continue
 		}
-
+		if perm == nil {
+			continue
+		}
 		err = p.CreateRolePermissions(ctx, role.ID, perm.ID)
 		if err != nil && !database.IsUniqConstraintErr(err) {
 			log.Println(err)

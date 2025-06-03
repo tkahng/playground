@@ -71,7 +71,7 @@ func TestEnqueuer(t *testing.T) {
 		test.WithTx(t, func(ctx context.Context, tx database.Dbx) {
 			enqueuer := jobs.NewDBEnqueuer(tx)
 
-			jobs := []jobs.EnqueueParams{
+			params := []jobs.EnqueueParams{
 				{
 					Args:        testJob{Message: "batch1"},
 					RunAfter:    time.Now(),
@@ -85,7 +85,7 @@ func TestEnqueuer(t *testing.T) {
 				},
 			}
 
-			err := enqueuer.EnqueueMany(ctx, jobs...)
+			err := enqueuer.EnqueueMany(ctx, params...)
 			assert.NoError(t, err)
 
 			count, err := crudrepo.Job.Count(

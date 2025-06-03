@@ -465,6 +465,9 @@ func (s *taskStore) CreateTaskProjectWithTasks(ctx context.Context, input *share
 	if err != nil {
 		return nil, err
 	}
+	if taskProject == nil {
+		return nil, errors.New("task project not created")
+	}
 	var tasks []*models.Task
 	for i, task := range input.Tasks {
 		task.Rank = float64(i * 1000)
