@@ -41,72 +41,69 @@ export const AuthProvider: React.FC<{
     "currentUser",
     null
   );
-  const values = React.useMemo(() => {
-    const signUp = async (args: SignupInput): Promise<UserInfoTokens> => {
-      const data = await signIn(args);
-      setUser(data);
-      return data;
-    };
-    const login = async (args: SigninInput): Promise<UserInfoTokens> => {
-      const data = await signIn(args);
-      setUser(data);
-      return data;
-    };
-    const logout = async () => {
-      setUser(null);
-    };
-    const getOrRefreshToken = async (token?: string) => {
-      try {
-        if (token) {
-          const data = await refreshToken({ refresh_token: token });
+  // const values = React.useMemo(() => {
+  const signUp = async (args: SignupInput): Promise<UserInfoTokens> => {
+    const data = await signIn(args);
+    setUser(data);
+    return data;
+  };
+  const login = async (args: SigninInput): Promise<UserInfoTokens> => {
+    const data = await signIn(args);
+    setUser(data);
+    return data;
+  };
+  const logout = async () => {
+    setUser(null);
+  };
+  const getOrRefreshToken = async (token?: string) => {
+    try {
+      if (token) {
+        const data = await refreshToken({ refresh_token: token });
+        setUser(data);
+        return data;
+      }
+      if (!user) {
+        return Promise.reject();
+      } else {
+        const decoded = jwtDecode(user.tokens.access_token);
+        if (!decoded?.exp) {
+          console.error("Token does not have an expiration time.");
+          return Promise.reject();
+        }
+        if (decoded?.exp <= Math.round(Date.now() / 1000)) {
+          const data = await refreshToken({
+            refresh_token: user.tokens.refresh_token,
+          });
           setUser(data);
           return data;
-        }
-        if (!user) {
-          return Promise.reject();
         } else {
-          const decoded = jwtDecode(user.tokens.access_token);
-          if (!decoded?.exp) {
-            console.error("Token does not have an expiration time.");
-            return Promise.reject();
-          }
-          if (decoded?.exp <= Math.round(Date.now() / 1000)) {
-            const data = await refreshToken({
-              refresh_token: user.tokens.refresh_token,
-            });
-            setUser(data);
-            return data;
-          } else {
-            return user;
-          }
+          return user;
         }
-      } catch (error) {
-        console.error("Error refreshing token:", error);
-        setUser(null);
-        return Promise.reject();
       }
-    };
-    const checkAuth = async () => {
-      if (!user) {
-        return;
-      }
-      try {
-        await getOrRefreshToken(user.tokens.refresh_token);
-      } catch (error) {
-        console.error("Error checking auth:", error);
-        setUser(null);
-        return Promise.reject();
-      }
-    };
-    return {
-      user,
-      signUp,
-      login,
-      logout,
-      getOrRefreshToken,
-      checkAuth,
-    };
-  }, [user, setUser]);
+    } catch (error) {
+      console.error("Error refreshing token:", error);
+      setUser(null);
+      return Promise.reject();
+    }
+  };
+  const checkAuth = async () => {
+    if (!user) {
+      return;
+    }
+    try {
+      await getOrRefreshToken(user.tokens.refresh_token);
+    } catch (error) {
+      console.error("Error checking auth:", error);
+      setUser(null);
+      return Promise.reject();
+    }
+  };
 
-  return <AuthContext.Provider value={values}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider
+      value={{ user, signUp, login, logout, checkAuth, getOrRefreshToken }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
 };

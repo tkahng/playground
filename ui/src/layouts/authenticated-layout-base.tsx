@@ -16,13 +16,13 @@ export default function AuthenticatedLayoutBase() {
       isMounted.current = true;
       checkAuth()
         .then(() => {
-          isMounted.current = false;
+          // isMounted.current = false;
         })
         .catch(() => {
-          isMounted.current = false;
+          // isMounted.current = false;
         });
     }
-  }, [location, checkAuth, user]);
+  }, [checkAuth, location, user]);
 
   if (!user) {
     return (
