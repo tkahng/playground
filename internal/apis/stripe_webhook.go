@@ -3,8 +3,7 @@ package apis
 import (
 	"context"
 	"encoding/json"
-	"fmt"
-	"os"
+	"log/slog"
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/stripe/stripe-go/v82"
@@ -29,8 +28,7 @@ func (api *Api) StripeWebhook(ctx context.Context, input *StripeWebhookInput) (*
 	event := stripe.Event{}
 
 	if err := json.Unmarshal(payload, &event); err != nil {
-		fmt.Fprintf(os.Stderr, "⚠️  Webhook error while parsing basic request. %v\n", err.Error())
-
+		slog.ErrorContext(ctx, "⚠️  Webhook error while parsing basic request. %v", err.Error())
 		return nil, huma.Error400BadRequest(err.Error())
 	}
 	cfg := api.app.Cfg()
@@ -39,7 +37,7 @@ func (api *Api) StripeWebhook(ctx context.Context, input *StripeWebhookInput) (*
 	}
 	event, err := webhook.ConstructEvent(payload, input.Signature, cfg.StripeConfig.Webhook)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "⚠️  Webhook signature verification failed. %v\n", err)
+		slog.ErrorContext(ctx, "⚠️  Webhook error while parsing basic request. %v", err.Error())
 		return nil, huma.Error400BadRequest(err.Error())
 	}
 	payment := api.app.Payment()
@@ -85,7 +83,7 @@ func (api *Api) StripeWebhook(ctx context.Context, input *StripeWebhookInput) (*
 		}
 		return nil, nil
 	default:
-		fmt.Fprintf(os.Stderr, "⚠️  Unhandled event type: %s\n", event.Type)
+		slog.ErrorContext(ctx, "⚠️  Unhandled event type: %s", event.Type)
 		return nil, huma.Error400BadRequest("unhandled event type")
 	}
 	// return nil, huma.Error400BadRequest("unhandled event type")
