@@ -24,7 +24,7 @@ type StripeUrlOutput struct {
 	}
 }
 
-func (a *Api) StripeCheckoutSession(ctx context.Context, input *StripePaymentInput) (*StripeUrlOutput, error) {
+func (api *Api) StripeCheckoutSession(ctx context.Context, input *StripePaymentInput) (*StripeUrlOutput, error) {
 	customer := contextstore.GetContextCurrentCustomer(ctx)
 	if customer == nil {
 		return nil, huma.Error403Forbidden("No customer found")
@@ -32,7 +32,7 @@ func (a *Api) StripeCheckoutSession(ctx context.Context, input *StripePaymentInp
 	if input.Body.PriceID == "" {
 		return nil, huma.Error400BadRequest("Price ID is required")
 	}
-	url, err := a.app.Payment().CreateCheckoutSession(ctx, customer.ID, input.Body.PriceID)
+	url, err := api.app.Payment().CreateCheckoutSession(ctx, customer.ID, input.Body.PriceID)
 	if err != nil {
 		return nil, err
 	}
@@ -53,12 +53,12 @@ type StripeBillingPortalInput struct {
 	Body StripeBillingPortalBody
 }
 
-func (a *Api) StripeBillingPortal(ctx context.Context, input *struct{}) (*StripeUrlOutput, error) {
+func (api *Api) StripeBillingPortal(ctx context.Context, input *struct{}) (*StripeUrlOutput, error) {
 	customer := contextstore.GetContextCurrentCustomer(ctx)
 	if customer == nil {
 		return nil, huma.Error403Forbidden("No customer found")
 	}
-	url, err := a.app.Payment().CreateBillingPortalSession(ctx, customer.ID)
+	url, err := api.app.Payment().CreateBillingPortalSession(ctx, customer.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -80,9 +80,9 @@ type StripeCheckoutSessionInput struct {
 	CheckoutSessionID string `path:"checkoutSessionId"`
 }
 
-func (a *Api) StripeCheckoutSessionGet(ctx context.Context, input *StripeCheckoutSessionInput) (*CheckoutSessionOutput, error) {
+func (api *Api) StripeCheckoutSessionGet(ctx context.Context, input *StripeCheckoutSessionInput) (*CheckoutSessionOutput, error) {
 
-	payment := a.app.Payment()
+	payment := api.app.Payment()
 	cs, err := payment.FindSubscriptionWithPriceBySessionId(ctx, input.CheckoutSessionID)
 	if err != nil {
 		return nil, err

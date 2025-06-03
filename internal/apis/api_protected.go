@@ -9,7 +9,7 @@ import (
 	"github.com/tkahng/authgo/internal/crudrepo"
 )
 
-func (a *Api) ApiProtected(ctx context.Context, input *struct {
+func (api *Api) ApiProtected(ctx context.Context, input *struct {
 	PermissionName string `path:"permission-name"`
 }) (*struct {
 	Body string
@@ -18,7 +18,7 @@ func (a *Api) ApiProtected(ctx context.Context, input *struct {
 	if claims == nil {
 		return nil, huma.Error404NotFound("User not found")
 	}
-	dbx := a.app.Db()
+	dbx := api.app.Db()
 	permission, err := crudrepo.Permission.GetOne(
 		ctx,
 		dbx,

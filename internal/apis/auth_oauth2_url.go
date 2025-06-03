@@ -18,11 +18,11 @@ type OAuth2AuthorizationUrlOutput struct {
 	} `json:"body"`
 }
 
-func (h *Api) OAuth2AuthorizationUrl(ctx context.Context, input *OAuth2AuthorizationUrlInput) (*OAuth2AuthorizationUrlOutput, error) {
+func (api *Api) OAuth2AuthorizationUrl(ctx context.Context, input *OAuth2AuthorizationUrlInput) (*OAuth2AuthorizationUrlOutput, error) {
 	if input == nil {
 		return nil, huma.Error400BadRequest("input is required")
 	}
-	res, err := h.app.Auth().CreateOAuthUrl(
+	res, err := api.app.Auth().CreateOAuthUrl(
 		ctx,
 		input.Provider,
 		input.RedirectTo,
