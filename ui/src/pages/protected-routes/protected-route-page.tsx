@@ -11,7 +11,6 @@ export default function ProtectedRoutePage() {
   const { data, isPending, isError, error } = useQuery({
     queryKey: ["protected-route", permission],
     queryFn: async () => {
-      await checkAuth();
       if (!user?.tokens.access_token || !permission) {
         throw new Error("Missing access token");
       }
