@@ -35,7 +35,7 @@ func TestPostgresTeamStore_InvitationCRUD(t *testing.T) {
 			t.Fatalf("CreateTeam() error = %v", err)
 		}
 		userID := user.ID
-		member, err := store.CreateTeamMember(ctx, team.ID, userID, models.TeamMemberRole("owner"), false)
+		member, err := store.CreateTeamMember(ctx, team.ID, userID, "owner", false)
 		if err != nil {
 			t.Fatalf("CreateTeamMember() error = %v", err)
 		}
@@ -80,7 +80,7 @@ func TestPostgresTeamStore_InvitationCRUD(t *testing.T) {
 		if err == nil || newinv != nil {
 			t.Fatalf("FindInvitationByID() = %v, err = %v", newinv, err)
 		}
-		if err != shared.ErrTokenExpired {
+		if errors.Is(err, shared.ErrTokenExpired) {
 			t.Fatalf("FindInvitationByID() expected ErrTokenExpired, got %v", err)
 		}
 

@@ -34,7 +34,10 @@ func WithTx(t *testing.T, fn func(ctx context.Context, db database.Dbx)) {
 	// panic handle
 	defer func() {
 		if err := recover(); err != nil {
-			tx.Rollback(ctx)
+			err := tx.Rollback(ctx)
+			if err != nil {
+				return
+			}
 			t.Fatal(err)
 		}
 	}()

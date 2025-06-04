@@ -34,7 +34,8 @@ func (r *PostgresCrudRepo[Model]) Builder() SQLBuilderInterface {
 
 // Get retrieves records from the database based on the provided filters
 func (r *PostgresCrudRepo[Model]) Get(ctx context.Context, db database.Dbx, where *map[string]any, order *map[string]string, limit *int, skip *int) ([]*Model, error) {
-	args := []any{}
+	var args []any
+	//goland:noinspection Annotator
 	query := fmt.Sprintf("SELECT %s FROM %s", r.builder.Fields(""), r.builder.Table())
 	expr, err := r.builder.WhereError(ctx, where, &args, nil)
 	if err != nil {
@@ -75,6 +76,7 @@ func (r *PostgresCrudRepo[Model]) Put(ctx context.Context, dbx database.Dbx, mod
 		if err != nil {
 			return nil, err
 		}
+		//goland:noinspection Annotator
 		query := fmt.Sprintf("UPDATE %s SET %s", r.builder.Table(), set)
 		if expr, err := r.builder.WhereError(ctx, &where, &args, nil); err != nil {
 			return nil, err
@@ -125,6 +127,7 @@ func (r *PostgresCrudRepo[Model]) GetOne(ctx context.Context, dbx database.Dbx, 
 // Post inserts new records into the database
 func (r *PostgresCrudRepo[Model]) Post(ctx context.Context, dbx database.Dbx, models []Model) ([]*Model, error) {
 	args := []any{}
+	//goland:noinspection Annotator
 	query := fmt.Sprintf("INSERT INTO %s", r.builder.Table())
 	if fields, values, err := r.builder.ValuesError(&models, &args, nil); err != nil {
 		return nil, err
@@ -158,6 +161,7 @@ func (r *PostgresCrudRepo[Model]) PostOne(ctx context.Context, dbx database.Dbx,
 // DeleteReturn removes records from the database based on the provided filters
 func (r *PostgresCrudRepo[Model]) DeleteReturn(ctx context.Context, dbx database.Dbx, where *map[string]any) ([]*Model, error) {
 	args := []any{}
+	//goland:noinspection Annotator
 	query := fmt.Sprintf("DELETE FROM %s", r.builder.Table())
 	if expr, err := r.builder.WhereError(ctx, where, &args, nil); err != nil {
 		return nil, err
@@ -179,6 +183,7 @@ func (r *PostgresCrudRepo[Model]) DeleteReturn(ctx context.Context, dbx database
 // DeleteReturn removes records from the database based on the provided filters
 func (r *PostgresCrudRepo[Model]) Delete(ctx context.Context, dbx database.Dbx, where *map[string]any) (int64, error) {
 	args := []any{}
+	//goland:noinspection Annotator
 	query := fmt.Sprintf("DELETE FROM %s", r.builder.Table())
 	if expr, err := r.builder.WhereError(ctx, where, &args, nil); err != nil {
 		return 0, err
@@ -201,6 +206,7 @@ func (r *PostgresCrudRepo[Model]) Delete(ctx context.Context, dbx database.Dbx, 
 // Count returns the number of records that match the provided filters
 func (r *PostgresCrudRepo[Model]) Count(ctx context.Context, dbx database.Dbx, where *map[string]any) (int64, error) {
 	args := []any{}
+	//goland:noinspection Annotator
 	query := fmt.Sprintf("SELECT COUNT(*) FROM %s", r.builder.Table())
 	if expr, err := r.builder.WhereError(ctx, where, &args, nil); err != nil {
 		return 0, err
