@@ -80,7 +80,7 @@ func TestPostgresTeamStore_InvitationCRUD(t *testing.T) {
 		if err == nil || newinv != nil {
 			t.Fatalf("FindInvitationByID() = %v, err = %v", newinv, err)
 		}
-		if errors.Is(err, shared.ErrTokenExpired) {
+		if err != shared.ErrTokenExpired {
 			t.Fatalf("FindInvitationByID() expected ErrTokenExpired, got %v", err)
 		}
 
