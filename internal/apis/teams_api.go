@@ -176,6 +176,24 @@ func (api *Api) FindTeamInfoBySlug(
 	}, nil
 }
 
+func (api *Api) FindTeamMemberBySlug(
+	ctx context.Context,
+	input *struct {
+		Slug string `path:"team-slug" required:"true"`
+	},
+) (
+	*TeamMemberOutput,
+	error,
+) {
+	info := contextstore.GetContextTeamInfo(ctx)
+	if info == nil {
+		return nil, huma.Error401Unauthorized("unauthorized")
+	}
+	return &TeamMemberOutput{
+		Body: shared.FromTeamMemberModel(&info.Member),
+	}, nil
+}
+
 type TeamMemberOutput struct {
 	Body *shared.TeamMember `json:"body"`
 }

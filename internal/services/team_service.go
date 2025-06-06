@@ -274,7 +274,8 @@ func (t *teamService) FindTeamInfoBySlug(ctx context.Context, slug string, userI
 	if member == nil {
 		return nil, nil
 	}
-
+	member.Team = team // Ensure the team is set in the member
+	member.User = user // Ensure the user is set in the member
 	return &shared.TeamInfoModel{
 		Team:   *team,
 		Member: *member,

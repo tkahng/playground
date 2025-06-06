@@ -149,6 +149,26 @@ func BindTeamsApi(api huma.API, appApi *Api) {
 		},
 		appApi.FindTeamInfoBySlug,
 	)
+	// get teammember by slug
+	huma.Register(
+		teamsGroup,
+		huma.Operation{
+			OperationID: "get-team-member-by-slug",
+			Method:      http.MethodGet,
+			Path:        "/team/slug/{slug}/member",
+			Summary:     "get-team-member-by-slug",
+			Description: "get a team member by team slug",
+			Tags:        []string{"Teams"},
+			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+			Middlewares: huma.Middlewares{
+				teamInfoSlugMiddleware,
+			},
+		},
+		appApi.FindTeamMemberBySlug,
+	)
 	// update team
 	huma.Register(
 		teamsGroup,
