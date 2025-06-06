@@ -637,14 +637,6 @@ ORDER BY ss.created_at DESC;
 )
 
 func (s *PostgresStripeStore) FindLatestActiveSubscriptionWithPriceByCustomerId(ctx context.Context, customerId string) (*models.StripeSubscription, error) {
-	// data, err := database.QueryAll[*models.SubscriptionWithPrice](ctx, s.db, getLatestActiveSubscriptionWithPriceByCustomerIdQuery, customerId)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// if len(data) == 0 {
-	// 	return nil, nil
-	// }
-	// return data[0], err
 	data, err := s.FindActiveSubscriptionsByCustomerIds(ctx, customerId)
 	if err != nil {
 		return nil, err

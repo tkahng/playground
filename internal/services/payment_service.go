@@ -46,14 +46,23 @@ type PaymentRbacStore interface {
 }
 
 type PaymentStripeStore interface {
+	LoadPricesByIds(ctx context.Context, priceIds ...string) ([]*models.StripePrice, error)
+	LoadProductsByIds(ctx context.Context, productIds ...string) ([]*models.StripeProduct, error)
+	LoadPricesWithProductByPriceIds(ctx context.Context, priceIds ...string) ([]*models.StripePrice, error)
+	LoadSubscriptionsPriceProduct(ctx context.Context, subscriptions ...*models.StripeSubscription) error
+	LoadSubscriptionsByIds(ctx context.Context, subscriptionIds ...string) ([]*models.StripeSubscription, error)
+	FindActiveSubscriptionsByCustomerIds(ctx context.Context, customerIds ...string) ([]*models.StripeSubscription, error)
+	FindActiveSubscriptionsByTeamIds(ctx context.Context, teamIds ...uuid.UUID) ([]*models.StripeSubscription, error)
+	FindActiveSubscriptionsByUserIds(ctx context.Context, userIds ...uuid.UUID) ([]*models.StripeSubscription, error)
+
 	LoadPricesByProductIds(ctx context.Context, productIds ...string) ([][]*models.StripePrice, error)
 	LoadProductRoles(ctx context.Context, productIds ...string) ([][]*models.Role, error)
-	CreateCustomer(ctx context.Context, customer *models.StripeCustomer) (*models.StripeCustomer, error)
 	FindCustomer(ctx context.Context, customer *models.StripeCustomer) (*models.StripeCustomer, error)
 	FindLatestActiveSubscriptionWithPriceByCustomerId(ctx context.Context, customerId string) (*models.StripeSubscription, error)
 	FindSubscriptionsWithPriceProductByIds(ctx context.Context, subscriptionIds ...string) ([]*models.StripeSubscription, error)
 
 	// customers crud
+	CreateCustomer(ctx context.Context, customer *models.StripeCustomer) (*models.StripeCustomer, error)
 	ListCustomers(ctx context.Context, input *shared.StripeCustomerListParams) ([]*models.StripeCustomer, error)
 	CountCustomers(ctx context.Context, filter *shared.StripeCustomerListFilter) (int64, error)
 
