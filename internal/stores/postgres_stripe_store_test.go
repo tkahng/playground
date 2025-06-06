@@ -318,7 +318,7 @@ func TestPostgresStripeStore_FindCustomer(t *testing.T) {
 	})
 }
 
-func TestPostgresStripeStore_SubscriptionQueries(t *testing.T) {
+func TestPostgresStripeStore_SubscriptionRelations(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
@@ -377,22 +377,22 @@ func TestPostgresStripeStore_SubscriptionQueries(t *testing.T) {
 			t.Fatalf("UpsertSubscription() error = %v", err)
 		}
 		// FindSubscriptionWithPriceById
-		withPrice, err := store.FindSubscriptionWithPriceById(ctx, "sub_1")
-		if err != nil || withPrice == nil || withPrice.Subscription.ID != "sub_1" {
+		withPriceList, err := store.FindSubscriptionsWithPriceProductByIds(ctx, "sub_1")
+		if err != nil {
+			t.Fatalf("FindSubscriptionWithPriceProductById() error = %v", err)
+		}
+		if len(withPriceList) == 0 {
+			t.Fatalf("FindSubscriptionWithPriceProductById() = %v, want at least 1", withPriceList)
+		}
+		withPrice := withPriceList[0]
+		if withPrice == nil || withPrice.ID != "sub_1" {
 			t.Errorf("FindSubscriptionWithPriceById() = %v, err = %v", withPrice, err)
 		}
-		// FindLatestActiveSubscriptionWithPriceByCustomerId
-		latest, err := store.FindLatestActiveSubscriptionWithPriceByCustomerId(ctx, customer.ID)
-		if err != nil || latest == nil || latest.Subscription.ID != "sub_1" {
-			t.Errorf("FindLatestActiveSubscriptionWithPriceByCustomerId() = %v, err = %v", latest, err)
+		if withPrice.Price == nil || withPrice.Price.ID != price.ID {
+			t.Errorf("FindSubscriptionWithPriceById() Price = %v, want %v", withPrice.Price, price.ID)
 		}
-		// IsFirstSubscription
-		isFirst, err := store.IsFirstSubscription(ctx, customer.ID)
-		if err != nil {
-			t.Errorf("IsFirstSubscription() error = %v", err)
-		}
-		if !isFirst {
-			t.Errorf("IsFirstSubscription() = %v, want true", isFirst)
+		if withPrice.Price.Product == nil || withPrice.Price.Product.ID != product.ID {
+			t.Errorf("FindSubscriptionWithPriceById() Product = %v, want %v", withPrice.Price.Product, product.ID)
 		}
 		return errors.New("rollback")
 	})

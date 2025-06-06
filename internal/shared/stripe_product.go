@@ -4,10 +4,12 @@ import (
 	"time"
 
 	crudModels "github.com/tkahng/authgo/internal/models"
+	"github.com/tkahng/authgo/internal/tools/mapper"
 )
 
-type Product struct {
-	ID          string            `db:"id,pk" json:"id"`
+type StripeProduct struct {
+	_           struct{}          `db:"stripe_products" json:"-"`
+	ID          string            `db:"id" json:"id"`
 	Active      bool              `db:"active" json:"active"`
 	Name        string            `db:"name" json:"name"`
 	Description *string           `db:"description" json:"description"`
@@ -15,10 +17,13 @@ type Product struct {
 	Metadata    map[string]string `db:"metadata" json:"metadata"`
 	CreatedAt   time.Time         `db:"created_at" json:"created_at"`
 	UpdatedAt   time.Time         `db:"updated_at" json:"updated_at"`
+	Prices      []*StripePrice    `db:"prices" src:"id" dest:"product_id" table:"stripe_prices" json:"prices,omitempty"`
+	Roles       []*Role           `db:"roles" src:"id" dest:"product_id" table:"roles" through:"product_roles,role_id,id" json:"roles,omitempty"`
+	Permissions []*Permission     `db:"permissions" src:"id" dest:"product_id" table:"permissions" through:"product_permissions,permission_id,id" json:"permissions,omitempty"`
 }
 
-func FromModelProduct(product *crudModels.StripeProduct) *Product {
-	return &Product{
+func FromModelProduct(product *crudModels.StripeProduct) *StripeProduct {
+	return &StripeProduct{
 		ID:          product.ID,
 		Active:      product.Active,
 		Name:        product.Name,
@@ -27,13 +32,10 @@ func FromModelProduct(product *crudModels.StripeProduct) *Product {
 		Metadata:    product.Metadata,
 		CreatedAt:   product.CreatedAt,
 		UpdatedAt:   product.UpdatedAt,
+		Prices:      mapper.Map(product.Prices, FromModelPrice),
+		Permissions: mapper.Map(product.Permissions, FromModelPermission),
+		Roles:       mapper.Map(product.Roles, FromModelRole),
 	}
-}
-
-type StripeProductWitPermission struct {
-	*Product
-	Permissions []*Permission `db:"permissions" json:"permissions,omitempty" required:"false"`
-	Prices      []*Price      `db:"prices" json:"prices,omitempty" required:"false"`
 }
 
 type StripeProductListFilter struct {

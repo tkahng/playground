@@ -12,6 +12,35 @@ import (
 
 type MockPaymentStore struct{ mock.Mock }
 
+// FindSubscriptionsWithPriceProductByIds implements PaymentStore.
+func (m *MockPaymentStore) FindSubscriptionsWithPriceProductByIds(ctx context.Context, subscriptionIds ...string) ([]*models.StripeSubscription, error) {
+	args := m.Called(ctx, subscriptionIds)
+	if args.Get(0) != nil {
+		return args.Get(0).([]*models.StripeSubscription), args.Error(1)
+	}
+	return nil, args.Error(1)
+}
+
+// FindSubscriptionById implements PaymentStore.
+func (m *MockPaymentStore) FindSubscriptionById(ctx context.Context, subscriptionId string) (*models.StripeSubscription, error) {
+	args := m.Called(ctx, subscriptionId)
+	if args.Get(0) != nil {
+		return args.Get(0).(*models.StripeSubscription), args.Error(1)
+	}
+	return nil, args.Error(1)
+}
+
+var _ PaymentStore = (*MockPaymentStore)(nil)
+
+// LoadProductPermissions implements PaymentStore.
+func (m *MockPaymentStore) LoadProductPermissions(ctx context.Context, productIds ...string) ([][]*models.Permission, error) {
+	args := m.Called(ctx, productIds)
+	if args.Get(0) != nil {
+		return args.Get(0).([][]*models.Permission), args.Error(1)
+	}
+	return nil, args.Error(1)
+}
+
 // CreateProductRoles implements PaymentStore.
 func (m *MockPaymentStore) CreateProductRoles(ctx context.Context, productId string, roleIds ...uuid.UUID) error {
 	args := m.Called(ctx, productId, roleIds)
@@ -69,9 +98,9 @@ func (m *MockPaymentStore) CountProducts(ctx context.Context, filter *shared.Str
 	return args.Get(0).(int64), args.Error(1)
 }
 
-// LoadProductPrices implements PaymentStore.
-func (m *MockPaymentStore) LoadProductPrices(ctx context.Context, where *map[string]any, productIds ...string) ([][]*models.StripePrice, error) {
-	args := m.Called(ctx, where, productIds)
+// LoadPricesByProductIds implements PaymentStore.
+func (m *MockPaymentStore) LoadPricesByProductIds(ctx context.Context, productIds ...string) ([][]*models.StripePrice, error) {
+	args := m.Called(ctx, productIds)
 	if args.Get(0) != nil {
 		return args.Get(0).([][]*models.StripePrice), args.Error(1)
 	}
@@ -232,5 +261,3 @@ func (m *MockPaymentStore) CountTeamMembers(ctx context.Context, teamId uuid.UUI
 	args := m.Called(ctx, teamId)
 	return args.Get(0).(int64), args.Error(1)
 }
-
-var _ PaymentStore = (*MockPaymentStore)(nil)

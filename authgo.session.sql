@@ -1,66 +1,22 @@
-SELECT *
-FROM team_members
-ORDER BY updated_at DESC
-LIMIT 1 -- WITH -- Get permissions assigned through roles
-        -- role_based_permissions AS (
-        --         SELECT p.*,
-        --                 rp.role_id,
-        --                 NULL::uuid AS direct_assignment -- Null indicates not directly assigned
-        --         FROM public.user_roles ur
-        --                 JOIN public.role_permissions rp ON ur.role_id = rp.role_id
-        --                 JOIN public.permissions p ON rp.permission_id = p.id
-        --         WHERE ur.user_id = 'bee744f5-a2cf-46c2-b02c-501a562cfc5d'
-        -- ),
-        -- -- Get permissions assigned through subscription product roles
-        -- role_based_permissions AS (
-        --         SELECT p.*,
-        --                 rp.role_id,
-        --                 NULL::uuid AS direct_assignment -- Null indicates not directly assigned
-        --         FROM public.user_roles ur
-        --                 JOIN public.role_permissions rp ON ur.role_id = rp.role_id
-        --                 JOIN public.permissions p ON rp.permission_id = p.id
-        --         WHERE ur.user_id = 'bee744f5-a2cf-46c2-b02c-501a562cfc5d'
-        -- ),
-        -- -- Get permissions assigned directly to user
-        -- direct_permissions AS (
-        --         SELECT p.*,
-        --                 NULL::uuid AS role_id,
-        --                 -- Null indicates not from a role
-        --                 up.user_id AS direct_assignment
-        --         FROM public.user_permissions up
-        --                 JOIN public.permissions p ON up.permission_id = p.id
-        --         WHERE up.user_id = 'bee744f5-a2cf-46c2-b02c-501a562cfc5d'
-        -- ),
-        -- -- Combine both sources
-        -- combined_permissions AS (
-        --         SELECT *
-        --         FROM role_based_permissions
-        --         UNION ALL
-        --         SELECT *
-        --         FROM direct_permissions
-        -- ) -- Final result with aggregated role information
-        -- SELECT p.id,
-        --         p.name,
-        --         p.description,
-        --         p.created_at,
-        --         p.updated_at,
-        --         -- Array of role IDs that grant this permission (empty if direct)
-        --         array_remove(array_agg(DISTINCT rp.role_id), NULL) AS role_ids,
-        --         -- Boolean indicating if permission is directly assigned
-        --         bool_or(rp.direct_assignment IS NOT NULL) AS is_directly_assigned
-        -- FROM (
-        --                 SELECT DISTINCT id,
-        --                         name,
-        --                         description,
-        --                         created_at,
-        --                         updated_at
-        --                 FROM combined_permissions
-        --         ) p
-        --         LEFT JOIN combined_permissions rp ON p.id = rp.id
-        -- GROUP BY p.id,
-        --         p.name,
-        --         p.description,
-        --         p.created_at,
-        --         p.updated_at
-        -- ORDER BY p.name,
-        --         p.id;
+WITH latest_subscriptions AS (
+        SELECT DISTINCT ON (stripe_customer_id) *
+        FROM stripe_subscriptions
+        WHERE status IN ('active', 'trialing')
+        ORDER BY stripe_customer_id,
+                created DESC
+)
+SELECT t.id AS team_id,
+        sc.id AS stripe_customer_id,
+        sc.email AS stripe_customer_email,
+        sc.customer_type,
+        ss.id AS stripe_subscription_id,
+        ss.status AS stripe_subscription_status,
+        ss.created AS subscription_created_at,
+        ss.current_period_end
+FROM teams t
+        LEFT JOIN stripe_customers sc ON sc.team_id = t.id
+        AND sc.customer_type = 'team'
+        LEFT JOIN latest_subscriptions ss ON ss.stripe_customer_id = sc.id -- WHERE t.id = ANY($1::uuid []);
+WHERE t.id IN (
+                '01972f1f-6244-7dcb-ab0b-bd0f39674659'
+        );

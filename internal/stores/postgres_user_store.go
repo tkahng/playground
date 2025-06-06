@@ -39,27 +39,27 @@ func (*PostgresUserStore) UserWhere(user *models.User) *map[string]any {
 	}
 	where := map[string]any{}
 	if user.ID != uuid.Nil {
-		where["id"] = map[string]any{
+		where[models.UserTable.ID] = map[string]any{
 			"_eq": user.ID.String(),
 		}
 	}
 	if user.Name != nil {
-		where["name"] = map[string]any{
+		where[models.UserTable.Name] = map[string]any{
 			"_like": fmt.Sprintf("%%%s%%", *user.Name),
 		}
 	}
 	if user.Email != "" {
-		where["email"] = map[string]any{
+		where[models.UserTable.Email] = map[string]any{
 			"_eq": user.Email,
 		}
 	}
 	if user.EmailVerifiedAt != nil {
 		if user.EmailVerifiedAt.IsZero() {
-			where["email_verified_at"] = map[string]any{
+			where[models.UserTable.EmailVerifiedAt] = map[string]any{
 				"_neq": nil,
 			}
 		} else {
-			where["email_verified_at"] = map[string]any{
+			where[models.UserTable.EmailVerifiedAt] = map[string]any{
 				"_gte": user.EmailVerifiedAt.Format(time.RFC3339Nano),
 			}
 		}
@@ -93,7 +93,7 @@ func (a *PostgresUserStore) AssignUserRoles(ctx context.Context, userId uuid.UUI
 			ctx,
 			a.db,
 			&map[string]any{
-				"id": map[string]any{
+				models.UserTable.ID: map[string]any{
 					"_eq": userId.String(),
 				},
 			},
@@ -108,7 +108,7 @@ func (a *PostgresUserStore) AssignUserRoles(ctx context.Context, userId uuid.UUI
 			ctx,
 			a.db,
 			&map[string]any{
-				"name": map[string]any{
+				models.RoleTable.Name: map[string]any{
 					"_in": roleNames,
 				},
 			},
@@ -139,7 +139,7 @@ func (a *PostgresUserStore) AssignUserRoles(ctx context.Context, userId uuid.UUI
 // DeleteUser implements UserStore.
 func (p *PostgresUserStore) DeleteUser(ctx context.Context, userId uuid.UUID) error {
 	_, err := crudrepo.User.Delete(ctx, p.db, &map[string]any{
-		"id": map[string]any{"_eq": userId.String()},
+		models.UserTable.ID: map[string]any{"_eq": userId.String()},
 	})
 	if err != nil {
 		return err
@@ -216,7 +216,7 @@ func (p *PostgresUserStore) GetUserInfo(ctx context.Context, email string) (*sha
 		ctx,
 		p.db,
 		&map[string]any{
-			"email": map[string]any{
+			models.UserTable.Email: map[string]any{
 				"_eq": email,
 			},
 		},
@@ -292,7 +292,7 @@ func (p *PostgresUserStore) LoadUsersByUserIds(ctx context.Context, userIds ...u
 		ctx,
 		p.db,
 		&map[string]any{
-			"id": map[string]any{
+			models.UserTable.ID: map[string]any{
 				"_in": userIds,
 			},
 		},

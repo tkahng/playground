@@ -29,6 +29,7 @@ type TeamService interface {
 
 type TeamStripeStore interface {
 	FindLatestActiveSubscriptionWithPriceByCustomerId(ctx context.Context, customerId string) (*models.SubscriptionWithPrice, error)
+	// FindActiveSubscriptionWithPriceProductByCustomerId(ctx context.Context, customerId string) (*models.StripeSubscription, error)
 }
 type TeamStore interface {
 	// find team

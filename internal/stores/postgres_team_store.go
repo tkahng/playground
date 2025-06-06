@@ -49,24 +49,24 @@ func (s *PostgresTeamStore) FindTeam(ctx context.Context, team *models.Team) (*m
 	}
 	where := map[string]any{}
 	if team.ID != uuid.Nil {
-		where["id"] = map[string]any{
+		where[models.TeamTable.ID] = map[string]any{
 			"_eq": team.ID.String(),
 		}
 	}
 
 	if team.Slug != "" {
-		where["slug"] = map[string]any{
+		where[models.TeamTable.Slug] = map[string]any{
 			"_eq": team.Slug,
 		}
 	}
 	if team.Name != "" {
-		where["name"] = map[string]any{
+		where[models.TeamTable.Name] = map[string]any{
 			"_eq": team.Name,
 		}
 	}
 	if team.StripeCustomer != nil {
 		if team.StripeCustomer.ID != "" {
-			where["stripe_customer"] = map[string]any{
+			where[models.TeamTable.StripeCustomer] = map[string]any{
 				"id": map[string]any{
 					"_eq": team.StripeCustomer.ID,
 				},
@@ -91,22 +91,22 @@ func (s *PostgresTeamStore) FindTeamMember(ctx context.Context, member *models.T
 	}
 	where := map[string]any{}
 	if member.ID != uuid.Nil {
-		where["id"] = map[string]any{
+		where[models.TeamMemberTable.ID] = map[string]any{
 			"_eq": member.ID.String(),
 		}
 	}
 	if member.TeamID != uuid.Nil {
-		where["team_id"] = map[string]any{
+		where[models.TeamMemberTable.TeamID] = map[string]any{
 			"_eq": member.TeamID.String(),
 		}
 	}
 	if member.UserID != nil {
-		where["user_id"] = map[string]any{
+		where[models.TeamMemberTable.UserID] = map[string]any{
 			"_eq": member.UserID.String(),
 		}
 	}
 	if member.Role != "" {
-		where["role"] = map[string]any{
+		where[models.TeamMemberTable.Role] = map[string]any{
 			"_eq": member.Role,
 		}
 	}
@@ -131,7 +131,7 @@ func (s *PostgresTeamStore) LoadTeamsByIds(ctx context.Context, teamIds ...uuid.
 		ctx,
 		s.db,
 		&map[string]any{
-			"id": map[string]any{
+			models.TeamTable.ID: map[string]any{
 				"_in": ids,
 			},
 		},
@@ -156,16 +156,16 @@ func (s *PostgresTeamStore) FindPendingInvitation(ctx context.Context, teamId uu
 		ctx,
 		s.db,
 		&map[string]any{
-			"team_id": map[string]any{
+			models.TeamInvitationTable.TeamID: map[string]any{
 				"_eq": teamId.String(),
 			},
-			"email": map[string]any{
+			models.TeamInvitationTable.Email: map[string]any{
 				"_eq": email,
 			},
-			"status": map[string]any{
+			models.TeamInvitationTable.Status: map[string]any{
 				"_eq": string(models.TeamInvitationStatusPending),
 			},
-			"expires_at": map[string]any{
+			models.TeamInvitationTable.ExpiresAt: map[string]any{
 				"_gt": time.Now().Format(time.RFC3339Nano),
 			},
 		},
@@ -264,7 +264,7 @@ func (s *PostgresTeamStore) FindUserByID(ctx context.Context, userId uuid.UUID) 
 		ctx,
 		s.db,
 		&map[string]any{
-			"id": map[string]any{
+			models.UserTable.ID: map[string]any{
 				"_eq": userId.String(),
 			},
 		},
@@ -280,18 +280,18 @@ func (s *PostgresTeamStore) FindTeamInvitations(ctx context.Context, teamId uuid
 		ctx,
 		s.db,
 		&map[string]any{
-			"team_id": map[string]any{
+			models.TeamInvitationTable.TeamID: map[string]any{
 				"_eq": teamId.String(),
 			},
-			"status": map[string]any{
+			models.TeamInvitationTable.Status: map[string]any{
 				"_eq": string(models.TeamInvitationStatusPending),
 			},
-			"expires_at": map[string]any{
+			models.TeamInvitationTable.ExpiresAt: map[string]any{
 				"_gt": time.Now().Format(time.RFC3339Nano),
 			},
 		},
 		&map[string]string{
-			"created_at": "desc",
+			models.TeamInvitationTable.CreatedAt: "desc",
 		},
 		nil,
 		nil,
@@ -308,7 +308,7 @@ func (s *PostgresTeamStore) FindInvitationByID(ctx context.Context, invitationId
 		ctx,
 		s.db,
 		&map[string]any{
-			"id": map[string]any{
+			models.TeamInvitationTable.ID: map[string]any{
 				"_eq": invitationId.String(),
 			},
 		},
@@ -333,7 +333,7 @@ func (s *PostgresTeamStore) FindInvitationByToken(ctx context.Context, token str
 		ctx,
 		s.db,
 		&map[string]any{
-			"token": map[string]any{
+			models.TeamInvitationTable.Token: map[string]any{
 				"_eq": token,
 			},
 		},
@@ -368,7 +368,7 @@ func (s *PostgresTeamStore) GetInvitationByID(ctx context.Context, invitationId 
 		ctx,
 		s.db,
 		&map[string]any{
-			"id": map[string]any{
+			models.TeamInvitationTable.ID: map[string]any{
 				"_eq": invitationId.String(),
 			},
 		},
@@ -405,10 +405,10 @@ func (s *PostgresTeamStore) DeleteTeamMember(ctx context.Context, teamId uuid.UU
 		ctx,
 		s.db,
 		&map[string]any{
-			"team_id": map[string]any{
+			models.TeamMemberTable.TeamID: map[string]any{
 				"_eq": teamId.String(),
 			},
-			"user_id": map[string]any{
+			models.TeamMemberTable.UserID: map[string]any{
 				"_eq": userId.String(),
 			},
 		},
@@ -425,7 +425,7 @@ func (s *PostgresTeamStore) CheckTeamSlug(ctx context.Context, slug string) (boo
 		ctx,
 		s.db,
 		&map[string]any{
-			"slug": map[string]any{
+			models.TeamTable.Slug: map[string]any{
 				"_eq": slug,
 			},
 		},
@@ -458,10 +458,10 @@ func (s *PostgresTeamStore) CountOwnerTeamMembers(ctx context.Context, teamId uu
 		ctx,
 		s.db,
 		&map[string]any{
-			"team_id": map[string]any{
+			models.TeamMemberTable.TeamID: map[string]any{
 				"_eq": teamId.String(),
 			},
-			"role": map[string]any{
+			models.TeamMemberTable.Role: map[string]any{
 				"_eq": string(models.TeamMemberRoleOwner),
 			},
 		},
@@ -478,7 +478,7 @@ func (s *PostgresTeamStore) CountTeamMembers(ctx context.Context, teamId uuid.UU
 		ctx,
 		s.db,
 		&map[string]any{
-			"team_id": map[string]any{
+			models.TeamMemberTable.TeamID: map[string]any{
 				"_eq": teamId.String(),
 			},
 		},
@@ -498,8 +498,8 @@ func (s *PostgresTeamStore) FindTeamByStripeCustomerId(ctx context.Context, stri
 		ctx,
 		s.db,
 		&map[string]any{
-			"stripe_customer": map[string]any{
-				"id": map[string]any{
+			models.TeamTable.StripeCustomer: map[string]any{
+				models.StripeCustomerTable.ID: map[string]any{
 					"_eq": stripeCustomerId,
 				},
 			},
@@ -513,10 +513,10 @@ func (s *PostgresTeamStore) FindTeamMemberByTeamAndUserId(ctx context.Context, t
 		ctx,
 		s.db,
 		&map[string]any{
-			"user_id": map[string]any{
+			models.TeamMemberTable.UserID: map[string]any{
 				"_eq": userId.String(),
 			},
-			"team_id": map[string]any{
+			models.TeamMemberTable.TeamID: map[string]any{
 				"_eq": teamId.String(),
 			},
 		},
@@ -530,9 +530,9 @@ func (s *PostgresTeamStore) FindTeamMemberByTeamAndUserId(ctx context.Context, t
 // UpdateTeamMemberSelectedAt implements TeamQueryer.
 func (s *PostgresTeamStore) UpdateTeamMemberSelectedAt(ctx context.Context, teamId, userId uuid.UUID) error {
 	qquery := squirrel.Update("team_members").
-		Where("team_id = ?", teamId).
-		Where("user_id = ?", userId).
-		Set("last_selected_at", time.Now())
+		Where(squirrel.Eq{models.TeamMemberTable.TeamID: teamId}).
+		Where(squirrel.Eq{models.TeamMemberTable.UserID: userId}).
+		Set(models.TeamMemberTable.LastSelectedAt, time.Now())
 
 	err := database.ExecWithBuilder(ctx, s.db, qquery.PlaceholderFormat(squirrel.Dollar))
 	if err != nil {
@@ -547,12 +547,12 @@ func (s *PostgresTeamStore) FindLatestTeamMemberByUserID(ctx context.Context, us
 		ctx,
 		s.db,
 		&map[string]any{
-			"user_id": map[string]any{
+			models.TeamMemberTable.UserID: map[string]any{
 				"_eq": userId.String(),
 			},
 		},
 		&map[string]string{
-			"last_selected_at": "DESC",
+			models.TeamMemberTable.LastSelectedAt: "DESC",
 		},
 		types.Pointer(1),
 		nil,
@@ -572,7 +572,7 @@ func (s *PostgresTeamStore) DeleteTeam(ctx context.Context, teamId uuid.UUID) er
 		ctx,
 		s.db,
 		&map[string]any{
-			"id": map[string]any{
+			models.TeamTable.ID: map[string]any{
 				"_eq": teamId.String(),
 			},
 		},
@@ -589,7 +589,7 @@ func (s *PostgresTeamStore) FindTeamByID(ctx context.Context, teamId uuid.UUID) 
 		ctx,
 		s.db,
 		&map[string]any{
-			"id": map[string]any{
+			models.TeamTable.ID: map[string]any{
 				"_eq": teamId.String(),
 			},
 		},
@@ -601,7 +601,7 @@ func (s *PostgresTeamStore) FindTeamBySlug(ctx context.Context, slug string) (*m
 		ctx,
 		s.db,
 		&map[string]any{
-			"slug": map[string]any{
+			models.TeamTable.Slug: map[string]any{
 				"_eq": slug,
 			},
 		},
@@ -641,10 +641,10 @@ func (s *PostgresTeamStore) CountTeamMembersByUserID(ctx context.Context, userId
 		ctx,
 		s.db,
 		&map[string]any{
-			"user_id": map[string]any{
+			models.TeamMemberTable.UserID: map[string]any{
 				"_eq": userId.String(),
 			},
-			"active": map[string]any{
+			models.TeamMemberTable.Active: map[string]any{
 				"_eq": true,
 			},
 		},
@@ -745,8 +745,8 @@ func listTeamsFilter(qs squirrel.SelectBuilder, params *shared.ListTeamsParams) 
 	if params.Q != "" {
 		qs = qs.Where(
 			squirrel.Or{
-				squirrel.ILike{"name": "%" + params.Q + "%"},
-				squirrel.ILike{"slug": "%" + params.Q + "%"},
+				squirrel.ILike{models.TeamTable.Name: "%" + params.Q + "%"},
+				squirrel.ILike{models.TeamTable.Slug: "%" + params.Q + "%"},
 			},
 		)
 	}

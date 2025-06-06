@@ -4,6 +4,7 @@ import (
 	"time"
 
 	crudModels "github.com/tkahng/authgo/internal/models"
+	"github.com/tkahng/authgo/internal/tools/mapper"
 	ty "github.com/tkahng/authgo/internal/tools/types"
 )
 
@@ -26,12 +27,9 @@ const (
 	StripePricingPlanIntervalYear  StripePricingPlanInterval = "year"
 )
 
-// ToModelsStripePricingPlanInterval converts a StripePricingPlanInterval to models.StripePricingPlanInterval
-
-// ToStripePricingPlanInterval converts a models.StripePricingPlanInterval to StripePricingPlanInterval
-
-type Price struct {
-	ID              string                     `db:"id,pk" json:"id"`
+type StripePrice struct {
+	_               struct{}                   `db:"stripe_prices" json:"-"`
+	ID              string                     `db:"id" json:"id"`
 	ProductID       string                     `db:"product_id" json:"product_id"`
 	LookupKey       *string                    `db:"lookup_key" json:"lookup_key"`
 	Active          bool                       `db:"active" json:"active"`
@@ -44,14 +42,16 @@ type Price struct {
 	Metadata        map[string]string          `db:"metadata" json:"metadata"`
 	CreatedAt       time.Time                  `db:"created_at" json:"created_at"`
 	UpdatedAt       time.Time                  `db:"updated_at" json:"updated_at"`
+	Product         *StripeProduct             `db:"product" src:"product_id" dest:"id" table:"stripe_products" json:"product,omitempty"`
+	Subscriptions   []*Subscription            `db:"subscriptions" src:"id" dest:"price_id" table:"stripe_subscriptions" json:"subscriptions,omitempty"`
 }
 
-func FromModelPrice(price *crudModels.StripePrice) *Price {
+func FromModelPrice(price *crudModels.StripePrice) *StripePrice {
 	var interval *StripePricingPlanInterval
 	if price.Interval != nil {
 		interval = ty.Pointer(StripePricingPlanInterval(*price.Interval))
 	}
-	return &Price{
+	return &StripePrice{
 		ID:              price.ID,
 		ProductID:       price.ProductID,
 		LookupKey:       price.LookupKey,
@@ -65,12 +65,9 @@ func FromModelPrice(price *crudModels.StripePrice) *Price {
 		Metadata:        price.Metadata,
 		CreatedAt:       price.CreatedAt,
 		UpdatedAt:       price.UpdatedAt,
+		Product:         FromModelProduct(price.Product),
+		Subscriptions:   mapper.Map(price.Subscriptions, FromModelSubscription),
 	}
-}
-
-type StripePricesWithProduct struct {
-	*Price
-	Product *Product `db:"product" json:"product,omitempty" required:"false"`
 }
 
 type StripePriceListFilter struct {

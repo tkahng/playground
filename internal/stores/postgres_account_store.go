@@ -78,7 +78,7 @@ func UserAccountWhere(filter *shared.UserAccountListFilter) *map[string]any {
 		for _, p := range filter.Providers {
 			providers = append(providers, p.String())
 		}
-		where["provider"] = map[string]any{
+		where[models.UserAccountTable.Provider] = map[string]any{
 			"_in": providers,
 		}
 	}
@@ -87,17 +87,17 @@ func UserAccountWhere(filter *shared.UserAccountListFilter) *map[string]any {
 		for _, pt := range filter.ProviderTypes {
 			providerTypes = append(providerTypes, pt.String())
 		}
-		where["type"] = map[string]any{
+		where[models.UserAccountTable.Type] = map[string]any{
 			"_in": providerTypes,
 		}
 	}
 	if len(filter.Ids) > 0 {
-		where["id"] = map[string]any{
+		where[models.UserAccountTable.ID] = map[string]any{
 			"_in": filter.Ids,
 		}
 	}
 	if len(filter.UserIds) > 0 {
-		where["user_id"] = map[string]any{
+		where[models.UserAccountTable.UserID] = map[string]any{
 			"_in": filter.UserIds,
 		}
 	}
@@ -117,10 +117,10 @@ func (u *PostgresAccountStore) CountUserAccounts(ctx context.Context, filter *sh
 // FindUserAccountByUserIdAndProvider implements UserAccountStore.
 func (u *PostgresAccountStore) FindUserAccountByUserIdAndProvider(ctx context.Context, userId uuid.UUID, provider models.Providers) (*models.UserAccount, error) {
 	return crudrepo.UserAccount.GetOne(ctx, u.db, &map[string]any{
-		"user_id": map[string]any{
+		models.UserAccountTable.UserID: map[string]any{
 			"_eq": userId.String(),
 		},
-		"provider": map[string]any{
+		models.UserAccountTable.Provider: map[string]any{
 			"_eq": provider.String(),
 		},
 	})
@@ -144,10 +144,10 @@ func (u *PostgresAccountStore) UnlinkAccount(ctx context.Context, userId uuid.UU
 		ctx,
 		u.db,
 		&map[string]any{
-			"user_id": map[string]any{
+			models.UserAccountTable.UserID: map[string]any{
 				"_eq": userId.String(),
 			},
-			"provider": map[string]any{
+			models.UserAccountTable.Provider: map[string]any{
 				"_eq": provider.String(),
 			},
 		},
@@ -177,7 +177,7 @@ func (u *PostgresAccountStore) GetUserAccounts(ctx context.Context, userIds ...u
 		ctx,
 		u.db,
 		&map[string]any{
-			"user_id": map[string]any{
+			models.UserAccountTable.UserID: map[string]any{
 				"_in": ids,
 			},
 		},
@@ -198,10 +198,10 @@ func (u *PostgresAccountStore) UpdateUserPassword(ctx context.Context, userId uu
 		ctx,
 		u.db,
 		&map[string]any{
-			"user_id": map[string]any{
+			models.UserAccountTable.UserID: map[string]any{
 				"_eq": userId.String(),
 			},
-			"provider": map[string]any{
+			models.UserAccountTable.Provider: map[string]any{
 				"_eq": string(models.ProvidersCredentials),
 			},
 		},

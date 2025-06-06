@@ -65,52 +65,50 @@ func UuidV7Generator[Model any](builder *SQLBuilder[Model]) error {
 	return nil
 }
 
-type operators struct {
-	Eq     string
-	Neq    string
-	Gt     string
-	Gte    string
-	Lt     string
-	Lte    string
-	Like   string
-	Nlike  string
-	Ilike  string
-	Nilike string
-	In     string
-	Nin    string
-}
+const (
+	// Eq is the equality operator
+	Eq = "_eq"
+	// Neq is the inequality operator
+	Neq = "_neq"
+	// Gt is the greater than operator
+	Gt = "_gt"
+	// Gte is the greater than or equal to operator
+	Gte = "_gte"
+	// Lt is the less than operator
+	Lt = "_lt"
+	// Lte is the less than or equal to operator
+	Lte = "_lte"
+	// Like is the LIKE operator
+	Like = "_like"
+	// Nlike is the NOT LIKE operator
+	Nlike = "_nlike"
+	// Ilike is the ILIKE operator (case-insensitive LIKE)
+	Ilike = "_ilike"
 
-var Operators = operators{
-	Eq:     "_eq",
-	Neq:    "_neq",
-	Gt:     "_gt",
-	Gte:    "_gte",
-	Lt:     "_lt",
-	Lte:    "_lte",
-	Like:   "_like",
-	Nlike:  "_nlike",
-	Ilike:  "_ilike",
-	Nilike: "_nilike",
-	In:     "_in",
-	Nin:    "_nin",
-}
+	// Nilike is the NOT ILIKE operator (case-insensitive NOT LIKE)
+	Nilike = "_nilike"
+	// In is the IN operator
+	In = "_in"
+	// Nin is the NOT IN operator
+	Nin = "_nin"
+)
 
 func NewSQLBuilder[Model any](opts ...SQLBuilderOptions[Model]) *SQLBuilder[Model] {
 	operations := map[string]func(string, ...string) string{
-		Operators.Eq:     func(key string, values ...string) string { return fmt.Sprintf("%s = %s", key, values[0]) },
-		Operators.Neq:    func(key string, values ...string) string { return fmt.Sprintf("%s != %s", key, values[0]) },
-		Operators.Gt:     func(key string, values ...string) string { return fmt.Sprintf("%s > %s", key, values[0]) },
-		Operators.Gte:    func(key string, values ...string) string { return fmt.Sprintf("%s >= %s", key, values[0]) },
-		Operators.Lt:     func(key string, values ...string) string { return fmt.Sprintf("%s < %s", key, values[0]) },
-		Operators.Lte:    func(key string, values ...string) string { return fmt.Sprintf("%s <= %s", key, values[0]) },
-		Operators.Like:   func(key string, values ...string) string { return fmt.Sprintf("%s LIKE %s", key, values[0]) },
-		Operators.Nlike:  func(key string, values ...string) string { return fmt.Sprintf("%s NOT LIKE %s", key, values[0]) },
-		Operators.Ilike:  func(key string, values ...string) string { return fmt.Sprintf("%s ILIKE %s", key, values[0]) },
-		Operators.Nilike: func(key string, values ...string) string { return fmt.Sprintf("%s NOT ILIKE %s", key, values[0]) },
-		Operators.In: func(key string, values ...string) string {
+		Eq:     func(key string, values ...string) string { return fmt.Sprintf("%s = %s", key, values[0]) },
+		Neq:    func(key string, values ...string) string { return fmt.Sprintf("%s != %s", key, values[0]) },
+		Gt:     func(key string, values ...string) string { return fmt.Sprintf("%s > %s", key, values[0]) },
+		Gte:    func(key string, values ...string) string { return fmt.Sprintf("%s >= %s", key, values[0]) },
+		Lt:     func(key string, values ...string) string { return fmt.Sprintf("%s < %s", key, values[0]) },
+		Lte:    func(key string, values ...string) string { return fmt.Sprintf("%s <= %s", key, values[0]) },
+		Like:   func(key string, values ...string) string { return fmt.Sprintf("%s LIKE %s", key, values[0]) },
+		Nlike:  func(key string, values ...string) string { return fmt.Sprintf("%s NOT LIKE %s", key, values[0]) },
+		Ilike:  func(key string, values ...string) string { return fmt.Sprintf("%s ILIKE %s", key, values[0]) },
+		Nilike: func(key string, values ...string) string { return fmt.Sprintf("%s NOT ILIKE %s", key, values[0]) },
+		In: func(key string, values ...string) string {
 			return fmt.Sprintf("%s IN (%s)", key, strings.Join(values, ","))
 		},
-		Operators.Nin: func(key string, values ...string) string {
+		Nin: func(key string, values ...string) string {
 			return fmt.Sprintf("%s NOT IN (%s)", key, strings.Join(values, ","))
 		},
 	}

@@ -3,6 +3,7 @@ package shared
 import (
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/models"
 )
 
@@ -21,11 +22,9 @@ const (
 )
 
 type Subscription struct {
-	_                struct{} `db:"stripe_subscriptions" json:"-"`
-	ID               string   `db:"id" json:"id"`
-	StripeCustomerID string   `db:"stripe_customer_id" json:"stripe_customer_id"`
-	// UserID             *uuid.UUID               `db:"user_id" json:"user_id"`
-	// TeamID             uuid.UUID                `db:"team_id" json:"team_id"`
+	_                  struct{}                 `db:"stripe_subscriptions" json:"-"`
+	ID                 string                   `db:"id" json:"id"`
+	StripeCustomerID   string                   `db:"stripe_customer_id" json:"stripe_customer_id"`
 	Status             StripeSubscriptionStatus `db:"status" json:"status"`
 	Metadata           map[string]string        `db:"metadata" json:"metadata"`
 	ItemID             string                   `db:"item_id" json:"item_id"`
@@ -42,23 +41,41 @@ type Subscription struct {
 	TrialEnd           *time.Time               `db:"trial_end" json:"trial_end"`
 	CreatedAt          time.Time                `db:"created_at" json:"created_at"`
 	UpdatedAt          time.Time                `db:"updated_at" json:"updated_at"`
-	Team               *Team                    `db:"teams" src:"team_id" dest:"id" table:"teams" json:"team,omitempty"`
-	Price              *Price                   `db:"stripe_prices" src:"price_id" dest:"id" table:"stripe_prices" json:"price,omitempty"`
-}
-type SubscriptionWithPrice struct {
-	*Subscription
-	Price *StripePricesWithProduct `json:"price,omitempty" required:"false"`
+	StripeCustomer     *StripeCustomer          `db:"stripe_customer" src:"stripe_customer_id" dest:"id" table:"stripe_customers" json:"stripe_customer,omitempty"`
+	Price              *StripePrice             `db:"price" src:"price_id" dest:"id" table:"stripe_prices" json:"price,omitempty"`
 }
 
-func FromModelToSubWithUserAndPrice(sub *models.SubscriptionWithPrice) *SubscriptionWithData {
-	return &SubscriptionWithData{
-		Subscription: FromModelSubscription(&sub.Subscription),
-		Price: &StripePricesWithProduct{
-			Product: FromModelProduct(&sub.Product),
-			Price:   FromModelPrice(&sub.Price),
-		},
-	}
+type StripeCustomerType string
+
+const (
+	StripeCustomerTypeUser StripeCustomerType = "user"
+	StripeCustomerTypeTeam StripeCustomerType = "team"
+)
+
+type StripeCustomer struct {
+	_              struct{}           `db:"stripe_customers" json:"-"`
+	ID             string             `db:"id" json:"id"`
+	Email          string             `db:"email" json:"email"`
+	Name           *string            `db:"name" json:"name,omitempty" required:"false"`
+	UserID         *uuid.UUID         `db:"user_id" json:"user_id,omitempty" required:"false"`
+	TeamID         *uuid.UUID         `db:"team_id" json:"team_id,omitempty" required:"false"`
+	CustomerType   StripeCustomerType `db:"customer_type" json:"customer_type" enum:"user,team"`
+	BillingAddress *map[string]string `db:"billing_address" json:"billing_address"`
+	PaymentMethod  *map[string]string `db:"payment_method" json:"payment_method"`
+	CreatedAt      time.Time          `db:"created_at" json:"created_at"`
+	UpdatedAt      time.Time          `db:"updated_at" json:"updated_at"`
+	Team           *Team              `db:"team" src:"team_id" dest:"id" table:"teams" json:"team,omitempty"`
+	User           *User              `db:"user" src:"user_id" dest:"id" table:"users" json:"user,omitempty"`
+	Subscriptions  []*Subscription    `db:"subscriptions" src:"id" dest:"stripe_customer_id" table:"stripe_subscriptions" json:"subscriptions,omitempty"`
 }
+
+// func FromModelToSubWithUserAndPrice(sub *models.SubscriptionWithPrice) *SubscriptionWithData {
+// 	return &SubscriptionWithData{
+// 		Subscription: FromModelSubscription(&sub.Subscription),
+// 		Price:        FromModelPrice(&sub.Price),
+// 		pro:          FromModelProduct(sub.Product),
+// 	}
+// }
 
 func FromModelSubscription(sub *models.StripeSubscription) *Subscription {
 	return &Subscription{
@@ -82,16 +99,23 @@ func FromModelSubscription(sub *models.StripeSubscription) *Subscription {
 	}
 }
 
-type SubscriptionWithData struct {
-	*Subscription
-	Price            *StripePricesWithProduct `json:"price,omitempty" required:"false"`
-	SubscriptionUser *User                    `json:"user,omitempty" required:"false"`
+type SubscriptionWithPrice struct {
+	Price        StripePrice   `json:"price"`
+	Subscription Subscription  `json:"subscription"`
+	Product      StripeProduct `json:"product"`
 }
+
+// type SubscriptionWithData struct {
+// 	*Subscription
+// 	Price            *StripePricesWithProduct `json:"price,omitempty" required:"false"`
+// 	SubscriptionUser *User                    `json:"user,omitempty" required:"false"`
+// }
 
 type StripeSubscriptionListFilter struct {
 	Q      string                     `query:"q,omitempty" required:"false"`
 	Ids    []string                   `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
 	UserID string                     `query:"user_id,omitempty" required:"false" format:"uuid"`
+	TeamID string                     `query:"team_id,omitempty" required:"false" format:"uuid"`
 	Status []StripeSubscriptionStatus `query:"status,omitempty" required:"false" minimum:"1" maximum:"100" enum:"trialing,active,canceled,incomplete,incomplete_expired,past_due,unpaid,paused"`
 }
 type StripeSubscriptionListParams struct {
@@ -99,7 +123,6 @@ type StripeSubscriptionListParams struct {
 	StripeSubscriptionListFilter
 	SortParams
 	StripeSubscriptionExpand
-	// Expand []string `query:"expand,omitempty" required:"false" minimum:"1" maximum:"100" enum:"user,price,product"`
 }
 
 type StripeSubscriptionExpand struct {

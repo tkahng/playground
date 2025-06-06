@@ -9,7 +9,7 @@ import (
 )
 
 func (api *Api) GetStripeSubscriptions(ctx context.Context, input *struct{}) (*struct {
-	Body *shared.SubscriptionWithPrice `json:"body,omitempty" required:"false"`
+	Body *shared.Subscription `json:"body,omitempty" required:"false"`
 }, error) {
 
 	customer := contextstore.GetContextCurrentCustomer(ctx)
@@ -17,23 +17,16 @@ func (api *Api) GetStripeSubscriptions(ctx context.Context, input *struct{}) (*s
 		return nil, huma.Error403Forbidden("no customer found")
 	}
 
-	subscriptions, err := api.app.Payment().Store().FindLatestActiveSubscriptionWithPriceByCustomerId(ctx, customer.ID)
+	subWithPriceProduct, err := api.app.Payment().Store().FindLatestActiveSubscriptionWithPriceByCustomerId(ctx, customer.ID)
 	if err != nil {
 		return nil, err
 	}
 	output := &struct {
-		Body *shared.SubscriptionWithPrice `json:"body,omitempty" required:"false"`
+		Body *shared.Subscription `json:"body,omitempty" required:"false"`
 	}{}
 
-	if subscriptions == nil {
+	if subWithPriceProduct == nil {
 		return output, nil
-	}
-	output.Body = &shared.SubscriptionWithPrice{
-		Subscription: shared.FromModelSubscription(&subscriptions.Subscription),
-		Price: &shared.StripePricesWithProduct{
-			Price:   shared.FromModelPrice(&subscriptions.Price),
-			Product: shared.FromModelProduct(&subscriptions.Product),
-		},
 	}
 
 	return output, nil

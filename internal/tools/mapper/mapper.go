@@ -38,6 +38,22 @@ func MapToPointer[T any, K comparable](records []*T, keys []K, keyFn KeyFn[*T, K
 	return result
 }
 
+func ToMap[T any, K comparable](records []T, keyFn KeyFn[T, K]) map[K]T {
+	var m = make(map[K]T)
+	for _, record := range records {
+		m[keyFn(record)] = record
+	}
+	return m
+}
+
+func ToManyMap[T any, K comparable](records []T, keyFn KeyFn[T, K]) map[K][]T {
+	var m = make(map[K][]T)
+	for _, record := range records {
+		m[keyFn(record)] = append(m[keyFn(record)], record)
+	}
+	return m
+}
+
 func MapToMany[T any, K comparable](records []T, keys []K, keyFn KeyFn[T, K]) [][]T {
 	var m = make(map[K][]T)
 	for _, record := range records {
@@ -77,7 +93,7 @@ func Map[T1, T2 any](s []T1, f func(T1) T2) []T2 {
 	}
 	return r
 }
-func MapIdx[T1, T2 any](s []T1, f func(int, T1) T2) []T2 {
+func MapIdx[T1, T2 any](s []T1, f func(idx int, item T1) T2) []T2 {
 	r := make([]T2, len(s))
 	for i, v := range s {
 		r[i] = f(i, v)

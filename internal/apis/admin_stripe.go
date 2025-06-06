@@ -14,7 +14,7 @@ import (
 
 func (api *Api) AdminStripeSubscriptions(ctx context.Context,
 	input *shared.StripeSubscriptionListParams,
-) (*shared.PaginatedOutput[*shared.SubscriptionWithData], error) {
+) (*shared.PaginatedOutput[*shared.Subscription], error) {
 	subscriptions, err := api.app.Payment().Store().ListSubscriptions(ctx, input)
 	if err != nil {
 		return nil, err
@@ -24,39 +24,41 @@ func (api *Api) AdminStripeSubscriptions(ctx context.Context,
 	if err != nil {
 		return nil, err
 	}
-	return &shared.PaginatedOutput[*shared.SubscriptionWithData]{
-		Body: shared.PaginatedResponse[*shared.SubscriptionWithData]{
-			Data: mapper.Map(subscriptions, func(sub *models.StripeSubscription) *shared.SubscriptionWithData {
-				return &shared.SubscriptionWithData{
-					Subscription: shared.FromModelSubscription(sub),
-				}
-			}),
+	return &shared.PaginatedOutput[*shared.Subscription]{
+		Body: shared.PaginatedResponse[*shared.Subscription]{
+			Data: mapper.Map(subscriptions, shared.FromModelSubscription),
 			Meta: shared.GenerateMeta(&input.PaginatedInput, count),
 		},
 	}, nil
-
 }
 
 func (api *Api) AdminStripeSubscriptionsGet(ctx context.Context,
 	input *shared.StripeSubscriptionGetParams,
-) (*struct{ Body *shared.SubscriptionWithData }, error) {
+) (*struct{ Body *shared.Subscription }, error) {
 	if input == nil || input.SubscriptionID == "" {
 		return nil, huma.Error400BadRequest("subscription_id is required")
 	}
-	subscription, err := api.app.Payment().Store().FindSubscriptionWithPriceById(ctx, input.SubscriptionID)
+	subscriptions, err := api.app.Payment().Store().ListSubscriptions(ctx, &shared.StripeSubscriptionListParams{
+		StripeSubscriptionListFilter: shared.StripeSubscriptionListFilter{
+			Ids: []string{input.SubscriptionID},
+		},
+		PaginatedInput: shared.PaginatedInput{
+			Page:    0,
+			PerPage: 1,
+		},
+	})
 	if err != nil {
 		return nil, err
 	}
-	if subscription == nil {
+	if len(subscriptions) == 0 {
 		return nil, nil
 	}
-	sub := shared.FromModelToSubWithUserAndPrice(subscription)
-	return &struct{ Body *shared.SubscriptionWithData }{Body: sub}, nil
+	return &struct{ Body *shared.Subscription }{Body: shared.FromModelSubscription(subscriptions[0])}, nil
 }
 
 func (api *Api) AdminStripeProducts(ctx context.Context,
 	input *shared.StripeProductListParams,
-) (*shared.PaginatedOutput[*shared.StripeProductWitPermission], error) {
+) (*shared.PaginatedOutput[*shared.StripeProduct], error) {
 
 	products, err := api.app.Payment().Store().ListProducts(ctx, input)
 	if err != nil {
@@ -66,7 +68,7 @@ func (api *Api) AdminStripeProducts(ctx context.Context,
 		return p.ID
 	})
 	if slices.Contains(input.Expand, "prices") {
-		data, err := api.app.Payment().Store().LoadProductPrices(ctx, nil, productIds...)
+		data, err := api.app.Payment().Store().LoadPricesByProductIds(ctx, productIds...)
 		if err != nil {
 			return nil, err
 		}
@@ -93,19 +95,9 @@ func (api *Api) AdminStripeProducts(ctx context.Context,
 	if err != nil {
 		return nil, err
 	}
-	return &shared.PaginatedOutput[*shared.StripeProductWitPermission]{
-		Body: shared.PaginatedResponse[*shared.StripeProductWitPermission]{
-			Data: mapper.Map(products, func(p *models.StripeProduct) *shared.StripeProductWitPermission {
-				return &shared.StripeProductWitPermission{
-					Product: shared.FromModelProduct(p),
-					Permissions: mapper.Map(p.Permissions, func(r *models.Permission) *shared.Permission {
-						return shared.FromModelPermission(r)
-					}),
-					Prices: mapper.Map(p.Prices, func(p *models.StripePrice) *shared.Price {
-						return shared.FromModelPrice(p)
-					}),
-				}
-			}),
+	return &shared.PaginatedOutput[*shared.StripeProduct]{
+		Body: shared.PaginatedResponse[*shared.StripeProduct]{
+			Data: mapper.Map(products, shared.FromModelProduct),
 			Meta: shared.GenerateMeta(&input.PaginatedInput, count),
 		},
 	}, nil
@@ -114,7 +106,7 @@ func (api *Api) AdminStripeProducts(ctx context.Context,
 func (api *Api) AdminStripeProductsGet(ctx context.Context,
 	input *shared.StripeProductGetParams,
 ) (*struct {
-	Body *shared.StripeProductWitPermission
+	Body *shared.StripeProduct
 }, error) {
 
 	if input == nil || input.ProductID == "" {
@@ -129,7 +121,7 @@ func (api *Api) AdminStripeProductsGet(ctx context.Context,
 	}
 
 	if slices.Contains(input.Expand, "prices") {
-		prices, err := api.app.Payment().Store().LoadProductPrices(ctx, nil, input.ProductID)
+		prices, err := api.app.Payment().Store().LoadPricesByProductIds(ctx, input.ProductID)
 		if err != nil {
 			return nil, err
 		}
@@ -137,23 +129,19 @@ func (api *Api) AdminStripeProductsGet(ctx context.Context,
 			product.Prices = prices[0]
 		}
 	}
-	if slices.Contains(input.Expand, "roles") {
-		roles, err := api.app.Payment().Store().LoadProductRoles(ctx, input.ProductID)
+	if slices.Contains(input.Expand, "permissions") {
+		roles, err := api.app.Payment().Store().LoadProductPermissions(ctx, input.ProductID)
 		if err != nil {
 			return nil, err
 		}
 		if len(roles) > 0 {
-			product.Roles = roles[0]
+			product.Permissions = roles[0]
 		}
 	}
 	return &struct {
-		Body *shared.StripeProductWitPermission
+		Body *shared.StripeProduct
 	}{
-		Body: &shared.StripeProductWitPermission{
-			Product:     shared.FromModelProduct(product),
-			Permissions: mapper.Map(product.Permissions, shared.FromModelPermission),
-			Prices:      mapper.Map(product.Prices, shared.FromModelPrice),
-		},
+		Body: shared.FromModelProduct(product),
 	}, nil
 }
 

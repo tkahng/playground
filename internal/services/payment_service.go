@@ -39,7 +39,7 @@ type PaymentTeamStore interface {
 }
 
 type PaymentRbacStore interface {
-	// permission methods
+	LoadProductPermissions(ctx context.Context, productIds ...string) ([][]*models.Permission, error)
 	FindPermissionByName(ctx context.Context, name string) (*models.Permission, error)
 	CreateProductPermissions(ctx context.Context, productId string, permissionIds ...uuid.UUID) error
 	CreateProductRoles(ctx context.Context, productId string, roleIds ...uuid.UUID) error
@@ -52,16 +52,16 @@ type PaymentStripeStore interface {
 	CountSubscriptions(ctx context.Context, filter *shared.StripeSubscriptionListFilter) (int64, error)
 	CreateCustomer(ctx context.Context, customer *models.StripeCustomer) (*models.StripeCustomer, error)
 	FindCustomer(ctx context.Context, customer *models.StripeCustomer) (*models.StripeCustomer, error)
-	FindLatestActiveSubscriptionWithPriceByCustomerId(ctx context.Context, customerId string) (*models.SubscriptionWithPrice, error)
 	FindProductByStripeId(ctx context.Context, productId string) (*models.StripeProduct, error)
-	FindSubscriptionWithPriceById(ctx context.Context, subscriptionId string) (*models.SubscriptionWithPrice, error)
+	FindLatestActiveSubscriptionWithPriceByCustomerId(ctx context.Context, customerId string) (*models.SubscriptionWithPrice, error)
+	FindSubscriptionsWithPriceProductByIds(ctx context.Context, subscriptionIds ...string) ([]*models.StripeSubscription, error)
 	FindValidPriceById(ctx context.Context, priceId string) (*models.StripePrice, error)
 	IsFirstSubscription(ctx context.Context, customerID string) (bool, error)
 	ListCustomers(ctx context.Context, input *shared.StripeCustomerListParams) ([]*models.StripeCustomer, error)
 	ListPrices(ctx context.Context, input *shared.StripePriceListParams) ([]*models.StripePrice, error)
 	ListProducts(ctx context.Context, input *shared.StripeProductListParams) ([]*models.StripeProduct, error)
 	ListSubscriptions(ctx context.Context, input *shared.StripeSubscriptionListParams) ([]*models.StripeSubscription, error)
-	LoadProductPrices(ctx context.Context, where *map[string]any, productIds ...string) ([][]*models.StripePrice, error)
+	LoadPricesByProductIds(ctx context.Context, productIds ...string) ([][]*models.StripePrice, error)
 	LoadProductRoles(ctx context.Context, productIds ...string) ([][]*models.Role, error)
 	UpsertPrice(ctx context.Context, price *models.StripePrice) error
 	UpsertPriceFromStripe(ctx context.Context, price *stripe.Price) error
@@ -100,7 +100,9 @@ type PaymentService interface {
 	CreateBillingPortalSession(ctx context.Context, stripeCustomerId string) (string, error)
 	CreateCheckoutSession(ctx context.Context, stripeCustomerId string, priceId string) (string, error)
 
-	FindSubscriptionWithPriceBySessionId(ctx context.Context, sessionId string) (*models.SubscriptionWithPrice, error)
+	// FindSubscriptionWithPriceBySessionId(ctx context.Context, sessionId string) (*models.StripeSubscription, error)
+
+	FindSubscriptionWithPriceProductBySessionId(ctx context.Context, sessionId string) (*models.StripeSubscription, error)
 
 	UpsertSubscriptionByIds(ctx context.Context, cutomerId string, subscriptionId string) error
 
@@ -314,22 +316,26 @@ func (srv *StripeService) FindAndUpsertAllPrices(ctx context.Context) error {
 	return nil
 }
 
-func (srv *StripeService) FindSubscriptionWithPriceBySessionId(ctx context.Context, sessionId string) (*models.SubscriptionWithPrice, error) {
-	sub, err := srv.client.FindCheckoutSessionByStripeId(sessionId)
+func (srv *StripeService) FindSubscriptionWithPriceProductBySessionId(ctx context.Context, sessionId string) (*models.StripeSubscription, error) {
+	checkoutSession, err := srv.client.FindCheckoutSessionByStripeId(sessionId)
 	if err != nil {
 		return nil, err
 	}
-	if sub == nil {
+	if checkoutSession == nil {
 		return nil, errors.New("subscription not found")
 	}
-	if sub.Subscription == nil {
+	if checkoutSession.Subscription == nil {
 		return nil, errors.New("subscription not found")
 	}
-	data, err := srv.paymentStore.FindSubscriptionWithPriceById(ctx, sub.Subscription.ID)
+
+	subscription, err := srv.paymentStore.FindSubscriptionsWithPriceProductByIds(ctx, checkoutSession.Subscription.ID)
 	if err != nil {
 		return nil, err
 	}
-	return data, nil
+	if len(subscription) == 0 {
+		return nil, errors.New("subscription not found")
+	}
+	return subscription[0], nil
 }
 
 func (srv *StripeService) UpsertSubscriptionByIds(ctx context.Context, cutomerId, subscriptionId string) error {

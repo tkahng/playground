@@ -73,7 +73,7 @@ func (api *Api) StripeBillingPortal(ctx context.Context, input *struct{}) (*Stri
 }
 
 type CheckoutSessionOutput struct {
-	Body shared.SubscriptionWithPrice
+	Body shared.Subscription
 }
 
 type StripeCheckoutSessionInput struct {
@@ -83,21 +83,14 @@ type StripeCheckoutSessionInput struct {
 func (api *Api) StripeCheckoutSessionGet(ctx context.Context, input *StripeCheckoutSessionInput) (*CheckoutSessionOutput, error) {
 
 	payment := api.app.Payment()
-	cs, err := payment.FindSubscriptionWithPriceBySessionId(ctx, input.CheckoutSessionID)
+	cs, err := payment.FindSubscriptionWithPriceProductBySessionId(ctx, input.CheckoutSessionID)
 	if err != nil {
 		return nil, err
 	}
 	if cs == nil {
 		return nil, huma.Error404NotFound("checkout session not found")
 	}
-
 	return &CheckoutSessionOutput{
-		Body: shared.SubscriptionWithPrice{
-			Subscription: shared.FromModelSubscription(&cs.Subscription),
-			Price: &shared.StripePricesWithProduct{
-				Price:   shared.FromModelPrice(&cs.Price),
-				Product: shared.FromModelProduct(&cs.Product),
-			},
-		},
+		Body: *shared.FromModelSubscription(cs),
 	}, nil
 }

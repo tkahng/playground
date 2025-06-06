@@ -3,7 +3,6 @@ package apis
 import (
 	"context"
 
-	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 )
@@ -13,7 +12,7 @@ type StripeProductsWithPricesInput struct {
 	shared.SortParams
 }
 
-func (api *Api) StripeProductsWithPrices(ctx context.Context, inputt *StripeProductsWithPricesInput) (*shared.PaginatedOutput[*shared.StripeProductWitPermission], error) {
+func (api *Api) StripeProductsWithPrices(ctx context.Context, inputt *StripeProductsWithPricesInput) (*shared.PaginatedOutput[*shared.StripeProduct], error) {
 	input := &shared.StripeProductListParams{
 		PaginatedInput: inputt.PaginatedInput,
 		StripeProductListFilter: shared.StripeProductListFilter{
@@ -29,11 +28,7 @@ func (api *Api) StripeProductsWithPrices(ctx context.Context, inputt *StripeProd
 	for _, u := range products {
 		ids = append(ids, u.ID)
 	}
-	prices, err := api.app.Payment().Store().LoadProductPrices(ctx, &map[string]any{
-		"product_id": map[string]any{
-			"_in": ids,
-		},
-	}, ids...)
+	prices, err := api.app.Payment().Store().LoadPricesByProductIds(ctx, ids...)
 	if err != nil {
 		return nil, err
 	}
@@ -49,16 +44,8 @@ func (api *Api) StripeProductsWithPrices(ctx context.Context, inputt *StripeProd
 		return nil, err
 	}
 
-	return &shared.PaginatedOutput[*shared.StripeProductWitPermission]{
-		Body: shared.PaginatedResponse[*shared.StripeProductWitPermission]{
-			Data: mapper.Map(products, func(p *models.StripeProduct) *shared.StripeProductWitPermission {
-				return &shared.StripeProductWitPermission{
-					Product:     shared.FromModelProduct(p),
-					Permissions: mapper.Map(p.Permissions, shared.FromModelPermission),
-					Prices:      mapper.Map(p.Prices, shared.FromModelPrice),
-				}
-			}),
-			Meta: shared.GenerateMeta(&input.PaginatedInput, count),
-		},
-	}, nil
+	return &shared.PaginatedOutput[*shared.StripeProduct]{Body: shared.PaginatedResponse[*shared.StripeProduct]{
+		Data: mapper.Map(products, shared.FromModelProduct),
+		Meta: shared.GenerateMeta(&input.PaginatedInput, count),
+	}}, nil
 }

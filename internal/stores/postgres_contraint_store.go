@@ -21,18 +21,18 @@ func (p *PostgresConstraintStore) FindLatestActiveSubscriptionByTeamId(ctx conte
 		ctx,
 		p.db,
 		&map[string]any{
-			"stripe_customer": map[string]any{
-				"team_id": map[string]any{
+			models.StripeSubscriptionTable.StripeCustomer: map[string]any{
+				models.StripeCustomerTable.TeamID: map[string]any{
 					"_eq": teamId.String(),
 				},
 			},
-			"status": map[string]any{"_in": []string{
+			models.StripeSubscriptionTable.Status: map[string]any{"_in": []string{
 				string(models.StripeSubscriptionStatusActive),
 				string(models.StripeSubscriptionStatusTrialing),
 			}},
 		},
 		&map[string]string{
-			"created_at": "desc",
+			models.StripeSubscriptionTable.CreatedAt: "desc",
 		},
 		types.Pointer(1),
 		nil,
@@ -65,18 +65,20 @@ func (p *PostgresConstraintStore) FindLatestActiveSubscriptionByUserId(ctx conte
 		ctx,
 		p.db,
 		&map[string]any{
-			"stripe_customer": map[string]any{
-				"user_id": map[string]any{
+			models.StripeSubscriptionTable.StripeCustomer: map[string]any{
+				models.StripeCustomerTable.UserID: map[string]any{
 					"_eq": userId.String(),
 				},
 			},
-			"status": map[string]any{"_in": []string{
-				string(models.StripeSubscriptionStatusActive),
-				string(models.StripeSubscriptionStatusTrialing),
-			}},
+			models.StripeSubscriptionTable.Status: map[string]any{
+				"_in": []string{
+					string(models.StripeSubscriptionStatusActive),
+					string(models.StripeSubscriptionStatusTrialing),
+				},
+			},
 		},
 		&map[string]string{
-			"created_at": "desc",
+			models.StripeSubscriptionTable.CreatedAt: "desc",
 		},
 		types.Pointer(1),
 		nil,
@@ -96,7 +98,7 @@ func (p *PostgresConstraintStore) FindUserById(ctx context.Context, userId uuid.
 		ctx,
 		p.db,
 		&map[string]any{
-			"id": map[string]any{
+			models.UserTable.ID: map[string]any{
 				"_eq": userId.String(),
 			},
 		},

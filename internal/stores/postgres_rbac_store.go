@@ -75,12 +75,12 @@ func (s *PostgresRBACStore) FindRolesByIds(ctx context.Context, params []uuid.UU
 		ctx,
 		s.db,
 		&map[string]any{
-			"id": map[string]any{
+			models.RoleTable.ID: map[string]any{
 				"_in": newIds,
 			},
 		},
 		&map[string]string{
-			"name": "asc",
+			models.RoleTable.Name: "asc",
 		},
 		nil,
 		nil,
@@ -108,7 +108,7 @@ func (a *PostgresRBACStore) FindPermissionById(ctx context.Context, id uuid.UUID
 		ctx,
 		a.db,
 		&map[string]any{
-			"id": map[string]any{
+			models.PermissionTable.ID: map[string]any{
 				"_eq": id.String(),
 			},
 		},
@@ -118,7 +118,7 @@ func (a *PostgresRBACStore) FindPermissionById(ctx context.Context, id uuid.UUID
 
 func (a *PostgresRBACStore) FindRoleById(ctx context.Context, id uuid.UUID) (*models.Role, error) {
 	return crudrepo.Role.GetOne(ctx, a.db, &map[string]any{
-		"id": map[string]any{
+		models.RoleTable.ID: map[string]any{
 			"_eq": id.String(),
 		},
 	})
@@ -129,7 +129,7 @@ func (a *PostgresRBACStore) FindRoleByName(ctx context.Context, name string) (*m
 		ctx,
 		a.db,
 		&map[string]any{
-			"name": map[string]any{
+			models.RoleTable.Name: map[string]any{
 				"_eq": name,
 			},
 		},
@@ -144,7 +144,7 @@ func (a *PostgresRBACStore) AssignUserRoles(ctx context.Context, userId uuid.UUI
 			ctx,
 			a.db,
 			&map[string]any{
-				"id": map[string]any{
+				models.UserTable.ID: map[string]any{
 					"_eq": userId.String(),
 				},
 			},
@@ -159,7 +159,7 @@ func (a *PostgresRBACStore) AssignUserRoles(ctx context.Context, userId uuid.UUI
 			ctx,
 			a.db,
 			&map[string]any{
-				"name": map[string]any{
+				models.RoleTable.Name: map[string]any{
 					"_in": roleNames,
 				},
 			},
@@ -263,7 +263,7 @@ func (p *PostgresRBACStore) FindPermissionByName(ctx context.Context, name strin
 		ctx,
 		p.db,
 		&map[string]any{
-			"name": map[string]any{
+			models.PermissionTable.Name: map[string]any{
 				"_eq": name,
 			},
 		},
@@ -283,12 +283,12 @@ func (p *PostgresRBACStore) FindPermissionsByIds(ctx context.Context, params []u
 		ctx,
 		p.db,
 		&map[string]any{
-			"id": map[string]any{
+			models.PermissionTable.ID: map[string]any{
 				"_in": newIds,
 			},
 		},
 		&map[string]string{
-			"name": "asc",
+			models.PermissionTable.Name: "asc",
 		},
 		nil,
 		nil,
@@ -300,7 +300,7 @@ func (p *PostgresRBACStore) FindOrCreatePermission(ctx context.Context, permissi
 		ctx,
 		p.db,
 		&map[string]any{
-			"name": map[string]any{
+			models.PermissionTable.Name: map[string]any{
 				"_eq": permissionName,
 			},
 		},
@@ -333,7 +333,7 @@ func (p *PostgresRBACStore) UpdatePermission(ctx context.Context, id uuid.UUID, 
 		ctx,
 		p.db,
 		&map[string]any{
-			"id": map[string]any{
+			models.PermissionTable.ID: map[string]any{
 				"_eq": id.String(),
 			},
 		},
@@ -373,7 +373,7 @@ func (p *PostgresRBACStore) UpdateRole(ctx context.Context, id uuid.UUID, roledt
 		ctx,
 		p.db,
 		&map[string]any{
-			"id": map[string]any{
+			models.RoleTable.ID: map[string]any{
 				"_eq": id.String(),
 			},
 		},
@@ -398,7 +398,7 @@ func (p *PostgresRBACStore) DeleteRole(ctx context.Context, id uuid.UUID) error 
 		ctx,
 		p.db,
 		&map[string]any{
-			"id": map[string]any{
+			models.RoleTable.ID: map[string]any{
 				"_eq": id.String(),
 			},
 		},
@@ -448,7 +448,7 @@ func (p *PostgresRBACStore) DeletePermission(ctx context.Context, id uuid.UUID) 
 		ctx,
 		p.db,
 		&map[string]any{
-			"id": map[string]any{
+			models.PermissionTable.ID: map[string]any{
 				"_eq": id.String(),
 			},
 		},
@@ -464,7 +464,7 @@ func (p *PostgresRBACStore) FindOrCreateRole(ctx context.Context, roleName strin
 		ctx,
 		p.db,
 		&map[string]any{
-			"name": map[string]any{
+			models.RoleTable.Name: map[string]any{
 				"_eq": roleName,
 			},
 		},
