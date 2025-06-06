@@ -3,9 +3,11 @@ package stores_test
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/Masterminds/squirrel"
 	"github.com/stripe/stripe-go/v82"
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
@@ -318,7 +320,7 @@ func TestPostgresStripeStore_FindCustomer(t *testing.T) {
 	})
 }
 
-func TestPostgresStripeStore_SubscriptionRelations(t *testing.T) {
+func TestPostgresStripeStore_FindSubscriptionsWithPriceProductByIds(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
@@ -398,6 +400,315 @@ func TestPostgresStripeStore_SubscriptionRelations(t *testing.T) {
 	})
 }
 
+func TestPostgresStripeStore_FindActiveSubscriptionsByTeamIds(t *testing.T) {
+	test.Short(t)
+	ctx, dbx := test.DbSetup()
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+		store := stores.NewPostgresStripeStore(dbxx)
+		userStore := stores.NewPostgresUserStore(dbxx)
+		teamStore := stores.NewPostgresTeamStore(dbxx)
+		user, err := userStore.CreateUser(ctx, &models.User{Email: "sub@example.com"})
+		if err != nil {
+			t.Fatalf("CreateUser() error = %v", err)
+		}
+
+		team, err := teamStore.CreateTeam(ctx, "test", "test")
+		if err != nil {
+			t.Fatalf("CreateTeam() error = %v", err)
+		}
+
+		_, err = teamStore.CreateTeamMember(
+			ctx,
+			team.ID,
+			user.ID,
+			models.TeamMemberRoleOwner,
+			true,
+		)
+		if err != nil {
+			t.Fatalf("CreateTeamMember() error = %v", err)
+		}
+		// Insert product and price
+		product := &models.StripeProduct{ID: "prod_sub_1", Active: true, Name: "Sub Product", Metadata: map[string]string{}}
+		err = store.UpsertProduct(ctx, product)
+		if err != nil {
+			t.Fatalf("UpsertProduct() error = %v", err)
+		}
+		price := &models.StripePrice{
+			ID:         "price_sub_1",
+			ProductID:  product.ID,
+			Active:     true,
+			UnitAmount: types.Pointer(int64(2000)),
+			Currency:   "usd",
+			Type:       models.StripePricingTypeRecurring,
+			Metadata:   map[string]string{},
+		}
+		err = store.UpsertPrice(ctx, price)
+		if err != nil {
+			t.Fatalf("UpsertPrice() error = %v", err)
+		}
+		// Insert customer
+		customer := &models.StripeCustomer{
+			ID:           "cus_sub_1",
+			Email:        "sub@example.com",
+			CustomerType: models.StripeCustomerTypeTeam,
+			TeamID:       types.Pointer(team.ID),
+			// UserID:       types.Pointer(user.ID),
+		}
+		_, err = store.CreateCustomer(ctx, customer)
+		if err != nil {
+			t.Fatalf("CreateCustomer() error = %v", err)
+		}
+		// Insert subscription
+		sub := &models.StripeSubscription{
+			ID:                 "sub_1",
+			StripeCustomerID:   customer.ID,
+			Status:             models.StripeSubscriptionStatusActive,
+			Metadata:           map[string]string{},
+			ItemID:             "item_1",
+			PriceID:            price.ID,
+			Quantity:           1,
+			CancelAtPeriodEnd:  false,
+			Created:            time.Now(),
+			CurrentPeriodStart: time.Now(),
+			CurrentPeriodEnd:   time.Now().Add(30 * 24 * time.Hour),
+		}
+		err = store.UpsertSubscription(ctx, sub)
+		if err != nil {
+			t.Fatalf("UpsertSubscription() error = %v", err)
+		}
+		// FindSubscriptionWithPriceById
+		teamSubs, err := store.FindActiveSubscriptionsByTeamIds(ctx, team.ID)
+		if err != nil {
+			t.Fatalf("FindActiveSubscriptionsByTeamIds() error = %v", err)
+		}
+		if len(teamSubs) == 0 {
+			t.Fatalf("FindActiveSubscriptionsByTeamIds() = %v, want at least 1", teamSubs)
+		}
+
+		withPrice := teamSubs[0]
+		err = store.LoadSubscriptionsPriceProduct(ctx, withPrice)
+		if err != nil {
+			t.Fatalf("LoadSubscriptionstripe_pricesriceProduct() error = %v", err)
+		}
+		if withPrice == nil || withPrice.ID != "sub_1" {
+			t.Errorf("FindSubscriptionWithPriceById() = %v, err = %v", withPrice, err)
+		}
+		if withPrice.Price == nil || withPrice.Price.ID != price.ID {
+			t.Errorf("FindSubscriptionWithPriceById() Price = %v, want %v", withPrice.Price, price.ID)
+		}
+		if withPrice.Price.Product == nil || withPrice.Price.Product.ID != product.ID {
+			t.Errorf("FindSubscriptionWithPriceById() Product = %v, want %v", withPrice.Price.Product, product.ID)
+		}
+		return errors.New("rollback")
+	})
+}
+func TestPostgresStripeStore_FindActiveSubscriptionsByCustomerIds(t *testing.T) {
+	test.Short(t)
+	ctx, dbx := test.DbSetup()
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+		store := stores.NewPostgresStripeStore(dbxx)
+		userStore := stores.NewPostgresUserStore(dbxx)
+		teamStore := stores.NewPostgresTeamStore(dbxx)
+		user, err := userStore.CreateUser(ctx, &models.User{Email: "sub@example.com"})
+		if err != nil {
+			t.Fatalf("CreateUser() error = %v", err)
+		}
+
+		team, err := teamStore.CreateTeam(ctx, "test", "test")
+		if err != nil {
+			t.Fatalf("CreateTeam() error = %v", err)
+		}
+
+		_, err = teamStore.CreateTeamMember(
+			ctx,
+			team.ID,
+			user.ID,
+			models.TeamMemberRoleOwner,
+			true,
+		)
+		if err != nil {
+			t.Fatalf("CreateTeamMember() error = %v", err)
+		}
+		// Insert product and price
+		product := &models.StripeProduct{ID: "prod_sub_1", Active: true, Name: "Sub Product", Metadata: map[string]string{}}
+		err = store.UpsertProduct(ctx, product)
+		if err != nil {
+			t.Fatalf("UpsertProduct() error = %v", err)
+		}
+		price := &models.StripePrice{
+			ID:         "price_sub_1",
+			ProductID:  product.ID,
+			Active:     true,
+			UnitAmount: types.Pointer(int64(2000)),
+			Currency:   "usd",
+			Type:       models.StripePricingTypeRecurring,
+			Metadata:   map[string]string{},
+		}
+		err = store.UpsertPrice(ctx, price)
+		if err != nil {
+			t.Fatalf("UpsertPrice() error = %v", err)
+		}
+		// Insert customer
+		customer := &models.StripeCustomer{
+			ID:           "cus_sub_1",
+			Email:        "sub@example.com",
+			CustomerType: models.StripeCustomerTypeTeam,
+			TeamID:       types.Pointer(team.ID),
+			// UserID:       types.Pointer(user.ID),
+		}
+		_, err = store.CreateCustomer(ctx, customer)
+		if err != nil {
+			t.Fatalf("CreateCustomer() error = %v", err)
+		}
+		// Insert subscription
+		sub := &models.StripeSubscription{
+			ID:                 "sub_1",
+			StripeCustomerID:   customer.ID,
+			Status:             models.StripeSubscriptionStatusActive,
+			Metadata:           map[string]string{},
+			ItemID:             "item_1",
+			PriceID:            price.ID,
+			Quantity:           1,
+			CancelAtPeriodEnd:  false,
+			Created:            time.Now(),
+			CurrentPeriodStart: time.Now(),
+			CurrentPeriodEnd:   time.Now().Add(30 * 24 * time.Hour),
+		}
+		err = store.UpsertSubscription(ctx, sub)
+		if err != nil {
+			t.Fatalf("UpsertSubscription() error = %v", err)
+		}
+		// FindSubscriptionWithPriceById
+		customerSubs, err := store.FindActiveSubscriptionsByCustomerIds(ctx, customer.ID)
+		if err != nil {
+			t.Fatalf("FindActiveSubscriptionsByCustomerIds() error = %v", err)
+		}
+		if len(customerSubs) == 0 {
+			t.Fatalf("FindActiveSubscriptionsByCustomerIds() = %v, want at least 1", customerSubs)
+		}
+
+		withPrice := customerSubs[0]
+		err = store.LoadSubscriptionsPriceProduct(ctx, withPrice)
+		if err != nil {
+			t.Fatalf("LoadSubscriptionstripe_pricesriceProduct() error = %v", err)
+		}
+		if withPrice == nil || withPrice.ID != "sub_1" {
+			t.Errorf("FindSubscriptionWithPriceById() = %v, err = %v", withPrice, err)
+		}
+		if withPrice.Price == nil || withPrice.Price.ID != price.ID {
+			t.Errorf("FindSubscriptionWithPriceById() Price = %v, want %v", withPrice.Price, price.ID)
+		}
+		if withPrice.Price.Product == nil || withPrice.Price.Product.ID != product.ID {
+			t.Errorf("FindSubscriptionWithPriceById() Product = %v, want %v", withPrice.Price.Product, product.ID)
+		}
+		return errors.New("rollback")
+	})
+}
+func TestPostgresStripeStore_FindActiveSubscriptionsByUserIds(t *testing.T) {
+	test.Short(t)
+	ctx, dbx := test.DbSetup()
+	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+		store := stores.NewPostgresStripeStore(dbxx)
+		userStore := stores.NewPostgresUserStore(dbxx)
+		teamStore := stores.NewPostgresTeamStore(dbxx)
+		user, err := userStore.CreateUser(ctx, &models.User{Email: "sub@example.com"})
+		if err != nil {
+			t.Fatalf("CreateUser() error = %v", err)
+		}
+
+		team, err := teamStore.CreateTeam(ctx, "test", "test")
+		if err != nil {
+			t.Fatalf("CreateTeam() error = %v", err)
+		}
+
+		_, err = teamStore.CreateTeamMember(
+			ctx,
+			team.ID,
+			user.ID,
+			models.TeamMemberRoleOwner,
+			true,
+		)
+		if err != nil {
+			t.Fatalf("CreateTeamMember() error = %v", err)
+		}
+		// Insert product and price
+		product := &models.StripeProduct{ID: "prod_sub_1", Active: true, Name: "Sub Product", Metadata: map[string]string{}}
+		err = store.UpsertProduct(ctx, product)
+		if err != nil {
+			t.Fatalf("UpsertProduct() error = %v", err)
+		}
+		price := &models.StripePrice{
+			ID:         "price_sub_1",
+			ProductID:  product.ID,
+			Active:     true,
+			UnitAmount: types.Pointer(int64(2000)),
+			Currency:   "usd",
+			Type:       models.StripePricingTypeRecurring,
+			Metadata:   map[string]string{},
+		}
+		err = store.UpsertPrice(ctx, price)
+		if err != nil {
+			t.Fatalf("UpsertPrice() error = %v", err)
+		}
+		// Insert customer
+		customer := &models.StripeCustomer{
+			ID:           "cus_sub_1",
+			Email:        "sub@example.com",
+			CustomerType: models.StripeCustomerTypeUser,
+			// TeamID:       types.Pointer(team.ID),
+			UserID: types.Pointer(user.ID),
+		}
+		_, err = store.CreateCustomer(ctx, customer)
+		if err != nil {
+			t.Fatalf("CreateCustomer() error = %v", err)
+		}
+		// Insert subscription
+		sub := &models.StripeSubscription{
+			ID:                 "sub_1",
+			StripeCustomerID:   customer.ID,
+			Status:             models.StripeSubscriptionStatusActive,
+			Metadata:           map[string]string{},
+			ItemID:             "item_1",
+			PriceID:            price.ID,
+			Quantity:           1,
+			CancelAtPeriodEnd:  false,
+			Created:            time.Now(),
+			CurrentPeriodStart: time.Now(),
+			CurrentPeriodEnd:   time.Now().Add(30 * 24 * time.Hour),
+		}
+		err = store.UpsertSubscription(ctx, sub)
+		if err != nil {
+			t.Fatalf("UpsertSubscription() error = %v", err)
+		}
+		customerSubs, err := store.FindActiveSubscriptionsByUserIds(ctx, user.ID)
+		if err != nil {
+			t.Fatalf("FindActiveSubscriptionsByUserIds() error = %v", err)
+		}
+		if len(customerSubs) == 0 {
+			t.Fatalf("FindActiveSubscriptionsByUserIds() = %v, want at least 1", customerSubs)
+		}
+
+		withPrice := customerSubs[0]
+		if withPrice == nil || withPrice.ID != "sub_1" {
+			t.Errorf("FindSubscriptionWithPriceById() = %v, err = %v", withPrice, err)
+		}
+		err = store.LoadSubscriptionsPriceProduct(ctx, withPrice)
+		if err != nil {
+			t.Fatalf("LoadSubscriptionstripe_pricesriceProduct() error = %v", err)
+		}
+		if withPrice == nil || withPrice.ID != "sub_1" {
+			t.Errorf("FindSubscriptionWithPriceById() = %v, err = %v", withPrice, err)
+		}
+		if withPrice.Price == nil || withPrice.Price.ID != price.ID {
+			t.Errorf("FindSubscriptionWithPriceById() Price = %v, want %v", withPrice.Price, price.ID)
+		}
+		if withPrice.Price.Product == nil || withPrice.Price.Product.ID != product.ID {
+			t.Errorf("FindSubscriptionWithPriceById() Product = %v, want %v", withPrice.Price.Product, product.ID)
+		}
+		return errors.New("rollback")
+	})
+}
+
 func TestPostgresStripeStore_UpsertSubscriptionFromStripe(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
@@ -464,4 +775,290 @@ func TestPostgresStripeStore_UpsertSubscriptionFromStripe(t *testing.T) {
 		}
 		return errors.New("rollback")
 	})
+}
+func TestSelectStripePriceColumns(t *testing.T) {
+	type args struct {
+		tablePrefix string
+		prefix      string
+	}
+	tests := []struct {
+		name   string
+		args   args
+		expect []string
+	}{
+		{
+			name: "no prefix",
+			args: args{
+				tablePrefix: "",
+				prefix:      "",
+			},
+			expect: []string{
+				`id AS "id"`,
+				`product_id AS "product_id"`,
+				`lookup_key AS "lookup_key"`,
+				`active AS "active"`,
+				`unit_amount AS "unit_amount"`,
+				`currency AS "currency"`,
+				`type AS "type"`,
+				`interval AS "interval"`,
+				`interval_count AS "interval_count"`,
+				`trial_period_days AS "trial_period_days"`,
+				`metadata AS "metadata"`,
+				`created_at AS "created_at"`,
+				`updated_at AS "updated_at"`,
+			},
+		},
+		{
+			name: "with tablePrefix and prefix",
+			args: args{
+				tablePrefix: "stripe_prices",
+				prefix:      "price",
+			},
+			expect: []string{
+				`stripe_prices.id AS "price.id"`,
+				`stripe_prices.product_id AS "price.product_id"`,
+				`stripe_prices.lookup_key AS "price.lookup_key"`,
+				`stripe_prices.active AS "price.active"`,
+				`stripe_prices.unit_amount AS "price.unit_amount"`,
+				`stripe_prices.currency AS "price.currency"`,
+				`stripe_prices.type AS "price.type"`,
+				`stripe_prices.interval AS "price.interval"`,
+				`stripe_prices.interval_count AS "price.interval_count"`,
+				`stripe_prices.trial_period_days AS "price.trial_period_days"`,
+				`stripe_prices.metadata AS "price.metadata"`,
+				`stripe_prices.created_at AS "price.created_at"`,
+				`stripe_prices.updated_at AS "price.updated_at"`,
+			},
+		},
+		{
+			name: "with tablePrefix only and double prefix",
+			args: args{
+				tablePrefix: "stripe_prices",
+				prefix:      "some.price",
+			},
+			expect: []string{
+				`stripe_prices.id AS "some.price.id"`,
+				`stripe_prices.product_id AS "some.price.product_id"`,
+				`stripe_prices.lookup_key AS "some.price.lookup_key"`,
+				`stripe_prices.active AS "some.price.active"`,
+				`stripe_prices.unit_amount AS "some.price.unit_amount"`,
+				`stripe_prices.currency AS "some.price.currency"`,
+				`stripe_prices.type AS "some.price.type"`,
+				`stripe_prices.interval AS "some.price.interval"`,
+				`stripe_prices.interval_count AS "some.price.interval_count"`,
+				`stripe_prices.trial_period_days AS "some.price.trial_period_days"`,
+				`stripe_prices.metadata AS "some.price.metadata"`,
+				`stripe_prices.created_at AS "some.price.created_at"`,
+				`stripe_prices.updated_at AS "some.price.updated_at"`,
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			qs := squirrel.Select()
+			qs = stores.SelectStripePriceColumns(qs, tt.args.prefix)
+			sql, _, err := qs.ToSql()
+			if err != nil {
+				t.Fatalf("ToSql() error = %v", err)
+			}
+			for _, col := range tt.expect {
+				if !containsSQLColumn(sql, col) {
+					t.Errorf("Expected column %q in SQL: %s", col, sql)
+				}
+			}
+		})
+	}
+}
+
+func TestSelectStripeProductColumns(t *testing.T) {
+	type args struct {
+		tablePrefix string
+		prefix      string
+	}
+	tests := []struct {
+		name   string
+		args   args
+		expect []string
+	}{
+		{
+			name: "no prefix",
+			args: args{
+				tablePrefix: "",
+				prefix:      "",
+			},
+			expect: []string{
+				`id AS "id"`,
+				`name AS "name"`,
+				`description AS "description"`,
+				`active AS "active"`,
+				`image AS "image"`,
+				`metadata AS "metadata"`,
+				`created_at AS "created_at"`,
+				`updated_at AS "updated_at"`,
+			},
+		},
+		{
+			name: "with tablePrefix and prefix",
+			args: args{
+				tablePrefix: "p",
+				prefix:      "product",
+			},
+			expect: []string{
+				`stripe_products.id AS "product.id"`,
+				`stripe_products.name AS "product.name"`,
+				`stripe_products.description AS "product.description"`,
+				`stripe_products.active AS "product.active"`,
+				`stripe_products.image AS "product.image"`,
+				`stripe_products.metadata AS "product.metadata"`,
+				`stripe_products.created_at AS "product.created_at"`,
+				`stripe_products.updated_at AS "product.updated_at"`,
+			},
+		},
+		{
+			name: "with tablePrefix only and double prefix",
+			args: args{
+				tablePrefix: "p",
+				prefix:      "some.product",
+			},
+			expect: []string{
+				`stripe_products.id AS "some.product.id"`,
+				`stripe_products.name AS "some.product.name"`,
+				`stripe_products.description AS "some.product.description"`,
+				`stripe_products.active AS "some.product.active"`,
+				`stripe_products.image AS "some.product.image"`,
+				`stripe_products.metadata AS "some.product.metadata"`,
+				`stripe_products.created_at AS "some.product.created_at"`,
+				`stripe_products.updated_at AS "some.product.updated_at"`,
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			qs := squirrel.Select()
+			qs = stores.SelectStripeProductColumns(qs, tt.args.prefix)
+			sql, _, err := qs.ToSql()
+			if err != nil {
+				t.Fatalf("ToSql() error = %v", err)
+			}
+			for _, col := range tt.expect {
+				if !containsSQLColumn(sql, col) {
+					t.Errorf("Expected column %q in SQL: %s", col, sql)
+				}
+			}
+		})
+	}
+}
+
+func TestSelectStripeSubscriptionColumns(t *testing.T) {
+	type args struct {
+		tablePrefix string
+		prefix      string
+	}
+	tests := []struct {
+		name   string
+		args   args
+		expect []string
+	}{
+		{
+			name: "no prefix",
+			args: args{
+				tablePrefix: "",
+				prefix:      "",
+			},
+			expect: []string{
+				`stripe_subscriptions.id AS "id"`,
+				`stripe_subscriptions.stripe_customer_id AS "stripe_customer_id"`,
+				`stripe_subscriptions.status AS "status"`,
+				`stripe_subscriptions.metadata AS "metadata"`,
+				`stripe_subscriptions.item_id AS "item_id"`,
+				`stripe_subscriptions.price_id AS "price_id"`,
+				`stripe_subscriptions.quantity AS "quantity"`,
+				`stripe_subscriptions.cancel_at_period_end AS "cancel_at_period_end"`,
+				`stripe_subscriptions.created AS "created"`,
+				`stripe_subscriptions.current_period_start AS "current_period_start"`,
+				`stripe_subscriptions.current_period_end AS "current_period_end"`,
+				`stripe_subscriptions.ended_at AS "ended_at"`,
+				`stripe_subscriptions.cancel_at AS "cancel_at"`,
+				`stripe_subscriptions.canceled_at AS "canceled_at"`,
+				`stripe_subscriptions.trial_start AS "trial_start"`,
+				`stripe_subscriptions.trial_end AS "trial_end"`,
+				`stripe_subscriptions.created_at AS "created_at"`,
+				`stripe_subscriptions.updated_at AS "updated_at"`,
+			},
+		},
+		{
+			name: "with tablePrefix and prefix",
+			args: args{
+				tablePrefix: "ss",
+				prefix:      "subscription",
+			},
+			expect: []string{
+				`stripe_subscriptions.id AS "subscription.id"`,
+				`stripe_subscriptions.stripe_customer_id AS "subscription.stripe_customer_id"`,
+				`stripe_subscriptions.status AS "subscription.status"`,
+				`stripe_subscriptions.metadata AS "subscription.metadata"`,
+				`stripe_subscriptions.item_id AS "subscription.item_id"`,
+				`stripe_subscriptions.price_id AS "subscription.price_id"`,
+				`stripe_subscriptions.quantity AS "subscription.quantity"`,
+				`stripe_subscriptions.cancel_at_period_end AS "subscription.cancel_at_period_end"`,
+				`stripe_subscriptions.created AS "subscription.created"`,
+				`stripe_subscriptions.current_period_start AS "subscription.current_period_start"`,
+				`stripe_subscriptions.current_period_end AS "subscription.current_period_end"`,
+				`stripe_subscriptions.ended_at AS "subscription.ended_at"`,
+				`stripe_subscriptions.cancel_at AS "subscription.cancel_at"`,
+				`stripe_subscriptions.canceled_at AS "subscription.canceled_at"`,
+				`stripe_subscriptions.trial_start AS "subscription.trial_start"`,
+				`stripe_subscriptions.trial_end AS "subscription.trial_end"`,
+				`stripe_subscriptions.created_at AS "subscription.created_at"`,
+				`stripe_subscriptions.updated_at AS "subscription.updated_at"`,
+			},
+		},
+		{
+			name: "with tablePrefix only and double prefix",
+			args: args{
+				tablePrefix: "ss",
+				prefix:      "some.subscription",
+			},
+			expect: []string{
+				`stripe_subscriptions.id AS "some.subscription.id"`,
+				`stripe_subscriptions.stripe_customer_id AS "some.subscription.stripe_customer_id"`,
+				`stripe_subscriptions.status AS "some.subscription.status"`,
+				`stripe_subscriptions.metadata AS "some.subscription.metadata"`,
+				`stripe_subscriptions.item_id AS "some.subscription.item_id"`,
+				`stripe_subscriptions.price_id AS "some.subscription.price_id"`,
+				`stripe_subscriptions.quantity AS "some.subscription.quantity"`,
+				`stripe_subscriptions.cancel_at_period_end AS "some.subscription.cancel_at_period_end"`,
+				`stripe_subscriptions.created AS "some.subscription.created"`,
+				`stripe_subscriptions.current_period_start AS "some.subscription.current_period_start"`,
+				`stripe_subscriptions.current_period_end AS "some.subscription.current_period_end"`,
+				`stripe_subscriptions.ended_at AS "some.subscription.ended_at"`,
+				`stripe_subscriptions.cancel_at AS "some.subscription.cancel_at"`,
+				`stripe_subscriptions.canceled_at AS "some.subscription.canceled_at"`,
+				`stripe_subscriptions.trial_start AS "some.subscription.trial_start"`,
+				`stripe_subscriptions.trial_end AS "some.subscription.trial_end"`,
+				`stripe_subscriptions.created_at AS "some.subscription.created_at"`,
+				`stripe_subscriptions.updated_at AS "some.subscription.updated_at"`,
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			qs := squirrel.Select()
+			qs = stores.SelectStripeSubscriptionColumns(qs, tt.args.prefix)
+			sql, _, err := qs.ToSql()
+			if err != nil {
+				t.Fatalf("ToSql() error = %v", err)
+			}
+			for _, col := range tt.expect {
+				if !containsSQLColumn(sql, col) {
+					t.Errorf("Expected column %q in SQL: %s", col, sql)
+				}
+			}
+		})
+	}
+}
+
+// containsSQLColumn checks if the column string is present in the SELECT SQL.
+func containsSQLColumn(sql, col string) bool {
+	return strings.Contains(sql, col)
 }

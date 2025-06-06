@@ -109,7 +109,7 @@ func (a *PostgresRBACStore) FindPermissionById(ctx context.Context, id uuid.UUID
 		a.db,
 		&map[string]any{
 			models.PermissionTable.ID: map[string]any{
-				"_eq": id.String(),
+				"_eq": id,
 			},
 		},
 	)
@@ -119,7 +119,7 @@ func (a *PostgresRBACStore) FindPermissionById(ctx context.Context, id uuid.UUID
 func (a *PostgresRBACStore) FindRoleById(ctx context.Context, id uuid.UUID) (*models.Role, error) {
 	return crudrepo.Role.GetOne(ctx, a.db, &map[string]any{
 		models.RoleTable.ID: map[string]any{
-			"_eq": id.String(),
+			"_eq": id,
 		},
 	})
 }
@@ -145,7 +145,7 @@ func (a *PostgresRBACStore) AssignUserRoles(ctx context.Context, userId uuid.UUI
 			a.db,
 			&map[string]any{
 				models.UserTable.ID: map[string]any{
-					"_eq": userId.String(),
+					"_eq": userId,
 				},
 			},
 		)
@@ -334,7 +334,7 @@ func (p *PostgresRBACStore) UpdatePermission(ctx context.Context, id uuid.UUID, 
 		p.db,
 		&map[string]any{
 			models.PermissionTable.ID: map[string]any{
-				"_eq": id.String(),
+				"_eq": id,
 			},
 		},
 	)
@@ -374,7 +374,7 @@ func (p *PostgresRBACStore) UpdateRole(ctx context.Context, id uuid.UUID, roledt
 		p.db,
 		&map[string]any{
 			models.RoleTable.ID: map[string]any{
-				"_eq": id.String(),
+				"_eq": id,
 			},
 		},
 	)
@@ -399,7 +399,7 @@ func (p *PostgresRBACStore) DeleteRole(ctx context.Context, id uuid.UUID) error 
 		p.db,
 		&map[string]any{
 			models.RoleTable.ID: map[string]any{
-				"_eq": id.String(),
+				"_eq": id,
 			},
 		},
 	)
@@ -430,10 +430,10 @@ func (p *PostgresRBACStore) DeleteUserRole(ctx context.Context, userId, roleId u
 		p.db,
 		&map[string]any{
 			"role_id": map[string]any{
-				"_eq": roleId.String(),
+				"_eq": roleId,
 			},
 			"user_id": map[string]any{
-				"_eq": userId.String(),
+				"_eq": userId,
 			},
 		},
 	)
@@ -449,7 +449,7 @@ func (p *PostgresRBACStore) DeletePermission(ctx context.Context, id uuid.UUID) 
 		p.db,
 		&map[string]any{
 			models.PermissionTable.ID: map[string]any{
-				"_eq": id.String(),
+				"_eq": id,
 			},
 		},
 	)
@@ -547,7 +547,7 @@ func (p *PostgresRBACStore) DeleteRolePermissions(ctx context.Context, roleId uu
 		p.db,
 		&map[string]any{
 			"role_id": map[string]any{
-				"_eq": roleId.String(),
+				"_eq": roleId,
 			},
 			"permission_id": map[string]any{
 				"_in": ids,

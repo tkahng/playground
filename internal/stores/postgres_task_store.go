@@ -42,22 +42,22 @@ func (*taskStore) TaskWhere(task *models.Task) *map[string]any {
 	where := map[string]any{}
 	if task.ID != uuid.Nil {
 		where["id"] = map[string]any{
-			"_eq": task.ID.String(),
+			"_eq": task.ID,
 		}
 	}
 	if task.ProjectID != uuid.Nil {
 		where["project_id"] = map[string]any{
-			"_eq": task.ProjectID.String(),
+			"_eq": task.ProjectID,
 		}
 	}
 	if task.TeamID != uuid.Nil {
 		where["team_id"] = map[string]any{
-			"_eq": task.TeamID.String(),
+			"_eq": task.TeamID,
 		}
 	}
 	if task.CreatedByMemberID != nil {
 		where["created_by_member_id"] = map[string]any{
-			"_eq": task.CreatedByMemberID.String(),
+			"_eq": task.CreatedByMemberID,
 		}
 	}
 	if task.Status != "" {
@@ -77,7 +77,7 @@ func (*taskStore) TaskWhere(task *models.Task) *map[string]any {
 	}
 	if task.ParentID != nil {
 		where["parent_id"] = map[string]any{
-			"_eq": task.ParentID.String(),
+			"_eq": task.ParentID,
 		}
 	}
 	return &where
@@ -197,7 +197,7 @@ func (s *taskStore) FindTaskByID(ctx context.Context, id uuid.UUID) (*models.Tas
 		s.db,
 		&map[string]any{
 			"id": map[string]any{
-				"_eq": id.String(),
+				"_eq": id,
 			},
 		},
 	)
@@ -210,7 +210,7 @@ func (s *taskStore) FindLastTaskRank(ctx context.Context, taskProjectID uuid.UUI
 		s.db,
 		&map[string]any{
 			"project_id": map[string]any{
-				"_eq": taskProjectID.String(),
+				"_eq": taskProjectID,
 			},
 		},
 		&map[string]string{
@@ -236,7 +236,7 @@ func (s *taskStore) DeleteTask(ctx context.Context, taskID uuid.UUID) error {
 		s.db,
 		&map[string]any{
 			"id": map[string]any{
-				"_eq": taskID.String(),
+				"_eq": taskID,
 			},
 		},
 	)
@@ -250,7 +250,7 @@ func (s *taskStore) FindTaskProjectByID(ctx context.Context, id uuid.UUID) (*mod
 		s.db,
 		&map[string]any{
 			"id": map[string]any{
-				"_eq": id.String(),
+				"_eq": id,
 			},
 		},
 	)
@@ -262,7 +262,7 @@ func (s *taskStore) DeleteTaskProject(ctx context.Context, taskProjectID uuid.UU
 		s.db,
 		&map[string]any{
 			"id": map[string]any{
-				"_eq": taskProjectID.String(),
+				"_eq": taskProjectID,
 			},
 		},
 	)
@@ -504,7 +504,7 @@ func (s *taskStore) CalculateTaskRankStatus(ctx context.Context, taskId uuid.UUI
 			s.db,
 			&map[string]any{
 				"project_id": map[string]any{
-					"_eq": taskProjectId.String(),
+					"_eq": taskProjectId,
 				},
 				"status": map[string]any{
 					"_eq": status,
@@ -534,7 +534,7 @@ func (s *taskStore) CalculateTaskRankStatus(ctx context.Context, taskId uuid.UUI
 		s.db,
 		&map[string]any{
 			"project_id": map[string]any{
-				"_eq": taskProjectId.String(),
+				"_eq": taskProjectId,
 			},
 		},
 		&map[string]string{
@@ -560,7 +560,7 @@ func (s *taskStore) CalculateTaskRankStatus(ctx context.Context, taskId uuid.UUI
 			s.db,
 			&map[string]any{
 				"project_id": map[string]any{
-					"_eq": taskProjectId.String(),
+					"_eq": taskProjectId,
 				},
 				"status": map[string]any{
 					"_eq": status,
@@ -586,7 +586,7 @@ func (s *taskStore) CalculateTaskRankStatus(ctx context.Context, taskId uuid.UUI
 		s.db,
 		&map[string]any{
 			"project_id": map[string]any{
-				"_eq": taskProjectId.String(),
+				"_eq": taskProjectId,
 			},
 			"status": map[string]any{
 				"_eq": status,

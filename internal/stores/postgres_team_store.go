@@ -50,7 +50,7 @@ func (s *PostgresTeamStore) FindTeam(ctx context.Context, team *models.Team) (*m
 	where := map[string]any{}
 	if team.ID != uuid.Nil {
 		where[models.TeamTable.ID] = map[string]any{
-			"_eq": team.ID.String(),
+			"_eq": team.ID,
 		}
 	}
 
@@ -92,17 +92,17 @@ func (s *PostgresTeamStore) FindTeamMember(ctx context.Context, member *models.T
 	where := map[string]any{}
 	if member.ID != uuid.Nil {
 		where[models.TeamMemberTable.ID] = map[string]any{
-			"_eq": member.ID.String(),
+			"_eq": member.ID,
 		}
 	}
 	if member.TeamID != uuid.Nil {
 		where[models.TeamMemberTable.TeamID] = map[string]any{
-			"_eq": member.TeamID.String(),
+			"_eq": member.TeamID,
 		}
 	}
 	if member.UserID != nil {
 		where[models.TeamMemberTable.UserID] = map[string]any{
-			"_eq": member.UserID.String(),
+			"_eq": member.UserID,
 		}
 	}
 	if member.Role != "" {
@@ -157,7 +157,7 @@ func (s *PostgresTeamStore) FindPendingInvitation(ctx context.Context, teamId uu
 		s.db,
 		&map[string]any{
 			models.TeamInvitationTable.TeamID: map[string]any{
-				"_eq": teamId.String(),
+				"_eq": teamId,
 			},
 			models.TeamInvitationTable.Email: map[string]any{
 				"_eq": email,
@@ -166,7 +166,7 @@ func (s *PostgresTeamStore) FindPendingInvitation(ctx context.Context, teamId uu
 				"_eq": string(models.TeamInvitationStatusPending),
 			},
 			models.TeamInvitationTable.ExpiresAt: map[string]any{
-				"_gt": time.Now().Format(time.RFC3339Nano),
+				"_gt": time.Now(),
 			},
 		},
 	)
@@ -265,7 +265,7 @@ func (s *PostgresTeamStore) FindUserByID(ctx context.Context, userId uuid.UUID) 
 		s.db,
 		&map[string]any{
 			models.UserTable.ID: map[string]any{
-				"_eq": userId.String(),
+				"_eq": userId,
 			},
 		},
 	)
@@ -281,13 +281,13 @@ func (s *PostgresTeamStore) FindTeamInvitations(ctx context.Context, teamId uuid
 		s.db,
 		&map[string]any{
 			models.TeamInvitationTable.TeamID: map[string]any{
-				"_eq": teamId.String(),
+				"_eq": teamId,
 			},
 			models.TeamInvitationTable.Status: map[string]any{
 				"_eq": string(models.TeamInvitationStatusPending),
 			},
 			models.TeamInvitationTable.ExpiresAt: map[string]any{
-				"_gt": time.Now().Format(time.RFC3339Nano),
+				"_gt": time.Now(),
 			},
 		},
 		&map[string]string{
@@ -309,7 +309,7 @@ func (s *PostgresTeamStore) FindInvitationByID(ctx context.Context, invitationId
 		s.db,
 		&map[string]any{
 			models.TeamInvitationTable.ID: map[string]any{
-				"_eq": invitationId.String(),
+				"_eq": invitationId,
 			},
 		},
 	)
@@ -369,7 +369,7 @@ func (s *PostgresTeamStore) GetInvitationByID(ctx context.Context, invitationId 
 		s.db,
 		&map[string]any{
 			models.TeamInvitationTable.ID: map[string]any{
-				"_eq": invitationId.String(),
+				"_eq": invitationId,
 			},
 		},
 	)
@@ -406,10 +406,10 @@ func (s *PostgresTeamStore) DeleteTeamMember(ctx context.Context, teamId uuid.UU
 		s.db,
 		&map[string]any{
 			models.TeamMemberTable.TeamID: map[string]any{
-				"_eq": teamId.String(),
+				"_eq": teamId,
 			},
 			models.TeamMemberTable.UserID: map[string]any{
-				"_eq": userId.String(),
+				"_eq": userId,
 			},
 		},
 	)
@@ -459,7 +459,7 @@ func (s *PostgresTeamStore) CountOwnerTeamMembers(ctx context.Context, teamId uu
 		s.db,
 		&map[string]any{
 			models.TeamMemberTable.TeamID: map[string]any{
-				"_eq": teamId.String(),
+				"_eq": teamId,
 			},
 			models.TeamMemberTable.Role: map[string]any{
 				"_eq": string(models.TeamMemberRoleOwner),
@@ -479,7 +479,7 @@ func (s *PostgresTeamStore) CountTeamMembers(ctx context.Context, teamId uuid.UU
 		s.db,
 		&map[string]any{
 			models.TeamMemberTable.TeamID: map[string]any{
-				"_eq": teamId.String(),
+				"_eq": teamId,
 			},
 		},
 	)
@@ -514,10 +514,10 @@ func (s *PostgresTeamStore) FindTeamMemberByTeamAndUserId(ctx context.Context, t
 		s.db,
 		&map[string]any{
 			models.TeamMemberTable.UserID: map[string]any{
-				"_eq": userId.String(),
+				"_eq": userId,
 			},
 			models.TeamMemberTable.TeamID: map[string]any{
-				"_eq": teamId.String(),
+				"_eq": teamId,
 			},
 		},
 	)
@@ -548,7 +548,7 @@ func (s *PostgresTeamStore) FindLatestTeamMemberByUserID(ctx context.Context, us
 		s.db,
 		&map[string]any{
 			models.TeamMemberTable.UserID: map[string]any{
-				"_eq": userId.String(),
+				"_eq": userId,
 			},
 		},
 		&map[string]string{
@@ -573,7 +573,7 @@ func (s *PostgresTeamStore) DeleteTeam(ctx context.Context, teamId uuid.UUID) er
 		s.db,
 		&map[string]any{
 			models.TeamTable.ID: map[string]any{
-				"_eq": teamId.String(),
+				"_eq": teamId,
 			},
 		},
 	)
@@ -590,7 +590,7 @@ func (s *PostgresTeamStore) FindTeamByID(ctx context.Context, teamId uuid.UUID) 
 		s.db,
 		&map[string]any{
 			models.TeamTable.ID: map[string]any{
-				"_eq": teamId.String(),
+				"_eq": teamId,
 			},
 		},
 	)
@@ -642,7 +642,7 @@ func (s *PostgresTeamStore) CountTeamMembersByUserID(ctx context.Context, userId
 		s.db,
 		&map[string]any{
 			models.TeamMemberTable.UserID: map[string]any{
-				"_eq": userId.String(),
+				"_eq": userId,
 			},
 			models.TeamMemberTable.Active: map[string]any{
 				"_eq": true,

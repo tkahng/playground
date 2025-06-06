@@ -52,8 +52,8 @@ type PaymentStripeStore interface {
 	CountSubscriptions(ctx context.Context, filter *shared.StripeSubscriptionListFilter) (int64, error)
 	CreateCustomer(ctx context.Context, customer *models.StripeCustomer) (*models.StripeCustomer, error)
 	FindCustomer(ctx context.Context, customer *models.StripeCustomer) (*models.StripeCustomer, error)
+	FindLatestActiveSubscriptionWithPriceByCustomerId(ctx context.Context, customerId string) (*models.StripeSubscription, error)
 	FindProductByStripeId(ctx context.Context, productId string) (*models.StripeProduct, error)
-	FindLatestActiveSubscriptionWithPriceByCustomerId(ctx context.Context, customerId string) (*models.SubscriptionWithPrice, error)
 	FindSubscriptionsWithPriceProductByIds(ctx context.Context, subscriptionIds ...string) ([]*models.StripeSubscription, error)
 	FindValidPriceById(ctx context.Context, priceId string) (*models.StripePrice, error)
 	IsFirstSubscription(ctx context.Context, customerID string) (bool, error)
@@ -197,14 +197,14 @@ func (srv *StripeService) VerifyAndUpdateTeamSubscriptionQuantity(ctx context.Co
 	if customer == nil {
 		return errors.New("no stripe customer id")
 	}
-	subs, err := srv.paymentStore.FindLatestActiveSubscriptionWithPriceByCustomerId(ctx, customer.ID)
+	sub, err := srv.paymentStore.FindLatestActiveSubscriptionWithPriceByCustomerId(ctx, customer.ID)
 	if err != nil {
 		return err
 	}
-	if subs == nil {
+	if sub == nil {
 		return errors.New("no subscription")
 	}
-	sub := subs.Subscription
+
 	count, err := srv.paymentStore.CountTeamMembers(ctx, teamId)
 	if err != nil {
 		return err
@@ -213,7 +213,11 @@ func (srv *StripeService) VerifyAndUpdateTeamSubscriptionQuantity(ctx context.Co
 		return nil
 	}
 	if sub.Quantity != count {
-		_, err := srv.client.UpdateItemQuantity(sub.ItemID, sub.PriceID, count)
+		_, err := srv.client.UpdateItemQuantity(
+			sub.ItemID,
+			sub.PriceID,
+			count,
+		)
 		if err != nil {
 			return err
 		}

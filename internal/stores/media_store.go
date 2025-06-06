@@ -59,7 +59,7 @@ func (s *MediaStore) FindMediaByID(ctx context.Context, mediaId uuid.UUID) (*mod
 		s.dbx,
 		&map[string]any{
 			"id": map[string]any{
-				"_eq": mediaId.String(),
+				"_eq": mediaId,
 			},
 		},
 	)

@@ -23,7 +23,7 @@ func (p *PostgresConstraintStore) FindLatestActiveSubscriptionByTeamId(ctx conte
 		&map[string]any{
 			models.StripeSubscriptionTable.StripeCustomer: map[string]any{
 				models.StripeCustomerTable.TeamID: map[string]any{
-					"_eq": teamId.String(),
+					"_eq": teamId,
 				},
 			},
 			models.StripeSubscriptionTable.Status: map[string]any{"_in": []string{
@@ -67,7 +67,7 @@ func (p *PostgresConstraintStore) FindLatestActiveSubscriptionByUserId(ctx conte
 		&map[string]any{
 			models.StripeSubscriptionTable.StripeCustomer: map[string]any{
 				models.StripeCustomerTable.UserID: map[string]any{
-					"_eq": userId.String(),
+					"_eq": userId,
 				},
 			},
 			models.StripeSubscriptionTable.Status: map[string]any{
@@ -99,7 +99,7 @@ func (p *PostgresConstraintStore) FindUserById(ctx context.Context, userId uuid.
 		p.db,
 		&map[string]any{
 			models.UserTable.ID: map[string]any{
-				"_eq": userId.String(),
+				"_eq": userId,
 			},
 		},
 	)

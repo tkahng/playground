@@ -118,10 +118,10 @@ func (u *PostgresAccountStore) CountUserAccounts(ctx context.Context, filter *sh
 func (u *PostgresAccountStore) FindUserAccountByUserIdAndProvider(ctx context.Context, userId uuid.UUID, provider models.Providers) (*models.UserAccount, error) {
 	return crudrepo.UserAccount.GetOne(ctx, u.db, &map[string]any{
 		models.UserAccountTable.UserID: map[string]any{
-			"_eq": userId.String(),
+			"_eq": userId,
 		},
 		models.UserAccountTable.Provider: map[string]any{
-			"_eq": provider.String(),
+			"_eq": provider,
 		},
 	})
 }
@@ -145,10 +145,10 @@ func (u *PostgresAccountStore) UnlinkAccount(ctx context.Context, userId uuid.UU
 		u.db,
 		&map[string]any{
 			models.UserAccountTable.UserID: map[string]any{
-				"_eq": userId.String(),
+				"_eq": userId,
 			},
 			models.UserAccountTable.Provider: map[string]any{
-				"_eq": provider.String(),
+				"_eq": provider,
 			},
 		},
 	)
@@ -199,7 +199,7 @@ func (u *PostgresAccountStore) UpdateUserPassword(ctx context.Context, userId uu
 		u.db,
 		&map[string]any{
 			models.UserAccountTable.UserID: map[string]any{
-				"_eq": userId.String(),
+				"_eq": userId,
 			},
 			models.UserAccountTable.Provider: map[string]any{
 				"_eq": string(models.ProvidersCredentials),

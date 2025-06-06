@@ -2,7 +2,6 @@ package stores
 
 import (
 	"context"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/crudrepo"
@@ -43,22 +42,22 @@ func (s *PostgresNotificationStore) FindNotification(ctx context.Context, args *
 	where := map[string]any{}
 	if args.ID != uuid.Nil {
 		where["id"] = map[string]any{
-			"_eq": args.ID.String(),
+			"_eq": args.ID,
 		}
 	}
 	if args.UserID != nil {
 		where["user_id"] = map[string]any{
-			"_eq": args.UserID.String(),
+			"_eq": args.UserID,
 		}
 	}
 	if args.TeamID != nil {
 		where["team_id"] = map[string]any{
-			"_eq": args.TeamID.String(),
+			"_eq": args.TeamID,
 		}
 	}
 	if args.TeamMemberID != nil {
 		where["team_member_id"] = map[string]any{
-			"_eq": args.TeamMemberID.String(),
+			"_eq": args.TeamMemberID,
 		}
 	}
 	if args.Type != "" {
@@ -73,7 +72,7 @@ func (s *PostgresNotificationStore) FindNotification(ctx context.Context, args *
 	}
 	if args.ReadAt != nil {
 		where["read_at"] = map[string]any{
-			"_gte": args.ReadAt.Format(time.RFC3339Nano),
+			"_gte": args.ReadAt,
 		}
 	}
 

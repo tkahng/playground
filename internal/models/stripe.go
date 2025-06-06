@@ -21,6 +21,8 @@ type StripeProduct struct {
 	Permissions []*Permission     `db:"permissions" src:"id" dest:"product_id" table:"permissions" through:"product_permissions,permission_id,id" json:"permissions,omitempty"`
 }
 
+// type StripeProduct
+
 type stripeProductTable struct {
 	ID          string
 	Active      string
@@ -47,6 +49,22 @@ var StripeProductTable = stripeProductTable{
 	Prices:      "prices",
 	Roles:       "roles",
 	Permissions: "permissions",
+}
+
+var StripeProductTableName = "stripe_products"
+
+var StripeProductTablePrefix = stripeProductTable{
+	ID:          StripeProductTableName + "." + "id",
+	Active:      StripeProductTableName + "." + "active",
+	Name:        StripeProductTableName + "." + "name",
+	Description: StripeProductTableName + "." + "description",
+	Image:       StripeProductTableName + "." + "image",
+	Metadata:    StripeProductTableName + "." + "metadata",
+	CreatedAt:   StripeProductTableName + "." + "created_at",
+	UpdatedAt:   StripeProductTableName + "." + "updated_at",
+	Prices:      StripeProductTableName + "." + "prices",
+	Roles:       StripeProductTableName + "." + "roles",
+	Permissions: StripeProductTableName + "." + "permissions",
 }
 
 type StripePricingType string
@@ -106,6 +124,8 @@ type stripePriceTable struct {
 	Subscriptions   string
 }
 
+var StripePriceTableName = "stripe_prices"
+
 var StripePriceTable = stripePriceTable{
 	ID:              "id",
 	ProductID:       "product_id",
@@ -123,6 +143,23 @@ var StripePriceTable = stripePriceTable{
 	Product:         "product",
 	Subscriptions:   "subscriptions",
 }
+var StripePriceTablePrefix = stripePriceTable{
+	ID:              StripePriceTableName + "." + "id",
+	ProductID:       StripePriceTableName + "." + "product_id",
+	LookupKey:       StripePriceTableName + "." + "lookup_key",
+	Active:          StripePriceTableName + "." + "active",
+	UnitAmount:      StripePriceTableName + "." + "unit_amount",
+	Currency:        StripePriceTableName + "." + "currency",
+	Type:            StripePriceTableName + "." + "type",
+	Interval:        StripePriceTableName + "." + "interval",
+	IntervalCount:   StripePriceTableName + "." + "interval_count",
+	TrialPeriodDays: StripePriceTableName + "." + "trial_period_days",
+	Metadata:        StripePriceTableName + "." + "metadata",
+	CreatedAt:       StripePriceTableName + "." + "created_at",
+	UpdatedAt:       StripePriceTableName + "." + "updated_at",
+	Product:         StripePriceTableName + "." + "product",
+	Subscriptions:   StripePriceTableName + "." + "subscriptions",
+}
 
 type StripeSubscriptionStatus string
 
@@ -136,6 +173,10 @@ const (
 	StripeSubscriptionStatusUnpaid            StripeSubscriptionStatus = "unpaid"
 	StripeSubscriptionStatusPaused            StripeSubscriptionStatus = "paused"
 )
+
+func (s StripeSubscriptionStatus) String() string {
+	return string(s)
+}
 
 type StripeSubscription struct {
 	_                  struct{}                 `db:"stripe_subscriptions" json:"-"`
@@ -184,6 +225,7 @@ type stripeSubscriptionTable struct {
 	Price              string
 }
 
+var StripeSubscriptionTableName = "stripe_subscriptions"
 var StripeSubscriptionTable = stripeSubscriptionTable{
 	ID:                 "id",
 	StripeCustomerID:   "stripe_customer_id",
@@ -205,6 +247,29 @@ var StripeSubscriptionTable = stripeSubscriptionTable{
 	UpdatedAt:          "updated_at",
 	StripeCustomer:     "stripe_customer",
 	Price:              "price",
+}
+
+var StripeSubscriptionTablePrefix = stripeSubscriptionTable{
+	ID:                 StripeSubscriptionTableName + "." + "id",
+	StripeCustomerID:   StripeSubscriptionTableName + "." + "stripe_customer_id",
+	Status:             StripeSubscriptionTableName + "." + "status",
+	Metadata:           StripeSubscriptionTableName + "." + "metadata",
+	ItemID:             StripeSubscriptionTableName + "." + "item_id",
+	PriceID:            StripeSubscriptionTableName + "." + "price_id",
+	Quantity:           StripeSubscriptionTableName + "." + "quantity",
+	CancelAtPeriodEnd:  StripeSubscriptionTableName + "." + "cancel_at_period_end",
+	Created:            StripeSubscriptionTableName + "." + "created",
+	CurrentPeriodStart: StripeSubscriptionTableName + "." + "current_period_start",
+	CurrentPeriodEnd:   StripeSubscriptionTableName + "." + "current_period_end",
+	EndedAt:            StripeSubscriptionTableName + "." + "ended_at",
+	CancelAt:           StripeSubscriptionTableName + "." + "cancel_at",
+	CanceledAt:         StripeSubscriptionTableName + "." + "canceled_at",
+	TrialStart:         StripeSubscriptionTableName + "." + "trial_start",
+	TrialEnd:           StripeSubscriptionTableName + "." + "trial_end",
+	CreatedAt:          StripeSubscriptionTableName + "." + "created_at",
+	UpdatedAt:          StripeSubscriptionTableName + "." + "updated_at",
+	StripeCustomer:     StripeSubscriptionTableName + "." + "stripe_customer",
+	Price:              StripeSubscriptionTableName + "." + "price",
 }
 
 type StripeCustomerType string
@@ -229,6 +294,7 @@ type StripeCustomer struct {
 	Team           *Team                 `db:"team" src:"team_id" dest:"id" table:"teams" json:"team,omitempty"`
 	User           *User                 `db:"user" src:"user_id" dest:"id" table:"users" json:"user,omitempty"`
 	Subscriptions  []*StripeSubscription `db:"subscriptions" src:"id" dest:"stripe_customer_id" table:"stripe_subscriptions" json:"subscriptions,omitempty"`
+	// scannable
 }
 
 type stripeCustomerTable struct {
@@ -247,6 +313,8 @@ type stripeCustomerTable struct {
 	Subscriptions  string
 }
 
+var StripeCustomerTableName = "stripe_customers"
+
 var StripeCustomerTable = stripeCustomerTable{
 	ID:             "id",
 	Email:          "email",
@@ -261,6 +329,22 @@ var StripeCustomerTable = stripeCustomerTable{
 	Team:           "team",
 	User:           "user",
 	Subscriptions:  "subscriptions",
+}
+
+var StripeCustomerTablePrefix = stripeCustomerTable{
+	ID:             StripeCustomerTableName + "." + "id",
+	Email:          StripeCustomerTableName + "." + "email",
+	Name:           StripeCustomerTableName + "." + "name",
+	UserID:         StripeCustomerTableName + "." + "user_id",
+	TeamID:         StripeCustomerTableName + "." + "team_id",
+	CustomerType:   StripeCustomerTableName + "." + "customer_type",
+	BillingAddress: StripeCustomerTableName + "." + "billing_address",
+	PaymentMethod:  StripeCustomerTableName + "." + "payment_method",
+	CreatedAt:      StripeCustomerTableName + "." + "created_at",
+	UpdatedAt:      StripeCustomerTableName + "." + "updated_at",
+	Team:           StripeCustomerTableName + "." + "team",
+	User:           StripeCustomerTableName + "." + "user",
+	Subscriptions:  StripeCustomerTableName + "." + "subscriptions",
 }
 
 type SubscriptionWithPrice struct {

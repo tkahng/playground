@@ -138,10 +138,10 @@ func (m *MockPaymentStore) CreateProductPermissions(ctx context.Context, product
 }
 
 // FindLatestActiveSubscriptionWithPriceByCustomerId implements PaymentStore.
-func (m *MockPaymentStore) FindLatestActiveSubscriptionWithPriceByCustomerId(ctx context.Context, customerId string) (*models.SubscriptionWithPrice, error) {
+func (m *MockPaymentStore) FindLatestActiveSubscriptionWithPriceByCustomerId(ctx context.Context, customerId string) (*models.StripeSubscription, error) {
 	args := m.Called(ctx, customerId)
 	if args.Get(0) != nil {
-		return args.Get(0).(*models.SubscriptionWithPrice), args.Error(1)
+		return args.Get(0).(*models.StripeSubscription), args.Error(1)
 	}
 	return nil, args.Error(1)
 }

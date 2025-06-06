@@ -3,6 +3,7 @@ package stores
 import (
 	"context"
 	"errors"
+	"fmt"
 	"slices"
 	"strings"
 	"time"
@@ -148,6 +149,36 @@ func (s *PostgresStripeStore) LoadPricesWithProductByPriceIds(ctx context.Contex
 	return prices, nil
 }
 
+func (s *PostgresStripeStore) LoadSubscriptionsPriceProduct(ctx context.Context, subscriptions ...*models.StripeSubscription) error {
+	if len(subscriptions) == 0 {
+		return nil
+	}
+	priceIds := mapper.Map(subscriptions, func(sub *models.StripeSubscription) string {
+		if sub == nil || sub.PriceID == "" {
+			return ""
+		}
+		return sub.PriceID
+	})
+	prices, err := s.LoadPricesWithProductByPriceIds(ctx, priceIds...)
+	if err != nil {
+		return err
+	}
+	for i, sub := range subscriptions {
+		if sub == nil {
+			continue
+		}
+		price := prices[i]
+		if price == nil {
+			continue
+		}
+		if price.ID != sub.PriceID {
+			continue
+		}
+		sub.Price = price
+	}
+	return nil
+}
+
 func (s *PostgresStripeStore) LoadSubscriptionsByIds(ctx context.Context, subscriptionIds ...string) ([]*models.StripeSubscription, error) {
 	if len(subscriptionIds) == 0 {
 		return nil, nil
@@ -176,164 +207,125 @@ func (s *PostgresStripeStore) LoadSubscriptionsByIds(ctx context.Context, subscr
 	}), nil
 }
 
-func (s *PostgresStripeStore) LoadSubscriptionsWithPriceProductBySubscriptionIds(ctx context.Context, subscriptionIds ...string) ([]*models.StripeSubscription, error) {
-	if len(subscriptionIds) == 0 {
+func (s *PostgresStripeStore) FindActiveSubscriptionsByCustomerIds(ctx context.Context, customerIds ...string) ([]*models.StripeSubscription, error) {
+	if len(customerIds) == 0 {
 		return nil, nil
 	}
-	subscriptions, err := s.LoadSubscriptionsByIds(ctx, subscriptionIds...)
+	qs := squirrel.Select()
+	qs = SelectStripeSubscriptionColumns(qs, "")
+	qs = qs.
+		From("stripe_subscriptions").
+		Where(squirrel.Or{
+			squirrel.And{
+				squirrel.Eq{
+					"stripe_subscriptions.stripe_customer_id": customerIds,
+				},
+				squirrel.Eq{
+					"stripe_subscriptions.status": models.StripeSubscriptionStatusActive,
+				},
+			},
+			squirrel.And{
+				squirrel.Eq{
+					"stripe_subscriptions.stripe_customer_id": customerIds,
+				},
+				squirrel.Eq{
+					"stripe_subscriptions.status": models.StripeSubscriptionStatusTrialing,
+				},
+				squirrel.Gt{
+					"stripe_subscriptions.trial_end": time.Now().Format(time.RFC3339Nano),
+				},
+			},
+		})
+	subscriptions, err := database.QueryWithBuilder[*models.StripeSubscription](ctx, s.db, qs.PlaceholderFormat(squirrel.Dollar))
 	if err != nil {
 		return nil, err
 	}
-	priceIds := mapper.Map(subscriptions, func(sub *models.StripeSubscription) string {
-		if sub == nil || sub.PriceID == "" {
+	return mapper.MapToPointer(subscriptions, customerIds, func(s *models.StripeSubscription) string {
+
+		if s == nil {
 			return ""
 		}
-		return sub.PriceID
-	})
-
-	pricesWithProduct, err := s.LoadPricesWithProductByPriceIds(ctx, priceIds...)
-	if err != nil {
-		return nil, err
-	}
-	for i, sub := range subscriptions {
-		if sub == nil {
-			continue
-		}
-		price := pricesWithProduct[i]
-		if price == nil {
-			continue
-		}
-		if price.ID != sub.PriceID {
-			continue
-		}
-		sub.Price = price
-	}
-	return subscriptions, nil
+		return s.StripeCustomerID
+	}), nil
 }
 
-// func (s *PostgresStripeStore) FindActiveProductsAndPrices(ctx context.Context, paginationInput *shared.PaginationInput) ([]*models.StripeProduct, error) {
-// 	limit, offset := database.Paginate(paginationInput)
-// 	prodquery := squirrel.Select("*").
-// 		From("stripe_products").
-// 		Where(squirrel.Eq{models.StripeProductTable.Active: true}).
-// 		OrderBy("metadata DESC").
-// 		Limit(uint64(*limit)).
-// 		Offset(uint64(*offset)).
-// 		PlaceholderFormat(squirrel.Dollar)
-// 	products, err := database.QueryWithBuilder[*models.StripeProduct](
-// 		ctx,
-// 		s.db,
-// 		squirrel.Select("sp.*").
-// 			From("stripe_products sp").
-// 			Where(squirrel.Eq{models.StripeProductTable.Active: true}).
-// 			OrderBy("sp.created_at DESC").
-// 			Limit(uint64(*limit)).
-// 			Offset(uint64(*offset)).
-// 			PlaceholderFormat(squirrel.Dollar),
-// 	)
-
+// func (s *PostgresStripeStore) FindActiveSubscriptionsByTeamIds(ctx context.Context, teamIds ...uuid.UUID) ([]*models.StripeSubscription, error) {
+// 	if len(teamIds) == 0 {
+// 		return nil, nil
+// 	}
+// 	qs := squirrel.Select()
+// 	qs = SelectStripeSubscriptionColumns(qs, "")
+// 	qs = SelectStripeCustomerColumns(qs, "stripe_customer")
+// 	qs = qs.
+// 		From("stripe_subscriptions").
+// 		Join("stripe_customers ON stripe_subscriptions.stripe_customer_id = stripe_customers.id").
+// 		Where(squirrel.Or{
+// 			squirrel.And{
+// 				squirrel.Eq{
+// 					"stripe_customers.team_id": teamIds,
+// 				},
+// 				squirrel.Eq{
+// 					"stripe_subscriptions.status": models.StripeSubscriptionStatusActive,
+// 				},
+// 			},
+// 			squirrel.And{
+// 				squirrel.Eq{
+// 					"stripe_customers.team_id": teamIds,
+// 				},
+// 				squirrel.Eq{
+// 					"stripe_subscriptions.status": models.StripeSubscriptionStatusTrialing,
+// 				},
+// 				squirrel.Gt{
+// 					"stripe_subscriptions.trial_end": time.Now().Format(time.RFC3339Nano),
+// 				},
+// 			},
+// 		})
+// 	subscriptions, err := database.QueryWithBuilder[*models.StripeSubscription](ctx, s.db, qs.PlaceholderFormat(squirrel.Dollar))
 // 	if err != nil {
 // 		return nil, err
 // 	}
-// 	return products, nil
-// }
+// 	return mapper.MapToPointer(subscriptions, teamIds, func(s *models.StripeSubscription) uuid.UUID {
 
-func (s *PostgresStripeStore) FindStripeCustomersByTeamIds(ctx context.Context, teamIds ...uuid.UUID) ([]*models.StripeCustomer, error) {
-	teamStringIds := mapper.Map(teamIds, func(id uuid.UUID) string {
-		return id.String()
-	})
-	where := map[string]any{
-		models.StripeCustomerTable.TeamID: map[string]any{
-			"_in": teamStringIds,
-		},
-	}
-	customers, err := crudrepo.StripeCustomer.Get(
-		ctx,
-		s.db,
-		&where,
-		nil,
-		nil,
-		nil,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	return customers, nil
-}
-
-func (s *PostgresStripeStore) FindActiveSubscriptionsByCustomerIds(ctx context.Context, stringTeamIds ...string) ([]*models.StripeSubscription, error) {
-	if len(stringTeamIds) == 0 {
-		return nil, nil
-	}
-	where := map[string]any{
-		"_or": []map[string]any{
-			{
-				models.StripeSubscriptionTable.StripeCustomerID: map[string]any{
-					"_in": stringTeamIds,
-				},
-				models.StripeSubscriptionTable.Status: map[string]any{
-					"_eq": string(models.StripeSubscriptionStatusActive),
-				},
-			},
-			{
-				models.StripeSubscriptionTable.StripeCustomerID: map[string]any{
-					"_in": stringTeamIds,
-				},
-				models.StripeSubscriptionTable.Status: map[string]any{
-					"_eq": string(models.StripeSubscriptionStatusTrialing),
-				},
-				models.StripeSubscriptionTable.TrialEnd: map[string]any{
-					"_gt": time.Now().Format(time.RFC3339Nano),
-				},
-			},
-		},
-	}
-	subscriptions, err := crudrepo.StripeSubscription.Get(
-		ctx,
-		s.db,
-		&where,
-		nil,
-		nil,
-		nil,
-	)
-	if err != nil {
-		return nil, err
-	}
-	return subscriptions, nil
-}
-
+//			if s == nil || s.StripeCustomer == nil || s.StripeCustomer.TeamID == nil {
+//				return uuid.Nil
+//			}
+//			return *s.StripeCustomer.TeamID
+//		}), nil
+//	}
 func (s *PostgresStripeStore) FindActiveSubscriptionsByTeamIds(ctx context.Context, teamIds ...uuid.UUID) ([]*models.StripeSubscription, error) {
 	if len(teamIds) == 0 {
 		return nil, nil
 	}
-	stringTeamIds := mapper.Map(teamIds, func(id uuid.UUID) string {
-		return id.String()
-	})
 	where := map[string]any{
 		"_or": []map[string]any{
 			{
-				models.StripeSubscriptionTable.StripeCustomer: map[string]any{
-					models.StripeCustomerTable.TeamID: map[string]any{
-						"_in": stringTeamIds,
+				"_and": []map[string]any{
+					{
+						models.StripeSubscriptionTable.StripeCustomer: map[string]any{
+							models.StripeCustomerTable.TeamID: map[string]any{
+								"_in": teamIds,
+							},
+						},
 					},
-				},
-				models.StripeSubscriptionTable.Status: map[string]any{
-					"_eq": string(models.StripeSubscriptionStatusActive),
+					{
+						models.StripeSubscriptionTable.Status: map[string]any{
+							"_eq": models.StripeSubscriptionStatusActive,
+						},
+					},
 				},
 			},
 			{
-				models.StripeSubscriptionTable.StripeCustomer: map[string]any{
+				"_and": []map[string]any{{models.StripeSubscriptionTable.StripeCustomer: map[string]any{
 					models.StripeCustomerTable.TeamID: map[string]any{
-						"_in": stringTeamIds,
+						"_in": teamIds,
 					},
-				},
-				models.StripeSubscriptionTable.Status: map[string]any{
-					"_eq": string(models.StripeSubscriptionStatusTrialing),
-				},
-				models.StripeSubscriptionTable.TrialEnd: map[string]any{
-					"_gt": time.Now().Format(time.RFC3339Nano),
-				},
+				}},
+					{models.StripeSubscriptionTable.Status: map[string]any{
+						"_eq": models.StripeSubscriptionStatusTrialing,
+					}},
+					{models.StripeSubscriptionTable.TrialEnd: map[string]any{
+						"_gt": time.Now(),
+					}}},
 			},
 		},
 	}
@@ -350,53 +342,48 @@ func (s *PostgresStripeStore) FindActiveSubscriptionsByTeamIds(ctx context.Conte
 	}
 	return subscriptions, nil
 }
-
 func (s *PostgresStripeStore) FindActiveSubscriptionsByUserIds(ctx context.Context, userIds ...uuid.UUID) ([]*models.StripeSubscription, error) {
 	if len(userIds) == 0 {
 		return nil, nil
 	}
-	stringUserIds := mapper.Map(userIds, func(id uuid.UUID) string {
-		return id.String()
-	})
-	where := map[string]any{
-		"_or": []map[string]any{
-			{
-				models.StripeSubscriptionTable.StripeCustomer: map[string]any{
-					models.StripeCustomerTable.UserID: map[string]any{
-						"_in": stringUserIds,
-					},
+	qs := squirrel.Select()
+	qs = SelectStripeSubscriptionColumns(qs, "")
+	qs = SelectStripeCustomerColumns(qs, "stripe_customer")
+	qs = qs.
+		From("stripe_subscriptions").
+		Join("stripe_customers ON stripe_subscriptions.stripe_customer_id = stripe_customers.id").
+		Where(squirrel.Or{
+			squirrel.And{
+				squirrel.Eq{
+					"stripe_customers.user_id": userIds,
 				},
-				models.StripeSubscriptionTable.Status: map[string]any{
-					"_eq": string(models.StripeSubscriptionStatusActive),
-				},
-			},
-			{
-				models.StripeSubscriptionTable.StripeCustomer: map[string]any{
-					models.StripeCustomerTable.UserID: map[string]any{
-						"_in": stringUserIds,
-					},
-				},
-				models.StripeSubscriptionTable.Status: map[string]any{
-					"_eq": string(models.StripeSubscriptionStatusTrialing),
-				},
-				models.StripeSubscriptionTable.TrialEnd: map[string]any{
-					"_gt": time.Now().Format(time.RFC3339Nano),
+				squirrel.Eq{
+					"stripe_subscriptions.status": models.StripeSubscriptionStatusActive,
 				},
 			},
-		},
-	}
-	subscriptions, err := crudrepo.StripeSubscription.Get(
-		ctx,
-		s.db,
-		&where,
-		nil,
-		nil,
-		nil,
-	)
+			squirrel.And{
+				squirrel.Eq{
+					"stripe_customers.user_id": userIds,
+				},
+				squirrel.Eq{
+					"stripe_subscriptions.status": models.StripeSubscriptionStatusTrialing,
+				},
+				squirrel.Gt{
+					"stripe_subscriptions.trial_end": time.Now().Format(time.RFC3339Nano),
+				},
+			},
+		})
+	subscriptions, err := database.QueryWithBuilder[*models.StripeSubscription](ctx, s.db, qs.PlaceholderFormat(squirrel.Dollar))
 	if err != nil {
 		return nil, err
 	}
-	return subscriptions, nil
+	return mapper.MapToPointer(subscriptions, userIds, func(s *models.StripeSubscription) uuid.UUID {
+
+		if s == nil || s.StripeCustomer == nil || s.StripeCustomer.UserID == nil {
+			return uuid.Nil
+		}
+		return *s.StripeCustomer.UserID
+	}), nil
 }
 
 func (s *PostgresStripeStore) CreateCustomer(ctx context.Context, customer *models.StripeCustomer) (*models.StripeCustomer, error) {
@@ -519,12 +506,12 @@ func (s *PostgresStripeStore) FindCustomer(ctx context.Context, customer *models
 	}
 	if customer.TeamID != nil {
 		where[models.StripeCustomerTable.TeamID] = map[string]any{
-			"_eq": customer.TeamID.String(),
+			"_eq": customer.TeamID,
 		}
 	}
 	if customer.UserID != nil {
 		where[models.StripeCustomerTable.UserID] = map[string]any{
-			"_eq": customer.UserID.String(),
+			"_eq": customer.UserID,
 		}
 	}
 	data, err := crudrepo.StripeCustomer.GetOne(
@@ -549,63 +536,97 @@ func (s *PostgresStripeStore) FindProductByStripeId(ctx context.Context, product
 	return database.OptionalRow(data, err)
 }
 
-const (
-	getSubscriptionWithPriceProductByIdQuery = `
-SELECT ss.id AS "id",
-        ss.stripe_customer_id AS "stripe_customer_id",
-        ss.status AS "status",
-        ss.metadata AS "metadata",
-		ss.item_id AS "item_id",
-        ss.price_id AS "price_id",
-        ss.quantity AS "quantity",
-        ss.cancel_at_period_end AS "cancel_at_period_end",
-        ss.created AS "created",
-        ss.current_period_start AS "current_period_start",
-        ss.current_period_end AS "current_period_end",
-        ss.ended_at AS "ended_at",
-        ss.cancel_at AS "cancel_at",
-        ss.canceled_at AS "canceled_at",
-        ss.trial_start AS "trial_start",
-        ss.trial_end AS "trial_end",
-        ss.created_at AS "created_at",
-        ss.updated_at AS "updated_at",
-        sp.id AS "price.id",
-        sp.product_id AS "price.product_id",
-        sp.lookup_key AS "price.lookup_key",
-        sp.active AS "price.active",
-        sp.unit_amount AS "price.unit_amount",
-        sp.currency AS "price.currency",
-        sp.type AS "price.type",
-        sp.interval AS "price.interval",
-        sp.interval_count AS "price.interval_count",
-        sp.trial_period_days AS "price.trial_period_days",
-        sp.metadata AS "price.metadata",
-        sp.created_at AS "price.created_at",
-        sp.updated_at AS "price.updated_at",
-        p.id AS "price.product.id",
-        p.name AS "price.product.name",
-        p.description AS "price.product.description",
-        p.active AS "price.product.active",
-        p.image AS "price.product.image",
-        p.metadata AS "price.product.metadata",
-        p.created_at AS "price.product.created_at",
-        p.updated_at AS "price.product.updated_at"
-FROM public.stripe_subscriptions ss
-        JOIN public.stripe_prices sp ON ss.price_id = sp.id
-        JOIN public.stripe_products p ON sp.product_id = p.id
-		WHERE ss.id	= ANY (
-                $1::text []
-        );
-		`
-)
-
-// FindSubscriptionWithPriceById implements PaymentStore.
 func (s *PostgresStripeStore) FindSubscriptionsWithPriceProductByIds(ctx context.Context, subscriptionIds ...string) ([]*models.StripeSubscription, error) {
-	data, err := database.QueryAll[*models.StripeSubscription](ctx, s.db, getSubscriptionWithPriceProductByIdQuery, subscriptionIds)
+	qs := squirrel.Select()
+	qs = SelectStripeSubscriptionColumns(qs, "")
+	qs = SelectStripePriceColumns(qs, "price")
+	qs = SelectStripeProductColumns(qs, "price.product")
+	qs = qs.From(models.StripeSubscriptionTableName).
+		Join(models.StripePriceTableName + " ON " + models.StripeSubscriptionTablePrefix.PriceID + " = " + models.StripePriceTablePrefix.ID).
+		Join(models.StripeProductTableName + " ON " + models.StripePriceTablePrefix.ProductID + " = " + models.StripeProductTablePrefix.ID).
+		Where(squirrel.Eq{models.StripeSubscriptionTablePrefix.ID: subscriptionIds})
+	data, err := database.QueryWithBuilder[*models.StripeSubscription](ctx, s.db, qs.PlaceholderFormat(squirrel.Dollar))
 	if err != nil {
 		return nil, err
 	}
 	return data, nil
+}
+
+func SelectStripeSubscriptionColumns(qs squirrel.SelectBuilder, prefix string) squirrel.SelectBuilder {
+	qs = qs.
+		Column(models.StripeSubscriptionTablePrefix.ID + " AS " + Quote(WithPrefix(prefix, models.StripeSubscriptionTable.ID))).
+		Column(models.StripeSubscriptionTablePrefix.StripeCustomerID + " AS " + Quote(WithPrefix(prefix, models.StripeSubscriptionTable.StripeCustomerID))).
+		Column(models.StripeSubscriptionTablePrefix.Status + " AS " + Quote(WithPrefix(prefix, models.StripeSubscriptionTable.Status))).
+		Column(models.StripeSubscriptionTablePrefix.Metadata + " AS " + Quote(WithPrefix(prefix, models.StripeSubscriptionTable.Metadata))).
+		Column(models.StripeSubscriptionTablePrefix.ItemID + " AS " + Quote(WithPrefix(prefix, models.StripeSubscriptionTable.ItemID))).
+		Column(models.StripeSubscriptionTablePrefix.PriceID + " AS " + Quote(WithPrefix(prefix, models.StripeSubscriptionTable.PriceID))).
+		Column(models.StripeSubscriptionTablePrefix.Quantity + " AS " + Quote(WithPrefix(prefix, models.StripeSubscriptionTable.Quantity))).
+		Column(models.StripeSubscriptionTablePrefix.CancelAtPeriodEnd + " AS " + Quote(WithPrefix(prefix, models.StripeSubscriptionTable.CancelAtPeriodEnd))).
+		Column(models.StripeSubscriptionTablePrefix.Created + " AS " + Quote(WithPrefix(prefix, models.StripeSubscriptionTable.Created))).
+		Column(models.StripeSubscriptionTablePrefix.CurrentPeriodStart + " AS " + Quote(WithPrefix(prefix, models.StripeSubscriptionTable.CurrentPeriodStart))).
+		Column(models.StripeSubscriptionTablePrefix.CurrentPeriodEnd + " AS " + Quote(WithPrefix(prefix, models.StripeSubscriptionTable.CurrentPeriodEnd))).
+		Column(models.StripeSubscriptionTablePrefix.EndedAt + " AS " + Quote(WithPrefix(prefix, models.StripeSubscriptionTable.EndedAt))).
+		Column(models.StripeSubscriptionTablePrefix.CancelAt + " AS " + Quote(WithPrefix(prefix, models.StripeSubscriptionTable.CancelAt))).
+		Column(models.StripeSubscriptionTablePrefix.CanceledAt + " AS " + Quote(WithPrefix(prefix, models.StripeSubscriptionTable.CanceledAt))).
+		Column(models.StripeSubscriptionTablePrefix.TrialStart + " AS " + Quote(WithPrefix(prefix, models.StripeSubscriptionTable.TrialStart))).
+		Column(models.StripeSubscriptionTablePrefix.TrialEnd + " AS " + Quote(WithPrefix(prefix, models.StripeSubscriptionTable.TrialEnd))).
+		Column(models.StripeSubscriptionTablePrefix.CreatedAt + " AS " + Quote(WithPrefix(prefix, models.StripeSubscriptionTable.CreatedAt))).
+		Column(models.StripeSubscriptionTablePrefix.UpdatedAt + " AS " + Quote(WithPrefix(prefix, models.StripeSubscriptionTable.UpdatedAt)))
+	return qs
+}
+
+func SelectStripeProductColumns(qs squirrel.SelectBuilder, prefix string) squirrel.SelectBuilder {
+	qs = qs.Column(models.StripeProductTablePrefix.ID + " AS " + Quote(WithPrefix(prefix, models.StripeProductTable.ID))).
+		Column(models.StripeProductTablePrefix.Name + " AS " + Quote(WithPrefix(prefix, models.StripeProductTable.Name))).
+		Column(models.StripeProductTablePrefix.Description + " AS " + Quote(WithPrefix(prefix, models.StripeProductTable.Description))).
+		Column(models.StripeProductTablePrefix.Active + " AS " + Quote(WithPrefix(prefix, models.StripeProductTable.Active))).
+		Column(models.StripeProductTablePrefix.Image + " AS " + Quote(WithPrefix(prefix, models.StripeProductTable.Image))).
+		Column(models.StripeProductTablePrefix.Metadata + " AS " + Quote(WithPrefix(prefix, models.StripeProductTable.Metadata))).
+		Column(models.StripeProductTablePrefix.CreatedAt + " AS " + Quote(WithPrefix(prefix, models.StripeProductTable.CreatedAt))).
+		Column(models.StripeProductTablePrefix.UpdatedAt + " AS " + Quote(WithPrefix(prefix, models.StripeProductTable.UpdatedAt)))
+
+	return qs
+}
+func WithPrefix(prefix, name string) string {
+	if prefix == "" {
+		return name
+	}
+	return fmt.Sprintf("%s.%s", prefix, name)
+}
+
+func Quote(name string) string {
+	return fmt.Sprintf("\"%s\"", name)
+}
+
+func SelectStripePriceColumns(qs squirrel.SelectBuilder, prefix string) squirrel.SelectBuilder {
+	qs = qs.Column(models.StripePriceTablePrefix.ID + " AS " + Quote(WithPrefix(prefix, models.StripePriceTable.ID))).
+		Column(models.StripePriceTablePrefix.ProductID + " AS " + Quote(WithPrefix(prefix, models.StripePriceTable.ProductID))).
+		Column(models.StripePriceTablePrefix.LookupKey + " AS " + Quote(WithPrefix(prefix, models.StripePriceTable.LookupKey))).
+		Column(models.StripePriceTablePrefix.Active + " AS " + Quote(WithPrefix(prefix, models.StripePriceTable.Active))).
+		Column(models.StripePriceTablePrefix.UnitAmount + " AS " + Quote(WithPrefix(prefix, models.StripePriceTable.UnitAmount))).
+		Column(models.StripePriceTablePrefix.Currency + " AS " + Quote(WithPrefix(prefix, models.StripePriceTable.Currency))).
+		Column(models.StripePriceTablePrefix.Type + " AS " + Quote(WithPrefix(prefix, models.StripePriceTable.Type))).
+		Column(models.StripePriceTablePrefix.Interval + " AS " + Quote(WithPrefix(prefix, models.StripePriceTable.Interval))).
+		Column(models.StripePriceTablePrefix.IntervalCount + " AS " + Quote(WithPrefix(prefix, models.StripePriceTable.IntervalCount))).
+		Column(models.StripePriceTablePrefix.TrialPeriodDays + " AS " + Quote(WithPrefix(prefix, models.StripePriceTable.TrialPeriodDays))).
+		Column(models.StripePriceTablePrefix.Metadata + " AS " + Quote(WithPrefix(prefix, models.StripePriceTable.Metadata))).
+		Column(models.StripePriceTablePrefix.CreatedAt + " AS " + Quote(WithPrefix(prefix, models.StripePriceTable.CreatedAt))).
+		Column(models.StripePriceTablePrefix.UpdatedAt + " AS " + Quote(WithPrefix(prefix, models.StripePriceTable.UpdatedAt)))
+	return qs
+}
+
+func SelectStripeCustomerColumns(qs squirrel.SelectBuilder, prefix string) squirrel.SelectBuilder {
+	qs = qs.Column(models.StripeCustomerTablePrefix.ID + " AS " + Quote(WithPrefix(prefix, models.StripeCustomerTable.ID))).
+		Column(models.StripeCustomerTablePrefix.Email + " AS " + Quote(WithPrefix(prefix, models.StripeCustomerTable.Email))).
+		Column(models.StripeCustomerTablePrefix.Name + " AS " + Quote(WithPrefix(prefix, models.StripeCustomerTable.Name))).
+		Column(models.StripeCustomerTablePrefix.UserID + " AS " + Quote(WithPrefix(prefix, models.StripeCustomerTable.UserID))).
+		Column(models.StripeCustomerTablePrefix.TeamID + " AS " + Quote(WithPrefix(prefix, models.StripeCustomerTable.TeamID))).
+		Column(models.StripeCustomerTablePrefix.CustomerType + " AS " + Quote(WithPrefix(prefix, models.StripeCustomerTable.CustomerType))).
+		Column(models.StripeCustomerTablePrefix.BillingAddress + " AS " + Quote(WithPrefix(prefix, models.StripeCustomerTable.BillingAddress))).
+		Column(models.StripeCustomerTablePrefix.PaymentMethod + " AS " + Quote(WithPrefix(prefix, models.StripeCustomerTable.PaymentMethod))).
+		Column(models.StripeCustomerTablePrefix.CreatedAt + " AS " + Quote(WithPrefix(prefix, models.StripeCustomerTable.CreatedAt))).
+		Column(models.StripeCustomerTablePrefix.UpdatedAt + " AS " + Quote(WithPrefix(prefix, models.StripeCustomerTable.UpdatedAt)))
+	return qs
 }
 
 const (
@@ -658,15 +679,33 @@ ORDER BY ss.created_at DESC;
 		`
 )
 
-func (s *PostgresStripeStore) FindLatestActiveSubscriptionWithPriceByCustomerId(ctx context.Context, customerId string) (*models.SubscriptionWithPrice, error) {
-	data, err := database.QueryAll[*models.SubscriptionWithPrice](ctx, s.db, getLatestActiveSubscriptionWithPriceByCustomerIdQuery, customerId)
+func (s *PostgresStripeStore) FindLatestActiveSubscriptionWithPriceByCustomerId(ctx context.Context, customerId string) (*models.StripeSubscription, error) {
+	// data, err := database.QueryAll[*models.SubscriptionWithPrice](ctx, s.db, getLatestActiveSubscriptionWithPriceByCustomerIdQuery, customerId)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// if len(data) == 0 {
+	// 	return nil, nil
+	// }
+	// return data[0], err
+	data, err := s.FindActiveSubscriptionsByCustomerIds(ctx, customerId)
 	if err != nil {
 		return nil, err
 	}
 	if len(data) == 0 {
 		return nil, nil
 	}
-	return data[0], err
+	subscription := data[0]
+	if subscription == nil {
+		return nil, nil
+	}
+	if subscription.Price == nil {
+		return nil, fmt.Errorf("subscription %s has no price", subscription.ID)
+	}
+	if subscription.Price.Product == nil {
+		return nil, fmt.Errorf("subscription %s has no product", subscription.ID)
+	}
+	return subscription, nil
 }
 
 // FindValidPriceById implements PaymentStore.

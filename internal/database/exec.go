@@ -13,6 +13,7 @@ type QueryBuilder interface {
 
 func QueryWithBuilder[T any](ctx context.Context, db Dbx, query QueryBuilder) ([]T, error) {
 	sql, args, err := query.ToSql()
+	// fmt.Println("query", sql, "args", args)
 	if err != nil {
 		return nil, err
 	}

@@ -40,7 +40,7 @@ func (*PostgresUserStore) UserWhere(user *models.User) *map[string]any {
 	where := map[string]any{}
 	if user.ID != uuid.Nil {
 		where[models.UserTable.ID] = map[string]any{
-			"_eq": user.ID.String(),
+			"_eq": user.ID,
 		}
 	}
 	if user.Name != nil {
@@ -60,7 +60,7 @@ func (*PostgresUserStore) UserWhere(user *models.User) *map[string]any {
 			}
 		} else {
 			where[models.UserTable.EmailVerifiedAt] = map[string]any{
-				"_gte": user.EmailVerifiedAt.Format(time.RFC3339Nano),
+				"_gte": user.EmailVerifiedAt,
 			}
 		}
 	}
@@ -94,7 +94,7 @@ func (a *PostgresUserStore) AssignUserRoles(ctx context.Context, userId uuid.UUI
 			a.db,
 			&map[string]any{
 				models.UserTable.ID: map[string]any{
-					"_eq": userId.String(),
+					"_eq": userId,
 				},
 			},
 		)
@@ -139,7 +139,7 @@ func (a *PostgresUserStore) AssignUserRoles(ctx context.Context, userId uuid.UUI
 // DeleteUser implements UserStore.
 func (p *PostgresUserStore) DeleteUser(ctx context.Context, userId uuid.UUID) error {
 	_, err := crudrepo.User.Delete(ctx, p.db, &map[string]any{
-		models.UserTable.ID: map[string]any{"_eq": userId.String()},
+		models.UserTable.ID: map[string]any{"_eq": userId},
 	})
 	if err != nil {
 		return err
