@@ -231,6 +231,38 @@ type StripeCustomer struct {
 	Subscriptions  []*StripeSubscription `db:"subscriptions" src:"id" dest:"stripe_customer_id" table:"stripe_subscriptions" json:"subscriptions,omitempty"`
 }
 
+type stripeCustomerTable struct {
+	ID             string
+	Email          string
+	Name           string
+	UserID         string
+	TeamID         string
+	CustomerType   string
+	BillingAddress string
+	PaymentMethod  string
+	CreatedAt      string
+	UpdatedAt      string
+	Team           string
+	User           string
+	Subscriptions  string
+}
+
+var StripeCustomerTable = stripeCustomerTable{
+	ID:             "id",
+	Email:          "email",
+	Name:           "name",
+	UserID:         "user_id",
+	TeamID:         "team_id",
+	CustomerType:   "customer_type",
+	BillingAddress: "billing_address",
+	PaymentMethod:  "payment_method",
+	CreatedAt:      "created_at",
+	UpdatedAt:      "updated_at",
+	Team:           "team",
+	User:           "user",
+	Subscriptions:  "subscriptions",
+}
+
 type SubscriptionWithPrice struct {
 	Price        StripePrice        `json:"price"`
 	Subscription StripeSubscription `json:"subscription"`
