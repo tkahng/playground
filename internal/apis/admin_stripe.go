@@ -112,7 +112,7 @@ func (api *Api) AdminStripeProductsGet(ctx context.Context,
 	if input == nil || input.ProductID == "" {
 		return nil, huma.Error400BadRequest("product_id is required")
 	}
-	product, err := api.app.Payment().Store().FindProductByStripeId(ctx, input.ProductID)
+	product, err := api.app.Payment().Store().FindProductById(ctx, input.ProductID)
 	if err != nil {
 		return nil, err
 	}
@@ -151,7 +151,7 @@ func (api *Api) AdminStripeProductsRolesCreate(ctx context.Context, input *struc
 }) (*struct{}, error) {
 
 	id := input.ProductID
-	user, err := api.app.Payment().Store().FindProductByStripeId(ctx, id)
+	user, err := api.app.Payment().Store().FindProductById(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -173,7 +173,7 @@ func (api *Api) AdminStripeProductsRolesDelete(ctx context.Context, input *struc
 	RoleID    string `path:"role-id" required:"true" format:"uuid"`
 }) (*struct{}, error) {
 	id := input.ProductID
-	product, err := api.app.Payment().Store().FindProductByStripeId(ctx, id)
+	product, err := api.app.Payment().Store().FindProductById(ctx, id)
 	if err != nil {
 		return nil, err
 	}

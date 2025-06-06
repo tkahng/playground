@@ -191,7 +191,7 @@ func TestPostgresStripeStore_ProductAndPrice(t *testing.T) {
 		}
 
 		// FindProductByStripeId
-		found, err := store.FindProductByStripeId(ctx, "prod_123")
+		found, err := store.FindProductById(ctx, "prod_123")
 		if err != nil {
 			t.Fatalf("FindProductByStripeId() error = %v", err)
 		}
@@ -217,7 +217,7 @@ func TestPostgresStripeStore_ProductAndPrice(t *testing.T) {
 		}
 
 		// FindValidPriceById
-		validPrice, err := store.FindValidPriceById(ctx, "price_123")
+		validPrice, err := store.FindActivePriceById(ctx, "price_123")
 		if err != nil {
 			t.Fatalf("FindValidPriceById() error = %v", err)
 		}
@@ -264,7 +264,7 @@ func TestPostgresStripeStore_UpsertProductAndPriceFromStripe(t *testing.T) {
 		if err != nil {
 			t.Fatalf("UpsertProductFromStripe() error = %v", err)
 		}
-		found, err := store.FindProductByStripeId(ctx, stripeProduct.ID)
+		found, err := store.FindProductById(ctx, stripeProduct.ID)
 		if err != nil || found == nil || found.ID != stripeProduct.ID {
 			t.Errorf("FindProductByStripeId() = %v, err = %v", found, err)
 		}

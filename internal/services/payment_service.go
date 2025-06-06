@@ -46,27 +46,38 @@ type PaymentRbacStore interface {
 }
 
 type PaymentStripeStore interface {
-	CountCustomers(ctx context.Context, filter *shared.StripeCustomerListFilter) (int64, error)
-	CountPrices(ctx context.Context, filter *shared.StripePriceListFilter) (int64, error)
-	CountProducts(ctx context.Context, filter *shared.StripeProductListFilter) (int64, error)
-	CountSubscriptions(ctx context.Context, filter *shared.StripeSubscriptionListFilter) (int64, error)
+	LoadPricesByProductIds(ctx context.Context, productIds ...string) ([][]*models.StripePrice, error)
+	LoadProductRoles(ctx context.Context, productIds ...string) ([][]*models.Role, error)
 	CreateCustomer(ctx context.Context, customer *models.StripeCustomer) (*models.StripeCustomer, error)
 	FindCustomer(ctx context.Context, customer *models.StripeCustomer) (*models.StripeCustomer, error)
 	FindLatestActiveSubscriptionWithPriceByCustomerId(ctx context.Context, customerId string) (*models.StripeSubscription, error)
-	FindProductByStripeId(ctx context.Context, productId string) (*models.StripeProduct, error)
 	FindSubscriptionsWithPriceProductByIds(ctx context.Context, subscriptionIds ...string) ([]*models.StripeSubscription, error)
-	FindValidPriceById(ctx context.Context, priceId string) (*models.StripePrice, error)
-	IsFirstSubscription(ctx context.Context, customerID string) (bool, error)
+
+	// customers crud
 	ListCustomers(ctx context.Context, input *shared.StripeCustomerListParams) ([]*models.StripeCustomer, error)
+	CountCustomers(ctx context.Context, filter *shared.StripeCustomerListFilter) (int64, error)
+
+	// prices crud
+	FindActivePriceById(ctx context.Context, priceId string) (*models.StripePrice, error)
+
 	ListPrices(ctx context.Context, input *shared.StripePriceListParams) ([]*models.StripePrice, error)
-	ListProducts(ctx context.Context, input *shared.StripeProductListParams) ([]*models.StripeProduct, error)
-	ListSubscriptions(ctx context.Context, input *shared.StripeSubscriptionListParams) ([]*models.StripeSubscription, error)
-	LoadPricesByProductIds(ctx context.Context, productIds ...string) ([][]*models.StripePrice, error)
-	LoadProductRoles(ctx context.Context, productIds ...string) ([][]*models.Role, error)
+	CountPrices(ctx context.Context, filter *shared.StripePriceListFilter) (int64, error)
 	UpsertPrice(ctx context.Context, price *models.StripePrice) error
 	UpsertPriceFromStripe(ctx context.Context, price *stripe.Price) error
+
+	// products crud
+	FindProductById(ctx context.Context, productId string) (*models.StripeProduct, error)
+
+	ListProducts(ctx context.Context, input *shared.StripeProductListParams) ([]*models.StripeProduct, error)
+	CountProducts(ctx context.Context, filter *shared.StripeProductListFilter) (int64, error)
 	UpsertProduct(ctx context.Context, product *models.StripeProduct) error
 	UpsertProductFromStripe(ctx context.Context, product *stripe.Product) error
+
+	// subscriptions crud
+	IsFirstSubscription(ctx context.Context, customerID string) (bool, error)
+
+	ListSubscriptions(ctx context.Context, input *shared.StripeSubscriptionListParams) ([]*models.StripeSubscription, error)
+	CountSubscriptions(ctx context.Context, filter *shared.StripeSubscriptionListFilter) (int64, error)
 	UpsertSubscription(ctx context.Context, sub *models.StripeSubscription) error
 	UpsertSubscriptionFromStripe(ctx context.Context, sub *stripe.Subscription) error
 }
@@ -238,7 +249,7 @@ func (srv *StripeService) SyncPerms(ctx context.Context) error {
 	var err error
 	for productId, permission := range shared.StripeProductPermissionMap {
 		err = func() error {
-			product, err := srv.paymentStore.FindProductByStripeId(ctx, productId)
+			product, err := srv.paymentStore.FindProductById(ctx, productId)
 			if err != nil {
 				return err
 			}
@@ -407,7 +418,7 @@ func (srv *StripeService) CreateCheckoutSession(ctx context.Context, stripeCusto
 	if firstSub {
 		trialDays = types.Pointer(int64(14))
 	}
-	valPrice, err := srv.paymentStore.FindValidPriceById(ctx, priceId)
+	valPrice, err := srv.paymentStore.FindActivePriceById(ctx, priceId)
 	if err != nil {
 		return "", err
 	}

@@ -155,8 +155,8 @@ func (m *MockPaymentStore) FindPermissionByName(ctx context.Context, name string
 	return nil, args.Error(1)
 }
 
-// FindProductByStripeId implements PaymentStore.
-func (m *MockPaymentStore) FindProductByStripeId(ctx context.Context, productId string) (*models.StripeProduct, error) {
+// FindProductById implements PaymentStore.
+func (m *MockPaymentStore) FindProductById(ctx context.Context, productId string) (*models.StripeProduct, error) {
 	args := m.Called(ctx, productId)
 	if args.Get(0) != nil {
 		return args.Get(0).(*models.StripeProduct), args.Error(1)
@@ -182,8 +182,8 @@ func (m *MockPaymentStore) FindTeamByStripeCustomerId(ctx context.Context, strip
 	return nil, args.Error(1)
 }
 
-// FindValidPriceById implements PaymentStore.
-func (m *MockPaymentStore) FindValidPriceById(ctx context.Context, priceId string) (*models.StripePrice, error) {
+// FindActivePriceById implements PaymentStore.
+func (m *MockPaymentStore) FindActivePriceById(ctx context.Context, priceId string) (*models.StripePrice, error) {
 	args := m.Called(ctx, priceId)
 	if args.Get(0) != nil {
 		return args.Get(0).(*models.StripePrice), args.Error(1)
