@@ -8,6 +8,7 @@ import (
 	"reflect"
 	"slices"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -425,22 +426,30 @@ func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any, run func(s
 	// Check for special conditions
 	// _not, _and, and _or are used for logical operations
 	if item, ok := (*where)["_not"]; ok {
-		expr := item.(map[string]any)
-
-		return "NOT (" + b.Where(&expr, args, run) + ")"
+		expr, ok := item.(map[string]any)
+		if ok {
+			return "NOT (" + b.Where(&expr, args, run) + ")"
+		}
 	} else if items, ok := (*where)["_and"]; ok {
 		result := []string{}
-		for _, item := range items.([]any) {
-			expr := item.(map[string]any)
-			result = append(result, b.Where(&expr, args, run))
+		ands, ok := items.([]map[string]any)
+		if ok {
+			for _, item := range ands {
+				expr := item
+				result = append(result, b.Where(&expr, args, run))
+			}
 		}
 
 		return "(" + strings.Join(result, " AND ") + ")"
-	} else if items, ok := (*where)["_or"]; ok {
+	} else if ors, ok := (*where)["_or"]; ok {
 		result := []string{}
-		for _, item := range items.([]any) {
-			expr := item.(map[string]any)
-			result = append(result, b.Where(&expr, args, run))
+
+		orWheres, ok := ors.([]map[string]any)
+		if ok {
+			for _, item := range orWheres {
+				expr := item
+				result = append(result, b.Where(&expr, args, run))
+			}
 		}
 
 		return "(" + strings.Join(result, " OR ") + ")"
@@ -458,15 +467,29 @@ func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any, run func(s
 				if _value.Kind() == reflect.String {
 					// String values are passed to operation handler as single parameter
 					result = append(result, handler(b.identifier(key), b.parameter(_value, args)))
+				} else if it, ok := _value.Interface().(time.Time); ok {
+					_newValue := reflect.ValueOf(it.Format(time.RFC3339Nano))
+					result = append(result, handler(b.identifier(key), b.parameter(_newValue, args)))
+				} else if it, ok := _value.Interface().(fmt.Stringer); ok {
+					_newValue := reflect.ValueOf(it.String())
+					if _newValue.Kind() == reflect.String {
+						// If the value implements fmt.Stringer, use its String method
+						result = append(result, handler(b.identifier(key), b.parameter(_newValue, args)))
+					}
 				} else if _value.Kind() == reflect.Slice || _value.Kind() == reflect.Array {
 					// Slice or array values are passed to operation handler as a list of parameters
 					items := []string{}
 					for i := range _value.Len() {
-						items = append(items, b.parameter(_value.Index(i), args))
+						if _value.Index(i).Kind() == reflect.String {
+							items = append(items, b.parameter(_value.Index(i), args))
+						} else if it, ok := _value.Index(i).Interface().(fmt.Stringer); ok {
+							// If the value implements fmt.Stringer, use its String method
+							items = append(items, b.parameter(reflect.ValueOf(it.String()), args))
+						}
 					}
-
 					result = append(result, handler(b.identifier(key), items...))
 				}
+
 			} else {
 				// Relation field condition detected
 				if relation, ok := b.relations[key]; ok {
@@ -480,7 +503,6 @@ func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any, run func(s
 					}
 
 					// Construct the sub-query for the related table
-					args_ := []any{}
 					where := item.(map[string]any)
 					var query string
 					if relation.through != "" {
@@ -497,12 +519,10 @@ func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any, run func(s
 					} else {
 						query = fmt.Sprintf("SELECT %s FROM %s", b.identifier(relation.dest), builder.Table())
 					}
-					if expr := builder.Where(&where, &args_, run); expr != "" {
+					if expr := builder.Where(&where, args, run); expr != "" {
 						query += fmt.Sprintf(" WHERE %s", expr)
 					}
-
 					if run == nil {
-						*args = append(*args, args_...)
 						if inop, ok := b.operations[relation.src+"_in"]; ok {
 							result = append(result, inop(b.identifier(relation.src), query))
 						}
