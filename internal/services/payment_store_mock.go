@@ -12,6 +12,75 @@ import (
 
 type MockPaymentStore struct{ mock.Mock }
 
+// FindActiveSubscriptionsByCustomerIds implements PaymentStore.
+func (m *MockPaymentStore) FindActiveSubscriptionsByCustomerIds(ctx context.Context, customerIds ...string) ([]*models.StripeSubscription, error) {
+	args := m.Called(ctx, customerIds)
+	if args.Get(0) != nil {
+		return args.Get(0).([]*models.StripeSubscription), args.Error(1)
+	}
+	return nil, args.Error(1)
+}
+
+// FindActiveSubscriptionsByTeamIds implements PaymentStore.
+func (m *MockPaymentStore) FindActiveSubscriptionsByTeamIds(ctx context.Context, teamIds ...uuid.UUID) ([]*models.StripeSubscription, error) {
+	args := m.Called(ctx, teamIds)
+	if args.Get(0) != nil {
+		return args.Get(0).([]*models.StripeSubscription), args.Error(1)
+	}
+	return nil, args.Error(1)
+}
+
+// FindActiveSubscriptionsByUserIds implements PaymentStore.
+func (m *MockPaymentStore) FindActiveSubscriptionsByUserIds(ctx context.Context, userIds ...uuid.UUID) ([]*models.StripeSubscription, error) {
+	args := m.Called(ctx, userIds)
+	if args.Get(0) != nil {
+		return args.Get(0).([]*models.StripeSubscription), args.Error(1)
+	}
+	return nil, args.Error(1)
+}
+
+// LoadPricesByIds implements PaymentStore.
+func (m *MockPaymentStore) LoadPricesByIds(ctx context.Context, priceIds ...string) ([]*models.StripePrice, error) {
+	args := m.Called(ctx, priceIds)
+	if args.Get(0) != nil {
+		return args.Get(0).([]*models.StripePrice), args.Error(1)
+	}
+	return nil, args.Error(1)
+}
+
+// LoadPricesWithProductByPriceIds implements PaymentStore.
+func (m *MockPaymentStore) LoadPricesWithProductByPriceIds(ctx context.Context, priceIds ...string) ([]*models.StripePrice, error) {
+	args := m.Called(ctx, priceIds)
+	if args.Get(0) != nil {
+		return args.Get(0).([]*models.StripePrice), args.Error(1)
+	}
+	return nil, args.Error(1)
+}
+
+// LoadProductsByIds implements PaymentStore.
+func (m *MockPaymentStore) LoadProductsByIds(ctx context.Context, productIds ...string) ([]*models.StripeProduct, error) {
+	args := m.Called(ctx, productIds)
+	if args.Get(0) != nil {
+		return args.Get(0).([]*models.StripeProduct), args.Error(1)
+	}
+	return nil, args.Error(1)
+}
+
+// LoadSubscriptionsByIds implements PaymentStore.
+func (m *MockPaymentStore) LoadSubscriptionsByIds(ctx context.Context, subscriptionIds ...string) ([]*models.StripeSubscription, error) {
+	args := m.Called(ctx, subscriptionIds)
+	if args.Get(0) != nil {
+		return args.Get(0).([]*models.StripeSubscription), args.Error(1)
+	}
+	return nil, args.Error(1)
+}
+
+// LoadSubscriptionsPriceProduct implements PaymentStore.
+func (m *MockPaymentStore) LoadSubscriptionsPriceProduct(ctx context.Context, subscriptions ...*models.StripeSubscription) error {
+	args := m.Called(ctx, subscriptions)
+	return args.Error(0)
+}
+
 // FindSubscriptionsWithPriceProductByIds implements PaymentStore.
 func (m *MockPaymentStore) FindSubscriptionsWithPriceProductByIds(ctx context.Context, subscriptionIds ...string) ([]*models.StripeSubscription, error) {
 	args := m.Called(ctx, subscriptionIds)
@@ -250,13 +319,7 @@ func (m *MockPaymentStore) UpsertSubscriptionFromStripe(ctx context.Context, sub
 	args := m.Called(ctx, sub)
 	return args.Error(0)
 }
-func (m *MockPaymentStore) FindLatestActiveSubscriptionByTeamId(ctx context.Context, teamId uuid.UUID) (*models.StripeSubscription, error) {
-	args := m.Called(ctx, teamId)
-	if args.Get(0) != nil {
-		return args.Get(0).(*models.StripeSubscription), args.Error(1)
-	}
-	return nil, args.Error(1)
-}
+
 func (m *MockPaymentStore) CountTeamMembers(ctx context.Context, teamId uuid.UUID) (int64, error) {
 	args := m.Called(ctx, teamId)
 	return args.Get(0).(int64), args.Error(1)

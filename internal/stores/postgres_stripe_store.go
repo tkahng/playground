@@ -637,6 +637,14 @@ ORDER BY ss.created_at DESC;
 )
 
 func (s *PostgresStripeStore) FindLatestActiveSubscriptionWithPriceByCustomerId(ctx context.Context, customerId string) (*models.StripeSubscription, error) {
+	// data, err := database.QueryAll[*models.SubscriptionWithPrice](ctx, s.db, getLatestActiveSubscriptionWithPriceByCustomerIdQuery, customerId)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// if len(data) == 0 {
+	// 	return nil, nil
+	// }
+	// return data[0], err
 	data, err := s.FindActiveSubscriptionsByCustomerIds(ctx, customerId)
 	if err != nil {
 		return nil, err
@@ -1159,4 +1167,39 @@ func (s *PostgresStripeStore) CountSubscriptions(ctx context.Context, filter *sh
 		return 0, err
 	}
 	return data, nil
+}
+
+type PostgresStripeStoreInterface interface {
+	WithTx(tx database.Dbx) *PostgresStripeStore
+	LoadPricesByIds(ctx context.Context, priceIds ...string) ([]*models.StripePrice, error)
+	LoadPricesByProductIds(ctx context.Context, productIds ...string) ([][]*models.StripePrice, error)
+	LoadProductsByIds(ctx context.Context, productIds ...string) ([]*models.StripeProduct, error)
+	LoadPricesWithProductByPriceIds(ctx context.Context, priceIds ...string) ([]*models.StripePrice, error)
+	LoadSubscriptionsPriceProduct(ctx context.Context, subscriptions ...*models.StripeSubscription) error
+	LoadSubscriptionsByIds(ctx context.Context, subscriptionIds ...string) ([]*models.StripeSubscription, error)
+	FindActiveSubscriptionsByCustomerIds(ctx context.Context, customerIds ...string) ([]*models.StripeSubscription, error)
+	FindActiveSubscriptionsByTeamIds(ctx context.Context, teamIds ...uuid.UUID) ([]*models.StripeSubscription, error)
+	FindActiveSubscriptionsByUserIds(ctx context.Context, userIds ...uuid.UUID) ([]*models.StripeSubscription, error)
+	FindSubscriptionsWithPriceProductByIds(ctx context.Context, subscriptionIds ...string) ([]*models.StripeSubscription, error)
+	CreateCustomer(ctx context.Context, customer *models.StripeCustomer) (*models.StripeCustomer, error)
+	UpsertPriceFromStripe(ctx context.Context, price *stripe.Price) error
+	UpsertPrice(ctx context.Context, price *models.StripePrice) error
+	UpsertProductFromStripe(ctx context.Context, product *stripe.Product) error
+	UpsertProduct(ctx context.Context, product *models.StripeProduct) error
+	FindCustomer(ctx context.Context, customer *models.StripeCustomer) (*models.StripeCustomer, error)
+	FindProductById(ctx context.Context, productId string) (*models.StripeProduct, error)
+	FindLatestActiveSubscriptionWithPriceByCustomerId(ctx context.Context, customerId string) (*models.StripeSubscription, error)
+	FindActivePriceById(ctx context.Context, priceId string) (*models.StripePrice, error)
+	IsFirstSubscription(ctx context.Context, customerID string) (bool, error)
+	ListPrices(ctx context.Context, input *shared.StripePriceListParams) ([]*models.StripePrice, error)
+	CountProducts(ctx context.Context, filter *shared.StripeProductListFilter) (int64, error)
+	UpsertSubscriptionFromStripe(ctx context.Context, sub *stripe.Subscription) error
+	UpsertSubscription(ctx context.Context, sub *models.StripeSubscription) error
+	ListProducts(ctx context.Context, input *shared.StripeProductListParams) ([]*models.StripeProduct, error)
+	LoadProductRoles(ctx context.Context, productIds ...string) ([][]*models.Role, error)
+	CountPrices(ctx context.Context, filter *shared.StripePriceListFilter) (int64, error)
+	ListCustomers(ctx context.Context, input *shared.StripeCustomerListParams) ([]*models.StripeCustomer, error)
+	CountCustomers(ctx context.Context, filter *shared.StripeCustomerListFilter) (int64, error)
+	ListSubscriptions(ctx context.Context, input *shared.StripeSubscriptionListParams) ([]*models.StripeSubscription, error)
+	CountSubscriptions(ctx context.Context, filter *shared.StripeSubscriptionListFilter) (int64, error)
 }
