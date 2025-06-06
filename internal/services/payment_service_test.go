@@ -167,24 +167,21 @@ func TestStripeService_VerifyAndUpdateTeamSubscriptionQuantity(t *testing.T) {
 	}
 	product := &models.StripeProduct{ID: "prod_123"}
 	price := &models.StripePrice{ID: "price_123", ProductID: "prod_123"}
+	price.Product = product
 	sub := &models.StripeSubscription{
 		ItemID:           "item_123",
 		PriceID:          "price_123",
 		Quantity:         2,
 		StripeCustomerID: customer.ID,
 	}
-	subWithPrice := &models.SubscriptionWithPrice{
-		Price:        *price,
-		Product:      *product,
-		Subscription: *sub,
-	}
+	sub.Price = price
 
 	t.Run("updates quantity if different", func(t *testing.T) {
 		store := new(MockPaymentStore)
 		client := new(mockPaymentClient)
 		service := &StripeService{paymentStore: store, client: client}
 		store.On("FindCustomer", ctx, mock.Anything).Return(customer, nil)
-		store.On("FindLatestActiveSubscriptionWithPriceByCustomerId", ctx, customer.ID).Return(subWithPrice, nil)
+		store.On("FindActiveSubscriptionByCustomerId", ctx, customer.ID).Return(sub, nil)
 		store.On("CountTeamMembers", ctx, teamId).Return(int64(3), nil)
 		client.On("UpdateItemQuantity", sub.ItemID, sub.PriceID, int64(3)).Return(&stripe.SubscriptionItem{}, nil)
 		err := service.VerifyAndUpdateTeamSubscriptionQuantity(ctx, teamId)
@@ -198,7 +195,7 @@ func TestStripeService_VerifyAndUpdateTeamSubscriptionQuantity(t *testing.T) {
 		client := new(mockPaymentClient)
 		service := &StripeService{paymentStore: store, client: client}
 		store.On("FindCustomer", ctx, mock.Anything).Return(customer, nil)
-		store.On("FindLatestActiveSubscriptionWithPriceByCustomerId", ctx, customer.ID).Return(subWithPrice, nil)
+		store.On("FindActiveSubscriptionByCustomerId", ctx, customer.ID).Return(sub, nil)
 		store.On("CountTeamMembers", ctx, teamId).Return(int64(2), nil)
 		err := service.VerifyAndUpdateTeamSubscriptionQuantity(ctx, teamId)
 		assert.NoError(t, err)
@@ -210,7 +207,7 @@ func TestStripeService_VerifyAndUpdateTeamSubscriptionQuantity(t *testing.T) {
 		client := new(mockPaymentClient)
 		service := &StripeService{paymentStore: store, client: client}
 		store.On("FindCustomer", ctx, mock.Anything).Return(customer, nil)
-		store.On("FindLatestActiveSubscriptionWithPriceByCustomerId", ctx, customer.ID).Return(nil, nil)
+		store.On("FindActiveSubscriptionByCustomerId", ctx, customer.ID).Return(nil, nil)
 		err := service.VerifyAndUpdateTeamSubscriptionQuantity(ctx, teamId)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "no subscription")
@@ -243,7 +240,7 @@ func TestStripeService_VerifyAndUpdateTeamSubscriptionQuantity(t *testing.T) {
 		client := new(mockPaymentClient)
 		service := &StripeService{paymentStore: store, client: client}
 		store.On("FindCustomer", ctx, mock.Anything).Return(customer, nil)
-		store.On("FindLatestActiveSubscriptionWithPriceByCustomerId", ctx, customer.ID).Return(subWithPrice, nil)
+		store.On("FindActiveSubscriptionByCustomerId", ctx, customer.ID).Return(sub, nil)
 		store.On("CountTeamMembers", ctx, teamId).Return(int64(0), errors.New("count error"))
 		err := service.VerifyAndUpdateTeamSubscriptionQuantity(ctx, teamId)
 		assert.Error(t, err)
@@ -255,7 +252,7 @@ func TestStripeService_VerifyAndUpdateTeamSubscriptionQuantity(t *testing.T) {
 		client := new(mockPaymentClient)
 		service := &StripeService{paymentStore: store, client: client}
 		store.On("FindCustomer", ctx, mock.Anything).Return(customer, nil)
-		store.On("FindLatestActiveSubscriptionWithPriceByCustomerId", ctx, customer.ID).Return(subWithPrice, nil)
+		store.On("FindActiveSubscriptionByCustomerId", ctx, customer.ID).Return(sub, nil)
 		store.On("CountTeamMembers", ctx, teamId).Return(int64(0), nil)
 		err := service.VerifyAndUpdateTeamSubscriptionQuantity(ctx, teamId)
 		assert.NoError(t, err)
@@ -267,7 +264,7 @@ func TestStripeService_VerifyAndUpdateTeamSubscriptionQuantity(t *testing.T) {
 		client := new(mockPaymentClient)
 		service := &StripeService{paymentStore: store, client: client}
 		store.On("FindCustomer", ctx, mock.Anything).Return(customer, nil)
-		store.On("FindLatestActiveSubscriptionWithPriceByCustomerId", ctx, customer.ID).Return(subWithPrice, nil)
+		store.On("FindActiveSubscriptionByCustomerId", ctx, customer.ID).Return(sub, nil)
 		store.On("CountTeamMembers", ctx, teamId).Return(int64(3), nil)
 		client.On("UpdateItemQuantity", sub.ItemID, sub.PriceID, int64(3)).Return(nil, errors.New("update error"))
 		err := service.VerifyAndUpdateTeamSubscriptionQuantity(ctx, teamId)

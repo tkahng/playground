@@ -223,15 +223,6 @@ func (m *mockTeamStore) CountOwnerTeamMembers(ctx context.Context, teamId uuid.U
 	return count, args.Error(1)
 }
 
-// FindLatestActiveSubscriptionWithPriceByCustomerId implements TeamServiceStore.
-func (m *mockTeamStore) FindLatestActiveSubscriptionWithPriceByCustomerId(ctx context.Context, customerId string) (*models.SubscriptionWithPrice, error) {
-	args := m.Called(ctx, customerId)
-	var subscription *models.SubscriptionWithPrice
-	if args.Get(0) != nil {
-		subscription = args.Get(0).(*models.SubscriptionWithPrice)
-	}
-	return subscription, args.Error(1)
-}
 
 // CreateTeamWithOwnerMember implements TeamStore.
 func (m *mockTeamStore) CreateTeamWithOwnerMember(ctx context.Context, name string, slug string, userId uuid.UUID) (*shared.TeamInfoModel, error) {

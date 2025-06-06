@@ -206,8 +206,8 @@ func (m *MockPaymentStore) CreateProductPermissions(ctx context.Context, product
 	return args.Error(0)
 }
 
-// FindLatestActiveSubscriptionWithPriceByCustomerId implements PaymentStore.
-func (m *MockPaymentStore) FindLatestActiveSubscriptionWithPriceByCustomerId(ctx context.Context, customerId string) (*models.StripeSubscription, error) {
+// FindActiveSubscriptionByCustomerId implements PaymentStore.
+func (m *MockPaymentStore) FindActiveSubscriptionByCustomerId(ctx context.Context, customerId string) (*models.StripeSubscription, error) {
 	args := m.Called(ctx, customerId)
 	if args.Get(0) != nil {
 		return args.Get(0).(*models.StripeSubscription), args.Error(1)
@@ -229,15 +229,6 @@ func (m *MockPaymentStore) FindProductById(ctx context.Context, productId string
 	args := m.Called(ctx, productId)
 	if args.Get(0) != nil {
 		return args.Get(0).(*models.StripeProduct), args.Error(1)
-	}
-	return nil, args.Error(1)
-}
-
-// FindSubscriptionWithPriceById implements PaymentStore.
-func (m *MockPaymentStore) FindSubscriptionWithPriceById(ctx context.Context, stripeId string) (*models.SubscriptionWithPrice, error) {
-	args := m.Called(ctx, stripeId)
-	if args.Get(0) != nil {
-		return args.Get(0).(*models.SubscriptionWithPrice), args.Error(1)
 	}
 	return nil, args.Error(1)
 }

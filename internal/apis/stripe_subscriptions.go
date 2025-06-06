@@ -17,16 +17,15 @@ func (api *Api) GetStripeSubscriptions(ctx context.Context, input *struct{}) (*s
 		return nil, huma.Error403Forbidden("no customer found")
 	}
 
-	subWithPriceProduct, err := api.app.Payment().Store().FindLatestActiveSubscriptionWithPriceByCustomerId(ctx, customer.ID)
+	subWithPriceProduct, err := api.app.Payment().Store().FindActiveSubscriptionByCustomerId(ctx, customer.ID)
 	if err != nil {
 		return nil, err
 	}
+
 	output := &struct {
 		Body *shared.Subscription `json:"body,omitempty" required:"false"`
-	}{}
-
-	if subWithPriceProduct == nil {
-		return output, nil
+	}{
+		Body: shared.FromModelSubscription(subWithPriceProduct),
 	}
 
 	return output, nil

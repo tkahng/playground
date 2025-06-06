@@ -51,17 +51,21 @@ type PaymentStripeStore interface {
 	LoadPricesWithProductByPriceIds(ctx context.Context, priceIds ...string) ([]*models.StripePrice, error)
 	LoadSubscriptionsPriceProduct(ctx context.Context, subscriptions ...*models.StripeSubscription) error
 	LoadSubscriptionsByIds(ctx context.Context, subscriptionIds ...string) ([]*models.StripeSubscription, error)
+
 	FindActiveSubscriptionsByCustomerIds(ctx context.Context, customerIds ...string) ([]*models.StripeSubscription, error)
+	FindActiveSubscriptionByCustomerId(ctx context.Context, customerId string) (*models.StripeSubscription, error)
+
 	FindActiveSubscriptionsByTeamIds(ctx context.Context, teamIds ...uuid.UUID) ([]*models.StripeSubscription, error)
+
 	FindActiveSubscriptionsByUserIds(ctx context.Context, userIds ...uuid.UUID) ([]*models.StripeSubscription, error)
 
 	LoadPricesByProductIds(ctx context.Context, productIds ...string) ([][]*models.StripePrice, error)
 	LoadProductRoles(ctx context.Context, productIds ...string) ([][]*models.Role, error)
-	FindCustomer(ctx context.Context, customer *models.StripeCustomer) (*models.StripeCustomer, error)
-	FindLatestActiveSubscriptionWithPriceByCustomerId(ctx context.Context, customerId string) (*models.StripeSubscription, error)
+
 	FindSubscriptionsWithPriceProductByIds(ctx context.Context, subscriptionIds ...string) ([]*models.StripeSubscription, error)
 
 	// customers crud
+	FindCustomer(ctx context.Context, customer *models.StripeCustomer) (*models.StripeCustomer, error)
 	CreateCustomer(ctx context.Context, customer *models.StripeCustomer) (*models.StripeCustomer, error)
 	ListCustomers(ctx context.Context, input *shared.StripeCustomerListParams) ([]*models.StripeCustomer, error)
 	CountCustomers(ctx context.Context, filter *shared.StripeCustomerListFilter) (int64, error)
@@ -217,7 +221,7 @@ func (srv *StripeService) VerifyAndUpdateTeamSubscriptionQuantity(ctx context.Co
 	if customer == nil {
 		return errors.New("no stripe customer id")
 	}
-	sub, err := srv.paymentStore.FindLatestActiveSubscriptionWithPriceByCustomerId(ctx, customer.ID)
+	sub, err := srv.paymentStore.FindActiveSubscriptionByCustomerId(ctx, customer.ID)
 	if err != nil {
 		return err
 	}
@@ -412,7 +416,7 @@ func (srv *StripeService) CreateCheckoutSession(ctx context.Context, stripeCusto
 	} else {
 		count = 1
 	}
-	val, err := srv.paymentStore.FindLatestActiveSubscriptionWithPriceByCustomerId(ctx, stripeCustomerId)
+	val, err := srv.paymentStore.FindActiveSubscriptionByCustomerId(ctx, stripeCustomerId)
 	if err != nil {
 		return "", err
 	}
@@ -450,7 +454,7 @@ func (srv *StripeService) CreateBillingPortalSession(ctx context.Context, stripe
 		return "", errors.New("team not found")
 	}
 
-	sub, err := srv.paymentStore.FindLatestActiveSubscriptionWithPriceByCustomerId(ctx, stripeCustomerId)
+	sub, err := srv.paymentStore.FindActiveSubscriptionByCustomerId(ctx, stripeCustomerId)
 	if err != nil {
 		return "", err
 	}
