@@ -21,6 +21,34 @@ type StripeProduct struct {
 	Permissions []*Permission     `db:"permissions" src:"id" dest:"product_id" table:"permissions" through:"product_permissions,permission_id,id" json:"permissions,omitempty"`
 }
 
+type stripeProductTable struct {
+	ID          string
+	Active      string
+	Name        string
+	Description string
+	Image       string
+	Metadata    string
+	CreatedAt   string
+	UpdatedAt   string
+	Prices      string
+	Roles       string
+	Permissions string
+}
+
+var StripeProductTable = stripeProductTable{
+	ID:          "id",
+	Active:      "active",
+	Name:        "name",
+	Description: "description",
+	Image:       "image",
+	Metadata:    "metadata",
+	CreatedAt:   "created_at",
+	UpdatedAt:   "updated_at",
+	Prices:      "prices",
+	Roles:       "roles",
+	Permissions: "permissions",
+}
+
 type StripePricingType string
 
 const (
@@ -60,7 +88,42 @@ type StripePrice struct {
 	Subscriptions   []*StripeSubscription      `db:"subscriptions" src:"id" dest:"price_id" table:"stripe_subscriptions" json:"subscriptions,omitempty"`
 }
 
-// enum:"trialing,active,canceled,incomplete,incomplete_expired,past_due,unpaid,paused"
+type stripePriceTable struct {
+	ID              string
+	ProductID       string
+	LookupKey       string
+	Active          string
+	UnitAmount      string
+	Currency        string
+	Type            string
+	Interval        string
+	IntervalCount   string
+	TrialPeriodDays string
+	Metadata        string
+	CreatedAt       string
+	UpdatedAt       string
+	Product         string
+	Subscriptions   string
+}
+
+var StripePriceTable = stripePriceTable{
+	ID:              "id",
+	ProductID:       "product_id",
+	LookupKey:       "lookup_key",
+	Active:          "active",
+	UnitAmount:      "unit_amount",
+	Currency:        "currency",
+	Type:            "type",
+	Interval:        "interval",
+	IntervalCount:   "interval_count",
+	TrialPeriodDays: "trial_period_days",
+	Metadata:        "metadata",
+	CreatedAt:       "created_at",
+	UpdatedAt:       "updated_at",
+	Product:         "product",
+	Subscriptions:   "subscriptions",
+}
+
 type StripeSubscriptionStatus string
 
 const (
@@ -75,11 +138,9 @@ const (
 )
 
 type StripeSubscription struct {
-	_                struct{} `db:"stripe_subscriptions" json:"-"`
-	ID               string   `db:"id" json:"id"`
-	StripeCustomerID string   `db:"stripe_customer_id" json:"stripe_customer_id"`
-	// UserID             *uuid.UUID               `db:"user_id" json:"user_id"`
-	// TeamID             uuid.UUID                `db:"team_id" json:"team_id"`
+	_                  struct{}                 `db:"stripe_subscriptions" json:"-"`
+	ID                 string                   `db:"id" json:"id"`
+	StripeCustomerID   string                   `db:"stripe_customer_id" json:"stripe_customer_id"`
 	Status             StripeSubscriptionStatus `db:"status" json:"status"`
 	Metadata           map[string]string        `db:"metadata" json:"metadata"`
 	ItemID             string                   `db:"item_id" json:"item_id"`
@@ -96,8 +157,54 @@ type StripeSubscription struct {
 	TrialEnd           *time.Time               `db:"trial_end" json:"trial_end"`
 	CreatedAt          time.Time                `db:"created_at" json:"created_at"`
 	UpdatedAt          time.Time                `db:"updated_at" json:"updated_at"`
-	Team               *Team                    `db:"teams" src:"team_id" dest:"id" table:"teams" json:"team,omitempty"`
-	Price              *StripePrice             `db:"stripe_prices" src:"price_id" dest:"id" table:"stripe_prices" json:"price,omitempty"`
+	StripeCustomer     *StripeCustomer          `db:"stripe_customer" src:"stripe_customer_id" dest:"id" table:"stripe_customers" json:"stripe_customer,omitempty"`
+	Price              *StripePrice             `db:"price" src:"price_id" dest:"id" table:"stripe_prices" json:"price,omitempty"`
+}
+
+type stripeSubscriptionTable struct {
+	ID                 string
+	StripeCustomerID   string
+	Status             string
+	Metadata           string
+	ItemID             string
+	PriceID            string
+	Quantity           string
+	CancelAtPeriodEnd  string
+	Created            string
+	CurrentPeriodStart string
+	CurrentPeriodEnd   string
+	EndedAt            string
+	CancelAt           string
+	CanceledAt         string
+	TrialStart         string
+	TrialEnd           string
+	CreatedAt          string
+	UpdatedAt          string
+	StripeCustomer     string
+	Price              string
+}
+
+var StripeSubscriptionTable = stripeSubscriptionTable{
+	ID:                 "id",
+	StripeCustomerID:   "stripe_customer_id",
+	Status:             "status",
+	Metadata:           "metadata",
+	ItemID:             "item_id",
+	PriceID:            "price_id",
+	Quantity:           "quantity",
+	CancelAtPeriodEnd:  "cancel_at_period_end",
+	Created:            "created",
+	CurrentPeriodStart: "current_period_start",
+	CurrentPeriodEnd:   "current_period_end",
+	EndedAt:            "ended_at",
+	CancelAt:           "cancel_at",
+	CanceledAt:         "canceled_at",
+	TrialStart:         "trial_start",
+	TrialEnd:           "trial_end",
+	CreatedAt:          "created_at",
+	UpdatedAt:          "updated_at",
+	StripeCustomer:     "stripe_customer",
+	Price:              "price",
 }
 
 type StripeCustomerType string
@@ -108,17 +215,20 @@ const (
 )
 
 type StripeCustomer struct {
-	_              struct{}           `db:"stripe_customers" json:"-"`
-	ID             string             `db:"id" json:"id"`
-	Email          string             `db:"email" json:"email"`
-	Name           *string            `db:"name" json:"name,omitempty" required:"false"`
-	UserID         *uuid.UUID         `db:"user_id" json:"user_id,omitempty" required:"false"`
-	TeamID         *uuid.UUID         `db:"team_id" json:"team_id,omitempty" required:"false"`
-	CustomerType   StripeCustomerType `db:"customer_type" json:"customer_type" enum:"user,team"`
-	BillingAddress *map[string]string `db:"billing_address" json:"billing_address"`
-	PaymentMethod  *map[string]string `db:"payment_method" json:"payment_method"`
-	CreatedAt      time.Time          `db:"created_at" json:"created_at"`
-	UpdatedAt      time.Time          `db:"updated_at" json:"updated_at"`
+	_              struct{}              `db:"stripe_customers" json:"-"`
+	ID             string                `db:"id" json:"id"`
+	Email          string                `db:"email" json:"email"`
+	Name           *string               `db:"name" json:"name,omitempty" required:"false"`
+	UserID         *uuid.UUID            `db:"user_id" json:"user_id,omitempty" required:"false"`
+	TeamID         *uuid.UUID            `db:"team_id" json:"team_id,omitempty" required:"false"`
+	CustomerType   StripeCustomerType    `db:"customer_type" json:"customer_type" enum:"user,team"`
+	BillingAddress *map[string]string    `db:"billing_address" json:"billing_address"`
+	PaymentMethod  *map[string]string    `db:"payment_method" json:"payment_method"`
+	CreatedAt      time.Time             `db:"created_at" json:"created_at"`
+	UpdatedAt      time.Time             `db:"updated_at" json:"updated_at"`
+	Team           *Team                 `db:"team" src:"team_id" dest:"id" table:"teams" json:"team,omitempty"`
+	User           *User                 `db:"user" src:"user_id" dest:"id" table:"users" json:"user,omitempty"`
+	Subscriptions  []*StripeSubscription `db:"subscriptions" src:"id" dest:"stripe_customer_id" table:"stripe_subscriptions" json:"subscriptions,omitempty"`
 }
 
 type SubscriptionWithPrice struct {
