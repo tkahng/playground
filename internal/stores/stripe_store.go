@@ -400,24 +400,6 @@ func (s *DbStripeStore) UpsertPriceFromStripe(ctx context.Context, price *stripe
 	return s.UpsertPrice(ctx, val)
 }
 
-func (s *DbStripeStore) UpsertPrice(ctx context.Context, price *models.StripePrice) error {
-	var dbx database.Dbx = s.db
-	q := squirrel.Insert("stripe_prices").Columns("id", "product_id", "lookup_key", "active", "unit_amount", "currency", "type", "interval", "interval_count", "trial_period_days", "metadata").Values(price.ID, price.ProductID, price.LookupKey, price.Active, price.UnitAmount, price.Currency, price.Type, price.Interval, price.IntervalCount, price.TrialPeriodDays, price.Metadata).Suffix(`
-		ON CONFLICT(id) DO UPDATE SET 
-			product_id = EXCLUDED.product_id,
-			lookup_key = EXCLUDED.lookup_key,
-			active = EXCLUDED.active,
-			unit_amount = EXCLUDED.unit_amount,
-			currency = EXCLUDED.currency,
-			type = EXCLUDED.type,
-			interval = EXCLUDED.interval,
-			interval_count = EXCLUDED.interval_count,
-			trial_period_days = EXCLUDED.trial_period_days,
-			metadata = EXCLUDED.metadata
-		`)
-	return database.ExecWithBuilder(ctx, dbx, q.PlaceholderFormat(squirrel.Dollar))
-}
-
 // UpsertProductFromStripe implements PaymentStore.
 func (s *DbStripeStore) UpsertProductFromStripe(ctx context.Context, product *stripe.Product) error {
 	if product == nil {
@@ -555,23 +537,6 @@ func Quote(name string) string {
 	return fmt.Sprintf("\"%s\"", name)
 }
 
-func SelectStripePriceColumns(qs squirrel.SelectBuilder, prefix string) squirrel.SelectBuilder {
-	qs = qs.Column(models.StripePriceTablePrefix.ID + " AS " + Quote(WithPrefix(prefix, models.StripePriceTable.ID))).
-		Column(models.StripePriceTablePrefix.ProductID + " AS " + Quote(WithPrefix(prefix, models.StripePriceTable.ProductID))).
-		Column(models.StripePriceTablePrefix.LookupKey + " AS " + Quote(WithPrefix(prefix, models.StripePriceTable.LookupKey))).
-		Column(models.StripePriceTablePrefix.Active + " AS " + Quote(WithPrefix(prefix, models.StripePriceTable.Active))).
-		Column(models.StripePriceTablePrefix.UnitAmount + " AS " + Quote(WithPrefix(prefix, models.StripePriceTable.UnitAmount))).
-		Column(models.StripePriceTablePrefix.Currency + " AS " + Quote(WithPrefix(prefix, models.StripePriceTable.Currency))).
-		Column(models.StripePriceTablePrefix.Type + " AS " + Quote(WithPrefix(prefix, models.StripePriceTable.Type))).
-		Column(models.StripePriceTablePrefix.Interval + " AS " + Quote(WithPrefix(prefix, models.StripePriceTable.Interval))).
-		Column(models.StripePriceTablePrefix.IntervalCount + " AS " + Quote(WithPrefix(prefix, models.StripePriceTable.IntervalCount))).
-		Column(models.StripePriceTablePrefix.TrialPeriodDays + " AS " + Quote(WithPrefix(prefix, models.StripePriceTable.TrialPeriodDays))).
-		Column(models.StripePriceTablePrefix.Metadata + " AS " + Quote(WithPrefix(prefix, models.StripePriceTable.Metadata))).
-		Column(models.StripePriceTablePrefix.CreatedAt + " AS " + Quote(WithPrefix(prefix, models.StripePriceTable.CreatedAt))).
-		Column(models.StripePriceTablePrefix.UpdatedAt + " AS " + Quote(WithPrefix(prefix, models.StripePriceTable.UpdatedAt)))
-	return qs
-}
-
 func SelectStripeCustomerColumns(qs squirrel.SelectBuilder, prefix string) squirrel.SelectBuilder {
 	qs = qs.Column(models.StripeCustomerTablePrefix.ID + " AS " + Quote(WithPrefix(prefix, models.StripeCustomerTable.ID))).
 		Column(models.StripeCustomerTablePrefix.Email + " AS " + Quote(WithPrefix(prefix, models.StripeCustomerTable.Email))).
@@ -686,28 +651,6 @@ func (s *DbStripeStore) IsFirstSubscription(ctx context.Context, customerID stri
 		},
 	)
 	return data > 0, err
-}
-
-// ListPrices implements PaymentStore.
-func (s *DbStripeStore) ListPrices(ctx context.Context, input *shared.StripePriceListParams) ([]*models.StripePrice, error) {
-	var dbx database.Dbx = s.db
-	filter := input.StripePriceListFilter
-	pageInput := &input.PaginatedInput
-	limit, offset := database.PaginateRepo(pageInput)
-	param := listPriceFilterFuncMap(&filter)
-	sort := listPriceOrderByMap(input)
-	data, err := crudrepo.StripePrice.Get(
-		ctx,
-		dbx,
-		param,
-		sort,
-		limit,
-		offset,
-	)
-	if err != nil {
-		return nil, err
-	}
-	return data, nil
 }
 
 // ListProducts implements PaymentStore.
@@ -830,31 +773,6 @@ func (s *DbStripeStore) UpsertSubscription(ctx context.Context, sub *models.Stri
 }
 
 var (
-	StripeProductColumnNames = []string{
-		"id",
-		"active",
-		"name",
-		"description",
-		"image",
-		"metadata",
-		"created_at",
-		"updated_at",
-	}
-	StripePriceColumnNames = []string{
-		"id",
-		"product_id",
-		"lookup_key",
-		"active",
-		"unit_amount",
-		"currency",
-		"type",
-		"interval",
-		"interval_count",
-		"trial_period_days",
-		"metadata",
-		"created_at",
-		"updated_at",
-	}
 	StripeCustomerColumnNames = []string{
 		"id",
 		"stripe_id",
@@ -961,7 +879,7 @@ func listProductOrderByQuery(q squirrel.SelectBuilder, input *shared.StripeProdu
 	}
 	if input.SortBy == MetadataIndexName {
 		q = q.OrderBy("metadata->'index'" + " " + strings.ToUpper(input.SortOrder))
-	} else if slices.Contains(StripeProductColumnNames, input.SortBy) {
+	} else if slices.Contains(models.StripeProductTable.Columns, input.SortBy) {
 		q = q.OrderBy(input.SortBy + " " + strings.ToUpper(input.SortOrder))
 	}
 	return q
@@ -983,59 +901,6 @@ func listProductFilterFuncQuery(q squirrel.SelectBuilder, filter *shared.StripeP
 		q = q.Where("id in (?)", filter.Ids)
 	}
 	return q
-}
-
-func listPriceOrderByMap(input *shared.StripePriceListParams) *map[string]string {
-	if input == nil {
-		return nil
-	}
-	if input.SortParams.SortBy == "" {
-		return nil
-	}
-	return &map[string]string{
-		input.SortParams.SortBy: input.SortParams.SortOrder,
-	}
-}
-
-func listPriceFilterFuncMap(filter *shared.StripePriceListFilter) *map[string]any {
-	if filter == nil {
-		return nil
-	}
-	param := map[string]any{}
-
-	if filter.Active != "" {
-		if filter.Active == shared.Active {
-			param[models.StripePriceTable.Active] = map[string]any{
-				"_eq": true,
-			}
-		}
-		if filter.Active == shared.Inactive {
-			param[models.StripePriceTable.Active] = map[string]any{
-				"_eq": false,
-			}
-		}
-	}
-	if len(filter.Ids) > 0 {
-		param[models.StripePriceTable.ID] = map[string]any{
-			"_in": filter.Ids,
-		}
-	}
-	if len(filter.ProductIds) > 0 {
-		param[models.StripePriceTable.ProductID] = map[string]any{
-			"_in": filter.ProductIds,
-		}
-	}
-
-	return &param
-}
-
-func (s *DbStripeStore) CountPrices(ctx context.Context, filter *shared.StripePriceListFilter) (int64, error) {
-	filermap := listPriceFilterFuncMap(filter)
-	data, err := crudrepo.StripePrice.Count(ctx, s.db, filermap)
-	if err != nil {
-		return 0, err
-	}
-	return data, nil
 }
 
 func (s *DbStripeStore) ListCustomers(ctx context.Context, input *shared.StripeCustomerListParams) ([]*models.StripeCustomer, error) {

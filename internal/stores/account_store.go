@@ -35,9 +35,6 @@ var (
 	// UserAccountColumnNames = models.UserAccounts.Columns().Names()
 )
 
-// ListUserAccounts implements AdminCrudActions.
-// ListUsers implements AdminCrudActions.
-
 func (u *DbAccountStore) ListUserAccounts(ctx context.Context, input *shared.UserAccountListParams) ([]*models.UserAccount, error) {
 	where := UserAccountWhere(&input.UserAccountListFilter)
 	sort := UserAccountOrderBy(&input.SortParams)
@@ -59,7 +56,7 @@ func UserAccountOrderBy(params *shared.SortParams) *map[string]string {
 	if params == nil {
 		return nil
 	}
-	if slices.Contains(UserAccountColumnNames, params.SortBy) {
+	if slices.Contains(models.UserAccountTable.Columns, params.SortBy) {
 		return &map[string]string{
 			params.SortBy: params.SortOrder,
 		}

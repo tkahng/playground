@@ -24,6 +24,7 @@ type StripeProduct struct {
 // type StripeProduct
 
 type stripeProductTable struct {
+	Columns     []string
 	ID          string
 	Active      string
 	Name        string
@@ -38,6 +39,19 @@ type stripeProductTable struct {
 }
 
 var StripeProductTable = stripeProductTable{
+	Columns: []string{
+		"id",
+		"active",
+		"name",
+		"description",
+		"image",
+		"metadata",
+		"created_at",
+		"updated_at",
+		"prices",
+		"roles",
+		"permissions",
+	},
 	ID:          "id",
 	Active:      "active",
 	Name:        "name",
@@ -54,6 +68,19 @@ var StripeProductTable = stripeProductTable{
 var StripeProductTableName = "stripe_products"
 
 var StripeProductTablePrefix = stripeProductTable{
+	Columns: []string{
+		StripeProductTableName + "." + "id",
+		StripeProductTableName + "." + "active",
+		StripeProductTableName + "." + "name",
+		StripeProductTableName + "." + "description",
+		StripeProductTableName + "." + "image",
+		StripeProductTableName + "." + "metadata",
+		StripeProductTableName + "." + "created_at",
+		StripeProductTableName + "." + "updated_at",
+		StripeProductTableName + "." + "prices",
+		StripeProductTableName + "." + "roles",
+		StripeProductTableName + "." + "permissions",
+	},
 	ID:          StripeProductTableName + "." + "id",
 	Active:      StripeProductTableName + "." + "active",
 	Name:        StripeProductTableName + "." + "name",
@@ -107,6 +134,7 @@ type StripePrice struct {
 }
 
 type stripePriceTable struct {
+	Columns         []string
 	ID              string
 	ProductID       string
 	LookupKey       string
@@ -127,6 +155,23 @@ type stripePriceTable struct {
 var StripePriceTableName = "stripe_prices"
 
 var StripePriceTable = stripePriceTable{
+	Columns: []string{
+		"id",
+		"product_id",
+		"lookup_key",
+		"active",
+		"unit_amount",
+		"currency",
+		"type",
+		"interval",
+		"interval_count",
+		"trial_period_days",
+		"metadata",
+		"created_at",
+		"updated_at",
+		"product",
+		"subscriptions",
+	},
 	ID:              "id",
 	ProductID:       "product_id",
 	LookupKey:       "lookup_key",
@@ -144,6 +189,23 @@ var StripePriceTable = stripePriceTable{
 	Subscriptions:   "subscriptions",
 }
 var StripePriceTablePrefix = stripePriceTable{
+	Columns: []string{
+		StripePriceTableName + "." + "id",
+		StripePriceTableName + "." + "product_id",
+		StripePriceTableName + "." + "lookup_key",
+		StripePriceTableName + "." + "active",
+		StripePriceTableName + "." + "unit_amount",
+		StripePriceTableName + "." + "currency",
+		StripePriceTableName + "." + "type",
+		StripePriceTableName + "." + "interval",
+		StripePriceTableName + "." + "interval_count",
+		StripePriceTableName + "." + "trial_period_days",
+		StripePriceTableName + "." + "metadata",
+		StripePriceTableName + "." + "created_at",
+		StripePriceTableName + "." + "updated_at",
+		StripePriceTableName + "." + "product",
+		StripePriceTableName + "." + "subscriptions",
+	},
 	ID:              StripePriceTableName + "." + "id",
 	ProductID:       StripePriceTableName + "." + "product_id",
 	LookupKey:       StripePriceTableName + "." + "lookup_key",
@@ -203,6 +265,7 @@ type StripeSubscription struct {
 }
 
 type stripeSubscriptionTable struct {
+	Columns            []string
 	ID                 string
 	StripeCustomerID   string
 	Status             string
@@ -227,29 +290,73 @@ type stripeSubscriptionTable struct {
 
 var StripeSubscriptionTableName = "stripe_subscriptions"
 var StripeSubscriptionTable = stripeSubscriptionTable{
-	ID:                 "id",
+	Columns: []string{
+		"id",
+		"stripe_customer_id",
+		"status",
+		"metadata",
+		"item_id",
+		"price_id",
+		"quantity",
+		"cancel_at_period_end",
+		"created",
+		"current_period_start",
+		"current_period_end",
+		"ended_at",
+		"cancel_at",
+		"canceled_at",
+		"trial_start",
+		"trial_end",
+		"created_at",
+		"updated_at",
+		"stripe_customer",
+		"price",
+	},
+	ID:                 "id", // primary key
 	StripeCustomerID:   "stripe_customer_id",
 	Status:             "status",
 	Metadata:           "metadata",
-	ItemID:             "item_id",
-	PriceID:            "price_id",
+	ItemID:             "item_id",  // item_id is the ID of the subscription item
+	PriceID:            "price_id", // price_id is the ID of the price associated with the subscription
 	Quantity:           "quantity",
 	CancelAtPeriodEnd:  "cancel_at_period_end",
-	Created:            "created",
-	CurrentPeriodStart: "current_period_start",
-	CurrentPeriodEnd:   "current_period_end",
-	EndedAt:            "ended_at",
-	CancelAt:           "cancel_at",
-	CanceledAt:         "canceled_at",
-	TrialStart:         "trial_start",
-	TrialEnd:           "trial_end",
-	CreatedAt:          "created_at",
-	UpdatedAt:          "updated_at",
-	StripeCustomer:     "stripe_customer",
-	Price:              "price",
+	Created:            "created",              // created is the timestamp when the subscription was created
+	CurrentPeriodStart: "current_period_start", // current_period_start is the start of the current billing period
+	CurrentPeriodEnd:   "current_period_end",   // current_period_end is the end of the current billing period
+	EndedAt:            "ended_at",             // ended_at is the timestamp when the subscription ended, if applicable
+	CancelAt:           "cancel_at",            // cancel_at is the timestamp when the subscription will be canceled, if applicable
+	CanceledAt:         "canceled_at",          // canceled_at is the timestamp when the subscription was canceled, if applicable
+	TrialStart:         "trial_start",          // trial_start is the timestamp when the trial period started, if applicable
+	TrialEnd:           "trial_end",            // trial_end is the timestamp when the trial period ended, if applicable
+	CreatedAt:          "created_at",           // created_at is the timestamp when the subscription was created in the database
+	UpdatedAt:          "updated_at",           // updated_at is the timestamp when the subscription was last updated in the database
+	StripeCustomer:     "stripe_customer",      // stripe_customer is the StripeCustomer associated with the subscription
+	Price:              "price",                // price is the StripePrice associated with the subscription
 }
 
 var StripeSubscriptionTablePrefix = stripeSubscriptionTable{
+	Columns: []string{
+		StripeSubscriptionTableName + "." + "id",
+		StripeSubscriptionTableName + "." + "stripe_customer_id",
+		StripeSubscriptionTableName + "." + "status",
+		StripeSubscriptionTableName + "." + "metadata",
+		StripeSubscriptionTableName + "." + "item_id",
+		StripeSubscriptionTableName + "." + "price_id",
+		StripeSubscriptionTableName + "." + "quantity",
+		StripeSubscriptionTableName + "." + "cancel_at_period_end",
+		StripeSubscriptionTableName + "." + "created",
+		StripeSubscriptionTableName + "." + "current_period_start",
+		StripeSubscriptionTableName + "." + "current_period_end",
+		StripeSubscriptionTableName + "." + "ended_at",
+		StripeSubscriptionTableName + "." + "cancel_at",
+		StripeSubscriptionTableName + "." + "canceled_at",
+		StripeSubscriptionTableName + "." + "trial_start",
+		StripeSubscriptionTableName + "." + "trial_end",
+		StripeSubscriptionTableName + "." + "created_at",
+		StripeSubscriptionTableName + "." + "updated_at",
+		StripeSubscriptionTableName + "." + "stripe_customer",
+		StripeSubscriptionTableName + "." + "price",
+	},
 	ID:                 StripeSubscriptionTableName + "." + "id",
 	StripeCustomerID:   StripeSubscriptionTableName + "." + "stripe_customer_id",
 	Status:             StripeSubscriptionTableName + "." + "status",
@@ -298,6 +405,7 @@ type StripeCustomer struct {
 }
 
 type stripeCustomerTable struct {
+	Columns        []string
 	ID             string
 	Email          string
 	Name           string
@@ -316,6 +424,21 @@ type stripeCustomerTable struct {
 var StripeCustomerTableName = "stripe_customers"
 
 var StripeCustomerTable = stripeCustomerTable{
+	Columns: []string{
+		"id",
+		"email",
+		"name",
+		"user_id",
+		"team_id",
+		"customer_type",
+		"billing_address",
+		"payment_method",
+		"created_at",
+		"updated_at",
+		"team",
+		"user",
+		"subscriptions",
+	},
 	ID:             "id",
 	Email:          "email",
 	Name:           "name",
@@ -332,6 +455,21 @@ var StripeCustomerTable = stripeCustomerTable{
 }
 
 var StripeCustomerTablePrefix = stripeCustomerTable{
+	Columns: []string{
+		StripeCustomerTableName + "." + "id",
+		StripeCustomerTableName + "." + "email",
+		StripeCustomerTableName + "." + "name",
+		StripeCustomerTableName + "." + "user_id",
+		StripeCustomerTableName + "." + "team_id",
+		StripeCustomerTableName + "." + "customer_type",
+		StripeCustomerTableName + "." + "billing_address",
+		StripeCustomerTableName + "." + "payment_method",
+		StripeCustomerTableName + "." + "created_at",
+		StripeCustomerTableName + "." + "updated_at",
+		StripeCustomerTableName + "." + "team",
+		StripeCustomerTableName + "." + "user",
+		StripeCustomerTableName + "." + "subscriptions",
+	},
 	ID:             StripeCustomerTableName + "." + "id",
 	Email:          StripeCustomerTableName + "." + "email",
 	Name:           StripeCustomerTableName + "." + "name",

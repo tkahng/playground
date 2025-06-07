@@ -52,6 +52,7 @@ type UserAccount struct {
 }
 
 type userAccountTable struct {
+	Columns           []string
 	ID                string
 	UserID            string
 	Type              string
@@ -71,6 +72,24 @@ type userAccountTable struct {
 }
 
 var UserAccountTable = userAccountTable{
+	Columns: []string{
+		"id",
+		"user_id",
+		"type",
+		"provider",
+		"provider_account_id",
+		"password",
+		"refresh_token",
+		"access_token",
+		"expires_at",
+		"id_token",
+		"scope",
+		"session_state",
+		"token_type",
+		"created_at",
+		"updated_at",
+		"user",
+	},
 	ID:                "id",
 	UserID:            "user_id",
 	Type:              "type",
