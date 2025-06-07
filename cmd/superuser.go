@@ -43,10 +43,10 @@ var superuserCreate = &cobra.Command{
 		confdb := conf.GetConfig[conf.DBConfig]()
 
 		dbx := database.CreateQueries(ctx, confdb.DatabaseUrl)
-		userStore := stores.NewPostgresUserStore(dbx)
-		authStore := stores.NewPostgresAuthStore(dbx)
+		userStore := stores.NewDbUserStore(dbx)
+		authStore := stores.NewDbAuthStore(dbx)
 
-		rbacStore := stores.NewPostgresRBACStore(dbx)
+		rbacStore := stores.NewDbRBACStore(dbx)
 		err := rbacStore.EnsureRoleAndPermissions(ctx, "superuser", "superuser")
 		if err != nil {
 			return err

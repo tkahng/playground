@@ -9,17 +9,17 @@ import (
 	"github.com/tkahng/authgo/internal/models"
 )
 
-type PostgresNotificationStore struct {
+type DbNotificationStore struct {
 	db database.Dbx
 }
 
-func NewPostgresNotificationStore(db database.Dbx) *PostgresNotificationStore {
-	return &PostgresNotificationStore{
+func NewDbNotificationStore(db database.Dbx) *DbNotificationStore {
+	return &DbNotificationStore{
 		db: db,
 	}
 }
 
-func (s *PostgresNotificationStore) CreateNotification(ctx context.Context, notification *models.Notification) (*models.Notification, error) {
+func (s *DbNotificationStore) CreateNotification(ctx context.Context, notification *models.Notification) (*models.Notification, error) {
 	return crudrepo.Notification.PostOne(
 		ctx,
 		s.db,
@@ -27,7 +27,7 @@ func (s *PostgresNotificationStore) CreateNotification(ctx context.Context, noti
 	)
 }
 
-func (s *PostgresNotificationStore) CreateManyNotifications(ctx context.Context, notifications []models.Notification) ([]*models.Notification, error) {
+func (s *DbNotificationStore) CreateManyNotifications(ctx context.Context, notifications []models.Notification) ([]*models.Notification, error) {
 	return crudrepo.Notification.Post(
 		ctx,
 		s.db,
@@ -35,7 +35,7 @@ func (s *PostgresNotificationStore) CreateManyNotifications(ctx context.Context,
 	)
 }
 
-func (s *PostgresNotificationStore) FindNotification(ctx context.Context, args *models.Notification) (*models.Notification, error) {
+func (s *DbNotificationStore) FindNotification(ctx context.Context, args *models.Notification) (*models.Notification, error) {
 	if args == nil {
 		return nil, nil
 	}

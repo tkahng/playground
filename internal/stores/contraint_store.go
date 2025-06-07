@@ -11,12 +11,12 @@ import (
 	"github.com/tkahng/authgo/internal/tools/types"
 )
 
-type PostgresConstraintStore struct {
+type DbConstraintStore struct {
 	db database.Dbx
 }
 
 // FindLatestActiveSubscriptionByTeamId implements services.ConstaintCheckerStore.
-func (p *PostgresConstraintStore) FindLatestActiveSubscriptionByTeamId(ctx context.Context, teamId uuid.UUID) (*models.StripeSubscription, error) {
+func (p *DbConstraintStore) FindLatestActiveSubscriptionByTeamId(ctx context.Context, teamId uuid.UUID) (*models.StripeSubscription, error) {
 	subscriptions, err := crudrepo.StripeSubscription.Get(
 		ctx,
 		p.db,
@@ -47,7 +47,7 @@ func (p *PostgresConstraintStore) FindLatestActiveSubscriptionByTeamId(ctx conte
 }
 
 // FindUserByEmail implements services.ConstaintCheckerStore.
-func (p *PostgresConstraintStore) FindUserByEmail(ctx context.Context, email string) (*models.User, error) {
+func (p *DbConstraintStore) FindUserByEmail(ctx context.Context, email string) (*models.User, error) {
 	return crudrepo.User.GetOne(
 		ctx,
 		p.db,
@@ -60,7 +60,7 @@ func (p *PostgresConstraintStore) FindUserByEmail(ctx context.Context, email str
 }
 
 // FindLatestActiveSubscriptionByUserId implements services.ConstaintCheckerStore.
-func (p *PostgresConstraintStore) FindLatestActiveSubscriptionByUserId(ctx context.Context, userId uuid.UUID) (*models.StripeSubscription, error) {
+func (p *DbConstraintStore) FindLatestActiveSubscriptionByUserId(ctx context.Context, userId uuid.UUID) (*models.StripeSubscription, error) {
 	subscriptions, err := crudrepo.StripeSubscription.Get(
 		ctx,
 		p.db,
@@ -93,7 +93,7 @@ func (p *PostgresConstraintStore) FindLatestActiveSubscriptionByUserId(ctx conte
 }
 
 // FindUserById implements services.ConstaintCheckerStore.
-func (p *PostgresConstraintStore) FindUserById(ctx context.Context, userId uuid.UUID) (*models.User, error) {
+func (p *DbConstraintStore) FindUserById(ctx context.Context, userId uuid.UUID) (*models.User, error) {
 	return crudrepo.User.GetOne(
 		ctx,
 		p.db,
@@ -105,10 +105,10 @@ func (p *PostgresConstraintStore) FindUserById(ctx context.Context, userId uuid.
 	)
 }
 
-func NewPostgresConstraintStore(db database.Dbx) *PostgresConstraintStore {
-	return &PostgresConstraintStore{
+func NewDbConstraintStore(db database.Dbx) *DbConstraintStore {
+	return &DbConstraintStore{
 		db: db,
 	}
 }
 
-var _ services.ConstaintCheckerStore = (*PostgresConstraintStore)(nil)
+var _ services.ConstaintCheckerStore = (*DbConstraintStore)(nil)

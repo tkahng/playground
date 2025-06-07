@@ -148,19 +148,19 @@ func NewBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 
 	enqueuer := jobs.NewDBEnqueuer(pool)
 
-	userStore := stores.NewPostgresUserStore(pool)
+	userStore := stores.NewDbUserStore(pool)
 	userService := services.NewUserService(userStore)
 
-	userAccountStore := stores.NewPostgresUserAccountStore(pool)
+	userAccountStore := stores.NewDbAccountStore(pool)
 	userAccountService := services.NewUserAccountService(userAccountStore)
 
-	rbac := stores.NewPostgresRBACStore(pool)
+	rbac := stores.NewDbRBACStore(pool)
 	rbacService := services.NewRBACService(rbac)
 
 	taskStore := stores.NewTaskStore(pool)
 	taskService := services.NewTaskService(taskStore)
 
-	paymentStore := stores.NewPostgresPaymentStore(pool)
+	paymentStore := stores.NewDbPaymentStore(pool)
 	paymentClient := payment.NewPaymentClient(cfg.StripeConfig)
 	paymentService := services.NewPaymentService(
 		paymentClient,
@@ -170,7 +170,7 @@ func NewBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 	tokenService := services.NewJwtService()
 	passwordService := services.NewPasswordService()
 
-	authStore := stores.NewPostgresAuthStore(pool)
+	authStore := stores.NewDbAuthStore(pool)
 	routineService := services.NewRoutineService()
 	authMailService := services.NewMailService(mail)
 	authService := services.NewAuthService(
@@ -183,7 +183,7 @@ func NewBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 		l,
 		enqueuer,
 	)
-	checkerStore := stores.NewPostgresConstraintStore(pool)
+	checkerStore := stores.NewDbConstraintStore(pool)
 	checker := services.NewConstraintCheckerService(
 		checkerStore,
 	)

@@ -20,12 +20,12 @@ import (
 	"github.com/tkahng/authgo/internal/tools/types"
 )
 
-type PostgresRBACStore struct {
+type DbRBACStore struct {
 	db database.Dbx
 }
 
 // DeleteProductRoles implements services.RBACStore.
-func (s *PostgresRBACStore) DeleteProductRoles(ctx context.Context, productId string, roleIds ...uuid.UUID) error {
+func (s *DbRBACStore) DeleteProductRoles(ctx context.Context, productId string, roleIds ...uuid.UUID) error {
 	if len(roleIds) == 0 {
 		return nil
 	}
@@ -52,18 +52,18 @@ func (s *PostgresRBACStore) DeleteProductRoles(ctx context.Context, productId st
 }
 
 type RBACStore struct {
-	*PostgresRBACStore
+	*DbRBACStore
 }
 
-var _ services.RBACStore = &PostgresRBACStore{}
+var _ services.RBACStore = &DbRBACStore{}
 
-func NewPostgresRBACStore(db database.Dbx) *PostgresRBACStore {
-	return &PostgresRBACStore{
+func NewDbRBACStore(db database.Dbx) *DbRBACStore {
+	return &DbRBACStore{
 		db: db,
 	}
 }
 
-func (s *PostgresRBACStore) FindRolesByIds(ctx context.Context, params []uuid.UUID) ([]*models.Role, error) {
+func (s *DbRBACStore) FindRolesByIds(ctx context.Context, params []uuid.UUID) ([]*models.Role, error) {
 	if len(params) == 0 {
 		return nil, nil
 	}
@@ -87,7 +87,7 @@ func (s *PostgresRBACStore) FindRolesByIds(ctx context.Context, params []uuid.UU
 	)
 }
 
-func (s *PostgresRBACStore) CreateProductRoles(ctx context.Context, productId string, roleIds ...uuid.UUID) error {
+func (s *DbRBACStore) CreateProductRoles(ctx context.Context, productId string, roleIds ...uuid.UUID) error {
 	var roles []models.ProductRole
 	for _, role := range roleIds {
 		roles = append(roles, models.ProductRole{
@@ -103,7 +103,7 @@ func (s *PostgresRBACStore) CreateProductRoles(ctx context.Context, productId st
 
 }
 
-func (a *PostgresRBACStore) FindPermissionById(ctx context.Context, id uuid.UUID) (*models.Permission, error) {
+func (a *DbRBACStore) FindPermissionById(ctx context.Context, id uuid.UUID) (*models.Permission, error) {
 	data, err := crudrepo.Permission.GetOne(
 		ctx,
 		a.db,
@@ -116,7 +116,7 @@ func (a *PostgresRBACStore) FindPermissionById(ctx context.Context, id uuid.UUID
 	return database.OptionalRow(data, err)
 }
 
-func (a *PostgresRBACStore) FindRoleById(ctx context.Context, id uuid.UUID) (*models.Role, error) {
+func (a *DbRBACStore) FindRoleById(ctx context.Context, id uuid.UUID) (*models.Role, error) {
 	return crudrepo.Role.GetOne(ctx, a.db, &map[string]any{
 		models.RoleTable.ID: map[string]any{
 			"_eq": id,
@@ -124,7 +124,7 @@ func (a *PostgresRBACStore) FindRoleById(ctx context.Context, id uuid.UUID) (*mo
 	})
 }
 
-func (a *PostgresRBACStore) FindRoleByName(ctx context.Context, name string) (*models.Role, error) {
+func (a *DbRBACStore) FindRoleByName(ctx context.Context, name string) (*models.Role, error) {
 	return crudrepo.Role.GetOne(
 		ctx,
 		a.db,
@@ -138,7 +138,7 @@ func (a *PostgresRBACStore) FindRoleByName(ctx context.Context, name string) (*m
 
 // var _ RBACStore = &PostgresRBACStore{}
 
-func (a *PostgresRBACStore) AssignUserRoles(ctx context.Context, userId uuid.UUID, roleNames ...string) error {
+func (a *DbRBACStore) AssignUserRoles(ctx context.Context, userId uuid.UUID, roleNames ...string) error {
 	if len(roleNames) > 0 {
 		user, err := crudrepo.User.GetOne(
 			ctx,
@@ -198,7 +198,7 @@ func (a *PostgresRBACStore) AssignUserRoles(ctx context.Context, userId uuid.UUI
 }
 
 // CreateProductPermissions implements RBACStore.
-func (p *PostgresRBACStore) CreateProductPermissions(ctx context.Context, productId string, permissionIds ...uuid.UUID) error {
+func (p *DbRBACStore) CreateProductPermissions(ctx context.Context, productId string, permissionIds ...uuid.UUID) error {
 	var db database.Dbx = p.db
 	var permissions []models.ProductPermission
 	for _, permissionId := range permissionIds {
@@ -218,7 +218,7 @@ func (p *PostgresRBACStore) CreateProductPermissions(ctx context.Context, produc
 	return nil
 }
 
-func (p *PostgresRBACStore) CreateUserPermissions(ctx context.Context, userId uuid.UUID, permissionIds ...uuid.UUID) error {
+func (p *DbRBACStore) CreateUserPermissions(ctx context.Context, userId uuid.UUID, permissionIds ...uuid.UUID) error {
 	var dtos []models.UserPermission
 	for _, id := range permissionIds {
 		dtos = append(dtos, models.UserPermission{
@@ -237,7 +237,7 @@ func (p *PostgresRBACStore) CreateUserPermissions(ctx context.Context, userId uu
 	return nil
 }
 
-func (p *PostgresRBACStore) CreateUserRoles(ctx context.Context, userId uuid.UUID, roleIds ...uuid.UUID) error {
+func (p *DbRBACStore) CreateUserRoles(ctx context.Context, userId uuid.UUID, roleIds ...uuid.UUID) error {
 	var dtos []models.UserRole
 	for _, id := range roleIds {
 		dtos = append(dtos, models.UserRole{
@@ -258,7 +258,7 @@ func (p *PostgresRBACStore) CreateUserRoles(ctx context.Context, userId uuid.UUI
 }
 
 // FindPermissionByName implements RBACStore.
-func (p *PostgresRBACStore) FindPermissionByName(ctx context.Context, name string) (*models.Permission, error) {
+func (p *DbRBACStore) FindPermissionByName(ctx context.Context, name string) (*models.Permission, error) {
 	data, err := crudrepo.Permission.GetOne(
 		ctx,
 		p.db,
@@ -271,7 +271,7 @@ func (p *PostgresRBACStore) FindPermissionByName(ctx context.Context, name strin
 	return database.OptionalRow(data, err)
 }
 
-func (p *PostgresRBACStore) FindPermissionsByIds(ctx context.Context, params []uuid.UUID) ([]*models.Permission, error) {
+func (p *DbRBACStore) FindPermissionsByIds(ctx context.Context, params []uuid.UUID) ([]*models.Permission, error) {
 	if len(params) == 0 {
 		return nil, nil
 	}
@@ -295,7 +295,7 @@ func (p *PostgresRBACStore) FindPermissionsByIds(ctx context.Context, params []u
 	)
 }
 
-func (p *PostgresRBACStore) FindOrCreatePermission(ctx context.Context, permissionName string) (*models.Permission, error) {
+func (p *DbRBACStore) FindOrCreatePermission(ctx context.Context, permissionName string) (*models.Permission, error) {
 	permission, err := crudrepo.Permission.GetOne(
 		ctx,
 		p.db,
@@ -317,7 +317,7 @@ func (p *PostgresRBACStore) FindOrCreatePermission(ctx context.Context, permissi
 	return permission, nil
 }
 
-func (p *PostgresRBACStore) CreatePermission(ctx context.Context, name string, description *string) (*models.Permission, error) {
+func (p *DbRBACStore) CreatePermission(ctx context.Context, name string, description *string) (*models.Permission, error) {
 	data, err := crudrepo.Permission.PostOne(ctx, p.db, &models.Permission{
 		Name:        name,
 		Description: description,
@@ -328,7 +328,7 @@ func (p *PostgresRBACStore) CreatePermission(ctx context.Context, name string, d
 	return data, nil
 }
 
-func (p *PostgresRBACStore) UpdatePermission(ctx context.Context, id uuid.UUID, roledto *shared.UpdatePermissionDto) error {
+func (p *DbRBACStore) UpdatePermission(ctx context.Context, id uuid.UUID, roledto *shared.UpdatePermissionDto) error {
 	permission, err := crudrepo.Permission.GetOne(
 		ctx,
 		p.db,
@@ -354,7 +354,7 @@ func (p *PostgresRBACStore) UpdatePermission(ctx context.Context, id uuid.UUID, 
 	return nil
 }
 
-func (p *PostgresRBACStore) CreateRole(ctx context.Context, role *shared.CreateRoleDto) (*models.Role, error) {
+func (p *DbRBACStore) CreateRole(ctx context.Context, role *shared.CreateRoleDto) (*models.Role, error) {
 	if role == nil {
 		return nil, fmt.Errorf("role is nil")
 	}
@@ -368,7 +368,7 @@ func (p *PostgresRBACStore) CreateRole(ctx context.Context, role *shared.CreateR
 	return data, nil
 }
 
-func (p *PostgresRBACStore) UpdateRole(ctx context.Context, id uuid.UUID, roledto *shared.UpdateRoleDto) error {
+func (p *DbRBACStore) UpdateRole(ctx context.Context, id uuid.UUID, roledto *shared.UpdateRoleDto) error {
 	role, err := crudrepo.Role.GetOne(
 		ctx,
 		p.db,
@@ -393,7 +393,7 @@ func (p *PostgresRBACStore) UpdateRole(ctx context.Context, id uuid.UUID, roledt
 	return nil
 }
 
-func (p *PostgresRBACStore) DeleteRole(ctx context.Context, id uuid.UUID) error {
+func (p *DbRBACStore) DeleteRole(ctx context.Context, id uuid.UUID) error {
 	_, err := crudrepo.Role.Delete(
 		ctx,
 		p.db,
@@ -409,7 +409,7 @@ func (p *PostgresRBACStore) DeleteRole(ctx context.Context, id uuid.UUID) error 
 	return nil
 }
 
-func (p *PostgresRBACStore) CreateRolePermissions(ctx context.Context, roleId uuid.UUID, permissionIds ...uuid.UUID) error {
+func (p *DbRBACStore) CreateRolePermissions(ctx context.Context, roleId uuid.UUID, permissionIds ...uuid.UUID) error {
 	var permissions []models.RolePermission
 	for _, perm := range permissionIds {
 		permissions = append(permissions, models.RolePermission{
@@ -424,7 +424,7 @@ func (p *PostgresRBACStore) CreateRolePermissions(ctx context.Context, roleId uu
 	return nil
 }
 
-func (p *PostgresRBACStore) DeleteUserRole(ctx context.Context, userId, roleId uuid.UUID) error {
+func (p *DbRBACStore) DeleteUserRole(ctx context.Context, userId, roleId uuid.UUID) error {
 	_, err := crudrepo.RolePermission.Delete(
 		ctx,
 		p.db,
@@ -443,7 +443,7 @@ func (p *PostgresRBACStore) DeleteUserRole(ctx context.Context, userId, roleId u
 	return nil
 }
 
-func (p *PostgresRBACStore) DeletePermission(ctx context.Context, id uuid.UUID) error {
+func (p *DbRBACStore) DeletePermission(ctx context.Context, id uuid.UUID) error {
 	_, err := crudrepo.Permission.Delete(
 		ctx,
 		p.db,
@@ -459,7 +459,7 @@ func (p *PostgresRBACStore) DeletePermission(ctx context.Context, id uuid.UUID) 
 	return nil
 }
 
-func (p *PostgresRBACStore) FindOrCreateRole(ctx context.Context, roleName string) (*models.Role, error) {
+func (p *DbRBACStore) FindOrCreateRole(ctx context.Context, roleName string) (*models.Role, error) {
 	role, err := crudrepo.Role.GetOne(
 		ctx,
 		p.db,
@@ -481,7 +481,7 @@ func (p *PostgresRBACStore) FindOrCreateRole(ctx context.Context, roleName strin
 	return role, nil
 }
 
-func (p *PostgresRBACStore) EnsureRoleAndPermissions(ctx context.Context, roleName string, permissionNames ...string) error {
+func (p *DbRBACStore) EnsureRoleAndPermissions(ctx context.Context, roleName string, permissionNames ...string) error {
 	// find superuser role
 	role, err := p.FindOrCreateRole(ctx, roleName)
 	if err != nil {
@@ -534,7 +534,7 @@ FROM public.role_permissions rp
 GROUP BY rp.role_id;`
 )
 
-func (p *PostgresRBACStore) DeleteRolePermissions(ctx context.Context, roleId uuid.UUID, permissionIds ...uuid.UUID) error {
+func (p *DbRBACStore) DeleteRolePermissions(ctx context.Context, roleId uuid.UUID, permissionIds ...uuid.UUID) error {
 	if len(permissionIds) == 0 {
 		return nil
 	}
@@ -587,7 +587,7 @@ FROM public.product_permissions rp
 GROUP BY rp.product_id;`
 )
 
-func (p *PostgresRBACStore) LoadProductPermissions(ctx context.Context, productIds ...string) ([][]*models.Permission, error) {
+func (p *DbRBACStore) LoadProductPermissions(ctx context.Context, productIds ...string) ([][]*models.Permission, error) {
 
 	data, err := pgxscan.All(
 		ctx,
@@ -609,7 +609,7 @@ func (p *PostgresRBACStore) LoadProductPermissions(ctx context.Context, productI
 	}), nil
 }
 
-func (p *PostgresRBACStore) LoadRolePermissions(ctx context.Context, roleIds ...uuid.UUID) ([][]*models.Permission, error) {
+func (p *DbRBACStore) LoadRolePermissions(ctx context.Context, roleIds ...uuid.UUID) ([][]*models.Permission, error) {
 	// var results []JoinedResult[*crudModels.Permission, uuid.UUID]
 	ids := []string{}
 	for _, id := range roleIds {
@@ -635,7 +635,7 @@ func (p *PostgresRBACStore) LoadRolePermissions(ctx context.Context, roleIds ...
 	}), nil
 }
 
-func (p *PostgresRBACStore) CountRoles(ctx context.Context, filter *shared.RoleListFilter) (int64, error) {
+func (p *DbRBACStore) CountRoles(ctx context.Context, filter *shared.RoleListFilter) (int64, error) {
 	q := squirrel.Select("COUNT(roles.*)").From("roles")
 
 	q = ListRolesFilterFuncQuery(q, filter)
@@ -650,7 +650,7 @@ func (p *PostgresRBACStore) CountRoles(ctx context.Context, filter *shared.RoleL
 
 	return data[0].Count, nil
 }
-func (p *PostgresRBACStore) ListPermissions(ctx context.Context, input *shared.PermissionsListParams) ([]*models.Permission, error) {
+func (p *DbRBACStore) ListPermissions(ctx context.Context, input *shared.PermissionsListParams) ([]*models.Permission, error) {
 	q := squirrel.Select("permissions.*").From("permissions")
 	filter := input.PermissionsListFilter
 	pageInput := &input.PaginatedInput
@@ -669,7 +669,7 @@ func (p *PostgresRBACStore) ListPermissions(ctx context.Context, input *shared.P
 }
 
 // CountPermissions implements AdminCrudActions.
-func (p *PostgresRBACStore) CountPermissions(ctx context.Context, filter *shared.PermissionsListFilter) (int64, error) {
+func (p *DbRBACStore) CountPermissions(ctx context.Context, filter *shared.PermissionsListFilter) (int64, error) {
 	q := squirrel.Select("COUNT(permissions.*)").From("permissions")
 
 	// q = ViewApplyPagination(q, pageInput)
@@ -723,7 +723,7 @@ func ListPermissionsFilterFunc(sq squirrel.SelectBuilder, filter *shared.Permiss
 	return sq
 }
 
-func (p *PostgresRBACStore) ListRoles(ctx context.Context, input *shared.RolesListParams) ([]*models.Role, error) {
+func (p *DbRBACStore) ListRoles(ctx context.Context, input *shared.RolesListParams) ([]*models.Role, error) {
 	q := squirrel.Select("roles.*").From("roles")
 	filter := input.RoleListFilter
 	pageInput := &input.PaginatedInput
@@ -902,7 +902,7 @@ FROM public.permissions p
 WHERE cp.id IS NULL;`
 )
 
-func (p *PostgresRBACStore) ListUserNotPermissionsSource(ctx context.Context, userId uuid.UUID, limit int64, offset int64) ([]shared.PermissionSource, error) {
+func (p *DbRBACStore) ListUserNotPermissionsSource(ctx context.Context, userId uuid.UUID, limit int64, offset int64) ([]shared.PermissionSource, error) {
 
 	res, err := database.QueryAll[shared.PermissionSource](ctx, p.db, getuserNotPermissions, userId, limit, offset)
 	if err != nil {
@@ -912,7 +912,7 @@ func (p *PostgresRBACStore) ListUserNotPermissionsSource(ctx context.Context, us
 	return res, nil
 }
 
-func (p *PostgresRBACStore) CountNotUserPermissionSource(ctx context.Context, userId uuid.UUID) (int64, error) {
+func (p *DbRBACStore) CountNotUserPermissionSource(ctx context.Context, userId uuid.UUID) (int64, error) {
 	// q := psql.RawQuery(getuserNotPermissionCounts, userId, userId)
 
 	data, err := database.Count(ctx, p.db, getuserNotPermissionCounts, userId)
@@ -1054,7 +1054,7 @@ FROM combined_permissions
 	;`
 )
 
-func (p *PostgresRBACStore) ListUserPermissionsSource(ctx context.Context, userId uuid.UUID, limit int64, offset int64) ([]shared.PermissionSource, error) {
+func (p *DbRBACStore) ListUserPermissionsSource(ctx context.Context, userId uuid.UUID, limit int64, offset int64) ([]shared.PermissionSource, error) {
 	data, err := database.QueryAll[shared.PermissionSource](ctx, p.db, QueryUserPermissionSource, userId, limit, offset)
 	if err != nil {
 		return nil, err
@@ -1063,7 +1063,7 @@ func (p *PostgresRBACStore) ListUserPermissionsSource(ctx context.Context, userI
 	return data, nil
 }
 
-func (p *PostgresRBACStore) CountUserPermissionSource(ctx context.Context, userId uuid.UUID) (int64, error) {
+func (p *DbRBACStore) CountUserPermissionSource(ctx context.Context, userId uuid.UUID) (int64, error) {
 	data, err := database.Count(ctx, p.db, QueryUserPermissionSourceCount, userId)
 	if err != nil {
 		return 0, err

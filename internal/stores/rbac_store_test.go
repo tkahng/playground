@@ -18,7 +18,7 @@ func TestListPermissions(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(tx database.Dbx) error {
-		rbacstore := stores.NewPostgresRBACStore(tx)
+		rbacstore := stores.NewDbRBACStore(tx)
 		err := rbacstore.EnsureRoleAndPermissions(
 			ctx,
 			shared.PermissionNameAdmin,
@@ -63,7 +63,7 @@ func TestListPermissions(t *testing.T) {
 		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				store := stores.NewPostgresRBACStore(tx)
+				store := stores.NewDbRBACStore(tx)
 				got, err := store.ListPermissions(tt.args.ctx, tt.args.input)
 				if (err != nil) != tt.wantErr {
 					t.Errorf("ListPermissions() error = %v, wantErr %v", err, tt.wantErr)
@@ -82,7 +82,7 @@ func TestCountPermissions(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(tx database.Dbx) error {
-		rbacstore := stores.NewPostgresRBACStore(tx)
+		rbacstore := stores.NewDbRBACStore(tx)
 		err := rbacstore.EnsureRoleAndPermissions(
 			ctx,
 			shared.PermissionNameAdmin,
@@ -130,7 +130,7 @@ func TestCountPermissions(t *testing.T) {
 
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				store := stores.NewPostgresRBACStore(tx)
+				store := stores.NewDbRBACStore(tx)
 				got, err := store.CountPermissions(ctx, tt.filter)
 				if (err != nil) != tt.wantErr {
 					t.Errorf("CountPermissions() error = %v, wantErr %v", err, tt.wantErr)
@@ -150,7 +150,7 @@ func TestListRoles(t *testing.T) {
 	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(tx database.Dbx) error {
 		// Create test roles and permissions
-		rbacstore := stores.NewPostgresRBACStore(tx)
+		rbacstore := stores.NewDbRBACStore(tx)
 		err := rbacstore.EnsureRoleAndPermissions(
 			ctx,
 			shared.PermissionNameAdmin,
@@ -194,7 +194,7 @@ func TestListRoles(t *testing.T) {
 		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				store := stores.NewPostgresRBACStore(tx)
+				store := stores.NewDbRBACStore(tx)
 				got, err := store.ListRoles(tt.args.ctx, tt.args.input)
 				if (err != nil) != tt.wantErr {
 					t.Errorf("ListRoles() error = %v, wantErr %v", err, tt.wantErr)
@@ -213,7 +213,7 @@ func TestCountRoles(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(tx database.Dbx) error {
-		rbacstore := stores.NewPostgresRBACStore(tx)
+		rbacstore := stores.NewDbRBACStore(tx)
 		err := rbacstore.EnsureRoleAndPermissions(
 			ctx,
 			shared.PermissionNameAdmin,
@@ -269,7 +269,7 @@ func TestCountRoles(t *testing.T) {
 
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				store := stores.NewPostgresRBACStore(tx)
+				store := stores.NewDbRBACStore(tx)
 				got, err := store.CountRoles(ctx, tt.filter)
 				if (err != nil) != tt.wantErr {
 					t.Errorf("CountRoles() error = %v, wantErr %v", err, tt.wantErr)
@@ -289,7 +289,7 @@ func TestFindPermissionsByIds(t *testing.T) {
 	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		// Create test permissions
-		rbacstore := stores.NewPostgresRBACStore(dbxx)
+		rbacstore := stores.NewDbRBACStore(dbxx)
 		// userstore := stores.NewPostgresUserStore(dbxx)
 		perm1, err := rbacstore.CreatePermission(ctx, "test_perm_1", nil)
 		if err != nil {
@@ -356,7 +356,7 @@ func TestFindPermissionsByIds(t *testing.T) {
 
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				store := stores.NewPostgresRBACStore(dbxx)
+				store := stores.NewDbRBACStore(dbxx)
 				got, err := store.FindPermissionsByIds(tt.args.ctx, tt.args.params)
 				if (err != nil) != tt.wantErr {
 					t.Errorf("FindPermissionsByIds() error = %v, wantErr %v", err, tt.wantErr)
@@ -384,8 +384,8 @@ func TestListUserPermissionsSource(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
-		userStore := stores.NewPostgresUserStore(dbxx)
-		rbacStore := stores.NewPostgresRBACStore(dbxx)
+		userStore := stores.NewDbUserStore(dbxx)
+		rbacStore := stores.NewDbRBACStore(dbxx)
 		// Create test user
 		user, err := userStore.CreateUser(ctx, &models.User{
 			Email: "test@test.com",
@@ -460,7 +460,7 @@ func TestListUserPermissionsSource(t *testing.T) {
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				// Create a new instance of the PostgresRBACStore
-				store := stores.NewPostgresRBACStore(dbxx)
+				store := stores.NewDbRBACStore(dbxx)
 				got, err := store.ListUserPermissionsSource(tt.args.ctx, tt.args.userId, tt.args.limit, tt.args.offset)
 				if (err != nil) != tt.wantErr {
 					t.Errorf("ListUserPermissionsSource() error = %v, wantErr %v", err, tt.wantErr)
@@ -484,8 +484,8 @@ func TestCountUserPermissionSource(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
-		rbacstore := stores.NewPostgresRBACStore(dbxx)
-		userstore := stores.NewPostgresUserStore(dbxx)
+		rbacstore := stores.NewDbRBACStore(dbxx)
+		userstore := stores.NewDbUserStore(dbxx)
 		// Create test user
 		user, err := userstore.CreateUser(ctx, &models.User{
 			Email: "test@test.com",
@@ -553,7 +553,7 @@ func TestCountUserPermissionSource(t *testing.T) {
 
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				store := stores.NewPostgresRBACStore(dbxx)
+				store := stores.NewDbRBACStore(dbxx)
 				got, err := store.CountUserPermissionSource(tt.args.ctx, tt.args.userId)
 				if (err != nil) != tt.wantErr {
 					t.Errorf("CountUserPermissionSource() error = %v, wantErr %v", err, tt.wantErr)
@@ -572,8 +572,8 @@ func TestListUserNotPermissionsSource(t *testing.T) {
 	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		// Create test user
-		userstore := stores.NewPostgresUserStore(dbxx)
-		rbacstore := stores.NewPostgresRBACStore(dbxx)
+		userstore := stores.NewDbUserStore(dbxx)
+		rbacstore := stores.NewDbRBACStore(dbxx)
 		user, err := userstore.CreateUser(ctx, &models.User{
 			Email: "test@test.com",
 		})
@@ -664,7 +664,7 @@ func TestListUserNotPermissionsSource(t *testing.T) {
 
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				store := stores.NewPostgresRBACStore(dbxx)
+				store := stores.NewDbRBACStore(dbxx)
 				got, err := store.ListUserNotPermissionsSource(tt.args.ctx, tt.args.userId, tt.args.limit, tt.args.offset)
 				if (err != nil) != tt.wantErr {
 					t.Errorf("ListUserNotPermissionsSource() error = %v, wantErr %v", err, tt.wantErr)
@@ -688,8 +688,8 @@ func TestCountNotUserPermissionSource(t *testing.T) {
 	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		// Create test user
-		userstore := stores.NewPostgresUserStore(dbxx)
-		rbacstore := stores.NewPostgresRBACStore(dbxx)
+		userstore := stores.NewDbUserStore(dbxx)
+		rbacstore := stores.NewDbRBACStore(dbxx)
 		user, err := userstore.CreateUser(ctx, &models.User{
 			Email: "test@test.com",
 		})
@@ -762,7 +762,7 @@ func TestCountNotUserPermissionSource(t *testing.T) {
 
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				store := stores.NewPostgresRBACStore(dbxx)
+				store := stores.NewDbRBACStore(dbxx)
 				got, err := store.CountNotUserPermissionSource(tt.args.ctx, tt.args.userId)
 				if (err != nil) != tt.wantErr {
 					t.Errorf("CountNotUserPermissionSource() error = %v, wantErr %v", err, tt.wantErr)
@@ -782,7 +782,7 @@ func TestCreateProductPermissions(t *testing.T) {
 	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		// rbacStore := stores.NewPostgresRBACStore(dbxx)
-		paymentStore := stores.NewPostgresPaymentStore(dbxx)
+		paymentStore := stores.NewDbPaymentStore(dbxx)
 		permission, err := paymentStore.FindOrCreatePermission(ctx, "basic")
 		if err != nil {
 			t.Fatalf("failed to find or create permission: %v", err)
@@ -835,8 +835,8 @@ func TestCreateUserRoles(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
-		userStore := stores.NewPostgresUserStore(dbxx)
-		rbacStore := stores.NewPostgresRBACStore(dbxx)
+		userStore := stores.NewDbUserStore(dbxx)
+		rbacStore := stores.NewDbRBACStore(dbxx)
 		// Create a user
 		user, err := userStore.CreateUser(ctx, &models.User{
 			Email: "tkahng@gmail.com",

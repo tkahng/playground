@@ -13,11 +13,11 @@ import (
 	"github.com/tkahng/authgo/internal/test"
 )
 
-func TestPostgresTokenStore_CRUD(t *testing.T) {
+func TestTokenStore_CRUD(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
-		userStore := stores.NewPostgresUserStore(dbxx)
+		userStore := stores.NewDbUserStore(dbxx)
 		store := stores.NewPostgresTokenStore(dbxx)
 		user, err := userStore.CreateUser(ctx, &models.User{
 			Email: "user@example.com",

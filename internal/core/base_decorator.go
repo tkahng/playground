@@ -23,12 +23,12 @@ func NewDecorator(ctx context.Context, cfg conf.EnvConfig, pool database.Dbx) *B
 	enqueuer := jobs.NewDBEnqueuer(pool)
 	var mail mailer.Mailer = &mailer.LogMailer{}
 	authMailService := services.NewMailService(mail)
-	userStore := stores.NewPostgresUserStore(pool)
-	rbac := stores.NewPostgresRBACStore(pool)
+	userStore := stores.NewDbUserStore(pool)
+	rbac := stores.NewDbRBACStore(pool)
 	taskStore := stores.NewTaskStore(pool)
-	paymentStore := stores.NewPostgresPaymentStore(pool)
-	authStore := stores.NewPostgresAuthStore(pool)
-	userAccountStore := stores.NewPostgresUserAccountStore(pool)
+	paymentStore := stores.NewDbPaymentStore(pool)
+	authStore := stores.NewDbAuthStore(pool)
+	userAccountStore := stores.NewDbAccountStore(pool)
 	userService := services.NewUserService(userStore)
 	userAccountService := services.NewUserAccountService(userAccountStore)
 	rbacService := services.NewRBACService(rbac)
@@ -53,7 +53,7 @@ func NewDecorator(ctx context.Context, cfg conf.EnvConfig, pool database.Dbx) *B
 		l,
 		enqueuer,
 	)
-	checkerStore := stores.NewPostgresConstraintStore(pool)
+	checkerStore := stores.NewDbConstraintStore(pool)
 	checker := services.NewConstraintCheckerService(
 		checkerStore,
 	)

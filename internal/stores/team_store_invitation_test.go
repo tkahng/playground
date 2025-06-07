@@ -13,12 +13,12 @@ import (
 	"github.com/tkahng/authgo/internal/test"
 )
 
-func TestPostgresTeamStore_InvitationCRUD(t *testing.T) {
+func TestTeamStore_InvitationCRUD(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
-		store := stores.NewPostgresTeamStore(dbxx)
-		userStore := stores.NewPostgresUserStore(dbxx)
+		store := stores.NewDbTeamStore(dbxx)
+		userStore := stores.NewDbUserStore(dbxx)
 		user, err := userStore.CreateUser(
 			ctx,
 			&models.User{

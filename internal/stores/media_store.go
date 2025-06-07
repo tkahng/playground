@@ -10,26 +10,26 @@ import (
 	"github.com/tkahng/authgo/internal/services"
 )
 
-type MediaStore struct {
+type DbMediaStore struct {
 	dbx database.Dbx
 }
 
-func (s *MediaStore) WithTx(tx database.Dbx) services.MediaStore {
-	return &MediaStore{
+func (s *DbMediaStore) WithTx(tx database.Dbx) services.MediaStore {
+	return &DbMediaStore{
 		dbx: tx,
 	}
 }
 
-var _ services.MediaStore = (*MediaStore)(nil)
+var _ services.MediaStore = (*DbMediaStore)(nil)
 
 func NewMediaStore(dbx database.Dbx) services.MediaStore {
-	return &MediaStore{
+	return &DbMediaStore{
 		dbx: dbx,
 	}
 }
 
 // UpdateMedia implements services.MediaStore.
-func (s *MediaStore) UpdateMedia(ctx context.Context, media *models.Medium) (*models.Medium, error) {
+func (s *DbMediaStore) UpdateMedia(ctx context.Context, media *models.Medium) (*models.Medium, error) {
 	data, err := crudrepo.Media.PutOne(
 		ctx,
 		s.dbx,
@@ -41,7 +41,7 @@ func (s *MediaStore) UpdateMedia(ctx context.Context, media *models.Medium) (*mo
 	return data, nil
 }
 
-func (s *MediaStore) CreateMedia(ctx context.Context, media *models.Medium) (*models.Medium, error) {
+func (s *DbMediaStore) CreateMedia(ctx context.Context, media *models.Medium) (*models.Medium, error) {
 	data, err := crudrepo.Media.PostOne(
 		ctx,
 		s.dbx,
@@ -53,7 +53,7 @@ func (s *MediaStore) CreateMedia(ctx context.Context, media *models.Medium) (*mo
 	return data, nil
 }
 
-func (s *MediaStore) FindMediaByID(ctx context.Context, mediaId uuid.UUID) (*models.Medium, error) {
+func (s *DbMediaStore) FindMediaByID(ctx context.Context, mediaId uuid.UUID) (*models.Medium, error) {
 	data, err := crudrepo.Media.GetOne(
 		ctx,
 		s.dbx,

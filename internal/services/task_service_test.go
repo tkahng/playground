@@ -18,8 +18,8 @@ func TestDefineTaskOrderNumberByStatus(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
-		userStore := stores.NewPostgresUserStore(dbxx)
-		teamstore := stores.NewPostgresTeamStore(dbxx)
+		userStore := stores.NewDbUserStore(dbxx)
+		teamstore := stores.NewDbTeamStore(dbxx)
 		taskStore := stores.NewTaskStore(dbxx)
 		taskService := services.NewTaskService(taskStore)
 		user, err := userStore.CreateUser(ctx, &models.User{

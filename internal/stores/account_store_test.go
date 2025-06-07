@@ -10,17 +10,17 @@ import (
 	"github.com/tkahng/authgo/internal/test"
 )
 
-func TestPostgresAccountStore_CRUD(t *testing.T) {
+func TestAccountStore_CRUD(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
-		userStore := NewPostgresUserStore(dbxx)
+		userStore := NewDbUserStore(dbxx)
 		user, err := userStore.CreateUser(ctx, &models.User{
 			Email: "test@example.com",
 		})
 		assert.NoError(t, err)
 		userID := user.ID
-		store := NewPostgresUserAccountStore(dbxx)
+		store := NewDbAccountStore(dbxx)
 		account := &models.UserAccount{
 			UserID:            userID,
 			Provider:          models.ProvidersGoogle,
@@ -77,12 +77,12 @@ func TestPostgresAccountStore_CRUD(t *testing.T) {
 	})
 }
 
-func TestPostgresAccountStore_GetUserAccounts(t *testing.T) {
+func TestAccountStore_GetUserAccounts(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
-		userStore := NewPostgresUserStore(dbxx)
-		store := NewPostgresUserAccountStore(dbxx)
+		userStore := NewDbUserStore(dbxx)
+		store := NewDbAccountStore(dbxx)
 		user1, err := userStore.CreateUser(ctx, &models.User{Email: "user1@example.com"})
 		assert.NoError(t, err)
 		user2, err := userStore.CreateUser(ctx, &models.User{Email: "user2@example.com"})
@@ -103,12 +103,12 @@ func TestPostgresAccountStore_GetUserAccounts(t *testing.T) {
 	})
 }
 
-func TestPostgresAccountStore_UpdateUserPassword(t *testing.T) {
+func TestAccountStore_UpdateUserPassword(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
-		userStore := NewPostgresUserStore(dbxx)
-		store := NewPostgresUserAccountStore(dbxx)
+		userStore := NewDbUserStore(dbxx)
+		store := NewDbAccountStore(dbxx)
 		user, err := userStore.CreateUser(ctx, &models.User{Email: "pwuser@example.com"})
 		assert.NoError(t, err)
 		acc := &models.UserAccount{UserID: user.ID, Provider: models.ProvidersCredentials, Type: "credentials", ProviderAccountID: "pwuser"}

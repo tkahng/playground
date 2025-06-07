@@ -14,11 +14,11 @@ import (
 	"github.com/tkahng/authgo/internal/test"
 )
 
-func TestPostgresUserStore_CRUD(t *testing.T) {
+func TestUserStore_CRUD(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
-		store := stores.NewPostgresUserStore(dbxx)
+		store := stores.NewDbUserStore(dbxx)
 
 		// CreateUser
 		email := "testuser@example.com"
@@ -90,11 +90,11 @@ func TestPostgresUserStore_CRUD(t *testing.T) {
 	})
 }
 
-func TestPostgresUserStore_LoadUsersByUserIds(t *testing.T) {
+func TestUserStore_LoadUsersByUserIds(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
-		store := stores.NewPostgresUserStore(dbxx)
+		store := stores.NewDbUserStore(dbxx)
 		user1, err := store.CreateUser(ctx, &models.User{Email: "loaduser1@example.com"})
 		if err != nil {
 			t.Fatalf("CreateUser() error = %v", err)
@@ -122,11 +122,11 @@ func ptrString(s string) *string {
 	return &s
 }
 
-func TestPostgresUserStore_FindUserById(t *testing.T) {
+func TestUserStore_FindUserById(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
-		p := stores.NewPostgresUserStore(dbxx)
+		p := stores.NewDbUserStore(dbxx)
 		ids := []uuid.UUID{}
 		users := []*models.User{}
 		type fields struct {
@@ -194,7 +194,7 @@ func TestPostgresUserStore_FindUserById(t *testing.T) {
 
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				p := stores.NewPostgresUserStore(tt.fields.db)
+				p := stores.NewDbUserStore(tt.fields.db)
 				got, err := p.FindUserById(tt.args.ctx, tt.args.userId)
 				if (err != nil) != tt.wantErr {
 					t.Errorf("PostgresUserStore.FindUserById() error = %v, wantErr %v", err, tt.wantErr)

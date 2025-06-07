@@ -20,9 +20,9 @@ func TestConstraintCheckerService_CannotHaveValidSubscription(t *testing.T) {
 	ctx, dbx := test.DbSetup()
 
 	dbx.RunInTransaction(ctx, func(tx database.Dbx) error {
-		userStore := stores.NewPostgresUserStore(tx)
-		paymentStore := stores.NewPostgresStripeStore(tx)
-		constraintStore := stores.NewPostgresConstraintStore(tx)
+		userStore := stores.NewDbUserStore(tx)
+		paymentStore := stores.NewDbStripeStore(tx)
+		constraintStore := stores.NewDbConstraintStore(tx)
 
 		user, err := userStore.CreateUser(ctx, &models.User{
 			Email: "test@example.com",
@@ -107,7 +107,7 @@ func TestConstraintCheckerService_CannotHaveValidSubscription(t *testing.T) {
 }
 func TestConstraintCheckerService_CannotBeAdminOrBasicName(t *testing.T) {
 	ctx, dbx := test.DbSetup()
-	checkerStore := stores.NewPostgresConstraintStore(dbx)
+	checkerStore := stores.NewDbConstraintStore(dbx)
 	type fields struct {
 		db  database.Dbx
 		ctx context.Context
@@ -161,7 +161,7 @@ func TestConstraintCheckerService_CannotBeAdminOrBasicName(t *testing.T) {
 }
 func TestConstraintCheckerService_CannotBeAdminOrBasicRoleAndPermissionName(t *testing.T) {
 	ctx, dbx := test.DbSetup()
-	checkerStore := stores.NewPostgresConstraintStore(dbx)
+	checkerStore := stores.NewDbConstraintStore(dbx)
 
 	type fields struct {
 		db  database.Dbx
@@ -235,7 +235,7 @@ func TestConstraintCheckerService_CannotBeAdminOrBasicRoleAndPermissionName(t *t
 }
 func TestConstraintCheckerService_CannotBeSuperUserEmailAndRoleName(t *testing.T) {
 	ctx, dbx := test.DbSetup()
-	checkerStore := stores.NewPostgresConstraintStore(dbx)
+	checkerStore := stores.NewDbConstraintStore(dbx)
 
 	type fields struct {
 		db  database.Dbx
@@ -311,9 +311,9 @@ func TestConstraintCheckerService_CannotBeSuperUserID(t *testing.T) {
 	ctx, dbx := test.DbSetup()
 
 	dbx.RunInTransaction(ctx, func(tx database.Dbx) error {
-		rbacStore := stores.NewPostgresRBACStore(tx)
-		userStore := stores.NewPostgresUserStore(tx)
-		checkerStore := stores.NewPostgresConstraintStore(tx)
+		rbacStore := stores.NewDbRBACStore(tx)
+		userStore := stores.NewDbUserStore(tx)
+		checkerStore := stores.NewDbConstraintStore(tx)
 
 		err := rbacStore.EnsureRoleAndPermissions(
 			ctx,
@@ -415,7 +415,7 @@ func TestConstraintCheckerService_CannotBeSuperUserID(t *testing.T) {
 }
 func TestConstraintCheckerService_CannotBeSuperUserEmail(t *testing.T) {
 	ctx, dbx := test.DbSetup()
-	checkerStore := stores.NewPostgresConstraintStore(dbx)
+	checkerStore := stores.NewDbConstraintStore(dbx)
 
 	type fields struct {
 		db  database.Dbx

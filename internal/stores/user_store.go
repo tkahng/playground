@@ -17,22 +17,22 @@ import (
 	"github.com/tkahng/authgo/internal/crudrepo"
 )
 
-type PostgresUserStore struct {
+type DbUserStore struct {
 	db database.Dbx
 }
 
-func NewPostgresUserStore(db database.Dbx) *PostgresUserStore {
-	return &PostgresUserStore{
+func NewDbUserStore(db database.Dbx) *DbUserStore {
+	return &DbUserStore{
 		db: db,
 	}
 }
-func (s *PostgresUserStore) WithTx(tx database.Dbx) *PostgresUserStore {
-	return &PostgresUserStore{
+func (s *DbUserStore) WithTx(tx database.Dbx) *DbUserStore {
+	return &DbUserStore{
 		db: tx,
 	}
 }
 
-func (*PostgresUserStore) UserWhere(user *models.User) *map[string]any {
+func (*DbUserStore) UserWhere(user *models.User) *map[string]any {
 	if user == nil {
 		return nil
 	}
@@ -67,7 +67,7 @@ func (*PostgresUserStore) UserWhere(user *models.User) *map[string]any {
 	return &where
 }
 
-func (s *PostgresUserStore) FindUser(ctx context.Context, user *models.User) (*models.User, error) {
+func (s *DbUserStore) FindUser(ctx context.Context, user *models.User) (*models.User, error) {
 	where := s.UserWhere(user)
 	return crudrepo.User.GetOne(
 		ctx,
@@ -76,7 +76,7 @@ func (s *PostgresUserStore) FindUser(ctx context.Context, user *models.User) (*m
 	)
 }
 
-func (s *PostgresUserStore) FindUserById(ctx context.Context, userId uuid.UUID) (*models.User, error) {
+func (s *DbUserStore) FindUserById(ctx context.Context, userId uuid.UUID) (*models.User, error) {
 	return s.FindUser(
 		ctx,
 		&models.User{
@@ -86,7 +86,7 @@ func (s *PostgresUserStore) FindUserById(ctx context.Context, userId uuid.UUID) 
 }
 
 // AssignUserRoles implements UserStore.
-func (s *PostgresUserStore) AssignUserRoles(ctx context.Context, userId uuid.UUID, roleNames ...string) error {
+func (s *DbUserStore) AssignUserRoles(ctx context.Context, userId uuid.UUID, roleNames ...string) error {
 	if len(roleNames) > 0 {
 		user, err := crudrepo.User.GetOne(
 			ctx,
@@ -136,7 +136,7 @@ func (s *PostgresUserStore) AssignUserRoles(ctx context.Context, userId uuid.UUI
 }
 
 // DeleteUser implements UserStore.
-func (s *PostgresUserStore) DeleteUser(ctx context.Context, userId uuid.UUID) error {
+func (s *DbUserStore) DeleteUser(ctx context.Context, userId uuid.UUID) error {
 	_, err := crudrepo.User.Delete(ctx, s.db, &map[string]any{
 		models.UserTable.ID: map[string]any{"_eq": userId},
 	})
@@ -203,7 +203,7 @@ LIMIT 1;
 )
 
 // GetUserInfo implements UserStore.
-func (s *PostgresUserStore) GetUserInfo(ctx context.Context, email string) (*shared.UserInfo, error) {
+func (s *DbUserStore) GetUserInfo(ctx context.Context, email string) (*shared.UserInfo, error) {
 	type rolePermissionClaims struct {
 		UserID      uuid.UUID          `json:"user_id" db:"user_id"`
 		Email       string             `json:"email" db:"email"`
@@ -259,7 +259,7 @@ func (s *PostgresUserStore) GetUserInfo(ctx context.Context, email string) (*sha
 }
 
 // UpdateUser implements UserStore.
-func (s *PostgresUserStore) UpdateUser(ctx context.Context, user *models.User) error {
+func (s *DbUserStore) UpdateUser(ctx context.Context, user *models.User) error {
 	_, err := crudrepo.User.PutOne(ctx, s.db, &models.User{
 		ID:              user.ID,
 		Email:           user.Email,
@@ -278,7 +278,7 @@ func (s *PostgresUserStore) UpdateUser(ctx context.Context, user *models.User) e
 // FindUserByEmail implements UserStore.
 
 // CreateUser implements UserStore.
-func (s *PostgresUserStore) CreateUser(ctx context.Context, user *models.User) (*models.User, error) {
+func (s *DbUserStore) CreateUser(ctx context.Context, user *models.User) (*models.User, error) {
 	return crudrepo.User.PostOne(
 		ctx,
 		s.db,
@@ -286,7 +286,7 @@ func (s *PostgresUserStore) CreateUser(ctx context.Context, user *models.User) (
 	)
 }
 
-func (s *PostgresUserStore) LoadUsersByUserIds(ctx context.Context, userIds ...uuid.UUID) ([]*models.User, error) {
+func (s *DbUserStore) LoadUsersByUserIds(ctx context.Context, userIds ...uuid.UUID) ([]*models.User, error) {
 	users, err := crudrepo.User.Get(
 		ctx,
 		s.db,
@@ -310,8 +310,8 @@ func (s *PostgresUserStore) LoadUsersByUserIds(ctx context.Context, userIds ...u
 	}), nil
 }
 
-type PostgresUserStoreInterface interface {
-	WithTx(tx database.Dbx) *PostgresUserStore
+type DbUserStoreInterface interface {
+	WithTx(tx database.Dbx) *DbUserStore
 	UserWhere(user *models.User) *map[string]any
 	FindUser(ctx context.Context, user *models.User) (*models.User, error)
 	FindUserById(ctx context.Context, userId uuid.UUID) (*models.User, error)

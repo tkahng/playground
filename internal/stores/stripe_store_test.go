@@ -17,12 +17,12 @@ import (
 	"github.com/tkahng/authgo/internal/tools/types"
 )
 
-func TestPostgresStripeStore_CreateCustomer(t *testing.T) {
+func TestStripeStore_CreateCustomer(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
-		userStore := stores.NewPostgresUserStore(dbxx)
-		teamStore := stores.NewPostgresTeamStore(dbxx)
+		userStore := stores.NewDbUserStore(dbxx)
+		teamStore := stores.NewDbTeamStore(dbxx)
 		user, err := userStore.CreateUser(ctx, &models.User{
 			Email: "tkahng@gmail.com",
 		})
@@ -139,7 +139,7 @@ func TestPostgresStripeStore_CreateCustomer(t *testing.T) {
 		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				store := stores.NewPostgresStripeStore(tt.fields.db)
+				store := stores.NewDbStripeStore(tt.fields.db)
 				got, err := store.CreateCustomer(tt.args.ctx, tt.args.customer)
 				if (err != nil) != tt.wantErr {
 					t.Errorf("PostgresStripeStore.CreateCustomer() error = %v, wantErr %v", err, tt.wantErr)
@@ -170,11 +170,11 @@ func TestPostgresStripeStore_CreateCustomer(t *testing.T) {
 	})
 }
 
-func TestPostgresStripeStore_ProductAndPrice(t *testing.T) {
+func TestStripeStore_ProductAndPrice(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
-		store := stores.NewPostgresStripeStore(dbxx)
+		store := stores.NewDbStripeStore(dbxx)
 
 		// UpsertProduct
 		product := &models.StripeProduct{
@@ -247,11 +247,11 @@ func TestPostgresStripeStore_ProductAndPrice(t *testing.T) {
 	})
 }
 
-func TestPostgresStripeStore_UpsertProductAndPriceFromStripe(t *testing.T) {
+func TestStripeStore_UpsertProductAndPriceFromStripe(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
-		store := stores.NewPostgresStripeStore(dbxx)
+		store := stores.NewDbStripeStore(dbxx)
 		stripeProduct := &stripe.Product{
 			ID:          "prod_stripe_1",
 			Active:      true,
@@ -292,16 +292,16 @@ func TestPostgresStripeStore_UpsertProductAndPriceFromStripe(t *testing.T) {
 	})
 }
 
-func TestPostgresStripeStore_FindCustomer(t *testing.T) {
+func TestStripeStore_FindCustomer(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
-		userStore := stores.NewPostgresUserStore(dbxx)
+		userStore := stores.NewDbUserStore(dbxx)
 		user, err := userStore.CreateUser(ctx, &models.User{Email: "findcustomer@example.com"})
 		if err != nil {
 			t.Fatalf("CreateUser() error = %v", err)
 		}
-		store := stores.NewPostgresStripeStore(dbxx)
+		store := stores.NewDbStripeStore(dbxx)
 		customer := &models.StripeCustomer{
 			ID:           "cus_find_1",
 			UserID:       types.Pointer(user.ID),
@@ -320,12 +320,12 @@ func TestPostgresStripeStore_FindCustomer(t *testing.T) {
 	})
 }
 
-func TestPostgresStripeStore_FindSubscriptionsWithPriceProductByIds(t *testing.T) {
+func TestStripeStore_FindSubscriptionsWithPriceProductByIds(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
-		store := stores.NewPostgresStripeStore(dbxx)
-		userStore := stores.NewPostgresUserStore(dbxx)
+		store := stores.NewDbStripeStore(dbxx)
+		userStore := stores.NewDbUserStore(dbxx)
 		user, err := userStore.CreateUser(ctx, &models.User{Email: "sub@example.com"})
 		if err != nil {
 			t.Fatalf("CreateUser() error = %v", err)
@@ -400,13 +400,13 @@ func TestPostgresStripeStore_FindSubscriptionsWithPriceProductByIds(t *testing.T
 	})
 }
 
-func TestPostgresStripeStore_FindActiveSubscriptionsByTeamIds(t *testing.T) {
+func TestStripeStore_FindActiveSubscriptionsByTeamIds(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
-		store := stores.NewPostgresStripeStore(dbxx)
-		userStore := stores.NewPostgresUserStore(dbxx)
-		teamStore := stores.NewPostgresTeamStore(dbxx)
+		store := stores.NewDbStripeStore(dbxx)
+		userStore := stores.NewDbUserStore(dbxx)
+		teamStore := stores.NewDbTeamStore(dbxx)
 		user, err := userStore.CreateUser(ctx, &models.User{Email: "sub@example.com"})
 		if err != nil {
 			t.Fatalf("CreateUser() error = %v", err)
@@ -502,13 +502,13 @@ func TestPostgresStripeStore_FindActiveSubscriptionsByTeamIds(t *testing.T) {
 		return errors.New("rollback")
 	})
 }
-func TestPostgresStripeStore_FindActiveSubscriptionsByCustomerIds(t *testing.T) {
+func TestStripeStore_FindActiveSubscriptionsByCustomerIds(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
-		store := stores.NewPostgresStripeStore(dbxx)
-		userStore := stores.NewPostgresUserStore(dbxx)
-		teamStore := stores.NewPostgresTeamStore(dbxx)
+		store := stores.NewDbStripeStore(dbxx)
+		userStore := stores.NewDbUserStore(dbxx)
+		teamStore := stores.NewDbTeamStore(dbxx)
 		user, err := userStore.CreateUser(ctx, &models.User{Email: "sub@example.com"})
 		if err != nil {
 			t.Fatalf("CreateUser() error = %v", err)
@@ -604,13 +604,13 @@ func TestPostgresStripeStore_FindActiveSubscriptionsByCustomerIds(t *testing.T) 
 		return errors.New("rollback")
 	})
 }
-func TestPostgresStripeStore_FindActiveSubscriptionsByUserIds(t *testing.T) {
+func TestStripeStore_FindActiveSubscriptionsByUserIds(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
-		store := stores.NewPostgresStripeStore(dbxx)
-		userStore := stores.NewPostgresUserStore(dbxx)
-		teamStore := stores.NewPostgresTeamStore(dbxx)
+		store := stores.NewDbStripeStore(dbxx)
+		userStore := stores.NewDbUserStore(dbxx)
+		teamStore := stores.NewDbTeamStore(dbxx)
 		user, err := userStore.CreateUser(ctx, &models.User{Email: "sub@example.com"})
 		if err != nil {
 			t.Fatalf("CreateUser() error = %v", err)
@@ -709,12 +709,12 @@ func TestPostgresStripeStore_FindActiveSubscriptionsByUserIds(t *testing.T) {
 	})
 }
 
-func TestPostgresStripeStore_UpsertSubscriptionFromStripe(t *testing.T) {
+func TestStripeStore_UpsertSubscriptionFromStripe(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
-		store := stores.NewPostgresStripeStore(dbxx)
-		userStore := stores.NewPostgresUserStore(dbxx)
+		store := stores.NewDbStripeStore(dbxx)
+		userStore := stores.NewDbUserStore(dbxx)
 		user, err := userStore.CreateUser(ctx, &models.User{Email: "sub@example.com"})
 		if err != nil {
 			t.Fatalf("CreateUser() error = %v", err)

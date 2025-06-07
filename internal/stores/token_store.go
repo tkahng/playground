@@ -11,24 +11,24 @@ import (
 	"github.com/tkahng/authgo/internal/shared"
 )
 
-type PostgresTokenStore struct {
+type DbTokenStore struct {
 	db database.Dbx
 }
 
-func NewPostgresTokenStore(db database.Dbx) *PostgresTokenStore {
-	return &PostgresTokenStore{
+func NewPostgresTokenStore(db database.Dbx) *DbTokenStore {
+	return &DbTokenStore{
 		db: db,
 	}
 }
-func (p *PostgresTokenStore) WithTx(tx database.Dbx) *PostgresTokenStore {
-	return &PostgresTokenStore{
+func (p *DbTokenStore) WithTx(tx database.Dbx) *DbTokenStore {
+	return &DbTokenStore{
 		db: tx,
 	}
 }
 
 // var _ services. = &PostgresTokenStore{}
 
-func (a *PostgresTokenStore) GetToken(ctx context.Context, token string) (*models.Token, error) {
+func (a *DbTokenStore) GetToken(ctx context.Context, token string) (*models.Token, error) {
 	res, err := crudrepo.Token.GetOne(ctx,
 		a.db,
 		&map[string]any{
@@ -48,7 +48,7 @@ func (a *PostgresTokenStore) GetToken(ctx context.Context, token string) (*model
 	return res, nil
 }
 
-func (a *PostgresTokenStore) SaveToken(ctx context.Context, token *shared.CreateTokenDTO) error {
+func (a *DbTokenStore) SaveToken(ctx context.Context, token *shared.CreateTokenDTO) error {
 	_, err := crudrepo.Token.PostOne(ctx, a.db, &models.Token{
 		Type:       models.TokenTypes(token.Type),
 		Identifier: token.Identifier,
@@ -64,7 +64,7 @@ func (a *PostgresTokenStore) SaveToken(ctx context.Context, token *shared.Create
 	return nil
 }
 
-func (a *PostgresTokenStore) DeleteToken(ctx context.Context, token string) error {
+func (a *DbTokenStore) DeleteToken(ctx context.Context, token string) error {
 	_, err := crudrepo.Token.DeleteReturn(ctx, a.db, &map[string]any{
 		"token": map[string]any{
 			"_eq": token,
@@ -76,7 +76,7 @@ func (a *PostgresTokenStore) DeleteToken(ctx context.Context, token string) erro
 	return nil
 }
 
-func (a *PostgresTokenStore) VerifyTokenStorage(ctx context.Context, token string) error {
+func (a *DbTokenStore) VerifyTokenStorage(ctx context.Context, token string) error {
 	res, err := a.GetToken(ctx, token)
 	if err != nil {
 		return err

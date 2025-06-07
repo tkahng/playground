@@ -14,10 +14,10 @@ import (
 	"github.com/tkahng/authgo/internal/test"
 )
 
-func TestPostgresNotificationStore_CreateNotification(t *testing.T) {
+func TestNotificationStore_CreateNotification(t *testing.T) {
 	test.DbSetup()
 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
-		store := stores.NewPostgresNotificationStore(db)
+		store := stores.NewDbNotificationStore(db)
 
 		notification := &models.Notification{
 			Channel:   "test-channel",
@@ -33,10 +33,10 @@ func TestPostgresNotificationStore_CreateNotification(t *testing.T) {
 	})
 }
 
-func TestPostgresNotificationStore_CreateManyNotifications(t *testing.T) {
+func TestNotificationStore_CreateManyNotifications(t *testing.T) {
 	test.DbSetup()
 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
-		store := stores.NewPostgresNotificationStore(db)
+		store := stores.NewDbNotificationStore(db)
 
 		notifications := []models.Notification{
 			{
@@ -68,10 +68,10 @@ func TestPostgresNotificationStore_CreateManyNotifications(t *testing.T) {
 	})
 }
 
-func TestPostgresNotificationStore_FindNotification(t *testing.T) {
+func TestNotificationStore_FindNotification(t *testing.T) {
 	test.DbSetup()
 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
-		store := stores.NewPostgresNotificationStore(db)
+		store := stores.NewDbNotificationStore(db)
 
 		notification := &models.Notification{
 			ID:        uuid.New(),
@@ -97,7 +97,7 @@ func TestPostgresNotificationStore_FindNotification(t *testing.T) {
 	})
 }
 
-func TestPostgresNotificationStore_FindNotification2(t *testing.T) {
+func TestNotificationStore_FindNotification2(t *testing.T) {
 	test.DbSetup()
 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
 		type fields struct {
@@ -118,7 +118,7 @@ func TestPostgresNotificationStore_FindNotification2(t *testing.T) {
 		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				s := stores.NewPostgresNotificationStore(tt.fields.db)
+				s := stores.NewDbNotificationStore(tt.fields.db)
 				got, err := s.FindNotification(tt.args.ctx, tt.args.args)
 				if (err != nil) != tt.wantErr {
 					t.Errorf("PostgresNotificationStore.FindNotification() error = %v, wantErr %v", err, tt.wantErr)

@@ -17,14 +17,14 @@ import (
 	"github.com/tkahng/authgo/internal/tools/types"
 )
 
-type PostgresAccountStore struct {
+type DbAccountStore struct {
 	db database.Dbx
 }
 
 // CreateUserAccount implements services.UserAccountStore.
 
-func NewPostgresUserAccountStore(db database.Dbx) *PostgresAccountStore {
-	return &PostgresAccountStore{
+func NewDbAccountStore(db database.Dbx) *DbAccountStore {
+	return &DbAccountStore{
 		db: db,
 	}
 }
@@ -38,7 +38,7 @@ var (
 // ListUserAccounts implements AdminCrudActions.
 // ListUsers implements AdminCrudActions.
 
-func (u *PostgresAccountStore) ListUserAccounts(ctx context.Context, input *shared.UserAccountListParams) ([]*models.UserAccount, error) {
+func (u *DbAccountStore) ListUserAccounts(ctx context.Context, input *shared.UserAccountListParams) ([]*models.UserAccount, error) {
 	where := UserAccountWhere(&input.UserAccountListFilter)
 	sort := UserAccountOrderBy(&input.SortParams)
 	data, err := crudrepo.UserAccount.Get(
@@ -105,7 +105,7 @@ func UserAccountWhere(filter *shared.UserAccountListFilter) *map[string]any {
 }
 
 // CountUsers implements AdminCrudActions.
-func (u *PostgresAccountStore) CountUserAccounts(ctx context.Context, filter *shared.UserAccountListFilter) (int64, error) {
+func (u *DbAccountStore) CountUserAccounts(ctx context.Context, filter *shared.UserAccountListFilter) (int64, error) {
 	where := UserAccountWhere(filter)
 	data, err := crudrepo.UserAccount.Count(ctx, u.db, where)
 	if err != nil {
@@ -115,7 +115,7 @@ func (u *PostgresAccountStore) CountUserAccounts(ctx context.Context, filter *sh
 }
 
 // FindUserAccountByUserIdAndProvider implements UserAccountStore.
-func (u *PostgresAccountStore) FindUserAccountByUserIdAndProvider(ctx context.Context, userId uuid.UUID, provider models.Providers) (*models.UserAccount, error) {
+func (u *DbAccountStore) FindUserAccountByUserIdAndProvider(ctx context.Context, userId uuid.UUID, provider models.Providers) (*models.UserAccount, error) {
 	return crudrepo.UserAccount.GetOne(ctx, u.db, &map[string]any{
 		models.UserAccountTable.UserID: map[string]any{
 			"_eq": userId,
@@ -127,7 +127,7 @@ func (u *PostgresAccountStore) FindUserAccountByUserIdAndProvider(ctx context.Co
 }
 
 // CreateUserAccount implements UserAccountStore.
-func (u *PostgresAccountStore) CreateUserAccount(ctx context.Context, account *models.UserAccount) (*models.UserAccount, error) {
+func (u *DbAccountStore) CreateUserAccount(ctx context.Context, account *models.UserAccount) (*models.UserAccount, error) {
 	if account == nil {
 		return nil, errors.New("account is nil")
 	}
@@ -139,7 +139,7 @@ func (u *PostgresAccountStore) CreateUserAccount(ctx context.Context, account *m
 }
 
 // UnlinkAccount implements UserAccountStore.
-func (u *PostgresAccountStore) UnlinkAccount(ctx context.Context, userId uuid.UUID, provider models.Providers) error {
+func (u *DbAccountStore) UnlinkAccount(ctx context.Context, userId uuid.UUID, provider models.Providers) error {
 	_, err := crudrepo.UserAccount.Delete(
 		ctx,
 		u.db,
@@ -159,7 +159,7 @@ func (u *PostgresAccountStore) UnlinkAccount(ctx context.Context, userId uuid.UU
 }
 
 // UpdateUserAccount implements UserAccountStore.
-func (u *PostgresAccountStore) UpdateUserAccount(ctx context.Context, account *models.UserAccount) error {
+func (u *DbAccountStore) UpdateUserAccount(ctx context.Context, account *models.UserAccount) error {
 	_, err := crudrepo.UserAccount.PutOne(ctx, u.db, account)
 	if err != nil {
 		return fmt.Errorf("error updating user account: %w", err)
@@ -167,7 +167,7 @@ func (u *PostgresAccountStore) UpdateUserAccount(ctx context.Context, account *m
 	return nil
 }
 
-func (u *PostgresAccountStore) GetUserAccounts(ctx context.Context, userIds ...uuid.UUID) ([][]*models.UserAccount, error) {
+func (u *DbAccountStore) GetUserAccounts(ctx context.Context, userIds ...uuid.UUID) ([][]*models.UserAccount, error) {
 	// var results []JoinedResult[*crudModels.Permission, uuid.UUID]
 	ids := []string{}
 	for _, id := range userIds {
@@ -193,7 +193,7 @@ func (u *PostgresAccountStore) GetUserAccounts(ctx context.Context, userIds ...u
 	}), nil
 }
 
-func (u *PostgresAccountStore) UpdateUserPassword(ctx context.Context, userId uuid.UUID, password string) error {
+func (u *DbAccountStore) UpdateUserPassword(ctx context.Context, userId uuid.UUID, password string) error {
 	account, err := crudrepo.UserAccount.GetOne(
 		ctx,
 		u.db,

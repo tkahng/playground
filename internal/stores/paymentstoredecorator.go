@@ -10,13 +10,13 @@ import (
 )
 
 type PaymentStoreDecorator struct {
-	*PostgresStripeStore
-	*PostgresRBACStore
+	*DbStripeStore
+	*DbRBACStore
 	*TeamStoreDecorator
 }
 
 type TeamStoreDecorator struct {
-	Delegate                         *PostgresTeamStore
+	Delegate                         *DbTeamStore
 	CheckTeamSlugFunc                func(ctx context.Context, slug string) (bool, error)
 	CountOwnerTeamMembersFunc        func(ctx context.Context, teamId uuid.UUID) (int64, error)
 	CountTeamMembersFunc             func(ctx context.Context, teamId uuid.UUID) (int64, error)
@@ -93,7 +93,7 @@ func (p *TeamStoreDecorator) FindTeamMember(ctx context.Context, member *models.
 	return p.Delegate.FindTeamMember(ctx, member)
 }
 
-func NewTeamStoreDecorator(delegate *PostgresTeamStore) *TeamStoreDecorator {
+func NewTeamStoreDecorator(delegate *DbTeamStore) *TeamStoreDecorator {
 	return &TeamStoreDecorator{
 		Delegate: delegate,
 	}

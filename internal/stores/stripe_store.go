@@ -21,25 +21,25 @@ import (
 	"github.com/tkahng/authgo/internal/tools/utils"
 )
 
-var _ services.PaymentStripeStore = (*PostgresStripeStore)(nil)
+var _ services.PaymentStripeStore = (*DbStripeStore)(nil)
 
-func NewPostgresStripeStore(db database.Dbx) *PostgresStripeStore {
-	return &PostgresStripeStore{
+func NewDbStripeStore(db database.Dbx) *DbStripeStore {
+	return &DbStripeStore{
 		db: db,
 	}
 }
 
-type PostgresStripeStore struct {
+type DbStripeStore struct {
 	db database.Dbx
 }
 
-func (s *PostgresStripeStore) WithTx(tx database.Dbx) *PostgresStripeStore {
-	return &PostgresStripeStore{
+func (s *DbStripeStore) WithTx(tx database.Dbx) *DbStripeStore {
+	return &DbStripeStore{
 		db: tx,
 	}
 }
 
-func (s *PostgresStripeStore) LoadPricesByIds(ctx context.Context, priceIds ...string) ([]*models.StripePrice, error) {
+func (s *DbStripeStore) LoadPricesByIds(ctx context.Context, priceIds ...string) ([]*models.StripePrice, error) {
 	if len(priceIds) == 0 {
 		return nil, nil
 	}
@@ -66,7 +66,7 @@ func (s *PostgresStripeStore) LoadPricesByIds(ctx context.Context, priceIds ...s
 	}), nil
 }
 
-func (s *PostgresStripeStore) LoadPricesByProductIds(ctx context.Context, productIds ...string) ([][]*models.StripePrice, error) {
+func (s *DbStripeStore) LoadPricesByProductIds(ctx context.Context, productIds ...string) ([][]*models.StripePrice, error) {
 
 	prices, err := crudrepo.StripePrice.Get(
 		ctx,
@@ -88,7 +88,7 @@ func (s *PostgresStripeStore) LoadPricesByProductIds(ctx context.Context, produc
 	}), nil
 }
 
-func (s *PostgresStripeStore) LoadProductsByIds(ctx context.Context, productIds ...string) ([]*models.StripeProduct, error) {
+func (s *DbStripeStore) LoadProductsByIds(ctx context.Context, productIds ...string) ([]*models.StripeProduct, error) {
 	if len(productIds) == 0 {
 		return nil, nil
 	}
@@ -115,7 +115,7 @@ func (s *PostgresStripeStore) LoadProductsByIds(ctx context.Context, productIds 
 	}), nil
 }
 
-func (s *PostgresStripeStore) LoadPricesWithProductByPriceIds(ctx context.Context, priceIds ...string) ([]*models.StripePrice, error) {
+func (s *DbStripeStore) LoadPricesWithProductByPriceIds(ctx context.Context, priceIds ...string) ([]*models.StripePrice, error) {
 	if len(priceIds) == 0 {
 		return nil, nil
 	}
@@ -149,7 +149,7 @@ func (s *PostgresStripeStore) LoadPricesWithProductByPriceIds(ctx context.Contex
 	return prices, nil
 }
 
-func (s *PostgresStripeStore) LoadSubscriptionsPriceProduct(ctx context.Context, subscriptions ...*models.StripeSubscription) error {
+func (s *DbStripeStore) LoadSubscriptionsPriceProduct(ctx context.Context, subscriptions ...*models.StripeSubscription) error {
 	if len(subscriptions) == 0 {
 		return nil
 	}
@@ -179,7 +179,7 @@ func (s *PostgresStripeStore) LoadSubscriptionsPriceProduct(ctx context.Context,
 	return nil
 }
 
-func (s *PostgresStripeStore) LoadSubscriptionsByIds(ctx context.Context, subscriptionIds ...string) ([]*models.StripeSubscription, error) {
+func (s *DbStripeStore) LoadSubscriptionsByIds(ctx context.Context, subscriptionIds ...string) ([]*models.StripeSubscription, error) {
 	if len(subscriptionIds) == 0 {
 		return nil, nil
 	}
@@ -207,7 +207,7 @@ func (s *PostgresStripeStore) LoadSubscriptionsByIds(ctx context.Context, subscr
 	}), nil
 }
 
-func (s *PostgresStripeStore) FindActiveSubscriptionsByCustomerIds(ctx context.Context, customerIds ...string) ([]*models.StripeSubscription, error) {
+func (s *DbStripeStore) FindActiveSubscriptionsByCustomerIds(ctx context.Context, customerIds ...string) ([]*models.StripeSubscription, error) {
 	if len(customerIds) == 0 {
 		return nil, nil
 	}
@@ -249,7 +249,7 @@ func (s *PostgresStripeStore) FindActiveSubscriptionsByCustomerIds(ctx context.C
 	}), nil
 }
 
-func (s *PostgresStripeStore) FindActiveSubscriptionsByTeamIds(ctx context.Context, teamIds ...uuid.UUID) ([]*models.StripeSubscription, error) {
+func (s *DbStripeStore) FindActiveSubscriptionsByTeamIds(ctx context.Context, teamIds ...uuid.UUID) ([]*models.StripeSubscription, error) {
 	if len(teamIds) == 0 {
 		return nil, nil
 	}
@@ -293,7 +293,7 @@ func (s *PostgresStripeStore) FindActiveSubscriptionsByTeamIds(ctx context.Conte
 	}), nil
 }
 
-func (s *PostgresStripeStore) FindActiveSubscriptionsByUserIds(ctx context.Context, userIds ...uuid.UUID) ([]*models.StripeSubscription, error) {
+func (s *DbStripeStore) FindActiveSubscriptionsByUserIds(ctx context.Context, userIds ...uuid.UUID) ([]*models.StripeSubscription, error) {
 	if len(userIds) == 0 {
 		return nil, nil
 	}
@@ -337,7 +337,7 @@ func (s *PostgresStripeStore) FindActiveSubscriptionsByUserIds(ctx context.Conte
 	}), nil
 }
 
-func (s *PostgresStripeStore) FindSubscriptionsWithPriceProductByIds(ctx context.Context, subscriptionIds ...string) ([]*models.StripeSubscription, error) {
+func (s *DbStripeStore) FindSubscriptionsWithPriceProductByIds(ctx context.Context, subscriptionIds ...string) ([]*models.StripeSubscription, error) {
 	qs := squirrel.Select()
 	qs = SelectStripeSubscriptionColumns(qs, "")
 	qs = SelectStripePriceColumns(qs, "price")
@@ -359,7 +359,7 @@ func (s *PostgresStripeStore) FindSubscriptionsWithPriceProductByIds(ctx context
 	}), nil
 }
 
-func (s *PostgresStripeStore) CreateCustomer(ctx context.Context, customer *models.StripeCustomer) (*models.StripeCustomer, error) {
+func (s *DbStripeStore) CreateCustomer(ctx context.Context, customer *models.StripeCustomer) (*models.StripeCustomer, error) {
 	if customer == nil {
 		return nil, errors.New("customer is nil")
 	}
@@ -377,7 +377,7 @@ func (s *PostgresStripeStore) CreateCustomer(ctx context.Context, customer *mode
 	)
 }
 
-func (s *PostgresStripeStore) UpsertPriceFromStripe(ctx context.Context, price *stripe.Price) error {
+func (s *DbStripeStore) UpsertPriceFromStripe(ctx context.Context, price *stripe.Price) error {
 	if price == nil {
 		return nil
 	}
@@ -400,7 +400,7 @@ func (s *PostgresStripeStore) UpsertPriceFromStripe(ctx context.Context, price *
 	return s.UpsertPrice(ctx, val)
 }
 
-func (s *PostgresStripeStore) UpsertPrice(ctx context.Context, price *models.StripePrice) error {
+func (s *DbStripeStore) UpsertPrice(ctx context.Context, price *models.StripePrice) error {
 	var dbx database.Dbx = s.db
 	q := squirrel.Insert("stripe_prices").Columns("id", "product_id", "lookup_key", "active", "unit_amount", "currency", "type", "interval", "interval_count", "trial_period_days", "metadata").Values(price.ID, price.ProductID, price.LookupKey, price.Active, price.UnitAmount, price.Currency, price.Type, price.Interval, price.IntervalCount, price.TrialPeriodDays, price.Metadata).Suffix(`
 		ON CONFLICT(id) DO UPDATE SET 
@@ -419,7 +419,7 @@ func (s *PostgresStripeStore) UpsertPrice(ctx context.Context, price *models.Str
 }
 
 // UpsertProductFromStripe implements PaymentStore.
-func (s *PostgresStripeStore) UpsertProductFromStripe(ctx context.Context, product *stripe.Product) error {
+func (s *DbStripeStore) UpsertProductFromStripe(ctx context.Context, product *stripe.Product) error {
 	if product == nil {
 		return nil
 	}
@@ -438,7 +438,7 @@ func (s *PostgresStripeStore) UpsertProductFromStripe(ctx context.Context, produ
 	return s.UpsertProduct(ctx, param)
 }
 
-func (s *PostgresStripeStore) UpsertProduct(ctx context.Context, product *models.StripeProduct) error {
+func (s *DbStripeStore) UpsertProduct(ctx context.Context, product *models.StripeProduct) error {
 	var dbx database.Dbx = s.db
 	q := squirrel.Insert("stripe_products").
 		Columns(
@@ -467,7 +467,7 @@ func (s *PostgresStripeStore) UpsertProduct(ctx context.Context, product *models
 }
 
 // FindCustomer implements PaymentStore.
-func (s *PostgresStripeStore) FindCustomer(ctx context.Context, customer *models.StripeCustomer) (*models.StripeCustomer, error) {
+func (s *DbStripeStore) FindCustomer(ctx context.Context, customer *models.StripeCustomer) (*models.StripeCustomer, error) {
 	if customer == nil {
 		return nil, nil
 	}
@@ -496,7 +496,7 @@ func (s *PostgresStripeStore) FindCustomer(ctx context.Context, customer *models
 }
 
 // FindProductById implements PaymentStore.
-func (s *PostgresStripeStore) FindProductById(ctx context.Context, productId string) (*models.StripeProduct, error) {
+func (s *DbStripeStore) FindProductById(ctx context.Context, productId string) (*models.StripeProduct, error) {
 	data, err := crudrepo.StripeProduct.GetOne(
 		ctx,
 		s.db,
@@ -636,7 +636,7 @@ ORDER BY ss.created_at DESC;
 		`
 )
 
-func (s *PostgresStripeStore) FindActiveSubscriptionByCustomerId(ctx context.Context, customerId string) (*models.StripeSubscription, error) {
+func (s *DbStripeStore) FindActiveSubscriptionByCustomerId(ctx context.Context, customerId string) (*models.StripeSubscription, error) {
 	data, err := s.FindActiveSubscriptionsByCustomerIds(ctx, customerId)
 	if err != nil {
 		return nil, err
@@ -658,7 +658,7 @@ func (s *PostgresStripeStore) FindActiveSubscriptionByCustomerId(ctx context.Con
 }
 
 // FindActivePriceById implements PaymentStore.
-func (s *PostgresStripeStore) FindActivePriceById(ctx context.Context, priceId string) (*models.StripePrice, error) {
+func (s *DbStripeStore) FindActivePriceById(ctx context.Context, priceId string) (*models.StripePrice, error) {
 	data, err := crudrepo.StripePrice.GetOne(
 		ctx,
 		s.db,
@@ -675,7 +675,7 @@ func (s *PostgresStripeStore) FindActivePriceById(ctx context.Context, priceId s
 }
 
 // IsFirstSubscription implements PaymentStore.
-func (s *PostgresStripeStore) IsFirstSubscription(ctx context.Context, customerID string) (bool, error) {
+func (s *DbStripeStore) IsFirstSubscription(ctx context.Context, customerID string) (bool, error) {
 	data, err := crudrepo.StripeSubscription.Count(
 		ctx,
 		s.db,
@@ -689,7 +689,7 @@ func (s *PostgresStripeStore) IsFirstSubscription(ctx context.Context, customerI
 }
 
 // ListPrices implements PaymentStore.
-func (s *PostgresStripeStore) ListPrices(ctx context.Context, input *shared.StripePriceListParams) ([]*models.StripePrice, error) {
+func (s *DbStripeStore) ListPrices(ctx context.Context, input *shared.StripePriceListParams) ([]*models.StripePrice, error) {
 	var dbx database.Dbx = s.db
 	filter := input.StripePriceListFilter
 	pageInput := &input.PaginatedInput
@@ -716,7 +716,7 @@ type CountOutput struct {
 	Count int64
 }
 
-func (s *PostgresStripeStore) CountProducts(ctx context.Context, filter *shared.StripeProductListFilter) (int64, error) {
+func (s *DbStripeStore) CountProducts(ctx context.Context, filter *shared.StripeProductListFilter) (int64, error) {
 	q := squirrel.Select("COUNT(stripe_products.*)").
 		From("stripe_products")
 
@@ -734,7 +734,7 @@ func (s *PostgresStripeStore) CountProducts(ctx context.Context, filter *shared.
 }
 
 // UpsertSubscriptionFromStripe implements PaymentStore.
-func (s *PostgresStripeStore) UpsertSubscriptionFromStripe(ctx context.Context, sub *stripe.Subscription) error {
+func (s *DbStripeStore) UpsertSubscriptionFromStripe(ctx context.Context, sub *stripe.Subscription) error {
 	if sub == nil {
 		return nil
 	}
@@ -774,7 +774,7 @@ func (s *PostgresStripeStore) UpsertSubscriptionFromStripe(ctx context.Context, 
 	return err
 }
 
-func (s *PostgresStripeStore) UpsertSubscription(ctx context.Context, sub *models.StripeSubscription) error {
+func (s *DbStripeStore) UpsertSubscription(ctx context.Context, sub *models.StripeSubscription) error {
 	q := squirrel.Insert("stripe_subscriptions").
 		Columns(
 			"id",
@@ -886,7 +886,7 @@ var (
 	MetadataIndexName = "metadata.index"
 )
 
-func (s *PostgresStripeStore) ListProducts(ctx context.Context, input *shared.StripeProductListParams) ([]*models.StripeProduct, error) {
+func (s *DbStripeStore) ListProducts(ctx context.Context, input *shared.StripeProductListParams) ([]*models.StripeProduct, error) {
 	q := squirrel.Select("stripe_products.*").
 		From("stripe_products")
 	filter := input.StripeProductListFilter
@@ -932,7 +932,7 @@ FROM public.product_roles rp
 GROUP BY rp.product_id;`
 )
 
-func (s *PostgresStripeStore) LoadProductRoles(ctx context.Context, productIds ...string) ([][]*models.Role, error) {
+func (s *DbStripeStore) LoadProductRoles(ctx context.Context, productIds ...string) ([][]*models.Role, error) {
 	data, err := database.QueryAll[shared.JoinedResult[*models.Role, string]](
 		ctx,
 		s.db,
@@ -1029,7 +1029,7 @@ func listPriceFilterFuncMap(filter *shared.StripePriceListFilter) *map[string]an
 	return &param
 }
 
-func (s *PostgresStripeStore) CountPrices(ctx context.Context, filter *shared.StripePriceListFilter) (int64, error) {
+func (s *DbStripeStore) CountPrices(ctx context.Context, filter *shared.StripePriceListFilter) (int64, error) {
 	filermap := listPriceFilterFuncMap(filter)
 	data, err := crudrepo.StripePrice.Count(ctx, s.db, filermap)
 	if err != nil {
@@ -1038,7 +1038,7 @@ func (s *PostgresStripeStore) CountPrices(ctx context.Context, filter *shared.St
 	return data, nil
 }
 
-func (s *PostgresStripeStore) ListCustomers(ctx context.Context, input *shared.StripeCustomerListParams) ([]*models.StripeCustomer, error) {
+func (s *DbStripeStore) ListCustomers(ctx context.Context, input *shared.StripeCustomerListParams) ([]*models.StripeCustomer, error) {
 
 	filter := input.StripeCustomerListFilter
 	pageInput := &input.PaginatedInput
@@ -1084,7 +1084,7 @@ func listCustomerFilterFunc(filter *shared.StripeCustomerListFilter) *map[string
 	return &where
 }
 
-func (s *PostgresStripeStore) CountCustomers(ctx context.Context, filter *shared.StripeCustomerListFilter) (int64, error) {
+func (s *DbStripeStore) CountCustomers(ctx context.Context, filter *shared.StripeCustomerListFilter) (int64, error) {
 	where := listCustomerFilterFunc(filter)
 	data, err := crudrepo.StripeCustomer.Count(ctx, s.db, where)
 	if err != nil {
@@ -1093,7 +1093,7 @@ func (s *PostgresStripeStore) CountCustomers(ctx context.Context, filter *shared
 	return data, nil
 }
 
-func (s *PostgresStripeStore) ListSubscriptions(ctx context.Context, input *shared.StripeSubscriptionListParams) ([]*models.StripeSubscription, error) {
+func (s *DbStripeStore) ListSubscriptions(ctx context.Context, input *shared.StripeSubscriptionListParams) ([]*models.StripeSubscription, error) {
 
 	filter := input.StripeSubscriptionListFilter
 	pageInput := &input.PaginatedInput
@@ -1152,7 +1152,7 @@ func listSubscriptionFilterFunc(filter *shared.StripeSubscriptionListFilter) *ma
 	return &where
 }
 
-func (s *PostgresStripeStore) CountSubscriptions(ctx context.Context, filter *shared.StripeSubscriptionListFilter) (int64, error) {
+func (s *DbStripeStore) CountSubscriptions(ctx context.Context, filter *shared.StripeSubscriptionListFilter) (int64, error) {
 	where := listSubscriptionFilterFunc(filter)
 	data, err := crudrepo.StripeSubscription.Count(ctx, s.db, where)
 	if err != nil {
