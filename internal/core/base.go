@@ -188,7 +188,7 @@ func NewBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 		checkerStore,
 	)
 
-	teamStore := stores.NewPostgresTeamServiceStore(pool)
+	teamStore := stores.NewDbTeamStripeStore(pool)
 	teamService := services.NewTeamService(teamStore)
 
 	app := NewApp(

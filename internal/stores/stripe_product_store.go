@@ -13,7 +13,22 @@ import (
 	"github.com/tkahng/authgo/internal/shared"
 )
 
-func (s *DbStripeStore) ListProducts(ctx context.Context, input *shared.StripeProductListParams) ([]*models.StripeProduct, error) {
+type DbProductStore struct {
+	db database.Dbx
+}
+
+func NewDbProductStore(db database.Dbx) *DbProductStore {
+	return &DbProductStore{
+		db: db,
+	}
+}
+func (s *DbProductStore) WithTx(tx database.Dbx) *DbProductStore {
+	return &DbProductStore{
+		db: tx,
+	}
+}
+
+func (s *DbProductStore) ListProducts(ctx context.Context, input *shared.StripeProductListParams) ([]*models.StripeProduct, error) {
 	q := squirrel.Select("stripe_products.*").
 		From("stripe_products")
 	filter := input.StripeProductListFilter
@@ -29,7 +44,7 @@ func (s *DbStripeStore) ListProducts(ctx context.Context, input *shared.StripePr
 	return data, nil
 }
 
-func (s *DbStripeStore) CountProducts(ctx context.Context, filter *shared.StripeProductListFilter) (int64, error) {
+func (s *DbProductStore) CountProducts(ctx context.Context, filter *shared.StripeProductListFilter) (int64, error) {
 	q := squirrel.Select("COUNT(stripe_products.*)").
 		From("stripe_products")
 
@@ -46,7 +61,7 @@ func (s *DbStripeStore) CountProducts(ctx context.Context, filter *shared.Stripe
 	return data[0].Count, nil
 }
 
-func (s *DbStripeStore) FindProductById(ctx context.Context, productId string) (*models.StripeProduct, error) {
+func (s *DbProductStore) FindProductById(ctx context.Context, productId string) (*models.StripeProduct, error) {
 	data, err := crudrepo.StripeProduct.GetOne(
 		ctx,
 		s.db,
@@ -58,7 +73,7 @@ func (s *DbStripeStore) FindProductById(ctx context.Context, productId string) (
 	)
 	return database.OptionalRow(data, err)
 }
-func (s *DbStripeStore) UpsertProduct(ctx context.Context, product *models.StripeProduct) error {
+func (s *DbProductStore) UpsertProduct(ctx context.Context, product *models.StripeProduct) error {
 	var dbx database.Dbx = s.db
 	q := squirrel.Insert("stripe_products").
 		Columns(
@@ -87,7 +102,7 @@ func (s *DbStripeStore) UpsertProduct(ctx context.Context, product *models.Strip
 }
 
 // UpsertProductFromStripe implements PaymentStore.
-func (s *DbStripeStore) UpsertProductFromStripe(ctx context.Context, product *stripe.Product) error {
+func (s *DbProductStore) UpsertProductFromStripe(ctx context.Context, product *stripe.Product) error {
 	if product == nil {
 		return nil
 	}

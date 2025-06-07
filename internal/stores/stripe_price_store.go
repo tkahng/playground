@@ -12,7 +12,23 @@ import (
 	"github.com/tkahng/authgo/internal/tools/types"
 )
 
-func (s *DbStripeStore) UpsertPrice(ctx context.Context, price *models.StripePrice) error {
+type DbPriceStore struct {
+	db database.Dbx
+}
+
+func NewDbPriceStore(db database.Dbx) *DbPriceStore {
+	return &DbPriceStore{
+		db: db,
+	}
+}
+
+func (s *DbPriceStore) WithTx(tx database.Dbx) *DbPriceStore {
+	return &DbPriceStore{
+		db: tx,
+	}
+}
+
+func (s *DbPriceStore) UpsertPrice(ctx context.Context, price *models.StripePrice) error {
 	var dbx database.Dbx = s.db
 	q := squirrel.Insert("stripe_prices").Columns("id", "product_id", "lookup_key", "active", "unit_amount", "currency", "type", "interval", "interval_count", "trial_period_days", "metadata").Values(price.ID, price.ProductID, price.LookupKey, price.Active, price.UnitAmount, price.Currency, price.Type, price.Interval, price.IntervalCount, price.TrialPeriodDays, price.Metadata).Suffix(`
 		ON CONFLICT(id) DO UPDATE SET 
@@ -75,7 +91,7 @@ func listPriceFilterFuncMap(filter *shared.StripePriceListFilter) *map[string]an
 }
 
 // ListPrices implements PaymentStore.
-func (s *DbStripeStore) ListPrices(ctx context.Context, input *shared.StripePriceListParams) ([]*models.StripePrice, error) {
+func (s *DbPriceStore) ListPrices(ctx context.Context, input *shared.StripePriceListParams) ([]*models.StripePrice, error) {
 	var dbx database.Dbx = s.db
 	filter := input.StripePriceListFilter
 	pageInput := &input.PaginatedInput
@@ -96,7 +112,7 @@ func (s *DbStripeStore) ListPrices(ctx context.Context, input *shared.StripePric
 	return data, nil
 }
 
-func (s *DbStripeStore) CountPrices(ctx context.Context, filter *shared.StripePriceListFilter) (int64, error) {
+func (s *DbPriceStore) CountPrices(ctx context.Context, filter *shared.StripePriceListFilter) (int64, error) {
 	filermap := listPriceFilterFuncMap(filter)
 	data, err := crudrepo.StripePrice.Count(ctx, s.db, filermap)
 	if err != nil {
@@ -123,7 +139,7 @@ func SelectStripePriceColumns(qs squirrel.SelectBuilder, prefix string) squirrel
 }
 
 // FindActivePriceById implements PaymentStore.
-func (s *DbStripeStore) FindActivePriceById(ctx context.Context, priceId string) (*models.StripePrice, error) {
+func (s *DbPriceStore) FindActivePriceById(ctx context.Context, priceId string) (*models.StripePrice, error) {
 	data, err := crudrepo.StripePrice.GetOne(
 		ctx,
 		s.db,
@@ -139,7 +155,7 @@ func (s *DbStripeStore) FindActivePriceById(ctx context.Context, priceId string)
 	return data, err
 }
 
-func (s *DbStripeStore) UpsertPriceFromStripe(ctx context.Context, price *stripe.Price) error {
+func (s *DbPriceStore) UpsertPriceFromStripe(ctx context.Context, price *stripe.Price) error {
 	if price == nil {
 		return nil
 	}

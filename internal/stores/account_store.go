@@ -29,6 +29,12 @@ func NewDbAccountStore(db database.Dbx) *DbAccountStore {
 	}
 }
 
+func (s *DbAccountStore) WithTx(tx database.Dbx) *DbAccountStore {
+	return &DbAccountStore{
+		db: tx,
+	}
+}
+
 var (
 	// UserColumnNames = models.Users.Columns().Names()
 	UserAccountColumnNames = []string{"id", "user_id", "type", "provider", "provider_account_id", "created_at", "updated_at"}

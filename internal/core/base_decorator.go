@@ -58,7 +58,7 @@ func NewDecorator(ctx context.Context, cfg conf.EnvConfig, pool database.Dbx) *B
 		checkerStore,
 	)
 
-	teamStore := stores.NewPostgresTeamServiceStore(pool)
+	teamStore := stores.NewDbTeamStripeStore(pool)
 	teamService := services.NewTeamService(teamStore)
 
 	app := NewApp(

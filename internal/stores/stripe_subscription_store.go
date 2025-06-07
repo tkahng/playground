@@ -20,7 +20,22 @@ import (
 	"github.com/tkahng/authgo/internal/tools/utils"
 )
 
-func (s *DbStripeStore) FindActiveSubscriptionsByCustomerIds(ctx context.Context, customerIds ...string) ([]*models.StripeSubscription, error) {
+type DbSubscriptionStore struct {
+	db database.Dbx
+}
+
+func NewDbSubscriptionStore(db database.Dbx) *DbSubscriptionStore {
+	return &DbSubscriptionStore{
+		db: db,
+	}
+}
+func (s *DbSubscriptionStore) WithTx(tx database.Dbx) *DbSubscriptionStore {
+	return &DbSubscriptionStore{
+		db: tx,
+	}
+}
+
+func (s *DbSubscriptionStore) FindActiveSubscriptionsByCustomerIds(ctx context.Context, customerIds ...string) ([]*models.StripeSubscription, error) {
 	if len(customerIds) == 0 {
 		return nil, nil
 	}
@@ -62,7 +77,7 @@ func (s *DbStripeStore) FindActiveSubscriptionsByCustomerIds(ctx context.Context
 	}), nil
 }
 
-func (s *DbStripeStore) FindActiveSubscriptionsByTeamIds(ctx context.Context, teamIds ...uuid.UUID) ([]*models.StripeSubscription, error) {
+func (s *DbSubscriptionStore) FindActiveSubscriptionsByTeamIds(ctx context.Context, teamIds ...uuid.UUID) ([]*models.StripeSubscription, error) {
 	if len(teamIds) == 0 {
 		return nil, nil
 	}
@@ -106,7 +121,7 @@ func (s *DbStripeStore) FindActiveSubscriptionsByTeamIds(ctx context.Context, te
 	}), nil
 }
 
-func (s *DbStripeStore) FindActiveSubscriptionsByUserIds(ctx context.Context, userIds ...uuid.UUID) ([]*models.StripeSubscription, error) {
+func (s *DbSubscriptionStore) FindActiveSubscriptionsByUserIds(ctx context.Context, userIds ...uuid.UUID) ([]*models.StripeSubscription, error) {
 	if len(userIds) == 0 {
 		return nil, nil
 	}
@@ -150,7 +165,7 @@ func (s *DbStripeStore) FindActiveSubscriptionsByUserIds(ctx context.Context, us
 	}), nil
 }
 
-func (s *DbStripeStore) FindSubscriptionsWithPriceProductByIds(ctx context.Context, subscriptionIds ...string) ([]*models.StripeSubscription, error) {
+func (s *DbSubscriptionStore) FindSubscriptionsWithPriceProductByIds(ctx context.Context, subscriptionIds ...string) ([]*models.StripeSubscription, error) {
 	qs := squirrel.Select()
 	qs = SelectStripeSubscriptionColumns(qs, "")
 	qs = SelectStripePriceColumns(qs, "price")
@@ -173,7 +188,7 @@ func (s *DbStripeStore) FindSubscriptionsWithPriceProductByIds(ctx context.Conte
 }
 
 // UpsertSubscriptionFromStripe implements PaymentStore.
-func (s *DbStripeStore) UpsertSubscriptionFromStripe(ctx context.Context, sub *stripe.Subscription) error {
+func (s *DbSubscriptionStore) UpsertSubscriptionFromStripe(ctx context.Context, sub *stripe.Subscription) error {
 	if sub == nil {
 		return nil
 	}
@@ -213,7 +228,7 @@ func (s *DbStripeStore) UpsertSubscriptionFromStripe(ctx context.Context, sub *s
 	return err
 }
 
-func (s *DbStripeStore) UpsertSubscription(ctx context.Context, sub *models.StripeSubscription) error {
+func (s *DbSubscriptionStore) UpsertSubscription(ctx context.Context, sub *models.StripeSubscription) error {
 	q := squirrel.Insert("stripe_subscriptions").
 		Columns(
 			"id",
@@ -268,7 +283,7 @@ func (s *DbStripeStore) UpsertSubscription(ctx context.Context, sub *models.Stri
 	return database.ExecWithBuilder(ctx, s.db, q.PlaceholderFormat(squirrel.Dollar))
 }
 
-func (s *DbStripeStore) FindActiveSubscriptionByCustomerId(ctx context.Context, customerId string) (*models.StripeSubscription, error) {
+func (s *DbSubscriptionStore) FindActiveSubscriptionByCustomerId(ctx context.Context, customerId string) (*models.StripeSubscription, error) {
 	data, err := s.FindActiveSubscriptionsByCustomerIds(ctx, customerId)
 	if err != nil {
 		return nil, err
@@ -290,7 +305,7 @@ func (s *DbStripeStore) FindActiveSubscriptionByCustomerId(ctx context.Context, 
 }
 
 // IsFirstSubscription implements PaymentStore.
-func (s *DbStripeStore) IsFirstSubscription(ctx context.Context, customerID string) (bool, error) {
+func (s *DbSubscriptionStore) IsFirstSubscription(ctx context.Context, customerID string) (bool, error) {
 	data, err := crudrepo.StripeSubscription.Count(
 		ctx,
 		s.db,
@@ -303,7 +318,7 @@ func (s *DbStripeStore) IsFirstSubscription(ctx context.Context, customerID stri
 	return data > 0, err
 }
 
-func (s *DbStripeStore) ListSubscriptions(ctx context.Context, input *shared.StripeSubscriptionListParams) ([]*models.StripeSubscription, error) {
+func (s *DbSubscriptionStore) ListSubscriptions(ctx context.Context, input *shared.StripeSubscriptionListParams) ([]*models.StripeSubscription, error) {
 
 	filter := input.StripeSubscriptionListFilter
 	pageInput := &input.PaginatedInput
@@ -362,7 +377,7 @@ func listSubscriptionFilterFunc(filter *shared.StripeSubscriptionListFilter) *ma
 	return &where
 }
 
-func (s *DbStripeStore) CountSubscriptions(ctx context.Context, filter *shared.StripeSubscriptionListFilter) (int64, error) {
+func (s *DbSubscriptionStore) CountSubscriptions(ctx context.Context, filter *shared.StripeSubscriptionListFilter) (int64, error) {
 	where := listSubscriptionFilterFunc(filter)
 	data, err := crudrepo.StripeSubscription.Count(ctx, s.db, where)
 	if err != nil {

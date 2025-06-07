@@ -13,7 +13,23 @@ import (
 	"github.com/tkahng/authgo/internal/shared"
 )
 
-func (s *DbStripeStore) ListCustomers(ctx context.Context, input *shared.StripeCustomerListParams) ([]*models.StripeCustomer, error) {
+type DbCustomerStore struct {
+	db database.Dbx
+}
+
+func NewDbCustomerStore(db database.Dbx) *DbCustomerStore {
+	return &DbCustomerStore{
+		db: db,
+	}
+}
+
+func (s *DbCustomerStore) WithTx(tx database.Dbx) *DbCustomerStore {
+	return &DbCustomerStore{
+		db: tx,
+	}
+}
+
+func (s *DbCustomerStore) ListCustomers(ctx context.Context, input *shared.StripeCustomerListParams) ([]*models.StripeCustomer, error) {
 
 	filter := input.StripeCustomerListFilter
 	pageInput := &input.PaginatedInput
@@ -34,7 +50,7 @@ func (s *DbStripeStore) ListCustomers(ctx context.Context, input *shared.StripeC
 	}
 	return data, nil
 }
-func (s *DbStripeStore) CountCustomers(ctx context.Context, filter *shared.StripeCustomerListFilter) (int64, error) {
+func (s *DbCustomerStore) CountCustomers(ctx context.Context, filter *shared.StripeCustomerListFilter) (int64, error) {
 	where := listCustomerFilterFunc(filter)
 	data, err := crudrepo.StripeCustomer.Count(ctx, s.db, where)
 	if err != nil {
@@ -81,7 +97,7 @@ func SelectStripeCustomerColumns(qs squirrel.SelectBuilder, prefix string) squir
 	return qs
 }
 
-func (s *DbStripeStore) CreateCustomer(ctx context.Context, customer *models.StripeCustomer) (*models.StripeCustomer, error) {
+func (s *DbCustomerStore) CreateCustomer(ctx context.Context, customer *models.StripeCustomer) (*models.StripeCustomer, error) {
 	if customer == nil {
 		return nil, errors.New("customer is nil")
 	}
@@ -100,7 +116,7 @@ func (s *DbStripeStore) CreateCustomer(ctx context.Context, customer *models.Str
 }
 
 // FindCustomer implements PaymentStore.
-func (s *DbStripeStore) FindCustomer(ctx context.Context, customer *models.StripeCustomer) (*models.StripeCustomer, error) {
+func (s *DbCustomerStore) FindCustomer(ctx context.Context, customer *models.StripeCustomer) (*models.StripeCustomer, error) {
 	if customer == nil {
 		return nil, nil
 	}

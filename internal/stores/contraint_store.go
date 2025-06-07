@@ -15,6 +15,12 @@ type DbConstraintStore struct {
 	db database.Dbx
 }
 
+func (p *DbConstraintStore) WithTx(tx database.Dbx) *DbConstraintStore {
+	return &DbConstraintStore{
+		db: tx,
+	}
+}
+
 // FindLatestActiveSubscriptionByTeamId implements services.ConstaintCheckerStore.
 func (p *DbConstraintStore) FindLatestActiveSubscriptionByTeamId(ctx context.Context, teamId uuid.UUID) (*models.StripeSubscription, error) {
 	subscriptions, err := crudrepo.StripeSubscription.Get(

@@ -21,12 +21,17 @@ func NewDbStripeStore(db database.Dbx) *DbStripeStore {
 }
 
 type DbStripeStore struct {
+	*DbCustomerStore
+	*DbProductStore
+	*DbSubscriptionStore
+	*DbPriceStore
 	db database.Dbx
 }
 
 func (s *DbStripeStore) WithTx(tx database.Dbx) *DbStripeStore {
 	return &DbStripeStore{
-		db: tx,
+		db:              tx,
+		DbCustomerStore: s.DbCustomerStore.WithTx(tx),
 	}
 }
 
