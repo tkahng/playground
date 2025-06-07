@@ -160,7 +160,7 @@ func TestUserStore_FindUserById(t *testing.T) {
 				want    *models.User
 				wantErr bool
 			}{
-				name: fmt.Sprintf("FindUserById-%s", user.ID.String()),
+				name: fmt.Sprintf("FindUserByID-%s", user.ID.String()),
 				fields: fields{
 					db: dbxx,
 				},
@@ -195,13 +195,13 @@ func TestUserStore_FindUserById(t *testing.T) {
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				p := stores.NewDbUserStore(tt.fields.db)
-				got, err := p.FindUserById(tt.args.ctx, tt.args.userId)
+				got, err := p.FindUserByID(tt.args.ctx, tt.args.userId)
 				if (err != nil) != tt.wantErr {
-					t.Errorf("PostgresUserStore.FindUserById() error = %v, wantErr %v", err, tt.wantErr)
+					t.Errorf("PostgresUserStore.FindUserByID() error = %v, wantErr %v", err, tt.wantErr)
 					return
 				}
 				if !reflect.DeepEqual(got, tt.want) {
-					t.Errorf("PostgresUserStore.FindUserById() = %v, want %v", got, tt.want)
+					t.Errorf("PostgresUserStore.FindUserByID() = %v, want %v", got, tt.want)
 				}
 			})
 		}

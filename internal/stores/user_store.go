@@ -79,7 +79,7 @@ func (s *DbUserStore) FindUser(ctx context.Context, user *models.User) (*models.
 	)
 }
 
-func (s *DbUserStore) FindUserById(ctx context.Context, userId uuid.UUID) (*models.User, error) {
+func (s *DbUserStore) FindUserByID(ctx context.Context, userId uuid.UUID) (*models.User, error) {
 	return s.FindUser(
 		ctx,
 		&models.User{
@@ -317,7 +317,7 @@ type DbUserStoreInterface interface {
 	WithTx(tx database.Dbx) *DbUserStore
 	UserWhere(user *models.User) *map[string]any
 	FindUser(ctx context.Context, user *models.User) (*models.User, error)
-	FindUserById(ctx context.Context, userId uuid.UUID) (*models.User, error)
+	FindUserByID(ctx context.Context, userId uuid.UUID) (*models.User, error)
 	AssignUserRoles(ctx context.Context, userId uuid.UUID, roleNames ...string) error
 	DeleteUser(ctx context.Context, userId uuid.UUID) error
 	GetUserInfo(ctx context.Context, email string) (*shared.UserInfo, error)
@@ -456,7 +456,7 @@ func FindUserByEmail(ctx context.Context, db database.Dbx, email string) (*model
 	)
 	return database.OptionalRow(a, err)
 }
-func FindUserById(ctx context.Context, db database.Dbx, userId uuid.UUID) (*models.User, error) {
+func FindUserByID(ctx context.Context, db database.Dbx, userId uuid.UUID) (*models.User, error) {
 	a, err := crudrepo.User.GetOne(
 		ctx,
 		db,

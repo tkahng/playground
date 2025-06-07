@@ -204,7 +204,7 @@ func FindUserByEmail(ctx context.Context, db database.Dbx, email string) (*crudM
 	)
 	return database.OptionalRow(a, err)
 }
-func FindUserById(ctx context.Context, db database.Dbx, userId uuid.UUID) (*crudModels.User, error) {
+func FindUserByID(ctx context.Context, db database.Dbx, userId uuid.UUID) (*crudModels.User, error) {
 	a, err := crudrepo.User.GetOne(
 		ctx,
 		db,

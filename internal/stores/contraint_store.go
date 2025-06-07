@@ -98,8 +98,8 @@ func (p *DbConstraintStore) FindLatestActiveSubscriptionByUserId(ctx context.Con
 	return subscriptions[0], nil
 }
 
-// FindUserById implements services.ConstaintCheckerStore.
-func (p *DbConstraintStore) FindUserById(ctx context.Context, userId uuid.UUID) (*models.User, error) {
+// FindUserByID implements services.ConstaintCheckerStore.
+func (p *DbConstraintStore) FindUserByID(ctx context.Context, userId uuid.UUID) (*models.User, error) {
 	return crudrepo.User.GetOne(
 		ctx,
 		p.db,

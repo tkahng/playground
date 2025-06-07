@@ -45,6 +45,14 @@ type TeamStoreDecorator struct {
 	FindTeamBySlugFunc               func(ctx context.Context, slug string) (*models.Team, error)
 }
 
+// FindTeamMember implements services.TeamStore.
+func (p *TeamStoreDecorator) FindTeamMember(ctx context.Context, member *models.TeamMember) (*models.TeamMember, error) {
+	if p.FindTeamMemberFunc != nil {
+		return p.FindTeamMemberFunc(ctx, member)
+	}
+	return p.Delegate.FindTeamMember(ctx, member)
+}
+
 // FindTeamBySlug implements services.TeamStore.
 func (p *TeamStoreDecorator) FindTeamBySlug(ctx context.Context, slug string) (*models.Team, error) {
 	if p.FindTeamBySlugFunc != nil {
@@ -85,13 +93,13 @@ func (p *TeamStoreDecorator) FindTeam(ctx context.Context, team *models.Team) (*
 	return p.Delegate.FindTeam(ctx, team)
 }
 
-// FindTeamMember implements services.TeamStore.
-func (p *TeamStoreDecorator) FindTeamMember(ctx context.Context, member *models.TeamMember) (*models.TeamMember, error) {
-	if p.FindTeamMemberFunc != nil {
-		return p.FindTeamMemberFunc(ctx, member)
-	}
-	return p.Delegate.FindTeamMember(ctx, member)
-}
+// // FindTeamMember implements services.TeamStore.
+// func (p *TeamStoreDecorator) FindTeamMember(ctx context.Context, member *models.TeamMember) (*models.TeamMember, error) {
+// 	if p.FindTeamMemberFunc != nil {
+// 		return p.FindTeamMemberFunc(ctx, member)
+// 	}
+// 	return p.Delegate.FindTeamMember(ctx, member)
+// }
 
 func NewTeamStoreDecorator(delegate *DbTeamStore) *TeamStoreDecorator {
 	return &TeamStoreDecorator{

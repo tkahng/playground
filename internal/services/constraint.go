@@ -10,7 +10,7 @@ import (
 )
 
 type ConstaintCheckerStore interface {
-	FindUserById(ctx context.Context, userId uuid.UUID) (*models.User, error)
+	FindUserByID(ctx context.Context, userId uuid.UUID) (*models.User, error)
 	FindUserByEmail(ctx context.Context, email string) (*models.User, error)
 	FindLatestActiveSubscriptionByUserId(ctx context.Context, userId uuid.UUID) (*models.StripeSubscription, error)
 	FindLatestActiveSubscriptionByTeamId(ctx context.Context, teamId uuid.UUID) (*models.StripeSubscription, error)
@@ -105,7 +105,7 @@ func (c *ConstraintCheckerService) CannotBeSuperUserEmailAndRoleName(ctx context
 
 // CannotBeSuperUserID implements ConstraintChecker.
 func (c *ConstraintCheckerService) CannotBeSuperUserID(ctx context.Context, userId uuid.UUID) (bool, error) {
-	user, err := c.store.FindUserById(ctx, userId)
+	user, err := c.store.FindUserByID(ctx, userId)
 	if err != nil {
 		return false, err
 	}

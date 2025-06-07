@@ -184,7 +184,7 @@ func (api *Api) AdminUsersGet(ctx context.Context, input *struct {
 	UserID uuid.UUID `path:"user-id" json:"user_id" format:"uuid" required:"true"`
 }) (*struct{ Body *shared.User }, error) {
 	db := api.app.Db()
-	user, err := queries.FindUserById(ctx, db, input.UserID)
+	user, err := queries.FindUserByID(ctx, db, input.UserID)
 	if err != nil {
 		return nil, err
 	}

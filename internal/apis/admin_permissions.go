@@ -20,7 +20,7 @@ func (api *Api) AdminUserPermissionsDelete(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	user, err := api.app.User().Store().FindUserById(ctx, id)
+	user, err := api.app.User().Store().FindUserByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +55,7 @@ func (api *Api) AdminUserPermissionsCreate(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	user, err := api.app.User().Store().FindUserById(ctx, id)
+	user, err := api.app.User().Store().FindUserByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}

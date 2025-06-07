@@ -397,23 +397,23 @@ ctx, dbx := test.DbSetup()
 
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				got, err := queries.FindUserById(tt.args.ctx, tt.args.db, tt.args.userId)
+				got, err := queries.FindUserByID(tt.args.ctx, tt.args.db, tt.args.userId)
 				if (err != nil) != tt.wantErr {
-					t.Errorf("FindUserById() error = %v, wantErr %v", err, tt.wantErr)
+					t.Errorf("FindUserByID() error = %v, wantErr %v", err, tt.wantErr)
 					return
 				}
 				if tt.want == nil && got != nil {
-					t.Errorf("FindUserById() = %v, want nil", got)
+					t.Errorf("FindUserByID() = %v, want nil", got)
 				}
 				if tt.want != nil && got != nil {
 					if !reflect.DeepEqual(got.ID, tt.want.ID) {
-						t.Errorf("FindUserById() ID = %v, want %v", got.ID, tt.want.ID)
+						t.Errorf("FindUserByID() ID = %v, want %v", got.ID, tt.want.ID)
 					}
 					if !reflect.DeepEqual(got.Email, tt.want.Email) {
-						t.Errorf("FindUserById() Email = %v, want %v", got.Email, tt.want.Email)
+						t.Errorf("FindUserByID() Email = %v, want %v", got.Email, tt.want.Email)
 					}
 					if !reflect.DeepEqual(got.Name, tt.want.Name) {
-						t.Errorf("FindUserById() Name = %v, want %v", got.Name, tt.want.Name)
+						t.Errorf("FindUserByID() Name = %v, want %v", got.Name, tt.want.Name)
 					}
 				}
 			})
@@ -551,7 +551,7 @@ ctx, dbx := test.DbSetup()
 
 				if !tt.wantErr {
 					// Verify the update
-					updatedUser, err := queries.FindUserById(tt.args.ctx, tt.args.db, tt.args.userId)
+					updatedUser, err := queries.FindUserByID(tt.args.ctx, tt.args.db, tt.args.userId)
 					if err != nil {
 						t.Errorf("Failed to fetch updated user: %v", err)
 						return
