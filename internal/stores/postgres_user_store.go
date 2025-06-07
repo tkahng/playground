@@ -21,15 +21,14 @@ type PostgresUserStore struct {
 	db database.Dbx
 }
 
-func (p *PostgresUserStore) WithTx(tx database.Dbx) *PostgresUserStore {
-	return &PostgresUserStore{
-		db: tx,
-	}
-}
-
 func NewPostgresUserStore(db database.Dbx) *PostgresUserStore {
 	return &PostgresUserStore{
 		db: db,
+	}
+}
+func (s *PostgresUserStore) WithTx(tx database.Dbx) *PostgresUserStore {
+	return &PostgresUserStore{
+		db: tx,
 	}
 }
 
@@ -77,8 +76,8 @@ func (s *PostgresUserStore) FindUser(ctx context.Context, user *models.User) (*m
 	)
 }
 
-func (p *PostgresUserStore) FindUserById(ctx context.Context, userId uuid.UUID) (*models.User, error) {
-	return p.FindUser(
+func (s *PostgresUserStore) FindUserById(ctx context.Context, userId uuid.UUID) (*models.User, error) {
+	return s.FindUser(
 		ctx,
 		&models.User{
 			ID: userId,
@@ -87,11 +86,11 @@ func (p *PostgresUserStore) FindUserById(ctx context.Context, userId uuid.UUID) 
 }
 
 // AssignUserRoles implements UserStore.
-func (a *PostgresUserStore) AssignUserRoles(ctx context.Context, userId uuid.UUID, roleNames ...string) error {
+func (s *PostgresUserStore) AssignUserRoles(ctx context.Context, userId uuid.UUID, roleNames ...string) error {
 	if len(roleNames) > 0 {
 		user, err := crudrepo.User.GetOne(
 			ctx,
-			a.db,
+			s.db,
 			&map[string]any{
 				models.UserTable.ID: map[string]any{
 					"_eq": userId,
@@ -106,7 +105,7 @@ func (a *PostgresUserStore) AssignUserRoles(ctx context.Context, userId uuid.UUI
 		}
 		roles, err := crudrepo.Role.Get(
 			ctx,
-			a.db,
+			s.db,
 			&map[string]any{
 				models.RoleTable.Name: map[string]any{
 					"_in": roleNames,
@@ -127,7 +126,7 @@ func (a *PostgresUserStore) AssignUserRoles(ctx context.Context, userId uuid.UUI
 					RoleID: role.ID,
 				})
 			}
-			_, err = crudrepo.UserRole.Post(ctx, a.db, userRoles)
+			_, err = crudrepo.UserRole.Post(ctx, s.db, userRoles)
 			if err != nil {
 				return fmt.Errorf("error assigning user role while assigning roles: %w", err)
 			}
@@ -137,8 +136,8 @@ func (a *PostgresUserStore) AssignUserRoles(ctx context.Context, userId uuid.UUI
 }
 
 // DeleteUser implements UserStore.
-func (p *PostgresUserStore) DeleteUser(ctx context.Context, userId uuid.UUID) error {
-	_, err := crudrepo.User.Delete(ctx, p.db, &map[string]any{
+func (s *PostgresUserStore) DeleteUser(ctx context.Context, userId uuid.UUID) error {
+	_, err := crudrepo.User.Delete(ctx, s.db, &map[string]any{
 		models.UserTable.ID: map[string]any{"_eq": userId},
 	})
 	if err != nil {
@@ -204,7 +203,7 @@ LIMIT 1;
 )
 
 // GetUserInfo implements UserStore.
-func (p *PostgresUserStore) GetUserInfo(ctx context.Context, email string) (*shared.UserInfo, error) {
+func (s *PostgresUserStore) GetUserInfo(ctx context.Context, email string) (*shared.UserInfo, error) {
 	type rolePermissionClaims struct {
 		UserID      uuid.UUID          `json:"user_id" db:"user_id"`
 		Email       string             `json:"email" db:"email"`
@@ -214,7 +213,7 @@ func (p *PostgresUserStore) GetUserInfo(ctx context.Context, email string) (*sha
 	}
 	user, err := crudrepo.User.GetOne(
 		ctx,
-		p.db,
+		s.db,
 		&map[string]any{
 			models.UserTable.Email: map[string]any{
 				"_eq": email,
@@ -239,7 +238,7 @@ func (p *PostgresUserStore) GetUserInfo(ctx context.Context, email string) (*sha
 		},
 	}
 	roles, err := func() (*rolePermissionClaims, error) {
-		res, err := pgxscan.One(ctx, p.db, scan.StructMapper[rolePermissionClaims](), RawGetUserWithAllRolesAndPermissionsByEmail, email)
+		res, err := pgxscan.One(ctx, s.db, scan.StructMapper[rolePermissionClaims](), RawGetUserWithAllRolesAndPermissionsByEmail, email)
 		if err != nil {
 			return nil, err
 		}
@@ -260,8 +259,8 @@ func (p *PostgresUserStore) GetUserInfo(ctx context.Context, email string) (*sha
 }
 
 // UpdateUser implements UserStore.
-func (p *PostgresUserStore) UpdateUser(ctx context.Context, user *models.User) error {
-	_, err := crudrepo.User.PutOne(ctx, p.db, &models.User{
+func (s *PostgresUserStore) UpdateUser(ctx context.Context, user *models.User) error {
+	_, err := crudrepo.User.PutOne(ctx, s.db, &models.User{
 		ID:              user.ID,
 		Email:           user.Email,
 		Name:            user.Name,
@@ -279,18 +278,18 @@ func (p *PostgresUserStore) UpdateUser(ctx context.Context, user *models.User) e
 // FindUserByEmail implements UserStore.
 
 // CreateUser implements UserStore.
-func (p *PostgresUserStore) CreateUser(ctx context.Context, user *models.User) (*models.User, error) {
+func (s *PostgresUserStore) CreateUser(ctx context.Context, user *models.User) (*models.User, error) {
 	return crudrepo.User.PostOne(
 		ctx,
-		p.db,
+		s.db,
 		user,
 	)
 }
 
-func (p *PostgresUserStore) LoadUsersByUserIds(ctx context.Context, userIds ...uuid.UUID) ([]*models.User, error) {
+func (s *PostgresUserStore) LoadUsersByUserIds(ctx context.Context, userIds ...uuid.UUID) ([]*models.User, error) {
 	users, err := crudrepo.User.Get(
 		ctx,
-		p.db,
+		s.db,
 		&map[string]any{
 			models.UserTable.ID: map[string]any{
 				"_in": userIds,
@@ -309,4 +308,17 @@ func (p *PostgresUserStore) LoadUsersByUserIds(ctx context.Context, userIds ...u
 		}
 		return a.ID
 	}), nil
+}
+
+type PostgresUserStoreInterface interface {
+	WithTx(tx database.Dbx) *PostgresUserStore
+	UserWhere(user *models.User) *map[string]any
+	FindUser(ctx context.Context, user *models.User) (*models.User, error)
+	FindUserById(ctx context.Context, userId uuid.UUID) (*models.User, error)
+	AssignUserRoles(ctx context.Context, userId uuid.UUID, roleNames ...string) error
+	DeleteUser(ctx context.Context, userId uuid.UUID) error
+	GetUserInfo(ctx context.Context, email string) (*shared.UserInfo, error)
+	UpdateUser(ctx context.Context, user *models.User) error
+	CreateUser(ctx context.Context, user *models.User) (*models.User, error)
+	LoadUsersByUserIds(ctx context.Context, userIds ...uuid.UUID) ([]*models.User, error)
 }

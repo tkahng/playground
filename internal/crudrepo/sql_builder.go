@@ -124,8 +124,8 @@ func NewSQLBuilder[Model any](opts ...SQLBuilderOptions[Model]) *SQLBuilder[Mode
 	_type := reflect.TypeFor[Model]()
 
 	table := strings.ToLower(_type.Name())
-	fields := []Field{}
-	columnNames := []string{}
+	var fields []Field
+	var columnNames []string
 	relations := map[string]Relation{}
 	operations_ := map[string]func(string, ...string) string{}
 	for idx := range _type.NumField() {
@@ -217,7 +217,7 @@ func (b *SQLBuilder[Model]) Table() string {
 
 // Returns a comma-separated list of field names with proper identifier formatting
 func (b *SQLBuilder[Model]) Fields(prefix string) string {
-	result := []string{}
+	var result []string
 	for _, field := range b.fields {
 		result = append(result, prefix+b.identifier(field.name))
 	}
@@ -251,7 +251,7 @@ func (b *SQLBuilder[Model]) Values(values *[]Model, args *[]any, keys *[]any) (f
 	}
 
 	// Generate the field names for the VALUES clause
-	fieldsArray := []string{}
+	var fieldsArray []string
 	for idx, field := range b.fields {
 		if idx == 0 {
 			// The first field is the primary key
@@ -506,8 +506,9 @@ func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any, run func(s
 					where := item.(map[string]any)
 					var query string
 					if relation.through != "" {
+						//goland:noinspection Annotator
 						query = fmt.Sprintf(
-							"SELECT %s FROM %s join %s on %s.%s = %s.%s",
+							`SELECT %s FROM %s join %s on %s.%s = %s.%s`,
 							b.identifier(relation.dest),
 							b.identifier(relation.through),
 							builder.Table(),
@@ -517,6 +518,7 @@ func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any, run func(s
 							b.identifier(relation.throughField),
 						)
 					} else {
+						//goland:noinspection Annotator
 						query = fmt.Sprintf("SELECT %s FROM %s", b.identifier(relation.dest), builder.Table())
 					}
 					if expr := builder.Where(&where, args, run); expr != "" {

@@ -20,21 +20,24 @@ import (
 
 func TestNotifier(t *testing.T) {
 	ctx, dbx := test.DbSetup()
-	is := is.New(t)
+	expIs := is.New(t)
 	l := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	ctx, cancel := context.WithCancel(ctx)
 	wg := sync.WaitGroup{}
 	// pool, err := testPool("postgres://postgres:postgres@localhost:5432/authgo_test?sslmode=disable")
-	// is.NoErr(err)
+	// expIs.NoErr(err)
 
 	li := NewListener(dbx.Pool())
 	err := li.Connect(ctx)
-	is.NoErr(err)
+	expIs.NoErr(err)
 
 	n := NewNotifier(l, li)
 	wg.Add(1)
 	go func() {
-		n.Run(ctx)
+		err := n.Run(ctx)
+		if err != nil {
+			return
+		}
 		wg.Done()
 	}()
 	sub := n.Listen("foo")
@@ -43,14 +46,29 @@ func TestNotifier(t *testing.T) {
 	wg.Add(1)
 	go func() {
 		<-sub.EstablishedC()
-		conn.Exec(ctx, "select pg_notify('foo', '1')")
-		conn.Exec(ctx, "select pg_notify('foo', '2')")
-		conn.Exec(ctx, "select pg_notify('foo', '3')")
-		conn.Exec(ctx, "select pg_notify('foo', '4')")
-		conn.Exec(ctx, "select pg_notify('foo', '5')")
+		_, err := conn.Exec(ctx, "select pg_notify('foo', '1')")
+		if err != nil {
+			return
+		}
+		_, err = conn.Exec(ctx, "select pg_notify('foo', '2')")
+		if err != nil {
+			return
+		}
+		_, err = conn.Exec(ctx, "select pg_notify('foo', '3')")
+		if err != nil {
+			return
+		}
+		_, err = conn.Exec(ctx, "select pg_notify('foo', '4')")
+		if err != nil {
+			return
+		}
+		_, err = conn.Exec(ctx, "select pg_notify('foo', '5')")
+		if err != nil {
+			return
+		}
 		wg.Done()
 	}()
-	is.NoErr(err)
+	expIs.NoErr(err)
 
 	wg.Add(1)
 
@@ -65,14 +83,17 @@ func TestNotifier(t *testing.T) {
 		wg.Done()
 	}()
 
-	msgs := []string{}
+	var msgs []string
 	for r := range out {
 		msgs = append(msgs, r)
 	}
-	is.Equal(msgs, []string{"1", "2", "3", "4", "5"})
+	expIs.Equal(msgs, []string{"1", "2", "3", "4", "5"})
 
 	cancel()
 	sub.Unlisten(ctx) // uses background ctx anyway
-	li.Close(ctx)
+	err = li.Close(ctx)
+	if err != nil {
+		return
+	}
 	wg.Wait()
 }

@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/tkahng/authgo/internal/database"
-
 	"github.com/tkahng/authgo/internal/services"
 )
 
