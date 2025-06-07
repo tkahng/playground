@@ -36,3 +36,7 @@ func QueryAll[T any](ctx context.Context, db Dbx, query string, args ...any) ([]
 func Count(ctx context.Context, db Dbx, query string, args ...any) (int64, error) {
 	return pgxscan.One(ctx, db, scan.SingleColumnMapper[int64], query, args...)
 }
+
+type CountOutput struct {
+	Count int64
+}

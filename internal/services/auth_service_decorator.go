@@ -253,8 +253,8 @@ func (a *AuthStoreDecorator) FindUser(ctx context.Context, user *models.User) (*
 // WithTx implements AuthStore.
 func (a *AuthStoreDecorator) WithTx(dbx database.Dbx) AuthStore {
 	return &AuthStoreDecorator{
-		Delegate:                               a.Delegate.WithTx(dbx),
-		AssignUserRolesFunc:                    a.AssignUserRolesFunc,
+		Delegate: a.Delegate.WithTx(dbx),
+		// AssignUserRolesFunc:                    a.AssignUserRolesFunc,
 		CreateUserFunc:                         a.CreateUserFunc,
 		DeleteTokenFunc:                        a.DeleteTokenFunc,
 		DeleteUserFunc:                         a.DeleteUserFunc,
@@ -279,12 +279,12 @@ func (a *AuthStoreDecorator) RunInTransaction(ctx context.Context, fn func(store
 }
 
 // AssignUserRoles implements AuthStore.
-func (a *AuthStoreDecorator) AssignUserRoles(ctx context.Context, userId uuid.UUID, roleNames ...string) error {
-	if a.AssignUserRolesFunc != nil {
-		return a.AssignUserRolesFunc(ctx, userId, roleNames...)
-	}
-	return a.Delegate.AssignUserRoles(ctx, userId, roleNames...)
-}
+// func (a *AuthStoreDecorator) AssignUserRoles(ctx context.Context, userId uuid.UUID, roleNames ...string) error {
+// 	if a.AssignUserRolesFunc != nil {
+// 		return a.AssignUserRolesFunc(ctx, userId, roleNames...)
+// 	}
+// 	return a.Delegate.AssignUserRoles(ctx, userId, roleNames...)
+// }
 
 // CreateUser implements AuthStore.
 func (a *AuthStoreDecorator) CreateUser(ctx context.Context, user *models.User) (*models.User, error) {

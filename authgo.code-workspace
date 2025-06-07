@@ -143,6 +143,9 @@
     "go.coverOnSingleTestFile": true,
     "go.coverOnSingleTest": true,
     "go.coverShowCounts": true,
-    "sqltools.results.reuseTabs": "connection"
+    "sqltools.results.reuseTabs": "connection",
+    "workbench.editor.enablePreviewFromCodeNavigation": true,
+    "workbench.editor.enablePreviewFromQuickOpen": true,
+    "workbench.editor.highlightModifiedTabs": true
   }
 }

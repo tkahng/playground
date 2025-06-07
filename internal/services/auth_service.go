@@ -30,7 +30,7 @@ type AuthAccountStore interface {
 type AuthUserStore interface {
 	GetUserInfo(ctx context.Context, email string) (*shared.UserInfo, error)
 	CreateUser(ctx context.Context, user *models.User) (*models.User, error)
-	AssignUserRoles(ctx context.Context, userId uuid.UUID, roleNames ...string) error
+	// AssignUserRoles(ctx context.Context, userId uuid.UUID, roleNames ...string) error
 	UpdateUser(ctx context.Context, user *models.User) error
 	DeleteUser(ctx context.Context, id uuid.UUID) error
 	FindUser(ctx context.Context, user *models.User) (*models.User, error)

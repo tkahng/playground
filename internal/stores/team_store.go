@@ -728,7 +728,7 @@ func (s *DbTeamStore) ListTeams(ctx context.Context, params *shared.ListTeamsPar
 func (s *DbTeamStore) CountTeams(ctx context.Context, params *shared.ListTeamsParams) (int64, error) {
 	qs := squirrel.Select("COUNT(teams.*)").From("teams")
 	qs = listTeamsFilter(qs, params)
-	count, err := database.QueryWithBuilder[CountOutput](ctx, s.db, qs.PlaceholderFormat(squirrel.Dollar))
+	count, err := database.QueryWithBuilder[database.CountOutput](ctx, s.db, qs.PlaceholderFormat(squirrel.Dollar))
 	if err != nil {
 		return 0, err
 	}

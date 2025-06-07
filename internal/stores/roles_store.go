@@ -640,7 +640,7 @@ func (p *DbRBACStore) CountRoles(ctx context.Context, filter *shared.RoleListFil
 
 	q = ListRolesFilterFuncQuery(q, filter)
 
-	data, err := database.QueryWithBuilder[CountOutput](ctx, p.db, q.PlaceholderFormat(squirrel.Dollar))
+	data, err := database.QueryWithBuilder[database.CountOutput](ctx, p.db, q.PlaceholderFormat(squirrel.Dollar))
 	if err != nil {
 		return 0, err
 	}
@@ -675,7 +675,7 @@ func (p *DbRBACStore) CountPermissions(ctx context.Context, filter *shared.Permi
 	// q = ViewApplyPagination(q, pageInput)
 	q = ListPermissionsFilterFunc(q, filter)
 
-	data, err := database.QueryWithBuilder[CountOutput](ctx, p.db, q.PlaceholderFormat(squirrel.Dollar))
+	data, err := database.QueryWithBuilder[database.CountOutput](ctx, p.db, q.PlaceholderFormat(squirrel.Dollar))
 	if err != nil {
 		return 0, err
 	}

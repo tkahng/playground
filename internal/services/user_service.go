@@ -9,7 +9,7 @@ import (
 )
 
 type UserStore interface {
-	AssignUserRoles(ctx context.Context, userId uuid.UUID, roleNames ...string) error
+	// AssignUserRoles(ctx context.Context, userId uuid.UUID, roleNames ...string) error
 	CreateUser(ctx context.Context, user *models.User) (*models.User, error)
 	DeleteUser(ctx context.Context, userId uuid.UUID) error
 	FindUserById(ctx context.Context, userId uuid.UUID) (*models.User, error)

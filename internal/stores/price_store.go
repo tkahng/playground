@@ -4,10 +4,12 @@ import (
 	"context"
 
 	"github.com/Masterminds/squirrel"
+	"github.com/stripe/stripe-go/v82"
 	"github.com/tkahng/authgo/internal/crudrepo"
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/authgo/internal/tools/types"
 )
 
 func (s *DbStripeStore) UpsertPrice(ctx context.Context, price *models.StripePrice) error {
@@ -118,4 +120,44 @@ func SelectStripePriceColumns(qs squirrel.SelectBuilder, prefix string) squirrel
 		Column(models.StripePriceTablePrefix.CreatedAt + " AS " + Quote(WithPrefix(prefix, models.StripePriceTable.CreatedAt))).
 		Column(models.StripePriceTablePrefix.UpdatedAt + " AS " + Quote(WithPrefix(prefix, models.StripePriceTable.UpdatedAt)))
 	return qs
+}
+
+// FindActivePriceById implements PaymentStore.
+func (s *DbStripeStore) FindActivePriceById(ctx context.Context, priceId string) (*models.StripePrice, error) {
+	data, err := crudrepo.StripePrice.GetOne(
+		ctx,
+		s.db,
+		&map[string]any{
+			models.StripePriceTable.ID: map[string]any{
+				"_eq": priceId,
+			},
+			models.StripePriceTable.Type: map[string]any{
+				"_eq": string(models.StripePricingTypeRecurring),
+			},
+		},
+	)
+	return data, err
+}
+
+func (s *DbStripeStore) UpsertPriceFromStripe(ctx context.Context, price *stripe.Price) error {
+	if price == nil {
+		return nil
+	}
+	val := &models.StripePrice{
+		ID:         price.ID,
+		ProductID:  price.Product.ID,
+		Active:     price.Active,
+		LookupKey:  &price.LookupKey,
+		UnitAmount: &price.UnitAmount,
+		Currency:   string(price.Currency),
+		Type:       models.StripePricingType(price.Type),
+		Metadata:   price.Metadata,
+	}
+	if price.Recurring != nil {
+		recur := price.Recurring
+		val.Interval = types.Pointer(models.StripePricingPlanInterval(recur.Interval))
+		val.IntervalCount = types.Pointer(recur.IntervalCount)
+		val.TrialPeriodDays = types.Pointer(recur.TrialPeriodDays)
+	}
+	return s.UpsertPrice(ctx, val)
 }
