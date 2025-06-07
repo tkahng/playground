@@ -13,7 +13,7 @@ import (
 	"github.com/tkahng/authgo/internal/repository"
 )
 
-type SqResource[Model any, Key comparable, Filter any] struct {
+type QueryResource[Model any, Key comparable, Filter any] struct {
 	db           database.Dbx
 	builder      *repository.SQLBuilder[Model]
 	filterFn     func(qs squirrel.SelectBuilder, filter *Filter) squirrel.SelectBuilder
@@ -21,7 +21,7 @@ type SqResource[Model any, Key comparable, Filter any] struct {
 	paginationFn func(qs squirrel.SelectBuilder, filter *Filter) squirrel.SelectBuilder
 }
 
-func (p *SqResource[M, K, F]) filter(qs squirrel.SelectBuilder, filter *F) squirrel.SelectBuilder {
+func (p *QueryResource[M, K, F]) filter(qs squirrel.SelectBuilder, filter *F) squirrel.SelectBuilder {
 	if filter == nil {
 		return qs // return the original query if no filter is provided
 	}
@@ -32,7 +32,7 @@ func (p *SqResource[M, K, F]) filter(qs squirrel.SelectBuilder, filter *F) squir
 	return qs
 }
 
-func (p *SqResource[M, K, F]) pagination(qs squirrel.SelectBuilder, filter *F) squirrel.SelectBuilder {
+func (p *QueryResource[M, K, F]) pagination(qs squirrel.SelectBuilder, filter *F) squirrel.SelectBuilder {
 	if filter == nil {
 		return qs
 	}
@@ -47,7 +47,7 @@ func (p *SqResource[M, K, F]) pagination(qs squirrel.SelectBuilder, filter *F) s
 	return qs
 }
 
-func (p *SqResource[M, K, F]) sort(qs squirrel.SelectBuilder, filter *F) squirrel.SelectBuilder {
+func (p *QueryResource[M, K, F]) sort(qs squirrel.SelectBuilder, filter *F) squirrel.SelectBuilder {
 	if filter == nil {
 		return qs // return the original query if no filter is provided
 	}
@@ -62,7 +62,7 @@ func (p *SqResource[M, K, F]) sort(qs squirrel.SelectBuilder, filter *F) squirre
 }
 
 // Count implements Resource.
-func (s *SqResource[Model, Key, Filter]) Count(ctx context.Context, filter *Filter) (int64, error) {
+func (s *QueryResource[Model, Key, Filter]) Count(ctx context.Context, filter *Filter) (int64, error) {
 	qs := sq.Select("COUNT(" + s.builder.Table() + ".*)").
 		From(s.builder.Table())
 
@@ -79,7 +79,7 @@ func (s *SqResource[Model, Key, Filter]) Count(ctx context.Context, filter *Filt
 }
 
 // Create implements Resource.
-func (s *SqResource[Model, Key, Filter]) Create(ctx context.Context, model *Model) (*Model, error) {
+func (s *QueryResource[Model, Key, Filter]) Create(ctx context.Context, model *Model) (*Model, error) {
 	_value := reflect.ValueOf(*model)
 	_type := reflect.TypeOf(*model)
 	var fieldsArray []string
@@ -123,14 +123,14 @@ func (s *SqResource[Model, Key, Filter]) Create(ctx context.Context, model *Mode
 }
 
 // Delete implements Resource.
-func (s *SqResource[Model, Key, Filter]) Delete(ctx context.Context, id Key) error {
+func (s *QueryResource[Model, Key, Filter]) Delete(ctx context.Context, id Key) error {
 	qs := sq.Delete(s.builder.Table()).Where(sq.Eq{s.builder.IdColumnName(): id})
 	err := database.ExecWithBuilder(ctx, s.db, qs.PlaceholderFormat(sq.Dollar))
 	return err
 }
 
 // Find implements Resource.
-func (s *SqResource[Model, Key, Filter]) Find(ctx context.Context, filter *Filter) ([]*Model, error) {
+func (s *QueryResource[Model, Key, Filter]) Find(ctx context.Context, filter *Filter) ([]*Model, error) {
 	qs := sq.Select(s.builder.ColumnNamesTablePrefix()...).
 		From(s.builder.Table())
 
@@ -146,8 +146,24 @@ func (s *SqResource[Model, Key, Filter]) Find(ctx context.Context, filter *Filte
 	return res, nil
 }
 
+// FindOne implements Resource.
+func (s *QueryResource[Model, Key, Filter]) FindOne(ctx context.Context, filter *Filter) (*Model, error) {
+	qs := sq.Select(s.builder.ColumnNamesTablePrefix()...).
+		From(s.builder.Table())
+	// Apply filters, sorting, and pagination
+	qs = s.filter(qs, filter).Limit(1)
+	res, err := database.QueryWithBuilder[*Model](ctx, s.db, qs.PlaceholderFormat(sq.Dollar))
+	if err != nil {
+		return nil, fmt.Errorf("error finding one model: %w", err)
+	}
+	if len(res) == 0 {
+		return nil, nil
+	}
+	return res[0], nil
+}
+
 // FindByID implements Resource.
-func (s *SqResource[Model, Key, Filter]) FindByID(ctx context.Context, id Key) (*Model, error) {
+func (s *QueryResource[Model, Key, Filter]) FindByID(ctx context.Context, id Key) (*Model, error) {
 	qs := sq.Select(s.builder.ColumnNamesTablePrefix()...).
 		From(s.builder.Table()).Where(sq.Eq{s.builder.IdColumnName(): id}).Limit(1)
 	res, err := database.QueryWithBuilder[*Model](ctx, s.db, qs.PlaceholderFormat(sq.Dollar))
@@ -161,7 +177,7 @@ func (s *SqResource[Model, Key, Filter]) FindByID(ctx context.Context, id Key) (
 }
 
 // Update implements Resource.
-func (s *SqResource[Model, Key, Filter]) Update(ctx context.Context, model *Model) (*Model, error) {
+func (s *QueryResource[Model, Key, Filter]) Update(ctx context.Context, model *Model) (*Model, error) {
 	if model == nil {
 		return nil, nil
 	}
@@ -189,8 +205,8 @@ func (s *SqResource[Model, Key, Filter]) Update(ctx context.Context, model *Mode
 }
 
 // WithTx implements Resource.
-func (s *SqResource[Model, Key, Filter]) WithTx(tx database.Dbx) Resource[Model, Key, Filter] {
-	return &SqResource[Model, Key, Filter]{
+func (s *QueryResource[Model, Key, Filter]) WithTx(tx database.Dbx) Resource[Model, Key, Filter] {
+	return &QueryResource[Model, Key, Filter]{
 		db:           tx,
 		filterFn:     s.filterFn,
 		sortFn:       s.sortFn,
@@ -204,8 +220,8 @@ func NewSqResource[Model any, Key comparable, Filter any](
 	filterFn func(qs squirrel.SelectBuilder, filter *Filter) squirrel.SelectBuilder,
 	sortFn func(qs squirrel.SelectBuilder, filter *Filter) squirrel.SelectBuilder,
 	paginationFn func(qs squirrel.SelectBuilder, filter *Filter) squirrel.SelectBuilder,
-) *SqResource[Model, Key, Filter] {
-	return &SqResource[Model, Key, Filter]{
+) *QueryResource[Model, Key, Filter] {
+	return &QueryResource[Model, Key, Filter]{
 		db:           db,
 		filterFn:     filterFn,
 		sortFn:       sortFn,
@@ -213,4 +229,4 @@ func NewSqResource[Model any, Key comparable, Filter any](
 	}
 }
 
-var _ Resource[any, any, any] = (*SqResource[any, any, any])(nil)
+var _ Resource[any, any, any] = (*QueryResource[any, any, any])(nil)

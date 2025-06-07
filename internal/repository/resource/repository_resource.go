@@ -129,8 +129,16 @@ func (p *RepositoryResource[M, K, F]) Find(ctx context.Context, filter *F) ([]*M
 	}
 	return data, nil
 }
+func (p *RepositoryResource[M, K, F]) FindOne(ctx context.Context, filter *F) (*M, error) {
+	where := p.filter(filter)
+	data, err := p.repository.GetOne(ctx, p.db, where)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
+}
 
-// FindOne implements Resource.
+// FindByID implements Resource.
 func (p *RepositoryResource[M, K, F]) FindByID(ctx context.Context, id K) (*M, error) {
 	where := p.idWhere(id)
 	data, err := p.repository.GetOne(ctx, p.db, where)

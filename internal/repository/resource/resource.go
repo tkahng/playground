@@ -17,6 +17,7 @@ type Resource[Model any, Key comparable, Filter any] interface {
 	Create(ctx context.Context, model *Model) (*Model, error)
 	Count(ctx context.Context, filter *Filter) (int64, error)
 	Find(ctx context.Context, filter *Filter) ([]*Model, error)
+	FindOne(ctx context.Context, filter *Filter) (*Model, error)
 	FindByID(ctx context.Context, id Key) (*Model, error)
 	WithTx(tx database.Dbx) Resource[Model, Key, Filter]
 }
