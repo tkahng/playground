@@ -9,9 +9,9 @@ import (
 
 	"github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
-	"github.com/tkahng/authgo/internal/crudrepo"
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
+	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 )
@@ -63,7 +63,7 @@ func (s *DbTeamGroupStore) FindTeam(ctx context.Context, team *models.Team) (*mo
 			}
 		}
 	}
-	team, err := crudrepo.Team.GetOne(
+	team, err := repository.Team.GetOne(
 		ctx,
 		s.db,
 		&where,
@@ -80,7 +80,7 @@ func (s *DbTeamGroupStore) LoadTeamsByIds(ctx context.Context, teamIds ...uuid.U
 	for _, id := range teamIds {
 		ids = append(ids, id.String())
 	}
-	teams, err := crudrepo.Team.Get(
+	teams, err := repository.Team.Get(
 		ctx,
 		s.db,
 		&map[string]any{
@@ -104,7 +104,7 @@ func (s *DbTeamGroupStore) LoadTeamsByIds(ctx context.Context, teamIds ...uuid.U
 }
 
 func (s *DbTeamGroupStore) FindTeamByStripeCustomerId(ctx context.Context, stripeCustomerId string) (*models.Team, error) {
-	data, err := crudrepo.Team.GetOne(
+	data, err := repository.Team.GetOne(
 		ctx,
 		s.db,
 		&map[string]any{
@@ -120,7 +120,7 @@ func (s *DbTeamGroupStore) FindTeamByStripeCustomerId(ctx context.Context, strip
 
 // DeleteTeam implements TeamQueryer.
 func (s *DbTeamGroupStore) DeleteTeam(ctx context.Context, teamId uuid.UUID) error {
-	_, err := crudrepo.Team.Delete(
+	_, err := repository.Team.Delete(
 		ctx,
 		s.db,
 		&map[string]any{
@@ -137,7 +137,7 @@ func (s *DbTeamGroupStore) DeleteTeam(ctx context.Context, teamId uuid.UUID) err
 
 // FindTeamByID implements TeamQueryer.
 func (s *DbTeamGroupStore) FindTeamByID(ctx context.Context, teamId uuid.UUID) (*models.Team, error) {
-	return crudrepo.Team.GetOne(
+	return repository.Team.GetOne(
 		ctx,
 		s.db,
 		&map[string]any{
@@ -149,7 +149,7 @@ func (s *DbTeamGroupStore) FindTeamByID(ctx context.Context, teamId uuid.UUID) (
 }
 
 func (s *DbTeamGroupStore) FindTeamBySlug(ctx context.Context, slug string) (*models.Team, error) {
-	return crudrepo.Team.GetOne(
+	return repository.Team.GetOne(
 		ctx,
 		s.db,
 		&map[string]any{
@@ -168,7 +168,7 @@ func (s *DbTeamGroupStore) UpdateTeam(ctx context.Context, teamId uuid.UUID, nam
 		// StripeCustomerID: stripeCustomerId,
 		UpdatedAt: time.Now(),
 	}
-	_, err := crudrepo.Team.PutOne(
+	_, err := repository.Team.PutOne(
 		ctx,
 		s.db,
 		team,
@@ -184,7 +184,7 @@ func (s *DbTeamGroupStore) CreateTeam(ctx context.Context, name string, slug str
 		Name: name,
 		Slug: slug,
 	}
-	team, err := crudrepo.Team.PostOne(
+	team, err := repository.Team.PostOne(
 		ctx,
 		s.db,
 		teamModel,
@@ -230,7 +230,7 @@ func (s *DbTeamGroupStore) CountTeams(ctx context.Context, params *shared.ListTe
 
 // CheckTeamSlug implements services.TeamStore.
 func (s *DbTeamGroupStore) CheckTeamSlug(ctx context.Context, slug string) (bool, error) {
-	team, err := crudrepo.Team.GetOne(
+	team, err := repository.Team.GetOne(
 		ctx,
 		s.db,
 		&map[string]any{
@@ -271,7 +271,7 @@ func listTeamsOrderBy(qs squirrel.SelectBuilder, params *shared.ListTeamsParams)
 	if params.SortParams.SortBy != "" && params.SortParams.SortOrder != "" {
 		if params.SortParams.SortBy == "team_members.last_selected_at" {
 			qs = qs.OrderBy("team_members.last_selected_at " + strings.ToUpper(params.SortParams.SortOrder))
-		} else if slices.Contains(crudrepo.TeamBuilder.ColumnNames(), params.SortParams.SortBy) {
+		} else if slices.Contains(repository.TeamBuilder.ColumnNames(), params.SortParams.SortBy) {
 			qs = qs.OrderBy(params.SortParams.SortBy + " " + strings.ToUpper(params.SortParams.SortOrder))
 		}
 	} else {

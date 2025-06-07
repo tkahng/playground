@@ -8,9 +8,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/stephenafamo/scan"
 	"github.com/stephenafamo/scan/pgxscan"
-	"github.com/tkahng/authgo/internal/crudrepo"
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
+	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 )
@@ -90,7 +90,7 @@ func ListPermissionsFilterFunc(sq squirrel.SelectBuilder, filter *shared.Permiss
 
 // FindPermissionByName implements RBACStore.
 func (p *DbRbacStore) FindPermissionByName(ctx context.Context, name string) (*models.Permission, error) {
-	data, err := crudrepo.Permission.GetOne(
+	data, err := repository.Permission.GetOne(
 		ctx,
 		p.db,
 		&map[string]any{
@@ -103,7 +103,7 @@ func (p *DbRbacStore) FindPermissionByName(ctx context.Context, name string) (*m
 }
 
 func (a *DbRbacStore) FindPermissionById(ctx context.Context, id uuid.UUID) (*models.Permission, error) {
-	data, err := crudrepo.Permission.GetOne(
+	data, err := repository.Permission.GetOne(
 		ctx,
 		a.db,
 		&map[string]any{
@@ -123,7 +123,7 @@ func (p *DbRbacStore) FindPermissionsByIds(ctx context.Context, params []uuid.UU
 	for i, id := range params {
 		newIds[i] = id.String()
 	}
-	return crudrepo.Permission.Get(
+	return repository.Permission.Get(
 		ctx,
 		p.db,
 		&map[string]any{
@@ -140,7 +140,7 @@ func (p *DbRbacStore) FindPermissionsByIds(ctx context.Context, params []uuid.UU
 }
 
 func (p *DbRbacStore) FindOrCreatePermission(ctx context.Context, permissionName string) (*models.Permission, error) {
-	permission, err := crudrepo.Permission.GetOne(
+	permission, err := repository.Permission.GetOne(
 		ctx,
 		p.db,
 		&map[string]any{
@@ -162,7 +162,7 @@ func (p *DbRbacStore) FindOrCreatePermission(ctx context.Context, permissionName
 }
 
 func (p *DbRbacStore) CreatePermission(ctx context.Context, name string, description *string) (*models.Permission, error) {
-	data, err := crudrepo.Permission.PostOne(ctx, p.db, &models.Permission{
+	data, err := repository.Permission.PostOne(ctx, p.db, &models.Permission{
 		Name:        name,
 		Description: description,
 	})
@@ -173,7 +173,7 @@ func (p *DbRbacStore) CreatePermission(ctx context.Context, name string, descrip
 }
 
 func (p *DbRbacStore) UpdatePermission(ctx context.Context, id uuid.UUID, roledto *shared.UpdatePermissionDto) error {
-	permission, err := crudrepo.Permission.GetOne(
+	permission, err := repository.Permission.GetOne(
 		ctx,
 		p.db,
 		&map[string]any{
@@ -190,7 +190,7 @@ func (p *DbRbacStore) UpdatePermission(ctx context.Context, id uuid.UUID, roledt
 	}
 	permission.Name = roledto.Name
 	permission.Description = roledto.Description
-	_, err = crudrepo.Permission.PutOne(ctx, p.db, permission)
+	_, err = repository.Permission.PutOne(ctx, p.db, permission)
 
 	if err != nil {
 		return err
@@ -206,7 +206,7 @@ func (p *DbRbacStore) CreateRolePermissions(ctx context.Context, roleId uuid.UUI
 			PermissionID: perm,
 		})
 	}
-	_, err := crudrepo.RolePermission.Post(ctx, p.db, permissions)
+	_, err := repository.RolePermission.Post(ctx, p.db, permissions)
 	if err != nil {
 		return err
 	}
@@ -268,7 +268,7 @@ func (p *DbRbacStore) LoadRolePermissions(ctx context.Context, roleIds ...uuid.U
 }
 
 func (p *DbRbacStore) DeletePermission(ctx context.Context, id uuid.UUID) error {
-	_, err := crudrepo.Permission.Delete(
+	_, err := repository.Permission.Delete(
 		ctx,
 		p.db,
 		&map[string]any{
@@ -291,7 +291,7 @@ func (p *DbRbacStore) DeleteRolePermissions(ctx context.Context, roleId uuid.UUI
 	for _, id := range permissionIds {
 		ids = append(ids, id.String())
 	}
-	_, err := crudrepo.RolePermission.Delete(
+	_, err := repository.RolePermission.Delete(
 		ctx,
 		p.db,
 		&map[string]any{

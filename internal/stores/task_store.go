@@ -9,9 +9,9 @@ import (
 
 	"github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
-	"github.com/tkahng/authgo/internal/crudrepo"
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
+	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/services"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
@@ -24,7 +24,7 @@ type taskStore struct {
 
 // CreateTask implements services.TaskStore.
 func (s *taskStore) CreateTask(ctx context.Context, task *models.Task) (*models.Task, error) {
-	return crudrepo.Task.PostOne(ctx, s.db, task)
+	return repository.Task.PostOne(ctx, s.db, task)
 }
 
 // FindTask implements services.TaskStore.
@@ -32,7 +32,7 @@ func (s *taskStore) FindTask(ctx context.Context, task *models.Task) (*models.Ta
 
 	where := s.TaskWhere(task)
 
-	return crudrepo.Task.GetOne(ctx, s.db, where)
+	return repository.Task.GetOne(ctx, s.db, where)
 }
 
 func (*taskStore) TaskWhere(task *models.Task) *map[string]any {
@@ -85,7 +85,7 @@ func (*taskStore) TaskWhere(task *models.Task) *map[string]any {
 
 // UpdateTask implements services.TaskStore.
 func (s *taskStore) UpdateTask(ctx context.Context, task *models.Task) error {
-	_, err := crudrepo.Task.PutOne(ctx, s.db, task)
+	_, err := repository.Task.PutOne(ctx, s.db, task)
 	return err
 }
 
@@ -171,7 +171,7 @@ GROUP BY tp.id;`
 )
 
 func (s *taskStore) LoadTaskProjectsTasks(ctx context.Context, projectIds ...uuid.UUID) ([][]*models.Task, error) {
-	tasks, err := crudrepo.Task.Get(
+	tasks, err := repository.Task.Get(
 		ctx,
 		s.db,
 		&map[string]any{
@@ -192,7 +192,7 @@ func (s *taskStore) LoadTaskProjectsTasks(ctx context.Context, projectIds ...uui
 }
 
 func (s *taskStore) FindTaskByID(ctx context.Context, id uuid.UUID) (*models.Task, error) {
-	task, err := crudrepo.Task.GetOne(
+	task, err := repository.Task.GetOne(
 		ctx,
 		s.db,
 		&map[string]any{
@@ -205,7 +205,7 @@ func (s *taskStore) FindTaskByID(ctx context.Context, id uuid.UUID) (*models.Tas
 }
 
 func (s *taskStore) FindLastTaskRank(ctx context.Context, taskProjectID uuid.UUID) (float64, error) {
-	tasks, err := crudrepo.Task.Get(
+	tasks, err := repository.Task.Get(
 		ctx,
 		s.db,
 		&map[string]any{
@@ -231,7 +231,7 @@ func (s *taskStore) FindLastTaskRank(ctx context.Context, taskProjectID uuid.UUI
 
 func (s *taskStore) DeleteTask(ctx context.Context, taskID uuid.UUID) error {
 
-	_, err := crudrepo.Task.Delete(
+	_, err := repository.Task.Delete(
 		ctx,
 		s.db,
 		&map[string]any{
@@ -245,7 +245,7 @@ func (s *taskStore) DeleteTask(ctx context.Context, taskID uuid.UUID) error {
 
 func (s *taskStore) FindTaskProjectByID(ctx context.Context, id uuid.UUID) (*models.TaskProject, error) {
 
-	task, err := crudrepo.TaskProject.GetOne(
+	task, err := repository.TaskProject.GetOne(
 		ctx,
 		s.db,
 		&map[string]any{
@@ -257,7 +257,7 @@ func (s *taskStore) FindTaskProjectByID(ctx context.Context, id uuid.UUID) (*mod
 	return database.OptionalRow(task, err)
 }
 func (s *taskStore) DeleteTaskProject(ctx context.Context, taskProjectID uuid.UUID) error {
-	_, err := crudrepo.TaskProject.Delete(
+	_, err := repository.TaskProject.Delete(
 		ctx,
 		s.db,
 		&map[string]any{
@@ -347,7 +347,7 @@ func (s *taskStore) ListTasks(ctx context.Context, input *shared.TaskListParams)
 	iimit, offset := database.PaginateRepo(pageInput)
 	order := ListTasksOrderByFunc(input)
 	where := ListTasksFilterFunc(&filter)
-	data, err := crudrepo.Task.Get(
+	data, err := repository.Task.Get(
 		ctx,
 		s.db,
 		where,
@@ -364,7 +364,7 @@ func (s *taskStore) ListTasks(ctx context.Context, input *shared.TaskListParams)
 // CountTasks implements AdminCrudActions.
 func (s *taskStore) CountTasks(ctx context.Context, filter *shared.TaskListFilter) (int64, error) {
 	where := ListTasksFilterFunc(filter)
-	return crudrepo.Task.Count(ctx, s.db, where)
+	return repository.Task.Count(ctx, s.db, where)
 }
 func ListTaskProjectsFilterFunc(filter *shared.TaskProjectsListFilter) *map[string]any {
 	if filter == nil {
@@ -419,7 +419,7 @@ func (s *taskStore) ListTaskProjects(ctx context.Context, input *shared.TaskProj
 	limit, offset := database.PaginateRepo(pageInput)
 	oredr := ListTaskProjectsOrderByFunc(input)
 	where := ListTaskProjectsFilterFunc(&filter)
-	data, err := crudrepo.TaskProject.Get(
+	data, err := repository.TaskProject.Get(
 		ctx,
 		s.db,
 		where,
@@ -436,7 +436,7 @@ func (s *taskStore) ListTaskProjects(ctx context.Context, input *shared.TaskProj
 // CountTaskProjects implements AdminCrudActions.
 func (s *taskStore) CountTaskProjects(ctx context.Context, filter *shared.TaskProjectsListFilter) (int64, error) {
 	where := ListTaskProjectsFilterFunc(filter)
-	return crudrepo.TaskProject.Count(ctx, s.db, where)
+	return repository.TaskProject.Count(ctx, s.db, where)
 }
 
 func (s *taskStore) CreateTaskProject(ctx context.Context, input *shared.CreateTaskProjectDTO) (*models.TaskProject, error) {
@@ -448,7 +448,7 @@ func (s *taskStore) CreateTaskProject(ctx context.Context, input *shared.CreateT
 		Status:            models.TaskProjectStatus(input.Status),
 		Rank:              input.Rank,
 	}
-	projects, err := crudrepo.TaskProject.PostOne(ctx, s.db, &taskProject)
+	projects, err := repository.TaskProject.PostOne(ctx, s.db, &taskProject)
 	if err != nil {
 		return nil, err
 	}
@@ -499,7 +499,7 @@ func (s *taskStore) CreateTaskFromInput(ctx context.Context, teamID uuid.UUID, p
 
 func (s *taskStore) CalculateTaskRankStatus(ctx context.Context, taskId uuid.UUID, taskProjectId uuid.UUID, status models.TaskStatus, currentRank float64, position int64) (float64, error) {
 	if position == 0 {
-		res, err := crudrepo.Task.Get(
+		res, err := repository.Task.Get(
 			ctx,
 			s.db,
 			&map[string]any{
@@ -529,7 +529,7 @@ func (s *taskStore) CalculateTaskRankStatus(ctx context.Context, taskId uuid.UUI
 		}
 		return response.Rank - 1000, nil
 	}
-	ele, err := crudrepo.Task.Get(
+	ele, err := repository.Task.Get(
 		ctx,
 		s.db,
 		&map[string]any{
@@ -555,7 +555,7 @@ func (s *taskStore) CalculateTaskRankStatus(ctx context.Context, taskId uuid.UUI
 		return element.Rank, nil
 	}
 	if currentRank > element.Rank {
-		sideELe, err := crudrepo.Task.Get(
+		sideELe, err := repository.Task.Get(
 			ctx,
 			s.db,
 			&map[string]any{
@@ -581,7 +581,7 @@ func (s *taskStore) CalculateTaskRankStatus(ctx context.Context, taskId uuid.UUI
 		sideElements := sideELe[0]
 		return (element.Rank + sideElements.Rank) / 2, nil
 	}
-	sideele, err := crudrepo.Task.Get(
+	sideele, err := repository.Task.Get(
 		ctx,
 		s.db,
 		&map[string]any{
@@ -633,7 +633,7 @@ func (s *taskStore) UpdateTaskProject(ctx context.Context, taskProjectID uuid.UU
 	taskProject.Description = input.Description
 	taskProject.Status = models.TaskProjectStatus(input.Status)
 	taskProject.Rank = input.Rank
-	_, err = crudrepo.TaskProject.PutOne(ctx, s.db, taskProject)
+	_, err = repository.TaskProject.PutOne(ctx, s.db, taskProject)
 	if err != nil {
 		return err
 	}
@@ -653,7 +653,7 @@ func (s *taskStore) UpdateTaskRankStatus(ctx context.Context, taskID uuid.UUID, 
 		return err
 	}
 	task.Rank = rank
-	_, err = crudrepo.Task.PutOne(ctx, s.db, task)
+	_, err = repository.Task.PutOne(ctx, s.db, task)
 	if err != nil {
 		return err
 	}

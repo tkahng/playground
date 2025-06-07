@@ -8,9 +8,9 @@ import (
 
 	"github.com/alexedwards/argon2id"
 	"github.com/google/uuid"
-	"github.com/tkahng/authgo/internal/crudrepo"
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
+	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 	"github.com/tkahng/authgo/internal/tools/security"
@@ -44,7 +44,7 @@ var (
 func (u *DbAccountStore) ListUserAccounts(ctx context.Context, input *shared.UserAccountListParams) ([]*models.UserAccount, error) {
 	where := UserAccountWhere(&input.UserAccountListFilter)
 	sort := UserAccountOrderBy(&input.SortParams)
-	data, err := crudrepo.UserAccount.Get(
+	data, err := repository.UserAccount.Get(
 		ctx,
 		u.db,
 		where,
@@ -110,7 +110,7 @@ func UserAccountWhere(filter *shared.UserAccountListFilter) *map[string]any {
 // CountUsers implements AdminCrudActions.
 func (u *DbAccountStore) CountUserAccounts(ctx context.Context, filter *shared.UserAccountListFilter) (int64, error) {
 	where := UserAccountWhere(filter)
-	data, err := crudrepo.UserAccount.Count(ctx, u.db, where)
+	data, err := repository.UserAccount.Count(ctx, u.db, where)
 	if err != nil {
 		return 0, err
 	}
@@ -119,7 +119,7 @@ func (u *DbAccountStore) CountUserAccounts(ctx context.Context, filter *shared.U
 
 // FindUserAccountByUserIdAndProvider implements UserAccountStore.
 func (u *DbAccountStore) FindUserAccountByUserIdAndProvider(ctx context.Context, userId uuid.UUID, provider models.Providers) (*models.UserAccount, error) {
-	return crudrepo.UserAccount.GetOne(ctx, u.db, &map[string]any{
+	return repository.UserAccount.GetOne(ctx, u.db, &map[string]any{
 		models.UserAccountTable.UserID: map[string]any{
 			"_eq": userId,
 		},
@@ -134,7 +134,7 @@ func (u *DbAccountStore) CreateUserAccount(ctx context.Context, account *models.
 	if account == nil {
 		return nil, errors.New("account is nil")
 	}
-	createdAccount, err := crudrepo.UserAccount.PostOne(ctx, u.db, account)
+	createdAccount, err := repository.UserAccount.PostOne(ctx, u.db, account)
 	if err != nil {
 		return nil, fmt.Errorf("error creating user account: %w", err)
 	}
@@ -143,7 +143,7 @@ func (u *DbAccountStore) CreateUserAccount(ctx context.Context, account *models.
 
 // UnlinkAccount implements UserAccountStore.
 func (u *DbAccountStore) UnlinkAccount(ctx context.Context, userId uuid.UUID, provider models.Providers) error {
-	_, err := crudrepo.UserAccount.Delete(
+	_, err := repository.UserAccount.Delete(
 		ctx,
 		u.db,
 		&map[string]any{
@@ -163,7 +163,7 @@ func (u *DbAccountStore) UnlinkAccount(ctx context.Context, userId uuid.UUID, pr
 
 // UpdateUserAccount implements UserAccountStore.
 func (u *DbAccountStore) UpdateUserAccount(ctx context.Context, account *models.UserAccount) error {
-	_, err := crudrepo.UserAccount.PutOne(ctx, u.db, account)
+	_, err := repository.UserAccount.PutOne(ctx, u.db, account)
 	if err != nil {
 		return fmt.Errorf("error updating user account: %w", err)
 	}
@@ -176,7 +176,7 @@ func (u *DbAccountStore) GetUserAccounts(ctx context.Context, userIds ...uuid.UU
 	for _, id := range userIds {
 		ids = append(ids, id.String())
 	}
-	data, err := crudrepo.UserAccount.Get(
+	data, err := repository.UserAccount.Get(
 		ctx,
 		u.db,
 		&map[string]any{
@@ -197,7 +197,7 @@ func (u *DbAccountStore) GetUserAccounts(ctx context.Context, userIds ...uuid.UU
 }
 
 func (u *DbAccountStore) UpdateUserPassword(ctx context.Context, userId uuid.UUID, password string) error {
-	account, err := crudrepo.UserAccount.GetOne(
+	account, err := repository.UserAccount.GetOne(
 		ctx,
 		u.db,
 		&map[string]any{
@@ -220,7 +220,7 @@ func (u *DbAccountStore) UpdateUserPassword(ctx context.Context, userId uuid.UUI
 		return err
 	}
 	account.Password = &hash
-	_, err = crudrepo.UserAccount.PutOne(
+	_, err = repository.UserAccount.PutOne(
 		ctx,
 		u.db,
 		account,

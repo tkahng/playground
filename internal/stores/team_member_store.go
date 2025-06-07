@@ -10,9 +10,9 @@ import (
 
 	"github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
-	"github.com/tkahng/authgo/internal/crudrepo"
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
+	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/types"
 )
@@ -37,7 +37,7 @@ func (s *DbTeamMemberStore) WithTx(tx database.Dbx) *DbTeamMemberStore {
 // FindUserByID implements services.TeamInvitationStore.
 //
 //	func (s *DbTeamStore) FindUserByID(ctx context.Context, userId uuid.UUID) (*models.User, error) {
-//		user, err := crudrepo.User.GetOne(
+//		user, err := repository.User.GetOne(
 //			ctx,
 //			s.db,
 //			&map[string]any{
@@ -78,7 +78,7 @@ func (s *DbTeamMemberStore) FindTeamMember(ctx context.Context, member *models.T
 			"_eq": member.Role,
 		}
 	}
-	member, err := crudrepo.TeamMember.GetOne(
+	member, err := repository.TeamMember.GetOne(
 		ctx,
 		s.db,
 		&where,
@@ -161,7 +161,7 @@ func (s *DbTeamStore) CreateTeamWithOwnerMember2(ctx context.Context, name strin
 }
 
 func (s *DbTeamMemberStore) CreateTeamFromUser(ctx context.Context, user *models.User) (*models.TeamMember, error) {
-	team, err := crudrepo.Team.PostOne(
+	team, err := repository.Team.PostOne(
 		ctx,
 		s.db,
 		&models.Team{
@@ -175,7 +175,7 @@ func (s *DbTeamMemberStore) CreateTeamFromUser(ctx context.Context, user *models
 	if team == nil {
 		return nil, errors.New("team not found")
 	}
-	teamMember, err := crudrepo.TeamMember.PostOne(
+	teamMember, err := repository.TeamMember.PostOne(
 		ctx,
 		s.db,
 		&models.TeamMember{
@@ -198,7 +198,7 @@ func (s *DbTeamMemberStore) CreateTeamFromUser(ctx context.Context, user *models
 
 // DeleteTeamMember implements services.TeamStore.
 func (s *DbTeamMemberStore) DeleteTeamMember(ctx context.Context, teamId uuid.UUID, userId uuid.UUID) error {
-	_, err := crudrepo.TeamMember.Delete(
+	_, err := repository.TeamMember.Delete(
 		ctx,
 		s.db,
 		&map[string]any{
@@ -218,7 +218,7 @@ func (s *DbTeamMemberStore) DeleteTeamMember(ctx context.Context, teamId uuid.UU
 
 // UpdateTeamMember implements services.TeamStore.
 func (s *DbTeamMemberStore) UpdateTeamMember(ctx context.Context, member *models.TeamMember) (*models.TeamMember, error) {
-	newMember, err := crudrepo.TeamMember.PutOne(
+	newMember, err := repository.TeamMember.PutOne(
 		ctx,
 		s.db,
 		member,
@@ -231,7 +231,7 @@ func (s *DbTeamMemberStore) UpdateTeamMember(ctx context.Context, member *models
 
 // CountOwnerTeamMembers implements services.TeamStore.
 func (s *DbTeamMemberStore) CountOwnerTeamMembers(ctx context.Context, teamId uuid.UUID) (int64, error) {
-	c, err := crudrepo.TeamMember.Count(
+	c, err := repository.TeamMember.Count(
 		ctx,
 		s.db,
 		&map[string]any{
@@ -251,7 +251,7 @@ func (s *DbTeamMemberStore) CountOwnerTeamMembers(ctx context.Context, teamId uu
 
 // CountTeamMembers implements services.TeamStore.
 func (s *DbTeamMemberStore) CountTeamMembers(ctx context.Context, teamId uuid.UUID) (int64, error) {
-	c, err := crudrepo.TeamMember.Count(
+	c, err := repository.TeamMember.Count(
 		ctx,
 		s.db,
 		&map[string]any{
@@ -266,7 +266,7 @@ func (s *DbTeamMemberStore) CountTeamMembers(ctx context.Context, teamId uuid.UU
 	return c, nil
 }
 func (s *DbTeamMemberStore) FindTeamMemberByTeamAndUserId(ctx context.Context, teamId, userId uuid.UUID) (*models.TeamMember, error) {
-	teamMember, err := crudrepo.TeamMember.GetOne(
+	teamMember, err := repository.TeamMember.GetOne(
 		ctx,
 		s.db,
 		&map[string]any{
@@ -300,7 +300,7 @@ func (s *DbTeamMemberStore) UpdateTeamMemberSelectedAt(ctx context.Context, team
 
 // FindLatestTeamMemberByUserID implements TeamQueryer.
 func (s *DbTeamMemberStore) FindLatestTeamMemberByUserID(ctx context.Context, userId uuid.UUID) (*models.TeamMember, error) {
-	teamMember, err := crudrepo.TeamMember.Get(
+	teamMember, err := repository.TeamMember.Get(
 		ctx,
 		s.db,
 		&map[string]any{
@@ -327,7 +327,7 @@ func (s *DbTeamMemberStore) FindLatestTeamMemberByUserID(ctx context.Context, us
 func (s *DbTeamMemberStore) FindTeamMembersByUserID(ctx context.Context, userId uuid.UUID, paginate *shared.TeamMemberListInput) ([]*models.TeamMember, error) {
 	limit, offset := database.PaginateRepo(&paginate.PaginatedInput)
 	orderby := make(map[string]string)
-	if paginate.SortBy != "" && paginate.SortOrder != "" && slices.Contains(crudrepo.TeamMemberBuilder.ColumnNames(), paginate.SortBy) {
+	if paginate.SortBy != "" && paginate.SortOrder != "" && slices.Contains(repository.TeamMemberBuilder.ColumnNames(), paginate.SortBy) {
 		orderby[paginate.SortBy] = paginate.SortOrder
 	} else {
 		orderby["last_selected_at"] = "DESC"
@@ -337,7 +337,7 @@ func (s *DbTeamMemberStore) FindTeamMembersByUserID(ctx context.Context, userId 
 	qs = qs.Where(squirrel.Eq{"active": true})
 	if paginate.SortBy == "team.name" {
 		qs = qs.Join("teams on team_members.team_id = teams.id").OrderBy("teams.name " + strings.ToUpper(paginate.SortOrder))
-	} else if slices.Contains(crudrepo.TeamMemberBuilder.ColumnNames(), paginate.SortBy) {
+	} else if slices.Contains(repository.TeamMemberBuilder.ColumnNames(), paginate.SortBy) {
 		qs = qs.OrderBy(paginate.SortBy + " " + strings.ToUpper(paginate.SortOrder))
 	} else {
 		qs = qs.OrderBy("last_selected_at DESC")
@@ -352,7 +352,7 @@ func (s *DbTeamMemberStore) FindTeamMembersByUserID(ctx context.Context, userId 
 }
 
 func (s *DbTeamMemberStore) CountTeamMembersByUserID(ctx context.Context, userId uuid.UUID) (int64, error) {
-	c, err := crudrepo.TeamMember.Count(
+	c, err := repository.TeamMember.Count(
 		ctx,
 		s.db,
 		&map[string]any{
@@ -377,7 +377,7 @@ func (s *DbTeamMemberStore) CreateTeamMember(ctx context.Context, teamId, userId
 		Active:           true,
 		HasBillingAccess: hasBillingAccess,
 	}
-	return crudrepo.TeamMember.PostOne(
+	return repository.TeamMember.PostOne(
 		ctx,
 		s.db,
 		teamMember,

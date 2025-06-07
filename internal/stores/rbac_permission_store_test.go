@@ -7,9 +7,9 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/tkahng/authgo/internal/crudrepo"
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
+	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/stores"
 	"github.com/tkahng/authgo/internal/test"
@@ -562,7 +562,7 @@ func TestUpdatePermission(t *testing.T) {
 
 				if tt.name == "update existing permission" {
 					// Verify the update
-					updatedPermission, err := crudrepo.Permission.GetOne(ctx,
+					updatedPermission, err := repository.Permission.GetOne(ctx,
 						dbxx,
 						&map[string]any{
 							"id": map[string]any{
@@ -676,7 +676,7 @@ func TestEnsureRoleAndPermissions(t *testing.T) {
 				}
 
 				// Verify role was created
-				role, err := crudrepo.Role.GetOne(ctx, tt.args.db,
+				role, err := repository.Role.GetOne(ctx, tt.args.db,
 					&map[string]any{
 						"name": map[string]any{
 							"_eq": tt.args.roleName,

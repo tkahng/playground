@@ -6,10 +6,10 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/tkahng/authgo/internal/crudrepo"
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/jobs"
 	"github.com/tkahng/authgo/internal/models"
+	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/test"
 )
 
@@ -29,7 +29,7 @@ func TestEnqueuer(t *testing.T) {
 
 			err := enqueuer.Enqueue(ctx, job, nil, runAfter, 3)
 			assert.NoError(t, err)
-			storedJob, err := crudrepo.Job.GetOne(ctx, tx, &map[string]any{
+			storedJob, err := repository.Job.GetOne(ctx, tx, &map[string]any{
 				"kind": map[string]any{
 					"_eq": job.Kind(),
 				},
@@ -57,7 +57,7 @@ func TestEnqueuer(t *testing.T) {
 			assert.NoError(t, err)
 
 			// Verify payload was updated
-			queryJob, err := crudrepo.Job.GetOne(ctx, tx, &map[string]any{
+			queryJob, err := repository.Job.GetOne(ctx, tx, &map[string]any{
 				"unique_key": map[string]any{
 					"_eq": uniqueKey,
 				},
@@ -88,7 +88,7 @@ func TestEnqueuer(t *testing.T) {
 			err := enqueuer.EnqueueMany(ctx, params...)
 			assert.NoError(t, err)
 
-			count, err := crudrepo.Job.Count(
+			count, err := repository.Job.Count(
 				ctx,
 				tx,
 				nil,

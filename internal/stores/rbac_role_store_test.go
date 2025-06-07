@@ -8,9 +8,9 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/tkahng/authgo/internal/crudrepo"
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
+	"github.com/tkahng/authgo/internal/repository"
 
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/stores"
@@ -453,7 +453,7 @@ func TestUpdateRole(t *testing.T) {
 
 				if tt.name == "update existing role" {
 					// Verify the update
-					updatedRole, err := crudrepo.Role.GetOne(ctx,
+					updatedRole, err := repository.Role.GetOne(ctx,
 						dbxx,
 						&map[string]any{
 							"id": map[string]any{
@@ -528,7 +528,7 @@ func TestDeleteRole(t *testing.T) {
 
 				if tt.name == "delete existing role" {
 					// Verify the role was deleted
-					deletedRole, err := crudrepo.Role.GetOne(ctx,
+					deletedRole, err := repository.Role.GetOne(ctx,
 						dbxx,
 						&map[string]any{
 							"id": map[string]any{
@@ -589,7 +589,7 @@ func TestDeletePermission(t *testing.T) {
 
 				if tt.name == "delete existing permission" {
 					// Verify the permission was deleted
-					deletedPermission, err := crudrepo.Permission.GetOne(ctx,
+					deletedPermission, err := repository.Permission.GetOne(ctx,
 						dbxx,
 						&map[string]any{
 							"id": map[string]any{

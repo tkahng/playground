@@ -9,9 +9,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/tkahng/authgo/internal/crudrepo"
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
+	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/stores"
 	"github.com/tkahng/authgo/internal/test"
@@ -208,15 +208,15 @@ func TestUpdateTeamMemberUpdatedAt(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	t.Cleanup(func() {
-		_, err := crudrepo.TeamMember.Delete(ctx, dbx, nil)
+		_, err := repository.TeamMember.Delete(ctx, dbx, nil)
 		if err != nil {
 			slog.ErrorContext(ctx, "Error deleting team members", slog.Any("error", err))
 		}
-		_, err = crudrepo.Team.Delete(ctx, dbx, nil)
+		_, err = repository.Team.Delete(ctx, dbx, nil)
 		if err != nil {
 			slog.ErrorContext(ctx, "Error deleting teams", slog.Any("error", err))
 		}
-		_, err = crudrepo.User.Delete(ctx, dbx, nil)
+		_, err = repository.User.Delete(ctx, dbx, nil)
 		if err != nil {
 			slog.ErrorContext(ctx, "Error deleting users", slog.Any("error", err))
 		}

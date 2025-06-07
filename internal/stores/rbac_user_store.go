@@ -5,9 +5,9 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	"github.com/tkahng/authgo/internal/crudrepo"
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
+	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 	"github.com/tkahng/authgo/internal/tools/types"
@@ -15,7 +15,7 @@ import (
 
 func (a *DbRbacStore) AssignUserRoles(ctx context.Context, userId uuid.UUID, roleNames ...string) error {
 	if len(roleNames) > 0 {
-		user, err := crudrepo.User.GetOne(
+		user, err := repository.User.GetOne(
 			ctx,
 			a.db,
 			&map[string]any{
@@ -30,7 +30,7 @@ func (a *DbRbacStore) AssignUserRoles(ctx context.Context, userId uuid.UUID, rol
 		if user == nil {
 			return fmt.Errorf("user not found while assigning roles")
 		}
-		roles, err := crudrepo.Role.Get(
+		roles, err := repository.Role.Get(
 			ctx,
 			a.db,
 			&map[string]any{
@@ -63,7 +63,7 @@ func (a *DbRbacStore) AssignUserRoles(ctx context.Context, userId uuid.UUID, rol
 					RoleID: role.ID,
 				})
 			}
-			_, err = crudrepo.UserRole.Post(ctx, a.db, userRoles)
+			_, err = repository.UserRole.Post(ctx, a.db, userRoles)
 			if err != nil {
 				return fmt.Errorf("error assigning user role while assigning roles: %w", err)
 			}
@@ -80,7 +80,7 @@ func (p *DbRbacStore) CreateUserPermissions(ctx context.Context, userId uuid.UUI
 			PermissionID: id,
 		})
 	}
-	_, err := crudrepo.UserPermission.Post(
+	_, err := repository.UserPermission.Post(
 		ctx,
 		p.db,
 		dtos,
@@ -99,7 +99,7 @@ func (p *DbRbacStore) CreateUserRoles(ctx context.Context, userId uuid.UUID, rol
 			RoleID: id,
 		})
 	}
-	_, err := crudrepo.UserRole.Post(
+	_, err := repository.UserRole.Post(
 		ctx,
 		p.db,
 		dtos,
@@ -400,7 +400,7 @@ FROM combined_permissions
 }
 
 func (p *DbRbacStore) DeleteUserRole(ctx context.Context, userId, roleId uuid.UUID) error {
-	_, err := crudrepo.RolePermission.Delete(
+	_, err := repository.RolePermission.Delete(
 		ctx,
 		p.db,
 		&map[string]any{

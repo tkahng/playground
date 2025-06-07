@@ -7,9 +7,9 @@ import (
 
 	"github.com/Masterminds/squirrel"
 	"github.com/stripe/stripe-go/v82"
-	"github.com/tkahng/authgo/internal/crudrepo"
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
+	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
 )
 
@@ -62,7 +62,7 @@ func (s *DbProductStore) CountProducts(ctx context.Context, filter *shared.Strip
 }
 
 func (s *DbProductStore) FindProductById(ctx context.Context, productId string) (*models.StripeProduct, error) {
-	data, err := crudrepo.StripeProduct.GetOne(
+	data, err := repository.StripeProduct.GetOne(
 		ctx,
 		s.db,
 		&map[string]any{

@@ -4,9 +4,9 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	"github.com/tkahng/authgo/internal/crudrepo"
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
+	"github.com/tkahng/authgo/internal/repository"
 )
 
 func CreateTeamFromUser(ctx context.Context, dbx database.Dbx, user *models.User) (*models.TeamMember, error) {
@@ -16,7 +16,7 @@ func CreateTeamFromUser(ctx context.Context, dbx database.Dbx, user *models.User
 			Slug: user.Email,
 			// StripeCustomerID: nil,
 		}
-		team, err := crudrepo.Team.PostOne(
+		team, err := repository.Team.PostOne(
 			ctx,
 			dbx,
 			teamModel,
@@ -36,7 +36,7 @@ func CreateTeamFromUser(ctx context.Context, dbx database.Dbx, user *models.User
 			UserID: &userId,
 			Role:   models.TeamMemberRoleOwner,
 		}
-		return crudrepo.TeamMember.PostOne(
+		return repository.TeamMember.PostOne(
 			ctx,
 			dbx,
 			teamMember,

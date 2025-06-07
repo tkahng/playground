@@ -11,7 +11,7 @@ import (
 	"github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
 	"github.com/stripe/stripe-go/v82"
-	"github.com/tkahng/authgo/internal/crudrepo"
+	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/shared"
@@ -306,7 +306,7 @@ func (s *DbSubscriptionStore) FindActiveSubscriptionByCustomerId(ctx context.Con
 
 // IsFirstSubscription implements PaymentStore.
 func (s *DbSubscriptionStore) IsFirstSubscription(ctx context.Context, customerID string) (bool, error) {
-	data, err := crudrepo.StripeSubscription.Count(
+	data, err := repository.StripeSubscription.Count(
 		ctx,
 		s.db,
 		&map[string]any{
@@ -326,7 +326,7 @@ func (s *DbSubscriptionStore) ListSubscriptions(ctx context.Context, input *shar
 	limit, offset := database.PaginateRepo(pageInput)
 	where := listSubscriptionFilterFunc(&filter)
 	order := listSubscriptionOrderByFunc(input)
-	data, err := crudrepo.StripeSubscription.Get(
+	data, err := repository.StripeSubscription.Get(
 		ctx,
 		s.db,
 		where,
@@ -379,7 +379,7 @@ func listSubscriptionFilterFunc(filter *shared.StripeSubscriptionListFilter) *ma
 
 func (s *DbSubscriptionStore) CountSubscriptions(ctx context.Context, filter *shared.StripeSubscriptionListFilter) (int64, error) {
 	where := listSubscriptionFilterFunc(filter)
-	data, err := crudrepo.StripeSubscription.Count(ctx, s.db, where)
+	data, err := repository.StripeSubscription.Count(ctx, s.db, where)
 	if err != nil {
 		return 0, err
 	}

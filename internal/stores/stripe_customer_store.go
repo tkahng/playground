@@ -7,9 +7,9 @@ import (
 	"strings"
 
 	"github.com/Masterminds/squirrel"
-	"github.com/tkahng/authgo/internal/crudrepo"
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
+	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
 )
 
@@ -37,7 +37,7 @@ func (s *DbCustomerStore) ListCustomers(ctx context.Context, input *shared.Strip
 	limit, offset := database.PaginateRepo(pageInput)
 	where := listCustomerFilterFunc(&filter)
 	order := stripeCustomerOrderByFunc(input)
-	data, err := crudrepo.StripeCustomer.Get(
+	data, err := repository.StripeCustomer.Get(
 		ctx,
 		s.db,
 		where,
@@ -52,7 +52,7 @@ func (s *DbCustomerStore) ListCustomers(ctx context.Context, input *shared.Strip
 }
 func (s *DbCustomerStore) CountCustomers(ctx context.Context, filter *shared.StripeCustomerListFilter) (int64, error) {
 	where := listCustomerFilterFunc(filter)
-	data, err := crudrepo.StripeCustomer.Count(ctx, s.db, where)
+	data, err := repository.StripeCustomer.Count(ctx, s.db, where)
 	if err != nil {
 		return 0, err
 	}
@@ -108,7 +108,7 @@ func (s *DbCustomerStore) CreateCustomer(ctx context.Context, customer *models.S
 	} else {
 		return nil, errors.New("customer type is not set")
 	}
-	return crudrepo.StripeCustomer.PostOne(
+	return repository.StripeCustomer.PostOne(
 		ctx,
 		s.db,
 		customer,
@@ -136,7 +136,7 @@ func (s *DbCustomerStore) FindCustomer(ctx context.Context, customer *models.Str
 			"_eq": customer.UserID,
 		}
 	}
-	data, err := crudrepo.StripeCustomer.GetOne(
+	data, err := repository.StripeCustomer.GetOne(
 		ctx,
 		s.db,
 		&where,

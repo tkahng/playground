@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/tkahng/authgo/internal/crudrepo"
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
+	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
 )
 
@@ -28,7 +28,7 @@ func (s *DbTeamInvitationStore) WithTx(db database.Dbx) *DbTeamInvitationStore {
 }
 
 func (s *DbTeamInvitationStore) FindTeamInvitations(ctx context.Context, teamId uuid.UUID) ([]*models.TeamInvitation, error) {
-	invitations, err := crudrepo.TeamInvitation.Get(
+	invitations, err := repository.TeamInvitation.Get(
 		ctx,
 		s.db,
 		&map[string]any{
@@ -56,7 +56,7 @@ func (s *DbTeamInvitationStore) FindTeamInvitations(ctx context.Context, teamId 
 
 // FindInvitationByID implements services.TeamInvitationStore.
 func (s *DbTeamInvitationStore) FindInvitationByID(ctx context.Context, invitationId uuid.UUID) (*models.TeamInvitation, error) {
-	invitation, err := crudrepo.TeamInvitation.GetOne(
+	invitation, err := repository.TeamInvitation.GetOne(
 		ctx,
 		s.db,
 		&map[string]any{
@@ -81,7 +81,7 @@ func (s *DbTeamInvitationStore) FindInvitationByID(ctx context.Context, invitati
 
 // FindInvitationByToken implements services.TeamInvitationStore.
 func (s *DbTeamInvitationStore) FindInvitationByToken(ctx context.Context, token string) (*models.TeamInvitation, error) {
-	invitation, err := crudrepo.TeamInvitation.GetOne(
+	invitation, err := repository.TeamInvitation.GetOne(
 		ctx,
 		s.db,
 		&map[string]any{
@@ -106,7 +106,7 @@ func (s *DbTeamInvitationStore) FindInvitationByToken(ctx context.Context, token
 
 // CreateInvitation implements services.TeamInvitationStore.
 func (s *DbTeamInvitationStore) CreateInvitation(ctx context.Context, invitation *models.TeamInvitation) error {
-	_, err := crudrepo.TeamInvitation.PostOne(
+	_, err := repository.TeamInvitation.PostOne(
 		ctx,
 		s.db,
 		invitation,
@@ -116,7 +116,7 @@ func (s *DbTeamInvitationStore) CreateInvitation(ctx context.Context, invitation
 
 // GetInvitationByID implements services.TeamInvitationStore.
 func (s *DbTeamInvitationStore) GetInvitationByID(ctx context.Context, invitationId uuid.UUID) (*models.TeamInvitation, error) {
-	invitation, err := crudrepo.TeamInvitation.GetOne(
+	invitation, err := repository.TeamInvitation.GetOne(
 		ctx,
 		s.db,
 		&map[string]any{
@@ -139,7 +139,7 @@ func (s *DbTeamInvitationStore) GetInvitationByID(ctx context.Context, invitatio
 
 // UpdateInvitation implements services.TeamInvitationStore.
 func (s *DbTeamInvitationStore) UpdateInvitation(ctx context.Context, invitation *models.TeamInvitation) error {
-	_, err := crudrepo.TeamInvitation.PutOne(
+	_, err := repository.TeamInvitation.PutOne(
 		ctx,
 		s.db,
 		invitation,
@@ -153,7 +153,7 @@ func (s *DbTeamInvitationStore) UpdateInvitation(ctx context.Context, invitation
 
 // FindPendingInvitation implements services.TeamInvitationStore.
 func (s *DbTeamInvitationStore) FindPendingInvitation(ctx context.Context, teamId uuid.UUID, email string) (*models.TeamInvitation, error) {
-	invitation, err := crudrepo.TeamInvitation.GetOne(
+	invitation, err := repository.TeamInvitation.GetOne(
 		ctx,
 		s.db,
 		&map[string]any{

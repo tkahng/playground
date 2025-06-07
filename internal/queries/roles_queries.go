@@ -8,9 +8,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/stephenafamo/scan"
 	"github.com/stephenafamo/scan/pgxscan"
-	"github.com/tkahng/authgo/internal/crudrepo"
 	"github.com/tkahng/authgo/internal/database"
 	crudModels "github.com/tkahng/authgo/internal/models"
+	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 )
@@ -141,7 +141,7 @@ func CreateRolePermissions(ctx context.Context, db database.Dbx, roleId uuid.UUI
 	// }
 	// q = q.Suffix("RETURNING *")
 	// _, err := QueryWithBuilder[crudModels.RolePermission](ctx, db, q.PlaceholderFormat(squirrel.Dollar))
-	_, err := crudrepo.RolePermission.Post(ctx, db, permissions)
+	_, err := repository.RolePermission.Post(ctx, db, permissions)
 	if err != nil {
 		return err
 	}
@@ -156,7 +156,7 @@ func CreateProductPermissions(ctx context.Context, db database.Dbx, productId st
 			PermissionID: permissionId,
 		})
 	}
-	_, err := crudrepo.ProductPermission.Post(
+	_, err := repository.ProductPermission.Post(
 		ctx,
 		db,
 		permissions,
@@ -209,7 +209,7 @@ type CreateRoleDto struct {
 }
 
 func FindOrCreateRole(ctx context.Context, dbx database.Dbx, roleName string) (*crudModels.Role, error) {
-	role, err := crudrepo.Role.GetOne(
+	role, err := repository.Role.GetOne(
 		ctx,
 		dbx,
 		&map[string]any{
@@ -231,7 +231,7 @@ func FindOrCreateRole(ctx context.Context, dbx database.Dbx, roleName string) (*
 }
 
 func CreateRole(ctx context.Context, dbx database.Dbx, role *CreateRoleDto) (*crudModels.Role, error) {
-	data, err := crudrepo.Role.PostOne(ctx, dbx, &crudModels.Role{
+	data, err := repository.Role.PostOne(ctx, dbx, &crudModels.Role{
 		Name:        role.Name,
 		Description: role.Description,
 	})
@@ -244,7 +244,7 @@ type UpdateRoleDto struct {
 }
 
 func UpdateRole(ctx context.Context, dbx database.Dbx, id uuid.UUID, roledto *UpdateRoleDto) error {
-	role, err := crudrepo.Role.GetOne(
+	role, err := repository.Role.GetOne(
 		ctx,
 		dbx,
 		&map[string]any{
@@ -261,7 +261,7 @@ func UpdateRole(ctx context.Context, dbx database.Dbx, id uuid.UUID, roledto *Up
 	}
 	role.Name = roledto.Name
 	role.Description = roledto.Description
-	_, err = crudrepo.Role.PutOne(ctx, dbx, role)
+	_, err = repository.Role.PutOne(ctx, dbx, role)
 	if err != nil {
 		return err
 	}
@@ -274,7 +274,7 @@ type UpdatePermissionDto struct {
 }
 
 func UpdatePermission(ctx context.Context, dbx database.Dbx, id uuid.UUID, roledto *UpdatePermissionDto) error {
-	permission, err := crudrepo.Permission.GetOne(
+	permission, err := repository.Permission.GetOne(
 		ctx,
 		dbx,
 		&map[string]any{
@@ -291,7 +291,7 @@ func UpdatePermission(ctx context.Context, dbx database.Dbx, id uuid.UUID, roled
 	}
 	permission.Name = roledto.Name
 	permission.Description = roledto.Description
-	_, err = crudrepo.Permission.PutOne(ctx, dbx, permission)
+	_, err = repository.Permission.PutOne(ctx, dbx, permission)
 
 	if err != nil {
 		return err
@@ -300,7 +300,7 @@ func UpdatePermission(ctx context.Context, dbx database.Dbx, id uuid.UUID, roled
 }
 
 func DeleteRole(ctx context.Context, dbx database.Dbx, id uuid.UUID) error {
-	_, err := crudrepo.Role.Delete(
+	_, err := repository.Role.Delete(
 		ctx,
 		dbx,
 		&map[string]any{
@@ -318,14 +318,14 @@ type CreatePermissionDto struct {
 }
 
 func CreatePermission(ctx context.Context, dbx database.Dbx, permission *CreatePermissionDto) (*crudModels.Permission, error) {
-	data, err := crudrepo.Permission.PostOne(ctx, dbx, &crudModels.Permission{
+	data, err := repository.Permission.PostOne(ctx, dbx, &crudModels.Permission{
 		Name:        permission.Name,
 		Description: permission.Description,
 	})
 	return data, err
 }
 func FindOrCreatePermission(ctx context.Context, dbx database.Dbx, permissionName string) (*crudModels.Permission, error) {
-	permission, err := crudrepo.Permission.GetOne(
+	permission, err := repository.Permission.GetOne(
 		ctx,
 		dbx,
 		&map[string]any{
@@ -347,7 +347,7 @@ func FindOrCreatePermission(ctx context.Context, dbx database.Dbx, permissionNam
 }
 
 func DeletePermission(ctx context.Context, dbx database.Dbx, id uuid.UUID) error {
-	_, err := crudrepo.Permission.Delete(
+	_, err := repository.Permission.Delete(
 		ctx,
 		dbx,
 		&map[string]any{
@@ -360,7 +360,7 @@ func DeletePermission(ctx context.Context, dbx database.Dbx, id uuid.UUID) error
 }
 
 func FindPermissionById(ctx context.Context, dbx database.Dbx, id uuid.UUID) (*crudModels.Permission, error) {
-	data, err := crudrepo.Permission.GetOne(
+	data, err := repository.Permission.GetOne(
 		ctx,
 		dbx,
 		&map[string]any{
@@ -372,7 +372,7 @@ func FindPermissionById(ctx context.Context, dbx database.Dbx, id uuid.UUID) (*c
 	return database.OptionalRow(data, err)
 }
 func FindPermissionByName(ctx context.Context, dbx database.Dbx, name string) (*crudModels.Permission, error) {
-	data, err := crudrepo.Permission.GetOne(
+	data, err := repository.Permission.GetOne(
 		ctx,
 		dbx,
 		&map[string]any{
@@ -385,7 +385,7 @@ func FindPermissionByName(ctx context.Context, dbx database.Dbx, name string) (*
 }
 
 func FindRoleByName(ctx context.Context, dbx database.Dbx, name string) (*crudModels.Role, error) {
-	data, err := crudrepo.Role.GetOne(
+	data, err := repository.Role.GetOne(
 		ctx,
 		dbx,
 		&map[string]any{

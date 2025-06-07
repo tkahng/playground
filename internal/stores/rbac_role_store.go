@@ -9,9 +9,9 @@ import (
 
 	"github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
-	"github.com/tkahng/authgo/internal/crudrepo"
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
+	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/services"
 	"github.com/tkahng/authgo/internal/shared"
 )
@@ -40,7 +40,7 @@ func (s *DbRbacStore) FindRolesByIds(ctx context.Context, params []uuid.UUID) ([
 	for i, id := range params {
 		newIds[i] = id.String()
 	}
-	return crudrepo.Role.Get(
+	return repository.Role.Get(
 		ctx,
 		s.db,
 		&map[string]any{
@@ -56,7 +56,7 @@ func (s *DbRbacStore) FindRolesByIds(ctx context.Context, params []uuid.UUID) ([
 	)
 }
 func (a *DbRbacStore) FindRoleById(ctx context.Context, id uuid.UUID) (*models.Role, error) {
-	return crudrepo.Role.GetOne(ctx, a.db, &map[string]any{
+	return repository.Role.GetOne(ctx, a.db, &map[string]any{
 		models.RoleTable.ID: map[string]any{
 			"_eq": id,
 		},
@@ -64,7 +64,7 @@ func (a *DbRbacStore) FindRoleById(ctx context.Context, id uuid.UUID) (*models.R
 }
 
 func (a *DbRbacStore) FindRoleByName(ctx context.Context, name string) (*models.Role, error) {
-	return crudrepo.Role.GetOne(
+	return repository.Role.GetOne(
 		ctx,
 		a.db,
 		&map[string]any{
@@ -79,7 +79,7 @@ func (p *DbRbacStore) CreateRole(ctx context.Context, role *shared.CreateRoleDto
 	if role == nil {
 		return nil, fmt.Errorf("role is nil")
 	}
-	data, err := crudrepo.Role.PostOne(ctx, p.db, &models.Role{
+	data, err := repository.Role.PostOne(ctx, p.db, &models.Role{
 		Name:        role.Name,
 		Description: role.Description,
 	})
@@ -90,7 +90,7 @@ func (p *DbRbacStore) CreateRole(ctx context.Context, role *shared.CreateRoleDto
 }
 
 func (p *DbRbacStore) UpdateRole(ctx context.Context, id uuid.UUID, roledto *shared.UpdateRoleDto) error {
-	role, err := crudrepo.Role.GetOne(
+	role, err := repository.Role.GetOne(
 		ctx,
 		p.db,
 		&map[string]any{
@@ -107,7 +107,7 @@ func (p *DbRbacStore) UpdateRole(ctx context.Context, id uuid.UUID, roledto *sha
 	}
 	role.Name = roledto.Name
 	role.Description = roledto.Description
-	_, err = crudrepo.Role.PutOne(ctx, p.db, role)
+	_, err = repository.Role.PutOne(ctx, p.db, role)
 	if err != nil {
 		return err
 	}
@@ -115,7 +115,7 @@ func (p *DbRbacStore) UpdateRole(ctx context.Context, id uuid.UUID, roledto *sha
 }
 
 func (p *DbRbacStore) DeleteRole(ctx context.Context, id uuid.UUID) error {
-	_, err := crudrepo.Role.Delete(
+	_, err := repository.Role.Delete(
 		ctx,
 		p.db,
 		&map[string]any{
@@ -131,7 +131,7 @@ func (p *DbRbacStore) DeleteRole(ctx context.Context, id uuid.UUID) error {
 }
 
 func (p *DbRbacStore) FindOrCreateRole(ctx context.Context, roleName string) (*models.Role, error) {
-	role, err := crudrepo.Role.GetOne(
+	role, err := repository.Role.GetOne(
 		ctx,
 		p.db,
 		&map[string]any{

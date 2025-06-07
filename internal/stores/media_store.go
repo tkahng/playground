@@ -4,9 +4,9 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	"github.com/tkahng/authgo/internal/crudrepo"
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
+	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/services"
 )
 
@@ -30,7 +30,7 @@ func NewMediaStore(dbx database.Dbx) services.MediaStore {
 
 // UpdateMedia implements services.MediaStore.
 func (s *DbMediaStore) UpdateMedia(ctx context.Context, media *models.Medium) (*models.Medium, error) {
-	data, err := crudrepo.Media.PutOne(
+	data, err := repository.Media.PutOne(
 		ctx,
 		s.dbx,
 		media,
@@ -42,7 +42,7 @@ func (s *DbMediaStore) UpdateMedia(ctx context.Context, media *models.Medium) (*
 }
 
 func (s *DbMediaStore) CreateMedia(ctx context.Context, media *models.Medium) (*models.Medium, error) {
-	data, err := crudrepo.Media.PostOne(
+	data, err := repository.Media.PostOne(
 		ctx,
 		s.dbx,
 		media,
@@ -54,7 +54,7 @@ func (s *DbMediaStore) CreateMedia(ctx context.Context, media *models.Medium) (*
 }
 
 func (s *DbMediaStore) FindMediaByID(ctx context.Context, mediaId uuid.UUID) (*models.Medium, error) {
-	data, err := crudrepo.Media.GetOne(
+	data, err := repository.Media.GetOne(
 		ctx,
 		s.dbx,
 		&map[string]any{

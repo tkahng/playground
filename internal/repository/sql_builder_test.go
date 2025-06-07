@@ -1,4 +1,4 @@
-package crudrepo
+package repository
 
 import (
 	"testing"

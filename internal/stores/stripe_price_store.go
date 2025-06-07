@@ -5,9 +5,9 @@ import (
 
 	"github.com/Masterminds/squirrel"
 	"github.com/stripe/stripe-go/v82"
-	"github.com/tkahng/authgo/internal/crudrepo"
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
+	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/types"
 )
@@ -98,7 +98,7 @@ func (s *DbPriceStore) ListPrices(ctx context.Context, input *shared.StripePrice
 	limit, offset := database.PaginateRepo(pageInput)
 	param := listPriceFilterFuncMap(&filter)
 	sort := listPriceOrderByMap(input)
-	data, err := crudrepo.StripePrice.Get(
+	data, err := repository.StripePrice.Get(
 		ctx,
 		dbx,
 		param,
@@ -114,7 +114,7 @@ func (s *DbPriceStore) ListPrices(ctx context.Context, input *shared.StripePrice
 
 func (s *DbPriceStore) CountPrices(ctx context.Context, filter *shared.StripePriceListFilter) (int64, error) {
 	filermap := listPriceFilterFuncMap(filter)
-	data, err := crudrepo.StripePrice.Count(ctx, s.db, filermap)
+	data, err := repository.StripePrice.Count(ctx, s.db, filermap)
 	if err != nil {
 		return 0, err
 	}
@@ -140,7 +140,7 @@ func SelectStripePriceColumns(qs squirrel.SelectBuilder, prefix string) squirrel
 
 // FindActivePriceById implements PaymentStore.
 func (s *DbPriceStore) FindActivePriceById(ctx context.Context, priceId string) (*models.StripePrice, error) {
-	data, err := crudrepo.StripePrice.GetOne(
+	data, err := repository.StripePrice.GetOne(
 		ctx,
 		s.db,
 		&map[string]any{

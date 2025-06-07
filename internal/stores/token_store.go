@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/tkahng/authgo/internal/crudrepo"
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
+	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
 )
 
@@ -29,7 +29,7 @@ func (p *DbTokenStore) WithTx(tx database.Dbx) *DbTokenStore {
 // var _ services. = &PostgresTokenStore{}
 
 func (a *DbTokenStore) GetToken(ctx context.Context, token string) (*models.Token, error) {
-	res, err := crudrepo.Token.GetOne(ctx,
+	res, err := repository.Token.GetOne(ctx,
 		a.db,
 		&map[string]any{
 			"token": map[string]any{
@@ -49,7 +49,7 @@ func (a *DbTokenStore) GetToken(ctx context.Context, token string) (*models.Toke
 }
 
 func (a *DbTokenStore) SaveToken(ctx context.Context, token *shared.CreateTokenDTO) error {
-	_, err := crudrepo.Token.PostOne(ctx, a.db, &models.Token{
+	_, err := repository.Token.PostOne(ctx, a.db, &models.Token{
 		Type:       models.TokenTypes(token.Type),
 		Identifier: token.Identifier,
 		Expires:    token.Expires,
@@ -65,7 +65,7 @@ func (a *DbTokenStore) SaveToken(ctx context.Context, token *shared.CreateTokenD
 }
 
 func (a *DbTokenStore) DeleteToken(ctx context.Context, token string) error {
-	_, err := crudrepo.Token.DeleteReturn(ctx, a.db, &map[string]any{
+	_, err := repository.Token.DeleteReturn(ctx, a.db, &map[string]any{
 		"token": map[string]any{
 			"_eq": token,
 		},

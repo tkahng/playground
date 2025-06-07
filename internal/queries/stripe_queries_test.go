@@ -8,7 +8,7 @@ package queries_test
 
 // 	"github.com/google/uuid"
 // 	"github.com/stripe/stripe-go/v82"
-// 	"github.com/tkahng/authgo/internal/crudrepo"
+// 	"github.com/tkahng/authgo/internal/repository"
 // 	"github.com/tkahng/authgo/internal/database"
 // 	"github.com/tkahng/authgo/internal/models"
 // 	"github.com/tkahng/authgo/internal/queries"
@@ -657,7 +657,7 @@ package queries_test
 
 // 				if tt.args.price != nil {
 // 					// Verify price was created/updated
-// 					price, err := crudrepo.StripePrice.GetOne(
+// 					price, err := repository.StripePrice.GetOne(
 // 						ctx,
 // 						dbxx,
 // 						&map[string]any{

@@ -4,9 +4,9 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	"github.com/tkahng/authgo/internal/crudrepo"
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
+	"github.com/tkahng/authgo/internal/repository"
 )
 
 type DbNotificationStore struct {
@@ -20,7 +20,7 @@ func NewDbNotificationStore(db database.Dbx) *DbNotificationStore {
 }
 
 func (s *DbNotificationStore) CreateNotification(ctx context.Context, notification *models.Notification) (*models.Notification, error) {
-	return crudrepo.Notification.PostOne(
+	return repository.Notification.PostOne(
 		ctx,
 		s.db,
 		notification,
@@ -28,7 +28,7 @@ func (s *DbNotificationStore) CreateNotification(ctx context.Context, notificati
 }
 
 func (s *DbNotificationStore) CreateManyNotifications(ctx context.Context, notifications []models.Notification) ([]*models.Notification, error) {
-	return crudrepo.Notification.Post(
+	return repository.Notification.Post(
 		ctx,
 		s.db,
 		notifications,
@@ -76,7 +76,7 @@ func (s *DbNotificationStore) FindNotification(ctx context.Context, args *models
 		}
 	}
 
-	return crudrepo.Notification.GetOne(
+	return repository.Notification.GetOne(
 		ctx,
 		s.db,
 		&where,

@@ -4,9 +4,9 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	"github.com/tkahng/authgo/internal/crudrepo"
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
+	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/services"
 	"github.com/tkahng/authgo/internal/tools/types"
 )
@@ -23,7 +23,7 @@ func (p *DbConstraintStore) WithTx(tx database.Dbx) *DbConstraintStore {
 
 // FindLatestActiveSubscriptionByTeamId implements services.ConstaintCheckerStore.
 func (p *DbConstraintStore) FindLatestActiveSubscriptionByTeamId(ctx context.Context, teamId uuid.UUID) (*models.StripeSubscription, error) {
-	subscriptions, err := crudrepo.StripeSubscription.Get(
+	subscriptions, err := repository.StripeSubscription.Get(
 		ctx,
 		p.db,
 		&map[string]any{
@@ -54,7 +54,7 @@ func (p *DbConstraintStore) FindLatestActiveSubscriptionByTeamId(ctx context.Con
 
 // FindUserByEmail implements services.ConstaintCheckerStore.
 func (p *DbConstraintStore) FindUserByEmail(ctx context.Context, email string) (*models.User, error) {
-	return crudrepo.User.GetOne(
+	return repository.User.GetOne(
 		ctx,
 		p.db,
 		&map[string]any{
@@ -67,7 +67,7 @@ func (p *DbConstraintStore) FindUserByEmail(ctx context.Context, email string) (
 
 // FindLatestActiveSubscriptionByUserId implements services.ConstaintCheckerStore.
 func (p *DbConstraintStore) FindLatestActiveSubscriptionByUserId(ctx context.Context, userId uuid.UUID) (*models.StripeSubscription, error) {
-	subscriptions, err := crudrepo.StripeSubscription.Get(
+	subscriptions, err := repository.StripeSubscription.Get(
 		ctx,
 		p.db,
 		&map[string]any{
@@ -100,7 +100,7 @@ func (p *DbConstraintStore) FindLatestActiveSubscriptionByUserId(ctx context.Con
 
 // FindUserByID implements services.ConstaintCheckerStore.
 func (p *DbConstraintStore) FindUserByID(ctx context.Context, userId uuid.UUID) (*models.User, error) {
-	return crudrepo.User.GetOne(
+	return repository.User.GetOne(
 		ctx,
 		p.db,
 		&map[string]any{

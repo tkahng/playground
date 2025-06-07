@@ -6,9 +6,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/stephenafamo/scan"
 	"github.com/stephenafamo/scan/pgxscan"
-	"github.com/tkahng/authgo/internal/crudrepo"
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
+	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 )
@@ -21,7 +21,7 @@ func (s *DbRbacStore) CreateProductRoles(ctx context.Context, productId string, 
 			RoleID:    role,
 		})
 	}
-	_, err := crudrepo.ProductRole.Post(ctx, s.db, roles)
+	_, err := repository.ProductRole.Post(ctx, s.db, roles)
 	if err != nil {
 		return err
 	}
@@ -39,7 +39,7 @@ func (p *DbRbacStore) CreateProductPermissions(ctx context.Context, productId st
 			PermissionID: permissionId,
 		})
 	}
-	_, err := crudrepo.ProductPermission.Post(
+	_, err := repository.ProductPermission.Post(
 		ctx,
 		db,
 		permissions,
@@ -109,7 +109,7 @@ func (s *DbRbacStore) DeleteProductRoles(ctx context.Context, productId string, 
 	for i, id := range roleIds {
 		newIds[i] = id.String()
 	}
-	_, err := crudrepo.ProductRole.Delete(
+	_, err := repository.ProductRole.Delete(
 		ctx,
 		s.db,
 		&map[string]any{

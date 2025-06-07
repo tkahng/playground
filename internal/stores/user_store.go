@@ -17,7 +17,7 @@ import (
 
 	"github.com/stephenafamo/scan"
 	"github.com/stephenafamo/scan/pgxscan"
-	"github.com/tkahng/authgo/internal/crudrepo"
+	"github.com/tkahng/authgo/internal/repository"
 )
 
 type DbUserStore struct {
@@ -72,7 +72,7 @@ func (*DbUserStore) UserWhere(user *models.User) *map[string]any {
 
 func (s *DbUserStore) FindUser(ctx context.Context, user *models.User) (*models.User, error) {
 	where := s.UserWhere(user)
-	return crudrepo.User.GetOne(
+	return repository.User.GetOne(
 		ctx,
 		s.db,
 		where,
@@ -91,7 +91,7 @@ func (s *DbUserStore) FindUserByID(ctx context.Context, userId uuid.UUID) (*mode
 // AssignUserRoles implements UserStore.
 func (s *DbUserStore) AssignUserRoles(ctx context.Context, userId uuid.UUID, roleNames ...string) error {
 	if len(roleNames) > 0 {
-		user, err := crudrepo.User.GetOne(
+		user, err := repository.User.GetOne(
 			ctx,
 			s.db,
 			&map[string]any{
@@ -106,7 +106,7 @@ func (s *DbUserStore) AssignUserRoles(ctx context.Context, userId uuid.UUID, rol
 		if user == nil {
 			return fmt.Errorf("user not found while assigning roles")
 		}
-		roles, err := crudrepo.Role.Get(
+		roles, err := repository.Role.Get(
 			ctx,
 			s.db,
 			&map[string]any{
@@ -129,7 +129,7 @@ func (s *DbUserStore) AssignUserRoles(ctx context.Context, userId uuid.UUID, rol
 					RoleID: role.ID,
 				})
 			}
-			_, err = crudrepo.UserRole.Post(ctx, s.db, userRoles)
+			_, err = repository.UserRole.Post(ctx, s.db, userRoles)
 			if err != nil {
 				return fmt.Errorf("error assigning user role while assigning roles: %w", err)
 			}
@@ -140,7 +140,7 @@ func (s *DbUserStore) AssignUserRoles(ctx context.Context, userId uuid.UUID, rol
 
 // DeleteUser implements UserStore.
 func (s *DbUserStore) DeleteUser(ctx context.Context, userId uuid.UUID) error {
-	_, err := crudrepo.User.Delete(ctx, s.db, &map[string]any{
+	_, err := repository.User.Delete(ctx, s.db, &map[string]any{
 		models.UserTable.ID: map[string]any{"_eq": userId},
 	})
 	if err != nil {
@@ -214,7 +214,7 @@ func (s *DbUserStore) GetUserInfo(ctx context.Context, email string) (*shared.Us
 		Permissions []string           `json:"permissions" db:"permissions"`
 		Providers   []models.Providers `json:"providers" db:"providers"`
 	}
-	user, err := crudrepo.User.GetOne(
+	user, err := repository.User.GetOne(
 		ctx,
 		s.db,
 		&map[string]any{
@@ -263,7 +263,7 @@ func (s *DbUserStore) GetUserInfo(ctx context.Context, email string) (*shared.Us
 
 // UpdateUser implements UserStore.
 func (s *DbUserStore) UpdateUser(ctx context.Context, user *models.User) error {
-	_, err := crudrepo.User.PutOne(ctx, s.db, &models.User{
+	_, err := repository.User.PutOne(ctx, s.db, &models.User{
 		ID:              user.ID,
 		Email:           user.Email,
 		Name:            user.Name,
@@ -282,7 +282,7 @@ func (s *DbUserStore) UpdateUser(ctx context.Context, user *models.User) error {
 
 // CreateUser implements UserStore.
 func (s *DbUserStore) CreateUser(ctx context.Context, user *models.User) (*models.User, error) {
-	return crudrepo.User.PostOne(
+	return repository.User.PostOne(
 		ctx,
 		s.db,
 		user,
@@ -290,7 +290,7 @@ func (s *DbUserStore) CreateUser(ctx context.Context, user *models.User) (*model
 }
 
 func (s *DbUserStore) LoadUsersByUserIds(ctx context.Context, userIds ...uuid.UUID) ([]*models.User, error) {
-	users, err := crudrepo.User.Get(
+	users, err := repository.User.Get(
 		ctx,
 		s.db,
 		&map[string]any{
@@ -350,7 +350,7 @@ func FindUserWithRolesAndPermissionsByEmail(ctx context.Context, db database.Dbx
 }
 
 func FindUserAccountByUserIdAndProvider(ctx context.Context, db database.Dbx, userId uuid.UUID, provider shared.Providers) (*models.UserAccount, error) {
-	return crudrepo.UserAccount.GetOne(ctx, db, &map[string]any{
+	return repository.UserAccount.GetOne(ctx, db, &map[string]any{
 		"user_id": map[string]any{
 			"_eq": userId.String(),
 		},
@@ -361,7 +361,7 @@ func FindUserAccountByUserIdAndProvider(ctx context.Context, db database.Dbx, us
 }
 
 func LoadUsersByUserIds(ctx context.Context, db database.Dbx, userIds ...uuid.UUID) ([]*models.User, error) {
-	users, err := crudrepo.User.Get(
+	users, err := repository.User.Get(
 		ctx,
 		db,
 		&map[string]any{
@@ -385,7 +385,7 @@ func LoadUsersByUserIds(ctx context.Context, db database.Dbx, userIds ...uuid.UU
 }
 
 func CreateUser(ctx context.Context, db database.Dbx, params *shared.AuthenticationInput) (*models.User, error) {
-	return crudrepo.User.PostOne(ctx, db, &models.User{
+	return repository.User.PostOne(ctx, db, &models.User{
 		Email:           params.Email,
 		Name:            params.Name,
 		Image:           params.AvatarUrl,
@@ -401,7 +401,7 @@ func CreateUserRoles(ctx context.Context, db database.Dbx, userId uuid.UUID, rol
 			RoleID: id,
 		})
 	}
-	_, err := crudrepo.UserRole.Post(
+	_, err := repository.UserRole.Post(
 		ctx,
 		db,
 		dtos,
@@ -420,7 +420,7 @@ func CreateUserPermissions(ctx context.Context, db database.Dbx, userId uuid.UUI
 			PermissionID: id,
 		})
 	}
-	_, err := crudrepo.UserPermission.Post(
+	_, err := repository.UserPermission.Post(
 		ctx,
 		db,
 		dtos,
@@ -432,7 +432,7 @@ func CreateUserPermissions(ctx context.Context, db database.Dbx, userId uuid.UUI
 }
 
 func CreateAccount(ctx context.Context, db database.Dbx, userId uuid.UUID, params *shared.AuthenticationInput) (*models.UserAccount, error) {
-	r, err := crudrepo.UserAccount.PostOne(ctx, db, &models.UserAccount{
+	r, err := repository.UserAccount.PostOne(ctx, db, &models.UserAccount{
 		UserID:            userId,
 		Type:              models.ProviderTypes(params.Type),
 		Password:          params.HashPassword,
@@ -445,7 +445,7 @@ func CreateAccount(ctx context.Context, db database.Dbx, userId uuid.UUID, param
 }
 
 func FindUserByEmail(ctx context.Context, db database.Dbx, email string) (*models.User, error) {
-	a, err := crudrepo.User.GetOne(
+	a, err := repository.User.GetOne(
 		ctx,
 		db,
 		&map[string]any{
@@ -457,7 +457,7 @@ func FindUserByEmail(ctx context.Context, db database.Dbx, email string) (*model
 	return database.OptionalRow(a, err)
 }
 func FindUserByID(ctx context.Context, db database.Dbx, userId uuid.UUID) (*models.User, error) {
-	a, err := crudrepo.User.GetOne(
+	a, err := repository.User.GetOne(
 		ctx,
 		db,
 		&map[string]any{
@@ -470,7 +470,7 @@ func FindUserByID(ctx context.Context, db database.Dbx, userId uuid.UUID) (*mode
 }
 
 func UpdateUserPassword(ctx context.Context, db database.Dbx, userId uuid.UUID, password string) error {
-	account, err := crudrepo.UserAccount.GetOne(
+	account, err := repository.UserAccount.GetOne(
 		ctx,
 		db,
 		&map[string]any{
@@ -493,7 +493,7 @@ func UpdateUserPassword(ctx context.Context, db database.Dbx, userId uuid.UUID, 
 		return err
 	}
 	account.Password = &hash
-	_, err = crudrepo.UserAccount.PutOne(
+	_, err = repository.UserAccount.PutOne(
 		ctx,
 		db,
 		account,
@@ -505,7 +505,7 @@ func UpdateUserPassword(ctx context.Context, db database.Dbx, userId uuid.UUID, 
 }
 
 func UpdateMe(ctx context.Context, db database.Dbx, userId uuid.UUID, input *shared.UpdateMeInput) error {
-	user, err := crudrepo.User.GetOne(
+	user, err := repository.User.GetOne(
 		ctx,
 		db,
 		&map[string]any{
@@ -520,7 +520,7 @@ func UpdateMe(ctx context.Context, db database.Dbx, userId uuid.UUID, input *sha
 	if user == nil {
 		return errors.New("user not found")
 	}
-	_, err = crudrepo.User.PutOne(
+	_, err = repository.User.PutOne(
 		ctx,
 		db,
 		&models.User{
@@ -543,7 +543,7 @@ func GetUserAccounts(ctx context.Context, db database.Dbx, userIds ...uuid.UUID)
 	for _, id := range userIds {
 		ids = append(ids, id.String())
 	}
-	data, err := crudrepo.UserAccount.Get(
+	data, err := repository.UserAccount.Get(
 		ctx,
 		db,
 		&map[string]any{

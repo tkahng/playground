@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/tkahng/authgo/internal/crudrepo"
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
+	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/services"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
@@ -39,7 +39,7 @@ func (s *DbStripeStore) LoadPricesByIds(ctx context.Context, priceIds ...string)
 	if len(priceIds) == 0 {
 		return nil, nil
 	}
-	prices, err := crudrepo.StripePrice.Get(
+	prices, err := repository.StripePrice.Get(
 		ctx,
 		s.db,
 		&map[string]any{
@@ -64,7 +64,7 @@ func (s *DbStripeStore) LoadPricesByIds(ctx context.Context, priceIds ...string)
 
 func (s *DbStripeStore) LoadPricesByProductIds(ctx context.Context, productIds ...string) ([][]*models.StripePrice, error) {
 
-	prices, err := crudrepo.StripePrice.Get(
+	prices, err := repository.StripePrice.Get(
 		ctx,
 		s.db,
 		&map[string]any{
@@ -88,7 +88,7 @@ func (s *DbStripeStore) LoadProductsByIds(ctx context.Context, productIds ...str
 	if len(productIds) == 0 {
 		return nil, nil
 	}
-	products, err := crudrepo.StripeProduct.Get(
+	products, err := repository.StripeProduct.Get(
 		ctx,
 		s.db,
 		&map[string]any{
@@ -184,7 +184,7 @@ func (s *DbStripeStore) LoadSubscriptionsByIds(ctx context.Context, subscription
 			"_in": subscriptionIds,
 		},
 	}
-	subscriptions, err := crudrepo.StripeSubscription.Get(
+	subscriptions, err := repository.StripeSubscription.Get(
 		ctx,
 		s.db,
 		&where,

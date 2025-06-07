@@ -258,7 +258,7 @@ type RoleIdsInput struct {
 // 	if err != nil {
 // 		return nil, err
 // 	}
-// 	_, err = crudrepo.UserRole.DeleteReturn(
+// 	_, err = repository.UserRole.DeleteReturn(
 // 		ctx,
 // 		db,
 // 		&map[string]any{
