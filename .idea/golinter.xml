@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="GoLinterSettings">
+    <option name="enabledLinters">
+      <list>
+        <option value="staticcheck" />
+        <option value="govet" />
+        <option value="cyclop" />
+        <option value="errcheck" />
+        <option value="copyloopvar" />
+        <option value="ineffassign" />
+        <option value="iface" />
+        <option value="bodyclose" />
+        <option value="asciicheck" />
+        <option value="containedctx" />
+        <option value="testifylint" />
+        <option value="unused" />
+        <option value="contextcheck" />
+      </list>
+    </option>
+  </component>
+</project>
