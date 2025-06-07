@@ -49,15 +49,15 @@ func (api *Api) AdminUsers(ctx context.Context, input *struct {
 		}
 	}
 
-	if slices.Contains(input.Expand, "permissions") {
-		perms, err := queries.GetUserPermissions(ctx, db, userIds...)
-		if err != nil {
-			return nil, err
-		}
-		for idx, user := range users {
-			user.Permissions = perms[idx]
-		}
-	}
+	// if slices.Contains(input.Expand, "permissions") {
+	// 	perms, err := queries.GetUserPermissions(ctx, db, userIds...)
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+	// 	for idx, user := range users {
+	// 		user.Permissions = perms[idx]
+	// 	}
+	// }
 
 	if slices.Contains(input.Expand, "accounts") {
 		accounts, err := queries.GetUserAccounts(ctx, db, userIds...)

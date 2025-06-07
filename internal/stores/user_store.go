@@ -2,14 +2,17 @@ package stores
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
+	"github.com/alexedwards/argon2id"
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
+	"github.com/tkahng/authgo/internal/tools/security"
 	"github.com/tkahng/authgo/internal/tools/types"
 
 	"github.com/stephenafamo/scan"
@@ -321,4 +324,241 @@ type DbUserStoreInterface interface {
 	UpdateUser(ctx context.Context, user *models.User) error
 	CreateUser(ctx context.Context, user *models.User) (*models.User, error)
 	LoadUsersByUserIds(ctx context.Context, userIds ...uuid.UUID) ([]*models.User, error)
+}
+
+type RolePermissionClaims struct {
+	UserID      uuid.UUID          `json:"user_id" db:"user_id"`
+	Email       string             `json:"email" db:"email"`
+	Roles       []string           `json:"roles" db:"roles"`
+	Permissions []string           `json:"permissions" db:"permissions"`
+	Providers   []models.Providers `json:"providers" db:"providers"`
+}
+
+// FindUserWithRolesAndPermissionsByEmail retrieves a user's roles and permissions
+// from the database based on their email address.
+// It expects a database connection (or transaction) `db` and the `email` of the user.
+// It returns a pointer to a RolePermissionClaims struct containing the user's
+// roles and permissions, or an error if the user is not found or if any other
+// database error occurs.
+func FindUserWithRolesAndPermissionsByEmail(ctx context.Context, db database.Dbx, email string) (*RolePermissionClaims, error) {
+	res, err := pgxscan.One(ctx, db, scan.StructMapper[RolePermissionClaims](), RawGetUserWithAllRolesAndPermissionsByEmail, email)
+	if err != nil {
+		return nil, err
+	}
+
+	return &res, nil
+}
+
+func FindUserAccountByUserIdAndProvider(ctx context.Context, db database.Dbx, userId uuid.UUID, provider shared.Providers) (*models.UserAccount, error) {
+	return crudrepo.UserAccount.GetOne(ctx, db, &map[string]any{
+		"user_id": map[string]any{
+			"_eq": userId.String(),
+		},
+		"provider": map[string]any{
+			"_eq": provider.String(),
+		},
+	})
+}
+
+func LoadUsersByUserIds(ctx context.Context, db database.Dbx, userIds ...uuid.UUID) ([]*models.User, error) {
+	users, err := crudrepo.User.Get(
+		ctx,
+		db,
+		&map[string]any{
+			"id": map[string]any{
+				"_in": userIds,
+			},
+		},
+		nil,
+		nil,
+		nil,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return mapper.MapToPointer(users, userIds, func(a *models.User) uuid.UUID {
+		if a == nil {
+			return uuid.UUID{}
+		}
+		return a.ID
+	}), nil
+}
+
+func CreateUser(ctx context.Context, db database.Dbx, params *shared.AuthenticationInput) (*models.User, error) {
+	return crudrepo.User.PostOne(ctx, db, &models.User{
+		Email:           params.Email,
+		Name:            params.Name,
+		Image:           params.AvatarUrl,
+		EmailVerifiedAt: params.EmailVerifiedAt,
+	})
+}
+
+func CreateUserRoles(ctx context.Context, db database.Dbx, userId uuid.UUID, roleIds ...uuid.UUID) error {
+	var dtos []models.UserRole
+	for _, id := range roleIds {
+		dtos = append(dtos, models.UserRole{
+			UserID: userId,
+			RoleID: id,
+		})
+	}
+	_, err := crudrepo.UserRole.Post(
+		ctx,
+		db,
+		dtos,
+	)
+	if err != nil {
+
+		return err
+	}
+	return nil
+}
+func CreateUserPermissions(ctx context.Context, db database.Dbx, userId uuid.UUID, permissionIds ...uuid.UUID) error {
+	var dtos []models.UserPermission
+	for _, id := range permissionIds {
+		dtos = append(dtos, models.UserPermission{
+			UserID:       userId,
+			PermissionID: id,
+		})
+	}
+	_, err := crudrepo.UserPermission.Post(
+		ctx,
+		db,
+		dtos,
+	)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func CreateAccount(ctx context.Context, db database.Dbx, userId uuid.UUID, params *shared.AuthenticationInput) (*models.UserAccount, error) {
+	r, err := crudrepo.UserAccount.PostOne(ctx, db, &models.UserAccount{
+		UserID:            userId,
+		Type:              models.ProviderTypes(params.Type),
+		Password:          params.HashPassword,
+		Provider:          models.Providers(params.Provider),
+		ProviderAccountID: params.ProviderAccountID,
+		AccessToken:       params.AccessToken,
+		RefreshToken:      params.RefreshToken,
+	})
+	return database.OptionalRow(r, err)
+}
+
+func FindUserByEmail(ctx context.Context, db database.Dbx, email string) (*models.User, error) {
+	a, err := crudrepo.User.GetOne(
+		ctx,
+		db,
+		&map[string]any{
+			"email": map[string]any{
+				"_eq": email,
+			},
+		},
+	)
+	return database.OptionalRow(a, err)
+}
+func FindUserById(ctx context.Context, db database.Dbx, userId uuid.UUID) (*models.User, error) {
+	a, err := crudrepo.User.GetOne(
+		ctx,
+		db,
+		&map[string]any{
+			"id": map[string]any{
+				"_eq": userId.String(),
+			},
+		},
+	)
+	return database.OptionalRow(a, err)
+}
+
+func UpdateUserPassword(ctx context.Context, db database.Dbx, userId uuid.UUID, password string) error {
+	account, err := crudrepo.UserAccount.GetOne(
+		ctx,
+		db,
+		&map[string]any{
+			"user_id": map[string]any{
+				"_eq": userId.String(),
+			},
+			"provider": map[string]any{
+				"_eq": string(models.ProvidersCredentials),
+			},
+		},
+	)
+	if err != nil {
+		return err
+	}
+	if account == nil {
+		return errors.New("user ProvidersCredentials account not found")
+	}
+	hash, err := security.CreateHash(password, argon2id.DefaultParams)
+	if err != nil {
+		return err
+	}
+	account.Password = &hash
+	_, err = crudrepo.UserAccount.PutOne(
+		ctx,
+		db,
+		account,
+	)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func UpdateMe(ctx context.Context, db database.Dbx, userId uuid.UUID, input *shared.UpdateMeInput) error {
+	user, err := crudrepo.User.GetOne(
+		ctx,
+		db,
+		&map[string]any{
+			"id": map[string]any{
+				"_eq": userId.String(),
+			},
+		},
+	)
+	if err != nil {
+		return err
+	}
+	if user == nil {
+		return errors.New("user not found")
+	}
+	_, err = crudrepo.User.PutOne(
+		ctx,
+		db,
+		&models.User{
+			ID:        userId,
+			Name:      input.Name,
+			Image:     input.Image,
+			UpdatedAt: time.Now(),
+		},
+	)
+
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func GetUserAccounts(ctx context.Context, db database.Dbx, userIds ...uuid.UUID) ([][]*models.UserAccount, error) {
+	// var results []JoinedResult[*models.Permission, uuid.UUID]
+	ids := []string{}
+	for _, id := range userIds {
+		ids = append(ids, id.String())
+	}
+	data, err := crudrepo.UserAccount.Get(
+		ctx,
+		db,
+		&map[string]any{
+			"user_id": map[string]any{
+				"_in": userIds,
+			},
+		},
+		nil,
+		nil,
+		nil,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return mapper.MapToManyPointer(data, userIds, func(a *models.UserAccount) uuid.UUID {
+		return a.UserID
+	}), nil
 }

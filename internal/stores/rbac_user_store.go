@@ -9,6 +9,7 @@ import (
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/authgo/internal/tools/mapper"
 	"github.com/tkahng/authgo/internal/tools/types"
 )
 
@@ -415,4 +416,102 @@ func (p *DbRbacStore) DeleteUserRole(ctx context.Context, userId, roleId uuid.UU
 		return err
 	}
 	return nil
+}
+
+func (p *DbRbacStore) GetUserRoles(ctx context.Context, userIds ...uuid.UUID) ([][]*models.Role, error) {
+	const (
+		GetUserRolesQuery = `
+		SELECT rp.user_id as key,
+			COALESCE(
+					json_agg(
+							jsonb_build_object(
+									'id',
+									p.id,
+									'name',
+									p.name,
+									'description',
+									p.description,
+									'created_at',
+									p.created_at,
+									'updated_at',
+									p.updated_at
+							)
+					) FILTER (
+							WHERE p.id IS NOT NULL
+					),
+					'[]'
+			) AS data
+	FROM public.user_roles rp
+			LEFT JOIN public.roles p ON p.id = rp.role_id
+			WHERE rp.user_id = ANY (
+					$1::uuid []
+			)
+	GROUP BY rp.user_id;`
+	)
+
+	data, err := database.QueryAll[shared.JoinedResult[*models.Role, uuid.UUID]](
+		ctx,
+		p.db,
+		GetUserRolesQuery,
+		userIds,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return mapper.Map(mapper.MapTo(data, userIds, func(a shared.JoinedResult[*models.Role, uuid.UUID]) uuid.UUID {
+		return a.Key
+	}), func(a *shared.JoinedResult[*models.Role, uuid.UUID]) []*models.Role {
+		if a == nil {
+			return nil
+		}
+		return a.Data
+	}), nil
+}
+
+func GetUserPermissions(ctx context.Context, db database.Dbx, userIds ...uuid.UUID) ([][]*models.Permission, error) {
+	const (
+		GetUserPermissionsQuery = `
+	SELECT rp.user_id as key,
+			COALESCE(
+					json_agg(
+							jsonb_build_object(
+									'id',
+									p.id,
+									'name',
+									p.name,
+									'description',
+									p.description,
+									'created_at',
+									p.created_at,
+									'updated_at',
+									p.updated_at
+							)
+					) FILTER (
+							WHERE p.id IS NOT NULL
+					),
+					'[]'
+			) AS data
+	FROM public.user_permissions rp
+			LEFT JOIN public.permissions p ON p.id = rp.permission_id
+	WHERE rp.user_id = ANY ($1::uuid [])
+	GROUP BY rp.user_id;`
+	)
+
+	data, err := database.QueryAll[shared.JoinedResult[*models.Permission, uuid.UUID]](
+		ctx,
+		db,
+		GetUserPermissionsQuery,
+		userIds,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return mapper.Map(mapper.MapTo(data, userIds, func(a shared.JoinedResult[*models.Permission, uuid.UUID]) uuid.UUID {
+		return a.Key
+	}), func(a *shared.JoinedResult[*models.Permission, uuid.UUID]) []*models.Permission {
+		if a == nil {
+			return nil
+		}
+		return a.Data
+	}), nil
 }
