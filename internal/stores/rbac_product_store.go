@@ -13,7 +13,7 @@ import (
 	"github.com/tkahng/authgo/internal/tools/mapper"
 )
 
-func (s *DbRBACStore) CreateProductRoles(ctx context.Context, productId string, roleIds ...uuid.UUID) error {
+func (s *DbRbacStore) CreateProductRoles(ctx context.Context, productId string, roleIds ...uuid.UUID) error {
 	var roles []models.ProductRole
 	for _, role := range roleIds {
 		roles = append(roles, models.ProductRole{
@@ -30,7 +30,7 @@ func (s *DbRBACStore) CreateProductRoles(ctx context.Context, productId string, 
 }
 
 // CreateProductPermissions implements RBACStore.
-func (p *DbRBACStore) CreateProductPermissions(ctx context.Context, productId string, permissionIds ...uuid.UUID) error {
+func (p *DbRbacStore) CreateProductPermissions(ctx context.Context, productId string, permissionIds ...uuid.UUID) error {
 	var db database.Dbx = p.db
 	var permissions []models.ProductPermission
 	for _, permissionId := range permissionIds {
@@ -50,7 +50,7 @@ func (p *DbRBACStore) CreateProductPermissions(ctx context.Context, productId st
 	return nil
 }
 
-func (p *DbRBACStore) LoadProductPermissions(ctx context.Context, productIds ...string) ([][]*models.Permission, error) {
+func (p *DbRbacStore) LoadProductPermissions(ctx context.Context, productIds ...string) ([][]*models.Permission, error) {
 	const (
 		GetProductPermissionsQuery = `
 		SELECT rp.product_id as key,
@@ -101,7 +101,7 @@ func (p *DbRBACStore) LoadProductPermissions(ctx context.Context, productIds ...
 }
 
 // DeleteProductRoles implements services.RBACStore.
-func (s *DbRBACStore) DeleteProductRoles(ctx context.Context, productId string, roleIds ...uuid.UUID) error {
+func (s *DbRbacStore) DeleteProductRoles(ctx context.Context, productId string, roleIds ...uuid.UUID) error {
 	if len(roleIds) == 0 {
 		return nil
 	}

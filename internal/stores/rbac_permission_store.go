@@ -15,7 +15,7 @@ import (
 	"github.com/tkahng/authgo/internal/tools/mapper"
 )
 
-func (p *DbRBACStore) ListPermissions(ctx context.Context, input *shared.PermissionsListParams) ([]*models.Permission, error) {
+func (p *DbRbacStore) ListPermissions(ctx context.Context, input *shared.PermissionsListParams) ([]*models.Permission, error) {
 	q := squirrel.Select("permissions.*").From("permissions")
 	filter := input.PermissionsListFilter
 	pageInput := &input.PaginatedInput
@@ -34,7 +34,7 @@ func (p *DbRBACStore) ListPermissions(ctx context.Context, input *shared.Permiss
 }
 
 // CountPermissions implements AdminCrudActions.
-func (p *DbRBACStore) CountPermissions(ctx context.Context, filter *shared.PermissionsListFilter) (int64, error) {
+func (p *DbRbacStore) CountPermissions(ctx context.Context, filter *shared.PermissionsListFilter) (int64, error) {
 	q := squirrel.Select("COUNT(permissions.*)").From("permissions")
 
 	// q = ViewApplyPagination(q, pageInput)
@@ -89,7 +89,7 @@ func ListPermissionsFilterFunc(sq squirrel.SelectBuilder, filter *shared.Permiss
 }
 
 // FindPermissionByName implements RBACStore.
-func (p *DbRBACStore) FindPermissionByName(ctx context.Context, name string) (*models.Permission, error) {
+func (p *DbRbacStore) FindPermissionByName(ctx context.Context, name string) (*models.Permission, error) {
 	data, err := crudrepo.Permission.GetOne(
 		ctx,
 		p.db,
@@ -102,7 +102,7 @@ func (p *DbRBACStore) FindPermissionByName(ctx context.Context, name string) (*m
 	return database.OptionalRow(data, err)
 }
 
-func (a *DbRBACStore) FindPermissionById(ctx context.Context, id uuid.UUID) (*models.Permission, error) {
+func (a *DbRbacStore) FindPermissionById(ctx context.Context, id uuid.UUID) (*models.Permission, error) {
 	data, err := crudrepo.Permission.GetOne(
 		ctx,
 		a.db,
@@ -115,7 +115,7 @@ func (a *DbRBACStore) FindPermissionById(ctx context.Context, id uuid.UUID) (*mo
 	return database.OptionalRow(data, err)
 }
 
-func (p *DbRBACStore) FindPermissionsByIds(ctx context.Context, params []uuid.UUID) ([]*models.Permission, error) {
+func (p *DbRbacStore) FindPermissionsByIds(ctx context.Context, params []uuid.UUID) ([]*models.Permission, error) {
 	if len(params) == 0 {
 		return nil, nil
 	}
@@ -139,7 +139,7 @@ func (p *DbRBACStore) FindPermissionsByIds(ctx context.Context, params []uuid.UU
 	)
 }
 
-func (p *DbRBACStore) FindOrCreatePermission(ctx context.Context, permissionName string) (*models.Permission, error) {
+func (p *DbRbacStore) FindOrCreatePermission(ctx context.Context, permissionName string) (*models.Permission, error) {
 	permission, err := crudrepo.Permission.GetOne(
 		ctx,
 		p.db,
@@ -161,7 +161,7 @@ func (p *DbRBACStore) FindOrCreatePermission(ctx context.Context, permissionName
 	return permission, nil
 }
 
-func (p *DbRBACStore) CreatePermission(ctx context.Context, name string, description *string) (*models.Permission, error) {
+func (p *DbRbacStore) CreatePermission(ctx context.Context, name string, description *string) (*models.Permission, error) {
 	data, err := crudrepo.Permission.PostOne(ctx, p.db, &models.Permission{
 		Name:        name,
 		Description: description,
@@ -172,7 +172,7 @@ func (p *DbRBACStore) CreatePermission(ctx context.Context, name string, descrip
 	return data, nil
 }
 
-func (p *DbRBACStore) UpdatePermission(ctx context.Context, id uuid.UUID, roledto *shared.UpdatePermissionDto) error {
+func (p *DbRbacStore) UpdatePermission(ctx context.Context, id uuid.UUID, roledto *shared.UpdatePermissionDto) error {
 	permission, err := crudrepo.Permission.GetOne(
 		ctx,
 		p.db,
@@ -198,7 +198,7 @@ func (p *DbRBACStore) UpdatePermission(ctx context.Context, id uuid.UUID, roledt
 	return nil
 }
 
-func (p *DbRBACStore) CreateRolePermissions(ctx context.Context, roleId uuid.UUID, permissionIds ...uuid.UUID) error {
+func (p *DbRbacStore) CreateRolePermissions(ctx context.Context, roleId uuid.UUID, permissionIds ...uuid.UUID) error {
 	var permissions []models.RolePermission
 	for _, perm := range permissionIds {
 		permissions = append(permissions, models.RolePermission{
@@ -213,7 +213,7 @@ func (p *DbRBACStore) CreateRolePermissions(ctx context.Context, roleId uuid.UUI
 	return nil
 }
 
-func (p *DbRBACStore) LoadRolePermissions(ctx context.Context, roleIds ...uuid.UUID) ([][]*models.Permission, error) {
+func (p *DbRbacStore) LoadRolePermissions(ctx context.Context, roleIds ...uuid.UUID) ([][]*models.Permission, error) {
 	const (
 		GetRolePermissionsQuery = `
 		SELECT rp.role_id as key,
@@ -267,7 +267,7 @@ func (p *DbRBACStore) LoadRolePermissions(ctx context.Context, roleIds ...uuid.U
 	}), nil
 }
 
-func (p *DbRBACStore) DeletePermission(ctx context.Context, id uuid.UUID) error {
+func (p *DbRbacStore) DeletePermission(ctx context.Context, id uuid.UUID) error {
 	_, err := crudrepo.Permission.Delete(
 		ctx,
 		p.db,
@@ -283,7 +283,7 @@ func (p *DbRBACStore) DeletePermission(ctx context.Context, id uuid.UUID) error 
 	return nil
 }
 
-func (p *DbRBACStore) DeleteRolePermissions(ctx context.Context, roleId uuid.UUID, permissionIds ...uuid.UUID) error {
+func (p *DbRbacStore) DeleteRolePermissions(ctx context.Context, roleId uuid.UUID, permissionIds ...uuid.UUID) error {
 	if len(permissionIds) == 0 {
 		return nil
 	}

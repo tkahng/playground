@@ -11,7 +11,7 @@ import (
 
 type PaymentStoreDecorator struct {
 	*DbStripeStore
-	*DbRBACStore
+	*DbRbacStore
 	*TeamStoreDecorator
 }
 

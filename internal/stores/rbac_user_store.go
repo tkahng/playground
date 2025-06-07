@@ -12,7 +12,7 @@ import (
 	"github.com/tkahng/authgo/internal/tools/types"
 )
 
-func (a *DbRBACStore) AssignUserRoles(ctx context.Context, userId uuid.UUID, roleNames ...string) error {
+func (a *DbRbacStore) AssignUserRoles(ctx context.Context, userId uuid.UUID, roleNames ...string) error {
 	if len(roleNames) > 0 {
 		user, err := crudrepo.User.GetOne(
 			ctx,
@@ -71,7 +71,7 @@ func (a *DbRBACStore) AssignUserRoles(ctx context.Context, userId uuid.UUID, rol
 	return nil
 }
 
-func (p *DbRBACStore) CreateUserPermissions(ctx context.Context, userId uuid.UUID, permissionIds ...uuid.UUID) error {
+func (p *DbRbacStore) CreateUserPermissions(ctx context.Context, userId uuid.UUID, permissionIds ...uuid.UUID) error {
 	var dtos []models.UserPermission
 	for _, id := range permissionIds {
 		dtos = append(dtos, models.UserPermission{
@@ -90,7 +90,7 @@ func (p *DbRBACStore) CreateUserPermissions(ctx context.Context, userId uuid.UUI
 	return nil
 }
 
-func (p *DbRBACStore) CreateUserRoles(ctx context.Context, userId uuid.UUID, roleIds ...uuid.UUID) error {
+func (p *DbRbacStore) CreateUserRoles(ctx context.Context, userId uuid.UUID, roleIds ...uuid.UUID) error {
 	var dtos []models.UserRole
 	for _, id := range roleIds {
 		dtos = append(dtos, models.UserRole{
@@ -110,7 +110,7 @@ func (p *DbRBACStore) CreateUserRoles(ctx context.Context, userId uuid.UUID, rol
 	return nil
 }
 
-func (p *DbRBACStore) ListUserNotPermissionsSource(ctx context.Context, userId uuid.UUID, limit int64, offset int64) ([]shared.PermissionSource, error) {
+func (p *DbRbacStore) ListUserNotPermissionsSource(ctx context.Context, userId uuid.UUID, limit int64, offset int64) ([]shared.PermissionSource, error) {
 	const getuserNotPermissions = `
 	WITH -- Get permissions assigned through roles
 role_based_permissions AS (
@@ -185,7 +185,7 @@ LIMIT $2 OFFSET $3;`
 	return res, nil
 }
 
-func (p *DbRBACStore) CountNotUserPermissionSource(ctx context.Context, userId uuid.UUID) (int64, error) {
+func (p *DbRbacStore) CountNotUserPermissionSource(ctx context.Context, userId uuid.UUID) (int64, error) {
 	// q := psql.RawQuery(getuserNotPermissionCounts, userId, userId)
 	const (
 		getuserNotPermissionCounts = `
@@ -249,7 +249,7 @@ func (p *DbRBACStore) CountNotUserPermissionSource(ctx context.Context, userId u
 	return data, nil
 }
 
-func (p *DbRBACStore) ListUserPermissionsSource(ctx context.Context, userId uuid.UUID, limit int64, offset int64) ([]shared.PermissionSource, error) {
+func (p *DbRbacStore) ListUserPermissionsSource(ctx context.Context, userId uuid.UUID, limit int64, offset int64) ([]shared.PermissionSource, error) {
 	const (
 		QueryUserPermissionSource string = `
 	WITH -- Get permissions assigned through roles
@@ -338,7 +338,7 @@ func (p *DbRBACStore) ListUserPermissionsSource(ctx context.Context, userId uuid
 	return data, nil
 }
 
-func (p *DbRBACStore) CountUserPermissionSource(ctx context.Context, userId uuid.UUID) (int64, error) {
+func (p *DbRbacStore) CountUserPermissionSource(ctx context.Context, userId uuid.UUID) (int64, error) {
 	const QueryUserPermissionSourceCount string = `
 WITH -- Get permissions assigned through roles
 role_based_permissions AS (
@@ -398,7 +398,7 @@ FROM combined_permissions
 	return data, nil
 }
 
-func (p *DbRBACStore) DeleteUserRole(ctx context.Context, userId, roleId uuid.UUID) error {
+func (p *DbRbacStore) DeleteUserRole(ctx context.Context, userId, roleId uuid.UUID) error {
 	_, err := crudrepo.RolePermission.Delete(
 		ctx,
 		p.db,

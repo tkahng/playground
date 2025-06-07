@@ -16,23 +16,23 @@ import (
 	"github.com/tkahng/authgo/internal/shared"
 )
 
-type DbRBACStore struct {
+type DbRbacStore struct {
 	db database.Dbx
 }
 
 type RBACStore struct {
-	*DbRBACStore
+	*DbRbacStore
 }
 
-var _ services.RBACStore = &DbRBACStore{}
+var _ services.RBACStore = &DbRbacStore{}
 
-func NewDbRBACStore(db database.Dbx) *DbRBACStore {
-	return &DbRBACStore{
+func NewDbRBACStore(db database.Dbx) *DbRbacStore {
+	return &DbRbacStore{
 		db: db,
 	}
 }
 
-func (s *DbRBACStore) FindRolesByIds(ctx context.Context, params []uuid.UUID) ([]*models.Role, error) {
+func (s *DbRbacStore) FindRolesByIds(ctx context.Context, params []uuid.UUID) ([]*models.Role, error) {
 	if len(params) == 0 {
 		return nil, nil
 	}
@@ -55,7 +55,7 @@ func (s *DbRBACStore) FindRolesByIds(ctx context.Context, params []uuid.UUID) ([
 		nil,
 	)
 }
-func (a *DbRBACStore) FindRoleById(ctx context.Context, id uuid.UUID) (*models.Role, error) {
+func (a *DbRbacStore) FindRoleById(ctx context.Context, id uuid.UUID) (*models.Role, error) {
 	return crudrepo.Role.GetOne(ctx, a.db, &map[string]any{
 		models.RoleTable.ID: map[string]any{
 			"_eq": id,
@@ -63,7 +63,7 @@ func (a *DbRBACStore) FindRoleById(ctx context.Context, id uuid.UUID) (*models.R
 	})
 }
 
-func (a *DbRBACStore) FindRoleByName(ctx context.Context, name string) (*models.Role, error) {
+func (a *DbRbacStore) FindRoleByName(ctx context.Context, name string) (*models.Role, error) {
 	return crudrepo.Role.GetOne(
 		ctx,
 		a.db,
@@ -75,9 +75,7 @@ func (a *DbRBACStore) FindRoleByName(ctx context.Context, name string) (*models.
 	)
 }
 
-// var _ RBACStore = &PostgresRBACStore{}
-
-func (p *DbRBACStore) CreateRole(ctx context.Context, role *shared.CreateRoleDto) (*models.Role, error) {
+func (p *DbRbacStore) CreateRole(ctx context.Context, role *shared.CreateRoleDto) (*models.Role, error) {
 	if role == nil {
 		return nil, fmt.Errorf("role is nil")
 	}
@@ -91,7 +89,7 @@ func (p *DbRBACStore) CreateRole(ctx context.Context, role *shared.CreateRoleDto
 	return data, nil
 }
 
-func (p *DbRBACStore) UpdateRole(ctx context.Context, id uuid.UUID, roledto *shared.UpdateRoleDto) error {
+func (p *DbRbacStore) UpdateRole(ctx context.Context, id uuid.UUID, roledto *shared.UpdateRoleDto) error {
 	role, err := crudrepo.Role.GetOne(
 		ctx,
 		p.db,
@@ -116,7 +114,7 @@ func (p *DbRBACStore) UpdateRole(ctx context.Context, id uuid.UUID, roledto *sha
 	return nil
 }
 
-func (p *DbRBACStore) DeleteRole(ctx context.Context, id uuid.UUID) error {
+func (p *DbRbacStore) DeleteRole(ctx context.Context, id uuid.UUID) error {
 	_, err := crudrepo.Role.Delete(
 		ctx,
 		p.db,
@@ -132,7 +130,7 @@ func (p *DbRBACStore) DeleteRole(ctx context.Context, id uuid.UUID) error {
 	return nil
 }
 
-func (p *DbRBACStore) FindOrCreateRole(ctx context.Context, roleName string) (*models.Role, error) {
+func (p *DbRbacStore) FindOrCreateRole(ctx context.Context, roleName string) (*models.Role, error) {
 	role, err := crudrepo.Role.GetOne(
 		ctx,
 		p.db,
@@ -154,7 +152,7 @@ func (p *DbRBACStore) FindOrCreateRole(ctx context.Context, roleName string) (*m
 	return role, nil
 }
 
-func (p *DbRBACStore) EnsureRoleAndPermissions(ctx context.Context, roleName string, permissionNames ...string) error {
+func (p *DbRbacStore) EnsureRoleAndPermissions(ctx context.Context, roleName string, permissionNames ...string) error {
 	// find superuser role
 	role, err := p.FindOrCreateRole(ctx, roleName)
 	if err != nil {
@@ -177,7 +175,7 @@ func (p *DbRBACStore) EnsureRoleAndPermissions(ctx context.Context, roleName str
 	return nil
 }
 
-func (p *DbRBACStore) CountRoles(ctx context.Context, filter *shared.RoleListFilter) (int64, error) {
+func (p *DbRbacStore) CountRoles(ctx context.Context, filter *shared.RoleListFilter) (int64, error) {
 	q := squirrel.Select("COUNT(roles.*)").From("roles")
 
 	q = ListRolesFilterFuncQuery(q, filter)
@@ -192,7 +190,7 @@ func (p *DbRBACStore) CountRoles(ctx context.Context, filter *shared.RoleListFil
 
 	return data[0].Count, nil
 }
-func (p *DbRBACStore) ListRoles(ctx context.Context, input *shared.RolesListParams) ([]*models.Role, error) {
+func (p *DbRbacStore) ListRoles(ctx context.Context, input *shared.RolesListParams) ([]*models.Role, error) {
 	q := squirrel.Select("roles.*").From("roles")
 	filter := input.RoleListFilter
 	pageInput := &input.PaginatedInput
