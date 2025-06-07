@@ -46,3 +46,14 @@ func ParseValidUUIDs(ids []string) []uuid.UUID {
 func Int64ToISODate(timestamp int64) time.Time {
 	return time.Unix(timestamp, 0)
 }
+
+func WithPrefix(prefix, name string) string {
+	if prefix == "" {
+		return name
+	}
+	return fmt.Sprintf("%s.%s", prefix, name)
+}
+
+func Quote(name string) string {
+	return fmt.Sprintf("\"%s\"", name)
+}

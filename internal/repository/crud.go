@@ -17,23 +17,14 @@ var (
 	UserAccountBuilder = NewSQLBuilder[models.UserAccount](
 		UuidV7Generator,
 	)
-	UserRoleBuilder = NewSQLBuilder(
-		func(s *SQLBuilder[models.UserRole]) error {
-			s.skipIdInsert = false
-			return nil
-		},
+	UserRoleBuilder = NewSQLBuilder[models.UserRole](
+		SkipIdInsert,
 	)
-	UserPermissionBuilder = NewSQLBuilder(
-		func(s *SQLBuilder[models.UserPermission]) error {
-			s.skipIdInsert = false
-			return nil
-		},
+	UserPermissionBuilder = NewSQLBuilder[models.UserPermission](
+		SkipIdInsert,
 	)
-	RolePermissionBuilder = NewSQLBuilder(
-		func(s *SQLBuilder[models.RolePermission]) error {
-			s.skipIdInsert = false
-			return nil
-		},
+	RolePermissionBuilder = NewSQLBuilder[models.RolePermission](
+		SkipIdInsert,
 	)
 	TokenBuilder = NewSQLBuilder[models.Token](
 		UuidV7Generator,
@@ -44,41 +35,23 @@ var (
 	TaskBuilder = NewSQLBuilder[models.Task](
 		UuidV7Generator,
 	)
-	ProductPermissionBuilder = NewSQLBuilder(
-		func(s *SQLBuilder[models.ProductPermission]) error {
-			s.skipIdInsert = false
-			return nil
-		},
+	ProductPermissionBuilder = NewSQLBuilder[models.ProductPermission](
+		SkipIdInsert,
 	)
-	ProductRoleBuilder = NewSQLBuilder(
-		func(s *SQLBuilder[models.ProductRole]) error {
-			s.skipIdInsert = false
-			return nil
-		},
+	ProductRoleBuilder = NewSQLBuilder[models.ProductRole](
+		SkipIdInsert,
 	)
-	StripeProductBuilder = NewSQLBuilder(
-		func(s *SQLBuilder[models.StripeProduct]) error {
-			s.skipIdInsert = false
-			return nil
-		},
+	StripeProductBuilder = NewSQLBuilder[models.StripeProduct](
+		SkipIdInsert,
 	)
-	StripePriceBuilder = NewSQLBuilder(
-		func(s *SQLBuilder[models.StripePrice]) error {
-			s.skipIdInsert = false
-			return nil
-		},
+	StripePriceBuilder = NewSQLBuilder[models.StripePrice](
+		SkipIdInsert,
 	)
-	StripeCustomerBuilder = NewSQLBuilder(
-		func(s *SQLBuilder[models.StripeCustomer]) error {
-			s.skipIdInsert = false
-			return nil
-		},
+	StripeCustomerBuilder = NewSQLBuilder[models.StripeCustomer](
+		SkipIdInsert,
 	)
-	StripeSubscriptionBuilder = NewSQLBuilder(
-		func(s *SQLBuilder[models.StripeSubscription]) error {
-			s.skipIdInsert = false
-			return nil
-		},
+	StripeSubscriptionBuilder = NewSQLBuilder[models.StripeSubscription](
+		SkipIdInsert,
 	)
 	MediaBuilder = NewSQLBuilder[models.Medium](
 		UuidV7Generator,

@@ -16,6 +16,7 @@
             <path value="file://$PROJECT_DIR$/internal/stores" />
             <path value="file://$PROJECT_DIR$/internal/workers" />
             <path value="file://$PROJECT_DIR$/internal/jobs" />
+            <path value="file://$PROJECT_DIR$/internal/repository" />
           </resourceRoots>
         </entryData>
       </entry>

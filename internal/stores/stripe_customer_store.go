@@ -11,6 +11,7 @@ import (
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/authgo/internal/tools/utils"
 )
 
 type DbCustomerStore struct {
@@ -84,16 +85,16 @@ func listCustomerFilterFunc(filter *shared.StripeCustomerListFilter) *map[string
 }
 
 func SelectStripeCustomerColumns(qs squirrel.SelectBuilder, prefix string) squirrel.SelectBuilder {
-	qs = qs.Column(models.StripeCustomerTablePrefix.ID + " AS " + Quote(WithPrefix(prefix, models.StripeCustomerTable.ID))).
-		Column(models.StripeCustomerTablePrefix.Email + " AS " + Quote(WithPrefix(prefix, models.StripeCustomerTable.Email))).
-		Column(models.StripeCustomerTablePrefix.Name + " AS " + Quote(WithPrefix(prefix, models.StripeCustomerTable.Name))).
-		Column(models.StripeCustomerTablePrefix.UserID + " AS " + Quote(WithPrefix(prefix, models.StripeCustomerTable.UserID))).
-		Column(models.StripeCustomerTablePrefix.TeamID + " AS " + Quote(WithPrefix(prefix, models.StripeCustomerTable.TeamID))).
-		Column(models.StripeCustomerTablePrefix.CustomerType + " AS " + Quote(WithPrefix(prefix, models.StripeCustomerTable.CustomerType))).
-		Column(models.StripeCustomerTablePrefix.BillingAddress + " AS " + Quote(WithPrefix(prefix, models.StripeCustomerTable.BillingAddress))).
-		Column(models.StripeCustomerTablePrefix.PaymentMethod + " AS " + Quote(WithPrefix(prefix, models.StripeCustomerTable.PaymentMethod))).
-		Column(models.StripeCustomerTablePrefix.CreatedAt + " AS " + Quote(WithPrefix(prefix, models.StripeCustomerTable.CreatedAt))).
-		Column(models.StripeCustomerTablePrefix.UpdatedAt + " AS " + Quote(WithPrefix(prefix, models.StripeCustomerTable.UpdatedAt)))
+	qs = qs.Column(models.StripeCustomerTablePrefix.ID + " AS " + utils.Quote(utils.WithPrefix(prefix, models.StripeCustomerTable.ID))).
+		Column(models.StripeCustomerTablePrefix.Email + " AS " + utils.Quote(utils.WithPrefix(prefix, models.StripeCustomerTable.Email))).
+		Column(models.StripeCustomerTablePrefix.Name + " AS " + utils.Quote(utils.WithPrefix(prefix, models.StripeCustomerTable.Name))).
+		Column(models.StripeCustomerTablePrefix.UserID + " AS " + utils.Quote(utils.WithPrefix(prefix, models.StripeCustomerTable.UserID))).
+		Column(models.StripeCustomerTablePrefix.TeamID + " AS " + utils.Quote(utils.WithPrefix(prefix, models.StripeCustomerTable.TeamID))).
+		Column(models.StripeCustomerTablePrefix.CustomerType + " AS " + utils.Quote(utils.WithPrefix(prefix, models.StripeCustomerTable.CustomerType))).
+		Column(models.StripeCustomerTablePrefix.BillingAddress + " AS " + utils.Quote(utils.WithPrefix(prefix, models.StripeCustomerTable.BillingAddress))).
+		Column(models.StripeCustomerTablePrefix.PaymentMethod + " AS " + utils.Quote(utils.WithPrefix(prefix, models.StripeCustomerTable.PaymentMethod))).
+		Column(models.StripeCustomerTablePrefix.CreatedAt + " AS " + utils.Quote(utils.WithPrefix(prefix, models.StripeCustomerTable.CreatedAt))).
+		Column(models.StripeCustomerTablePrefix.UpdatedAt + " AS " + utils.Quote(utils.WithPrefix(prefix, models.StripeCustomerTable.UpdatedAt)))
 	return qs
 }
 

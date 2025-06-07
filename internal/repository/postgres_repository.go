@@ -29,14 +29,13 @@ func NewPostgresRepository[Model any](builder *SQLBuilder[Model]) *PostgresRepos
 
 func (r *PostgresRepository[Model]) Builder() SQLBuilderInterface {
 	return r.builder
-
 }
 
 // Get retrieves records from the database based on the provided filters
 func (r *PostgresRepository[Model]) Get(ctx context.Context, db database.Dbx, where *map[string]any, order *map[string]string, limit *int, skip *int) ([]*Model, error) {
 	var args []any
 	//goland:noinspection Annotator
-	query := fmt.Sprintf("SELECT %s FROM %s", r.builder.Fields(""), r.builder.Table())
+	query := fmt.Sprintf("SELECT %s FROM %s", r.builder.FieldString(""), r.builder.Table())
 	expr, err := r.builder.WhereError(ctx, where, &args, nil)
 	if err != nil {
 		return nil, err
@@ -83,7 +82,7 @@ func (r *PostgresRepository[Model]) Put(ctx context.Context, dbx database.Dbx, m
 		} else if expr != "" {
 			query += fmt.Sprintf(" WHERE %s", expr)
 		}
-		query += fmt.Sprintf(" RETURNING %s", r.builder.Fields(""))
+		query += fmt.Sprintf(" RETURNING %s", r.builder.FieldString(""))
 
 		items, err := pgxscan.All(ctx, dbx, scan.StructMapper[*Model](), query, args...)
 		if err != nil {
@@ -134,7 +133,7 @@ func (r *PostgresRepository[Model]) Post(ctx context.Context, dbx database.Dbx, 
 	} else if fields != "" && values != "" {
 		query += fmt.Sprintf(" (%s) VALUES %s", fields, values)
 	}
-	query += fmt.Sprintf(" RETURNING %s", r.builder.Fields(""))
+	query += fmt.Sprintf(" RETURNING %s", r.builder.FieldString(""))
 
 	// Execute the query and scan the results
 	result, err := pgxscan.All(ctx, dbx, scan.StructMapper[*Model](), query, args...)
@@ -168,7 +167,7 @@ func (r *PostgresRepository[Model]) DeleteReturn(ctx context.Context, dbx databa
 	} else if expr != "" {
 		query += fmt.Sprintf(" WHERE %s", expr)
 	}
-	query += fmt.Sprintf(" RETURNING %s", r.builder.Fields(""))
+	query += fmt.Sprintf(" RETURNING %s", r.builder.FieldString(""))
 
 	// Execute the query and scan the results
 	result, err := pgxscan.All(ctx, dbx, scan.StructMapper[*Model](), query, args...)

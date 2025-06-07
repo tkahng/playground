@@ -14,8 +14,8 @@ import (
 )
 
 type Field struct {
-	idx  int
-	name string
+	Idx  int
+	Name string
 }
 
 type Relation struct {
@@ -42,10 +42,34 @@ type SQLBuilder[Model any] struct {
 	skipIdInsert bool // Skip inserting the primary key field if it is generated
 }
 
+// IdColumnName implements SQLBuilderInterface.
+func (b *SQLBuilder[Model]) IdColumnName() string {
+	return b.idColumnName
+}
+func (b *SQLBuilder[Model]) SkipIdInsert() bool {
+	// Returns whether to skip inserting the primary key field
+	return b.skipIdInsert
+}
+func (b *SQLBuilder[Model]) Generator() func(reflect.StructField, *[]any) (string, error) {
+	// Returns the generator function for the primary key field
+	return b.generator
+}
+
+func (b *SQLBuilder[Model]) Identifier(name string) string {
+	return b.identifier(name)
+}
+
 type SQLBuilderInterface interface {
+	Identifier(name string) string
 	Table() string
 	ColumnNames() []string
+	ColumnNamesTablePrefix() []string
+	Fields() []Field
+	FieldString(prefix string) string
 	Where(where *map[string]any, args *[]any, run func(string) []string) string
+	IdColumnName() string
+	SkipIdInsert() bool
+	Generator() func(reflect.StructField, *[]any) (string, error)
 }
 
 var registry = map[string]SQLBuilderInterface{}
@@ -64,6 +88,14 @@ func UuidV7Generator[Model any](builder *SQLBuilder[Model]) error {
 		}
 		return id.String(), nil
 	}
+	return nil
+}
+
+func SkipIdInsert[Model any](builder *SQLBuilder[Model]) error {
+	if builder == nil {
+		return errors.New("SQLBuilder cannot be nil")
+	}
+	builder.skipIdInsert = true
 	return nil
 }
 
@@ -187,8 +219,8 @@ func NewSQLBuilder[Model any](opts ...SQLBuilderOptions[Model]) *SQLBuilder[Mode
 	result := &SQLBuilder[Model]{
 		table:        table,
 		columnNames:  columnNames,
-		keys:         []string{fields[0].name},
-		idColumnName: fields[0].name, // Assuming the first field is the primary key
+		keys:         []string{fields[0].Name},
+		idColumnName: fields[0].Name, // Assuming the first field is the primary key
 		fields:       fields,
 		relations:    relations,
 		operations:   operations_,
@@ -209,7 +241,26 @@ func NewSQLBuilder[Model any](opts ...SQLBuilderOptions[Model]) *SQLBuilder[Mode
 	return result
 }
 func (b *SQLBuilder[Model]) ColumnNames() []string {
-	return b.columnNames
+	var prefixedNames []string
+	for _, name := range b.columnNames {
+		prefixedNames = append(prefixedNames, b.identifier(name))
+	}
+	return prefixedNames
+}
+
+// Returns the column names with proper identifier formatting
+func (b *SQLBuilder[Model]) Fields() []Field {
+	// Returns the fields with their indices and names
+	return b.fields
+}
+
+func (b *SQLBuilder[Model]) ColumnNamesTablePrefix() []string {
+	// Returns the column names with the table prefix
+	var prefixedNames []string
+	for _, name := range b.columnNames {
+		prefixedNames = append(prefixedNames, b.identifier(b.table)+"."+b.identifier(name))
+	}
+	return prefixedNames
 }
 
 // Returns the table name with proper identifier formatting
@@ -218,10 +269,10 @@ func (b *SQLBuilder[Model]) Table() string {
 }
 
 // Returns a comma-separated list of field names with proper identifier formatting
-func (b *SQLBuilder[Model]) Fields(prefix string) string {
+func (b *SQLBuilder[Model]) FieldString(prefix string) string {
 	var result []string
 	for _, field := range b.fields {
-		result = append(result, prefix+b.identifier(field.name))
+		result = append(result, prefix+b.identifier(field.Name))
 	}
 
 	return strings.Join(result, ",")
@@ -259,20 +310,20 @@ func (b *SQLBuilder[Model]) Values(values *[]Model, args *[]any, keys *[]any) (f
 			// The first field is the primary key
 			if b.generator != nil {
 				// If a generator function is provided, primary key will be generated
-				fieldsArray = append(fieldsArray, b.identifier(field.name))
+				fieldsArray = append(fieldsArray, b.identifier(field.Name))
 			}
 			if b.skipIdInsert {
 				// If skipIdInsert is true, skip inserting the primary key field
 				continue
 			}
 			// Otherwise, add the primary key field to the VALUES clause
-			fieldsArray = append(fieldsArray, b.identifier(field.name))
+			fieldsArray = append(fieldsArray, b.identifier(field.Name))
 		} else {
-			if slices.Contains(timestampNames, field.name) {
+			if slices.Contains(timestampNames, field.Name) {
 				continue // Skip timestamp fields
 			}
 			// Other fields are added to the VALUES clause
-			fieldsArray = append(fieldsArray, b.identifier(field.name))
+			fieldsArray = append(fieldsArray, b.identifier(field.Name))
 		}
 	}
 
@@ -289,9 +340,9 @@ func (b *SQLBuilder[Model]) Values(values *[]Model, args *[]any, keys *[]any) (f
 				// The first field is the primary key
 				if b.generator != nil {
 					// If a generator function is provided, use it to generate the key
-					id, err := b.generator(_type.Field(field.idx), keys)
+					id, err := b.generator(_type.Field(field.Idx), keys)
 					if err != nil {
-						return "", "", fmt.Errorf("error generating primary key for field %s: %w", field.name, err)
+						return "", "", fmt.Errorf("error generating primary key for field %s: %w", field.Name, err)
 					}
 					items = append(items, b.parameter(reflect.ValueOf(id), args))
 				}
@@ -299,13 +350,13 @@ func (b *SQLBuilder[Model]) Values(values *[]Model, args *[]any, keys *[]any) (f
 					// If skipIdInsert is true, skip inserting the primary key field
 					continue
 				}
-				items = append(items, b.parameter(_value.Field(field.idx), args))
+				items = append(items, b.parameter(_value.Field(field.Idx), args))
 			} else {
-				if slices.Contains(timestampNames, field.name) {
+				if slices.Contains(timestampNames, field.Name) {
 					continue // Skip timestamp fields
 				}
 				// Other fields are added to the VALUES clause
-				items = append(items, b.parameter(_value.Field(field.idx), args))
+				items = append(items, b.parameter(_value.Field(field.Idx), args))
 			}
 		}
 
@@ -348,7 +399,7 @@ func (b *SQLBuilder[Model]) Set(set *Model, args *[]any, where *map[string]any) 
 			// Use it to construct the WHERE clause
 			if where != nil {
 				// Get the field value
-				_field := _value.Field(field.idx)
+				_field := _value.Field(field.Idx)
 				for _field.Kind() == reflect.Pointer {
 					_field = _field.Elem()
 				}
@@ -356,19 +407,27 @@ func (b *SQLBuilder[Model]) Set(set *Model, args *[]any, where *map[string]any) 
 				// Set the WHERE clause condition based on the field type
 				switch _field.Kind() {
 				case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-					(*where)[field.name] = map[string]any{"_eq": fmt.Sprintf("%d", _field.Int())}
+					(*where)[field.Name] = map[string]any{"_eq": fmt.Sprintf("%d", _field.Int())}
 				case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-					(*where)[field.name] = map[string]any{"_eq": fmt.Sprintf("%d", _field.Uint())}
+					(*where)[field.Name] = map[string]any{"_eq": fmt.Sprintf("%d", _field.Uint())}
 				case reflect.Float32, reflect.Float64:
-					(*where)[field.name] = map[string]any{"_eq": fmt.Sprintf("%f", _field.Float())}
+					(*where)[field.Name] = map[string]any{"_eq": fmt.Sprintf("%f", _field.Float())}
 				case reflect.Complex64, reflect.Complex128:
-					(*where)[field.name] = map[string]any{"_eq": fmt.Sprintf("%f", _field.Complex())}
+					(*where)[field.Name] = map[string]any{"_eq": fmt.Sprintf("%f", _field.Complex())}
 				case reflect.String:
-					(*where)[field.name] = map[string]any{"_eq": _field.String()}
+					(*where)[field.Name] = map[string]any{"_eq": _field.String()}
 				default:
-					u, ok := _field.Interface().(uuid.UUID)
-					if ok {
-						(*where)[field.name] = map[string]any{"_eq": u.String()}
+					if u, ok := _field.Interface().(uuid.UUID); ok {
+						(*where)[field.Name] = map[string]any{"_eq": u.String()}
+					} else if it, ok := _value.Interface().(time.Time); ok {
+						_newValue := reflect.ValueOf(it.Format(time.RFC3339Nano))
+						(*where)[field.Name] = map[string]any{"_eq": _newValue.String()}
+					} else if it, ok := _value.Interface().(fmt.Stringer); ok {
+						_newValue := reflect.ValueOf(it.String())
+						if _newValue.Kind() == reflect.String {
+							// If the value implements fmt.Stringer, use its String method
+							(*where)[field.Name] = map[string]any{"_eq": _newValue.String()}
+						}
 					} else {
 						panic("Invalid identifier type")
 					}
@@ -376,7 +435,7 @@ func (b *SQLBuilder[Model]) Set(set *Model, args *[]any, where *map[string]any) 
 			}
 		} else {
 			// Other fields are added to the SET clause
-			result = append(result, b.identifier(field.name)+"="+b.parameter(_value.Field(field.idx), args))
+			result = append(result, b.identifier(field.Name)+"="+b.parameter(_value.Field(field.Idx), args))
 		}
 	}
 

@@ -1,29 +1,15 @@
-package repository
+package resource
 
 import (
 	"context"
 
 	"github.com/tkahng/authgo/internal/database"
+	"github.com/tkahng/authgo/internal/repository"
 )
-
-type Paginable interface {
-	Pagination() (limit, offset int)
-}
-
-type MapSortable interface {
-	Sort() *map[string]string
-}
-
-type DefaultFilter interface {
-	Sort() *map[string]string
-	Pagination() (limit, offset int)
-	// Paginable
-	// MapSortable
-}
 
 type RepositoryResource[M any, K comparable, F any] struct {
 	db           database.Dbx
-	repository   *PostgresRepository[M]
+	repository   *repository.PostgresRepository[M]
 	filterFn     func(filter *F) *map[string]any
 	sortFn       func(filter *F) *map[string]string
 	paginationFn func(filter *F) (limit, offset int)
@@ -31,7 +17,7 @@ type RepositoryResource[M any, K comparable, F any] struct {
 
 func NewRepositoryResource[M any, K comparable, F any](
 	db database.Dbx,
-	repository *PostgresRepository[M],
+	repository *repository.PostgresRepository[M],
 	filterFn func(filter *F) *map[string]any,
 	sortFn func(filter *F) *map[string]string,
 	paginationFn func(filter *F) (limit, offset int),
@@ -76,8 +62,11 @@ func (p *RepositoryResource[M, K, F]) sort(filter *F) *map[string]string {
 	if p.sortFn != nil {
 		return p.sortFn(filter)
 	}
-	if sortable, ok := any(filter).(MapSortable); ok {
-		return sortable.Sort()
+	if sortable, ok := any(filter).(Sortable); ok {
+		sortBy, sortOrder := sortable.Sort()
+		return &map[string]string{
+			sortBy: sortOrder,
+		}
 	}
 	return nil // default no sorting
 }
@@ -102,7 +91,7 @@ func (p *RepositoryResource[M, K, F]) Create(ctx context.Context, model *M) (*M,
 
 func (p *RepositoryResource[M, K, F]) idWhere(id K) *map[string]any {
 	where := map[string]any{
-		p.repository.builder.idColumnName: map[string]any{
+		p.repository.Builder().IdColumnName(): map[string]any{
 			"_eq": id,
 		},
 	}
@@ -142,7 +131,7 @@ func (p *RepositoryResource[M, K, F]) Find(ctx context.Context, filter *F) ([]*M
 }
 
 // FindOne implements Resource.
-func (p *RepositoryResource[M, K, F]) FindOne(ctx context.Context, id K) (*M, error) {
+func (p *RepositoryResource[M, K, F]) FindByID(ctx context.Context, id K) (*M, error) {
 	where := p.idWhere(id)
 	data, err := p.repository.GetOne(ctx, p.db, where)
 	if err != nil {

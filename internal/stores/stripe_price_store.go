@@ -10,6 +10,7 @@ import (
 	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/types"
+	"github.com/tkahng/authgo/internal/tools/utils"
 )
 
 type DbPriceStore struct {
@@ -122,19 +123,19 @@ func (s *DbPriceStore) CountPrices(ctx context.Context, filter *shared.StripePri
 }
 
 func SelectStripePriceColumns(qs squirrel.SelectBuilder, prefix string) squirrel.SelectBuilder {
-	qs = qs.Column(models.StripePriceTablePrefix.ID + " AS " + Quote(WithPrefix(prefix, models.StripePriceTable.ID))).
-		Column(models.StripePriceTablePrefix.ProductID + " AS " + Quote(WithPrefix(prefix, models.StripePriceTable.ProductID))).
-		Column(models.StripePriceTablePrefix.LookupKey + " AS " + Quote(WithPrefix(prefix, models.StripePriceTable.LookupKey))).
-		Column(models.StripePriceTablePrefix.Active + " AS " + Quote(WithPrefix(prefix, models.StripePriceTable.Active))).
-		Column(models.StripePriceTablePrefix.UnitAmount + " AS " + Quote(WithPrefix(prefix, models.StripePriceTable.UnitAmount))).
-		Column(models.StripePriceTablePrefix.Currency + " AS " + Quote(WithPrefix(prefix, models.StripePriceTable.Currency))).
-		Column(models.StripePriceTablePrefix.Type + " AS " + Quote(WithPrefix(prefix, models.StripePriceTable.Type))).
-		Column(models.StripePriceTablePrefix.Interval + " AS " + Quote(WithPrefix(prefix, models.StripePriceTable.Interval))).
-		Column(models.StripePriceTablePrefix.IntervalCount + " AS " + Quote(WithPrefix(prefix, models.StripePriceTable.IntervalCount))).
-		Column(models.StripePriceTablePrefix.TrialPeriodDays + " AS " + Quote(WithPrefix(prefix, models.StripePriceTable.TrialPeriodDays))).
-		Column(models.StripePriceTablePrefix.Metadata + " AS " + Quote(WithPrefix(prefix, models.StripePriceTable.Metadata))).
-		Column(models.StripePriceTablePrefix.CreatedAt + " AS " + Quote(WithPrefix(prefix, models.StripePriceTable.CreatedAt))).
-		Column(models.StripePriceTablePrefix.UpdatedAt + " AS " + Quote(WithPrefix(prefix, models.StripePriceTable.UpdatedAt)))
+	qs = qs.Column(models.StripePriceTablePrefix.ID + " AS " + utils.Quote(utils.WithPrefix(prefix, models.StripePriceTable.ID))).
+		Column(models.StripePriceTablePrefix.ProductID + " AS " + utils.Quote(utils.WithPrefix(prefix, models.StripePriceTable.ProductID))).
+		Column(models.StripePriceTablePrefix.LookupKey + " AS " + utils.Quote(utils.WithPrefix(prefix, models.StripePriceTable.LookupKey))).
+		Column(models.StripePriceTablePrefix.Active + " AS " + utils.Quote(utils.WithPrefix(prefix, models.StripePriceTable.Active))).
+		Column(models.StripePriceTablePrefix.UnitAmount + " AS " + utils.Quote(utils.WithPrefix(prefix, models.StripePriceTable.UnitAmount))).
+		Column(models.StripePriceTablePrefix.Currency + " AS " + utils.Quote(utils.WithPrefix(prefix, models.StripePriceTable.Currency))).
+		Column(models.StripePriceTablePrefix.Type + " AS " + utils.Quote(utils.WithPrefix(prefix, models.StripePriceTable.Type))).
+		Column(models.StripePriceTablePrefix.Interval + " AS " + utils.Quote(utils.WithPrefix(prefix, models.StripePriceTable.Interval))).
+		Column(models.StripePriceTablePrefix.IntervalCount + " AS " + utils.Quote(utils.WithPrefix(prefix, models.StripePriceTable.IntervalCount))).
+		Column(models.StripePriceTablePrefix.TrialPeriodDays + " AS " + utils.Quote(utils.WithPrefix(prefix, models.StripePriceTable.TrialPeriodDays))).
+		Column(models.StripePriceTablePrefix.Metadata + " AS " + utils.Quote(utils.WithPrefix(prefix, models.StripePriceTable.Metadata))).
+		Column(models.StripePriceTablePrefix.CreatedAt + " AS " + utils.Quote(utils.WithPrefix(prefix, models.StripePriceTable.CreatedAt))).
+		Column(models.StripePriceTablePrefix.UpdatedAt + " AS " + utils.Quote(utils.WithPrefix(prefix, models.StripePriceTable.UpdatedAt)))
 	return qs
 }
 

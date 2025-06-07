@@ -11,6 +11,7 @@ import (
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/authgo/internal/tools/utils"
 )
 
 type DbProductStore struct {
@@ -155,14 +156,14 @@ func listProductFilterFuncQuery(q squirrel.SelectBuilder, filter *shared.StripeP
 }
 
 func SelectStripeProductColumns(qs squirrel.SelectBuilder, prefix string) squirrel.SelectBuilder {
-	qs = qs.Column(models.StripeProductTablePrefix.ID + " AS " + Quote(WithPrefix(prefix, models.StripeProductTable.ID))).
-		Column(models.StripeProductTablePrefix.Name + " AS " + Quote(WithPrefix(prefix, models.StripeProductTable.Name))).
-		Column(models.StripeProductTablePrefix.Description + " AS " + Quote(WithPrefix(prefix, models.StripeProductTable.Description))).
-		Column(models.StripeProductTablePrefix.Active + " AS " + Quote(WithPrefix(prefix, models.StripeProductTable.Active))).
-		Column(models.StripeProductTablePrefix.Image + " AS " + Quote(WithPrefix(prefix, models.StripeProductTable.Image))).
-		Column(models.StripeProductTablePrefix.Metadata + " AS " + Quote(WithPrefix(prefix, models.StripeProductTable.Metadata))).
-		Column(models.StripeProductTablePrefix.CreatedAt + " AS " + Quote(WithPrefix(prefix, models.StripeProductTable.CreatedAt))).
-		Column(models.StripeProductTablePrefix.UpdatedAt + " AS " + Quote(WithPrefix(prefix, models.StripeProductTable.UpdatedAt)))
+	qs = qs.Column(models.StripeProductTablePrefix.ID + " AS " + utils.Quote(utils.WithPrefix(prefix, models.StripeProductTable.ID))).
+		Column(models.StripeProductTablePrefix.Name + " AS " + utils.Quote(utils.WithPrefix(prefix, models.StripeProductTable.Name))).
+		Column(models.StripeProductTablePrefix.Description + " AS " + utils.Quote(utils.WithPrefix(prefix, models.StripeProductTable.Description))).
+		Column(models.StripeProductTablePrefix.Active + " AS " + utils.Quote(utils.WithPrefix(prefix, models.StripeProductTable.Active))).
+		Column(models.StripeProductTablePrefix.Image + " AS " + utils.Quote(utils.WithPrefix(prefix, models.StripeProductTable.Image))).
+		Column(models.StripeProductTablePrefix.Metadata + " AS " + utils.Quote(utils.WithPrefix(prefix, models.StripeProductTable.Metadata))).
+		Column(models.StripeProductTablePrefix.CreatedAt + " AS " + utils.Quote(utils.WithPrefix(prefix, models.StripeProductTable.CreatedAt))).
+		Column(models.StripeProductTablePrefix.UpdatedAt + " AS " + utils.Quote(utils.WithPrefix(prefix, models.StripeProductTable.UpdatedAt)))
 
 	return qs
 }

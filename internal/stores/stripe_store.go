@@ -2,7 +2,6 @@ package stores
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
@@ -203,16 +202,16 @@ func (s *DbStripeStore) LoadSubscriptionsByIds(ctx context.Context, subscription
 	}), nil
 }
 
-func WithPrefix(prefix, name string) string {
-	if prefix == "" {
-		return name
-	}
-	return fmt.Sprintf("%s.%s", prefix, name)
-}
+// func WithPrefix(prefix, name string) string {
+// 	if prefix == "" {
+// 		return name
+// 	}
+// 	return fmt.Sprintf("%s.%s", prefix, name)
+// }
 
-func Quote(name string) string {
-	return fmt.Sprintf("\"%s\"", name)
-}
+// func Quote(name string) string {
+// 	return fmt.Sprintf("\"%s\"", name)
+// }
 
 var (
 	MetadataIndexName = "metadata.index"

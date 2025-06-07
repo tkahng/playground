@@ -24,6 +24,7 @@ type User struct {
 }
 
 type userTable struct {
+	Columns         []string
 	ID              string
 	Email           string
 	EmailVerifiedAt string
@@ -40,6 +41,15 @@ type userTable struct {
 }
 
 var UserTable = userTable{
+	Columns: []string{
+		"id",
+		"email",
+		"email_verified_at",
+		"name",
+		"image",
+		"created_at",
+		"updated_at",
+	},
 	ID:              "id",
 	Email:           "email",
 	EmailVerifiedAt: "email_verified_at",

@@ -388,23 +388,23 @@ func (s *DbSubscriptionStore) CountSubscriptions(ctx context.Context, filter *sh
 
 func SelectStripeSubscriptionColumns(qs squirrel.SelectBuilder, prefix string) squirrel.SelectBuilder {
 	qs = qs.
-		Column(models.StripeSubscriptionTablePrefix.ID + " AS " + Quote(WithPrefix(prefix, models.StripeSubscriptionTable.ID))).
-		Column(models.StripeSubscriptionTablePrefix.StripeCustomerID + " AS " + Quote(WithPrefix(prefix, models.StripeSubscriptionTable.StripeCustomerID))).
-		Column(models.StripeSubscriptionTablePrefix.Status + " AS " + Quote(WithPrefix(prefix, models.StripeSubscriptionTable.Status))).
-		Column(models.StripeSubscriptionTablePrefix.Metadata + " AS " + Quote(WithPrefix(prefix, models.StripeSubscriptionTable.Metadata))).
-		Column(models.StripeSubscriptionTablePrefix.ItemID + " AS " + Quote(WithPrefix(prefix, models.StripeSubscriptionTable.ItemID))).
-		Column(models.StripeSubscriptionTablePrefix.PriceID + " AS " + Quote(WithPrefix(prefix, models.StripeSubscriptionTable.PriceID))).
-		Column(models.StripeSubscriptionTablePrefix.Quantity + " AS " + Quote(WithPrefix(prefix, models.StripeSubscriptionTable.Quantity))).
-		Column(models.StripeSubscriptionTablePrefix.CancelAtPeriodEnd + " AS " + Quote(WithPrefix(prefix, models.StripeSubscriptionTable.CancelAtPeriodEnd))).
-		Column(models.StripeSubscriptionTablePrefix.Created + " AS " + Quote(WithPrefix(prefix, models.StripeSubscriptionTable.Created))).
-		Column(models.StripeSubscriptionTablePrefix.CurrentPeriodStart + " AS " + Quote(WithPrefix(prefix, models.StripeSubscriptionTable.CurrentPeriodStart))).
-		Column(models.StripeSubscriptionTablePrefix.CurrentPeriodEnd + " AS " + Quote(WithPrefix(prefix, models.StripeSubscriptionTable.CurrentPeriodEnd))).
-		Column(models.StripeSubscriptionTablePrefix.EndedAt + " AS " + Quote(WithPrefix(prefix, models.StripeSubscriptionTable.EndedAt))).
-		Column(models.StripeSubscriptionTablePrefix.CancelAt + " AS " + Quote(WithPrefix(prefix, models.StripeSubscriptionTable.CancelAt))).
-		Column(models.StripeSubscriptionTablePrefix.CanceledAt + " AS " + Quote(WithPrefix(prefix, models.StripeSubscriptionTable.CanceledAt))).
-		Column(models.StripeSubscriptionTablePrefix.TrialStart + " AS " + Quote(WithPrefix(prefix, models.StripeSubscriptionTable.TrialStart))).
-		Column(models.StripeSubscriptionTablePrefix.TrialEnd + " AS " + Quote(WithPrefix(prefix, models.StripeSubscriptionTable.TrialEnd))).
-		Column(models.StripeSubscriptionTablePrefix.CreatedAt + " AS " + Quote(WithPrefix(prefix, models.StripeSubscriptionTable.CreatedAt))).
-		Column(models.StripeSubscriptionTablePrefix.UpdatedAt + " AS " + Quote(WithPrefix(prefix, models.StripeSubscriptionTable.UpdatedAt)))
+		Column(models.StripeSubscriptionTablePrefix.ID + " AS " + utils.Quote(utils.WithPrefix(prefix, models.StripeSubscriptionTable.ID))).
+		Column(models.StripeSubscriptionTablePrefix.StripeCustomerID + " AS " + utils.Quote(utils.WithPrefix(prefix, models.StripeSubscriptionTable.StripeCustomerID))).
+		Column(models.StripeSubscriptionTablePrefix.Status + " AS " + utils.Quote(utils.WithPrefix(prefix, models.StripeSubscriptionTable.Status))).
+		Column(models.StripeSubscriptionTablePrefix.Metadata + " AS " + utils.Quote(utils.WithPrefix(prefix, models.StripeSubscriptionTable.Metadata))).
+		Column(models.StripeSubscriptionTablePrefix.ItemID + " AS " + utils.Quote(utils.WithPrefix(prefix, models.StripeSubscriptionTable.ItemID))).
+		Column(models.StripeSubscriptionTablePrefix.PriceID + " AS " + utils.Quote(utils.WithPrefix(prefix, models.StripeSubscriptionTable.PriceID))).
+		Column(models.StripeSubscriptionTablePrefix.Quantity + " AS " + utils.Quote(utils.WithPrefix(prefix, models.StripeSubscriptionTable.Quantity))).
+		Column(models.StripeSubscriptionTablePrefix.CancelAtPeriodEnd + " AS " + utils.Quote(utils.WithPrefix(prefix, models.StripeSubscriptionTable.CancelAtPeriodEnd))).
+		Column(models.StripeSubscriptionTablePrefix.Created + " AS " + utils.Quote(utils.WithPrefix(prefix, models.StripeSubscriptionTable.Created))).
+		Column(models.StripeSubscriptionTablePrefix.CurrentPeriodStart + " AS " + utils.Quote(utils.WithPrefix(prefix, models.StripeSubscriptionTable.CurrentPeriodStart))).
+		Column(models.StripeSubscriptionTablePrefix.CurrentPeriodEnd + " AS " + utils.Quote(utils.WithPrefix(prefix, models.StripeSubscriptionTable.CurrentPeriodEnd))).
+		Column(models.StripeSubscriptionTablePrefix.EndedAt + " AS " + utils.Quote(utils.WithPrefix(prefix, models.StripeSubscriptionTable.EndedAt))).
+		Column(models.StripeSubscriptionTablePrefix.CancelAt + " AS " + utils.Quote(utils.WithPrefix(prefix, models.StripeSubscriptionTable.CancelAt))).
+		Column(models.StripeSubscriptionTablePrefix.CanceledAt + " AS " + utils.Quote(utils.WithPrefix(prefix, models.StripeSubscriptionTable.CanceledAt))).
+		Column(models.StripeSubscriptionTablePrefix.TrialStart + " AS " + utils.Quote(utils.WithPrefix(prefix, models.StripeSubscriptionTable.TrialStart))).
+		Column(models.StripeSubscriptionTablePrefix.TrialEnd + " AS " + utils.Quote(utils.WithPrefix(prefix, models.StripeSubscriptionTable.TrialEnd))).
+		Column(models.StripeSubscriptionTablePrefix.CreatedAt + " AS " + utils.Quote(utils.WithPrefix(prefix, models.StripeSubscriptionTable.CreatedAt))).
+		Column(models.StripeSubscriptionTablePrefix.UpdatedAt + " AS " + utils.Quote(utils.WithPrefix(prefix, models.StripeSubscriptionTable.UpdatedAt)))
 	return qs
 }
