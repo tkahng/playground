@@ -3,9 +3,7 @@ package repository
 import (
 	"context"
 
-	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/database"
-	"github.com/tkahng/authgo/internal/models"
 )
 
 type Paginable interface {
@@ -25,18 +23,18 @@ type DefaultFilter interface {
 
 type RepositoryResource[M any, K comparable, F any] struct {
 	db           database.Dbx
-	repository   *PostgresCrudRepo[M]
-	filterFn     func(filter F) *map[string]any
-	sortFn       func(filter F) *map[string]string
-	paginationFn func(filter F) (limit, offset int)
+	repository   *PostgresRepository[M]
+	filterFn     func(filter *F) *map[string]any
+	sortFn       func(filter *F) *map[string]string
+	paginationFn func(filter *F) (limit, offset int)
 }
 
 func NewRepositoryResource[M any, K comparable, F any](
 	db database.Dbx,
-	repository *PostgresCrudRepo[M],
-	filterFn func(filter F) *map[string]any,
-	sortFn func(filter F) *map[string]string,
-	paginationFn func(filter F) (limit, offset int),
+	repository *PostgresRepository[M],
+	filterFn func(filter *F) *map[string]any,
+	sortFn func(filter *F) *map[string]string,
+	paginationFn func(filter *F) (limit, offset int),
 ) *RepositoryResource[M, K, F] {
 	return &RepositoryResource[M, K, F]{
 		db:           db,
@@ -47,15 +45,21 @@ func NewRepositoryResource[M any, K comparable, F any](
 	}
 }
 
-func (p *RepositoryResource[M, K, F]) filter(filter F) *map[string]any {
+func (p *RepositoryResource[M, K, F]) filter(filter *F) *map[string]any {
 	where := new(map[string]any)
+	if filter == nil {
+		return where // return empty map if no filter is provided
+	}
 	if p.filterFn != nil {
 		where = p.filterFn(filter)
 	}
 	return where
 }
 
-func (p *RepositoryResource[M, K, F]) pagination(filter F) (limit, offset int) {
+func (p *RepositoryResource[M, K, F]) pagination(filter *F) (limit, offset int) {
+	if filter == nil {
+		return 10, 0 // default values
+	}
 	if p.paginationFn != nil {
 		return p.paginationFn(filter)
 	}
@@ -65,7 +69,10 @@ func (p *RepositoryResource[M, K, F]) pagination(filter F) (limit, offset int) {
 	return 10, 0 // default values
 }
 
-func (p *RepositoryResource[M, K, F]) sort(filter F) *map[string]string {
+func (p *RepositoryResource[M, K, F]) sort(filter *F) *map[string]string {
+	if filter == nil {
+		return nil // return nil if no filter is provided
+	}
 	if p.sortFn != nil {
 		return p.sortFn(filter)
 	}
@@ -76,7 +83,7 @@ func (p *RepositoryResource[M, K, F]) sort(filter F) *map[string]string {
 }
 
 // Count implements Resource.
-func (p *RepositoryResource[M, K, F]) Count(ctx context.Context, filter F) (int64, error) {
+func (p *RepositoryResource[M, K, F]) Count(ctx context.Context, filter *F) (int64, error) {
 	where := p.filter(filter)
 	return p.repository.Count(ctx, p.db, where)
 }
@@ -112,7 +119,7 @@ func (p *RepositoryResource[M, K, F]) Delete(ctx context.Context, id K) error {
 }
 
 // Find implements Resource.
-func (p *RepositoryResource[M, K, F]) Find(ctx context.Context, filter F) ([]*M, error) {
+func (p *RepositoryResource[M, K, F]) Find(ctx context.Context, filter *F) ([]*M, error) {
 	// if filter == nil {
 	// 	return nil, nil
 	// }
@@ -168,11 +175,4 @@ func (p *RepositoryResource[M, K, F]) WithTx(tx database.Dbx) Resource[M, K, F] 
 		sortFn:       p.sortFn,
 		paginationFn: p.paginationFn,
 	}
-}
-
-var _ Resource[models.User, uuid.UUID, UserListFilter] = (*RepositoryResource[models.User, uuid.UUID, UserListFilter])(nil)
-
-type UserListFilter struct {
-	PaginatedInput
-	SortParams
 }

@@ -6,7 +6,7 @@ import (
 	"github.com/tkahng/authgo/internal/database"
 )
 
-type CrudRepo[Model any] interface {
+type Repository[Model any] interface {
 	Get(ctx context.Context, dbx database.Dbx, where *map[string]any, order *map[string]string, limit *int, skip *int) ([]*Model, error)
 	GetOne(ctx context.Context, dbx database.Dbx, where *map[string]any) (*Model, error)
 	Put(ctx context.Context, dbx database.Dbx, models []Model) ([]*Model, error)

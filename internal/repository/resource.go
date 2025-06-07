@@ -17,14 +17,21 @@ type Resource[Model any, Key comparable, Filter any] interface {
 	Delete(ctx context.Context, id Key) error
 	Update(ctx context.Context, model *Model) (*Model, error)
 	Create(ctx context.Context, model *Model) (*Model, error)
-	Count(ctx context.Context, filter Filter) (int64, error)
-	Find(ctx context.Context, filter Filter) ([]*Model, error)
+	Count(ctx context.Context, filter *Filter) (int64, error)
+	Find(ctx context.Context, filter *Filter) ([]*Model, error)
 	FindOne(ctx context.Context, id Key) (*Model, error)
 	WithTx(tx database.Dbx) Resource[Model, Key, Filter]
 }
 
 type ModelResource[Model any, Key comparable, Filter any] struct {
 	Resource[Model, Key, Filter]
+	DeleteFunc  func(ctx context.Context, id Key) error
+	UpdateFunc  func(ctx context.Context, model *Model) (*Model, error)
+	CreateFunc  func(ctx context.Context, model *Model) (*Model, error)
+	CountFunc   func(ctx context.Context, filter *Filter) (int64, error)
+	FindFunc    func(ctx context.Context, filter *Filter) ([]*Model, error)
+	FindOneFunc func(ctx context.Context, id Key) (*Model, error)
+	TxFunc      func(tx database.Dbx) Resource[Model, Key, Filter]
 }
 
 var _ Resource[models.User, uuid.UUID, any] = (*ModelResource[models.User, uuid.UUID, any])(nil)
@@ -36,13 +43,13 @@ func (r *ModelResource[Model, Key, Filter]) WithTx(tx database.Dbx) Resource[Mod
 	return r.Resource.WithTx(tx)
 }
 
-func (r *ModelResource[Model, Key, Filter]) Find(ctx context.Context, filter Filter) ([]*Model, error) {
+func (r *ModelResource[Model, Key, Filter]) Find(ctx context.Context, filter *Filter) ([]*Model, error) {
 	if r.Resource == nil {
 		return nil, ResourceNotImplementedError
 	}
 	return r.Resource.Find(ctx, filter)
 }
-func (r *ModelResource[Model, Key, Filter]) Count(ctx context.Context, filter Filter) (int64, error) {
+func (r *ModelResource[Model, Key, Filter]) Count(ctx context.Context, filter *Filter) (int64, error) {
 	if r.Resource == nil {
 		return 0, ResourceNotImplementedError
 	}
