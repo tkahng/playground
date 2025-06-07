@@ -109,9 +109,6 @@ func (p *RepositoryResource[M, K, F]) Delete(ctx context.Context, id K) error {
 
 // Find implements Resource.
 func (p *RepositoryResource[M, K, F]) Find(ctx context.Context, filter *F) ([]*M, error) {
-	// if filter == nil {
-	// 	return nil, nil
-	// }
 	where := p.filter(filter)
 	sort := p.sort(filter)
 	limit, offset := p.pagination(filter)
