@@ -31,6 +31,7 @@ type Relation struct {
 type SQLBuilder[Model any] struct {
 	table        string
 	keys         []string
+	idColumnName string // Name of the primary key column
 	fields       []Field
 	columnNames  []string
 	relations    map[string]Relation
@@ -187,6 +188,7 @@ func NewSQLBuilder[Model any](opts ...SQLBuilderOptions[Model]) *SQLBuilder[Mode
 		table:        table,
 		columnNames:  columnNames,
 		keys:         []string{fields[0].name},
+		idColumnName: fields[0].name, // Assuming the first field is the primary key
 		fields:       fields,
 		relations:    relations,
 		operations:   operations_,
