@@ -39,5 +39,5 @@ func WithAttributes(parent context.Context, attrs ...slog.Attr) context.Context 
 
 // Initialize default logger at package init
 func init() {
-	slog.SetDefault(GetDefaultLogger(slog.LevelInfo))
+	slog.SetDefault(GetDefaultLogger())
 }

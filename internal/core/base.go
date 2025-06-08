@@ -134,7 +134,7 @@ func NewBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 	settings := cfg.ToSettings()
 	pool := database.CreateQueries(ctx, cfg.Db.DatabaseUrl)
 	fs, err := filesystem.NewFileSystem(cfg.StorageConfig)
-	l := logger.GetDefaultLogger(slog.LevelInfo)
+	l := logger.GetDefaultLogger()
 
 	if err != nil {
 		panic(err)

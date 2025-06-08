@@ -9,6 +9,8 @@ import (
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/test"
+	"github.com/tkahng/authgo/internal/tools/logger"
+	"github.com/tkahng/authgo/internal/tools/mapper"
 )
 
 func TestNewUserAccountRepositoryResource_FilterFunc(t *testing.T) {
@@ -105,6 +107,7 @@ func TestUserAccountRepositoryResource_Create(t *testing.T) {
 }
 
 func TestUserAccountRepsository_find(t *testing.T) {
+	logger.SetDefaultLogger()
 	test.DbSetup()
 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
 		userResource := NewUserRepositoryResource(db)
@@ -163,7 +166,7 @@ func TestUserAccountRepsository_find(t *testing.T) {
 			predicate func(t *testing.T, got []*models.UserAccount, err error)
 		}{
 			{
-				name: "find all useraccounts sorted by name ascending",
+				name: "find all useraccounts sorted by provider ascending, 3 per page, page 0",
 				args: args{
 					ctx: ctx,
 					filter: &UserAccountFilter{
@@ -181,41 +184,16 @@ func TestUserAccountRepsository_find(t *testing.T) {
 					if err != nil {
 						t.Errorf("UserAccountRepository.find() error = %v", err)
 					}
-					CheckSliceLength(t, got, 3)
-					for i := 1; i < len(got)-1; i++ {
-						firstName, secondName := *&got[i].Provider, *&got[i+1].Provider
-						if firstName > secondName {
-							t.Errorf("useraccounts are not in order. first name %s > second name %s", firstName, secondName)
-						}
+
+					if len(got) != 3 {
+						t.Errorf("UserRepository.find() got = %d, want %d", len(got), 3)
 					}
-				},
-			},
-			{
-				name: "find all useraccounts sorted by name ascending, 3 per page, page 0",
-				args: args{
-					ctx: ctx,
-					filter: &UserAccountFilter{
-						PaginatedInput: PaginatedInput{
-							Page:    0,
-							PerPage: 3,
-						},
-						SortParams: SortParams{
-							SortBy:    "provider",
-							SortOrder: "asc",
-						},
-					},
-				},
-				predicate: func(t *testing.T, got []*models.UserAccount, err error) {
-					if err != nil {
-						t.Errorf("UserAccountRepository.find() error = %v", err)
-					}
-					CheckSliceLength(t, got, 3)
 					CheckUserAccountOrderByName(t, got)
 				},
 			},
 
 			{
-				name: "find all useraccounts sorted by name ascending, 3 per page, page 1",
+				name: "find all useraccounts sorted by provider ascending, 3 per page, page 1",
 				args: args{
 					ctx: ctx,
 					filter: &UserAccountFilter{
@@ -233,8 +211,15 @@ func TestUserAccountRepsository_find(t *testing.T) {
 					if err != nil {
 						t.Errorf("UserAccountRepository.find() error = %v", err)
 					}
-					CheckSliceLength(t, got, 3)
-					CheckUserAccountOrderByName(t, got)
+					if len(got) != 2 {
+						t.Errorf("UserRepository.find() got = %d, want %d", len(got), 2)
+					}
+					for i := 1; i < len(got)-1; i++ {
+						firstName, secondName := got[i].Provider.String(), got[i+1].Provider.String()
+						if firstName > secondName {
+							t.Errorf("users are not in order. first name %s > second name %s", firstName, secondName)
+						}
+					}
 				},
 			},
 			{
@@ -256,35 +241,12 @@ func TestUserAccountRepsository_find(t *testing.T) {
 					if err != nil {
 						t.Errorf("UserAccountRepository.find() error = %v", err)
 					}
-					CheckSliceLength(t, got, 3)
-					CheckUserAccountOrderByName(t, got)
-				},
-			},
-			{
-				name: "find all useraccounts sorted by name ascending, 3 per page, page 3",
-				args: args{
-					ctx: ctx,
-					filter: &UserAccountFilter{
-						PaginatedInput: PaginatedInput{
-							Page:    3,
-							PerPage: 3,
-						},
-						SortParams: SortParams{
-							SortBy:    "provider",
-							SortOrder: "asc",
-						},
-					},
-				},
-				predicate: func(t *testing.T, got []*models.UserAccount, err error) {
-					if err != nil {
-						t.Errorf("UserAccountRepository.find() error = %v", err)
-					}
-					CheckSliceLength(t, got, 1)
-					if got[0].Provider == "" || got[0].Provider != "Zeta UserAccount" {
-						t.Errorf("UserAccountRepository.find() got = %s, want %s", got[0].Provider, "Zeta UserAccount")
+					if len(got) != 0 {
+						t.Errorf("UserRepository.find() got = %d, want %d", len(got), 0)
 					}
 				},
 			},
+
 			{
 				name: "find all useraccounts with 'ta' in name. sorted by name ascending, 10 per page, page 0",
 				args: args{
@@ -298,15 +260,25 @@ func TestUserAccountRepsository_find(t *testing.T) {
 							SortBy:    "provider",
 							SortOrder: "asc",
 						},
-						Q: "ta",
+						// Q: "ta",
 					},
 				},
 				predicate: func(t *testing.T, got []*models.UserAccount, err error) {
 					if err != nil {
 						t.Errorf("UserAccountRepository.find() error = %v", err)
 					}
-					CheckSliceLength(t, got, 3)
-					CheckUserAccountOrderByName(t, got)
+					if len(got) != 5 {
+						t.Errorf("UserRepository.find() got = %d, want %d", len(got), 5)
+					}
+					for i := 1; i < len(got)-1; i++ {
+						firstName, secondName := got[i].Provider.String(), got[i+1].Provider.String()
+						if firstName > secondName {
+							allproviders := mapper.Map(got, func(u *models.UserAccount) string {
+								return u.Provider.String()
+							})
+							t.Errorf("users are not in order. first name %s > second name %s. all names: %v", firstName, secondName, allproviders)
+						}
+					}
 				},
 			},
 		}

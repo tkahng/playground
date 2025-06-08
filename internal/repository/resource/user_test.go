@@ -418,7 +418,9 @@ func TestUserRepsository_find(t *testing.T) {
 					if err != nil {
 						t.Errorf("UserRepository.find() error = %v", err)
 					}
-					CheckSliceLength(t, got, 10)
+					if len(got) != 10 {
+						t.Errorf("UserRepository.find() got = %d, want %d", len(got), 10)
+					}
 					for i := 1; i < len(got)-1; i++ {
 						firstName, secondName := *got[i].Name, *got[i+1].Name
 						if firstName > secondName {
@@ -446,7 +448,9 @@ func TestUserRepsository_find(t *testing.T) {
 					if err != nil {
 						t.Errorf("UserRepository.find() error = %v", err)
 					}
-					CheckSliceLength(t, got, 3)
+					if len(got) != 3 {
+						t.Errorf("UserRepository.find() got = %d, want %d", len(got), 3)
+					}
 					CheckUserOrderByName(t, got)
 				},
 			},
@@ -470,7 +474,9 @@ func TestUserRepsository_find(t *testing.T) {
 					if err != nil {
 						t.Errorf("UserRepository.find() error = %v", err)
 					}
-					CheckSliceLength(t, got, 3)
+					if len(got) != 3 {
+						t.Errorf("UserRepository.find() got = %d, want %d", len(got), 3)
+					}
 					CheckUserOrderByName(t, got)
 				},
 			},
@@ -493,7 +499,9 @@ func TestUserRepsository_find(t *testing.T) {
 					if err != nil {
 						t.Errorf("UserRepository.find() error = %v", err)
 					}
-					CheckSliceLength(t, got, 3)
+					if len(got) != 3 {
+						t.Errorf("UserRepository.find() got = %d, want %d", len(got), 3)
+					}
 					CheckUserOrderByName(t, got)
 				},
 			},
@@ -516,7 +524,9 @@ func TestUserRepsository_find(t *testing.T) {
 					if err != nil {
 						t.Errorf("UserRepository.find() error = %v", err)
 					}
-					CheckSliceLength(t, got, 1)
+					if len(got) != 1 {
+						t.Errorf("UserRepository.find() got = %d, want %d", len(got), 1)
+					}
 					if got[0].Name == nil || *got[0].Name != "Zeta User" {
 						t.Errorf("UserRepository.find() got = %s, want %s", *got[0].Name, "Zeta User")
 					}
@@ -542,7 +552,9 @@ func TestUserRepsository_find(t *testing.T) {
 					if err != nil {
 						t.Errorf("UserRepository.find() error = %v", err)
 					}
-					CheckSliceLength(t, got, 3)
+					if len(got) != 3 {
+						t.Errorf("UserRepository.find() got = %d, want %d", len(got), 3)
+					}
 					CheckUserOrderByName(t, got)
 				},
 			},
@@ -566,7 +578,9 @@ func TestUserRepsository_find(t *testing.T) {
 					if err != nil {
 						t.Errorf("UserRepository.find() error = %v", err)
 					}
-					CheckSliceLength(t, got, 3)
+					if len(got) != 3 {
+						t.Errorf("UserRepository.find() got = %d, want %d", len(got), 3)
+					}
 					CheckUserOrderByName(t, got)
 				},
 			},
@@ -590,7 +604,9 @@ func TestUserRepsository_find(t *testing.T) {
 					if err != nil {
 						t.Errorf("UserRepository.find() error = %v", err)
 					}
-					CheckSliceLength(t, got, 3)
+					if len(got) != 3 {
+						t.Errorf("UserRepository.find() got = %d, want %d", len(got), 3)
+					}
 					CheckUserOrderByName(t, got)
 				},
 			},

@@ -2,7 +2,6 @@ package core
 
 import (
 	"context"
-	"log/slog"
 
 	"github.com/tkahng/authgo/internal/conf"
 	"github.com/tkahng/authgo/internal/database"
@@ -19,7 +18,7 @@ func NewDecorator(ctx context.Context, cfg conf.EnvConfig, pool database.Dbx) *B
 
 	fs := filesystem.NewMockFileSystem(cfg.StorageConfig)
 
-	l := logger.GetDefaultLogger(slog.LevelInfo)
+	l := logger.GetDefaultLogger()
 	enqueuer := jobs.NewDBEnqueuer(pool)
 	var mail mailer.Mailer = &mailer.LogMailer{}
 	authMailService := services.NewMailService(mail)
