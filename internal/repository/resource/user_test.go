@@ -1,13 +1,18 @@
 package resource
 
 import (
+	"context"
+	"errors"
 	"fmt"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
+	"github.com/tkahng/authgo/internal/test"
 	"github.com/tkahng/authgo/internal/tools/types"
 )
 
@@ -153,7 +158,16 @@ func TestNewUserRepositoryResource_FilterFunc(t *testing.T) {
 		where := filterFunc(filter)
 		assert.Nil(t, where)
 	})
-
+	t.Run("Email verified at nil", func(t *testing.T) {
+		filter := &UserListFilter{
+			EmailVerified: types.OptionalParam[bool]{IsSet: true, Value: false},
+		}
+		where := filterFunc(filter)
+		assert.NotNil(t, where)
+		assert.Equal(t, map[string]any{
+			"email_verified_at": map[string]any{"_eq": nil},
+		}, *where)
+	})
 }
 
 func TestNewUserRepositoryResource_SortFunc(t *testing.T) {
@@ -225,4 +239,382 @@ func TestNewUserRepositoryResource_PaginationFunc(t *testing.T) {
 		assert.Equal(t, 15, limit)
 		assert.Equal(t, 45, offset)
 	})
+}
+
+func TestUserRepository_create(t *testing.T) {
+	test.DbSetup()
+	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
+		userResource := NewUserRepositoryResource(db)
+		user, err := userResource.Create(ctx, &models.User{
+			Name:  types.Pointer("Test User"),
+			Email: "duplicate@email.com",
+		})
+		if err != nil || user == nil {
+			t.Fatalf("Failed to create user: %v", err)
+		}
+		type args struct {
+			ctx   context.Context
+			model *models.User
+		}
+		tests := []struct {
+			name    string
+			args    args
+			want    *models.User
+			wantErr bool
+			err     error
+		}{
+			{
+				name: "successfully create user email ",
+				args: args{
+					ctx: ctx,
+					model: &models.User{
+						Name:  types.Pointer("Test User"),
+						Email: "test@example.com",
+					},
+				},
+				want: &models.User{
+					Name:  types.Pointer("Test User"),
+					Email: "test@example.com",
+				},
+			},
+			{
+				name: "successfully create user with email and image",
+				args: args{
+					ctx: ctx,
+					model: &models.User{
+						Name:  types.Pointer("Test User With Image"),
+						Email: "test-with-image@example.com",
+					},
+				},
+				want: &models.User{
+					Name:  types.Pointer("Test User With Image"),
+					Email: "test-with-image@example.com",
+				},
+			},
+			{
+				name: "error creating user with same mail",
+				args: args{
+					ctx: ctx,
+					model: &models.User{
+						Email: "duplicate@email.com",
+					},
+				},
+				wantErr: true,
+				err:     errors.New("duplicate key value violates unique constraint \"users_email_key\" (SQLSTATE 23505)"),
+			},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				got, err := userResource.Create(tt.args.ctx, tt.args.model)
+				if err != nil {
+					if !tt.wantErr {
+						t.Errorf("UserRepository.create() error = %v, wantErr %v", err, tt.wantErr)
+					} else if !strings.Contains(err.Error(), tt.err.Error()) {
+						t.Errorf("UserRepository.create() error = %v, want %v", err, tt.err)
+					}
+				}
+				if got != nil && tt.want != nil {
+					if got.Name == nil && tt.want.Name != nil {
+						t.Errorf("UserRepository.create() got = %v, want %v", got.Name, tt.want.Name)
+					}
+					if got.Name != nil && tt.want.Name != nil && *got.Name != *tt.want.Name {
+						t.Errorf("UserRepository.create() got = %s, want %s", *got.Name, *tt.want.Name)
+					}
+					if got.Email != tt.want.Email {
+						t.Errorf("UserRepository.create() got = %s, want %s", got.Email, tt.want.Email)
+					}
+					if got.EmailVerifiedAt != tt.want.EmailVerifiedAt {
+						t.Errorf("UserRepository.create() got = %v, want %v", got.EmailVerifiedAt, tt.want.EmailVerifiedAt)
+					}
+					if got.Image != tt.want.Image {
+						t.Errorf("UserRepository.create() got = %v, want %v", got.Image, tt.want.Image)
+					}
+				}
+			})
+		}
+	})
+}
+
+func TestUserRepsository_find(t *testing.T) {
+	test.DbSetup()
+	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
+		usersInput := []*models.User{
+			{
+				Name:            types.Pointer("Alpha User"),
+				Email:           "alpha@example.com",
+				EmailVerifiedAt: types.Pointer(time.Now()),
+			},
+			{
+				Name:  types.Pointer("Beta User"),
+				Email: "beta@example.com",
+			},
+			{
+				Name:  types.Pointer("Charlie User"),
+				Email: "charlie@example.com",
+			},
+			{
+				Name:            types.Pointer("Delta User"),
+				Email:           "delta@example.com",
+				EmailVerifiedAt: types.Pointer(time.Now()),
+			},
+			{
+				Name:  types.Pointer("Echo User"),
+				Email: "echo@example.com",
+			},
+			{
+				Name:  types.Pointer("Foxtrot User"),
+				Email: "foxtrot@example.com",
+			},
+			{
+				Name:            types.Pointer("Gamma User"),
+				Email:           "gamma@example.com",
+				EmailVerifiedAt: types.Pointer(time.Now()),
+			},
+			{
+				Name:  types.Pointer("Hotel User"),
+				Email: "hotel@example.com",
+			},
+			{
+				Name:  types.Pointer("Yankee User"),
+				Email: "yankee@example.com",
+			},
+			{
+				Name:  types.Pointer("Zeta User"),
+				Email: "zeta@example.com",
+			},
+		}
+		userResource := NewUserRepositoryResource(db)
+		for _, user := range usersInput {
+			_, err := userResource.Create(ctx, user)
+			if err != nil {
+				t.Fatalf("Failed to create user: %v", err)
+			}
+		}
+		type args struct {
+			ctx    context.Context
+			filter *UserListFilter
+		}
+		tests := []struct {
+			name      string
+			args      args
+			predicate func(t *testing.T, got []*models.User, err error)
+		}{
+			{
+				name: "find all users sorted by name ascending",
+				args: args{
+					ctx: ctx,
+					filter: &UserListFilter{
+						PaginatedInput: PaginatedInput{
+							Page:    0,
+							PerPage: 10,
+						},
+						SortParams: SortParams{
+							SortBy:    "name",
+							SortOrder: "asc",
+						},
+					},
+				},
+				predicate: func(t *testing.T, got []*models.User, err error) {
+					if err != nil {
+						t.Errorf("UserRepository.find() error = %v", err)
+					}
+					CheckSliceLength(t, got, 10)
+					for i := 1; i < len(got)-1; i++ {
+						firstName, secondName := *got[i].Name, *got[i+1].Name
+						if firstName > secondName {
+							t.Errorf("users are not in order. first name %s > second name %s", firstName, secondName)
+						}
+					}
+				},
+			},
+			{
+				name: "find all users sorted by name ascending, 3 per page, page 0",
+				args: args{
+					ctx: ctx,
+					filter: &UserListFilter{
+						PaginatedInput: PaginatedInput{
+							Page:    0,
+							PerPage: 3,
+						},
+						SortParams: SortParams{
+							SortBy:    "name",
+							SortOrder: "asc",
+						},
+					},
+				},
+				predicate: func(t *testing.T, got []*models.User, err error) {
+					if err != nil {
+						t.Errorf("UserRepository.find() error = %v", err)
+					}
+					CheckSliceLength(t, got, 3)
+					CheckUserOrderByName(t, got)
+				},
+			},
+
+			{
+				name: "find all users sorted by name ascending, 3 per page, page 1",
+				args: args{
+					ctx: ctx,
+					filter: &UserListFilter{
+						PaginatedInput: PaginatedInput{
+							Page:    1,
+							PerPage: 3,
+						},
+						SortParams: SortParams{
+							SortBy:    "name",
+							SortOrder: "asc",
+						},
+					},
+				},
+				predicate: func(t *testing.T, got []*models.User, err error) {
+					if err != nil {
+						t.Errorf("UserRepository.find() error = %v", err)
+					}
+					CheckSliceLength(t, got, 3)
+					CheckUserOrderByName(t, got)
+				},
+			},
+			{
+				name: "find all users sorted by name ascending, 3 per page, page 2",
+				args: args{
+					ctx: ctx,
+					filter: &UserListFilter{
+						PaginatedInput: PaginatedInput{
+							Page:    2,
+							PerPage: 3,
+						},
+						SortParams: SortParams{
+							SortBy:    "name",
+							SortOrder: "asc",
+						},
+					},
+				},
+				predicate: func(t *testing.T, got []*models.User, err error) {
+					if err != nil {
+						t.Errorf("UserRepository.find() error = %v", err)
+					}
+					CheckSliceLength(t, got, 3)
+					CheckUserOrderByName(t, got)
+				},
+			},
+			{
+				name: "find all users sorted by name ascending, 3 per page, page 3",
+				args: args{
+					ctx: ctx,
+					filter: &UserListFilter{
+						PaginatedInput: PaginatedInput{
+							Page:    3,
+							PerPage: 3,
+						},
+						SortParams: SortParams{
+							SortBy:    "name",
+							SortOrder: "asc",
+						},
+					},
+				},
+				predicate: func(t *testing.T, got []*models.User, err error) {
+					if err != nil {
+						t.Errorf("UserRepository.find() error = %v", err)
+					}
+					CheckSliceLength(t, got, 1)
+					if got[0].Name == nil || *got[0].Name != "Zeta User" {
+						t.Errorf("UserRepository.find() got = %s, want %s", *got[0].Name, "Zeta User")
+					}
+				},
+			},
+			{
+				name: "find all users with 'ta' in name. sorted by name ascending, 10 per page, page 0",
+				args: args{
+					ctx: ctx,
+					filter: &UserListFilter{
+						PaginatedInput: PaginatedInput{
+							Page:    0,
+							PerPage: 10,
+						},
+						SortParams: SortParams{
+							SortBy:    "name",
+							SortOrder: "asc",
+						},
+						Q: "ta",
+					},
+				},
+				predicate: func(t *testing.T, got []*models.User, err error) {
+					if err != nil {
+						t.Errorf("UserRepository.find() error = %v", err)
+					}
+					CheckSliceLength(t, got, 3)
+					CheckUserOrderByName(t, got)
+				},
+			},
+			{
+				name: "find all users that are verified. sorted by name ascending, 10 per page, page 0",
+				args: args{
+					ctx: ctx,
+					filter: &UserListFilter{
+						PaginatedInput: PaginatedInput{
+							Page:    0,
+							PerPage: 10,
+						},
+						SortParams: SortParams{
+							SortBy:    "name",
+							SortOrder: "asc",
+						},
+						EmailVerified: types.OptionalParam[bool]{IsSet: true, Value: true},
+					},
+				},
+				predicate: func(t *testing.T, got []*models.User, err error) {
+					if err != nil {
+						t.Errorf("UserRepository.find() error = %v", err)
+					}
+					CheckSliceLength(t, got, 3)
+					CheckUserOrderByName(t, got)
+				},
+			},
+			{
+				name: "find all users that are verified. sorted by name ascending, 10 per page, page 0",
+				args: args{
+					ctx: ctx,
+					filter: &UserListFilter{
+						PaginatedInput: PaginatedInput{
+							Page:    0,
+							PerPage: 10,
+						},
+						SortParams: SortParams{
+							SortBy:    "name",
+							SortOrder: "asc",
+						},
+						EmailVerified: types.OptionalParam[bool]{IsSet: true, Value: true},
+					},
+				},
+				predicate: func(t *testing.T, got []*models.User, err error) {
+					if err != nil {
+						t.Errorf("UserRepository.find() error = %v", err)
+					}
+					CheckSliceLength(t, got, 3)
+					CheckUserOrderByName(t, got)
+				},
+			},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				got, err := userResource.Find(tt.args.ctx, tt.args.filter)
+				tt.predicate(t, got, err)
+			})
+		}
+	})
+}
+
+func CheckSliceLength(t *testing.T, got []*models.User, expected int) {
+	if len(got) != expected {
+		t.Errorf("UserRepository.find() got = %d, want %d", len(got), expected)
+	}
+}
+
+func CheckUserOrderByName(t *testing.T, got []*models.User) {
+	for i := 1; i < len(got)-1; i++ {
+		firstName, secondName := *got[i].Name, *got[i+1].Name
+		if firstName > secondName {
+			t.Errorf("users are not in order. first name %s > second name %s", firstName, secondName)
+		}
+	}
 }

@@ -36,12 +36,12 @@ func NewUserRepositoryResource(
 			if filter.EmailVerified.IsSet {
 				emailverified := filter.EmailVerified.Value
 				if emailverified {
-					where["email_verified_at"] = map[string]any{
-						"_neq": nil,
+					where[models.UserTable.EmailVerifiedAt] = map[string]any{
+						repo.IsNotNull: nil,
 					}
 				} else {
-					where["email_verified_at"] = map[string]any{
-						"_eq": nil,
+					where[models.UserTable.EmailVerifiedAt] = map[string]any{
+						repo.IsNull: nil,
 					}
 				}
 			}

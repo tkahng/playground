@@ -125,7 +125,14 @@ const (
 	In = "_in"
 	// Nin is the NOT IN operator
 	Nin = "_nin"
+	// IsNot is the IS NOT operator
+	IsNull    = "_isnull"
+	IsNotNull = "_isnotnull"
 )
+
+var nilOps = []string{
+	"_isnull", "_isnotnull",
+}
 
 func NewSQLBuilder[Model any](opts ...SQLBuilderOptions[Model]) *SQLBuilder[Model] {
 	operations := map[string]func(string, ...string) string{
@@ -145,6 +152,8 @@ func NewSQLBuilder[Model any](opts ...SQLBuilderOptions[Model]) *SQLBuilder[Mode
 		Nin: func(key string, values ...string) string {
 			return fmt.Sprintf("%s NOT IN (%s)", key, strings.Join(values, ","))
 		},
+		IsNull:    func(key string, values ...string) string { return fmt.Sprintf("%s IS NULL", key) },
+		IsNotNull: func(key string, values ...string) string { return fmt.Sprintf("%s IS NOT NULL", key) },
 	}
 	identifier := func(name string) string {
 		return fmt.Sprintf("\"%s\"", name)
@@ -419,10 +428,10 @@ func (b *SQLBuilder[Model]) Set(set *Model, args *[]any, where *map[string]any) 
 				default:
 					if u, ok := _field.Interface().(uuid.UUID); ok {
 						(*where)[field.Name] = map[string]any{"_eq": u.String()}
-					} else if it, ok := _value.Interface().(time.Time); ok {
+					} else if it, ok := _field.Interface().(time.Time); ok {
 						_newValue := reflect.ValueOf(it.Format(time.RFC3339Nano))
 						(*where)[field.Name] = map[string]any{"_eq": _newValue.String()}
-					} else if it, ok := _value.Interface().(fmt.Stringer); ok {
+					} else if it, ok := _field.Interface().(fmt.Stringer); ok {
 						_newValue := reflect.ValueOf(it.String())
 						if _newValue.Kind() == reflect.String {
 							// If the value implements fmt.Stringer, use its String method
@@ -523,15 +532,33 @@ func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any, run func(s
 		for op, value := range item.(map[string]any) {
 			if handler, ok := b.operations[key+op]; ok {
 				// Primitive field condition detected
-				_value := reflect.ValueOf(value)
+				// slog.Info("Processing primitive field condition", slog.String("key", key), slog.String("operation", op), slog.Any("value", value))
+				if value == nil {
+					// slog.Warn("Nil value detected for key", slog.String("key", key), slog.String("operation", op))
 
+					if slices.Contains(nilOps, op) {
+						// slog.Info("Nil operation detected, adding to result", slog.String("key", key))
+						// If the value is nil and the operation is a nil operation, send it
+						result = append(result, handler(b.identifier(key)))
+					}
+					continue // Skip nil values for non-nil operations
+				}
+
+				_value := reflect.ValueOf(value)
+				if _value.IsValid() {
+					continue
+				}
+				if _value.Kind() == reflect.Pointer && !_value.IsNil() {
+					// If the value is a pointer, dereference it
+					_value = _value.Elem()
+				}
 				if _value.Kind() == reflect.String {
 					// String values are passed to operation handler as single parameter
 					result = append(result, handler(b.identifier(key), b.parameter(_value, args)))
-				} else if it, ok := _value.Interface().(time.Time); ok {
+				} else if it, ok := value.(time.Time); ok {
 					_newValue := reflect.ValueOf(it.Format(time.RFC3339Nano))
 					result = append(result, handler(b.identifier(key), b.parameter(_newValue, args)))
-				} else if it, ok := _value.Interface().(fmt.Stringer); ok {
+				} else if it, ok := value.(fmt.Stringer); ok {
 					_newValue := reflect.ValueOf(it.String())
 					if _newValue.Kind() == reflect.String {
 						// If the value implements fmt.Stringer, use its String method
