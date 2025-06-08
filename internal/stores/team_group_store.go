@@ -14,6 +14,7 @@ import (
 	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
+	"github.com/tkahng/authgo/internal/tools/utils"
 )
 
 type DbTeamGroupStore struct {
@@ -268,10 +269,11 @@ func listTeamsFilter(qs squirrel.SelectBuilder, params *shared.ListTeamsParams) 
 }
 
 func listTeamsOrderBy(qs squirrel.SelectBuilder, params *shared.ListTeamsParams) squirrel.SelectBuilder {
+	fmt.Println("sortby", params.SortBy, "sortorder", params.SortOrder)
 	if params.SortParams.SortBy != "" && params.SortParams.SortOrder != "" {
 		if params.SortParams.SortBy == "team_members.last_selected_at" {
 			qs = qs.OrderBy("team_members.last_selected_at " + strings.ToUpper(params.SortParams.SortOrder))
-		} else if slices.Contains(repository.TeamBuilder.ColumnNames(), params.SortParams.SortBy) {
+		} else if slices.Contains(repository.TeamBuilder.ColumnNames(), utils.Quote(params.SortParams.SortBy)) {
 			qs = qs.OrderBy(params.SortParams.SortBy + " " + strings.ToUpper(params.SortParams.SortOrder))
 		}
 	} else {

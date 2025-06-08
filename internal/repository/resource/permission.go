@@ -5,6 +5,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
+	"github.com/tkahng/authgo/internal/repository"
 )
 
 type PermissionsListFilter struct {
@@ -22,6 +23,7 @@ func NewPermissionQueryResource(
 ) *QueryResource[models.Permission, uuid.UUID, PermissionsListFilter] {
 	return NewQueryResource[models.Permission, uuid.UUID](
 		db,
+		repository.PermissionBuilder,
 		func(qs sq.SelectBuilder, filter *PermissionsListFilter) sq.SelectBuilder {
 			if filter == nil {
 				return qs

@@ -25,20 +25,20 @@ func TestNewSQLBuilder(t *testing.T) {
 			args: args{opts: []SQLBuilderOptions[models.User]{
 				UuidV7Generator[models.User],
 			}},
-			want: buidlerWants{skipIdGeneration: true, generator: true}, // expected result here
+			want: buidlerWants{skipIdGeneration: false, generator: true}, // expected result here
 		},
 		{
 			name: "Test case 2",
 			args: args{opts: []SQLBuilderOptions[models.User]{}},
-			want: buidlerWants{skipIdGeneration: true, generator: false}, // expected result here
+			want: buidlerWants{skipIdGeneration: false, generator: false}, // expected result here
 		},
 		// TODO: Add more test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := NewSQLBuilder(tt.args.opts...)
-			if got.skipIdInsert != tt.want.skipIdGeneration {
-				t.Errorf("NewSQLBuilder() skipIdGeneration = %v, want %v", got.skipIdInsert, tt.want.skipIdGeneration)
+			if got.insertID != tt.want.skipIdGeneration {
+				t.Errorf("NewSQLBuilder() skipIdGeneration = %v, want %v", got.insertID, tt.want.skipIdGeneration)
 			}
 			if tt.want.generator {
 				if got.generator == nil {

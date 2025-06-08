@@ -18,13 +18,13 @@ var (
 		UuidV7Generator,
 	)
 	UserRoleBuilder = NewSQLBuilder[models.UserRole](
-		SkipIdInsert,
+		InsertID,
 	)
 	UserPermissionBuilder = NewSQLBuilder[models.UserPermission](
-		SkipIdInsert,
+		InsertID,
 	)
 	RolePermissionBuilder = NewSQLBuilder[models.RolePermission](
-		SkipIdInsert,
+		InsertID,
 	)
 	TokenBuilder = NewSQLBuilder[models.Token](
 		UuidV7Generator,
@@ -36,22 +36,22 @@ var (
 		UuidV7Generator,
 	)
 	ProductPermissionBuilder = NewSQLBuilder[models.ProductPermission](
-		SkipIdInsert,
+		InsertID,
 	)
 	ProductRoleBuilder = NewSQLBuilder[models.ProductRole](
-		SkipIdInsert,
+		InsertID,
 	)
 	StripeProductBuilder = NewSQLBuilder[models.StripeProduct](
-		SkipIdInsert,
+		InsertID,
 	)
 	StripePriceBuilder = NewSQLBuilder[models.StripePrice](
-		SkipIdInsert,
+		InsertID,
 	)
 	StripeCustomerBuilder = NewSQLBuilder[models.StripeCustomer](
-		SkipIdInsert,
+		InsertID,
 	)
 	StripeSubscriptionBuilder = NewSQLBuilder[models.StripeSubscription](
-		SkipIdInsert,
+		InsertID,
 	)
 	MediaBuilder = NewSQLBuilder[models.Medium](
 		UuidV7Generator,

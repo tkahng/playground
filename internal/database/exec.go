@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/stephenafamo/scan"
 	"github.com/stephenafamo/scan/pgxscan"
@@ -13,7 +14,7 @@ type QueryBuilder interface {
 
 func QueryWithBuilder[T any](ctx context.Context, db Dbx, query QueryBuilder) ([]T, error) {
 	sql, args, err := query.ToSql()
-	// fmt.Println("query", sql, "args", args)
+	fmt.Println("query", sql, "args", args)
 	if err != nil {
 		return nil, err
 	}

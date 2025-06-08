@@ -15,7 +15,11 @@ var _ services.PaymentStripeStore = (*DbStripeStore)(nil)
 
 func NewDbStripeStore(db database.Dbx) *DbStripeStore {
 	return &DbStripeStore{
-		db: db,
+		db:                  db,
+		DbCustomerStore:     NewDbCustomerStore(db),
+		DbProductStore:      NewDbProductStore(db),
+		DbSubscriptionStore: NewDbSubscriptionStore(db),
+		DbPriceStore:        NewDbPriceStore(db),
 	}
 }
 
@@ -29,8 +33,11 @@ type DbStripeStore struct {
 
 func (s *DbStripeStore) WithTx(tx database.Dbx) *DbStripeStore {
 	return &DbStripeStore{
-		db:              tx,
-		DbCustomerStore: s.DbCustomerStore.WithTx(tx),
+		db:                  tx,
+		DbCustomerStore:     s.DbCustomerStore.WithTx(tx),
+		DbProductStore:      s.DbProductStore.WithTx(tx),
+		DbSubscriptionStore: s.DbSubscriptionStore.WithTx(tx),
+		DbPriceStore:        s.DbPriceStore.WithTx(tx),
 	}
 }
 

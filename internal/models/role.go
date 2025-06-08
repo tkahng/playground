@@ -50,6 +50,7 @@ type Permission struct {
 }
 
 type permissionTable struct {
+	Columns     []string
 	ID          string
 	Name        string
 	Description string
@@ -61,6 +62,13 @@ type permissionTable struct {
 }
 
 var PermissionTable = permissionTable{
+	Columns: []string{
+		"id",
+		"name",
+		"description",
+		"created_at",
+		"updated_at",
+	},
 	ID:          "id",
 	Name:        "name",
 	Description: "description",

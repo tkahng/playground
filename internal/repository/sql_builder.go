@@ -39,16 +39,16 @@ type SQLBuilder[Model any] struct {
 	identifier   func(string) string
 	parameter    func(reflect.Value, *[]any) string
 	generator    func(reflect.StructField, *[]any) (string, error)
-	skipIdInsert bool // Skip inserting the primary key field if it is generated
+	insertID     bool // If true, the id value read from the model will be insert into the database. default false
 }
 
 // IdColumnName implements SQLBuilderInterface.
 func (b *SQLBuilder[Model]) IdColumnName() string {
 	return b.idColumnName
 }
-func (b *SQLBuilder[Model]) SkipIdInsert() bool {
+func (b *SQLBuilder[Model]) InsertID() bool {
 	// Returns whether to skip inserting the primary key field
-	return b.skipIdInsert
+	return b.insertID
 }
 func (b *SQLBuilder[Model]) Generator() func(reflect.StructField, *[]any) (string, error) {
 	// Returns the generator function for the primary key field
@@ -68,7 +68,7 @@ type SQLBuilderInterface interface {
 	FieldString(prefix string) string
 	Where(where *map[string]any, args *[]any, run func(string) []string) string
 	IdColumnName() string
-	SkipIdInsert() bool
+	InsertID() bool
 	Generator() func(reflect.StructField, *[]any) (string, error)
 }
 
@@ -91,11 +91,11 @@ func UuidV7Generator[Model any](builder *SQLBuilder[Model]) error {
 	return nil
 }
 
-func SkipIdInsert[Model any](builder *SQLBuilder[Model]) error {
+func InsertID[Model any](builder *SQLBuilder[Model]) error {
 	if builder == nil {
 		return errors.New("SQLBuilder cannot be nil")
 	}
-	builder.skipIdInsert = true
+	builder.insertID = true
 	return nil
 }
 
@@ -236,7 +236,7 @@ func NewSQLBuilder[Model any](opts ...SQLBuilderOptions[Model]) *SQLBuilder[Mode
 		identifier:   identifier,
 		parameter:    parameter,
 		generator:    nil,
-		skipIdInsert: true,
+		insertID:     false,
 	}
 	for _, opt := range opts {
 		if err := opt(result); err != nil {
@@ -317,16 +317,17 @@ func (b *SQLBuilder[Model]) Values(values *[]Model, args *[]any, keys *[]any) (f
 	for idx, field := range b.fields {
 		if idx == 0 {
 			// The first field is the primary key
-			if b.generator != nil {
-				// If a generator function is provided, primary key will be generated
-				fieldsArray = append(fieldsArray, b.identifier(field.Name))
-			}
-			if b.skipIdInsert {
-				// If skipIdInsert is true, skip inserting the primary key field
-				continue
+
+			if b.insertID {
+				if b.generator != nil {
+					// If a generator function is provided, primary key will be generated
+					fieldsArray = append(fieldsArray, b.identifier(field.Name))
+				} else {
+					// If skipIdInsert is true, skip inserting the primary key field
+					fieldsArray = append(fieldsArray, b.identifier(field.Name))
+				}
 			}
 			// Otherwise, add the primary key field to the VALUES clause
-			fieldsArray = append(fieldsArray, b.identifier(field.Name))
 		} else {
 			if slices.Contains(timestampNames, field.Name) {
 				continue // Skip timestamp fields
@@ -347,19 +348,19 @@ func (b *SQLBuilder[Model]) Values(values *[]Model, args *[]any, keys *[]any) (f
 		for idx, field := range b.fields {
 			if idx == 0 {
 				// The first field is the primary key
-				if b.generator != nil {
-					// If a generator function is provided, use it to generate the key
-					id, err := b.generator(_type.Field(field.Idx), keys)
-					if err != nil {
-						return "", "", fmt.Errorf("error generating primary key for field %s: %w", field.Name, err)
+
+				if b.insertID {
+					if b.generator != nil {
+						// If a generator function is provided, use it to generate the key
+						id, err := b.generator(_type.Field(field.Idx), keys)
+						if err != nil {
+							return "", "", fmt.Errorf("error generating primary key for field %s: %w", field.Name, err)
+						}
+						items = append(items, b.parameter(reflect.ValueOf(id), args))
+					} else {
+						items = append(items, b.parameter(_value.Field(field.Idx), args))
 					}
-					items = append(items, b.parameter(reflect.ValueOf(id), args))
 				}
-				if b.skipIdInsert {
-					// If skipIdInsert is true, skip inserting the primary key field
-					continue
-				}
-				items = append(items, b.parameter(_value.Field(field.Idx), args))
 			} else {
 				if slices.Contains(timestampNames, field.Name) {
 					continue // Skip timestamp fields
@@ -512,12 +513,14 @@ func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any, run func(s
 
 		return "(" + strings.Join(result, " AND ") + ")"
 	} else if ors, ok := (*where)["_or"]; ok {
+		slog.Info("Processing OR condition", slog.Any("ors", ors))
 		result := []string{}
 
 		orWheres, ok := ors.([]map[string]any)
 		if ok {
 			for _, item := range orWheres {
 				expr := item
+				slog.Info("Processing OR item", slog.Any("item", item))
 				result = append(result, b.Where(&expr, args, run))
 			}
 		}
@@ -528,8 +531,9 @@ func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any, run func(s
 	// Otherwise, construct the WHERE clause based on the field names and operations
 	result := []string{}
 	for key, item := range *where {
-		// fmt.Println(key, item)
+		fmt.Println("key", key, "item", item)
 		for op, value := range item.(map[string]any) {
+			fmt.Println("operation", op, "value", value)
 			if handler, ok := b.operations[key+op]; ok {
 				// Primitive field condition detected
 				// slog.Info("Processing primitive field condition", slog.String("key", key), slog.String("operation", op), slog.Any("value", value))
@@ -545,7 +549,8 @@ func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any, run func(s
 				}
 
 				_value := reflect.ValueOf(value)
-				if _value.IsValid() {
+				if !_value.IsValid() {
+					slog.Info("value is invalid")
 					continue
 				}
 				if _value.Kind() == reflect.Pointer && !_value.IsNil() {

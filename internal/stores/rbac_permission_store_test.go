@@ -301,7 +301,7 @@ func TestDeleteRolePermissions(t *testing.T) {
 		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				err := rbacStore.DeleteRolePermissions(tt.args.ctx, tt.args.id)
+				err := rbacStore.DeleteRolePermissions(tt.args.ctx, tt.args.id, permission.ID)
 				if (err != nil) != tt.wantErr {
 					t.Errorf("DeleteRolePermissions() error = %v, wantErr %v", err, tt.wantErr)
 				}
@@ -594,6 +594,9 @@ func TestCreateRolePermissions(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to find or create role: %v", err)
 		}
+		if role == nil {
+			t.Fatalf("role should not be nil")
+		}
 		permission, err := rbacStore.FindOrCreatePermission(ctx, "basic")
 		if err != nil {
 			t.Fatalf("failed to find or create permission: %v", err)
@@ -613,8 +616,7 @@ func TestCreateRolePermissions(t *testing.T) {
 			{
 				name: "create role permission",
 				args: args{
-					ctx: ctx,
-
+					ctx:           ctx,
 					roleId:        role.ID,
 					permissionIds: []uuid.UUID{permission.ID},
 				},
@@ -634,8 +636,8 @@ func TestCreateRolePermissions(t *testing.T) {
 
 func TestEnsureRoleAndPermissions(t *testing.T) {
 	test.Short(t)
-	ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+	test.DbSetup()
+	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		rbacStore := stores.NewDbRBACStore(dbxx)
 		type args struct {
 			ctx             context.Context
@@ -661,8 +663,7 @@ func TestEnsureRoleAndPermissions(t *testing.T) {
 			{
 				name: "ensure role with multiple permissions",
 				args: args{
-					ctx: ctx,
-
+					ctx:             ctx,
 					roleName:        "test_role_2",
 					permissionNames: []string{"perm_1", "perm_2", "perm_3"},
 				},
@@ -676,12 +677,7 @@ func TestEnsureRoleAndPermissions(t *testing.T) {
 				}
 
 				// Verify role was created
-				role, err := repository.Role.GetOne(ctx, tt.args.db,
-					&map[string]any{
-						"name": map[string]any{
-							"_eq": tt.args.roleName,
-						},
-					})
+				role, err := rbacStore.FindRoleByName(tt.args.ctx, tt.args.roleName)
 				if err != nil {
 					t.Errorf("Failed to find created role: %v", err)
 				}
@@ -699,6 +695,5 @@ func TestEnsureRoleAndPermissions(t *testing.T) {
 				}
 			})
 		}
-		return errors.New("rollback")
 	})
 }

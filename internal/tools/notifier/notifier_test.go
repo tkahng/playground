@@ -34,10 +34,7 @@ func TestNotifier(t *testing.T) {
 	n := NewNotifier(l, li)
 	wg.Add(1)
 	go func() {
-		err := n.Run(ctx)
-		if err != nil {
-			return
-		}
+		n.Run(ctx)
 		wg.Done()
 	}()
 	sub := n.Listen("foo")
@@ -46,26 +43,11 @@ func TestNotifier(t *testing.T) {
 	wg.Add(1)
 	go func() {
 		<-sub.EstablishedC()
-		_, err := conn.Exec(ctx, "select pg_notify('foo', '1')")
-		if err != nil {
-			return
-		}
-		_, err = conn.Exec(ctx, "select pg_notify('foo', '2')")
-		if err != nil {
-			return
-		}
-		_, err = conn.Exec(ctx, "select pg_notify('foo', '3')")
-		if err != nil {
-			return
-		}
-		_, err = conn.Exec(ctx, "select pg_notify('foo', '4')")
-		if err != nil {
-			return
-		}
-		_, err = conn.Exec(ctx, "select pg_notify('foo', '5')")
-		if err != nil {
-			return
-		}
+		conn.Exec(ctx, "select pg_notify('foo', '1')")
+		conn.Exec(ctx, "select pg_notify('foo', '2')")
+		conn.Exec(ctx, "select pg_notify('foo', '3')")
+		conn.Exec(ctx, "select pg_notify('foo', '4')")
+		conn.Exec(ctx, "select pg_notify('foo', '5')")
 		wg.Done()
 	}()
 	expIs.NoErr(err)
@@ -91,9 +73,6 @@ func TestNotifier(t *testing.T) {
 
 	cancel()
 	sub.Unlisten(ctx) // uses background ctx anyway
-	err = li.Close(ctx)
-	if err != nil {
-		return
-	}
+	li.Close(ctx)
 	wg.Wait()
 }

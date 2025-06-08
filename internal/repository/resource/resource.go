@@ -281,16 +281,18 @@ func (s *QueryResource[Model, Key, Filter]) Create(ctx context.Context, model *M
 	var valuesArray []interface{}
 	for _, field := range s.builder.Fields() {
 		if field.Name == s.builder.IdColumnName() {
-			if s.builder.SkipIdInsert() {
-				continue
-			} else if gen := s.builder.Generator(); gen != nil {
+			if gen := s.builder.Generator(); gen != nil {
 				id, err := gen(_type.Field(field.Idx), nil)
 				if err != nil {
 					return nil, fmt.Errorf("error generating primary key for field %s: %w", field.Name, err)
 				}
 				fieldsArray = append(fieldsArray, s.builder.Identifier(field.Name))
 				valuesArray = append(valuesArray, id)
-			} else if _field := _value.Field(field.Idx); !_field.IsValid() || _field.IsZero() {
+			}
+			if s.builder.InsertID() {
+				continue
+			}
+			if _field := _value.Field(field.Idx); !_field.IsValid() || _field.IsZero() {
 				continue
 			} else {
 				fieldsArray = append(fieldsArray, s.builder.Identifier(field.Name))
@@ -412,12 +414,14 @@ func (s *QueryResource[Model, Key, Filter]) WithTx(tx database.Dbx) Resource[Mod
 
 func NewQueryResource[Model any, Key comparable, Filter any](
 	db database.Dbx,
+	builder *repository.SQLBuilder[Model],
 	filterFn func(qs squirrel.SelectBuilder, filter *Filter) squirrel.SelectBuilder,
 	sortFn func(qs squirrel.SelectBuilder, filter *Filter) squirrel.SelectBuilder,
 	paginationFn func(qs squirrel.SelectBuilder, filter *Filter) squirrel.SelectBuilder,
 ) *QueryResource[Model, Key, Filter] {
 	return &QueryResource[Model, Key, Filter]{
 		db:           db,
+		builder:      builder,
 		filterFn:     filterFn,
 		sortFn:       sortFn,
 		paginationFn: paginationFn,

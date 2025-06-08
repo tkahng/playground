@@ -36,7 +36,7 @@ func TestNewUserRepositoryResource_FilterFunc(t *testing.T) {
 		where := filterFunc(filter)
 		assert.NotNil(t, where)
 		assert.Equal(t, map[string]any{
-			"email_verified_at": map[string]any{"_neq": nil},
+			"email_verified_at": map[string]any{"_isnotnull": nil},
 		}, *where)
 	})
 
@@ -47,7 +47,7 @@ func TestNewUserRepositoryResource_FilterFunc(t *testing.T) {
 		where := filterFunc(filter)
 		assert.NotNil(t, where)
 		assert.Equal(t, map[string]any{
-			"email_verified_at": map[string]any{"_eq": nil},
+			"email_verified_at": map[string]any{"_isnull": nil},
 		}, *where)
 	})
 
@@ -149,7 +149,7 @@ func TestNewUserRepositoryResource_FilterFunc(t *testing.T) {
 		assert.Equal(t, map[string]any{
 			"email":             map[string]any{"_in": []string{"a@example.com"}},
 			"roles":             map[string]any{"id": map[string]any{"_in": []uuid.UUID{role}}},
-			"email_verified_at": map[string]any{"_neq": nil},
+			"email_verified_at": map[string]any{"_isnotnull": nil},
 		}, *where)
 	})
 
@@ -165,7 +165,7 @@ func TestNewUserRepositoryResource_FilterFunc(t *testing.T) {
 		where := filterFunc(filter)
 		assert.NotNil(t, where)
 		assert.Equal(t, map[string]any{
-			"email_verified_at": map[string]any{"_eq": nil},
+			"email_verified_at": map[string]any{"_isnull": nil},
 		}, *where)
 	})
 }

@@ -16,9 +16,9 @@ func TestCreateProductPermissions(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
-		// rbacStore := stores.NewPostgresRBACStore(dbxx)
+		rbacStore := stores.NewDbRBACStore(dbxx)
 		paymentStore := stores.NewDbPaymentStore(dbxx)
-		permission, err := paymentStore.FindOrCreatePermission(ctx, "basic")
+		permission, err := rbacStore.FindOrCreatePermission(ctx, "basic")
 		if err != nil {
 			t.Fatalf("failed to find or create permission: %v", err)
 		}
