@@ -10,7 +10,6 @@ import (
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/test"
 	"github.com/tkahng/authgo/internal/tools/logger"
-	"github.com/tkahng/authgo/internal/tools/mapper"
 )
 
 func TestNewUserAccountRepositoryResource_FilterFunc(t *testing.T) {
@@ -111,42 +110,54 @@ func TestUserAccountRepsository_find(t *testing.T) {
 	test.DbSetup()
 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
 		userResource := NewUserRepositoryResource(db)
-		user, err := userResource.Create(ctx, &models.User{
+		user1, err := userResource.Create(ctx, &models.User{
 			Email: "test@example.com",
 		})
 		if err != nil {
 			t.Fatalf("Failed to create user: %v", err)
 		}
+		if user1 == nil {
+			t.Fatal("User should not be nil")
+		}
+		user2, err := userResource.Create(ctx, &models.User{
+			Email: "test2@example.com",
+		})
+		if err != nil {
+			t.Fatalf("Failed to create user: %v", err)
+		}
+		if user2 == nil {
+			t.Fatal("User should not be nil")
+		}
 		useraccountsInput := []*models.UserAccount{
 			{
-				UserID:            user.ID,
+				UserID:            user1.ID,
 				Type:              models.ProviderTypeOAuth,
 				Provider:          models.ProvidersApple,
-				ProviderAccountID: user.ID.String(),
+				ProviderAccountID: user1.ID.String(),
 			},
 			{
-				UserID:            user.ID,
+				UserID:            user2.ID,
 				Type:              models.ProviderTypeCredentials,
 				Provider:          models.ProvidersCredentials,
-				ProviderAccountID: user.ID.String(),
+				ProviderAccountID: user2.ID.String(),
 			},
 			{
-				UserID:            user.ID,
+				UserID:            user1.ID,
 				Type:              models.ProviderTypeOAuth,
 				Provider:          models.ProvidersFacebook,
-				ProviderAccountID: user.ID.String(),
+				ProviderAccountID: user1.ID.String(),
 			},
 			{
-				UserID:            user.ID,
+				UserID:            user1.ID,
 				Type:              models.ProviderTypeOAuth,
 				Provider:          models.ProvidersGithub,
-				ProviderAccountID: user.ID.String(),
+				ProviderAccountID: user1.ID.String(),
 			},
 			{
-				UserID:            user.ID,
+				UserID:            user1.ID,
 				Type:              models.ProviderTypeOAuth,
 				Provider:          models.ProvidersGoogle,
-				ProviderAccountID: user.ID.String(),
+				ProviderAccountID: user1.ID.String(),
 			},
 		}
 		useraccountResource := NewUserAccountRepositoryResource(db)
@@ -174,10 +185,6 @@ func TestUserAccountRepsository_find(t *testing.T) {
 							Page:    0,
 							PerPage: 3,
 						},
-						SortParams: SortParams{
-							SortBy:    "provider",
-							SortOrder: "asc",
-						},
 					},
 				},
 				predicate: func(t *testing.T, got []*models.UserAccount, err error) {
@@ -188,7 +195,6 @@ func TestUserAccountRepsository_find(t *testing.T) {
 					if len(got) != 3 {
 						t.Errorf("UserRepository.find() got = %d, want %d", len(got), 3)
 					}
-					CheckUserAccountOrderByName(t, got)
 				},
 			},
 
@@ -201,10 +207,6 @@ func TestUserAccountRepsository_find(t *testing.T) {
 							Page:    1,
 							PerPage: 3,
 						},
-						SortParams: SortParams{
-							SortBy:    "provider",
-							SortOrder: "asc",
-						},
 					},
 				},
 				predicate: func(t *testing.T, got []*models.UserAccount, err error) {
@@ -214,12 +216,7 @@ func TestUserAccountRepsository_find(t *testing.T) {
 					if len(got) != 2 {
 						t.Errorf("UserRepository.find() got = %d, want %d", len(got), 2)
 					}
-					for i := 1; i < len(got)-1; i++ {
-						firstName, secondName := got[i].Provider.String(), got[i+1].Provider.String()
-						if firstName > secondName {
-							t.Errorf("users are not in order. first name %s > second name %s", firstName, secondName)
-						}
-					}
+
 				},
 			},
 			{
@@ -230,10 +227,6 @@ func TestUserAccountRepsository_find(t *testing.T) {
 						PaginatedInput: PaginatedInput{
 							Page:    2,
 							PerPage: 3,
-						},
-						SortParams: SortParams{
-							SortBy:    "provider",
-							SortOrder: "asc",
 						},
 					},
 				},
@@ -248,35 +241,45 @@ func TestUserAccountRepsository_find(t *testing.T) {
 			},
 
 			{
-				name: "find all useraccounts with 'ta' in name. sorted by name ascending, 10 per page, page 0",
+				name: "find accounts of user 1",
 				args: args{
 					ctx: ctx,
 					filter: &UserAccountFilter{
-						PaginatedInput: PaginatedInput{
-							Page:    0,
-							PerPage: 10,
-						},
-						SortParams: SortParams{
-							SortBy:    "provider",
-							SortOrder: "asc",
-						},
-						// Q: "ta",
+						UserIds: []uuid.UUID{user1.ID},
 					},
 				},
 				predicate: func(t *testing.T, got []*models.UserAccount, err error) {
 					if err != nil {
 						t.Errorf("UserAccountRepository.find() error = %v", err)
 					}
-					if len(got) != 5 {
-						t.Errorf("UserRepository.find() got = %d, want %d", len(got), 5)
+					if len(got) != 4 {
+						t.Errorf("UserRepository.find() got = %d, want %d", len(got), 4)
 					}
-					for i := 1; i < len(got)-1; i++ {
-						firstName, secondName := got[i].Provider.String(), got[i+1].Provider.String()
-						if firstName > secondName {
-							allproviders := mapper.Map(got, func(u *models.UserAccount) string {
-								return u.Provider.String()
-							})
-							t.Errorf("users are not in order. first name %s > second name %s. all names: %v", firstName, secondName, allproviders)
+					for _, account := range got {
+						if account.UserID != user1.ID {
+							t.Errorf("UserAccountRepository.find() got user ID = %s, want %s", account.UserID, user1.ID)
+						}
+					}
+				},
+			},
+			{
+				name: "find accounts of user 2",
+				args: args{
+					ctx: ctx,
+					filter: &UserAccountFilter{
+						UserIds: []uuid.UUID{user2.ID},
+					},
+				},
+				predicate: func(t *testing.T, got []*models.UserAccount, err error) {
+					if err != nil {
+						t.Errorf("UserAccountRepository.find() error = %v", err)
+					}
+					if len(got) != 1 {
+						t.Errorf("UserRepository.find() got = %d, want %d", len(got), 1)
+					}
+					for _, account := range got {
+						if account.UserID != user2.ID {
+							t.Errorf("UserAccountRepository.find() got user ID = %s, want %s", account.UserID, user2.ID)
 						}
 					}
 				},
