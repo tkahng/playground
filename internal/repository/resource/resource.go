@@ -30,6 +30,8 @@ type Resource[Model any, Key comparable, Filter any] interface {
 	WithTx(tx database.Dbx) Resource[Model, Key, Filter]
 }
 
+var _ Resource[any, any, any] = (*RepositoryResource[any, any, any])(nil)
+
 type RepositoryResource[M any, K comparable, F any] struct {
 	db           database.Dbx
 	repository   *repository.PostgresRepository[M]
@@ -205,19 +207,20 @@ func (p *RepositoryResource[M, K, F]) WithTx(tx database.Dbx) Resource[M, K, F] 
 }
 
 type QueryResource[Model any, Key comparable, Filter any] struct {
-	db           database.Dbx
-	builder      *repository.SQLBuilder[Model]
-	filterFn     func(qs sq.SelectBuilder, filter *Filter) sq.SelectBuilder
-	sortFn       func(qs sq.SelectBuilder, filter *Filter) sq.SelectBuilder
-	paginationFn func(qs sq.SelectBuilder, filter *Filter) sq.SelectBuilder
+	db             database.Dbx
+	builder        *repository.SQLBuilder[Model]
+	selectFilterFn func(qs sq.SelectBuilder, filter *Filter) sq.SelectBuilder
+	deleteFilterFn func(qs sq.SelectBuilder, filter *Filter) sq.SelectBuilder
+	sortFn         func(qs sq.SelectBuilder, filter *Filter) sq.SelectBuilder
+	paginationFn   func(qs sq.SelectBuilder, filter *Filter) sq.SelectBuilder
 }
 
 func (p *QueryResource[M, K, F]) filter(qs sq.SelectBuilder, filter *F) sq.SelectBuilder {
 	if filter == nil {
 		return qs // return the original query if no filter is provided
 	}
-	if p.filterFn != nil {
-		qs = p.filterFn(qs, filter)
+	if p.selectFilterFn != nil {
+		qs = p.selectFilterFn(qs, filter)
 		return qs
 	}
 	return qs
@@ -403,11 +406,11 @@ func (s *QueryResource[Model, Key, Filter]) Update(ctx context.Context, model *M
 // WithTx implements Resource.
 func (s *QueryResource[Model, Key, Filter]) WithTx(tx database.Dbx) Resource[Model, Key, Filter] {
 	return &QueryResource[Model, Key, Filter]{
-		db:           tx,
-		filterFn:     s.filterFn,
-		sortFn:       s.sortFn,
-		paginationFn: s.paginationFn,
-		builder:      s.builder,
+		db:             tx,
+		selectFilterFn: s.selectFilterFn,
+		sortFn:         s.sortFn,
+		paginationFn:   s.paginationFn,
+		builder:        s.builder,
 	}
 }
 
@@ -419,11 +422,11 @@ func NewQueryResource[Model any, Key comparable, Filter any](
 	paginationFn func(qs sq.SelectBuilder, filter *Filter) sq.SelectBuilder,
 ) *QueryResource[Model, Key, Filter] {
 	return &QueryResource[Model, Key, Filter]{
-		db:           db,
-		builder:      builder,
-		filterFn:     filterFn,
-		sortFn:       sortFn,
-		paginationFn: paginationFn,
+		db:             db,
+		builder:        builder,
+		selectFilterFn: filterFn,
+		sortFn:         sortFn,
+		paginationFn:   paginationFn,
 	}
 }
 

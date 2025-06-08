@@ -1,158 +1,117 @@
 package resource
 
-// func TestNewUserAccountRepositoryResource_FilterFunc(t *testing.T) {
-// 	db := &database.Queries{} // Mock or use a real database connection as needed
-// 	repo := NewUserAccountRepositoryResource(db)
+import (
+	"context"
+	"testing"
 
-// 	// get the filter function
-// 	filterFunc := repo.filterFn
+	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
+	"github.com/tkahng/authgo/internal/database"
+	"github.com/tkahng/authgo/internal/models"
+	"github.com/tkahng/authgo/internal/test"
+)
 
-// 	t.Run("nil filter returns empty map", func(t *testing.T) {
-// 		where := filterFunc(nil)
-// 		assert.NotNil(t, where)
-// 		assert.Equal(t, 0, len(*where))
-// 	})
+func TestNewUserAccountRepositoryResource_FilterFunc(t *testing.T) {
+	db := &database.Queries{} // Mock or use a real database connection as needed
+	repo := NewUserAccountRepositoryResource(db)
 
-// 	t.Run("EmailVerified true", func(t *testing.T) {
-// 		filter := &UserAccountFilter{
-// 			EmailVerified: types.OptionalParam[bool]{IsSet: true, Value: true},
-// 		}
-// 		where := filterFunc(filter)
-// 		assert.NotNil(t, where)
-// 		assert.Equal(t, map[string]any{
-// 			"email_verified_at": map[string]any{"_isnotnull": nil},
-// 		}, *where)
-// 	})
+	filterFunc := repo.filter
 
-// 	t.Run("EmailVerified false", func(t *testing.T) {
-// 		filter := &UserAccountFilter{
-// 			EmailVerified: types.OptionalParam[bool]{IsSet: true, Value: false},
-// 		}
-// 		where := filterFunc(filter)
-// 		assert.NotNil(t, where)
-// 		assert.Equal(t, map[string]any{
-// 			"email_verified_at": map[string]any{"_isnull": nil},
-// 		}, *where)
-// 	})
+	t.Run("nil filter returns empty map", func(t *testing.T) {
+		where := filterFunc(nil)
+		assert.NotNil(t, where)
+		assert.Equal(t, 0, len(*where))
+	})
 
-// 	t.Run("EmailVerified false not set", func(t *testing.T) {
-// 		id := uuid.New()
-// 		filter := &UserAccountFilter{
-// 			EmailVerified: types.OptionalParam[bool]{IsSet: false, Value: false},
-// 			Ids: uuid.UUIDs{
-// 				id,
-// 			},
-// 		}
-// 		where := filterFunc(filter)
-// 		assert.NotNil(t, where)
-// 		assert.Equal(t, map[string]any{
-// 			"id": map[string]any{"_in": []uuid.UUID{id}},
-// 		}, *where)
-// 	})
+	t.Run("Providers filter", func(t *testing.T) {
+		filter := &UserAccountFilter{
+			Providers: []models.Providers{"google", "github"},
+		}
+		where := filterFunc(filter)
+		assert.NotNil(t, where)
+		assert.Equal(t, map[string]any{
+			"provider": map[string]any{"_in": []models.Providers{"google", "github"}},
+		}, *where)
+	})
 
-// 	t.Run("Emails filter", func(t *testing.T) {
-// 		filter := &UserAccountFilter{
-// 			Emails: []string{"a@example.com", "b@example.com"},
-// 		}
-// 		where := filterFunc(filter)
-// 		assert.NotNil(t, where)
-// 		assert.Equal(t, map[string]any{
-// 			"email": map[string]any{"_in": []string{"a@example.com", "b@example.com"}},
-// 		}, *where)
-// 	})
+	t.Run("Ids filter", func(t *testing.T) {
+		id1 := uuid.New()
+		id2 := uuid.New()
+		filter := &UserAccountFilter{
+			Ids: []uuid.UUID{id1, id2},
+		}
+		where := filterFunc(filter)
+		assert.NotNil(t, where)
+		assert.Equal(t, map[string]any{
+			"id": map[string]any{"_in": []uuid.UUID{id1, id2}},
+		}, *where)
+	})
 
-// 	t.Run("Ids filter", func(t *testing.T) {
-// 		id1 := uuid.New()
-// 		id2 := uuid.New()
-// 		filter := &UserAccountFilter{
-// 			Ids: []uuid.UUID{id1, id2},
-// 		}
-// 		where := filterFunc(filter)
-// 		assert.NotNil(t, where)
-// 		assert.Equal(t, map[string]any{
-// 			"id": map[string]any{"_in": []uuid.UUID{id1, id2}},
-// 		}, *where)
-// 	})
+	// t.Run("Q filter", func(t *testing.T) {
+	// 	filter := &UserAccountFilter{
+	// 		Q: "test",
+	// 	}
+	// 	where := filterFunc(filter)
+	// 	assert.NotNil(t, where)
+	// 	expected := map[string]any{
+	// 		"_or": []map[string]any{
+	// 			{"email": map[string]any{"_ilike": "%test%"}},
+	// 			{"name": map[string]any{"_ilike": "%test%"}},
+	// 		},
+	// 	}
+	// 	assert.Equal(t, expected, *where)
+	// })
+}
 
-// 	t.Run("Providers filter", func(t *testing.T) {
-// 		filter := &UserAccountFilter{
-// 			Providers: []models.Providers{"google", "github"},
-// 		}
-// 		where := filterFunc(filter)
-// 		assert.NotNil(t, where)
-// 		assert.Equal(t, map[string]any{
-// 			"accounts": map[string]any{
-// 				"provider": map[string]any{
-// 					"_in": []models.Providers{"google", "github"},
-// 				},
-// 			},
-// 		}, *where)
-// 	})
+func TestUserAccountRepositoryResource_Create(t *testing.T) {
+	test.DbSetup()
+	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
+		userResource := NewUserRepositoryResource(db)
+		accountResource := NewUserAccountRepositoryResource(db)
 
-// 	t.Run("RoleIds filter", func(t *testing.T) {
-// 		role1 := uuid.New()
-// 		role2 := uuid.New()
-// 		filter := &UserAccountFilter{
-// 			RoleIds: []uuid.UUID{role1, role2},
-// 		}
-// 		where := filterFunc(filter)
-// 		assert.NotNil(t, where)
-// 		assert.Equal(t, map[string]any{
-// 			"roles": map[string]any{
-// 				"id": map[string]any{
-// 					"_in": []uuid.UUID{role1, role2},
-// 				},
-// 			},
-// 		}, *where)
-// 	})
+		t.Run("Create with valid data", func(t *testing.T) {
 
-// 	t.Run("Q filter", func(t *testing.T) {
-// 		filter := &UserAccountFilter{
-// 			Q: "foo",
-// 		}
-// 		where := filterFunc(filter)
-// 		assert.NotNil(t, where)
-// 		expected := map[string]any{
-// 			"_or": []map[string]any{
-// 				{"email": map[string]any{"_ilike": "%foo%"}},
-// 				{"name": map[string]any{"_ilike": "%foo%"}},
-// 			},
-// 		}
-// 		assert.Equal(t, expected, *where)
-// 	})
+			user, err := userResource.Create(ctx, &models.User{
+				Email: "test@example.com",
+			})
+			userAccount := &models.UserAccount{
+				UserID:            user.ID,
+				Provider:          models.ProvidersCredentials,
+				ProviderAccountID: user.ID.String(),
+				Type:              models.ProviderTypeCredentials,
+			}
+			created, err := accountResource.Create(ctx, userAccount)
+			assert.NoError(t, err)
+			assert.NotNil(t, created)
+			assert.Equal(t, userAccount.Provider, created.Provider)
+			assert.Equal(t, userAccount.ProviderAccountID, created.ProviderAccountID)
+			assert.Equal(t, userAccount.Type, created.Type)
+			assert.Equal(t, user.ID, created.UserID)
+		})
 
-// 	t.Run("Multiple filters combined", func(t *testing.T) {
-// 		role := uuid.New()
-// 		filter := &UserAccountFilter{
-// 			Emails:        []string{"a@example.com"},
-// 			RoleIds:       []uuid.UUID{role},
-// 			EmailVerified: types.OptionalParam[bool]{IsSet: true, Value: true},
-// 		}
-// 		where := filterFunc(filter)
-// 		assert.NotNil(t, where)
-// 		assert.Equal(t, map[string]any{
-// 			"email":             map[string]any{"_in": []string{"a@example.com"}},
-// 			"roles":             map[string]any{"id": map[string]any{"_in": []uuid.UUID{role}}},
-// 			"email_verified_at": map[string]any{"_isnotnull": nil},
-// 		}, *where)
-// 	})
-
-// 	t.Run("Empty filter returns nil", func(t *testing.T) {
-// 		filter := &UserAccountFilter{}
-// 		where := filterFunc(filter)
-// 		assert.Nil(t, where)
-// 	})
-// 	t.Run("Email verified at nil", func(t *testing.T) {
-// 		filter := &UserAccountFilter{
-// 			EmailVerified: types.OptionalParam[bool]{IsSet: true, Value: false},
-// 		}
-// 		where := filterFunc(filter)
-// 		assert.NotNil(t, where)
-// 		assert.Equal(t, map[string]any{
-// 			"email_verified_at": map[string]any{"_isnull": nil},
-// 		}, *where)
-// 	})
-// }
+		t.Run("Create with duplicate provider", func(t *testing.T) {
+			user, err := userResource.Create(ctx, &models.User{
+				Email: "test-duplicate-google@example.com",
+			})
+			if err != nil {
+				t.Fatalf("Failed to create user: %v", err)
+			}
+			userAccount := &models.UserAccount{
+				UserID:            user.ID,
+				Provider:          models.ProvidersGoogle,
+				ProviderAccountID: user.ID.String(),
+				Type:              models.ProviderTypeOAuth,
+			}
+			// userAccount2 := &models.UserAccount{
+			// 	UserID:            user.ID,
+			// 	Provider:          models.ProvidersGoogle,
+			// 	ProviderAccountID: user.ID.String(),
+			// 	Type:              models.ProviderTypeOAuth,
+			// }
+			_, err = accountResource.Create(ctx, userAccount)
+		})
+	})
+}
 
 // func TestNewUserAccountRepositoryResource_SortFunc(t *testing.T) {
 // 	db := &database.Queries{}
