@@ -327,11 +327,11 @@ func ListTasksFilterFunc(filter *shared.TaskListFilter) *map[string]any {
 	if filter.ParentStatus != "" {
 		if filter.ParentStatus == "parent" {
 			where["parent_id"] = map[string]any{
-				"_eq": "NULL",
+				repository.IsNull: nil,
 			}
 		} else if filter.ParentStatus == "child" {
 			where["parent_id"] = map[string]any{
-				"_neq": "NULL",
+				repository.IsNotNull: nil,
 			}
 		}
 	}
