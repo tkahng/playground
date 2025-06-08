@@ -15,6 +15,7 @@ import (
 	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/types"
+	"github.com/tkahng/authgo/internal/tools/utils"
 )
 
 type DbTeamMemberStore struct {
@@ -327,7 +328,7 @@ func (s *DbTeamMemberStore) FindLatestTeamMemberByUserID(ctx context.Context, us
 func (s *DbTeamMemberStore) FindTeamMembersByUserID(ctx context.Context, userId uuid.UUID, paginate *shared.TeamMemberListInput) ([]*models.TeamMember, error) {
 	limit, offset := database.PaginateRepo(&paginate.PaginatedInput)
 	orderby := make(map[string]string)
-	if paginate.SortBy != "" && paginate.SortOrder != "" && slices.Contains(repository.TeamMemberBuilder.ColumnNames(), paginate.SortBy) {
+	if paginate.SortBy != "" && paginate.SortOrder != "" && slices.Contains(repository.TeamMemberBuilder.ColumnNames(), utils.Quote(paginate.SortBy)) {
 		orderby[paginate.SortBy] = paginate.SortOrder
 	} else {
 		orderby["last_selected_at"] = "DESC"
@@ -337,7 +338,7 @@ func (s *DbTeamMemberStore) FindTeamMembersByUserID(ctx context.Context, userId 
 	qs = qs.Where(squirrel.Eq{"active": true})
 	if paginate.SortBy == "team.name" {
 		qs = qs.Join("teams on team_members.team_id = teams.id").OrderBy("teams.name " + strings.ToUpper(paginate.SortOrder))
-	} else if slices.Contains(repository.TeamMemberBuilder.ColumnNames(), paginate.SortBy) {
+	} else if slices.Contains(repository.TeamMemberBuilder.ColumnNames(), utils.Quote(paginate.SortBy)) {
 		qs = qs.OrderBy(paginate.SortBy + " " + strings.ToUpper(paginate.SortOrder))
 	} else {
 		qs = qs.OrderBy("last_selected_at DESC")

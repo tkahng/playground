@@ -247,7 +247,7 @@ func (p *QueryResource[M, K, F]) sort(qs sq.SelectBuilder, filter *F) sq.SelectB
 		return qs
 	} else if sortable, ok := any(filter).(Sortable); ok {
 		sortby, sortOrder := sortable.Sort()
-		if sortby != "" && slices.Contains(p.builder.ColumnNames(), sortby) {
+		if sortby != "" && slices.Contains(p.builder.ColumnNames(), utils.Quote(sortby)) {
 			qs = qs.OrderBy(p.builder.Identifier(sortby) + " " + strings.ToUpper(sortOrder))
 			return qs
 		}
