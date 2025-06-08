@@ -604,7 +604,7 @@ func TestUserRepsository_find(t *testing.T) {
 	})
 }
 
-func CheckSliceLength(t *testing.T, got []*models.User, expected int) {
+func CheckSliceLength[M any](t *testing.T, got []*M, expected int) {
 	if len(got) != expected {
 		t.Errorf("UserRepository.find() got = %d, want %d", len(got), expected)
 	}
@@ -613,6 +613,14 @@ func CheckSliceLength(t *testing.T, got []*models.User, expected int) {
 func CheckUserOrderByName(t *testing.T, got []*models.User) {
 	for i := 1; i < len(got)-1; i++ {
 		firstName, secondName := *got[i].Name, *got[i+1].Name
+		if firstName > secondName {
+			t.Errorf("users are not in order. first name %s > second name %s", firstName, secondName)
+		}
+	}
+}
+func CheckUserAccountOrderByName(t *testing.T, got []*models.UserAccount) {
+	for i := 1; i < len(got)-1; i++ {
+		firstName, secondName := got[i].Provider.String(), got[i+1].Provider.String()
 		if firstName > secondName {
 			t.Errorf("users are not in order. first name %s > second name %s", firstName, secondName)
 		}
