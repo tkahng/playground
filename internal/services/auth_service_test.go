@@ -400,7 +400,7 @@ func TestAuthenticate(t *testing.T) {
 			if tc.checkMail {
 				param := mockMailService.param
 				assert.NotNil(t, param)
-				assert.Equal(t, param.Message.To, testEmail)
+				assert.Equal(t, param.To, testEmail)
 				assert.Equal(t, param.SendMailParams.Type, tc.checkWant.SendMailParams.Type)
 			}
 

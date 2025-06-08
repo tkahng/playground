@@ -3,20 +3,15 @@
   <component name="GoLinterSettings">
     <option name="enabledLinters">
       <list>
+        <option value="ineffassign" />
         <option value="staticcheck" />
         <option value="govet" />
         <option value="cyclop" />
         <option value="errcheck" />
-        <option value="copyloopvar" />
-        <option value="ineffassign" />
-        <option value="iface" />
-        <option value="bodyclose" />
-        <option value="asciicheck" />
-        <option value="containedctx" />
-        <option value="testifylint" />
         <option value="unused" />
-        <option value="contextcheck" />
       </list>
     </option>
+    <option name="fastOnly" value="false" />
+    <option name="linterSelected" value="true" />
   </component>
 </project>

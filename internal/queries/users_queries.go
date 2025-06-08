@@ -11,7 +11,6 @@ import (
 	"github.com/stephenafamo/scan/pgxscan"
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
-	crudModels "github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
@@ -97,7 +96,7 @@ func FindUserWithRolesAndPermissionsByEmail(ctx context.Context, db database.Dbx
 	return &res, nil
 }
 
-func FindUserAccountByUserIdAndProvider(ctx context.Context, db database.Dbx, userId uuid.UUID, provider shared.Providers) (*crudModels.UserAccount, error) {
+func FindUserAccountByUserIdAndProvider(ctx context.Context, db database.Dbx, userId uuid.UUID, provider shared.Providers) (*models.UserAccount, error) {
 	return repository.UserAccount.GetOne(ctx, db, &map[string]any{
 		"user_id": map[string]any{
 			"_eq": userId.String(),
@@ -108,7 +107,7 @@ func FindUserAccountByUserIdAndProvider(ctx context.Context, db database.Dbx, us
 	})
 }
 
-func LoadUsersByUserIds(ctx context.Context, db database.Dbx, userIds ...uuid.UUID) ([]*crudModels.User, error) {
+func LoadUsersByUserIds(ctx context.Context, db database.Dbx, userIds ...uuid.UUID) ([]*models.User, error) {
 	users, err := repository.User.Get(
 		ctx,
 		db,
@@ -124,7 +123,7 @@ func LoadUsersByUserIds(ctx context.Context, db database.Dbx, userIds ...uuid.UU
 	if err != nil {
 		return nil, err
 	}
-	return mapper.MapToPointer(users, userIds, func(a *crudModels.User) uuid.UUID {
+	return mapper.MapToPointer(users, userIds, func(a *models.User) uuid.UUID {
 		if a == nil {
 			return uuid.UUID{}
 		}
@@ -132,8 +131,8 @@ func LoadUsersByUserIds(ctx context.Context, db database.Dbx, userIds ...uuid.UU
 	}), nil
 }
 
-func CreateUser(ctx context.Context, db database.Dbx, params *shared.AuthenticationInput) (*crudModels.User, error) {
-	return repository.User.PostOne(ctx, db, &crudModels.User{
+func CreateUser(ctx context.Context, db database.Dbx, params *shared.AuthenticationInput) (*models.User, error) {
+	return repository.User.PostOne(ctx, db, &models.User{
 		Email:           params.Email,
 		Name:            params.Name,
 		Image:           params.AvatarUrl,
@@ -142,9 +141,9 @@ func CreateUser(ctx context.Context, db database.Dbx, params *shared.Authenticat
 }
 
 func CreateUserRoles(ctx context.Context, db database.Dbx, userId uuid.UUID, roleIds ...uuid.UUID) error {
-	var dtos []crudModels.UserRole
+	var dtos []models.UserRole
 	for _, id := range roleIds {
-		dtos = append(dtos, crudModels.UserRole{
+		dtos = append(dtos, models.UserRole{
 			UserID: userId,
 			RoleID: id,
 		})
@@ -161,9 +160,9 @@ func CreateUserRoles(ctx context.Context, db database.Dbx, userId uuid.UUID, rol
 	return nil
 }
 func CreateUserPermissions(ctx context.Context, db database.Dbx, userId uuid.UUID, permissionIds ...uuid.UUID) error {
-	var dtos []crudModels.UserPermission
+	var dtos []models.UserPermission
 	for _, id := range permissionIds {
-		dtos = append(dtos, crudModels.UserPermission{
+		dtos = append(dtos, models.UserPermission{
 			UserID:       userId,
 			PermissionID: id,
 		})
@@ -179,12 +178,12 @@ func CreateUserPermissions(ctx context.Context, db database.Dbx, userId uuid.UUI
 	return nil
 }
 
-func CreateAccount(ctx context.Context, db database.Dbx, userId uuid.UUID, params *shared.AuthenticationInput) (*crudModels.UserAccount, error) {
-	r, err := repository.UserAccount.PostOne(ctx, db, &crudModels.UserAccount{
+func CreateAccount(ctx context.Context, db database.Dbx, userId uuid.UUID, params *shared.AuthenticationInput) (*models.UserAccount, error) {
+	r, err := repository.UserAccount.PostOne(ctx, db, &models.UserAccount{
 		UserID:            userId,
-		Type:              crudModels.ProviderTypes(params.Type),
+		Type:              models.ProviderTypes(params.Type),
 		Password:          params.HashPassword,
-		Provider:          crudModels.Providers(params.Provider),
+		Provider:          models.Providers(params.Provider),
 		ProviderAccountID: params.ProviderAccountID,
 		AccessToken:       params.AccessToken,
 		RefreshToken:      params.RefreshToken,
@@ -192,7 +191,7 @@ func CreateAccount(ctx context.Context, db database.Dbx, userId uuid.UUID, param
 	return database.OptionalRow(r, err)
 }
 
-func FindUserByEmail(ctx context.Context, db database.Dbx, email string) (*crudModels.User, error) {
+func FindUserByEmail(ctx context.Context, db database.Dbx, email string) (*models.User, error) {
 	a, err := repository.User.GetOne(
 		ctx,
 		db,
@@ -204,7 +203,7 @@ func FindUserByEmail(ctx context.Context, db database.Dbx, email string) (*crudM
 	)
 	return database.OptionalRow(a, err)
 }
-func FindUserByID(ctx context.Context, db database.Dbx, userId uuid.UUID) (*crudModels.User, error) {
+func FindUserByID(ctx context.Context, db database.Dbx, userId uuid.UUID) (*models.User, error) {
 	a, err := repository.User.GetOne(
 		ctx,
 		db,
@@ -226,7 +225,7 @@ func UpdateUserPassword(ctx context.Context, db database.Dbx, userId uuid.UUID, 
 				"_eq": userId.String(),
 			},
 			"provider": map[string]any{
-				"_eq": string(crudModels.ProvidersCredentials),
+				"_eq": string(models.ProvidersCredentials),
 			},
 		},
 	)
@@ -271,7 +270,7 @@ func UpdateMe(ctx context.Context, db database.Dbx, userId uuid.UUID, input *sha
 	_, err = repository.User.PutOne(
 		ctx,
 		db,
-		&crudModels.User{
+		&models.User{
 			ID:        userId,
 			Name:      input.Name,
 			Image:     input.Image,
@@ -285,7 +284,7 @@ func UpdateMe(ctx context.Context, db database.Dbx, userId uuid.UUID, input *sha
 	return nil
 }
 
-func GetUserAccounts(ctx context.Context, db database.Dbx, userIds ...uuid.UUID) ([][]*crudModels.UserAccount, error) {
+func GetUserAccounts(ctx context.Context, db database.Dbx, userIds ...uuid.UUID) ([][]*models.UserAccount, error) {
 	// var results []JoinedResult[*crudModels.Permission, uuid.UUID]
 	ids := []string{}
 	for _, id := range userIds {
@@ -306,7 +305,7 @@ func GetUserAccounts(ctx context.Context, db database.Dbx, userIds ...uuid.UUID)
 	if err != nil {
 		return nil, err
 	}
-	return mapper.MapToManyPointer(data, userIds, func(a *crudModels.UserAccount) uuid.UUID {
+	return mapper.MapToManyPointer(data, userIds, func(a *models.UserAccount) uuid.UUID {
 		return a.UserID
 	}), nil
 }

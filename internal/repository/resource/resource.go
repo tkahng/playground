@@ -9,7 +9,6 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/Masterminds/squirrel"
 	sq "github.com/Masterminds/squirrel"
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/repository"
@@ -208,12 +207,12 @@ func (p *RepositoryResource[M, K, F]) WithTx(tx database.Dbx) Resource[M, K, F] 
 type QueryResource[Model any, Key comparable, Filter any] struct {
 	db           database.Dbx
 	builder      *repository.SQLBuilder[Model]
-	filterFn     func(qs squirrel.SelectBuilder, filter *Filter) squirrel.SelectBuilder
-	sortFn       func(qs squirrel.SelectBuilder, filter *Filter) squirrel.SelectBuilder
-	paginationFn func(qs squirrel.SelectBuilder, filter *Filter) squirrel.SelectBuilder
+	filterFn     func(qs sq.SelectBuilder, filter *Filter) sq.SelectBuilder
+	sortFn       func(qs sq.SelectBuilder, filter *Filter) sq.SelectBuilder
+	paginationFn func(qs sq.SelectBuilder, filter *Filter) sq.SelectBuilder
 }
 
-func (p *QueryResource[M, K, F]) filter(qs squirrel.SelectBuilder, filter *F) squirrel.SelectBuilder {
+func (p *QueryResource[M, K, F]) filter(qs sq.SelectBuilder, filter *F) sq.SelectBuilder {
 	if filter == nil {
 		return qs // return the original query if no filter is provided
 	}
@@ -224,7 +223,7 @@ func (p *QueryResource[M, K, F]) filter(qs squirrel.SelectBuilder, filter *F) sq
 	return qs
 }
 
-func (p *QueryResource[M, K, F]) pagination(qs squirrel.SelectBuilder, filter *F) squirrel.SelectBuilder {
+func (p *QueryResource[M, K, F]) pagination(qs sq.SelectBuilder, filter *F) sq.SelectBuilder {
 	if filter == nil {
 		return qs
 	}
@@ -239,7 +238,7 @@ func (p *QueryResource[M, K, F]) pagination(qs squirrel.SelectBuilder, filter *F
 	return qs
 }
 
-func (p *QueryResource[M, K, F]) sort(qs squirrel.SelectBuilder, filter *F) squirrel.SelectBuilder {
+func (p *QueryResource[M, K, F]) sort(qs sq.SelectBuilder, filter *F) sq.SelectBuilder {
 	if filter == nil {
 		return qs // return the original query if no filter is provided
 	}
@@ -415,9 +414,9 @@ func (s *QueryResource[Model, Key, Filter]) WithTx(tx database.Dbx) Resource[Mod
 func NewQueryResource[Model any, Key comparable, Filter any](
 	db database.Dbx,
 	builder *repository.SQLBuilder[Model],
-	filterFn func(qs squirrel.SelectBuilder, filter *Filter) squirrel.SelectBuilder,
-	sortFn func(qs squirrel.SelectBuilder, filter *Filter) squirrel.SelectBuilder,
-	paginationFn func(qs squirrel.SelectBuilder, filter *Filter) squirrel.SelectBuilder,
+	filterFn func(qs sq.SelectBuilder, filter *Filter) sq.SelectBuilder,
+	sortFn func(qs sq.SelectBuilder, filter *Filter) sq.SelectBuilder,
+	paginationFn func(qs sq.SelectBuilder, filter *Filter) sq.SelectBuilder,
 ) *QueryResource[Model, Key, Filter] {
 	return &QueryResource[Model, Key, Filter]{
 		db:           db,

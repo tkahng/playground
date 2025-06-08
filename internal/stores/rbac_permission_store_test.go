@@ -272,7 +272,6 @@ func TestDeleteRolePermissions(t *testing.T) {
 
 		type args struct {
 			ctx context.Context
-			dbx database.Dbx
 			id  uuid.UUID
 		}
 		tests := []struct {
@@ -330,7 +329,6 @@ func TestFindOrCreatePermission(t *testing.T) {
 		rbacStore := stores.NewDbRBACStore(dbxx)
 		type args struct {
 			ctx            context.Context
-			db             database.Dbx
 			permissionName string
 		}
 		tests := []struct {
@@ -385,7 +383,6 @@ func TestCreatePermission(t *testing.T) {
 
 		type args struct {
 			ctx         context.Context
-			dbx         database.Dbx
 			name        string
 			description *string
 		}
@@ -451,7 +448,6 @@ func TestFindPermissionById(t *testing.T) {
 
 		type args struct {
 			ctx context.Context
-			dbx database.Dbx
 			id  uuid.UUID
 		}
 		tests := []struct {
@@ -641,7 +637,6 @@ func TestEnsureRoleAndPermissions(t *testing.T) {
 		rbacStore := stores.NewDbRBACStore(dbxx)
 		type args struct {
 			ctx             context.Context
-			db              database.Dbx
 			roleName        string
 			permissionNames []string
 		}

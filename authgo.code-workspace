@@ -37,7 +37,7 @@
       "editor.codeLens": true,
       "editor.codeActionWidget.includeNearbyQuickFixes": true
     },
-    "go.lintOnSave": "file",
+    "go.lintOnSave": "package",
     "go.lintTool": "golangci-lint",
     "go.lintFlags": ["--path-mode=abs", "--fast-only"],
     "go.formatTool": "custom",
@@ -59,7 +59,7 @@
       "editor.defaultFormatter": "esbenp.prettier-vscode",
       "editor.formatOnSave": true
     },
-    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.defaultFormatter": "golang.go",
     "editor.formatOnPaste": true,
     "editor.codeActionsOnSave": {
       "source.fixAll": "always",
