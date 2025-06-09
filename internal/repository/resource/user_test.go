@@ -30,7 +30,7 @@ func TestNewUserRepositoryResource_FilterFunc(t *testing.T) {
 	})
 
 	t.Run("EmailVerified true", func(t *testing.T) {
-		filter := &UserListFilter{
+		filter := &UserFilter{
 			EmailVerified: types.OptionalParam[bool]{IsSet: true, Value: true},
 		}
 		where := filterFunc(filter)
@@ -41,7 +41,7 @@ func TestNewUserRepositoryResource_FilterFunc(t *testing.T) {
 	})
 
 	t.Run("EmailVerified false", func(t *testing.T) {
-		filter := &UserListFilter{
+		filter := &UserFilter{
 			EmailVerified: types.OptionalParam[bool]{IsSet: true, Value: false},
 		}
 		where := filterFunc(filter)
@@ -53,7 +53,7 @@ func TestNewUserRepositoryResource_FilterFunc(t *testing.T) {
 
 	t.Run("EmailVerified false not set", func(t *testing.T) {
 		id := uuid.New()
-		filter := &UserListFilter{
+		filter := &UserFilter{
 			EmailVerified: types.OptionalParam[bool]{IsSet: false, Value: false},
 			Ids: uuid.UUIDs{
 				id,
@@ -67,7 +67,7 @@ func TestNewUserRepositoryResource_FilterFunc(t *testing.T) {
 	})
 
 	t.Run("Emails filter", func(t *testing.T) {
-		filter := &UserListFilter{
+		filter := &UserFilter{
 			Emails: []string{"a@example.com", "b@example.com"},
 		}
 		where := filterFunc(filter)
@@ -80,7 +80,7 @@ func TestNewUserRepositoryResource_FilterFunc(t *testing.T) {
 	t.Run("Ids filter", func(t *testing.T) {
 		id1 := uuid.New()
 		id2 := uuid.New()
-		filter := &UserListFilter{
+		filter := &UserFilter{
 			Ids: []uuid.UUID{id1, id2},
 		}
 		where := filterFunc(filter)
@@ -91,7 +91,7 @@ func TestNewUserRepositoryResource_FilterFunc(t *testing.T) {
 	})
 
 	t.Run("Providers filter", func(t *testing.T) {
-		filter := &UserListFilter{
+		filter := &UserFilter{
 			Providers: []models.Providers{"google", "github"},
 		}
 		where := filterFunc(filter)
@@ -108,7 +108,7 @@ func TestNewUserRepositoryResource_FilterFunc(t *testing.T) {
 	t.Run("RoleIds filter", func(t *testing.T) {
 		role1 := uuid.New()
 		role2 := uuid.New()
-		filter := &UserListFilter{
+		filter := &UserFilter{
 			RoleIds: []uuid.UUID{role1, role2},
 		}
 		where := filterFunc(filter)
@@ -123,7 +123,7 @@ func TestNewUserRepositoryResource_FilterFunc(t *testing.T) {
 	})
 
 	t.Run("Q filter", func(t *testing.T) {
-		filter := &UserListFilter{
+		filter := &UserFilter{
 			Q: "foo",
 		}
 		where := filterFunc(filter)
@@ -139,7 +139,7 @@ func TestNewUserRepositoryResource_FilterFunc(t *testing.T) {
 
 	t.Run("Multiple filters combined", func(t *testing.T) {
 		role := uuid.New()
-		filter := &UserListFilter{
+		filter := &UserFilter{
 			Emails:        []string{"a@example.com"},
 			RoleIds:       []uuid.UUID{role},
 			EmailVerified: types.OptionalParam[bool]{IsSet: true, Value: true},
@@ -154,12 +154,12 @@ func TestNewUserRepositoryResource_FilterFunc(t *testing.T) {
 	})
 
 	t.Run("Empty filter returns nil", func(t *testing.T) {
-		filter := &UserListFilter{}
+		filter := &UserFilter{}
 		where := filterFunc(filter)
 		assert.Nil(t, where)
 	})
 	t.Run("Email verified at nil", func(t *testing.T) {
-		filter := &UserListFilter{
+		filter := &UserFilter{
 			EmailVerified: types.OptionalParam[bool]{IsSet: true, Value: false},
 		}
 		where := filterFunc(filter)
@@ -180,7 +180,7 @@ func TestNewUserRepositoryResource_SortFunc(t *testing.T) {
 	})
 
 	t.Run("empty sort fields returns default", func(t *testing.T) {
-		filter := &UserListFilter{}
+		filter := &UserFilter{}
 		s, b := filter.Sort()
 		fmt.Println("haa", s, b)
 		order := sortFunc(filter)
@@ -189,7 +189,7 @@ func TestNewUserRepositoryResource_SortFunc(t *testing.T) {
 	})
 
 	t.Run("invalid sort by returns nil map", func(t *testing.T) {
-		filter := &UserListFilter{SortParams: SortParams{
+		filter := &UserFilter{SortParams: SortParams{
 			SortBy:    "notacol",
 			SortOrder: "asc",
 		}}
@@ -198,7 +198,7 @@ func TestNewUserRepositoryResource_SortFunc(t *testing.T) {
 	})
 
 	t.Run("valid sort by returns map", func(t *testing.T) {
-		filter := &UserListFilter{SortParams: SortParams{
+		filter := &UserFilter{SortParams: SortParams{
 			SortBy:    "email",
 			SortOrder: "desc",
 		}}
@@ -220,21 +220,21 @@ func TestNewUserRepositoryResource_PaginationFunc(t *testing.T) {
 	})
 
 	t.Run("negative page returns page 0", func(t *testing.T) {
-		input := &UserListFilter{PaginatedInput: PaginatedInput{Page: -2, PerPage: 5}}
+		input := &UserFilter{PaginatedInput: PaginatedInput{Page: -2, PerPage: 5}}
 		limit, offset := paginationFunc(input)
 		assert.Equal(t, 5, limit)
 		assert.Equal(t, 0, offset)
 	})
 
 	t.Run("perPage < 1 returns default", func(t *testing.T) {
-		input := &UserListFilter{PaginatedInput: PaginatedInput{Page: 2, PerPage: 0}}
+		input := &UserFilter{PaginatedInput: PaginatedInput{Page: 2, PerPage: 0}}
 		limit, offset := paginationFunc(input)
 		assert.Equal(t, 10, limit)
 		assert.Equal(t, 20, offset)
 	})
 
 	t.Run("normal values", func(t *testing.T) {
-		input := &UserListFilter{PaginatedInput: PaginatedInput{Page: 3, PerPage: 15}}
+		input := &UserFilter{PaginatedInput: PaginatedInput{Page: 3, PerPage: 15}}
 		limit, offset := paginationFunc(input)
 		assert.Equal(t, 15, limit)
 		assert.Equal(t, 45, offset)
@@ -392,7 +392,7 @@ func TestUserRepsository_find(t *testing.T) {
 		}
 		type args struct {
 			ctx    context.Context
-			filter *UserListFilter
+			filter *UserFilter
 		}
 		tests := []struct {
 			name      string
@@ -403,7 +403,7 @@ func TestUserRepsository_find(t *testing.T) {
 				name: "find all users sorted by name ascending",
 				args: args{
 					ctx: ctx,
-					filter: &UserListFilter{
+					filter: &UserFilter{
 						PaginatedInput: PaginatedInput{
 							Page:    0,
 							PerPage: 10,
@@ -433,7 +433,7 @@ func TestUserRepsository_find(t *testing.T) {
 				name: "find all users sorted by name ascending, 3 per page, page 0",
 				args: args{
 					ctx: ctx,
-					filter: &UserListFilter{
+					filter: &UserFilter{
 						PaginatedInput: PaginatedInput{
 							Page:    0,
 							PerPage: 3,
@@ -459,7 +459,7 @@ func TestUserRepsository_find(t *testing.T) {
 				name: "find all users sorted by name ascending, 3 per page, page 1",
 				args: args{
 					ctx: ctx,
-					filter: &UserListFilter{
+					filter: &UserFilter{
 						PaginatedInput: PaginatedInput{
 							Page:    1,
 							PerPage: 3,
@@ -484,7 +484,7 @@ func TestUserRepsository_find(t *testing.T) {
 				name: "find all users sorted by name ascending, 3 per page, page 2",
 				args: args{
 					ctx: ctx,
-					filter: &UserListFilter{
+					filter: &UserFilter{
 						PaginatedInput: PaginatedInput{
 							Page:    2,
 							PerPage: 3,
@@ -509,7 +509,7 @@ func TestUserRepsository_find(t *testing.T) {
 				name: "find all users sorted by name ascending, 3 per page, page 3",
 				args: args{
 					ctx: ctx,
-					filter: &UserListFilter{
+					filter: &UserFilter{
 						PaginatedInput: PaginatedInput{
 							Page:    3,
 							PerPage: 3,
@@ -536,7 +536,7 @@ func TestUserRepsository_find(t *testing.T) {
 				name: "find all users with 'ta' in name. sorted by name ascending, 10 per page, page 0",
 				args: args{
 					ctx: ctx,
-					filter: &UserListFilter{
+					filter: &UserFilter{
 						PaginatedInput: PaginatedInput{
 							Page:    0,
 							PerPage: 10,
@@ -562,7 +562,7 @@ func TestUserRepsository_find(t *testing.T) {
 				name: "find all users that are verified. sorted by name ascending, 10 per page, page 0",
 				args: args{
 					ctx: ctx,
-					filter: &UserListFilter{
+					filter: &UserFilter{
 						PaginatedInput: PaginatedInput{
 							Page:    0,
 							PerPage: 10,
@@ -588,7 +588,7 @@ func TestUserRepsository_find(t *testing.T) {
 				name: "find all users that are verified. sorted by name ascending, 10 per page, page 0",
 				args: args{
 					ctx: ctx,
-					filter: &UserListFilter{
+					filter: &UserFilter{
 						PaginatedInput: PaginatedInput{
 							Page:    0,
 							PerPage: 10,

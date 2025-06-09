@@ -33,7 +33,7 @@ func TestNewPermissionQueryResource_FilterFunc(t *testing.T) {
 
 		t.Run("Q filter", func(t *testing.T) {
 			qs := squirrel.Select(models.PermissionTable.Columns...).From(repo.builder.Table())
-			filter := &PermissionsListFilter{
+			filter := &PermissionsFilter{
 				Q: "test",
 			}
 			where := filterFunc(qs, filter)
@@ -49,7 +49,7 @@ func TestNewPermissionQueryResource_FilterFunc(t *testing.T) {
 			qs := squirrel.Select(models.PermissionTable.Columns...).From(repo.builder.Table())
 			id1 := uuid.New()
 			id2 := uuid.New()
-			filter := &PermissionsListFilter{
+			filter := &PermissionsFilter{
 				Ids: []uuid.UUID{id1, id2},
 			}
 			where := filterFunc(qs, filter)
@@ -65,7 +65,7 @@ func TestNewPermissionQueryResource_FilterFunc(t *testing.T) {
 			qs := squirrel.Select(models.PermissionTable.Columns...).From(repo.builder.Table())
 			id1 := uuid.New()
 			id2 := uuid.New()
-			filter := &PermissionsListFilter{
+			filter := &PermissionsFilter{
 				Ids: []uuid.UUID{id1, id2},
 			}
 			where := filterFunc(qs, filter)
@@ -79,7 +79,7 @@ func TestNewPermissionQueryResource_FilterFunc(t *testing.T) {
 
 		t.Run("Names filter", func(t *testing.T) {
 			qs := squirrel.Select(models.PermissionTable.Columns...).From(repo.builder.Table())
-			filter := &PermissionsListFilter{
+			filter := &PermissionsFilter{
 				Names: []string{"read", "write"},
 			}
 			where := filterFunc(qs, filter)
@@ -94,7 +94,7 @@ func TestNewPermissionQueryResource_FilterFunc(t *testing.T) {
 		t.Run("RoleId filter", func(t *testing.T) {
 			qs := squirrel.Select(models.PermissionTable.Columns...).From(repo.builder.Table())
 			roleId := uuid.New()
-			filter := &PermissionsListFilter{
+			filter := &PermissionsFilter{
 				RoleId: roleId,
 			}
 			where := filterFunc(qs, filter)
@@ -108,7 +108,7 @@ func TestNewPermissionQueryResource_FilterFunc(t *testing.T) {
 		t.Run("RoleId filter", func(t *testing.T) {
 			qs := squirrel.Select(models.PermissionTable.Columns...).From(repo.builder.Table())
 			roleId := uuid.New()
-			filter := &PermissionsListFilter{
+			filter := &PermissionsFilter{
 				RoleId: roleId,
 			}
 			where := filterFunc(qs, filter)

@@ -17,10 +17,14 @@ type UserAccountFilter struct {
 	UserIds       []uuid.UUID            `query:"user_ids,omitempty" minimum:"1" maximum:"100" required:"false" format:"uuid"`
 }
 
+type UserAccountResource struct {
+	*RepositoryResource[models.UserAccount, uuid.UUID, UserAccountFilter]
+}
+
 func NewUserAccountRepositoryResource(
 	db database.Dbx,
-) *RepositoryResource[models.UserAccount, uuid.UUID, UserAccountFilter] {
-	return NewRepositoryResource[models.UserAccount, uuid.UUID](
+) *UserAccountResource {
+	resource := NewRepositoryResource[models.UserAccount, uuid.UUID](
 		db,
 		repo.UserAccount,
 		func(filter *UserAccountFilter) *map[string]any {
@@ -53,7 +57,9 @@ func NewUserAccountRepositoryResource(
 		nil,
 		nil,
 	)
-
+	return &UserAccountResource{
+		RepositoryResource: resource,
+	}
 }
 
-var _ Resource[models.UserAccount, uuid.UUID, UserAccountFilter] = (*RepositoryResource[models.UserAccount, uuid.UUID, UserAccountFilter])(nil)
+var _ Resource[models.UserAccount, uuid.UUID, UserAccountFilter] = (*UserAccountResource)(nil)

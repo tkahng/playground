@@ -8,7 +8,7 @@ import (
 	"github.com/tkahng/authgo/internal/repository"
 )
 
-type PermissionsListFilter struct {
+type PermissionsFilter struct {
 	PaginatedInput
 	SortParams
 	Q           string      `query:"q,omitempty" required:"false"`
@@ -20,11 +20,11 @@ type PermissionsListFilter struct {
 
 func NewPermissionQueryResource(
 	db database.Dbx,
-) *QueryResource[models.Permission, uuid.UUID, PermissionsListFilter] {
+) *QueryResource[models.Permission, uuid.UUID, PermissionsFilter] {
 	return NewQueryResource[models.Permission, uuid.UUID](
 		db,
 		repository.PermissionBuilder,
-		func(qs sq.SelectBuilder, filter *PermissionsListFilter) sq.SelectBuilder {
+		func(qs sq.SelectBuilder, filter *PermissionsFilter) sq.SelectBuilder {
 			if filter == nil {
 				return qs
 			}

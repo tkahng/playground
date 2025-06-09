@@ -8,7 +8,7 @@ import (
 	"github.com/tkahng/authgo/internal/tools/types"
 )
 
-type UserListFilter struct {
+type UserFilter struct {
 	PaginatedInput
 	SortParams
 	Providers     []models.Providers        `query:"providers,omitempty" required:"false" uniqueItems:"true" minimum:"1" maximum:"100" enum:"google,apple,facebook,github,credentials"`
@@ -19,15 +19,15 @@ type UserListFilter struct {
 	EmailVerified types.OptionalParam[bool] `query:"email_verified,omitempty" required:"false"`
 }
 
-var _ Resource[models.User, uuid.UUID, UserListFilter] = (*RepositoryResource[models.User, uuid.UUID, UserListFilter])(nil)
+var _ Resource[models.User, uuid.UUID, UserFilter] = (*RepositoryResource[models.User, uuid.UUID, UserFilter])(nil)
 
 func NewUserRepositoryResource(
 	db database.Dbx,
-) *RepositoryResource[models.User, uuid.UUID, UserListFilter] {
+) *RepositoryResource[models.User, uuid.UUID, UserFilter] {
 	return NewRepositoryResource[models.User, uuid.UUID](
 		db,
 		repo.User,
-		func(filter *UserListFilter) *map[string]any {
+		func(filter *UserFilter) *map[string]any {
 			where := make(map[string]any)
 			if filter == nil {
 				return &where // return empty map if no filter is provided
