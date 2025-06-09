@@ -281,11 +281,11 @@ func listTeamsFilter(qs squirrel.SelectBuilder, params *shared.ListTeamsParams) 
 
 func listTeamsOrderBy(qs squirrel.SelectBuilder, params *shared.ListTeamsParams) squirrel.SelectBuilder {
 	fmt.Println("sortby", params.SortBy, "sortorder", params.SortOrder)
-	if params.SortParams.SortBy != "" && params.SortParams.SortOrder != "" {
-		if params.SortParams.SortBy == "team_members.last_selected_at" {
-			qs = qs.OrderBy("team_members.last_selected_at " + strings.ToUpper(params.SortParams.SortOrder))
-		} else if slices.Contains(repository.TeamBuilder.ColumnNames(), utils.Quote(params.SortParams.SortBy)) {
-			qs = qs.OrderBy(params.SortParams.SortBy + " " + strings.ToUpper(params.SortParams.SortOrder))
+	if params.SortBy != "" && params.SortOrder != "" {
+		if params.SortBy == "team_members.last_selected_at" {
+			qs = qs.OrderBy("team_members.last_selected_at " + strings.ToUpper(params.SortOrder))
+		} else if slices.Contains(repository.TeamBuilder.ColumnNames(), utils.Quote(params.SortBy)) {
+			qs = qs.OrderBy(params.SortBy + " " + strings.ToUpper(params.SortOrder))
 		}
 	} else {
 		qs = qs.OrderBy("created_at DESC")

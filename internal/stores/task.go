@@ -472,12 +472,13 @@ func (s *DbTaskStore) CreateTaskProjectWithTasks(ctx context.Context, input *sha
 	var tasks []*models.Task
 	for i, task := range input.Tasks {
 		task.Rank = float64(i * 1000)
-		newTask, err := s.CreateTaskFromInput(ctx, taskProject.TeamID, taskProject.ID, input.CreateTaskProjectDTO.MemberID, &task)
+		newTask, err := s.CreateTaskFromInput(ctx, taskProject.TeamID, taskProject.ID, input.MemberID, &task)
 		if err != nil {
 			return nil, err
 		}
 		tasks = append(tasks, newTask)
 	}
+	taskProject.Tasks = tasks
 	return taskProject, nil
 }
 

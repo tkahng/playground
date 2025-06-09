@@ -53,7 +53,7 @@
     },
     
     "go.lintTool": "golangci-lint",
-    "go.lintFlags": ["--path-mode=abs", "--fast-only", "--fix"],
+    // "go.lintFlags": ["--path-mode=abs", "--fast-only", "--fix"],
     "go.formatTool": "custom",
     "go.alternateTools": {
       "customFormatter": "golangci-lint"
