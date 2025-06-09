@@ -20,7 +20,7 @@ import (
 func TestListRoles(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(tx database.Dbx) error {
+	_ = dbx.RunInTransaction(ctx, func(tx database.Dbx) error {
 		// Create test roles and permissions
 		rbacstore := stores.NewDbRBACStore(tx)
 		err := rbacstore.EnsureRoleAndPermissions(
@@ -84,7 +84,7 @@ func TestListRoles(t *testing.T) {
 func TestCountRoles(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(tx database.Dbx) error {
+	_ = dbx.RunInTransaction(ctx, func(tx database.Dbx) error {
 		rbacstore := stores.NewDbRBACStore(tx)
 		err := rbacstore.EnsureRoleAndPermissions(
 			ctx,
@@ -159,7 +159,7 @@ func TestCountRoles(t *testing.T) {
 func TestLoadRolePermissions(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+	_ = dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		rbacStore := stores.NewDbRBACStore(dbxx)
 		err := rbacStore.EnsureRoleAndPermissions(ctx, "basic", "basic")
 		if err != nil {
@@ -171,7 +171,6 @@ func TestLoadRolePermissions(t *testing.T) {
 		}
 		type args struct {
 			ctx     context.Context
-			db      database.Dbx
 			roleIds []uuid.UUID
 		}
 		tests := []struct {
@@ -215,7 +214,7 @@ func TestLoadRolePermissions(t *testing.T) {
 // func TestGetUserPermissions(t *testing.T) {
 // 	test.Short(t)
 // 	ctx, dbx := test.DbSetup()
-// 	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+// 	_ = dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 // 		rbacStore := stores.NewDbRBACStore(dbxx)
 // 		userStore := stores.NewDbUserStore(dbxx)
 // 		permission, err := rbacStore.FindOrCreatePermission(ctx, "basic")
@@ -285,11 +284,10 @@ func TestLoadRolePermissions(t *testing.T) {
 func TestFindOrCreateRole(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+	_ = dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		rbacStore := stores.NewDbRBACStore(dbxx)
 		type args struct {
 			ctx      context.Context
-			db       database.Dbx
 			roleName string
 		}
 		tests := []struct {
@@ -337,11 +335,10 @@ func TestFindOrCreateRole(t *testing.T) {
 func TestCreateRole(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+	_ = dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		rbacStore := stores.NewDbRBACStore(dbxx)
 		type args struct {
 			ctx  context.Context
-			dbx  database.Dbx
 			role *shared.CreateRoleDto
 		}
 		tests := []struct {
@@ -394,7 +391,7 @@ func TestCreateRole(t *testing.T) {
 func TestUpdateRole(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+	_ = dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		// Create initial role to update
 		rbacStore := stores.NewDbRBACStore(dbxx)
 		role, err := rbacStore.CreateRole(ctx, &shared.CreateRoleDto{
@@ -408,7 +405,6 @@ func TestUpdateRole(t *testing.T) {
 
 		type args struct {
 			ctx     context.Context
-			dbx     database.Dbx
 			id      uuid.UUID
 			roledto *shared.UpdateRoleDto
 		}
@@ -480,7 +476,7 @@ func TestUpdateRole(t *testing.T) {
 func TestDeleteRole(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+	_ = dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		// Create a role to delete
 		rbacStore := stores.NewDbRBACStore(dbxx)
 		role, err := rbacStore.CreateRole(ctx, &shared.CreateRoleDto{
@@ -492,7 +488,6 @@ func TestDeleteRole(t *testing.T) {
 
 		type args struct {
 			ctx context.Context
-			dbx database.Dbx
 			id  uuid.UUID
 		}
 		tests := []struct {
@@ -552,7 +547,7 @@ func TestDeleteRole(t *testing.T) {
 func TestDeletePermission(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+	_ = dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		rbacStore := stores.NewDbRBACStore(dbxx)
 		// Create a permission to delete
 		permission, err := rbacStore.CreatePermission(ctx, "permission_to_delete", nil)
@@ -562,7 +557,6 @@ func TestDeletePermission(t *testing.T) {
 
 		type args struct {
 			ctx context.Context
-			dbx database.Dbx
 			id  uuid.UUID
 		}
 		tests := []struct {

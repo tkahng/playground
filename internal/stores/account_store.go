@@ -49,8 +49,8 @@ func (u *DbAccountStore) ListUserAccounts(ctx context.Context, input *shared.Use
 		u.db,
 		where,
 		sort,
-		types.Pointer(int(input.PaginatedInput.Page)),
-		types.Pointer(int(input.PaginatedInput.PerPage)),
+		types.Pointer(int(input.Page)),
+		types.Pointer(int(input.PerPage)),
 	)
 	if err != nil {
 		return nil, err

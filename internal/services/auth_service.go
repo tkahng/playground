@@ -40,6 +40,36 @@ type AuthTokenStore interface {
 	SaveToken(ctx context.Context, token *shared.CreateTokenDTO) error
 	DeleteToken(ctx context.Context, token string) error
 }
+type AuthService interface {
+	Password() PasswordService
+	Token() JwtService
+	Mail() MailService
+	Store() AuthStore
+	HandlePasswordResetRequest(ctx context.Context, email string) error
+	HandleAccessToken(ctx context.Context, token string) (*shared.UserInfo, error)
+	HandleRefreshToken(ctx context.Context, token string) (*shared.UserInfoTokens, error)
+	HandleVerificationToken(ctx context.Context, token string) error
+	HandlePasswordResetToken(ctx context.Context, token, password string) error
+	CheckResetPasswordToken(ctx context.Context, token string) error
+	VerifyStateToken(ctx context.Context, token string) (*shared.ProviderStateClaims, error)
+	CreateOAuthUrl(ctx context.Context, provider shared.Providers, redirectUrl string) (string, error)
+	CreateAndPersistStateToken(ctx context.Context, payload *shared.ProviderStatePayload) (string, error)
+	FetchAuthUser(ctx context.Context, code string, parsedState *shared.ProviderStateClaims) (*oauth.AuthUser, error)
+	VerifyAndParseOtpToken(ctx context.Context, emailType mailer.EmailType, token string) (*shared.OtpClaims, error)
+	Authenticate(ctx context.Context, params *shared.AuthenticationInput) (*models.User, error)
+	CreateAuthTokensFromEmail(ctx context.Context, email string) (*shared.UserInfoTokens, error)
+	SendOtpEmail(emailType mailer.EmailType, ctx context.Context, user *models.User) error
+	Signout(ctx context.Context, token string) error
+	ResetPassword(ctx context.Context, userId uuid.UUID, oldPassword, newPassword string) error
+}
+
+type AuthStore interface {
+	WithTx(dbx database.Dbx) AuthStore
+	RunInTransaction(ctx context.Context, fn func(store AuthStore) error) error
+	AuthUserStore
+	AuthAccountStore
+	AuthTokenStore
+}
 
 var _ AuthService = (*BaseAuthService)(nil)
 
@@ -910,35 +940,4 @@ func (app *BaseAuthService) UpdateUserVerifiedOrResetPassword(ctx context.Contex
 		}
 	}
 	return reset, nil
-}
-
-type AuthService interface {
-	Password() PasswordService
-	Token() JwtService
-	Mail() MailService
-	Store() AuthStore
-	HandlePasswordResetRequest(ctx context.Context, email string) error
-	HandleAccessToken(ctx context.Context, token string) (*shared.UserInfo, error)
-	HandleRefreshToken(ctx context.Context, token string) (*shared.UserInfoTokens, error)
-	HandleVerificationToken(ctx context.Context, token string) error
-	HandlePasswordResetToken(ctx context.Context, token, password string) error
-	CheckResetPasswordToken(ctx context.Context, token string) error
-	VerifyStateToken(ctx context.Context, token string) (*shared.ProviderStateClaims, error)
-	CreateOAuthUrl(ctx context.Context, provider shared.Providers, redirectUrl string) (string, error)
-	CreateAndPersistStateToken(ctx context.Context, payload *shared.ProviderStatePayload) (string, error)
-	FetchAuthUser(ctx context.Context, code string, parsedState *shared.ProviderStateClaims) (*oauth.AuthUser, error)
-	VerifyAndParseOtpToken(ctx context.Context, emailType mailer.EmailType, token string) (*shared.OtpClaims, error)
-	Authenticate(ctx context.Context, params *shared.AuthenticationInput) (*models.User, error)
-	CreateAuthTokensFromEmail(ctx context.Context, email string) (*shared.UserInfoTokens, error)
-	SendOtpEmail(emailType mailer.EmailType, ctx context.Context, user *models.User) error
-	Signout(ctx context.Context, token string) error
-	ResetPassword(ctx context.Context, userId uuid.UUID, oldPassword, newPassword string) error
-}
-
-type AuthStore interface {
-	WithTx(dbx database.Dbx) AuthStore
-	RunInTransaction(ctx context.Context, fn func(store AuthStore) error) error
-	AuthUserStore
-	AuthAccountStore
-	AuthTokenStore
 }

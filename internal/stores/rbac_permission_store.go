@@ -243,10 +243,7 @@ func (p *DbRbacStore) LoadRolePermissions(ctx context.Context, roleIds ...uuid.U
 			)
 	GROUP BY rp.role_id;`
 	)
-	ids := []string{}
-	for _, id := range roleIds {
-		ids = append(ids, id.String())
-	}
+
 	data, err := pgxscan.All(
 		ctx,
 		p.db,

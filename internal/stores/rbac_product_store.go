@@ -6,7 +6,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/stephenafamo/scan"
 	"github.com/stephenafamo/scan/pgxscan"
-	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
@@ -31,7 +30,7 @@ func (s *DbRbacStore) CreateProductRoles(ctx context.Context, productId string, 
 
 // CreateProductPermissions implements RBACStore.
 func (p *DbRbacStore) CreateProductPermissions(ctx context.Context, productId string, permissionIds ...uuid.UUID) error {
-	var db database.Dbx = p.db
+	db := p.db
 	var permissions []models.ProductPermission
 	for _, permissionId := range permissionIds {
 		permissions = append(permissions, models.ProductPermission{

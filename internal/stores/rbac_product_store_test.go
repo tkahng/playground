@@ -15,7 +15,7 @@ import (
 func TestCreateProductPermissions(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+	_ = dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		rbacStore := stores.NewDbRBACStore(dbxx)
 		paymentStore := stores.NewDbPaymentStore(dbxx)
 		permission, err := rbacStore.FindOrCreatePermission(ctx, "basic")
@@ -69,7 +69,7 @@ func TestCreateProductPermissions(t *testing.T) {
 func TestCreateProductRoles(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+	_ = dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		rbacStore := stores.NewDbRBACStore(dbxx)
 		stripeStore := stores.NewDbPaymentStore(dbxx)
 		role, err := rbacStore.FindOrCreateRole(ctx, "basic")
@@ -89,7 +89,6 @@ func TestCreateProductRoles(t *testing.T) {
 		}
 		type args struct {
 			ctx       context.Context
-			db        database.Dbx
 			productId string
 			roleIds   []uuid.UUID
 		}

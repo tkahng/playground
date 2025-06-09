@@ -11,7 +11,7 @@ import (
 
 func TestPoller_Run(t *testing.T) {
 	ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+	_ = dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		type fields struct {
 			Store      JobStore
 			Dispatcher Dispatcher

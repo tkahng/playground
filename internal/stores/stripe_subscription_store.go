@@ -193,22 +193,19 @@ func (s *DbSubscriptionStore) UpsertSubscriptionFromStripe(ctx context.Context, 
 		return nil
 	}
 	var item *stripe.SubscriptionItem
-	var customer *stripe.Customer = sub.Customer
 	if len(sub.Items.Data) > 0 {
 		item = sub.Items.Data[0]
 	}
 	if item == nil || item.Price == nil {
 		return errors.New("price not found")
 	}
-	if customer == nil {
-		return errors.New("customer not found")
-	}
+
 	status := models.StripeSubscriptionStatus(sub.Status)
 	err := s.UpsertSubscription(
 		ctx,
 		&models.StripeSubscription{
 			ID:                 sub.ID,
-			StripeCustomerID:   customer.ID,
+			StripeCustomerID:   sub.Customer.ID,
 			Status:             models.StripeSubscriptionStatus(status),
 			Metadata:           sub.Metadata,
 			ItemID:             item.ID,

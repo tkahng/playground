@@ -19,7 +19,7 @@ import (
 func TestConstraintCheckerService_CannotHaveValidSubscription(t *testing.T) {
 	ctx, dbx := test.DbSetup()
 
-	dbx.RunInTransaction(ctx, func(tx database.Dbx) error {
+	_ = dbx.RunInTransaction(ctx, func(tx database.Dbx) error {
 		userStore := stores.NewDbUserStore(tx)
 		paymentStore := stores.NewDbStripeStore(tx)
 		constraintStore := stores.NewDbConstraintStore(tx)
@@ -310,7 +310,7 @@ func TestConstraintCheckerService_CannotBeSuperUserEmailAndRoleName(t *testing.T
 func TestConstraintCheckerService_CannotBeSuperUserID(t *testing.T) {
 	ctx, dbx := test.DbSetup()
 
-	dbx.RunInTransaction(ctx, func(tx database.Dbx) error {
+	_ = dbx.RunInTransaction(ctx, func(tx database.Dbx) error {
 		rbacStore := stores.NewDbRBACStore(tx)
 		userStore := stores.NewDbUserStore(tx)
 		checkerStore := stores.NewDbConstraintStore(tx)

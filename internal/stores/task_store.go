@@ -325,11 +325,12 @@ func ListTasksFilterFunc(filter *shared.TaskListFilter) *map[string]any {
 		}
 	}
 	if filter.ParentStatus != "" {
-		if filter.ParentStatus == "parent" {
+		switch filter.ParentStatus {
+		case shared.ParentStatusParent:
 			where["parent_id"] = map[string]any{
 				repository.IsNull: nil,
 			}
-		} else if filter.ParentStatus == "child" {
+		case shared.ParentStatusChild:
 			where["parent_id"] = map[string]any{
 				repository.IsNotNull: nil,
 			}
@@ -460,7 +461,7 @@ func (s *taskStore) CreateTaskProjectWithTasks(ctx context.Context, input *share
 	if err != nil {
 		return nil, err
 	}
-	input.CreateTaskProjectDTO.Rank = float64(count * 1000)
+	input.Rank = float64(count * 1000)
 	taskProject, err := s.CreateTaskProject(ctx, &input.CreateTaskProjectDTO)
 	if err != nil {
 		return nil, err

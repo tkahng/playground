@@ -15,7 +15,7 @@ import (
 func TestCreateMedia(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+	_ = dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		userStore := stores.NewDbUserStore(dbxx)
 		mediaStore := stores.NewMediaStore(dbxx)
 		user, err := userStore.CreateUser(ctx, &models.User{
@@ -104,7 +104,7 @@ func TestCreateMedia(t *testing.T) {
 func TestFindMediaByID(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+	_ = dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		userStore := stores.NewDbUserStore(dbxx)
 		mediaStore := stores.NewMediaStore(dbxx)
 		user, err := userStore.CreateUser(ctx, &models.User{

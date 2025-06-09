@@ -16,7 +16,7 @@ import (
 func TestTeamStore_InvitationCRUD(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+	_ = dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		store := stores.NewDbTeamStore(dbxx)
 		userStore := stores.NewDbUserStore(dbxx)
 		user, err := userStore.CreateUser(
@@ -121,7 +121,7 @@ func TestTeamStore_InvitationCRUD(t *testing.T) {
 func TestInvitationStore_CRUD(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+	_ = dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		teamStore := stores.NewDbTeamStore(dbxx)
 		userStore := stores.NewDbUserStore(dbxx)
 
@@ -204,7 +204,7 @@ func TestInvitationStore_CRUD(t *testing.T) {
 func TestTeamStore_FindPendingInvitation(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+	_ = dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
 		teamStore := stores.NewDbTeamStore(dbxx)
 		userStore := stores.NewDbUserStore(dbxx)
 

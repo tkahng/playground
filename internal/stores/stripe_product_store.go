@@ -75,7 +75,7 @@ func (s *DbProductStore) FindProductById(ctx context.Context, productId string) 
 	return database.OptionalRow(data, err)
 }
 func (s *DbProductStore) UpsertProduct(ctx context.Context, product *models.StripeProduct) error {
-	var dbx database.Dbx = s.db
+	dbx := s.db
 	q := squirrel.Insert("stripe_products").
 		Columns(
 			"id",
@@ -127,7 +127,7 @@ func listProductOrderByQuery(q squirrel.SelectBuilder, input *shared.StripeProdu
 	if input == nil {
 		return q
 	}
-	if input.SortParams.SortBy == "" {
+	if input.SortBy == "" {
 		q = q.OrderBy("metadata->'index'" + " " + strings.ToUpper(input.SortOrder))
 	}
 	if input.SortBy == MetadataIndexName {

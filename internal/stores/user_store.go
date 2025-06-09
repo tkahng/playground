@@ -340,14 +340,6 @@ type RolePermissionClaims struct {
 // It returns a pointer to a RolePermissionClaims struct containing the user's
 // roles and permissions, or an error if the user is not found or if any other
 // database error occurs.
-func FindUserWithRolesAndPermissionsByEmail(ctx context.Context, db database.Dbx, email string) (*RolePermissionClaims, error) {
-	res, err := pgxscan.One(ctx, db, scan.StructMapper[RolePermissionClaims](), RawGetUserWithAllRolesAndPermissionsByEmail, email)
-	if err != nil {
-		return nil, err
-	}
-
-	return &res, nil
-}
 
 func FindUserAccountByUserIdAndProvider(ctx context.Context, db database.Dbx, userId uuid.UUID, provider shared.Providers) (*models.UserAccount, error) {
 	return repository.UserAccount.GetOne(ctx, db, &map[string]any{
@@ -539,10 +531,7 @@ func UpdateMe(ctx context.Context, db database.Dbx, userId uuid.UUID, input *sha
 
 func GetUserAccounts(ctx context.Context, db database.Dbx, userIds ...uuid.UUID) ([][]*models.UserAccount, error) {
 	// var results []JoinedResult[*models.Permission, uuid.UUID]
-	ids := []string{}
-	for _, id := range userIds {
-		ids = append(ids, id.String())
-	}
+
 	data, err := repository.UserAccount.Get(
 		ctx,
 		db,

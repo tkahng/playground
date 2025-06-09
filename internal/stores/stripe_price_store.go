@@ -30,7 +30,7 @@ func (s *DbPriceStore) WithTx(tx database.Dbx) *DbPriceStore {
 }
 
 func (s *DbPriceStore) UpsertPrice(ctx context.Context, price *models.StripePrice) error {
-	var dbx database.Dbx = s.db
+	dbx := s.db
 	q := squirrel.Insert("stripe_prices").Columns("id", "product_id", "lookup_key", "active", "unit_amount", "currency", "type", "interval", "interval_count", "trial_period_days", "metadata").Values(price.ID, price.ProductID, price.LookupKey, price.Active, price.UnitAmount, price.Currency, price.Type, price.Interval, price.IntervalCount, price.TrialPeriodDays, price.Metadata).Suffix(`
 		ON CONFLICT(id) DO UPDATE SET 
 			product_id = EXCLUDED.product_id,
@@ -52,11 +52,11 @@ func listPriceOrderByMap(input *shared.StripePriceListParams) *map[string]string
 	if input == nil {
 		return nil
 	}
-	if input.SortParams.SortBy == "" {
+	if input.SortBy == "" {
 		return nil
 	}
 	return &map[string]string{
-		input.SortParams.SortBy: input.SortParams.SortOrder,
+		input.SortBy: input.SortOrder,
 	}
 }
 
@@ -94,7 +94,7 @@ func listPriceFilterFuncMap(filter *shared.StripePriceListFilter) *map[string]an
 
 // ListPrices implements PaymentStore.
 func (s *DbPriceStore) ListPrices(ctx context.Context, input *shared.StripePriceListParams) ([]*models.StripePrice, error) {
-	var dbx database.Dbx = s.db
+	dbx := s.db
 	filter := input.StripePriceListFilter
 	pageInput := &input.PaginatedInput
 	limit, offset := database.PaginateRepo(pageInput)
