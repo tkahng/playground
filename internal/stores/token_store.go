@@ -11,6 +11,13 @@ import (
 	"github.com/tkahng/authgo/internal/shared"
 )
 
+type DbTokenStoreInterface interface {
+	GetToken(ctx context.Context, token string) (*models.Token, error)
+	SaveToken(ctx context.Context, token *shared.CreateTokenDTO) error
+	DeleteToken(ctx context.Context, token string) error
+	VerifyTokenStorage(ctx context.Context, token string) error
+}
+
 type DbTokenStore struct {
 	db database.Dbx
 }

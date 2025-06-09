@@ -13,7 +13,7 @@ import (
 func TestAccountStore_CRUD(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
 		userStore := NewDbUserStore(dbxx)
 		user, err := userStore.CreateUser(ctx, &models.User{
 			Email: "test@example.com",
@@ -80,7 +80,7 @@ func TestAccountStore_CRUD(t *testing.T) {
 func TestAccountStore_GetUserAccounts(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
 		userStore := NewDbUserStore(dbxx)
 		store := NewDbAccountStore(dbxx)
 		user1, err := userStore.CreateUser(ctx, &models.User{Email: "user1@example.com"})
@@ -106,7 +106,7 @@ func TestAccountStore_GetUserAccounts(t *testing.T) {
 func TestAccountStore_UpdateUserPassword(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
 		userStore := NewDbUserStore(dbxx)
 		store := NewDbAccountStore(dbxx)
 		user, err := userStore.CreateUser(ctx, &models.User{Email: "pwuser@example.com"})
@@ -128,7 +128,7 @@ func TestAccountStore_UpdateUserPassword(t *testing.T) {
 // func TestListUserAccounts(t *testing.T) {
 // 	test.Short(t)
 // ctx, dbx := test.DbSetup()
-// 	_ = dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+// 	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
 // 		faker := faker.New().Internet()
 // 		_, err := seeders.CreateUserWithAccountAndRole(ctx, dbxx, 5, models.ProvidersGoogle, "basic", faker)
 // 		if err != nil {
@@ -204,7 +204,7 @@ func TestAccountStore_UpdateUserPassword(t *testing.T) {
 // func TestCountUserAccounts(t *testing.T) {
 // 	test.Short(t)
 // ctx, dbx := test.DbSetup()
-// 	_ = dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+// 	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
 // 		faker := faker.New().Internet()
 // 		_, err := seeders.CreateUserWithAccountAndRole(ctx, dbxx, 5, models.ProvidersGoogle, "basic", faker)
 // 		if err != nil {

@@ -65,10 +65,17 @@ type AuthService interface {
 
 type AuthStore interface {
 	WithTx(dbx database.Dbx) AuthStore
-	RunInTransaction(ctx context.Context, fn func(store AuthStore) error) error
+	RunInTransaction(fn func(store AuthStore) error) error
 	AuthUserStore
 	AuthAccountStore
 	AuthTokenStore
+}
+
+type AuthServiceStore interface {
+	RunInTx(fn func(store AuthServiceStore) error) error
+	User() AuthUserStore
+	Account() AuthAccountStore
+	Token() AuthTokenStore
 }
 
 var _ AuthService = (*BaseAuthService)(nil)
@@ -744,7 +751,6 @@ func (app *BaseAuthService) Authenticate(ctx context.Context, params *shared.Aut
 	// if user does not exist, Create User and UserAccount ----------------------------------------------------------------------------------------------------
 	if user == nil {
 		err = app.authStore.RunInTransaction(
-			ctx,
 			func(store AuthStore) error {
 				user, err = app.CreateUser(ctx, app.authStore, params)
 				if err != nil {
@@ -810,7 +816,6 @@ func (app *BaseAuthService) Authenticate(ctx context.Context, params *shared.Aut
 			}
 		}
 		err = app.authStore.RunInTransaction(
-			ctx,
 			func(store AuthStore) error {
 				account, err = app.CreateAccount(ctx, store, user, params)
 				if err != nil {

@@ -238,7 +238,7 @@ type AuthStoreDecorator struct {
 	UnlinkAccountFunc                      func(ctx context.Context, userId uuid.UUID, provider models.Providers) error
 	UpdateUserFunc                         func(ctx context.Context, user *models.User) error
 	UpdateUserAccountFunc                  func(ctx context.Context, account *models.UserAccount) error
-	RunInTransactionFunc                   func(ctx context.Context, fn func(store AuthStore) error) error
+	RunInTransactionFunc                   func(fn func(store AuthStore) error) error
 	FindUserFunc                           func(ctx context.Context, user *models.User) (*models.User, error)
 }
 
@@ -271,11 +271,11 @@ func (a *AuthStoreDecorator) WithTx(dbx database.Dbx) AuthStore {
 }
 
 // RunInTransaction implements AuthStore.
-func (a *AuthStoreDecorator) RunInTransaction(ctx context.Context, fn func(store AuthStore) error) error {
+func (a *AuthStoreDecorator) RunInTransaction(fn func(store AuthStore) error) error {
 	if a.RunInTransactionFunc != nil {
-		return a.RunInTransactionFunc(ctx, fn)
+		return a.RunInTransactionFunc(fn)
 	}
-	return a.Delegate.RunInTransaction(ctx, fn)
+	return a.Delegate.RunInTransaction(fn)
 }
 
 // AssignUserRoles implements AuthStore.

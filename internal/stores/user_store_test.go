@@ -17,7 +17,7 @@ import (
 func TestUserStore_CRUD(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
 		store := stores.NewDbUserStore(dbxx)
 
 		// CreateUser
@@ -93,7 +93,7 @@ func TestUserStore_CRUD(t *testing.T) {
 func TestUserStore_LoadUsersByUserIds(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
 		store := stores.NewDbUserStore(dbxx)
 		user1, err := store.CreateUser(ctx, &models.User{Email: "loaduser1@example.com"})
 		if err != nil {
@@ -125,7 +125,7 @@ func ptrString(s string) *string {
 func TestUserStore_FindUserById(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
 		p := stores.NewDbUserStore(dbxx)
 		type fields struct {
 			db database.Dbx

@@ -2,7 +2,6 @@ package database
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -15,6 +14,7 @@ type Dbx interface {
 	Query(ctx context.Context, sql string, arguments ...any) (pgx.Rows, error)
 	Exec(ctx context.Context, sql string, arguments ...any) (pgconn.CommandTag, error)
 	RunInTransaction(ctx context.Context, fn func(Dbx) error) error
+	RunInTx(fn func(Dbx) error) error
 	QueryRow(ctx context.Context, sql string, arguments ...any) pgx.Row
 }
 
@@ -57,20 +57,10 @@ func (v *Queries) Exec(ctx context.Context, sql string, args ...any) (pgconn.Com
 }
 
 func (v *Queries) RunInTransaction(ctx context.Context, fn func(Dbx) error) error {
+	return WithTx(v, fn)
+}
 
-	tx, err := v.db.Begin(ctx)
-	if err != nil {
-		return fmt.Errorf("error starting transaction: %w", err)
-	}
-	// Ensure the transaction will be rolled back if not committed
-	defer tx.Rollback(ctx)
-
-	err = fn(&txQueries{db: tx})
-	if err == nil {
-		if err := tx.Commit(ctx); err != nil {
-			return fmt.Errorf("error committing transaction: %w", err)
-		}
-	}
-
-	return err
+// RunInTx implements Dbx.
+func (v *Queries) RunInTx(fn func(Dbx) error) error {
+	return WithTx(v, fn)
 }

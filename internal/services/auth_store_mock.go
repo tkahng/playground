@@ -36,7 +36,7 @@ func (m *MockAuthStore) WithTx(dbx database.Dbx) AuthStore {
 }
 
 // RunInTransaction implements AuthStore.
-func (m *MockAuthStore) RunInTransaction(ctx context.Context, fn func(store AuthStore) error) error {
+func (m *MockAuthStore) RunInTransaction(fn func(store AuthStore) error) error {
 	// args := m.Called(ctx, fn)
 	if m.Tx != nil {
 		m.TxErr = fn(m)

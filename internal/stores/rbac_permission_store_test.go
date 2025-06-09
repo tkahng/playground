@@ -18,7 +18,7 @@ import (
 func TestFindPermissionsByIds(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
 		// Create test permissions
 		rbacstore := stores.NewDbRBACStore(dbxx)
 		// userstore := stores.NewPostgresUserStore(dbxx)
@@ -114,7 +114,7 @@ func TestFindPermissionsByIds(t *testing.T) {
 func TestListPermissions(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTransaction(ctx, func(tx database.Dbx) error {
+	_ = dbx.RunInTx( func(tx database.Dbx) error {
 		rbacstore := stores.NewDbRBACStore(tx)
 		err := rbacstore.EnsureRoleAndPermissions(
 			ctx,
@@ -178,7 +178,7 @@ func TestListPermissions(t *testing.T) {
 func TestCountPermissions(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTransaction(ctx, func(tx database.Dbx) error {
+	_ = dbx.RunInTx( func(tx database.Dbx) error {
 		rbacstore := stores.NewDbRBACStore(tx)
 		err := rbacstore.EnsureRoleAndPermissions(
 			ctx,
@@ -245,7 +245,7 @@ func TestCountPermissions(t *testing.T) {
 func TestDeleteRolePermissions(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
 		// Create a role and permission to test deletion
 		rbacStore := stores.NewDbRBACStore(dbxx)
 		role, err := rbacStore.CreateRole(ctx, &shared.CreateRoleDto{
@@ -325,7 +325,7 @@ func TestDeleteRolePermissions(t *testing.T) {
 func TestFindOrCreatePermission(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
 		rbacStore := stores.NewDbRBACStore(dbxx)
 		type args struct {
 			ctx            context.Context
@@ -377,7 +377,7 @@ func TestFindOrCreatePermission(t *testing.T) {
 func TestCreatePermission(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
 		rbacStore := stores.NewDbRBACStore(dbxx)
 		description := "test description"
 
@@ -438,7 +438,7 @@ func TestCreatePermission(t *testing.T) {
 func TestFindPermissionById(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
 		rbacStore := stores.NewDbRBACStore(dbxx)
 		// Create a test permission to find
 		permission, err := rbacStore.CreatePermission(ctx, "test_permission", nil)
@@ -501,7 +501,7 @@ func TestFindPermissionById(t *testing.T) {
 func TestUpdatePermission(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
 		// Create initial permission to update
 		rbacStore := stores.NewDbRBACStore(dbxx)
 		permission, err := rbacStore.CreatePermission(ctx, "initial_permission", nil)
@@ -583,7 +583,7 @@ func TestUpdatePermission(t *testing.T) {
 func TestCreateRolePermissions(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
 		rbacStore := stores.NewDbRBACStore(dbxx)
 		role, err := rbacStore.FindOrCreateRole(ctx, "basic")
 		if err != nil {

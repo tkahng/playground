@@ -18,6 +18,22 @@ import (
 	"github.com/tkahng/authgo/internal/tools/utils"
 )
 
+type DbTeamMemberStoreInterface interface {
+	CountOwnerTeamMembers(ctx context.Context, teamId uuid.UUID) (int64, error)
+	CountTeamMembers(ctx context.Context, teamId uuid.UUID) (int64, error)
+	CountTeamMembersByUserID(ctx context.Context, userId uuid.UUID) (int64, error)
+	CreateTeamFromUser(ctx context.Context, user *models.User) (*models.TeamMember, error)
+	CreateTeamMember(ctx context.Context, teamId uuid.UUID, userId uuid.UUID, role models.TeamMemberRole, hasBillingAccess bool) (*models.TeamMember, error)
+	DeleteTeamMember(ctx context.Context, teamId uuid.UUID, userId uuid.UUID) error
+	FindLatestTeamMemberByUserID(ctx context.Context, userId uuid.UUID) (*models.TeamMember, error)
+	FindTeamMember(ctx context.Context, member *models.TeamMember) (*models.TeamMember, error)
+	FindTeamMemberByTeamAndUserId(ctx context.Context, teamId uuid.UUID, userId uuid.UUID) (*models.TeamMember, error)
+	FindTeamMembersByUserID(ctx context.Context, userId uuid.UUID, paginate *shared.TeamMemberListInput) ([]*models.TeamMember, error)
+	UpdateTeamMember(ctx context.Context, member *models.TeamMember) (*models.TeamMember, error)
+	UpdateTeamMemberSelectedAt(ctx context.Context, teamId uuid.UUID, userId uuid.UUID) error
+	WithTx(tx database.Dbx) *DbTeamMemberStore
+}
+
 type DbTeamMemberStore struct {
 	db database.Dbx
 }

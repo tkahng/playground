@@ -1,6 +1,8 @@
 package resource
 
 import (
+	"context"
+
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
@@ -18,7 +20,11 @@ type UserFilter struct {
 	RoleIds       []uuid.UUID               `query:"role_ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
 	EmailVerified types.OptionalParam[bool] `query:"email_verified,omitempty" required:"false"`
 }
+type dsad interface {
+	Find(ctx context.Context, filter *UserFilter) ([]*models.User, error)
+}
 
+var _ dsad = (*RepositoryResource[models.User, uuid.UUID, UserFilter])(nil)
 var _ Resource[models.User, uuid.UUID, UserFilter] = (*RepositoryResource[models.User, uuid.UUID, UserFilter])(nil)
 
 func NewUserRepositoryResource(

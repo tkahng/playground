@@ -17,7 +17,7 @@ import (
 func TestLoadTaskProjectsTasks(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
 		userStore := stores.NewDbUserStore(dbxx)
 		teamstore := stores.NewDbTeamStore(dbxx)
 		taskStore := stores.NewTaskStore(dbxx)
@@ -112,7 +112,7 @@ func TestLoadTaskProjectsTasks(t *testing.T) {
 func TestFindTaskByID(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
 		userStore := stores.NewDbUserStore(dbxx)
 		teamstore := stores.NewDbTeamStore(dbxx)
 		taskStore := stores.NewTaskStore(dbxx)
@@ -209,7 +209,7 @@ func TestFindTaskByID(t *testing.T) {
 func TestFindLastTaskOrder(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
 		userStore := stores.NewDbUserStore(dbxx)
 		teamstore := stores.NewDbTeamStore(dbxx)
 		taskStore := stores.NewTaskStore(dbxx)
@@ -304,7 +304,7 @@ func TestFindLastTaskOrder(t *testing.T) {
 func TestDeleteTask(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
 		userStore := stores.NewDbUserStore(dbxx)
 		teamstore := stores.NewDbTeamStore(dbxx)
 		taskStore := stores.NewTaskStore(dbxx)
@@ -382,7 +382,7 @@ func TestDeleteTask(t *testing.T) {
 func TestFindTaskProjectByID(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
 		userStore := stores.NewDbUserStore(dbxx)
 		teamstore := stores.NewDbTeamStore(dbxx)
 		taskStore := stores.NewTaskStore(dbxx)
@@ -465,7 +465,7 @@ func TestFindTaskProjectByID(t *testing.T) {
 func TestDeleteTaskProject(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
 		userStore := stores.NewDbUserStore(dbxx)
 		teamstore := stores.NewDbTeamStore(dbxx)
 		taskStore := stores.NewTaskStore(dbxx)
@@ -531,7 +531,7 @@ func TestDeleteTaskProject(t *testing.T) {
 func TestListTasks(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
 		userStore := stores.NewDbUserStore(dbxx)
 		teamstore := stores.NewDbTeamStore(dbxx)
 		taskStore := stores.NewTaskStore(dbxx)
@@ -645,7 +645,7 @@ func TestListTasks(t *testing.T) {
 func TestCountTasks(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
 		userStore := stores.NewDbUserStore(dbxx)
 		teamstore := stores.NewDbTeamStore(dbxx)
 		taskStore := stores.NewTaskStore(dbxx)
@@ -735,7 +735,7 @@ func TestCountTasks(t *testing.T) {
 func TestListTaskProjects(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
 		userStore := stores.NewDbUserStore(dbxx)
 		teamstore := stores.NewDbTeamStore(dbxx)
 		taskStore := stores.NewTaskStore(dbxx)
@@ -835,7 +835,7 @@ func TestListTaskProjects(t *testing.T) {
 func TestCountTaskProjects(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
 		userStore := stores.NewDbUserStore(dbxx)
 		teamstore := stores.NewDbTeamStore(dbxx)
 		taskStore := stores.NewTaskStore(dbxx)
@@ -911,7 +911,7 @@ func TestCountTaskProjects(t *testing.T) {
 func TestCreateTaskProject(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
 		userStore := stores.NewDbUserStore(dbxx)
 		teamstore := stores.NewDbTeamStore(dbxx)
 		taskStore := stores.NewTaskStore(dbxx)
@@ -997,7 +997,7 @@ func TestCreateTaskProject(t *testing.T) {
 func TestCreateTaskProjectWithTasks(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
 		userStore := stores.NewDbUserStore(dbxx)
 		teamstore := stores.NewDbTeamStore(dbxx)
 		taskStore := stores.NewTaskStore(dbxx)
@@ -1106,7 +1106,7 @@ func TestCreateTaskProjectWithTasks(t *testing.T) {
 func TestCreateTaskFromInput(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
 		userStore := stores.NewDbUserStore(dbxx)
 		teamstore := stores.NewDbTeamStore(dbxx)
 		taskStore := stores.NewTaskStore(dbxx)
@@ -1207,7 +1207,7 @@ func TestCreateTaskFromInput(t *testing.T) {
 // func TestUpdateTask(t *testing.T) {
 // 	test.Short(t)
 // 	ctx, dbx := test.DbSetup()
-// 	_ = dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+// 	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
 // 		userStore := stores.NewPostgresUserStore(dbxx)
 // 		user, err := userStore.CreateUser(ctx, &models.User{
 // 			Email: "tkahng@gmail.com",
@@ -1317,7 +1317,7 @@ func TestCreateTaskFromInput(t *testing.T) {
 // func TestUpdateTaskProjectUpdateDate(t *testing.T) {
 // 	test.Short(t)
 // 	ctx, dbx := test.DbSetup()
-// 	_ = dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+// 	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
 // 		userStore := stores.NewPostgresUserStore(dbxx)
 // 		user, err := userStore.CreateUser(ctx, &models.User{
 // 			Email: "tkahng@gmail.com",
@@ -1383,7 +1383,7 @@ func TestCreateTaskFromInput(t *testing.T) {
 // func TestUpdateTaskProject(t *testing.T) {
 // 	test.Short(t)
 // 	ctx, dbx := test.DbSetup()
-// 	_ = dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+// 	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
 // 		userStore := stores.NewPostgresUserStore(dbxx)
 // 		user, err := userStore.CreateUser(ctx, &models.User{
 // 			Email: "tkahng@gmail.com",
@@ -1483,7 +1483,7 @@ func TestCreateTaskFromInput(t *testing.T) {
 // func TestUpdateTaskPositionStatus(t *testing.T) {
 // 	test.Short(t)
 // 	ctx, dbx := test.DbSetup()
-// 	_ = dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+// 	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
 // 		userStore := stores.NewPostgresUserStore(dbxx)
 // 		user, err := userStore.CreateUser(ctx, &models.User{
 // 			Email: "tkahng@gmail.com",
@@ -1613,7 +1613,7 @@ func TestCreateTaskFromInput(t *testing.T) {
 // func TestLoadTaskProjectsTasks(t *testing.T) {
 // 	test.Short(t)
 // 	ctx, dbx := test.DbSetup()
-// 	_ = dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+// 	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
 // 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 // 			Email: "tkahng@gmail.com",
 // 		})
@@ -1704,7 +1704,7 @@ func TestCreateTaskFromInput(t *testing.T) {
 // func TestFindTaskByID(t *testing.T) {
 // 	test.Short(t)
 // 	ctx, dbx := test.DbSetup()
-// 	_ = dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+// 	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
 // 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 // 			Email: "tkahng@gmail.com",
 // 		})
@@ -1796,7 +1796,7 @@ func TestCreateTaskFromInput(t *testing.T) {
 // func TestFindLastTaskOrder(t *testing.T) {
 // 	test.Short(t)
 // 	ctx, dbx := test.DbSetup()
-// 	_ = dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+// 	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
 // 		user, err := queries.CreateUser(
 // 			ctx,
 // 			dbxx,
@@ -1889,7 +1889,7 @@ func TestCreateTaskFromInput(t *testing.T) {
 // func TestDeleteTask(t *testing.T) {
 // 	test.Short(t)
 // 	ctx, dbx := test.DbSetup()
-// 	_ = dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+// 	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
 // 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 // 			Email: "tkahng@gmail.com",
 // 		})
@@ -1959,7 +1959,7 @@ func TestCreateTaskFromInput(t *testing.T) {
 // func TestFindTaskProjectByID(t *testing.T) {
 // 	test.Short(t)
 // 	ctx, dbx := test.DbSetup()
-// 	_ = dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+// 	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
 // 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 // 			Email: "tkahng@gmail.com",
 // 		})
@@ -2039,7 +2039,7 @@ func TestCreateTaskFromInput(t *testing.T) {
 // func TestDeleteTaskProject(t *testing.T) {
 // 	test.Short(t)
 // 	ctx, dbx := test.DbSetup()
-// 	_ = dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+// 	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
 // 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 // 			Email: "tkahng@gmail.com",
 // 		})
@@ -2102,7 +2102,7 @@ func TestCreateTaskFromInput(t *testing.T) {
 // func TestListTasks(t *testing.T) {
 // 	test.Short(t)
 // 	ctx, dbx := test.DbSetup()
-// 	_ = dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+// 	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
 // 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 // 			Email: "tkahng@gmail.com",
 // 		})
@@ -2216,7 +2216,7 @@ func TestCreateTaskFromInput(t *testing.T) {
 // func TestCountTasks(t *testing.T) {
 // 	test.Short(t)
 // 	ctx, dbx := test.DbSetup()
-// 	_ = dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+// 	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
 // 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 // 			Email: "tkahng@gmail.com",
 // 		})
@@ -2301,7 +2301,7 @@ func TestCreateTaskFromInput(t *testing.T) {
 // func TestListTaskProjects(t *testing.T) {
 // 	test.Short(t)
 // 	ctx, dbx := test.DbSetup()
-// 	_ = dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+// 	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
 // 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 // 			Email: "tkahng@gmail.com",
 // 		})
@@ -2396,7 +2396,7 @@ func TestCreateTaskFromInput(t *testing.T) {
 // func TestCountTaskProjects(t *testing.T) {
 // 	test.Short(t)
 // 	ctx, dbx := test.DbSetup()
-// 	_ = dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+// 	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
 // 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 // 			Email: "tkahng@gmail.com",
 // 		})
@@ -2463,7 +2463,7 @@ func TestCreateTaskFromInput(t *testing.T) {
 // func TestCreateTaskProject(t *testing.T) {
 // 	test.Short(t)
 // 	ctx, dbx := test.DbSetup()
-// 	_ = dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+// 	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
 // 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 // 			Email: "tkahng@gmail.com",
 // 		})
@@ -2545,7 +2545,7 @@ func TestCreateTaskFromInput(t *testing.T) {
 // func TestCreateTaskProjectWithTasks(t *testing.T) {
 // 	test.Short(t)
 // 	ctx, dbx := test.DbSetup()
-// 	_ = dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+// 	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
 // 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 // 			Email: "tkahng@gmail.com",
 // 		})
@@ -2642,7 +2642,7 @@ func TestCreateTaskFromInput(t *testing.T) {
 // func TestCreateTask(t *testing.T) {
 // 	test.Short(t)
 // 	ctx, dbx := test.DbSetup()
-// 	_ = dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+// 	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
 // 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 // 			Email: "tkahng@gmail.com",
 // 		})
@@ -2735,7 +2735,7 @@ func TestCreateTaskFromInput(t *testing.T) {
 // func TestDefineTaskOrderNumberByStatus(t *testing.T) {
 // 	test.Short(t)
 // 	ctx, dbx := test.DbSetup()
-// 	_ = dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+// 	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
 // 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 // 			Email: "tkahng@gmail.com",
 // 		})
@@ -2865,7 +2865,7 @@ func TestCreateTaskFromInput(t *testing.T) {
 // func TestUpdateTask(t *testing.T) {
 // 	test.Short(t)
 // 	ctx, dbx := test.DbSetup()
-// 	_ = dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+// 	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
 // 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 // 			Email: "tkahng@gmail.com",
 // 		})
@@ -2974,7 +2974,7 @@ func TestCreateTaskFromInput(t *testing.T) {
 // func TestUpdateTaskProjectUpdateDate(t *testing.T) {
 // 	test.Short(t)
 // 	ctx, dbx := test.DbSetup()
-// 	_ = dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+// 	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
 // 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 // 			Email: "tkahng@gmail.com",
 // 		})
@@ -3039,7 +3039,7 @@ func TestCreateTaskFromInput(t *testing.T) {
 // func TestUpdateTaskProject(t *testing.T) {
 // 	test.Short(t)
 // 	ctx, dbx := test.DbSetup()
-// 	_ = dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+// 	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
 // 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 // 			Email: "tkahng@gmail.com",
 // 		})
@@ -3138,7 +3138,7 @@ func TestCreateTaskFromInput(t *testing.T) {
 // func TestUpdateTaskPositionStatus(t *testing.T) {
 // 	test.Short(t)
 // 	ctx, dbx := test.DbSetup()
-// 	_ = dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+// 	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
 // 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 // 			Email: "tkahng@gmail.com",
 // 		})

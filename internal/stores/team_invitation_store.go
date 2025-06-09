@@ -12,6 +12,16 @@ import (
 	"github.com/tkahng/authgo/internal/shared"
 )
 
+type DbTeamInvitationStoreInterface interface { // size=16 (0x10)
+	CreateInvitation(ctx context.Context, invitation *models.TeamInvitation) error
+	FindInvitationByID(ctx context.Context, invitationId uuid.UUID) (*models.TeamInvitation, error)
+	FindInvitationByToken(ctx context.Context, token string) (*models.TeamInvitation, error)
+	FindPendingInvitation(ctx context.Context, teamId uuid.UUID, email string) (*models.TeamInvitation, error)
+	FindTeamInvitations(ctx context.Context, teamId uuid.UUID) ([]*models.TeamInvitation, error)
+	GetInvitationByID(ctx context.Context, invitationId uuid.UUID) (*models.TeamInvitation, error)
+	UpdateInvitation(ctx context.Context, invitation *models.TeamInvitation) error
+}
+
 type DbTeamInvitationStore struct {
 	db database.Dbx
 }

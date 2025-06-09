@@ -16,7 +16,7 @@ import (
 func TestTokenStore_CRUD(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
 		userStore := stores.NewDbUserStore(dbxx)
 		store := stores.NewPostgresTokenStore(dbxx)
 		user, err := userStore.CreateUser(ctx, &models.User{

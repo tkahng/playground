@@ -17,6 +17,21 @@ import (
 	"github.com/tkahng/authgo/internal/tools/utils"
 )
 
+type DbTeamGroupStoreInterface interface {
+	CheckTeamSlug(ctx context.Context, slug string) (bool, error)
+	CountTeams(ctx context.Context, params *shared.ListTeamsParams) (int64, error)
+	CreateTeam(ctx context.Context, name string, slug string) (*models.Team, error)
+	DeleteTeam(ctx context.Context, teamId uuid.UUID) error
+	FindTeam(ctx context.Context, team *models.Team) (*models.Team, error)
+	FindTeamByID(ctx context.Context, teamId uuid.UUID) (*models.Team, error)
+	FindTeamBySlug(ctx context.Context, slug string) (*models.Team, error)
+	FindTeamByStripeCustomerId(ctx context.Context, stripeCustomerId string) (*models.Team, error)
+	ListTeams(ctx context.Context, params *shared.ListTeamsParams) ([]*models.Team, error)
+	LoadTeamsByIds(ctx context.Context, teamIds ...uuid.UUID) ([]*models.Team, error)
+	UpdateTeam(ctx context.Context, teamId uuid.UUID, name string) (*models.Team, error)
+	WithTx(tx database.Dbx) *DbTeamGroupStore
+}
+
 type DbTeamGroupStore struct {
 	db database.Dbx
 }

@@ -37,7 +37,7 @@ func NewDbTeamStore(db database.Dbx) *DbTeamStore {
 }
 
 func (p *DbTeamStore) Transact(ctx context.Context, txFunc func(adapters *DbTeamStore) error) error {
-	return database.WithTx(ctx, p.db, func(tx database.Dbx) error {
+	return database.WithTx(p.db, func(tx database.Dbx) error {
 		adapters := p.WithTx(tx)
 
 		return txFunc(adapters)

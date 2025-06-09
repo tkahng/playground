@@ -168,3 +168,11 @@ func SelectStripeProductColumns(qs squirrel.SelectBuilder, prefix string) squirr
 
 	return qs
 }
+
+type DbProductStoreInterface interface {
+	ListProducts(ctx context.Context, input *shared.StripeProductListParams) ([]*models.StripeProduct, error)
+	CountProducts(ctx context.Context, filter *shared.StripeProductListFilter) (int64, error)
+	FindProductById(ctx context.Context, productId string) (*models.StripeProduct, error)
+	UpsertProduct(ctx context.Context, product *models.StripeProduct) error
+	UpsertProductFromStripe(ctx context.Context, product *stripe.Product) error
+}

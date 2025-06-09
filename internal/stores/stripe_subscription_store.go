@@ -406,3 +406,16 @@ func SelectStripeSubscriptionColumns(qs squirrel.SelectBuilder, prefix string) s
 		Column(models.StripeSubscriptionTablePrefix.UpdatedAt + " AS " + utils.Quote(utils.WithPrefix(prefix, models.StripeSubscriptionTable.UpdatedAt)))
 	return qs
 }
+
+type DbSubscriptionStoreInterface interface {
+	FindActiveSubscriptionsByCustomerIds(ctx context.Context, customerIds ...string) ([]*models.StripeSubscription, error)
+	FindActiveSubscriptionsByTeamIds(ctx context.Context, teamIds ...uuid.UUID) ([]*models.StripeSubscription, error)
+	FindActiveSubscriptionsByUserIds(ctx context.Context, userIds ...uuid.UUID) ([]*models.StripeSubscription, error)
+	FindSubscriptionsWithPriceProductByIds(ctx context.Context, subscriptionIds ...string) ([]*models.StripeSubscription, error)
+	UpsertSubscriptionFromStripe(ctx context.Context, sub *stripe.Subscription) error
+	UpsertSubscription(ctx context.Context, sub *models.StripeSubscription) error
+	FindActiveSubscriptionByCustomerId(ctx context.Context, customerId string) (*models.StripeSubscription, error)
+	IsFirstSubscription(ctx context.Context, customerID string) (bool, error)
+	ListSubscriptions(ctx context.Context, input *shared.StripeSubscriptionListParams) ([]*models.StripeSubscription, error)
+	CountSubscriptions(ctx context.Context, filter *shared.StripeSubscriptionListFilter) (int64, error)
+}

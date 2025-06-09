@@ -179,3 +179,11 @@ func (s *DbPriceStore) UpsertPriceFromStripe(ctx context.Context, price *stripe.
 	}
 	return s.UpsertPrice(ctx, val)
 }
+
+type DbPriceStoreInterface interface {
+	UpsertPrice(ctx context.Context, price *models.StripePrice) error
+	ListPrices(ctx context.Context, input *shared.StripePriceListParams) ([]*models.StripePrice, error)
+	CountPrices(ctx context.Context, filter *shared.StripePriceListFilter) (int64, error)
+	FindActivePriceById(ctx context.Context, priceId string) (*models.StripePrice, error)
+	UpsertPriceFromStripe(ctx context.Context, price *stripe.Price) error
+}

@@ -17,6 +17,18 @@ import (
 	"github.com/tkahng/authgo/internal/tools/types"
 )
 
+type DbAccountStoreInterface interface {
+	CountUserAccounts(ctx context.Context, filter *shared.UserAccountListFilter) (int64, error)
+	CreateUserAccount(ctx context.Context, account *models.UserAccount) (*models.UserAccount, error)
+	FindUserAccountByUserIdAndProvider(ctx context.Context, userId uuid.UUID, provider models.Providers) (*models.UserAccount, error)
+	GetUserAccounts(ctx context.Context, userIds ...uuid.UUID) ([][]*models.UserAccount, error)
+	ListUserAccounts(ctx context.Context, input *shared.UserAccountListParams) ([]*models.UserAccount, error)
+	UnlinkAccount(ctx context.Context, userId uuid.UUID, provider models.Providers) error
+	UpdateUserAccount(ctx context.Context, account *models.UserAccount) error
+	UpdateUserPassword(ctx context.Context, userId uuid.UUID, password string) error
+	WithTx(tx database.Dbx) *DbAccountStore
+}
+
 type DbAccountStore struct {
 	db database.Dbx
 }

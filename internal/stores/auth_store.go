@@ -1,8 +1,6 @@
 package stores
 
 import (
-	"context"
-
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/services"
 )
@@ -32,13 +30,10 @@ func NewDbAuthStore(db database.Dbx) *DbAuthStore {
 	}
 }
 
-var _ services.AuthStore = (*DbAuthStore)(nil)
-
 func (s *DbAuthStore) RunInTransaction(
-	ctx context.Context,
 	fn func(store services.AuthStore) error,
 ) error {
-	return s.db.RunInTransaction(ctx, func(tx database.Dbx) error {
+	return s.db.RunInTx(func(tx database.Dbx) error {
 		store := s.WithTx(tx)
 		return fn(store)
 	})

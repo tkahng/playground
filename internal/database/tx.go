@@ -2,7 +2,6 @@ package database
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 
 	"github.com/jackc/pgx/v5"
@@ -47,38 +46,38 @@ func (v *txQueries) Exec(ctx context.Context, sql string, args ...any) (pgconn.C
 }
 
 func (v *txQueries) RunInTransaction(ctx context.Context, fn func(Dbx) error) error {
-
-	tx, err := v.db.Begin(ctx)
-	if err != nil {
-		return fmt.Errorf("error starting transaction: %w", err)
-	}
-	// Ensure the transaction will be rolled back if not committed
-	defer tx.Rollback(ctx)
-
-	err = fn(&txQueries{db: tx})
-	if err == nil {
-		if err := tx.Commit(ctx); err != nil {
-			return fmt.Errorf("error committing transaction: %w", err)
-		}
-	}
-
-	return err
+	return WithTx(v, fn)
 }
 
-func WithTx(ctx context.Context, dbx Dbx, fn func(tx Dbx) error) error {
+func (v *txQueries) RunInTx(fn func(Dbx) error) error {
+	return WithTx(v, fn)
+}
+
+func WithTx(dbx Dbx, fn func(tx Dbx) error) error {
+	ctx := context.Background() // Use the appropriate context as needed
 	tx, err := dbx.Begin(ctx)
 	if err != nil {
 		slog.Error("error starting transaction", slog.Any("error", err))
-		return fmt.Errorf("error starting transaction: %w", err)
+		return err
 	}
 	// Ensure the transaction will be rolled back if not committed
+	//nolint:errcheck
 	defer tx.Rollback(ctx)
+
+	defer func() {
+		if err := recover(); err != nil {
+			err := tx.Rollback(ctx)
+			if err != nil {
+				return
+			}
+		}
+	}()
 
 	err = fn(&txQueries{db: tx})
 	if err == nil {
 		if err := tx.Commit(ctx); err != nil {
-			slog.Error("error committing transaction", slog.Any("error", err))
-			return fmt.Errorf("error committing transaction: %w", err)
+			slog.ErrorContext(ctx, "error committing transaction", slog.Any("error", err))
+			return err
 		}
 	}
 

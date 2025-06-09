@@ -314,7 +314,6 @@ func (s *DbUserStore) LoadUsersByUserIds(ctx context.Context, userIds ...uuid.UU
 }
 
 type DbUserStoreInterface interface {
-	WithTx(tx database.Dbx) *DbUserStore
 	UserWhere(user *models.User) *map[string]any
 	FindUser(ctx context.Context, user *models.User) (*models.User, error)
 	FindUserByID(ctx context.Context, userId uuid.UUID) (*models.User, error)
@@ -325,6 +324,8 @@ type DbUserStoreInterface interface {
 	CreateUser(ctx context.Context, user *models.User) (*models.User, error)
 	LoadUsersByUserIds(ctx context.Context, userIds ...uuid.UUID) ([]*models.User, error)
 }
+
+var _ DbUserStoreInterface = &DbUserStore{}
 
 type RolePermissionClaims struct {
 	UserID      uuid.UUID          `json:"user_id" db:"user_id"`

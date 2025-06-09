@@ -19,7 +19,7 @@ func TestGetUserTaskStats(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 
-	_ = dbx.RunInTransaction(ctx, func(dbxx database.Dbx) error {
+	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
 		taskStore := stores.NewTaskStore(dbxx)
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 			Email: "tkahng@gmail.com",

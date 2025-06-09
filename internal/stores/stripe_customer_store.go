@@ -144,3 +144,10 @@ func (s *DbCustomerStore) FindCustomer(ctx context.Context, customer *models.Str
 	)
 	return database.OptionalRow(data, err)
 }
+
+type DbCustomerStoreInterface interface {
+	ListCustomers(ctx context.Context, input *shared.StripeCustomerListParams) ([]*models.StripeCustomer, error)
+	CountCustomers(ctx context.Context, filter *shared.StripeCustomerListFilter) (int64, error)
+	CreateCustomer(ctx context.Context, customer *models.StripeCustomer) (*models.StripeCustomer, error)
+	FindCustomer(ctx context.Context, customer *models.StripeCustomer) (*models.StripeCustomer, error)
+}
