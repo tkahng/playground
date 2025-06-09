@@ -106,7 +106,7 @@ func TestLoadTaskProjectsTasks(t *testing.T) {
 				}
 			})
 		}
-		return test.EndTestErr
+		return test.ErrEndTest
 	})
 }
 func TestFindTaskByID(t *testing.T) {
@@ -202,7 +202,7 @@ func TestFindTaskByID(t *testing.T) {
 				}
 			})
 		}
-		return test.EndTestErr
+		return test.ErrEndTest
 	})
 }
 
@@ -298,7 +298,7 @@ func TestFindLastTaskOrder(t *testing.T) {
 				}
 			})
 		}
-		return test.EndTestErr
+		return test.ErrEndTest
 	})
 }
 func TestDeleteTask(t *testing.T) {
@@ -376,7 +376,7 @@ func TestDeleteTask(t *testing.T) {
 				}
 			})
 		}
-		return test.EndTestErr
+		return test.ErrEndTest
 	})
 }
 func TestFindTaskProjectByID(t *testing.T) {
@@ -459,7 +459,7 @@ func TestFindTaskProjectByID(t *testing.T) {
 				}
 			})
 		}
-		return test.EndTestErr
+		return test.ErrEndTest
 	})
 }
 func TestDeleteTaskProject(t *testing.T) {
@@ -525,7 +525,7 @@ func TestDeleteTaskProject(t *testing.T) {
 				}
 			})
 		}
-		return test.EndTestErr
+		return test.ErrEndTest
 	})
 }
 func TestListTasks(t *testing.T) {
@@ -639,7 +639,7 @@ func TestListTasks(t *testing.T) {
 				}
 			})
 		}
-		return test.EndTestErr
+		return test.ErrEndTest
 	})
 }
 func TestCountTasks(t *testing.T) {
@@ -729,7 +729,7 @@ func TestCountTasks(t *testing.T) {
 				}
 			})
 		}
-		return test.EndTestErr
+		return test.ErrEndTest
 	})
 }
 func TestListTaskProjects(t *testing.T) {
@@ -829,7 +829,7 @@ func TestListTaskProjects(t *testing.T) {
 				}
 			})
 		}
-		return test.EndTestErr
+		return test.ErrEndTest
 	})
 }
 func TestCountTaskProjects(t *testing.T) {
@@ -905,7 +905,7 @@ func TestCountTaskProjects(t *testing.T) {
 				}
 			})
 		}
-		return test.EndTestErr
+		return test.ErrEndTest
 	})
 }
 func TestCreateTaskProject(t *testing.T) {
@@ -991,7 +991,7 @@ func TestCreateTaskProject(t *testing.T) {
 				}
 			})
 		}
-		return test.EndTestErr
+		return test.ErrEndTest
 	})
 }
 func TestCreateTaskProjectWithTasks(t *testing.T) {
@@ -1099,7 +1099,7 @@ func TestCreateTaskProjectWithTasks(t *testing.T) {
 				}
 			})
 		}
-		return test.EndTestErr
+		return test.ErrEndTest
 	})
 }
 
@@ -1200,7 +1200,7 @@ func TestCreateTaskFromInput(t *testing.T) {
 				}
 			})
 		}
-		return test.EndTestErr
+		return test.ErrEndTest
 	})
 }
 

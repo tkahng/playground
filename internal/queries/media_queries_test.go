@@ -96,7 +96,7 @@ ctx, dbx := test.DbSetup()
 				}
 			})
 		}
-		return test.EndTestErr
+		return test.ErrEndTest
 	})
 }
 
@@ -181,6 +181,6 @@ ctx, dbx := test.DbSetup()
 				}
 			})
 		}
-		return test.EndTestErr
+		return test.ErrEndTest
 	})
 }

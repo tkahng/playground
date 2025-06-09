@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	EndTestErr  = errors.New("end test. rollback transaction")
+	ErrEndTest  = errors.New("end test. rollback transaction")
 	ctxInstance context.Context
 	ctxOnce     sync.Once
 	dbx         *database.Queries
@@ -26,10 +26,11 @@ func DbSetup() (context.Context, *database.Queries) {
 
 func WithTx(t *testing.T, fn func(ctx context.Context, db database.Dbx)) {
 	ctx := context.Background()
-	tx, err := dbx.Pool().Begin(ctx)
+	tx, err := dbx.Begin(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
+	// nolint:errcheck
 	defer tx.Rollback(ctx)
 	// panic handle
 	defer func() {

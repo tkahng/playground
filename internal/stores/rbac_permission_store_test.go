@@ -171,7 +171,7 @@ func TestListPermissions(t *testing.T) {
 				}
 			})
 		}
-		return test.EndTestErr
+		return test.ErrEndTest
 	})
 }
 
@@ -238,7 +238,7 @@ func TestCountPermissions(t *testing.T) {
 				}
 			})
 		}
-		return test.EndTestErr
+		return test.ErrEndTest
 	})
 }
 

@@ -102,7 +102,7 @@ func TestConstraintCheckerService_CannotHaveValidSubscription(t *testing.T) {
 				}
 			})
 		}
-		return test.EndTestErr
+		return test.ErrEndTest
 	})
 }
 func TestConstraintCheckerService_CannotBeAdminOrBasicName(t *testing.T) {
@@ -410,7 +410,7 @@ func TestConstraintCheckerService_CannotBeSuperUserID(t *testing.T) {
 				}
 			})
 		}
-		return test.EndTestErr
+		return test.ErrEndTest
 	})
 }
 func TestConstraintCheckerService_CannotBeSuperUserEmail(t *testing.T) {

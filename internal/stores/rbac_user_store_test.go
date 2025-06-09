@@ -459,7 +459,7 @@ func TestCreateUserRoles(t *testing.T) {
 				}
 			})
 		}
-		return test.EndTestErr
+		return test.ErrEndTest
 	})
 }
 

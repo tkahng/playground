@@ -111,7 +111,7 @@ ctx, dbx := test.DbSetup()
 				}
 			})
 		}
-		return test.EndTestErr
+		return test.ErrEndTest
 	})
 }
 
@@ -161,7 +161,7 @@ ctx, dbx := test.DbSetup()
 				}
 			})
 		}
-		return test.EndTestErr
+		return test.ErrEndTest
 	})
 }
 
@@ -275,7 +275,7 @@ ctx, dbx := test.DbSetup()
 				}
 			})
 		}
-		return test.EndTestErr
+		return test.ErrEndTest
 	})
 }
 func TestFindUserByEmail(t *testing.T) {
@@ -345,7 +345,7 @@ ctx, dbx := test.DbSetup()
 				}
 			})
 		}
-		return test.EndTestErr
+		return test.ErrEndTest
 	})
 }
 func TestFindUserById(t *testing.T) {
@@ -418,7 +418,7 @@ ctx, dbx := test.DbSetup()
 				}
 			})
 		}
-		return test.EndTestErr
+		return test.ErrEndTest
 	})
 }
 func TestUpdateUserPassword(t *testing.T) {
@@ -486,7 +486,7 @@ ctx, dbx := test.DbSetup()
 				}
 			})
 		}
-		return test.EndTestErr
+		return test.ErrEndTest
 	})
 }
 func TestUpdateMe(t *testing.T) {
@@ -565,7 +565,7 @@ ctx, dbx := test.DbSetup()
 				}
 			})
 		}
-		return test.EndTestErr
+		return test.ErrEndTest
 	})
 }
 func TestGetUserAccounts(t *testing.T) {
@@ -684,6 +684,6 @@ ctx, dbx := test.DbSetup()
 				}
 			})
 		}
-		return test.EndTestErr
+		return test.ErrEndTest
 	})
 }

@@ -124,7 +124,7 @@ func TestListUsers(t *testing.T) {
 				}
 			})
 		}
-		return test.EndTestErr
+		return test.ErrEndTest
 	})
 }
 func TestCountUsers(t *testing.T) {
@@ -195,7 +195,7 @@ func TestCountUsers(t *testing.T) {
 				}
 			})
 		}
-		return test.EndTestErr
+		return test.ErrEndTest
 	})
 }
 func TestDeleteUsers(t *testing.T) {
@@ -228,7 +228,7 @@ func TestDeleteUsers(t *testing.T) {
 				}
 			})
 		}
-		return test.EndTestErr
+		return test.ErrEndTest
 	})
 }
 func TestUpdateUser(t *testing.T) {
@@ -275,6 +275,6 @@ func TestUpdateUser(t *testing.T) {
 				}
 			})
 		}
-		return test.EndTestErr
+		return test.ErrEndTest
 	})
 }
