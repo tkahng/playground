@@ -60,7 +60,8 @@ func UpsertCustomerStripeId(ctx context.Context, dbx database.Dbx, userId uuid.U
 		Columns("id", "stripe_id").
 		Values(userId, stripeCustomerId).
 		Suffix(`ON CONFLICT (id) DO UPDATE SET stripe_id = EXCLUDED.stripe_id`)
-	return database.ExecWithBuilder(ctx, dbx, q.PlaceholderFormat(squirrel.Dollar))
+	_, err := database.ExecWithBuilder(ctx, dbx, q.PlaceholderFormat(squirrel.Dollar))
+	return err
 }
 
 func UpsertProduct(ctx context.Context, dbx database.Dbx, product *models.StripeProduct) error {
@@ -90,7 +91,8 @@ func UpsertProduct(ctx context.Context, dbx database.Dbx, product *models.Stripe
 						metadata = EXCLUDED.metadata
 		`,
 		)
-	return database.ExecWithBuilder(ctx, dbx, q.PlaceholderFormat(squirrel.Dollar))
+	_, err := database.ExecWithBuilder(ctx, dbx, q.PlaceholderFormat(squirrel.Dollar))
+	return err
 }
 
 func UpsertProductFromStripe(ctx context.Context, dbx database.Dbx, product *stripe.Product) error {
@@ -154,7 +156,8 @@ func UpsertPrice(ctx context.Context, dbx database.Dbx, price *models.StripePric
 			trial_period_days = EXCLUDED.trial_period_days,
 			metadata = EXCLUDED.metadata
 		`)
-	return database.ExecWithBuilder(ctx, dbx, q.PlaceholderFormat(squirrel.Dollar))
+	_, err := database.ExecWithBuilder(ctx, dbx, q.PlaceholderFormat(squirrel.Dollar))
+	return err
 }
 
 func UpsertPriceFromStripe(ctx context.Context, dbx database.Dbx, price *stripe.Price) error {
@@ -237,7 +240,8 @@ func UpsertSubscription(ctx context.Context, dbx database.Dbx, subscription *mod
 			"trial_end = EXCLUDED.trial_end",
 	)
 
-	return database.ExecWithBuilder(ctx, dbx, q.PlaceholderFormat(squirrel.Dollar))
+	_, err := database.ExecWithBuilder(ctx, dbx, q.PlaceholderFormat(squirrel.Dollar))
+	return err
 }
 
 func UpsertSubscriptionFromStripe(ctx context.Context, exec database.Dbx, sub *stripe.Subscription) error {

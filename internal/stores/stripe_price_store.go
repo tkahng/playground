@@ -44,7 +44,8 @@ func (s *DbPriceStore) UpsertPrice(ctx context.Context, price *models.StripePric
 			trial_period_days = EXCLUDED.trial_period_days,
 			metadata = EXCLUDED.metadata
 		`)
-	return database.ExecWithBuilder(ctx, dbx, q.PlaceholderFormat(squirrel.Dollar))
+	_, err := database.ExecWithBuilder(ctx, dbx, q.PlaceholderFormat(squirrel.Dollar))
+	return err
 }
 
 func listPriceOrderByMap(input *shared.StripePriceListParams) *map[string]string {

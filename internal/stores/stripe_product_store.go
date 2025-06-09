@@ -99,7 +99,8 @@ func (s *DbProductStore) UpsertProduct(ctx context.Context, product *models.Stri
 						image = EXCLUDED.image, 
 						metadata = EXCLUDED.metadata
 		`)
-	return database.ExecWithBuilder(ctx, dbx, q.PlaceholderFormat(squirrel.Dollar))
+	_, err := database.ExecWithBuilder(ctx, dbx, q.PlaceholderFormat(squirrel.Dollar))
+	return err
 }
 
 // UpsertProductFromStripe implements PaymentStore.

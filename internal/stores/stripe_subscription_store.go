@@ -280,7 +280,8 @@ func (s *DbSubscriptionStore) UpsertSubscription(ctx context.Context, sub *model
 		"canceled_at = EXCLUDED.canceled_at," +
 		"trial_start = EXCLUDED.trial_start," +
 		"trial_end = EXCLUDED.trial_end")
-	return database.ExecWithBuilder(ctx, s.db, q.PlaceholderFormat(squirrel.Dollar))
+	_, err := database.ExecWithBuilder(ctx, s.db, q.PlaceholderFormat(squirrel.Dollar))
+	return err
 }
 
 func (s *DbSubscriptionStore) FindActiveSubscriptionByCustomerId(ctx context.Context, customerId string) (*models.StripeSubscription, error) {

@@ -2,7 +2,6 @@ package database
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/stephenafamo/scan"
 	"github.com/stephenafamo/scan/pgxscan"
@@ -14,20 +13,27 @@ type QueryBuilder interface {
 
 func QueryWithBuilder[T any](ctx context.Context, db Dbx, query QueryBuilder) ([]T, error) {
 	sql, args, err := query.ToSql()
-	fmt.Println("query", sql, "args", args)
+	// fmt.Println("query", sql, "args", args)
 	if err != nil {
 		return nil, err
 	}
 	return QueryAll[T](ctx, db, sql, args...)
 }
-
-func ExecWithBuilder(ctx context.Context, db Dbx, query QueryBuilder) error {
+func QueryWithBuilderSingle[T any](ctx context.Context, db Dbx, query QueryBuilder) ([]T, error) {
+	sql, args, err := query.ToSql()
+	// fmt.Println("query", sql, "args", args)
+	if err != nil {
+		return nil, err
+	}
+	return QueryAll[T](ctx, db, sql, args...)
+}
+func ExecWithBuilder(ctx context.Context, db Dbx, query QueryBuilder) (int64, error) {
 	sql, args, err := query.ToSql()
 	if err != nil {
-		return err
+		return 0, err
 	}
-	_, err = db.Exec(ctx, sql, args...)
-	return err
+	result, err := db.Exec(ctx, sql, args...)
+	return result.RowsAffected(), err
 }
 
 func QueryAll[T any](ctx context.Context, db Dbx, query string, args ...any) ([]T, error) {

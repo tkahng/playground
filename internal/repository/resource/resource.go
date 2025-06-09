@@ -21,6 +21,7 @@ var (
 
 type Resource[Model any, Key comparable, Filter any] interface {
 	Delete(ctx context.Context, id Key) error
+	// DeleteMany(ctx context.Context, filter *Filter) (int64, error)
 	Update(ctx context.Context, model *Model) (*Model, error)
 	Create(ctx context.Context, model *Model) (*Model, error)
 	Count(ctx context.Context, filter *Filter) (int64, error)
@@ -82,18 +83,14 @@ func (p *RepositoryResource[M, K, F]) pagination(filter *F) (limit, offset int) 
 
 func (p *RepositoryResource[M, K, F]) sort(filter *F) *map[string]string {
 	if filter == nil {
-		slog.Info("sort called with nil filter, returning nil")
 		return nil // return nil if no filter is provided
 	}
 	if p.sortFn != nil {
-		slog.Info("sortFn is not nil, calling sortFn with filter", "filter", filter)
 		return p.sortFn(filter)
 	}
 	if sortable, ok := any(filter).(Sortable); ok {
-		slog.Info("filter implements Sortable, calling Sort method", "filter", filter)
 		sortBy, sortOrder := sortable.Sort()
 		if sortBy != "" && slices.Contains(p.repository.Builder().ColumnNames(), utils.Quote(sortBy)) {
-			slog.Info("valid sort by field found", "sortBy", sortBy, "sortOrder", sortOrder)
 			return &map[string]string{
 				sortBy: sortOrder,
 			}
@@ -135,9 +132,12 @@ func (p *RepositoryResource[M, K, F]) idWhere(id K) *map[string]any {
 
 // Delete implements Resource.
 func (p *RepositoryResource[M, K, F]) Delete(ctx context.Context, id K) error {
-	_, err := p.repository.Delete(ctx, p.db, p.idWhere(id))
+	count, err := p.repository.Delete(ctx, p.db, p.idWhere(id))
 	if err != nil {
 		return err
+	}
+	if count == 0 {
+		return errors.New("no rows deleted")
 	}
 	return nil
 }
@@ -210,17 +210,34 @@ type QueryResource[Model any, Key comparable, Filter any] struct {
 	db             database.Dbx
 	builder        *repository.SQLBuilder[Model]
 	selectFilterFn func(qs sq.SelectBuilder, filter *Filter) sq.SelectBuilder
-	deleteFilterFn func(qs sq.SelectBuilder, filter *Filter) sq.SelectBuilder
 	sortFn         func(qs sq.SelectBuilder, filter *Filter) sq.SelectBuilder
 	paginationFn   func(qs sq.SelectBuilder, filter *Filter) sq.SelectBuilder
 }
+
+func NewQueryResource[Model any, Key comparable, Filter any](
+	db database.Dbx,
+	builder *repository.SQLBuilder[Model],
+	filterFn func(qs sq.SelectBuilder, filter *Filter) sq.SelectBuilder,
+	sortFn func(qs sq.SelectBuilder, filter *Filter) sq.SelectBuilder,
+	paginationFn func(qs sq.SelectBuilder, filter *Filter) sq.SelectBuilder,
+) *QueryResource[Model, Key, Filter] {
+	return &QueryResource[Model, Key, Filter]{
+		db:             db,
+		builder:        builder,
+		selectFilterFn: filterFn,
+		sortFn:         sortFn,
+		paginationFn:   paginationFn,
+	}
+}
+
+var _ Resource[any, any, any] = (*QueryResource[any, any, any])(nil)
 
 func (p *QueryResource[M, K, F]) filter(qs sq.SelectBuilder, filter *F) sq.SelectBuilder {
 	if filter == nil {
 		return qs // return the original query if no filter is provided
 	}
 	if p.selectFilterFn != nil {
-		qs = p.selectFilterFn(qs, filter)
+		qs := p.selectFilterFn(qs, filter)
 		return qs
 	}
 	return qs
@@ -323,11 +340,19 @@ func (s *QueryResource[Model, Key, Filter]) Create(ctx context.Context, model *M
 
 // Delete implements Resource.
 func (s *QueryResource[Model, Key, Filter]) Delete(ctx context.Context, id Key) error {
-	qs := sq.Delete(s.builder.Table()).Where(sq.Eq{s.builder.IdColumnName(): id})
-	err := database.ExecWithBuilder(ctx, s.db, qs.PlaceholderFormat(sq.Dollar))
-	return err
+	qs := sq.Delete(s.builder.Table()).
+		Where(sq.Eq{s.builder.IdColumnName(): id})
+	count, err := database.ExecWithBuilder(ctx, s.db, qs.PlaceholderFormat(sq.Dollar))
+	if err != nil {
+		return fmt.Errorf("error deleting model: %w", err)
+	}
+	if count == 0 {
+		return errors.New("no rows deleted")
+	}
+	return nil
 }
 
+// Default filter implementation if no custom filter function is provided
 // Find implements Resource.
 func (s *QueryResource[Model, Key, Filter]) Find(ctx context.Context, filter *Filter) ([]*Model, error) {
 	qs := sq.Select(s.builder.ColumnNamesTablePrefix()...).
@@ -413,24 +438,6 @@ func (s *QueryResource[Model, Key, Filter]) WithTx(tx database.Dbx) Resource[Mod
 		builder:        s.builder,
 	}
 }
-
-func NewQueryResource[Model any, Key comparable, Filter any](
-	db database.Dbx,
-	builder *repository.SQLBuilder[Model],
-	filterFn func(qs sq.SelectBuilder, filter *Filter) sq.SelectBuilder,
-	sortFn func(qs sq.SelectBuilder, filter *Filter) sq.SelectBuilder,
-	paginationFn func(qs sq.SelectBuilder, filter *Filter) sq.SelectBuilder,
-) *QueryResource[Model, Key, Filter] {
-	return &QueryResource[Model, Key, Filter]{
-		db:             db,
-		builder:        builder,
-		selectFilterFn: filterFn,
-		sortFn:         sortFn,
-		paginationFn:   paginationFn,
-	}
-}
-
-var _ Resource[any, any, any] = (*QueryResource[any, any, any])(nil)
 
 type Sortable interface {
 	Sort() (sortBy, sortOrder string)

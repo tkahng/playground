@@ -292,11 +292,8 @@ func (s *DbTeamMemberStore) UpdateTeamMemberSelectedAt(ctx context.Context, team
 		Where(squirrel.Eq{models.TeamMemberTable.UserID: userId}).
 		Set(models.TeamMemberTable.LastSelectedAt, time.Now())
 
-	err := database.ExecWithBuilder(ctx, s.db, qquery.PlaceholderFormat(squirrel.Dollar))
-	if err != nil {
-		return err
-	}
-	return nil
+	_, err := database.ExecWithBuilder(ctx, s.db, qquery.PlaceholderFormat(squirrel.Dollar))
+	return err
 }
 
 // FindLatestTeamMemberByUserID implements TeamQueryer.

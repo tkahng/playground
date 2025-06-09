@@ -614,11 +614,8 @@ func (s *taskStore) UpdateTaskProjectUpdateDate(ctx context.Context, taskProject
 		Where("id = ?", taskProjectID).
 		Set("updated_at", time.Now())
 
-	err := database.ExecWithBuilder(ctx, s.db, q.PlaceholderFormat(squirrel.Dollar))
-	if err != nil {
-		return err
-	}
-	return nil
+	_, err := database.ExecWithBuilder(ctx, s.db, q.PlaceholderFormat(squirrel.Dollar))
+	return err
 }
 
 func (s *taskStore) UpdateTaskProject(ctx context.Context, taskProjectID uuid.UUID, input *shared.UpdateTaskProjectBaseDTO) error {
