@@ -1,18 +1,6 @@
 {
   "folders": [
     {
-      "name": "internal",
-      "path": "internal"
-    },
-    {
-      "name": "ui",
-      "path": "ui"
-    },
-    {
-      "name": "cmd",
-      "path": "cmd"
-    },
-    {
       "name": "authgo",
       "path": "."
     }
@@ -42,7 +30,6 @@
     },
     "explorer.excludeGitIgnore": false,
     "[go]": {
-      
       "editor.formatOnSave": true,
       "editor.codeActionsOnSave": {
         "source.organizeImports": "always"
@@ -51,9 +38,16 @@
       "editor.codeLens": true,
       "editor.codeActionWidget.includeNearbyQuickFixes": true
     },
-    
+
     "go.lintTool": "golangci-lint",
-    // "go.lintFlags": ["--path-mode=abs", "--fast-only", "--fix"],
+    "go.lintOnSave": "workspace",
+    "go.lintFlags": [
+      "--path-mode=abs",
+      "--fast-only",
+      "--fix",
+      "-c",
+      ".golangci-lint.yml"
+    ],
     "go.formatTool": "custom",
     "go.alternateTools": {
       "customFormatter": "golangci-lint"
@@ -66,7 +60,6 @@
       "editor.defaultFormatter": "mtxr.sqltools"
     },
     "editor.formatOnSaveMode": "file",
-    
     "[json]": {
       "editor.defaultFormatter": "esbenp.prettier-vscode",
       "editor.formatOnSave": true
@@ -100,8 +93,8 @@
       "templ": "html"
     },
     "gopls": {
-      "ui.semanticTokens": false,
-    // "formatting.gofumpt": true
+      "ui.semanticTokens": false
+      // "formatting.gofumpt": true
     },
     "editor.codeLens": true,
     "[typescript]": {

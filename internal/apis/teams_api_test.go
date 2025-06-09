@@ -117,6 +117,10 @@ func TestTeamSlug(t *testing.T) {
 		}
 		_, err = app.Team().Store().CreateTeam(context.Background(), "test team",
 			"public")
+		if err != nil {
+			t.Errorf("Error creating team: %v", err)
+			return
+		}
 		VerifiedHeader := fmt.Sprintf("Authorization: Bearer %s", tokensVerifiedTokens.Tokens.AccessToken)
 		resp := api.Post("/teams/check-slug", VerifiedHeader, struct {
 			Slug string `json:"slug" required:"true"`

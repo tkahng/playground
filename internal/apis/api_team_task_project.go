@@ -251,6 +251,9 @@ func (api *Api) TeamTaskProjectTasksCreate(ctx context.Context, input *shared.Cr
 		return nil, err
 	}
 	err = api.app.Task().Store().UpdateTaskProjectUpdateDate(ctx, parsedProjectID)
+	if err != nil {
+		return nil, huma.Error500InternalServerError("Failed to update task project update date")
+	}
 	return &TaskResposne{
 		Body: shared.FromModelTask(task),
 	}, nil

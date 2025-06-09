@@ -208,7 +208,7 @@ func (p *Poller) pollOnce(ctx context.Context) error {
 
 			jobCtx, cancel := context.WithTimeout(
 				ctx,
-				p.opts.Timeout,
+				timeout,
 			)
 			defer cancel()
 
