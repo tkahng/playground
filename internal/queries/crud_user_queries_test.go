@@ -21,7 +21,7 @@ import (
 func TestListUsers(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
+	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		internet := faker.New().Internet()
 		users1, err := seeders.CreateUserWithAccountAndRole(ctx, dbxx, 5, models.ProvidersGoogle, "superuser", internet)
 		if err != nil {
@@ -130,7 +130,7 @@ func TestListUsers(t *testing.T) {
 func TestCountUsers(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
+	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		internet := faker.New().Internet()
 		_, err := seeders.CreateUserWithAccountAndRole(ctx, dbxx, 5, models.ProvidersGoogle, "superuser", internet)
 		if err != nil {
@@ -201,7 +201,7 @@ func TestCountUsers(t *testing.T) {
 func TestDeleteUsers(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
+	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		internet := faker.New().Internet()
 		users, err := seeders.CreateUserWithAccountAndRole(ctx, dbxx, 1, models.ProvidersGoogle, "basic", internet)
 		if err != nil {
@@ -234,7 +234,7 @@ func TestDeleteUsers(t *testing.T) {
 func TestUpdateUser(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
+	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		internet := faker.New().Internet()
 		users, err := seeders.CreateUserWithAccountAndRole(ctx, dbxx, 1, models.ProvidersGoogle, "basic", internet)
 		if err != nil {

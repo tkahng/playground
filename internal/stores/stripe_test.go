@@ -20,7 +20,7 @@ import (
 func TestStripeStore_CreateCustomer(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
+	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		userStore := stores.NewDbUserStore(dbxx)
 		teamStore := stores.NewDbTeamStore(dbxx)
 		user, err := userStore.CreateUser(ctx, &models.User{
@@ -173,7 +173,7 @@ func TestStripeStore_CreateCustomer(t *testing.T) {
 func TestStripeStore_ProductAndPrice(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
+	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		store := stores.NewDbStripeStore(dbxx)
 
 		// UpsertProduct
@@ -250,7 +250,7 @@ func TestStripeStore_ProductAndPrice(t *testing.T) {
 func TestStripeStore_UpsertProductAndPriceFromStripe(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
+	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		store := stores.NewDbStripeStore(dbxx)
 		stripeProduct := &stripe.Product{
 			ID:          "prod_stripe_1",
@@ -295,7 +295,7 @@ func TestStripeStore_UpsertProductAndPriceFromStripe(t *testing.T) {
 func TestStripeStore_FindCustomer(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
+	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		userStore := stores.NewDbUserStore(dbxx)
 		user, err := userStore.CreateUser(ctx, &models.User{Email: "findcustomer@example.com"})
 		if err != nil {
@@ -323,7 +323,7 @@ func TestStripeStore_FindCustomer(t *testing.T) {
 func TestStripeStore_FindSubscriptionsWithPriceProductByIds(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
+	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		store := stores.NewDbStripeStore(dbxx)
 		userStore := stores.NewDbUserStore(dbxx)
 		user, err := userStore.CreateUser(ctx, &models.User{Email: "sub@example.com"})
@@ -403,7 +403,7 @@ func TestStripeStore_FindSubscriptionsWithPriceProductByIds(t *testing.T) {
 func TestStripeStore_FindActiveSubscriptionsByTeamIds(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
+	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		store := stores.NewDbStripeStore(dbxx)
 		userStore := stores.NewDbUserStore(dbxx)
 		teamStore := stores.NewDbTeamStore(dbxx)
@@ -505,7 +505,7 @@ func TestStripeStore_FindActiveSubscriptionsByTeamIds(t *testing.T) {
 func TestStripeStore_FindActiveSubscriptionsByCustomerIds(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
+	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		store := stores.NewDbStripeStore(dbxx)
 		userStore := stores.NewDbUserStore(dbxx)
 		teamStore := stores.NewDbTeamStore(dbxx)
@@ -607,7 +607,7 @@ func TestStripeStore_FindActiveSubscriptionsByCustomerIds(t *testing.T) {
 func TestStripeStore_FindActiveSubscriptionsByUserIds(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
+	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		store := stores.NewDbStripeStore(dbxx)
 		userStore := stores.NewDbUserStore(dbxx)
 		teamStore := stores.NewDbTeamStore(dbxx)
@@ -712,7 +712,7 @@ func TestStripeStore_FindActiveSubscriptionsByUserIds(t *testing.T) {
 func TestStripeStore_UpsertSubscriptionFromStripe(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
+	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		store := stores.NewDbStripeStore(dbxx)
 		userStore := stores.NewDbUserStore(dbxx)
 		user, err := userStore.CreateUser(ctx, &models.User{Email: "sub@example.com"})

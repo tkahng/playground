@@ -84,7 +84,7 @@ func TestTeamStore_CountTeamMembers(t *testing.T) {
 func TestCreateTeamMember(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
+	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		teamStore := stores.NewDbTeamStore(dbxx)
 		userStore := stores.NewDbUserStore(dbxx)
 		team, err := teamStore.CreateTeam(ctx, "TeamWithMember", "team-with-member-slug")
@@ -112,7 +112,7 @@ func TestCreateTeamMember(t *testing.T) {
 func TestFindTeamMembersByUserID(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
+	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		teamStore := stores.NewDbTeamStore(dbxx)
 		userStore := stores.NewDbUserStore(dbxx)
 		team, err := teamStore.CreateTeam(ctx, "TeamForMembers", "team-for-members-slug")
@@ -144,7 +144,7 @@ func TestFindTeamMembersByUserID(t *testing.T) {
 func TestFindLatestTeamMemberByUserID(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
+	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		teamStore := stores.NewDbTeamStore(dbxx)
 		userStore := stores.NewDbUserStore(dbxx)
 		team1, err := teamStore.CreateTeam(ctx, "team1", "team1-slug")
@@ -222,7 +222,7 @@ func TestUpdateTeamMemberUpdatedAt(t *testing.T) {
 		}
 	})
 
-	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
+	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		teamStore := stores.NewDbTeamStore(dbxx)
 		userStore := stores.NewDbUserStore(dbxx)
 
@@ -275,7 +275,7 @@ func TestUpdateTeamMemberUpdatedAt(t *testing.T) {
 func TestUpdateTeamMemberSelectedAt(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
+	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		teamStore := stores.NewDbTeamStore(dbxx)
 		userStore := stores.NewDbUserStore(dbxx)
 

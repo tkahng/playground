@@ -17,7 +17,7 @@ import (
 func TestLoadTaskProjectsTasks(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
+	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		userStore := stores.NewDbUserStore(dbxx)
 		teamstore := stores.NewDbTeamStore(dbxx)
 		taskStore := stores.NewDbTaskStore(dbxx)
@@ -112,7 +112,7 @@ func TestLoadTaskProjectsTasks(t *testing.T) {
 func TestFindTaskByID(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
+	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		userStore := stores.NewDbUserStore(dbxx)
 		teamstore := stores.NewDbTeamStore(dbxx)
 		taskStore := stores.NewDbTaskStore(dbxx)
@@ -209,7 +209,7 @@ func TestFindTaskByID(t *testing.T) {
 func TestFindLastTaskOrder(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
+	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		userStore := stores.NewDbUserStore(dbxx)
 		teamstore := stores.NewDbTeamStore(dbxx)
 		taskStore := stores.NewDbTaskStore(dbxx)
@@ -304,7 +304,7 @@ func TestFindLastTaskOrder(t *testing.T) {
 func TestDeleteTask(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
+	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		userStore := stores.NewDbUserStore(dbxx)
 		teamstore := stores.NewDbTeamStore(dbxx)
 		taskStore := stores.NewDbTaskStore(dbxx)
@@ -382,7 +382,7 @@ func TestDeleteTask(t *testing.T) {
 func TestFindTaskProjectByID(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
+	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		userStore := stores.NewDbUserStore(dbxx)
 		teamstore := stores.NewDbTeamStore(dbxx)
 		taskStore := stores.NewDbTaskStore(dbxx)
@@ -465,7 +465,7 @@ func TestFindTaskProjectByID(t *testing.T) {
 func TestDeleteTaskProject(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
+	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		userStore := stores.NewDbUserStore(dbxx)
 		teamstore := stores.NewDbTeamStore(dbxx)
 		taskStore := stores.NewDbTaskStore(dbxx)
@@ -531,7 +531,7 @@ func TestDeleteTaskProject(t *testing.T) {
 func TestListTasks(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
+	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		userStore := stores.NewDbUserStore(dbxx)
 		teamstore := stores.NewDbTeamStore(dbxx)
 		taskStore := stores.NewDbTaskStore(dbxx)
@@ -645,7 +645,7 @@ func TestListTasks(t *testing.T) {
 func TestCountTasks(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
+	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		userStore := stores.NewDbUserStore(dbxx)
 		teamstore := stores.NewDbTeamStore(dbxx)
 		taskStore := stores.NewDbTaskStore(dbxx)
@@ -735,7 +735,7 @@ func TestCountTasks(t *testing.T) {
 func TestListTaskProjects(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
+	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		userStore := stores.NewDbUserStore(dbxx)
 		teamstore := stores.NewDbTeamStore(dbxx)
 		taskStore := stores.NewDbTaskStore(dbxx)
@@ -835,7 +835,7 @@ func TestListTaskProjects(t *testing.T) {
 func TestCountTaskProjects(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
+	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		userStore := stores.NewDbUserStore(dbxx)
 		teamstore := stores.NewDbTeamStore(dbxx)
 		taskStore := stores.NewDbTaskStore(dbxx)
@@ -911,7 +911,7 @@ func TestCountTaskProjects(t *testing.T) {
 func TestCreateTaskProject(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
+	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		userStore := stores.NewDbUserStore(dbxx)
 		teamstore := stores.NewDbTeamStore(dbxx)
 		taskStore := stores.NewDbTaskStore(dbxx)
@@ -997,7 +997,7 @@ func TestCreateTaskProject(t *testing.T) {
 func TestCreateTaskProjectWithTasks(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
+	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		userStore := stores.NewDbUserStore(dbxx)
 		teamstore := stores.NewDbTeamStore(dbxx)
 		taskStore := stores.NewDbTaskStore(dbxx)
@@ -1106,7 +1106,7 @@ func TestCreateTaskProjectWithTasks(t *testing.T) {
 func TestCreateTaskFromInput(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
+	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		userStore := stores.NewDbUserStore(dbxx)
 		teamstore := stores.NewDbTeamStore(dbxx)
 		taskStore := stores.NewDbTaskStore(dbxx)

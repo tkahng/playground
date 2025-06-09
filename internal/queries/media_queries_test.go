@@ -15,8 +15,8 @@ import (
 
 func TestCreateMedia(t *testing.T) {
 	test.Short(t)
-ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
+	ctx, dbx := test.DbSetup()
+	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 			Email: "test@example.com",
 		})
@@ -102,8 +102,8 @@ ctx, dbx := test.DbSetup()
 
 func TestFindMediaByID(t *testing.T) {
 	test.Short(t)
-ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
+	ctx, dbx := test.DbSetup()
+	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 			Email: "test@example.com",
 		})

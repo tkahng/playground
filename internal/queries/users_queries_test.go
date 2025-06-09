@@ -17,9 +17,9 @@ import (
 
 func TestCreateUser(t *testing.T) {
 	test.Short(t)
-ctx, dbx := test.DbSetup()
+	ctx, dbx := test.DbSetup()
 
-	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
+	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		type args struct {
 			ctx    context.Context
 			db     database.Dbx
@@ -67,8 +67,8 @@ ctx, dbx := test.DbSetup()
 
 func TestCreateUserRoles(t *testing.T) {
 	test.Short(t)
-ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
+	ctx, dbx := test.DbSetup()
+	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		// Create a user
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 			Email: "tkahng@gmail.com",
@@ -117,8 +117,8 @@ ctx, dbx := test.DbSetup()
 
 func TestCreateUserPermissions(t *testing.T) {
 	test.Short(t)
-ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
+	ctx, dbx := test.DbSetup()
+	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		// Create a user
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 			Email: "tkahng@gmail.com",
@@ -167,8 +167,8 @@ ctx, dbx := test.DbSetup()
 
 func TestCreateAccount(t *testing.T) {
 	test.Short(t)
-ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
+	ctx, dbx := test.DbSetup()
+	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		// Create a user
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 			Email: "testuser@example.com",
@@ -280,9 +280,9 @@ ctx, dbx := test.DbSetup()
 }
 func TestFindUserByEmail(t *testing.T) {
 	test.Short(t)
-ctx, dbx := test.DbSetup()
+	ctx, dbx := test.DbSetup()
 
-	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
+	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		// Create a test user first
 		testUser, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 			Email: "test@example.com",
@@ -350,9 +350,9 @@ ctx, dbx := test.DbSetup()
 }
 func TestFindUserById(t *testing.T) {
 	test.Short(t)
-ctx, dbx := test.DbSetup()
+	ctx, dbx := test.DbSetup()
 
-	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
+	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		// Create a test user first
 		testUser, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 			Email: "test@example.com",
@@ -423,9 +423,9 @@ ctx, dbx := test.DbSetup()
 }
 func TestUpdateUserPassword(t *testing.T) {
 	test.Short(t)
-ctx, dbx := test.DbSetup()
+	ctx, dbx := test.DbSetup()
 
-	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
+	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		// Create test user
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 			Email: "test@example.com",
@@ -491,9 +491,9 @@ ctx, dbx := test.DbSetup()
 }
 func TestUpdateMe(t *testing.T) {
 	test.Short(t)
-ctx, dbx := test.DbSetup()
+	ctx, dbx := test.DbSetup()
 
-	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
+	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		// Create test user first
 		testUser, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 			Email: "test@example.com",
@@ -570,9 +570,9 @@ ctx, dbx := test.DbSetup()
 }
 func TestGetUserAccounts(t *testing.T) {
 	test.Short(t)
-ctx, dbx := test.DbSetup()
+	ctx, dbx := test.DbSetup()
 
-	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
+	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		// Create test users
 		user1, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 			Email: "user1@example.com",

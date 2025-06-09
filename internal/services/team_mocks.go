@@ -223,7 +223,6 @@ func (m *mockTeamStore) CountOwnerTeamMembers(ctx context.Context, teamId uuid.U
 	return count, args.Error(1)
 }
 
-
 // CreateTeamWithOwnerMember implements TeamStore.
 func (m *mockTeamStore) CreateTeamWithOwnerMember(ctx context.Context, name string, slug string, userId uuid.UUID) (*shared.TeamInfoModel, error) {
 	args := m.Called(ctx, name, slug, userId)

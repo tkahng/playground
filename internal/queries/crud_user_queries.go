@@ -23,11 +23,12 @@ func ListUserFilterFunc(filter *shared.UserListFilter) *map[string]any {
 	}
 	where := map[string]any{}
 	if filter.EmailVerified != "" {
-		if filter.EmailVerified == shared.Verified {
+		switch filter.EmailVerified {
+		case shared.Verified:
 			where["email_verified_at"] = map[string]any{
 				"_neq": nil,
 			}
-		} else if filter.EmailVerified == shared.UnVerified {
+		case shared.UnVerified:
 			where["email_verified_at"] = map[string]any{
 				"_eq": nil,
 			}

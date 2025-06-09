@@ -83,6 +83,7 @@ var _ AuthService = (*BaseAuthService)(nil)
 type BaseAuthService struct {
 	routine   RoutineService
 	authStore AuthStore
+	adapter   stores.StorageAdapterInterface
 	mail      MailService
 	token     JwtService
 	password  PasswordService
@@ -113,6 +114,9 @@ func NewAuthService(
 	}
 
 	return authService
+}
+func (app *BaseAuthService) Adapter() stores.StorageAdapterInterface {
+	return app.adapter
 }
 
 // Mail implements AuthService.

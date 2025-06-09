@@ -19,7 +19,7 @@ import (
 func TestCreateTeam(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
+	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		teamStore := stores.NewDbTeamStore(dbxx)
 		team, err := teamStore.CreateTeam(ctx, "Test Team", "test-team-slug")
 		if err != nil {
@@ -35,7 +35,7 @@ func TestCreateTeam(t *testing.T) {
 func TestUpdateTeam(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
+	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		teamStore := stores.NewDbTeamStore(dbxx)
 		team, err := teamStore.CreateTeam(ctx, "Old Name", "old-name-slug")
 		if err != nil {
@@ -56,7 +56,7 @@ func TestUpdateTeam(t *testing.T) {
 func TestDeleteTeam(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
+	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		teamStore := stores.NewDbTeamStore(dbxx)
 		// Create a team to delete
 		team, err := teamStore.CreateTeam(ctx, "ToDelete", "to-delete-slug")
@@ -74,7 +74,7 @@ func TestDeleteTeam(t *testing.T) {
 func TestFindTeamByID(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
+	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		teamStore := stores.NewDbTeamStore(dbxx)
 		team, err := teamStore.CreateTeam(ctx, "FindMe", "find-me-slug")
 		if err != nil {
@@ -126,7 +126,7 @@ func TestTeamStore_CheckTeamSlug(t *testing.T) {
 func TestTeamStore_FindTeamByStripeCustomerId(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
+	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		teamStore := stores.NewDbTeamStore(dbxx)
 		stripeID := "cus_test_123"
 		team, err := teamStore.CreateTeam(ctx, "StripeTeam", "stripe-team-slug")
@@ -159,7 +159,7 @@ func TestTeamStore_FindTeamByStripeCustomerId(t *testing.T) {
 func TestTeamStore_ListTeams(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
+	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		teamStore := stores.NewDbTeamStore(dbxx)
 		userStore := stores.NewDbUserStore(dbxx)
 
@@ -276,7 +276,7 @@ func TestTeamStore_ListTeams(t *testing.T) {
 func TestTeamStore_CountTeams(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
+	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		teamStore := stores.NewDbTeamStore(dbxx)
 		userStore := stores.NewDbUserStore(dbxx)
 
@@ -373,7 +373,7 @@ func TestTeamStore_CountTeams(t *testing.T) {
 func TestTeamStore_FindTeamBySlug(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
+	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		teamStore := stores.NewDbTeamStore(dbxx)
 
 		// Create a team with a unique slug
