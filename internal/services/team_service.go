@@ -67,6 +67,7 @@ type TeamStore interface {
 
 type TeamServiceStore interface {
 	TeamStore
+	// Team() TeamStore
 	// TeamStripeStore
 }
 
