@@ -2,7 +2,7 @@ package middleware
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"slices"
 
@@ -32,11 +32,9 @@ func EmailVerifiedMiddleware(api huma.API) func(ctx huma.Context, next func(huma
 func AuthMiddleware(api huma.API, app core.App) func(ctx huma.Context, next func(huma.Context)) {
 
 	return func(ctx huma.Context, next func(huma.Context)) {
-		fmt.Println("AuthMiddleware")
 		ctxx := ctx.Context()
 		// check if already has user claims
 		if claims := contextstore.GetContextUserInfo(ctxx); claims != nil {
-			log.Println("already has user claims")
 			next(ctx)
 			return
 		}
@@ -53,7 +51,7 @@ func AuthMiddleware(api huma.API, app core.App) func(ctx huma.Context, next func
 		}
 		user, err := app.Auth().HandleAccessToken(ctxx, token)
 		if err != nil {
-			log.Println(err)
+			slog.ErrorContext(ctxx, "failed to handle access token", slog.Any("error", err))
 			next(ctx)
 			return
 		}
@@ -66,7 +64,6 @@ func AuthMiddleware(api huma.API, app core.App) func(ctx huma.Context, next func
 
 func RequireAuthMiddleware(api huma.API) func(ctx huma.Context, next func(huma.Context)) {
 	return func(ctx huma.Context, next func(huma.Context)) {
-		fmt.Println("RequireAuthMiddleware")
 		if ctx.Operation().Security == nil {
 			next(ctx)
 			return
