@@ -59,10 +59,18 @@ type SendMailParams struct {
 	TemplatePath string
 	Template     string
 }
-type EmailParams struct {
-	Token      string
-	Type       string
-	RedirectTo string
+
+func (p *SendMailParams) GeneratePath(appUrl *url.URL, token string, tokenType string, redirectTo string) (string, error) {
+	path, err := GetPathParams(p.TemplatePath, token, tokenType, redirectTo)
+	if err != nil {
+		return "", nil
+	}
+
+	return appUrl.ResolveReference(path).String(), nil
+}
+
+func (p *SendMailParams) GetSubject(args ...string) string {
+	return fmt.Sprintf(p.Subject, args)
 }
 
 type CommonParams struct {
@@ -117,7 +125,7 @@ func encodeRedirectURL(referrerURL string) string {
 	}
 	return referrerURL
 }
-func GetTemplate[T any](name string, mailTemplate string, params T) string {
+func GenerateBody[T any](name string, mailTemplate string, params T) string {
 	tmpl, err := template.New(name).Parse(mailTemplate)
 	if err != nil {
 		log.Fatal(err)

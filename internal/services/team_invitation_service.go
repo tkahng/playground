@@ -142,7 +142,7 @@ func (i *InvitationService) SendInvitationEmail(ctx context.Context, params *Tea
 		return err
 	}
 	params.ConfirmationURL = confUrl
-	body := mailer.GetTemplate("body", string(mailer.DefaultTeamInviteMail), params)
+	body := mailer.GenerateBody("body", string(mailer.DefaultTeamInviteMail), params)
 	param := &mailer.AllEmailParams{}
 	param.CommonParams = &mailer.CommonParams{
 		ConfirmationURL: params.ConfirmationURL,

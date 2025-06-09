@@ -91,17 +91,18 @@ func (app *OtpMailer) GetSendMailParams(emailType mailer.EmailType, tokenHash st
 	if sendMailParams, ok = mailer.EmailPathMap[emailType]; !ok {
 		return nil, fmt.Errorf("email type not found")
 	}
-	path, err := mailer.GetPathParams(sendMailParams.TemplatePath, tokenHash, string(claims.Type), claims.RedirectTo)
+	appUrl, err := url.Parse(appOpts.AppUrl)
 	if err != nil {
 		return nil, err
 	}
-	appUrl, err := url.Parse(appOpts.AppUrl)
+
+	confirmUrl, err := sendMailParams.GeneratePath(appUrl, tokenHash, string(claims.Type), claims.RedirectTo)
 	if err != nil {
 		return nil, err
 	}
 	common := &mailer.CommonParams{
 		SiteURL:         appUrl.String(),
-		ConfirmationURL: appUrl.ResolveReference(path).String(),
+		ConfirmationURL: confirmUrl,
 		Email:           claims.Email,
 		Token:           claims.Otp,
 		TokenHash:       tokenHash,
@@ -111,7 +112,7 @@ func (app *OtpMailer) GetSendMailParams(emailType mailer.EmailType, tokenHash st
 		From:    appOpts.SenderAddress,
 		To:      common.Email,
 		Subject: fmt.Sprintf(sendMailParams.Subject, appOpts.AppName),
-		Body:    mailer.GetTemplate("body", sendMailParams.Template, common),
+		Body:    mailer.GenerateBody("body", sendMailParams.Template, common),
 	}
 	allEmailParams := &mailer.AllEmailParams{
 		SendMailParams: &sendMailParams,

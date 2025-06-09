@@ -272,7 +272,7 @@ func (app *BaseAuthService) GetSendMailParams(emailType mailer.EmailType, tokenH
 		From:    appOpts.SenderAddress,
 		To:      common.Email,
 		Subject: fmt.Sprintf(sendMailParams.Subject, appOpts.AppName),
-		Body:    mailer.GetTemplate("body", sendMailParams.Template, common),
+		Body:    mailer.GenerateBody("body", sendMailParams.Template, common),
 	}
 	allEmailParams := &mailer.AllEmailParams{
 		SendMailParams: &sendMailParams,
