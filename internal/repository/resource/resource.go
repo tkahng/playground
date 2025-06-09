@@ -16,7 +16,7 @@ import (
 )
 
 var (
-	ResourceNotImplementedError = errors.New("resource not implemented")
+	ErrResourceNotImplemented = errors.New("resource not implemented")
 )
 
 type Resource[Model any, Key comparable, Filter any] interface {

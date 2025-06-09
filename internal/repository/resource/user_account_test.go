@@ -61,6 +61,7 @@ func TestUserAccountRepositoryResource_Create(t *testing.T) {
 			user, err := userResource.Create(ctx, &models.User{
 				Email: "test@example.com",
 			})
+			assert.NoError(t, err)
 			userAccount := &models.UserAccount{
 				UserID:            user.ID,
 				Provider:          models.ProvidersCredentials,

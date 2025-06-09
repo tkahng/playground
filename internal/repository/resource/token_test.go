@@ -14,7 +14,6 @@ import (
 )
 
 // mockDbx is a minimal mock for database.Dbx
-type mockDbx struct{}
 
 func TestNewTokenRepositoryResource_FilterFunc(t *testing.T) {
 	db := &database.Queries{} // Mock or use a real database connection as needed
