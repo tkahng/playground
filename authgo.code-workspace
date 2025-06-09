@@ -18,6 +18,19 @@
     }
   ],
   "settings": {
+    "[yaml]": {
+      "editor.defaultFormatter": "redhat.vscode-yaml",
+      "editor.insertSpaces": true,
+      "editor.tabSize": 2,
+      "editor.autoIndent": "keep",
+      "diffEditor.ignoreTrimWhitespace": false,
+      "editor.defaultColorDecorators": "never",
+      "editor.quickSuggestions": {
+        "strings": true,
+        "other": true,
+        "comments": false
+      }
+    },
     "git.ignoredRepositories": ["/opt/homebrew/.git"],
     "editor.formatOnSave": true,
     "editor.quickSuggestions": {
@@ -29,6 +42,7 @@
     },
     "explorer.excludeGitIgnore": false,
     "[go]": {
+      
       "editor.formatOnSave": true,
       "editor.codeActionsOnSave": {
         "source.organizeImports": "always"
@@ -37,7 +51,9 @@
       "editor.codeLens": true,
       "editor.codeActionWidget.includeNearbyQuickFixes": true
     },
+    
     "go.lintTool": "golangci-lint",
+    "go.lintFlags": ["--path-mode=abs", "--fast-only", "--fix"],
     "go.formatTool": "custom",
     "go.alternateTools": {
       "customFormatter": "golangci-lint"
@@ -49,6 +65,8 @@
       "editor.formatOnSave": true,
       "editor.defaultFormatter": "mtxr.sqltools"
     },
+    "editor.formatOnSaveMode": "file",
+    
     "[json]": {
       "editor.defaultFormatter": "esbenp.prettier-vscode",
       "editor.formatOnSave": true
@@ -57,7 +75,6 @@
       "editor.defaultFormatter": "esbenp.prettier-vscode",
       "editor.formatOnSave": true
     },
-    "editor.defaultFormatter": "golang.go",
     "editor.formatOnPaste": true,
     "editor.codeActionsOnSave": {
       "source.fixAll": "always",
@@ -83,7 +100,8 @@
       "templ": "html"
     },
     "gopls": {
-      "ui.semanticTokens": false
+      "ui.semanticTokens": false,
+    // "formatting.gofumpt": true
     },
     "editor.codeLens": true,
     "[typescript]": {
@@ -144,6 +162,9 @@
     "sqltools.results.reuseTabs": "connection",
     "workbench.editor.enablePreviewFromCodeNavigation": true,
     "workbench.editor.enablePreviewFromQuickOpen": true,
-    "workbench.editor.highlightModifiedTabs": true
+    "workbench.editor.highlightModifiedTabs": true,
+    "yaml.schemas": {
+      "https://golangci-lint.run/jsonschema/golangci.jsonschema.json": "file:///Users/tkahng/GitHub/trk-go/authgo/.golangci-lint.yml"
+    }
   }
 }
