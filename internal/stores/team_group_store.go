@@ -48,7 +48,6 @@ func (s *DbTeamGroupStore) WithTx(tx database.Dbx) *DbTeamGroupStore {
 	}
 }
 
-// FindTeam implements services.TeamStore.
 func (s *DbTeamGroupStore) FindTeam(ctx context.Context, team *models.Team) (*models.Team, error) {
 	if team == nil {
 		return nil, nil
@@ -90,7 +89,6 @@ func (s *DbTeamGroupStore) FindTeam(ctx context.Context, team *models.Team) (*mo
 	return team, nil
 }
 
-// LoadTeamsByIds implements services.TeamStore.
 func (s *DbTeamGroupStore) LoadTeamsByIds(ctx context.Context, teamIds ...uuid.UUID) ([]*models.Team, error) {
 	var ids []string
 	for _, id := range teamIds {
@@ -244,7 +242,6 @@ func (s *DbTeamGroupStore) CountTeams(ctx context.Context, params *shared.ListTe
 	return count[0].Count, nil
 }
 
-// CheckTeamSlug implements services.TeamStore.
 func (s *DbTeamGroupStore) CheckTeamSlug(ctx context.Context, slug string) (bool, error) {
 	team, err := repository.Team.GetOne(
 		ctx,

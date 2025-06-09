@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/tkahng/authgo/internal/database"
-	"github.com/tkahng/authgo/internal/services"
 )
 
 type DbTeamStore struct {
@@ -43,5 +42,3 @@ func (p *DbTeamStore) Transact(ctx context.Context, txFunc func(adapters *DbTeam
 		return txFunc(adapters)
 	})
 }
-
-var _ services.TeamStore = &DbTeamStore{}

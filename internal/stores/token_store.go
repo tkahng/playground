@@ -33,8 +33,6 @@ func (p *DbTokenStore) WithTx(tx database.Dbx) *DbTokenStore {
 	}
 }
 
-// var _ services. = &PostgresTokenStore{}
-
 func (a *DbTokenStore) GetToken(ctx context.Context, token string) (*models.Token, error) {
 	res, err := repository.Token.GetOne(ctx,
 		a.db,

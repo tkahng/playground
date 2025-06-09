@@ -7,28 +7,18 @@ import (
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/repository"
-	"github.com/tkahng/authgo/internal/services"
 )
 
 type DbMediaStore struct {
 	dbx database.Dbx
 }
 
-func (s *DbMediaStore) WithTx(tx database.Dbx) services.MediaStore {
-	return &DbMediaStore{
-		dbx: tx,
-	}
-}
-
-var _ services.MediaStore = (*DbMediaStore)(nil)
-
-func NewMediaStore(dbx database.Dbx) services.MediaStore {
+func NewMediaStore(dbx database.Dbx) *DbMediaStore {
 	return &DbMediaStore{
 		dbx: dbx,
 	}
 }
 
-// UpdateMedia implements services.MediaStore.
 func (s *DbMediaStore) UpdateMedia(ctx context.Context, media *models.Medium) (*models.Medium, error) {
 	data, err := repository.Media.PutOne(
 		ctx,

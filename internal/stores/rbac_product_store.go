@@ -99,7 +99,6 @@ func (p *DbRbacStore) LoadProductPermissions(ctx context.Context, productIds ...
 	}), nil
 }
 
-// DeleteProductRoles implements services.RBACStore.
 func (s *DbRbacStore) DeleteProductRoles(ctx context.Context, productId string, roleIds ...uuid.UUID) error {
 	if len(roleIds) == 0 {
 		return nil

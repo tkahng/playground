@@ -7,7 +7,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/auth/oauth"
 	"github.com/tkahng/authgo/internal/conf"
-	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/jobs"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/shared"
@@ -251,32 +250,32 @@ func (a *AuthStoreDecorator) FindUser(ctx context.Context, user *models.User) (*
 }
 
 // WithTx implements AuthStore.
-func (a *AuthStoreDecorator) WithTx(dbx database.Dbx) AuthStore {
-	return &AuthStoreDecorator{
-		Delegate: a.Delegate.WithTx(dbx),
-		// AssignUserRolesFunc:                    a.AssignUserRolesFunc,
-		CreateUserFunc:                         a.CreateUserFunc,
-		DeleteTokenFunc:                        a.DeleteTokenFunc,
-		DeleteUserFunc:                         a.DeleteUserFunc,
-		FindUserAccountByUserIdAndProviderFunc: a.FindUserAccountByUserIdAndProviderFunc,
-		GetTokenFunc:                           a.GetTokenFunc,
-		GetUserInfoFunc:                        a.GetUserInfoFunc,
-		LinkAccountFunc:                        a.LinkAccountFunc,
-		RunInTransactionFunc:                   a.RunInTransactionFunc,
-		SaveTokenFunc:                          a.SaveTokenFunc,
-		UnlinkAccountFunc:                      a.UnlinkAccountFunc,
-		UpdateUserFunc:                         a.UpdateUserFunc,
-		UpdateUserAccountFunc:                  a.UpdateUserAccountFunc,
-	}
-}
+// func (a *AuthStoreDecorator) WithTx(dbx database.Dbx) AuthStore {
+// 	return &AuthStoreDecorator{
+// 		Delegate: a.Delegate.WithTx(dbx),
+// 		// AssignUserRolesFunc:                    a.AssignUserRolesFunc,
+// 		CreateUserFunc:                         a.CreateUserFunc,
+// 		DeleteTokenFunc:                        a.DeleteTokenFunc,
+// 		DeleteUserFunc:                         a.DeleteUserFunc,
+// 		FindUserAccountByUserIdAndProviderFunc: a.FindUserAccountByUserIdAndProviderFunc,
+// 		GetTokenFunc:                           a.GetTokenFunc,
+// 		GetUserInfoFunc:                        a.GetUserInfoFunc,
+// 		LinkAccountFunc:                        a.LinkAccountFunc,
+// 		RunInTransactionFunc:                   a.RunInTransactionFunc,
+// 		SaveTokenFunc:                          a.SaveTokenFunc,
+// 		UnlinkAccountFunc:                      a.UnlinkAccountFunc,
+// 		UpdateUserFunc:                         a.UpdateUserFunc,
+// 		UpdateUserAccountFunc:                  a.UpdateUserAccountFunc,
+// 	}
+// }
 
 // RunInTransaction implements AuthStore.
-func (a *AuthStoreDecorator) RunInTransaction(fn func(store AuthStore) error) error {
-	if a.RunInTransactionFunc != nil {
-		return a.RunInTransactionFunc(fn)
-	}
-	return a.Delegate.RunInTransaction(fn)
-}
+// func (a *AuthStoreDecorator) RunInTransaction(fn func(store AuthStore) error) error {
+// 	if a.RunInTransactionFunc != nil {
+// 		return a.RunInTransactionFunc(fn)
+// 	}
+// 	return a.Delegate.RunInTransaction(fn)
+// }
 
 // AssignUserRoles implements AuthStore.
 // func (a *AuthStoreDecorator) AssignUserRoles(ctx context.Context, userId uuid.UUID, roleNames ...string) error {

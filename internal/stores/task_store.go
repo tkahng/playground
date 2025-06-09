@@ -12,7 +12,6 @@ import (
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/repository"
-	"github.com/tkahng/authgo/internal/services"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 	"github.com/tkahng/authgo/internal/tools/types"
@@ -22,12 +21,10 @@ type taskStore struct {
 	db database.Dbx
 }
 
-// CreateTask implements services.TaskStore.
 func (s *taskStore) CreateTask(ctx context.Context, task *models.Task) (*models.Task, error) {
 	return repository.Task.PostOne(ctx, s.db, task)
 }
 
-// FindTask implements services.TaskStore.
 func (s *taskStore) FindTask(ctx context.Context, task *models.Task) (*models.Task, error) {
 
 	where := s.TaskWhere(task)
@@ -83,7 +80,6 @@ func (*taskStore) TaskWhere(task *models.Task) *map[string]any {
 	return &where
 }
 
-// UpdateTask implements services.TaskStore.
 func (s *taskStore) UpdateTask(ctx context.Context, task *models.Task) error {
 	_, err := repository.Task.PutOne(ctx, s.db, task)
 	return err
@@ -157,8 +153,6 @@ func NewTaskStore(db database.Dbx) *taskStore {
 		db: db,
 	}
 }
-
-var _ services.TaskStore = &taskStore{}
 
 const (
 	LoadTaskProjectsTasksQuery = `

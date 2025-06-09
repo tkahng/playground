@@ -18,6 +18,8 @@ type AllStore struct {
 	subscription   *DbSubscriptionStore
 }
 
+var _ AllStoreInterface = (*AllStore)(nil)
+
 type AllStoreInterface interface {
 	User() DbUserStoreInterface
 	Account() DbAccountStoreInterface
@@ -77,4 +79,39 @@ func (s *AllStore) Account() DbAccountStoreInterface {
 }
 func (s *AllStore) Token() DbTokenStoreInterface {
 	return s.token
+}
+
+// Customer implements AllStoreInterface.
+func (s *AllStore) Customer() DbCustomerStoreInterface {
+	return s.customer
+}
+
+// Price implements AllStoreInterface.
+func (s *AllStore) Price() DbPriceStoreInterface {
+	return s.price
+}
+
+// Product implements AllStoreInterface.
+func (s *AllStore) Product() DbProductStoreInterface {
+	return s.product
+}
+
+// Subscription implements AllStoreInterface.
+func (s *AllStore) Subscription() DbSubscriptionStoreInterface {
+	return s.subscription
+}
+
+// TeamGroup implements AllStoreInterface.
+func (s *AllStore) TeamGroup() DbTeamGroupStoreInterface {
+	return s.teamGroup
+}
+
+// TeamInvitation implements AllStoreInterface.
+func (s *AllStore) TeamInvitation() DbTeamInvitationStoreInterface {
+	return s.teamInvitation
+}
+
+// TeamMember implements AllStoreInterface.
+func (s *AllStore) TeamMember() DbTeamMemberStoreInterface {
+	return s.teamMember
 }

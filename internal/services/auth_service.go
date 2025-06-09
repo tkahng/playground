@@ -11,7 +11,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/auth/oauth"
 	"github.com/tkahng/authgo/internal/conf"
-	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/jobs"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/shared"
@@ -64,8 +63,8 @@ type AuthService interface {
 }
 
 type AuthStore interface {
-	WithTx(dbx database.Dbx) AuthStore
-	RunInTransaction(fn func(store AuthStore) error) error
+	// WithTx(dbx database.Dbx) AuthStore
+	// RunInTransaction(fn func(store AuthStore) error) error
 	AuthUserStore
 	AuthAccountStore
 	AuthTokenStore
@@ -750,25 +749,53 @@ func (app *BaseAuthService) Authenticate(ctx context.Context, params *shared.Aut
 
 	// if user does not exist, Create User and UserAccount ----------------------------------------------------------------------------------------------------
 	if user == nil {
-		err = app.authStore.RunInTransaction(
-			func(store AuthStore) error {
-				user, err = app.CreateUser(ctx, app.authStore, params)
+		err = func(store AuthStore) error {
+			user, err = func() (*models.User, error) {
+				fmt.Println("User does not exist, creating user")
+				user, err := app.authStore.CreateUser(ctx, &models.User{Email: params.Email, Name: params.Name, Image: params.AvatarUrl, EmailVerifiedAt: params.EmailVerifiedAt})
 				if err != nil {
-					return err
+					return nil, fmt.Errorf("error at creating user: %w", err)
 				}
 				if user == nil {
-					return fmt.Errorf("user not created")
+					return nil, fmt.Errorf("user not created")
 				}
-				account, err = app.CreateAccount(ctx, app.authStore, user, params)
-				if err != nil {
-					return err
+				params.UserId = &user.ID
+				return user, nil
+			}()
+			if err != nil {
+				return err
+			}
+			if user == nil {
+				return fmt.Errorf("user not created")
+			}
+			account, err = func() (*models.UserAccount, error) {
+				fmt.Println("Account does not exist, creating account")
+				if params.Type == shared.ProviderTypeCredentials {
+					if params.HashPassword == nil {
+						if params.Password == nil {
+							return nil, fmt.Errorf("password is nil")
+						}
+						if pw, err := app.password.HashPassword(*params.Password); err != nil {
+							return nil, fmt.Errorf("error at hashing password: %w", err)
+						} else {
+							params.HashPassword = &pw
+						}
+						if params.HashPassword == nil {
+							return nil, fmt.Errorf("password is nil")
+						}
+					}
 				}
-				if account == nil {
-					return fmt.Errorf("account not created")
-				}
-				return nil
-			},
-		)
+				return app.authStore.CreateUserAccount(ctx, &models.UserAccount{UserID: user.ID, Type: models.ProviderTypes(params.Type), Provider: models.Providers(params.Provider), ProviderAccountID: params.ProviderAccountID, Password: params.HashPassword, AccessToken: params.AccessToken, RefreshToken: params.RefreshToken})
+			}()
+			if err != nil {
+				return err
+			}
+			if account == nil {
+				return fmt.Errorf("account not created")
+			}
+			return nil
+		}(app.authStore)
+
 		if err != nil {
 			return nil, fmt.Errorf("error at creating user: %w", err)
 		}
@@ -815,31 +842,31 @@ func (app *BaseAuthService) Authenticate(ctx context.Context, params *shared.Aut
 				checkCredential = true
 			}
 		}
-		err = app.authStore.RunInTransaction(
-			func(store AuthStore) error {
-				account, err = app.CreateAccount(ctx, store, user, params)
+		// err = app.authStore.RunInTransaction(
+		err = func(store AuthStore) error {
+			account, err = app.CreateAccount(ctx, app.authStore, user, params)
+			if err != nil {
+				return fmt.Errorf("error at linking account: %w", err)
+			}
+			if account == nil {
+				return fmt.Errorf("account not created")
+			}
+			if checkCredential {
+				slog.Info("User has a credentials account, resetting password")
+				reset, err = app.UpdateUserVerifiedOrResetPassword(ctx, app.authStore, user, params)
 				if err != nil {
-					return fmt.Errorf("error at linking account: %w", err)
+					app.logger.Error(
+						"error at checking user credentials security",
+						slog.Any("error", err),
+						slog.String("email", user.Email),
+						slog.String("userId", user.ID.String()),
+					)
+					return err
 				}
-				if account == nil {
-					return fmt.Errorf("account not created")
-				}
-				if checkCredential {
-					slog.Info("User has a credentials account, resetting password")
-					reset, err = app.UpdateUserVerifiedOrResetPassword(ctx, store, user, params)
-					if err != nil {
-						app.logger.Error(
-							"error at checking user credentials security",
-							slog.Any("error", err),
-							slog.String("email", user.Email),
-							slog.String("userId", user.ID.String()),
-						)
-						return err
-					}
-				}
-				return nil
-			},
-		)
+			}
+			return nil
+		}(app.authStore)
+		// )
 		if err != nil {
 			return nil, fmt.Errorf("error at creating user account: %w", err)
 		}

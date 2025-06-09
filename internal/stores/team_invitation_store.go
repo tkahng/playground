@@ -64,7 +64,6 @@ func (s *DbTeamInvitationStore) FindTeamInvitations(ctx context.Context, teamId 
 	return invitations, nil
 }
 
-// FindInvitationByID implements services.TeamInvitationStore.
 func (s *DbTeamInvitationStore) FindInvitationByID(ctx context.Context, invitationId uuid.UUID) (*models.TeamInvitation, error) {
 	invitation, err := repository.TeamInvitation.GetOne(
 		ctx,

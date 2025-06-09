@@ -2,7 +2,6 @@ package stores
 
 import (
 	"github.com/tkahng/authgo/internal/database"
-	"github.com/tkahng/authgo/internal/services"
 )
 
 type DbAuthStore struct {
@@ -12,7 +11,7 @@ type DbAuthStore struct {
 	*DbTokenStore
 }
 
-func (s *DbAuthStore) WithTx(dbx database.Dbx) services.AuthStore {
+func (s *DbAuthStore) WithTx(dbx database.Dbx) *DbAuthStore {
 	return &DbAuthStore{
 		db:             dbx,
 		DbAccountStore: s.DbAccountStore,
@@ -31,7 +30,7 @@ func NewDbAuthStore(db database.Dbx) *DbAuthStore {
 }
 
 func (s *DbAuthStore) RunInTransaction(
-	fn func(store services.AuthStore) error,
+	fn func(store *DbAuthStore) error,
 ) error {
 	return s.db.RunInTx(func(tx database.Dbx) error {
 		store := s.WithTx(tx)

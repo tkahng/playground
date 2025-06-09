@@ -6,12 +6,9 @@ import (
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/repository"
-	"github.com/tkahng/authgo/internal/services"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 )
-
-var _ services.PaymentStripeStore = (*DbStripeStore)(nil)
 
 func NewDbStripeStore(db database.Dbx) *DbStripeStore {
 	return &DbStripeStore{

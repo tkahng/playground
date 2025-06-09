@@ -26,7 +26,6 @@ type DbAccountStoreInterface interface {
 	UnlinkAccount(ctx context.Context, userId uuid.UUID, provider models.Providers) error
 	UpdateUserAccount(ctx context.Context, account *models.UserAccount) error
 	UpdateUserPassword(ctx context.Context, userId uuid.UUID, password string) error
-	WithTx(tx database.Dbx) *DbAccountStore
 }
 
 type DbAccountStore struct {
