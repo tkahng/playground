@@ -75,7 +75,7 @@ func (p *RepositoryResource[M, K, F]) pagination(filter *F) (limit, offset int) 
 	if p.paginationFn != nil {
 		return p.paginationFn(filter)
 	}
-	if paginable, ok := any(filter).(Paginable); ok {
+	if paginable, ok := any(filter).(repository.Paginable); ok {
 		return paginable.Pagination()
 	}
 	return 10, 0 // default values
@@ -88,7 +88,7 @@ func (p *RepositoryResource[M, K, F]) sort(filter *F) *map[string]string {
 	if p.sortFn != nil {
 		return p.sortFn(filter)
 	}
-	if sortable, ok := any(filter).(Sortable); ok {
+	if sortable, ok := any(filter).(repository.Sortable); ok {
 		sortBy, sortOrder := sortable.Sort()
 		if sortBy != "" && slices.Contains(p.repository.Builder().ColumnNames(), utils.Quote(sortBy)) {
 			return &map[string]string{
@@ -250,7 +250,7 @@ func (p *QueryResource[M, K, F]) pagination(qs sq.SelectBuilder, filter *F) sq.S
 	if p.paginationFn != nil {
 		qs = p.paginationFn(qs, filter)
 		return qs
-	} else if paginable, ok := any(filter).(Paginable); ok {
+	} else if paginable, ok := any(filter).(repository.Paginable); ok {
 		limit, offset := paginable.Pagination()
 		qs = qs.Limit(uint64(limit)).Offset(uint64(offset))
 		return qs
@@ -265,7 +265,7 @@ func (p *QueryResource[M, K, F]) sort(qs sq.SelectBuilder, filter *F) sq.SelectB
 	if p.sortFn != nil {
 		qs = p.sortFn(qs, filter)
 		return qs
-	} else if sortable, ok := any(filter).(Sortable); ok {
+	} else if sortable, ok := any(filter).(repository.Sortable); ok {
 		sortby, sortOrder := sortable.Sort()
 		if sortby != "" && slices.Contains(p.builder.ColumnNames(), utils.Quote(sortby)) {
 			qs = qs.OrderBy(p.builder.Identifier(sortby) + " " + strings.ToUpper(sortOrder))
@@ -437,51 +437,4 @@ func (s *QueryResource[Model, Key, Filter]) WithTx(tx database.Dbx) Resource[Mod
 		paginationFn:   s.paginationFn,
 		builder:        s.builder,
 	}
-}
-
-type Sortable interface {
-	Sort() (sortBy, sortOrder string)
-}
-type DefaultFilter interface {
-	Sortable
-	Paginable
-}
-type SortParams struct {
-	SortBy    string `query:"sort_by,omitempty" required:"false"`
-	SortOrder string `query:"sort_order,omitempty" required:"false" enum:"asc,desc"`
-}
-
-func (s *SortParams) Sort() (sortBy, sortOrder string) {
-	if s == nil {
-		return "", "" // default values
-	}
-	if s.SortBy == "" {
-		s.SortBy = "created_at" // default sort by
-	}
-	if s.SortOrder == "" {
-		s.SortOrder = "desc" // default sort order
-	}
-	return s.SortBy, s.SortOrder
-}
-
-type PaginatedInput struct {
-	Page    int64 `query:"page,omitempty" minimum:"0" required:"false"`
-	PerPage int64 `query:"per_page,omitempty" default:"10" minimum:"1" maximum:"100" required:"false"`
-}
-
-type Paginable interface {
-	Pagination() (limit, offset int)
-}
-
-func (p *PaginatedInput) Pagination() (limit, offset int) {
-	if p == nil {
-		return 10, 0 // default values
-	}
-	if p.PerPage <= 0 {
-		p.PerPage = 10 // default value
-	}
-	if p.Page < 0 {
-		p.Page = 0 // default value
-	}
-	return int(p.PerPage), int(p.Page) * int(p.PerPage)
 }

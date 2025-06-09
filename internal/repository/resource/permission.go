@@ -9,8 +9,8 @@ import (
 )
 
 type PermissionsFilter struct {
-	PaginatedInput
-	SortParams
+	repository.PaginatedInput
+	repository.SortParams
 	Q           string      `query:"q,omitempty" required:"false"`
 	Ids         []uuid.UUID `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
 	Names       []string    `query:"names,omitempty" required:"false" minimum:"1" maximum:"100"`

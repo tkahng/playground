@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/tkahng/authgo/internal/tools/utils"
 )
 
 type Field struct {
@@ -70,6 +71,8 @@ type SQLBuilderInterface interface {
 	IdColumnName() string
 	InsertID() bool
 	Generator() func(reflect.StructField, *[]any) (string, error)
+
+	Sort(filter Sortable) *map[string]string
 }
 
 var registry = map[string]SQLBuilderInterface{}
@@ -304,6 +307,21 @@ func (b *SQLBuilder[Model]) ValuesError(values *[]Model, args *[]any, keys *[]an
 }
 
 var timestampNames = []string{"created_at", "updated_at"}
+
+func (b *SQLBuilder[Model]) Sort(filter Sortable) *map[string]string {
+	if filter == nil {
+		return nil
+	}
+	sortBy, sortOrder := filter.Sort()
+	if sortBy != "" && slices.Contains(b.ColumnNames(), utils.Quote(sortBy)) {
+		return &map[string]string{
+			sortBy: sortOrder,
+		}
+	} else {
+		slog.Info("sort by field not found in repository columns", "sortBy", sortBy, "sortOrder", sortOrder, "columns", b.ColumnNames())
+		return nil // Return nil if the sortBy field is not found in the repository columns
+	}
+}
 
 // Constructs the VALUES clause for an INSERT query
 func (b *SQLBuilder[Model]) Values(values *[]Model, args *[]any, keys *[]any) (fields string, vals string, err error) {

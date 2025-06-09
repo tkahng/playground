@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
+	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/test"
 	"github.com/tkahng/authgo/internal/tools/logger"
 )
@@ -179,7 +180,7 @@ func TestUserAccountRepsository_find(t *testing.T) {
 				args: args{
 					ctx: ctx,
 					filter: &UserAccountFilter{
-						PaginatedInput: PaginatedInput{
+						PaginatedInput: repository.PaginatedInput{
 							Page:    0,
 							PerPage: 3,
 						},
@@ -201,7 +202,7 @@ func TestUserAccountRepsository_find(t *testing.T) {
 				args: args{
 					ctx: ctx,
 					filter: &UserAccountFilter{
-						PaginatedInput: PaginatedInput{
+						PaginatedInput: repository.PaginatedInput{
 							Page:    1,
 							PerPage: 3,
 						},
@@ -222,7 +223,7 @@ func TestUserAccountRepsository_find(t *testing.T) {
 				args: args{
 					ctx: ctx,
 					filter: &UserAccountFilter{
-						PaginatedInput: PaginatedInput{
+						PaginatedInput: repository.PaginatedInput{
 							Page:    2,
 							PerPage: 3,
 						},

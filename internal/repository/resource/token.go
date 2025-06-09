@@ -11,8 +11,8 @@ import (
 )
 
 type TokenFilter struct {
-	PaginatedInput
-	SortParams
+	repository.PaginatedInput
+	repository.SortParams
 	Q             string                         `query:"q,omitempty" required:"false"`
 	UserIds       []uuid.UUID                    `query:"user_ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
 	Ids           []uuid.UUID                    `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`

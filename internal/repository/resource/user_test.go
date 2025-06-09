@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
+	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/test"
 	"github.com/tkahng/authgo/internal/tools/types"
 )
@@ -189,7 +190,7 @@ func TestNewUserRepositoryResource_SortFunc(t *testing.T) {
 	})
 
 	t.Run("invalid sort by returns nil map", func(t *testing.T) {
-		filter := &UserFilter{SortParams: SortParams{
+		filter := &UserFilter{SortParams: repository.SortParams{
 			SortBy:    "notacol",
 			SortOrder: "asc",
 		}}
@@ -198,7 +199,7 @@ func TestNewUserRepositoryResource_SortFunc(t *testing.T) {
 	})
 
 	t.Run("valid sort by returns map", func(t *testing.T) {
-		filter := &UserFilter{SortParams: SortParams{
+		filter := &UserFilter{SortParams: repository.SortParams{
 			SortBy:    "email",
 			SortOrder: "desc",
 		}}
@@ -220,21 +221,21 @@ func TestNewUserRepositoryResource_PaginationFunc(t *testing.T) {
 	})
 
 	t.Run("negative page returns page 0", func(t *testing.T) {
-		input := &UserFilter{PaginatedInput: PaginatedInput{Page: -2, PerPage: 5}}
+		input := &UserFilter{PaginatedInput: repository.PaginatedInput{Page: -2, PerPage: 5}}
 		limit, offset := paginationFunc(input)
 		assert.Equal(t, 5, limit)
 		assert.Equal(t, 0, offset)
 	})
 
 	t.Run("perPage < 1 returns default", func(t *testing.T) {
-		input := &UserFilter{PaginatedInput: PaginatedInput{Page: 2, PerPage: 0}}
+		input := &UserFilter{PaginatedInput: repository.PaginatedInput{Page: 2, PerPage: 0}}
 		limit, offset := paginationFunc(input)
 		assert.Equal(t, 10, limit)
 		assert.Equal(t, 20, offset)
 	})
 
 	t.Run("normal values", func(t *testing.T) {
-		input := &UserFilter{PaginatedInput: PaginatedInput{Page: 3, PerPage: 15}}
+		input := &UserFilter{PaginatedInput: repository.PaginatedInput{Page: 3, PerPage: 15}}
 		limit, offset := paginationFunc(input)
 		assert.Equal(t, 15, limit)
 		assert.Equal(t, 45, offset)
@@ -404,11 +405,11 @@ func TestUserRepsository_find(t *testing.T) {
 				args: args{
 					ctx: ctx,
 					filter: &UserFilter{
-						PaginatedInput: PaginatedInput{
+						PaginatedInput: repository.PaginatedInput{
 							Page:    0,
 							PerPage: 10,
 						},
-						SortParams: SortParams{
+						SortParams: repository.SortParams{
 							SortBy:    "name",
 							SortOrder: "asc",
 						},
@@ -434,11 +435,11 @@ func TestUserRepsository_find(t *testing.T) {
 				args: args{
 					ctx: ctx,
 					filter: &UserFilter{
-						PaginatedInput: PaginatedInput{
+						PaginatedInput: repository.PaginatedInput{
 							Page:    0,
 							PerPage: 3,
 						},
-						SortParams: SortParams{
+						SortParams: repository.SortParams{
 							SortBy:    "name",
 							SortOrder: "asc",
 						},
@@ -460,11 +461,11 @@ func TestUserRepsository_find(t *testing.T) {
 				args: args{
 					ctx: ctx,
 					filter: &UserFilter{
-						PaginatedInput: PaginatedInput{
+						PaginatedInput: repository.PaginatedInput{
 							Page:    1,
 							PerPage: 3,
 						},
-						SortParams: SortParams{
+						SortParams: repository.SortParams{
 							SortBy:    "name",
 							SortOrder: "asc",
 						},
@@ -485,11 +486,11 @@ func TestUserRepsository_find(t *testing.T) {
 				args: args{
 					ctx: ctx,
 					filter: &UserFilter{
-						PaginatedInput: PaginatedInput{
+						PaginatedInput: repository.PaginatedInput{
 							Page:    2,
 							PerPage: 3,
 						},
-						SortParams: SortParams{
+						SortParams: repository.SortParams{
 							SortBy:    "name",
 							SortOrder: "asc",
 						},
@@ -510,11 +511,11 @@ func TestUserRepsository_find(t *testing.T) {
 				args: args{
 					ctx: ctx,
 					filter: &UserFilter{
-						PaginatedInput: PaginatedInput{
+						PaginatedInput: repository.PaginatedInput{
 							Page:    3,
 							PerPage: 3,
 						},
-						SortParams: SortParams{
+						SortParams: repository.SortParams{
 							SortBy:    "name",
 							SortOrder: "asc",
 						},
@@ -537,11 +538,11 @@ func TestUserRepsository_find(t *testing.T) {
 				args: args{
 					ctx: ctx,
 					filter: &UserFilter{
-						PaginatedInput: PaginatedInput{
+						PaginatedInput: repository.PaginatedInput{
 							Page:    0,
 							PerPage: 10,
 						},
-						SortParams: SortParams{
+						SortParams: repository.SortParams{
 							SortBy:    "name",
 							SortOrder: "asc",
 						},
@@ -563,11 +564,11 @@ func TestUserRepsository_find(t *testing.T) {
 				args: args{
 					ctx: ctx,
 					filter: &UserFilter{
-						PaginatedInput: PaginatedInput{
+						PaginatedInput: repository.PaginatedInput{
 							Page:    0,
 							PerPage: 10,
 						},
-						SortParams: SortParams{
+						SortParams: repository.SortParams{
 							SortBy:    "name",
 							SortOrder: "asc",
 						},
@@ -589,11 +590,11 @@ func TestUserRepsository_find(t *testing.T) {
 				args: args{
 					ctx: ctx,
 					filter: &UserFilter{
-						PaginatedInput: PaginatedInput{
+						PaginatedInput: repository.PaginatedInput{
 							Page:    0,
 							PerPage: 10,
 						},
-						SortParams: SortParams{
+						SortParams: repository.SortParams{
 							SortBy:    "name",
 							SortOrder: "asc",
 						},

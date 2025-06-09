@@ -75,7 +75,7 @@ func (p *RepositoryResourceService[M, K, F]) pagination(filter *F) (limit, offse
 	if p.paginationFn != nil {
 		return p.paginationFn(filter)
 	}
-	if paginable, ok := any(filter).(Paginable); ok {
+	if paginable, ok := any(filter).(repository.Paginable); ok {
 		return paginable.Pagination()
 	}
 	return 10, 0 // default values
@@ -88,7 +88,7 @@ func (p *RepositoryResourceService[M, K, F]) sort(filter *F) *map[string]string 
 	if p.sortFn != nil {
 		return p.sortFn(filter)
 	}
-	if sortable, ok := any(filter).(Sortable); ok {
+	if sortable, ok := any(filter).(repository.Sortable); ok {
 		sortBy, sortOrder := sortable.Sort()
 		if sortBy != "" && slices.Contains(p.repository.Builder().ColumnNames(), utils.Quote(sortBy)) {
 			return &map[string]string{
@@ -242,7 +242,7 @@ func (p *QueryResourceService[M, K, F]) pagination(qs sq.SelectBuilder, filter *
 	if p.paginationFn != nil {
 		qs = p.paginationFn(qs, filter)
 		return qs
-	} else if paginable, ok := any(filter).(Paginable); ok {
+	} else if paginable, ok := any(filter).(repository.Paginable); ok {
 		limit, offset := paginable.Pagination()
 		qs = qs.Limit(uint64(limit)).Offset(uint64(offset))
 		return qs
@@ -257,7 +257,7 @@ func (p *QueryResourceService[M, K, F]) sort(qs sq.SelectBuilder, filter *F) sq.
 	if p.sortFn != nil {
 		qs = p.sortFn(qs, filter)
 		return qs
-	} else if sortable, ok := any(filter).(Sortable); ok {
+	} else if sortable, ok := any(filter).(repository.Sortable); ok {
 		sortby, sortOrder := sortable.Sort()
 		if sortby != "" && slices.Contains(p.builder.ColumnNames(), utils.Quote(sortby)) {
 			qs = qs.OrderBy(p.builder.Identifier(sortby) + " " + strings.ToUpper(sortOrder))

@@ -1,4 +1,4 @@
-package stores
+package repository
 
 type Sortable interface {
 	Sort() (sortBy, sortOrder string)

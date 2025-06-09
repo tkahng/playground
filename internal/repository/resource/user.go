@@ -6,13 +6,14 @@ import (
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
+	"github.com/tkahng/authgo/internal/repository"
 	repo "github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/tools/types"
 )
 
 type UserFilter struct {
-	PaginatedInput
-	SortParams
+	repository.PaginatedInput
+	repository.SortParams
 	Providers     []models.Providers        `query:"providers,omitempty" required:"false" uniqueItems:"true" minimum:"1" maximum:"100" enum:"google,apple,facebook,github,credentials"`
 	Q             string                    `query:"q,omitempty" required:"false"`
 	Ids           []uuid.UUID               `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`

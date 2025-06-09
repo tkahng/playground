@@ -57,18 +57,18 @@ func pagination(filter Paginable) (limit, offset int) {
 	}
 	return filter.Pagination()
 }
-func sort(filter Sortable, columnNames []string) *map[string]string {
+func (s *DbUserStore) sort(filter Sortable) *map[string]string {
 	if filter == nil {
 		return nil // return nil if no filter is provided
 	}
 
 	sortBy, sortOrder := filter.Sort()
-	if sortBy != "" && slices.Contains(columnNames, utils.Quote(sortBy)) {
+	if sortBy != "" && slices.Contains(repository.UserBuilder.ColumnNames(), utils.Quote(sortBy)) {
 		return &map[string]string{
 			sortBy: sortOrder,
 		}
 	} else {
-		slog.Info("sort by field not found in repository columns", "sortBy", sortBy, "sortOrder", sortOrder, "columns", columnNames)
+		slog.Info("sort by field not found in repository columns", "sortBy", sortBy, "sortOrder", sortOrder, "columns", repository.UserBuilder.ColumnNames())
 	}
 
 	return nil // default no sorting
@@ -80,7 +80,7 @@ func (s *DbUserStore) FindUsers(ctx context.Context, filter *UserFilter) ([]*mod
 	if where == nil {
 		return nil, nil // no filter, return empty slice
 	}
-	sort := sort(filter, repository.User.Builder().ColumnNames())
+	sort := s.sort(filter)
 	limit, offset := pagination(filter)
 	users, err := repository.User.Get(
 		ctx,
