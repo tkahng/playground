@@ -13,10 +13,7 @@ import (
 )
 
 func TestNewUserAccountRepositoryResource_FilterFunc(t *testing.T) {
-	db := &database.Queries{} // Mock or use a real database connection as needed
-	repo := NewUserAccountRepositoryResource(db)
-
-	filterFunc := repo.filter
+	filterFunc := UserAccount.filter
 
 	t.Run("nil filter returns empty map", func(t *testing.T) {
 		where := filterFunc(nil)
@@ -53,12 +50,12 @@ func TestNewUserAccountRepositoryResource_FilterFunc(t *testing.T) {
 func TestUserAccountRepositoryResource_Create(t *testing.T) {
 	test.DbSetup()
 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
-		userResource := NewUserRepositoryResource(db)
-		accountResource := NewUserAccountRepositoryResource(db)
+		userResource := User
+		accountResource := UserAccount
 
 		t.Run("Create with valid data", func(t *testing.T) {
 
-			user, err := userResource.Create(ctx, &models.User{
+			user, err := userResource.Create(ctx, db, &models.User{
 				Email: "test@example.com",
 			})
 			assert.NoError(t, err)
@@ -68,7 +65,7 @@ func TestUserAccountRepositoryResource_Create(t *testing.T) {
 				ProviderAccountID: user.ID.String(),
 				Type:              models.ProviderTypeCredentials,
 			}
-			created, err := accountResource.Create(ctx, userAccount)
+			created, err := accountResource.Create(ctx, db, userAccount)
 			assert.NoError(t, err)
 			assert.NotNil(t, created)
 			assert.Equal(t, userAccount.Provider, created.Provider)
@@ -78,7 +75,7 @@ func TestUserAccountRepositoryResource_Create(t *testing.T) {
 		})
 
 		t.Run("Create with duplicate provider", func(t *testing.T) {
-			user, err := userResource.Create(ctx, &models.User{
+			user, err := userResource.Create(ctx, db, &models.User{
 				Email: "test-duplicate-google@example.com",
 			})
 			if err != nil {
@@ -96,9 +93,9 @@ func TestUserAccountRepositoryResource_Create(t *testing.T) {
 				ProviderAccountID: user.ID.String(),
 				Type:              models.ProviderTypeOAuth,
 			}
-			_, err = accountResource.Create(ctx, userAccount)
+			_, err = accountResource.Create(ctx, db, userAccount)
 			assert.NoError(t, err)
-			_, err = accountResource.Create(ctx, userAccount2)
+			_, err = accountResource.Create(ctx, db, userAccount2)
 			assert.Error(t, err)
 			assert.Contains(t, err.Error(), "duplicate key value violates unique constraint")
 
@@ -110,8 +107,8 @@ func TestUserAccountRepsository_find(t *testing.T) {
 	logger.SetDefaultLogger()
 	test.DbSetup()
 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
-		userResource := NewUserRepositoryResource(db)
-		user1, err := userResource.Create(ctx, &models.User{
+		userResource := User
+		user1, err := userResource.Create(ctx, db, &models.User{
 			Email: "test@example.com",
 		})
 		if err != nil {
@@ -120,7 +117,7 @@ func TestUserAccountRepsository_find(t *testing.T) {
 		if user1 == nil {
 			t.Fatal("User should not be nil")
 		}
-		user2, err := userResource.Create(ctx, &models.User{
+		user2, err := userResource.Create(ctx, db, &models.User{
 			Email: "test2@example.com",
 		})
 		if err != nil {
@@ -161,9 +158,9 @@ func TestUserAccountRepsository_find(t *testing.T) {
 				ProviderAccountID: user1.ID.String(),
 			},
 		}
-		useraccountResource := NewUserAccountRepositoryResource(db)
+		useraccountResource := UserAccount
 		for _, useraccount := range useraccountsInput {
-			_, err := useraccountResource.Create(ctx, useraccount)
+			_, err := useraccountResource.Create(ctx, db, useraccount)
 			if err != nil {
 				t.Fatalf("Failed to create useraccount: %v", err)
 			}
@@ -288,7 +285,7 @@ func TestUserAccountRepsository_find(t *testing.T) {
 		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				got, err := useraccountResource.Find(tt.args.ctx, tt.args.filter)
+				got, err := useraccountResource.Find(tt.args.ctx, db, tt.args.filter)
 				tt.predicate(t, got, err)
 			})
 		}
