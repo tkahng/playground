@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
+	"slices"
 	"time"
 
 	"github.com/alexedwards/argon2id"
@@ -14,6 +16,7 @@ import (
 	"github.com/tkahng/authgo/internal/tools/mapper"
 	"github.com/tkahng/authgo/internal/tools/security"
 	"github.com/tkahng/authgo/internal/tools/types"
+	"github.com/tkahng/authgo/internal/tools/utils"
 
 	"github.com/stephenafamo/scan"
 	"github.com/stephenafamo/scan/pgxscan"
@@ -33,6 +36,64 @@ type UserFilter struct {
 
 type DbUserStore struct {
 	db database.Dbx
+}
+
+// CountUsers implements DbUserStoreInterface.
+func (s *DbUserStore) CountUsers(ctx context.Context, filter *UserFilter) (int64, error) {
+	where := s.filter(filter)
+	if where == nil {
+		return 0, nil // no filter, return 0
+	}
+	count, err := repository.User.Count(ctx, s.db, where)
+	if err != nil {
+		return 0, fmt.Errorf("error counting users: %w", err)
+	}
+	return count, nil
+}
+
+func pagination(filter Paginable) (limit, offset int) {
+	if filter == nil {
+		return 10, 0 // default values
+	}
+	return filter.Pagination()
+}
+func sort(filter Sortable, columnNames []string) *map[string]string {
+	if filter == nil {
+		return nil // return nil if no filter is provided
+	}
+
+	sortBy, sortOrder := filter.Sort()
+	if sortBy != "" && slices.Contains(columnNames, utils.Quote(sortBy)) {
+		return &map[string]string{
+			sortBy: sortOrder,
+		}
+	} else {
+		slog.Info("sort by field not found in repository columns", "sortBy", sortBy, "sortOrder", sortOrder, "columns", columnNames)
+	}
+
+	return nil // default no sorting
+}
+
+// FindUsers implements DbUserStoreInterface.
+func (s *DbUserStore) FindUsers(ctx context.Context, filter *UserFilter) ([]*models.User, error) {
+	where := s.filter(filter)
+	if where == nil {
+		return nil, nil // no filter, return empty slice
+	}
+	sort := sort(filter, repository.User.Builder().ColumnNames())
+	limit, offset := pagination(filter)
+	users, err := repository.User.Get(
+		ctx,
+		s.db,
+		where,
+		sort,
+		types.Pointer(limit),
+		types.Pointer(offset),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("error finding users: %w", err)
+	}
+	return users, nil
 }
 
 func NewDbUserStore(db database.Dbx) *DbUserStore {
@@ -395,6 +456,8 @@ type DbUserStoreInterface interface {
 	UpdateUser(ctx context.Context, user *models.User) error
 	CreateUser(ctx context.Context, user *models.User) (*models.User, error)
 	LoadUsersByUserIds(ctx context.Context, userIds ...uuid.UUID) ([]*models.User, error)
+	FindUsers(ctx context.Context, filter *UserFilter) ([]*models.User, error)
+	CountUsers(ctx context.Context, filter *UserFilter) (int64, error)
 }
 
 var _ DbUserStoreInterface = &DbUserStore{}

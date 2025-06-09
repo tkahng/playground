@@ -22,6 +22,30 @@ type UserStoreDecorator struct {
 	LoadUsersByUserIdsFunc func(ctx context.Context, userIds ...uuid.UUID) ([]*models.User, error)
 	UpdateUserFunc         func(ctx context.Context, user *models.User) error
 	UserWhereFunc          func(user *models.User) *map[string]any
+	FindUsersFunc          func(ctx context.Context, filter *UserFilter) ([]*models.User, error)
+	CountUsersFunc         func(ctx context.Context, filter *UserFilter) (int64, error)
+}
+
+// CountUsers implements DbUserStoreInterface.
+func (u *UserStoreDecorator) CountUsers(ctx context.Context, filter *UserFilter) (int64, error) {
+	if u.CountUsersFunc != nil {
+		return u.CountUsersFunc(ctx, filter)
+	}
+	if u.Delegate == nil {
+		return 0, ErrDelegateNil
+	}
+	return u.Delegate.CountUsers(ctx, filter)
+}
+
+// FindUsers implements DbUserStoreInterface.
+func (u *UserStoreDecorator) FindUsers(ctx context.Context, filter *UserFilter) ([]*models.User, error) {
+	if u.FindUsersFunc != nil {
+		return u.FindUsersFunc(ctx, filter)
+	}
+	if u.Delegate == nil {
+		return nil, ErrDelegateNil
+	}
+	return u.Delegate.FindUsers(ctx, filter)
 }
 
 func (u *UserStoreDecorator) Cleanup() {
