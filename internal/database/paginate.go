@@ -16,7 +16,7 @@ func Paginate(q squirrel.SelectBuilder, input *shared.PaginatedInput) squirrel.S
 	if input.PerPage == 0 {
 		input.PerPage = 10
 	}
-	return q.Limit(uint64(input.PerPage)).Offset(uint64((input.Page) * input.PerPage))
+	return q.Limit(uint64(input.PerPage)).Offset(uint64(input.Page * input.PerPage))
 }
 
 func PaginateRepo(input *shared.PaginatedInput) (*int, *int) {
@@ -29,5 +29,5 @@ func PaginateRepo(input *shared.PaginatedInput) (*int, *int) {
 	if input.PerPage == 0 {
 		input.PerPage = 10
 	}
-	return types.Pointer(int(input.PerPage)), types.Pointer(int((input.Page) * input.PerPage))
+	return types.Pointer(int(input.PerPage)), types.Pointer(int(input.Page * input.PerPage))
 }
