@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/jobs"
 	"github.com/tkahng/authgo/internal/models"
+	"github.com/tkahng/authgo/internal/stores"
 	"github.com/tkahng/authgo/internal/tools/mailer"
 	"github.com/tkahng/authgo/internal/tools/utils"
 )
@@ -23,7 +24,7 @@ func (j OtpEmailJobArgs) Kind() string {
 }
 
 type UserFinder interface {
-	FindUser(ctx context.Context, user *models.User) (*models.User, error)
+	FindUser(ctx context.Context, user *stores.UserFilter) (*models.User, error)
 }
 
 type TokenCreator interface {
@@ -64,7 +65,7 @@ func NewOtpEmailWorker(user UserFinder, mail OtpMail) jobs.Worker[OtpEmailJobArg
 func (w *otpMailWorker) Work(ctx context.Context, job *jobs.Job[OtpEmailJobArgs]) error {
 	fmt.Println("otp mail")
 	utils.PrettyPrintJSON(job)
-	user, err := w.user.FindUser(ctx, &models.User{ID: job.Args.UserID})
+	user, err := w.user.FindUser(ctx, &stores.UserFilter{Ids: []uuid.UUID{job.Args.UserID}})
 	if err != nil {
 		slog.ErrorContext(
 			ctx,

@@ -17,7 +17,7 @@ import (
 func TestUserStore_CRUD(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
+	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		store := stores.NewDbUserStore(dbxx)
 
 		// CreateUser
@@ -34,9 +34,10 @@ func TestUserStore_CRUD(t *testing.T) {
 		}
 
 		// FindUserByEmail
-		found, err := store.FindUser(ctx, &models.User{
-			Email: email,
+		found, err := store.FindUser(ctx, &stores.UserFilter{
+			Emails: []string{email},
 		})
+
 		if err != nil || found == nil || found.ID != user.ID {
 			t.Errorf("FindUserByEmail() = %v, err = %v", found, err)
 		}
@@ -76,8 +77,8 @@ func TestUserStore_CRUD(t *testing.T) {
 		if err != nil {
 			t.Errorf("DeleteUser() error = %v", err)
 		}
-		deleted, err := store.FindUser(ctx, &models.User{
-			Email: email,
+		deleted, err := store.FindUser(ctx, &stores.UserFilter{
+			Emails: []string{email},
 		})
 		if err != nil {
 			t.Errorf("FindUserByEmail() after delete error = %v", err)
@@ -93,7 +94,7 @@ func TestUserStore_CRUD(t *testing.T) {
 func TestUserStore_LoadUsersByUserIds(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
+	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		store := stores.NewDbUserStore(dbxx)
 		user1, err := store.CreateUser(ctx, &models.User{Email: "loaduser1@example.com"})
 		if err != nil {
@@ -125,7 +126,7 @@ func ptrString(s string) *string {
 func TestUserStore_FindUserById(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
+	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		p := stores.NewDbUserStore(dbxx)
 		type fields struct {
 			db database.Dbx

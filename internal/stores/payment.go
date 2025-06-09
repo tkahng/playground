@@ -17,3 +17,16 @@ func NewDbPaymentStore(db database.Dbx) *DbPaymentStore {
 		DbTeamStore:   NewDbTeamStore(db),
 	}
 }
+
+type PaymentStoreAdapter interface {
+	// team methods
+	// Team()
+	Team() DbTeamStore
+
+	// PaymentTeamStore
+	Rbac() DbRbacStoreInterface
+	// // rbac methods
+	// PaymentRbacStore
+	// // payment methods
+	// PaymentStripeStore
+}

@@ -16,7 +16,7 @@ type UserStoreDecorator struct {
 	AssignUserRolesFunc    func(ctx context.Context, userId uuid.UUID, roleNames ...string) error
 	CreateUserFunc         func(ctx context.Context, user *models.User) (*models.User, error)
 	DeleteUserFunc         func(ctx context.Context, userId uuid.UUID) error
-	FindUserFunc           func(ctx context.Context, user *models.User) (*models.User, error)
+	FindUserFunc           func(ctx context.Context, user *UserFilter) (*models.User, error)
 	FindUserByIDFunc       func(ctx context.Context, userId uuid.UUID) (*models.User, error)
 	GetUserInfoFunc        func(ctx context.Context, email string) (*shared.UserInfo, error)
 	LoadUsersByUserIdsFunc func(ctx context.Context, userIds ...uuid.UUID) ([]*models.User, error)
@@ -73,7 +73,7 @@ func (u *UserStoreDecorator) DeleteUser(ctx context.Context, userId uuid.UUID) e
 }
 
 // FindUser implements DbUserStoreInterface.
-func (u *UserStoreDecorator) FindUser(ctx context.Context, user *models.User) (*models.User, error) {
+func (u *UserStoreDecorator) FindUser(ctx context.Context, user *UserFilter) (*models.User, error) {
 	if u.FindUserFunc != nil {
 		return u.FindUserFunc(ctx, user)
 	}
@@ -125,17 +125,6 @@ func (u *UserStoreDecorator) UpdateUser(ctx context.Context, user *models.User) 
 		return ErrDelegateNil
 	}
 	return u.Delegate.UpdateUser(ctx, user)
-}
-
-// UserWhere implements DbUserStoreInterface.
-func (u *UserStoreDecorator) UserWhere(user *models.User) *map[string]any {
-	if u.UserWhereFunc != nil {
-		return u.UserWhereFunc(user)
-	}
-	if u.Delegate == nil {
-		panic(ErrDelegateNil)
-	}
-	return u.Delegate.UserWhere(user)
 }
 
 func (u *UserStoreDecorator) WithTx(dbx database.Dbx) *UserStoreDecorator {

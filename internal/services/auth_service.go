@@ -14,6 +14,7 @@ import (
 	"github.com/tkahng/authgo/internal/jobs"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/authgo/internal/stores"
 	"github.com/tkahng/authgo/internal/tools/mailer"
 	"github.com/tkahng/authgo/internal/tools/security"
 	"golang.org/x/oauth2"
@@ -31,7 +32,7 @@ type AuthUserStore interface {
 	CreateUser(ctx context.Context, user *models.User) (*models.User, error)
 	UpdateUser(ctx context.Context, user *models.User) error
 	DeleteUser(ctx context.Context, id uuid.UUID) error
-	FindUser(ctx context.Context, user *models.User) (*models.User, error)
+	FindUser(ctx context.Context, user *stores.UserFilter) (*models.User, error)
 }
 
 type AuthTokenStore interface {
@@ -356,8 +357,8 @@ func (app *BaseAuthService) HandlePasswordResetRequest(ctx context.Context, emai
 
 	user, err := app.authStore.FindUser(
 		ctx,
-		&models.User{
-			Email: email,
+		&stores.UserFilter{
+			Emails: []string{email},
 		},
 	)
 	if err != nil {
@@ -535,8 +536,8 @@ func (app *BaseAuthService) HandlePasswordResetToken(ctx context.Context, token,
 
 	user, err := app.authStore.FindUser(
 		ctx,
-		&models.User{
-			Email: claims.Email,
+		&stores.UserFilter{
+			Emails: []string{claims.Email},
 		},
 	)
 	if err != nil {
@@ -631,8 +632,8 @@ func (app *BaseAuthService) HandleVerificationToken(ctx context.Context, token s
 	}
 	user, err := app.authStore.FindUser(
 		ctx,
-		&models.User{
-			Email: claims.Email,
+		&stores.UserFilter{
+			Emails: []string{claims.Email},
 		},
 	)
 	if err != nil {
@@ -732,8 +733,8 @@ func (app *BaseAuthService) Authenticate(ctx context.Context, params *shared.Aut
 
 	user, err = app.authStore.FindUser(
 		ctx,
-		&models.User{
-			Email: params.Email,
+		&stores.UserFilter{
+			Emails: []string{params.Email},
 		},
 	)
 	if err != nil {

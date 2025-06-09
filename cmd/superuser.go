@@ -52,7 +52,9 @@ var superuserCreate = &cobra.Command{
 			return err
 		}
 
-		user, err := userStore.FindUser(ctx, &models.User{Email: args[0]})
+		user, err := userStore.FindUser(ctx, &stores.UserFilter{
+			Emails: []string{args[0]},
+		})
 		if err != nil {
 			return err
 		}

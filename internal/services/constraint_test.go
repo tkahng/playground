@@ -20,9 +20,10 @@ func TestConstraintCheckerService_CannotHaveValidSubscription(t *testing.T) {
 	ctx, dbx := test.DbSetup()
 
 	_ = dbx.RunInTx(func(tx database.Dbx) error {
-		userStore := stores.NewDbUserStore(tx)
-		paymentStore := stores.NewDbStripeStore(tx)
-		constraintStore := stores.NewDbConstraintStore(tx)
+		allStore := stores.NewAllEmbeddedStores(tx)
+		userStore := allStore
+		paymentStore := allStore
+		constraintStore := allStore
 
 		user, err := userStore.CreateUser(ctx, &models.User{
 			Email: "test@example.com",
@@ -107,7 +108,7 @@ func TestConstraintCheckerService_CannotHaveValidSubscription(t *testing.T) {
 }
 func TestConstraintCheckerService_CannotBeAdminOrBasicName(t *testing.T) {
 	ctx, dbx := test.DbSetup()
-	checkerStore := stores.NewDbConstraintStore(dbx)
+	checkerStore := stores.NewAllEmbeddedStores(dbx)
 	type fields struct {
 		db  database.Dbx
 		ctx context.Context

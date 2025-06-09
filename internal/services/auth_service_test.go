@@ -297,7 +297,7 @@ func TestAuthenticate(t *testing.T) {
 			setupMocks: func() {
 				storeDecorator.Cleanup()
 				mockPassword.Cleanup()
-				storeDecorator.FindUserFunc = func(ctx context.Context, user *models.User) (*models.User, error) {
+				storeDecorator.FindUserFunc = func(ctx context.Context, user *stores.UserFilter) (*models.User, error) {
 					return nil, nil // Simulate user not found
 				}
 				// mockStorage.On("FindUser", ctx, mock.Anything).Return(nil, nil)
@@ -353,7 +353,7 @@ func TestAuthenticate(t *testing.T) {
 			setupMocks: func() {
 				storeDecorator.Cleanup()
 				mockPassword.Cleanup()
-				storeDecorator.FindUserFunc = func(ctx context.Context, user *models.User) (*models.User, error) {
+				storeDecorator.FindUserFunc = func(ctx context.Context, user *stores.UserFilter) (*models.User, error) {
 					return &models.User{ID: testUserId, Email: testEmail}, nil // Simulate user found
 				}
 				// mockStorage.On("FindUser", ctx, mock.Anything).Return(&models.User{ID: testUserId, Email: testEmail}, nil)
@@ -379,7 +379,7 @@ func TestAuthenticate(t *testing.T) {
 			setupMocks: func() {
 				storeDecorator.Cleanup()
 				mockPassword.Cleanup()
-				storeDecorator.FindUserFunc = func(ctx context.Context, user *models.User) (*models.User, error) {
+				storeDecorator.FindUserFunc = func(ctx context.Context, user *stores.UserFilter) (*models.User, error) {
 					return &models.User{ID: testUserId, Email: testEmail}, nil // Simulate user found
 				}
 				// mockStorage.On("FindUser", ctx, mock.Anything).Return(&models.User{ID: testUserId, Email: testEmail}, nil)
@@ -405,7 +405,7 @@ func TestAuthenticate(t *testing.T) {
 			setupMocks: func() {
 				storeDecorator.Cleanup()
 				mockPassword.Cleanup()
-				storeDecorator.FindUserFunc = func(ctx context.Context, user *models.User) (*models.User, error) {
+				storeDecorator.FindUserFunc = func(ctx context.Context, user *stores.UserFilter) (*models.User, error) {
 					return &models.User{ID: testUserId, Email: testEmail}, nil // Simulate user found
 				}
 				// mockStorage.On("FindUser", ctx, mock.Anything).Return(&models.User{ID: testUserId, Email: testEmail}, nil)
@@ -447,7 +447,7 @@ func TestAuthenticate(t *testing.T) {
 				// mockStorage.On("FindUser", ctx, mock.Anything).Return(&models.User{ID: testUserId, Email: testEmail}, nil)
 				// mockStorage.On("FindUserAccountByUserIdAndProvider", ctx, testUserId, mock.Anything).Return(nil, nil)
 
-				storeDecorator.FindUserFunc = func(ctx context.Context, user *models.User) (*models.User, error) {
+				storeDecorator.FindUserFunc = func(ctx context.Context, user *stores.UserFilter) (*models.User, error) {
 					return &models.User{ID: testUserId, Email: testEmail}, nil // Simulate user found
 				}
 				storeDecorator.FindUserAccountByUserIdAndProviderFunc = func(ctx context.Context, userId uuid.UUID, provider models.Providers) (*models.UserAccount, error) {

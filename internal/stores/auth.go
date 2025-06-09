@@ -4,6 +4,14 @@ import (
 	"github.com/tkahng/authgo/internal/database"
 )
 
+type AuthStoreAdapter interface {
+	// WithTx(dbx database.Dbx) AuthStore
+	// RunInTransaction(fn func(store AuthStore) error) error
+	User() DbAuthStore
+	Account() DbAccountStore
+	Token() DbTokenStore
+}
+
 type DbAuthStore struct {
 	db database.Dbx
 	*DbAccountStore

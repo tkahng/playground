@@ -3,7 +3,6 @@ package stores
 import (
 	"context"
 	"errors"
-	"fmt"
 	"slices"
 	"strings"
 	"time"
@@ -50,25 +49,6 @@ func (s *DbTeamMemberStore) WithTx(tx database.Dbx) *DbTeamMemberStore {
 	}
 }
 
-// FindUserByID implements services.TeamInvitationStore.
-//
-//	func (s *DbTeamStore) FindUserByID(ctx context.Context, userId uuid.UUID) (*models.User, error) {
-//		user, err := repository.User.GetOne(
-//			ctx,
-//			s.db,
-//			&map[string]any{
-//				models.UserTable.ID: map[string]any{
-//					"_eq": userId,
-//				},
-//			},
-//		)
-//		if err != nil {
-//			return nil, err
-//		}
-//		return user, nil
-//	}
-//
-// FindTeamMember implements services.TeamStore.
 func (s *DbTeamMemberStore) FindTeamMember(ctx context.Context, member *models.TeamMember) (*models.TeamMember, error) {
 	if member == nil {
 		return nil, nil
@@ -103,77 +83,6 @@ func (s *DbTeamMemberStore) FindTeamMember(ctx context.Context, member *models.T
 		return nil, err
 	}
 	return member, nil
-}
-
-// CreateTeamWithOwnerMember implements services.TeamStore.
-func (s *DbTeamStore) CreateTeamWithOwnerMember(ctx context.Context, name string, slug string, userId uuid.UUID) (*shared.TeamInfoModel, error) {
-	var teamInfo *shared.TeamInfoModel
-	err := s.Transact(
-		ctx,
-		func(store *DbTeamStore) error {
-			team, err := store.CreateTeam(ctx, name, slug)
-			if err != nil {
-				return err
-			}
-			if team == nil {
-				return fmt.Errorf("team not found")
-			}
-			teamMember, err := store.CreateTeamMember(ctx, team.ID, userId, models.TeamMemberRoleOwner, true)
-			if err != nil {
-				return err
-			}
-			if teamMember == nil {
-				return fmt.Errorf("team member not found")
-			}
-			teamInfo = &shared.TeamInfoModel{
-				Team:   *team,
-				Member: *teamMember,
-			}
-			return nil
-		},
-	)
-	if err != nil {
-		return nil, err
-	}
-	return teamInfo, nil
-}
-func (s *DbTeamStore) CreateTeamWithOwnerMember2(ctx context.Context, name string, slug string, userId uuid.UUID) (*shared.TeamInfoModel, error) {
-	var teamInfo *shared.TeamInfoModel
-	err := s.Transact(ctx, func(store *DbTeamStore) error {
-		user, err := store.FindUserByID(ctx, userId)
-		if err != nil {
-			return err
-		}
-		if user == nil {
-			return fmt.Errorf("user not found")
-		}
-		team, err := store.CreateTeam(ctx, name, slug)
-		if err != nil {
-			return err
-		}
-		if team == nil {
-			return fmt.Errorf("team not found")
-		}
-		teamMember, err := store.CreateTeamMember(ctx, team.ID, userId, models.TeamMemberRoleOwner, true)
-		if err != nil {
-			return err
-		}
-		if teamMember == nil {
-			return fmt.Errorf("team member not found")
-		}
-		teamMember.Team = team
-		teamMember.User = user
-		teamInfo = &shared.TeamInfoModel{
-			Team:   *team,
-			Member: *teamMember,
-			User:   *user,
-		}
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-	return teamInfo, nil
 }
 
 func (s *DbTeamMemberStore) CreateTeamFromUser(ctx context.Context, user *models.User) (*models.TeamMember, error) {

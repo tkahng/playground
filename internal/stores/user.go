@@ -20,6 +20,17 @@ import (
 	"github.com/tkahng/authgo/internal/repository"
 )
 
+type UserFilter struct {
+	PaginatedInput
+	SortParams
+	Providers     []models.Providers        `query:"providers,omitempty" required:"false" uniqueItems:"true" minimum:"1" maximum:"100" enum:"google,apple,facebook,github,credentials"`
+	Q             string                    `query:"q,omitempty" required:"false"`
+	Ids           []uuid.UUID               `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+	Emails        []string                  `query:"emails,omitempty" required:"false" minimum:"1" maximum:"100" format:"email"`
+	RoleIds       []uuid.UUID               `query:"role_ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+	EmailVerified types.OptionalParam[bool] `query:"email_verified,omitempty" required:"false"`
+}
+
 type DbUserStore struct {
 	db database.Dbx
 }
@@ -33,6 +44,68 @@ func (s *DbUserStore) WithTx(tx database.Dbx) *DbUserStore {
 	return &DbUserStore{
 		db: tx,
 	}
+}
+
+func (s *DbUserStore) filter(filter *UserFilter) *map[string]any {
+	where := make(map[string]any)
+	if filter == nil {
+		return &where // return empty map if no filter is provided
+	}
+
+	if filter.EmailVerified.IsSet {
+		emailverified := filter.EmailVerified.Value
+		if emailverified {
+			where[models.UserTable.EmailVerifiedAt] = map[string]any{
+				repository.IsNotNull: nil,
+			}
+		} else {
+			where[models.UserTable.EmailVerifiedAt] = map[string]any{
+				repository.IsNull: nil,
+			}
+		}
+	}
+	if len(filter.Emails) > 0 {
+		where["email"] = map[string]any{
+			"_in": filter.Emails,
+		}
+	}
+	if len(filter.Ids) > 0 {
+		where["id"] = map[string]any{
+			"_in": filter.Ids,
+		}
+	}
+	if len(filter.Providers) > 0 {
+		where["accounts"] = map[string]any{
+			"provider": map[string]any{
+				"_in": filter.Providers,
+			},
+		}
+	}
+	if len(filter.RoleIds) > 0 {
+		where["roles"] = map[string]any{
+			"id": map[string]any{
+				"_in": filter.RoleIds,
+			},
+		}
+	}
+	if filter.Q != "" {
+		where["_or"] = []map[string]any{
+			{
+				"email": map[string]any{
+					"_ilike": "%" + filter.Q + "%",
+				},
+			},
+			{
+				"name": map[string]any{
+					"_ilike": "%" + filter.Q + "%",
+				},
+			},
+		}
+	}
+	if len(where) == 0 {
+		return nil
+	}
+	return &where
 }
 
 func (*DbUserStore) UserWhere(user *models.User) *map[string]any {
@@ -70,8 +143,8 @@ func (*DbUserStore) UserWhere(user *models.User) *map[string]any {
 	return &where
 }
 
-func (s *DbUserStore) FindUser(ctx context.Context, user *models.User) (*models.User, error) {
-	where := s.UserWhere(user)
+func (s *DbUserStore) FindUser(ctx context.Context, user *UserFilter) (*models.User, error) {
+	where := s.filter(user)
 	return repository.User.GetOne(
 		ctx,
 		s.db,
@@ -82,8 +155,8 @@ func (s *DbUserStore) FindUser(ctx context.Context, user *models.User) (*models.
 func (s *DbUserStore) FindUserByID(ctx context.Context, userId uuid.UUID) (*models.User, error) {
 	return s.FindUser(
 		ctx,
-		&models.User{
-			ID: userId,
+		&UserFilter{
+			Ids: []uuid.UUID{userId},
 		},
 	)
 }
@@ -314,8 +387,7 @@ func (s *DbUserStore) LoadUsersByUserIds(ctx context.Context, userIds ...uuid.UU
 }
 
 type DbUserStoreInterface interface {
-	UserWhere(user *models.User) *map[string]any
-	FindUser(ctx context.Context, user *models.User) (*models.User, error)
+	FindUser(ctx context.Context, user *UserFilter) (*models.User, error)
 	FindUserByID(ctx context.Context, userId uuid.UUID) (*models.User, error)
 	AssignUserRoles(ctx context.Context, userId uuid.UUID, roleNames ...string) error
 	DeleteUser(ctx context.Context, userId uuid.UUID) error
@@ -341,17 +413,6 @@ type RolePermissionClaims struct {
 // It returns a pointer to a RolePermissionClaims struct containing the user's
 // roles and permissions, or an error if the user is not found or if any other
 // database error occurs.
-
-func FindUserAccountByUserIdAndProvider(ctx context.Context, db database.Dbx, userId uuid.UUID, provider shared.Providers) (*models.UserAccount, error) {
-	return repository.UserAccount.GetOne(ctx, db, &map[string]any{
-		"user_id": map[string]any{
-			"_eq": userId.String(),
-		},
-		"provider": map[string]any{
-			"_eq": provider.String(),
-		},
-	})
-}
 
 func LoadUsersByUserIds(ctx context.Context, db database.Dbx, userIds ...uuid.UUID) ([]*models.User, error) {
 	users, err := repository.User.Get(

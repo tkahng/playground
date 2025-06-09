@@ -17,6 +17,7 @@ type AllEmbeddedStores struct {
 	*DbProductStore
 	*DbSubscriptionStore
 	*DbTaskStore
+	*DbConstraintStore
 }
 
 func NewAllEmbeddedStores(db database.Dbx) *AllEmbeddedStores {
@@ -33,6 +34,7 @@ func NewAllEmbeddedStores(db database.Dbx) *AllEmbeddedStores {
 		DbProductStore:        NewDbProductStore(db),
 		DbSubscriptionStore:   NewDbSubscriptionStore(db),
 		DbTaskStore:           NewDbTaskStore(db),
+		DbConstraintStore:     NewDbConstraintStore(db),
 	}
 }
 
@@ -50,6 +52,7 @@ func (s *AllEmbeddedStores) WithTx(dbx database.Dbx) *AllEmbeddedStores {
 		DbProductStore:        s.DbProductStore.WithTx(dbx),
 		DbSubscriptionStore:   s.DbSubscriptionStore.WithTx(dbx),
 		DbTaskStore:           s.DbTaskStore.WithTx(dbx),
+		DbConstraintStore:     s.DbConstraintStore.WithTx(dbx),
 	}
 }
 
