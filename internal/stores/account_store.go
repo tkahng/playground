@@ -21,8 +21,6 @@ type DbAccountStore struct {
 	db database.Dbx
 }
 
-// CreateUserAccount implements services.UserAccountStore.
-
 func NewDbAccountStore(db database.Dbx) *DbAccountStore {
 	return &DbAccountStore{
 		db: db,

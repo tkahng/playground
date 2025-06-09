@@ -204,19 +204,15 @@ func (app *BaseAuthService) SendOtpEmail(emailType mailer.EmailType, ctx context
 		return fmt.Errorf("invalid email type")
 	}
 
-	claims := shared.OtpClaims{
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: tokenOpts.ExpiresAt(),
-		},
-		OtpPayload: shared.OtpPayload{
-			Type:       tokenOpts.Type,
-			UserId:     user.ID,
-			Email:      user.Email,
-			Token:      security.GenerateTokenKey(),
-			Otp:        security.GenerateOtp(6),
-			RedirectTo: appOpts.AppUrl,
-		},
-	}
+	claims := shared.OtpClaims{}
+	claims.ExpiresAt = tokenOpts.ExpiresAt()
+	claims.Type = tokenOpts.Type
+	claims.UserId = user.ID
+	claims.Email = user.Email
+	claims.Token = security.GenerateTokenKey()
+	claims.Otp = security.GenerateOtp(6)
+	claims.RedirectTo = appOpts.AppUrl
+
 	tokenHash, err := app.token.CreateJwtToken(claims, tokenOpts.Secret)
 	if err != nil {
 		return fmt.Errorf("error at creating verification token: %w", err)
@@ -281,7 +277,7 @@ func (app *BaseAuthService) GetSendMailParams(emailType mailer.EmailType, tokenH
 
 // FetchAuthUser implements Authenticator.
 func (app *BaseAuthService) FetchAuthUser(ctx context.Context, code string, parsedState *shared.ProviderStateClaims) (*oauth.AuthUser, error) {
-	var provider oauth.ProviderConfig = oauth.NewProviderByName(string(parsedState.Provider))
+	var provider = oauth.NewProviderByName(parsedState.Provider.String())
 	if provider == nil {
 		return nil, fmt.Errorf("provider %v not found", parsedState.Provider)
 	}
@@ -750,14 +746,14 @@ func (app *BaseAuthService) Authenticate(ctx context.Context, params *shared.Aut
 		err = app.authStore.RunInTransaction(
 			ctx,
 			func(store AuthStore) error {
-				user, err = app.CreateUser(ctx, store, params)
+				user, err = app.CreateUser(ctx, app.authStore, params)
 				if err != nil {
 					return err
 				}
 				if user == nil {
 					return fmt.Errorf("user not created")
 				}
-				account, err = app.CreateAccount(ctx, store, user, params)
+				account, err = app.CreateAccount(ctx, app.authStore, user, params)
 				if err != nil {
 					return err
 				}
@@ -922,12 +918,8 @@ func (app *BaseAuthService) UpdateUserVerifiedOrResetPassword(ctx context.Contex
 					if err != nil {
 						return false, fmt.Errorf("error updating user password: %w", err)
 					}
-					reset = true
 					fmt.Println("setting reset to true")
-					// err = app.SendOtpEmail(EmailTypeSecurityPasswordReset, ctx, user)
-					// if err != nil {
-					// 	return fmt.Errorf("error sending password reset email: %w", err)
-					// }
+
 				}
 			}
 			fmt.Println("updating user email verified at")

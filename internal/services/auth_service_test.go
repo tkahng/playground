@@ -401,7 +401,7 @@ func TestAuthenticate(t *testing.T) {
 				param := mockMailService.param
 				assert.NotNil(t, param)
 				assert.Equal(t, param.To, testEmail)
-				assert.Equal(t, param.SendMailParams.Type, tc.checkWant.SendMailParams.Type)
+				assert.Equal(t, param.Type, tc.checkWant.Type)
 			}
 
 			mockStorage.AssertExpectations(t)

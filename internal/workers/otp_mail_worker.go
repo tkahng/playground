@@ -9,7 +9,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/jobs"
 	"github.com/tkahng/authgo/internal/models"
-	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mailer"
 	"github.com/tkahng/authgo/internal/tools/utils"
 )
@@ -25,11 +24,6 @@ func (j OtpEmailJobArgs) Kind() string {
 
 type UserFinder interface {
 	FindUser(ctx context.Context, user *models.User) (*models.User, error)
-}
-
-type TokenSaver interface {
-	SaveToken(ctx context.Context, token *shared.CreateTokenDTO) error
-	SaveOtpToken(ctx context.Context, token *shared.CreateTokenDTO) error
 }
 
 type TokenCreator interface {
