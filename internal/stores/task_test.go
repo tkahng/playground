@@ -20,7 +20,7 @@ func TestLoadTaskProjectsTasks(t *testing.T) {
 	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
 		userStore := stores.NewDbUserStore(dbxx)
 		teamstore := stores.NewDbTeamStore(dbxx)
-		taskStore := stores.NewTaskStore(dbxx)
+		taskStore := stores.NewDbTaskStore(dbxx)
 		user, err := userStore.CreateUser(ctx, &models.User{
 			Email: "tkahng@gmail.com",
 		})
@@ -115,7 +115,7 @@ func TestFindTaskByID(t *testing.T) {
 	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
 		userStore := stores.NewDbUserStore(dbxx)
 		teamstore := stores.NewDbTeamStore(dbxx)
-		taskStore := stores.NewTaskStore(dbxx)
+		taskStore := stores.NewDbTaskStore(dbxx)
 		user, err := userStore.CreateUser(ctx, &models.User{
 			Email: "tkahng@gmail.com",
 		})
@@ -212,7 +212,7 @@ func TestFindLastTaskOrder(t *testing.T) {
 	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
 		userStore := stores.NewDbUserStore(dbxx)
 		teamstore := stores.NewDbTeamStore(dbxx)
-		taskStore := stores.NewTaskStore(dbxx)
+		taskStore := stores.NewDbTaskStore(dbxx)
 		user, err := userStore.CreateUser(
 			ctx,
 			&models.User{
@@ -307,7 +307,7 @@ func TestDeleteTask(t *testing.T) {
 	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
 		userStore := stores.NewDbUserStore(dbxx)
 		teamstore := stores.NewDbTeamStore(dbxx)
-		taskStore := stores.NewTaskStore(dbxx)
+		taskStore := stores.NewDbTaskStore(dbxx)
 		user, err := userStore.CreateUser(ctx, &models.User{
 			Email: "tkahng@gmail.com",
 		})
@@ -385,7 +385,7 @@ func TestFindTaskProjectByID(t *testing.T) {
 	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
 		userStore := stores.NewDbUserStore(dbxx)
 		teamstore := stores.NewDbTeamStore(dbxx)
-		taskStore := stores.NewTaskStore(dbxx)
+		taskStore := stores.NewDbTaskStore(dbxx)
 		user, err := userStore.CreateUser(ctx, &models.User{
 			Email: "tkahng@gmail.com",
 		})
@@ -468,7 +468,7 @@ func TestDeleteTaskProject(t *testing.T) {
 	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
 		userStore := stores.NewDbUserStore(dbxx)
 		teamstore := stores.NewDbTeamStore(dbxx)
-		taskStore := stores.NewTaskStore(dbxx)
+		taskStore := stores.NewDbTaskStore(dbxx)
 		user, err := userStore.CreateUser(ctx, &models.User{
 			Email: "tkahng@gmail.com",
 		})
@@ -534,7 +534,7 @@ func TestListTasks(t *testing.T) {
 	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
 		userStore := stores.NewDbUserStore(dbxx)
 		teamstore := stores.NewDbTeamStore(dbxx)
-		taskStore := stores.NewTaskStore(dbxx)
+		taskStore := stores.NewDbTaskStore(dbxx)
 		user, err := userStore.CreateUser(ctx, &models.User{
 			Email: "tkahng@gmail.com",
 		})
@@ -648,7 +648,7 @@ func TestCountTasks(t *testing.T) {
 	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
 		userStore := stores.NewDbUserStore(dbxx)
 		teamstore := stores.NewDbTeamStore(dbxx)
-		taskStore := stores.NewTaskStore(dbxx)
+		taskStore := stores.NewDbTaskStore(dbxx)
 		user, err := userStore.CreateUser(ctx, &models.User{
 			Email: "tkahng@gmail.com",
 		})
@@ -738,7 +738,7 @@ func TestListTaskProjects(t *testing.T) {
 	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
 		userStore := stores.NewDbUserStore(dbxx)
 		teamstore := stores.NewDbTeamStore(dbxx)
-		taskStore := stores.NewTaskStore(dbxx)
+		taskStore := stores.NewDbTaskStore(dbxx)
 		user, err := userStore.CreateUser(ctx, &models.User{
 			Email: "tkahng@gmail.com",
 		})
@@ -838,7 +838,7 @@ func TestCountTaskProjects(t *testing.T) {
 	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
 		userStore := stores.NewDbUserStore(dbxx)
 		teamstore := stores.NewDbTeamStore(dbxx)
-		taskStore := stores.NewTaskStore(dbxx)
+		taskStore := stores.NewDbTaskStore(dbxx)
 		user, err := userStore.CreateUser(ctx, &models.User{
 			Email: "tkahng@gmail.com",
 		})
@@ -914,7 +914,7 @@ func TestCreateTaskProject(t *testing.T) {
 	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
 		userStore := stores.NewDbUserStore(dbxx)
 		teamstore := stores.NewDbTeamStore(dbxx)
-		taskStore := stores.NewTaskStore(dbxx)
+		taskStore := stores.NewDbTaskStore(dbxx)
 		user, err := userStore.CreateUser(ctx, &models.User{
 			Email: "tkahng@gmail.com",
 		})
@@ -1000,7 +1000,7 @@ func TestCreateTaskProjectWithTasks(t *testing.T) {
 	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
 		userStore := stores.NewDbUserStore(dbxx)
 		teamstore := stores.NewDbTeamStore(dbxx)
-		taskStore := stores.NewTaskStore(dbxx)
+		taskStore := stores.NewDbTaskStore(dbxx)
 		user, err := userStore.CreateUser(ctx, &models.User{
 			Email: "tkahng@gmail.com",
 		})
@@ -1109,7 +1109,7 @@ func TestCreateTaskFromInput(t *testing.T) {
 	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
 		userStore := stores.NewDbUserStore(dbxx)
 		teamstore := stores.NewDbTeamStore(dbxx)
-		taskStore := stores.NewTaskStore(dbxx)
+		taskStore := stores.NewDbTaskStore(dbxx)
 		user, err := userStore.CreateUser(ctx, &models.User{
 			Email: "tkahng@gmail.com",
 		})

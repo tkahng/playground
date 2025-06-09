@@ -20,7 +20,7 @@ func TestGetUserTaskStats(t *testing.T) {
 	ctx, dbx := test.DbSetup()
 
 	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
-		taskStore := stores.NewTaskStore(dbxx)
+		taskStore := stores.NewDbTaskStore(dbxx)
 		user, err := queries.CreateUser(ctx, dbxx, &shared.AuthenticationInput{
 			Email: "tkahng@gmail.com",
 		})

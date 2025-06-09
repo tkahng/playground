@@ -24,7 +24,7 @@ func NewDecorator(ctx context.Context, cfg conf.EnvConfig, pool database.Dbx) *B
 	authMailService := services.NewMailService(mail)
 	userStore := stores.NewDbUserStore(pool)
 	rbac := stores.NewDbRBACStore(pool)
-	taskStore := stores.NewTaskStore(pool)
+	taskStore := stores.NewDbTaskStore(pool)
 	paymentStore := stores.NewDbPaymentStore(pool)
 	authStore := stores.NewDbAuthStore(pool)
 	userAccountStore := stores.NewDbAccountStore(pool)

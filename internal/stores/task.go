@@ -17,22 +17,28 @@ import (
 	"github.com/tkahng/authgo/internal/tools/types"
 )
 
-type taskStore struct {
+type DbTaskStore struct {
 	db database.Dbx
 }
 
-func (s *taskStore) CreateTask(ctx context.Context, task *models.Task) (*models.Task, error) {
+func (s *DbTaskStore) WithTx(dbx database.Dbx) *DbTaskStore {
+	return &DbTaskStore{
+		db: dbx,
+	}
+}
+
+func (s *DbTaskStore) CreateTask(ctx context.Context, task *models.Task) (*models.Task, error) {
 	return repository.Task.PostOne(ctx, s.db, task)
 }
 
-func (s *taskStore) FindTask(ctx context.Context, task *models.Task) (*models.Task, error) {
+func (s *DbTaskStore) FindTask(ctx context.Context, task *models.Task) (*models.Task, error) {
 
 	where := s.TaskWhere(task)
 
 	return repository.Task.GetOne(ctx, s.db, where)
 }
 
-func (*taskStore) TaskWhere(task *models.Task) *map[string]any {
+func (*DbTaskStore) TaskWhere(task *models.Task) *map[string]any {
 	if task == nil {
 		return nil
 	}
@@ -80,12 +86,12 @@ func (*taskStore) TaskWhere(task *models.Task) *map[string]any {
 	return &where
 }
 
-func (s *taskStore) UpdateTask(ctx context.Context, task *models.Task) error {
+func (s *DbTaskStore) UpdateTask(ctx context.Context, task *models.Task) error {
 	_, err := repository.Task.PutOne(ctx, s.db, task)
 	return err
 }
 
-func (s *taskStore) CountItems(ctx context.Context, projectID uuid.UUID, status models.TaskStatus, excludeID uuid.UUID) (int64, error) {
+func (s *DbTaskStore) CountItems(ctx context.Context, projectID uuid.UUID, status models.TaskStatus, excludeID uuid.UUID) (int64, error) {
 	var count int64
 	query := `
 		SELECT COUNT(*) 
@@ -96,7 +102,7 @@ func (s *taskStore) CountItems(ctx context.Context, projectID uuid.UUID, status 
 	return count, err
 }
 
-func (s *taskStore) GetTaskFirstPosition(ctx context.Context, projectID uuid.UUID, status models.TaskStatus, excludeID uuid.UUID) (float64, error) {
+func (s *DbTaskStore) GetTaskFirstPosition(ctx context.Context, projectID uuid.UUID, status models.TaskStatus, excludeID uuid.UUID) (float64, error) {
 	var rank float64
 	query := `
 		SELECT rank 
@@ -109,7 +115,7 @@ func (s *taskStore) GetTaskFirstPosition(ctx context.Context, projectID uuid.UUI
 	return rank, err
 }
 
-func (s *taskStore) GetTaskLastPosition(ctx context.Context, projectID uuid.UUID, status models.TaskStatus, excludeID uuid.UUID) (float64, error) {
+func (s *DbTaskStore) GetTaskLastPosition(ctx context.Context, projectID uuid.UUID, status models.TaskStatus, excludeID uuid.UUID) (float64, error) {
 	var rank float64
 	query := `
 		SELECT rank 
@@ -122,7 +128,7 @@ func (s *taskStore) GetTaskLastPosition(ctx context.Context, projectID uuid.UUID
 	return rank, err
 }
 
-func (s *taskStore) GetTaskPositions(ctx context.Context, projectID uuid.UUID, status models.TaskStatus, excludeID uuid.UUID, offset int64) ([]float64, error) {
+func (s *DbTaskStore) GetTaskPositions(ctx context.Context, projectID uuid.UUID, status models.TaskStatus, excludeID uuid.UUID, offset int64) ([]float64, error) {
 	query := `
 		SELECT rank 
 		FROM tasks 
@@ -148,8 +154,8 @@ func (s *taskStore) GetTaskPositions(ctx context.Context, projectID uuid.UUID, s
 
 	return ranks, rows.Err()
 }
-func NewTaskStore(db database.Dbx) *taskStore {
-	return &taskStore{
+func NewDbTaskStore(db database.Dbx) *DbTaskStore {
+	return &DbTaskStore{
 		db: db,
 	}
 }
@@ -164,7 +170,7 @@ WHERE tp.id = ANY ($1::uuid [])
 GROUP BY tp.id;`
 )
 
-func (s *taskStore) LoadTaskProjectsTasks(ctx context.Context, projectIds ...uuid.UUID) ([][]*models.Task, error) {
+func (s *DbTaskStore) LoadTaskProjectsTasks(ctx context.Context, projectIds ...uuid.UUID) ([][]*models.Task, error) {
 	tasks, err := repository.Task.Get(
 		ctx,
 		s.db,
@@ -185,7 +191,7 @@ func (s *taskStore) LoadTaskProjectsTasks(ctx context.Context, projectIds ...uui
 	}), nil
 }
 
-func (s *taskStore) FindTaskByID(ctx context.Context, id uuid.UUID) (*models.Task, error) {
+func (s *DbTaskStore) FindTaskByID(ctx context.Context, id uuid.UUID) (*models.Task, error) {
 	task, err := repository.Task.GetOne(
 		ctx,
 		s.db,
@@ -198,7 +204,7 @@ func (s *taskStore) FindTaskByID(ctx context.Context, id uuid.UUID) (*models.Tas
 	return database.OptionalRow(task, err)
 }
 
-func (s *taskStore) FindLastTaskRank(ctx context.Context, taskProjectID uuid.UUID) (float64, error) {
+func (s *DbTaskStore) FindLastTaskRank(ctx context.Context, taskProjectID uuid.UUID) (float64, error) {
 	tasks, err := repository.Task.Get(
 		ctx,
 		s.db,
@@ -223,7 +229,7 @@ func (s *taskStore) FindLastTaskRank(ctx context.Context, taskProjectID uuid.UUI
 	return task.Rank + 1000, nil
 }
 
-func (s *taskStore) DeleteTask(ctx context.Context, taskID uuid.UUID) error {
+func (s *DbTaskStore) DeleteTask(ctx context.Context, taskID uuid.UUID) error {
 
 	_, err := repository.Task.Delete(
 		ctx,
@@ -237,7 +243,7 @@ func (s *taskStore) DeleteTask(ctx context.Context, taskID uuid.UUID) error {
 	return err
 }
 
-func (s *taskStore) FindTaskProjectByID(ctx context.Context, id uuid.UUID) (*models.TaskProject, error) {
+func (s *DbTaskStore) FindTaskProjectByID(ctx context.Context, id uuid.UUID) (*models.TaskProject, error) {
 
 	task, err := repository.TaskProject.GetOne(
 		ctx,
@@ -250,7 +256,7 @@ func (s *taskStore) FindTaskProjectByID(ctx context.Context, id uuid.UUID) (*mod
 	)
 	return database.OptionalRow(task, err)
 }
-func (s *taskStore) DeleteTaskProject(ctx context.Context, taskProjectID uuid.UUID) error {
+func (s *DbTaskStore) DeleteTaskProject(ctx context.Context, taskProjectID uuid.UUID) error {
 	_, err := repository.TaskProject.Delete(
 		ctx,
 		s.db,
@@ -335,7 +341,7 @@ func ListTasksFilterFunc(filter *shared.TaskListFilter) *map[string]any {
 }
 
 // ListTasks implements AdminCrudActions.
-func (s *taskStore) ListTasks(ctx context.Context, input *shared.TaskListParams) ([]*models.Task, error) {
+func (s *DbTaskStore) ListTasks(ctx context.Context, input *shared.TaskListParams) ([]*models.Task, error) {
 	filter := input.TaskListFilter
 	pageInput := &input.PaginatedInput
 
@@ -357,7 +363,7 @@ func (s *taskStore) ListTasks(ctx context.Context, input *shared.TaskListParams)
 }
 
 // CountTasks implements AdminCrudActions.
-func (s *taskStore) CountTasks(ctx context.Context, filter *shared.TaskListFilter) (int64, error) {
+func (s *DbTaskStore) CountTasks(ctx context.Context, filter *shared.TaskListFilter) (int64, error) {
 	where := ListTasksFilterFunc(filter)
 	return repository.Task.Count(ctx, s.db, where)
 }
@@ -407,7 +413,7 @@ func ListTaskProjectsOrderByFunc(input *shared.TaskProjectsListParams) *map[stri
 }
 
 // ListTaskProjects implements AdminCrudActions.
-func (s *taskStore) ListTaskProjects(ctx context.Context, input *shared.TaskProjectsListParams) ([]*models.TaskProject, error) {
+func (s *DbTaskStore) ListTaskProjects(ctx context.Context, input *shared.TaskProjectsListParams) ([]*models.TaskProject, error) {
 	filter := input.TaskProjectsListFilter
 	pageInput := &input.PaginatedInput
 
@@ -429,12 +435,12 @@ func (s *taskStore) ListTaskProjects(ctx context.Context, input *shared.TaskProj
 }
 
 // CountTaskProjects implements AdminCrudActions.
-func (s *taskStore) CountTaskProjects(ctx context.Context, filter *shared.TaskProjectsListFilter) (int64, error) {
+func (s *DbTaskStore) CountTaskProjects(ctx context.Context, filter *shared.TaskProjectsListFilter) (int64, error) {
 	where := ListTaskProjectsFilterFunc(filter)
 	return repository.TaskProject.Count(ctx, s.db, where)
 }
 
-func (s *taskStore) CreateTaskProject(ctx context.Context, input *shared.CreateTaskProjectDTO) (*models.TaskProject, error) {
+func (s *DbTaskStore) CreateTaskProject(ctx context.Context, input *shared.CreateTaskProjectDTO) (*models.TaskProject, error) {
 	taskProject := models.TaskProject{
 		TeamID:            input.TeamID,
 		CreatedByMemberID: &input.MemberID,
@@ -450,7 +456,7 @@ func (s *taskStore) CreateTaskProject(ctx context.Context, input *shared.CreateT
 	return projects, nil
 }
 
-func (s *taskStore) CreateTaskProjectWithTasks(ctx context.Context, input *shared.CreateTaskProjectWithTasksDTO) (*models.TaskProject, error) {
+func (s *DbTaskStore) CreateTaskProjectWithTasks(ctx context.Context, input *shared.CreateTaskProjectWithTasksDTO) (*models.TaskProject, error) {
 	count, err := s.CountTaskProjects(ctx, nil)
 	if err != nil {
 		return nil, err
@@ -475,7 +481,7 @@ func (s *taskStore) CreateTaskProjectWithTasks(ctx context.Context, input *share
 	return taskProject, nil
 }
 
-func (s *taskStore) CreateTaskFromInput(ctx context.Context, teamID uuid.UUID, projectID uuid.UUID, memberID uuid.UUID, input *shared.CreateTaskProjectTaskDTO) (*models.Task, error) {
+func (s *DbTaskStore) CreateTaskFromInput(ctx context.Context, teamID uuid.UUID, projectID uuid.UUID, memberID uuid.UUID, input *shared.CreateTaskProjectTaskDTO) (*models.Task, error) {
 	setter := models.Task{
 		ProjectID:         projectID,
 		CreatedByMemberID: &memberID,
@@ -492,7 +498,7 @@ func (s *taskStore) CreateTaskFromInput(ctx context.Context, teamID uuid.UUID, p
 	return task, nil
 }
 
-func (s *taskStore) CalculateTaskRankStatus(ctx context.Context, taskId uuid.UUID, taskProjectId uuid.UUID, status models.TaskStatus, currentRank float64, position int64) (float64, error) {
+func (s *DbTaskStore) CalculateTaskRankStatus(ctx context.Context, taskId uuid.UUID, taskProjectId uuid.UUID, status models.TaskStatus, currentRank float64, position int64) (float64, error) {
 	if position == 0 {
 		res, err := repository.Task.Get(
 			ctx,
@@ -604,7 +610,7 @@ func (s *taskStore) CalculateTaskRankStatus(ctx context.Context, taskId uuid.UUI
 
 }
 
-func (s *taskStore) UpdateTaskProjectUpdateDate(ctx context.Context, taskProjectID uuid.UUID) error {
+func (s *DbTaskStore) UpdateTaskProjectUpdateDate(ctx context.Context, taskProjectID uuid.UUID) error {
 	q := squirrel.Update("task_projects").
 		Where("id = ?", taskProjectID).
 		Set("updated_at", time.Now())
@@ -613,7 +619,7 @@ func (s *taskStore) UpdateTaskProjectUpdateDate(ctx context.Context, taskProject
 	return err
 }
 
-func (s *taskStore) UpdateTaskProject(ctx context.Context, taskProjectID uuid.UUID, input *shared.UpdateTaskProjectBaseDTO) error {
+func (s *DbTaskStore) UpdateTaskProject(ctx context.Context, taskProjectID uuid.UUID, input *shared.UpdateTaskProjectBaseDTO) error {
 	taskProject, err := s.FindTaskProjectByID(ctx, taskProjectID)
 	if err != nil {
 		return err
@@ -632,7 +638,7 @@ func (s *taskStore) UpdateTaskProject(ctx context.Context, taskProjectID uuid.UU
 	return nil
 }
 
-func (s *taskStore) UpdateTaskRankStatus(ctx context.Context, taskID uuid.UUID, position int64, status models.TaskStatus) error {
+func (s *DbTaskStore) UpdateTaskRankStatus(ctx context.Context, taskID uuid.UUID, position int64, status models.TaskStatus) error {
 	task, err := s.FindTaskByID(ctx, taskID)
 	if err != nil {
 		return err

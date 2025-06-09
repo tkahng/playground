@@ -17,11 +17,12 @@ import (
 func TestDefineTaskOrderNumberByStatus(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
+	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		userStore := stores.NewDbUserStore(dbxx)
 		teamstore := stores.NewDbTeamStore(dbxx)
-		taskStore := stores.NewTaskStore(dbxx)
-		taskService := services.NewTaskService(taskStore)
+		taskStore := stores.NewDbTaskStore(dbxx)
+		allStore := stores.NewAllEmbeddedStores(dbxx)
+		taskService := services.NewTaskService(allStore)
 		user, err := userStore.CreateUser(ctx, &models.User{
 			Email: "tkahng@gmail.com",
 		})
