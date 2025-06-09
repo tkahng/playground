@@ -38,7 +38,15 @@ type RbacStoreDecorator struct {
 	FindRoleByNameFunc           func(ctx context.Context, name string) (*models.Role, error)
 	FindRolesByIdsFunc           func(ctx context.Context, params []uuid.UUID) ([]*models.Role, error)
 	GetUserRolesFunc             func(ctx context.Context, userIds ...uuid.UUID) ([][]*models.Role, error)
-	ListPermissionsFunc          func(ctx context.Context, input *shared.PermissionsListParams) ([]*models.Permission, error)
+
+	ListPermissionsFunc              func(ctx context.Context, input *shared.PermissionsListParams) ([]*models.Permission, error)
+	ListRolesFunc                    func(ctx context.Context, input *shared.RolesListParams) ([]*models.Role, error)
+	ListUserNotPermissionsSourceFunc func(ctx context.Context, userId uuid.UUID, limit int64, offset int64) ([]shared.PermissionSource, error)
+	ListUserPermissionsSourceFunc    func(ctx context.Context, userId uuid.UUID, limit int64, offset int64) ([]shared.PermissionSource, error)
+	LoadProductPermissionsFunc       func(ctx context.Context, productIds ...string) ([][]*models.Permission, error)
+	LoadRolePermissionsFunc          func(ctx context.Context, roleIds ...uuid.UUID) ([][]*models.Permission, error)
+	UpdatePermissionFunc             func(ctx context.Context, id uuid.UUID, roledto *shared.UpdatePermissionDto) error
+	UpdateRoleFunc                   func(ctx context.Context, id uuid.UUID, roledto *shared.UpdateRoleDto) error
 }
 
 // AssignUserRoles implements DbRbacStoreInterface.
@@ -65,167 +73,365 @@ func (r *RbacStoreDecorator) CountNotUserPermissionSource(ctx context.Context, u
 
 // CountPermissions implements DbRbacStoreInterface.
 func (r *RbacStoreDecorator) CountPermissions(ctx context.Context, filter *shared.PermissionsListFilter) (int64, error) {
-	panic("unimplemented")
+	if r.CountPermissionsFunc != nil {
+		return r.CountPermissionsFunc(ctx, filter)
+	}
+	if r.Delegate == nil {
+		return 0, ErrDelegateNil
+	}
+	return r.Delegate.CountPermissions(ctx, filter)
 }
 
 // CountRoles implements DbRbacStoreInterface.
 func (r *RbacStoreDecorator) CountRoles(ctx context.Context, filter *shared.RoleListFilter) (int64, error) {
-	panic("unimplemented")
+	if r.CountRolesFunc != nil {
+		return r.CountRolesFunc(ctx, filter)
+	}
+	if r.Delegate == nil {
+		return 0, ErrDelegateNil
+	}
+	return r.Delegate.CountRoles(ctx, filter)
 }
 
 // CountUserPermissionSource implements DbRbacStoreInterface.
 func (r *RbacStoreDecorator) CountUserPermissionSource(ctx context.Context, userId uuid.UUID) (int64, error) {
-	panic("unimplemented")
+	if r.CountUserPermissionSourceFunc != nil {
+		return r.CountUserPermissionSourceFunc(ctx, userId)
+	}
+	if r.Delegate == nil {
+		return 0, ErrDelegateNil
+	}
+	return r.Delegate.CountUserPermissionSource(ctx, userId)
 }
 
 // CreatePermission implements DbRbacStoreInterface.
 func (r *RbacStoreDecorator) CreatePermission(ctx context.Context, name string, description *string) (*models.Permission, error) {
-	panic("unimplemented")
+	if r.CreatePermissionFunc != nil {
+		return r.CreatePermissionFunc(ctx, name, description)
+	}
+	if r.Delegate == nil {
+		return nil, ErrDelegateNil
+	}
+	return r.Delegate.CreatePermission(ctx, name, description)
 }
 
 // CreateProductPermissions implements DbRbacStoreInterface.
 func (r *RbacStoreDecorator) CreateProductPermissions(ctx context.Context, productId string, permissionIds ...uuid.UUID) error {
-	panic("unimplemented")
+	if r.CreateProductPermissionsFunc != nil {
+		return r.CreateProductPermissionsFunc(ctx, productId, permissionIds...)
+	}
+	if r.Delegate == nil {
+		return ErrDelegateNil
+	}
+	return r.Delegate.CreateProductPermissions(ctx, productId, permissionIds...)
 }
 
 // CreateProductRoles implements DbRbacStoreInterface.
 func (r *RbacStoreDecorator) CreateProductRoles(ctx context.Context, productId string, roleIds ...uuid.UUID) error {
-	panic("unimplemented")
+	if r.CreateProductRolesFunc != nil {
+		return r.CreateProductRolesFunc(ctx, productId, roleIds...)
+	}
+	if r.Delegate == nil {
+		return ErrDelegateNil
+	}
+	return r.Delegate.CreateProductRoles(ctx, productId, roleIds...)
 }
 
 // CreateRole implements DbRbacStoreInterface.
 func (r *RbacStoreDecorator) CreateRole(ctx context.Context, role *shared.CreateRoleDto) (*models.Role, error) {
-	panic("unimplemented")
+	if r.CreateRoleFunc != nil {
+		return r.CreateRoleFunc(ctx, role)
+	}
+	if r.Delegate == nil {
+		return nil, ErrDelegateNil
+	}
+	return r.Delegate.CreateRole(ctx, role)
 }
 
 // CreateRolePermissions implements DbRbacStoreInterface.
 func (r *RbacStoreDecorator) CreateRolePermissions(ctx context.Context, roleId uuid.UUID, permissionIds ...uuid.UUID) error {
-	panic("unimplemented")
+	if r.CreateRolePermissionsFunc != nil {
+		return r.CreateRolePermissionsFunc(ctx, roleId, permissionIds...)
+	}
+	if r.Delegate == nil {
+		return ErrDelegateNil
+	}
+	return r.Delegate.CreateRolePermissions(ctx, roleId, permissionIds...)
 }
 
 // CreateUserPermissions implements DbRbacStoreInterface.
 func (r *RbacStoreDecorator) CreateUserPermissions(ctx context.Context, userId uuid.UUID, permissionIds ...uuid.UUID) error {
-	panic("unimplemented")
+	if r.CreateUserPermissionsFunc != nil {
+		return r.CreateUserPermissionsFunc(ctx, userId, permissionIds...)
+	}
+	if r.Delegate == nil {
+		return ErrDelegateNil
+	}
+	return r.Delegate.CreateUserPermissions(ctx, userId, permissionIds...)
 }
 
 // CreateUserRoles implements DbRbacStoreInterface.
 func (r *RbacStoreDecorator) CreateUserRoles(ctx context.Context, userId uuid.UUID, roleIds ...uuid.UUID) error {
-	panic("unimplemented")
+	if r.CreateUserRolesFunc != nil {
+		return r.CreateUserRolesFunc(ctx, userId, roleIds...)
+	}
+	if r.Delegate == nil {
+		return ErrDelegateNil
+	}
+	return r.Delegate.CreateUserRoles(ctx, userId, roleIds...)
 }
 
 // DeletePermission implements DbRbacStoreInterface.
 func (r *RbacStoreDecorator) DeletePermission(ctx context.Context, id uuid.UUID) error {
-	panic("unimplemented")
+	if r.DeletePermissionFunc != nil {
+		return r.DeletePermissionFunc(ctx, id)
+	}
+	if r.Delegate == nil {
+		return ErrDelegateNil
+	}
+	return r.Delegate.DeletePermission(ctx, id)
 }
 
 // DeleteProductRoles implements DbRbacStoreInterface.
 func (r *RbacStoreDecorator) DeleteProductRoles(ctx context.Context, productId string, roleIds ...uuid.UUID) error {
-	panic("unimplemented")
+	if r.DeleteProductRolesFunc != nil {
+		return r.DeleteProductRolesFunc(ctx, productId, roleIds...)
+	}
+	if r.Delegate == nil {
+		return ErrDelegateNil
+	}
+	return r.Delegate.DeleteProductRoles(ctx, productId, roleIds...)
 }
 
 // DeleteRole implements DbRbacStoreInterface.
 func (r *RbacStoreDecorator) DeleteRole(ctx context.Context, id uuid.UUID) error {
-	panic("unimplemented")
+	if r.DeleteRoleFunc != nil {
+		return r.DeleteRoleFunc(ctx, id)
+	}
+	if r.Delegate == nil {
+		return ErrDelegateNil
+	}
+	return r.Delegate.DeleteRole(ctx, id)
 }
 
 // DeleteRolePermissions implements DbRbacStoreInterface.
 func (r *RbacStoreDecorator) DeleteRolePermissions(ctx context.Context, roleId uuid.UUID, permissionIds ...uuid.UUID) error {
-	panic("unimplemented")
+	if r.DeleteRolePermissionsFunc != nil {
+		return r.DeleteRolePermissionsFunc(ctx, roleId, permissionIds...)
+	}
+	if r.Delegate == nil {
+		return ErrDelegateNil
+	}
+	return r.Delegate.DeleteRolePermissions(ctx, roleId, permissionIds...)
 }
 
 // DeleteUserRole implements DbRbacStoreInterface.
 func (r *RbacStoreDecorator) DeleteUserRole(ctx context.Context, userId uuid.UUID, roleId uuid.UUID) error {
-	panic("unimplemented")
+	if r.DeleteUserRoleFunc != nil {
+		return r.DeleteUserRoleFunc(ctx, userId, roleId)
+	}
+	if r.Delegate == nil {
+		return ErrDelegateNil
+	}
+	return r.Delegate.DeleteUserRole(ctx, userId, roleId)
 }
 
 // EnsureRoleAndPermissions implements DbRbacStoreInterface.
 func (r *RbacStoreDecorator) EnsureRoleAndPermissions(ctx context.Context, roleName string, permissionNames ...string) error {
-	panic("unimplemented")
+	if r.EnsureRoleAndPermissionsFunc != nil {
+		return r.EnsureRoleAndPermissionsFunc(ctx, roleName, permissionNames...)
+	}
+	if r.Delegate == nil {
+		return ErrDelegateNil
+	}
+	return r.Delegate.EnsureRoleAndPermissions(ctx, roleName, permissionNames...)
 }
 
 // FindOrCreatePermission implements DbRbacStoreInterface.
 func (r *RbacStoreDecorator) FindOrCreatePermission(ctx context.Context, permissionName string) (*models.Permission, error) {
-	panic("unimplemented")
+	if r.FindOrCreatePermissionFunc != nil {
+		return r.FindOrCreatePermissionFunc(ctx, permissionName)
+	}
+	if r.Delegate == nil {
+		return nil, ErrDelegateNil
+	}
+	return r.Delegate.FindOrCreatePermission(ctx, permissionName)
 }
 
 // FindOrCreateRole implements DbRbacStoreInterface.
 func (r *RbacStoreDecorator) FindOrCreateRole(ctx context.Context, roleName string) (*models.Role, error) {
-	panic("unimplemented")
+	if r.FindOrCreateRoleFunc != nil {
+		return r.FindOrCreateRoleFunc(ctx, roleName)
+	}
+	if r.Delegate == nil {
+		return nil, ErrDelegateNil
+	}
+	return r.Delegate.FindOrCreateRole(ctx, roleName)
 }
 
 // FindPermissionById implements DbRbacStoreInterface.
 func (r *RbacStoreDecorator) FindPermissionById(ctx context.Context, id uuid.UUID) (*models.Permission, error) {
-	panic("unimplemented")
+	if r.FindPermissionByIdFunc != nil {
+		return r.FindPermissionByIdFunc(ctx, id)
+	}
+	if r.Delegate == nil {
+		return nil, ErrDelegateNil
+	}
+	return r.Delegate.FindPermissionById(ctx, id)
 }
 
 // FindPermissionByName implements DbRbacStoreInterface.
 func (r *RbacStoreDecorator) FindPermissionByName(ctx context.Context, name string) (*models.Permission, error) {
-	panic("unimplemented")
+	if r.FindPermissionByNameFunc != nil {
+		return r.FindPermissionByNameFunc(ctx, name)
+	}
+	if r.Delegate == nil {
+		return nil, ErrDelegateNil
+	}
+	return r.Delegate.FindPermissionByName(ctx, name)
 }
 
 // FindPermissionsByIds implements DbRbacStoreInterface.
 func (r *RbacStoreDecorator) FindPermissionsByIds(ctx context.Context, params []uuid.UUID) ([]*models.Permission, error) {
-	panic("unimplemented")
+	if r.FindPermissionsByIdsFunc != nil {
+		return r.FindPermissionsByIdsFunc(ctx, params)
+	}
+	if r.Delegate == nil {
+		return nil, ErrDelegateNil
+	}
+	return r.Delegate.FindPermissionsByIds(ctx, params)
 }
 
 // FindRoleById implements DbRbacStoreInterface.
 func (r *RbacStoreDecorator) FindRoleById(ctx context.Context, id uuid.UUID) (*models.Role, error) {
-	panic("unimplemented")
+	if r.FindRoleByIdFunc != nil {
+		return r.FindRoleByIdFunc(ctx, id)
+	}
+	if r.Delegate == nil {
+		return nil, ErrDelegateNil
+	}
+	return r.Delegate.FindRoleById(ctx, id)
 }
 
 // FindRoleByName implements DbRbacStoreInterface.
 func (r *RbacStoreDecorator) FindRoleByName(ctx context.Context, name string) (*models.Role, error) {
-	panic("unimplemented")
+	if r.FindRoleByNameFunc != nil {
+		return r.FindRoleByNameFunc(ctx, name)
+	}
+	if r.Delegate == nil {
+		return nil, ErrDelegateNil
+	}
+	return r.Delegate.FindRoleByName(ctx, name)
 }
 
 // FindRolesByIds implements DbRbacStoreInterface.
 func (r *RbacStoreDecorator) FindRolesByIds(ctx context.Context, params []uuid.UUID) ([]*models.Role, error) {
-	panic("unimplemented")
+	if r.FindRolesByIdsFunc != nil {
+		return r.FindRolesByIdsFunc(ctx, params)
+	}
+	if r.Delegate == nil {
+		return nil, ErrDelegateNil
+	}
+	return r.Delegate.FindRolesByIds(ctx, params)
 }
 
 // GetUserRoles implements DbRbacStoreInterface.
 func (r *RbacStoreDecorator) GetUserRoles(ctx context.Context, userIds ...uuid.UUID) ([][]*models.Role, error) {
-	panic("unimplemented")
+	if r.GetUserRolesFunc != nil {
+		return r.GetUserRolesFunc(ctx, userIds...)
+	}
+	if r.Delegate == nil {
+		return nil, ErrDelegateNil
+	}
+	return r.Delegate.GetUserRoles(ctx, userIds...)
 }
 
 // ListPermissions implements DbRbacStoreInterface.
 func (r *RbacStoreDecorator) ListPermissions(ctx context.Context, input *shared.PermissionsListParams) ([]*models.Permission, error) {
-	panic("unimplemented")
+	if r.ListPermissionsFunc != nil {
+		return r.ListPermissionsFunc(ctx, input)
+	}
+	if r.Delegate == nil {
+		return nil, ErrDelegateNil
+	}
+	return r.Delegate.ListPermissions(ctx, input)
 }
 
 // ListRoles implements DbRbacStoreInterface.
 func (r *RbacStoreDecorator) ListRoles(ctx context.Context, input *shared.RolesListParams) ([]*models.Role, error) {
-	panic("unimplemented")
+	if r.ListRolesFunc != nil {
+		return r.ListRolesFunc(ctx, input)
+	}
+	if r.Delegate == nil {
+		return nil, ErrDelegateNil
+	}
+	return r.Delegate.ListRoles(ctx, input)
 }
 
 // ListUserNotPermissionsSource implements DbRbacStoreInterface.
 func (r *RbacStoreDecorator) ListUserNotPermissionsSource(ctx context.Context, userId uuid.UUID, limit int64, offset int64) ([]shared.PermissionSource, error) {
-	panic("unimplemented")
+	if r.ListUserNotPermissionsSourceFunc != nil {
+		return r.ListUserNotPermissionsSourceFunc(ctx, userId, limit, offset)
+	}
+	if r.Delegate == nil {
+		return nil, ErrDelegateNil
+	}
+	return r.Delegate.ListUserNotPermissionsSource(ctx, userId, limit, offset)
 }
 
 // ListUserPermissionsSource implements DbRbacStoreInterface.
 func (r *RbacStoreDecorator) ListUserPermissionsSource(ctx context.Context, userId uuid.UUID, limit int64, offset int64) ([]shared.PermissionSource, error) {
-	panic("unimplemented")
+	if r.ListUserPermissionsSourceFunc != nil {
+		return r.ListUserPermissionsSourceFunc(ctx, userId, limit, offset)
+	}
+	if r.Delegate == nil {
+		return nil, ErrDelegateNil
+	}
+	return r.Delegate.ListUserPermissionsSource(ctx, userId, limit, offset)
 }
 
 // LoadProductPermissions implements DbRbacStoreInterface.
 func (r *RbacStoreDecorator) LoadProductPermissions(ctx context.Context, productIds ...string) ([][]*models.Permission, error) {
-	panic("unimplemented")
+	if r.LoadProductPermissionsFunc != nil {
+		return r.LoadProductPermissionsFunc(ctx, productIds...)
+	}
+	if r.Delegate == nil {
+		return nil, ErrDelegateNil
+	}
+	return r.Delegate.LoadProductPermissions(ctx, productIds...)
 }
 
 // LoadRolePermissions implements DbRbacStoreInterface.
 func (r *RbacStoreDecorator) LoadRolePermissions(ctx context.Context, roleIds ...uuid.UUID) ([][]*models.Permission, error) {
-	panic("unimplemented")
+	if r.LoadRolePermissionsFunc != nil {
+		return r.LoadRolePermissionsFunc(ctx, roleIds...)
+	}
+	if r.Delegate == nil {
+		return nil, ErrDelegateNil
+	}
+	return r.Delegate.LoadRolePermissions(ctx, roleIds...)
 }
 
 // UpdatePermission implements DbRbacStoreInterface.
 func (r *RbacStoreDecorator) UpdatePermission(ctx context.Context, id uuid.UUID, roledto *shared.UpdatePermissionDto) error {
-	panic("unimplemented")
+	if r.UpdatePermissionFunc != nil {
+		return r.UpdatePermissionFunc(ctx, id, roledto)
+	}
+	if r.Delegate == nil {
+		return ErrDelegateNil
+	}
+	return r.Delegate.UpdatePermission(ctx, id, roledto)
 }
 
 // UpdateRole implements DbRbacStoreInterface.
 func (r *RbacStoreDecorator) UpdateRole(ctx context.Context, id uuid.UUID, roledto *shared.UpdateRoleDto) error {
-	panic("unimplemented")
+	if r.UpdateRoleFunc != nil {
+		return r.UpdateRoleFunc(ctx, id, roledto)
+	}
+	if r.Delegate == nil {
+		return ErrDelegateNil
+	}
+	return r.Delegate.UpdateRole(ctx, id, roledto)
 }
 
 var _ DbRbacStoreInterface = (*RbacStoreDecorator)(nil)
