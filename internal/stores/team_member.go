@@ -31,7 +31,6 @@ type DbTeamMemberStoreInterface interface {
 	FindTeamMembersByUserID(ctx context.Context, userId uuid.UUID, paginate *shared.TeamMemberListInput) ([]*models.TeamMember, error)
 	UpdateTeamMember(ctx context.Context, member *models.TeamMember) (*models.TeamMember, error)
 	UpdateTeamMemberSelectedAt(ctx context.Context, teamId uuid.UUID, userId uuid.UUID) error
-	WithTx(tx database.Dbx) *DbTeamMemberStore
 }
 
 type DbTeamMemberStore struct {

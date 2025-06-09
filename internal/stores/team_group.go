@@ -29,7 +29,6 @@ type DbTeamGroupStoreInterface interface {
 	ListTeams(ctx context.Context, params *shared.ListTeamsParams) ([]*models.Team, error)
 	LoadTeamsByIds(ctx context.Context, teamIds ...uuid.UUID) ([]*models.Team, error)
 	UpdateTeam(ctx context.Context, teamId uuid.UUID, name string) (*models.Team, error)
-	WithTx(tx database.Dbx) *DbTeamGroupStore
 }
 
 type DbTeamGroupStore struct {

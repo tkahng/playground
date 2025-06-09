@@ -13,6 +13,11 @@ func NewJwtServiceDecorator() *JwtServiceDecorator {
 	}
 }
 
+func (j *JwtServiceDecorator) Cleanup() {
+	j.CreateJwtTokenFunc = nil
+	j.ParseTokenFunc = nil
+}
+
 type JwtServiceDecorator struct {
 	Delegate           JwtService
 	CreateJwtTokenFunc func(payload jwt.Claims, signingKey string) (string, error)

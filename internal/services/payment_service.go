@@ -106,6 +106,7 @@ type CustomerStore interface {
 
 type PaymentStore interface {
 	// team methods
+	// Team()
 	PaymentTeamStore
 	// rbac methods
 	PaymentRbacStore
