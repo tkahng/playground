@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/tkahng/authgo/internal/conf"
 	"github.com/tkahng/authgo/internal/models"
+	"github.com/tkahng/authgo/internal/repository/resource"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/stores"
 	"github.com/tkahng/authgo/internal/tools/mailer"
@@ -23,10 +24,12 @@ func TestHandleRefreshToken(t *testing.T) {
 	ctx := context.Background()
 	// mockStorage := new(MockAuthStore)
 	mockStorage := stores.NewStoreDecorators()
+	adatper := resource.NewResourceDecoratorAdapter()
 	mockToken := NewJwtServiceDecorator()
 	app := &BaseAuthService{
 		token:     mockToken,
 		authStore: mockStorage,
+		adapter:   adatper,
 		options: &conf.AppOptions{
 			Auth: conf.AuthOptions{
 				RefreshToken: conf.TokenOption{
@@ -129,11 +132,13 @@ func TestHandleRefreshToken(t *testing.T) {
 func TestResetPassword(t *testing.T) {
 	ctx := context.Background()
 	storageDecorators := stores.NewStoreDecorators()
+	adapter := resource.NewResourceDecoratorAdapter()
 	// mockStorage := new(MockAuthStore)
 	passwordManager := NewPasswordService()
 	app := &BaseAuthService{
 		authStore: storageDecorators,
 		password:  passwordManager,
+		adapter:   adapter,
 	}
 
 	testUserId := uuid.New()
@@ -248,7 +253,7 @@ func TestResetPassword(t *testing.T) {
 func TestAuthenticate(t *testing.T) {
 	ctx := context.Background()
 	storeDecorator := stores.NewStoreDecorators()
-
+	adapter := resource.NewResourceDecoratorAdapter()
 	mockToken := NewJwtService()
 	mockPassword := NewPasswordServiceDecorator()
 	mockMailService := &MockMailService{
@@ -266,6 +271,7 @@ func TestAuthenticate(t *testing.T) {
 		Wg: wg,
 	}
 	app := &BaseAuthService{
+		adapter:   adapter,
 		authStore: storeDecorator,
 		token:     mockToken,
 		password:  mockPassword,

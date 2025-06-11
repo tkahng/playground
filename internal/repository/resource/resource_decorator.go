@@ -125,16 +125,16 @@ type ResourceDecoratorAdapter struct {
 	token       *ResourceDecorator[models.Token, uuid.UUID, TokenFilter]
 }
 
-func (r *ResourceDecoratorAdapter) User() *ResourceDecorator[models.User, uuid.UUID, UserFilter] {
+func (r *ResourceDecoratorAdapter) User() Resource[models.User, uuid.UUID, UserFilter] {
 	return r.user
 }
-func (r *ResourceDecoratorAdapter) Permission() *ResourceDecorator[models.Permission, uuid.UUID, PermissionsFilter] {
+func (r *ResourceDecoratorAdapter) Permission() Resource[models.Permission, uuid.UUID, PermissionsFilter] {
 	return r.permission
 }
-func (r *ResourceDecoratorAdapter) UserAccount() *ResourceDecorator[models.UserAccount, uuid.UUID, UserAccountFilter] {
+func (r *ResourceDecoratorAdapter) UserAccount() Resource[models.UserAccount, uuid.UUID, UserAccountFilter] {
 	return r.userAccount
 }
-func (r *ResourceDecoratorAdapter) Token() *ResourceDecorator[models.Token, uuid.UUID, TokenFilter] {
+func (r *ResourceDecoratorAdapter) Token() Resource[models.Token, uuid.UUID, TokenFilter] {
 	return r.token
 }
 func NewResourceDecoratorAdapter() *ResourceDecoratorAdapter {
