@@ -16,12 +16,12 @@ func NewStoreDecorators() *StoreDecorators {
 
 func NewAdapterDecorators() *StorageAdapterDecorator {
 	return &StorageAdapterDecorator{
-		user:           &UserStoreDecorator{},
-		userAccount:    &AccountStoreDecorator{},
-		token:          &TokenStoreDecorator{},
-		teamGroup:      &TeamGroupStoreDecorator{},
-		teamInvitation: &TeamInvitationStoreDecorator{},
-		teamMember:     &TeamMemberStoreDecorator{},
+		UserFunc:           &UserStoreDecorator{},
+		UserAccountFunc:    &AccountStoreDecorator{},
+		TokenFunc:          &TokenStoreDecorator{},
+		TeamGroupFunc:      &TeamGroupStoreDecorator{},
+		TeamInvitationFunc: &TeamInvitationStoreDecorator{},
+		TeamMemberFunc:     &TeamMemberStoreDecorator{},
 	}
 }
 
@@ -41,12 +41,12 @@ func (s *StoreDecorators) Cleanup() {
 }
 
 type StorageAdapterDecorator struct {
-	user           *UserStoreDecorator
-	userAccount    *AccountStoreDecorator
-	token          *TokenStoreDecorator
-	teamGroup      *TeamGroupStoreDecorator
-	teamInvitation *TeamInvitationStoreDecorator
-	teamMember     *TeamMemberStoreDecorator
+	UserFunc           *UserStoreDecorator
+	UserAccountFunc    *AccountStoreDecorator
+	TokenFunc          *TokenStoreDecorator
+	TeamGroupFunc      *TeamGroupStoreDecorator
+	TeamInvitationFunc *TeamInvitationStoreDecorator
+	TeamMemberFunc     *TeamMemberStoreDecorator
 }
 
 // Customer implements StorageAdapterInterface.
@@ -76,32 +76,32 @@ func (s *StorageAdapterDecorator) Subscription() DbSubscriptionStoreInterface {
 
 // TeamGroup implements StorageAdapterInterface.
 func (s *StorageAdapterDecorator) TeamGroup() DbTeamGroupStoreInterface {
-	return s.teamGroup
+	return s.TeamGroupFunc
 }
 
 // TeamInvitation implements StorageAdapterInterface.
 func (s *StorageAdapterDecorator) TeamInvitation() DbTeamInvitationStoreInterface {
-	return s.teamInvitation
+	return s.TeamInvitationFunc
 }
 
 // TeamMember implements StorageAdapterInterface.
 func (s *StorageAdapterDecorator) TeamMember() DbTeamMemberStoreInterface {
-	return s.teamMember
+	return s.TeamMemberFunc
 }
 
 // Token implements StorageAdapterInterface.
 func (s *StorageAdapterDecorator) Token() DbTokenStoreInterface {
-	return s.token
+	return s.TokenFunc
 }
 
 // User implements StorageAdapterInterface.
 func (s *StorageAdapterDecorator) User() DbUserStoreInterface {
-	return s.user
+	return s.UserFunc
 }
 
 // UserAccount implements StorageAdapterInterface.
 func (s *StorageAdapterDecorator) UserAccount() DbAccountStoreInterface {
-	return s.userAccount
+	return s.UserAccountFunc
 }
 
 var _ StorageAdapterInterface = (*StorageAdapterDecorator)(nil)

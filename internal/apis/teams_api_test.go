@@ -22,11 +22,11 @@ import (
 
 func createTeamAndMember(app core.App, user *shared.User, teamName string) (*shared.TeamInfoModel, error) {
 
-	team, err := app.Team().Store().CreateTeam(context.Background(), teamName, strings.TrimSpace(teamName))
+	team, err := app.Adapter().TeamGroup().CreateTeam(context.Background(), teamName, strings.TrimSpace(teamName))
 	if err != nil {
 		return nil, err
 	}
-	member, err := app.Team().Store().CreateTeamMember(context.Background(), team.ID, user.ID, models.TeamMemberRoleOwner, true)
+	member, err := app.Adapter().TeamMember().CreateTeamMember(context.Background(), team.ID, user.ID, models.TeamMemberRoleOwner, true)
 	if err != nil {
 		return nil, err
 	}
@@ -42,14 +42,14 @@ func createTeamAndMember(app core.App, user *shared.User, teamName string) (*sha
 }
 func createVerifiedUser(app core.App) (*shared.UserInfo, error) {
 	nw := time.Now()
-	user, err := app.User().Store().CreateUser(context.Background(), &models.User{
+	user, err := app.Adapter().User().CreateUser(context.Background(), &models.User{
 		Email:           "authenticated@example.com",
 		EmailVerifiedAt: &nw,
 	})
 	if err != nil {
 		return nil, err
 	}
-	_, err = app.UserAccount().Store().CreateUserAccount(context.Background(), &models.UserAccount{
+	_, err = app.Adapter().UserAccount().CreateUserAccount(context.Background(), &models.UserAccount{
 		UserID:            user.ID,
 		Provider:          models.ProvidersGoogle,
 		Type:              "oauth",
@@ -63,7 +63,7 @@ func createVerifiedUser(app core.App) (*shared.UserInfo, error) {
 	}, nil
 }
 func createUnverifiedUser(app *core.BaseAppDecorator) (*shared.UserInfo, error) {
-	user, err := app.User().Store().CreateUser(context.Background(), &models.User{
+	user, err := app.Adapter().User().CreateUser(context.Background(), &models.User{
 		Email: "authenticated@example.com",
 	})
 	if err != nil {
@@ -115,7 +115,7 @@ func TestTeamSlug(t *testing.T) {
 			t.Errorf("Error creating auth tokens: %v", err)
 			return
 		}
-		_, err = app.Team().Store().CreateTeam(context.Background(), "test team",
+		_, err = app.Adapter().TeamGroup().CreateTeam(context.Background(), "test team",
 			"public")
 		if err != nil {
 			t.Errorf("Error creating team: %v", err)
@@ -331,7 +331,7 @@ func TestUpdateTeam_failedNotOwner(t *testing.T) {
 			return
 		}
 
-		member1, err := app.Team().Store().CreateTeamWithOwnerMember(
+		member1, err := app.Team().CreateTeam(
 			ctx,
 			"test team",
 			"test-team",
@@ -351,7 +351,7 @@ func TestUpdateTeam_failedNotOwner(t *testing.T) {
 			t.Errorf("Error creating user: %v", err)
 			return
 		}
-		member2, err := app.Team().Store().CreateTeamMember(
+		member2, err := app.Adapter().TeamMember().CreateTeamMember(
 			ctx,
 			member1.Team.ID,
 			user2.ID,
@@ -403,7 +403,7 @@ func TestUpdateTeam_successOwner(t *testing.T) {
 			return
 		}
 
-		member1, err := app.Team().Store().CreateTeamWithOwnerMember(
+		member1, err := app.Team().CreateTeam(
 			ctx,
 			"test team",
 			"test-team",
@@ -453,7 +453,7 @@ func TestDeleteTeam_successOwner(t *testing.T) {
 			return
 		}
 
-		member1, err := app.Team().Store().CreateTeamWithOwnerMember(
+		member1, err := app.Team().CreateTeam(
 			ctx,
 			"test team",
 			"test-team",
@@ -497,7 +497,7 @@ func TestDeleteTeam_failNonOwner(t *testing.T) {
 			return
 		}
 
-		member1, err := app.Team().Store().CreateTeamWithOwnerMember(
+		member1, err := app.Team().CreateTeam(
 			ctx,
 			"test team",
 			"test-team",
@@ -517,7 +517,7 @@ func TestDeleteTeam_failNonOwner(t *testing.T) {
 			t.Errorf("Error creating user: %v", err)
 			return
 		}
-		member2, err := app.Team().Store().CreateTeamMember(
+		member2, err := app.Adapter().TeamMember().CreateTeamMember(
 			ctx,
 			member1.Team.ID,
 			user2.ID,
@@ -565,7 +565,7 @@ func TestGetActiveTeamMember_success(t *testing.T) {
 			return
 		}
 
-		member1, err := app.Team().Store().CreateTeamWithOwnerMember(
+		member1, err := app.Team().CreateTeam(
 			ctx,
 			"test team",
 			"test-team",
@@ -653,7 +653,7 @@ func TestGetUserTeamMembers_basic(t *testing.T) {
 			return
 		}
 
-		member1, err := app.Team().Store().CreateTeamWithOwnerMember(
+		member1, err := app.Team().CreateTeam(
 			ctx,
 			"test team",
 			"test-team",
@@ -708,7 +708,7 @@ func TestGetUserTeamMembers_sortbyname(t *testing.T) {
 			return
 		}
 
-		member1, err := app.Team().Store().CreateTeamWithOwnerMember(
+		member1, err := app.Team().CreateTeam(
 			ctx,
 			"test team a",
 			"test-team a",
@@ -722,7 +722,7 @@ func TestGetUserTeamMembers_sortbyname(t *testing.T) {
 			t.Errorf("Error creating user: %v", err)
 			return
 		}
-		member2, err := app.Team().Store().CreateTeamWithOwnerMember(
+		member2, err := app.Team().CreateTeam(
 			ctx,
 			"test team b",
 			"test-team b",
@@ -776,7 +776,7 @@ func TestGetUserTeamMembers_sortbyname2(t *testing.T) {
 			return
 		}
 
-		member1, err := app.Team().Store().CreateTeamWithOwnerMember(
+		member1, err := app.Team().CreateTeam(
 			ctx,
 			"test team a",
 			"test-team a",
@@ -790,7 +790,7 @@ func TestGetUserTeamMembers_sortbyname2(t *testing.T) {
 			t.Errorf("Error creating user: %v", err)
 			return
 		}
-		member2, err := app.Team().Store().CreateTeamWithOwnerMember(
+		member2, err := app.Team().CreateTeam(
 			ctx,
 			"test team b",
 			"test-team b",

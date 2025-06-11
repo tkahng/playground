@@ -65,6 +65,12 @@ type BaseApp struct {
 	user     services.UserService
 	userAcc  services.UserAccountService
 	task     services.TaskService
+	adapter  stores.StorageAdapterInterface
+}
+
+// Adapter implements App.
+func (app *BaseApp) Adapter() stores.StorageAdapterInterface {
+	return app.adapter
 }
 
 // UserAccount implements App.
@@ -146,6 +152,8 @@ func NewBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 		mail = &mailer.LogMailer{}
 	}
 
+	adapter := stores.NewStorageAdapter(pool)
+
 	enqueuer := jobs.NewDBEnqueuer(pool)
 
 	userStore := stores.NewDbUserStore(pool)
@@ -188,8 +196,7 @@ func NewBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 		checkerStore,
 	)
 
-	teamStore := stores.NewDbTeamStripeStore(pool)
-	teamService := services.NewTeamService(teamStore)
+	teamService := services.NewTeamService(adapter)
 
 	app := NewApp(
 		fs,
@@ -206,6 +213,7 @@ func NewBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 		userAccountService,
 		taskService,
 		teamService,
+		adapter,
 	)
 	return app
 }
@@ -225,6 +233,7 @@ func NewApp(
 	userAccountService services.UserAccountService,
 	taskService services.TaskService,
 	teamService services.TeamService,
+	adapter stores.StorageAdapterInterface,
 ) *BaseApp {
 	app := &BaseApp{
 		fs:       fs,
@@ -241,6 +250,7 @@ func NewApp(
 		userAcc:  userAccountService,
 		task:     taskService,
 		team:     teamService,
+		adapter:  adapter,
 	}
 	return app
 }

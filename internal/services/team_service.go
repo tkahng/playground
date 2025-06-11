@@ -13,7 +13,6 @@ import (
 )
 
 type TeamService interface {
-	Store() stores.TeamStoreInterface
 	SetActiveTeamMember(ctx context.Context, userId uuid.UUID, teamId uuid.UUID) (*models.TeamMember, error)
 	GetActiveTeamMember(ctx context.Context, userId uuid.UUID) (*models.TeamMember, error)
 	FindTeamInfo(ctx context.Context, teamId, userId uuid.UUID) (*shared.TeamInfoModel, error)
@@ -28,11 +27,6 @@ type TeamService interface {
 	FindTeamMembersByUserID(ctx context.Context, userId uuid.UUID, paginate *shared.TeamMemberListInput) ([]*models.TeamMember, error)
 }
 
-//	type TeamStripeStore interface {
-//		FindActiveSubscriptionByCustomerId(ctx context.Context, customerId string) (*models.SubscriptionWithPrice, error)
-//		// FindActiveSubscriptionWithPriceProductByCustomerId(ctx context.Context, customerId string) (*models.StripeSubscription, error)
-//	}
-
 type TeamServiceStore interface {
 	stores.TeamStoreInterface
 	// Team() TeamStore
@@ -40,8 +34,7 @@ type TeamServiceStore interface {
 }
 
 type teamService struct {
-	adapter   stores.StorageAdapterInterface
-	teamStore TeamServiceStore
+	adapter stores.StorageAdapterInterface
 }
 
 // FindTeamMembersByUserID implements TeamService.
@@ -75,9 +68,9 @@ func (t *teamService) FindTeamMembersByUserID(ctx context.Context, userId uuid.U
 	return members, nil
 }
 
-func NewTeamService(store TeamServiceStore) TeamService {
+func NewTeamService(adapter stores.StorageAdapterInterface) TeamService {
 	return &teamService{
-		// adapter: adapter,
+		adapter: adapter,
 	}
 }
 

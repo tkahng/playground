@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/contextstore"
 	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/authgo/internal/stores"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 )
 
@@ -67,7 +68,7 @@ func (api *Api) CheckTeamSlug(
 	},
 	error,
 ) {
-	exists, err := api.app.Team().Store().CheckTeamSlug(ctx, input.Body.Slug)
+	exists, err := api.app.Adapter().TeamGroup().CheckTeamSlug(ctx, input.Body.Slug)
 	if err != nil {
 		return nil, err
 	}
@@ -102,7 +103,9 @@ func (api *Api) GetUserTeamMembers(
 	if len(teams) == 0 {
 		return nil, huma.Error500InternalServerError("teams not found")
 	}
-	count, err := api.app.Team().Store().CountTeamMembersByUserID(ctx, info.User.ID)
+	count, err := api.app.Adapter().TeamMember().CountTeamMembers(ctx, &stores.TeamMemberFilter{
+		UserIds: []uuid.UUID{info.User.ID},
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -135,14 +138,14 @@ func (api *Api) GetUserTeams(
 		params.SortParams = input.SortParams
 	}
 
-	teams, err := api.app.Team().Store().ListTeams(ctx, params)
+	teams, err := api.app.Adapter().TeamGroup().ListTeams(ctx, params)
 	if err != nil {
 		return nil, err
 	}
 	// if len(teams) == 0 {
 	// 	return nil, huma.Error500InternalServerError("teams not found")
 	// }
-	count, err := api.app.Team().Store().CountTeams(ctx, params)
+	count, err := api.app.Adapter().TeamGroup().CountTeams(ctx, params)
 	if err != nil {
 		return nil, err
 	}
@@ -288,7 +291,7 @@ func (api *Api) GetTeam(
 	if err != nil {
 		return nil, huma.Error400BadRequest("invalid team ID")
 	}
-	team, err := api.app.Team().Store().FindTeamByID(ctx, uid)
+	team, err := api.app.Adapter().TeamGroup().FindTeamByID(ctx, uid)
 	if err != nil {
 		return nil, err
 	}

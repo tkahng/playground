@@ -22,6 +22,7 @@ func NewDecorator(ctx context.Context, cfg conf.EnvConfig, pool database.Dbx) *B
 	enqueuer := jobs.NewDBEnqueuer(pool)
 	var mail mailer.Mailer = &mailer.LogMailer{}
 	authMailService := services.NewMailService(mail)
+	adapter := stores.NewStorageAdapter(pool)
 	userStore := stores.NewDbUserStore(pool)
 	rbac := stores.NewDbRBACStore(pool)
 	taskStore := stores.NewDbTaskStore(pool)
@@ -57,8 +58,7 @@ func NewDecorator(ctx context.Context, cfg conf.EnvConfig, pool database.Dbx) *B
 		checkerStore,
 	)
 
-	teamStore := stores.NewDbTeamStripeStore(pool)
-	teamService := services.NewTeamService(teamStore)
+	teamService := services.NewTeamService(adapter)
 
 	app := NewApp(
 		fs,
@@ -75,6 +75,7 @@ func NewDecorator(ctx context.Context, cfg conf.EnvConfig, pool database.Dbx) *B
 		userAccountService,
 		taskService,
 		teamService,
+		adapter,
 	)
 	return &BaseAppDecorator{app: app}
 }
@@ -93,8 +94,15 @@ type BaseAppDecorator struct {
 	UserAccountFunc func() services.UserAccountService
 	TeamFunc        func() services.TeamService
 	TaskFunc        func() services.TaskService
+	AdapterFunc     func() stores.StorageAdapterInterface
 }
 
+func (b *BaseAppDecorator) Adapter() stores.StorageAdapterInterface {
+	if b.AdapterFunc != nil {
+		return b.AdapterFunc()
+	}
+	return b.app.Adapter()
+}
 func (b *BaseAppDecorator) Auth() services.AuthService {
 	if b.AuthFunc != nil {
 		return b.AuthFunc()
