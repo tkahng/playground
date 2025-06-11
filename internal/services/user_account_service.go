@@ -5,15 +5,15 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/models"
-	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/authgo/internal/stores"
 )
 
 type UserAccountStore interface {
-	CountUserAccounts(ctx context.Context, filter *shared.UserAccountListFilter) (int64, error)
+	CountUserAccounts(ctx context.Context, filter *stores.UserAccountFilter) (int64, error)
 	FindUserAccountByUserIdAndProvider(ctx context.Context, userId uuid.UUID, provider models.Providers) (*models.UserAccount, error)
 	GetUserAccounts(ctx context.Context, userIds ...uuid.UUID) ([][]*models.UserAccount, error)
 	CreateUserAccount(ctx context.Context, account *models.UserAccount) (*models.UserAccount, error)
-	ListUserAccounts(ctx context.Context, input *shared.UserAccountListParams) ([]*models.UserAccount, error)
+	ListUserAccounts(ctx context.Context, input *stores.UserAccountFilter) ([]*models.UserAccount, error)
 	UnlinkAccount(ctx context.Context, userId uuid.UUID, provider models.Providers) error
 	UpdateUserAccount(ctx context.Context, account *models.UserAccount) error
 	UpdateUserPassword(ctx context.Context, userId uuid.UUID, password string) error

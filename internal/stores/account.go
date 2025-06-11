@@ -17,12 +17,21 @@ import (
 	"github.com/tkahng/authgo/internal/tools/types"
 )
 
+type UserAccountFilter struct {
+	repository.PaginatedInput
+	repository.SortParams
+	Providers     []models.Providers     `query:"providers,omitempty" required:"false" uniqueItems:"true" minimum:"1" maximum:"100" enum:"google,apple,facebook,github,credentials"`
+	ProviderTypes []models.ProviderTypes `query:"provider_types,omitempty" required:"false" uniqueItems:"true" minimum:"1" maximum:"100" enum:"oauth,credentials"`
+	Q             string                 `query:"q,omitempty" required:"false"`
+	Ids           []uuid.UUID            `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+	UserIds       []uuid.UUID            `query:"user_ids,omitempty" minimum:"1" maximum:"100" required:"false" format:"uuid"`
+}
 type DbAccountStoreInterface interface {
-	CountUserAccounts(ctx context.Context, filter *shared.UserAccountListFilter) (int64, error)
+	CountUserAccounts(ctx context.Context, filter *UserAccountFilter) (int64, error)
 	CreateUserAccount(ctx context.Context, account *models.UserAccount) (*models.UserAccount, error)
 	FindUserAccountByUserIdAndProvider(ctx context.Context, userId uuid.UUID, provider models.Providers) (*models.UserAccount, error)
 	GetUserAccounts(ctx context.Context, userIds ...uuid.UUID) ([][]*models.UserAccount, error)
-	ListUserAccounts(ctx context.Context, input *shared.UserAccountListParams) ([]*models.UserAccount, error)
+	ListUserAccounts(ctx context.Context, input *UserAccountFilter) ([]*models.UserAccount, error)
 	UnlinkAccount(ctx context.Context, userId uuid.UUID, provider models.Providers) error
 	UpdateUserAccount(ctx context.Context, account *models.UserAccount) error
 	UpdateUserPassword(ctx context.Context, userId uuid.UUID, password string) error
@@ -50,9 +59,9 @@ var (
 	// UserAccountColumnNames = models.UserAccounts.Columns().Names()
 )
 
-func (u *DbAccountStore) ListUserAccounts(ctx context.Context, input *shared.UserAccountListParams) ([]*models.UserAccount, error) {
-	where := UserAccountWhere(&input.UserAccountListFilter)
-	sort := UserAccountOrderBy(&input.SortParams)
+func (u *DbAccountStore) ListUserAccounts(ctx context.Context, input *UserAccountFilter) ([]*models.UserAccount, error) {
+	where := UserAccountWhere(input)
+	sort := repository.UserAccountBuilder.Sort(input)
 	data, err := repository.UserAccount.Get(
 		ctx,
 		u.db,
@@ -80,27 +89,19 @@ func UserAccountOrderBy(params *shared.SortParams) *map[string]string {
 }
 
 // func CreateUser(ctx context.Context, db db.Dbx, params *shared.AuthenticateUserParams) (*models.User, error) {
-func UserAccountWhere(filter *shared.UserAccountListFilter) *map[string]any {
+func UserAccountWhere(filter *UserAccountFilter) *map[string]any {
 	where := make(map[string]any)
 	if filter == nil {
 		return &where
 	}
 	if len(filter.Providers) > 0 {
-		var providers []string
-		for _, p := range filter.Providers {
-			providers = append(providers, p.String())
-		}
 		where[models.UserAccountTable.Provider] = map[string]any{
-			"_in": providers,
+			"_in": filter.Providers,
 		}
 	}
 	if len(filter.ProviderTypes) > 0 {
-		var providerTypes []string
-		for _, pt := range filter.ProviderTypes {
-			providerTypes = append(providerTypes, pt.String())
-		}
 		where[models.UserAccountTable.Type] = map[string]any{
-			"_in": providerTypes,
+			"_in": filter.ProviderTypes,
 		}
 	}
 	if len(filter.Ids) > 0 {
@@ -117,7 +118,7 @@ func UserAccountWhere(filter *shared.UserAccountListFilter) *map[string]any {
 }
 
 // CountUsers implements AdminCrudActions.
-func (u *DbAccountStore) CountUserAccounts(ctx context.Context, filter *shared.UserAccountListFilter) (int64, error) {
+func (u *DbAccountStore) CountUserAccounts(ctx context.Context, filter *UserAccountFilter) (int64, error) {
 	where := UserAccountWhere(filter)
 	data, err := repository.UserAccount.Count(ctx, u.db, where)
 	if err != nil {

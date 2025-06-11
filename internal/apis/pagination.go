@@ -1,18 +1,25 @@
-package shared
+package apis
 
 import (
 	"math"
-)
 
-// ProvidersGoogle      Providers = "google"
-// ProvidersApple       Providers = "apple"
-// ProvidersFacebook    Providers = "facebook"
-// ProvidersGithub      Providers = "github"
-// ProvidersCredentials Providers = "credentials"
+	"github.com/tkahng/authgo/internal/repository"
+	"github.com/tkahng/authgo/internal/shared"
+)
 
 type SortParams struct {
 	SortBy    string `query:"sort_by,omitempty" required:"false"`
 	SortOrder string `query:"sort_order,omitempty" required:"false" enum:"asc,desc"`
+}
+
+func (s *SortParams) ToRepoSort() *repository.SortParams {
+	if s == nil {
+		return nil // default values
+	}
+	return &repository.SortParams{
+		SortBy:    s.SortBy,
+		SortOrder: s.SortOrder,
+	}
 }
 
 func (s *SortParams) Sort() (sortBy, sortOrder string) {
@@ -44,7 +51,7 @@ type PaginatedResponse[T any] struct {
 	Data []T  `json:"data"`
 	Meta Meta `json:"meta"`
 }
-type PaginatedOutput[T any] struct {
+type ApiPaginatedOutput[T any] struct {
 	Body PaginatedResponse[T] `json:"body"`
 }
 type Meta struct {
@@ -56,8 +63,8 @@ type Meta struct {
 	HasMore  bool   `json:"has_more"`
 }
 
-func GenerateMeta(input *PaginatedInput, total int64) Meta {
-	var meta Meta = Meta{
+func ApiGenerateMeta(input *PaginatedInput, total int64) shared.Meta {
+	var meta shared.Meta = shared.Meta{
 		Page:    input.Page,
 		PerPage: input.PerPage,
 		Total:   total,
@@ -83,40 +90,3 @@ func GenerateMeta(input *PaginatedInput, total int64) Meta {
 	}
 	return meta
 }
-
-type Link struct {
-	URL    *string `json:"url"`
-	Label  string  `json:"label"`
-	Active bool    `json:"active"`
-}
-type MetaLink struct {
-	First *string `json:"first"`
-	Last  *string `json:"last"`
-	Next  *string `json:"next"`
-	Prev  *string `json:"prev"`
-}
-
-type JoinedResult[T any, K any] struct {
-	Key  K   `db:"key"`
-	Data []T `db:"data"`
-}
-
-// meta: {
-// 	current_page: number;
-// 	from: number | null;
-// 	last_page: number;
-// 	/** @description Generated paginator links. */
-// 	links: {
-// 		url: string | null;
-// 		label: string;
-// 		active: boolean;
-// 	}[];
-// 	/** @description Base path for paginator generated URLs. */
-// 	path: string | null;
-// 	/** @description Number of items shown per page. */
-// 	per_page: number;
-// 	/** @description Number of the last item in the slice. */
-// 	to: number | null;
-// 	/** @description Total number of items being paginated. */
-// 	total: number;
-// };

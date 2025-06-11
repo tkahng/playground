@@ -99,8 +99,27 @@ type UserAccountListFilter struct {
 	Ids           []string        `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
 	UserIds       []string        `query:"user_ids,omitempty" minimum:"1" maximum:"100" required:"false" format:"uuid"`
 }
+type UserAccountFilter struct {
+	PaginatedInput
+	SortParams
+	Providers     []Providers     `query:"providers,omitempty" required:"false" uniqueItems:"true" minimum:"1" maximum:"100" enum:"google,apple,facebook,github,credentials"`
+	ProviderTypes []ProviderTypes `query:"provider_types,omitempty" required:"false" uniqueItems:"true" minimum:"1" maximum:"100" enum:"oauth,credentials"`
+	Q             string          `query:"q,omitempty" required:"false"`
+	Ids           []string        `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+	UserIds       []string        `query:"user_ids,omitempty" minimum:"1" maximum:"100" required:"false" format:"uuid"`
+
+	// Providers     []models.Providers     `query:"providers,omitempty" required:"false" uniqueItems:"true" minimum:"1" maximum:"100" enum:"google,apple,facebook,github,credentials"`
+	// ProviderTypes []models.ProviderTypes `query:"provider_types,omitempty" required:"false" uniqueItems:"true" minimum:"1" maximum:"100" enum:"oauth,credentials"`
+	// Q             string                 `query:"q,omitempty" required:"false"`
+	// Ids           []uuid.UUID            `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+	// UserIds       []uuid.UUID            `query:"user_ids,omitempty" minimum:"1" maximum:"100" required:"false" format:"uuid"`
+}
 type UserAccountListParams struct {
 	PaginatedInput
-	UserAccountListFilter
 	SortParams
+	Providers     []Providers     `query:"providers,omitempty" required:"false" uniqueItems:"true" minimum:"1" maximum:"100" enum:"google,apple,facebook,github,credentials"`
+	ProviderTypes []ProviderTypes `query:"provider_types,omitempty" required:"false" uniqueItems:"true" minimum:"1" maximum:"100" enum:"oauth,credentials"`
+	Q             string          `query:"q,omitempty" required:"false"`
+	Ids           []string        `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+	UserIds       []string        `query:"user_ids,omitempty" minimum:"1" maximum:"100" required:"false" format:"uuid"`
 }

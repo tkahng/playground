@@ -6,16 +6,15 @@ import (
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
-	"github.com/tkahng/authgo/internal/shared"
 )
 
 type AccountStoreDecorator struct {
 	Delegate                               *DbAccountStore
-	CountUserAccountsFunc                  func(ctx context.Context, filter *shared.UserAccountListFilter) (int64, error)
+	CountUserAccountsFunc                  func(ctx context.Context, filter *UserAccountFilter) (int64, error)
 	CreateUserAccountFunc                  func(ctx context.Context, account *models.UserAccount) (*models.UserAccount, error)
 	FindUserAccountByUserIdAndProviderFunc func(ctx context.Context, userId uuid.UUID, provider models.Providers) (*models.UserAccount, error)
 	GetUserAccountsFunc                    func(ctx context.Context, userIds ...uuid.UUID) ([][]*models.UserAccount, error)
-	ListUserAccountsFunc                   func(ctx context.Context, input *shared.UserAccountListParams) ([]*models.UserAccount, error)
+	ListUserAccountsFunc                   func(ctx context.Context, input *UserAccountFilter) ([]*models.UserAccount, error)
 	UnlinkAccountFunc                      func(ctx context.Context, userId uuid.UUID, provider models.Providers) error
 	UpdateUserAccountFunc                  func(ctx context.Context, account *models.UserAccount) error
 	UpdateUserPasswordFunc                 func(ctx context.Context, userId uuid.UUID, password string) error
@@ -44,7 +43,7 @@ func (a *AccountStoreDecorator) WithTx(dbx database.Dbx) *AccountStoreDecorator 
 }
 
 // CountUserAccounts implements DbAccountStoreInterface.
-func (a *AccountStoreDecorator) CountUserAccounts(ctx context.Context, filter *shared.UserAccountListFilter) (int64, error) {
+func (a *AccountStoreDecorator) CountUserAccounts(ctx context.Context, filter *UserAccountFilter) (int64, error) {
 	if a.CountUserAccountsFunc != nil {
 		return a.CountUserAccountsFunc(ctx, filter)
 	}
@@ -88,7 +87,7 @@ func (a *AccountStoreDecorator) GetUserAccounts(ctx context.Context, userIds ...
 }
 
 // ListUserAccounts implements DbAccountStoreInterface.
-func (a *AccountStoreDecorator) ListUserAccounts(ctx context.Context, input *shared.UserAccountListParams) ([]*models.UserAccount, error) {
+func (a *AccountStoreDecorator) ListUserAccounts(ctx context.Context, input *UserAccountFilter) ([]*models.UserAccount, error) {
 	if a.ListUserAccountsFunc != nil {
 		return a.ListUserAccountsFunc(ctx, input)
 	}
