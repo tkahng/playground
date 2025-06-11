@@ -5,8 +5,16 @@ import (
 	"github.com/tkahng/authgo/internal/models"
 )
 
-type ResourceProvider interface {
-	User() Resource[models.User, uuid.UUID, UserFilter]
-	UserAccount() Resource[models.UserAccount, uuid.UUID, UserAccountFilter]
-	Permission() Resource[models.Permission, uuid.UUID, PermissionsFilter]
+type (
+	UserResource        = Resource[models.User, uuid.UUID, UserFilter]
+	PermissionResource  = Resource[models.Permission, uuid.UUID, PermissionsFilter]
+	UserAccountResource = Resource[models.UserAccount, uuid.UUID, UserAccountFilter]
+	TokenResource       = Resource[models.Token, uuid.UUID, TokenFilter]
+)
+
+type ResourceAdapter struct {
+	User        UserResource
+	Permission  PermissionResource
+	UserAccount UserAccountResource
+	Token       TokenResource
 }
