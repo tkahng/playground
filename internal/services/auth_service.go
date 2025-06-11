@@ -13,6 +13,7 @@ import (
 	"github.com/tkahng/authgo/internal/conf"
 	"github.com/tkahng/authgo/internal/jobs"
 	"github.com/tkahng/authgo/internal/models"
+	"github.com/tkahng/authgo/internal/repository/resource"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/stores"
 	"github.com/tkahng/authgo/internal/tools/mailer"
@@ -83,7 +84,7 @@ var _ AuthService = (*BaseAuthService)(nil)
 type BaseAuthService struct {
 	routine   RoutineService
 	authStore AuthStore
-	adapter   stores.StorageAdapterInterface
+	adapter   resource.ResourceAdapterInterface
 	mail      MailService
 	token     JwtService
 	password  PasswordService
@@ -115,7 +116,7 @@ func NewAuthService(
 
 	return authService
 }
-func (app *BaseAuthService) Adapter() stores.StorageAdapterInterface {
+func (app *BaseAuthService) Adapter() resource.ResourceAdapterInterface {
 	return app.adapter
 }
 
