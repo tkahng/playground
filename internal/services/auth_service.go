@@ -83,13 +83,13 @@ var _ AuthService = (*BaseAuthService)(nil)
 type BaseAuthService struct {
 	routine   RoutineService
 	authStore AuthStore
-	// adapter   resource.ResourceAdapterInterface
-	mail     MailService
-	token    JwtService
-	password PasswordService
-	options  *conf.AppOptions
-	logger   *slog.Logger
-	enqueuer jobs.Enqueuer
+	mail      MailService
+	token     JwtService
+	password  PasswordService
+	options   *conf.AppOptions
+	logger    *slog.Logger
+	enqueuer  jobs.Enqueuer
+	// adapter   stores.StorageAdapterInterface
 }
 
 func NewAuthService(
@@ -236,7 +236,7 @@ func (app *BaseAuthService) SendOtpEmail(emailType mailer.EmailType, ctx context
 		Identifier: claims.Email,
 		UserID:     &claims.UserId,
 	}
-
+	// err = app.adapter.Token().SaveToken(ctx, dto)
 	err = app.authStore.SaveToken(ctx, dto)
 	if err != nil {
 		return fmt.Errorf("error at creating verification token: %w", err)
@@ -313,7 +313,12 @@ func (app *BaseAuthService) FetchAuthUser(ctx context.Context, code string, pars
 }
 
 func (app *BaseAuthService) ResetPassword(ctx context.Context, userId uuid.UUID, oldPassword string, newPassword string) error {
-	account, err := app.authStore.FindUserAccountByUserIdAndProvider(ctx, userId, models.ProvidersCredentials)
+	account, err := app.authStore.FindUserAccountByUserIdAndProvider(
+		ctx,
+		userId,
+		models.ProvidersCredentials,
+	)
+	// account, err := app.authStore.FindUserAccountByUserIdAndProvider(ctx, userId, models.ProvidersCredentials)
 	if err != nil {
 		return fmt.Errorf("error getting user account: %w", err)
 	}
