@@ -77,7 +77,7 @@ func (t *teamService) FindTeamMembersByUserID(ctx context.Context, userId uuid.U
 
 func NewTeamService(store TeamServiceStore) TeamService {
 	return &teamService{
-		teamStore: store,
+		// adapter: adapter,
 	}
 }
 
@@ -91,7 +91,12 @@ func (t *teamService) LeaveTeam(ctx context.Context, teamId uuid.UUID, userId uu
 		return errors.New("team member not found")
 	}
 	if teamInfo.Member.Role == models.TeamMemberRoleOwner {
-		count, err := t.teamStore.CountOwnerTeamMembers(ctx, teamId)
+		count, err := t.adapter.TeamMember().CountTeamMembers(ctx,
+			&stores.TeamMemberFilter{
+				TeamIds: []uuid.UUID{teamId},
+				Roles:   []models.TeamMemberRole{models.TeamMemberRoleOwner},
+			})
+		// count, err := t.teamStore.CountOwnerTeamMembers(ctx, teamId)
 		if err != nil {
 			return err
 		}
@@ -99,7 +104,8 @@ func (t *teamService) LeaveTeam(ctx context.Context, teamId uuid.UUID, userId uu
 			return errors.New("owner cannot leave team")
 		}
 	}
-	err = t.teamStore.DeleteTeamMember(ctx, teamId, userId)
+	err = t.adapter.TeamMember().DeleteTeamMember(ctx, teamId, userId)
+	// err = t.teamStore.DeleteTeamMember(ctx, teamId, userId)
 	if err != nil {
 		return err
 	}
@@ -125,7 +131,9 @@ func (t *teamService) DeleteTeam(ctx context.Context, teamId uuid.UUID, userId u
 
 // UpdateTeam implements TeamService.
 func (t *teamService) UpdateTeam(ctx context.Context, teamId uuid.UUID, name string) (*models.Team, error) {
-	team, err := t.teamStore.UpdateTeam(ctx, teamId, name)
+	// team, err := t.teamStore.UpdateTeam(ctx, teamId, name)
+	team, err := t.adapter.TeamGroup().UpdateTeam(ctx, teamId, name)
+
 	if err != nil {
 		return nil, err
 	}
@@ -137,26 +145,44 @@ func (t *teamService) UpdateTeam(ctx context.Context, teamId uuid.UUID, name str
 
 // CreateTeam implements TeamService.
 func (t *teamService) CreateTeam(ctx context.Context, name string, slug string, userId uuid.UUID) (*shared.TeamInfoModel, error) {
-	check, err := t.teamStore.CheckTeamSlug(ctx, slug)
+	user, err := t.adapter.User().FindUserByID(ctx, userId)
+	if err != nil {
+		return nil, err
+	}
+	// check, err := t.teamStore.CheckTeamSlug(ctx, slug)
+	check, err := t.adapter.TeamGroup().CheckTeamSlug(ctx, slug)
 	if err != nil {
 		return nil, err
 	}
 	if !check {
 		return nil, errors.New("team slug already exists")
 	}
-	teaminfo, err := t.teamStore.CreateTeamWithOwnerMember(ctx, name, slug, userId)
+	team, err := t.adapter.TeamGroup().CreateTeam(ctx, name, slug)
 	if err != nil {
 		return nil, err
 	}
-	if teaminfo == nil {
+	if team == nil {
 		return nil, errors.New("team not found")
 	}
-	return teaminfo, nil
+	teamMember, err := t.adapter.TeamMember().CreateTeamMember(ctx, team.ID, userId, models.TeamMemberRoleOwner, true)
+	if err != nil {
+		return nil, err
+	}
+	if teamMember == nil {
+		return nil, errors.New("team member not found")
+	}
+	teamInfo := &shared.TeamInfoModel{
+		Team:   *team,
+		Member: *teamMember,
+		User:   *user,
+	}
+	return teamInfo, nil
 }
 
 // AddMember implements TeamService.
 func (t *teamService) AddMember(ctx context.Context, teamId uuid.UUID, userId uuid.UUID, role models.TeamMemberRole, hasBillingAccess bool) (*models.TeamMember, error) {
-	member, err := t.teamStore.CreateTeamMember(ctx, teamId, userId, role, hasBillingAccess)
+	// member, err := t.teamStore.CreateTeamMember(ctx, teamId, userId, role, hasBillingAccess)
+	member, err := t.adapter.TeamMember().CreateTeamMember(ctx, teamId, userId, role, hasBillingAccess)
 	if err != nil {
 		return nil, err
 	}
@@ -165,7 +191,8 @@ func (t *teamService) AddMember(ctx context.Context, teamId uuid.UUID, userId uu
 
 // RemoveMember implements TeamService.
 func (t *teamService) RemoveMember(ctx context.Context, teamId uuid.UUID, userId uuid.UUID) error {
-	err := t.teamStore.DeleteTeamMember(ctx, teamId, userId)
+	// err := t.teamStore.DeleteTeamMember(ctx, teamId, userId)
+	err := t.adapter.TeamMember().DeleteTeamMember(ctx, teamId, userId)
 	if err != nil {
 		return err
 	}
@@ -173,7 +200,7 @@ func (t *teamService) RemoveMember(ctx context.Context, teamId uuid.UUID, userId
 }
 
 func (t *teamService) Store() stores.TeamStoreInterface {
-	return t.teamStore
+	return nil
 }
 
 // SetActiveTeamMember impleements TeamService.
@@ -189,7 +216,8 @@ func (t *teamService) SetActiveTeamMember(ctx context.Context, teamId, userId uu
 	if member == nil {
 		return nil, nil
 	}
-	err = t.teamStore.UpdateTeamMemberSelectedAt(ctx, teamId, member.ID)
+	err = t.adapter.TeamMember().UpdateTeamMemberSelectedAt(ctx, teamId, userId)
+	// err = t.teamStore.UpdateTeamMemberSelectedAt(ctx, teamId, member.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -197,7 +225,8 @@ func (t *teamService) SetActiveTeamMember(ctx context.Context, teamId, userId uu
 }
 
 func (t *teamService) GetActiveTeamMember(ctx context.Context, userId uuid.UUID) (*models.TeamMember, error) {
-	team, err := t.teamStore.FindLatestTeamMemberByUserID(ctx, userId)
+	// team, err := t.teamStore.FindLatestTeamMemberByUserID(ctx, userId)
+	team, err := t.adapter.TeamMember().FindLatestTeamMemberByUserID(ctx, userId)
 	if err != nil {
 		return nil, err
 	}
