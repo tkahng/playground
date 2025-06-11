@@ -10,7 +10,9 @@ import (
 	"strings"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/database"
+	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/tools/utils"
 )
@@ -19,6 +21,12 @@ var (
 	ErrResourceNotImplemented = errors.New("resource not implemented")
 )
 
+type (
+	UserResource        = Resource[models.User, uuid.UUID, UserFilter]
+	PermissionResource  = Resource[models.Permission, uuid.UUID, PermissionsFilter]
+	UserAccountResource = Resource[models.UserAccount, uuid.UUID, UserAccountFilter]
+	TokenResource       = Resource[models.Token, uuid.UUID, TokenFilter]
+)
 type Resource[Model any, Key comparable, Filter any] interface {
 	Delete(ctx context.Context, id Key) error
 	// DeleteMany(ctx context.Context, filter *Filter) (int64, error)
