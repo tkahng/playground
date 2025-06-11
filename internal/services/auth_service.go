@@ -13,7 +13,6 @@ import (
 	"github.com/tkahng/authgo/internal/conf"
 	"github.com/tkahng/authgo/internal/jobs"
 	"github.com/tkahng/authgo/internal/models"
-	"github.com/tkahng/authgo/internal/repository/resource"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/stores"
 	"github.com/tkahng/authgo/internal/tools/mailer"
@@ -84,13 +83,13 @@ var _ AuthService = (*BaseAuthService)(nil)
 type BaseAuthService struct {
 	routine   RoutineService
 	authStore AuthStore
-	adapter   resource.ResourceAdapterInterface
-	mail      MailService
-	token     JwtService
-	password  PasswordService
-	options   *conf.AppOptions
-	logger    *slog.Logger
-	enqueuer  jobs.Enqueuer
+	// adapter   resource.ResourceAdapterInterface
+	mail     MailService
+	token    JwtService
+	password PasswordService
+	options  *conf.AppOptions
+	logger   *slog.Logger
+	enqueuer jobs.Enqueuer
 }
 
 func NewAuthService(
@@ -116,9 +115,10 @@ func NewAuthService(
 
 	return authService
 }
-func (app *BaseAuthService) Adapter() resource.ResourceAdapterInterface {
-	return app.adapter
-}
+
+// func (app *BaseAuthService) Adapter() resource.ResourceAdapterInterface {
+// 	return app.adapter
+// }
 
 // Mail implements AuthService.
 func (app *BaseAuthService) Mail() MailService {
@@ -742,12 +742,31 @@ func (app *BaseAuthService) Authenticate(ctx context.Context, params *shared.Aut
 			Emails: []string{params.Email},
 		},
 	)
+	// user, err = app.adapter.User().FindOne(
+	// 	ctx,
+	// 	&resource.UserFilter{
+	// 		Emails: []string{params.Email},
+	// 	},
+	// )
 	if err != nil {
 		return nil, fmt.Errorf("error at getting user by email: %w", err)
 	}
 	// if user exists, get user account
 	if user != nil {
-		account, err = app.authStore.FindUserAccountByUserIdAndProvider(ctx, user.ID, models.ProvidersCredentials)
+		account, err = app.authStore.FindUserAccountByUserIdAndProvider(
+			ctx,
+			user.ID,
+			models.ProvidersCredentials,
+		)
+		// account, err = app.adapter.UserAccount().FindOne(
+		// 	ctx,
+		// 	&resource.UserAccountFilter{
+		// 		UserIds: []uuid.UUID{user.ID},
+		// 		Providers: []models.Providers{
+		// 			models.Providers(params.Provider),
+		// 		},
+		// 	},
+		// )
 		if err != nil {
 			return nil, fmt.Errorf("error at getting user account: %w", err)
 		}
@@ -757,8 +776,24 @@ func (app *BaseAuthService) Authenticate(ctx context.Context, params *shared.Aut
 	if user == nil {
 		err = func(store AuthStore) error {
 			user, err = func() (*models.User, error) {
-				fmt.Println("User does not exist, creating user")
-				user, err := app.authStore.CreateUser(ctx, &models.User{Email: params.Email, Name: params.Name, Image: params.AvatarUrl, EmailVerifiedAt: params.EmailVerifiedAt})
+				user, err := app.authStore.CreateUser(
+					ctx,
+					&models.User{
+						Email:           params.Email,
+						Name:            params.Name,
+						Image:           params.AvatarUrl,
+						EmailVerifiedAt: params.EmailVerifiedAt,
+					},
+				)
+				// user, err := app.authStore.CreateUser(
+				// 	ctx,
+				// 	&models.User{
+				// 		Email:           params.Email,
+				// 		Name:            params.Name,
+				// 		Image:           params.AvatarUrl,
+				// 		EmailVerifiedAt: params.EmailVerifiedAt,
+				// 	},
+				// )
 				if err != nil {
 					return nil, fmt.Errorf("error at creating user: %w", err)
 				}
@@ -791,7 +826,18 @@ func (app *BaseAuthService) Authenticate(ctx context.Context, params *shared.Aut
 						}
 					}
 				}
-				return app.authStore.CreateUserAccount(ctx, &models.UserAccount{UserID: user.ID, Type: models.ProviderTypes(params.Type), Provider: models.Providers(params.Provider), ProviderAccountID: params.ProviderAccountID, Password: params.HashPassword, AccessToken: params.AccessToken, RefreshToken: params.RefreshToken})
+				return app.authStore.CreateUserAccount(
+					ctx,
+					&models.UserAccount{
+						UserID:            user.ID,
+						Type:              models.ProviderTypes(params.Type),
+						Provider:          models.Providers(params.Provider),
+						ProviderAccountID: params.ProviderAccountID,
+						Password:          params.HashPassword,
+						AccessToken:       params.AccessToken,
+						RefreshToken:      params.RefreshToken,
+					},
+				)
 			}()
 			if err != nil {
 				return err
