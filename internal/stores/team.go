@@ -13,7 +13,6 @@ import (
 
 type DbTeamStore struct {
 	db database.Dbx
-	// *DbUserStore
 	*DbTeamGroupStore
 	*DbTeamMemberStore
 	*DbTeamInvitationStore
@@ -22,8 +21,7 @@ type DbTeamStore struct {
 func (s *DbTeamStore) WithTx(db database.Dbx) *DbTeamStore {
 	return &DbTeamStore{
 
-		db: db,
-		// DbUserStore:           s.DbUserStore.WithTx(db),
+		db:                    db,
 		DbTeamGroupStore:      s.DbTeamGroupStore.WithTx(db),
 		DbTeamMemberStore:     s.DbTeamMemberStore.WithTx(db),
 		DbTeamInvitationStore: s.DbTeamInvitationStore.WithTx(db),
@@ -32,8 +30,7 @@ func (s *DbTeamStore) WithTx(db database.Dbx) *DbTeamStore {
 
 func NewDbTeamStore(db database.Dbx) *DbTeamStore {
 	return &DbTeamStore{
-		db: db,
-		// DbUserStore:           NewDbUserStore(db),
+		db:                    db,
 		DbTeamGroupStore:      NewDbTeamGroupStore(db),
 		DbTeamMemberStore:     NewDbTeamMemberStore(db),
 		DbTeamInvitationStore: NewDbTeamInvitationStore(db),
