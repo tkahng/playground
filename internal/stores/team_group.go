@@ -17,6 +17,12 @@ import (
 	"github.com/tkahng/authgo/internal/tools/utils"
 )
 
+type TeamFilter struct {
+	Q string `query:"q"`
+	// Active ActiveStatus `query:"active"`
+	UserID string `query:"user_id"`
+}
+
 type DbTeamGroupStoreInterface interface {
 	CheckTeamSlug(ctx context.Context, slug string) (bool, error)
 	CountTeams(ctx context.Context, params *shared.ListTeamsParams) (int64, error)

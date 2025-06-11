@@ -69,7 +69,9 @@ func TestTeamStore_CountTeamMembers(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := stores.NewDbTeamStore(tt.fields.db)
-			got, err := s.CountTeamMembers(tt.args.ctx, tt.args.teamId)
+			got, err := s.CountTeamMembers(tt.args.ctx, &stores.TeamMemberFilter{
+				TeamIds: []uuid.UUID{tt.args.teamId},
+			})
 			if (err != nil) != tt.wantErr {
 				t.Errorf("PostgresTeamStore.CountTeamMembers() error = %v, wantErr %v", err, tt.wantErr)
 				return

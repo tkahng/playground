@@ -8,6 +8,7 @@ import (
 	stripe "github.com/stripe/stripe-go/v82"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/authgo/internal/stores"
 )
 
 type MockPaymentStore struct{ mock.Mock }
@@ -311,7 +312,7 @@ func (m *MockPaymentStore) UpsertSubscriptionFromStripe(ctx context.Context, sub
 	return args.Error(0)
 }
 
-func (m *MockPaymentStore) CountTeamMembers(ctx context.Context, teamId uuid.UUID) (int64, error) {
-	args := m.Called(ctx, teamId)
+func (m *MockPaymentStore) CountTeamMembers(ctx context.Context, filter *stores.TeamMemberFilter) (int64, error) {
+	args := m.Called(ctx, filter)
 	return args.Get(0).(int64), args.Error(1)
 }

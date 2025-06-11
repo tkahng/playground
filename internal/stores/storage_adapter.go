@@ -2,6 +2,22 @@ package stores
 
 import "github.com/tkahng/authgo/internal/database"
 
+var _ StorageAdapterInterface = (*StorageAdapter)(nil)
+
+type StorageAdapterInterface interface {
+	User() DbUserStoreInterface
+	UserAccount() DbAccountStoreInterface
+	Token() DbTokenStoreInterface
+	TeamGroup() DbTeamGroupStoreInterface
+	TeamMember() DbTeamMemberStoreInterface
+	TeamInvitation() DbTeamInvitationStoreInterface
+	Customer() DbCustomerStoreInterface
+	Price() DbPriceStoreInterface
+	Product() DbProductStoreInterface
+	Subscription() DbSubscriptionStoreInterface
+	// WithTx(tx database.Dbx) *StorageAdapter
+	RunInTx(fn func(tx StorageAdapterInterface) error) error
+}
 type StorageAdapter struct {
 	db             database.Dbx
 	user           *DbUserStore
@@ -88,23 +104,6 @@ func (s *StorageAdapter) User() DbUserStoreInterface {
 // UserAccount implements StorageAdapterInterface.
 func (s *StorageAdapter) UserAccount() DbAccountStoreInterface {
 	return s.userAccount
-}
-
-var _ StorageAdapterInterface = (*StorageAdapter)(nil)
-
-type StorageAdapterInterface interface {
-	User() DbUserStoreInterface
-	UserAccount() DbAccountStoreInterface
-	Token() DbTokenStoreInterface
-	TeamGroup() DbTeamGroupStoreInterface
-	TeamMember() DbTeamMemberStoreInterface
-	TeamInvitation() DbTeamInvitationStoreInterface
-	Customer() DbCustomerStoreInterface
-	Price() DbPriceStoreInterface
-	Product() DbProductStoreInterface
-	Subscription() DbSubscriptionStoreInterface
-	// WithTx(tx database.Dbx) *StorageAdapter
-	RunInTx(fn func(tx StorageAdapterInterface) error) error
 }
 
 func NewStorageAdapter(db database.Dbx) *StorageAdapter {

@@ -17,15 +17,23 @@ import (
 	"github.com/tkahng/authgo/internal/tools/utils"
 )
 
+type TeamMemberFilter struct {
+	Q       string                  `query:"q"`
+	Ids     []uuid.UUID             `query:"ids"`
+	Roles   []models.TeamMemberRole `query:"roles"`
+	UserIds []uuid.UUID             `query:"user_ids"`
+	TeamIds []uuid.UUID             `query:"team_ids"`
+}
+
 type DbTeamMemberStoreInterface interface {
 	CountOwnerTeamMembers(ctx context.Context, teamId uuid.UUID) (int64, error)
-	CountTeamMembers(ctx context.Context, teamId uuid.UUID) (int64, error)
+	CountTeamMembers(ctx context.Context, filter *TeamMemberFilter) (int64, error)
 	CountTeamMembersByUserID(ctx context.Context, userId uuid.UUID) (int64, error)
 	CreateTeamFromUser(ctx context.Context, user *models.User) (*models.TeamMember, error)
 	CreateTeamMember(ctx context.Context, teamId uuid.UUID, userId uuid.UUID, role models.TeamMemberRole, hasBillingAccess bool) (*models.TeamMember, error)
 	DeleteTeamMember(ctx context.Context, teamId uuid.UUID, userId uuid.UUID) error
 	FindLatestTeamMemberByUserID(ctx context.Context, userId uuid.UUID) (*models.TeamMember, error)
-	FindTeamMember(ctx context.Context, member *models.TeamMember) (*models.TeamMember, error)
+	FindTeamMember(ctx context.Context, member *TeamMemberFilter) (*models.TeamMember, error)
 	FindTeamMemberByTeamAndUserId(ctx context.Context, teamId uuid.UUID, userId uuid.UUID) (*models.TeamMember, error)
 	FindTeamMembersByUserID(ctx context.Context, userId uuid.UUID, paginate *shared.TeamMemberListInput) ([]*models.TeamMember, error)
 	UpdateTeamMember(ctx context.Context, member *models.TeamMember) (*models.TeamMember, error)
@@ -49,35 +57,43 @@ func (s *DbTeamMemberStore) WithTx(tx database.Dbx) *DbTeamMemberStore {
 	}
 }
 
-func (s *DbTeamMemberStore) FindTeamMember(ctx context.Context, member *models.TeamMember) (*models.TeamMember, error) {
-	if member == nil {
-		return nil, nil
+func (s *DbTeamMemberStore) filter(filter *TeamMemberFilter) *map[string]any {
+	if filter == nil {
+		return nil
 	}
-	where := map[string]any{}
-	if member.ID != uuid.Nil {
+	where := make(map[string]any)
+	if filter.Q != "" {
+
+	}
+	if len(filter.Ids) > 0 {
 		where[models.TeamMemberTable.ID] = map[string]any{
-			"_eq": member.ID,
+			"_in": filter.Ids,
 		}
 	}
-	if member.TeamID != uuid.Nil {
-		where[models.TeamMemberTable.TeamID] = map[string]any{
-			"_eq": member.TeamID,
-		}
-	}
-	if member.UserID != nil {
-		where[models.TeamMemberTable.UserID] = map[string]any{
-			"_eq": member.UserID,
-		}
-	}
-	if member.Role != "" {
+	if len(filter.Roles) > 0 {
 		where[models.TeamMemberTable.Role] = map[string]any{
-			"_eq": member.Role,
+			"_in": filter.Roles,
 		}
 	}
+	if len(filter.TeamIds) > 0 {
+		where[models.TeamMemberTable.TeamID] = map[string]any{
+			"_in": filter.TeamIds,
+		}
+	}
+	if len(filter.UserIds) > 0 {
+		where[models.TeamMemberTable.UserID] = map[string]any{
+			"_in": filter.UserIds,
+		}
+	}
+	return &where
+}
+
+func (s *DbTeamMemberStore) FindTeamMember(ctx context.Context, filter *TeamMemberFilter) (*models.TeamMember, error) {
+	where := s.filter(filter)
 	member, err := repository.TeamMember.GetOne(
 		ctx,
 		s.db,
-		&where,
+		where,
 	)
 	if err != nil {
 		return nil, err
@@ -85,6 +101,24 @@ func (s *DbTeamMemberStore) FindTeamMember(ctx context.Context, member *models.T
 	return member, nil
 }
 
+func (s *DbTeamMemberStore) FindTeamMemberByTeamAndUserId(ctx context.Context, teamId, userId uuid.UUID) (*models.TeamMember, error) {
+	teamMember, err := repository.TeamMember.GetOne(
+		ctx,
+		s.db,
+		&map[string]any{
+			models.TeamMemberTable.UserID: map[string]any{
+				"_eq": userId,
+			},
+			models.TeamMemberTable.TeamID: map[string]any{
+				"_eq": teamId,
+			},
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return teamMember, nil
+}
 func (s *DbTeamMemberStore) CreateTeamFromUser(ctx context.Context, user *models.User) (*models.TeamMember, error) {
 	team, err := repository.Team.PostOne(
 		ctx,
@@ -175,38 +209,17 @@ func (s *DbTeamMemberStore) CountOwnerTeamMembers(ctx context.Context, teamId uu
 }
 
 // CountTeamMembers implements services.TeamStore.
-func (s *DbTeamMemberStore) CountTeamMembers(ctx context.Context, teamId uuid.UUID) (int64, error) {
+func (s *DbTeamMemberStore) CountTeamMembers(ctx context.Context, filter *TeamMemberFilter) (int64, error) {
+	where := s.filter(filter)
 	c, err := repository.TeamMember.Count(
 		ctx,
 		s.db,
-		&map[string]any{
-			models.TeamMemberTable.TeamID: map[string]any{
-				"_eq": teamId,
-			},
-		},
+		where,
 	)
 	if err != nil {
 		return 0, err
 	}
 	return c, nil
-}
-func (s *DbTeamMemberStore) FindTeamMemberByTeamAndUserId(ctx context.Context, teamId, userId uuid.UUID) (*models.TeamMember, error) {
-	teamMember, err := repository.TeamMember.GetOne(
-		ctx,
-		s.db,
-		&map[string]any{
-			models.TeamMemberTable.UserID: map[string]any{
-				"_eq": userId,
-			},
-			models.TeamMemberTable.TeamID: map[string]any{
-				"_eq": teamId,
-			},
-		},
-	)
-	if err != nil {
-		return nil, err
-	}
-	return teamMember, nil
 }
 
 // UpdateTeamMemberSelectedAt implements TeamQueryer.

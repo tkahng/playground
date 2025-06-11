@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/authgo/internal/stores"
 )
 
 type mockTeamService struct {
@@ -122,9 +123,9 @@ func (m *mockTeamService) SetActiveTeamMember(ctx context.Context, userId uuid.U
 }
 
 // Store implements TeamService.
-func (m *mockTeamService) Store() TeamStore {
+func (m *mockTeamService) Store() stores.TeamStoreInterface {
 	args := m.Called()
-	return args.Get(0).(TeamStore)
+	return args.Get(0).(stores.TeamStoreInterface)
 }
 
 var _ TeamService = (*mockTeamService)(nil)
@@ -184,7 +185,7 @@ func (m *mockTeamStore) FindTeam(ctx context.Context, team *models.Team) (*model
 }
 
 // FindTeamMember implements TeamServiceStore.
-func (m *mockTeamStore) FindTeamMember(ctx context.Context, member *models.TeamMember) (*models.TeamMember, error) {
+func (m *mockTeamStore) FindTeamMember(ctx context.Context, member *stores.TeamMemberFilter) (*models.TeamMember, error) {
 	args := m.Called(ctx, member)
 	var teamMember *models.TeamMember
 	if args.Get(0) != nil {
@@ -240,8 +241,8 @@ func (m *mockTeamStore) CheckTeamSlug(ctx context.Context, slug string) (bool, e
 }
 
 // CountTeamMembers implements TeamStore.
-func (m *mockTeamStore) CountTeamMembers(ctx context.Context, teamId uuid.UUID) (int64, error) {
-	args := m.Called(ctx, teamId)
+func (m *mockTeamStore) CountTeamMembers(ctx context.Context, filter *stores.TeamMemberFilter) (int64, error) {
+	args := m.Called(ctx, filter)
 	var count int64
 	if args.Get(0) != nil {
 		count = args.Get(0).(int64)

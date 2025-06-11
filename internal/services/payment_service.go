@@ -11,6 +11,7 @@ import (
 	"github.com/stripe/stripe-go/v82"
 	"github.com/tkahng/authgo/internal/conf"
 	"github.com/tkahng/authgo/internal/models"
+	"github.com/tkahng/authgo/internal/stores"
 
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
@@ -35,7 +36,7 @@ type PaymentClient interface {
 type PaymentTeamStore interface {
 	// team methods
 	FindTeamByStripeCustomerId(ctx context.Context, stripeCustomerId string) (*models.Team, error)
-	CountTeamMembers(ctx context.Context, teamId uuid.UUID) (int64, error)
+	CountTeamMembers(ctx context.Context, filter *stores.TeamMemberFilter) (int64, error)
 }
 
 type PaymentRbacStore interface {
@@ -239,7 +240,9 @@ func (srv *StripeService) VerifyAndUpdateTeamSubscriptionQuantity(ctx context.Co
 		return errors.New("no subscription")
 	}
 
-	count, err := srv.paymentStore.CountTeamMembers(ctx, teamId)
+	count, err := srv.paymentStore.CountTeamMembers(ctx, &stores.TeamMemberFilter{
+		TeamIds: []uuid.UUID{teamId},
+	})
 	if err != nil {
 		return err
 	}
@@ -419,7 +422,9 @@ func (srv *StripeService) CreateCheckoutSession(ctx context.Context, stripeCusto
 		if team == nil {
 			return "", errors.New("team not found")
 		}
-		count, err = srv.paymentStore.CountTeamMembers(ctx, team.ID)
+		count, err = srv.paymentStore.CountTeamMembers(ctx, &stores.TeamMemberFilter{
+			TeamIds: []uuid.UUID{team.ID},
+		})
 		if err != nil {
 			return "", err
 		}
