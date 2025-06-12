@@ -11,38 +11,6 @@ import (
 	"github.com/tkahng/authgo/internal/stores"
 )
 
-type TaskStore interface {
-	CreateTask(ctx context.Context, task *models.Task) (*models.Task, error)
-	FindTask(ctx context.Context, task *models.Task) (*models.Task, error)
-	UpdateTask(ctx context.Context, task *models.Task) error
-	// UpdateTask(ctx context.Context, task *models.Task) error
-	// task methods
-	CountTasks(ctx context.Context, filter *shared.TaskListFilter) (int64, error)
-	CreateTaskFromInput(ctx context.Context, teamID uuid.UUID, projectID uuid.UUID, memberID uuid.UUID, input *shared.CreateTaskProjectTaskDTO) (*models.Task, error)
-	DeleteTask(ctx context.Context, taskID uuid.UUID) error
-	FindLastTaskRank(ctx context.Context, taskProjectID uuid.UUID) (float64, error)
-	FindTaskByID(ctx context.Context, id uuid.UUID) (*models.Task, error)
-	ListTasks(ctx context.Context, input *shared.TaskListParams) ([]*models.Task, error)
-
-	CalculateTaskRankStatus(ctx context.Context, taskId uuid.UUID, taskProjectId uuid.UUID, status models.TaskStatus, currentRank float64, position int64) (float64, error)
-	UpdateTaskRankStatus(ctx context.Context, taskID uuid.UUID, position int64, status models.TaskStatus) error
-
-	// task project methods
-	LoadTaskProjectsTasks(ctx context.Context, projectIds ...uuid.UUID) ([][]*models.Task, error)
-	FindTaskProjectByID(ctx context.Context, id uuid.UUID) (*models.TaskProject, error)
-	ListTaskProjects(ctx context.Context, input *shared.TaskProjectsListParams) ([]*models.TaskProject, error)
-	UpdateTaskProject(ctx context.Context, taskProjectID uuid.UUID, input *shared.UpdateTaskProjectBaseDTO) error
-	UpdateTaskProjectUpdateDate(ctx context.Context, taskProjectID uuid.UUID) error
-	DeleteTaskProject(ctx context.Context, taskProjectID uuid.UUID) error
-	CreateTaskProject(ctx context.Context, input *shared.CreateTaskProjectDTO) (*models.TaskProject, error)
-	CreateTaskProjectWithTasks(ctx context.Context, input *shared.CreateTaskProjectWithTasksDTO) (*models.TaskProject, error)
-	CountTaskProjects(ctx context.Context, filter *shared.TaskProjectsListFilter) (int64, error)
-	CountItems(ctx context.Context, projectID uuid.UUID, status models.TaskStatus, excludeID uuid.UUID) (int64, error)
-	GetTaskFirstPosition(ctx context.Context, projectID uuid.UUID, status models.TaskStatus, excludeID uuid.UUID) (float64, error)
-	GetTaskLastPosition(ctx context.Context, projectID uuid.UUID, status models.TaskStatus, excludeID uuid.UUID) (float64, error)
-	GetTaskPositions(ctx context.Context, projectID uuid.UUID, status models.TaskStatus, excludeID uuid.UUID, offset int64) ([]float64, error)
-}
-
 type TaskService interface {
 	FindAndUpdateTask(ctx context.Context, taskID uuid.UUID, input *shared.UpdateTaskDto) error
 

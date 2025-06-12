@@ -229,18 +229,26 @@ func (s *DbTeamGroupStore) filter(params *TeamFilter) *map[string]any {
 	}
 	where := make(map[string]any)
 	if params.Q != "" {
-		where["or"] = []map[string]any{
+		where["_or"] = []map[string]any{
 			{
-				models.TeamTable.Name: map[string]any{"_ilike": "%" + params.Q + "%"},
+				"_and": []map[string]any{
+					{
+						models.TeamTable.Name: map[string]any{"_ilike": "%" + params.Q + "%"},
+					},
+				},
 			},
 			{
-				models.TeamTable.Slug: map[string]any{"_ilike": "%" + params.Q + "%"},
+				"_and": []map[string]any{
+					{
+						models.TeamTable.Slug: map[string]any{"_ilike": "%" + params.Q + "%"},
+					},
+				},
 			},
 		}
 	}
 	if len(params.UserIds) > 0 {
-		where[models.TeamTable.StripeCustomer] = map[string]any{
-			models.StripeCustomerTable.UserID: map[string]any{
+		where[models.TeamTable.Members] = map[string]any{
+			models.TeamMemberTable.UserID: map[string]any{
 				"_in": params.UserIds,
 			},
 		}

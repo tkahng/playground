@@ -215,6 +215,7 @@ func (r *PostgresRepository[Model]) Count(ctx context.Context, dbx database.Dbx,
 	}
 
 	// Execute the query and scan the results
+	fmt.Println("query", query, "args", args)
 	count, err := pgxscan.One(ctx, dbx, scan.SingleColumnMapper[int64], query, args...)
 
 	// result, err := r.builder.Scan(dbx.Query(ctx, query, args...))
