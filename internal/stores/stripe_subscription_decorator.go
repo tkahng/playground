@@ -23,7 +23,17 @@ type StripeSubscriptionStoreDecorator struct {
 }
 
 func (s *StripeSubscriptionStoreDecorator) Cleanup() {
-	panic("unimplemented")
+	s.CountSubscriptionsFunc = nil
+	s.FindActiveSubscriptionByCustomerIdFunc = nil
+	s.FindActiveSubscriptionsByCustomerIdsFunc = nil
+	s.FindActiveSubscriptionsByTeamIdsFunc = nil
+	s.FindActiveSubscriptionsByUserIdsFunc = nil
+	s.FindSubscriptionsWithPriceProductByIdsFunc = nil
+	s.IsFirstSubscriptionFunc = nil
+	s.ListSubscriptionsFunc = nil
+	s.UpsertSubscriptionFunc = nil
+	s.UpsertSubscriptionFromStripeFunc = nil
+
 }
 
 // CountSubscriptions implements DbSubscriptionStoreInterface.
