@@ -27,13 +27,13 @@ func (p *GoogleConfig) FetchAuthUser(ctx context.Context, token *oauth2.Token) (
 	if err := json.Unmarshal(data, &rawUser); err != nil {
 		return nil, err
 	}
-	extracted := struct {
+	var extracted struct {
 		Id            string `json:"sub"`
 		Name          string `json:"name"`
 		Picture       string `json:"picture"`
 		Email         string `json:"email"`
 		EmailVerified bool   `json:"email_verified"`
-	}{}
+	}
 	if err := json.Unmarshal(data, &extracted); err != nil {
 		return nil, err
 	}

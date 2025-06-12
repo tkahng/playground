@@ -54,13 +54,13 @@ func (p *GithubConfig) FetchAuthUser(ctx context.Context, token *oauth2.Token) (
 	if err := json.Unmarshal(data, &rawUser); err != nil {
 		return nil, err
 	}
-	extracted := struct {
+	var extracted struct {
 		Login     string `json:"login"`
 		Name      string `json:"name"`
 		Email     string `json:"email"`
 		AvatarURL string `json:"avatar_url"`
 		Id        int64  `json:"id"`
-	}{}
+	}
 	if err := json.Unmarshal(data, &extracted); err != nil {
 		return nil, err
 	}
