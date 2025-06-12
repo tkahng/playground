@@ -808,7 +808,7 @@ func (app *BaseAuthService) authenticateNewAccount(ctx context.Context, user *mo
 			func() {
 				ctx := context.Background()
 				fmt.Println("User is first login, sending reset password email")
-				err := app.SendOtpEmail(mailer.EmailTypeSecurityPasswordReset, ctx, user, app.adapter)
+				err := app.SendOtpEmail(mailer.EmailTypeSecurityPasswordReset, ctx, user, nil)
 				if err != nil {
 					app.logger.Error(
 						"error sending reset password email",
@@ -825,7 +825,7 @@ func (app *BaseAuthService) authenticateNewAccount(ctx context.Context, user *mo
 			func() {
 				ctx := context.Background()
 				fmt.Println("User is first login, sending verification email")
-				err := app.SendOtpEmail(mailer.EmailTypeVerify, ctx, user, app.adapter)
+				err := app.SendOtpEmail(mailer.EmailTypeVerify, ctx, user, nil)
 				if err != nil {
 					app.logger.Error(
 						"error sending verification email",
