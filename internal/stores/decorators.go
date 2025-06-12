@@ -47,6 +47,7 @@ type StorageAdapterDecorator struct {
 	TeamGroupFunc      *TeamGroupStoreDecorator
 	TeamInvitationFunc *TeamInvitationStoreDecorator
 	TeamMemberFunc     *TeamMemberStoreDecorator
+	RunInTxFunc        func(fn func(tx StorageAdapterInterface) error) error
 }
 
 func (s *StorageAdapterDecorator) Cleanup() {
@@ -90,7 +91,10 @@ func (s *StorageAdapterDecorator) Product() DbProductStoreInterface {
 
 // RunInTx implements StorageAdapterInterface.
 func (s *StorageAdapterDecorator) RunInTx(fn func(tx StorageAdapterInterface) error) error {
-	panic("unimplemented")
+	if s.RunInTxFunc != nil {
+		return s.RunInTxFunc(fn)
+	}
+	return ErrDelegateNil
 }
 
 // Subscription implements StorageAdapterInterface.
