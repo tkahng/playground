@@ -18,11 +18,12 @@ import (
 )
 
 type TeamMemberFilter struct {
-	Q       string                  `query:"q"`
-	Ids     []uuid.UUID             `query:"ids"`
-	Roles   []models.TeamMemberRole `query:"roles"`
-	UserIds []uuid.UUID             `query:"user_ids"`
-	TeamIds []uuid.UUID             `query:"team_ids"`
+	Q       string                    `query:"q"`
+	Ids     []uuid.UUID               `query:"ids"`
+	Roles   []models.TeamMemberRole   `query:"roles"`
+	UserIds []uuid.UUID               `query:"user_ids"`
+	TeamIds []uuid.UUID               `query:"team_ids"`
+	Active  types.OptionalParam[bool] `query:"active"`
 }
 
 type DbTeamMemberStoreInterface interface {
@@ -83,6 +84,11 @@ func (s *DbTeamMemberStore) filter(filter *TeamMemberFilter) *map[string]any {
 	if len(filter.UserIds) > 0 {
 		where[models.TeamMemberTable.UserID] = map[string]any{
 			"_in": filter.UserIds,
+		}
+	}
+	if filter.Active.IsSet {
+		where[models.TeamMemberTable.Active] = map[string]any{
+			"_eq": filter.Active.Value,
 		}
 	}
 	return &where

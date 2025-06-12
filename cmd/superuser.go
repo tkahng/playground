@@ -44,7 +44,8 @@ var superuserCreate = &cobra.Command{
 
 		dbx := database.CreateQueries(ctx, confdb.DatabaseUrl)
 		userStore := stores.NewDbUserStore(dbx)
-		authStore := stores.NewDbAuthStore(dbx)
+		adapter := stores.NewStorageAdapter(dbx)
+		// authStore := stores.NewDbAuthStore(dbx)
 
 		rbacStore := stores.NewDbRBACStore(dbx)
 		err := rbacStore.EnsureRoleAndPermissions(ctx, "superuser", "superuser")
@@ -67,7 +68,7 @@ var superuserCreate = &cobra.Command{
 			if err != nil {
 				return err
 			}
-			user, err = authStore.CreateUser(ctx, &models.User{
+			user, err = adapter.User().CreateUser(ctx, &models.User{
 				Email: args[0],
 			})
 			if err != nil {
@@ -80,7 +81,7 @@ var superuserCreate = &cobra.Command{
 				Type:              models.ProviderTypeCredentials,
 				Password:          types.Pointer(hash),
 			}
-			_, err = authStore.CreateUserAccount(ctx, account)
+			_, err = adapter.UserAccount().CreateUserAccount(ctx, account)
 			if err != nil {
 				return err
 			}

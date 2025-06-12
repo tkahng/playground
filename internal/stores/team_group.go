@@ -2,37 +2,38 @@ package stores
 
 import (
 	"context"
-	"fmt"
 	"slices"
-	"strings"
 	"time"
 
-	"github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/repository"
-	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 	"github.com/tkahng/authgo/internal/tools/utils"
 )
 
 type TeamFilter struct {
-	Q string `query:"q"`
-	// Active ActiveStatus `query:"active"`
-	UserID string `query:"user_id"`
+	PaginatedInput
+	SortParams
+	Q           string      `query:"q"`
+	Names       []string    `query:"names,omitempty" required:"false" json:"names,omitempty"`
+	Slugs       []string    `query:"slugs,omitempty" required:"false" json:"slugs,omitempty"`
+	Ids         []uuid.UUID `query:"ids,omitempty" required:"false" json:"ids,omitempty"`
+	UserIds     []uuid.UUID `query:"user_ids,omitempty" required:"false" json:"user_ids,omitempty"`
+	CustomerIds []string    `query:"customer_ids,omitempty" required:"false" json:"customer_ids,omitempty"`
 }
 
 type DbTeamGroupStoreInterface interface {
 	CheckTeamSlug(ctx context.Context, slug string) (bool, error)
-	CountTeams(ctx context.Context, params *shared.ListTeamsParams) (int64, error)
+	CountTeams(ctx context.Context, params *TeamFilter) (int64, error)
 	CreateTeam(ctx context.Context, name string, slug string) (*models.Team, error)
 	DeleteTeam(ctx context.Context, teamId uuid.UUID) error
-	FindTeam(ctx context.Context, team *models.Team) (*models.Team, error)
+	FindTeam(ctx context.Context, team *TeamFilter) (*models.Team, error)
 	FindTeamByID(ctx context.Context, teamId uuid.UUID) (*models.Team, error)
 	FindTeamBySlug(ctx context.Context, slug string) (*models.Team, error)
 	FindTeamByStripeCustomerId(ctx context.Context, stripeCustomerId string) (*models.Team, error)
-	ListTeams(ctx context.Context, params *shared.ListTeamsParams) ([]*models.Team, error)
+	ListTeams(ctx context.Context, params *TeamFilter) ([]*models.Team, error)
 	LoadTeamsByIds(ctx context.Context, teamIds ...uuid.UUID) ([]*models.Team, error)
 	UpdateTeam(ctx context.Context, teamId uuid.UUID, name string) (*models.Team, error)
 }
@@ -53,40 +54,12 @@ func (s *DbTeamGroupStore) WithTx(tx database.Dbx) *DbTeamGroupStore {
 	}
 }
 
-func (s *DbTeamGroupStore) FindTeam(ctx context.Context, team *models.Team) (*models.Team, error) {
-	if team == nil {
-		return nil, nil
-	}
-	where := map[string]any{}
-	if team.ID != uuid.Nil {
-		where[models.TeamTable.ID] = map[string]any{
-			"_eq": team.ID,
-		}
-	}
-
-	if team.Slug != "" {
-		where[models.TeamTable.Slug] = map[string]any{
-			"_eq": team.Slug,
-		}
-	}
-	if team.Name != "" {
-		where[models.TeamTable.Name] = map[string]any{
-			"_eq": team.Name,
-		}
-	}
-	if team.StripeCustomer != nil {
-		if team.StripeCustomer.ID != "" {
-			where[models.TeamTable.StripeCustomer] = map[string]any{
-				"id": map[string]any{
-					"_eq": team.StripeCustomer.ID,
-				},
-			}
-		}
-	}
+func (s *DbTeamGroupStore) FindTeam(ctx context.Context, filter *TeamFilter) (*models.Team, error) {
+	where := s.filter(filter)
 	team, err := repository.Team.GetOne(
 		ctx,
 		s.db,
-		&where,
+		where,
 	)
 	if err != nil {
 		return nil, err
@@ -214,37 +187,108 @@ func (s *DbTeamGroupStore) CreateTeam(ctx context.Context, name string, slug str
 	return team, nil
 }
 
-func (s *DbTeamGroupStore) ListTeams(ctx context.Context, params *shared.ListTeamsParams) ([]*models.Team, error) {
-	// Build the query
-	if params == nil {
-		params = &shared.ListTeamsParams{}
-	}
-	if params.UserID != "" && params.SortBy == "team_members.last_selected_at" {
-		return nil, fmt.Errorf("cannot sort by team_members.last_selected_at without filtering by user_id")
-	}
-	limit, offset := database.PaginateRepo(&params.PaginatedInput)
-	qs := squirrel.Select("teams.*").From("teams")
-	qs = listTeamsFilter(qs, params)
-	qs = listTeamsOrderBy(qs, params)
-	qs = qs.Limit(uint64(*limit)).Offset(uint64(*offset))
-	teams, err := database.QueryWithBuilder[*models.Team](ctx, s.db, qs.PlaceholderFormat(squirrel.Dollar))
+func (s *DbTeamGroupStore) ListTeams(ctx context.Context, params *TeamFilter) ([]*models.Team, error) {
+	where := s.filter(params)
+	limit, offset := params.Pagination()
+	sort := s.sort(params)
+	teams, err := repository.Team.Get(
+		ctx,
+		s.db,
+		where,
+		sort,
+		&limit,
+		&offset,
+	)
+	// qs := squirrel.Select("teams.*").From("teams")
+	// qs = listTeamsFilter(qs, params)
+	// qs = listTeamsOrderBy(qs, params)
+	// qs = queryPagination(qs, params)
+	// teams, err := database.QueryWithBuilder[*models.Team](ctx, s.db, qs.PlaceholderFormat(squirrel.Dollar))
 	if err != nil {
 		return nil, err
 	}
 	return teams, nil
 }
 
-func (s *DbTeamGroupStore) CountTeams(ctx context.Context, params *shared.ListTeamsParams) (int64, error) {
-	qs := squirrel.Select("COUNT(teams.*)").From("teams")
-	qs = listTeamsFilter(qs, params)
-	count, err := database.QueryWithBuilder[database.CountOutput](ctx, s.db, qs.PlaceholderFormat(squirrel.Dollar))
+func (s *DbTeamGroupStore) sort(params *TeamFilter) *map[string]string {
+	if params == nil {
+		return nil
+	}
+	order := make(map[string]string)
+	if params.SortBy != "" {
+		if slices.Contains(repository.TeamBuilder.ColumnNames(), utils.Quote(params.SortBy)) {
+			order[params.SortBy] = params.SortOrder
+		}
+	}
+	return &order
+}
+
+func (s *DbTeamGroupStore) filter(params *TeamFilter) *map[string]any {
+	if params == nil {
+		return nil
+	}
+	where := make(map[string]any)
+	if params.Q != "" {
+		where["or"] = []map[string]any{
+			{
+				models.TeamTable.Name: map[string]any{"_ilike": "%" + params.Q + "%"},
+			},
+			{
+				models.TeamTable.Slug: map[string]any{"_ilike": "%" + params.Q + "%"},
+			},
+		}
+	}
+	if len(params.UserIds) > 0 {
+		where[models.TeamTable.StripeCustomer] = map[string]any{
+			models.StripeCustomerTable.UserID: map[string]any{
+				"_in": params.UserIds,
+			},
+		}
+	}
+	if len(params.Ids) > 0 {
+		where[models.TeamTable.ID] = map[string]any{
+			"_in": params.Ids,
+		}
+	}
+	if len(params.Names) > 0 {
+		where[models.TeamTable.Name] = map[string]any{
+			"_in": params.Names,
+		}
+	}
+	if len(params.Slugs) > 0 {
+		where[models.TeamTable.Slug] = map[string]any{
+			"_in": params.Slugs,
+		}
+	}
+	if len(params.CustomerIds) > 0 {
+		where[models.TeamTable.StripeCustomer] = map[string]any{
+			models.StripeCustomerTable.ID: map[string]any{
+				"_in": params.CustomerIds,
+			},
+		}
+	}
+
+	return &where
+}
+
+func (s *DbTeamGroupStore) CountTeams(ctx context.Context, params *TeamFilter) (int64, error) {
+	where := s.filter(params)
+	count, err := repository.Team.Count(
+		ctx,
+		s.db,
+		where,
+	)
+	// qs := squirrel.Select("COUNT(teams.*)").From("teams")
+	// qs = listTeamsFilter(qs, params)
+	// count, err := database.QueryWithBuilder[database.CountOutput](ctx, s.db, qs.PlaceholderFormat(squirrel.Dollar))
 	if err != nil {
 		return 0, err
 	}
-	if len(count) == 0 {
-		return 0, nil
-	}
-	return count[0].Count, nil
+	return count, nil
+	// if len(count) == 0 {
+	// 	return 0, nil
+	// }
+	// return count[0].Count, nil
 }
 
 func (s *DbTeamGroupStore) CheckTeamSlug(ctx context.Context, slug string) (bool, error) {
@@ -266,35 +310,45 @@ func (s *DbTeamGroupStore) CheckTeamSlug(ctx context.Context, slug string) (bool
 	return false, nil
 }
 
-func listTeamsFilter(qs squirrel.SelectBuilder, params *shared.ListTeamsParams) squirrel.SelectBuilder {
-	if params == nil {
-		return qs
-	}
-	if params.Q != "" {
-		qs = qs.Where(
-			squirrel.Or{
-				squirrel.ILike{models.TeamTable.Name: "%" + params.Q + "%"},
-				squirrel.ILike{models.TeamTable.Slug: "%" + params.Q + "%"},
-			},
-		)
-	}
-	if params.UserID != "" {
-		qs = qs.Join("team_members ON teams.id = team_members.team_id").
-			Where(squirrel.Eq{"team_members.user_id": params.UserID})
-	}
-	return qs
-}
+// func listTeamsFilter(qs squirrel.SelectBuilder, params *TeamFilter) squirrel.SelectBuilder {
+// 	if params == nil {
+// 		return qs
+// 	}
+// 	if params.Q != "" {
+// 		qs = qs.Where(
+// 			squirrel.Or{
+// 				squirrel.ILike{models.TeamTable.Name: "%" + params.Q + "%"},
+// 				squirrel.ILike{models.TeamTable.Slug: "%" + params.Q + "%"},
+// 			},
+// 		)
+// 	}
+// 	if len(params.UserIds) > 0 {
+// 		qs = qs.Join("team_members ON teams.id = team_members.team_id").
+// 			Where(squirrel.Eq{"team_members.user_id": params.UserIds})
+// 	}
+// 	if len(params.Ids) > 0 {
+// 		qs = qs.Where(squirrel.Eq{models.TeamTable.ID: params.Ids})
+// 	}
+// 	if len(params.Names) > 0 {
+// 		qs = qs.Where(squirrel.Eq{models.TeamTable.Name: params.Names})
+// 	}
+// 	if len(params.Slugs) > 0 {
+// 		qs = qs.Where(squirrel.Eq{models.TeamTable.Slug: params.Slugs})
+// 	}
 
-func listTeamsOrderBy(qs squirrel.SelectBuilder, params *shared.ListTeamsParams) squirrel.SelectBuilder {
-	fmt.Println("sortby", params.SortBy, "sortorder", params.SortOrder)
-	if params.SortBy != "" && params.SortOrder != "" {
-		if params.SortBy == "team_members.last_selected_at" {
-			qs = qs.OrderBy("team_members.last_selected_at " + strings.ToUpper(params.SortOrder))
-		} else if slices.Contains(repository.TeamBuilder.ColumnNames(), utils.Quote(params.SortBy)) {
-			qs = qs.OrderBy(params.SortBy + " " + strings.ToUpper(params.SortOrder))
-		}
-	} else {
-		qs = qs.OrderBy("created_at DESC")
-	}
-	return qs
-}
+// 	return qs
+// }
+
+// func listTeamsOrderBy(qs squirrel.SelectBuilder, params *TeamFilter) squirrel.SelectBuilder {
+// 	fmt.Println("sortby", params.SortBy, "sortorder", params.SortOrder)
+// 	if params.SortBy != "" && params.SortOrder != "" {
+// 		if params.SortBy == "team_members.last_selected_at" {
+// 			qs = qs.OrderBy("team_members.last_selected_at " + strings.ToUpper(params.SortOrder))
+// 		} else if slices.Contains(repository.TeamBuilder.ColumnNames(), utils.Quote(params.SortBy)) {
+// 			qs = qs.OrderBy(params.SortBy + " " + strings.ToUpper(params.SortOrder))
+// 		}
+// 	} else {
+// 		qs = qs.OrderBy("created_at DESC")
+// 	}
+// 	return qs
+// }

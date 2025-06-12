@@ -28,9 +28,9 @@ var stripeSyncCmd = &cobra.Command{
 		stripeconfig := conf.GetConfig[conf.StripeConfig]()
 
 		dbx := database.CreateQueries(ctx, dbconf.DatabaseUrl)
-		store := stores.NewDbPaymentStore(dbx)
+		adapter := stores.NewStorageAdapter(dbx)
 		client := payment.NewPaymentClient(stripeconfig)
-		service := services.NewPaymentService(client, store)
+		service := services.NewPaymentService(client, adapter)
 
 		return service.UpsertPriceProductFromStripe(ctx)
 	},
@@ -45,9 +45,9 @@ var stripeRolesCmd = &cobra.Command{
 		stripeconfig := conf.GetConfig[conf.StripeConfig]()
 
 		dbx := database.CreateQueries(ctx, dbconf.DatabaseUrl)
-		store := stores.NewDbPaymentStore(dbx)
+		adapter := stores.NewStorageAdapter(dbx)
 		client := payment.NewPaymentClient(stripeconfig)
-		service := services.NewPaymentService(client, store)
+		service := services.NewPaymentService(client, adapter)
 		// Create the payment service
 		return service.SyncPerms(ctx)
 	},

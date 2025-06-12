@@ -5,20 +5,19 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/models"
-	"github.com/tkahng/authgo/internal/shared"
 )
 
 type TeamGroupStoreDecorator struct {
 	Delegate                       *DbTeamGroupStore
 	CheckTeamSlugFunc              func(ctx context.Context, slug string) (bool, error)
-	CountTeamsFunc                 func(ctx context.Context, params *shared.ListTeamsParams) (int64, error)
+	CountTeamsFunc                 func(ctx context.Context, params *TeamFilter) (int64, error)
 	CreateTeamFunc                 func(ctx context.Context, name string, slug string) (*models.Team, error)
 	DeleteTeamFunc                 func(ctx context.Context, teamId uuid.UUID) error
-	FindTeamFunc                   func(ctx context.Context, team *models.Team) (*models.Team, error)
+	FindTeamFunc                   func(ctx context.Context, team *TeamFilter) (*models.Team, error)
 	FindTeamByIDFunc               func(ctx context.Context, teamId uuid.UUID) (*models.Team, error)
 	FindTeamBySlugFunc             func(ctx context.Context, slug string) (*models.Team, error)
 	FindTeamByStripeCustomerIdFunc func(ctx context.Context, stripeCustomerId string) (*models.Team, error)
-	ListTeamsFunc                  func(ctx context.Context, params *shared.ListTeamsParams) ([]*models.Team, error)
+	ListTeamsFunc                  func(ctx context.Context, params *TeamFilter) ([]*models.Team, error)
 	LoadTeamsByIdsFunc             func(ctx context.Context, teamIds ...uuid.UUID) ([]*models.Team, error)
 	UpdateTeamFunc                 func(ctx context.Context, teamId uuid.UUID, name string) (*models.Team, error)
 }
@@ -49,7 +48,7 @@ func (t *TeamGroupStoreDecorator) CheckTeamSlug(ctx context.Context, slug string
 }
 
 // CountTeams implements DbTeamGroupStoreInterface.
-func (t *TeamGroupStoreDecorator) CountTeams(ctx context.Context, params *shared.ListTeamsParams) (int64, error) {
+func (t *TeamGroupStoreDecorator) CountTeams(ctx context.Context, params *TeamFilter) (int64, error) {
 	if t.CountTeamsFunc != nil {
 		return t.CountTeamsFunc(ctx, params)
 	}
@@ -82,7 +81,7 @@ func (t *TeamGroupStoreDecorator) DeleteTeam(ctx context.Context, teamId uuid.UU
 }
 
 // FindTeam implements DbTeamGroupStoreInterface.
-func (t *TeamGroupStoreDecorator) FindTeam(ctx context.Context, team *models.Team) (*models.Team, error) {
+func (t *TeamGroupStoreDecorator) FindTeam(ctx context.Context, team *TeamFilter) (*models.Team, error) {
 	if t.FindTeamFunc != nil {
 		return t.FindTeamFunc(ctx, team)
 	}
@@ -126,7 +125,7 @@ func (t *TeamGroupStoreDecorator) FindTeamByStripeCustomerId(ctx context.Context
 }
 
 // ListTeams implements DbTeamGroupStoreInterface.
-func (t *TeamGroupStoreDecorator) ListTeams(ctx context.Context, params *shared.ListTeamsParams) ([]*models.Team, error) {
+func (t *TeamGroupStoreDecorator) ListTeams(ctx context.Context, params *TeamFilter) ([]*models.Team, error) {
 	if t.ListTeamsFunc != nil {
 		return t.ListTeamsFunc(ctx, params)
 	}

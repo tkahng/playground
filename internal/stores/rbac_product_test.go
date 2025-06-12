@@ -16,13 +16,12 @@ func TestCreateProductPermissions(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
-		rbacStore := stores.NewDbRBACStore(dbxx)
-		paymentStore := stores.NewDbPaymentStore(dbxx)
-		permission, err := rbacStore.FindOrCreatePermission(ctx, "basic")
+		adapter := stores.NewStorageAdapter(dbxx)
+		permission, err := adapter.Rbac().FindOrCreatePermission(ctx, "basic")
 		if err != nil {
 			t.Fatalf("failed to find or create permission: %v", err)
 		}
-		err = paymentStore.UpsertProduct(ctx, &models.StripeProduct{
+		err = adapter.Product().UpsertProduct(ctx, &models.StripeProduct{
 			ID:          "stripe-product-id",
 			Active:      true,
 			Name:        "Test Product",
@@ -57,7 +56,7 @@ func TestCreateProductPermissions(t *testing.T) {
 		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				if err := paymentStore.CreateProductPermissions(tt.args.ctx, tt.args.productId, tt.args.permissionIds...); (err != nil) != tt.wantErr {
+				if err := adapter.Rbac().CreateProductPermissions(tt.args.ctx, tt.args.productId, tt.args.permissionIds...); (err != nil) != tt.wantErr {
 					t.Errorf("CreateProductPermissions() error = %v, wantErr %v", err, tt.wantErr)
 				}
 			})
@@ -70,13 +69,12 @@ func TestCreateProductRoles(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
-		rbacStore := stores.NewDbRBACStore(dbxx)
-		stripeStore := stores.NewDbPaymentStore(dbxx)
-		role, err := rbacStore.FindOrCreateRole(ctx, "basic")
+		adapter := stores.NewStorageAdapter(dbxx)
+		role, err := adapter.Rbac().FindOrCreateRole(ctx, "basic")
 		if err != nil {
 			t.Fatalf("failed to find or create role: %v", err)
 		}
-		err = stripeStore.UpsertProduct(ctx, &models.StripeProduct{
+		err = adapter.Product().UpsertProduct(ctx, &models.StripeProduct{
 			ID:          "stripe-product-id",
 			Active:      true,
 			Name:        "Test Product",
@@ -110,7 +108,7 @@ func TestCreateProductRoles(t *testing.T) {
 		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				if err := rbacStore.CreateProductRoles(tt.args.ctx, tt.args.productId, tt.args.roleIds...); (err != nil) != tt.wantErr {
+				if err := adapter.Rbac().CreateProductRoles(tt.args.ctx, tt.args.productId, tt.args.roleIds...); (err != nil) != tt.wantErr {
 					t.Errorf("CreateProductRoles() error = %v, wantErr %v", err, tt.wantErr)
 				}
 			})

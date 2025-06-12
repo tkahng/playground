@@ -26,7 +26,6 @@ func NewDecorator(ctx context.Context, cfg conf.EnvConfig, pool database.Dbx) *B
 	userStore := stores.NewDbUserStore(pool)
 	rbac := stores.NewDbRBACStore(pool)
 	taskStore := stores.NewDbTaskStore(pool)
-	paymentStore := stores.NewDbPaymentStore(pool)
 	userAccountStore := stores.NewDbAccountStore(pool)
 	userService := services.NewUserService(userStore)
 	userAccountService := services.NewUserAccountService(userAccountStore)
@@ -35,7 +34,7 @@ func NewDecorator(ctx context.Context, cfg conf.EnvConfig, pool database.Dbx) *B
 	paymentClient := services.NewTestPaymentClient()
 	paymentService := services.NewPaymentService(
 		paymentClient,
-		paymentStore,
+		adapter,
 	)
 
 	tokenService := services.NewJwtServiceDecorator()

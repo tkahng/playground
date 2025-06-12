@@ -10,7 +10,7 @@ import (
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/repository"
-	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/authgo/internal/tools/types"
 	"github.com/tkahng/authgo/internal/tools/utils"
 )
 
@@ -29,15 +29,28 @@ func (s *DbProductStore) WithTx(tx database.Dbx) *DbProductStore {
 	}
 }
 
-func (s *DbProductStore) ListProducts(ctx context.Context, input *shared.StripeProductListParams) ([]*models.StripeProduct, error) {
+func (s *DbProductStore) FindProduct(ctx context.Context, filter *StripeProductFilter) (*models.StripeProduct, error) {
 	q := squirrel.Select("stripe_products.*").
 		From("stripe_products")
-	filter := input.StripeProductListFilter
-	pageInput := &input.PaginatedInput
 
-	q = database.Paginate(q, pageInput)
-	q = listProductFilterFuncQuery(q, &filter)
-	q = listProductOrderByQuery(q, input)
+	q = s.listProductFilterFuncQuery(q, filter)
+	data, err := database.QueryWithBuilder[*models.StripeProduct](ctx, s.db, q.Limit(1).PlaceholderFormat(squirrel.Dollar))
+	if err != nil {
+		return nil, err
+	}
+	if len(data) == 0 {
+		return nil, nil
+	}
+	return data[0], nil
+}
+
+func (s *DbProductStore) ListProducts(ctx context.Context, input *StripeProductFilter) ([]*models.StripeProduct, error) {
+	q := squirrel.Select("stripe_products.*").
+		From("stripe_products")
+
+	q = queryPagination(q, input)
+	q = s.listProductFilterFuncQuery(q, input)
+	q = s.listProductOrderByQuery(q, input)
 	data, err := database.QueryWithBuilder[*models.StripeProduct](ctx, s.db, q.PlaceholderFormat(squirrel.Dollar))
 	if err != nil {
 		return nil, err
@@ -45,11 +58,11 @@ func (s *DbProductStore) ListProducts(ctx context.Context, input *shared.StripeP
 	return data, nil
 }
 
-func (s *DbProductStore) CountProducts(ctx context.Context, filter *shared.StripeProductListFilter) (int64, error) {
+func (s *DbProductStore) CountProducts(ctx context.Context, filter *StripeProductFilter) (int64, error) {
 	q := squirrel.Select("COUNT(stripe_products.*)").
 		From("stripe_products")
 
-	q = listProductFilterFuncQuery(q, filter)
+	q = s.listProductFilterFuncQuery(q, filter)
 	data, err := database.QueryWithBuilder[database.CountOutput](ctx, s.db, q.PlaceholderFormat(squirrel.Dollar))
 
 	if err != nil {
@@ -123,7 +136,7 @@ func (s *DbProductStore) UpsertProductFromStripe(ctx context.Context, product *s
 	return s.UpsertProduct(ctx, param)
 }
 
-func listProductOrderByQuery(q squirrel.SelectBuilder, input *shared.StripeProductListParams) squirrel.SelectBuilder {
+func (s *DbProductStore) listProductOrderByQuery(q squirrel.SelectBuilder, input *StripeProductFilter) squirrel.SelectBuilder {
 	if input == nil {
 		return q
 	}
@@ -138,21 +151,17 @@ func listProductOrderByQuery(q squirrel.SelectBuilder, input *shared.StripeProdu
 	return q
 }
 
-func listProductFilterFuncQuery(q squirrel.SelectBuilder, filter *shared.StripeProductListFilter) squirrel.SelectBuilder {
+func (s *DbProductStore) listProductFilterFuncQuery(q squirrel.SelectBuilder, filter *StripeProductFilter) squirrel.SelectBuilder {
 	if filter == nil {
 		return q
 	}
-	if filter.Active != "" {
-		if filter.Active == shared.Active {
-			q = q.Where("active = ?", true)
-		}
-		if filter.Active == shared.Inactive {
-			q = q.Where("active = ?", false)
-		}
+	if filter.Active.IsSet {
+		q = q.Where("active = ?", filter.Active.Value)
 	}
 	if len(filter.Ids) > 0 {
 		q = q.Where("id in (?)", filter.Ids)
 	}
+
 	return q
 }
 
@@ -169,9 +178,18 @@ func SelectStripeProductColumns(qs squirrel.SelectBuilder, prefix string) squirr
 	return qs
 }
 
+type StripeProductFilter struct {
+	PaginatedInput
+	SortParams
+	Q      string                    `query:"q,omitempty" required:"false"`
+	Ids    []string                  `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" uniqueItems:"true"`
+	Active types.OptionalParam[bool] `query:"active,omitempty" required:"false"`
+	Expand []string                  `query:"expand,omitempty" required:"false" minimum:"1" maximum:"100" uniqueItems:"true" enum:"prices,permissions"`
+}
 type DbProductStoreInterface interface {
-	ListProducts(ctx context.Context, input *shared.StripeProductListParams) ([]*models.StripeProduct, error)
-	CountProducts(ctx context.Context, filter *shared.StripeProductListFilter) (int64, error)
+	ListProducts(ctx context.Context, input *StripeProductFilter) ([]*models.StripeProduct, error)
+	CountProducts(ctx context.Context, filter *StripeProductFilter) (int64, error)
+	FindProduct(ctx context.Context, filter *StripeProductFilter) (*models.StripeProduct, error)
 	FindProductById(ctx context.Context, productId string) (*models.StripeProduct, error)
 	UpsertProduct(ctx context.Context, product *models.StripeProduct) error
 	UpsertProductFromStripe(ctx context.Context, product *stripe.Product) error

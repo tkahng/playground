@@ -322,8 +322,8 @@ func (s *DbSubscriptionStore) ListSubscriptions(ctx context.Context, input *shar
 	pageInput := &input.PaginatedInput
 
 	limit, offset := database.PaginateRepo(pageInput)
-	where := listSubscriptionFilterFunc(&filter)
-	order := listSubscriptionOrderByFunc(input)
+	where := s.filter(&filter)
+	order := s.listSubscriptionOrderByFunc(input)
 	data, err := repository.StripeSubscription.Get(
 		ctx,
 		s.db,
@@ -338,7 +338,7 @@ func (s *DbSubscriptionStore) ListSubscriptions(ctx context.Context, input *shar
 	return data, nil
 }
 
-func listSubscriptionOrderByFunc(input *shared.StripeSubscriptionListParams) *map[string]string {
+func (s *DbSubscriptionStore) listSubscriptionOrderByFunc(input *shared.StripeSubscriptionListParams) *map[string]string {
 	if input == nil {
 		return nil
 	}
@@ -349,7 +349,7 @@ func listSubscriptionOrderByFunc(input *shared.StripeSubscriptionListParams) *ma
 	return &order
 }
 
-func listSubscriptionFilterFunc(filter *shared.StripeSubscriptionListFilter) *map[string]any {
+func (s *DbSubscriptionStore) filter(filter *shared.StripeSubscriptionListFilter) *map[string]any {
 	if filter == nil {
 		return nil
 	}
@@ -376,7 +376,7 @@ func listSubscriptionFilterFunc(filter *shared.StripeSubscriptionListFilter) *ma
 }
 
 func (s *DbSubscriptionStore) CountSubscriptions(ctx context.Context, filter *shared.StripeSubscriptionListFilter) (int64, error) {
-	where := listSubscriptionFilterFunc(filter)
+	where := s.filter(filter)
 	data, err := repository.StripeSubscription.Count(ctx, s.db, where)
 	if err != nil {
 		return 0, err

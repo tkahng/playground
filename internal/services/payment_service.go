@@ -16,6 +16,7 @@ import (
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 	"github.com/tkahng/authgo/internal/tools/types"
+	"github.com/tkahng/authgo/internal/tools/utils"
 )
 
 type PaymentClient interface {
@@ -118,6 +119,8 @@ type PaymentService interface {
 	Client() PaymentClient
 	Store() PaymentStore
 
+	Adapter() stores.StorageAdapterInterface
+
 	// admin methods
 	SyncPerms(ctx context.Context) error
 	UpsertPriceProductFromStripe(ctx context.Context) error
@@ -148,19 +151,62 @@ type StripeService struct {
 	logger       *slog.Logger
 	client       PaymentClient
 	paymentStore PaymentStore
+	adapter      stores.StorageAdapterInterface
+}
+
+// Adapter implements PaymentService.
+func (srv *StripeService) Adapter() stores.StorageAdapterInterface {
+	return srv.adapter
 }
 
 var _ PaymentService = (*StripeService)(nil)
 
 func NewPaymentService(
 	client PaymentClient,
-	paymentStore PaymentStore,
+	adapter stores.StorageAdapterInterface,
 ) PaymentService {
 	return &StripeService{
-		client:       client,
-		logger:       slog.Default(),
-		paymentStore: paymentStore,
+		client:  client,
+		logger:  slog.Default(),
+		adapter: adapter,
 	}
+}
+
+func (s *StripeService) UpsertSubscriptionFromStripe(ctx context.Context, sub *stripe.Subscription) error {
+	if sub == nil {
+		return nil
+	}
+	var item *stripe.SubscriptionItem
+	if len(sub.Items.Data) > 0 {
+		item = sub.Items.Data[0]
+	}
+	if item == nil || item.Price == nil {
+		return errors.New("price not found")
+	}
+
+	status := models.StripeSubscriptionStatus(sub.Status)
+	err := s.adapter.Subscription().UpsertSubscription(
+		ctx,
+		&models.StripeSubscription{
+			ID:                 sub.ID,
+			StripeCustomerID:   sub.Customer.ID,
+			Status:             models.StripeSubscriptionStatus(status),
+			Metadata:           sub.Metadata,
+			ItemID:             item.ID,
+			PriceID:            item.Price.ID,
+			Quantity:           item.Quantity,
+			CancelAtPeriodEnd:  sub.CancelAtPeriodEnd,
+			Created:            utils.Int64ToISODate(sub.Created),
+			CurrentPeriodStart: utils.Int64ToISODate(item.CurrentPeriodStart),
+			CurrentPeriodEnd:   utils.Int64ToISODate(item.CurrentPeriodEnd),
+			EndedAt:            types.Pointer(utils.Int64ToISODate(sub.EndedAt)),
+			CancelAt:           types.Pointer(utils.Int64ToISODate(sub.CancelAt)),
+			CanceledAt:         types.Pointer(utils.Int64ToISODate(sub.CanceledAt)),
+			TrialStart:         types.Pointer(utils.Int64ToISODate(sub.TrialStart)),
+			TrialEnd:           types.Pointer(utils.Int64ToISODate(sub.TrialEnd)),
+		},
+	)
+	return err
 }
 
 // CreateTeamCustomer implements PaymentService.
@@ -323,22 +369,46 @@ func (srv *StripeService) FindAndUpsertAllProducts(ctx context.Context) error {
 	return nil
 }
 
-func (srv *StripeService) UpsertProductFromStripe(ctx context.Context, product *stripe.Product) error {
-	err := srv.paymentStore.UpsertProductFromStripe(ctx, product)
-	if err != nil {
-		srv.logger.Error("error upserting product", "product", product.ID, "error", err)
-		return err
+func (s *StripeService) UpsertProductFromStripe(ctx context.Context, product *stripe.Product) error {
+	if product == nil {
+		return nil
 	}
-	return nil
+	var image *string
+	if len(product.Images) > 0 {
+		image = &product.Images[0]
+	}
+	param := &models.StripeProduct{
+		ID:          product.ID,
+		Active:      product.Active,
+		Name:        product.Name,
+		Description: &product.Description,
+		Image:       image,
+		Metadata:    product.Metadata,
+	}
+	return s.adapter.Product().UpsertProduct(ctx, param)
 }
 
-func (srv *StripeService) UpsertPriceFromStripe(ctx context.Context, price *stripe.Price) error {
-	err := srv.paymentStore.UpsertPriceFromStripe(ctx, price)
-	if err != nil {
-		srv.logger.Error("error upserting price", "price", price.ID, "error", err)
-		return err
+func (s *StripeService) UpsertPriceFromStripe(ctx context.Context, price *stripe.Price) error {
+	if price == nil {
+		return nil
 	}
-	return nil
+	val := &models.StripePrice{
+		ID:         price.ID,
+		ProductID:  price.Product.ID,
+		Active:     price.Active,
+		LookupKey:  &price.LookupKey,
+		UnitAmount: &price.UnitAmount,
+		Currency:   string(price.Currency),
+		Type:       models.StripePricingType(price.Type),
+		Metadata:   price.Metadata,
+	}
+	if price.Recurring != nil {
+		recur := price.Recurring
+		val.Interval = types.Pointer(models.StripePricingPlanInterval(recur.Interval))
+		val.IntervalCount = types.Pointer(recur.IntervalCount)
+		val.TrialPeriodDays = types.Pointer(recur.TrialPeriodDays)
+	}
+	return s.adapter.Price().UpsertPrice(ctx, val)
 }
 
 func (srv *StripeService) FindAndUpsertAllPrices(ctx context.Context) error {
@@ -348,7 +418,7 @@ func (srv *StripeService) FindAndUpsertAllPrices(ctx context.Context) error {
 		return err
 	}
 	for _, price := range prices {
-		err = srv.paymentStore.UpsertPriceFromStripe(ctx, price)
+		err = srv.UpsertPriceFromStripe(ctx, price)
 		if err != nil {
 			srv.logger.Error("error upserting price", "price", price.ID, "error", err)
 			continue
@@ -380,8 +450,8 @@ func (srv *StripeService) FindSubscriptionWithPriceProductBySessionId(ctx contex
 }
 
 func (srv *StripeService) UpsertSubscriptionByIds(ctx context.Context, cutomerId, subscriptionId string) error {
-	customer, err := srv.paymentStore.FindCustomer(ctx, &models.StripeCustomer{
-		ID: cutomerId,
+	customer, err := srv.adapter.Customer().FindCustomer(ctx, &stores.StripeCustomerFilter{
+		Ids: []string{cutomerId},
 	})
 	if err != nil {
 		return err
@@ -396,7 +466,7 @@ func (srv *StripeService) UpsertSubscriptionByIds(ctx context.Context, cutomerId
 	if sub == nil {
 		return errors.New("subscription not found")
 	}
-	err = srv.paymentStore.UpsertSubscriptionFromStripe(ctx, sub)
+	err = srv.UpsertSubscriptionFromStripe(ctx, sub)
 	if err != nil {
 		return err
 	}
@@ -404,8 +474,8 @@ func (srv *StripeService) UpsertSubscriptionByIds(ctx context.Context, cutomerId
 }
 
 func (srv *StripeService) CreateCheckoutSession(ctx context.Context, stripeCustomerId string, priceId string) (string, error) {
-	customer, err := srv.paymentStore.FindCustomer(ctx, &models.StripeCustomer{
-		ID: stripeCustomerId,
+	customer, err := srv.adapter.Customer().FindCustomer(ctx, &stores.StripeCustomerFilter{
+		Ids: []string{stripeCustomerId},
 	})
 	if err != nil {
 		return "", err
@@ -415,14 +485,17 @@ func (srv *StripeService) CreateCheckoutSession(ctx context.Context, stripeCusto
 	}
 	var count int64
 	if customer.TeamID != nil {
-		team, err := srv.paymentStore.FindTeamByStripeCustomerId(ctx, stripeCustomerId)
+		team, err := srv.adapter.TeamGroup().FindTeam(ctx, &stores.TeamFilter{
+			CustomerIds: []string{stripeCustomerId},
+		})
+		// team, err := srv.paymentStore.FindTeamByStripeCustomerId(ctx, stripeCustomerId)
 		if err != nil {
 			return "", err
 		}
 		if team == nil {
 			return "", errors.New("team not found")
 		}
-		count, err = srv.paymentStore.CountTeamMembers(ctx, &stores.TeamMemberFilter{
+		count, err = srv.adapter.TeamMember().CountTeamMembers(ctx, &stores.TeamMemberFilter{
 			TeamIds: []uuid.UUID{team.ID},
 		})
 		if err != nil {

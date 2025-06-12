@@ -168,11 +168,10 @@ func NewBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 	taskStore := stores.NewDbTaskStore(pool)
 	taskService := services.NewTaskService(taskStore)
 
-	paymentStore := stores.NewDbPaymentStore(pool)
 	paymentClient := payment.NewPaymentClient(cfg.StripeConfig)
 	paymentService := services.NewPaymentService(
 		paymentClient,
-		paymentStore,
+		adapter,
 	)
 
 	tokenService := services.NewJwtService()

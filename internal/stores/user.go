@@ -8,6 +8,7 @@ import (
 	"slices"
 	"time"
 
+	"github.com/Masterminds/squirrel"
 	"github.com/alexedwards/argon2id"
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/database"
@@ -57,6 +58,13 @@ func pagination(filter Paginable) (limit, offset int) {
 	}
 	return filter.Pagination()
 }
+
+func queryPagination(q squirrel.SelectBuilder, filter Paginable) squirrel.SelectBuilder {
+	limit, offset := pagination(filter)
+	q = q.Limit(uint64(limit)).Offset(uint64(offset))
+	return q
+}
+
 func (s *DbUserStore) sort(filter Sortable) *map[string]string {
 	if filter == nil {
 		return nil // return nil if no filter is provided

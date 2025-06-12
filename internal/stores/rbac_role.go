@@ -19,6 +19,12 @@ type DbRbacStore struct {
 	db database.Dbx
 }
 
+func (p *DbRbacStore) WithTx(tx database.Dbx) *DbRbacStore {
+	return &DbRbacStore{
+		db: tx,
+	}
+}
+
 func NewDbRBACStore(db database.Dbx) *DbRbacStore {
 	return &DbRbacStore{
 		db: db,

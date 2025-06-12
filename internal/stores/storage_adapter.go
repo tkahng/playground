@@ -15,6 +15,8 @@ type StorageAdapterInterface interface {
 	Price() DbPriceStoreInterface
 	Product() DbProductStoreInterface
 	Subscription() DbSubscriptionStoreInterface
+
+	Rbac() DbRbacStoreInterface
 	// WithTx(tx database.Dbx) *StorageAdapter
 	RunInTx(fn func(tx StorageAdapterInterface) error) error
 }
@@ -30,6 +32,7 @@ type StorageAdapter struct {
 	price          *DbPriceStore
 	product        *DbProductStore
 	subscription   *DbSubscriptionStore
+	rbac           *DbRbacStore
 	// Task
 }
 
@@ -60,6 +63,7 @@ func (s *StorageAdapter) WithTx(tx database.Dbx) *StorageAdapter {
 		price:          s.price.WithTx(tx),
 		product:        s.product.WithTx(tx),
 		subscription:   s.subscription.WithTx(tx),
+		rbac:           s.rbac.WithTx(tx),
 	}
 }
 
@@ -69,6 +73,10 @@ func (s *StorageAdapter) RunInTx(fn func(tx StorageAdapterInterface) error) erro
 		tx := s.WithTx(d)
 		return fn(tx)
 	})
+}
+
+func (s *StorageAdapter) Rbac() DbRbacStoreInterface {
+	return s.rbac
 }
 
 // Subscription implements StorageAdapterInterface.

@@ -128,23 +128,20 @@ func (api *Api) GetUserTeams(
 	if info == nil {
 		return nil, huma.Error401Unauthorized("unauthorized")
 	}
-	params := &shared.ListTeamsParams{
-		ListTeamsFilter: shared.ListTeamsFilter{
-			UserID: info.User.ID.String(),
-		},
+	params := &stores.TeamFilter{
+		UserIds: []uuid.UUID{info.User.ID},
 	}
 	if input != nil {
-		params.PaginatedInput = input.PaginatedInput
-		params.SortParams = input.SortParams
+		params.Page = input.Page
+		params.PerPage = input.PerPage
+		params.SortBy = input.SortBy
+		params.SortOrder = input.SortOrder
 	}
 
 	teams, err := api.app.Adapter().TeamGroup().ListTeams(ctx, params)
 	if err != nil {
 		return nil, err
 	}
-	// if len(teams) == 0 {
-	// 	return nil, huma.Error500InternalServerError("teams not found")
-	// }
 	count, err := api.app.Adapter().TeamGroup().CountTeams(ctx, params)
 	if err != nil {
 		return nil, err

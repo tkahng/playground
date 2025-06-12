@@ -158,6 +158,7 @@
     "workbench.editor.highlightModifiedTabs": true,
     "yaml.schemas": {
       "https://golangci-lint.run/jsonschema/golangci.jsonschema.json": "file:///Users/tkahng/GitHub/trk-go/authgo/.golangci-lint.yml"
-    }
+    },
+    "explorer.fileNesting.enabled": true
   }
 }

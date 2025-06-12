@@ -7,10 +7,11 @@ import (
 	"strings"
 
 	"github.com/Masterminds/squirrel"
+	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/repository"
-	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/authgo/internal/tools/types"
 	"github.com/tkahng/authgo/internal/tools/utils"
 )
 
@@ -30,29 +31,26 @@ func (s *DbCustomerStore) WithTx(tx database.Dbx) *DbCustomerStore {
 	}
 }
 
-func (s *DbCustomerStore) ListCustomers(ctx context.Context, input *shared.StripeCustomerListParams) ([]*models.StripeCustomer, error) {
+func (s *DbCustomerStore) ListCustomers(ctx context.Context, input *StripeCustomerFilter) ([]*models.StripeCustomer, error) {
 
-	filter := input.StripeCustomerListFilter
-	pageInput := &input.PaginatedInput
-
-	limit, offset := database.PaginateRepo(pageInput)
-	where := listCustomerFilterFunc(&filter)
-	order := stripeCustomerOrderByFunc(input)
+	limit, offset := pagination(input)
+	where := s.filter(input)
+	order := s.stripeCustomerOrderByFunc(input)
 	data, err := repository.StripeCustomer.Get(
 		ctx,
 		s.db,
 		where,
 		order,
-		limit,
-		offset,
+		&limit,
+		&offset,
 	)
 	if err != nil {
 		return nil, err
 	}
 	return data, nil
 }
-func (s *DbCustomerStore) CountCustomers(ctx context.Context, filter *shared.StripeCustomerListFilter) (int64, error) {
-	where := listCustomerFilterFunc(filter)
+func (s *DbCustomerStore) CountCustomers(ctx context.Context, filter *StripeCustomerFilter) (int64, error) {
+	where := s.filter(filter)
 	data, err := repository.StripeCustomer.Count(ctx, s.db, where)
 	if err != nil {
 		return 0, err
@@ -60,7 +58,7 @@ func (s *DbCustomerStore) CountCustomers(ctx context.Context, filter *shared.Str
 	return data, nil
 }
 
-func stripeCustomerOrderByFunc(input *shared.StripeCustomerListParams) *map[string]string {
+func (s *DbCustomerStore) stripeCustomerOrderByFunc(input *StripeCustomerFilter) *map[string]string {
 	if input == nil {
 		return nil
 	}
@@ -71,7 +69,19 @@ func stripeCustomerOrderByFunc(input *shared.StripeCustomerListParams) *map[stri
 	return &order
 }
 
-func listCustomerFilterFunc(filter *shared.StripeCustomerListFilter) *map[string]any {
+type StripeCustomerFilter struct {
+	PaginatedInput
+	SortParams
+	Q            string                                         `query:"q,omitempty" required:"false"`
+	Ids          []string                                       `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" uniqueItems:"true"`
+	Emails       []string                                       `db:"emails" json:"emails,omitempty" required:"false" minimum:"1" maximum:"100" uniqueItems:"true"`
+	Names        []string                                       `db:"names" json:"names,omitempty" required:"false"`
+	UserIds      []uuid.UUID                                    `db:"user_ids" json:"user_ids,omitempty" required:"false"`
+	TeamIds      []uuid.UUID                                    `db:"team_ids" json:"team_ids,omitempty" required:"false"`
+	CustomerType types.OptionalParam[models.StripeCustomerType] `query:"customer_type,omitempty" json:"customer_type,omitempty" enum:"user,team" required:"false"`
+}
+
+func (s *DbCustomerStore) filter(filter *StripeCustomerFilter) *map[string]any {
 	if filter == nil {
 		return nil
 	}
@@ -79,6 +89,31 @@ func listCustomerFilterFunc(filter *shared.StripeCustomerListFilter) *map[string
 	if len(filter.Ids) > 0 {
 		where[models.StripeCustomerTable.ID] = map[string]any{
 			"_in": filter.Ids,
+		}
+	}
+	if len(filter.Emails) > 0 {
+		where[models.StripeCustomerTable.Email] = map[string]any{
+			"_in": filter.Emails,
+		}
+	}
+	if len(filter.Names) > 0 {
+		where[models.StripeCustomerTable.Name] = map[string]any{
+			"_in": filter.Names,
+		}
+	}
+	if len(filter.UserIds) > 0 {
+		where[models.StripeCustomerTable.UserID] = map[string]any{
+			"_in": filter.UserIds,
+		}
+	}
+	if len(filter.TeamIds) > 0 {
+		where[models.StripeCustomerTable.TeamID] = map[string]any{
+			"_in": filter.TeamIds,
+		}
+	}
+	if filter.CustomerType.IsSet {
+		where[models.StripeCustomerTable.CustomerType] = map[string]any{
+			"_eq": filter.CustomerType.Value,
 		}
 	}
 	return &where
@@ -117,37 +152,22 @@ func (s *DbCustomerStore) CreateCustomer(ctx context.Context, customer *models.S
 }
 
 // FindCustomer implements PaymentStore.
-func (s *DbCustomerStore) FindCustomer(ctx context.Context, customer *models.StripeCustomer) (*models.StripeCustomer, error) {
-	if customer == nil {
+func (s *DbCustomerStore) FindCustomer(ctx context.Context, filter *StripeCustomerFilter) (*models.StripeCustomer, error) {
+	if filter == nil {
 		return nil, nil
 	}
-	where := map[string]any{}
-	if customer.ID != "" {
-		where[models.StripeCustomerTable.ID] = map[string]any{
-			"_eq": customer.ID,
-		}
-	}
-	if customer.TeamID != nil {
-		where[models.StripeCustomerTable.TeamID] = map[string]any{
-			"_eq": customer.TeamID,
-		}
-	}
-	if customer.UserID != nil {
-		where[models.StripeCustomerTable.UserID] = map[string]any{
-			"_eq": customer.UserID,
-		}
-	}
+	where := s.filter(filter)
 	data, err := repository.StripeCustomer.GetOne(
 		ctx,
 		s.db,
-		&where,
+		where,
 	)
 	return database.OptionalRow(data, err)
 }
 
 type DbCustomerStoreInterface interface {
-	ListCustomers(ctx context.Context, input *shared.StripeCustomerListParams) ([]*models.StripeCustomer, error)
-	CountCustomers(ctx context.Context, filter *shared.StripeCustomerListFilter) (int64, error)
+	ListCustomers(ctx context.Context, input *StripeCustomerFilter) ([]*models.StripeCustomer, error)
+	CountCustomers(ctx context.Context, filter *StripeCustomerFilter) (int64, error)
 	CreateCustomer(ctx context.Context, customer *models.StripeCustomer) (*models.StripeCustomer, error)
-	FindCustomer(ctx context.Context, customer *models.StripeCustomer) (*models.StripeCustomer, error)
+	FindCustomer(ctx context.Context, customer *StripeCustomerFilter) (*models.StripeCustomer, error)
 }

@@ -10,7 +10,6 @@ import (
 
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
-	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/stores"
 	"github.com/tkahng/authgo/internal/test"
 	"github.com/tkahng/authgo/internal/tools/types"
@@ -211,9 +210,9 @@ func TestTeamStore_ListTeams(t *testing.T) {
 		}
 
 		// Test: List teams for user1
-		params := &shared.ListTeamsParams{ListTeamsFilter: shared.ListTeamsFilter{
-			UserID: user1.ID.String(),
-		}}
+		params := &stores.TeamFilter{
+			UserIds: []uuid.UUID{user1.ID},
+		}
 		user1Teams, err := teamStore.ListTeams(ctx, params)
 		if err != nil {
 			t.Fatalf("ListTeams(user1) error = %v", err)
@@ -230,10 +229,8 @@ func TestTeamStore_ListTeams(t *testing.T) {
 		}
 
 		// Test: List teams with search query
-		paramsQ := &shared.ListTeamsParams{
-			ListTeamsFilter: shared.ListTeamsFilter{
-				Q: "Alpha",
-			},
+		paramsQ := &stores.TeamFilter{
+			Q: "Alpha",
 		}
 		alphaTeams, err := teamStore.ListTeams(ctx, paramsQ)
 		if err != nil {
@@ -244,8 +241,8 @@ func TestTeamStore_ListTeams(t *testing.T) {
 		}
 
 		// Test: List teams with sort order
-		paramsSort := &shared.ListTeamsParams{
-			SortParams: shared.SortParams{SortBy: "name", SortOrder: "desc"},
+		paramsSort := &stores.TeamFilter{
+			SortParams: stores.SortParams{SortBy: "name", SortOrder: "desc"},
 		}
 		sortedTeams, err := teamStore.ListTeams(ctx, paramsSort)
 		if err != nil {
@@ -259,7 +256,7 @@ func TestTeamStore_ListTeams(t *testing.T) {
 		}
 
 		// Test: Pagination
-		paramsPag := &shared.ListTeamsParams{}
+		paramsPag := &stores.TeamFilter{}
 		paramsPag.PerPage = 2
 		paramsPag.Page = 0
 		pagedTeams, err := teamStore.ListTeams(ctx, paramsPag)
@@ -328,9 +325,9 @@ func TestTeamStore_CountTeams(t *testing.T) {
 		}
 
 		// Count teams for user1
-		params := &shared.ListTeamsParams{ListTeamsFilter: shared.ListTeamsFilter{
-			UserID: user1.ID.String(),
-		}}
+		params := &stores.TeamFilter{
+			UserIds: []uuid.UUID{user1.ID},
+		}
 		user1Count, err := teamStore.CountTeams(ctx, params)
 		if err != nil {
 			t.Fatalf("CountTeams(user1) error = %v", err)
@@ -340,10 +337,8 @@ func TestTeamStore_CountTeams(t *testing.T) {
 		}
 
 		// Count teams with search query
-		paramsQ := &shared.ListTeamsParams{
-			ListTeamsFilter: shared.ListTeamsFilter{
-				Q: "CountAlpha",
-			},
+		paramsQ := &stores.TeamFilter{
+			Q: "CountAlpha",
 		}
 		alphaCount, err := teamStore.CountTeams(ctx, paramsQ)
 		if err != nil {
@@ -354,10 +349,8 @@ func TestTeamStore_CountTeams(t *testing.T) {
 		}
 
 		// Count teams with no matches
-		paramsNone := &shared.ListTeamsParams{
-			ListTeamsFilter: shared.ListTeamsFilter{
-				Q: "NoSuchTeam",
-			},
+		paramsNone := &stores.TeamFilter{
+			Q: "NoSuchTeam",
 		}
 		noneCount, err := teamStore.CountTeams(ctx, paramsNone)
 		if err != nil {

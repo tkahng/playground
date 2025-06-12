@@ -226,7 +226,7 @@ func TestStripeStore_ProductAndPrice(t *testing.T) {
 		}
 
 		// ListProducts
-		products, err := store.ListProducts(ctx, &shared.StripeProductListParams{})
+		products, err := store.ListProducts(ctx, &stores.StripeProductFilter{})
 		if err != nil {
 			t.Fatalf("ListProducts() error = %v", err)
 		}
@@ -312,7 +312,7 @@ func TestStripeStore_FindCustomer(t *testing.T) {
 		if err != nil {
 			t.Fatalf("CreateCustomer() error = %v", err)
 		}
-		found, err := store.FindCustomer(ctx, &models.StripeCustomer{ID: "cus_find_1"})
+		found, err := store.FindCustomer(ctx, &stores.StripeCustomerFilter{Ids: []string{"cus_find_1"}})
 		if err != nil || found == nil || found.ID != "cus_find_1" {
 			t.Errorf("FindCustomer() = %v, err = %v", found, err)
 		}
