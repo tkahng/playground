@@ -17,9 +17,9 @@ func TestTeamStore_InvitationCRUD(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
-		store := stores.NewDbTeamStore(dbxx)
-		userStore := stores.NewDbUserStore(dbxx)
-		user, err := userStore.CreateUser(
+		adapter := stores.NewStorageAdapter(dbxx)
+		store := stores.NewDbTeamInvitationStore(dbxx)
+		user, err := adapter.User().CreateUser(
 			ctx,
 			&models.User{
 				Email: "newuser@example.com",
@@ -30,12 +30,12 @@ func TestTeamStore_InvitationCRUD(t *testing.T) {
 		}
 
 		// Create team and member
-		team, err := store.CreateTeam(ctx, "InviteTeam", "invite-team-slug")
+		team, err := adapter.TeamGroup().CreateTeam(ctx, "InviteTeam", "invite-team-slug")
 		if err != nil {
 			t.Fatalf("CreateTeam() error = %v", err)
 		}
 		userID := user.ID
-		member, err := store.CreateTeamMember(ctx, team.ID, userID, "owner", false)
+		member, err := adapter.TeamMember().CreateTeamMember(ctx, team.ID, userID, "owner", false)
 		if err != nil {
 			t.Fatalf("CreateTeamMember() error = %v", err)
 		}
@@ -122,19 +122,19 @@ func TestInvitationStore_CRUD(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
-		teamStore := stores.NewDbTeamStore(dbxx)
-		userStore := stores.NewDbUserStore(dbxx)
+		adapter := stores.NewStorageAdapter(dbxx)
+		teamStore := stores.NewDbTeamInvitationStore(dbxx)
 
 		// Create team and user
-		team, err := teamStore.CreateTeam(ctx, "InviteTeam", "invite-team-slug")
+		team, err := adapter.TeamGroup().CreateTeam(ctx, "InviteTeam", "invite-team-slug")
 		if err != nil {
 			t.Fatalf("CreateTeam() error = %v", err)
 		}
-		user, err := userStore.CreateUser(ctx, &models.User{Email: "inviter@example.com"})
+		user, err := adapter.User().CreateUser(ctx, &models.User{Email: "inviter@example.com"})
 		if err != nil {
 			t.Fatalf("CreateUser() error = %v", err)
 		}
-		member, err := teamStore.CreateTeamMember(ctx, team.ID, user.ID, models.TeamMemberRole("owner"), true)
+		member, err := adapter.TeamMember().CreateTeamMember(ctx, team.ID, user.ID, models.TeamMemberRole("owner"), true)
 		if err != nil {
 			t.Fatalf("CreateTeamMember() error = %v", err)
 		}
@@ -205,21 +205,21 @@ func TestTeamStore_FindPendingInvitation(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
-		teamStore := stores.NewDbTeamStore(dbxx)
-		userStore := stores.NewDbUserStore(dbxx)
+		adapter := stores.NewStorageAdapter(dbxx)
+		invitationStore := stores.NewDbTeamInvitationStore(dbxx)
 
 		// Create team and user
-		team, err := teamStore.CreateTeam(ctx, "PendingInviteTeam", "pending-invite-team-slug")
+		team, err := adapter.TeamGroup().CreateTeam(ctx, "PendingInviteTeam", "pending-invite-team-slug")
 		if err != nil {
 			t.Fatalf("CreateTeam() error = %v", err)
 		}
-		user, err := userStore.CreateUser(ctx, &models.User{
+		user, err := adapter.User().CreateUser(ctx, &models.User{
 			Email: "pendinginvite@example.com",
 		})
 		if err != nil {
 			t.Fatalf("CreateUser() error = %v", err)
 		}
-		member, err := teamStore.CreateTeamMember(ctx, team.ID, user.ID, models.TeamMemberRoleOwner, true)
+		member, err := adapter.TeamMember().CreateTeamMember(ctx, team.ID, user.ID, models.TeamMemberRoleOwner, true)
 		if err != nil {
 			t.Fatalf("CreateTeamMember() error = %v", err)
 		}
@@ -236,13 +236,13 @@ func TestTeamStore_FindPendingInvitation(t *testing.T) {
 			Status:          models.TeamInvitationStatusPending,
 			ExpiresAt:       expiresAt,
 		}
-		err = teamStore.CreateInvitation(ctx, invitation)
+		err = invitationStore.CreateInvitation(ctx, invitation)
 		if err != nil {
 			t.Fatalf("CreateInvitation() error = %v", err)
 		}
 
 		// Should find the pending invitation
-		found, err := teamStore.FindPendingInvitation(ctx, team.ID, "invitee-pending@example.com")
+		found, err := invitationStore.FindPendingInvitation(ctx, team.ID, "invitee-pending@example.com")
 		if err != nil {
 			t.Fatalf("FindPendingInvitation() error = %v", err)
 		}
@@ -260,13 +260,13 @@ func TestTeamStore_FindPendingInvitation(t *testing.T) {
 			Status:          models.TeamInvitationStatusPending,
 			ExpiresAt:       time.Now().Add(-1 * time.Hour),
 		}
-		err = teamStore.CreateInvitation(ctx, expiredInvitation)
+		err = invitationStore.CreateInvitation(ctx, expiredInvitation)
 		if err != nil {
 			t.Fatalf("CreateInvitation() error = %v", err)
 		}
 
 		// Should not find the expired invitation
-		expired, err := teamStore.FindPendingInvitation(ctx, team.ID, "expired@example.com")
+		expired, err := invitationStore.FindPendingInvitation(ctx, team.ID, "expired@example.com")
 		if err != nil {
 			t.Fatalf("FindPendingInvitation() error = %v", err)
 		}
@@ -275,7 +275,7 @@ func TestTeamStore_FindPendingInvitation(t *testing.T) {
 		}
 
 		// Should not find for wrong email
-		notFound, err := teamStore.FindPendingInvitation(ctx, team.ID, "notfound@example.com")
+		notFound, err := invitationStore.FindPendingInvitation(ctx, team.ID, "notfound@example.com")
 		if err != nil {
 			t.Fatalf("FindPendingInvitation() error = %v", err)
 		}
@@ -284,11 +284,11 @@ func TestTeamStore_FindPendingInvitation(t *testing.T) {
 		}
 
 		// Should not find for wrong team
-		otherTeam, err := teamStore.CreateTeam(ctx, "OtherTeam", "other-team-slug")
+		otherTeam, err := adapter.TeamGroup().CreateTeam(ctx, "OtherTeam", "other-team-slug")
 		if err != nil {
 			t.Fatalf("CreateTeam() error = %v", err)
 		}
-		other, err := teamStore.FindPendingInvitation(ctx, otherTeam.ID, "invitee-pending@example.com")
+		other, err := invitationStore.FindPendingInvitation(ctx, otherTeam.ID, "invitee-pending@example.com")
 		if err != nil {
 			t.Fatalf("FindPendingInvitation() error = %v", err)
 		}
