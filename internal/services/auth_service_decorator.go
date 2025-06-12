@@ -10,6 +10,7 @@ import (
 	"github.com/tkahng/authgo/internal/jobs"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/authgo/internal/stores"
 	"github.com/tkahng/authgo/internal/tools/mailer"
 )
 
@@ -29,7 +30,7 @@ type AuthServiceDecorator struct {
 	HandleVerificationTokenFunc    func(ctx context.Context, token string) error
 	SignoutFunc                    func(ctx context.Context, token string) error
 	ResetPasswordFunc              func(ctx context.Context, userId uuid.UUID, oldPassword string, newPassword string) error
-	SendOtpEmailFunc               func(emailType mailer.EmailType, ctx context.Context, user *models.User) error
+	SendOtpEmailFunc               func(emailType mailer.EmailType, ctx context.Context, user *models.User, adapter stores.StorageAdapterInterface) error
 	VerifyAndParseOtpTokenFunc     func(ctx context.Context, emailType mailer.EmailType, token string) (*shared.OtpClaims, error)
 	VerifyStateTokenFunc           func(ctx context.Context, token string) (*shared.ProviderStateClaims, error)
 	CreateAndPersistStateTokenFunc func(ctx context.Context, payload *shared.ProviderStatePayload) (string, error)
@@ -111,12 +112,12 @@ func (a *AuthServiceDecorator) Authenticate(ctx context.Context, params *shared.
 	return a.Delegate.Authenticate(ctx, params)
 }
 
-// CheckResetPasswordToken implements AuthService.
-func (a *AuthServiceDecorator) CheckResetPasswordToken(ctx context.Context, token string) error {
+// HandleCheckResetPasswordToken implements AuthService.
+func (a *AuthServiceDecorator) HandleCheckResetPasswordToken(ctx context.Context, token string) error {
 	if a.CheckResetPasswordTokenFunc != nil {
 		return a.CheckResetPasswordTokenFunc(ctx, token)
 	}
-	return a.Delegate.CheckResetPasswordToken(ctx, token)
+	return a.Delegate.HandleCheckResetPasswordToken(ctx, token)
 }
 
 // CreateAndPersistStateToken implements AuthService.
@@ -192,11 +193,11 @@ func (a *AuthServiceDecorator) ResetPassword(ctx context.Context, userId uuid.UU
 }
 
 // SendOtpEmail implements AuthService.
-func (a *AuthServiceDecorator) SendOtpEmail(emailType mailer.EmailType, ctx context.Context, user *models.User) error {
+func (a *AuthServiceDecorator) SendOtpEmail(emailType mailer.EmailType, ctx context.Context, user *models.User, adapter stores.StorageAdapterInterface) error {
 	if a.SendOtpEmailFunc != nil {
-		return a.SendOtpEmailFunc(emailType, ctx, user)
+		return a.SendOtpEmailFunc(emailType, ctx, user, adapter)
 	}
-	return a.Delegate.SendOtpEmail(emailType, ctx, user)
+	return a.Delegate.SendOtpEmail(emailType, ctx, user, adapter)
 }
 
 // Signout implements AuthService.

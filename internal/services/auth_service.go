@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/url"
@@ -40,16 +41,25 @@ type AuthTokenStore interface {
 	DeleteToken(ctx context.Context, token string) error
 }
 type AuthService interface {
+	// properties -----------------------------------------------------------------------------------------------------------
+
 	Password() PasswordService
 	Token() JwtService
 	Mail() MailService
-	Store() AuthStore
+
+	// handlers -----------------------------------------------------------------------------------------------------------
+
 	HandlePasswordResetRequest(ctx context.Context, email string) error
 	HandleAccessToken(ctx context.Context, token string) (*shared.UserInfo, error)
 	HandleRefreshToken(ctx context.Context, token string) (*shared.UserInfoTokens, error)
 	HandleVerificationToken(ctx context.Context, token string) error
 	HandlePasswordResetToken(ctx context.Context, token, password string) error
-	CheckResetPasswordToken(ctx context.Context, token string) error
+	HandleCheckResetPasswordToken(ctx context.Context, token string) error
+	Signout(ctx context.Context, token string) error
+	ResetPassword(ctx context.Context, userId uuid.UUID, oldPassword, newPassword string) error
+
+	// methods -----------------------------------------------------------------------------------------------------------
+
 	VerifyStateToken(ctx context.Context, token string) (*shared.ProviderStateClaims, error)
 	CreateOAuthUrl(ctx context.Context, provider shared.Providers, redirectUrl string) (string, error)
 	CreateAndPersistStateToken(ctx context.Context, payload *shared.ProviderStatePayload) (string, error)
@@ -57,9 +67,7 @@ type AuthService interface {
 	VerifyAndParseOtpToken(ctx context.Context, emailType mailer.EmailType, token string) (*shared.OtpClaims, error)
 	Authenticate(ctx context.Context, params *shared.AuthenticationInput) (*models.User, error)
 	CreateAuthTokensFromEmail(ctx context.Context, email string) (*shared.UserInfoTokens, error)
-	SendOtpEmail(emailType mailer.EmailType, ctx context.Context, user *models.User) error
-	Signout(ctx context.Context, token string) error
-	ResetPassword(ctx context.Context, userId uuid.UUID, oldPassword, newPassword string) error
+	SendOtpEmail(emailType mailer.EmailType, ctx context.Context, user *models.User, adapter stores.StorageAdapterInterface) error
 }
 
 type AuthStore interface {
@@ -176,7 +184,10 @@ func (app *BaseAuthService) CreateOAuthUrl(ctx context.Context, providerName sha
 // FireAndForget implements AuthService.
 // Subtle: this method shadows the method (WorkerService).FireAndForget of BaseAuthService.WorkerService.
 // SendOtpEmail creates and saves a new otp token and sends it to the user's email
-func (app *BaseAuthService) SendOtpEmail(emailType mailer.EmailType, ctx context.Context, user *models.User) error {
+func (app *BaseAuthService) SendOtpEmail(emailType mailer.EmailType, ctx context.Context, user *models.User, adapter stores.StorageAdapterInterface) error {
+	if adapter == nil {
+		adapter = app.adapter
+	}
 	if app.options == nil {
 		return fmt.Errorf("app options is nil")
 	}
@@ -226,7 +237,7 @@ func (app *BaseAuthService) SendOtpEmail(emailType mailer.EmailType, ctx context
 		Identifier: claims.Email,
 		UserID:     &claims.UserId,
 	}
-	err = app.adapter.Token().SaveToken(ctx, dto)
+	err = adapter.Token().SaveToken(ctx, dto)
 	// err = app.authStore.SaveToken(ctx, dto)
 	if err != nil {
 		return fmt.Errorf("error at creating verification token: %w", err)
@@ -382,7 +393,7 @@ func (app *BaseAuthService) HandlePasswordResetRequest(ctx context.Context, emai
 		return fmt.Errorf("user account not found")
 	}
 
-	err = app.SendOtpEmail(mailer.EmailTypeConfirmPasswordReset, ctx, user)
+	err = app.SendOtpEmail(mailer.EmailTypeConfirmPasswordReset, ctx, user, app.adapter)
 	if err != nil {
 		return fmt.Errorf("error sending password reset email: %w", err)
 	}
@@ -505,8 +516,8 @@ func (app *BaseAuthService) CreateAuthTokens(ctx context.Context, payload *share
 	}, nil
 }
 
-// CheckResetPasswordToken implements AuthActions.
-func (app *BaseAuthService) CheckResetPasswordToken(ctx context.Context, tokenHash string) error {
+// HandleCheckResetPasswordToken implements AuthActions.
+func (app *BaseAuthService) HandleCheckResetPasswordToken(ctx context.Context, tokenHash string) error {
 	opts := app.options.Auth
 	var claims shared.PasswordResetClaims
 	err := app.token.ParseToken(tokenHash, opts.PasswordResetToken, &claims)
@@ -687,8 +698,8 @@ func (app *BaseAuthService) VerifyAndParseOtpToken(ctx context.Context, emailTyp
 
 // methods
 
-func (app *BaseAuthService) CreateUserAndAccount(ctx context.Context, params *shared.AuthenticationInput) (*models.User, error) {
-	user, err := app.adapter.User().CreateUser(
+func (app *BaseAuthService) CreateUserAndAccount(ctx context.Context, params *shared.AuthenticationInput, adapter stores.StorageAdapterInterface) (*models.User, error) {
+	user, err := adapter.User().CreateUser(
 		ctx,
 		&models.User{
 			Email:           params.Email,
@@ -707,7 +718,7 @@ func (app *BaseAuthService) CreateUserAndAccount(ctx context.Context, params *sh
 	if err1 != nil {
 		return nil, err1
 	}
-	account, err := app.adapter.UserAccount().CreateUserAccount(
+	account, err := adapter.UserAccount().CreateUserAccount(
 		ctx,
 		&models.UserAccount{
 			UserID:            user.ID,
@@ -720,7 +731,7 @@ func (app *BaseAuthService) CreateUserAndAccount(ctx context.Context, params *sh
 		},
 	)
 	if err != nil {
-		return nil, fmt.Errorf("error at creating user account: %w", err)
+		return nil, err
 	}
 	if account == nil {
 		return nil, fmt.Errorf("user account not created")
@@ -728,15 +739,18 @@ func (app *BaseAuthService) CreateUserAndAccount(ctx context.Context, params *sh
 	return user, nil
 }
 
-func (app *BaseAuthService) CreateAccountFromUser(ctx context.Context, user *models.User, params *shared.AuthenticationInput) (*models.UserAccount, error) {
+func (app *BaseAuthService) CreateAccountFromUser(ctx context.Context, params *shared.AuthenticationInput, adapter stores.StorageAdapterInterface) (*models.UserAccount, error) {
+	if params.UserId == nil {
+		return nil, fmt.Errorf("user id is required")
+	}
 	err := app.HashInputPassword(params)
 	if err != nil {
 		return nil, err
 	}
-	account, err := app.adapter.UserAccount().CreateUserAccount(
+	account, err := adapter.UserAccount().CreateUserAccount(
 		ctx,
 		&models.UserAccount{
-			UserID:            user.ID,
+			UserID:            *params.UserId,
 			Type:              models.ProviderTypes(params.Type),
 			Provider:          models.Providers(params.Provider),
 			ProviderAccountID: params.ProviderAccountID,
@@ -759,130 +773,34 @@ func (app *BaseAuthService) Authenticate(ctx context.Context, params *shared.Aut
 	var account *models.UserAccount
 	var err error
 
+	// find user by email ----------------------------------------------------------------------------------------------------
 	user, err = app.adapter.User().FindUser(
 		ctx,
 		&stores.UserFilter{
 			Emails: []string{params.Email},
 		},
 	)
-
-	// if err != nil {
-	// 	return nil, fmt.Errorf("error at getting user by email: %w", err)
-	// }
-	// // if user exists, get user account
-	// if user != nil {
-	// 	user, err = app.CreateUserAndAccount(ctx, params)
-	// }
-
-	// if user does not exist, Create User and UserAccount ----------------------------------------------------------------------------------------------------
+	if err != nil {
+		return nil, err
+	}
+	// if user is not found, create user and account, then send verification email ----------------------------------------------------------------------------------------------------
 	if user == nil {
-		newUser, err := app.CreateUserAndAccount(ctx, params)
-		if err != nil {
-			return nil, err
-		}
-		app.routine.FireAndForget(
-			func() {
-				ctx := context.Background()
-				fmt.Println("User is first login, sending verification email")
-				err := app.SendOtpEmail(mailer.EmailTypeVerify, ctx, newUser)
-				if err != nil {
-					app.logger.Error(
-						"error sending verification email",
-						slog.Any("error", err),
-						slog.String("email", newUser.Email),
-						slog.String("userId", newUser.ID.String()),
-					)
-				}
-			},
-		)
-		return newUser, nil
+		return app.authenticateNewUser(ctx, params)
+	}
+
+	params.UserId = &user.ID
+
+	account, err = app.adapter.UserAccount().FindUserAccount(ctx, &stores.UserAccountFilter{
+		UserIds:   []uuid.UUID{user.ID},
+		Providers: []models.Providers{models.Providers(params.Provider)},
+	})
+
+	if err != nil {
+		return nil, err
 	}
 	// if user exists, but requested account type does not exist, Create UserAccount  of requested type ----------------------------------------------------------------------------------------------------
 	if account == nil {
-		fmt.Println("User exists, but account does not exist")
-		var checkCredential bool
-		var reset bool
-		if user.EmailVerifiedAt == nil && params.EmailVerifiedAt != nil {
-			if params.Type == shared.ProviderTypeOAuth {
-				fmt.Println("User has a credentials account, with new oauth. resetting checkCredential")
-				checkCredential = true
-			}
-		}
-		// err = app.authStore.RunInTransaction(
-		err = func() error {
-			account, err = func() (*models.UserAccount, error) {
-				fmt.Println("Account does not exist, creating account")
-				err1 := app.HashInputPassword(params)
-				if err1 != nil {
-					return nil, err1
-				}
-				return app.adapter.UserAccount().CreateUserAccount(
-					ctx,
-					&models.UserAccount{
-						UserID:            user.ID,
-						Type:              models.ProviderTypes(params.Type),
-						Provider:          models.Providers(params.Provider),
-						ProviderAccountID: params.ProviderAccountID,
-						Password:          params.HashPassword,
-						AccessToken:       params.AccessToken,
-						RefreshToken:      params.RefreshToken,
-					},
-				)
-			}()
-			if err != nil {
-				return fmt.Errorf("error at linking account: %w", err)
-			}
-			if account == nil {
-				return fmt.Errorf("account not created")
-			}
-			if checkCredential {
-				slog.Info("User has a credentials account, resetting password")
-				reset, err = app.UpdateUserVerifiedOrResetPassword(ctx, app.authStore, user, params)
-				if err != nil {
-					app.logger.Error(
-						"error at checking user credentials security",
-						slog.Any("error", err),
-						slog.String("email", user.Email),
-						slog.String("userId", user.ID.String()),
-					)
-					return err
-				}
-			}
-			return nil
-		}()
-		// )
-		if err != nil {
-			return nil, fmt.Errorf("error at creating user account: %w", err)
-		}
-		if reset {
-			fmt.Println("User has a credentials account, sending security password reset email")
-			// err = app.enqueuer.Enqueue(
-			// 	ctx,
-			// 	workers.OtpEmailJobArgs{
-			// 		Type:   mailer.EmailTypeSecurityPasswordReset,
-			// 		UserID: user.ID,
-			// 	},
-			// 	nil,
-			// 	time.Now(),
-			// 	1,
-			// )
-			app.routine.FireAndForget(
-				func() {
-					ctx := context.Background()
-					fmt.Println("sending security password reset email")
-					err := app.SendOtpEmail(mailer.EmailTypeSecurityPasswordReset, ctx, user)
-					if err != nil {
-						app.logger.Error(
-							"error sending security password reset email",
-							slog.Any("error", err),
-							slog.String("email", user.Email),
-							slog.String("userId", user.ID.String()),
-						)
-					}
-				},
-			)
-		}
-		return user, nil
+		return app.authenticateNewAccount(ctx, user, params)
 	}
 	// if user exists and account exists, check if password is correct  or check if provider key is correct ----------------------------------------------------------------------------------------------------
 	if params.Type == shared.ProviderTypeCredentials {
@@ -897,7 +815,96 @@ func (app *BaseAuthService) Authenticate(ctx context.Context, params *shared.Aut
 	}
 	return user, nil
 }
+func (app *BaseAuthService) authenticateNewAccount(ctx context.Context, user *models.User, params *shared.AuthenticationInput) (*models.User, error) {
+	if user == nil {
+		return nil, fmt.Errorf("user is nil")
+	}
+	var resetPassword bool
+	err := app.adapter.RunInTx(func(tx stores.StorageAdapterInterface) error {
+		var err error
+		resetPassword, err = app.CheckAndResetCredentialsPassword(ctx, user, params, app.adapter)
+		if err != nil {
+			return err
+		}
 
+		_, err = app.CreateAccountFromUser(ctx, params, tx)
+		if err != nil {
+			return err
+		}
+		err = app.UpdateUserEmailVerifiedAt(ctx, user, params, tx)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	if resetPassword {
+		app.routine.FireAndForget(
+			func() {
+				ctx := context.Background()
+				fmt.Println("User is first login, sending reset password email")
+				err := app.SendOtpEmail(mailer.EmailTypeSecurityPasswordReset, ctx, user, app.adapter)
+				if err != nil {
+					app.logger.Error(
+						"error sending reset password email",
+						slog.Any("error", err),
+						slog.String("email", user.Email),
+						slog.String("userId", user.ID.String()),
+					)
+				}
+			},
+		)
+	}
+	if user.EmailVerifiedAt == nil {
+		app.routine.FireAndForget(
+			func() {
+				ctx := context.Background()
+				fmt.Println("User is first login, sending verification email")
+				err := app.SendOtpEmail(mailer.EmailTypeVerify, ctx, user, app.adapter)
+				if err != nil {
+					app.logger.Error(
+						"error sending verification email",
+						slog.Any("error", err),
+						slog.String("email", user.Email),
+						slog.String("userId", user.ID.String()),
+					)
+				}
+			},
+		)
+	}
+	return user, nil
+}
+func (app *BaseAuthService) authenticateNewUser(ctx context.Context, params *shared.AuthenticationInput) (*models.User, error) {
+	var user *models.User
+	err := app.adapter.RunInTx(func(tx stores.StorageAdapterInterface) error {
+		newUser, err := app.CreateUserAndAccount(ctx, params, app.adapter)
+		user = newUser
+		return err
+	})
+	if err != nil {
+		return nil, err
+	}
+	app.routine.FireAndForget(
+		func() {
+			ctx := context.Background()
+			fmt.Println("User is first login, sending verification email")
+			err := app.SendOtpEmail(mailer.EmailTypeVerify, ctx, user, app.adapter)
+			if err != nil {
+				app.logger.Error(
+					"error sending verification email",
+					slog.Any("error", err),
+					slog.String("email", user.Email),
+					slog.String("userId", user.ID.String()),
+				)
+			}
+		},
+	)
+	return user, nil
+}
+
+// HashInputPassword hashes the password and sets the HashPassword field in the params if it is not already set.
 func (app *BaseAuthService) HashInputPassword(params *shared.AuthenticationInput) error {
 	if params.Type == shared.ProviderTypeCredentials {
 		if params.HashPassword == nil {
@@ -917,60 +924,70 @@ func (app *BaseAuthService) HashInputPassword(params *shared.AuthenticationInput
 	return nil
 }
 
-func (app *BaseAuthService) getAdapter(tx ...stores.StorageAdapterInterface) stores.StorageAdapterInterface {
-	if len(tx) > 0 {
-		return tx[0]
+func (app *BaseAuthService) UpdateUserEmailVerifiedAt(ctx context.Context, user *models.User, params *shared.AuthenticationInput, adapter stores.StorageAdapterInterface) error {
+	if user == nil {
+		return errors.New("user is nil")
 	}
-	return app.adapter
+	if params == nil {
+		return errors.New("params is nil")
+	}
+	if params.EmailVerifiedAt == nil {
+		return nil
+	}
+	if user.EmailVerifiedAt != nil {
+		return nil
+	}
+	user.EmailVerifiedAt = params.EmailVerifiedAt
+	err := adapter.User().UpdateUser(ctx, user)
+	if err != nil {
+		return fmt.Errorf("error updating user email verified at: %w", err)
+	}
+	return nil
 }
 
-func (app *BaseAuthService) UpdateUserVerifiedOrResetPassword(ctx context.Context, store AuthStore, user *models.User, params *shared.AuthenticationInput, tx ...stores.StorageAdapterInterface) (bool, error) {
-	adapter := app.getAdapter(tx...)
-	if user == nil || params == nil {
-		return false, fmt.Errorf("user not found")
+// if incoming request is a oauth type,
+// and if user already has a credentials account,
+// and if user email is not verified,
+// then reset the password of the credentials account.
+// if there was a reset, return true, else return false
+func (app *BaseAuthService) CheckAndResetCredentialsPassword(ctx context.Context, user *models.User, params *shared.AuthenticationInput, adapter stores.StorageAdapterInterface) (bool, error) {
+	if user == nil {
+		return false, fmt.Errorf("user is nil")
 	}
-	reset := false
-	fmt.Println("setting reset to false")
-	// if user is not verified,
-	if user.EmailVerifiedAt == nil {
-		if params.EmailVerifiedAt != nil {
-			// and if incoming request is oauth,
-			if params.Type == shared.ProviderTypeOAuth {
-				//  check if user has a credentials account
-				account, err := adapter.UserAccount().FindUserAccount(ctx, &stores.UserAccountFilter{
-					UserIds:   []uuid.UUID{user.ID},
-					Providers: []models.Providers{models.ProvidersCredentials},
-				})
-
-				if err != nil {
-					return false, fmt.Errorf("error loading user accounts: %w", err)
-				}
-				if account != nil {
-					fmt.Println("User has a credentials account, resetting password")
-					// if user has a credentials account, send security password reset email
-					randomPassword := security.RandomString(20)
-					hash, err := app.password.HashPassword(randomPassword)
-					if err != nil {
-						return false, fmt.Errorf("error at hashing password: %w", err)
-					}
-					account.Password = &hash
-					err = adapter.UserAccount().UpdateUserAccount(ctx, account)
-					if err != nil {
-						return false, fmt.Errorf("error updating user password: %w", err)
-					}
-					fmt.Println("setting reset to true")
-
-				}
-			}
-			user.EmailVerifiedAt = params.EmailVerifiedAt
-			err := adapter.User().UpdateUser(ctx, user)
-			if err != nil {
-				return false, fmt.Errorf("error updating user email confirmation: %w", err)
-			}
-			return true, nil
-		}
+	if params == nil {
+		return false, fmt.Errorf("params is nil")
 	}
-	return reset, nil
+	// if incoming request is not a oauth type, return false
+	if params.Type == shared.ProviderTypeCredentials {
+		return false, nil
+	}
+	// if incoming request does not have email verified at, return false
+	if params.EmailVerifiedAt == nil {
+		return false, nil
+	}
+	// if user email is verified, return false
+	if user.EmailVerifiedAt != nil {
+		return false, nil
+	}
+	account, err := adapter.UserAccount().FindUserAccount(ctx, &stores.UserAccountFilter{
+		UserIds:   []uuid.UUID{user.ID},
+		Providers: []models.Providers{models.ProvidersCredentials},
+	})
+	if err != nil {
+		return false, fmt.Errorf("error finding credentials account: %w", err)
+	}
+	if account == nil {
+		return false, nil
+	}
+	randomPassword := security.RandomString(20)
+	hash, err := app.password.HashPassword(randomPassword)
+	if err != nil {
+		return false, fmt.Errorf("error at hashing password: %w", err)
+	}
+	account.Password = &hash
+	err = adapter.UserAccount().UpdateUserAccount(ctx, account)
+	if err != nil {
+		return false, fmt.Errorf("error updating user password: %w", err)
+	}
+	return true, nil
 }
-
-func (app *BaseAuthService) UpdateAccountWithRandomePassword()

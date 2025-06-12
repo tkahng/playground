@@ -35,7 +35,7 @@ func (api *Api) RequestPasswordReset(ctx context.Context, input *struct{ Body *R
 func (api *Api) CheckPasswordResetGet(ctx context.Context, input *OtpInput) (*struct{}, error) {
 
 	action := api.app.Auth()
-	err := action.CheckResetPasswordToken(ctx, input.Token)
+	err := action.HandleCheckResetPasswordToken(ctx, input.Token)
 	if err != nil {
 		return nil, err
 	}

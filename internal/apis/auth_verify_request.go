@@ -35,7 +35,7 @@ func (api *Api) RequestVerification(ctx context.Context, input *struct{}) (*stru
 		Image:           claims.User.Image,
 		CreatedAt:       claims.User.CreatedAt,
 		UpdatedAt:       claims.User.UpdatedAt,
-	})
+	}, api.app.Adapter())
 	if err != nil {
 		return nil, err
 	}

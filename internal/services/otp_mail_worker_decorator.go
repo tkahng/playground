@@ -14,10 +14,11 @@ type WorkerDecorator[T jobs.JobArgs] struct {
 }
 
 func NewWorkerDecorator(authService AuthService) *WorkerDecorator[workers.OtpEmailJobArgs] {
-	worker := workers.NewOtpEmailWorker(authService.Store(), authService)
-	return &WorkerDecorator[workers.OtpEmailJobArgs]{
-		Delegate: worker,
-	}
+	panic("AuthService is not implemented")
+	// worker := workers.NewOtpEmailWorker(nil, authService)
+	// return &WorkerDecorator[workers.OtpEmailJobArgs]{
+	// 	Delegate: worker,
+	// }
 }
 
 // Work implements jobs.Worker.

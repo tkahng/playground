@@ -36,7 +36,7 @@ type MailService interface {
 }
 
 type OtpMail interface {
-	SendOtpEmail(emailType mailer.EmailType, ctx context.Context, user *models.User) error
+	SendOtpEmail(emailType mailer.EmailType, ctx context.Context, user *models.User, adapter stores.StorageAdapterInterface) error
 }
 
 func RegisterMailWorker(
@@ -77,7 +77,7 @@ func (w *otpMailWorker) Work(ctx context.Context, job *jobs.Job[OtpEmailJobArgs]
 		)
 		return err
 	}
-	err = w.mail.SendOtpEmail(job.Args.Type, ctx, user)
+	err = w.mail.SendOtpEmail(job.Args.Type, ctx, user, nil)
 	if err != nil {
 		slog.ErrorContext(
 			ctx,
