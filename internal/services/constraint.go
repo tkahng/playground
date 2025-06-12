@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/authgo/internal/stores"
 )
 
 type ConstaintCheckerStore interface {
@@ -17,10 +18,10 @@ type ConstaintCheckerStore interface {
 }
 
 func NewConstraintCheckerService(
-	store ConstaintCheckerStore,
+	adapter stores.StorageAdapterInterface,
 ) *ConstraintCheckerService {
 	return &ConstraintCheckerService{
-		store: store,
+		adapter: adapter,
 	}
 }
 
@@ -36,7 +37,8 @@ type ConstraintChecker interface {
 }
 
 type ConstraintCheckerService struct {
-	store ConstaintCheckerStore
+	store   ConstaintCheckerStore
+	adapter stores.StorageAdapterInterface
 }
 
 // EmailMustBeVerified implements ConstraintChecker.

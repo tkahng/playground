@@ -50,9 +50,8 @@ func NewDecorator(ctx context.Context, cfg conf.EnvConfig, pool database.Dbx) *B
 		enqueuer,
 		adapter,
 	)
-	checkerStore := stores.NewDbConstraintStore(pool)
 	checker := services.NewConstraintCheckerService(
-		checkerStore,
+		adapter,
 	)
 
 	teamService := services.NewTeamService(adapter)

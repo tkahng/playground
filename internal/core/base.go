@@ -187,9 +187,8 @@ func NewBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 		enqueuer,
 		adapter,
 	)
-	checkerStore := stores.NewDbConstraintStore(pool)
 	checker := services.NewConstraintCheckerService(
-		checkerStore,
+		adapter,
 	)
 
 	teamService := services.NewTeamService(adapter)
