@@ -19,6 +19,18 @@ type AccountStoreDecorator struct {
 	UpdateUserAccountFunc                  func(ctx context.Context, account *models.UserAccount) error
 	UpdateUserPasswordFunc                 func(ctx context.Context, userId uuid.UUID, password string) error
 	WithTxFunc                             func(dbx database.Dbx) *AccountStoreDecorator
+	FindUserAccountFunc                    func(ctx context.Context, filter *UserAccountFilter) (*models.UserAccount, error)
+}
+
+// FindUserAccount implements DbAccountStoreInterface.
+func (a *AccountStoreDecorator) FindUserAccount(ctx context.Context, filter *UserAccountFilter) (*models.UserAccount, error) {
+	if a.FindUserAccountFunc != nil {
+		return a.FindUserAccountFunc(ctx, filter)
+	}
+	if a.Delegate == nil {
+		return nil, ErrDelegateNil
+	}
+	return a.Delegate.FindUserAccount(ctx, filter)
 }
 
 func (a *AccountStoreDecorator) Cleanup() {
@@ -65,15 +77,6 @@ func (a *AccountStoreDecorator) CreateUserAccount(ctx context.Context, account *
 }
 
 // FindUserAccountByUserIdAndProvider implements DbAccountStoreInterface.
-func (a *AccountStoreDecorator) FindUserAccountByUserIdAndProvider(ctx context.Context, userId uuid.UUID, provider models.Providers) (*models.UserAccount, error) {
-	if a.FindUserAccountByUserIdAndProviderFunc != nil {
-		return a.FindUserAccountByUserIdAndProviderFunc(ctx, userId, provider)
-	}
-	if a.Delegate == nil {
-		return nil, ErrDelegateNil
-	}
-	return a.Delegate.FindUserAccountByUserIdAndProvider(ctx, userId, provider)
-}
 
 // GetUserAccounts implements DbAccountStoreInterface.
 func (a *AccountStoreDecorator) GetUserAccounts(ctx context.Context, userIds ...uuid.UUID) ([][]*models.UserAccount, error) {

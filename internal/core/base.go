@@ -190,6 +190,7 @@ func NewBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 		routineService,
 		l,
 		enqueuer,
+		adapter,
 	)
 	checkerStore := stores.NewDbConstraintStore(pool)
 	checker := services.NewConstraintCheckerService(

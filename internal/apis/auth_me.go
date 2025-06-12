@@ -20,11 +20,11 @@ func (api *Api) Me(ctx context.Context, input *struct{}) (*MeOutput, error) {
 	if claims == nil {
 		return nil, huma.Error404NotFound("User not found")
 	}
-	user, err := api.app.User().Store().FindUserByID(ctx, claims.User.ID)
+	user, err := api.app.Adapter().User().FindUserByID(ctx, claims.User.ID)
 	if err != nil {
 		return nil, err
 	}
-	accounts, err := api.app.UserAccount().Store().GetUserAccounts(ctx, user.ID)
+	accounts, err := api.app.Adapter().UserAccount().GetUserAccounts(ctx, user.ID)
 	if err != nil {
 		return nil, err
 	}

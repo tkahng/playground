@@ -21,7 +21,6 @@ import (
 )
 
 type AuthAccountStore interface {
-	FindUserAccountByUserIdAndProvider(ctx context.Context, userId uuid.UUID, provider models.Providers) (*models.UserAccount, error)
 	UpdateUserAccount(ctx context.Context, account *models.UserAccount) error
 	CreateUserAccount(ctx context.Context, account *models.UserAccount) (*models.UserAccount, error)
 	UnlinkAccount(ctx context.Context, userId uuid.UUID, provider models.Providers) error
@@ -71,13 +70,6 @@ type AuthStore interface {
 	AuthTokenStore
 }
 
-type AuthServiceStore interface {
-	RunInTx(fn func(store AuthServiceStore) error) error
-	User() AuthUserStore
-	Account() AuthAccountStore
-	Token() AuthTokenStore
-}
-
 var _ AuthService = (*BaseAuthService)(nil)
 
 type BaseAuthService struct {
@@ -89,7 +81,7 @@ type BaseAuthService struct {
 	options   *conf.AppOptions
 	logger    *slog.Logger
 	enqueuer  jobs.Enqueuer
-	// adapter   stores.StorageAdapterInterface
+	adapter   stores.StorageAdapterInterface
 }
 
 func NewAuthService(
@@ -101,6 +93,7 @@ func NewAuthService(
 	workerService RoutineService,
 	logger *slog.Logger,
 	enqueuer jobs.Enqueuer,
+	adapter stores.StorageAdapterInterface,
 ) AuthService {
 	authService := &BaseAuthService{
 		routine:   workerService,
@@ -111,14 +104,11 @@ func NewAuthService(
 		options:   opts,
 		logger:    logger,
 		enqueuer:  enqueuer,
+		adapter:   adapter,
 	}
 
 	return authService
 }
-
-// func (app *BaseAuthService) Adapter() resource.ResourceAdapterInterface {
-// 	return app.adapter
-// }
 
 // Mail implements AuthService.
 func (app *BaseAuthService) Mail() MailService {
@@ -236,8 +226,8 @@ func (app *BaseAuthService) SendOtpEmail(emailType mailer.EmailType, ctx context
 		Identifier: claims.Email,
 		UserID:     &claims.UserId,
 	}
-	// err = app.adapter.Token().SaveToken(ctx, dto)
-	err = app.authStore.SaveToken(ctx, dto)
+	err = app.adapter.Token().SaveToken(ctx, dto)
+	// err = app.authStore.SaveToken(ctx, dto)
 	if err != nil {
 		return fmt.Errorf("error at creating verification token: %w", err)
 	}
@@ -313,10 +303,12 @@ func (app *BaseAuthService) FetchAuthUser(ctx context.Context, code string, pars
 }
 
 func (app *BaseAuthService) ResetPassword(ctx context.Context, userId uuid.UUID, oldPassword string, newPassword string) error {
-	account, err := app.authStore.FindUserAccountByUserIdAndProvider(
+	account, err := app.adapter.UserAccount().FindUserAccount(
 		ctx,
-		userId,
-		models.ProvidersCredentials,
+		&stores.UserAccountFilter{
+			UserIds:   []uuid.UUID{userId},
+			Providers: []models.Providers{models.ProvidersCredentials},
+		},
 	)
 	// account, err := app.authStore.FindUserAccountByUserIdAndProvider(ctx, userId, models.ProvidersCredentials)
 	if err != nil {
@@ -336,7 +328,8 @@ func (app *BaseAuthService) ResetPassword(ctx context.Context, userId uuid.UUID,
 		return fmt.Errorf("error at hashing password: %w", err)
 	}
 	account.Password = &hash
-	err = app.authStore.UpdateUserAccount(ctx, account)
+
+	err = app.adapter.UserAccount().UpdateUserAccount(ctx, account)
 	if err != nil {
 		return fmt.Errorf("error updating user password: %w", err)
 	}
@@ -351,11 +344,12 @@ func (app *BaseAuthService) Signout(ctx context.Context, token string) error {
 	if err != nil {
 		return fmt.Errorf("error verifying refresh token: %w", err)
 	}
-	_, err = app.authStore.GetToken(ctx, token) // corrected 'tokne' to 'token'
+	_, err = app.adapter.Token().GetToken(ctx, token) // corrected 'tokne' to 'token'
+	// _, err = app.authStore.GetToken(ctx, token) // corrected 'tokne' to 'token'
 	if err != nil {
 		return err
 	}
-	err = app.authStore.DeleteToken(ctx, token) // corrected to use 'app.token'
+	err = app.adapter.Token().DeleteToken(ctx, token) // corrected to use 'app.token'
 	if err != nil {
 		return fmt.Errorf("error at deleting token: %w", err)
 	}
@@ -365,7 +359,7 @@ func (app *BaseAuthService) Signout(ctx context.Context, token string) error {
 // HandlePasswordResetRequest implements AuthActions.
 func (app *BaseAuthService) HandlePasswordResetRequest(ctx context.Context, email string) error {
 
-	user, err := app.authStore.FindUser(
+	user, err := app.adapter.User().FindUser(
 		ctx,
 		&stores.UserFilter{
 			Emails: []string{email},
@@ -377,8 +371,10 @@ func (app *BaseAuthService) HandlePasswordResetRequest(ctx context.Context, emai
 	if user == nil {
 		return fmt.Errorf("user not found")
 	}
-
-	account, err := app.authStore.FindUserAccountByUserIdAndProvider(ctx, user.ID, models.ProvidersCredentials)
+	account, err := app.adapter.UserAccount().FindUserAccount(ctx, &stores.UserAccountFilter{
+		UserIds:   []uuid.UUID{user.ID},
+		Providers: []models.Providers{models.ProvidersCredentials},
+	})
 	if err != nil {
 		return fmt.Errorf("error getting user account: %w", err)
 	}
@@ -410,7 +406,7 @@ func (app *BaseAuthService) CreateAndPersistStateToken(ctx context.Context, payl
 		return token, err
 	}
 
-	err = app.authStore.SaveToken(ctx, &shared.CreateTokenDTO{
+	err = app.adapter.Token().SaveToken(ctx, &shared.CreateTokenDTO{
 		Type:       shared.TokenTypesStateToken,
 		Identifier: payload.Token,
 		Expires:    config.Expires(),
@@ -424,7 +420,7 @@ func (app *BaseAuthService) CreateAndPersistStateToken(ctx context.Context, payl
 
 // CreateAuthTokensFromEmail implements AuthActions.
 func (app *BaseAuthService) CreateAuthTokensFromEmail(ctx context.Context, email string) (*shared.UserInfoTokens, error) {
-	user, err := app.authStore.GetUserInfo(ctx, email)
+	user, err := app.adapter.User().GetUserInfo(ctx, email)
 	if err != nil {
 		return nil, err
 	}
@@ -479,7 +475,7 @@ func (app *BaseAuthService) CreateAuthTokens(ctx context.Context, payload *share
 		if err != nil {
 			return token, err
 		}
-		err = app.authStore.SaveToken(
+		err = app.adapter.Token().SaveToken(
 			ctx,
 			&shared.CreateTokenDTO{
 				Type:       shared.TokenTypesRefreshToken,
@@ -517,7 +513,7 @@ func (app *BaseAuthService) CheckResetPasswordToken(ctx context.Context, tokenHa
 	if err != nil {
 		return fmt.Errorf("error verifying password reset token: %w", err)
 	}
-	token, err := app.authStore.GetToken(ctx, claims.Token)
+	token, err := app.adapter.Token().GetToken(ctx, claims.Token)
 	if err != nil {
 		return err
 	}
@@ -535,16 +531,16 @@ func (app *BaseAuthService) HandlePasswordResetToken(ctx context.Context, token,
 	if err != nil {
 		return fmt.Errorf("error verifying password reset token: %w", err)
 	}
-	_, err = app.authStore.GetToken(ctx, token) // corrected 'tokne' to 'token'
+	_, err = app.adapter.Token().GetToken(ctx, token) // corrected 'tokne' to 'token'
 	if err != nil {
 		return err
 	}
-	err = app.authStore.DeleteToken(ctx, token) // corrected to use 'app.token'
+	err = app.adapter.Token().DeleteToken(ctx, token) // corrected to use 'app.token'
 	if err != nil {
 		return fmt.Errorf("error deleting token: %w", err)
 	}
 
-	user, err := app.authStore.FindUser(
+	user, err := app.adapter.User().FindUser(
 		ctx,
 		&stores.UserFilter{
 			Emails: []string{claims.Email},
@@ -557,7 +553,10 @@ func (app *BaseAuthService) HandlePasswordResetToken(ctx context.Context, token,
 		return fmt.Errorf("user not found")
 	}
 
-	account, err := app.authStore.FindUserAccountByUserIdAndProvider(ctx, user.ID, models.ProvidersCredentials)
+	account, err := app.adapter.UserAccount().FindUserAccount(ctx, &stores.UserAccountFilter{
+		UserIds:   []uuid.UUID{user.ID},
+		Providers: []models.Providers{models.ProvidersCredentials},
+	})
 	if err != nil {
 		return fmt.Errorf("error getting user account: %w", err)
 	}
@@ -569,7 +568,7 @@ func (app *BaseAuthService) HandlePasswordResetToken(ctx context.Context, token,
 		return fmt.Errorf("error at hashing password: %w", err)
 	}
 	account.Password = &hash
-	err = app.authStore.UpdateUserAccount(ctx, account)
+	err = app.adapter.UserAccount().UpdateUserAccount(ctx, account)
 	if err != nil {
 		return fmt.Errorf("error updating user password: %w", err)
 	}
@@ -583,11 +582,11 @@ func (app *BaseAuthService) VerifyStateToken(ctx context.Context, token string) 
 	if err != nil {
 		return nil, fmt.Errorf("error verifying state token: %w", err)
 	}
-	_, err = app.authStore.GetToken(ctx, token) // corrected 'tokne' to 'token'
+	_, err = app.adapter.Token().GetToken(ctx, token) // corrected 'tokne' to 'token'
 	if err != nil {
 		return nil, err
 	}
-	err = app.authStore.DeleteToken(ctx, token) // corrected to use 'app.token'
+	err = app.adapter.Token().DeleteToken(ctx, token) // corrected to use 'app.token'
 	if err != nil {
 		return nil, fmt.Errorf("error deleting token: %w", err)
 	}
@@ -600,7 +599,7 @@ func (app *BaseAuthService) HandleAccessToken(ctx context.Context, token string)
 	if err != nil {
 		return nil, fmt.Errorf("error verifying access token: %w", err)
 	}
-	return app.authStore.GetUserInfo(ctx, claims.Email)
+	return app.adapter.User().GetUserInfo(ctx, claims.Email)
 }
 
 // HandleRefreshToken implements AuthActions.
@@ -611,15 +610,15 @@ func (app *BaseAuthService) HandleRefreshToken(ctx context.Context, token string
 	if err != nil {
 		return nil, fmt.Errorf("error verifying refresh token: %w", err)
 	}
-	_, err = app.authStore.GetToken(ctx, claims.Token)
+	_, err = app.adapter.Token().GetToken(ctx, claims.Token)
 	if err != nil {
 		return nil, fmt.Errorf("error getting token: %w", err) // corrected to return nil before the error
 	}
-	err = app.authStore.DeleteToken(ctx, claims.Token)
+	err = app.adapter.Token().DeleteToken(ctx, claims.Token)
 	if err != nil {
 		return nil, fmt.Errorf("error deleting token: %w", err)
 	}
-	info, err := app.authStore.GetUserInfo(ctx, claims.Email)
+	info, err := app.adapter.User().GetUserInfo(ctx, claims.Email)
 	if err != nil {
 		return nil, err
 	}
@@ -632,15 +631,15 @@ func (app *BaseAuthService) HandleVerificationToken(ctx context.Context, token s
 	if err != nil {
 		return fmt.Errorf("error verifying verification token: %w", err)
 	}
-	_, err = app.authStore.GetToken(ctx, claims.Token)
+	_, err = app.adapter.Token().GetToken(ctx, claims.Token)
 	if err != nil {
 		return fmt.Errorf("error getting token: %w", err)
 	}
-	err = app.authStore.DeleteToken(ctx, claims.Token)
+	err = app.adapter.Token().DeleteToken(ctx, claims.Token)
 	if err != nil {
 		return fmt.Errorf("error deleting token: %w", err)
 	}
-	user, err := app.authStore.FindUser(
+	user, err := app.adapter.User().FindUser(
 		ctx,
 		&stores.UserFilter{
 			Emails: []string{claims.Email},
@@ -657,7 +656,7 @@ func (app *BaseAuthService) HandleVerificationToken(ctx context.Context, token s
 	}
 	now := time.Now()
 	user.EmailVerifiedAt = &now
-	err = app.authStore.UpdateUser(ctx, user)
+	err = app.adapter.User().UpdateUser(ctx, user)
 	if err != nil {
 		return fmt.Errorf("error updating user: %w", err)
 	}
@@ -688,52 +687,71 @@ func (app *BaseAuthService) VerifyAndParseOtpToken(ctx context.Context, emailTyp
 
 // methods
 
-func (app *BaseAuthService) CreateUser(ctx context.Context, store AuthStore, params *shared.AuthenticationInput) (*models.User, error) {
-	fmt.Println("User does not exist, creating user")
-	user, err := store.CreateUser(ctx, &models.User{
-		Email:           params.Email,
-		Name:            params.Name,
-		Image:           params.AvatarUrl,
-		EmailVerifiedAt: params.EmailVerifiedAt,
-	})
-
+func (app *BaseAuthService) CreateUserAndAccount(ctx context.Context, params *shared.AuthenticationInput) (*models.User, error) {
+	user, err := app.adapter.User().CreateUser(
+		ctx,
+		&models.User{
+			Email:           params.Email,
+			Name:            params.Name,
+			Image:           params.AvatarUrl,
+			EmailVerifiedAt: params.EmailVerifiedAt,
+		},
+	)
 	if err != nil {
-		return nil, fmt.Errorf("error at creating user: %w", err)
+		return nil, err
 	}
 	if user == nil {
 		return nil, fmt.Errorf("user not created")
 	}
-	params.UserId = &user.ID
+	err1 := app.HashInputPassword(params)
+	if err1 != nil {
+		return nil, err1
+	}
+	account, err := app.adapter.UserAccount().CreateUserAccount(
+		ctx,
+		&models.UserAccount{
+			UserID:            user.ID,
+			Type:              models.ProviderTypes(params.Type),
+			Provider:          models.Providers(params.Provider),
+			ProviderAccountID: params.ProviderAccountID,
+			Password:          params.HashPassword,
+			AccessToken:       params.AccessToken,
+			RefreshToken:      params.RefreshToken,
+		},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("error at creating user account: %w", err)
+	}
+	if account == nil {
+		return nil, fmt.Errorf("user account not created")
+	}
 	return user, nil
 }
 
-func (app *BaseAuthService) CreateAccount(ctx context.Context, store AuthStore, user *models.User, params *shared.AuthenticationInput) (*models.UserAccount, error) {
-	fmt.Println("Account does not exist, creating account")
-	if params.Type == shared.ProviderTypeCredentials {
-		if params.HashPassword == nil {
-			if params.Password == nil {
-				return nil, fmt.Errorf("password is nil")
-			}
-			if pw, err := app.password.HashPassword(*params.Password); err != nil {
-				return nil, fmt.Errorf("error at hashing password: %w", err)
-			} else {
-				params.HashPassword = &pw
-			}
-			if params.HashPassword == nil {
-				return nil, fmt.Errorf("password is nil")
-			}
-		}
+func (app *BaseAuthService) CreateAccountFromUser(ctx context.Context, user *models.User, params *shared.AuthenticationInput) (*models.UserAccount, error) {
+	err := app.HashInputPassword(params)
+	if err != nil {
+		return nil, err
 	}
-	// link account of requested type
-	return store.CreateUserAccount(ctx, &models.UserAccount{
-		UserID:            user.ID,
-		Type:              models.ProviderTypes(params.Type),
-		Provider:          models.Providers(params.Provider),
-		ProviderAccountID: params.ProviderAccountID,
-		Password:          params.HashPassword,
-		AccessToken:       params.AccessToken,
-		RefreshToken:      params.RefreshToken,
-	})
+	account, err := app.adapter.UserAccount().CreateUserAccount(
+		ctx,
+		&models.UserAccount{
+			UserID:            user.ID,
+			Type:              models.ProviderTypes(params.Type),
+			Provider:          models.Providers(params.Provider),
+			ProviderAccountID: params.ProviderAccountID,
+			Password:          params.HashPassword,
+			AccessToken:       params.AccessToken,
+			RefreshToken:      params.RefreshToken,
+		},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("error at creating user account: %w", err)
+	}
+	if account == nil {
+		return nil, fmt.Errorf("user account not created")
+	}
+	return account, nil
 }
 
 func (app *BaseAuthService) Authenticate(ctx context.Context, params *shared.AuthenticationInput) (*models.User, error) {
@@ -741,152 +759,43 @@ func (app *BaseAuthService) Authenticate(ctx context.Context, params *shared.Aut
 	var account *models.UserAccount
 	var err error
 
-	user, err = app.authStore.FindUser(
+	user, err = app.adapter.User().FindUser(
 		ctx,
 		&stores.UserFilter{
 			Emails: []string{params.Email},
 		},
 	)
-	// user, err = app.adapter.User().FindOne(
-	// 	ctx,
-	// 	&resource.UserFilter{
-	// 		Emails: []string{params.Email},
-	// 	},
-	// )
-	if err != nil {
-		return nil, fmt.Errorf("error at getting user by email: %w", err)
-	}
-	// if user exists, get user account
-	if user != nil {
-		account, err = app.authStore.FindUserAccountByUserIdAndProvider(
-			ctx,
-			user.ID,
-			models.ProvidersCredentials,
-		)
-		// account, err = app.adapter.UserAccount().FindOne(
-		// 	ctx,
-		// 	&resource.UserAccountFilter{
-		// 		UserIds: []uuid.UUID{user.ID},
-		// 		Providers: []models.Providers{
-		// 			models.Providers(params.Provider),
-		// 		},
-		// 	},
-		// )
-		if err != nil {
-			return nil, fmt.Errorf("error at getting user account: %w", err)
-		}
-	}
+
+	// if err != nil {
+	// 	return nil, fmt.Errorf("error at getting user by email: %w", err)
+	// }
+	// // if user exists, get user account
+	// if user != nil {
+	// 	user, err = app.CreateUserAndAccount(ctx, params)
+	// }
 
 	// if user does not exist, Create User and UserAccount ----------------------------------------------------------------------------------------------------
 	if user == nil {
-		err = func(store AuthStore) error {
-			user, err = func() (*models.User, error) {
-				user, err := app.authStore.CreateUser(
-					ctx,
-					&models.User{
-						Email:           params.Email,
-						Name:            params.Name,
-						Image:           params.AvatarUrl,
-						EmailVerifiedAt: params.EmailVerifiedAt,
-					},
-				)
-				// user, err := app.authStore.CreateUser(
-				// 	ctx,
-				// 	&models.User{
-				// 		Email:           params.Email,
-				// 		Name:            params.Name,
-				// 		Image:           params.AvatarUrl,
-				// 		EmailVerifiedAt: params.EmailVerifiedAt,
-				// 	},
-				// )
-				if err != nil {
-					return nil, fmt.Errorf("error at creating user: %w", err)
-				}
-				if user == nil {
-					return nil, fmt.Errorf("user not created")
-				}
-				params.UserId = &user.ID
-				return user, nil
-			}()
-			if err != nil {
-				return err
-			}
-			if user == nil {
-				return fmt.Errorf("user not created")
-			}
-			account, err = func() (*models.UserAccount, error) {
-				fmt.Println("Account does not exist, creating account")
-				if params.Type == shared.ProviderTypeCredentials {
-					if params.HashPassword == nil {
-						if params.Password == nil {
-							return nil, fmt.Errorf("password is nil")
-						}
-						if pw, err := app.password.HashPassword(*params.Password); err != nil {
-							return nil, fmt.Errorf("error at hashing password: %w", err)
-						} else {
-							params.HashPassword = &pw
-						}
-						if params.HashPassword == nil {
-							return nil, fmt.Errorf("password is nil")
-						}
-					}
-				}
-				return app.authStore.CreateUserAccount(
-					ctx,
-					&models.UserAccount{
-						UserID:            user.ID,
-						Type:              models.ProviderTypes(params.Type),
-						Provider:          models.Providers(params.Provider),
-						ProviderAccountID: params.ProviderAccountID,
-						Password:          params.HashPassword,
-						AccessToken:       params.AccessToken,
-						RefreshToken:      params.RefreshToken,
-					},
-				)
-			}()
-			if err != nil {
-				return err
-			}
-			if account == nil {
-				return fmt.Errorf("account not created")
-			}
-			return nil
-		}(app.authStore)
-
+		newUser, err := app.CreateUserAndAccount(ctx, params)
 		if err != nil {
-			return nil, fmt.Errorf("error at creating user: %w", err)
+			return nil, err
 		}
-		if user == nil {
-			return nil, fmt.Errorf("user not created")
-		}
-		if user.EmailVerifiedAt == nil {
-			// err = app.enqueuer.Enqueue(
-			// 	ctx,
-			// 	workers.OtpEmailJobArgs{
-			// 		Type:   mailer.EmailTypeVerify,
-			// 		UserID: user.ID,
-			// 	},
-			// 	nil,
-			// 	time.Now(),
-			// 	1,
-			// )
-			app.routine.FireAndForget(
-				func() {
-					ctx := context.Background()
-					fmt.Println("User is first login, sending verification email")
-					err := app.SendOtpEmail(mailer.EmailTypeVerify, ctx, user)
-					if err != nil {
-						app.logger.Error(
-							"error sending verification email",
-							slog.Any("error", err),
-							slog.String("email", user.Email),
-							slog.String("userId", user.ID.String()),
-						)
-					}
-				},
-			)
-		}
-		return user, nil
+		app.routine.FireAndForget(
+			func() {
+				ctx := context.Background()
+				fmt.Println("User is first login, sending verification email")
+				err := app.SendOtpEmail(mailer.EmailTypeVerify, ctx, newUser)
+				if err != nil {
+					app.logger.Error(
+						"error sending verification email",
+						slog.Any("error", err),
+						slog.String("email", newUser.Email),
+						slog.String("userId", newUser.ID.String()),
+					)
+				}
+			},
+		)
+		return newUser, nil
 	}
 	// if user exists, but requested account type does not exist, Create UserAccount  of requested type ----------------------------------------------------------------------------------------------------
 	if account == nil {
@@ -900,8 +809,26 @@ func (app *BaseAuthService) Authenticate(ctx context.Context, params *shared.Aut
 			}
 		}
 		// err = app.authStore.RunInTransaction(
-		err = func(store AuthStore) error {
-			account, err = app.CreateAccount(ctx, app.authStore, user, params)
+		err = func() error {
+			account, err = func() (*models.UserAccount, error) {
+				fmt.Println("Account does not exist, creating account")
+				err1 := app.HashInputPassword(params)
+				if err1 != nil {
+					return nil, err1
+				}
+				return app.adapter.UserAccount().CreateUserAccount(
+					ctx,
+					&models.UserAccount{
+						UserID:            user.ID,
+						Type:              models.ProviderTypes(params.Type),
+						Provider:          models.Providers(params.Provider),
+						ProviderAccountID: params.ProviderAccountID,
+						Password:          params.HashPassword,
+						AccessToken:       params.AccessToken,
+						RefreshToken:      params.RefreshToken,
+					},
+				)
+			}()
 			if err != nil {
 				return fmt.Errorf("error at linking account: %w", err)
 			}
@@ -922,7 +849,7 @@ func (app *BaseAuthService) Authenticate(ctx context.Context, params *shared.Aut
 				}
 			}
 			return nil
-		}(app.authStore)
+		}()
 		// )
 		if err != nil {
 			return nil, fmt.Errorf("error at creating user account: %w", err)
@@ -971,13 +898,34 @@ func (app *BaseAuthService) Authenticate(ctx context.Context, params *shared.Aut
 	return user, nil
 }
 
-// func newFunction(ctx context.Context, err error, app *BaseAuthService, user *models.User) error {
-// 	err = app.authStore.AssignUserRoles(ctx, user.ID, shared.PermissionNameBasic)
-// 	return err
-// }
+func (app *BaseAuthService) HashInputPassword(params *shared.AuthenticationInput) error {
+	if params.Type == shared.ProviderTypeCredentials {
+		if params.HashPassword == nil {
+			if params.Password == nil {
+				return fmt.Errorf("password is nil")
+			}
+			if pw, err := app.password.HashPassword(*params.Password); err != nil {
+				return fmt.Errorf("error at hashing password: %w", err)
+			} else {
+				params.HashPassword = &pw
+			}
+			if params.HashPassword == nil {
+				return fmt.Errorf("password is nil")
+			}
+		}
+	}
+	return nil
+}
 
-func (app *BaseAuthService) UpdateUserVerifiedOrResetPassword(ctx context.Context, store AuthStore, user *models.User, params *shared.AuthenticationInput) (bool, error) {
+func (app *BaseAuthService) getAdapter(tx ...stores.StorageAdapterInterface) stores.StorageAdapterInterface {
+	if len(tx) > 0 {
+		return tx[0]
+	}
+	return app.adapter
+}
 
+func (app *BaseAuthService) UpdateUserVerifiedOrResetPassword(ctx context.Context, store AuthStore, user *models.User, params *shared.AuthenticationInput, tx ...stores.StorageAdapterInterface) (bool, error) {
+	adapter := app.getAdapter(tx...)
 	if user == nil || params == nil {
 		return false, fmt.Errorf("user not found")
 	}
@@ -989,7 +937,10 @@ func (app *BaseAuthService) UpdateUserVerifiedOrResetPassword(ctx context.Contex
 			// and if incoming request is oauth,
 			if params.Type == shared.ProviderTypeOAuth {
 				//  check if user has a credentials account
-				account, err := store.FindUserAccountByUserIdAndProvider(ctx, user.ID, models.ProvidersCredentials)
+				account, err := adapter.UserAccount().FindUserAccount(ctx, &stores.UserAccountFilter{
+					UserIds:   []uuid.UUID{user.ID},
+					Providers: []models.Providers{models.ProvidersCredentials},
+				})
 
 				if err != nil {
 					return false, fmt.Errorf("error loading user accounts: %w", err)
@@ -1003,7 +954,7 @@ func (app *BaseAuthService) UpdateUserVerifiedOrResetPassword(ctx context.Contex
 						return false, fmt.Errorf("error at hashing password: %w", err)
 					}
 					account.Password = &hash
-					err = store.UpdateUserAccount(ctx, account)
+					err = adapter.UserAccount().UpdateUserAccount(ctx, account)
 					if err != nil {
 						return false, fmt.Errorf("error updating user password: %w", err)
 					}
@@ -1011,9 +962,8 @@ func (app *BaseAuthService) UpdateUserVerifiedOrResetPassword(ctx context.Contex
 
 				}
 			}
-			fmt.Println("updating user email verified at")
 			user.EmailVerifiedAt = params.EmailVerifiedAt
-			err := store.UpdateUser(ctx, user)
+			err := adapter.User().UpdateUser(ctx, user)
 			if err != nil {
 				return false, fmt.Errorf("error updating user email confirmation: %w", err)
 			}
@@ -1022,3 +972,5 @@ func (app *BaseAuthService) UpdateUserVerifiedOrResetPassword(ctx context.Contex
 	}
 	return reset, nil
 }
+
+func (app *BaseAuthService) UpdateAccountWithRandomePassword()

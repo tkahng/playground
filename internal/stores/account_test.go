@@ -4,6 +4,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
@@ -41,8 +42,11 @@ func TestAccountStore_CRUD(t *testing.T) {
 			assert.NotNil(t, linkedAccount)
 		})
 
-		t.Run("FindUserAccountByUserIdAndProvider", func(t *testing.T) {
-			got, err := store.FindUserAccountByUserIdAndProvider(ctx, userID, models.ProvidersGoogle)
+		t.Run("FindUserAccount", func(t *testing.T) {
+			got, err := store.FindUserAccount(ctx, &UserAccountFilter{
+				UserIds:   []uuid.UUID{userID},
+				Providers: []models.Providers{models.ProvidersGoogle},
+			})
 			assert.NoError(t, err)
 			assert.NotNil(t, got)
 			assert.Equal(t, account.ProviderAccountID, got.ProviderAccountID)

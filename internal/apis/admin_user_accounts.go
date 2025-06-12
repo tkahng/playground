@@ -82,11 +82,11 @@ func (api *Api) AdminUserAccounts(ctx context.Context, input *UserAccountFilter)
 	filter.Ids = utils.ParseValidUUIDs(input.Ids)
 	filter.UserIds = utils.ParseValidUUIDs(input.UserIds)
 
-	data, err := api.app.UserAccount().Store().ListUserAccounts(ctx, filter)
+	data, err := api.app.Adapter().UserAccount().ListUserAccounts(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
-	count, err := api.app.UserAccount().Store().CountUserAccounts(ctx, filter)
+	count, err := api.app.Adapter().UserAccount().CountUserAccounts(ctx, filter)
 	if err != nil {
 		return nil, err
 	}

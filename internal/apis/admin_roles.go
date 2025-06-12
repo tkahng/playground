@@ -159,7 +159,7 @@ func (api *Api) AdminUserRolesDelete(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	user, err := api.app.User().Store().FindUserByID(ctx, id)
+	user, err := api.app.Adapter().User().FindUserByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -201,7 +201,7 @@ func (api *Api) AdminUserRolesCreate(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	user, err := api.app.User().Store().FindUserByID(ctx, id)
+	user, err := api.app.Adapter().User().FindUserByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -239,7 +239,7 @@ type RoleIdsInput struct {
 // 	if err != nil {
 // 		return nil, err
 // 	}
-// 	user, err := api.app.User().Store().FindUserByID(ctx, id)
+// 	user, err := api.app.Adapter().User().FindUserByID(ctx, id)
 // 	if err != nil {
 // 		return nil, err
 // 	}

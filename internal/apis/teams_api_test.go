@@ -69,7 +69,7 @@ func createUnverifiedUser(app *core.BaseAppDecorator) (*shared.UserInfo, error) 
 	if err != nil {
 		return nil, err
 	}
-	_, err = app.UserAccount().Store().CreateUserAccount(context.Background(), &models.UserAccount{
+	_, err = app.Adapter().UserAccount().CreateUserAccount(context.Background(), &models.UserAccount{
 		UserID:            user.ID,
 		Provider:          models.ProvidersGoogle,
 		Type:              "oauth",
@@ -320,7 +320,7 @@ func TestUpdateTeam_failedNotOwner(t *testing.T) {
 		appApi := apis.NewApi(app)
 		_, api := humatest.New(t)
 		apis.AddRoutes(api, appApi)
-		user1, err := app.User().Store().CreateUser(
+		user1, err := app.Adapter().User().CreateUser(
 			ctx,
 			&models.User{
 				Email: "user1@example",
@@ -341,7 +341,7 @@ func TestUpdateTeam_failedNotOwner(t *testing.T) {
 			t.Errorf("Error creating user: %v", err)
 			return
 		}
-		user2, err := app.User().Store().CreateUser(
+		user2, err := app.Adapter().User().CreateUser(
 			ctx,
 			&models.User{
 				Email: "user2@example",
@@ -392,7 +392,7 @@ func TestUpdateTeam_successOwner(t *testing.T) {
 		appApi := apis.NewApi(app)
 		_, api := humatest.New(t)
 		apis.AddRoutes(api, appApi)
-		user1, err := app.User().Store().CreateUser(
+		user1, err := app.Adapter().User().CreateUser(
 			ctx,
 			&models.User{
 				Email: "user1@example",
@@ -442,7 +442,7 @@ func TestDeleteTeam_successOwner(t *testing.T) {
 		appApi := apis.NewApi(app)
 		_, api := humatest.New(t)
 		apis.AddRoutes(api, appApi)
-		user1, err := app.User().Store().CreateUser(
+		user1, err := app.Adapter().User().CreateUser(
 			ctx,
 			&models.User{
 				Email: "user1@example",
@@ -486,7 +486,7 @@ func TestDeleteTeam_failNonOwner(t *testing.T) {
 		appApi := apis.NewApi(app)
 		_, api := humatest.New(t)
 		apis.AddRoutes(api, appApi)
-		user1, err := app.User().Store().CreateUser(
+		user1, err := app.Adapter().User().CreateUser(
 			ctx,
 			&models.User{
 				Email: "user1@example",
@@ -507,7 +507,7 @@ func TestDeleteTeam_failNonOwner(t *testing.T) {
 			t.Errorf("Error creating user: %v", err)
 			return
 		}
-		user2, err := app.User().Store().CreateUser(
+		user2, err := app.Adapter().User().CreateUser(
 			ctx,
 			&models.User{
 				Email: "user2@example",
@@ -554,7 +554,7 @@ func TestGetActiveTeamMember_success(t *testing.T) {
 		appApi := apis.NewApi(app)
 		_, api := humatest.New(t)
 		apis.AddRoutes(api, appApi)
-		user1, err := app.User().Store().CreateUser(
+		user1, err := app.Adapter().User().CreateUser(
 			ctx,
 			&models.User{
 				Email: "user1@example",
@@ -609,7 +609,7 @@ func TestGetActiveTeamMember_nomember(t *testing.T) {
 		appApi := apis.NewApi(app)
 		_, api := humatest.New(t)
 		apis.AddRoutes(api, appApi)
-		user1, err := app.User().Store().CreateUser(
+		user1, err := app.Adapter().User().CreateUser(
 			ctx,
 			&models.User{
 				Email: "user1@example",
@@ -642,7 +642,7 @@ func TestGetUserTeamMembers_basic(t *testing.T) {
 		appApi := apis.NewApi(app)
 		_, api := humatest.New(t)
 		apis.AddRoutes(api, appApi)
-		user1, err := app.User().Store().CreateUser(
+		user1, err := app.Adapter().User().CreateUser(
 			ctx,
 			&models.User{
 				Email: "user1@example",
@@ -697,7 +697,7 @@ func TestGetUserTeamMembers_sortbyname(t *testing.T) {
 		appApi := apis.NewApi(app)
 		_, api := humatest.New(t)
 		apis.AddRoutes(api, appApi)
-		user1, err := app.User().Store().CreateUser(
+		user1, err := app.Adapter().User().CreateUser(
 			ctx,
 			&models.User{
 				Email: "user1@example",
@@ -765,7 +765,7 @@ func TestGetUserTeamMembers_sortbyname2(t *testing.T) {
 		appApi := apis.NewApi(app)
 		_, api := humatest.New(t)
 		apis.AddRoutes(api, appApi)
-		user1, err := app.User().Store().CreateUser(
+		user1, err := app.Adapter().User().CreateUser(
 			ctx,
 			&models.User{
 				Email: "user1@example",
