@@ -49,6 +49,30 @@ type StorageAdapterDecorator struct {
 	TeamMemberFunc     *TeamMemberStoreDecorator
 }
 
+func (s *StorageAdapterDecorator) Cleanup() {
+	if s == nil {
+		return
+	}
+	if s.UserFunc != nil {
+		s.UserFunc.Cleanup()
+	}
+	if s.UserAccountFunc != nil {
+		s.UserAccountFunc.Cleanup()
+	}
+	if s.TokenFunc != nil {
+		s.TokenFunc.Cleanup()
+	}
+	if s.TeamGroupFunc != nil {
+		s.TeamGroupFunc.Cleanup()
+	}
+	if s.TeamInvitationFunc != nil {
+		s.TeamInvitationFunc.Cleanup()
+	}
+	if s.TeamMemberFunc != nil {
+		s.TeamMemberFunc.Cleanup()
+	}
+}
+
 // Customer implements StorageAdapterInterface.
 func (s *StorageAdapterDecorator) Customer() DbCustomerStoreInterface {
 	panic("unimplemented")

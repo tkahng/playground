@@ -23,6 +23,20 @@ type TeamGroupStoreDecorator struct {
 	UpdateTeamFunc                 func(ctx context.Context, teamId uuid.UUID, name string) (*models.Team, error)
 }
 
+func (t *TeamGroupStoreDecorator) Cleanup() {
+	t.CheckTeamSlugFunc = nil
+	t.CountTeamsFunc = nil
+	t.CreateTeamFunc = nil
+	t.DeleteTeamFunc = nil
+	t.FindTeamFunc = nil
+	t.FindTeamByIDFunc = nil
+	t.FindTeamBySlugFunc = nil
+	t.FindTeamByStripeCustomerIdFunc = nil
+	t.ListTeamsFunc = nil
+	t.LoadTeamsByIdsFunc = nil
+	t.UpdateTeamFunc = nil
+}
+
 // CheckTeamSlug implements DbTeamGroupStoreInterface.
 func (t *TeamGroupStoreDecorator) CheckTeamSlug(ctx context.Context, slug string) (bool, error) {
 	if t.CheckTeamSlugFunc != nil {

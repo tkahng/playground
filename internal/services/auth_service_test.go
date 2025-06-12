@@ -21,13 +21,13 @@ import (
 
 func TestHandleRefreshToken(t *testing.T) {
 	ctx := context.Background()
-	// mockStorage := new(MockAuthStore)
-	mockStorage := stores.NewStoreDecorators()
+	// adapter := new(MockAuthStore)
+	adapter := stores.NewAdapterDecorators()
 	// adatper := resource.NewResourceDecoratorAdapter()
 	mockToken := NewJwtServiceDecorator()
 	app := &BaseAuthService{
-		token:     mockToken,
-		authStore: mockStorage,
+		token:   mockToken,
+		adapter: adapter,
 		// adapter:   adatper,
 		options: &conf.AppOptions{
 			Auth: conf.AuthOptions{
@@ -50,15 +50,15 @@ func TestHandleRefreshToken(t *testing.T) {
 			name:  "valid refresh token",
 			token: "valid.token.here",
 			setupMocks: func() {
-				mockStorage.Cleanup()
+				adapter.TokenFunc.Cleanup()
 				mockToken.Cleanup()
-				mockStorage.GetTokenFunc = func(ctx context.Context, token string) (*models.Token, error) {
+				adapter.TokenFunc.GetTokenFunc = func(ctx context.Context, token string) (*models.Token, error) {
 					return &models.Token{
 						Type:  models.TokenTypesRefreshToken,
 						Token: "valid.token.here",
 					}, nil
 				}
-				mockStorage.DeleteTokenFunc = func(ctx context.Context, token string) error {
+				adapter.TokenFunc.DeleteTokenFunc = func(ctx context.Context, token string) error {
 					return nil
 				}
 				mockToken.ParseTokenFunc = func(token string, config conf.TokenOption, data any) error {
@@ -69,7 +69,7 @@ func TestHandleRefreshToken(t *testing.T) {
 					return "new.valid.token.here", nil
 				}
 
-				mockStorage.GetUserInfoFunc = func(ctx context.Context, email string) (*shared.UserInfo, error) {
+				adapter.UserFunc.GetUserInfoFunc = func(ctx context.Context, email string) (*shared.UserInfo, error) {
 					return &shared.UserInfo{
 						User: shared.User{
 							ID:    uuid.New(),
@@ -77,7 +77,7 @@ func TestHandleRefreshToken(t *testing.T) {
 						},
 					}, nil
 				}
-				mockStorage.SaveTokenFunc = func(ctx context.Context, token *shared.CreateTokenDTO) error {
+				adapter.TokenFunc.SaveTokenFunc = func(ctx context.Context, token *shared.CreateTokenDTO) error {
 					return nil
 				}
 			},
@@ -130,13 +130,13 @@ func TestHandleRefreshToken(t *testing.T) {
 }
 func TestResetPassword(t *testing.T) {
 	ctx := context.Background()
-	storageDecorators := stores.NewStoreDecorators()
+	storageDecorators := stores.NewAdapterDecorators()
 	// adapter := resource.NewResourceDecoratorAdapter()
 	// mockStorage := new(MockAuthStore)
 	passwordManager := NewPasswordService()
 	app := &BaseAuthService{
-		authStore: storageDecorators,
-		password:  passwordManager,
+		adapter:  storageDecorators,
+		password: passwordManager,
 		// adapter:   adapter,
 	}
 
@@ -174,7 +174,7 @@ func TestResetPassword(t *testing.T) {
 			newPassword: testNewPassword,
 			setupMocks: func() {
 				storageDecorators.Cleanup()
-				storageDecorators.FindUserAccountByUserIdAndProviderFunc = func(ctx context.Context, userId uuid.UUID, provider models.Providers) (*models.UserAccount, error) {
+				storageDecorators.UserAccountFunc.FindUserAccountByUserIdAndProviderFunc = func(ctx context.Context, userId uuid.UUID, provider models.Providers) (*models.UserAccount, error) {
 					return &models.UserAccount{
 						Password: &testHashedPassword,
 						UserID:   userId,
@@ -188,7 +188,7 @@ func TestResetPassword(t *testing.T) {
 				// 		Provider: models.ProvidersCredentials,
 				// 		Type:     models.ProviderTypeCredentials,
 				// 	}, nil)
-				storageDecorators.UpdateUserAccountFunc = func(ctx context.Context, account *models.UserAccount) error {
+				storageDecorators.UserAccountFunc.UpdateUserAccountFunc = func(ctx context.Context, account *models.UserAccount) error {
 					return nil
 				}
 				// mockStorage.On("UpdateUserAccount", ctx, mock.Anything).Return(nil)
@@ -202,7 +202,7 @@ func TestResetPassword(t *testing.T) {
 			newPassword: testNewPassword,
 			setupMocks: func() {
 				storageDecorators.Cleanup()
-				storageDecorators.FindUserAccountByUserIdAndProviderFunc = func(ctx context.Context, userId uuid.UUID, provider models.Providers) (*models.UserAccount, error) {
+				storageDecorators.UserAccountFunc.FindUserAccountByUserIdAndProviderFunc = func(ctx context.Context, userId uuid.UUID, provider models.Providers) (*models.UserAccount, error) {
 					return nil, nil
 				}
 				// mockStorage.On("FindUserAccountByUserIdAndProvider", ctx, testUserId, models.ProvidersCredentials).
@@ -217,7 +217,7 @@ func TestResetPassword(t *testing.T) {
 			newPassword: testNewPassword,
 			setupMocks: func() {
 				storageDecorators.Cleanup()
-				storageDecorators.FindUserAccountByUserIdAndProviderFunc = func(ctx context.Context, userId uuid.UUID, provider models.Providers) (*models.UserAccount, error) {
+				storageDecorators.UserAccountFunc.FindUserAccountByUserIdAndProviderFunc = func(ctx context.Context, userId uuid.UUID, provider models.Providers) (*models.UserAccount, error) {
 					return &models.UserAccount{Password: &testHashedPassword}, nil
 				}
 				// mockStorage.On("FindUserAccountByUserIdAndProvider", ctx, testUserId, models.ProvidersCredentials).
@@ -251,7 +251,7 @@ func TestResetPassword(t *testing.T) {
 
 func TestAuthenticate(t *testing.T) {
 	ctx := context.Background()
-	storeDecorator := stores.NewStoreDecorators()
+	storeDecorator := stores.NewAdapterDecorators()
 	// adapter := resource.NewResourceDecoratorAdapter()
 	mockToken := NewJwtService()
 	mockPassword := NewPasswordServiceDecorator()
@@ -271,12 +271,12 @@ func TestAuthenticate(t *testing.T) {
 	}
 	app := &BaseAuthService{
 		// adapter:   adapter,
-		authStore: storeDecorator,
-		token:     mockToken,
-		password:  mockPassword,
-		routine:   mockRoutineService,
-		mail:      mockMailService,
-		options:   settings,
+		adapter:  storeDecorator,
+		token:    mockToken,
+		password: mockPassword,
+		routine:  mockRoutineService,
+		mail:     mockMailService,
+		options:  settings,
 	}
 
 	testUserId := uuid.New()
@@ -302,12 +302,12 @@ func TestAuthenticate(t *testing.T) {
 			setupMocks: func() {
 				storeDecorator.Cleanup()
 				mockPassword.Cleanup()
-				storeDecorator.FindUserFunc = func(ctx context.Context, user *stores.UserFilter) (*models.User, error) {
+				storeDecorator.UserFunc.FindUserFunc = func(ctx context.Context, user *stores.UserFilter) (*models.User, error) {
 					return nil, nil // Simulate user not found
 				}
 				// mockStorage.On("FindUser", ctx, mock.Anything).Return(nil, nil)
 
-				storeDecorator.CreateUserFunc = func(ctx context.Context, user *models.User) (*models.User, error) {
+				storeDecorator.UserFunc.CreateUserFunc = func(ctx context.Context, user *models.User) (*models.User, error) {
 					return &models.User{ID: testUserId, Email: testEmail}, nil // Simulate user creation
 				}
 				// mockStorage.On("CreateUser", ctx, mock.Anything).Return(&models.User{ID: testUserId, Email: testEmail}, nil)
@@ -315,7 +315,7 @@ func TestAuthenticate(t *testing.T) {
 				mockPassword.HashPasswordFunc = func(password string) (string, error) {
 					return testHashedPassword, nil // Simulate password hashing
 				}
-				storeDecorator.CreateUserAccountFunc = func(ctx context.Context, account *models.UserAccount) (*models.UserAccount, error) {
+				storeDecorator.UserAccountFunc.CreateUserAccountFunc = func(ctx context.Context, account *models.UserAccount) (*models.UserAccount, error) {
 					return &models.UserAccount{
 						Password: &testHashedPassword,
 						UserID:   testUserId,
@@ -329,7 +329,7 @@ func TestAuthenticate(t *testing.T) {
 				// 	Provider: models.ProvidersCredentials,
 				// 	Type:     models.ProviderTypeCredentials,
 				// }, nil)
-				storeDecorator.SaveTokenFunc = func(ctx context.Context, token *shared.CreateTokenDTO) error {
+				storeDecorator.TokenFunc.SaveTokenFunc = func(ctx context.Context, token *shared.CreateTokenDTO) error {
 					return nil // Simulate token saving
 				}
 				// mockStorage.On("SaveToken", ctx, mock.Anything).Return(nil)
@@ -358,11 +358,11 @@ func TestAuthenticate(t *testing.T) {
 			setupMocks: func() {
 				storeDecorator.Cleanup()
 				mockPassword.Cleanup()
-				storeDecorator.FindUserFunc = func(ctx context.Context, user *stores.UserFilter) (*models.User, error) {
+				storeDecorator.UserFunc.FindUserFunc = func(ctx context.Context, user *stores.UserFilter) (*models.User, error) {
 					return &models.User{ID: testUserId, Email: testEmail}, nil // Simulate user found
 				}
 				// mockStorage.On("FindUser", ctx, mock.Anything).Return(&models.User{ID: testUserId, Email: testEmail}, nil)
-				storeDecorator.FindUserAccountByUserIdAndProviderFunc = func(ctx context.Context, userId uuid.UUID, provider models.Providers) (*models.UserAccount, error) {
+				storeDecorator.UserAccountFunc.FindUserAccountByUserIdAndProviderFunc = func(ctx context.Context, userId uuid.UUID, provider models.Providers) (*models.UserAccount, error) {
 					return &models.UserAccount{Password: &testHashedPassword}, nil // Simulate account found
 				}
 				// mockStorage.On("FindUserAccountByUserIdAndProvider", ctx, testUserId, models.ProvidersCredentials).
@@ -384,11 +384,11 @@ func TestAuthenticate(t *testing.T) {
 			setupMocks: func() {
 				storeDecorator.Cleanup()
 				mockPassword.Cleanup()
-				storeDecorator.FindUserFunc = func(ctx context.Context, user *stores.UserFilter) (*models.User, error) {
+				storeDecorator.UserFunc.FindUserFunc = func(ctx context.Context, user *stores.UserFilter) (*models.User, error) {
 					return &models.User{ID: testUserId, Email: testEmail}, nil // Simulate user found
 				}
 				// mockStorage.On("FindUser", ctx, mock.Anything).Return(&models.User{ID: testUserId, Email: testEmail}, nil)
-				storeDecorator.FindUserAccountByUserIdAndProviderFunc = func(ctx context.Context, userId uuid.UUID, provider models.Providers) (*models.UserAccount, error) {
+				storeDecorator.UserAccountFunc.FindUserAccountByUserIdAndProviderFunc = func(ctx context.Context, userId uuid.UUID, provider models.Providers) (*models.UserAccount, error) {
 					return &models.UserAccount{Password: &testHashedPassword}, nil // Simulate account found
 				}
 				// mockStorage.On("FindUserAccountByUserIdAndProvider", ctx, testUserId, models.ProvidersCredentials).
@@ -410,11 +410,11 @@ func TestAuthenticate(t *testing.T) {
 			setupMocks: func() {
 				storeDecorator.Cleanup()
 				mockPassword.Cleanup()
-				storeDecorator.FindUserFunc = func(ctx context.Context, user *stores.UserFilter) (*models.User, error) {
+				storeDecorator.UserFunc.FindUserFunc = func(ctx context.Context, user *stores.UserFilter) (*models.User, error) {
 					return &models.User{ID: testUserId, Email: testEmail}, nil // Simulate user found
 				}
 				// mockStorage.On("FindUser", ctx, mock.Anything).Return(&models.User{ID: testUserId, Email: testEmail}, nil)
-				storeDecorator.FindUserAccountByUserIdAndProviderFunc = func(ctx context.Context, userId uuid.UUID, provider models.Providers) (*models.UserAccount, error) {
+				storeDecorator.UserAccountFunc.FindUserAccountByUserIdAndProviderFunc = func(ctx context.Context, userId uuid.UUID, provider models.Providers) (*models.UserAccount, error) {
 					return nil, nil // Simulate account not found
 				}
 				// mockStorage.On("FindUserAccountByUserIdAndProvider", ctx, testUserId, models.ProvidersCredentials).Return(nil, nil)
@@ -422,7 +422,7 @@ func TestAuthenticate(t *testing.T) {
 					return testHashedPassword, nil // Simulate password hashing
 				}
 				// mockPassword.On("HashPassword", testPasswordStr).Return(testHashedPassword, nil)
-				storeDecorator.CreateUserAccountFunc = func(ctx context.Context, account *models.UserAccount) (*models.UserAccount, error) {
+				storeDecorator.UserAccountFunc.CreateUserAccountFunc = func(ctx context.Context, account *models.UserAccount) (*models.UserAccount, error) {
 					return &models.UserAccount{
 						Password: &testHashedPassword,
 						UserID:   testUserId,
@@ -452,13 +452,13 @@ func TestAuthenticate(t *testing.T) {
 				// mockStorage.On("FindUser", ctx, mock.Anything).Return(&models.User{ID: testUserId, Email: testEmail}, nil)
 				// mockStorage.On("FindUserAccountByUserIdAndProvider", ctx, testUserId, mock.Anything).Return(nil, nil)
 
-				storeDecorator.FindUserFunc = func(ctx context.Context, user *stores.UserFilter) (*models.User, error) {
+				storeDecorator.UserFunc.FindUserFunc = func(ctx context.Context, user *stores.UserFilter) (*models.User, error) {
 					return &models.User{ID: testUserId, Email: testEmail}, nil // Simulate user found
 				}
-				storeDecorator.FindUserAccountByUserIdAndProviderFunc = func(ctx context.Context, userId uuid.UUID, provider models.Providers) (*models.UserAccount, error) {
+				storeDecorator.UserAccountFunc.FindUserAccountByUserIdAndProviderFunc = func(ctx context.Context, userId uuid.UUID, provider models.Providers) (*models.UserAccount, error) {
 					return nil, nil // Simulate account not found
 				}
-				storeDecorator.CreateUserAccountFunc = func(ctx context.Context, account *models.UserAccount) (*models.UserAccount, error) {
+				storeDecorator.UserAccountFunc.CreateUserAccountFunc = func(ctx context.Context, account *models.UserAccount) (*models.UserAccount, error) {
 					return &models.UserAccount{
 						UserID:   testUserId,
 						Provider: models.ProvidersGoogle,
@@ -470,11 +470,11 @@ func TestAuthenticate(t *testing.T) {
 				// 	Provider: models.ProvidersGoogle,
 				// 	Type:     models.ProviderTypeOAuth,
 				// }, nil)
-				storeDecorator.UpdateUserFunc = func(ctx context.Context, user *models.User) error {
+				storeDecorator.UserFunc.UpdateUserFunc = func(ctx context.Context, user *models.User) error {
 					return nil // Simulate user update
 				}
 				// mockStorage.On("UpdateUser", ctx, mock.Anything).Return(nil)
-				storeDecorator.SaveTokenFunc = func(ctx context.Context, token *shared.CreateTokenDTO) error {
+				storeDecorator.TokenFunc.SaveTokenFunc = func(ctx context.Context, token *shared.CreateTokenDTO) error {
 					return nil // Simulate token saving
 				}
 				// mockStorage.On("SaveToken", ctx, mock.Anything).Return(nil)

@@ -18,6 +18,16 @@ type TeamInvitationStoreDecorator struct {
 	UpdateInvitationFunc      func(ctx context.Context, invitation *models.TeamInvitation) error
 }
 
+func (t *TeamInvitationStoreDecorator) Cleanup() {
+	t.CreateInvitationFunc = nil
+	t.FindInvitationByIDFunc = nil
+	t.FindInvitationByTokenFunc = nil
+	t.FindPendingInvitationFunc = nil
+	t.FindTeamInvitationsFunc = nil
+	t.GetInvitationByIDFunc = nil
+	t.UpdateInvitationFunc = nil
+}
+
 // CreateInvitation implements DbTeamInvitationStoreInterface.
 func (t *TeamInvitationStoreDecorator) CreateInvitation(ctx context.Context, invitation *models.TeamInvitation) error {
 	if t.CreateInvitationFunc != nil {

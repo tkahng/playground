@@ -26,6 +26,22 @@ type TeamMemberStoreDecorator struct {
 	// Add any additional methods or fields for the decorator here
 }
 
+func (t *TeamMemberStoreDecorator) Cleanup() {
+	t.CountOwnerTeamMembersFunc = nil
+	t.CountTeamMembersFunc = nil
+	t.CountTeamMembersByUserIDFunc = nil
+	t.CreateTeamFromUserFunc = nil
+	t.CreateTeamMemberFunc = nil
+	t.DeleteTeamMemberFunc = nil
+	t.FindLatestTeamMemberByUserIDFunc = nil
+	t.FindTeamMemberFunc = nil
+	t.FindTeamMemberByTeamAndUserIdFunc = nil
+	t.FindTeamMembersByUserIDFunc = nil
+	t.UpdateTeamMemberFunc = nil
+	t.UpdateTeamMemberSelectedAtFunc = nil
+
+}
+
 // CountOwnerTeamMembers implements DbTeamMemberStoreInterface.
 func (t *TeamMemberStoreDecorator) CountOwnerTeamMembers(ctx context.Context, teamId uuid.UUID) (int64, error) {
 	if t.CountOwnerTeamMembersFunc != nil {

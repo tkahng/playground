@@ -81,20 +81,19 @@ type AuthStore interface {
 var _ AuthService = (*BaseAuthService)(nil)
 
 type BaseAuthService struct {
-	routine   RoutineService
-	authStore AuthStore
-	mail      MailService
-	token     JwtService
-	password  PasswordService
-	options   *conf.AppOptions
-	logger    *slog.Logger
-	enqueuer  jobs.Enqueuer
-	adapter   stores.StorageAdapterInterface
+	routine RoutineService
+	// authStore AuthStore
+	mail     MailService
+	token    JwtService
+	password PasswordService
+	options  *conf.AppOptions
+	logger   *slog.Logger
+	enqueuer jobs.Enqueuer
+	adapter  stores.StorageAdapterInterface
 }
 
 func NewAuthService(
 	opts *conf.AppOptions,
-	authStore AuthStore,
 	mail MailService,
 	token JwtService,
 	password PasswordService,
@@ -104,15 +103,14 @@ func NewAuthService(
 	adapter stores.StorageAdapterInterface,
 ) AuthService {
 	authService := &BaseAuthService{
-		routine:   workerService,
-		authStore: authStore,
-		mail:      mail,
-		token:     token,
-		password:  password,
-		options:   opts,
-		logger:    logger,
-		enqueuer:  enqueuer,
-		adapter:   adapter,
+		routine:  workerService,
+		mail:     mail,
+		token:    token,
+		password: password,
+		options:  opts,
+		logger:   logger,
+		enqueuer: enqueuer,
+		adapter:  adapter,
 	}
 
 	return authService
@@ -126,11 +124,6 @@ func (app *BaseAuthService) Mail() MailService {
 // Password implements AuthService.
 func (app *BaseAuthService) Password() PasswordService {
 	return app.password
-}
-
-// Store implements AuthService.
-func (app *BaseAuthService) Store() AuthStore {
-	return app.authStore
 }
 
 // Token implements AuthService.
@@ -193,9 +186,6 @@ func (app *BaseAuthService) SendOtpEmail(emailType mailer.EmailType, ctx context
 	}
 	if app.token == nil {
 		return fmt.Errorf("token service is nil")
-	}
-	if app.authStore == nil {
-		return fmt.Errorf("auth store is nil")
 	}
 	if app.mail == nil {
 		return fmt.Errorf("mail service is nil")

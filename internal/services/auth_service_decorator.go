@@ -40,24 +40,24 @@ type AuthServiceDecorator struct {
 
 func NewAuthServiceDecorator(
 	opts *conf.AppOptions,
-	authStore AuthStore,
 	mail MailService,
 	token JwtService,
 	password PasswordService,
 	workerService RoutineService,
 	logger *slog.Logger,
 	enqueuer jobs.Enqueuer,
+	adapter stores.StorageAdapterInterface,
 ) AuthService {
 	authService := &AuthServiceDecorator{}
 	authService.Delegate = &BaseAuthService{
-		routine:   workerService,
-		authStore: authStore,
-		mail:      mail,
-		token:     token,
-		password:  password,
-		options:   opts,
-		logger:    logger,
-		enqueuer:  enqueuer,
+		routine:  workerService,
+		mail:     mail,
+		token:    token,
+		password: password,
+		options:  opts,
+		logger:   logger,
+		enqueuer: enqueuer,
+		adapter:  adapter,
 	}
 	return authService
 }
@@ -78,14 +78,6 @@ func (a *AuthServiceDecorator) Password() PasswordService {
 		return a.PasswordFunc()
 	}
 	return a.Delegate.Password()
-}
-
-// Store implements AuthService.
-func (a *AuthServiceDecorator) Store() AuthStore {
-	if a.StoreFunc != nil {
-		return a.StoreFunc()
-	}
-	return a.Delegate.Store()
 }
 
 // Token implements AuthService.

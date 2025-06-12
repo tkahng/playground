@@ -178,12 +178,10 @@ func NewBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 	tokenService := services.NewJwtService()
 	passwordService := services.NewPasswordService()
 
-	authStore := stores.NewDbAuthStore(pool)
 	routineService := services.NewRoutineService()
 	authMailService := services.NewMailService(mail)
 	authService := services.NewAuthService(
 		settings,
-		authStore,
 		authMailService,
 		tokenService,
 		passwordService,

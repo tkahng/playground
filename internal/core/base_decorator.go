@@ -27,7 +27,6 @@ func NewDecorator(ctx context.Context, cfg conf.EnvConfig, pool database.Dbx) *B
 	rbac := stores.NewDbRBACStore(pool)
 	taskStore := stores.NewDbTaskStore(pool)
 	paymentStore := stores.NewDbPaymentStore(pool)
-	authStore := stores.NewDbAuthStore(pool)
 	userAccountStore := stores.NewDbAccountStore(pool)
 	userService := services.NewUserService(userStore)
 	userAccountService := services.NewUserAccountService(userAccountStore)
@@ -45,13 +44,13 @@ func NewDecorator(ctx context.Context, cfg conf.EnvConfig, pool database.Dbx) *B
 
 	authService := services.NewAuthServiceDecorator(
 		settings,
-		authStore,
 		authMailService,
 		tokenService,
 		passwordService,
 		routine,
 		l,
 		enqueuer,
+		adapter,
 	)
 	checkerStore := stores.NewDbConstraintStore(pool)
 	checker := services.NewConstraintCheckerService(
