@@ -6,18 +6,6 @@ type StoreDecorators struct {
 	*TokenStoreDecorator
 }
 
-func NewAdapterDecorators() *StorageAdapterDecorator {
-	return &StorageAdapterDecorator{
-		UserFunc:           &UserStoreDecorator{},
-		UserAccountFunc:    &AccountStoreDecorator{},
-		TokenFunc:          &TokenStoreDecorator{},
-		TeamGroupFunc:      &TeamGroupStoreDecorator{},
-		TeamInvitationFunc: &TeamInvitationStoreDecorator{},
-		TeamMemberFunc:     &TeamMemberStoreDecorator{},
-		RbacFunc:           &RbacStoreDecorator{},
-	}
-}
-
 func (s *StoreDecorators) Cleanup() {
 	if s == nil {
 		return
@@ -33,6 +21,22 @@ func (s *StoreDecorators) Cleanup() {
 	}
 }
 
+func NewAdapterDecorators() *StorageAdapterDecorator {
+	return &StorageAdapterDecorator{
+		UserFunc:           &UserStoreDecorator{},
+		UserAccountFunc:    &AccountStoreDecorator{},
+		TokenFunc:          &TokenStoreDecorator{},
+		TeamGroupFunc:      &TeamGroupStoreDecorator{},
+		TeamInvitationFunc: &TeamInvitationStoreDecorator{},
+		TeamMemberFunc:     &TeamMemberStoreDecorator{},
+		RbacFunc:           &RbacStoreDecorator{},
+		CustomerFunc:       &CustomerStoreDecorator{},
+		ProductFunc:        &StripeProductStoreDecorator{},
+		PriceFunc:          &StripePriceStoreDecorator{},
+		SubscriptionFunc:   &StripeSubscriptionStoreDecorator{},
+	}
+}
+
 type StorageAdapterDecorator struct {
 	UserFunc           *UserStoreDecorator
 	UserAccountFunc    *AccountStoreDecorator
@@ -42,10 +46,10 @@ type StorageAdapterDecorator struct {
 	TeamMemberFunc     *TeamMemberStoreDecorator
 	RbacFunc           *RbacStoreDecorator
 	CustomerFunc       *CustomerStoreDecorator
-	// PriceFunc          *PriceStoreDecorator
-	ProductFunc *StripeProductStoreDecorator
-	// SubscriptionFunc   *SubscriptionStoreDecorator
-	RunInTxFunc func(fn func(tx StorageAdapterInterface) error) error
+	ProductFunc        *StripeProductStoreDecorator
+	PriceFunc          *StripePriceStoreDecorator
+	SubscriptionFunc   *StripeSubscriptionStoreDecorator
+	RunInTxFunc        func(fn func(tx StorageAdapterInterface) error) error
 }
 
 // Rbac implements StorageAdapterInterface.
@@ -84,7 +88,7 @@ func (s *StorageAdapterDecorator) Customer() DbCustomerStoreInterface {
 
 // Price implements StorageAdapterInterface.
 func (s *StorageAdapterDecorator) Price() DbPriceStoreInterface {
-	panic("unimplemented")
+	return s.PriceFunc
 }
 
 // Product implements StorageAdapterInterface.
@@ -102,8 +106,7 @@ func (s *StorageAdapterDecorator) RunInTx(fn func(tx StorageAdapterInterface) er
 
 // Subscription implements StorageAdapterInterface.
 func (s *StorageAdapterDecorator) Subscription() DbSubscriptionStoreInterface {
-	// return s.SubscriptionFunc
-	panic("unimplemented")
+	return s.SubscriptionFunc
 }
 
 // TeamGroup implements StorageAdapterInterface.

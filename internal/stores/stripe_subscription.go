@@ -14,7 +14,6 @@ import (
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/repository"
-	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 	"github.com/tkahng/authgo/internal/tools/types"
 	"github.com/tkahng/authgo/internal/tools/utils"
@@ -316,21 +315,18 @@ func (s *DbSubscriptionStore) IsFirstSubscription(ctx context.Context, customerI
 	return data > 0, err
 }
 
-func (s *DbSubscriptionStore) ListSubscriptions(ctx context.Context, input *shared.StripeSubscriptionListParams) ([]*models.StripeSubscription, error) {
+func (s *DbSubscriptionStore) ListSubscriptions(ctx context.Context, input *StripeSubscriptionListFilter) ([]*models.StripeSubscription, error) {
 
-	filter := input.StripeSubscriptionListFilter
-	pageInput := &input.PaginatedInput
-
-	limit, offset := database.PaginateRepo(pageInput)
-	where := s.filter(&filter)
+	limit, offset := input.Pagination()
+	where := s.filter(input)
 	order := s.listSubscriptionOrderByFunc(input)
 	data, err := repository.StripeSubscription.Get(
 		ctx,
 		s.db,
 		where,
 		order,
-		limit,
-		offset,
+		&limit,
+		&offset,
 	)
 	if err != nil {
 		return nil, err
@@ -338,7 +334,7 @@ func (s *DbSubscriptionStore) ListSubscriptions(ctx context.Context, input *shar
 	return data, nil
 }
 
-func (s *DbSubscriptionStore) listSubscriptionOrderByFunc(input *shared.StripeSubscriptionListParams) *map[string]string {
+func (s *DbSubscriptionStore) listSubscriptionOrderByFunc(input *StripeSubscriptionListFilter) *map[string]string {
 	if input == nil {
 		return nil
 	}
@@ -349,7 +345,17 @@ func (s *DbSubscriptionStore) listSubscriptionOrderByFunc(input *shared.StripeSu
 	return &order
 }
 
-func (s *DbSubscriptionStore) filter(filter *shared.StripeSubscriptionListFilter) *map[string]any {
+type StripeSubscriptionListFilter struct {
+	PaginatedInput
+	SortParams
+	Q       string                            `query:"q,omitempty" required:"false"`
+	Ids     []string                          `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+	UserIDs []uuid.UUID                       `query:"user_id,omitempty" required:"false" format:"uuid"`
+	TeamIDs []uuid.UUID                       `query:"team_id,omitempty" required:"false" format:"uuid"`
+	Status  []models.StripeSubscriptionStatus `query:"status,omitempty" required:"false" minimum:"1" maximum:"100" enum:"trialing,active,canceled,incomplete,incomplete_expired,past_due,unpaid,paused"`
+}
+
+func (s *DbSubscriptionStore) filter(filter *StripeSubscriptionListFilter) *map[string]any {
 	if filter == nil {
 		return nil
 	}
@@ -360,9 +366,8 @@ func (s *DbSubscriptionStore) filter(filter *shared.StripeSubscriptionListFilter
 		}
 	}
 	if len(filter.Status) > 0 {
-		statuses := mapper.Map(filter.Status, func(s shared.StripeSubscriptionStatus) string { return string(s) })
 		where[models.StripeSubscriptionTable.Status] = map[string]any{
-			"_in": statuses,
+			"_in": filter.Status,
 		}
 	}
 	if len(filter.UserIDs) > 0 {
@@ -372,10 +377,17 @@ func (s *DbSubscriptionStore) filter(filter *shared.StripeSubscriptionListFilter
 			},
 		}
 	}
+	if len(filter.TeamIDs) > 0 {
+		where[models.StripeSubscriptionTable.StripeCustomer] = map[string]any{
+			models.StripeCustomerTable.TeamID: map[string]any{
+				"_eq": filter.TeamIDs,
+			},
+		}
+	}
 	return &where
 }
 
-func (s *DbSubscriptionStore) CountSubscriptions(ctx context.Context, filter *shared.StripeSubscriptionListFilter) (int64, error) {
+func (s *DbSubscriptionStore) CountSubscriptions(ctx context.Context, filter *StripeSubscriptionListFilter) (int64, error) {
 	where := s.filter(filter)
 	data, err := repository.StripeSubscription.Count(ctx, s.db, where)
 	if err != nil {
@@ -416,6 +428,6 @@ type DbSubscriptionStoreInterface interface {
 	UpsertSubscription(ctx context.Context, sub *models.StripeSubscription) error
 	FindActiveSubscriptionByCustomerId(ctx context.Context, customerId string) (*models.StripeSubscription, error)
 	IsFirstSubscription(ctx context.Context, customerID string) (bool, error)
-	ListSubscriptions(ctx context.Context, input *shared.StripeSubscriptionListParams) ([]*models.StripeSubscription, error)
-	CountSubscriptions(ctx context.Context, filter *shared.StripeSubscriptionListFilter) (int64, error)
+	ListSubscriptions(ctx context.Context, input *StripeSubscriptionListFilter) ([]*models.StripeSubscription, error)
+	CountSubscriptions(ctx context.Context, filter *StripeSubscriptionListFilter) (int64, error)
 }
