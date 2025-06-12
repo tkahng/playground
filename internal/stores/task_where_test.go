@@ -5,12 +5,14 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/models"
-	"github.com/tkahng/authgo/internal/tools/types"
 )
 
 func Test_taskStore_TaskWhere(t *testing.T) {
+	var id1 = uuid.New()
+	var id2 = uuid.New()
+	var id3 = uuid.New()
 	type args struct {
-		Task *models.Task
+		Task *TaskFilter
 	}
 	tests := []struct {
 		name string
@@ -27,96 +29,120 @@ func Test_taskStore_TaskWhere(t *testing.T) {
 		{
 			name: "name",
 			args: args{
-				Task: &models.Task{
-					Name: "test",
+				Task: &TaskFilter{
+					Names: []string{"test"},
 				},
 			},
 			want: &map[string]any{
-				"name": "test",
+				"name": map[string]any{
+					"_in": []string{"test"},
+				},
 			},
 		}, {
 			name: "project_id",
 			args: args{
-				Task: &models.Task{
-					ProjectID: uuid.New(),
+				Task: &TaskFilter{
+					ProjectIds: []uuid.UUID{id1},
 				},
 			},
 			want: &map[string]any{
-				"project_id": uuid.New(),
+				"project_id": map[string]any{
+					"_in": []uuid.UUID{id1},
+				},
 			},
 		},
 		{
 			name: "team_id",
 			args: args{
-				Task: &models.Task{
-					TeamID: uuid.New(),
+				Task: &TaskFilter{
+					TeamIds: []uuid.UUID{id2},
 				},
 			},
 			want: &map[string]any{
-				"team_id": uuid.New(),
+				"team_id": map[string]any{
+					"_in": []uuid.UUID{id2},
+				},
 			},
 		},
 		{
 			name: "created_by_member_id",
 			args: args{
-				Task: &models.Task{
-					CreatedByMemberID: types.Pointer(uuid.New()),
+				Task: &TaskFilter{
+					CreatedByMemberIds: []uuid.UUID{id3},
 				},
 			},
 			want: &map[string]any{
-				"created_by_member_id": uuid.New(),
+				"created_by_member_id": map[string]any{
+					"_in": []uuid.UUID{id3},
+				},
 			},
 		},
 		{
 			name: "name and team_id",
 			args: args{
-				Task: &models.Task{
-					Name:   "test",
-					TeamID: uuid.New(),
+				Task: &TaskFilter{
+					Names:   []string{"test"},
+					TeamIds: []uuid.UUID{id2},
 				},
 			},
 			want: &map[string]any{
-				"name":    "test",
-				"team_id": uuid.New(),
+				"name": map[string]any{
+					"_in": []string{"test"},
+				},
+				"team_id": map[string]any{
+					"_in": []uuid.UUID{id2},
+				},
 			},
 		},
 		{
 			name: "name and project_id",
 			args: args{
-				Task: &models.Task{
-					Name:      "test",
-					ProjectID: uuid.New(),
+				Task: &TaskFilter{
+					Names:      []string{"test"},
+					ProjectIds: []uuid.UUID{id1},
 				},
 			},
 			want: &map[string]any{
-				"name":       "test",
-				"project_id": uuid.New(),
+				"name": map[string]any{
+					"_in": []string{"test"},
+				},
+				"project_id": map[string]any{
+					"_in": []uuid.UUID{id1},
+				},
 			},
 		},
 		{
 			name: "id and status",
 			args: args{
-				Task: &models.Task{
-					ID:     uuid.New(),
-					Status: models.TaskStatusDone,
+				Task: &TaskFilter{
+					Ids:      []uuid.UUID{id2},
+					Statuses: []models.TaskStatus{models.TaskStatusDone},
 				},
 			},
 			want: &map[string]any{
-				"id":     uuid.New(),
-				"status": models.TaskStatusDone,
+				"id": map[string]any{
+					"_in": []uuid.UUID{id2},
+				},
+				"status": map[string]any{
+					"_in": []models.TaskStatus{models.TaskStatusDone},
+				},
 			},
 		},
 		{
 			name: "project_id and status",
 			args: args{
-				Task: &models.Task{
-					ProjectID: uuid.New(),
-					Status:    models.TaskStatusDone,
+				Task: &TaskFilter{
+					ProjectIds: []uuid.UUID{id3},
+					Statuses:   []models.TaskStatus{models.TaskStatusDone},
 				},
 			},
 			want: &map[string]any{
-				"name":   "test",
-				"status": models.TaskStatusDone,
+				"id": map[string]any{
+					"_in": []uuid.UUID{id2},
+				},
+				"status": map[string]any{
+					"_in": []models.TaskStatus{models.TaskStatusDone},
+				},
 			},
 		},
 	}
@@ -137,33 +163,33 @@ func Test_taskStore_TaskWhere(t *testing.T) {
 			if got != nil && tt.want != nil && tt.args.Task != nil {
 				for k := range *got {
 					if k == "name" {
-						if tt.args.Task.Name == "" {
-							t.Errorf("have key %v, but have %v", k, tt.args.Task.Name)
+						if len(tt.args.Task.Names) == 0 {
+							t.Errorf("have key %v, but have %v", k, tt.args.Task.Names)
 						}
 					}
 					if k == "id" {
-						if tt.args.Task.ID == uuid.Nil {
-							t.Errorf("have key %v, but have %v", k, tt.args.Task.ID)
+						if len(tt.args.Task.Ids) == 0 {
+							t.Errorf("have key %v, but have %v", k, tt.args.Task.Ids)
 						}
 					}
 					if k == "created_by_member_id" {
-						if tt.args.Task.CreatedByMemberID == nil {
-							t.Errorf("have key %v, but have %v", k, tt.args.Task.CreatedByMemberID)
+						if len(tt.args.Task.CreatedByMemberIds) == 0 {
+							t.Errorf("have key %v, but have %v", k, tt.args.Task.CreatedByMemberIds)
 						}
 					}
 					if k == "team_id" {
-						if tt.args.Task.TeamID == uuid.Nil {
-							t.Errorf("have key %v, but have %v", k, tt.args.Task.TeamID)
+						if len(tt.args.Task.TeamIds) == 0 {
+							t.Errorf("have key %v, but have %v", k, tt.args.Task.TeamIds)
 						}
 					}
 					if k == "status" {
-						if tt.args.Task.Status == "" {
-							t.Errorf("have key %v, but have %v", k, tt.args.Task.Status)
+						if len(tt.args.Task.Statuses) == 0 {
+							t.Errorf("have key %v, but have %v", k, tt.args.Task.Statuses)
 						}
 					}
 					if k == "project_id" {
-						if tt.args.Task.ProjectID == uuid.Nil {
-							t.Errorf("have key %v, but have %v", k, tt.args.Task.ProjectID)
+						if len(tt.args.Task.ProjectIds) == 0 {
+							t.Errorf("have key %v, but have %v", k, tt.args.Task.ProjectIds)
 						}
 					}
 				}

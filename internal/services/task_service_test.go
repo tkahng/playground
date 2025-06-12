@@ -18,24 +18,21 @@ func TestDefineTaskOrderNumberByStatus(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
-		userStore := stores.NewDbUserStore(dbxx)
-		teamstore := stores.NewDbTeamStore(dbxx)
-		taskStore := stores.NewDbTaskStore(dbxx)
-		allStore := stores.NewAllEmbeddedStores(dbxx)
-		taskService := services.NewTaskService(allStore)
-		user, err := userStore.CreateUser(ctx, &models.User{
+		adapter := stores.NewStorageAdapter(dbxx)
+		taskService := services.NewTaskService(adapter)
+		user, err := adapter.User().CreateUser(ctx, &models.User{
 			Email: "tkahng@gmail.com",
 		})
 		if err != nil {
 			t.Fatalf("failed to create user: %v", err)
 		}
 
-		member, err := teamstore.CreateTeamFromUser(ctx, user)
+		member, err := adapter.TeamMember().CreateTeamFromUser(ctx, user)
 		if err != nil {
 			t.Fatalf("failed to create team from user: %v", err)
 		}
 
-		taskProject, err := taskStore.CreateTaskProject(ctx, &shared.CreateTaskProjectDTO{
+		taskProject, err := adapter.Task().CreateTaskProject(ctx, &shared.CreateTaskProjectDTO{
 			Name:     "Test Project",
 			Status:   shared.TaskProjectStatusDone,
 			TeamID:   member.TeamID,
@@ -45,7 +42,7 @@ func TestDefineTaskOrderNumberByStatus(t *testing.T) {
 			t.Fatalf("failed to create task project: %v", err)
 		}
 
-		task1, err := taskStore.CreateTask(ctx, &models.Task{
+		task1, err := adapter.Task().CreateTask(ctx, &models.Task{
 			Name:              "Task 1",
 			Status:            models.TaskStatusDone,
 			Rank:              1000,
@@ -56,7 +53,7 @@ func TestDefineTaskOrderNumberByStatus(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to create task: %v", err)
 		}
-		task2, err := taskStore.CreateTask(ctx, &models.Task{
+		task2, err := adapter.Task().CreateTask(ctx, &models.Task{
 			Name:              "Task 2",
 			Status:            models.TaskStatusDone,
 			Rank:              2000,
@@ -67,7 +64,7 @@ func TestDefineTaskOrderNumberByStatus(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to create task: %v", err)
 		}
-		task3, err := taskStore.CreateTask(ctx, &models.Task{
+		task3, err := adapter.Task().CreateTask(ctx, &models.Task{
 			Name:              "Task 3",
 			Status:            models.TaskStatusDone,
 			Rank:              3000,

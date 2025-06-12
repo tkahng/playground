@@ -17,6 +17,7 @@ type StorageAdapterInterface interface {
 	Subscription() DbSubscriptionStoreInterface
 
 	Rbac() DbRbacStoreInterface
+	Task() DbTaskStoreInterface
 	// WithTx(tx database.Dbx) *StorageAdapter
 	RunInTx(fn func(tx StorageAdapterInterface) error) error
 }
@@ -33,7 +34,12 @@ type StorageAdapter struct {
 	product        *DbProductStore
 	subscription   *DbSubscriptionStore
 	rbac           *DbRbacStore
+	task           *DbTaskStore
 	// Task
+}
+
+func (s *StorageAdapter) Task() DbTaskStoreInterface {
+	return s.task
 }
 
 // Customer implements StorageAdapterInterface.

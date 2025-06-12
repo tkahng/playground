@@ -569,7 +569,7 @@ func TestListTasks(t *testing.T) {
 		type args struct {
 			ctx   context.Context
 			db    database.Dbx
-			input *shared.TaskListParams
+			input *stores.TaskFilter
 		}
 		tests := []struct {
 			name      string
@@ -582,13 +582,9 @@ func TestListTasks(t *testing.T) {
 				args: args{
 					ctx: ctx,
 					db:  dbxx,
-					input: &shared.TaskListParams{
-						TaskListFilter: shared.TaskListFilter{
-							ProjectID: taskProject.ID.String(),
-							Status: []shared.TaskStatus{
-								shared.TaskStatusDone,
-							},
-						},
+					input: &stores.TaskFilter{
+						ProjectIds: []uuid.UUID{taskProject.ID},
+						Statuses:   []models.TaskStatus{models.TaskStatusDone},
 						PaginatedInput: shared.PaginatedInput{
 							Page:    0,
 							PerPage: 10,
@@ -603,7 +599,7 @@ func TestListTasks(t *testing.T) {
 				args: args{
 					ctx: ctx,
 					db:  dbxx,
-					input: &shared.TaskListParams{
+					input: &stores.TaskFilter{
 						PaginatedInput: shared.PaginatedInput{
 							Page:    0,
 							PerPage: 10,
@@ -683,7 +679,7 @@ func TestCountTasks(t *testing.T) {
 		type args struct {
 			ctx    context.Context
 			db     database.Dbx
-			filter *shared.TaskListFilter
+			filter *stores.TaskFilter
 		}
 		tests := []struct {
 			name    string
@@ -696,11 +692,9 @@ func TestCountTasks(t *testing.T) {
 				args: args{
 					ctx: ctx,
 					db:  dbxx,
-					filter: &shared.TaskListFilter{
-						ProjectID: taskProject.ID.String(),
-						Status: []shared.TaskStatus{
-							shared.TaskStatusDone,
-						},
+					filter: &stores.TaskFilter{
+						ProjectIds: []uuid.UUID{taskProject.ID},
+						Statuses:   []models.TaskStatus{models.TaskStatusDone},
 					},
 				},
 				want:    1,
@@ -1085,10 +1079,8 @@ func TestCreateTaskProjectWithTasks(t *testing.T) {
 					// }
 
 					// Verify tasks were created
-					tasks, err := taskStore.ListTasks(tt.args.ctx, &shared.TaskListParams{
-						TaskListFilter: shared.TaskListFilter{
-							ProjectID: got.ID.String(),
-						},
+					tasks, err := taskStore.ListTasks(tt.args.ctx, &stores.TaskFilter{
+						ProjectIds: []uuid.UUID{got.ID},
 					})
 					if err != nil {
 						t.Errorf("Failed to list tasks: %v", err)
@@ -2136,7 +2128,7 @@ func TestCreateTaskFromInput(t *testing.T) {
 // 		type args struct {
 // 			ctx   context.Context
 // 			db    database.Dbx
-// 			input *shared.TaskListParams
+// 			input *stores.TaskFilter
 // 		}
 // 		tests := []struct {
 // 			name      string
@@ -2149,7 +2141,7 @@ func TestCreateTaskFromInput(t *testing.T) {
 // 				args: args{
 // 					ctx: ctx,
 // 					db:  dbxx,
-// 					input: &shared.TaskListParams{
+// 					input: &stores.TaskFilter{
 // 						TaskListFilter: shared.TaskListFilter{
 // 							ProjectID: taskProject.ID.String(),
 // 							Status: []shared.TaskStatus{
@@ -2170,7 +2162,7 @@ func TestCreateTaskFromInput(t *testing.T) {
 // 				args: args{
 // 					ctx: ctx,
 // 					db:  dbxx,
-// 					input: &shared.TaskListParams{
+// 					input: &stores.TaskFilter{
 // 						PaginatedInput: shared.PaginatedInput{
 // 							Page:    0,
 // 							PerPage: 10,
@@ -2622,7 +2614,7 @@ func TestCreateTaskFromInput(t *testing.T) {
 // 					// }
 
 // 					// Verify tasks were created
-// 					tasks, err := queries.ListTasks(tt.args.ctx, tt.args.db, &shared.TaskListParams{
+// 					tasks, err := queries.ListTasks(tt.args.ctx, tt.args.db, &stores.TaskFilter{
 // 						TaskListFilter: shared.TaskListFilter{
 // 							ProjectID: got.ID.String(),
 // 						},

@@ -38,18 +38,19 @@ func MapToPointer[T any, K comparable](records []*T, keys []K, keyFn KeyFn[*T, K
 	return result
 }
 
-func ToMap[T any, K comparable](records []T, keyFn KeyFn[T, K]) map[K]T {
-	var m = make(map[K]T)
+func ToMap[T any, K comparable](records []*T, keyFn KeyFn[*T, K]) map[K]*T {
+	var m = make(map[K]*T)
 	for _, record := range records {
 		m[keyFn(record)] = record
 	}
 	return m
 }
 
-func ToManyMap[T any, K comparable](records []T, keyFn KeyFn[T, K]) map[K][]T {
-	var m = make(map[K][]T)
+func ToManyMap[T any, K comparable](records []*T, keyFn KeyFn[*T, K]) map[K][]*T {
+	var m = make(map[K][]*T)
 	for _, record := range records {
-		m[keyFn(record)] = append(m[keyFn(record)], record)
+		key := keyFn(record)
+		m[key] = append(m[key], record)
 	}
 	return m
 }

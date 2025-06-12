@@ -9,6 +9,7 @@ import (
 	"github.com/tkahng/authgo/internal/conf"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/authgo/internal/stores"
 	"github.com/tkahng/authgo/internal/tools/mailer"
 	"github.com/tkahng/authgo/internal/tools/security"
 )
@@ -102,9 +103,10 @@ type TeamInvitationStore interface {
 }
 
 type InvitationService struct {
-	routine  RoutineService
-	mailer   MailService
-	store    TeamInvitationStore
+	routine RoutineService
+	mailer  MailService
+	// store    TeamInvitationStore
+	adapter  stores.StorageAdapterInterface
 	settings conf.AppOptions
 }
 
@@ -161,16 +163,16 @@ func (i *InvitationService) SendInvitationEmail(ctx context.Context, params *Tea
 var _ TeamInvitationService = (*InvitationService)(nil)
 
 func NewInvitationService(
-	store TeamInvitationStore,
+	adapter stores.StorageAdapterInterface,
 	mailer MailService,
 	settings conf.AppOptions,
 	workerService RoutineService,
 ) TeamInvitationService {
 	return &InvitationService{
 		routine:  workerService,
-		store:    store,
 		mailer:   mailer,
 		settings: settings,
+		adapter:  adapter,
 	}
 }
 func (i *InvitationService) CancelInvitation(
@@ -179,7 +181,7 @@ func (i *InvitationService) CancelInvitation(
 	userId uuid.UUID,
 	invitationId uuid.UUID,
 ) error {
-	member, err := i.store.FindTeamMemberByTeamAndUserId(ctx, teamId, userId)
+	member, err := i.adapter.TeamMember().FindTeamMemberByTeamAndUserId(ctx, teamId, userId)
 	if err != nil {
 		return err
 	}
@@ -189,7 +191,7 @@ func (i *InvitationService) CancelInvitation(
 	if member.Role != models.TeamMemberRoleOwner {
 		return fmt.Errorf("user is not an owner of the team")
 	}
-	invitation, err := i.store.FindInvitationByID(ctx, invitationId)
+	invitation, err := i.adapter.TeamInvitation().FindInvitationByID(ctx, invitationId)
 	if err != nil {
 		return err
 	}
@@ -201,7 +203,7 @@ func (i *InvitationService) CancelInvitation(
 	}
 	invitation.Status = models.TeamInvitationStatusCanceled
 
-	return i.store.UpdateInvitation(ctx, invitation)
+	return i.adapter.TeamInvitation().UpdateInvitation(ctx, invitation)
 }
 
 // CheckValidInvitation implements TeamInvitationService.
@@ -210,14 +212,14 @@ func (i *InvitationService) CheckValidInvitation(
 	userId uuid.UUID,
 	invitationToken string,
 ) (bool, error) {
-	invite, err := i.store.FindInvitationByToken(ctx, invitationToken)
+	invite, err := i.adapter.TeamInvitation().FindInvitationByToken(ctx, invitationToken)
 	if err != nil {
 		return false, err
 	}
 	if invite == nil {
 		return false, fmt.Errorf("invitation not found")
 	}
-	user, err := i.store.FindUserByID(ctx, userId)
+	user, err := i.adapter.User().FindUserByID(ctx, userId)
 	if err != nil {
 		return false, err
 	}
@@ -239,14 +241,14 @@ func (i *InvitationService) AcceptInvitation(
 	userId uuid.UUID,
 	invitationToken string,
 ) error {
-	invite, err := i.store.FindInvitationByToken(ctx, invitationToken)
+	invite, err := i.adapter.TeamInvitation().FindInvitationByToken(ctx, invitationToken)
 	if err != nil {
 		return err
 	}
 	if invite == nil {
 		return fmt.Errorf("invitation not found")
 	}
-	user, err := i.store.FindUserByID(ctx, userId)
+	user, err := i.adapter.User().FindUserByID(ctx, userId)
 	if err != nil {
 		return err
 	}
@@ -260,11 +262,11 @@ func (i *InvitationService) AcceptInvitation(
 		return fmt.Errorf("invitation is not pending")
 	}
 	invite.Status = models.TeamInvitationStatusAccepted
-	_, err = i.store.CreateTeamMember(ctx, invite.TeamID, user.ID, invite.Role, false)
+	_, err = i.adapter.TeamMember().CreateTeamMember(ctx, invite.TeamID, user.ID, invite.Role, false)
 	if err != nil {
 		return err
 	}
-	err = i.store.UpdateInvitation(ctx, invite)
+	err = i.adapter.TeamInvitation().UpdateInvitation(ctx, invite)
 	if err != nil {
 		return err
 	}
@@ -281,21 +283,21 @@ func (i *InvitationService) CreateInvitation(
 	resend bool,
 ) error {
 
-	member, err := i.store.FindTeamMemberByTeamAndUserId(ctx, teamId, invitingUserId)
+	member, err := i.adapter.TeamMember().FindTeamMemberByTeamAndUserId(ctx, teamId, invitingUserId)
 	if err != nil {
 		return err
 	}
 	if member == nil {
 		return fmt.Errorf("user is not a member of the team")
 	}
-	if user, err := i.store.FindUserByID(ctx, invitingUserId); err != nil {
+	if user, err := i.adapter.User().FindUserByID(ctx, invitingUserId); err != nil {
 		return err
 	} else if user == nil {
 		return fmt.Errorf("user not found")
 	} else {
 		member.User = user
 	}
-	if team, err := i.store.FindTeamByID(ctx, teamId); err != nil {
+	if team, err := i.adapter.TeamGroup().FindTeamByID(ctx, teamId); err != nil {
 		return err
 	} else if team == nil {
 		return fmt.Errorf("team not found")
@@ -303,7 +305,7 @@ func (i *InvitationService) CreateInvitation(
 		member.Team = team
 	}
 	invitation := new(models.TeamInvitation)
-	existingInvite, err := i.store.FindPendingInvitation(ctx, teamId, inviteeEmail)
+	existingInvite, err := i.adapter.TeamInvitation().FindPendingInvitation(ctx, teamId, inviteeEmail)
 	if err != nil {
 		return err
 	}
@@ -316,7 +318,7 @@ func (i *InvitationService) CreateInvitation(
 		invitation.TeamID = teamId
 		invitation.InviterMemberID = member.ID
 		invitation.ExpiresAt = i.settings.Auth.InviteToken.Expires()
-		err = i.store.CreateInvitation(ctx, invitation)
+		err = i.adapter.TeamInvitation().CreateInvitation(ctx, invitation)
 		if err != nil {
 			return err
 		}
@@ -327,7 +329,7 @@ func (i *InvitationService) CreateInvitation(
 		existingInvite.Status = models.TeamInvitationStatusPending
 		existingInvite.Role = role
 		existingInvite.ExpiresAt = i.settings.Auth.InviteToken.Expires()
-		err = i.store.UpdateInvitation(ctx, existingInvite)
+		err = i.adapter.TeamInvitation().UpdateInvitation(ctx, existingInvite)
 		if err != nil {
 			return err
 		}
@@ -354,7 +356,7 @@ func (i *InvitationService) CreateInvitation(
 
 // FindInvitations implements TeamInvitationService.
 func (i *InvitationService) FindInvitations(ctx context.Context, teamId uuid.UUID) ([]*models.TeamInvitation, error) {
-	invitations, err := i.store.FindTeamInvitations(ctx, teamId)
+	invitations, err := i.adapter.TeamInvitation().FindTeamInvitations(ctx, teamId)
 	if err != nil {
 		return nil, err
 	}
@@ -363,14 +365,14 @@ func (i *InvitationService) FindInvitations(ctx context.Context, teamId uuid.UUI
 
 // RejectInvitation implements TeamInvitationService.
 func (i *InvitationService) RejectInvitation(ctx context.Context, userId uuid.UUID, invitationToken string) error {
-	invite, err := i.store.FindInvitationByToken(ctx, invitationToken)
+	invite, err := i.adapter.TeamInvitation().FindInvitationByToken(ctx, invitationToken)
 	if err != nil {
 		return err
 	}
 	if invite == nil {
 		return fmt.Errorf("invitation not found")
 	}
-	user, err := i.store.FindUserByID(ctx, userId)
+	user, err := i.adapter.User().FindUserByID(ctx, userId)
 	if err != nil {
 		return err
 	}

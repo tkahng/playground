@@ -24,12 +24,12 @@ func NewDecorator(ctx context.Context, cfg conf.EnvConfig, pool database.Dbx) *B
 	authMailService := services.NewMailService(mail)
 	adapter := stores.NewStorageAdapter(pool)
 	userStore := stores.NewDbUserStore(pool)
-	taskStore := stores.NewDbTaskStore(pool)
+	// taskStore := stores.NewDbTaskStore(pool)
 	userAccountStore := stores.NewDbAccountStore(pool)
 	userService := services.NewUserService(userStore)
 	userAccountService := services.NewUserAccountService(userAccountStore)
 	rbacService := services.NewRBACService(adapter)
-	taskService := services.NewTaskService(taskStore)
+	taskService := services.NewTaskService(adapter)
 	paymentClient := services.NewTestPaymentClient()
 	paymentService := services.NewPaymentService(
 		paymentClient,

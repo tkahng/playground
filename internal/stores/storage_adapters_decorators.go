@@ -34,6 +34,7 @@ func NewAdapterDecorators() *StorageAdapterDecorator {
 		ProductFunc:        &StripeProductStoreDecorator{},
 		PriceFunc:          &StripePriceStoreDecorator{},
 		SubscriptionFunc:   &StripeSubscriptionStoreDecorator{},
+		TaskFunc:           &TaskDecorator{},
 	}
 }
 
@@ -49,6 +50,7 @@ type StorageAdapterDecorator struct {
 	ProductFunc        *StripeProductStoreDecorator
 	PriceFunc          *StripePriceStoreDecorator
 	SubscriptionFunc   *StripeSubscriptionStoreDecorator
+	TaskFunc           *TaskDecorator
 	RunInTxFunc        func(fn func(tx StorageAdapterInterface) error) error
 }
 
@@ -155,6 +157,10 @@ func (s *StorageAdapterDecorator) User() DbUserStoreInterface {
 // UserAccount implements StorageAdapterInterface.
 func (s *StorageAdapterDecorator) UserAccount() DbAccountStoreInterface {
 	return s.UserAccountFunc
+}
+
+func (s *StorageAdapterDecorator) Task() DbTaskStoreInterface {
+	return s.TaskFunc
 }
 
 var _ StorageAdapterInterface = (*StorageAdapterDecorator)(nil)

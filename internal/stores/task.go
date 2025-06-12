@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -15,6 +16,7 @@ import (
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 	"github.com/tkahng/authgo/internal/tools/types"
+	"github.com/tkahng/authgo/internal/tools/utils"
 )
 
 type DbTaskStore struct {
@@ -31,56 +33,87 @@ func (s *DbTaskStore) CreateTask(ctx context.Context, task *models.Task) (*model
 	return repository.Task.PostOne(ctx, s.db, task)
 }
 
-func (s *DbTaskStore) FindTask(ctx context.Context, task *models.Task) (*models.Task, error) {
+func (s *DbTaskStore) FindTask(ctx context.Context, task *TaskFilter) (*models.Task, error) {
 
 	where := s.TaskWhere(task)
 
 	return repository.Task.GetOne(ctx, s.db, where)
 }
 
-func (*DbTaskStore) TaskWhere(task *models.Task) *map[string]any {
+type TaskFilter struct {
+	shared.PaginatedInput
+	SortParams
+	Q                  string              `query:"q,omitempty" json:"q,omitempty" required:"false"`
+	Ids                []uuid.UUID         `query:"ids,omitempty" json:"ids,omitempty" format:"uuid" required:"false"`
+	ProjectIds         []uuid.UUID         `query:"project_ids,omitempty" json:"project_ids,omitempty" format:"uuid" required:"false"`
+	Names              []string            `query:"names,omitempty" json:"names,omitempty" required:"false"`
+	Statuses           []models.TaskStatus `query:"statuses,omitempty" json:"statuses,omitempty" required:"false"`
+	TeamIds            []uuid.UUID         `query:"team_ids,omitempty" json:"team_ids,omitempty" format:"uuid" required:"false"`
+	CreatedByMemberIds []uuid.UUID         `query:"created_by_member_ids,omitempty" json:"created_by_member_ids,omitempty" format:"uuid" required:"false"`
+	ParentIds          []uuid.UUID         `query:"parent_ids,omitempty" json:"parent_ids,omitempty" format:"uuid" required:"false"`
+}
+
+func (*DbTaskStore) TaskWhere(task *TaskFilter) *map[string]any {
 	if task == nil {
 		return nil
 	}
 	where := map[string]any{}
-	if task.ID != uuid.Nil {
+	if task.Q != "" {
+		where["_or"] = []map[string]any{
+			{
+				"_and": []map[string]any{
+					{
+						"name": map[string]any{
+							"_ilike": "%" + task.Q + "%",
+						},
+					},
+				},
+			},
+			{
+				"_and": []map[string]any{
+					{
+						"description": map[string]any{
+							"_ilike": "%" + task.Q + "%",
+						},
+					},
+				},
+			},
+		}
+	}
+	if len(task.Ids) > 0 {
 		where["id"] = map[string]any{
-			"_eq": task.ID,
+			"_in": task.Ids,
 		}
 	}
-	if task.ProjectID != uuid.Nil {
-		where["project_id"] = map[string]any{
-			"_eq": task.ProjectID,
-		}
-	}
-	if task.TeamID != uuid.Nil {
-		where["team_id"] = map[string]any{
-			"_eq": task.TeamID,
-		}
-	}
-	if task.CreatedByMemberID != nil {
-		where["created_by_member_id"] = map[string]any{
-			"_eq": task.CreatedByMemberID,
-		}
-	}
-	if task.Status != "" {
-		where["status"] = map[string]any{
-			"_eq": task.Status,
-		}
-	}
-	if task.Name != "" {
+	if len(task.Names) > 0 {
 		where["name"] = map[string]any{
-			"_like": fmt.Sprintf("%%%s%%", task.Name),
+			"_in": task.Names,
 		}
 	}
-	if task.Description != nil {
-		where["description"] = map[string]any{
-			"_like": fmt.Sprintf("%%%s%%", *task.Description),
+	if len(task.ProjectIds) > 0 {
+		where["project_id"] = map[string]any{
+			"_in": task.ProjectIds,
 		}
 	}
-	if task.ParentID != nil {
+	if len(task.TeamIds) > 0 {
+		where["team_id"] = map[string]any{
+			"_in": task.TeamIds,
+		}
+	}
+	if len(task.CreatedByMemberIds) > 0 {
+		where["created_by_member_id"] = map[string]any{
+			"_in": task.CreatedByMemberIds,
+		}
+	}
+	if len(task.Statuses) > 0 {
+		where["status"] = map[string]any{
+			"_in": task.Statuses,
+		}
+	}
+
+	if len(task.ParentIds) > 0 {
 		where["parent_id"] = map[string]any{
-			"_eq": task.ParentID,
+			"_in": task.ParentIds,
 		}
 	}
 	return &where
@@ -243,6 +276,14 @@ func (s *DbTaskStore) DeleteTask(ctx context.Context, taskID uuid.UUID) error {
 	return err
 }
 
+type TaskProjectsFilter struct {
+	shared.PaginatedInput
+	SortParams
+	Q      string      `query:"q,omitempty" json:"q,omitempty" required:"false"`
+	Ids    []uuid.UUID `query:"ids,omitempty" json:"ids,omitempty" format:"uuid" required:"false"`
+	TeamID uuid.UUID   `query:"team_id,omitempty" json:"team_id,omitempty" format:"uuid" required:"false"`
+}
+
 func (s *DbTaskStore) FindTaskProjectByID(ctx context.Context, id uuid.UUID) (*models.TaskProject, error) {
 
 	task, err := repository.TaskProject.GetOne(
@@ -268,93 +309,29 @@ func (s *DbTaskStore) DeleteTaskProject(ctx context.Context, taskProjectID uuid.
 	)
 	return err
 }
-func ListTasksOrderByFunc(input *shared.TaskListParams) *map[string]string {
-	order := map[string]string{}
-
-	if input == nil || input.SortBy == "" || input.SortOrder == "" {
-		return nil
-	}
-	order[input.SortBy] = strings.ToUpper(input.SortOrder)
-	return &order
-}
-
-func ListTasksFilterFunc(filter *shared.TaskListFilter) *map[string]any {
-	if filter == nil {
-		return nil
-	}
-	where := make(map[string]any)
-	if filter.Q != "" {
-		where["_or"] = []map[string]any{
-			{
-				"name": map[string]any{
-					"_ilike": "%" + filter.Q + "%",
-				},
-			},
-			{
-				"description": map[string]any{
-					"_ilike": "%" + filter.Q + "%",
-				},
-			},
+func ListTasksOrderByFunc(input *TaskFilter) *map[string]string {
+	sortBy, sortOrder := input.Sort()
+	if slices.Contains(repository.TaskBuilder.ColumnNames(), utils.Quote(sortBy)) {
+		return &map[string]string{
+			sortBy: strings.ToUpper(sortOrder),
 		}
 	}
-	if len(filter.Status) > 0 {
-		where["status"] = map[string]any{
-			"_in": filter.Status,
-		}
-	}
-	if len(filter.CreatedByMemberID) > 0 {
-		where["created_by_member_id"] = map[string]any{
-			"_eq": filter.CreatedByMemberID,
-		}
-	}
-
-	if filter.ProjectID != "" {
-		where["project_id"] = map[string]any{
-			"_eq": filter.ProjectID,
-		}
-	}
-
-	if len(filter.Ids) > 0 {
-		where["id"] = map[string]any{
-			"_in": filter.Ids,
-		}
-	}
-	if filter.ParentID != "" {
-		where["parent_id"] = map[string]any{
-			"_eq": filter.ParentID,
-		}
-	}
-	if filter.ParentStatus != "" {
-		switch filter.ParentStatus {
-		case shared.ParentStatusParent:
-			where["parent_id"] = map[string]any{
-				repository.IsNull: nil,
-			}
-		case shared.ParentStatusChild:
-			where["parent_id"] = map[string]any{
-				repository.IsNotNull: nil,
-			}
-		}
-	}
-
-	return &where
+	return nil
 }
 
 // ListTasks implements AdminCrudActions.
-func (s *DbTaskStore) ListTasks(ctx context.Context, input *shared.TaskListParams) ([]*models.Task, error) {
-	filter := input.TaskListFilter
-	pageInput := &input.PaginatedInput
+func (s *DbTaskStore) ListTasks(ctx context.Context, input *TaskFilter) ([]*models.Task, error) {
 
-	iimit, offset := database.PaginateRepo(pageInput)
+	iimit, offset := pagination(input)
 	order := ListTasksOrderByFunc(input)
-	where := ListTasksFilterFunc(&filter)
+	where := s.TaskWhere(input)
 	data, err := repository.Task.Get(
 		ctx,
 		s.db,
 		where,
 		order,
-		iimit,
-		offset,
+		&iimit,
+		&offset,
 	)
 	if err != nil {
 		return nil, err
@@ -363,10 +340,11 @@ func (s *DbTaskStore) ListTasks(ctx context.Context, input *shared.TaskListParam
 }
 
 // CountTasks implements AdminCrudActions.
-func (s *DbTaskStore) CountTasks(ctx context.Context, filter *shared.TaskListFilter) (int64, error) {
-	where := ListTasksFilterFunc(filter)
+func (s *DbTaskStore) CountTasks(ctx context.Context, filter *TaskFilter) (int64, error) {
+	where := s.TaskWhere(filter)
 	return repository.Task.Count(ctx, s.db, where)
 }
+
 func ListTaskProjectsFilterFunc(filter *shared.TaskProjectsListFilter) *map[string]any {
 	if filter == nil {
 		return nil

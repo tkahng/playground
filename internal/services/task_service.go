@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/authgo/internal/stores"
 )
 
 type TaskStore interface {
@@ -51,7 +52,8 @@ type TaskService interface {
 	CalculateNewPosition(ctx context.Context, groupID uuid.UUID, status models.TaskStatus, targetIndex int64, excludeID uuid.UUID) (float64, error)
 }
 type taskService struct {
-	store TaskStore
+	store   TaskStore
+	adapter *stores.StorageAdapter
 }
 
 // FindAndUpdateTask implements TaskService.
@@ -168,8 +170,12 @@ func (t *taskService) Store() TaskStore {
 	return t.store
 }
 
-func NewTaskService(store TaskStore) TaskService {
+func (t *taskService) Adapter() stores.StorageAdapterInterface {
+	return t.adapter
+}
+
+func NewTaskService(adapter *stores.StorageAdapter) TaskService {
 	return &taskService{
-		store: store,
+		adapter: adapter,
 	}
 }
