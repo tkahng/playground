@@ -358,8 +358,6 @@ func (m *mockTeamStore) UpdateTeamMemberSelectedAt(ctx context.Context, teamId u
 	return args.Error(0)
 }
 
-var _ TeamServiceStore = (*mockTeamStore)(nil)
-
 type mockTeamInvitationService struct {
 	mock.Mock
 }
@@ -526,5 +524,3 @@ func (m *mockTeamInvitationStore) FindInvitationByToken(ctx context.Context, tok
 	}
 	return invitation, args.Error(1)
 }
-
-var _ TeamInvitationStore = (*mockTeamInvitationStore)(nil)

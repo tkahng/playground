@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/shared"
 )
@@ -41,20 +40,4 @@ type TeamStoreInterface interface {
 
 	// misc methods
 	FindUserByID(ctx context.Context, userId uuid.UUID) (*models.User, error)
-}
-
-type DbTeamStore struct {
-	db database.Dbx
-	*DbTeamGroupStore
-	*DbTeamMemberStore
-	*DbTeamInvitationStore
-}
-
-func NewDbTeamStore(db database.Dbx) *DbTeamStore {
-	return &DbTeamStore{
-		db:                    db,
-		DbTeamGroupStore:      NewDbTeamGroupStore(db),
-		DbTeamMemberStore:     NewDbTeamMemberStore(db),
-		DbTeamInvitationStore: NewDbTeamInvitationStore(db),
-	}
 }

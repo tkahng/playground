@@ -27,12 +27,6 @@ type TeamService interface {
 	FindTeamMembersByUserID(ctx context.Context, userId uuid.UUID, paginate *shared.TeamMemberListInput) ([]*models.TeamMember, error)
 }
 
-type TeamServiceStore interface {
-	stores.TeamStoreInterface
-	// Team() TeamStore
-	// TeamStripeStore
-}
-
 type teamService struct {
 	adapter stores.StorageAdapterInterface
 }

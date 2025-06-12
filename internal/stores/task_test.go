@@ -113,8 +113,8 @@ func TestFindTaskByID(t *testing.T) {
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		adapter := stores.NewStorageAdapter(dbxx)
-		teamstore := stores.NewDbTeamStore(dbxx)
-		taskStore := stores.NewDbTaskStore(dbxx)
+		teamstore := adapter.TeamMember()
+		taskStore := adapter.Task()
 		user, err := adapter.User().CreateUser(ctx, &models.User{
 			Email: "tkahng@gmail.com",
 		})

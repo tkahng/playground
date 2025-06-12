@@ -36,8 +36,8 @@ func TestTeamStore_UpdateTeamMember(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := stores.NewDbTeamStore(tt.fields.db)
-			got, err := s.UpdateTeamMember(tt.args.ctx, tt.args.member)
+			adapter := stores.NewStorageAdapter(tt.fields.db)
+			got, err := adapter.TeamMember().UpdateTeamMember(tt.args.ctx, tt.args.member)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("PostgresTeamStore.UpdateTeamMember() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -68,8 +68,8 @@ func TestTeamStore_CountTeamMembers(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := stores.NewDbTeamStore(tt.fields.db)
-			got, err := s.CountTeamMembers(tt.args.ctx, &stores.TeamMemberFilter{
+			s := stores.NewStorageAdapter(tt.fields.db)
+			got, err := s.TeamMember().CountTeamMembers(tt.args.ctx, &stores.TeamMemberFilter{
 				TeamIds: []uuid.UUID{tt.args.teamId},
 			})
 			if (err != nil) != tt.wantErr {
@@ -87,8 +87,9 @@ func TestCreateTeamMember(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
-		teamStore := stores.NewDbTeamStore(dbxx)
-		userStore := stores.NewDbUserStore(dbxx)
+		adapter := stores.NewStorageAdapter(dbxx)
+		teamStore := adapter.TeamGroup()
+		userStore := adapter.User()
 		team, err := teamStore.CreateTeam(ctx, "TeamWithMember", "team-with-member-slug")
 		if err != nil {
 			t.Fatalf("CreateTeam() error = %v", err)
@@ -100,7 +101,7 @@ func TestCreateTeamMember(t *testing.T) {
 			t.Fatalf("CreateUser() error = %v", err)
 		}
 		userID := user.ID
-		member, err := teamStore.CreateTeamMember(ctx, team.ID, userID, models.TeamMemberRoleMember, true)
+		member, err := adapter.TeamMember().CreateTeamMember(ctx, team.ID, userID, models.TeamMemberRoleMember, true)
 		if err != nil {
 			t.Fatalf("CreateTeamMember() error = %v", err)
 		}
@@ -115,9 +116,10 @@ func TestFindTeamMembersByUserID(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
-		teamStore := stores.NewDbTeamStore(dbxx)
-		userStore := stores.NewDbUserStore(dbxx)
-		team, err := teamStore.CreateTeam(ctx, "TeamForMembers", "team-for-members-slug")
+		adapter := stores.NewStorageAdapter(dbxx)
+		teamStore := adapter.TeamMember()
+		userStore := adapter.User()
+		team, err := adapter.TeamGroup().CreateTeam(ctx, "TeamForMembers", "team-for-members-slug")
 		if err != nil {
 			t.Fatalf("CreateTeam() error = %v", err)
 		}
@@ -147,8 +149,9 @@ func TestFindLatestTeamMemberByUserID(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
-		teamStore := stores.NewDbTeamStore(dbxx)
-		userStore := stores.NewDbUserStore(dbxx)
+		adapter := stores.NewStorageAdapter(dbxx)
+		teamStore := adapter.TeamGroup()
+		userStore := adapter.User()
 		team1, err := teamStore.CreateTeam(ctx, "team1", "team1-slug")
 		if err != nil {
 			t.Fatalf("CreateTeam() error = %v", err)
@@ -164,20 +167,20 @@ func TestFindLatestTeamMemberByUserID(t *testing.T) {
 			t.Fatalf("CreateUser() error = %v", err)
 		}
 		userID := user.ID
-		teamMember1, err := teamStore.CreateTeamMember(ctx, team1.ID, userID, models.TeamMemberRoleMember, true)
+		teamMember1, err := adapter.TeamMember().CreateTeamMember(ctx, team1.ID, userID, models.TeamMemberRoleMember, true)
 		if err != nil {
 			t.Fatalf("CreateTeamMember() error = %v", err)
 		}
-		teamMember2, err := teamStore.CreateTeamMember(ctx, team2.ID, userID, models.TeamMemberRoleMember, true)
+		teamMember2, err := adapter.TeamMember().CreateTeamMember(ctx, team2.ID, userID, models.TeamMemberRoleMember, true)
 		if err != nil {
 			t.Fatalf("CreateTeamMember() error = %v", err)
 		}
 		time.Sleep(time.Millisecond * 10)
-		err = teamStore.UpdateTeamMemberSelectedAt(ctx, teamMember1.TeamID, userID)
+		err = adapter.TeamMember().UpdateTeamMemberSelectedAt(ctx, teamMember1.TeamID, userID)
 		if err != nil {
 			t.Fatalf("UpdateTeamMemberUpdatedAt() error = %v", err)
 		}
-		latest, err := teamStore.FindLatestTeamMemberByUserID(ctx, userID)
+		latest, err := adapter.TeamMember().FindLatestTeamMemberByUserID(ctx, userID)
 		if err != nil {
 			t.Fatalf("FindLatestTeamMemberByUserID() error = %v", err)
 		}
@@ -188,11 +191,11 @@ func TestFindLatestTeamMemberByUserID(t *testing.T) {
 			t.Errorf("FindLatestTeamMemberByUserID() = %v, want teamMember1 ID %v", latest.ID, teamMember1.ID)
 		}
 		time.Sleep(time.Millisecond * 10)
-		err = teamStore.UpdateTeamMemberSelectedAt(ctx, teamMember1.TeamID, userID)
+		err = adapter.TeamMember().UpdateTeamMemberSelectedAt(ctx, teamMember1.TeamID, userID)
 		if err != nil {
 			t.Fatalf("UpdateTeamMemberUpdatedAt() error = %v", err)
 		}
-		latest, err = teamStore.FindLatestTeamMemberByUserID(ctx, userID)
+		latest, err = adapter.TeamMember().FindLatestTeamMemberByUserID(ctx, userID)
 		if err != nil {
 			t.Fatalf("FindLatestTeamMemberByUserID() error = %v", err)
 		}
@@ -225,20 +228,19 @@ func TestUpdateTeamMemberUpdatedAt(t *testing.T) {
 	})
 
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
-		teamStore := stores.NewDbTeamStore(dbxx)
-		userStore := stores.NewDbUserStore(dbxx)
+		adapter := stores.NewStorageAdapter(dbxx)
 
-		team, err := teamStore.CreateTeam(ctx, "UpdateMemberTeam", "update-member-team-slug")
+		team, err := adapter.TeamGroup().CreateTeam(ctx, "UpdateMemberTeam", "update-member-team-slug")
 		if err != nil {
 			t.Fatalf("CreateTeam() error = %v", err)
 		}
-		user, err := userStore.CreateUser(ctx, &models.User{
+		user, err := adapter.User().CreateUser(ctx, &models.User{
 			Email: "updatemember@example.com",
 		})
 		if err != nil {
 			t.Fatalf("CreateUser() error = %v", err)
 		}
-		member, err := teamStore.CreateTeamMember(ctx, team.ID, user.ID, models.TeamMemberRoleMember, true)
+		member, err := adapter.TeamMember().CreateTeamMember(ctx, team.ID, user.ID, models.TeamMemberRoleMember, true)
 		if err != nil {
 			t.Fatalf("CreateTeamMember() error = %v", err)
 		}
@@ -248,7 +250,7 @@ func TestUpdateTeamMemberUpdatedAt(t *testing.T) {
 		// Sleep to ensure updated_at will be different
 		time.Sleep(time.Second * 1)
 
-		err = teamStore.UpdateTeamMemberSelectedAt(ctx, team.ID, user.ID)
+		err = adapter.TeamMember().UpdateTeamMemberSelectedAt(ctx, team.ID, user.ID)
 		if err != nil {
 			t.Fatalf("UpdateTeamMemberUpdatedAt() error = %v", err)
 		}
@@ -257,7 +259,7 @@ func TestUpdateTeamMemberUpdatedAt(t *testing.T) {
 		}
 
 		// Fetch the member again to check updated_at
-		updated, err := teamStore.FindTeamMemberByTeamAndUserId(ctx, team.ID, user.ID)
+		updated, err := adapter.TeamMember().FindTeamMemberByTeamAndUserId(ctx, team.ID, user.ID)
 		if err != nil {
 			t.Fatalf("GetOne() error = %v", err)
 		}
@@ -278,11 +280,12 @@ func TestUpdateTeamMemberSelectedAt(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
-		teamStore := stores.NewDbTeamStore(dbxx)
-		userStore := stores.NewDbUserStore(dbxx)
+		adapter := stores.NewStorageAdapter(dbxx)
+		teamStore := adapter.TeamMember()
+		userStore := adapter.User()
 
 		// Create team and user
-		team, err := teamStore.CreateTeam(ctx, "SelectedAtTeam", "selected-at-team-slug")
+		team, err := adapter.TeamGroup().CreateTeam(ctx, "SelectedAtTeam", "selected-at-team-slug")
 		if err != nil {
 			t.Fatalf("CreateTeam() error = %v", err)
 		}

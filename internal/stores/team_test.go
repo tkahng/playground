@@ -19,7 +19,8 @@ func TestCreateTeam(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
-		teamStore := stores.NewDbTeamStore(dbxx)
+		adapter := stores.NewStorageAdapter(dbxx)
+		teamStore := adapter.TeamGroup()
 		team, err := teamStore.CreateTeam(ctx, "Test Team", "test-team-slug")
 		if err != nil {
 			t.Fatalf("CreateTeam() error = %v", err)
@@ -35,7 +36,8 @@ func TestUpdateTeam(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
-		teamStore := stores.NewDbTeamStore(dbxx)
+		adapter := stores.NewStorageAdapter(dbxx)
+		teamStore := adapter.TeamGroup()
 		team, err := teamStore.CreateTeam(ctx, "Old Name", "old-name-slug")
 		if err != nil {
 			t.Fatalf("CreateTeam() error = %v", err)
@@ -56,8 +58,8 @@ func TestDeleteTeam(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
-		teamStore := stores.NewDbTeamStore(dbxx)
-		// Create a team to delete
+		adapter := stores.NewStorageAdapter(dbxx)
+		teamStore := adapter.TeamGroup() // Create a team to delete
 		team, err := teamStore.CreateTeam(ctx, "ToDelete", "to-delete-slug")
 		if err != nil {
 			t.Fatalf("CreateTeam() error = %v", err)
@@ -74,7 +76,8 @@ func TestFindTeamByID(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
-		teamStore := stores.NewDbTeamStore(dbxx)
+		adapter := stores.NewStorageAdapter(dbxx)
+		teamStore := adapter.TeamGroup()
 		team, err := teamStore.CreateTeam(ctx, "FindMe", "find-me-slug")
 		if err != nil {
 			t.Fatalf("CreateTeam() error = %v", err)
@@ -109,8 +112,8 @@ func TestTeamStore_CheckTeamSlug(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := stores.NewDbTeamStore(tt.fields.db)
-			got, err := s.CheckTeamSlug(tt.args.ctx, tt.args.slug)
+			adapter := stores.NewStorageAdapter(tt.fields.db)
+			got, err := adapter.TeamGroup().CheckTeamSlug(tt.args.ctx, tt.args.slug)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("PostgresTeamStore.CheckTeamSlug() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -277,8 +280,9 @@ func TestTeamStore_CountTeams(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
-		teamStore := stores.NewDbTeamStore(dbxx)
-		userStore := stores.NewDbUserStore(dbxx)
+		adapter := stores.NewStorageAdapter(dbxx)
+		teamStore := adapter.TeamGroup()
+		userStore := adapter.User()
 
 		// Create users
 		user1, err := userStore.CreateUser(ctx, &models.User{Email: "countuser1@example.com"})
@@ -305,15 +309,15 @@ func TestTeamStore_CountTeams(t *testing.T) {
 		}
 
 		// Add members
-		_, err = teamStore.CreateTeamMember(ctx, teamA.ID, user1.ID, models.TeamMemberRoleMember, true)
+		_, err = adapter.TeamMember().CreateTeamMember(ctx, teamA.ID, user1.ID, models.TeamMemberRoleMember, true)
 		if err != nil {
 			t.Fatalf("CreateTeamMember() error = %v", err)
 		}
-		_, err = teamStore.CreateTeamMember(ctx, teamB.ID, user1.ID, models.TeamMemberRoleMember, true)
+		_, err = adapter.TeamMember().CreateTeamMember(ctx, teamB.ID, user1.ID, models.TeamMemberRoleMember, true)
 		if err != nil {
 			t.Fatalf("CreateTeamMember() error = %v", err)
 		}
-		_, err = teamStore.CreateTeamMember(ctx, teamC.ID, user2.ID, models.TeamMemberRoleMember, true)
+		_, err = adapter.TeamMember().CreateTeamMember(ctx, teamC.ID, user2.ID, models.TeamMemberRoleMember, true)
 		if err != nil {
 			t.Fatalf("CreateTeamMember() error = %v", err)
 		}
@@ -370,7 +374,8 @@ func TestTeamStore_FindTeamBySlug(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
-		teamStore := stores.NewDbTeamStore(dbxx)
+		adapter := stores.NewStorageAdapter(dbxx)
+		teamStore := adapter.TeamGroup()
 
 		// Create a team with a unique slug
 		team, err := teamStore.CreateTeam(ctx, "SlugTeam", "unique-slug-123")
