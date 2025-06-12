@@ -159,23 +159,6 @@ func (s *DbPriceStore) FindPrice(ctx context.Context, filter *StripePriceFilter)
 	return data, nil
 }
 
-// FindActivePriceById implements PaymentStore.
-func (s *DbPriceStore) FindActivePriceById(ctx context.Context, priceId string) (*models.StripePrice, error) {
-	data, err := repository.StripePrice.GetOne(
-		ctx,
-		s.db,
-		&map[string]any{
-			models.StripePriceTable.ID: map[string]any{
-				"_eq": priceId,
-			},
-			models.StripePriceTable.Type: map[string]any{
-				"_eq": string(models.StripePricingTypeRecurring),
-			},
-		},
-	)
-	return data, err
-}
-
 func (s *DbPriceStore) LoadPricesByProductIds(ctx context.Context, productIds ...string) ([][]*models.StripePrice, error) {
 
 	prices, err := repository.StripePrice.Get(
@@ -257,6 +240,5 @@ type DbPriceStoreInterface interface {
 	ListPrices(ctx context.Context, input *StripePriceFilter) ([]*models.StripePrice, error)
 	CountPrices(ctx context.Context, filter *StripePriceFilter) (int64, error)
 	FindPrice(ctx context.Context, filter *StripePriceFilter) (*models.StripePrice, error)
-	FindActivePriceById(ctx context.Context, priceId string) (*models.StripePrice, error)
 	UpsertPriceFromStripe(ctx context.Context, price *stripe.Price) error
 }

@@ -62,15 +62,6 @@ func (s *StripePriceStoreDecorator) CountPrices(ctx context.Context, filter *Str
 }
 
 // FindActivePriceById implements DbPriceStoreInterface.
-func (s *StripePriceStoreDecorator) FindActivePriceById(ctx context.Context, priceId string) (*models.StripePrice, error) {
-	if s.FindActivePriceByIdFunc != nil {
-		return s.FindActivePriceByIdFunc(ctx, priceId)
-	}
-	if s.Delegate == nil {
-		return nil, ErrDelegateNil
-	}
-	return s.Delegate.FindActivePriceById(ctx, priceId)
-}
 
 // FindPrice implements DbPriceStoreInterface.
 func (s *StripePriceStoreDecorator) FindPrice(ctx context.Context, filter *StripePriceFilter) (*models.StripePrice, error) {

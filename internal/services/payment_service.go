@@ -466,7 +466,10 @@ func (srv *StripeService) CreateCheckoutSession(ctx context.Context, stripeCusto
 	if firstSub {
 		trialDays = types.Pointer(int64(14))
 	}
-	valPrice, err := srv.adapter.Price().FindActivePriceById(ctx, priceId)
+	valPrice, err := srv.adapter.Price().FindPrice(ctx, &stores.StripePriceFilter{
+		Ids:    []string{priceId},
+		Active: types.OptionalParam[bool]{IsSet: true, Value: true},
+	})
 	if err != nil {
 		return "", err
 	}
