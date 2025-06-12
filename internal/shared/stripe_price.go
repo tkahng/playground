@@ -69,15 +69,3 @@ func FromModelPrice(price *crudModels.StripePrice) *StripePrice {
 		Subscriptions:   mapper.Map(price.Subscriptions, FromModelSubscription),
 	}
 }
-
-type StripePriceListFilter struct {
-	Q          string       `query:"q,omitempty" required:"false"`
-	Ids        []string     `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" uniqueItems:"true"`
-	Active     ActiveStatus `query:"active,omitempty" required:"false" enum:"active,inactive"`
-	ProductIds []string     `query:"product_ids,omitempty" required:"false" minimum:"1" maximum:"100" uniqueItems:"true"`
-}
-type StripePriceListParams struct {
-	PaginatedInput
-	StripePriceListFilter
-	SortParams
-}

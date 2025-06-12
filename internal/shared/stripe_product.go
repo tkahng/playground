@@ -39,12 +39,6 @@ func FromModelProduct(product *crudModels.StripeProduct) *StripeProduct {
 	}
 }
 
-type StripeProductListFilter struct {
-	Q      string                    `query:"q,omitempty" required:"false"`
-	Ids    []string                  `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100"`
-	Active types.OptionalParam[bool] `query:"active,omitempty" required:"false"`
-}
-
 type StripeProductListParams struct {
 	PaginatedInput
 	SortParams

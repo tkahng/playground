@@ -286,7 +286,7 @@ type RoleIdsInput struct {
 // 	return &output, nil
 // }
 
-type RolePermissionsUpdateInput struct {
+type PermissionIdsInput struct {
 	PermissionIDs []string `json:"permission_ids" minimum:"0" maximum:"100" format:"uuid" required:"true"`
 }
 
@@ -325,7 +325,7 @@ func (api *Api) AdminRolesGet(ctx context.Context, input *struct {
 
 func (api *Api) AdminRolesCreatePermissions(ctx context.Context, input *struct {
 	RoleID string `path:"id" format:"uuid" required:"true"`
-	Body   RolePermissionsUpdateInput
+	Body   PermissionIdsInput
 }) (*struct {
 }, error) {
 	id, err := uuid.Parse(input.RoleID)

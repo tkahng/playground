@@ -261,6 +261,7 @@ type DbRbacStoreInterface interface { // size=16 (0x10)
 	CreateUserRoles(ctx context.Context, userId uuid.UUID, roleIds ...uuid.UUID) error
 	DeletePermission(ctx context.Context, id uuid.UUID) error
 	DeleteProductRoles(ctx context.Context, productId string, roleIds ...uuid.UUID) error
+	DeleteProductPermissions(ctx context.Context, productId string, permissionIds ...uuid.UUID) error
 	DeleteRole(ctx context.Context, id uuid.UUID) error
 	DeleteRolePermissions(ctx context.Context, roleId uuid.UUID, permissionIds ...uuid.UUID) error
 	DeleteUserRole(ctx context.Context, userId uuid.UUID, roleId uuid.UUID) error
@@ -284,3 +285,5 @@ type DbRbacStoreInterface interface { // size=16 (0x10)
 	UpdatePermission(ctx context.Context, id uuid.UUID, roledto *shared.UpdatePermissionDto) error
 	UpdateRole(ctx context.Context, id uuid.UUID, roledto *shared.UpdateRoleDto) error
 }
+
+var _ DbRbacStoreInterface = (*DbRbacStore)(nil)

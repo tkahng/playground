@@ -99,6 +99,28 @@ func (p *DbRbacStore) LoadProductPermissions(ctx context.Context, productIds ...
 	}), nil
 }
 
+func (s *DbRbacStore) DeleteProductPermissions(ctx context.Context, productId string, permissionIds ...uuid.UUID) error {
+	if len(permissionIds) == 0 {
+		return nil
+	}
+	_, err := repository.ProductPermission.Delete(
+		ctx,
+		s.db,
+		&map[string]any{
+			"product_id": map[string]any{
+				"_eq": productId,
+			},
+			"permission_id": map[string]any{
+				"_in": permissionIds,
+			},
+		},
+	)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *DbRbacStore) DeleteProductRoles(ctx context.Context, productId string, roleIds ...uuid.UUID) error {
 	if len(roleIds) == 0 {
 		return nil

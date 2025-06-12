@@ -25,6 +25,7 @@ type RbacStoreDecorator struct {
 	CreateUserRolesFunc          func(ctx context.Context, userId uuid.UUID, roleIds ...uuid.UUID) error
 	DeletePermissionFunc         func(ctx context.Context, id uuid.UUID) error
 	DeleteProductRolesFunc       func(ctx context.Context, productId string, roleIds ...uuid.UUID) error
+	DeleteProductPermissionsFunc func(ctx context.Context, productId string, permissionIds ...uuid.UUID) error
 	DeleteRoleFunc               func(ctx context.Context, id uuid.UUID) error
 	DeleteRolePermissionsFunc    func(ctx context.Context, roleId uuid.UUID, permissionIds ...uuid.UUID) error
 	DeleteUserRoleFunc           func(ctx context.Context, userId uuid.UUID, roleId uuid.UUID) error
@@ -242,6 +243,17 @@ func (r *RbacStoreDecorator) DeleteProductRoles(ctx context.Context, productId s
 		return ErrDelegateNil
 	}
 	return r.Delegate.DeleteProductRoles(ctx, productId, roleIds...)
+}
+
+// DeleteProductPermissions implements DbRbacStoreInterface.
+func (r *RbacStoreDecorator) DeleteProductPermissions(ctx context.Context, productId string, permissionIds ...uuid.UUID) error {
+	if r.DeleteProductPermissionsFunc != nil {
+		return r.DeleteProductPermissionsFunc(ctx, productId, permissionIds...)
+	}
+	if r.Delegate == nil {
+		return ErrDelegateNil
+	}
+	return r.Delegate.DeleteProductPermissions(ctx, productId, permissionIds...)
 }
 
 // DeleteRole implements DbRbacStoreInterface.

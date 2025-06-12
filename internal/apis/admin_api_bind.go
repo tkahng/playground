@@ -359,7 +359,33 @@ func BindAdminApi(api huma.API, appApi *Api) {
 	//  admin stripe products get
 	huma.Register(adminGroup, huma.Operation{OperationID: "admin-stripe-product-get", Method: http.MethodGet, Path: "/products/{product-id}", Summary: "Admin stripe product get", Description: "Get a stripe product by ID", Tags: []string{"Admin", "Product", "Stripe"}, Errors: []int{http.StatusNotFound, http.StatusBadRequest}, Security: []map[string][]string{{shared.BearerAuthSecurityKey: {}}}}, appApi.AdminStripeProductsGet)
 	// admin stripe products roles create
-	huma.Register(adminGroup, huma.Operation{OperationID: "admin-create-product-roles", Method: http.MethodPost, Path: "/products/{product-id}/roles", Summary: "Create product roles", Description: "Create product roles", Tags: []string{"Admin", "Roles", "Product", "Stripe"}, Errors: []int{http.StatusNotFound}, Security: []map[string][]string{{shared.BearerAuthSecurityKey: {}}}}, appApi.AdminStripeProductsRolesCreate)
+	huma.Register(
+		adminGroup,
+		huma.Operation{
+			OperationID: "admin-create-product-permissions",
+			Method:      http.MethodPost,
+			Path:        "/products/{product-id}/permissions",
+			Summary:     "Create product permissions",
+			Description: "Create product permissions",
+			Tags:        []string{"Admin", "Permissions", "Product"},
+			Errors:      []int{http.StatusNotFound},
+			Security:    []map[string][]string{{shared.BearerAuthSecurityKey: {}}},
+		},
+		appApi.AdminStripeProductsPermissionsCreate,
+	)
 	// admin stripe products roles delete
-	huma.Register(adminGroup, huma.Operation{OperationID: "admin-delete-product-roles", Method: http.MethodDelete, Path: "/products/{product-id}/roles/{role-id}", Summary: "Delete product roles", Description: "Delete product roles", Tags: []string{"Admin", "Roles", "Product", "Stripe"}, Errors: []int{http.StatusNotFound}, Security: []map[string][]string{{shared.BearerAuthSecurityKey: {}}}}, appApi.AdminStripeProductsRolesDelete)
+	huma.Register(
+		adminGroup,
+		huma.Operation{
+			OperationID: "admin-delete-product-permissions",
+			Method:      http.MethodDelete,
+			Path:        "/products/{product-id}/permissions/{permission-id}",
+			Summary:     "Delete product permissions",
+			Description: "Delete product permissions",
+			Tags:        []string{"Admin", "Permissions", "Product"},
+			Errors:      []int{http.StatusNotFound},
+			Security:    []map[string][]string{{shared.BearerAuthSecurityKey: {}}},
+		},
+		appApi.AdminStripeProductsPermissionDelete,
+	)
 }

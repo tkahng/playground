@@ -159,9 +159,9 @@ func (api *Api) AdminStripeProductsGet(ctx context.Context,
 	}, nil
 }
 
-func (api *Api) AdminStripeProductsRolesCreate(ctx context.Context, input *struct {
+func (api *Api) AdminStripeProductsPermissionsCreate(ctx context.Context, input *struct {
 	ProductID string `path:"product-id" required:"true"`
-	Body      RoleIdsInput
+	Body      PermissionIdsInput
 }) (*struct{}, error) {
 
 	id := input.ProductID
@@ -173,18 +173,18 @@ func (api *Api) AdminStripeProductsRolesCreate(ctx context.Context, input *struc
 		return nil, huma.Error404NotFound("Product not found")
 	}
 
-	roleIds := utils.ParseValidUUIDs(input.Body.RolesIds)
+	permissionIds := utils.ParseValidUUIDs(input.Body.PermissionIDs)
 
-	err = api.app.Adapter().Rbac().CreateProductRoles(ctx, user.ID, roleIds...)
+	err = api.app.Adapter().Rbac().CreateProductPermissions(ctx, user.ID, permissionIds...)
 	if err != nil {
 		return nil, err
 	}
 	return nil, nil
 }
 
-func (api *Api) AdminStripeProductsRolesDelete(ctx context.Context, input *struct {
-	ProductID string `path:"product-id" required:"true"`
-	RoleID    string `path:"role-id" required:"true" format:"uuid"`
+func (api *Api) AdminStripeProductsPermissionDelete(ctx context.Context, input *struct {
+	ProductID    string `path:"product-id" required:"true"`
+	PermissionID string `path:"permission-id" required:"true" format:"uuid"`
 }) (*struct{}, error) {
 	id := input.ProductID
 	product, err := api.app.Adapter().Product().FindProductById(ctx, id)
@@ -195,19 +195,21 @@ func (api *Api) AdminStripeProductsRolesDelete(ctx context.Context, input *struc
 		return nil, huma.Error404NotFound("Product not found")
 	}
 
-	roleId, err := uuid.Parse(input.RoleID)
+	permissionId, err := uuid.Parse(input.PermissionID)
 	if err != nil {
 		return nil, huma.Error400BadRequest("role_id is not a valid UUID")
 	}
 
-	role, err := api.app.Adapter().Rbac().FindRoleById(ctx, roleId)
+	permission, err := api.app.Adapter().Rbac().FindPermission(ctx, &stores.PermissionFilter{
+		Ids: []uuid.UUID{permissionId},
+	})
 	if err != nil {
 		return nil, err
 	}
-	if role == nil {
-		return nil, huma.Error404NotFound("Role not found")
+	if permission == nil {
+		return nil, huma.Error404NotFound("Permission not found")
 	}
-	err = api.app.Adapter().Rbac().DeleteProductRoles(ctx, product.ID, role.ID)
+	err = api.app.Adapter().Rbac().DeleteProductPermissions(ctx, product.ID, permission.ID)
 	if err != nil {
 		return nil, err
 	}
