@@ -16,6 +16,17 @@ type StripePriceStoreDecorator struct {
 	UpsertPriceFunc            func(ctx context.Context, price *models.StripePrice) error
 	UpsertPriceFromStripeFunc  func(ctx context.Context, price *stripe.Price) error
 	LoadPricesByProductIdsFunc func(ctx context.Context, productIds ...string) ([][]*models.StripePrice, error)
+	LoadPricesByIdsFunc        func(ctx context.Context, priceIds ...string) ([]*models.StripePrice, error)
+}
+
+func (s *StripePriceStoreDecorator) LoadPricesByIds(ctx context.Context, priceIds ...string) ([]*models.StripePrice, error) {
+	if s.LoadPricesByIdsFunc != nil {
+		return s.LoadPricesByIdsFunc(ctx, priceIds...)
+	}
+	if s.Delegate == nil {
+		return nil, ErrDelegateNil
+	}
+	return s.Delegate.LoadPricesByIds(ctx, priceIds...)
 }
 
 // LoadPricesByProductIds implements DbPriceStoreInterface.

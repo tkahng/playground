@@ -126,14 +126,13 @@ func TestTeamStore_FindTeamByStripeCustomerId(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
-		teamStore := stores.NewDbTeamStore(dbxx)
+		adapter := stores.NewStorageAdapter(dbxx)
 		stripeID := "cus_test_123"
-		team, err := teamStore.CreateTeam(ctx, "StripeTeam", "stripe-team-slug")
+		team, err := adapter.TeamGroup().CreateTeam(ctx, "StripeTeam", "stripe-team-slug")
 		if err != nil {
 			t.Fatalf("CreateTeam() error = %v", err)
 		}
-		customerStore := stores.NewDbStripeStore(dbxx)
-		customer, err := customerStore.CreateCustomer(ctx, &models.StripeCustomer{
+		customer, err := adapter.Customer().CreateCustomer(ctx, &models.StripeCustomer{
 			ID:           stripeID,
 			TeamID:       types.Pointer(team.ID),
 			CustomerType: models.StripeCustomerTypeTeam,
@@ -144,7 +143,9 @@ func TestTeamStore_FindTeamByStripeCustomerId(t *testing.T) {
 		if customer == nil || customer.ID != stripeID {
 			t.Errorf("CreateCustomer() = %v, want ID %v", customer, stripeID)
 		}
-		found, err := teamStore.FindTeamByStripeCustomerId(ctx, stripeID)
+		found, err := adapter.TeamGroup().FindTeam(ctx, &stores.TeamFilter{
+			CustomerIds: []string{stripeID},
+		})
 		if err != nil {
 			t.Fatalf("FindTeamByStripeCustomerId() error = %v", err)
 		}
@@ -159,8 +160,10 @@ func TestTeamStore_ListTeams(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
-		teamStore := stores.NewDbTeamStore(dbxx)
-		userStore := stores.NewDbUserStore(dbxx)
+		adapter := stores.NewStorageAdapter(dbxx)
+		teamStore := adapter.TeamGroup()
+		teamMemberStore := adapter.TeamMember()
+		userStore := adapter.User()
 
 		// Create users
 		user1, err := userStore.CreateUser(ctx, &models.User{Email: "user1@example.com"})
@@ -187,15 +190,15 @@ func TestTeamStore_ListTeams(t *testing.T) {
 		}
 
 		// Add members
-		_, err = teamStore.CreateTeamMember(ctx, teamA.ID, user1.ID, models.TeamMemberRoleMember, true)
+		_, err = teamMemberStore.CreateTeamMember(ctx, teamA.ID, user1.ID, models.TeamMemberRoleMember, true)
 		if err != nil {
 			t.Fatalf("CreateTeamMember() error = %v", err)
 		}
-		_, err = teamStore.CreateTeamMember(ctx, teamB.ID, user1.ID, models.TeamMemberRoleMember, true)
+		_, err = teamMemberStore.CreateTeamMember(ctx, teamB.ID, user1.ID, models.TeamMemberRoleMember, true)
 		if err != nil {
 			t.Fatalf("CreateTeamMember() error = %v", err)
 		}
-		_, err = teamStore.CreateTeamMember(ctx, teamC.ID, user2.ID, models.TeamMemberRoleMember, true)
+		_, err = teamMemberStore.CreateTeamMember(ctx, teamC.ID, user2.ID, models.TeamMemberRoleMember, true)
 		if err != nil {
 			t.Fatalf("CreateTeamMember() error = %v", err)
 		}

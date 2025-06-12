@@ -20,21 +20,21 @@ func TestStripeStore_CreateCustomer(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
-		userStore := stores.NewDbUserStore(dbxx)
-		teamStore := stores.NewDbTeamStore(dbxx)
-		user, err := userStore.CreateUser(ctx, &models.User{
+		adapter := stores.NewStorageAdapter(dbxx)
+
+		user, err := adapter.User().CreateUser(ctx, &models.User{
 			Email: "tkahng@gmail.com",
 		})
 		if err != nil {
 			return err
 		}
-		user2, err := userStore.CreateUser(ctx, &models.User{
+		user2, err := adapter.User().CreateUser(ctx, &models.User{
 			Email: "user2@gmail.com",
 		})
 		if err != nil {
 			return err
 		}
-		team, err := teamStore.CreateTeam(ctx, "test", "test")
+		team, err := adapter.TeamGroup().CreateTeam(ctx, "test", "test")
 		if err != nil {
 			return err
 		}
@@ -138,29 +138,28 @@ func TestStripeStore_CreateCustomer(t *testing.T) {
 		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				store := stores.NewDbStripeStore(tt.fields.db)
-				got, err := store.CreateCustomer(tt.args.ctx, tt.args.customer)
+				got, err := adapter.Customer().CreateCustomer(tt.args.ctx, tt.args.customer)
 				if (err != nil) != tt.wantErr {
-					t.Errorf("PostgresStripeStore.CreateCustomer() error = %v, wantErr %v", err, tt.wantErr)
+					t.Errorf("PostgresStripeadapter.Customer().CreateCustomer() error = %v, wantErr %v", err, tt.wantErr)
 					return
 				}
 				if got != nil && tt.want != nil {
 					if got.ID != tt.want.ID {
-						t.Errorf("PostgresStripeStore.CreateCustomer() got = %v, want %v", got.ID, tt.want.ID)
+						t.Errorf("PostgresStripeadapter.Customer().CreateCustomer() got = %v, want %v", got.ID, tt.want.ID)
 					}
 					if got.UserID != nil && tt.want.UserID != nil {
 						if *got.UserID != *tt.want.UserID {
-							t.Errorf("PostgresStripeStore.CreateCustomer() got = %v, want %v", *got.UserID, *tt.want.UserID)
+							t.Errorf("PostgresStripeadapter.Customer().CreateCustomer() got = %v, want %v", *got.UserID, *tt.want.UserID)
 						}
 					}
 					if got.TeamID != nil && tt.want.TeamID != nil {
 						if *got.TeamID != *tt.want.TeamID {
-							t.Errorf("PostgresStripeStore.CreateCustomer() got = %v, want %v", *got.TeamID, *tt.want.TeamID)
+							t.Errorf("PostgresStripeadapter.Customer().CreateCustomer() got = %v, want %v", *got.TeamID, *tt.want.TeamID)
 						}
 					}
 
 					if got.CustomerType != tt.want.CustomerType {
-						t.Errorf("PostgresStripeStore.CreateCustomer() got.CustomerType = %v, want %v", got.CustomerType, tt.want.CustomerType)
+						t.Errorf("PostgresStripeadapter.Customer().CreateCustomer() got.CustomerType = %v, want %v", got.CustomerType, tt.want.CustomerType)
 					}
 				}
 			})
@@ -173,7 +172,7 @@ func TestStripeStore_ProductAndPrice(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
-		store := stores.NewDbStripeStore(dbxx)
+		adapter := stores.NewStorageAdapter(dbxx)
 
 		// UpsertProduct
 		product := &models.StripeProduct{
@@ -184,13 +183,13 @@ func TestStripeStore_ProductAndPrice(t *testing.T) {
 				"key1": "value1",
 			},
 		}
-		err := store.UpsertProduct(ctx, product)
+		err := adapter.Product().UpsertProduct(ctx, product)
 		if err != nil {
 			t.Fatalf("UpsertProduct() error = %v", err)
 		}
 
 		// FindProductByStripeId
-		found, err := store.FindProductById(ctx, "prod_123")
+		found, err := adapter.Product().FindProductById(ctx, "prod_123")
 		if err != nil {
 			t.Fatalf("FindProductByStripeId() error = %v", err)
 		}
@@ -210,13 +209,19 @@ func TestStripeStore_ProductAndPrice(t *testing.T) {
 				"key1": "value1",
 			},
 		}
-		err = store.UpsertPrice(ctx, price)
+		err = adapter.Price().UpsertPrice(ctx, price)
 		if err != nil {
 			t.Fatalf("UpsertPrice() error = %v", err)
 		}
 
 		// FindValidPriceById
-		validPrice, err := store.FindActivePriceById(ctx, "price_123")
+		validPrice, err := adapter.Price().FindPrice(ctx, &stores.StripePriceFilter{
+			Ids: []string{price.ID},
+			Active: types.OptionalParam[bool]{
+				Value: true,
+				IsSet: true,
+			},
+		})
 		if err != nil {
 			t.Fatalf("FindValidPriceById() error = %v", err)
 		}
@@ -225,7 +230,7 @@ func TestStripeStore_ProductAndPrice(t *testing.T) {
 		}
 
 		// ListProducts
-		products, err := store.ListProducts(ctx, &stores.StripeProductFilter{})
+		products, err := adapter.Product().ListProducts(ctx, &stores.StripeProductFilter{})
 		if err != nil {
 			t.Fatalf("ListProducts() error = %v", err)
 		}
@@ -234,7 +239,7 @@ func TestStripeStore_ProductAndPrice(t *testing.T) {
 		}
 
 		// ListPrices
-		prices, err := store.ListPrices(ctx, &stores.StripePriceFilter{})
+		prices, err := adapter.Price().ListPrices(ctx, &stores.StripePriceFilter{})
 		if err != nil {
 			t.Fatalf("ListPrices() error = %v", err)
 		}
@@ -250,7 +255,7 @@ func TestStripeStore_UpsertProductAndPrice(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
-		store := stores.NewDbStripeStore(dbxx)
+		adapter := stores.NewStorageAdapter(dbxx)
 		stripeProduct := &models.StripeProduct{
 			ID:          "prod_stripe_1",
 			Active:      true,
@@ -258,11 +263,11 @@ func TestStripeStore_UpsertProductAndPrice(t *testing.T) {
 			Description: types.Pointer("Stripe Desc"),
 			Metadata:    map[string]string{"foo": "bar"},
 		}
-		err := store.UpsertProduct(ctx, stripeProduct)
+		err := adapter.Product().UpsertProduct(ctx, stripeProduct)
 		if err != nil {
 			t.Fatalf("UpsertProductFromStripe() error = %v", err)
 		}
-		found, err := store.FindProductById(ctx, stripeProduct.ID)
+		found, err := adapter.Product().FindProductById(ctx, stripeProduct.ID)
 		if err != nil || found == nil || found.ID != stripeProduct.ID {
 			t.Errorf("FindProductByStripeId() = %v, err = %v", found, err)
 		}
@@ -280,7 +285,7 @@ func TestStripeStore_UpsertProductAndPrice(t *testing.T) {
 			IntervalCount:   types.Pointer(int64(1)),
 			TrialPeriodDays: types.Pointer(int64(14)),
 		}
-		err = store.UpsertPrice(ctx, stripePrice)
+		err = adapter.Price().UpsertPrice(ctx, stripePrice)
 		if err != nil {
 			t.Fatalf("UpsertPrice() error = %v", err)
 		}
@@ -292,23 +297,23 @@ func TestStripeStore_FindCustomer(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
-		userStore := stores.NewDbUserStore(dbxx)
-		user, err := userStore.CreateUser(ctx, &models.User{Email: "findcustomer@example.com"})
+		adapter := stores.NewStorageAdapter(dbxx)
+		user, err := adapter.User().CreateUser(ctx, &models.User{Email: "findcustomer@example.com"})
 		if err != nil {
 			t.Fatalf("CreateUser() error = %v", err)
 		}
-		store := stores.NewDbStripeStore(dbxx)
+
 		customer := &models.StripeCustomer{
 			ID:           "cus_find_1",
 			UserID:       types.Pointer(user.ID),
 			Email:        user.Email,
 			CustomerType: models.StripeCustomerTypeUser,
 		}
-		_, err = store.CreateCustomer(ctx, customer)
+		_, err = adapter.Customer().CreateCustomer(ctx, customer)
 		if err != nil {
 			t.Fatalf("CreateCustomer() error = %v", err)
 		}
-		found, err := store.FindCustomer(ctx, &stores.StripeCustomerFilter{Ids: []string{"cus_find_1"}})
+		found, err := adapter.Customer().FindCustomer(ctx, &stores.StripeCustomerFilter{Ids: []string{"cus_find_1"}})
 		if err != nil || found == nil || found.ID != "cus_find_1" {
 			t.Errorf("FindCustomer() = %v, err = %v", found, err)
 		}
@@ -320,15 +325,14 @@ func TestStripeStore_FindSubscriptionsWithPriceProductByIds(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
-		store := stores.NewDbStripeStore(dbxx)
-		userStore := stores.NewDbUserStore(dbxx)
-		user, err := userStore.CreateUser(ctx, &models.User{Email: "sub@example.com"})
+		adapter := stores.NewStorageAdapter(dbxx)
+		user, err := adapter.User().CreateUser(ctx, &models.User{Email: "sub@example.com"})
 		if err != nil {
 			t.Fatalf("CreateUser() error = %v", err)
 		}
 		// Insert product and price
 		product := &models.StripeProduct{ID: "prod_sub_1", Active: true, Name: "Sub Product", Metadata: map[string]string{}}
-		err = store.UpsertProduct(ctx, product)
+		err = adapter.Product().UpsertProduct(ctx, product)
 		if err != nil {
 			t.Fatalf("UpsertProduct() error = %v", err)
 		}
@@ -341,7 +345,7 @@ func TestStripeStore_FindSubscriptionsWithPriceProductByIds(t *testing.T) {
 			Type:       models.StripePricingTypeRecurring,
 			Metadata:   map[string]string{},
 		}
-		err = store.UpsertPrice(ctx, price)
+		err = adapter.Price().UpsertPrice(ctx, price)
 		if err != nil {
 			t.Fatalf("UpsertPrice() error = %v", err)
 		}
@@ -352,7 +356,7 @@ func TestStripeStore_FindSubscriptionsWithPriceProductByIds(t *testing.T) {
 			CustomerType: models.StripeCustomerTypeUser,
 			UserID:       types.Pointer(user.ID),
 		}
-		_, err = store.CreateCustomer(ctx, customer)
+		_, err = adapter.Customer().CreateCustomer(ctx, customer)
 		if err != nil {
 			t.Fatalf("CreateCustomer() error = %v", err)
 		}
@@ -370,12 +374,12 @@ func TestStripeStore_FindSubscriptionsWithPriceProductByIds(t *testing.T) {
 			CurrentPeriodStart: time.Now(),
 			CurrentPeriodEnd:   time.Now().Add(30 * 24 * time.Hour),
 		}
-		err = store.UpsertSubscription(ctx, sub)
+		err = adapter.Subscription().UpsertSubscription(ctx, sub)
 		if err != nil {
 			t.Fatalf("UpsertSubscription() error = %v", err)
 		}
 		// FindSubscriptionWithPriceById
-		withPriceList, err := store.FindSubscriptionsWithPriceProductByIds(ctx, "sub_1")
+		withPriceList, err := adapter.Subscription().FindSubscriptionsWithPriceProductByIds(ctx, "sub_1")
 		if err != nil {
 			t.Fatalf("FindSubscriptionWithPriceProductById() error = %v", err)
 		}
@@ -400,20 +404,19 @@ func TestStripeStore_FindActiveSubscriptionsByTeamIds(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
-		store := stores.NewDbStripeStore(dbxx)
-		userStore := stores.NewDbUserStore(dbxx)
-		teamStore := stores.NewDbTeamStore(dbxx)
-		user, err := userStore.CreateUser(ctx, &models.User{Email: "sub@example.com"})
+		adapter := stores.NewStorageAdapter(dbxx)
+
+		user, err := adapter.User().CreateUser(ctx, &models.User{Email: "sub@example.com"})
 		if err != nil {
 			t.Fatalf("CreateUser() error = %v", err)
 		}
 
-		team, err := teamStore.CreateTeam(ctx, "test", "test")
+		team, err := adapter.TeamGroup().CreateTeam(ctx, "test", "test")
 		if err != nil {
 			t.Fatalf("CreateTeam() error = %v", err)
 		}
 
-		_, err = teamStore.CreateTeamMember(
+		_, err = adapter.TeamMember().CreateTeamMember(
 			ctx,
 			team.ID,
 			user.ID,
@@ -425,7 +428,7 @@ func TestStripeStore_FindActiveSubscriptionsByTeamIds(t *testing.T) {
 		}
 		// Insert product and price
 		product := &models.StripeProduct{ID: "prod_sub_1", Active: true, Name: "Sub Product", Metadata: map[string]string{}}
-		err = store.UpsertProduct(ctx, product)
+		err = adapter.Product().UpsertProduct(ctx, product)
 		if err != nil {
 			t.Fatalf("UpsertProduct() error = %v", err)
 		}
@@ -438,7 +441,7 @@ func TestStripeStore_FindActiveSubscriptionsByTeamIds(t *testing.T) {
 			Type:       models.StripePricingTypeRecurring,
 			Metadata:   map[string]string{},
 		}
-		err = store.UpsertPrice(ctx, price)
+		err = adapter.Price().UpsertPrice(ctx, price)
 		if err != nil {
 			t.Fatalf("UpsertPrice() error = %v", err)
 		}
@@ -450,7 +453,7 @@ func TestStripeStore_FindActiveSubscriptionsByTeamIds(t *testing.T) {
 			TeamID:       types.Pointer(team.ID),
 			// UserID:       types.Pointer(user.ID),
 		}
-		_, err = store.CreateCustomer(ctx, customer)
+		_, err = adapter.Customer().CreateCustomer(ctx, customer)
 		if err != nil {
 			t.Fatalf("CreateCustomer() error = %v", err)
 		}
@@ -468,12 +471,12 @@ func TestStripeStore_FindActiveSubscriptionsByTeamIds(t *testing.T) {
 			CurrentPeriodStart: time.Now(),
 			CurrentPeriodEnd:   time.Now().Add(30 * 24 * time.Hour),
 		}
-		err = store.UpsertSubscription(ctx, sub)
+		err = adapter.Subscription().UpsertSubscription(ctx, sub)
 		if err != nil {
 			t.Fatalf("UpsertSubscription() error = %v", err)
 		}
 		// FindSubscriptionWithPriceById
-		teamSubs, err := store.FindActiveSubscriptionsByTeamIds(ctx, team.ID)
+		teamSubs, err := adapter.Subscription().FindActiveSubscriptionsByTeamIds(ctx, team.ID)
 		if err != nil {
 			t.Fatalf("FindActiveSubscriptionsByTeamIds() error = %v", err)
 		}
@@ -482,7 +485,7 @@ func TestStripeStore_FindActiveSubscriptionsByTeamIds(t *testing.T) {
 		}
 
 		withPrice := teamSubs[0]
-		err = store.LoadSubscriptionsPriceProduct(ctx, withPrice)
+		err = loadPricesWithProduct(ctx, withPrice, adapter)
 		if err != nil {
 			t.Fatalf("LoadSubscriptionstripe_pricesriceProduct() error = %v", err)
 		}
@@ -498,24 +501,47 @@ func TestStripeStore_FindActiveSubscriptionsByTeamIds(t *testing.T) {
 		return errors.New("rollback")
 	})
 }
+
+func loadPricesWithProduct(ctx context.Context, withPrice *models.StripeSubscription, adapter stores.StorageAdapterInterface) error {
+	if withPrice == nil {
+		return nil
+	}
+	price, err := adapter.Price().FindPrice(ctx, &stores.StripePriceFilter{
+		Ids: []string{withPrice.PriceID},
+	})
+	if err != nil {
+		return err
+	}
+	if price == nil {
+		return errors.New("price not found")
+	}
+	product, err := adapter.Product().FindProductById(ctx, price.ProductID)
+	if err != nil {
+		return err
+	}
+	if product == nil {
+		return errors.New("product not found")
+	}
+	withPrice.Price = price
+	withPrice.Price.Product = product
+	return nil
+}
 func TestStripeStore_FindActiveSubscriptionsByCustomerIds(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
-		store := stores.NewDbStripeStore(dbxx)
-		userStore := stores.NewDbUserStore(dbxx)
-		teamStore := stores.NewDbTeamStore(dbxx)
-		user, err := userStore.CreateUser(ctx, &models.User{Email: "sub@example.com"})
+		adapter := stores.NewStorageAdapter(dbxx)
+		user, err := adapter.User().CreateUser(ctx, &models.User{Email: "sub@example.com"})
 		if err != nil {
 			t.Fatalf("CreateUser() error = %v", err)
 		}
 
-		team, err := teamStore.CreateTeam(ctx, "test", "test")
+		team, err := adapter.TeamGroup().CreateTeam(ctx, "test", "test")
 		if err != nil {
 			t.Fatalf("CreateTeam() error = %v", err)
 		}
 
-		_, err = teamStore.CreateTeamMember(
+		_, err = adapter.TeamMember().CreateTeamMember(
 			ctx,
 			team.ID,
 			user.ID,
@@ -527,7 +553,7 @@ func TestStripeStore_FindActiveSubscriptionsByCustomerIds(t *testing.T) {
 		}
 		// Insert product and price
 		product := &models.StripeProduct{ID: "prod_sub_1", Active: true, Name: "Sub Product", Metadata: map[string]string{}}
-		err = store.UpsertProduct(ctx, product)
+		err = adapter.Product().UpsertProduct(ctx, product)
 		if err != nil {
 			t.Fatalf("UpsertProduct() error = %v", err)
 		}
@@ -540,7 +566,7 @@ func TestStripeStore_FindActiveSubscriptionsByCustomerIds(t *testing.T) {
 			Type:       models.StripePricingTypeRecurring,
 			Metadata:   map[string]string{},
 		}
-		err = store.UpsertPrice(ctx, price)
+		err = adapter.Price().UpsertPrice(ctx, price)
 		if err != nil {
 			t.Fatalf("UpsertPrice() error = %v", err)
 		}
@@ -552,7 +578,7 @@ func TestStripeStore_FindActiveSubscriptionsByCustomerIds(t *testing.T) {
 			TeamID:       types.Pointer(team.ID),
 			// UserID:       types.Pointer(user.ID),
 		}
-		_, err = store.CreateCustomer(ctx, customer)
+		_, err = adapter.Customer().CreateCustomer(ctx, customer)
 		if err != nil {
 			t.Fatalf("CreateCustomer() error = %v", err)
 		}
@@ -570,12 +596,12 @@ func TestStripeStore_FindActiveSubscriptionsByCustomerIds(t *testing.T) {
 			CurrentPeriodStart: time.Now(),
 			CurrentPeriodEnd:   time.Now().Add(30 * 24 * time.Hour),
 		}
-		err = store.UpsertSubscription(ctx, sub)
+		err = adapter.Subscription().UpsertSubscription(ctx, sub)
 		if err != nil {
 			t.Fatalf("UpsertSubscription() error = %v", err)
 		}
 		// FindSubscriptionWithPriceById
-		customerSubs, err := store.FindActiveSubscriptionsByCustomerIds(ctx, customer.ID)
+		customerSubs, err := adapter.Subscription().FindActiveSubscriptionsByCustomerIds(ctx, customer.ID)
 		if err != nil {
 			t.Fatalf("FindActiveSubscriptionsByCustomerIds() error = %v", err)
 		}
@@ -584,7 +610,7 @@ func TestStripeStore_FindActiveSubscriptionsByCustomerIds(t *testing.T) {
 		}
 
 		withPrice := customerSubs[0]
-		err = store.LoadSubscriptionsPriceProduct(ctx, withPrice)
+		err = loadPricesWithProduct(ctx, withPrice, adapter)
 		if err != nil {
 			t.Fatalf("LoadSubscriptionstripe_pricesriceProduct() error = %v", err)
 		}
@@ -604,20 +630,19 @@ func TestStripeStore_FindActiveSubscriptionsByUserIds(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
-		store := stores.NewDbStripeStore(dbxx)
-		userStore := stores.NewDbUserStore(dbxx)
-		teamStore := stores.NewDbTeamStore(dbxx)
-		user, err := userStore.CreateUser(ctx, &models.User{Email: "sub@example.com"})
+		adapter := stores.NewStorageAdapter(dbxx)
+
+		user, err := adapter.User().CreateUser(ctx, &models.User{Email: "sub@example.com"})
 		if err != nil {
 			t.Fatalf("CreateUser() error = %v", err)
 		}
 
-		team, err := teamStore.CreateTeam(ctx, "test", "test")
+		team, err := adapter.TeamGroup().CreateTeam(ctx, "test", "test")
 		if err != nil {
 			t.Fatalf("CreateTeam() error = %v", err)
 		}
 
-		_, err = teamStore.CreateTeamMember(
+		_, err = adapter.TeamMember().CreateTeamMember(
 			ctx,
 			team.ID,
 			user.ID,
@@ -629,7 +654,7 @@ func TestStripeStore_FindActiveSubscriptionsByUserIds(t *testing.T) {
 		}
 		// Insert product and price
 		product := &models.StripeProduct{ID: "prod_sub_1", Active: true, Name: "Sub Product", Metadata: map[string]string{}}
-		err = store.UpsertProduct(ctx, product)
+		err = adapter.Product().UpsertProduct(ctx, product)
 		if err != nil {
 			t.Fatalf("UpsertProduct() error = %v", err)
 		}
@@ -642,7 +667,7 @@ func TestStripeStore_FindActiveSubscriptionsByUserIds(t *testing.T) {
 			Type:       models.StripePricingTypeRecurring,
 			Metadata:   map[string]string{},
 		}
-		err = store.UpsertPrice(ctx, price)
+		err = adapter.Price().UpsertPrice(ctx, price)
 		if err != nil {
 			t.Fatalf("UpsertPrice() error = %v", err)
 		}
@@ -654,7 +679,7 @@ func TestStripeStore_FindActiveSubscriptionsByUserIds(t *testing.T) {
 			// TeamID:       types.Pointer(team.ID),
 			UserID: types.Pointer(user.ID),
 		}
-		_, err = store.CreateCustomer(ctx, customer)
+		_, err = adapter.Customer().CreateCustomer(ctx, customer)
 		if err != nil {
 			t.Fatalf("CreateCustomer() error = %v", err)
 		}
@@ -672,11 +697,11 @@ func TestStripeStore_FindActiveSubscriptionsByUserIds(t *testing.T) {
 			CurrentPeriodStart: time.Now(),
 			CurrentPeriodEnd:   time.Now().Add(30 * 24 * time.Hour),
 		}
-		err = store.UpsertSubscription(ctx, sub)
+		err = adapter.Subscription().UpsertSubscription(ctx, sub)
 		if err != nil {
 			t.Fatalf("UpsertSubscription() error = %v", err)
 		}
-		customerSubs, err := store.FindActiveSubscriptionsByUserIds(ctx, user.ID)
+		customerSubs, err := adapter.Subscription().FindActiveSubscriptionsByUserIds(ctx, user.ID)
 		if err != nil {
 			t.Fatalf("FindActiveSubscriptionsByUserIds() error = %v", err)
 		}
@@ -688,7 +713,7 @@ func TestStripeStore_FindActiveSubscriptionsByUserIds(t *testing.T) {
 		if withPrice == nil || withPrice.ID != "sub_1" {
 			t.Errorf("FindSubscriptionWithPriceById() = %v, err = %v", withPrice, err)
 		}
-		err = store.LoadSubscriptionsPriceProduct(ctx, withPrice)
+		err = loadPricesWithProduct(ctx, withPrice, adapter)
 		if err != nil {
 			t.Fatalf("LoadSubscriptionstripe_pricesriceProduct() error = %v", err)
 		}
@@ -709,15 +734,15 @@ func TestStripeStore_UpsertSubscriptionFromStripe(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
-		store := stores.NewDbStripeStore(dbxx)
-		userStore := stores.NewDbUserStore(dbxx)
-		user, err := userStore.CreateUser(ctx, &models.User{Email: "sub@example.com"})
+		adapter := stores.NewStorageAdapter(dbxx)
+
+		user, err := adapter.User().CreateUser(ctx, &models.User{Email: "sub@example.com"})
 		if err != nil {
 			t.Fatalf("CreateUser() error = %v", err)
 		}
 		// Insert product and price
 		product := &models.StripeProduct{ID: "prod_stripe_sub", Active: true, Name: "StripeSubProduct", Metadata: map[string]string{}}
-		err = store.UpsertProduct(ctx, product)
+		err = adapter.Product().UpsertProduct(ctx, product)
 		if err != nil {
 			t.Fatalf("UpsertProduct() error = %v", err)
 		}
@@ -730,7 +755,7 @@ func TestStripeStore_UpsertSubscriptionFromStripe(t *testing.T) {
 			Type:       models.StripePricingTypeRecurring,
 			Metadata:   map[string]string{},
 		}
-		err = store.UpsertPrice(ctx, price)
+		err = adapter.Price().UpsertPrice(ctx, price)
 		if err != nil {
 			t.Fatalf("UpsertPrice() error = %v", err)
 		}
@@ -741,7 +766,7 @@ func TestStripeStore_UpsertSubscriptionFromStripe(t *testing.T) {
 			CustomerType: models.StripeCustomerTypeUser,
 			UserID:       types.Pointer(user.ID),
 		}
-		_, err = store.CreateCustomer(ctx, customer)
+		_, err = adapter.Customer().CreateCustomer(ctx, customer)
 		if err != nil {
 			t.Fatalf("CreateCustomer() error = %v", err)
 		}
@@ -765,7 +790,7 @@ func TestStripeStore_UpsertSubscriptionFromStripe(t *testing.T) {
 			CancelAtPeriodEnd: false,
 			Created:           time.Now().Unix(),
 		}
-		err = store.UpsertSubscriptionFromStripe(ctx, stripeSub)
+		err = adapter.Subscription().UpsertSubscriptionFromStripe(ctx, stripeSub)
 		if err != nil {
 			t.Fatalf("UpsertSubscriptionFromStripe() error = %v", err)
 		}

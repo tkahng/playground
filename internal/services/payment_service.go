@@ -88,7 +88,39 @@ func NewPaymentService(
 		adapter: adapter,
 	}
 }
-
+func (s *StripeService) LoadPricesWithProductByPriceIds(ctx context.Context, priceIds ...string) ([]*models.StripePrice, error) {
+	if len(priceIds) == 0 {
+		return nil, nil
+	}
+	prices, err := s.adapter.Price().LoadPricesByIds(ctx, priceIds...)
+	if err != nil {
+		return nil, err
+	}
+	productIds := mapper.Map(prices, func(price *models.StripePrice) string {
+		if price == nil || price.ProductID == "" {
+			return ""
+		}
+		return price.ProductID
+	})
+	products, err := s.adapter.Product().LoadProductsByIds(ctx, productIds...)
+	if err != nil {
+		return nil, err
+	}
+	for i, price := range prices {
+		if price == nil {
+			continue
+		}
+		product := products[i]
+		if product == nil {
+			continue
+		}
+		if product.ID != price.ProductID {
+			continue
+		}
+		price.Product = product
+	}
+	return prices, nil
+}
 func (s *StripeService) UpsertSubscriptionFromStripe(ctx context.Context, sub *stripe.Subscription) error {
 	if sub == nil {
 		return nil

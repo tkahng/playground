@@ -10,6 +10,7 @@ import (
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/repository"
+	"github.com/tkahng/authgo/internal/tools/mapper"
 	"github.com/tkahng/authgo/internal/tools/types"
 	"github.com/tkahng/authgo/internal/tools/utils"
 )
@@ -186,7 +187,38 @@ type StripeProductFilter struct {
 	Active types.OptionalParam[bool] `query:"active,omitempty" required:"false"`
 	Expand []string                  `query:"expand,omitempty" required:"false" minimum:"1" maximum:"100" uniqueItems:"true" enum:"prices,permissions"`
 }
+
+func (s *DbProductStore) LoadProductsByIds(ctx context.Context, productIds ...string) ([]*models.StripeProduct, error) {
+	if len(productIds) == 0 {
+		return nil, nil
+	}
+	products, err := repository.StripeProduct.Get(
+		ctx,
+		s.db,
+		&map[string]any{
+			models.StripeProductTable.ID: map[string]any{
+				"_in": productIds,
+			},
+		},
+		nil,
+		nil,
+		nil,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return mapper.MapToPointer(products, productIds, func(t *models.StripeProduct) string {
+		if t == nil {
+			return ""
+		}
+		return t.ID
+	}), nil
+}
+
+var _ DbProductStoreInterface = (*DbProductStore)(nil)
+
 type DbProductStoreInterface interface {
+	LoadProductsByIds(ctx context.Context, productIds ...string) ([]*models.StripeProduct, error)
 	ListProducts(ctx context.Context, input *StripeProductFilter) ([]*models.StripeProduct, error)
 	CountProducts(ctx context.Context, filter *StripeProductFilter) (int64, error)
 	FindProduct(ctx context.Context, filter *StripeProductFilter) (*models.StripeProduct, error)

@@ -198,6 +198,33 @@ func (s *DbPriceStore) LoadPricesByProductIds(ctx context.Context, productIds ..
 	}), nil
 }
 
+func (s *DbPriceStore) LoadPricesByIds(ctx context.Context, priceIds ...string) ([]*models.StripePrice, error) {
+	if len(priceIds) == 0 {
+		return nil, nil
+	}
+	prices, err := repository.StripePrice.Get(
+		ctx,
+		s.db,
+		&map[string]any{
+			models.StripePriceTable.ID: map[string]any{
+				"_in": priceIds,
+			},
+		},
+		nil,
+		nil,
+		nil,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return mapper.MapToPointer(prices, priceIds, func(t *models.StripePrice) string {
+		if t == nil {
+			return ""
+		}
+		return t.ID
+	}), nil
+}
+
 func (s *DbPriceStore) UpsertPriceFromStripe(ctx context.Context, price *stripe.Price) error {
 	if price == nil {
 		return nil
@@ -224,6 +251,7 @@ func (s *DbPriceStore) UpsertPriceFromStripe(ctx context.Context, price *stripe.
 var _ DbPriceStoreInterface = (*DbPriceStore)(nil)
 
 type DbPriceStoreInterface interface {
+	LoadPricesByIds(ctx context.Context, priceIds ...string) ([]*models.StripePrice, error)
 	LoadPricesByProductIds(ctx context.Context, productIds ...string) ([][]*models.StripePrice, error)
 	UpsertPrice(ctx context.Context, price *models.StripePrice) error
 	ListPrices(ctx context.Context, input *StripePriceFilter) ([]*models.StripePrice, error)

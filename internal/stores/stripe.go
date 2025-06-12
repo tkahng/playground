@@ -10,15 +10,15 @@ import (
 	"github.com/tkahng/authgo/internal/tools/mapper"
 )
 
-func NewDbStripeStore(db database.Dbx) *DbStripeStore {
-	return &DbStripeStore{
-		db:                  db,
-		DbCustomerStore:     NewDbCustomerStore(db),
-		DbProductStore:      NewDbProductStore(db),
-		DbSubscriptionStore: NewDbSubscriptionStore(db),
-		DbPriceStore:        NewDbPriceStore(db),
-	}
-}
+// func NewDbStripeStore(db database.Dbx) *DbStripeStore {
+// 	return &DbStripeStore{
+// 		db:                  db,
+// 		DbCustomerStore:     NewDbCustomerStore(db),
+// 		DbProductStore:      NewDbProductStore(db),
+// 		DbSubscriptionStore: NewDbSubscriptionStore(db),
+// 		DbPriceStore:        NewDbPriceStore(db),
+// 	}
+// }
 
 type DbStripeStore struct {
 	*DbCustomerStore
@@ -38,32 +38,32 @@ func (s *DbStripeStore) WithTx(tx database.Dbx) *DbStripeStore {
 	}
 }
 
-func (s *DbStripeStore) LoadPricesByIds(ctx context.Context, priceIds ...string) ([]*models.StripePrice, error) {
-	if len(priceIds) == 0 {
-		return nil, nil
-	}
-	prices, err := repository.StripePrice.Get(
-		ctx,
-		s.db,
-		&map[string]any{
-			models.StripePriceTable.ID: map[string]any{
-				"_in": priceIds,
-			},
-		},
-		nil,
-		nil,
-		nil,
-	)
-	if err != nil {
-		return nil, err
-	}
-	return mapper.MapToPointer(prices, priceIds, func(t *models.StripePrice) string {
-		if t == nil {
-			return ""
-		}
-		return t.ID
-	}), nil
-}
+// func (s *DbStripeStore) LoadPricesByIds(ctx context.Context, priceIds ...string) ([]*models.StripePrice, error) {
+// 	if len(priceIds) == 0 {
+// 		return nil, nil
+// 	}
+// 	prices, err := repository.StripePrice.Get(
+// 		ctx,
+// 		s.db,
+// 		&map[string]any{
+// 			models.StripePriceTable.ID: map[string]any{
+// 				"_in": priceIds,
+// 			},
+// 		},
+// 		nil,
+// 		nil,
+// 		nil,
+// 	)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	return mapper.MapToPointer(prices, priceIds, func(t *models.StripePrice) string {
+// 		if t == nil {
+// 			return ""
+// 		}
+// 		return t.ID
+// 	}), nil
+// }
 
 func (s *DbStripeStore) LoadPricesByProductIds(ctx context.Context, productIds ...string) ([][]*models.StripePrice, error) {
 
@@ -148,35 +148,35 @@ func (s *DbStripeStore) LoadPricesWithProductByPriceIds(ctx context.Context, pri
 	return prices, nil
 }
 
-func (s *DbStripeStore) LoadSubscriptionsPriceProduct(ctx context.Context, subscriptions ...*models.StripeSubscription) error {
-	if len(subscriptions) == 0 {
-		return nil
-	}
-	priceIds := mapper.Map(subscriptions, func(sub *models.StripeSubscription) string {
-		if sub == nil || sub.PriceID == "" {
-			return ""
-		}
-		return sub.PriceID
-	})
-	prices, err := s.LoadPricesWithProductByPriceIds(ctx, priceIds...)
-	if err != nil {
-		return err
-	}
-	for i, sub := range subscriptions {
-		if sub == nil {
-			continue
-		}
-		price := prices[i]
-		if price == nil {
-			continue
-		}
-		if price.ID != sub.PriceID {
-			continue
-		}
-		sub.Price = price
-	}
-	return nil
-}
+// func (s *DbStripeStore) LoadSubscriptionsPriceProduct(ctx context.Context, subscriptions ...*models.StripeSubscription) error {
+// 	if len(subscriptions) == 0 {
+// 		return nil
+// 	}
+// 	priceIds := mapper.Map(subscriptions, func(sub *models.StripeSubscription) string {
+// 		if sub == nil || sub.PriceID == "" {
+// 			return ""
+// 		}
+// 		return sub.PriceID
+// 	})
+// 	prices, err := s.LoadPricesWithProductByPriceIds(ctx, priceIds...)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	for i, sub := range subscriptions {
+// 		if sub == nil {
+// 			continue
+// 		}
+// 		price := prices[i]
+// 		if price == nil {
+// 			continue
+// 		}
+// 		if price.ID != sub.PriceID {
+// 			continue
+// 		}
+// 		sub.Price = price
+// 	}
+// 	return nil
+// }
 
 func (s *DbStripeStore) LoadSubscriptionsByIds(ctx context.Context, subscriptionIds ...string) ([]*models.StripeSubscription, error) {
 	if len(subscriptionIds) == 0 {
