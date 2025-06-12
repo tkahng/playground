@@ -21,25 +21,6 @@ import (
 	"golang.org/x/oauth2"
 )
 
-type AuthAccountStore interface {
-	UpdateUserAccount(ctx context.Context, account *models.UserAccount) error
-	CreateUserAccount(ctx context.Context, account *models.UserAccount) (*models.UserAccount, error)
-	UnlinkAccount(ctx context.Context, userId uuid.UUID, provider models.Providers) error
-}
-
-type AuthUserStore interface {
-	GetUserInfo(ctx context.Context, email string) (*shared.UserInfo, error)
-	CreateUser(ctx context.Context, user *models.User) (*models.User, error)
-	UpdateUser(ctx context.Context, user *models.User) error
-	DeleteUser(ctx context.Context, id uuid.UUID) error
-	FindUser(ctx context.Context, user *stores.UserFilter) (*models.User, error)
-}
-
-type AuthTokenStore interface {
-	GetToken(ctx context.Context, token string) (*models.Token, error)
-	SaveToken(ctx context.Context, token *shared.CreateTokenDTO) error
-	DeleteToken(ctx context.Context, token string) error
-}
 type AuthService interface {
 	// properties -----------------------------------------------------------------------------------------------------------
 
@@ -68,14 +49,6 @@ type AuthService interface {
 	Authenticate(ctx context.Context, params *shared.AuthenticationInput) (*models.User, error)
 	CreateAuthTokensFromEmail(ctx context.Context, email string) (*shared.UserInfoTokens, error)
 	SendOtpEmail(emailType mailer.EmailType, ctx context.Context, user *models.User, adapter stores.StorageAdapterInterface) error
-}
-
-type AuthStore interface {
-	// WithTx(dbx database.Dbx) AuthStore
-	// RunInTransaction(fn func(store AuthStore) error) error
-	AuthUserStore
-	AuthAccountStore
-	AuthTokenStore
 }
 
 var _ AuthService = (*BaseAuthService)(nil)

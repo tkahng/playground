@@ -18,7 +18,6 @@ type AuthServiceDecorator struct {
 	Delegate                       *BaseAuthService
 	MailFunc                       func() MailService
 	PasswordFunc                   func() PasswordService
-	StoreFunc                      func() AuthStore
 	TokenFunc                      func() JwtService
 	CreateOAuthUrlFunc             func(ctx context.Context, provider shared.Providers, redirectUrl string) (string, error)
 	AuthenticateFunc               func(ctx context.Context, params *shared.AuthenticationInput) (*models.User, error)
