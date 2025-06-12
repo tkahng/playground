@@ -96,7 +96,6 @@ func TestStripeService_FindCustomerByTeam(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		adapter := stores.NewAdapterDecorators()
-		store := new(MockPaymentStore)
 		client := new(mockPaymentClient)
 		service := &StripeService{adapter: adapter, client: client}
 		adapter.CustomerFunc.FindCustomerFunc = func(ctx context.Context, filter *stores.StripeCustomerFilter) (*models.StripeCustomer, error) {
@@ -106,7 +105,6 @@ func TestStripeService_FindCustomerByTeam(t *testing.T) {
 		result, err := service.FindCustomerByTeam(ctx, teamId)
 		assert.NoError(t, err)
 		assert.Equal(t, customer, result)
-		store.AssertExpectations(t)
 	})
 
 	t.Run("store error", func(t *testing.T) {
