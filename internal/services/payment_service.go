@@ -34,87 +34,6 @@ type PaymentClient interface {
 	UpdateItemQuantity(itemId string, priceId string, count int64) (*stripe.SubscriptionItem, error)
 }
 
-type PaymentTeamStore interface {
-	// team methods
-	FindTeamByStripeCustomerId(ctx context.Context, stripeCustomerId string) (*models.Team, error)
-	CountTeamMembers(ctx context.Context, filter *stores.TeamMemberFilter) (int64, error)
-}
-
-type PaymentRbacStore interface {
-	LoadProductPermissions(ctx context.Context, productIds ...string) ([][]*models.Permission, error)
-	FindPermissionByName(ctx context.Context, name string) (*models.Permission, error)
-	CreateProductPermissions(ctx context.Context, productId string, permissionIds ...uuid.UUID) error
-	CreateProductRoles(ctx context.Context, productId string, roleIds ...uuid.UUID) error
-}
-
-type PaymentStripeStore interface {
-	// customers crud
-	CustomerStore
-	SubscriptionStore
-	// prices crud
-	PriceStore
-	// products crud
-	ProductStore
-	LoadPricesByIds(ctx context.Context, priceIds ...string) ([]*models.StripePrice, error)
-	LoadProductsByIds(ctx context.Context, productIds ...string) ([]*models.StripeProduct, error)
-	LoadPricesWithProductByPriceIds(ctx context.Context, priceIds ...string) ([]*models.StripePrice, error)
-	LoadSubscriptionsPriceProduct(ctx context.Context, subscriptions ...*models.StripeSubscription) error
-	LoadSubscriptionsByIds(ctx context.Context, subscriptionIds ...string) ([]*models.StripeSubscription, error)
-
-	FindActiveSubscriptionsByCustomerIds(ctx context.Context, customerIds ...string) ([]*models.StripeSubscription, error)
-	FindActiveSubscriptionByCustomerId(ctx context.Context, customerId string) (*models.StripeSubscription, error)
-
-	FindActiveSubscriptionsByTeamIds(ctx context.Context, teamIds ...uuid.UUID) ([]*models.StripeSubscription, error)
-
-	FindActiveSubscriptionsByUserIds(ctx context.Context, userIds ...uuid.UUID) ([]*models.StripeSubscription, error)
-
-	LoadPricesByProductIds(ctx context.Context, productIds ...string) ([][]*models.StripePrice, error)
-	LoadProductRoles(ctx context.Context, productIds ...string) ([][]*models.Role, error)
-
-	FindSubscriptionsWithPriceProductByIds(ctx context.Context, subscriptionIds ...string) ([]*models.StripeSubscription, error)
-}
-
-type SubscriptionStore interface {
-	// subscriptions crud
-	IsFirstSubscription(ctx context.Context, customerID string) (bool, error)
-	ListSubscriptions(ctx context.Context, input *shared.StripeSubscriptionListParams) ([]*models.StripeSubscription, error)
-	CountSubscriptions(ctx context.Context, filter *shared.StripeSubscriptionListFilter) (int64, error)
-	UpsertSubscription(ctx context.Context, sub *models.StripeSubscription) error
-	UpsertSubscriptionFromStripe(ctx context.Context, sub *stripe.Subscription) error
-}
-
-type ProductStore interface {
-	FindProductById(ctx context.Context, productId string) (*models.StripeProduct, error)
-	ListProducts(ctx context.Context, input *shared.StripeProductListParams) ([]*models.StripeProduct, error)
-	CountProducts(ctx context.Context, filter *shared.StripeProductListFilter) (int64, error)
-	UpsertProduct(ctx context.Context, product *models.StripeProduct) error
-	UpsertProductFromStripe(ctx context.Context, product *stripe.Product) error
-}
-
-type PriceStore interface {
-	FindActivePriceById(ctx context.Context, priceId string) (*models.StripePrice, error)
-	ListPrices(ctx context.Context, input *shared.StripePriceListParams) ([]*models.StripePrice, error)
-	CountPrices(ctx context.Context, filter *shared.StripePriceListFilter) (int64, error)
-	UpsertPrice(ctx context.Context, price *models.StripePrice) error
-	UpsertPriceFromStripe(ctx context.Context, price *stripe.Price) error
-}
-
-type CustomerStore interface {
-	FindCustomer(ctx context.Context, customer *models.StripeCustomer) (*models.StripeCustomer, error)
-	CreateCustomer(ctx context.Context, customer *models.StripeCustomer) (*models.StripeCustomer, error)
-	ListCustomers(ctx context.Context, input *shared.StripeCustomerListParams) ([]*models.StripeCustomer, error)
-	CountCustomers(ctx context.Context, filter *shared.StripeCustomerListFilter) (int64, error)
-}
-
-type PaymentStore interface {
-	// team methods
-	// Team()
-	PaymentTeamStore
-	// rbac methods
-	PaymentRbacStore
-	// payment methods
-	PaymentStripeStore
-}
 type PaymentService interface {
 	Client() PaymentClient
 
@@ -147,9 +66,8 @@ type PaymentService interface {
 }
 
 type StripeService struct {
-	logger *slog.Logger
-	client PaymentClient
-	// paymentStore PaymentStore
+	logger  *slog.Logger
+	client  PaymentClient
 	adapter stores.StorageAdapterInterface
 }
 
