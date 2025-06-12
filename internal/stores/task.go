@@ -279,9 +279,10 @@ func (s *DbTaskStore) DeleteTask(ctx context.Context, taskID uuid.UUID) error {
 type TaskProjectsFilter struct {
 	shared.PaginatedInput
 	SortParams
-	Q      string      `query:"q,omitempty" json:"q,omitempty" required:"false"`
-	Ids    []uuid.UUID `query:"ids,omitempty" json:"ids,omitempty" format:"uuid" required:"false"`
-	TeamID uuid.UUID   `query:"team_id,omitempty" json:"team_id,omitempty" format:"uuid" required:"false"`
+	Q        string                     `query:"q,omitempty" json:"q,omitempty" required:"false"`
+	Ids      []uuid.UUID                `query:"ids,omitempty" json:"ids,omitempty" format:"uuid" required:"false"`
+	TeamIds  []uuid.UUID                `query:"team_ids,omitempty" json:"team_ids,omitempty" format:"uuid" required:"false"`
+	Statuses []models.TaskProjectStatus `query:"statuses,omitempty" json:"statuses,omitempty" required:"false"`
 }
 
 func (s *DbTaskStore) FindTaskProjectByID(ctx context.Context, id uuid.UUID) (*models.TaskProject, error) {
@@ -344,7 +345,57 @@ func (s *DbTaskStore) CountTasks(ctx context.Context, filter *TaskFilter) (int64
 	where := s.TaskWhere(filter)
 	return repository.Task.Count(ctx, s.db, where)
 }
+func (*DbTaskStore) TaskProjectWhere(task *TaskProjectsFilter) *map[string]any {
+	if task == nil {
+		return nil
+	}
+	where := map[string]any{}
+	if task.Q != "" {
+		where["_or"] = []map[string]any{
+			{
+				"_and": []map[string]any{
+					{
+						"name": map[string]any{
+							"_ilike": "%" + task.Q + "%",
+						},
+					},
+				},
+			},
+			{
+				"_and": []map[string]any{
+					{
+						"description": map[string]any{
+							"_ilike": "%" + task.Q + "%",
+						},
+					},
+				},
+			},
+		}
+	}
+	if len(task.Ids) > 0 {
+		where["id"] = map[string]any{
+			"_in": task.Ids,
+		}
+	}
 
+	if len(task.TeamIds) > 0 {
+		where["team_id"] = map[string]any{
+			"_in": task.TeamIds,
+		}
+	}
+	// if len(task.CreatedByMemberIds) > 0 {
+	// 	where["created_by_member_id"] = map[string]any{
+	// 		"_in": task.CreatedByMemberIds,
+	// 	}
+	// }
+	if len(task.Statuses) > 0 {
+		where["status"] = map[string]any{
+			"_in": task.Statuses,
+		}
+	}
+
+	return &where
+}
 func ListTaskProjectsFilterFunc(filter *shared.TaskProjectsListFilter) *map[string]any {
 	if filter == nil {
 		return nil
@@ -380,31 +431,29 @@ func ListTaskProjectsFilterFunc(filter *shared.TaskProjectsListFilter) *map[stri
 	return &where
 }
 
-func ListTaskProjectsOrderByFunc(input *shared.TaskProjectsListParams) *map[string]string {
-
-	if input == nil || input.SortBy == "" || input.SortOrder == "" {
-		return nil
+func ListTaskProjectsOrderByFunc(input *TaskProjectsFilter) *map[string]string {
+	sortBy, sortOrder := input.Sort()
+	if slices.Contains(repository.TaskProjectBuilder.ColumnNames(), utils.Quote(sortBy)) {
+		return &map[string]string{
+			sortBy: strings.ToUpper(sortOrder),
+		}
 	}
-	order := make(map[string]string)
-	order[input.SortBy] = strings.ToUpper(input.SortOrder)
-	return &order
+	return nil
 }
 
 // ListTaskProjects implements AdminCrudActions.
-func (s *DbTaskStore) ListTaskProjects(ctx context.Context, input *shared.TaskProjectsListParams) ([]*models.TaskProject, error) {
-	filter := input.TaskProjectsListFilter
-	pageInput := &input.PaginatedInput
+func (s *DbTaskStore) ListTaskProjects(ctx context.Context, input *TaskProjectsFilter) ([]*models.TaskProject, error) {
 
-	limit, offset := database.PaginateRepo(pageInput)
+	limit, offset := input.Pagination()
 	oredr := ListTaskProjectsOrderByFunc(input)
-	where := ListTaskProjectsFilterFunc(&filter)
+	where := s.TaskProjectWhere(input)
 	data, err := repository.TaskProject.Get(
 		ctx,
 		s.db,
 		where,
 		oredr,
-		limit,
-		offset,
+		&limit,
+		&offset,
 	)
 	if err != nil {
 		return nil, err
@@ -413,8 +462,8 @@ func (s *DbTaskStore) ListTaskProjects(ctx context.Context, input *shared.TaskPr
 }
 
 // CountTaskProjects implements AdminCrudActions.
-func (s *DbTaskStore) CountTaskProjects(ctx context.Context, filter *shared.TaskProjectsListFilter) (int64, error) {
-	where := ListTaskProjectsFilterFunc(filter)
+func (s *DbTaskStore) CountTaskProjects(ctx context.Context, filter *TaskProjectsFilter) (int64, error) {
+	where := s.TaskProjectWhere(filter)
 	return repository.TaskProject.Count(ctx, s.db, where)
 }
 

@@ -13,7 +13,7 @@ type TaskDecorator struct {
 	Delegate                        *DbTaskStore
 	CalculateTaskRankStatusFunc     func(ctx context.Context, taskId uuid.UUID, taskProjectId uuid.UUID, status models.TaskStatus, currentRank float64, position int64) (float64, error)
 	CountItemsFunc                  func(ctx context.Context, projectID uuid.UUID, status models.TaskStatus, excludeID uuid.UUID) (int64, error)
-	CountTaskProjectsFunc           func(ctx context.Context, filter *shared.TaskProjectsListFilter) (int64, error)
+	CountTaskProjectsFunc           func(ctx context.Context, filter *TaskProjectsFilter) (int64, error)
 	CountTasksFunc                  func(ctx context.Context, filter *TaskFilter) (int64, error)
 	CreateTaskFunc                  func(ctx context.Context, task *models.Task) (*models.Task, error)
 	CreateTaskFromInputFunc         func(ctx context.Context, teamID uuid.UUID, projectID uuid.UUID, memberID uuid.UUID, input *shared.CreateTaskProjectTaskDTO) (*models.Task, error)
@@ -28,7 +28,7 @@ type TaskDecorator struct {
 	GetTaskFirstPositionFunc        func(ctx context.Context, projectID uuid.UUID, status models.TaskStatus, excludeID uuid.UUID) (float64, error)
 	GetTaskLastPositionFunc         func(ctx context.Context, projectID uuid.UUID, status models.TaskStatus, excludeID uuid.UUID) (float64, error)
 	GetTaskPositionsFunc            func(ctx context.Context, projectID uuid.UUID, status models.TaskStatus, excludeID uuid.UUID, offset int64) ([]float64, error)
-	ListTaskProjectsFunc            func(ctx context.Context, input *shared.TaskProjectsListParams) ([]*models.TaskProject, error)
+	ListTaskProjectsFunc            func(ctx context.Context, input *TaskProjectsFilter) ([]*models.TaskProject, error)
 	ListTasksFunc                   func(ctx context.Context, input *TaskFilter) ([]*models.Task, error)
 	LoadTaskProjectsTasksFunc       func(ctx context.Context, projectIds ...uuid.UUID) ([][]*models.Task, error)
 	TaskWhereFunc                   func(task *TaskFilter) *map[string]any
@@ -161,7 +161,7 @@ func (t *TaskDecorator) GetTaskPositions(ctx context.Context, projectID uuid.UUI
 }
 
 // ListTaskProjects implements DbTaskStoreInterface.
-func (t *TaskDecorator) ListTaskProjects(ctx context.Context, input *shared.TaskProjectsListParams) ([]*models.TaskProject, error) {
+func (t *TaskDecorator) ListTaskProjects(ctx context.Context, input *TaskProjectsFilter) ([]*models.TaskProject, error) {
 	if t.ListTaskProjectsFunc != nil {
 		return t.ListTaskProjectsFunc(ctx, input)
 	}
@@ -282,7 +282,7 @@ func (t *TaskDecorator) CountItems(ctx context.Context, projectID uuid.UUID, sta
 }
 
 // CountTaskProjects implements DbTaskStoreInterface.
-func (t *TaskDecorator) CountTaskProjects(ctx context.Context, filter *shared.TaskProjectsListFilter) (int64, error) {
+func (t *TaskDecorator) CountTaskProjects(ctx context.Context, filter *TaskProjectsFilter) (int64, error) {
 	if t.CountTaskProjectsFunc != nil {
 		return t.CountTaskProjectsFunc(ctx, filter)
 	}

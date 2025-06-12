@@ -756,7 +756,7 @@ func TestListTaskProjects(t *testing.T) {
 		type args struct {
 			ctx   context.Context
 			db    database.Dbx
-			input *shared.TaskProjectsListParams
+			input *stores.TaskProjectsFilter
 		}
 		tests := []struct {
 			name      string
@@ -769,10 +769,8 @@ func TestListTaskProjects(t *testing.T) {
 				args: args{
 					ctx: ctx,
 					db:  dbxx,
-					input: &shared.TaskProjectsListParams{
-						TaskProjectsListFilter: shared.TaskProjectsListFilter{
-							TeamID: member.TeamID.String(),
-						},
+					input: &stores.TaskProjectsFilter{
+						TeamIds: []uuid.UUID{member.TeamID},
 						PaginatedInput: shared.PaginatedInput{
 							Page:    0,
 							PerPage: 10,
@@ -787,7 +785,7 @@ func TestListTaskProjects(t *testing.T) {
 				args: args{
 					ctx: ctx,
 					db:  dbxx,
-					input: &shared.TaskProjectsListParams{
+					input: &stores.TaskProjectsFilter{
 						PaginatedInput: shared.PaginatedInput{
 							Page:    0,
 							PerPage: 10,
@@ -856,7 +854,7 @@ func TestCountTaskProjects(t *testing.T) {
 		type args struct {
 			ctx    context.Context
 			db     database.Dbx
-			filter *shared.TaskProjectsListFilter
+			filter *stores.TaskProjectsFilter
 		}
 		tests := []struct {
 			name    string
@@ -869,8 +867,8 @@ func TestCountTaskProjects(t *testing.T) {
 				args: args{
 					ctx: ctx,
 					db:  dbxx,
-					filter: &shared.TaskProjectsListFilter{
-						TeamID: member.TeamID.String(),
+					filter: &stores.TaskProjectsFilter{
+						TeamIds: []uuid.UUID{member.TeamID},
 					},
 				},
 				want:    1,
