@@ -11,7 +11,6 @@ import (
 	"github.com/stripe/stripe-go/v82"
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
-	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/stores"
 	"github.com/tkahng/authgo/internal/test"
 	"github.com/tkahng/authgo/internal/tools/types"
@@ -235,7 +234,7 @@ func TestStripeStore_ProductAndPrice(t *testing.T) {
 		}
 
 		// ListPrices
-		prices, err := store.ListPrices(ctx, &shared.StripePriceListParams{})
+		prices, err := store.ListPrices(ctx, &stores.StripePriceFilter{})
 		if err != nil {
 			t.Fatalf("ListPrices() error = %v", err)
 		}
@@ -247,20 +246,19 @@ func TestStripeStore_ProductAndPrice(t *testing.T) {
 	})
 }
 
-func TestStripeStore_UpsertProductAndPriceFromStripe(t *testing.T) {
+func TestStripeStore_UpsertProductAndPrice(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		store := stores.NewDbStripeStore(dbxx)
-		stripeProduct := &stripe.Product{
+		stripeProduct := &models.StripeProduct{
 			ID:          "prod_stripe_1",
 			Active:      true,
 			Name:        "Stripe Product",
-			Description: "Stripe Desc",
-			Images:      []string{"img1.jpg"},
+			Description: types.Pointer("Stripe Desc"),
 			Metadata:    map[string]string{"foo": "bar"},
 		}
-		err := store.UpsertProductFromStripe(ctx, stripeProduct)
+		err := store.UpsertProduct(ctx, stripeProduct)
 		if err != nil {
 			t.Fatalf("UpsertProductFromStripe() error = %v", err)
 		}
@@ -269,24 +267,22 @@ func TestStripeStore_UpsertProductAndPriceFromStripe(t *testing.T) {
 			t.Errorf("FindProductByStripeId() = %v, err = %v", found, err)
 		}
 
-		stripePrice := &stripe.Price{
-			ID:         "price_stripe_1",
-			Product:    &stripe.Product{ID: stripeProduct.ID},
-			Active:     true,
-			LookupKey:  "lookup_1",
-			UnitAmount: 5000,
-			Currency:   "usd",
-			Type:       "recurring",
-			Metadata:   map[string]string{"foo": "bar"},
-			Recurring: &stripe.PriceRecurring{
-				Interval:        "month",
-				IntervalCount:   1,
-				TrialPeriodDays: 14,
-			},
+		stripePrice := &models.StripePrice{
+			ID:              "price_stripe_1",
+			ProductID:       stripeProduct.ID,
+			Active:          true,
+			LookupKey:       types.Pointer("lookup_1"),
+			UnitAmount:      types.Pointer(int64(5000)),
+			Currency:        "usd",
+			Type:            "recurring",
+			Metadata:        map[string]string{"foo": "bar"},
+			Interval:        types.Pointer(models.StripePricingPlanIntervalMonth),
+			IntervalCount:   types.Pointer(int64(1)),
+			TrialPeriodDays: types.Pointer(int64(14)),
 		}
-		err = store.UpsertPriceFromStripe(ctx, stripePrice)
+		err = store.UpsertPrice(ctx, stripePrice)
 		if err != nil {
-			t.Fatalf("UpsertPriceFromStripe() error = %v", err)
+			t.Fatalf("UpsertPrice() error = %v", err)
 		}
 		return errors.New("rollback")
 	})

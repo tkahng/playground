@@ -8,7 +8,6 @@ import (
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/repository"
-	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/types"
 	"github.com/tkahng/authgo/internal/tools/utils"
 )
@@ -48,7 +47,7 @@ func (s *DbPriceStore) UpsertPrice(ctx context.Context, price *models.StripePric
 	return err
 }
 
-func listPriceOrderByMap(input *shared.StripePriceListParams) *map[string]string {
+func listPriceOrderByMap(input *StripePriceFilter) *map[string]string {
 	if input == nil {
 		return nil
 	}
@@ -60,22 +59,25 @@ func listPriceOrderByMap(input *shared.StripePriceListParams) *map[string]string
 	}
 }
 
-func listPriceFilterFuncMap(filter *shared.StripePriceListFilter) *map[string]any {
+type StripePriceFilter struct {
+	PaginatedInput
+	SortParams
+	Q          string                                        `query:"q,omitempty" required:"false"`
+	Ids        []string                                      `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" uniqueItems:"true"`
+	Active     types.OptionalParam[bool]                     `query:"active,omitempty" required:"false"`
+	ProductIds []string                                      `query:"product_ids,omitempty" required:"false" minimum:"1" maximum:"100" uniqueItems:"true"`
+	Type       types.OptionalParam[models.StripePricingType] `query:"type,omitempty" required:"false" enum:"recurring,one_time"`
+}
+
+func listPriceFilterFuncMap(filter *StripePriceFilter) *map[string]any {
 	if filter == nil {
 		return nil
 	}
 	param := map[string]any{}
 
-	if filter.Active != "" {
-		if filter.Active == shared.Active {
-			param[models.StripePriceTable.Active] = map[string]any{
-				"_eq": true,
-			}
-		}
-		if filter.Active == shared.Inactive {
-			param[models.StripePriceTable.Active] = map[string]any{
-				"_eq": false,
-			}
+	if filter.Active.IsSet {
+		param[models.StripePriceTable.Active] = map[string]any{
+			"_eq": filter.Active.Value,
 		}
 	}
 	if len(filter.Ids) > 0 {
@@ -88,25 +90,29 @@ func listPriceFilterFuncMap(filter *shared.StripePriceListFilter) *map[string]an
 			"_in": filter.ProductIds,
 		}
 	}
+	if filter.Type.IsSet {
+		param[models.StripePriceTable.Type] = map[string]any{
+			"_eq": filter.Type.Value,
+		}
+	}
 
 	return &param
 }
 
 // ListPrices implements PaymentStore.
-func (s *DbPriceStore) ListPrices(ctx context.Context, input *shared.StripePriceListParams) ([]*models.StripePrice, error) {
+func (s *DbPriceStore) ListPrices(ctx context.Context, input *StripePriceFilter) ([]*models.StripePrice, error) {
 	dbx := s.db
-	filter := input.StripePriceListFilter
-	pageInput := &input.PaginatedInput
-	limit, offset := database.PaginateRepo(pageInput)
-	param := listPriceFilterFuncMap(&filter)
+
+	limit, offset := input.Pagination()
+	param := listPriceFilterFuncMap(input)
 	sort := listPriceOrderByMap(input)
 	data, err := repository.StripePrice.Get(
 		ctx,
 		dbx,
 		param,
 		sort,
-		limit,
-		offset,
+		&limit,
+		&offset,
 	)
 	if err != nil {
 		return nil, err
@@ -114,7 +120,7 @@ func (s *DbPriceStore) ListPrices(ctx context.Context, input *shared.StripePrice
 	return data, nil
 }
 
-func (s *DbPriceStore) CountPrices(ctx context.Context, filter *shared.StripePriceListFilter) (int64, error) {
+func (s *DbPriceStore) CountPrices(ctx context.Context, filter *StripePriceFilter) (int64, error) {
 	filermap := listPriceFilterFuncMap(filter)
 	data, err := repository.StripePrice.Count(ctx, s.db, filermap)
 	if err != nil {
@@ -138,6 +144,18 @@ func SelectStripePriceColumns(qs squirrel.SelectBuilder, prefix string) squirrel
 		Column(models.StripePriceTablePrefix.CreatedAt + " AS " + utils.Quote(utils.WithPrefix(prefix, models.StripePriceTable.CreatedAt))).
 		Column(models.StripePriceTablePrefix.UpdatedAt + " AS " + utils.Quote(utils.WithPrefix(prefix, models.StripePriceTable.UpdatedAt)))
 	return qs
+}
+func (s *DbPriceStore) FindPrice(ctx context.Context, filter *StripePriceFilter) (*models.StripePrice, error) {
+	param := listPriceFilterFuncMap(filter)
+	data, err := repository.StripePrice.GetOne(
+		ctx,
+		s.db,
+		param,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
 }
 
 // FindActivePriceById implements PaymentStore.
@@ -180,10 +198,13 @@ func (s *DbPriceStore) UpsertPriceFromStripe(ctx context.Context, price *stripe.
 	return s.UpsertPrice(ctx, val)
 }
 
+var _ DbPriceStoreInterface = (*DbPriceStore)(nil)
+
 type DbPriceStoreInterface interface {
 	UpsertPrice(ctx context.Context, price *models.StripePrice) error
-	ListPrices(ctx context.Context, input *shared.StripePriceListParams) ([]*models.StripePrice, error)
-	CountPrices(ctx context.Context, filter *shared.StripePriceListFilter) (int64, error)
+	ListPrices(ctx context.Context, input *StripePriceFilter) ([]*models.StripePrice, error)
+	CountPrices(ctx context.Context, filter *StripePriceFilter) (int64, error)
+	FindPrice(ctx context.Context, filter *StripePriceFilter) (*models.StripePrice, error)
 	FindActivePriceById(ctx context.Context, priceId string) (*models.StripePrice, error)
 	UpsertPriceFromStripe(ctx context.Context, price *stripe.Price) error
 }

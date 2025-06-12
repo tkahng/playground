@@ -159,6 +159,9 @@
     "yaml.schemas": {
       "https://golangci-lint.run/jsonschema/golangci.jsonschema.json": "file:///Users/tkahng/GitHub/trk-go/authgo/.golangci-lint.yml"
     },
-    "explorer.fileNesting.enabled": true
+    "explorer.fileNesting.enabled": true,
+    "gitlens.views.repositories.pullRequests.enabled": false,
+    "gitlens.views.repositories.autoRefresh": true,
+    "gitlens.views.remotes.pullRequests.enabled": false
   }
 }

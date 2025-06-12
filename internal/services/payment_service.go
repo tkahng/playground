@@ -225,7 +225,7 @@ func (srv *StripeService) CreateTeamCustomer(ctx context.Context, team *models.T
 		TeamID:       types.Pointer(team.ID),
 		CustomerType: models.StripeCustomerTypeTeam,
 	}
-	return srv.paymentStore.CreateCustomer(ctx, stripeCustomer)
+	return srv.adapter.Customer().CreateCustomer(ctx, stripeCustomer)
 }
 
 // CreateUserCustomer implements PaymentService.
@@ -244,33 +244,33 @@ func (srv *StripeService) CreateUserCustomer(ctx context.Context, user *models.U
 		UserID:       types.Pointer(user.ID),
 		CustomerType: models.StripeCustomerTypeUser,
 	}
-	return srv.paymentStore.CreateCustomer(ctx, stripeCustomer)
+	return srv.adapter.Customer().CreateCustomer(ctx, stripeCustomer)
 }
 
 // FindCustomerByTeam implements PaymentService.
 func (srv *StripeService) FindCustomerByTeam(ctx context.Context, teamId uuid.UUID) (*models.StripeCustomer, error) {
-	return srv.paymentStore.FindCustomer(
+	return srv.adapter.Customer().FindCustomer(
 		ctx,
-		&models.StripeCustomer{
-			TeamID: types.Pointer(teamId),
+		&stores.StripeCustomerFilter{
+			TeamIds: []uuid.UUID{teamId},
 		},
 	)
 }
 
 // FindCustomerByUser implements PaymentService.
 func (srv *StripeService) FindCustomerByUser(ctx context.Context, userId uuid.UUID) (*models.StripeCustomer, error) {
-	return srv.paymentStore.FindCustomer(
+	return srv.adapter.Customer().FindCustomer(
 		ctx,
-		&models.StripeCustomer{
-			UserID: types.Pointer(userId),
+		&stores.StripeCustomerFilter{
+			UserIds: []uuid.UUID{userId},
 		},
 	)
 }
 
 // VerifyAndUpdateTeamSubscriptionQuantity implements PaymentService.
 func (srv *StripeService) VerifyAndUpdateTeamSubscriptionQuantity(ctx context.Context, teamId uuid.UUID) error {
-	customer, err := srv.paymentStore.FindCustomer(ctx, &models.StripeCustomer{
-		TeamID: types.Pointer(teamId),
+	customer, err := srv.adapter.Customer().FindCustomer(ctx, &stores.StripeCustomerFilter{
+		TeamIds: []uuid.UUID{teamId},
 	})
 	if err != nil {
 		return err
@@ -278,7 +278,7 @@ func (srv *StripeService) VerifyAndUpdateTeamSubscriptionQuantity(ctx context.Co
 	if customer == nil {
 		return errors.New("no stripe customer id")
 	}
-	sub, err := srv.paymentStore.FindActiveSubscriptionByCustomerId(ctx, customer.ID)
+	sub, err := srv.adapter.Subscription().FindActiveSubscriptionByCustomerId(ctx, customer.ID)
 	if err != nil {
 		return err
 	}
@@ -321,21 +321,23 @@ func (srv *StripeService) SyncPerms(ctx context.Context) error {
 	var err error
 	for productId, permission := range shared.StripeProductPermissionMap {
 		err = func() error {
-			product, err := srv.paymentStore.FindProductById(ctx, productId)
+			product, err := srv.adapter.Product().FindProduct(ctx, &stores.StripeProductFilter{
+				Ids: []string{productId},
+			})
 			if err != nil {
 				return err
 			}
 			if product == nil {
 				return errors.New("product not found")
 			}
-			perm, err := srv.paymentStore.FindPermissionByName(ctx, permission)
+			perm, err := srv.adapter.Rbac().FindPermissionByName(ctx, permission)
 			if err != nil {
 				return err
 			}
 			if perm == nil {
 				return errors.New("permission not found")
 			}
-			return srv.paymentStore.CreateProductPermissions(ctx, product.ID, perm.ID)
+			return srv.adapter.Rbac().CreateProductPermissions(ctx, product.ID, perm.ID)
 		}()
 	}
 	return err
@@ -360,7 +362,7 @@ func (srv *StripeService) FindAndUpsertAllProducts(ctx context.Context) error {
 		return err
 	}
 	for _, product := range products {
-		err = srv.paymentStore.UpsertProductFromStripe(ctx, product)
+		err = srv.UpsertProductFromStripe(ctx, product)
 		if err != nil {
 			srv.logger.Error("error upserting product", "product", product.ID, "error", err)
 			continue
@@ -439,7 +441,7 @@ func (srv *StripeService) FindSubscriptionWithPriceProductBySessionId(ctx contex
 		return nil, errors.New("subscription not found")
 	}
 
-	subscription, err := srv.paymentStore.FindSubscriptionsWithPriceProductByIds(ctx, checkoutSession.Subscription.ID)
+	subscription, err := srv.adapter.Subscription().FindSubscriptionsWithPriceProductByIds(ctx, checkoutSession.Subscription.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -504,14 +506,14 @@ func (srv *StripeService) CreateCheckoutSession(ctx context.Context, stripeCusto
 	} else {
 		count = 1
 	}
-	val, err := srv.paymentStore.FindActiveSubscriptionByCustomerId(ctx, stripeCustomerId)
+	val, err := srv.adapter.Subscription().FindActiveSubscriptionByCustomerId(ctx, stripeCustomerId)
 	if err != nil {
 		return "", err
 	}
 	if val != nil {
 		return "", errors.New("user already has a valid subscription")
 	}
-	firstSub, err := srv.paymentStore.IsFirstSubscription(ctx, stripeCustomerId)
+	firstSub, err := srv.adapter.Subscription().IsFirstSubscription(ctx, stripeCustomerId)
 	if err != nil {
 		return "", err
 	}
@@ -519,7 +521,7 @@ func (srv *StripeService) CreateCheckoutSession(ctx context.Context, stripeCusto
 	if firstSub {
 		trialDays = types.Pointer(int64(14))
 	}
-	valPrice, err := srv.paymentStore.FindActivePriceById(ctx, priceId)
+	valPrice, err := srv.adapter.Price().FindActivePriceById(ctx, priceId)
 	if err != nil {
 		return "", err
 	}
@@ -534,7 +536,7 @@ func (srv *StripeService) CreateCheckoutSession(ctx context.Context, stripeCusto
 }
 
 func (srv *StripeService) CreateBillingPortalSession(ctx context.Context, stripeCustomerId string) (string, error) {
-	team, err := srv.paymentStore.FindTeamByStripeCustomerId(ctx, stripeCustomerId)
+	team, err := srv.adapter.TeamGroup().FindTeamByStripeCustomerId(ctx, stripeCustomerId)
 	if err != nil {
 		return "", err
 	}
@@ -542,20 +544,18 @@ func (srv *StripeService) CreateBillingPortalSession(ctx context.Context, stripe
 		return "", errors.New("team not found")
 	}
 
-	sub, err := srv.paymentStore.FindActiveSubscriptionByCustomerId(ctx, stripeCustomerId)
+	sub, err := srv.adapter.Subscription().FindActiveSubscriptionByCustomerId(ctx, stripeCustomerId)
 	if err != nil {
 		return "", err
 	}
 	if sub == nil {
 		return "", errors.New("no subscription.  subscribe to access billing portal")
 	}
-	prods, err := srv.paymentStore.ListProducts(ctx, &shared.StripeProductListParams{
-		PaginatedInput: shared.PaginatedInput{
+	prods, err := srv.adapter.Product().ListProducts(ctx, &stores.StripeProductFilter{
+		PaginatedInput: stores.PaginatedInput{
 			PerPage: 100,
 		},
-		StripeProductListFilter: shared.StripeProductListFilter{
-			Active: shared.Active,
-		},
+		Active: types.OptionalParam[bool]{IsSet: true, Value: true},
 	})
 	if err != nil {
 		return "", err
@@ -564,19 +564,17 @@ func (srv *StripeService) CreateBillingPortalSession(ctx context.Context, stripe
 	for i, p := range prods {
 		prodIds[i] = p.ID
 	}
-	prices, err := srv.paymentStore.ListPrices(ctx, &shared.StripePriceListParams{
-		PaginatedInput: shared.PaginatedInput{
+	prices, err := srv.adapter.Price().ListPrices(ctx, &stores.StripePriceFilter{
+		PaginatedInput: stores.PaginatedInput{
 			PerPage: 100,
 		},
-		StripePriceListFilter: shared.StripePriceListFilter{
-			Active:     shared.Active,
-			ProductIds: prodIds,
-		},
+		Active:     types.OptionalParam[bool]{IsSet: true, Value: true},
+		ProductIds: prodIds,
 	})
-	grouped := mapper.MapToMany(prices, prodIds, func(p *models.StripePrice) string { return p.ProductID })
 	if err != nil {
 		return "", err
 	}
+	grouped := mapper.MapToMany(prices, prodIds, func(p *models.StripePrice) string { return p.ProductID })
 	var configurations []*stripe.BillingPortalConfigurationFeaturesSubscriptionUpdateProductParams
 	for i, id := range prods {
 		price := grouped[i]

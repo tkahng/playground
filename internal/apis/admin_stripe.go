@@ -80,7 +80,7 @@ func (api *Api) AdminStripeProducts(ctx context.Context,
 		}
 	}
 	if slices.Contains(input.Expand, "permissions") {
-		data, err := api.app.Rbac().Store().LoadProductPermissions(ctx, productIds...)
+		data, err := api.app.Adapter().Rbac().LoadProductPermissions(ctx, productIds...)
 		if err != nil {
 			return nil, err
 		}
@@ -186,14 +186,14 @@ func (api *Api) AdminStripeProductsRolesDelete(ctx context.Context, input *struc
 		return nil, huma.Error400BadRequest("role_id is not a valid UUID")
 	}
 
-	role, err := api.app.Rbac().Store().FindRoleById(ctx, roleId)
+	role, err := api.app.Adapter().Rbac().FindRoleById(ctx, roleId)
 	if err != nil {
 		return nil, err
 	}
 	if role == nil {
 		return nil, huma.Error404NotFound("Role not found")
 	}
-	err = api.app.Rbac().Store().DeleteProductRoles(ctx, product.ID, role.ID)
+	err = api.app.Adapter().Rbac().DeleteProductRoles(ctx, product.ID, role.ID)
 	if err != nil {
 		return nil, err
 	}

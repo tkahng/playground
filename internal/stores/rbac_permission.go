@@ -2,6 +2,7 @@ package stores
 
 import (
 	"context"
+	"slices"
 	"strings"
 
 	"github.com/Masterminds/squirrel"
@@ -13,17 +14,26 @@ import (
 	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
+	"github.com/tkahng/authgo/internal/tools/utils"
 )
 
-func (p *DbRbacStore) ListPermissions(ctx context.Context, input *shared.PermissionsListParams) ([]*models.Permission, error) {
+type PermissionFilter struct {
+	PaginatedInput
+	SortParams
+	Q           string      `query:"q,omitempty" required:"false"`
+	Ids         []uuid.UUID `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+	Names       []string    `query:"names,omitempty" required:"false" minimum:"1" maximum:"100"`
+	RoleId      uuid.UUID   `query:"role_id,omitempty" required:"false" format:"uuid"`
+	RoleReverse bool        `query:"role_reverse,omitempty" required:"false" doc:"When role_id is provided, if this is true, it will return the permissions that the role does not have"`
+}
+
+func (p *DbRbacStore) ListPermissions(ctx context.Context, input *PermissionFilter) ([]*models.Permission, error) {
 	q := squirrel.Select("permissions.*").From("permissions")
-	filter := input.PermissionsListFilter
-	pageInput := &input.PaginatedInput
 
 	// q = ViewApplyPagination(q, pageInput)
-	q = ListPermissionsFilterFunc(q, &filter)
-	q = database.Paginate(q, pageInput)
-	if input.SortBy != "" && input.SortOrder != "" {
+	q = ListPermissionsFilterFunc(q, input)
+	q = queryPagination(q, input)
+	if input.SortBy != "" && slices.Contains(repository.PermissionBuilder.ColumnNames(), utils.Quote(input.SortBy)) {
 		q = q.OrderBy(input.SortBy + " " + strings.ToUpper(input.SortOrder))
 	}
 	data, err := database.QueryWithBuilder[*models.Permission](ctx, p.db, q.PlaceholderFormat(squirrel.Dollar))
@@ -34,7 +44,7 @@ func (p *DbRbacStore) ListPermissions(ctx context.Context, input *shared.Permiss
 }
 
 // CountPermissions implements AdminCrudActions.
-func (p *DbRbacStore) CountPermissions(ctx context.Context, filter *shared.PermissionsListFilter) (int64, error) {
+func (p *DbRbacStore) CountPermissions(ctx context.Context, filter *PermissionFilter) (int64, error) {
 	q := squirrel.Select("COUNT(permissions.*)").From("permissions")
 
 	// q = ViewApplyPagination(q, pageInput)
@@ -50,7 +60,8 @@ func (p *DbRbacStore) CountPermissions(ctx context.Context, filter *shared.Permi
 
 	return data[0].Count, nil
 }
-func ListPermissionsFilterFunc(sq squirrel.SelectBuilder, filter *shared.PermissionsListFilter) squirrel.SelectBuilder {
+func ListPermissionsFilterFunc(sq squirrel.SelectBuilder, filter *PermissionFilter) squirrel.SelectBuilder {
+
 	if filter == nil {
 		return sq
 	}
@@ -70,8 +81,7 @@ func ListPermissionsFilterFunc(sq squirrel.SelectBuilder, filter *shared.Permiss
 		sq = sq.Where(squirrel.Eq{"id": filter.Ids})
 	}
 
-	if filter.RoleId != "" {
-
+	if filter.RoleId != uuid.Nil {
 		if filter.RoleReverse {
 			sq = sq.LeftJoin(
 				"role_permissions"+" on "+"permissions.id"+" = "+"role_permissions"+"."+"permission_id"+" and "+"role_permissions"+"."+"role_id"+" = ?",
@@ -86,6 +96,20 @@ func ListPermissionsFilterFunc(sq squirrel.SelectBuilder, filter *shared.Permiss
 		}
 	}
 	return sq
+}
+
+func (p *DbRbacStore) FindPermission(ctx context.Context, filter *PermissionFilter) (*models.Permission, error) {
+	q := squirrel.Select("permissions.*").From("permissions")
+	q = ListPermissionsFilterFunc(q, filter)
+	q = q.Limit(1)
+	data, err := database.QueryWithBuilder[*models.Permission](ctx, p.db, q.PlaceholderFormat(squirrel.Dollar))
+	if err != nil {
+		return nil, err
+	}
+	if len(data) == 0 {
+		return nil, nil
+	}
+	return data[0], nil
 }
 
 // FindPermissionByName implements RBACStore.

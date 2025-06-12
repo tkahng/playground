@@ -162,8 +162,7 @@ func NewBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 	userAccountStore := stores.NewDbAccountStore(pool)
 	userAccountService := services.NewUserAccountService(userAccountStore)
 
-	rbac := stores.NewDbRBACStore(pool)
-	rbacService := services.NewRBACService(rbac)
+	rbacService := services.NewRBACService(adapter)
 
 	taskStore := stores.NewDbTaskStore(pool)
 	taskService := services.NewTaskService(taskStore)

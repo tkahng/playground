@@ -128,7 +128,7 @@ func TestListPermissions(t *testing.T) {
 		type args struct {
 			ctx   context.Context
 			db    database.Dbx
-			input *shared.PermissionsListParams
+			input *stores.PermissionFilter
 		}
 		tests := []struct {
 			name      string
@@ -141,14 +141,12 @@ func TestListPermissions(t *testing.T) {
 				args: args{
 					ctx: ctx,
 					db:  tx,
-					input: &shared.PermissionsListParams{
-						PermissionsListFilter: shared.PermissionsListFilter{
-							// Q: "super",
-							Names: []string{
-								shared.PermissionNameAdmin,
-							},
+					input: &stores.PermissionFilter{
+						// Q: "super",
+						Names: []string{
+							shared.PermissionNameAdmin,
 						},
-						PaginatedInput: shared.PaginatedInput{
+						PaginatedInput: stores.PaginatedInput{
 							Page:    0,
 							PerPage: 20,
 						},
@@ -192,13 +190,13 @@ func TestCountPermissions(t *testing.T) {
 
 		tests := []struct {
 			name    string
-			filter  *shared.PermissionsListFilter
+			filter  *stores.PermissionFilter
 			want    int64
 			wantErr bool
 		}{
 			{
 				name: "Count all permissions",
-				filter: &shared.PermissionsListFilter{
+				filter: &stores.PermissionFilter{
 					Names: []string{
 						shared.PermissionNameAdmin,
 						shared.PermissionNameBasic,
@@ -209,7 +207,7 @@ func TestCountPermissions(t *testing.T) {
 			},
 			{
 				name: "Count filtered permissions",
-				filter: &shared.PermissionsListFilter{
+				filter: &stores.PermissionFilter{
 					Names: []string{
 						shared.PermissionNameAdmin,
 					},

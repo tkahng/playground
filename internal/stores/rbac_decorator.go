@@ -12,7 +12,7 @@ type RbacStoreDecorator struct {
 	Delegate                         *DbRbacStore
 	AssignRoleFunc                   func(ctx context.Context, userId uuid.UUID, roleNames ...string) error
 	CountNotUserPermissionSourceFunc func(ctx context.Context, userId uuid.UUID) (int64, error)
-	CountPermissionsFunc             func(ctx context.Context, filter *shared.PermissionsListFilter) (int64, error)
+	CountPermissionsFunc             func(ctx context.Context, filter *PermissionFilter) (int64, error)
 	CountRolesFunc                   func(ctx context.Context, filter *shared.RoleListFilter) (int64, error)
 	CountUserPermissionSourceFunc    func(ctx context.Context, userId uuid.UUID) (int64, error)
 	CreatePermissionFunc             func(ctx context.Context, name string, description *string) (*models.Permission, error)
@@ -31,6 +31,7 @@ type RbacStoreDecorator struct {
 	EnsureRoleAndPermissionsFunc func(ctx context.Context, roleName string, permissionNames ...string) error
 	FindOrCreatePermissionFunc   func(ctx context.Context, permissionName string) (*models.Permission, error)
 	FindOrCreateRoleFunc         func(ctx context.Context, roleName string) (*models.Role, error)
+	FindPermissionFunc           func(ctx context.Context, filter *PermissionFilter) (*models.Permission, error)
 	FindPermissionByIdFunc       func(ctx context.Context, id uuid.UUID) (*models.Permission, error)
 	FindPermissionByNameFunc     func(ctx context.Context, name string) (*models.Permission, error)
 	FindPermissionsByIdsFunc     func(ctx context.Context, params []uuid.UUID) ([]*models.Permission, error)
@@ -39,7 +40,7 @@ type RbacStoreDecorator struct {
 	FindRolesByIdsFunc           func(ctx context.Context, params []uuid.UUID) ([]*models.Role, error)
 	GetUserRolesFunc             func(ctx context.Context, userIds ...uuid.UUID) ([][]*models.Role, error)
 
-	ListPermissionsFunc              func(ctx context.Context, input *shared.PermissionsListParams) ([]*models.Permission, error)
+	ListPermissionsFunc              func(ctx context.Context, input *PermissionFilter) ([]*models.Permission, error)
 	ListRolesFunc                    func(ctx context.Context, input *shared.RolesListParams) ([]*models.Role, error)
 	ListUserNotPermissionsSourceFunc func(ctx context.Context, userId uuid.UUID, limit int64, offset int64) ([]shared.PermissionSource, error)
 	ListUserPermissionsSourceFunc    func(ctx context.Context, userId uuid.UUID, limit int64, offset int64) ([]shared.PermissionSource, error)
@@ -72,7 +73,7 @@ func (r *RbacStoreDecorator) CountNotUserPermissionSource(ctx context.Context, u
 }
 
 // CountPermissions implements DbRbacStoreInterface.
-func (r *RbacStoreDecorator) CountPermissions(ctx context.Context, filter *shared.PermissionsListFilter) (int64, error) {
+func (r *RbacStoreDecorator) CountPermissions(ctx context.Context, filter *PermissionFilter) (int64, error) {
 	if r.CountPermissionsFunc != nil {
 		return r.CountPermissionsFunc(ctx, filter)
 	}
@@ -269,6 +270,16 @@ func (r *RbacStoreDecorator) FindOrCreateRole(ctx context.Context, roleName stri
 	return r.Delegate.FindOrCreateRole(ctx, roleName)
 }
 
+func (r *RbacStoreDecorator) FindPermission(ctx context.Context, filter *PermissionFilter) (*models.Permission, error) {
+	if r.FindPermissionFunc != nil {
+		return r.FindPermissionFunc(ctx, filter)
+	}
+	if r.Delegate == nil {
+		return nil, ErrDelegateNil
+	}
+	return r.Delegate.FindPermission(ctx, filter)
+}
+
 // FindPermissionById implements DbRbacStoreInterface.
 func (r *RbacStoreDecorator) FindPermissionById(ctx context.Context, id uuid.UUID) (*models.Permission, error) {
 	if r.FindPermissionByIdFunc != nil {
@@ -347,7 +358,7 @@ func (r *RbacStoreDecorator) GetUserRoles(ctx context.Context, userIds ...uuid.U
 }
 
 // ListPermissions implements DbRbacStoreInterface.
-func (r *RbacStoreDecorator) ListPermissions(ctx context.Context, input *shared.PermissionsListParams) ([]*models.Permission, error) {
+func (r *RbacStoreDecorator) ListPermissions(ctx context.Context, input *PermissionFilter) ([]*models.Permission, error) {
 	if r.ListPermissionsFunc != nil {
 		return r.ListPermissionsFunc(ctx, input)
 	}

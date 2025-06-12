@@ -50,16 +50,6 @@ type DbTeamStore struct {
 	*DbTeamInvitationStore
 }
 
-func (s *DbTeamStore) WithTx(db database.Dbx) *DbTeamStore {
-	return &DbTeamStore{
-
-		db:                    db,
-		DbTeamGroupStore:      s.DbTeamGroupStore.WithTx(db),
-		DbTeamMemberStore:     s.DbTeamMemberStore.WithTx(db),
-		DbTeamInvitationStore: s.DbTeamInvitationStore.WithTx(db),
-	}
-}
-
 func NewDbTeamStore(db database.Dbx) *DbTeamStore {
 	return &DbTeamStore{
 		db:                    db,

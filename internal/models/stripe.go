@@ -88,6 +88,8 @@ var StripeProductTablePrefix = stripeProductTable{
 	Permissions: StripeProductTableName + "." + "permissions",
 }
 
+// StripePricingType represents the type of pricing for a Stripe product
+// It can be either "one_time" or "recurring"
 type StripePricingType string
 
 const (

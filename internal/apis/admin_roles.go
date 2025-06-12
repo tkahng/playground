@@ -15,7 +15,7 @@ import (
 func (api *Api) AdminRolesList(ctx context.Context, input *struct {
 	shared.RolesListParams
 }) (*shared.PaginatedOutput[*shared.RoleWithPermissions], error) {
-	store := api.app.Rbac().Store()
+	store := api.app.Adapter().Rbac()
 	roles, err := store.ListRoles(ctx, &input.RolesListParams)
 	if err != nil {
 		return nil, err
@@ -62,14 +62,14 @@ func (api *Api) AdminRolesCreate(ctx context.Context, input *struct {
 }) (*struct {
 	Body shared.Role
 }, error) {
-	data, err := api.app.Rbac().Store().FindRoleByName(ctx, input.Body.Name)
+	data, err := api.app.Adapter().Rbac().FindRoleByName(ctx, input.Body.Name)
 	if err != nil {
 		return nil, err
 	}
 	if data != nil {
 		return nil, huma.Error409Conflict("Role already exists")
 	}
-	role, err := api.app.Rbac().Store().CreateRole(ctx, &shared.CreateRoleDto{
+	role, err := api.app.Adapter().Rbac().CreateRole(ctx, &shared.CreateRoleDto{
 		Name:        input.Body.Name,
 		Description: input.Body.Description,
 	})
@@ -91,7 +91,7 @@ func (api *Api) AdminRolesDelete(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	role, err := api.app.Rbac().Store().FindRoleById(ctx, id)
+	role, err := api.app.Adapter().Rbac().FindRoleById(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -107,7 +107,7 @@ func (api *Api) AdminRolesDelete(ctx context.Context, input *struct {
 	if !ok {
 		return nil, huma.Error400BadRequest("Cannot delete the admin or basic role")
 	}
-	err = api.app.Rbac().Store().DeleteRole(ctx, role.ID)
+	err = api.app.Adapter().Rbac().DeleteRole(ctx, role.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -124,7 +124,7 @@ func (api *Api) AdminRolesUpdate(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	role, err := api.app.Rbac().Store().FindRoleById(ctx, id)
+	role, err := api.app.Adapter().Rbac().FindRoleById(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -139,7 +139,7 @@ func (api *Api) AdminRolesUpdate(ctx context.Context, input *struct {
 	if !ok {
 		return nil, huma.Error400BadRequest("Cannot update the admin or basic role")
 	}
-	err = api.app.Rbac().Store().UpdateRole(ctx, role.ID, &shared.UpdateRoleDto{
+	err = api.app.Adapter().Rbac().UpdateRole(ctx, role.ID, &shared.UpdateRoleDto{
 		Name:        input.Body.Name,
 		Description: input.Body.Description,
 	})
@@ -170,7 +170,7 @@ func (api *Api) AdminUserRolesDelete(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	role, err := api.app.Rbac().Store().FindRoleById(ctx, roleID)
+	role, err := api.app.Adapter().Rbac().FindRoleById(ctx, roleID)
 	if err != nil {
 		return nil, err
 	}
@@ -187,7 +187,7 @@ func (api *Api) AdminUserRolesDelete(ctx context.Context, input *struct {
 		return nil, huma.Error400BadRequest("Cannot remove the super user role from your own account")
 	}
 
-	err = api.app.Rbac().Store().DeleteUserRole(ctx, user.ID, role.ID)
+	err = api.app.Adapter().Rbac().DeleteUserRole(ctx, user.ID, role.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -211,7 +211,7 @@ func (api *Api) AdminUserRolesCreate(ctx context.Context, input *struct {
 
 	roleIds := utils.ParseValidUUIDs(input.Body.RolesIds)
 
-	roles, err := api.app.Rbac().Store().FindRolesByIds(ctx, roleIds)
+	roles, err := api.app.Adapter().Rbac().FindRolesByIds(ctx, roleIds)
 	if err != nil {
 		return nil, err
 	}
@@ -219,7 +219,7 @@ func (api *Api) AdminUserRolesCreate(ctx context.Context, input *struct {
 	for _, role := range roles {
 		newRoleIds = append(newRoleIds, role.ID)
 	}
-	err = api.app.Rbac().Store().CreateUserRoles(ctx, user.ID, newRoleIds...)
+	err = api.app.Adapter().Rbac().CreateUserRoles(ctx, user.ID, newRoleIds...)
 	if err != nil {
 		return nil, err
 	}
@@ -254,7 +254,7 @@ type RoleIdsInput struct {
 // 		}
 // 		roleIds[i] = id
 // 	}
-// 	roles, err := api.app.Rbac().Store().FindRolesByIds(ctx, roleIds)
+// 	roles, err := api.app.Adapter().Rbac().FindRolesByIds(ctx, roleIds)
 // 	if err != nil {
 // 		return nil, err
 // 	}
@@ -274,7 +274,7 @@ type RoleIdsInput struct {
 // 	for _, role := range roles {
 // 		newRoleIds = append(newRoleIds, role.ID)
 // 	}
-// 	err = api.app.Rbac().Store().CreateUserRoles(ctx, user.ID, newRoleIds...)
+// 	err = api.app.Adapter().Rbac().CreateUserRoles(ctx, user.ID, newRoleIds...)
 // 	if err != nil {
 // 		return nil, err
 // 	}
@@ -300,7 +300,7 @@ func (api *Api) AdminRolesGet(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	role, err := api.app.Rbac().Store().FindRoleById(ctx, id)
+	role, err := api.app.Adapter().Rbac().FindRoleById(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -309,7 +309,7 @@ func (api *Api) AdminRolesGet(ctx context.Context, input *struct {
 	}
 	if len(input.Expand) > 0 {
 		if slices.Contains(input.Expand, "permissions") {
-			rolePermissions, err := api.app.Rbac().Store().LoadRolePermissions(ctx, role.ID)
+			rolePermissions, err := api.app.Adapter().Rbac().LoadRolePermissions(ctx, role.ID)
 			if err != nil {
 				return nil, err
 			}
@@ -332,7 +332,7 @@ func (api *Api) AdminRolesCreatePermissions(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	role, err := api.app.Rbac().Store().FindRoleById(ctx, id)
+	role, err := api.app.Adapter().Rbac().FindRoleById(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -341,7 +341,7 @@ func (api *Api) AdminRolesCreatePermissions(ctx context.Context, input *struct {
 	}
 	permissionIds := utils.ParseValidUUIDs(input.Body.PermissionIDs)
 
-	err = api.app.Rbac().Store().CreateRolePermissions(ctx, role.ID, permissionIds...)
+	err = api.app.Adapter().Rbac().CreateRolePermissions(ctx, role.ID, permissionIds...)
 
 	if err != nil {
 		return nil, err
@@ -358,7 +358,7 @@ func (api *Api) AdminRolesDeletePermissions(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	role, err := api.app.Rbac().Store().FindRoleById(ctx, id)
+	role, err := api.app.Adapter().Rbac().FindRoleById(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -369,7 +369,7 @@ func (api *Api) AdminRolesDeletePermissions(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	permission, err := api.app.Rbac().Store().FindPermissionById(ctx, permissionId)
+	permission, err := api.app.Adapter().Rbac().FindPermissionById(ctx, permissionId)
 	if err != nil {
 		return nil, err
 	}
@@ -385,7 +385,7 @@ func (api *Api) AdminRolesDeletePermissions(ctx context.Context, input *struct {
 	if !ok {
 		return nil, huma.Error400BadRequest("Cannot remove the admin permission from the admin role")
 	}
-	err = api.app.Rbac().Store().DeleteRolePermissions(ctx, role.ID, permission.ID)
+	err = api.app.Adapter().Rbac().DeleteRolePermissions(ctx, role.ID, permission.ID)
 	if err != nil {
 		return nil, err
 	}
