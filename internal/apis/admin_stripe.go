@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/authgo/internal/stores"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 	"github.com/tkahng/authgo/internal/tools/utils"
 )
@@ -15,12 +16,22 @@ import (
 func (api *Api) AdminStripeSubscriptions(ctx context.Context,
 	input *shared.StripeSubscriptionListParams,
 ) (*shared.PaginatedOutput[*shared.Subscription], error) {
-	subscriptions, err := api.app.Payment().Store().ListSubscriptions(ctx, input)
+	filter := &stores.StripeSubscriptionListFilter{}
+	filter.Page = input.Page
+	filter.PerPage = input.PerPage
+	filter.Status = mapper.Map(input.Status, func(s shared.StripeSubscriptionStatus) models.StripeSubscriptionStatus {
+		return models.StripeSubscriptionStatus(s)
+	})
+	filter.Ids = input.Ids
+	filter.TeamIDs = utils.ParseValidUUIDs(input.TeamIDs)
+	filter.UserIDs = utils.ParseValidUUIDs(input.UserIDs)
+
+	subscriptions, err := api.app.Adapter().Subscription().ListSubscriptions(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
 
-	count, err := api.app.Payment().Store().CountSubscriptions(ctx, &input.StripeSubscriptionListFilter)
+	count, err := api.app.Adapter().Subscription().CountSubscriptions(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -38,11 +49,9 @@ func (api *Api) AdminStripeSubscriptionsGet(ctx context.Context,
 	if input == nil || input.SubscriptionID == "" {
 		return nil, huma.Error400BadRequest("subscription_id is required")
 	}
-	subscriptions, err := api.app.Payment().Store().ListSubscriptions(ctx, &shared.StripeSubscriptionListParams{
-		StripeSubscriptionListFilter: shared.StripeSubscriptionListFilter{
-			Ids: []string{input.SubscriptionID},
-		},
-		PaginatedInput: shared.PaginatedInput{
+	subscriptions, err := api.app.Adapter().Subscription().ListSubscriptions(ctx, &stores.StripeSubscriptionListFilter{
+		Ids: []string{input.SubscriptionID},
+		PaginatedInput: stores.PaginatedInput{
 			Page:    0,
 			PerPage: 1,
 		},
@@ -59,8 +68,13 @@ func (api *Api) AdminStripeSubscriptionsGet(ctx context.Context,
 func (api *Api) AdminStripeProducts(ctx context.Context,
 	input *shared.StripeProductListParams,
 ) (*shared.PaginatedOutput[*shared.StripeProduct], error) {
-
-	products, err := api.app.Payment().Store().ListProducts(ctx, input)
+	filter := &stores.StripeProductFilter{}
+	filter.Page = input.Page
+	filter.PerPage = input.PerPage
+	filter.Ids = input.Ids
+	filter.Active = input.Active
+	filter.Q = input.Q
+	products, err := api.app.Adapter().Product().ListProducts(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +82,7 @@ func (api *Api) AdminStripeProducts(ctx context.Context,
 		return p.ID
 	})
 	if slices.Contains(input.Expand, "prices") {
-		data, err := api.app.Payment().Store().LoadPricesByProductIds(ctx, productIds...)
+		data, err := api.app.Adapter().Price().LoadPricesByProductIds(ctx, productIds...)
 		if err != nil {
 			return nil, err
 		}
@@ -91,7 +105,7 @@ func (api *Api) AdminStripeProducts(ctx context.Context,
 			}
 		}
 	}
-	count, err := api.app.Payment().Store().CountProducts(ctx, &input.StripeProductListFilter)
+	count, err := api.app.Adapter().Product().CountProducts(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -112,7 +126,7 @@ func (api *Api) AdminStripeProductsGet(ctx context.Context,
 	if input == nil || input.ProductID == "" {
 		return nil, huma.Error400BadRequest("product_id is required")
 	}
-	product, err := api.app.Payment().Store().FindProductById(ctx, input.ProductID)
+	product, err := api.app.Adapter().Product().FindProductById(ctx, input.ProductID)
 	if err != nil {
 		return nil, err
 	}
@@ -121,7 +135,7 @@ func (api *Api) AdminStripeProductsGet(ctx context.Context,
 	}
 
 	if slices.Contains(input.Expand, "prices") {
-		prices, err := api.app.Payment().Store().LoadPricesByProductIds(ctx, input.ProductID)
+		prices, err := api.app.Adapter().Price().LoadPricesByProductIds(ctx, input.ProductID)
 		if err != nil {
 			return nil, err
 		}
@@ -130,7 +144,7 @@ func (api *Api) AdminStripeProductsGet(ctx context.Context,
 		}
 	}
 	if slices.Contains(input.Expand, "permissions") {
-		roles, err := api.app.Payment().Store().LoadProductPermissions(ctx, input.ProductID)
+		roles, err := api.app.Adapter().Rbac().LoadProductPermissions(ctx, input.ProductID)
 		if err != nil {
 			return nil, err
 		}
@@ -151,7 +165,7 @@ func (api *Api) AdminStripeProductsRolesCreate(ctx context.Context, input *struc
 }) (*struct{}, error) {
 
 	id := input.ProductID
-	user, err := api.app.Payment().Store().FindProductById(ctx, id)
+	user, err := api.app.Adapter().Product().FindProductById(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -161,7 +175,7 @@ func (api *Api) AdminStripeProductsRolesCreate(ctx context.Context, input *struc
 
 	roleIds := utils.ParseValidUUIDs(input.Body.RolesIds)
 
-	err = api.app.Payment().Store().CreateProductRoles(ctx, user.ID, roleIds...)
+	err = api.app.Adapter().Rbac().CreateProductRoles(ctx, user.ID, roleIds...)
 	if err != nil {
 		return nil, err
 	}
@@ -173,7 +187,7 @@ func (api *Api) AdminStripeProductsRolesDelete(ctx context.Context, input *struc
 	RoleID    string `path:"role-id" required:"true" format:"uuid"`
 }) (*struct{}, error) {
 	id := input.ProductID
-	product, err := api.app.Payment().Store().FindProductById(ctx, id)
+	product, err := api.app.Adapter().Product().FindProductById(ctx, id)
 	if err != nil {
 		return nil, err
 	}

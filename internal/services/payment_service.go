@@ -117,7 +117,6 @@ type PaymentStore interface {
 }
 type PaymentService interface {
 	Client() PaymentClient
-	Store() PaymentStore
 
 	Adapter() stores.StorageAdapterInterface
 
@@ -148,10 +147,10 @@ type PaymentService interface {
 }
 
 type StripeService struct {
-	logger       *slog.Logger
-	client       PaymentClient
-	paymentStore PaymentStore
-	adapter      stores.StorageAdapterInterface
+	logger *slog.Logger
+	client PaymentClient
+	// paymentStore PaymentStore
+	adapter stores.StorageAdapterInterface
 }
 
 // Adapter implements PaymentService.
@@ -286,7 +285,7 @@ func (srv *StripeService) VerifyAndUpdateTeamSubscriptionQuantity(ctx context.Co
 		return errors.New("no subscription")
 	}
 
-	count, err := srv.paymentStore.CountTeamMembers(ctx, &stores.TeamMemberFilter{
+	count, err := srv.adapter.TeamMember().CountTeamMembers(ctx, &stores.TeamMemberFilter{
 		TeamIds: []uuid.UUID{teamId},
 	})
 	if err != nil {
@@ -311,10 +310,6 @@ func (srv *StripeService) VerifyAndUpdateTeamSubscriptionQuantity(ctx context.Co
 
 func (srv *StripeService) Client() PaymentClient {
 	return srv.client
-}
-
-func (srv *StripeService) Store() PaymentStore {
-	return srv.paymentStore
 }
 
 func (srv *StripeService) SyncPerms(ctx context.Context) error {

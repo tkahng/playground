@@ -17,7 +17,7 @@ func (api *Api) GetStripeSubscriptions(ctx context.Context, input *struct{}) (*s
 		return nil, huma.Error403Forbidden("no customer found")
 	}
 
-	subWithPriceProduct, err := api.app.Payment().Store().FindActiveSubscriptionByCustomerId(ctx, customer.ID)
+	subWithPriceProduct, err := api.app.Adapter().Subscription().FindActiveSubscriptionByCustomerId(ctx, customer.ID)
 	if err != nil {
 		return nil, err
 	}

@@ -8,6 +8,7 @@ import (
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/repository"
+	"github.com/tkahng/authgo/internal/tools/mapper"
 	"github.com/tkahng/authgo/internal/tools/types"
 	"github.com/tkahng/authgo/internal/tools/utils"
 )
@@ -175,6 +176,28 @@ func (s *DbPriceStore) FindActivePriceById(ctx context.Context, priceId string) 
 	return data, err
 }
 
+func (s *DbPriceStore) LoadPricesByProductIds(ctx context.Context, productIds ...string) ([][]*models.StripePrice, error) {
+
+	prices, err := repository.StripePrice.Get(
+		ctx,
+		s.db,
+		&map[string]any{
+			models.StripePriceTable.ProductID: map[string]any{
+				"_in": productIds,
+			},
+		},
+		nil,
+		nil,
+		nil,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return mapper.MapToManyPointer(prices, productIds, func(t *models.StripePrice) string {
+		return t.ProductID
+	}), nil
+}
+
 func (s *DbPriceStore) UpsertPriceFromStripe(ctx context.Context, price *stripe.Price) error {
 	if price == nil {
 		return nil
@@ -201,6 +224,7 @@ func (s *DbPriceStore) UpsertPriceFromStripe(ctx context.Context, price *stripe.
 var _ DbPriceStoreInterface = (*DbPriceStore)(nil)
 
 type DbPriceStoreInterface interface {
+	LoadPricesByProductIds(ctx context.Context, productIds ...string) ([][]*models.StripePrice, error)
 	UpsertPrice(ctx context.Context, price *models.StripePrice) error
 	ListPrices(ctx context.Context, input *StripePriceFilter) ([]*models.StripePrice, error)
 	CountPrices(ctx context.Context, filter *StripePriceFilter) (int64, error)

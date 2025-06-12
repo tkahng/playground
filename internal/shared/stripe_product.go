@@ -5,6 +5,7 @@ import (
 
 	crudModels "github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/tools/mapper"
+	"github.com/tkahng/authgo/internal/tools/types"
 )
 
 type StripeProduct struct {
@@ -39,17 +40,18 @@ func FromModelProduct(product *crudModels.StripeProduct) *StripeProduct {
 }
 
 type StripeProductListFilter struct {
-	Q      string       `query:"q,omitempty" required:"false"`
-	Ids    []string     `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100"`
-	Active ActiveStatus `query:"active,omitempty" required:"false" enum:"active,inactive"`
+	Q      string                    `query:"q,omitempty" required:"false"`
+	Ids    []string                  `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100"`
+	Active types.OptionalParam[bool] `query:"active,omitempty" required:"false"`
 }
 
 type StripeProductListParams struct {
 	PaginatedInput
-	StripeProductListFilter
 	SortParams
 	StripeProductExpand
-	PriceActive ActiveStatus `query:"price_active,omitempty" required:"false" enum:"active,inactive"`
+	Q      string                    `query:"q,omitempty" required:"false"`
+	Ids    []string                  `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100"`
+	Active types.OptionalParam[bool] `query:"active,omitempty" required:"false"`
 }
 
 type StripeProductExpand struct {

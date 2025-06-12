@@ -8,13 +8,25 @@ import (
 )
 
 type StripePriceStoreDecorator struct {
-	Delegate                  *DbPriceStore
-	CountPricesFunc           func(ctx context.Context, filter *StripePriceFilter) (int64, error)
-	FindActivePriceByIdFunc   func(ctx context.Context, priceId string) (*models.StripePrice, error)
-	FindPriceFunc             func(ctx context.Context, filter *StripePriceFilter) (*models.StripePrice, error)
-	ListPricesFunc            func(ctx context.Context, input *StripePriceFilter) ([]*models.StripePrice, error)
-	UpsertPriceFunc           func(ctx context.Context, price *models.StripePrice) error
-	UpsertPriceFromStripeFunc func(ctx context.Context, price *stripe.Price) error
+	Delegate                   *DbPriceStore
+	CountPricesFunc            func(ctx context.Context, filter *StripePriceFilter) (int64, error)
+	FindActivePriceByIdFunc    func(ctx context.Context, priceId string) (*models.StripePrice, error)
+	FindPriceFunc              func(ctx context.Context, filter *StripePriceFilter) (*models.StripePrice, error)
+	ListPricesFunc             func(ctx context.Context, input *StripePriceFilter) ([]*models.StripePrice, error)
+	UpsertPriceFunc            func(ctx context.Context, price *models.StripePrice) error
+	UpsertPriceFromStripeFunc  func(ctx context.Context, price *stripe.Price) error
+	LoadPricesByProductIdsFunc func(ctx context.Context, productIds ...string) ([][]*models.StripePrice, error)
+}
+
+// LoadPricesByProductIds implements DbPriceStoreInterface.
+func (s *StripePriceStoreDecorator) LoadPricesByProductIds(ctx context.Context, productIds ...string) ([][]*models.StripePrice, error) {
+	if s.LoadPricesByProductIdsFunc != nil {
+		return s.LoadPricesByProductIdsFunc(ctx, productIds...)
+	}
+	if s.Delegate == nil {
+		return nil, ErrDelegateNil
+	}
+	return s.Delegate.LoadPricesByProductIds(ctx, productIds...)
 }
 
 func (s *StripePriceStoreDecorator) Cleanup() {
