@@ -18,21 +18,20 @@ func TestLoadTaskProjectsTasks(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
-		userStore := stores.NewDbUserStore(dbxx)
-		teamstore := stores.NewDbTeamStore(dbxx)
-		taskStore := stores.NewDbTaskStore(dbxx)
-		user, err := userStore.CreateUser(ctx, &models.User{
+		adapter := stores.NewStorageAdapter(dbxx)
+
+		user, err := adapter.User().CreateUser(ctx, &models.User{
 			Email: "tkahng@gmail.com",
 		})
 		if err != nil {
 			t.Fatalf("failed to create user: %v", err)
 		}
 
-		member, err := teamstore.CreateTeamFromUser(ctx, user)
+		member, err := adapter.TeamMember().CreateTeamFromUser(ctx, user)
 		if err != nil {
 			t.Fatalf("failed to create team from user: %v", err)
 		}
-		taskProject, err := taskStore.CreateTaskProject(ctx, &shared.CreateTaskProjectDTO{
+		taskProject, err := adapter.Task().CreateTaskProject(ctx, &shared.CreateTaskProjectDTO{
 			Name:     "Test Project",
 			Status:   shared.TaskProjectStatusDone,
 			TeamID:   member.TeamID,
@@ -41,7 +40,7 @@ func TestLoadTaskProjectsTasks(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to create task project: %v", err)
 		}
-		tasks, err := taskStore.CreateTask(ctx, &models.Task{
+		tasks, err := adapter.Task().CreateTask(ctx, &models.Task{
 			Name:              "Test Task",
 			Status:            models.TaskStatusDone,
 			CreatedByMemberID: types.Pointer(member.ID),
@@ -90,7 +89,7 @@ func TestLoadTaskProjectsTasks(t *testing.T) {
 		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				got, err := taskStore.LoadTaskProjectsTasks(tt.args.ctx, tt.args.projectIds...)
+				got, err := adapter.Task().LoadTaskProjectsTasks(tt.args.ctx, tt.args.projectIds...)
 				if (err != nil) != tt.wantErr {
 					t.Errorf("LoadTaskProjectsTasks() error = %v, wantErr %v", err, tt.wantErr)
 					return
@@ -113,10 +112,10 @@ func TestFindTaskByID(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
-		userStore := stores.NewDbUserStore(dbxx)
+		adapter := stores.NewStorageAdapter(dbxx)
 		teamstore := stores.NewDbTeamStore(dbxx)
 		taskStore := stores.NewDbTaskStore(dbxx)
-		user, err := userStore.CreateUser(ctx, &models.User{
+		user, err := adapter.User().CreateUser(ctx, &models.User{
 			Email: "tkahng@gmail.com",
 		})
 		if err != nil {
@@ -210,10 +209,9 @@ func TestFindLastTaskOrder(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
-		userStore := stores.NewDbUserStore(dbxx)
-		teamstore := stores.NewDbTeamStore(dbxx)
-		taskStore := stores.NewDbTaskStore(dbxx)
-		user, err := userStore.CreateUser(
+		adapter := stores.NewStorageAdapter(dbxx)
+
+		user, err := adapter.User().CreateUser(
 			ctx,
 			&models.User{
 				Email: "tkahng@gmail.com",
@@ -222,11 +220,11 @@ func TestFindLastTaskOrder(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to create user: %v", err)
 		}
-		member, err := teamstore.CreateTeamFromUser(ctx, user)
+		member, err := adapter.TeamMember().CreateTeamFromUser(ctx, user)
 		if err != nil {
 			t.Fatalf("failed to create team from user: %v", err)
 		}
-		taskProject, err := taskStore.CreateTaskProject(
+		taskProject, err := adapter.Task().CreateTaskProject(
 			ctx,
 			&shared.CreateTaskProjectDTO{
 				Name:     "Test Project",
@@ -239,7 +237,7 @@ func TestFindLastTaskOrder(t *testing.T) {
 			t.Fatalf("failed to create task project: %v", err)
 		}
 
-		_, err = taskStore.CreateTask(
+		_, err = adapter.Task().CreateTask(
 			ctx,
 			&models.Task{
 				Name:              "Test Task 1",
@@ -288,7 +286,7 @@ func TestFindLastTaskOrder(t *testing.T) {
 		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				got, err := taskStore.FindLastTaskRank(tt.args.ctx, tt.args.taskProjectID)
+				got, err := adapter.Task().FindLastTaskRank(tt.args.ctx, tt.args.taskProjectID)
 				if (err != nil) != tt.wantErr {
 					t.Errorf("FindLastTaskOrder() error = %v, wantErr %v", err, tt.wantErr)
 					return
@@ -305,20 +303,18 @@ func TestDeleteTask(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
-		userStore := stores.NewDbUserStore(dbxx)
-		teamstore := stores.NewDbTeamStore(dbxx)
-		taskStore := stores.NewDbTaskStore(dbxx)
-		user, err := userStore.CreateUser(ctx, &models.User{
+		adapter := stores.NewStorageAdapter(dbxx)
+		user, err := adapter.User().CreateUser(ctx, &models.User{
 			Email: "tkahng@gmail.com",
 		})
 		if err != nil {
 			t.Fatalf("failed to create user: %v", err)
 		}
-		member, err := teamstore.CreateTeamFromUser(ctx, user)
+		member, err := adapter.TeamMember().CreateTeamFromUser(ctx, user)
 		if err != nil {
 			t.Fatalf("failed to create team from user: %v", err)
 		}
-		taskProject, err := taskStore.CreateTaskProject(ctx, &shared.CreateTaskProjectDTO{
+		taskProject, err := adapter.Task().CreateTaskProject(ctx, &shared.CreateTaskProjectDTO{
 			Name:     "Test Project",
 			Status:   shared.TaskProjectStatusDone,
 			TeamID:   member.TeamID,
@@ -328,7 +324,7 @@ func TestDeleteTask(t *testing.T) {
 			t.Fatalf("failed to create task project: %v", err)
 		}
 
-		task, err := taskStore.CreateTask(ctx, &models.Task{
+		task, err := adapter.Task().CreateTask(ctx, &models.Task{
 			Name:              "Test Task 1",
 			Status:            models.TaskStatusDone,
 			Rank:              1000,
@@ -371,7 +367,7 @@ func TestDeleteTask(t *testing.T) {
 		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				if err := taskStore.DeleteTask(tt.args.ctx, tt.args.taskID); (err != nil) != tt.wantErr {
+				if err := adapter.Task().DeleteTask(tt.args.ctx, tt.args.taskID); (err != nil) != tt.wantErr {
 					t.Errorf("DeleteTask() error = %v, wantErr %v", err, tt.wantErr)
 				}
 			})
@@ -383,9 +379,10 @@ func TestFindTaskProjectByID(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
-		userStore := stores.NewDbUserStore(dbxx)
-		teamstore := stores.NewDbTeamStore(dbxx)
-		taskStore := stores.NewDbTaskStore(dbxx)
+		adapter := stores.NewStorageAdapter(dbxx)
+		userStore := adapter.User()
+		teamstore := adapter.TeamMember()
+		taskStore := adapter.Task()
 		user, err := userStore.CreateUser(ctx, &models.User{
 			Email: "tkahng@gmail.com",
 		})
@@ -466,9 +463,10 @@ func TestDeleteTaskProject(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
-		userStore := stores.NewDbUserStore(dbxx)
-		teamstore := stores.NewDbTeamStore(dbxx)
-		taskStore := stores.NewDbTaskStore(dbxx)
+		adapter := stores.NewStorageAdapter(dbxx)
+		userStore := adapter.User()
+		teamstore := adapter.TeamMember()
+		taskStore := adapter.Task()
 		user, err := userStore.CreateUser(ctx, &models.User{
 			Email: "tkahng@gmail.com",
 		})
@@ -532,9 +530,10 @@ func TestListTasks(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
-		userStore := stores.NewDbUserStore(dbxx)
-		teamstore := stores.NewDbTeamStore(dbxx)
-		taskStore := stores.NewDbTaskStore(dbxx)
+		adapter := stores.NewStorageAdapter(dbxx)
+		userStore := adapter.User()
+		teamstore := adapter.TeamMember()
+		taskStore := adapter.Task()
 		user, err := userStore.CreateUser(ctx, &models.User{
 			Email: "tkahng@gmail.com",
 		})
@@ -642,9 +641,10 @@ func TestCountTasks(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
-		userStore := stores.NewDbUserStore(dbxx)
-		teamstore := stores.NewDbTeamStore(dbxx)
-		taskStore := stores.NewDbTaskStore(dbxx)
+		adapter := stores.NewStorageAdapter(dbxx)
+		userStore := adapter.User()
+		teamstore := adapter.TeamMember()
+		taskStore := adapter.Task()
 		user, err := userStore.CreateUser(ctx, &models.User{
 			Email: "tkahng@gmail.com",
 		})
@@ -730,9 +730,10 @@ func TestListTaskProjects(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
-		userStore := stores.NewDbUserStore(dbxx)
-		teamstore := stores.NewDbTeamStore(dbxx)
-		taskStore := stores.NewDbTaskStore(dbxx)
+		adapter := stores.NewStorageAdapter(dbxx)
+		userStore := adapter.User()
+		teamstore := adapter.TeamMember()
+		taskStore := adapter.Task()
 		user, err := userStore.CreateUser(ctx, &models.User{
 			Email: "tkahng@gmail.com",
 		})
@@ -828,9 +829,10 @@ func TestCountTaskProjects(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
-		userStore := stores.NewDbUserStore(dbxx)
-		teamstore := stores.NewDbTeamStore(dbxx)
-		taskStore := stores.NewDbTaskStore(dbxx)
+		adapter := stores.NewStorageAdapter(dbxx)
+		userStore := adapter.User()
+		teamstore := adapter.TeamMember()
+		taskStore := adapter.Task()
 		user, err := userStore.CreateUser(ctx, &models.User{
 			Email: "tkahng@gmail.com",
 		})
@@ -904,9 +906,10 @@ func TestCreateTaskProject(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
-		userStore := stores.NewDbUserStore(dbxx)
-		teamstore := stores.NewDbTeamStore(dbxx)
-		taskStore := stores.NewDbTaskStore(dbxx)
+		adapter := stores.NewStorageAdapter(dbxx)
+		userStore := adapter.User()
+		teamstore := adapter.TeamMember()
+		taskStore := adapter.Task()
 		user, err := userStore.CreateUser(ctx, &models.User{
 			Email: "tkahng@gmail.com",
 		})
@@ -990,9 +993,10 @@ func TestCreateTaskProjectWithTasks(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
-		userStore := stores.NewDbUserStore(dbxx)
-		teamstore := stores.NewDbTeamStore(dbxx)
-		taskStore := stores.NewDbTaskStore(dbxx)
+		adapter := stores.NewStorageAdapter(dbxx)
+		userStore := adapter.User()
+		teamstore := adapter.TeamMember()
+		taskStore := adapter.Task()
 		user, err := userStore.CreateUser(ctx, &models.User{
 			Email: "tkahng@gmail.com",
 		})
@@ -1097,9 +1101,10 @@ func TestCreateTaskFromInput(t *testing.T) {
 	test.Short(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
-		userStore := stores.NewDbUserStore(dbxx)
-		teamstore := stores.NewDbTeamStore(dbxx)
-		taskStore := stores.NewDbTaskStore(dbxx)
+		adapter := stores.NewStorageAdapter(dbxx)
+		userStore := adapter.User()
+		teamstore := adapter.TeamMember()
+		taskStore := adapter.Task()
 		user, err := userStore.CreateUser(ctx, &models.User{
 			Email: "tkahng@gmail.com",
 		})
