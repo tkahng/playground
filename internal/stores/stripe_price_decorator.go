@@ -17,6 +17,16 @@ type StripePriceStoreDecorator struct {
 	UpsertPriceFromStripeFunc func(ctx context.Context, price *stripe.Price) error
 }
 
+func (s *StripePriceStoreDecorator) Cleanup() {
+	s.CountPricesFunc = nil
+	s.FindActivePriceByIdFunc = nil
+	s.FindPriceFunc = nil
+	s.ListPricesFunc = nil
+	s.UpsertPriceFunc = nil
+	s.UpsertPriceFromStripeFunc = nil
+
+}
+
 // CountPrices implements DbPriceStoreInterface.
 func (s *StripePriceStoreDecorator) CountPrices(ctx context.Context, filter *StripePriceFilter) (int64, error) {
 	if s.CountPricesFunc != nil {

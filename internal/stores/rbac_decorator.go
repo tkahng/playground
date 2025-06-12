@@ -50,6 +50,46 @@ type RbacStoreDecorator struct {
 	UpdateRoleFunc                   func(ctx context.Context, id uuid.UUID, roledto *shared.UpdateRoleDto) error
 }
 
+func (r *RbacStoreDecorator) Cleanup() {
+	r.AssignRoleFunc = nil
+	r.CountNotUserPermissionSourceFunc = nil
+	r.CountPermissionsFunc = nil
+	r.CountRolesFunc = nil
+	r.CountUserPermissionSourceFunc = nil
+	r.CreatePermissionFunc = nil
+	r.CreateProductPermissionsFunc = nil
+	r.CreateProductRolesFunc = nil
+	r.CreateRoleFunc = nil
+	r.CreateRolePermissionsFunc = nil
+	r.CreateUserPermissionsFunc = nil
+	r.CreateUserRolesFunc = nil
+	r.DeletePermissionFunc = nil
+	r.DeleteProductRolesFunc = nil
+	r.DeleteRoleFunc = nil
+	r.DeleteRolePermissionsFunc = nil
+	r.DeleteUserRoleFunc = nil
+	r.EnsureRoleAndPermissionsFunc = nil
+	r.FindOrCreatePermissionFunc = nil
+	r.FindOrCreateRoleFunc = nil
+	r.FindPermissionFunc = nil
+	r.FindPermissionByIdFunc = nil
+	r.FindPermissionByNameFunc = nil
+	r.FindPermissionsByIdsFunc = nil
+	r.FindRoleByIdFunc = nil
+	r.FindRoleByNameFunc = nil
+	r.FindRolesByIdsFunc = nil
+	r.GetUserRolesFunc = nil
+	r.ListPermissionsFunc = nil
+	r.ListRolesFunc = nil
+	r.ListUserNotPermissionsSourceFunc = nil
+	r.ListUserPermissionsSourceFunc = nil
+	r.LoadProductPermissionsFunc = nil
+	r.LoadRolePermissionsFunc = nil
+	r.UpdatePermissionFunc = nil
+	r.UpdateRoleFunc = nil
+
+}
+
 // AssignUserRoles implements DbRbacStoreInterface.
 func (r *RbacStoreDecorator) AssignUserRoles(ctx context.Context, userId uuid.UUID, roleNames ...string) error {
 	if r.AssignRoleFunc != nil {

@@ -17,6 +17,15 @@ type StripeProductStoreDecorator struct {
 	UpsertProductFromStripeFunc func(ctx context.Context, product *stripe.Product) error
 }
 
+func (s *StripeProductStoreDecorator) Cleanup() {
+	s.CountProductsFunc = nil
+	s.FindProductFunc = nil
+	s.FindProductByIdFunc = nil
+	s.ListProductsFunc = nil
+	s.UpsertProductFunc = nil
+	s.UpsertProductFromStripeFunc = nil
+}
+
 // CountProducts implements DbProductStoreInterface.
 func (s *StripeProductStoreDecorator) CountProducts(ctx context.Context, filter *StripeProductFilter) (int64, error) {
 	if s.CountProductsFunc != nil {

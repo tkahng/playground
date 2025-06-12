@@ -22,6 +22,10 @@ type StripeSubscriptionStoreDecorator struct {
 	UpsertSubscriptionFromStripeFunc           func(ctx context.Context, sub *stripe.Subscription) error
 }
 
+func (s *StripeSubscriptionStoreDecorator) Cleanup() {
+	panic("unimplemented")
+}
+
 // CountSubscriptions implements DbSubscriptionStoreInterface.
 func (s *StripeSubscriptionStoreDecorator) CountSubscriptions(ctx context.Context, filter *StripeSubscriptionListFilter) (int64, error) {
 	if s.CountSubscriptionsFunc != nil {

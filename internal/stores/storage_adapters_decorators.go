@@ -79,6 +79,24 @@ func (s *StorageAdapterDecorator) Cleanup() {
 	if s.TeamMemberFunc != nil {
 		s.TeamMemberFunc.Cleanup()
 	}
+	if s.RbacFunc != nil {
+		s.RbacFunc.Cleanup()
+	}
+	if s.CustomerFunc != nil {
+		s.CustomerFunc.Cleanup()
+	}
+	if s.ProductFunc != nil {
+		s.ProductFunc.Cleanup()
+	}
+	if s.PriceFunc != nil {
+		s.PriceFunc.Cleanup()
+	}
+	if s.SubscriptionFunc != nil {
+		s.SubscriptionFunc.Cleanup()
+	}
+	if s.RunInTxFunc != nil {
+		s.RunInTxFunc = nil // Clear the function to avoid memory leaks
+	}
 }
 
 // Customer implements StorageAdapterInterface.

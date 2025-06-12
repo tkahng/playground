@@ -14,6 +14,13 @@ type CustomerStoreDecorator struct {
 	CreateCustomerFunc func(ctx context.Context, customer *models.StripeCustomer) (*models.StripeCustomer, error)
 }
 
+func (c *CustomerStoreDecorator) Cleanup() {
+	c.CountCustomersFunc = nil
+	c.FindCustomerFunc = nil
+	c.ListCustomersFunc = nil
+	c.CreateCustomerFunc = nil
+}
+
 // CountCustomers implements DbCustomerStoreInterface.
 func (c *CustomerStoreDecorator) CountCustomers(ctx context.Context, filter *StripeCustomerFilter) (int64, error) {
 	if c.CountCustomersFunc != nil {
