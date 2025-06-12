@@ -203,61 +203,66 @@ func TestInvitationService_FindInvitations(t *testing.T) {
 	assert.Equal(t, invitations, result)
 }
 
-// func TestInvitationService_CancelInvitation_Success(t *testing.T) {
-// 	ctx := context.Background()
-// 	store := stores.NewAdapterDecorators()
-// 	opts := conf.NewSettings()
-// 	mailService := NewMockMailService()
-// 	wg := new(sync.WaitGroup)
-// 	mockRoutineService := new(MockRoutineService)
-// 	mockRoutineService.Wg = wg
-// 	service := NewInvitationService(store, mailService, *opts, mockRoutineService)
+func TestInvitationService_CancelInvitation_Success(t *testing.T) {
+	ctx := context.Background()
+	store := stores.NewAdapterDecorators()
+	opts := conf.NewSettings()
+	mailService := NewMockMailService()
+	wg := new(sync.WaitGroup)
+	mockRoutineService := new(MockRoutineService)
+	mockRoutineService.Wg = wg
+	service := NewInvitationService(store, mailService, *opts, mockRoutineService)
 
-// 	teamId := uuid.New()
-// 	userId := uuid.New()
-// 	invitationId := uuid.New()
-// 	member := &models.TeamMember{
-// 		ID:   uuid.New(),
-// 		Role: models.TeamMemberRoleOwner,
-// 	}
-// 	invitation := &models.TeamInvitation{
-// 		ID:     invitationId,
-// 		TeamID: teamId,
-// 		Status: models.TeamInvitationStatusPending,
-// 	}
+	teamId := uuid.New()
+	userId := uuid.New()
+	invitationId := uuid.New()
+	member := &models.TeamMember{
+		ID:   uuid.New(),
+		Role: models.TeamMemberRoleOwner,
+	}
+	invitation := &models.TeamInvitation{
+		ID:     invitationId,
+		TeamID: teamId,
+		Status: models.TeamInvitationStatusPending,
+	}
+	store.TeamMemberFunc.FindTeamMemberByTeamAndUserIdFunc = func(ctx context.Context, teamId, userId uuid.UUID) (*models.TeamMember, error) {
+		return member, nil
+	}
+	// store.On("FindTeamMemberByTeamAndUserId", ctx, teamId, userId).Return(member, nil)
+	store.TeamInvitationFunc.FindInvitationByIDFunc = func(ctx context.Context, invitationId uuid.UUID) (*models.TeamInvitation, error) {
+		return invitation, nil
+	}
+	store.TeamInvitationFunc.UpdateInvitationFunc = func(ctx context.Context, invitation *models.TeamInvitation) error {
+		return nil
+	}
 
-// 	store.On("FindTeamMemberByTeamAndUserId", ctx, teamId, userId).Return(member, nil)
-// 	store.On("FindInvitationByID", ctx, invitationId).Return(invitation, nil)
-// 	store.TeamInvitationFunc.UpdateInvitationFunc = func(ctx context.Context, invitation *models.TeamInvitation) error {
-// 		return nil
-// 	}
+	err := service.CancelInvitation(ctx, teamId, userId, invitationId)
+	assert.NoError(t, err)
+	assert.Equal(t, models.TeamInvitationStatusCanceled, invitation.Status)
+	// store.AssertExpectations(t)
+}
 
-// 	err := service.CancelInvitation(ctx, teamId, userId, invitationId)
-// 	assert.NoError(t, err)
-// 	assert.Equal(t, models.TeamInvitationStatusCanceled, invitation.Status)
-// 	store.AssertExpectations(t)
-// }
+func TestInvitationService_CancelInvitation_NotMember(t *testing.T) {
+	ctx := context.Background()
+	store := stores.NewAdapterDecorators()
+	opts := conf.NewSettings()
+	mailService := NewMockMailService()
+	wg := new(sync.WaitGroup)
+	mockRoutineService := new(MockRoutineService)
+	mockRoutineService.Wg = wg
+	service := NewInvitationService(store, mailService, *opts, mockRoutineService)
 
-// func TestInvitationService_CancelInvitation_NotMember(t *testing.T) {
-// 	ctx := context.Background()
-// 	store := stores.NewAdapterDecorators()
-// 	opts := conf.NewSettings()
-// 	mailService := NewMockMailService()
-// 	wg := new(sync.WaitGroup)
-// 	mockRoutineService := new(MockRoutineService)
-// 	mockRoutineService.Wg = wg
-// 	service := NewInvitationService(store, mailService, *opts, mockRoutineService)
+	teamId := uuid.New()
+	userId := uuid.New()
+	invitationId := uuid.New()
+	store.TeamMemberFunc.FindTeamMemberByTeamAndUserIdFunc = func(ctx context.Context, teamId, userId uuid.UUID) (*models.TeamMember, error) {
+		return nil, nil
+	}
 
-// 	teamId := uuid.New()
-// 	userId := uuid.New()
-// 	invitationId := uuid.New()
-
-// 	store.On("FindTeamMemberByTeamAndUserId", ctx, teamId, userId).Return((*models.TeamMember)(nil), nil)
-
-// 	err := service.CancelInvitation(ctx, teamId, userId, invitationId)
-// 	assert.Error(t, err)
-// 	assert.Contains(t, err.Error(), "not a member")
-// }
+	err := service.CancelInvitation(ctx, teamId, userId, invitationId)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "not a member")
+}
 
 // func TestInvitationService_CancelInvitation_NotOwner(t *testing.T) {
 // 	ctx := context.Background()
