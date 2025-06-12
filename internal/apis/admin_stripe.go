@@ -23,8 +23,8 @@ func (api *Api) AdminStripeSubscriptions(ctx context.Context,
 		return models.StripeSubscriptionStatus(s)
 	})
 	filter.Ids = input.Ids
-	filter.TeamIDs = utils.ParseValidUUIDs(input.TeamIDs)
-	filter.UserIDs = utils.ParseValidUUIDs(input.UserIDs)
+	filter.TeamIDs = utils.ParseValidUUIDs(input.TeamIDs...)
+	filter.UserIDs = utils.ParseValidUUIDs(input.UserIDs...)
 
 	subscriptions, err := api.app.Adapter().Subscription().ListSubscriptions(ctx, filter)
 	if err != nil {
@@ -173,7 +173,7 @@ func (api *Api) AdminStripeProductsPermissionsCreate(ctx context.Context, input 
 		return nil, huma.Error404NotFound("Product not found")
 	}
 
-	permissionIds := utils.ParseValidUUIDs(input.Body.PermissionIDs)
+	permissionIds := utils.ParseValidUUIDs(input.Body.PermissionIDs...)
 
 	err = api.app.Adapter().Rbac().CreateProductPermissions(ctx, user.ID, permissionIds...)
 	if err != nil {

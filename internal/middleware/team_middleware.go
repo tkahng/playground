@@ -52,7 +52,7 @@ func TeamInfoFromTask(api huma.API, app core.App) func(ctx huma.Context, next fu
 			huma.WriteErr(api, ctx, http.StatusBadRequest, "error parsing task id", err)
 			return
 		}
-		task, err := app.Task().Store().FindTaskByID(rawCtx, parsedTaskId)
+		task, err := app.Adapter().Task().FindTaskByID(rawCtx, parsedTaskId)
 		if err != nil {
 			huma.WriteErr(api, ctx, http.StatusInternalServerError, "error getting task", err)
 			return
@@ -95,7 +95,7 @@ func TeamInfoFromTaskProject(api huma.API, app core.App) func(ctx huma.Context, 
 			huma.WriteErr(api, ctx, http.StatusBadRequest, "error parsing project id", err)
 			return
 		}
-		project, err := app.Task().Store().FindTaskProjectByID(rawCtx, parsedProjectID)
+		project, err := app.Adapter().Task().FindTaskProjectByID(rawCtx, parsedProjectID)
 		if err != nil {
 			huma.WriteErr(api, ctx, http.StatusInternalServerError, "error getting project", err)
 			return

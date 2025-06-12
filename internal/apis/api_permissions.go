@@ -17,7 +17,7 @@ func (api *Api) PermissionsList(ctx context.Context, input *struct {
 	filter := new(stores.PermissionFilter)
 	filter.Page = input.PerPage
 	filter.PerPage = input.Page
-	filter.Ids = utils.ParseValidUUIDs(input.Ids)
+	filter.Ids = utils.ParseValidUUIDs(input.Ids...)
 	filter.Names = input.Names
 	filter.Q = input.Q
 	if len(input.RoleId) > 0 {

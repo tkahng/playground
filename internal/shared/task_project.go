@@ -118,9 +118,10 @@ type TaskProjectsListFilter struct {
 	Ids    []string            `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
 }
 type TeamTaskProjectsListFilter struct {
-	Q      string              `query:"q,omitempty" required:"false"`
-	Status []TaskProjectStatus `query:"status,omitempty" required:"false" minimum:"1" maximum:"100" enum:"todo,in_progress,done"`
-	Ids    []string            `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+	Q        string              `query:"q,omitempty" required:"false"`
+	Status   []TaskProjectStatus `query:"status,omitempty" required:"false" minimum:"1" maximum:"100" enum:"todo,in_progress,done"`
+	Ids      []string            `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+	Statuses []TaskProjectStatus `query:"task_status,omitempty" required:"false" minimum:"1" maximum:"100" enum:"todo,in_progress,done"`
 }
 
 type TaskProjectsListParams struct {

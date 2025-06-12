@@ -64,7 +64,7 @@ func (api *Api) AdminUserPermissionsCreate(ctx context.Context, input *struct {
 		return nil, huma.Error404NotFound("User not found")
 	}
 
-	permissionIds := utils.ParseValidUUIDs(input.Body.PermissionIds)
+	permissionIds := utils.ParseValidUUIDs(input.Body.PermissionIds...)
 
 	permissions, err := api.app.Adapter().Rbac().FindPermissionsByIds(ctx, permissionIds)
 	if err != nil {
@@ -127,7 +127,7 @@ func (api *Api) AdminPermissionsList(ctx context.Context, input *struct {
 	filter := new(stores.PermissionFilter)
 	filter.Page = input.PerPage
 	filter.PerPage = input.Page
-	filter.Ids = utils.ParseValidUUIDs(input.Ids)
+	filter.Ids = utils.ParseValidUUIDs(input.Ids...)
 	filter.Names = input.Names
 	filter.Q = input.Q
 	if len(input.RoleId) > 0 {

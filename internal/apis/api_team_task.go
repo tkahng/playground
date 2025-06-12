@@ -8,7 +8,9 @@ import (
 	"github.com/tkahng/authgo/internal/contextstore"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/authgo/internal/stores"
 	"github.com/tkahng/authgo/internal/tools/mapper"
+	"github.com/tkahng/authgo/internal/tools/utils"
 )
 
 type TaskListResponse struct {
@@ -21,22 +23,29 @@ func (api *Api) TeamTaskList(ctx context.Context, input *shared.TeamTaskListPara
 	if teamInfo == nil {
 		return nil, huma.Error401Unauthorized("Unauthorized")
 	}
-	newInput := shared.TaskListParams{}
-	newInput.SortParams = input.SortParams
-	newInput.PaginatedInput = input.PaginatedInput
-	newInput.TaskListFilter = shared.TaskListFilter{
-		ProjectID: input.ProjectID,
-		Status:    input.TeamTaskListFilter.Status,
-		Ids:       input.TeamTaskListFilter.Ids,
-		Q:         input.TeamTaskListFilter.Q,
-		TeamID:    teamInfo.Team.ID.String(),
-		ParentID:  input.TeamTaskListFilter.ParentID,
+	newInput := &stores.TaskFilter{}
+	newInput.SortBy = input.SortBy
+	newInput.SortOrder = input.SortOrder
+	newInput.Page = input.Page
+	newInput.PerPage = input.PerPage
+	newInput.Ids = utils.ParseValidUUIDs(input.TeamTaskListFilter.Ids...)
+	newInput.Q = input.TeamTaskListFilter.Q
+	newInput.Statuses = mapper.Map(input.TeamTaskListFilter.Status, func(status shared.TaskStatus) models.TaskStatus {
+		return models.TaskStatus(status)
+	})
+	newInput.TeamIds = []uuid.UUID{teamInfo.Team.ID}
+	newInput.ProjectIds = utils.ParseValidUUIDs(input.ProjectID)
+	parentID, err := uuid.Parse(input.TeamTaskListFilter.ParentID)
+	if err != nil && input.TeamTaskListFilter.ParentID != "" {
+		return nil, huma.Error400BadRequest("Invalid parent ID format", err)
 	}
-	tasks, err := api.app.Task().Store().ListTasks(ctx, &newInput)
+	newInput.ParentIds = []uuid.UUID{parentID}
+
+	tasks, err := api.app.Adapter().Task().ListTasks(ctx, newInput)
 	if err != nil {
 		return nil, huma.Error500InternalServerError("error listing tasks", err)
 	}
-	total, err := api.app.Task().Store().CountTasks(ctx, &newInput.TaskListFilter)
+	total, err := api.app.Adapter().Task().CountTasks(ctx, newInput)
 	if err != nil {
 		return nil, huma.Error500InternalServerError("error counting tasks", err)
 	}
@@ -95,7 +104,7 @@ func (api *Api) TaskDelete(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, huma.Error400BadRequest("Invalid task ID")
 	}
-	err = api.app.Task().Store().DeleteTask(ctx, id)
+	err = api.app.Adapter().Task().DeleteTask(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -114,7 +123,7 @@ func (api *Api) TaskGet(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, huma.Error400BadRequest("Invalid task ID")
 	}
-	task, err := api.app.Task().Store().FindTaskByID(ctx, id)
+	task, err := api.app.Adapter().Task().FindTaskByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}

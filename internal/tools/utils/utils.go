@@ -31,7 +31,7 @@ func PrettyPrintJSON[T any](v T) {
 	println(string(jsonData))
 }
 
-func ParseValidUUIDs(ids []string) []uuid.UUID {
+func ParseValidUUIDs(ids ...string) []uuid.UUID {
 	var uuids []uuid.UUID
 	for _, id := range ids {
 		parsed, err := uuid.Parse(id)

@@ -44,7 +44,6 @@ type TaskStore interface {
 }
 
 type TaskService interface {
-	Store() TaskStore
 	FindAndUpdateTask(ctx context.Context, taskID uuid.UUID, input *shared.UpdateTaskDto) error
 
 	CreateTaskWithChildren(ctx context.Context, teamID uuid.UUID, projectID uuid.UUID, memberID uuid.UUID, input *shared.CreateTaskWithChildrenDTO) (*models.Task, error)
@@ -52,13 +51,13 @@ type TaskService interface {
 	CalculateNewPosition(ctx context.Context, groupID uuid.UUID, status models.TaskStatus, targetIndex int64, excludeID uuid.UUID) (float64, error)
 }
 type taskService struct {
-	store   TaskStore
+	// store   TaskStore
 	adapter *stores.StorageAdapter
 }
 
 // FindAndUpdateTask implements TaskService.
 func (s *taskService) FindAndUpdateTask(ctx context.Context, taskID uuid.UUID, input *shared.UpdateTaskDto) error {
-	task, err := s.store.FindTask(ctx, &models.Task{ID: taskID})
+	task, err := s.adapter.Task().FindTask(ctx, &stores.TaskFilter{Ids: []uuid.UUID{taskID}})
 	if err != nil {
 		return err
 	}
@@ -74,11 +73,11 @@ func (s *taskService) FindAndUpdateTask(ctx context.Context, taskID uuid.UUID, i
 	task.AssigneeID = input.AssigneeID
 	task.ReporterID = input.ReporterID
 	task.ParentID = input.ParentID
-	err = s.store.UpdateTask(ctx, task)
+	err = s.adapter.Task().UpdateTask(ctx, task)
 	if err != nil {
 		return err
 	}
-	err = s.store.UpdateTaskProjectUpdateDate(ctx, task.ProjectID)
+	err = s.adapter.Task().UpdateTaskProjectUpdateDate(ctx, task.ProjectID)
 	if err != nil {
 		return fmt.Errorf("failed to update task project update date: %w", err)
 	}
@@ -86,7 +85,7 @@ func (s *taskService) FindAndUpdateTask(ctx context.Context, taskID uuid.UUID, i
 }
 
 func (s *taskService) UpdateTaskRankStatus(ctx context.Context, taskID uuid.UUID, position int64, status models.TaskStatus) error {
-	task, err := s.store.FindTaskByID(ctx, taskID)
+	task, err := s.adapter.Task().FindTaskByID(ctx, taskID)
 	if err != nil {
 		return err
 	}
@@ -98,11 +97,11 @@ func (s *taskService) UpdateTaskRankStatus(ctx context.Context, taskID uuid.UUID
 		return err
 	}
 	task.Rank = rank
-	err = s.store.UpdateTask(ctx, task)
+	err = s.adapter.Task().UpdateTask(ctx, task)
 	if err != nil {
 		return err
 	}
-	err = s.store.UpdateTaskProjectUpdateDate(ctx, task.ProjectID)
+	err = s.adapter.Task().UpdateTaskProjectUpdateDate(ctx, task.ProjectID)
 	if err != nil {
 		return fmt.Errorf("failed to update task project update date: %w", err)
 	}
@@ -110,7 +109,7 @@ func (s *taskService) UpdateTaskRankStatus(ctx context.Context, taskID uuid.UUID
 }
 
 func (s *taskService) CalculateNewPosition(ctx context.Context, groupID uuid.UUID, status models.TaskStatus, targetIndex int64, excludeID uuid.UUID) (float64, error) {
-	count, err := s.store.CountItems(ctx, groupID, status, excludeID)
+	count, err := s.adapter.Task().CountItems(ctx, groupID, status, excludeID)
 	if err != nil {
 		return 0, fmt.Errorf("failed to count items: %w", err)
 	}
@@ -121,7 +120,7 @@ func (s *taskService) CalculateNewPosition(ctx context.Context, groupID uuid.UUI
 
 	if targetIndex <= 0 {
 		// Insert at beginning
-		firstPos, err := s.store.GetTaskFirstPosition(ctx, groupID, status, excludeID)
+		firstPos, err := s.adapter.Task().GetTaskFirstPosition(ctx, groupID, status, excludeID)
 		if err != nil {
 			return 0, fmt.Errorf("failed to get first rank: %w", err)
 		}
@@ -130,7 +129,7 @@ func (s *taskService) CalculateNewPosition(ctx context.Context, groupID uuid.UUI
 
 	if targetIndex >= count {
 		// Insert at end
-		lastPos, err := s.store.GetTaskLastPosition(ctx, groupID, status, excludeID)
+		lastPos, err := s.adapter.Task().GetTaskLastPosition(ctx, groupID, status, excludeID)
 		if err != nil {
 			return 0, fmt.Errorf("failed to get last rank: %w", err)
 		}
@@ -138,7 +137,7 @@ func (s *taskService) CalculateNewPosition(ctx context.Context, groupID uuid.UUI
 	}
 
 	// Insert between two ranks
-	ranks, err := s.store.GetTaskPositions(ctx, groupID, status, excludeID, targetIndex-1)
+	ranks, err := s.adapter.Task().GetTaskPositions(ctx, groupID, status, excludeID, targetIndex-1)
 	if err != nil {
 		return 0, fmt.Errorf("failed to get ranks: %w", err)
 	}
@@ -152,7 +151,7 @@ func (s *taskService) CalculateNewPosition(ctx context.Context, groupID uuid.UUI
 
 // CreateTaskWithChildren implements TaskService.
 func (t *taskService) CreateTaskWithChildren(ctx context.Context, teamId uuid.UUID, projectID uuid.UUID, memberID uuid.UUID, input *shared.CreateTaskWithChildrenDTO) (*models.Task, error) {
-	task, err := t.store.CreateTaskFromInput(ctx, teamId, projectID, memberID, &input.CreateTaskProjectTaskDTO)
+	task, err := t.adapter.Task().CreateTaskFromInput(ctx, teamId, projectID, memberID, &input.CreateTaskProjectTaskDTO)
 	if err != nil {
 		return nil, err
 	}
@@ -163,11 +162,6 @@ func (t *taskService) CreateTaskWithChildren(ctx context.Context, teamId uuid.UU
 	// 	}
 	// }
 	return task, nil
-}
-
-// Store implements TaskService.
-func (t *taskService) Store() TaskStore {
-	return t.store
 }
 
 func (t *taskService) Adapter() stores.StorageAdapterInterface {

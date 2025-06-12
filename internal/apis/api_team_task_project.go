@@ -9,8 +9,10 @@ import (
 	"github.com/tkahng/authgo/internal/contextstore"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/authgo/internal/stores"
 	"github.com/tkahng/authgo/internal/tools/ai/googleai"
 	"github.com/tkahng/authgo/internal/tools/mapper"
+	"github.com/tkahng/authgo/internal/tools/utils"
 )
 
 type TaskProjectListResponse struct {
@@ -23,20 +25,22 @@ func (api *Api) TeamTaskProjectList(ctx context.Context, input *shared.TeamTaskP
 	if teamInfo == nil {
 		return nil, huma.Error401Unauthorized("Unauthorized")
 	}
-	newInput := shared.TaskProjectsListParams{}
-	newInput.SortParams = input.SortParams
-	newInput.PaginatedInput = input.PaginatedInput
-	newInput.TaskProjectsListFilter = shared.TaskProjectsListFilter{
-		TeamID: teamInfo.Team.ID.String(),
-		Status: input.TeamTaskProjectsListFilter.Status,
-		Ids:    input.TeamTaskProjectsListFilter.Ids,
-		Q:      input.TeamTaskProjectsListFilter.Q,
-	}
-	taskProject, err := api.app.Task().Store().ListTaskProjects(ctx, &newInput)
+	newInput := &stores.TaskProjectsFilter{}
+	newInput.SortBy = input.SortBy
+	newInput.SortOrder = input.SortOrder
+	newInput.Page = input.Page
+	newInput.PerPage = input.PerPage
+	newInput.Ids = utils.ParseValidUUIDs(input.Ids...)
+	newInput.Q = input.Q
+	newInput.Statuses = mapper.Map(input.Statuses, func(status shared.TaskProjectStatus) models.TaskProjectStatus {
+		return models.TaskProjectStatus(status)
+	})
+	newInput.TeamIds = []uuid.UUID{teamInfo.Team.ID}
+	taskProject, err := api.app.Adapter().Task().ListTaskProjects(ctx, newInput)
 	if err != nil {
 		return nil, err
 	}
-	total, err := api.app.Task().Store().CountTaskProjects(ctx, &newInput.TaskProjectsListFilter)
+	total, err := api.app.Adapter().Task().CountTaskProjects(ctx, newInput)
 	if err != nil {
 		return nil, err
 	}
@@ -45,7 +49,7 @@ func (api *Api) TeamTaskProjectList(ctx context.Context, input *shared.TeamTaskP
 	})
 
 	if input.Expand != nil && slices.Contains(input.Expand, "tasks") {
-		tasks, err := api.app.Task().Store().LoadTaskProjectsTasks(ctx, taskProjectIds...)
+		tasks, err := api.app.Adapter().Task().LoadTaskProjectsTasks(ctx, taskProjectIds...)
 		if err != nil {
 			return nil, err
 		}
@@ -85,7 +89,7 @@ func (api *Api) TeamTaskProjectCreate(
 		return nil, huma.Error401Unauthorized("Unauthorized")
 	}
 
-	taskProject, err := api.app.Task().Store().CreateTaskProjectWithTasks(ctx, &shared.CreateTaskProjectWithTasksDTO{
+	taskProject, err := api.app.Adapter().Task().CreateTaskProjectWithTasks(ctx, &shared.CreateTaskProjectWithTasksDTO{
 		CreateTaskProjectDTO: shared.CreateTaskProjectDTO{
 			TeamID:      parsedTeamID,
 			MemberID:    teamInfo.Member.ID,
@@ -143,7 +147,7 @@ func (api *Api) TeamTaskProjectCreateWithAi(ctx context.Context, input *TaskProj
 			}
 		}),
 	}
-	taskProject, err := api.app.Task().Store().CreateTaskProjectWithTasks(ctx, &args)
+	taskProject, err := api.app.Adapter().Task().CreateTaskProjectWithTasks(ctx, &args)
 	if err != nil {
 		return nil, err
 	}
@@ -169,7 +173,7 @@ func (api *Api) TeamTaskProjectUpdate(ctx context.Context, input *shared.UpdateT
 		return nil, huma.Error400BadRequest("Invalid task project id")
 	}
 	payload := input.Body
-	err = api.app.Task().Store().UpdateTaskProject(ctx, id, &payload)
+	err = api.app.Adapter().Task().UpdateTaskProject(ctx, id, &payload)
 	if err != nil {
 		return nil, err
 	}
@@ -188,7 +192,7 @@ func (api *Api) TeamTaskProjectDelete(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, huma.Error400BadRequest("Invalid task project id")
 	}
-	err = api.app.Task().Store().DeleteTaskProject(ctx, id)
+	err = api.app.Adapter().Task().DeleteTaskProject(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -208,12 +212,12 @@ func (api *Api) TeamTaskProjectGet(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, huma.Error400BadRequest("Invalid task project id")
 	}
-	taskProject, err := api.app.Task().Store().FindTaskProjectByID(ctx, id)
+	taskProject, err := api.app.Adapter().Task().FindTaskProjectByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 	if input.Expand != nil && slices.Contains(input.Expand, "tasks") {
-		tasks, err := api.app.Task().Store().LoadTaskProjectsTasks(ctx, taskProject.ID)
+		tasks, err := api.app.Adapter().Task().LoadTaskProjectsTasks(ctx, taskProject.ID)
 		if err != nil {
 			return nil, err
 		}
@@ -241,7 +245,7 @@ func (api *Api) TeamTaskProjectTasksCreate(ctx context.Context, input *shared.Cr
 		return nil, huma.Error400BadRequest("Invalid task project id")
 	}
 	payload := input.Body
-	order, err := api.app.Task().Store().FindLastTaskRank(ctx, parsedProjectID)
+	order, err := api.app.Adapter().Task().FindLastTaskRank(ctx, parsedProjectID)
 	if err != nil {
 		return nil, err
 	}
@@ -250,7 +254,7 @@ func (api *Api) TeamTaskProjectTasksCreate(ctx context.Context, input *shared.Cr
 	if err != nil {
 		return nil, err
 	}
-	err = api.app.Task().Store().UpdateTaskProjectUpdateDate(ctx, parsedProjectID)
+	err = api.app.Adapter().Task().UpdateTaskProjectUpdateDate(ctx, parsedProjectID)
 	if err != nil {
 		return nil, huma.Error500InternalServerError("Failed to update task project update date")
 	}

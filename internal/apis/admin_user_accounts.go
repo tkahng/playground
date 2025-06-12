@@ -79,8 +79,8 @@ func (api *Api) AdminUserAccounts(ctx context.Context, input *UserAccountFilter)
 	filter.PerPage = input.PerPage
 	filter.SortBy, filter.SortOrder = input.Sort()
 	filter.Q = input.Q
-	filter.Ids = utils.ParseValidUUIDs(input.Ids)
-	filter.UserIds = utils.ParseValidUUIDs(input.UserIds)
+	filter.Ids = utils.ParseValidUUIDs(input.Ids...)
+	filter.UserIds = utils.ParseValidUUIDs(input.UserIds...)
 
 	data, err := api.app.Adapter().UserAccount().ListUserAccounts(ctx, filter)
 	if err != nil {

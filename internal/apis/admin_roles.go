@@ -209,7 +209,7 @@ func (api *Api) AdminUserRolesCreate(ctx context.Context, input *struct {
 		return nil, huma.Error404NotFound("User not found")
 	}
 
-	roleIds := utils.ParseValidUUIDs(input.Body.RolesIds)
+	roleIds := utils.ParseValidUUIDs(input.Body.RolesIds...)
 
 	roles, err := api.app.Adapter().Rbac().FindRolesByIds(ctx, roleIds)
 	if err != nil {
@@ -339,7 +339,7 @@ func (api *Api) AdminRolesCreatePermissions(ctx context.Context, input *struct {
 	if role == nil {
 		return nil, huma.Error404NotFound("Role not found")
 	}
-	permissionIds := utils.ParseValidUUIDs(input.Body.PermissionIDs)
+	permissionIds := utils.ParseValidUUIDs(input.Body.PermissionIDs...)
 
 	err = api.app.Adapter().Rbac().CreateRolePermissions(ctx, role.ID, permissionIds...)
 

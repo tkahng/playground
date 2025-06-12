@@ -22,7 +22,7 @@ func CheckTaskOwnerMiddleware(api huma.API, app core.App) func(ctx huma.Context,
 			huma.WriteErr(api, ctx, http.StatusBadRequest, "invalid task id", err)
 			return
 		}
-		task, err := app.Task().Store().FindTaskByID(rawCtx, id)
+		task, err := app.Adapter().Task().FindTaskByID(rawCtx, id)
 		if err != nil {
 			huma.WriteErr(api, ctx, http.StatusInternalServerError, "error getting task", err)
 			return
