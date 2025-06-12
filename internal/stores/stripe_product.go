@@ -15,6 +15,10 @@ import (
 	"github.com/tkahng/authgo/internal/tools/utils"
 )
 
+var (
+	MetadataIndexName = "metadata.index"
+)
+
 type DbProductStore struct {
 	db database.Dbx
 }
