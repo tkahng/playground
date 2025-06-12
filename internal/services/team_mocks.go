@@ -122,12 +122,6 @@ func (m *mockTeamService) SetActiveTeamMember(ctx context.Context, userId uuid.U
 	return member, args.Error(1)
 }
 
-// Store implements TeamService.
-func (m *mockTeamService) Store() stores.TeamStoreInterface {
-	args := m.Called()
-	return args.Get(0).(stores.TeamStoreInterface)
-}
-
 var _ TeamService = (*mockTeamService)(nil)
 
 type mockTeamStore struct {

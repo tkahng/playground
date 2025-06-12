@@ -186,10 +186,6 @@ func (t *teamService) RemoveMember(ctx context.Context, teamId uuid.UUID, userId
 	return nil
 }
 
-func (t *teamService) Store() stores.TeamStoreInterface {
-	return nil
-}
-
 // SetActiveTeamMember impleements TeamService.
 func (t *teamService) SetActiveTeamMember(ctx context.Context, teamId, userId uuid.UUID) (*models.TeamMember, error) {
 	// member, err := t.teamStore.FindTeamMemberByTeamAndUserId(ctx, teamId, userId)
