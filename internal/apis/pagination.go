@@ -4,7 +4,6 @@ import (
 	"math"
 
 	"github.com/tkahng/authgo/internal/repository"
-	"github.com/tkahng/authgo/internal/shared"
 )
 
 type SortParams struct {
@@ -47,12 +46,12 @@ func (p *PaginatedInput) Pagination() (limit, offset int) {
 	return int(p.PerPage), int(p.Page) * int(p.PerPage)
 }
 
-type PaginatedResponse[T any] struct {
+type ApiPaginatedResponse[T any] struct {
 	Data []T  `json:"data"`
 	Meta Meta `json:"meta"`
 }
 type ApiPaginatedOutput[T any] struct {
-	Body PaginatedResponse[T] `json:"body"`
+	Body ApiPaginatedResponse[T] `json:"body"`
 }
 type Meta struct {
 	Page     int64  `json:"page"`
@@ -63,8 +62,8 @@ type Meta struct {
 	HasMore  bool   `json:"has_more"`
 }
 
-func ApiGenerateMeta(input *PaginatedInput, total int64) shared.Meta {
-	var meta shared.Meta = shared.Meta{
+func ApiGenerateMeta(input *PaginatedInput, total int64) Meta {
+	meta := Meta{
 		Page:    input.Page,
 		PerPage: input.PerPage,
 		Total:   total,

@@ -36,8 +36,8 @@ func (p ApiProviders) String() string {
 }
 
 type UserAccountFilter struct {
-	shared.PaginatedInput
-	shared.SortParams
+	PaginatedInput
+	SortParams
 	Providers     []ApiProviders     `query:"providers,omitempty" required:"false" uniqueItems:"true" minimum:"1" maximum:"100" enum:"google,apple,facebook,github,credentials"`
 	ProviderTypes []ApiProviderTypes `query:"provider_types,omitempty" required:"false" uniqueItems:"true" minimum:"1" maximum:"100" enum:"oauth,credentials"`
 	Q             string             `query:"q,omitempty" required:"false"`
@@ -73,7 +73,7 @@ func GenerateMeta(input *PaginatedInput, total int64) Meta {
 	return meta
 }
 
-func (api *Api) AdminUserAccounts(ctx context.Context, input *UserAccountFilter) (*shared.PaginatedOutput[*shared.UserAccountOutput], error) {
+func (api *Api) AdminUserAccounts(ctx context.Context, input *UserAccountFilter) (*ApiPaginatedOutput[*shared.UserAccountOutput], error) {
 	filter := &stores.UserAccountFilter{}
 	filter.Page = input.Page
 	filter.PerPage = input.PerPage
@@ -90,10 +90,10 @@ func (api *Api) AdminUserAccounts(ctx context.Context, input *UserAccountFilter)
 	if err != nil {
 		return nil, err
 	}
-	return &shared.PaginatedOutput[*shared.UserAccountOutput]{
-		Body: shared.PaginatedResponse[*shared.UserAccountOutput]{
+	return &ApiPaginatedOutput[*shared.UserAccountOutput]{
+		Body: ApiPaginatedResponse[*shared.UserAccountOutput]{
 			Data: mapper.Map(data, shared.FromModelUserAccountOutput),
-			Meta: shared.GenerateMeta(&input.PaginatedInput, count),
+			Meta: ApiGenerateMeta(&input.PaginatedInput, count),
 		},
 	}, nil
 }
