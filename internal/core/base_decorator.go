@@ -13,18 +13,17 @@ import (
 	"github.com/tkahng/authgo/internal/tools/mailer"
 )
 
-func NewDecorator(ctx context.Context, cfg conf.EnvConfig, pool database.Dbx) *BaseAppDecorator {
+func NewAppDecorator(ctx context.Context, cfg conf.EnvConfig, pool database.Dbx) *BaseAppDecorator {
 	settings := cfg.ToSettings()
 
 	fs := filesystem.NewMockFileSystem(cfg.StorageConfig)
 
 	l := logger.GetDefaultLogger()
 	enqueuer := jobs.NewDBEnqueuer(pool)
+	adapter := stores.NewStorageAdapter(pool)
 	var mail mailer.Mailer = &mailer.LogMailer{}
 	authMailService := services.NewMailService(mail)
-	adapter := stores.NewStorageAdapter(pool)
 	userStore := stores.NewDbUserStore(pool)
-	// taskStore := stores.NewDbTaskStore(pool)
 	userAccountStore := stores.NewDbAccountStore(pool)
 	userService := services.NewUserService(userStore)
 	userAccountService := services.NewUserAccountService(userAccountStore)
@@ -46,7 +45,6 @@ func NewDecorator(ctx context.Context, cfg conf.EnvConfig, pool database.Dbx) *B
 		tokenService,
 		passwordService,
 		routine,
-		l,
 		enqueuer,
 		adapter,
 	)

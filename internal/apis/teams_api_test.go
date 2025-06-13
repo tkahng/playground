@@ -3,6 +3,7 @@ package apis_test
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -87,7 +88,7 @@ func TestGetGreeting(t *testing.T) {
 	_, api := humatest.New(t)
 	cfg := conf.ZeroEnvConfig()
 	ctx, db := test.DbSetup()
-	app := core.NewDecorator(ctx, cfg, db)
+	app := core.NewAppDecorator(ctx, cfg, db)
 	appApi := apis.NewApi(app)
 	apis.AddRoutes(api, appApi)
 
@@ -102,7 +103,7 @@ func TestTeamSlug(t *testing.T) {
 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
 		_, api := humatest.New(t)
 		cfg := conf.ZeroEnvConfig()
-		app := core.NewDecorator(ctx, cfg, db)
+		app := core.NewAppDecorator(ctx, cfg, db)
 		appApi := apis.NewApi(app)
 		apis.AddRoutes(api, appApi)
 		user, err := createVerifiedUser(app)
@@ -148,7 +149,7 @@ func TestGetTeam_unauthorized(t *testing.T) {
 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
 
 		cfg := conf.ZeroEnvConfig()
-		app := core.NewDecorator(ctx, cfg, db)
+		app := core.NewAppDecorator(ctx, cfg, db)
 		appApi := apis.NewApi(app)
 		_, api := humatest.New(t)
 		apis.AddRoutes(api, appApi)
@@ -168,7 +169,7 @@ func TestGetTeam_invalidID(t *testing.T) {
 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
 
 		cfg := conf.ZeroEnvConfig()
-		app := core.NewDecorator(ctx, cfg, db)
+		app := core.NewAppDecorator(ctx, cfg, db)
 		appApi := apis.NewApi(app)
 		_, api := humatest.New(t)
 		apis.AddRoutes(api, appApi)
@@ -202,7 +203,7 @@ func TestGetTeam_success(t *testing.T) {
 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
 
 		cfg := conf.ZeroEnvConfig()
-		app := core.NewDecorator(ctx, cfg, db)
+		app := core.NewAppDecorator(ctx, cfg, db)
 		appApi := apis.NewApi(app)
 		_, api := humatest.New(t)
 		apis.AddRoutes(api, appApi)
@@ -236,7 +237,7 @@ func TestCreateTeam_SuccessfulCreation(t *testing.T) {
 	test.DbSetup()
 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
 		cfg := conf.ZeroEnvConfig()
-		app := core.NewDecorator(ctx, cfg, db)
+		app := core.NewAppDecorator(ctx, cfg, db)
 		appApi := apis.NewApi(app)
 		_, api := humatest.New(t)
 		apis.AddRoutes(api, appApi)
@@ -281,7 +282,7 @@ func TestCreateTeam_emailNotVerified(t *testing.T) {
 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
 
 		cfg := conf.ZeroEnvConfig()
-		app := core.NewDecorator(ctx, cfg, db)
+		app := core.NewAppDecorator(ctx, cfg, db)
 		appApi := apis.NewApi(app)
 		_, api := humatest.New(t)
 		apis.AddRoutes(api, appApi)
@@ -315,7 +316,7 @@ func TestUpdateTeam_failedNotOwner(t *testing.T) {
 	test.DbSetup()
 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
 		cfg := conf.ZeroEnvConfig()
-		app := core.NewDecorator(ctx, cfg, db)
+		app := core.NewAppDecorator(ctx, cfg, db)
 
 		appApi := apis.NewApi(app)
 		_, api := humatest.New(t)
@@ -387,7 +388,7 @@ func TestUpdateTeam_successOwner(t *testing.T) {
 	test.DbSetup()
 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
 		cfg := conf.ZeroEnvConfig()
-		app := core.NewDecorator(ctx, cfg, db)
+		app := core.NewAppDecorator(ctx, cfg, db)
 
 		appApi := apis.NewApi(app)
 		_, api := humatest.New(t)
@@ -437,7 +438,7 @@ func TestDeleteTeam_successOwner(t *testing.T) {
 	test.DbSetup()
 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
 		cfg := conf.ZeroEnvConfig()
-		app := core.NewDecorator(ctx, cfg, db)
+		app := core.NewAppDecorator(ctx, cfg, db)
 
 		appApi := apis.NewApi(app)
 		_, api := humatest.New(t)
@@ -482,7 +483,7 @@ func TestDeleteTeam_failNonOwner(t *testing.T) {
 	test.DbSetup()
 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
 		cfg := conf.ZeroEnvConfig()
-		app := core.NewDecorator(ctx, cfg, db)
+		app := core.NewAppDecorator(ctx, cfg, db)
 
 		appApi := apis.NewApi(app)
 		_, api := humatest.New(t)
@@ -550,7 +551,7 @@ func TestGetActiveTeamMember_success(t *testing.T) {
 	test.DbSetup()
 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
 		cfg := conf.ZeroEnvConfig()
-		app := core.NewDecorator(ctx, cfg, db)
+		app := core.NewAppDecorator(ctx, cfg, db)
 
 		appApi := apis.NewApi(app)
 		_, api := humatest.New(t)
@@ -605,7 +606,7 @@ func TestGetActiveTeamMember_nomember(t *testing.T) {
 	test.DbSetup()
 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
 		cfg := conf.ZeroEnvConfig()
-		app := core.NewDecorator(ctx, cfg, db)
+		app := core.NewAppDecorator(ctx, cfg, db)
 
 		appApi := apis.NewApi(app)
 		_, api := humatest.New(t)
@@ -638,7 +639,7 @@ func TestGetUserTeamMembers_basic(t *testing.T) {
 	test.DbSetup()
 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
 		cfg := conf.ZeroEnvConfig()
-		app := core.NewDecorator(ctx, cfg, db)
+		app := core.NewAppDecorator(ctx, cfg, db)
 
 		appApi := apis.NewApi(app)
 		_, api := humatest.New(t)
@@ -693,7 +694,7 @@ func TestGetUserTeamMembers_sortbyname(t *testing.T) {
 	test.DbSetup()
 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
 		cfg := conf.ZeroEnvConfig()
-		app := core.NewDecorator(ctx, cfg, db)
+		app := core.NewAppDecorator(ctx, cfg, db)
 
 		appApi := apis.NewApi(app)
 		_, api := humatest.New(t)
@@ -760,12 +761,8 @@ func TestGetUserTeamMembers_sortbyname(t *testing.T) {
 func TestGetUserTeamMembers_sortbyname2(t *testing.T) {
 	test.DbSetup()
 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
-		cfg := conf.ZeroEnvConfig()
-		app := core.NewDecorator(ctx, cfg, db)
 
-		appApi := apis.NewApi(app)
-		_, api := humatest.New(t)
-		apis.AddRoutes(api, appApi)
+		api, app, _ := newFunction(t, ctx, db)
 		user1, err := app.Adapter().User().CreateUser(
 			ctx,
 			&models.User{
@@ -822,6 +819,58 @@ func TestGetUserTeamMembers_sortbyname2(t *testing.T) {
 		}
 		if len(obj.Data) == 0 || obj.Data[0].ID != member2.Member.ID {
 			t.Fatalf("wrong member id. expected: %v, got: %v", member2.Member.ID, obj.Data[0].ID)
+		}
+	})
+}
+
+func newFunction(t *testing.T, ctx context.Context, db database.Dbx) (humatest.TestAPI, core.App, conf.EnvConfig) {
+	cfg := conf.ZeroEnvConfig()
+	app := core.NewAppDecorator(ctx, cfg, db)
+	appApi := apis.NewApi(app)
+	_, api := humatest.New(t)
+	apis.AddRoutes(api, appApi)
+	return api, app, cfg
+}
+
+func TestApi_GetUserTeams(t *testing.T) {
+	test.DbSetup()
+	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
+		cfg := conf.ZeroEnvConfig()
+		app := core.NewAppDecorator(ctx, cfg, db)
+		appApi := apis.NewApi(app)
+		type fields struct {
+			app core.App
+		}
+		type args struct {
+			ctx   context.Context
+			input *shared.UserListTeamsParams
+		}
+		tests := []struct {
+			name    string
+			fields  fields
+			args    args
+			want    *apis.ApiPaginatedOutput[*shared.Team]
+			wantErr bool
+		}{
+			{
+				name:    "",
+				fields:  fields{},
+				args:    args{},
+				want:    &apis.ApiPaginatedOutput[*shared.Team]{},
+				wantErr: false,
+			},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				got, err := appApi.GetUserTeams(tt.args.ctx, tt.args.input)
+				if (err != nil) != tt.wantErr {
+					t.Errorf("Api.GetUserTeams() error = %v, wantErr %v", err, tt.wantErr)
+					return
+				}
+				if !reflect.DeepEqual(got, tt.want) {
+					t.Errorf("Api.GetUserTeams() = %v, want %v", got, tt.want)
+				}
+			})
 		}
 	})
 }

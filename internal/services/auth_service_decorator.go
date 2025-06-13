@@ -2,7 +2,6 @@ package services
 
 import (
 	"context"
-	"log/slog"
 
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/auth/oauth"
@@ -43,7 +42,6 @@ func NewAuthServiceDecorator(
 	token JwtService,
 	password PasswordService,
 	workerService RoutineService,
-	logger *slog.Logger,
 	enqueuer jobs.Enqueuer,
 	adapter stores.StorageAdapterInterface,
 ) AuthService {
@@ -54,7 +52,6 @@ func NewAuthServiceDecorator(
 		token:    token,
 		password: password,
 		options:  opts,
-		logger:   logger,
 		enqueuer: enqueuer,
 		adapter:  adapter,
 	}

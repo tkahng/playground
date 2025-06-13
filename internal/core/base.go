@@ -110,9 +110,6 @@ func (app *BaseApp) Fs() filesystem.FileSystem {
 	return app.fs
 }
 
-func (app *BaseApp) Logger() *slog.Logger {
-	return app.logger
-}
 func (app *BaseApp) Db() database.Dbx {
 	return app.db
 }

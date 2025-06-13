@@ -60,7 +60,6 @@ type BaseAuthService struct {
 	token    JwtService
 	password PasswordService
 	options  *conf.AppOptions
-	logger   *slog.Logger
 	enqueuer jobs.Enqueuer
 	adapter  stores.StorageAdapterInterface
 }
@@ -81,7 +80,6 @@ func NewAuthService(
 		token:    token,
 		password: password,
 		options:  opts,
-		logger:   logger,
 		enqueuer: enqueuer,
 		adapter:  adapter,
 	}
@@ -810,7 +808,7 @@ func (app *BaseAuthService) authenticateNewAccount(ctx context.Context, user *mo
 				fmt.Println("User is first login, sending reset password email")
 				err := app.SendOtpEmail(mailer.EmailTypeSecurityPasswordReset, ctx, user, nil)
 				if err != nil {
-					app.logger.Error(
+					slog.Error(
 						"error sending reset password email",
 						slog.Any("error", err),
 						slog.String("email", user.Email),
@@ -827,7 +825,7 @@ func (app *BaseAuthService) authenticateNewAccount(ctx context.Context, user *mo
 				fmt.Println("User is first login, sending verification email")
 				err := app.SendOtpEmail(mailer.EmailTypeVerify, ctx, user, nil)
 				if err != nil {
-					app.logger.Error(
+					slog.Error(
 						"error sending verification email",
 						slog.Any("error", err),
 						slog.String("email", user.Email),
@@ -855,7 +853,7 @@ func (app *BaseAuthService) authenticateNewUser(ctx context.Context, params *sha
 			fmt.Println("User is first login, sending verification email")
 			err := app.SendOtpEmail(mailer.EmailTypeVerify, ctx, user, app.adapter)
 			if err != nil {
-				app.logger.Error(
+				slog.Error(
 					"error sending verification email",
 					slog.Any("error", err),
 					slog.String("email", user.Email),
