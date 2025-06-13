@@ -151,7 +151,7 @@ func (api *Api) GetUserTeams(
 		if err != nil {
 			return nil, err
 		}
-		for idx, _ := range teamIds {
+		for idx := range teamIds {
 			team := teams[idx]
 			member := members[idx]
 			if team != nil && member != nil {
