@@ -56,7 +56,7 @@ func pagination(filter Paginable) (limit, offset int) {
 	if filter == nil {
 		return 10, 0 // default values
 	}
-	return filter.Pagination()
+	return filter.LimitOffset()
 }
 
 func queryPagination(q squirrel.SelectBuilder, filter Paginable) squirrel.SelectBuilder {

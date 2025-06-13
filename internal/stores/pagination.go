@@ -31,10 +31,10 @@ type PaginatedInput struct {
 }
 
 type Paginable interface {
-	Pagination() (limit, offset int)
+	LimitOffset() (limit, offset int)
 }
 
-func (p *PaginatedInput) Pagination() (limit, offset int) {
+func (p *PaginatedInput) LimitOffset() (limit, offset int) {
 	if p == nil {
 		return 10, 0 // default values
 	}

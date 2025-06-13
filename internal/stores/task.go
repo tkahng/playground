@@ -444,7 +444,7 @@ func ListTaskProjectsOrderByFunc(input *TaskProjectsFilter) *map[string]string {
 // ListTaskProjects implements AdminCrudActions.
 func (s *DbTaskStore) ListTaskProjects(ctx context.Context, input *TaskProjectsFilter) ([]*models.TaskProject, error) {
 
-	limit, offset := input.Pagination()
+	limit, offset := input.LimitOffset()
 	oredr := ListTaskProjectsOrderByFunc(input)
 	where := s.TaskProjectWhere(input)
 	data, err := repository.TaskProject.Get(

@@ -104,7 +104,7 @@ func listPriceFilterFuncMap(filter *StripePriceFilter) *map[string]any {
 func (s *DbPriceStore) ListPrices(ctx context.Context, input *StripePriceFilter) ([]*models.StripePrice, error) {
 	dbx := s.db
 
-	limit, offset := input.Pagination()
+	limit, offset := input.LimitOffset()
 	param := listPriceFilterFuncMap(input)
 	sort := listPriceOrderByMap(input)
 	data, err := repository.StripePrice.Get(

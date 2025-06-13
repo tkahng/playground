@@ -96,7 +96,7 @@ func (s *DbTeamMemberStore) LoadTeamMembersByUserAndTeamIds(ctx context.Context,
 func (s *DbTeamMemberStore) FindTeamMembers(ctx context.Context, filter *TeamMemberFilter) ([]*models.TeamMember, error) {
 	where := s.filter(filter)
 	sort := s.sort(filter)
-	limit, offset := filter.Pagination()
+	limit, offset := filter.LimitOffset()
 	members, err := repository.TeamMember.Get(
 		ctx,
 		s.db,

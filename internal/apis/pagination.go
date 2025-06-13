@@ -33,7 +33,7 @@ type PaginatedInput struct {
 	PerPage int64 `query:"per_page,omitempty" default:"10" minimum:"1" maximum:"100" required:"false"`
 }
 
-func (p *PaginatedInput) Pagination() (limit, offset int) {
+func (p *PaginatedInput) LimitOffset() (limit, offset int) {
 	if p == nil {
 		return 10, 0 // default values
 	}

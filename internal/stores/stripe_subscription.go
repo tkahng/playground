@@ -317,7 +317,7 @@ func (s *DbSubscriptionStore) IsFirstSubscription(ctx context.Context, customerI
 
 func (s *DbSubscriptionStore) ListSubscriptions(ctx context.Context, input *StripeSubscriptionListFilter) ([]*models.StripeSubscription, error) {
 
-	limit, offset := input.Pagination()
+	limit, offset := input.LimitOffset()
 	where := s.filter(input)
 	order := s.listSubscriptionOrderByFunc(input)
 	data, err := repository.StripeSubscription.Get(

@@ -189,7 +189,7 @@ func (s *DbTeamGroupStore) CreateTeam(ctx context.Context, name string, slug str
 
 func (s *DbTeamGroupStore) ListTeams(ctx context.Context, params *TeamFilter) ([]*models.Team, error) {
 	where := s.filter(params)
-	limit, offset := params.Pagination()
+	limit, offset := params.LimitOffset()
 	sort := s.sort(params)
 	teams, err := repository.Team.Get(
 		ctx,
