@@ -3,6 +3,10 @@
     {
       "name": "authgo",
       "path": "."
+    },
+    {
+      "name": "ui",
+      "path": "ui"
     }
   ],
   "settings": {

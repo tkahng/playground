@@ -164,7 +164,9 @@ func (s *DbProductStore) listProductFilterFuncQuery(q squirrel.SelectBuilder, fi
 		q = q.Where("active = ?", filter.Active.Value)
 	}
 	if len(filter.Ids) > 0 {
-		q = q.Where("id in (?)", filter.Ids)
+		q = q.Where(squirrel.Eq{
+			"id": filter.Ids,
+		})
 	}
 
 	return q

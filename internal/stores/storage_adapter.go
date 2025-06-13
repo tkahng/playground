@@ -133,5 +133,6 @@ func NewStorageAdapter(db database.Dbx) *StorageAdapter {
 		price:          NewDbPriceStore(db),
 		product:        NewDbProductStore(db),
 		subscription:   NewDbSubscriptionStore(db),
+		rbac:           NewDbRBACStore(db),
 	}
 }
