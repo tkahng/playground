@@ -6,6 +6,7 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/contextstore"
+	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/stores"
 	"github.com/tkahng/authgo/internal/tools/mapper"
@@ -141,6 +142,22 @@ func (api *Api) GetUserTeams(
 	teams, err := api.app.Adapter().TeamGroup().ListTeams(ctx, params)
 	if err != nil {
 		return nil, err
+	}
+	if len(teams) > 0 {
+		teamIds := mapper.Map(teams, func(t *models.Team) uuid.UUID {
+			return t.ID
+		})
+		members, err := api.app.Adapter().TeamMember().LoadTeamMembersByUserAndTeamIds(ctx, info.User.ID, teamIds...)
+		if err != nil {
+			return nil, err
+		}
+		for idx, _ := range teamIds {
+			team := teams[idx]
+			member := members[idx]
+			if team != nil && member != nil {
+				team.Members = append(team.Members, member)
+			}
+		}
 	}
 	count, err := api.app.Adapter().TeamGroup().CountTeams(ctx, params)
 	if err != nil {
