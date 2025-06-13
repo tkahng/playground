@@ -27,6 +27,11 @@ type TeamMemberStoreDecorator struct {
 	// Add any additional methods or fields for the decorator here
 }
 
+// LoadTeamMembersByUserAndTeamIds implements DbTeamMemberStoreInterface.
+func (t *TeamMemberStoreDecorator) LoadTeamMembersByUserAndTeamIds(ctx context.Context, userId uuid.UUID, teamIds ...uuid.UUID) ([]*models.TeamMember, error) {
+	panic("unimplemented")
+}
+
 // FindTeamMembers implements DbTeamMemberStoreInterface.
 func (t *TeamMemberStoreDecorator) FindTeamMembers(ctx context.Context, filter *TeamMemberFilter) ([]*models.TeamMember, error) {
 	if t.FindTeamMembersFunc != nil {
@@ -119,17 +124,6 @@ func (t *TeamMemberStoreDecorator) FindTeamMember(ctx context.Context, member *T
 	}
 	return t.Delegate.FindTeamMember(ctx, member)
 }
-
-// FindTeamMemberByTeamAndUserId implements DbTeamMemberStoreInterface.
-// func (t *TeamMemberStoreDecorator) FindTeamMemberByTeamAndUserId(ctx context.Context, teamId uuid.UUID, userId uuid.UUID) (*models.TeamMember, error) {
-// 	if t.FindTeamMemberByTeamAndUserIdFunc != nil {
-// 		return t.FindTeamMemberByTeamAndUserIdFunc(ctx, teamId, userId)
-// 	}
-// 	if t.Delegate == nil {
-// 		return nil, ErrDelegateNil
-// 	}
-// 	// return t.Delegate.FindTeamMemberByTeamAndUserId(ctx, teamId, userId)
-// }
 
 // FindTeamMembersByUserID implements DbTeamMemberStoreInterface.
 func (t *TeamMemberStoreDecorator) FindTeamMembersByUserID(ctx context.Context, userId uuid.UUID, paginate *shared.TeamMemberListInput) ([]*models.TeamMember, error) {

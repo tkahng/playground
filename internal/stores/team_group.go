@@ -199,11 +199,6 @@ func (s *DbTeamGroupStore) ListTeams(ctx context.Context, params *TeamFilter) ([
 		&limit,
 		&offset,
 	)
-	// qs := squirrel.Select("teams.*").From("teams")
-	// qs = listTeamsFilter(qs, params)
-	// qs = listTeamsOrderBy(qs, params)
-	// qs = queryPagination(qs, params)
-	// teams, err := database.QueryWithBuilder[*models.Team](ctx, s.db, qs.PlaceholderFormat(squirrel.Dollar))
 	if err != nil {
 		return nil, err
 	}

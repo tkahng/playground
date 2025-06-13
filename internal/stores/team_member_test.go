@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/goforj/godump"
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
@@ -328,5 +329,88 @@ func TestUpdateTeamMemberSelectedAt(t *testing.T) {
 			t.Errorf("LastSelectedAt not updated recently: %v", updated.LastSelectedAt)
 		}
 		return errors.New("rollback")
+	})
+}
+
+func TestDbTeamMemberStore_LoadTeamMembersByUserAndTeamIds(t *testing.T) {
+	test.DbSetup()
+	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
+		adapter := stores.NewStorageAdapter(db)
+		user1, err := adapter.User().CreateUser(ctx, &models.User{
+			Email: "user1@example.com",
+		})
+		if err != nil {
+			t.Fatalf("CreateUser() error = %v", err)
+		}
+		var teamInfo [][]string = [][]string{
+			{"Team1", "team1-slug"},
+			{"Team2", "team2-slug"},
+			{"Team3", "team3-slug"},
+		}
+		var teamsMap map[uuid.UUID]*models.Team = make(map[uuid.UUID]*models.Team)
+		var teamsSlice []*models.Team
+		var teamIds []uuid.UUID
+		for _, info := range teamInfo {
+			team, err := adapter.TeamGroup().CreateTeam(ctx, info[0], info[1])
+			if err != nil {
+				t.Fatalf("CreateTeam() error = %v", err)
+			}
+			teamsMap[team.ID] = team
+			teamsSlice = append(teamsSlice, team)
+			teamIds = append(teamIds, team.ID)
+			_, err = adapter.TeamMember().CreateTeamMember(ctx, team.ID, user1.ID, models.TeamMemberRoleMember, true)
+			if err != nil {
+				t.Fatalf("CreateTeamMember() error = %v", err)
+			}
+		}
+		godump.Dump(teamsSlice)
+		type fields struct {
+			db database.Dbx
+		}
+		type args struct {
+			ctx     context.Context
+			userId  uuid.UUID
+			teamIds []uuid.UUID
+		}
+		tests := []struct {
+			name    string
+			fields  fields
+			args    args
+			want    map[uuid.UUID]*models.TeamMember
+			wantErr bool
+		}{
+			{
+				name: "load team members by team",
+				fields: fields{
+					db: db,
+				},
+				args: args{
+					userId:  user1.ID,
+					teamIds: teamIds,
+					ctx:     ctx,
+				},
+
+				wantErr: false,
+			},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				store := stores.NewDbTeamMemberStore(tt.fields.db)
+				got, _ := store.LoadTeamMembersByUserAndTeamIds(tt.args.ctx, tt.args.userId, tt.args.teamIds...)
+				godump.Dump(got)
+				for _, teamMember := range got {
+					if team, ok := teamsMap[teamMember.TeamID]; ok {
+						if teamMember.UserID == nil || *teamMember.UserID != user1.ID {
+							t.Errorf("LoadTeamMembersByUserAndTeamIds() = %v, want userID %v for team %v", teamMember.UserID, user1.ID, teamMember.ID)
+						}
+						if teamMember.TeamID != team.ID {
+							t.Errorf("LoadTeamMembersByUserAndTeamIds() = %v, want teamID %v for team %v", teamMember.TeamID, team.ID, teamMember.ID)
+						}
+					} else {
+						t.Errorf("LoadTeamMembersByUserAndTeamIds() did not find member for team %v", teamMember.ID)
+					}
+				}
+			})
+		}
 	})
 }

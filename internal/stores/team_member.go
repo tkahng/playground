@@ -14,6 +14,7 @@ import (
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/authgo/internal/tools/mapper"
 	"github.com/tkahng/authgo/internal/tools/types"
 	"github.com/tkahng/authgo/internal/tools/utils"
 )
@@ -30,6 +31,7 @@ type TeamMemberFilter struct {
 }
 
 type DbTeamMemberStoreInterface interface {
+	LoadTeamMembersByUserAndTeamIds(ctx context.Context, userId uuid.UUID, teamIds ...uuid.UUID) ([]*models.TeamMember, error)
 	FindTeamMembers(ctx context.Context, filter *TeamMemberFilter) ([]*models.TeamMember, error)
 	CountTeamMembers(ctx context.Context, filter *TeamMemberFilter) (int64, error)
 	CreateTeamFromUser(ctx context.Context, user *models.User) (*models.TeamMember, error)
@@ -57,6 +59,38 @@ func (s *DbTeamMemberStore) WithTx(tx database.Dbx) *DbTeamMemberStore {
 	return &DbTeamMemberStore{
 		db: tx,
 	}
+}
+
+func (s *DbTeamMemberStore) LoadTeamMembersByUserAndTeamIds(ctx context.Context, userId uuid.UUID, teamIds ...uuid.UUID) ([]*models.TeamMember, error) {
+	if len(teamIds) == 0 {
+		return nil, errors.New("teamIds cannot be empty")
+	}
+	where := &map[string]any{
+		models.TeamMemberTable.UserID: map[string]any{
+			"_eq": userId,
+		},
+		models.TeamMemberTable.TeamID: map[string]any{
+			"_in": teamIds,
+		},
+		models.TeamMemberTable.Active: map[string]any{
+			"_eq": true,
+		},
+	}
+	members, err := repository.TeamMember.Get(
+		ctx,
+		s.db,
+		where,
+		nil,
+		nil,
+		nil,
+	)
+	if err != nil {
+		return nil, err
+	}
+	memberMap := mapper.MapToPointer(members, teamIds, func(m *models.TeamMember) uuid.UUID {
+		return m.TeamID
+	})
+	return memberMap, nil
 }
 
 func (s *DbTeamMemberStore) FindTeamMembers(ctx context.Context, filter *TeamMemberFilter) ([]*models.TeamMember, error) {
