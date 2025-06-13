@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/stephenafamo/scan"
-	"github.com/stephenafamo/scan/pgxscan"
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/tools/types"
@@ -55,7 +53,12 @@ func (r *PostgresRepository[Model]) Get(ctx context.Context, db database.Dbx, wh
 
 	// Execute the query and scan the results
 	// fmt.Println("query", query, "args", args)
-	items, err := pgxscan.All(ctx, db, scan.StructMapper[*Model](), query, args...)
+	items, err := database.QueryAll[*Model](
+		ctx,
+		db,
+		query,
+		args...,
+	)
 	if err != nil {
 		slog.ErrorContext(ctx, "Error executing Get query", slog.String("query", query), slog.Any("args", args), slog.Any("error", err))
 		return nil, err
@@ -84,7 +87,12 @@ func (r *PostgresRepository[Model]) Put(ctx context.Context, dbx database.Dbx, m
 		}
 		query += fmt.Sprintf(" RETURNING %s", r.builder.FieldString(""))
 
-		items, err := pgxscan.All(ctx, dbx, scan.StructMapper[*Model](), query, args...)
+		items, err := database.QueryAll[*Model](
+			ctx,
+			dbx,
+			query,
+			args...,
+		)
 		if err != nil {
 			slog.ErrorContext(ctx, "Error executing Put query", slog.String("query", query), slog.Any("args", args), slog.Any("error", err))
 			return nil, err
@@ -137,7 +145,12 @@ func (r *PostgresRepository[Model]) Post(ctx context.Context, dbx database.Dbx, 
 
 	// Execute the query and scan the results
 	// fmt.Println("query", query, "args", args)
-	result, err := pgxscan.All(ctx, dbx, scan.StructMapper[*Model](), query, args...)
+	result, err := database.QueryAll[*Model](
+		ctx,
+		dbx,
+		query,
+		args...,
+	)
 	if err != nil {
 		slog.ErrorContext(ctx, "Error executing Post query", slog.String("query", query), slog.Any("args", args), slog.Any("error", err))
 		return nil, err
@@ -171,7 +184,12 @@ func (r *PostgresRepository[Model]) DeleteReturn(ctx context.Context, dbx databa
 	query += fmt.Sprintf(" RETURNING %s", r.builder.FieldString(""))
 
 	// Execute the query and scan the results
-	result, err := pgxscan.All(ctx, dbx, scan.StructMapper[*Model](), query, args...)
+	result, err := database.QueryAll[*Model](
+		ctx,
+		dbx,
+		query,
+		args...,
+	)
 	if err != nil {
 		slog.ErrorContext(ctx, "Error executing Delete query", slog.String("query", query), slog.Any("args", args), slog.Any("error", err))
 		return nil, err
@@ -193,14 +211,18 @@ func (r *PostgresRepository[Model]) Delete(ctx context.Context, dbx database.Dbx
 	// query += fmt.Sprintf(" RETURNING %s", r.builder.Fields(""))
 
 	// Execute the query and scan the results
-	result, err := dbx.Exec(ctx, query, args...)
-	// result, err := pgxscan.All(ctx, dbx, scan.StructMapper[*Model](), query, args...)
+	result, err := database.Exec(
+		ctx,
+		dbx,
+		query,
+		args...,
+	)
 	if err != nil {
 		slog.ErrorContext(ctx, "Error executing Delete query", slog.String("query", query), slog.Any("args", args), slog.Any("error", err))
 		return 0, err
 	}
 
-	return result.RowsAffected(), nil
+	return result, nil
 }
 
 // Count returns the number of records that match the provided filters
@@ -216,7 +238,7 @@ func (r *PostgresRepository[Model]) Count(ctx context.Context, dbx database.Dbx,
 
 	// Execute the query and scan the results
 	// fmt.Println("query", query, "args", args)
-	count, err := pgxscan.One(ctx, dbx, scan.SingleColumnMapper[int64], query, args...)
+	count, err := database.Count(ctx, dbx, query, args...)
 
 	// result, err := r.builder.Scan(dbx.Query(ctx, query, args...))
 	if err != nil {

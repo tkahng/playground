@@ -16,6 +16,7 @@ type Dbx interface {
 	Exec(ctx context.Context, sql string, arguments ...any) (pgconn.CommandTag, error)
 	RunInTx(fn func(Dbx) error) error
 	QueryRow(ctx context.Context, sql string, arguments ...any) pgx.Row
+	RunInTxContext(ctx context.Context, fn func(context.Context) error) error
 }
 
 // type TxFunc
@@ -76,6 +77,11 @@ var _ Dbx = (*txQueries)(nil)
 
 type txQueries struct {
 	db pgx.Tx
+}
+
+// RunInTxContext implements Dbx.
+func (v *txQueries) RunInTxContext(ctx context.Context, fn func(context.Context) error) error {
+	return WithTxContext(v, ctx, fn)
 }
 
 // QueryRow implements Dbx.

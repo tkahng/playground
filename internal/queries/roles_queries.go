@@ -6,10 +6,8 @@ import (
 	"log"
 
 	"github.com/google/uuid"
-	"github.com/stephenafamo/scan"
-	"github.com/stephenafamo/scan/pgxscan"
 	"github.com/tkahng/authgo/internal/database"
-	crudModels "github.com/tkahng/authgo/internal/models"
+	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
@@ -45,25 +43,24 @@ FROM public.role_permissions rp
 GROUP BY rp.role_id;`
 )
 
-func LoadRolePermissions(ctx context.Context, db database.Dbx, roleIds ...uuid.UUID) ([][]*crudModels.Permission, error) {
+func LoadRolePermissions(ctx context.Context, db database.Dbx, roleIds ...uuid.UUID) ([][]*models.Permission, error) {
 	// var results []JoinedResult[*crudModels.Permission, uuid.UUID]
 	var ids []string
 	for _, id := range roleIds {
 		ids = append(ids, id.String())
 	}
-	data, err := pgxscan.All(
+	data, err := database.QueryAll[shared.JoinedResult[*models.Permission, uuid.UUID]](
 		ctx,
 		db,
-		scan.StructMapper[shared.JoinedResult[*crudModels.Permission, uuid.UUID]](),
 		GetRolePermissionsQuery,
 		roleIds,
 	)
 	if err != nil {
 		return nil, err
 	}
-	return mapper.Map(mapper.MapTo(data, roleIds, func(a shared.JoinedResult[*crudModels.Permission, uuid.UUID]) uuid.UUID {
+	return mapper.Map(mapper.MapTo(data, roleIds, func(a shared.JoinedResult[*models.Permission, uuid.UUID]) uuid.UUID {
 		return a.Key
-	}), func(a *shared.JoinedResult[*crudModels.Permission, uuid.UUID]) []*crudModels.Permission {
+	}), func(a *shared.JoinedResult[*models.Permission, uuid.UUID]) []*models.Permission {
 		if a == nil {
 			return nil
 		}
@@ -101,25 +98,24 @@ FROM public.user_roles rp
 GROUP BY rp.user_id;`
 )
 
-func GetUserRoles(ctx context.Context, db database.Dbx, userIds ...uuid.UUID) ([][]*crudModels.Role, error) {
+func GetUserRoles(ctx context.Context, db database.Dbx, userIds ...uuid.UUID) ([][]*models.Role, error) {
 	// var results []JoinedResult[*crudModels.Permission, uuid.UUID]
 	var ids []string
 	for _, id := range userIds {
 		ids = append(ids, id.String())
 	}
-	data, err := pgxscan.All(
+	data, err := database.QueryAll[shared.JoinedResult[*models.Role, uuid.UUID]](
 		ctx,
 		db,
-		scan.StructMapper[shared.JoinedResult[*crudModels.Role, uuid.UUID]](),
 		GetUserRolesQuery,
 		userIds,
 	)
 	if err != nil {
 		return nil, err
 	}
-	return mapper.Map(mapper.MapTo(data, userIds, func(a shared.JoinedResult[*crudModels.Role, uuid.UUID]) uuid.UUID {
+	return mapper.Map(mapper.MapTo(data, userIds, func(a shared.JoinedResult[*models.Role, uuid.UUID]) uuid.UUID {
 		return a.Key
-	}), func(a *shared.JoinedResult[*crudModels.Role, uuid.UUID]) []*crudModels.Role {
+	}), func(a *shared.JoinedResult[*models.Role, uuid.UUID]) []*models.Role {
 		if a == nil {
 			return nil
 		}
@@ -128,9 +124,9 @@ func GetUserRoles(ctx context.Context, db database.Dbx, userIds ...uuid.UUID) ([
 }
 
 func CreateRolePermissions(ctx context.Context, db database.Dbx, roleId uuid.UUID, permissionIds ...uuid.UUID) error {
-	var permissions []crudModels.RolePermission
+	var permissions []models.RolePermission
 	for _, perm := range permissionIds {
-		permissions = append(permissions, crudModels.RolePermission{
+		permissions = append(permissions, models.RolePermission{
 			RoleID:       roleId,
 			PermissionID: perm,
 		})
@@ -149,9 +145,9 @@ func CreateRolePermissions(ctx context.Context, db database.Dbx, roleId uuid.UUI
 }
 
 func CreateProductPermissions(ctx context.Context, db database.Dbx, productId string, permissionIds ...uuid.UUID) error {
-	var permissions []crudModels.ProductPermission
+	var permissions []models.ProductPermission
 	for _, permissionId := range permissionIds {
-		permissions = append(permissions, crudModels.ProductPermission{
+		permissions = append(permissions, models.ProductPermission{
 			ProductID:    productId,
 			PermissionID: permissionId,
 		})
@@ -161,17 +157,7 @@ func CreateProductPermissions(ctx context.Context, db database.Dbx, productId st
 		db,
 		permissions,
 	)
-	// q := squirrel.Insert("product_permissions").Columns("product_id", "permission_id")
-	// for _, perm := range permissions {
-	// 	q = q.Values(perm.ProductID, perm.PermissionID)
-	// }
-	// q = q.Suffix("RETURNING *")
-	// sql, args, err := q.PlaceholderFormat(squirrel.Dollar).ToSql()
-	// if err != nil {
-	// 	return err
-	// }
-	// fmt.Println(sql, args)
-	// _, err = pgxscan.All(ctx, db, scan.StructMapper[crudModels.ProductPermission](), sql, args...)
+
 	if err != nil {
 		return err
 	}
@@ -208,7 +194,7 @@ type CreateRoleDto struct {
 	Description *string `json:"description,omitempty"`
 }
 
-func FindOrCreateRole(ctx context.Context, dbx database.Dbx, roleName string) (*crudModels.Role, error) {
+func FindOrCreateRole(ctx context.Context, dbx database.Dbx, roleName string) (*models.Role, error) {
 	role, err := repository.Role.GetOne(
 		ctx,
 		dbx,
@@ -230,8 +216,8 @@ func FindOrCreateRole(ctx context.Context, dbx database.Dbx, roleName string) (*
 	return role, nil
 }
 
-func CreateRole(ctx context.Context, dbx database.Dbx, role *CreateRoleDto) (*crudModels.Role, error) {
-	data, err := repository.Role.PostOne(ctx, dbx, &crudModels.Role{
+func CreateRole(ctx context.Context, dbx database.Dbx, role *CreateRoleDto) (*models.Role, error) {
+	data, err := repository.Role.PostOne(ctx, dbx, &models.Role{
 		Name:        role.Name,
 		Description: role.Description,
 	})
@@ -317,14 +303,14 @@ type CreatePermissionDto struct {
 	Description *string `json:"description,omitempty"`
 }
 
-func CreatePermission(ctx context.Context, dbx database.Dbx, permission *CreatePermissionDto) (*crudModels.Permission, error) {
-	data, err := repository.Permission.PostOne(ctx, dbx, &crudModels.Permission{
+func CreatePermission(ctx context.Context, dbx database.Dbx, permission *CreatePermissionDto) (*models.Permission, error) {
+	data, err := repository.Permission.PostOne(ctx, dbx, &models.Permission{
 		Name:        permission.Name,
 		Description: permission.Description,
 	})
 	return data, err
 }
-func FindOrCreatePermission(ctx context.Context, dbx database.Dbx, permissionName string) (*crudModels.Permission, error) {
+func FindOrCreatePermission(ctx context.Context, dbx database.Dbx, permissionName string) (*models.Permission, error) {
 	permission, err := repository.Permission.GetOne(
 		ctx,
 		dbx,
@@ -359,7 +345,7 @@ func DeletePermission(ctx context.Context, dbx database.Dbx, id uuid.UUID) error
 	return err
 }
 
-func FindPermissionById(ctx context.Context, dbx database.Dbx, id uuid.UUID) (*crudModels.Permission, error) {
+func FindPermissionById(ctx context.Context, dbx database.Dbx, id uuid.UUID) (*models.Permission, error) {
 	data, err := repository.Permission.GetOne(
 		ctx,
 		dbx,
@@ -371,7 +357,7 @@ func FindPermissionById(ctx context.Context, dbx database.Dbx, id uuid.UUID) (*c
 	)
 	return database.OptionalRow(data, err)
 }
-func FindPermissionByName(ctx context.Context, dbx database.Dbx, name string) (*crudModels.Permission, error) {
+func FindPermissionByName(ctx context.Context, dbx database.Dbx, name string) (*models.Permission, error) {
 	data, err := repository.Permission.GetOne(
 		ctx,
 		dbx,
@@ -384,7 +370,7 @@ func FindPermissionByName(ctx context.Context, dbx database.Dbx, name string) (*
 	return database.OptionalRow(data, err)
 }
 
-func FindRoleByName(ctx context.Context, dbx database.Dbx, name string) (*crudModels.Role, error) {
+func FindRoleByName(ctx context.Context, dbx database.Dbx, name string) (*models.Role, error) {
 	data, err := repository.Role.GetOne(
 		ctx,
 		dbx,

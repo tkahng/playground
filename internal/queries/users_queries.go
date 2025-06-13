@@ -7,8 +7,6 @@ import (
 
 	"github.com/alexedwards/argon2id"
 	"github.com/google/uuid"
-	"github.com/stephenafamo/scan"
-	"github.com/stephenafamo/scan/pgxscan"
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/repository"
@@ -88,12 +86,19 @@ type RolePermissionClaims struct {
 // roles and permissions, or an error if the user is not found or if any other
 // database error occurs.
 func FindUserWithRolesAndPermissionsByEmail(ctx context.Context, db database.Dbx, email string) (*RolePermissionClaims, error) {
-	res, err := pgxscan.One(ctx, db, scan.StructMapper[RolePermissionClaims](), RawGetUserWithAllRolesAndPermissionsByEmail, email)
+	res, err := database.QueryAll[RolePermissionClaims](
+		ctx,
+		db,
+		RawGetUserWithAllRolesAndPermissionsByEmail,
+		email,
+	)
 	if err != nil {
 		return nil, err
 	}
-
-	return &res, nil
+	if len(res) == 0 {
+		return nil, nil // No user found with the given email
+	}
+	return &res[0], nil
 }
 
 func FindUserAccountByUserIdAndProvider(ctx context.Context, db database.Dbx, userId uuid.UUID, provider shared.Providers) (*models.UserAccount, error) {

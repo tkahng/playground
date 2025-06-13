@@ -1,26 +1,5 @@
 package stores
 
-type StoreDecorators struct {
-	*UserStoreDecorator
-	*AccountStoreDecorator
-	*TokenStoreDecorator
-}
-
-func (s *StoreDecorators) Cleanup() {
-	if s == nil {
-		return
-	}
-	if s.UserStoreDecorator != nil {
-		s.UserStoreDecorator.Cleanup()
-	}
-	if s.AccountStoreDecorator != nil {
-		s.AccountStoreDecorator.Cleanup()
-	}
-	if s.TokenStoreDecorator != nil {
-		s.TokenStoreDecorator.Cleanup()
-	}
-}
-
 func NewAdapterDecorators() *StorageAdapterDecorator {
 	return &StorageAdapterDecorator{
 		UserFunc:           &UserStoreDecorator{},

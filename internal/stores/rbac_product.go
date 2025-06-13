@@ -4,8 +4,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	"github.com/stephenafamo/scan"
-	"github.com/stephenafamo/scan/pgxscan"
+	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
@@ -79,10 +78,9 @@ func (p *DbRbacStore) LoadProductPermissions(ctx context.Context, productIds ...
 			)
 	GROUP BY rp.product_id;`
 	)
-	data, err := pgxscan.All(
+	data, err := database.QueryAll[shared.JoinedResult[*models.Permission, string]](
 		ctx,
 		p.db,
-		scan.StructMapper[shared.JoinedResult[*models.Permission, string]](),
 		GetProductPermissionsQuery,
 		productIds,
 	)

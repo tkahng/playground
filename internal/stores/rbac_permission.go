@@ -7,8 +7,6 @@ import (
 
 	"github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
-	"github.com/stephenafamo/scan"
-	"github.com/stephenafamo/scan/pgxscan"
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/repository"
@@ -268,10 +266,9 @@ func (p *DbRbacStore) LoadRolePermissions(ctx context.Context, roleIds ...uuid.U
 	GROUP BY rp.role_id;`
 	)
 
-	data, err := pgxscan.All(
+	data, err := database.QueryAll[shared.JoinedResult[*models.Permission, uuid.UUID]](
 		ctx,
 		p.db,
-		scan.StructMapper[shared.JoinedResult[*models.Permission, uuid.UUID]](),
 		GetRolePermissionsQuery,
 		roleIds,
 	)
