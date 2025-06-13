@@ -112,7 +112,12 @@ func (t *teamService) DeleteTeam(ctx context.Context, teamId uuid.UUID, userId u
 	if teamInfo.Member.Role != models.TeamMemberRoleOwner {
 		return errors.New("only owner can delete team")
 	}
-
+	err = t.adapter.TeamGroup().DeleteTeam(ctx, teamId)
+	// err = t.teamStore.DeleteTeam(ctx, teamId)
+	if err != nil {
+		slog.ErrorContext(ctx, "error deleting team", "teamId", teamId, "error", err)
+		return err
+	}
 	return nil
 }
 
@@ -132,6 +137,7 @@ func (t *teamService) UpdateTeam(ctx context.Context, teamId uuid.UUID, name str
 
 // CreateTeam implements TeamService.
 func (t *teamService) CreateTeam(ctx context.Context, name string, slug string, userId uuid.UUID) (*shared.TeamInfoModel, error) {
+	slog.InfoContext(ctx, "CreateTeam", "name", name, "slug", slug, "userId", userId)
 	user, err := t.adapter.User().FindUserByID(ctx, userId)
 	if err != nil {
 		return nil, err

@@ -2,6 +2,7 @@ package apis
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
@@ -281,10 +282,13 @@ func (api *Api) DeleteTeam(
 	if info == nil {
 		return nil, huma.Error401Unauthorized("unauthorized")
 	}
-	err := api.app.Team().DeleteTeam(ctx, info.Team.ID, *info.Member.UserID)
+	slog.InfoContext(ctx, "Deleting team", slog.String("team_id", info.Team.ID.String()), slog.String("user_id", info.User.ID.String()))
+	err := api.app.Team().DeleteTeam(ctx, info.Team.ID, info.User.ID)
 	if err != nil {
+		slog.ErrorContext(ctx, "error deleting team", "teamId", info.Team.ID.String(), "userId", info.User.ID.String(), "error", err)
 		return nil, err
 	}
+	slog.InfoContext(ctx, "Team deleted successfully", slog.String("team_id", info.Team.ID.String()), slog.String("user_id", info.User.ID.String()))
 	return nil, nil
 }
 

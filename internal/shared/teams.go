@@ -44,15 +44,14 @@ type TeamMember struct {
 }
 
 type Team struct {
-	_    struct{}  `db:"teams" json:"-"`
-	ID   uuid.UUID `db:"id" json:"id"`
-	Name string    `db:"name" json:"name"`
-	Slug string    `db:"slug" json:"slug"`
-	// StripeCustomerID *string       `db:"stripe_customer_id" json:"stripe_customer_id"`
-	CreatedAt time.Time     `db:"created_at" json:"created_at"`
-	UpdatedAt time.Time     `db:"updated_at" json:"updated_at"`
-	Members   []*TeamMember `db:"members" src:"id" dest:"team_id" table:"team_members" json:"members,omitempty"`
-	// StripeCustomer *Stripecus `db:"stripe_customer" src:"id" dest:"team_id" table:"stripe_customers" json:"stripe_customer,omitempty" required:"false"`
+	_              struct{}        `db:"teams" json:"-"`
+	ID             uuid.UUID       `db:"id" json:"id"`
+	Name           string          `db:"name" json:"name"`
+	Slug           string          `db:"slug" json:"slug"`
+	CreatedAt      time.Time       `db:"created_at" json:"created_at"`
+	UpdatedAt      time.Time       `db:"updated_at" json:"updated_at"`
+	Members        []*TeamMember   `db:"members" src:"id" dest:"team_id" table:"team_members" json:"members,omitempty"`
+	StripeCustomer *StripeCustomer `db:"stripe_customer" src:"id" dest:"team_id" table:"stripe_customers" json:"stripe_customer,omitempty" required:"false"`
 }
 
 func FromTeamModel(team *models.Team) *Team {

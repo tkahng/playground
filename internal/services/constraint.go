@@ -37,13 +37,14 @@ type ConstraintChecker interface {
 }
 
 type ConstraintCheckerService struct {
-	store   ConstaintCheckerStore
 	adapter stores.StorageAdapterInterface
 }
 
 // EmailMustBeVerified implements ConstraintChecker.
 func (c *ConstraintCheckerService) EmailMustBeVerified(ctx context.Context, email string) (bool, error) {
-	user, err := c.store.FindUserByEmail(ctx, email)
+	user, err := c.adapter.User().FindUser(ctx, &stores.UserFilter{
+		Emails: []string{email},
+	})
 	if err != nil {
 		return false, err
 	}
@@ -58,24 +59,31 @@ func (c *ConstraintCheckerService) EmailMustBeVerified(ctx context.Context, emai
 
 // TeamCannotHaveValidSubscription implements ConstraintChecker.
 func (c *ConstraintCheckerService) TeamCannotHaveValidSubscription(ctx context.Context, teamId uuid.UUID) (bool, error) {
-	subscription, err := c.store.FindLatestActiveSubscriptionByTeamId(ctx, teamId)
+	subscription, err := c.adapter.Subscription().FindActiveSubscriptionsByTeamIds(ctx, teamId)
 	if err != nil {
 		return false, err
 	}
-	if subscription != nil {
-		return false, huma.Error400BadRequest("Cannot perform this action on a team with a valid subscription")
+
+	if len(subscription) > 0 {
+		sub := subscription[0]
+		if sub != nil {
+			return false, huma.Error400BadRequest("Cannot perform this action on a team with a valid subscription")
+		}
 	}
 	return true, nil
 }
 
 // CannotHaveValidUserSubscription implements ConstraintChecker.
 func (c *ConstraintCheckerService) CannotHaveValidUserSubscription(ctx context.Context, userId uuid.UUID) (bool, error) {
-	subscription, err := c.store.FindLatestActiveSubscriptionByUserId(ctx, userId)
+	subscription, err := c.adapter.Subscription().FindActiveSubscriptionsByUserIds(ctx, userId)
 	if err != nil {
 		return false, err
 	}
-	if subscription != nil {
-		return false, huma.Error400BadRequest("Cannot perform this action on a user with a valid subscription")
+	if len(subscription) > 0 {
+		sub := subscription[0]
+		if sub != nil {
+			return false, huma.Error400BadRequest("Cannot perform this action on a user with a valid subscription")
+		}
 	}
 	return true, nil
 }
@@ -107,7 +115,9 @@ func (c *ConstraintCheckerService) CannotBeSuperUserEmailAndRoleName(ctx context
 
 // CannotBeSuperUserID implements ConstraintChecker.
 func (c *ConstraintCheckerService) CannotBeSuperUserID(ctx context.Context, userId uuid.UUID) (bool, error) {
-	user, err := c.store.FindUserById(ctx, userId)
+	user, err := c.adapter.User().FindUser(ctx, &stores.UserFilter{
+		Ids: []uuid.UUID{userId},
+	})
 	if err != nil {
 		return false, err
 	}

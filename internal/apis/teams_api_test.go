@@ -472,6 +472,7 @@ func TestDeleteTeam_successOwner(t *testing.T) {
 		}
 		VerifiedHeader := fmt.Sprintf("Authorization: Bearer %s", tokensVerifiedTokens.Tokens.AccessToken)
 		resp := api.Delete("/teams/"+member1.Team.ID.String(), VerifiedHeader)
+		fmt.Println("resp", resp.Body.String())
 		if resp.Code != 200 {
 			t.Fatalf("Unexpected response: %s", resp.Body.String())
 		}

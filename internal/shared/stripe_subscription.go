@@ -69,14 +69,6 @@ type StripeCustomer struct {
 	Subscriptions  []*Subscription    `db:"subscriptions" src:"id" dest:"stripe_customer_id" table:"stripe_subscriptions" json:"subscriptions,omitempty"`
 }
 
-// func FromModelToSubWithUserAndPrice(sub *models.SubscriptionWithPrice) *SubscriptionWithData {
-// 	return &SubscriptionWithData{
-// 		Subscription: FromModelSubscription(&sub.Subscription),
-// 		Price:        FromModelPrice(&sub.Price),
-// 		pro:          FromModelProduct(sub.Product),
-// 	}
-// }
-
 func FromModelSubscription(sub *models.StripeSubscription) *Subscription {
 	return &Subscription{
 		ID:                 sub.ID,

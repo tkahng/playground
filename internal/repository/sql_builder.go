@@ -549,9 +549,9 @@ func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any, run func(s
 	// Otherwise, construct the WHERE clause based on the field names and operations
 	result := []string{}
 	for key, item := range *where {
-		fmt.Println("key", key, "item", item)
+		// fmt.Println("key", key, "item", item)
 		for op, value := range item.(map[string]any) {
-			fmt.Println("operation", op, "value", value)
+			// fmt.Println("operation", op, "value", value)
 			if handler, ok := b.operations[key+op]; ok {
 				// Primitive field condition detected
 				// slog.Info("Processing primitive field condition", slog.String("key", key), slog.String("operation", op), slog.Any("value", value))

@@ -15,6 +15,7 @@ import (
 
 func TeamCanDelete(api huma.API, app core.App) func(ctx huma.Context, next func(huma.Context)) {
 	return func(ctx huma.Context, next func(huma.Context)) {
+		slog.Info("starting TeamCanDelete middleware")
 		rawCtx := ctx.Context()
 		teamInfo := contextstore.GetContextTeamInfo(rawCtx)
 		if teamInfo == nil {
@@ -176,7 +177,7 @@ func TeamInfoFromParam(api huma.API, app core.App) func(ctx huma.Context, next f
 			huma.WriteErr(api, ctx, http.StatusNotFound, "team not found", nil)
 			return
 		}
-
+		slog.Info("found team info")
 		ctxx := contextstore.SetContextTeamInfo(rawCtx, teamInfo)
 		ctx = huma.WithContext(ctx, ctxx)
 		next(ctx)
@@ -185,14 +186,16 @@ func TeamInfoFromParam(api huma.API, app core.App) func(ctx huma.Context, next f
 
 func RequireTeamMemberRolesMiddleware(api huma.API, roles ...models.TeamMemberRole) func(ctx huma.Context, next func(huma.Context)) {
 	return func(ctx huma.Context, next func(huma.Context)) {
+		slog.Info("starting RequireTeamMemberRolesMiddleware")
 		rawctx := ctx.Context()
 		if info := contextstore.GetContextTeamInfo(rawctx); info != nil {
-			fmt.Println("role", info.Member.Role)
+			slog.Info("found team info in context")
 			if len(roles) == 0 {
 				next(ctx)
 				return
 			}
 			if slices.Contains(roles, info.Member.Role) {
+				slog.Info("user has required team member role")
 				next(ctx)
 				return
 			}

@@ -54,7 +54,7 @@ func (r *PostgresRepository[Model]) Get(ctx context.Context, db database.Dbx, wh
 	}
 
 	// Execute the query and scan the results
-	fmt.Println("query", query, "args", args)
+	// fmt.Println("query", query, "args", args)
 	items, err := pgxscan.All(ctx, db, scan.StructMapper[*Model](), query, args...)
 	if err != nil {
 		slog.ErrorContext(ctx, "Error executing Get query", slog.String("query", query), slog.Any("args", args), slog.Any("error", err))
@@ -136,7 +136,7 @@ func (r *PostgresRepository[Model]) Post(ctx context.Context, dbx database.Dbx, 
 	query += fmt.Sprintf(" RETURNING %s", r.builder.FieldString(""))
 
 	// Execute the query and scan the results
-	fmt.Println("query", query, "args", args)
+	// fmt.Println("query", query, "args", args)
 	result, err := pgxscan.All(ctx, dbx, scan.StructMapper[*Model](), query, args...)
 	if err != nil {
 		slog.ErrorContext(ctx, "Error executing Post query", slog.String("query", query), slog.Any("args", args), slog.Any("error", err))
@@ -215,7 +215,7 @@ func (r *PostgresRepository[Model]) Count(ctx context.Context, dbx database.Dbx,
 	}
 
 	// Execute the query and scan the results
-	fmt.Println("query", query, "args", args)
+	// fmt.Println("query", query, "args", args)
 	count, err := pgxscan.One(ctx, dbx, scan.SingleColumnMapper[int64], query, args...)
 
 	// result, err := r.builder.Scan(dbx.Query(ctx, query, args...))

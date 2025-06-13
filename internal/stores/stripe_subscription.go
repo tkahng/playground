@@ -112,7 +112,6 @@ func (s *DbSubscriptionStore) FindActiveSubscriptionsByTeamIds(ctx context.Conte
 		return nil, err
 	}
 	return mapper.MapToPointer(subscriptions, teamIds, func(s *models.StripeSubscription) uuid.UUID {
-
 		if s == nil || s.StripeCustomer == nil || s.StripeCustomer.TeamID == nil {
 			return uuid.Nil
 		}
