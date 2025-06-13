@@ -22,8 +22,20 @@ type TeamMemberStoreDecorator struct {
 	FindTeamMembersByUserIDFunc       func(ctx context.Context, userId uuid.UUID, paginate *shared.TeamMemberListInput) ([]*models.TeamMember, error)
 	UpdateTeamMemberFunc              func(ctx context.Context, member *models.TeamMember) (*models.TeamMember, error)
 	UpdateTeamMemberSelectedAtFunc    func(ctx context.Context, teamId uuid.UUID, userId uuid.UUID) error
+	FindTeamMembersFunc               func(ctx context.Context, filter *TeamMemberFilter) ([]*models.TeamMember, error)
 
 	// Add any additional methods or fields for the decorator here
+}
+
+// FindTeamMembers implements DbTeamMemberStoreInterface.
+func (t *TeamMemberStoreDecorator) FindTeamMembers(ctx context.Context, filter *TeamMemberFilter) ([]*models.TeamMember, error) {
+	if t.FindTeamMembersFunc != nil {
+		return t.FindTeamMembersFunc(ctx, filter)
+	}
+	if t.Delegate == nil {
+		return nil, ErrDelegateNil
+	}
+	return t.Delegate.FindTeamMembers(ctx, filter)
 }
 
 func (t *TeamMemberStoreDecorator) Cleanup() {
@@ -42,17 +54,6 @@ func (t *TeamMemberStoreDecorator) Cleanup() {
 
 }
 
-// CountOwnerTeamMembers implements DbTeamMemberStoreInterface.
-func (t *TeamMemberStoreDecorator) CountOwnerTeamMembers(ctx context.Context, teamId uuid.UUID) (int64, error) {
-	if t.CountOwnerTeamMembersFunc != nil {
-		return t.CountOwnerTeamMembersFunc(ctx, teamId)
-	}
-	if t.Delegate == nil {
-		return 0, ErrDelegateNil
-	}
-	return t.Delegate.CountOwnerTeamMembers(ctx, teamId)
-}
-
 // CountTeamMembers implements DbTeamMemberStoreInterface.
 func (t *TeamMemberStoreDecorator) CountTeamMembers(ctx context.Context, filter *TeamMemberFilter) (int64, error) {
 	if t.CountTeamMembersFunc != nil {
@@ -62,17 +63,6 @@ func (t *TeamMemberStoreDecorator) CountTeamMembers(ctx context.Context, filter 
 		return 0, ErrDelegateNil
 	}
 	return t.Delegate.CountTeamMembers(ctx, filter)
-}
-
-// CountTeamMembersByUserID implements DbTeamMemberStoreInterface.
-func (t *TeamMemberStoreDecorator) CountTeamMembersByUserID(ctx context.Context, userId uuid.UUID) (int64, error) {
-	if t.CountTeamMembersByUserIDFunc != nil {
-		return t.CountTeamMembersByUserIDFunc(ctx, userId)
-	}
-	if t.Delegate == nil {
-		return 0, ErrDelegateNil
-	}
-	return t.Delegate.CountTeamMembersByUserID(ctx, userId)
 }
 
 // CreateTeamFromUser implements DbTeamMemberStoreInterface.

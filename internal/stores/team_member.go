@@ -3,6 +3,7 @@ package stores
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"slices"
 	"strings"
 	"time"
@@ -18,6 +19,8 @@ import (
 )
 
 type TeamMemberFilter struct {
+	PaginatedInput
+	SortParams
 	Q       string                    `query:"q"`
 	Ids     []uuid.UUID               `query:"ids"`
 	Roles   []models.TeamMemberRole   `query:"roles"`
@@ -27,9 +30,8 @@ type TeamMemberFilter struct {
 }
 
 type DbTeamMemberStoreInterface interface {
-	CountOwnerTeamMembers(ctx context.Context, teamId uuid.UUID) (int64, error)
+	FindTeamMembers(ctx context.Context, filter *TeamMemberFilter) ([]*models.TeamMember, error)
 	CountTeamMembers(ctx context.Context, filter *TeamMemberFilter) (int64, error)
-	CountTeamMembersByUserID(ctx context.Context, userId uuid.UUID) (int64, error)
 	CreateTeamFromUser(ctx context.Context, user *models.User) (*models.TeamMember, error)
 	CreateTeamMember(ctx context.Context, teamId uuid.UUID, userId uuid.UUID, role models.TeamMemberRole, hasBillingAccess bool) (*models.TeamMember, error)
 	DeleteTeamMember(ctx context.Context, teamId uuid.UUID, userId uuid.UUID) error
@@ -56,6 +58,24 @@ func (s *DbTeamMemberStore) WithTx(tx database.Dbx) *DbTeamMemberStore {
 	return &DbTeamMemberStore{
 		db: tx,
 	}
+}
+
+func (s *DbTeamMemberStore) FindTeamMembers(ctx context.Context, filter *TeamMemberFilter) ([]*models.TeamMember, error) {
+	where := s.filter(filter)
+	sort := s.sort(filter)
+	limit, offset := filter.Pagination()
+	members, err := repository.TeamMember.Get(
+		ctx,
+		s.db,
+		where,
+		sort,
+		&limit,
+		&offset,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return members, nil
 }
 
 func (s *DbTeamMemberStore) filter(filter *TeamMemberFilter) *map[string]any {
@@ -105,6 +125,23 @@ func (s *DbTeamMemberStore) FindTeamMember(ctx context.Context, filter *TeamMemb
 		return nil, err
 	}
 	return member, nil
+}
+
+func (s *DbTeamMemberStore) sort(filter Sortable) *map[string]string {
+	if filter == nil {
+		return nil // return nil if no filter is provided
+	}
+
+	sortBy, sortOrder := filter.Sort()
+	if sortBy != "" && slices.Contains(repository.TeamMemberBuilder.ColumnNames(), utils.Quote(sortBy)) {
+		return &map[string]string{
+			sortBy: sortOrder,
+		}
+	} else {
+		slog.Info("sort by field not found in repository columns", "sortBy", sortBy, "sortOrder", sortOrder, "columns", repository.UserBuilder.ColumnNames())
+	}
+
+	return nil // default no sorting
 }
 
 func (s *DbTeamMemberStore) FindTeamMemberByTeamAndUserId(ctx context.Context, teamId, userId uuid.UUID) (*models.TeamMember, error) {
@@ -194,26 +231,6 @@ func (s *DbTeamMemberStore) UpdateTeamMember(ctx context.Context, member *models
 	return newMember, nil
 }
 
-// CountOwnerTeamMembers implements services.TeamStore.
-func (s *DbTeamMemberStore) CountOwnerTeamMembers(ctx context.Context, teamId uuid.UUID) (int64, error) {
-	c, err := repository.TeamMember.Count(
-		ctx,
-		s.db,
-		&map[string]any{
-			models.TeamMemberTable.TeamID: map[string]any{
-				"_eq": teamId,
-			},
-			models.TeamMemberTable.Role: map[string]any{
-				"_eq": string(models.TeamMemberRoleOwner),
-			},
-		},
-	)
-	if err != nil {
-		return 0, err
-	}
-	return c, nil
-}
-
 // CountTeamMembers implements services.TeamStore.
 func (s *DbTeamMemberStore) CountTeamMembers(ctx context.Context, filter *TeamMemberFilter) (int64, error) {
 	where := s.filter(filter)
@@ -292,24 +309,6 @@ func (s *DbTeamMemberStore) FindTeamMembersByUserID(ctx context.Context, userId 
 	return teamMembers, nil
 }
 
-func (s *DbTeamMemberStore) CountTeamMembersByUserID(ctx context.Context, userId uuid.UUID) (int64, error) {
-	c, err := repository.TeamMember.Count(
-		ctx,
-		s.db,
-		&map[string]any{
-			models.TeamMemberTable.UserID: map[string]any{
-				"_eq": userId,
-			},
-			models.TeamMemberTable.Active: map[string]any{
-				"_eq": true,
-			},
-		},
-	)
-	if err != nil {
-		return 0, err
-	}
-	return c, nil
-}
 func (s *DbTeamMemberStore) CreateTeamMember(ctx context.Context, teamId, userId uuid.UUID, role models.TeamMemberRole, hasBillingAccess bool) (*models.TeamMember, error) {
 	teamMember := &models.TeamMember{
 		TeamID:           teamId,
