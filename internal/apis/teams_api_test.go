@@ -331,7 +331,7 @@ func TestUpdateTeam_failedNotOwner(t *testing.T) {
 			return
 		}
 
-		member1, err := app.Team().CreateTeam(
+		member1, err := app.Team().CreateTeamWithOwner(
 			ctx,
 			"test team",
 			"test-team",
@@ -403,7 +403,7 @@ func TestUpdateTeam_successOwner(t *testing.T) {
 			return
 		}
 
-		member1, err := app.Team().CreateTeam(
+		member1, err := app.Team().CreateTeamWithOwner(
 			ctx,
 			"test team",
 			"test-team",
@@ -453,7 +453,7 @@ func TestDeleteTeam_successOwner(t *testing.T) {
 			return
 		}
 
-		member1, err := app.Team().CreateTeam(
+		member1, err := app.Team().CreateTeamWithOwner(
 			ctx,
 			"test team",
 			"test-team",
@@ -498,7 +498,7 @@ func TestDeleteTeam_failNonOwner(t *testing.T) {
 			return
 		}
 
-		member1, err := app.Team().CreateTeam(
+		member1, err := app.Team().CreateTeamWithOwner(
 			ctx,
 			"test team",
 			"test-team",
@@ -566,7 +566,7 @@ func TestGetActiveTeamMember_success(t *testing.T) {
 			return
 		}
 
-		member1, err := app.Team().CreateTeam(
+		member1, err := app.Team().CreateTeamWithOwner(
 			ctx,
 			"test team",
 			"test-team",
@@ -654,7 +654,7 @@ func TestGetUserTeamMembers_basic(t *testing.T) {
 			return
 		}
 
-		member1, err := app.Team().CreateTeam(
+		member1, err := app.Team().CreateTeamWithOwner(
 			ctx,
 			"test team",
 			"test-team",
@@ -709,7 +709,7 @@ func TestGetUserTeamMembers_sortbyname(t *testing.T) {
 			return
 		}
 
-		member1, err := app.Team().CreateTeam(
+		member1, err := app.Team().CreateTeamWithOwner(
 			ctx,
 			"test team a",
 			"test-team a",
@@ -723,7 +723,7 @@ func TestGetUserTeamMembers_sortbyname(t *testing.T) {
 			t.Errorf("Error creating user: %v", err)
 			return
 		}
-		member2, err := app.Team().CreateTeam(
+		member2, err := app.Team().CreateTeamWithOwner(
 			ctx,
 			"test team b",
 			"test-team b",
@@ -777,7 +777,7 @@ func TestGetUserTeamMembers_sortbyname2(t *testing.T) {
 			return
 		}
 
-		member1, err := app.Team().CreateTeam(
+		member1, err := app.Team().CreateTeamWithOwner(
 			ctx,
 			"test team a",
 			"test-team a",
@@ -791,7 +791,7 @@ func TestGetUserTeamMembers_sortbyname2(t *testing.T) {
 			t.Errorf("Error creating user: %v", err)
 			return
 		}
-		member2, err := app.Team().CreateTeam(
+		member2, err := app.Team().CreateTeamWithOwner(
 			ctx,
 			"test team b",
 			"test-team b",

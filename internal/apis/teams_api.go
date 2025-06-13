@@ -38,7 +38,7 @@ func (api *Api) CreateTeam(
 	if info == nil {
 		return nil, huma.Error401Unauthorized("unauthorized")
 	}
-	team, err := api.app.Team().CreateTeam(
+	team, err := api.app.Team().CreateTeamWithOwner(
 		ctx,
 		input.Body.Name,
 		input.Body.Slug,

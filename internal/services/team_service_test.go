@@ -103,7 +103,7 @@ func TestTeamService_CreateTeam_Success(t *testing.T) {
 		return &expectedTeamInfo.Member, nil
 	}
 
-	teamInfo, err := service.CreateTeam(ctx, name, slug, userID)
+	teamInfo, err := service.CreateTeamWithOwner(ctx, name, slug, userID)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedTeamInfo, teamInfo)
 }
@@ -127,7 +127,7 @@ func TestTeamService_CreateTeam_SlugExists(t *testing.T) {
 	}
 	// mockStore.On("CheckTeamSlug", ctx, slug).Return(false, nil)
 
-	teamInfo, err := service.CreateTeam(ctx, name, slug, userID)
+	teamInfo, err := service.CreateTeamWithOwner(ctx, name, slug, userID)
 	assert.Nil(t, teamInfo)
 	assert.EqualError(t, err, "team slug already exists")
 }
@@ -152,7 +152,7 @@ func TestTeamService_CreateTeam_CheckTeamSlugError(t *testing.T) {
 	}
 	// mockStore.On("CheckTeamSlug", ctx, slug).Return(false, expectedErr)
 
-	teamInfo, err := service.CreateTeam(ctx, name, slug, userID)
+	teamInfo, err := service.CreateTeamWithOwner(ctx, name, slug, userID)
 	assert.Nil(t, teamInfo)
 	assert.Equal(t, expectedErr, err)
 }
@@ -183,7 +183,7 @@ func TestTeamService_CreateTeam_CreateTeamWithOwnerMemberError(t *testing.T) {
 
 	// mockStore.On("CreateTeamWithOwnerMember", ctx, name, slug, userID).Return(nil, expectedErr)
 
-	teamInfo, err := service.CreateTeam(ctx, name, slug, userID)
+	teamInfo, err := service.CreateTeamWithOwner(ctx, name, slug, userID)
 	assert.Nil(t, teamInfo)
 	assert.Equal(t, expectedErr, err)
 	// mockStore.AssertExpectations(t)

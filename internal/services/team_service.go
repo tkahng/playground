@@ -21,7 +21,7 @@ type TeamService interface {
 	AddMember(ctx context.Context, teamId, userId uuid.UUID, role models.TeamMemberRole, hasBillingAccess bool) (*models.TeamMember, error)
 	RemoveMember(ctx context.Context, teamId, userId uuid.UUID) error
 	LeaveTeam(ctx context.Context, teamId, userId uuid.UUID) error
-	CreateTeam(ctx context.Context, name string, slug string, userId uuid.UUID) (*shared.TeamInfoModel, error)
+	CreateTeamWithOwner(ctx context.Context, name string, slug string, userId uuid.UUID) (*shared.TeamInfoModel, error)
 	UpdateTeam(ctx context.Context, teamId uuid.UUID, name string) (*models.Team, error)
 	DeleteTeam(ctx context.Context, teamId uuid.UUID, userId uuid.UUID) error
 	FindTeamMembersByUserID(ctx context.Context, userId uuid.UUID, paginate *shared.TeamMemberListInput) ([]*models.TeamMember, error)
@@ -135,8 +135,8 @@ func (t *teamService) UpdateTeam(ctx context.Context, teamId uuid.UUID, name str
 	return team, nil
 }
 
-// CreateTeam implements TeamService.
-func (t *teamService) CreateTeam(ctx context.Context, name string, slug string, userId uuid.UUID) (*shared.TeamInfoModel, error) {
+// CreateTeamWithOwner implements TeamService.
+func (t *teamService) CreateTeamWithOwner(ctx context.Context, name string, slug string, userId uuid.UUID) (*shared.TeamInfoModel, error) {
 	slog.InfoContext(ctx, "CreateTeam", "name", name, "slug", slug, "userId", userId)
 	user, err := t.adapter.User().FindUserByID(ctx, userId)
 	if err != nil {
