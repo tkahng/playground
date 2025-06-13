@@ -121,15 +121,15 @@ func (t *TeamMemberStoreDecorator) FindTeamMember(ctx context.Context, member *T
 }
 
 // FindTeamMemberByTeamAndUserId implements DbTeamMemberStoreInterface.
-func (t *TeamMemberStoreDecorator) FindTeamMemberByTeamAndUserId(ctx context.Context, teamId uuid.UUID, userId uuid.UUID) (*models.TeamMember, error) {
-	if t.FindTeamMemberByTeamAndUserIdFunc != nil {
-		return t.FindTeamMemberByTeamAndUserIdFunc(ctx, teamId, userId)
-	}
-	if t.Delegate == nil {
-		return nil, ErrDelegateNil
-	}
-	return t.Delegate.FindTeamMemberByTeamAndUserId(ctx, teamId, userId)
-}
+// func (t *TeamMemberStoreDecorator) FindTeamMemberByTeamAndUserId(ctx context.Context, teamId uuid.UUID, userId uuid.UUID) (*models.TeamMember, error) {
+// 	if t.FindTeamMemberByTeamAndUserIdFunc != nil {
+// 		return t.FindTeamMemberByTeamAndUserIdFunc(ctx, teamId, userId)
+// 	}
+// 	if t.Delegate == nil {
+// 		return nil, ErrDelegateNil
+// 	}
+// 	// return t.Delegate.FindTeamMemberByTeamAndUserId(ctx, teamId, userId)
+// }
 
 // FindTeamMembersByUserID implements DbTeamMemberStoreInterface.
 func (t *TeamMemberStoreDecorator) FindTeamMembersByUserID(ctx context.Context, userId uuid.UUID, paginate *shared.TeamMemberListInput) ([]*models.TeamMember, error) {

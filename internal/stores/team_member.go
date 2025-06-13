@@ -37,7 +37,6 @@ type DbTeamMemberStoreInterface interface {
 	DeleteTeamMember(ctx context.Context, teamId uuid.UUID, userId uuid.UUID) error
 	FindLatestTeamMemberByUserID(ctx context.Context, userId uuid.UUID) (*models.TeamMember, error)
 	FindTeamMember(ctx context.Context, member *TeamMemberFilter) (*models.TeamMember, error)
-	FindTeamMemberByTeamAndUserId(ctx context.Context, teamId uuid.UUID, userId uuid.UUID) (*models.TeamMember, error)
 	FindTeamMembersByUserID(ctx context.Context, userId uuid.UUID, paginate *shared.TeamMemberListInput) ([]*models.TeamMember, error)
 	UpdateTeamMember(ctx context.Context, member *models.TeamMember) (*models.TeamMember, error)
 	UpdateTeamMemberSelectedAt(ctx context.Context, teamId uuid.UUID, userId uuid.UUID) error
@@ -144,24 +143,6 @@ func (s *DbTeamMemberStore) sort(filter Sortable) *map[string]string {
 	return nil // default no sorting
 }
 
-func (s *DbTeamMemberStore) FindTeamMemberByTeamAndUserId(ctx context.Context, teamId, userId uuid.UUID) (*models.TeamMember, error) {
-	teamMember, err := repository.TeamMember.GetOne(
-		ctx,
-		s.db,
-		&map[string]any{
-			models.TeamMemberTable.UserID: map[string]any{
-				"_eq": userId,
-			},
-			models.TeamMemberTable.TeamID: map[string]any{
-				"_eq": teamId,
-			},
-		},
-	)
-	if err != nil {
-		return nil, err
-	}
-	return teamMember, nil
-}
 func (s *DbTeamMemberStore) CreateTeamFromUser(ctx context.Context, user *models.User) (*models.TeamMember, error) {
 	team, err := repository.Team.PostOne(
 		ctx,

@@ -181,7 +181,10 @@ func (i *InvitationService) CancelInvitation(
 	userId uuid.UUID,
 	invitationId uuid.UUID,
 ) error {
-	member, err := i.adapter.TeamMember().FindTeamMemberByTeamAndUserId(ctx, teamId, userId)
+	member, err := i.adapter.TeamMember().FindTeamMember(ctx, &stores.TeamMemberFilter{
+		TeamIds: []uuid.UUID{teamId},
+		UserIds: []uuid.UUID{userId},
+	})
 	if err != nil {
 		return err
 	}
@@ -283,7 +286,10 @@ func (i *InvitationService) CreateInvitation(
 	resend bool,
 ) error {
 
-	member, err := i.adapter.TeamMember().FindTeamMemberByTeamAndUserId(ctx, teamId, invitingUserId)
+	member, err := i.adapter.TeamMember().FindTeamMember(ctx, &stores.TeamMemberFilter{
+		TeamIds: []uuid.UUID{teamId},
+		UserIds: []uuid.UUID{invitingUserId},
+	})
 	if err != nil {
 		return err
 	}

@@ -259,7 +259,10 @@ func TestUpdateTeamMemberUpdatedAt(t *testing.T) {
 		}
 
 		// Fetch the member again to check updated_at
-		updated, err := adapter.TeamMember().FindTeamMemberByTeamAndUserId(ctx, team.ID, user.ID)
+		updated, err := adapter.TeamMember().FindTeamMember(ctx, &stores.TeamMemberFilter{
+			TeamIds: []uuid.UUID{team.ID},
+			UserIds: []uuid.UUID{user.ID},
+		})
 		if err != nil {
 			t.Fatalf("GetOne() error = %v", err)
 		}
@@ -307,7 +310,10 @@ func TestUpdateTeamMemberSelectedAt(t *testing.T) {
 		}
 
 		// Fetch the member again and check last_selected_at
-		updated, err := teamStore.FindTeamMemberByTeamAndUserId(ctx, team.ID, user.ID)
+		updated, err := teamStore.FindTeamMember(ctx, &stores.TeamMemberFilter{
+			TeamIds: []uuid.UUID{team.ID},
+			UserIds: []uuid.UUID{user.ID},
+		})
 		if err != nil {
 			t.Fatalf("FindTeamMemberByTeamAndUserId() error = %v", err)
 		}
