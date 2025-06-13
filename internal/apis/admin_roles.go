@@ -8,15 +8,59 @@ import (
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/authgo/internal/stores"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 	"github.com/tkahng/authgo/internal/tools/utils"
 )
 
+type RoleListFilter struct {
+	Q         string   `query:"q,omitempty" required:"false"`
+	Ids       []string `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+	Names     []string `query:"names,omitempty" required:"false" minimum:"1" maximum:"100"`
+	UserId    string   `query:"user_id,omitempty" required:"false" format:"uuid"`
+	Reverse   string   `query:"reverse,omitempty" required:"false" doc:"When true, it will return the roles that do not match the filter criteria" enum:"user,product"`
+	ProductId string   `query:"product_id,omitempty" required:"false"`
+}
+type RolesListParams struct {
+	PaginatedInput
+	RoleListFilter
+	SortParams
+	Expand []string `query:"expand,omitempty" required:"false" minimum:"1" maximum:"100" enum:"users,permissions"`
+}
+
+func ToRoleListFilter(input *RolesListParams) (*stores.RoleListFilter, error) {
+	filter := &stores.RoleListFilter{}
+	filter.Page = input.PerPage
+	filter.PerPage = input.Page
+	filter.Q = input.Q
+	filter.Ids = utils.ParseValidUUIDs(input.Ids...)
+	filter.Names = input.Names
+	if input.UserId != "" {
+		id, err := uuid.Parse(input.UserId)
+		if err != nil {
+			return nil, err
+		}
+		filter.UserId = id
+	}
+	if input.ProductId != "" {
+		filter.ProductId = input.ProductId
+	}
+	filter.Reverse = input.Reverse
+	filter.SortBy = input.SortBy
+	filter.SortOrder = input.SortOrder
+	filter.Expand = input.Expand
+	return filter, nil
+}
+
 func (api *Api) AdminRolesList(ctx context.Context, input *struct {
-	shared.RolesListParams
-}) (*shared.PaginatedOutput[*shared.RoleWithPermissions], error) {
+	RolesListParams
+}) (*ApiPaginatedOutput[*shared.RoleWithPermissions], error) {
 	store := api.app.Adapter().Rbac()
-	roles, err := store.ListRoles(ctx, &input.RolesListParams)
+	filter, err := ToRoleListFilter(&input.RolesListParams)
+	if err != nil {
+		return nil, err
+	}
+	roles, err := store.ListRoles(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -34,19 +78,19 @@ func (api *Api) AdminRolesList(ctx context.Context, input *struct {
 		}
 
 	}
-	count, err := store.CountRoles(ctx, &input.RoleListFilter)
+	count, err := store.CountRoles(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
-	return &shared.PaginatedOutput[*shared.RoleWithPermissions]{
-		Body: shared.PaginatedResponse[*shared.RoleWithPermissions]{
+	return &ApiPaginatedOutput[*shared.RoleWithPermissions]{
+		Body: ApiPaginatedResponse[*shared.RoleWithPermissions]{
 			Data: mapper.Map(roles, func(r *models.Role) *shared.RoleWithPermissions {
 				return &shared.RoleWithPermissions{
 					Role:        shared.FromModelRole(r),
 					Permissions: mapper.Map(r.Permissions, shared.FromModelPermission),
 				}
 			}),
-			Meta: shared.GenerateMeta(&input.PaginatedInput, count),
+			Meta: ApiGenerateMeta(&input.PaginatedInput, count),
 		},
 	}, nil
 
@@ -233,7 +277,7 @@ type RoleIdsInput struct {
 // func (api *Api) AdminUserRolesUpdate(ctx context.Context, input *struct {
 // 	UserID string       `path:"user-id" format:"uuid" required:"true"`
 // 	Body   RoleIdsInput `json:"body" required:"true"`
-// }) (*shared.PaginatedOutput[*shared.Role], error) {
+// }) (*ApiPaginatedOutput[*shared.Role], error) {
 // 	db := api.app.Db()
 // 	id, err := uuid.Parse(input.UserID)
 // 	if err != nil {
@@ -278,8 +322,8 @@ type RoleIdsInput struct {
 // 	if err != nil {
 // 		return nil, err
 // 	}
-// 	output := shared.PaginatedOutput[*shared.Role]{
-// 		Body: shared.PaginatedResponse[*shared.Role]{
+// 	output := ApiPaginatedOutput[*shared.Role]{
+// 		Body: ApiPaginatedResponse[*shared.Role]{
 // 			Data: mapper.Map(roles, shared.FromCrudRole),
 // 		},
 // 	}

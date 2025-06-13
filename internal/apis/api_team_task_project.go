@@ -16,7 +16,7 @@ import (
 )
 
 type TaskProjectListResponse struct {
-	Body *shared.PaginatedResponse[*shared.TaskProject]
+	Body *ApiPaginatedResponse[*shared.TaskProject]
 }
 
 func (api *Api) TeamTaskProjectList(ctx context.Context, input *shared.TeamTaskProjectsListParams) (*TaskProjectListResponse, error) {
@@ -58,11 +58,11 @@ func (api *Api) TeamTaskProjectList(ctx context.Context, input *shared.TeamTaskP
 		}
 	}
 	return &TaskProjectListResponse{
-		Body: &shared.PaginatedResponse[*shared.TaskProject]{
+		Body: &ApiPaginatedResponse[*shared.TaskProject]{
 			Data: mapper.Map(taskProject, func(taskProject *models.TaskProject) *shared.TaskProject {
 				return shared.FromModelProject(taskProject)
 			}),
-			Meta: shared.GenerateMeta(&input.PaginatedInput, total),
+			Meta: GenerateMeta(&input.PaginatedInput, total),
 		},
 	}, nil
 }

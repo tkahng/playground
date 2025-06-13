@@ -14,7 +14,7 @@ import (
 )
 
 type TaskListResponse struct {
-	Body *shared.PaginatedResponse[*shared.Task]
+	Body *ApiPaginatedResponse[*shared.Task]
 }
 
 func (api *Api) TeamTaskList(ctx context.Context, input *shared.TeamTaskListParams) (*TaskListResponse, error) {
@@ -50,11 +50,11 @@ func (api *Api) TeamTaskList(ctx context.Context, input *shared.TeamTaskListPara
 		return nil, huma.Error500InternalServerError("error counting tasks", err)
 	}
 	return &TaskListResponse{
-		Body: &shared.PaginatedResponse[*shared.Task]{
+		Body: &ApiPaginatedResponse[*shared.Task]{
 			Data: mapper.Map(tasks, func(task *models.Task) *shared.Task {
 				return shared.FromModelTask(task)
 			}),
-			Meta: shared.GenerateMeta(&input.PaginatedInput, total),
+			Meta: GenerateMeta(&input.PaginatedInput, total),
 		},
 	}, nil
 }

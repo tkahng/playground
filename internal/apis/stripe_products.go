@@ -13,7 +13,7 @@ type StripeProductsWithPricesInput struct {
 	shared.SortParams
 }
 
-func (api *Api) StripeProductsWithPrices(ctx context.Context, input *StripeProductsWithPricesInput) (*shared.PaginatedOutput[*shared.StripeProduct], error) {
+func (api *Api) StripeProductsWithPrices(ctx context.Context, input *StripeProductsWithPricesInput) (*ApiPaginatedOutput[*shared.StripeProduct], error) {
 
 	filter := &stores.StripeProductFilter{}
 	filter.Page = input.Page
@@ -47,8 +47,8 @@ func (api *Api) StripeProductsWithPrices(ctx context.Context, input *StripeProdu
 		return nil, err
 	}
 
-	return &shared.PaginatedOutput[*shared.StripeProduct]{Body: shared.PaginatedResponse[*shared.StripeProduct]{
+	return &ApiPaginatedOutput[*shared.StripeProduct]{Body: ApiPaginatedResponse[*shared.StripeProduct]{
 		Data: mapper.Map(products, shared.FromModelProduct),
-		Meta: shared.GenerateMeta(&input.PaginatedInput, count),
+		Meta: GenerateMeta(&input.PaginatedInput, count),
 	}}, nil
 }

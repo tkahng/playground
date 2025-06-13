@@ -353,6 +353,7 @@ type StripeSubscriptionListFilter struct {
 	UserIDs []uuid.UUID                       `query:"user_id,omitempty" required:"false" format:"uuid"`
 	TeamIDs []uuid.UUID                       `query:"team_id,omitempty" required:"false" format:"uuid"`
 	Status  []models.StripeSubscriptionStatus `query:"status,omitempty" required:"false" minimum:"1" maximum:"100" enum:"trialing,active,canceled,incomplete,incomplete_expired,past_due,unpaid,paused"`
+	Expand  []string                          `query:"expand,omitempty" required:"false" minimum:"1" maximum:"100" enum:"user,price,product"`
 }
 
 func (s *DbSubscriptionStore) filter(filter *StripeSubscriptionListFilter) *map[string]any {

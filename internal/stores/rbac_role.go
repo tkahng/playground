@@ -15,6 +15,18 @@ import (
 	"github.com/tkahng/authgo/internal/shared"
 )
 
+type RoleListFilter struct {
+	PaginatedInput
+	SortParams
+	Q         string      `query:"q,omitempty" required:"false"`
+	Ids       []uuid.UUID `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+	Names     []string    `query:"names,omitempty" required:"false" minimum:"1" maximum:"100"`
+	UserId    uuid.UUID   `query:"user_id,omitempty" required:"false" format:"uuid"`
+	Reverse   string      `query:"reverse,omitempty" required:"false" doc:"When true, it will return the roles that do not match the filter criteria" enum:"user,product"`
+	ProductId string      `query:"product_id,omitempty" required:"false"`
+	Expand    []string    `query:"expand,omitempty" required:"false" minimum:"1" maximum:"100" enum:"users,permissions"`
+}
+
 type DbRbacStore struct {
 	db database.Dbx
 }
@@ -174,10 +186,10 @@ func (p *DbRbacStore) EnsureRoleAndPermissions(ctx context.Context, roleName str
 	return nil
 }
 
-func (p *DbRbacStore) CountRoles(ctx context.Context, filter *shared.RoleListFilter) (int64, error) {
+func (p *DbRbacStore) CountRoles(ctx context.Context, filter *RoleListFilter) (int64, error) {
 	q := squirrel.Select("COUNT(roles.*)").From("roles")
 
-	q = ListRolesFilterFuncQuery(q, filter)
+	q = p.filter(q, filter)
 
 	data, err := database.QueryWithBuilder[database.CountOutput](ctx, p.db, q.PlaceholderFormat(squirrel.Dollar))
 	if err != nil {
@@ -189,14 +201,11 @@ func (p *DbRbacStore) CountRoles(ctx context.Context, filter *shared.RoleListFil
 
 	return data[0].Count, nil
 }
-func (p *DbRbacStore) ListRoles(ctx context.Context, input *shared.RolesListParams) ([]*models.Role, error) {
+func (p *DbRbacStore) ListRoles(ctx context.Context, input *RoleListFilter) ([]*models.Role, error) {
 	q := squirrel.Select("roles.*").From("roles")
-	filter := input.RoleListFilter
-	pageInput := &input.PaginatedInput
 
-	// q = ViewApplyPagination(q, pageInput)
-	q = ListRolesFilterFuncQuery(q, &filter)
-	q = database.Paginate(q, pageInput)
+	q = p.filter(q, input)
+	q = queryPagination(q, input)
 	if input.SortBy != "" && input.SortOrder != "" {
 		q = q.OrderBy(input.SortBy + " " + strings.ToUpper(input.SortOrder))
 	}
@@ -207,8 +216,8 @@ func (p *DbRbacStore) ListRoles(ctx context.Context, input *shared.RolesListPara
 	return data, nil
 }
 
-func ListRolesFilterFuncQuery(sq squirrel.SelectBuilder, filter *shared.RoleListFilter) squirrel.SelectBuilder {
-	// where := make(map[string]any)
+func (p *DbRbacStore) filter(q squirrel.SelectBuilder, filter *RoleListFilter) squirrel.SelectBuilder {
+	var sq squirrel.SelectBuilder = q
 	if filter == nil {
 		return sq
 	}
@@ -217,30 +226,28 @@ func ListRolesFilterFuncQuery(sq squirrel.SelectBuilder, filter *shared.RoleList
 			squirrel.Or{
 				squirrel.ILike{"name": "%" + filter.Q + "%"},
 				squirrel.ILike{"description": "%" + filter.Q + "%"},
-			},
-		)
-
+			})
 	}
 	if len(filter.Names) > 0 {
-		sq = sq.Where(squirrel.Eq{"name": filter.Names})
+		sq = sq.Where(
+			squirrel.Eq{
+				"name": filter.Names,
+			},
+		)
 	}
 	if len(filter.Ids) > 0 {
-		sq = sq.Where(squirrel.Eq{"id": filter.Ids})
+		sq = sq.Where(
+			squirrel.Eq{
+				"id": filter.Ids,
+			},
+		)
 	}
-
-	if filter.UserId != "" {
-
+	if filter.UserId != uuid.Nil {
 		if filter.Reverse == "user" {
-			sq = sq.LeftJoin(
-				"user_roles"+" on "+"roles.id"+" = "+"user_roles"+"."+"role_id"+" and "+"user_roles"+"."+"user_id"+" = ?",
-				filter.UserId,
-			)
+			sq = sq.LeftJoin("user_roles"+" on "+"roles.id"+" = "+"user_roles"+"."+"role_id"+" and "+"user_roles"+"."+"user_id"+" = ?", filter.UserId)
 			sq = sq.Where("user_roles.role_id is null")
-
 		} else {
-			sq = sq.Join("user_roles on roles.id = user_roles.role_id").
-				Where(squirrel.Eq{"user_roles.user_id": filter.UserId})
-
+			sq = sq.Join("user_roles on roles.id = user_roles.role_id").Where(squirrel.Eq{"user_roles.user_id": filter.UserId})
 		}
 	}
 	return sq
@@ -250,7 +257,7 @@ type DbRbacStoreInterface interface { // size=16 (0x10)
 	AssignUserRoles(ctx context.Context, userId uuid.UUID, roleNames ...string) error
 	CountNotUserPermissionSource(ctx context.Context, userId uuid.UUID) (int64, error)
 	CountPermissions(ctx context.Context, filter *PermissionFilter) (int64, error)
-	CountRoles(ctx context.Context, filter *shared.RoleListFilter) (int64, error)
+	CountRoles(ctx context.Context, filter *RoleListFilter) (int64, error)
 	CountUserPermissionSource(ctx context.Context, userId uuid.UUID) (int64, error)
 	CreatePermission(ctx context.Context, name string, description *string) (*models.Permission, error)
 	CreateProductPermissions(ctx context.Context, productId string, permissionIds ...uuid.UUID) error
@@ -277,7 +284,7 @@ type DbRbacStoreInterface interface { // size=16 (0x10)
 	FindRolesByIds(ctx context.Context, params []uuid.UUID) ([]*models.Role, error)
 	GetUserRoles(ctx context.Context, userIds ...uuid.UUID) ([][]*models.Role, error)
 	ListPermissions(ctx context.Context, input *PermissionFilter) ([]*models.Permission, error)
-	ListRoles(ctx context.Context, input *shared.RolesListParams) ([]*models.Role, error)
+	ListRoles(ctx context.Context, input *RoleListFilter) ([]*models.Role, error)
 	ListUserNotPermissionsSource(ctx context.Context, userId uuid.UUID, limit int64, offset int64) ([]shared.PermissionSource, error)
 	ListUserPermissionsSource(ctx context.Context, userId uuid.UUID, limit int64, offset int64) ([]shared.PermissionSource, error)
 	LoadProductPermissions(ctx context.Context, productIds ...string) ([][]*models.Permission, error)

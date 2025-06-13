@@ -80,9 +80,19 @@ func (api *Api) AdminUserPermissionsCreate(ctx context.Context, input *struct {
 	return nil, nil
 }
 
+type UserPermissionsListFilter struct {
+	UserId  string `path:"user-id" format:"uuid"`
+	Reverse bool   `query:"reverse,omitempty"`
+}
+type UserPermissionsListParams struct {
+	PaginatedInput
+	UserPermissionsListFilter
+	SortParams
+}
+
 func (api *Api) AdminUserPermissionSourceList(ctx context.Context, input *struct {
-	shared.UserPermissionsListParams
-}) (*shared.PaginatedOutput[shared.PermissionSource], error) {
+	UserPermissionsListParams
+}) (*ApiPaginatedOutput[shared.PermissionSource], error) {
 	id, err := uuid.Parse(input.UserId)
 	if err != nil {
 		return nil, err
@@ -110,18 +120,31 @@ func (api *Api) AdminUserPermissionSourceList(ctx context.Context, input *struct
 			return nil, err
 		}
 	}
-	return &shared.PaginatedOutput[shared.PermissionSource]{
-		Body: shared.PaginatedResponse[shared.PermissionSource]{
+	return &ApiPaginatedOutput[shared.PermissionSource]{
+		Body: ApiPaginatedResponse[shared.PermissionSource]{
 
 			Data: userPermissionSources,
-			Meta: shared.GenerateMeta(&input.PaginatedInput, count),
+			Meta: ApiGenerateMeta(&input.PaginatedInput, count),
 		},
 	}, nil
 }
 
+type PermissionsListFilter struct {
+	Q           string   `query:"q,omitempty" required:"false"`
+	Ids         []string `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+	Names       []string `query:"names,omitempty" required:"false" minimum:"1" maximum:"100"`
+	RoleId      string   `query:"role_id,omitempty" required:"false" format:"uuid"`
+	RoleReverse bool     `query:"role_reverse,omitempty" required:"false" doc:"When role_id is provided, if this is true, it will return the permissions that the role does not have"`
+}
+type PermissionsListParams struct {
+	PaginatedInput
+	PermissionsListFilter
+	SortParams
+}
+
 func (api *Api) AdminPermissionsList(ctx context.Context, input *struct {
-	shared.PermissionsListParams
-}) (*shared.PaginatedOutput[*shared.Permission], error) {
+	PermissionsListParams
+}) (*ApiPaginatedOutput[*shared.Permission], error) {
 	store := api.app.Adapter().Rbac()
 	fmt.Println(input)
 	filter := new(stores.PermissionFilter)
@@ -150,11 +173,11 @@ func (api *Api) AdminPermissionsList(ctx context.Context, input *struct {
 		return nil, err
 	}
 
-	return &shared.PaginatedOutput[*shared.Permission]{
-		Body: shared.PaginatedResponse[*shared.Permission]{
+	return &ApiPaginatedOutput[*shared.Permission]{
+		Body: ApiPaginatedResponse[*shared.Permission]{
 
 			Data: mapper.Map(permissions, shared.FromModelPermission),
-			Meta: shared.GenerateMeta(&input.PaginatedInput, count),
+			Meta: ApiGenerateMeta(&input.PaginatedInput, count),
 		},
 	}, nil
 

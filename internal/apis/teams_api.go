@@ -90,7 +90,7 @@ func (api *Api) GetUserTeamMembers(
 	ctx context.Context,
 	input *shared.TeamMemberListInput,
 ) (
-	*shared.PaginatedOutput[*shared.TeamMember],
+	*ApiPaginatedOutput[*shared.TeamMember],
 	error,
 ) {
 	info := contextstore.GetContextUserInfo(ctx)
@@ -110,10 +110,10 @@ func (api *Api) GetUserTeamMembers(
 	if err != nil {
 		return nil, err
 	}
-	return &shared.PaginatedOutput[*shared.TeamMember]{
-		Body: shared.PaginatedResponse[*shared.TeamMember]{
+	return &ApiPaginatedOutput[*shared.TeamMember]{
+		Body: ApiPaginatedResponse[*shared.TeamMember]{
 			Data: mapper.Map(teams, shared.FromTeamMemberModel),
-			Meta: shared.GenerateMeta(&input.PaginatedInput, count),
+			Meta: GenerateMeta(&input.PaginatedInput, count),
 		},
 	}, nil
 }
@@ -122,7 +122,7 @@ func (api *Api) GetUserTeams(
 	ctx context.Context,
 	input *shared.UserListTeamsParams,
 ) (
-	*shared.PaginatedOutput[*shared.Team],
+	*ApiPaginatedOutput[*shared.Team],
 	error,
 ) {
 	info := contextstore.GetContextUserInfo(ctx)
@@ -163,10 +163,10 @@ func (api *Api) GetUserTeams(
 	if err != nil {
 		return nil, err
 	}
-	return &shared.PaginatedOutput[*shared.Team]{
-		Body: shared.PaginatedResponse[*shared.Team]{
+	return &ApiPaginatedOutput[*shared.Team]{
+		Body: ApiPaginatedResponse[*shared.Team]{
 			Data: mapper.Map(teams, shared.FromTeamModel),
-			Meta: shared.GenerateMeta(&input.PaginatedInput, count),
+			Meta: GenerateMeta(&input.PaginatedInput, count),
 		},
 	}, nil
 }

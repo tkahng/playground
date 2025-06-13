@@ -7,22 +7,14 @@ import (
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
-	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 )
 
-type UserDetail struct {
-	*shared.User
-	Roles       []*shared.RoleWithPermissions `json:"roles,omitempty" required:"false"`
-	Accounts    []*shared.UserAccountOutput   `json:"accounts,omitempty" required:"false"`
-	Permissions []*shared.Permission          `json:"permissions,omitempty" required:"false"`
-}
-
 func (api *Api) AdminUsers(ctx context.Context, input *struct {
 	shared.UserListParams
-}) (*shared.PaginatedOutput[*UserDetail], error) {
+}) (*ApiPaginatedOutput[*shared.User], error) {
 	db := api.app.Db()
 	fmt.Printf("AdminUsers: %v", input.UserListParams)
 	users, err := queries.ListUsers(ctx, db, &input.UserListParams)
@@ -49,16 +41,6 @@ func (api *Api) AdminUsers(ctx context.Context, input *struct {
 		}
 	}
 
-	// if slices.Contains(input.Expand, "permissions") {
-	// 	perms, err := queries.GetUserPermissions(ctx, db, userIds...)
-	// 	if err != nil {
-	// 		return nil, err
-	// 	}
-	// 	for idx, user := range users {
-	// 		user.Permissions = perms[idx]
-	// 	}
-	// }
-
 	if slices.Contains(input.Expand, "accounts") {
 		accounts, err := queries.GetUserAccounts(ctx, db, userIds...)
 		if err != nil {
@@ -69,17 +51,10 @@ func (api *Api) AdminUsers(ctx context.Context, input *struct {
 		}
 	}
 
-	return &shared.PaginatedOutput[*UserDetail]{
-		Body: shared.PaginatedResponse[*UserDetail]{
-			Data: mapper.Map(users, func(user *models.User) *UserDetail {
-				return &UserDetail{
-					User:        shared.FromUserModel(user),
-					Roles:       mapper.Map(user.Roles, shared.FromModelRoleWithPermissions),
-					Accounts:    mapper.Map(user.Accounts, shared.FromModelUserAccountOutput),
-					Permissions: mapper.Map(user.Permissions, shared.FromModelPermission),
-				}
-			}),
-			Meta: shared.GenerateMeta(&input.PaginatedInput, count),
+	return &ApiPaginatedOutput[*shared.User]{
+		Body: ApiPaginatedResponse[*shared.User]{
+			Data: mapper.Map(users, shared.FromUserModel),
+			Meta: GenerateMeta(&input.PaginatedInput, count),
 		},
 	}, nil
 }

@@ -13,7 +13,7 @@ type RbacStoreDecorator struct {
 	AssignRoleFunc                   func(ctx context.Context, userId uuid.UUID, roleNames ...string) error
 	CountNotUserPermissionSourceFunc func(ctx context.Context, userId uuid.UUID) (int64, error)
 	CountPermissionsFunc             func(ctx context.Context, filter *PermissionFilter) (int64, error)
-	CountRolesFunc                   func(ctx context.Context, filter *shared.RoleListFilter) (int64, error)
+	CountRolesFunc                   func(ctx context.Context, filter *RoleListFilter) (int64, error)
 	CountUserPermissionSourceFunc    func(ctx context.Context, userId uuid.UUID) (int64, error)
 	CreatePermissionFunc             func(ctx context.Context, name string, description *string) (*models.Permission, error)
 	CreateProductPermissionsFunc     func(ctx context.Context, productId string, permissionIds ...uuid.UUID) error
@@ -42,7 +42,7 @@ type RbacStoreDecorator struct {
 	GetUserRolesFunc             func(ctx context.Context, userIds ...uuid.UUID) ([][]*models.Role, error)
 
 	ListPermissionsFunc              func(ctx context.Context, input *PermissionFilter) ([]*models.Permission, error)
-	ListRolesFunc                    func(ctx context.Context, input *shared.RolesListParams) ([]*models.Role, error)
+	ListRolesFunc                    func(ctx context.Context, input *RoleListFilter) ([]*models.Role, error)
 	ListUserNotPermissionsSourceFunc func(ctx context.Context, userId uuid.UUID, limit int64, offset int64) ([]shared.PermissionSource, error)
 	ListUserPermissionsSourceFunc    func(ctx context.Context, userId uuid.UUID, limit int64, offset int64) ([]shared.PermissionSource, error)
 	LoadProductPermissionsFunc       func(ctx context.Context, productIds ...string) ([][]*models.Permission, error)
@@ -125,7 +125,7 @@ func (r *RbacStoreDecorator) CountPermissions(ctx context.Context, filter *Permi
 }
 
 // CountRoles implements DbRbacStoreInterface.
-func (r *RbacStoreDecorator) CountRoles(ctx context.Context, filter *shared.RoleListFilter) (int64, error) {
+func (r *RbacStoreDecorator) CountRoles(ctx context.Context, filter *RoleListFilter) (int64, error) {
 	if r.CountRolesFunc != nil {
 		return r.CountRolesFunc(ctx, filter)
 	}
@@ -421,7 +421,7 @@ func (r *RbacStoreDecorator) ListPermissions(ctx context.Context, input *Permiss
 }
 
 // ListRoles implements DbRbacStoreInterface.
-func (r *RbacStoreDecorator) ListRoles(ctx context.Context, input *shared.RolesListParams) ([]*models.Role, error) {
+func (r *RbacStoreDecorator) ListRoles(ctx context.Context, input *RoleListFilter) ([]*models.Role, error) {
 	if r.ListRolesFunc != nil {
 		return r.ListRolesFunc(ctx, input)
 	}

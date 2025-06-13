@@ -35,7 +35,7 @@ func TestListRoles(t *testing.T) {
 		type args struct {
 			ctx   context.Context
 			db    database.Dbx
-			input *shared.RolesListParams
+			input *stores.RoleListFilter
 		}
 		tests := []struct {
 			name      string
@@ -48,13 +48,11 @@ func TestListRoles(t *testing.T) {
 				args: args{
 					ctx: ctx,
 					db:  tx,
-					input: &shared.RolesListParams{
-						RoleListFilter: shared.RoleListFilter{
-							Names: []string{
-								shared.PermissionNameAdmin,
-							},
+					input: &stores.RoleListFilter{
+						Names: []string{
+							shared.PermissionNameAdmin,
 						},
-						PaginatedInput: shared.PaginatedInput{
+						PaginatedInput: stores.PaginatedInput{
 							Page:    0,
 							PerPage: 20,
 						},
@@ -106,13 +104,13 @@ func TestCountRoles(t *testing.T) {
 		}
 		tests := []struct {
 			name    string
-			filter  *shared.RoleListFilter
+			filter  *stores.RoleListFilter
 			want    int64
 			wantErr bool
 		}{
 			{
 				name: "Count all roles",
-				filter: &shared.RoleListFilter{
+				filter: &stores.RoleListFilter{
 					Names: []string{
 						shared.PermissionNameAdmin,
 						shared.PermissionNameBasic,
@@ -123,7 +121,7 @@ func TestCountRoles(t *testing.T) {
 			},
 			{
 				name: "Count filtered roles",
-				filter: &shared.RoleListFilter{
+				filter: &stores.RoleListFilter{
 					Names: []string{
 						shared.PermissionNameAdmin,
 					},

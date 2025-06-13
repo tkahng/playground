@@ -105,7 +105,7 @@ func (api *Api) GetMedia(ctx context.Context, input *struct {
 	}, nil
 }
 
-func (api *Api) MediaList(ctx context.Context, input *shared.MediaListParams) (*shared.PaginatedOutput[*shared.Media], error) {
+func (api *Api) MediaList(ctx context.Context, input *shared.MediaListParams) (*ApiPaginatedOutput[*shared.Media], error) {
 	db := api.app.Db()
 	medias, err := queries.ListMedia(ctx, db, input)
 	if err != nil {
@@ -130,10 +130,10 @@ func (api *Api) MediaList(ctx context.Context, input *shared.MediaListParams) (*
 		return nil, err
 	}
 
-	return &shared.PaginatedOutput[*shared.Media]{
-		Body: shared.PaginatedResponse[*shared.Media]{
+	return &ApiPaginatedOutput[*shared.Media]{
+		Body: ApiPaginatedResponse[*shared.Media]{
 			Data: data,
-			Meta: shared.GenerateMeta(&input.PaginatedInput, count),
+			Meta: GenerateMeta(&input.PaginatedInput, count),
 		},
 	}, nil
 }

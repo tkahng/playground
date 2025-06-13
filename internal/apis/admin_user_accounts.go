@@ -45,7 +45,7 @@ type UserAccountFilter struct {
 	UserIds       []string           `query:"user_ids,omitempty" minimum:"1" maximum:"100" required:"false" format:"uuid"`
 }
 
-func GenerateMeta(input *PaginatedInput, total int64) Meta {
+func GenerateMeta(input *shared.PaginatedInput, total int64) Meta {
 	var meta Meta = Meta{
 		Page:    input.Page,
 		PerPage: input.PerPage,

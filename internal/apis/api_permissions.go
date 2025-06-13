@@ -13,7 +13,7 @@ import (
 
 func (api *Api) PermissionsList(ctx context.Context, input *struct {
 	shared.PermissionsListParams
-}) (*shared.PaginatedOutput[*shared.Permission], error) {
+}) (*ApiPaginatedOutput[*shared.Permission], error) {
 	filter := new(stores.PermissionFilter)
 	filter.Page = input.PerPage
 	filter.PerPage = input.Page
@@ -41,11 +41,11 @@ func (api *Api) PermissionsList(ctx context.Context, input *struct {
 		return nil, err
 	}
 
-	return &shared.PaginatedOutput[*shared.Permission]{
-		Body: shared.PaginatedResponse[*shared.Permission]{
+	return &ApiPaginatedOutput[*shared.Permission]{
+		Body: ApiPaginatedResponse[*shared.Permission]{
 
 			Data: mapper.Map(permissions, shared.FromModelPermission),
-			Meta: shared.GenerateMeta(&input.PaginatedInput, count),
+			Meta: GenerateMeta(&input.PaginatedInput, count),
 		},
 	}, nil
 
