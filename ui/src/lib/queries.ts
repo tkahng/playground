@@ -1308,36 +1308,6 @@ export const permissionsList = async () => {
   return data;
 };
 
-export const getUserTeamMembers = async (token: string) => {
-  const { data, error } = await client.GET("/api/team-members", {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-    params: {
-      query: {
-        sort_by: "team.name",
-        sort_order: "asc",
-      },
-    },
-  });
-  if (error) {
-    throw error;
-  }
-  return data;
-};
-
-export const getActiveTeamMember = async (token: string) => {
-  const { data, error } = await client.GET("/api/team-members/active", {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-  if (error) {
-    throw error;
-  }
-  return data;
-};
-
 export const getUserTeams = async (token: string) => {
   const { data, error } = await client.GET("/api/teams", {
     headers: {
@@ -1365,6 +1335,32 @@ export const getTeamBySlug = async (token: string, slug: string) => {
     },
     params: {
       path: { "team-slug": slug },
+    },
+  });
+  if (error) {
+    throw error;
+  }
+  return data;
+};
+
+export const getTeamTeamMembers = async (
+  token: string,
+  teamId: string,
+  page: number,
+  perPage: number
+) => {
+  const { data, error } = await client.GET("/api/teams/{team-id}/members", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    params: {
+      path: {
+        "team-id": teamId,
+      },
+      query: {
+        page,
+        per_page: perPage,
+      },
     },
   });
   if (error) {
