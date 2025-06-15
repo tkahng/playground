@@ -4,7 +4,7 @@ import { useAuthProvider } from "./use-auth-provider";
 
 export const useUserTeams = () => {
   const { user } = useAuthProvider();
-  return useQuery({
+  const { data, isLoading, error, isError } = useQuery({
     queryKey: ["user-teams-list"],
     queryFn: async () => {
       if (!user?.tokens.access_token) {
@@ -16,5 +16,20 @@ export const useUserTeams = () => {
       }
       return { data, meta };
     },
+    enabled: !!user?.tokens.access_token,
   });
+  if (!user?.tokens.access_token) {
+    return {
+      data: null,
+      isError: true,
+      isLoading: false,
+      error: new Error("User is not authenticated"),
+    };
+  }
+  return {
+    data: data,
+    isError,
+    isLoading,
+    error,
+  };
 };
