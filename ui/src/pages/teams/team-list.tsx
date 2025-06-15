@@ -4,17 +4,15 @@
 // import { useToast } from "@/components/ui/use-toast";
 import { DataTable } from "@/components/data-table";
 import { RouteMap } from "@/components/route-map";
-import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { getUserTeams } from "@/lib/queries";
+import { useUserTeams } from "@/hooks/use-user-teams";
 import { Team } from "@/schema.types";
-import { useQuery } from "@tanstack/react-query";
 import { PaginationState, Updater } from "@tanstack/react-table";
 import { NavLink, useSearchParams } from "react-router";
 import { toast } from "sonner";
 import { CreateTeamDialog } from "./create-team-dialog";
 
 export default function TeamListPage() {
-  const { user } = useAuthProvider();
+  // const { user } = useAuthProvider();
   const [searchParams, setSearchParams] = useSearchParams();
   const pageIndex = parseInt(searchParams.get("page") || "0", 10);
   const pageSize = parseInt(searchParams.get("per_page") || "10", 10);
@@ -29,19 +27,7 @@ export default function TeamListPage() {
       per_page: String(newState.pageSize),
     });
   };
-  const { data, isLoading, isError, error } = useQuery({
-    queryKey: ["user-teams-list"],
-    queryFn: async () => {
-      if (!user?.tokens.access_token) {
-        throw new Error("Missing access token");
-      }
-      const { data, meta } = await getUserTeams(user.tokens.access_token);
-      if (!data) {
-        throw new Error("No teams found");
-      }
-      return { data, meta };
-    },
-  });
+  const { data, isLoading, isError, error } = useUserTeams();
 
   if (isLoading) {
     return <div>Loading...</div>;

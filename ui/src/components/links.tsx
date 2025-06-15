@@ -120,3 +120,39 @@ export const userDashboardLinks: LinkDto[] = [
   RouteLinks.TEAM_LIST,
   RouteLinks.SETTINGS,
 ];
+
+export const teamDashboardLinks: LinkDto[] = [
+  RouteLinks.DASHBOARD_OVERVIEW,
+  RouteLinks.TASK_PROJECTS,
+  RouteLinks.SETTINGS,
+  RouteLinks.ADMIN,
+  RouteLinks.ADMIN_DASHBOARD_USERS,
+  RouteLinks.ADMIN_DASHBOARD_ROLES,
+  RouteLinks.ADMIN_DASHBOARD_PERMISSIONS,
+];
+
+export const createTeamDashboardLink = (slug: string) => {
+  const path = `/teams/${slug}/dashboard`;
+  return {
+    to: path,
+    title: "Team Dashboard",
+    current: (pathname: string) => pathname.startsWith(path),
+  };
+};
+export const createTeamProjectsLink = (slug: string) => {
+  const path = `/teams/${slug}/projects`;
+  return {
+    to: path,
+    title: "Team Projects",
+    current: (pathname: string) => pathname.startsWith(path),
+  };
+};
+
+export const createTeamSettingsLink = (slug: string) => {
+  const path = `/teams/${slug}/settings`;
+  return {
+    to: path,
+    title: "Team Settings",
+    current: (pathname: string) => pathname.startsWith(path),
+  };
+};

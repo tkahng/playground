@@ -3,6 +3,7 @@ import { LinkDto } from "@/components/links";
 import NexusAILogo from "@/components/nexus-logo";
 import { cn } from "@/lib/utils";
 import { Link, useLocation } from "react-router";
+import TeamSwitcher from "./team-switcher-2";
 
 export function NexusAILandingHeader({
   leftLinks,
@@ -17,6 +18,7 @@ export function NexusAILandingHeader({
       <nav className={cn("flex h-14 items-center box-border")}>
         <div className="flex flex-grow items-center space-x-4">
           <NexusAILogo />
+          <TeamSwitcher />
           {leftLinks?.length
             ? leftLinks.map(({ to, title, current }) => (
                 <Link

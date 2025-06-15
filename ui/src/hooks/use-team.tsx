@@ -46,7 +46,23 @@ export function useTeam(): {
       }
       return response;
     },
+    enabled: !!teamSlug,
   });
+  if (!teamSlug) {
+    if (team) {
+      return {
+        team,
+        isLoading: false,
+        error: null,
+      };
+    } else {
+      return {
+        team: null,
+        isLoading: false,
+        error: new Error("Team slug is required"),
+      };
+    }
+  }
   return {
     team: data?.team || team,
     isLoading,

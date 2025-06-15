@@ -1101,7 +1101,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/team/slug/{slug}/member": {
+    "/api/team/slug/{team-slug}/member": {
         parameters: {
             query?: never;
             header?: never;
@@ -1165,7 +1165,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/teams/slug/{slug}": {
+    "/api/teams/slug/{team-slug}": {
         parameters: {
             query?: never;
             header?: never;
