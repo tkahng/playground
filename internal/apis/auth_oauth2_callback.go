@@ -66,21 +66,6 @@ func (api *Api) OAuth2CallbackGet(ctx context.Context, input *OAuth2CallbackInpu
 
 }
 
-func FromUserModel(user *models.User) *ApiUser {
-	if user == nil {
-		return nil
-	}
-	return &ApiUser{
-		ID:              user.ID,
-		Email:           user.Email,
-		EmailVerifiedAt: user.EmailVerifiedAt,
-		Name:            user.Name,
-		Image:           user.Image,
-		CreatedAt:       user.CreatedAt,
-		UpdatedAt:       user.UpdatedAt,
-	}
-}
-
 func ToApiUserInfoTokens(userInfo *models.UserInfoTokens) *ApiUserInfoTokens {
 	if userInfo == nil {
 		return nil

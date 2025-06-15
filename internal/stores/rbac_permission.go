@@ -18,11 +18,13 @@ import (
 type PermissionFilter struct {
 	PaginatedInput
 	SortParams
-	Q           string      `query:"q,omitempty" required:"false"`
-	Ids         []uuid.UUID `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
-	Names       []string    `query:"names,omitempty" required:"false" minimum:"1" maximum:"100"`
-	RoleId      uuid.UUID   `query:"role_id,omitempty" required:"false" format:"uuid"`
-	RoleReverse bool        `query:"role_reverse,omitempty" required:"false" doc:"When role_id is provided, if this is true, it will return the permissions that the role does not have"`
+	Q              string      `query:"q,omitempty" required:"false"`
+	Ids            []uuid.UUID `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+	Names          []string    `query:"names,omitempty" required:"false" minimum:"1" maximum:"100"`
+	RoleId         uuid.UUID   `query:"role_id,omitempty" required:"false" format:"uuid"`
+	RoleReverse    bool        `query:"role_reverse,omitempty" required:"false" doc:"When role_id is provided, if this is true, it will return the permissions that the role does not have"`
+	ProductID      string      `query:"product_id,omitempty" required:"false"`
+	ProductReverse bool        `query:"product_reverse,omitempty" required:"false" doc:"When product_id is provided, if this is true, it will return the permissions that the product does not have"`
 }
 
 func (p *DbRbacStore) ListPermissions(ctx context.Context, input *PermissionFilter) ([]*models.Permission, error) {
@@ -90,6 +92,20 @@ func ListPermissionsFilterFunc(sq squirrel.SelectBuilder, filter *PermissionFilt
 		} else {
 			sq = sq.Join("role_permissions on permissions.id = role_permissions.permission_id and role_permissions.role_id = ?", filter.RoleId).
 				Where(squirrel.Eq{"role_permissions.role_id": filter.RoleId})
+
+		}
+	}
+	if filter.ProductID != "" {
+		if filter.ProductReverse {
+			sq = sq.LeftJoin(
+				"product_permissions"+" on "+"permissions.id"+" = "+"product_permissions"+"."+"permission_id"+" and "+"product_permissions"+"."+"product_id"+" = ?",
+				filter.ProductID,
+			)
+			sq = sq.Where("product_permissions.permission_id is null")
+
+		} else {
+			sq = sq.Join("product_permissions on permissions.id = product_permissions.permission_id and product_permissions.product_id = ?", filter.ProductID).
+				Where(squirrel.Eq{"product_permissions.product_id": filter.ProductID})
 
 		}
 	}
