@@ -11,10 +11,3 @@ var StripeProductPermissionMap = map[string]string{
 	StripeProductProID:      PermissionNamePro,
 	StripeProductAdvancedID: PermissionNameAdvanced,
 }
-
-type ActiveStatus string
-
-const (
-	Active   ActiveStatus = "active"
-	Inactive ActiveStatus = "inactive"
-)
