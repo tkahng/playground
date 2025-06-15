@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/contextstore"
 	"github.com/tkahng/authgo/internal/models"
+	"github.com/tkahng/authgo/internal/services"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/stores"
 	"github.com/tkahng/authgo/internal/tools/ai/googleai"
@@ -255,7 +256,7 @@ type CreateTaskProjectTaskDTO struct {
 
 type ApiCreateTaskWithProjectIdInput struct {
 	TaskProjectID string `path:"task-project-id" json:"task_project_id" required:"true" format:"uuid"`
-	Body          CreateTaskProjectTaskDTO
+	Body          services.TaskFields
 }
 
 func (api *Api) TeamTaskProjectTasksCreate(ctx context.Context, input *ApiCreateTaskWithProjectIdInput) (*TaskResponse, error) {
@@ -272,20 +273,9 @@ func (api *Api) TeamTaskProjectTasksCreate(ctx context.Context, input *ApiCreate
 	if err != nil {
 		return nil, huma.Error400BadRequest("Invalid task project id")
 	}
-	payload := input.Body
-	order, err := api.app.Adapter().Task().FindLastTaskRank(ctx, parsedProjectID)
-	if err != nil {
-		return nil, err
-	}
-	payload.Rank = order
-	modelInput := &models.Task{}
-	modelInput.Name = payload.Name
-	modelInput.Description = payload.Description
-	modelInput.Status = models.TaskStatus(payload.Status)
-	modelInput.Rank = payload.Rank
-	modelInput.ProjectID = parsedProjectID
+
 	// modelInput.CreatedByMemberID = payload
-	task, err := api.app.Adapter().Task().CreateTask(ctx, &models.Task{})
+	task, err := api.app.Task().CreateTask(ctx, teamInfo.Team.ID, parsedProjectID, teamInfo.Member.ID, &input.Body)
 	if err != nil {
 		return nil, err
 	}

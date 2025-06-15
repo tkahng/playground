@@ -342,12 +342,12 @@ func TestDbTeamMemberStore_LoadTeamMembersByUserAndTeamIds(t *testing.T) {
 		if err != nil {
 			t.Fatalf("CreateUser() error = %v", err)
 		}
-		var teamInfo [][]string = [][]string{
+		var teamInfo = [][]string{
 			{"Team1", "team1-slug"},
 			{"Team2", "team2-slug"},
 			{"Team3", "team3-slug"},
 		}
-		var teamsMap map[uuid.UUID]*models.Team = make(map[uuid.UUID]*models.Team)
+		var teamsMap = make(map[uuid.UUID]*models.Team)
 		var teamsSlice []*models.Team
 		var teamIds []uuid.UUID
 		for _, info := range teamInfo {

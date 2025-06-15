@@ -217,7 +217,7 @@ func (p *DbRbacStore) ListRoles(ctx context.Context, input *RoleListFilter) ([]*
 }
 
 func (p *DbRbacStore) filter(q squirrel.SelectBuilder, filter *RoleListFilter) squirrel.SelectBuilder {
-	var sq squirrel.SelectBuilder = q
+	var sq = q
 	if filter == nil {
 		return sq
 	}

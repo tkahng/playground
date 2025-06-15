@@ -37,7 +37,7 @@ func TestInvitationService_CreateInvitation(t *testing.T) {
 	inviteeEmail := "invitee@example.com"
 	invitingUser := &models.User{ID: uuid.New(), Email: "inviting@example.com"}
 	team := &models.Team{ID: uuid.New(), Name: "Test Team"}
-	store.TeamMemberFunc.FindTeamMemberByTeamAndUserIdFunc = func(ctx context.Context, teamId, userId uuid.UUID) (*models.TeamMember, error) {
+	store.TeamMemberFunc.FindTeamMemberFunc = func(ctx context.Context, filter *stores.TeamMemberFilter) (*models.TeamMember, error) {
 		return member, nil
 	}
 	store.UserFunc.FindUserByIDFunc = func(ctx context.Context, userId uuid.UUID) (*models.User, error) {
@@ -71,7 +71,7 @@ func TestInvitationService_CreateInvitation_NotMember(t *testing.T) {
 	service := NewInvitationService(store, mailService, *opts, mockRoutineService)
 	teamId := uuid.New()
 	userId := uuid.New()
-	store.TeamMemberFunc.FindTeamMemberByTeamAndUserIdFunc = func(ctx context.Context, teamId, userId uuid.UUID) (*models.TeamMember, error) {
+	store.TeamMemberFunc.FindTeamMemberFunc = func(ctx context.Context, filter *stores.TeamMemberFilter) (*models.TeamMember, error) {
 		return nil, nil
 	}
 
@@ -215,7 +215,7 @@ func TestInvitationService_CancelInvitation_Success(t *testing.T) {
 		TeamID: teamId,
 		Status: models.TeamInvitationStatusPending,
 	}
-	store.TeamMemberFunc.FindTeamMemberByTeamAndUserIdFunc = func(ctx context.Context, teamId, userId uuid.UUID) (*models.TeamMember, error) {
+	store.TeamMemberFunc.FindTeamMemberFunc = func(ctx context.Context, filter *stores.TeamMemberFilter) (*models.TeamMember, error) {
 		return member, nil
 	}
 	store.TeamInvitationFunc.FindInvitationByIDFunc = func(ctx context.Context, invitationId uuid.UUID) (*models.TeamInvitation, error) {
@@ -243,7 +243,7 @@ func TestInvitationService_CancelInvitation_NotMember(t *testing.T) {
 	teamId := uuid.New()
 	userId := uuid.New()
 	invitationId := uuid.New()
-	store.TeamMemberFunc.FindTeamMemberByTeamAndUserIdFunc = func(ctx context.Context, teamId, userId uuid.UUID) (*models.TeamMember, error) {
+	store.TeamMemberFunc.FindTeamMemberFunc = func(ctx context.Context, filter *stores.TeamMemberFilter) (*models.TeamMember, error) {
 		return nil, nil
 	}
 
@@ -270,7 +270,7 @@ func TestInvitationService_CancelInvitation_NotOwner(t *testing.T) {
 		Role: models.TeamMemberRoleMember,
 	}
 
-	store.TeamMemberFunc.FindTeamMemberByTeamAndUserIdFunc = func(ctx context.Context, teamId, userId uuid.UUID) (*models.TeamMember, error) {
+	store.TeamMemberFunc.FindTeamMemberFunc = func(ctx context.Context, filter *stores.TeamMemberFilter) (*models.TeamMember, error) {
 		return member, nil
 	}
 
@@ -297,7 +297,7 @@ func TestInvitationService_CancelInvitation_InvitationNotFound(t *testing.T) {
 		Role: models.TeamMemberRoleOwner,
 	}
 
-	store.TeamMemberFunc.FindTeamMemberByTeamAndUserIdFunc = func(ctx context.Context, teamId, userId uuid.UUID) (*models.TeamMember, error) {
+	store.TeamMemberFunc.FindTeamMemberFunc = func(ctx context.Context, filter *stores.TeamMemberFilter) (*models.TeamMember, error) {
 		return member, nil
 	}
 	store.TeamInvitationFunc.FindInvitationByIDFunc = func(ctx context.Context, invitationId uuid.UUID) (*models.TeamInvitation, error) {
@@ -332,7 +332,7 @@ func TestInvitationService_CancelInvitation_InvitationTeamMismatch(t *testing.T)
 		Status: models.TeamInvitationStatusPending,
 	}
 
-	store.TeamMemberFunc.FindTeamMemberByTeamAndUserIdFunc = func(ctx context.Context, teamId, userId uuid.UUID) (*models.TeamMember, error) {
+	store.TeamMemberFunc.FindTeamMemberFunc = func(ctx context.Context, filter *stores.TeamMemberFilter) (*models.TeamMember, error) {
 		return member, nil
 	}
 	store.TeamInvitationFunc.FindInvitationByIDFunc = func(ctx context.Context, invitationId uuid.UUID) (*models.TeamInvitation, error) {
@@ -358,7 +358,7 @@ func TestInvitationService_CancelInvitation_FindTeamMemberError(t *testing.T) {
 	userId := uuid.New()
 	invitationId := uuid.New()
 
-	store.TeamMemberFunc.FindTeamMemberByTeamAndUserIdFunc = func(ctx context.Context, teamId, userId uuid.UUID) (*models.TeamMember, error) {
+	store.TeamMemberFunc.FindTeamMemberFunc = func(ctx context.Context, filter *stores.TeamMemberFilter) (*models.TeamMember, error) {
 		return nil, assert.AnError
 	}
 
@@ -385,7 +385,7 @@ func TestInvitationService_CancelInvitation_FindInvitationError(t *testing.T) {
 		Role: models.TeamMemberRoleOwner,
 	}
 
-	store.TeamMemberFunc.FindTeamMemberByTeamAndUserIdFunc = func(ctx context.Context, teamId, userId uuid.UUID) (*models.TeamMember, error) {
+	store.TeamMemberFunc.FindTeamMemberFunc = func(ctx context.Context, filter *stores.TeamMemberFilter) (*models.TeamMember, error) {
 		return member, nil
 	}
 	store.TeamInvitationFunc.FindInvitationByIDFunc = func(ctx context.Context, invitationId uuid.UUID) (*models.TeamInvitation, error) {
@@ -420,7 +420,7 @@ func TestInvitationService_CancelInvitation_UpdateInvitationError(t *testing.T) 
 		Status: models.TeamInvitationStatusPending,
 	}
 
-	store.TeamMemberFunc.FindTeamMemberByTeamAndUserIdFunc = func(ctx context.Context, teamId, userId uuid.UUID) (*models.TeamMember, error) {
+	store.TeamMemberFunc.FindTeamMemberFunc = func(ctx context.Context, filter *stores.TeamMemberFilter) (*models.TeamMember, error) {
 		return member, nil
 	}
 	store.TeamInvitationFunc.FindInvitationByIDFunc = func(ctx context.Context, invitationId uuid.UUID) (*models.TeamInvitation, error) {

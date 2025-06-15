@@ -38,7 +38,7 @@ func OAuth2ConfigFromEnv(cfg conf.EnvConfig) {
 					AuthURL:      github.Endpoint.AuthURL,
 					TokenURL:     github.Endpoint.TokenURL,
 					UserInfoURL:  "https://api.github.com/user",
-					RedirectURL:  cfg.AppConfig.AppUrl + cfg.OAuth2Config.AuthCallback,
+					RedirectURL:  cfg.AppUrl + cfg.AuthCallback,
 				},
 			}
 		})
@@ -60,7 +60,7 @@ func OAuth2ConfigFromEnv(cfg conf.EnvConfig) {
 					AuthURL:     "https://accounts.google.com/o/oauth2/v2/auth",
 					TokenURL:    "https://oauth2.googleapis.com/token",
 					UserInfoURL: "https://www.googleapis.com/oauth2/v3/userinfo",
-					RedirectURL: cfg.AppConfig.AppUrl + cfg.OAuth2Config.AuthCallback,
+					RedirectURL: cfg.AppUrl + cfg.AuthCallback,
 				}}
 		})
 	}
@@ -100,7 +100,7 @@ func (p *OAuth2ProviderConfig) oauth2Config() *oauth2.Config {
 }
 
 func (p *OAuth2ProviderConfig) FetchTokenOptions(verifier string) []oauth2.AuthCodeOption {
-	var opts []oauth2.AuthCodeOption = []oauth2.AuthCodeOption{
+	var opts = []oauth2.AuthCodeOption{
 		oauth2.AccessTypeOffline,
 		oauth2.ApprovalForce,
 	}

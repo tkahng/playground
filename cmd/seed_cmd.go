@@ -6,7 +6,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/tkahng/authgo/internal/conf"
 	"github.com/tkahng/authgo/internal/database"
-	"github.com/tkahng/authgo/internal/queries"
+	"github.com/tkahng/authgo/internal/stores"
 )
 
 func NewSeedCmd() *cobra.Command {
@@ -27,7 +27,8 @@ var seedRolesCmd = &cobra.Command{
 		conf := conf.GetConfig[conf.DBConfig]()
 
 		dbx := database.CreateQueries(ctx, conf.DatabaseUrl)
-		err := queries.EnsureRoleAndPermissions(ctx, dbx, "superuser", "superuser", "advanced", "pro", "basic")
+		rbacStore := stores.NewDbRBACStore(dbx)
+		err := rbacStore.EnsureRoleAndPermissions(ctx, "superuser", "superuser", "advanced", "pro", "basic")
 		if err != nil {
 			slog.Error(
 				"error at createing roles",
@@ -35,7 +36,7 @@ var seedRolesCmd = &cobra.Command{
 				"role", "superuser",
 			)
 		}
-		err = queries.EnsureRoleAndPermissions(ctx, dbx, "advanced", "advanced", "pro", "basic")
+		err = rbacStore.EnsureRoleAndPermissions(ctx, "advanced", "advanced", "pro", "basic")
 		if err != nil {
 			slog.Error(
 				"error at createing roles",
@@ -43,7 +44,7 @@ var seedRolesCmd = &cobra.Command{
 				"role", "basic",
 			)
 		}
-		err = queries.EnsureRoleAndPermissions(ctx, dbx, "pro", "pro", "basic")
+		err = rbacStore.EnsureRoleAndPermissions(ctx, "pro", "pro", "basic")
 		if err != nil {
 			slog.Error(
 				"error at createing roles",
@@ -51,7 +52,7 @@ var seedRolesCmd = &cobra.Command{
 				"role", "basic",
 			)
 		}
-		err = queries.EnsureRoleAndPermissions(ctx, dbx, "basic", "basic")
+		err = rbacStore.EnsureRoleAndPermissions(ctx, "basic", "basic")
 		if err != nil {
 			slog.Error(
 				"error at createing roles",

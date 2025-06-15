@@ -21,7 +21,7 @@ func main() {
 	// var url string
 	// flag.StringVar(&url, "dbhost", "", "DB host (postgresql://{user}:{password}@{hostname}/{db}?sslmode=require)")
 
-	var topic string = "notification-default"
+	var topic = "notification-default"
 	// flag.StringVar(&topic, "channel", "", "a string")
 
 	// flag.Parse()

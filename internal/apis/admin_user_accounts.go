@@ -38,15 +38,15 @@ func (p ApiProviders) String() string {
 type UserAccountFilter struct {
 	PaginatedInput
 	SortParams
-	Providers     []ApiProviders     `query:"providers,omitempty" required:"false" uniqueItems:"true" minimum:"1" maximum:"100" enum:"google,apple,facebook,github,credentials"`
-	ProviderTypes []ApiProviderTypes `query:"provider_types,omitempty" required:"false" uniqueItems:"true" minimum:"1" maximum:"100" enum:"oauth,credentials"`
-	Q             string             `query:"q,omitempty" required:"false"`
-	Ids           []string           `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
-	UserIds       []string           `query:"user_ids,omitempty" minimum:"1" maximum:"100" required:"false" format:"uuid"`
+	Providers     []shared.Providers     `query:"providers,omitempty" required:"false" uniqueItems:"true" minimum:"1" maximum:"100" enum:"google,apple,facebook,github,credentials"`
+	ProviderTypes []shared.ProviderTypes `query:"provider_types,omitempty" required:"false" uniqueItems:"true" minimum:"1" maximum:"100" enum:"oauth,credentials"`
+	Q             string                 `query:"q,omitempty" required:"false"`
+	Ids           []string               `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+	UserIds       []string               `query:"user_ids,omitempty" minimum:"1" maximum:"100" required:"false" format:"uuid"`
 }
 
 func GenerateMeta(input *shared.PaginatedInput, total int64) Meta {
-	var meta Meta = Meta{
+	var meta = Meta{
 		Page:    input.Page,
 		PerPage: input.PerPage,
 		Total:   total,

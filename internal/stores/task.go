@@ -70,7 +70,7 @@ func (s *DbTaskStore) FindTask(ctx context.Context, task *TaskFilter) (*models.T
 }
 
 type TaskFilter struct {
-	shared.PaginatedInput
+	PaginatedInput
 	SortParams
 	Q                  string              `query:"q,omitempty" json:"q,omitempty" required:"false"`
 	Ids                []uuid.UUID         `query:"ids,omitempty" json:"ids,omitempty" format:"uuid" required:"false"`
@@ -154,14 +154,29 @@ func (s *DbTaskStore) UpdateTask(ctx context.Context, task *models.Task) error {
 }
 
 func (s *DbTaskStore) CountItems(ctx context.Context, projectID uuid.UUID, status models.TaskStatus, excludeID uuid.UUID) (int64, error) {
-	var count int64
-	query := `
-		SELECT COUNT(*) 
-		FROM tasks 
-		WHERE project_id = $1 AND status = $2 AND id != $3
-	`
-	err := s.db.QueryRow(ctx, query, projectID, status, excludeID).Scan(&count)
-	return count, err
+	return repository.Task.Count(
+		ctx,
+		s.db,
+		&map[string]any{
+			"project_id": map[string]any{
+				"_eq": projectID,
+			},
+			"status": map[string]any{
+				"_eq": status,
+			},
+			"id": map[string]any{
+				"_neq": excludeID,
+			},
+		},
+	)
+	// var count int64
+	// query := `
+	// 	SELECT COUNT(*)
+	// 	FROM tasks
+	// 	WHERE project_id = $1 AND status = $2 AND id != $3
+	// `
+	// err := s.db.QueryRow(ctx, query, projectID, status, excludeID).Scan(&count)
+	// return count, err
 }
 
 func (s *DbTaskStore) GetTaskFirstPosition(ctx context.Context, projectID uuid.UUID, status models.TaskStatus, excludeID uuid.UUID) (float64, error) {

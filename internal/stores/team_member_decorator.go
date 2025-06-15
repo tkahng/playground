@@ -17,7 +17,7 @@ type TeamMemberStoreDecorator struct {
 	CreateTeamMemberFunc              func(ctx context.Context, teamId uuid.UUID, userId uuid.UUID, role models.TeamMemberRole, hasBillingAccess bool) (*models.TeamMember, error)
 	DeleteTeamMemberFunc              func(ctx context.Context, teamId uuid.UUID, userId uuid.UUID) error
 	FindLatestTeamMemberByUserIDFunc  func(ctx context.Context, userId uuid.UUID) (*models.TeamMember, error)
-	FindTeamMemberFunc                func(ctx context.Context, member *TeamMemberFilter) (*models.TeamMember, error)
+	FindTeamMemberFunc                func(ctx context.Context, filter *TeamMemberFilter) (*models.TeamMember, error)
 	FindTeamMemberByTeamAndUserIdFunc func(ctx context.Context, teamId uuid.UUID, userId uuid.UUID) (*models.TeamMember, error)
 	FindTeamMembersByUserIDFunc       func(ctx context.Context, userId uuid.UUID, paginate *shared.TeamMemberListInput) ([]*models.TeamMember, error)
 	UpdateTeamMemberFunc              func(ctx context.Context, member *models.TeamMember) (*models.TeamMember, error)

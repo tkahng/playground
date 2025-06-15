@@ -3,7 +3,6 @@ package queries
 import (
 	"context"
 
-	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/repository"
@@ -30,7 +29,7 @@ func CreateTeamFromUser(ctx context.Context, dbx database.Dbx, user *models.User
 		return nil, err
 	}
 	teamMember, err := func() (*models.TeamMember, error) {
-		var userId uuid.UUID = user.ID
+		var userId = user.ID
 		teamMember := &models.TeamMember{
 			TeamID: team.ID,
 			UserID: &userId,

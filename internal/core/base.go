@@ -102,7 +102,7 @@ func NewBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 		panic(err)
 	}
 	var mail mailer.Mailer
-	if cfg.ResendConfig.ResendApiKey != "" {
+	if cfg.ResendApiKey != "" {
 		mail = mailer.NewResendMailer(cfg.ResendConfig)
 	} else {
 		mail = &mailer.LogMailer{}

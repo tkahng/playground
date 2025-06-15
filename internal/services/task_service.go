@@ -11,7 +11,15 @@ import (
 	"github.com/tkahng/authgo/internal/stores"
 )
 
+type TaskFields struct {
+	Name        string            `json:"name" required:"true"`
+	Description *string           `json:"description,omitempty" required:"false"`
+	Status      models.TaskStatus `json:"status" required:"false" enum:"todo,in_progress,done" default:"todo"`
+	Rank        float64           `json:"rank,omitempty" required:"false"`
+	Position    *int64            `json:"position,omitempty" required:"false"`
+}
 type TaskService interface {
+	CreateTask(ctx context.Context, teamID uuid.UUID, projectID uuid.UUID, createdByMemberID uuid.UUID, input *TaskFields) (*models.Task, error)
 	FindAndUpdateTask(ctx context.Context, taskID uuid.UUID, input *shared.UpdateTaskDto) error
 
 	CreateTaskWithChildren(ctx context.Context, teamID uuid.UUID, projectID uuid.UUID, memberID uuid.UUID, input *shared.CreateTaskWithChildrenDTO) (*models.Task, error)
@@ -22,6 +30,32 @@ type taskService struct {
 	// store   TaskStore
 	adapter *stores.StorageAdapter
 }
+
+// CreateTask implements TaskService.
+func (s *taskService) CreateTask(ctx context.Context, teamID uuid.UUID, projectID uuid.UUID, createdByMemberID uuid.UUID, input *TaskFields) (*models.Task, error) {
+	setter := models.Task{
+		ProjectID:         projectID,
+		CreatedByMemberID: &createdByMemberID,
+		TeamID:            teamID,
+		Name:              input.Name,
+		Description:       input.Description,
+		Status:            models.TaskStatus(input.Status),
+		Rank:              input.Rank,
+	}
+	task, err := s.adapter.Task().CreateTask(ctx, &setter)
+	if err != nil {
+		return nil, err
+	}
+	return task, nil
+}
+
+func NewTaskService(adapter *stores.StorageAdapter) TaskService {
+	return &taskService{
+		adapter: adapter,
+	}
+}
+
+var _ TaskService = (*taskService)(nil)
 
 // FindAndUpdateTask implements TaskService.
 func (s *taskService) FindAndUpdateTask(ctx context.Context, taskID uuid.UUID, input *shared.UpdateTaskDto) error {
@@ -134,10 +168,4 @@ func (t *taskService) CreateTaskWithChildren(ctx context.Context, teamId uuid.UU
 
 func (t *taskService) Adapter() stores.StorageAdapterInterface {
 	return t.adapter
-}
-
-func NewTaskService(adapter *stores.StorageAdapter) TaskService {
-	return &taskService{
-		adapter: adapter,
-	}
 }

@@ -65,42 +65,7 @@ type TeamInvitationService interface {
 	) error
 }
 
-type TeamInvitationStore interface {
-	FindTeamByID(ctx context.Context, teamId uuid.UUID) (*models.Team, error)
-	CreateTeamMember(ctx context.Context, teamId, userId uuid.UUID, role models.TeamMemberRole, hasBillingAccess bool) (*models.TeamMember, error)
-	DeleteTeamMember(ctx context.Context, teamId, userId uuid.UUID) error
-	FindTeamMemberByTeamAndUserId(
-		ctx context.Context,
-		teamId uuid.UUID,
-		userId uuid.UUID,
-	) (*models.TeamMember, error)
-	FindUserByID(ctx context.Context, userId uuid.UUID) (*models.User, error)
-	CreateInvitation(
-		ctx context.Context,
-		invitation *models.TeamInvitation,
-	) error
-	UpdateInvitation(
-		ctx context.Context,
-		invitation *models.TeamInvitation,
-	) error
-	FindInvitationByToken(
-		ctx context.Context,
-		token string,
-	) (*models.TeamInvitation, error)
-	FindInvitationByID(
-		ctx context.Context,
-		invitationId uuid.UUID,
-	) (*models.TeamInvitation, error)
-	FindTeamInvitations(
-		ctx context.Context,
-		teamId uuid.UUID,
-	) ([]*models.TeamInvitation, error)
-	FindPendingInvitation(
-		ctx context.Context,
-		teamId uuid.UUID,
-		email string,
-	) (*models.TeamInvitation, error)
-}
+var _ TeamInvitationService = (*InvitationService)(nil)
 
 type InvitationService struct {
 	routine RoutineService
@@ -159,8 +124,6 @@ func (i *InvitationService) SendInvitationEmail(ctx context.Context, params *Tea
 	}
 	return i.mailer.SendMail(param)
 }
-
-var _ TeamInvitationService = (*InvitationService)(nil)
 
 func NewInvitationService(
 	adapter stores.StorageAdapterInterface,

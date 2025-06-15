@@ -28,15 +28,15 @@ func (api *Api) TeamTaskList(ctx context.Context, input *shared.TeamTaskListPara
 	newInput.SortOrder = input.SortOrder
 	newInput.Page = input.Page
 	newInput.PerPage = input.PerPage
-	newInput.Ids = utils.ParseValidUUIDs(input.TeamTaskListFilter.Ids...)
-	newInput.Q = input.TeamTaskListFilter.Q
-	newInput.Statuses = mapper.Map(input.TeamTaskListFilter.Status, func(status shared.TaskStatus) models.TaskStatus {
+	newInput.Ids = utils.ParseValidUUIDs(input.Ids...)
+	newInput.Q = input.Q
+	newInput.Statuses = mapper.Map(input.Status, func(status shared.TaskStatus) models.TaskStatus {
 		return models.TaskStatus(status)
 	})
 	newInput.TeamIds = []uuid.UUID{teamInfo.Team.ID}
 	newInput.ProjectIds = utils.ParseValidUUIDs(input.ProjectID)
-	parentID, err := uuid.Parse(input.TeamTaskListFilter.ParentID)
-	if err != nil && input.TeamTaskListFilter.ParentID != "" {
+	parentID, err := uuid.Parse(input.ParentID)
+	if err != nil && input.ParentID != "" {
 		return nil, huma.Error400BadRequest("Invalid parent ID format", err)
 	}
 	newInput.ParentIds = []uuid.UUID{parentID}
