@@ -78,6 +78,21 @@ export default function TeamListPage() {
               );
             },
           },
+          {
+            accessorKey: "role",
+            header: "Member Role",
+            cell: ({ row }) => {
+              const members = row.original.members;
+              if (!members || members.length === 0) {
+                return <span className="text-gray-500">No members</span>;
+              }
+              return (
+                <span className="text-gray-500">
+                  {members[0].role || "Member"}
+                </span>
+              );
+            },
+          },
         ]}
         data={data?.data || []}
         rowCount={data?.meta.total || 0}

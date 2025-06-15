@@ -12,7 +12,6 @@ import CallbackComponent from "@/pages/auth/callback";
 import ConfirmVerification from "@/pages/auth/confirm-verification";
 import Signin from "@/pages/auth/signin";
 import SignupPage from "@/pages/auth/signup";
-import Dashboard from "@/pages/dashboard"; // Your protected page
 import LandingAboutPage from "@/pages/landing/about";
 import LandingContactPage from "@/pages/landing/contact";
 import Features from "@/pages/landing/features";
@@ -25,6 +24,7 @@ import { BrowserRouter, Route, Routes } from "react-router";
 import {
   adminHeaderLinks,
   authenticatedSubHeaderLinks,
+  userDashboardLinks,
 } from "./components/links";
 import { Providers } from "./components/providers";
 import { RouteMap } from "./components/route-map";
@@ -38,6 +38,7 @@ import ProductsListPage from "./pages/admin/products/products-list";
 import SubscriptionsListPage from "./pages/admin/subscriptions/subscription-list";
 import ConfirmPasswordReset from "./pages/auth/confirm-password-reset";
 import ResetPasswordRequestPage from "./pages/auth/reset-password";
+import DashboardPage from "./pages/dashboard";
 import NotAuthorizedPage from "./pages/not-authorized";
 import ProjectEdit from "./pages/projects/project-edit";
 import ProjectListPage from "./pages/projects/projects-list";
@@ -45,6 +46,7 @@ import TaskLayout from "./pages/projects/task-layout";
 import ProtectedRouteLayout from "./pages/protected-routes/protected-layout";
 import ProtectedRoutePage from "./pages/protected-routes/protected-route-page";
 import ProtectedRouteIndex from "./pages/protected-routes/route-index";
+import TeamDashboard from "./pages/teams/dashboard";
 import TeamListPage from "./pages/teams/team-list";
 function App() {
   return (
@@ -83,13 +85,40 @@ function App() {
             </Route>
 
             <Route element={<AuthenticatedLayoutBase />}>
-              <Route path={RouteMap.TEAM_LIST} element={<TeamListPage />} />
               <Route path={RouteMap.PAYMENT}>
-                {/* /payment/success?sessionId */}
                 <Route path="success" element={<PaymentSuccessPage />} />
               </Route>
-              {/* <Route path={`${RouteMap.TEAM_LIST}/:teamSlug`} element={<TeamsLayout />} /> */}
             </Route>
+
+            <Route element={<AuthenticatedLayoutBase />}>
+              {/* user pages */}
+              <Route
+                // dashboard
+                children={
+                  <Route path={`/dashboard`} element={<DashboardPage />} />
+                }
+                element={<DashboardLayout headerLinks={userDashboardLinks} />}
+              />
+              <Route
+                // dashboard
+                path={`/teams`}
+                element={<DashboardLayout headerLinks={userDashboardLinks} />}
+              >
+                <Route element={<PageSectionLayout title="Teams" />}>
+                  <Route index element={<TeamListPage />} />
+                </Route>
+              </Route>
+              <Route
+                path={RouteMap.SETTINGS}
+                element={<DashboardLayout headerLinks={userDashboardLinks} />}
+              >
+                <Route element={<PageSectionLayout title="Settings" />}>
+                  <Route index element={<AccountSettingsPage />} />
+                  <Route path="billing" element={<BillingSettingPage />} />
+                </Route>
+              </Route>
+            </Route>
+
             <Route element={<AuthenticatedLayoutBase />}>
               <Route
                 element={
@@ -97,8 +126,8 @@ function App() {
                 }
               >
                 <Route
-                  path={`${RouteMap.TEAM_LIST_SLUG}/dashboard`}
-                  element={<Dashboard />}
+                  path={`/teams/:teamSlug/dashboard`}
+                  element={<TeamDashboard />}
                 />
               </Route>
 
@@ -111,18 +140,18 @@ function App() {
                 <Route element={<PageSectionLayout title="Projects" />}>
                   <Route element={<TaskLayout />}>
                     <Route
-                      path={`${RouteMap.TEAM_LIST_SLUG}/projects`}
+                      path={`/teams/:teamSlug/projects`}
                       element={<ProjectListPage />}
                     />
                     <Route
-                      path={`${RouteMap.TEAM_LIST_SLUG}/projects/:projectId`}
+                      path={`/teams/:teamSlug/projects/:projectId`}
                       element={<ProjectEdit />}
                     />
                   </Route>
                 </Route>
               </Route>
               <Route
-                path={RouteMap.PROTECTED}
+                path={`/protected`}
                 element={
                   <DashboardLayout headerLinks={authenticatedSubHeaderLinks} />
                 }
@@ -135,17 +164,6 @@ function App() {
                       element={<ProtectedRoutePage />}
                     />
                   </Route>
-                </Route>
-              </Route>
-              <Route
-                path={RouteMap.SETTINGS}
-                element={
-                  <DashboardLayout headerLinks={authenticatedSubHeaderLinks} />
-                }
-              >
-                <Route element={<PageSectionLayout title="Settings" />}>
-                  <Route index element={<AccountSettingsPage />} />
-                  <Route path="billing" element={<BillingSettingPage />} />
                 </Route>
               </Route>
             </Route>

@@ -1,9 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { getStats, getUserSubscriptions } from "@/lib/queries";
+import { getUserSubscriptions, getUserTeams } from "@/lib/queries";
 import { useQuery } from "@tanstack/react-query";
-import { CheckCircle, Cpu, Users, XCircle } from "lucide-react";
+import { CheckCircle, XCircle } from "lucide-react";
 
 export default function DashboardPage() {
   const { user } = useAuthProvider();
@@ -14,11 +13,13 @@ export default function DashboardPage() {
         throw new Error("User not found");
       }
 
-      const stats = await getStats(user.tokens.access_token);
+      // const stats = await getStats(user.tokens.access_token);
       const subs = await getUserSubscriptions(user.tokens.access_token);
+      const teams = await getUserTeams(user.tokens.access_token);
       return {
-        ...stats,
+        // ...stats,
         sub: subs,
+        teams: teams.data,
       };
     },
   });
@@ -61,7 +62,7 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
         </div>
-        <div className="grid gap-6 md:grid-rows-1 lg:grid-rows-2 col-span-2">
+        {/* <div className="grid gap-6 md:grid-rows-1 lg:grid-rows-2 col-span-2">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
@@ -106,7 +107,7 @@ export default function DashboardPage() {
               />
             </CardContent>
           </Card>
-        </div>
+        </div> */}
       </div>
     </div>
   );

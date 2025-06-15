@@ -12,6 +12,11 @@ export const defaultCurrentFunc = (pathname: string, to: string) => {
 };
 
 export const RouteLinks = {
+  TEAM_LIST: {
+    to: RouteMap.TEAM_LIST,
+    title: "Teams",
+    current: (pathname: string) => pathname.startsWith(RouteMap.TEAM_LIST),
+  },
   FEATURES: { to: RouteMap.FEATURES, title: "Features" },
   PRICING: { to: RouteMap.PRICING, title: "Pricing" },
   ABOUT: { to: RouteMap.ABOUT, title: "About" },
@@ -108,4 +113,10 @@ export const authenticatedSubHeaderLinks: LinkDto[] = [
 export const settingsSidebarLinks: LinkDto[] = [
   RouteLinks.GENERAL_SETTINGS,
   RouteLinks.BILLING_SETTINGS,
+];
+
+export const userDashboardLinks: LinkDto[] = [
+  RouteLinks.DASHBOARD,
+  RouteLinks.TEAM_LIST,
+  RouteLinks.SETTINGS,
 ];
