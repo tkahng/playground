@@ -8,5 +8,3 @@ linters:
     - staticcheck
     - unused
     - exhaustruct
-# formatters:
-
