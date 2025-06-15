@@ -36,7 +36,6 @@ type DbTeamGroupStoreInterface interface {
 	ListTeams(ctx context.Context, params *TeamFilter) ([]*models.Team, error)
 	LoadTeamsByIds(ctx context.Context, teamIds ...uuid.UUID) ([]*models.Team, error)
 	UpdateTeam(ctx context.Context, teamId uuid.UUID, name string) (*models.Team, error)
-	GetTeamTaskStats(ctx context.Context, teamId uuid.UUID) (*models.TaskStats, error)
 }
 
 type DbTeamGroupStore struct {
@@ -53,42 +52,6 @@ func (s *DbTeamGroupStore) WithTx(tx database.Dbx) *DbTeamGroupStore {
 	return &DbTeamGroupStore{
 		db: tx,
 	}
-}
-
-const TaskStatsQuery = `
-WITH project_stats AS (
-    SELECT COUNT(*) as total_projects,
-        COUNT(*) FILTER (
-            WHERE tp.status = 'done'
-        ) as completed_projects
-    FROM task_projects tp
-    WHERE tp.team_id = $1
-),
-task_stats AS (
-    SELECT COUNT(*) as total_tasks,
-        COUNT(*) FILTER (
-            WHERE t.status = 'done'
-        ) as completed_tasks
-    FROM tasks t
-    WHERE t.team_id = $1
-)
-SELECT ps.total_projects,
-    ps.completed_projects,
-    ts.total_tasks,
-    ts.completed_tasks
-FROM project_stats ps
-    CROSS JOIN task_stats ts;
-	`
-
-func (s *DbTeamGroupStore) GetTeamTaskStats(ctx context.Context, teamId uuid.UUID) (*models.TaskStats, error) {
-	res, err := database.QueryAll[models.TaskStats](ctx, s.db, TaskStatsQuery, teamId)
-	if err != nil {
-		return nil, err
-	}
-	if len(res) == 0 {
-		return nil, nil
-	}
-	return &res[0], nil
 }
 
 func (s *DbTeamGroupStore) FindTeam(ctx context.Context, filter *TeamFilter) (*models.Team, error) {

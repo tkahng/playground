@@ -46,6 +46,7 @@ type DbTaskStoreInterface interface { // size=16 (0x10)
 	UpdateTaskProjectUpdateDate(ctx context.Context, taskProjectID uuid.UUID) error
 	UpdateTaskRankStatus(ctx context.Context, taskID uuid.UUID, position int64, status models.TaskStatus) error
 	WithTx(dbx database.Dbx) *DbTaskStore
+	GetTeamTaskStats(ctx context.Context, teamId uuid.UUID) (*models.TaskStats, error)
 }
 
 type DbTaskStore struct {
@@ -732,4 +733,40 @@ func (s *DbTaskStore) UpdateTaskRankStatus(ctx context.Context, taskID uuid.UUID
 		return fmt.Errorf("failed to update task project update date: %w", err)
 	}
 	return nil
+}
+
+const TeamTaskStatsQuery = `
+WITH project_stats AS (
+    SELECT COUNT(*) as total_projects,
+        COUNT(*) FILTER (
+            WHERE tp.status = 'done'
+        ) as completed_projects
+    FROM task_projects tp
+    WHERE tp.team_id = $1
+),
+task_stats AS (
+    SELECT COUNT(*) as total_tasks,
+        COUNT(*) FILTER (
+            WHERE t.status = 'done'
+        ) as completed_tasks
+    FROM tasks t
+    WHERE t.team_id = $1
+)
+SELECT ps.total_projects,
+    ps.completed_projects,
+    ts.total_tasks,
+    ts.completed_tasks
+FROM project_stats ps
+    CROSS JOIN task_stats ts;
+	`
+
+func (s *DbTaskStore) GetTeamTaskStats(ctx context.Context, teamId uuid.UUID) (*models.TaskStats, error) {
+	res, err := database.QueryAll[models.TaskStats](ctx, s.db, TeamTaskStatsQuery, teamId)
+	if err != nil {
+		return nil, err
+	}
+	if len(res) == 0 {
+		return nil, nil
+	}
+	return &res[0], nil
 }
