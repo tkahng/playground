@@ -13,13 +13,13 @@ import (
 )
 
 type UserAccountOutput struct {
-	ID                uuid.UUID        `db:"id,pk" json:"id"`
-	UserID            uuid.UUID        `db:"user_id" json:"user_id"`
-	Type              ApiProviderTypes `db:"type" json:"type" enum:"oauth,credentials"`
-	Provider          ApiProviders     `db:"provider" json:"provider" enum:"google,apple,facebook,github,credentials"`
-	ProviderAccountID string           `db:"provider_account_id" json:"provider_account_id"`
-	CreatedAt         time.Time        `db:"created_at" json:"created_at"`
-	UpdatedAt         time.Time        `db:"updated_at" json:"updated_at"`
+	ID                uuid.UUID            `db:"id,pk" json:"id"`
+	UserID            uuid.UUID            `db:"user_id" json:"user_id"`
+	Type              models.ProviderTypes `db:"type" json:"type" enum:"oauth,credentials"`
+	Provider          models.Providers     `db:"provider" json:"provider" enum:"google,apple,facebook,github,credentials"`
+	ProviderAccountID string               `db:"provider_account_id" json:"provider_account_id"`
+	CreatedAt         time.Time            `db:"created_at" json:"created_at"`
+	UpdatedAt         time.Time            `db:"updated_at" json:"updated_at"`
 }
 
 func FromModelUserAccountOutput(u *models.UserAccount) *UserAccountOutput {
@@ -29,8 +29,8 @@ func FromModelUserAccountOutput(u *models.UserAccount) *UserAccountOutput {
 	return &UserAccountOutput{
 		ID:                u.ID,
 		UserID:            u.UserID,
-		Type:              ApiProviderTypes(u.Type),
-		Provider:          ApiProviders(u.Provider),
+		Type:              u.Type,
+		Provider:          u.Provider,
 		ProviderAccountID: u.ProviderAccountID,
 		CreatedAt:         u.CreatedAt,
 		UpdatedAt:         u.UpdatedAt,

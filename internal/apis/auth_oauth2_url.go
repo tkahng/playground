@@ -8,8 +8,8 @@ import (
 )
 
 type OAuth2AuthorizationUrlInput struct {
-	Provider   ApiProviders `json:"provider"  query:"provider" form:"provider" enum:"google,github" required:"true"`
-	RedirectTo string       `json:"redirect_to" query:"redirect_to" form:"redirect_to" format:"uri" required:"false"`
+	Provider   models.Providers `json:"provider"  query:"provider" form:"provider" enum:"google,github" required:"true"`
+	RedirectTo string           `json:"redirect_to" query:"redirect_to" form:"redirect_to" format:"uri" required:"false"`
 }
 
 type OAuth2AuthorizationUrlOutput struct {

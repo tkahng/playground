@@ -8,7 +8,6 @@ import (
 
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/services"
-	"github.com/tkahng/authgo/internal/tools/mapper"
 )
 
 func (api *Api) OAuth2CallbackPost(ctx context.Context, input *OAuth2CallbackInput) (*AuthenticatedInfoResponse, error) {
@@ -91,7 +90,7 @@ func ToApiUserInfoTokens(userInfo *models.UserInfoTokens) *ApiUserInfoTokens {
 			User:        *FromUserModel(&userInfo.User),
 			Roles:       userInfo.Roles,
 			Permissions: userInfo.Permissions,
-			Providers:   mapper.Map(userInfo.Providers, func(p models.Providers) ApiProviders { return ApiProviders(p) }),
+			Providers:   userInfo.Providers,
 		},
 		Tokens: TokenDto{
 			AccessToken:  userInfo.Tokens.AccessToken,

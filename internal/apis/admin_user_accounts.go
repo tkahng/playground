@@ -11,31 +11,6 @@ import (
 	"github.com/tkahng/authgo/internal/tools/utils"
 )
 
-type ApiProviderTypes string
-
-const (
-	ProviderTypeOAuth       ApiProviderTypes = "oauth"
-	ProviderTypeCredentials ApiProviderTypes = "credentials"
-)
-
-func (p ApiProviderTypes) String() string {
-	return string(p)
-}
-
-type ApiProviders string
-
-const (
-	ProvidersGoogle      ApiProviders = "google"
-	ProvidersApple       ApiProviders = "apple"
-	ProvidersFacebook    ApiProviders = "facebook"
-	ProvidersGithub      ApiProviders = "github"
-	ProvidersCredentials ApiProviders = "credentials"
-)
-
-func (p ApiProviders) String() string {
-	return string(p)
-}
-
 type UserAccountFilter struct {
 	PaginatedInput
 	SortParams

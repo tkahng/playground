@@ -19,7 +19,7 @@ import (
 type UserListFilter struct {
 	PaginatedInput
 	SortParams
-	Providers     []ApiProviders            `query:"providers,omitempty" required:"false" uniqueItems:"true" minimum:"1" maximum:"100" enum:"google,apple,facebook,github,credentials"`
+	Providers     []models.Providers        `query:"providers,omitempty" required:"false" uniqueItems:"true" minimum:"1" maximum:"100" enum:"google,apple,facebook,github,credentials"`
 	Q             string                    `query:"q,omitempty" required:"false"`
 	Ids           []string                  `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
 	Emails        []string                  `query:"emails,omitempty" required:"false" minimum:"1" maximum:"100" format:"email"`
@@ -39,9 +39,7 @@ func (api *Api) AdminUsers(ctx context.Context, input *struct {
 	filter.SortBy = input.SortBy
 	filter.SortOrder = input.SortOrder
 	filter.Q = input.Q
-	filter.Providers = mapper.Map(input.Providers, func(p ApiProviders) models.Providers {
-		return models.Providers(p.String())
-	})
+	filter.Providers = input.Providers
 	filter.Ids = utils.ParseValidUUIDs(input.Ids...)
 	filter.Emails = input.Emails
 	filter.RoleIds = utils.ParseValidUUIDs(input.RoleIds...)
