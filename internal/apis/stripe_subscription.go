@@ -70,6 +70,9 @@ type StripeCustomer struct {
 }
 
 func FromModelSubscription(sub *models.StripeSubscription) *StripeSubscription {
+	if sub == nil {
+		return nil
+	}
 	return &StripeSubscription{
 		ID:                 sub.ID,
 		StripeCustomerID:   sub.StripeCustomerID,
