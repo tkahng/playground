@@ -59,7 +59,7 @@ func (api *Api) TeamTaskList(ctx context.Context, input *shared.TeamTaskListPara
 	}, nil
 }
 
-type TaskResposne struct {
+type TaskResponse struct {
 	Body *shared.Task
 }
 
@@ -113,7 +113,7 @@ func (api *Api) TaskDelete(ctx context.Context, input *struct {
 
 func (api *Api) TaskGet(ctx context.Context, input *struct {
 	TaskID string `path:"task-id"`
-}) (*TaskResposne, error) {
+}) (*TaskResponse, error) {
 
 	userInfo := contextstore.GetContextUserInfo(ctx)
 	if userInfo == nil {
@@ -127,7 +127,7 @@ func (api *Api) TaskGet(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	return &TaskResposne{
+	return &TaskResponse{
 		Body: shared.FromModelTask(task),
 	}, nil
 }

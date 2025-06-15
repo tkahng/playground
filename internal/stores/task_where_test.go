@@ -149,7 +149,7 @@ func Test_taskStore_TaskWhere(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tr := &DbTaskStore{}
-			got := tr.TaskWhere(tt.args.Task)
+			got := tr.taskWhere(tt.args.Task)
 			if got == nil {
 				if tt.want != nil {
 					t.Errorf("TaskWhere() = %v, want %v", got, tt.want)

@@ -193,15 +193,15 @@ func (t *TaskDecorator) LoadTaskProjectsTasks(ctx context.Context, projectIds ..
 	return t.Delegate.LoadTaskProjectsTasks(ctx, projectIds...)
 }
 
-// TaskWhere implements DbTaskStoreInterface.
-func (t *TaskDecorator) TaskWhere(task *TaskFilter) *map[string]any {
+// taskWhere implements DbTaskStoreInterface.
+func (t *TaskDecorator) taskWhere(task *TaskFilter) *map[string]any {
 	if t.TaskWhereFunc != nil {
 		return t.TaskWhereFunc(task)
 	}
 	if t.Delegate == nil {
 		return nil
 	}
-	return t.Delegate.TaskWhere(task)
+	return t.Delegate.taskWhere(task)
 }
 
 // UpdateTask implements DbTaskStoreInterface.

@@ -40,7 +40,7 @@ type DbTaskStoreInterface interface { // size=16 (0x10)
 	ListTaskProjects(ctx context.Context, input *TaskProjectsFilter) ([]*models.TaskProject, error)
 	ListTasks(ctx context.Context, input *TaskFilter) ([]*models.Task, error)
 	LoadTaskProjectsTasks(ctx context.Context, projectIds ...uuid.UUID) ([][]*models.Task, error)
-	TaskWhere(task *TaskFilter) *map[string]any
+	taskWhere(task *TaskFilter) *map[string]any
 	UpdateTask(ctx context.Context, task *models.Task) error
 	UpdateTaskProject(ctx context.Context, taskProjectID uuid.UUID, input *shared.UpdateTaskProjectBaseDTO) error
 	UpdateTaskProjectUpdateDate(ctx context.Context, taskProjectID uuid.UUID) error
@@ -64,7 +64,7 @@ func (s *DbTaskStore) CreateTask(ctx context.Context, task *models.Task) (*model
 
 func (s *DbTaskStore) FindTask(ctx context.Context, task *TaskFilter) (*models.Task, error) {
 
-	where := s.TaskWhere(task)
+	where := s.taskWhere(task)
 
 	return repository.Task.GetOne(ctx, s.db, where)
 }
@@ -82,7 +82,7 @@ type TaskFilter struct {
 	ParentIds          []uuid.UUID         `query:"parent_ids,omitempty" json:"parent_ids,omitempty" format:"uuid" required:"false"`
 }
 
-func (*DbTaskStore) TaskWhere(task *TaskFilter) *map[string]any {
+func (*DbTaskStore) taskWhere(task *TaskFilter) *map[string]any {
 	if task == nil {
 		return nil
 	}
@@ -354,7 +354,7 @@ func (s *DbTaskStore) ListTasks(ctx context.Context, input *TaskFilter) ([]*mode
 
 	iimit, offset := pagination(input)
 	order := ListTasksOrderByFunc(input)
-	where := s.TaskWhere(input)
+	where := s.taskWhere(input)
 	data, err := repository.Task.Get(
 		ctx,
 		s.db,
@@ -371,7 +371,7 @@ func (s *DbTaskStore) ListTasks(ctx context.Context, input *TaskFilter) ([]*mode
 
 // CountTasks implements AdminCrudActions.
 func (s *DbTaskStore) CountTasks(ctx context.Context, filter *TaskFilter) (int64, error) {
-	where := s.TaskWhere(filter)
+	where := s.taskWhere(filter)
 	return repository.Task.Count(ctx, s.db, where)
 }
 func (*DbTaskStore) TaskProjectWhere(task *TaskProjectsFilter) *map[string]any {

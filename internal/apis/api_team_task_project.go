@@ -230,7 +230,35 @@ func (api *Api) TeamTaskProjectGet(ctx context.Context, input *struct {
 	}, nil
 }
 
-func (api *Api) TeamTaskProjectTasksCreate(ctx context.Context, input *shared.CreateTaskWithProjectIdInput) (*TaskResposne, error) {
+const (
+	TaskStatusTodo       TaskStatus = "todo"
+	TaskStatusInProgress TaskStatus = "in_progress"
+	TaskStatusDone       TaskStatus = "done"
+)
+
+type TaskStatus string
+
+// Enum values for TaskProjectStatus
+const (
+	TaskProjectStatusTodo       TaskProjectStatus = "todo"
+	TaskProjectStatusInProgress TaskProjectStatus = "in_progress"
+	TaskProjectStatusDone       TaskProjectStatus = "done"
+)
+
+type TaskProjectStatus string
+type CreateTaskProjectTaskDTO struct {
+	Name        string     `json:"name" required:"true"`
+	Description *string    `json:"description,omitempty" required:"false"`
+	Status      TaskStatus `json:"status" required:"false" enum:"todo,in_progress,done" default:"todo"`
+	Rank        float64    `json:"rank,omitempty" required:"false"`
+}
+
+type ApiCreateTaskWithProjectIdInput struct {
+	TaskProjectID string `path:"task-project-id" json:"task_project_id" required:"true" format:"uuid"`
+	Body          CreateTaskProjectTaskDTO
+}
+
+func (api *Api) TeamTaskProjectTasksCreate(ctx context.Context, input *ApiCreateTaskWithProjectIdInput) (*TaskResponse, error) {
 	userInfo := contextstore.GetContextUserInfo(ctx)
 	if userInfo == nil {
 		return nil, huma.Error401Unauthorized("Unauthorized")
@@ -250,7 +278,14 @@ func (api *Api) TeamTaskProjectTasksCreate(ctx context.Context, input *shared.Cr
 		return nil, err
 	}
 	payload.Rank = order
-	task, err := api.app.Task().CreateTaskWithChildren(ctx, teamInfo.Member.TeamID, parsedProjectID, teamInfo.Member.ID, &payload)
+	modelInput := &models.Task{}
+	modelInput.Name = payload.Name
+	modelInput.Description = payload.Description
+	modelInput.Status = models.TaskStatus(payload.Status)
+	modelInput.Rank = payload.Rank
+	modelInput.ProjectID = parsedProjectID
+	// modelInput.CreatedByMemberID = payload
+	task, err := api.app.Adapter().Task().CreateTask(ctx, &models.Task{})
 	if err != nil {
 		return nil, err
 	}
@@ -258,7 +293,7 @@ func (api *Api) TeamTaskProjectTasksCreate(ctx context.Context, input *shared.Cr
 	if err != nil {
 		return nil, huma.Error500InternalServerError("Failed to update task project update date")
 	}
-	return &TaskResposne{
+	return &TaskResponse{
 		Body: shared.FromModelTask(task),
 	}, nil
 }
