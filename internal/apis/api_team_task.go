@@ -14,26 +14,26 @@ import (
 )
 
 type Task struct {
-	_                 struct{}     `db:"tasks" json:"-"`
-	ID                uuid.UUID    `db:"id" json:"id"`
-	CreatedByMemberID *uuid.UUID   `db:"created_by_member_id" json:"created_by_member_id" nullable:"true"`
-	TeamID            uuid.UUID    `db:"team_id" json:"team_id"`
-	ProjectID         uuid.UUID    `db:"project_id" json:"project_id"`
-	Name              string       `db:"name" json:"name"`
-	Description       *string      `db:"description" json:"description"`
-	Status            TaskStatus   `db:"status" json:"status" enum:"todo,in_progress,done"`
-	StartAt           *time.Time   `db:"start_at" json:"start_at" nullable:"true"`
-	EndAt             *time.Time   `db:"end_at" json:"end_at" nullable:"true"`
-	AssigneeID        *uuid.UUID   `db:"assignee_id" json:"assignee_id" nullable:"true"`
-	ReporterID        *uuid.UUID   `db:"reporter_id" json:"reporter_id" nullable:"true"`
-	Rank              float64      `db:"rank" json:"rank"`
-	ParentID          *uuid.UUID   `db:"parent_id" json:"parent_id" nullable:"true"`
-	CreatedAt         time.Time    `db:"created_at" json:"created_at"`
-	UpdatedAt         time.Time    `db:"updated_at" json:"updated_at"`
-	Children          []*Task      `db:"children" src:"id" dest:"parent_id" table:"tasks" json:"children,omitempty"`
-	CreatedByMember   *TeamMember  `db:"created_by_member" src:"created_by_member_id" dest:"id" table:"team_members" json:"created_by_member,omitempty"`
-	Team              *Team        `db:"team" src:"team_id" dest:"id" table:"teams" json:"team,omitempty"`
-	Project           *TaskProject `db:"project" src:"project_id" dest:"id" table:"task_projects" json:"project,omitempty"`
+	_                 struct{}          `db:"tasks" json:"-"`
+	ID                uuid.UUID         `db:"id" json:"id"`
+	CreatedByMemberID *uuid.UUID        `db:"created_by_member_id" json:"created_by_member_id" nullable:"true"`
+	TeamID            uuid.UUID         `db:"team_id" json:"team_id"`
+	ProjectID         uuid.UUID         `db:"project_id" json:"project_id"`
+	Name              string            `db:"name" json:"name"`
+	Description       *string           `db:"description" json:"description"`
+	Status            models.TaskStatus `db:"status" json:"status" enum:"todo,in_progress,done"`
+	StartAt           *time.Time        `db:"start_at" json:"start_at" nullable:"true"`
+	EndAt             *time.Time        `db:"end_at" json:"end_at" nullable:"true"`
+	AssigneeID        *uuid.UUID        `db:"assignee_id" json:"assignee_id" nullable:"true"`
+	ReporterID        *uuid.UUID        `db:"reporter_id" json:"reporter_id" nullable:"true"`
+	Rank              float64           `db:"rank" json:"rank"`
+	ParentID          *uuid.UUID        `db:"parent_id" json:"parent_id" nullable:"true"`
+	CreatedAt         time.Time         `db:"created_at" json:"created_at"`
+	UpdatedAt         time.Time         `db:"updated_at" json:"updated_at"`
+	Children          []*Task           `db:"children" src:"id" dest:"parent_id" table:"tasks" json:"children,omitempty"`
+	CreatedByMember   *TeamMember       `db:"created_by_member" src:"created_by_member_id" dest:"id" table:"team_members" json:"created_by_member,omitempty"`
+	Team              *Team             `db:"team" src:"team_id" dest:"id" table:"teams" json:"team,omitempty"`
+	Project           *TaskProject      `db:"project" src:"project_id" dest:"id" table:"task_projects" json:"project,omitempty"`
 }
 
 func FromModelTask(task *models.Task) *Task {
@@ -47,7 +47,7 @@ func FromModelTask(task *models.Task) *Task {
 		ProjectID:         task.ProjectID,
 		Name:              task.Name,
 		Description:       task.Description,
-		Status:            TaskStatus(task.Status),
+		Status:            task.Status,
 		StartAt:           task.StartAt,
 		EndAt:             task.EndAt,
 		AssigneeID:        task.AssigneeID,
@@ -64,41 +64,25 @@ func FromModelTask(task *models.Task) *Task {
 }
 
 type CreateTaskProjectTaskDTO struct {
-	Name        string     `json:"name" required:"true"`
-	Description *string    `json:"description,omitempty" required:"false"`
-	Status      TaskStatus `json:"status" required:"false" enum:"todo,in_progress,done" default:"todo"`
-	Rank        float64    `json:"rank,omitempty" required:"false"`
-}
-
-type UpdateTaskDto struct {
-	Name        string     `db:"name" json:"name"`
-	Description *string    `db:"description" json:"description"`
-	Status      TaskStatus `db:"status" json:"status" enum:"todo,in_progress,done"`
-	StartAt     *time.Time `db:"start_at" json:"start_at" nullable:"true"`
-	EndAt       *time.Time `db:"end_at" json:"end_at" nullable:"true"`
-	AssigneeID  *uuid.UUID `db:"assignee_id" json:"assignee_id" nullable:"true"`
-	ReporterID  *uuid.UUID `db:"reporter_id" json:"reporter_id" nullable:"true"`
-	ParentID    *uuid.UUID `db:"parent_id" json:"parent_id" nullable:"true"`
+	Name        string            `json:"name" required:"true"`
+	Description *string           `json:"description,omitempty" required:"false"`
+	Status      models.TaskStatus `json:"status" required:"false" enum:"todo,in_progress,done" default:"todo"`
+	Rank        float64           `json:"rank,omitempty" required:"false"`
 }
 
 type UpdateTaskInput struct {
-	Body   UpdateTaskDto
+	Body   stores.UpdateTaskDto
 	TaskID string `path:"task-id" json:"task_id" required:"true" format:"uuid"`
 }
 
 type TaskPositionStatusDTO struct {
-	Position int64      `json:"position" required:"true"`
-	Status   TaskStatus `json:"status" required:"true" enum:"todo,in_progress,done"`
+	Position int64             `json:"position" required:"true"`
+	Status   models.TaskStatus `json:"status" required:"true" enum:"todo,in_progress,done"`
 }
 
 type TaskPositionStatusInput struct {
 	TaskID string `path:"task-id" json:"task_id" required:"true" format:"uuid"`
 	Body   TaskPositionStatusDTO
-}
-
-type CreateTaskWithChildrenDTO struct {
-	CreateTaskProjectTaskDTO
-	Children []CreateTaskProjectTaskDTO `json:"children,omitempty" required:"false"`
 }
 
 type TaskListResponse struct {
@@ -107,11 +91,11 @@ type TaskListResponse struct {
 type TeamTaskListParams struct {
 	ProjectID string `path:"task-project-id" json:"project_id" required:"true" format:"uuid"`
 	PaginatedInput
-	Q                 string       `query:"q,omitempty" required:"false"`
-	Status            []TaskStatus `query:"status,omitempty" required:"false" enum:"todo,in_progress,done"`
-	CreatedByMemberID string       `query:"created_by,omitempty" required:"false" format:"uuid"`
-	Ids               []string     `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
-	ParentID          string       `query:"parent_id,omitempty" required:"false" format:"uuid"`
+	Q                 string              `query:"q,omitempty" required:"false"`
+	Status            []models.TaskStatus `query:"status,omitempty" required:"false" enum:"todo,in_progress,done"`
+	CreatedByMemberID string              `query:"created_by,omitempty" required:"false" format:"uuid"`
+	Ids               []string            `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+	ParentID          string              `query:"parent_id,omitempty" required:"false" format:"uuid"`
 	SortParams
 	Expand []string `query:"expand,omitempty" required:"false" minimum:"1" maximum:"100" enum:"subtasks"`
 }
@@ -129,9 +113,7 @@ func (api *Api) TeamTaskList(ctx context.Context, input *TeamTaskListParams) (*T
 	newInput.PerPage = input.PerPage
 	newInput.Ids = utils.ParseValidUUIDs(input.Ids...)
 	newInput.Q = input.Q
-	newInput.Statuses = mapper.Map(input.Status, func(status TaskStatus) models.TaskStatus {
-		return models.TaskStatus(status)
-	})
+	newInput.Statuses = input.Status
 	newInput.TeamIds = []uuid.UUID{teamInfo.Team.ID}
 	newInput.ProjectIds = utils.ParseValidUUIDs(input.ProjectID)
 	parentID, err := uuid.Parse(input.ParentID)
@@ -166,16 +148,7 @@ func (api *Api) TaskUpdate(ctx context.Context, input *UpdateTaskInput) (*struct
 	if err != nil {
 		return nil, huma.Error400BadRequest("Invalid task ID")
 	}
-	err = api.app.Adapter().Task().FindAndUpdateTask(ctx, id, &stores.UpdateTaskDto{
-		Name:        input.Body.Name,
-		Description: input.Body.Description,
-		Status:      models.TaskStatus(input.Body.Status),
-		StartAt:     input.Body.StartAt,
-		EndAt:       input.Body.EndAt,
-		AssigneeID:  input.Body.AssigneeID,
-		ReporterID:  input.Body.ReporterID,
-		ParentID:    input.Body.ParentID,
-	})
+	err = api.app.Adapter().Task().FindAndUpdateTask(ctx, id, &input.Body)
 	if err != nil {
 		return nil, err
 	}
