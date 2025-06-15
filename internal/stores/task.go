@@ -13,7 +13,6 @@ import (
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/repository"
-	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 	"github.com/tkahng/authgo/internal/tools/types"
 	"github.com/tkahng/authgo/internal/tools/utils"
@@ -47,6 +46,7 @@ type DbTaskStoreInterface interface { // size=16 (0x10)
 	UpdateTaskRankStatus(ctx context.Context, taskID uuid.UUID, position int64, status models.TaskStatus) error
 	WithTx(dbx database.Dbx) *DbTaskStore
 	GetTeamTaskStats(ctx context.Context, teamId uuid.UUID) (*models.TaskStats, error)
+	FindAndUpdateTask(ctx context.Context, taskID uuid.UUID, input *UpdateTaskDto) error
 }
 
 type DbTaskStore struct {
@@ -149,6 +149,41 @@ func (*DbTaskStore) taskWhere(task *TaskFilter) *map[string]any {
 		}
 	}
 	return &where
+}
+
+type UpdateTaskDto struct {
+	Name        string            `db:"name" json:"name"`
+	Description *string           `db:"description" json:"description"`
+	Status      models.TaskStatus `db:"status" json:"status" enum:"todo,in_progress,done"`
+	StartAt     *time.Time        `db:"start_at" json:"start_at" nullable:"true"`
+	EndAt       *time.Time        `db:"end_at" json:"end_at" nullable:"true"`
+	AssigneeID  *uuid.UUID        `db:"assignee_id" json:"assignee_id" nullable:"true"`
+	ReporterID  *uuid.UUID        `db:"reporter_id" json:"reporter_id" nullable:"true"`
+	ParentID    *uuid.UUID        `db:"parent_id" json:"parent_id" nullable:"true"`
+}
+
+func (s *DbTaskStore) FindAndUpdateTask(ctx context.Context, taskID uuid.UUID, input *UpdateTaskDto) error {
+	task, err := s.FindTaskByID(ctx, taskID)
+	if err != nil {
+		return err
+	}
+	if task == nil {
+		return errors.New("task not found")
+	}
+
+	task.Name = input.Name
+	task.Description = input.Description
+	task.Status = models.TaskStatus(input.Status)
+	task.StartAt = input.StartAt
+	task.EndAt = input.EndAt
+	task.AssigneeID = input.AssigneeID
+	task.ReporterID = input.ReporterID
+	task.ParentID = input.ParentID
+	err = s.UpdateTask(ctx, task)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (s *DbTaskStore) UpdateTask(ctx context.Context, task *models.Task) error {
@@ -324,7 +359,7 @@ func (s *DbTaskStore) DeleteTask(ctx context.Context, taskID uuid.UUID) error {
 }
 
 type TaskProjectsFilter struct {
-	shared.PaginatedInput
+	PaginatedInput
 	SortParams
 	Q        string                     `query:"q,omitempty" json:"q,omitempty" required:"false"`
 	Ids      []uuid.UUID                `query:"ids,omitempty" json:"ids,omitempty" format:"uuid" required:"false"`

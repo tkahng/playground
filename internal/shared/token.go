@@ -68,7 +68,7 @@ type ProviderStatePayload struct {
 	// Email               string           `json:"email,omitempty"`
 	Token               string            `json:"token"`
 	Type                models.TokenTypes `json:"type"`
-	Provider            Providers         `json:"provider"`
+	Provider            models.Providers  `json:"provider"`
 	CodeVerifier        string            `json:"code_verifier,omitempty"`
 	CodeChallenge       string            `json:"code_challenge,omitempty"`
 	CodeChallengeMethod string            `json:"code_challenge_method,omitempty"`

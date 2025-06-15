@@ -41,7 +41,6 @@ type OAuth2CallbackInput struct {
 type OAuth2CallbackGetResponse struct {
 	Status int
 	Url    string `header:"Location"`
-	// Body   *shared.AuthenticatedDTO
 }
 
 func (api *Api) OAuth2CallbackGet(ctx context.Context, input *OAuth2CallbackInput) (*OAuth2CallbackGetResponse, error) {

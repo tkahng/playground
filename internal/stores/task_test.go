@@ -8,7 +8,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
-	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/stores"
 	"github.com/tkahng/authgo/internal/test"
 	"github.com/tkahng/authgo/internal/tools/types"
@@ -841,7 +840,7 @@ func TestListTaskProjects(t *testing.T) {
 					db:  dbxx,
 					input: &stores.TaskProjectsFilter{
 						TeamIds: []uuid.UUID{member.TeamID},
-						PaginatedInput: shared.PaginatedInput{
+						PaginatedInput: stores.PaginatedInput{
 							Page:    0,
 							PerPage: 10,
 						},
@@ -856,7 +855,7 @@ func TestListTaskProjects(t *testing.T) {
 					ctx: ctx,
 					db:  dbxx,
 					input: &stores.TaskProjectsFilter{
-						PaginatedInput: shared.PaginatedInput{
+						PaginatedInput: stores.PaginatedInput{
 							Page:    0,
 							PerPage: 10,
 						},

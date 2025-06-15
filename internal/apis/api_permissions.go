@@ -5,15 +5,14 @@ import (
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
-	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/stores"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 	"github.com/tkahng/authgo/internal/tools/utils"
 )
 
 func (api *Api) PermissionsList(ctx context.Context, input *struct {
-	shared.PermissionsListParams
-}) (*ApiPaginatedOutput[*shared.Permission], error) {
+	PermissionsListParams
+}) (*ApiPaginatedOutput[*Permission], error) {
 	filter := new(stores.PermissionFilter)
 	filter.Page = input.PerPage
 	filter.PerPage = input.Page
@@ -41,11 +40,11 @@ func (api *Api) PermissionsList(ctx context.Context, input *struct {
 		return nil, err
 	}
 
-	return &ApiPaginatedOutput[*shared.Permission]{
-		Body: ApiPaginatedResponse[*shared.Permission]{
+	return &ApiPaginatedOutput[*Permission]{
+		Body: ApiPaginatedResponse[*Permission]{
 
-			Data: mapper.Map(permissions, shared.FromModelPermission),
-			Meta: GenerateMeta(&input.PaginatedInput, count),
+			Data: mapper.Map(permissions, FromModelPermission),
+			Meta: ApiGenerateMeta(&input.PaginatedInput, count),
 		},
 	}, nil
 

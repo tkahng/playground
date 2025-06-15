@@ -8,7 +8,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/contextstore"
 	"github.com/tkahng/authgo/internal/models"
-	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/stores"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 	"github.com/tkahng/authgo/internal/tools/utils"
@@ -103,7 +102,7 @@ type CreateTaskWithChildrenDTO struct {
 }
 
 type TaskListResponse struct {
-	Body *ApiPaginatedResponse[*shared.Task]
+	Body *ApiPaginatedResponse[*Task]
 }
 type TeamTaskListParams struct {
 	ProjectID string `path:"task-project-id" json:"project_id" required:"true" format:"uuid"`
@@ -150,10 +149,8 @@ func (api *Api) TeamTaskList(ctx context.Context, input *TeamTaskListParams) (*T
 		return nil, huma.Error500InternalServerError("error counting tasks", err)
 	}
 	return &TaskListResponse{
-		Body: &ApiPaginatedResponse[*shared.Task]{
-			Data: mapper.Map(tasks, func(task *models.Task) *shared.Task {
-				return shared.FromModelTask(task)
-			}),
+		Body: &ApiPaginatedResponse[*Task]{
+			Data: mapper.Map(tasks, FromModelTask),
 			Meta: ApiGenerateMeta(&input.PaginatedInput, total),
 		},
 	}, nil
@@ -163,20 +160,29 @@ type TaskResponse struct {
 	Body *Task
 }
 
-func (api *Api) TaskUpdate(ctx context.Context, input *shared.UpdateTaskInput) (*struct{}, error) {
+func (api *Api) TaskUpdate(ctx context.Context, input *UpdateTaskInput) (*struct{}, error) {
 
 	id, err := uuid.Parse(input.TaskID)
 	if err != nil {
 		return nil, huma.Error400BadRequest("Invalid task ID")
 	}
-	err = api.app.Task().FindAndUpdateTask(ctx, id, &input.Body)
+	err = api.app.Adapter().Task().FindAndUpdateTask(ctx, id, &stores.UpdateTaskDto{
+		Name:        input.Body.Name,
+		Description: input.Body.Description,
+		Status:      models.TaskStatus(input.Body.Status),
+		StartAt:     input.Body.StartAt,
+		EndAt:       input.Body.EndAt,
+		AssigneeID:  input.Body.AssigneeID,
+		ReporterID:  input.Body.ReporterID,
+		ParentID:    input.Body.ParentID,
+	})
 	if err != nil {
 		return nil, err
 	}
 	return nil, nil
 }
 
-func (api *Api) UpdateTaskPositionStatus(ctx context.Context, input *shared.TaskPositionStatusInput) (*struct{}, error) {
+func (api *Api) UpdateTaskPositionStatus(ctx context.Context, input *TaskPositionStatusInput) (*struct{}, error) {
 	if input == nil {
 		return nil, huma.Error400BadRequest("Invalid input")
 	}

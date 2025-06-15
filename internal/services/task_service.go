@@ -4,10 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/models"
-	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/stores"
 )
 
@@ -20,7 +20,6 @@ type TaskFields struct {
 }
 type TaskService interface {
 	CreateTask(ctx context.Context, teamID uuid.UUID, projectID uuid.UUID, createdByMemberID uuid.UUID, input *TaskFields) (*models.Task, error)
-	FindAndUpdateTask(ctx context.Context, taskID uuid.UUID, input *shared.UpdateTaskDto) error
 
 	// CreateTaskWithChildren(ctx context.Context, teamID uuid.UUID, projectID uuid.UUID, memberID uuid.UUID, input *shared.CreateTaskWithChildrenDTO) (*models.Task, error)
 	UpdateTaskRankStatus(ctx context.Context, taskID uuid.UUID, position int64, status models.TaskStatus) error
@@ -58,32 +57,15 @@ func NewTaskService(adapter *stores.StorageAdapter) TaskService {
 var _ TaskService = (*taskService)(nil)
 
 // FindAndUpdateTask implements TaskService.
-func (s *taskService) FindAndUpdateTask(ctx context.Context, taskID uuid.UUID, input *shared.UpdateTaskDto) error {
-	task, err := s.adapter.Task().FindTask(ctx, &stores.TaskFilter{Ids: []uuid.UUID{taskID}})
-	if err != nil {
-		return err
-	}
-	if task == nil {
-		return errors.New("task not found")
-	}
-
-	task.Name = input.Name
-	task.Description = input.Description
-	task.Status = models.TaskStatus(input.Status)
-	task.StartAt = input.StartAt
-	task.EndAt = input.EndAt
-	task.AssigneeID = input.AssigneeID
-	task.ReporterID = input.ReporterID
-	task.ParentID = input.ParentID
-	err = s.adapter.Task().UpdateTask(ctx, task)
-	if err != nil {
-		return err
-	}
-	err = s.adapter.Task().UpdateTaskProjectUpdateDate(ctx, task.ProjectID)
-	if err != nil {
-		return fmt.Errorf("failed to update task project update date: %w", err)
-	}
-	return nil
+type UpdateTaskDto struct {
+	Name        string            `db:"name" json:"name"`
+	Description *string           `db:"description" json:"description"`
+	Status      models.TaskStatus `db:"status" json:"status" enum:"todo,in_progress,done"`
+	StartAt     *time.Time        `db:"start_at" json:"start_at" nullable:"true"`
+	EndAt       *time.Time        `db:"end_at" json:"end_at" nullable:"true"`
+	AssigneeID  *uuid.UUID        `db:"assignee_id" json:"assignee_id" nullable:"true"`
+	ReporterID  *uuid.UUID        `db:"reporter_id" json:"reporter_id" nullable:"true"`
+	ParentID    *uuid.UUID        `db:"parent_id" json:"parent_id" nullable:"true"`
 }
 
 func (s *taskService) UpdateTaskRankStatus(ctx context.Context, taskID uuid.UUID, position int64, status models.TaskStatus) error {

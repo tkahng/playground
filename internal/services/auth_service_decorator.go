@@ -18,7 +18,7 @@ type AuthServiceDecorator struct {
 	MailFunc                       func() MailService
 	PasswordFunc                   func() PasswordService
 	TokenFunc                      func() JwtService
-	CreateOAuthUrlFunc             func(ctx context.Context, provider shared.Providers, redirectUrl string) (string, error)
+	CreateOAuthUrlFunc             func(ctx context.Context, provider models.Providers, redirectUrl string) (string, error)
 	AuthenticateFunc               func(ctx context.Context, params *AuthenticationInput) (*models.User, error)
 	CheckResetPasswordTokenFunc    func(ctx context.Context, token string) error
 	HandleAccessTokenFunc          func(ctx context.Context, token string) (*models.UserInfo, error)
@@ -85,7 +85,7 @@ func (a *AuthServiceDecorator) Token() JwtService {
 }
 
 // CreateOAuthUrl implements AuthService.
-func (a *AuthServiceDecorator) CreateOAuthUrl(ctx context.Context, provider shared.Providers, redirectUrl string) (string, error) {
+func (a *AuthServiceDecorator) CreateOAuthUrl(ctx context.Context, provider models.Providers, redirectUrl string) (string, error) {
 	if a.CreateOAuthUrlFunc != nil {
 		return a.CreateOAuthUrlFunc(ctx, provider, redirectUrl)
 	}

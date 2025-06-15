@@ -42,7 +42,7 @@ type AuthService interface {
 	// methods -----------------------------------------------------------------------------------------------------------
 
 	VerifyStateToken(ctx context.Context, token string) (*shared.ProviderStateClaims, error)
-	CreateOAuthUrl(ctx context.Context, provider shared.Providers, redirectUrl string) (string, error)
+	CreateOAuthUrl(ctx context.Context, provider models.Providers, redirectUrl string) (string, error)
 	CreateAndPersistStateToken(ctx context.Context, payload *shared.ProviderStatePayload) (string, error)
 	FetchAuthUser(ctx context.Context, code string, parsedState *shared.ProviderStateClaims) (*oauth.AuthUser, error)
 	VerifyAndParseOtpToken(ctx context.Context, emailType mailer.EmailType, token string) (*shared.OtpClaims, error)
@@ -103,7 +103,7 @@ func (app *BaseAuthService) Token() JwtService {
 }
 
 // CreateOAuthUrl implements AuthService.
-func (app *BaseAuthService) CreateOAuthUrl(ctx context.Context, providerName shared.Providers, redirectUrl string) (string, error) {
+func (app *BaseAuthService) CreateOAuthUrl(ctx context.Context, providerName models.Providers, redirectUrl string) (string, error) {
 	redirectTo := redirectUrl
 	if redirectTo == "" {
 		redirectTo = app.options.Meta.AppUrl

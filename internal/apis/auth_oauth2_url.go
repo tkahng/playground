@@ -4,12 +4,12 @@ import (
 	"context"
 
 	"github.com/danielgtaylor/huma/v2"
-	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/authgo/internal/models"
 )
 
 type OAuth2AuthorizationUrlInput struct {
-	Provider   shared.Providers `json:"provider"  query:"provider" form:"provider" enum:"google,github" required:"true"`
-	RedirectTo string           `json:"redirect_to" query:"redirect_to" form:"redirect_to" format:"uri" required:"false"`
+	Provider   ApiProviders `json:"provider"  query:"provider" form:"provider" enum:"google,github" required:"true"`
+	RedirectTo string       `json:"redirect_to" query:"redirect_to" form:"redirect_to" format:"uri" required:"false"`
 }
 
 type OAuth2AuthorizationUrlOutput struct {
@@ -24,7 +24,7 @@ func (api *Api) OAuth2AuthorizationUrl(ctx context.Context, input *OAuth2Authori
 	}
 	res, err := api.app.Auth().CreateOAuthUrl(
 		ctx,
-		input.Provider,
+		models.Providers(input.Provider),
 		input.RedirectTo,
 	)
 	if err != nil {
