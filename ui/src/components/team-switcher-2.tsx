@@ -24,11 +24,7 @@ import { useNavigate } from "react-router";
 export default function TeamSwitcher() {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
-  const {
-    data: teams,
-    error: teamsError,
-    isLoading: teamsLoading,
-  } = useUserTeams();
+  const { data, error: teamsError, isLoading: teamsLoading } = useUserTeams();
   const { team, isLoading: teamLoading, error: teamError } = useTeam();
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(team);
 
@@ -38,7 +34,7 @@ export default function TeamSwitcher() {
   if (teamsError || teamError) {
     return <div>Error: {teamsError?.message || teamError?.message}</div>;
   }
-  if (!teams || teams.data.length === 0 || !selectedTeam) {
+  if (!data || data.data.length === 0 || !selectedTeam) {
     return <div>No teams available.</div>;
   }
   function handleSelectTeam(team: Team) {
@@ -76,7 +72,7 @@ export default function TeamSwitcher() {
               <CommandInput placeholder="Search team..." />
               <CommandEmpty>No team found.</CommandEmpty>
               <CommandGroup heading="Teams">
-                {teams.data.map((team) => (
+                {data.data.map((team) => (
                   <CommandItem
                     key={team.id}
                     onSelect={() => {
