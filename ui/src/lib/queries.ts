@@ -246,7 +246,7 @@ export const deleteRolePermission = async (
 export const createRolePermission = async (
   token: string,
   roleId: string,
-  body: components["schemas"]["RolePermissionsUpdateInput"]
+  body: components["schemas"]["PermissionIdsInput"]
 ) => {
   const { data, error } = await client.POST(
     "/api/admin/roles/{id}/permissions",
@@ -1180,10 +1180,10 @@ export const adminStripeProduct = async (token: string, id: string) => {
 export const adminStripeProductRolesCreate = async (
   token: string,
   id: string,
-  body: operations["admin-create-product-roles"]["requestBody"]["content"]["application/json"]
+  body: operations["admin-create-product-permissions"]["requestBody"]["content"]["application/json"]
 ) => {
   const { data, error } = await client.POST(
-    "/api/admin/products/{product-id}/roles",
+    "/api/admin/products/{product-id}/permissions",
     {
       params: {
         path: { "product-id": id },
@@ -1200,18 +1200,18 @@ export const adminStripeProductRolesCreate = async (
   return data;
 };
 
-export const adminStripeProductRolesDelete = async (
+export const adminStripeProductPermissionsDelete = async (
   token: string,
   productId: string,
-  roleId: string
+  permissionId: string
 ) => {
   const { data, error } = await client.DELETE(
-    "/api/admin/products/{product-id}/roles/{role-id}",
+    "/api/admin/products/{product-id}/permissions/{permission-id}",
     {
       params: {
         path: {
           "product-id": productId,
-          "role-id": roleId,
+          "permission-id": permissionId,
         },
       },
       headers: {

@@ -2,25 +2,25 @@ import { components } from "@/schema";
 
 export type SigninInput = components["schemas"]["SigninDto"];
 
-export type UserInfoTokens = components["schemas"]["UserInfoTokens"];
+export type UserInfoTokens = components["schemas"]["ApiUserInfoTokens"];
 export type SignupInput = components["schemas"]["SignupInput"];
 
 export type RefreshTokenInput = components["schemas"]["RefreshTokenInput"];
 
-export type User = components["schemas"]["User"];
+export type User = components["schemas"]["ApiUser"];
 
-export type PriceIntervals = components["schemas"]["Price"]["interval"];
+export type PriceIntervals = components["schemas"]["StripePrice"]["interval"];
 
 export type BillingIntervals = Exclude<
   PriceIntervals,
   "week" | "day" | undefined
 >;
 
-export type RoleWithPermissions = components["schemas"]["RoleWithPermissions"];
+export type RoleWithPermissions = components["schemas"]["Role"];
 export type Role = components["schemas"]["Role"];
 export type Permission = components["schemas"]["Permission"];
 
-export type UserDetail = components["schemas"]["UserDetail"];
+export type UserDetail = components["schemas"]["ApiUser"];
 
 export type UserDetailWithRoles = {
   accounts: components["schemas"]["UserAccountOutput"][];
@@ -44,13 +44,13 @@ export type UserDetailWithRoles = {
   updated_at: string;
 };
 
-export type SubscriptionWithPrice =
-  components["schemas"]["SubscriptionWithPrice"];
+export type StripeSubscription = components["schemas"]["StripeSubscription"];
 
-export type ProductWithPrices =
-  components["schemas"]["StripeProductWitPermission"];
+export type SubscriptionWithPrice = StripeSubscription;
 
-export type Price = components["schemas"]["Price"];
+export type ProductWithPrices = components["schemas"]["StripeProduct"];
+
+export type Price = components["schemas"]["StripePrice"];
 
 export type UserPermissions = components["schemas"]["PermissionSource"];
 

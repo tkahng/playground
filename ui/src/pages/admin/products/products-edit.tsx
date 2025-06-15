@@ -12,7 +12,7 @@ import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { ConfirmDialog, useDialog } from "@/hooks/use-dialog";
 import {
   adminStripeProduct,
-  adminStripeProductRolesDelete,
+  adminStripeProductPermissionsDelete,
 } from "@/lib/queries";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronLeft, Trash } from "lucide-react";
@@ -34,16 +34,16 @@ export default function ProductEditPage() {
       return adminStripeProduct(user.tokens.access_token, productId);
     },
   });
-  const deleteProductRolesMutation = useMutation({
-    mutationFn: async (roleid: string) => {
+  const deleteProductPermissionsMutation = useMutation({
+    mutationFn: async (permissionId: string) => {
       if (!user?.tokens.access_token || !productId) {
         throw new Error("Missing access token");
       }
       // Call the API to delete the role
-      return adminStripeProductRolesDelete(
+      return adminStripeProductPermissionsDelete(
         user.tokens.access_token,
         productId,
-        roleid
+        permissionId
       );
     },
     onSuccess: async () => {
@@ -99,7 +99,7 @@ export default function ProductEditPage() {
                 <div className="flex flex-row gap-2 justify-end">
                   <DeleteButton
                     onDelete={() => {
-                      deleteProductRolesMutation.mutate(row.original.id);
+                      deleteProductPermissionsMutation.mutate(row.original.id);
                     }}
                     permissionId={row.original.id}
                     // disabled={!row.original.is_directly_assigned}

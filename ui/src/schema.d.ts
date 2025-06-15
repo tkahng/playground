@@ -113,7 +113,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/admin/products/{product-id}/roles": {
+    "/api/admin/products/{product-id}/permissions": {
         parameters: {
             query?: never;
             header?: never;
@@ -123,17 +123,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Create product roles
-         * @description Create product roles
+         * Create product permissions
+         * @description Create product permissions
          */
-        post: operations["admin-create-product-roles"];
+        post: operations["admin-create-product-permissions"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/admin/products/{product-id}/roles/{role-id}": {
+    "/api/admin/products/{product-id}/permissions/{permission-id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -144,10 +144,10 @@ export interface paths {
         put?: never;
         post?: never;
         /**
-         * Delete product roles
-         * @description Delete product roles
+         * Delete product permissions
+         * @description Delete product permissions
          */
-        delete: operations["admin-delete-product-roles"];
+        delete: operations["admin-delete-product-permissions"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1330,6 +1330,146 @@ export interface components {
             /** Format: uuid */
             permission_ids: string[] | null;
         };
+        ApiPaginatedResponseApiUser: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            data: components["schemas"]["ApiUser"][] | null;
+            meta: components["schemas"]["Meta"];
+        };
+        ApiPaginatedResponseMedia: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            data: components["schemas"]["Media"][] | null;
+            meta: components["schemas"]["Meta"];
+        };
+        ApiPaginatedResponsePermission: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            data: components["schemas"]["Permission"][] | null;
+            meta: components["schemas"]["Meta"];
+        };
+        ApiPaginatedResponsePermissionSource: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            data: components["schemas"]["PermissionSource"][] | null;
+            meta: components["schemas"]["Meta"];
+        };
+        ApiPaginatedResponseRole: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            data: components["schemas"]["Role"][] | null;
+            meta: components["schemas"]["Meta"];
+        };
+        ApiPaginatedResponseStripeProduct: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            data: components["schemas"]["StripeProduct"][] | null;
+            meta: components["schemas"]["Meta"];
+        };
+        ApiPaginatedResponseStripeSubscription: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            data: components["schemas"]["StripeSubscription"][] | null;
+            meta: components["schemas"]["Meta"];
+        };
+        ApiPaginatedResponseTask: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            data: components["schemas"]["Task"][] | null;
+            meta: components["schemas"]["Meta"];
+        };
+        ApiPaginatedResponseTaskProject: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            data: components["schemas"]["TaskProject"][] | null;
+            meta: components["schemas"]["Meta"];
+        };
+        ApiPaginatedResponseTeam: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            data: components["schemas"]["Team"][] | null;
+            meta: components["schemas"]["Meta"];
+        };
+        ApiPaginatedResponseTeamMember: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            data: components["schemas"]["TeamMember"][] | null;
+            meta: components["schemas"]["Meta"];
+        };
+        ApiPaginatedResponseUserAccountOutput: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            data: components["schemas"]["UserAccountOutput"][] | null;
+            meta: components["schemas"]["Meta"];
+        };
+        ApiUser: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            accounts?: components["schemas"]["UserAccountOutput"][] | null;
+            /** Format: date-time */
+            created_at: string;
+            email: string;
+            /** Format: date-time */
+            email_verified_at: string | null;
+            id: string;
+            image: string | null;
+            name: string | null;
+            permissions?: components["schemas"]["Permission"][] | null;
+            roles?: components["schemas"]["Role"][] | null;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        ApiUserInfoTokens: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            permissions: string[] | null;
+            providers: ("google" | "apple" | "facebook" | "github" | "credentials")[] | null;
+            roles: string[] | null;
+            tokens: components["schemas"]["TokenDto"];
+            user: components["schemas"]["ApiUser"];
+        };
         "Check-team-slugRequest": {
             /**
              * Format: uri
@@ -1383,23 +1523,6 @@ export interface components {
              */
             status: "todo" | "in_progress" | "done";
             tasks?: components["schemas"]["CreateTaskProjectTaskDTO"][] | null;
-        };
-        CreateTaskWithChildrenDTO: {
-            /**
-             * Format: uri
-             * @description A URL to the JSON Schema for this object.
-             */
-            readonly $schema?: string;
-            children?: components["schemas"]["CreateTaskProjectTaskDTO"][] | null;
-            description?: string;
-            name: string;
-            /** Format: double */
-            rank?: number;
-            /**
-             * @default todo
-             * @enum {string}
-             */
-            status: "todo" | "in_progress" | "done";
         };
         CreateTeamInput: {
             /**
@@ -1495,114 +1618,6 @@ export interface components {
             readonly $schema?: string;
             token: string;
         };
-        PaginatedResponseMedia: {
-            /**
-             * Format: uri
-             * @description A URL to the JSON Schema for this object.
-             */
-            readonly $schema?: string;
-            data: components["schemas"]["Media"][] | null;
-            meta: components["schemas"]["Meta"];
-        };
-        PaginatedResponsePermission: {
-            /**
-             * Format: uri
-             * @description A URL to the JSON Schema for this object.
-             */
-            readonly $schema?: string;
-            data: components["schemas"]["Permission"][] | null;
-            meta: components["schemas"]["Meta"];
-        };
-        PaginatedResponsePermissionSource: {
-            /**
-             * Format: uri
-             * @description A URL to the JSON Schema for this object.
-             */
-            readonly $schema?: string;
-            data: components["schemas"]["PermissionSource"][] | null;
-            meta: components["schemas"]["Meta"];
-        };
-        PaginatedResponseRoleWithPermissions: {
-            /**
-             * Format: uri
-             * @description A URL to the JSON Schema for this object.
-             */
-            readonly $schema?: string;
-            data: components["schemas"]["RoleWithPermissions"][] | null;
-            meta: components["schemas"]["Meta"];
-        };
-        PaginatedResponseStripeProductWitPermission: {
-            /**
-             * Format: uri
-             * @description A URL to the JSON Schema for this object.
-             */
-            readonly $schema?: string;
-            data: components["schemas"]["StripeProductWitPermission"][] | null;
-            meta: components["schemas"]["Meta"];
-        };
-        PaginatedResponseSubscriptionWithData: {
-            /**
-             * Format: uri
-             * @description A URL to the JSON Schema for this object.
-             */
-            readonly $schema?: string;
-            data: components["schemas"]["SubscriptionWithData"][] | null;
-            meta: components["schemas"]["Meta"];
-        };
-        PaginatedResponseTask: {
-            /**
-             * Format: uri
-             * @description A URL to the JSON Schema for this object.
-             */
-            readonly $schema?: string;
-            data: components["schemas"]["Task"][] | null;
-            meta: components["schemas"]["Meta"];
-        };
-        PaginatedResponseTaskProject: {
-            /**
-             * Format: uri
-             * @description A URL to the JSON Schema for this object.
-             */
-            readonly $schema?: string;
-            data: components["schemas"]["TaskProject"][] | null;
-            meta: components["schemas"]["Meta"];
-        };
-        PaginatedResponseTeam: {
-            /**
-             * Format: uri
-             * @description A URL to the JSON Schema for this object.
-             */
-            readonly $schema?: string;
-            data: components["schemas"]["Team"][] | null;
-            meta: components["schemas"]["Meta"];
-        };
-        PaginatedResponseTeamMember: {
-            /**
-             * Format: uri
-             * @description A URL to the JSON Schema for this object.
-             */
-            readonly $schema?: string;
-            data: components["schemas"]["TeamMember"][] | null;
-            meta: components["schemas"]["Meta"];
-        };
-        PaginatedResponseUserAccountOutput: {
-            /**
-             * Format: uri
-             * @description A URL to the JSON Schema for this object.
-             */
-            readonly $schema?: string;
-            data: components["schemas"]["UserAccountOutput"][] | null;
-            meta: components["schemas"]["Meta"];
-        };
-        PaginatedResponseUserDetail: {
-            /**
-             * Format: uri
-             * @description A URL to the JSON Schema for this object.
-             */
-            readonly $schema?: string;
-            data: components["schemas"]["UserDetail"][] | null;
-            meta: components["schemas"]["Meta"];
-        };
         PasswordResetInput: {
             /**
              * Format: uri
@@ -1635,6 +1650,15 @@ export interface components {
             description?: string;
             name: string;
         };
+        PermissionIdsInput: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            /** Format: uuid */
+            permission_ids: string[] | null;
+        };
         PermissionSource: {
             /** Format: date-time */
             created_at: string;
@@ -1644,44 +1668,6 @@ export interface components {
             name: string;
             product_ids: string[] | null;
             role_ids: string[] | null;
-            /** Format: date-time */
-            updated_at: string;
-        };
-        Price: {
-            active: boolean;
-            /** Format: date-time */
-            created_at: string;
-            currency: string;
-            id: string;
-            /** @enum {string} */
-            interval?: "day" | "week" | "month" | "year";
-            /** Format: int64 */
-            interval_count: number | null;
-            lookup_key: string | null;
-            metadata: {
-                [key: string]: string;
-            };
-            product_id: string;
-            /** Format: int64 */
-            trial_period_days: number | null;
-            /** @enum {string} */
-            type: "one_time" | "recurring";
-            /** Format: int64 */
-            unit_amount: number | null;
-            /** Format: date-time */
-            updated_at: string;
-        };
-        Product: {
-            active: boolean;
-            /** Format: date-time */
-            created_at: string;
-            description: string | null;
-            id: string;
-            image: string | null;
-            metadata: {
-                [key: string]: string;
-            };
-            name: string;
             /** Format: date-time */
             updated_at: string;
         };
@@ -1712,8 +1698,10 @@ export interface components {
             description?: string;
             id: string;
             name: string;
+            permissions?: components["schemas"]["Permission"][] | null;
             /** Format: date-time */
             updated_at: string;
+            users?: components["schemas"]["ApiUser"][] | null;
         };
         RoleCreateInput: {
             /**
@@ -1732,30 +1720,6 @@ export interface components {
             readonly $schema?: string;
             /** Format: uuid */
             role_ids: string[] | null;
-        };
-        RolePermissionsUpdateInput: {
-            /**
-             * Format: uri
-             * @description A URL to the JSON Schema for this object.
-             */
-            readonly $schema?: string;
-            /** Format: uuid */
-            permission_ids: string[] | null;
-        };
-        RoleWithPermissions: {
-            /**
-             * Format: uri
-             * @description A URL to the JSON Schema for this object.
-             */
-            readonly $schema?: string;
-            /** Format: date-time */
-            created_at: string;
-            description?: string;
-            id: string;
-            name: string;
-            permissions?: components["schemas"]["Permission"][] | null;
-            /** Format: date-time */
-            updated_at: string;
         };
         SigninDto: {
             /**
@@ -1786,6 +1750,28 @@ export interface components {
             name: string | null;
             password: string;
         };
+        StripeCustomer: {
+            billing_address: {
+                [key: string]: string;
+            };
+            /** Format: date-time */
+            created_at: string;
+            /** @enum {string} */
+            customer_type: "user" | "team";
+            email: string;
+            id: string;
+            name?: string;
+            payment_method: {
+                [key: string]: string;
+            };
+            subscriptions?: components["schemas"]["StripeSubscription"][] | null;
+            team?: components["schemas"]["Team"];
+            team_id?: string;
+            /** Format: date-time */
+            updated_at: string;
+            user?: components["schemas"]["ApiUser"];
+            user_id?: string;
+        };
         StripePaymentPayload: {
             /**
              * Format: uri
@@ -1794,7 +1780,7 @@ export interface components {
             readonly $schema?: string;
             price_id: string;
         };
-        StripePricesWithProduct: {
+        StripePrice: {
             active: boolean;
             /** Format: date-time */
             created_at: string;
@@ -1808,8 +1794,9 @@ export interface components {
             metadata: {
                 [key: string]: string;
             };
-            product?: components["schemas"]["Product"];
+            product?: components["schemas"]["StripeProduct"];
             product_id: string;
+            subscriptions?: components["schemas"]["StripeSubscription"][] | null;
             /** Format: int64 */
             trial_period_days: number | null;
             /** @enum {string} */
@@ -1819,7 +1806,7 @@ export interface components {
             /** Format: date-time */
             updated_at: string;
         };
-        StripeProductWitPermission: {
+        StripeProduct: {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
@@ -1836,7 +1823,48 @@ export interface components {
             };
             name: string;
             permissions?: components["schemas"]["Permission"][] | null;
-            prices?: components["schemas"]["Price"][] | null;
+            prices?: components["schemas"]["StripePrice"][] | null;
+            roles?: components["schemas"]["Role"][] | null;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        StripeSubscription: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            /** Format: date-time */
+            cancel_at: string | null;
+            cancel_at_period_end: boolean;
+            /** Format: date-time */
+            canceled_at: string | null;
+            /** Format: date-time */
+            created: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            current_period_end: string;
+            /** Format: date-time */
+            current_period_start: string;
+            /** Format: date-time */
+            ended_at: string | null;
+            id: string;
+            item_id: string;
+            metadata: {
+                [key: string]: string;
+            };
+            price?: components["schemas"]["StripePrice"];
+            price_id: string;
+            /** Format: int64 */
+            quantity: number;
+            status: string;
+            stripe_customer?: components["schemas"]["StripeCustomer"];
+            stripe_customer_id: string;
+            /** Format: date-time */
+            trial_end: string | null;
+            /** Format: date-time */
+            trial_start: string | null;
             /** Format: date-time */
             updated_at: string;
         };
@@ -1847,87 +1875,6 @@ export interface components {
              */
             readonly $schema?: string;
             url: string;
-        };
-        SubscriptionWithData: {
-            /**
-             * Format: uri
-             * @description A URL to the JSON Schema for this object.
-             */
-            readonly $schema?: string;
-            /** Format: date-time */
-            cancel_at: string | null;
-            cancel_at_period_end: boolean;
-            /** Format: date-time */
-            canceled_at: string | null;
-            /** Format: date-time */
-            created: string;
-            /** Format: date-time */
-            created_at: string;
-            /** Format: date-time */
-            current_period_end: string;
-            /** Format: date-time */
-            current_period_start: string;
-            /** Format: date-time */
-            ended_at: string | null;
-            id: string;
-            item_id: string;
-            metadata: {
-                [key: string]: string;
-            };
-            price?: components["schemas"]["StripePricesWithProduct"];
-            price_id: string;
-            /** Format: int64 */
-            quantity: number;
-            status: string;
-            stripe_customer_id: string;
-            team?: components["schemas"]["Team"];
-            /** Format: date-time */
-            trial_end: string | null;
-            /** Format: date-time */
-            trial_start: string | null;
-            /** Format: date-time */
-            updated_at: string;
-            user?: components["schemas"]["User"];
-        };
-        SubscriptionWithPrice: {
-            /**
-             * Format: uri
-             * @description A URL to the JSON Schema for this object.
-             */
-            readonly $schema?: string;
-            /** Format: date-time */
-            cancel_at: string | null;
-            cancel_at_period_end: boolean;
-            /** Format: date-time */
-            canceled_at: string | null;
-            /** Format: date-time */
-            created: string;
-            /** Format: date-time */
-            created_at: string;
-            /** Format: date-time */
-            current_period_end: string;
-            /** Format: date-time */
-            current_period_start: string;
-            /** Format: date-time */
-            ended_at: string | null;
-            id: string;
-            item_id: string;
-            metadata: {
-                [key: string]: string;
-            };
-            price?: components["schemas"]["StripePricesWithProduct"];
-            price_id: string;
-            /** Format: int64 */
-            quantity: number;
-            status: string;
-            stripe_customer_id: string;
-            team?: components["schemas"]["Team"];
-            /** Format: date-time */
-            trial_end: string | null;
-            /** Format: date-time */
-            trial_start: string | null;
-            /** Format: date-time */
-            updated_at: string;
         };
         Task: {
             /**
@@ -1960,6 +1907,24 @@ export interface components {
             team_id: string;
             /** Format: date-time */
             updated_at: string;
+        };
+        TaskFields: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            description?: string;
+            name: string;
+            /** Format: int64 */
+            position?: number;
+            /** Format: double */
+            rank?: number;
+            /**
+             * @default todo
+             * @enum {string}
+             */
+            status: "todo" | "in_progress" | "done";
         };
         TaskPositionStatusDTO: {
             /**
@@ -2031,6 +1996,7 @@ export interface components {
             members?: components["schemas"]["TeamMember"][] | null;
             name: string;
             slug: string;
+            stripe_customer?: components["schemas"]["StripeCustomer"];
             /** Format: date-time */
             updated_at: string;
         };
@@ -2042,7 +2008,7 @@ export interface components {
             readonly $schema?: string;
             member: components["schemas"]["TeamMember"];
             team: components["schemas"]["Team"];
-            user: components["schemas"]["User"];
+            user: components["schemas"]["ApiUser"];
         };
         TeamMember: {
             /**
@@ -2063,7 +2029,7 @@ export interface components {
             team_id: string;
             /** Format: date-time */
             updated_at: string;
-            user?: components["schemas"]["User"];
+            user?: components["schemas"]["ApiUser"];
             user_id: string;
         };
         TokenDto: {
@@ -2131,23 +2097,6 @@ export interface components {
             readonly $schema?: string;
             password: string;
         };
-        User: {
-            /**
-             * Format: uri
-             * @description A URL to the JSON Schema for this object.
-             */
-            readonly $schema?: string;
-            /** Format: date-time */
-            created_at: string;
-            email: string;
-            /** Format: date-time */
-            email_verified_at: string | null;
-            id: string;
-            image: string | null;
-            name: string | null;
-            /** Format: date-time */
-            updated_at: string;
-        };
         UserAccountOutput: {
             /** Format: date-time */
             created_at: string;
@@ -2175,33 +2124,6 @@ export interface components {
             image?: string;
             name?: string;
             password: string;
-        };
-        UserDetail: {
-            accounts?: components["schemas"]["UserAccountOutput"][] | null;
-            /** Format: date-time */
-            created_at: string;
-            email: string;
-            /** Format: date-time */
-            email_verified_at: string | null;
-            id: string;
-            image: string | null;
-            name: string | null;
-            permissions?: components["schemas"]["Permission"][] | null;
-            roles?: components["schemas"]["RoleWithPermissions"][] | null;
-            /** Format: date-time */
-            updated_at: string;
-        };
-        UserInfoTokens: {
-            /**
-             * Format: uri
-             * @description A URL to the JSON Schema for this object.
-             */
-            readonly $schema?: string;
-            permissions: string[] | null;
-            providers: ("google" | "apple" | "facebook" | "github" | "credentials")[] | null;
-            roles: string[] | null;
-            tokens: components["schemas"]["TokenDto"];
-            user: components["schemas"]["User"];
         };
         UserMutationInput: {
             /**
@@ -2240,6 +2162,8 @@ export interface components {
             id: string;
             image: string | null;
             name: string | null;
+            permissions?: components["schemas"]["Permission"][] | null;
+            roles?: components["schemas"]["Role"][] | null;
             /** Format: date-time */
             updated_at: string;
         };
@@ -2294,6 +2218,9 @@ export interface operations {
                 role_id?: string;
                 /** @description When role_id is provided, if this is true, it will return the permissions that the role does not have */
                 role_reverse?: boolean;
+                product_id?: string;
+                /** @description When product_id is provided, if this is true, it will return the permissions that the product does not have */
+                product_reverse?: boolean;
                 sort_by?: string;
                 sort_order?: "asc" | "desc";
             };
@@ -2309,7 +2236,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PaginatedResponsePermission"];
+                    "application/json": components["schemas"]["ApiPaginatedResponsePermission"];
                 };
             };
             /** @description Not Found */
@@ -2546,13 +2473,12 @@ export interface operations {
             query?: {
                 page?: number;
                 per_page?: number;
-                q?: string;
-                ids?: string[] | null;
-                active?: "active" | "inactive";
                 sort_by?: string;
                 sort_order?: "asc" | "desc";
                 expand?: ("prices" | "permissions")[] | null;
-                price_active?: "active" | "inactive";
+                q?: string;
+                ids?: string[] | null;
+                active?: boolean;
             };
             header?: never;
             path?: never;
@@ -2566,7 +2492,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PaginatedResponseStripeProductWitPermission"];
+                    "application/json": components["schemas"]["ApiPaginatedResponseStripeProduct"];
                 };
             };
             /** @description Not Found */
@@ -2617,7 +2543,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["StripeProductWitPermission"];
+                    "application/json": components["schemas"]["StripeProduct"];
                 };
             };
             /** @description Bad Request */
@@ -2658,7 +2584,7 @@ export interface operations {
             };
         };
     };
-    "admin-create-product-roles": {
+    "admin-create-product-permissions": {
         parameters: {
             query?: never;
             header?: never;
@@ -2669,7 +2595,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["RoleIdsInput"];
+                "application/json": components["schemas"]["PermissionIdsInput"];
             };
         };
         responses: {
@@ -2709,13 +2635,13 @@ export interface operations {
             };
         };
     };
-    "admin-delete-product-roles": {
+    "admin-delete-product-permissions": {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 "product-id": string;
-                "role-id": string;
+                "permission-id": string;
             };
             cookie?: never;
         };
@@ -2785,7 +2711,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PaginatedResponseRoleWithPermissions"];
+                    "application/json": components["schemas"]["ApiPaginatedResponseRole"];
                 };
             };
             /** @description Not Found */
@@ -2887,7 +2813,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RoleWithPermissions"];
+                    "application/json": components["schemas"]["Role"];
                 };
             };
             /** @description Not Found */
@@ -3030,7 +2956,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["RolePermissionsUpdateInput"];
+                "application/json": components["schemas"]["PermissionIdsInput"];
             };
         };
         responses: {
@@ -3125,7 +3051,8 @@ export interface operations {
                 per_page?: number;
                 q?: string;
                 ids?: string[] | null;
-                user_id?: string;
+                user_id?: string[] | null;
+                team_id?: string[] | null;
                 status?: ("trialing" | "active" | "canceled" | "incomplete" | "incomplete_expired" | "past_due" | "unpaid" | "paused")[] | null;
                 sort_by?: string;
                 sort_order?: "asc" | "desc";
@@ -3143,7 +3070,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PaginatedResponseSubscriptionWithData"];
+                    "application/json": components["schemas"]["ApiPaginatedResponseStripeSubscription"];
                 };
             };
             /** @description Not Found */
@@ -3194,7 +3121,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SubscriptionWithData"];
+                    "application/json": components["schemas"]["StripeSubscription"];
                 };
             };
             /** @description Bad Request */
@@ -3240,13 +3167,13 @@ export interface operations {
             query?: {
                 page?: number;
                 per_page?: number;
+                sort_by?: string;
+                sort_order?: "asc" | "desc";
                 providers?: ("google" | "apple" | "facebook" | "github" | "credentials")[] | null;
                 provider_types?: ("oauth" | "credentials")[] | null;
                 q?: string;
                 ids?: string[] | null;
                 user_ids?: string[] | null;
-                sort_by?: string;
-                sort_order?: "asc" | "desc";
             };
             header?: never;
             path?: never;
@@ -3260,7 +3187,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PaginatedResponseUserAccountOutput"];
+                    "application/json": components["schemas"]["ApiPaginatedResponseUserAccountOutput"];
                 };
             };
             /** @description Not Found */
@@ -3297,14 +3224,14 @@ export interface operations {
             query?: {
                 page?: number;
                 per_page?: number;
+                sort_by?: string;
+                sort_order?: "asc" | "desc";
                 providers?: ("google" | "apple" | "facebook" | "github" | "credentials")[] | null;
                 q?: string;
                 ids?: string[] | null;
                 emails?: string[] | null;
                 role_ids?: string[] | null;
-                email_verified?: "verified" | "unverified";
-                sort_by?: string;
-                sort_order?: "asc" | "desc";
+                email_verified?: boolean;
                 expand?: ("roles" | "permissions" | "accounts" | "subscriptions")[] | null;
             };
             header?: never;
@@ -3319,7 +3246,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PaginatedResponseUserDetail"];
+                    "application/json": components["schemas"]["ApiPaginatedResponseApiUser"];
                 };
             };
             /** @description Not Found */
@@ -3370,7 +3297,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["User"];
+                    "application/json": components["schemas"]["ApiUser"];
                 };
             };
             /** @description Not Found */
@@ -3419,7 +3346,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["User"];
+                    "application/json": components["schemas"]["ApiUser"];
                 };
             };
             /** @description Not Found */
@@ -3623,7 +3550,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PaginatedResponsePermissionSource"];
+                    "application/json": components["schemas"]["ApiPaginatedResponsePermissionSource"];
                 };
             };
             /** @description Not Found */
@@ -3985,7 +3912,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["UserInfoTokens"];
+                    "application/json": components["schemas"]["ApiUserInfoTokens"];
                 };
             };
             /** @description Not Found */
@@ -4346,7 +4273,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["UserInfoTokens"];
+                    "application/json": components["schemas"]["ApiUserInfoTokens"];
                 };
             };
             /** @description Not Found */
@@ -4497,7 +4424,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["UserInfoTokens"];
+                    "application/json": components["schemas"]["ApiUserInfoTokens"];
                 };
             };
             /** @description Not Found */
@@ -4621,7 +4548,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["UserInfoTokens"];
+                    "application/json": components["schemas"]["ApiUserInfoTokens"];
                 };
             };
             /** @description Not Found */
@@ -4772,10 +4699,10 @@ export interface operations {
             query?: {
                 page?: number;
                 per_page?: number;
-                q?: string;
-                userId?: string;
                 sort_by?: string;
                 sort_order?: "asc" | "desc";
+                q?: string;
+                user_ids?: string[] | null;
             };
             header?: never;
             path?: never;
@@ -4789,7 +4716,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PaginatedResponseMedia"];
+                    "application/json": components["schemas"]["ApiPaginatedResponseMedia"];
                 };
             };
             /** @description Unauthorized */
@@ -4946,6 +4873,9 @@ export interface operations {
                 role_id?: string;
                 /** @description When role_id is provided, if this is true, it will return the permissions that the role does not have */
                 role_reverse?: boolean;
+                product_id?: string;
+                /** @description When product_id is provided, if this is true, it will return the permissions that the product does not have */
+                product_reverse?: boolean;
                 sort_by?: string;
                 sort_order?: "asc" | "desc";
             };
@@ -4961,7 +4891,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PaginatedResponsePermission"];
+                    "application/json": components["schemas"]["ApiPaginatedResponsePermission"];
                 };
             };
             /** @description Not Found */
@@ -5100,7 +5030,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PaginatedResponseStripeProductWitPermission"];
+                    "application/json": components["schemas"]["ApiPaginatedResponseStripeProduct"];
                 };
             };
             /** @description Bad Request */
@@ -5198,7 +5128,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SubscriptionWithPrice"];
+                    "application/json": components["schemas"]["StripeSubscription"];
                 };
             };
             /** @description Bad Request */
@@ -5327,7 +5257,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SubscriptionWithPrice"];
+                    "application/json": components["schemas"]["StripeSubscription"];
                 };
             };
             /** @description Bad Request */
@@ -5472,7 +5402,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateTaskWithChildrenDTO"];
+                "application/json": components["schemas"]["TaskFields"];
             };
         };
         responses: {
@@ -5571,7 +5501,6 @@ export interface operations {
                 created_by?: string;
                 ids?: string[] | null;
                 parent_id?: string;
-                parent_status?: "parent" | "child";
                 sort_by?: string;
                 sort_order?: "asc" | "desc";
                 expand?: "subtasks"[] | null;
@@ -5590,7 +5519,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PaginatedResponseTask"];
+                    "application/json": components["schemas"]["ApiPaginatedResponseTask"];
                 };
             };
             /** @description Not Found */
@@ -5840,7 +5769,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PaginatedResponseTeamMember"];
+                    "application/json": components["schemas"]["ApiPaginatedResponseTeamMember"];
                 };
             };
             /** @description Bad Request */
@@ -5979,7 +5908,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PaginatedResponseTeam"];
+                    "application/json": components["schemas"]["ApiPaginatedResponseTeam"];
                 };
             };
             /** @description Bad Request */
@@ -6328,7 +6257,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SubscriptionWithPrice"];
+                    "application/json": components["schemas"]["StripeSubscription"];
                 };
             };
             /** @description Bad Request */
@@ -6448,6 +6377,7 @@ export interface operations {
                 q?: string;
                 status?: ("todo" | "in_progress" | "done")[] | null;
                 ids?: string[] | null;
+                task_status?: ("todo" | "in_progress" | "done")[] | null;
                 sort_by?: string;
                 sort_order?: "asc" | "desc";
                 expand?: ("tasks" | "subtasks")[] | null;
@@ -6466,7 +6396,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PaginatedResponseTaskProject"];
+                    "application/json": components["schemas"]["ApiPaginatedResponseTaskProject"];
                 };
             };
             /** @description Not Found */

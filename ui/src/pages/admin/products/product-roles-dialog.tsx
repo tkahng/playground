@@ -18,7 +18,10 @@ import {
 } from "@/components/ui/form";
 import MultipleSelector from "@/components/ui/multiple-selector";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { adminStripeProductRolesCreate, rolesPaginate } from "@/lib/queries";
+import {
+  adminStripeProductRolesCreate as adminStripeProductPermissionsCreate,
+  permissionsPaginate,
+} from "@/lib/queries";
 import { ProductWithPrices } from "@/schema.types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -29,7 +32,7 @@ import { z } from "zod";
 const formSchema = z.object({
   // userId: z.string().uuid(),
   // roleIds: z.string().uuid().array().min(1),
-  roles: z
+  permissions: z
     .object({
       value: z.string().uuid(),
       label: z.string(),
@@ -54,9 +57,9 @@ export function ProductRolesDialog({
       if (!user?.tokens.access_token || !productId) {
         throw new Error("Missing access token or role ID");
       }
-      const { data } = await rolesPaginate(user.tokens.access_token, {
+      const { data } = await permissionsPaginate(user.tokens.access_token, {
         product_id: productId,
-        reverse: "product",
+        product_reverse: true,
         page: 0,
         per_page: 50,
       });
@@ -68,9 +71,15 @@ export function ProductRolesDialog({
       if (!user?.tokens.access_token || !productId) {
         throw new Error("Missing access token or role ID");
       }
-      await adminStripeProductRolesCreate(user.tokens.access_token, productId, {
-        role_ids: values.roles.map((role) => role.value),
-      });
+      await adminStripeProductPermissionsCreate(
+        user.tokens.access_token,
+        productId,
+        {
+          permission_ids: values.permissions.map(
+            (permission) => permission.value
+          ),
+        }
+      );
       setDialogOpen(false);
     },
     onSuccess: async () => {
@@ -85,7 +94,7 @@ export function ProductRolesDialog({
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      roles: [],
+      permissions: [],
     },
   });
 
@@ -94,7 +103,7 @@ export function ProductRolesDialog({
   };
   useEffect(() => {
     if (data) {
-      form.reset({ roles: [] });
+      form.reset({ permissions: [] });
     }
   }, [data, form]);
 
@@ -127,10 +136,10 @@ export function ProductRolesDialog({
               <div className="space-y-4">
                 <FormField
                   control={form.control}
-                  name="roles"
+                  name="permissions"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Roles</FormLabel>
+                      <FormLabel>Permissions</FormLabel>
                       <FormControl>
                         <MultipleSelector
                           {...field}

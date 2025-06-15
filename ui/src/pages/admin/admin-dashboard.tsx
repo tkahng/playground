@@ -23,7 +23,7 @@ export default function AdminDashboardPage() {
       const VerifiedUsers = await userPaginate(user.tokens.access_token, {
         page: 0,
         per_page: 1,
-        email_verified: "verified",
+        email_verified: true,
       });
       return {
         ...stats,

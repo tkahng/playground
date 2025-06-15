@@ -58,13 +58,13 @@ export default function SubscriptionsListPage() {
             accessorKey: "id",
             header: "ID",
           },
-          {
-            id: "user",
-            header: "User",
-            cell: ({ row }) => {
-              return row.original.user?.email;
-            },
-          },
+          // {
+          //   id: "user",
+          //   header: "User",
+          //   cell: ({ row }) => {
+          //     return row.original.user?.email;
+          //   },
+          // },
           {
             id: "product",
             header: "Product",
