@@ -15,7 +15,6 @@ import (
 	"github.com/tkahng/authgo/internal/core"
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
-	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/test"
 	"github.com/tkahng/authgo/internal/tools/utils"
 )
@@ -679,7 +678,7 @@ func TestGetUserTeamMembers_basic(t *testing.T) {
 		if resp.Code != 200 {
 			t.Fatalf("Unexpected response: %s", resp.Body.String())
 		}
-		obj, err := utils.UnmarshalJSON[apis.ApiPaginatedResponse[*shared.TeamMember]](resp.Body.Bytes())
+		obj, err := utils.UnmarshalJSON[apis.ApiPaginatedResponse[*apis.TeamMember]](resp.Body.Bytes())
 		if err != nil {
 			t.Fatalf("error marshaling response: %v", err)
 		}
@@ -748,7 +747,7 @@ func TestGetUserTeamMembers_sortbyname(t *testing.T) {
 		if resp.Code != 200 {
 			t.Fatalf("Unexpected response: %s", resp.Body.String())
 		}
-		obj, err := utils.UnmarshalJSON[apis.ApiPaginatedResponse[*shared.TeamMember]](resp.Body.Bytes())
+		obj, err := utils.UnmarshalJSON[apis.ApiPaginatedResponse[*apis.TeamMember]](resp.Body.Bytes())
 		if err != nil {
 			t.Fatalf("error marshaling response: %v", err)
 		}
@@ -812,7 +811,7 @@ func TestGetUserTeamMembers_sortbyname2(t *testing.T) {
 		if resp.Code != 200 {
 			t.Fatalf("Unexpected response: %s", resp.Body.String())
 		}
-		obj, err := utils.UnmarshalJSON[apis.ApiPaginatedResponse[*shared.TeamMember]](resp.Body.Bytes())
+		obj, err := utils.UnmarshalJSON[apis.ApiPaginatedResponse[*apis.TeamMember]](resp.Body.Bytes())
 		if err != nil {
 			t.Fatalf("error marshaling response: %v", err)
 		}

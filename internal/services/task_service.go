@@ -22,7 +22,7 @@ type TaskService interface {
 	CreateTask(ctx context.Context, teamID uuid.UUID, projectID uuid.UUID, createdByMemberID uuid.UUID, input *TaskFields) (*models.Task, error)
 	FindAndUpdateTask(ctx context.Context, taskID uuid.UUID, input *shared.UpdateTaskDto) error
 
-	CreateTaskWithChildren(ctx context.Context, teamID uuid.UUID, projectID uuid.UUID, memberID uuid.UUID, input *shared.CreateTaskWithChildrenDTO) (*models.Task, error)
+	// CreateTaskWithChildren(ctx context.Context, teamID uuid.UUID, projectID uuid.UUID, memberID uuid.UUID, input *shared.CreateTaskWithChildrenDTO) (*models.Task, error)
 	UpdateTaskRankStatus(ctx context.Context, taskID uuid.UUID, position int64, status models.TaskStatus) error
 	CalculateNewPosition(ctx context.Context, groupID uuid.UUID, status models.TaskStatus, targetIndex int64, excludeID uuid.UUID) (float64, error)
 }
@@ -151,20 +151,20 @@ func (s *taskService) CalculateNewPosition(ctx context.Context, groupID uuid.UUI
 	return (ranks[0] + ranks[1]) / 2.0, nil
 }
 
-// CreateTaskWithChildren implements TaskService.
-func (t *taskService) CreateTaskWithChildren(ctx context.Context, teamId uuid.UUID, projectID uuid.UUID, memberID uuid.UUID, input *shared.CreateTaskWithChildrenDTO) (*models.Task, error) {
-	task, err := t.adapter.Task().CreateTaskFromInput(ctx, teamId, projectID, memberID, &input.CreateTaskProjectTaskDTO)
-	if err != nil {
-		return nil, err
-	}
-	// for _, child := range input.Children {
-	// 	childTask, err := CreateTask(ctx, userID, projectID, &child)
-	// 	if err != nil {
-	// 		return nil, err
-	// 	}
-	// }
-	return task, nil
-}
+// // CreateTaskWithChildren implements TaskService.
+// func (t *taskService) CreateTaskWithChildren(ctx context.Context, teamId uuid.UUID, projectID uuid.UUID, memberID uuid.UUID, input *shared.CreateTaskWithChildrenDTO) (*models.Task, error) {
+// 	task, err := t.adapter.Task().CreateTaskFromInput(ctx, teamId, projectID, memberID, &input.CreateTaskProjectTaskDTO)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	// for _, child := range input.Children {
+// 	// 	childTask, err := CreateTask(ctx, userID, projectID, &child)
+// 	// 	if err != nil {
+// 	// 		return nil, err
+// 	// 	}
+// 	// }
+// 	return task, nil
+// }
 
 func (t *taskService) Adapter() stores.StorageAdapterInterface {
 	return t.adapter

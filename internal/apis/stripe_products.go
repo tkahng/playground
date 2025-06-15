@@ -3,17 +3,16 @@ package apis
 import (
 	"context"
 
-	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/stores"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 )
 
 type StripeProductsWithPricesInput struct {
-	shared.PaginatedInput
-	shared.SortParams
+	PaginatedInput
+	SortParams
 }
 
-func (api *Api) StripeProductsWithPrices(ctx context.Context, input *StripeProductsWithPricesInput) (*ApiPaginatedOutput[*shared.StripeProduct], error) {
+func (api *Api) StripeProductsWithPrices(ctx context.Context, input *StripeProductsWithPricesInput) (*ApiPaginatedOutput[*StripeProduct], error) {
 
 	filter := &stores.StripeProductFilter{}
 	filter.Page = input.Page
@@ -47,8 +46,8 @@ func (api *Api) StripeProductsWithPrices(ctx context.Context, input *StripeProdu
 		return nil, err
 	}
 
-	return &ApiPaginatedOutput[*shared.StripeProduct]{Body: ApiPaginatedResponse[*shared.StripeProduct]{
-		Data: mapper.Map(products, shared.FromModelProduct),
-		Meta: GenerateMeta(&input.PaginatedInput, count),
+	return &ApiPaginatedOutput[*StripeProduct]{Body: ApiPaginatedResponse[*StripeProduct]{
+		Data: mapper.Map(products, FromModelProduct),
+		Meta: ApiGenerateMeta(&input.PaginatedInput, count),
 	}}, nil
 }

@@ -5,7 +5,6 @@ import (
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/tkahng/authgo/internal/contextstore"
-	"github.com/tkahng/authgo/internal/shared"
 )
 
 type StripePaymentPayload struct {
@@ -73,7 +72,7 @@ func (api *Api) StripeBillingPortal(ctx context.Context, input *struct{}) (*Stri
 }
 
 type CheckoutSessionOutput struct {
-	Body shared.Subscription
+	Body Subscription
 }
 
 type StripeCheckoutSessionInput struct {
@@ -91,6 +90,6 @@ func (api *Api) StripeCheckoutSessionGet(ctx context.Context, input *StripeCheck
 		return nil, huma.Error404NotFound("checkout session not found")
 	}
 	return &CheckoutSessionOutput{
-		Body: *shared.FromModelSubscription(cs),
+		Body: *FromModelSubscription(cs),
 	}, nil
 }

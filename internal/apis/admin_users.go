@@ -9,7 +9,7 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/models"
-	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/authgo/internal/services"
 	"github.com/tkahng/authgo/internal/stores"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 	"github.com/tkahng/authgo/internal/tools/types"
@@ -104,7 +104,7 @@ type UserCreateInput struct {
 func (api *Api) AdminUsersCreate(ctx context.Context, input *struct {
 	Body UserCreateInput
 }) (*struct {
-	Body *shared.User
+	Body *ApiUser
 }, error) {
 	action := api.app.Auth()
 	adapter := api.app.Adapter()
@@ -117,11 +117,11 @@ func (api *Api) AdminUsersCreate(ctx context.Context, input *struct {
 	if existingUser != nil {
 		return nil, huma.Error409Conflict("User already exists")
 	}
-	user, err := action.Authenticate(ctx, &shared.AuthenticationInput{
+	user, err := action.Authenticate(ctx, &services.AuthenticationInput{
 		Email:             input.Body.Email,
-		Provider:          shared.ProvidersCredentials,
+		Provider:          models.ProvidersCredentials,
 		Password:          &input.Body.Password,
-		Type:              shared.ProviderTypeCredentials,
+		Type:              models.ProviderTypeCredentials,
 		ProviderAccountID: input.Body.Email,
 		EmailVerifiedAt:   input.Body.EmailVerifiedAt,
 	})
@@ -129,9 +129,9 @@ func (api *Api) AdminUsersCreate(ctx context.Context, input *struct {
 		return nil, err
 	}
 	return &struct {
-		Body *shared.User
+		Body *ApiUser
 	}{
-		Body: shared.FromUserModel(user),
+		Body: FromUserModel(user),
 	}, nil
 
 }
@@ -211,10 +211,10 @@ func (api *Api) AdminUsersUpdatePassword(ctx context.Context, input *struct {
 
 func (api *Api) AdminUsersGet(ctx context.Context, input *struct {
 	UserID uuid.UUID `path:"user-id" json:"user_id" format:"uuid" required:"true"`
-}) (*struct{ Body *shared.User }, error) {
+}) (*struct{ Body *ApiUser }, error) {
 	user, err := api.app.Adapter().User().FindUserByID(ctx, input.UserID)
 	if err != nil {
 		return nil, err
 	}
-	return &struct{ Body *shared.User }{Body: shared.FromUserModel(user)}, nil
+	return &struct{ Body *ApiUser }{Body: FromUserModel(user)}, nil
 }

@@ -111,7 +111,7 @@ func (p *DbRbacStore) CreateUserRoles(ctx context.Context, userId uuid.UUID, rol
 	return nil
 }
 
-func (p *DbRbacStore) ListUserNotPermissionsSource(ctx context.Context, userId uuid.UUID, limit int64, offset int64) ([]shared.PermissionSource, error) {
+func (p *DbRbacStore) ListUserNotPermissionsSource(ctx context.Context, userId uuid.UUID, limit int64, offset int64) ([]*models.PermissionSource, error) {
 	const getuserNotPermissions = `
 	WITH -- Get permissions assigned through roles
 role_based_permissions AS (
@@ -178,7 +178,7 @@ GROUP BY p.id
 ORDER BY p.name,
     p.id
 LIMIT $2 OFFSET $3;`
-	res, err := database.QueryAll[shared.PermissionSource](ctx, p.db, getuserNotPermissions, userId, limit, offset)
+	res, err := database.QueryAll[*models.PermissionSource](ctx, p.db, getuserNotPermissions, userId, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -250,7 +250,7 @@ func (p *DbRbacStore) CountNotUserPermissionSource(ctx context.Context, userId u
 	return data, nil
 }
 
-func (p *DbRbacStore) ListUserPermissionsSource(ctx context.Context, userId uuid.UUID, limit int64, offset int64) ([]shared.PermissionSource, error) {
+func (p *DbRbacStore) ListUserPermissionsSource(ctx context.Context, userId uuid.UUID, limit int64, offset int64) ([]*models.PermissionSource, error) {
 	const (
 		QueryUserPermissionSource string = `
 	WITH -- Get permissions assigned through roles
@@ -331,7 +331,7 @@ func (p *DbRbacStore) ListUserPermissionsSource(ctx context.Context, userId uuid
 	OFFSET $3
 		;`
 	)
-	data, err := database.QueryAll[shared.PermissionSource](ctx, p.db, QueryUserPermissionSource, userId, limit, offset)
+	data, err := database.QueryAll[*models.PermissionSource](ctx, p.db, QueryUserPermissionSource, userId, limit, offset)
 	if err != nil {
 		return nil, err
 	}

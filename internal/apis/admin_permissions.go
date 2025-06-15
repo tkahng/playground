@@ -6,7 +6,7 @@ import (
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
-	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/stores"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 	"github.com/tkahng/authgo/internal/tools/utils"
@@ -92,14 +92,14 @@ type UserPermissionsListParams struct {
 
 func (api *Api) AdminUserPermissionSourceList(ctx context.Context, input *struct {
 	UserPermissionsListParams
-}) (*ApiPaginatedOutput[shared.PermissionSource], error) {
+}) (*ApiPaginatedOutput[*PermissionSource], error) {
 	id, err := uuid.Parse(input.UserId)
 	if err != nil {
 		return nil, err
 	}
 	limit := input.PerPage
 	offset := input.Page * input.PerPage
-	var userPermissionSources []shared.PermissionSource
+	var userPermissionSources []*models.PermissionSource
 	var count int64
 	if input.Reverse {
 		userPermissionSources, err = api.app.Adapter().Rbac().ListUserNotPermissionsSource(ctx, id, limit, offset)
@@ -120,10 +120,10 @@ func (api *Api) AdminUserPermissionSourceList(ctx context.Context, input *struct
 			return nil, err
 		}
 	}
-	return &ApiPaginatedOutput[shared.PermissionSource]{
-		Body: ApiPaginatedResponse[shared.PermissionSource]{
+	return &ApiPaginatedOutput[*PermissionSource]{
+		Body: ApiPaginatedResponse[*PermissionSource]{
 
-			Data: userPermissionSources,
+			Data: mapper.Map(userPermissionSources, FromModelPermissionSource),
 			Meta: ApiGenerateMeta(&input.PaginatedInput, count),
 		},
 	}, nil
@@ -144,7 +144,7 @@ type PermissionsListParams struct {
 
 func (api *Api) AdminPermissionsList(ctx context.Context, input *struct {
 	PermissionsListParams
-}) (*ApiPaginatedOutput[*shared.Permission], error) {
+}) (*ApiPaginatedOutput[*Permission], error) {
 	store := api.app.Adapter().Rbac()
 	fmt.Println(input)
 	filter := new(stores.PermissionFilter)
@@ -173,10 +173,10 @@ func (api *Api) AdminPermissionsList(ctx context.Context, input *struct {
 		return nil, err
 	}
 
-	return &ApiPaginatedOutput[*shared.Permission]{
-		Body: ApiPaginatedResponse[*shared.Permission]{
+	return &ApiPaginatedOutput[*Permission]{
+		Body: ApiPaginatedResponse[*Permission]{
 
-			Data: mapper.Map(permissions, shared.FromModelPermission),
+			Data: mapper.Map(permissions, FromModelPermission),
 			Meta: ApiGenerateMeta(&input.PaginatedInput, count),
 		},
 	}, nil
@@ -190,7 +190,7 @@ type PermissionCreateInput struct {
 
 func (api *Api) AdminPermissionsCreate(ctx context.Context, input *struct {
 	Body PermissionCreateInput
-}) (*struct{ Body shared.Permission }, error) {
+}) (*struct{ Body Permission }, error) {
 	store := api.app.Adapter().Rbac()
 	permission, err := store.FindPermissionByName(ctx, input.Body.Name)
 	if err != nil {
@@ -207,8 +207,8 @@ func (api *Api) AdminPermissionsCreate(ctx context.Context, input *struct {
 	if data == nil {
 		return nil, huma.Error500InternalServerError("Failed to create permission")
 	}
-	return &struct{ Body shared.Permission }{
-		Body: *shared.FromModelPermission(data),
+	return &struct{ Body Permission }{
+		Body: *FromModelPermission(data),
 	}, nil
 }
 
@@ -249,7 +249,7 @@ func (api *Api) AdminPermissionsUpdate(ctx context.Context, input *struct {
 	Body        PermissionCreateInput
 	Description *string `json:"description,omitempty"`
 }) (*struct {
-	Body shared.Permission
+	Body Permission
 }, error) {
 	store := api.app.Adapter().Rbac()
 	id, err := uuid.Parse(input.ID)
@@ -271,7 +271,7 @@ func (api *Api) AdminPermissionsUpdate(ctx context.Context, input *struct {
 	if !ok {
 		return nil, huma.Error400BadRequest("Cannot update the admin or basic permission")
 	}
-	err = store.UpdatePermission(ctx, permission.ID, &shared.UpdatePermissionDto{
+	err = store.UpdatePermission(ctx, permission.ID, &stores.UpdatePermissionDto{
 		Name:        input.Body.Name,
 		Description: input.Description,
 	})
@@ -279,15 +279,15 @@ func (api *Api) AdminPermissionsUpdate(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	return &struct{ Body shared.Permission }{
-		Body: *shared.FromModelPermission(permission),
+	return &struct{ Body Permission }{
+		Body: *FromModelPermission(permission),
 	}, nil
 }
 
 func (api *Api) AdminPermissionsGet(ctx context.Context, input *struct {
 	ID string `path:"id" format:"uuid" required:"true"`
 }) (*struct {
-	Body *shared.Permission
+	Body *Permission
 }, error) {
 	id, err := uuid.Parse(input.ID)
 	if err != nil {
@@ -300,7 +300,7 @@ func (api *Api) AdminPermissionsGet(ctx context.Context, input *struct {
 	if permission == nil {
 		return nil, huma.Error404NotFound("Permission not found")
 	}
-	return &struct{ Body *shared.Permission }{
-		Body: shared.FromModelPermission(permission),
+	return &struct{ Body *Permission }{
+		Body: FromModelPermission(permission),
 	}, nil
 }

@@ -1,10 +1,11 @@
-package shared
+package apis
 
 import (
 	"time"
 
-	crudModels "github.com/tkahng/authgo/internal/models"
+	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/tools/mapper"
+	"github.com/tkahng/authgo/internal/tools/types"
 )
 
 type StripeProduct struct {
@@ -22,7 +23,7 @@ type StripeProduct struct {
 	Permissions []*Permission     `db:"permissions" src:"id" dest:"product_id" table:"permissions" through:"product_permissions,permission_id,id" json:"permissions,omitempty"`
 }
 
-func FromModelProduct(product *crudModels.StripeProduct) *StripeProduct {
+func FromModelProduct(product *models.StripeProduct) *StripeProduct {
 	return &StripeProduct{
 		ID:          product.ID,
 		Active:      product.Active,
@@ -34,5 +35,24 @@ func FromModelProduct(product *crudModels.StripeProduct) *StripeProduct {
 		UpdatedAt:   product.UpdatedAt,
 		Prices:      mapper.Map(product.Prices, FromModelPrice),
 		Permissions: mapper.Map(product.Permissions, FromModelPermission),
+		Roles:       mapper.Map(product.Roles, FromModelRole),
 	}
+}
+
+type StripeProductListParams struct {
+	PaginatedInput
+	SortParams
+	StripeProductExpand
+	Q      string                    `query:"q,omitempty" required:"false"`
+	Ids    []string                  `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100"`
+	Active types.OptionalParam[bool] `query:"active,omitempty" required:"false"`
+}
+
+type StripeProductExpand struct {
+	Expand []string `query:"expand,omitempty" required:"false" minimum:"1" maximum:"100" uniqueItems:"true" enum:"prices,permissions"`
+}
+
+type StripeProductGetParams struct {
+	ProductID string `path:"product-id" json:"product_id" required:"true"`
+	StripeProductExpand
 }

@@ -5,11 +5,10 @@ import (
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/tkahng/authgo/internal/contextstore"
-	"github.com/tkahng/authgo/internal/shared"
 )
 
 func (api *Api) GetStripeSubscriptions(ctx context.Context, input *struct{}) (*struct {
-	Body *shared.Subscription `json:"body,omitempty" required:"false"`
+	Body *Subscription `json:"body,omitempty" required:"false"`
 }, error) {
 
 	customer := contextstore.GetContextCurrentCustomer(ctx)
@@ -23,9 +22,9 @@ func (api *Api) GetStripeSubscriptions(ctx context.Context, input *struct{}) (*s
 	}
 
 	output := &struct {
-		Body *shared.Subscription `json:"body,omitempty" required:"false"`
+		Body *Subscription `json:"body,omitempty" required:"false"`
 	}{
-		Body: shared.FromModelSubscription(subWithPriceProduct),
+		Body: FromModelSubscription(subWithPriceProduct),
 	}
 
 	return output, nil

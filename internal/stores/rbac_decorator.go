@@ -5,7 +5,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/models"
-	"github.com/tkahng/authgo/internal/shared"
 )
 
 type RbacStoreDecorator struct {
@@ -18,7 +17,7 @@ type RbacStoreDecorator struct {
 	CreatePermissionFunc             func(ctx context.Context, name string, description *string) (*models.Permission, error)
 	CreateProductPermissionsFunc     func(ctx context.Context, productId string, permissionIds ...uuid.UUID) error
 	CreateProductRolesFunc           func(ctx context.Context, productId string, roleIds ...uuid.UUID) error
-	CreateRoleFunc                   func(ctx context.Context, role *shared.CreateRoleDto) (*models.Role, error)
+	CreateRoleFunc                   func(ctx context.Context, role *CreateRoleDto) (*models.Role, error)
 	CreateRolePermissionsFunc        func(ctx context.Context, roleId uuid.UUID, permissionIds ...uuid.UUID) error
 	CreateUserPermissionsFunc        func(ctx context.Context, userId uuid.UUID, permissionIds ...uuid.UUID) error
 
@@ -43,12 +42,12 @@ type RbacStoreDecorator struct {
 
 	ListPermissionsFunc              func(ctx context.Context, input *PermissionFilter) ([]*models.Permission, error)
 	ListRolesFunc                    func(ctx context.Context, input *RoleListFilter) ([]*models.Role, error)
-	ListUserNotPermissionsSourceFunc func(ctx context.Context, userId uuid.UUID, limit int64, offset int64) ([]shared.PermissionSource, error)
-	ListUserPermissionsSourceFunc    func(ctx context.Context, userId uuid.UUID, limit int64, offset int64) ([]shared.PermissionSource, error)
+	ListUserNotPermissionsSourceFunc func(ctx context.Context, userId uuid.UUID, limit int64, offset int64) ([]*models.PermissionSource, error)
+	ListUserPermissionsSourceFunc    func(ctx context.Context, userId uuid.UUID, limit int64, offset int64) ([]*models.PermissionSource, error)
 	LoadProductPermissionsFunc       func(ctx context.Context, productIds ...string) ([][]*models.Permission, error)
 	LoadRolePermissionsFunc          func(ctx context.Context, roleIds ...uuid.UUID) ([][]*models.Permission, error)
-	UpdatePermissionFunc             func(ctx context.Context, id uuid.UUID, roledto *shared.UpdatePermissionDto) error
-	UpdateRoleFunc                   func(ctx context.Context, id uuid.UUID, roledto *shared.UpdateRoleDto) error
+	UpdatePermissionFunc             func(ctx context.Context, id uuid.UUID, roledto *UpdatePermissionDto) error
+	UpdateRoleFunc                   func(ctx context.Context, id uuid.UUID, roledto *UpdateRoleDto) error
 }
 
 func (r *RbacStoreDecorator) Cleanup() {
@@ -180,7 +179,7 @@ func (r *RbacStoreDecorator) CreateProductRoles(ctx context.Context, productId s
 }
 
 // CreateRole implements DbRbacStoreInterface.
-func (r *RbacStoreDecorator) CreateRole(ctx context.Context, role *shared.CreateRoleDto) (*models.Role, error) {
+func (r *RbacStoreDecorator) CreateRole(ctx context.Context, role *CreateRoleDto) (*models.Role, error) {
 	if r.CreateRoleFunc != nil {
 		return r.CreateRoleFunc(ctx, role)
 	}
@@ -432,7 +431,7 @@ func (r *RbacStoreDecorator) ListRoles(ctx context.Context, input *RoleListFilte
 }
 
 // ListUserNotPermissionsSource implements DbRbacStoreInterface.
-func (r *RbacStoreDecorator) ListUserNotPermissionsSource(ctx context.Context, userId uuid.UUID, limit int64, offset int64) ([]shared.PermissionSource, error) {
+func (r *RbacStoreDecorator) ListUserNotPermissionsSource(ctx context.Context, userId uuid.UUID, limit int64, offset int64) ([]*models.PermissionSource, error) {
 	if r.ListUserNotPermissionsSourceFunc != nil {
 		return r.ListUserNotPermissionsSourceFunc(ctx, userId, limit, offset)
 	}
@@ -443,7 +442,7 @@ func (r *RbacStoreDecorator) ListUserNotPermissionsSource(ctx context.Context, u
 }
 
 // ListUserPermissionsSource implements DbRbacStoreInterface.
-func (r *RbacStoreDecorator) ListUserPermissionsSource(ctx context.Context, userId uuid.UUID, limit int64, offset int64) ([]shared.PermissionSource, error) {
+func (r *RbacStoreDecorator) ListUserPermissionsSource(ctx context.Context, userId uuid.UUID, limit int64, offset int64) ([]*models.PermissionSource, error) {
 	if r.ListUserPermissionsSourceFunc != nil {
 		return r.ListUserPermissionsSourceFunc(ctx, userId, limit, offset)
 	}
@@ -476,7 +475,7 @@ func (r *RbacStoreDecorator) LoadRolePermissions(ctx context.Context, roleIds ..
 }
 
 // UpdatePermission implements DbRbacStoreInterface.
-func (r *RbacStoreDecorator) UpdatePermission(ctx context.Context, id uuid.UUID, roledto *shared.UpdatePermissionDto) error {
+func (r *RbacStoreDecorator) UpdatePermission(ctx context.Context, id uuid.UUID, roledto *UpdatePermissionDto) error {
 	if r.UpdatePermissionFunc != nil {
 		return r.UpdatePermissionFunc(ctx, id, roledto)
 	}
@@ -487,7 +486,7 @@ func (r *RbacStoreDecorator) UpdatePermission(ctx context.Context, id uuid.UUID,
 }
 
 // UpdateRole implements DbRbacStoreInterface.
-func (r *RbacStoreDecorator) UpdateRole(ctx context.Context, id uuid.UUID, roledto *shared.UpdateRoleDto) error {
+func (r *RbacStoreDecorator) UpdateRole(ctx context.Context, id uuid.UUID, roledto *UpdateRoleDto) error {
 	if r.UpdateRoleFunc != nil {
 		return r.UpdateRoleFunc(ctx, id, roledto)
 	}

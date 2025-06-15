@@ -3,15 +3,85 @@ package apis
 import (
 	"context"
 	"slices"
+	"time"
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/models"
-	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/stores"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 	"github.com/tkahng/authgo/internal/tools/utils"
 )
+
+type Role struct {
+	_           struct{}      `db:"roles" json:"-"`
+	ID          uuid.UUID     `db:"id" json:"id"`
+	Name        string        `db:"name" json:"name"`
+	Description *string       `db:"description" json:"description,omitempty"`
+	CreatedAt   time.Time     `db:"created_at" json:"created_at"`
+	UpdatedAt   time.Time     `db:"updated_at" json:"updated_at"`
+	Permissions []*Permission `db:"permissions" src:"id" dest:"role_id" table:"permissions" through:"role_permissions,permission_id,id" json:"permissions,omitempty"`
+	Users       []*ApiUser    `db:"users" src:"id" dest:"role_id" table:"users" through:"user_roles,user_id,id" json:"users,omitempty"`
+}
+
+func FromModelRole(role *models.Role) *Role {
+	if role == nil {
+		return nil
+	}
+	return &Role{
+		ID:          role.ID,
+		Name:        role.Name,
+		Description: role.Description,
+		CreatedAt:   role.CreatedAt,
+		UpdatedAt:   role.UpdatedAt,
+		Permissions: mapper.Map(role.Permissions, FromModelPermission),
+		Users:       mapper.Map(role.Users, FromUserModel),
+	}
+}
+
+type Permission struct {
+	ID          uuid.UUID `db:"id" json:"id"`
+	Name        string    `db:"name" json:"name"`
+	Description *string   `db:"description" json:"description,omitempty"`
+	CreatedAt   time.Time `db:"created_at" json:"created_at"`
+	UpdatedAt   time.Time `db:"updated_at" json:"updated_at"`
+}
+type PermissionSource struct {
+	ID          uuid.UUID   `db:"id,pk" json:"id"`
+	Name        string      `db:"name" json:"name"`
+	Description *string     `db:"description" json:"description"`
+	CreatedAt   time.Time   `db:"created_at" json:"created_at"`
+	UpdatedAt   time.Time   `db:"updated_at" json:"updated_at"`
+	RoleIDs     []uuid.UUID `db:"role_ids" json:"role_ids"`
+	ProductIDs  []string    `db:"product_ids" json:"product_ids"`
+	IsDirectly  bool        `db:"is_directly_assigned" json:"is_directly_assigned"`
+}
+
+func FromModelPermissionSource(permission *models.PermissionSource) *PermissionSource {
+	if permission == nil {
+		return nil
+	}
+	return &PermissionSource{
+		ID:          permission.ID,
+		Name:        permission.Name,
+		Description: permission.Description,
+		CreatedAt:   permission.CreatedAt,
+		UpdatedAt:   permission.UpdatedAt,
+		RoleIDs:     permission.RoleIDs,
+		ProductIDs:  permission.ProductIDs,
+		IsDirectly:  permission.IsDirectly,
+	}
+}
+
+func FromModelPermission(permission *models.Permission) *Permission {
+	return &Permission{
+		ID:          permission.ID,
+		Name:        permission.Name,
+		Description: permission.Description,
+		CreatedAt:   permission.CreatedAt,
+		UpdatedAt:   permission.UpdatedAt,
+	}
+}
 
 type RoleListFilter struct {
 	Q         string   `query:"q,omitempty" required:"false"`
@@ -54,7 +124,7 @@ func ToRoleListFilter(input *RolesListParams) (*stores.RoleListFilter, error) {
 
 func (api *Api) AdminRolesList(ctx context.Context, input *struct {
 	RolesListParams
-}) (*ApiPaginatedOutput[*shared.RoleWithPermissions], error) {
+}) (*ApiPaginatedOutput[*Role], error) {
 	store := api.app.Adapter().Rbac()
 	filter, err := ToRoleListFilter(&input.RolesListParams)
 	if err != nil {
@@ -82,14 +152,9 @@ func (api *Api) AdminRolesList(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	return &ApiPaginatedOutput[*shared.RoleWithPermissions]{
-		Body: ApiPaginatedResponse[*shared.RoleWithPermissions]{
-			Data: mapper.Map(roles, func(r *models.Role) *shared.RoleWithPermissions {
-				return &shared.RoleWithPermissions{
-					Role:        shared.FromModelRole(r),
-					Permissions: mapper.Map(r.Permissions, shared.FromModelPermission),
-				}
-			}),
+	return &ApiPaginatedOutput[*Role]{
+		Body: ApiPaginatedResponse[*Role]{
+			Data: mapper.Map(roles, FromModelRole),
 			Meta: ApiGenerateMeta(&input.PaginatedInput, count),
 		},
 	}, nil
@@ -104,7 +169,7 @@ type RoleCreateInput struct {
 func (api *Api) AdminRolesCreate(ctx context.Context, input *struct {
 	Body RoleCreateInput
 }) (*struct {
-	Body shared.Role
+	Body Role
 }, error) {
 	data, err := api.app.Adapter().Rbac().FindRoleByName(ctx, input.Body.Name)
 	if err != nil {
@@ -113,7 +178,7 @@ func (api *Api) AdminRolesCreate(ctx context.Context, input *struct {
 	if data != nil {
 		return nil, huma.Error409Conflict("Role already exists")
 	}
-	role, err := api.app.Adapter().Rbac().CreateRole(ctx, &shared.CreateRoleDto{
+	role, err := api.app.Adapter().Rbac().CreateRole(ctx, &stores.CreateRoleDto{
 		Name:        input.Body.Name,
 		Description: input.Body.Description,
 	})
@@ -123,8 +188,8 @@ func (api *Api) AdminRolesCreate(ctx context.Context, input *struct {
 	if role == nil {
 		return nil, huma.Error500InternalServerError("Failed to create role")
 	}
-	return &struct{ Body shared.Role }{
-		Body: *shared.FromModelRole(role),
+	return &struct{ Body Role }{
+		Body: *FromModelRole(role),
 	}, nil
 }
 
@@ -162,7 +227,7 @@ func (api *Api) AdminRolesUpdate(ctx context.Context, input *struct {
 	RoleID string `path:"id" format:"uuid" required:"true"`
 	Body   RoleCreateInput
 }) (*struct {
-	Body *shared.Role
+	Body *Role
 }, error) {
 	id, err := uuid.Parse(input.RoleID)
 	if err != nil {
@@ -183,7 +248,7 @@ func (api *Api) AdminRolesUpdate(ctx context.Context, input *struct {
 	if !ok {
 		return nil, huma.Error400BadRequest("Cannot update the admin or basic role")
 	}
-	err = api.app.Adapter().Rbac().UpdateRole(ctx, role.ID, &shared.UpdateRoleDto{
+	err = api.app.Adapter().Rbac().UpdateRole(ctx, role.ID, &stores.UpdateRoleDto{
 		Name:        input.Body.Name,
 		Description: input.Body.Description,
 	})
@@ -191,8 +256,8 @@ func (api *Api) AdminRolesUpdate(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	return &struct{ Body *shared.Role }{
-		Body: shared.FromModelRole(role),
+	return &struct{ Body *Role }{
+		Body: FromModelRole(role),
 	}, nil
 }
 func (api *Api) AdminUserRolesDelete(ctx context.Context, input *struct {
@@ -274,62 +339,6 @@ type RoleIdsInput struct {
 	RolesIds []string `json:"role_ids" minimum:"1" maximum:"100" format:"uuid" required:"true"`
 }
 
-// func (api *Api) AdminUserRolesUpdate(ctx context.Context, input *struct {
-// 	UserID string       `path:"user-id" format:"uuid" required:"true"`
-// 	Body   RoleIdsInput `json:"body" required:"true"`
-// }) (*ApiPaginatedOutput[*shared.Role], error) {
-// 	db := api.app.Db()
-// 	id, err := uuid.Parse(input.UserID)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	user, err := api.app.Adapter().User().FindUserByID(ctx, id)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	if user == nil {
-// 		return nil, huma.Error404NotFound("User not found")
-// 	}
-// 	roleIds := make([]uuid.UUID, len(input.Body.RolesIds))
-// 	for i, id := range input.Body.RolesIds {
-// 		id, err := uuid.Parse(id)
-// 		if err != nil {
-// 			return nil, err
-// 		}
-// 		roleIds[i] = id
-// 	}
-// 	roles, err := api.app.Adapter().Rbac().FindRolesByIds(ctx, roleIds)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	_, err = repository.UserRole.DeleteReturn(
-// 		ctx,
-// 		db,
-// 		&map[string]any{
-// 			"user_id": map[string]any{
-// 				"_eq": id.String(),
-// 			},
-// 		},
-// 	)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	newRoleIds := []uuid.UUID{}
-// 	for _, role := range roles {
-// 		newRoleIds = append(newRoleIds, role.ID)
-// 	}
-// 	err = api.app.Adapter().Rbac().CreateUserRoles(ctx, user.ID, newRoleIds...)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	output := ApiPaginatedOutput[*shared.Role]{
-// 		Body: ApiPaginatedResponse[*shared.Role]{
-// 			Data: mapper.Map(roles, shared.FromCrudRole),
-// 		},
-// 	}
-// 	return &output, nil
-// }
-
 type PermissionIdsInput struct {
 	PermissionIDs []string `json:"permission_ids" minimum:"0" maximum:"100" format:"uuid" required:"true"`
 }
@@ -338,7 +347,7 @@ func (api *Api) AdminRolesGet(ctx context.Context, input *struct {
 	RoleID string   `path:"id" format:"uuid" required:"true"`
 	Expand []string `query:"expand" required:"false" minimum:"1" maximum:"100" enum:"permissions"`
 }) (*struct {
-	Body shared.RoleWithPermissions
+	Body Role
 }, error) {
 	id, err := uuid.Parse(input.RoleID)
 	if err != nil {
@@ -362,8 +371,8 @@ func (api *Api) AdminRolesGet(ctx context.Context, input *struct {
 			}
 		}
 	}
-	return &struct{ Body shared.RoleWithPermissions }{
-		Body: *shared.FromModelRoleWithPermissions(role),
+	return &struct{ Body Role }{
+		Body: *FromModelRole(role),
 	}, nil
 }
 

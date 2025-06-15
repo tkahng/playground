@@ -19,7 +19,7 @@ type AuthServiceDecorator struct {
 	PasswordFunc                   func() PasswordService
 	TokenFunc                      func() JwtService
 	CreateOAuthUrlFunc             func(ctx context.Context, provider shared.Providers, redirectUrl string) (string, error)
-	AuthenticateFunc               func(ctx context.Context, params *shared.AuthenticationInput) (*models.User, error)
+	AuthenticateFunc               func(ctx context.Context, params *AuthenticationInput) (*models.User, error)
 	CheckResetPasswordTokenFunc    func(ctx context.Context, token string) error
 	HandleAccessTokenFunc          func(ctx context.Context, token string) (*models.UserInfo, error)
 	HandleRefreshTokenFunc         func(ctx context.Context, token string) (*models.UserInfoTokens, error)
@@ -93,7 +93,7 @@ func (a *AuthServiceDecorator) CreateOAuthUrl(ctx context.Context, provider shar
 }
 
 // Authenticate implements AuthService.
-func (a *AuthServiceDecorator) Authenticate(ctx context.Context, params *shared.AuthenticationInput) (*models.User, error) {
+func (a *AuthServiceDecorator) Authenticate(ctx context.Context, params *AuthenticationInput) (*models.User, error) {
 	if a.AuthenticateFunc != nil {
 		return a.AuthenticateFunc(ctx, params)
 	}

@@ -110,30 +110,3 @@ type UpdateTaskProjectDTO struct {
 	Body          UpdateTaskProjectBaseDTO
 	TaskProjectID string `path:"task-project-id" json:"task_project_id" required:"true" format:"uuid"`
 }
-
-type TaskProjectsListFilter struct {
-	Q      string              `query:"q,omitempty" required:"false"`
-	TeamID string              `query:"team_id,omitempty" required:"false" format:"uuid"`
-	Status []TaskProjectStatus `query:"status,omitempty" required:"false" minimum:"1" maximum:"100" enum:"todo,in_progress,done"`
-	Ids    []string            `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
-}
-type TeamTaskProjectsListFilter struct {
-	Q        string              `query:"q,omitempty" required:"false"`
-	Status   []TaskProjectStatus `query:"status,omitempty" required:"false" minimum:"1" maximum:"100" enum:"todo,in_progress,done"`
-	Ids      []string            `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
-	Statuses []TaskProjectStatus `query:"task_status,omitempty" required:"false" minimum:"1" maximum:"100" enum:"todo,in_progress,done"`
-}
-
-type TaskProjectsListParams struct {
-	PaginatedInput
-	TaskProjectsListFilter
-	SortParams
-	Expand []string `query:"expand,omitempty" required:"false" minimum:"1" maximum:"100" enum:"tasks,subtasks"`
-}
-type TeamTaskProjectsListParams struct {
-	TeamID string `path:"team-id" required:"true" format:"uuid"`
-	PaginatedInput
-	TeamTaskProjectsListFilter
-	SortParams
-	Expand []string `query:"expand,omitempty" required:"false" minimum:"1" maximum:"100" enum:"tasks,subtasks"`
-}

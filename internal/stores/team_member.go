@@ -13,11 +13,15 @@ import (
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/repository"
-	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 	"github.com/tkahng/authgo/internal/tools/types"
 	"github.com/tkahng/authgo/internal/tools/utils"
 )
+
+type TeamMemberListInput struct {
+	PaginatedInput
+	SortParams
+}
 
 type TeamMemberFilter struct {
 	PaginatedInput
@@ -39,7 +43,7 @@ type DbTeamMemberStoreInterface interface {
 	DeleteTeamMember(ctx context.Context, teamId uuid.UUID, userId uuid.UUID) error
 	FindLatestTeamMemberByUserID(ctx context.Context, userId uuid.UUID) (*models.TeamMember, error)
 	FindTeamMember(ctx context.Context, member *TeamMemberFilter) (*models.TeamMember, error)
-	FindTeamMembersByUserID(ctx context.Context, userId uuid.UUID, paginate *shared.TeamMemberListInput) ([]*models.TeamMember, error)
+	FindTeamMembersByUserID(ctx context.Context, userId uuid.UUID, paginate *TeamMemberListInput) ([]*models.TeamMember, error)
 	UpdateTeamMember(ctx context.Context, member *models.TeamMember) (*models.TeamMember, error)
 	UpdateTeamMemberSelectedAt(ctx context.Context, teamId uuid.UUID, userId uuid.UUID) error
 }
@@ -297,8 +301,8 @@ func (s *DbTeamMemberStore) FindLatestTeamMemberByUserID(ctx context.Context, us
 }
 
 // FindTeamMembersByUserID implements TeamQueryer.
-func (s *DbTeamMemberStore) FindTeamMembersByUserID(ctx context.Context, userId uuid.UUID, paginate *shared.TeamMemberListInput) ([]*models.TeamMember, error) {
-	limit, offset := database.PaginateRepo(&paginate.PaginatedInput)
+func (s *DbTeamMemberStore) FindTeamMembersByUserID(ctx context.Context, userId uuid.UUID, paginate *TeamMemberListInput) ([]*models.TeamMember, error) {
+	limit, offset := pagination(&paginate.PaginatedInput)
 	orderby := make(map[string]string)
 	if paginate.SortBy != "" && paginate.SortOrder != "" && slices.Contains(repository.TeamMemberBuilder.ColumnNames(), utils.Quote(paginate.SortBy)) {
 		orderby[paginate.SortBy] = paginate.SortOrder
@@ -315,7 +319,7 @@ func (s *DbTeamMemberStore) FindTeamMembersByUserID(ctx context.Context, userId 
 	} else {
 		qs = qs.OrderBy("last_selected_at DESC")
 	}
-	qs = qs.Limit(uint64(*limit)).Offset(uint64(*offset))
+	qs = qs.Limit(uint64(limit)).Offset(uint64(offset))
 	teamMembers, err := database.QueryWithBuilder[*models.TeamMember](ctx, s.db, qs.PlaceholderFormat(squirrel.Dollar))
 	if err != nil {
 		return nil, err

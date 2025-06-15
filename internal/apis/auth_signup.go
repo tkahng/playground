@@ -4,7 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/authgo/internal/models"
+	"github.com/tkahng/authgo/internal/services"
 )
 
 type RequiredPasswordField string
@@ -26,12 +27,12 @@ func (api *Api) SignUp(ctx context.Context, input *struct{ Body SignupInput }) (
 	if err != nil {
 		return nil, fmt.Errorf("error hashing password: %w", err)
 	}
-	params := &shared.AuthenticationInput{
+	params := &services.AuthenticationInput{
 		Email:             input.Body.Email,
-		Provider:          shared.ProvidersCredentials,
+		Provider:          models.ProvidersCredentials,
 		Password:          &password,
 		HashPassword:      &hash,
-		Type:              shared.ProviderTypeCredentials,
+		Type:              models.ProviderTypeCredentials,
 		Name:              input.Body.Name,
 		ProviderAccountID: input.Body.Email,
 	}

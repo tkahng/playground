@@ -5,7 +5,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/models"
-	"github.com/tkahng/authgo/internal/shared"
 )
 
 type TeamMemberStoreDecorator struct {
@@ -19,7 +18,7 @@ type TeamMemberStoreDecorator struct {
 	FindLatestTeamMemberByUserIDFunc  func(ctx context.Context, userId uuid.UUID) (*models.TeamMember, error)
 	FindTeamMemberFunc                func(ctx context.Context, filter *TeamMemberFilter) (*models.TeamMember, error)
 	FindTeamMemberByTeamAndUserIdFunc func(ctx context.Context, teamId uuid.UUID, userId uuid.UUID) (*models.TeamMember, error)
-	FindTeamMembersByUserIDFunc       func(ctx context.Context, userId uuid.UUID, paginate *shared.TeamMemberListInput) ([]*models.TeamMember, error)
+	FindTeamMembersByUserIDFunc       func(ctx context.Context, userId uuid.UUID, paginate *TeamMemberListInput) ([]*models.TeamMember, error)
 	UpdateTeamMemberFunc              func(ctx context.Context, member *models.TeamMember) (*models.TeamMember, error)
 	UpdateTeamMemberSelectedAtFunc    func(ctx context.Context, teamId uuid.UUID, userId uuid.UUID) error
 	FindTeamMembersFunc               func(ctx context.Context, filter *TeamMemberFilter) ([]*models.TeamMember, error)
@@ -126,7 +125,7 @@ func (t *TeamMemberStoreDecorator) FindTeamMember(ctx context.Context, member *T
 }
 
 // FindTeamMembersByUserID implements DbTeamMemberStoreInterface.
-func (t *TeamMemberStoreDecorator) FindTeamMembersByUserID(ctx context.Context, userId uuid.UUID, paginate *shared.TeamMemberListInput) ([]*models.TeamMember, error) {
+func (t *TeamMemberStoreDecorator) FindTeamMembersByUserID(ctx context.Context, userId uuid.UUID, paginate *TeamMemberListInput) ([]*models.TeamMember, error) {
 	if t.FindTeamMembersByUserIDFunc != nil {
 		return t.FindTeamMembersByUserIDFunc(ctx, userId, paginate)
 	}

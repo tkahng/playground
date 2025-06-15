@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/authgo/internal/models"
+	"github.com/tkahng/authgo/internal/services"
 )
 
 type SigninDto struct {
@@ -27,12 +28,12 @@ func (api *Api) SignIn(ctx context.Context, input *struct{ Body *SigninDto }) (*
 	if err != nil {
 		return nil, fmt.Errorf("error hashing password: %w", err)
 	}
-	params := &shared.AuthenticationInput{
+	params := &services.AuthenticationInput{
 		Email:             input.Body.Email,
-		Provider:          shared.ProvidersCredentials,
+		Provider:          models.ProvidersCredentials,
 		Password:          &password,
 		HashPassword:      &hash,
-		Type:              shared.ProviderTypeCredentials,
+		Type:              models.ProviderTypeCredentials,
 		ProviderAccountID: input.Body.Email,
 	}
 	user, err := action.Authenticate(ctx, params)

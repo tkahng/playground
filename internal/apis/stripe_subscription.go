@@ -1,4 +1,4 @@
-package shared
+package apis
 
 import (
 	"time"
@@ -65,7 +65,7 @@ type StripeCustomer struct {
 	CreatedAt      time.Time          `db:"created_at" json:"created_at"`
 	UpdatedAt      time.Time          `db:"updated_at" json:"updated_at"`
 	Team           *Team              `db:"team" src:"team_id" dest:"id" table:"teams" json:"team,omitempty"`
-	User           *User              `db:"user" src:"user_id" dest:"id" table:"users" json:"user,omitempty"`
+	User           *ApiUser           `db:"user" src:"user_id" dest:"id" table:"users" json:"user,omitempty"`
 	Subscriptions  []*Subscription    `db:"subscriptions" src:"id" dest:"stripe_customer_id" table:"stripe_subscriptions" json:"subscriptions,omitempty"`
 }
 
@@ -89,4 +89,39 @@ func FromModelSubscription(sub *models.StripeSubscription) *Subscription {
 		CreatedAt:          sub.CreatedAt,
 		UpdatedAt:          sub.UpdatedAt,
 	}
+}
+
+type SubscriptionWithPrice struct {
+	Price        StripePrice   `json:"price"`
+	Subscription Subscription  `json:"subscription"`
+	Product      StripeProduct `json:"product"`
+}
+
+// type SubscriptionWithData struct {
+// 	*Subscription
+// 	Price            *StripePricesWithProduct `json:"price,omitempty" required:"false"`
+// 	SubscriptionUser *User                    `json:"user,omitempty" required:"false"`
+// }
+
+// type StripeSubscriptionListFilter struct {
+// 	Q       string                     `query:"q,omitempty" required:"false"`
+// 	Ids     []string                   `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+// 	UserIDs []string                   `query:"user_id,omitempty" required:"false" format:"uuid"`
+// 	TeamIDs []string                   `query:"team_id,omitempty" required:"false" format:"uuid"`
+// 	Status  []StripeSubscriptionStatus `query:"status,omitempty" required:"false" minimum:"1" maximum:"100" enum:"trialing,active,canceled,incomplete,incomplete_expired,past_due,unpaid,paused"`
+// }
+// type StripeSubscriptionListParams struct {
+// 	PaginatedInput
+// 	StripeSubscriptionListFilter
+// 	SortParams
+// 	StripeSubscriptionExpand
+// }
+
+type StripeSubscriptionExpand struct {
+	Expand []string `query:"expand,omitempty" required:"false" minimum:"1" maximum:"100" enum:"user,price,product"`
+}
+
+type StripeSubscriptionGetParams struct {
+	SubscriptionID string `path:"subscription-id" json:"subscription_id" required:"true"`
+	StripeSubscriptionExpand
 }

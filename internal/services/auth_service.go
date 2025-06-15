@@ -46,7 +46,7 @@ type AuthService interface {
 	CreateAndPersistStateToken(ctx context.Context, payload *shared.ProviderStatePayload) (string, error)
 	FetchAuthUser(ctx context.Context, code string, parsedState *shared.ProviderStateClaims) (*oauth.AuthUser, error)
 	VerifyAndParseOtpToken(ctx context.Context, emailType mailer.EmailType, token string) (*shared.OtpClaims, error)
-	Authenticate(ctx context.Context, params *shared.AuthenticationInput) (*models.User, error)
+	Authenticate(ctx context.Context, params *AuthenticationInput) (*models.User, error)
 	CreateAuthTokensFromEmail(ctx context.Context, email string) (*models.UserInfoTokens, error)
 	SendOtpEmail(emailType mailer.EmailType, ctx context.Context, user *models.User, adapter stores.StorageAdapterInterface) error
 }
@@ -119,7 +119,7 @@ func (app *BaseAuthService) CreateOAuthUrl(ctx context.Context, providerName sha
 		oauth2.AccessTypeOffline,
 	}
 	info := &shared.ProviderStatePayload{
-		Type:       shared.TokenTypesStateToken,
+		Type:       models.TokenTypesStateToken,
 		Provider:   providerName,
 		RedirectTo: redirectTo,
 		Token:      security.GenerateTokenKey(),
@@ -408,7 +408,7 @@ func (app *BaseAuthService) CreateAuthTokens(ctx context.Context, payload *model
 
 	authToken, err := func() (string, error) {
 		claims := shared.AuthenticationClaims{
-			Type: shared.TokenTypesAccessToken,
+			Type: models.TokenTypesAccessToken,
 			RegisteredClaims: jwt.RegisteredClaims{
 				ExpiresAt: opts.AccessToken.ExpiresAt(),
 			},
@@ -434,7 +434,7 @@ func (app *BaseAuthService) CreateAuthTokens(ctx context.Context, payload *model
 	refreshToken, err := func() (string, error) {
 
 		claims := shared.RefreshTokenClaims{
-			Type:             shared.TokenTypesRefreshToken,
+			Type:             models.TokenTypesRefreshToken,
 			RegisteredClaims: jwt.RegisteredClaims{ExpiresAt: opts.RefreshToken.ExpiresAt()},
 			RefreshTokenPayload: shared.RefreshTokenPayload{
 				UserId: payload.User.ID,
@@ -659,7 +659,7 @@ func (app *BaseAuthService) VerifyAndParseOtpToken(ctx context.Context, emailTyp
 
 // methods
 
-func (app *BaseAuthService) CreateUserAndAccount(ctx context.Context, params *shared.AuthenticationInput, adapter stores.StorageAdapterInterface) (*models.User, error) {
+func (app *BaseAuthService) CreateUserAndAccount(ctx context.Context, params *AuthenticationInput, adapter stores.StorageAdapterInterface) (*models.User, error) {
 	user, err := adapter.User().CreateUser(
 		ctx,
 		&models.User{
@@ -700,7 +700,7 @@ func (app *BaseAuthService) CreateUserAndAccount(ctx context.Context, params *sh
 	return user, nil
 }
 
-func (app *BaseAuthService) CreateAccountFromUser(ctx context.Context, params *shared.AuthenticationInput, adapter stores.StorageAdapterInterface) (*models.UserAccount, error) {
+func (app *BaseAuthService) CreateAccountFromUser(ctx context.Context, params *AuthenticationInput, adapter stores.StorageAdapterInterface) (*models.UserAccount, error) {
 	if params.UserId == nil {
 		return nil, fmt.Errorf("user id is required")
 	}
@@ -729,7 +729,22 @@ func (app *BaseAuthService) CreateAccountFromUser(ctx context.Context, params *s
 	return account, nil
 }
 
-func (app *BaseAuthService) Authenticate(ctx context.Context, params *shared.AuthenticationInput) (*models.User, error) {
+type AuthenticationInput struct {
+	Email             string
+	Name              *string
+	AvatarUrl         *string
+	EmailVerifiedAt   *time.Time
+	Provider          models.Providers
+	Password          *string
+	HashPassword      *string
+	Type              models.ProviderTypes
+	ProviderAccountID string
+	UserId            *uuid.UUID
+	AccessToken       *string
+	RefreshToken      *string
+}
+
+func (app *BaseAuthService) Authenticate(ctx context.Context, params *AuthenticationInput) (*models.User, error) {
 	var user *models.User
 	var account *models.UserAccount
 	var err error
@@ -764,7 +779,7 @@ func (app *BaseAuthService) Authenticate(ctx context.Context, params *shared.Aut
 		return app.authenticateNewAccount(ctx, user, params)
 	}
 	// if user exists and account exists, check if password is correct  or check if provider key is correct ----------------------------------------------------------------------------------------------------
-	if params.Type == shared.ProviderTypeCredentials {
+	if params.Type == models.ProviderTypeCredentials {
 		if params.Password == nil || account.Password == nil {
 			return nil, fmt.Errorf("password or account password is nil")
 		}
@@ -776,7 +791,7 @@ func (app *BaseAuthService) Authenticate(ctx context.Context, params *shared.Aut
 	}
 	return user, nil
 }
-func (app *BaseAuthService) authenticateNewAccount(ctx context.Context, user *models.User, params *shared.AuthenticationInput) (*models.User, error) {
+func (app *BaseAuthService) authenticateNewAccount(ctx context.Context, user *models.User, params *AuthenticationInput) (*models.User, error) {
 	if user == nil {
 		return nil, fmt.Errorf("user is nil")
 	}
@@ -837,7 +852,7 @@ func (app *BaseAuthService) authenticateNewAccount(ctx context.Context, user *mo
 	}
 	return user, nil
 }
-func (app *BaseAuthService) authenticateNewUser(ctx context.Context, params *shared.AuthenticationInput) (*models.User, error) {
+func (app *BaseAuthService) authenticateNewUser(ctx context.Context, params *AuthenticationInput) (*models.User, error) {
 	var user *models.User
 	err := app.adapter.RunInTx(func(tx stores.StorageAdapterInterface) error {
 		newUser, err := app.CreateUserAndAccount(ctx, params, app.adapter)
@@ -866,8 +881,8 @@ func (app *BaseAuthService) authenticateNewUser(ctx context.Context, params *sha
 }
 
 // HashInputPassword hashes the password and sets the HashPassword field in the params if it is not already set.
-func (app *BaseAuthService) HashInputPassword(params *shared.AuthenticationInput) error {
-	if params.Type == shared.ProviderTypeCredentials {
+func (app *BaseAuthService) HashInputPassword(params *AuthenticationInput) error {
+	if params.Type == models.ProviderTypeCredentials {
 		if params.HashPassword == nil {
 			if params.Password == nil {
 				return fmt.Errorf("password is nil")
@@ -885,7 +900,7 @@ func (app *BaseAuthService) HashInputPassword(params *shared.AuthenticationInput
 	return nil
 }
 
-func (app *BaseAuthService) UpdateUserEmailVerifiedAt(ctx context.Context, user *models.User, params *shared.AuthenticationInput, adapter stores.StorageAdapterInterface) error {
+func (app *BaseAuthService) UpdateUserEmailVerifiedAt(ctx context.Context, user *models.User, params *AuthenticationInput, adapter stores.StorageAdapterInterface) error {
 	if user == nil {
 		return errors.New("user is nil")
 	}
@@ -911,7 +926,7 @@ func (app *BaseAuthService) UpdateUserEmailVerifiedAt(ctx context.Context, user 
 // and if user email is not verified,
 // then reset the password of the credentials account.
 // if there was a reset, return true, else return false
-func (app *BaseAuthService) CheckAndResetCredentialsPassword(ctx context.Context, user *models.User, params *shared.AuthenticationInput, adapter stores.StorageAdapterInterface) (bool, error) {
+func (app *BaseAuthService) CheckAndResetCredentialsPassword(ctx context.Context, user *models.User, params *AuthenticationInput, adapter stores.StorageAdapterInterface) (bool, error) {
 	if user == nil {
 		return false, fmt.Errorf("user is nil")
 	}
@@ -919,7 +934,7 @@ func (app *BaseAuthService) CheckAndResetCredentialsPassword(ctx context.Context
 		return false, fmt.Errorf("params is nil")
 	}
 	// if incoming request is not a oauth type, return false
-	if params.Type == shared.ProviderTypeCredentials {
+	if params.Type == models.ProviderTypeCredentials {
 		return false, nil
 	}
 	// if incoming request does not have email verified at, return false

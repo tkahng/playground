@@ -9,7 +9,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
-	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/stores"
 	"github.com/tkahng/authgo/internal/test"
 )
@@ -29,7 +28,7 @@ func TestListUserPermissionsSource(t *testing.T) {
 		}
 
 		// Create test role and permission
-		role, err := rbacStore.CreateRole(ctx, &shared.CreateRoleDto{
+		role, err := rbacStore.CreateRole(ctx, &stores.CreateRoleDto{
 			Name: "test_role",
 		})
 		if err != nil {
@@ -129,7 +128,7 @@ func TestCountUserPermissionSource(t *testing.T) {
 		}
 
 		// Create test role and permission
-		role, err := rbacstore.CreateRole(ctx, &shared.CreateRoleDto{
+		role, err := rbacstore.CreateRole(ctx, &stores.CreateRoleDto{
 			Name: "test_role",
 		})
 		if err != nil {
@@ -216,7 +215,7 @@ func TestListUserNotPermissionsSource(t *testing.T) {
 		}
 
 		// Create test role and permission that will be assigned
-		role, err := rbacstore.CreateRole(ctx, &shared.CreateRoleDto{
+		role, err := rbacstore.CreateRole(ctx, &stores.CreateRoleDto{
 			Name: "test_role",
 		})
 		if err != nil {
@@ -332,7 +331,7 @@ func TestCountNotUserPermissionSource(t *testing.T) {
 		}
 
 		// Create test role and permission that will be assigned
-		role, err := rbacstore.CreateRole(ctx, &shared.CreateRoleDto{
+		role, err := rbacstore.CreateRole(ctx, &stores.CreateRoleDto{
 			Name: "test_role",
 		})
 		if err != nil {

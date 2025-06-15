@@ -1,12 +1,5 @@
 package shared
 
-import (
-	"time"
-
-	"github.com/google/uuid"
-	crudModels "github.com/tkahng/authgo/internal/models"
-)
-
 // enum:oauth,credentials
 type ProviderTypes string
 
@@ -32,94 +25,4 @@ const (
 
 func (p Providers) String() string {
 	return string(p)
-}
-
-type UserAccount struct {
-	ID                uuid.UUID     `db:"id,pk" json:"id"`
-	UserID            uuid.UUID     `db:"user_id" json:"user_id"`
-	Type              ProviderTypes `db:"type" json:"type"`
-	Provider          Providers     `db:"provider" json:"provider"`
-	ProviderAccountID string        `db:"provider_account_id" json:"provider_account_id"`
-	Password          *string       `db:"password" json:"password"`
-	RefreshToken      *string       `db:"refresh_token" json:"refresh_token"`
-	AccessToken       *string       `db:"access_token" json:"access_token"`
-	ExpiresAt         *int64        `db:"expires_at" json:"expires_at"`
-	IDToken           *string       `db:"id_token" json:"id_token"`
-	Scope             *string       `db:"scope" json:"scope"`
-	SessionState      *string       `db:"session_state" json:"session_state"`
-	TokenType         *string       `db:"token_type" json:"token_type"`
-	CreatedAt         time.Time     `db:"created_at" json:"created_at"`
-	UpdatedAt         time.Time     `db:"updated_at" json:"updated_at"`
-}
-
-type UserAccountOutput struct {
-	ID                uuid.UUID     `db:"id,pk" json:"id"`
-	UserID            uuid.UUID     `db:"user_id" json:"user_id"`
-	Type              ProviderTypes `db:"type" json:"type" enum:"oauth,credentials"`
-	Provider          Providers     `db:"provider" json:"provider" enum:"google,apple,facebook,github,credentials"`
-	ProviderAccountID string        `db:"provider_account_id" json:"provider_account_id"`
-	CreatedAt         time.Time     `db:"created_at" json:"created_at"`
-	UpdatedAt         time.Time     `db:"updated_at" json:"updated_at"`
-}
-
-func FromModelUserAccount(u *crudModels.UserAccount) *UserAccount {
-	if u == nil {
-		return nil
-	}
-	return &UserAccount{
-		ID:                u.ID,
-		UserID:            u.UserID,
-		Type:              ProviderTypes(u.Type),
-		Provider:          Providers(u.Provider),
-		ProviderAccountID: u.ProviderAccountID,
-		CreatedAt:         u.CreatedAt,
-		UpdatedAt:         u.UpdatedAt,
-	}
-}
-
-func FromModelUserAccountOutput(u *crudModels.UserAccount) *UserAccountOutput {
-	if u == nil {
-		return nil
-	}
-	return &UserAccountOutput{
-		ID:                u.ID,
-		UserID:            u.UserID,
-		Type:              ProviderTypes(u.Type),
-		Provider:          Providers(u.Provider),
-		ProviderAccountID: u.ProviderAccountID,
-		CreatedAt:         u.CreatedAt,
-		UpdatedAt:         u.UpdatedAt,
-	}
-}
-
-type UserAccountListFilter struct {
-	Providers     []Providers     `query:"providers,omitempty" required:"false" uniqueItems:"true" minimum:"1" maximum:"100" enum:"google,apple,facebook,github,credentials"`
-	ProviderTypes []ProviderTypes `query:"provider_types,omitempty" required:"false" uniqueItems:"true" minimum:"1" maximum:"100" enum:"oauth,credentials"`
-	Q             string          `query:"q,omitempty" required:"false"`
-	Ids           []string        `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
-	UserIds       []string        `query:"user_ids,omitempty" minimum:"1" maximum:"100" required:"false" format:"uuid"`
-}
-type UserAccountFilter struct {
-	PaginatedInput
-	SortParams
-	Providers     []Providers     `query:"providers,omitempty" required:"false" uniqueItems:"true" minimum:"1" maximum:"100" enum:"google,apple,facebook,github,credentials"`
-	ProviderTypes []ProviderTypes `query:"provider_types,omitempty" required:"false" uniqueItems:"true" minimum:"1" maximum:"100" enum:"oauth,credentials"`
-	Q             string          `query:"q,omitempty" required:"false"`
-	Ids           []string        `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
-	UserIds       []string        `query:"user_ids,omitempty" minimum:"1" maximum:"100" required:"false" format:"uuid"`
-
-	// Providers     []models.Providers     `query:"providers,omitempty" required:"false" uniqueItems:"true" minimum:"1" maximum:"100" enum:"google,apple,facebook,github,credentials"`
-	// ProviderTypes []models.ProviderTypes `query:"provider_types,omitempty" required:"false" uniqueItems:"true" minimum:"1" maximum:"100" enum:"oauth,credentials"`
-	// Q             string                 `query:"q,omitempty" required:"false"`
-	// Ids           []uuid.UUID            `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
-	// UserIds       []uuid.UUID            `query:"user_ids,omitempty" minimum:"1" maximum:"100" required:"false" format:"uuid"`
-}
-type UserAccountListParams struct {
-	PaginatedInput
-	SortParams
-	Providers     []Providers     `query:"providers,omitempty" required:"false" uniqueItems:"true" minimum:"1" maximum:"100" enum:"google,apple,facebook,github,credentials"`
-	ProviderTypes []ProviderTypes `query:"provider_types,omitempty" required:"false" uniqueItems:"true" minimum:"1" maximum:"100" enum:"oauth,credentials"`
-	Q             string          `query:"q,omitempty" required:"false"`
-	Ids           []string        `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
-	UserIds       []string        `query:"user_ids,omitempty" minimum:"1" maximum:"100" required:"false" format:"uuid"`
 }

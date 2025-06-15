@@ -12,7 +12,6 @@ import (
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/repository"
-	"github.com/tkahng/authgo/internal/shared"
 )
 
 type RoleListFilter struct {
@@ -86,7 +85,12 @@ func (a *DbRbacStore) FindRoleByName(ctx context.Context, name string) (*models.
 	)
 }
 
-func (p *DbRbacStore) CreateRole(ctx context.Context, role *shared.CreateRoleDto) (*models.Role, error) {
+type CreateRoleDto struct {
+	Name        string  `json:"name"`
+	Description *string `json:"description,omitempty"`
+}
+
+func (p *DbRbacStore) CreateRole(ctx context.Context, role *CreateRoleDto) (*models.Role, error) {
 	if role == nil {
 		return nil, fmt.Errorf("role is nil")
 	}
@@ -100,7 +104,12 @@ func (p *DbRbacStore) CreateRole(ctx context.Context, role *shared.CreateRoleDto
 	return data, nil
 }
 
-func (p *DbRbacStore) UpdateRole(ctx context.Context, id uuid.UUID, roledto *shared.UpdateRoleDto) error {
+type UpdateRoleDto struct {
+	Name        string  `json:"name"`
+	Description *string `json:"description,omitempty"`
+}
+
+func (p *DbRbacStore) UpdateRole(ctx context.Context, id uuid.UUID, roledto *UpdateRoleDto) error {
 	role, err := repository.Role.GetOne(
 		ctx,
 		p.db,
@@ -155,7 +164,7 @@ func (p *DbRbacStore) FindOrCreateRole(ctx context.Context, roleName string) (*m
 		return nil, err
 	}
 	if role == nil {
-		role, err = p.CreateRole(ctx, &shared.CreateRoleDto{Name: roleName})
+		role, err = p.CreateRole(ctx, &CreateRoleDto{Name: roleName})
 		if err != nil {
 			return nil, err
 		}
@@ -262,7 +271,7 @@ type DbRbacStoreInterface interface { // size=16 (0x10)
 	CreatePermission(ctx context.Context, name string, description *string) (*models.Permission, error)
 	CreateProductPermissions(ctx context.Context, productId string, permissionIds ...uuid.UUID) error
 	CreateProductRoles(ctx context.Context, productId string, roleIds ...uuid.UUID) error
-	CreateRole(ctx context.Context, role *shared.CreateRoleDto) (*models.Role, error)
+	CreateRole(ctx context.Context, role *CreateRoleDto) (*models.Role, error)
 	CreateRolePermissions(ctx context.Context, roleId uuid.UUID, permissionIds ...uuid.UUID) error
 	CreateUserPermissions(ctx context.Context, userId uuid.UUID, permissionIds ...uuid.UUID) error
 	CreateUserRoles(ctx context.Context, userId uuid.UUID, roleIds ...uuid.UUID) error
@@ -285,12 +294,12 @@ type DbRbacStoreInterface interface { // size=16 (0x10)
 	GetUserRoles(ctx context.Context, userIds ...uuid.UUID) ([][]*models.Role, error)
 	ListPermissions(ctx context.Context, input *PermissionFilter) ([]*models.Permission, error)
 	ListRoles(ctx context.Context, input *RoleListFilter) ([]*models.Role, error)
-	ListUserNotPermissionsSource(ctx context.Context, userId uuid.UUID, limit int64, offset int64) ([]shared.PermissionSource, error)
-	ListUserPermissionsSource(ctx context.Context, userId uuid.UUID, limit int64, offset int64) ([]shared.PermissionSource, error)
+	ListUserNotPermissionsSource(ctx context.Context, userId uuid.UUID, limit int64, offset int64) ([]*models.PermissionSource, error)
+	ListUserPermissionsSource(ctx context.Context, userId uuid.UUID, limit int64, offset int64) ([]*models.PermissionSource, error)
 	LoadProductPermissions(ctx context.Context, productIds ...string) ([][]*models.Permission, error)
 	LoadRolePermissions(ctx context.Context, roleIds ...uuid.UUID) ([][]*models.Permission, error)
-	UpdatePermission(ctx context.Context, id uuid.UUID, roledto *shared.UpdatePermissionDto) error
-	UpdateRole(ctx context.Context, id uuid.UUID, roledto *shared.UpdateRoleDto) error
+	UpdatePermission(ctx context.Context, id uuid.UUID, roledto *UpdatePermissionDto) error
+	UpdateRole(ctx context.Context, id uuid.UUID, roledto *UpdateRoleDto) error
 }
 
 var _ DbRbacStoreInterface = (*DbRbacStore)(nil)

@@ -5,12 +5,12 @@ import (
 	"context"
 	"io"
 	"path"
+	"time"
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/contextstore"
 	"github.com/tkahng/authgo/internal/models"
-	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/stores"
 	"github.com/tkahng/authgo/internal/tools/utils"
 )
@@ -80,9 +80,17 @@ func (api *Api) UploadMedia(ctx context.Context, input *struct {
 	return nil, nil
 }
 
+type Media struct {
+	ID        uuid.UUID `json:"id" db:"id" format:"uuid"`
+	Filename  string    `json:"filename" db:"filename"`
+	URL       string    `json:"url" db:"url" format:"uri"`
+	CreatedAt time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt time.Time `json:"updated_at" db:"updated_at"`
+}
+
 func (api *Api) GetMedia(ctx context.Context, input *struct {
 	ID string `path:"id" format:"uuid" required:"true" description:"Id of the media"`
-}) (*shared.Media, error) {
+}) (*Media, error) {
 	id, err := uuid.Parse(input.ID)
 	if err != nil {
 		return nil, err
@@ -95,7 +103,7 @@ func (api *Api) GetMedia(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	return &shared.Media{
+	return &Media{
 		ID:        media.ID,
 		Filename:  media.Filename,
 		URL:       url,
@@ -111,7 +119,7 @@ type MediaListFilter struct {
 	UserIds []string `query:"user_ids,omitempty" format:"uuid" required:"false"`
 }
 
-func (api *Api) MediaList(ctx context.Context, input *MediaListFilter) (*ApiPaginatedOutput[*shared.Media], error) {
+func (api *Api) MediaList(ctx context.Context, input *MediaListFilter) (*ApiPaginatedOutput[*Media], error) {
 	filter := &stores.MediaListFilter{}
 	filter.Page = input.Page
 	filter.PerPage = input.PerPage
@@ -124,13 +132,13 @@ func (api *Api) MediaList(ctx context.Context, input *MediaListFilter) (*ApiPagi
 	if err != nil {
 		return nil, err
 	}
-	var data []*shared.Media
+	var data []*Media
 	for _, media := range medias {
 		url, err := api.app.Fs().GeneratePresignedURL(ctx, media.Disk, path.Join(media.Directory, media.Filename))
 		if err != nil {
 			return nil, err
 		}
-		data = append(data, &shared.Media{
+		data = append(data, &Media{
 			ID:        media.ID,
 			Filename:  media.Filename,
 			URL:       url,
@@ -143,8 +151,8 @@ func (api *Api) MediaList(ctx context.Context, input *MediaListFilter) (*ApiPagi
 		return nil, err
 	}
 
-	return &ApiPaginatedOutput[*shared.Media]{
-		Body: ApiPaginatedResponse[*shared.Media]{
+	return &ApiPaginatedOutput[*Media]{
+		Body: ApiPaginatedResponse[*Media]{
 			Data: data,
 			Meta: ApiGenerateMeta(&input.PaginatedInput, count),
 		},

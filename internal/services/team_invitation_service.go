@@ -8,7 +8,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/conf"
 	"github.com/tkahng/authgo/internal/models"
-	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/stores"
 	"github.com/tkahng/authgo/internal/tools/mailer"
 	"github.com/tkahng/authgo/internal/tools/security"
@@ -79,7 +78,7 @@ func (i *InvitationService) CreateConfirmationUrl(tokenhash string) (string, err
 	path, err := mailer.GetPathParams(
 		"/team-invitation",
 		tokenhash,
-		string(shared.TokenTypesInviteToken),
+		string(models.TokenTypesInviteToken),
 		i.settings.Meta.AppUrl,
 	)
 	if err != nil {

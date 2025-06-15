@@ -9,13 +9,10 @@ import (
 	"time"
 
 	"github.com/Masterminds/squirrel"
-	"github.com/alexedwards/argon2id"
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
-	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
-	"github.com/tkahng/authgo/internal/tools/security"
 	"github.com/tkahng/authgo/internal/tools/types"
 	"github.com/tkahng/authgo/internal/tools/utils"
 
@@ -495,148 +492,5 @@ func LoadUsersByUserIds(ctx context.Context, db database.Dbx, userIds ...uuid.UU
 			return uuid.UUID{}
 		}
 		return a.ID
-	}), nil
-}
-
-func CreateUser(ctx context.Context, db database.Dbx, params *shared.AuthenticationInput) (*models.User, error) {
-	return repository.User.PostOne(ctx, db, &models.User{
-		Email:           params.Email,
-		Name:            params.Name,
-		Image:           params.AvatarUrl,
-		EmailVerifiedAt: params.EmailVerifiedAt,
-	})
-}
-
-func CreateUserRoles(ctx context.Context, db database.Dbx, userId uuid.UUID, roleIds ...uuid.UUID) error {
-	var dtos []models.UserRole
-	for _, id := range roleIds {
-		dtos = append(dtos, models.UserRole{
-			UserID: userId,
-			RoleID: id,
-		})
-	}
-	_, err := repository.UserRole.Post(
-		ctx,
-		db,
-		dtos,
-	)
-	if err != nil {
-
-		return err
-	}
-	return nil
-}
-func CreateUserPermissions(ctx context.Context, db database.Dbx, userId uuid.UUID, permissionIds ...uuid.UUID) error {
-	var dtos []models.UserPermission
-	for _, id := range permissionIds {
-		dtos = append(dtos, models.UserPermission{
-			UserID:       userId,
-			PermissionID: id,
-		})
-	}
-	_, err := repository.UserPermission.Post(
-		ctx,
-		db,
-		dtos,
-	)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func CreateAccount(ctx context.Context, db database.Dbx, userId uuid.UUID, params *shared.AuthenticationInput) (*models.UserAccount, error) {
-	r, err := repository.UserAccount.PostOne(ctx, db, &models.UserAccount{
-		UserID:            userId,
-		Type:              models.ProviderTypes(params.Type),
-		Password:          params.HashPassword,
-		Provider:          models.Providers(params.Provider),
-		ProviderAccountID: params.ProviderAccountID,
-		AccessToken:       params.AccessToken,
-		RefreshToken:      params.RefreshToken,
-	})
-	return database.OptionalRow(r, err)
-}
-
-func FindUserByEmail(ctx context.Context, db database.Dbx, email string) (*models.User, error) {
-	a, err := repository.User.GetOne(
-		ctx,
-		db,
-		&map[string]any{
-			"email": map[string]any{
-				"_eq": email,
-			},
-		},
-	)
-	return database.OptionalRow(a, err)
-}
-func FindUserByID(ctx context.Context, db database.Dbx, userId uuid.UUID) (*models.User, error) {
-	a, err := repository.User.GetOne(
-		ctx,
-		db,
-		&map[string]any{
-			"id": map[string]any{
-				"_eq": userId.String(),
-			},
-		},
-	)
-	return database.OptionalRow(a, err)
-}
-
-func UpdateUserPassword(ctx context.Context, db database.Dbx, userId uuid.UUID, password string) error {
-	account, err := repository.UserAccount.GetOne(
-		ctx,
-		db,
-		&map[string]any{
-			"user_id": map[string]any{
-				"_eq": userId.String(),
-			},
-			"provider": map[string]any{
-				"_eq": string(models.ProvidersCredentials),
-			},
-		},
-	)
-	if err != nil {
-		return err
-	}
-	if account == nil {
-		return errors.New("user ProvidersCredentials account not found")
-	}
-	hash, err := security.CreateHash(password, argon2id.DefaultParams)
-	if err != nil {
-		return err
-	}
-	account.Password = &hash
-	_, err = repository.UserAccount.PutOne(
-		ctx,
-		db,
-		account,
-	)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func GetUserAccounts(ctx context.Context, db database.Dbx, userIds ...uuid.UUID) ([][]*models.UserAccount, error) {
-	// var results []JoinedResult[*models.Permission, uuid.UUID]
-
-	data, err := repository.UserAccount.Get(
-		ctx,
-		db,
-		&map[string]any{
-			"user_id": map[string]any{
-				"_in": userIds,
-			},
-		},
-		nil,
-		nil,
-		nil,
-	)
-	if err != nil {
-		return nil, err
-	}
-	return mapper.MapToManyPointer(data, userIds, func(a *models.UserAccount) uuid.UUID {
-		return a.UserID
 	}), nil
 }

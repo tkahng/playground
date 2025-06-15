@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	crudModels "github.com/tkahng/authgo/internal/models"
 )
 
 const (
@@ -19,21 +18,6 @@ type User struct {
 	Image           *string    `db:"image" json:"image"`
 	CreatedAt       time.Time  `db:"created_at" json:"created_at"`
 	UpdatedAt       time.Time  `db:"updated_at" json:"updated_at"`
-}
-
-func FromUserModel(user *crudModels.User) *User {
-	if user == nil {
-		return nil
-	}
-	return &User{
-		ID:              user.ID,
-		Email:           user.Email,
-		EmailVerifiedAt: user.EmailVerifiedAt,
-		Name:            user.Name,
-		Image:           user.Image,
-		CreatedAt:       user.CreatedAt,
-		UpdatedAt:       user.UpdatedAt,
-	}
 }
 
 type UpdateMeInput struct {

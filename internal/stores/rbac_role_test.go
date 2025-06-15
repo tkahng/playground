@@ -337,7 +337,7 @@ func TestCreateRole(t *testing.T) {
 		rbacStore := stores.NewDbRBACStore(dbxx)
 		type args struct {
 			ctx  context.Context
-			role *shared.CreateRoleDto
+			role *stores.CreateRoleDto
 		}
 		tests := []struct {
 			name    string
@@ -349,7 +349,7 @@ func TestCreateRole(t *testing.T) {
 				name: "create role with name only",
 				args: args{
 					ctx: ctx,
-					role: &shared.CreateRoleDto{
+					role: &stores.CreateRoleDto{
 						Name: "test_role",
 					},
 				},
@@ -361,7 +361,7 @@ func TestCreateRole(t *testing.T) {
 				args: args{
 					ctx: ctx,
 
-					role: &shared.CreateRoleDto{
+					role: &stores.CreateRoleDto{
 						Name:        "test_role_2",
 						Description: new(string),
 					},
@@ -392,7 +392,7 @@ func TestUpdateRole(t *testing.T) {
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		// Create initial role to update
 		rbacStore := stores.NewDbRBACStore(dbxx)
-		role, err := rbacStore.CreateRole(ctx, &shared.CreateRoleDto{
+		role, err := rbacStore.CreateRole(ctx, &stores.CreateRoleDto{
 			Name: "initial_role",
 		})
 		if err != nil {
@@ -404,7 +404,7 @@ func TestUpdateRole(t *testing.T) {
 		type args struct {
 			ctx     context.Context
 			id      uuid.UUID
-			roledto *shared.UpdateRoleDto
+			roledto *stores.UpdateRoleDto
 		}
 		tests := []struct {
 			name    string
@@ -417,7 +417,7 @@ func TestUpdateRole(t *testing.T) {
 					ctx: ctx,
 
 					id: role.ID,
-					roledto: &shared.UpdateRoleDto{
+					roledto: &stores.UpdateRoleDto{
 						Name:        "updated_role",
 						Description: &description,
 					},
@@ -430,7 +430,7 @@ func TestUpdateRole(t *testing.T) {
 					ctx: ctx,
 
 					id: uuid.New(),
-					roledto: &shared.UpdateRoleDto{
+					roledto: &stores.UpdateRoleDto{
 						Name: "test_role",
 					},
 				},
@@ -477,7 +477,7 @@ func TestDeleteRole(t *testing.T) {
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		// Create a role to delete
 		rbacStore := stores.NewDbRBACStore(dbxx)
-		role, err := rbacStore.CreateRole(ctx, &shared.CreateRoleDto{
+		role, err := rbacStore.CreateRole(ctx, &stores.CreateRoleDto{
 			Name: "role_to_delete",
 		})
 		if err != nil {

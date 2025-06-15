@@ -13,7 +13,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/tkahng/authgo/internal/conf"
 	"github.com/tkahng/authgo/internal/models"
-	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/stores"
 	"github.com/tkahng/authgo/internal/tools/mailer"
 	"github.com/tkahng/authgo/internal/tools/types"
@@ -32,8 +31,8 @@ func TestHandleRefreshToken(t *testing.T) {
 		options: &conf.AppOptions{
 			Auth: conf.AuthOptions{
 				RefreshToken: conf.TokenOption{
-					Type:     shared.TokenTypesRefreshToken,
-					Secret:   string(shared.TokenTypesRefreshToken),
+					Type:     models.TokenTypesRefreshToken,
+					Secret:   string(models.TokenTypesRefreshToken),
 					Duration: 604800, // 7days
 				},
 			},
@@ -284,7 +283,7 @@ func TestAuthenticate(t *testing.T) {
 
 	testCases := []struct {
 		name          string
-		input         *shared.AuthenticationInput
+		input         *AuthenticationInput
 		setupMocks    func()
 		expectedError bool
 		checkMail     bool
@@ -292,10 +291,10 @@ func TestAuthenticate(t *testing.T) {
 	}{
 		{
 			name: "user does not exist, create user and account",
-			input: &shared.AuthenticationInput{
+			input: &AuthenticationInput{
 				Email:    testEmail,
 				Password: &testPasswordStr,
-				Type:     shared.ProviderTypeCredentials,
+				Type:     models.ProviderTypeCredentials,
 			},
 			setupMocks: func() {
 				storeDecorator.Cleanup()
@@ -345,10 +344,10 @@ func TestAuthenticate(t *testing.T) {
 		},
 		{
 			name: "user exists, account exists, correct password",
-			input: &shared.AuthenticationInput{
+			input: &AuthenticationInput{
 				Email:    testEmail,
 				Password: &testPasswordStr,
-				Type:     shared.ProviderTypeCredentials,
+				Type:     models.ProviderTypeCredentials,
 			},
 			setupMocks: func() {
 				storeDecorator.Cleanup()
@@ -371,10 +370,10 @@ func TestAuthenticate(t *testing.T) {
 		},
 		{
 			name: "user exists, account exists, incorrect password",
-			input: &shared.AuthenticationInput{
+			input: &AuthenticationInput{
 				Email:    testEmail,
 				Password: &testPasswordStr,
-				Type:     shared.ProviderTypeCredentials,
+				Type:     models.ProviderTypeCredentials,
 			},
 			setupMocks: func() {
 				storeDecorator.Cleanup()
@@ -397,10 +396,10 @@ func TestAuthenticate(t *testing.T) {
 		},
 		{
 			name: "user exists, account does not exist, create account",
-			input: &shared.AuthenticationInput{
+			input: &AuthenticationInput{
 				Email:    testEmail,
 				Password: &testPasswordStr,
-				Type:     shared.ProviderTypeCredentials,
+				Type:     models.ProviderTypeCredentials,
 			},
 			setupMocks: func() {
 				storeDecorator.Cleanup()
@@ -437,10 +436,10 @@ func TestAuthenticate(t *testing.T) {
 		},
 		{
 			name: "user exists, account does not exist, create account password reset",
-			input: &shared.AuthenticationInput{
+			input: &AuthenticationInput{
 				Email:           testEmail,
-				Provider:        shared.Providers(models.ProvidersGoogle),
-				Type:            shared.ProviderTypeOAuth,
+				Provider:        models.ProvidersGoogle,
+				Type:            models.ProviderTypeOAuth,
 				EmailVerifiedAt: types.Pointer(time.Now()),
 			},
 			setupMocks: func() {

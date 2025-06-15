@@ -7,7 +7,7 @@ import (
 	"net/url"
 
 	"github.com/tkahng/authgo/internal/models"
-	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/authgo/internal/services"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 )
 
@@ -23,7 +23,7 @@ func (api *Api) OAuth2CallbackPost(ctx context.Context, input *OAuth2CallbackInp
 		return nil, err
 	}
 	q := uri.Query()
-	q.Add(string(shared.TokenTypesRefreshToken), dto.Tokens.RefreshToken)
+	q.Add(string(models.TokenTypesRefreshToken), dto.Tokens.RefreshToken)
 	uri.RawQuery = q.Encode()
 	fmt.Println(uri.String())
 
@@ -56,7 +56,7 @@ func (api *Api) OAuth2CallbackGet(ctx context.Context, input *OAuth2CallbackInpu
 		return nil, err
 	}
 	q := uri.Query()
-	q.Add(string(shared.TokenTypesRefreshToken), dto.Tokens.RefreshToken)
+	q.Add(string(models.TokenTypesRefreshToken), dto.Tokens.RefreshToken)
 	uri.RawQuery = q.Encode()
 	fmt.Println(uri.String())
 
@@ -117,20 +117,20 @@ func OAuth2Callback(ctx context.Context, api *Api, input *OAuth2CallbackInput) (
 	if parsedState == nil {
 		return nil, fmt.Errorf("token not found")
 	}
-	if parsedState.Type != shared.TokenTypesStateToken {
+	if parsedState.Type != models.TokenTypesStateToken {
 		return nil, fmt.Errorf("invalid token type. want verification_token, got  %v", parsedState.Type)
 	}
 	authUser, err := action.FetchAuthUser(ctx, input.Code, parsedState)
 	if err != nil {
 		return nil, fmt.Errorf("error at Oatuh2Callback: %w", err)
 	}
-	params := &shared.AuthenticationInput{
+	params := &services.AuthenticationInput{
 		AvatarUrl:         &authUser.AvatarURL,
 		Email:             authUser.Email,
 		Name:              &authUser.Username,
 		EmailVerifiedAt:   &authUser.Expiry,
-		Provider:          parsedState.Provider,
-		Type:              shared.ProviderTypeOAuth,
+		Provider:          models.Providers(parsedState.Provider),
+		Type:              models.ProviderTypeOAuth,
 		ProviderAccountID: authUser.Id,
 		AccessToken:       &authUser.AccessToken,
 		RefreshToken:      &authUser.RefreshToken,

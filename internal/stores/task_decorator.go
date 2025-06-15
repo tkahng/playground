@@ -6,7 +6,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
-	"github.com/tkahng/authgo/internal/shared"
 )
 
 type TaskDecorator struct {
@@ -16,9 +15,9 @@ type TaskDecorator struct {
 	CountTaskProjectsFunc           func(ctx context.Context, filter *TaskProjectsFilter) (int64, error)
 	CountTasksFunc                  func(ctx context.Context, filter *TaskFilter) (int64, error)
 	CreateTaskFunc                  func(ctx context.Context, task *models.Task) (*models.Task, error)
-	CreateTaskFromInputFunc         func(ctx context.Context, teamID uuid.UUID, projectID uuid.UUID, memberID uuid.UUID, input *shared.CreateTaskProjectTaskDTO) (*models.Task, error)
-	CreateTaskProjectFunc           func(ctx context.Context, input *shared.CreateTaskProjectDTO) (*models.TaskProject, error)
-	CreateTaskProjectWithTasksFunc  func(ctx context.Context, input *shared.CreateTaskProjectWithTasksDTO) (*models.TaskProject, error)
+	CreateTaskFromInputFunc         func(ctx context.Context, teamID uuid.UUID, projectID uuid.UUID, memberID uuid.UUID, input *CreateTaskProjectTaskDTO) (*models.Task, error)
+	CreateTaskProjectFunc           func(ctx context.Context, input *CreateTaskProjectDTO) (*models.TaskProject, error)
+	CreateTaskProjectWithTasksFunc  func(ctx context.Context, input *CreateTaskProjectWithTasksDTO) (*models.TaskProject, error)
 	DeleteTaskFunc                  func(ctx context.Context, taskID uuid.UUID) error
 	DeleteTaskProjectFunc           func(ctx context.Context, taskProjectID uuid.UUID) error
 	FindLastTaskRankFunc            func(ctx context.Context, taskProjectID uuid.UUID) (float64, error)
@@ -33,7 +32,7 @@ type TaskDecorator struct {
 	LoadTaskProjectsTasksFunc       func(ctx context.Context, projectIds ...uuid.UUID) ([][]*models.Task, error)
 	TaskWhereFunc                   func(task *TaskFilter) *map[string]any
 	UpdateTaskFunc                  func(ctx context.Context, task *models.Task) error
-	UpdateTaskProjectFunc           func(ctx context.Context, taskProjectID uuid.UUID, input *shared.UpdateTaskProjectBaseDTO) error
+	UpdateTaskProjectFunc           func(ctx context.Context, taskProjectID uuid.UUID, input *UpdateTaskProjectBaseDTO) error
 	UpdateTaskProjectUpdateDateFunc func(ctx context.Context, taskProjectID uuid.UUID) error
 	UpdateTaskRankStatusFunc        func(ctx context.Context, taskID uuid.UUID, position int64, status models.TaskStatus) error
 	WithTxFunc                      func(dbx database.Dbx) *DbTaskStore
@@ -52,7 +51,7 @@ func (t *TaskDecorator) GetTeamTaskStats(ctx context.Context, teamId uuid.UUID) 
 }
 
 // CreateTaskProject implements DbTaskStoreInterface.
-func (t *TaskDecorator) CreateTaskProject(ctx context.Context, input *shared.CreateTaskProjectDTO) (*models.TaskProject, error) {
+func (t *TaskDecorator) CreateTaskProject(ctx context.Context, input *CreateTaskProjectDTO) (*models.TaskProject, error) {
 	if t.CreateTaskProjectFunc != nil {
 		return t.CreateTaskProjectFunc(ctx, input)
 	}
@@ -63,7 +62,7 @@ func (t *TaskDecorator) CreateTaskProject(ctx context.Context, input *shared.Cre
 }
 
 // CreateTaskProjectWithTasks implements DbTaskStoreInterface.
-func (t *TaskDecorator) CreateTaskProjectWithTasks(ctx context.Context, input *shared.CreateTaskProjectWithTasksDTO) (*models.TaskProject, error) {
+func (t *TaskDecorator) CreateTaskProjectWithTasks(ctx context.Context, input *CreateTaskProjectWithTasksDTO) (*models.TaskProject, error) {
 	if t.CreateTaskProjectWithTasksFunc != nil {
 		return t.CreateTaskProjectWithTasksFunc(ctx, input)
 	}
@@ -228,7 +227,7 @@ func (t *TaskDecorator) UpdateTask(ctx context.Context, task *models.Task) error
 }
 
 // UpdateTaskProject implements DbTaskStoreInterface.
-func (t *TaskDecorator) UpdateTaskProject(ctx context.Context, taskProjectID uuid.UUID, input *shared.UpdateTaskProjectBaseDTO) error {
+func (t *TaskDecorator) UpdateTaskProject(ctx context.Context, taskProjectID uuid.UUID, input *UpdateTaskProjectBaseDTO) error {
 	if t.UpdateTaskProjectFunc != nil {
 		return t.UpdateTaskProjectFunc(ctx, taskProjectID, input)
 	}
@@ -327,7 +326,7 @@ func (t *TaskDecorator) CreateTask(ctx context.Context, task *models.Task) (*mod
 }
 
 // CreateTaskFromInput implements DbTaskStoreInterface.
-func (t *TaskDecorator) CreateTaskFromInput(ctx context.Context, teamID uuid.UUID, projectID uuid.UUID, memberID uuid.UUID, input *shared.CreateTaskProjectTaskDTO) (*models.Task, error) {
+func (t *TaskDecorator) CreateTaskFromInput(ctx context.Context, teamID uuid.UUID, projectID uuid.UUID, memberID uuid.UUID, input *CreateTaskProjectTaskDTO) (*models.Task, error) {
 	if t.CreateTaskFromInputFunc != nil {
 		return t.CreateTaskFromInputFunc(ctx, teamID, projectID, memberID, input)
 	}

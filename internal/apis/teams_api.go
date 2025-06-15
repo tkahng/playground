@@ -3,15 +3,87 @@ package apis
 import (
 	"context"
 	"log/slog"
+	"time"
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/contextstore"
 	"github.com/tkahng/authgo/internal/models"
-	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/stores"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 )
+
+type TeamInfo struct {
+	User   ApiUser    `json:"user"`
+	Team   Team       `json:"team"`
+	Member TeamMember `json:"member"`
+}
+
+type TeamMemberRole string
+
+const (
+	TeamMemberRoleOwner  TeamMemberRole = "owner"
+	TeamMemberRoleMember TeamMemberRole = "member"
+	TeamMemberRoleGuest  TeamMemberRole = "guest"
+)
+
+type TeamMember struct {
+	_                struct{}       `db:"team_members" json:"-"`
+	ID               uuid.UUID      `db:"id" json:"id"`
+	TeamID           uuid.UUID      `db:"team_id" json:"team_id"`
+	UserID           *uuid.UUID     `db:"user_id" json:"user_id"`
+	Active           bool           `db:"active" json:"active"`
+	Role             TeamMemberRole `db:"role" json:"role" enum:"owner,member,guest"`
+	HasBillingAccess bool           `db:"has_billing_access" json:"has_billing_access"`
+	LastSelectedAt   time.Time      `db:"last_selected_at" json:"last_selected_at"`
+	CreatedAt        time.Time      `db:"created_at" json:"created_at"`
+	UpdatedAt        time.Time      `db:"updated_at" json:"updated_at"`
+	Team             *Team          `db:"team" src:"team_id" dest:"id" table:"team" json:"team,omitempty"`
+	User             *ApiUser       `db:"user" src:"user_id" dest:"id" table:"users" json:"user,omitempty"`
+}
+
+type Team struct {
+	_              struct{}        `db:"teams" json:"-"`
+	ID             uuid.UUID       `db:"id" json:"id"`
+	Name           string          `db:"name" json:"name"`
+	Slug           string          `db:"slug" json:"slug"`
+	CreatedAt      time.Time       `db:"created_at" json:"created_at"`
+	UpdatedAt      time.Time       `db:"updated_at" json:"updated_at"`
+	Members        []*TeamMember   `db:"members" src:"id" dest:"team_id" table:"team_members" json:"members,omitempty"`
+	StripeCustomer *StripeCustomer `db:"stripe_customer" src:"id" dest:"team_id" table:"stripe_customers" json:"stripe_customer,omitempty" required:"false"`
+}
+
+func FromTeamModel(team *models.Team) *Team {
+	if team == nil {
+		return nil
+	}
+	return &Team{
+		ID:        team.ID,
+		Name:      team.Name,
+		Slug:      team.Slug,
+		CreatedAt: team.CreatedAt,
+		UpdatedAt: team.UpdatedAt,
+		Members:   mapper.Map(team.Members, FromTeamMemberModel),
+	}
+}
+func FromTeamMemberModel(member *models.TeamMember) *TeamMember {
+	if member == nil {
+		return nil
+	}
+	return &TeamMember{
+		ID:               member.ID,
+		TeamID:           member.TeamID,
+		UserID:           member.UserID,
+		Active:           member.Active,
+		Role:             TeamMemberRole(member.Role),
+		HasBillingAccess: member.HasBillingAccess,
+		LastSelectedAt:   member.LastSelectedAt,
+		CreatedAt:        member.CreatedAt,
+		UpdatedAt:        member.UpdatedAt,
+		Team:             FromTeamModel(member.Team),
+		User:             FromUserModel(member.User),
+	}
+}
 
 type CreateTeamInput struct {
 	Name string `json:"name" required:"true"`
@@ -19,10 +91,10 @@ type CreateTeamInput struct {
 }
 
 type TeamOutput struct {
-	Body *shared.Team `json:"body"`
+	Body *Team `json:"body"`
 }
 type TeamInfoOutput struct {
-	Body *shared.TeamInfo `json:"body"`
+	Body *TeamInfo `json:"body"`
 }
 
 func (api *Api) CreateTeam(
@@ -51,7 +123,7 @@ func (api *Api) CreateTeam(
 		return nil, huma.Error500InternalServerError("team not found")
 	}
 	return &TeamOutput{
-		Body: shared.FromTeamModel(&team.Team),
+		Body: FromTeamModel(&team.Team),
 	}, nil
 }
 
@@ -87,18 +159,28 @@ func (api *Api) CheckTeamSlug(
 	}, nil
 }
 
+type TeamMemberListInput struct {
+	PaginatedInput
+	SortParams
+}
+
 func (api *Api) GetUserTeamMembers(
 	ctx context.Context,
-	input *shared.TeamMemberListInput,
+	input *TeamMemberListInput,
 ) (
-	*ApiPaginatedOutput[*shared.TeamMember],
+	*ApiPaginatedOutput[*TeamMember],
 	error,
 ) {
 	info := contextstore.GetContextUserInfo(ctx)
 	if info == nil {
 		return nil, huma.Error401Unauthorized("unauthorized")
 	}
-	teams, err := api.app.Team().FindTeamMembersByUserID(ctx, info.User.ID, input)
+	filter := &stores.TeamMemberListInput{}
+	filter.Page = input.Page
+	filter.PerPage = input.PerPage
+	filter.SortBy = input.SortBy
+	filter.SortOrder = input.SortOrder
+	teams, err := api.app.Team().FindTeamMembersByUserID(ctx, info.User.ID, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -111,19 +193,24 @@ func (api *Api) GetUserTeamMembers(
 	if err != nil {
 		return nil, err
 	}
-	return &ApiPaginatedOutput[*shared.TeamMember]{
-		Body: ApiPaginatedResponse[*shared.TeamMember]{
-			Data: mapper.Map(teams, shared.FromTeamMemberModel),
-			Meta: GenerateMeta(&input.PaginatedInput, count),
+	return &ApiPaginatedOutput[*TeamMember]{
+		Body: ApiPaginatedResponse[*TeamMember]{
+			Data: mapper.Map(teams, FromTeamMemberModel),
+			Meta: ApiGenerateMeta(&input.PaginatedInput, count),
 		},
 	}, nil
 }
 
+type UserListTeamsParams struct {
+	PaginatedInput
+	SortParams
+}
+
 func (api *Api) GetUserTeams(
 	ctx context.Context,
-	input *shared.UserListTeamsParams,
+	input *UserListTeamsParams,
 ) (
-	*ApiPaginatedOutput[*shared.Team],
+	*ApiPaginatedOutput[*Team],
 	error,
 ) {
 	info := contextstore.GetContextUserInfo(ctx)
@@ -164,10 +251,10 @@ func (api *Api) GetUserTeams(
 	if err != nil {
 		return nil, err
 	}
-	return &ApiPaginatedOutput[*shared.Team]{
-		Body: ApiPaginatedResponse[*shared.Team]{
-			Data: mapper.Map(teams, shared.FromTeamModel),
-			Meta: GenerateMeta(&input.PaginatedInput, count),
+	return &ApiPaginatedOutput[*Team]{
+		Body: ApiPaginatedResponse[*Team]{
+			Data: mapper.Map(teams, FromTeamModel),
+			Meta: ApiGenerateMeta(&input.PaginatedInput, count),
 		},
 	}, nil
 }
@@ -186,10 +273,10 @@ func (api *Api) FindTeamInfoBySlug(
 		return nil, huma.Error401Unauthorized("unauthorized")
 	}
 	return &TeamInfoOutput{
-		Body: &shared.TeamInfo{
-			Team:   *shared.FromTeamModel(&info.Team),
-			Member: *shared.FromTeamMemberModel(&info.Member),
-			User:   *shared.FromUserModel(&info.User),
+		Body: &TeamInfo{
+			Team:   *FromTeamModel(&info.Team),
+			Member: *FromTeamMemberModel(&info.Member),
+			User:   *FromUserModel(&info.User),
 		},
 	}, nil
 }
@@ -208,12 +295,12 @@ func (api *Api) FindTeamMemberBySlug(
 		return nil, huma.Error401Unauthorized("unauthorized")
 	}
 	return &TeamMemberOutput{
-		Body: shared.FromTeamMemberModel(&info.Member),
+		Body: FromTeamMemberModel(&info.Member),
 	}, nil
 }
 
 type TeamMemberOutput struct {
-	Body *shared.TeamMember `json:"body"`
+	Body *TeamMember `json:"body"`
 }
 
 func (api *Api) GetActiveTeamMember(
@@ -235,7 +322,7 @@ func (api *Api) GetActiveTeamMember(
 		return nil, huma.Error404NotFound("team not found")
 	}
 	return &TeamMemberOutput{
-		Body: shared.FromTeamMemberModel(team),
+		Body: FromTeamMemberModel(team),
 	}, nil
 }
 
@@ -265,7 +352,7 @@ func (api *Api) UpdateTeam(
 		return nil, huma.Error500InternalServerError("team not found")
 	}
 	return &TeamOutput{
-		Body: shared.FromTeamModel(team),
+		Body: FromTeamModel(team),
 	}, nil
 }
 
@@ -317,7 +404,7 @@ func (api *Api) GetTeam(
 		return nil, huma.Error404NotFound("team not found")
 	}
 	return &TeamOutput{
-		Body: shared.FromTeamModel(team),
+		Body: FromTeamModel(team),
 	}, nil
 }
 

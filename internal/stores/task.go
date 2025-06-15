@@ -25,9 +25,9 @@ type DbTaskStoreInterface interface { // size=16 (0x10)
 	CountTaskProjects(ctx context.Context, filter *TaskProjectsFilter) (int64, error)
 	CountTasks(ctx context.Context, filter *TaskFilter) (int64, error)
 	CreateTask(ctx context.Context, task *models.Task) (*models.Task, error)
-	CreateTaskFromInput(ctx context.Context, teamID uuid.UUID, projectID uuid.UUID, memberID uuid.UUID, input *shared.CreateTaskProjectTaskDTO) (*models.Task, error)
-	CreateTaskProject(ctx context.Context, input *shared.CreateTaskProjectDTO) (*models.TaskProject, error)
-	CreateTaskProjectWithTasks(ctx context.Context, input *shared.CreateTaskProjectWithTasksDTO) (*models.TaskProject, error)
+	CreateTaskFromInput(ctx context.Context, teamID uuid.UUID, projectID uuid.UUID, memberID uuid.UUID, input *CreateTaskProjectTaskDTO) (*models.Task, error)
+	CreateTaskProject(ctx context.Context, input *CreateTaskProjectDTO) (*models.TaskProject, error)
+	CreateTaskProjectWithTasks(ctx context.Context, input *CreateTaskProjectWithTasksDTO) (*models.TaskProject, error)
 	DeleteTask(ctx context.Context, taskID uuid.UUID) error
 	DeleteTaskProject(ctx context.Context, taskProjectID uuid.UUID) error
 	FindLastTaskRank(ctx context.Context, taskProjectID uuid.UUID) (float64, error)
@@ -42,7 +42,7 @@ type DbTaskStoreInterface interface { // size=16 (0x10)
 	LoadTaskProjectsTasks(ctx context.Context, projectIds ...uuid.UUID) ([][]*models.Task, error)
 	taskWhere(task *TaskFilter) *map[string]any
 	UpdateTask(ctx context.Context, task *models.Task) error
-	UpdateTaskProject(ctx context.Context, taskProjectID uuid.UUID, input *shared.UpdateTaskProjectBaseDTO) error
+	UpdateTaskProject(ctx context.Context, taskProjectID uuid.UUID, input *UpdateTaskProjectBaseDTO) error
 	UpdateTaskProjectUpdateDate(ctx context.Context, taskProjectID uuid.UUID) error
 	UpdateTaskRankStatus(ctx context.Context, taskID uuid.UUID, position int64, status models.TaskStatus) error
 	WithTx(dbx database.Dbx) *DbTaskStore
@@ -52,6 +52,8 @@ type DbTaskStoreInterface interface { // size=16 (0x10)
 type DbTaskStore struct {
 	db database.Dbx
 }
+
+var _ DbTaskStoreInterface = (*DbTaskStore)(nil)
 
 func (s *DbTaskStore) WithTx(dbx database.Dbx) *DbTaskStore {
 	return &DbTaskStore{
@@ -441,40 +443,6 @@ func (*DbTaskStore) TaskProjectWhere(task *TaskProjectsFilter) *map[string]any {
 
 	return &where
 }
-func ListTaskProjectsFilterFunc(filter *shared.TaskProjectsListFilter) *map[string]any {
-	if filter == nil {
-		return nil
-	}
-	where := make(map[string]any)
-	if filter.Q != "" {
-		where["_or"] = []map[string]any{
-			{
-				"name": map[string]any{
-					"_ilike": "%" + filter.Q + "%",
-				},
-			},
-			{
-				"description": map[string]any{
-					"_ilike": "%" + filter.Q + "%",
-				},
-			},
-		}
-	}
-
-	if len(filter.Ids) > 0 {
-		where["id"] = map[string]any{
-			"_in": filter.Ids,
-		}
-	}
-
-	if filter.TeamID != "" {
-		where["user_id"] = map[string]any{
-			"_eq": filter.TeamID,
-		}
-	}
-
-	return &where
-}
 
 func ListTaskProjectsOrderByFunc(input *TaskProjectsFilter) *map[string]string {
 	sortBy, sortOrder := input.Sort()
@@ -512,7 +480,7 @@ func (s *DbTaskStore) CountTaskProjects(ctx context.Context, filter *TaskProject
 	return repository.TaskProject.Count(ctx, s.db, where)
 }
 
-func (s *DbTaskStore) CreateTaskProject(ctx context.Context, input *shared.CreateTaskProjectDTO) (*models.TaskProject, error) {
+func (s *DbTaskStore) CreateTaskProject(ctx context.Context, input *CreateTaskProjectDTO) (*models.TaskProject, error) {
 	taskProject := models.TaskProject{
 		TeamID:            input.TeamID,
 		CreatedByMemberID: &input.MemberID,
@@ -528,7 +496,26 @@ func (s *DbTaskStore) CreateTaskProject(ctx context.Context, input *shared.Creat
 	return projects, nil
 }
 
-func (s *DbTaskStore) CreateTaskProjectWithTasks(ctx context.Context, input *shared.CreateTaskProjectWithTasksDTO) (*models.TaskProject, error) {
+type CreateTaskProjectDTO struct {
+	TeamID      uuid.UUID                `json:"team_id" required:"true" format:"uuid"`
+	MemberID    uuid.UUID                `json:"member_id" required:"true" format:"uuid"`
+	Name        string                   `json:"name" required:"true"`
+	Description *string                  `json:"description,omitempty" required:"false"`
+	Status      models.TaskProjectStatus `json:"status" required:"false" enum:"todo,in_progress,done" default:"todo"`
+	Rank        float64                  `json:"rank,omitempty" required:"false"`
+}
+type CreateTaskProjectTaskDTO struct {
+	Name        string            `json:"name" required:"true"`
+	Description *string           `json:"description,omitempty" required:"false"`
+	Status      models.TaskStatus `json:"status" required:"false" enum:"todo,in_progress,done" default:"todo"`
+	Rank        float64           `json:"rank,omitempty" required:"false"`
+}
+type CreateTaskProjectWithTasksDTO struct {
+	CreateTaskProjectDTO
+	Tasks []CreateTaskProjectTaskDTO `json:"tasks,omitempty" required:"false"`
+}
+
+func (s *DbTaskStore) CreateTaskProjectWithTasks(ctx context.Context, input *CreateTaskProjectWithTasksDTO) (*models.TaskProject, error) {
 	count, err := s.CountTaskProjects(ctx, nil)
 	if err != nil {
 		return nil, err
@@ -554,7 +541,7 @@ func (s *DbTaskStore) CreateTaskProjectWithTasks(ctx context.Context, input *sha
 	return taskProject, nil
 }
 
-func (s *DbTaskStore) CreateTaskFromInput(ctx context.Context, teamID uuid.UUID, projectID uuid.UUID, memberID uuid.UUID, input *shared.CreateTaskProjectTaskDTO) (*models.Task, error) {
+func (s *DbTaskStore) CreateTaskFromInput(ctx context.Context, teamID uuid.UUID, projectID uuid.UUID, memberID uuid.UUID, input *CreateTaskProjectTaskDTO) (*models.Task, error) {
 	setter := models.Task{
 		ProjectID:         projectID,
 		CreatedByMemberID: &memberID,
@@ -692,7 +679,15 @@ func (s *DbTaskStore) UpdateTaskProjectUpdateDate(ctx context.Context, taskProje
 	return err
 }
 
-func (s *DbTaskStore) UpdateTaskProject(ctx context.Context, taskProjectID uuid.UUID, input *shared.UpdateTaskProjectBaseDTO) error {
+type UpdateTaskProjectBaseDTO struct {
+	Name        string                   `json:"name" required:"true"`
+	Description *string                  `json:"description,omitempty" required:"false"`
+	Status      models.TaskProjectStatus `json:"status" enum:"todo,in_progress,done"`
+	Rank        float64                  `json:"rank"`
+	Position    *int64                   `json:"position,omitempty" required:"false"`
+}
+
+func (s *DbTaskStore) UpdateTaskProject(ctx context.Context, taskProjectID uuid.UUID, input *UpdateTaskProjectBaseDTO) error {
 	taskProject, err := s.FindTaskProjectByID(ctx, taskProjectID)
 	if err != nil {
 		return err

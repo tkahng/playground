@@ -6,7 +6,6 @@ import (
 
 	"github.com/danielgtaylor/huma/v2/humatest"
 	"github.com/tkahng/authgo/internal/core"
-	"github.com/tkahng/authgo/internal/shared"
 )
 
 func TestApi_GetStripeSubscriptions(t *testing.T) {
@@ -21,7 +20,7 @@ func TestApi_GetStripeSubscriptions(t *testing.T) {
 		name    string
 		fields  fields
 		args    args
-		want    *struct{ Body *shared.SubscriptionWithPrice }
+		want    *struct{ Body *SubscriptionWithPrice }
 		wantErr bool
 	}{
 		// TODO: Add test cases.

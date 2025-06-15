@@ -4,23 +4,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	crudModels "github.com/tkahng/authgo/internal/models"
-	"github.com/tkahng/authgo/internal/tools/mapper"
 )
-
-type CreateRoleDto struct {
-	Name        string  `json:"name"`
-	Description *string `json:"description,omitempty"`
-}
-type UpdateRoleDto struct {
-	Name        string  `json:"name"`
-	Description *string `json:"description,omitempty"`
-}
-
-type UpdatePermissionDto struct {
-	Name        string  `json:"name"`
-	Description *string `json:"description,omitempty"`
-}
 
 type Role struct {
 	ID          uuid.UUID `db:"id" json:"id"`
@@ -28,58 +12,4 @@ type Role struct {
 	Description *string   `db:"description" json:"description,omitempty"`
 	CreatedAt   time.Time `db:"created_at" json:"created_at"`
 	UpdatedAt   time.Time `db:"updated_at" json:"updated_at"`
-}
-
-func FromModelRole(role *crudModels.Role) *Role {
-	if role == nil {
-		return nil
-	}
-	return &Role{
-		ID:          role.ID,
-		Name:        role.Name,
-		Description: role.Description,
-		CreatedAt:   role.CreatedAt,
-		UpdatedAt:   role.UpdatedAt,
-	}
-}
-
-type RoleWithPermissions struct {
-	*Role
-	Permissions []*Permission `json:"permissions,omitempty" required:"false"`
-}
-
-func FromModelRoleWithPermissions(role *crudModels.Role) *RoleWithPermissions {
-	if role == nil {
-		return nil
-	}
-	return &RoleWithPermissions{
-		Role:        FromModelRole(role),
-		Permissions: mapper.Map(role.Permissions, FromModelPermission),
-	}
-}
-
-type RoleListFilter struct {
-	Q         string   `query:"q,omitempty" required:"false"`
-	Ids       []string `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
-	Names     []string `query:"names,omitempty" required:"false" minimum:"1" maximum:"100"`
-	UserId    string   `query:"user_id,omitempty" required:"false" format:"uuid"`
-	Reverse   string   `query:"reverse,omitempty" required:"false" doc:"When true, it will return the roles that do not match the filter criteria" enum:"user,product"`
-	ProductId string   `query:"product_id,omitempty" required:"false"`
-}
-type RolesListParams struct {
-	PaginatedInput
-	RoleListFilter
-	SortParams
-	Expand []string `query:"expand,omitempty" required:"false" minimum:"1" maximum:"100" enum:"users,permissions"`
-}
-
-type PermissionSource struct {
-	ID          uuid.UUID   `db:"id,pk" json:"id"`
-	Name        string      `db:"name" json:"name"`
-	Description *string     `db:"description" json:"description"`
-	CreatedAt   time.Time   `db:"created_at" json:"created_at"`
-	UpdatedAt   time.Time   `db:"updated_at" json:"updated_at"`
-	RoleIDs     []uuid.UUID `db:"role_ids" json:"role_ids"`
-	ProductIDs  []string    `db:"product_ids" json:"product_ids"`
-	IsDirectly  bool        `db:"is_directly_assigned" json:"is_directly_assigned"`
 }

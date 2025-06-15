@@ -7,30 +7,10 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/models"
-	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/stores"
 	"github.com/tkahng/authgo/internal/tools/mapper"
-	"github.com/tkahng/authgo/internal/tools/types"
 	"github.com/tkahng/authgo/internal/tools/utils"
 )
-
-// enum:"trialing,active,canceled,incomplete,incomplete_expired,past_due,unpaid,paused"
-type StripeSubscriptionStatus string
-
-const (
-	StripeSubscriptionStatusTrialing          StripeSubscriptionStatus = "trialing"
-	StripeSubscriptionStatusActive            StripeSubscriptionStatus = "active"
-	StripeSubscriptionStatusCanceled          StripeSubscriptionStatus = "canceled"
-	StripeSubscriptionStatusIncomplete        StripeSubscriptionStatus = "incomplete"
-	StripeSubscriptionStatusIncompleteExpired StripeSubscriptionStatus = "incomplete_expired"
-	StripeSubscriptionStatusPastDue           StripeSubscriptionStatus = "past_due"
-	StripeSubscriptionStatusUnpaid            StripeSubscriptionStatus = "unpaid"
-	StripeSubscriptionStatusPaused            StripeSubscriptionStatus = "paused"
-)
-
-func (s StripeSubscriptionStatus) String() string {
-	return string(s)
-}
 
 type StripeSubscriptionListFilter struct {
 	Q       string                     `query:"q,omitempty" required:"false"`
@@ -63,7 +43,7 @@ func ToStripeSubscriptionListFilter(input *StripeSubscriptionListParams) (*store
 
 func (api *Api) AdminStripeSubscriptions(ctx context.Context,
 	input *StripeSubscriptionListParams,
-) (*ApiPaginatedOutput[*shared.Subscription], error) {
+) (*ApiPaginatedOutput[*Subscription], error) {
 	filter, err := ToStripeSubscriptionListFilter(input)
 	if err != nil {
 		return nil, huma.Error400BadRequest("Invalid filter parameters", err)
@@ -78,17 +58,17 @@ func (api *Api) AdminStripeSubscriptions(ctx context.Context,
 	if err != nil {
 		return nil, err
 	}
-	return &ApiPaginatedOutput[*shared.Subscription]{
-		Body: ApiPaginatedResponse[*shared.Subscription]{
-			Data: mapper.Map(subscriptions, shared.FromModelSubscription),
+	return &ApiPaginatedOutput[*Subscription]{
+		Body: ApiPaginatedResponse[*Subscription]{
+			Data: mapper.Map(subscriptions, FromModelSubscription),
 			Meta: ApiGenerateMeta(&input.PaginatedInput, count),
 		},
 	}, nil
 }
 
 func (api *Api) AdminStripeSubscriptionsGet(ctx context.Context,
-	input *shared.StripeSubscriptionGetParams,
-) (*struct{ Body *shared.Subscription }, error) {
+	input *StripeSubscriptionGetParams,
+) (*struct{ Body *Subscription }, error) {
 	if input == nil || input.SubscriptionID == "" {
 		return nil, huma.Error400BadRequest("subscription_id is required")
 	}
@@ -105,25 +85,7 @@ func (api *Api) AdminStripeSubscriptionsGet(ctx context.Context,
 	if len(subscriptions) == 0 {
 		return nil, nil
 	}
-	return &struct{ Body *shared.Subscription }{Body: shared.FromModelSubscription(subscriptions[0])}, nil
-}
-
-type StripeProductListParams struct {
-	PaginatedInput
-	SortParams
-	StripeProductExpand
-	Q      string                    `query:"q,omitempty" required:"false"`
-	Ids    []string                  `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100"`
-	Active types.OptionalParam[bool] `query:"active,omitempty" required:"false"`
-}
-
-type StripeProductExpand struct {
-	Expand []string `query:"expand,omitempty" required:"false" minimum:"1" maximum:"100" uniqueItems:"true" enum:"prices,permissions"`
-}
-
-type StripeProductGetParams struct {
-	ProductID string `path:"product-id" json:"product_id" required:"true"`
-	StripeProductExpand
+	return &struct{ Body *Subscription }{Body: FromModelSubscription(subscriptions[0])}, nil
 }
 
 func ToStripeProductListFilter(input *StripeProductListParams) (*stores.StripeProductFilter, error) {
@@ -138,7 +100,7 @@ func ToStripeProductListFilter(input *StripeProductListParams) (*stores.StripePr
 
 func (api *Api) AdminStripeProducts(ctx context.Context,
 	input *StripeProductListParams,
-) (*ApiPaginatedOutput[*shared.StripeProduct], error) {
+) (*ApiPaginatedOutput[*StripeProduct], error) {
 	filter, err := ToStripeProductListFilter(input)
 	if err != nil {
 		return nil, huma.Error400BadRequest("Invalid filter parameters", err)
@@ -178,18 +140,18 @@ func (api *Api) AdminStripeProducts(ctx context.Context,
 	if err != nil {
 		return nil, err
 	}
-	return &ApiPaginatedOutput[*shared.StripeProduct]{
-		Body: ApiPaginatedResponse[*shared.StripeProduct]{
-			Data: mapper.Map(products, shared.FromModelProduct),
+	return &ApiPaginatedOutput[*StripeProduct]{
+		Body: ApiPaginatedResponse[*StripeProduct]{
+			Data: mapper.Map(products, FromModelProduct),
 			Meta: ApiGenerateMeta(&input.PaginatedInput, count),
 		},
 	}, nil
 }
 
 func (api *Api) AdminStripeProductsGet(ctx context.Context,
-	input *shared.StripeProductGetParams,
+	input *StripeProductGetParams,
 ) (*struct {
-	Body *shared.StripeProduct
+	Body *StripeProduct
 }, error) {
 
 	if input == nil || input.ProductID == "" {
@@ -222,9 +184,9 @@ func (api *Api) AdminStripeProductsGet(ctx context.Context,
 		}
 	}
 	return &struct {
-		Body *shared.StripeProduct
+		Body *StripeProduct
 	}{
-		Body: shared.FromModelProduct(product),
+		Body: FromModelProduct(product),
 	}, nil
 }
 

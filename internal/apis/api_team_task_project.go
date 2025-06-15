@@ -3,24 +3,130 @@ package apis
 import (
 	"context"
 	"slices"
+	"time"
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/contextstore"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/services"
-	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/stores"
 	"github.com/tkahng/authgo/internal/tools/ai/googleai"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 	"github.com/tkahng/authgo/internal/tools/utils"
 )
 
-type TaskProjectListResponse struct {
-	Body *ApiPaginatedResponse[*shared.TaskProject]
+const (
+	TaskStatusTodo       TaskStatus = "todo"
+	TaskStatusInProgress TaskStatus = "in_progress"
+	TaskStatusDone       TaskStatus = "done"
+)
+
+type TaskStatus string
+
+// Enum values for TaskProjectStatus
+const (
+	TaskProjectStatusTodo       TaskProjectStatus = "todo"
+	TaskProjectStatusInProgress TaskProjectStatus = "in_progress"
+	TaskProjectStatusDone       TaskProjectStatus = "done"
+)
+
+type TaskProjectStatus string
+
+type TaskProject struct {
+	_                 struct{}          `db:"task_projects" json:"-"`
+	ID                uuid.UUID         `db:"id" json:"id"`
+	CreatedByMemberID *uuid.UUID        `db:"created_by_member_id" json:"created_by_member_id" nullable:"true"`
+	TeamID            uuid.UUID         `db:"team_id" json:"team_id"`
+	Name              string            `db:"name" json:"name"`
+	Description       *string           `db:"description" json:"description"`
+	Status            TaskProjectStatus `db:"status" json:"status" enum:"todo,in_progress,done"`
+	StartAt           *time.Time        `db:"start_at" json:"start_at" nullable:"true"`
+	EndAt             *time.Time        `db:"end_at" json:"end_at" nullable:"true"`
+	AssigneeID        *uuid.UUID        `db:"assignee_id" json:"assignee_id" nullable:"true"`
+	ReporterID        *uuid.UUID        `db:"reporter_id" json:"reporter_id" nullable:"true"`
+	Rank              float64           `db:"rank" json:"rank"`
+	CreatedAt         time.Time         `db:"created_at" json:"created_at"`
+	UpdatedAt         time.Time         `db:"updated_at" json:"updated_at"`
+	CreatedByMember   *TeamMember       `db:"created_by_member" src:"created_by_member_id" dest:"id" table:"team_members" json:"created_by_member,omitempty"`
+	Team              *Team             `db:"team" src:"team_id" dest:"id" table:"teams" json:"team,omitempty"`
+	Tasks             []*Task           `db:"tasks" src:"id" dest:"project_id" table:"tasks" json:"tasks,omitempty"`
 }
 
-func (api *Api) TeamTaskProjectList(ctx context.Context, input *shared.TeamTaskProjectsListParams) (*TaskProjectListResponse, error) {
+func FromModelProject(task *models.TaskProject) *TaskProject {
+	if task == nil {
+		return nil
+	}
+	return &TaskProject{
+		ID:                task.ID,
+		CreatedByMemberID: task.CreatedByMemberID,
+		TeamID:            task.TeamID,
+		Name:              task.Name,
+		Description:       task.Description,
+		Status:            TaskProjectStatus(task.Status),
+		StartAt:           task.StartAt,
+		EndAt:             task.EndAt,
+		AssigneeID:        task.AssigneeID,
+		ReporterID:        task.ReporterID,
+		Rank:              task.Rank,
+		CreatedAt:         task.CreatedAt,
+		UpdatedAt:         task.UpdatedAt,
+		CreatedByMember:   FromTeamMemberModel(task.CreatedByMember),
+		Team:              FromTeamModel(task.Team),
+		Tasks:             mapper.Map(task.Tasks, FromModelTask),
+	}
+}
+
+type CreateTaskProjectDTO struct {
+	TeamID      uuid.UUID         `json:"team_id" required:"true" format:"uuid"`
+	MemberID    uuid.UUID         `json:"member_id" required:"true" format:"uuid"`
+	Name        string            `json:"name" required:"true"`
+	Description *string           `json:"description,omitempty" required:"false"`
+	Status      TaskProjectStatus `json:"status" required:"false" enum:"todo,in_progress,done" default:"todo"`
+	Rank        float64           `json:"rank,omitempty" required:"false"`
+}
+
+type CreateTaskProjectWithTasksDTO struct {
+	CreateTaskProjectDTO
+	Tasks []CreateTaskProjectTaskDTO `json:"tasks,omitempty" required:"false"`
+}
+type CreateTaskProjectWithoutTeamDTO struct {
+	Name        string            `json:"name" required:"true"`
+	Description *string           `json:"description,omitempty" required:"false"`
+	Status      TaskProjectStatus `json:"status" required:"false" enum:"todo,in_progress,done" default:"todo"`
+	Rank        float64           `json:"rank,omitempty" required:"false"`
+}
+
+type CreateTaskProjectWithoutTeamWithTasks struct {
+	CreateTaskProjectWithoutTeamDTO
+	Tasks []CreateTaskProjectTaskDTO `json:"tasks,omitempty" required:"false"`
+}
+type CreateTaskProjectWithTasksInput struct {
+	TeamID string `json:"team_id" path:"team-id" required:"true" format:"uuid"`
+	Body   CreateTaskProjectWithoutTeamWithTasks
+}
+
+type UpdateTaskProjectDTO struct {
+	Body          stores.UpdateTaskProjectBaseDTO
+	TaskProjectID string `path:"task-project-id" json:"task_project_id" required:"true" format:"uuid"`
+}
+
+type TaskProjectListResponse struct {
+	Body *ApiPaginatedResponse[*TaskProject]
+}
+
+type TeamTaskProjectsListParams struct {
+	TeamID string `path:"team-id" required:"true" format:"uuid"`
+	PaginatedInput
+	Q        string              `query:"q,omitempty" required:"false"`
+	Status   []TaskProjectStatus `query:"status,omitempty" required:"false" minimum:"1" maximum:"100" enum:"todo,in_progress,done"`
+	Ids      []string            `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+	Statuses []TaskProjectStatus `query:"task_status,omitempty" required:"false" minimum:"1" maximum:"100" enum:"todo,in_progress,done"`
+	SortParams
+	Expand []string `query:"expand,omitempty" required:"false" minimum:"1" maximum:"100" enum:"tasks,subtasks"`
+}
+
+func (api *Api) TeamTaskProjectList(ctx context.Context, input *TeamTaskProjectsListParams) (*TaskProjectListResponse, error) {
 
 	teamInfo := contextstore.GetContextTeamInfo(ctx)
 	if teamInfo == nil {
@@ -33,7 +139,7 @@ func (api *Api) TeamTaskProjectList(ctx context.Context, input *shared.TeamTaskP
 	newInput.PerPage = input.PerPage
 	newInput.Ids = utils.ParseValidUUIDs(input.Ids...)
 	newInput.Q = input.Q
-	newInput.Statuses = mapper.Map(input.Statuses, func(status shared.TaskProjectStatus) models.TaskProjectStatus {
+	newInput.Statuses = mapper.Map(input.Statuses, func(status TaskProjectStatus) models.TaskProjectStatus {
 		return models.TaskProjectStatus(status)
 	})
 	newInput.TeamIds = []uuid.UUID{teamInfo.Team.ID}
@@ -59,21 +165,21 @@ func (api *Api) TeamTaskProjectList(ctx context.Context, input *shared.TeamTaskP
 		}
 	}
 	return &TaskProjectListResponse{
-		Body: &ApiPaginatedResponse[*shared.TaskProject]{
-			Data: mapper.Map(taskProject, func(taskProject *models.TaskProject) *shared.TaskProject {
-				return shared.FromModelProject(taskProject)
+		Body: &ApiPaginatedResponse[*TaskProject]{
+			Data: mapper.Map(taskProject, func(taskProject *models.TaskProject) *TaskProject {
+				return FromModelProject(taskProject)
 			}),
-			Meta: GenerateMeta(&input.PaginatedInput, total),
+			Meta: ApiGenerateMeta(&input.PaginatedInput, total),
 		},
 	}, nil
 }
 
 func (api *Api) TeamTaskProjectCreate(
 	ctx context.Context,
-	input *shared.CreateTaskProjectWithTasksInput,
+	input *CreateTaskProjectWithTasksInput,
 ) (
 	*struct {
-		Body *shared.TaskProject
+		Body *TaskProject
 	},
 	error,
 ) {
@@ -90,24 +196,31 @@ func (api *Api) TeamTaskProjectCreate(
 		return nil, huma.Error401Unauthorized("Unauthorized")
 	}
 
-	taskProject, err := api.app.Adapter().Task().CreateTaskProjectWithTasks(ctx, &shared.CreateTaskProjectWithTasksDTO{
-		CreateTaskProjectDTO: shared.CreateTaskProjectDTO{
+	taskProject, err := api.app.Adapter().Task().CreateTaskProjectWithTasks(ctx, &stores.CreateTaskProjectWithTasksDTO{
+		CreateTaskProjectDTO: stores.CreateTaskProjectDTO{
 			TeamID:      parsedTeamID,
 			MemberID:    teamInfo.Member.ID,
 			Name:        input.Body.Name,
 			Description: input.Body.Description,
-			Status:      input.Body.Status,
+			Status:      models.TaskProjectStatus(input.Body.Status),
 			Rank:        input.Body.Rank,
 		},
-		Tasks: input.Body.Tasks,
+		Tasks: mapper.Map(input.Body.Tasks, func(task CreateTaskProjectTaskDTO) stores.CreateTaskProjectTaskDTO {
+			return stores.CreateTaskProjectTaskDTO{
+				Name:        task.Name,
+				Description: task.Description,
+				Status:      models.TaskStatus(task.Status),
+				Rank:        task.Rank,
+			}
+		}),
 	})
 	if err != nil {
 		return nil, err
 	}
 	return &struct {
-		Body *shared.TaskProject
+		Body *TaskProject
 	}{
-		Body: shared.FromModelProject(taskProject),
+		Body: FromModelProject(taskProject),
 	}, nil
 }
 
@@ -120,7 +233,7 @@ type TaskProjectCreateWithAiInput struct {
 }
 
 func (api *Api) TeamTaskProjectCreateWithAi(ctx context.Context, input *TaskProjectCreateWithAiInput) (*struct {
-	Body *shared.TaskProject
+	Body *TaskProject
 }, error) {
 	teamInfo := contextstore.GetContextTeamInfo(ctx)
 	if teamInfo == nil {
@@ -132,19 +245,19 @@ func (api *Api) TeamTaskProjectCreateWithAi(ctx context.Context, input *TaskProj
 	if err != nil {
 		return nil, err
 	}
-	args := shared.CreateTaskProjectWithTasksDTO{
-		CreateTaskProjectDTO: shared.CreateTaskProjectDTO{
+	args := stores.CreateTaskProjectWithTasksDTO{
+		CreateTaskProjectDTO: stores.CreateTaskProjectDTO{
 			Name:        taskProjectPlan.Project.Name,
 			Description: &taskProjectPlan.Project.Description,
-			Status:      shared.TaskProjectStatusTodo,
+			Status:      models.TaskProjectStatusTodo,
 			TeamID:      teamInfo.Member.TeamID,
 			MemberID:    teamInfo.Member.ID,
 		},
-		Tasks: mapper.Map(taskProjectPlan.Tasks, func(task googleai.Task) shared.CreateTaskProjectTaskDTO {
-			return shared.CreateTaskProjectTaskDTO{
+		Tasks: mapper.Map(taskProjectPlan.Tasks, func(task googleai.Task) stores.CreateTaskProjectTaskDTO {
+			return stores.CreateTaskProjectTaskDTO{
 				Name:        task.Name,
 				Description: &task.Description,
-				Status:      shared.TaskStatusTodo,
+				Status:      models.TaskStatusTodo,
 			}
 		}),
 	}
@@ -153,17 +266,17 @@ func (api *Api) TeamTaskProjectCreateWithAi(ctx context.Context, input *TaskProj
 		return nil, err
 	}
 	return &struct {
-		Body *shared.TaskProject
+		Body *TaskProject
 	}{
-		Body: shared.FromModelProject(taskProject),
+		Body: FromModelProject(taskProject),
 	}, nil
 }
 
 type TaskProjectResponse struct {
-	Body *shared.TaskProject
+	Body *TaskProject
 }
 
-func (api *Api) TeamTaskProjectUpdate(ctx context.Context, input *shared.UpdateTaskProjectDTO) (*struct{}, error) {
+func (api *Api) TeamTaskProjectUpdate(ctx context.Context, input *UpdateTaskProjectDTO) (*struct{}, error) {
 	userInfo := contextstore.GetContextUserInfo(ctx)
 	if userInfo == nil {
 		return nil, huma.Error401Unauthorized("Unauthorized")
@@ -227,31 +340,8 @@ func (api *Api) TeamTaskProjectGet(ctx context.Context, input *struct {
 		}
 	}
 	return &TaskProjectResponse{
-		Body: shared.FromModelProject(taskProject),
+		Body: FromModelProject(taskProject),
 	}, nil
-}
-
-const (
-	TaskStatusTodo       TaskStatus = "todo"
-	TaskStatusInProgress TaskStatus = "in_progress"
-	TaskStatusDone       TaskStatus = "done"
-)
-
-type TaskStatus string
-
-// Enum values for TaskProjectStatus
-const (
-	TaskProjectStatusTodo       TaskProjectStatus = "todo"
-	TaskProjectStatusInProgress TaskProjectStatus = "in_progress"
-	TaskProjectStatusDone       TaskProjectStatus = "done"
-)
-
-type TaskProjectStatus string
-type CreateTaskProjectTaskDTO struct {
-	Name        string     `json:"name" required:"true"`
-	Description *string    `json:"description,omitempty" required:"false"`
-	Status      TaskStatus `json:"status" required:"false" enum:"todo,in_progress,done" default:"todo"`
-	Rank        float64    `json:"rank,omitempty" required:"false"`
 }
 
 type ApiCreateTaskWithProjectIdInput struct {
@@ -284,6 +374,6 @@ func (api *Api) TeamTaskProjectTasksCreate(ctx context.Context, input *ApiCreate
 		return nil, huma.Error500InternalServerError("Failed to update task project update date")
 	}
 	return &TaskResponse{
-		Body: shared.FromModelTask(task),
+		Body: FromModelTask(task),
 	}, nil
 }

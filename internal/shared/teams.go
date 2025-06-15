@@ -8,12 +8,6 @@ import (
 	"github.com/tkahng/authgo/internal/tools/mapper"
 )
 
-type TeamInfo struct {
-	User   User       `json:"user"`
-	Team   Team       `json:"team"`
-	Member TeamMember `json:"member"`
-}
-
 type TeamMemberRole string
 
 const (
@@ -66,38 +60,16 @@ func FromTeamMemberModel(member *models.TeamMember) *TeamMember {
 		return nil
 	}
 	return &TeamMember{
-		ID:               member.ID,
-		TeamID:           member.TeamID,
-		UserID:           member.UserID,
-		Active:           member.Active,
-		Role:             TeamMemberRole(member.Role),
+		ID:     member.ID,
+		TeamID: member.TeamID,
+		UserID: member.UserID,
+		Active: member.Active,
+		// Role:             TeamMemberRole(member.Role),
 		HasBillingAccess: member.HasBillingAccess,
 		LastSelectedAt:   member.LastSelectedAt,
 		CreatedAt:        member.CreatedAt,
 		UpdatedAt:        member.UpdatedAt,
-		Team:             FromTeamModel(member.Team),
-		User:             FromUserModel(member.User),
+		// Team:             FromTeamModel(member.Team),
+		// User:             FromUserModel(member.User),
 	}
-}
-
-type TeamMemberListInput struct {
-	PaginatedInput
-	SortParams
-}
-
-type ListTeamsFilter struct {
-	Q string `query:"q"`
-	// Active ActiveStatus `query:"active"`
-	UserID string `query:"user_id"`
-}
-
-type ListTeamsParams struct {
-	ListTeamsFilter
-	PaginatedInput
-	SortParams
-}
-
-type UserListTeamsParams struct {
-	PaginatedInput
-	SortParams
 }

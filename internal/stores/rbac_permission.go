@@ -194,7 +194,12 @@ func (p *DbRbacStore) CreatePermission(ctx context.Context, name string, descrip
 	return data, nil
 }
 
-func (p *DbRbacStore) UpdatePermission(ctx context.Context, id uuid.UUID, roledto *shared.UpdatePermissionDto) error {
+type UpdatePermissionDto struct {
+	Name        string  `json:"name"`
+	Description *string `json:"description,omitempty"`
+}
+
+func (p *DbRbacStore) UpdatePermission(ctx context.Context, id uuid.UUID, roledto *UpdatePermissionDto) error {
 	permission, err := repository.Permission.GetOne(
 		ctx,
 		p.db,

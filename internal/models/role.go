@@ -79,6 +79,17 @@ var PermissionTable = permissionTable{
 	Products:    "products",
 }
 
+type PermissionSource struct {
+	ID          uuid.UUID   `db:"id,pk" json:"id"`
+	Name        string      `db:"name" json:"name"`
+	Description *string     `db:"description" json:"description"`
+	CreatedAt   time.Time   `db:"created_at" json:"created_at"`
+	UpdatedAt   time.Time   `db:"updated_at" json:"updated_at"`
+	RoleIDs     []uuid.UUID `db:"role_ids" json:"role_ids"`
+	ProductIDs  []string    `db:"product_ids" json:"product_ids"`
+	IsDirectly  bool        `db:"is_directly_assigned" json:"is_directly_assigned"`
+}
+
 type UserRole struct {
 	_      struct{}  `db:"user_roles" json:"-"`
 	UserID uuid.UUID `db:"user_id" json:"user_id"`

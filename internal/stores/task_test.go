@@ -31,18 +31,18 @@ func TestGetUserTaskStats(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to create team from user: %v", err)
 		}
-		taskProject, err := taskStore.CreateTaskProject(ctx, &shared.CreateTaskProjectDTO{
+		taskProject, err := taskStore.CreateTaskProject(ctx, &stores.CreateTaskProjectDTO{
 			Name:     "Test Project",
-			Status:   shared.TaskProjectStatusDone,
+			Status:   models.TaskProjectStatusDone,
 			TeamID:   member.TeamID,
 			MemberID: member.ID,
 		})
 		if err != nil {
 			t.Fatalf("failed to create task project: %v", err)
 		}
-		_, err = taskStore.CreateTaskFromInput(ctx, member.TeamID, taskProject.ID, member.ID, &shared.CreateTaskProjectTaskDTO{
+		_, err = taskStore.CreateTaskFromInput(ctx, member.TeamID, taskProject.ID, member.ID, &stores.CreateTaskProjectTaskDTO{
 			Name:   "Test Task",
-			Status: shared.TaskStatusDone,
+			Status: models.TaskStatusDone,
 		})
 		if err != nil {
 			t.Fatalf("failed to create task: %v", err)
@@ -100,9 +100,9 @@ func TestLoadTaskProjectsTasks(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to create team from user: %v", err)
 		}
-		taskProject, err := adapter.Task().CreateTaskProject(ctx, &shared.CreateTaskProjectDTO{
+		taskProject, err := adapter.Task().CreateTaskProject(ctx, &stores.CreateTaskProjectDTO{
 			Name:     "Test Project",
-			Status:   shared.TaskProjectStatusDone,
+			Status:   models.TaskProjectStatusDone,
 			TeamID:   member.TeamID,
 			MemberID: member.ID,
 		})
@@ -197,9 +197,9 @@ func TestFindTaskByID(t *testing.T) {
 		if member == nil {
 			t.Fatalf("failed to create team member")
 		}
-		taskProject, err := taskStore.CreateTaskProject(ctx, &shared.CreateTaskProjectDTO{
+		taskProject, err := taskStore.CreateTaskProject(ctx, &stores.CreateTaskProjectDTO{
 			Name:     "Test Project",
-			Status:   shared.TaskProjectStatusDone,
+			Status:   models.TaskProjectStatusDone,
 			TeamID:   member.TeamID,
 			MemberID: member.ID,
 		})
@@ -295,9 +295,9 @@ func TestFindLastTaskOrder(t *testing.T) {
 		}
 		taskProject, err := adapter.Task().CreateTaskProject(
 			ctx,
-			&shared.CreateTaskProjectDTO{
+			&stores.CreateTaskProjectDTO{
 				Name:     "Test Project",
-				Status:   shared.TaskProjectStatusDone,
+				Status:   models.TaskProjectStatusDone,
 				TeamID:   member.TeamID,
 				MemberID: member.ID,
 			},
@@ -383,9 +383,9 @@ func TestDeleteTask(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to create team from user: %v", err)
 		}
-		taskProject, err := adapter.Task().CreateTaskProject(ctx, &shared.CreateTaskProjectDTO{
+		taskProject, err := adapter.Task().CreateTaskProject(ctx, &stores.CreateTaskProjectDTO{
 			Name:     "Test Project",
-			Status:   shared.TaskProjectStatusDone,
+			Status:   models.TaskProjectStatusDone,
 			TeamID:   member.TeamID,
 			MemberID: member.ID,
 		})
@@ -462,9 +462,9 @@ func TestFindTaskProjectByID(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to create team from user: %v", err)
 		}
-		taskProject, err := taskStore.CreateTaskProject(ctx, &shared.CreateTaskProjectDTO{
+		taskProject, err := taskStore.CreateTaskProject(ctx, &stores.CreateTaskProjectDTO{
 			Name:     "Test Project",
-			Status:   shared.TaskProjectStatusDone,
+			Status:   models.TaskProjectStatusDone,
 			TeamID:   member.TeamID,
 			MemberID: member.ID,
 		})
@@ -546,9 +546,9 @@ func TestDeleteTaskProject(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to create team from user: %v", err)
 		}
-		taskProject, err := taskStore.CreateTaskProject(ctx, &shared.CreateTaskProjectDTO{
+		taskProject, err := taskStore.CreateTaskProject(ctx, &stores.CreateTaskProjectDTO{
 			Name:     "Test Project",
-			Status:   shared.TaskProjectStatusDone,
+			Status:   models.TaskProjectStatusDone,
 			TeamID:   member.TeamID,
 			MemberID: member.ID,
 		})
@@ -613,9 +613,9 @@ func TestListTasks(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to create team from user: %v", err)
 		}
-		taskProject, err := taskStore.CreateTaskProject(ctx, &shared.CreateTaskProjectDTO{
+		taskProject, err := taskStore.CreateTaskProject(ctx, &stores.CreateTaskProjectDTO{
 			Name:     "Test Project",
-			Status:   shared.TaskProjectStatusDone,
+			Status:   models.TaskProjectStatusDone,
 			TeamID:   member.TeamID,
 			MemberID: member.ID,
 		})
@@ -724,9 +724,9 @@ func TestCountTasks(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to create team from user: %v", err)
 		}
-		taskProject, err := taskStore.CreateTaskProject(ctx, &shared.CreateTaskProjectDTO{
+		taskProject, err := taskStore.CreateTaskProject(ctx, &stores.CreateTaskProjectDTO{
 			Name:     "Test Project",
-			Status:   shared.TaskProjectStatusDone,
+			Status:   models.TaskProjectStatusDone,
 			TeamID:   member.TeamID,
 			MemberID: member.ID,
 		})
@@ -813,9 +813,9 @@ func TestListTaskProjects(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to create team from user: %v", err)
 		}
-		taskProject, err := taskStore.CreateTaskProject(ctx, &shared.CreateTaskProjectDTO{
+		taskProject, err := taskStore.CreateTaskProject(ctx, &stores.CreateTaskProjectDTO{
 			Name:     "Test Project",
-			Status:   shared.TaskProjectStatusDone,
+			Status:   models.TaskProjectStatusDone,
 			TeamID:   member.TeamID,
 			MemberID: member.ID,
 		})
@@ -912,9 +912,9 @@ func TestCountTaskProjects(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to create team from user: %v", err)
 		}
-		_, err = taskStore.CreateTaskProject(ctx, &shared.CreateTaskProjectDTO{
+		_, err = taskStore.CreateTaskProject(ctx, &stores.CreateTaskProjectDTO{
 			Name:     "Test Project",
-			Status:   shared.TaskProjectStatusDone,
+			Status:   models.TaskProjectStatusDone,
 			TeamID:   member.TeamID,
 			MemberID: member.ID,
 		})
@@ -994,7 +994,7 @@ func TestCreateTaskProject(t *testing.T) {
 			ctx    context.Context
 			db     database.Dbx
 			userID uuid.UUID
-			input  *shared.CreateTaskProjectDTO
+			input  *stores.CreateTaskProjectDTO
 		}
 		tests := []struct {
 			name    string
@@ -1008,10 +1008,10 @@ func TestCreateTaskProject(t *testing.T) {
 					ctx:    ctx,
 					db:     dbxx,
 					userID: user.ID,
-					input: &shared.CreateTaskProjectDTO{
+					input: &stores.CreateTaskProjectDTO{
 						Name:        "Test Project",
 						Description: types.Pointer("Test Description"),
-						Status:      shared.TaskProjectStatusDone,
+						Status:      models.TaskProjectStatusDone,
 						Rank:        1000,
 						TeamID:      member.TeamID,
 						MemberID:    member.ID,
@@ -1083,7 +1083,7 @@ func TestCreateTaskProjectWithTasks(t *testing.T) {
 			ctx    context.Context
 			db     database.Dbx
 			userID uuid.UUID
-			input  *shared.CreateTaskProjectWithTasksDTO
+			input  *stores.CreateTaskProjectWithTasksDTO
 		}
 		tests := []struct {
 			name    string
@@ -1097,26 +1097,26 @@ func TestCreateTaskProjectWithTasks(t *testing.T) {
 					ctx:    ctx,
 					db:     dbxx,
 					userID: user.ID,
-					input: &shared.CreateTaskProjectWithTasksDTO{
-						CreateTaskProjectDTO: shared.CreateTaskProjectDTO{
+					input: &stores.CreateTaskProjectWithTasksDTO{
+						CreateTaskProjectDTO: stores.CreateTaskProjectDTO{
 							Name:        "Test Project",
 							TeamID:      member.TeamID,
 							MemberID:    member.ID,
 							Description: types.Pointer("Test Description"),
-							Status:      shared.TaskProjectStatusDone,
+							Status:      models.TaskProjectStatusDone,
 						},
-						Tasks: []shared.CreateTaskProjectTaskDTO{
+						Tasks: []stores.CreateTaskProjectTaskDTO{
 							{
 								Name:        "Test Task 1",
 								Rank:        1000,
 								Description: types.Pointer("Test Description 1"),
-								Status:      shared.TaskStatusDone,
+								Status:      models.TaskStatusDone,
 							},
 							{
 								Name:        "Test Task 2",
 								Rank:        2000,
 								Description: types.Pointer("Test Description 2"),
-								Status:      shared.TaskStatusDone,
+								Status:      models.TaskStatusDone,
 							},
 						},
 					},
@@ -1187,9 +1187,9 @@ func TestCreateTaskFromInput(t *testing.T) {
 			t.Fatalf("failed to create team from user: %v", err)
 		}
 
-		taskProject, err := taskStore.CreateTaskProject(ctx, &shared.CreateTaskProjectDTO{
+		taskProject, err := taskStore.CreateTaskProject(ctx, &stores.CreateTaskProjectDTO{
 			Name:     "Test Project",
-			Status:   shared.TaskProjectStatusDone,
+			Status:   models.TaskProjectStatusDone,
 			TeamID:   member.TeamID,
 			MemberID: member.ID,
 		})
@@ -1203,7 +1203,7 @@ func TestCreateTaskFromInput(t *testing.T) {
 			teamID    uuid.UUID
 			projectID uuid.UUID
 			memberID  uuid.UUID
-			input     *shared.CreateTaskProjectTaskDTO
+			input     *stores.CreateTaskProjectTaskDTO
 		}
 		tests := []struct {
 			name    string
@@ -1219,10 +1219,10 @@ func TestCreateTaskFromInput(t *testing.T) {
 					teamID:    member.TeamID,
 					projectID: taskProject.ID,
 					memberID:  member.ID,
-					input: &shared.CreateTaskProjectTaskDTO{
+					input: &stores.CreateTaskProjectTaskDTO{
 						Name:        "Test Task",
 						Description: types.Pointer("Test Description"),
-						Status:      shared.TaskStatusDone,
+						Status:      models.TaskStatusDone,
 						Rank:        1000,
 					},
 				},
@@ -1285,9 +1285,9 @@ func TestCreateTaskFromInput(t *testing.T) {
 // 		if err != nil {
 // 			t.Fatalf("failed to create team from user: %v", err)
 // 		}
-// 		taskProject, err := queries.CreateTaskProject(ctx, dbxx, &shared.CreateTaskProjectDTO{
+// 		taskProject, err := queries.CreateTaskProject(ctx, dbxx, &stores.CreateTaskProjectDTO{
 // 			Name:     "Test Project",
-// 			Status:   shared.TaskProjectStatusDone,
+// 			Status:   models.TaskProjectStatusDone,
 // 			TeamID:   member.TeamID,
 // 			MemberID: member.ID,
 // 		})
@@ -1395,9 +1395,9 @@ func TestCreateTaskFromInput(t *testing.T) {
 // 		if err != nil {
 // 			t.Fatalf("failed to create team from user: %v", err)
 // 		}
-// 		taskProject, err := queries.CreateTaskProject(ctx, dbxx, &shared.CreateTaskProjectDTO{
+// 		taskProject, err := queries.CreateTaskProject(ctx, dbxx, &stores.CreateTaskProjectDTO{
 // 			Name:     "Test Project",
-// 			Status:   shared.TaskProjectStatusDone,
+// 			Status:   models.TaskProjectStatusDone,
 // 			TeamID:   member.TeamID,
 // 			MemberID: member.ID,
 // 		})
@@ -1461,10 +1461,10 @@ func TestCreateTaskFromInput(t *testing.T) {
 // 		if err != nil {
 // 			t.Fatalf("failed to create team from user: %v", err)
 // 		}
-// 		taskProject, err := queries.CreateTaskProject(ctx, dbxx, &shared.CreateTaskProjectDTO{
+// 		taskProject, err := queries.CreateTaskProject(ctx, dbxx, &stores.CreateTaskProjectDTO{
 // 			Name:        "Test Project",
 // 			Description: types.Pointer("Test Description"),
-// 			Status:      shared.TaskProjectStatusDone,
+// 			Status:      models.TaskProjectStatusDone,
 // 			Rank:       1000,
 // 			TeamID:      member.TeamID,
 // 			MemberID:    member.ID,
@@ -1477,7 +1477,7 @@ func TestCreateTaskFromInput(t *testing.T) {
 // 			ctx           context.Context
 // 			db            database.Dbx
 // 			taskProjectID uuid.UUID
-// 			input         *shared.UpdateTaskProjectBaseDTO
+// 			input         *UpdateTaskProjectBaseDTO
 // 		}
 // 		tests := []struct {
 // 			name    string
@@ -1490,7 +1490,7 @@ func TestCreateTaskFromInput(t *testing.T) {
 // 					ctx:           ctx,
 // 					db:            dbxx,
 // 					taskProjectID: taskProject.ID,
-// 					input: &shared.UpdateTaskProjectBaseDTO{
+// 					input: &UpdateTaskProjectBaseDTO{
 // 						Name:        "Updated Project",
 // 						Description: types.Pointer("Updated Description"),
 // 						Status:      shared.TaskProjectStatusInProgress,
@@ -1505,7 +1505,7 @@ func TestCreateTaskFromInput(t *testing.T) {
 // 					ctx:           ctx,
 // 					db:            dbxx,
 // 					taskProjectID: uuid.New(),
-// 					input: &shared.UpdateTaskProjectBaseDTO{
+// 					input: &UpdateTaskProjectBaseDTO{
 // 						Name:   "Updated Project",
 // 						Status: shared.TaskProjectStatusInProgress,
 // 					},
@@ -1561,9 +1561,9 @@ func TestCreateTaskFromInput(t *testing.T) {
 // 		if err != nil {
 // 			t.Fatalf("failed to create team from user: %v", err)
 // 		}
-// 		taskProject, err := queries.CreateTaskProject(ctx, dbxx, &shared.CreateTaskProjectDTO{
+// 		taskProject, err := queries.CreateTaskProject(ctx, dbxx, &stores.CreateTaskProjectDTO{
 // 			Name:     "Test Project",
-// 			Status:   shared.TaskProjectStatusDone,
+// 			Status:   models.TaskProjectStatusDone,
 // 			TeamID:   member.TeamID,
 // 			MemberID: member.ID,
 // 		})
@@ -1691,9 +1691,9 @@ func TestCreateTaskFromInput(t *testing.T) {
 // 		if err != nil {
 // 			t.Fatalf("failed to create team from user: %v", err)
 // 		}
-// 		taskProject, err := queries.CreateTaskProject(ctx, dbxx, &shared.CreateTaskProjectDTO{
+// 		taskProject, err := queries.CreateTaskProject(ctx, dbxx, &stores.CreateTaskProjectDTO{
 // 			Name:     "Test Project",
-// 			Status:   shared.TaskProjectStatusDone,
+// 			Status:   models.TaskProjectStatusDone,
 // 			TeamID:   member.TeamID,
 // 			MemberID: member.ID,
 // 		})
@@ -1784,9 +1784,9 @@ func TestCreateTaskFromInput(t *testing.T) {
 // 		if member == nil {
 // 			t.Fatalf("failed to create team member")
 // 		}
-// 		taskProject, err := queries.CreateTaskProject(ctx, dbxx, &shared.CreateTaskProjectDTO{
+// 		taskProject, err := queries.CreateTaskProject(ctx, dbxx, &stores.CreateTaskProjectDTO{
 // 			Name:     "Test Project",
-// 			Status:   shared.TaskProjectStatusDone,
+// 			Status:   models.TaskProjectStatusDone,
 // 			TeamID:   member.TeamID,
 // 			MemberID: member.ID,
 // 		})
@@ -1880,9 +1880,9 @@ func TestCreateTaskFromInput(t *testing.T) {
 // 		taskProject, err := queries.CreateTaskProject(
 // 			ctx,
 // 			dbxx,
-// 			&shared.CreateTaskProjectDTO{
+// 			&stores.CreateTaskProjectDTO{
 // 				Name:     "Test Project",
-// 				Status:   shared.TaskProjectStatusDone,
+// 				Status:   models.TaskProjectStatusDone,
 // 				TeamID:   member.TeamID,
 // 				MemberID: member.ID,
 // 			},
@@ -1966,9 +1966,9 @@ func TestCreateTaskFromInput(t *testing.T) {
 // 		if err != nil {
 // 			t.Fatalf("failed to create team from user: %v", err)
 // 		}
-// 		taskProject, err := queries.CreateTaskProject(ctx, dbxx, &shared.CreateTaskProjectDTO{
+// 		taskProject, err := queries.CreateTaskProject(ctx, dbxx, &stores.CreateTaskProjectDTO{
 // 			Name:     "Test Project",
-// 			Status:   shared.TaskProjectStatusDone,
+// 			Status:   models.TaskProjectStatusDone,
 // 			TeamID:   member.TeamID,
 // 			MemberID: member.ID,
 // 		})
@@ -2036,9 +2036,9 @@ func TestCreateTaskFromInput(t *testing.T) {
 // 		if err != nil {
 // 			t.Fatalf("failed to create team from user: %v", err)
 // 		}
-// 		taskProject, err := queries.CreateTaskProject(ctx, dbxx, &shared.CreateTaskProjectDTO{
+// 		taskProject, err := queries.CreateTaskProject(ctx, dbxx, &stores.CreateTaskProjectDTO{
 // 			Name:     "Test Project",
-// 			Status:   shared.TaskProjectStatusDone,
+// 			Status:   models.TaskProjectStatusDone,
 // 			TeamID:   member.TeamID,
 // 			MemberID: member.ID,
 // 		})
@@ -2116,9 +2116,9 @@ func TestCreateTaskFromInput(t *testing.T) {
 // 		if err != nil {
 // 			t.Fatalf("failed to create team from user: %v", err)
 // 		}
-// 		taskProject, err := queries.CreateTaskProject(ctx, dbxx, &shared.CreateTaskProjectDTO{
+// 		taskProject, err := queries.CreateTaskProject(ctx, dbxx, &stores.CreateTaskProjectDTO{
 // 			Name:     "Test Project",
-// 			Status:   shared.TaskProjectStatusDone,
+// 			Status:   models.TaskProjectStatusDone,
 // 			TeamID:   member.TeamID,
 // 			MemberID: member.ID,
 // 		})
@@ -2179,9 +2179,9 @@ func TestCreateTaskFromInput(t *testing.T) {
 // 		if err != nil {
 // 			t.Fatalf("failed to create team from user: %v", err)
 // 		}
-// 		taskProject, err := queries.CreateTaskProject(ctx, dbxx, &shared.CreateTaskProjectDTO{
+// 		taskProject, err := queries.CreateTaskProject(ctx, dbxx, &stores.CreateTaskProjectDTO{
 // 			Name:     "Test Project",
-// 			Status:   shared.TaskProjectStatusDone,
+// 			Status:   models.TaskProjectStatusDone,
 // 			TeamID:   member.TeamID,
 // 			MemberID: member.ID,
 // 		})
@@ -2293,9 +2293,9 @@ func TestCreateTaskFromInput(t *testing.T) {
 // 		if err != nil {
 // 			t.Fatalf("failed to create team from user: %v", err)
 // 		}
-// 		taskProject, err := queries.CreateTaskProject(ctx, dbxx, &shared.CreateTaskProjectDTO{
+// 		taskProject, err := queries.CreateTaskProject(ctx, dbxx, &stores.CreateTaskProjectDTO{
 // 			Name:     "Test Project",
-// 			Status:   shared.TaskProjectStatusDone,
+// 			Status:   models.TaskProjectStatusDone,
 // 			TeamID:   member.TeamID,
 // 			MemberID: member.ID,
 // 		})
@@ -2374,9 +2374,9 @@ func TestCreateTaskFromInput(t *testing.T) {
 // 		if err != nil {
 // 			t.Fatalf("failed to create user: %v", err)
 // 		}
-// 		taskProject, err := queries.CreateTaskProject(ctx, dbxx, &shared.CreateTaskProjectDTO{
+// 		taskProject, err := queries.CreateTaskProject(ctx, dbxx, &stores.CreateTaskProjectDTO{
 // 			Name:   "Test Project",
-// 			Status: shared.TaskProjectStatusDone,
+// 			Status: models.TaskProjectStatusDone,
 // 		})
 // 		if err != nil {
 // 			t.Fatalf("failed to create task project: %v", err)
@@ -2469,9 +2469,9 @@ func TestCreateTaskFromInput(t *testing.T) {
 // 		if err != nil {
 // 			t.Fatalf("failed to create user: %v", err)
 // 		}
-// 		_, err = queries.CreateTaskProject(ctx, dbxx, &shared.CreateTaskProjectDTO{
+// 		_, err = queries.CreateTaskProject(ctx, dbxx, &stores.CreateTaskProjectDTO{
 // 			Name:   "Test Project",
-// 			Status: shared.TaskProjectStatusDone,
+// 			Status: models.TaskProjectStatusDone,
 // 		})
 // 		if err != nil {
 // 			t.Fatalf("failed to create task project: %v", err)
@@ -2544,7 +2544,7 @@ func TestCreateTaskFromInput(t *testing.T) {
 // 			ctx    context.Context
 // 			db     database.Dbx
 // 			userID uuid.UUID
-// 			input  *shared.CreateTaskProjectDTO
+// 			input  *stores.CreateTaskProjectDTO
 // 		}
 // 		tests := []struct {
 // 			name    string
@@ -2558,10 +2558,10 @@ func TestCreateTaskFromInput(t *testing.T) {
 // 					ctx:    ctx,
 // 					db:     dbxx,
 // 					userID: user.ID,
-// 					input: &shared.CreateTaskProjectDTO{
+// 					input: &stores.CreateTaskProjectDTO{
 // 						Name:        "Test Project",
 // 						Description: types.Pointer("Test Description"),
-// 						Status:      shared.TaskProjectStatusDone,
+// 						Status:      models.TaskProjectStatusDone,
 // 						Rank:       1000,
 // 						TeamID:      member.TeamID,
 // 						MemberID:    member.ID,
@@ -2638,10 +2638,10 @@ func TestCreateTaskFromInput(t *testing.T) {
 // 					db:     dbxx,
 // 					userID: user.ID,
 // 					input: &shared.CreateTaskProjectWithTasksDTO{
-// 						CreateTaskProjectDTO: shared.CreateTaskProjectDTO{
+// 						CreateTaskProjectDTO: stores.CreateTaskProjectDTO{
 // 							Name:        "Test Project",
 // 							Description: types.Pointer("Test Description"),
-// 							Status:      shared.TaskProjectStatusDone,
+// 							Status:      models.TaskProjectStatusDone,
 // 						},
 // 						Tasks: []shared.CreateTaskBaseDTO{
 // 							{
@@ -2719,9 +2719,9 @@ func TestCreateTaskFromInput(t *testing.T) {
 // 		if err != nil {
 // 			t.Fatalf("failed to create team from user: %v", err)
 // 		}
-// 		taskProject, err := queries.CreateTaskProject(ctx, dbxx, &shared.CreateTaskProjectDTO{
+// 		taskProject, err := queries.CreateTaskProject(ctx, dbxx, &stores.CreateTaskProjectDTO{
 // 			Name:     "Test Project",
-// 			Status:   shared.TaskProjectStatusDone,
+// 			Status:   models.TaskProjectStatusDone,
 // 			TeamID:   member.TeamID,
 // 			MemberID: member.ID,
 // 		})
@@ -2812,9 +2812,9 @@ func TestCreateTaskFromInput(t *testing.T) {
 // 		if err != nil {
 // 			t.Fatalf("failed to create team from user: %v", err)
 // 		}
-// 		taskProject, err := queries.CreateTaskProject(ctx, dbxx, &shared.CreateTaskProjectDTO{
+// 		taskProject, err := queries.CreateTaskProject(ctx, dbxx, &stores.CreateTaskProjectDTO{
 // 			Name:     "Test Project",
-// 			Status:   shared.TaskProjectStatusDone,
+// 			Status:   models.TaskProjectStatusDone,
 // 			TeamID:   member.TeamID,
 // 			MemberID: member.ID,
 // 		})
@@ -2942,9 +2942,9 @@ func TestCreateTaskFromInput(t *testing.T) {
 // 		if err != nil {
 // 			t.Fatalf("failed to create team from user: %v", err)
 // 		}
-// 		taskProject, err := queries.CreateTaskProject(ctx, dbxx, &shared.CreateTaskProjectDTO{
+// 		taskProject, err := queries.CreateTaskProject(ctx, dbxx, &stores.CreateTaskProjectDTO{
 // 			Name:     "Test Project",
-// 			Status:   shared.TaskProjectStatusDone,
+// 			Status:   models.TaskProjectStatusDone,
 // 			TeamID:   member.TeamID,
 // 			MemberID: member.ID,
 // 		})
@@ -3051,9 +3051,9 @@ func TestCreateTaskFromInput(t *testing.T) {
 // 		if err != nil {
 // 			t.Fatalf("failed to create team from user: %v", err)
 // 		}
-// 		taskProject, err := queries.CreateTaskProject(ctx, dbxx, &shared.CreateTaskProjectDTO{
+// 		taskProject, err := queries.CreateTaskProject(ctx, dbxx, &stores.CreateTaskProjectDTO{
 // 			Name:     "Test Project",
-// 			Status:   shared.TaskProjectStatusDone,
+// 			Status:   models.TaskProjectStatusDone,
 // 			TeamID:   member.TeamID,
 // 			MemberID: member.ID,
 // 		})
@@ -3116,10 +3116,10 @@ func TestCreateTaskFromInput(t *testing.T) {
 // 		if err != nil {
 // 			t.Fatalf("failed to create team from user: %v", err)
 // 		}
-// 		taskProject, err := queries.CreateTaskProject(ctx, dbxx, &shared.CreateTaskProjectDTO{
+// 		taskProject, err := queries.CreateTaskProject(ctx, dbxx, &stores.CreateTaskProjectDTO{
 // 			Name:        "Test Project",
 // 			Description: types.Pointer("Test Description"),
-// 			Status:      shared.TaskProjectStatusDone,
+// 			Status:      models.TaskProjectStatusDone,
 // 			Rank:       1000,
 // 			TeamID:      member.TeamID,
 // 			MemberID:    member.ID,
@@ -3132,7 +3132,7 @@ func TestCreateTaskFromInput(t *testing.T) {
 // 			ctx           context.Context
 // 			db            database.Dbx
 // 			taskProjectID uuid.UUID
-// 			input         *shared.UpdateTaskProjectBaseDTO
+// 			input         *UpdateTaskProjectBaseDTO
 // 		}
 // 		tests := []struct {
 // 			name    string
@@ -3145,7 +3145,7 @@ func TestCreateTaskFromInput(t *testing.T) {
 // 					ctx:           ctx,
 // 					db:            dbxx,
 // 					taskProjectID: taskProject.ID,
-// 					input: &shared.UpdateTaskProjectBaseDTO{
+// 					input: &UpdateTaskProjectBaseDTO{
 // 						Name:        "Updated Project",
 // 						Description: types.Pointer("Updated Description"),
 // 						Status:      shared.TaskProjectStatusInProgress,
@@ -3160,7 +3160,7 @@ func TestCreateTaskFromInput(t *testing.T) {
 // 					ctx:           ctx,
 // 					db:            dbxx,
 // 					taskProjectID: uuid.New(),
-// 					input: &shared.UpdateTaskProjectBaseDTO{
+// 					input: &UpdateTaskProjectBaseDTO{
 // 						Name:   "Updated Project",
 // 						Status: shared.TaskProjectStatusInProgress,
 // 					},
@@ -3215,9 +3215,9 @@ func TestCreateTaskFromInput(t *testing.T) {
 // 		if err != nil {
 // 			t.Fatalf("failed to create team from user: %v", err)
 // 		}
-// 		taskProject, err := queries.CreateTaskProject(ctx, dbxx, &shared.CreateTaskProjectDTO{
+// 		taskProject, err := queries.CreateTaskProject(ctx, dbxx, &stores.CreateTaskProjectDTO{
 // 			Name:     "Test Project",
-// 			Status:   shared.TaskProjectStatusDone,
+// 			Status:   models.TaskProjectStatusDone,
 // 			TeamID:   member.TeamID,
 // 			MemberID: member.ID,
 // 		})
