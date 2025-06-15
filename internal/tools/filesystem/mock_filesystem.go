@@ -6,7 +6,6 @@ import (
 
 	awss3 "github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/tkahng/authgo/internal/conf"
-	"github.com/tkahng/authgo/internal/shared"
 )
 
 type StorageClientDecorator struct {
@@ -33,8 +32,8 @@ type S3FileSystemDecorator struct {
 	Delegate                 *S3FileSystem
 	GeneratePresignedURLFunc func(ctx context.Context, bucket string, key string) (string, error)
 	PutFileFunc              func(ctx context.Context, authority string, key string, file io.Reader) error
-	PutFileFromBytesFunc     func(ctx context.Context, b []byte, name string) (*shared.FileDto, error)
-	PutNewFileFromURLFunc    func(ctx context.Context, url string) (*shared.FileDto, error)
+	PutFileFromBytesFunc     func(ctx context.Context, b []byte, name string) (*FileDto, error)
+	PutNewFileFromURLFunc    func(ctx context.Context, url string) (*FileDto, error)
 	StorageClientFunc        func() StorageClient
 	PresignClientFunc        func() PresignClient
 	HttpClientFunc           func() HttpRequestDoer
@@ -57,7 +56,7 @@ func (s *S3FileSystemDecorator) PutFile(ctx context.Context, authority string, k
 }
 
 // PutFileFromBytes implements FileSystem.
-func (s *S3FileSystemDecorator) PutFileFromBytes(ctx context.Context, b []byte, name string) (*shared.FileDto, error) {
+func (s *S3FileSystemDecorator) PutFileFromBytes(ctx context.Context, b []byte, name string) (*FileDto, error) {
 	if s.PutFileFromBytesFunc != nil {
 		return s.PutFileFromBytesFunc(ctx, b, name)
 	}
@@ -65,7 +64,7 @@ func (s *S3FileSystemDecorator) PutFileFromBytes(ctx context.Context, b []byte, 
 }
 
 // PutNewFileFromURL implements FileSystem.
-func (s *S3FileSystemDecorator) PutNewFileFromURL(ctx context.Context, url string) (*shared.FileDto, error) {
+func (s *S3FileSystemDecorator) PutNewFileFromURL(ctx context.Context, url string) (*FileDto, error) {
 	if s.PutNewFileFromURLFunc != nil {
 		return s.PutNewFileFromURLFunc(ctx, url)
 	}

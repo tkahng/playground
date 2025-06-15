@@ -22,7 +22,6 @@ import (
 	"github.com/gabriel-vasile/mimetype"
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/conf"
-	"github.com/tkahng/authgo/internal/shared"
 )
 
 type StorageClient interface {
@@ -123,7 +122,7 @@ func Snakecase(str string) string {
 	return strings.ToLower(result.String())
 }
 
-func (fs *S3FileSystem) PutNewFileFromURL(ctx context.Context, url string) (*shared.FileDto, error) {
+func (fs *S3FileSystem) PutNewFileFromURL(ctx context.Context, url string) (*FileDto, error) {
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return nil, err
@@ -148,7 +147,7 @@ func (fs *S3FileSystem) PutNewFileFromURL(ctx context.Context, url string) (*sha
 	return fs.PutFileFromBytes(ctx, buf.Bytes(), path.Base(url))
 }
 
-func (fs *S3FileSystem) PutFileFromBytes(ctx context.Context, b []byte, name string) (*shared.FileDto, error) {
+func (fs *S3FileSystem) PutFileFromBytes(ctx context.Context, b []byte, name string) (*FileDto, error) {
 	id := uuid.New()
 	size := len(b)
 	if size == 0 {
@@ -168,7 +167,7 @@ func (fs *S3FileSystem) PutFileFromBytes(ctx context.Context, b []byte, name str
 		return nil, err
 	}
 
-	dto := &shared.FileDto{
+	dto := &FileDto{
 		ID:           id,
 		Disk:         fs.cfg.BucketName,
 		Directory:    path.Dir(key),

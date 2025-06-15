@@ -1,4 +1,4 @@
-package shared
+package filesystem
 
 import "github.com/google/uuid"
 
