@@ -17,37 +17,6 @@ import (
 	"github.com/tkahng/authgo/internal/tools/payment"
 )
 
-type AppFactory interface {
-	New(
-		fs filesystem.FileSystem,
-		pool *database.Queries,
-		settings *conf.AppOptions,
-		cfg conf.EnvConfig,
-		mail mailer.Mailer,
-		authService services.AuthService,
-		paymentService services.PaymentService,
-		checker *services.ConstraintCheckerService,
-		rbacService services.RBACService,
-		userService services.UserService,
-		userAccountService services.UserAccountService,
-		taskService services.TaskService,
-	) *BaseApp
-}
-type NewAppFunc func(
-	fs filesystem.FileSystem,
-	pool *database.Queries,
-	settings *conf.AppOptions,
-	cfg conf.EnvConfig,
-	mail mailer.Mailer,
-	authService services.AuthService,
-	paymentService services.PaymentService,
-	checker *services.ConstraintCheckerService,
-	rbacService services.RBACService,
-	userService services.UserService,
-	userAccountService services.UserAccountService,
-	taskService services.TaskService,
-) *BaseApp
-
 var _ App = (*BaseApp)(nil)
 
 type BaseApp struct {
@@ -62,8 +31,6 @@ type BaseApp struct {
 	team     services.TeamService
 	checker  services.ConstraintChecker
 	rbac     services.RBACService
-	user     services.UserService
-	userAcc  services.UserAccountService
 	task     services.TaskService
 	adapter  stores.StorageAdapterInterface
 }
@@ -73,19 +40,11 @@ func (app *BaseApp) Adapter() stores.StorageAdapterInterface {
 	return app.adapter
 }
 
-// UserAccount implements App.
-func (app *BaseApp) UserAccount() services.UserAccountService {
-	return app.userAcc
-}
-
 func (app *BaseApp) Task() services.TaskService {
 	return app.task
 }
 
 // User implements App.
-func (app *BaseApp) User() services.UserService {
-	return app.user
-}
 
 // Rbac implements App.
 func (app *BaseApp) Rbac() services.RBACService {
@@ -153,12 +112,6 @@ func NewBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 
 	enqueuer := jobs.NewDBEnqueuer(pool)
 
-	userStore := stores.NewDbUserStore(pool)
-	userService := services.NewUserService(userStore)
-
-	userAccountStore := stores.NewDbAccountStore(pool)
-	userAccountService := services.NewUserAccountService(userAccountStore)
-
 	rbacService := services.NewRBACService(adapter)
 
 	taskService := services.NewTaskService(adapter)
@@ -201,8 +154,6 @@ func NewBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 		paymentService,
 		checker, // pass as ConstraintChecker
 		rbacService,
-		userService,
-		userAccountService,
 		taskService,
 		teamService,
 		adapter,
@@ -221,8 +172,6 @@ func NewApp(
 	paymentService services.PaymentService,
 	checker services.ConstraintChecker,
 	rbacService services.RBACService,
-	userService services.UserService,
-	userAccountService services.UserAccountService,
 	taskService services.TaskService,
 	teamService services.TeamService,
 	adapter stores.StorageAdapterInterface,
@@ -238,8 +187,6 @@ func NewApp(
 		payment:  paymentService,
 		checker:  checker,
 		rbac:     rbacService,
-		user:     userService,
-		userAcc:  userAccountService,
 		task:     taskService,
 		team:     teamService,
 		adapter:  adapter,

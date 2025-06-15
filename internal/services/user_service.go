@@ -18,20 +18,14 @@ type UserStore interface {
 	UpdateUser(ctx context.Context, user *models.User) error
 }
 
-type UserService interface {
-	Store() UserStore
-}
-type userService struct {
-	store UserStore
-}
+// type UserService interface {
+// }
+// type userService struct {
+// 	adapter stores.StorageAdapterInterface
+// }
 
-// Store implements UserService.
-func (u *userService) Store() UserStore {
-	return u.store
-}
-
-func NewUserService(store UserStore) UserService {
-	return &userService{
-		store: store,
-	}
-}
+// func NewUserService(adapter stores.StorageAdapterInterface) UserService {
+// 	return &userService{
+// 		adapter: adapter,
+// 	}
+// }

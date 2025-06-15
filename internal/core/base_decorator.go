@@ -23,10 +23,6 @@ func NewAppDecorator(ctx context.Context, cfg conf.EnvConfig, pool database.Dbx)
 	adapter := stores.NewStorageAdapter(pool)
 	var mail mailer.Mailer = &mailer.LogMailer{}
 	authMailService := services.NewMailService(mail)
-	userStore := stores.NewDbUserStore(pool)
-	userAccountStore := stores.NewDbAccountStore(pool)
-	userService := services.NewUserService(userStore)
-	userAccountService := services.NewUserAccountService(userAccountStore)
 	rbacService := services.NewRBACService(adapter)
 	taskService := services.NewTaskService(adapter)
 	paymentClient := services.NewTestPaymentClient()
@@ -65,8 +61,6 @@ func NewAppDecorator(ctx context.Context, cfg conf.EnvConfig, pool database.Dbx)
 		paymentService,
 		checker, // pass as ConstraintChecker
 		rbacService,
-		userService,
-		userAccountService,
 		taskService,
 		teamService,
 		adapter,
@@ -75,20 +69,18 @@ func NewAppDecorator(ctx context.Context, cfg conf.EnvConfig, pool database.Dbx)
 }
 
 type BaseAppDecorator struct {
-	app             *BaseApp
-	AuthFunc        func() services.AuthService
-	CfgFunc         func() *conf.EnvConfig
-	CheckerFunc     func() services.ConstraintChecker
-	DbFunc          func() database.Dbx
-	FsFunc          func() *filesystem.S3FileSystem
-	MailerFunc      func() mailer.Mailer
-	PaymentFunc     func() services.PaymentService
-	RbacFunc        func() services.RBACService
-	UserFunc        func() services.UserService
-	UserAccountFunc func() services.UserAccountService
-	TeamFunc        func() services.TeamService
-	TaskFunc        func() services.TaskService
-	AdapterFunc     func() stores.StorageAdapterInterface
+	app         *BaseApp
+	AuthFunc    func() services.AuthService
+	CfgFunc     func() *conf.EnvConfig
+	CheckerFunc func() services.ConstraintChecker
+	DbFunc      func() database.Dbx
+	FsFunc      func() *filesystem.S3FileSystem
+	MailerFunc  func() mailer.Mailer
+	PaymentFunc func() services.PaymentService
+	RbacFunc    func() services.RBACService
+	TeamFunc    func() services.TeamService
+	TaskFunc    func() services.TaskService
+	AdapterFunc func() stores.StorageAdapterInterface
 }
 
 func (b *BaseAppDecorator) Adapter() stores.StorageAdapterInterface {
@@ -169,18 +161,4 @@ func (b *BaseAppDecorator) Team() services.TeamService {
 		return b.TeamFunc()
 	}
 	return b.app.Team()
-}
-
-func (b *BaseAppDecorator) User() services.UserService {
-	if b.UserFunc != nil {
-		return b.UserFunc()
-	}
-	return b.app.User()
-}
-
-func (b *BaseAppDecorator) UserAccount() services.UserAccountService {
-	if b.UserAccountFunc != nil {
-		return b.UserAccountFunc()
-	}
-	return b.app.UserAccount()
 }
