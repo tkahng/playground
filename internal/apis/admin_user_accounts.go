@@ -4,6 +4,7 @@ import (
 	"context"
 	"math"
 
+	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/stores"
 	"github.com/tkahng/authgo/internal/tools/mapper"
@@ -38,11 +39,11 @@ func (p ApiProviders) String() string {
 type UserAccountFilter struct {
 	PaginatedInput
 	SortParams
-	Providers     []ApiProviders     `query:"providers,omitempty" required:"false" uniqueItems:"true" minimum:"1" maximum:"100" enum:"google,apple,facebook,github,credentials"`
-	ProviderTypes []ApiProviderTypes `query:"provider_types,omitempty" required:"false" uniqueItems:"true" minimum:"1" maximum:"100" enum:"oauth,credentials"`
-	Q             string             `query:"q,omitempty" required:"false"`
-	Ids           []string           `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
-	UserIds       []string           `query:"user_ids,omitempty" minimum:"1" maximum:"100" required:"false" format:"uuid"`
+	Providers     []models.Providers     `query:"providers,omitempty" required:"false" uniqueItems:"true" minimum:"1" maximum:"100" enum:"google,apple,facebook,github,credentials"`
+	ProviderTypes []models.ProviderTypes `query:"provider_types,omitempty" required:"false" uniqueItems:"true" minimum:"1" maximum:"100" enum:"oauth,credentials"`
+	Q             string                 `query:"q,omitempty" required:"false"`
+	Ids           []string               `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+	UserIds       []string               `query:"user_ids,omitempty" minimum:"1" maximum:"100" required:"false" format:"uuid"`
 }
 
 func GenerateMeta(input *shared.PaginatedInput, total int64) Meta {
@@ -81,6 +82,8 @@ func (api *Api) AdminUserAccounts(ctx context.Context, input *UserAccountFilter)
 	filter.Q = input.Q
 	filter.Ids = utils.ParseValidUUIDs(input.Ids...)
 	filter.UserIds = utils.ParseValidUUIDs(input.UserIds...)
+	filter.Providers = input.Providers
+	filter.ProviderTypes = input.ProviderTypes
 
 	data, err := api.app.Adapter().UserAccount().ListUserAccounts(ctx, filter)
 	if err != nil {
