@@ -8,7 +8,7 @@ import (
 )
 
 func (api *Api) GetStripeSubscriptions(ctx context.Context, input *struct{}) (*struct {
-	Body *Subscription `json:"body,omitempty" required:"false"`
+	Body *StripeSubscription `json:"body,omitempty" required:"false"`
 }, error) {
 
 	customer := contextstore.GetContextCurrentCustomer(ctx)
@@ -22,7 +22,7 @@ func (api *Api) GetStripeSubscriptions(ctx context.Context, input *struct{}) (*s
 	}
 
 	output := &struct {
-		Body *Subscription `json:"body,omitempty" required:"false"`
+		Body *StripeSubscription `json:"body,omitempty" required:"false"`
 	}{
 		Body: FromModelSubscription(subWithPriceProduct),
 	}

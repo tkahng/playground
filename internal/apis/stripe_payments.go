@@ -72,7 +72,7 @@ func (api *Api) StripeBillingPortal(ctx context.Context, input *struct{}) (*Stri
 }
 
 type CheckoutSessionOutput struct {
-	Body Subscription
+	Body StripeSubscription
 }
 
 type StripeCheckoutSessionInput struct {

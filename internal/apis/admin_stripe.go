@@ -43,7 +43,7 @@ func ToStripeSubscriptionListFilter(input *StripeSubscriptionListParams) (*store
 
 func (api *Api) AdminStripeSubscriptions(ctx context.Context,
 	input *StripeSubscriptionListParams,
-) (*ApiPaginatedOutput[*Subscription], error) {
+) (*ApiPaginatedOutput[*StripeSubscription], error) {
 	filter, err := ToStripeSubscriptionListFilter(input)
 	if err != nil {
 		return nil, huma.Error400BadRequest("Invalid filter parameters", err)
@@ -58,8 +58,8 @@ func (api *Api) AdminStripeSubscriptions(ctx context.Context,
 	if err != nil {
 		return nil, err
 	}
-	return &ApiPaginatedOutput[*Subscription]{
-		Body: ApiPaginatedResponse[*Subscription]{
+	return &ApiPaginatedOutput[*StripeSubscription]{
+		Body: ApiPaginatedResponse[*StripeSubscription]{
 			Data: mapper.Map(subscriptions, FromModelSubscription),
 			Meta: ApiGenerateMeta(&input.PaginatedInput, count),
 		},
@@ -68,7 +68,7 @@ func (api *Api) AdminStripeSubscriptions(ctx context.Context,
 
 func (api *Api) AdminStripeSubscriptionsGet(ctx context.Context,
 	input *StripeSubscriptionGetParams,
-) (*struct{ Body *Subscription }, error) {
+) (*struct{ Body *StripeSubscription }, error) {
 	if input == nil || input.SubscriptionID == "" {
 		return nil, huma.Error400BadRequest("subscription_id is required")
 	}
@@ -85,7 +85,7 @@ func (api *Api) AdminStripeSubscriptionsGet(ctx context.Context,
 	if len(subscriptions) == 0 {
 		return nil, nil
 	}
-	return &struct{ Body *Subscription }{Body: FromModelSubscription(subscriptions[0])}, nil
+	return &struct{ Body *StripeSubscription }{Body: FromModelSubscription(subscriptions[0])}, nil
 }
 
 func ToStripeProductListFilter(input *StripeProductListParams) (*stores.StripeProductFilter, error) {

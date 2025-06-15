@@ -21,7 +21,7 @@ const (
 	StripeSubscriptionStatusPaused            StripeSubscriptionStatus = "paused"
 )
 
-type Subscription struct {
+type StripeSubscription struct {
 	_                  struct{}                 `db:"stripe_subscriptions" json:"-"`
 	ID                 string                   `db:"id" json:"id"`
 	StripeCustomerID   string                   `db:"stripe_customer_id" json:"stripe_customer_id"`
@@ -53,24 +53,24 @@ const (
 )
 
 type StripeCustomer struct {
-	_              struct{}           `db:"stripe_customers" json:"-"`
-	ID             string             `db:"id" json:"id"`
-	Email          string             `db:"email" json:"email"`
-	Name           *string            `db:"name" json:"name,omitempty" required:"false"`
-	UserID         *uuid.UUID         `db:"user_id" json:"user_id,omitempty" required:"false"`
-	TeamID         *uuid.UUID         `db:"team_id" json:"team_id,omitempty" required:"false"`
-	CustomerType   StripeCustomerType `db:"customer_type" json:"customer_type" enum:"user,team"`
-	BillingAddress *map[string]string `db:"billing_address" json:"billing_address"`
-	PaymentMethod  *map[string]string `db:"payment_method" json:"payment_method"`
-	CreatedAt      time.Time          `db:"created_at" json:"created_at"`
-	UpdatedAt      time.Time          `db:"updated_at" json:"updated_at"`
-	Team           *Team              `db:"team" src:"team_id" dest:"id" table:"teams" json:"team,omitempty"`
-	User           *ApiUser           `db:"user" src:"user_id" dest:"id" table:"users" json:"user,omitempty"`
-	Subscriptions  []*Subscription    `db:"subscriptions" src:"id" dest:"stripe_customer_id" table:"stripe_subscriptions" json:"subscriptions,omitempty"`
+	_              struct{}              `db:"stripe_customers" json:"-"`
+	ID             string                `db:"id" json:"id"`
+	Email          string                `db:"email" json:"email"`
+	Name           *string               `db:"name" json:"name,omitempty" required:"false"`
+	UserID         *uuid.UUID            `db:"user_id" json:"user_id,omitempty" required:"false"`
+	TeamID         *uuid.UUID            `db:"team_id" json:"team_id,omitempty" required:"false"`
+	CustomerType   StripeCustomerType    `db:"customer_type" json:"customer_type" enum:"user,team"`
+	BillingAddress *map[string]string    `db:"billing_address" json:"billing_address"`
+	PaymentMethod  *map[string]string    `db:"payment_method" json:"payment_method"`
+	CreatedAt      time.Time             `db:"created_at" json:"created_at"`
+	UpdatedAt      time.Time             `db:"updated_at" json:"updated_at"`
+	Team           *Team                 `db:"team" src:"team_id" dest:"id" table:"teams" json:"team,omitempty"`
+	User           *ApiUser              `db:"user" src:"user_id" dest:"id" table:"users" json:"user,omitempty"`
+	Subscriptions  []*StripeSubscription `db:"subscriptions" src:"id" dest:"stripe_customer_id" table:"stripe_subscriptions" json:"subscriptions,omitempty"`
 }
 
-func FromModelSubscription(sub *models.StripeSubscription) *Subscription {
-	return &Subscription{
+func FromModelSubscription(sub *models.StripeSubscription) *StripeSubscription {
+	return &StripeSubscription{
 		ID:                 sub.ID,
 		StripeCustomerID:   sub.StripeCustomerID,
 		Status:             StripeSubscriptionStatus(sub.Status),
@@ -92,9 +92,9 @@ func FromModelSubscription(sub *models.StripeSubscription) *Subscription {
 }
 
 type SubscriptionWithPrice struct {
-	Price        StripePrice   `json:"price"`
-	Subscription Subscription  `json:"subscription"`
-	Product      StripeProduct `json:"product"`
+	Price        StripePrice        `json:"price"`
+	Subscription StripeSubscription `json:"subscription"`
+	Product      StripeProduct      `json:"product"`
 }
 
 // type SubscriptionWithData struct {
