@@ -7,7 +7,7 @@ import {
   useLocation,
 } from "react-router";
 
-export default function AuthenticatedLayoutBase() {
+export default function AuthenticatedLayoutOutlet() {
   const location = useLocation();
   const { user, checkAuth } = useAuthProvider();
   const isMounted = useRef(false);

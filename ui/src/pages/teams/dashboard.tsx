@@ -92,7 +92,7 @@ export default function TeamDashboard() {
   return (
     // <div className="flex flex-col min-h-screen">
     //   <main className="flex-1 py-6 bg-gray-50 dark:bg-gray-900">
-    <div className="container px-4 md:px-6">
+    <div className="mx-auto px-8 py-8 justify-start items-stretch flex-1 max-w-[1200px]">
       {/* <div className="space-y-6"> */}
       <div className="flex items-center justify-between mb-6">
         <div>

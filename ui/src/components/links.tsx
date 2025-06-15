@@ -131,6 +131,12 @@ export const teamDashboardLinks: LinkDto[] = [
   RouteLinks.ADMIN_DASHBOARD_PERMISSIONS,
 ];
 
+export const teamLinks = (slug: string): LinkDto[] => [
+  createTeamDashboardLink(slug),
+  createTeamProjectsLink(slug),
+  createTeamSettingsLink(slug),
+];
+
 export const createTeamDashboardLink = (slug: string) => {
   const path = `/teams/${slug}/dashboard`;
   return {

@@ -1,5 +1,5 @@
 import AdminLayoutBase from "@/layouts/admin-layout-base";
-import AuthenticatedLayoutBase from "@/layouts/authenticated-layout-base";
+import AuthenticatedLayoutOutlet from "@/layouts/authenticated-layout-outlet";
 import DashboardLayout from "@/layouts/dashboard-layout";
 import RootLayout from "@/layouts/root";
 import PermissionEdit from "@/pages/admin/permissions/permissions-edit";
@@ -31,6 +31,7 @@ import { RouteMap } from "./components/route-map";
 import AdminLayout from "./layouts/admin-layout";
 import PageSectionLayout from "./layouts/page-section";
 import PublicLayout from "./layouts/public-layout";
+import TeamDashboardLayout from "./layouts/team-dashboard-layout";
 import NotFoundPage from "./pages/404";
 import AdminDashboardPage from "./pages/admin/admin-dashboard";
 import ProductEditPage from "./pages/admin/products/products-edit";
@@ -48,6 +49,48 @@ import ProtectedRoutePage from "./pages/protected-routes/protected-route-page";
 import ProtectedRouteIndex from "./pages/protected-routes/route-index";
 import TeamDashboard from "./pages/teams/dashboard";
 import TeamListPage from "./pages/teams/team-list";
+
+function TeamRoutes() {
+  return (
+    <>
+      <Route element={<AuthenticatedLayoutOutlet />}>
+        <Route element={<TeamDashboardLayout />}>
+          <Route
+            path={`/teams/:teamSlug/dashboard`}
+            element={<TeamDashboard />}
+          />
+          <Route element={<PageSectionLayout title="Projects" />}>
+            <Route element={<TaskLayout />}>
+              <Route
+                path={`/teams/:teamSlug/projects`}
+                element={<ProjectListPage />}
+              />
+              <Route
+                path={`/teams/:teamSlug/projects/:projectId`}
+                element={<ProjectEdit />}
+              />
+            </Route>
+          </Route>
+        </Route>
+
+        <Route
+          path={`/protected`}
+          element={
+            <DashboardLayout headerLinks={authenticatedSubHeaderLinks} />
+          }
+        >
+          <Route element={<PageSectionLayout title="Protected" />}>
+            <Route element={<ProtectedRouteLayout />}>
+              <Route index element={<ProtectedRouteIndex />} />
+              <Route path=":permission" element={<ProtectedRoutePage />} />
+            </Route>
+          </Route>
+        </Route>
+      </Route>
+    </>
+  );
+}
+
 function App() {
   return (
     <>
@@ -84,14 +127,7 @@ function App() {
               />
             </Route>
 
-            <Route element={<AuthenticatedLayoutBase />}>
-              <Route path={RouteMap.PAYMENT}>
-                <Route path="success" element={<PaymentSuccessPage />} />
-              </Route>
-            </Route>
-
-            <Route element={<AuthenticatedLayoutBase />}>
-              {/* user pages */}
+            <Route element={<AuthenticatedLayoutOutlet />}>
               <Route
                 // dashboard
                 children={
@@ -99,6 +135,12 @@ function App() {
                 }
                 element={<DashboardLayout headerLinks={userDashboardLinks} />}
               />
+              <Route path={RouteMap.PAYMENT}>
+                <Route path="success" element={<PaymentSuccessPage />} />
+              </Route>
+            </Route>
+
+            <Route element={<AuthenticatedLayoutOutlet />}>
               <Route
                 // dashboard
                 path={`/teams`}
@@ -118,56 +160,7 @@ function App() {
                 </Route>
               </Route>
             </Route>
-
-            <Route element={<AuthenticatedLayoutBase />}>
-              <Route
-                element={
-                  <DashboardLayout headerLinks={authenticatedSubHeaderLinks} />
-                }
-              >
-                <Route
-                  path={`/teams/:teamSlug/dashboard`}
-                  element={<TeamDashboard />}
-                />
-              </Route>
-
-              <Route
-                // path={RouteMap.TASK_PROJECTS}
-                element={
-                  <DashboardLayout headerLinks={authenticatedSubHeaderLinks} />
-                }
-              >
-                <Route element={<PageSectionLayout title="Projects" />}>
-                  <Route element={<TaskLayout />}>
-                    <Route
-                      path={`/teams/:teamSlug/projects`}
-                      element={<ProjectListPage />}
-                    />
-                    <Route
-                      path={`/teams/:teamSlug/projects/:projectId`}
-                      element={<ProjectEdit />}
-                    />
-                  </Route>
-                </Route>
-              </Route>
-              <Route
-                path={`/protected`}
-                element={
-                  <DashboardLayout headerLinks={authenticatedSubHeaderLinks} />
-                }
-              >
-                <Route element={<PageSectionLayout title="Protected" />}>
-                  <Route element={<ProtectedRouteLayout />}>
-                    <Route index element={<ProtectedRouteIndex />} />
-                    <Route
-                      path=":permission"
-                      element={<ProtectedRoutePage />}
-                    />
-                  </Route>
-                </Route>
-              </Route>
-            </Route>
-
+            {TeamRoutes()}
             <Route path={"/admin"} element={<AdminLayoutBase />}>
               <Route element={<AdminLayout headerLinks={adminHeaderLinks} />}>
                 <Route index element={<AdminDashboardPage />} />
