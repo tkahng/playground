@@ -96,19 +96,49 @@ func (s *DbTeamMemberStore) LoadTeamMembersByUserAndTeamIds(ctx context.Context,
 	})
 	return memberMap, nil
 }
-
-func (s *DbTeamMemberStore) FindTeamMembers(ctx context.Context, filter *TeamMemberFilter) ([]*models.TeamMember, error) {
-	where := s.filter(filter)
-	sort := s.sort(filter)
-	limit, offset := filter.LimitOffset()
-	members, err := repository.TeamMember.Get(
+func (s *DbTeamMemberStore) CountTeamMembers(ctx context.Context, filter *TeamMemberFilter) (int64, error) {
+	qs := squirrel.Select("COUNT(team_members.*)").From("team_members")
+	qs = s.filterQuery(qs, filter)
+	c, err := database.QueryWithBuilder[database.CountOutput](
 		ctx,
 		s.db,
-		where,
-		sort,
-		&limit,
-		&offset,
+		qs.PlaceholderFormat(squirrel.Dollar),
 	)
+	// where := s.filter(filter)
+	// c, err := repository.TeamMember.Count(
+	// 	ctx,
+	// 	s.db,
+	// 	where,
+	// )
+	if err != nil {
+		return 0, err
+	}
+	if len(c) == 0 {
+		return 0, nil
+	}
+	return c[0].Count, nil
+}
+func (s *DbTeamMemberStore) FindTeamMembers(ctx context.Context, filter *TeamMemberFilter) ([]*models.TeamMember, error) {
+	qs := squirrel.Select("team_members.*").From("team_members")
+	qs = s.filterQuery(qs, filter)
+	qs = s.sortQuery(qs, filter)
+	qs = queryPagination(qs, filter)
+	members, err := database.QueryWithBuilder[*models.TeamMember](
+		ctx,
+		s.db,
+		qs.PlaceholderFormat(squirrel.Dollar),
+	)
+	// where := s.filter(filter)
+	// sort := s.sort(filter)
+	// limit, offset := filter.LimitOffset()
+	// members, err := repository.TeamMember.Get(
+	// 	ctx,
+	// 	s.db,
+	// 	where,
+	// 	sort,
+	// 	&limit,
+	// 	&offset,
+	// )
 	if err != nil {
 		return nil, err
 	}
@@ -150,6 +180,48 @@ func (s *DbTeamMemberStore) filter(filter *TeamMemberFilter) *map[string]any {
 	}
 	return &where
 }
+func (s *DbTeamMemberStore) filterQuery(qs squirrel.SelectBuilder, filter *TeamMemberFilter) squirrel.SelectBuilder {
+	if filter == nil {
+		return qs
+	}
+	if filter.Q != "" {
+
+	}
+	if len(filter.Ids) > 0 {
+		qs = qs.Where(squirrel.Eq{models.TeamMemberTable.ID: filter.Ids})
+
+	}
+	if len(filter.Roles) > 0 {
+		qs = qs.Where(
+			squirrel.Eq{
+				models.TeamMemberTable.Role: filter.Roles,
+			},
+		)
+
+	}
+	if len(filter.TeamIds) > 0 {
+		qs = qs.Where(
+			squirrel.Eq{
+				models.TeamMemberTable.TeamID: filter.TeamIds,
+			},
+		)
+	}
+	if len(filter.UserIds) > 0 {
+		qs = qs.Where(
+			squirrel.Eq{
+				models.TeamMemberTable.UserID: filter.UserIds,
+			},
+		)
+	}
+	if filter.Active.IsSet {
+		qs = qs.Where(
+			squirrel.Eq{
+				models.TeamMemberTable.Active: filter.Active.Value,
+			},
+		)
+	}
+	return qs
+}
 
 func (s *DbTeamMemberStore) FindTeamMember(ctx context.Context, filter *TeamMemberFilter) (*models.TeamMember, error) {
 	where := s.filter(filter)
@@ -164,22 +236,37 @@ func (s *DbTeamMemberStore) FindTeamMember(ctx context.Context, filter *TeamMemb
 	return member, nil
 }
 
-func (s *DbTeamMemberStore) sort(filter Sortable) *map[string]string {
+func (s *DbTeamMemberStore) sortQuery(qs squirrel.SelectBuilder, filter Sortable) squirrel.SelectBuilder {
 	if filter == nil {
-		return nil // return nil if no filter is provided
+		return qs // return original query if no filter is provided
 	}
-
 	sortBy, sortOrder := filter.Sort()
 	if sortBy != "" && slices.Contains(repository.TeamMemberBuilder.ColumnNames(), utils.Quote(sortBy)) {
-		return &map[string]string{
-			sortBy: sortOrder,
-		}
+		qs = qs.OrderBy(utils.Quote(sortBy) + " " + strings.ToUpper(sortOrder))
+	} else if sortBy == "team.name" {
+		qs = qs.Join("teams on team_members.team_id = teams.id").OrderBy("teams.name " + strings.ToUpper(sortOrder))
 	} else {
-		slog.Info("sort by field not found in repository columns", "sortBy", sortBy, "sortOrder", sortOrder, "columns", repository.UserBuilder.ColumnNames())
+		slog.Info("sort by field not found in repository columns", "sortBy", sortBy, "sortOrder", sortOrder, "columns", repository.TeamMemberBuilder.ColumnNames())
 	}
-
-	return nil // default no sorting
+	return qs
 }
+
+// func (s *DbTeamMemberStore) sort(filter Sortable) *map[string]string {
+// 	if filter == nil {
+// 		return nil // return nil if no filter is provided
+// 	}
+
+// 	sortBy, sortOrder := filter.Sort()
+// 	if sortBy != "" && slices.Contains(repository.TeamMemberBuilder.ColumnNames(), utils.Quote(sortBy)) {
+// 		return &map[string]string{
+// 			sortBy: sortOrder,
+// 		}
+// 	} else {
+// 		slog.Info("sort by field not found in repository columns", "sortBy", sortBy, "sortOrder", sortOrder, "columns", repository.UserBuilder.ColumnNames())
+// 	}
+
+// 	return nil // default no sorting
+// }
 
 func (s *DbTeamMemberStore) CreateTeamFromUser(ctx context.Context, user *models.User) (*models.TeamMember, error) {
 	team, err := repository.Team.PostOne(
@@ -251,18 +338,6 @@ func (s *DbTeamMemberStore) UpdateTeamMember(ctx context.Context, member *models
 }
 
 // CountTeamMembers implements services.TeamStore.
-func (s *DbTeamMemberStore) CountTeamMembers(ctx context.Context, filter *TeamMemberFilter) (int64, error) {
-	where := s.filter(filter)
-	c, err := repository.TeamMember.Count(
-		ctx,
-		s.db,
-		where,
-	)
-	if err != nil {
-		return 0, err
-	}
-	return c, nil
-}
 
 // UpdateTeamMemberSelectedAt implements TeamQueryer.
 func (s *DbTeamMemberStore) UpdateTeamMemberSelectedAt(ctx context.Context, teamId, userId uuid.UUID) error {
