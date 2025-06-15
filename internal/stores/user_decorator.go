@@ -7,7 +7,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
-	"github.com/tkahng/authgo/internal/shared"
 )
 
 type UserStoreDecorator struct {
@@ -18,7 +17,7 @@ type UserStoreDecorator struct {
 	DeleteUserFunc         func(ctx context.Context, userId uuid.UUID) error
 	FindUserFunc           func(ctx context.Context, user *UserFilter) (*models.User, error)
 	FindUserByIDFunc       func(ctx context.Context, userId uuid.UUID) (*models.User, error)
-	GetUserInfoFunc        func(ctx context.Context, email string) (*shared.UserInfo, error)
+	GetUserInfoFunc        func(ctx context.Context, email string) (*models.UserInfo, error)
 	LoadUsersByUserIdsFunc func(ctx context.Context, userIds ...uuid.UUID) ([]*models.User, error)
 	UpdateUserFunc         func(ctx context.Context, user *models.User) error
 	UserWhereFunc          func(user *models.User) *map[string]any
@@ -119,7 +118,7 @@ func (u *UserStoreDecorator) FindUserByID(ctx context.Context, userId uuid.UUID)
 }
 
 // GetUserInfo implements DbUserStoreInterface.
-func (u *UserStoreDecorator) GetUserInfo(ctx context.Context, email string) (*shared.UserInfo, error) {
+func (u *UserStoreDecorator) GetUserInfo(ctx context.Context, email string) (*models.UserInfo, error) {
 	if u.GetUserInfoFunc != nil {
 		return u.GetUserInfoFunc(ctx, email)
 	}

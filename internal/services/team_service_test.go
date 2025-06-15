@@ -8,7 +8,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/tkahng/authgo/internal/models"
-	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/stores"
 )
 
@@ -79,7 +78,7 @@ func TestTeamService_CreateTeam_Success(t *testing.T) {
 
 	// mockStore.On("CheckTeamSlug", ctx, slug).Return(true, nil)
 
-	expectedTeamInfo := &shared.TeamInfoModel{
+	expectedTeamInfo := &models.TeamInfoModel{
 		User: models.User{ID: userID},
 		Team: models.Team{ID: teamID, Name: name, Slug: slug},
 		Member: models.TeamMember{

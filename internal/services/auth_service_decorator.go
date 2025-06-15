@@ -21,8 +21,8 @@ type AuthServiceDecorator struct {
 	CreateOAuthUrlFunc             func(ctx context.Context, provider shared.Providers, redirectUrl string) (string, error)
 	AuthenticateFunc               func(ctx context.Context, params *shared.AuthenticationInput) (*models.User, error)
 	CheckResetPasswordTokenFunc    func(ctx context.Context, token string) error
-	HandleAccessTokenFunc          func(ctx context.Context, token string) (*shared.UserInfo, error)
-	HandleRefreshTokenFunc         func(ctx context.Context, token string) (*shared.UserInfoTokens, error)
+	HandleAccessTokenFunc          func(ctx context.Context, token string) (*models.UserInfo, error)
+	HandleRefreshTokenFunc         func(ctx context.Context, token string) (*models.UserInfoTokens, error)
 	HandlePasswordResetRequestFunc func(ctx context.Context, email string) error
 	HandlePasswordResetTokenFunc   func(ctx context.Context, token string, password string) error
 	HandleVerificationTokenFunc    func(ctx context.Context, token string) error
@@ -32,7 +32,7 @@ type AuthServiceDecorator struct {
 	VerifyAndParseOtpTokenFunc     func(ctx context.Context, emailType mailer.EmailType, token string) (*shared.OtpClaims, error)
 	VerifyStateTokenFunc           func(ctx context.Context, token string) (*shared.ProviderStateClaims, error)
 	CreateAndPersistStateTokenFunc func(ctx context.Context, payload *shared.ProviderStatePayload) (string, error)
-	CreateAuthTokensFromEmailFunc  func(ctx context.Context, email string) (*shared.UserInfoTokens, error)
+	CreateAuthTokensFromEmailFunc  func(ctx context.Context, email string) (*models.UserInfoTokens, error)
 	FetchAuthUserFunc              func(ctx context.Context, code string, parsedState *shared.ProviderStateClaims) (*oauth.AuthUser, error)
 }
 
@@ -117,7 +117,7 @@ func (a *AuthServiceDecorator) CreateAndPersistStateToken(ctx context.Context, p
 }
 
 // CreateAuthTokensFromEmail implements AuthService.
-func (a *AuthServiceDecorator) CreateAuthTokensFromEmail(ctx context.Context, email string) (*shared.UserInfoTokens, error) {
+func (a *AuthServiceDecorator) CreateAuthTokensFromEmail(ctx context.Context, email string) (*models.UserInfoTokens, error) {
 	if a.CreateAuthTokensFromEmailFunc != nil {
 		return a.CreateAuthTokensFromEmailFunc(ctx, email)
 	}
@@ -133,7 +133,7 @@ func (a *AuthServiceDecorator) FetchAuthUser(ctx context.Context, code string, p
 }
 
 // HandleAccessToken implements AuthService.
-func (a *AuthServiceDecorator) HandleAccessToken(ctx context.Context, token string) (*shared.UserInfo, error) {
+func (a *AuthServiceDecorator) HandleAccessToken(ctx context.Context, token string) (*models.UserInfo, error) {
 	if a.HandleAccessTokenFunc != nil {
 		return a.HandleAccessTokenFunc(ctx, token)
 	}
@@ -157,7 +157,7 @@ func (a *AuthServiceDecorator) HandlePasswordResetToken(ctx context.Context, tok
 }
 
 // HandleRefreshToken implements AuthService.
-func (a *AuthServiceDecorator) HandleRefreshToken(ctx context.Context, token string) (*shared.UserInfoTokens, error) {
+func (a *AuthServiceDecorator) HandleRefreshToken(ctx context.Context, token string) (*models.UserInfoTokens, error) {
 	if a.HandleRefreshTokenFunc != nil {
 		return a.HandleRefreshTokenFunc(ctx, token)
 	}

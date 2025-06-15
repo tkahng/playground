@@ -17,7 +17,7 @@ type AuthenticatedInfoResponse struct {
 	// SetCookieOutput
 	SetCookie []http.Cookie `header:"Set-Cookie"`
 
-	Body shared.UserInfoTokens `json:"body"`
+	Body ApiUserInfoTokens `json:"body"`
 }
 
 func (api *Api) SignIn(ctx context.Context, input *struct{ Body *SigninDto }) (*AuthenticatedInfoResponse, error) {
@@ -47,7 +47,7 @@ func (api *Api) SignIn(ctx context.Context, input *struct{ Body *SigninDto }) (*
 		return nil, fmt.Errorf("error creating auth dto: %w", err)
 	}
 	return &AuthenticatedInfoResponse{
-		Body: *dto,
+		Body: *ToApiUserInfoTokens(dto),
 	}, nil
 
 }

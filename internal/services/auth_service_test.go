@@ -69,15 +69,15 @@ func TestHandleRefreshToken(t *testing.T) {
 					return "new.valid.token.here", nil
 				}
 
-				adapter.UserFunc.GetUserInfoFunc = func(ctx context.Context, email string) (*shared.UserInfo, error) {
-					return &shared.UserInfo{
-						User: shared.User{
+				adapter.UserFunc.GetUserInfoFunc = func(ctx context.Context, email string) (*models.UserInfo, error) {
+					return &models.UserInfo{
+						User: models.User{
 							ID:    uuid.New(),
 							Email: "test@example.com",
 						},
 					}, nil
 				}
-				adapter.TokenFunc.SaveTokenFunc = func(ctx context.Context, token *shared.CreateTokenDTO) error {
+				adapter.TokenFunc.SaveTokenFunc = func(ctx context.Context, token *stores.CreateTokenDTO) error {
 					return nil
 				}
 			},
@@ -324,7 +324,7 @@ func TestAuthenticate(t *testing.T) {
 					}, nil // Simulate account creation
 				}
 
-				storeDecorator.TokenFunc.SaveTokenFunc = func(ctx context.Context, token *shared.CreateTokenDTO) error {
+				storeDecorator.TokenFunc.SaveTokenFunc = func(ctx context.Context, token *stores.CreateTokenDTO) error {
 					return nil // Simulate token saving
 				}
 				// mockStorage.On("SaveToken", ctx, mock.Anything).Return(nil)
@@ -429,7 +429,7 @@ func TestAuthenticate(t *testing.T) {
 						Type:     models.ProviderTypeCredentials,
 					}, nil // Simulate account creation
 				}
-				storeDecorator.TokenFunc.SaveTokenFunc = func(ctx context.Context, token *shared.CreateTokenDTO) error {
+				storeDecorator.TokenFunc.SaveTokenFunc = func(ctx context.Context, token *stores.CreateTokenDTO) error {
 					return nil // Simulate token saving
 				}
 			},
@@ -479,7 +479,7 @@ func TestAuthenticate(t *testing.T) {
 					return nil // Simulate user update
 				}
 				// mockStorage.On("UpdateUser", ctx, mock.Anything).Return(nil)
-				storeDecorator.TokenFunc.SaveTokenFunc = func(ctx context.Context, token *shared.CreateTokenDTO) error {
+				storeDecorator.TokenFunc.SaveTokenFunc = func(ctx context.Context, token *stores.CreateTokenDTO) error {
 					return nil // Simulate token saving
 				}
 				// mockStorage.On("SaveToken", ctx, mock.Anything).Return(nil)

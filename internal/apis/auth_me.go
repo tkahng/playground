@@ -2,16 +2,47 @@ package apis
 
 import (
 	"context"
+	"time"
 
 	"github.com/danielgtaylor/huma/v2"
+	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/contextstore"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 )
 
+type UserAccountOutput struct {
+	ID                uuid.UUID        `db:"id,pk" json:"id"`
+	UserID            uuid.UUID        `db:"user_id" json:"user_id"`
+	Type              ApiProviderTypes `db:"type" json:"type" enum:"oauth,credentials"`
+	Provider          ApiProviders     `db:"provider" json:"provider" enum:"google,apple,facebook,github,credentials"`
+	ProviderAccountID string           `db:"provider_account_id" json:"provider_account_id"`
+	CreatedAt         time.Time        `db:"created_at" json:"created_at"`
+	UpdatedAt         time.Time        `db:"updated_at" json:"updated_at"`
+}
+
+func FromModelUserAccountOutput(u *models.UserAccount) *UserAccountOutput {
+	if u == nil {
+		return nil
+	}
+	return &UserAccountOutput{
+		ID:                u.ID,
+		UserID:            u.UserID,
+		Type:              ApiProviderTypes(u.Type),
+		Provider:          ApiProviders(u.Provider),
+		ProviderAccountID: u.ProviderAccountID,
+		CreatedAt:         u.CreatedAt,
+		UpdatedAt:         u.UpdatedAt,
+	}
+}
+
+type UserWithAccounts struct {
+	*ApiUser
+	Accounts []*UserAccountOutput `json:"accounts"`
+}
 type MeOutput struct {
-	Body *shared.UserWithAccounts
+	Body *UserWithAccounts
 }
 
 func (api *Api) Me(ctx context.Context, input *struct{}) (*MeOutput, error) {
@@ -33,9 +64,9 @@ func (api *Api) Me(ctx context.Context, input *struct{}) (*MeOutput, error) {
 	}
 
 	return &MeOutput{
-		Body: &shared.UserWithAccounts{
-			User:     shared.FromUserModel(user),
-			Accounts: mapper.Map(acc, shared.FromModelUserAccountOutput),
+		Body: &UserWithAccounts{
+			ApiUser:  FromUserModel(user),
+			Accounts: mapper.Map(acc, FromModelUserAccountOutput),
 		},
 	}, nil
 

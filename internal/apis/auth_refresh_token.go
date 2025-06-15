@@ -16,6 +16,6 @@ func (api *Api) RefreshToken(ctx context.Context, input *struct{ Body *RefreshTo
 	}
 
 	return &AuthenticatedInfoResponse{
-		Body: *claims,
+		Body: *ToApiUserInfoTokens(claims),
 	}, nil
 }

@@ -348,7 +348,7 @@ LIMIT 1;
 )
 
 // GetUserInfo implements UserStore.
-func (s *DbUserStore) GetUserInfo(ctx context.Context, email string) (*shared.UserInfo, error) {
+func (s *DbUserStore) GetUserInfo(ctx context.Context, email string) (*models.UserInfo, error) {
 	type rolePermissionClaims struct {
 		UserID      uuid.UUID          `json:"user_id" db:"user_id"`
 		Email       string             `json:"email" db:"email"`
@@ -369,18 +369,10 @@ func (s *DbUserStore) GetUserInfo(ctx context.Context, email string) (*shared.Us
 		return nil, fmt.Errorf("error getting user: %w", err)
 	}
 	if user == nil {
-		return nil, shared.ErrUserNotFound
+		return nil, errors.New("user not found")
 	}
-	result := &shared.UserInfo{
-		User: shared.User{
-			ID:              user.ID,
-			Email:           user.Email,
-			EmailVerifiedAt: user.EmailVerifiedAt,
-			Name:            user.Name,
-			Image:           user.Image,
-			CreatedAt:       user.CreatedAt,
-			UpdatedAt:       user.UpdatedAt,
-		},
+	result := &models.UserInfo{
+		User: *user,
 	}
 	roles, err := func() (*rolePermissionClaims, error) {
 		res, err := pgxscan.One(ctx, s.db, scan.StructMapper[rolePermissionClaims](), RawGetUserWithAllRolesAndPermissionsByEmail, email)
@@ -392,13 +384,10 @@ func (s *DbUserStore) GetUserInfo(ctx context.Context, email string) (*shared.Us
 	if err != nil {
 		return nil, fmt.Errorf("error getting user roles and permissions: %w", err)
 	}
-	var providers []shared.Providers
-	for _, provider := range roles.Providers {
-		providers = append(providers, shared.Providers(provider))
-	}
+
 	result.Roles = roles.Roles
 	result.Permissions = roles.Permissions
-	result.Providers = providers
+	result.Providers = roles.Providers
 
 	return result, nil
 }
@@ -460,7 +449,7 @@ type DbUserStoreInterface interface {
 	FindUserByID(ctx context.Context, userId uuid.UUID) (*models.User, error)
 	AssignUserRoles(ctx context.Context, userId uuid.UUID, roleNames ...string) error
 	DeleteUser(ctx context.Context, userId uuid.UUID) error
-	GetUserInfo(ctx context.Context, email string) (*shared.UserInfo, error)
+	GetUserInfo(ctx context.Context, email string) (*models.UserInfo, error)
 	UpdateUser(ctx context.Context, user *models.User) error
 	CreateUser(ctx context.Context, user *models.User) (*models.User, error)
 	LoadUsersByUserIds(ctx context.Context, userIds ...uuid.UUID) ([]*models.User, error)
@@ -623,39 +612,6 @@ func UpdateUserPassword(ctx context.Context, db database.Dbx, userId uuid.UUID, 
 		db,
 		account,
 	)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func UpdateMe(ctx context.Context, db database.Dbx, userId uuid.UUID, input *shared.UpdateMeInput) error {
-	user, err := repository.User.GetOne(
-		ctx,
-		db,
-		&map[string]any{
-			"id": map[string]any{
-				"_eq": userId.String(),
-			},
-		},
-	)
-	if err != nil {
-		return err
-	}
-	if user == nil {
-		return errors.New("user not found")
-	}
-	_, err = repository.User.PutOne(
-		ctx,
-		db,
-		&models.User{
-			ID:        userId,
-			Name:      input.Name,
-			Image:     input.Image,
-			UpdatedAt: time.Now(),
-		},
-	)
-
 	if err != nil {
 		return err
 	}

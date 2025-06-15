@@ -64,3 +64,22 @@ var UserTable = userTable{
 	StripeCustomer:  "stripe_customer",
 	TeamMembers:     "team_members",
 }
+
+type UserInfo struct {
+	User        User        `db:"user" json:"user"`
+	Roles       []string    `db:"roles" json:"roles"`
+	Permissions []string    `db:"permissions" json:"permissions"`
+	Providers   []Providers `db:"providers" json:"providers" enum:"google,apple,facebook,github,credentials"`
+}
+type UserInfoTokens struct {
+	UserInfo
+	Tokens TokenDto `json:"tokens"`
+}
+
+type TokenDto struct {
+	AccessToken string `json:"access_token"`
+	ExpiresIn   int64  `json:"expires_in" example:"3600"`
+	TokenType   string `json:"token_type" example:"Bearer"`
+	// Scope        string `json:"scope"`
+	RefreshToken string `json:"refresh_token"`
+}

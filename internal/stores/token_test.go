@@ -26,8 +26,8 @@ func TestTokenStore_CRUD(t *testing.T) {
 			return err
 		}
 		tokenStr := "tok_test_123"
-		tok := &shared.CreateTokenDTO{
-			Type:       shared.TokenType(models.TokenTypesAccessToken),
+		tok := &stores.CreateTokenDTO{
+			Type:       models.TokenTypes(models.TokenTypesAccessToken),
 			Identifier: "user@example.com",
 			Expires:    time.Now().Add(1 * time.Hour),
 			Token:      tokenStr,
@@ -56,8 +56,8 @@ func TestTokenStore_CRUD(t *testing.T) {
 		})
 
 		t.Run("GetToken_expired", func(t *testing.T) {
-			expiredTok := &shared.CreateTokenDTO{
-				Type:       shared.TokenTypesAccessToken,
+			expiredTok := &stores.CreateTokenDTO{
+				Type:       models.TokenTypesAccessToken,
 				Identifier: "user2@example.com",
 				Expires:    time.Now().Add(-1 * time.Hour),
 				Token:      "tok_expired",
@@ -72,8 +72,8 @@ func TestTokenStore_CRUD(t *testing.T) {
 		})
 
 		t.Run("VerifyTokenStorage", func(t *testing.T) {
-			tok2 := &shared.CreateTokenDTO{
-				Type:       shared.TokenTypesVerificationToken,
+			tok2 := &stores.CreateTokenDTO{
+				Type:       models.TokenTypesVerificationToken,
 				Identifier: "user3@example.com",
 				Expires:    time.Now().Add(1 * time.Hour),
 				Token:      "tok_verify",

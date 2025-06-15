@@ -73,7 +73,7 @@ func GenerateMeta(input *shared.PaginatedInput, total int64) Meta {
 	return meta
 }
 
-func (api *Api) AdminUserAccounts(ctx context.Context, input *UserAccountFilter) (*ApiPaginatedOutput[*shared.UserAccountOutput], error) {
+func (api *Api) AdminUserAccounts(ctx context.Context, input *UserAccountFilter) (*ApiPaginatedOutput[*UserAccountOutput], error) {
 	filter := &stores.UserAccountFilter{}
 	filter.Page = input.Page
 	filter.PerPage = input.PerPage
@@ -90,9 +90,9 @@ func (api *Api) AdminUserAccounts(ctx context.Context, input *UserAccountFilter)
 	if err != nil {
 		return nil, err
 	}
-	return &ApiPaginatedOutput[*shared.UserAccountOutput]{
-		Body: ApiPaginatedResponse[*shared.UserAccountOutput]{
-			Data: mapper.Map(data, shared.FromModelUserAccountOutput),
+	return &ApiPaginatedOutput[*UserAccountOutput]{
+		Body: ApiPaginatedResponse[*UserAccountOutput]{
+			Data: mapper.Map(data, FromModelUserAccountOutput),
 			Meta: ApiGenerateMeta(&input.PaginatedInput, count),
 		},
 	}, nil

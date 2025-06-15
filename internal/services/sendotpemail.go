@@ -9,13 +9,14 @@ import (
 	"github.com/tkahng/authgo/internal/conf"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/authgo/internal/stores"
 	"github.com/tkahng/authgo/internal/tools/mailer"
 	"github.com/tkahng/authgo/internal/tools/security"
 )
 
 type TokenSaver interface {
-	SaveToken(ctx context.Context, token *shared.CreateTokenDTO) error
-	SaveOtpToken(ctx context.Context, token *shared.CreateTokenDTO) error
+	SaveToken(ctx context.Context, token *stores.CreateTokenDTO) error
+	SaveOtpToken(ctx context.Context, token *stores.CreateTokenDTO) error
 }
 
 type TokenCreator interface {
@@ -62,10 +63,10 @@ func (app *OtpMailer) SendOtpEmail(emailType mailer.EmailType, ctx context.Conte
 		return fmt.Errorf("error at creating verification token: %w", err)
 	}
 
-	dto := &shared.CreateTokenDTO{
+	dto := &stores.CreateTokenDTO{
 		Expires:    claims.ExpiresAt.Time,
 		Token:      claims.Token,
-		Type:       claims.Type,
+		Type:       models.TokenTypes(claims.Type),
 		Identifier: claims.Email,
 		UserID:     &claims.UserId,
 	}

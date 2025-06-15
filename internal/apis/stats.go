@@ -5,26 +5,28 @@ import (
 	"errors"
 
 	"github.com/tkahng/authgo/internal/contextstore"
-	"github.com/tkahng/authgo/internal/queries"
-	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/authgo/internal/models"
 )
 
+type UserStats struct {
+	Task models.TaskStats `json:"task_stats" db:"task_stats"`
+}
+
 type StatsResponse struct {
-	Body *shared.UserStats `json:"body"`
+	Body *UserStats `json:"body"`
 }
 
 func (api *Api) Stats(ctx context.Context, input *struct{}) (*StatsResponse, error) {
-	db := api.app.Db()
 	user := contextstore.GetContextUserInfo(ctx)
 	if user == nil {
 		return nil, errors.New("user not found")
 	}
-	stats, err := queries.GetTeamTaskStats(ctx, db, user.User.ID)
+	stats, err := api.app.Adapter().Task().GetTeamTaskStats(ctx, user.User.ID)
 	if err != nil {
 		return nil, err
 	}
 	return &StatsResponse{
-		Body: &shared.UserStats{
+		Body: &UserStats{
 			Task: *stats,
 		},
 	}, nil

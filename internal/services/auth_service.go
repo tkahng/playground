@@ -31,8 +31,8 @@ type AuthService interface {
 	// handlers -----------------------------------------------------------------------------------------------------------
 
 	HandlePasswordResetRequest(ctx context.Context, email string) error
-	HandleAccessToken(ctx context.Context, token string) (*shared.UserInfo, error)
-	HandleRefreshToken(ctx context.Context, token string) (*shared.UserInfoTokens, error)
+	HandleAccessToken(ctx context.Context, token string) (*models.UserInfo, error)
+	HandleRefreshToken(ctx context.Context, token string) (*models.UserInfoTokens, error)
 	HandleVerificationToken(ctx context.Context, token string) error
 	HandlePasswordResetToken(ctx context.Context, token, password string) error
 	HandleCheckResetPasswordToken(ctx context.Context, token string) error
@@ -47,7 +47,7 @@ type AuthService interface {
 	FetchAuthUser(ctx context.Context, code string, parsedState *shared.ProviderStateClaims) (*oauth.AuthUser, error)
 	VerifyAndParseOtpToken(ctx context.Context, emailType mailer.EmailType, token string) (*shared.OtpClaims, error)
 	Authenticate(ctx context.Context, params *shared.AuthenticationInput) (*models.User, error)
-	CreateAuthTokensFromEmail(ctx context.Context, email string) (*shared.UserInfoTokens, error)
+	CreateAuthTokensFromEmail(ctx context.Context, email string) (*models.UserInfoTokens, error)
 	SendOtpEmail(emailType mailer.EmailType, ctx context.Context, user *models.User, adapter stores.StorageAdapterInterface) error
 }
 
@@ -191,10 +191,10 @@ func (app *BaseAuthService) SendOtpEmail(emailType mailer.EmailType, ctx context
 	if err != nil {
 		return fmt.Errorf("error at creating verification token: %w", err)
 	}
-	dto := &shared.CreateTokenDTO{
+	dto := &stores.CreateTokenDTO{
 		Expires:    claims.ExpiresAt.Time,
 		Token:      claims.Token,
-		Type:       claims.Type,
+		Type:       models.TokenTypes(claims.Type),
 		Identifier: claims.Email,
 		UserID:     &claims.UserId,
 	}
@@ -378,8 +378,8 @@ func (app *BaseAuthService) CreateAndPersistStateToken(ctx context.Context, payl
 		return token, err
 	}
 
-	err = app.adapter.Token().SaveToken(ctx, &shared.CreateTokenDTO{
-		Type:       shared.TokenTypesStateToken,
+	err = app.adapter.Token().SaveToken(ctx, &stores.CreateTokenDTO{
+		Type:       models.TokenTypesStateToken,
 		Identifier: payload.Token,
 		Expires:    config.Expires(),
 		Token:      payload.Token,
@@ -391,7 +391,7 @@ func (app *BaseAuthService) CreateAndPersistStateToken(ctx context.Context, payl
 }
 
 // CreateAuthTokensFromEmail implements AuthActions.
-func (app *BaseAuthService) CreateAuthTokensFromEmail(ctx context.Context, email string) (*shared.UserInfoTokens, error) {
+func (app *BaseAuthService) CreateAuthTokensFromEmail(ctx context.Context, email string) (*models.UserInfoTokens, error) {
 	user, err := app.adapter.User().GetUserInfo(ctx, email)
 	if err != nil {
 		return nil, err
@@ -399,7 +399,7 @@ func (app *BaseAuthService) CreateAuthTokensFromEmail(ctx context.Context, email
 	return app.CreateAuthTokens(ctx, user)
 }
 
-func (app *BaseAuthService) CreateAuthTokens(ctx context.Context, payload *shared.UserInfo) (*shared.UserInfoTokens, error) {
+func (app *BaseAuthService) CreateAuthTokens(ctx context.Context, payload *models.UserInfo) (*models.UserInfoTokens, error) {
 	if payload == nil {
 		return nil, fmt.Errorf("payload is nil")
 	}
@@ -449,8 +449,8 @@ func (app *BaseAuthService) CreateAuthTokens(ctx context.Context, payload *share
 		}
 		err = app.adapter.Token().SaveToken(
 			ctx,
-			&shared.CreateTokenDTO{
-				Type:       shared.TokenTypesRefreshToken,
+			&stores.CreateTokenDTO{
+				Type:       models.TokenTypesRefreshToken,
 				Identifier: claims.Email,
 				Expires:    opts.RefreshToken.Expires(),
 				Token:      claims.Token,
@@ -466,9 +466,9 @@ func (app *BaseAuthService) CreateAuthTokens(ctx context.Context, payload *share
 	if err != nil {
 		return nil, err
 	}
-	return &shared.UserInfoTokens{
+	return &models.UserInfoTokens{
 		UserInfo: *payload,
-		Tokens: shared.TokenDto{
+		Tokens: models.TokenDto{
 			AccessToken:  authToken,
 			RefreshToken: refreshToken,
 			ExpiresIn:    opts.AccessToken.Duration,
@@ -564,7 +564,7 @@ func (app *BaseAuthService) VerifyStateToken(ctx context.Context, token string) 
 	}
 	return &claims, nil
 }
-func (app *BaseAuthService) HandleAccessToken(ctx context.Context, token string) (*shared.UserInfo, error) {
+func (app *BaseAuthService) HandleAccessToken(ctx context.Context, token string) (*models.UserInfo, error) {
 	opts := app.options.Auth
 	var claims shared.AuthenticationClaims
 	err := app.token.ParseToken(token, opts.AccessToken, &claims)
@@ -575,7 +575,7 @@ func (app *BaseAuthService) HandleAccessToken(ctx context.Context, token string)
 }
 
 // HandleRefreshToken implements AuthActions.
-func (app *BaseAuthService) HandleRefreshToken(ctx context.Context, token string) (*shared.UserInfoTokens, error) {
+func (app *BaseAuthService) HandleRefreshToken(ctx context.Context, token string) (*models.UserInfoTokens, error) {
 	opts := app.options.Auth
 	var claims shared.RefreshTokenClaims
 	err := app.token.ParseToken(token, opts.RefreshToken, &claims)

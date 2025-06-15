@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"slices"
+	"time"
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
@@ -29,7 +30,7 @@ type UserListFilter struct {
 
 func (api *Api) AdminUsers(ctx context.Context, input *struct {
 	UserListFilter
-}) (*ApiPaginatedOutput[*shared.User], error) {
+}) (*ApiPaginatedOutput[*ApiUser], error) {
 	adapter := api.app.Adapter()
 	fmt.Printf("AdminUsers: %v", input.UserListFilter)
 	filter := &stores.UserFilter{}
@@ -80,16 +81,28 @@ func (api *Api) AdminUsers(ctx context.Context, input *struct {
 		}
 	}
 
-	return &ApiPaginatedOutput[*shared.User]{
-		Body: ApiPaginatedResponse[*shared.User]{
-			Data: mapper.Map(users, shared.FromUserModel),
+	return &ApiPaginatedOutput[*ApiUser]{
+		Body: ApiPaginatedResponse[*ApiUser]{
+			Data: mapper.Map(users, FromUserModel),
 			Meta: ApiGenerateMeta(&input.PaginatedInput, count),
 		},
 	}, nil
 }
 
+type UserMutationInput struct {
+	Email           string     `json:"email" required:"true" format:"email" maxLength:"100"`
+	Name            *string    `json:"name,omitempty" required:"false" maxLength:"100"`
+	Image           *string    `json:"image,omitempty" required:"false" format:"uri" maxLength:"200"`
+	EmailVerifiedAt *time.Time `json:"email_verified_at,omitempty" required:"false" format:"date-time"`
+}
+
+type UserCreateInput struct {
+	*UserMutationInput
+	Password string `json:"password" required:"true" minLength:"8" maxLength:"100"`
+}
+
 func (api *Api) AdminUsersCreate(ctx context.Context, input *struct {
-	Body shared.UserCreateInput
+	Body UserCreateInput
 }) (*struct {
 	Body *shared.User
 }, error) {
@@ -152,7 +165,7 @@ func (api *Api) AdminUsersDelete(ctx context.Context, input *struct {
 
 func (api *Api) AdminUsersUpdate(ctx context.Context, input *struct {
 	ID   uuid.UUID `path:"user-id" format:"uuid" required:"true"`
-	Body shared.UserMutationInput
+	Body UserMutationInput
 }) (*struct{}, error) {
 	adapter := api.app.Adapter()
 	user, err := adapter.User().FindUserByID(ctx, input.ID)

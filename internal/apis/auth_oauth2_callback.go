@@ -6,12 +6,10 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/authgo/internal/tools/mapper"
 )
-
-type OAuth2CallbackPostResponse struct {
-	Body *shared.UserInfoTokens
-}
 
 func (api *Api) OAuth2CallbackPost(ctx context.Context, input *OAuth2CallbackInput) (*AuthenticatedInfoResponse, error) {
 
@@ -30,9 +28,8 @@ func (api *Api) OAuth2CallbackPost(ctx context.Context, input *OAuth2CallbackInp
 	fmt.Println(uri.String())
 
 	return &AuthenticatedInfoResponse{
-		Body: dto.UserInfoTokens,
+		Body: dto.ApiUserInfoTokens,
 	}, nil
-	// return TokenDtoFromUserWithApp(ctx, h.app, user, uuid.NewString())
 }
 
 type OAuth2CallbackInput struct {
@@ -71,8 +68,43 @@ func (api *Api) OAuth2CallbackGet(ctx context.Context, input *OAuth2CallbackInpu
 
 }
 
+func FromUserModel(user *models.User) *ApiUser {
+	if user == nil {
+		return nil
+	}
+	return &ApiUser{
+		ID:              user.ID,
+		Email:           user.Email,
+		EmailVerifiedAt: user.EmailVerifiedAt,
+		Name:            user.Name,
+		Image:           user.Image,
+		CreatedAt:       user.CreatedAt,
+		UpdatedAt:       user.UpdatedAt,
+	}
+}
+
+func ToApiUserInfoTokens(userInfo *models.UserInfoTokens) *ApiUserInfoTokens {
+	if userInfo == nil {
+		return nil
+	}
+	return &ApiUserInfoTokens{
+		ApiUserInfo: ApiUserInfo{
+			User:        *FromUserModel(&userInfo.User),
+			Roles:       userInfo.Roles,
+			Permissions: userInfo.Permissions,
+			Providers:   mapper.Map(userInfo.Providers, func(p models.Providers) ApiProviders { return ApiProviders(p) }),
+		},
+		Tokens: TokenDto{
+			AccessToken:  userInfo.Tokens.AccessToken,
+			ExpiresIn:    userInfo.Tokens.ExpiresIn,
+			TokenType:    userInfo.Tokens.TokenType,
+			RefreshToken: userInfo.Tokens.RefreshToken,
+		},
+	}
+}
+
 type CallbackOutput struct {
-	shared.UserInfoTokens
+	ApiUserInfoTokens
 	RedirectTo string `json:"redirect_to"`
 }
 
@@ -113,7 +145,7 @@ func OAuth2Callback(ctx context.Context, api *Api, input *OAuth2CallbackInput) (
 		return nil, fmt.Errorf("error creating auth dto: %w", err)
 	}
 	return &CallbackOutput{
-		UserInfoTokens: *dto,
-		RedirectTo:     parsedState.RedirectTo,
+		ApiUserInfoTokens: *ToApiUserInfoTokens(dto),
+		RedirectTo:        parsedState.RedirectTo,
 	}, nil
 }

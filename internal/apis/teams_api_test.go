@@ -20,7 +20,7 @@ import (
 	"github.com/tkahng/authgo/internal/tools/utils"
 )
 
-func createTeamAndMember(app core.App, user *shared.User, teamName string) (*shared.TeamInfoModel, error) {
+func createTeamAndMember(app core.App, user *models.User, teamName string) (*models.TeamInfoModel, error) {
 
 	team, err := app.Adapter().TeamGroup().CreateTeam(context.Background(), teamName, strings.TrimSpace(teamName))
 	if err != nil {
@@ -30,7 +30,7 @@ func createTeamAndMember(app core.App, user *shared.User, teamName string) (*sha
 	if err != nil {
 		return nil, err
 	}
-	return &shared.TeamInfoModel{
+	return &models.TeamInfoModel{
 		Team: *team,
 		User: models.User{
 			ID:              user.ID,
@@ -40,7 +40,7 @@ func createTeamAndMember(app core.App, user *shared.User, teamName string) (*sha
 		Member: *member,
 	}, nil
 }
-func createVerifiedUser(app core.App) (*shared.UserInfo, error) {
+func createVerifiedUser(app core.App) (*models.UserInfo, error) {
 	nw := time.Now()
 	user, err := app.Adapter().User().CreateUser(context.Background(), &models.User{
 		Email:           "authenticated@example.com",
@@ -58,11 +58,11 @@ func createVerifiedUser(app core.App) (*shared.UserInfo, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &shared.UserInfo{
-		User: *shared.FromUserModel(user),
+	return &models.UserInfo{
+		User: *user,
 	}, nil
 }
-func createUnverifiedUser(app *core.BaseAppDecorator) (*shared.UserInfo, error) {
+func createUnverifiedUser(app *core.BaseAppDecorator) (*models.UserInfo, error) {
 	user, err := app.Adapter().User().CreateUser(context.Background(), &models.User{
 		Email: "authenticated@example.com",
 	})
@@ -78,8 +78,8 @@ func createUnverifiedUser(app *core.BaseAppDecorator) (*shared.UserInfo, error) 
 	if err != nil {
 		return nil, err
 	}
-	return &shared.UserInfo{
-		User: *shared.FromUserModel(user),
+	return &models.UserInfo{
+		User: *user,
 	}, nil
 }
 
@@ -253,9 +253,9 @@ func TestCreateTeam_SuccessfulCreation(t *testing.T) {
 		VerifiedHeader := fmt.Sprintf("Authorization: Bearer %s", tokensVerifiedTokens.Tokens.AccessToken)
 		sdasd := struct {
 			Name             string
-			ctxUserInfo      *shared.UserInfo
+			ctxUserInfo      *models.UserInfo
 			createTeamErr    error
-			createTeamResult *shared.TeamInfoModel
+			createTeamResult *models.TeamInfoModel
 			expectedErr      error
 			expectedOutput   *apis.TeamOutput
 			header           string

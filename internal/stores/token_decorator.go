@@ -5,14 +5,13 @@ import (
 
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
-	"github.com/tkahng/authgo/internal/shared"
 )
 
 type TokenStoreDecorator struct {
 	Delegate               *DbTokenStore
 	DeleteTokenFunc        func(ctx context.Context, token string) error
 	GetTokenFunc           func(ctx context.Context, token string) (*models.Token, error)
-	SaveTokenFunc          func(ctx context.Context, token *shared.CreateTokenDTO) error
+	SaveTokenFunc          func(ctx context.Context, token *CreateTokenDTO) error
 	VerifyTokenStorageFunc func(ctx context.Context, token string) error
 	WithTxFunc             func(dbx database.Dbx) *TokenStoreDecorator
 }
@@ -53,7 +52,7 @@ func (t *TokenStoreDecorator) GetToken(ctx context.Context, token string) (*mode
 }
 
 // SaveToken implements DbTokenStoreInterface.
-func (t *TokenStoreDecorator) SaveToken(ctx context.Context, token *shared.CreateTokenDTO) error {
+func (t *TokenStoreDecorator) SaveToken(ctx context.Context, token *CreateTokenDTO) error {
 	if t.SaveTokenFunc != nil {
 		return t.SaveTokenFunc(ctx, token)
 	}

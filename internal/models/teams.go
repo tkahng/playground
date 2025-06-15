@@ -142,3 +142,9 @@ var TeamMemberTable = teamMemberTable{
 	Team:             "team",
 	User:             "user",
 }
+
+type TeamInfoModel struct {
+	User   User       `json:"user"`
+	Team   Team       `json:"team"`
+	Member TeamMember `json:"member"`
+}

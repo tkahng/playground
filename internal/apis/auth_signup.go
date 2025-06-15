@@ -47,6 +47,6 @@ func (api *Api) SignUp(ctx context.Context, input *struct{ Body SignupInput }) (
 		return nil, fmt.Errorf("error creating auth dto: %w", err)
 	}
 	return &AuthenticatedInfoResponse{
-		Body: *dto,
+		Body: *ToApiUserInfoTokens(dto),
 	}, nil
 }

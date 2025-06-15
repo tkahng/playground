@@ -5,15 +5,26 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/shared"
 )
 
+type CreateTokenDTO struct {
+	Type       models.TokenTypes `db:"type" json:"type"`
+	Identifier string            `db:"identifier" json:"identifier"`
+	Expires    time.Time         `db:"expires" json:"expires"`
+	Token      string            `db:"token" json:"token"`
+	ID         *uuid.UUID        `db:"id" json:"id"`
+	UserID     *uuid.UUID        `db:"user_id" json:"user_id"`
+	Otp        *string           `db:"otp" json:"otp"`
+}
+
 type DbTokenStoreInterface interface {
 	GetToken(ctx context.Context, token string) (*models.Token, error)
-	SaveToken(ctx context.Context, token *shared.CreateTokenDTO) error
+	SaveToken(ctx context.Context, token *CreateTokenDTO) error
 	DeleteToken(ctx context.Context, token string) error
 	VerifyTokenStorage(ctx context.Context, token string) error
 }
@@ -53,7 +64,7 @@ func (a *DbTokenStore) GetToken(ctx context.Context, token string) (*models.Toke
 	return res, nil
 }
 
-func (a *DbTokenStore) SaveToken(ctx context.Context, token *shared.CreateTokenDTO) error {
+func (a *DbTokenStore) SaveToken(ctx context.Context, token *CreateTokenDTO) error {
 	_, err := repository.Token.PostOne(ctx, a.db, &models.Token{
 		Type:       models.TokenTypes(token.Type),
 		Identifier: token.Identifier,
