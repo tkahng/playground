@@ -37,6 +37,18 @@ type TaskDecorator struct {
 	UpdateTaskProjectUpdateDateFunc func(ctx context.Context, taskProjectID uuid.UUID) error
 	UpdateTaskRankStatusFunc        func(ctx context.Context, taskID uuid.UUID, position int64, status models.TaskStatus) error
 	WithTxFunc                      func(dbx database.Dbx) *DbTaskStore
+	GetTeamTaskStatsFunc            func(ctx context.Context, teamId uuid.UUID) (*models.TaskStats, error)
+}
+
+// GetTeamTaskStats implements DbTaskStoreInterface.
+func (t *TaskDecorator) GetTeamTaskStats(ctx context.Context, teamId uuid.UUID) (*models.TaskStats, error) {
+	if t.GetTeamTaskStatsFunc != nil {
+		return t.GetTeamTaskStatsFunc(ctx, teamId)
+	}
+	if t.Delegate == nil {
+		return nil, ErrDelegateNil
+	}
+	return t.Delegate.GetTeamTaskStats(ctx, teamId)
 }
 
 // CreateTaskProject implements DbTaskStoreInterface.
