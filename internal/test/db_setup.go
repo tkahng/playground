@@ -25,6 +25,7 @@ func DbSetup() (context.Context, *database.Queries) {
 }
 
 func WithTx(t *testing.T, fn func(ctx context.Context, db database.Dbx)) {
+	DbSetup()
 	ctx := context.Background()
 	tx, err := dbx.Begin(ctx)
 	if err != nil {
