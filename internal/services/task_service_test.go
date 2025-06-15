@@ -26,7 +26,7 @@ func TestDefineTaskOrderNumberByStatus(t *testing.T) {
 			t.Fatalf("failed to create user: %v", err)
 		}
 
-		member, err := adapter.TeamMember().CreateTeamFromUser(ctx, user)
+		member, err := adapter.TeamMember().CreateTeamMemberFromUserAndSlug(ctx, user, "TestTeam", models.TeamMemberRoleOwner)
 		if err != nil {
 			t.Fatalf("failed to create team from user: %v", err)
 		}

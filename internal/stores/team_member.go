@@ -46,6 +46,7 @@ type DbTeamMemberStoreInterface interface {
 	FindTeamMembersByUserID(ctx context.Context, userId uuid.UUID, paginate *TeamMemberListInput) ([]*models.TeamMember, error)
 	UpdateTeamMember(ctx context.Context, member *models.TeamMember) (*models.TeamMember, error)
 	UpdateTeamMemberSelectedAt(ctx context.Context, teamId uuid.UUID, userId uuid.UUID) error
+	CreateTeamMemberFromUserAndSlug(ctx context.Context, user *models.User, slug string, role models.TeamMemberRole) (*models.TeamMember, error)
 }
 
 type DbTeamMemberStore struct {
@@ -245,6 +246,8 @@ func (s *DbTeamMemberStore) sortQuery(qs squirrel.SelectBuilder, filter Sortable
 		qs = qs.OrderBy(utils.Quote(sortBy) + " " + strings.ToUpper(sortOrder))
 	} else if sortBy == "team.name" {
 		qs = qs.Join("teams on team_members.team_id = teams.id").OrderBy("teams.name " + strings.ToUpper(sortOrder))
+	} else if sortBy == "user.email" {
+		qs = qs.Join("users on team_members.user_id = users.id").OrderBy("users.email " + strings.ToUpper(sortOrder))
 	} else {
 		slog.Info("sort by field not found in repository columns", "sortBy", sortBy, "sortOrder", sortOrder, "columns", repository.TeamMemberBuilder.ColumnNames())
 	}
@@ -283,6 +286,7 @@ func (s *DbTeamMemberStore) CreateTeamFromUser(ctx context.Context, user *models
 	if team == nil {
 		return nil, errors.New("team not found")
 	}
+	// Create a team member for the user
 	teamMember, err := repository.TeamMember.PostOne(
 		ctx,
 		s.db,
@@ -291,6 +295,61 @@ func (s *DbTeamMemberStore) CreateTeamFromUser(ctx context.Context, user *models
 			UserID:           types.Pointer(user.ID),
 			Role:             models.TeamMemberRoleOwner,
 			HasBillingAccess: true,
+			Active:           true,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	if teamMember == nil {
+		return nil, errors.New("team member not found")
+	}
+	return teamMember, nil
+}
+
+func (s *DbTeamMemberStore) CreateTeamMemberFromUserAndSlug(ctx context.Context, user *models.User, slug string, role models.TeamMemberRole) (*models.TeamMember, error) {
+	team, err := repository.Team.GetOne(
+		ctx,
+		s.db,
+		&map[string]any{
+			models.TeamTable.Slug: map[string]any{
+				"_eq": slug,
+			},
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	if team == nil {
+		// If team already exists, just create a team member
+		team, err = repository.Team.PostOne(
+			ctx,
+			s.db,
+			&models.Team{
+				Name: slug,
+				Slug: slug,
+			},
+		)
+		if err != nil {
+			return nil, err
+		}
+		if team == nil {
+			return nil, errors.New("team not found")
+		}
+	}
+	billingAccess := true
+	if role != models.TeamMemberRoleOwner {
+		billingAccess = false
+	}
+	teamMember, err := repository.TeamMember.PostOne(
+		ctx,
+		s.db,
+		&models.TeamMember{
+			TeamID:           team.ID,
+			UserID:           types.Pointer(user.ID),
+			Role:             role,
+			HasBillingAccess: billingAccess,
+			Active:           true,
 		},
 	)
 	if err != nil {

@@ -14,7 +14,6 @@ import (
 )
 
 func TestGetUserTaskStats(t *testing.T) {
-
 	test.Short(t)
 	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
@@ -27,6 +26,7 @@ func TestGetUserTaskStats(t *testing.T) {
 			t.Fatalf("failed to create user: %v", err)
 		}
 		member, err := adapter.TeamMember().CreateTeamFromUser(ctx, user)
+		// member, err := adapter.TeamMember().CreateTeamMemberFromUserAndSlug(ctx, user, "TestTeam", models.TeamMemberRoleOwner)
 		if err != nil {
 			t.Fatalf("failed to create team from user: %v", err)
 		}
@@ -95,7 +95,7 @@ func TestLoadTaskProjectsTasks(t *testing.T) {
 			t.Fatalf("failed to create user: %v", err)
 		}
 
-		member, err := adapter.TeamMember().CreateTeamFromUser(ctx, user)
+		member, err := adapter.TeamMember().CreateTeamMemberFromUserAndSlug(ctx, user, "TestTeam", models.TeamMemberRoleOwner)
 		if err != nil {
 			t.Fatalf("failed to create team from user: %v", err)
 		}
@@ -189,7 +189,7 @@ func TestFindTaskByID(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to create user: %v", err)
 		}
-		member, err := teamstore.CreateTeamFromUser(ctx, user)
+		member, err := teamstore.CreateTeamMemberFromUserAndSlug(ctx, user, "TestTeam", models.TeamMemberRoleOwner)
 		if err != nil {
 			t.Fatalf("failed to create team from user: %v", err)
 		}
@@ -288,7 +288,7 @@ func TestFindLastTaskOrder(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to create user: %v", err)
 		}
-		member, err := adapter.TeamMember().CreateTeamFromUser(ctx, user)
+		member, err := adapter.TeamMember().CreateTeamMemberFromUserAndSlug(ctx, user, "TestTeam", models.TeamMemberRoleOwner)
 		if err != nil {
 			t.Fatalf("failed to create team from user: %v", err)
 		}
@@ -378,7 +378,7 @@ func TestDeleteTask(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to create user: %v", err)
 		}
-		member, err := adapter.TeamMember().CreateTeamFromUser(ctx, user)
+		member, err := adapter.TeamMember().CreateTeamMemberFromUserAndSlug(ctx, user, "TestTeam", models.TeamMemberRoleOwner)
 		if err != nil {
 			t.Fatalf("failed to create team from user: %v", err)
 		}
@@ -457,7 +457,7 @@ func TestFindTaskProjectByID(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to create user: %v", err)
 		}
-		member, err := teamstore.CreateTeamFromUser(ctx, user)
+		member, err := teamstore.CreateTeamMemberFromUserAndSlug(ctx, user, "TestTeam", models.TeamMemberRoleOwner)
 		if err != nil {
 			t.Fatalf("failed to create team from user: %v", err)
 		}
@@ -541,7 +541,7 @@ func TestDeleteTaskProject(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to create user: %v", err)
 		}
-		member, err := teamstore.CreateTeamFromUser(ctx, user)
+		member, err := teamstore.CreateTeamMemberFromUserAndSlug(ctx, user, "TestTeam", models.TeamMemberRoleOwner)
 		if err != nil {
 			t.Fatalf("failed to create team from user: %v", err)
 		}
@@ -608,7 +608,7 @@ func TestListTasks(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to create user: %v", err)
 		}
-		member, err := teamstore.CreateTeamFromUser(ctx, user)
+		member, err := teamstore.CreateTeamMemberFromUserAndSlug(ctx, user, "TestTeam", models.TeamMemberRoleOwner)
 		if err != nil {
 			t.Fatalf("failed to create team from user: %v", err)
 		}
@@ -719,7 +719,7 @@ func TestCountTasks(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to create user: %v", err)
 		}
-		member, err := teamstore.CreateTeamFromUser(ctx, user)
+		member, err := teamstore.CreateTeamMemberFromUserAndSlug(ctx, user, "TestTeam", models.TeamMemberRoleOwner)
 		if err != nil {
 			t.Fatalf("failed to create team from user: %v", err)
 		}
@@ -808,7 +808,7 @@ func TestListTaskProjects(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to create user: %v", err)
 		}
-		member, err := teamstore.CreateTeamFromUser(ctx, user)
+		member, err := teamstore.CreateTeamMemberFromUserAndSlug(ctx, user, "TestTeam", models.TeamMemberRoleOwner)
 		if err != nil {
 			t.Fatalf("failed to create team from user: %v", err)
 		}
@@ -907,7 +907,7 @@ func TestCountTaskProjects(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to create user: %v", err)
 		}
-		member, err := teamstore.CreateTeamFromUser(ctx, user)
+		member, err := teamstore.CreateTeamMemberFromUserAndSlug(ctx, user, "TestTeam", models.TeamMemberRoleOwner)
 		if err != nil {
 			t.Fatalf("failed to create team from user: %v", err)
 		}
@@ -985,7 +985,7 @@ func TestCreateTaskProject(t *testing.T) {
 			t.Fatalf("failed to create user: %v", err)
 		}
 
-		member, err := teamstore.CreateTeamFromUser(ctx, user)
+		member, err := teamstore.CreateTeamMemberFromUserAndSlug(ctx, user, "TestTeam", models.TeamMemberRoleOwner)
 		if err != nil {
 			t.Fatalf("failed to create team from user: %v", err)
 		}
@@ -1073,7 +1073,7 @@ func TestCreateTaskProjectWithTasks(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to create user: %v", err)
 		}
-		member, err := teamstore.CreateTeamFromUser(ctx, user)
+		member, err := teamstore.CreateTeamMemberFromUserAndSlug(ctx, user, "TestTeam", models.TeamMemberRoleOwner)
 		if err != nil {
 			t.Fatalf("failed to create team from user: %v", err)
 		}
@@ -1181,7 +1181,7 @@ func TestCreateTaskFromInput(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to create user: %v", err)
 		}
-		member, err := teamstore.CreateTeamFromUser(ctx, user)
+		member, err := teamstore.CreateTeamMemberFromUserAndSlug(ctx, user, "TestTeam", models.TeamMemberRoleOwner)
 		if err != nil {
 			t.Fatalf("failed to create team from user: %v", err)
 		}

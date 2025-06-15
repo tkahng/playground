@@ -18,69 +18,111 @@ import (
 )
 
 func TestTeamStore_UpdateTeamMember(t *testing.T) {
-	type fields struct {
-		db database.Dbx
-	}
-	type args struct {
-		ctx    context.Context
-		member *models.TeamMember
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		want    *models.TeamMember
-		wantErr bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			adapter := stores.NewStorageAdapter(tt.fields.db)
-			got, err := adapter.TeamMember().UpdateTeamMember(tt.args.ctx, tt.args.member)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("PostgresTeamStore.UpdateTeamMember() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("PostgresTeamStore.UpdateTeamMember() = %v, want %v", got, tt.want)
-			}
+	test.DbSetup()
+	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
+		adapter := stores.NewStorageAdapter(db)
+		user, err := adapter.User().CreateUser(ctx, &models.User{
+			Email: "testuser@example.com",
 		})
-	}
+		if err != nil {
+			t.Fatalf("CreateUser() error = %v", err)
+		}
+		if user == nil {
+			t.Fatal("CreateUser() returned nil user")
+		}
+		team1, err := adapter.TeamMember().CreateTeamMemberFromUserAndSlug(ctx, user, "TestTeam", models.TeamMemberRoleOwner)
+		if err != nil {
+			t.Fatalf("CreateTeamMemberFromUserAndSlug() error = %v", err)
+		}
+		if team1 == nil {
+			t.Fatal("CreateTeamMemberFromUserAndSlug() returned nil team member")
+		}
+		type args struct {
+			ctx    context.Context
+			member *models.TeamMember
+		}
+		tests := []struct {
+			name    string
+			args    args
+			want    *models.TeamMember
+			wantErr bool
+		}{
+			{
+				name: "update team member",
+				args: args{
+					ctx: ctx,
+					member: &models.TeamMember{
+						ID:               team1.ID,
+						TeamID:           team1.TeamID,
+						UserID:           team1.UserID,
+						Role:             models.TeamMemberRoleMember,
+						Active:           true,
+						HasBillingAccess: true,
+						LastSelectedAt:   team1.LastSelectedAt,
+					},
+				},
+				want: &models.TeamMember{
+					ID:               team1.ID,
+					TeamID:           team1.TeamID,
+					UserID:           team1.UserID,
+					Role:             models.TeamMemberRoleMember,
+					Active:           true,
+					HasBillingAccess: true,
+					LastSelectedAt:   team1.LastSelectedAt,
+				},
+				wantErr: false,
+			},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+
+				got, err := adapter.TeamMember().UpdateTeamMember(tt.args.ctx, tt.args.member)
+				if (err != nil) != tt.wantErr {
+					t.Errorf("PostgresTeamStore.UpdateTeamMember() error = %v, wantErr %v", err, tt.wantErr)
+					return
+				}
+				if !reflect.DeepEqual(got.Role, tt.want.Role) {
+					t.Errorf("PostgresTeamStore.UpdateTeamMember() = %v, want %v", got.Role, tt.want.Role)
+				}
+			})
+		}
+	})
 }
 
 func TestTeamStore_CountTeamMembers(t *testing.T) {
-	type fields struct {
-		db database.Dbx
-	}
-	type args struct {
-		ctx    context.Context
-		teamId uuid.UUID
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		want    int64
-		wantErr bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			s := stores.NewStorageAdapter(tt.fields.db)
-			got, err := s.TeamMember().CountTeamMembers(tt.args.ctx, &stores.TeamMemberFilter{
-				TeamIds: []uuid.UUID{tt.args.teamId},
+	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
+		type fields struct {
+			db database.Dbx
+		}
+		type args struct {
+			ctx    context.Context
+			teamId uuid.UUID
+		}
+		tests := []struct {
+			name    string
+			fields  fields
+			args    args
+			want    int64
+			wantErr bool
+		}{
+			// TODO: Add test cases.
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				s := stores.NewStorageAdapter(tt.fields.db)
+				got, err := s.TeamMember().CountTeamMembers(tt.args.ctx, &stores.TeamMemberFilter{
+					TeamIds: []uuid.UUID{tt.args.teamId},
+				})
+				if (err != nil) != tt.wantErr {
+					t.Errorf("PostgresTeamStore.CountTeamMembers() error = %v, wantErr %v", err, tt.wantErr)
+					return
+				}
+				if got != tt.want {
+					t.Errorf("PostgresTeamStore.CountTeamMembers() = %v, want %v", got, tt.want)
+				}
 			})
-			if (err != nil) != tt.wantErr {
-				t.Errorf("PostgresTeamStore.CountTeamMembers() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if got != tt.want {
-				t.Errorf("PostgresTeamStore.CountTeamMembers() = %v, want %v", got, tt.want)
-			}
-		})
-	}
+		}
+	})
 }
 
 func TestCreateTeamMember(t *testing.T) {
@@ -408,6 +450,41 @@ func TestDbTeamMemberStore_LoadTeamMembersByUserAndTeamIds(t *testing.T) {
 					} else {
 						t.Errorf("LoadTeamMembersByUserAndTeamIds() did not find member for team %v", teamMember.ID)
 					}
+				}
+			})
+		}
+	})
+}
+
+func TestDbTeamMemberStore_FindTeamMembers(t *testing.T) {
+	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
+		adapter := stores.NewStorageAdapter(db)
+		type fields struct {
+			db database.Dbx
+		}
+		type args struct {
+			ctx    context.Context
+			filter *stores.TeamMemberFilter
+		}
+		tests := []struct {
+			name    string
+			fields  fields
+			args    args
+			want    []*models.TeamMember
+			wantErr bool
+		}{
+			// TODO: Add test cases.
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+
+				got, err := adapter.TeamMember().FindTeamMembers(tt.args.ctx, tt.args.filter)
+				if (err != nil) != tt.wantErr {
+					t.Errorf("DbTeamMemberStore.FindTeamMembers() error = %v, wantErr %v", err, tt.wantErr)
+					return
+				}
+				if !reflect.DeepEqual(got, tt.want) {
+					t.Errorf("DbTeamMemberStore.FindTeamMembers() = %v, want %v", got, tt.want)
 				}
 			})
 		}
