@@ -452,3 +452,49 @@ func (api *Api) SetCurrentTeam(
 		},
 	}, nil
 }
+
+type FindTeamTeamMembersInput struct {
+	PaginatedInput
+	SortParams
+	TeamID string `path:"team-id" required:"true" format:"uuid"`
+}
+
+func (api *Api) FindTeamTeamMembers(
+	ctx context.Context,
+	input *FindTeamTeamMembersInput,
+) (
+	*ApiPaginatedOutput[*TeamMember],
+	error,
+) {
+	teamID, err := uuid.Parse(input.TeamID)
+	if err != nil {
+		return nil, huma.Error400BadRequest("invalid team ID")
+	}
+	info := contextstore.GetContextUserInfo(ctx)
+	if info == nil {
+		return nil, huma.Error401Unauthorized("unauthorized")
+	}
+	filter := &stores.TeamMemberFilter{}
+	filter.Page = input.Page
+	filter.PerPage = input.PerPage
+	filter.SortBy = input.SortBy
+	filter.SortOrder = input.SortOrder
+	filter.TeamIds = []uuid.UUID{teamID}
+	teams, err := api.app.Adapter().TeamMember().FindTeamMembers(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+	if len(teams) == 0 {
+		return nil, huma.Error500InternalServerError("teams not found")
+	}
+	count, err := api.app.Adapter().TeamMember().CountTeamMembers(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+	return &ApiPaginatedOutput[*TeamMember]{
+		Body: ApiPaginatedResponse[*TeamMember]{
+			Data: mapper.Map(teams, FromTeamMemberModel),
+			Meta: ApiGenerateMeta(&input.PaginatedInput, count),
+		},
+	}, nil
+}
