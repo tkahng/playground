@@ -44,6 +44,7 @@ export function NexusAILandingHeader({
           {rightLinks?.length && rightLinks.length > 0
             ? rightLinks.map(({ to, title, current }) => (
                 <Link
+                  key={to}
                   className={cn(
                     current
                       ? current(pathname)
