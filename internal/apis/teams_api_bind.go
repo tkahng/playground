@@ -135,7 +135,7 @@ func BindTeamsApi(api huma.API, appApi *Api) {
 		huma.Operation{
 			OperationID: "get-team-by-slug",
 			Method:      http.MethodGet,
-			Path:        "/teams/slug/{slug}",
+			Path:        "/teams/slug/{team-slug}",
 			Summary:     "get-team-by-slug",
 			Description: "get a team by slug",
 			Tags:        []string{"Teams"},
@@ -155,7 +155,7 @@ func BindTeamsApi(api huma.API, appApi *Api) {
 		huma.Operation{
 			OperationID: "get-team-member-by-slug",
 			Method:      http.MethodGet,
-			Path:        "/team/slug/{slug}/member",
+			Path:        "/team/slug/{team-slug}/member",
 			Summary:     "get-team-member-by-slug",
 			Description: "get a team member by team slug",
 			Tags:        []string{"Teams"},
