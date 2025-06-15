@@ -10,7 +10,6 @@ import (
 	"github.com/tkahng/authgo/internal/conf"
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
-	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/stores"
 	"github.com/tkahng/authgo/internal/tools/security"
 	"github.com/tkahng/authgo/internal/tools/types"
@@ -87,12 +86,12 @@ var superuserCreate = &cobra.Command{
 			}
 		}
 		if user != nil {
-			claims, err := queries.FindUserWithRolesAndPermissionsByEmail(ctx, dbx, args[0])
+			claims, err := adapter.User().GetUserInfo(ctx, args[0])
 			if err != nil {
 				return err
 			}
 			if !slices.Contains(claims.Roles, "superuser") {
-				err = queries.CreateUserRoles(ctx, dbx, user.ID, role.ID)
+				err = adapter.Rbac().CreateUserRoles(ctx, user.ID, role.ID)
 				if err != nil {
 					return err
 				}

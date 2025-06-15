@@ -10,8 +10,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/contextstore"
 	"github.com/tkahng/authgo/internal/models"
-	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/authgo/internal/stores"
+	"github.com/tkahng/authgo/internal/tools/utils"
 )
 
 func (api *Api) UploadMedia(ctx context.Context, input *struct {
@@ -20,7 +21,6 @@ func (api *Api) UploadMedia(ctx context.Context, input *struct {
 		Urls  []string        `form:"urls" format:"uri" required:"false" description:"Urls to upload"  minItems:"1" maxItems:"10" nullable:"false"`
 	}] `contentType:"multipart/form-data"`
 }) (*struct{}, error) {
-	db := api.app.Db()
 	user := contextstore.GetContextUserInfo(ctx)
 	if user == nil {
 		return nil, huma.Error404NotFound("User not found")
@@ -38,7 +38,7 @@ func (api *Api) UploadMedia(ctx context.Context, input *struct {
 			if err != nil {
 				return nil, err
 			}
-			_, err = queries.CreateMedia(ctx, db, &models.Medium{
+			_, err = api.app.Adapter().Media().CreateMedia(ctx, &models.Medium{
 				UserID:           &user.User.ID,
 				Disk:             dto.Disk,
 				Directory:        dto.Directory,
@@ -61,7 +61,7 @@ func (api *Api) UploadMedia(ctx context.Context, input *struct {
 			if err != nil {
 				return nil, err
 			}
-			_, err = queries.CreateMedia(ctx, db, &models.Medium{
+			_, err = api.app.Adapter().Media().CreateMedia(ctx, &models.Medium{
 				UserID:           &user.User.ID,
 				Disk:             dto.Disk,
 				Directory:        dto.Directory,
@@ -83,12 +83,11 @@ func (api *Api) UploadMedia(ctx context.Context, input *struct {
 func (api *Api) GetMedia(ctx context.Context, input *struct {
 	ID string `path:"id" format:"uuid" required:"true" description:"Id of the media"`
 }) (*shared.Media, error) {
-	db := api.app.Db()
 	id, err := uuid.Parse(input.ID)
 	if err != nil {
 		return nil, err
 	}
-	media, err := queries.FindMediaByID(ctx, db, id)
+	media, err := api.app.Adapter().Media().FindMediaByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -105,9 +104,23 @@ func (api *Api) GetMedia(ctx context.Context, input *struct {
 	}, nil
 }
 
-func (api *Api) MediaList(ctx context.Context, input *shared.MediaListParams) (*ApiPaginatedOutput[*shared.Media], error) {
-	db := api.app.Db()
-	medias, err := queries.ListMedia(ctx, db, input)
+type MediaListFilter struct {
+	PaginatedInput
+	SortParams
+	Q       string   `query:"q,omitempty" required:"false"`
+	UserIds []string `query:"user_ids,omitempty" format:"uuid" required:"false"`
+}
+
+func (api *Api) MediaList(ctx context.Context, input *MediaListFilter) (*ApiPaginatedOutput[*shared.Media], error) {
+	filter := &stores.MediaListFilter{}
+	filter.Page = input.Page
+	filter.PerPage = input.PerPage
+	filter.SortBy = input.SortBy
+	filter.SortOrder = input.SortOrder
+	filter.Q = input.Q
+	filter.UserIds = utils.ParseValidUUIDs(input.UserIds...)
+
+	medias, err := api.app.Adapter().Media().FindMedia(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -125,7 +138,7 @@ func (api *Api) MediaList(ctx context.Context, input *shared.MediaListParams) (*
 			UpdatedAt: media.UpdatedAt,
 		})
 	}
-	count, err := queries.CountMedia(ctx, db, &input.MediaListFilter)
+	count, err := api.app.Adapter().Media().CountMedia(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -133,7 +146,7 @@ func (api *Api) MediaList(ctx context.Context, input *shared.MediaListParams) (*
 	return &ApiPaginatedOutput[*shared.Media]{
 		Body: ApiPaginatedResponse[*shared.Media]{
 			Data: data,
-			Meta: GenerateMeta(&input.PaginatedInput, count),
+			Meta: ApiGenerateMeta(&input.PaginatedInput, count),
 		},
 	}, nil
 }

@@ -8,8 +8,8 @@ import (
 	"github.com/jaswdr/faker/v2"
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
-	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/repository"
+	"github.com/tkahng/authgo/internal/stores"
 	"github.com/tkahng/authgo/internal/tools/types"
 )
 
@@ -48,7 +48,8 @@ type CreateUserDto struct {
 }
 
 func CreateUserWithAccountAndRole(ctx context.Context, dbx database.Dbx, count int, provider models.Providers, roleName string, faker faker.Internet) ([]*models.User, error) {
-	role, err := queries.FindOrCreateRole(ctx, dbx, roleName)
+	rbacStore := stores.NewDbRBACStore(dbx)
+	role, err := rbacStore.FindOrCreateRole(ctx, roleName)
 	if err != nil {
 		return nil, err
 	}

@@ -33,6 +33,11 @@ type StorageAdapterDecorator struct {
 	RunInTxFunc        func(fn func(tx StorageAdapterInterface) error) error
 }
 
+// Media implements StorageAdapterInterface.
+func (s *StorageAdapterDecorator) Media() MediaStoreInterface {
+	panic("unimplemented")
+}
+
 // Rbac implements StorageAdapterInterface.
 func (s *StorageAdapterDecorator) Rbac() DbRbacStoreInterface {
 	return s.RbacFunc

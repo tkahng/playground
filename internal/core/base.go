@@ -7,7 +7,6 @@ import (
 	"github.com/tkahng/authgo/internal/conf"
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/jobs"
-	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/services"
 	"github.com/tkahng/authgo/internal/stores"
 
@@ -192,11 +191,4 @@ func NewApp(
 		adapter:  adapter,
 	}
 	return app
-}
-
-func (app *BaseApp) Bootstrap() {
-	ctx := context.Background()
-	db := app.Db()
-	queries.EnsureRoleAndPermissions(ctx, db, "superuser", "superuser")
-	queries.EnsureRoleAndPermissions(ctx, db, "basic", "basic")
 }

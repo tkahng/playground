@@ -6,7 +6,6 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/tkahng/authgo/internal/contextstore"
 	"github.com/tkahng/authgo/internal/models"
-	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 )
@@ -45,12 +44,21 @@ func (api *Api) Me(ctx context.Context, input *struct{}) (*MeOutput, error) {
 func (api *Api) MeUpdate(ctx context.Context, input *struct {
 	Body shared.UpdateMeInput
 }) (*struct{}, error) {
-	db := api.app.Db()
 	claims := contextstore.GetContextUserInfo(ctx)
 	if claims == nil {
 		return nil, huma.Error404NotFound("User not found")
 	}
-	err := queries.UpdateMe(ctx, db, claims.User.ID, &input.Body)
+	adapter := api.app.Adapter()
+	user, err := adapter.User().FindUserByID(ctx, claims.User.ID)
+	if err != nil {
+		return nil, err
+	}
+	if user == nil {
+		return nil, huma.Error404NotFound("User not found")
+	}
+	user.Name = input.Body.Name
+	user.Image = input.Body.Image
+	err = adapter.User().UpdateUser(ctx, user)
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +66,6 @@ func (api *Api) MeUpdate(ctx context.Context, input *struct {
 }
 
 func (api *Api) MeDelete(ctx context.Context, input *struct{}) (*struct{}, error) {
-	db := api.app.Db()
 	claims := contextstore.GetContextUserInfo(ctx)
 	if claims == nil {
 		return nil, huma.Error404NotFound("User not found")
@@ -79,7 +86,7 @@ func (api *Api) MeDelete(ctx context.Context, input *struct{}) (*struct{}, error
 	if !ok {
 		return nil, huma.Error403Forbidden("You cannot delete a user with active subscriptions")
 	}
-	err = queries.DeleteUsers(ctx, db, claims.User.ID)
+	err = api.app.Adapter().User().DeleteUser(ctx, claims.User.ID)
 	if err != nil {
 		return nil, err
 	}

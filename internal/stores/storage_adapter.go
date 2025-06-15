@@ -15,7 +15,7 @@ type StorageAdapterInterface interface {
 	Price() DbPriceStoreInterface
 	Product() DbProductStoreInterface
 	Subscription() DbSubscriptionStoreInterface
-
+	Media() MediaStoreInterface
 	Rbac() DbRbacStoreInterface
 	Task() DbTaskStoreInterface
 	// WithTx(tx database.Dbx) *StorageAdapter
@@ -35,7 +35,11 @@ type StorageAdapter struct {
 	subscription   *DbSubscriptionStore
 	rbac           *DbRbacStore
 	task           *DbTaskStore
-	// Task
+	media          *DbMediaStore
+}
+
+func (s *StorageAdapter) Media() MediaStoreInterface {
+	return s.media
 }
 
 func (s *StorageAdapter) Task() DbTaskStoreInterface {
