@@ -18,7 +18,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronLeft, Trash } from "lucide-react";
 import { Link, useParams } from "react-router";
 import { toast } from "sonner";
-import { ProductRolesDialog } from "./product-roles-dialog";
+import { ProductPermissionsDialog } from "./product-permissions-dialog";
 
 export default function ProductEditPage() {
   const { user } = useAuthProvider();
@@ -79,8 +79,8 @@ export default function ProductEditPage() {
       </Link>
       <h1 className="text-2xl font-bold">{data?.name}</h1>
       <div className="space-y-4 flex flex-row space-x-16">
-        <p className="flex-1">Add Roles to this product.</p>
-        <ProductRolesDialog userDetail={data} />
+        <p className="flex-1">Add Permissions to this product.</p>
+        <ProductPermissionsDialog product={data} />
       </div>
       <DataTable
         columns={[

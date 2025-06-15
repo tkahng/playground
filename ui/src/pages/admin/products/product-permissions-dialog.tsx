@@ -41,18 +41,18 @@ const formSchema = z.object({
     .min(1),
 });
 
-export function ProductRolesDialog({
-  userDetail,
+export function ProductPermissionsDialog({
+  product,
 }: {
-  userDetail: ProductWithPrices;
+  product: ProductWithPrices;
 }) {
   const { user } = useAuthProvider();
   const [isDialogOpen, setDialogOpen] = useState(false);
   const queryClient = useQueryClient();
   // const [value, setValue] = useState<Option[]>([]);
-  const productId = userDetail?.id;
+  const productId = product?.id;
   const { data, isLoading, error } = useQuery({
-    queryKey: ["product-roles-reverse", productId],
+    queryKey: ["product-permissions-reverse", productId],
     queryFn: async () => {
       if (!user?.tokens.access_token || !productId) {
         throw new Error("Missing access token or role ID");
@@ -87,7 +87,7 @@ export function ProductRolesDialog({
         queryKey: ["product", productId],
       });
       await queryClient.invalidateQueries({
-        queryKey: ["product-roles-reverse", productId],
+        queryKey: ["product-permissions-reverse", productId],
       });
     },
   });
@@ -116,18 +116,18 @@ export function ProductRolesDialog({
   }
 
   if (!data?.length) {
-    return <div>User not found</div>;
+    return <div>Permissions not found</div>;
   }
   return (
     <Dialog open={isDialogOpen} onOpenChange={setDialogOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline">Assign Roles</Button>
+        <Button variant="outline">Assign Permissions</Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Assign Roles</DialogTitle>
+          <DialogTitle>Assign Permissions</DialogTitle>
           <DialogDescription>
-            Select the roles you want to assign to this product.
+            Select the permissions you want to assign to this product.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -143,11 +143,11 @@ export function ProductRolesDialog({
                       <FormControl>
                         <MultipleSelector
                           {...field}
-                          defaultOptions={data.map((role) => ({
-                            label: role.name,
-                            value: role.id,
+                          defaultOptions={data.map((permission) => ({
+                            label: permission.name,
+                            value: permission.id,
                           }))}
-                          placeholder="Select Roles you like..."
+                          placeholder="Select Permissions you like..."
                           emptyIndicator={
                             <p className="text-center text-lg leading-10 text-gray-600 dark:text-gray-400">
                               no results found.
@@ -160,7 +160,7 @@ export function ProductRolesDialog({
                   )}
                 />
                 <DialogFooter>
-                  <Button type="submit">Assign roles</Button>
+                  <Button type="submit">Assign Permissions</Button>
                 </DialogFooter>
               </div>
             </div>
