@@ -41,13 +41,13 @@ import ConfirmPasswordReset from "./pages/auth/confirm-password-reset";
 import ResetPasswordRequestPage from "./pages/auth/reset-password";
 import DashboardPage from "./pages/dashboard";
 import NotAuthorizedPage from "./pages/not-authorized";
-import ProjectEdit from "./pages/projects/project-edit";
-import ProjectListPage from "./pages/projects/projects-list";
-import TaskLayout from "./pages/projects/task-layout";
 import ProtectedRouteLayout from "./pages/protected-routes/protected-layout";
 import ProtectedRoutePage from "./pages/protected-routes/protected-route-page";
 import ProtectedRouteIndex from "./pages/protected-routes/route-index";
 import TeamDashboard from "./pages/teams/dashboard";
+import ProjectEdit from "./pages/teams/projects/project-edit";
+import ProjectListPage from "./pages/teams/projects/projects-list";
+import TaskLayout from "./pages/teams/projects/task-layout";
 import TeamListPage from "./pages/teams/team-list";
 
 function TeamRoutes() {
@@ -70,6 +70,14 @@ function TeamRoutes() {
                 element={<ProjectEdit />}
               />
             </Route>
+          </Route>
+
+          <Route
+            path={`/teams/:teamSlug/settings`}
+            element={<PageSectionLayout title="Settings" />}
+          >
+            <Route index element={<AccountSettingsPage />} />
+            <Route path="billing" element={<BillingSettingPage />} />
           </Route>
         </Route>
 
