@@ -602,12 +602,9 @@ func TestDeleteTeam_failNonOwner(t *testing.T) {
 func TestGetActiveTeamMember_nomember(t *testing.T) {
 	test.DbSetup()
 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
-		cfg := conf.ZeroEnvConfig()
-		app := core.NewAppDecorator(ctx, cfg, db)
-
-		appApi := apis.NewApi(app)
-		_, api := humatest.New(t)
-		apis.AddRoutes(api, appApi)
+		testApi := setupApi(t, ctx, db)
+		app := testApi.App
+		api := testApi.TestApi
 		user1, err := app.Adapter().User().CreateUser(
 			ctx,
 			&models.User{
@@ -822,18 +819,24 @@ func TestGetActiveTeamMember_nomember(t *testing.T) {
 
 type TestApi struct {
 	TestApi humatest.TestAPI
-	// AppApi
-	App core.App
-	Cfg conf.EnvConfig
+	Api     apis.Api
+	App     core.App
+	Cfg     conf.EnvConfig
 }
 
-func setupApi(t *testing.T, ctx context.Context, db database.Dbx) (humatest.TestAPI, core.App, conf.EnvConfig) {
+func setupApi(t *testing.T, ctx context.Context, db database.Dbx) TestApi {
 	cfg := conf.ZeroEnvConfig()
 	app := core.NewAppDecorator(ctx, cfg, db)
 	appApi := apis.NewApi(app)
 	_, api := humatest.New(t)
 	apis.AddRoutes(api, appApi)
-	return api, app, cfg
+	testApi := TestApi{
+		TestApi: api,
+		Api:     *appApi,
+		App:     app,
+		Cfg:     cfg,
+	}
+	return testApi
 }
 
 // func TestApi_GetUserTeams(t *testing.T) {
