@@ -33,7 +33,7 @@ const formSchema = z.object({
   image: z.string().url().optional(),
 });
 
-export default function TeamAccountSettingsPage() {
+export default function TeamSettingsPage() {
   const [, setIsPending] = useState(false);
   const { user } = useAuthProvider();
   const { data, isLoading, isError, error } = useQuery({
