@@ -12,17 +12,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
+import { useTeam } from "@/hooks/use-team";
 import { GetError } from "@/lib/get-erro";
-import {
-  deleteUser,
-  getMe,
-  requestVerification,
-  updateMe,
-} from "@/lib/queries";
+import { deleteUser, updateTeam } from "@/lib/queries";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CheckCircle } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -30,21 +25,11 @@ import { z } from "zod";
 
 const formSchema = z.object({
   name: z.string().min(1).optional(),
-  image: z.string().url().optional(),
 });
 
 export default function TeamSettingsPage() {
-  const [, setIsPending] = useState(false);
   const { user } = useAuthProvider();
-  const { data, isLoading, isError, error } = useQuery({
-    queryKey: ["auth/me"],
-    queryFn: async () => {
-      if (!user) {
-        throw new Error("User not found");
-      }
-      return getMe(user.tokens.access_token);
-    },
-  });
+  const { team: data, isLoading, error } = useTeam();
 
   const queryClient = useQueryClient();
   const mutation = useMutation({
@@ -52,9 +37,15 @@ export default function TeamSettingsPage() {
       if (!user) {
         throw new Error("User not found");
       }
-      await updateMe(user.tokens.access_token, {
-        name: formData.name ?? null,
-        image: formData.image ?? null,
+      if (!data) {
+        throw new Error("Team not found");
+      }
+      if (!formData.name) {
+        throw new Error("Name is required");
+      }
+      await updateTeam(user.tokens.access_token, data.id, {
+        name: formData.name,
+        slug: data.slug,
       });
     },
     onSuccess: async () => {
@@ -92,42 +83,10 @@ export default function TeamSettingsPage() {
     },
   });
 
-  const requestVerificationEmailMutation = useMutation({
-    mutationFn: async () => {
-      if (!user) {
-        throw new Error("User not found");
-      }
-      await requestVerification(user.tokens.access_token);
-    },
-    onSuccess: async () => {
-      setIsPending(false);
-      await queryClient.invalidateQueries({
-        queryKey: ["auth/me"],
-      });
-      toast.success("Verification email sent successfully");
-    },
-    onError: (error) => {
-      setIsPending(false);
-      const err = GetError(error);
-      if (err) {
-        if (err.errors?.length) {
-          toast.error(`${err.errors[0].message || err.errors[0].value}`);
-        } else if (err.title) toast.error(`${err.detail || err.title}`);
-      } else {
-        toast.error(`Failed to send verification email: ${error.message}`);
-      }
-    },
-  });
-
-  const requestVerificationEmail = () => {
-    requestVerificationEmailMutation.mutate();
-  };
-
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: data?.name ?? undefined,
-      image: data?.image ?? undefined,
     },
   });
 
@@ -138,12 +97,11 @@ export default function TeamSettingsPage() {
     if (data) {
       form.reset({
         name: data.name || "",
-        image: data.image || "",
       });
     }
   }, [data, form]);
   if (isLoading) return <p>Loading...</p>;
-  if (isError) return <p>Error: {error.message}</p>;
+  if (error) return <p>Error: {error.message}</p>;
   if (!data) return <p>User not found</p>;
   return (
     <div className="flex">
@@ -155,23 +113,7 @@ export default function TeamSettingsPage() {
             This is how others will see you on the site.
           </p>
         </div>
-        <Separator />
-        <div className="flex flex-row w-full justify-between">
-          <div className="flex items-center space-x-4">
-            <h1>Email </h1>
-            <p className="text-sm text-muted-foreground">{data.email}</p>
-          </div>
 
-          {data.email_verified_at ? (
-            <div>
-              <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-300" />
-            </div>
-          ) : (
-            <Button onClick={requestVerificationEmail}>
-              Send Verification Email
-            </Button>
-          )}
-        </div>
         <Separator />
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
@@ -188,19 +130,7 @@ export default function TeamSettingsPage() {
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="image"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Image</FormLabel>
-                  <FormControl>
-                    <Input {...field} placeholder="Image" type="url" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+
             <Button type="submit" disabled={!form.formState.isDirty}>
               Save
             </Button>

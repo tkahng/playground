@@ -1368,3 +1368,23 @@ export const getTeamTeamMembers = async (
   }
   return data;
 };
+
+export const updateTeam = async (
+  token: string,
+  teamId: string,
+  body: components["schemas"]["UpdateTeamDto"]
+) => {
+  const { data, error } = await client.PUT("/api/teams/{team-id}", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    params: {
+      path: { "team-id": teamId },
+    },
+    body,
+  });
+  if (error) {
+    throw error;
+  }
+  return data;
+};

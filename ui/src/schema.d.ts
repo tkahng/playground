@@ -2036,13 +2036,14 @@ export interface components {
             /** @enum {string} */
             status: "todo" | "in_progress" | "done";
         };
-        UpdateTeamInputBody: {
+        UpdateTeamDto: {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
              */
             readonly $schema?: string;
             name: string;
+            slug: string;
         };
         UpdateUserPasswordInput: {
             /**
@@ -5967,7 +5968,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["UpdateTeamInputBody"];
+                "application/json": components["schemas"]["UpdateTeamDto"];
             };
         };
         responses: {
