@@ -328,9 +328,12 @@ func (api *Api) GetActiveTeamMember(
 
 type UpdateTeamInput struct {
 	TeamID string `path:"team-id" required:"true"`
-	Body   struct {
-		Name string `json:"name" required:"true"`
-	} `json:"body" required:"true"`
+	Body   UpdateTeamDto
+}
+
+type UpdateTeamDto struct {
+	Name string `json:"name" required:"true"`
+	Slug string `json:"slug" required:"true"`
 }
 
 func (api *Api) UpdateTeam(

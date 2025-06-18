@@ -369,9 +369,10 @@ func TestUpdateTeam_failedNotOwner(t *testing.T) {
 		VerifiedHeader := fmt.Sprintf("Authorization: Bearer %s", tokensVerifiedTokens.Tokens.AccessToken)
 		resp := api.Put("/teams/"+member1.Team.ID.String(), VerifiedHeader, &apis.UpdateTeamInput{
 			TeamID: member1.Team.ID.String(),
-			Body: struct {
-				Name string "json:\"name\" required:\"true\""
-			}{Name: "test team"},
+			Body: apis.UpdateTeamDto{
+				Name: "test team",
+				Slug: "test-team",
+			},
 		})
 		if resp.Code == 200 {
 			t.Fatalf("Unexpected response: %s", resp.Body.String())
@@ -421,9 +422,10 @@ func TestUpdateTeam_successOwner(t *testing.T) {
 		VerifiedHeader := fmt.Sprintf("Authorization: Bearer %s", tokensVerifiedTokens.Tokens.AccessToken)
 		resp := api.Put("/teams/"+member1.Team.ID.String(), VerifiedHeader, apis.UpdateTeamInput{
 			TeamID: member1.Team.ID.String(),
-			Body: struct {
-				Name string "json:\"name\" required:\"true\""
-			}{Name: "test team"},
+			Body: apis.UpdateTeamDto{
+				Name: "test team",
+				Slug: "test-team",
+			},
 		}.Body)
 		if resp.Code != 200 {
 			t.Fatalf("Unexpected response: %s", resp.Body.String())
