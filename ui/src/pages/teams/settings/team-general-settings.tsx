@@ -17,7 +17,6 @@ import {
   deleteUser,
   getMe,
   requestVerification,
-  resetPassword,
   updateMe,
 } from "@/lib/queries";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -34,12 +33,7 @@ const formSchema = z.object({
   image: z.string().url().optional(),
 });
 
-const resetPasswordSchema = z.object({
-  currentPassword: z.string().min(1, "Current password is required"),
-  newPassword: z.string().min(1, "New password is required"),
-});
-
-export default function AccountSettingsPage() {
+export default function TeamAccountSettingsPage() {
   const [, setIsPending] = useState(false);
   const { user } = useAuthProvider();
   const { data, isLoading, isError, error } = useQuery({
@@ -51,9 +45,7 @@ export default function AccountSettingsPage() {
       return getMe(user.tokens.access_token);
     },
   });
-  const credentialsAccount = data?.accounts?.find(
-    (account) => account.provider === "credentials"
-  );
+
   const queryClient = useQueryClient();
   const mutation = useMutation({
     mutationFn: async (formData: z.infer<typeof formSchema>) => {
@@ -99,37 +91,7 @@ export default function AccountSettingsPage() {
       toast.success("Account deleted successfully");
     },
   });
-  const resetPasswordMutation = useMutation({
-    mutationFn: async (formData: z.infer<typeof resetPasswordSchema>) => {
-      if (!user) {
-        throw new Error("User not found");
-      }
-      await resetPassword(
-        user.tokens.access_token,
-        formData.currentPassword,
-        formData.newPassword
-      );
-      toast.success("Password reset successfully");
-    },
-    onError: (error) => {
-      const err = GetError(error);
-      if (err) {
-        if (err.errors?.length) {
-          toast.error(`${err.errors[0].message || err.errors[0].value}`);
-        } else if (err.title) toast.error(`${err.detail || err.title}`);
-      } else {
-        toast.error(`Failed to reset password: ${error.message}`);
-      }
-      // toast.error(`Failed to reset password: ${error.message}`);
-    },
-    onSuccess: async () => {
-      setIsPending(true);
-      await queryClient.invalidateQueries({
-        queryKey: ["auth/me"],
-      });
-      resetPasswordForm.reset();
-    },
-  });
+
   const requestVerificationEmailMutation = useMutation({
     mutationFn: async () => {
       if (!user) {
@@ -161,14 +123,6 @@ export default function AccountSettingsPage() {
     requestVerificationEmailMutation.mutate();
   };
 
-  const resetPasswordForm = useForm<z.infer<typeof resetPasswordSchema>>({
-    resolver: zodResolver(resetPasswordSchema),
-    defaultValues: {
-      currentPassword: undefined,
-      newPassword: undefined,
-    },
-  });
-
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -176,11 +130,7 @@ export default function AccountSettingsPage() {
       image: data?.image ?? undefined,
     },
   });
-  const onResetPasswordSubmut = (
-    values: z.infer<typeof resetPasswordSchema>
-  ) => {
-    resetPasswordMutation.mutate(values);
-  };
+
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     mutation.mutate(values);
   };
@@ -257,56 +207,7 @@ export default function AccountSettingsPage() {
           </form>
         </Form>
         <Separator />
-        {credentialsAccount && (
-          <Form {...resetPasswordForm}>
-            <h1>Reset Password</h1>
-            <form
-              onSubmit={resetPasswordForm.handleSubmit(onResetPasswordSubmut)}
-              className="space-y-8"
-            >
-              <FormField
-                control={resetPasswordForm.control}
-                name="currentPassword"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Current Password</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        placeholder="Current Password"
-                        type="password"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={resetPasswordForm.control}
-                name="newPassword"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>New Password</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        placeholder="New Password"
-                        type="password"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <Button
-                type="submit"
-                disabled={!resetPasswordForm.formState.isDirty}
-              >
-                Save
-              </Button>
-            </form>
-          </Form>
-        )}
+
         <Separator />
         <div className="space-y-2">
           <h3 className="text-lg font-medium">Danger Zone</h3>
