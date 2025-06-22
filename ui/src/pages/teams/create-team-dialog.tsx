@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
+import { GetError } from "@/lib/get-error";
 import { createTeam } from "@/lib/team-queries";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -51,7 +52,8 @@ export function CreateTeamDialog() {
       toast.success("Team created successfully");
     },
     onError: (error) => {
-      toast.error(error.message);
+      const err = GetError(error);
+      toast.error(err?.detail);
     },
   });
   const form = useForm<z.infer<typeof formSchema>>({
