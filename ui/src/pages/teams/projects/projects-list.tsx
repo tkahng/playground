@@ -1,5 +1,4 @@
 import { DataTable } from "@/components/data-table";
-import { RouteMap } from "@/components/route-map";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { useTeam } from "@/hooks/use-team";
 import { taskProjectList } from "@/lib/queries";
@@ -82,7 +81,7 @@ export default function ProjectListPage() {
             cell: ({ row }) => {
               return (
                 <NavLink
-                  to={`${RouteMap.TASK_PROJECTS}/${row.original.id}`}
+                  to={`/teams/${team?.slug}/projects/${row.original.id}`}
                   className="hover:underline text-blue-500"
                 >
                   {row.original.id}
@@ -105,21 +104,6 @@ export default function ProjectListPage() {
               return new Date(row.original.updated_at).toLocaleDateString();
             },
           },
-          // {
-          //   id: "actions",
-          //   cell: ({ row }) => {
-          //     return (
-          //       <div className="flex flex-row gap-2 justify-end">
-          //         <RoleEllipsisDropdown
-          //           roleId={row.original.id}
-          //           onDelete={(roleId) => {
-          //             // mutation.mutate(roleId);
-          //           }}
-          //         />
-          //       </div>
-          //     );
-          //   },
-          // },
         ]}
         data={projects}
         rowCount={rowCount}
