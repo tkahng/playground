@@ -24,9 +24,10 @@ import { CreateTeamDialog } from "./create-team-dialog";
 
 export default function TeamSwitcher() {
   const navigate = useNavigate();
+  // const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const { data, error: teamsError, isLoading: teamsLoading } = useUserTeams();
-  const { team } = useTeamContext();
+  const { team, setTeam } = useTeamContext();
 
   if (teamsLoading) {
     return <div>Loading...</div>;
@@ -39,7 +40,8 @@ export default function TeamSwitcher() {
   }
   function handleSelectTeam(team: Team) {
     setOpen(false);
-    // setTeam(team);
+    setTeam(team);
+    // queryClient.invalidateQueries({ queryKey: ["team-by-slug-layout"] });
     navigate(`/teams/${team.slug}/dashboard`);
   }
   return (

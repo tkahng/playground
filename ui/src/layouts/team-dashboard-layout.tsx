@@ -27,11 +27,11 @@ export default function TeamDashboardLayout() {
       }
       const response = await getTeamBySlug(user.tokens.access_token, teamSlug);
       // if (!team) {
-      // setTeam(response.team);
+      setTeam(response.team);
       // }
       return response;
     },
-    enabled: false,
+    enabled: !!user?.tokens.access_token && !!teamSlug,
   });
   // const { pathname } = useLocation();
   const isAdmin = user?.roles?.includes("superuser");
@@ -57,17 +57,13 @@ export default function TeamDashboardLayout() {
   useEffect(() => {
     if (!isMounted.current) {
       isMounted.current = true;
-      if (teamSlug && user?.tokens.access_token) {
-        refetch().then((data) => {
-          if (data.data) {
-            setTeam(data.data.team);
-          } else {
-            console.error("Failed to fetch team data");
-          }
-        });
-      }
+      // if (teamSlug && user?.tokens.access_token) {
+      refetch().then(() => {
+        isMounted.current = false;
+      });
+      // }
     }
-  }, [refetch, setTeam, teamSlug, user?.tokens.access_token]);
+  }, [refetch, teamSlug]);
   if (error) {
     return <div>Error loading team: {error.message}</div>;
   }
