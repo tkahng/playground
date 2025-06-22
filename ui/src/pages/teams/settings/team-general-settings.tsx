@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { useTeam } from "@/hooks/use-team";
-import { GetError } from "@/lib/get-erro";
+import { GetError } from "@/lib/get-error";
 import { deleteUser, updateTeam } from "@/lib/queries";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";

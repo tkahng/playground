@@ -12,7 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { GetError } from "@/lib/get-erro";
+import { GetError } from "@/lib/get-error";
 import {
   deleteUser,
   getMe,
