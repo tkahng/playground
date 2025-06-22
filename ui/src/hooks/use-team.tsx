@@ -27,6 +27,7 @@ export function useTeam(): {
   team: Team | null;
   isLoading: boolean;
   error: Error | null;
+  setTeam: (team: Team | null) => void;
 } {
   const { user } = useAuthProvider();
   const { teamSlug } = useParams<{ teamSlug: string }>();
@@ -46,20 +47,23 @@ export function useTeam(): {
       }
       return response;
     },
-    enabled: !!teamSlug,
+    enabled: !!teamSlug && !team,
   });
+
   if (!teamSlug) {
     if (team) {
       return {
         team,
         isLoading: false,
         error: null,
+        setTeam,
       };
     } else {
       return {
         team: null,
         isLoading: false,
         error: new Error("Team slug is required"),
+        setTeam,
       };
     }
   }
@@ -67,5 +71,6 @@ export function useTeam(): {
     team: data?.team || team,
     isLoading,
     error: error as Error | null,
+    setTeam,
   };
 }

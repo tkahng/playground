@@ -25,7 +25,7 @@ export default function TeamSwitcher() {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const { data, error: teamsError, isLoading: teamsLoading } = useUserTeams();
-  const { team, isLoading: teamLoading, error: teamError } = useTeam();
+  const { team, isLoading: teamLoading, error: teamError, setTeam } = useTeam();
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(team);
 
   if (teamsLoading || teamLoading) {
@@ -40,8 +40,7 @@ export default function TeamSwitcher() {
   function handleSelectTeam(team: Team) {
     setSelectedTeam(team);
     setOpen(false);
-    // Optionally, you can add logic to navigate to the selected team's dashboard
-    // For example, using a router:
+    setTeam(team);
     navigate(`/teams/${team.slug}/dashboard`);
   }
   return (
