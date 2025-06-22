@@ -1,3 +1,4 @@
+import { TeamStatCard } from "@/components/team-stats-card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -114,54 +115,31 @@ export default function TeamDashboard() {
 
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Team Members</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{teamStats.totalMembers}</div>
-            <p className="text-xs text-muted-foreground">+2 from last month</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Chats</CardTitle>
-            <MessageSquare className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{teamStats.activeChats}</div>
-            <p className="text-xs text-muted-foreground">+12% from last week</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">API Calls</CardTitle>
-            <Zap className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {teamStats.apiCalls.toLocaleString()}
-            </div>
-            <p className="text-xs text-muted-foreground">+8% from last month</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Code Generated
-            </CardTitle>
-            <Code className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {teamStats.codeGenerations}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              +15% from last month
-            </p>
-          </CardContent>
-        </Card>
+        <TeamStatCard
+          title="Team Members"
+          icon={<Users className="h-4 w-4 text-muted-foreground" />}
+          value={teamStats.totalMembers}
+          description="+2 from last month"
+        />
+        <TeamStatCard
+          title="Active Chats"
+          icon={<MessageSquare className="h-4 w-4 text-muted-foreground" />}
+          value={teamStats.activeChats}
+          description="+12% from last week"
+        />
+        <TeamStatCard
+          title="API Calls"
+          icon={<Zap className="h-4 w-4 text-muted-foreground" />}
+          value={teamStats.apiCalls.toLocaleString()}
+          description="+8% from last month"
+        />
+
+        <TeamStatCard
+          title="Code Generated"
+          icon={<Code className="h-4 w-4 text-muted-foreground" />}
+          value={teamStats.codeGenerations}
+          description="+15% from last month"
+        />
       </div>
 
       {/* Usage Progress */}
