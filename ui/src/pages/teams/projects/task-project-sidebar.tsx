@@ -60,7 +60,7 @@ export default function TaskProjectSidebar() {
         {projects?.data?.map((item) => (
           <Link
             key={item.id}
-            to={`/projects/${item.id}`}
+            to={`/teams/${currentTeam?.slug}/projects/${item.id}`}
             className={cn(
               pathname.startsWith(`/projects/${item.id}`)
                 ? "underline"
