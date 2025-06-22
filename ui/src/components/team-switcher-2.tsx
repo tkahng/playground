@@ -17,16 +17,16 @@ import {
 import { useTeam } from "@/hooks/use-team";
 import { useUserTeams } from "@/hooks/use-user-teams";
 import { Team } from "@/schema.types";
-import { Check, ChevronsUpDown, Plus } from "lucide-react";
+import { Check, ChevronsUpDown } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
+import { CreateTeamDialog } from "./create-team-dialog";
 
 export default function TeamSwitcher() {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const { data, error: teamsError, isLoading: teamsLoading } = useUserTeams();
   const { team, isLoading: teamLoading, error: teamError, setTeam } = useTeam();
-  const [selectedTeam, setSelectedTeam] = useState<Team | null>(team);
 
   if (teamsLoading || teamLoading) {
     return <div>Loading...</div>;
@@ -34,11 +34,10 @@ export default function TeamSwitcher() {
   if (teamsError || teamError) {
     return <div>Error: {teamsError?.message || teamError?.message}</div>;
   }
-  if (!data || data.data.length === 0 || !selectedTeam) {
+  if (!data || data.data.length === 0) {
     return <div>No teams available.</div>;
   }
   function handleSelectTeam(team: Team) {
-    setSelectedTeam(team);
     setOpen(false);
     setTeam(team);
     navigate(`/teams/${team.slug}/dashboard`);
@@ -57,10 +56,10 @@ export default function TeamSwitcher() {
             <div className="flex items-center">
               <Avatar className="mr-2 h-5 w-5">
                 <AvatarFallback>
-                  {selectedTeam?.name.slice(0, 2).toUpperCase()}
+                  {team?.name.slice(0, 2).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
-              <span className="truncate">{selectedTeam?.name}</span>
+              <span className="truncate">{team?.name}</span>
             </div>
             <ChevronsUpDown className="ml-auto h-4 w-4 shrink-0 opacity-50" />
           </Button>
@@ -71,34 +70,28 @@ export default function TeamSwitcher() {
               <CommandInput placeholder="Search team..." />
               <CommandEmpty>No team found.</CommandEmpty>
               <CommandGroup heading="Teams">
-                {data.data.map((team) => (
+                {data.data.map((te) => (
                   <CommandItem
-                    key={team.id}
+                    key={te.id}
                     onSelect={() => {
-                      handleSelectTeam(team);
+                      handleSelectTeam(te);
                     }}
                     className="text-sm"
                   >
                     <Avatar className="mr-2 h-5 w-5">
-                      {/* <AvatarImage
-                        src={team.avatar || "/placeholder.svg"}
-                        alt={team.name}
-                      /> */}
                       <AvatarFallback>
-                        {team.name.slice(0, 2).toUpperCase()}
+                        {te.name.slice(0, 2).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1">
-                      <div className="font-medium">{team.name}</div>
+                      <div className="font-medium">{te.name}</div>
                       {/* <div className="text-xs text-muted-foreground">
                         {team.plan} • {team.role}
                       </div> */}
                     </div>
                     <Check
                       className={`ml-auto h-4 w-4 ${
-                        selectedTeam?.id === team.id
-                          ? "opacity-100"
-                          : "opacity-0"
+                        te?.id === team?.id ? "opacity-100" : "opacity-0"
                       }`}
                     />
                   </CommandItem>
@@ -109,8 +102,9 @@ export default function TeamSwitcher() {
             <CommandList>
               <CommandGroup>
                 <CommandItem>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Create Team
+                  <CreateTeamDialog />
+                  {/* <Plus className="mr-2 h-4 w-4" />
+                  Create Team */}
                 </CommandItem>
               </CommandGroup>
             </CommandList>

@@ -1,7 +1,4 @@
-// page with list of teams to select from
-// import { CreateTeamDialog } from "@/components/create-team-dialog";
-// import { TeamCard } from "@/components/team-card";
-// import { useToast } from "@/components/ui/use-toast";
+import { CreateTeamDialog } from "@/components/create-team-dialog";
 import { DataTable } from "@/components/data-table";
 import { RouteMap } from "@/components/route-map";
 import { useUserTeams } from "@/hooks/use-user-teams";
@@ -9,10 +6,8 @@ import { Team } from "@/schema.types";
 import { PaginationState, Updater } from "@tanstack/react-table";
 import { NavLink, useSearchParams } from "react-router";
 import { toast } from "sonner";
-import { CreateTeamDialog } from "./create-team-dialog";
 
 export default function TeamListPage() {
-  // const { user } = useAuthProvider();
   const [searchParams, setSearchParams] = useSearchParams();
   const pageIndex = parseInt(searchParams.get("page") || "0", 10);
   const pageSize = parseInt(searchParams.get("per_page") || "10", 10);

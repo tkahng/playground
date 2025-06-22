@@ -18,12 +18,14 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
+import { useTeamContext } from "@/hooks/use-team-context";
 import { GetError } from "@/lib/get-error";
 import { createTeam } from "@/lib/team-queries";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -34,6 +36,8 @@ const formSchema = z.object({
 
 export function CreateTeamDialog() {
   const { user } = useAuthProvider();
+  const { setTeam } = useTeamContext();
+  const navigate = useNavigate();
   const [isDialogOpen, setDialogOpen] = useState(false);
   const queryClient = useQueryClient();
 
@@ -42,14 +46,16 @@ export function CreateTeamDialog() {
       if (!user?.tokens.access_token) {
         throw new Error("Missing access token or user ID");
       }
-      await createTeam(user.tokens.access_token, values);
+      return await createTeam(user.tokens.access_token, values);
     },
-    onSuccess: async () => {
+    onSuccess: async (data) => {
       await queryClient.invalidateQueries({
         queryKey: ["user-teams-list"],
       });
       setDialogOpen(false);
+      setTeam(data);
       toast.success("Team created successfully");
+      navigate(`/teams/${data.slug}/dashboard`);
     },
     onError: (error) => {
       const err = GetError(error);
