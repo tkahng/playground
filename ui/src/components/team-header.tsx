@@ -3,7 +3,7 @@ import { LinkDto } from "@/components/links";
 import NexusAILogo from "@/components/nexus-logo";
 import { cn } from "@/lib/utils";
 import { Link, useLocation } from "react-router";
-import TeamSwitcher from "./team-switcher-2";
+import TeamSwitcher from "./team-switcher";
 
 export function TeamHeader({
   leftLinks,
