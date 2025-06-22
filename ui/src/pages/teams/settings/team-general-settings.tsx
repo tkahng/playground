@@ -21,7 +21,6 @@ import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
-// import { useNavigate } from "react-router-dom";
 
 const formSchema = z.object({
   name: z.string().min(1).optional(),

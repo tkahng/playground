@@ -158,6 +158,7 @@ export default function AccountSettingsPage() {
   });
 
   const requestVerificationEmail = () => {
+    setIsPending(true);
     requestVerificationEmailMutation.mutate();
   };
 
