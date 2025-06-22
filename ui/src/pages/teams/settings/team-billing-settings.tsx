@@ -5,7 +5,7 @@ import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { getUserSubscriptions } from "@/lib/queries";
 import { useQuery } from "@tanstack/react-query";
 
-export default function BillingSettingPage() {
+export default function TeamBillingSettingPage() {
   const { user } = useAuthProvider();
   const { data, isPending, isError, error } = useQuery({
     queryKey: ["billing-settings"],

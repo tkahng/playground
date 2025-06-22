@@ -12,7 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { useTeam } from "@/hooks/use-team";
+import { useTeamContext } from "@/hooks/use-team-context";
 import { GetError } from "@/lib/get-error";
 import { deleteUser, updateTeam } from "@/lib/queries";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -28,7 +28,7 @@ const formSchema = z.object({
 
 export default function TeamSettingsPage() {
   const { user } = useAuthProvider();
-  const { team: data, isLoading, error } = useTeam();
+  const { team: data } = useTeamContext();
 
   const queryClient = useQueryClient();
   const mutation = useMutation({
@@ -99,8 +99,8 @@ export default function TeamSettingsPage() {
       });
     }
   }, [data, form]);
-  if (isLoading) return <p>Loading...</p>;
-  if (error) return <p>Error: {error.message}</p>;
+  // if (isLoading) return <p>Loading...</p>;
+  // if (error) return <p>Error: {error.message}</p>;
   if (!data) return <p>User not found</p>;
   return (
     <div className="flex">

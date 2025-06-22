@@ -1,6 +1,6 @@
 import { DataTable } from "@/components/data-table";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { useTeam } from "@/hooks/use-team";
+import { useTeamContext } from "@/hooks/use-team-context";
 import { taskProjectList } from "@/lib/queries";
 import { useQuery } from "@tanstack/react-query";
 import { PaginationState, Updater } from "@tanstack/react-table";
@@ -11,7 +11,7 @@ import { CreateProjectDialog } from "./create-project-dialog";
 export default function ProjectListPage() {
   const { user } = useAuthProvider();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { team, error: teamError } = useTeam();
+  const { team } = useTeamContext();
   const pageIndex = parseInt(searchParams.get("page") || "0", 10);
   const pageSize = parseInt(searchParams.get("per_page") || "10", 10);
   // const queryClient = useQueryClient();
@@ -49,9 +49,9 @@ export default function ProjectListPage() {
     },
     enabled: !!user?.tokens.access_token && !!teamId,
   });
-  if (teamError) {
-    return <div>Error: {teamError.message}</div>;
-  }
+  // if (teamError) {
+  //   return <div>Error: {teamError.message}</div>;
+  // }
   if (isLoading) {
     return <div>Loading...</div>;
   }

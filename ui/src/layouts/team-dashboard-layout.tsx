@@ -4,12 +4,35 @@ import { NexusAIMinimalFooter } from "@/components/nexus-minimal-footer";
 import { RouteMap } from "@/components/route-map";
 import { TeamHeader } from "@/components/team-header";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { useTeam } from "@/hooks/use-team";
-import { Outlet } from "react-router";
+import { useTeamContext } from "@/hooks/use-team-context";
+import { getTeamBySlug } from "@/lib/queries";
+import { useQuery } from "@tanstack/react-query";
+import { useEffect, useRef } from "react";
+import { Outlet, useParams } from "react-router";
 
 export default function TeamDashboardLayout() {
+  // const { user } = useAuthProvider();
+  // const { team, error, isLoading } = useTeam();
   const { user } = useAuthProvider();
-  const { team, error, isLoading } = useTeam();
+  const { teamSlug } = useParams<{ teamSlug: string }>();
+  const { setTeam, team } = useTeamContext();
+  const { isLoading, error, refetch } = useQuery({
+    queryKey: ["team-by-slug-layout"],
+    queryFn: async () => {
+      if (!user?.tokens.access_token) {
+        throw new Error("Missing access token");
+      }
+      if (!teamSlug) {
+        throw new Error("Team slug is required");
+      }
+      const response = await getTeamBySlug(user.tokens.access_token, teamSlug);
+      // if (!team) {
+      // setTeam(response.team);
+      // }
+      return response;
+    },
+    enabled: false,
+  });
   // const { pathname } = useLocation();
   const isAdmin = user?.roles?.includes("superuser");
   // const isAdminPath = pathname.startsWith(RouteMap.ADMIN);
@@ -30,6 +53,21 @@ export default function TeamDashboardLayout() {
   // if (!isAdminPath) {
   //   links.push({ to: RouteMap.DASHBOARD, title: "Dashboard" });
   // }
+  const isMounted = useRef(false);
+  useEffect(() => {
+    if (!isMounted.current) {
+      isMounted.current = true;
+      if (teamSlug && user?.tokens.access_token) {
+        refetch().then((data) => {
+          if (data.data) {
+            setTeam(data.data.team);
+          } else {
+            console.error("Failed to fetch team data");
+          }
+        });
+      }
+    }
+  }, [refetch, setTeam, teamSlug, user?.tokens.access_token]);
   if (error) {
     return <div>Error loading team: {error.message}</div>;
   }

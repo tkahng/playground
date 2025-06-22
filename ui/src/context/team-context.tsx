@@ -17,12 +17,10 @@ export const TeamContext = createContext<TeamContextType>({
 
 export const TeamProvider = ({ children }: { children: React.ReactNode }) => {
   const [team, setTeam] = useLocalStorage<Team | null>("currentTeam", null);
-  const values = React.useMemo(() => {
-    return {
-      team,
-      setTeam,
-    };
-  }, [team, setTeam]);
 
-  return <TeamContext.Provider value={values}>{children}</TeamContext.Provider>;
+  return (
+    <TeamContext.Provider value={{ team, setTeam }}>
+      {children}
+    </TeamContext.Provider>
+  );
 };

@@ -14,7 +14,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { useTeam } from "@/hooks/use-team";
+import { useTeamContext } from "@/hooks/use-team-context";
 import { useUserTeams } from "@/hooks/use-user-teams";
 import { Team } from "@/schema.types";
 import { Check, ChevronsUpDown } from "lucide-react";
@@ -26,20 +26,20 @@ export default function TeamSwitcher() {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const { data, error: teamsError, isLoading: teamsLoading } = useUserTeams();
-  const { team, isLoading: teamLoading, error: teamError, setTeam } = useTeam();
+  const { team } = useTeamContext();
 
-  if (teamsLoading || teamLoading) {
+  if (teamsLoading) {
     return <div>Loading...</div>;
   }
-  if (teamsError || teamError) {
-    return <div>Error: {teamsError?.message || teamError?.message}</div>;
+  if (teamsError) {
+    return <div>Error: {teamsError?.message}</div>;
   }
   if (!data || data.data.length === 0) {
     return <div>No teams available.</div>;
   }
   function handleSelectTeam(team: Team) {
     setOpen(false);
-    setTeam(team);
+    // setTeam(team);
     navigate(`/teams/${team.slug}/dashboard`);
   }
   return (

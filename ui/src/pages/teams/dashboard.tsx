@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useTeam } from "@/hooks/use-team";
+import { useTeamContext } from "@/hooks/use-team-context";
 import {
   Activity,
   Code,
@@ -41,7 +41,7 @@ type TeamMember = {
 };
 
 export default function TeamDashboard() {
-  const { team, isLoading, error } = useTeam();
+  const { team } = useTeamContext();
   const teamMembers: TeamMember[] = [
     {
       id: "1",
@@ -81,12 +81,12 @@ export default function TeamDashboard() {
     usageLimit: 25000,
     currentUsage: 15420,
   };
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
-  if (error) {
-    return <div>Error: {error.message}</div>;
-  }
+  // if (isLoading) {
+  //   return <div>Loading...</div>;
+  // }
+  // if (error) {
+  //   return <div>Error: {error.message}</div>;
+  // }
   if (!team) {
     return <div>No team selected</div>;
   }

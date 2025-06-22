@@ -7,10 +7,6 @@ export type LinkDto = {
   current?: (pathname: string) => boolean;
 };
 
-export const defaultCurrentFunc = (pathname: string, to: string) => {
-  return pathname === to;
-};
-
 export const RouteLinks = {
   TEAM_LIST: {
     to: RouteMap.TEAM_LIST,
@@ -96,13 +92,6 @@ export const adminHeaderLinks: LinkDto[] = [
   RouteLinks.ADMIN_DASHBOARD_SUBSCRIPTIONS,
 ];
 
-export const protectedSidebarLinks: LinkDto[] = [
-  RouteLinks.PROTECTED,
-  RouteLinks.PROTECTED_BASIC,
-  RouteLinks.PROTECTED_PRO,
-  RouteLinks.PROTECTED_ADVANCED,
-];
-
 export const authenticatedSubHeaderLinks: LinkDto[] = [
   RouteLinks.DASHBOARD_OVERVIEW,
   RouteLinks.TASK_PROJECTS,
@@ -119,16 +108,6 @@ export const userDashboardLinks: LinkDto[] = [
   RouteLinks.DASHBOARD,
   RouteLinks.TEAM_LIST,
   RouteLinks.SETTINGS,
-];
-
-export const teamDashboardLinks: LinkDto[] = [
-  RouteLinks.DASHBOARD_OVERVIEW,
-  RouteLinks.TASK_PROJECTS,
-  RouteLinks.SETTINGS,
-  RouteLinks.ADMIN,
-  RouteLinks.ADMIN_DASHBOARD_USERS,
-  RouteLinks.ADMIN_DASHBOARD_ROLES,
-  RouteLinks.ADMIN_DASHBOARD_PERMISSIONS,
 ];
 
 export const teamLinks = (slug: string): LinkDto[] => [
