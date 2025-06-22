@@ -31,7 +31,7 @@ import { z } from "zod";
 
 const formSchema = z.object({
   name: z.string().min(1).optional(),
-  image: z.string().url().optional(),
+  image: z.string().nullable().optional(),
 });
 
 const resetPasswordSchema = z.object({
@@ -174,7 +174,7 @@ export default function AccountSettingsPage() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: data?.name ?? undefined,
-      image: data?.image ?? undefined,
+      image: data?.image,
     },
   });
   const onResetPasswordSubmut = (
@@ -186,12 +186,10 @@ export default function AccountSettingsPage() {
     mutation.mutate(values);
   };
   useEffect(() => {
-    if (data) {
-      form.reset({
-        name: data.name || "",
-        image: data.image || "",
-      });
-    }
+    form.reset({
+      name: data?.name || "",
+      image: data?.image || "",
+    });
   }, [data, form]);
   if (isLoading) return <p>Loading...</p>;
   if (isError) return <p>Error: {error.message}</p>;
@@ -246,7 +244,12 @@ export default function AccountSettingsPage() {
                 <FormItem>
                   <FormLabel>Image</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="Image" type="url" />
+                    <Input
+                      {...field}
+                      placeholder="Image"
+                      type="url"
+                      value={field.value || ""}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
