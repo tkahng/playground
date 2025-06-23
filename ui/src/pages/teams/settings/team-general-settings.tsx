@@ -1,5 +1,5 @@
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
-import { settingsSidebarLinks } from "@/components/links";
+import { teamSettingLinks } from "@/components/links";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -104,7 +104,7 @@ export default function TeamSettingsPage() {
   if (!data) return <p>User not found</p>;
   return (
     <div className="flex">
-      <DashboardSidebar links={settingsSidebarLinks} />
+      <DashboardSidebar links={teamSettingLinks(data.slug)} />
       <div className="flex-1 space-y-6 p-12 w-full">
         <div>
           <h3 className="text-lg font-medium">Profile</h3>

@@ -1,10 +1,24 @@
 import { client } from "@/lib/client";
 import { components } from "@/schema";
 
-export const getTeamMembers = async (accessToken: string) => {
-  const { data, error } = await client.GET("/api/team-members", {
+export const getTeamMembers = async (
+  accessToken: string,
+  teamId: string,
+  page?: number,
+  perPage?: number
+) => {
+  const { data, error } = await client.GET("/api/teams/{team-id}/members", {
     headers: {
       Authorization: `Bearer ${accessToken}`,
+    },
+    params: {
+      path: {
+        "team-id": teamId,
+      },
+      query: {
+        page,
+        per_page: perPage,
+      },
     },
   });
   if (error) {
