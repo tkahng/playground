@@ -7,6 +7,7 @@ import { getTeamMembers } from "@/lib/team-queries";
 import { useQuery } from "@tanstack/react-query";
 import { PaginationState, Updater } from "@tanstack/react-table";
 import { useSearchParams } from "react-router";
+import { TeamMemberActionDropdown } from "./team-member-action-dropdown";
 
 export default function TeamMembersSettingPage() {
   const { user } = useAuthProvider();
@@ -70,6 +71,16 @@ export default function TeamMembersSettingPage() {
             {
               header: "Role",
               accessorKey: "role",
+            },
+            {
+              id: "actions",
+              cell: ({ row }) => {
+                return (
+                  <div className="flex flex-row gap-2 justify-end">
+                    <TeamMemberActionDropdown memberId={row.original.id} />
+                  </div>
+                );
+              },
             },
           ]}
         />
