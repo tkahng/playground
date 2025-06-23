@@ -19,19 +19,25 @@ import (
 var _ App = (*BaseApp)(nil)
 
 type BaseApp struct {
-	cfg      *conf.EnvConfig
-	db       database.Dbx
-	settings *conf.AppOptions
-	payment  services.PaymentService
-	logger   *slog.Logger
-	fs       filesystem.FileSystem
-	mail     mailer.Mailer
-	auth     services.AuthService
-	team     services.TeamService
-	checker  services.ConstraintChecker
-	rbac     services.RBACService
-	task     services.TaskService
-	adapter  stores.StorageAdapterInterface
+	cfg            *conf.EnvConfig
+	db             database.Dbx
+	settings       *conf.AppOptions
+	payment        services.PaymentService
+	logger         *slog.Logger
+	fs             filesystem.FileSystem
+	mail           mailer.Mailer
+	auth           services.AuthService
+	team           services.TeamService
+	checker        services.ConstraintChecker
+	rbac           services.RBACService
+	task           services.TaskService
+	adapter        stores.StorageAdapterInterface
+	teamInvitation services.TeamInvitationService
+}
+
+// TeamInvitation implements App.
+func (app *BaseApp) TeamInvitation() services.TeamInvitationService {
+	return app.teamInvitation
 }
 
 // Adapter implements App.
@@ -141,7 +147,7 @@ func NewBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 	)
 
 	teamService := services.NewTeamService(adapter)
-
+	teamInvitationService := services.NewInvitationService(adapter, authMailService, *settings, routineService)
 	app := NewApp(
 		fs,
 		pool,
@@ -156,6 +162,7 @@ func NewBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 		taskService,
 		teamService,
 		adapter,
+		teamInvitationService,
 	)
 	return app
 }
@@ -174,21 +181,23 @@ func NewApp(
 	taskService services.TaskService,
 	teamService services.TeamService,
 	adapter stores.StorageAdapterInterface,
+	invitation services.TeamInvitationService,
 ) *BaseApp {
 	app := &BaseApp{
-		fs:       fs,
-		db:       pool,
-		settings: settings,
-		logger:   logger,
-		cfg:      &cfg,
-		mail:     mail,
-		auth:     authService,
-		payment:  paymentService,
-		checker:  checker,
-		rbac:     rbacService,
-		task:     taskService,
-		team:     teamService,
-		adapter:  adapter,
+		fs:             fs,
+		db:             pool,
+		settings:       settings,
+		logger:         logger,
+		cfg:            &cfg,
+		mail:           mail,
+		auth:           authService,
+		payment:        paymentService,
+		checker:        checker,
+		rbac:           rbacService,
+		task:           taskService,
+		team:           teamService,
+		adapter:        adapter,
+		teamInvitation: invitation,
 	}
 	return app
 }

@@ -21,7 +21,7 @@ func NewAppDecorator(ctx context.Context, cfg conf.EnvConfig, pool database.Dbx)
 	l := logger.GetDefaultLogger()
 	enqueuer := jobs.NewDBEnqueuer(pool)
 	adapter := stores.NewStorageAdapter(pool)
-	var mail mailer.Mailer = &mailer.LogMailer{}
+	mail := &mailer.LogMailer{}
 	authMailService := services.NewMailService(mail)
 	rbacService := services.NewRBACService(adapter)
 	taskService := services.NewTaskService(adapter)
@@ -49,7 +49,12 @@ func NewAppDecorator(ctx context.Context, cfg conf.EnvConfig, pool database.Dbx)
 	)
 
 	teamService := services.NewTeamService(adapter)
-
+	invitation := services.NewInvitationService(
+		adapter,
+		authMailService,
+		*settings,
+		routine,
+	)
 	app := NewApp(
 		fs,
 		pool,
@@ -64,24 +69,36 @@ func NewAppDecorator(ctx context.Context, cfg conf.EnvConfig, pool database.Dbx)
 		taskService,
 		teamService,
 		adapter,
+		invitation,
 	)
 	return &BaseAppDecorator{app: app}
 }
 
 type BaseAppDecorator struct {
-	app         *BaseApp
-	AuthFunc    func() services.AuthService
-	CfgFunc     func() *conf.EnvConfig
-	CheckerFunc func() services.ConstraintChecker
-	DbFunc      func() database.Dbx
-	FsFunc      func() *filesystem.S3FileSystem
-	MailerFunc  func() mailer.Mailer
-	PaymentFunc func() services.PaymentService
-	RbacFunc    func() services.RBACService
-	TeamFunc    func() services.TeamService
-	TaskFunc    func() services.TaskService
-	AdapterFunc func() stores.StorageAdapterInterface
+	app                *BaseApp
+	AuthFunc           func() services.AuthService
+	CfgFunc            func() *conf.EnvConfig
+	CheckerFunc        func() services.ConstraintChecker
+	DbFunc             func() database.Dbx
+	FsFunc             func() *filesystem.S3FileSystem
+	MailerFunc         func() mailer.Mailer
+	PaymentFunc        func() services.PaymentService
+	RbacFunc           func() services.RBACService
+	TeamFunc           func() services.TeamService
+	TaskFunc           func() services.TaskService
+	AdapterFunc        func() stores.StorageAdapterInterface
+	TeamInvitationFunc func() services.TeamInvitationService
 }
+
+// TeamInvitation implements App.
+func (b *BaseAppDecorator) TeamInvitation() services.TeamInvitationService {
+	if b.TeamInvitationFunc != nil {
+		return b.TeamInvitationFunc()
+	}
+	return b.app.TeamInvitation()
+}
+
+var _ App = (*BaseAppDecorator)(nil)
 
 func (b *BaseAppDecorator) Adapter() stores.StorageAdapterInterface {
 	if b.AdapterFunc != nil {

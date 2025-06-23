@@ -526,3 +526,10 @@ func (api *Api) FindTeamTeamMembers(
 		},
 	}, nil
 }
+
+func (api *Api) InviteTeamMember(
+	ctx context.Context,
+	input *struct{},
+) (*struct{}, error) {
+	return nil, nil
+}

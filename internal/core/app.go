@@ -27,6 +27,7 @@ type App interface {
 	Auth() services.AuthService
 
 	Team() services.TeamService
+	TeamInvitation() services.TeamInvitationService
 
 	Checker() services.ConstraintChecker
 
