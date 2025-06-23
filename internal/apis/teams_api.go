@@ -483,12 +483,37 @@ func (api *Api) FindTeamTeamMembers(
 	filter.SortBy = input.SortBy
 	filter.SortOrder = input.SortOrder
 	filter.TeamIds = []uuid.UUID{teamID}
-	teams, err := api.app.Adapter().TeamMember().FindTeamMembers(ctx, filter)
+	members, err := api.app.Adapter().TeamMember().FindTeamMembers(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
-	if len(teams) == 0 {
-		return nil, huma.Error500InternalServerError("teams not found")
+	if len(members) > 0 {
+		userIds := make([]uuid.UUID, len(members))
+		for idx, member := range members {
+			if member == nil {
+				continue
+			}
+			if member.UserID == nil {
+				continue
+			}
+			userIds[idx] = *member.UserID
+		}
+		users, err := api.app.Adapter().User().LoadUsersByUserIds(ctx, userIds...)
+		if err != nil {
+			return nil, err
+		}
+		for idx := range userIds {
+			member := members[idx]
+			if member == nil {
+				continue
+			}
+			user := users[idx]
+			if user == nil {
+				continue
+			}
+			member.User = user
+		}
+
 	}
 	count, err := api.app.Adapter().TeamMember().CountTeamMembers(ctx, filter)
 	if err != nil {
@@ -496,7 +521,7 @@ func (api *Api) FindTeamTeamMembers(
 	}
 	return &ApiPaginatedOutput[*TeamMember]{
 		Body: ApiPaginatedResponse[*TeamMember]{
-			Data: mapper.Map(teams, FromTeamMemberModel),
+			Data: mapper.Map(members, FromTeamMemberModel),
 			Meta: ApiGenerateMeta(&input.PaginatedInput, count),
 		},
 	}, nil
