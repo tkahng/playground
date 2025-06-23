@@ -50,6 +50,7 @@ import ProjectListPage from "./pages/teams/projects/projects-list";
 import TaskLayout from "./pages/teams/projects/task-layout";
 import TeamBillingSettingPage from "./pages/teams/settings/team-billing-settings";
 import TeamSettingsPage from "./pages/teams/settings/team-general-settings";
+import TeamMembersSettingPage from "./pages/teams/settings/team-members-settings";
 import TeamListPage from "./pages/teams/team-list";
 
 function TeamRoutes() {
@@ -80,6 +81,7 @@ function TeamRoutes() {
           >
             <Route index element={<TeamSettingsPage />} />
             <Route path="billing" element={<TeamBillingSettingPage />} />
+            <Route path="members" element={<TeamMembersSettingPage />} />
           </Route>
         </Route>
 

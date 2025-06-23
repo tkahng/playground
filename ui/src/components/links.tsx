@@ -149,19 +149,19 @@ export const createTeamSettingsLink = (slug: string) => {
 };
 
 export const createTeamBillingSettingsLink = (slug: string) => {
-  const path = `/teams/${slug}/billing`;
+  const path = `/teams/${slug}/settings/billing`;
   return {
     to: path,
-    title: "Team Settings",
+    title: "Team Billing Settings",
     current: (pathname: string) => pathname.startsWith(path),
   };
 };
 
 export const createTeamMembersSettingsLink = (slug: string) => {
-  const path = `/teams/${slug}/members`;
+  const path = `/teams/${slug}/settings/members`;
   return {
     to: path,
-    title: "Team Settings",
+    title: "Team Members Settings",
     current: (pathname: string) => pathname.startsWith(path),
   };
 };
