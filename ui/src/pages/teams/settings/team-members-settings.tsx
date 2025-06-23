@@ -61,11 +61,11 @@ export default function TeamMembersSettingPage() {
           columns={[
             {
               header: "Name",
-              accessorKey: "name",
+              accessorKey: "user.name",
             },
             {
               header: "Email",
-              accessorKey: "email",
+              accessorKey: "user.email",
             },
             {
               header: "Role",
