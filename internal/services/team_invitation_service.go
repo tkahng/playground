@@ -25,8 +25,8 @@ type TeamInvitationService interface {
 	CreateInvitation(
 		ctx context.Context,
 		teamId uuid.UUID,
-		userId uuid.UUID,
-		email string,
+		invitingUserId uuid.UUID,
+		inviteeEmail string,
 		role models.TeamMemberRole,
 		resend bool,
 	) error
@@ -58,7 +58,7 @@ type TeamInvitationService interface {
 		teamId uuid.UUID,
 	) ([]*models.TeamInvitation, error)
 
-	SendInvitationEmail(
+	sendInvitationEmail(
 		ctx context.Context,
 		params *TeamInvitationMailParams,
 	) error
@@ -91,8 +91,8 @@ func (i *InvitationService) CreateConfirmationUrl(tokenhash string) (string, err
 	return appUrl.ResolveReference(path).String(), nil
 }
 
-// SendInvitationEmail implements TeamInvitationService.
-func (i *InvitationService) SendInvitationEmail(ctx context.Context, params *TeamInvitationMailParams) error {
+// sendInvitationEmail implements TeamInvitationService.
+func (i *InvitationService) sendInvitationEmail(ctx context.Context, params *TeamInvitationMailParams) error {
 	if params == nil {
 		return fmt.Errorf("params is nil")
 	}
@@ -308,7 +308,7 @@ func (i *InvitationService) CreateInvitation(
 		func() {
 			ctx := context.Background()
 
-			err := i.SendInvitationEmail(ctx, &TeamInvitationMailParams{
+			err := i.sendInvitationEmail(ctx, &TeamInvitationMailParams{
 				Email:          invitation.Email,
 				InvitedByEmail: member.User.Email,
 				TeamName:       member.Team.Name,

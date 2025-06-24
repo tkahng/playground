@@ -527,9 +527,137 @@ func (api *Api) FindTeamTeamMembers(
 	}, nil
 }
 
-func (api *Api) InviteTeamMember(
+type InviteTeamMemberDto struct {
+	Email string `json:"email" required:"true"`
+	Role  string `json:"role" required:"true"`
+}
+type InviteTeamMemberInput struct {
+	TeamID string              `path:"team-id" required:"true" format:"uuid"`
+	Body   InviteTeamMemberDto `json:"body" required:"true"`
+}
+
+func (api *Api) CreateInvitation(
 	ctx context.Context,
-	input *struct{},
+	input *InviteTeamMemberInput,
 ) (*struct{}, error) {
+	userInfo := contextstore.GetContextUserInfo(ctx)
+	if userInfo == nil {
+		return nil, huma.Error401Unauthorized("Unauthorized")
+	}
+	parsedTeamId, err := uuid.Parse(input.TeamID)
+	if err != nil {
+		return nil, err
+	}
+
+	err = api.app.TeamInvitation().CreateInvitation(
+		ctx,
+		parsedTeamId,
+		userInfo.User.ID,
+		input.Body.Email,
+		models.TeamMemberRole(input.Body.Role),
+		true,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return nil, nil
+}
+
+type CheckValidInvitationDto struct {
+	Token string `json:"token" required:"true"`
+}
+type CheckValidInvitationInput struct {
+	Body CheckValidInvitationDto
+}
+
+func (api *Api) CehckValidInvitation(
+	ctx context.Context,
+	input *CheckValidInvitationInput,
+) (*struct{}, error) {
+	userInfo := contextstore.GetContextUserInfo(ctx)
+	if userInfo == nil {
+		return nil, huma.Error401Unauthorized("Unauthorized. No user info")
+	}
+	res, err := api.app.TeamInvitation().CheckValidInvitation(
+		ctx,
+		userInfo.User.ID,
+		input.Body.Token,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if !res {
+		return nil, huma.Error400BadRequest("Invalid invitation")
+	}
+	return nil, nil
+}
+
+func (api *Api) AcceptInvitation(
+	ctx context.Context,
+	input *CheckValidInvitationInput,
+) (*struct{}, error) {
+	userInfo := contextstore.GetContextUserInfo(ctx)
+	if userInfo == nil {
+		return nil, huma.Error401Unauthorized("Unauthorized. No user info")
+	}
+	err := api.app.TeamInvitation().AcceptInvitation(
+		ctx,
+		userInfo.User.ID,
+		input.Body.Token,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return nil, nil
+}
+
+func (api *Api) DeclineInvitation(
+	ctx context.Context,
+	input *CheckValidInvitationInput,
+) (*struct{}, error) {
+	userInfo := contextstore.GetContextUserInfo(ctx)
+	if userInfo == nil {
+		return nil, huma.Error401Unauthorized("Unauthorized. No user info")
+	}
+	err := api.app.TeamInvitation().RejectInvitation(
+		ctx,
+		userInfo.User.ID,
+		input.Body.Token,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return nil, nil
+}
+
+type CancelInvitationDto struct {
+	InvitationID uuid.UUID `json:"invitation_id" required:"true" format:"uuid"`
+}
+type CancelInvitationInput struct {
+	TeamID string `path:"team-id" required:"true" format:"uuid"`
+	Body   CancelInvitationDto
+}
+
+func (api *Api) CencelInvitation(
+	ctx context.Context,
+	input *CancelInvitationInput,
+) (*struct{}, error) {
+	userInfo := contextstore.GetContextUserInfo(ctx)
+	if userInfo == nil {
+		return nil, huma.Error401Unauthorized("Unauthorized. No user info")
+	}
+	parsedTeamId, err := uuid.Parse(input.TeamID)
+	if err != nil {
+		return nil, err
+	}
+	err = api.app.TeamInvitation().CancelInvitation(
+		ctx,
+		parsedTeamId,
+		userInfo.User.ID,
+		input.Body.InvitationID,
+	)
+	if err != nil {
+		return nil, err
+	}
 	return nil, nil
 }
