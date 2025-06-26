@@ -12,12 +12,17 @@ import (
 	"github.com/tkahng/authgo/internal/shared"
 )
 
+type TeamInvitationParams struct {
+	PaginatedInput
+	SortParams
+}
+
 type DbTeamInvitationStoreInterface interface { // size=16 (0x10)
 	CreateInvitation(ctx context.Context, invitation *models.TeamInvitation) error
 	FindInvitationByID(ctx context.Context, invitationId uuid.UUID) (*models.TeamInvitation, error)
 	FindInvitationByToken(ctx context.Context, token string) (*models.TeamInvitation, error)
 	FindPendingInvitation(ctx context.Context, teamId uuid.UUID, email string) (*models.TeamInvitation, error)
-	FindTeamInvitations(ctx context.Context, teamId uuid.UUID) ([]*models.TeamInvitation, error)
+	FindTeamInvitations(ctx context.Context, teamId uuid.UUID, params *TeamInvitationParams) ([]*models.TeamInvitation, error)
 	GetInvitationByID(ctx context.Context, invitationId uuid.UUID) (*models.TeamInvitation, error)
 	UpdateInvitation(ctx context.Context, invitation *models.TeamInvitation) error
 }
@@ -37,7 +42,7 @@ func (s *DbTeamInvitationStore) WithTx(db database.Dbx) *DbTeamInvitationStore {
 	}
 }
 
-func (s *DbTeamInvitationStore) FindTeamInvitations(ctx context.Context, teamId uuid.UUID) ([]*models.TeamInvitation, error) {
+func (s *DbTeamInvitationStore) FindTeamInvitations(ctx context.Context, teamId uuid.UUID, params *TeamInvitationParams) ([]*models.TeamInvitation, error) {
 	invitations, err := repository.TeamInvitation.Get(
 		ctx,
 		s.db,

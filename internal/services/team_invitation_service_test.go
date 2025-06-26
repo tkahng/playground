@@ -184,7 +184,7 @@ func TestInvitationService_FindInvitations(t *testing.T) {
 	service := NewInvitationService(store, mailService, *opts, mockRoutineService)
 	teamId := uuid.New()
 	invitations := []*models.TeamInvitation{{TeamID: teamId, Email: "test@example.com"}}
-	store.TeamInvitationFunc.FindTeamInvitationsFunc = func(ctx context.Context, teamId uuid.UUID) ([]*models.TeamInvitation, error) {
+	store.TeamInvitationFunc.FindTeamInvitationsFunc = func(ctx context.Context, teamId uuid.UUID, params *stores.TeamInvitationParams) ([]*models.TeamInvitation, error) {
 		return invitations, nil
 	}
 

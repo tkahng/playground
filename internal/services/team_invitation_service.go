@@ -324,7 +324,7 @@ func (i *InvitationService) CreateInvitation(
 
 // FindInvitations implements TeamInvitationService.
 func (i *InvitationService) FindInvitations(ctx context.Context, teamId uuid.UUID) ([]*models.TeamInvitation, error) {
-	invitations, err := i.adapter.TeamInvitation().FindTeamInvitations(ctx, teamId)
+	invitations, err := i.adapter.TeamInvitation().FindTeamInvitations(ctx, teamId, nil)
 	if err != nil {
 		return nil, err
 	}
