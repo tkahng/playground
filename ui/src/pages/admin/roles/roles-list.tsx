@@ -95,7 +95,6 @@ export default function RolesListPage() {
         </p>
         <CreateRoleDialog />
       </div>
-      <p></p>
       <DataTable
         columns={[
           {

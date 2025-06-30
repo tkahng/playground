@@ -81,14 +81,12 @@ export function InviteTeamMemberDialog() {
   return (
     <Dialog open={isDialogOpen} onOpenChange={setDialogOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline">Create Role</Button>
+        <Button variant="outline">Invite Member</Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Create Role</DialogTitle>
-          <DialogDescription>
-            Create a new role to manage permissions and access control.
-          </DialogDescription>
+          <DialogTitle>Invite Member</DialogTitle>
+          <DialogDescription>Invite a member to your team.</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>

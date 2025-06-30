@@ -7,6 +7,7 @@ import { getTeamMembers } from "@/lib/team-queries";
 import { useQuery } from "@tanstack/react-query";
 import { PaginationState, Updater } from "@tanstack/react-table";
 import { useSearchParams } from "react-router";
+import { InviteTeamMemberDialog } from "./invite-team-member-dialog";
 import { TeamMemberActionDropdown } from "./team-member-action-dropdown";
 
 export default function TeamMembersSettingPage() {
@@ -53,6 +54,13 @@ export default function TeamMembersSettingPage() {
     <div className="flex">
       <DashboardSidebar links={teamSettingLinks(team?.slug)} />
       <div className="flex-1 space-y-6 p-12 w-full">
+        <div className="flex items-center justify-between">
+          <p>
+            Create and manage Roles for your applications. Roles contain
+            collections of Permissions and can be assigned to Users.
+          </p>
+          <InviteTeamMemberDialog />
+        </div>
         <DataTable
           data={data.data || []}
           rowCount={data.meta.total || 0}
