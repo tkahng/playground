@@ -2,13 +2,6 @@ import { DataTable } from "@/components/data-table";
 import { RouteMap } from "@/components/route-map";
 import { Button } from "@/components/ui/button";
 import {
-  DialogClose,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
   Form,
   FormControl,
   FormDescription,
@@ -20,7 +13,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { ConfirmDialog, useDialog } from "@/hooks/use-dialog";
 import { useTabs } from "@/hooks/use-tabs";
 import {
   deleteRolePermission,
@@ -30,12 +22,13 @@ import {
 import { CreateRolePermissionDialog } from "@/pages/admin/roles/create-role-permission-dialog";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ChevronLeft, Trash } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
 import { z } from "zod";
+import { RoleDeleteButton } from "./role-delete-button";
 
 const formSchema = z.object({
   name: z.string().min(2, {
@@ -210,7 +203,7 @@ export default function RoleEdit() {
                 cell: ({ row }) => {
                   return (
                     <div className="flex flex-row gap-2 justify-end">
-                      <DeleteButton
+                      <RoleDeleteButton
                         permissionId={row.original.id}
                         onDelete={onDelete}
                       />
@@ -224,56 +217,5 @@ export default function RoleEdit() {
         </TabsContent>
       </Tabs>
     </div>
-  );
-}
-
-function DeleteButton({
-  permissionId,
-  onDelete,
-}: {
-  permissionId: string;
-  onDelete: (permissionId: string) => void;
-}) {
-  const editDialog = useDialog();
-  return (
-    <>
-      <Button variant="outline" size="icon" onClick={editDialog.trigger}>
-        <Trash className="h-4 w-4" />
-      </Button>
-      <ConfirmDialog dialogProps={editDialog.props}>
-        <>
-          <DialogHeader>
-            <DialogTitle>Are you absolutely sure?</DialogTitle>
-          </DialogHeader>
-          {/* Dialog Content */}
-          <DialogDescription>This action cannot be undone.</DialogDescription>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  console.log("cancel");
-                  // editDialog.props.onOpenChange(false);
-                }}
-              >
-                Cancel
-              </Button>
-            </DialogClose>
-            <DialogClose asChild>
-              <Button
-                variant="destructive"
-                onClick={() => {
-                  console.log("delete");
-                  // editDialog.props.onOpenChange(false);
-                  onDelete(permissionId);
-                }}
-              >
-                Delete
-              </Button>
-            </DialogClose>
-          </DialogFooter>
-        </>
-      </ConfirmDialog>
-    </>
   );
 }
