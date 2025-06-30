@@ -799,3 +799,51 @@ func (api *Api) LoadTeamInvitationRelations(ctx context.Context, invitations []*
 	}
 	return nil
 }
+
+type FindUserTeamInvitationsInput struct {
+	PaginatedInput
+	SortParams
+}
+
+func (api *Api) GetUserTeamInvitations(
+	ctx context.Context,
+	input *FindUserTeamInvitationsInput,
+) (*ApiPaginatedOutput[*TeamInvitation], error) {
+	userInfo := contextstore.GetContextUserInfo(ctx)
+	if userInfo == nil {
+		return nil, huma.Error401Unauthorized("Unauthorized. No user info")
+	}
+
+	filter := &stores.TeamInvitationFilter{}
+	filter.Page = input.Page
+	filter.PerPage = input.PerPage
+	filter.SortBy = input.SortBy
+	filter.SortOrder = input.SortOrder
+	filter.Emails = []string{userInfo.User.Email}
+	invitations, err := api.app.Adapter().TeamInvitation().FindTeamInvitations(
+		ctx,
+		filter,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if len(invitations) > 0 {
+		err := api.LoadTeamInvitationRelations(ctx, invitations)
+		if err != nil {
+			return nil, err
+		}
+	}
+	count, err := api.app.Adapter().TeamInvitation().CountTeamInvitations(
+		ctx,
+		filter,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &ApiPaginatedOutput[*TeamInvitation]{
+		Body: ApiPaginatedResponse[*TeamInvitation]{
+			Data: mapper.Map(invitations, FromTeamInvitationModel),
+			Meta: ApiGenerateMeta(&input.PaginatedInput, count),
+		},
+	}, nil
+}

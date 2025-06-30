@@ -16,6 +16,7 @@ type TeamInvitationFilter struct {
 	PaginatedInput
 	SortParams
 	TeamIds   []uuid.UUID                    `query:"team_ids,omitempty" json:"team_ids,omitempty" format:"uuid" required:"false"`
+	Emails    []string                       `query:"emails,omitempty" json:"emails,omitempty" required:"false" minimum:"1" maximum:"100" format:"email"`
 	Statuses  []models.TeamInvitationStatus  `query:"statuses,omitempty" json:"statuses,omitempty" required:"false" minimum:"1" maximum:"100" enum:"pending,accepted,declined,canceled"`
 	ExpiresAt types.OptionalParam[time.Time] `query:"expires_at,omitempty" json:"expires_at,omitempty" required:"false"`
 }
@@ -63,6 +64,11 @@ func (s *DbTeamInvitationStore) filter(params *TeamInvitationFilter) *map[string
 	if params.ExpiresAt.IsSet {
 		where[models.TeamInvitationTable.ExpiresAt] = map[string]any{
 			repository.Gte: params.ExpiresAt.Value,
+		}
+	}
+	if len(params.Emails) > 0 {
+		where[models.TeamInvitationTable.Email] = map[string]any{
+			repository.In: params.Emails,
 		}
 	}
 	return &where

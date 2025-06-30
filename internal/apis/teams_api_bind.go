@@ -305,4 +305,24 @@ func BindTeamsApi(api huma.API, appApi *Api) {
 		appApi.DeclineInvitation,
 	)
 
+	// find user team invitations
+
+	huma.Register(
+		teamsGroup,
+		huma.Operation{
+			OperationID: "find-user-team-invitations",
+			Method:      http.MethodGet,
+			Path:        "/auth/me/invitations",
+			Summary:     "find-user-team-invitations",
+			Description: "find user team invitations",
+			Tags:        []string{"Teams", "Me"},
+			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+			Middlewares: huma.Middlewares{},
+		},
+		appApi.GetUserTeamInvitations,
+	)
+
 }
