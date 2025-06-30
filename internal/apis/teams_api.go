@@ -847,3 +847,35 @@ func (api *Api) GetUserTeamInvitations(
 		},
 	}, nil
 }
+
+type GetInvitationByTokenInput struct {
+	Token string `path:"token" required:"true"`
+}
+
+func (api *Api) GetInvitationByToken(
+	ctx context.Context,
+	input *GetInvitationByTokenInput,
+) (*TeamInvitation, error) {
+	userInfo := contextstore.GetContextUserInfo(ctx)
+	if userInfo == nil {
+		return nil, huma.Error401Unauthorized("Unauthorized. No user info")
+	}
+	invitation, err := api.app.Adapter().TeamInvitation().FindInvitationByToken(ctx, input.Token)
+	if err != nil {
+		return nil, err
+	}
+	team, err := api.app.Adapter().TeamGroup().FindTeamByID(ctx, invitation.TeamID)
+	if err != nil {
+		return nil, err
+	}
+	invitation.Team = team
+	member, err := api.app.Adapter().TeamMember().FindTeamMember(ctx, &stores.TeamMemberFilter{
+		Ids: []uuid.UUID{invitation.InviterMemberID},
+	})
+	if err != nil {
+		return nil, err
+	}
+	invitation.InviterMember = member
+
+	return FromTeamInvitationModel(invitation), nil
+}

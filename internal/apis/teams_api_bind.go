@@ -213,7 +213,7 @@ func BindTeamsApi(api huma.API, appApi *Api) {
 			Path:        "/teams/{team-id}/invitations/{invitation-id}",
 			Summary:     "cancel-invitation",
 			Description: "cancel invitation",
-			Tags:        []string{"Teams"},
+			Tags:        []string{"Teams", "Team Invitations"},
 			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
 			Security: []map[string][]string{{
 				shared.BearerAuthSecurityKey: {},
@@ -236,7 +236,7 @@ func BindTeamsApi(api huma.API, appApi *Api) {
 			Path:        "/teams/{team-id}/invitations",
 			Summary:     "find-team-invitations",
 			Description: "find team invitations",
-			Tags:        []string{"Teams"},
+			Tags:        []string{"Teams", "Team Invitations"},
 			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
 			Security: []map[string][]string{{
 				shared.BearerAuthSecurityKey: {},
@@ -257,7 +257,7 @@ func BindTeamsApi(api huma.API, appApi *Api) {
 			Path:        "/team-invitations/check",
 			Summary:     "check-valid-invitation",
 			Description: "check valid invitation",
-			Tags:        []string{"Teams"},
+			Tags:        []string{"Team Invitations"},
 			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
 			Security: []map[string][]string{{
 				shared.BearerAuthSecurityKey: {},
@@ -276,7 +276,7 @@ func BindTeamsApi(api huma.API, appApi *Api) {
 			Path:        "/team-invitations/accept",
 			Summary:     "accept-invitation",
 			Description: "accept invitation",
-			Tags:        []string{"Teams"},
+			Tags:        []string{"Team Invitations"},
 			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
 			Security: []map[string][]string{{
 				shared.BearerAuthSecurityKey: {},
@@ -295,7 +295,7 @@ func BindTeamsApi(api huma.API, appApi *Api) {
 			Path:        "/team-invitations/decline",
 			Summary:     "decline-invitation",
 			Description: "decline invitation",
-			Tags:        []string{"Teams"},
+			Tags:        []string{"Team Invitations"},
 			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
 			Security: []map[string][]string{{
 				shared.BearerAuthSecurityKey: {},
@@ -312,10 +312,10 @@ func BindTeamsApi(api huma.API, appApi *Api) {
 		huma.Operation{
 			OperationID: "find-user-team-invitations",
 			Method:      http.MethodGet,
-			Path:        "/auth/me/invitations",
+			Path:        "/team-invitations",
 			Summary:     "find-user-team-invitations",
 			Description: "find user team invitations",
-			Tags:        []string{"Teams", "Me"},
+			Tags:        []string{"Team Invitations"},
 			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
 			Security: []map[string][]string{{
 				shared.BearerAuthSecurityKey: {},
@@ -325,4 +325,22 @@ func BindTeamsApi(api huma.API, appApi *Api) {
 		appApi.GetUserTeamInvitations,
 	)
 
+	// find user team invitation by token
+	huma.Register(
+		teamsGroup,
+		huma.Operation{
+			OperationID: "find-user-team-invitation-by-token",
+			Method:      http.MethodGet,
+			Path:        "/team-invitations/{token}",
+			Summary:     "find-user-team-invitation-by-token",
+			Description: "find user team invitation by token",
+			Tags:        []string{"Team Invitations"},
+			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+			Middlewares: huma.Middlewares{},
+		},
+		appApi.GetInvitationByToken,
+	)
 }
