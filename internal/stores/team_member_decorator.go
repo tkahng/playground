@@ -24,7 +24,18 @@ type TeamMemberStoreDecorator struct {
 	FindTeamMembersFunc                 func(ctx context.Context, filter *TeamMemberFilter) ([]*models.TeamMember, error)
 	CreateTeamMemberFromUserAndSlugFunc func(ctx context.Context, user *models.User, slug string, role models.TeamMemberRole) (*models.TeamMember, error)
 	LoadTeamMembersByUserAndTeamIdsFunc func(ctx context.Context, userId uuid.UUID, teamIds ...uuid.UUID) ([]*models.TeamMember, error)
-	// Add any additional methods or fields for the decorator here
+	LoadTeamMembersByIdsFunc            func(ctx context.Context, teamMemberIds ...uuid.UUID) ([]*models.TeamMember, error)
+}
+
+// LoadTeamMembersByIds implements DbTeamMemberStoreInterface.
+func (t *TeamMemberStoreDecorator) LoadTeamMembersByIds(ctx context.Context, teamMemberIds ...uuid.UUID) ([]*models.TeamMember, error) {
+	if t.LoadTeamMembersByIdsFunc != nil {
+		return t.LoadTeamMembersByIdsFunc(ctx, teamMemberIds...)
+	}
+	if t.Delegate == nil {
+		return nil, ErrDelegateNil
+	}
+	return t.Delegate.LoadTeamMembersByIds(ctx, teamMemberIds...)
 }
 
 // CreateTeamMemberFromUserAndSlug implements DbTeamMemberStoreInterface.

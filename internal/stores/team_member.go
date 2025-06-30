@@ -36,6 +36,7 @@ type TeamMemberFilter struct {
 
 type DbTeamMemberStoreInterface interface {
 	LoadTeamMembersByUserAndTeamIds(ctx context.Context, userId uuid.UUID, teamIds ...uuid.UUID) ([]*models.TeamMember, error)
+	LoadTeamMembersByIds(ctx context.Context, teamMemberIds ...uuid.UUID) ([]*models.TeamMember, error)
 	FindTeamMembers(ctx context.Context, filter *TeamMemberFilter) ([]*models.TeamMember, error)
 	CountTeamMembers(ctx context.Context, filter *TeamMemberFilter) (int64, error)
 	CreateTeamFromUser(ctx context.Context, user *models.User) (*models.TeamMember, error)
@@ -52,6 +53,32 @@ type DbTeamMemberStoreInterface interface {
 type DbTeamMemberStore struct {
 	db database.Dbx
 }
+
+// LoadTeamMembersByIds implements DbTeamMemberStoreInterface.
+func (s *DbTeamMemberStore) LoadTeamMembersByIds(ctx context.Context, teamMemberIds ...uuid.UUID) ([]*models.TeamMember, error) {
+	members, err := repository.TeamMember.Get(
+		ctx,
+		s.db,
+		&map[string]any{
+			models.TeamMemberTable.ID: map[string]any{
+				"_in": teamMemberIds,
+			},
+		},
+		nil,
+		nil,
+		nil,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+	memberMap := mapper.MapToPointer(members, teamMemberIds, func(m *models.TeamMember) uuid.UUID {
+		return m.ID
+	})
+	return memberMap, nil
+}
+
+var _ DbTeamMemberStoreInterface = (*DbTeamMemberStore)(nil)
 
 func NewDbTeamMemberStore(db database.Dbx) *DbTeamMemberStore {
 	return &DbTeamMemberStore{
