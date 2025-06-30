@@ -3,6 +3,7 @@ package cmd
 import (
 	"errors"
 	"log/slog"
+	"time"
 
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/spf13/cobra"
@@ -72,7 +73,7 @@ var seedRolesCmd = &cobra.Command{
 var seedUserCmd = &cobra.Command{
 	Use:     "user",
 	Short:   "seed user",
-	Example: "seed user admin@k2dv.io Password123!",
+	Example: "seed user admin@k2dv.io Password123! true",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) != 2 {
 			return errors.New("missing email and password arguments")
@@ -82,14 +83,20 @@ var seedUserCmd = &cobra.Command{
 			return errors.New("mrror missing or invalid email address")
 		}
 		email := args[0]
-		password := args[0]
-
+		password := args[1]
+		verirfied := args[2]
+		var verifiedAt *time.Time
+		if verirfied == "true" {
+			t := time.Now()
+			verifiedAt = &t
+		}
 		ctx := cmd.Context()
 		cfg := conf.GetConfig[conf.EnvConfig]()
 		app := core.NewBaseApp(ctx, cfg)
 		params := &services.AuthenticationInput{
-			Email:    email,
-			Password: &password,
+			Email:           email,
+			Password:        &password,
+			EmailVerifiedAt: verifiedAt,
 		}
 		_, err := app.Auth().Authenticate(
 			ctx,
