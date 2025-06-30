@@ -10,6 +10,7 @@ import (
 	"github.com/tkahng/authgo/internal/conf"
 	"github.com/tkahng/authgo/internal/core"
 	"github.com/tkahng/authgo/internal/database"
+	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/services"
 	"github.com/tkahng/authgo/internal/stores"
 	"github.com/tkahng/authgo/internal/tools/slug"
@@ -17,6 +18,8 @@ import (
 
 func NewSeedCmd() *cobra.Command {
 	seedCmd.AddCommand(seedRolesCmd)
+	seedCmd.AddCommand(seedUserCmd)
+	seedCmd.AddCommand(seedTeam)
 	return seedCmd
 }
 
@@ -75,7 +78,7 @@ var seedUserCmd = &cobra.Command{
 	Short:   "seed user",
 	Example: "seed user admin@k2dv.io Password123! true",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if len(args) != 2 {
+		if len(args) != 3 {
 			return errors.New("missing email and password arguments")
 		}
 
@@ -97,6 +100,8 @@ var seedUserCmd = &cobra.Command{
 			Email:           email,
 			Password:        &password,
 			EmailVerifiedAt: verifiedAt,
+			Provider:        models.ProvidersCredentials,
+			Type:            models.ProviderTypeCredentials,
 		}
 		_, err := app.Auth().Authenticate(
 			ctx,
