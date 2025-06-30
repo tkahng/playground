@@ -63,7 +63,9 @@ func TestTeamStore_InvitationCRUD(t *testing.T) {
 			t.Errorf("FindInvitationByToken() = %v, err = %v", inv, err)
 		}
 		// FindTeamInvitations should return the invitation
-		invs, err := store.FindTeamInvitations(ctx, team.ID, nil)
+		invs, err := store.FindTeamInvitations(ctx, &stores.TeamInvitationFilter{
+			TeamIds: []uuid.UUID{team.ID},
+		})
 		if err != nil || len(invs) == 0 {
 			t.Errorf("FindTeamInvitations() = %v, err = %v", invs, err)
 		}
@@ -176,7 +178,9 @@ func TestInvitationStore_CRUD(t *testing.T) {
 		}
 
 		// Find all for team
-		invs, err := teamStore.FindTeamInvitations(ctx, team.ID, nil)
+		invs, err := teamStore.FindTeamInvitations(ctx, &stores.TeamInvitationFilter{
+			TeamIds: []uuid.UUID{team.ID},
+		})
 		if err != nil || len(invs) == 0 {
 			t.Errorf("FindTeamInvitations() = %v, err = %v", invs, err)
 		}

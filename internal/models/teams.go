@@ -45,6 +45,8 @@ const (
 	TeamMemberRoleGuest  TeamMemberRole = "guest"
 )
 
+// TeamInvitationStatus
+// enum:"pending,accepted,declined,canceled"
 type TeamInvitationStatus string
 
 const (

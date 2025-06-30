@@ -32,6 +32,19 @@ type UserFilter struct {
 	EmailVerified types.OptionalParam[bool] `query:"email_verified,omitempty" required:"false"`
 }
 
+type DbUserStoreInterface interface {
+	FindUser(ctx context.Context, user *UserFilter) (*models.User, error)
+	FindUserByID(ctx context.Context, userId uuid.UUID) (*models.User, error)
+	AssignUserRoles(ctx context.Context, userId uuid.UUID, roleNames ...string) error
+	DeleteUser(ctx context.Context, userId uuid.UUID) error
+	GetUserInfo(ctx context.Context, email string) (*models.UserInfo, error)
+	UpdateUser(ctx context.Context, user *models.User) error
+	CreateUser(ctx context.Context, user *models.User) (*models.User, error)
+	LoadUsersByUserIds(ctx context.Context, userIds ...uuid.UUID) ([]*models.User, error)
+	FindUsers(ctx context.Context, filter *UserFilter) ([]*models.User, error)
+	CountUsers(ctx context.Context, filter *UserFilter) (int64, error)
+}
+
 type DbUserStore struct {
 	db database.Dbx
 }
@@ -439,19 +452,6 @@ func (s *DbUserStore) LoadUsersByUserIds(ctx context.Context, userIds ...uuid.UU
 		}
 		return a.ID
 	}), nil
-}
-
-type DbUserStoreInterface interface {
-	FindUser(ctx context.Context, user *UserFilter) (*models.User, error)
-	FindUserByID(ctx context.Context, userId uuid.UUID) (*models.User, error)
-	AssignUserRoles(ctx context.Context, userId uuid.UUID, roleNames ...string) error
-	DeleteUser(ctx context.Context, userId uuid.UUID) error
-	GetUserInfo(ctx context.Context, email string) (*models.UserInfo, error)
-	UpdateUser(ctx context.Context, user *models.User) error
-	CreateUser(ctx context.Context, user *models.User) (*models.User, error)
-	LoadUsersByUserIds(ctx context.Context, userIds ...uuid.UUID) ([]*models.User, error)
-	FindUsers(ctx context.Context, filter *UserFilter) ([]*models.User, error)
-	CountUsers(ctx context.Context, filter *UserFilter) (int64, error)
 }
 
 var _ DbUserStoreInterface = &DbUserStore{}

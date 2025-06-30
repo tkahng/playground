@@ -13,9 +13,21 @@ type TeamInvitationStoreDecorator struct {
 	FindInvitationByIDFunc    func(ctx context.Context, invitationId uuid.UUID) (*models.TeamInvitation, error)
 	FindInvitationByTokenFunc func(ctx context.Context, token string) (*models.TeamInvitation, error)
 	FindPendingInvitationFunc func(ctx context.Context, teamId uuid.UUID, email string) (*models.TeamInvitation, error)
-	FindTeamInvitationsFunc   func(ctx context.Context, teamId uuid.UUID, params *TeamInvitationParams) ([]*models.TeamInvitation, error)
+	FindTeamInvitationsFunc   func(ctx context.Context, params *TeamInvitationFilter) ([]*models.TeamInvitation, error)
 	GetInvitationByIDFunc     func(ctx context.Context, invitationId uuid.UUID) (*models.TeamInvitation, error)
 	UpdateInvitationFunc      func(ctx context.Context, invitation *models.TeamInvitation) error
+	CountTeamInvitationsFunc  func(ctx context.Context, filter *TeamInvitationFilter) (int64, error)
+}
+
+// CountTeamInvitations implements DbTeamInvitationStoreInterface.
+func (t *TeamInvitationStoreDecorator) CountTeamInvitations(ctx context.Context, params *TeamInvitationFilter) (int64, error) {
+	if t.CountTeamInvitationsFunc != nil {
+		return t.CountTeamInvitationsFunc(ctx, params)
+	}
+	if t.Delegate == nil {
+		return 0, ErrDelegateNil
+	}
+	return t.Delegate.CountTeamInvitations(ctx, params)
 }
 
 func (t *TeamInvitationStoreDecorator) Cleanup() {
@@ -73,14 +85,14 @@ func (t *TeamInvitationStoreDecorator) FindPendingInvitation(ctx context.Context
 }
 
 // FindTeamInvitations implements DbTeamInvitationStoreInterface.
-func (t *TeamInvitationStoreDecorator) FindTeamInvitations(ctx context.Context, teamId uuid.UUID, params *TeamInvitationParams) ([]*models.TeamInvitation, error) {
+func (t *TeamInvitationStoreDecorator) FindTeamInvitations(ctx context.Context, params *TeamInvitationFilter) ([]*models.TeamInvitation, error) {
 	if t.FindTeamInvitationsFunc != nil {
-		return t.FindTeamInvitationsFunc(ctx, teamId, params)
+		return t.FindTeamInvitationsFunc(ctx, params)
 	}
 	if t.Delegate == nil {
 		return nil, ErrDelegateNil
 	}
-	return t.Delegate.FindTeamInvitations(ctx, teamId, params)
+	return t.Delegate.FindTeamInvitations(ctx, params)
 }
 
 // GetInvitationByID implements DbTeamInvitationStoreInterface.

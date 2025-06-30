@@ -30,7 +30,7 @@ func (r *PostgresRepository[Model]) Builder() SQLBuilderInterface {
 }
 
 // Get retrieves records from the database based on the provided filters
-func (r *PostgresRepository[Model]) Get(ctx context.Context, db database.Dbx, where *map[string]any, order *map[string]string, limit *int, skip *int) ([]*Model, error) {
+func (r *PostgresRepository[Model]) Get(ctx context.Context, db database.Dbx, where *map[string]any, order *map[string]string, limit *int, offset *int) ([]*Model, error) {
 	var args []any
 	//goland:noinspection Annotator
 	query := fmt.Sprintf("SELECT %s FROM %s", r.builder.FieldString(""), r.builder.Table())
@@ -47,8 +47,8 @@ func (r *PostgresRepository[Model]) Get(ctx context.Context, db database.Dbx, wh
 	if limit != nil {
 		query += fmt.Sprintf(" LIMIT %d", *limit)
 	}
-	if skip != nil {
-		query += fmt.Sprintf(" OFFSET %d", *skip)
+	if offset != nil {
+		query += fmt.Sprintf(" OFFSET %d", *offset)
 	}
 
 	// Execute the query and scan the results

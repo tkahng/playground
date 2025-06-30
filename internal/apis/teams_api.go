@@ -661,3 +661,94 @@ func (api *Api) CencelInvitation(
 	}
 	return nil, nil
 }
+
+type FindInvitationsInput struct {
+	PaginatedInput
+	SortParams
+	TeamID string `path:"team-id" required:"true" format:"uuid"`
+}
+type TeamInvitationStatus string
+
+const (
+	TeamInvitationStatusPending  TeamInvitationStatus = "pending"
+	TeamInvitationStatusAccepted TeamInvitationStatus = "accepted"
+	TeamInvitationStatusDeclined TeamInvitationStatus = "declined"
+	TeamInvitationStatusCanceled TeamInvitationStatus = "canceled"
+)
+
+type TeamInvitation struct {
+	_               struct{}             `db:"team_invitations" json:"-"`
+	ID              uuid.UUID            `db:"id" json:"id"`
+	TeamID          uuid.UUID            `db:"team_id" json:"team_id"`
+	InviterMemberID uuid.UUID            `db:"inviter_member_id" json:"inviter_member_id"`
+	Email           string               `db:"email" json:"email"`
+	Role            TeamMemberRole       `db:"role" json:"role"`
+	Token           string               `db:"token" json:"token"`
+	Status          TeamInvitationStatus `db:"status" json:"status" enum:"pending,accepted,declined,canceled"`
+	ExpiresAt       time.Time            `db:"expires_at" json:"expires_at"`
+	CreatedAt       time.Time            `db:"created_at" json:"created_at"`
+	UpdatedAt       time.Time            `db:"updated_at" json:"updated_at"`
+	Team            *Team                `db:"team" src:"team_id" dest:"id" table:"teams" json:"team,omitempty"`
+	InviterMember   *TeamMember          `db:"inviter_member" src:"inviter_member_id" dest:"id" table:"member" json:"inviter_member,omitempty"`
+}
+
+func FromTeamInvitationModel(team *models.TeamInvitation) *TeamInvitation {
+	if team == nil {
+		return nil
+	}
+	return &TeamInvitation{
+		ID:              team.ID,
+		TeamID:          team.TeamID,
+		InviterMemberID: team.InviterMemberID,
+		Email:           team.Email,
+		Role:            TeamMemberRole(team.Role),
+		Token:           team.Token,
+		Status:          TeamInvitationStatus(team.Status),
+		ExpiresAt:       team.ExpiresAt,
+		CreatedAt:       team.CreatedAt,
+		UpdatedAt:       team.UpdatedAt,
+		Team:            FromTeamModel(team.Team),
+		InviterMember:   FromTeamMemberModel(team.InviterMember),
+	}
+}
+func (api *Api) FindInvitations(
+	ctx context.Context,
+	input *FindInvitationsInput,
+) (*ApiPaginatedOutput[*TeamInvitation], error) {
+	userInfo := contextstore.GetContextUserInfo(ctx)
+	if userInfo == nil {
+		return nil, huma.Error401Unauthorized("Unauthorized. No user info")
+	}
+	parsedTeamId, err := uuid.Parse(input.TeamID)
+	if err != nil {
+		return nil, err
+	}
+	filter := &stores.TeamInvitationFilter{}
+	filter.Page = input.Page
+	filter.PerPage = input.PerPage
+	filter.SortBy = input.SortBy
+	filter.SortOrder = input.SortOrder
+	filter.TeamIds = []uuid.UUID{parsedTeamId}
+	invitations, err := api.app.Adapter().TeamInvitation().FindTeamInvitations(
+		ctx,
+		filter,
+	)
+	if err != nil {
+		return nil, err
+	}
+	count, err := api.app.Adapter().TeamInvitation().CountTeamInvitations(
+		ctx,
+		filter,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &ApiPaginatedOutput[*TeamInvitation]{
+		Body: ApiPaginatedResponse[*TeamInvitation]{
+			Data: mapper.Map(invitations, FromTeamInvitationModel),
+			Meta: ApiGenerateMeta(&input.PaginatedInput, count),
+		},
+	}, nil
+
+}
