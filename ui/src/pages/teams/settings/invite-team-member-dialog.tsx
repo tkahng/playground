@@ -17,8 +17,16 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { createRole } from "@/lib/queries";
+import { useTeam } from "@/hooks/use-team";
+import { inviteTeamMember } from "@/lib/queries";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -27,12 +35,13 @@ import { toast } from "sonner";
 import { z } from "zod";
 
 const formSchema = z.object({
-  name: z.string().min(1),
-  description: z.string().min(1).optional(),
+  email: z.string().min(1),
+  role: z.enum(["member", "owner", "guest"]),
 });
 
 export function InviteTeamMemberDialog() {
   const { user } = useAuthProvider();
+  const { team } = useTeam();
   const [isDialogOpen, setDialogOpen] = useState(false);
   const queryClient = useQueryClient();
 
@@ -41,14 +50,17 @@ export function InviteTeamMemberDialog() {
       if (!user?.tokens.access_token) {
         throw new Error("Missing access token or role ID");
       }
-      await createRole(user.tokens.access_token, values);
+      if (!team) {
+        throw new Error("Current team member team ID is required");
+      }
+      await inviteTeamMember(user.tokens.access_token, team?.id, values);
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({
-        queryKey: ["roles-list"],
+        queryKey: ["team-invitations"],
       });
       setDialogOpen(false);
-      toast.success("Role created successfully");
+      toast.success("Member invited successfully");
     },
     onError: (error) => {
       toast.error(error.message);
@@ -57,8 +69,8 @@ export function InviteTeamMemberDialog() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: "",
-      description: "",
+      email: "",
+      role: "member",
     },
   });
 
@@ -84,32 +96,44 @@ export function InviteTeamMemberDialog() {
               <div className="space-y-4">
                 <FormField
                   control={form.control}
-                  name="name"
+                  name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Role Name</FormLabel>
+                      <FormLabel>Email</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="Role Name" />
+                        <Input {...field} placeholder="Email" type="email" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+
                 <FormField
                   control={form.control}
-                  name="description"
+                  name="role"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Description</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="Role Description" />
-                      </FormControl>
-                      <FormMessage />
+                      <FormLabel>Role</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <FormControl {...field}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select Task Status" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="guest">Guest</SelectItem>
+                          <SelectItem value="member">Member</SelectItem>
+                          <SelectItem value="owner">Owner</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </FormItem>
                   )}
                 />
                 <DialogFooter>
-                  <Button type="submit">Create Role</Button>
+                  <Button type="submit">Invite Member</Button>
                 </DialogFooter>
               </div>
             </div>

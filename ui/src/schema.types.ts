@@ -61,6 +61,8 @@ export type TaskStatus = components["schemas"]["Task"]["status"];
 export type UserWithAccounts = components["schemas"]["UserWithAccounts"];
 
 export type TeamMember = components["schemas"]["TeamMember"];
+
+export type TeamMemberRole = components["schemas"]["TeamMember"]["role"];
 export type Team = components["schemas"]["Team"];
 
 export type TeamMemberState = {
