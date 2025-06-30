@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useTeamContext } from "@/hooks/use-team-context";
+import { useTeam } from "@/hooks/use-team";
 import {
   Activity,
   Code,
@@ -41,7 +41,7 @@ type TeamMember = {
 };
 
 export default function TeamDashboard() {
-  const { team } = useTeamContext();
+  const { team } = useTeam();
   const teamMembers: TeamMember[] = [
     {
       id: "1",

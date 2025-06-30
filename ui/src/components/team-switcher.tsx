@@ -14,7 +14,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { useTeamContext } from "@/hooks/use-team-context";
+import { useTeam } from "@/hooks/use-team";
 import { useUserTeams } from "@/hooks/use-user-teams";
 import { Team } from "@/schema.types";
 import { Check, ChevronsUpDown } from "lucide-react";
@@ -27,7 +27,7 @@ export default function TeamSwitcher() {
   // const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const { data, error: teamsError, isLoading: teamsLoading } = useUserTeams();
-  const { team, setTeam } = useTeamContext();
+  const { team, setTeam } = useTeam();
 
   if (teamsLoading) {
     return <div>Loading...</div>;

@@ -1,5 +1,5 @@
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { useTeamContext } from "@/hooks/use-team-context";
+import { useTeam } from "@/hooks/use-team";
 import { getTeamBySlug } from "@/lib/queries";
 import { useQuery } from "@tanstack/react-query";
 import { Navigate, Outlet, useParams } from "react-router";
@@ -7,7 +7,7 @@ import { Navigate, Outlet, useParams } from "react-router";
 export default function TeamsLayout() {
   const { user } = useAuthProvider();
   const { teamSlug } = useParams<{ teamSlug: string }>();
-  const { team, setTeam } = useTeamContext();
+  const { team, setTeam } = useTeam();
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["team-by-slug"],
     queryFn: async () => {

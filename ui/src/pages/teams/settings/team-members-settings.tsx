@@ -2,7 +2,7 @@ import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { DataTable } from "@/components/data-table";
 import { teamSettingLinks } from "@/components/links";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { useTeamContext } from "@/hooks/use-team-context";
+import { useTeam } from "@/hooks/use-team";
 import { getTeamMembers } from "@/lib/team-queries";
 import { useQuery } from "@tanstack/react-query";
 import { PaginationState, Updater } from "@tanstack/react-table";
@@ -11,7 +11,7 @@ import { TeamMemberActionDropdown } from "./team-member-action-dropdown";
 
 export default function TeamMembersSettingPage() {
   const { user } = useAuthProvider();
-  const { team } = useTeamContext();
+  const { team } = useTeam();
   const [searchParams, setSearchParams] = useSearchParams();
   const pageIndex = parseInt(searchParams.get("page") || "0", 10);
   const pageSize = parseInt(searchParams.get("per_page") || "10", 10);

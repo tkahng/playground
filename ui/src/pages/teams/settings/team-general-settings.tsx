@@ -12,7 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { useTeamContext } from "@/hooks/use-team-context";
+import { useTeam } from "@/hooks/use-team";
 import { GetError } from "@/lib/get-error";
 import { deleteUser, updateTeam } from "@/lib/queries";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -28,7 +28,7 @@ const formSchema = z.object({
 
 export default function TeamSettingsPage() {
   const { user } = useAuthProvider();
-  const { team: data } = useTeamContext();
+  const { team: data } = useTeam();
 
   const queryClient = useQueryClient();
   const mutation = useMutation({

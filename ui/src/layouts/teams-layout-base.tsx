@@ -1,5 +1,5 @@
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { useTeamContext } from "@/hooks/use-team-context";
+import { useTeam } from "@/hooks/use-team";
 import {
   createSearchParams,
   Navigate,
@@ -10,7 +10,7 @@ import {
 export default function TeamsLayoutBase() {
   const location = useLocation();
   const { user } = useAuthProvider();
-  const { team } = useTeamContext();
+  const { team } = useTeam();
 
   if (!user) {
     return (

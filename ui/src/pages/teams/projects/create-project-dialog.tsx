@@ -25,7 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { useTeamContext } from "@/hooks/use-team-context";
+import { useTeam } from "@/hooks/use-team";
 import { taskProjectCreate } from "@/lib/queries";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -42,7 +42,7 @@ const formSchema = z.object({
 
 export function CreateProjectDialog() {
   const { user } = useAuthProvider();
-  const { team: currentTeam } = useTeamContext();
+  const { team: currentTeam } = useTeam();
   const [isDialogOpen, setDialogOpen] = useState(false);
   const queryClient = useQueryClient();
 

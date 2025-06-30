@@ -4,7 +4,7 @@ import { NexusAIMinimalFooter } from "@/components/nexus-minimal-footer";
 import { RouteMap } from "@/components/route-map";
 import { TeamHeader } from "@/components/team-header";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { useTeamContext } from "@/hooks/use-team-context";
+import { useTeam } from "@/hooks/use-team";
 import { getTeamBySlug } from "@/lib/queries";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
@@ -15,7 +15,7 @@ export default function TeamDashboardLayout() {
   // const { team, error, isLoading } = useTeam();
   const { user } = useAuthProvider();
   const { teamSlug } = useParams<{ teamSlug: string }>();
-  const { setTeam, team } = useTeamContext();
+  const { setTeam, team } = useTeam();
   const { isLoading, error, refetch } = useQuery({
     queryKey: ["team-by-slug-layout"],
     queryFn: async () => {

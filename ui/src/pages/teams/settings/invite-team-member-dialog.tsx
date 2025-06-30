@@ -18,55 +18,47 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { useTeam } from "@/hooks/use-team";
-import { GetError } from "@/lib/get-error";
-import { createTeam } from "@/lib/team-queries";
+import { createRole } from "@/lib/queries";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import { z } from "zod";
 
 const formSchema = z.object({
-  name: z.string().min(1, "Team name is required"),
-  slug: z.string().min(1, "Team slug is required"),
+  name: z.string().min(1),
+  description: z.string().min(1).optional(),
 });
 
-export function CreateTeamDialog() {
+export function InviteTeamMemberDialog() {
   const { user } = useAuthProvider();
-  const { setTeam } = useTeam();
-  const navigate = useNavigate();
   const [isDialogOpen, setDialogOpen] = useState(false);
   const queryClient = useQueryClient();
 
   const mutation = useMutation({
     mutationFn: async (values: z.infer<typeof formSchema>) => {
       if (!user?.tokens.access_token) {
-        throw new Error("Missing access token or user ID");
+        throw new Error("Missing access token or role ID");
       }
-      return await createTeam(user.tokens.access_token, values);
+      await createRole(user.tokens.access_token, values);
     },
-    onSuccess: async (data) => {
+    onSuccess: async () => {
       await queryClient.invalidateQueries({
-        queryKey: ["user-teams-list"],
+        queryKey: ["roles-list"],
       });
       setDialogOpen(false);
-      setTeam(data);
-      toast.success("Team created successfully");
-      navigate(`/teams/${data.slug}/dashboard`);
+      toast.success("Role created successfully");
     },
     onError: (error) => {
-      const err = GetError(error);
-      toast.error(err?.detail);
+      toast.error(error.message);
     },
   });
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
-      slug: "",
+      description: "",
     },
   });
 
@@ -77,12 +69,14 @@ export function CreateTeamDialog() {
   return (
     <Dialog open={isDialogOpen} onOpenChange={setDialogOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline">Create Team</Button>
+        <Button variant="outline">Create Role</Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Create Team</DialogTitle>
-          <DialogDescription>Create a new team.</DialogDescription>
+          <DialogTitle>Create Role</DialogTitle>
+          <DialogDescription>
+            Create a new role to manage permissions and access control.
+          </DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
@@ -93,9 +87,9 @@ export function CreateTeamDialog() {
                   name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Name</FormLabel>
+                      <FormLabel>Role Name</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="Name" />
+                        <Input {...field} placeholder="Role Name" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -103,20 +97,19 @@ export function CreateTeamDialog() {
                 />
                 <FormField
                   control={form.control}
-                  name="slug"
+                  name="description"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Slug</FormLabel>
+                      <FormLabel>Description</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="Slug" />
+                        <Input {...field} placeholder="Role Description" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-
                 <DialogFooter>
-                  <Button type="submit">Create Team</Button>
+                  <Button type="submit">Create Role</Button>
                 </DialogFooter>
               </div>
             </div>

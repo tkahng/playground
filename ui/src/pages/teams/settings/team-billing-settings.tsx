@@ -2,13 +2,13 @@ import CustomerPortalForm from "@/components/customer-portal-form";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { teamSettingLinks } from "@/components/links";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { useTeamContext } from "@/hooks/use-team-context";
+import { useTeam } from "@/hooks/use-team";
 import { getUserSubscriptions } from "@/lib/queries";
 import { useQuery } from "@tanstack/react-query";
 
 export default function TeamBillingSettingPage() {
   const { user } = useAuthProvider();
-  const { team } = useTeamContext();
+  const { team } = useTeam();
   const { data, isPending, isError, error } = useQuery({
     queryKey: ["billing-settings"],
     queryFn: async () => {
