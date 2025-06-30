@@ -745,34 +745,9 @@ func (api *Api) FindInvitations(
 		return nil, err
 	}
 	if len(invitations) > 0 {
-		teamIds := mapper.Map(
-			invitations,
-			func(t *models.TeamInvitation) uuid.UUID {
-				return t.TeamID
-			},
-		)
-		teams, err := api.app.Adapter().TeamGroup().LoadTeamsByIds(ctx, teamIds...)
+		err := api.LoadTeamInvitationRelations(ctx, invitations)
 		if err != nil {
 			return nil, err
-		}
-		for idx, invitation := range invitations {
-			team := teams[idx]
-			invitation.Team = team
-		}
-
-		memberIds := mapper.Map(
-			invitations,
-			func(t *models.TeamInvitation) uuid.UUID {
-				return t.InviterMemberID
-			},
-		)
-		members, err := api.app.Adapter().TeamMember().LoadTeamMembersByIds(ctx, memberIds...)
-		if err != nil {
-			return nil, err
-		}
-		for idx, invitation := range invitations {
-			member := members[idx]
-			invitation.InviterMember = member
 		}
 	}
 	count, err := api.app.Adapter().TeamInvitation().CountTeamInvitations(
@@ -790,4 +765,37 @@ func (api *Api) FindInvitations(
 		},
 	}, nil
 
+}
+
+func (api *Api) LoadTeamInvitationRelations(ctx context.Context, invitations []*models.TeamInvitation) error {
+	teamIds := mapper.Map(
+		invitations,
+		func(t *models.TeamInvitation) uuid.UUID {
+			return t.TeamID
+		},
+	)
+	teams, err := api.app.Adapter().TeamGroup().LoadTeamsByIds(ctx, teamIds...)
+	if err != nil {
+		return err
+	}
+	for idx, invitation := range invitations {
+		team := teams[idx]
+		invitation.Team = team
+	}
+
+	memberIds := mapper.Map(
+		invitations,
+		func(t *models.TeamInvitation) uuid.UUID {
+			return t.InviterMemberID
+		},
+	)
+	members, err := api.app.Adapter().TeamMember().LoadTeamMembersByIds(ctx, memberIds...)
+	if err != nil {
+		return err
+	}
+	for idx, invitation := range invitations {
+		member := members[idx]
+		invitation.InviterMember = member
+	}
+	return nil
 }
