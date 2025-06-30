@@ -179,6 +179,9 @@ func BindTeamsApi(api huma.API, appApi *Api) {
 		},
 		appApi.DeleteTeam,
 	)
+
+	// team invitations -----------------------------------------------------------------------------------------------------------
+
 	// create team invitation
 	huma.Register(
 		teamsGroup,
@@ -221,6 +224,28 @@ func BindTeamsApi(api huma.API, appApi *Api) {
 			},
 		},
 		appApi.CencelInvitation,
+	)
+
+	// find team invitations
+
+	huma.Register(
+		teamsGroup,
+		huma.Operation{
+			OperationID: "find-team-invitations",
+			Method:      http.MethodGet,
+			Path:        "/teams/{team-id}/invitations",
+			Summary:     "find-team-invitations",
+			Description: "find team invitations",
+			Tags:        []string{"Teams"},
+			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+			Middlewares: huma.Middlewares{
+				teamInfoMiddleware,
+			},
+		},
+		appApi.FindInvitations,
 	)
 
 	// check valid invitation

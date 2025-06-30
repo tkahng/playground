@@ -744,6 +744,37 @@ func (api *Api) FindInvitations(
 	if err != nil {
 		return nil, err
 	}
+	if len(invitations) > 0 {
+		teamIds := mapper.Map(
+			invitations,
+			func(t *models.TeamInvitation) uuid.UUID {
+				return t.TeamID
+			},
+		)
+		teams, err := api.app.Adapter().TeamGroup().LoadTeamsByIds(ctx, teamIds...)
+		if err != nil {
+			return nil, err
+		}
+		for idx, invitation := range invitations {
+			team := teams[idx]
+			invitation.Team = team
+		}
+
+		memberIds := mapper.Map(
+			invitations,
+			func(t *models.TeamInvitation) uuid.UUID {
+				return t.InviterMemberID
+			},
+		)
+		members, err := api.app.Adapter().TeamMember().LoadTeamMembersByIds(ctx, memberIds...)
+		if err != nil {
+			return nil, err
+		}
+		for idx, invitation := range invitations {
+			member := members[idx]
+			invitation.InviterMember = member
+		}
+	}
 	count, err := api.app.Adapter().TeamInvitation().CountTeamInvitations(
 		ctx,
 		filter,
