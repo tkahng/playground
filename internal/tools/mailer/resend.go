@@ -1,6 +1,8 @@
 package mailer
 
 import (
+	"log/slog"
+
 	"github.com/resend/resend-go/v2"
 	"github.com/tkahng/authgo/internal/conf"
 )
@@ -38,5 +40,15 @@ func (m *ResendMailer) Send(params *Message) error {
 		Subject: params.Subject,
 		Html:    params.Body,
 	})
+	if err != nil {
+		slog.Error(
+			"Failed to send email",
+			slog.Any("error", err),
+			slog.String("from", params.From),
+			slog.String("to", params.To),
+			slog.String("subject", params.Subject),
+			slog.String("body", params.Body),
+		)
+	}
 	return err
 }

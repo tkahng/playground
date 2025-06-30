@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"net/url"
 
 	"github.com/google/uuid"
@@ -117,6 +118,7 @@ func (i *InvitationService) sendInvitationEmail(ctx context.Context, params *Tea
 		Token:           params.TokenHash,
 	}
 	param.Message = &mailer.Message{
+		From:    i.settings.Meta.SenderAddress,
 		To:      params.Email,
 		Subject: fmt.Sprintf("Invitation to join %s", params.TeamName),
 		Body:    body,
@@ -308,13 +310,15 @@ func (i *InvitationService) CreateInvitation(
 		func() {
 			ctx := context.Background()
 
-			err := i.sendInvitationEmail(ctx, &TeamInvitationMailParams{
+			params := &TeamInvitationMailParams{
 				Email:          invitation.Email,
 				InvitedByEmail: member.User.Email,
 				TeamName:       member.Team.Name,
 				TokenHash:      invitation.Token,
-			})
+			}
+			err := i.sendInvitationEmail(ctx, params)
 			if err != nil {
+				slog.ErrorContext(ctx, "failed to send invitation email", slog.Any("error", err), slog.Any("params", params))
 				fmt.Printf("failed to send invitation email: %v", err)
 			}
 		},
