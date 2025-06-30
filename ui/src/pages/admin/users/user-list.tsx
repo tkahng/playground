@@ -1,20 +1,12 @@
 import { DataTable } from "@/components/data-table";
 import { RouteMap } from "@/components/route-map";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { userPaginate } from "@/lib/queries";
 import { useQuery } from "@tanstack/react-query";
 import { PaginationState, Updater } from "@tanstack/react-table";
-import { Ellipsis, Pencil } from "lucide-react";
-import { useState } from "react";
-import { NavLink, useNavigate, useSearchParams } from "react-router";
+import { NavLink, useSearchParams } from "react-router";
 import { CreateUserDialog } from "./create-user-dialog";
+import { UserActionDropdown } from "./user-action-dropdown";
 export default function UserListPage() {
   const { user } = useAuthProvider();
 
@@ -135,7 +127,7 @@ export default function UserListPage() {
             cell: ({ row }) => {
               return (
                 <div className="flex flex-row gap-2 justify-end">
-                  <UserEllipsisDropdown userId={row.original.id} />
+                  <UserActionDropdown userId={row.original.id} />
                 </div>
               );
             },
@@ -148,46 +140,5 @@ export default function UserListPage() {
         paginationEnabled
       />
     </div>
-  );
-}
-
-function UserEllipsisDropdown({ userId }: { userId: string }) {
-  // const editDialog = useDialog();
-  const navigate = useNavigate();
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  return (
-    <>
-      <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon">
-            <Ellipsis className="h-4 w-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent>
-          <DropdownMenuItem
-            onSelect={() => {
-              setDropdownOpen(false);
-              navigate(`${RouteMap.ADMIN_USERS}/${userId}`);
-            }}
-          >
-            <Button variant="ghost" size="sm">
-              <Pencil className="h-4 w-4" />
-              <span>Edit</span>
-            </Button>
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            onSelect={() => {
-              setDropdownOpen(false);
-              navigate(`${RouteMap.ADMIN_USERS}/${userId}?tab=roles`);
-            }}
-          >
-            <Button variant="ghost" size="sm">
-              <Pencil className="h-4 w-4" />
-              <span>Assign Roles</span>
-            </Button>
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </>
   );
 }
