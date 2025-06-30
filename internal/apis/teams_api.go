@@ -634,8 +634,8 @@ type CancelInvitationDto struct {
 	InvitationID uuid.UUID `json:"invitation_id" required:"true" format:"uuid"`
 }
 type CancelInvitationInput struct {
-	TeamID string `path:"team-id" required:"true" format:"uuid"`
-	Body   CancelInvitationDto
+	TeamID       string `path:"team-id" required:"true" format:"uuid"`
+	InvitationID string `path:"invitation-id" required:"true" format:"uuid"`
 }
 
 func (api *Api) CencelInvitation(
@@ -646,15 +646,23 @@ func (api *Api) CencelInvitation(
 	if userInfo == nil {
 		return nil, huma.Error401Unauthorized("Unauthorized. No user info")
 	}
+	teamInfo := contextstore.GetContextTeamInfo(ctx)
+	if teamInfo == nil {
+		return nil, huma.Error401Unauthorized("Unauthorized. No team info")
+	}
 	parsedTeamId, err := uuid.Parse(input.TeamID)
+	if err != nil {
+		return nil, err
+	}
+	parsedInvitationId, err := uuid.Parse(input.InvitationID)
 	if err != nil {
 		return nil, err
 	}
 	err = api.app.TeamInvitation().CancelInvitation(
 		ctx,
 		parsedTeamId,
-		userInfo.User.ID,
-		input.Body.InvitationID,
+		teamInfo.User.ID,
+		parsedInvitationId,
 	)
 	if err != nil {
 		return nil, err

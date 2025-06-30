@@ -201,15 +201,15 @@ func BindTeamsApi(api huma.API, appApi *Api) {
 		appApi.CreateInvitation,
 	)
 
-	// check valid invitation
+	// cancel invitation
 	huma.Register(
 		teamsGroup,
 		huma.Operation{
-			OperationID: "check-valid-invitation",
-			Method:      http.MethodGet,
+			OperationID: "cancel-invitation",
+			Method:      http.MethodDelete,
 			Path:        "/teams/{team-id}/invitations/{invitation-id}",
-			Summary:     "check-valid-invitation",
-			Description: "check valid invitation",
+			Summary:     "cancel-invitation",
+			Description: "cancel invitation",
 			Tags:        []string{"Teams"},
 			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
 			Security: []map[string][]string{{
@@ -217,8 +217,67 @@ func BindTeamsApi(api huma.API, appApi *Api) {
 			}},
 			Middlewares: huma.Middlewares{
 				teamInfoMiddleware,
+				requiredOwnerMember,
 			},
+		},
+		appApi.CencelInvitation,
+	)
+
+	// check valid invitation
+	huma.Register(
+		teamsGroup,
+		huma.Operation{
+			OperationID: "check-valid-invitation",
+			Method:      http.MethodPost,
+			Path:        "/team-invitations/check",
+			Summary:     "check-valid-invitation",
+			Description: "check valid invitation",
+			Tags:        []string{"Teams"},
+			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+			Middlewares: huma.Middlewares{},
 		},
 		appApi.CheckValidInvitation,
 	)
+
+	// accept invitation
+	huma.Register(
+		teamsGroup,
+		huma.Operation{
+			OperationID: "accept-invitation",
+			Method:      http.MethodPost,
+			Path:        "/team-invitations/accept",
+			Summary:     "accept-invitation",
+			Description: "accept invitation",
+			Tags:        []string{"Teams"},
+			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+			Middlewares: huma.Middlewares{},
+		},
+		appApi.AcceptInvitation,
+	)
+
+	// decline invitation
+	huma.Register(
+		teamsGroup,
+		huma.Operation{
+			OperationID: "decline-invitation",
+			Method:      http.MethodPost,
+			Path:        "/team-invitations/decline",
+			Summary:     "decline-invitation",
+			Description: "decline invitation",
+			Tags:        []string{"Teams"},
+			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+			Middlewares: huma.Middlewares{},
+		},
+		appApi.DeclineInvitation,
+	)
+
 }
