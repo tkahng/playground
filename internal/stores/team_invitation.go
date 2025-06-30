@@ -2,7 +2,6 @@ package stores
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -113,8 +112,7 @@ func (s *DbTeamInvitationStore) FindInvitationByID(ctx context.Context, invitati
 		return nil, nil
 	}
 	if invitation.ExpiresAt.Before(time.Now()) {
-		fmt.Println("Invitation expired")
-		fmt.Println(invitation.ExpiresAt)
+
 		return nil, shared.ErrTokenExpired
 	}
 	return invitation, nil
@@ -138,8 +136,7 @@ func (s *DbTeamInvitationStore) FindInvitationByToken(ctx context.Context, token
 		return nil, nil
 	}
 	if invitation.ExpiresAt.Before(time.Now()) {
-		fmt.Println("Invitation expired")
-		fmt.Println(invitation.ExpiresAt)
+
 		return nil, shared.ErrTokenExpired
 	}
 	return invitation, nil

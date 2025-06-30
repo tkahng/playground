@@ -55,7 +55,7 @@ func NewAppDecorator(ctx context.Context, cfg conf.EnvConfig, pool database.Dbx)
 		*settings,
 		routine,
 	)
-	app := NewApp(
+	app := newApp(
 		fs,
 		pool,
 		settings,

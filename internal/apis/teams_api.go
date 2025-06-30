@@ -570,7 +570,7 @@ type CheckValidInvitationInput struct {
 	Body CheckValidInvitationDto
 }
 
-func (api *Api) CehckValidInvitation(
+func (api *Api) CheckValidInvitation(
 	ctx context.Context,
 	input *CheckValidInvitationInput,
 ) (*struct{}, error) {

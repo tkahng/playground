@@ -179,5 +179,46 @@ func BindTeamsApi(api huma.API, appApi *Api) {
 		},
 		appApi.DeleteTeam,
 	)
+	// create team invitation
+	huma.Register(
+		teamsGroup,
+		huma.Operation{
+			OperationID: "create-team-invitation",
+			Method:      http.MethodPost,
+			Path:        "/teams/{team-id}/invitations",
+			Summary:     "create-team-invitation",
+			Description: "create a team invitation",
+			Tags:        []string{"Teams"},
+			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+			Middlewares: huma.Middlewares{
+				teamInfoMiddleware,
+				requiredOwnerMember,
+			},
+		},
+		appApi.CreateInvitation,
+	)
 
+	// check valid invitation
+	huma.Register(
+		teamsGroup,
+		huma.Operation{
+			OperationID: "check-valid-invitation",
+			Method:      http.MethodGet,
+			Path:        "/teams/{team-id}/invitations/{invitation-id}",
+			Summary:     "check-valid-invitation",
+			Description: "check valid invitation",
+			Tags:        []string{"Teams"},
+			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+			Middlewares: huma.Middlewares{
+				teamInfoMiddleware,
+			},
+		},
+		appApi.CheckValidInvitation,
+	)
 }
