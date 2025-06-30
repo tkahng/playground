@@ -1388,3 +1388,148 @@ export const updateTeam = async (
   }
   return data;
 };
+
+export const inviteTeamMember = async (
+  token: string,
+  teamId: string,
+  body: components["schemas"]["InviteTeamMemberDto"]
+) => {
+  const { error } = await client.POST("/api/teams/{team-id}/invitations", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    params: {
+      path: { "team-id": teamId },
+    },
+    body,
+  });
+  if (error) {
+    throw error;
+  }
+  return true;
+};
+
+export const getTeamInvitations = async (
+  token: string,
+  teamId: string,
+  page: number = 0,
+  perPage: number = 10
+) => {
+  const { data, error } = await client.GET("/api/teams/{team-id}/invitations", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    params: {
+      path: { "team-id": teamId },
+      query: {
+        page,
+        per_page: perPage,
+      },
+    },
+  });
+  if (error) {
+    throw error;
+  }
+  return data;
+};
+
+export const cancelTeamInvitation = async (
+  token: string,
+  teamId: string,
+  invitationId: string
+) => {
+  const { error } = await client.DELETE(
+    "/api/teams/{team-id}/invitations/{invitation-id}",
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      params: {
+        path: {
+          "team-id": teamId,
+          "invitation-id": invitationId,
+        },
+      },
+    }
+  );
+  if (error) {
+    throw error;
+  }
+  return true;
+};
+
+export const verifyTeamInvitation = async (
+  token: string,
+  invitationToken: string
+) => {
+  const { error } = await client.POST("/api/team-invitations/check", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: {
+      token: invitationToken,
+    },
+  });
+  if (error) {
+    throw error;
+  }
+  return true;
+};
+
+export const acceptInvitation = async (
+  token: string,
+  invitationToken: string
+) => {
+  const { error } = await client.POST("/api/team-invitations/accept", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: {
+      token: invitationToken,
+    },
+  });
+  if (error) {
+    throw error;
+  }
+  return true;
+};
+
+export const declineInvitation = async (
+  token: string,
+  invitationToken: string
+) => {
+  const { error } = await client.POST("/api/team-invitations/decline", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: {
+      token: invitationToken,
+    },
+  });
+  if (error) {
+    throw error;
+  }
+  return true;
+};
+
+export const getUserTeamInvitations = async (
+  token: string,
+  page = 0,
+  perPage = 10
+) => {
+  const { data, error } = await client.GET("/api/auth/me/invitations", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    params: {
+      query: {
+        page,
+        per_page: perPage,
+      },
+    },
+  });
+  if (error) {
+    throw error;
+  }
+  return data;
+};
