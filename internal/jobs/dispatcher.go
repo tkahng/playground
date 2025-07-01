@@ -10,23 +10,6 @@ import (
 	"github.com/tkahng/authgo/internal/models"
 )
 
-// with the client using the AddWorker function.
-type Worker[T JobArgs] interface {
-
-	// Work performs the job and returns an error if the job failed. The context
-	// will be configured with a timeout according to the worker settings and may
-	// be cancelled for other reasons.
-	//
-	// If no error is returned, the job is assumed to have succeeded and will be
-	// marked completed.
-	//
-	// It is important for any worker to respect context cancellation to enable
-	// the client to respond to shutdown requests; there is no way to cancel a
-	// running job that does not respect context cancellation, other than
-	// terminating the process.
-	Work(ctx context.Context, job *Job[T]) error
-}
-
 // Dispatcher routes jobs to their appropriate handlers based on job kind.
 type Dispatcher interface {
 	// Dispatch executes the job with the appropriate handler.
@@ -73,6 +56,11 @@ func RegisterWorker[T JobArgs](d Dispatcher, worker Worker[T]) {
 func (d *dispatcher) Dispatch(ctx context.Context, row *models.JobRow) error {
 	handler, ok := d.handlers[row.Kind]
 	if !ok {
+		slog.Error(
+			"no handler registered for kind",
+			slog.String("kind", row.Kind),
+			slog.String("job_id", row.ID.String()),
+		)
 		return fmt.Errorf("no handler registered for kind: %s", row.Kind)
 	}
 	return handler(ctx, row)
@@ -91,7 +79,13 @@ func execute[T JobArgs](ctx context.Context, worker Worker[T], job *Job[T]) (err
 	}
 	err = worker.Work(ctx, job)
 	if err != nil {
-		slog.ErrorContext(ctx, "fail job", "kind", job.Args.Kind(), "id", job.ID, "error", err)
+		slog.ErrorContext(
+			ctx,
+			"fail job",
+			slog.String("kind", job.Args.Kind()),
+			slog.String("id", job.ID.String()),
+			slog.Any("error", err),
+		)
 	} else {
 		slog.InfoContext(ctx, "done job", "kind", job.Args.Kind(), "id", job.ID)
 	}
