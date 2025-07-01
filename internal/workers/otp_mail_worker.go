@@ -1,65 +1,61 @@
 package workers
 
-// type OtpEmailJobArgs struct {
-// 	UserID uuid.UUID
-// 	Type   mailer.EmailType
-// }
+import (
+	"context"
+	"fmt"
+	"log/slog"
 
-// func (j OtpEmailJobArgs) Kind() string {
-// 	return "otp_email"
-// }
+	"github.com/google/uuid"
+	"github.com/tkahng/authgo/internal/jobs"
+	"github.com/tkahng/authgo/internal/tools/mailer"
+	"github.com/tkahng/authgo/internal/tools/utils"
+)
 
-// // func RegisterMailWorker(
-// // 	dispatcher jobs.Dispatcher,
-// // 	userFinder UserFinder,
-// // 	otpMailer OtpMail,
+type OtpEmailJobArgs struct {
+	UserID uuid.UUID
+	Type   mailer.EmailType
+}
 
-// // ) {
-// // 	worker := NewOtpEmailWorker(userFinder, otpMailer)
-// // 	jobs.RegisterWorker(dispatcher, worker)
-// // }
+func (j OtpEmailJobArgs) Kind() string {
+	return "otp_email"
+}
 
-// type otpMailWorker struct {
+func RegisterMailWorker(
+	dispatcher jobs.Dispatcher,
+	mailService OtpMailServiceInterface,
 
-// }
+) {
+	worker := NewOtpEmailWorker(mailService)
+	jobs.RegisterWorker(dispatcher, worker)
+}
 
-// func NewOtpEmailWorker(user UserFinder, mail OtpMail) jobs.Worker[OtpEmailJobArgs] {
-// 	return &otpMailWorker{
-// 		mail: mail,
-// 		user: user,
-// 	}
-// }
+type otpMailWorker struct {
+	mail OtpMailServiceInterface
+}
+type OtpMailServiceInterface interface {
+	SendOtpEmail(ctx context.Context, emailType mailer.EmailType, userId uuid.UUID) error
+}
 
-// // Work implements jobs.Worker.
-// func (w *otpMailWorker) Work(ctx context.Context, job *jobs.Job[OtpEmailJobArgs]) error {
-// 	fmt.Println("otp mail")
-// 	utils.PrettyPrintJSON(job)
-// 	user, err := w.user.FindUser(ctx, &stores.UserFilter{Ids: []uuid.UUID{job.Args.UserID}})
-// 	if err != nil {
-// 		slog.ErrorContext(
-// 			ctx,
-// 			"error getting user",
-// 			slog.Any("error", err),
-// 			slog.String("email", user.Email),
-// 			slog.String("emailType", job.Args.Type),
-// 			slog.String("userId", user.ID.String()),
-// 		)
-// 		return err
-// 	}
-// 	err = w.mail.SendOtpEmail(job.Args.Type, ctx, user, nil)
-// 	if err != nil {
-// 		slog.ErrorContext(
-// 			ctx,
-// 			"error sending email",
-// 			slog.Any("error", err),
-// 			slog.String("email", user.Email),
-// 			slog.String("emailType", job.Args.Type),
-// 			slog.String("userId", user.ID.String()),
-// 		)
-// 		return err
-// 	}
+func NewOtpEmailWorker(otpMailService OtpMailServiceInterface) jobs.Worker[OtpEmailJobArgs] {
+	return &otpMailWorker{
+		mail: otpMailService,
+	}
+}
 
-// 	return nil
-// }
+// Work implements jobs.Worker.
+func (w *otpMailWorker) Work(ctx context.Context, job *jobs.Job[OtpEmailJobArgs]) error {
+	fmt.Println("otp mail")
+	utils.PrettyPrintJSON(job)
+	err := w.mail.SendOtpEmail(ctx, job.Args.Type, job.Args.UserID)
+	if err != nil {
+		slog.ErrorContext(
+			ctx,
+			"failed to send otp email",
+			slog.Any("error", err),
+			slog.Any("args", job.Args),
+		)
+	}
+	return err
+}
 
-// var _ jobs.Worker[OtpEmailJobArgs] = (*otpMailWorker)(nil)
+var _ jobs.Worker[OtpEmailJobArgs] = (*otpMailWorker)(nil)
