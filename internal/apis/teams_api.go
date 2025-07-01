@@ -882,7 +882,15 @@ func (api *Api) GetInvitationByToken(
 		return nil, err
 	}
 	invitation.InviterMember = member
-
+	if member != nil {
+		if member.UserID != nil {
+			user, err := api.app.Adapter().User().FindUserByID(ctx, *member.UserID)
+			if err != nil {
+				return nil, err
+			}
+			invitation.InviterMember.User = user
+		}
+	}
 	return &ApiOutput[*TeamInvitation]{
 		Body: FromTeamInvitationModel(invitation),
 	}, nil
