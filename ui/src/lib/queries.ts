@@ -1517,7 +1517,7 @@ export const getUserTeamInvitations = async (
   page = 0,
   perPage = 10
 ) => {
-  const { data, error } = await client.GET("/api/auth/me/invitations", {
+  const { data, error } = await client.GET("/api/team-invitations", {
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -1528,6 +1528,29 @@ export const getUserTeamInvitations = async (
       },
     },
   });
+  if (error) {
+    throw error;
+  }
+  return data;
+};
+
+export const getTeamInvitationByToken = async (
+  token: string,
+  invitationToken: string
+) => {
+  const { data, error } = await client.GET(
+    "/api/team-invitations/token/{token}",
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      params: {
+        path: {
+          token: invitationToken,
+        },
+      },
+    }
+  );
   if (error) {
     throw error;
   }
