@@ -9,7 +9,6 @@ import { Ellipsis, Pencil } from "lucide-react";
 import { useState } from "react";
 
 export function TeamMemberActionDropdown({ memberId }: { memberId: string }) {
-  // const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   if (!memberId) return null;
   return (

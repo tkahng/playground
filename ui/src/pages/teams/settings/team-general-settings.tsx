@@ -28,10 +28,8 @@ const formSchema = z.object({
 
 export default function TeamSettingsPage() {
   const { user } = useAuthProvider();
-  const { team: data } = useTeam();
-  const disabled =
-    !user?.tokens.access_token ||
-    !data?.members?.some((m) => m.role === "owner");
+  const { team: data, teamMember } = useTeam();
+  const disabled = !user?.tokens.access_token || teamMember?.role !== "owner";
 
   const queryClient = useQueryClient();
   const mutation = useMutation({
