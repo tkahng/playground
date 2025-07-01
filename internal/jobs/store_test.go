@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/tkahng/authgo/internal/database"
+	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/test"
 )
@@ -149,4 +150,79 @@ func TestDbJobStore_SaveManyJobs(t *testing.T) {
 			})
 		}
 	})
+}
+
+func TestDbJobStore_ClaimPendingJobs(t *testing.T) {
+	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
+		type fields struct {
+			db Db
+		}
+		type args struct {
+			jobs  []EnqueueParams
+			ctx   context.Context
+			limit int
+		}
+		tests := []struct {
+			name      string
+			fields    fields
+			args      args
+			want      []*models.JobRow
+			wantCount int64
+			wantErr   bool
+		}{
+			{
+				name: "claim jobs",
+				fields: fields{
+					db: db,
+				},
+				args: args{
+					jobs: []EnqueueParams{
+						{
+							Args: EmailJobArgs{
+								Recipient: "recipient",
+								Subject:   "subject",
+								Body:      "body",
+							},
+							UniqueKey:   nil,
+							RunAfter:    time.Now(),
+							MaxAttempts: 1,
+						},
+						{
+							Args: EmailJobArgs{
+								Recipient: "recipient2",
+								Subject:   "subject2",
+								Body:      "body2",
+							},
+							UniqueKey:   nil,
+							RunAfter:    time.Now(),
+							MaxAttempts: 1,
+						},
+					},
+					ctx:   context.Background(),
+					limit: 10,
+				},
+
+				wantErr: false,
+			},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				s := &DbJobStore{
+					db: tt.fields.db,
+				}
+				if err := s.SaveManyJobs(tt.args.ctx, tt.args.jobs...); (err != nil) != tt.wantErr {
+					t.Errorf("DbJobStore.SaveManyJobs() error = %v, wantErr %v", err, tt.wantErr)
+				}
+				got, err := s.ClaimPendingJobs(tt.args.ctx, tt.args.limit)
+				if (err != nil) != tt.wantErr {
+					t.Errorf("DbJobStore.ClaimPendingJobs() error = %v, wantErr %v", err, tt.wantErr)
+					return
+				}
+				if len(got) != len(tt.args.jobs) {
+					t.Errorf("DbJobStore.ClaimPendingJobs() got = %v, want %v", len(got), len(tt.args.jobs))
+				}
+			})
+		}
+	},
+	)
 }
