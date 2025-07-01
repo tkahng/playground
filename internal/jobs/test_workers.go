@@ -41,7 +41,6 @@ var _ Worker[EmailJobArgs] = (*EmailWorker)(nil)
 
 func (w *EmailWorker) Work(ctx context.Context, job *Job[EmailJobArgs]) error {
 	if w.Wg != nil {
-		w.Wg.Add(1)
 		defer w.Wg.Done()
 	}
 	if w.WorkFunc != nil {
