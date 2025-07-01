@@ -331,7 +331,7 @@ func BindTeamsApi(api huma.API, appApi *Api) {
 		huma.Operation{
 			OperationID: "find-user-team-invitation-by-token",
 			Method:      http.MethodGet,
-			Path:        "/team-invitations/{token}",
+			Path:        "/team-invitations/token/{token}",
 			Summary:     "find-user-team-invitation-by-token",
 			Description: "find user team invitation by token",
 			Tags:        []string{"Team Invitations"},
