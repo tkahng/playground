@@ -867,6 +867,9 @@ func (api *Api) GetInvitationByToken(
 	if invitation == nil {
 		return nil, huma.Error404NotFound("invitation not found")
 	}
+	if invitation.Email != userInfo.User.Email {
+		return nil, huma.Error401Unauthorized("unauthorized")
+	}
 	team, err := api.app.Adapter().TeamGroup().FindTeamByID(ctx, invitation.TeamID)
 	if err != nil {
 		return nil, err
