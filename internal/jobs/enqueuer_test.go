@@ -23,7 +23,7 @@ func TestEnqueuer(t *testing.T) {
 	test.DbSetup()
 	t.Run("Enqueue single job", func(t *testing.T) {
 		test.WithTx(t, func(ctx context.Context, tx database.Dbx) {
-			enqueuer := jobs.NewDBEnqueuer(tx)
+			enqueuer := jobs.NewDbJobManager(tx)
 			job := testJob{Message: "hello"}
 			runAfter := time.Now().Add(1 * time.Hour)
 
@@ -43,8 +43,7 @@ func TestEnqueuer(t *testing.T) {
 
 	t.Run("Enqueue with unique key", func(t *testing.T) {
 		test.WithTx(t, func(ctx context.Context, tx database.Dbx) {
-			enqueuer := jobs.NewDBEnqueuer(tx)
-
+			enqueuer := jobs.NewDbJobManager(tx)
 			uniqueKey := "unique_123"
 			job := testJob{Message: "unique"}
 
@@ -69,8 +68,7 @@ func TestEnqueuer(t *testing.T) {
 
 	t.Run("EnqueueMany batch insert", func(t *testing.T) {
 		test.WithTx(t, func(ctx context.Context, tx database.Dbx) {
-			enqueuer := jobs.NewDBEnqueuer(tx)
-
+			enqueuer := jobs.NewDbJobManager(tx)
 			params := []jobs.EnqueueParams{
 				{
 					Args:        testJob{Message: "batch1"},

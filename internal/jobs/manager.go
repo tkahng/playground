@@ -8,19 +8,19 @@ import (
 )
 
 type DbJobManager struct {
-	store    JobStore
-	poller   Poller
-	enqueuer Enqueuer
+	store      JobStore
+	poller     Poller
+	dispatcher Dispatcher
 }
 
 // Enqueue implements JobManagerInterface.
 func (j *DbJobManager) Enqueue(ctx context.Context, args JobArgs, uniqueKey *string, runAfter time.Time, maxAttempts int) error {
-	return j.enqueuer.Enqueue(ctx, args, uniqueKey, runAfter, maxAttempts)
+	return j.store.SaveJob(ctx, &EnqueueParams{Args: args, UniqueKey: uniqueKey, RunAfter: runAfter, MaxAttempts: maxAttempts})
 }
 
 // EnqueueMany implements JobManagerInterface.
 func (j *DbJobManager) EnqueueMany(ctx context.Context, jobs ...EnqueueParams) error {
-	return j.enqueuer.EnqueueMany(ctx, jobs...)
+	return j.store.SaveManyJobs(ctx, jobs...)
 }
 
 // Run implements JobManagerInterface.
@@ -39,16 +39,14 @@ func NewDbJobManager(dbx database.Dbx) *DbJobManager {
 	store := NewDbJobStore(dbx)
 	dispatcher := NewDispatcher()
 	poller := NewDbPoller(store, dispatcher)
-	enqueuer := NewDBEnqueuer(dbx)
 	return &DbJobManager{
-		store:    store,
-		poller:   poller,
-		enqueuer: enqueuer,
+		store:      store,
+		poller:     poller,
+		dispatcher: dispatcher,
 	}
 }
 
 type DbJobManagerDecorator struct {
-	Enqueuer        Enqueuer
 	Store           JobStore
 	Poller          Poller
 	Delegate        *DbJobManager

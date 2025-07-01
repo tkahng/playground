@@ -94,7 +94,7 @@ func TestPoller_Run(t *testing.T) {
 
 			}()
 
-			if err := testJobs.Enqueuer.Enqueue(ctx, tt.args.args, nil, time.Now(), 1); (err != nil) != tt.wantErr {
+			if err := testJobs.Manager.Enqueue(ctx, tt.args.args, nil, time.Now(), 1); (err != nil) != tt.wantErr {
 				t.Errorf("Poller.Run() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			// Wait for job(s) to complete
@@ -121,11 +121,11 @@ func TestPoller_Run(t *testing.T) {
 }
 
 type TestJobService struct {
+	Manager    JobManager
 	Adapter    stores.StorageAdapterInterface
 	Store      JobStore
 	Dispatcher Dispatcher
 	Poller     *DbPoller
-	Enqueuer   Enqueuer
 	Worker     *EmailWorker
 	Job        *Job[EmailJobArgs]
 	Wg         *sync.WaitGroup
@@ -152,16 +152,20 @@ func setupJobs(dbx database.Dbx) *TestJobService {
 		WithSize(1),
 		WithTimeout(2),
 	)
-	enqueuer := NewDBEnqueuer(dbx)
-	emailWorker := &EmailWorker{}
 
+	emailWorker := &EmailWorker{}
+	manager := &DbJobManager{
+		store:      store,
+		poller:     poller,
+		dispatcher: dispatcher,
+	}
 	RegisterWorker(dispatcher, emailWorker)
 	return &TestJobService{
+		Manager:    manager,
 		Adapter:    adapter,
 		Store:      store,
 		Dispatcher: dispatcher,
 		Poller:     poller,
-		Enqueuer:   enqueuer,
 		Worker:     emailWorker,
 	}
 }

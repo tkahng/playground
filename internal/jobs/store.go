@@ -11,6 +11,23 @@ import (
 	"github.com/tkahng/authgo/internal/models"
 )
 
+type EnqueueParams struct {
+	Args        JobArgs   // Job arguments (must implement JobArgs interface)
+	UniqueKey   *string   // Optional unique key for deduplication
+	RunAfter    time.Time // When the job should become available for processing
+	MaxAttempts int       // Maximum number of attempts before marking as failed
+}
+type Enqueuer interface {
+	// Enqueue adds a single job to the queue and returns its time-ordered UUIDv7
+	Enqueue(ctx context.Context, args JobArgs, uniqueKey *string, runAfter time.Time, maxAttempts int) error
+
+	// EnqueueMany efficiently adds multiple jobs in batches using transactions
+	// Processes jobs in chunks to prevent overwhelming the database
+	EnqueueMany(ctx context.Context, jobs ...EnqueueParams) error
+}
+
+const maxBatchSize = 1000
+
 type JobStore interface {
 	SaveJob(ctx context.Context, args *EnqueueParams) error
 	SaveManyJobs(ctx context.Context, jobs ...EnqueueParams) error
