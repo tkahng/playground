@@ -46,31 +46,6 @@ type EnqueueParams struct {
 const maxBatchSize = 1000
 
 // Enqueue adds a single job to the queue
-func (e *DBEnqueuer) Enqueue(ctx context.Context, args JobArgs, uniqueKey *string, runAfter time.Time, maxAttempts int) error {
-	payload, err := json.Marshal(args)
-	if err != nil {
-		return fmt.Errorf("marshal args: %w", err)
-	}
-
-	// Generate time-ordered UUIDv7 for better database performance
-	id, err := uuid.NewV7()
-	if err != nil {
-		return fmt.Errorf("generate uuid: %w", err)
-	}
-
-	_, err = e.db.Exec(ctx, `
-		INSERT INTO jobs (id, kind, unique_key, payload, status, run_after, attempts, max_attempts, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, 'pending', $5, 0, $6, clock_timestamp(), clock_timestamp())
-		ON CONFLICT (unique_key)
-		WHERE status IN ('pending', 'processing')
-		DO UPDATE SET
-			payload = EXCLUDED.payload,
-			run_after = EXCLUDED.run_after,
-			updated_at = clock_timestamp()
-	`, id, args.Kind(), uniqueKey, payload, runAfter, maxAttempts)
-
-	return err
-}
 
 // EnqueueMany efficiently processes multiple jobs in batches
 func (e *DBEnqueuer) EnqueueMany(ctx context.Context, jobs ...EnqueueParams) error {
@@ -113,6 +88,31 @@ func (e *DBEnqueuer) processBatch(ctx context.Context, jobs []EnqueueParams) err
 	}
 
 	return tx.Commit(ctx)
+}
+func (e *DBEnqueuer) Enqueue(ctx context.Context, args JobArgs, uniqueKey *string, runAfter time.Time, maxAttempts int) error {
+	payload, err := json.Marshal(args)
+	if err != nil {
+		return fmt.Errorf("marshal args: %w", err)
+	}
+
+	// Generate time-ordered UUIDv7 for better database performance
+	id, err := uuid.NewV7()
+	if err != nil {
+		return fmt.Errorf("generate uuid: %w", err)
+	}
+
+	_, err = e.db.Exec(ctx, `
+		INSERT INTO jobs (id, kind, unique_key, payload, status, run_after, attempts, max_attempts, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, 'pending', $5, 0, $6, clock_timestamp(), clock_timestamp())
+		ON CONFLICT (unique_key)
+		WHERE status IN ('pending', 'processing')
+		DO UPDATE SET
+			payload = EXCLUDED.payload,
+			run_after = EXCLUDED.run_after,
+			updated_at = clock_timestamp()
+	`, id, args.Kind(), uniqueKey, payload, runAfter, maxAttempts)
+
+	return err
 }
 
 // addJobToBatch adds a single job to the batch operation
