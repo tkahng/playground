@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/tkahng/authgo/internal/models"
 )
 
 // Enqueuer provides methods for adding jobs to the queue
@@ -24,6 +25,8 @@ type Enqueuer interface {
 type DBEnqueuer struct {
 	db Db
 }
+
+var _ Enqueuer = (*DBEnqueuer)(nil)
 
 // NewDBEnqueuer creates a new database-backed job enqueuer
 func NewDBEnqueuer(db Db) *DBEnqueuer {
@@ -153,3 +156,31 @@ func (e *DBEnqueuer) executeBatch(ctx context.Context, tx pgx.Tx, batch *pgx.Bat
 
 	return nil
 }
+
+type DBEnqueuerDecorator struct {
+	Jobs            []*models.JobRow
+	Delegate        Enqueuer
+	EnqueueFunc     func(ctx context.Context, args JobArgs, uniqueKey *string, runAfter time.Time, maxAttempts int) error
+	EnqueueManyFunc func(ctx context.Context, jobs ...EnqueueParams) error
+}
+
+var _ Enqueuer = (*DBEnqueuerDecorator)(nil)
+
+// Enqueue implements Enqueuer.
+func (d *DBEnqueuerDecorator) Enqueue(ctx context.Context, args JobArgs, uniqueKey *string, runAfter time.Time, maxAttempts int) error {
+	if d.EnqueueFunc != nil {
+		return d.EnqueueFunc(ctx, args, uniqueKey, runAfter, maxAttempts)
+	}
+	return d.Delegate.Enqueue(ctx, args, uniqueKey, runAfter, maxAttempts)
+}
+
+// EnqueueMany implements Enqueuer.
+func (d *DBEnqueuerDecorator) EnqueueMany(ctx context.Context, jobs ...EnqueueParams) error {
+
+	if d.EnqueueManyFunc != nil {
+		return d.EnqueueManyFunc(ctx, jobs...)
+	}
+	return d.Delegate.EnqueueMany(ctx, jobs...)
+}
+
+var _ Enqueuer = &DBEnqueuerDecorator{}

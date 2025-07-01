@@ -24,6 +24,8 @@ type dispatcher struct {
 	handlers map[string]func(context.Context, *models.JobRow) error
 }
 
+var _ Dispatcher = (*dispatcher)(nil)
+
 func (d *dispatcher) SetHandler(kind string, handler func(context.Context, *models.JobRow) error) {
 	if _, exists := d.handlers[kind]; exists {
 		return
@@ -91,3 +93,29 @@ func execute[T JobArgs](ctx context.Context, worker Worker[T], job *Job[T]) (err
 	}
 	return err
 }
+
+type DispatchDecorator struct {
+	Delegate       Dispatcher
+	SetHandlerFunc func(kind string, handler func(context.Context, *models.JobRow) error)
+	DispatchFunc   func(ctx context.Context, row *models.JobRow) error
+}
+
+func (d *DispatchDecorator) Dispatch(ctx context.Context, row *models.JobRow) error {
+	if d.DispatchFunc != nil {
+		return d.DispatchFunc(ctx, row)
+	}
+	return d.Delegate.Dispatch(ctx, row)
+}
+
+func (d *DispatchDecorator) SetHandler(kind string, handler func(context.Context, *models.JobRow) error) {
+	if d.SetHandlerFunc != nil {
+		d.SetHandlerFunc(kind, handler)
+	}
+	d.Delegate.SetHandler(kind, handler)
+}
+
+func NewDispatchDecorator() *DispatchDecorator {
+	return &DispatchDecorator{Delegate: NewDispatcher()}
+}
+
+var _ Dispatcher = (*DispatchDecorator)(nil)

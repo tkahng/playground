@@ -59,11 +59,17 @@ func WithSize(size int) PollerOptsFunc {
 	}
 }
 
+type PollerInterface interface {
+	Run(ctx context.Context) error
+}
+
 type Poller struct {
 	Store      JobStore
 	Dispatcher Dispatcher
 	opts       pollerOpts
 }
+
+var _ PollerInterface = (*Poller)(nil)
 
 func NewPoller(store JobStore, dispatcher Dispatcher, opts ...PollerOptsFunc) *Poller {
 	p := &Poller{
@@ -158,4 +164,32 @@ func (p *Poller) pollOnce(ctx context.Context) error {
 	}
 
 	return g.Wait()
+}
+
+type PollerDecorator struct {
+	Delegate     *Poller
+	RunFunc      func(ctx context.Context) error
+	PollOnceFunc func(ctx context.Context) error
+}
+
+var _ PollerInterface = (*PollerDecorator)(nil)
+
+func (d *PollerDecorator) Run(ctx context.Context) error {
+	if d.RunFunc != nil {
+		return d.RunFunc(ctx)
+	}
+	return d.Delegate.Run(ctx)
+}
+
+func (d *PollerDecorator) PollOnce(ctx context.Context) error {
+	if d.PollOnceFunc != nil {
+		return d.PollOnceFunc(ctx)
+	}
+	return d.Delegate.pollOnce(ctx)
+}
+
+func NewPollerDecorator(store JobStore, dispatcher Dispatcher, opts ...PollerOptsFunc) *PollerDecorator {
+	return &PollerDecorator{
+		Delegate: NewPoller(store, dispatcher, opts...),
+	}
 }

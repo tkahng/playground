@@ -20,6 +20,8 @@ type DbJobStore struct {
 	db Db
 }
 
+var _ JobStore = (*DbJobStore)(nil)
+
 func (s *DbJobStore) RunInTx(ctx context.Context, fn func(JobStore) error) error {
 	tx, err := s.db.Begin(ctx)
 	if err != nil {
@@ -94,4 +96,58 @@ func (s *DbJobStore) RescheduleJob(ctx context.Context, id uuid.UUID, delay time
 		WHERE id = $1
 	`, id, delay)
 	return err
+}
+
+type JobStoreDecorator struct {
+	Job                  *models.JobRow
+	Delegate             JobStore
+	RunInTxFunc          func(ctx context.Context, fn func(JobStore) error) error
+	ClaimPendingJobsFunc func(ctx context.Context, limit int) ([]*models.JobRow, error)
+	MarkDoneFunc         func(ctx context.Context, id uuid.UUID) error
+	MarkFailedFunc       func(ctx context.Context, id uuid.UUID, reason string) error
+	RescheduleJobFunc    func(ctx context.Context, id uuid.UUID, delay time.Duration) error
+}
+
+var _ JobStore = (*JobStoreDecorator)(nil)
+
+// RunInTx implements JobStore.
+func (d *JobStoreDecorator) RunInTx(ctx context.Context, fn func(JobStore) error) error {
+	if d.RunInTxFunc != nil {
+		return d.RunInTxFunc(ctx, fn)
+	}
+	return d.Delegate.RunInTx(ctx, fn)
+}
+
+func NewJobStoreDecorator() *JobStoreDecorator {
+	return &JobStoreDecorator{}
+}
+
+var _ JobStore = (*JobStoreDecorator)(nil)
+
+func (d *JobStoreDecorator) ClaimPendingJobs(ctx context.Context, limit int) ([]*models.JobRow, error) {
+	if d.ClaimPendingJobsFunc != nil {
+		return d.ClaimPendingJobsFunc(ctx, limit)
+	}
+	return d.Delegate.ClaimPendingJobs(ctx, limit)
+}
+
+func (d *JobStoreDecorator) MarkDone(ctx context.Context, id uuid.UUID) error {
+	if d.MarkDoneFunc != nil {
+		return d.MarkDoneFunc(ctx, id)
+	}
+	return d.Delegate.MarkDone(ctx, id)
+}
+
+func (d *JobStoreDecorator) MarkFailed(ctx context.Context, id uuid.UUID, reason string) error {
+	if d.MarkFailedFunc != nil {
+		return d.MarkFailedFunc(ctx, id, reason)
+	}
+	return d.Delegate.MarkFailed(ctx, id, reason)
+}
+
+func (d *JobStoreDecorator) RescheduleJob(ctx context.Context, id uuid.UUID, delay time.Duration) error {
+	if d.RescheduleJobFunc != nil {
+		return d.RescheduleJobFunc(ctx, id, delay)
+	}
+	return d.Delegate.RescheduleJob(ctx, id, delay)
 }
