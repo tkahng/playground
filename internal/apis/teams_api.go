@@ -858,7 +858,7 @@ func (api *Api) GetInvitationByToken(
 ) (*ApiOutput[*TeamInvitation], error) {
 	userInfo := contextstore.GetContextUserInfo(ctx)
 	if userInfo == nil {
-		return nil, huma.Error401Unauthorized("Unauthorized. No user info")
+		return nil, huma.Error401Unauthorized("Unauthorized. no user info")
 	}
 	invitation, err := api.app.Adapter().TeamInvitation().FindInvitationByToken(ctx, input.Token)
 	if err != nil {
@@ -868,7 +868,7 @@ func (api *Api) GetInvitationByToken(
 		return nil, huma.Error404NotFound("invitation not found")
 	}
 	if invitation.Email != userInfo.User.Email {
-		return nil, huma.Error401Unauthorized("unauthorized")
+		return nil, huma.Error401Unauthorized("unauthorized. email not match")
 	}
 	team, err := api.app.Adapter().TeamGroup().FindTeamByID(ctx, invitation.TeamID)
 	if err != nil {
