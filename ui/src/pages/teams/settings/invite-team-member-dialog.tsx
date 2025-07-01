@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/select";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { useTeam } from "@/hooks/use-team";
+import { GetError } from "@/lib/get-error";
 import { inviteTeamMember } from "@/lib/queries";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -44,7 +45,10 @@ export function InviteTeamMemberDialog() {
   const { team } = useTeam();
   const [isDialogOpen, setDialogOpen] = useState(false);
   const queryClient = useQueryClient();
-
+  const disabled =
+    !user?.tokens.access_token ||
+    !team ||
+    !team.members?.some((member) => member.role === "owner");
   const mutation = useMutation({
     mutationFn: async (values: z.infer<typeof formSchema>) => {
       if (!user?.tokens.access_token) {
@@ -63,7 +67,8 @@ export function InviteTeamMemberDialog() {
       toast.success("Member invited successfully");
     },
     onError: (error) => {
-      toast.error(error.message);
+      const err = GetError(error);
+      toast.error(err?.detail);
     },
   });
   const form = useForm<z.infer<typeof formSchema>>({
@@ -81,7 +86,9 @@ export function InviteTeamMemberDialog() {
   return (
     <Dialog open={isDialogOpen} onOpenChange={setDialogOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline">Invite Member</Button>
+        <Button variant="outline" disabled={disabled}>
+          Invite Member
+        </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>

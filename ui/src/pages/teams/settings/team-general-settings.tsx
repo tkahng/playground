@@ -29,6 +29,9 @@ const formSchema = z.object({
 export default function TeamSettingsPage() {
   const { user } = useAuthProvider();
   const { team: data } = useTeam();
+  const disabled =
+    !user?.tokens.access_token ||
+    !data?.members?.some((m) => m.role === "owner");
 
   const queryClient = useQueryClient();
   const mutation = useMutation({
@@ -99,8 +102,6 @@ export default function TeamSettingsPage() {
       });
     }
   }, [data, form]);
-  // if (isLoading) return <p>Loading...</p>;
-  // if (error) return <p>Error: {error.message}</p>;
   if (!data) return <p>User not found</p>;
   return (
     <div className="flex">
@@ -123,7 +124,7 @@ export default function TeamSettingsPage() {
                 <FormItem>
                   <FormLabel>Name</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="Name" />
+                    <Input {...field} placeholder="Name" disabled={disabled} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -135,7 +136,6 @@ export default function TeamSettingsPage() {
             </Button>
           </form>
         </Form>
-        <Separator />
 
         <Separator />
         <div className="space-y-2">
@@ -148,6 +148,7 @@ export default function TeamSettingsPage() {
             onClick={() => {
               deleteUserMutation.mutate();
             }}
+            disabled={disabled}
           >
             Delete Account
           </Button>
