@@ -83,3 +83,70 @@ func TestDbJobStore_SaveJob(t *testing.T) {
 		}
 	})
 }
+
+func TestDbJobStore_SaveManyJobs(t *testing.T) {
+	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
+		type fields struct {
+			db Db
+		}
+		type args struct {
+			ctx  context.Context
+			jobs []EnqueueParams
+		}
+		tests := []struct {
+			name    string
+			fields  fields
+			args    args
+			wantErr bool
+		}{
+			{
+				name: "create email job",
+				fields: fields{
+					db: db,
+				},
+				args: args{
+					ctx: context.Background(),
+					jobs: []EnqueueParams{
+						{
+							Args: EmailJobArgs{
+								Recipient: "recipient",
+								Subject:   "subject",
+								Body:      "body",
+							},
+							UniqueKey:   nil,
+							RunAfter:    time.Now(),
+							MaxAttempts: 1,
+						},
+						{
+							Args: EmailJobArgs{
+								Recipient: "recipient2",
+								Subject:   "subject2",
+								Body:      "body2",
+							},
+							UniqueKey:   nil,
+							RunAfter:    time.Now(),
+							MaxAttempts: 1,
+						},
+					}},
+				wantErr: false,
+			},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				e := &DbJobStore{
+					db: tt.fields.db,
+				}
+				if err := e.SaveManyJobs(tt.args.ctx, tt.args.jobs...); (err != nil) != tt.wantErr {
+					t.Errorf("DbJobStore.SaveManyJobs() error = %v, wantErr %v", err, tt.wantErr)
+				}
+				count, err := repository.Job.Count(tt.args.ctx, db, nil)
+				if err != nil {
+					t.Error(err)
+				}
+				if count != int64(len(tt.args.jobs)) {
+					t.Errorf("DbJobStore.SaveManyJobs() count = %v, want %v", count, len(tt.args.jobs))
+				}
+			})
+		}
+	})
+}
