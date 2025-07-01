@@ -53,6 +53,10 @@ type ApiPaginatedResponse[T any] struct {
 type ApiPaginatedOutput[T any] struct {
 	Body ApiPaginatedResponse[T] `json:"body"`
 }
+
+type ApiOutput[T any] struct {
+	Body T `json:"body"`
+}
 type Meta struct {
 	Page     int64  `json:"page"`
 	PerPage  int64  `json:"per_page"`

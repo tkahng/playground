@@ -124,6 +124,10 @@ func (s *DbTeamInvitationStore) FindInvitationByID(ctx context.Context, invitati
 	return invitation, nil
 }
 
+var invitationStatuses = []models.TeamInvitationStatus{
+	models.TeamInvitationStatusPending,
+}
+
 // FindInvitationByToken implements services.TeamInvitationStore.
 func (s *DbTeamInvitationStore) FindInvitationByToken(ctx context.Context, token string) (*models.TeamInvitation, error) {
 	invitation, err := repository.TeamInvitation.GetOne(
@@ -133,18 +137,18 @@ func (s *DbTeamInvitationStore) FindInvitationByToken(ctx context.Context, token
 			models.TeamInvitationTable.Token: map[string]any{
 				"_eq": token,
 			},
+			models.TeamInvitationTable.Status: map[string]any{
+				"_in": invitationStatuses,
+			},
+			models.TeamInvitationTable.ExpiresAt: map[string]any{
+				"_gt": time.Now(),
+			},
 		},
 	)
 	if err != nil {
 		return nil, err
 	}
-	if invitation == nil {
-		return nil, nil
-	}
-	if invitation.ExpiresAt.Before(time.Now()) {
 
-		return nil, shared.ErrTokenExpired
-	}
 	return invitation, nil
 }
 

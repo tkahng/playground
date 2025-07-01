@@ -855,7 +855,7 @@ type GetInvitationByTokenInput struct {
 func (api *Api) GetInvitationByToken(
 	ctx context.Context,
 	input *GetInvitationByTokenInput,
-) (*TeamInvitation, error) {
+) (*ApiOutput[*TeamInvitation], error) {
 	userInfo := contextstore.GetContextUserInfo(ctx)
 	if userInfo == nil {
 		return nil, huma.Error401Unauthorized("Unauthorized. No user info")
@@ -863,6 +863,9 @@ func (api *Api) GetInvitationByToken(
 	invitation, err := api.app.Adapter().TeamInvitation().FindInvitationByToken(ctx, input.Token)
 	if err != nil {
 		return nil, err
+	}
+	if invitation == nil {
+		return nil, huma.Error404NotFound("invitation not found")
 	}
 	team, err := api.app.Adapter().TeamGroup().FindTeamByID(ctx, invitation.TeamID)
 	if err != nil {
@@ -877,5 +880,7 @@ func (api *Api) GetInvitationByToken(
 	}
 	invitation.InviterMember = member
 
-	return FromTeamInvitationModel(invitation), nil
+	return &ApiOutput[*TeamInvitation]{
+		Body: FromTeamInvitationModel(invitation),
+	}, nil
 }
