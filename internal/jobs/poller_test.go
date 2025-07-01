@@ -144,8 +144,8 @@ func (s *TestJobService) Clear() {
 // type
 
 func setupJobs(dbx database.Dbx) *TestJobService {
-	store := NewDbJobStore(dbx)
 	adapter := stores.NewStorageAdapter(dbx)
+	store := NewDbJobStore(dbx)
 	dispatcher := NewDispatcher()
 	poller := NewPoller(store, dispatcher,
 		WithIntervalMs(100), // 100 ms
