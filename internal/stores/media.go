@@ -160,3 +160,61 @@ func (s *DbMediaStore) sort(filter Sortable) *map[string]string {
 
 	return nil // default no sorting
 }
+
+type MediaStoreDecorator struct {
+	Delegate          MediaStoreInterface
+	CountMediaFunc    func(ctx context.Context, filter *MediaListFilter) (int64, error)
+	CreateMediaFunc   func(ctx context.Context, media *models.Medium) (*models.Medium, error)
+	FindMediaFunc     func(ctx context.Context, filter *MediaListFilter) ([]*models.Medium, error)
+	FindMediaByIDFunc func(ctx context.Context, mediaId uuid.UUID) (*models.Medium, error)
+	UpdateMediaFunc   func(ctx context.Context, media *models.Medium) (*models.Medium, error)
+}
+
+// CountMedia implements MediaStoreInterface.
+func (m *MediaStoreDecorator) CountMedia(ctx context.Context, filter *MediaListFilter) (int64, error) {
+	if m.CountMediaFunc == nil {
+		return m.CountMediaFunc(ctx, filter)
+	}
+	return m.Delegate.CountMedia(ctx, filter)
+}
+
+// CreateMedia implements MediaStoreInterface.
+func (m *MediaStoreDecorator) CreateMedia(ctx context.Context, media *models.Medium) (*models.Medium, error) {
+	if m.CreateMediaFunc == nil {
+		return m.CreateMediaFunc(ctx, media)
+	}
+	return m.Delegate.CreateMedia(ctx, media)
+}
+
+// FindMedia implements MediaStoreInterface.
+func (m *MediaStoreDecorator) FindMedia(ctx context.Context, filter *MediaListFilter) ([]*models.Medium, error) {
+	if m.FindMediaFunc == nil {
+		return m.FindMediaFunc(ctx, filter)
+	}
+	return m.Delegate.FindMedia(ctx, filter)
+}
+
+// FindMediaByID implements MediaStoreInterface.
+func (m *MediaStoreDecorator) FindMediaByID(ctx context.Context, mediaId uuid.UUID) (*models.Medium, error) {
+	if m.FindMediaByIDFunc == nil {
+		return m.FindMediaByIDFunc(ctx, mediaId)
+	}
+	return m.Delegate.FindMediaByID(ctx, mediaId)
+}
+
+// UpdateMedia implements MediaStoreInterface.
+func (m *MediaStoreDecorator) UpdateMedia(ctx context.Context, media *models.Medium) (*models.Medium, error) {
+	if m.UpdateMediaFunc == nil {
+		return m.UpdateMediaFunc(ctx, media)
+	}
+	return m.Delegate.UpdateMedia(ctx, media)
+}
+
+var _ MediaStoreInterface = (*MediaStoreDecorator)(nil)
+
+func NewMediaStoreDecorator(dbx database.Dbx) *MediaStoreDecorator {
+	delegate := NewMediaStore(dbx)
+	return &MediaStoreDecorator{
+		Delegate: delegate,
+	}
+}

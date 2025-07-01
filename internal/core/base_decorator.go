@@ -19,8 +19,9 @@ func NewAppDecorator(ctx context.Context, cfg conf.EnvConfig, pool database.Dbx)
 	fs := filesystem.NewMockFileSystem(cfg.StorageConfig)
 
 	l := logger.GetDefaultLogger()
-	enqueuer := jobs.NewDBEnqueuer(pool)
-	adapter := stores.NewStorageAdapter(pool)
+	jobManager := jobs.NewDbJobManagerDecorator(pool)
+	adapter := stores.NewAdapterDecorators()
+	adapter.Delegate = stores.NewStorageAdapter(pool)
 	mail := &mailer.LogMailer{}
 	authMailService := services.NewMailService(mail)
 	rbacService := services.NewRBACService(adapter)
@@ -41,7 +42,7 @@ func NewAppDecorator(ctx context.Context, cfg conf.EnvConfig, pool database.Dbx)
 		tokenService,
 		passwordService,
 		routine,
-		enqueuer,
+		jobManager,
 		adapter,
 	)
 	checker := services.NewConstraintCheckerService(
@@ -88,6 +89,15 @@ type BaseAppDecorator struct {
 	TaskFunc           func() services.TaskService
 	AdapterFunc        func() stores.StorageAdapterInterface
 	TeamInvitationFunc func() services.TeamInvitationService
+	JobManagerFunc     func() jobs.JobManager
+}
+
+// JobManager implements App.
+func (b *BaseAppDecorator) JobManager() jobs.JobManager {
+	if b.JobManagerFunc != nil {
+		return b.JobManagerFunc()
+	}
+	return b.app.JobManager()
 }
 
 // TeamInvitation implements App.

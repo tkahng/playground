@@ -7,40 +7,40 @@ import (
 	"github.com/tkahng/authgo/internal/database"
 )
 
-type JobManager struct {
+type DbJobManager struct {
 	store    JobStore
 	poller   Poller
 	enqueuer Enqueuer
 }
 
 // Enqueue implements JobManagerInterface.
-func (j *JobManager) Enqueue(ctx context.Context, args JobArgs, uniqueKey *string, runAfter time.Time, maxAttempts int) error {
+func (j *DbJobManager) Enqueue(ctx context.Context, args JobArgs, uniqueKey *string, runAfter time.Time, maxAttempts int) error {
 	return j.enqueuer.Enqueue(ctx, args, uniqueKey, runAfter, maxAttempts)
 }
 
 // EnqueueMany implements JobManagerInterface.
-func (j *JobManager) EnqueueMany(ctx context.Context, jobs ...EnqueueParams) error {
+func (j *DbJobManager) EnqueueMany(ctx context.Context, jobs ...EnqueueParams) error {
 	return j.enqueuer.EnqueueMany(ctx, jobs...)
 }
 
 // Run implements JobManagerInterface.
-func (j *JobManager) Run(ctx context.Context) error {
+func (j *DbJobManager) Run(ctx context.Context) error {
 	return j.poller.Run(ctx)
 }
 
-type JobManagerInterface interface {
+type JobManager interface {
 	Enqueuer
 	Poller
 }
 
-var _ JobManagerInterface = (*JobManager)(nil)
+var _ JobManager = (*DbJobManager)(nil)
 
-func NewJobManager(dbx database.Dbx) *JobManager {
+func NewDbJobManager(dbx database.Dbx) *DbJobManager {
 	store := NewDbJobStore(dbx)
 	dispatcher := NewDispatcher()
 	poller := NewDbPoller(store, dispatcher)
 	enqueuer := NewDBEnqueuer(dbx)
-	return &JobManager{
+	return &DbJobManager{
 		store:    store,
 		poller:   poller,
 		enqueuer: enqueuer,
@@ -51,14 +51,14 @@ type DbJobManagerDecorator struct {
 	Enqueuer        Enqueuer
 	Store           JobStore
 	Poller          Poller
-	Delegate        *JobManager
+	Delegate        *DbJobManager
 	EnqueueFunc     func(ctx context.Context, args JobArgs, uniqueKey *string, runAfter time.Time, maxAttempts int) error
 	EnqueueManyFunc func(ctx context.Context, jobs ...EnqueueParams) error
 	RunFunc         func(ctx context.Context) error
 }
 
 func NewDbJobManagerDecorator(dbx database.Dbx) *DbJobManagerDecorator {
-	delegate := NewJobManager(dbx)
+	delegate := NewDbJobManager(dbx)
 	return &DbJobManagerDecorator{Delegate: delegate}
 }
 
@@ -86,4 +86,4 @@ func (d *DbJobManagerDecorator) Run(ctx context.Context) error {
 	return d.Delegate.Run(ctx)
 }
 
-var _ JobManagerInterface = (*DbJobManagerDecorator)(nil)
+var _ JobManager = (*DbJobManagerDecorator)(nil)

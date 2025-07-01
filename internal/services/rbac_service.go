@@ -7,7 +7,7 @@ type RBACService interface {
 }
 
 type rbacService struct {
-	adapter *stores.StorageAdapter
+	adapter stores.StorageAdapterInterface
 }
 
 // Adapter implements RBACService.
@@ -15,7 +15,7 @@ func (r *rbacService) Adapter() stores.StorageAdapterInterface {
 	return r.adapter
 }
 
-func NewRBACService(adapter *stores.StorageAdapter) RBACService {
+func NewRBACService(adapter stores.StorageAdapterInterface) RBACService {
 	return &rbacService{
 		adapter: adapter,
 	}

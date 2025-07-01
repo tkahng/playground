@@ -14,13 +14,13 @@ import (
 	"github.com/tkahng/authgo/internal/tools/security"
 )
 
-type OtpMailServiceInterface interface {
+type OtpMailService interface {
 	SendOtpEmail(ctx context.Context, emailType mailer.EmailType, userId uuid.UUID) error
 }
 
-var _ OtpMailServiceInterface = &OtpMailService{}
+var _ OtpMailService = &DbOtpMailService{}
 
-type OtpMailService struct {
+type DbOtpMailService struct {
 	options  *conf.AppOptions
 	adapter  stores.StorageAdapterInterface
 	mail     MailService
@@ -28,8 +28,8 @@ type OtpMailService struct {
 	password PasswordService
 }
 
-func NewOtpMailService(opts *conf.AppOptions, mail MailService, token JwtService, password PasswordService, adapter stores.StorageAdapterInterface) OtpMailService {
-	return OtpMailService{
+func NewDbOtpMailService(opts *conf.AppOptions, mail MailService, token JwtService, password PasswordService, adapter stores.StorageAdapterInterface) DbOtpMailService {
+	return DbOtpMailService{
 		options:  opts,
 		adapter:  adapter,
 		mail:     mail,
@@ -38,7 +38,7 @@ func NewOtpMailService(opts *conf.AppOptions, mail MailService, token JwtService
 	}
 }
 
-func (app *OtpMailService) SendOtpEmail(ctx context.Context, emailType mailer.EmailType, userId uuid.UUID) error {
+func (app *DbOtpMailService) SendOtpEmail(ctx context.Context, emailType mailer.EmailType, userId uuid.UUID) error {
 	adapter := app.adapter
 	user, err := adapter.User().FindUserByID(ctx, userId)
 	if err != nil {
@@ -104,7 +104,7 @@ func (app *OtpMailService) SendOtpEmail(ctx context.Context, emailType mailer.Em
 	return app.mail.SendMail(sendMailParams)
 }
 
-func (app *OtpMailService) getSendMailParams(emailType mailer.EmailType, tokenHash string, claims shared.OtpClaims) (*mailer.AllEmailParams, error) {
+func (app *DbOtpMailService) getSendMailParams(emailType mailer.EmailType, tokenHash string, claims shared.OtpClaims) (*mailer.AllEmailParams, error) {
 	appOpts := app.options.Meta
 	var sendMailParams mailer.SendMailParams
 	var ok bool

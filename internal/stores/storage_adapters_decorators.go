@@ -14,16 +14,19 @@ func NewAdapterDecorators() *StorageAdapterDecorator {
 		PriceFunc:          &StripePriceStoreDecorator{},
 		SubscriptionFunc:   &StripeSubscriptionStoreDecorator{},
 		TaskFunc:           &TaskDecorator{},
+		MediaFunc:          &DbMediaStore{},
 	}
 }
 
 type StorageAdapterDecorator struct {
+	Delegate           StorageAdapterInterface
 	UserFunc           *UserStoreDecorator
 	UserAccountFunc    *AccountStoreDecorator
 	TokenFunc          *TokenStoreDecorator
 	TeamGroupFunc      *TeamGroupStoreDecorator
 	TeamInvitationFunc *TeamInvitationStoreDecorator
 	TeamMemberFunc     *TeamMemberStoreDecorator
+	MediaFunc          *DbMediaStore
 	RbacFunc           *RbacStoreDecorator
 	CustomerFunc       *CustomerStoreDecorator
 	ProductFunc        *StripeProductStoreDecorator
@@ -33,14 +36,22 @@ type StorageAdapterDecorator struct {
 	RunInTxFunc        func(fn func(tx StorageAdapterInterface) error) error
 }
 
+var _ StorageAdapterInterface = (*StorageAdapterDecorator)(nil)
+
 // Media implements StorageAdapterInterface.
 func (s *StorageAdapterDecorator) Media() MediaStoreInterface {
-	panic("unimplemented")
+	if s.MediaFunc != nil {
+		return s.MediaFunc
+	}
+	return s.Delegate.Media()
 }
 
 // Rbac implements StorageAdapterInterface.
 func (s *StorageAdapterDecorator) Rbac() DbRbacStoreInterface {
-	return s.RbacFunc
+	if s.RbacFunc != nil {
+		return s.RbacFunc
+	}
+	return s.Delegate.Rbac()
 }
 
 func (s *StorageAdapterDecorator) Cleanup() {
@@ -87,17 +98,26 @@ func (s *StorageAdapterDecorator) Cleanup() {
 
 // Customer implements StorageAdapterInterface.
 func (s *StorageAdapterDecorator) Customer() DbCustomerStoreInterface {
-	return s.CustomerFunc
+	if s.CustomerFunc != nil {
+		return s.CustomerFunc
+	}
+	return s.Delegate.Customer()
 }
 
 // Price implements StorageAdapterInterface.
 func (s *StorageAdapterDecorator) Price() DbPriceStoreInterface {
-	return s.PriceFunc
+	if s.PriceFunc != nil {
+		return s.PriceFunc
+	}
+	return s.Delegate.Price()
 }
 
 // Product implements StorageAdapterInterface.
 func (s *StorageAdapterDecorator) Product() DbProductStoreInterface {
-	return s.ProductFunc
+	if s.ProductFunc != nil {
+		return s.ProductFunc
+	}
+	return s.Delegate.Product()
 }
 
 // RunInTx implements StorageAdapterInterface.
@@ -105,46 +125,70 @@ func (s *StorageAdapterDecorator) RunInTx(fn func(tx StorageAdapterInterface) er
 	if s.RunInTxFunc != nil {
 		return s.RunInTxFunc(fn)
 	}
-	return ErrDelegateNil
+	return s.Delegate.RunInTx(fn)
 }
 
 // Subscription implements StorageAdapterInterface.
 func (s *StorageAdapterDecorator) Subscription() DbSubscriptionStoreInterface {
-	return s.SubscriptionFunc
+	if s.SubscriptionFunc != nil {
+		return s.SubscriptionFunc
+	}
+	return s.Delegate.Subscription()
 }
 
 // TeamGroup implements StorageAdapterInterface.
 func (s *StorageAdapterDecorator) TeamGroup() DbTeamGroupStoreInterface {
-	return s.TeamGroupFunc
+	if s.TeamGroupFunc != nil {
+		return s.TeamGroupFunc
+	}
+	return s.Delegate.TeamGroup()
 }
 
 // TeamInvitation implements StorageAdapterInterface.
 func (s *StorageAdapterDecorator) TeamInvitation() DbTeamInvitationStoreInterface {
-	return s.TeamInvitationFunc
+	if s.TeamInvitationFunc != nil {
+		return s.TeamInvitationFunc
+	}
+	return s.Delegate.TeamInvitation()
 }
 
 // TeamMember implements StorageAdapterInterface.
 func (s *StorageAdapterDecorator) TeamMember() DbTeamMemberStoreInterface {
-	return s.TeamMemberFunc
+	if s.TeamMemberFunc != nil {
+		return s.TeamMemberFunc
+	}
+	return s.Delegate.TeamMember()
 }
 
 // Token implements StorageAdapterInterface.
 func (s *StorageAdapterDecorator) Token() DbTokenStoreInterface {
-	return s.TokenFunc
+	if s.TokenFunc != nil {
+		return s.TokenFunc
+	}
+	return s.Delegate.Token()
 }
 
 // User implements StorageAdapterInterface.
 func (s *StorageAdapterDecorator) User() DbUserStoreInterface {
-	return s.UserFunc
+	if s.UserFunc != nil {
+		return s.UserFunc
+	}
+	return s.Delegate.User()
 }
 
 // UserAccount implements StorageAdapterInterface.
 func (s *StorageAdapterDecorator) UserAccount() DbAccountStoreInterface {
-	return s.UserAccountFunc
+	if s.UserAccountFunc != nil {
+		return s.UserAccountFunc
+	}
+	return s.Delegate.UserAccount()
 }
 
 func (s *StorageAdapterDecorator) Task() DbTaskStoreInterface {
-	return s.TaskFunc
+	if s.TaskFunc != nil {
+		return s.TaskFunc
+	}
+	return s.Delegate.Task()
 }
 
 var _ StorageAdapterInterface = (*StorageAdapterDecorator)(nil)
