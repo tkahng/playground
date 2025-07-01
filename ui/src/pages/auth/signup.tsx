@@ -18,7 +18,7 @@ import { SignupInput } from "@/schema.types";
 import { Label } from "@radix-ui/react-label";
 import { Lock } from "lucide-react";
 import { useState } from "react";
-import { Link, useNavigate } from "react-router";
+import { Link, useLocation, useNavigate } from "react-router";
 import { toast } from "sonner";
 
 export default function SignupPage() {
@@ -30,6 +30,10 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { signUp } = useAuthProvider();
+  const { search } = useLocation();
+  const params = new URLSearchParams(search);
+  const redirectTo = params.get("redirect_to");
+  const navigateTo = redirectTo || RouteMap.DASHBOARD;
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setLoading(true);
@@ -41,7 +45,7 @@ export default function SignupPage() {
         name: input.name,
       });
       setLoading(false);
-      navigate(RouteMap.DASHBOARD);
+      navigate(navigateTo);
     } catch (error) {
       if (error instanceof Error) {
         toast.error(error.message, {

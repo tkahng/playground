@@ -25,7 +25,8 @@ export default function SigninPage() {
   const [input, setInput] = useState<SigninInput>({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
   const { search } = useLocation();
-  const redirectTo = new URLSearchParams(search).get("redirect_to");
+  const params = new URLSearchParams(search);
+  const redirectTo = params.get("redirect_to");
   const navigate = useNavigate(); // Get navigation function
   const { login } = useContext(AuthContext);
 
@@ -115,7 +116,10 @@ export default function SigninPage() {
               Forgot your password?{" "}
               <Link
                 className="text-primary underline-offset-4 hover:underline"
-                to={RouteMap.FORGOT_PASSWORD}
+                to={{
+                  pathname: RouteMap.FORGOT_PASSWORD,
+                  search: params?.toString(),
+                }}
               >
                 Reset password
               </Link>
@@ -124,7 +128,10 @@ export default function SigninPage() {
               Don't have an account?{" "}
               <Link
                 className="text-primary underline-offset-4 hover:underline"
-                to={RouteMap.SIGNUP}
+                to={{
+                  pathname: RouteMap.SIGNUP,
+                  search: params?.toString(),
+                }}
               >
                 Sign up
               </Link>
