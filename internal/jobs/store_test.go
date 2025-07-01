@@ -307,3 +307,165 @@ func TestDbJobStore_MarkDone(t *testing.T) {
 		}
 	})
 }
+
+func TestDbJobStore_MarkFailed(t *testing.T) {
+	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
+		type fields struct {
+			db database.Dbx
+		}
+		type args struct {
+			jobs []EnqueueParams
+			ctx  context.Context
+			id   uuid.UUID
+		}
+		tests := []struct {
+			name    string
+			fields  fields
+			args    args
+			wantErr bool
+		}{
+			{
+				name: "mark failed",
+				fields: fields{
+					db: db,
+				},
+				args: args{
+					jobs: []EnqueueParams{
+						{
+							Args: EmailJobArgs{
+								Recipient: "recipient2",
+								Subject:   "subject2",
+								Body:      "body2",
+							},
+							UniqueKey:   nil,
+							RunAfter:    time.Now(),
+							MaxAttempts: 1,
+						},
+					},
+					ctx: context.Background(),
+				},
+				wantErr: false,
+			},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				s := &DbJobStore{
+					db: tt.fields.db,
+				}
+				if err := s.SaveManyJobs(tt.args.ctx, tt.args.jobs...); (err != nil) != tt.wantErr {
+					t.Errorf("DbJobStore.SaveManyJobs() error = %v, wantErr %v", err, tt.wantErr)
+				}
+				pendingJobs, err := s.ClaimPendingJobs(tt.args.ctx, 1)
+				if (err != nil) != tt.wantErr {
+					t.Errorf("DbJobStore.ClaimPendingJobs() error = %v, wantErr %v", err, tt.wantErr)
+					return
+				}
+				if len(pendingJobs) < 1 {
+					t.Errorf("DbJobStore.ClaimPendingJobs() got = %v, want %v", len(pendingJobs), 1)
+				}
+				tt.args.id = pendingJobs[0].ID
+				if err := s.MarkFailed(tt.args.ctx, tt.args.id, "reason"); (err != nil) != tt.wantErr {
+					t.Errorf("DbJobStore.MarkDone() error = %v, wantErr %v", err, tt.wantErr)
+				}
+				got, err := repository.Job.GetOne(
+					tt.args.ctx,
+					tt.fields.db,
+					&map[string]any{
+						"id": map[string]any{
+							"_eq": tt.args.id,
+						},
+					},
+				)
+				if (err != nil) != tt.wantErr {
+					t.Errorf("DbJobStore.ClaimPendingJobs() error = %v, wantErr %v", err, tt.wantErr)
+					return
+				}
+				if got.Status != models.JobStatusFailed {
+					t.Errorf("DbJobStore.MarkDone() got = %v, want %v", string(got.Status), string(models.JobStatusFailed))
+				}
+			})
+		}
+	})
+}
+
+func TestDbJobStore_RescheduleJob(t *testing.T) {
+	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
+		type fields struct {
+			db database.Dbx
+		}
+		type args struct {
+			jobs  []EnqueueParams
+			delay time.Duration
+			ctx   context.Context
+			id    uuid.UUID
+		}
+		tests := []struct {
+			name    string
+			fields  fields
+			args    args
+			wantErr bool
+		}{
+			{
+				name: "mark RescheduleJob",
+				fields: fields{
+					db: db,
+				},
+				args: args{
+					jobs: []EnqueueParams{
+						{
+							Args: EmailJobArgs{
+								Recipient: "recipient2",
+								Subject:   "subject2",
+								Body:      "body2",
+							},
+							UniqueKey:   nil,
+							RunAfter:    time.Now(),
+							MaxAttempts: 1,
+						},
+					},
+					delay: time.Hour,
+					ctx:   context.Background(),
+				},
+				wantErr: false,
+			},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				s := &DbJobStore{
+					db: tt.fields.db,
+				}
+				if err := s.SaveManyJobs(tt.args.ctx, tt.args.jobs...); (err != nil) != tt.wantErr {
+					t.Errorf("DbJobStore.SaveManyJobs() error = %v, wantErr %v", err, tt.wantErr)
+				}
+				pendingJobs, err := s.ClaimPendingJobs(tt.args.ctx, 1)
+				if (err != nil) != tt.wantErr {
+					t.Errorf("DbJobStore.ClaimPendingJobs() error = %v, wantErr %v", err, tt.wantErr)
+					return
+				}
+				if len(pendingJobs) < 1 {
+					t.Errorf("DbJobStore.ClaimPendingJobs() got = %v, want %v", len(pendingJobs), 1)
+				}
+				tt.args.id = pendingJobs[0].ID
+				if err := s.RescheduleJob(tt.args.ctx, tt.args.id, tt.args.delay); (err != nil) != tt.wantErr {
+					t.Errorf("DbJobStore.MarkDone() error = %v, wantErr %v", err, tt.wantErr)
+				}
+				got, err := repository.Job.GetOne(
+					tt.args.ctx,
+					tt.fields.db,
+					&map[string]any{
+						"id": map[string]any{
+							"_eq": tt.args.id,
+						},
+					},
+				)
+				if (err != nil) != tt.wantErr {
+					t.Errorf("DbJobStore.ClaimPendingJobs() error = %v, wantErr %v", err, tt.wantErr)
+					return
+				}
+				if got.Status != models.JobStatusPending {
+					t.Errorf("DbJobStore.MarkDone() got = %v, want %v", string(got.Status), string(models.JobStatusFailed))
+				}
+			})
+		}
+	})
+}
