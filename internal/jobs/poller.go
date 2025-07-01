@@ -10,6 +10,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/tkahng/authgo/internal/models"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -28,6 +29,7 @@ func ServeWithPoller(ctx context.Context, poller *Poller) error {
 type pollerOpts struct {
 	Interval time.Duration
 	Timeout  time.Duration
+	Size     int
 }
 type PollerOptsFunc func(*pollerOpts)
 
@@ -40,6 +42,12 @@ func WithTimeout(timeout int64) PollerOptsFunc {
 func WithInterval(interval int64) PollerOptsFunc {
 	return func(opts *pollerOpts) {
 		opts.Interval = time.Duration(interval) * time.Second
+	}
+}
+
+func WithSize(size int) PollerOptsFunc {
+	return func(opts *pollerOpts) {
+		opts.Size = size
 	}
 }
 
@@ -56,6 +64,7 @@ func NewPoller(store JobStore, dispatcher Dispatcher, opts ...PollerOptsFunc) *P
 		opts: pollerOpts{
 			Interval: 5 * time.Second,
 			Timeout:  30 * time.Second,
+			Size:     1,
 		},
 	}
 	for _, opt := range opts {
@@ -86,7 +95,7 @@ func (p *Poller) pollOnce(ctx context.Context) error {
 		func(js JobStore) error {
 
 			// Claim only one job
-			jobs, err := js.ClaimPendingJobs(ctx, 1) // LIMIT to 1
+			jobs, err := js.ClaimPendingJobs(ctx, p.opts.Size) // LIMIT to 1
 			if err != nil {
 				return fmt.Errorf("claim jobs: %w", err)
 			}
@@ -96,7 +105,6 @@ func (p *Poller) pollOnce(ctx context.Context) error {
 				return nil // Commit an empty transaction to avoid erroring if there are no jobs
 			}
 
-			row := jobs[0] // Get the single claimed job
 			timeout := p.opts.Timeout
 			if timeout == 0 { // Provide a default if not set by options
 				timeout = 30 * time.Second
@@ -108,29 +116,39 @@ func (p *Poller) pollOnce(ctx context.Context) error {
 			)
 			defer cancel()
 
-			dispatchErr := p.Dispatcher.Dispatch(jobCtx, &row)
-			if dispatchErr != nil {
-				slog.ErrorContext(ctx, "there was an error dispatching the job. will attempt to reschedule or mark as failed", slog.Any("error", dispatchErr), slog.String("job_id", row.ID.String()))
-				if row.Attempts >= row.MaxAttempts {
-					if markFailedErr := js.MarkFailed(ctx, row.ID, dispatchErr.Error()); markFailedErr != nil {
-						slog.ErrorContext(ctx, "Error marking job as failed (and rolling back)", slog.Any("error", markFailedErr), slog.String("job_id", row.ID.String()))
-						return fmt.Errorf("failed to mark job %s as failed: %w", row.ID, markFailedErr)
-					}
-				} else {
-					delay := time.Duration(math.Pow(2, float64(row.Attempts))) * time.Second
-					if rescheduleErr := js.RescheduleJob(ctx, row.ID, delay); rescheduleErr != nil {
-						slog.ErrorContext(ctx, "Error rescheduling job (and rolling back)", slog.Any("error", rescheduleErr), slog.String("job_id", row.ID.String()))
-						return fmt.Errorf("failed to reschedule job %s: %w", row.ID, rescheduleErr)
-					}
-				}
-			} else {
-				if markDoneErr := js.MarkDone(ctx, row.ID); markDoneErr != nil {
-					slog.ErrorContext(ctx, "Error marking job as done (and rolling back)", slog.Any("error", markDoneErr), slog.String("job_id", row.ID.String()))
-					return fmt.Errorf("failed to mark job %s as done: %w", row.ID, markDoneErr)
+			for _, job := range jobs {
+				if err := p.dispatch(jobCtx, job, js); err != nil {
+					slog.ErrorContext(ctx, "dispatch error", "error", err)
+					return err
 				}
 			}
-
 			return nil
 		},
 	)
+}
+
+func (p *Poller) dispatch(ctx context.Context, row *models.JobRow, js JobStore) error {
+	dispatchErr := p.Dispatcher.Dispatch(ctx, row)
+	if dispatchErr != nil {
+		slog.ErrorContext(ctx, "there was an error dispatching the job. will attempt to reschedule or mark as failed", slog.Any("error", dispatchErr), slog.String("job_id", row.ID.String()))
+		if row.Attempts >= row.MaxAttempts {
+			if markFailedErr := js.MarkFailed(ctx, row.ID, dispatchErr.Error()); markFailedErr != nil {
+				slog.ErrorContext(ctx, "Error marking job as failed (and rolling back)", slog.Any("error", markFailedErr), slog.String("job_id", row.ID.String()))
+				return fmt.Errorf("failed to mark job %s as failed: %w", row.ID, markFailedErr)
+			}
+		} else {
+			delay := time.Duration(math.Pow(2, float64(row.Attempts))) * time.Second
+			if rescheduleErr := js.RescheduleJob(ctx, row.ID, delay); rescheduleErr != nil {
+				slog.ErrorContext(ctx, "Error rescheduling job (and rolling back)", slog.Any("error", rescheduleErr), slog.String("job_id", row.ID.String()))
+				return fmt.Errorf("failed to reschedule job %s: %w", row.ID, rescheduleErr)
+			}
+		}
+	} else {
+		if markDoneErr := js.MarkDone(ctx, row.ID); markDoneErr != nil {
+			slog.ErrorContext(ctx, "Error marking job as done (and rolling back)", slog.Any("error", markDoneErr), slog.String("job_id", row.ID.String()))
+			return fmt.Errorf("failed to mark job %s as done: %w", row.ID, markDoneErr)
+		}
+	}
+
+	return nil
 }

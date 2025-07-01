@@ -10,7 +10,7 @@ import (
 )
 
 type JobStore interface {
-	ClaimPendingJobs(ctx context.Context, limit int) ([]models.JobRow, error)
+	ClaimPendingJobs(ctx context.Context, limit int) ([]*models.JobRow, error)
 	MarkDone(ctx context.Context, id uuid.UUID) error
 	MarkFailed(ctx context.Context, id uuid.UUID, reason string) error
 	RescheduleJob(ctx context.Context, id uuid.UUID, delay time.Duration) error
@@ -42,7 +42,7 @@ func NewDbJobStore(db Db) *DbJobStore {
 	}
 }
 
-func (s *DbJobStore) ClaimPendingJobs(ctx context.Context, limit int) ([]models.JobRow, error) {
+func (s *DbJobStore) ClaimPendingJobs(ctx context.Context, limit int) ([]*models.JobRow, error) {
 	rows, err := s.db.Query(ctx, `
 		UPDATE jobs SET status='processing', updated_at=clock_timestamp(), attempts=attempts+1
 		WHERE id IN (
@@ -59,7 +59,7 @@ func (s *DbJobStore) ClaimPendingJobs(ctx context.Context, limit int) ([]models.
 	}
 	defer rows.Close()
 
-	var jobs []models.JobRow
+	var jobs []*models.JobRow
 	for rows.Next() {
 		var row models.JobRow
 		if err := rows.Scan(
@@ -68,7 +68,7 @@ func (s *DbJobStore) ClaimPendingJobs(ctx context.Context, limit int) ([]models.
 		); err != nil {
 			return nil, err
 		}
-		jobs = append(jobs, row)
+		jobs = append(jobs, &row)
 	}
 	return jobs, rows.Err()
 }

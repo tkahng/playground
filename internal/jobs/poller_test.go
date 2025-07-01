@@ -30,11 +30,8 @@ func TestPoller_Run(t *testing.T) {
 		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				p := &Poller{
-					Store:      tt.fields.Store,
-					Dispatcher: tt.fields.Dispatcher,
-					opts:       tt.fields.opts,
-				}
+				p := NewPoller(tt.fields.Store, tt.fields.Dispatcher)
+
 				if err := p.Run(tt.args.ctx); (err != nil) != tt.wantErr {
 					t.Errorf("Poller.Run() error = %v, wantErr %v", err, tt.wantErr)
 				}

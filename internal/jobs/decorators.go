@@ -36,7 +36,7 @@ type JobStoreDecorator struct {
 	Job                  *models.JobRow
 	Delegate             JobStore
 	RunInTxFunc          func(ctx context.Context, fn func(JobStore) error) error
-	ClaimPendingJobsFunc func(ctx context.Context, limit int) ([]models.JobRow, error)
+	ClaimPendingJobsFunc func(ctx context.Context, limit int) ([]*models.JobRow, error)
 	MarkDoneFunc         func(ctx context.Context, id uuid.UUID) error
 	MarkFailedFunc       func(ctx context.Context, id uuid.UUID, reason string) error
 	RescheduleJobFunc    func(ctx context.Context, id uuid.UUID, delay time.Duration) error
@@ -56,7 +56,7 @@ func NewJobStoreDecorator() *JobStoreDecorator {
 
 var _ JobStore = (*JobStoreDecorator)(nil)
 
-func (d *JobStoreDecorator) ClaimPendingJobs(ctx context.Context, limit int) ([]models.JobRow, error) {
+func (d *JobStoreDecorator) ClaimPendingJobs(ctx context.Context, limit int) ([]*models.JobRow, error) {
 	if d.ClaimPendingJobsFunc != nil {
 		return d.ClaimPendingJobsFunc(ctx, limit)
 	}
