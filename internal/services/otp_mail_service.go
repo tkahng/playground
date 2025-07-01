@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/conf"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/shared"
@@ -14,24 +14,49 @@ import (
 	"github.com/tkahng/authgo/internal/tools/security"
 )
 
-type TokenSaver interface {
-	SaveToken(ctx context.Context, token *stores.CreateTokenDTO) error
-	SaveOtpToken(ctx context.Context, token *stores.CreateTokenDTO) error
+type OtpMailServiceInterface interface {
+	SendOtpEmail(ctx context.Context, emailType mailer.EmailType, userId uuid.UUID) error
 }
 
-type TokenCreator interface {
-	CreateJwtToken(claims jwt.Claims, secret string) (string, error)
+var _ OtpMailServiceInterface = &OtpMailService{}
+
+type OtpMailService struct {
+	options  *conf.AppOptions
+	adapter  stores.StorageAdapterInterface
+	mail     MailService
+	token    JwtService
+	password PasswordService
 }
 
-type OtpMailer struct {
-	mail      MailService
-	token     TokenCreator
-	authStore TokenSaver
-	options   conf.AppOptions
+func NewOtpMailService(opts *conf.AppOptions, mail MailService, token JwtService, password PasswordService, adapter stores.StorageAdapterInterface) OtpMailService {
+	return OtpMailService{
+		options:  opts,
+		adapter:  adapter,
+		mail:     mail,
+		token:    token,
+		password: password,
+	}
 }
 
-// SendOtpEmail creates and saves a new otp token and sends it to the user's email
-func (app *OtpMailer) SendOtpEmail(emailType mailer.EmailType, ctx context.Context, user *models.User) error {
+func (app *OtpMailService) SendOtpEmail(ctx context.Context, emailType mailer.EmailType, userId uuid.UUID) error {
+	adapter := app.adapter
+	user, err := adapter.User().FindUserByID(ctx, userId)
+	if err != nil {
+		return err
+	}
+	if app.options == nil {
+		return fmt.Errorf("app options is nil")
+	}
+	if app.token == nil {
+		return fmt.Errorf("token service is nil")
+	}
+	if app.mail == nil {
+		return fmt.Errorf("mail service is nil")
+	}
+	if user == nil {
+		return fmt.Errorf("user is nil")
+	}
+
 	appOpts := app.options.Meta
 	var tokenOpts conf.TokenOption
 	switch emailType {
@@ -45,24 +70,19 @@ func (app *OtpMailer) SendOtpEmail(emailType mailer.EmailType, ctx context.Conte
 		return fmt.Errorf("invalid email type")
 	}
 
-	claims := shared.OtpClaims{
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: tokenOpts.ExpiresAt(),
-		},
-		OtpPayload: shared.OtpPayload{
-			Type:       tokenOpts.Type,
-			UserId:     user.ID,
-			Email:      user.Email,
-			Token:      security.GenerateTokenKey(),
-			Otp:        security.GenerateOtp(6),
-			RedirectTo: appOpts.AppUrl,
-		},
-	}
+	claims := shared.OtpClaims{}
+	claims.ExpiresAt = tokenOpts.ExpiresAt()
+	claims.Type = tokenOpts.Type
+	claims.UserId = user.ID
+	claims.Email = user.Email
+	claims.Token = security.GenerateTokenKey()
+	claims.Otp = security.GenerateOtp(6)
+	claims.RedirectTo = appOpts.AppUrl
+
 	tokenHash, err := app.token.CreateJwtToken(claims, tokenOpts.Secret)
 	if err != nil {
 		return fmt.Errorf("error at creating verification token: %w", err)
 	}
-
 	dto := &stores.CreateTokenDTO{
 		Expires:    claims.ExpiresAt.Time,
 		Token:      claims.Token,
@@ -70,14 +90,13 @@ func (app *OtpMailer) SendOtpEmail(emailType mailer.EmailType, ctx context.Conte
 		Identifier: claims.Email,
 		UserID:     &claims.UserId,
 	}
-
-	err = app.authStore.SaveToken(ctx, dto)
-
+	err = adapter.Token().SaveToken(ctx, dto)
+	// err = app.authStore.SaveToken(ctx, dto)
 	if err != nil {
 		return fmt.Errorf("error at creating verification token: %w", err)
 	}
 
-	sendMailParams, err := app.GetSendMailParams(emailType, tokenHash, claims)
+	sendMailParams, err := app.getSendMailParams(emailType, tokenHash, claims)
 	if err != nil {
 		return fmt.Errorf("error at getting send mail params: %w", err)
 	}
@@ -85,25 +104,24 @@ func (app *OtpMailer) SendOtpEmail(emailType mailer.EmailType, ctx context.Conte
 	return app.mail.SendMail(sendMailParams)
 }
 
-func (app *OtpMailer) GetSendMailParams(emailType mailer.EmailType, tokenHash string, claims shared.OtpClaims) (*mailer.AllEmailParams, error) {
+func (app *OtpMailService) getSendMailParams(emailType mailer.EmailType, tokenHash string, claims shared.OtpClaims) (*mailer.AllEmailParams, error) {
 	appOpts := app.options.Meta
 	var sendMailParams mailer.SendMailParams
 	var ok bool
 	if sendMailParams, ok = mailer.EmailPathMap[emailType]; !ok {
 		return nil, fmt.Errorf("email type not found")
 	}
-	appUrl, err := url.Parse(appOpts.AppUrl)
+	path, err := mailer.GetPathParams(sendMailParams.TemplatePath, tokenHash, string(claims.Type), claims.RedirectTo)
 	if err != nil {
 		return nil, err
 	}
-
-	confirmUrl, err := sendMailParams.GeneratePath(appUrl, tokenHash, string(claims.Type), claims.RedirectTo)
+	appUrl, err := url.Parse(appOpts.AppUrl)
 	if err != nil {
 		return nil, err
 	}
 	common := &mailer.CommonParams{
 		SiteURL:         appUrl.String(),
-		ConfirmationURL: confirmUrl,
+		ConfirmationURL: appUrl.ResolveReference(path).String(),
 		Email:           claims.Email,
 		Token:           claims.Otp,
 		TokenHash:       tokenHash,
