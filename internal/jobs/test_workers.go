@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"sync"
 	"time"
 )
 
@@ -23,12 +24,26 @@ func (e EmailJobArgs) Kind() string {
 
 // EmailWorker implements the Worker interface for email jobs.
 type EmailWorker struct {
+	Wg       *sync.WaitGroup
+	Job      *Job[EmailJobArgs]
+	Success  bool
 	WorkFunc func(ctx context.Context, job *Job[EmailJobArgs]) error
+}
+
+func (w *EmailWorker) Clear() {
+	w.Wg = nil
+	w.Success = false
+	w.WorkFunc = nil
+	w.Job = nil
 }
 
 var _ Worker[EmailJobArgs] = (*EmailWorker)(nil)
 
 func (w *EmailWorker) Work(ctx context.Context, job *Job[EmailJobArgs]) error {
+	if w.Wg != nil {
+		w.Wg.Add(1)
+		defer w.Wg.Done()
+	}
 	if w.WorkFunc != nil {
 		return w.WorkFunc(ctx, job)
 	}
@@ -71,12 +86,26 @@ func (r ReportJobArgs) Kind() string {
 
 // ReportWorker implements the Worker interface for report generation jobs.
 type ReportWorker struct {
+	Wg       *sync.WaitGroup
+	Job      *Job[ReportJobArgs]
+	Success  bool
 	WorkFunc func(ctx context.Context, job *Job[ReportJobArgs]) error
+}
+
+func (w *ReportWorker) Clear() {
+	w.Wg = nil
+	w.Success = false
+	w.WorkFunc = nil
+	w.Job = nil
 }
 
 var _ Worker[ReportJobArgs] = (*ReportWorker)(nil)
 
 func (w *ReportWorker) Work(ctx context.Context, job *Job[ReportJobArgs]) error {
+	if w.Wg != nil {
+		w.Wg.Add(1)
+		defer w.Wg.Done()
+	}
 	if w.WorkFunc != nil {
 		return w.WorkFunc(ctx, job)
 	}

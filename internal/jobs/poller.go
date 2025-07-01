@@ -14,7 +14,7 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-func ServeWithPoller(ctx context.Context, poller *Poller) error {
+func ServeWithPoller(ctx context.Context, poller *Poller) {
 	ctx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
@@ -23,7 +23,7 @@ func ServeWithPoller(ctx context.Context, poller *Poller) error {
 		return poller.Run(ctx)
 	})
 
-	return g.Wait()
+	g.Wait()
 }
 
 type pollerOpts struct {
