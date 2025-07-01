@@ -57,6 +57,11 @@ type DbJobManagerDecorator struct {
 	RunFunc         func(ctx context.Context) error
 }
 
+func NewDbJobManagerDecorator(dbx database.Dbx) *DbJobManagerDecorator {
+	delegate := NewJobManager(dbx)
+	return &DbJobManagerDecorator{Delegate: delegate}
+}
+
 // Enqueue implements JobManagerInterface.
 func (d *DbJobManagerDecorator) Enqueue(ctx context.Context, args JobArgs, uniqueKey *string, runAfter time.Time, maxAttempts int) error {
 	if d.EnqueueFunc != nil {
