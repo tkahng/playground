@@ -5,12 +5,23 @@ import (
 	"time"
 
 	"github.com/tkahng/authgo/internal/database"
+	"github.com/tkahng/authgo/internal/models"
 )
 
 type DbJobManager struct {
 	store      JobStore
 	poller     Poller
 	dispatcher Dispatcher
+}
+
+// Dispatch implements JobManager.
+func (j *DbJobManager) Dispatch(ctx context.Context, row *models.JobRow) error {
+	return j.dispatcher.Dispatch(ctx, row)
+}
+
+// SetHandler implements JobManager.
+func (j *DbJobManager) SetHandler(kind string, handler func(context.Context, *models.JobRow) error) {
+	j.dispatcher.SetHandler(kind, handler)
 }
 
 // Enqueue implements JobManagerInterface.
@@ -29,6 +40,7 @@ func (j *DbJobManager) Run(ctx context.Context) error {
 }
 
 type JobManager interface {
+	Dispatcher
 	Enqueuer
 	Poller
 }
@@ -53,6 +65,21 @@ type DbJobManagerDecorator struct {
 	EnqueueFunc     func(ctx context.Context, args JobArgs, uniqueKey *string, runAfter time.Time, maxAttempts int) error
 	EnqueueManyFunc func(ctx context.Context, jobs ...EnqueueParams) error
 	RunFunc         func(ctx context.Context) error
+	Dispatcher      Dispatcher
+	DispatchFunc    func(ctx context.Context, row *models.JobRow) error
+}
+
+// Dispatch implements JobManager.
+func (d *DbJobManagerDecorator) Dispatch(ctx context.Context, row *models.JobRow) error {
+	if d.Dispatcher != nil {
+		return d.Dispatcher.Dispatch(ctx, row)
+	}
+	return d.Delegate.Dispatch(ctx, row)
+}
+
+// SetHandler implements JobManager.
+func (d *DbJobManagerDecorator) SetHandler(kind string, handler func(context.Context, *models.JobRow) error) {
+	panic("unimplemented")
 }
 
 func NewDbJobManagerDecorator(dbx database.Dbx) *DbJobManagerDecorator {

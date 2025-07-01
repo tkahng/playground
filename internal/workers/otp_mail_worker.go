@@ -21,12 +21,12 @@ func (j OtpEmailJobArgs) Kind() string {
 }
 
 func RegisterMailWorker(
-	dispatcher jobs.Dispatcher,
+	manager jobs.JobManager,
 	mailService OtpMailServiceInterface,
 
 ) {
 	worker := NewOtpEmailWorker(mailService)
-	jobs.RegisterWorker(dispatcher, worker)
+	jobs.RegisterWorker(manager, worker)
 }
 
 type otpMailWorker struct {
@@ -59,3 +59,18 @@ func (w *otpMailWorker) Work(ctx context.Context, job *jobs.Job[OtpEmailJobArgs]
 }
 
 var _ jobs.Worker[OtpEmailJobArgs] = (*otpMailWorker)(nil)
+
+type OtpMailWorkerDecorator struct {
+	Delegate jobs.Worker[OtpEmailJobArgs]
+	WorkFunc func(ctx context.Context, job *jobs.Job[OtpEmailJobArgs]) error
+}
+
+// Work implements jobs.Worker.
+func (o *OtpMailWorkerDecorator) Work(ctx context.Context, job *jobs.Job[OtpEmailJobArgs]) error {
+	if o.WorkFunc != nil {
+		return o.WorkFunc(ctx, job)
+	}
+	return o.Delegate.Work(ctx, job)
+}
+
+var _ jobs.Worker[OtpEmailJobArgs] = (*OtpMailWorkerDecorator)(nil)
