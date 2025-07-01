@@ -24,6 +24,9 @@ type StripeProduct struct {
 }
 
 func FromModelProduct(product *models.StripeProduct) *StripeProduct {
+	if product == nil {
+		return nil
+	}
 	return &StripeProduct{
 		ID:          product.ID,
 		Active:      product.Active,
