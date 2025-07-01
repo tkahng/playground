@@ -132,29 +132,20 @@ export default function SignupPage() {
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">
             <div className="text-center text-sm text-gray-500 dark:text-gray-400">
-              Forgot your password?{" "}
+              Already have an account?{" "}
               <Link
                 className="text-primary underline-offset-4 hover:underline"
-                to={RouteMap.FORGOT_PASSWORD}
+                to={{
+                  pathname: RouteMap.SIGNIN,
+                  search: params.toString(),
+                }}
               >
-                Reset password
-              </Link>
-            </div>
-            <div className="text-center text-sm text-gray-500 dark:text-gray-400">
-              Don't have an account?{" "}
-              <Link
-                className="text-primary underline-offset-4 hover:underline"
-                to={RouteMap.SIGNIN}
-              >
-                Sign up
+                Sign in
               </Link>
             </div>
             <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t" />
-              </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">
+                <span className="px-2 text-muted-foreground">
                   Or continue with
                 </span>
               </div>
