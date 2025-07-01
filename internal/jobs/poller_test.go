@@ -124,7 +124,7 @@ type TestJobService struct {
 	Adapter    stores.StorageAdapterInterface
 	Store      JobStore
 	Dispatcher Dispatcher
-	Poller     *Poller
+	Poller     *DbPoller
 	Enqueuer   Enqueuer
 	Worker     *EmailWorker
 	Job        *Job[EmailJobArgs]
@@ -147,7 +147,7 @@ func setupJobs(dbx database.Dbx) *TestJobService {
 	adapter := stores.NewStorageAdapter(dbx)
 	store := NewDbJobStore(dbx)
 	dispatcher := NewDispatcher()
-	poller := NewPoller(store, dispatcher,
+	poller := NewDbPoller(store, dispatcher,
 		WithIntervalMs(100), // 100 ms
 		WithSize(1),
 		WithTimeout(2),

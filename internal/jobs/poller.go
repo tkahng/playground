@@ -14,7 +14,7 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-func ServeWithPoller(ctx context.Context, poller *Poller) {
+func ServeWithPoller(ctx context.Context, poller *DbPoller) {
 	ctx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
@@ -59,20 +59,20 @@ func WithSize(size int) PollerOptsFunc {
 	}
 }
 
-type PollerInterface interface {
+type Poller interface {
 	Run(ctx context.Context) error
 }
 
-type Poller struct {
+type DbPoller struct {
 	Store      JobStore
 	Dispatcher Dispatcher
 	opts       pollerOpts
 }
 
-var _ PollerInterface = (*Poller)(nil)
+var _ Poller = (*DbPoller)(nil)
 
-func NewPoller(store JobStore, dispatcher Dispatcher, opts ...PollerOptsFunc) *Poller {
-	p := &Poller{
+func NewDbPoller(store JobStore, dispatcher Dispatcher, opts ...PollerOptsFunc) *DbPoller {
+	p := &DbPoller{
 		Store:      store,
 		Dispatcher: dispatcher,
 		opts: pollerOpts{
@@ -87,7 +87,7 @@ func NewPoller(store JobStore, dispatcher Dispatcher, opts ...PollerOptsFunc) *P
 	return p
 }
 
-func (p *Poller) Run(ctx context.Context) error {
+func (p *DbPoller) Run(ctx context.Context) error {
 	ticker := time.NewTicker(p.opts.Interval)
 	defer ticker.Stop()
 
@@ -103,7 +103,7 @@ func (p *Poller) Run(ctx context.Context) error {
 	}
 }
 
-func (p *Poller) pollOnce(ctx context.Context) error {
+func (p *DbPoller) pollOnce(ctx context.Context) error {
 	// Use a timeout for the transaction itself
 	txCtx, cancel := context.WithTimeout(ctx, p.opts.Timeout)
 	defer cancel()
@@ -166,30 +166,30 @@ func (p *Poller) pollOnce(ctx context.Context) error {
 	return g.Wait()
 }
 
-type PollerDecorator struct {
-	Delegate     *Poller
+type DbPollerDecorator struct {
+	Delegate     *DbPoller
 	RunFunc      func(ctx context.Context) error
 	PollOnceFunc func(ctx context.Context) error
 }
 
-var _ PollerInterface = (*PollerDecorator)(nil)
+var _ Poller = (*DbPollerDecorator)(nil)
 
-func (d *PollerDecorator) Run(ctx context.Context) error {
+func (d *DbPollerDecorator) Run(ctx context.Context) error {
 	if d.RunFunc != nil {
 		return d.RunFunc(ctx)
 	}
 	return d.Delegate.Run(ctx)
 }
 
-func (d *PollerDecorator) PollOnce(ctx context.Context) error {
+func (d *DbPollerDecorator) PollOnce(ctx context.Context) error {
 	if d.PollOnceFunc != nil {
 		return d.PollOnceFunc(ctx)
 	}
 	return d.Delegate.pollOnce(ctx)
 }
 
-func NewPollerDecorator(store JobStore, dispatcher Dispatcher, opts ...PollerOptsFunc) *PollerDecorator {
-	return &PollerDecorator{
-		Delegate: NewPoller(store, dispatcher, opts...),
+func NewDbPollerDecorator(store JobStore, dispatcher Dispatcher, opts ...PollerOptsFunc) *DbPollerDecorator {
+	return &DbPollerDecorator{
+		Delegate: NewDbPoller(store, dispatcher, opts...),
 	}
 }
