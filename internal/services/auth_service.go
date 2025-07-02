@@ -12,7 +12,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/auth/oauth"
 	"github.com/tkahng/authgo/internal/conf"
-	"github.com/tkahng/authgo/internal/jobs"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/stores"
@@ -54,29 +53,29 @@ type AuthService interface {
 var _ AuthService = (*BaseAuthService)(nil)
 
 type BaseAuthService struct {
-	routine  RoutineService
-	mail     MailService
-	token    JwtService
-	password PasswordService
-	options  *conf.AppOptions
-	enqueuer jobs.Enqueuer
-	adapter  stores.StorageAdapterInterface
+	routine    RoutineService
+	mail       MailService
+	token      JwtService
+	password   PasswordService
+	options    *conf.AppOptions
+	adapter    stores.StorageAdapterInterface
+	jobService JobService
 }
 
 func NewAuthService(
 	opts *conf.AppOptions,
 	mail MailService,
-	enqueuer jobs.Enqueuer,
+	jobService JobService,
 	adapter stores.StorageAdapterInterface,
 ) AuthService {
 	authService := &BaseAuthService{
-		routine:  NewRoutineService(),
-		mail:     mail,
-		token:    NewJwtService(),
-		password: NewPasswordService(),
-		options:  opts,
-		enqueuer: enqueuer,
-		adapter:  adapter,
+		routine:    NewRoutineService(),
+		mail:       mail,
+		token:      NewJwtService(),
+		password:   NewPasswordService(),
+		options:    opts,
+		adapter:    adapter,
+		jobService: jobService,
 	}
 
 	return authService

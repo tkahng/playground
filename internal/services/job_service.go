@@ -24,3 +24,25 @@ func NewJobService(enqueuer jobs.Enqueuer) JobService {
 		enqueuer: enqueuer,
 	}
 }
+
+type JobServiceDecorator struct {
+	Delegate              JobService
+	EnqueueOtpMailJobFunc func(ctx context.Context, job jobs.EnqueueParams) error
+}
+
+// EnqueueOtpMailJob implements JobService.
+func (j *JobServiceDecorator) EnqueueOtpMailJob(ctx context.Context, job jobs.EnqueueParams) error {
+	if j.EnqueueOtpMailJobFunc != nil {
+		return j.EnqueueOtpMailJobFunc(ctx, job)
+	}
+	return j.Delegate.EnqueueOtpMailJob(ctx, job)
+}
+
+func NewJobServiceDecorator(enqueuer jobs.Enqueuer) *JobServiceDecorator {
+	delegate := NewJobService(enqueuer)
+	return &JobServiceDecorator{
+		Delegate: delegate,
+	}
+}
+
+var _ JobService = (*JobServiceDecorator)(nil)

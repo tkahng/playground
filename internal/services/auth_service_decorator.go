@@ -6,7 +6,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/auth/oauth"
 	"github.com/tkahng/authgo/internal/conf"
-	"github.com/tkahng/authgo/internal/jobs"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/stores"
@@ -39,8 +38,8 @@ type AuthServiceDecorator struct {
 func NewAuthServiceDecorator(
 	opts *conf.AppOptions,
 	mail MailService,
-	enqueuer jobs.Enqueuer,
 	adapter stores.StorageAdapterInterface,
+	jobService JobService,
 ) AuthService {
 	tokenService := NewJwtServiceDecorator()
 	passwordService := NewPasswordServiceDecorator()
@@ -52,8 +51,10 @@ func NewAuthServiceDecorator(
 		token:    tokenService,
 		password: passwordService,
 		options:  opts,
-		enqueuer: enqueuer,
 		adapter:  adapter,
+		jobService: &JobServiceDecorator{
+			Delegate: jobService,
+		},
 	}
 	return authService
 }

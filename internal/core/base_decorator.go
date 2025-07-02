@@ -20,6 +20,7 @@ func NewAppDecorator(ctx context.Context, cfg conf.EnvConfig, pool database.Dbx)
 
 	l := logger.GetDefaultLogger()
 	jobManager := jobs.NewDbJobManagerDecorator(pool)
+	jobService := services.NewJobServiceDecorator(jobManager)
 	adapter := stores.NewDbAdapterDecorators(pool)
 	mail := &mailer.LogMailer{}
 	authMailService := services.NewMailService(mail)
@@ -36,8 +37,8 @@ func NewAppDecorator(ctx context.Context, cfg conf.EnvConfig, pool database.Dbx)
 	authService := services.NewAuthServiceDecorator(
 		settings,
 		authMailService,
-		jobManager,
 		adapter,
+		jobService,
 	)
 	checker := services.NewConstraintCheckerService(
 		adapter,

@@ -125,7 +125,7 @@ func NewBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 		mail = &mailer.LogMailer{}
 	}
 	jobManager := jobs.NewDbJobManagerDecorator(pool)
-
+	jobService := services.NewJobService(jobManager)
 	adapter := stores.NewStorageAdapter(pool)
 
 	rbacService := services.NewRBACService(adapter)
@@ -142,7 +142,7 @@ func NewBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 	authService := services.NewAuthService(
 		settings,
 		authMailService,
-		jobManager,
+		jobService,
 		adapter,
 	)
 	checker := services.NewConstraintCheckerService(
