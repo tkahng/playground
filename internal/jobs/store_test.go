@@ -93,7 +93,7 @@ func TestDbJobStore_SaveManyJobs(t *testing.T) {
 		}
 		type args struct {
 			ctx  context.Context
-			jobs []EnqueueParams
+			jobs []*EnqueueParams
 		}
 		tests := []struct {
 			name    string
@@ -108,7 +108,7 @@ func TestDbJobStore_SaveManyJobs(t *testing.T) {
 				},
 				args: args{
 					ctx: context.Background(),
-					jobs: []EnqueueParams{
+					jobs: []*EnqueueParams{
 						{
 							Args: EmailJobArgs{
 								Recipient: "recipient",
@@ -159,7 +159,7 @@ func TestDbJobStore_ClaimPendingJobs(t *testing.T) {
 			db Db
 		}
 		type args struct {
-			jobs  []EnqueueParams
+			jobs  []*EnqueueParams
 			ctx   context.Context
 			limit int
 		}
@@ -177,7 +177,7 @@ func TestDbJobStore_ClaimPendingJobs(t *testing.T) {
 					db: db,
 				},
 				args: args{
-					jobs: []EnqueueParams{
+					jobs: []*EnqueueParams{
 						{
 							Args: EmailJobArgs{
 								Recipient: "recipient",
@@ -234,7 +234,7 @@ func TestDbJobStore_MarkDone(t *testing.T) {
 			db database.Dbx
 		}
 		type args struct {
-			jobs []EnqueueParams
+			jobs []*EnqueueParams
 			ctx  context.Context
 			id   uuid.UUID
 		}
@@ -250,7 +250,7 @@ func TestDbJobStore_MarkDone(t *testing.T) {
 					db: db,
 				},
 				args: args{
-					jobs: []EnqueueParams{
+					jobs: []*EnqueueParams{
 						{
 							Args: EmailJobArgs{
 								Recipient: "recipient2",
@@ -314,7 +314,7 @@ func TestDbJobStore_MarkFailed(t *testing.T) {
 			db database.Dbx
 		}
 		type args struct {
-			jobs []EnqueueParams
+			jobs []*EnqueueParams
 			ctx  context.Context
 			id   uuid.UUID
 		}
@@ -330,7 +330,7 @@ func TestDbJobStore_MarkFailed(t *testing.T) {
 					db: db,
 				},
 				args: args{
-					jobs: []EnqueueParams{
+					jobs: []*EnqueueParams{
 						{
 							Args: EmailJobArgs{
 								Recipient: "recipient2",
@@ -394,7 +394,7 @@ func TestDbJobStore_RescheduleJob(t *testing.T) {
 			db database.Dbx
 		}
 		type args struct {
-			jobs  []EnqueueParams
+			jobs  []*EnqueueParams
 			delay time.Duration
 			ctx   context.Context
 			id    uuid.UUID
@@ -411,7 +411,7 @@ func TestDbJobStore_RescheduleJob(t *testing.T) {
 					db: db,
 				},
 				args: args{
-					jobs: []EnqueueParams{
+					jobs: []*EnqueueParams{
 						{
 							Args: EmailJobArgs{
 								Recipient: "recipient2",

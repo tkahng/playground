@@ -3,6 +3,7 @@ package jobs
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -24,18 +25,18 @@ type EnqueueParams struct {
 }
 type Enqueuer interface {
 	// Enqueue adds a single job to the queue and returns its time-ordered UUIDv7
-	Enqueue(ctx context.Context, args JobArgs, uniqueKey *string, runAfter time.Time, maxAttempts int) error
+	Enqueue(ctx context.Context, args *EnqueueParams) error
 
 	// EnqueueMany efficiently adds multiple jobs in batches using transactions
 	// Processes jobs in chunks to prevent overwhelming the database
-	EnqueueMany(ctx context.Context, jobs ...EnqueueParams) error
+	EnqueueMany(ctx context.Context, jobs ...*EnqueueParams) error
 }
 
 const maxBatchSize = 1000
 
 type JobStore interface {
 	SaveJob(ctx context.Context, args *EnqueueParams) error
-	SaveManyJobs(ctx context.Context, jobs ...EnqueueParams) error
+	SaveManyJobs(ctx context.Context, jobs ...*EnqueueParams) error
 	ClaimPendingJobs(ctx context.Context, limit int) ([]*models.JobRow, error)
 	MarkDone(ctx context.Context, id uuid.UUID) error
 	MarkFailed(ctx context.Context, id uuid.UUID, reason string) error
@@ -76,7 +77,7 @@ func (s *DbJobStore) SaveJob(ctx context.Context, job *EnqueueParams) error {
 }
 
 // SaveManyJobs implements JobStore.
-func (e *DbJobStore) SaveManyJobs(ctx context.Context, jobs ...EnqueueParams) error {
+func (e *DbJobStore) SaveManyJobs(ctx context.Context, jobs ...*EnqueueParams) error {
 	if len(jobs) == 0 {
 		return nil
 	}
@@ -92,7 +93,7 @@ func (e *DbJobStore) SaveManyJobs(ctx context.Context, jobs ...EnqueueParams) er
 
 	return nil
 }
-func (e *DbJobStore) processBatch(ctx context.Context, jobs []EnqueueParams) error {
+func (e *DbJobStore) processBatch(ctx context.Context, jobs []*EnqueueParams) error {
 	tx, err := e.db.Begin(ctx)
 	if err != nil {
 		return fmt.Errorf("begin transaction: %w", err)
@@ -117,7 +118,10 @@ func (e *DbJobStore) processBatch(ctx context.Context, jobs []EnqueueParams) err
 }
 
 // addJobToBatch adds a single job to the batch operation
-func (e *DbJobStore) addJobToBatch(batch *pgx.Batch, job EnqueueParams) error {
+func (e *DbJobStore) addJobToBatch(batch *pgx.Batch, job *EnqueueParams) error {
+	if job == nil {
+		return errors.New("job is nil")
+	}
 	payload, err := json.Marshal(job.Args)
 	if err != nil {
 		return fmt.Errorf("marshal args: %w", err)
@@ -236,11 +240,11 @@ type JobStoreDecorator struct {
 	MarkFailedFunc       func(ctx context.Context, id uuid.UUID, reason string) error
 	RescheduleJobFunc    func(ctx context.Context, id uuid.UUID, delay time.Duration) error
 	SaveJobFunc          func(ctx context.Context, args *EnqueueParams) error
-	SaveManyJobsFunc     func(ctx context.Context, jobs ...EnqueueParams) error
+	SaveManyJobsFunc     func(ctx context.Context, jobs ...*EnqueueParams) error
 }
 
 // SaveManyJobs implements JobStore.
-func (d *JobStoreDecorator) SaveManyJobs(ctx context.Context, jobs ...EnqueueParams) error {
+func (d *JobStoreDecorator) SaveManyJobs(ctx context.Context, jobs ...*EnqueueParams) error {
 	if d.SaveManyJobsFunc != nil {
 		return d.SaveManyJobsFunc(ctx, jobs...)
 	}
@@ -313,7 +317,11 @@ func TestEnqueuer(t *testing.T) {
 			job := testJob{Message: "hello"}
 			runAfter := time.Now().Add(1 * time.Hour)
 
-			err := enqueuer.Enqueue(ctx, job, nil, runAfter, 3)
+			err := enqueuer.Enqueue(ctx, &EnqueueParams{
+				Args:        &job,
+				RunAfter:    runAfter,
+				MaxAttempts: 3,
+			})
 			assert.NoError(t, err)
 			storedJob, err := repository.Job.GetOne(ctx, tx, &map[string]any{
 				"kind": map[string]any{
@@ -333,12 +341,23 @@ func TestEnqueuer(t *testing.T) {
 			uniqueKey := "unique_123"
 			job := testJob{Message: "unique"}
 
-			// First insert
-			err := enqueuer.Enqueue(ctx, job, &uniqueKey, time.Now(), 1)
+			// First insert job, &uniqueKey, time.Now(), 1
+			err := enqueuer.Enqueue(ctx, &EnqueueParams{
+				Args:        &job,
+				UniqueKey:   &uniqueKey,
+				RunAfter:    time.Now(),
+				MaxAttempts: 1,
+			})
 			assert.NoError(t, err)
 
 			// Second insert should update existing
-			err = enqueuer.Enqueue(ctx, testJob{Message: "updated"}, &uniqueKey, time.Now(), 1)
+			// testJob{Message: "updated"}, &uniqueKey, time.Now(), 1
+			err = enqueuer.Enqueue(ctx, &EnqueueParams{
+				Args:        &testJob{Message: "updated"},
+				UniqueKey:   &uniqueKey,
+				RunAfter:    time.Now(),
+				MaxAttempts: 1,
+			})
 			assert.NoError(t, err)
 
 			// Verify payload was updated
@@ -355,7 +374,7 @@ func TestEnqueuer(t *testing.T) {
 	t.Run("EnqueueMany batch insert", func(t *testing.T) {
 		test.WithTx(t, func(ctx context.Context, tx database.Dbx) {
 			enqueuer := NewDbJobManager(tx)
-			params := []EnqueueParams{
+			params := []*EnqueueParams{
 				{
 					Args:        testJob{Message: "batch1"},
 					RunAfter:    time.Now(),

@@ -93,8 +93,12 @@ func TestPoller_Run(t *testing.T) {
 				ServeWithPoller(ctx, testJobs.Poller)
 
 			}()
-
-			if err := testJobs.Manager.Enqueue(ctx, tt.args.args, nil, time.Now(), 1); (err != nil) != tt.wantErr {
+			// tt.args.args, nil, time.Now(), 1
+			if err := testJobs.Manager.Enqueue(ctx, &EnqueueParams{
+				Args:        tt.args.args,
+				RunAfter:    time.Now(),
+				MaxAttempts: 1,
+			}); (err != nil) != tt.wantErr {
 				t.Errorf("Poller.Run() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			// Wait for job(s) to complete

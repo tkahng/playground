@@ -2,7 +2,6 @@ package jobs
 
 import (
 	"context"
-	"time"
 
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
@@ -25,12 +24,12 @@ func (j *DbJobManager) SetHandler(kind string, handler func(context.Context, *mo
 }
 
 // Enqueue implements JobManagerInterface.
-func (j *DbJobManager) Enqueue(ctx context.Context, args JobArgs, uniqueKey *string, runAfter time.Time, maxAttempts int) error {
-	return j.store.SaveJob(ctx, &EnqueueParams{Args: args, UniqueKey: uniqueKey, RunAfter: runAfter, MaxAttempts: maxAttempts})
+func (j *DbJobManager) Enqueue(ctx context.Context, args *EnqueueParams) error {
+	return j.store.SaveJob(ctx, args)
 }
 
 // EnqueueMany implements JobManagerInterface.
-func (j *DbJobManager) EnqueueMany(ctx context.Context, jobs ...EnqueueParams) error {
+func (j *DbJobManager) EnqueueMany(ctx context.Context, jobs ...*EnqueueParams) error {
 	return j.store.SaveManyJobs(ctx, jobs...)
 }
 
@@ -63,8 +62,8 @@ type DbJobManagerDecorator struct {
 	Poller          Poller
 	Dispatcher      Dispatcher
 	Delegate        *DbJobManager
-	EnqueueFunc     func(ctx context.Context, args JobArgs, uniqueKey *string, runAfter time.Time, maxAttempts int) error
-	EnqueueManyFunc func(ctx context.Context, jobs ...EnqueueParams) error
+	EnqueueFunc     func(ctx context.Context, args *EnqueueParams) error
+	EnqueueManyFunc func(ctx context.Context, jobs ...*EnqueueParams) error
 	RunFunc         func(ctx context.Context) error
 	DispatchFunc    func(ctx context.Context, row *models.JobRow) error
 }
@@ -91,15 +90,15 @@ func NewDbJobManagerDecorator(dbx database.Dbx) *DbJobManagerDecorator {
 }
 
 // Enqueue implements JobManagerInterface.
-func (d *DbJobManagerDecorator) Enqueue(ctx context.Context, args JobArgs, uniqueKey *string, runAfter time.Time, maxAttempts int) error {
+func (d *DbJobManagerDecorator) Enqueue(ctx context.Context, args *EnqueueParams) error {
 	if d.EnqueueFunc != nil {
-		return d.EnqueueFunc(ctx, args, uniqueKey, runAfter, maxAttempts)
+		return d.EnqueueFunc(ctx, args)
 	}
-	return d.Delegate.Enqueue(ctx, args, uniqueKey, runAfter, maxAttempts)
+	return d.Delegate.Enqueue(ctx, args)
 }
 
 // EnqueueMany implements JobManagerInterface.
-func (d *DbJobManagerDecorator) EnqueueMany(ctx context.Context, jobs ...EnqueueParams) error {
+func (d *DbJobManagerDecorator) EnqueueMany(ctx context.Context, jobs ...*EnqueueParams) error {
 	if d.EnqueueManyFunc != nil {
 		return d.EnqueueManyFunc(ctx, jobs...)
 	}
