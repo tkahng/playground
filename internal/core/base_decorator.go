@@ -17,18 +17,18 @@ func NewAppDecorator(ctx context.Context, cfg conf.EnvConfig, pool database.Dbx)
 	settings := cfg.ToSettings()
 
 	fs := filesystem.NewMockFileSystem(cfg.StorageConfig)
+	adapter := stores.NewDbAdapterDecorators(pool)
 
 	l := logger.GetDefaultLogger()
 	mail := &mailer.LogMailer{}
 	mailServiece := services.NewOtpMailService(
 		settings,
 		mail,
-		stores.NewStorageAdapter(pool),
+		adapter,
 	)
 	jobManager := jobs.NewDbJobManagerDecorator(pool)
 	jobService := services.NewJobServiceDecorator(jobManager)
 	jobService.RegisterWorkers(mailServiece)
-	adapter := stores.NewDbAdapterDecorators(pool)
 	authMailService := services.NewMailService(mail)
 	rbacService := services.NewRBACService(adapter)
 	taskService := services.NewTaskService(adapter)

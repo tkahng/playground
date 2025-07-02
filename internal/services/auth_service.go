@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"net/url"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -138,110 +137,6 @@ func (app *BaseAuthService) CreateOAuthUrl(ctx context.Context, providerName mod
 		return "", fmt.Errorf("error at building auth url")
 	}
 	return res, nil
-}
-
-// FireAndForget implements AuthService.
-// Subtle: this method shadows the method (WorkerService).FireAndForget of BaseAuthService.WorkerService.
-// SendOtpEmail creates and saves a new otp token and sends it to the user's email
-func (app *BaseAuthService) SendOtpEmail(emailType mailer.EmailType, ctx context.Context, user *models.User, adapter stores.StorageAdapterInterface) error {
-	if adapter == nil {
-		adapter = app.adapter
-	}
-	if app.options == nil {
-		return fmt.Errorf("app options is nil")
-	}
-	if app.token == nil {
-		return fmt.Errorf("token service is nil")
-	}
-	if app.mail == nil {
-		return fmt.Errorf("mail service is nil")
-	}
-	if user == nil {
-		return fmt.Errorf("user is nil")
-	}
-
-	appOpts := app.options.Meta
-	var tokenOpts conf.TokenOption
-	switch emailType {
-	case mailer.EmailTypeVerify:
-		tokenOpts = app.options.Auth.VerificationToken
-	case mailer.EmailTypeSecurityPasswordReset:
-		tokenOpts = app.options.Auth.PasswordResetToken
-	case mailer.EmailTypeConfirmPasswordReset:
-		tokenOpts = app.options.Auth.PasswordResetToken
-	default:
-		return fmt.Errorf("invalid email type")
-	}
-
-	claims := shared.OtpClaims{}
-	claims.ExpiresAt = tokenOpts.ExpiresAt()
-	claims.Type = tokenOpts.Type
-	claims.UserId = user.ID
-	claims.Email = user.Email
-	claims.Token = security.GenerateTokenKey()
-	claims.Otp = security.GenerateOtp(6)
-	claims.RedirectTo = appOpts.AppUrl
-
-	tokenHash, err := app.token.CreateJwtToken(claims, tokenOpts.Secret)
-	if err != nil {
-		return fmt.Errorf("error at creating verification token: %w", err)
-	}
-	dto := &stores.CreateTokenDTO{
-		Expires:    claims.ExpiresAt.Time,
-		Token:      claims.Token,
-		Type:       models.TokenTypes(claims.Type),
-		Identifier: claims.Email,
-		UserID:     &claims.UserId,
-	}
-	err = adapter.Token().SaveToken(ctx, dto)
-	// err = app.authStore.SaveToken(ctx, dto)
-	if err != nil {
-		return fmt.Errorf("error at creating verification token: %w", err)
-	}
-
-	sendMailParams, err := app.GetSendMailParams(emailType, tokenHash, claims)
-	if err != nil {
-		return fmt.Errorf("error at getting send mail params: %w", err)
-	}
-
-	return app.mail.SendMail(sendMailParams)
-}
-
-func (app *BaseAuthService) GetSendMailParams(emailType mailer.EmailType, tokenHash string, claims shared.OtpClaims) (*mailer.AllEmailParams, error) {
-	appOpts := app.options.Meta
-	var sendMailParams mailer.SendMailParams
-	var ok bool
-	if sendMailParams, ok = mailer.EmailPathMap[emailType]; !ok {
-		return nil, fmt.Errorf("email type not found")
-	}
-	path, err := mailer.GetPathParams(sendMailParams.TemplatePath, tokenHash, string(claims.Type), claims.RedirectTo)
-	if err != nil {
-		return nil, err
-	}
-	appUrl, err := url.Parse(appOpts.AppUrl)
-	if err != nil {
-		return nil, err
-	}
-	common := &mailer.CommonParams{
-		SiteURL:         appUrl.String(),
-		ConfirmationURL: appUrl.ResolveReference(path).String(),
-		Email:           claims.Email,
-		Token:           claims.Otp,
-		TokenHash:       tokenHash,
-		RedirectTo:      claims.RedirectTo,
-	}
-	message := &mailer.Message{
-		From:    appOpts.SenderAddress,
-		To:      common.Email,
-		Subject: fmt.Sprintf(sendMailParams.Subject, appOpts.AppName),
-		Body:    mailer.GenerateBody("body", sendMailParams.Template, common),
-	}
-	allEmailParams := &mailer.AllEmailParams{
-		SendMailParams: &sendMailParams,
-		CommonParams:   common,
-		Message:        message,
-	}
-	return allEmailParams, nil
 }
 
 // FetchAuthUser implements Authenticator.
@@ -822,21 +717,6 @@ func (app *BaseAuthService) authenticateNewAccount(ctx context.Context, user *mo
 		if err != nil {
 			return nil, err
 		}
-		// app.routine.FireAndForget(
-		// 	func() {
-		// 		ctx := context.Background()
-		// 		fmt.Println("User is first login, sending reset password email")
-		// 		err := app.SendOtpEmail(mailer.EmailTypeSecurityPasswordReset, ctx, user, nil)
-		// 		if err != nil {
-		// 			slog.Error(
-		// 				"error sending reset password email",
-		// 				slog.Any("error", err),
-		// 				slog.String("email", user.Email),
-		// 				slog.String("userId", user.ID.String()),
-		// 			)
-		// 		}
-		// 	},
-		// )
 	}
 	if user.EmailVerifiedAt == nil {
 		err := app.jobService.EnqueueOtpMailJob(ctx, &workers.OtpEmailJobArgs{
@@ -846,21 +726,6 @@ func (app *BaseAuthService) authenticateNewAccount(ctx context.Context, user *mo
 		if err != nil {
 			return nil, err
 		}
-		// app.routine.FireAndForget(
-		// 	func() {
-		// 		ctx := context.Background()
-		// 		fmt.Println("User is first login, sending verification email")
-		// 		err := app.SendOtpEmail(mailer.EmailTypeVerify, ctx, user, nil)
-		// 		if err != nil {
-		// 			slog.Error(
-		// 				"error sending verification email",
-		// 				slog.Any("error", err),
-		// 				slog.String("email", user.Email),
-		// 				slog.String("userId", user.ID.String()),
-		// 			)
-		// 		}
-		// 	},
-		// )
 	}
 	return user, nil
 }
@@ -883,7 +748,6 @@ func (app *BaseAuthService) authenticateNewUser(ctx context.Context, params *Aut
 			Type:   mailer.EmailTypeVerify,
 		},
 	)
-	// err := app.SendOtpEmail(mailer.EmailTypeVerify, ctx, user, app.adapter)
 	if err != nil {
 		slog.Error(
 			"error sending verification email",
