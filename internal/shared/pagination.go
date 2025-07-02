@@ -34,15 +34,6 @@ func (p *PaginatedInput) Pagination() (page, perPage int) {
 	return int(p.Page), int(p.PerPage)
 }
 
-type Meta struct {
-	Page     int64  `json:"page"`
-	PerPage  int64  `json:"per_page"`
-	Total    int64  `json:"total"`
-	NextPage *int64 `json:"next_page"`
-	PrevPage *int64 `json:"prev_page"`
-	HasMore  bool   `json:"has_more"`
-}
-
 type JoinedResult[T any, K any] struct {
 	Key  K   `db:"key"`
 	Data []T `db:"data"`
