@@ -88,10 +88,10 @@ func execute[T JobArgs](ctx context.Context, worker Worker[T], job *Job[T]) (err
 			slog.String("id", job.ID.String()),
 			slog.Any("error", err),
 		)
-	} else {
-		slog.InfoContext(ctx, "done job", "kind", job.Args.Kind(), "id", job.ID)
+		return err
 	}
-	return err
+	slog.InfoContext(ctx, "done job", "kind", job.Args.Kind(), "id", job.ID)
+	return nil
 }
 
 type DispatchDecorator struct {
