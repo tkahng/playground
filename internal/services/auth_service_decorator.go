@@ -182,12 +182,12 @@ func (a *AuthServiceDecorator) ResetPassword(ctx context.Context, userId uuid.UU
 }
 
 // SendOtpEmail implements AuthService.
-func (a *AuthServiceDecorator) SendOtpEmail(emailType mailer.EmailType, ctx context.Context, user *models.User, adapter stores.StorageAdapterInterface) error {
-	if a.SendOtpEmailFunc != nil {
-		return a.SendOtpEmailFunc(emailType, ctx, user, adapter)
-	}
-	return a.Delegate.SendOtpEmail(emailType, ctx, user, adapter)
-}
+// func (a *AuthServiceDecorator) SendOtpEmail(emailType mailer.EmailType, ctx context.Context, user *models.User, adapter stores.StorageAdapterInterface) error {
+// 	if a.SendOtpEmailFunc != nil {
+// 		return a.SendOtpEmailFunc(emailType, ctx, user, adapter)
+// 	}
+// 	return a.Delegate.SendOtpEmail(emailType, ctx, user, adapter)
+// }
 
 // Signout implements AuthService.
 func (a *AuthServiceDecorator) Signout(ctx context.Context, token string) error {

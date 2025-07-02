@@ -48,7 +48,7 @@ type AuthService interface {
 	VerifyAndParseOtpToken(ctx context.Context, emailType mailer.EmailType, token string) (*shared.OtpClaims, error)
 	Authenticate(ctx context.Context, params *AuthenticationInput) (*models.User, error)
 	CreateAuthTokensFromEmail(ctx context.Context, email string) (*models.UserInfoTokens, error)
-	SendOtpEmail(emailType mailer.EmailType, ctx context.Context, user *models.User, adapter stores.StorageAdapterInterface) error
+	// SendOtpEmail(emailType mailer.EmailType, ctx context.Context, user *models.User, adapter stores.StorageAdapterInterface) error
 }
 
 var _ AuthService = (*BaseAuthService)(nil)
@@ -348,8 +348,11 @@ func (app *BaseAuthService) HandlePasswordResetRequest(ctx context.Context, emai
 	if account == nil {
 		return fmt.Errorf("user account not found")
 	}
-
-	err = app.SendOtpEmail(mailer.EmailTypeConfirmPasswordReset, ctx, user, app.adapter)
+	err = app.jobService.EnqueueOtpMailJob(ctx, &workers.OtpEmailJobArgs{
+		UserID: user.ID,
+		Type:   mailer.EmailTypeConfirmPasswordReset,
+	})
+	// err = app.SendOtpEmail(mailer.EmailTypeConfirmPasswordReset, ctx, user, app.adapter)
 	if err != nil {
 		return fmt.Errorf("error sending password reset email: %w", err)
 	}
@@ -871,21 +874,25 @@ func (app *BaseAuthService) authenticateNewUser(ctx context.Context, params *Aut
 	if err != nil {
 		return nil, err
 	}
-	app.routine.FireAndForget(
-		func() {
-			ctx := context.Background()
-			fmt.Println("User is first login, sending verification email")
-			err := app.SendOtpEmail(mailer.EmailTypeVerify, ctx, user, app.adapter)
-			if err != nil {
-				slog.Error(
-					"error sending verification email",
-					slog.Any("error", err),
-					slog.String("email", user.Email),
-					slog.String("userId", user.ID.String()),
-				)
-			}
+
+	fmt.Println("User is first login, sending verification email")
+	err = app.jobService.EnqueueOtpMailJob(
+		ctx,
+		&workers.OtpEmailJobArgs{
+			UserID: user.ID,
+			Type:   mailer.EmailTypeVerify,
 		},
 	)
+	// err := app.SendOtpEmail(mailer.EmailTypeVerify, ctx, user, app.adapter)
+	if err != nil {
+		slog.Error(
+			"error sending verification email",
+			slog.Any("error", err),
+			slog.String("email", user.Email),
+			slog.String("userId", user.ID.String()),
+		)
+		return nil, err
+	}
 	return user, nil
 }
 

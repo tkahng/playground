@@ -28,6 +28,22 @@ type DbOtpMailService struct {
 	password PasswordService
 }
 
+func NewOtpMailService(
+	opts *conf.AppOptions,
+	mail MailService,
+	token JwtService,
+	password PasswordService,
+	adapter stores.StorageAdapterInterface,
+) OtpMailService {
+	return &DbOtpMailService{
+		options:  opts,
+		adapter:  adapter,
+		mail:     mail,
+		token:    token,
+		password: password,
+	}
+}
+
 func NewDbOtpMailService(opts *conf.AppOptions, mail MailService, token JwtService, password PasswordService, adapter stores.StorageAdapterInterface) DbOtpMailService {
 	return DbOtpMailService{
 		options:  opts,
