@@ -263,15 +263,12 @@ func TestAuthenticate(t *testing.T) {
 		},
 	}).ToSettings()
 	wg := new(sync.WaitGroup)
-	mockRoutineService := &MockRoutineService{
-		Wg: wg,
-	}
+
 	app := &BaseAuthService{
 		// adapter:   adapter,
 		adapter:  storeDecorator,
 		token:    mockToken,
 		password: mockPassword,
-		routine:  mockRoutineService,
 		mail:     mockMailService,
 		options:  settings,
 	}

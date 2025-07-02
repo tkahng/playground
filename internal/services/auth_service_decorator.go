@@ -43,10 +43,8 @@ func NewAuthServiceDecorator(
 ) AuthService {
 	tokenService := NewJwtServiceDecorator()
 	passwordService := NewPasswordServiceDecorator()
-	routine := NewRoutineServiceDecorator()
 	authService := &AuthServiceDecorator{}
 	authService.Delegate = &BaseAuthService{
-		routine:  routine,
 		mail:     mail,
 		token:    tokenService,
 		password: passwordService,
