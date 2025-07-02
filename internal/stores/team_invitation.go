@@ -140,15 +140,17 @@ func (s *DbTeamInvitationStore) FindInvitationByToken(ctx context.Context, token
 			models.TeamInvitationTable.Status: map[string]any{
 				"_in": invitationStatuses,
 			},
-			models.TeamInvitationTable.ExpiresAt: map[string]any{
-				"_gt": time.Now(),
-			},
 		},
 	)
 	if err != nil {
 		return nil, err
 	}
-
+	if invitation == nil {
+		return nil, nil
+	}
+	if invitation.ExpiresAt.Before(time.Now()) {
+		return nil, shared.ErrTokenExpired
+	}
 	return invitation, nil
 }
 
@@ -214,13 +216,13 @@ func (s *DbTeamInvitationStore) FindPendingInvitation(ctx context.Context, teamI
 			models.TeamInvitationTable.Status: map[string]any{
 				"_eq": string(models.TeamInvitationStatusPending),
 			},
-			models.TeamInvitationTable.ExpiresAt: map[string]any{
-				"_gt": time.Now(),
-			},
 		},
 	)
 	if err != nil {
 		return nil, err
+	}
+	if invitation.ExpiresAt.Before(time.Now()) {
+		return nil, shared.ErrTokenExpired
 	}
 	return invitation, nil
 }

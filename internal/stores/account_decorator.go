@@ -22,6 +22,13 @@ type AccountStoreDecorator struct {
 	FindUserAccountFunc                    func(ctx context.Context, filter *UserAccountFilter) (*models.UserAccount, error)
 }
 
+func NewAccountStoreDecorator(db database.Dbx) *AccountStoreDecorator {
+	delegate := NewDbAccountStore(db)
+	return &AccountStoreDecorator{
+		Delegate: delegate,
+	}
+}
+
 // FindUserAccount implements DbAccountStoreInterface.
 func (a *AccountStoreDecorator) FindUserAccount(ctx context.Context, filter *UserAccountFilter) (*models.UserAccount, error) {
 	if a.FindUserAccountFunc != nil {

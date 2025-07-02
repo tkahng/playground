@@ -1,5 +1,7 @@
 package stores
 
+import "github.com/tkahng/authgo/internal/database"
+
 func NewAdapterDecorators() *StorageAdapterDecorator {
 	return &StorageAdapterDecorator{
 		UserFunc:           &UserStoreDecorator{},
@@ -14,7 +16,67 @@ func NewAdapterDecorators() *StorageAdapterDecorator {
 		PriceFunc:          &StripePriceStoreDecorator{},
 		SubscriptionFunc:   &StripeSubscriptionStoreDecorator{},
 		TaskFunc:           &TaskDecorator{},
-		MediaFunc:          &DbMediaStore{},
+		MediaFunc:          &MediaStoreDecorator{},
+	}
+}
+
+func NewDbAdapterDecorators(db database.Dbx) *StorageAdapterDecorator {
+	return &StorageAdapterDecorator{
+		UserFunc:           NewUserStoreDecorator(db),
+		UserAccountFunc:    NewAccountStoreDecorator(db),
+		TokenFunc:          NewTokenStoreDecorator(db),
+		TeamGroupFunc:      NewTeamGroupStoreDecorator(db),
+		TeamInvitationFunc: NewTeamInvitationStoreDecorator(db),
+		TeamMemberFunc:     NewTeamMemberStoreDecorator(db),
+		RbacFunc:           NewRbacStoreDecorator(db),
+		CustomerFunc:       NewCustomerStoreDecorator(db),
+		ProductFunc:        NewStripeProductStoreDecorator(db),
+		PriceFunc:          NewStripePriceStoreDecorator(db),
+		SubscriptionFunc:   NewStripeSubscriptionStoreDecorator(db),
+		TaskFunc:           NewTaskDecorator(db),
+		MediaFunc:          NewDbMediaStoreDecorator(db),
+	}
+}
+
+func NewCustomerStoreDecorator(db database.Dbx) *CustomerStoreDecorator {
+	delegate := NewDbCustomerStore(db)
+	return &CustomerStoreDecorator{
+		Delegate: delegate,
+	}
+}
+
+func NewStripeProductStoreDecorator(db database.Dbx) *StripeProductStoreDecorator {
+	delegate := NewDbProductStore(db)
+	return &StripeProductStoreDecorator{
+		Delegate: delegate,
+	}
+}
+
+func NewStripePriceStoreDecorator(db database.Dbx) *StripePriceStoreDecorator {
+	delegate := NewDbPriceStore(db)
+	return &StripePriceStoreDecorator{
+		Delegate: delegate,
+	}
+}
+
+func NewStripeSubscriptionStoreDecorator(db database.Dbx) *StripeSubscriptionStoreDecorator {
+	delegate := NewDbSubscriptionStore(db)
+	return &StripeSubscriptionStoreDecorator{
+		Delegate: delegate,
+	}
+}
+
+func NewTaskDecorator(db database.Dbx) *TaskDecorator {
+	delegate := NewDbTaskStore(db)
+	return &TaskDecorator{
+		Delegate: delegate,
+	}
+}
+
+func NewDbMediaStoreDecorator(db database.Dbx) *MediaStoreDecorator {
+	delegate := NewMediaStore(db)
+	return &MediaStoreDecorator{
+		Delegate: delegate,
 	}
 }
 
@@ -26,7 +88,7 @@ type StorageAdapterDecorator struct {
 	TeamGroupFunc      *TeamGroupStoreDecorator
 	TeamInvitationFunc *TeamInvitationStoreDecorator
 	TeamMemberFunc     *TeamMemberStoreDecorator
-	MediaFunc          *DbMediaStore
+	MediaFunc          *MediaStoreDecorator
 	RbacFunc           *RbacStoreDecorator
 	CustomerFunc       *CustomerStoreDecorator
 	ProductFunc        *StripeProductStoreDecorator

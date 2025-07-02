@@ -25,6 +25,13 @@ type UserStoreDecorator struct {
 	CountUsersFunc         func(ctx context.Context, filter *UserFilter) (int64, error)
 }
 
+func NewUserStoreDecorator(db database.Dbx) *UserStoreDecorator {
+	delegate := NewDbUserStore(db)
+	return &UserStoreDecorator{
+		Delegate: delegate,
+	}
+}
+
 // CountUsers implements DbUserStoreInterface.
 func (u *UserStoreDecorator) CountUsers(ctx context.Context, filter *UserFilter) (int64, error) {
 	if u.CountUsersFunc != nil {

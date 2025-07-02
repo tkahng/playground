@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
 )
 
@@ -20,6 +21,13 @@ type TeamGroupStoreDecorator struct {
 	ListTeamsFunc                  func(ctx context.Context, params *TeamFilter) ([]*models.Team, error)
 	LoadTeamsByIdsFunc             func(ctx context.Context, teamIds ...uuid.UUID) ([]*models.Team, error)
 	UpdateTeamFunc                 func(ctx context.Context, teamId uuid.UUID, name string) (*models.Team, error)
+}
+
+func NewTeamGroupStoreDecorator(db database.Dbx) *TeamGroupStoreDecorator {
+	delegate := NewDbTeamGroupStore(db)
+	return &TeamGroupStoreDecorator{
+		Delegate: delegate,
+	}
 }
 
 func (t *TeamGroupStoreDecorator) Cleanup() {

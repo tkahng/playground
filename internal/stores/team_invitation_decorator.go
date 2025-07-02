@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
 )
 
@@ -17,6 +18,13 @@ type TeamInvitationStoreDecorator struct {
 	GetInvitationByIDFunc     func(ctx context.Context, invitationId uuid.UUID) (*models.TeamInvitation, error)
 	UpdateInvitationFunc      func(ctx context.Context, invitation *models.TeamInvitation) error
 	CountTeamInvitationsFunc  func(ctx context.Context, filter *TeamInvitationFilter) (int64, error)
+}
+
+func NewTeamInvitationStoreDecorator(db database.Dbx) *TeamInvitationStoreDecorator {
+	delegate := NewDbTeamInvitationStore(db)
+	return &TeamInvitationStoreDecorator{
+		Delegate: delegate,
+	}
 }
 
 // CountTeamInvitations implements DbTeamInvitationStoreInterface.

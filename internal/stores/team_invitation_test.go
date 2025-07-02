@@ -71,7 +71,7 @@ func TestTeamStore_InvitationCRUD(t *testing.T) {
 		}
 		// original := inv.ExpiresAt
 
-		inv.ExpiresAt = now
+		inv.ExpiresAt = time.Now()
 		err = store.UpdateInvitation(ctx, inv)
 		if err != nil {
 			t.Errorf("UpdateInvitation() error = %v", err)
@@ -262,7 +262,7 @@ func TestTeamStore_FindPendingInvitation(t *testing.T) {
 			Role:            models.TeamMemberRoleMember,
 			Token:           uuid.NewString(),
 			Status:          models.TeamInvitationStatusPending,
-			ExpiresAt:       time.Now().Add(-1 * time.Hour),
+			ExpiresAt:       time.Now(),
 		}
 		err = invitationStore.CreateInvitation(ctx, expiredInvitation)
 		if err != nil {
@@ -271,7 +271,7 @@ func TestTeamStore_FindPendingInvitation(t *testing.T) {
 
 		// Should not find the expired invitation
 		expired, err := invitationStore.FindPendingInvitation(ctx, team.ID, "expired@example.com")
-		if err != nil {
+		if err == nil {
 			t.Fatalf("FindPendingInvitation() error = %v", err)
 		}
 		if expired != nil {

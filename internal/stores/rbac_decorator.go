@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
 )
 
@@ -48,6 +49,13 @@ type RbacStoreDecorator struct {
 	LoadRolePermissionsFunc          func(ctx context.Context, roleIds ...uuid.UUID) ([][]*models.Permission, error)
 	UpdatePermissionFunc             func(ctx context.Context, id uuid.UUID, roledto *UpdatePermissionDto) error
 	UpdateRoleFunc                   func(ctx context.Context, id uuid.UUID, roledto *UpdateRoleDto) error
+}
+
+func NewRbacStoreDecorator(db database.Dbx) *RbacStoreDecorator {
+	delegate := NewDbRBACStore(db)
+	return &RbacStoreDecorator{
+		Delegate: delegate,
+	}
 }
 
 func (r *RbacStoreDecorator) Cleanup() {

@@ -16,6 +16,13 @@ type TokenStoreDecorator struct {
 	WithTxFunc             func(dbx database.Dbx) *TokenStoreDecorator
 }
 
+func NewTokenStoreDecorator(db database.Dbx) *TokenStoreDecorator {
+	delegate := NewPostgresTokenStore(db)
+	return &TokenStoreDecorator{
+		Delegate: delegate,
+	}
+}
+
 func (t *TokenStoreDecorator) Cleanup() {
 	t.WithTxFunc = nil
 	t.DeleteTokenFunc = nil

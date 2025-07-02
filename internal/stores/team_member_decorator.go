@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
 )
 
@@ -25,6 +26,13 @@ type TeamMemberStoreDecorator struct {
 	CreateTeamMemberFromUserAndSlugFunc func(ctx context.Context, user *models.User, slug string, role models.TeamMemberRole) (*models.TeamMember, error)
 	LoadTeamMembersByUserAndTeamIdsFunc func(ctx context.Context, userId uuid.UUID, teamIds ...uuid.UUID) ([]*models.TeamMember, error)
 	LoadTeamMembersByIdsFunc            func(ctx context.Context, teamMemberIds ...uuid.UUID) ([]*models.TeamMember, error)
+}
+
+func NewTeamMemberStoreDecorator(db database.Dbx) *TeamMemberStoreDecorator {
+	delegate := NewDbTeamMemberStore(db)
+	return &TeamMemberStoreDecorator{
+		Delegate: delegate,
+	}
 }
 
 // LoadTeamMembersByIds implements DbTeamMemberStoreInterface.
