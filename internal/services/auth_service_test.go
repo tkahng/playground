@@ -265,11 +265,9 @@ func TestAuthenticate(t *testing.T) {
 	wg := new(sync.WaitGroup)
 
 	app := &BaseAuthService{
-		// adapter:   adapter,
 		adapter:  storeDecorator,
 		token:    mockToken,
 		password: mockPassword,
-		mail:     mockMailService,
 		options:  settings,
 	}
 

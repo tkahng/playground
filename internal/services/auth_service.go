@@ -25,7 +25,7 @@ type AuthService interface {
 
 	Password() PasswordService
 	Token() JwtService
-	Mail() MailService
+	// Mail() MailService
 
 	// handlers -----------------------------------------------------------------------------------------------------------
 
@@ -53,7 +53,6 @@ type AuthService interface {
 var _ AuthService = (*BaseAuthService)(nil)
 
 type BaseAuthService struct {
-	mail       MailService
 	token      JwtService
 	password   PasswordService
 	options    *conf.AppOptions
@@ -68,7 +67,6 @@ func NewAuthService(
 	adapter stores.StorageAdapterInterface,
 ) AuthService {
 	authService := &BaseAuthService{
-		mail:       mail,
 		token:      NewJwtService(),
 		password:   NewPasswordService(),
 		options:    opts,
@@ -80,9 +78,9 @@ func NewAuthService(
 }
 
 // Mail implements AuthService.
-func (app *BaseAuthService) Mail() MailService {
-	return app.mail
-}
+// func (app *BaseAuthService) Mail() MailService {
+// 	return app.mail
+// }
 
 // Password implements AuthService.
 func (app *BaseAuthService) Password() PasswordService {

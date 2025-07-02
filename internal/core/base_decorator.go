@@ -42,7 +42,6 @@ func NewAppDecorator(ctx context.Context, cfg conf.EnvConfig, pool database.Dbx)
 
 	authService := services.NewAuthServiceDecorator(
 		settings,
-		authMailService,
 		adapter,
 		jobService,
 	)
