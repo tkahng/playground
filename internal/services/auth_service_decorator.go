@@ -39,18 +39,18 @@ type AuthServiceDecorator struct {
 func NewAuthServiceDecorator(
 	opts *conf.AppOptions,
 	mail MailService,
-	token JwtService,
-	password PasswordService,
-	workerService RoutineService,
 	enqueuer jobs.Enqueuer,
 	adapter stores.StorageAdapterInterface,
 ) AuthService {
+	tokenService := NewJwtServiceDecorator()
+	passwordService := NewPasswordServiceDecorator()
+	routine := NewRoutineServiceDecorator()
 	authService := &AuthServiceDecorator{}
 	authService.Delegate = &BaseAuthService{
-		routine:  workerService,
+		routine:  routine,
 		mail:     mail,
-		token:    token,
-		password: password,
+		token:    tokenService,
+		password: passwordService,
 		options:  opts,
 		enqueuer: enqueuer,
 		adapter:  adapter,

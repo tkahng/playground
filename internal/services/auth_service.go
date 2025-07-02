@@ -54,8 +54,7 @@ type AuthService interface {
 var _ AuthService = (*BaseAuthService)(nil)
 
 type BaseAuthService struct {
-	routine RoutineService
-	// authStore AuthStore
+	routine  RoutineService
 	mail     MailService
 	token    JwtService
 	password PasswordService
@@ -67,18 +66,14 @@ type BaseAuthService struct {
 func NewAuthService(
 	opts *conf.AppOptions,
 	mail MailService,
-	token JwtService,
-	password PasswordService,
-	workerService RoutineService,
-	logger *slog.Logger,
 	enqueuer jobs.Enqueuer,
 	adapter stores.StorageAdapterInterface,
 ) AuthService {
 	authService := &BaseAuthService{
-		routine:  workerService,
+		routine:  NewRoutineService(),
 		mail:     mail,
-		token:    token,
-		password: password,
+		token:    NewJwtService(),
+		password: NewPasswordService(),
 		options:  opts,
 		enqueuer: enqueuer,
 		adapter:  adapter,

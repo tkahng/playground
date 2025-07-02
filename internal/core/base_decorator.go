@@ -32,16 +32,11 @@ func NewAppDecorator(ctx context.Context, cfg conf.EnvConfig, pool database.Dbx)
 		adapter,
 	)
 
-	tokenService := services.NewJwtServiceDecorator()
-	passwordService := services.NewPasswordService()
 	routine := services.NewRoutineServiceDecorator()
 
 	authService := services.NewAuthServiceDecorator(
 		settings,
 		authMailService,
-		tokenService,
-		passwordService,
-		routine,
 		jobManager,
 		adapter,
 	)

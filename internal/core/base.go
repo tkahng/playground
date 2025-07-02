@@ -55,9 +55,6 @@ func (app *BaseApp) Task() services.TaskService {
 	return app.task
 }
 
-// User implements App.
-
-// Rbac implements App.
 func (app *BaseApp) Rbac() services.RBACService {
 	return app.rbac
 }
@@ -83,6 +80,9 @@ func (app *BaseApp) Fs() filesystem.FileSystem {
 func (app *BaseApp) Db() database.Dbx {
 	return app.db
 }
+func (app *BaseApp) SetDb(db database.Dbx) {
+	app.db = db
+}
 
 // Payment implements App.
 func (a *BaseApp) Payment() services.PaymentService {
@@ -94,8 +94,17 @@ func (a *BaseApp) Settings() *conf.AppOptions {
 	return a.settings
 }
 
+func (a *BaseApp) SetSettings(settings *conf.AppOptions) {
+	a.settings = settings
+}
+
 func (app *BaseApp) Cfg() *conf.EnvConfig {
 	return app.cfg
+}
+
+func (a *BaseApp) SetCfg(cfg *conf.EnvConfig) {
+	a.cfg = cfg
+	a.SetSettings(cfg.ToSettings())
 }
 
 // Mailer implements App.
@@ -128,18 +137,11 @@ func NewBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 		adapter,
 	)
 
-	tokenService := services.NewJwtService()
-	passwordService := services.NewPasswordService()
-
 	routineService := services.NewRoutineService()
 	authMailService := services.NewMailService(mail)
 	authService := services.NewAuthService(
 		settings,
 		authMailService,
-		tokenService,
-		passwordService,
-		routineService,
-		l,
 		jobManager,
 		adapter,
 	)
