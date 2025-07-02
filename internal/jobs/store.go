@@ -60,7 +60,7 @@ const query string = `
 
 // SaveJob implements JobStore.
 func (s *DbJobStore) SaveJob(ctx context.Context, job *EnqueueParams) error {
-	payload, err := json.Marshal(job)
+	payload, err := json.Marshal(job.Args)
 	if err != nil {
 		return fmt.Errorf("marshal args: %w", err)
 	}

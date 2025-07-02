@@ -72,6 +72,8 @@ func NewAppDecorator(ctx context.Context, cfg conf.EnvConfig, pool database.Dbx)
 		teamService,
 		adapter,
 		invitation,
+		jobManager,
+		jobService,
 	)
 	return &BaseAppDecorator{app: app}
 }

@@ -32,15 +32,6 @@ func (api *Api) RequestVerification(ctx context.Context, input *struct{}) (*stru
 		Type:   mailer.EmailTypeVerify,
 	})
 
-	// 	mailer.EmailTypeVerify, ctx, &models.User{
-	// 	ID:              claims.User.ID,
-	// 	Email:           claims.User.Email,
-	// 	EmailVerifiedAt: claims.User.EmailVerifiedAt,
-	// 	Name:            claims.User.Name,
-	// 	Image:           claims.User.Image,
-	// 	CreatedAt:       claims.User.CreatedAt,
-	// 	UpdatedAt:       claims.User.UpdatedAt,
-	// }, api.app.Adapter())
 	if err != nil {
 		return nil, err
 	}

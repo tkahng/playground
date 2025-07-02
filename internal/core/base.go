@@ -178,6 +178,8 @@ func NewBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 		teamService,
 		adapter,
 		teamInvitationService,
+		jobManager,
+		jobService,
 	)
 	return app
 }
@@ -197,6 +199,8 @@ func newApp(
 	teamService services.TeamService,
 	adapter stores.StorageAdapterInterface,
 	invitation services.TeamInvitationService,
+	jobManager jobs.JobManager,
+	jobService services.JobService,
 ) *BaseApp {
 	app := &BaseApp{
 		fs:             fs,
@@ -213,6 +217,8 @@ func newApp(
 		team:           teamService,
 		adapter:        adapter,
 		teamInvitation: invitation,
+		jobManager:     jobManager,
+		jobService:     jobService,
 	}
 	return app
 }
