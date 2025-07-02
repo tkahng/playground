@@ -17,6 +17,7 @@ import (
 	"github.com/tkahng/authgo/internal/stores"
 	"github.com/tkahng/authgo/internal/tools/mailer"
 	"github.com/tkahng/authgo/internal/tools/security"
+	"github.com/tkahng/authgo/internal/workers"
 	"golang.org/x/oauth2"
 )
 
@@ -811,38 +812,52 @@ func (app *BaseAuthService) authenticateNewAccount(ctx context.Context, user *mo
 		return nil, err
 	}
 	if resetPassword {
-		app.routine.FireAndForget(
-			func() {
-				ctx := context.Background()
-				fmt.Println("User is first login, sending reset password email")
-				err := app.SendOtpEmail(mailer.EmailTypeSecurityPasswordReset, ctx, user, nil)
-				if err != nil {
-					slog.Error(
-						"error sending reset password email",
-						slog.Any("error", err),
-						slog.String("email", user.Email),
-						slog.String("userId", user.ID.String()),
-					)
-				}
-			},
-		)
+		err := app.jobService.EnqueueOtpMailJob(ctx, &workers.OtpEmailJobArgs{
+			UserID: user.ID,
+			Type:   mailer.EmailTypeSecurityPasswordReset,
+		})
+		if err != nil {
+			return nil, err
+		}
+		// app.routine.FireAndForget(
+		// 	func() {
+		// 		ctx := context.Background()
+		// 		fmt.Println("User is first login, sending reset password email")
+		// 		err := app.SendOtpEmail(mailer.EmailTypeSecurityPasswordReset, ctx, user, nil)
+		// 		if err != nil {
+		// 			slog.Error(
+		// 				"error sending reset password email",
+		// 				slog.Any("error", err),
+		// 				slog.String("email", user.Email),
+		// 				slog.String("userId", user.ID.String()),
+		// 			)
+		// 		}
+		// 	},
+		// )
 	}
 	if user.EmailVerifiedAt == nil {
-		app.routine.FireAndForget(
-			func() {
-				ctx := context.Background()
-				fmt.Println("User is first login, sending verification email")
-				err := app.SendOtpEmail(mailer.EmailTypeVerify, ctx, user, nil)
-				if err != nil {
-					slog.Error(
-						"error sending verification email",
-						slog.Any("error", err),
-						slog.String("email", user.Email),
-						slog.String("userId", user.ID.String()),
-					)
-				}
-			},
-		)
+		err := app.jobService.EnqueueOtpMailJob(ctx, &workers.OtpEmailJobArgs{
+			UserID: user.ID,
+			Type:   mailer.EmailTypeVerify,
+		})
+		if err != nil {
+			return nil, err
+		}
+		// app.routine.FireAndForget(
+		// 	func() {
+		// 		ctx := context.Background()
+		// 		fmt.Println("User is first login, sending verification email")
+		// 		err := app.SendOtpEmail(mailer.EmailTypeVerify, ctx, user, nil)
+		// 		if err != nil {
+		// 			slog.Error(
+		// 				"error sending verification email",
+		// 				slog.Any("error", err),
+		// 				slog.String("email", user.Email),
+		// 				slog.String("userId", user.ID.String()),
+		// 			)
+		// 		}
+		// 	},
+		// )
 	}
 	return user, nil
 }

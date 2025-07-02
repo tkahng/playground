@@ -5,8 +5,8 @@ import (
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/tkahng/authgo/internal/contextstore"
-	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/tools/mailer"
+	"github.com/tkahng/authgo/internal/workers"
 )
 
 type EmailVerificationInput struct {
@@ -18,7 +18,7 @@ type EmailVerificationRequestInput struct {
 }
 
 func (api *Api) RequestVerification(ctx context.Context, input *struct{}) (*struct{}, error) {
-	action := api.app.Auth()
+	jobService := api.app.JobService()
 	claims := contextstore.GetContextUserInfo(ctx)
 	if claims == nil {
 		return nil, huma.Error404NotFound("User not found")
@@ -27,15 +27,20 @@ func (api *Api) RequestVerification(ctx context.Context, input *struct{}) (*stru
 		return nil, huma.Error404NotFound("Email already verified")
 	}
 	// user :=
-	err := action.SendOtpEmail(mailer.EmailTypeVerify, ctx, &models.User{
-		ID:              claims.User.ID,
-		Email:           claims.User.Email,
-		EmailVerifiedAt: claims.User.EmailVerifiedAt,
-		Name:            claims.User.Name,
-		Image:           claims.User.Image,
-		CreatedAt:       claims.User.CreatedAt,
-		UpdatedAt:       claims.User.UpdatedAt,
-	}, api.app.Adapter())
+	err := jobService.EnqueueOtpMailJob(ctx, &workers.OtpEmailJobArgs{
+		UserID: claims.User.ID,
+		Type:   mailer.EmailTypeVerify,
+	})
+
+	// 	mailer.EmailTypeVerify, ctx, &models.User{
+	// 	ID:              claims.User.ID,
+	// 	Email:           claims.User.Email,
+	// 	EmailVerifiedAt: claims.User.EmailVerifiedAt,
+	// 	Name:            claims.User.Name,
+	// 	Image:           claims.User.Image,
+	// 	CreatedAt:       claims.User.CreatedAt,
+	// 	UpdatedAt:       claims.User.UpdatedAt,
+	// }, api.app.Adapter())
 	if err != nil {
 		return nil, err
 	}

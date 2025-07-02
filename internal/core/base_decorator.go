@@ -85,6 +85,15 @@ type BaseAppDecorator struct {
 	AdapterFunc        func() stores.StorageAdapterInterface
 	TeamInvitationFunc func() services.TeamInvitationService
 	JobManagerFunc     func() jobs.JobManager
+	JobServiceFunc     func() services.JobService
+}
+
+// JobService implements App.
+func (b *BaseAppDecorator) JobService() services.JobService {
+	if b.JobServiceFunc != nil {
+		return b.JobServiceFunc()
+	}
+	return b.app.JobService()
 }
 
 // JobManager implements App.

@@ -34,11 +34,17 @@ type BaseApp struct {
 	adapter        stores.StorageAdapterInterface
 	teamInvitation services.TeamInvitationService
 	jobManager     jobs.JobManager
+	jobService     services.JobService
 }
 
 // JobManager implements App.
 func (app *BaseApp) JobManager() jobs.JobManager {
 	return app.jobManager
+}
+
+// JobService implements App.
+func (app *BaseApp) JobService() services.JobService {
+	return app.jobService
 }
 
 // TeamInvitation implements App.

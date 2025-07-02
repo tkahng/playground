@@ -35,4 +35,6 @@ type App interface {
 	Adapter() stores.StorageAdapterInterface
 
 	JobManager() jobs.JobManager
+
+	JobService() services.JobService
 }
