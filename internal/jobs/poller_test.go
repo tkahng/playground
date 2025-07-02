@@ -19,11 +19,7 @@ func TestPoller_Run(t *testing.T) {
 	// test.WithTx(t, func(ctx context.Context, dbx database.Dbx) {
 
 	t.Cleanup(func() {
-		_, err := repository.Job.Delete(ctx, dbx, &map[string]any{
-			"kind": map[string]any{
-				"_eq": "email",
-			},
-		})
+		_, err := repository.Job.Delete(ctx, dbx, &map[string]any{})
 		if err != nil {
 			t.Error(err)
 		}

@@ -20,8 +20,7 @@ func NewAppDecorator(ctx context.Context, cfg conf.EnvConfig, pool database.Dbx)
 
 	l := logger.GetDefaultLogger()
 	jobManager := jobs.NewDbJobManagerDecorator(pool)
-	adapter := stores.NewAdapterDecorators()
-	adapter.Delegate = stores.NewStorageAdapter(pool)
+	adapter := stores.NewDbAdapterDecorators(pool)
 	mail := &mailer.LogMailer{}
 	authMailService := services.NewMailService(mail)
 	rbacService := services.NewRBACService(adapter)

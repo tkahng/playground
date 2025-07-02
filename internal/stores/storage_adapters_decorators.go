@@ -35,6 +35,7 @@ func NewDbAdapterDecorators(db database.Dbx) *StorageAdapterDecorator {
 		SubscriptionFunc:   NewStripeSubscriptionStoreDecorator(db),
 		TaskFunc:           NewTaskDecorator(db),
 		MediaFunc:          NewDbMediaStoreDecorator(db),
+		Delegate:           NewStorageAdapter(db),
 	}
 }
 
