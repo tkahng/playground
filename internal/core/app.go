@@ -7,19 +7,16 @@ import (
 	"github.com/tkahng/authgo/internal/services"
 	"github.com/tkahng/authgo/internal/stores"
 	"github.com/tkahng/authgo/internal/tools/filesystem"
-	"github.com/tkahng/authgo/internal/tools/mailer"
 )
 
 type App interface {
 	Cfg() *conf.EnvConfig
 
+	Settings() *conf.AppOptions
+
 	Db() database.Dbx
 
 	Fs() filesystem.FileSystem
-
-	Settings() *conf.AppOptions
-
-	Mailer() mailer.Mailer
 
 	Rbac() services.RBACService
 
@@ -28,11 +25,13 @@ type App interface {
 	Auth() services.AuthService
 
 	Team() services.TeamService
+
 	TeamInvitation() services.TeamInvitationService
 
 	Checker() services.ConstraintChecker
 
 	Task() services.TaskService
+
 	Adapter() stores.StorageAdapterInterface
 
 	JobManager() jobs.JobManager

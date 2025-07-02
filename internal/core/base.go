@@ -99,9 +99,6 @@ func (app *BaseApp) Cfg() *conf.EnvConfig {
 }
 
 // Mailer implements App.
-func (app *BaseApp) Mailer() mailer.Mailer {
-	return app.mail
-}
 
 func NewBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 	settings := cfg.ToSettings()
@@ -123,7 +120,6 @@ func NewBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 	adapter := stores.NewStorageAdapter(pool)
 
 	rbacService := services.NewRBACService(adapter)
-
 	taskService := services.NewTaskService(adapter)
 
 	paymentClient := payment.NewPaymentClient(cfg.StripeConfig)

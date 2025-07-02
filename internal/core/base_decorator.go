@@ -150,14 +150,6 @@ func (b *BaseAppDecorator) Fs() filesystem.FileSystem {
 	}
 	return b.app.Fs()
 }
-
-func (b *BaseAppDecorator) Mailer() mailer.Mailer {
-	if b.MailerFunc != nil {
-		return b.MailerFunc()
-	}
-	return b.app.Mailer()
-}
-
 func (b *BaseAppDecorator) Payment() services.PaymentService {
 	if b.PaymentFunc != nil {
 		return b.PaymentFunc()
