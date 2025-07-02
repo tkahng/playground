@@ -12,13 +12,15 @@ import (
 	"github.com/tkahng/authgo/internal/stores"
 	"github.com/tkahng/authgo/internal/tools/mailer"
 	"github.com/tkahng/authgo/internal/tools/security"
+	"github.com/tkahng/authgo/internal/workers"
 )
 
 type OtpMailService interface {
 	SendOtpEmail(ctx context.Context, emailType mailer.EmailType, userId uuid.UUID) error
+	SendTeamInvitationEmail(ctx context.Context, params *workers.TeamInvitationJobArgs) error
 }
 
-var _ OtpMailService = &DbOtpMailService{}
+var _ OtpMailService = (*DbOtpMailService)(nil)
 
 type DbOtpMailService struct {
 	options  *conf.AppOptions
@@ -155,9 +157,69 @@ func (app *DbOtpMailService) getSendMailParams(emailType mailer.EmailType, token
 	return allEmailParams, nil
 }
 
+func (i *DbOtpMailService) CreateConfirmationUrl(tokenhash string) (string, error) {
+	path, err := mailer.GetPathParams(
+		"/team-invitation",
+		tokenhash,
+		string(models.TokenTypesInviteToken),
+		i.options.Meta.AppUrl,
+	)
+	if err != nil {
+		return "", err
+	}
+	appUrl, err := url.Parse(i.options.Meta.AppUrl)
+	if err != nil {
+		return "", err
+	}
+	return appUrl.ResolveReference(path).String(), nil
+}
+
+// SendInvitationEmail implements TeamInvitationService.
+func (i *DbOtpMailService) SendTeamInvitationEmail(ctx context.Context, params *workers.TeamInvitationJobArgs) error {
+	if params == nil {
+		return fmt.Errorf("params is nil")
+	}
+	if params.Email == "" {
+		return fmt.Errorf("email is empty")
+	}
+	if params.TeamName == "" {
+		return fmt.Errorf("team name is empty")
+	}
+
+	confUrl, err := i.CreateConfirmationUrl(params.TokenHash)
+	if err != nil {
+		return err
+	}
+	params.ConfirmationURL = confUrl
+	body := mailer.GenerateBody("body", string(mailer.DefaultTeamInviteMail), params)
+	param := &mailer.AllEmailParams{}
+	param.CommonParams = &mailer.CommonParams{
+		ConfirmationURL: params.ConfirmationURL,
+		Email:           params.Email,
+		SiteURL:         i.options.Meta.AppUrl,
+		Token:           params.TokenHash,
+	}
+	param.Message = &mailer.Message{
+		From:    i.options.Meta.SenderAddress,
+		To:      params.Email,
+		Subject: fmt.Sprintf("Invitation to join %s", params.TeamName),
+		Body:    body,
+	}
+	return i.mail.Send(param.Message)
+}
+
 type OtpMailDecorator struct {
-	Delegate         DbOtpMailService
-	SendOtpEmailFunc func(ctx context.Context, emailType mailer.EmailType, userId uuid.UUID) error
+	Delegate                DbOtpMailService
+	SendOtpEmailFunc        func(ctx context.Context, emailType mailer.EmailType, userId uuid.UUID) error
+	SendInvitationEmailFunc func(ctx context.Context, params *workers.TeamInvitationJobArgs) error
+}
+
+// SendTeamInvitationEmail implements OtpMailService.
+func (o *OtpMailDecorator) SendTeamInvitationEmail(ctx context.Context, params *workers.TeamInvitationJobArgs) error {
+	if o.SendInvitationEmailFunc != nil {
+		return o.SendInvitationEmailFunc(ctx, params)
+	}
+	return o.Delegate.SendTeamInvitationEmail(ctx, params)
 }
 
 // SendOtpEmail implements OtpMailService.

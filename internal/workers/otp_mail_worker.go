@@ -33,6 +33,7 @@ type otpMailWorker struct {
 	mail OtpMailServiceInterface
 }
 type OtpMailServiceInterface interface {
+	SendTeamInvitationEmail(ctx context.Context, params *TeamInvitationJobArgs) error
 	SendOtpEmail(ctx context.Context, emailType mailer.EmailType, userId uuid.UUID) error
 }
 

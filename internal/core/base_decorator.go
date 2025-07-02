@@ -56,6 +56,7 @@ func NewAppDecorator(ctx context.Context, cfg conf.EnvConfig, pool database.Dbx)
 		authMailService,
 		*settings,
 		routine,
+		jobService,
 	)
 	app := newApp(
 		fs,

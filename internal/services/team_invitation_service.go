@@ -3,15 +3,13 @@ package services
 import (
 	"context"
 	"fmt"
-	"log/slog"
-	"net/url"
 
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/conf"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/stores"
-	"github.com/tkahng/authgo/internal/tools/mailer"
 	"github.com/tkahng/authgo/internal/tools/security"
+	"github.com/tkahng/authgo/internal/workers"
 )
 
 type TeamInvitationMailParams struct {
@@ -59,10 +57,10 @@ type TeamInvitationService interface {
 		teamId uuid.UUID,
 	) ([]*models.TeamInvitation, error)
 
-	sendInvitationEmail(
-		ctx context.Context,
-		params *TeamInvitationMailParams,
-	) error
+	// sendInvitationEmail(
+	// 	ctx context.Context,
+	// 	params *TeamInvitationMailParams,
+	// ) error
 }
 
 var _ TeamInvitationService = (*InvitationService)(nil)
@@ -71,66 +69,34 @@ type InvitationService struct {
 	routine RoutineService
 	mailer  MailService
 	// store    TeamInvitationStore
-	adapter  stores.StorageAdapterInterface
-	settings conf.AppOptions
+	adapter    stores.StorageAdapterInterface
+	settings   conf.AppOptions
+	jobService JobService
 }
 
-func (i *InvitationService) CreateConfirmationUrl(tokenhash string) (string, error) {
-	path, err := mailer.GetPathParams(
-		"/team-invitation",
-		tokenhash,
-		string(models.TokenTypesInviteToken),
-		i.settings.Meta.AppUrl,
-	)
-	if err != nil {
-		return "", err
-	}
-	appUrl, err := url.Parse(i.settings.Meta.AppUrl)
-	if err != nil {
-		return "", err
-	}
-	return appUrl.ResolveReference(path).String(), nil
-}
-
-// sendInvitationEmail implements TeamInvitationService.
-func (i *InvitationService) sendInvitationEmail(ctx context.Context, params *TeamInvitationMailParams) error {
-	if params == nil {
-		return fmt.Errorf("params is nil")
-	}
-	if params.Email == "" {
-		return fmt.Errorf("email is empty")
-	}
-	if params.TeamName == "" {
-		return fmt.Errorf("team name is empty")
-	}
-
-	confUrl, err := i.CreateConfirmationUrl(params.TokenHash)
-	if err != nil {
-		return err
-	}
-	params.ConfirmationURL = confUrl
-	body := mailer.GenerateBody("body", string(mailer.DefaultTeamInviteMail), params)
-	param := &mailer.AllEmailParams{}
-	param.CommonParams = &mailer.CommonParams{
-		ConfirmationURL: params.ConfirmationURL,
-		Email:           params.Email,
-		SiteURL:         i.settings.Meta.AppUrl,
-		Token:           params.TokenHash,
-	}
-	param.Message = &mailer.Message{
-		From:    i.settings.Meta.SenderAddress,
-		To:      params.Email,
-		Subject: fmt.Sprintf("Invitation to join %s", params.TeamName),
-		Body:    body,
-	}
-	return i.mailer.SendMail(param)
-}
+// func (i *InvitationService) CreateConfirmationUrl(tokenhash string) (string, error) {
+// 	path, err := mailer.GetPathParams(
+// 		"/team-invitation",
+// 		tokenhash,
+// 		string(models.TokenTypesInviteToken),
+// 		i.settings.Meta.AppUrl,
+// 	)
+// 	if err != nil {
+// 		return "", err
+// 	}
+// 	appUrl, err := url.Parse(i.settings.Meta.AppUrl)
+// 	if err != nil {
+// 		return "", err
+// 	}
+// 	return appUrl.ResolveReference(path).String(), nil
+// }
 
 func NewInvitationService(
 	adapter stores.StorageAdapterInterface,
 	mailer MailService,
 	settings conf.AppOptions,
 	workerService RoutineService,
+	jobService JobService,
 ) TeamInvitationService {
 	return &InvitationService{
 		routine:  workerService,
@@ -305,24 +271,32 @@ func (i *InvitationService) CreateInvitation(
 		}
 		invitation = existingInvite
 	}
+	err = i.jobService.EnqueueTeamInvitationJob(ctx, &workers.TeamInvitationJobArgs{
+		Email:          invitation.Email,
+		InvitedByEmail: member.User.Email,
+		TeamName:       member.Team.Name,
+		TokenHash:      invitation.Token,
+	})
+	if err != nil {
+		return err
+	}
+	// i.routine.FireAndForget(
+	// 	func() {
+	// 		ctx := context.Background()
 
-	i.routine.FireAndForget(
-		func() {
-			ctx := context.Background()
-
-			params := &TeamInvitationMailParams{
-				Email:          invitation.Email,
-				InvitedByEmail: member.User.Email,
-				TeamName:       member.Team.Name,
-				TokenHash:      invitation.Token,
-			}
-			err := i.sendInvitationEmail(ctx, params)
-			if err != nil {
-				slog.ErrorContext(ctx, "failed to send invitation email", slog.Any("error", err), slog.Any("params", params))
-				fmt.Printf("failed to send invitation email: %v", err)
-			}
-		},
-	)
+	// 		params := &TeamInvitationMailParams{
+	// 			Email:          invitation.Email,
+	// 			InvitedByEmail: member.User.Email,
+	// 			TeamName:       member.Team.Name,
+	// 			TokenHash:      invitation.Token,
+	// 		}
+	// 		err := i.sendInvitationEmail(ctx, params)
+	// 		if err != nil {
+	// 			slog.ErrorContext(ctx, "failed to send invitation email", slog.Any("error", err), slog.Any("params", params))
+	// 			fmt.Printf("failed to send invitation email: %v", err)
+	// 		}
+	// 	},
+	// )
 	return nil
 }
 

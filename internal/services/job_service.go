@@ -10,11 +10,21 @@ import (
 
 type JobService interface {
 	EnqueueOtpMailJob(ctx context.Context, args *workers.OtpEmailJobArgs) error
+	EnqueueTeamInvitationJob(ctx context.Context, args *workers.TeamInvitationJobArgs) error
 	RegisterWorkers(mail OtpMailService)
 }
 
 type DbJobService struct {
 	manager jobs.JobManager
+}
+
+// EnqueueTeamInvitationJob implements JobService.
+func (d *DbJobService) EnqueueTeamInvitationJob(ctx context.Context, args *workers.TeamInvitationJobArgs) error {
+	return d.manager.Enqueue(ctx, &jobs.EnqueueParams{
+		Args:        args,
+		RunAfter:    time.Now(),
+		MaxAttempts: 3,
+	})
 }
 
 // RegisterWorkers implements JobService.
@@ -38,9 +48,18 @@ func NewJobService(manager jobs.JobManager) JobService {
 }
 
 type JobServiceDecorator struct {
-	Delegate              JobService
-	EnqueueOtpMailJobFunc func(ctx context.Context, job *workers.OtpEmailJobArgs) error
-	RegisterWorkersFunc   func(mail OtpMailService)
+	Delegate                  JobService
+	EnqueueOtpMailJobFunc     func(ctx context.Context, job *workers.OtpEmailJobArgs) error
+	EnqueueTeamInvitationFunc func(ctx context.Context, job *workers.TeamInvitationJobArgs) error
+	RegisterWorkersFunc       func(mail OtpMailService)
+}
+
+// EnqueueTeamInvitationJob implements JobService.
+func (j *JobServiceDecorator) EnqueueTeamInvitationJob(ctx context.Context, args *workers.TeamInvitationJobArgs) error {
+	if j.EnqueueTeamInvitationFunc != nil {
+		return j.EnqueueTeamInvitationFunc(ctx, args)
+	}
+	return j.Delegate.EnqueueTeamInvitationJob(ctx, args)
 }
 
 // RegisterWorkers implements JobService.

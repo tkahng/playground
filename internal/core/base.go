@@ -162,7 +162,13 @@ func NewBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 	)
 
 	teamService := services.NewTeamService(adapter)
-	teamInvitationService := services.NewInvitationService(adapter, authMailService, *settings, routineService)
+	teamInvitationService := services.NewInvitationService(
+		adapter,
+		authMailService,
+		*settings,
+		routineService,
+		jobService,
+	)
 	app := newApp(
 		fs,
 		pool,
