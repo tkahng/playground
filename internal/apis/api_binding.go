@@ -9,6 +9,7 @@ import (
 	"github.com/tkahng/authgo/internal/core"
 	"github.com/tkahng/authgo/internal/middleware"
 	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/authgo/internal/tools/types"
 )
 
 func BindMiddlewares(api huma.API, app core.App) {
@@ -26,7 +27,7 @@ type IndexOutput struct {
 
 func BindApis(api huma.API, appApi *Api) {
 	huma.Get(api, "/", func(ctx context.Context, input *struct {
-		Page shared.OmittableNullable[string] `query:"page" required:"false"`
+		Page types.OmittableNullable[string] `query:"page" required:"false"`
 	}) (*IndexOutput, error) {
 		fmt.Println("input", input)
 		return &IndexOutput{

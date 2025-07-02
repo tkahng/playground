@@ -8,7 +8,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/contextstore"
 	"github.com/tkahng/authgo/internal/models"
-	"github.com/tkahng/authgo/internal/shared"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 )
 
@@ -71,9 +70,13 @@ func (api *Api) Me(ctx context.Context, input *struct{}) (*MeOutput, error) {
 	}, nil
 
 }
+type UpdateMeInput struct {
+	Name  *string `json:"name"`
+	Image *string `json:"image"`
+}
 
 func (api *Api) MeUpdate(ctx context.Context, input *struct {
-	Body shared.UpdateMeInput
+	Body UpdateMeInput
 }) (*struct{}, error) {
 	claims := contextstore.GetContextUserInfo(ctx)
 	if claims == nil {
