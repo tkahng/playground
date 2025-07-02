@@ -61,11 +61,11 @@ func NewDbJobManager(dbx database.Dbx) *DbJobManager {
 type DbJobManagerDecorator struct {
 	Store           JobStore
 	Poller          Poller
+	Dispatcher      Dispatcher
 	Delegate        *DbJobManager
 	EnqueueFunc     func(ctx context.Context, args JobArgs, uniqueKey *string, runAfter time.Time, maxAttempts int) error
 	EnqueueManyFunc func(ctx context.Context, jobs ...EnqueueParams) error
 	RunFunc         func(ctx context.Context) error
-	Dispatcher      Dispatcher
 	DispatchFunc    func(ctx context.Context, row *models.JobRow) error
 }
 
@@ -79,7 +79,10 @@ func (d *DbJobManagerDecorator) Dispatch(ctx context.Context, row *models.JobRow
 
 // SetHandler implements JobManager.
 func (d *DbJobManagerDecorator) SetHandler(kind string, handler func(context.Context, *models.JobRow) error) {
-	panic("unimplemented")
+	if d.Dispatcher != nil {
+		d.Dispatcher.SetHandler(kind, handler)
+	}
+	d.Delegate.SetHandler(kind, handler)
 }
 
 func NewDbJobManagerDecorator(dbx database.Dbx) *DbJobManagerDecorator {
