@@ -10,7 +10,7 @@ import (
 
 type JobService interface {
 	EnqueueOtpMailJob(ctx context.Context, args *workers.OtpEmailJobArgs) error
-	RegisterWorkers(mail OtpMailService) error
+	RegisterWorkers(mail OtpMailService)
 }
 
 type DbJobService struct {
@@ -18,9 +18,8 @@ type DbJobService struct {
 }
 
 // RegisterWorkers implements JobService.
-func (d *DbJobService) RegisterWorkers(mail OtpMailService) error {
+func (d *DbJobService) RegisterWorkers(mail OtpMailService) {
 	jobs.RegisterWorker(d.manager, workers.NewOtpEmailWorker(mail))
-	return nil
 }
 
 // EnqueueOtpMailJob implements JobService.
@@ -41,15 +40,15 @@ func NewJobService(manager jobs.JobManager) JobService {
 type JobServiceDecorator struct {
 	Delegate              JobService
 	EnqueueOtpMailJobFunc func(ctx context.Context, job *workers.OtpEmailJobArgs) error
-	RegisterWorkersFunc   func(mail OtpMailService) error
+	RegisterWorkersFunc   func(mail OtpMailService)
 }
 
 // RegisterWorkers implements JobService.
-func (j *JobServiceDecorator) RegisterWorkers(mail OtpMailService) error {
+func (j *JobServiceDecorator) RegisterWorkers(mail OtpMailService) {
 	if j.RegisterWorkersFunc != nil {
-		return j.RegisterWorkersFunc(mail)
+		j.RegisterWorkersFunc(mail)
 	}
-	return j.Delegate.RegisterWorkers(mail)
+	j.Delegate.RegisterWorkers(mail)
 }
 
 // EnqueueOtpMailJob implements JobService.

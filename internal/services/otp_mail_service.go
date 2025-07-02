@@ -23,28 +23,26 @@ var _ OtpMailService = &DbOtpMailService{}
 type DbOtpMailService struct {
 	options  *conf.AppOptions
 	adapter  stores.StorageAdapterInterface
-	mail     MailService
+	mail     mailer.Mailer
 	token    JwtService
 	password PasswordService
 }
 
 func NewOtpMailService(
 	opts *conf.AppOptions,
-	mail MailService,
-	token JwtService,
-	password PasswordService,
+	mail mailer.Mailer,
 	adapter stores.StorageAdapterInterface,
 ) OtpMailService {
 	return &DbOtpMailService{
 		options:  opts,
 		adapter:  adapter,
 		mail:     mail,
-		token:    token,
-		password: password,
+		token:    NewJwtService(),
+		password: NewPasswordService(),
 	}
 }
 
-func NewDbOtpMailService(opts *conf.AppOptions, mail MailService, token JwtService, password PasswordService, adapter stores.StorageAdapterInterface) DbOtpMailService {
+func NewDbOtpMailService(opts *conf.AppOptions, mail mailer.Mailer, token JwtService, password PasswordService, adapter stores.StorageAdapterInterface) DbOtpMailService {
 	return DbOtpMailService{
 		options:  opts,
 		adapter:  adapter,
@@ -117,7 +115,7 @@ func (app *DbOtpMailService) SendOtpEmail(ctx context.Context, emailType mailer.
 		return fmt.Errorf("error at getting send mail params: %w", err)
 	}
 
-	return app.mail.SendMail(sendMailParams)
+	return app.mail.Send(sendMailParams.Message)
 }
 
 func (app *DbOtpMailService) getSendMailParams(emailType mailer.EmailType, tokenHash string, claims shared.OtpClaims) (*mailer.AllEmailParams, error) {
@@ -156,3 +154,18 @@ func (app *DbOtpMailService) getSendMailParams(emailType mailer.EmailType, token
 	}
 	return allEmailParams, nil
 }
+
+type OtpMailDecorator struct {
+	Delegate         DbOtpMailService
+	SendOtpEmailFunc func(ctx context.Context, emailType mailer.EmailType, userId uuid.UUID) error
+}
+
+// SendOtpEmail implements OtpMailService.
+func (o *OtpMailDecorator) SendOtpEmail(ctx context.Context, emailType mailer.EmailType, userId uuid.UUID) error {
+	if o.SendOtpEmailFunc != nil {
+		return o.SendOtpEmailFunc(ctx, emailType, userId)
+	}
+	return o.Delegate.SendOtpEmail(ctx, emailType, userId)
+}
+
+var _ OtpMailService = (*OtpMailDecorator)(nil)
