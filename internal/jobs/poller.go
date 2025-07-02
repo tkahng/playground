@@ -61,6 +61,7 @@ func WithSize(size int) PollerOptsFunc {
 
 type Poller interface {
 	Run(ctx context.Context) error
+	PollOnce(ctx context.Context) error
 }
 
 type DbPoller struct {
@@ -96,14 +97,14 @@ func (p *DbPoller) Run(ctx context.Context) error {
 		case <-ctx.Done():
 			return ctx.Err()
 		case <-ticker.C:
-			if err := p.pollOnce(ctx); err != nil {
+			if err := p.PollOnce(ctx); err != nil {
 				slog.ErrorContext(ctx, "poller error", "error", err)
 			}
 		}
 	}
 }
 
-func (p *DbPoller) pollOnce(ctx context.Context) error {
+func (p *DbPoller) PollOnce(ctx context.Context) error {
 	// Use a timeout for the transaction itself
 	txCtx, cancel := context.WithTimeout(ctx, p.opts.Timeout)
 	defer cancel()
@@ -172,6 +173,14 @@ type DbPollerDecorator struct {
 	PollOnceFunc func(ctx context.Context) error
 }
 
+// PollOnce implements Poller.
+func (d *DbPollerDecorator) PollOnce(ctx context.Context) error {
+	if d.PollOnceFunc != nil {
+		return d.PollOnceFunc(ctx)
+	}
+	return d.Delegate.PollOnce(ctx)
+}
+
 var _ Poller = (*DbPollerDecorator)(nil)
 
 func (d *DbPollerDecorator) Run(ctx context.Context) error {
@@ -179,13 +188,6 @@ func (d *DbPollerDecorator) Run(ctx context.Context) error {
 		return d.RunFunc(ctx)
 	}
 	return d.Delegate.Run(ctx)
-}
-
-func (d *DbPollerDecorator) PollOnce(ctx context.Context) error {
-	if d.PollOnceFunc != nil {
-		return d.PollOnceFunc(ctx)
-	}
-	return d.Delegate.pollOnce(ctx)
 }
 
 func NewDbPollerDecorator(store JobStore, dispatcher Dispatcher, opts ...PollerOptsFunc) *DbPollerDecorator {
