@@ -33,7 +33,7 @@ export default function CallbackComponent() {
             console.log("Token data:", data);
             isMounted.current = false;
             // Redirect to a protected route
-            navigate("/dashboard");
+            navigate("/");
           })
           .catch((error) => {
             // Handle error (e.g., display an error message)

@@ -67,7 +67,7 @@ export default function PaymentSuccessPage() {
 
           <div className="flex flex-col sm:flex-row gap-2">
             <Button variant="outline" className="flex-1" asChild>
-              <Link to={RouteMap.DASHBOARD}>
+              <Link to={RouteMap.ACCOUNT_OVERVIEW}>
                 <Home className="mr-2 h-4 w-4" />
                 Dashboard
               </Link>

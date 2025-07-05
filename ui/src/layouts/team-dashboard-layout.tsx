@@ -40,7 +40,7 @@ export default function TeamDashboardLayout() {
       ]
     : [];
   const links = [
-    { to: RouteMap.DASHBOARD, title: "Dashboard", current: () => true },
+    { to: RouteMap.ACCOUNT_OVERVIEW, title: "Dashboard", current: () => true },
     ...admin,
   ] as LinkDto[];
 

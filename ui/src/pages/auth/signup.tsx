@@ -33,7 +33,7 @@ export default function SignupPage() {
   const { search } = useLocation();
   const params = new URLSearchParams(search);
   const redirectTo = params.get("redirect_to");
-  const navigateTo = redirectTo || RouteMap.DASHBOARD;
+  const navigateTo = redirectTo || RouteMap.ACCOUNT_OVERVIEW;
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setLoading(true);

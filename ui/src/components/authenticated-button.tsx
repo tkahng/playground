@@ -3,7 +3,7 @@ import { RouteMap } from "@/components/route-map";
 import { UserNav } from "@/components/user-nav";
 const links: LinkDto[] = [
   {
-    to: RouteMap.DASHBOARD,
+    to: RouteMap.ACCOUNT_OVERVIEW,
     title: "Dashboard",
   },
   {

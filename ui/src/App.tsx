@@ -18,8 +18,6 @@ import Features from "@/pages/landing/features";
 import Landing from "@/pages/landing/landing";
 import PricingPage from "@/pages/landing/pricing";
 import PaymentSuccessPage from "@/pages/payment/payment-success";
-import BillingSettingPage from "@/pages/settings/billing-settings";
-import AccountSettingsPage from "@/pages/settings/general-settings";
 import { BrowserRouter, Route, Routes } from "react-router";
 import {
   adminHeaderLinks,
@@ -33,17 +31,18 @@ import PageSectionLayout from "./layouts/page-section";
 import PublicLayout from "./layouts/public-layout";
 import TeamDashboardLayout from "./layouts/team-dashboard-layout";
 import NotFoundPage from "./pages/404";
+import AccountOverviewPage from "./pages/account/overview";
 import AdminDashboardPage from "./pages/admin/admin-dashboard";
 import ProductEditPage from "./pages/admin/products/products-edit";
 import ProductsListPage from "./pages/admin/products/products-list";
 import SubscriptionsListPage from "./pages/admin/subscriptions/subscription-list";
 import ConfirmPasswordReset from "./pages/auth/confirm-password-reset";
 import ResetPasswordRequestPage from "./pages/auth/reset-password";
-import DashboardPage from "./pages/dashboard";
 import NotAuthorizedPage from "./pages/not-authorized";
 import ProtectedRouteLayout from "./pages/protected-routes/protected-layout";
 import ProtectedRoutePage from "./pages/protected-routes/protected-route-page";
 import ProtectedRouteIndex from "./pages/protected-routes/route-index";
+import AccountSettingsPage from "./pages/settings/general-settings";
 import TeamSelect from "./pages/team-select";
 import TeamDashboard from "./pages/teams/dashboard";
 import ProjectEdit from "./pages/teams/projects/project-edit";
@@ -142,24 +141,35 @@ function App() {
             </Route>
 
             <Route element={<AuthenticatedLayoutOutlet />}>
+              <Route path={RouteMap.PAYMENT}>
+                <Route path="success" element={<PaymentSuccessPage />} />
+              </Route>
+            </Route>
+
+            <Route element={<AuthenticatedLayoutOutlet />}>
               <Route
-                // dashboard
-                children={
-                  <Route path={`/dashboard`} element={<DashboardPage />} />
-                }
+                path={`/account`}
                 element={<DashboardLayout headerLinks={userDashboardLinks} />}
-              />
+              >
+                <Route element={<PageSectionLayout title="Account" />}>
+                  <Route index element={<AccountOverviewPage />} />
+                </Route>
+                {/* <Route path="billing" element={<BillingSettingPage />} /> */}
+
+                <Route element={<PageSectionLayout title="Settings" />}>
+                  <Route path="settings" element={<AccountSettingsPage />} />
+                </Route>
+              </Route>
+            </Route>
+
+            <Route element={<AuthenticatedLayoutOutlet />}>
               <Route
                 // dashboard
                 children={
                   <Route path={`/team-select`} element={<TeamSelect />} />
                 }
-                element={<DashboardLayout headerLinks={userDashboardLinks} />}
+                element={<DashboardLayout />}
               />
-              <Route path={RouteMap.PAYMENT}>
-                <Route path="success" element={<PaymentSuccessPage />} />
-              </Route>
-
               <Route
                 // dashboard
                 children={
@@ -170,9 +180,6 @@ function App() {
                 }
                 element={<DashboardLayout />}
               />
-            </Route>
-
-            <Route element={<AuthenticatedLayoutOutlet />}>
               <Route
                 // dashboard
                 path={`/teams`}
@@ -180,15 +187,6 @@ function App() {
               >
                 <Route element={<PageSectionLayout title="Teams" />}>
                   <Route index element={<TeamListPage />} />
-                </Route>
-              </Route>
-              <Route
-                path={RouteMap.SETTINGS}
-                element={<DashboardLayout headerLinks={userDashboardLinks} />}
-              >
-                <Route element={<PageSectionLayout title="Settings" />}>
-                  <Route index element={<AccountSettingsPage />} />
-                  <Route path="billing" element={<BillingSettingPage />} />
                 </Route>
               </Route>
             </Route>

@@ -28,7 +28,7 @@ export default function DashboardLayout({
     : [];
   // const dashboard = !isAdminPath
   const links = [
-    { to: RouteMap.DASHBOARD, title: "Dashboard", current: () => true },
+    { to: RouteMap.ACCOUNT_OVERVIEW, title: "Dashboard", current: () => true },
     ...admin,
   ] as LinkDto[];
   // if (!isAdminPath) {

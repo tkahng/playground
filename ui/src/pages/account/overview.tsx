@@ -4,7 +4,7 @@ import { getUserSubscriptions, getUserTeams } from "@/lib/queries";
 import { useQuery } from "@tanstack/react-query";
 import { CheckCircle, XCircle } from "lucide-react";
 
-export default function DashboardPage() {
+export default function AccountOverviewPage() {
   const { user } = useAuthProvider();
   const { data, error, isError, isLoading } = useQuery({
     queryKey: ["stats"],

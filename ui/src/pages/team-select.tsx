@@ -8,8 +8,6 @@ import { NavLink, useSearchParams } from "react-router";
 import { toast } from "sonner";
 
 export default function TeamSelect() {
-  //   const { user } = useAuthProvider();
-  //   const { setTeam } = useTeam();
   const [searchParams, setSearchParams] = useSearchParams();
   const pageIndex = parseInt(searchParams.get("page") || "0", 10);
   const pageSize = parseInt(searchParams.get("per_page") || "10", 10);
@@ -38,7 +36,7 @@ export default function TeamSelect() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 mx-auto px-8 py-8 justify-start items-stretch flex-1 max-w-[1200px]">
       <div className="flex items-center justify-between">
         <p>Create and manage Teams for your applications.</p>
         <CreateTeamDialog />

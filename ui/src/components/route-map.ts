@@ -7,8 +7,8 @@ export const RouteMap = {
   CONTACT: "/contact",
   HOME: "/",
   LANDING_HOME: "/home",
-  DASHBOARD: "/dashboard",
-  SETTINGS: "/settings",
+  ACCOUNT_OVERVIEW: "/account",
+  SETTINGS: "/account/settings",
   BILLING_SETTINGS: "/settings/billing",
 
   SIGNIN: "/signin",

@@ -11,10 +11,8 @@ export const useUserTeams = () => {
         throw new Error("Missing access token");
       }
       const { data, meta } = await getUserTeams(user.tokens.access_token);
-      if (!data) {
-        throw new Error("No teams found");
-      }
-      return { data, meta };
+
+      return { data: data || [], meta };
     },
     enabled: !!user?.tokens.access_token,
   });

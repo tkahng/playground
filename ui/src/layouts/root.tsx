@@ -19,7 +19,13 @@ export default function RootLayout() {
     ? [{ to: RouteMap.ADMIN, title: "Admin", current: () => false }]
     : [];
   const isUser = user
-    ? [{ to: RouteMap.DASHBOARD, title: "Dashboard", current: () => false }]
+    ? [
+        {
+          to: RouteMap.ACCOUNT_OVERVIEW,
+          title: "Dashboard",
+          current: () => false,
+        },
+      ]
     : [];
   const isNotUsersTeam = team?.member?.user_id !== user?.user.id;
   // const dashboard = !isAdminPath

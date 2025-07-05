@@ -18,11 +18,12 @@ export const RouteLinks = {
   ABOUT: { to: RouteMap.ABOUT, title: "About" },
   // CONTACT: { to: RouteMap.CONTACT, title: "Contact" },
   DASHBOARD: {
-    to: RouteMap.DASHBOARD,
-    title: "Dashboard",
-    current: (pathname: string) => pathname.startsWith(RouteMap.DASHBOARD),
+    to: RouteMap.ACCOUNT_OVERVIEW,
+    title: "Account",
+    current: (pathname: string) =>
+      pathname.startsWith(RouteMap.ACCOUNT_OVERVIEW),
   },
-  DASHBOARD_OVERVIEW: { to: RouteMap.DASHBOARD, title: "Overview" },
+  DASHBOARD_OVERVIEW: { to: RouteMap.ACCOUNT_OVERVIEW, title: "Overview" },
   TASK_PROJECTS: {
     to: RouteMap.TASK_PROJECTS,
     title: "Projects",
@@ -106,7 +107,6 @@ export const settingsSidebarLinks: LinkDto[] = [
 
 export const userDashboardLinks: LinkDto[] = [
   RouteLinks.DASHBOARD,
-  RouteLinks.TEAM_LIST,
   RouteLinks.SETTINGS,
 ];
 
