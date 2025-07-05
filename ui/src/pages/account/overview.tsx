@@ -1,10 +1,33 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CreateTeamDialog } from "@/components/create-team-dialog";
+import { DashboardSidebar } from "@/components/dashboard-sidebar";
+import { DataTable } from "@/components/data-table";
+import { accountSidebarLinks } from "@/components/links";
+import { RouteMap } from "@/components/route-map";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
+import { useUserTeams } from "@/hooks/use-user-teams";
+import { GetError } from "@/lib/get-error";
 import { getUserSubscriptions, getUserTeams } from "@/lib/queries";
+import { Team } from "@/schema.types";
 import { useQuery } from "@tanstack/react-query";
-import { CheckCircle, XCircle } from "lucide-react";
+import { PaginationState, Updater } from "@tanstack/react-table";
+import { NavLink, useSearchParams } from "react-router";
+import { toast } from "sonner";
 
 export default function AccountOverviewPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const pageIndex = parseInt(searchParams.get("page") || "0", 10);
+  const pageSize = parseInt(searchParams.get("per_page") || "10", 10);
+
+  const onPaginationChange = (updater: Updater<PaginationState>) => {
+    const newState =
+      typeof updater === "function"
+        ? updater({ pageIndex, pageSize })
+        : updater;
+    setSearchParams({
+      page: String(newState.pageIndex),
+      per_page: String(newState.pageSize),
+    });
+  };
   const { user } = useAuthProvider();
   const { data, error, isError, isLoading } = useQuery({
     queryKey: ["stats"],
@@ -23,6 +46,18 @@ export default function AccountOverviewPage() {
       };
     },
   });
+
+  const {
+    data: teams,
+    isLoading: teamsIsLoading,
+    isError: teamsIsError,
+    error: teamsError,
+  } = useUserTeams();
+
+  const handleSelectTeam = (team: Team) => {
+    toast.success(`Selected team: ${team.name}`);
+  };
+
   if (isLoading) {
     return <div>Loading...</div>;
   }
@@ -32,82 +67,63 @@ export default function AccountOverviewPage() {
   if (!data) {
     return <div>No data</div>;
   }
+  if (teamsIsLoading) {
+    return <div>Loading...</div>;
+  }
+  if (teamsIsError) {
+    const err = GetError(teamsError);
+    return <div>Error: {err?.detail}</div>;
+  }
   return (
-    <div className="mx-auto px-8 py-8 justify-start items-stretch flex-1 max-w-[1200px]">
-      <h1 className="mb-6 text-3xl font-bold">Overview</h1>
-      <div className="grid gap-6 md:grid-cols-3 lg:grid-cols-5">
-        <div className="col-span-3 gap-6 grid">
-          <Card>
-            <CardHeader>
-              <CardTitle>Current Plan</CardTitle>
-            </CardHeader>
-            <CardContent className="text-4xl font-bold">
-              {data.sub?.price?.product?.name || "No Plan"}
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle>Email Verified</CardTitle>
-            </CardHeader>
-            <CardContent className="text-4xl font-bold">
-              {user?.user.email_verified_at ? (
-                <div>
-                  <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-300" />
-                </div>
-              ) : (
-                <div>
-                  <XCircle className="h-8 w-8 text-red-600 dark:text-red-300" />
-                </div>
-              )}
-            </CardContent>
-          </Card>
+    <div className="flex">
+      <DashboardSidebar links={accountSidebarLinks} />
+      <div className="flex-1 space-y-6 p-12 w-full">
+        <div className="mx-auto px-8 py-8 justify-start items-stretch flex-1 max-w-[1200px]">
+          <div className="flex items-center justify-between">
+            <p>Create and manage Teams for your applications.</p>
+            <CreateTeamDialog />
+          </div>
+
+          <DataTable
+            columns={[
+              {
+                accessorKey: "name",
+                header: "Name",
+                cell: ({ row }) => {
+                  return (
+                    <NavLink
+                      to={`${RouteMap.TEAM_LIST}/${row.original.slug}/dashboard`}
+                      className="hover:underline text-blue-500"
+                      onClick={() => handleSelectTeam(row.original)}
+                    >
+                      {row.original.name}
+                    </NavLink>
+                  );
+                },
+              },
+              {
+                accessorKey: "role",
+                header: "Member Role",
+                cell: ({ row }) => {
+                  const members = row.original.members;
+                  if (!members || members.length === 0) {
+                    return <span className="text-gray-500">No members</span>;
+                  }
+                  return (
+                    <span className="text-gray-500">
+                      {members[0].role || "Member"}
+                    </span>
+                  );
+                },
+              },
+            ]}
+            data={teams?.data || []}
+            rowCount={teams?.meta.total || 0}
+            paginationState={{ pageIndex, pageSize }}
+            onPaginationChange={onPaginationChange}
+            paginationEnabled
+          />
         </div>
-        {/* <div className="grid gap-6 md:grid-rows-1 lg:grid-rows-2 col-span-2">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Projects Done / Total
-              </CardTitle>
-              <Cpu className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {data?.task_stats.completed_projects} /{" "}
-                {data?.task_stats.total_projects}
-              </div>
-              <Progress
-                value={
-                  (data?.task_stats.completed_projects /
-                    data?.task_stats.total_projects) *
-                  100
-                }
-                className="mt-2"
-              />
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Tasks Done / Total
-              </CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {data?.task_stats.completed_tasks} /{" "}
-                {data?.task_stats.total_tasks}
-              </div>
-              <Progress
-                value={
-                  (data?.task_stats.completed_tasks /
-                    data?.task_stats.total_tasks) *
-                  100
-                }
-                className="mt-2"
-              />
-            </CardContent>
-          </Card>
-        </div> */}
       </div>
     </div>
   );

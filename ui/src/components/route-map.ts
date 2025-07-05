@@ -9,7 +9,7 @@ export const RouteMap = {
   LANDING_HOME: "/home",
   ACCOUNT_OVERVIEW: "/account",
   SETTINGS: "/account/settings",
-  BILLING_SETTINGS: "/settings/billing",
+  BILLING_SETTINGS: "/account/settings/billing",
 
   SIGNIN: "/signin",
   SIGNUP: "/signup",

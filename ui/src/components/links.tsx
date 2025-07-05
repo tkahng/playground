@@ -19,7 +19,12 @@ export const RouteLinks = {
   // CONTACT: { to: RouteMap.CONTACT, title: "Contact" },
   DASHBOARD: {
     to: RouteMap.ACCOUNT_OVERVIEW,
-    title: "Account",
+    title: "Overview",
+    current: (pathname: string) => pathname === RouteMap.ACCOUNT_OVERVIEW,
+  },
+  ACCOUNT_OVERVIEW_TEAMS: {
+    to: RouteMap.ACCOUNT_OVERVIEW,
+    title: "Teams",
     current: (pathname: string) =>
       pathname.startsWith(RouteMap.ACCOUNT_OVERVIEW),
   },
@@ -99,7 +104,9 @@ export const authenticatedSubHeaderLinks: LinkDto[] = [
   RouteLinks.PROTECTED,
   RouteLinks.SETTINGS,
 ];
-
+export const accountSidebarLinks: LinkDto[] = [
+  RouteLinks.ACCOUNT_OVERVIEW_TEAMS,
+];
 export const settingsSidebarLinks: LinkDto[] = [
   RouteLinks.GENERAL_SETTINGS,
   RouteLinks.BILLING_SETTINGS,

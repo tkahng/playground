@@ -42,6 +42,7 @@ import NotAuthorizedPage from "./pages/not-authorized";
 import ProtectedRouteLayout from "./pages/protected-routes/protected-layout";
 import ProtectedRoutePage from "./pages/protected-routes/protected-route-page";
 import ProtectedRouteIndex from "./pages/protected-routes/route-index";
+import BillingSettingPage from "./pages/settings/billing-settings";
 import AccountSettingsPage from "./pages/settings/general-settings";
 import TeamSelect from "./pages/team-select";
 import TeamDashboard from "./pages/teams/dashboard";
@@ -151,13 +152,17 @@ function App() {
                 path={`/account`}
                 element={<DashboardLayout headerLinks={userDashboardLinks} />}
               >
-                <Route element={<PageSectionLayout title="Account" />}>
+                <Route element={<PageSectionLayout title="Account Overview" />}>
                   <Route index element={<AccountOverviewPage />} />
                 </Route>
                 {/* <Route path="billing" element={<BillingSettingPage />} /> */}
 
                 <Route element={<PageSectionLayout title="Settings" />}>
                   <Route path="settings" element={<AccountSettingsPage />} />
+                  <Route
+                    path="settings/billing"
+                    element={<BillingSettingPage />}
+                  />
                 </Route>
               </Route>
             </Route>
