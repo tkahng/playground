@@ -44,6 +44,7 @@ import NotAuthorizedPage from "./pages/not-authorized";
 import ProtectedRouteLayout from "./pages/protected-routes/protected-layout";
 import ProtectedRoutePage from "./pages/protected-routes/protected-route-page";
 import ProtectedRouteIndex from "./pages/protected-routes/route-index";
+import TeamSelect from "./pages/team-select";
 import TeamDashboard from "./pages/teams/dashboard";
 import ProjectEdit from "./pages/teams/projects/project-edit";
 import ProjectListPage from "./pages/teams/projects/projects-list";
@@ -145,6 +146,13 @@ function App() {
                 // dashboard
                 children={
                   <Route path={`/dashboard`} element={<DashboardPage />} />
+                }
+                element={<DashboardLayout headerLinks={userDashboardLinks} />}
+              />
+              <Route
+                // dashboard
+                children={
+                  <Route path={`/team-select`} element={<TeamSelect />} />
                 }
                 element={<DashboardLayout headerLinks={userDashboardLinks} />}
               />
