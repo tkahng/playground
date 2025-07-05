@@ -11,7 +11,7 @@ export default function TeamsLayoutBase() {
   const location = useLocation();
   const { user } = useAuthProvider();
   const { team } = useTeam();
-
+  const isNotUsersTeam = team?.member?.user_id !== user?.user.id;
   if (!user) {
     return (
       <Navigate
@@ -24,11 +24,24 @@ export default function TeamsLayoutBase() {
       />
     );
   }
+
   if (!team) {
     return (
       <Navigate
         to={{
-          pathname: "/teams",
+          pathname: "/team-select",
+          search: createSearchParams({
+            redirect_to: location.pathname + location.search,
+          }).toString(),
+        }}
+      />
+    );
+  }
+  if (isNotUsersTeam) {
+    return (
+      <Navigate
+        to={{
+          pathname: "/team-select",
           search: createSearchParams({
             redirect_to: location.pathname + location.search,
           }).toString(),

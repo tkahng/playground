@@ -8,11 +8,9 @@ import { useTeam } from "@/hooks/use-team";
 import { getTeamBySlug } from "@/lib/queries";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
-import { Outlet, useParams } from "react-router";
+import { createSearchParams, Navigate, Outlet, useParams } from "react-router";
 
 export default function TeamDashboardLayout() {
-  // const { user } = useAuthProvider();
-  // const { team, error, isLoading } = useTeam();
   const { user } = useAuthProvider();
   const { teamSlug } = useParams<{ teamSlug: string }>();
   const { setTeam, team } = useTeam();
@@ -26,16 +24,12 @@ export default function TeamDashboardLayout() {
         throw new Error("Team slug is required");
       }
       const response = await getTeamBySlug(user.tokens.access_token, teamSlug);
-      // if (!team) {
       setTeam(response.team);
-      // }
       return response;
     },
     enabled: !!user?.tokens.access_token && !!teamSlug,
   });
-  // const { pathname } = useLocation();
   const isAdmin = user?.roles?.includes("superuser");
-  // const isAdminPath = pathname.startsWith(RouteMap.ADMIN);
   const admin: LinkDto[] = isAdmin
     ? [
         {
@@ -45,25 +39,33 @@ export default function TeamDashboardLayout() {
         },
       ]
     : [];
-  // const dashboard = !isAdminPath
   const links = [
     { to: RouteMap.DASHBOARD, title: "Dashboard", current: () => true },
     ...admin,
   ] as LinkDto[];
-  // if (!isAdminPath) {
-  //   links.push({ to: RouteMap.DASHBOARD, title: "Dashboard" });
-  // }
+
+  const isNotUserTeam = team?.member?.user_id !== user?.user.id;
   const isMounted = useRef(false);
   useEffect(() => {
     if (!isMounted.current) {
       isMounted.current = true;
-      // if (teamSlug && user?.tokens.access_token) {
       refetch().then(() => {
         isMounted.current = false;
       });
-      // }
     }
   }, [refetch, teamSlug]);
+  if (isNotUserTeam) {
+    return (
+      <Navigate
+        to={{
+          pathname: "/team-select",
+          search: createSearchParams({
+            redirect_to: location.pathname + location.search,
+          }).toString(),
+        }}
+      />
+    );
+  }
   if (error) {
     return <div>Error loading team: {error.message}</div>;
   }

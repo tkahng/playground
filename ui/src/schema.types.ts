@@ -65,6 +65,7 @@ export type TeamMember = components["schemas"]["TeamMember"];
 export type TeamMemberRole = components["schemas"]["TeamMember"]["role"];
 export type Team = components["schemas"]["Team"];
 
+export type TeamWithMember = components["schemas"]["TeamWithMember"];
 export type TeamMemberState = {
   currentMember: TeamMember | null;
   members: TeamMember[];

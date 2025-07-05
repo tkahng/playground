@@ -650,6 +650,7 @@ func (app *BaseAuthService) Authenticate(ctx context.Context, params *Authentica
 	}
 	// if user is not found, create user and account, then send verification email ----------------------------------------------------------------------------------------------------
 	if user == nil {
+		fmt.Println("User is first login, sending verification email")
 		return app.authenticateNewUser(ctx, params)
 	}
 
@@ -728,15 +729,16 @@ func (app *BaseAuthService) authenticateNewAccount(ctx context.Context, user *mo
 func (app *BaseAuthService) authenticateNewUser(ctx context.Context, params *AuthenticationInput) (*models.User, error) {
 	var user *models.User
 	err := app.adapter.RunInTx(func(tx stores.StorageAdapterInterface) error {
+
 		newUser, err := app.CreateUserAndAccount(ctx, params, app.adapter)
 		user = newUser
 		return err
 	})
 	if err != nil {
+		slog.ErrorContext(ctx, "error creating user", slog.Any("error", err), slog.String("email", params.Email))
 		return nil, err
 	}
 
-	fmt.Println("User is first login, sending verification email")
 	err = app.jobService.EnqueueOtpMailJob(
 		ctx,
 		&workers.OtpEmailJobArgs{
@@ -753,6 +755,7 @@ func (app *BaseAuthService) authenticateNewUser(ctx context.Context, params *Aut
 		)
 		return nil, err
 	}
+	fmt.Println("job enqueued")
 	return user, nil
 }
 

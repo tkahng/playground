@@ -1515,15 +1515,6 @@ export interface components {
             data: components["schemas"]["TaskProject"][] | null;
             meta: components["schemas"]["Meta"];
         };
-        ApiPaginatedResponseTeam: {
-            /**
-             * Format: uri
-             * @description A URL to the JSON Schema for this object.
-             */
-            readonly $schema?: string;
-            data: components["schemas"]["Team"][] | null;
-            meta: components["schemas"]["Meta"];
-        };
         ApiPaginatedResponseTeamInvitation: {
             /**
              * Format: uri
@@ -1540,6 +1531,15 @@ export interface components {
              */
             readonly $schema?: string;
             data: components["schemas"]["TeamMember"][] | null;
+            meta: components["schemas"]["Meta"];
+        };
+        ApiPaginatedResponseTeamWithMember: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            data: components["schemas"]["TeamWithMember"][] | null;
             meta: components["schemas"]["Meta"];
         };
         ApiPaginatedResponseUserAccountOutput: {
@@ -2179,6 +2179,18 @@ export interface components {
             updated_at: string;
             user?: components["schemas"]["ApiUser"];
             user_id: string;
+        };
+        TeamWithMember: {
+            /** Format: date-time */
+            created_at: string;
+            id: string;
+            member?: components["schemas"]["TeamMember"];
+            members?: components["schemas"]["TeamMember"][] | null;
+            name: string;
+            slug: string;
+            stripe_customer?: components["schemas"]["StripeCustomer"];
+            /** Format: date-time */
+            updated_at: string;
         };
         TokenDto: {
             access_token: string;
@@ -6166,7 +6178,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiPaginatedResponseTeam"];
+                    "application/json": components["schemas"]["ApiPaginatedResponseTeamWithMember"];
                 };
             };
             /** @description Bad Request */

@@ -9,7 +9,7 @@ import { Outlet, useLocation, useNavigate } from "react-router";
 
 export default function RootLayout() {
   const { user } = useAuthProvider();
-  const { team } = useTeam();
+  const { team, setTeam } = useTeam();
   const { pathname } = useLocation();
   const navigate = useNavigate();
   // const { pathname } = useLocation();
@@ -21,10 +21,14 @@ export default function RootLayout() {
   const isUser = user
     ? [{ to: RouteMap.DASHBOARD, title: "Dashboard", current: () => false }]
     : [];
-
+  const isNotUsersTeam = team?.member?.user_id !== user?.user.id;
   // const dashboard = !isAdminPath
   const links = [...isUser, ...admin] as LinkDto[];
   useEffect(() => {
+    if (user && isNotUsersTeam) {
+      setTeam(null);
+      navigate(`team-select`);
+    }
     // if logged in and has team set, redirect to team
     if (user && team) {
       navigate(`teams/${team.slug}/dashboard`);
@@ -32,7 +36,7 @@ export default function RootLayout() {
     if (user && !team) {
       navigate(`team-select`);
     }
-  }, [user, pathname, navigate, team]);
+  }, [user, pathname, navigate, team, isNotUsersTeam, setTeam]);
   return (
     <>
       <div className="relative flex min-h-screen flex-col">

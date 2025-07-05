@@ -52,6 +52,10 @@ type Team struct {
 	Members        []*TeamMember   `db:"members" src:"id" dest:"team_id" table:"team_members" json:"members,omitempty"`
 	StripeCustomer *StripeCustomer `db:"stripe_customer" src:"id" dest:"team_id" table:"stripe_customers" json:"stripe_customer,omitempty" required:"false"`
 }
+type TeamWithMember struct {
+	Team
+	Member *TeamMember `json:"member,omitempty"`
+}
 
 func FromTeamModel(team *models.Team) *Team {
 	if team == nil {
@@ -210,7 +214,7 @@ func (api *Api) GetUserTeams(
 	ctx context.Context,
 	input *UserListTeamsParams,
 ) (
-	*ApiPaginatedOutput[*Team],
+	*ApiPaginatedOutput[*TeamWithMember],
 	error,
 ) {
 	info := contextstore.GetContextUserInfo(ctx)
@@ -231,6 +235,7 @@ func (api *Api) GetUserTeams(
 	if err != nil {
 		return nil, err
 	}
+	var teamsWithMember []*TeamWithMember
 	if len(teams) > 0 {
 		teamIds := mapper.Map(teams, func(t *models.Team) uuid.UUID {
 			return t.ID
@@ -242,18 +247,20 @@ func (api *Api) GetUserTeams(
 		for idx := range teamIds {
 			team := teams[idx]
 			member := members[idx]
-			if team != nil && member != nil {
-				team.Members = append(team.Members, member)
+			teamWithMember := &TeamWithMember{
+				Team:   *FromTeamModel(team),
+				Member: FromTeamMemberModel(member),
 			}
+			teamsWithMember = append(teamsWithMember, teamWithMember)
 		}
 	}
 	count, err := api.app.Adapter().TeamGroup().CountTeams(ctx, params)
 	if err != nil {
 		return nil, err
 	}
-	return &ApiPaginatedOutput[*Team]{
-		Body: ApiPaginatedResponse[*Team]{
-			Data: mapper.Map(teams, FromTeamModel),
+	return &ApiPaginatedOutput[*TeamWithMember]{
+		Body: ApiPaginatedResponse[*TeamWithMember]{
+			Data: teamsWithMember,
 			Meta: ApiGenerateMeta(&input.PaginatedInput, count),
 		},
 	}, nil
