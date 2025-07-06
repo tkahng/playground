@@ -2181,6 +2181,11 @@ export interface components {
             user_id: string;
         };
         TeamWithMember: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
             /** Format: date-time */
             created_at: string;
             id: string;
@@ -6229,7 +6234,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Team"];
+                    "application/json": components["schemas"]["TeamWithMember"];
                 };
             };
             /** @description Bad Request */

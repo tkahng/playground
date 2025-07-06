@@ -1,4 +1,4 @@
-import { useLocalStorage } from "@/hooks/use-local-storage";
+import { useNullableLocalStorage } from "@/hooks/use-local-storage";
 import { refreshToken, signIn } from "@/lib/queries";
 import { SigninInput, SignupInput, UserInfoTokens } from "@/schema.types";
 import { jwtDecode } from "jwt-decode";
@@ -37,7 +37,7 @@ export const AuthContext = React.createContext<AuthContextType>({
 export const AuthProvider: React.FC<{
   children: React.ReactNode;
 }> = ({ children }) => {
-  const [user, setUser] = useLocalStorage<UserInfoTokens | null>(
+  const [user, setUser] = useNullableLocalStorage<UserInfoTokens>(
     "currentUser",
     null
   );

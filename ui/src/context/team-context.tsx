@@ -1,5 +1,5 @@
 // react context for TeamMemberState
-import { useLocalStorage } from "@/hooks/use-local-storage";
+import { useNullableLocalStorage } from "@/hooks/use-local-storage";
 import { Team, TeamMember, TeamWithMember } from "@/schema.types";
 import React, { createContext } from "react";
 
@@ -18,11 +18,11 @@ export const TeamContext = createContext<TeamContextType>({
 });
 
 export const TeamProvider = ({ children }: { children: React.ReactNode }) => {
-  const [team, setTeam] = useLocalStorage<TeamWithMember | null>(
+  const [team, setTeam] = useNullableLocalStorage<TeamWithMember>(
     "currentTeamWithMember",
     null
   );
-  const [teamMember, setTeamMember] = useLocalStorage<TeamMember | null>(
+  const [teamMember, setTeamMember] = useNullableLocalStorage<TeamMember>(
     "currentTeamMember",
     null
   );
