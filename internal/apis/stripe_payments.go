@@ -11,8 +11,11 @@ type StripePaymentPayload struct {
 	// StripeCustomerID string `json:"stripe_customer_id"`
 	PriceID string `json:"price_id"`
 }
-type StripePaymentInput struct {
-	// HxRequestHeaders
+type StripeTeamPaymentInput struct {
+	TeamID string `path:"team-id" required:"false"`
+	Body   StripePaymentPayload
+}
+type StripeUserPaymentInput struct {
 	Body StripePaymentPayload
 }
 
@@ -23,7 +26,29 @@ type StripeUrlOutput struct {
 	}
 }
 
-func (api *Api) StripeCheckoutSession(ctx context.Context, input *StripePaymentInput) (*StripeUrlOutput, error) {
+func (api *Api) CreateTeamCheckoutSession(ctx context.Context, input *StripeTeamPaymentInput) (*StripeUrlOutput, error) {
+	customer := contextstore.GetContextCurrentCustomer(ctx)
+	if customer == nil {
+		return nil, huma.Error403Forbidden("No customer found")
+	}
+	if input.Body.PriceID == "" {
+		return nil, huma.Error400BadRequest("Price ID is required")
+	}
+	url, err := api.app.Payment().CreateCheckoutSession(ctx, customer.ID, input.Body.PriceID)
+	if err != nil {
+		return nil, err
+	}
+	return &StripeUrlOutput{
+		Body: struct {
+			Url string `json:"url"`
+		}{
+			Url: url,
+		},
+	}, nil
+
+}
+
+func (api *Api) CreateUserCheckoutSession(ctx context.Context, input *StripeUserPaymentInput) (*StripeUrlOutput, error) {
 	customer := contextstore.GetContextCurrentCustomer(ctx)
 	if customer == nil {
 		return nil, huma.Error403Forbidden("No customer found")

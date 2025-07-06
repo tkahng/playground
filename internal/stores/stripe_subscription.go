@@ -166,9 +166,12 @@ func (s *DbSubscriptionStore) FindActiveSubscriptionsByUserIds(ctx context.Conte
 func (s *DbSubscriptionStore) FindSubscriptionsWithPriceProductByIds(ctx context.Context, subscriptionIds ...string) ([]*models.StripeSubscription, error) {
 	qs := squirrel.Select()
 	qs = SelectStripeSubscriptionColumns(qs, "")
+	qs = SelectStripeCustomerColumns(qs, "stripe_customer")
 	qs = SelectStripePriceColumns(qs, "price")
 	qs = SelectStripeProductColumns(qs, "price.product")
 	qs = qs.From(models.StripeSubscriptionTableName).
+		// Join("stripe_customers ON stripe_subscriptions.stripe_customer_id = stripe_customers.id").
+		Join(models.StripeCustomerTableName + " ON " + models.StripeSubscriptionTablePrefix.StripeCustomerID + " = " + models.StripeCustomerTablePrefix.ID).
 		Join(models.StripePriceTableName + " ON " + models.StripeSubscriptionTablePrefix.PriceID + " = " + models.StripePriceTablePrefix.ID).
 		Join(models.StripeProductTableName + " ON " + models.StripePriceTablePrefix.ProductID + " = " + models.StripeProductTablePrefix.ID).
 		Where(squirrel.Eq{models.StripeSubscriptionTablePrefix.ID: subscriptionIds})
@@ -176,7 +179,6 @@ func (s *DbSubscriptionStore) FindSubscriptionsWithPriceProductByIds(ctx context
 	if err != nil {
 		return nil, err
 	}
-
 	return mapper.MapToPointer(data, subscriptionIds, func(s *models.StripeSubscription) string {
 		if s == nil {
 			return ""

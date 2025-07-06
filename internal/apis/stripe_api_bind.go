@@ -114,7 +114,7 @@ func BindStripeApi(api huma.API, appApi *Api) {
 				selectCustomerFromUserMiddleware,
 			},
 		},
-		appApi.StripeCheckoutSession,
+		appApi.CreateUserCheckoutSession,
 	)
 	// stripe my subscriptions
 	huma.Register(
@@ -173,6 +173,6 @@ func BindStripeApi(api huma.API, appApi *Api) {
 				selectCustomerFromTeamMiddleware,
 			},
 		},
-		appApi.StripeCheckoutSession,
+		appApi.CreateTeamCheckoutSession,
 	)
 }

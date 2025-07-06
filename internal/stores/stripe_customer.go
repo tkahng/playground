@@ -11,13 +11,52 @@ import (
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/repository"
+	"github.com/tkahng/authgo/internal/tools/mapper"
 	"github.com/tkahng/authgo/internal/tools/types"
 	"github.com/tkahng/authgo/internal/tools/utils"
 )
 
+type DbCustomerStoreInterface interface {
+	ListCustomers(ctx context.Context, input *StripeCustomerFilter) ([]*models.StripeCustomer, error)
+	CountCustomers(ctx context.Context, filter *StripeCustomerFilter) (int64, error)
+	CreateCustomer(ctx context.Context, customer *models.StripeCustomer) (*models.StripeCustomer, error)
+	FindCustomer(ctx context.Context, customer *StripeCustomerFilter) (*models.StripeCustomer, error)
+	LoadCustomersByIds(ctx context.Context, ids ...string) ([]*models.StripeCustomer, error)
+}
+
 type DbCustomerStore struct {
 	db database.Dbx
 }
+
+// LoadCustomersByIds implements DbCustomerStoreInterface.
+func (s *DbCustomerStore) LoadCustomersByIds(ctx context.Context, ids ...string) ([]*models.StripeCustomer, error) {
+	if len(ids) == 0 {
+		return nil, nil
+	}
+	prices, err := repository.StripeCustomer.Get(
+		ctx,
+		s.db,
+		&map[string]any{
+			models.StripeCustomerTable.ID: map[string]any{
+				"_in": ids,
+			},
+		},
+		nil,
+		nil,
+		nil,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return mapper.MapToPointer(prices, ids, func(t *models.StripeCustomer) string {
+		if t == nil {
+			return ""
+		}
+		return t.ID
+	}), nil
+}
+
+var _ DbCustomerStoreInterface = (*DbCustomerStore)(nil)
 
 func NewDbCustomerStore(db database.Dbx) *DbCustomerStore {
 	return &DbCustomerStore{
@@ -163,11 +202,4 @@ func (s *DbCustomerStore) FindCustomer(ctx context.Context, filter *StripeCustom
 		where,
 	)
 	return database.OptionalRow(data, err)
-}
-
-type DbCustomerStoreInterface interface {
-	ListCustomers(ctx context.Context, input *StripeCustomerFilter) ([]*models.StripeCustomer, error)
-	CountCustomers(ctx context.Context, filter *StripeCustomerFilter) (int64, error)
-	CreateCustomer(ctx context.Context, customer *models.StripeCustomer) (*models.StripeCustomer, error)
-	FindCustomer(ctx context.Context, customer *StripeCustomerFilter) (*models.StripeCustomer, error)
 }

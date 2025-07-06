@@ -386,14 +386,15 @@ func (srv *StripeService) FindSubscriptionWithPriceProductBySessionId(ctx contex
 		return nil, errors.New("subscription not found")
 	}
 
-	subscription, err := srv.adapter.Subscription().FindSubscriptionsWithPriceProductByIds(ctx, checkoutSession.Subscription.ID)
+	subscriptions, err := srv.adapter.Subscription().FindSubscriptionsWithPriceProductByIds(ctx, checkoutSession.Subscription.ID)
 	if err != nil {
 		return nil, err
 	}
-	if len(subscription) == 0 {
+	if len(subscriptions) == 0 {
 		return nil, errors.New("subscription not found")
 	}
-	return subscription[0], nil
+
+	return subscriptions[0], nil
 }
 
 func (srv *StripeService) UpsertSubscriptionByIds(ctx context.Context, cutomerId, subscriptionId string) error {

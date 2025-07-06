@@ -7,11 +7,23 @@ import (
 )
 
 type CustomerStoreDecorator struct {
-	Delegate           *DbCustomerStore
-	CountCustomersFunc func(ctx context.Context, filter *StripeCustomerFilter) (int64, error)
-	FindCustomerFunc   func(ctx context.Context, filter *StripeCustomerFilter) (*models.StripeCustomer, error)
-	ListCustomersFunc  func(ctx context.Context, input *StripeCustomerFilter) ([]*models.StripeCustomer, error)
-	CreateCustomerFunc func(ctx context.Context, customer *models.StripeCustomer) (*models.StripeCustomer, error)
+	Delegate               *DbCustomerStore
+	CountCustomersFunc     func(ctx context.Context, filter *StripeCustomerFilter) (int64, error)
+	FindCustomerFunc       func(ctx context.Context, filter *StripeCustomerFilter) (*models.StripeCustomer, error)
+	ListCustomersFunc      func(ctx context.Context, input *StripeCustomerFilter) ([]*models.StripeCustomer, error)
+	CreateCustomerFunc     func(ctx context.Context, customer *models.StripeCustomer) (*models.StripeCustomer, error)
+	LoadCustomersByIdsFunc func(ctx context.Context, ids ...string) ([]*models.StripeCustomer, error)
+}
+
+// LoadCustomersByIds implements DbCustomerStoreInterface.
+func (c *CustomerStoreDecorator) LoadCustomersByIds(ctx context.Context, ids ...string) ([]*models.StripeCustomer, error) {
+	if c.LoadCustomersByIdsFunc != nil {
+		return c.LoadCustomersByIdsFunc(ctx, ids...)
+	}
+	if c.Delegate == nil {
+		return nil, ErrDelegateNil
+	}
+	return c.Delegate.LoadCustomersByIds(ctx, ids...)
 }
 
 func (c *CustomerStoreDecorator) Cleanup() {

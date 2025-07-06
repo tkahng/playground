@@ -872,3 +872,12 @@ func (api *Api) GetInvitationByToken(
 		Body: FromTeamInvitationModel(invitation),
 	}, nil
 }
+
+// func (
+// 	api *Api,
+// ) TeamNotificationSse(
+// 	ctx context.Context,
+// 	input *TeamNotificationSseInput,
+// ) (*ApiOutput[*TeamNotification], error) {
+// 	return nil, nil
+// }
