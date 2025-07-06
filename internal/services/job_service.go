@@ -80,7 +80,10 @@ func (j *JobServiceDecorator) EnqueueOtpMailJob(ctx context.Context, job *worker
 }
 
 func NewJobServiceDecorator(enqueuer jobs.JobManager) *JobServiceDecorator {
-	delegate := NewJobService(enqueuer)
+	var delegate JobService
+	if enqueuer != nil {
+		delegate = NewJobService(enqueuer)
+	}
 	return &JobServiceDecorator{
 		Delegate: delegate,
 	}

@@ -15,6 +15,16 @@ import (
 
 func TestDbJobStore_SaveJob(t *testing.T) {
 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
+		// ctx, db := test.DbSetup()
+
+		// // test.WithTx(t, func(ctx context.Context, dbx database.Dbx) {
+
+		// t.Cleanup(func() {
+		// 	_, err := repository.Job.Delete(ctx, db, &map[string]any{})
+		// 	if err != nil {
+		// 		t.Error(err)
+		// 	}
+		// })
 		type fields struct {
 			db Db
 		}
@@ -64,7 +74,7 @@ func TestDbJobStore_SaveJob(t *testing.T) {
 				if firstJob == nil {
 					t.Error("job not found")
 				}
-				var payload Job[EmailJobArgs]
+				var payload EmailJobArgs
 				if err := json.Unmarshal(firstJob.Payload, &payload); err != nil {
 					t.Error(err)
 				}
@@ -72,14 +82,14 @@ func TestDbJobStore_SaveJob(t *testing.T) {
 				if !ok {
 					t.Error("job args is not email job args")
 				}
-				if argPayload.Recipient != payload.Args.Recipient {
-					t.Errorf("DbJobStore.SaveJob() argPayload.Recipient = %v, want %v", argPayload.Recipient, payload.Args.Recipient)
+				if argPayload.Recipient != payload.Recipient {
+					t.Errorf("DbJobStore.SaveJob() argPayload.Recipient = %v, want %v", argPayload.Recipient, payload.Recipient)
 				}
-				if argPayload.Subject != payload.Args.Subject {
-					t.Errorf("DbJobStore.SaveJob() argPayload.Subject = %v, want %v", argPayload.Subject, payload.Args.Subject)
+				if argPayload.Subject != payload.Subject {
+					t.Errorf("DbJobStore.SaveJob() argPayload.Subject = %v, want %v", argPayload.Subject, payload.Subject)
 				}
-				if argPayload.Body != payload.Args.Body {
-					t.Errorf("DbJobStore.SaveJob() argPayload.Body = %v, want %v", argPayload.Body, payload.Args.Body)
+				if argPayload.Body != payload.Body {
+					t.Errorf("DbJobStore.SaveJob() argPayload.Body = %v, want %v", argPayload.Body, payload.Body)
 				}
 			})
 		}

@@ -15,6 +15,7 @@ import (
 	"github.com/tkahng/authgo/internal/stores"
 	"github.com/tkahng/authgo/internal/tools/mailer"
 	"github.com/tkahng/authgo/internal/tools/types"
+	"github.com/tkahng/authgo/internal/workers"
 )
 
 func TestHandleRefreshToken(t *testing.T) {
@@ -248,7 +249,7 @@ func TestAuthenticate(t *testing.T) {
 	ctx := context.Background()
 	storeDecorator := stores.NewAdapterDecorators()
 	txStoreDecorator := stores.NewAdapterDecorators()
-	// adapter := resource.NewResourceDecoratorAdapter()
+	jobService := NewJobServiceDecorator(nil)
 	mockToken := NewJwtService()
 	mockPassword := NewPasswordServiceDecorator()
 
@@ -261,10 +262,11 @@ func TestAuthenticate(t *testing.T) {
 	}).ToSettings()
 
 	app := &BaseAuthService{
-		adapter:  storeDecorator,
-		token:    mockToken,
-		password: mockPassword,
-		options:  settings,
+		adapter:    storeDecorator,
+		token:      mockToken,
+		password:   mockPassword,
+		options:    settings,
+		jobService: jobService,
 	}
 
 	testUserId := uuid.New()
@@ -313,7 +315,10 @@ func TestAuthenticate(t *testing.T) {
 						Type:     models.ProviderTypeCredentials,
 					}, nil // Simulate account creation
 				}
-
+				jobService.EnqueueOtpMailJobFunc = func(ctx context.Context, job *workers.OtpEmailJobArgs) error {
+					return nil // Simulate email sending
+				}
+				// mockJobService.On("EnqueueOtpMailJob", ctx, mock.Anything).Return(nil)
 				storeDecorator.TokenFunc.SaveTokenFunc = func(ctx context.Context, token *stores.CreateTokenDTO) error {
 					return nil // Simulate token saving
 				}

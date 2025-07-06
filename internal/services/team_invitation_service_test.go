@@ -9,6 +9,7 @@ import (
 	"github.com/tkahng/authgo/internal/conf"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/stores"
+	"github.com/tkahng/authgo/internal/workers"
 )
 
 func TestNewInvitationService(t *testing.T) {
@@ -26,7 +27,7 @@ func TestInvitationService_CreateInvitation(t *testing.T) {
 	store := stores.NewAdapterDecorators()
 	opts := conf.NewSettings()
 
-	jobService := &JobServiceDecorator{}
+	jobService := NewJobServiceDecorator(nil)
 	service := NewInvitationService(store, *opts, jobService)
 
 	member := &models.TeamMember{ID: uuid.New()}
@@ -48,7 +49,9 @@ func TestInvitationService_CreateInvitation(t *testing.T) {
 	store.TeamInvitationFunc.CreateInvitationFunc = func(ctx context.Context, invitation *models.TeamInvitation) error {
 		return nil
 	}
-
+	jobService.EnqueueTeamInvitationFunc = func(ctx context.Context, args *workers.TeamInvitationJobArgs) error {
+		return nil
+	}
 	err := service.CreateInvitation(ctx, team.ID, invitingUser.ID, inviteeEmail, models.TeamMemberRoleMember, true)
 	assert.NoError(t, err)
 }
