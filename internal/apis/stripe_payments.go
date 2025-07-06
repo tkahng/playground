@@ -124,10 +124,17 @@ func (api *Api) StripeCheckoutSessionGet(ctx context.Context, input *StripeCheck
 				return nil, err
 			}
 			if teamInfo == nil {
-				return nil, huma.Error404NotFound("team not found")
+				return nil, huma.Error404NotFound("you are not a member of the team this checkout session is for")
 			}
 			cs.StripeCustomer.Team = &teamInfo.Team
 		}
+		if cs.StripeCustomer.UserID != nil {
+			if *cs.StripeCustomer.UserID != info.User.ID {
+				return nil, huma.Error403Forbidden("you are not the user this checkout session is for")
+			}
+			cs.StripeCustomer.User = &info.User
+		}
+
 	}
 	return &CheckoutSessionOutput{
 		Body: *FromModelSubscription(cs),
