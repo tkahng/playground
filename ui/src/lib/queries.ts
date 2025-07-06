@@ -749,6 +749,35 @@ export const createCheckoutSession = async (
   return data;
 };
 
+export const createTeamCheckoutSession = async (
+  token: string,
+  { price_id, team_id }: { price_id: string; team_id: string }
+) => {
+  const { data, error } = await client.POST(
+    "/api/teams/{team-id}/subscriptions/checkout-session",
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: {
+        price_id,
+      },
+      params: {
+        path: {
+          "team-id": team_id,
+        },
+      },
+    }
+  );
+  if (error) {
+    throw error;
+  }
+  if (!data) {
+    throw new Error("No data");
+  }
+  return data;
+};
+
 export const createBillingPortalSession = async (token: string) => {
   const { data, error } = await client.POST(
     "/api/subscriptions/billing-portals",

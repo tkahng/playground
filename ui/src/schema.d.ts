@@ -6804,7 +6804,9 @@ export interface operations {
         parameters: {
             query?: never;
             header?: never;
-            path?: never;
+            path: {
+                "team-id": string;
+            };
             cookie?: never;
         };
         requestBody: {
