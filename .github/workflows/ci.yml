@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:15
+        image: tkahng/postgres:17
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
@@ -43,31 +43,6 @@ jobs:
 
       - name: Run tests
         run: go test -v ./... -race --cover -coverprofile=coverage.out
-
-  # setup:
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@v4
-  #       with:
-  #         fetch-depth: 0
-
-  #     # Set up Go environment
-  #     - name: Set up Go
-  #       uses: actions/setup-go@v4
-  #       with:
-  #         go-version: "1.24.1" # Use Go version 1.23.5
-
-  #     - name: Set up Node.js
-  #       uses: actions/setup-node@v4
-  #       with:
-  #         node-version: 20.17.0
-  #     # Install dependencies
-  #     - name: Install dependencies
-  #       run: go mod tidy
-
-  #     - name: Build Admin dashboard UI
-  #       run: npm --prefix ./ui install && npm --prefix ./ui run build
 
   build:
     runs-on: ubuntu-latest
