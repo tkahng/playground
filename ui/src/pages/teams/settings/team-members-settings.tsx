@@ -56,8 +56,7 @@ export default function TeamMembersSettingPage() {
       <div className="flex-1 space-y-6 p-12 w-full">
         <div className="flex items-center justify-between">
           <p>
-            Create and manage Roles for your applications. Roles contain
-            collections of Permissions and can be assigned to Users.
+            Manage your team's members. Invite team members to join your team.
           </p>
           <InviteTeamMemberDialog />
         </div>

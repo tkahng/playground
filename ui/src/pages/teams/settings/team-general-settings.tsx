@@ -106,9 +106,9 @@ export default function TeamSettingsPage() {
       <DashboardSidebar links={teamSettingLinks(data.slug)} />
       <div className="flex-1 space-y-6 p-12 w-full">
         <div>
-          <h3 className="text-lg font-medium">Profile</h3>
+          <h3 className="text-lg font-medium">Team Profile</h3>
           <p className="text-sm text-muted-foreground">
-            This is how others will see you on the site.
+            Update your team&apos;s profile information
           </p>
         </div>
 
@@ -148,7 +148,7 @@ export default function TeamSettingsPage() {
             }}
             disabled={disabled}
           >
-            Delete Account
+            Delete Team
           </Button>
         </div>
       </div>
