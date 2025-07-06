@@ -814,6 +814,31 @@ export const createBillingPortalSession = async (token: string) => {
   }
   return data.url;
 };
+export const createTeamBillingPortalSession = async (
+  token: string,
+  teamId: string
+) => {
+  const { data, error } = await client.POST(
+    "/api/teams/{team-id}/subscriptions/billing-portals",
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      params: {
+        path: {
+          "team-id": teamId,
+        },
+      },
+    }
+  );
+  if (error) {
+    throw error;
+  }
+  if (!data) {
+    throw new Error("No data");
+  }
+  return data.url;
+};
 
 export const getAuthUrl = async ({
   provider,

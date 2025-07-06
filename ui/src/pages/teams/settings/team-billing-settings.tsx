@@ -3,7 +3,7 @@ import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { teamSettingLinks } from "@/components/links";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { useTeam } from "@/hooks/use-team";
-import { getUserSubscriptions } from "@/lib/queries";
+import { getTeamSubscriptions } from "@/lib/queries";
 import { useQuery } from "@tanstack/react-query";
 
 export default function TeamBillingSettingPage() {
@@ -15,13 +15,15 @@ export default function TeamBillingSettingPage() {
       if (!user?.tokens.access_token) {
         throw new Error("Missing access token");
       }
-      return getUserSubscriptions(user.tokens.access_token);
+      if (!team?.id) {
+        throw new Error("Current team member team ID is required");
+      }
+      return getTeamSubscriptions(user.tokens.access_token, team.id);
     },
   });
   if (isPending) {
     return <div>Loading...</div>;
   }
-
   if (isError) {
     return <div>Error: {error.message}</div>;
   }

@@ -12,7 +12,7 @@ type StripePaymentPayload struct {
 	PriceID string `json:"price_id"`
 }
 type StripeTeamPaymentInput struct {
-	TeamID string `path:"team-id" required:"false"`
+	TeamID string `path:"team-id" required:"true"`
 	Body   StripePaymentPayload
 }
 type StripeUserPaymentInput struct {
@@ -70,14 +70,27 @@ func (api *Api) CreateUserCheckoutSession(ctx context.Context, input *StripeUser
 
 }
 
-type StripeBillingPortalBody struct {
-}
-type StripeBillingPortalInput struct {
-	// HxRequestHeaders
-	Body StripeBillingPortalBody
-}
-
 func (api *Api) StripeBillingPortal(ctx context.Context, input *struct{}) (*StripeUrlOutput, error) {
+	customer := contextstore.GetContextCurrentCustomer(ctx)
+	if customer == nil {
+		return nil, huma.Error403Forbidden("No customer found")
+	}
+	url, err := api.app.Payment().CreateBillingPortalSession(ctx, customer.ID)
+	if err != nil {
+		return nil, err
+	}
+	return &StripeUrlOutput{
+		Body: struct {
+			Url string `json:"url"`
+		}{
+			Url: url,
+		},
+	}, nil
+
+}
+func (api *Api) StripeTeamBillingPortal(ctx context.Context, input *struct {
+	TeamID string `path:"team-id" required:"true"`
+}) (*StripeUrlOutput, error) {
 	customer := contextstore.GetContextCurrentCustomer(ctx)
 	if customer == nil {
 		return nil, huma.Error403Forbidden("No customer found")

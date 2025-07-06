@@ -154,7 +154,7 @@ func BindStripeApi(api huma.API, appApi *Api) {
 				selectCustomerFromTeamMiddleware,
 			},
 		},
-		appApi.StripeBillingPortal,
+		appApi.StripeTeamBillingPortal,
 	)
 	//  stripe checkout session
 	huma.Register(
