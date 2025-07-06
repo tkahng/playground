@@ -701,6 +701,25 @@ export const getUserSubscriptions = async (token: string) => {
   }
   return data ? data : null;
 };
+export const getTeamSubscriptions = async (token: string, teamId: string) => {
+  const { data, error } = await client.GET(
+    "/api/teams/{team-id}/subscriptions/active",
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      params: {
+        path: {
+          "team-id": teamId,
+        },
+      },
+    }
+  );
+  if (error) {
+    throw error;
+  }
+  return data ? data : null;
+};
 
 export const getCheckoutSession = async (token: string, id: string) => {
   const { data, error } = await client.GET(

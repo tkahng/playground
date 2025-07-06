@@ -10,7 +10,7 @@ export default function TeamBillingSettingPage() {
   const { user } = useAuthProvider();
   const { team } = useTeam();
   const { data, isPending, isError, error } = useQuery({
-    queryKey: ["billing-settings"],
+    queryKey: ["team-billing-settings"],
     queryFn: async () => {
       if (!user?.tokens.access_token) {
         throw new Error("Missing access token");
