@@ -13,7 +13,7 @@ import { createSearchParams, Navigate, Outlet, useParams } from "react-router";
 export default function TeamDashboardLayout() {
   const { user } = useAuthProvider();
   const { teamSlug } = useParams<{ teamSlug: string }>();
-  const { setTeam, team } = useTeam();
+  const { setTeam, team, teamMember } = useTeam();
   const { isLoading, error, refetch } = useQuery({
     queryKey: ["team-by-slug-layout"],
     queryFn: async () => {
@@ -24,11 +24,20 @@ export default function TeamDashboardLayout() {
         throw new Error("Team slug is required");
       }
       const response = await getTeamBySlug(user.tokens.access_token, teamSlug);
-      setTeam(response.team);
+
+      setTeam({ ...response.team, member: response.member });
       return response;
     },
-    enabled: !!user?.tokens.access_token && !!teamSlug,
+    enabled: false,
   });
+  const isMounted = useRef(false);
+  useEffect(() => {
+    if (!isMounted.current) {
+      isMounted.current = true;
+      refetch().then(() => {});
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [teamSlug]);
   const isAdmin = user?.roles?.includes("superuser");
   const admin: LinkDto[] = isAdmin
     ? [
@@ -44,28 +53,8 @@ export default function TeamDashboardLayout() {
     ...admin,
   ] as LinkDto[];
 
-  const isNotUserTeam = team?.member?.user_id !== user?.user.id;
-  const isMounted = useRef(false);
-  useEffect(() => {
-    if (!isMounted.current) {
-      isMounted.current = true;
-      refetch().then(() => {
-        isMounted.current = false;
-      });
-    }
-  }, [refetch, teamSlug]);
-  if (isNotUserTeam) {
-    return (
-      <Navigate
-        to={{
-          pathname: "/team-select",
-          search: createSearchParams({
-            redirect_to: location.pathname + location.search,
-          }).toString(),
-        }}
-      />
-    );
-  }
+  const isNotUserTeam = teamMember?.user_id !== user?.user.id;
+
   if (error) {
     return <div>Error loading team: {error.message}</div>;
   }
@@ -77,6 +66,18 @@ export default function TeamDashboardLayout() {
   }
   if (!user) {
     return <div>No user found.</div>;
+  }
+  if (isNotUserTeam) {
+    return (
+      <Navigate
+        to={{
+          pathname: "/team-select",
+          search: createSearchParams({
+            redirect_to: location.pathname + location.search,
+          }).toString(),
+        }}
+      />
+    );
   }
   return (
     <div className="min-h-screen flex flex-col">

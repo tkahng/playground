@@ -42,13 +42,11 @@ const formSchema = z.object({
 
 export function InviteTeamMemberDialog() {
   const { user } = useAuthProvider();
-  const { team } = useTeam();
+  const { team, teamMember } = useTeam();
   const [isDialogOpen, setDialogOpen] = useState(false);
   const queryClient = useQueryClient();
   const disabled =
-    !user?.tokens.access_token ||
-    !team ||
-    !team.members?.some((member) => member.role === "owner");
+    !user?.tokens.access_token || !team || teamMember?.role !== "owner";
   const mutation = useMutation({
     mutationFn: async (values: z.infer<typeof formSchema>) => {
       if (!user?.tokens.access_token) {

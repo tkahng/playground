@@ -4,15 +4,12 @@ import { NexusAILandingHeader } from "@/components/nexus-landing-header";
 import { RouteMap } from "@/components/route-map";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { useTeam } from "@/hooks/use-team";
-import { useEffect } from "react";
-import { Outlet, useLocation, useNavigate } from "react-router";
+import { Navigate, Outlet, useLocation } from "react-router";
 
 export default function RootLayout() {
   const { user } = useAuthProvider();
-  const { team, setTeam } = useTeam();
+  const { team, teamMember } = useTeam();
   const { pathname } = useLocation();
-  const navigate = useNavigate();
-  // const { pathname } = useLocation();
   const isAdmin = user?.roles?.includes("superuser");
   // const isAdminPath = pathname.startsWith(RouteMap.ADMIN);
   const admin = isAdmin
@@ -27,22 +24,14 @@ export default function RootLayout() {
         },
       ]
     : [];
-  const isNotUsersTeam = team?.member?.user_id !== user?.user.id;
-  // const dashboard = !isAdminPath
   const links = [...isUser, ...admin] as LinkDto[];
-  useEffect(() => {
-    if (user && isNotUsersTeam) {
-      setTeam(null);
-      navigate(`team-select`);
+  if (user && pathname === "/") {
+    if (team && teamMember?.user_id === user.user.id) {
+      return <Navigate to={`/teams/${team.slug}/dashboard`} />;
+    } else {
+      return <Navigate to="/team-select" />;
     }
-    // if logged in and has team set, redirect to team
-    if (user && team) {
-      navigate(`teams/${team.slug}/dashboard`);
-    }
-    if (user && !team) {
-      navigate(`team-select`);
-    }
-  }, [user, pathname, navigate, team, isNotUsersTeam, setTeam]);
+  }
   return (
     <>
       <div className="relative flex min-h-screen flex-col">

@@ -10,8 +10,8 @@ import {
 export default function TeamsLayoutBase() {
   const location = useLocation();
   const { user } = useAuthProvider();
-  const { team } = useTeam();
-  const isNotUsersTeam = team?.member?.user_id !== user?.user.id;
+  const { team, teamMember } = useTeam();
+  const isNotUsersTeam = teamMember?.user_id !== user?.user.id;
   if (!user) {
     return (
       <Navigate
