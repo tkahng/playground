@@ -56,53 +56,25 @@ type TeamInvitationService interface {
 		ctx context.Context,
 		teamId uuid.UUID,
 	) ([]*models.TeamInvitation, error)
-
-	// sendInvitationEmail(
-	// 	ctx context.Context,
-	// 	params *TeamInvitationMailParams,
-	// ) error
 }
 
 var _ TeamInvitationService = (*InvitationService)(nil)
 
 type InvitationService struct {
-	routine RoutineService
-	mailer  MailService
-	// store    TeamInvitationStore
 	adapter    stores.StorageAdapterInterface
 	settings   conf.AppOptions
 	jobService JobService
 }
 
-// func (i *InvitationService) CreateConfirmationUrl(tokenhash string) (string, error) {
-// 	path, err := mailer.GetPathParams(
-// 		"/team-invitation",
-// 		tokenhash,
-// 		string(models.TokenTypesInviteToken),
-// 		i.settings.Meta.AppUrl,
-// 	)
-// 	if err != nil {
-// 		return "", err
-// 	}
-// 	appUrl, err := url.Parse(i.settings.Meta.AppUrl)
-// 	if err != nil {
-// 		return "", err
-// 	}
-// 	return appUrl.ResolveReference(path).String(), nil
-// }
-
 func NewInvitationService(
 	adapter stores.StorageAdapterInterface,
-	mailer MailService,
 	settings conf.AppOptions,
-	workerService RoutineService,
 	jobService JobService,
 ) TeamInvitationService {
 	return &InvitationService{
-		routine:  workerService,
-		mailer:   mailer,
-		settings: settings,
-		adapter:  adapter,
+		settings:   settings,
+		adapter:    adapter,
+		jobService: jobService,
 	}
 }
 func (i *InvitationService) CancelInvitation(

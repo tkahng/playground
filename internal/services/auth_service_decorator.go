@@ -14,7 +14,6 @@ import (
 
 type AuthServiceDecorator struct {
 	Delegate                       *BaseAuthService
-	MailFunc                       func() MailService
 	PasswordFunc                   func() PasswordService
 	TokenFunc                      func() JwtService
 	CreateOAuthUrlFunc             func(ctx context.Context, provider models.Providers, redirectUrl string) (string, error)
@@ -37,7 +36,6 @@ type AuthServiceDecorator struct {
 
 func NewAuthServiceDecorator(
 	opts *conf.AppOptions,
-	// mail MailService,
 	adapter stores.StorageAdapterInterface,
 	jobService JobService,
 ) AuthService {
@@ -45,7 +43,6 @@ func NewAuthServiceDecorator(
 	passwordService := NewPasswordServiceDecorator()
 	authService := &AuthServiceDecorator{}
 	authService.Delegate = &BaseAuthService{
-		// mail:     mail,
 		token:    tokenService,
 		password: passwordService,
 		options:  opts,
@@ -59,15 +56,6 @@ func NewAuthServiceDecorator(
 
 var _ AuthService = (*AuthServiceDecorator)(nil)
 
-// Mail implements AuthService.
-// func (a *AuthServiceDecorator) Mail() MailService {
-// 	if a.MailFunc != nil {
-// 		return a.MailFunc()
-// 	}
-// 	return a.Delegate.Mail()
-// }
-
-// Password implements AuthService.
 func (a *AuthServiceDecorator) Password() PasswordService {
 	if a.PasswordFunc != nil {
 		return a.PasswordFunc()

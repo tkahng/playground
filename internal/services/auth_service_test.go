@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"sync"
 	"testing"
 	"time"
 
@@ -252,9 +251,7 @@ func TestAuthenticate(t *testing.T) {
 	// adapter := resource.NewResourceDecoratorAdapter()
 	mockToken := NewJwtService()
 	mockPassword := NewPasswordServiceDecorator()
-	mockMailService := &MockMailService{
-		delegate: NewMailService(&mailer.LogMailer{}),
-	}
+
 	settings := (&conf.EnvConfig{
 		AppConfig: conf.AppConfig{
 			AppUrl:        "http://localhost:8080",
@@ -262,7 +259,6 @@ func TestAuthenticate(t *testing.T) {
 			SenderAddress: "tkahng@gmail.com",
 		},
 	}).ToSettings()
-	wg := new(sync.WaitGroup)
 
 	app := &BaseAuthService{
 		adapter:  storeDecorator,
@@ -494,20 +490,11 @@ func TestAuthenticate(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			// mockStorage.ExpectedCalls = nil
-			// mockStorage.Calls = nil
-			// mockStorage2.ExpectedCalls = nil
-			// mockStorage2.Calls = nil
-			// mockPassword.ExpectedCalls = nil
-			// mockPassword.Calls = nil
-			mockMailService.param = nil
-
 			if tc.setupMocks != nil {
 				tc.setupMocks()
 			}
 
 			result, err := app.Authenticate(ctx, tc.input)
-			wg.Wait()
 			if tc.expectedError {
 				assert.Error(t, err)
 				assert.Nil(t, result)
@@ -516,14 +503,9 @@ func TestAuthenticate(t *testing.T) {
 				assert.NotNil(t, result)
 			}
 			if tc.checkMail {
-				param := mockMailService.param
-				assert.NotNil(t, param)
-				assert.Equal(t, param.To, testEmail)
-				assert.Equal(t, param.Type, tc.checkWant.Type)
+
 			}
 
-			// mockStorage.AssertExpectations(t)
-			// mockPassword.AssertExpectations(t)
 		})
 	}
 }

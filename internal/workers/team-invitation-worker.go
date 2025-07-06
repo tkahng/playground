@@ -36,7 +36,3 @@ func NewTeamInvitationWorker(otpMailService OtpMailServiceInterface) jobs.Worker
 		mail: otpMailService,
 	}
 }
-
-// type TeamInvitationWorkerInterface interface {
-// 	SendInvitationEmail(ctx context.Context, params *TeamInvitationJobArgs) error
-// }

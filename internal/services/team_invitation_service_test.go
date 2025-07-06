@@ -9,7 +9,6 @@ import (
 	"github.com/tkahng/authgo/internal/conf"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/stores"
-	"github.com/tkahng/authgo/internal/tools/mailer"
 )
 
 func TestNewInvitationService(t *testing.T) {
@@ -17,7 +16,7 @@ func TestNewInvitationService(t *testing.T) {
 	opts := conf.NewSettings()
 
 	JobService := &JobServiceDecorator{}
-	service := NewInvitationService(mockStore, NewMailService(&mailer.LogMailer{}), *opts, nil, JobService)
+	service := NewInvitationService(mockStore, *opts, JobService)
 
 	assert.NotNil(t, service, "NewInvitationService should not return nil")
 }
@@ -26,10 +25,9 @@ func TestInvitationService_CreateInvitation(t *testing.T) {
 	ctx := context.Background()
 	store := stores.NewAdapterDecorators()
 	opts := conf.NewSettings()
-	mailService := NewMockMailService()
 
 	jobService := &JobServiceDecorator{}
-	service := NewInvitationService(store, mailService, *opts, nil, jobService)
+	service := NewInvitationService(store, *opts, jobService)
 
 	member := &models.TeamMember{ID: uuid.New()}
 	inviteeEmail := "invitee@example.com"
@@ -59,10 +57,9 @@ func TestInvitationService_CreateInvitation_NotMember(t *testing.T) {
 	ctx := context.Background()
 	store := stores.NewAdapterDecorators()
 	opts := conf.NewSettings()
-	mailService := NewMockMailService()
 
 	jobService := &JobServiceDecorator{}
-	service := NewInvitationService(store, mailService, *opts, nil, jobService)
+	service := NewInvitationService(store, *opts, jobService)
 
 	teamId := uuid.New()
 	userId := uuid.New()
@@ -79,11 +76,10 @@ func TestInvitationService_AcceptInvitation(t *testing.T) {
 	ctx := context.Background()
 	store := stores.NewAdapterDecorators()
 	opts := conf.NewSettings()
-	mailService := NewMockMailService()
 
 	// Mock the mail service
 	jobService := &JobServiceDecorator{}
-	service := NewInvitationService(store, mailService, *opts, nil, jobService)
+	service := NewInvitationService(store, *opts, jobService)
 
 	teamId := uuid.New()
 	userId := uuid.New()
@@ -116,10 +112,9 @@ func TestInvitationService_AcceptInvitation_UserMismatch(t *testing.T) {
 	ctx := context.Background()
 	store := stores.NewAdapterDecorators()
 	opts := conf.NewSettings()
-	mailService := NewMockMailService()
 
 	jobService := &JobServiceDecorator{}
-	service := NewInvitationService(store, mailService, *opts, nil, jobService)
+	service := NewInvitationService(store, *opts, jobService)
 
 	teamId := uuid.New()
 	userId := uuid.New()
@@ -144,10 +139,9 @@ func TestInvitationService_RejectInvitation(t *testing.T) {
 	ctx := context.Background()
 	store := stores.NewAdapterDecorators()
 	opts := conf.NewSettings()
-	mailService := NewMockMailService()
 
 	jobService := &JobServiceDecorator{}
-	service := NewInvitationService(store, mailService, *opts, nil, jobService)
+	service := NewInvitationService(store, *opts, jobService)
 
 	teamId := uuid.New()
 	userId := uuid.New()
@@ -172,10 +166,9 @@ func TestInvitationService_FindInvitations(t *testing.T) {
 	ctx := context.Background()
 	store := stores.NewAdapterDecorators()
 	opts := conf.NewSettings()
-	mailService := NewMockMailService()
 
 	jobService := &JobServiceDecorator{}
-	service := NewInvitationService(store, mailService, *opts, nil, jobService)
+	service := NewInvitationService(store, *opts, jobService)
 
 	teamId := uuid.New()
 	invitations := []*models.TeamInvitation{{TeamID: teamId, Email: "test@example.com"}}
@@ -192,10 +185,9 @@ func TestInvitationService_CancelInvitation_Success(t *testing.T) {
 	ctx := context.Background()
 	store := stores.NewAdapterDecorators()
 	opts := conf.NewSettings()
-	mailService := NewMockMailService()
 
 	jobService := &JobServiceDecorator{}
-	service := NewInvitationService(store, mailService, *opts, nil, jobService)
+	service := NewInvitationService(store, *opts, jobService)
 
 	teamId := uuid.New()
 	userId := uuid.New()
@@ -228,10 +220,9 @@ func TestInvitationService_CancelInvitation_NotMember(t *testing.T) {
 	ctx := context.Background()
 	store := stores.NewAdapterDecorators()
 	opts := conf.NewSettings()
-	mailService := NewMockMailService()
 
 	jobService := &JobServiceDecorator{}
-	service := NewInvitationService(store, mailService, *opts, nil, jobService)
+	service := NewInvitationService(store, *opts, jobService)
 
 	teamId := uuid.New()
 	userId := uuid.New()
@@ -249,10 +240,9 @@ func TestInvitationService_CancelInvitation_NotOwner(t *testing.T) {
 	ctx := context.Background()
 	store := stores.NewAdapterDecorators()
 	opts := conf.NewSettings()
-	mailService := NewMockMailService()
 
 	jobService := &JobServiceDecorator{}
-	service := NewInvitationService(store, mailService, *opts, nil, jobService)
+	service := NewInvitationService(store, *opts, jobService)
 
 	teamId := uuid.New()
 	userId := uuid.New()
@@ -275,10 +265,9 @@ func TestInvitationService_CancelInvitation_InvitationNotFound(t *testing.T) {
 	ctx := context.Background()
 	store := stores.NewAdapterDecorators()
 	opts := conf.NewSettings()
-	mailService := NewMockMailService()
 
 	jobService := &JobServiceDecorator{}
-	service := NewInvitationService(store, mailService, *opts, nil, jobService)
+	service := NewInvitationService(store, *opts, jobService)
 
 	teamId := uuid.New()
 	userId := uuid.New()
@@ -304,10 +293,9 @@ func TestInvitationService_CancelInvitation_InvitationTeamMismatch(t *testing.T)
 	ctx := context.Background()
 	store := stores.NewAdapterDecorators()
 	opts := conf.NewSettings()
-	mailService := NewMockMailService()
 
 	jobService := &JobServiceDecorator{}
-	service := NewInvitationService(store, mailService, *opts, nil, jobService)
+	service := NewInvitationService(store, *opts, jobService)
 
 	teamId := uuid.New()
 	userId := uuid.New()
@@ -338,10 +326,9 @@ func TestInvitationService_CancelInvitation_FindTeamMemberError(t *testing.T) {
 	ctx := context.Background()
 	store := stores.NewAdapterDecorators()
 	opts := conf.NewSettings()
-	mailService := NewMockMailService()
 
 	jobService := &JobServiceDecorator{}
-	service := NewInvitationService(store, mailService, *opts, nil, jobService)
+	service := NewInvitationService(store, *opts, jobService)
 
 	teamId := uuid.New()
 	userId := uuid.New()
@@ -360,10 +347,9 @@ func TestInvitationService_CancelInvitation_FindInvitationError(t *testing.T) {
 	ctx := context.Background()
 	store := stores.NewAdapterDecorators()
 	opts := conf.NewSettings()
-	mailService := NewMockMailService()
 
 	jobService := &JobServiceDecorator{}
-	service := NewInvitationService(store, mailService, *opts, nil, jobService)
+	service := NewInvitationService(store, *opts, jobService)
 
 	teamId := uuid.New()
 	userId := uuid.New()
@@ -389,10 +375,9 @@ func TestInvitationService_CancelInvitation_UpdateInvitationError(t *testing.T) 
 	ctx := context.Background()
 	store := stores.NewAdapterDecorators()
 	opts := conf.NewSettings()
-	mailService := NewMockMailService()
 
 	jobService := &JobServiceDecorator{}
-	service := NewInvitationService(store, mailService, *opts, nil, jobService)
+	service := NewInvitationService(store, *opts, jobService)
 
 	teamId := uuid.New()
 	userId := uuid.New()
@@ -425,10 +410,9 @@ func TestInvitationService_CheckValidInvitation_Success(t *testing.T) {
 	ctx := context.Background()
 	store := stores.NewAdapterDecorators()
 	opts := conf.NewSettings()
-	mailService := NewMockMailService()
 
 	jobService := &JobServiceDecorator{}
-	service := NewInvitationService(store, mailService, *opts, nil, jobService)
+	service := NewInvitationService(store, *opts, jobService)
 
 	userId := uuid.New()
 	invitationToken := "token"
@@ -457,10 +441,9 @@ func TestInvitationService_CheckValidInvitation_InvitationNotFound(t *testing.T)
 	ctx := context.Background()
 	store := stores.NewAdapterDecorators()
 	opts := conf.NewSettings()
-	mailService := NewMockMailService()
 
 	jobService := &JobServiceDecorator{}
-	service := NewInvitationService(store, mailService, *opts, nil, jobService)
+	service := NewInvitationService(store, *opts, jobService)
 
 	userId := uuid.New()
 	invitationToken := "token"
@@ -479,10 +462,9 @@ func TestInvitationService_CheckValidInvitation_FindInvitationError(t *testing.T
 	ctx := context.Background()
 	store := stores.NewAdapterDecorators()
 	opts := conf.NewSettings()
-	mailService := NewMockMailService()
 
 	jobService := &JobServiceDecorator{}
-	service := NewInvitationService(store, mailService, *opts, nil, jobService)
+	service := NewInvitationService(store, *opts, jobService)
 
 	userId := uuid.New()
 	invitationToken := "token"
@@ -500,10 +482,9 @@ func TestInvitationService_CheckValidInvitation_UserNotFound(t *testing.T) {
 	ctx := context.Background()
 	store := stores.NewAdapterDecorators()
 	opts := conf.NewSettings()
-	mailService := NewMockMailService()
 
 	jobService := &JobServiceDecorator{}
-	service := NewInvitationService(store, mailService, *opts, nil, jobService)
+	service := NewInvitationService(store, *opts, jobService)
 
 	userId := uuid.New()
 	invitationToken := "token"
@@ -529,10 +510,9 @@ func TestInvitationService_CheckValidInvitation_FindUserError(t *testing.T) {
 	ctx := context.Background()
 	store := stores.NewAdapterDecorators()
 	opts := conf.NewSettings()
-	mailService := NewMockMailService()
 
 	jobService := &JobServiceDecorator{}
-	service := NewInvitationService(store, mailService, *opts, nil, jobService)
+	service := NewInvitationService(store, *opts, jobService)
 
 	userId := uuid.New()
 	invitationToken := "token"
@@ -557,10 +537,9 @@ func TestInvitationService_CheckValidInvitation_UserEmailMismatch(t *testing.T) 
 	ctx := context.Background()
 	store := stores.NewAdapterDecorators()
 	opts := conf.NewSettings()
-	mailService := NewMockMailService()
 
 	jobService := &JobServiceDecorator{}
-	service := NewInvitationService(store, mailService, *opts, nil, jobService)
+	service := NewInvitationService(store, *opts, jobService)
 
 	userId := uuid.New()
 	invitationToken := "token"
@@ -590,10 +569,9 @@ func TestInvitationService_CheckValidInvitation_InvitationNotPending(t *testing.
 	ctx := context.Background()
 	store := stores.NewAdapterDecorators()
 	opts := conf.NewSettings()
-	mailService := NewMockMailService()
 
 	jobService := &JobServiceDecorator{}
-	service := NewInvitationService(store, mailService, *opts, nil, jobService)
+	service := NewInvitationService(store, *opts, jobService)
 
 	userId := uuid.New()
 	invitationToken := "token"
@@ -622,10 +600,9 @@ func TestInvitationService_AcceptInvitation_Success(t *testing.T) {
 	ctx := context.Background()
 	store := stores.NewAdapterDecorators()
 	opts := conf.NewSettings()
-	mailService := NewMockMailService()
 
 	jobService := &JobServiceDecorator{}
-	service := NewInvitationService(store, mailService, *opts, nil, jobService)
+	service := NewInvitationService(store, *opts, jobService)
 
 	teamId := uuid.New()
 	userId := uuid.New()
@@ -659,10 +636,9 @@ func TestInvitationService_AcceptInvitation_InvitationNotFound(t *testing.T) {
 	ctx := context.Background()
 	store := stores.NewAdapterDecorators()
 	opts := conf.NewSettings()
-	mailService := NewMockMailService()
 
 	jobService := &JobServiceDecorator{}
-	service := NewInvitationService(store, mailService, *opts, nil, jobService)
+	service := NewInvitationService(store, *opts, jobService)
 
 	userId := uuid.New()
 	store.TeamInvitationFunc.FindInvitationByTokenFunc = func(ctx context.Context, token string) (*models.TeamInvitation, error) {
@@ -678,10 +654,9 @@ func TestInvitationService_AcceptInvitation_FindInvitationError(t *testing.T) {
 	ctx := context.Background()
 	store := stores.NewAdapterDecorators()
 	opts := conf.NewSettings()
-	mailService := NewMockMailService()
 
 	jobService := &JobServiceDecorator{}
-	service := NewInvitationService(store, mailService, *opts, nil, jobService)
+	service := NewInvitationService(store, *opts, jobService)
 
 	userId := uuid.New()
 	store.TeamInvitationFunc.FindInvitationByTokenFunc = func(ctx context.Context, token string) (*models.TeamInvitation, error) {
@@ -697,10 +672,9 @@ func TestInvitationService_AcceptInvitation_UserNotFound(t *testing.T) {
 	ctx := context.Background()
 	store := stores.NewAdapterDecorators()
 	opts := conf.NewSettings()
-	mailService := NewMockMailService()
 
 	jobService := &JobServiceDecorator{}
-	service := NewInvitationService(store, mailService, *opts, nil, jobService)
+	service := NewInvitationService(store, *opts, jobService)
 
 	teamId := uuid.New()
 	userId := uuid.New()
@@ -726,10 +700,9 @@ func TestInvitationService_AcceptInvitation_FindUserError(t *testing.T) {
 	ctx := context.Background()
 	store := stores.NewAdapterDecorators()
 	opts := conf.NewSettings()
-	mailService := NewMockMailService()
 
 	jobService := &JobServiceDecorator{}
-	service := NewInvitationService(store, mailService, *opts, nil, jobService)
+	service := NewInvitationService(store, *opts, jobService)
 
 	teamId := uuid.New()
 	userId := uuid.New()
@@ -755,10 +728,9 @@ func TestInvitationService_AcceptInvitation_UserEmailMismatch(t *testing.T) {
 	ctx := context.Background()
 	store := stores.NewAdapterDecorators()
 	opts := conf.NewSettings()
-	mailService := NewMockMailService()
 
 	jobService := &JobServiceDecorator{}
-	service := NewInvitationService(store, mailService, *opts, nil, jobService)
+	service := NewInvitationService(store, *opts, jobService)
 
 	teamId := uuid.New()
 	userId := uuid.New()
@@ -785,10 +757,9 @@ func TestInvitationService_AcceptInvitation_InvitationNotPending(t *testing.T) {
 	ctx := context.Background()
 	store := stores.NewAdapterDecorators()
 	opts := conf.NewSettings()
-	mailService := NewMockMailService()
 
 	jobService := &JobServiceDecorator{}
-	service := NewInvitationService(store, mailService, *opts, nil, jobService)
+	service := NewInvitationService(store, *opts, jobService)
 
 	teamId := uuid.New()
 	userId := uuid.New()

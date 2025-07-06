@@ -62,7 +62,6 @@ type BaseAuthService struct {
 
 func NewAuthService(
 	opts *conf.AppOptions,
-	mail MailService,
 	jobService JobService,
 	adapter stores.StorageAdapterInterface,
 ) AuthService {
@@ -76,11 +75,6 @@ func NewAuthService(
 
 	return authService
 }
-
-// Mail implements AuthService.
-// func (app *BaseAuthService) Mail() MailService {
-// 	return app.mail
-// }
 
 // Password implements AuthService.
 func (app *BaseAuthService) Password() PasswordService {

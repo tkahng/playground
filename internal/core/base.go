@@ -149,11 +149,8 @@ func NewBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 		adapter,
 	)
 
-	routineService := services.NewRoutineService()
-	authMailService := services.NewMailService(mail)
 	authService := services.NewAuthService(
 		settings,
-		authMailService,
 		jobService,
 		adapter,
 	)
@@ -164,9 +161,7 @@ func NewBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 	teamService := services.NewTeamService(adapter)
 	teamInvitationService := services.NewInvitationService(
 		adapter,
-		authMailService,
 		*settings,
-		routineService,
 		jobService,
 	)
 	app := newApp(

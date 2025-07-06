@@ -30,6 +30,7 @@ func (d *DbJobService) EnqueueTeamInvitationJob(ctx context.Context, args *worke
 // RegisterWorkers implements JobService.
 func (d *DbJobService) RegisterWorkers(mail OtpMailService) {
 	jobs.RegisterWorker(d.manager, workers.NewOtpEmailWorker(mail))
+	jobs.RegisterWorker(d.manager, workers.NewTeamInvitationWorker(mail))
 }
 
 // EnqueueOtpMailJob implements JobService.

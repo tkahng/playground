@@ -29,7 +29,6 @@ func NewAppDecorator(ctx context.Context, cfg conf.EnvConfig, pool database.Dbx)
 	jobManager := jobs.NewDbJobManagerDecorator(pool)
 	jobService := services.NewJobServiceDecorator(jobManager)
 	jobService.RegisterWorkers(mailServiece)
-	authMailService := services.NewMailService(mail)
 	rbacService := services.NewRBACService(adapter)
 	taskService := services.NewTaskService(adapter)
 	paymentClient := services.NewTestPaymentClient()
@@ -37,8 +36,6 @@ func NewAppDecorator(ctx context.Context, cfg conf.EnvConfig, pool database.Dbx)
 		paymentClient,
 		adapter,
 	)
-
-	routine := services.NewRoutineServiceDecorator()
 
 	authService := services.NewAuthServiceDecorator(
 		settings,
@@ -52,9 +49,7 @@ func NewAppDecorator(ctx context.Context, cfg conf.EnvConfig, pool database.Dbx)
 	teamService := services.NewTeamService(adapter)
 	invitation := services.NewInvitationService(
 		adapter,
-		authMailService,
 		*settings,
-		routine,
 		jobService,
 	)
 	app := newApp(

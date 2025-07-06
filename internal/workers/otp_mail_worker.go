@@ -20,15 +20,6 @@ func (j OtpEmailJobArgs) Kind() string {
 	return "otp_email"
 }
 
-func RegisterMailWorker(
-	manager jobs.JobManager,
-	mailService OtpMailServiceInterface,
-
-) {
-	worker := NewOtpEmailWorker(mailService)
-	jobs.RegisterWorker(manager, worker)
-}
-
 type otpMailWorker struct {
 	mail OtpMailServiceInterface
 }
