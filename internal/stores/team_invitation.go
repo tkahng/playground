@@ -3,6 +3,7 @@ package stores
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -31,6 +32,13 @@ type DbTeamInvitationStoreInterface interface { // size=16 (0x10)
 	CountTeamInvitations(ctx context.Context, params *TeamInvitationFilter) (int64, error)
 	GetInvitationByID(ctx context.Context, invitationId uuid.UUID) (*models.TeamInvitation, error)
 	UpdateInvitation(ctx context.Context, invitation *models.TeamInvitation) error
+	AcceptInvitation(
+		ctx context.Context,
+		adapter StorageAdapterInterface,
+		userId uuid.UUID,
+		invitationToken string,
+		out *models.TeamMember,
+	) error
 }
 
 type DbTeamInvitationStore struct {
@@ -223,4 +231,47 @@ func (s *DbTeamInvitationStore) FindPendingInvitation(ctx context.Context, teamI
 		return nil, errors.New("invitation expired")
 	}
 	return invitation, nil
+}
+
+func (i *DbTeamInvitationStore) AcceptInvitation(
+	ctx context.Context,
+	adapter StorageAdapterInterface,
+	userId uuid.UUID,
+	invitationToken string,
+	out *models.TeamMember,
+) error {
+	invite, err := adapter.TeamInvitation().FindInvitationByToken(ctx, invitationToken)
+	if err != nil {
+		return err
+	}
+	if invite == nil {
+		return fmt.Errorf("invitation not found")
+	}
+	user, err := adapter.User().FindUserByID(ctx, userId)
+	if err != nil {
+		return err
+	}
+	if user == nil {
+		return fmt.Errorf("user not found")
+	}
+	if invite.Email != user.Email {
+		return fmt.Errorf("user does not match invitation")
+	}
+	if invite.Status != models.TeamInvitationStatusPending {
+		return fmt.Errorf("invitation is not pending")
+	}
+	invite.Status = models.TeamInvitationStatusAccepted
+	teamMember, err := adapter.TeamMember().CreateTeamMember(ctx, invite.TeamID, user.ID, invite.Role, false)
+	if err != nil {
+		return err
+	}
+	if teamMember == nil {
+		return fmt.Errorf("team member not created")
+	}
+	err = adapter.TeamInvitation().UpdateInvitation(ctx, invite)
+	if err != nil {
+		return err
+	}
+	*out = *teamMember
+	return nil
 }

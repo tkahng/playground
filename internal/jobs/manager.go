@@ -13,6 +13,11 @@ type DbJobManager struct {
 	dispatcher Dispatcher
 }
 
+// WithTx implements JobManager.
+func (j *DbJobManager) WithTx(db database.Dbx) JobManager {
+	return NewDbJobManager(db)
+}
+
 // PollOnce implements JobManager.
 func (j *DbJobManager) PollOnce(ctx context.Context) error {
 	return j.poller.PollOnce(ctx)
@@ -47,6 +52,7 @@ type JobManager interface {
 	Dispatcher
 	Enqueuer
 	Poller
+	WithTx(db database.Dbx) JobManager
 }
 
 var _ JobManager = (*DbJobManager)(nil)
@@ -72,6 +78,15 @@ type DbJobManagerDecorator struct {
 	EnqueueManyFunc func(ctx context.Context, jobs ...*EnqueueParams) error
 	RunFunc         func(ctx context.Context) error
 	DispatchFunc    func(ctx context.Context, row *models.JobRow) error
+	WithTxFunc      func(db database.Dbx) JobManager
+}
+
+// WithTx implements JobManager.
+func (d *DbJobManagerDecorator) WithTx(db database.Dbx) JobManager {
+	if d.WithTxFunc != nil {
+		return d.WithTxFunc(db)
+	}
+	return d.Delegate.WithTx(db)
 }
 
 // PollOnce implements JobManager.

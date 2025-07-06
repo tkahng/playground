@@ -69,7 +69,6 @@ type InvitationService struct {
 	adapter    stores.StorageAdapterInterface
 	settings   conf.AppOptions
 	jobService JobService
-	// paymentService
 }
 
 // GetInvitation implements TeamInvitationService.
@@ -172,32 +171,15 @@ func (i *InvitationService) AcceptInvitation(
 	userId uuid.UUID,
 	invitationToken string,
 ) error {
-	invite, err := i.adapter.TeamInvitation().FindInvitationByToken(ctx, invitationToken)
+	invite := &models.TeamMember{}
+	err := i.adapter.TeamInvitation().AcceptInvitation(ctx, i.adapter, userId, invitationToken, invite)
 	if err != nil {
 		return err
 	}
-	if invite == nil {
-		return fmt.Errorf("invitation not found")
-	}
-	user, err := i.adapter.User().FindUserByID(ctx, userId)
-	if err != nil {
-		return err
-	}
-	if user == nil {
-		return fmt.Errorf("user not found")
-	}
-	if invite.Email != user.Email {
-		return fmt.Errorf("user does not match invitation")
-	}
-	if invite.Status != models.TeamInvitationStatusPending {
-		return fmt.Errorf("invitation is not pending")
-	}
-	invite.Status = models.TeamInvitationStatusAccepted
-	_, err = i.adapter.TeamMember().CreateTeamMember(ctx, invite.TeamID, user.ID, invite.Role, false)
-	if err != nil {
-		return err
-	}
-	err = i.adapter.TeamInvitation().UpdateInvitation(ctx, invite)
+	err = i.jobService.EnqueueTeamMemberAddedJob(ctx, &workers.TeamMemberAddedJobArgs{
+		TeamMemberID: userId,
+		TeamID:       userId,
+	})
 	if err != nil {
 		return err
 	}

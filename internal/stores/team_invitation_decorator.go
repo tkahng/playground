@@ -18,6 +18,18 @@ type TeamInvitationStoreDecorator struct {
 	GetInvitationByIDFunc     func(ctx context.Context, invitationId uuid.UUID) (*models.TeamInvitation, error)
 	UpdateInvitationFunc      func(ctx context.Context, invitation *models.TeamInvitation) error
 	CountTeamInvitationsFunc  func(ctx context.Context, filter *TeamInvitationFilter) (int64, error)
+	AcceptInvitationFunc      func(ctx context.Context, adapter StorageAdapterInterface, userId uuid.UUID, invitationToken string, out *models.TeamMember) error
+}
+
+// AcceptInvitation implements DbTeamInvitationStoreInterface.
+func (t *TeamInvitationStoreDecorator) AcceptInvitation(ctx context.Context, adapter StorageAdapterInterface, userId uuid.UUID, invitationToken string, out *models.TeamMember) error {
+	if t.AcceptInvitationFunc != nil {
+		return t.AcceptInvitationFunc(ctx, adapter, userId, invitationToken, out)
+	}
+	if t.Delegate == nil {
+		return ErrDelegateNil
+	}
+	return t.Delegate.AcceptInvitation(ctx, adapter, userId, invitationToken, out)
 }
 
 func NewTeamInvitationStoreDecorator(db database.Dbx) *TeamInvitationStoreDecorator {

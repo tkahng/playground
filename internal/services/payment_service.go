@@ -239,19 +239,34 @@ func (srv *StripeService) VerifyAndUpdateTeamSubscriptionQuantity(ctx context.Co
 		return err
 	}
 	if sub == nil {
-		return errors.New("no subscription")
+		slog.Debug(
+			"no active subscription found",
+		)
+		return nil
 	}
 
 	count, err := srv.adapter.TeamMember().CountTeamMembers(ctx, &stores.TeamMemberFilter{
 		TeamIds: []uuid.UUID{teamId},
+		Active:  types.OptionalParam[bool]{IsSet: true, Value: true},
 	})
 	if err != nil {
 		return err
 	}
-	if count == 0 {
+	if count == sub.Quantity {
+		slog.Debug(
+			"team member count matches subscription quantity. no need to update",
+			slog.String("team_id", teamId.String()),
+			slog.Int64("count", count),
+			slog.Int64("quantity", sub.Quantity),
+		)
 		return nil
-	}
-	if sub.Quantity != count {
+	} else {
+		slog.Debug(
+			"team member count does not match subscription quantity. updating stripe.",
+			slog.String("team_id", teamId.String()),
+			slog.Int64("count", count),
+			slog.Int64("quantity", sub.Quantity),
+		)
 		_, err := srv.client.UpdateItemQuantity(
 			sub.ItemID,
 			sub.PriceID,
@@ -262,7 +277,6 @@ func (srv *StripeService) VerifyAndUpdateTeamSubscriptionQuantity(ctx context.Co
 		}
 		return nil
 	}
-	return nil
 }
 
 func (srv *StripeService) Client() PaymentClient {

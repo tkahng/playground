@@ -4,11 +4,13 @@ import (
 	"context"
 	"time"
 
+	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/jobs"
 	"github.com/tkahng/authgo/internal/workers"
 )
 
 type JobService interface {
+	WithTx(db database.Dbx) JobService
 	EnqueueTeamMemberAddedJob(ctx context.Context, job *workers.TeamMemberAddedJobArgs) error
 	EnqueueOtpMailJob(ctx context.Context, args *workers.OtpEmailJobArgs) error
 	EnqueueTeamInvitationJob(ctx context.Context, args *workers.TeamInvitationJobArgs) error
@@ -17,6 +19,13 @@ type JobService interface {
 
 type DbJobService struct {
 	manager jobs.JobManager
+}
+
+// WithTx implements JobService.
+func (d *DbJobService) WithTx(db database.Dbx) JobService {
+	return &DbJobService{
+		manager: d.manager.WithTx(db),
+	}
 }
 
 func (d *DbJobService) EnqueueTeamMemberAddedJob(ctx context.Context, job *workers.TeamMemberAddedJobArgs) error {
@@ -64,6 +73,15 @@ type JobServiceDecorator struct {
 	EnqueueTeamInvitationFunc     func(ctx context.Context, job *workers.TeamInvitationJobArgs) error
 	RegisterWorkersFunc           func(mail OtpMailService, paymentService PaymentService)
 	EnqueueTeamMemberAddedJobFunc func(ctx context.Context, job *workers.TeamMemberAddedJobArgs) error
+	WithTxFunc                    func(db database.Dbx) JobService
+}
+
+// WithTx implements JobService.
+func (j *JobServiceDecorator) WithTx(db database.Dbx) JobService {
+	if j.WithTxFunc != nil {
+		return j.WithTxFunc(db)
+	}
+	return j.Delegate.WithTx(db)
 }
 
 // EnqueueTeamMemberAddedJob implements JobService.

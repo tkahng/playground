@@ -10,6 +10,7 @@ import (
 
 type TeamMemberAddedJobArgs struct {
 	TeamMemberID uuid.UUID `json:"team_member_id"`
+	TeamID       uuid.UUID `json:"team_id"`
 }
 
 func (j TeamMemberAddedJobArgs) Kind() string {
