@@ -97,6 +97,9 @@ type CreateTeamInput struct {
 type TeamOutput struct {
 	Body *Team `json:"body"`
 }
+type TeamWithMemberOutput struct {
+	Body *TeamWithMember `json:"body"`
+}
 type TeamInfoOutput struct {
 	Body *TeamInfo `json:"body"`
 }
@@ -107,7 +110,7 @@ func (api *Api) CreateTeam(
 		Body CreateTeamInput `json:"body" required:"true"`
 	},
 ) (
-	*TeamOutput,
+	*TeamWithMemberOutput,
 	error,
 ) {
 	info := contextstore.GetContextUserInfo(ctx)
@@ -126,8 +129,11 @@ func (api *Api) CreateTeam(
 	if team == nil {
 		return nil, huma.Error500InternalServerError("team not found")
 	}
-	return &TeamOutput{
-		Body: FromTeamModel(&team.Team),
+	return &TeamWithMemberOutput{
+		Body: &TeamWithMember{
+			Team:   *FromTeamModel(&team.Team),
+			Member: FromTeamMemberModel(&team.Member),
+		},
 	}, nil
 }
 

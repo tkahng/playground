@@ -2,13 +2,11 @@ package workers
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/jobs"
 	"github.com/tkahng/authgo/internal/tools/mailer"
-	"github.com/tkahng/authgo/internal/tools/utils"
 )
 
 type OtpEmailJobArgs struct {
@@ -36,8 +34,6 @@ func NewOtpEmailWorker(otpMailService OtpMailServiceInterface) jobs.Worker[OtpEm
 
 // Work implements jobs.Worker.
 func (w *otpMailWorker) Work(ctx context.Context, job *jobs.Job[OtpEmailJobArgs]) error {
-	fmt.Println("otp mail")
-	utils.PrettyPrintJSON(job)
 	err := w.mail.SendOtpEmail(ctx, job.Args.Type, job.Args.UserID)
 	if err != nil {
 		slog.ErrorContext(
