@@ -650,7 +650,6 @@ func (app *BaseAuthService) Authenticate(ctx context.Context, params *Authentica
 	}
 	// if user is not found, create user and account, then send verification email ----------------------------------------------------------------------------------------------------
 	if user == nil {
-		fmt.Println("User is first login, sending verification email")
 		return app.authenticateNewUser(ctx, params)
 	}
 
@@ -755,7 +754,6 @@ func (app *BaseAuthService) authenticateNewUser(ctx context.Context, params *Aut
 		)
 		return nil, err
 	}
-	fmt.Println("job enqueued")
 	return user, nil
 }
 
