@@ -37,7 +37,6 @@ func (t *teamService) FindTeamMembersByUserID(ctx context.Context, userId uuid.U
 		userId,
 		paginate,
 	)
-	// members, err := t.teamStore.FindTeamMembersByUserID(ctx, userId, paginate)
 	if err != nil {
 		return nil, err
 	}
@@ -48,7 +47,6 @@ func (t *teamService) FindTeamMembersByUserID(ctx context.Context, userId uuid.U
 		return member.TeamID
 	})
 	teams, err := t.adapter.TeamGroup().LoadTeamsByIds(ctx, teamIds...)
-	// teams, err := t.teamStore.LoadTeamsByIds(ctx, teamIds...)
 	if err != nil {
 		return nil, err
 	}
@@ -136,7 +134,6 @@ func (t *teamService) UpdateTeam(ctx context.Context, teamId uuid.UUID, name str
 
 // CreateTeamWithOwner implements TeamService.
 func (t *teamService) CreateTeamWithOwner(ctx context.Context, name string, slug string, userId uuid.UUID) (*models.TeamInfoModel, error) {
-	slog.InfoContext(ctx, "CreateTeam", "name", name, "slug", slug, "userId", userId)
 	user, err := t.adapter.User().FindUserByID(ctx, userId)
 	if err != nil {
 		return nil, err
@@ -163,6 +160,7 @@ func (t *teamService) CreateTeamWithOwner(ctx context.Context, name string, slug
 	if teamMember == nil {
 		return nil, errors.New("team member not found")
 	}
+	teamMember.User = user
 	teamInfo := &models.TeamInfoModel{
 		Team:   *team,
 		Member: *teamMember,
@@ -221,7 +219,6 @@ func (t *teamService) GetActiveTeamMember(ctx context.Context, userId uuid.UUID)
 	return team, nil
 }
 func (t *teamService) FindTeamInfo(ctx context.Context, teamId, userId uuid.UUID) (*models.TeamInfoModel, error) {
-	slog.InfoContext(ctx, "FindTeamInfo", "teamId", teamId, "userId", userId)
 	user, err := t.adapter.User().FindUserByID(ctx, userId)
 	// user, err := t.teamStore.FindUserByID(ctx, userId)
 	if err != nil {
@@ -250,7 +247,7 @@ func (t *teamService) FindTeamInfo(ctx context.Context, teamId, userId uuid.UUID
 	if member == nil {
 		return nil, nil
 	}
-
+	member.User = user
 	return &models.TeamInfoModel{
 		Team:   *team,
 		Member: *member,
@@ -259,7 +256,6 @@ func (t *teamService) FindTeamInfo(ctx context.Context, teamId, userId uuid.UUID
 }
 
 func (t *teamService) FindTeamInfoBySlug(ctx context.Context, slug string, userId uuid.UUID) (*models.TeamInfoModel, error) {
-	slog.InfoContext(ctx, "FindTeamInfoBySlug", "slug", slug, "userId", userId)
 	user, err := t.adapter.User().FindUserByID(ctx, userId)
 	// user, err := t.teamStore.FindUserByID(ctx, userId)
 	if err != nil {

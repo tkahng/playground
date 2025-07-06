@@ -174,43 +174,6 @@ type TeamMemberListInput struct {
 	SortParams
 }
 
-func (api *Api) GetUserTeamMembers(
-	ctx context.Context,
-	input *TeamMemberListInput,
-) (
-	*ApiPaginatedOutput[*TeamMember],
-	error,
-) {
-	info := contextstore.GetContextUserInfo(ctx)
-	if info == nil {
-		return nil, huma.Error401Unauthorized("unauthorized")
-	}
-	filter := &stores.TeamMemberListInput{}
-	filter.Page = input.Page
-	filter.PerPage = input.PerPage
-	filter.SortBy = input.SortBy
-	filter.SortOrder = input.SortOrder
-	teams, err := api.app.Team().FindTeamMembersByUserID(ctx, info.User.ID, filter)
-	if err != nil {
-		return nil, err
-	}
-	if len(teams) == 0 {
-		return nil, huma.Error500InternalServerError("teams not found")
-	}
-	count, err := api.app.Adapter().TeamMember().CountTeamMembers(ctx, &stores.TeamMemberFilter{
-		UserIds: []uuid.UUID{info.User.ID},
-	})
-	if err != nil {
-		return nil, err
-	}
-	return &ApiPaginatedOutput[*TeamMember]{
-		Body: ApiPaginatedResponse[*TeamMember]{
-			Data: mapper.Map(teams, FromTeamMemberModel),
-			Meta: ApiGenerateMeta(&input.PaginatedInput, count),
-		},
-	}, nil
-}
-
 type UserListTeamsParams struct {
 	PaginatedInput
 	SortParams
@@ -253,6 +216,7 @@ func (api *Api) GetUserTeams(
 		for idx := range teamIds {
 			team := teams[idx]
 			member := members[idx]
+			member.User = &info.User
 			teamWithMember := &TeamWithMember{
 				Team:   *FromTeamModel(team),
 				Member: FromTeamMemberModel(member),
