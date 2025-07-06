@@ -8,7 +8,7 @@ import { useTeam } from "@/hooks/use-team";
 import { getTeamBySlug } from "@/lib/queries";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
-import { createSearchParams, Navigate, Outlet, useParams } from "react-router";
+import { Navigate, Outlet, useParams } from "react-router";
 
 export default function TeamDashboardLayout() {
   const { user } = useAuthProvider();
@@ -49,7 +49,7 @@ export default function TeamDashboardLayout() {
       ]
     : [];
   const links = [
-    { to: RouteMap.ACCOUNT_OVERVIEW, title: "Dashboard", current: () => true },
+    { to: RouteMap.DASHBOARD, title: "Dashboard", current: () => false },
     ...admin,
   ] as LinkDto[];
 
@@ -71,10 +71,7 @@ export default function TeamDashboardLayout() {
     return (
       <Navigate
         to={{
-          pathname: "/team-select",
-          search: createSearchParams({
-            redirect_to: location.pathname + location.search,
-          }).toString(),
+          pathname: "/teams",
         }}
       />
     );

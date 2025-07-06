@@ -27,6 +27,7 @@ export const RouteMap = {
   PROTECTED_PRO: "/protected/pro",
   PROTECTED_ADVANCED: "/protected/advanced",
   DASHBOARD_KANBAN: "/kanban",
+  DASHBOARD: "/dashboard",
 
   TASK_PROJECTS: "/projects",
   TASKS_HOME: "/tasks",

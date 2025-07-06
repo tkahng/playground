@@ -1,4 +1,5 @@
 import { useAuthProvider } from "@/hooks/use-auth-provider";
+import { useTeam } from "@/hooks/use-team";
 import { useEffect, useRef } from "react";
 import {
   createSearchParams,
@@ -9,7 +10,9 @@ import {
 
 export default function AuthenticatedLayoutOutlet() {
   const location = useLocation();
+  const { pathname } = location;
   const { user, checkAuth } = useAuthProvider();
+  const { team, teamMember } = useTeam();
   const isMounted = useRef(false);
   useEffect(() => {
     if (!isMounted.current) {
@@ -36,6 +39,19 @@ export default function AuthenticatedLayoutOutlet() {
       />
     );
   }
-
+  if (user) {
+    if (pathname === "/") {
+      if (team && teamMember?.user_id === user.user.id) {
+        return <Navigate to={`/teams/${team.slug}/dashboard`} />;
+      } else {
+        return <Navigate to="/teams" />;
+      }
+    }
+    if (pathname === "/dashboard") {
+      if (team && teamMember?.user_id === user.user.id) {
+        return <Navigate to={`/teams/${team.slug}/dashboard`} />;
+      }
+    }
+  }
   return <Outlet context={{ user }} />;
 }

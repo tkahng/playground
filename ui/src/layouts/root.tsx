@@ -18,18 +18,25 @@ export default function RootLayout() {
   const isUser = user
     ? [
         {
-          to: RouteMap.ACCOUNT_OVERVIEW,
+          to: RouteMap.DASHBOARD,
           title: "Dashboard",
           current: () => false,
         },
       ]
     : [];
   const links = [...isUser, ...admin] as LinkDto[];
-  if (user && pathname === "/") {
-    if (team && teamMember?.user_id === user.user.id) {
-      return <Navigate to={`/teams/${team.slug}/dashboard`} />;
-    } else {
-      return <Navigate to="/team-select" />;
+  if (user) {
+    if (pathname === "/") {
+      if (team && teamMember?.user_id === user.user.id) {
+        return <Navigate to={`/teams/${team.slug}/dashboard`} />;
+      } else {
+        return <Navigate to="/teams" />;
+      }
+    }
+    if (pathname === "/dashboard") {
+      if (team && teamMember?.user_id === user.user.id) {
+        return <Navigate to={`/teams/${team.slug}/dashboard`} />;
+      }
     }
   }
   return (

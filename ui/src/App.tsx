@@ -38,13 +38,14 @@ import ProductsListPage from "./pages/admin/products/products-list";
 import SubscriptionsListPage from "./pages/admin/subscriptions/subscription-list";
 import ConfirmPasswordReset from "./pages/auth/confirm-password-reset";
 import ResetPasswordRequestPage from "./pages/auth/reset-password";
+import Dashboard from "./pages/dashboard";
 import NotAuthorizedPage from "./pages/not-authorized";
 import ProtectedRouteLayout from "./pages/protected-routes/protected-layout";
 import ProtectedRoutePage from "./pages/protected-routes/protected-route-page";
 import ProtectedRouteIndex from "./pages/protected-routes/route-index";
 import BillingSettingPage from "./pages/settings/billing-settings";
 import AccountSettingsPage from "./pages/settings/general-settings";
-import TeamSelect from "./pages/team-select";
+import TeamSelect from "./pages/teams";
 import TeamDashboard from "./pages/teams/dashboard";
 import ProjectEdit from "./pages/teams/projects/project-edit";
 import ProjectListPage from "./pages/teams/projects/projects-list";
@@ -52,7 +53,6 @@ import TaskLayout from "./pages/teams/projects/task-layout";
 import TeamBillingSettingPage from "./pages/teams/settings/team-billing-settings";
 import TeamSettingsPage from "./pages/teams/settings/team-general-settings";
 import TeamMembersSettingPage from "./pages/teams/settings/team-members-settings";
-import TeamListPage from "./pages/teams/team-list";
 import UserTeamInvitationRedirectPage from "./pages/teams/user-team-invitation-redirect-page";
 
 function TeamRoutes() {
@@ -157,7 +157,7 @@ function App() {
                 </Route>
                 {/* <Route path="billing" element={<BillingSettingPage />} /> */}
 
-                <Route element={<PageSectionLayout title="Settings" />}>
+                <Route element={<PageSectionLayout title="Account Settings" />}>
                   <Route path="settings" element={<AccountSettingsPage />} />
                   <Route
                     path="settings/billing"
@@ -165,14 +165,14 @@ function App() {
                   />
                 </Route>
               </Route>
-            </Route>
-
-            <Route element={<AuthenticatedLayoutOutlet />}>
               <Route
                 // dashboard
-                children={
-                  <Route path={`/team-select`} element={<TeamSelect />} />
-                }
+                children={<Route path={`/dashboard`} element={<Dashboard />} />}
+                element={<DashboardLayout />}
+              />
+              <Route
+                // dashboard
+                children={<Route path={`/teams`} element={<TeamSelect />} />}
                 element={<DashboardLayout />}
               />
               <Route
@@ -185,16 +185,8 @@ function App() {
                 }
                 element={<DashboardLayout />}
               />
-              <Route
-                // dashboard
-                path={`/teams`}
-                element={<DashboardLayout headerLinks={userDashboardLinks} />}
-              >
-                <Route element={<PageSectionLayout title="Teams" />}>
-                  <Route index element={<TeamListPage />} />
-                </Route>
-              </Route>
             </Route>
+
             {TeamRoutes()}
             <Route path={"/admin"} element={<AdminLayoutBase />}>
               <Route element={<AdminLayout headerLinks={adminHeaderLinks} />}>
