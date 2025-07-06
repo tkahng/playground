@@ -2,33 +2,32 @@ import { components } from "@/schema";
 
 export type SigninInput = components["schemas"]["SigninDto"];
 
-export type AuthenticatedDTO = components["schemas"]["UserInfoTokens"];
+export type UserInfoTokens = components["schemas"]["ApiUserInfoTokens"];
 export type SignupInput = components["schemas"]["SignupInput"];
 
 export type RefreshTokenInput = components["schemas"]["RefreshTokenInput"];
-export type RefreshTokenOutput = components["schemas"]["UserInfoTokens"];
 
-export type User = components["schemas"]["User"];
+export type User = components["schemas"]["ApiUser"];
 
-export type PriceIntervals = components["schemas"]["Price"]["interval"];
+export type PriceIntervals = components["schemas"]["StripePrice"]["interval"];
 
 export type BillingIntervals = Exclude<
   PriceIntervals,
   "week" | "day" | undefined
 >;
 
-export type RoleWithPermissions = components["schemas"]["RoleWithPermissions"];
+export type RoleWithPermissions = components["schemas"]["Role"];
 export type Role = components["schemas"]["Role"];
 export type Permission = components["schemas"]["Permission"];
 
-export type UserDetail = components["schemas"]["UserDetail"];
+export type UserDetail = components["schemas"]["ApiUser"];
 
 export type UserDetailWithRoles = {
   accounts: components["schemas"]["UserAccountOutput"][];
   roles: RoleWithPermissions[] | null;
   permissions: {
     created_at: string;
-    description?: string;
+    description?: string | null;
     id: string;
     is_directly_assigned: boolean;
     name: string;
@@ -45,12 +44,13 @@ export type UserDetailWithRoles = {
   updated_at: string;
 };
 
-export type SubscriptionWithPrice =
-  components["schemas"]["SubscriptionWithPrice"];
+export type StripeSubscription = components["schemas"]["StripeSubscription"];
 
-export type ProductWithPrices = components["schemas"]["StripeProductWithData"];
+export type SubscriptionWithPrice = StripeSubscription;
 
-export type Price = components["schemas"]["Price"];
+export type ProductWithPrices = components["schemas"]["StripeProduct"];
+
+export type Price = components["schemas"]["StripePrice"];
 
 export type UserPermissions = components["schemas"]["PermissionSource"];
 
@@ -59,3 +59,14 @@ export type ErrorModel = components["schemas"]["ErrorModel"];
 export type TaskStatus = components["schemas"]["Task"]["status"];
 
 export type UserWithAccounts = components["schemas"]["UserWithAccounts"];
+
+export type TeamMember = components["schemas"]["TeamMember"];
+
+export type TeamMemberRole = components["schemas"]["TeamMember"]["role"];
+export type Team = components["schemas"]["Team"];
+
+export type TeamWithMember = components["schemas"]["TeamWithMember"];
+export type TeamMemberState = {
+  currentMember: TeamMember | null;
+  members: TeamMember[];
+};

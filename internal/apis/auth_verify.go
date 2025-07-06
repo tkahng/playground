@@ -12,8 +12,8 @@ func (api *Api) Verify(ctx context.Context, input *OtpInput) (*struct{}, error) 
 	return verify(api, ctx, input)
 }
 
-func (h *Api) VerifyPost(ctx context.Context, input *struct{ Body *OtpInput }) (*struct{}, error) {
-	return verify(h, ctx, input.Body)
+func (api *Api) VerifyPost(ctx context.Context, input *struct{ Body *OtpInput }) (*struct{}, error) {
+	return verify(api, ctx, input.Body)
 }
 
 func verify(api *Api, ctx context.Context, input *OtpInput) (*struct{}, error) {

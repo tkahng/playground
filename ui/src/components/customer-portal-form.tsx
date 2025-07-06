@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { createBillingPortalSession } from "@/lib/queries";
+import { useTeam } from "@/hooks/use-team";
+import { createTeamBillingPortalSession } from "@/lib/queries";
 import { SubscriptionWithPrice } from "@/schema.types";
 import { ReactNode, useState } from "react";
 import { Link } from "react-router";
@@ -14,7 +15,8 @@ interface Props {
 
 export default function CustomerPortalForm({ subscription }: Props) {
   //   const router = useRouter();
-  const { user, checkAuth } = useAuthProvider();
+  const { user } = useAuthProvider();
+  const { team, teamMember } = useTeam();
   // const { pathname: currentPath } = useLocation();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -22,20 +24,25 @@ export default function CustomerPortalForm({ subscription }: Props) {
     subscription &&
     new Intl.NumberFormat("en-US", {
       style: "currency",
-      currency: subscription?.price?.currency!,
+      currency: subscription?.price?.currency,
       minimumFractionDigits: 0,
     }).format((subscription?.price?.unit_amount || 0) / 100);
 
   const handleStripePortalRequest = async () => {
-    await checkAuth(); // Ensure user is authenticated
     setIsSubmitting(true);
     if (!user) {
       setIsSubmitting(false);
       toast.error("Please login to open the customer portal.");
       return;
     }
-    const redirectUrl = await createBillingPortalSession(
-      user.tokens.access_token
+    if (!team) {
+      setIsSubmitting(false);
+      toast.error("Please join a team to open the customer portal.");
+      return;
+    }
+    const redirectUrl = await createTeamBillingPortalSession(
+      user.tokens.access_token,
+      team?.id
     );
     window.location.href = redirectUrl;
     setIsSubmitting(false);
@@ -57,7 +64,7 @@ export default function CustomerPortalForm({ subscription }: Props) {
               // variant="slim"
               onClick={handleStripePortalRequest}
               // loading={isSubmitting}
-              disabled={isSubmitting}
+              disabled={isSubmitting || teamMember?.role !== "owner"}
             >
               Open customer portal
             </Button>

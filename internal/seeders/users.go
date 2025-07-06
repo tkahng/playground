@@ -6,36 +6,36 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jaswdr/faker/v2"
-	"github.com/tkahng/authgo/internal/crudrepo"
-	"github.com/tkahng/authgo/internal/db"
+	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
-	"github.com/tkahng/authgo/internal/queries"
+	"github.com/tkahng/authgo/internal/repository"
+	"github.com/tkahng/authgo/internal/stores"
 	"github.com/tkahng/authgo/internal/tools/types"
 )
 
-func CreateUserFromEmails(ctx context.Context, dbx db.Dbx, emails ...string) ([]*models.User, error) {
+func CreateUserFromEmails(ctx context.Context, dbx database.Dbx, emails ...string) ([]*models.User, error) {
 	var users []models.User
 	for _, emails := range emails {
 		users = append(users, models.User{Email: emails})
 	}
 
-	res, err := crudrepo.User.Post(ctx, dbx, users)
+	res, err := repository.User.Post(ctx, dbx, users)
 	if err != nil {
 		return nil, err
 	}
 	return res, nil
 }
 
-func CreateUsers(ctx context.Context, dbx db.Dbx, count int) ([]*models.User, error) {
-	faker := faker.New().Internet()
+func CreateUsers(ctx context.Context, dbx database.Dbx, count int) ([]*models.User, error) {
+	internet := faker.New().Internet()
 	var users []models.User
 	for i := 0; i < count; i++ {
 		user := models.User{
-			Email: faker.Email(),
+			Email: internet.Email(),
 		}
 		users = append(users, user)
 	}
-	res, err := crudrepo.User.Post(ctx, dbx, users)
+	res, err := repository.User.Post(ctx, dbx, users)
 	if err != nil {
 		return nil, err
 	}
@@ -47,8 +47,9 @@ type CreateUserDto struct {
 	Provider models.Providers
 }
 
-func CreateUserWithAccountAndRole(ctx context.Context, dbx db.Dbx, count int, provider models.Providers, roleName string, faker faker.Internet) ([]*models.User, error) {
-	role, err := queries.FindOrCreateRole(ctx, dbx, roleName)
+func CreateUserWithAccountAndRole(ctx context.Context, dbx database.Dbx, count int, provider models.Providers, roleName string, faker faker.Internet) ([]*models.User, error) {
+	rbacStore := stores.NewDbRBACStore(dbx)
+	role, err := rbacStore.FindOrCreateRole(ctx, roleName)
 	if err != nil {
 		return nil, err
 	}
@@ -63,7 +64,7 @@ func CreateUserWithAccountAndRole(ctx context.Context, dbx db.Dbx, count int, pr
 		}
 		usersdto = append(usersdto, user)
 	}
-	users, err := crudrepo.User.Post(ctx, dbx, usersdto)
+	users, err := repository.User.Post(ctx, dbx, usersdto)
 	if err != nil {
 		return nil, err
 	}
@@ -96,18 +97,18 @@ func CreateUserWithAccountAndRole(ctx context.Context, dbx db.Dbx, count int, pr
 		userRoles = append(userRoles, userRole)
 	}
 
-	_, err = crudrepo.UserAccount.Post(ctx, dbx, accountsDto)
+	_, err = repository.UserAccount.Post(ctx, dbx, accountsDto)
 	if err != nil {
 		return nil, err
 	}
-	_, err = crudrepo.UserRole.Post(ctx, dbx, userRoles)
+	_, err = repository.UserRole.Post(ctx, dbx, userRoles)
 	if err != nil {
 		return nil, err
 	}
 	return users, nil
 }
 
-func CreateStripeProductPrices(ctx context.Context, dbx db.Dbx, count int) ([]*models.StripeProduct, error) {
+func CreateStripeProductPrices(ctx context.Context, dbx database.Dbx, count int) ([]*models.StripeProduct, error) {
 	var products []models.StripeProduct
 	for range count {
 		uid := uuid.NewString()
@@ -119,7 +120,7 @@ func CreateStripeProductPrices(ctx context.Context, dbx db.Dbx, count int) ([]*m
 		}
 		products = append(products, product)
 	}
-	res, err := crudrepo.StripeProduct.Post(ctx, dbx, products)
+	res, err := repository.StripeProduct.Post(ctx, dbx, products)
 	if err != nil {
 		return nil, err
 	}
@@ -137,7 +138,7 @@ func CreateStripeProductPrices(ctx context.Context, dbx db.Dbx, count int) ([]*m
 		}
 		prices = append(prices, price)
 	}
-	newPrices, err := crudrepo.StripePrice.Post(ctx, dbx, prices)
+	newPrices, err := repository.StripePrice.Post(ctx, dbx, prices)
 	if err != nil {
 		return nil, err
 	}

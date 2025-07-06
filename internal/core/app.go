@@ -1,25 +1,40 @@
 package core
 
 import (
-	"context"
-
 	"github.com/tkahng/authgo/internal/conf"
-	"github.com/tkahng/authgo/internal/db"
-	"github.com/tkahng/authgo/internal/payment"
+	"github.com/tkahng/authgo/internal/database"
+	"github.com/tkahng/authgo/internal/jobs"
+	"github.com/tkahng/authgo/internal/services"
+	"github.com/tkahng/authgo/internal/stores"
 	"github.com/tkahng/authgo/internal/tools/filesystem"
-	"github.com/tkahng/authgo/internal/tools/mailer"
 )
 
 type App interface {
 	Cfg() *conf.EnvConfig
-	Db() db.Dbx
-	Fs() *filesystem.FileSystem
-	NewChecker(ctx context.Context) ConstraintChecker
+
 	Settings() *conf.AppOptions
-	NewMailClient() mailer.Mailer
-	EncryptionEnv() string
 
-	Payment() *payment.StripeService
+	Db() database.Dbx
 
-	Auth() Authenticator
+	Fs() filesystem.FileSystem
+
+	Rbac() services.RBACService
+
+	Payment() services.PaymentService
+
+	Auth() services.AuthService
+
+	Team() services.TeamService
+
+	TeamInvitation() services.TeamInvitationService
+
+	Checker() services.ConstraintChecker
+
+	Task() services.TaskService
+
+	Adapter() stores.StorageAdapterInterface
+
+	JobManager() jobs.JobManager
+
+	JobService() services.JobService
 }

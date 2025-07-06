@@ -4,7 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/authgo/internal/models"
+	"github.com/tkahng/authgo/internal/services"
 )
 
 type RequiredPasswordField string
@@ -22,11 +23,16 @@ type SignupInput struct {
 func (api *Api) SignUp(ctx context.Context, input *struct{ Body SignupInput }) (*AuthenticatedInfoResponse, error) {
 	action := api.app.Auth()
 	password := input.Body.Password.String()
-	params := &shared.AuthenticationInput{
+	hash, err := action.Password().HashPassword(password)
+	if err != nil {
+		return nil, fmt.Errorf("error hashing password: %w", err)
+	}
+	params := &services.AuthenticationInput{
 		Email:             input.Body.Email,
-		Provider:          shared.ProvidersCredentials,
+		Provider:          models.ProvidersCredentials,
 		Password:          &password,
-		Type:              shared.ProviderTypeCredentials,
+		HashPassword:      &hash,
+		Type:              models.ProviderTypeCredentials,
 		Name:              input.Body.Name,
 		ProviderAccountID: input.Body.Email,
 	}
@@ -42,6 +48,6 @@ func (api *Api) SignUp(ctx context.Context, input *struct{ Body SignupInput }) (
 		return nil, fmt.Errorf("error creating auth dto: %w", err)
 	}
 	return &AuthenticatedInfoResponse{
-		Body: *dto,
+		Body: *ToApiUserInfoTokens(dto),
 	}, nil
 }

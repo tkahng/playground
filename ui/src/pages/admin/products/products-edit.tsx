@@ -12,40 +12,38 @@ import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { ConfirmDialog, useDialog } from "@/hooks/use-dialog";
 import {
   adminStripeProduct,
-  adminStripeProductRolesDelete,
+  adminStripeProductPermissionsDelete,
 } from "@/lib/queries";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronLeft, Trash } from "lucide-react";
 import { Link, useParams } from "react-router";
 import { toast } from "sonner";
-import { ProductRolesDialog } from "./product-roles-dialog";
+import { ProductPermissionsDialog } from "./product-permissions-dialog";
 
 export default function ProductEditPage() {
-  const { user, checkAuth } = useAuthProvider();
+  const { user } = useAuthProvider();
 
   const queryClient = useQueryClient();
   const { productId } = useParams<{ productId: string }>();
   const { data, isError, isLoading, error } = useQuery({
     queryKey: ["product", productId],
     queryFn: async () => {
-      await checkAuth(); // Ensure user is authenticated
       if (!user?.tokens.access_token || !productId) {
         throw new Error("Missing access token");
       }
       return adminStripeProduct(user.tokens.access_token, productId);
     },
   });
-  const deleteProductRolesMutation = useMutation({
-    mutationFn: async (roleid: string) => {
-      await checkAuth(); // Ensure user is authenticated
+  const deleteProductPermissionsMutation = useMutation({
+    mutationFn: async (permissionId: string) => {
       if (!user?.tokens.access_token || !productId) {
         throw new Error("Missing access token");
       }
       // Call the API to delete the role
-      return adminStripeProductRolesDelete(
+      return adminStripeProductPermissionsDelete(
         user.tokens.access_token,
         productId,
-        roleid
+        permissionId
       );
     },
     onSuccess: async () => {
@@ -81,8 +79,8 @@ export default function ProductEditPage() {
       </Link>
       <h1 className="text-2xl font-bold">{data?.name}</h1>
       <div className="space-y-4 flex flex-row space-x-16">
-        <p className="flex-1">Add Roles to this product.</p>
-        <ProductRolesDialog userDetail={data} />
+        <p className="flex-1">Add Permissions to this product.</p>
+        <ProductPermissionsDialog product={data} />
       </div>
       <DataTable
         columns={[
@@ -101,7 +99,7 @@ export default function ProductEditPage() {
                 <div className="flex flex-row gap-2 justify-end">
                   <DeleteButton
                     onDelete={() => {
-                      deleteProductRolesMutation.mutate(row.original.id);
+                      deleteProductPermissionsMutation.mutate(row.original.id);
                     }}
                     permissionId={row.original.id}
                     // disabled={!row.original.is_directly_assigned}
@@ -111,7 +109,7 @@ export default function ProductEditPage() {
             },
           },
         ]}
-        data={data?.roles || []}
+        data={data?.permissions || []}
       />
     </div>
   );

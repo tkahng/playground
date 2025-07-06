@@ -1,148 +1,109 @@
-import { useLocalStorage } from "@/hooks/use-local-storage";
-import { client } from "@/lib/client";
-import { AuthenticatedDTO, SigninInput, SignupInput } from "@/schema.types";
+import { useNullableLocalStorage } from "@/hooks/use-local-storage";
+import { refreshToken, signIn } from "@/lib/queries";
+import { SigninInput, SignupInput, UserInfoTokens } from "@/schema.types";
 import { jwtDecode } from "jwt-decode";
-import { createContext, useMemo } from "react";
-
-interface AuthProviderProps {
-  children?: React.ReactNode;
-}
+import React from "react";
 
 export interface AuthContextType {
-  // client():
-  user: AuthenticatedDTO | null;
-  signUp: ({ email, name, password }: SignupInput) => Promise<void>;
-  login: ({ email, password }: SigninInput) => Promise<any>;
+  user: UserInfoTokens | null;
+  // setUser: (user: UserInfoTokens | null) => void;
+  signUp: (args: SignupInput) => Promise<UserInfoTokens>;
+  login: (args: SigninInput) => Promise<UserInfoTokens>;
   logout: () => Promise<void>;
-  checkError: (error: any) => Promise<void>;
   checkAuth: () => Promise<void>;
-  getOrRefreshToken: (token?: string) => Promise<AuthenticatedDTO>;
+  getOrRefreshToken: (token?: string) => Promise<UserInfoTokens>;
 }
-export const AuthContext = createContext<AuthContextType>({
+
+export const AuthContext = React.createContext<AuthContextType>({
   user: null,
-  signUp: async () => {},
-  login: async () => {},
-  logout: async () => {},
-  checkError: async () => {},
-  checkAuth: async () => {},
+  // setUser: () => {},
+  signUp: async () => {
+    throw new Error("Not implemented");
+  },
+  login: async () => {
+    throw new Error("Not implemented");
+  },
+  logout: async () => {
+    throw new Error("Not implemented");
+  },
   getOrRefreshToken: async () => {
+    throw new Error("Not implemented");
+  },
+  checkAuth: async () => {
     throw new Error("Not implemented");
   },
 });
 
-export const AuthProvider = ({ children }: AuthProviderProps) => {
-  const [user, setUser] = useLocalStorage<AuthenticatedDTO | null>(
-    "auth",
+export const AuthProvider: React.FC<{
+  children: React.ReactNode;
+}> = ({ children }) => {
+  const [user, setUser] = useNullableLocalStorage<UserInfoTokens>(
+    "currentUser",
     null
   );
-  const signUp = async ({
-    email,
-    name,
-    password,
-  }: SignupInput): Promise<void> => {
-    const { data, error } = await client.POST("/api/auth/signup", {
-      body: {
-        email,
-        name,
-        password,
-      },
-    });
-    if (error) {
-      throw error;
-    }
+  // const values = React.useMemo(() => {
+  const signUp = async (args: SignupInput): Promise<UserInfoTokens> => {
+    const data = await signIn(args);
     setUser(data);
-    return Promise.resolve();
+    return data;
   };
-  const login = async ({ email, password }: SigninInput): Promise<void> => {
-    const { data, error } = await client.POST("/api/auth/signin", {
-      body: {
-        email,
-        password,
-      },
-    });
-    if (error) {
-      throw error;
-    }
+  const login = async (args: SigninInput): Promise<UserInfoTokens> => {
+    const data = await signIn(args);
     setUser(data);
-    return Promise.resolve();
+    return data;
   };
-
-  const logout = async (): Promise<void> => {
+  const logout = async () => {
     setUser(null);
-    return Promise.resolve();
   };
-
-  const checkError = async (error: any) => {
-    if (
-      error.status === 401 ||
-      error.status === 403 ||
-      // Supabase returns 400 when the session is missing, we need to check this case too.
-      (error.status === 400 && error.name === "AuthSessionMissingError")
-    ) {
-      return Promise.reject();
-    }
-
-    return Promise.resolve();
-  };
-
   const getOrRefreshToken = async (token?: string) => {
-    if (token) {
-      const { data, error } = await client.POST("/api/auth/refresh-token", {
-        body: {
-          refresh_token: token,
-        },
-      });
-      if (error) {
-        console.error("Error refreshing token:", error);
-        setUser(null);
-        throw error;
-      }
-      setUser(data);
-      return data;
-    }
-    if (!user) {
-      return Promise.reject();
-    } else {
-      const decoded = jwtDecode(user.tokens.access_token) as any;
-      if (decoded.exp <= Math.round(Date.now() / 1000)) {
-        const { data, error } = await client.POST("/api/auth/refresh-token", {
-          body: {
-            refresh_token: user.tokens.refresh_token,
-          },
-        });
-        if (error) {
-          setUser(null);
-          throw error;
-        }
+    try {
+      if (token) {
+        const data = await refreshToken({ refresh_token: token });
         setUser(data);
-        return user;
-      } else {
-        return user;
+        return data;
       }
+      if (!user) {
+        return Promise.reject();
+      } else {
+        const decoded = jwtDecode(user.tokens.access_token);
+        if (!decoded?.exp) {
+          console.error("Token does not have an expiration time.");
+          return Promise.reject();
+        }
+        if (decoded?.exp <= Math.round(Date.now() / 1000)) {
+          const data = await refreshToken({
+            refresh_token: user.tokens.refresh_token,
+          });
+          setUser(data);
+          return data;
+        } else {
+          return user;
+        }
+      }
+    } catch (error) {
+      console.error("Error refreshing token:", error);
+      setUser(null);
+      return Promise.reject();
     }
   };
-
   const checkAuth = async () => {
     if (!user) {
       return;
     }
     try {
-      await getOrRefreshToken();
-    } catch (error) {}
+      await getOrRefreshToken(user.tokens.refresh_token);
+    } catch (error) {
+      console.error("Error checking auth:", error);
+      setUser(null);
+      return Promise.reject();
+    }
   };
 
-  const value = useMemo(
-    () => ({
-      user,
-      signUp,
-      login,
-      logout,
-      checkAuth,
-      checkError,
-      getOrRefreshToken,
-    }),
-    [user]
+  return (
+    <AuthContext.Provider
+      value={{ user, signUp, login, logout, checkAuth, getOrRefreshToken }}
+    >
+      {children}
+    </AuthContext.Provider>
   );
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

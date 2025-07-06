@@ -4,32 +4,52 @@ import (
 	"context"
 	"fmt"
 	"slices"
+	"time"
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/models"
-	"github.com/tkahng/authgo/internal/queries"
-	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/authgo/internal/services"
+	"github.com/tkahng/authgo/internal/stores"
 	"github.com/tkahng/authgo/internal/tools/mapper"
+	"github.com/tkahng/authgo/internal/tools/types"
+	"github.com/tkahng/authgo/internal/tools/utils"
 )
 
-type UserDetail struct {
-	*shared.User
-	Roles       []*shared.RoleWithPermissions `json:"roles,omitempty" required:"false"`
-	Accounts    []*shared.UserAccountOutput   `json:"accounts,omitempty" required:"false"`
-	Permissions []*shared.Permission          `json:"permissions,omitempty" required:"false"`
+type UserListFilter struct {
+	PaginatedInput
+	SortParams
+	Providers     []models.Providers        `query:"providers,omitempty" required:"false" uniqueItems:"true" minimum:"1" maximum:"100" enum:"google,apple,facebook,github,credentials"`
+	Q             string                    `query:"q,omitempty" required:"false"`
+	Ids           []string                  `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+	Emails        []string                  `query:"emails,omitempty" required:"false" minimum:"1" maximum:"100" format:"email"`
+	RoleIds       []string                  `query:"role_ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+	EmailVerified types.OptionalParam[bool] `query:"email_verified,omitempty" required:"false"`
+	Expand        []string                  `query:"expand,omitempty" required:"false" minimum:"1" uniqueItems:"true" enum:"roles,permissions,accounts,subscriptions"`
 }
 
 func (api *Api) AdminUsers(ctx context.Context, input *struct {
-	shared.UserListParams
-}) (*shared.PaginatedOutput[*UserDetail], error) {
-	db := api.app.Db()
-	fmt.Printf("AdminUsers: %v", input.UserListParams)
-	users, err := queries.ListUsers(ctx, db, &input.UserListParams)
+	UserListFilter
+}) (*ApiPaginatedOutput[*ApiUser], error) {
+	adapter := api.app.Adapter()
+	fmt.Printf("AdminUsers: %v", input.UserListFilter)
+	filter := &stores.UserFilter{}
+	filter.Page = input.Page
+	filter.PerPage = input.PerPage
+	filter.SortBy = input.SortBy
+	filter.SortOrder = input.SortOrder
+	filter.Q = input.Q
+	filter.Providers = input.Providers
+	filter.Ids = utils.ParseValidUUIDs(input.Ids...)
+	filter.Emails = input.Emails
+	filter.RoleIds = utils.ParseValidUUIDs(input.RoleIds...)
+	filter.EmailVerified = input.EmailVerified
+
+	users, err := adapter.User().FindUsers(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
-	count, err := queries.CountUsers(ctx, db, &input.UserListFilter)
+	count, err := adapter.User().CountUsers(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -40,7 +60,7 @@ func (api *Api) AdminUsers(ctx context.Context, input *struct {
 		userIdsstring = append(userIdsstring, user.ID.String())
 	}
 	if slices.Contains(input.Expand, "roles") {
-		roles, err := queries.GetUserRoles(ctx, db, userIds...)
+		roles, err := adapter.Rbac().GetUserRoles(ctx, userIds...)
 		if err != nil {
 			return nil, err
 		}
@@ -49,18 +69,8 @@ func (api *Api) AdminUsers(ctx context.Context, input *struct {
 		}
 	}
 
-	if slices.Contains(input.Expand, "permissions") {
-		perms, err := queries.GetUserPermissions(ctx, db, userIds...)
-		if err != nil {
-			return nil, err
-		}
-		for idx, user := range users {
-			user.Permissions = perms[idx]
-		}
-	}
-
 	if slices.Contains(input.Expand, "accounts") {
-		accounts, err := queries.GetUserAccounts(ctx, db, userIds...)
+		accounts, err := adapter.UserAccount().GetUserAccounts(ctx, userIds...)
 		if err != nil {
 			return nil, err
 		}
@@ -69,65 +79,82 @@ func (api *Api) AdminUsers(ctx context.Context, input *struct {
 		}
 	}
 
-	return &shared.PaginatedOutput[*UserDetail]{
-		Body: shared.PaginatedResponse[*UserDetail]{
-			Data: mapper.Map(users, func(user *models.User) *UserDetail {
-				return &UserDetail{
-					User:        shared.FromCrudUser(user),
-					Roles:       mapper.Map(user.Roles, shared.FromCrudRoleWithPermissions),
-					Accounts:    mapper.Map(user.Accounts, shared.FromCrudUserAccountOutput),
-					Permissions: mapper.Map(user.Permissions, shared.FromCrudPermission),
-				}
-			}),
-			Meta: shared.GenerateMeta(input.PaginatedInput, count),
+	return &ApiPaginatedOutput[*ApiUser]{
+		Body: ApiPaginatedResponse[*ApiUser]{
+			Data: mapper.Map(users, FromUserModel),
+			Meta: ApiGenerateMeta(&input.PaginatedInput, count),
 		},
 	}, nil
 }
 
+type UserMutationInput struct {
+	Email           string     `json:"email" required:"true" format:"email" maxLength:"100"`
+	Name            *string    `json:"name,omitempty" required:"false" maxLength:"100"`
+	Image           *string    `json:"image,omitempty" required:"false" format:"uri" maxLength:"200"`
+	EmailVerifiedAt *time.Time `json:"email_verified_at,omitempty" required:"false" format:"date-time"`
+}
+
+type UserCreateInput struct {
+	*UserMutationInput
+	Password string `json:"password" required:"true" minLength:"8" maxLength:"100"`
+}
+
 func (api *Api) AdminUsersCreate(ctx context.Context, input *struct {
-	Body shared.UserCreateInput
+	Body UserCreateInput
 }) (*struct {
-	Body *shared.User
+	Body *ApiUser
 }, error) {
-	db := api.app.Db()
 	action := api.app.Auth()
-	existingUser, err := queries.FindUserByEmail(ctx, db, input.Body.Email)
+	adapter := api.app.Adapter()
+	existingUser, err := adapter.User().FindUser(ctx, &stores.UserFilter{
+		Emails: []string{input.Body.Email},
+	})
 	if err != nil {
 		return nil, err
 	}
 	if existingUser != nil {
 		return nil, huma.Error409Conflict("User already exists")
 	}
-	user, err := action.Authenticate(ctx, &shared.AuthenticationInput{
+	user, err := action.Authenticate(ctx, &services.AuthenticationInput{
 		Email:             input.Body.Email,
-		Provider:          shared.ProvidersCredentials,
+		Provider:          models.ProvidersCredentials,
 		Password:          &input.Body.Password,
-		Type:              shared.ProviderTypeCredentials,
+		Type:              models.ProviderTypeCredentials,
 		ProviderAccountID: input.Body.Email,
 		EmailVerifiedAt:   input.Body.EmailVerifiedAt,
 	})
 	if err != nil {
 		return nil, err
 	}
-	return &struct{ Body *shared.User }{Body: user}, nil
+	return &struct {
+		Body *ApiUser
+	}{
+		Body: FromUserModel(user),
+	}, nil
 
 }
 
 func (api *Api) AdminUsersDelete(ctx context.Context, input *struct {
 	ID uuid.UUID `path:"user-id" format:"uuid" required:"true"`
 }) (*struct{}, error) {
-	db := api.app.Db()
-	checker := api.app.NewChecker(ctx)
-	err := checker.CannotBeSuperUserID(input.ID)
+	checker := api.app.Checker()
+	adapter := api.app.Adapter()
+	ok, err := checker.CannotBeSuperUserID(ctx, input.ID)
 	if err != nil {
 		return nil, err
+	}
+	if !ok {
+		return nil, huma.Error400BadRequest("Cannot delete super user")
 	}
 	// Check if the user has any active subscriptions
-	err = checker.CannotHaveValidSubscription(input.ID)
+	ok, err = checker.CannotHaveValidUserSubscription(ctx, input.ID)
 	if err != nil {
 		return nil, err
 	}
-	err = queries.DeleteUsers(ctx, db, input.ID)
+	if !ok {
+		return nil, huma.Error400BadRequest("Cannot delete user with active subscription")
+	}
+	err = adapter.User().DeleteUser(ctx, input.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -136,10 +163,21 @@ func (api *Api) AdminUsersDelete(ctx context.Context, input *struct {
 
 func (api *Api) AdminUsersUpdate(ctx context.Context, input *struct {
 	ID   uuid.UUID `path:"user-id" format:"uuid" required:"true"`
-	Body shared.UserMutationInput
+	Body UserMutationInput
 }) (*struct{}, error) {
-	db := api.app.Db()
-	err := queries.UpdateUser(ctx, db, input.ID, &input.Body)
+	adapter := api.app.Adapter()
+	user, err := adapter.User().FindUserByID(ctx, input.ID)
+	if err != nil {
+		return nil, err
+	}
+	if user == nil {
+		return nil, huma.Error404NotFound("User not found")
+	}
+	user.Email = input.Body.Email
+	user.Name = input.Body.Name
+	user.Image = input.Body.Image
+	user.EmailVerifiedAt = input.Body.EmailVerifiedAt
+	err = adapter.User().UpdateUser(ctx, user)
 	if err != nil {
 		return nil, err
 	}
@@ -154,13 +192,15 @@ func (api *Api) AdminUsersUpdatePassword(ctx context.Context, input *struct {
 	ID   uuid.UUID `path:"user-id" format:"uuid" required:"true"`
 	Body UpdateUserPasswordInput
 }) (*struct{}, error) {
-	db := api.app.Db()
-	checker := api.app.NewChecker(ctx)
-	err := checker.CannotBeSuperUserID(input.ID)
+	checker := api.app.Checker()
+	ok, err := checker.CannotBeSuperUserID(ctx, input.ID)
 	if err != nil {
 		return nil, err
 	}
-	err = queries.UpdateUserPassword(ctx, db, input.ID, input.Body.Password)
+	if !ok {
+		return nil, huma.Error400BadRequest("Cannot update super user password")
+	}
+	err = api.app.Adapter().UserAccount().UpdateUserPassword(ctx, input.ID, input.Body.Password)
 	if err != nil {
 		return nil, err
 	}
@@ -169,11 +209,10 @@ func (api *Api) AdminUsersUpdatePassword(ctx context.Context, input *struct {
 
 func (api *Api) AdminUsersGet(ctx context.Context, input *struct {
 	UserID uuid.UUID `path:"user-id" json:"user_id" format:"uuid" required:"true"`
-}) (*struct{ Body *shared.User }, error) {
-	db := api.app.Db()
-	user, err := queries.FindUserById(ctx, db, input.UserID)
+}) (*struct{ Body *ApiUser }, error) {
+	user, err := api.app.Adapter().User().FindUserByID(ctx, input.UserID)
 	if err != nil {
 		return nil, err
 	}
-	return &struct{ Body *shared.User }{Body: shared.FromCrudUser(user)}, nil
+	return &struct{ Body *ApiUser }{Body: FromUserModel(user)}, nil
 }

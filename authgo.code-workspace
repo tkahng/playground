@@ -1,25 +1,35 @@
 {
   "folders": [
     {
-      "name": "internal",
-      "path": "internal"
+      "name": "authgo",
+      "path": "."
     },
     {
       "name": "ui",
       "path": "ui"
-    },
-    {
-      "name": "authgo",
-      "path": "."
     }
   ],
   "settings": {
+    "[yaml]": {
+      "editor.defaultFormatter": "redhat.vscode-yaml",
+      "editor.insertSpaces": true,
+      "editor.tabSize": 2,
+      "editor.autoIndent": "keep",
+      "diffEditor.ignoreTrimWhitespace": false,
+      "editor.defaultColorDecorators": "never",
+      "editor.quickSuggestions": {
+        "strings": true,
+        "other": true,
+        "comments": false
+      }
+    },
     "git.ignoredRepositories": ["/opt/homebrew/.git"],
     "editor.formatOnSave": true,
     "editor.quickSuggestions": {
       "strings": true
     },
     "files.exclude": {
+      "ui": true,
       "/opt/homebrew/": true
     },
     "explorer.excludeGitIgnore": false,
@@ -32,9 +42,16 @@
       "editor.codeLens": true,
       "editor.codeActionWidget.includeNearbyQuickFixes": true
     },
-    "go.lintOnSave": "file",
+
     "go.lintTool": "golangci-lint",
-    "go.lintFlags": ["--path-mode=abs", "--fast-only"],
+    "go.lintOnSave": "workspace",
+    "go.lintFlags": [
+      "--path-mode=abs",
+      "--fast-only",
+      "--fix",
+      "-c",
+      ".golangci-lint.yml"
+    ],
     "go.formatTool": "custom",
     "go.alternateTools": {
       "customFormatter": "golangci-lint"
@@ -46,6 +63,7 @@
       "editor.formatOnSave": true,
       "editor.defaultFormatter": "mtxr.sqltools"
     },
+    "editor.formatOnSaveMode": "file",
     "[json]": {
       "editor.defaultFormatter": "esbenp.prettier-vscode",
       "editor.formatOnSave": true
@@ -54,7 +72,6 @@
       "editor.defaultFormatter": "esbenp.prettier-vscode",
       "editor.formatOnSave": true
     },
-    "editor.defaultFormatter": "esbenp.prettier-vscode",
     "editor.formatOnPaste": true,
     "editor.codeActionsOnSave": {
       "source.fixAll": "always",
@@ -81,6 +98,7 @@
     },
     "gopls": {
       "ui.semanticTokens": false
+      // "formatting.gofumpt": true
     },
     "editor.codeLens": true,
     "[typescript]": {
@@ -103,6 +121,9 @@
       "editor.codeLens": true,
       "editor.gotoLocation.multipleTypeDefinitions": "gotoAndPeek"
     },
+    "sqltools.queryParams.enableReplace": false, // enables string replacement.
+    // the following regex, will match named params in your variables files
+    "sqltools.queryParams.regex": "\\$[\\d]+|([@:$][\\w]+)",
     "sqltools.connections": [
       {
         "previewLimit": 50,
@@ -127,8 +148,24 @@
       "*": true,
       "plaintext": false,
       "markdown": false,
-      "scminput": false
+      "scminput": false,
+      "go": true
     },
-    "github.copilot.nextEditSuggestions.enabled": true
+    "github.copilot.nextEditSuggestions.enabled": true,
+    "go.coverMode": "atomic",
+    "go.coverOnSingleTestFile": true,
+    "go.coverOnSingleTest": true,
+    "go.coverShowCounts": true,
+    "sqltools.results.reuseTabs": "connection",
+    "workbench.editor.enablePreviewFromCodeNavigation": true,
+    "workbench.editor.enablePreviewFromQuickOpen": true,
+    "workbench.editor.highlightModifiedTabs": true,
+    "yaml.schemas": {
+      "https://golangci-lint.run/jsonschema/golangci.jsonschema.json": "file:///Users/tkahng/GitHub/trk-go/authgo/.golangci-lint.yml"
+    },
+    "explorer.fileNesting.enabled": true,
+    "gitlens.views.repositories.pullRequests.enabled": false,
+    "gitlens.views.repositories.autoRefresh": true,
+    "gitlens.views.remotes.pullRequests.enabled": false
   }
 }

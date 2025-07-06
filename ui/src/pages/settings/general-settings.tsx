@@ -12,7 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { GetError } from "@/lib/get-erro";
+import { GetError } from "@/lib/get-error";
 import {
   deleteUser,
   getMe,
@@ -31,7 +31,7 @@ import { z } from "zod";
 
 const formSchema = z.object({
   name: z.string().min(1).optional(),
-  image: z.string().url().optional(),
+  image: z.string().nullable().optional(),
 });
 
 const resetPasswordSchema = z.object({
@@ -40,12 +40,11 @@ const resetPasswordSchema = z.object({
 });
 
 export default function AccountSettingsPage() {
-  const [_, setIsPending] = useState(false);
-  const { user, checkAuth } = useAuthProvider();
+  const [, setIsPending] = useState(false);
+  const { user } = useAuthProvider();
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["auth/me"],
     queryFn: async () => {
-      await checkAuth(); // Ensure user is authenticated
       if (!user) {
         throw new Error("User not found");
       }
@@ -58,7 +57,6 @@ export default function AccountSettingsPage() {
   const queryClient = useQueryClient();
   const mutation = useMutation({
     mutationFn: async (formData: z.infer<typeof formSchema>) => {
-      await checkAuth(); // Ensure user is authenticated
       if (!user) {
         throw new Error("User not found");
       }
@@ -73,19 +71,18 @@ export default function AccountSettingsPage() {
       });
       toast.success("Profile updated successfully");
     },
-    onError: (error: any) => {
+    onError: (error) => {
       toast.error(`Failed to update Profile: ${error.message}`);
     },
   });
   const deleteUserMutation = useMutation({
     mutationFn: async () => {
-      await checkAuth(); // Ensure user is authenticated
       if (!user) {
         throw new Error("User not found");
       }
       await deleteUser(user.tokens.access_token);
     },
-    onError: (error: any) => {
+    onError: (error) => {
       const err = GetError(error);
       if (err) {
         if (err.errors?.length) {
@@ -104,7 +101,6 @@ export default function AccountSettingsPage() {
   });
   const resetPasswordMutation = useMutation({
     mutationFn: async (formData: z.infer<typeof resetPasswordSchema>) => {
-      await checkAuth(); // Ensure user is authenticated
       if (!user) {
         throw new Error("User not found");
       }
@@ -115,7 +111,7 @@ export default function AccountSettingsPage() {
       );
       toast.success("Password reset successfully");
     },
-    onError: (error: any) => {
+    onError: (error) => {
       const err = GetError(error);
       if (err) {
         if (err.errors?.length) {
@@ -136,7 +132,6 @@ export default function AccountSettingsPage() {
   });
   const requestVerificationEmailMutation = useMutation({
     mutationFn: async () => {
-      await checkAuth(); // Ensure user is authenticated
       if (!user) {
         throw new Error("User not found");
       }
@@ -149,7 +144,7 @@ export default function AccountSettingsPage() {
       });
       toast.success("Verification email sent successfully");
     },
-    onError: (error: any) => {
+    onError: (error) => {
       setIsPending(false);
       const err = GetError(error);
       if (err) {
@@ -163,6 +158,7 @@ export default function AccountSettingsPage() {
   });
 
   const requestVerificationEmail = () => {
+    setIsPending(true);
     requestVerificationEmailMutation.mutate();
   };
 
@@ -178,7 +174,7 @@ export default function AccountSettingsPage() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: data?.name ?? undefined,
-      image: data?.image ?? undefined,
+      image: data?.image,
     },
   });
   const onResetPasswordSubmut = (
@@ -190,13 +186,11 @@ export default function AccountSettingsPage() {
     mutation.mutate(values);
   };
   useEffect(() => {
-    if (data) {
-      form.reset({
-        name: data.name || "",
-        image: data.image || "",
-      });
-    }
-  }, [data, form.reset]);
+    form.reset({
+      name: data?.name || "",
+      image: data?.image || "",
+    });
+  }, [data, form]);
   if (isLoading) return <p>Loading...</p>;
   if (isError) return <p>Error: {error.message}</p>;
   if (!data) return <p>User not found</p>;
@@ -250,7 +244,12 @@ export default function AccountSettingsPage() {
                 <FormItem>
                   <FormLabel>Image</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="Image" type="url" />
+                    <Input
+                      {...field}
+                      placeholder="Image"
+                      type="url"
+                      value={field.value || ""}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

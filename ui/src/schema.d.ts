@@ -113,7 +113,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/admin/products/{product-id}/roles": {
+    "/api/admin/products/{product-id}/permissions": {
         parameters: {
             query?: never;
             header?: never;
@@ -123,17 +123,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Create product roles
-         * @description Create product roles
+         * Create product permissions
+         * @description Create product permissions
          */
-        post: operations["admin-create-product-roles"];
+        post: operations["admin-create-product-permissions"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/admin/products/{product-id}/roles/{role-id}": {
+    "/api/admin/products/{product-id}/permissions/{permission-id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -144,10 +144,10 @@ export interface paths {
         put?: never;
         post?: never;
         /**
-         * Delete product roles
-         * @description Delete product roles
+         * Delete product permissions
+         * @description Delete product permissions
          */
-        delete: operations["admin-delete-product-roles"];
+        delete: operations["admin-delete-product-permissions"];
         options?: never;
         head?: never;
         patch?: never;
@@ -213,11 +213,7 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /**
-         * Update role permissions
-         * @description Update role permissions
-         */
-        put: operations["admin-roles-update-permissions"];
+        put?: never;
         /**
          * Create role permissions
          * @description Create role permissions
@@ -433,11 +429,7 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /**
-         * Update user roles
-         * @description Update user roles
-         */
-        put: operations["admin-update-user-roles"];
+        put?: never;
         /**
          * Create user roles
          * @description Create user roles
@@ -789,26 +781,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/notifications/sse": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Notifications SSE
-         * @description Notifications SSE
-         */
-        get: operations["notifications-sse"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/permissions": {
         parameters: {
             query?: never;
@@ -869,86 +841,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/stripe/billing-portal": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * billing-portal
-         * @description billing-portals
-         */
-        post: operations["stripe-billing-portal"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/stripe/checkout-session": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * create checkout session
-         * @description create checkout session
-         */
-        post: operations["create-checkout-session"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/stripe/checkout-session/{checkoutSessionId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * get checkout session
-         * @description get checkout session
-         */
-        get: operations["get-checkout-session"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/stripe/my-subscriptions": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * stripe-my-subscriptions
-         * @description stripe-my-subscriptions
-         */
-        get: operations["stripe-my-subscriptions"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/stripe/products": {
         parameters: {
             query?: never;
@@ -989,7 +881,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/task-projects": {
+    "/api/subscriptions/active": {
         parameters: {
             query?: never;
             header?: never;
@@ -997,23 +889,19 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Task project list
-         * @description List of task projects
+         * subscriptions-active
+         * @description get active user subscriptions
          */
-        get: operations["task-project-list"];
+        get: operations["subscriptions-active"];
         put?: never;
-        /**
-         * Task project create
-         * @description Create a new task project
-         */
-        post: operations["task-project-create"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/task-projects/ai": {
+    "/api/subscriptions/billing-portals": {
         parameters: {
             query?: never;
             header?: never;
@@ -1023,10 +911,50 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Task project create with ai
-         * @description Create a new task project with ai
+         * create user billing-portal
+         * @description billing-portals
          */
-        post: operations["task-project-create-with-ai"];
+        post: operations["stripe-billing-portal"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/subscriptions/checkout-session": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * create checkout session
+         * @description user create checkout session
+         */
+        post: operations["create-checkout-session"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/subscriptions/checkout-session/{checkoutSessionId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * get checkout session
+         * @description get checkout session
+         */
+        get: operations["get-checkout-session"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1050,7 +978,11 @@ export interface paths {
          * @description Update a task project
          */
         put: operations["task-project-update"];
-        post?: never;
+        /**
+         * Task project tasks create
+         * @description Create a new task project task
+         */
+        post: operations["task-project-tasks-create"];
         /**
          * Task project delete
          * @description Delete a task project
@@ -1062,26 +994,6 @@ export interface paths {
         trace?: never;
     };
     "/api/task-projects/{task-project-id}/tasks": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Task project tasks create
-         * @description Create a new task project task
-         */
-        post: operations["task-project-tasks-create"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/tasks": {
         parameters: {
             query?: never;
             header?: never;
@@ -1149,6 +1061,366 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/team-invitations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * find-user-team-invitations
+         * @description find user team invitations
+         */
+        get: operations["find-user-team-invitations"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/team-invitations/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * accept-invitation
+         * @description accept invitation
+         */
+        post: operations["accept-invitation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/team-invitations/check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * check-valid-invitation
+         * @description check valid invitation
+         */
+        post: operations["check-valid-invitation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/team-invitations/decline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * decline-invitation
+         * @description decline invitation
+         */
+        post: operations["decline-invitation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/team-invitations/token/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * find-user-team-invitation-by-token
+         * @description find user team invitation by token
+         */
+        get: operations["find-user-team-invitation-by-token"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/teams": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * get-user-teams
+         * @description get all teams for a user
+         */
+        get: operations["get-user-teams"];
+        put?: never;
+        /**
+         * create-team
+         * @description create a new team
+         */
+        post: operations["create-team"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/teams/check-slug": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * check-team-slug
+         * @description check if a team slug is available
+         */
+        post: operations["check-team-slug"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/teams/slug/{team-slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * get-team-info-by-slug
+         * @description get a team by slug
+         */
+        get: operations["get-team-by-slug"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/teams/{team-id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * get-team
+         * @description get a team by ID
+         */
+        get: operations["get-team"];
+        /**
+         * update-team
+         * @description update a team by ID
+         */
+        put: operations["update-team"];
+        post?: never;
+        /**
+         * delete-team
+         * @description delete a team by ID
+         */
+        delete: operations["delete-team"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/teams/{team-id}/invitations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * find-team-invitations
+         * @description find team invitations
+         */
+        get: operations["find-team-invitations"];
+        put?: never;
+        /**
+         * create-team-invitation
+         * @description create a team invitation
+         */
+        post: operations["create-team-invitation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/teams/{team-id}/invitations/{invitation-id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * cancel-invitation
+         * @description cancel invitation
+         */
+        delete: operations["cancel-invitation"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/teams/{team-id}/members": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * get-team-team-members
+         * @description get members of a team by team team ID
+         */
+        get: operations["get-team-team-members"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/teams/{team-id}/subscriptions/active": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * team-subscriptions-active
+         * @description get active team subscriptions
+         */
+        get: operations["team-subscriptions-active"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/teams/{team-id}/subscriptions/billing-portals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * create team billing-portal
+         * @description billing-portals
+         */
+        post: operations["stripe-billing-portal-team"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/teams/{team-id}/subscriptions/checkout-session": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * create team checkout session
+         * @description user create checkout session
+         */
+        post: operations["create-checkout-session-team"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/teams/{team-id}/task-projects": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Task project list
+         * @description List of task projects
+         */
+        get: operations["task-project-list"];
+        put?: never;
+        /**
+         * Task project create
+         * @description Create a new task project
+         */
+        post: operations["task-project-create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/teams/{team-id}/task-projects/ai": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Task project create with ai
+         * @description Create a new task project with ai
+         */
+        post: operations["task-project-create-with-ai"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1162,6 +1434,179 @@ export interface components {
             /** Format: uuid */
             permission_ids: string[] | null;
         };
+        ApiPaginatedResponseApiUser: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            data: components["schemas"]["ApiUser"][] | null;
+            meta: components["schemas"]["Meta"];
+        };
+        ApiPaginatedResponseMedia: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            data: components["schemas"]["Media"][] | null;
+            meta: components["schemas"]["Meta"];
+        };
+        ApiPaginatedResponsePermission: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            data: components["schemas"]["Permission"][] | null;
+            meta: components["schemas"]["Meta"];
+        };
+        ApiPaginatedResponsePermissionSource: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            data: components["schemas"]["PermissionSource"][] | null;
+            meta: components["schemas"]["Meta"];
+        };
+        ApiPaginatedResponseRole: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            data: components["schemas"]["Role"][] | null;
+            meta: components["schemas"]["Meta"];
+        };
+        ApiPaginatedResponseStripeProduct: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            data: components["schemas"]["StripeProduct"][] | null;
+            meta: components["schemas"]["Meta"];
+        };
+        ApiPaginatedResponseStripeSubscription: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            data: components["schemas"]["StripeSubscription"][] | null;
+            meta: components["schemas"]["Meta"];
+        };
+        ApiPaginatedResponseTask: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            data: components["schemas"]["Task"][] | null;
+            meta: components["schemas"]["Meta"];
+        };
+        ApiPaginatedResponseTaskProject: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            data: components["schemas"]["TaskProject"][] | null;
+            meta: components["schemas"]["Meta"];
+        };
+        ApiPaginatedResponseTeamInvitation: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            data: components["schemas"]["TeamInvitation"][] | null;
+            meta: components["schemas"]["Meta"];
+        };
+        ApiPaginatedResponseTeamMember: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            data: components["schemas"]["TeamMember"][] | null;
+            meta: components["schemas"]["Meta"];
+        };
+        ApiPaginatedResponseTeamWithMember: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            data: components["schemas"]["TeamWithMember"][] | null;
+            meta: components["schemas"]["Meta"];
+        };
+        ApiPaginatedResponseUserAccountOutput: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            data: components["schemas"]["UserAccountOutput"][] | null;
+            meta: components["schemas"]["Meta"];
+        };
+        ApiUser: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            accounts?: components["schemas"]["UserAccountOutput"][] | null;
+            /** Format: date-time */
+            created_at: string;
+            email: string;
+            /** Format: date-time */
+            email_verified_at: string | null;
+            id: string;
+            image: string | null;
+            name: string | null;
+            permissions?: components["schemas"]["Permission"][] | null;
+            roles?: components["schemas"]["Role"][] | null;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        ApiUserInfoTokens: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            permissions: string[] | null;
+            providers: ("google" | "apple" | "facebook" | "github" | "credentials")[] | null;
+            roles: string[] | null;
+            tokens: components["schemas"]["TokenDto"];
+            user: components["schemas"]["ApiUser"];
+        };
+        "Check-team-slugRequest": {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            slug: string;
+        };
+        "Check-team-slugResponse": {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            exists: boolean;
+        };
+        CheckValidInvitationDto: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            token: string;
+        };
         ConfirmPasswordResetInput: {
             /**
              * Format: uri
@@ -1172,18 +1617,18 @@ export interface components {
             password: string;
             token: string;
         };
-        CreateTaskBaseDTO: {
+        CreateTaskProjectTaskDTO: {
             description?: string;
             name: string;
             /** Format: double */
-            order?: number;
+            rank?: number;
             /**
              * @default todo
              * @enum {string}
              */
             status: "todo" | "in_progress" | "done";
         };
-        CreateTaskProjectWithTasksDTO: {
+        CreateTaskProjectWithoutTeamWithTasks: {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
@@ -1192,30 +1637,22 @@ export interface components {
             description?: string;
             name: string;
             /** Format: double */
-            order?: number;
+            rank?: number;
             /**
              * @default todo
              * @enum {string}
              */
             status: "todo" | "in_progress" | "done";
-            tasks?: components["schemas"]["CreateTaskBaseDTO"][] | null;
+            tasks?: components["schemas"]["CreateTaskProjectTaskDTO"][] | null;
         };
-        CreateTaskWithChildrenDTO: {
+        CreateTeamInput: {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
              */
             readonly $schema?: string;
-            children?: components["schemas"]["CreateTaskBaseDTO"][] | null;
-            description?: string;
             name: string;
-            /** Format: double */
-            order?: number;
-            /**
-             * @default todo
-             * @enum {string}
-             */
-            status: "todo" | "in_progress" | "done";
+            slug: string;
         };
         ErrorDetail: {
             /** @description Where the error occurred, e.g. 'body.items[3].tags' or 'path.thing-id' */
@@ -1262,6 +1699,15 @@ export interface components {
             readonly $schema?: string;
             access: string;
         };
+        InviteTeamMemberDto: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            email: string;
+            role: string;
+        };
         Media: {
             /** Format: date-time */
             created_at: string;
@@ -1286,19 +1732,6 @@ export interface components {
             /** Format: int64 */
             total: number;
         };
-        Notification: {
-            channel: string;
-            content: {
-                [key: string]: unknown;
-            };
-            /** Format: date-time */
-            created_at: string;
-            id: string;
-            type: string;
-            /** Format: date-time */
-            updated_at: string;
-            user_id: string;
-        };
         OAuth2AuthorizationUrlOutputBody: {
             /**
              * Format: uri
@@ -1314,105 +1747,6 @@ export interface components {
              */
             readonly $schema?: string;
             token: string;
-        };
-        PaginatedResponseMedia: {
-            /**
-             * Format: uri
-             * @description A URL to the JSON Schema for this object.
-             */
-            readonly $schema?: string;
-            data: components["schemas"]["Media"][] | null;
-            meta: components["schemas"]["Meta"];
-        };
-        PaginatedResponsePermission: {
-            /**
-             * Format: uri
-             * @description A URL to the JSON Schema for this object.
-             */
-            readonly $schema?: string;
-            data: components["schemas"]["Permission"][] | null;
-            meta: components["schemas"]["Meta"];
-        };
-        PaginatedResponsePermissionSource: {
-            /**
-             * Format: uri
-             * @description A URL to the JSON Schema for this object.
-             */
-            readonly $schema?: string;
-            data: components["schemas"]["PermissionSource"][] | null;
-            meta: components["schemas"]["Meta"];
-        };
-        PaginatedResponseRole: {
-            /**
-             * Format: uri
-             * @description A URL to the JSON Schema for this object.
-             */
-            readonly $schema?: string;
-            data: components["schemas"]["Role"][] | null;
-            meta: components["schemas"]["Meta"];
-        };
-        PaginatedResponseRoleWithPermissions: {
-            /**
-             * Format: uri
-             * @description A URL to the JSON Schema for this object.
-             */
-            readonly $schema?: string;
-            data: components["schemas"]["RoleWithPermissions"][] | null;
-            meta: components["schemas"]["Meta"];
-        };
-        PaginatedResponseStripeProductWithData: {
-            /**
-             * Format: uri
-             * @description A URL to the JSON Schema for this object.
-             */
-            readonly $schema?: string;
-            data: components["schemas"]["StripeProductWithData"][] | null;
-            meta: components["schemas"]["Meta"];
-        };
-        PaginatedResponseSubscriptionWithData: {
-            /**
-             * Format: uri
-             * @description A URL to the JSON Schema for this object.
-             */
-            readonly $schema?: string;
-            data: components["schemas"]["SubscriptionWithData"][] | null;
-            meta: components["schemas"]["Meta"];
-        };
-        PaginatedResponseTaskProjectWithTasks: {
-            /**
-             * Format: uri
-             * @description A URL to the JSON Schema for this object.
-             */
-            readonly $schema?: string;
-            data: components["schemas"]["TaskProjectWithTasks"][] | null;
-            meta: components["schemas"]["Meta"];
-        };
-        PaginatedResponseTaskWithSubtask: {
-            /**
-             * Format: uri
-             * @description A URL to the JSON Schema for this object.
-             */
-            readonly $schema?: string;
-            data: components["schemas"]["TaskWithSubtask"][] | null;
-            meta: components["schemas"]["Meta"];
-        };
-        PaginatedResponseUserAccountOutput: {
-            /**
-             * Format: uri
-             * @description A URL to the JSON Schema for this object.
-             */
-            readonly $schema?: string;
-            data: components["schemas"]["UserAccountOutput"][] | null;
-            meta: components["schemas"]["Meta"];
-        };
-        PaginatedResponseUserDetail: {
-            /**
-             * Format: uri
-             * @description A URL to the JSON Schema for this object.
-             */
-            readonly $schema?: string;
-            data: components["schemas"]["UserDetail"][] | null;
-            meta: components["schemas"]["Meta"];
         };
         PasswordResetInput: {
             /**
@@ -1446,53 +1780,24 @@ export interface components {
             description?: string;
             name: string;
         };
+        PermissionIdsInput: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            /** Format: uuid */
+            permission_ids: string[] | null;
+        };
         PermissionSource: {
             /** Format: date-time */
             created_at: string;
-            description: string;
+            description: string | null;
             id: string;
             is_directly_assigned: boolean;
             name: string;
             product_ids: string[] | null;
             role_ids: string[] | null;
-            /** Format: date-time */
-            updated_at: string;
-        };
-        Price: {
-            active: boolean;
-            /** Format: date-time */
-            created_at: string;
-            currency: string;
-            id: string;
-            /** @enum {string} */
-            interval?: "day" | "week" | "month" | "year";
-            /** Format: int64 */
-            interval_count: number | null;
-            lookup_key: string | null;
-            metadata: {
-                [key: string]: string;
-            };
-            product_id: string;
-            /** Format: int64 */
-            trial_period_days: number | null;
-            /** @enum {string} */
-            type: "one_time" | "recurring";
-            /** Format: int64 */
-            unit_amount: number | null;
-            /** Format: date-time */
-            updated_at: string;
-        };
-        Product: {
-            active: boolean;
-            /** Format: date-time */
-            created_at: string;
-            description: string | null;
-            id: string;
-            image: string | null;
-            metadata: {
-                [key: string]: string;
-            };
-            name: string;
             /** Format: date-time */
             updated_at: string;
         };
@@ -1523,8 +1828,10 @@ export interface components {
             description?: string;
             id: string;
             name: string;
+            permissions?: components["schemas"]["Permission"][] | null;
             /** Format: date-time */
             updated_at: string;
+            users?: components["schemas"]["ApiUser"][] | null;
         };
         RoleCreateInput: {
             /**
@@ -1543,30 +1850,6 @@ export interface components {
             readonly $schema?: string;
             /** Format: uuid */
             role_ids: string[] | null;
-        };
-        RolePermissionsUpdateInput: {
-            /**
-             * Format: uri
-             * @description A URL to the JSON Schema for this object.
-             */
-            readonly $schema?: string;
-            /** Format: uuid */
-            permission_ids: string[] | null;
-        };
-        RoleWithPermissions: {
-            /**
-             * Format: uri
-             * @description A URL to the JSON Schema for this object.
-             */
-            readonly $schema?: string;
-            /** Format: date-time */
-            created_at: string;
-            description?: string;
-            id: string;
-            name: string;
-            permissions?: components["schemas"]["Permission"][] | null;
-            /** Format: date-time */
-            updated_at: string;
         };
         SigninDto: {
             /**
@@ -1597,6 +1880,28 @@ export interface components {
             name: string | null;
             password: string;
         };
+        StripeCustomer: {
+            billing_address: {
+                [key: string]: string;
+            };
+            /** Format: date-time */
+            created_at: string;
+            /** @enum {string} */
+            customer_type: "user" | "team";
+            email: string;
+            id: string;
+            name?: string;
+            payment_method: {
+                [key: string]: string;
+            };
+            subscriptions?: components["schemas"]["StripeSubscription"][] | null;
+            team?: components["schemas"]["Team"];
+            team_id?: string;
+            /** Format: date-time */
+            updated_at: string;
+            user?: components["schemas"]["ApiUser"];
+            user_id?: string;
+        };
         StripePaymentPayload: {
             /**
              * Format: uri
@@ -1605,7 +1910,7 @@ export interface components {
             readonly $schema?: string;
             price_id: string;
         };
-        StripePricesWithProduct: {
+        StripePrice: {
             active: boolean;
             /** Format: date-time */
             created_at: string;
@@ -1619,8 +1924,9 @@ export interface components {
             metadata: {
                 [key: string]: string;
             };
-            product?: components["schemas"]["Product"];
+            product?: components["schemas"]["StripeProduct"];
             product_id: string;
+            subscriptions?: components["schemas"]["StripeSubscription"][] | null;
             /** Format: int64 */
             trial_period_days: number | null;
             /** @enum {string} */
@@ -1630,7 +1936,7 @@ export interface components {
             /** Format: date-time */
             updated_at: string;
         };
-        StripeProductWithData: {
+        StripeProduct: {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
@@ -1646,8 +1952,49 @@ export interface components {
                 [key: string]: string;
             };
             name: string;
-            prices?: components["schemas"]["Price"][] | null;
+            permissions?: components["schemas"]["Permission"][] | null;
+            prices?: components["schemas"]["StripePrice"][] | null;
             roles?: components["schemas"]["Role"][] | null;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        StripeSubscription: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            /** Format: date-time */
+            cancel_at: string | null;
+            cancel_at_period_end: boolean;
+            /** Format: date-time */
+            canceled_at: string | null;
+            /** Format: date-time */
+            created: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            current_period_end: string;
+            /** Format: date-time */
+            current_period_start: string;
+            /** Format: date-time */
+            ended_at: string | null;
+            id: string;
+            item_id: string;
+            metadata: {
+                [key: string]: string;
+            };
+            price?: components["schemas"]["StripePrice"];
+            price_id: string;
+            /** Format: int64 */
+            quantity: number;
+            status: string;
+            stripe_customer?: components["schemas"]["StripeCustomer"];
+            stripe_customer_id: string;
+            /** Format: date-time */
+            trial_end: string | null;
+            /** Format: date-time */
+            trial_start: string | null;
             /** Format: date-time */
             updated_at: string;
         };
@@ -1659,98 +2006,55 @@ export interface components {
             readonly $schema?: string;
             url: string;
         };
-        SubscriptionWithData: {
-            /**
-             * Format: uri
-             * @description A URL to the JSON Schema for this object.
-             */
-            readonly $schema?: string;
-            /** Format: date-time */
-            cancel_at: string | null;
-            cancel_at_period_end: boolean;
-            /** Format: date-time */
-            canceled_at: string | null;
-            /** Format: date-time */
-            created: string;
-            /** Format: date-time */
-            created_at: string;
-            /** Format: date-time */
-            current_period_end: string;
-            /** Format: date-time */
-            current_period_start: string;
-            /** Format: date-time */
-            ended_at: string | null;
-            id: string;
-            metadata: {
-                [key: string]: string;
-            };
-            price?: components["schemas"]["StripePricesWithProduct"];
-            price_id: string;
-            /** Format: int64 */
-            quantity: number;
-            status: string;
-            /** Format: date-time */
-            trial_end: string | null;
-            /** Format: date-time */
-            trial_start: string | null;
-            /** Format: date-time */
-            updated_at: string;
-            user?: components["schemas"]["User"];
-            user_id: string;
-        };
-        SubscriptionWithPrice: {
-            /**
-             * Format: uri
-             * @description A URL to the JSON Schema for this object.
-             */
-            readonly $schema?: string;
-            /** Format: date-time */
-            cancel_at: string | null;
-            cancel_at_period_end: boolean;
-            /** Format: date-time */
-            canceled_at: string | null;
-            /** Format: date-time */
-            created: string;
-            /** Format: date-time */
-            created_at: string;
-            /** Format: date-time */
-            current_period_end: string;
-            /** Format: date-time */
-            current_period_start: string;
-            /** Format: date-time */
-            ended_at: string | null;
-            id: string;
-            metadata: {
-                [key: string]: string;
-            };
-            price?: components["schemas"]["StripePricesWithProduct"];
-            price_id: string;
-            /** Format: int64 */
-            quantity: number;
-            status: string;
-            /** Format: date-time */
-            trial_end: string | null;
-            /** Format: date-time */
-            trial_start: string | null;
-            /** Format: date-time */
-            updated_at: string;
-            user_id: string;
-        };
         Task: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            assignee_id: string | null;
+            children?: components["schemas"]["Task"][] | null;
             /** Format: date-time */
             created_at: string;
+            created_by_member?: components["schemas"]["TeamMember"];
+            created_by_member_id: string | null;
             description: string | null;
+            /** Format: date-time */
+            end_at: string | null;
             id: string;
             name: string;
-            /** Format: double */
-            order: number;
-            parent_id: string;
+            parent_id: string | null;
+            project?: components["schemas"]["TaskProject"];
             project_id: string;
+            /** Format: double */
+            rank: number;
+            reporter_id: string | null;
+            /** Format: date-time */
+            start_at: string | null;
             /** @enum {string} */
             status: "todo" | "in_progress" | "done";
+            team?: components["schemas"]["Team"];
+            team_id: string;
             /** Format: date-time */
             updated_at: string;
-            user_id: string;
+        };
+        TaskFields: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            description?: string;
+            name: string;
+            /** Format: int64 */
+            position?: number;
+            /** Format: double */
+            rank?: number;
+            /**
+             * @default todo
+             * @enum {string}
+             */
+            status: "todo" | "in_progress" | "done";
         };
         TaskPositionStatusDTO: {
             /**
@@ -1769,18 +2073,28 @@ export interface components {
              * @description A URL to the JSON Schema for this object.
              */
             readonly $schema?: string;
+            assignee_id: string | null;
             /** Format: date-time */
             created_at: string;
+            created_by_member?: components["schemas"]["TeamMember"];
+            created_by_member_id: string | null;
             description: string | null;
+            /** Format: date-time */
+            end_at: string | null;
             id: string;
             name: string;
             /** Format: double */
-            order: number;
+            rank: number;
+            reporter_id: string | null;
+            /** Format: date-time */
+            start_at: string | null;
             /** @enum {string} */
             status: "todo" | "in_progress" | "done";
+            tasks?: components["schemas"]["Task"][] | null;
+            team?: components["schemas"]["Team"];
+            team_id: string;
             /** Format: date-time */
             updated_at: string;
-            user_id: string;
         };
         TaskProjectCreateWithAiDto: {
             /**
@@ -1789,26 +2103,6 @@ export interface components {
              */
             readonly $schema?: string;
             input: string;
-        };
-        TaskProjectWithTasks: {
-            /**
-             * Format: uri
-             * @description A URL to the JSON Schema for this object.
-             */
-            readonly $schema?: string;
-            /** Format: date-time */
-            created_at: string;
-            description: string | null;
-            id: string;
-            name: string;
-            /** Format: double */
-            order: number;
-            /** @enum {string} */
-            status: "todo" | "in_progress" | "done";
-            tasks?: components["schemas"]["TaskWithSubtask"][] | null;
-            /** Format: date-time */
-            updated_at: string;
-            user_id: string;
         };
         TaskStats: {
             /** Format: int64 */
@@ -1820,27 +2114,88 @@ export interface components {
             /** Format: int64 */
             total_tasks: number;
         };
-        TaskWithSubtask: {
+        Team: {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
              */
             readonly $schema?: string;
-            children?: components["schemas"]["Task"][] | null;
             /** Format: date-time */
             created_at: string;
-            description: string | null;
             id: string;
+            members?: components["schemas"]["TeamMember"][] | null;
             name: string;
-            /** Format: double */
-            order: number;
-            parent_id: string;
-            project_id: string;
-            /** @enum {string} */
-            status: "todo" | "in_progress" | "done";
+            slug: string;
+            stripe_customer?: components["schemas"]["StripeCustomer"];
             /** Format: date-time */
             updated_at: string;
+        };
+        TeamInfo: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            member: components["schemas"]["TeamMember"];
+            team: components["schemas"]["Team"];
+            user: components["schemas"]["ApiUser"];
+        };
+        TeamInvitation: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            /** Format: date-time */
+            created_at: string;
+            email: string;
+            /** Format: date-time */
+            expires_at: string;
+            id: string;
+            inviter_member?: components["schemas"]["TeamMember"];
+            inviter_member_id: string;
+            role: string;
+            /** @enum {string} */
+            status: "pending" | "accepted" | "declined" | "canceled";
+            team?: components["schemas"]["Team"];
+            team_id: string;
+            token: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        TeamMember: {
+            active: boolean;
+            /** Format: date-time */
+            created_at: string;
+            has_billing_access: boolean;
+            id: string;
+            /** Format: date-time */
+            last_selected_at: string;
+            /** @enum {string} */
+            role: "owner" | "member" | "guest";
+            team?: components["schemas"]["Team"];
+            team_id: string;
+            /** Format: date-time */
+            updated_at: string;
+            user?: components["schemas"]["ApiUser"];
             user_id: string;
+        };
+        TeamWithMember: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            /** Format: date-time */
+            created_at: string;
+            id: string;
+            member?: components["schemas"]["TeamMember"];
+            members?: components["schemas"]["TeamMember"][] | null;
+            name: string;
+            slug: string;
+            stripe_customer?: components["schemas"]["StripeCustomer"];
+            /** Format: date-time */
+            updated_at: string;
         };
         TokenDto: {
             access_token: string;
@@ -1858,17 +2213,21 @@ export interface components {
             image: string | null;
             name: string | null;
         };
-        UpdateTaskBaseDTO: {
+        UpdateTaskDto: {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
              */
             readonly $schema?: string;
-            description?: string;
+            assignee_id: string | null;
+            description: string | null;
+            /** Format: date-time */
+            end_at: string | null;
             name: string;
-            /** Format: double */
-            order: number;
-            parent_id?: string;
+            parent_id: string | null;
+            reporter_id: string | null;
+            /** Format: date-time */
+            start_at: string | null;
             /** @enum {string} */
             status: "todo" | "in_progress" | "done";
         };
@@ -1880,12 +2239,21 @@ export interface components {
             readonly $schema?: string;
             description?: string;
             name: string;
-            /** Format: double */
-            order: number;
             /** Format: int64 */
             position?: number;
+            /** Format: double */
+            rank: number;
             /** @enum {string} */
             status: "todo" | "in_progress" | "done";
+        };
+        UpdateTeamDto: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            name: string;
+            slug: string;
         };
         UpdateUserPasswordInput: {
             /**
@@ -1894,23 +2262,6 @@ export interface components {
              */
             readonly $schema?: string;
             password: string;
-        };
-        User: {
-            /**
-             * Format: uri
-             * @description A URL to the JSON Schema for this object.
-             */
-            readonly $schema?: string;
-            /** Format: date-time */
-            created_at: string;
-            email: string;
-            /** Format: date-time */
-            email_verified_at: string | null;
-            id: string;
-            image: string | null;
-            name: string | null;
-            /** Format: date-time */
-            updated_at: string;
         };
         UserAccountOutput: {
             /** Format: date-time */
@@ -1939,33 +2290,6 @@ export interface components {
             image?: string;
             name?: string;
             password: string;
-        };
-        UserDetail: {
-            accounts?: components["schemas"]["UserAccountOutput"][] | null;
-            /** Format: date-time */
-            created_at: string;
-            email: string;
-            /** Format: date-time */
-            email_verified_at: string | null;
-            id: string;
-            image: string | null;
-            name: string | null;
-            permissions?: components["schemas"]["Permission"][] | null;
-            roles?: components["schemas"]["RoleWithPermissions"][] | null;
-            /** Format: date-time */
-            updated_at: string;
-        };
-        UserInfoTokens: {
-            /**
-             * Format: uri
-             * @description A URL to the JSON Schema for this object.
-             */
-            readonly $schema?: string;
-            permissions: string[] | null;
-            providers: ("google" | "apple" | "facebook" | "github" | "credentials")[] | null;
-            roles: string[] | null;
-            tokens: components["schemas"]["TokenDto"];
-            user: components["schemas"]["User"];
         };
         UserMutationInput: {
             /**
@@ -2004,6 +2328,8 @@ export interface components {
             id: string;
             image: string | null;
             name: string | null;
+            permissions?: components["schemas"]["Permission"][] | null;
+            roles?: components["schemas"]["Role"][] | null;
             /** Format: date-time */
             updated_at: string;
         };
@@ -2058,6 +2384,9 @@ export interface operations {
                 role_id?: string;
                 /** @description When role_id is provided, if this is true, it will return the permissions that the role does not have */
                 role_reverse?: boolean;
+                product_id?: string;
+                /** @description When product_id is provided, if this is true, it will return the permissions that the product does not have */
+                product_reverse?: boolean;
                 sort_by?: string;
                 sort_order?: "asc" | "desc";
             };
@@ -2073,7 +2402,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PaginatedResponsePermission"];
+                    "application/json": components["schemas"]["ApiPaginatedResponsePermission"];
                 };
             };
             /** @description Not Found */
@@ -2310,13 +2639,12 @@ export interface operations {
             query?: {
                 page?: number;
                 per_page?: number;
-                q?: string;
-                ids?: string[] | null;
-                active?: "active" | "inactive";
                 sort_by?: string;
                 sort_order?: "asc" | "desc";
-                expand?: ("prices" | "roles")[] | null;
-                price_active?: "active" | "inactive";
+                expand?: ("prices" | "permissions")[] | null;
+                q?: string;
+                ids?: string[] | null;
+                active?: boolean;
             };
             header?: never;
             path?: never;
@@ -2330,7 +2658,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PaginatedResponseStripeProductWithData"];
+                    "application/json": components["schemas"]["ApiPaginatedResponseStripeProduct"];
                 };
             };
             /** @description Not Found */
@@ -2365,7 +2693,7 @@ export interface operations {
     "admin-stripe-product-get": {
         parameters: {
             query?: {
-                expand?: ("prices" | "roles")[] | null;
+                expand?: ("prices" | "permissions")[] | null;
             };
             header?: never;
             path: {
@@ -2381,7 +2709,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["StripeProductWithData"];
+                    "application/json": components["schemas"]["StripeProduct"];
                 };
             };
             /** @description Bad Request */
@@ -2422,7 +2750,7 @@ export interface operations {
             };
         };
     };
-    "admin-create-product-roles": {
+    "admin-create-product-permissions": {
         parameters: {
             query?: never;
             header?: never;
@@ -2433,7 +2761,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["RoleIdsInput"];
+                "application/json": components["schemas"]["PermissionIdsInput"];
             };
         };
         responses: {
@@ -2473,13 +2801,13 @@ export interface operations {
             };
         };
     };
-    "admin-delete-product-roles": {
+    "admin-delete-product-permissions": {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 "product-id": string;
-                "role-id": string;
+                "permission-id": string;
             };
             cookie?: never;
         };
@@ -2549,7 +2877,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PaginatedResponseRoleWithPermissions"];
+                    "application/json": components["schemas"]["ApiPaginatedResponseRole"];
                 };
             };
             /** @description Not Found */
@@ -2651,7 +2979,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RoleWithPermissions"];
+                    "application/json": components["schemas"]["Role"];
                 };
             };
             /** @description Not Found */
@@ -2783,59 +3111,6 @@ export interface operations {
             };
         };
     };
-    "admin-roles-update-permissions": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RolePermissionsUpdateInput"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Role"];
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-            /** @description Unprocessable Entity */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-            /** @description Internal Server Error */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-        };
-    };
     "admin-roles-create-permissions": {
         parameters: {
             query?: never;
@@ -2847,7 +3122,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["RolePermissionsUpdateInput"];
+                "application/json": components["schemas"]["PermissionIdsInput"];
             };
         };
         responses: {
@@ -2942,7 +3217,8 @@ export interface operations {
                 per_page?: number;
                 q?: string;
                 ids?: string[] | null;
-                user_id?: string;
+                user_id?: string[] | null;
+                team_id?: string[] | null;
                 status?: ("trialing" | "active" | "canceled" | "incomplete" | "incomplete_expired" | "past_due" | "unpaid" | "paused")[] | null;
                 sort_by?: string;
                 sort_order?: "asc" | "desc";
@@ -2960,7 +3236,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PaginatedResponseSubscriptionWithData"];
+                    "application/json": components["schemas"]["ApiPaginatedResponseStripeSubscription"];
                 };
             };
             /** @description Not Found */
@@ -3011,7 +3287,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SubscriptionWithData"];
+                    "application/json": components["schemas"]["StripeSubscription"];
                 };
             };
             /** @description Bad Request */
@@ -3057,13 +3333,13 @@ export interface operations {
             query?: {
                 page?: number;
                 per_page?: number;
+                sort_by?: string;
+                sort_order?: "asc" | "desc";
                 providers?: ("google" | "apple" | "facebook" | "github" | "credentials")[] | null;
                 provider_types?: ("oauth" | "credentials")[] | null;
                 q?: string;
                 ids?: string[] | null;
                 user_ids?: string[] | null;
-                sort_by?: string;
-                sort_order?: "asc" | "desc";
             };
             header?: never;
             path?: never;
@@ -3077,7 +3353,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PaginatedResponseUserAccountOutput"];
+                    "application/json": components["schemas"]["ApiPaginatedResponseUserAccountOutput"];
                 };
             };
             /** @description Not Found */
@@ -3114,14 +3390,14 @@ export interface operations {
             query?: {
                 page?: number;
                 per_page?: number;
+                sort_by?: string;
+                sort_order?: "asc" | "desc";
                 providers?: ("google" | "apple" | "facebook" | "github" | "credentials")[] | null;
                 q?: string;
                 ids?: string[] | null;
                 emails?: string[] | null;
                 role_ids?: string[] | null;
-                email_verified?: "verified" | "unverified";
-                sort_by?: string;
-                sort_order?: "asc" | "desc";
+                email_verified?: boolean;
                 expand?: ("roles" | "permissions" | "accounts" | "subscriptions")[] | null;
             };
             header?: never;
@@ -3136,7 +3412,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PaginatedResponseUserDetail"];
+                    "application/json": components["schemas"]["ApiPaginatedResponseApiUser"];
                 };
             };
             /** @description Not Found */
@@ -3187,7 +3463,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["User"];
+                    "application/json": components["schemas"]["ApiUser"];
                 };
             };
             /** @description Not Found */
@@ -3236,7 +3512,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["User"];
+                    "application/json": components["schemas"]["ApiUser"];
                 };
             };
             /** @description Not Found */
@@ -3440,7 +3716,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PaginatedResponsePermissionSource"];
+                    "application/json": components["schemas"]["ApiPaginatedResponsePermissionSource"];
                 };
             };
             /** @description Not Found */
@@ -3541,59 +3817,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-            /** @description Unprocessable Entity */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-            /** @description Internal Server Error */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-        };
-    };
-    "admin-update-user-roles": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                "user-id": string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RoleIdsInput"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaginatedResponseRole"];
-                };
             };
             /** @description Not Found */
             404: {
@@ -3855,7 +4078,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["UserInfoTokens"];
+                    "application/json": components["schemas"]["ApiUserInfoTokens"];
                 };
             };
             /** @description Not Found */
@@ -4216,7 +4439,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["UserInfoTokens"];
+                    "application/json": components["schemas"]["ApiUserInfoTokens"];
                 };
             };
             /** @description Not Found */
@@ -4367,7 +4590,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["UserInfoTokens"];
+                    "application/json": components["schemas"]["ApiUserInfoTokens"];
                 };
             };
             /** @description Not Found */
@@ -4491,7 +4714,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["UserInfoTokens"];
+                    "application/json": components["schemas"]["ApiUserInfoTokens"];
                 };
             };
             /** @description Not Found */
@@ -4642,10 +4865,10 @@ export interface operations {
             query?: {
                 page?: number;
                 per_page?: number;
-                q?: string;
-                userId?: string;
                 sort_by?: string;
                 sort_order?: "asc" | "desc";
+                q?: string;
+                user_ids?: string[] | null;
             };
             header?: never;
             path?: never;
@@ -4659,7 +4882,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PaginatedResponseMedia"];
+                    "application/json": components["schemas"]["ApiPaginatedResponseMedia"];
                 };
             };
             /** @description Unauthorized */
@@ -4805,55 +5028,6 @@ export interface operations {
             };
         };
     };
-    "notifications-sse": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "text/event-stream": {
-                        data: components["schemas"]["Notification"];
-                        /**
-                         * @description The event name.
-                         * @constant
-                         */
-                        event?: "message";
-                        /** @description The event ID. */
-                        id?: number;
-                        /** @description The retry time in milliseconds. */
-                        retry?: number;
-                    }[];
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-            /** @description Internal Server Error */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-        };
-    };
     "permissions-list": {
         parameters: {
             query?: {
@@ -4865,6 +5039,9 @@ export interface operations {
                 role_id?: string;
                 /** @description When role_id is provided, if this is true, it will return the permissions that the role does not have */
                 role_reverse?: boolean;
+                product_id?: string;
+                /** @description When product_id is provided, if this is true, it will return the permissions that the product does not have */
+                product_reverse?: boolean;
                 sort_by?: string;
                 sort_order?: "asc" | "desc";
             };
@@ -4880,7 +5057,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PaginatedResponsePermission"];
+                    "application/json": components["schemas"]["ApiPaginatedResponsePermission"];
                 };
             };
             /** @description Not Found */
@@ -4981,6 +5158,147 @@ export interface operations {
             };
             /** @description Not Found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "stripe-products-with-prices": {
+        parameters: {
+            query?: {
+                page?: number;
+                per_page?: number;
+                sort_by?: string;
+                sort_order?: "asc" | "desc";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiPaginatedResponseStripeProduct"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "stripe-webhook": {
+        parameters: {
+            query?: never;
+            header?: {
+                "Stripe-Signature"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/octet-stream": string;
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "subscriptions-active": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StripeSubscription"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -5105,311 +5423,11 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SubscriptionWithPrice"];
+                    "application/json": components["schemas"]["StripeSubscription"];
                 };
             };
             /** @description Bad Request */
             400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-            /** @description Unprocessable Entity */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-            /** @description Internal Server Error */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-        };
-    };
-    "stripe-my-subscriptions": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SubscriptionWithPrice"];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-            /** @description Internal Server Error */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-        };
-    };
-    "stripe-products-with-prices": {
-        parameters: {
-            query?: {
-                page?: number;
-                per_page?: number;
-                sort_by?: string;
-                sort_order?: "asc" | "desc";
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaginatedResponseStripeProductWithData"];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-            /** @description Unprocessable Entity */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-            /** @description Internal Server Error */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-        };
-    };
-    "stripe-webhook": {
-        parameters: {
-            query?: never;
-            header?: {
-                "Stripe-Signature"?: string;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/octet-stream": string;
-            };
-        };
-        responses: {
-            /** @description No Content */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-            /** @description Unprocessable Entity */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-            /** @description Internal Server Error */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-        };
-    };
-    "task-project-list": {
-        parameters: {
-            query?: {
-                page?: number;
-                per_page?: number;
-                q?: string;
-                user_id?: string;
-                status?: ("todo" | "in_progress" | "done")[] | null;
-                ids?: string[] | null;
-                sort_by?: string;
-                sort_order?: "asc" | "desc";
-                expand?: ("tasks" | "subtasks")[] | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaginatedResponseTaskProjectWithTasks"];
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-            /** @description Unprocessable Entity */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-            /** @description Internal Server Error */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-        };
-    };
-    "task-project-create": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateTaskProjectWithTasksDTO"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TaskProject"];
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-            /** @description Unprocessable Entity */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-            /** @description Internal Server Error */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-        };
-    };
-    "task-project-create-with-ai": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["TaskProjectCreateWithAiDto"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TaskProject"];
-                };
-            };
-            /** @description Not Found */
-            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -5456,7 +5474,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TaskProjectWithTasks"];
+                    "application/json": components["schemas"]["TaskProject"];
                 };
             };
             /** @description Not Found */
@@ -5539,6 +5557,59 @@ export interface operations {
             };
         };
     };
+    "task-project-tasks-create": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                "task-project-id": string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TaskFields"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Task"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
     "task-project-delete": {
         parameters: {
             query?: never;
@@ -5586,59 +5657,6 @@ export interface operations {
             };
         };
     };
-    "task-project-tasks-create": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                "task-project-id": string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateTaskWithChildrenDTO"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TaskWithSubtask"];
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-            /** @description Unprocessable Entity */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-            /** @description Internal Server Error */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-        };
-    };
     "task-list": {
         parameters: {
             query?: {
@@ -5646,17 +5664,17 @@ export interface operations {
                 per_page?: number;
                 q?: string;
                 status?: ("todo" | "in_progress" | "done")[] | null;
-                project_id?: string;
-                user_id?: string;
+                created_by?: string;
                 ids?: string[] | null;
                 parent_id?: string;
-                parent_status?: "parent" | "child";
                 sort_by?: string;
                 sort_order?: "asc" | "desc";
                 expand?: "subtasks"[] | null;
             };
             header?: never;
-            path?: never;
+            path: {
+                "task-project-id": string;
+            };
             cookie?: never;
         };
         requestBody?: never;
@@ -5667,7 +5685,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PaginatedResponseTaskWithSubtask"];
+                    "application/json": components["schemas"]["ApiPaginatedResponseTask"];
                 };
             };
             /** @description Not Found */
@@ -5716,7 +5734,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TaskWithSubtask"];
+                    "application/json": components["schemas"]["Task"];
                 };
             };
             /** @description Not Found */
@@ -5759,7 +5777,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["UpdateTaskBaseDTO"];
+                "application/json": components["schemas"]["UpdateTaskDto"];
             };
         };
         responses: {
@@ -5867,6 +5885,1131 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "find-user-team-invitations": {
+        parameters: {
+            query?: {
+                page?: number;
+                per_page?: number;
+                sort_by?: string;
+                sort_order?: "asc" | "desc";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiPaginatedResponseTeamInvitation"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "accept-invitation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CheckValidInvitationDto"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "check-valid-invitation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CheckValidInvitationDto"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "decline-invitation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CheckValidInvitationDto"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "find-user-team-invitation-by-token": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TeamInvitation"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "get-user-teams": {
+        parameters: {
+            query?: {
+                page?: number;
+                per_page?: number;
+                sort_by?: string;
+                sort_order?: "asc" | "desc";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiPaginatedResponseTeamWithMember"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "create-team": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTeamInput"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TeamWithMember"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "check-team-slug": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Check-team-slugRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Check-team-slugResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "get-team-by-slug": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                "team-slug": string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TeamInfo"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "get-team": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                "team-id": string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Team"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "update-team": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                "team-id": string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateTeamDto"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Team"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "delete-team": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                "team-id": string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Team"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "find-team-invitations": {
+        parameters: {
+            query?: {
+                page?: number;
+                per_page?: number;
+                sort_by?: string;
+                sort_order?: "asc" | "desc";
+            };
+            header?: never;
+            path: {
+                "team-id": string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiPaginatedResponseTeamInvitation"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "create-team-invitation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                "team-id": string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InviteTeamMemberDto"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "cancel-invitation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                "team-id": string;
+                "invitation-id": string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "get-team-team-members": {
+        parameters: {
+            query?: {
+                page?: number;
+                per_page?: number;
+                sort_by?: string;
+                sort_order?: "asc" | "desc";
+            };
+            header?: never;
+            path: {
+                "team-id": string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiPaginatedResponseTeamMember"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "team-subscriptions-active": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                "team-id": string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StripeSubscription"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "stripe-billing-portal-team": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                "team-id": string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StripeUrlOutputBody"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "create-checkout-session-team": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                "team-id": string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StripePaymentPayload"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StripeUrlOutputBody"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "task-project-list": {
+        parameters: {
+            query?: {
+                page?: number;
+                per_page?: number;
+                q?: string;
+                status?: ("todo" | "in_progress" | "done")[] | null;
+                ids?: string[] | null;
+                task_status?: ("todo" | "in_progress" | "done")[] | null;
+                sort_by?: string;
+                sort_order?: "asc" | "desc";
+                expand?: ("tasks" | "subtasks")[] | null;
+            };
+            header?: never;
+            path: {
+                "team-id": string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiPaginatedResponseTaskProject"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "task-project-create": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                "team-id": string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTaskProjectWithoutTeamWithTasks"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskProject"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "task-project-create-with-ai": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                "team-id": string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TaskProjectCreateWithAiDto"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskProject"];
+                };
             };
             /** @description Not Found */
             404: {

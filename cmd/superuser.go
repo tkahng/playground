@@ -8,10 +8,9 @@ import (
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/spf13/cobra"
 	"github.com/tkahng/authgo/internal/conf"
-	"github.com/tkahng/authgo/internal/crudrepo"
-	"github.com/tkahng/authgo/internal/db"
-	"github.com/tkahng/authgo/internal/queries"
-	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/authgo/internal/database"
+	"github.com/tkahng/authgo/internal/models"
+	"github.com/tkahng/authgo/internal/stores"
 	"github.com/tkahng/authgo/internal/tools/security"
 	"github.com/tkahng/authgo/internal/tools/types"
 )
@@ -40,27 +39,26 @@ var superuserCreate = &cobra.Command{
 		}
 
 		ctx := cmd.Context()
-		conf := conf.GetConfig[conf.DBConfig]()
+		confdb := conf.GetConfig[conf.DBConfig]()
 
-		dbx := db.CreateQueries(ctx, conf.DatabaseUrl)
-		err := queries.EnsureRoleAndPermissions(ctx, dbx, "superuser", "superuser")
+		dbx := database.CreateQueries(ctx, confdb.DatabaseUrl)
+		userStore := stores.NewDbUserStore(dbx)
+		adapter := stores.NewStorageAdapter(dbx)
+		// authStore := stores.NewDbAuthStore(dbx)
+
+		rbacStore := stores.NewDbRBACStore(dbx)
+		err := rbacStore.EnsureRoleAndPermissions(ctx, "superuser", "superuser")
 		if err != nil {
 			return err
 		}
 
-		user, err := queries.FindUserByEmail(ctx, dbx, args[0])
+		user, err := userStore.FindUser(ctx, &stores.UserFilter{
+			Emails: []string{args[0]},
+		})
 		if err != nil {
 			return err
 		}
-		role, err := crudrepo.Role.GetOne(
-			ctx,
-			dbx,
-			&map[string]any{
-				"name": map[string]any{
-					"_eq": "superuser",
-				},
-			},
-		)
+		role, err := rbacStore.FindRoleByName(ctx, "superuser")
 		if err != nil {
 			return err
 		}
@@ -69,29 +67,31 @@ var superuserCreate = &cobra.Command{
 			if err != nil {
 				return err
 			}
-			data := &shared.AuthenticationInput{
-				Email:             args[0],
-				Provider:          shared.ProvidersCredentials,
-				ProviderAccountID: args[0],
-				HashPassword:      types.Pointer(hash),
-				Type:              shared.ProviderTypeCredentials,
-			}
-			user, err = queries.CreateUser(ctx, dbx, data)
+			user, err = adapter.User().CreateUser(ctx, &models.User{
+				Email: args[0],
+			})
 			if err != nil {
 				return err
 			}
-			_, err = queries.CreateAccount(ctx, dbx, user.ID, data)
+			account := &models.UserAccount{
+				Provider:          models.ProvidersCredentials,
+				ProviderAccountID: args[0],
+				UserID:            user.ID,
+				Type:              models.ProviderTypeCredentials,
+				Password:          types.Pointer(hash),
+			}
+			_, err = adapter.UserAccount().CreateUserAccount(ctx, account)
 			if err != nil {
 				return err
 			}
 		}
 		if user != nil {
-			claims, err := queries.FindUserWithRolesAndPermissionsByEmail(ctx, dbx, args[0])
+			claims, err := adapter.User().GetUserInfo(ctx, args[0])
 			if err != nil {
 				return err
 			}
 			if !slices.Contains(claims.Roles, "superuser") {
-				err = queries.CreateUserRoles(ctx, dbx, user.ID, role.ID)
+				err = adapter.Rbac().CreateUserRoles(ctx, user.ID, role.ID)
 				if err != nil {
 					return err
 				}

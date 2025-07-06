@@ -2,12 +2,131 @@ package mailer
 
 import (
 	"bytes"
+	"fmt"
 	"html/template"
 	"log"
+	"net/url"
+	"strings"
 )
 
-func GetTemplate(name string, mailTemplate string, params *CommonParams) string {
-	tmpl, err := template.New("body").Parse(mailTemplate)
+type EmailType = string
+
+const (
+	EmailTypeVerify                EmailType = "verify"
+	EmailTypeConfirmPasswordReset  EmailType = "confirm-password-reset"
+	EmailTypeSecurityPasswordReset EmailType = "security-password-reset"
+	EmailTypeTeamInvite            EmailType = "team-invite"
+	EmailTypeInvite                EmailType = "invite"
+)
+
+var (
+	TeamEmailPathMap = map[EmailType]SendMailParams{
+		EmailTypeTeamInvite: {
+			Type:         EmailTypeTeamInvite,
+			Subject:      "%s - You are invited to join a team",
+			TemplatePath: "/team-invitation",
+			Template:     DefaultTeamInviteMail,
+		},
+	}
+)
+
+var (
+	EmailPathMap = map[EmailType]SendMailParams{
+		EmailTypeVerify: {
+			Type:         EmailTypeVerify,
+			Subject:      "%s - Verify your email address",
+			TemplatePath: "/api/auth/verify",
+			Template:     DefaultConfirmationMail,
+		},
+		EmailTypeConfirmPasswordReset: {
+			Type:         EmailTypeConfirmPasswordReset,
+			Subject:      "%s - Confirm your password reset",
+			TemplatePath: "/password-reset",
+			Template:     DefaultRecoveryMail,
+		},
+		EmailTypeSecurityPasswordReset: {
+			Type:         EmailTypeSecurityPasswordReset,
+			Subject:      "%s - Reset your password",
+			TemplatePath: "/password-reset",
+			Template:     DefaultSecurityPasswordResetMail,
+		},
+	}
+)
+
+type SendMailParams struct {
+	Subject      string
+	Type         string
+	TemplatePath string
+	Template     string
+}
+
+func (p *SendMailParams) GeneratePath(appUrl *url.URL, token string, tokenType string, redirectTo string) (string, error) {
+	path, err := GetPathParams(p.TemplatePath, token, tokenType, redirectTo)
+	if err != nil {
+		return "", nil
+	}
+
+	return appUrl.ResolveReference(path).String(), nil
+}
+
+func (p *SendMailParams) GetSubject(args ...string) string {
+	return fmt.Sprintf(p.Subject, args)
+}
+
+type CommonParams struct {
+	SiteURL         string `json:"site_url"`
+	ConfirmationURL string `json:"confirmation_url"`
+	Email           string `json:"email"`
+	Token           string `json:"token"`
+	TokenHash       string `json:"token_hash"`
+	RedirectTo      string `json:"redirect_to"`
+}
+
+type AllEmailParams struct {
+	*SendMailParams
+	*CommonParams
+	*Message
+}
+
+func GenerateConfirmationURL(base string, path string, token, tokenType, redirectTo string) (string, error) {
+	parsedURL, err := url.Parse(base)
+	if err != nil {
+		return "", err
+	}
+	parsedURL.Path = path
+	params, err := GetPathParams(parsedURL.String(), token, tokenType, redirectTo)
+	if err != nil {
+		return "", err
+	}
+	return parsedURL.ResolveReference(params).String(), nil
+}
+
+func GetPathParams(filepath string, token, tokenType, redirectTo string) (*url.URL, error) {
+	path := &url.URL{}
+	if filepath != "" {
+		if p, err := url.Parse(filepath); err != nil {
+			return nil, err
+		} else {
+			path = p
+		}
+	}
+	path.RawQuery = fmt.Sprintf("token=%s&type=%s&redirect_to=%s", url.QueryEscape(token), url.QueryEscape(tokenType), encodeRedirectURL(redirectTo))
+	return path, nil
+}
+
+func encodeRedirectURL(referrerURL string) string {
+	if len(referrerURL) > 0 {
+		if strings.ContainsAny(referrerURL, "&=#") {
+			// if the string contains &, = or # it has not been URL
+			// encoded by the caller, which means it should be URL
+			// encoded by us otherwise, it should be taken as-is
+			referrerURL = url.QueryEscape(referrerURL)
+		}
+	}
+	return referrerURL
+}
+func GenerateBody[T any](name string, mailTemplate string, params T) string {
+	tmpl, err := template.New(name).Parse(mailTemplate)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -23,6 +142,10 @@ const DefaultInviteMail = `<h2>You have been invited</h2>
 <p>You have been invited to create a user on {{ .SiteURL }}. Follow this link to accept the invite:</p>
 <p><a href="{{ .ConfirmationURL }}">Accept the invite</a></p>
 <p>Alternatively, enter the code: {{ .Token }}</p>`
+
+const DefaultTeamInviteMail = `<h2>You have been invited</h2>
+<p>You have been invited to joint team {{ .TeamName }} by {{ .InvitedByEmail }}. Follow this link to accept the invite:</p>
+<p><a href="{{ .ConfirmationURL }}">Accept the invite</a></p>`
 
 const DefaultConfirmationMail = `<h2>Confirm your email</h2>
 

@@ -7,25 +7,6 @@ import (
 	"golang.org/x/oauth2"
 )
 
-// func init() {
-// 	Providers[NameGoogle] = wrapFactory(NewGoogleProvider)
-// }
-
-// func NewGoogleProvider() *GoogleConfig {
-// 	return &GoogleConfig{OAuth2ProviderConfig{
-// 		Name:    "Google",
-// 		Enabled: true,
-// 		PKCE:    true,
-// 		Scopes: []string{
-// 			"https://www.googleapis.com/auth/userinfo.profile",
-// 			"https://www.googleapis.com/auth/userinfo.email",
-// 		},
-// 		AuthURL:     "https://accounts.google.com/o/oauth2/v2/auth",
-// 		TokenURL:    "https://oauth2.googleapis.com/token",
-// 		UserInfoURL: "https://www.googleapis.com/oauth2/v3/userinfo",
-// 	}}
-// }
-
 type GoogleConfig struct {
 	OAuth2ProviderConfig
 }
@@ -46,13 +27,13 @@ func (p *GoogleConfig) FetchAuthUser(ctx context.Context, token *oauth2.Token) (
 	if err := json.Unmarshal(data, &rawUser); err != nil {
 		return nil, err
 	}
-	extracted := struct {
+	var extracted struct {
 		Id            string `json:"sub"`
 		Name          string `json:"name"`
 		Picture       string `json:"picture"`
 		Email         string `json:"email"`
 		EmailVerified bool   `json:"email_verified"`
-	}{}
+	}
 	if err := json.Unmarshal(data, &extracted); err != nil {
 		return nil, err
 	}

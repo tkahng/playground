@@ -4,15 +4,18 @@ import (
 	"context"
 
 	"github.com/danielgtaylor/huma/v2"
-	"github.com/tkahng/authgo/internal/core"
-	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/authgo/internal/contextstore"
 )
 
 type StripePaymentPayload struct {
+	// StripeCustomerID string `json:"stripe_customer_id"`
 	PriceID string `json:"price_id"`
 }
-type StripePaymentInput struct {
-	// HxRequestHeaders
+type StripeTeamPaymentInput struct {
+	TeamID string `path:"team-id" required:"true"`
+	Body   StripePaymentPayload
+}
+type StripeUserPaymentInput struct {
 	Body StripePaymentPayload
 }
 
@@ -23,16 +26,15 @@ type StripeUrlOutput struct {
 	}
 }
 
-func (a *Api) StripeCheckoutSession(ctx context.Context, input *StripePaymentInput) (*StripeUrlOutput, error) {
-	db := a.app.Db()
-	info := core.GetContextUserInfo(ctx)
-	if info == nil {
-		return nil, huma.Error403Forbidden("Not authenticated")
+func (api *Api) CreateTeamCheckoutSession(ctx context.Context, input *StripeTeamPaymentInput) (*StripeUrlOutput, error) {
+	customer := contextstore.GetContextCurrentCustomer(ctx)
+	if customer == nil {
+		return nil, huma.Error403Forbidden("No customer found")
 	}
-	user := &info.User
-
-	// return sesh.URL, nil
-	url, err := a.app.Payment().CreateCheckoutSession(ctx, db, user.ID, input.Body.PriceID)
+	if input.Body.PriceID == "" {
+		return nil, huma.Error400BadRequest("Price ID is required")
+	}
+	url, err := api.app.Payment().CreateCheckoutSession(ctx, customer.ID, input.Body.PriceID)
 	if err != nil {
 		return nil, err
 	}
@@ -46,18 +48,15 @@ func (a *Api) StripeCheckoutSession(ctx context.Context, input *StripePaymentInp
 
 }
 
-type StripeBillingPortalInput struct {
-	// HxRequestHeaders
-	// Body StripePaymentPayload
-}
-
-func (a *Api) StripeBillingPortal(ctx context.Context, input *StripeBillingPortalInput) (*StripeUrlOutput, error) {
-	db := a.app.Db()
-	info := core.GetContextUserInfo(ctx)
-	if info == nil {
-		return nil, huma.Error401Unauthorized("not authorized")
+func (api *Api) CreateUserCheckoutSession(ctx context.Context, input *StripeUserPaymentInput) (*StripeUrlOutput, error) {
+	customer := contextstore.GetContextCurrentCustomer(ctx)
+	if customer == nil {
+		return nil, huma.Error403Forbidden("No customer found")
 	}
-	url, err := a.app.Payment().CreateBillingPortalSession(ctx, db, info.User.ID)
+	if input.Body.PriceID == "" {
+		return nil, huma.Error400BadRequest("Price ID is required")
+	}
+	url, err := api.app.Payment().CreateCheckoutSession(ctx, customer.ID, input.Body.PriceID)
 	if err != nil {
 		return nil, err
 	}
@@ -71,38 +70,86 @@ func (a *Api) StripeBillingPortal(ctx context.Context, input *StripeBillingPorta
 
 }
 
-type CheckoutSession struct {
-	ID      string          `json:"id"`
-	Price   *shared.Price   `json:"price"`
-	Product *shared.Product `json:"product"`
+func (api *Api) StripeBillingPortal(ctx context.Context, input *struct{}) (*StripeUrlOutput, error) {
+	customer := contextstore.GetContextCurrentCustomer(ctx)
+	if customer == nil {
+		return nil, huma.Error403Forbidden("No customer found")
+	}
+	url, err := api.app.Payment().CreateBillingPortalSession(ctx, customer.ID)
+	if err != nil {
+		return nil, err
+	}
+	return &StripeUrlOutput{
+		Body: struct {
+			Url string `json:"url"`
+		}{
+			Url: url,
+		},
+	}, nil
+
+}
+func (api *Api) StripeTeamBillingPortal(ctx context.Context, input *struct {
+	TeamID string `path:"team-id" required:"true"`
+}) (*StripeUrlOutput, error) {
+	customer := contextstore.GetContextCurrentCustomer(ctx)
+	if customer == nil {
+		return nil, huma.Error403Forbidden("No customer found")
+	}
+	url, err := api.app.Payment().CreateBillingPortalSession(ctx, customer.ID)
+	if err != nil {
+		return nil, err
+	}
+	return &StripeUrlOutput{
+		Body: struct {
+			Url string `json:"url"`
+		}{
+			Url: url,
+		},
+	}, nil
+
 }
 
 type CheckoutSessionOutput struct {
-	Body shared.SubscriptionWithPrice
+	Body StripeSubscription
 }
 
 type StripeCheckoutSessionInput struct {
 	CheckoutSessionID string `path:"checkoutSessionId"`
 }
 
-func (a *Api) StripeCheckoutSessionGet(ctx context.Context, input *StripeCheckoutSessionInput) (*CheckoutSessionOutput, error) {
-	db := a.app.Db()
-	payment := a.app.Payment()
-	cs, err := payment.FindSubscriptionWithPriceBySessionId(ctx, db, input.CheckoutSessionID)
+func (api *Api) StripeCheckoutSessionGet(ctx context.Context, input *StripeCheckoutSessionInput) (*CheckoutSessionOutput, error) {
+	info := contextstore.GetContextUserInfo(ctx)
+	if info == nil {
+		return nil, huma.Error401Unauthorized("unauthorized")
+	}
+	payment := api.app.Payment()
+	cs, err := payment.FindSubscriptionWithPriceProductBySessionId(ctx, input.CheckoutSessionID)
 	if err != nil {
 		return nil, err
 	}
 	if cs == nil {
 		return nil, huma.Error404NotFound("checkout session not found")
 	}
+	if cs.StripeCustomer != nil {
+		if cs.StripeCustomer.TeamID != nil {
+			teamInfo, err := api.app.Team().FindTeamInfo(ctx, *cs.StripeCustomer.TeamID, info.User.ID)
+			if err != nil {
+				return nil, err
+			}
+			if teamInfo == nil {
+				return nil, huma.Error404NotFound("you are not a member of the team this checkout session is for")
+			}
+			cs.StripeCustomer.Team = &teamInfo.Team
+		}
+		if cs.StripeCustomer.UserID != nil {
+			if *cs.StripeCustomer.UserID != info.User.ID {
+				return nil, huma.Error403Forbidden("you are not the user this checkout session is for")
+			}
+			cs.StripeCustomer.User = &info.User
+		}
 
+	}
 	return &CheckoutSessionOutput{
-		Body: shared.SubscriptionWithPrice{
-			Subscription: shared.FromCrudSubscription(&cs.Subscription),
-			Price: &shared.StripePricesWithProduct{
-				Price:   shared.FromCrudPrice(&cs.Price),
-				Product: shared.FromCrudProduct(&cs.Product),
-			},
-		},
+		Body: *FromModelSubscription(cs),
 	}, nil
 }

@@ -5,21 +5,21 @@ import (
 	"slices"
 
 	"github.com/danielgtaylor/huma/v2"
-	"github.com/tkahng/authgo/internal/core"
-	"github.com/tkahng/authgo/internal/crudrepo"
+	"github.com/tkahng/authgo/internal/contextstore"
+	"github.com/tkahng/authgo/internal/repository"
 )
 
-func (a *Api) ApiProtected(ctx context.Context, input *struct {
+func (api *Api) ApiProtected(ctx context.Context, input *struct {
 	PermissionName string `path:"permission-name"`
 }) (*struct {
 	Body string
 }, error) {
-	claims := core.GetContextUserInfo(ctx)
+	claims := contextstore.GetContextUserInfo(ctx)
 	if claims == nil {
 		return nil, huma.Error404NotFound("User not found")
 	}
-	dbx := a.app.Db()
-	permission, err := crudrepo.Permission.GetOne(
+	dbx := api.app.Db()
+	permission, err := repository.Permission.GetOne(
 		ctx,
 		dbx,
 		&map[string]any{

@@ -6,12 +6,9 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/authgo/internal/models"
+	"github.com/tkahng/authgo/internal/services"
 )
-
-type OAuth2CallbackPostResponse struct {
-	Body *shared.UserInfoTokens
-}
 
 func (api *Api) OAuth2CallbackPost(ctx context.Context, input *OAuth2CallbackInput) (*AuthenticatedInfoResponse, error) {
 
@@ -25,14 +22,13 @@ func (api *Api) OAuth2CallbackPost(ctx context.Context, input *OAuth2CallbackInp
 		return nil, err
 	}
 	q := uri.Query()
-	q.Add(string(shared.TokenTypesRefreshToken), dto.Tokens.RefreshToken)
+	q.Add(string(models.TokenTypesRefreshToken), dto.Tokens.RefreshToken)
 	uri.RawQuery = q.Encode()
 	fmt.Println(uri.String())
 
 	return &AuthenticatedInfoResponse{
-		Body: dto.UserInfoTokens,
+		Body: dto.ApiUserInfoTokens,
 	}, nil
-	// return TokenDtoFromUserWithApp(ctx, h.app, user, uuid.NewString())
 }
 
 type OAuth2CallbackInput struct {
@@ -44,7 +40,6 @@ type OAuth2CallbackInput struct {
 type OAuth2CallbackGetResponse struct {
 	Status int
 	Url    string `header:"Location"`
-	// Body   *shared.AuthenticatedDTO
 }
 
 func (api *Api) OAuth2CallbackGet(ctx context.Context, input *OAuth2CallbackInput) (*OAuth2CallbackGetResponse, error) {
@@ -59,7 +54,7 @@ func (api *Api) OAuth2CallbackGet(ctx context.Context, input *OAuth2CallbackInpu
 		return nil, err
 	}
 	q := uri.Query()
-	q.Add(string(shared.TokenTypesRefreshToken), dto.Tokens.RefreshToken)
+	q.Add(string(models.TokenTypesRefreshToken), dto.Tokens.RefreshToken)
 	uri.RawQuery = q.Encode()
 	fmt.Println(uri.String())
 
@@ -71,8 +66,28 @@ func (api *Api) OAuth2CallbackGet(ctx context.Context, input *OAuth2CallbackInpu
 
 }
 
+func ToApiUserInfoTokens(userInfo *models.UserInfoTokens) *ApiUserInfoTokens {
+	if userInfo == nil {
+		return nil
+	}
+	return &ApiUserInfoTokens{
+		ApiUserInfo: ApiUserInfo{
+			User:        *FromUserModel(&userInfo.User),
+			Roles:       userInfo.Roles,
+			Permissions: userInfo.Permissions,
+			Providers:   userInfo.Providers,
+		},
+		Tokens: TokenDto{
+			AccessToken:  userInfo.Tokens.AccessToken,
+			ExpiresIn:    userInfo.Tokens.ExpiresIn,
+			TokenType:    userInfo.Tokens.TokenType,
+			RefreshToken: userInfo.Tokens.RefreshToken,
+		},
+	}
+}
+
 type CallbackOutput struct {
-	shared.UserInfoTokens
+	ApiUserInfoTokens
 	RedirectTo string `json:"redirect_to"`
 }
 
@@ -85,27 +100,20 @@ func OAuth2Callback(ctx context.Context, api *Api, input *OAuth2CallbackInput) (
 	if parsedState == nil {
 		return nil, fmt.Errorf("token not found")
 	}
-	if parsedState.Type != shared.TokenTypesStateToken {
+	if parsedState.Type != models.TokenTypesStateToken {
 		return nil, fmt.Errorf("invalid token type. want verification_token, got  %v", parsedState.Type)
 	}
 	authUser, err := action.FetchAuthUser(ctx, input.Code, parsedState)
 	if err != nil {
 		return nil, fmt.Errorf("error at Oatuh2Callback: %w", err)
 	}
-	var prv shared.Providers
-	switch parsedState.Provider {
-	case shared.OAuthProvidersGithub:
-		prv = shared.ProvidersGithub
-	case shared.OAuthProvidersGoogle:
-		prv = shared.ProvidersGoogle
-	}
-	params := &shared.AuthenticationInput{
+	params := &services.AuthenticationInput{
 		AvatarUrl:         &authUser.AvatarURL,
 		Email:             authUser.Email,
 		Name:              &authUser.Username,
 		EmailVerifiedAt:   &authUser.Expiry,
-		Provider:          prv,
-		Type:              shared.ProviderTypeOAuth,
+		Provider:          models.Providers(parsedState.Provider),
+		Type:              models.ProviderTypeOAuth,
 		ProviderAccountID: authUser.Id,
 		AccessToken:       &authUser.AccessToken,
 		RefreshToken:      &authUser.RefreshToken,
@@ -120,7 +128,7 @@ func OAuth2Callback(ctx context.Context, api *Api, input *OAuth2CallbackInput) (
 		return nil, fmt.Errorf("error creating auth dto: %w", err)
 	}
 	return &CallbackOutput{
-		UserInfoTokens: *dto,
-		RedirectTo:     parsedState.RedirectTo,
+		ApiUserInfoTokens: *ToApiUserInfoTokens(dto),
+		RedirectTo:        parsedState.RedirectTo,
 	}, nil
 }

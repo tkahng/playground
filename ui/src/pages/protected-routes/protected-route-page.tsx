@@ -1,17 +1,16 @@
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { GetError } from "@/lib/get-erro";
+import { GetError } from "@/lib/get-error";
 import { protectedApi } from "@/lib/queries";
 import { useQuery } from "@tanstack/react-query";
 import { useParams } from "react-router";
 
 export default function ProtectedRoutePage() {
-  const { user, checkAuth } = useAuthProvider();
+  const { user } = useAuthProvider();
   const { permission } = useParams<{ permission: string }>();
   console.log("permission", permission);
   const { data, isPending, isError, error } = useQuery({
     queryKey: ["protected-route", permission],
     queryFn: async () => {
-      await checkAuth();
       if (!user?.tokens.access_token || !permission) {
         throw new Error("Missing access token");
       }

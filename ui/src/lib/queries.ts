@@ -1,17 +1,15 @@
 import { client } from "@/lib/client";
 import { components, operations } from "@/schema";
 import {
-  AuthenticatedDTO,
   RefreshTokenInput,
   SigninInput,
   SignupInput,
   UserDetailWithRoles,
+  UserInfoTokens,
   UserWithAccounts,
 } from "@/schema.types";
 
-export const signIn = async (
-  args: SigninInput
-): Promise<AuthenticatedDTO | null> => {
+export const signIn = async (args: SigninInput): Promise<UserInfoTokens> => {
   const {
     data,
     error,
@@ -25,7 +23,7 @@ export const signIn = async (
   if (error) {
     throw error;
   }
-  return data || null;
+  return data;
 };
 
 export const signOut = async (
@@ -47,7 +45,7 @@ export const signOut = async (
 
 export const refreshToken = async (
   args: RefreshTokenInput
-): Promise<AuthenticatedDTO | null> => {
+): Promise<UserInfoTokens> => {
   const {
     data,
     error,
@@ -65,7 +63,7 @@ export const refreshToken = async (
 
 export const signUp = async (
   args: SignupInput
-): Promise<AuthenticatedDTO | null> => {
+): Promise<UserInfoTokens | null> => {
   const {
     data,
     error,
@@ -248,7 +246,7 @@ export const deleteRolePermission = async (
 export const createRolePermission = async (
   token: string,
   roleId: string,
-  body: components["schemas"]["RolePermissionsUpdateInput"]
+  body: components["schemas"]["PermissionIdsInput"]
 ) => {
   const { data, error } = await client.POST(
     "/api/admin/roles/{id}/permissions",
@@ -517,7 +515,7 @@ export const getUserInfo = async (
   const accoutns = await getUserAccounts(token, id);
   const userPerms: {
     created_at: string;
-    description?: string;
+    description: string | null;
     id: string;
     is_directly_assigned: boolean;
     name: string;
@@ -541,30 +539,30 @@ export const getUserInfo = async (
         });
       }
     });
-    const roles = await rolesPaginate(token, {
-      page: 0,
-      per_page: 50,
-      ids: Array.from(ids),
-    });
-    if (roles.data?.length) {
-      const map = new Map(roles.data.map((x) => [x.id, x]));
-      userPermissions.data.forEach((r) => {
-        const { role_ids, ...rest } = r;
-        const roleList: components["schemas"]["RoleWithPermissions"][] = [];
-        if (r.role_ids?.length) {
-          r.role_ids.forEach((id) => {
-            const role = map.get(id);
-            if (role) {
-              roleList.push(role);
-            }
-          });
-        }
-        userPerms.push({
-          ...rest,
-          roles: roleList,
-        });
-      });
-    }
+    // const roles = await rolesPaginate(token, {
+    //   page: 0,
+    //   per_page: 50,
+    //   ids: Array.from(ids),
+    // });
+    // if (roles.data?.length) {
+    //   // const map = new Map(roles.data.map((x) => [x.id, x]));
+    //   // roles.data.forEach((r) => {
+    //   //   // const { permissions, ...rest } = r;
+    //   //   // const roleList: components["schemas"]["RoleWithPermissions"][] = [];
+    //   //   // if (r.permissions?.length) {
+    //   //   //   r.permissions.forEach((permssion) => {
+    //   //   //     const role = map.get(id.id);
+    //   //   //     if (role) {
+    //   //   //       roleList.push(role);
+    //   //   //     }
+    //   //   //   });
+    //   //   // }
+    //   //   // userPerms.push({
+    //   //   //   ...rest,
+    //   //   //   roles: roleList,
+    //   //   // });
+    //   // });
+    // }
   }
   return {
     ...user,
@@ -693,7 +691,7 @@ export const getProductsWithPrices = async (token?: string) => {
 };
 
 export const getUserSubscriptions = async (token: string) => {
-  const { data, error } = await client.GET("/api/stripe/my-subscriptions", {
+  const { data, error } = await client.GET("/api/subscriptions/active", {
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -703,10 +701,29 @@ export const getUserSubscriptions = async (token: string) => {
   }
   return data ? data : null;
 };
+export const getTeamSubscriptions = async (token: string, teamId: string) => {
+  const { data, error } = await client.GET(
+    "/api/teams/{team-id}/subscriptions/active",
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      params: {
+        path: {
+          "team-id": teamId,
+        },
+      },
+    }
+  );
+  if (error) {
+    throw error;
+  }
+  return data ? data : null;
+};
 
 export const getCheckoutSession = async (token: string, id: string) => {
   const { data, error } = await client.GET(
-    "/api/stripe/checkout-session/{checkoutSessionId}",
+    "/api/subscriptions/checkout-session/{checkoutSessionId}",
     {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -731,14 +748,46 @@ export const createCheckoutSession = async (
   token: string,
   { price_id }: { price_id: string }
 ) => {
-  const { data, error } = await client.POST("/api/stripe/checkout-session", {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-    body: {
-      price_id,
-    },
-  });
+  const { data, error } = await client.POST(
+    "/api/subscriptions/checkout-session",
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: {
+        price_id,
+      },
+    }
+  );
+  if (error) {
+    throw error;
+  }
+  if (!data) {
+    throw new Error("No data");
+  }
+  return data;
+};
+
+export const createTeamCheckoutSession = async (
+  token: string,
+  { price_id, team_id }: { price_id: string; team_id: string }
+) => {
+  const { data, error } = await client.POST(
+    "/api/teams/{team-id}/subscriptions/checkout-session",
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: {
+        price_id,
+      },
+      params: {
+        path: {
+          "team-id": team_id,
+        },
+      },
+    }
+  );
   if (error) {
     throw error;
   }
@@ -749,11 +798,39 @@ export const createCheckoutSession = async (
 };
 
 export const createBillingPortalSession = async (token: string) => {
-  const { data, error } = await client.POST("/api/stripe/billing-portal", {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  const { data, error } = await client.POST(
+    "/api/subscriptions/billing-portals",
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+  if (error) {
+    throw error;
+  }
+  if (!data) {
+    throw new Error("No data");
+  }
+  return data.url;
+};
+export const createTeamBillingPortalSession = async (
+  token: string,
+  teamId: string
+) => {
+  const { data, error } = await client.POST(
+    "/api/teams/{team-id}/subscriptions/billing-portals",
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      params: {
+        path: {
+          "team-id": teamId,
+        },
+      },
+    }
+  );
   if (error) {
     throw error;
   }
@@ -813,16 +890,23 @@ export const confirmVerification = async (token: string, type: string) => {
 
 export const taskProjectList = async (
   token: string,
+  teamId: string,
   args: operations["task-project-list"]["parameters"]["query"]
 ) => {
-  const { data, error } = await client.GET("/api/task-projects", {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-    params: {
-      query: args,
-    },
-  });
+  const { data, error } = await client.GET(
+    "/api/teams/{team-id}/task-projects",
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      params: {
+        path: {
+          "team-id": teamId,
+        },
+        query: args,
+      },
+    }
+  );
   if (error) {
     throw error;
   }
@@ -860,14 +944,23 @@ export const taskProjectGet = async (token: string, id: string) => {
 
 export const taskProjectCreate = async (
   token: string,
+  teamId: string,
   args: operations["task-project-create"]["requestBody"]["content"]["application/json"]
 ) => {
-  const { data, error } = await client.POST("/api/task-projects", {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-    body: args,
-  });
+  const { data, error } = await client.POST(
+    "/api/teams/{team-id}/task-projects",
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      params: {
+        path: {
+          "team-id": teamId,
+        },
+      },
+      body: args,
+    }
+  );
   if (error) {
     throw error;
   }
@@ -879,14 +972,23 @@ export const taskProjectCreate = async (
 
 export const taskProjectCreateWithAi = async (
   token: string,
+  teamId: string,
   args: operations["task-project-create-with-ai"]["requestBody"]["content"]["application/json"]
 ) => {
-  const { data, error } = await client.POST("/api/task-projects/ai", {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-    body: args,
-  });
+  const { data, error } = await client.POST(
+    "/api/teams/{team-id}/task-projects/ai",
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      params: {
+        path: {
+          "team-id": teamId,
+        },
+      },
+      body: args,
+    }
+  );
   if (error) {
     throw error;
   }
@@ -898,16 +1000,24 @@ export const taskProjectCreateWithAi = async (
 
 export const taskList = async (
   token: string,
+  taskProjectId: string,
   args: operations["task-list"]["parameters"]["query"]
 ) => {
-  const { data, error } = await client.GET("/api/tasks", {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-    params: {
-      query: args,
-    },
-  });
+  const { data, error } = await client.GET(
+    "/api/task-projects/{task-project-id}/tasks",
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      params: {
+        path: {
+          "task-project-id": taskProjectId,
+        },
+
+        query: args,
+      },
+    }
+  );
   if (error) {
     throw error;
   }
@@ -923,7 +1033,7 @@ export const createTask = async (
   args: operations["task-project-tasks-create"]["requestBody"]["content"]["application/json"]
 ) => {
   const { data, error } = await client.POST(
-    "/api/task-projects/{task-project-id}/tasks",
+    "/api/task-projects/{task-project-id}",
     {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -1130,7 +1240,7 @@ export const adminStripeProduct = async (token: string, id: string) => {
     params: {
       path: { "product-id": id },
       query: {
-        expand: ["prices", "roles"],
+        expand: ["prices", "permissions"],
       },
     },
   });
@@ -1143,10 +1253,10 @@ export const adminStripeProduct = async (token: string, id: string) => {
 export const adminStripeProductRolesCreate = async (
   token: string,
   id: string,
-  body: operations["admin-create-product-roles"]["requestBody"]["content"]["application/json"]
+  body: operations["admin-create-product-permissions"]["requestBody"]["content"]["application/json"]
 ) => {
   const { data, error } = await client.POST(
-    "/api/admin/products/{product-id}/roles",
+    "/api/admin/products/{product-id}/permissions",
     {
       params: {
         path: { "product-id": id },
@@ -1163,18 +1273,18 @@ export const adminStripeProductRolesCreate = async (
   return data;
 };
 
-export const adminStripeProductRolesDelete = async (
+export const adminStripeProductPermissionsDelete = async (
   token: string,
   productId: string,
-  roleId: string
+  permissionId: string
 ) => {
   const { data, error } = await client.DELETE(
-    "/api/admin/products/{product-id}/roles/{role-id}",
+    "/api/admin/products/{product-id}/permissions/{permission-id}",
     {
       params: {
         path: {
           "product-id": productId,
-          "role-id": roleId,
+          "permission-id": permissionId,
         },
       },
       headers: {
@@ -1265,6 +1375,255 @@ export const permissionsList = async () => {
       },
     },
   });
+  if (error) {
+    throw error;
+  }
+  return data;
+};
+
+export const getUserTeams = async (token: string) => {
+  const { data, error } = await client.GET("/api/teams", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    params: {
+      query: {
+        page: 0,
+        per_page: 50,
+        sort_by: "name",
+        sort_order: "asc",
+      },
+    },
+  });
+  if (error) {
+    throw error;
+  }
+  return data;
+};
+
+export const getTeamBySlug = async (token: string, slug: string) => {
+  const { data, error } = await client.GET("/api/teams/slug/{team-slug}", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    params: {
+      path: { "team-slug": slug },
+    },
+  });
+  if (error) {
+    throw error;
+  }
+  return data;
+};
+
+export const getTeamTeamMembers = async (
+  token: string,
+  teamId: string,
+  page: number,
+  perPage: number
+) => {
+  const { data, error } = await client.GET("/api/teams/{team-id}/members", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    params: {
+      path: {
+        "team-id": teamId,
+      },
+      query: {
+        page,
+        per_page: perPage,
+      },
+    },
+  });
+  if (error) {
+    throw error;
+  }
+  return data;
+};
+
+export const updateTeam = async (
+  token: string,
+  teamId: string,
+  body: components["schemas"]["UpdateTeamDto"]
+) => {
+  const { data, error } = await client.PUT("/api/teams/{team-id}", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    params: {
+      path: { "team-id": teamId },
+    },
+    body,
+  });
+  if (error) {
+    throw error;
+  }
+  return data;
+};
+
+export const inviteTeamMember = async (
+  token: string,
+  teamId: string,
+  body: components["schemas"]["InviteTeamMemberDto"]
+) => {
+  const { error } = await client.POST("/api/teams/{team-id}/invitations", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    params: {
+      path: { "team-id": teamId },
+    },
+    body,
+  });
+  if (error) {
+    throw error;
+  }
+  return true;
+};
+
+export const getTeamInvitations = async (
+  token: string,
+  teamId: string,
+  page: number = 0,
+  perPage: number = 10
+) => {
+  const { data, error } = await client.GET("/api/teams/{team-id}/invitations", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    params: {
+      path: { "team-id": teamId },
+      query: {
+        page,
+        per_page: perPage,
+      },
+    },
+  });
+  if (error) {
+    throw error;
+  }
+  return data;
+};
+
+export const cancelTeamInvitation = async (
+  token: string,
+  teamId: string,
+  invitationId: string
+) => {
+  const { error } = await client.DELETE(
+    "/api/teams/{team-id}/invitations/{invitation-id}",
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      params: {
+        path: {
+          "team-id": teamId,
+          "invitation-id": invitationId,
+        },
+      },
+    }
+  );
+  if (error) {
+    throw error;
+  }
+  return true;
+};
+
+export const verifyTeamInvitation = async (
+  token: string,
+  invitationToken: string
+) => {
+  const { error } = await client.POST("/api/team-invitations/check", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: {
+      token: invitationToken,
+    },
+  });
+  if (error) {
+    throw error;
+  }
+  return true;
+};
+
+export const acceptInvitation = async (
+  token: string,
+  invitationToken: string
+) => {
+  const { error } = await client.POST("/api/team-invitations/accept", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: {
+      token: invitationToken,
+    },
+  });
+  if (error) {
+    throw error;
+  }
+  return true;
+};
+
+export const declineInvitation = async (
+  token: string,
+  invitationToken: string
+) => {
+  const { error } = await client.POST("/api/team-invitations/decline", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: {
+      token: invitationToken,
+    },
+  });
+  if (error) {
+    throw error;
+  }
+  return true;
+};
+
+export const getUserTeamInvitations = async (
+  token: string,
+  page = 0,
+  perPage = 10
+) => {
+  const { data, error } = await client.GET("/api/team-invitations", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    params: {
+      query: {
+        page,
+        per_page: perPage,
+      },
+    },
+  });
+  if (error) {
+    throw error;
+  }
+  return data;
+};
+
+export const getTeamInvitationByToken = async (
+  token: string,
+  invitationToken: string
+) => {
+  const { data, error } = await client.GET(
+    "/api/team-invitations/token/{token}",
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      params: {
+        path: {
+          token: invitationToken,
+        },
+      },
+    }
+  );
   if (error) {
     throw error;
   }

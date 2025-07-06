@@ -7,21 +7,28 @@ export type LinkDto = {
   current?: (pathname: string) => boolean;
 };
 
-export const defaultCurrentFunc = (pathname: string, to: string) => {
-  return pathname === to;
-};
-
 export const RouteLinks = {
+  TEAM_LIST: {
+    to: RouteMap.TEAM_LIST,
+    title: "Teams",
+    current: (pathname: string) => pathname.startsWith(RouteMap.TEAM_LIST),
+  },
   FEATURES: { to: RouteMap.FEATURES, title: "Features" },
   PRICING: { to: RouteMap.PRICING, title: "Pricing" },
   ABOUT: { to: RouteMap.ABOUT, title: "About" },
   // CONTACT: { to: RouteMap.CONTACT, title: "Contact" },
   DASHBOARD: {
-    to: RouteMap.DASHBOARD,
-    title: "Dashboard",
-    current: (pathname: string) => pathname.startsWith(RouteMap.DASHBOARD),
+    to: RouteMap.ACCOUNT_OVERVIEW,
+    title: "Overview",
+    current: (pathname: string) => pathname === RouteMap.ACCOUNT_OVERVIEW,
   },
-  DASHBOARD_OVERVIEW: { to: RouteMap.DASHBOARD, title: "Overview" },
+  ACCOUNT_OVERVIEW_TEAMS: {
+    to: RouteMap.ACCOUNT_OVERVIEW,
+    title: "Teams",
+    current: (pathname: string) =>
+      pathname.startsWith(RouteMap.ACCOUNT_OVERVIEW),
+  },
+  DASHBOARD_OVERVIEW: { to: RouteMap.ACCOUNT_OVERVIEW, title: "Overview" },
   TASK_PROJECTS: {
     to: RouteMap.TASK_PROJECTS,
     title: "Projects",
@@ -91,21 +98,77 @@ export const adminHeaderLinks: LinkDto[] = [
   RouteLinks.ADMIN_DASHBOARD_SUBSCRIPTIONS,
 ];
 
-export const protectedSidebarLinks: LinkDto[] = [
-  RouteLinks.PROTECTED,
-  RouteLinks.PROTECTED_BASIC,
-  RouteLinks.PROTECTED_PRO,
-  RouteLinks.PROTECTED_ADVANCED,
-];
-
 export const authenticatedSubHeaderLinks: LinkDto[] = [
   RouteLinks.DASHBOARD_OVERVIEW,
   RouteLinks.TASK_PROJECTS,
   RouteLinks.PROTECTED,
   RouteLinks.SETTINGS,
 ];
-
+export const accountSidebarLinks: LinkDto[] = [
+  RouteLinks.ACCOUNT_OVERVIEW_TEAMS,
+];
 export const settingsSidebarLinks: LinkDto[] = [
   RouteLinks.GENERAL_SETTINGS,
   RouteLinks.BILLING_SETTINGS,
 ];
+
+export const userDashboardLinks: LinkDto[] = [
+  RouteLinks.DASHBOARD,
+  RouteLinks.SETTINGS,
+];
+
+export const teamLinks = (slug: string): LinkDto[] => [
+  createTeamDashboardLink(slug),
+  createTeamProjectsLink(slug),
+  createTeamSettingsLink(slug),
+];
+
+export const teamSettingLinks = (slug: string): LinkDto[] => [
+  createTeamSettingsLink(slug),
+  createTeamBillingSettingsLink(slug),
+  createTeamMembersSettingsLink(slug),
+];
+
+export const createTeamDashboardLink = (slug: string) => {
+  const path = `/teams/${slug}/dashboard`;
+  return {
+    to: path,
+    title: "Team Dashboard",
+    current: (pathname: string) => pathname.startsWith(path),
+  };
+};
+export const createTeamProjectsLink = (slug: string) => {
+  const path = `/teams/${slug}/projects`;
+  return {
+    to: path,
+    title: "Team Projects",
+    current: (pathname: string) => pathname.startsWith(path),
+  };
+};
+
+export const createTeamSettingsLink = (slug: string) => {
+  const path = `/teams/${slug}/settings`;
+  return {
+    to: path,
+    title: "Team Settings",
+    current: (pathname: string) => pathname.startsWith(path),
+  };
+};
+
+export const createTeamBillingSettingsLink = (slug: string) => {
+  const path = `/teams/${slug}/settings/billing`;
+  return {
+    to: path,
+    title: "Team Billing Settings",
+    current: (pathname: string) => pathname.startsWith(path),
+  };
+};
+
+export const createTeamMembersSettingsLink = (slug: string) => {
+  const path = `/teams/${slug}/settings/members`;
+  return {
+    to: path,
+    title: "Team Members Settings",
+    current: (pathname: string) => pathname.startsWith(path),
+  };
+};

@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { createCheckoutSession } from "@/lib/queries";
+import { useTeam } from "@/hooks/use-team";
+import { createTeamCheckoutSession } from "@/lib/queries";
 import { cn } from "@/lib/utils";
 
 import { ProductWithPrices, SubscriptionWithPrice, User } from "@/schema.types";
@@ -18,14 +19,15 @@ interface Props {
 
 type BillingInterval = "lifetime" | "year" | "month";
 
-const formSchema = z.object({
+export const formSchema = z.object({
   price_id: z.string().min(2, {
     message: "name must be at least 2 characters.",
   }),
 });
 
 export default function Pricing({ products, subscription }: Props) {
-  const { user, checkAuth } = useAuthProvider();
+  const { user } = useAuthProvider();
+  const { team, teamMember } = useTeam();
   const intervals = Array.from(
     new Set(
       products.flatMap((product) =>
@@ -42,10 +44,7 @@ export default function Pricing({ products, subscription }: Props) {
 
   const mutation = useMutation({
     mutationFn: async (values: z.infer<typeof formSchema>) => {
-      await checkAuth(); // Ensure user is authenticated
-      setPriceIdLoading(values.price_id);
       if (!user) {
-        setPriceIdLoading(undefined);
         return navigate({
           pathname: "/signin",
           search: createSearchParams({
@@ -53,9 +52,15 @@ export default function Pricing({ products, subscription }: Props) {
           }).toString(),
         });
       }
-      const { url } = await createCheckoutSession(
+      if (!team || teamMember?.role !== "owner") {
+        return navigate({
+          pathname: `/teams/${team?.slug}/settings/billing`,
+        });
+      }
+      setPriceIdLoading(values.price_id);
+      const { url } = await createTeamCheckoutSession(
         user.tokens.access_token,
-        values
+        { ...values, team_id: team.id }
       );
       setPriceIdLoading(undefined);
       window.location.href = url;

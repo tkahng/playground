@@ -3,29 +3,42 @@ import { NexusAIFooter } from "@/components/nexus-footer";
 import { NexusAILandingHeader } from "@/components/nexus-landing-header";
 import { RouteMap } from "@/components/route-map";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { useEffect } from "react";
-import { Outlet, useLocation, useNavigate } from "react-router";
+import { useTeam } from "@/hooks/use-team";
+import { Navigate, Outlet, useLocation } from "react-router";
 
 export default function RootLayout() {
   const { user } = useAuthProvider();
+  const { team, teamMember } = useTeam();
   const { pathname } = useLocation();
-  const navigate = useNavigate();
-  // const { pathname } = useLocation();
   const isAdmin = user?.roles?.includes("superuser");
   // const isAdminPath = pathname.startsWith(RouteMap.ADMIN);
   const admin = isAdmin
     ? [{ to: RouteMap.ADMIN, title: "Admin", current: () => false }]
     : [];
   const isUser = user
-    ? [{ to: RouteMap.DASHBOARD, title: "Dashboard", current: () => false }]
+    ? [
+        {
+          to: RouteMap.DASHBOARD,
+          title: "Dashboard",
+          current: () => false,
+        },
+      ]
     : [];
-  // const dashboard = !isAdminPath
   const links = [...isUser, ...admin] as LinkDto[];
-  useEffect(() => {
-    if (user && pathname === RouteMap.HOME) {
-      navigate(RouteMap.DASHBOARD);
+  if (user) {
+    if (pathname === "/") {
+      if (team && teamMember?.user_id === user.user.id) {
+        return <Navigate to={`/teams/${team.slug}/dashboard`} />;
+      } else {
+        return <Navigate to="/teams" />;
+      }
     }
-  }, [user, pathname]);
+    if (pathname === "/dashboard") {
+      if (team && teamMember?.user_id === user.user.id) {
+        return <Navigate to={`/teams/${team.slug}/dashboard`} />;
+      }
+    }
+  }
   return (
     <>
       <div className="relative flex min-h-screen flex-col">

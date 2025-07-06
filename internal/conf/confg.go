@@ -1,10 +1,24 @@
 package conf
 
 import (
+	"time"
+
 	"github.com/caarlos0/env/v11"
 	_ "github.com/joho/godotenv/autoload"
 )
 
+type Int64 int64
+
+func (i Int64) Duration() time.Duration {
+	return time.Duration(i) * time.Second
+}
+
+type JobsConfig struct {
+	PollerInterval int64 `env:"POLLER_INTERVAL" envDefault:"1"` // Default
+	JobTimeout     int64 `env:"JOB_TIMEOUT" envDefault:"30"`
+}
+
+// Duration: 3600, // 1hr
 type StorageConfig struct {
 	ClientId     string `env:"STORAGE_CLIENT_ID" required:"true" json:"client_id"`
 	ClientSecret string `env:"STORAGE_CLIENT_SECRET" required:"true" json:"client_secret"`
@@ -69,8 +83,13 @@ type Options struct {
 	Port int    `doc:"Port to listen on." short:"p" default:"8080"`
 }
 
+func ZeroEnvConfig() EnvConfig {
+	return EnvConfig{}
+}
+
 type EnvConfig struct {
 	Db DBConfig
+	JobsConfig
 	AppConfig
 	ResendConfig
 	OAuth2Config
@@ -115,4 +134,9 @@ func GetConfig[T any]() T {
 		panic(err)
 	}
 	return config
+}
+
+func NewSettings() *AppOptions {
+	config := new(EnvConfig)
+	return config.ToSettings()
 }

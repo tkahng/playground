@@ -6,11 +6,10 @@ import { getUserSubscriptions } from "@/lib/queries";
 import { useQuery } from "@tanstack/react-query";
 
 export default function BillingSettingPage() {
-  const { user, checkAuth } = useAuthProvider();
+  const { user } = useAuthProvider();
   const { data, isPending, isError, error } = useQuery({
     queryKey: ["billing-settings"],
     queryFn: async () => {
-      await checkAuth(); // Ensure user is authenticated
       if (!user?.tokens.access_token) {
         throw new Error("Missing access token");
       }

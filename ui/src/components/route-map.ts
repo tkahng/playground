@@ -7,9 +7,9 @@ export const RouteMap = {
   CONTACT: "/contact",
   HOME: "/",
   LANDING_HOME: "/home",
-  DASHBOARD: "/dashboard",
-  SETTINGS: "/settings",
-  BILLING_SETTINGS: "/settings/billing",
+  ACCOUNT_OVERVIEW: "/account",
+  SETTINGS: "/account/settings",
+  BILLING_SETTINGS: "/account/settings/billing",
 
   SIGNIN: "/signin",
   SIGNUP: "/signup",
@@ -27,7 +27,12 @@ export const RouteMap = {
   PROTECTED_PRO: "/protected/pro",
   PROTECTED_ADVANCED: "/protected/advanced",
   DASHBOARD_KANBAN: "/kanban",
+  DASHBOARD: "/dashboard",
+
   TASK_PROJECTS: "/projects",
   TASKS_HOME: "/tasks",
   PAYMENT: "/payment",
+
+  TEAM_LIST: "/teams",
+  TEAM_LIST_SLUG: "/teams/:teamSlug",
 };

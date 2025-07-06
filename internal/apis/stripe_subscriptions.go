@@ -4,36 +4,52 @@ import (
 	"context"
 
 	"github.com/danielgtaylor/huma/v2"
-	"github.com/tkahng/authgo/internal/core"
-	"github.com/tkahng/authgo/internal/queries"
-	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/authgo/internal/contextstore"
 )
 
-func (api *Api) MyStripeSubscriptions(ctx context.Context, input *struct{}) (*struct {
-	Body *shared.SubscriptionWithPrice `json:"body,omitempty" required:"false"`
+func (api *Api) GetStripeSubscriptions(ctx context.Context, input *struct{}) (*struct {
+	Body *StripeSubscription `json:"body,omitempty" required:"false"`
 }, error) {
 
-	db := api.app.Db()
-	user := core.GetContextUserInfo(ctx)
-	if user == nil {
-		return nil, huma.Error401Unauthorized("not authorized")
+	customer := contextstore.GetContextCurrentCustomer(ctx)
+	if customer == nil {
+		return nil, huma.Error403Forbidden("no customer found")
 	}
-	subscriptions, err := queries.FindLatestActiveSubscriptionWithPriceByUserId(ctx, db, user.User.ID)
+
+	subWithPriceProduct, err := api.app.Adapter().Subscription().FindActiveSubscriptionByCustomerId(ctx, customer.ID)
 	if err != nil {
 		return nil, err
 	}
-	if subscriptions == nil {
-		return nil, nil
-	}
+
 	output := &struct {
-		Body *shared.SubscriptionWithPrice `json:"body,omitempty" required:"false"`
-	}{}
-	output.Body = &shared.SubscriptionWithPrice{
-		Subscription: shared.FromCrudSubscription(&subscriptions.Subscription),
-		Price: &shared.StripePricesWithProduct{
-			Price:   shared.FromCrudPrice(&subscriptions.Price),
-			Product: shared.FromCrudProduct(&subscriptions.Product),
-		},
+		Body *StripeSubscription `json:"body,omitempty" required:"false"`
+	}{
+		Body: FromModelSubscription(subWithPriceProduct),
+	}
+
+	return output, nil
+
+}
+func (api *Api) GetTeamStripeSubscriptions(ctx context.Context, input *struct {
+	TeamID string `path:"team-id" json:"team_id" format:"uuid" required:"true"`
+}) (*struct {
+	Body *StripeSubscription `json:"body,omitempty" required:"false"`
+}, error) {
+
+	customer := contextstore.GetContextCurrentCustomer(ctx)
+	if customer == nil {
+		return nil, huma.Error403Forbidden("no customer found")
+	}
+
+	subWithPriceProduct, err := api.app.Adapter().Subscription().FindActiveSubscriptionByCustomerId(ctx, customer.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	output := &struct {
+		Body *StripeSubscription `json:"body,omitempty" required:"false"`
+	}{
+		Body: FromModelSubscription(subWithPriceProduct),
 	}
 
 	return output, nil

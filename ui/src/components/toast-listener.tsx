@@ -32,7 +32,7 @@ export const ToastListener = ({ children }: { children: React.ReactNode }) => {
 
       // Replace the URL with the updated query string
     }
-  }, [location]);
+  }, [location, navigate]);
   // toast.error("Error");
 
   return children; // this component doesn’t render anything

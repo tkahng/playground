@@ -3,29 +3,48 @@ package apis
 import (
 	"context"
 
-	"github.com/tkahng/authgo/internal/queries"
-	"github.com/tkahng/authgo/internal/shared"
+	"github.com/danielgtaylor/huma/v2"
+	"github.com/google/uuid"
+	"github.com/tkahng/authgo/internal/stores"
 	"github.com/tkahng/authgo/internal/tools/mapper"
+	"github.com/tkahng/authgo/internal/tools/utils"
 )
 
 func (api *Api) PermissionsList(ctx context.Context, input *struct {
-	shared.PermissionsListParams
-}) (*shared.PaginatedOutput[*shared.Permission], error) {
-	db := api.app.Db()
-	permissions, err := queries.ListPermissions(ctx, db, &input.PermissionsListParams)
+	PermissionsListParams
+}) (*ApiPaginatedOutput[*Permission], error) {
+	filter := new(stores.PermissionFilter)
+	filter.Page = input.PerPage
+	filter.PerPage = input.Page
+	filter.Ids = utils.ParseValidUUIDs(input.Ids...)
+	filter.Names = input.Names
+	filter.Q = input.Q
+	if len(input.RoleId) > 0 {
+		roleId, err := uuid.Parse(input.RoleId)
+		if err != nil && input.RoleId != "" {
+			return nil, huma.Error400BadRequest("Invalid role ID format", err)
+		} else {
+			filter.RoleId = roleId
+		}
+	}
+	filter.RoleReverse = input.RoleReverse
+	filter.SortBy = input.SortBy
+	filter.SortOrder = input.SortOrder
+
+	permissions, err := api.app.Adapter().Rbac().ListPermissions(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
-	count, err := queries.CountPermissions(ctx, db, &input.PermissionsListFilter)
+	count, err := api.app.Adapter().Rbac().CountPermissions(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
 
-	return &shared.PaginatedOutput[*shared.Permission]{
-		Body: shared.PaginatedResponse[*shared.Permission]{
+	return &ApiPaginatedOutput[*Permission]{
+		Body: ApiPaginatedResponse[*Permission]{
 
-			Data: mapper.Map(permissions, shared.FromCrudPermission),
-			Meta: shared.GenerateMeta(input.PaginatedInput, count),
+			Data: mapper.Map(permissions, FromModelPermission),
+			Meta: ApiGenerateMeta(&input.PaginatedInput, count),
 		},
 	}, nil
 

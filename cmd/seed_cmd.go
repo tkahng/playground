@@ -1,16 +1,25 @@
 package cmd
 
 import (
+	"errors"
 	"log/slog"
+	"time"
 
+	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/spf13/cobra"
 	"github.com/tkahng/authgo/internal/conf"
-	"github.com/tkahng/authgo/internal/db"
-	"github.com/tkahng/authgo/internal/queries"
+	"github.com/tkahng/authgo/internal/core"
+	"github.com/tkahng/authgo/internal/database"
+	"github.com/tkahng/authgo/internal/models"
+	"github.com/tkahng/authgo/internal/services"
+	"github.com/tkahng/authgo/internal/stores"
+	"github.com/tkahng/authgo/internal/tools/slug"
 )
 
 func NewSeedCmd() *cobra.Command {
 	seedCmd.AddCommand(seedRolesCmd)
+	seedCmd.AddCommand(seedUserCmd)
+	seedCmd.AddCommand(seedTeam)
 	return seedCmd
 }
 
@@ -26,8 +35,9 @@ var seedRolesCmd = &cobra.Command{
 		ctx := cmd.Context()
 		conf := conf.GetConfig[conf.DBConfig]()
 
-		dbx := db.CreateQueries(ctx, conf.DatabaseUrl)
-		err := queries.EnsureRoleAndPermissions(ctx, dbx, "superuser", "superuser", "advanced", "pro", "basic")
+		dbx := database.CreateQueries(ctx, conf.DatabaseUrl)
+		rbacStore := stores.NewDbRBACStore(dbx)
+		err := rbacStore.EnsureRoleAndPermissions(ctx, "superuser", "superuser", "advanced", "pro", "basic")
 		if err != nil {
 			slog.Error(
 				"error at createing roles",
@@ -35,7 +45,7 @@ var seedRolesCmd = &cobra.Command{
 				"role", "superuser",
 			)
 		}
-		err = queries.EnsureRoleAndPermissions(ctx, dbx, "advanced", "advanced", "pro", "basic")
+		err = rbacStore.EnsureRoleAndPermissions(ctx, "advanced", "advanced", "pro", "basic")
 		if err != nil {
 			slog.Error(
 				"error at createing roles",
@@ -43,7 +53,7 @@ var seedRolesCmd = &cobra.Command{
 				"role", "basic",
 			)
 		}
-		err = queries.EnsureRoleAndPermissions(ctx, dbx, "pro", "pro", "basic")
+		err = rbacStore.EnsureRoleAndPermissions(ctx, "pro", "pro", "basic")
 		if err != nil {
 			slog.Error(
 				"error at createing roles",
@@ -51,7 +61,7 @@ var seedRolesCmd = &cobra.Command{
 				"role", "basic",
 			)
 		}
-		err = queries.EnsureRoleAndPermissions(ctx, dbx, "basic", "basic")
+		err = rbacStore.EnsureRoleAndPermissions(ctx, "basic", "basic")
 		if err != nil {
 			slog.Error(
 				"error at createing roles",
@@ -63,34 +73,84 @@ var seedRolesCmd = &cobra.Command{
 	},
 }
 
-// var seedUserCmd = &cobra.Command{
-// 	Use:   "users",
-// 	Short: "seed users",
-// 	RunE: func(cmd *cobra.Command, args []string) error {
-// 		ctx := cmd.Context()
-// 		conf := conf.GetConfig[conf.DBConfig]()
+var seedUserCmd = &cobra.Command{
+	Use:     "user",
+	Short:   "seed user",
+	Example: "seed user admin@k2dv.io Password123! true",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		if len(args) != 3 {
+			return errors.New("missing email and password arguments")
+		}
 
-// 		pool := db.CreatePool(ctx, conf)
-// 		dbx := db.NewQueries(pool)
-// 		// role, err := queries.FindRoleByName(ctx, dbx, "basic")
-// 		// if err != nil {
-// 		// 	return fmt.Errorf("error at createing users: %w", err)
-// 		// }
+		if args[0] == "" || is.EmailFormat.Validate(args[0]) != nil {
+			return errors.New("mrror missing or invalid email address")
+		}
+		email := args[0]
+		password := args[1]
+		verirfied := args[2]
+		var verifiedAt *time.Time
+		if verirfied == "true" {
+			t := time.Now()
+			verifiedAt = &t
+		}
+		ctx := cmd.Context()
+		cfg := conf.GetConfig[conf.EnvConfig]()
+		app := core.NewBaseApp(ctx, cfg)
+		params := &services.AuthenticationInput{
+			Email:           email,
+			Password:        &password,
+			EmailVerifiedAt: verifiedAt,
+			Provider:        models.ProvidersCredentials,
+			Type:            models.ProviderTypeCredentials,
+		}
+		_, err := app.Auth().Authenticate(
+			ctx,
+			params,
+		)
+		return err
+	},
+}
 
-// 		// // _, err = seeders.UserCredentialsRolesFactory(ctx, dbx, 20, role)
-// 		// // err := repository.PopulateRoles(ctx, dbx)
-// 		// if err != nil {
+var seedTeam = &cobra.Command{
+	Use:     "team",
+	Short:   "seed team",
+	Example: "seed team admin@k2dv.io teamSlug",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		if len(args) != 2 {
+			return errors.New("missing email and password arguments")
+		}
 
-// 		// 	return fmt.Errorf("error at createing users: %w", err)
-// 		// }
-// 		// err = seeders.UserOauthFactory(ctx, dbx, 10, models.ProvidersGoogle)
-// 		// if err != nil {
-// 		// 	return fmt.Errorf("error at createing users: %w", err)
-// 		// }
-// 		// err = seeders.UserOauthFactory(ctx, dbx, 10, models.ProvidersGithub)
-// 		// if err != nil {
-// 		// 	return fmt.Errorf("error at createing users: %w", err)
-// 		// }
-// 		return nil
-// 	},
-// }
+		if args[0] == "" || is.EmailFormat.Validate(args[0]) != nil {
+			return errors.New("mrror missing or invalid email address")
+		}
+		email := args[0]
+		slug := slug.NewSlug(args[1])
+
+		ctx := cmd.Context()
+		cfg := conf.GetConfig[conf.EnvConfig]()
+		app := core.NewBaseApp(ctx, cfg)
+		user, err := app.Adapter().User().FindUser(ctx, &stores.UserFilter{
+			Emails: []string{email},
+		})
+		if err != nil {
+			return err
+		}
+		if user == nil {
+			return errors.New("user not found")
+		}
+
+		team, err := app.Team().CreateTeamWithOwner(
+			ctx,
+			slug,
+			slug,
+			user.ID,
+		)
+		if err != nil {
+			return err
+		}
+		if team == nil {
+			return errors.New("team not found")
+		}
+		return err
+	},
+}

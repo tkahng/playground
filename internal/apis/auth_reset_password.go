@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/danielgtaylor/huma/v2"
-	"github.com/tkahng/authgo/internal/core"
+	"github.com/tkahng/authgo/internal/contextstore"
 )
 
 type RequestPasswordResetInput struct {
@@ -16,10 +16,13 @@ type RequestPasswordResetOutput struct {
 
 func (api *Api) RequestPasswordReset(ctx context.Context, input *struct{ Body *RequestPasswordResetInput }) (*RequestPasswordResetOutput, error) {
 
-	checker := api.app.NewChecker(ctx)
-	err := checker.CannotBeSuperUserEmail(input.Body.Email)
+	checker := api.app.Checker()
+	ok, err := checker.CannotBeSuperUserEmail(ctx, input.Body.Email)
 	if err != nil {
 		return nil, err
+	}
+	if ok {
+		return nil, huma.Error400BadRequest("Cannot reset password for super user")
 	}
 	action := api.app.Auth()
 	err = action.HandlePasswordResetRequest(ctx, input.Body.Email)
@@ -32,7 +35,7 @@ func (api *Api) RequestPasswordReset(ctx context.Context, input *struct{ Body *R
 func (api *Api) CheckPasswordResetGet(ctx context.Context, input *OtpInput) (*struct{}, error) {
 
 	action := api.app.Auth()
-	err := action.CheckResetPasswordToken(ctx, input.Token)
+	err := action.HandleCheckResetPasswordToken(ctx, input.Token)
 	if err != nil {
 		return nil, err
 	}
@@ -62,16 +65,19 @@ type PasswordResetInput struct {
 
 func (api *Api) ResetPassword(ctx context.Context, input *struct{ Body PasswordResetInput }) (*struct{}, error) {
 
-	claims := core.GetContextUserInfo(ctx)
-	checker := api.app.NewChecker(ctx)
-	err := checker.CannotBeSuperUserEmail(claims.User.Email)
-	if err != nil {
-		return nil, err
-	}
-	action := api.app.Auth()
+	claims := contextstore.GetContextUserInfo(ctx)
 	if claims == nil {
 		return nil, huma.Error404NotFound("User not found")
 	}
+	checker := api.app.Checker()
+	ok, err := checker.CannotBeSuperUserEmail(ctx, claims.User.Email)
+	if err != nil {
+		return nil, err
+	}
+	if ok {
+		return nil, huma.Error400BadRequest("Cannot reset password for super user")
+	}
+	action := api.app.Auth()
 	err = action.ResetPassword(ctx, claims.User.ID, input.Body.PreviousPassword, input.Body.NewPassword)
 	if err != nil {
 		return nil, err

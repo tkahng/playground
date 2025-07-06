@@ -4,7 +4,9 @@ import (
 	"context"
 
 	"github.com/danielgtaylor/huma/v2"
-	"github.com/tkahng/authgo/internal/core"
+	"github.com/tkahng/authgo/internal/contextstore"
+	"github.com/tkahng/authgo/internal/tools/mailer"
+	"github.com/tkahng/authgo/internal/workers"
 )
 
 type EmailVerificationInput struct {
@@ -16,15 +18,20 @@ type EmailVerificationRequestInput struct {
 }
 
 func (api *Api) RequestVerification(ctx context.Context, input *struct{}) (*struct{}, error) {
-	action := api.app.Auth()
-	claims := core.GetContextUserInfo(ctx)
+	jobService := api.app.JobService()
+	claims := contextstore.GetContextUserInfo(ctx)
 	if claims == nil {
 		return nil, huma.Error404NotFound("User not found")
 	}
 	if claims.User.EmailVerifiedAt != nil {
 		return nil, huma.Error404NotFound("Email already verified")
 	}
-	err := action.SendOtpEmail(core.EmailTypeVerify, ctx, &claims.User)
+	// user :=
+	err := jobService.EnqueueOtpMailJob(ctx, &workers.OtpEmailJobArgs{
+		UserID: claims.User.ID,
+		Type:   mailer.EmailTypeVerify,
+	})
+
 	if err != nil {
 		return nil, err
 	}

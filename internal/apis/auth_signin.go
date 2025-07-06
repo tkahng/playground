@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/authgo/internal/models"
+	"github.com/tkahng/authgo/internal/services"
 )
 
 type SigninDto struct {
@@ -17,17 +18,22 @@ type AuthenticatedInfoResponse struct {
 	// SetCookieOutput
 	SetCookie []http.Cookie `header:"Set-Cookie"`
 
-	Body shared.UserInfoTokens `json:"body"`
+	Body ApiUserInfoTokens `json:"body"`
 }
 
 func (api *Api) SignIn(ctx context.Context, input *struct{ Body *SigninDto }) (*AuthenticatedInfoResponse, error) {
 	action := api.app.Auth()
 	password := input.Body.Password.String()
-	params := &shared.AuthenticationInput{
+	hash, err := action.Password().HashPassword(password)
+	if err != nil {
+		return nil, fmt.Errorf("error hashing password: %w", err)
+	}
+	params := &services.AuthenticationInput{
 		Email:             input.Body.Email,
-		Provider:          shared.ProvidersCredentials,
+		Provider:          models.ProvidersCredentials,
 		Password:          &password,
-		Type:              shared.ProviderTypeCredentials,
+		HashPassword:      &hash,
+		Type:              models.ProviderTypeCredentials,
 		ProviderAccountID: input.Body.Email,
 	}
 	user, err := action.Authenticate(ctx, params)
@@ -42,7 +48,7 @@ func (api *Api) SignIn(ctx context.Context, input *struct{ Body *SigninDto }) (*
 		return nil, fmt.Errorf("error creating auth dto: %w", err)
 	}
 	return &AuthenticatedInfoResponse{
-		Body: *dto,
+		Body: *ToApiUserInfoTokens(dto),
 	}, nil
 
 }

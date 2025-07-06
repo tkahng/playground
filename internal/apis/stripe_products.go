@@ -3,27 +3,26 @@ package apis
 import (
 	"context"
 
-	"github.com/tkahng/authgo/internal/models"
-	"github.com/tkahng/authgo/internal/queries"
-	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/authgo/internal/stores"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 )
 
 type StripeProductsWithPricesInput struct {
-	shared.PaginatedInput
-	shared.SortParams
+	PaginatedInput
+	SortParams
 }
 
-func (api *Api) StripeProductsWithPrices(ctx context.Context, inputt *StripeProductsWithPricesInput) (*shared.PaginatedOutput[*shared.StripeProductWithData], error) {
-	db := api.app.Db()
-	input := &shared.StripeProductListParams{
-		PaginatedInput: inputt.PaginatedInput,
-		StripeProductListFilter: shared.StripeProductListFilter{
-			Active: shared.Active,
-		},
-		SortParams: inputt.SortParams,
-	}
-	products, err := queries.ListProducts(ctx, db, input)
+func (api *Api) StripeProductsWithPrices(ctx context.Context, input *StripeProductsWithPricesInput) (*ApiPaginatedOutput[*StripeProduct], error) {
+
+	filter := &stores.StripeProductFilter{}
+	filter.Page = input.Page
+	filter.PerPage = input.PerPage
+	filter.Active.IsSet = true
+	filter.Active.Value = true
+	filter.SortBy = input.SortBy
+	filter.SortOrder = input.SortOrder
+
+	products, err := api.app.Adapter().Product().ListProducts(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -31,36 +30,24 @@ func (api *Api) StripeProductsWithPrices(ctx context.Context, inputt *StripeProd
 	for _, u := range products {
 		ids = append(ids, u.ID)
 	}
-	prices, err := queries.LoadProductPrices(ctx, db, &map[string]any{
-		"product_id": map[string]any{
-			"_in": ids,
-		},
-	}, ids...)
+	prices, err := api.app.Adapter().Price().LoadPricesByProductIds(ctx, ids...)
+	if err != nil {
+		return nil, err
+	}
 	for i, products := range products {
 		price := prices[i]
 		if len(price) > 0 {
 			products.Prices = price
 		}
 	}
+
+	count, err := api.app.Adapter().Product().CountProducts(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
 
-	count, err := queries.CountProducts(ctx, db, &input.StripeProductListFilter)
-	if err != nil {
-		return nil, err
-	}
-
-	return &shared.PaginatedOutput[*shared.StripeProductWithData]{
-		Body: shared.PaginatedResponse[*shared.StripeProductWithData]{
-			Data: mapper.Map(products, func(p *models.StripeProduct) *shared.StripeProductWithData {
-				return &shared.StripeProductWithData{
-					Product: shared.FromCrudProduct(p),
-					Roles:   mapper.Map(p.Roles, shared.FromCrudRole),
-					Prices:  mapper.Map(p.Prices, shared.FromCrudPrice),
-				}
-			}),
-			Meta: shared.GenerateMeta(input.PaginatedInput, count),
-		},
-	}, nil
+	return &ApiPaginatedOutput[*StripeProduct]{Body: ApiPaginatedResponse[*StripeProduct]{
+		Data: mapper.Map(products, FromModelProduct),
+		Meta: ApiGenerateMeta(&input.PaginatedInput, count),
+	}}, nil
 }

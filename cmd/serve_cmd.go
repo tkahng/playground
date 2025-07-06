@@ -3,11 +3,10 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
-	"sync"
 	"syscall"
 	"time"
 
@@ -15,6 +14,7 @@ import (
 	"github.com/tkahng/authgo/internal/apis"
 	"github.com/tkahng/authgo/internal/conf"
 	"github.com/tkahng/authgo/internal/core"
+	"golang.org/x/sync/errgroup"
 )
 
 var port int
@@ -40,10 +40,12 @@ func NewServeCmd() *cobra.Command {
 func run(ctx context.Context) error {
 	ctx, cancel := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM, syscall.SIGHUP, syscall.SIGINT)
 	defer cancel()
+	g, ctx := errgroup.WithContext(ctx)
 	opts := conf.AppConfigGetter()
-	app := core.InitBaseApp(ctx, opts)
+	app := core.NewBaseApp(ctx, opts)
+	appApi := apis.NewApi(app)
 	srv, api := apis.NewServer()
-	apis.AddRoutes(api, app)
+	apis.AddRoutes(api, appApi)
 	if port == 0 {
 		port = 8080
 	}
@@ -51,24 +53,44 @@ func run(ctx context.Context) error {
 		Addr:    fmt.Sprintf(":%d", port),
 		Handler: srv,
 	}
-	go func() {
-		log.Printf("listening on %s\n", httpServer.Addr)
+	// Run HTTP server
+	g.Go(func() error {
+		slog.Info("Starting HTTP server", "addr", httpServer.Addr)
 		if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			fmt.Fprintf(os.Stderr, "error listening and serving: %s\n", err)
+			return fmt.Errorf("http server error: %w", err)
 		}
-	}()
-	var wg sync.WaitGroup
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		<-ctx.Done()
-		shutdownCtx := context.Background()
-		shutdownCtx, cancel := context.WithTimeout(shutdownCtx, 10*time.Second)
-		defer cancel()
-		if err := httpServer.Shutdown(shutdownCtx); err != nil {
-			fmt.Fprintf(os.Stderr, "error shutting down http server: %s\n", err)
-		}
-	}()
-	wg.Wait()
-	return nil
+		return nil
+	})
+	g.Go(func() error {
+		slog.Info("Starting poller")
+		return app.JobManager().Run(ctx)
+	})
+	err := g.Wait()
+
+	// Gracefully shutdown HTTP server
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	_ = httpServer.Shutdown(shutdownCtx)
+
+	return err
+	// go func() {
+	// 	log.Printf("listening on %s\n", httpServer.Addr)
+	// 	if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+	// 		fmt.Fprintf(os.Stderr, "error listening and serving: %s\n", err)
+	// 	}
+	// }()
+	// var wg sync.WaitGroup
+	// wg.Add(1)
+	// go func() {
+	// 	defer wg.Done()
+	// 	<-ctx.Done()
+	// 	shutdownCtx := context.Background()
+	// 	shutdownCtx, cancel := context.WithTimeout(shutdownCtx, 10*time.Second)
+	// 	defer cancel()
+	// 	if err := httpServer.Shutdown(shutdownCtx); err != nil {
+	// 		fmt.Fprintf(os.Stderr, "error shutting down http server: %s\n", err)
+	// 	}
+	// }()
+	// wg.Wait()
+	// return nil
 }

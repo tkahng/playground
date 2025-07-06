@@ -3,8 +3,10 @@ package cmd
 import (
 	"github.com/spf13/cobra"
 	"github.com/tkahng/authgo/internal/conf"
-	"github.com/tkahng/authgo/internal/db"
-	"github.com/tkahng/authgo/internal/payment"
+	"github.com/tkahng/authgo/internal/database"
+	"github.com/tkahng/authgo/internal/services"
+	"github.com/tkahng/authgo/internal/stores"
+	"github.com/tkahng/authgo/internal/tools/payment"
 )
 
 func NewStripeCmd() *cobra.Command {
@@ -25,10 +27,12 @@ var stripeSyncCmd = &cobra.Command{
 		dbconf := conf.GetConfig[conf.DBConfig]()
 		stripeconfig := conf.GetConfig[conf.StripeConfig]()
 
-		dbx := db.CreateQueries(ctx, dbconf.DatabaseUrl)
-		service := payment.NewStripeServiceFromConf(stripeconfig)
+		dbx := database.CreateQueries(ctx, dbconf.DatabaseUrl)
+		adapter := stores.NewStorageAdapter(dbx)
+		client := payment.NewPaymentClient(stripeconfig)
+		service := services.NewPaymentService(client, adapter)
 
-		return service.UpsertPriceProductFromStripe(ctx, dbx)
+		return service.UpsertPriceProductFromStripe(ctx)
 	},
 }
 
@@ -40,8 +44,11 @@ var stripeRolesCmd = &cobra.Command{
 		dbconf := conf.GetConfig[conf.DBConfig]()
 		stripeconfig := conf.GetConfig[conf.StripeConfig]()
 
-		dbx := db.CreateQueries(ctx, dbconf.DatabaseUrl)
-		service := payment.NewStripeServiceFromConf(stripeconfig)
-		return service.SyncPerms(ctx, dbx)
+		dbx := database.CreateQueries(ctx, dbconf.DatabaseUrl)
+		adapter := stores.NewStorageAdapter(dbx)
+		client := payment.NewPaymentClient(stripeconfig)
+		service := services.NewPaymentService(client, adapter)
+		// Create the payment service
+		return service.SyncPerms(ctx)
 	},
 }

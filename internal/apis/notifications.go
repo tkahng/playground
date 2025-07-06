@@ -9,7 +9,7 @@ import (
 func (api *Api) NotificationsSseEvents() map[string]any {
 	// sse.
 	return map[string]any{
-		"notifications": "notifications",
+		"notification": "notifications",
 	}
 }
 

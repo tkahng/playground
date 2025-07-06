@@ -63,7 +63,7 @@ export function KanbanBoard(props: { cars: Task[]; projectId: string }) {
   }, [props.cars]);
 
   const queryClient = useQueryClient();
-  const { user, checkAuth } = useAuthProvider();
+  const { user } = useAuthProvider();
   const mutation = useMutation({
     mutationFn: async ({
       taskId,
@@ -74,7 +74,6 @@ export function KanbanBoard(props: { cars: Task[]; projectId: string }) {
       status: "todo" | "in_progress" | "done";
       position: number;
     }) => {
-      await checkAuth(); // Ensure user is authenticated
       if (!user?.tokens.access_token) return;
       await taskPositionStatus(user?.tokens.access_token, taskId, {
         status: status,
@@ -121,16 +120,13 @@ export function KanbanBoard(props: { cars: Task[]; projectId: string }) {
   };
 
   // Helper function to flatten nested columns
-  const flattenColumns = useCallback(
-    (cols: NestedColumn[]): Column[] => {
-      return cols.flatMap((col) =>
-        col.children
-          ? [{ id: col.id, title: col.title }, ...flattenColumns(col.children)]
-          : [col]
-      );
-    },
-    [cars]
-  );
+  const flattenColumns = useCallback((cols: NestedColumn[]): Column[] => {
+    return cols.flatMap((col) =>
+      col.children
+        ? [{ id: col.id, title: col.title }, ...flattenColumns(col.children)]
+        : [col]
+    );
+  }, []);
 
   const flatColumns = useMemo(
     () => flattenColumns(columns),

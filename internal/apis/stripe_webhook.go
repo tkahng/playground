@@ -3,13 +3,11 @@ package apis
 import (
 	"context"
 	"encoding/json"
-	"fmt"
-	"os"
+	"log/slog"
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/stripe/stripe-go/v82"
 	"github.com/stripe/stripe-go/v82/webhook"
-	"github.com/tkahng/authgo/internal/queries"
 	"github.com/tkahng/authgo/internal/tools/utils"
 )
 
@@ -30,20 +28,18 @@ func (api *Api) StripeWebhook(ctx context.Context, input *StripeWebhookInput) (*
 	event := stripe.Event{}
 
 	if err := json.Unmarshal(payload, &event); err != nil {
-		fmt.Fprintf(os.Stderr, "⚠️  Webhook error while parsing basic request. %v\n", err.Error())
-
+		slog.ErrorContext(ctx, "⚠️  Webhook error while parsing basic request", slog.Any("error", err), slog.String("payload", string(payload)))
 		return nil, huma.Error400BadRequest(err.Error())
 	}
 	cfg := api.app.Cfg()
 	if cfg == nil {
 		return nil, huma.Error400BadRequest("Missing config")
 	}
-	event, err := webhook.ConstructEvent(payload, input.Signature, cfg.StripeConfig.Webhook)
+	event, err := webhook.ConstructEvent(payload, input.Signature, cfg.Webhook)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "⚠️  Webhook signature verification failed. %v\n", err)
+		slog.ErrorContext(ctx, "⚠️  Webhook error while parsing basic request", slog.Any("error", err), slog.String("payload", string(payload)))
 		return nil, huma.Error400BadRequest(err.Error())
 	}
-	db := api.app.Db()
 	payment := api.app.Payment()
 	switch event.Type {
 	case stripe.EventTypeProductCreated, stripe.EventTypeProductUpdated:
@@ -51,7 +47,7 @@ func (api *Api) StripeWebhook(ctx context.Context, input *StripeWebhookInput) (*
 		if err != nil {
 			return nil, huma.Error400BadRequest("failed to unmarshal product", err)
 		}
-		err = queries.UpsertProductFromStripe(ctx, db, &product)
+		err = payment.UpsertProductFromStripe(ctx, &product)
 		if err != nil {
 			return nil, huma.Error400BadRequest("failed to upsert product", err)
 		}
@@ -61,7 +57,7 @@ func (api *Api) StripeWebhook(ctx context.Context, input *StripeWebhookInput) (*
 		if err != nil {
 			return nil, huma.Error400BadRequest("failed to unmarshal price", err)
 		}
-		err = queries.UpsertPriceFromStripe(ctx, db, &price)
+		err = payment.UpsertPriceFromStripe(ctx, &price)
 		if err != nil {
 			return nil, huma.Error400BadRequest("failed to upsert price", err)
 		}
@@ -71,7 +67,7 @@ func (api *Api) StripeWebhook(ctx context.Context, input *StripeWebhookInput) (*
 		if err != nil {
 			return nil, huma.Error400BadRequest("failed to unmarshal session", err)
 		}
-		err = payment.UpsertSubscriptionByIds(ctx, db, session.Customer.ID, session.Subscription.ID)
+		err = payment.UpsertSubscriptionByIds(ctx, session.Customer.ID, session.Subscription.ID)
 		if err != nil {
 			return nil, huma.Error400BadRequest("failed to upsert checkout session complete", err)
 		}
@@ -81,13 +77,13 @@ func (api *Api) StripeWebhook(ctx context.Context, input *StripeWebhookInput) (*
 		if err != nil {
 			return nil, huma.Error400BadRequest("failed to unmarshal subscription", err)
 		}
-		err = payment.UpsertSubscriptionByIds(ctx, db, subscription.Customer.ID, subscription.ID)
+		err = payment.UpsertSubscriptionByIds(ctx, subscription.Customer.ID, subscription.ID)
 		if err != nil {
 			return nil, huma.Error400BadRequest("failed to upsert subscription", err)
 		}
 		return nil, nil
 	default:
-		fmt.Fprintf(os.Stderr, "⚠️  Unhandled event type: %s\n", event.Type)
+		slog.WarnContext(ctx, "⚠️  Unhandled Stripe event type", slog.String("event_type", string(event.Type)))
 		return nil, huma.Error400BadRequest("unhandled event type")
 	}
 	// return nil, huma.Error400BadRequest("unhandled event type")

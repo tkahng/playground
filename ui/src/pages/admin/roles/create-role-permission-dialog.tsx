@@ -37,13 +37,12 @@ const formSchema = z.object({
 });
 
 export function CreateRolePermissionDialog({ roleId }: { roleId: string }) {
-  const { user, checkAuth } = useAuthProvider();
+  const { user } = useAuthProvider();
   const [isDialogOpen, setDialogOpen] = useState(false);
   const queryClient = useQueryClient();
   const { data, isLoading, error } = useQuery({
     queryKey: ["role-permissions-reverse", roleId],
     queryFn: async () => {
-      await checkAuth(); // Ensure user is authenticated
       if (!user?.tokens.access_token) {
         throw new Error("Missing access token or role ID");
       }
@@ -91,7 +90,7 @@ export function CreateRolePermissionDialog({ roleId }: { roleId: string }) {
     if (data) {
       form.reset({ permissions: [] });
     }
-  }, [data, form.reset]);
+  }, [data, form]);
 
   if (isLoading) {
     return <div>Loading...</div>;

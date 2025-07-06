@@ -20,7 +20,7 @@ export type Task = {
   name: string;
   columnId: ColumnId;
   content: string | null;
-  order: number;
+  rank: number;
 };
 
 type TaskCardProps = {
