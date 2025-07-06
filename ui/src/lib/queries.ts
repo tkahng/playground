@@ -1532,13 +1532,13 @@ export const cancelTeamInvitation = async (
 };
 
 export const verifyTeamInvitation = async (
-  token: string,
+  // token: string,
   invitationToken: string
 ) => {
   const { error } = await client.POST("/api/team-invitations/check", {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
+    // headers: {
+    //   Authorization: `Bearer ${token}`,
+    // },
     body: {
       token: invitationToken,
     },
@@ -1607,16 +1607,13 @@ export const getUserTeamInvitations = async (
   return data;
 };
 
-export const getTeamInvitationByToken = async (
-  token: string,
-  invitationToken: string
-) => {
+export const getTeamInvitationByToken = async (invitationToken: string) => {
   const { data, error } = await client.GET(
     "/api/team-invitations/token/{token}",
     {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      // headers: {
+      //   Authorization: `Bearer ${token}`,
+      // },
       params: {
         path: {
           token: invitationToken,

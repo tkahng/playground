@@ -26,18 +26,25 @@ export default function SigninPage() {
   const [loading, setLoading] = useState(false);
   const { search } = useLocation();
   const params = new URLSearchParams(search);
+  const token = params.get("token");
   const redirectTo = params.get("redirect_to");
+  const email = params.get("email");
   const navigate = useNavigate(); // Get navigation function
   const { login } = useContext(AuthContext);
 
+  const navigateTo =
+    email && token ? `/team-invitation` : redirectTo ? redirectTo : "/";
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setLoading(true);
 
     try {
-      await login({ email: input.email, password: input.password });
+      await login({ email: email || input.email, password: input.password });
       setLoading(false);
-      navigate(redirectTo || RouteMap.ACCOUNT_OVERVIEW);
+      navigate({
+        pathname: navigateTo,
+        search: search,
+      });
     } catch (error) {
       if (error instanceof Error) {
         toast.error(error.message, {
@@ -87,8 +94,9 @@ export default function SigninPage() {
                   <Label htmlFor="email">Email</Label>
                   <Input
                     id="email"
-                    placeholder="tkahng+01@gmail.com"
+                    placeholder={email || "tkahng+01@gmail.com"}
                     required
+                    disabled={!!email}
                     name="email"
                     type="email"
                     onChange={handleChange}

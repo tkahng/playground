@@ -259,8 +259,8 @@ func BindTeamsApi(api huma.API, appApi *Api) {
 			Description: "check valid invitation",
 			Tags:        []string{"Team Invitations"},
 			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
-			Security: []map[string][]string{{
-				shared.BearerAuthSecurityKey: {},
+			Security:    []map[string][]string{{
+				// shared.BearerAuthSecurityKey: {},
 			}},
 			Middlewares: huma.Middlewares{},
 		},
@@ -336,8 +336,8 @@ func BindTeamsApi(api huma.API, appApi *Api) {
 			Description: "find user team invitation by token",
 			Tags:        []string{"Team Invitations"},
 			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
-			Security: []map[string][]string{{
-				shared.BearerAuthSecurityKey: {},
+			Security:    []map[string][]string{{
+				// shared.BearerAuthSecurityKey: {},
 			}},
 			Middlewares: huma.Middlewares{},
 		},

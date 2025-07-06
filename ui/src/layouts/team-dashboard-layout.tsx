@@ -5,10 +5,12 @@ import { RouteMap } from "@/components/route-map";
 import { TeamHeader } from "@/components/team-header";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { useTeam } from "@/hooks/use-team";
+import { GetError } from "@/lib/get-error";
 import { getTeamBySlug } from "@/lib/queries";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 import { Navigate, Outlet, useParams } from "react-router";
+import { toast } from "sonner";
 
 export default function TeamDashboardLayout() {
   const { user } = useAuthProvider();
@@ -56,7 +58,21 @@ export default function TeamDashboardLayout() {
   const isNotUserTeam = teamMember?.user_id !== user?.user.id;
 
   if (error) {
-    return <div>Error loading team: {error.message}</div>;
+    const err = GetError(error);
+    toast.error("Error loading team: " + err?.detail, {
+      description: "Please try again",
+      action: {
+        label: "Undo",
+        onClick: () => console.log("Undo"),
+      },
+    });
+    return (
+      <Navigate
+        to={{
+          pathname: "/teams",
+        }}
+      />
+    );
   }
   if (isLoading) {
     return <div>Loading team...</div>;

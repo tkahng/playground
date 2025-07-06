@@ -28,6 +28,18 @@ export default function AuthenticatedLayoutOutlet() {
   }, [checkAuth, location, user]);
 
   if (!user) {
+    if (pathname.startsWith("/team-invitation")) {
+      return (
+        <Navigate
+          to={{
+            pathname: "/signup",
+            search: createSearchParams({
+              redirect_to: location.pathname + location.search,
+            }).toString(),
+          }}
+        />
+      );
+    }
     return (
       <Navigate
         to={{

@@ -8,7 +8,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { useTeam } from "@/hooks/use-team";
 import { GetError } from "@/lib/get-error";
 import {
   acceptInvitation,
@@ -18,14 +17,13 @@ import {
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { ArrowRight, Check, Home } from "lucide-react";
 import { useState } from "react";
-import { useNavigate } from "react-router";
+import { Navigate, useNavigate } from "react-router";
 import { toast } from "sonner";
 
 export default function UserTeamInvitationRedirectPage() {
   const [disabled, setDisabled] = useState(false);
   const params = new URLSearchParams(window.location.search);
   const navigate = useNavigate();
-  const { setTeam } = useTeam();
   const { user } = useAuthProvider();
   const token = params.get("token");
   const { data, isLoading, error } = useQuery({
@@ -34,10 +32,7 @@ export default function UserTeamInvitationRedirectPage() {
       if (!token) {
         throw new Error("Missing session ID");
       }
-      if (!user?.tokens.access_token) {
-        throw new Error("Missing access token");
-      }
-      return getTeamInvitationByToken(user.tokens.access_token, token);
+      return getTeamInvitationByToken(token);
     },
   });
 
@@ -56,11 +51,13 @@ export default function UserTeamInvitationRedirectPage() {
       return result;
     },
     onSuccess: () => {
-      setTeam(data?.team || null);
+      toast.success("Invitation accepted successfully");
+      console.log("navigating to team dashboard");
       navigate(`/teams/${data?.team?.slug}/dashboard`);
     },
     onError: (err) => {
-      toast.error(`Failed to update role: ${err.message}`);
+      const error = GetError(err);
+      toast.error(`Failed to update role: ${error?.detail}`);
     },
   });
   const declineMutation = useMutation({
@@ -84,14 +81,14 @@ export default function UserTeamInvitationRedirectPage() {
       toast.error(`Failed to decline role: ${err.message}`);
     },
   });
-  function onAccept(token?: string) {
+  function onAccept() {
     setDisabled(true);
-    acceptMutation.mutateAsync(token);
+    acceptMutation.mutateAsync(token!);
     setDisabled(false);
   }
-  function onDecline(token?: string) {
+  function onDecline() {
     setDisabled(true);
-    declineMutation.mutateAsync(token);
+    declineMutation.mutateAsync(token!);
     setDisabled(false);
   }
   if (isLoading) {
@@ -117,6 +114,19 @@ export default function UserTeamInvitationRedirectPage() {
       </div>
     );
   }
+  if (!user) {
+    if (data) {
+      params.set("email", data.email);
+      return (
+        <Navigate
+          to={{
+            pathname: "/signin",
+            search: params.toString(),
+          }}
+        />
+      );
+    }
+  }
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -137,11 +147,7 @@ export default function UserTeamInvitationRedirectPage() {
             </p>
           </CardContent>
           <CardFooter className="flex flex-col space-y-2">
-            <Button
-              className="w-full"
-              disabled={disabled}
-              onClick={() => onAccept(token || undefined)}
-            >
+            <Button className="w-full" disabled={disabled} onClick={onAccept}>
               <ArrowRight className="mr-2 h-4 w-4" />
               Accept
             </Button>
@@ -149,7 +155,7 @@ export default function UserTeamInvitationRedirectPage() {
               variant="outline"
               className="w-full"
               disabled={disabled}
-              onClick={() => onDecline(token || undefined)}
+              onClick={onDecline}
             >
               <Home className="mr-2 h-4 w-4" />
               Decline

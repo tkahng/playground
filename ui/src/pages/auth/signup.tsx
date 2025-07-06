@@ -32,20 +32,23 @@ export default function SignupPage() {
   const { signUp } = useAuthProvider();
   const { search } = useLocation();
   const params = new URLSearchParams(search);
+  const token = params.get("token");
   const redirectTo = params.get("redirect_to");
-  const navigateTo = redirectTo || RouteMap.ACCOUNT_OVERVIEW;
+  const email = params.get("email");
+  const navigateTo =
+    email && token ? `/team-invitation` : redirectTo ? redirectTo : "?";
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setLoading(true);
 
     try {
       await signUp({
-        email: input.email,
+        email: email || input.email,
         password: input.password,
         name: input.name,
       });
       setLoading(false);
-      navigate(navigateTo);
+      navigate({ pathname: navigateTo, search: search });
     } catch (error) {
       if (error instanceof Error) {
         toast.error(error.message, {
@@ -106,8 +109,9 @@ export default function SignupPage() {
                   <Label htmlFor="email">Email</Label>
                   <Input
                     id="email"
-                    placeholder="tkahng+01@gmail.com"
+                    placeholder={email || "tkahng+01@gmail.com"}
                     required
+                    disabled={!!email}
                     name="email"
                     type="email"
                     onChange={handleChange}

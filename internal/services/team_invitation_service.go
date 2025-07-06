@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/conf"
@@ -34,6 +35,10 @@ type TeamInvitationService interface {
 		userId uuid.UUID,
 		invitationToken string,
 	) (bool, error)
+	GetInvitation(
+		ctx context.Context,
+		invitationToken string,
+	) (*models.TeamInvitation, error)
 	AcceptInvitation(
 		ctx context.Context,
 		userId uuid.UUID,
@@ -64,6 +69,23 @@ type InvitationService struct {
 	adapter    stores.StorageAdapterInterface
 	settings   conf.AppOptions
 	jobService JobService
+	// paymentService
+}
+
+// GetInvitation implements TeamInvitationService.
+func (i *InvitationService) GetInvitation(ctx context.Context, invitationToken string) (*models.TeamInvitation, error) {
+	inv, err := i.adapter.TeamInvitation().FindInvitationByToken(ctx, invitationToken)
+	if err != nil {
+		return nil, err
+	}
+	if inv == nil {
+		return nil, fmt.Errorf("invitation not found")
+	}
+	if inv.ExpiresAt.Before(time.Now()) {
+		return nil, fmt.Errorf("invitation is expired")
+	}
+	return inv, nil
+
 }
 
 func NewInvitationService(
@@ -124,19 +146,23 @@ func (i *InvitationService) CheckValidInvitation(
 	if invite == nil {
 		return false, fmt.Errorf("invitation not found")
 	}
-	user, err := i.adapter.User().FindUserByID(ctx, userId)
-	if err != nil {
-		return false, err
-	}
-	if user == nil {
-		return false, fmt.Errorf("user not found")
-	}
-	if invite.Email != user.Email {
-		return false, fmt.Errorf("user does not match invitation")
+	// user, err := i.adapter.User().FindUserByID(ctx, userId)
+	// if err != nil {
+	// 	return false, err
+	// }
+	// if user == nil {
+	// 	return false, fmt.Errorf("user not found")
+	// }
+	// if invite.Email != user.Email {
+	// 	return false, fmt.Errorf("user does not match invitation")
+	// }
+	if invite.ExpiresAt.After(time.Now()) {
+		return false, fmt.Errorf("invitation is expired")
 	}
 	if invite.Status != models.TeamInvitationStatusPending {
 		return false, fmt.Errorf("invitation is not pending")
 	}
+
 	return true, nil
 }
 
@@ -252,23 +278,7 @@ func (i *InvitationService) CreateInvitation(
 	if err != nil {
 		return err
 	}
-	// i.routine.FireAndForget(
-	// 	func() {
-	// 		ctx := context.Background()
 
-	// 		params := &TeamInvitationMailParams{
-	// 			Email:          invitation.Email,
-	// 			InvitedByEmail: member.User.Email,
-	// 			TeamName:       member.Team.Name,
-	// 			TokenHash:      invitation.Token,
-	// 		}
-	// 		err := i.sendInvitationEmail(ctx, params)
-	// 		if err != nil {
-	// 			slog.ErrorContext(ctx, "failed to send invitation email", slog.Any("error", err), slog.Any("params", params))
-	// 			fmt.Printf("failed to send invitation email: %v", err)
-	// 		}
-	// 	},
-	// )
 	return nil
 }
 
@@ -303,5 +313,9 @@ func (i *InvitationService) RejectInvitation(ctx context.Context, userId uuid.UU
 		return fmt.Errorf("user does not match invitation")
 	}
 	invite.Status = models.TeamInvitationStatusDeclined
+	err = i.adapter.TeamInvitation().UpdateInvitation(ctx, invite)
+	if err != nil {
+		return err
+	}
 	return nil
 }

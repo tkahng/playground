@@ -60,7 +60,7 @@ export default function PaymentSuccessPage() {
 
           <div className="flex flex-col sm:flex-row gap-2">
             <Button variant="outline" className="flex-1" asChild>
-              <Link to={`teams/${team?.slug}/dashboard`}>
+              <Link to={`/teams/${team?.slug}/dashboard`}>
                 <Home className="mr-2 h-4 w-4" />
                 Dashboard
               </Link>

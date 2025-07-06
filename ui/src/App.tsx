@@ -139,6 +139,11 @@ function App() {
                 path="/forgot-password"
                 element={<ResetPasswordRequestPage />}
               />
+              <Route
+                // dashboard
+                path={`/team-invitation`}
+                element={<UserTeamInvitationRedirectPage />}
+              />
             </Route>
 
             <Route element={<AuthenticatedLayoutOutlet />}>
@@ -173,16 +178,6 @@ function App() {
               <Route
                 // dashboard
                 children={<Route path={`/teams`} element={<TeamSelect />} />}
-                element={<DashboardLayout />}
-              />
-              <Route
-                // dashboard
-                children={
-                  <Route
-                    path={`/team-invitation`}
-                    element={<UserTeamInvitationRedirectPage />}
-                  />
-                }
                 element={<DashboardLayout />}
               />
             </Route>

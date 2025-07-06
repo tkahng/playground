@@ -9,13 +9,22 @@ import (
 )
 
 type JobService interface {
+	EnqueueTeamMemberAddedJob(ctx context.Context, job *workers.TeamMemberAddedJobArgs) error
 	EnqueueOtpMailJob(ctx context.Context, args *workers.OtpEmailJobArgs) error
 	EnqueueTeamInvitationJob(ctx context.Context, args *workers.TeamInvitationJobArgs) error
-	RegisterWorkers(mail OtpMailService)
+	RegisterWorkers(mail OtpMailService, paymentService PaymentService)
 }
 
 type DbJobService struct {
 	manager jobs.JobManager
+}
+
+func (d *DbJobService) EnqueueTeamMemberAddedJob(ctx context.Context, job *workers.TeamMemberAddedJobArgs) error {
+	return d.manager.Enqueue(ctx, &jobs.EnqueueParams{
+		Args:        job,
+		RunAfter:    time.Now(),
+		MaxAttempts: 3,
+	})
 }
 
 // EnqueueTeamInvitationJob implements JobService.
@@ -28,9 +37,10 @@ func (d *DbJobService) EnqueueTeamInvitationJob(ctx context.Context, args *worke
 }
 
 // RegisterWorkers implements JobService.
-func (d *DbJobService) RegisterWorkers(mail OtpMailService) {
+func (d *DbJobService) RegisterWorkers(mail OtpMailService, paymentService PaymentService) {
 	jobs.RegisterWorker(d.manager, workers.NewOtpEmailWorker(mail))
 	jobs.RegisterWorker(d.manager, workers.NewTeamInvitationWorker(mail))
+	jobs.RegisterWorker(d.manager, workers.NewTeamMemberAddedWorker(paymentService))
 }
 
 // EnqueueOtpMailJob implements JobService.
@@ -49,10 +59,19 @@ func NewJobService(manager jobs.JobManager) JobService {
 }
 
 type JobServiceDecorator struct {
-	Delegate                  JobService
-	EnqueueOtpMailJobFunc     func(ctx context.Context, job *workers.OtpEmailJobArgs) error
-	EnqueueTeamInvitationFunc func(ctx context.Context, job *workers.TeamInvitationJobArgs) error
-	RegisterWorkersFunc       func(mail OtpMailService)
+	Delegate                      JobService
+	EnqueueOtpMailJobFunc         func(ctx context.Context, job *workers.OtpEmailJobArgs) error
+	EnqueueTeamInvitationFunc     func(ctx context.Context, job *workers.TeamInvitationJobArgs) error
+	RegisterWorkersFunc           func(mail OtpMailService, paymentService PaymentService)
+	EnqueueTeamMemberAddedJobFunc func(ctx context.Context, job *workers.TeamMemberAddedJobArgs) error
+}
+
+// EnqueueTeamMemberAddedJob implements JobService.
+func (j *JobServiceDecorator) EnqueueTeamMemberAddedJob(ctx context.Context, job *workers.TeamMemberAddedJobArgs) error {
+	if j.EnqueueOtpMailJobFunc != nil {
+		return j.EnqueueTeamMemberAddedJobFunc(ctx, job)
+	}
+	return j.Delegate.EnqueueTeamMemberAddedJob(ctx, job)
 }
 
 // EnqueueTeamInvitationJob implements JobService.
@@ -64,11 +83,11 @@ func (j *JobServiceDecorator) EnqueueTeamInvitationJob(ctx context.Context, args
 }
 
 // RegisterWorkers implements JobService.
-func (j *JobServiceDecorator) RegisterWorkers(mail OtpMailService) {
+func (j *JobServiceDecorator) RegisterWorkers(mail OtpMailService, paymentService PaymentService) {
 	if j.RegisterWorkersFunc != nil {
-		j.RegisterWorkersFunc(mail)
+		j.RegisterWorkersFunc(mail, paymentService)
 	}
-	j.Delegate.RegisterWorkers(mail)
+	j.Delegate.RegisterWorkers(mail, paymentService)
 }
 
 // EnqueueOtpMailJob implements JobService.

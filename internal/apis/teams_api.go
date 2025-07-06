@@ -551,19 +551,19 @@ func (api *Api) CheckValidInvitation(
 	ctx context.Context,
 	input *CheckValidInvitationInput,
 ) (*struct{}, error) {
-	userInfo := contextstore.GetContextUserInfo(ctx)
-	if userInfo == nil {
-		return nil, huma.Error401Unauthorized("Unauthorized. No user info")
-	}
-	res, err := api.app.TeamInvitation().CheckValidInvitation(
+	// userInfo := contextstore.GetContextUserInfo(ctx)
+	// if userInfo == nil {
+	// 	return nil, huma.Error401Unauthorized("Unauthorized. No user info")
+	// }
+	res, err := api.app.TeamInvitation().GetInvitation(
 		ctx,
-		userInfo.User.ID,
+		// userInfo.User.ID,
 		input.Body.Token,
 	)
 	if err != nil {
 		return nil, err
 	}
-	if !res {
+	if res == nil {
 		return nil, huma.Error400BadRequest("Invalid invitation")
 	}
 	return nil, nil
@@ -585,6 +585,7 @@ func (api *Api) AcceptInvitation(
 	if err != nil {
 		return nil, err
 	}
+
 	return nil, nil
 }
 
@@ -833,20 +834,20 @@ func (api *Api) GetInvitationByToken(
 	ctx context.Context,
 	input *GetInvitationByTokenInput,
 ) (*ApiOutput[*TeamInvitation], error) {
-	userInfo := contextstore.GetContextUserInfo(ctx)
-	if userInfo == nil {
-		return nil, huma.Error401Unauthorized("Unauthorized. no user info")
-	}
-	invitation, err := api.app.Adapter().TeamInvitation().FindInvitationByToken(ctx, input.Token)
+	// userInfo := contextstore.GetContextUserInfo(ctx)
+	// if userInfo == nil {
+	// 	return nil, huma.Error401Unauthorized("Unauthorized. no user info")
+	// }
+	invitation, err := api.app.TeamInvitation().GetInvitation(ctx, input.Token)
 	if err != nil {
 		return nil, err
 	}
 	if invitation == nil {
 		return nil, huma.Error404NotFound("invitation not found")
 	}
-	if invitation.Email != userInfo.User.Email {
-		return nil, huma.Error401Unauthorized("unauthorized. email not match")
-	}
+	// if invitation.Email != userInfo.User.Email {
+	// 	return nil, huma.Error401Unauthorized("unauthorized. email not match")
+	// }
 	team, err := api.app.Adapter().TeamGroup().FindTeamByID(ctx, invitation.TeamID)
 	if err != nil {
 		return nil, err

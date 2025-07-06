@@ -138,7 +138,6 @@ func NewBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 		mail,
 		adapter,
 	)
-	jobService.RegisterWorkers(mailServiece)
 
 	rbacService := services.NewRBACService(adapter)
 	taskService := services.NewTaskService(adapter)
@@ -148,7 +147,7 @@ func NewBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 		paymentClient,
 		adapter,
 	)
-
+	jobService.RegisterWorkers(mailServiece, paymentService)
 	authService := services.NewAuthService(
 		settings,
 		jobService,
