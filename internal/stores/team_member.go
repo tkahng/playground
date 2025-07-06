@@ -48,10 +48,68 @@ type DbTeamMemberStoreInterface interface {
 	UpdateTeamMember(ctx context.Context, member *models.TeamMember) (*models.TeamMember, error)
 	UpdateTeamMemberSelectedAt(ctx context.Context, teamId uuid.UUID, userId uuid.UUID) error
 	CreateTeamMemberFromUserAndSlug(ctx context.Context, user *models.User, slug string, role models.TeamMemberRole) (*models.TeamMember, error)
+	VerifyAndUpdateTeamSubscriptionQuantity(ctx context.Context, adapter StorageAdapterInterface, teamId uuid.UUID) (int64, error)
 }
 
 type DbTeamMemberStore struct {
 	db database.Dbx
+}
+
+// VerifyAndUpdateTeamSubscriptionQuantity implements DbTeamMemberStoreInterface.
+func (s *DbTeamMemberStore) VerifyAndUpdateTeamSubscriptionQuantity(ctx context.Context, adapter StorageAdapterInterface, teamId uuid.UUID) (int64, error) {
+	customer, err := adapter.Customer().FindCustomer(ctx, &StripeCustomerFilter{
+		TeamIds: []uuid.UUID{teamId},
+	})
+	if err != nil {
+		return 0, err
+	}
+	if customer == nil {
+		return 0, errors.New("no stripe customer id")
+	}
+	sub, err := adapter.Subscription().FindActiveSubscriptionByCustomerId(ctx, customer.ID)
+	if err != nil {
+		return 0, err
+	}
+	if sub == nil {
+		slog.Debug(
+			"no active subscription found",
+		)
+		return 0, nil
+	}
+
+	count, err := adapter.TeamMember().CountTeamMembers(ctx, &TeamMemberFilter{
+		TeamIds: []uuid.UUID{teamId},
+		Active:  types.OptionalParam[bool]{IsSet: true, Value: true},
+	})
+	if err != nil {
+		return 0, err
+	}
+	return count, nil
+	// if count == sub.Quantity {
+	// 	slog.Debug(
+	// 		"team member count matches subscription quantity. no need to update",
+	// 		slog.String("team_id", teamId.String()),
+	// 		slog.Int64("count", count),
+	// 		slog.Int64("quantity", sub.Quantity),
+	// 	)
+	// 	return nil
+	// } else {
+	// 	slog.Debug(
+	// 		"team member count does not match subscription quantity. updating stripe.",
+	// 		slog.String("team_id", teamId.String()),
+	// 		slog.Int64("count", count),
+	// 		slog.Int64("quantity", sub.Quantity),
+	// 	)
+	// 	_, err := srv.client.UpdateItemQuantity(
+	// 		sub.ItemID,
+	// 		sub.PriceID,
+	// 		count,
+	// 	)
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// 	return nil
+	// }
 }
 
 // LoadTeamMembersByIds implements DbTeamMemberStoreInterface.

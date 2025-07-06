@@ -9,23 +9,35 @@ import (
 )
 
 type TeamMemberStoreDecorator struct {
-	Delegate                            *DbTeamMemberStore
-	CountOwnerTeamMembersFunc           func(ctx context.Context, teamId uuid.UUID) (int64, error)
-	CountTeamMembersFunc                func(ctx context.Context, filter *TeamMemberFilter) (int64, error)
-	CountTeamMembersByUserIDFunc        func(ctx context.Context, userId uuid.UUID) (int64, error)
-	CreateTeamFromUserFunc              func(ctx context.Context, user *models.User) (*models.TeamMember, error)
-	CreateTeamMemberFunc                func(ctx context.Context, teamId uuid.UUID, userId uuid.UUID, role models.TeamMemberRole, hasBillingAccess bool) (*models.TeamMember, error)
-	DeleteTeamMemberFunc                func(ctx context.Context, teamId uuid.UUID, userId uuid.UUID) error
-	FindLatestTeamMemberByUserIDFunc    func(ctx context.Context, userId uuid.UUID) (*models.TeamMember, error)
-	FindTeamMemberFunc                  func(ctx context.Context, filter *TeamMemberFilter) (*models.TeamMember, error)
-	FindTeamMemberByTeamAndUserIdFunc   func(ctx context.Context, teamId uuid.UUID, userId uuid.UUID) (*models.TeamMember, error)
-	FindTeamMembersByUserIDFunc         func(ctx context.Context, userId uuid.UUID, paginate *TeamMemberListInput) ([]*models.TeamMember, error)
-	UpdateTeamMemberFunc                func(ctx context.Context, member *models.TeamMember) (*models.TeamMember, error)
-	UpdateTeamMemberSelectedAtFunc      func(ctx context.Context, teamId uuid.UUID, userId uuid.UUID) error
-	FindTeamMembersFunc                 func(ctx context.Context, filter *TeamMemberFilter) ([]*models.TeamMember, error)
-	CreateTeamMemberFromUserAndSlugFunc func(ctx context.Context, user *models.User, slug string, role models.TeamMemberRole) (*models.TeamMember, error)
-	LoadTeamMembersByUserAndTeamIdsFunc func(ctx context.Context, userId uuid.UUID, teamIds ...uuid.UUID) ([]*models.TeamMember, error)
-	LoadTeamMembersByIdsFunc            func(ctx context.Context, teamMemberIds ...uuid.UUID) ([]*models.TeamMember, error)
+	Delegate                                    *DbTeamMemberStore
+	CountOwnerTeamMembersFunc                   func(ctx context.Context, teamId uuid.UUID) (int64, error)
+	CountTeamMembersFunc                        func(ctx context.Context, filter *TeamMemberFilter) (int64, error)
+	CountTeamMembersByUserIDFunc                func(ctx context.Context, userId uuid.UUID) (int64, error)
+	CreateTeamFromUserFunc                      func(ctx context.Context, user *models.User) (*models.TeamMember, error)
+	CreateTeamMemberFunc                        func(ctx context.Context, teamId uuid.UUID, userId uuid.UUID, role models.TeamMemberRole, hasBillingAccess bool) (*models.TeamMember, error)
+	DeleteTeamMemberFunc                        func(ctx context.Context, teamId uuid.UUID, userId uuid.UUID) error
+	FindLatestTeamMemberByUserIDFunc            func(ctx context.Context, userId uuid.UUID) (*models.TeamMember, error)
+	FindTeamMemberFunc                          func(ctx context.Context, filter *TeamMemberFilter) (*models.TeamMember, error)
+	FindTeamMemberByTeamAndUserIdFunc           func(ctx context.Context, teamId uuid.UUID, userId uuid.UUID) (*models.TeamMember, error)
+	FindTeamMembersByUserIDFunc                 func(ctx context.Context, userId uuid.UUID, paginate *TeamMemberListInput) ([]*models.TeamMember, error)
+	UpdateTeamMemberFunc                        func(ctx context.Context, member *models.TeamMember) (*models.TeamMember, error)
+	UpdateTeamMemberSelectedAtFunc              func(ctx context.Context, teamId uuid.UUID, userId uuid.UUID) error
+	FindTeamMembersFunc                         func(ctx context.Context, filter *TeamMemberFilter) ([]*models.TeamMember, error)
+	CreateTeamMemberFromUserAndSlugFunc         func(ctx context.Context, user *models.User, slug string, role models.TeamMemberRole) (*models.TeamMember, error)
+	LoadTeamMembersByUserAndTeamIdsFunc         func(ctx context.Context, userId uuid.UUID, teamIds ...uuid.UUID) ([]*models.TeamMember, error)
+	LoadTeamMembersByIdsFunc                    func(ctx context.Context, teamMemberIds ...uuid.UUID) ([]*models.TeamMember, error)
+	VerifyAndUpdateTeamSubscriptionQuantityFunc func(ctx context.Context, adapter StorageAdapterInterface, teamId uuid.UUID) (int64, error)
+}
+
+// VerifyAndUpdateTeamSubscriptionQuantity implements DbTeamMemberStoreInterface.
+func (t *TeamMemberStoreDecorator) VerifyAndUpdateTeamSubscriptionQuantity(ctx context.Context, adapter StorageAdapterInterface, teamId uuid.UUID) (int64, error) {
+	if t.VerifyAndUpdateTeamSubscriptionQuantityFunc != nil {
+		return t.VerifyAndUpdateTeamSubscriptionQuantityFunc(ctx, adapter, teamId)
+	}
+	if t.Delegate == nil {
+		return 0, ErrDelegateNil
+	}
+	return t.Delegate.VerifyAndUpdateTeamSubscriptionQuantity(ctx, adapter, teamId)
 }
 
 func NewTeamMemberStoreDecorator(db database.Dbx) *TeamMemberStoreDecorator {
