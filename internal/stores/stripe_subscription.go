@@ -40,8 +40,14 @@ func (s *DbSubscriptionStore) FindActiveSubscriptionsByCustomerIds(ctx context.C
 	}
 	qs := squirrel.Select()
 	qs = SelectStripeSubscriptionColumns(qs, "")
+	qs = SelectStripeCustomerColumns(qs, "stripe_customer")
+	qs = SelectStripePriceColumns(qs, "price")
+	qs = SelectStripeProductColumns(qs, "price.product")
 	qs = qs.
-		From("stripe_subscriptions").
+		From(models.StripeSubscriptionTableName).
+		Join(models.StripeCustomerTableName + " ON " + models.StripeSubscriptionTablePrefix.StripeCustomerID + " = " + models.StripeCustomerTablePrefix.ID).
+		Join(models.StripePriceTableName + " ON " + models.StripeSubscriptionTablePrefix.PriceID + " = " + models.StripePriceTablePrefix.ID).
+		Join(models.StripeProductTableName + " ON " + models.StripePriceTablePrefix.ProductID + " = " + models.StripeProductTablePrefix.ID).
 		Where(squirrel.Or{
 			squirrel.And{
 				squirrel.Eq{
@@ -68,7 +74,6 @@ func (s *DbSubscriptionStore) FindActiveSubscriptionsByCustomerIds(ctx context.C
 		return nil, err
 	}
 	return mapper.MapToPointer(subscriptions, customerIds, func(s *models.StripeSubscription) string {
-
 		if s == nil {
 			return ""
 		}

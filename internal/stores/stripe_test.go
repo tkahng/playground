@@ -614,10 +614,6 @@ func TestStripeStore_FindActiveSubscriptionsByCustomerIds(t *testing.T) {
 		}
 
 		withPrice := customerSubs[0]
-		err = loadPricesWithProduct(ctx, withPrice, adapter)
-		if err != nil {
-			t.Fatalf("LoadSubscriptionstripe_pricesriceProduct() error = %v", err)
-		}
 		if withPrice == nil || withPrice.ID != "sub_1" {
 			t.Errorf("FindSubscriptionWithPriceById() = %v, err = %v", withPrice, err)
 		}

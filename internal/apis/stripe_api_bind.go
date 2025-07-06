@@ -135,7 +135,7 @@ func BindStripeApi(api huma.API, appApi *Api) {
 				selectCustomerFromTeamMiddleware,
 			},
 		},
-		appApi.GetStripeSubscriptions,
+		appApi.GetTeamStripeSubscriptions,
 	)
 	// stripe billing portal
 	huma.Register(
