@@ -11,7 +11,8 @@ import (
 
 type JobService interface {
 	WithTx(db database.Dbx) JobService
-	EnqueueTeamMemberAddedJob(ctx context.Context, job *workers.TeamMemberAddedJobArgs) error
+	EnqueueTeamMemberAddedJob(ctx context.Context, job *workers.NewMemberNotificationJobArgs) error
+	EnqueueRefreshSubscriptionQuantityJob(ctx context.Context, job *workers.RefreshSubscriptionQuantityJobArgs) error
 	EnqueueOtpMailJob(ctx context.Context, args *workers.OtpEmailJobArgs) error
 	EnqueueTeamInvitationJob(ctx context.Context, args *workers.TeamInvitationJobArgs) error
 	RegisterWorkers(mail OtpMailService, paymentService PaymentService)
@@ -21,6 +22,15 @@ type DbJobService struct {
 	manager jobs.JobManager
 }
 
+// EnqueueRefreshSubscriptionQuantityJob implements JobService.
+func (d *DbJobService) EnqueueRefreshSubscriptionQuantityJob(ctx context.Context, job *workers.RefreshSubscriptionQuantityJobArgs) error {
+	return d.manager.Enqueue(ctx, &jobs.EnqueueParams{
+		Args:        job,
+		RunAfter:    time.Now(),
+		MaxAttempts: 3,
+	})
+}
+
 // WithTx implements JobService.
 func (d *DbJobService) WithTx(db database.Dbx) JobService {
 	return &DbJobService{
@@ -28,7 +38,7 @@ func (d *DbJobService) WithTx(db database.Dbx) JobService {
 	}
 }
 
-func (d *DbJobService) EnqueueTeamMemberAddedJob(ctx context.Context, job *workers.TeamMemberAddedJobArgs) error {
+func (d *DbJobService) EnqueueTeamMemberAddedJob(ctx context.Context, job *workers.NewMemberNotificationJobArgs) error {
 	return d.manager.Enqueue(ctx, &jobs.EnqueueParams{
 		Args:        job,
 		RunAfter:    time.Now(),
@@ -49,7 +59,7 @@ func (d *DbJobService) EnqueueTeamInvitationJob(ctx context.Context, args *worke
 func (d *DbJobService) RegisterWorkers(mail OtpMailService, paymentService PaymentService) {
 	jobs.RegisterWorker(d.manager, workers.NewOtpEmailWorker(mail))
 	jobs.RegisterWorker(d.manager, workers.NewTeamInvitationWorker(mail))
-	jobs.RegisterWorker(d.manager, workers.NewTeamMemberAddedWorker(paymentService))
+	jobs.RegisterWorker(d.manager, workers.NewRefreshSubscriptionQuantityWorker(paymentService))
 }
 
 // EnqueueOtpMailJob implements JobService.
@@ -68,12 +78,21 @@ func NewJobService(manager jobs.JobManager) JobService {
 }
 
 type JobServiceDecorator struct {
-	Delegate                      JobService
-	EnqueueOtpMailJobFunc         func(ctx context.Context, job *workers.OtpEmailJobArgs) error
-	EnqueueTeamInvitationFunc     func(ctx context.Context, job *workers.TeamInvitationJobArgs) error
-	RegisterWorkersFunc           func(mail OtpMailService, paymentService PaymentService)
-	EnqueueTeamMemberAddedJobFunc func(ctx context.Context, job *workers.TeamMemberAddedJobArgs) error
-	WithTxFunc                    func(db database.Dbx) JobService
+	Delegate                                  JobService
+	EnqueueOtpMailJobFunc                     func(ctx context.Context, job *workers.OtpEmailJobArgs) error
+	EnqueueTeamInvitationFunc                 func(ctx context.Context, job *workers.TeamInvitationJobArgs) error
+	RegisterWorkersFunc                       func(mail OtpMailService, paymentService PaymentService)
+	EnqueueTeamMemberAddedJobFunc             func(ctx context.Context, job *workers.NewMemberNotificationJobArgs) error
+	WithTxFunc                                func(db database.Dbx) JobService
+	EnqueueRefreshSubscriptionQuantityJobFunc func(ctx context.Context, job *workers.RefreshSubscriptionQuantityJobArgs) error
+}
+
+// EnqueueRefreshSubscriptionQuantityJob implements JobService.
+func (j *JobServiceDecorator) EnqueueRefreshSubscriptionQuantityJob(ctx context.Context, job *workers.RefreshSubscriptionQuantityJobArgs) error {
+	if j.EnqueueRefreshSubscriptionQuantityJobFunc != nil {
+		return j.EnqueueRefreshSubscriptionQuantityJobFunc(ctx, job)
+	}
+	return j.Delegate.EnqueueRefreshSubscriptionQuantityJob(ctx, job)
 }
 
 // WithTx implements JobService.
@@ -85,7 +104,7 @@ func (j *JobServiceDecorator) WithTx(db database.Dbx) JobService {
 }
 
 // EnqueueTeamMemberAddedJob implements JobService.
-func (j *JobServiceDecorator) EnqueueTeamMemberAddedJob(ctx context.Context, job *workers.TeamMemberAddedJobArgs) error {
+func (j *JobServiceDecorator) EnqueueTeamMemberAddedJob(ctx context.Context, job *workers.NewMemberNotificationJobArgs) error {
 	if j.EnqueueOtpMailJobFunc != nil {
 		return j.EnqueueTeamMemberAddedJobFunc(ctx, job)
 	}

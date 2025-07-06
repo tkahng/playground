@@ -176,9 +176,8 @@ func (i *InvitationService) AcceptInvitation(
 	if err != nil {
 		return err
 	}
-	err = i.jobService.EnqueueTeamMemberAddedJob(ctx, &workers.TeamMemberAddedJobArgs{
-		TeamMemberID: userId,
-		TeamID:       userId,
+	err = i.jobService.EnqueueTeamMemberAddedJob(ctx, &workers.NewMemberNotificationJobArgs{
+		TeamID: invite.TeamID,
 	})
 	if err != nil {
 		return err
