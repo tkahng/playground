@@ -5,6 +5,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/models"
+	"github.com/tkahng/authgo/internal/tools/mapper"
 )
 
 // enum:"trialing,active,canceled,incomplete,incomplete_expired,past_due,unpaid,paused"
@@ -69,6 +70,27 @@ type StripeCustomer struct {
 	Subscriptions  []*StripeSubscription `db:"subscriptions" src:"id" dest:"stripe_customer_id" table:"stripe_subscriptions" json:"subscriptions,omitempty"`
 }
 
+func FromModelCustomer(sub *models.StripeCustomer) *StripeCustomer {
+	if sub == nil {
+		return nil
+	}
+	return &StripeCustomer{
+		ID:             sub.ID,
+		Email:          sub.Email,
+		Name:           sub.Name,
+		UserID:         sub.UserID,
+		TeamID:         sub.TeamID,
+		CustomerType:   StripeCustomerType(sub.CustomerType),
+		BillingAddress: sub.BillingAddress,
+		PaymentMethod:  sub.PaymentMethod,
+		CreatedAt:      sub.CreatedAt,
+		UpdatedAt:      sub.UpdatedAt,
+		Team:           FromTeamModel(sub.Team),
+		User:           FromUserModel(sub.User),
+		Subscriptions:  mapper.Map(sub.Subscriptions, FromModelSubscription),
+	}
+}
+
 func FromModelSubscription(sub *models.StripeSubscription) *StripeSubscription {
 	if sub == nil {
 		return nil
@@ -91,6 +113,9 @@ func FromModelSubscription(sub *models.StripeSubscription) *StripeSubscription {
 		TrialEnd:           sub.TrialEnd,
 		CreatedAt:          sub.CreatedAt,
 		UpdatedAt:          sub.UpdatedAt,
+		ItemID:             sub.ItemID,
+		StripeCustomer:     FromModelCustomer(sub.StripeCustomer),
+		Price:              FromModelPrice(sub.Price),
 	}
 }
 

@@ -63,12 +63,19 @@ type PaymentService interface {
 	UpsertSubscriptionByIds(ctx context.Context, cutomerId string, subscriptionId string) error
 
 	VerifyAndUpdateTeamSubscriptionQuantity(ctx context.Context, teamId uuid.UUID) error
+
+	SyncCustomerData(ctx context.Context, customerID string)
 }
 
 type StripeService struct {
 	logger  *slog.Logger
 	client  PaymentClient
 	adapter stores.StorageAdapterInterface
+}
+
+// SyncCustomerData implements PaymentService.
+func (srv *StripeService) SyncCustomerData(ctx context.Context, customerID string) {
+	panic("unimplemented")
 }
 
 // Adapter implements PaymentService.
@@ -393,8 +400,9 @@ func (srv *StripeService) FindSubscriptionWithPriceProductBySessionId(ctx contex
 	if len(subscriptions) == 0 {
 		return nil, errors.New("subscription not found")
 	}
+	subscription := subscriptions[0]
 
-	return subscriptions[0], nil
+	return subscription, nil
 }
 
 func (srv *StripeService) UpsertSubscriptionByIds(ctx context.Context, cutomerId, subscriptionId string) error {
@@ -436,7 +444,6 @@ func (srv *StripeService) CreateCheckoutSession(ctx context.Context, stripeCusto
 		team, err := srv.adapter.TeamGroup().FindTeam(ctx, &stores.TeamFilter{
 			CustomerIds: []string{stripeCustomerId},
 		})
-		// team, err := srv.paymentStore.FindTeamByStripeCustomerId(ctx, stripeCustomerId)
 		if err != nil {
 			return "", err
 		}

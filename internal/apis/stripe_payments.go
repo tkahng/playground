@@ -105,7 +105,10 @@ type StripeCheckoutSessionInput struct {
 }
 
 func (api *Api) StripeCheckoutSessionGet(ctx context.Context, input *StripeCheckoutSessionInput) (*CheckoutSessionOutput, error) {
-
+	info := contextstore.GetContextUserInfo(ctx)
+	if info == nil {
+		return nil, huma.Error401Unauthorized("unauthorized")
+	}
 	payment := api.app.Payment()
 	cs, err := payment.FindSubscriptionWithPriceProductBySessionId(ctx, input.CheckoutSessionID)
 	if err != nil {
@@ -113,6 +116,18 @@ func (api *Api) StripeCheckoutSessionGet(ctx context.Context, input *StripeCheck
 	}
 	if cs == nil {
 		return nil, huma.Error404NotFound("checkout session not found")
+	}
+	if cs.StripeCustomer != nil {
+		if cs.StripeCustomer.TeamID != nil {
+			teamInfo, err := api.app.Team().FindTeamInfo(ctx, *cs.StripeCustomer.TeamID, info.User.ID)
+			if err != nil {
+				return nil, err
+			}
+			if teamInfo == nil {
+				return nil, huma.Error404NotFound("team not found")
+			}
+			cs.StripeCustomer.Team = &teamInfo.Team
+		}
 	}
 	return &CheckoutSessionOutput{
 		Body: *FromModelSubscription(cs),

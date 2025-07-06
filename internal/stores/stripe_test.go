@@ -263,6 +263,7 @@ func TestStripeStore_UpsertProductAndPrice(t *testing.T) {
 			Description: types.Pointer("Stripe Desc"),
 			Metadata:    map[string]string{"foo": "bar"},
 		}
+
 		err := adapter.Product().UpsertProduct(ctx, stripeProduct)
 		if err != nil {
 			t.Fatalf("UpsertProductFromStripe() error = %v", err)

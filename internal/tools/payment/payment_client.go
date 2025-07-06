@@ -150,13 +150,12 @@ func (c *StripeClient) CreateCheckoutSession(customerId, priceId string, quantit
 			Enabled: stripe.Bool(true),
 		},
 		Customer:           stripe.String(customerId),
-		PaymentMethodTypes: stripe.StringSlice([]string{"card"}),
+		PaymentMethodTypes: stripe.StringSlice([]string{string(stripe.SubscriptionPaymentSettingsPaymentMethodTypeCard)}),
 		CustomerUpdate:     customerUpdateParams,
-		Mode:               stripe.String("subscription"),
+		Mode:               stripe.String(string(stripe.CheckoutSessionModeSubscription)),
 		SuccessURL:         stripe.String(c.config.StripeAppUrl + "/payment/success?sessionId={CHECKOUT_SESSION_ID}"),
-		// CancelURL:          stripe.String(c.config.AppUrl + "/payment/cancel"),
-		LineItems:        lineParams,
-		SubscriptionData: subscriptionParams,
+		LineItems:          lineParams,
+		SubscriptionData:   subscriptionParams,
 	}
 	return session.New(sessionParams)
 }
