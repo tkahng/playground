@@ -2,6 +2,7 @@ package stores
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/google/uuid"
@@ -221,8 +222,11 @@ func (s *DbTeamInvitationStore) FindPendingInvitation(ctx context.Context, teamI
 	if err != nil {
 		return nil, err
 	}
+	if invitation == nil {
+		return nil, nil
+	}
 	if invitation.ExpiresAt.Before(time.Now()) {
-		return nil, shared.ErrTokenExpired
+		return nil, errors.New("invitation expired")
 	}
 	return invitation, nil
 }
