@@ -69,6 +69,11 @@ func (d *DbNotificationService) NotifyMembersOfNewMember(ctx context.Context, te
 		}
 		notifications = append(notifications, notification)
 	}
+
+	_, err = d.adapter.Notification().InsertManyNotifications(ctx, notifications)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 

@@ -17,7 +17,7 @@ import (
 
 type NotificationStore interface {
 	CreateNotification(ctx context.Context, notification *models.Notification) (*models.Notification, error)
-	CreateManyNotifications(ctx context.Context, notifications []models.Notification) ([]*models.Notification, error)
+	InsertManyNotifications(ctx context.Context, notifications []models.Notification) (int64, error)
 	FindNotification(ctx context.Context, args *NotificationFilter) (*models.Notification, error)
 	FindNotifications(ctx context.Context, args *NotificationFilter) ([]*models.Notification, error)
 	CountNotification(ctx context.Context, args *NotificationFilter) (int64, error)
@@ -54,8 +54,8 @@ func (s *DbNotificationStore) CreateNotification(ctx context.Context, notificati
 	)
 }
 
-func (s *DbNotificationStore) CreateManyNotifications(ctx context.Context, notifications []models.Notification) ([]*models.Notification, error) {
-	return repository.Notification.Post(
+func (s *DbNotificationStore) InsertManyNotifications(ctx context.Context, notifications []models.Notification) (int64, error) {
+	return repository.Notification.PostExec(
 		ctx,
 		s.db,
 		notifications,
@@ -163,7 +163,7 @@ type NotificationStoreDecorator struct {
 	Delegate              *DbNotificationStore
 	CountFunc             func(ctx context.Context, filter *NotificationFilter) (int64, error)
 	CreateFunc            func(ctx context.Context, notification *models.Notification) (*models.Notification, error)
-	CreateManyFunc        func(ctx context.Context, notifications []models.Notification) ([]*models.Notification, error)
+	CreateManyFunc        func(ctx context.Context, notifications []models.Notification) (int64, error)
 	FindNotificationFunc  func(ctx context.Context, args *NotificationFilter) (*models.Notification, error)
 	FindNotificationsFunc func(ctx context.Context, args *NotificationFilter) ([]*models.Notification, error)
 	UpdateFunc            func(ctx context.Context, notification *models.Notification) error
@@ -180,15 +180,15 @@ func (n *NotificationStoreDecorator) CountNotification(ctx context.Context, args
 	return n.Delegate.CountNotification(ctx, args)
 }
 
-// CreateManyNotifications implements NotificationStore.
-func (n *NotificationStoreDecorator) CreateManyNotifications(ctx context.Context, notifications []models.Notification) ([]*models.Notification, error) {
+// InsertManyNotifications implements NotificationStore.
+func (n *NotificationStoreDecorator) InsertManyNotifications(ctx context.Context, notifications []models.Notification) (int64, error) {
 	if n.CreateFunc != nil {
 		return n.CreateManyFunc(ctx, notifications)
 	}
 	if n.Delegate == nil {
-		return nil, errors.New("delegate is nil in CreateManyNotifications")
+		return 0, errors.New("delegate is nil in CreateManyNotifications")
 	}
-	return n.Delegate.CreateManyNotifications(ctx, notifications)
+	return n.Delegate.InsertManyNotifications(ctx, notifications)
 }
 
 // CreateNotification implements NotificationStore.
