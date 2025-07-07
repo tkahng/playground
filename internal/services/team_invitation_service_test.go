@@ -86,6 +86,12 @@ func TestInvitationService_AcceptInvitation(t *testing.T) {
 
 	teamId := uuid.New()
 	userId := uuid.New()
+	teamMember := &models.TeamMember{
+		ID:     uuid.New(),
+		TeamID: teamId,
+		UserID: &userId,
+		Role:   models.TeamMemberRoleMember,
+	}
 	invitation := &models.TeamInvitation{
 		TeamID: teamId,
 		Email:  "test@example.com",
@@ -93,20 +99,16 @@ func TestInvitationService_AcceptInvitation(t *testing.T) {
 		Role:   models.TeamMemberRoleMember,
 	}
 	user := &models.User{ID: userId, Email: "test@example.com"}
-	store.TeamInvitationFunc.FindInvitationByTokenFunc = func(ctx context.Context, token string) (*models.TeamInvitation, error) {
-		return invitation, nil
+	store.TeamInvitationFunc.AcceptInvitationFunc = func(ctx context.Context, adapter stores.StorageAdapterInterface, userId uuid.UUID, invitationToken string, out *models.TeamMember) error {
+		*out = *teamMember
+		invitation.Status = models.TeamInvitationStatusAccepted
+		return nil
 	}
-	store.UserFunc.FindUserByIDFunc = func(ctx context.Context, userId uuid.UUID) (*models.User, error) {
-		return user, nil
-	}
-	store.TeamMemberFunc.CreateTeamMemberFunc = func(ctx context.Context, teamId, userId uuid.UUID, role models.TeamMemberRole, hasBillingAccess bool) (*models.TeamMember, error) {
-		return &models.TeamMember{}, nil
-	}
-	store.TeamInvitationFunc.UpdateInvitationFunc = func(ctx context.Context, invitation *models.TeamInvitation) error {
+	jobService.EnqueueTeamMemberAddedJobFunc = func(ctx context.Context, job *workers.NewMemberNotificationJobArgs) error {
 		return nil
 	}
 
-	err := service.AcceptInvitation(ctx, userId, "token")
+	err := service.AcceptInvitation(ctx, user.ID, "token")
 	assert.NoError(t, err)
 	assert.Equal(t, models.TeamInvitationStatusAccepted, invitation.Status)
 }
@@ -121,19 +123,27 @@ func TestInvitationService_AcceptInvitation_UserMismatch(t *testing.T) {
 
 	teamId := uuid.New()
 	userId := uuid.New()
+
 	invitation := &models.TeamInvitation{
 		TeamID: teamId,
 		Email:  "test@example.com",
 		Status: models.TeamInvitationStatusPending,
+		Token:  "token",
+		Role:   models.TeamMemberRoleMember,
 	}
 	user := &models.User{ID: userId, Email: "other@example.com"}
+	jobService.EnqueueTeamMemberAddedJobFunc = func(ctx context.Context, job *workers.NewMemberNotificationJobArgs) error {
+		return nil
+	}
+	store.TeamInvitationFunc.Delegate = stores.NewDbTeamInvitationStore(nil)
 	store.TeamInvitationFunc.FindInvitationByTokenFunc = func(ctx context.Context, token string) (*models.TeamInvitation, error) {
 		return invitation, nil
 	}
 	store.UserFunc.FindUserByIDFunc = func(ctx context.Context, userId uuid.UUID) (*models.User, error) {
 		return user, nil
 	}
-	err := service.AcceptInvitation(ctx, userId, "token")
+
+	err := service.AcceptInvitation(ctx, user.ID, "token")
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "does not match invitation")
 }
@@ -154,11 +164,15 @@ func TestInvitationService_RejectInvitation(t *testing.T) {
 		Status: models.TeamInvitationStatusPending,
 	}
 	user := &models.User{ID: userId, Email: "test@example.com"}
+	// store.TeamInvitationFunc.Delegate = stores.NewDbTeamInvitationStore(nil)
 	store.TeamInvitationFunc.FindInvitationByTokenFunc = func(ctx context.Context, token string) (*models.TeamInvitation, error) {
 		return invitation, nil
 	}
 	store.UserFunc.FindUserByIDFunc = func(ctx context.Context, userId uuid.UUID) (*models.User, error) {
 		return user, nil
+	}
+	store.TeamInvitationFunc.UpdateInvitationFunc = func(ctx context.Context, invitation *models.TeamInvitation) error {
+		return nil
 	}
 	err := service.RejectInvitation(ctx, userId, "token")
 	assert.NoError(t, err)
@@ -616,7 +630,7 @@ func TestInvitationService_AcceptInvitation_Success(t *testing.T) {
 		Role:   models.TeamMemberRoleMember,
 	}
 	user := &models.User{ID: userId, Email: "test@example.com"}
-
+	store.TeamInvitationFunc.Delegate = &stores.DbTeamInvitationStore{}
 	store.TeamInvitationFunc.FindInvitationByTokenFunc = func(ctx context.Context, token string) (*models.TeamInvitation, error) {
 		return invitation, nil
 	}
@@ -627,9 +641,12 @@ func TestInvitationService_AcceptInvitation_Success(t *testing.T) {
 		return &models.TeamMember{}, nil
 	}
 	store.TeamInvitationFunc.UpdateInvitationFunc = func(ctx context.Context, invitation *models.TeamInvitation) error {
+		invitation.Status = models.TeamInvitationStatusAccepted
 		return nil
 	}
-
+	jobService.EnqueueTeamMemberAddedJobFunc = func(ctx context.Context, job *workers.NewMemberNotificationJobArgs) error {
+		return nil
+	}
 	err := service.AcceptInvitation(ctx, userId, "token")
 	assert.NoError(t, err)
 	assert.Equal(t, models.TeamInvitationStatusAccepted, invitation.Status)
@@ -644,6 +661,7 @@ func TestInvitationService_AcceptInvitation_InvitationNotFound(t *testing.T) {
 	service := NewInvitationService(store, *opts, jobService)
 
 	userId := uuid.New()
+	store.TeamInvitationFunc.Delegate = stores.NewDbTeamInvitationStore(nil)
 	store.TeamInvitationFunc.FindInvitationByTokenFunc = func(ctx context.Context, token string) (*models.TeamInvitation, error) {
 		return nil, nil
 	}
@@ -662,6 +680,7 @@ func TestInvitationService_AcceptInvitation_FindInvitationError(t *testing.T) {
 	service := NewInvitationService(store, *opts, jobService)
 
 	userId := uuid.New()
+	store.TeamInvitationFunc.Delegate = stores.NewDbTeamInvitationStore(nil)
 	store.TeamInvitationFunc.FindInvitationByTokenFunc = func(ctx context.Context, token string) (*models.TeamInvitation, error) {
 		return nil, assert.AnError
 	}
@@ -686,6 +705,7 @@ func TestInvitationService_AcceptInvitation_UserNotFound(t *testing.T) {
 		Email:  "test@example.com",
 		Status: models.TeamInvitationStatusPending,
 	}
+	store.TeamInvitationFunc.Delegate = stores.NewDbTeamInvitationStore(nil)
 
 	store.TeamInvitationFunc.FindInvitationByTokenFunc = func(ctx context.Context, token string) (*models.TeamInvitation, error) {
 		return invitation, nil
@@ -714,6 +734,7 @@ func TestInvitationService_AcceptInvitation_FindUserError(t *testing.T) {
 		Email:  "test@example.com",
 		Status: models.TeamInvitationStatusPending,
 	}
+	store.TeamInvitationFunc.Delegate = stores.NewDbTeamInvitationStore(nil)
 
 	store.TeamInvitationFunc.FindInvitationByTokenFunc = func(ctx context.Context, token string) (*models.TeamInvitation, error) {
 		return invitation, nil
@@ -743,6 +764,7 @@ func TestInvitationService_AcceptInvitation_UserEmailMismatch(t *testing.T) {
 		Status: models.TeamInvitationStatusPending,
 	}
 	user := &models.User{ID: userId, Email: "other@example.com"}
+	store.TeamInvitationFunc.Delegate = stores.NewDbTeamInvitationStore(nil)
 
 	store.TeamInvitationFunc.FindInvitationByTokenFunc = func(ctx context.Context, token string) (*models.TeamInvitation, error) {
 		return invitation, nil
@@ -772,6 +794,7 @@ func TestInvitationService_AcceptInvitation_InvitationNotPending(t *testing.T) {
 		Status: models.TeamInvitationStatusAccepted,
 	}
 	user := &models.User{ID: userId, Email: "test@example.com"}
+	store.TeamInvitationFunc.Delegate = stores.NewDbTeamInvitationStore(nil)
 
 	store.TeamInvitationFunc.FindInvitationByTokenFunc = func(ctx context.Context, token string) (*models.TeamInvitation, error) {
 		return invitation, nil

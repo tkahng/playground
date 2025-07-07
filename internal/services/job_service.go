@@ -105,7 +105,7 @@ func (j *JobServiceDecorator) WithTx(db database.Dbx) JobService {
 
 // EnqueueTeamMemberAddedJob implements JobService.
 func (j *JobServiceDecorator) EnqueueTeamMemberAddedJob(ctx context.Context, job *workers.NewMemberNotificationJobArgs) error {
-	if j.EnqueueOtpMailJobFunc != nil {
+	if j.EnqueueTeamMemberAddedJobFunc != nil {
 		return j.EnqueueTeamMemberAddedJobFunc(ctx, job)
 	}
 	return j.Delegate.EnqueueTeamMemberAddedJob(ctx, job)

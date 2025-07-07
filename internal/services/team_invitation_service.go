@@ -145,16 +145,16 @@ func (i *InvitationService) CheckValidInvitation(
 	if invite == nil {
 		return false, fmt.Errorf("invitation not found")
 	}
-	// user, err := i.adapter.User().FindUserByID(ctx, userId)
-	// if err != nil {
-	// 	return false, err
-	// }
-	// if user == nil {
-	// 	return false, fmt.Errorf("user not found")
-	// }
-	// if invite.Email != user.Email {
-	// 	return false, fmt.Errorf("user does not match invitation")
-	// }
+	user, err := i.adapter.User().FindUserByID(ctx, userId)
+	if err != nil {
+		return false, err
+	}
+	if user == nil {
+		return false, fmt.Errorf("user not found")
+	}
+	if invite.Email != user.Email {
+		return false, fmt.Errorf("user does not match invitation")
+	}
 	if invite.ExpiresAt.After(time.Now()) {
 		return false, fmt.Errorf("invitation is expired")
 	}

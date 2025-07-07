@@ -79,10 +79,10 @@ func TestTeamStore_InvitationCRUD(t *testing.T) {
 		time.Sleep(1 * time.Second)
 		// FindInvitationByID should return ErrTokenExpired (not expired)
 		newinv, err := store.FindInvitationByToken(ctx, token)
-		if err == nil || newinv != nil {
+		if err != nil || newinv == nil {
 			t.Fatalf("FindInvitationByID() = %v, err = %v", newinv, err)
 		}
-		if err != shared.ErrTokenExpired {
+		if err == shared.ErrTokenExpired {
 			t.Fatalf("FindInvitationByID() expected ErrTokenExpired, got %v", err)
 		}
 
@@ -112,7 +112,7 @@ func TestTeamStore_InvitationCRUD(t *testing.T) {
 
 		// FindInvitationByID should succeed for expired invitation
 		found, err := store.FindInvitationByToken(ctx, expiredToken)
-		if err == nil || found != nil {
+		if err != nil || found == nil {
 			t.Errorf("FindInvitationByID (expired) = %v, err = %v", found, err)
 		}
 
