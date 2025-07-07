@@ -23,9 +23,3 @@ func NewNotificationPayload[T NotificationDataKinder](title, body string, data T
 		Data: data,
 	}
 }
-
-type NotificationPayloadManager interface {
-}
-
-func RegisterPayloadKind(manager NotificationPayloadManager, kind string) {
-}

@@ -84,8 +84,8 @@ func TestNotificationStore_FindNotification(t *testing.T) {
 		_, err := store.CreateNotification(ctx, notification)
 		assert.NoError(t, err)
 
-		args := &models.Notification{
-			Channel: notification.Channel,
+		args := &stores.NotificationFilter{
+			Channels: []string{notification.Channel},
 		}
 
 		got, err := store.FindNotification(ctx, args)
@@ -105,7 +105,7 @@ func TestNotificationStore_FindNotification2(t *testing.T) {
 		}
 		type args struct {
 			ctx  context.Context
-			args *models.Notification
+			args *stores.NotificationFilter
 		}
 		tests := []struct {
 			name    string
