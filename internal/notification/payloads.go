@@ -5,16 +5,16 @@ type NotificationContent struct {
 	Body  string `json:"body"`
 }
 
-type NotificationPayload[T NotificationDataKinder] struct {
+type NotificationPayload[T NotificationData] struct {
 	Notification NotificationContent `json:"notification" required:"true"`
 	Data         T                   `json:"data" required:"true"`
 }
 
-type NotificationDataKinder interface {
+type NotificationData interface {
 	Kind() string
 }
 
-func NewNotificationPayload[T NotificationDataKinder](title, body string, data T) *NotificationPayload[T] {
+func NewNotificationPayload[T NotificationData](title, body string, data T) *NotificationPayload[T] {
 	return &NotificationPayload[T]{
 		Notification: NotificationContent{
 			Title: title,

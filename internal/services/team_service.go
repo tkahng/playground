@@ -15,6 +15,7 @@ type TeamService interface {
 	SetActiveTeamMember(ctx context.Context, userId uuid.UUID, teamId uuid.UUID) (*models.TeamMember, error)
 	GetActiveTeamMember(ctx context.Context, userId uuid.UUID) (*models.TeamMember, error)
 	FindTeamInfo(ctx context.Context, teamId, userId uuid.UUID) (*models.TeamInfoModel, error)
+	FindTeamInfoByMemberID(ctx context.Context, teamMemberID uuid.UUID) (*models.TeamInfoModel, error)
 	FindTeamInfoBySlug(ctx context.Context, slug string, userId uuid.UUID) (*models.TeamInfoModel, error)
 	FindLatestTeamInfo(ctx context.Context, userId uuid.UUID) (*models.TeamInfoModel, error)
 	AddMember(ctx context.Context, teamId, userId uuid.UUID, role models.TeamMemberRole, hasBillingAccess bool) (*models.TeamMember, error)
@@ -28,6 +29,56 @@ type TeamService interface {
 
 type teamService struct {
 	adapter stores.StorageAdapterInterface
+}
+
+// FindTeamInfoByMemberID implements TeamService.
+func (t *teamService) FindTeamInfoByMemberID(ctx context.Context, teamMemberID uuid.UUID) (*models.TeamInfoModel, error) {
+	member, err := t.adapter.TeamMember().FindTeamMember(ctx,
+		&stores.TeamMemberFilter{
+			Ids: []uuid.UUID{teamMemberID},
+		})
+	if err != nil {
+		return nil, err
+	}
+	if member == nil {
+		slog.ErrorContext(
+			ctx,
+			"team member not found",
+			slog.String("teamMemberID", teamMemberID.String()),
+		)
+		return nil, errors.New("team member not found")
+	}
+	if member.UserID == nil {
+		slog.ErrorContext(
+			ctx,
+			"user id not found on team member",
+			slog.String("teamMemberID", teamMemberID.String()),
+		)
+		return nil, errors.New("user id not found")
+	}
+
+	user, err := t.adapter.User().FindUserByID(ctx, *member.UserID)
+	if err != nil {
+		return nil, err
+	}
+	if user == nil {
+		return nil, errors.New("user not found")
+	}
+
+	team, err := t.adapter.TeamGroup().FindTeamByID(ctx, member.TeamID)
+	if err != nil {
+		return nil, err
+	}
+	if team == nil {
+		return nil, errors.New("team not found")
+	}
+
+	member.User = user
+	return &models.TeamInfoModel{
+		Team:   *team,
+		Member: *member,
+		User:   *user,
+	}, nil
 }
 
 // FindTeamMembersByUserID implements TeamService.
