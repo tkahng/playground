@@ -6,6 +6,12 @@ import (
 	"github.com/google/uuid"
 )
 
+// Notification
+//
+// Taxonomy:
+//   - Notification
+//   - Channel eg: "team_member_id:bbde432f-1553-4c7d-bf34-ffe020683f56"
+//   - Type eg: "comment_reply"
 type Notification struct {
 	_            struct{}       `db:"notifications" json:"-"`
 	ID           uuid.UUID      `db:"id,pk" json:"id"`
