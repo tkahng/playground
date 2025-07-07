@@ -10,39 +10,6 @@ import (
 	"github.com/tkahng/authgo/internal/tools/types"
 )
 
-type RepositoryTestCase[T any] struct {
-	TestGet    func(t *testing.T, c RepositoryTest[T])
-	TestPost   func(t *testing.T, c RepositoryTest[T])
-	TestPut    func(t *testing.T)
-	TestDelete func(t *testing.T)
-}
-type TestContext struct {
-	Ctx context.Context
-	Db  database.Dbx
-}
-
-type PostTest[T any] struct {
-	Setup func(t *testing.T, ctx TestContext)
-	Args  func(t *testing.T, ctx TestContext) []T
-	Check func(t *testing.T, ctx TestContext, got, want T)
-}
-type GetParams struct {
-	Where  *map[string]any
-	Sort   *map[string]string
-	Limit  int
-	Offset int
-}
-type RepositoryTest[T any] struct {
-	Repo        Repository[T]
-	CompareFunc func(got, want T) bool
-	SetupGet    func(t *testing.T, ctx TestContext) GetParams
-	SetupPost   func(t *testing.T, ctx TestContext) []T
-	SetupPut    func(t *testing.T, ctx TestContext) []T
-	SetupDelete func(t *testing.T, ctx TestContext) []T
-	ArgsFunc    func(t *testing.T, ctx TestContext) []T
-	WhereFunc   func(t *testing.T, ctx TestContext) map[string]any
-}
-
 func UserCompareFunc(got, want models.User) bool {
 	if got.Name != want.Name {
 		return false
