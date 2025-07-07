@@ -98,7 +98,7 @@ func TestInvitationService_AcceptInvitation(t *testing.T) {
 		Status: models.TeamInvitationStatusPending,
 		Role:   models.TeamMemberRoleMember,
 	}
-	user := &models.User{ID: userId, Email: "test@example.com"}
+	user := &models.User{ID: userId}
 	store.TeamInvitationFunc.AcceptInvitationFunc = func(ctx context.Context, adapter stores.StorageAdapterInterface, userId uuid.UUID, invitationToken string, out *models.TeamMember) error {
 		*out = *teamMember
 		invitation.Status = models.TeamInvitationStatusAccepted
