@@ -2,12 +2,18 @@ package core
 
 import (
 	"log/slog"
+	"sync"
 
 	"github.com/tkahng/authgo/internal/tools/hook"
 )
 
+type WaitEvent struct {
+	wg *sync.WaitGroup
+}
+
 type StartEvent struct {
 	hook.Event
+	WaitEvent
 	App App
 }
 
@@ -26,11 +32,17 @@ type lifecycle struct {
 
 // OnStart implements Lifecycle.
 func (l *lifecycle) OnStart() *hook.Hook[*StartEvent] {
+	if l.onStart == nil {
+		l.onStart = &hook.Hook[*StartEvent]{}
+	}
 	return l.onStart
 }
 
 // OnStop implements Lifecycle.
 func (l *lifecycle) OnStop() *hook.Hook[*StopEvent] {
+	if l.onStop == nil {
+		l.onStop = &hook.Hook[*StopEvent]{}
+	}
 	return l.onStop
 }
 
@@ -41,7 +53,7 @@ func (l *lifecycle) Start(e *StartEvent) error {
 
 // Stop implements Lifecycle.
 func (l *lifecycle) Stop(e *StopEvent) error {
-	return l.onStop.Trigger(e)
+	return l.OnStop().Trigger(e)
 }
 
 func (l *lifecycle) Init() {
