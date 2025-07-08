@@ -19,7 +19,7 @@ var (
 func DbSetup() (context.Context, *database.Queries) {
 	ctxOnce.Do(func() {
 		ctxInstance = context.Background()
-		dbx = database.CreateQueries(ctxInstance, "postgres://postgres:postgres@localhost:5432/authgo_test?sslmode=disable")
+		dbx = database.CreateQueriesContext(ctxInstance, "postgres://postgres:postgres@localhost:5432/authgo_test?sslmode=disable")
 	})
 	return ctxInstance, dbx
 }

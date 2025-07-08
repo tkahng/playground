@@ -147,19 +147,19 @@ func (a *BaseApp) SetSettings(settings *conf.AppOptions) {
 }
 
 func (app *BaseApp) Cfg() *conf.EnvConfig {
+	if app.cfg == nil {
+		opts := conf.AppConfigGetter()
+		app.cfg = &opts
+		app.settings = opts.ToSettings()
+	}
 	return app.cfg
-}
-
-func (a *BaseApp) SetCfg(cfg *conf.EnvConfig) {
-	a.cfg = cfg
-	a.SetSettings(cfg.ToSettings())
 }
 
 // Mailer implements App.
 
 func NewBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 	settings := cfg.ToSettings()
-	pool := database.CreateQueries(ctx, cfg.Db.DatabaseUrl)
+	pool := database.CreateQueriesContext(ctx, cfg.Db.DatabaseUrl)
 	fs, err := filesystem.NewFileSystem(cfg.StorageConfig)
 	l := logger.GetDefaultLogger()
 

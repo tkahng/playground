@@ -2,7 +2,9 @@ package core
 
 import (
 	"log/slog"
+	"net/http"
 
+	"github.com/danielgtaylor/huma/v2"
 	"github.com/tkahng/authgo/internal/tools/hook"
 	"golang.org/x/sync/errgroup"
 )
@@ -18,7 +20,9 @@ func (e *WaitEvent) Go(f func() error) {
 type StartEvent struct {
 	hook.Event
 	WaitEvent
-	App App
+	App    App
+	Server *http.Server
+	Api    huma.API
 }
 
 type StopEvent struct {
@@ -60,17 +64,9 @@ func (l *lifecycle) Stop(e *StopEvent, oneOffHandlerFuncs ...func(*StopEvent) er
 	return l.OnStop().Trigger(e, oneOffHandlerFuncs...)
 }
 
-func (l *lifecycle) Init() {
-	l.onStart = &hook.Hook[*StartEvent]{}
-	l.onStop = &hook.Hook[*StopEvent]{}
-}
-
 type Lifecycle interface {
-	Init()
-	Start(e *StartEvent, fns ...func(*StartEvent) error) error
 	OnStart() *hook.Hook[*StartEvent]
 	OnStop() *hook.Hook[*StopEvent]
-	Stop(e *StopEvent, fns ...func(*StopEvent) error) error
 }
 
 var _ Lifecycle = (*lifecycle)(nil)

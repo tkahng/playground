@@ -80,6 +80,7 @@ func ZeroEnvConfig() EnvConfig {
 }
 
 type EnvConfig struct {
+	Options
 	Db DBConfig
 	JobsConfig
 	AppConfig
@@ -95,17 +96,6 @@ func (c *EnvConfig) ToSettings() *AppOptions {
 		Auth: NewTokenOptions(),
 		Meta: c.AppConfig,
 	}
-}
-
-type Config struct {
-	Meta    AppConfig
-	Db      DBConfig
-	OAuth   OAuth2Config
-	Resend  ResendConfig
-	Smtp    SmtpConfig
-	Stripe  StripeConfig
-	Storage StorageConfig
-	Ai      AiConfig
 }
 
 func AppConfigGetter() EnvConfig {

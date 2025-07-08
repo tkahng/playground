@@ -35,9 +35,6 @@ func GetContextOrDefaultDbx(ctx context.Context, dbx Dbx) Dbx {
 	return dbx
 }
 
-func NewQueries(pool *pgxpool.Pool) *Queries {
-	return &Queries{db: pool}
-}
 func (v *Queries) QueryRow(ctx context.Context, sql string, args ...any) pgx.Row {
 	return v.db.QueryRow(ctx, sql, args...)
 }
