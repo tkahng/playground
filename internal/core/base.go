@@ -131,7 +131,7 @@ func NewBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 		mail = &mailer.LogMailer{}
 	}
 	adapter := stores.NewStorageAdapter(pool)
-	jobManager := jobs.NewDbJobManagerDecorator(pool)
+	jobManager := jobs.NewDbJobManager(pool)
 	jobService := services.NewJobService(jobManager)
 	mailServiece := services.NewOtpMailService(
 		settings,

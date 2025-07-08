@@ -10,11 +10,11 @@ import (
 	"github.com/tkahng/authgo/internal/stores"
 )
 
-type NotificationService interface {
+type NotificationPublisher interface {
 	NotifyMembersOfNewMember(ctx context.Context, teamMemberID uuid.UUID) error
 }
 
-type DbNotificationService struct {
+type DbNotificationPublisher struct {
 	teamService TeamService
 	adapter     stores.StorageAdapterInterface
 }
@@ -23,7 +23,7 @@ type DbNotificationService struct {
 // 1. find team member with team and user.
 // 2. find all team members of the team.
 // 3. send notification to all team members except the team member.
-func (d *DbNotificationService) NotifyMembersOfNewMember(ctx context.Context, teamMemberID uuid.UUID) error {
+func (d *DbNotificationPublisher) NotifyMembersOfNewMember(ctx context.Context, teamMemberID uuid.UUID) error {
 	// 1. find team member with team and user
 	newMember, err := d.teamService.FindTeamInfoByMemberID(ctx, teamMemberID)
 	if err != nil {
@@ -77,4 +77,4 @@ func (d *DbNotificationService) NotifyMembersOfNewMember(ctx context.Context, te
 	return nil
 }
 
-var _ NotificationService = (*DbNotificationService)(nil)
+var _ NotificationPublisher = (*DbNotificationPublisher)(nil)

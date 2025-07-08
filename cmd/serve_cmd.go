@@ -66,7 +66,9 @@ func run(ctx context.Context) error {
 		return app.JobManager().Run(ctx)
 	})
 	err := g.Wait()
-
+	if err != nil {
+		return fmt.Errorf("error running server: %w", err)
+	}
 	// Gracefully shutdown HTTP server
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
