@@ -159,8 +159,6 @@ func (h *Hook[T]) Trigger(event T, oneOffHandlerFuncs ...func(T) error) error {
 	handlers = append(handlers, oneOffHandlerFuncs...)
 	h.mu.RUnlock()
 
-	event.setNextFunc(nil) // reset in case the event is being reused
-
 	for i := len(handlers) - 1; i >= 0; i-- {
 		i := i
 		old := event.nextFunc()
