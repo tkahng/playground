@@ -94,12 +94,12 @@ type BaseAppDecorator struct {
 	RegisterHooksFunc  func()
 }
 
-// RegisterHooks implements App.
-func (b *BaseAppDecorator) RegisterHooks() {
+// RegisterBaseHooks implements App.
+func (b *BaseAppDecorator) RegisterBaseHooks() {
 	if b.RegisterHooksFunc != nil {
 		b.RegisterHooksFunc()
 	}
-	b.app.RegisterHooks()
+	b.app.RegisterBaseHooks()
 }
 
 // Lifecycle implements App.

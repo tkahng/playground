@@ -41,8 +41,8 @@ type BaseApp struct {
 	lc Lifecycle
 }
 
-// RegisterHooks implements App.
-func (app *BaseApp) RegisterHooks() {
+// RegisterBaseHooks implements App.
+func (app *BaseApp) RegisterBaseHooks() {
 	app.Lifecycle().OnStart().Bind(&hook.Handler[*StartEvent]{
 		Func: func(se *StartEvent) error {
 			return nil
@@ -140,10 +140,6 @@ func (a *BaseApp) Payment() services.PaymentService {
 // Settings implements App.
 func (a *BaseApp) Settings() *conf.AppOptions {
 	return a.settings
-}
-
-func (a *BaseApp) SetSettings(settings *conf.AppOptions) {
-	a.settings = settings
 }
 
 func (app *BaseApp) Cfg() *conf.EnvConfig {

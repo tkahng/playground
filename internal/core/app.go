@@ -42,5 +42,5 @@ type App interface {
 
 	Lifecycle() Lifecycle
 
-	RegisterHooks()
+	RegisterBaseHooks()
 }
