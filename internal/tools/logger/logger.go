@@ -6,10 +6,6 @@ import (
 	"path/filepath"
 )
 
-func SetDefaultLogger() {
-	slog.SetDefault(GetDefaultLogger())
-}
-
 func GetDefaultLogger() *slog.Logger {
 	return slog.New(ContextHandler{
 		Handler: slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{

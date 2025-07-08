@@ -10,7 +10,6 @@ import (
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/repository"
 	"github.com/tkahng/authgo/internal/test"
-	"github.com/tkahng/authgo/internal/tools/logger"
 )
 
 func TestNewUserAccountRepositoryResource_FilterFunc(t *testing.T) {
@@ -105,7 +104,6 @@ func TestUserAccountRepositoryResource_Create(t *testing.T) {
 }
 
 func TestUserAccountRepsository_find(t *testing.T) {
-	logger.SetDefaultLogger()
 	test.DbSetup()
 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
 		userResource := User
