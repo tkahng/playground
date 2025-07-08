@@ -52,3 +52,11 @@ type Lifecycle interface {
 }
 
 var _ Lifecycle = (*lifecycle)(nil)
+
+func NewLifecycle(logger *slog.Logger) Lifecycle {
+	return &lifecycle{
+		logger:  logger,
+		onStart: &hook.Hook[*StartEvent]{},
+		onStop:  &hook.Hook[*StopEvent]{},
+	}
+}
