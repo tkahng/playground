@@ -55,7 +55,7 @@ func main() {
 	go n.Run(ctx)
 
 	// subscribe to the topic
-	sub := n.Listen(topic)
+	sub := n.Subscribe(topic)
 
 	// indefinitely listen for updates
 	go func() {

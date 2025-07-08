@@ -17,7 +17,7 @@ import (
 type Notifier interface {
 	// Returns a Subscription to the supplied channel topic which can be used to by
 	// the caller to receive data published to that channel
-	Listen(channel string) Subscription
+	Subscribe(channel string) Subscription
 
 	// this runs the receiving loop forever
 	Run(ctx context.Context) error
@@ -94,8 +94,8 @@ type channelChange struct {
 	operation string
 }
 
-// Listen returns a Subscription.
-func (n *notifier) Listen(channel string) Subscription {
+// Subscribe returns a Subscription.
+func (n *notifier) Subscribe(channel string) Subscription {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 

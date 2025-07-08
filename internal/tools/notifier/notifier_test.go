@@ -38,7 +38,7 @@ func TestNotifier(t *testing.T) {
 		n.Run(ctx)
 		wg.Done()
 	}()
-	sub := n.Listen("foo")
+	sub := n.Subscribe("foo")
 
 	conn, err := dbx.Pool().Acquire(ctx)
 	wg.Add(1)
