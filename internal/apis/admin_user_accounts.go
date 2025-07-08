@@ -60,11 +60,11 @@ func (api *Api) AdminUserAccounts(ctx context.Context, input *UserAccountFilter)
 	filter.Providers = input.Providers
 	filter.ProviderTypes = input.ProviderTypes
 
-	data, err := api.app.Adapter().UserAccount().ListUserAccounts(ctx, filter)
+	data, err := api.App().Adapter().UserAccount().ListUserAccounts(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
-	count, err := api.app.Adapter().UserAccount().CountUserAccounts(ctx, filter)
+	count, err := api.App().Adapter().UserAccount().CountUserAccounts(ctx, filter)
 	if err != nil {
 		return nil, err
 	}

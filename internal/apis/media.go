@@ -34,11 +34,11 @@ func (api *Api) UploadMedia(ctx context.Context, input *struct {
 				return nil, err
 			}
 
-			dto, err := api.app.Fs().PutFileFromBytes(ctx, buf.Bytes(), file.Filename)
+			dto, err := api.App().Fs().PutFileFromBytes(ctx, buf.Bytes(), file.Filename)
 			if err != nil {
 				return nil, err
 			}
-			_, err = api.app.Adapter().Media().CreateMedia(ctx, &models.Medium{
+			_, err = api.App().Adapter().Media().CreateMedia(ctx, &models.Medium{
 				UserID:           &user.User.ID,
 				Disk:             dto.Disk,
 				Directory:        dto.Directory,
@@ -57,11 +57,11 @@ func (api *Api) UploadMedia(ctx context.Context, input *struct {
 
 	if formData.Urls != nil {
 		for _, url := range formData.Urls {
-			dto, err := api.app.Fs().PutNewFileFromURL(ctx, url)
+			dto, err := api.App().Fs().PutNewFileFromURL(ctx, url)
 			if err != nil {
 				return nil, err
 			}
-			_, err = api.app.Adapter().Media().CreateMedia(ctx, &models.Medium{
+			_, err = api.App().Adapter().Media().CreateMedia(ctx, &models.Medium{
 				UserID:           &user.User.ID,
 				Disk:             dto.Disk,
 				Directory:        dto.Directory,
@@ -95,11 +95,11 @@ func (api *Api) GetMedia(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	media, err := api.app.Adapter().Media().FindMediaByID(ctx, id)
+	media, err := api.App().Adapter().Media().FindMediaByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
-	url, err := api.app.Fs().GeneratePresignedURL(ctx, media.Disk, path.Join(media.Directory, media.Filename))
+	url, err := api.App().Fs().GeneratePresignedURL(ctx, media.Disk, path.Join(media.Directory, media.Filename))
 	if err != nil {
 		return nil, err
 	}
@@ -128,13 +128,13 @@ func (api *Api) MediaList(ctx context.Context, input *MediaListFilter) (*ApiPagi
 	filter.Q = input.Q
 	filter.UserIds = utils.ParseValidUUIDs(input.UserIds...)
 
-	medias, err := api.app.Adapter().Media().FindMedia(ctx, filter)
+	medias, err := api.App().Adapter().Media().FindMedia(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
 	var data []*Media
 	for _, media := range medias {
-		url, err := api.app.Fs().GeneratePresignedURL(ctx, media.Disk, path.Join(media.Directory, media.Filename))
+		url, err := api.App().Fs().GeneratePresignedURL(ctx, media.Disk, path.Join(media.Directory, media.Filename))
 		if err != nil {
 			return nil, err
 		}
@@ -146,7 +146,7 @@ func (api *Api) MediaList(ctx context.Context, input *MediaListFilter) (*ApiPagi
 			UpdatedAt: media.UpdatedAt,
 		})
 	}
-	count, err := api.app.Adapter().Media().CountMedia(ctx, filter)
+	count, err := api.App().Adapter().Media().CountMedia(ctx, filter)
 	if err != nil {
 		return nil, err
 	}

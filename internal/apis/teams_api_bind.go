@@ -10,11 +10,11 @@ import (
 )
 
 func BindTeamsApi(api huma.API, appApi *Api) {
-	teamInfoMiddleware := middleware.TeamInfoFromParam(api, appApi.app)
-	teamInfoSlugMiddleware := middleware.TeamInfoFromTeamSlug(api, appApi.app)
+	teamInfoMiddleware := middleware.TeamInfoFromParam(api, appApi.App())
+	teamInfoSlugMiddleware := middleware.TeamInfoFromTeamSlug(api, appApi.App())
 	requireMember := middleware.RequireTeamMemberRolesMiddleware(api)
 	requiredOwnerMember := middleware.RequireTeamMemberRolesMiddleware(api, models.TeamMemberRoleOwner)
-	checkTeamDelete := middleware.TeamCanDelete(api, appApi.app)
+	checkTeamDelete := middleware.TeamCanDelete(api, appApi.App())
 	emailVerified := middleware.EmailVerifiedMiddleware(api)
 	teamsGroup := huma.NewGroup(api)
 	// get team members

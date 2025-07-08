@@ -17,7 +17,7 @@ func (api *Api) VerifyPost(ctx context.Context, input *struct{ Body *OtpInput })
 }
 
 func verify(api *Api, ctx context.Context, input *OtpInput) (*struct{}, error) {
-	action := api.app.Auth()
+	action := api.App().Auth()
 	err := action.HandleVerificationToken(ctx, input.Token)
 	if err != nil {
 		return nil, err

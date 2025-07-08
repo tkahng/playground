@@ -34,7 +34,7 @@ func (api *Api) CreateTeamCheckoutSession(ctx context.Context, input *StripeTeam
 	if input.Body.PriceID == "" {
 		return nil, huma.Error400BadRequest("Price ID is required")
 	}
-	url, err := api.app.Payment().CreateCheckoutSession(ctx, customer.ID, input.Body.PriceID)
+	url, err := api.App().Payment().CreateCheckoutSession(ctx, customer.ID, input.Body.PriceID)
 	if err != nil {
 		return nil, err
 	}
@@ -56,7 +56,7 @@ func (api *Api) CreateUserCheckoutSession(ctx context.Context, input *StripeUser
 	if input.Body.PriceID == "" {
 		return nil, huma.Error400BadRequest("Price ID is required")
 	}
-	url, err := api.app.Payment().CreateCheckoutSession(ctx, customer.ID, input.Body.PriceID)
+	url, err := api.App().Payment().CreateCheckoutSession(ctx, customer.ID, input.Body.PriceID)
 	if err != nil {
 		return nil, err
 	}
@@ -75,7 +75,7 @@ func (api *Api) StripeBillingPortal(ctx context.Context, input *struct{}) (*Stri
 	if customer == nil {
 		return nil, huma.Error403Forbidden("No customer found")
 	}
-	url, err := api.app.Payment().CreateBillingPortalSession(ctx, customer.ID)
+	url, err := api.App().Payment().CreateBillingPortalSession(ctx, customer.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -95,7 +95,7 @@ func (api *Api) StripeTeamBillingPortal(ctx context.Context, input *struct {
 	if customer == nil {
 		return nil, huma.Error403Forbidden("No customer found")
 	}
-	url, err := api.app.Payment().CreateBillingPortalSession(ctx, customer.ID)
+	url, err := api.App().Payment().CreateBillingPortalSession(ctx, customer.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -122,7 +122,7 @@ func (api *Api) StripeCheckoutSessionGet(ctx context.Context, input *StripeCheck
 	if info == nil {
 		return nil, huma.Error401Unauthorized("unauthorized")
 	}
-	payment := api.app.Payment()
+	payment := api.App().Payment()
 	cs, err := payment.FindSubscriptionWithPriceProductBySessionId(ctx, input.CheckoutSessionID)
 	if err != nil {
 		return nil, err
@@ -132,7 +132,7 @@ func (api *Api) StripeCheckoutSessionGet(ctx context.Context, input *StripeCheck
 	}
 	if cs.StripeCustomer != nil {
 		if cs.StripeCustomer.TeamID != nil {
-			teamInfo, err := api.app.Team().FindTeamInfo(ctx, *cs.StripeCustomer.TeamID, info.User.ID)
+			teamInfo, err := api.App().Team().FindTeamInfo(ctx, *cs.StripeCustomer.TeamID, info.User.ID)
 			if err != nil {
 				return nil, err
 			}

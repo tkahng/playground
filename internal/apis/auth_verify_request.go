@@ -18,7 +18,7 @@ type EmailVerificationRequestInput struct {
 }
 
 func (api *Api) RequestVerification(ctx context.Context, input *struct{}) (*struct{}, error) {
-	jobService := api.app.JobService()
+	jobService := api.App().JobService()
 	claims := contextstore.GetContextUserInfo(ctx)
 	if claims == nil {
 		return nil, huma.Error404NotFound("User not found")

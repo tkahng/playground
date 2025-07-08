@@ -9,9 +9,9 @@ import (
 )
 
 func BindStripeApi(api huma.API, appApi *Api) {
-	teamInfoMiddleware := middleware.TeamInfoFromParam(api, appApi.app)
-	selectCustomerFromUserMiddleware := middleware.SelectCustomerFromUserMiddleware(api, appApi.app)
-	selectCustomerFromTeamMiddleware := middleware.SelectCustomerFromTeamMiddleware(api, appApi.app)
+	teamInfoMiddleware := middleware.TeamInfoFromParam(api, appApi.App())
+	selectCustomerFromUserMiddleware := middleware.SelectCustomerFromUserMiddleware(api, appApi.App())
+	selectCustomerFromTeamMiddleware := middleware.SelectCustomerFromTeamMiddleware(api, appApi.App())
 	stripeGroup := huma.NewGroup(api)
 
 	// stripe webhook

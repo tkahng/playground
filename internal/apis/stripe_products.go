@@ -22,7 +22,7 @@ func (api *Api) StripeProductsWithPrices(ctx context.Context, input *StripeProdu
 	filter.SortBy = input.SortBy
 	filter.SortOrder = input.SortOrder
 
-	products, err := api.app.Adapter().Product().ListProducts(ctx, filter)
+	products, err := api.App().Adapter().Product().ListProducts(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -30,7 +30,7 @@ func (api *Api) StripeProductsWithPrices(ctx context.Context, input *StripeProdu
 	for _, u := range products {
 		ids = append(ids, u.ID)
 	}
-	prices, err := api.app.Adapter().Price().LoadPricesByProductIds(ctx, ids...)
+	prices, err := api.App().Adapter().Price().LoadPricesByProductIds(ctx, ids...)
 	if err != nil {
 		return nil, err
 	}
@@ -41,7 +41,7 @@ func (api *Api) StripeProductsWithPrices(ctx context.Context, input *StripeProdu
 		}
 	}
 
-	count, err := api.app.Adapter().Product().CountProducts(ctx, filter)
+	count, err := api.App().Adapter().Product().CountProducts(ctx, filter)
 	if err != nil {
 		return nil, err
 	}

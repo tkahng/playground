@@ -22,7 +22,7 @@ type AuthenticatedInfoResponse struct {
 }
 
 func (api *Api) SignIn(ctx context.Context, input *struct{ Body *SigninDto }) (*AuthenticatedInfoResponse, error) {
-	action := api.app.Auth()
+	action := api.App().Auth()
 	password := input.Body.Password.String()
 	hash, err := action.Password().HashPassword(password)
 	if err != nil {

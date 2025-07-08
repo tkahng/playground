@@ -16,7 +16,7 @@ type RequestPasswordResetOutput struct {
 
 func (api *Api) RequestPasswordReset(ctx context.Context, input *struct{ Body *RequestPasswordResetInput }) (*RequestPasswordResetOutput, error) {
 
-	checker := api.app.Checker()
+	checker := api.App().Checker()
 	ok, err := checker.CannotBeSuperUserEmail(ctx, input.Body.Email)
 	if err != nil {
 		return nil, err
@@ -24,7 +24,7 @@ func (api *Api) RequestPasswordReset(ctx context.Context, input *struct{ Body *R
 	if ok {
 		return nil, huma.Error400BadRequest("Cannot reset password for super user")
 	}
-	action := api.app.Auth()
+	action := api.App().Auth()
 	err = action.HandlePasswordResetRequest(ctx, input.Body.Email)
 	if err != nil {
 		return nil, err
@@ -34,7 +34,7 @@ func (api *Api) RequestPasswordReset(ctx context.Context, input *struct{ Body *R
 
 func (api *Api) CheckPasswordResetGet(ctx context.Context, input *OtpInput) (*struct{}, error) {
 
-	action := api.app.Auth()
+	action := api.App().Auth()
 	err := action.HandleCheckResetPasswordToken(ctx, input.Token)
 	if err != nil {
 		return nil, err
@@ -50,7 +50,7 @@ type ConfirmPasswordResetInput struct {
 
 func (api *Api) ConfirmPasswordReset(ctx context.Context, input *struct{ Body *ConfirmPasswordResetInput }) (*RequestPasswordResetOutput, error) {
 
-	action := api.app.Auth()
+	action := api.App().Auth()
 	err := action.HandlePasswordResetToken(ctx, input.Body.Token, input.Body.Password)
 	if err != nil {
 		return nil, err
@@ -69,7 +69,7 @@ func (api *Api) ResetPassword(ctx context.Context, input *struct{ Body PasswordR
 	if claims == nil {
 		return nil, huma.Error404NotFound("User not found")
 	}
-	checker := api.app.Checker()
+	checker := api.App().Checker()
 	ok, err := checker.CannotBeSuperUserEmail(ctx, claims.User.Email)
 	if err != nil {
 		return nil, err
@@ -77,7 +77,7 @@ func (api *Api) ResetPassword(ctx context.Context, input *struct{ Body PasswordR
 	if ok {
 		return nil, huma.Error400BadRequest("Cannot reset password for super user")
 	}
-	action := api.app.Auth()
+	action := api.App().Auth()
 	err = action.ResetPassword(ctx, claims.User.ID, input.Body.PreviousPassword, input.Body.NewPassword)
 	if err != nil {
 		return nil, err

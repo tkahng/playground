@@ -16,7 +16,7 @@ func (api *Api) GetStripeSubscriptions(ctx context.Context, input *struct{}) (*s
 		return nil, huma.Error403Forbidden("no customer found")
 	}
 
-	subWithPriceProduct, err := api.app.Adapter().Subscription().FindActiveSubscriptionByCustomerId(ctx, customer.ID)
+	subWithPriceProduct, err := api.App().Adapter().Subscription().FindActiveSubscriptionByCustomerId(ctx, customer.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -41,7 +41,7 @@ func (api *Api) GetTeamStripeSubscriptions(ctx context.Context, input *struct {
 		return nil, huma.Error403Forbidden("no customer found")
 	}
 
-	subWithPriceProduct, err := api.app.Adapter().Subscription().FindActiveSubscriptionByCustomerId(ctx, customer.ID)
+	subWithPriceProduct, err := api.App().Adapter().Subscription().FindActiveSubscriptionByCustomerId(ctx, customer.ID)
 	if err != nil {
 		return nil, err
 	}

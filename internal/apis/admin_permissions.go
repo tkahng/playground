@@ -21,7 +21,7 @@ func (api *Api) AdminUserPermissionsDelete(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	user, err := api.app.Adapter().User().FindUserByID(ctx, id)
+	user, err := api.App().Adapter().User().FindUserByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -32,14 +32,14 @@ func (api *Api) AdminUserPermissionsDelete(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	permission, err := api.app.Adapter().Rbac().FindPermissionById(ctx, permissionId)
+	permission, err := api.App().Adapter().Rbac().FindPermissionById(ctx, permissionId)
 	if err != nil {
 		return nil, err
 	}
 	if permission == nil {
 		return nil, huma.Error404NotFound("Permission not found")
 	}
-	err = api.app.Adapter().Rbac().DeletePermission(ctx, permission.ID)
+	err = api.App().Adapter().Rbac().DeletePermission(ctx, permission.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -56,7 +56,7 @@ func (api *Api) AdminUserPermissionsCreate(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	user, err := api.app.Adapter().User().FindUserByID(ctx, id)
+	user, err := api.App().Adapter().User().FindUserByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -66,14 +66,14 @@ func (api *Api) AdminUserPermissionsCreate(ctx context.Context, input *struct {
 
 	permissionIds := utils.ParseValidUUIDs(input.Body.PermissionIds...)
 
-	permissions, err := api.app.Adapter().Rbac().FindPermissionsByIds(ctx, permissionIds)
+	permissions, err := api.App().Adapter().Rbac().FindPermissionsByIds(ctx, permissionIds)
 	if err != nil {
 		return nil, err
 	}
 	if len(permissions) != len(permissionIds) {
 		return nil, huma.Error404NotFound("Permission not found")
 	}
-	err = api.app.Adapter().Rbac().CreateUserPermissions(ctx, user.ID, permissionIds...)
+	err = api.App().Adapter().Rbac().CreateUserPermissions(ctx, user.ID, permissionIds...)
 	if err != nil {
 		return nil, err
 	}
@@ -102,20 +102,20 @@ func (api *Api) AdminUserPermissionSourceList(ctx context.Context, input *struct
 	var userPermissionSources []*models.PermissionSource
 	var count int64
 	if input.Reverse {
-		userPermissionSources, err = api.app.Adapter().Rbac().ListUserNotPermissionsSource(ctx, id, limit, offset)
+		userPermissionSources, err = api.App().Adapter().Rbac().ListUserNotPermissionsSource(ctx, id, limit, offset)
 		if err != nil {
 			return nil, err
 		}
-		count, err = api.app.Adapter().Rbac().CountNotUserPermissionSource(ctx, id)
+		count, err = api.App().Adapter().Rbac().CountNotUserPermissionSource(ctx, id)
 		if err != nil {
 			return nil, err
 		}
 	} else {
-		userPermissionSources, err = api.app.Adapter().Rbac().ListUserPermissionsSource(ctx, id, limit, offset)
+		userPermissionSources, err = api.App().Adapter().Rbac().ListUserPermissionsSource(ctx, id, limit, offset)
 		if err != nil {
 			return nil, err
 		}
-		count, err = api.app.Adapter().Rbac().CountUserPermissionSource(ctx, id)
+		count, err = api.App().Adapter().Rbac().CountUserPermissionSource(ctx, id)
 		if err != nil {
 			return nil, err
 		}
@@ -147,7 +147,7 @@ type PermissionsListParams struct {
 func (api *Api) AdminPermissionsList(ctx context.Context, input *struct {
 	PermissionsListParams
 }) (*ApiPaginatedOutput[*Permission], error) {
-	store := api.app.Adapter().Rbac()
+	store := api.App().Adapter().Rbac()
 	fmt.Println(input)
 	filter := new(stores.PermissionFilter)
 	filter.Page = input.PerPage
@@ -195,7 +195,7 @@ type PermissionCreateInput struct {
 func (api *Api) AdminPermissionsCreate(ctx context.Context, input *struct {
 	Body PermissionCreateInput
 }) (*struct{ Body Permission }, error) {
-	store := api.app.Adapter().Rbac()
+	store := api.App().Adapter().Rbac()
 	permission, err := store.FindPermissionByName(ctx, input.Body.Name)
 	if err != nil {
 		return nil, err
@@ -220,7 +220,7 @@ func (api *Api) AdminPermissionsDelete(ctx context.Context, input *struct {
 	ID string `path:"id" format:"uuid" required:"true"`
 }) (*struct {
 }, error) {
-	store := api.app.Adapter().Rbac()
+	store := api.App().Adapter().Rbac()
 	id, err := uuid.Parse(input.ID)
 	if err != nil {
 		return nil, err
@@ -233,7 +233,7 @@ func (api *Api) AdminPermissionsDelete(ctx context.Context, input *struct {
 		return nil, huma.Error404NotFound("Permission not found")
 	}
 	// Check if the permission is not admin or basic
-	checker := api.app.Checker()
+	checker := api.App().Checker()
 	ok, err := checker.CannotBeAdminOrBasicName(ctx, permission.Name)
 	if err != nil {
 		return nil, err
@@ -255,7 +255,7 @@ func (api *Api) AdminPermissionsUpdate(ctx context.Context, input *struct {
 }) (*struct {
 	Body Permission
 }, error) {
-	store := api.app.Adapter().Rbac()
+	store := api.App().Adapter().Rbac()
 	id, err := uuid.Parse(input.ID)
 	if err != nil {
 		return nil, err
@@ -267,7 +267,7 @@ func (api *Api) AdminPermissionsUpdate(ctx context.Context, input *struct {
 	if permission == nil {
 		return nil, huma.Error404NotFound("Permission not found")
 	}
-	checker := api.app.Checker()
+	checker := api.App().Checker()
 	ok, err := checker.CannotBeAdminOrBasicName(ctx, permission.Name)
 	if err != nil {
 		return nil, err
@@ -297,7 +297,7 @@ func (api *Api) AdminPermissionsGet(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	permission, err := api.app.Adapter().Rbac().FindPermissionById(ctx, id)
+	permission, err := api.App().Adapter().Rbac().FindPermissionById(ctx, id)
 	if err != nil {
 		return nil, err
 	}

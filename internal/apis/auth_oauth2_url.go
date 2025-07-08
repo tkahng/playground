@@ -22,7 +22,7 @@ func (api *Api) OAuth2AuthorizationUrl(ctx context.Context, input *OAuth2Authori
 	if input == nil {
 		return nil, huma.Error400BadRequest("input is required")
 	}
-	res, err := api.app.Auth().CreateOAuthUrl(
+	res, err := api.App().Auth().CreateOAuthUrl(
 		ctx,
 		models.Providers(input.Provider),
 		input.RedirectTo,

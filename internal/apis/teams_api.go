@@ -117,7 +117,7 @@ func (api *Api) CreateTeam(
 	if info == nil {
 		return nil, huma.Error401Unauthorized("unauthorized")
 	}
-	team, err := api.app.Team().CreateTeamWithOwner(
+	team, err := api.App().Team().CreateTeamWithOwner(
 		ctx,
 		input.Body.Name,
 		input.Body.Slug,
@@ -152,7 +152,7 @@ func (api *Api) CheckTeamSlug(
 	},
 	error,
 ) {
-	exists, err := api.app.Adapter().TeamGroup().CheckTeamSlug(ctx, input.Body.Slug)
+	exists, err := api.App().Adapter().TeamGroup().CheckTeamSlug(ctx, input.Body.Slug)
 	if err != nil {
 		return nil, err
 	}
@@ -200,7 +200,7 @@ func (api *Api) GetUserTeams(
 		params.SortOrder = input.SortOrder
 	}
 
-	teams, err := api.app.Adapter().TeamGroup().ListTeams(ctx, params)
+	teams, err := api.App().Adapter().TeamGroup().ListTeams(ctx, params)
 	if err != nil {
 		return nil, err
 	}
@@ -209,7 +209,7 @@ func (api *Api) GetUserTeams(
 		teamIds := mapper.Map(teams, func(t *models.Team) uuid.UUID {
 			return t.ID
 		})
-		members, err := api.app.Adapter().TeamMember().LoadTeamMembersByUserAndTeamIds(ctx, info.User.ID, teamIds...)
+		members, err := api.App().Adapter().TeamMember().LoadTeamMembersByUserAndTeamIds(ctx, info.User.ID, teamIds...)
 		if err != nil {
 			return nil, err
 		}
@@ -224,7 +224,7 @@ func (api *Api) GetUserTeams(
 			teamsWithMember = append(teamsWithMember, teamWithMember)
 		}
 	}
-	count, err := api.app.Adapter().TeamGroup().CountTeams(ctx, params)
+	count, err := api.App().Adapter().TeamGroup().CountTeams(ctx, params)
 	if err != nil {
 		return nil, err
 	}
@@ -291,7 +291,7 @@ func (api *Api) GetActiveTeamMember(
 	if info == nil {
 		return nil, huma.Error401Unauthorized("unauthorized")
 	}
-	team, err := api.app.Team().GetActiveTeamMember(ctx, info.User.ID)
+	team, err := api.App().Team().GetActiveTeamMember(ctx, info.User.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -324,7 +324,7 @@ func (api *Api) UpdateTeam(
 	if info == nil {
 		return nil, huma.Error401Unauthorized("unauthorized")
 	}
-	team, err := api.app.Team().UpdateTeam(ctx, info.Team.ID, input.Body.Name)
+	team, err := api.App().Team().UpdateTeam(ctx, info.Team.ID, input.Body.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -350,7 +350,7 @@ func (api *Api) DeleteTeam(
 		return nil, huma.Error401Unauthorized("unauthorized")
 	}
 	slog.InfoContext(ctx, "Deleting team", slog.String("team_id", info.Team.ID.String()), slog.String("user_id", info.User.ID.String()))
-	err := api.app.Team().DeleteTeam(ctx, info.Team.ID, info.User.ID)
+	err := api.App().Team().DeleteTeam(ctx, info.Team.ID, info.User.ID)
 	if err != nil {
 		slog.ErrorContext(ctx, "error deleting team", "teamId", info.Team.ID.String(), "userId", info.User.ID.String(), "error", err)
 		return nil, err
@@ -376,7 +376,7 @@ func (api *Api) GetTeam(
 	if err != nil {
 		return nil, huma.Error400BadRequest("invalid team ID")
 	}
-	team, err := api.app.Adapter().TeamGroup().FindTeamByID(ctx, uid)
+	team, err := api.App().Adapter().TeamGroup().FindTeamByID(ctx, uid)
 	if err != nil {
 		return nil, err
 	}
@@ -413,7 +413,7 @@ func (api *Api) SetCurrentTeam(
 	if err != nil {
 		return nil, huma.Error400BadRequest("invalid team ID")
 	}
-	teamMember, err := api.app.Team().SetActiveTeamMember(ctx, info.User.ID, passedTeamID)
+	teamMember, err := api.App().Team().SetActiveTeamMember(ctx, info.User.ID, passedTeamID)
 	if err != nil {
 		return nil, err
 	}
@@ -460,7 +460,7 @@ func (api *Api) FindTeamTeamMembers(
 	filter.SortBy = input.SortBy
 	filter.SortOrder = input.SortOrder
 	filter.TeamIds = []uuid.UUID{teamID}
-	members, err := api.app.Adapter().TeamMember().FindTeamMembers(ctx, filter)
+	members, err := api.App().Adapter().TeamMember().FindTeamMembers(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -475,7 +475,7 @@ func (api *Api) FindTeamTeamMembers(
 			}
 			userIds[idx] = *member.UserID
 		}
-		users, err := api.app.Adapter().User().LoadUsersByUserIds(ctx, userIds...)
+		users, err := api.App().Adapter().User().LoadUsersByUserIds(ctx, userIds...)
 		if err != nil {
 			return nil, err
 		}
@@ -492,7 +492,7 @@ func (api *Api) FindTeamTeamMembers(
 		}
 
 	}
-	count, err := api.app.Adapter().TeamMember().CountTeamMembers(ctx, filter)
+	count, err := api.App().Adapter().TeamMember().CountTeamMembers(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -526,7 +526,7 @@ func (api *Api) CreateInvitation(
 		return nil, err
 	}
 
-	err = api.app.TeamInvitation().CreateInvitation(
+	err = api.App().TeamInvitation().CreateInvitation(
 		ctx,
 		parsedTeamId,
 		userInfo.User.ID,
@@ -555,7 +555,7 @@ func (api *Api) CheckValidInvitation(
 	// if userInfo == nil {
 	// 	return nil, huma.Error401Unauthorized("Unauthorized. No user info")
 	// }
-	res, err := api.app.TeamInvitation().GetInvitation(
+	res, err := api.App().TeamInvitation().GetInvitation(
 		ctx,
 		// userInfo.User.ID,
 		input.Body.Token,
@@ -577,7 +577,7 @@ func (api *Api) AcceptInvitation(
 	if userInfo == nil {
 		return nil, huma.Error401Unauthorized("Unauthorized. No user info")
 	}
-	err := api.app.TeamInvitation().AcceptInvitation(
+	err := api.App().TeamInvitation().AcceptInvitation(
 		ctx,
 		userInfo.User.ID,
 		input.Body.Token,
@@ -597,7 +597,7 @@ func (api *Api) DeclineInvitation(
 	if userInfo == nil {
 		return nil, huma.Error401Unauthorized("Unauthorized. No user info")
 	}
-	err := api.app.TeamInvitation().RejectInvitation(
+	err := api.App().TeamInvitation().RejectInvitation(
 		ctx,
 		userInfo.User.ID,
 		input.Body.Token,
@@ -636,7 +636,7 @@ func (api *Api) CencelInvitation(
 	if err != nil {
 		return nil, err
 	}
-	err = api.app.TeamInvitation().CancelInvitation(
+	err = api.App().TeamInvitation().CancelInvitation(
 		ctx,
 		parsedTeamId,
 		teamInfo.User.ID,
@@ -715,7 +715,7 @@ func (api *Api) FindInvitations(
 	filter.SortBy = input.SortBy
 	filter.SortOrder = input.SortOrder
 	filter.TeamIds = []uuid.UUID{parsedTeamId}
-	invitations, err := api.app.Adapter().TeamInvitation().FindTeamInvitations(
+	invitations, err := api.App().Adapter().TeamInvitation().FindTeamInvitations(
 		ctx,
 		filter,
 	)
@@ -728,7 +728,7 @@ func (api *Api) FindInvitations(
 			return nil, err
 		}
 	}
-	count, err := api.app.Adapter().TeamInvitation().CountTeamInvitations(
+	count, err := api.App().Adapter().TeamInvitation().CountTeamInvitations(
 		ctx,
 		filter,
 	)
@@ -752,7 +752,7 @@ func (api *Api) LoadTeamInvitationRelations(ctx context.Context, invitations []*
 			return t.TeamID
 		},
 	)
-	teams, err := api.app.Adapter().TeamGroup().LoadTeamsByIds(ctx, teamIds...)
+	teams, err := api.App().Adapter().TeamGroup().LoadTeamsByIds(ctx, teamIds...)
 	if err != nil {
 		return err
 	}
@@ -767,7 +767,7 @@ func (api *Api) LoadTeamInvitationRelations(ctx context.Context, invitations []*
 			return t.InviterMemberID
 		},
 	)
-	members, err := api.app.Adapter().TeamMember().LoadTeamMembersByIds(ctx, memberIds...)
+	members, err := api.App().Adapter().TeamMember().LoadTeamMembersByIds(ctx, memberIds...)
 	if err != nil {
 		return err
 	}
@@ -798,7 +798,7 @@ func (api *Api) GetUserTeamInvitations(
 	filter.SortBy = input.SortBy
 	filter.SortOrder = input.SortOrder
 	filter.Emails = []string{userInfo.User.Email}
-	invitations, err := api.app.Adapter().TeamInvitation().FindTeamInvitations(
+	invitations, err := api.App().Adapter().TeamInvitation().FindTeamInvitations(
 		ctx,
 		filter,
 	)
@@ -811,7 +811,7 @@ func (api *Api) GetUserTeamInvitations(
 			return nil, err
 		}
 	}
-	count, err := api.app.Adapter().TeamInvitation().CountTeamInvitations(
+	count, err := api.App().Adapter().TeamInvitation().CountTeamInvitations(
 		ctx,
 		filter,
 	)
@@ -838,7 +838,7 @@ func (api *Api) GetInvitationByToken(
 	// if userInfo == nil {
 	// 	return nil, huma.Error401Unauthorized("Unauthorized. no user info")
 	// }
-	invitation, err := api.app.TeamInvitation().GetInvitation(ctx, input.Token)
+	invitation, err := api.App().TeamInvitation().GetInvitation(ctx, input.Token)
 	if err != nil {
 		return nil, err
 	}
@@ -848,12 +848,12 @@ func (api *Api) GetInvitationByToken(
 	// if invitation.Email != userInfo.User.Email {
 	// 	return nil, huma.Error401Unauthorized("unauthorized. email not match")
 	// }
-	team, err := api.app.Adapter().TeamGroup().FindTeamByID(ctx, invitation.TeamID)
+	team, err := api.App().Adapter().TeamGroup().FindTeamByID(ctx, invitation.TeamID)
 	if err != nil {
 		return nil, err
 	}
 	invitation.Team = team
-	member, err := api.app.Adapter().TeamMember().FindTeamMember(ctx, &stores.TeamMemberFilter{
+	member, err := api.App().Adapter().TeamMember().FindTeamMember(ctx, &stores.TeamMemberFilter{
 		Ids: []uuid.UUID{invitation.InviterMemberID},
 	})
 	if err != nil {
@@ -862,7 +862,7 @@ func (api *Api) GetInvitationByToken(
 	invitation.InviterMember = member
 	if member != nil {
 		if member.UserID != nil {
-			user, err := api.app.Adapter().User().FindUserByID(ctx, *member.UserID)
+			user, err := api.App().Adapter().User().FindUserByID(ctx, *member.UserID)
 			if err != nil {
 				return nil, err
 			}

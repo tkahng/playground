@@ -12,7 +12,7 @@ type AppSettingsout struct {
 
 func (api *Api) GetAppSettings(context context.Context, input *struct{}) (*AppSettingsout, error) {
 	return &AppSettingsout{
-		Body: api.app.Settings(),
+		Body: api.App().Settings(),
 	}, nil
 }
 

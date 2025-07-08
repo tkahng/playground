@@ -28,7 +28,7 @@ func TestApi_GetStripeSubscriptions(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			appApi := &Api{
-				app: tt.fields.app,
+				a: tt.fields.app,
 			}
 			_, api := humatest.New(t)
 

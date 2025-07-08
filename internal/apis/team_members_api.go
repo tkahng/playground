@@ -17,7 +17,7 @@ func (api *Api) TeamMembersSseEvents(ctx context.Context, input *struct{}, send 
 		return
 	}
 
-	subscription := api.app.Notifier().Subscribe("team_member_id:" + teamInfo.Member.ID.String())
+	subscription := api.App().Notifier().Subscribe("team_member_id:" + teamInfo.Member.ID.String())
 	defer close(ch)
 	defer subscription.Unlisten(ctx)
 

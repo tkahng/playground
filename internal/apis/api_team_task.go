@@ -122,11 +122,11 @@ func (api *Api) TeamTaskList(ctx context.Context, input *TeamTaskListParams) (*T
 	}
 	newInput.ParentIds = []uuid.UUID{parentID}
 
-	tasks, err := api.app.Adapter().Task().ListTasks(ctx, newInput)
+	tasks, err := api.App().Adapter().Task().ListTasks(ctx, newInput)
 	if err != nil {
 		return nil, huma.Error500InternalServerError("error listing tasks", err)
 	}
-	total, err := api.app.Adapter().Task().CountTasks(ctx, newInput)
+	total, err := api.App().Adapter().Task().CountTasks(ctx, newInput)
 	if err != nil {
 		return nil, huma.Error500InternalServerError("error counting tasks", err)
 	}
@@ -148,7 +148,7 @@ func (api *Api) TaskUpdate(ctx context.Context, input *UpdateTaskInput) (*struct
 	if err != nil {
 		return nil, huma.Error400BadRequest("Invalid task ID")
 	}
-	err = api.app.Adapter().Task().FindAndUpdateTask(ctx, id, &input.Body)
+	err = api.App().Adapter().Task().FindAndUpdateTask(ctx, id, &input.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -164,7 +164,7 @@ func (api *Api) UpdateTaskPositionStatus(ctx context.Context, input *TaskPositio
 	if err != nil {
 		return nil, huma.Error400BadRequest("Invalid task ID")
 	}
-	err = api.app.Task().UpdateTaskRankStatus(ctx, id, input.Body.Position, models.TaskStatus(input.Body.Status))
+	err = api.App().Task().UpdateTaskRankStatus(ctx, id, input.Body.Position, models.TaskStatus(input.Body.Status))
 	if err != nil {
 		return nil, err
 	}
@@ -183,7 +183,7 @@ func (api *Api) TaskDelete(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, huma.Error400BadRequest("Invalid task ID")
 	}
-	err = api.app.Adapter().Task().DeleteTask(ctx, id)
+	err = api.App().Adapter().Task().DeleteTask(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -202,7 +202,7 @@ func (api *Api) TaskGet(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, huma.Error400BadRequest("Invalid task ID")
 	}
-	task, err := api.app.Adapter().Task().FindTaskByID(ctx, id)
+	task, err := api.App().Adapter().Task().FindTaskByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}

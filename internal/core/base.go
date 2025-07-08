@@ -11,6 +11,7 @@ import (
 	"github.com/tkahng/authgo/internal/stores"
 
 	"github.com/tkahng/authgo/internal/tools/filesystem"
+	"github.com/tkahng/authgo/internal/tools/hook"
 	"github.com/tkahng/authgo/internal/tools/logger"
 	"github.com/tkahng/authgo/internal/tools/mailer"
 	"github.com/tkahng/authgo/internal/tools/payment"
@@ -42,7 +43,13 @@ type BaseApp struct {
 
 // RegisterHooks implements App.
 func (app *BaseApp) RegisterHooks() {
-	panic("unimplemented")
+	app.Lifecycle().OnStart().Bind(&hook.Handler[*StartEvent]{
+		Func: func(se *StartEvent) error {
+			return nil
+		},
+		Priority: -99,
+	})
+
 }
 
 func (app *BaseApp) Lifecycle() Lifecycle {

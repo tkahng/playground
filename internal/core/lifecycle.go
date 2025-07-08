@@ -2,13 +2,17 @@ package core
 
 import (
 	"log/slog"
-	"sync"
 
 	"github.com/tkahng/authgo/internal/tools/hook"
+	"golang.org/x/sync/errgroup"
 )
 
 type WaitEvent struct {
-	wg *sync.WaitGroup
+	wg *errgroup.Group
+}
+
+func (e *WaitEvent) Go(f func() error) {
+	e.wg.Go(f)
 }
 
 type StartEvent struct {
@@ -47,13 +51,13 @@ func (l *lifecycle) OnStop() *hook.Hook[*StopEvent] {
 }
 
 // Start implements Lifecycle.
-func (l *lifecycle) Start(e *StartEvent) error {
-	return l.onStart.Trigger(e)
+func (l *lifecycle) Start(e *StartEvent, oneOffHandlerFuncs ...func(*StartEvent) error) error {
+	return l.onStart.Trigger(e, oneOffHandlerFuncs...)
 }
 
 // Stop implements Lifecycle.
-func (l *lifecycle) Stop(e *StopEvent) error {
-	return l.OnStop().Trigger(e)
+func (l *lifecycle) Stop(e *StopEvent, oneOffHandlerFuncs ...func(*StopEvent) error) error {
+	return l.OnStop().Trigger(e, oneOffHandlerFuncs...)
 }
 
 func (l *lifecycle) Init() {
@@ -63,10 +67,10 @@ func (l *lifecycle) Init() {
 
 type Lifecycle interface {
 	Init()
-	Start(*StartEvent) error
+	Start(e *StartEvent, fns ...func(*StartEvent) error) error
 	OnStart() *hook.Hook[*StartEvent]
 	OnStop() *hook.Hook[*StopEvent]
-	Stop(*StopEvent) error
+	Stop(e *StopEvent, fns ...func(*StopEvent) error) error
 }
 
 var _ Lifecycle = (*lifecycle)(nil)

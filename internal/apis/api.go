@@ -5,12 +5,19 @@ import (
 )
 
 type Api struct {
-	app core.App
+	a core.App
+}
+
+func (a *Api) App() core.App {
+	if a.a == nil {
+		panic("app not initialized for api")
+	}
+	return a.a
 }
 
 func NewApi(app core.App) *Api {
 	return &Api{
-		app: app,
+		a: app,
 	}
 }
 
