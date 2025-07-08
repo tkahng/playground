@@ -89,6 +89,15 @@ type BaseAppDecorator struct {
 	TeamInvitationFunc func() services.TeamInvitationService
 	JobManagerFunc     func() jobs.JobManager
 	JobServiceFunc     func() services.JobService
+	NotifierFunc       func() services.NotifierService
+}
+
+// Notifier implements App.
+func (b *BaseAppDecorator) Notifier() services.NotifierService {
+	if b.NotifierFunc != nil {
+		return b.NotifierFunc()
+	}
+	return b.app.Notifier()
 }
 
 // JobService implements App.

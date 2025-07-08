@@ -37,4 +37,6 @@ type App interface {
 	JobManager() jobs.JobManager
 
 	JobService() services.JobService
+
+	Notifier() services.NotifierService
 }

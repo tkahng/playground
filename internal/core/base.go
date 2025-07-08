@@ -35,6 +35,12 @@ type BaseApp struct {
 	teamInvitation services.TeamInvitationService
 	jobManager     jobs.JobManager
 	jobService     services.JobService
+	notifier       services.NotifierService
+}
+
+// Notifier implements App.
+func (app *BaseApp) Notifier() services.NotifierService {
+	return app.notifier
 }
 
 // JobManager implements App.
