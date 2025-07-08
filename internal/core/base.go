@@ -36,30 +36,54 @@ type BaseApp struct {
 	jobManager     jobs.JobManager
 	jobService     services.JobService
 	notifier       services.NotifierService
+
+	lc Lifecycle
+}
+
+func (app *BaseApp) Lifecycle() Lifecycle {
+	if app.lc == nil {
+		app.lc = NewLifecycle(app.logger)
+	}
+	return app.lc
 }
 
 // Notifier implements App.
 func (app *BaseApp) Notifier() services.NotifierService {
+	if app.notifier == nil {
+		panic("notifier not initialized")
+	}
 	return app.notifier
 }
 
 // JobManager implements App.
 func (app *BaseApp) JobManager() jobs.JobManager {
+	if app.jobManager == nil {
+		panic("job manager not initialized")
+	}
 	return app.jobManager
 }
 
 // JobService implements App.
 func (app *BaseApp) JobService() services.JobService {
+	if app.jobService == nil {
+		panic("job service not initialized")
+	}
 	return app.jobService
 }
 
 // TeamInvitation implements App.
 func (app *BaseApp) TeamInvitation() services.TeamInvitationService {
+	if app.teamInvitation == nil {
+		panic("team invitation not initialized")
+	}
 	return app.teamInvitation
 }
 
 // Adapter implements App.
 func (app *BaseApp) Adapter() stores.StorageAdapterInterface {
+	if app.adapter == nil {
+		panic("adapter not initialized")
+	}
 	return app.adapter
 }
 

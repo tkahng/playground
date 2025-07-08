@@ -39,4 +39,6 @@ type App interface {
 	JobService() services.JobService
 
 	Notifier() services.NotifierService
+
+	Lifecycle() Lifecycle
 }

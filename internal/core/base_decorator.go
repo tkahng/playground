@@ -90,6 +90,15 @@ type BaseAppDecorator struct {
 	JobManagerFunc     func() jobs.JobManager
 	JobServiceFunc     func() services.JobService
 	NotifierFunc       func() services.NotifierService
+	LifecycleFunc      func() Lifecycle
+}
+
+// Lifecycle implements App.
+func (b *BaseAppDecorator) Lifecycle() Lifecycle {
+	if b.LifecycleFunc != nil {
+		return b.LifecycleFunc()
+	}
+	return b.app.Lifecycle()
 }
 
 // Notifier implements App.

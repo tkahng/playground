@@ -44,7 +44,13 @@ func (l *lifecycle) Stop(e *StopEvent) error {
 	return l.onStop.Trigger(e)
 }
 
+func (l *lifecycle) Init() {
+	l.onStart = &hook.Hook[*StartEvent]{}
+	l.onStop = &hook.Hook[*StopEvent]{}
+}
+
 type Lifecycle interface {
+	Init()
 	Start(*StartEvent) error
 	OnStart() *hook.Hook[*StartEvent]
 	OnStop() *hook.Hook[*StopEvent]
