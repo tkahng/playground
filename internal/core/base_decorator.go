@@ -91,6 +91,15 @@ type BaseAppDecorator struct {
 	JobServiceFunc     func() services.JobService
 	NotifierFunc       func() services.NotifierService
 	LifecycleFunc      func() Lifecycle
+	RegisterHooksFunc  func()
+}
+
+// RegisterHooks implements App.
+func (b *BaseAppDecorator) RegisterHooks() {
+	if b.RegisterHooksFunc != nil {
+		b.RegisterHooksFunc()
+	}
+	b.app.RegisterHooks()
 }
 
 // Lifecycle implements App.

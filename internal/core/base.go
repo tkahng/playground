@@ -40,6 +40,11 @@ type BaseApp struct {
 	lc Lifecycle
 }
 
+// RegisterHooks implements App.
+func (app *BaseApp) RegisterHooks() {
+	panic("unimplemented")
+}
+
 func (app *BaseApp) Lifecycle() Lifecycle {
 	if app.lc == nil {
 		app.lc = NewLifecycle(app.logger)
