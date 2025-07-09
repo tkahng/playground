@@ -14,7 +14,6 @@ import (
 	"github.com/tkahng/authgo/internal/tools/hook"
 	"github.com/tkahng/authgo/internal/tools/logger"
 	"github.com/tkahng/authgo/internal/tools/mailer"
-	"github.com/tkahng/authgo/internal/tools/payment"
 )
 
 var _ App = (*BaseApp)(nil)
@@ -41,7 +40,33 @@ type BaseApp struct {
 	lc Lifecycle
 }
 
-// Logger implements App.
+// check settings -------------------------------------------------------------------------------------
+func (app *BaseApp) Config() *conf.EnvConfig {
+	if app.cfg == nil {
+		opts := conf.AppConfigGetter()
+		app.cfg = &opts
+		app.settings = opts.ToSettings()
+	}
+	return app.cfg
+}
+func (a *BaseApp) Settings() *conf.AppOptions {
+	return a.settings
+}
+
+// check db -------------------------------------------------------------------------------------
+
+func (app *BaseApp) Db() database.Dbx {
+	return app.db
+}
+
+func (app *BaseApp) Lifecycle() Lifecycle {
+	if app.lc == nil {
+		app.lc = NewLifecycle(app.logger)
+	}
+	return app.lc
+}
+
+// check logging -------------------------------------------------------------------------------------
 func (app *BaseApp) Logger() *slog.Logger {
 	if app.logger == nil {
 		app.logger = logger.GetDefaultLogger()
@@ -49,6 +74,13 @@ func (app *BaseApp) Logger() *slog.Logger {
 	return app.logger
 }
 
+// Notifier implements App.
+func (app *BaseApp) Notifier() services.NotifierService {
+	if app.notifier == nil {
+		panic("notifier not initialized")
+	}
+	return app.notifier
+}
 func (app *BaseApp) IsBootstrapped() (isBootStrapped bool) {
 	if app.cfg == nil {
 		return
@@ -96,74 +128,6 @@ func (app *BaseApp) IsBootstrapped() (isBootStrapped bool) {
 }
 
 // BootStrap implements App.
-func (app *BaseApp) Bootstrap() error {
-	event := &BootstrapEvent{}
-	// event.App = app
-
-	err := app.Lifecycle().OnBootstrap().Trigger(event, func(e *BootstrapEvent) error {
-		// clear resources of previous core state (if any)
-		// if err := app.ResetBootstrapState(); err != nil {
-		// 	return err
-		// }
-
-		// ensure that data dir exist
-		// if err := os.MkdirAll(app.DataDir(), os.ModePerm); err != nil {
-		// 	return err
-		// }
-
-		// if err := app.initDataDB(); err != nil {
-		// 	return err
-		// }
-
-		// if err := app.initAuxDB(); err != nil {
-		// 	return err
-		// }
-
-		// if err := app.initLogger(); err != nil {
-		// 	return err
-		// }
-
-		// if err := app.RunSystemMigrations(); err != nil {
-		// 	return err
-		// }
-
-		// if err := app.ReloadCachedCollections(); err != nil {
-		// 	return err
-		// }
-
-		// if err := app.ReloadSettings(); err != nil {
-		// 	return err
-		// }
-
-		// try to cleanup the pb_data temp directory (if any)
-		// _ = os.RemoveAll(filepath.Join(app.DataDir(), LocalTempDirName))
-
-		return nil
-	})
-
-	// add a more user friendly message in case users forgot to call
-	// e.Next() as part of their bootstrap hook
-	if err == nil && !app.IsBootstrapped() {
-		app.Logger().Warn("OnBootstrap hook didn't fail but the app is still not bootstrapped - maybe missing e.Next()?")
-	}
-
-	return err
-}
-
-func (app *BaseApp) Lifecycle() Lifecycle {
-	if app.lc == nil {
-		app.lc = NewLifecycle(app.logger)
-	}
-	return app.lc
-}
-
-// Notifier implements App.
-func (app *BaseApp) Notifier() services.NotifierService {
-	if app.notifier == nil {
-		panic("notifier not initialized")
-	}
-	return app.notifier
-}
 
 // JobManager implements App.
 func (app *BaseApp) JobManager() jobs.JobManager {
@@ -223,31 +187,12 @@ func (app *BaseApp) Fs() filesystem.FileSystem {
 	return app.fs
 }
 
-func (app *BaseApp) Db() database.Dbx {
-	return app.db
-}
-func (app *BaseApp) SetDb(db database.Dbx) {
-	app.db = db
-}
-
 // Payment implements App.
 func (a *BaseApp) Payment() services.PaymentService {
 	return a.payment
 }
 
 // Settings implements App.
-func (a *BaseApp) Settings() *conf.AppOptions {
-	return a.settings
-}
-
-func (app *BaseApp) Config() *conf.EnvConfig {
-	if app.cfg == nil {
-		opts := conf.AppConfigGetter()
-		app.cfg = &opts
-		app.settings = opts.ToSettings()
-	}
-	return app.cfg
-}
 
 // Mailer implements App.
 // RegisterBaseHooks implements App.
@@ -260,73 +205,49 @@ func (app *BaseApp) RegisterBaseHooks() {
 	})
 
 }
-func NewBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
-	settings := cfg.ToSettings()
-	pool := database.CreateQueriesContext(ctx, cfg.Db.DatabaseUrl)
-	fs, err := filesystem.NewFileSystem(cfg.StorageConfig)
-	l := logger.GetDefaultLogger()
 
-	if err != nil {
+func PrepApp(preApp *BaseApp) {
+	if err := preApp.Config(); err != nil {
 		panic(err)
 	}
-	var mail mailer.Mailer
-	if cfg.ResendApiKey != "" {
-		mail = mailer.NewResendMailer(cfg.ResendConfig)
-	} else {
-		mail = &mailer.LogMailer{}
+	if err := preApp.initDb(); err != nil {
+		panic(err)
 	}
-	adapter := stores.NewStorageAdapter(pool)
-	jobManager := jobs.NewDbJobManager(pool)
-	jobService := services.NewJobService(jobManager)
-	mailServiece := services.NewOtpMailService(
-		settings,
-		mail,
-		adapter,
-	)
+	if err := preApp.initAdapter(); err != nil {
+		panic(err)
+	}
+	if err := preApp.initPayment(); err != nil {
+		panic(err)
+	}
 
-	rbacService := services.NewRBACService(adapter)
-	taskService := services.NewTaskService(adapter)
+	// fs, err := filesystem.NewFileSystem(cfg.StorageConfig)
+	if err := preApp.initJobs(); err != nil {
+		panic(err)
+	}
+	if err := preApp.initMail(); err != nil {
+		panic(err)
+	}
 
-	paymentClient := payment.NewPaymentClient(cfg.StripeConfig)
-	paymentService := services.NewPaymentService(
-		paymentClient,
-		adapter,
-	)
-	jobService.RegisterWorkers(mailServiece, paymentService)
-	authService := services.NewAuthService(
-		settings,
-		jobService,
-		adapter,
-	)
-	checker := services.NewConstraintCheckerService(
-		adapter,
-	)
-
-	teamService := services.NewTeamService(adapter)
-	teamInvitationService := services.NewInvitationService(
-		adapter,
-		*settings,
-		jobService,
-	)
-	app := newApp(
-		fs,
-		pool,
-		settings,
-		l,
-		cfg,
-		mail,
-		authService,
-		paymentService,
-		checker, // pass as ConstraintChecker
-		rbacService,
-		taskService,
-		teamService,
-		adapter,
-		teamInvitationService,
-		jobManager,
-		jobService,
-	)
-	return app
+	if err := preApp.initNotifier(); err != nil {
+		panic(err)
+	}
+	if err := preApp.initAuth(); err != nil {
+		panic(err)
+	}
+	if err := preApp.initTeams(); err != nil {
+		panic(err)
+	}
+	if err := preApp.initTasks(); err != nil {
+		panic(err)
+	}
+	if err := preApp.initWorkers(); err != nil {
+		panic(err)
+	}
+}
+func NewBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
+	preApp := &BaseApp{}
+	PrepApp(preApp)
+	return preApp
 }
 
 func newApp(
