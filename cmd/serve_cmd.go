@@ -44,7 +44,7 @@ func run(ctx context.Context) error {
 	defer cancel()
 	// g, ctx := errgroup.WithContext(ctx)
 	opts := conf.AppConfigGetter()
-	app := core.NewBaseApp(ctx, opts)
+	app := core.BootstrappedApp(ctx, opts)
 	appApi := apis.NewApi(app)
 	startEvent := apis.NewStartEvent(opts)
 	appApi.BindApi(startEvent.Api)

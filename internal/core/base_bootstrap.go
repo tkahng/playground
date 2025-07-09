@@ -7,6 +7,7 @@ import (
 	"github.com/tkahng/authgo/internal/jobs"
 	"github.com/tkahng/authgo/internal/services"
 	"github.com/tkahng/authgo/internal/stores"
+	"github.com/tkahng/authgo/internal/tools/logger"
 	"github.com/tkahng/authgo/internal/tools/mailer"
 	"github.com/tkahng/authgo/internal/tools/payment"
 )
@@ -22,10 +23,7 @@ func (app *BaseApp) Bootstrap() error {
 		if err := app.Config(); err != nil {
 			panic(err)
 		}
-		if err := app.initDb(); err != nil {
-			panic(err)
-		}
-		if err := app.initAdapter(); err != nil {
+		if err := app.initStore(); err != nil {
 			panic(err)
 		}
 		if err := app.initPayment(); err != nil {
@@ -60,7 +58,7 @@ func (app *BaseApp) Bootstrap() error {
 func (app *BaseApp) ResetBootstrapState() error {
 	return nil
 }
-func (app *BaseApp) initDb() error {
+func (app *BaseApp) initStore() error {
 
 	queries := database.CreateQueries(app.cfg.Db.DatabaseUrl)
 
@@ -99,11 +97,7 @@ func (app *BaseApp) initMail() error {
 }
 
 func (app *BaseApp) initLogger() error {
-	return nil
-}
-func (app *BaseApp) initAdapter() error {
-	adapter := stores.NewStorageAdapter(app.db)
-	app.adapter = adapter
+	app.logger = logger.GetDefaultLogger()
 	return nil
 }
 

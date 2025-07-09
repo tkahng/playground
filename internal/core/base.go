@@ -2,6 +2,7 @@ package core
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 
 	"github.com/tkahng/authgo/internal/conf"
@@ -19,25 +20,35 @@ import (
 var _ App = (*BaseApp)(nil)
 
 type BaseApp struct {
-	cfg            *conf.EnvConfig
-	db             database.Dbx
-	settings       *conf.AppOptions
-	payment        services.PaymentService
-	logger         *slog.Logger
-	fs             filesystem.FileSystem
-	mail           mailer.Mailer
-	auth           services.AuthService
-	team           services.TeamService
-	checker        services.ConstraintChecker
-	rbac           services.RBACService
-	task           services.TaskService
-	adapter        stores.StorageAdapterInterface
-	teamInvitation services.TeamInvitationService
-	jobManager     jobs.JobManager
-	jobService     services.JobService
-	notifier       services.NotifierService
+	cfg      *conf.EnvConfig
+	settings *conf.AppOptions
 
 	lc Lifecycle
+
+	logger *slog.Logger
+	mail   mailer.Mailer
+
+	db      database.Dbx
+	adapter stores.StorageAdapterInterface
+
+	mailService services.OtpMailService
+
+	jobManager jobs.JobManager
+	jobService services.JobService
+
+	checker services.ConstraintChecker
+	payment services.PaymentService
+
+	auth services.AuthService
+	rbac services.RBACService
+
+	task           services.TaskService
+	team           services.TeamService
+	teamInvitation services.TeamInvitationService
+
+	notifier services.NotifierService
+
+	fs filesystem.FileSystem
 }
 
 // check settings -------------------------------------------------------------------------------------
@@ -50,6 +61,9 @@ func (app *BaseApp) Config() *conf.EnvConfig {
 	return app.cfg
 }
 func (a *BaseApp) Settings() *conf.AppOptions {
+	if a.settings == nil {
+		return a.Config().ToSettings()
+	}
 	return a.settings
 }
 
@@ -57,6 +71,14 @@ func (a *BaseApp) Settings() *conf.AppOptions {
 
 func (app *BaseApp) Db() database.Dbx {
 	return app.db
+}
+
+// Adapter implements App.
+func (app *BaseApp) Adapter() stores.StorageAdapterInterface {
+	if app.adapter == nil {
+		panic("adapter not initialized")
+	}
+	return app.adapter
 }
 
 func (app *BaseApp) Lifecycle() Lifecycle {
@@ -153,14 +175,6 @@ func (app *BaseApp) TeamInvitation() services.TeamInvitationService {
 	return app.teamInvitation
 }
 
-// Adapter implements App.
-func (app *BaseApp) Adapter() stores.StorageAdapterInterface {
-	if app.adapter == nil {
-		panic("adapter not initialized")
-	}
-	return app.adapter
-}
-
 func (app *BaseApp) Task() services.TaskService {
 	return app.task
 }
@@ -206,48 +220,12 @@ func (app *BaseApp) RegisterBaseHooks() {
 
 }
 
-func PrepApp(preApp *BaseApp) {
-	if err := preApp.Config(); err != nil {
-		panic(err)
+func BootstrappedApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
+	app := &BaseApp{}
+	if err := app.Bootstrap(); err != nil {
+		panic(fmt.Errorf("failed to bootstrap app: %w", err))
 	}
-	if err := preApp.initDb(); err != nil {
-		panic(err)
-	}
-	if err := preApp.initAdapter(); err != nil {
-		panic(err)
-	}
-	if err := preApp.initPayment(); err != nil {
-		panic(err)
-	}
-
-	// fs, err := filesystem.NewFileSystem(cfg.StorageConfig)
-	if err := preApp.initJobs(); err != nil {
-		panic(err)
-	}
-	if err := preApp.initMail(); err != nil {
-		panic(err)
-	}
-
-	if err := preApp.initNotifier(); err != nil {
-		panic(err)
-	}
-	if err := preApp.initAuth(); err != nil {
-		panic(err)
-	}
-	if err := preApp.initTeams(); err != nil {
-		panic(err)
-	}
-	if err := preApp.initTasks(); err != nil {
-		panic(err)
-	}
-	if err := preApp.initWorkers(); err != nil {
-		panic(err)
-	}
-}
-func NewBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
-	preApp := &BaseApp{}
-	PrepApp(preApp)
-	return preApp
+	return app
 }
 
 func newApp(

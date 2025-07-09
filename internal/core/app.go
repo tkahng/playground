@@ -12,13 +12,25 @@ import (
 )
 
 type App interface {
-	Logger() *slog.Logger
 	Bootstrap() error
-	Config() *conf.EnvConfig
 
+	//  settings -------------------------------------------------------------------------------------
+	Config() *conf.EnvConfig
 	Settings() *conf.AppOptions
 
+	// store -------------------------------------------------------------------------------------
 	Db() database.Dbx
+	Adapter() stores.StorageAdapterInterface
+
+	// lifecycle
+	Lifecycle() Lifecycle
+	Logger() *slog.Logger
+
+	// jobs -------------------------------------------------------------------------------------
+
+	JobManager() jobs.JobManager
+
+	JobService() services.JobService
 
 	Fs() filesystem.FileSystem
 
@@ -36,13 +48,5 @@ type App interface {
 
 	Task() services.TaskService
 
-	Adapter() stores.StorageAdapterInterface
-
-	JobManager() jobs.JobManager
-
-	JobService() services.JobService
-
 	Notifier() services.NotifierService
-
-	Lifecycle() Lifecycle
 }
