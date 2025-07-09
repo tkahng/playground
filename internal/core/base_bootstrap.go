@@ -61,13 +61,16 @@ func (app *BaseApp) ResetBootstrapState() error {
 	return nil
 }
 func (app *BaseApp) initDb() error {
-	if app.db == nil {
-		queries := database.CreateQueries(app.cfg.Db.DatabaseUrl)
-		if err := queries.Pool().Ping(context.Background()); err != nil {
-			return err
-		}
-		app.db = queries
+
+	queries := database.CreateQueries(app.cfg.Db.DatabaseUrl)
+
+	if err := queries.Pool().Ping(context.Background()); err != nil {
+		return err
 	}
+
+	app.db = queries
+
+	app.adapter = stores.NewStorageAdapter(app.db)
 	return nil
 }
 
