@@ -58,7 +58,12 @@ func (api *Api) TeamMembersSseEvents(ctx context.Context, input *struct{}, send 
 				subscription.Unlisten(ctx)
 				slog.Debug("Subscription closed")
 				return
-			case payload := <-subscription.NotificationC():
+			case payload, ok := <-subscription.NotificationC():
+				if !ok {
+					slog.Debug("Subscription closed")
+					subscription.Unlisten(ctx)
+					return
+				}
 				var noti models.Notification
 				err := json.Unmarshal(payload, &noti)
 				if err != nil {
