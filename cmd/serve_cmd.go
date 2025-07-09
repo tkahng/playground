@@ -45,19 +45,16 @@ func run(ctx context.Context) error {
 	opts := conf.AppConfigGetter()
 	app := core.NewBaseApp(ctx, opts)
 	appApi := apis.NewApi(app)
-	srv, api := apis.NewServer()
-	apis.AddRoutes(api, appApi)
+	startEvent := apis.NewStartEvent(opts)
+	appApi.BindApi(startEvent.Api)
 	if port == 0 {
 		port = 8080
 	}
-	httpServer := &http.Server{
-		Addr:    fmt.Sprintf(":%d", port),
-		Handler: srv,
-	}
+
 	// Run HTTP server
 	g.Go(func() error {
-		slog.Info("Starting HTTP server", "addr", httpServer.Addr)
-		if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		slog.Info("Starting HTTP server", "addr", startEvent.Server.Addr)
+		if err := startEvent.Server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			return fmt.Errorf("http server error: %w", err)
 		}
 		return nil
@@ -73,7 +70,7 @@ func run(ctx context.Context) error {
 	// Gracefully shutdown HTTP server
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	_ = httpServer.Shutdown(shutdownCtx)
+	_ = startEvent.Server.Shutdown(shutdownCtx)
 
 	return err
 	// go func() {

@@ -41,6 +41,4 @@ type App interface {
 	Notifier() services.NotifierService
 
 	Lifecycle() Lifecycle
-
-	RegisterBaseHooks()
 }
