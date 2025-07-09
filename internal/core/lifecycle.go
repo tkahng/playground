@@ -17,6 +17,11 @@ func (e *WaitEvent) Go(f func() error) {
 	e.wg.Go(f)
 }
 
+type BootstrapEvent struct {
+	hook.Event
+	App App
+}
+
 type StartEvent struct {
 	hook.Event
 	WaitEvent
@@ -27,15 +32,30 @@ type StartEvent struct {
 
 type StopEvent struct {
 	hook.Event
-	App App
+	App       App
+	IsRestart bool
 }
-
+type Lifecycle interface {
+	OnBootstrap() *hook.Hook[*BootstrapEvent]
+	OnStart() *hook.Hook[*StartEvent]
+	OnStop() *hook.Hook[*StopEvent]
+}
 type lifecycle struct {
 	logger *slog.Logger
+
+	onBootstrap *hook.Hook[*BootstrapEvent]
 
 	onStart *hook.Hook[*StartEvent]
 
 	onStop *hook.Hook[*StopEvent]
+}
+
+// OnBootstrap implements Lifecycle.
+func (l *lifecycle) OnBootstrap() *hook.Hook[*BootstrapEvent] {
+	if l.onBootstrap == nil {
+		l.onBootstrap = &hook.Hook[*BootstrapEvent]{}
+	}
+	return l.onBootstrap
 }
 
 // OnStart implements Lifecycle.
@@ -54,27 +74,13 @@ func (l *lifecycle) OnStop() *hook.Hook[*StopEvent] {
 	return l.onStop
 }
 
-// Start implements Lifecycle.
-func (l *lifecycle) Start(e *StartEvent, oneOffHandlerFuncs ...func(*StartEvent) error) error {
-	return l.onStart.Trigger(e, oneOffHandlerFuncs...)
-}
-
-// Stop implements Lifecycle.
-func (l *lifecycle) Stop(e *StopEvent, oneOffHandlerFuncs ...func(*StopEvent) error) error {
-	return l.OnStop().Trigger(e, oneOffHandlerFuncs...)
-}
-
-type Lifecycle interface {
-	OnStart() *hook.Hook[*StartEvent]
-	OnStop() *hook.Hook[*StopEvent]
-}
-
 var _ Lifecycle = (*lifecycle)(nil)
 
 func NewLifecycle(logger *slog.Logger) Lifecycle {
 	return &lifecycle{
-		logger:  logger,
-		onStart: &hook.Hook[*StartEvent]{},
-		onStop:  &hook.Hook[*StopEvent]{},
+		logger:      logger,
+		onStart:     &hook.Hook[*StartEvent]{},
+		onStop:      &hook.Hook[*StopEvent]{},
+		onBootstrap: &hook.Hook[*BootstrapEvent]{},
 	}
 }

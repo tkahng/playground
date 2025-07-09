@@ -1,6 +1,8 @@
 package core
 
 import (
+	"log/slog"
+
 	"github.com/tkahng/authgo/internal/conf"
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/jobs"
@@ -10,6 +12,8 @@ import (
 )
 
 type App interface {
+	Logger() *slog.Logger
+	Bootstrap() error
 	Config() *conf.EnvConfig
 
 	Settings() *conf.AppOptions

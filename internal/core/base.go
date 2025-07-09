@@ -41,6 +41,115 @@ type BaseApp struct {
 	lc Lifecycle
 }
 
+// Logger implements App.
+func (app *BaseApp) Logger() *slog.Logger {
+	if app.logger == nil {
+		app.logger = logger.GetDefaultLogger()
+	}
+	return app.logger
+}
+
+func (app *BaseApp) IsBootstrapped() (isBootStrapped bool) {
+	if app.cfg == nil {
+		return
+	}
+	if app.db == nil {
+		return
+	}
+	if app.settings == nil {
+		return
+	}
+	if app.mail == nil {
+		return
+	}
+	if app.auth == nil {
+		return
+	}
+	if app.team == nil {
+		return
+	}
+	if app.checker == nil {
+		return
+	}
+	if app.rbac == nil {
+		return
+	}
+	if app.task == nil {
+		return
+	}
+	if app.adapter == nil {
+		return
+	}
+	if app.teamInvitation == nil {
+		return
+	}
+	if app.jobManager == nil {
+		return
+	}
+	if app.jobService == nil {
+		return
+	}
+	if app.notifier == nil {
+		return
+	}
+	return true
+}
+
+// BootStrap implements App.
+func (app *BaseApp) Bootstrap() error {
+	event := &BootstrapEvent{}
+	// event.App = app
+
+	err := app.Lifecycle().OnBootstrap().Trigger(event, func(e *BootstrapEvent) error {
+		// clear resources of previous core state (if any)
+		// if err := app.ResetBootstrapState(); err != nil {
+		// 	return err
+		// }
+
+		// ensure that data dir exist
+		// if err := os.MkdirAll(app.DataDir(), os.ModePerm); err != nil {
+		// 	return err
+		// }
+
+		// if err := app.initDataDB(); err != nil {
+		// 	return err
+		// }
+
+		// if err := app.initAuxDB(); err != nil {
+		// 	return err
+		// }
+
+		// if err := app.initLogger(); err != nil {
+		// 	return err
+		// }
+
+		// if err := app.RunSystemMigrations(); err != nil {
+		// 	return err
+		// }
+
+		// if err := app.ReloadCachedCollections(); err != nil {
+		// 	return err
+		// }
+
+		// if err := app.ReloadSettings(); err != nil {
+		// 	return err
+		// }
+
+		// try to cleanup the pb_data temp directory (if any)
+		// _ = os.RemoveAll(filepath.Join(app.DataDir(), LocalTempDirName))
+
+		return nil
+	})
+
+	// add a more user friendly message in case users forgot to call
+	// e.Next() as part of their bootstrap hook
+	if err == nil && !app.IsBootstrapped() {
+		app.Logger().Warn("OnBootstrap hook didn't fail but the app is still not bootstrapped - maybe missing e.Next()?")
+	}
+
+	return err
+}
+
 func (app *BaseApp) Lifecycle() Lifecycle {
 	if app.lc == nil {
 		app.lc = NewLifecycle(app.logger)

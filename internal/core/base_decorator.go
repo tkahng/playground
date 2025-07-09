@@ -2,6 +2,7 @@ package core
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/tkahng/authgo/internal/conf"
 	"github.com/tkahng/authgo/internal/database"
@@ -91,6 +92,24 @@ type BaseAppDecorator struct {
 	JobServiceFunc     func() services.JobService
 	NotifierFunc       func() services.NotifierService
 	LifecycleFunc      func() Lifecycle
+	LoggerFunc         func() *slog.Logger
+	BootstrapFunc      func() error
+}
+
+// Logger implements App.
+func (b *BaseAppDecorator) Logger() *slog.Logger {
+	if b.LoggerFunc != nil {
+		return b.LoggerFunc()
+	}
+	return b.app.Logger()
+}
+
+// BootStrap implements App.
+func (b *BaseAppDecorator) Bootstrap() error {
+	if b.BootstrapFunc != nil {
+		return b.BootstrapFunc()
+	}
+	return b.app.Bootstrap()
 }
 
 // RegisterBaseHooks implements App.
