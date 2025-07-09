@@ -26,9 +26,14 @@ func HumaTokenFromHeader(ctx huma.Context) string {
 	return ""
 }
 
+func HumaTokenFromQuery(ctx huma.Context) string {
+	return ctx.Query("access_token")
+}
+
 var HumaTokenFuncs = []func(huma.Context) string{
 	HumaTokenFromHeader,
 	HumaTokenFromCookie,
+	HumaTokenFromQuery,
 }
 
 // func
