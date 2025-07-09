@@ -10,6 +10,7 @@ import (
 )
 
 type Dbx interface {
+	Acquire(ctx context.Context) (c *pgxpool.Conn, err error)
 	SendBatch(ctx context.Context, b *pgx.Batch) pgx.BatchResults
 	Begin(ctx context.Context) (pgx.Tx, error)
 	Query(ctx context.Context, sql string, arguments ...any) (pgx.Rows, error)
@@ -25,6 +26,11 @@ var _ Dbx = (*Queries)(nil)
 
 type Queries struct {
 	db *pgxpool.Pool
+}
+
+// Acquire implements Dbx.
+func (v *Queries) Acquire(ctx context.Context) (c *pgxpool.Conn, err error) {
+	return v.db.Acquire(ctx)
 }
 
 func GetContextOrDefaultDbx(ctx context.Context, dbx Dbx) Dbx {
@@ -74,6 +80,11 @@ var _ Dbx = (*txQueries)(nil)
 
 type txQueries struct {
 	db pgx.Tx
+}
+
+// Acquire implements Dbx.
+func (v *txQueries) Acquire(ctx context.Context) (c *pgxpool.Conn, err error) {
+	return nil, nil
 }
 
 // RunInTxContext implements Dbx.

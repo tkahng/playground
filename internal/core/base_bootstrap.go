@@ -160,6 +160,8 @@ func (app *BaseApp) initAuth() error {
 	return nil
 }
 func (app *BaseApp) initNotifier() error {
+	notifierService := services.NewDbNotifierService(context.Background(), app.db, app.logger)
+	app.notifier = notifierService
 	return nil
 }
 

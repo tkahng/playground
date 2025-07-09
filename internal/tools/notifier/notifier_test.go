@@ -26,7 +26,7 @@ func TestNotifier(t *testing.T) {
 	// pool, err := testPool("postgres://postgres:postgres@localhost:5432/authgo_test?sslmode=disable")
 	// expIs.NoErr(err)
 
-	li := NewListener(dbx.Pool())
+	li := NewListener(dbx)
 	err := li.Connect(ctx)
 	if err != nil {
 		t.Fatal(err)

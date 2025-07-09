@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -27,7 +28,7 @@ func NewServeCmd() *cobra.Command {
 		Short: "Start the HTTP server",
 		Long:  `Starts the HTTP server on a specified port`,
 		Run: func(cmd *cobra.Command, args []string) {
-			if err := Run(); err != nil {
+			if err := Run2(); err != nil {
 				fmt.Fprintf(os.Stderr, "%s\n", err)
 				os.Exit(1)
 			}
@@ -38,9 +39,81 @@ func NewServeCmd() *cobra.Command {
 	return serveCmd
 }
 
+func Run2() error {
+	ctx, firstCancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM, syscall.SIGHUP, syscall.SIGINT)
+	defer firstCancel()
+	opts := conf.AppConfigGetter()
+	app := core.BootstrappedApp(opts)
+	appApi := apis.NewApi(app)
+	srv, api := apis.NewServer()
+	apis.AddRoutes(api, appApi)
+	if port == 0 {
+		port = 8080
+	}
+
+	httpServer := &http.Server{
+		Addr:    fmt.Sprintf(":%d", port),
+		Handler: srv,
+	}
+	serverShutdownErr := make(chan error, 1)
+
+	go func() {
+		quit := make(chan os.Signal, 1)
+		signal.Notify(quit, syscall.SIGTERM, syscall.SIGINT)
+
+		quitSignal := <-quit
+		signal.Stop(quit)
+
+		fmt.Printf("quit signal: %q received. starting graceful shutdown\n", quitSignal.String())
+
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+
+		if err := httpServer.Shutdown(ctx); err != nil {
+			serverShutdownErr <- err
+			return
+		}
+
+		serverShutdownErr <- nil
+	}()
+	go func() {
+		slog.Info("Starting notifier listener")
+		err := app.Notifier().Start(context.Background())
+		if err != nil {
+			slog.ErrorContext(
+				ctx,
+				"error starting notifier listener",
+				slog.Any("error", err),
+			)
+		}
+	}()
+
+	go func() {
+		slog.Info("Starting poller")
+		if err := app.JobManager().Run(context.Background()); err != nil {
+			slog.ErrorContext(
+				ctx,
+				"error starting poller",
+				slog.Any("error", err),
+			)
+		}
+	}()
+
+	fmt.Printf("server running on port %d", app.Config().Port)
+	if err := httpServer.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
+		return err
+	}
+
+	if err := <-serverShutdownErr; err != nil {
+		return err
+	}
+
+	return nil
+
+}
 func Run() error {
-	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM, syscall.SIGHUP, syscall.SIGINT)
-	defer cancel()
+	ctx, firstCancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM, syscall.SIGHUP, syscall.SIGINT)
+	defer firstCancel()
 	g, ctx := errgroup.WithContext(ctx)
 	opts := conf.AppConfigGetter()
 	app := core.BootstrappedApp(opts)
@@ -50,31 +123,33 @@ func Run() error {
 	if port == 0 {
 		port = 8080
 	}
+
 	httpServer := &http.Server{
 		Addr:    fmt.Sprintf(":%d", port),
 		Handler: srv,
 	}
+
 	g.Go(func() error {
 		slog.Info("Starting notifier listener")
-		if e := app.Notifier().Start(ctx); e != nil {
+		if err := app.Notifier().Start(ctx); err != nil {
 			slog.ErrorContext(
 				ctx,
 				"error starting notifier listener",
-				slog.Any("error", e),
+				slog.Any("error", err),
 			)
-			return e
+			return err
 		}
 		return nil
 	})
 	g.Go(func() error {
 		slog.Info("Starting poller")
-		if e := app.JobManager().Run(ctx); e != nil {
+		if err := app.JobManager().Run(ctx); err != nil {
 			slog.ErrorContext(
 				ctx,
 				"error starting poller",
-				slog.Any("error", e),
+				slog.Any("error", err),
 			)
-			return e
+			return err
 		}
 		return nil
 	})
@@ -87,11 +162,13 @@ func Run() error {
 		return nil
 	})
 	err := g.Wait()
-
+	if err != nil {
+		return err
+	}
 	// Gracefully shutdown HTTP server
-	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	_ = httpServer.Shutdown(shutdownCtx)
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer shutdownCancel()
+	err = httpServer.Shutdown(shutdownCtx)
 
 	return err
 	// go func() {
