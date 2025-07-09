@@ -343,4 +343,5 @@ func BindTeamsApi(api huma.API, appApi *Api) {
 		},
 		appApi.GetInvitationByToken,
 	)
+
 }

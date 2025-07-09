@@ -157,11 +157,11 @@ func (b *BaseAppDecorator) Auth() services.AuthService {
 	return b.app.Auth()
 }
 
-func (b *BaseAppDecorator) Cfg() *conf.EnvConfig {
+func (b *BaseAppDecorator) Config() *conf.EnvConfig {
 	if b.CfgFunc != nil {
 		return b.CfgFunc()
 	}
-	return b.app.Cfg()
+	return b.app.Config()
 }
 
 func (b *BaseAppDecorator) Checker() services.ConstraintChecker {

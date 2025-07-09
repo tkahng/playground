@@ -10,7 +10,7 @@ import (
 )
 
 type App interface {
-	Cfg() *conf.EnvConfig
+	Config() *conf.EnvConfig
 
 	Settings() *conf.AppOptions
 

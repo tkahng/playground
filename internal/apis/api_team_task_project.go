@@ -217,7 +217,7 @@ func (api *Api) TeamTaskProjectCreateWithAi(ctx context.Context, input *TaskProj
 		return nil, huma.Error401Unauthorized("no team info")
 	}
 
-	aiService := googleai.NewAiService(ctx, api.App().Cfg().AiConfig)
+	aiService := googleai.NewAiService(ctx, api.App().Config().AiConfig)
 	taskProjectPlan, err := aiService.GenerateProjectPlan(ctx, input.Body.Input)
 	if err != nil {
 		return nil, err

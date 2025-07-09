@@ -41,17 +41,6 @@ type BaseApp struct {
 	lc Lifecycle
 }
 
-// RegisterBaseHooks implements App.
-func (app *BaseApp) RegisterBaseHooks() {
-	app.Lifecycle().OnStart().Bind(&hook.Handler[*StartEvent]{
-		Func: func(se *StartEvent) error {
-			return nil
-		},
-		Priority: -99,
-	})
-
-}
-
 func (app *BaseApp) Lifecycle() Lifecycle {
 	if app.lc == nil {
 		app.lc = NewLifecycle(app.logger)
@@ -142,7 +131,7 @@ func (a *BaseApp) Settings() *conf.AppOptions {
 	return a.settings
 }
 
-func (app *BaseApp) Cfg() *conf.EnvConfig {
+func (app *BaseApp) Config() *conf.EnvConfig {
 	if app.cfg == nil {
 		opts := conf.AppConfigGetter()
 		app.cfg = &opts
@@ -152,7 +141,16 @@ func (app *BaseApp) Cfg() *conf.EnvConfig {
 }
 
 // Mailer implements App.
+// RegisterBaseHooks implements App.
+func (app *BaseApp) RegisterBaseHooks() {
+	app.Lifecycle().OnStart().Bind(&hook.Handler[*StartEvent]{
+		Func: func(se *StartEvent) error {
+			return nil
+		},
+		Priority: -99,
+	})
 
+}
 func NewBaseApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 	settings := cfg.ToSettings()
 	pool := database.CreateQueriesContext(ctx, cfg.Db.DatabaseUrl)
