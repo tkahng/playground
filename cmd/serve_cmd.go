@@ -38,6 +38,7 @@ func NewServeCmd() *cobra.Command {
 }
 
 func run(ctx context.Context) error {
+	ctx = context.Background()
 	ctx, cancel := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM, syscall.SIGHUP, syscall.SIGINT)
 	defer cancel()
 	g, ctx := errgroup.WithContext(ctx)
