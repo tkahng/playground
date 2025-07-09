@@ -28,7 +28,7 @@ func NewServeCmd() *cobra.Command {
 		Long:  `Starts the HTTP server on a specified port`,
 		Run: func(cmd *cobra.Command, args []string) {
 			ctx := cmd.Context()
-			if err := run(ctx); err != nil {
+			if err := Run(ctx); err != nil {
 				fmt.Fprintf(os.Stderr, "%s\n", err)
 				os.Exit(1)
 			}
@@ -39,7 +39,7 @@ func NewServeCmd() *cobra.Command {
 	return serveCmd
 }
 
-func run(ctx context.Context) error {
+func Run(ctx context.Context) error {
 	ctx, cancel := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM, syscall.SIGHUP, syscall.SIGINT)
 	defer cancel()
 	g, ctx := errgroup.WithContext(ctx)
@@ -116,7 +116,7 @@ func run(ctx context.Context) error {
 	// wg.Wait()
 	// return nil
 }
-func runHooks(ctx context.Context) error {
+func RunHooks(ctx context.Context) error {
 	ctx = context.Background()
 	ctx, cancel := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM, syscall.SIGHUP, syscall.SIGINT)
 	defer cancel()

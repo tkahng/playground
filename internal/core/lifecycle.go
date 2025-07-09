@@ -13,10 +13,6 @@ type WaitEvent struct {
 	wg *errgroup.Group
 }
 
-func (e *WaitEvent) Go(f func() error) {
-	e.wg.Go(f)
-}
-
 type BootstrapEvent struct {
 	hook.Event
 	App App
