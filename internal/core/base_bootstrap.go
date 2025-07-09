@@ -3,6 +3,7 @@ package core
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/jobs"
@@ -21,36 +22,41 @@ func (app *BaseApp) Bootstrap() error {
 		if err := app.ResetBootstrapState(); err != nil {
 			return err
 		}
-		if err := app.Config(); err != nil {
-			panic(err)
+
+		if err := app.Config(); err == nil {
+			panic("config is nil")
+		}
+		if err := app.initLogger(); err != nil {
+			panic(fmt.Errorf("error initializing logger: %w", err))
 		}
 		if err := app.initStore(); err != nil {
-			panic(err)
+			panic(fmt.Errorf("error initializing store: %w", err))
 		}
 		if err := app.initMail(); err != nil {
-			panic(err)
+			panic(fmt.Errorf("error initializing mailer: %w", err))
 		}
 		if err := app.initJobs(); err != nil {
-			panic(err)
+			panic(fmt.Errorf("error initializing jobs: %w", err))
 		}
 		if err := app.initPayment(); err != nil {
-			panic(err)
+			panic(fmt.Errorf("error initializing payment: %w", err))
 		}
 
 		if err := app.initNotifier(); err != nil {
-			panic(err)
+			panic(fmt.Errorf("error initializing notifier: %w", err))
 		}
+
 		if err := app.initAuth(); err != nil {
-			panic(err)
+			panic(fmt.Errorf("error initializing auth: %w", err))
 		}
 		if err := app.initTeams(); err != nil {
-			panic(err)
+			panic(fmt.Errorf("error initializing teams: %w", err))
 		}
 		if err := app.initTasks(); err != nil {
-			panic(err)
+			panic(fmt.Errorf("error initializing tasks: %w", err))
 		}
 		if err := app.initWorkers(); err != nil {
-			panic(err)
+			panic(fmt.Errorf("error initializing workers: %w", err))
 		}
 		return nil
 	})
@@ -90,10 +96,12 @@ func (app *BaseApp) initMail() error {
 		mail := fn()
 		if mail != nil {
 			app.mail = mail
-			return nil
+			break
 		}
 	}
-	app.mail = &mailer.LogMailer{}
+	if app.mail == nil {
+		app.mail = &mailer.LogMailer{}
+	}
 	mailServiece := services.NewOtpMailService(
 		app.settings,
 		app.mail,
@@ -167,7 +175,7 @@ func (app *BaseApp) initTeams() error {
 	return nil
 }
 
-func (app *BaseApp) initTasks() any {
+func (app *BaseApp) initTasks() error {
 	tasksService := services.NewTaskService(app.adapter)
 	app.task = tasksService
 	return nil

@@ -16,6 +16,7 @@ import (
 	"github.com/tkahng/authgo/internal/conf"
 	"github.com/tkahng/authgo/internal/core"
 	"github.com/tkahng/authgo/internal/tools/hook"
+	"golang.org/x/sync/errgroup"
 )
 
 var port int
@@ -39,6 +40,83 @@ func NewServeCmd() *cobra.Command {
 }
 
 func run(ctx context.Context) error {
+	ctx, cancel := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM, syscall.SIGHUP, syscall.SIGINT)
+	defer cancel()
+	g, ctx := errgroup.WithContext(ctx)
+	opts := conf.AppConfigGetter()
+	app := core.BootstrappedApp(ctx, opts)
+	appApi := apis.NewApi(app)
+	srv, api := apis.NewServer()
+	apis.AddRoutes(api, appApi)
+	if port == 0 {
+		port = 8080
+	}
+	httpServer := &http.Server{
+		Addr:    fmt.Sprintf(":%d", port),
+		Handler: srv,
+	}
+	g.Go(func() error {
+		slog.Info("Starting notifier listener")
+		if e := app.Notifier().Start(ctx); e != nil {
+			slog.ErrorContext(
+				ctx,
+				"error starting notifier listener",
+				slog.Any("error", e),
+			)
+			return e
+		}
+		return nil
+	})
+	g.Go(func() error {
+		slog.Info("Starting poller")
+		if e := app.JobManager().Run(ctx); e != nil {
+			slog.ErrorContext(
+				ctx,
+				"error starting poller",
+				slog.Any("error", e),
+			)
+			return e
+		}
+		return nil
+	})
+	// Run HTTP server
+	g.Go(func() error {
+		slog.Info("Starting HTTP server", "addr", httpServer.Addr)
+		if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			return fmt.Errorf("http server error: %w", err)
+		}
+		return nil
+	})
+	err := g.Wait()
+
+	// Gracefully shutdown HTTP server
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	_ = httpServer.Shutdown(shutdownCtx)
+
+	return err
+	// go func() {
+	// 	log.Printf("listening on %s\n", httpServer.Addr)
+	// 	if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+	// 		fmt.Fprintf(os.Stderr, "error listening and serving: %s\n", err)
+	// 	}
+	// }()
+	// var wg sync.WaitGroup
+	// wg.Add(1)
+	// go func() {
+	// 	defer wg.Done()
+	// 	<-ctx.Done()
+	// 	shutdownCtx := context.Background()
+	// 	shutdownCtx, cancel := context.WithTimeout(shutdownCtx, 10*time.Second)
+	// 	defer cancel()
+	// 	if err := httpServer.Shutdown(shutdownCtx); err != nil {
+	// 		fmt.Fprintf(os.Stderr, "error shutting down http server: %s\n", err)
+	// 	}
+	// }()
+	// wg.Wait()
+	// return nil
+}
+func runHooks(ctx context.Context) error {
 	ctx = context.Background()
 	ctx, cancel := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM, syscall.SIGHUP, syscall.SIGINT)
 	defer cancel()
@@ -47,8 +125,11 @@ func run(ctx context.Context) error {
 	app := core.BootstrappedApp(ctx, opts)
 	appApi := apis.NewApi(app)
 	startEvent := apis.NewStartEvent(opts)
+
 	appApi.BindApi(startEvent.Api)
+
 	var wg sync.WaitGroup
+
 	app.Lifecycle().OnStop().Bind(&hook.Handler[*core.StopEvent]{
 		Id: "pbGracefulShutdown",
 		Func: func(te *core.StopEvent) error {
@@ -74,16 +155,24 @@ func run(ctx context.Context) error {
 		},
 		Priority: -9999,
 	})
+	// wait for the graceful shutdown to complete before exit
+	defer func() {
+		wg.Wait()
+
+		if startEvent.Server != nil {
+			_ = startEvent.Server.Close()
+		}
+	}()
 	serverHookErr := app.Lifecycle().OnStart().Trigger(startEvent, func(se *core.StartEvent) error {
+		slog.Info("Starting HTTP server", "addr", startEvent.Server.Addr)
+		if err := startEvent.Server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			return fmt.Errorf("http server error: %w", err)
+		}
 		return nil
 	})
+
 	if serverHookErr != nil {
 		return serverHookErr
-	}
-
-	slog.Info("Starting HTTP server", "addr", startEvent.Server.Addr)
-	if err := startEvent.Server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-		return fmt.Errorf("http server error: %w", err)
 	}
 	return nil
 	// // Run HTTP server
