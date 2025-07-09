@@ -13,6 +13,39 @@ import (
 	"github.com/tkahng/authgo/internal/models"
 )
 
+func TeamInfoFromTeamMemberID(api huma.API, app core.App) func(ctx huma.Context, next func(huma.Context)) {
+	return func(ctx huma.Context, next func(huma.Context)) {
+		rawCtx := ctx.Context()
+		userInfo := contextstore.GetContextUserInfo(rawCtx)
+		if userInfo == nil {
+			huma.WriteErr(api, ctx, http.StatusUnauthorized, "unauthorized at middleware", nil)
+			return
+		}
+		teamMemberID := ctx.Param("team-member-id")
+		if teamMemberID == "" {
+			huma.WriteErr(api, ctx, http.StatusBadRequest, "team slug is required", nil)
+			return
+		}
+		parsedTeamMemberID, err := uuid.Parse(teamMemberID)
+		if err != nil {
+			huma.WriteErr(api, ctx, http.StatusBadRequest, "error parsing team member id", err)
+			return
+		}
+		teamInfo, err := app.Team().FindTeamInfoByMemberID(rawCtx, parsedTeamMemberID)
+		if err != nil {
+			huma.WriteErr(api, ctx, http.StatusInternalServerError, "error getting team info", err)
+			return
+		}
+		if teamInfo == nil {
+			huma.WriteErr(api, ctx, http.StatusNotFound, "team not found", nil)
+			return
+		}
+
+		ctxx := contextstore.SetContextTeamInfo(rawCtx, teamInfo)
+		ctx = huma.WithContext(ctx, ctxx)
+		next(ctx)
+	}
+}
 func TeamCanDelete(api huma.API, app core.App) func(ctx huma.Context, next func(huma.Context)) {
 	return func(ctx huma.Context, next func(huma.Context)) {
 		slog.Info("starting TeamCanDelete middleware")

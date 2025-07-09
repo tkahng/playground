@@ -9,6 +9,7 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/danielgtaylor/huma/v2/sse"
 	"github.com/tkahng/authgo/internal/contextstore"
+	"github.com/tkahng/authgo/internal/middleware"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/notification"
 	"github.com/tkahng/authgo/internal/shared"
@@ -16,19 +17,24 @@ import (
 
 type MiddlewareFunc func(ctx huma.Context, next func(huma.Context))
 
-func (api *Api) BindTeamMembersSseEvents(humapi huma.API, middlewares ...func(ctx huma.Context, next func(huma.Context))) {
+func (api *Api) BindTeamMembersSseEvents(humapi huma.API) {
+	membermiddleware := middleware.TeamInfoFromTeamMemberID(humapi, api.App())
+
 	sse.Register(
 		humapi,
 		huma.Operation{
-			OperationID: "team-members-sse-events",
+			OperationID: "team-members-sse-team-member-notifications",
 			Method:      http.MethodGet,
-			Path:        "/team-members/sse-events",
-			Summary:     "team-members-sse-events",
-			Description: "team-members-sse-events",
+			Path:        "/team-members/{team-member-id}/notifications/sse",
+			Summary:     "team-members-sse-team-member-notifications",
+			Description: "team-members-sse-team-member-notifications",
 			Tags:        []string{"Team Members"},
 			Security: []map[string][]string{{
 				shared.BearerAuthSecurityKey: {},
 			}},
+			Middlewares: huma.Middlewares{
+				membermiddleware,
+			},
 			Errors: []int{http.StatusInternalServerError, http.StatusBadRequest},
 		},
 		map[string]any{
