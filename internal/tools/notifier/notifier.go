@@ -94,7 +94,7 @@ type channelChange struct {
 	operation string
 }
 
-// Subscribe returns a Subscription.
+// Listen returns a Subscription.
 func (n *notifier) Subscribe(channel string) Subscription {
 	n.mu.Lock()
 	defer n.mu.Unlock()

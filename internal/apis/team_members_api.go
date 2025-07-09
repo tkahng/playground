@@ -44,7 +44,8 @@ func (api *Api) TeamMembersSseEvents(ctx context.Context, input *struct{}, send 
 	if teamInfo == nil {
 		return
 	}
-
+	ctx, cancelRequest := context.WithCancel(ctx)
+	defer cancelRequest()
 	subscription := api.App().Notifier().Subscribe("team_member_id:" + teamInfo.Member.ID.String())
 	defer subscription.Unlisten(ctx)
 
