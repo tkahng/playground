@@ -2,6 +2,7 @@ package core
 
 import (
 	"context"
+	"errors"
 
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/jobs"
@@ -26,15 +27,16 @@ func (app *BaseApp) Bootstrap() error {
 		if err := app.initStore(); err != nil {
 			panic(err)
 		}
-		if err := app.initPayment(); err != nil {
+		if err := app.initMail(); err != nil {
 			panic(err)
 		}
 		if err := app.initJobs(); err != nil {
 			panic(err)
 		}
-		if err := app.initMail(); err != nil {
+		if err := app.initPayment(); err != nil {
 			panic(err)
 		}
+
 		if err := app.initNotifier(); err != nil {
 			panic(err)
 		}
@@ -92,7 +94,12 @@ func (app *BaseApp) initMail() error {
 		}
 	}
 	app.mail = &mailer.LogMailer{}
-
+	mailServiece := services.NewOtpMailService(
+		app.settings,
+		app.mail,
+		app.adapter,
+	)
+	app.mailService = mailServiece
 	return nil
 }
 
@@ -111,27 +118,36 @@ func (app *BaseApp) initJobs() error {
 }
 
 func (app *BaseApp) initWorkers() error {
-	mailServiece := services.NewOtpMailService(
-		app.settings,
-		app.mail,
-		app.adapter,
-	)
-	app.jobService.RegisterWorkers(mailServiece, app.Payment())
+	if app.mailService == nil {
+		return errors.New("mail service not initialized")
+	}
+	if app.payment == nil {
+		return errors.New("payment service not initialized")
+	}
+	app.jobService.RegisterWorkers(app.mailService, app.payment)
 	return nil
 }
 func (app *BaseApp) initAuth() error {
+	if app.jobService == nil {
+		return errors.New("job manager not initialized")
+	}
+	if app.adapter == nil {
+		return errors.New("adapter not initialized")
+	}
 	authService := services.NewAuthService(
 		app.settings,
 		app.jobService,
 		app.adapter,
 	)
 	app.auth = authService
+
 	rbac := services.NewRBACService(app.adapter)
 	app.rbac = rbac
 
 	constraint := services.NewConstraintCheckerService(
 		app.adapter,
 	)
+
 	app.checker = constraint
 	return nil
 }

@@ -25,22 +25,21 @@ type BaseApp struct {
 
 	lc Lifecycle
 
-	logger *slog.Logger
-	mail   mailer.Mailer
-
 	db      database.Dbx
 	adapter stores.StorageAdapterInterface
 
+	logger      *slog.Logger
+	mail        mailer.Mailer
 	mailService services.OtpMailService
 
 	jobManager jobs.JobManager
 	jobService services.JobService
 
-	checker services.ConstraintChecker
 	payment services.PaymentService
 
-	auth services.AuthService
-	rbac services.RBACService
+	auth    services.AuthService
+	rbac    services.RBACService
+	checker services.ConstraintChecker
 
 	task           services.TaskService
 	team           services.TeamService
