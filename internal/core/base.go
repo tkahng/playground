@@ -1,7 +1,6 @@
 package core
 
 import (
-	"context"
 	"fmt"
 	"log/slog"
 
@@ -219,7 +218,7 @@ func (app *BaseApp) RegisterBaseHooks() {
 
 }
 
-func BootstrappedApp(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
+func BootstrappedApp(cfg conf.EnvConfig) *BaseApp {
 	app := &BaseApp{}
 	if err := app.Bootstrap(); err != nil {
 		panic(fmt.Errorf("failed to bootstrap app: %w", err))

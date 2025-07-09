@@ -27,8 +27,7 @@ func NewServeCmd() *cobra.Command {
 		Short: "Start the HTTP server",
 		Long:  `Starts the HTTP server on a specified port`,
 		Run: func(cmd *cobra.Command, args []string) {
-			ctx := cmd.Context()
-			if err := Run(ctx); err != nil {
+			if err := Run(); err != nil {
 				fmt.Fprintf(os.Stderr, "%s\n", err)
 				os.Exit(1)
 			}
@@ -39,12 +38,12 @@ func NewServeCmd() *cobra.Command {
 	return serveCmd
 }
 
-func Run(ctx context.Context) error {
-	ctx, cancel := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM, syscall.SIGHUP, syscall.SIGINT)
+func Run() error {
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM, syscall.SIGHUP, syscall.SIGINT)
 	defer cancel()
 	g, ctx := errgroup.WithContext(ctx)
 	opts := conf.AppConfigGetter()
-	app := core.BootstrappedApp(ctx, opts)
+	app := core.BootstrappedApp(opts)
 	appApi := apis.NewApi(app)
 	srv, api := apis.NewServer()
 	apis.AddRoutes(api, appApi)
@@ -116,13 +115,13 @@ func Run(ctx context.Context) error {
 	// wg.Wait()
 	// return nil
 }
-func RunHooks(ctx context.Context) error {
-	ctx = context.Background()
-	ctx, cancel := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM, syscall.SIGHUP, syscall.SIGINT)
+func RunHooks() error {
+
+	baseContext, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM, syscall.SIGHUP, syscall.SIGINT)
 	defer cancel()
 	// g, ctx := errgroup.WithContext(ctx)
 	opts := conf.AppConfigGetter()
-	app := core.BootstrappedApp(ctx, opts)
+	app := core.BootstrappedApp(opts)
 	appApi := apis.NewApi(app)
 	startEvent := apis.NewStartEvent(opts)
 
@@ -135,7 +134,7 @@ func RunHooks(ctx context.Context) error {
 		Func: func(te *core.StopEvent) error {
 			cancel()
 
-			ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+			ctx, cancel := context.WithTimeout(baseContext, 1*time.Second)
 			defer cancel()
 
 			wg.Add(1)
