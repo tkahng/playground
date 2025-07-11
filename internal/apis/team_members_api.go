@@ -3,8 +3,10 @@ package apis
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/danielgtaylor/huma/v2/sse"
@@ -39,13 +41,25 @@ func (api *Api) BindTeamMembersSseEvents(humapi huma.API) {
 		},
 		map[string]any{
 			"new_team_member": notification.NotificationPayload[notification.NewTeamMemberNotificationData]{},
+			"ping":            notification.NotificationPayload[PingMessage]{},
 		},
 		api.TeamMembersSseEvents,
 	)
 
 }
 
-func (api *Api) TeamMembersSseEvents(ctx context.Context, input *struct{}, send sse.Sender) {
+type PingMessage struct {
+	Message string `json:"message"`
+}
+
+func (PingMessage) Kind() string {
+	return "ping"
+}
+
+func (api *Api) TeamMembersSseEvents(ctx context.Context, input *struct {
+	TeamMemberID string `path:"team-member-id"`
+	AccessToken  string `query:"access_token"`
+}, send sse.Sender) {
 	teamInfo := contextstore.GetContextTeamInfo(ctx)
 	if teamInfo == nil {
 		return
@@ -55,16 +69,30 @@ func (api *Api) TeamMembersSseEvents(ctx context.Context, input *struct{}, send 
 	subscription := api.App().Notifier().Subscribe("team_member_id:" + teamInfo.Member.ID.String())
 	defer subscription.Unlisten(ctx)
 
+	fmt.Println("EstablishedC")
 	<-subscription.EstablishedC()
+	fmt.Println("EstablishedC done")
 
+	ticker := time.NewTicker(1 * time.Second)
+	defer ticker.Stop()
 	go func() {
 
 		for {
 			select {
+
 			case <-ctx.Done():
 				subscription.Unlisten(ctx)
 				slog.Debug("Subscription closed")
 				return
+
+			case <-ticker.C:
+				var pl notification.NotificationPayload[PingMessage]
+				pl.Data.Message = "ping"
+				pl.Notification.Body = "ping"
+				pl.Notification.Title = "ping"
+				if err := send.Data(pl); err != nil {
+					return
+				}
 			case payload, ok := <-subscription.NotificationC():
 				if !ok {
 					slog.Debug("Subscription closed")

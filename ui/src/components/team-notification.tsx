@@ -3,13 +3,23 @@ import { useSSE } from "@/hooks/use-sse";
 import { useTeam } from "@/hooks/use-team";
 import { GetError } from "@/lib/get-error";
 import { TeamMemberNotificationData } from "@/schema.types";
+import { useEffect, useState } from "react";
 
 function TeamNotification() {
   const { user } = useAuthProvider();
+  const [noti, setNoti] = useState<TeamMemberNotificationData | null>(null);
   const { teamMember } = useTeam();
   const { data, error } = useSSE<TeamMemberNotificationData>(
-    "/team-members/" + teamMember?.id + "/notifications/sse"
+    "/api/team-members/" +
+      teamMember?.id +
+      "/notifications/sse?access_token=" +
+      user?.tokens.access_token
   );
+  useEffect(() => {
+    if (data) {
+      setNoti(data);
+    }
+  }, [data]);
   if (!user) {
     return <div> </div>;
   }
@@ -20,7 +30,7 @@ function TeamNotification() {
     return <p>Error: {err?.detail}</p>;
   }
   if (!data) return <p>User not found</p>;
-  return <div> {data.notification.title}</div>;
+  return <div> {noti?.notification.title}</div>;
 }
 
 export default TeamNotification;

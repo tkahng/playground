@@ -27,13 +27,12 @@ export default function SigninPage() {
   const { search } = useLocation();
   const params = new URLSearchParams(search);
   const token = params.get("token");
-  const redirectTo = params.get("redirect_to");
+  // const redirectTo = params.get("redirect_to");
   const email = params.get("email");
   const navigate = useNavigate(); // Get navigation function
   const { login } = useContext(AuthContext);
 
-  const navigateTo =
-    email && token ? `/team-invitation` : redirectTo ? redirectTo : "/";
+  const navigateTo = email && token ? `/team-invitation` : "/";
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setLoading(true);

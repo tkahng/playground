@@ -32,7 +32,6 @@ func HumaTokenFromQuery(ctx huma.Context) string {
 
 var HumaTokenFuncs = []func(huma.Context) string{
 	HumaTokenFromHeader,
-	HumaTokenFromCookie,
 	HumaTokenFromQuery,
 }
 
