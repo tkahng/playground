@@ -43,7 +43,7 @@ func (api *Api) BindTeamMembersSseEvents(humapi huma.API) {
 			"new_team_member": notification.NotificationPayload[notification.NewTeamMemberNotificationData]{},
 			"ping":            notification.NotificationPayload[PingMessage]{},
 		},
-		api.TeamMembersSseEvents,
+		api.TeamMembersSseEvents2,
 	)
 
 }
@@ -56,6 +56,33 @@ func (PingMessage) Kind() string {
 	return "ping"
 }
 
+func (api *Api) TeamMembersSseEvents2(ctx context.Context, input *struct {
+	TeamMemberID string `path:"team-member-id"`
+	AccessToken  string `query:"access_token"`
+}, send sse.Sender) {
+	ctx, cancelRequest := context.WithCancel(ctx)
+	defer cancelRequest()
+	ticker := time.NewTicker(1 * time.Second)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			// subscription.Unlisten(ctx)
+			slog.Debug("Subscription closed")
+			return
+
+		case <-ticker.C:
+			var pl notification.NotificationPayload[PingMessage]
+			pl.Data.Message = "ping"
+			pl.Notification.Body = "ping"
+			pl.Notification.Title = "ping"
+			if err := send.Data(pl); err != nil {
+				return
+			}
+		}
+	}
+
+}
 func (api *Api) TeamMembersSseEvents(ctx context.Context, input *struct {
 	TeamMemberID string `path:"team-member-id"`
 	AccessToken  string `query:"access_token"`
