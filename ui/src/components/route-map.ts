@@ -8,6 +8,8 @@ export const RouteMap = {
   HOME: "/",
   LANDING_HOME: "/home",
   ACCOUNT_OVERVIEW: "/account",
+  ACCOUNT_OVERVIEW_TEAMS: "/account/teams",
+  ACCOUNT_OVERVIEW_TEAMS_INVITATION: "/account/teams-invitations",
   SETTINGS: "/account/settings",
   BILLING_SETTINGS: "/account/settings/billing",
 

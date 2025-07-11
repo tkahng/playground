@@ -31,6 +31,7 @@ import PageSectionLayout from "./layouts/page-section";
 import PublicLayout from "./layouts/public-layout";
 import TeamDashboardLayout from "./layouts/team-dashboard-layout";
 import NotFoundPage from "./pages/404";
+import InvitationsPage from "./pages/account/invitations";
 import AccountOverviewPage from "./pages/account/overview";
 import AdminDashboardPage from "./pages/admin/admin-dashboard";
 import ProductEditPage from "./pages/admin/products/products-edit";
@@ -159,6 +160,10 @@ function App() {
               >
                 <Route element={<PageSectionLayout title="Account Overview" />}>
                   <Route index element={<AccountOverviewPage />} />
+                  <Route
+                    path="teams-invitations"
+                    element={<InvitationsPage />}
+                  />
                 </Route>
                 {/* <Route path="billing" element={<BillingSettingPage />} /> */}
 

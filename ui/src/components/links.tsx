@@ -28,6 +28,12 @@ export const RouteLinks = {
     current: (pathname: string) =>
       pathname.startsWith(RouteMap.ACCOUNT_OVERVIEW),
   },
+  ACCOUNT_OVERVIEW_TEAM_INVITATIONS: {
+    to: RouteMap.ACCOUNT_OVERVIEW_TEAMS_INVITATION,
+    title: "Invitations",
+    current: (pathname: string) =>
+      pathname.startsWith(RouteMap.ACCOUNT_OVERVIEW_TEAMS_INVITATION),
+  },
   DASHBOARD_OVERVIEW: { to: RouteMap.ACCOUNT_OVERVIEW, title: "Overview" },
   TASK_PROJECTS: {
     to: RouteMap.TASK_PROJECTS,
@@ -106,6 +112,7 @@ export const authenticatedSubHeaderLinks: LinkDto[] = [
 ];
 export const accountSidebarLinks: LinkDto[] = [
   RouteLinks.ACCOUNT_OVERVIEW_TEAMS,
+  RouteLinks.ACCOUNT_OVERVIEW_TEAM_INVITATIONS,
 ];
 export const settingsSidebarLinks: LinkDto[] = [
   RouteLinks.GENERAL_SETTINGS,

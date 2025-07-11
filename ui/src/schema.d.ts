@@ -21,6 +21,50 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/jobs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Admin jobs
+         * @description List of jobs
+         */
+        get: operations["admin-jobs-get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/jobs/{job-id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Admin job get
+         * @description Get a job by ID
+         */
+        get: operations["admin-job-get"];
+        /**
+         * Admin job update
+         * @description Update a job by ID
+         */
+        put: operations["admin-job-update"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/permissions": {
         parameters: {
             query?: never;
@@ -1728,6 +1772,47 @@ export interface components {
             email: string;
             role: string;
         };
+        Job: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            /** Format: int64 */
+            attempts: number;
+            /** Format: date-time */
+            created_at: string;
+            id: string;
+            kind: string;
+            last_error: string | null;
+            /** Format: int64 */
+            max_attempts: number;
+            payload: string;
+            /** Format: date-time */
+            run_after: string;
+            status: string;
+            unique_key: string | null;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        JobUpdateDto: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            /** Format: int64 */
+            attempts: number;
+            kind: string;
+            last_error: string | null;
+            /** Format: int64 */
+            max_attempts: number;
+            payload: string;
+            /** Format: date-time */
+            run_after: string;
+            status: string;
+            unique_key: string | null;
+        };
         Media: {
             /** Format: date-time */
             created_at: string;
@@ -1833,6 +1918,9 @@ export interface components {
             role_ids: string[] | null;
             /** Format: date-time */
             updated_at: string;
+        };
+        PingMessage: {
+            message: string;
         };
         RefreshTokenInput: {
             /**
@@ -2397,6 +2485,193 @@ export interface operations {
             };
             /** @description Error */
             default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "admin-jobs-get": {
+        parameters: {
+            query?: {
+                page?: number;
+                per_page?: number;
+                sort_by?: string;
+                sort_order?: "asc" | "desc";
+                ids?: string[] | null;
+                kinds?: string[] | null;
+                unique_keys?: string[] | null;
+                statuses?: string[] | null;
+                run_after?: string;
+                attempt?: number;
+                last_errors?: string[] | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    Attempts?: number;
+                    CreatedAt?: string;
+                    Data?: components["schemas"]["Job"];
+                    ID?: string;
+                    Kind?: string;
+                    LastError?: string | null;
+                    MaxAttempts?: number;
+                    Meta?: components["schemas"]["Meta"];
+                    Payload?: number;
+                    RunAfter?: string;
+                    UniqueKey?: string | null;
+                    UpdatedAt?: string;
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "admin-job-get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                "job-id": string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Job"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "admin-job-update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                "job-id": string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["JobUpdateDto"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -6198,9 +6473,13 @@ export interface operations {
     };
     "team-members-sse-team-member-notifications": {
         parameters: {
-            query?: never;
+            query?: {
+                access_token?: string;
+            };
             header?: never;
-            path?: never;
+            path: {
+                "team-member-id": string;
+            };
             cookie?: never;
         };
         requestBody?: never;
@@ -6211,7 +6490,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "text/event-stream": {
+                    "text/event-stream": ({
                         data: components["schemas"]["NotificationPayloadNewTeamMemberNotificationData"];
                         /**
                          * @description The event name.
@@ -6222,11 +6501,31 @@ export interface operations {
                         id?: number;
                         /** @description The retry time in milliseconds. */
                         retry?: number;
-                    }[];
+                    } | {
+                        data: components["schemas"]["PingMessage"];
+                        /**
+                         * @description The event name.
+                         * @constant
+                         */
+                        event: "ping";
+                        /** @description The event ID. */
+                        id?: number;
+                        /** @description The retry time in milliseconds. */
+                        retry?: number;
+                    })[];
                 };
             };
             /** @description Bad Request */
             400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };

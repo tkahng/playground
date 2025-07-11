@@ -2,20 +2,17 @@ import { CreateTeamDialog } from "@/components/create-team-dialog";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { DataTable } from "@/components/data-table";
 import { accountSidebarLinks } from "@/components/links";
-import { RouteMap } from "@/components/route-map";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { useTeam } from "@/hooks/use-team";
-import { useUserTeams } from "@/hooks/use-user-teams";
 import { GetError } from "@/lib/get-error";
-import { getUserSubscriptions, getUserTeams } from "@/lib/queries";
+import { getUserTeamInvitations } from "@/lib/queries";
 import { Team } from "@/schema.types";
 import { useQuery } from "@tanstack/react-query";
 import { PaginationState, Updater } from "@tanstack/react-table";
-import { NavLink, useNavigate, useSearchParams } from "react-router";
+import { NavLink, useSearchParams } from "react-router";
 import { toast } from "sonner";
 
-export default function AccountOverviewPage() {
-  const navigate = useNavigate();
+export default function InvitationsPage() {
+  // const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const pageIndex = parseInt(searchParams.get("page") || "0", 10);
   const pageSize = parseInt(searchParams.get("per_page") || "10", 10);
@@ -32,34 +29,24 @@ export default function AccountOverviewPage() {
   };
   const { user } = useAuthProvider();
   const { data, error, isError, isLoading } = useQuery({
-    queryKey: ["stats"],
+    queryKey: ["user-invitations"],
     queryFn: async () => {
       if (!user) {
         throw new Error("User not found");
       }
 
       // const stats = await getStats(user.tokens.access_token);
-      const subs = await getUserSubscriptions(user.tokens.access_token);
-      const teams = await getUserTeams(user.tokens.access_token);
-      return {
-        // ...stats,
-        sub: subs,
-        teams: teams.data,
-      };
+      const teams = await getUserTeamInvitations(
+        user.tokens.access_token,
+        pageIndex,
+        pageSize
+      );
+      return teams;
     },
   });
 
-  const {
-    data: teams,
-    isLoading: teamsIsLoading,
-    isError: teamsIsError,
-    error: teamsError,
-  } = useUserTeams();
-  const { setTeam } = useTeam();
   const handleSelectTeam = (team: Team) => {
     toast.success(`Selected team: ${team.name}`);
-    setTeam(team);
-    navigate(`/teams/${team.slug}/dashboard`);
   };
 
   if (isLoading) {
@@ -71,11 +58,11 @@ export default function AccountOverviewPage() {
   if (!data) {
     return <div>No data</div>;
   }
-  if (teamsIsLoading) {
+  if (isLoading) {
     return <div>Loading...</div>;
   }
-  if (teamsIsError) {
-    const err = GetError(teamsError);
+  if (isError) {
+    const err = GetError(error);
     return <div>Error: {err?.detail}</div>;
   }
   return (
@@ -96,11 +83,14 @@ export default function AccountOverviewPage() {
                 cell: ({ row }) => {
                   return (
                     <NavLink
-                      to={`${RouteMap.TEAM_LIST}/${row.original.slug}/dashboard`}
+                      to={{
+                        pathname: `/team-invitation`,
+                        search: `?token=${row.original.token}`,
+                      }}
                       className="hover:underline text-blue-500"
-                      onClick={() => handleSelectTeam(row.original)}
+                      onClick={() => handleSelectTeam(row.original.team!)}
                     >
-                      {row.original.name}
+                      {row.original.team?.name}
                     </NavLink>
                   );
                 },
@@ -109,20 +99,16 @@ export default function AccountOverviewPage() {
                 accessorKey: "role",
                 header: "Member Role",
                 cell: ({ row }) => {
-                  const members = row.original.members;
-                  if (!members || members.length === 0) {
-                    return <span className="text-gray-500">No members</span>;
-                  }
                   return (
                     <span className="text-gray-500">
-                      {members[0].role || "Member"}
+                      {row.original.role || "Member"}
                     </span>
                   );
                 },
               },
             ]}
-            data={teams?.data || []}
-            rowCount={teams?.meta.total || 0}
+            data={data?.data || []}
+            rowCount={data?.meta.total || 0}
             paginationState={{ pageIndex, pageSize }}
             onPaginationChange={onPaginationChange}
             paginationEnabled
