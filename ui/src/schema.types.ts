@@ -70,3 +70,6 @@ export type TeamMemberState = {
   currentMember: TeamMember | null;
   members: TeamMember[];
 };
+
+export type TeamMemberNotificationData =
+  components["schemas"]["NotificationPayloadNewTeamMemberNotificationData"];
