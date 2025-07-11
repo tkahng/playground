@@ -50,7 +50,7 @@ func TestWSHandler(t *testing.T) {
 		},
 		func(_c sse.Client) {
 			t.Log("unregistering client in ondestroy")
-			// manager.UnregisterClient(_c)
+			manager.UnregisterClient(_c)
 			t.Log("unregistered client in ondestroy")
 			t.Log("waiting for client to close in ondestroy")
 			_c.Wait()
@@ -95,7 +95,7 @@ func TestWSHandler(t *testing.T) {
 
 `, resp.Body.String())
 
-	cancel()
+	cf()
 	_p := <-doneUnreg
 	assert.Equal(t, len(manager.Clients()), 0)
 	assert.Equal(t, _p, c)
