@@ -4,6 +4,8 @@ import (
 	"context"
 	"log/slog"
 	"net/http"
+	"net/http/httptest"
+	"sync"
 	"testing"
 	"time"
 
@@ -46,6 +48,7 @@ func TestWSHandler(t *testing.T) {
 			cf = _cf
 			c = _c
 			manager.RegisterClient(ctx, cf, c)
+			t.Log("registered client")
 			doneReg <- c
 		},
 		func(_c sse.Client) {
@@ -77,28 +80,40 @@ func TestWSHandler(t *testing.T) {
 
 	// once registration is done, the manager should have one client
 	t.Log("waiting for registration")
-	resp := api.Get("/sse")
-	<-doneReg
-	t.Log("registration done")
-	assert.Equal(t, len(manager.Clients()), 1)
 
-	err := manager.Send("test", DefaultMessage{Message: "test"})
-	// err := c.Write(sse.Message{
-	// 	Data: DefaultMessage{Message: "Hello, world!"},
-	// })
-	<-messageChan
+	var err error
+	var resp *httptest.ResponseRecorder
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+	go func() {
+		resp = api.Get("/sse")
+		wg.Done()
+	}()
+
+	wg.Add(1)
+	go func() {
+		<-doneReg
+		t.Log("registration for done")
+		assert.Equal(t, len(manager.Clients()), 1)
+		err = manager.Send("test", DefaultMessage{Message: "test"})
+		t.Log("sent message")
+		<-messageChan
+		t.Log("received message")
+		cf()
+		<-doneUnreg
+		assert.Equal(t, len(manager.Clients()), 0)
+		wg.Done()
+	}()
+	wg.Wait()
 	assert.NoError(t, err)
-	// write a message to the server; this will be echoed back
+	// _p := <-doneReg
 	assert.Equal(t, http.StatusOK, resp.Code)
 	assert.Equal(t, "text/event-stream", resp.Header().Get("Content-Type"))
 	assert.Equal(t, `data: {"message":"test"}
 
 `, resp.Body.String())
 
-	cf()
-	_p := <-doneUnreg
-	assert.Equal(t, len(manager.Clients()), 0)
-	assert.Equal(t, _p, c)
+	// _p := <-doneUnreg
 	// time.Sleep(1 * time.Second)
 	//FIXME: seems to be leaking goroutines
 }

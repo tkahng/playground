@@ -118,7 +118,9 @@ func (m *manager) RegisterClient(ctx context.Context, cf context.CancelFunc, c C
 		client:  c,
 		done:    done,
 	}
+	m.logger.Info("registering client")
 	m.register <- rr
+	m.logger.Info("client registered")
 	<-done
 }
 
