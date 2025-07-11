@@ -18,7 +18,7 @@ func (j NewMemberNotificationJobArgs) Kind() string {
 }
 
 type NewMemberNotificationService interface {
-	NotifyMembersOfNewMember(ctx context.Context, teamMemberID uuid.UUID, teamID uuid.UUID) error
+	NotifyMembersOfNewMember(ctx context.Context, teamMemberID uuid.UUID) error
 }
 
 type NewMemberNotificationWorker struct {
@@ -30,7 +30,7 @@ func (w *NewMemberNotificationWorker) Kind() string {
 }
 
 func (w *NewMemberNotificationWorker) Work(ctx context.Context, args *jobs.Job[NewMemberNotificationJobArgs]) error {
-	err := w.service.NotifyMembersOfNewMember(ctx, args.Args.TeamMemberID, args.Args.TeamID)
+	err := w.service.NotifyMembersOfNewMember(ctx, args.Args.TeamMemberID)
 	if err != nil {
 		slog.ErrorContext(
 			ctx,

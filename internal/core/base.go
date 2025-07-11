@@ -47,9 +47,18 @@ type BaseApp struct {
 
 	notifier services.NotifierService
 
-	fs filesystem.FileSystem
+	notifierPublisher services.NotificationPublisher
+	fs                filesystem.FileSystem
 
 	sseManager sse.Manager
+}
+
+// NotificationPublisher implements App.
+func (app *BaseApp) NotificationPublisher() services.NotificationPublisher {
+	if app.notifierPublisher == nil {
+		panic("notifier not initialized")
+	}
+	return app.notifierPublisher
 }
 
 // SseManager implements App.

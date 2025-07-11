@@ -42,16 +42,15 @@ func (app *BaseApp) Bootstrap() error {
 		if err := app.initPayment(); err != nil {
 			panic(fmt.Errorf("error initializing payment: %w", err))
 		}
-
+		if err := app.initTeams(); err != nil {
+			panic(fmt.Errorf("error initializing teams: %w", err))
+		}
 		if err := app.initRealtime(); err != nil {
 			panic(fmt.Errorf("error initializing notifier: %w", err))
 		}
 
 		if err := app.initAuth(); err != nil {
 			panic(fmt.Errorf("error initializing auth: %w", err))
-		}
-		if err := app.initTeams(); err != nil {
-			panic(fmt.Errorf("error initializing teams: %w", err))
 		}
 		if err := app.initTasks(); err != nil {
 			panic(fmt.Errorf("error initializing tasks: %w", err))
@@ -133,7 +132,7 @@ func (app *BaseApp) initWorkers() error {
 	if app.payment == nil {
 		return errors.New("payment service not initialized")
 	}
-	app.jobService.RegisterWorkers(app.mailService, app.payment)
+	app.jobService.RegisterWorkers(app.mailService, app.payment, app.notifierPublisher)
 	return nil
 }
 func (app *BaseApp) initAuth() error {
@@ -165,6 +164,13 @@ func (app *BaseApp) initRealtime() error {
 	app.sseManager = sseManager
 	notifierService := services.NewDbNotifierService(context.Background(), app.db, app.logger)
 	app.notifier = notifierService
+
+	notifierPublisher := services.NewDbNotificationPublisher(
+		sseManager,
+		app.team,
+		app.adapter,
+	)
+	app.notifierPublisher = notifierPublisher
 	return nil
 }
 

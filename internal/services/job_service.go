@@ -15,7 +15,7 @@ type JobService interface {
 	EnqueueRefreshSubscriptionQuantityJob(ctx context.Context, job *workers.RefreshSubscriptionQuantityJobArgs) error
 	EnqueueOtpMailJob(ctx context.Context, args *workers.OtpEmailJobArgs) error
 	EnqueueTeamInvitationJob(ctx context.Context, args *workers.TeamInvitationJobArgs) error
-	RegisterWorkers(mail OtpMailService, paymentService PaymentService)
+	RegisterWorkers(mail OtpMailService, paymentService PaymentService, notification NotificationPublisher)
 }
 
 type DbJobService struct {
@@ -56,10 +56,11 @@ func (d *DbJobService) EnqueueTeamInvitationJob(ctx context.Context, args *worke
 }
 
 // RegisterWorkers implements JobService.
-func (d *DbJobService) RegisterWorkers(mail OtpMailService, paymentService PaymentService) {
+func (d *DbJobService) RegisterWorkers(mail OtpMailService, paymentService PaymentService, notification NotificationPublisher) {
 	jobs.RegisterWorker(d.manager, workers.NewOtpEmailWorker(mail))
 	jobs.RegisterWorker(d.manager, workers.NewTeamInvitationWorker(mail))
 	jobs.RegisterWorker(d.manager, workers.NewRefreshSubscriptionQuantityWorker(paymentService))
+	jobs.RegisterWorker(d.manager, workers.NewNewMemberNotificationWorker(notification))
 	// jobs.RegisterWorker(d.manager, workers.(mail))
 }
 
@@ -82,7 +83,7 @@ type JobServiceDecorator struct {
 	Delegate                                  JobService
 	EnqueueOtpMailJobFunc                     func(ctx context.Context, job *workers.OtpEmailJobArgs) error
 	EnqueueTeamInvitationFunc                 func(ctx context.Context, job *workers.TeamInvitationJobArgs) error
-	RegisterWorkersFunc                       func(mail OtpMailService, paymentService PaymentService)
+	RegisterWorkersFunc                       func(mail OtpMailService, paymentService PaymentService, notification NotificationPublisher)
 	EnqueueTeamMemberAddedJobFunc             func(ctx context.Context, job *workers.NewMemberNotificationJobArgs) error
 	WithTxFunc                                func(db database.Dbx) JobService
 	EnqueueRefreshSubscriptionQuantityJobFunc func(ctx context.Context, job *workers.RefreshSubscriptionQuantityJobArgs) error
@@ -121,11 +122,11 @@ func (j *JobServiceDecorator) EnqueueTeamInvitationJob(ctx context.Context, args
 }
 
 // RegisterWorkers implements JobService.
-func (j *JobServiceDecorator) RegisterWorkers(mail OtpMailService, paymentService PaymentService) {
+func (j *JobServiceDecorator) RegisterWorkers(mail OtpMailService, paymentService PaymentService, notification NotificationPublisher) {
 	if j.RegisterWorkersFunc != nil {
-		j.RegisterWorkersFunc(mail, paymentService)
+		j.RegisterWorkersFunc(mail, paymentService, notification)
 	}
-	j.Delegate.RegisterWorkers(mail, paymentService)
+	j.Delegate.RegisterWorkers(mail, paymentService, notification)
 }
 
 // EnqueueOtpMailJob implements JobService.

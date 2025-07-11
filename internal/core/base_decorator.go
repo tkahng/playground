@@ -38,7 +38,7 @@ func NewAppDecorator(ctx context.Context, cfg conf.EnvConfig, pool database.Dbx)
 		adapter,
 	)
 
-	jobService.RegisterWorkers(mailServiece, paymentService)
+	jobService.RegisterWorkers(mailServiece, paymentService, nil)
 	authService := services.NewAuthServiceDecorator(
 		settings,
 		adapter,
@@ -76,26 +76,36 @@ func NewAppDecorator(ctx context.Context, cfg conf.EnvConfig, pool database.Dbx)
 }
 
 type BaseAppDecorator struct {
-	app                *BaseApp
-	AuthFunc           func() services.AuthService
-	CfgFunc            func() *conf.EnvConfig
-	CheckerFunc        func() services.ConstraintChecker
-	DbFunc             func() database.Dbx
-	FsFunc             func() *filesystem.S3FileSystem
-	MailerFunc         func() mailer.Mailer
-	PaymentFunc        func() services.PaymentService
-	RbacFunc           func() services.RBACService
-	TeamFunc           func() services.TeamService
-	TaskFunc           func() services.TaskService
-	AdapterFunc        func() stores.StorageAdapterInterface
-	TeamInvitationFunc func() services.TeamInvitationService
-	JobManagerFunc     func() jobs.JobManager
-	JobServiceFunc     func() services.JobService
-	NotifierFunc       func() services.NotifierService
-	LifecycleFunc      func() Lifecycle
-	LoggerFunc         func() *slog.Logger
-	BootstrapFunc      func() error
-	SseManagerFunc     func() sse.Manager
+	app                       *BaseApp
+	AuthFunc                  func() services.AuthService
+	CfgFunc                   func() *conf.EnvConfig
+	CheckerFunc               func() services.ConstraintChecker
+	DbFunc                    func() database.Dbx
+	FsFunc                    func() *filesystem.S3FileSystem
+	MailerFunc                func() mailer.Mailer
+	PaymentFunc               func() services.PaymentService
+	RbacFunc                  func() services.RBACService
+	TeamFunc                  func() services.TeamService
+	TaskFunc                  func() services.TaskService
+	AdapterFunc               func() stores.StorageAdapterInterface
+	TeamInvitationFunc        func() services.TeamInvitationService
+	JobManagerFunc            func() jobs.JobManager
+	JobServiceFunc            func() services.JobService
+	NotifierFunc              func() services.NotifierService
+	LifecycleFunc             func() Lifecycle
+	LoggerFunc                func() *slog.Logger
+	BootstrapFunc             func() error
+	SseManagerFunc            func() sse.Manager
+	NotificationPublisherFunc func() services.NotificationPublisher
+}
+
+// NotificationPublisher implements App.
+func (b *BaseAppDecorator) NotificationPublisher() services.NotificationPublisher {
+	if b.NotificationPublisherFunc != nil {
+		return b.NotificationPublisherFunc()
+	}
+
+	return b.app.NotificationPublisher()
 }
 
 // SseManager implements App.

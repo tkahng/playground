@@ -51,5 +51,7 @@ type App interface {
 
 	Notifier() services.NotifierService
 
+	NotificationPublisher() services.NotificationPublisher
+
 	SseManager() sse.Manager
 }
