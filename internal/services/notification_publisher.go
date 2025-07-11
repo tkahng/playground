@@ -3,11 +3,13 @@ package services
 import (
 	"context"
 	"encoding/json"
+	"log/slog"
 
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/notification"
 	"github.com/tkahng/authgo/internal/stores"
+	"github.com/tkahng/authgo/internal/tools/sse"
 )
 
 type NotificationPublisher interface {
@@ -15,6 +17,7 @@ type NotificationPublisher interface {
 }
 
 type DbNotificationPublisher struct {
+	sseManager  sse.Manager
 	teamService TeamService
 	adapter     stores.StorageAdapterInterface
 }
@@ -74,7 +77,28 @@ func (d *DbNotificationPublisher) NotifyMembersOfNewMember(ctx context.Context, 
 	if err != nil {
 		return err
 	}
+	for _, member := range members {
+		if member.ID == teamMemberID {
+			continue
+		}
+		err = d.sseManager.Send("team_member_id:"+member.ID.String(), payload)
+		if err != nil {
+			slog.ErrorContext(
+				ctx,
+				"error sending notification",
+				slog.Any("error", err),
+			)
+		}
+	}
 	return nil
 }
 
 var _ NotificationPublisher = (*DbNotificationPublisher)(nil)
+
+func NewDbNotificationPublisher(sseManager sse.Manager, teamService TeamService, adapter stores.StorageAdapterInterface) *DbNotificationPublisher {
+	return &DbNotificationPublisher{
+		sseManager:  sseManager,
+		teamService: teamService,
+		adapter:     adapter,
+	}
+}

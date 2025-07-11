@@ -273,6 +273,13 @@ func (srv *StripeService) VerifyAndUpdateTeamSubscriptionQuantity(ctx context.Co
 			count,
 		)
 		if err != nil {
+			slog.Error(
+				"failed to update stripe subscription quantity",
+				slog.String("team_id", teamId.String()),
+				slog.Int64("count", count),
+				slog.Int64("quantity", sub.Quantity),
+				slog.Any("error", err),
+			)
 			return err
 		}
 		return nil
