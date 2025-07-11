@@ -27,7 +27,7 @@ type Job struct {
 	ID          uuid.UUID `db:"id" json:"id"`
 	Kind        string    `db:"kind" json:"kind"`
 	UniqueKey   *string   `db:"unique_key" json:"unique_key"`
-	Payload     []byte    `db:"payload" json:"payload"`
+	Payload     string    `db:"payload" json:"payload"`
 	Status      JobStatus `db:"status" json:"status" enum:"pending,processing,done,failed"`
 	RunAfter    time.Time `db:"run_after" json:"run_after"`
 	Attempts    int64     `db:"attempts" json:"attempts"`
@@ -45,7 +45,7 @@ func ToJob(j *models.JobRow) *Job {
 		ID:          j.ID,
 		Kind:        j.Kind,
 		UniqueKey:   j.UniqueKey,
-		Payload:     j.Payload,
+		Payload:     string(j.Payload),
 		Status:      JobStatus(j.Status),
 		RunAfter:    j.RunAfter,
 		Attempts:    j.Attempts,
@@ -121,9 +121,9 @@ func (api *Api) AdminGetJob(
 }
 
 type JobUpdateDto struct {
-	Kind        string    `db:"kind" json:"kind"`
+	Kind        string    `db:"kind" json:"kind,omitempty" required:"true"`
 	UniqueKey   *string   `db:"unique_key" json:"unique_key"`
-	Payload     []byte    `db:"payload" json:"payload"`
+	Payload     string    `db:"payload" json:"payload"`
 	Status      JobStatus `db:"status" json:"status"`
 	RunAfter    time.Time `db:"run_after" json:"run_after"`
 	Attempts    int64     `db:"attempts" json:"attempts"`
@@ -147,7 +147,7 @@ func (api *Api) AdminUpdateJob(
 	}
 	j.Kind = input.Body.Kind
 	j.UniqueKey = input.Body.UniqueKey
-	j.Payload = input.Body.Payload
+	j.Payload = []byte(input.Body.Payload)
 	j.Status = models.JobStatus(input.Body.Status)
 	j.RunAfter = input.Body.RunAfter
 	j.Attempts = input.Body.Attempts
