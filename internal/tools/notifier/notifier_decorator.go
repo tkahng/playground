@@ -43,3 +43,33 @@ func (s *SubscriptionDecorator) Unlisten(ctx context.Context) {
 }
 
 var _ Subscription = (*SubscriptionDecorator)(nil)
+
+type NotifierDecorator struct {
+	Delegate      Notifier
+	RunFunc       func(ctx context.Context) error
+	SubscribeFunc func(channel string) Subscription
+}
+
+// Run implements Notifier.
+func (n *NotifierDecorator) Run(ctx context.Context) error {
+	if n.RunFunc != nil {
+		return n.RunFunc(ctx)
+	}
+	if n.Delegate == nil {
+		panic("delegate is nil in Run in NotifierDecorator")
+	}
+	return n.Delegate.Run(ctx)
+}
+
+// Subscribe implements Notifier.
+func (n *NotifierDecorator) Subscribe(channel string) Subscription {
+	if n.SubscribeFunc != nil {
+		return n.SubscribeFunc(channel)
+	}
+	if n.Delegate == nil {
+		panic("delegate is nil in Subscribe in NotifierDecorator")
+	}
+	return n.Delegate.Subscribe(channel)
+}
+
+var _ Notifier = (*NotifierDecorator)(nil)
