@@ -68,7 +68,7 @@ type JobFilter struct {
 	LastErrors []string                       `db:"last_errors" json:"last_errors" query:"last_errors" required:"false" minimum:"1" maximum:"100" uniqueItems:"true"`
 }
 
-func (api *Api) GetJobs(
+func (api *Api) AdminGetJobs(
 	ctx context.Context,
 	input *JobFilter,
 ) (*ApiPaginatedResponse[*Job], error) {
@@ -104,7 +104,7 @@ type FindJobInput struct {
 	ID string `path:"job-id" required:"true" format:"uuid"`
 }
 
-func (api *Api) GetJob(
+func (api *Api) AdminGetJob(
 	ctx context.Context,
 	input *FindJobInput,
 ) (*Job, error) {
@@ -129,7 +129,7 @@ type JobUpdateDto struct {
 	LastError   *string   `db:"last_error" json:"last_error"`
 }
 
-func (api *Api) UpdateJob(
+func (api *Api) AdminUpdateJob(
 	ctx context.Context,
 	input *struct {
 		FindJobInput

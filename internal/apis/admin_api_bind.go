@@ -388,4 +388,51 @@ func BindAdminApi(api huma.API, appApi *Api) {
 		},
 		appApi.AdminStripeProductsPermissionDelete,
 	)
+
+	// admin jobs -------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+	huma.Register(
+		adminGroup,
+		huma.Operation{
+			OperationID: "admin-jobs-get",
+			Method:      http.MethodGet,
+			Path:        "/jobs",
+			Summary:     "Admin jobs",
+			Description: "List of jobs",
+			Tags:        []string{"Admin", "Jobs"},
+			Errors:      []int{http.StatusNotFound},
+			Security:    []map[string][]string{{shared.BearerAuthSecurityKey: {}}},
+		},
+		appApi.AdminGetJobs,
+	)
+
+	huma.Register(
+		adminGroup,
+		huma.Operation{
+			OperationID: "admin-job-get",
+			Method:      http.MethodGet,
+			Path:        "/jobs/{job-id}",
+			Summary:     "Admin job get",
+			Description: "Get a job by ID",
+			Tags:        []string{"Admin", "Jobs"},
+			Errors:      []int{http.StatusNotFound, http.StatusBadRequest},
+			Security:    []map[string][]string{{shared.BearerAuthSecurityKey: {}}},
+		},
+		appApi.AdminGetJob,
+	)
+
+	huma.Register(
+		adminGroup,
+		huma.Operation{
+			OperationID: "admin-job-update",
+			Method:      http.MethodPut,
+			Path:        "/jobs/{job-id}",
+			Summary:     "Admin job update",
+			Description: "Update a job by ID",
+			Tags:        []string{"Admin", "Jobs"},
+			Errors:      []int{http.StatusNotFound, http.StatusBadRequest},
+			Security:    []map[string][]string{{shared.BearerAuthSecurityKey: {}}},
+		},
+		appApi.AdminUpdateJob,
+	)
 }
