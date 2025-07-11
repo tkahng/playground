@@ -28,7 +28,7 @@ type Job struct {
 	Kind        string    `db:"kind" json:"kind"`
 	UniqueKey   *string   `db:"unique_key" json:"unique_key"`
 	Payload     []byte    `db:"payload" json:"payload"`
-	Status      JobStatus `db:"status" json:"status"`
+	Status      JobStatus `db:"status" json:"status" enum:"pending,processing,done,failed"`
 	RunAfter    time.Time `db:"run_after" json:"run_after"`
 	Attempts    int64     `db:"attempts" json:"attempts"`
 	MaxAttempts int64     `db:"max_attempts" json:"max_attempts"`
@@ -62,7 +62,7 @@ type JobFilter struct {
 	Ids        []string                       `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
 	Kinds      []string                       `db:"kinds" json:"kinds" query:"kinds" required:"false" minimum:"1" maximum:"100" uniqueItems:"true"`
 	UniqueKeys []string                       `db:"unique_keys" json:"unique_keys" query:"unique_keys" required:"false" minimum:"1" maximum:"100" uniqueItems:"true"`
-	Statuses   []JobStatus                    `db:"statuses" json:"statuses" query:"statuses" required:"false" minimum:"1" maximum:"100" uniqueItems:"true"`
+	Statuses   []JobStatus                    `db:"statuses" json:"statuses" query:"statuses" required:"false" minimum:"1" maximum:"100" uniqueItems:"true" enum:"pending,processing,done,failed"`
 	RunAfter   types.OptionalParam[time.Time] `db:"run_after" json:"run_after" query:"run_after" required:"false"`
 	Attempt    types.OptionalParam[int64]     `db:"attempt" json:"attempt" query:"attempt" required:"false"`
 	LastErrors []string                       `db:"last_errors" json:"last_errors" query:"last_errors" required:"false" minimum:"1" maximum:"100" uniqueItems:"true"`
@@ -71,7 +71,7 @@ type JobFilter struct {
 func (api *Api) AdminGetJobs(
 	ctx context.Context,
 	input *JobFilter,
-) (*ApiPaginatedResponse[*Job], error) {
+) (*ApiPaginatedOutput[*Job], error) {
 	filter := &stores.JobFilter{}
 	filter.Page = input.Page
 	filter.PerPage = input.PerPage
@@ -94,9 +94,11 @@ func (api *Api) AdminGetJobs(
 	if err != nil {
 		return nil, err
 	}
-	return &ApiPaginatedResponse[*Job]{
-		Data: mapper.Map(jobs, ToJob),
-		Meta: ApiGenerateMeta(&input.PaginatedInput, count),
+	return &ApiPaginatedOutput[*Job]{
+		Body: ApiPaginatedResponse[*Job]{
+			Data: mapper.Map(jobs, ToJob),
+			Meta: ApiGenerateMeta(&input.PaginatedInput, count),
+		},
 	}, nil
 }
 

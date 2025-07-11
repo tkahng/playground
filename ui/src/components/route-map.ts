@@ -23,7 +23,7 @@ export const RouteMap = {
   ADMIN_PRODUCTS: "/admin/products",
   ADMIN_ROLES: "/admin/roles",
   ADMIN_PERMISSIONS: "/admin/permissions",
-
+  ADMIN_JOBS: "/admin/jobs",
   PROTECTED: "/protected",
   PROTECTED_BASIC: "/protected/basic",
   PROTECTED_PRO: "/protected/pro",

@@ -1507,6 +1507,15 @@ export interface components {
             data: components["schemas"]["ApiUser"][] | null;
             meta: components["schemas"]["Meta"];
         };
+        ApiPaginatedResponseJob: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            data: components["schemas"]["Job"][] | null;
+            meta: components["schemas"]["Meta"];
+        };
         ApiPaginatedResponseMedia: {
             /**
              * Format: uri
@@ -1790,7 +1799,8 @@ export interface components {
             payload: string;
             /** Format: date-time */
             run_after: string;
-            status: string;
+            /** @enum {string} */
+            status: "pending" | "processing" | "done" | "failed";
             unique_key: string | null;
             /** Format: date-time */
             updated_at: string;
@@ -2504,7 +2514,7 @@ export interface operations {
                 ids?: string[] | null;
                 kinds?: string[] | null;
                 unique_keys?: string[] | null;
-                statuses?: string[] | null;
+                statuses?: ("pending" | "processing" | "done" | "failed")[] | null;
                 run_after?: string;
                 attempt?: number;
                 last_errors?: string[] | null;
@@ -2515,24 +2525,14 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description No Content */
-            204: {
+            /** @description OK */
+            200: {
                 headers: {
-                    Attempts?: number;
-                    CreatedAt?: string;
-                    Data?: components["schemas"]["Job"];
-                    ID?: string;
-                    Kind?: string;
-                    LastError?: string | null;
-                    MaxAttempts?: number;
-                    Meta?: components["schemas"]["Meta"];
-                    Payload?: number;
-                    RunAfter?: string;
-                    UniqueKey?: string | null;
-                    UpdatedAt?: string;
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ApiPaginatedResponseJob"];
+                };
             };
             /** @description Not Found */
             404: {
