@@ -18,21 +18,11 @@ type Client interface {
 	// WriteForever is responsible for writing messages to the client (including
 	// the regularly spaced ping messages)
 	WriteForever(context.Context, func(Client), time.Duration)
-
-	// SetLogger allows consumers to inject their own logging dependencies
-	SetLogger(any) error
-
-	// Log allows implementors to use their own logging dependencies
-	Log(int, string, ...any)
-
 	// Wait blocks until the client is done processing messages
 	Wait()
 
 	// Client Key is the unique client identifier. usually some kind of keyName:keyValue
 	ID() string
-
-	// Cancel is the context cancel function
-	Cancel() context.CancelFunc
 
 	// write is a low level function to send messages to the client
 	Write(Message) error
@@ -47,23 +37,34 @@ type client struct {
 	egress           chan Message
 	logger           *slog.Logger
 	id               string
-	cancel           context.CancelFunc
 	send             func(any) error
 	pingMessageFunc  func() any
 	closeMessageFunc func() any
+}
+
+func NewClient(clientId string, sender func(any) error, logger *slog.Logger) Client {
+	// add 2 to the wait group for the read/write goroutines
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+	return &client{
+		lock:   &sync.RWMutex{},
+		wg:     wg,
+		send:   sender,
+		id:     clientId,
+		egress: make(chan Message, 32),
+		logger: logger,
+	}
 }
 
 func (c *client) ID() string {
 	return c.id
 }
 
-func (c *client) Cancel() context.CancelFunc {
-	return c.cancel
-}
-
 // Write implements the Writer interface.
 func (c *client) Write(p Message) error {
+	c.logger.Debug("writing message", "id", c.id)
 	c.egress <- p
+	c.logger.Debug("message written", "id", c.id)
 	return nil
 }
 
@@ -84,6 +85,7 @@ func (c *client) WriteForever(ctx context.Context, onDestroy func(Client), ping 
 
 	pingTicker := time.NewTicker(ping)
 	defer func() {
+		c.logger.Debug("closing client", "id", c.id)
 		c.wg.Done()
 		pingTicker.Stop()
 		onDestroy(c)
@@ -92,6 +94,7 @@ func (c *client) WriteForever(ctx context.Context, onDestroy func(Client), ping 
 	for {
 		select {
 		case <-ctx.Done():
+			c.logger.Debug("context done", "id", c.id)
 			if c.closeMessageFunc != nil {
 				if err := c.send(c.closeMessageFunc()); err != nil {
 					c.Log(int(slog.LevelError), fmt.Sprintf("error writing close message: %v", err))
@@ -101,6 +104,7 @@ func (c *client) WriteForever(ctx context.Context, onDestroy func(Client), ping 
 		case message, ok := <-c.egress:
 			// ok will be false in case the egress channel is closed
 			if !ok {
+				c.logger.Debug("egress channel closed")
 				if c.closeMessageFunc != nil {
 					if err := c.send(c.closeMessageFunc()); err != nil {
 						c.Log(int(slog.LevelError), fmt.Sprintf("error writing close message: %v", err))
@@ -109,6 +113,7 @@ func (c *client) WriteForever(ctx context.Context, onDestroy func(Client), ping 
 				return
 			}
 			// write a message to the connection
+			c.logger.Debug("writing message", "id", c.id)
 			if err := c.send(message.Data); err != nil {
 				c.Log(int(slog.LevelError), fmt.Sprintf("error writing message: %v", err))
 				return
@@ -117,9 +122,9 @@ func (c *client) WriteForever(ctx context.Context, onDestroy func(Client), ping 
 			if c.pingMessageFunc != nil {
 				if err := c.send(c.pingMessageFunc()); err != nil {
 					c.Log(int(slog.LevelError), fmt.Sprintf("error writing ping: %v", err))
+					return
 				}
 			}
-			return
 		}
 	}
 }

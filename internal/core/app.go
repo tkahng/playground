@@ -49,4 +49,6 @@ type App interface {
 	Task() services.TaskService
 
 	Notifier() services.NotifierService
+
+	// SseManager() sse.Manager
 }

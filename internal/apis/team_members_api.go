@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/danielgtaylor/huma/v2"
-	"github.com/danielgtaylor/huma/v2/sse"
+	humasse "github.com/danielgtaylor/huma/v2/sse"
 	"github.com/tkahng/authgo/internal/contextstore"
 	"github.com/tkahng/authgo/internal/middleware"
 	"github.com/tkahng/authgo/internal/models"
@@ -17,12 +17,32 @@ import (
 	"github.com/tkahng/authgo/internal/shared"
 )
 
+func TeamChannel(teamMemberId string) string {
+	return "team_member_id:" + teamMemberId
+}
+
+type TeamMemberSseInput struct {
+	TeamMemberID string `path:"team-member-id"`
+	AccessToken  string `query:"access_token"`
+}
+
 type MiddlewareFunc func(ctx huma.Context, next func(huma.Context))
 
 func (api *Api) BindTeamMembersSseEvents(humapi huma.API) {
 	membermiddleware := middleware.TeamInfoFromTeamMemberID(humapi, api.App())
-
-	sse.Register(
+	// hanlder := sse.ServeSSE[TeamMemberSseInput](
+	// 	func(ctx context.Context, f func(any) error) sse.Client {
+	// 		teamInfo := contextstore.GetContextTeamInfo(ctx)
+	// 		return sse.NewClient(TeamChannel(teamInfo.Member.ID.String()), f, slog.Default())
+	// 	},
+	// 	func(ctx context.Context, _cf context.CancelFunc, _c sse.Client) {
+	// 		// manager.RegisterClient(ctx, cf, c)
+	// 	},
+	// 	func(_c sse.Client) {
+	// 		_c.Wait()
+	// 	},
+	// )
+	humasse.Register(
 		humapi,
 		huma.Operation{
 			OperationID: "team-members-sse-team-member-notifications",
@@ -59,7 +79,7 @@ func (PingMessage) Kind() string {
 func (api *Api) TeamMembersSseEvents2(ctx context.Context, input *struct {
 	TeamMemberID string `path:"team-member-id"`
 	AccessToken  string `query:"access_token"`
-}, send sse.Sender) {
+}, send humasse.Sender) {
 	ctx, cancelRequest := context.WithCancel(ctx)
 	defer cancelRequest()
 	ticker := time.NewTicker(1 * time.Second)
@@ -86,7 +106,7 @@ func (api *Api) TeamMembersSseEvents2(ctx context.Context, input *struct {
 func (api *Api) TeamMembersSseEvents(ctx context.Context, input *struct {
 	TeamMemberID string `path:"team-member-id"`
 	AccessToken  string `query:"access_token"`
-}, send sse.Sender) {
+}, send humasse.Sender) {
 	teamInfo := contextstore.GetContextTeamInfo(ctx)
 	if teamInfo == nil {
 		return

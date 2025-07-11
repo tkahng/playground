@@ -14,6 +14,7 @@ import (
 	"github.com/tkahng/authgo/internal/tools/hook"
 	"github.com/tkahng/authgo/internal/tools/logger"
 	"github.com/tkahng/authgo/internal/tools/mailer"
+	"github.com/tkahng/authgo/internal/tools/sse"
 )
 
 var _ App = (*BaseApp)(nil)
@@ -47,6 +48,16 @@ type BaseApp struct {
 	notifier services.NotifierService
 
 	fs filesystem.FileSystem
+
+	sseManager sse.Manager
+}
+
+// SseManager implements App.
+func (app *BaseApp) SseManager() sse.Manager {
+	if app.sseManager == nil {
+		panic("sse manager not initialized")
+	}
+	return app.sseManager
 }
 
 // check settings -------------------------------------------------------------------------------------
