@@ -18,10 +18,6 @@ func (j TeamInvitationJobArgs) Kind() string {
 	return "team_invitation_mail"
 }
 
-type TeamInvitationJob struct {
-	Args TeamInvitationJobArgs
-}
-
 type TeamInvitationWorker struct {
 	mail OtpMailServiceInterface
 }

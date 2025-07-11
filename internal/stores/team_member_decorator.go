@@ -30,15 +30,15 @@ type TeamMemberStoreDecorator struct {
 }
 
 // VerifyAndUpdateTeamSubscriptionQuantity implements DbTeamMemberStoreInterface.
-func (t *TeamMemberStoreDecorator) VerifyAndUpdateTeamSubscriptionQuantity(ctx context.Context, adapter StorageAdapterInterface, teamId uuid.UUID) (int64, error) {
-	if t.VerifyAndUpdateTeamSubscriptionQuantityFunc != nil {
-		return t.VerifyAndUpdateTeamSubscriptionQuantityFunc(ctx, adapter, teamId)
-	}
-	if t.Delegate == nil {
-		return 0, ErrDelegateNil
-	}
-	return t.Delegate.VerifyAndUpdateTeamSubscriptionQuantity(ctx, adapter, teamId)
-}
+// func (t *TeamMemberStoreDecorator) VerifyAndUpdateTeamSubscriptionQuantity(ctx context.Context, adapter StorageAdapterInterface, teamId uuid.UUID) (int64, error) {
+// 	if t.VerifyAndUpdateTeamSubscriptionQuantityFunc != nil {
+// 		return t.VerifyAndUpdateTeamSubscriptionQuantityFunc(ctx, adapter, teamId)
+// 	}
+// 	if t.Delegate == nil {
+// 		return 0, ErrDelegateNil
+// 	}
+// 	return t.Delegate.VerifyAndUpdateTeamSubscriptionQuantity(ctx, adapter, teamId)
+// }
 
 func NewTeamMemberStoreDecorator(db database.Dbx) *TeamMemberStoreDecorator {
 	delegate := NewDbTeamMemberStore(db)

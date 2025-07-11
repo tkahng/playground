@@ -2,7 +2,6 @@ package apis
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -10,11 +9,14 @@ import (
 
 	"github.com/danielgtaylor/huma/v2"
 	humasse "github.com/danielgtaylor/huma/v2/sse"
+	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/contextstore"
 	"github.com/tkahng/authgo/internal/middleware"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/notification"
 	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/authgo/internal/stores"
+	"github.com/tkahng/authgo/internal/tools/mapper"
 	"github.com/tkahng/authgo/internal/tools/sse"
 )
 
@@ -84,91 +86,148 @@ func (PingMessage) Kind() string {
 	return "ping"
 }
 
-func (api *Api) TeamMembersSseEvents2(ctx context.Context, input *struct {
-	TeamMemberID string `path:"team-member-id"`
-	AccessToken  string `query:"access_token"`
-}, send humasse.Sender) {
-	ctx, cancelRequest := context.WithCancel(ctx)
-	defer cancelRequest()
-	ticker := time.NewTicker(1 * time.Second)
-	defer ticker.Stop()
-	for {
-		select {
-		case <-ctx.Done():
-			// subscription.Unlisten(ctx)
-			slog.Debug("Subscription closed")
-			return
-
-		case <-ticker.C:
-			var pl PingMessage
-			pl.Message = "ping"
-			if err := send.Data(&pl); err != nil {
-				return
-			}
-		}
-	}
-
+type TeamMembersNotificationsInput struct {
+	PaginatedInput
+	SortParams
+	TeamMemberID string `path:"team-member-id" required:"true" format:"uuid"`
 }
-func (api *Api) TeamMembersSseEvents(ctx context.Context, input *struct {
-	TeamMemberID string `path:"team-member-id"`
-	AccessToken  string `query:"access_token"`
-}, send humasse.Sender) {
-	teamInfo := contextstore.GetContextTeamInfo(ctx)
-	if teamInfo == nil {
-		return
+
+type Notification struct {
+	_            struct{}       `db:"notifications" json:"-"`
+	ID           uuid.UUID      `db:"id,pk" json:"id"`
+	CreatedAt    time.Time      `db:"created_at" json:"created_at"`
+	UpdatedAt    time.Time      `db:"updated_at" json:"updated_at"`
+	ReadAt       *time.Time     `db:"read_at" json:"read_at,omitempty"`
+	Channel      string         `db:"channel" json:"channel"`
+	Payload      string         `db:"payload" json:"payload"`
+	UserID       *uuid.UUID     `db:"user_id" json:"user_id,omitempty"`
+	TeamMemberID *uuid.UUID     `db:"team_member_id" json:"team_member_id,omitempty"`
+	TeamID       *uuid.UUID     `db:"team_id" json:"team_id,omitempty"`
+	Metadata     map[string]any `db:"metadata" json:"metadata"`
+	Type         string         `db:"type" json:"type"`
+	User         *ApiUser       `db:"user" src:"user_id" dest:"id" table:"users" json:"user,omitempty"`
+	TeamMember   *TeamMember    `db:"team_member" src:"team_member_id" dest:"id" table:"team_members" json:"team_member,omitempty"`
+	Team         *Team          `db:"team" src:"team_id" dest:"id" table:"teams" json:"team,omitempty"`
+}
+
+func FromModelNotification(notification *models.Notification) *Notification {
+	return &Notification{
+		ID:           notification.ID,
+		CreatedAt:    notification.CreatedAt,
+		UpdatedAt:    notification.UpdatedAt,
+		ReadAt:       notification.ReadAt,
+		Channel:      notification.Channel,
+		UserID:       notification.UserID,
+		Payload:      string(notification.Payload),
+		TeamMemberID: notification.TeamMemberID,
+		TeamID:       notification.TeamID,
+		Metadata:     notification.Metadata,
+		Type:         notification.Type,
+		User:         FromUserModel(notification.User),
+		TeamMember:   FromTeamMemberModel(notification.TeamMember),
+		Team:         FromTeamModel(notification.Team),
 	}
-	ctx, cancelRequest := context.WithCancel(ctx)
-	defer cancelRequest()
-	subscription := api.App().Notifier().Subscribe("team_member_id:" + teamInfo.Member.ID.String())
-	defer subscription.Unlisten(ctx)
-
-	fmt.Println("EstablishedC")
-	<-subscription.EstablishedC()
-	fmt.Println("EstablishedC done")
-
-	ticker := time.NewTicker(1 * time.Second)
-	defer ticker.Stop()
-	go func() {
-
-		for {
-			select {
-
-			case <-ctx.Done():
-				subscription.Unlisten(ctx)
-				slog.Debug("Subscription closed")
-				return
-
-			case <-ticker.C:
-				var pl notification.NotificationPayload[PingMessage]
-				pl.Data.Message = "ping"
-				pl.Notification.Body = "ping"
-				pl.Notification.Title = "ping"
-				if err := send.Data(pl); err != nil {
-					return
-				}
-			case payload, ok := <-subscription.NotificationC():
-				if !ok {
-					slog.Debug("Subscription closed")
-					subscription.Unlisten(ctx)
-					return
-				}
-				var noti models.Notification
-				err := json.Unmarshal(payload, &noti)
-				if err != nil {
-					slog.Error("Failed to unmarshal notification", slog.Any("error", err))
-					continue
-				}
-				var pl notification.NotificationPayload[notification.NewTeamMemberNotificationData]
-				err = json.Unmarshal(noti.Payload, &pl)
-				if err != nil {
-					slog.Error("Failed to unmarshal notification payload", slog.Any("error", err))
-					continue
-				}
-				if err := send.Data(pl); err != nil {
-					return
-				}
+}
+func (api *Api) BindFindTeamMembersNotifications(aapi huma.API) {
+	huma.Register(
+		aapi,
+		huma.Operation{
+			OperationID: "find-team-members-notifications",
+			Method:      http.MethodGet,
+			Path:        "/team-members/{team-member-id}/notifications",
+			Summary:     "find-team-members-notifications",
+			Description: "find team members notifications",
+			Tags:        []string{"Team Members"},
+			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+			Middlewares: huma.Middlewares{},
+		},
+		func(ctx context.Context, input *TeamMembersNotificationsInput) (*ApiPaginatedOutput[*Notification], error) {
+			teamInfo := contextstore.GetContextTeamInfo(ctx)
+			if teamInfo == nil {
+				return nil, huma.Error401Unauthorized("unauthorized")
 			}
-		}
-	}()
+			filter := &stores.NotificationFilter{
+				TeamMemberIds: []uuid.UUID{
+					teamInfo.Member.ID,
+				},
+			}
+			filter.Page = input.Page
+			filter.PerPage = input.PerPage
+			filter.SortBy = input.SortBy
+			filter.SortOrder = input.SortOrder
+			notifications, err := api.App().Adapter().Notification().FindNotifications(ctx, filter)
+			if err != nil {
+				return nil, err
+			}
+			count, err := api.App().Adapter().Notification().CountNotification(ctx, filter)
+			if err != nil {
+				return nil, err
+			}
+			return &ApiPaginatedOutput[*Notification]{
+				Body: ApiPaginatedResponse[*Notification]{
+					Meta: ApiGenerateMeta(&input.PaginatedInput, count),
+					Data: mapper.Map(notifications, FromModelNotification),
+				},
+			}, nil
+		},
+	)
+}
 
+type ReadTeamMembersNotificationsInput struct {
+	NotificationID string `path:"notification-id" required:"true" format:"uuid"`
+	TeamMemberID   string `path:"team-member-id" required:"true" format:"uuid"`
+}
+
+func (api *Api) BindReadTeamMembersNotifications(aapi huma.API) {
+	teamMemberMiddleware := middleware.TeamInfoFromTeamMemberID(aapi, api.app)
+	huma.Register(
+		aapi,
+		huma.Operation{
+			OperationID: "read-team-members-notifications",
+			Method:      http.MethodPost,
+			Path:        "/team-members/{team-member-id}/notifications/{notification-id}/read",
+			Summary:     "read-team-members-notifications",
+			Description: "read team members notifications",
+			Tags:        []string{"Team Members"},
+			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+			Middlewares: huma.Middlewares{
+				teamMemberMiddleware,
+			},
+		},
+		func(ctx context.Context, input *ReadTeamMembersNotificationsInput) (*struct{}, error) {
+			teamInfo := contextstore.GetContextTeamInfo(ctx)
+			if teamInfo == nil {
+				return nil, huma.Error401Unauthorized("unauthorized")
+			}
+			notificationID, err := uuid.Parse(input.NotificationID)
+			if err != nil {
+				return nil, err
+			}
+			notification, err := api.App().Adapter().Notification().FindNotification(ctx, &stores.NotificationFilter{
+				Ids: []uuid.UUID{
+					notificationID,
+				},
+				TeamMemberIds: []uuid.UUID{
+					teamInfo.Member.ID,
+				},
+			})
+			if err != nil {
+				return nil, err
+			}
+			now := time.Now()
+			notification.ReadAt = &now
+			err = api.App().Adapter().Notification().UpdateNotification(ctx, notification)
+			if err != nil {
+				return nil, err
+			}
+
+			return nil, nil
+		},
+	)
 }

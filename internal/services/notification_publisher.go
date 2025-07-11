@@ -69,6 +69,7 @@ func (d *DbNotificationPublisher) NotifyMembersOfNewMember(ctx context.Context, 
 			Channel:      "team_member_id:" + member.ID.String(),
 			Type:         payload.Kind(),
 			Payload:      notificationPayloadBytes,
+			Metadata:     map[string]any{},
 		}
 		notifications = append(notifications, notification)
 	}

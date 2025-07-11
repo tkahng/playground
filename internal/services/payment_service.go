@@ -232,7 +232,7 @@ func (srv *StripeService) VerifyAndUpdateTeamSubscriptionQuantity(ctx context.Co
 		return err
 	}
 	if customer == nil {
-		return errors.New("no stripe customer id")
+		return nil
 	}
 	sub, err := srv.adapter.Subscription().FindActiveSubscriptionByCustomerId(ctx, customer.ID)
 	if err != nil {
