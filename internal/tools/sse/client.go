@@ -19,10 +19,6 @@ type Client interface {
 	// the regularly spaced ping messages)
 	WriteForever(context.Context, func(Client), time.Duration)
 
-	// // ReadForever is responsible for reading messages from the client, and passing
-	// // them to the message handlers
-	// ReadForever(context.Context, func(Client))
-
 	// SetLogger allows consumers to inject their own logging dependencies
 	SetLogger(any) error
 
@@ -37,6 +33,9 @@ type Client interface {
 
 	// Cancel is the context cancel function
 	Cancel()
+
+	// write is a low level function to send messages to the client
+	Write(Message) (int, error)
 }
 type client struct {
 	lock             *sync.RWMutex
