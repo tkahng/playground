@@ -7,7 +7,7 @@ import { PaginationState, Updater } from "@tanstack/react-table";
 import { NavLink, useSearchParams } from "react-router";
 import { CreatePermissionDialog } from "./create-jobs-dialog";
 
-export default function PermissionListPage() {
+export default function JobsListPage() {
   const { user } = useAuthProvider();
   const [searchParams, setSearchParams] = useSearchParams();
   const pageIndex = parseInt(searchParams.get("page") || "0", 10);
@@ -91,14 +91,21 @@ export default function PermissionListPage() {
             accessorKey: "kind",
             header: "Kind",
             cell: ({ row }) => {
-              return <div>{row.original.kind}</div>;
+              return row.original.kind;
             },
           },
           {
             accessorKey: "unique_key",
             header: "UniqueKey",
             cell: ({ row }) => {
-              return <div>{row.original.unique_key}</div>;
+              return row.original.unique_key;
+            },
+          },
+          {
+            accessorKey: "status",
+            header: "Status",
+            cell: ({ row }) => {
+              return row.original.status;
             },
           },
         ]}

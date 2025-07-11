@@ -40,7 +40,7 @@ type DbJobStore struct {
 	db database.Dbx
 }
 
-func NewDbJobStore(db database.Dbx) JobStore {
+func NewDbJobStore(db database.Dbx) *DbJobStore {
 	return &DbJobStore{
 		db: db,
 	}

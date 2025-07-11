@@ -6491,23 +6491,23 @@ export interface operations {
                 };
                 content: {
                     "text/event-stream": ({
-                        data: components["schemas"]["NotificationPayloadNewTeamMemberNotificationData"];
-                        /**
-                         * @description The event name.
-                         * @constant
-                         */
-                        event: "new_team_member";
-                        /** @description The event ID. */
-                        id?: number;
-                        /** @description The retry time in milliseconds. */
-                        retry?: number;
-                    } | {
                         data: components["schemas"]["PingMessage"];
                         /**
                          * @description The event name.
                          * @constant
                          */
                         event: "ping";
+                        /** @description The event ID. */
+                        id?: number;
+                        /** @description The retry time in milliseconds. */
+                        retry?: number;
+                    } | {
+                        data: components["schemas"]["NotificationPayloadNewTeamMemberNotificationData"];
+                        /**
+                         * @description The event name.
+                         * @constant
+                         */
+                        event: "new_team_member";
                         /** @description The event ID. */
                         id?: number;
                         /** @description The retry time in milliseconds. */

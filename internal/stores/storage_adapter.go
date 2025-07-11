@@ -149,5 +149,8 @@ func NewStorageAdapter(db database.Dbx) *StorageAdapter {
 		subscription:   NewDbSubscriptionStore(db),
 		rbac:           NewDbRBACStore(db),
 		task:           NewDbTaskStore(db),
+		job:            NewDbJobStore(db),
+		media:          NewMediaStore(db),
+		notification:   NewDbNotificationStore(db),
 	}
 }

@@ -56,6 +56,11 @@ export const RouteLinks = {
     title: "Users",
     current: (pathname: string) => pathname.startsWith(RouteMap.ADMIN_USERS),
   },
+  ADMIN_DASHBOARD_JOBS: {
+    to: RouteMap.ADMIN_JOBS,
+    title: "Jobs",
+    current: (pathname: string) => pathname.startsWith(RouteMap.ADMIN_JOBS),
+  },
   ADMIN_DASHBOARD_ROLES: {
     to: RouteMap.ADMIN_ROLES,
     title: "Roles",
@@ -102,6 +107,7 @@ export const adminHeaderLinks: LinkDto[] = [
   RouteLinks.ADMIN_DASHBOARD_PERMISSIONS,
   RouteLinks.ADMIN_DASHBOARD_PRODUCTS,
   RouteLinks.ADMIN_DASHBOARD_SUBSCRIPTIONS,
+  RouteLinks.ADMIN_DASHBOARD_JOBS,
 ];
 
 export const authenticatedSubHeaderLinks: LinkDto[] = [

@@ -27,24 +27,20 @@ import { toast } from "sonner";
 import { z } from "zod";
 
 const formSchema = z.object({
+  kind: z.string(),
+  unique_key: z.string().nullable(),
   status: z.enum(["pending", "processing", "done", "failed"]),
   //   attempts: number;
   // kind: string;
-  kind: z.string(),
   // last_error: string | null;
   last_error: z.string().nullable(),
   // max_attempts: number;
   max_attempts: z.number(),
   payload: z.string(),
+  attempts: z.number(),
   // run_after: string;
   run_after: z.string(),
   // unique_key: string | null;
-  unique_key: z.string().nullable(),
-  // created_at: string;
-  created_at: z.string(),
-  // updated_at: string;
-  updated_at: z.string(),
-  attempts: z.number(),
 });
 export default function JobsEdit() {
   const navigate = useNavigate();
@@ -74,15 +70,9 @@ export default function JobsEdit() {
         throw new Error("Permission not found");
       }
       return adminJobQueries.updateJob(user.tokens.access_token, jobId, {
-        // status: values.status,
-        // attempts: permission.attempts,
-        // kind: permission.kind,
-        // last_error: permission.last_error,
-        // max_attempts: permission.max_attempts,
-        // payload: permission.payload,
-        // run_after: permission.run_after,
-        // unique_key: permission.unique_key,
         ...values,
+        kind: job.kind,
+        unique_key: job.unique_key,
       });
     },
     onSuccess: async () => {
@@ -102,16 +92,24 @@ export default function JobsEdit() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       status: job?.status || "pending",
+      attempts: job?.attempts || 0,
+      kind: job?.kind || "",
+      unique_key: job?.unique_key || null,
+      last_error: job?.last_error || null,
+      max_attempts: job?.max_attempts || 0,
+      payload: job?.payload || "",
+      run_after: job?.run_after || "",
     },
   });
   function onSubmit(values: z.infer<typeof formSchema>) {
     mutation.mutate(values);
   }
+
   useEffect(() => {
     if (job) {
       form.reset(job);
     }
-  }, [job, form.reset, form]);
+  }, [job, form]);
   if (!user) {
     navigate(RouteMap.SIGNIN);
   }
@@ -133,6 +131,32 @@ export default function JobsEdit() {
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
           <FormField
             control={form.control}
+            name="kind"
+            disabled
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Kind</FormLabel>
+                <FormControl>
+                  <Input {...field} value={field.value} />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="unique_key"
+            disabled
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Unique Key</FormLabel>
+                <FormControl>
+                  <Input {...field} value={field.value || ""} />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
             name="status"
             render={({ field }) => (
               <FormItem>
@@ -143,31 +167,20 @@ export default function JobsEdit() {
                 >
                   <FormControl {...field}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select Task Status" />
+                      <SelectValue placeholder="Select Job status Status" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="todo">Todo</SelectItem>
+                    <SelectItem value="pending">Pending</SelectItem>
                     <SelectItem value="in_progress">In Progress</SelectItem>
                     <SelectItem value="done">Done</SelectItem>
+                    <SelectItem value="failed">Failed</SelectItem>
                   </SelectContent>
                 </Select>
               </FormItem>
             )}
           />
-          <FormField
-            control={form.control}
-            name="kind"
-            disabled
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Kind</FormLabel>
-                <FormControl>
-                  <Input {...field} />
-                </FormControl>
-              </FormItem>
-            )}
-          />
+
           <Button type="submit" disabled={!form.formState.isDirty}>
             Submit
           </Button>
