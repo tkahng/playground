@@ -1,6 +1,7 @@
 import { client } from "@/lib/client";
 import { components, operations } from "@/schema";
 import {
+  JobsParams,
   RefreshTokenInput,
   SigninInput,
   SignupInput,
@@ -1625,4 +1626,59 @@ export const getTeamInvitationByToken = async (invitationToken: string) => {
     throw error;
   }
   return data;
+};
+
+export const adminJobQueries = {
+  getJob: async (token: string, id: string) => {
+    const { data, error } = await client.GET("/api/admin/jobs/{job-id}", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      params: {
+        path: {
+          "job-id": id,
+        },
+      },
+    });
+    if (error) {
+      throw error;
+    }
+    return data;
+  },
+  getJobs: async (token: string, params?: JobsParams) => {
+    const { data, error } = await client.GET("/api/admin/jobs", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      params: {
+        query: params,
+      },
+    });
+    if (error) {
+      throw error;
+    }
+    return data;
+  },
+
+  updateJob: async (
+    token: string,
+    id: string,
+    job: components["schemas"]["JobUpdateDto"]
+  ) => {
+    const { error } = await client.PUT("/api/admin/jobs/{job-id}", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: job,
+      params: {
+        path: {
+          "job-id": id,
+        },
+      },
+    });
+    if (error) {
+      throw error;
+    }
+    return true;
+  },
 };

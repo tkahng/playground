@@ -1,4 +1,4 @@
-import { components } from "@/schema";
+import { components, operations } from "@/schema";
 
 export type SigninInput = components["schemas"]["SigninDto"];
 
@@ -73,3 +73,5 @@ export type TeamMemberState = {
 
 export type TeamMemberNotificationData =
   components["schemas"]["NotificationPayloadNewTeamMemberNotificationData"];
+
+export type JobsParams = operations["admin-jobs-get"]["parameters"]["query"];
