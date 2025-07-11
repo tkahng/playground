@@ -24,7 +24,6 @@ require (
 	github.com/jackc/pgx/v5 v5.7.5
 	github.com/jaswdr/faker/v2 v2.5.0
 	github.com/joho/godotenv v1.5.1
-	github.com/matryer/is v1.4.1
 	github.com/resend/resend-go/v2 v2.20.0
 	github.com/spf13/cobra v1.9.1
 	github.com/stephenafamo/scan v0.6.2
