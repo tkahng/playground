@@ -35,7 +35,11 @@ type Client interface {
 	Cancel()
 
 	// write is a low level function to send messages to the client
-	Write(Message) (int, error)
+	Write(Message) error
+
+	// Close implements the Closer interface. Note the behavior of calling Close()
+	// multiple times is undefined; this implementation swallows all errors.
+	Close() error
 }
 type client struct {
 	lock             *sync.RWMutex
@@ -58,9 +62,9 @@ func (c *client) Cancel() {
 }
 
 // Write implements the Writer interface.
-func (c *client) Write(p Message) (int, error) {
+func (c *client) Write(p Message) error {
 	c.egress <- p
-	return 0, nil
+	return nil
 }
 
 // Close implements the Closer interface. Note the behavior of calling Close()
