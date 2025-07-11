@@ -107,7 +107,7 @@ type FindJobInput struct {
 func (api *Api) AdminGetJob(
 	ctx context.Context,
 	input *FindJobInput,
-) (*Job, error) {
+) (*ApiOutput[*Job], error) {
 	id := uuid.MustParse(input.ID)
 	j, err := api.app.Adapter().Job().FindJob(ctx, &stores.JobFilter{
 		Ids: []uuid.UUID{id},
@@ -115,7 +115,7 @@ func (api *Api) AdminGetJob(
 	if err != nil {
 		return nil, err
 	}
-	return ToJob(j), nil
+	return &ApiOutput[*Job]{Body: ToJob(j)}, nil
 }
 
 type JobUpdateDto struct {
