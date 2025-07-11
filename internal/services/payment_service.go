@@ -65,6 +65,7 @@ type PaymentService interface {
 	VerifyAndUpdateTeamSubscriptionQuantity(ctx context.Context, teamId uuid.UUID) error
 
 	SyncCustomerData(ctx context.Context, customerID string)
+	TeamCanAddMembers(ctx context.Context, teamId uuid.UUID) (bool, error)
 }
 
 type StripeService struct {
@@ -221,6 +222,17 @@ func (srv *StripeService) FindCustomerByUser(ctx context.Context, userId uuid.UU
 			UserIds: []uuid.UUID{userId},
 		},
 	)
+}
+
+func (srv *StripeService) TeamCanAddMembers(ctx context.Context, teamId uuid.UUID) (bool, error) {
+	subscriptions, err := srv.adapter.Subscription().FindActiveSubscriptionsByTeamIds(ctx, teamId)
+	if err != nil {
+		return false, err
+	}
+	if len(subscriptions) > 0 {
+		return true, nil
+	}
+	return false, nil
 }
 
 // VerifyAndUpdateTeamSubscriptionQuantity implements PaymentService.
