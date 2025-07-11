@@ -47,7 +47,7 @@ func (api *Api) BindTeamMembersSseEvents(humapi huma.API) {
 			fmt.Println("unregistering client")
 			api.app.SseManager().UnregisterClient(c)
 		},
-		60*time.Second,
+		1*time.Second,
 	)
 	humasse.Register(
 		humapi,

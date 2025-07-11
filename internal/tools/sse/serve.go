@@ -25,9 +25,10 @@ func ServeSSE[I any](
 		baseCtx, cf := context.WithCancel(context.Background())
 		client := clientFactory(ctx, send.Data)
 		onCreate(baseCtx, cf, client)
-		// defer func() {
-		// 	cf()
-		// }()
+		defer func() {
+			onDestroy(client)
+			cf()
+		}()
 		// all writes will happen in this goroutine, ensuring only one write on
 		// the connection at a time
 		client.WriteForever(baseCtx, onDestroy, ping)
