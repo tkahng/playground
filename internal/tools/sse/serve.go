@@ -23,13 +23,14 @@ func ServeSSE[I any](
 ) func(context.Context, *I, humasse.Sender) {
 	return func(ctx context.Context, input *I, send humasse.Sender) {
 
+		baseCtx, cf := context.WithCancel(context.Background())
 		client := clientFactory(ctx, send.Data)
-
-		ctx, cf := context.WithCancel(ctx)
-		onCreate(ctx, cf, client)
-
+		onCreate(baseCtx, cf, client)
+		// defer func() {
+		// 	cf()
+		// }()
 		// all writes will happen in this goroutine, ensuring only one write on
 		// the connection at a time
-		go client.WriteForever(ctx, onDestroy, ping)
+		client.WriteForever(baseCtx, onDestroy, ping)
 	}
 }

@@ -12,6 +12,7 @@ import (
 	"github.com/tkahng/authgo/internal/tools/filesystem"
 	"github.com/tkahng/authgo/internal/tools/logger"
 	"github.com/tkahng/authgo/internal/tools/mailer"
+	"github.com/tkahng/authgo/internal/tools/sse"
 )
 
 func NewAppDecorator(ctx context.Context, cfg conf.EnvConfig, pool database.Dbx) *BaseAppDecorator {
@@ -94,6 +95,15 @@ type BaseAppDecorator struct {
 	LifecycleFunc      func() Lifecycle
 	LoggerFunc         func() *slog.Logger
 	BootstrapFunc      func() error
+	SseManagerFunc     func() sse.Manager
+}
+
+// SseManager implements App.
+func (b *BaseAppDecorator) SseManager() sse.Manager {
+	if b.SseManagerFunc != nil {
+		return b.SseManagerFunc()
+	}
+	return b.app.SseManager()
 }
 
 // Logger implements App.

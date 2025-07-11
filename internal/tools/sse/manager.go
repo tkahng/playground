@@ -43,18 +43,26 @@ type Manager interface {
 type manager struct {
 	logger     *slog.Logger
 	mu         *sync.RWMutex
-	clients    map[string]ClientContext
+	clients    map[Client]context.CancelFunc
 	register   chan regreq
 	unregister chan regreq
 }
 
 // Send implements Manager.
-func (m *manager) Send(clientId string, data any) error {
-	if c, ok := m.clients[clientId]; ok {
-		m.logger.Debug("client found", "id", clientId)
-		return c.Client().Write(Message{Data: data})
-	} else {
-		m.logger.Warn("client not found", "id", clientId)
+func (m *manager) Send(channel string, data any) error {
+	var errs []error
+	for c := range m.clients {
+		if c.Channel() == channel {
+			m.logger.Debug("client found", "channel", channel)
+			err := c.Write(Message{Data: data})
+			if err != nil {
+				errs = append(errs, err)
+			}
+		}
+	}
+
+	if len(errs) > 0 {
+		return errors.Join(errs...)
 	}
 	return nil
 }
@@ -62,8 +70,8 @@ func (m *manager) Send(clientId string, data any) error {
 // SendAll implements Manager.
 func (m *manager) SendAll(data any) error {
 	var errs []error
-	for _, c := range m.clients {
-		if err := c.Client().Write(Message{Data: data}); err != nil {
+	for c := range m.clients {
+		if err := c.Write(Message{Data: data}); err != nil {
 			errs = append(errs, err)
 		}
 	}
@@ -84,7 +92,7 @@ func NewManager(logger *slog.Logger) Manager {
 	return &manager{
 		mu:         &sync.RWMutex{},
 		logger:     logger,
-		clients:    make(map[string]ClientContext),
+		clients:    make(map[Client]context.CancelFunc),
 		register:   make(chan regreq),
 		unregister: make(chan regreq),
 	}
@@ -95,8 +103,8 @@ func (m *manager) Clients() []Client {
 	res := []Client{}
 	m.mu.RLock()
 	defer m.mu.RUnlock()
-	for _, c := range m.clients {
-		res = append(res, c.Client())
+	for c := range m.clients {
+		res = append(res, c)
 	}
 	return res
 }
@@ -128,12 +136,13 @@ func (m *manager) UnregisterClient(c Client) {
 // Run runs in its own goroutine processing (un)registration requests.
 func (m *manager) Run(ctx context.Context) {
 	// helper fn for cleaning up client
-	cleanupClient := func(c ClientContext) {
-		m.logger.Info("unregistering client", "id", c.ID())
-		c.Cancel()()
-		delete(m.clients, c.ID())
-		c.Client().Close()
-		m.logger.Info("unregistered client", "id", c.ID())
+	cleanupClient := func(c Client) {
+		cancel, ok := m.clients[c]
+		if ok {
+			cancel()
+		}
+		delete(m.clients, c)
+		c.Close()
 	}
 
 	for {
@@ -141,8 +150,8 @@ func (m *manager) Run(ctx context.Context) {
 		case <-ctx.Done():
 			m.logger.Info("shutting down")
 			m.mu.Lock()
-			for _, client := range m.clients {
-				cleanupClient(client)
+			for c := range m.clients {
+				cleanupClient(c)
 			}
 			m.mu.Unlock()
 			m.logger.Info("shutdown complete")
@@ -151,11 +160,7 @@ func (m *manager) Run(ctx context.Context) {
 		case rr := <-m.register:
 			fmt.Println("got register")
 			m.mu.Lock()
-			m.clients[rr.client.ID()] = &clientContext{
-				id:     rr.client.ID(),
-				client: rr.client,
-				cancel: rr.cancel,
-			}
+			m.clients[rr.client] = rr.cancel
 			m.mu.Unlock()
 			fmt.Println("register done")
 			rr.done <- struct{}{}
@@ -163,8 +168,8 @@ func (m *manager) Run(ctx context.Context) {
 		case rr := <-m.unregister:
 			fmt.Println("got unregister")
 			m.mu.Lock()
-			if c, ok := m.clients[rr.client.ID()]; ok {
-				cleanupClient(c)
+			if _, ok := m.clients[rr.client]; ok {
+				cleanupClient(rr.client)
 			}
 			m.mu.Unlock()
 			fmt.Println("unregister done")

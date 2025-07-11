@@ -40,7 +40,7 @@ func TestWSHandler(t *testing.T) {
 				err := f(a)
 				messageChan <- struct{}{}
 				return err
-			}, slog.Default())
+			}, slog.Default(), nil)
 		},
 		func(ctx context.Context, _cf context.CancelFunc, _c sse.Client) {
 			cf = _cf

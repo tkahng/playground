@@ -9,6 +9,7 @@ import (
 	"github.com/tkahng/authgo/internal/services"
 	"github.com/tkahng/authgo/internal/stores"
 	"github.com/tkahng/authgo/internal/tools/filesystem"
+	"github.com/tkahng/authgo/internal/tools/sse"
 )
 
 type App interface {
@@ -50,5 +51,5 @@ type App interface {
 
 	Notifier() services.NotifierService
 
-	// SseManager() sse.Manager
+	SseManager() sse.Manager
 }

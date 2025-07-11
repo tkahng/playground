@@ -15,6 +15,7 @@ import (
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/notification"
 	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/authgo/internal/tools/sse"
 )
 
 func TeamChannel(teamMemberId string) string {
@@ -30,18 +31,24 @@ type MiddlewareFunc func(ctx huma.Context, next func(huma.Context))
 
 func (api *Api) BindTeamMembersSseEvents(humapi huma.API) {
 	membermiddleware := middleware.TeamInfoFromTeamMemberID(humapi, api.App())
-	// hanlder := sse.ServeSSE[TeamMemberSseInput](
-	// 	func(ctx context.Context, f func(any) error) sse.Client {
-	// 		teamInfo := contextstore.GetContextTeamInfo(ctx)
-	// 		return sse.NewClient(TeamChannel(teamInfo.Member.ID.String()), f, slog.Default())
-	// 	},
-	// 	func(ctx context.Context, _cf context.CancelFunc, _c sse.Client) {
-	// 		// manager.RegisterClient(ctx, cf, c)
-	// 	},
-	// 	func(_c sse.Client) {
-	// 		_c.Wait()
-	// 	},
-	// )
+	hanlder := sse.ServeSSE[TeamMemberSseInput](
+		func(ctx context.Context, f func(any) error) sse.Client {
+			teamInfo := contextstore.GetContextTeamInfo(ctx)
+			return sse.NewClient(TeamChannel(teamInfo.Member.ID.String()), f, slog.Default(), func() any {
+				return &PingMessage{
+					Message: "ping",
+				}
+			})
+		},
+		func(ctx context.Context, cf context.CancelFunc, c sse.Client) {
+			api.app.SseManager().RegisterClient(ctx, cf, c)
+		},
+		func(c sse.Client) {
+			fmt.Println("unregistering client")
+			api.app.SseManager().UnregisterClient(c)
+		},
+		1*time.Second,
+	)
 	humasse.Register(
 		humapi,
 		huma.Operation{
@@ -60,10 +67,11 @@ func (api *Api) BindTeamMembersSseEvents(humapi huma.API) {
 			Errors: []int{http.StatusInternalServerError, http.StatusBadRequest},
 		},
 		map[string]any{
-			"new_team_member": notification.NotificationPayload[notification.NewTeamMemberNotificationData]{},
-			"ping":            notification.NotificationPayload[PingMessage]{},
+			"new_team_member": &notification.NotificationPayload[notification.NewTeamMemberNotificationData]{},
+			"ping":            &PingMessage{},
 		},
-		api.TeamMembersSseEvents2,
+		// api.TeamMembersSseEvents2,
+		hanlder,
 	)
 
 }
@@ -92,11 +100,9 @@ func (api *Api) TeamMembersSseEvents2(ctx context.Context, input *struct {
 			return
 
 		case <-ticker.C:
-			var pl notification.NotificationPayload[PingMessage]
-			pl.Data.Message = "ping"
-			pl.Notification.Body = "ping"
-			pl.Notification.Title = "ping"
-			if err := send.Data(pl); err != nil {
+			var pl PingMessage
+			pl.Message = "ping"
+			if err := send.Data(&pl); err != nil {
 				return
 			}
 		}

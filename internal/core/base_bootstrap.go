@@ -12,6 +12,7 @@ import (
 	"github.com/tkahng/authgo/internal/tools/logger"
 	"github.com/tkahng/authgo/internal/tools/mailer"
 	"github.com/tkahng/authgo/internal/tools/payment"
+	"github.com/tkahng/authgo/internal/tools/sse"
 )
 
 func (app *BaseApp) Bootstrap() error {
@@ -42,7 +43,7 @@ func (app *BaseApp) Bootstrap() error {
 			panic(fmt.Errorf("error initializing payment: %w", err))
 		}
 
-		if err := app.initNotifier(); err != nil {
+		if err := app.initRealtime(); err != nil {
 			panic(fmt.Errorf("error initializing notifier: %w", err))
 		}
 
@@ -159,7 +160,9 @@ func (app *BaseApp) initAuth() error {
 	app.checker = constraint
 	return nil
 }
-func (app *BaseApp) initNotifier() error {
+func (app *BaseApp) initRealtime() error {
+	sseManager := sse.NewManager(app.logger)
+	app.sseManager = sseManager
 	notifierService := services.NewDbNotifierService(context.Background(), app.db, app.logger)
 	app.notifier = notifierService
 	return nil

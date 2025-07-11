@@ -22,7 +22,7 @@ type Client interface {
 	Wait()
 
 	// Client Key is the unique client identifier. usually some kind of keyName:keyValue
-	ID() string
+	Channel() string
 
 	// write is a low level function to send messages to the client
 	Write(Message) error
@@ -36,35 +36,36 @@ type client struct {
 	wg               *sync.WaitGroup
 	egress           chan Message
 	logger           *slog.Logger
-	id               string
+	channel          string
 	send             func(any) error
 	pingMessageFunc  func() any
 	closeMessageFunc func() any
 }
 
-func NewClient(clientId string, sender func(any) error, logger *slog.Logger) Client {
+func NewClient(clientId string, sender func(any) error, logger *slog.Logger, pingMessageFunc func() any) Client {
 	// add 2 to the wait group for the read/write goroutines
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
 	return &client{
-		lock:   &sync.RWMutex{},
-		wg:     wg,
-		send:   sender,
-		id:     clientId,
-		egress: make(chan Message, 32),
-		logger: logger,
+		lock:            &sync.RWMutex{},
+		wg:              wg,
+		send:            sender,
+		channel:         clientId,
+		egress:          make(chan Message, 32),
+		logger:          logger,
+		pingMessageFunc: pingMessageFunc,
 	}
 }
 
-func (c *client) ID() string {
-	return c.id
+func (c *client) Channel() string {
+	return c.channel
 }
 
 // Write implements the Writer interface.
 func (c *client) Write(p Message) error {
-	c.logger.Debug("writing message", "id", c.id)
+	c.logger.Debug("writing message", "id", c.channel)
 	c.egress <- p
-	c.logger.Debug("message written", "id", c.id)
+	c.logger.Debug("message written", "id", c.channel)
 	return nil
 }
 
@@ -85,16 +86,16 @@ func (c *client) WriteForever(ctx context.Context, onDestroy func(Client), ping 
 
 	pingTicker := time.NewTicker(ping)
 	defer func() {
-		c.logger.Debug("closing client", "id", c.id)
+		c.logger.Debug("closing client", "id", c.channel)
 		c.wg.Done()
 		pingTicker.Stop()
 		onDestroy(c)
 	}()
-
+	c.logger.Debug("writing forever", "id", c.channel)
 	for {
 		select {
 		case <-ctx.Done():
-			c.logger.Debug("context done", "id", c.id)
+			c.logger.Debug("context done", "id", c.channel)
 			if c.closeMessageFunc != nil {
 				if err := c.send(c.closeMessageFunc()); err != nil {
 					c.Log(int(slog.LevelError), fmt.Sprintf("error writing close message: %v", err))
@@ -113,7 +114,7 @@ func (c *client) WriteForever(ctx context.Context, onDestroy func(Client), ping 
 				return
 			}
 			// write a message to the connection
-			c.logger.Debug("writing message", "id", c.id)
+			c.logger.Debug("writing message", "id", c.channel)
 			if err := c.send(message.Data); err != nil {
 				c.Log(int(slog.LevelError), fmt.Sprintf("error writing message: %v", err))
 				return
