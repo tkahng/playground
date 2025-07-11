@@ -169,6 +169,12 @@ type NotificationStoreDecorator struct {
 	UpdateFunc            func(ctx context.Context, notification *models.Notification) error
 }
 
+func NewNotificationStoreDecorator(db database.Dbx) *NotificationStoreDecorator {
+	return &NotificationStoreDecorator{
+		Delegate: &DbNotificationStore{db: db},
+	}
+}
+
 // CountNotification implements NotificationStore.
 func (n *NotificationStoreDecorator) CountNotification(ctx context.Context, args *NotificationFilter) (int64, error) {
 	if n.CountFunc != nil {

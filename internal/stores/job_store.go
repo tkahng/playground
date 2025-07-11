@@ -2,6 +2,7 @@ package stores
 
 import (
 	"context"
+	"errors"
 	"slices"
 	"strings"
 	"time"
@@ -37,6 +38,12 @@ type JobStore interface {
 
 type DbJobStore struct {
 	db database.Dbx
+}
+
+func NewDbJobStore(db database.Dbx) JobStore {
+	return &DbJobStore{
+		db: db,
+	}
 }
 
 func (d *DbJobStore) filter(filter *JobFilter) *map[string]any {
@@ -142,3 +149,82 @@ func (d *DbJobStore) WithTx(db database.Dbx) JobStore {
 		db: db,
 	}
 }
+
+type JobStoreDecorator struct {
+	Delegate      JobStore
+	CountJobsFunc func(ctx context.Context, filter *JobFilter) (int64, error)
+	FindJobsFunc  func(ctx context.Context, filter *JobFilter) ([]*models.JobRow, error)
+	FindJobFunc   func(ctx context.Context, filter *JobFilter) (*models.JobRow, error)
+	CreateJobFunc func(ctx context.Context, job *models.JobRow) (*models.JobRow, error)
+	UpdateJobFunc func(ctx context.Context, job *models.JobRow) (*models.JobRow, error)
+	DeleteJobFunc func(ctx context.Context, filter *JobFilter) (int64, error)
+	RunInTxFunc   func(ctx context.Context, fn func(JobStore) error) error
+}
+
+// CountJobs implements JobStore.
+func (j *JobStoreDecorator) CountJobs(ctx context.Context, filter *JobFilter) (int64, error) {
+	if j.CountJobsFunc != nil {
+		return j.CountJobsFunc(ctx, filter)
+	}
+	if j.Delegate == nil {
+		return 0, errors.New("delegate for CountJobs in JobStore is nil")
+	}
+	return j.Delegate.CountJobs(ctx, filter)
+}
+
+// CreateJob implements JobStore.
+func (j *JobStoreDecorator) CreateJob(ctx context.Context, job *models.JobRow) (*models.JobRow, error) {
+	if j.CreateJobFunc != nil {
+		return j.CreateJobFunc(ctx, job)
+	}
+	if j.Delegate == nil {
+		return nil, errors.New("delegate for CreateJob in JobStore is nil")
+	}
+	return j.Delegate.CreateJob(ctx, job)
+}
+
+// DeleteJob implements JobStore.
+func (j *JobStoreDecorator) DeleteJob(ctx context.Context, filter *JobFilter) (int64, error) {
+	if j.DeleteJobFunc != nil {
+		return j.DeleteJobFunc(ctx, filter)
+	}
+	if j.Delegate == nil {
+		return 0, errors.New("delegate for DeleteJob in JobStore is nil")
+	}
+	return j.Delegate.DeleteJob(ctx, filter)
+}
+
+// FindJob implements JobStore.
+func (j *JobStoreDecorator) FindJob(ctx context.Context, filter *JobFilter) (*models.JobRow, error) {
+	if j.FindJobFunc != nil {
+		return j.FindJobFunc(ctx, filter)
+	}
+	if j.Delegate == nil {
+		return nil, errors.New("delegate for FindJob in JobStore is nil")
+	}
+	return j.Delegate.FindJob(ctx, filter)
+}
+
+// FindJobs implements JobStore.
+func (j *JobStoreDecorator) FindJobs(ctx context.Context, filter *JobFilter) ([]*models.JobRow, error) {
+	if j.FindJobsFunc != nil {
+		return j.FindJobsFunc(ctx, filter)
+	}
+	if j.Delegate == nil {
+		return nil, errors.New("delegate for FindJobs in JobStore is nil")
+	}
+	return j.Delegate.FindJobs(ctx, filter)
+}
+
+// UpdateJob implements JobStore.
+func (j *JobStoreDecorator) UpdateJob(ctx context.Context, job *models.JobRow) (*models.JobRow, error) {
+	if j.UpdateJobFunc != nil {
+		return j.UpdateJobFunc(ctx, job)
+	}
+	if j.Delegate == nil {
+		return nil, errors.New("delegate for UpdateJob in JobStore is nil")
+	}
+	return j.Delegate.UpdateJob(ctx, job)
+}
+
+var _ JobStore = &JobStoreDecorator{}

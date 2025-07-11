@@ -19,6 +19,7 @@ type StorageAdapterInterface interface {
 	Media() MediaStoreInterface
 	Rbac() DbRbacStoreInterface
 	Task() DbTaskStoreInterface
+	Job() JobStore
 	// WithTx(tx database.Dbx) *StorageAdapter
 	RunInTx(fn func(tx StorageAdapterInterface) error) error
 }
@@ -38,8 +39,12 @@ type StorageAdapter struct {
 	task           *DbTaskStore
 	media          *DbMediaStore
 	notification   *DbNotificationStore
+	job            *DbJobStore
 }
 
+func (s *StorageAdapter) Job() JobStore {
+	return s.job
+}
 func (s *StorageAdapter) Notification() NotificationStore {
 	return s.notification
 }
