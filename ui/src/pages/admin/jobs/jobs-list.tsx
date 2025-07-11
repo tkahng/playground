@@ -5,7 +5,6 @@ import { adminJobQueries } from "@/lib/queries";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { PaginationState, Updater } from "@tanstack/react-table";
 import { NavLink, useSearchParams } from "react-router";
-import { CreatePermissionDialog } from "./create-jobs-dialog";
 
 export default function JobsListPage() {
   const { user } = useAuthProvider();
@@ -40,20 +39,6 @@ export default function JobsListPage() {
     },
     placeholderData: keepPreviousData,
   });
-  // const deletePermissionMutation = useMutation({
-  //   mutationFn: async (permissionId: string) => {
-  //     if (!user?.tokens.access_token) {
-  //       throw new Error("Missing access token or role ID");
-  //     }
-  //     await deletePermission(user.tokens.access_token, permissionId);
-  //   },
-  //   onSuccess: () => {
-  //     queryClient.invalidateQueries({ queryKey: ["permissions-list"] });
-  //   },
-  //   onError: (error) => {
-  //     console.error(error);
-  //   },
-  // });
 
   if (isLoading) {
     return <div>Loading...</div>;
@@ -65,11 +50,7 @@ export default function JobsListPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <p>
-          Create and manage permissions for your applications. Permissions and
-          can be assigned to Users.
-        </p>
-        <CreatePermissionDialog />
+        <p>Manage Jobs for your applications.</p>
       </div>
       <DataTable
         columns={[
