@@ -3,6 +3,7 @@ package sse
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"sync"
 )
 
@@ -16,20 +17,43 @@ type Manager interface {
 	SendAll(data any) error
 }
 
+type clientContext struct {
+	id     string
+	client Client
+	cancel context.CancelFunc
+}
+
+func (c *clientContext) Client() Client {
+	return c.client
+}
+func (c *clientContext) Cancel() context.CancelFunc {
+	return c.cancel
+}
+
+func (c *clientContext) ID() string {
+	return c.id
+}
+
+type ClientContext interface {
+	ID() string
+	Client() Client
+	Cancel() context.CancelFunc
+}
+
 type manager struct {
+	logger     *slog.Logger
 	mu         *sync.RWMutex
-	clients    map[Client]context.CancelFunc
+	clients    map[string]ClientContext
 	register   chan regreq
 	unregister chan regreq
 }
 
 // Send implements Manager.
 func (m *manager) Send(clientId string, data any) error {
-
-	for c := range m.clients {
-		if c.ID() == clientId {
-			return c.Write(Message{Data: data})
-		}
+	if c, ok := m.clients[clientId]; ok {
+		return c.Client().Write(Message{Data: data})
+	} else {
+		m.logger.Warn("client not found", "id", clientId)
 	}
 	return nil
 }
@@ -37,8 +61,8 @@ func (m *manager) Send(clientId string, data any) error {
 // SendAll implements Manager.
 func (m *manager) SendAll(data any) error {
 	var errs []error
-	for c := range m.clients {
-		if err := c.Write(Message{Data: data}); err != nil {
+	for _, c := range m.clients {
+		if err := c.Client().Write(Message{Data: data}); err != nil {
 			errs = append(errs, err)
 		}
 	}
@@ -55,10 +79,11 @@ type regreq struct {
 	done    chan struct{}
 }
 
-func NewManager() Manager {
+func NewManager(logger *slog.Logger) Manager {
 	return &manager{
 		mu:         &sync.RWMutex{},
-		clients:    make(map[Client]context.CancelFunc),
+		logger:     logger,
+		clients:    make(map[string]ClientContext),
 		register:   make(chan regreq),
 		unregister: make(chan regreq),
 	}
@@ -69,9 +94,8 @@ func (m *manager) Clients() []Client {
 	res := []Client{}
 	m.mu.RLock()
 	defer m.mu.RUnlock()
-
-	for c := range m.clients {
-		res = append(res, c)
+	for _, c := range m.clients {
+		res = append(res, c.Client())
 	}
 	return res
 }
@@ -104,31 +128,35 @@ func (m *manager) UnregisterClient(c Client) {
 func (m *manager) Run(ctx context.Context) {
 	// helper fn for cleaning up client
 	cleanupClient := func(c Client) {
-		cancel, ok := m.clients[c]
+		clientCtx, ok := m.clients[c.ID()]
 		if ok {
-			cancel()
+			clientCtx.Cancel()
+			delete(m.clients, c.ID())
+			clientCtx.Client().Close()
 		}
-		delete(m.clients, c)
-		c.Close()
 	}
 
 	for {
 		select {
 		case <-ctx.Done():
 			m.mu.Lock()
-			for client := range m.clients {
-				cleanupClient(client)
+			for _, client := range m.clients {
+				cleanupClient(client.Client())
 			}
 			m.mu.Unlock()
 		case rr := <-m.register:
 			m.mu.Lock()
-			m.clients[rr.client] = rr.cancel
+			m.clients[rr.client.ID()] = &clientContext{
+				id:     rr.client.ID(),
+				client: rr.client,
+				cancel: rr.cancel,
+			}
 			m.mu.Unlock()
 			rr.done <- struct{}{}
 
 		case rr := <-m.unregister:
 			m.mu.Lock()
-			if _, ok := m.clients[rr.client]; ok {
+			if _, ok := m.clients[rr.client.ID()]; ok {
 				cleanupClient(rr.client)
 			}
 			m.mu.Unlock()

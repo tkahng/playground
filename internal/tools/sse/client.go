@@ -32,7 +32,7 @@ type Client interface {
 	ID() string
 
 	// Cancel is the context cancel function
-	Cancel()
+	Cancel() context.CancelFunc
 
 	// write is a low level function to send messages to the client
 	Write(Message) error
@@ -57,8 +57,8 @@ func (c *client) ID() string {
 	return c.id
 }
 
-func (c *client) Cancel() {
-	c.cancel()
+func (c *client) Cancel() context.CancelFunc {
+	return c.cancel
 }
 
 // Write implements the Writer interface.
