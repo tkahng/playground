@@ -1161,6 +1161,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/team-members/{team-member-id}/notifications/sse": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * team-members-sse-team-member-notifications
+         * @description team-members-sse-team-member-notifications
+         */
+        get: operations["team-members-sse-team-member-notifications"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/teams": {
         parameters: {
             query?: never;
@@ -1731,6 +1751,19 @@ export interface components {
             prev_page: number | null;
             /** Format: int64 */
             total: number;
+        };
+        NewTeamMemberNotificationData: {
+            email: string;
+            team_id: string;
+            team_member_id: string;
+        };
+        NotificationContent: {
+            body: string;
+            title: string;
+        };
+        NotificationPayloadNewTeamMemberNotificationData: {
+            data: components["schemas"]["NewTeamMemberNotificationData"];
+            notification: components["schemas"]["NotificationContent"];
         };
         OAuth2AuthorizationUrlOutputBody: {
             /**
@@ -6145,6 +6178,55 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "team-members-sse-team-member-notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/event-stream": {
+                        data: components["schemas"]["NotificationPayloadNewTeamMemberNotificationData"];
+                        /**
+                         * @description The event name.
+                         * @constant
+                         */
+                        event: "new_team_member";
+                        /** @description The event ID. */
+                        id?: number;
+                        /** @description The retry time in milliseconds. */
+                        retry?: number;
+                    }[];
+                };
+            };
+            /** @description Bad Request */
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };
