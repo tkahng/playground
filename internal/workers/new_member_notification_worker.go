@@ -10,7 +10,6 @@ import (
 
 type NewMemberNotificationJobArgs struct {
 	TeamMemberID uuid.UUID
-	TeamID       uuid.UUID
 }
 
 func (j NewMemberNotificationJobArgs) Kind() string {
