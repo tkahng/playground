@@ -22,15 +22,9 @@ func ServeSSE[I any](
 	// msgHandlers are callbacks that handle messages received from the client
 ) func(context.Context, *I, humasse.Sender) {
 	return func(ctx context.Context, input *I, send humasse.Sender) {
-		baseCtx, cf := context.WithCancel(context.Background())
-		client := clientFactory(ctx, send.Data)
+		baseCtx, cf := context.WithCancel(ctx)
+		client := clientFactory(baseCtx, send.Data)
 		onCreate(baseCtx, cf, client)
-		defer func() {
-			onDestroy(client)
-			cf()
-		}()
-		// all writes will happen in this goroutine, ensuring only one write on
-		// the connection at a time
 		client.WriteForever(baseCtx, onDestroy, ping)
 	}
 }
