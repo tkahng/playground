@@ -3,7 +3,6 @@ package sse
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log/slog"
 	"sync"
 )
@@ -53,7 +52,6 @@ func (m *manager) Send(channel string, data any) error {
 	var errs []error
 	for c := range m.clients {
 		if c.Channel() == channel {
-			m.logger.Debug("client found", "channel", channel)
 			err := c.Write(Message{Data: data})
 			if err != nil {
 				errs = append(errs, err)
@@ -118,9 +116,7 @@ func (m *manager) RegisterClient(ctx context.Context, cf context.CancelFunc, c C
 		client:  c,
 		done:    done,
 	}
-	m.logger.Info("registering client")
 	m.register <- rr
-	m.logger.Info("client registered")
 	<-done
 }
 
@@ -150,31 +146,25 @@ func (m *manager) Run(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
-			m.logger.Info("shutting down")
 			m.mu.Lock()
 			for c := range m.clients {
 				cleanupClient(c)
 			}
 			m.mu.Unlock()
-			m.logger.Info("shutdown complete")
 			return
 
 		case rr := <-m.register:
-			fmt.Println("got register")
 			m.mu.Lock()
 			m.clients[rr.client] = rr.cancel
 			m.mu.Unlock()
-			fmt.Println("register done")
 			rr.done <- struct{}{}
 
 		case rr := <-m.unregister:
-			fmt.Println("got unregister")
 			m.mu.Lock()
 			if _, ok := m.clients[rr.client]; ok {
 				cleanupClient(rr.client)
 			}
 			m.mu.Unlock()
-			fmt.Println("unregister done")
 			rr.done <- struct{}{}
 		}
 	}

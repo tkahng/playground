@@ -63,9 +63,7 @@ func (c *client) Channel() string {
 
 // Write implements the Writer interface.
 func (c *client) Write(p Message) error {
-	c.logger.Debug("writing message", "id", c.channel)
 	c.egress <- p
-	c.logger.Debug("message written", "id", c.channel)
 	return nil
 }
 
@@ -86,16 +84,13 @@ func (c *client) WriteForever(ctx context.Context, onDestroy func(Client), ping 
 
 	pingTicker := time.NewTicker(ping)
 	defer func() {
-		c.logger.Debug("closing client", "id", c.channel)
 		c.wg.Done()
 		pingTicker.Stop()
 		onDestroy(c)
 	}()
-	c.logger.Debug("writing forever", "id", c.channel)
 	for {
 		select {
 		case <-ctx.Done():
-			c.logger.Debug("context done", "id", c.channel)
 			if c.closeMessageFunc != nil {
 				if err := c.send(c.closeMessageFunc()); err != nil {
 					c.Log(int(slog.LevelError), fmt.Sprintf("error writing close message: %v", err))
@@ -105,7 +100,6 @@ func (c *client) WriteForever(ctx context.Context, onDestroy func(Client), ping 
 		case message, ok := <-c.egress:
 			// ok will be false in case the egress channel is closed
 			if !ok {
-				c.logger.Debug("egress channel closed")
 				if c.closeMessageFunc != nil {
 					if err := c.send(c.closeMessageFunc()); err != nil {
 						c.Log(int(slog.LevelError), fmt.Sprintf("error writing close message: %v", err))
@@ -114,7 +108,6 @@ func (c *client) WriteForever(ctx context.Context, onDestroy func(Client), ping 
 				return
 			}
 			// write a message to the connection
-			c.logger.Debug("writing message", "id", c.channel)
 			if err := c.send(message.Data); err != nil {
 				c.Log(int(slog.LevelError), fmt.Sprintf("error writing message: %v", err))
 				return
