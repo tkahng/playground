@@ -9,21 +9,21 @@ import (
 
 type StripePaymentPayload struct {
 	// StripeCustomerID string `json:"stripe_customer_id"`
-	PriceID string `json:"price_id"`
+	PriceID string `json:"price_id" required:"true"`
 }
 type StripeTeamPaymentInput struct {
-	TeamID string `path:"team-id" required:"true"`
-	Body   StripePaymentPayload
+	TeamID string               `path:"team-id" required:"true"`
+	Body   StripePaymentPayload `json:"body" required:"true"`
 }
 type StripeUserPaymentInput struct {
-	Body StripePaymentPayload
+	Body StripePaymentPayload `json:"body" required:"true"`
 }
 
 type StripeUrlOutput struct {
 	// HxResponseHeaders
 	Body struct {
 		Url string `json:"url"`
-	}
+	} `json:"body"`
 }
 
 func (api *Api) CreateTeamCheckoutSession(ctx context.Context, input *StripeTeamPaymentInput) (*StripeUrlOutput, error) {
