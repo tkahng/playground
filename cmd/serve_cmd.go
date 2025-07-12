@@ -75,18 +75,6 @@ func Run2() error {
 	}()
 
 	go func() {
-		slog.Info("Starting notifier listener")
-		err := app.Notifier().Start(context.Background())
-		if err != nil {
-			slog.ErrorContext(
-				ctx,
-				"error starting notifier listener",
-				slog.Any("error", err),
-			)
-		}
-	}()
-
-	go func() {
 		slog.Info("Starting poller")
 		if err := app.JobManager().Run(context.Background()); err != nil {
 			slog.ErrorContext(

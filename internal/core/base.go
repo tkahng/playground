@@ -45,8 +45,6 @@ type BaseApp struct {
 	team           services.TeamService
 	teamInvitation services.TeamInvitationService
 
-	notifier services.NotifierService
-
 	notifierPublisher services.NotificationPublisher
 	fs                filesystem.FileSystem
 
@@ -114,13 +112,6 @@ func (app *BaseApp) Logger() *slog.Logger {
 	return app.logger
 }
 
-// Notifier implements App.
-func (app *BaseApp) Notifier() services.NotifierService {
-	if app.notifier == nil {
-		panic("notifier not initialized")
-	}
-	return app.notifier
-}
 func (app *BaseApp) IsBootstrapped() (isBootStrapped bool) {
 	if app.cfg == nil {
 		return
@@ -161,9 +152,7 @@ func (app *BaseApp) IsBootstrapped() (isBootStrapped bool) {
 	if app.jobService == nil {
 		return
 	}
-	if app.notifier == nil {
-		return
-	}
+
 	return true
 }
 

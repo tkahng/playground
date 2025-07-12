@@ -162,8 +162,6 @@ func (app *BaseApp) initAuth() error {
 func (app *BaseApp) initRealtime() error {
 	sseManager := sse.NewManager(app.logger)
 	app.sseManager = sseManager
-	notifierService := services.NewDbNotifierService(context.Background(), app.db, app.logger)
-	app.notifier = notifierService
 
 	notifierPublisher := services.NewDbNotificationPublisher(
 		sseManager,

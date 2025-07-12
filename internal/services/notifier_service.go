@@ -78,5 +78,3 @@ func (d *DbNotifierService) Start(ctx context.Context) (err error) {
 	}()
 	return
 }
-
-var _ NotifierService = (*DbNotifierService)(nil)

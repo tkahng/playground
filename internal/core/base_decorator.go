@@ -91,7 +91,6 @@ type BaseAppDecorator struct {
 	TeamInvitationFunc        func() services.TeamInvitationService
 	JobManagerFunc            func() jobs.JobManager
 	JobServiceFunc            func() services.JobService
-	NotifierFunc              func() services.NotifierService
 	LifecycleFunc             func() Lifecycle
 	LoggerFunc                func() *slog.Logger
 	BootstrapFunc             func() error
@@ -142,12 +141,6 @@ func (b *BaseAppDecorator) Lifecycle() Lifecycle {
 }
 
 // Notifier implements App.
-func (b *BaseAppDecorator) Notifier() services.NotifierService {
-	if b.NotifierFunc != nil {
-		return b.NotifierFunc()
-	}
-	return b.app.Notifier()
-}
 
 // JobService implements App.
 func (b *BaseAppDecorator) JobService() services.JobService {
