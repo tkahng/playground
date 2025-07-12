@@ -185,7 +185,7 @@ func (app *BaseApp) initTeams() error {
 }
 
 func (app *BaseApp) initTasks() error {
-	tasksService := services.NewTaskService(app.adapter)
+	tasksService := services.NewTaskService(app.adapter, app.jobService)
 	app.task = tasksService
 	return nil
 }

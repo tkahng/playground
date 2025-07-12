@@ -28,6 +28,8 @@ type TaskService interface {
 type taskService struct {
 	// store   TaskStore
 	adapter stores.StorageAdapterInterface
+
+	jobService JobService
 }
 
 // CreateTask implements TaskService.
@@ -48,9 +50,10 @@ func (s *taskService) CreateTask(ctx context.Context, teamID uuid.UUID, projectI
 	return task, nil
 }
 
-func NewTaskService(adapter stores.StorageAdapterInterface) TaskService {
+func NewTaskService(adapter stores.StorageAdapterInterface, jobService JobService) TaskService {
 	return &taskService{
-		adapter: adapter,
+		adapter:    adapter,
+		jobService: jobService,
 	}
 }
 

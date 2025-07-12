@@ -31,7 +31,7 @@ func NewAppDecorator(ctx context.Context, cfg conf.EnvConfig, pool database.Dbx)
 	jobManager := jobs.NewDbJobManagerDecorator(pool)
 	jobService := services.NewJobServiceDecorator(jobManager)
 	rbacService := services.NewRBACService(adapter)
-	taskService := services.NewTaskService(adapter)
+	taskService := services.NewTaskService(adapter, jobService)
 	paymentClient := services.NewTestPaymentClient()
 	paymentService := services.NewPaymentService(
 		paymentClient,

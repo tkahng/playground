@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/database"
+	"github.com/tkahng/authgo/internal/jobs"
 	"github.com/tkahng/authgo/internal/models"
 	"github.com/tkahng/authgo/internal/services"
 	"github.com/tkahng/authgo/internal/stores"
@@ -18,7 +19,8 @@ func TestDefineTaskOrderNumberByStatus(t *testing.T) {
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		adapter := stores.NewStorageAdapter(dbxx)
-		taskService := services.NewTaskService(adapter)
+
+		taskService := services.NewTaskService(adapter, services.NewJobService(jobs.NewDbJobManager(dbxx)))
 		user, err := adapter.User().CreateUser(ctx, &models.User{
 			Email: "tkahng@gmail.com",
 		})
