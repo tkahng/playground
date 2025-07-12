@@ -51,16 +51,16 @@ const defaultCols = [
 
 export type ColumnId = (typeof defaultCols)[number]["id"];
 
-export function KanbanBoard(props: { cars: Task[]; projectId: string }) {
+export function KanbanBoard(props: { cards: Task[]; projectId: string }) {
   const [columns, setColumns] = useState<Column[]>(defaultCols);
-  const [cars, setCars] = useState<Task[]>(props.cars);
+  const [cards, setCards] = useState<Task[]>(props.cards);
   const [activeColumn, setActiveColumn] = useState<Column | null>(null);
-  const [activeCar, setActiveCar] = useState<Task | null>(null);
+  const [activeCard, setActiveCard] = useState<Task | null>(null);
   const dndContextId = useId();
 
   useEffect(() => {
-    setCars(props.cars);
-  }, [props.cars]);
+    setCards(props.cards);
+  }, [props.cards]);
 
   const queryClient = useQueryClient();
   const { user } = useAuthProvider();
@@ -140,19 +140,19 @@ export function KanbanBoard(props: { cars: Task[]; projectId: string }) {
   // recursively render nested columns
   const renderNestedColumns = (cols: NestedColumn[]) => {
     return cols.map((col) => {
-      const carsInColumn = cars.filter((car) => car.columnId === col.id);
+      const cardsInColumn = cards.filter((card) => card.columnId === col.id);
 
       if (col.children && col.children.length > 0) {
         return (
           <div key={col.id} className="flex flex-col">
-            {carsInColumn.length > 0 && (
+            {cardsInColumn.length > 0 && (
               <BoardColumn
                 column={col}
-                cars={carsInColumn}
+                cards={cardsInColumn}
                 projectId={props.projectId}
               />
             )}
-            <div className={carsInColumn.length > 0 ? "ml-4 mt-2" : ""}>
+            <div className={cardsInColumn.length > 0 ? "ml-4 mt-2" : ""}>
               {renderNestedColumns(col.children)}
             </div>
           </div>
@@ -162,7 +162,7 @@ export function KanbanBoard(props: { cars: Task[]; projectId: string }) {
           <BoardColumn
             key={col.id}
             column={col}
-            cars={carsInColumn}
+            cards={cardsInColumn}
             projectId={props.projectId}
           />
         );
@@ -179,14 +179,14 @@ export function KanbanBoard(props: { cars: Task[]; projectId: string }) {
     }
 
     if (data?.type === "Task") {
-      setActiveCar(data.car);
+      setActiveCard(data.card);
       return;
     }
   };
 
   const onDragEnd = async (event: DragEndEvent) => {
     setActiveColumn(null);
-    setActiveCar(null);
+    setActiveCard(null);
 
     const { active, over } = event;
     if (!over) return;
@@ -213,13 +213,13 @@ export function KanbanBoard(props: { cars: Task[]; projectId: string }) {
       const newColumnId = hasDraggableData(over)
         ? over.data.current?.type === "Column"
           ? (over.id as ColumnId)
-          : over.data.current?.car.columnId
+          : over.data.current?.card.columnId
         : (over.id as ColumnId);
 
-      const oldColumnId = activeData.car.columnId;
+      const oldColumnId = activeData.card.columnId;
 
       if (oldColumnId !== newColumnId) {
-        setCars((cars) => {
+        setCards((cars) => {
           return cars.map((car) =>
             car.id === activeId && newColumnId
               ? { ...car, columnId: newColumnId }
@@ -250,7 +250,7 @@ export function KanbanBoard(props: { cars: Task[]; projectId: string }) {
     if (!isActiveACar) return;
 
     if (isActiveACar && isOverACar) {
-      setCars((cars) => {
+      setCards((cars) => {
         const activeIndex = cars.findIndex((car) => car.id === activeId);
         const overIndex = cars.findIndex((car) => car.id === overId);
         const activeCar = cars[activeIndex];
@@ -276,7 +276,7 @@ export function KanbanBoard(props: { cars: Task[]; projectId: string }) {
     const isOverAColumn = overData?.type === "Column";
 
     if (isActiveACar && isOverAColumn) {
-      setCars((cars) => {
+      setCards((cars) => {
         const activeIndex = cars.findIndex((car) => car.id === activeId);
         const activeCar = cars[activeIndex];
         if (activeCar) {
@@ -314,11 +314,11 @@ export function KanbanBoard(props: { cars: Task[]; projectId: string }) {
               <BoardColumn
                 projectId={props.projectId}
                 column={activeColumn}
-                cars={cars.filter((car) => car.columnId === activeColumn.id)}
+                cards={cards.filter((car) => car.columnId === activeColumn.id)}
                 isOverlay
               />
             )}
-            {activeCar && <TaskCard task={activeCar} isOverlay />}
+            {activeCard && <TaskCard task={activeCard} isOverlay />}
           </DragOverlay>,
           document.body
         )}

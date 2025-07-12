@@ -78,7 +78,7 @@ export default function ProjectEdit() {
         Create and manage Roles for your applications. Roles contain collections
         of Permissions and can be assigned to Users.
       </p>
-      <KanbanBoard cars={project.tasks || []} projectId={projectId!} />
+      <KanbanBoard cards={project.tasks || []} projectId={projectId!} />
     </div>
   );
 }
