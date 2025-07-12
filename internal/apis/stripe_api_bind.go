@@ -9,9 +9,10 @@ import (
 )
 
 func BindStripeApi(api huma.API, appApi *Api) {
-	teamInfoMiddleware := middleware.TeamInfoFromParam(api, appApi.App())
-	selectCustomerFromUserMiddleware := middleware.SelectCustomerFromUserMiddleware(api, appApi.App())
-	selectCustomerFromTeamMiddleware := middleware.SelectCustomerFromTeamMiddleware(api, appApi.App())
+	selectCustomerFromUser := middleware.SelectCustomerFromUser(api, appApi.App())
+	selectCustomerFromTeam := middleware.SelectCustomerFromTeam(api, appApi.App())
+	selectOrCreateOwnerCustomerFromTeam := middleware.SelectOrCreateOwnerCustomerFromTeam(api, appApi.App())
+	teamInfoFromParam := middleware.TeamInfoFromParam(api, appApi.App())
 	stripeGroup := huma.NewGroup(api)
 
 	// stripe webhook
@@ -75,7 +76,7 @@ func BindStripeApi(api huma.API, appApi *Api) {
 				shared.BearerAuthSecurityKey: {},
 			}},
 			Middlewares: huma.Middlewares{
-				selectCustomerFromUserMiddleware,
+				selectCustomerFromUser,
 			},
 		},
 		appApi.GetStripeSubscriptions,
@@ -93,7 +94,7 @@ func BindStripeApi(api huma.API, appApi *Api) {
 			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
 			Security:    []map[string][]string{{shared.BearerAuthSecurityKey: {}}},
 			Middlewares: huma.Middlewares{
-				selectCustomerFromUserMiddleware,
+				selectCustomerFromUser,
 			},
 		},
 		appApi.StripeBillingPortal,
@@ -111,7 +112,7 @@ func BindStripeApi(api huma.API, appApi *Api) {
 			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
 			Security:    []map[string][]string{{shared.BearerAuthSecurityKey: {}}},
 			Middlewares: huma.Middlewares{
-				selectCustomerFromUserMiddleware,
+				selectCustomerFromUser,
 			},
 		},
 		appApi.CreateUserCheckoutSession,
@@ -131,11 +132,30 @@ func BindStripeApi(api huma.API, appApi *Api) {
 				shared.BearerAuthSecurityKey: {},
 			}},
 			Middlewares: huma.Middlewares{
-				teamInfoMiddleware,
-				selectCustomerFromTeamMiddleware,
+				teamInfoFromParam,
+				selectCustomerFromTeam,
 			},
 		},
 		appApi.GetTeamStripeSubscriptions,
+	)
+	//  stripe checkout session team create
+	huma.Register(
+		stripeGroup,
+		huma.Operation{
+			OperationID: "create-team-checkout-session",
+			Method:      http.MethodPost,
+			Path:        "/teams/{team-id}/subscriptions/checkout-session",
+			Summary:     "create checkout session",
+			Description: "user create checkout session",
+			Tags:        []string{"Subscriptions", "Checkout Session"},
+			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
+			Security:    []map[string][]string{{shared.BearerAuthSecurityKey: {}}},
+			Middlewares: huma.Middlewares{
+				teamInfoFromParam,
+				selectOrCreateOwnerCustomerFromTeam,
+			},
+		},
+		appApi.CreateTeamCheckoutSession,
 	)
 	// stripe billing portal
 	huma.Register(
@@ -150,29 +170,11 @@ func BindStripeApi(api huma.API, appApi *Api) {
 			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
 			Security:    []map[string][]string{{shared.BearerAuthSecurityKey: {}}},
 			Middlewares: huma.Middlewares{
-				teamInfoMiddleware,
-				selectCustomerFromTeamMiddleware,
+				teamInfoFromParam,
+				selectOrCreateOwnerCustomerFromTeam,
 			},
 		},
 		appApi.StripeTeamBillingPortal,
 	)
-	//  stripe checkout session
-	huma.Register(
-		stripeGroup,
-		huma.Operation{
-			OperationID: "create-checkout-session-team",
-			Method:      http.MethodPost,
-			Path:        "/teams/{team-id}/subscriptions/checkout-session",
-			Summary:     "create team checkout session",
-			Description: "user create checkout session",
-			Tags:        []string{"Subscriptions", "Checkout Session", "Team"},
-			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
-			Security:    []map[string][]string{{shared.BearerAuthSecurityKey: {}}},
-			Middlewares: huma.Middlewares{
-				teamInfoMiddleware,
-				selectCustomerFromTeamMiddleware,
-			},
-		},
-		appApi.CreateTeamCheckoutSession,
-	)
+
 }
