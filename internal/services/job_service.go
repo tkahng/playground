@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/tkahng/authgo/internal/database"
@@ -11,6 +12,8 @@ import (
 
 type JobService interface {
 	WithTx(db database.Dbx) JobService
+	EnqueTaskDueJob(ctx context.Context, job *workers.TaskDueTodayJobArgs) error
+	EnqueAssignedToTaskJob(ctx context.Context, job *workers.AssignedToTasJobArgs) error
 	EnqueueTeamMemberAddedJob(ctx context.Context, job *workers.NewMemberNotificationJobArgs) error
 	EnqueueRefreshSubscriptionQuantityJob(ctx context.Context, job *workers.RefreshSubscriptionQuantityJobArgs) error
 	EnqueueOtpMailJob(ctx context.Context, args *workers.OtpEmailJobArgs) error
@@ -20,6 +23,24 @@ type JobService interface {
 
 type DbJobService struct {
 	manager jobs.JobManager
+}
+
+// EnqueTaskDueJob implements JobService.
+func (d *DbJobService) EnqueTaskDueJob(ctx context.Context, job *workers.TaskDueTodayJobArgs) error {
+	return d.manager.Enqueue(ctx, &jobs.EnqueueParams{
+		Args:        job,
+		RunAfter:    job.DueDate,
+		MaxAttempts: 3,
+	})
+}
+
+// EnqueAssignedToTaskJob implements JobService.
+func (d *DbJobService) EnqueAssignedToTaskJob(ctx context.Context, job *workers.AssignedToTasJobArgs) error {
+	return d.manager.Enqueue(ctx, &jobs.EnqueueParams{
+		Args:        job,
+		RunAfter:    time.Now(),
+		MaxAttempts: 3,
+	})
 }
 
 // EnqueueRefreshSubscriptionQuantityJob implements JobService.
@@ -87,6 +108,30 @@ type JobServiceDecorator struct {
 	EnqueueTeamMemberAddedJobFunc             func(ctx context.Context, job *workers.NewMemberNotificationJobArgs) error
 	WithTxFunc                                func(db database.Dbx) JobService
 	EnqueueRefreshSubscriptionQuantityJobFunc func(ctx context.Context, job *workers.RefreshSubscriptionQuantityJobArgs) error
+	EnqueAssignedToTaskJobFunc                func(ctx context.Context, job *workers.AssignedToTasJobArgs) error
+	EnqueTaskDueJobFunc                       func(ctx context.Context, job *workers.TaskDueTodayJobArgs) error
+}
+
+// EnqueTaskDueJob implements JobService.
+func (j *JobServiceDecorator) EnqueTaskDueJob(ctx context.Context, job *workers.TaskDueTodayJobArgs) error {
+	if j.EnqueTaskDueJobFunc != nil {
+		return j.EnqueTaskDueJobFunc(ctx, job)
+	}
+	if j.Delegate == nil {
+		return errors.New("delegate for EnqueTaskDueJob in JobService is nil")
+	}
+	return j.Delegate.EnqueTaskDueJob(ctx, job)
+}
+
+// EnqueAssignedToTaskJob implements JobService.
+func (j *JobServiceDecorator) EnqueAssignedToTaskJob(ctx context.Context, job *workers.AssignedToTasJobArgs) error {
+	if j.EnqueAssignedToTaskJobFunc != nil {
+		return j.EnqueAssignedToTaskJobFunc(ctx, job)
+	}
+	if j.Delegate == nil {
+		return errors.New("delegate for EnqueAssignedToTaskJob in JobService is nil")
+	}
+	return j.Delegate.EnqueAssignedToTaskJob(ctx, job)
 }
 
 // EnqueueRefreshSubscriptionQuantityJob implements JobService.
