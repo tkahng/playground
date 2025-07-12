@@ -3,6 +3,7 @@ import { LinkDto } from "@/components/links";
 import NexusAILogo from "@/components/nexus-logo";
 import { cn } from "@/lib/utils";
 import { Link, useLocation } from "react-router";
+import { NotificationDropdown } from "./notification-dropdown";
 import TeamNotification from "./team-notification";
 import TeamSwitcher from "./team-switcher";
 
@@ -63,6 +64,7 @@ export function TeamHeader({
                 </Link>
               ))
             : null}
+          <NotificationDropdown />
           <AuthButton />
         </div>
       </nav>

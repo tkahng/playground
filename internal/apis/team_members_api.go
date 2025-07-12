@@ -129,6 +129,7 @@ func FromModelNotification(notification *models.Notification) *Notification {
 	}
 }
 func (api *Api) BindFindTeamMembersNotifications(aapi huma.API) {
+	teamInfoFromMember := middleware.TeamInfoFromTeamMemberID(aapi, api.app)
 	huma.Register(
 		aapi,
 		huma.Operation{
@@ -142,12 +143,14 @@ func (api *Api) BindFindTeamMembersNotifications(aapi huma.API) {
 			Security: []map[string][]string{{
 				shared.BearerAuthSecurityKey: {},
 			}},
-			Middlewares: huma.Middlewares{},
+			Middlewares: huma.Middlewares{
+				teamInfoFromMember,
+			},
 		},
 		func(ctx context.Context, input *TeamMembersNotificationsInput) (*ApiPaginatedOutput[*Notification], error) {
 			teamInfo := contextstore.GetContextTeamInfo(ctx)
 			if teamInfo == nil {
-				return nil, huma.Error401Unauthorized("unauthorized")
+				return nil, huma.Error401Unauthorized("no team info")
 			}
 			filter := &stores.NotificationFilter{
 				TeamMemberIds: []uuid.UUID{

@@ -1682,3 +1682,61 @@ export const adminJobQueries = {
     return true;
   },
 };
+
+export const teamQueries = {
+  getTeamMemberNotifications: async (
+    token: string,
+    teamMemberId: string,
+    page = 0,
+    perPage = 10
+  ) => {
+    const { data, error } = await client.GET(
+      "/api/team-members/{team-member-id}/notifications",
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        params: {
+          path: {
+            "team-member-id": teamMemberId,
+          },
+          query: {
+            page,
+            per_page: perPage,
+            sort_by: "created_at",
+            sort_order: "desc",
+          },
+        },
+      }
+    );
+    if (error) {
+      throw error;
+    }
+    return data;
+  },
+
+  readTeamMemberNotification: async (
+    token: string,
+    teamMemberId: string,
+    notiticationId: string
+  ) => {
+    const { error } = await client.POST(
+      "/api/team-members/{team-member-id}/notifications/{notification-id}/read",
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        params: {
+          path: {
+            "team-member-id": teamMemberId,
+            "notification-id": notiticationId,
+          },
+        },
+      }
+    );
+    if (error) {
+      throw error;
+    }
+    return true;
+  },
+};

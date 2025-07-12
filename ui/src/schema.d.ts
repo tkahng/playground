@@ -1205,6 +1205,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/team-members/{team-member-id}/notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * find-team-members-notifications
+         * @description find team members notifications
+         */
+        get: operations["find-team-members-notifications"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/team-members/{team-member-id}/notifications/sse": {
         parameters: {
             query?: never;
@@ -1219,6 +1239,26 @@ export interface paths {
         get: operations["team-members-sse-team-member-notifications"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/team-members/{team-member-id}/notifications/{notification-id}/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * read-team-members-notifications
+         * @description read team members notifications
+         */
+        post: operations["read-team-members-notifications"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1431,10 +1471,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * create team checkout session
+         * create checkout session
          * @description user create checkout session
          */
-        post: operations["create-checkout-session-team"];
+        post: operations["create-team-checkout-session"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1523,6 +1563,15 @@ export interface components {
              */
             readonly $schema?: string;
             data: components["schemas"]["Media"][] | null;
+            meta: components["schemas"]["Meta"];
+        };
+        ApiPaginatedResponseNotification: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            data: components["schemas"]["Notification"][] | null;
             meta: components["schemas"]["Meta"];
         };
         ApiPaginatedResponsePermission: {
@@ -1851,6 +1900,27 @@ export interface components {
             email: string;
             team_id: string;
             team_member_id: string;
+        };
+        Notification: {
+            channel: string;
+            /** Format: date-time */
+            created_at: string;
+            id: string;
+            metadata: {
+                [key: string]: unknown;
+            };
+            payload: string;
+            /** Format: date-time */
+            read_at?: string;
+            team?: components["schemas"]["Team"];
+            team_id?: string;
+            team_member?: components["schemas"]["TeamMember"];
+            team_member_id?: string;
+            type: string;
+            /** Format: date-time */
+            updated_at: string;
+            user?: components["schemas"]["ApiUser"];
+            user_id?: string;
         };
         NotificationContent: {
             body: string;
@@ -6471,6 +6541,60 @@ export interface operations {
             };
         };
     };
+    "find-team-members-notifications": {
+        parameters: {
+            query?: {
+                page?: number;
+                per_page?: number;
+                sort_by?: string;
+                sort_order?: "asc" | "desc";
+            };
+            header?: never;
+            path: {
+                "team-member-id": string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiPaginatedResponseNotification"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
     "team-members-sse-team-member-notifications": {
         parameters: {
             query?: {
@@ -6491,17 +6615,6 @@ export interface operations {
                 };
                 content: {
                     "text/event-stream": ({
-                        data: components["schemas"]["PingMessage"];
-                        /**
-                         * @description The event name.
-                         * @constant
-                         */
-                        event: "ping";
-                        /** @description The event ID. */
-                        id?: number;
-                        /** @description The retry time in milliseconds. */
-                        retry?: number;
-                    } | {
                         data: components["schemas"]["NotificationPayloadNewTeamMemberNotificationData"];
                         /**
                          * @description The event name.
@@ -6512,8 +6625,67 @@ export interface operations {
                         id?: number;
                         /** @description The retry time in milliseconds. */
                         retry?: number;
+                    } | {
+                        data: components["schemas"]["PingMessage"];
+                        /**
+                         * @description The event name.
+                         * @constant
+                         */
+                        event: "ping";
+                        /** @description The event ID. */
+                        id?: number;
+                        /** @description The retry time in milliseconds. */
+                        retry?: number;
                     })[];
                 };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "read-team-members-notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                "notification-id": string;
+                "team-member-id": string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Bad Request */
             400: {
@@ -7203,7 +7375,7 @@ export interface operations {
             };
         };
     };
-    "create-checkout-session-team": {
+    "create-team-checkout-session": {
         parameters: {
             query?: never;
             header?: never;
