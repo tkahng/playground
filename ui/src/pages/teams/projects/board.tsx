@@ -28,7 +28,6 @@ import {
   KanbanBoardCardButton,
   KanbanBoardCardButtonGroup,
   KanbanBoardCardDescription,
-  KanbanBoardCardTextarea,
   KanbanBoardColumn,
   KanbanBoardColumnButton,
   kanbanBoardColumnClassNames,
@@ -50,6 +49,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
+import { ConfirmDialog, useDialog } from "@/hooks/use-dialog";
 import { useJsLoaded } from "@/hooks/use-js-loaded";
 import { useProjectTasks } from "@/hooks/use-project-tasks";
 import { groupItems } from "@/lib/array";
@@ -57,6 +57,7 @@ import { GetError } from "@/lib/get-error";
 import { TaskStatus, TeamMember } from "@/schema.types";
 import { toast } from "sonner";
 import { CreateProjectTaskDialog2 } from "./tasks/create-project-task-dialog copy";
+import { EditProjectTaskDialog } from "./tasks/edit-project-task-dialog";
 
 // Types
 type Card = {
@@ -659,7 +660,6 @@ function MyKanbanBoardCard({
   onCardBlur,
   onCardKeyDown,
   onDeleteCard,
-  onUpdateCardTitle,
 }: {
   card: Card;
   isActive: boolean;
@@ -678,7 +678,7 @@ function MyKanbanBoardCard({
   const previousIsActiveReference = useRef(isActive);
   // This ref tracks if the card was cancelled via Escape.
   const wasCancelledReference = useRef(false);
-
+  const editDialog = useDialog();
   useEffect(() => {
     // Maintain focus after the card is picked up and moved.
     if (isActive && !isEditingTitle) {
@@ -706,53 +706,58 @@ function MyKanbanBoardCard({
     kanbanBoardCardReference.current?.focus();
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const formData = new FormData(event.currentTarget);
-    const cardTitle = formData.get("cardTitle") as string;
-    onUpdateCardTitle(card.id, cardTitle);
-    handleBlur();
-  }
+  // function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  //   event.preventDefault();
+  //   const formData = new FormData(event.currentTarget);
+  //   const cardTitle = formData.get("cardTitle") as string;
+  //   onUpdateCardTitle(card.id, cardTitle);
+  //   handleBlur();
+  // }
 
-  return isEditingTitle ? (
-    <form onBlur={handleBlur} onSubmit={handleSubmit}>
-      <KanbanBoardCardTextarea
-        aria-label="Edit card title"
-        autoFocus
-        defaultValue={card.name}
-        name="cardTitle"
-        onFocus={(event) => event.target.select()}
-        onInput={(event) => {
-          const input = event.currentTarget as HTMLTextAreaElement;
-          if (/\S/.test(input.value)) {
-            // Clear the error message if input is valid
-            input.setCustomValidity("");
-          } else {
-            input.setCustomValidity(
-              "Card content cannot be empty or just whitespace."
-            );
-          }
-        }}
-        onKeyDown={(event) => {
-          if (event.key === "Enter" && !event.shiftKey) {
-            event.preventDefault();
-            event.currentTarget.form?.requestSubmit();
-          }
+  // return isEditingTitle ? (
+  //   <form onBlur={handleBlur} onSubmit={handleSubmit}>
+  //     <KanbanBoardCardTextarea
+  //       aria-label="Edit card title"
+  //       autoFocus
+  //       defaultValue={card.name}
+  //       name="cardTitle"
+  //       onFocus={(event) => event.target.select()}
+  //       onInput={(event) => {
+  //         const input = event.currentTarget as HTMLTextAreaElement;
+  //         if (/\S/.test(input.value)) {
+  //           // Clear the error message if input is valid
+  //           input.setCustomValidity("");
+  //         } else {
+  //           input.setCustomValidity(
+  //             "Card content cannot be empty or just whitespace."
+  //           );
+  //         }
+  //       }}
+  //       onKeyDown={(event) => {
+  //         if (event.key === "Enter" && !event.shiftKey) {
+  //           event.preventDefault();
+  //           event.currentTarget.form?.requestSubmit();
+  //         }
 
-          if (event.key === "Escape") {
-            handleBlur();
-          }
-        }}
-        placeholder="Edit card title ..."
-        required
-      />
-    </form>
-  ) : (
+  //         if (event.key === "Escape") {
+  //           handleBlur();
+  //         }
+  //       }}
+  //       placeholder="Edit card title ..."
+  //       required
+  //     />
+  //   </form>
+  // ) : (
+  return (
     <KanbanBoardCard
       data={card}
       isActive={isActive}
       onBlur={onCardBlur}
-      onClick={() => setIsEditingTitle(true)}
+      onClick={() => {
+        editDialog.props.onOpenChange(true);
+        setIsEditingTitle(true);
+        handleBlur();
+      }}
       onKeyDown={(event) => {
         if (event.key === " ") {
           // Prevent the button "click" action on space because that should
@@ -781,8 +786,16 @@ function MyKanbanBoardCard({
           <span className="sr-only">Delete card</span>
         </KanbanBoardCardButton>
       </KanbanBoardCardButtonGroup>
+      <ConfirmDialog dialogProps={editDialog.props}>
+        <EditProjectTaskDialog
+          dialog={editDialog.props}
+          trigger={editDialog.trigger}
+          task={card}
+        />
+      </ConfirmDialog>
     </KanbanBoardCard>
   );
+  // );
 }
 
 function MyNewKanbanBoardCard({

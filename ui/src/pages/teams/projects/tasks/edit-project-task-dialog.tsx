@@ -112,11 +112,6 @@ export function EditProjectTaskDialog({
     mutation.mutate(values);
   };
   return (
-    // <Dialog open={dialog.open} onOpenChange={dialog.onOpenChange}>
-    //   <DialogTrigger asChild>
-    //     <Button variant="outline">Add Task to Project</Button>
-    //   </DialogTrigger>
-    //   <DialogContent className="sm:max-w-[425px]">
     <>
       <DialogHeader>
         <DialogTitle>Add Task to Project</DialogTitle>
@@ -186,7 +181,5 @@ export function EditProjectTaskDialog({
         </form>
       </Form>
     </>
-    //   </DialogContent>
-    // </Dialog>
   );
 }
