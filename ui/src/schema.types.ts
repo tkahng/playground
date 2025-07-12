@@ -56,8 +56,6 @@ export type UserPermissions = components["schemas"]["PermissionSource"];
 
 export type ErrorModel = components["schemas"]["ErrorModel"];
 
-export type TaskStatus = components["schemas"]["Task"]["status"];
-
 export type UserWithAccounts = components["schemas"]["UserWithAccounts"];
 
 export type TeamMember = components["schemas"]["TeamMember"];
@@ -80,3 +78,5 @@ export type TaskCreateParams =
   operations["task-project-tasks-create"]["requestBody"]["content"]["application/json"];
 
 export type Task = components["schemas"]["Task"];
+
+export type TaskStatus = components["schemas"]["Task"]["status"];
