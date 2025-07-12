@@ -117,11 +117,13 @@ func (api *Api) TeamTaskList(ctx context.Context, input *TeamTaskListParams) (*T
 	newInput.Statuses = input.Status
 	newInput.TeamIds = []uuid.UUID{teamInfo.Team.ID}
 	newInput.ProjectIds = utils.ParseValidUUIDs(input.ProjectID)
-	parentID, err := uuid.Parse(input.ParentID)
-	if err != nil && input.ParentID != "" {
-		return nil, huma.Error400BadRequest("Invalid parent ID format", err)
+	if input.ParentID != "" {
+		parentID, err := uuid.Parse(input.ParentID)
+		if err != nil {
+			return nil, huma.Error400BadRequest("Invalid parent ID format", err)
+		}
+		newInput.ParentIds = []uuid.UUID{parentID}
 	}
-	newInput.ParentIds = []uuid.UUID{parentID}
 
 	tasks, err := api.App().Adapter().Task().ListTasks(ctx, newInput)
 	if err != nil {

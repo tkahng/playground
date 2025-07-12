@@ -1014,7 +1014,6 @@ export const taskList = async (
         path: {
           "task-project-id": taskProjectId,
         },
-
         query: args,
       },
     }

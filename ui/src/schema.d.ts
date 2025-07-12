@@ -1245,6 +1245,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/team-members/{team-member-id}/notifications/{notification-id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * delete-team-members-notifications
+         * @description delete team members notifications
+         */
+        delete: operations["delete-team-members-notifications"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/team-members/{team-member-id}/notifications/{notification-id}/read": {
         parameters: {
             query?: never;
@@ -1705,6 +1725,11 @@ export interface components {
             tokens: components["schemas"]["TokenDto"];
             user: components["schemas"]["ApiUser"];
         };
+        AssignedToTaskNotificationData: {
+            assigned_by_member_id: string;
+            assignee_member_id: string;
+            task_id: string;
+        };
         "Check-team-slugRequest": {
             /**
              * Format: uri
@@ -1925,6 +1950,10 @@ export interface components {
         NotificationContent: {
             body: string;
             title: string;
+        };
+        NotificationPayloadAssignedToTaskNotificationData: {
+            data: components["schemas"]["AssignedToTaskNotificationData"];
+            notification: components["schemas"]["NotificationContent"];
         };
         NotificationPayloadNewTeamMemberNotificationData: {
             data: components["schemas"]["NewTeamMemberNotificationData"];
@@ -2245,17 +2274,27 @@ export interface components {
              * @description A URL to the JSON Schema for this object.
              */
             readonly $schema?: string;
+            assignee_id: string | null;
+            created_by_member_id: string | null;
             description?: string;
+            /** Format: date-time */
+            end_at: string | null;
             name: string;
+            parent_id: string | null;
             /** Format: int64 */
             position?: number;
+            project_id: string;
             /** Format: double */
             rank?: number;
+            reporter_id: string | null;
+            /** Format: date-time */
+            start_at: string | null;
             /**
              * @default todo
              * @enum {string}
              */
             status: "todo" | "in_progress" | "done";
+            team_id: string;
         };
         TaskPositionStatusDTO: {
             /**
@@ -6626,6 +6665,17 @@ export interface operations {
                         /** @description The retry time in milliseconds. */
                         retry?: number;
                     } | {
+                        data: components["schemas"]["NotificationPayloadAssignedToTaskNotificationData"];
+                        /**
+                         * @description The event name.
+                         * @constant
+                         */
+                        event: "assigned_to_task";
+                        /** @description The event ID. */
+                        id?: number;
+                        /** @description The retry time in milliseconds. */
+                        retry?: number;
+                    } | {
                         data: components["schemas"]["PingMessage"];
                         /**
                          * @description The event name.
@@ -6638,6 +6688,54 @@ export interface operations {
                         retry?: number;
                     })[];
                 };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "delete-team-members-notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                "notification-id": string;
+                "team-member-id": string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Bad Request */
             400: {

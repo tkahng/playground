@@ -50,6 +50,11 @@ func (s *taskService) CreateTask(ctx context.Context, teamID uuid.UUID, projectI
 		Description:       input.Description,
 		Status:            models.TaskStatus(input.Status),
 		Rank:              input.Rank,
+		AssigneeID:        input.AssigneeID,
+		ReporterID:        input.ReporterID,
+		StartAt:           input.StartAt,
+		EndAt:             input.EndAt,
+		ParentID:          input.ParentID,
 	}
 	task, err := s.adapter.Task().CreateTask(ctx, &setter)
 	if err != nil {
