@@ -916,7 +916,29 @@ export const taskProjectList = async (
   }
   return data;
 };
-
+export const taskQueries = {
+  updateTask: async (
+    token: string,
+    taskId: string,
+    body: components["schemas"]["UpdateTaskDto"]
+  ) => {
+    const { data, error } = await client.PUT(`/api/tasks/{task-id}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      params: {
+        path: {
+          "task-id": taskId,
+        },
+      },
+      body,
+    });
+    if (error) {
+      throw error;
+    }
+    return data;
+  },
+};
 export const taskProjectGet = async (token: string, id: string) => {
   const { data, error } = await client.GET(
     "/api/task-projects/{task-project-id}",

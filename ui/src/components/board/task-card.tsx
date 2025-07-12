@@ -1,6 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { ConfirmDialog, useDialog } from "@/hooks/use-dialog";
+import { taskQueries } from "@/lib/queries";
 import { cn } from "@/lib/utils";
 import { Task as DbTask } from "@/schema.types";
 import type { UniqueIdentifier } from "@dnd-kit/core";
@@ -19,11 +21,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@radix-ui/react-select";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { cva } from "class-variance-authority";
 import { format } from "date-fns";
 import { CalendarIcon, GripVertical } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { Form } from "react-router";
+import { toast } from "sonner";
 import { z } from "zod";
 import { Calendar } from "../ui/calendar";
 import {
@@ -67,7 +71,7 @@ export type CardDragData = {
 const formSchema = z.object({
   name: z.string().min(1),
   // name: string;
-  description: z.string().min(0).optional(),
+  description: z.string().min(0).nullable(),
   // description?: string;
   status: z.enum(["todo", "in_progress", "done"]),
   // status: "todo" | "in_progress" | "done";
@@ -92,6 +96,7 @@ const formSchema = z.object({
   team_id: z.string(),
 });
 export function TaskCard({ task, isOverlay }: TaskCardProps) {
+  const { user } = useAuthProvider();
   const {
     setNodeRef,
     attributes,
@@ -136,6 +141,7 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
   //     setOpen(true);
   //   }
   // };
+  const queryClient = useQueryClient();
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -153,8 +159,33 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
       team_id: task.task.team_id,
     },
   });
-  const onSubmit = (data: z.infer<typeof formSchema>) => {
-    console.log(data);
+  const mutation = useMutation({
+    mutationFn: async (values: z.infer<typeof formSchema>) => {
+      if (!user?.tokens.access_token) {
+        throw new Error("Missing access token");
+      }
+      await taskQueries.updateTask(user.tokens.access_token, task.task.id, {
+        ...values,
+        description: values.description || null,
+        assignee_id: values.assignee_id || null,
+        end_at: values.end_at || null,
+        parent_id: values.parent_id || null,
+        reporter_id: values.reporter_id || null,
+        start_at: values.start_at || null,
+      });
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["project-with-tasks", task.task.project_id],
+      });
+      toast.success("Task updated successfully");
+    },
+    onError: (error) => {
+      toast.error(`Failed to create task: ${error.message}`);
+    },
+  });
+  const onSubmit = (values: z.infer<typeof formSchema>) => {
+    mutation.mutate(values);
   };
   return (
     <Card
@@ -209,11 +240,16 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
                   <FormField
                     control={form.control}
                     name="description"
+                    defaultValue={task.task.description || ""}
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Description</FormLabel>
                         <FormControl>
-                          <Input {...field} placeholder="Task Description" />
+                          <Input
+                            {...field}
+                            value={field.value || ""}
+                            placeholder="Task Description"
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
