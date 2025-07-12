@@ -78,3 +78,5 @@ export type JobsParams = operations["admin-jobs-get"]["parameters"]["query"];
 
 export type TaskCreateParams =
   operations["task-project-tasks-create"]["requestBody"]["content"]["application/json"];
+
+export type Task = components["schemas"]["Task"];

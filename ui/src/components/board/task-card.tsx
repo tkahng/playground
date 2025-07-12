@@ -67,7 +67,19 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
       },
     },
   });
+  // const handlePointerDown = () => {
+  //   dragStartTime.current = Date.now();
+  // };
 
+  // const handlePointerUp = () => {
+  //   const now = Date.now();
+  //   const delta = now - (dragStartTime.current ?? now);
+
+  //   if (delta < 200) {
+  //     // Assume it's a click, not a drag
+  //     setOpen(true);
+  //   }
+  // };
   return (
     <Card
       ref={setNodeRef}
