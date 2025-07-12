@@ -235,3 +235,47 @@ func (api *Api) BindReadTeamMembersNotifications(aapi huma.API) {
 		},
 	)
 }
+
+func (api *Api) BindDeleteTeamMembersNotifications(aapi huma.API) {
+	teamMemberMiddleware := middleware.TeamInfoFromTeamMemberID(aapi, api.app)
+	huma.Register(
+		aapi,
+		huma.Operation{
+			OperationID: "delete-team-members-notifications",
+			Method:      http.MethodDelete,
+			Path:        "/team-members/{team-member-id}/notifications/{notification-id}",
+			Summary:     "delete-team-members-notifications",
+			Description: "delete team members notifications",
+			Tags:        []string{"Team Members"},
+			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+			Middlewares: huma.Middlewares{
+				teamMemberMiddleware,
+			},
+		},
+		func(ctx context.Context, input *ReadTeamMembersNotificationsInput) (*struct{}, error) {
+			teamInfo := contextstore.GetContextTeamInfo(ctx)
+			if teamInfo == nil {
+				return nil, huma.Error401Unauthorized("unauthorized")
+			}
+			notificationID, err := uuid.Parse(input.NotificationID)
+			if err != nil {
+				return nil, err
+			}
+			_, err = api.App().Adapter().Notification().DeleteNotifications(ctx, &stores.NotificationFilter{
+				Ids: []uuid.UUID{
+					notificationID,
+				},
+				TeamMemberIds: []uuid.UUID{
+					teamInfo.Member.ID,
+				},
+			})
+			if err != nil {
+				return nil, err
+			}
+			return nil, nil
+		},
+	)
+}

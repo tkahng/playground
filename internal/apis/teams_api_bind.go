@@ -348,4 +348,6 @@ func BindTeamsApi(api huma.API, appApi *Api) {
 	appApi.BindFindTeamMembersNotifications(teamsGroup)
 
 	appApi.BindReadTeamMembersNotifications(teamsGroup)
+
+	appApi.BindDeleteTeamMembersNotifications(teamsGroup)
 }
