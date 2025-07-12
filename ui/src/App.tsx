@@ -51,7 +51,6 @@ import AccountSettingsPage from "./pages/settings/general-settings";
 import TeamSelect from "./pages/teams";
 import TeamDashboard from "./pages/teams/dashboard";
 import ProjectEdit from "./pages/teams/projects/project-edit";
-import ProjectEditTest from "./pages/teams/projects/project-edit-test";
 import ProjectListPage from "./pages/teams/projects/projects-list";
 import TaskLayout from "./pages/teams/projects/task-layout";
 import TeamBillingSettingPage from "./pages/teams/settings/team-billing-settings";
@@ -78,10 +77,6 @@ function TeamRoutes() {
               <Route
                 path={`/teams/:teamSlug/projects/:projectId`}
                 element={<ProjectEdit />}
-              />
-              <Route
-                path={`/teams/:teamSlug/projects/:projectId/test`}
-                element={<ProjectEditTest />}
               />
             </Route>
           </Route>
