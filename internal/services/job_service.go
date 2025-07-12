@@ -27,8 +27,10 @@ type DbJobService struct {
 
 // EnqueTaskDueJob implements JobService.
 func (d *DbJobService) EnqueTaskDueJob(ctx context.Context, job *workers.TaskDueTodayJobArgs) error {
+	uniqueKey := "task_id:" + job.TaskID.String() + ":due_date"
 	return d.manager.Enqueue(ctx, &jobs.EnqueueParams{
 		Args:        job,
+		UniqueKey:   &uniqueKey,
 		RunAfter:    job.DueDate,
 		MaxAttempts: 3,
 	})
