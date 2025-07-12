@@ -21,6 +21,7 @@ export default function ProjectEdit() {
       return {
         ...data,
         tasks: data.tasks?.map((task) => ({
+          task: task,
           name: task.name,
           rank: task.rank,
           columnId: task.status as "todo" | "done" | "in_progress",
