@@ -49,7 +49,7 @@ type App interface {
 
 	Task() services.TaskService
 
-	NotificationPublisher() services.NotificationPublisher
+	NotificationPublisher() services.Notifier
 
 	SseManager() sse.Manager
 }

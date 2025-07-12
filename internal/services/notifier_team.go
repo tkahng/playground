@@ -12,11 +12,11 @@ import (
 	"github.com/tkahng/authgo/internal/tools/sse"
 )
 
-type NotificationPublisher interface {
+type Notifier interface {
 	NotifyMembersOfNewMember(ctx context.Context, teamMemberID uuid.UUID) error
 }
 
-type DbNotificationPublisher struct {
+type DbNotifier struct {
 	sseManager  sse.Manager
 	teamService TeamService
 	adapter     stores.StorageAdapterInterface
@@ -26,7 +26,7 @@ type DbNotificationPublisher struct {
 // 1. find team member with team and user.
 // 2. find all team members of the team.
 // 3. send notification to all team members except the team member.
-func (d *DbNotificationPublisher) NotifyMembersOfNewMember(ctx context.Context, teamMemberID uuid.UUID) error {
+func (d *DbNotifier) NotifyMembersOfNewMember(ctx context.Context, teamMemberID uuid.UUID) error {
 	// 1. find team member with team and user
 	newMember, err := d.teamService.FindTeamInfoByMemberID(ctx, teamMemberID)
 	if err != nil {
@@ -94,10 +94,10 @@ func (d *DbNotificationPublisher) NotifyMembersOfNewMember(ctx context.Context, 
 	return nil
 }
 
-var _ NotificationPublisher = (*DbNotificationPublisher)(nil)
+var _ Notifier = (*DbNotifier)(nil)
 
-func NewDbNotificationPublisher(sseManager sse.Manager, teamService TeamService, adapter stores.StorageAdapterInterface) *DbNotificationPublisher {
-	return &DbNotificationPublisher{
+func NewDbNotificationPublisher(sseManager sse.Manager, teamService TeamService, adapter stores.StorageAdapterInterface) *DbNotifier {
+	return &DbNotifier{
 		sseManager:  sseManager,
 		teamService: teamService,
 		adapter:     adapter,

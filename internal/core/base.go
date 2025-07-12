@@ -45,14 +45,14 @@ type BaseApp struct {
 	team           services.TeamService
 	teamInvitation services.TeamInvitationService
 
-	notifierPublisher services.NotificationPublisher
+	notifierPublisher services.Notifier
 	fs                filesystem.FileSystem
 
 	sseManager sse.Manager
 }
 
 // NotificationPublisher implements App.
-func (app *BaseApp) NotificationPublisher() services.NotificationPublisher {
+func (app *BaseApp) NotificationPublisher() services.Notifier {
 	if app.notifierPublisher == nil {
 		panic("notifier not initialized")
 	}

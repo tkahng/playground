@@ -95,11 +95,11 @@ type BaseAppDecorator struct {
 	LoggerFunc                func() *slog.Logger
 	BootstrapFunc             func() error
 	SseManagerFunc            func() sse.Manager
-	NotificationPublisherFunc func() services.NotificationPublisher
+	NotificationPublisherFunc func() services.Notifier
 }
 
 // NotificationPublisher implements App.
-func (b *BaseAppDecorator) NotificationPublisher() services.NotificationPublisher {
+func (b *BaseAppDecorator) NotificationPublisher() services.Notifier {
 	if b.NotificationPublisherFunc != nil {
 		return b.NotificationPublisherFunc()
 	}
