@@ -9,6 +9,7 @@ import { useMutation } from "@tanstack/react-query";
 
 import { useState } from "react";
 import { createSearchParams, useNavigate } from "react-router";
+import { toast } from "sonner";
 import { z } from "zod";
 
 interface Props {
@@ -45,6 +46,7 @@ export default function Pricing({ products, subscription }: Props) {
   const mutation = useMutation({
     mutationFn: async (values: z.infer<typeof formSchema>) => {
       if (!user) {
+        toast.error("Please login to checkout.");
         return navigate({
           pathname: "/signin",
           search: createSearchParams({
@@ -53,6 +55,7 @@ export default function Pricing({ products, subscription }: Props) {
         });
       }
       if (!team || teamMember?.role !== "owner") {
+        toast.error("You must be an owner to checkout.");
         return navigate({
           pathname: `/teams/${team?.slug}/settings/billing`,
         });

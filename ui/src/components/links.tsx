@@ -142,7 +142,9 @@ export const teamSettingLinks = (slug: string): LinkDto[] => [
   createTeamBillingSettingsLink(slug),
   createTeamMembersSettingsLink(slug),
 ];
-
+export const teamNotifications = (slug: string): LinkDto[] => [
+  createTeamNotificationsLink(slug),
+];
 export const createTeamDashboardLink = (slug: string) => {
   const path = `/teams/${slug}/dashboard`;
   return {

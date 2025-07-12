@@ -1,15 +1,12 @@
-import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { DataTable } from "@/components/data-table";
-import { teamSettingLinks } from "@/components/links";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { useTeam } from "@/hooks/use-team";
 import { teamQueries } from "@/lib/queries";
 import { useQuery } from "@tanstack/react-query";
 import { PaginationState, Updater } from "@tanstack/react-table";
+import { CheckCircle, Circle } from "lucide-react";
 import { useSearchParams } from "react-router";
-import { InviteTeamMemberDialog } from "./invite-team-member-dialog";
-import { TeamMemberActionDropdown } from "./team-member-action-dropdown";
-
+import { TeamNotificationActionDropdown } from "./team-notifications-action";
 export default function TeamNotifications() {
   const { user } = useAuthProvider();
   const { teamMember, team } = useTeam();
@@ -74,13 +71,10 @@ export default function TeamNotifications() {
   }
   return (
     <div className="flex">
-      <DashboardSidebar links={teamSettingLinks(team?.slug)} />
+      {/* <DashboardSidebar links={teamNotifications(team?.slug)} /> */}
       <div className="flex-1 space-y-6 p-12 w-full">
         <div className="flex items-center justify-between">
-          <p>
-            Manage your team's members. Invite team members to join your team.
-          </p>
-          <InviteTeamMemberDialog />
+          <p>Manage your notifications..</p>
         </div>
         <DataTable
           data={data.data || []}
@@ -90,8 +84,19 @@ export default function TeamNotifications() {
           paginationEnabled
           columns={[
             {
-              header: "ID",
-              accessorKey: "id",
+              header: "Read",
+              accessorKey: "read_at",
+              cell: ({ row }) => {
+                return (
+                  <div className="flex items-center justify-end">
+                    {row.original.read_at ? (
+                      <CheckCircle className="text-green-500" />
+                    ) : (
+                      <Circle className="text-gray-500" />
+                    )}
+                  </div>
+                );
+              },
             },
             {
               header: "Title",
@@ -106,7 +111,10 @@ export default function TeamNotifications() {
               cell: ({ row }) => {
                 return (
                   <div className="flex flex-row gap-2 justify-end">
-                    <TeamMemberActionDropdown memberId={row.original.id} />
+                    <TeamNotificationActionDropdown
+                      notificationId={row.original.id}
+                      read_at={row.original.read_at}
+                    />
                   </div>
                 );
               },
