@@ -18,6 +18,8 @@ func (j OtpEmailJobArgs) Kind() string {
 	return "otp_email"
 }
 
+type OtpEmailJobWorker jobs.Worker[OtpEmailJobArgs]
+
 type otpMailWorker struct {
 	mail OtpMailServiceInterface
 }
