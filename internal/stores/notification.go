@@ -22,10 +22,21 @@ type NotificationStore interface {
 	FindNotifications(ctx context.Context, args *NotificationFilter) ([]*models.Notification, error)
 	CountNotification(ctx context.Context, args *NotificationFilter) (int64, error)
 	UpdateNotification(ctx context.Context, notification *models.Notification) error
+	DeleteNotifications(ctx context.Context, args *NotificationFilter) (int64, error)
 }
 
 type DbNotificationStore struct {
 	db database.Dbx
+}
+
+// DeleteNotifications implements NotificationStore.
+func (s *DbNotificationStore) DeleteNotifications(ctx context.Context, args *NotificationFilter) (int64, error) {
+	where := s.filter(args)
+	return repository.Notification.Delete(
+		ctx,
+		s.db,
+		where,
+	)
 }
 
 // UpdateNotification implements NotificationStore.
@@ -167,6 +178,18 @@ type NotificationStoreDecorator struct {
 	FindNotificationFunc  func(ctx context.Context, args *NotificationFilter) (*models.Notification, error)
 	FindNotificationsFunc func(ctx context.Context, args *NotificationFilter) ([]*models.Notification, error)
 	UpdateFunc            func(ctx context.Context, notification *models.Notification) error
+	DeleteFunc            func(ctx context.Context, args *NotificationFilter) (int64, error)
+}
+
+// DeleteNotifications implements NotificationStore.
+func (n *NotificationStoreDecorator) DeleteNotifications(ctx context.Context, args *NotificationFilter) (int64, error) {
+	if n.DeleteFunc != nil {
+		return n.DeleteFunc(ctx, args)
+	}
+	if n.Delegate == nil {
+		return 0, errors.New("delegate is nil in DeleteNotifications")
+	}
+	return n.Delegate.DeleteNotifications(ctx, args)
 }
 
 func NewNotificationStoreDecorator(db database.Dbx) *NotificationStoreDecorator {
