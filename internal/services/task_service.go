@@ -12,11 +12,19 @@ import (
 )
 
 type TaskFields struct {
-	Name        string            `json:"name" required:"true"`
-	Description *string           `json:"description,omitempty" required:"false"`
-	Status      models.TaskStatus `json:"status" required:"false" enum:"todo,in_progress,done" default:"todo"`
-	Rank        float64           `json:"rank,omitempty" required:"false"`
-	Position    *int64            `json:"position,omitempty" required:"false"`
+	CreatedByMemberID *uuid.UUID        `db:"created_by_member_id" json:"created_by_member_id" nullable:"true"`
+	TeamID            uuid.UUID         `db:"team_id" json:"team_id"`
+	ProjectID         uuid.UUID         `db:"project_id" json:"project_id"`
+	Name              string            `json:"name" required:"true"`
+	Description       *string           `json:"description,omitempty" required:"false"`
+	Status            models.TaskStatus `json:"status" required:"false" enum:"todo,in_progress,done" default:"todo"`
+	StartAt           *time.Time        `db:"start_at" json:"start_at"  nullable:"true"`
+	EndAt             *time.Time        `db:"end_at" json:"end_at" nullable:"true"`
+	AssigneeID        *uuid.UUID        `db:"assignee_id" json:"assignee_id" nullable:"true"`
+	ReporterID        *uuid.UUID        `db:"reporter_id" json:"reporter_id" nullable:"true"`
+	Rank              float64           `json:"rank,omitempty" required:"false"`
+	Position          *int64            `json:"position,omitempty" required:"false"`
+	ParentID          *uuid.UUID        `db:"parent_id" json:"parent_id" nullable:"true"`
 }
 type TaskService interface {
 	CreateTask(ctx context.Context, teamID uuid.UUID, projectID uuid.UUID, createdByMemberID uuid.UUID, input *TaskFields) (*models.Task, error)

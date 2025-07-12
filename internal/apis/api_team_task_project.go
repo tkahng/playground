@@ -14,6 +14,7 @@ import (
 	"github.com/tkahng/authgo/internal/tools/ai/googleai"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 	"github.com/tkahng/authgo/internal/tools/utils"
+	"github.com/tkahng/authgo/internal/workers"
 )
 
 type TaskProject struct {
@@ -341,10 +342,18 @@ func (api *Api) TeamTaskProjectTasksCreate(ctx context.Context, input *ApiCreate
 		return nil, huma.Error400BadRequest("Invalid task project id")
 	}
 
-	// modelInput.CreatedByMemberID = payload
 	task, err := api.App().Task().CreateTask(ctx, teamInfo.Team.ID, parsedProjectID, teamInfo.Member.ID, &input.Body)
 	if err != nil {
 		return nil, err
+	}
+	if task.EndAt != nil {
+		err = api.App().JobService().EnqueTaskDueJob(ctx, &workers.TaskDueTodayJobArgs{
+			TaskID:  task.ID,
+			DueDate: *task.EndAt,
+		})
+		if err != nil {
+			return nil, huma.Error500InternalServerError("Failed to create task project update date job")
+		}
 	}
 	err = api.App().Adapter().Task().UpdateTaskProjectUpdateDate(ctx, parsedProjectID)
 	if err != nil {

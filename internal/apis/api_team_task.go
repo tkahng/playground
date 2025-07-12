@@ -11,6 +11,7 @@ import (
 	"github.com/tkahng/authgo/internal/stores"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 	"github.com/tkahng/authgo/internal/tools/utils"
+	"github.com/tkahng/authgo/internal/workers"
 )
 
 type Task struct {
@@ -143,12 +144,41 @@ type TaskResponse struct {
 }
 
 func (api *Api) TaskUpdate(ctx context.Context, input *UpdateTaskInput) (*struct{}, error) {
-
+	teamInfo := contextstore.GetContextTeamInfo(ctx)
+	if teamInfo == nil {
+		return nil, huma.Error401Unauthorized("Team not found")
+	}
 	id, err := uuid.Parse(input.TaskID)
 	if err != nil {
 		return nil, huma.Error400BadRequest("Invalid task ID")
 	}
-	err = api.App().Adapter().Task().FindAndUpdateTask(ctx, id, &input.Body)
+	task, err := api.App().Adapter().Task().FindTaskByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if task == nil {
+		return nil, huma.Error404NotFound("Task not found")
+	}
+	if task.AssigneeID == nil && input.Body.AssigneeID != nil {
+		err = api.App().JobService().EnqueAssignedToTaskJob(ctx, &workers.AssignedToTasJobArgs{
+			TaskID:              task.ID,
+			AssignedByMemeberID: teamInfo.Member.ID,
+			AssigneeMemberID:    *input.Body.AssigneeID,
+		})
+		if err != nil {
+			return nil, err
+		}
+	}
+	task.Name = input.Body.Name
+	task.Description = input.Body.Description
+	task.Status = models.TaskStatus(input.Body.Status)
+	task.StartAt = input.Body.StartAt
+	task.EndAt = input.Body.EndAt
+	task.AssigneeID = input.Body.AssigneeID
+	task.ReporterID = input.Body.ReporterID
+	task.ParentID = input.Body.ParentID
+
+	err = api.App().Adapter().Task().UpdateTask(ctx, task)
 	if err != nil {
 		return nil, err
 	}
