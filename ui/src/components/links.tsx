@@ -134,6 +134,7 @@ export const teamLinks = (slug: string): LinkDto[] => [
   createTeamDashboardLink(slug),
   createTeamProjectsLink(slug),
   createTeamSettingsLink(slug),
+  createTeamNotificationsLink(slug),
 ];
 
 export const teamSettingLinks = (slug: string): LinkDto[] => [
@@ -164,6 +165,15 @@ export const createTeamSettingsLink = (slug: string) => {
   return {
     to: path,
     title: "Team Settings",
+    current: (pathname: string) => pathname.startsWith(path),
+  };
+};
+
+export const createTeamNotificationsLink = (slug: string) => {
+  const path = `/teams/${slug}/notifications`;
+  return {
+    to: path,
+    title: "Notifications",
     current: (pathname: string) => pathname.startsWith(path),
   };
 };

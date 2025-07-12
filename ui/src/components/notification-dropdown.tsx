@@ -10,12 +10,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
+import { useTeam } from "@/hooks/use-team";
 import { useTeamNotifications } from "@/hooks/use-team-notifications";
 import { Bell } from "lucide-react";
 import { Link } from "react-router";
 
 export function NotificationDropdown() {
   const { user } = useAuthProvider();
+  const { team } = useTeam();
   const { notifications, notificationsLoading, notificationsIsError } =
     useTeamNotifications();
   if (!user || notificationsLoading || notificationsIsError) {
@@ -51,6 +53,14 @@ export function NotificationDropdown() {
               </Link>
             </DropdownMenuItem>
           ))}
+        </DropdownMenuGroup>
+        <DropdownMenuSeparator />
+        <DropdownMenuGroup>
+          <DropdownMenuItem key={"go-to-notifications"}>
+            <Link to={`/team/${team?.slug}/notifications`} className="w-full">
+              View all
+            </Link>
+          </DropdownMenuItem>
         </DropdownMenuGroup>
       </DropdownMenuContent>
     </DropdownMenu>
