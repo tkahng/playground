@@ -10,6 +10,7 @@ import (
 	"github.com/tkahng/authgo/internal/services"
 	"github.com/tkahng/authgo/internal/stores"
 
+	"github.com/tkahng/authgo/internal/tools/di"
 	"github.com/tkahng/authgo/internal/tools/filesystem"
 	"github.com/tkahng/authgo/internal/tools/hook"
 	"github.com/tkahng/authgo/internal/tools/logger"
@@ -49,6 +50,16 @@ type BaseApp struct {
 	fs                filesystem.FileSystem
 
 	sseManager sse.Manager
+
+	container di.Container
+}
+
+// Container implements App.
+func (app *BaseApp) Container() di.Container {
+	if app.container == nil {
+		panic("container not initialized")
+	}
+	return app.container
 }
 
 // NotificationPublisher implements App.

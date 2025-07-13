@@ -8,6 +8,7 @@ import (
 	"github.com/tkahng/authgo/internal/jobs"
 	"github.com/tkahng/authgo/internal/services"
 	"github.com/tkahng/authgo/internal/stores"
+	"github.com/tkahng/authgo/internal/tools/di"
 	"github.com/tkahng/authgo/internal/tools/filesystem"
 	"github.com/tkahng/authgo/internal/tools/sse"
 )
@@ -52,4 +53,6 @@ type App interface {
 	NotificationPublisher() services.Notifier
 
 	SseManager() sse.Manager
+
+	Container() di.Container
 }

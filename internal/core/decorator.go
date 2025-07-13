@@ -9,6 +9,7 @@ import (
 	"github.com/tkahng/authgo/internal/jobs"
 	"github.com/tkahng/authgo/internal/services"
 	"github.com/tkahng/authgo/internal/stores"
+	"github.com/tkahng/authgo/internal/tools/di"
 	"github.com/tkahng/authgo/internal/tools/filesystem"
 	"github.com/tkahng/authgo/internal/tools/logger"
 	"github.com/tkahng/authgo/internal/tools/mailer"
@@ -96,6 +97,15 @@ type BaseAppDecorator struct {
 	BootstrapFunc             func() error
 	SseManagerFunc            func() sse.Manager
 	NotificationPublisherFunc func() services.Notifier
+	ContainerFunc             func() di.Container
+}
+
+// Container implements App.
+func (b *BaseAppDecorator) Container() di.Container {
+	if b.ContainerFunc != nil {
+		return b.ContainerFunc()
+	}
+	return b.app.Container()
 }
 
 // NotificationPublisher implements App.
