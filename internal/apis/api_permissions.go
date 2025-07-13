@@ -31,11 +31,11 @@ func (api *Api) PermissionsList(ctx context.Context, input *struct {
 	filter.SortBy = input.SortBy
 	filter.SortOrder = input.SortOrder
 
-	permissions, err := api.app.Adapter().Rbac().ListPermissions(ctx, filter)
+	permissions, err := api.App().Adapter().Rbac().ListPermissions(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
-	count, err := api.app.Adapter().Rbac().CountPermissions(ctx, filter)
+	count, err := api.App().Adapter().Rbac().CountPermissions(ctx, filter)
 	if err != nil {
 		return nil, err
 	}

@@ -4,10 +4,10 @@ import (
 	"context"
 	"log/slog"
 	"os"
+	"slices"
 	"sync"
 	"testing"
 
-	"github.com/matryer/is"
 	"github.com/tkahng/authgo/internal/test"
 )
 
@@ -20,16 +20,17 @@ import (
 
 func TestNotifier(t *testing.T) {
 	ctx, dbx := test.DbSetup()
-	expIs := is.New(t)
 	l := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	ctx, cancel := context.WithCancel(ctx)
 	wg := sync.WaitGroup{}
 	// pool, err := testPool("postgres://postgres:postgres@localhost:5432/authgo_test?sslmode=disable")
 	// expIs.NoErr(err)
 
-	li := NewListener(dbx.Pool())
+	li := NewListener(dbx)
 	err := li.Connect(ctx)
-	expIs.NoErr(err)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	n := NewNotifier(l, li)
 	wg.Add(1)
@@ -37,7 +38,7 @@ func TestNotifier(t *testing.T) {
 		n.Run(ctx)
 		wg.Done()
 	}()
-	sub := n.Listen("foo")
+	sub := n.Subscribe("foo")
 
 	conn, err := dbx.Pool().Acquire(ctx)
 	wg.Add(1)
@@ -50,7 +51,9 @@ func TestNotifier(t *testing.T) {
 		conn.Exec(ctx, "select pg_notify('foo', '5')")
 		wg.Done()
 	}()
-	expIs.NoErr(err)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	wg.Add(1)
 
@@ -69,7 +72,10 @@ func TestNotifier(t *testing.T) {
 	for r := range out {
 		msgs = append(msgs, r)
 	}
-	expIs.Equal(msgs, []string{"1", "2", "3", "4", "5"})
+	want := []string{"1", "2", "3", "4", "5"}
+	if !slices.Equal(msgs, want) {
+		t.Fatal("expected different order")
+	}
 
 	cancel()
 	sub.Unlisten(ctx) // uses background ctx anyway

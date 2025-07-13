@@ -132,6 +132,32 @@ func (r *PostgresRepository[Model]) GetOne(ctx context.Context, dbx database.Dbx
 }
 
 // Post inserts new records into the database
+func (r *PostgresRepository[Model]) PostExec(ctx context.Context, dbx database.Dbx, models []Model) (int64, error) {
+	args := []any{}
+	//goland:noinspection Annotator
+	query := fmt.Sprintf("INSERT INTO %s", r.builder.Table())
+	if fields, values, err := r.builder.ValuesError(&models, &args, nil); err != nil {
+		return 0, err
+	} else if fields != "" && values != "" {
+		query += fmt.Sprintf(" (%s) VALUES %s", fields, values)
+	}
+	// Execute the query and scan the results
+	// fmt.Println("query", query, "args", args)
+	result, err := database.Exec(
+		ctx,
+		dbx,
+		query,
+		args...,
+	)
+	if err != nil {
+		slog.ErrorContext(ctx, "Error executing Post query", slog.String("query", query), slog.Any("args", args), slog.Any("error", err))
+		return 0, err
+	}
+
+	return result, nil
+}
+
+// Post inserts new records into the database
 func (r *PostgresRepository[Model]) Post(ctx context.Context, dbx database.Dbx, models []Model) ([]*Model, error) {
 	args := []any{}
 	//goland:noinspection Annotator

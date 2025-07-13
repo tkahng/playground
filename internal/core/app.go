@@ -1,20 +1,38 @@
 package core
 
 import (
+	"log/slog"
+
 	"github.com/tkahng/authgo/internal/conf"
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/jobs"
 	"github.com/tkahng/authgo/internal/services"
 	"github.com/tkahng/authgo/internal/stores"
+	"github.com/tkahng/authgo/internal/tools/di"
 	"github.com/tkahng/authgo/internal/tools/filesystem"
+	"github.com/tkahng/authgo/internal/tools/sse"
 )
 
 type App interface {
-	Cfg() *conf.EnvConfig
+	Bootstrap() error
 
+	//  settings -------------------------------------------------------------------------------------
+	Config() *conf.EnvConfig
 	Settings() *conf.AppOptions
 
+	// store -------------------------------------------------------------------------------------
 	Db() database.Dbx
+	Adapter() stores.StorageAdapterInterface
+
+	// lifecycle
+	Lifecycle() Lifecycle
+	Logger() *slog.Logger
+
+	// jobs -------------------------------------------------------------------------------------
+
+	JobManager() jobs.JobManager
+
+	JobService() services.JobService
 
 	Fs() filesystem.FileSystem
 
@@ -32,9 +50,9 @@ type App interface {
 
 	Task() services.TaskService
 
-	Adapter() stores.StorageAdapterInterface
+	NotificationPublisher() services.Notifier
 
-	JobManager() jobs.JobManager
+	SseManager() sse.Manager
 
-	JobService() services.JobService
+	Container() di.Container
 }

@@ -1,18 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ConfirmDialog, useDialog } from "@/hooks/use-dialog";
+import { EditProjectTaskDialog } from "@/pages/teams/projects/tasks/edit-project-task-dialog";
+import { Task as DbTask } from "@/schema.types";
 import type { UniqueIdentifier } from "@dnd-kit/core";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { cva } from "class-variance-authority";
 import { GripVertical } from "lucide-react";
-import {
-  DialogClose,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "../ui/dialog";
 import { ColumnId } from "./kanban-board";
 
 export type Task = {
@@ -21,6 +16,7 @@ export type Task = {
   columnId: ColumnId;
   content: string | null;
   rank: number;
+  task: DbTask;
 };
 
 type TaskCardProps = {
@@ -32,9 +28,8 @@ export type CardType = "Task";
 
 export type CardDragData = {
   type: CardType;
-  car: Task;
+  card: Task;
 };
-
 export function TaskCard({ task, isOverlay }: TaskCardProps) {
   const {
     setNodeRef,
@@ -47,7 +42,7 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
     id: task.id,
     data: {
       type: "Task",
-      car: task,
+      card: task,
     } satisfies CardDragData,
     attributes: {
       roleDescription: "Task",
@@ -95,39 +90,12 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
           {/* {task.order} */}
         </div>
       </CardContent>
+
       <ConfirmDialog dialogProps={editDialog.props}>
-        <>
-          <DialogHeader>
-            <DialogTitle>Are you absolutely sure?</DialogTitle>
-          </DialogHeader>
-          {/* Dialog Content */}
-          <DialogDescription>This action cannot be undone.</DialogDescription>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  console.log("cancel");
-                  // editDialog.props.onOpenChange(false);
-                }}
-              >
-                Cancel
-              </Button>
-            </DialogClose>
-            <DialogClose asChild>
-              <Button
-                variant="destructive"
-                onClick={() => {
-                  console.log("delete");
-                  // editDialog.props.onOpenChange(false);
-                  // onDelete(permissionId);
-                }}
-              >
-                Delete
-              </Button>
-            </DialogClose>
-          </DialogFooter>
-        </>
+        <EditProjectTaskDialog
+          onFinish={() => editDialog.props.onOpenChange(false)}
+          task={task.task}
+        />
       </ConfirmDialog>
     </Card>
   );

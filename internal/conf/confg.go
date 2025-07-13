@@ -1,17 +1,9 @@
 package conf
 
 import (
-	"time"
-
 	"github.com/caarlos0/env/v11"
 	_ "github.com/joho/godotenv/autoload"
 )
-
-type Int64 int64
-
-func (i Int64) Duration() time.Duration {
-	return time.Duration(i) * time.Second
-}
 
 type JobsConfig struct {
 	PollerInterval int64 `env:"POLLER_INTERVAL" envDefault:"1"` // Default
@@ -88,6 +80,7 @@ func ZeroEnvConfig() EnvConfig {
 }
 
 type EnvConfig struct {
+	Options
 	Db DBConfig
 	JobsConfig
 	AppConfig
@@ -103,17 +96,6 @@ func (c *EnvConfig) ToSettings() *AppOptions {
 		Auth: NewTokenOptions(),
 		Meta: c.AppConfig,
 	}
-}
-
-type Config struct {
-	Meta    AppConfig
-	Db      DBConfig
-	OAuth   OAuth2Config
-	Resend  ResendConfig
-	Smtp    SmtpConfig
-	Stripe  StripeConfig
-	Storage StorageConfig
-	Ai      AiConfig
 }
 
 func AppConfigGetter() EnvConfig {

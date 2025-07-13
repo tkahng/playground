@@ -11,6 +11,7 @@ import (
 	"github.com/tkahng/authgo/internal/stores"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 	"github.com/tkahng/authgo/internal/tools/utils"
+	"github.com/tkahng/authgo/internal/workers"
 )
 
 type Task struct {
@@ -116,17 +117,19 @@ func (api *Api) TeamTaskList(ctx context.Context, input *TeamTaskListParams) (*T
 	newInput.Statuses = input.Status
 	newInput.TeamIds = []uuid.UUID{teamInfo.Team.ID}
 	newInput.ProjectIds = utils.ParseValidUUIDs(input.ProjectID)
-	parentID, err := uuid.Parse(input.ParentID)
-	if err != nil && input.ParentID != "" {
-		return nil, huma.Error400BadRequest("Invalid parent ID format", err)
+	if input.ParentID != "" {
+		parentID, err := uuid.Parse(input.ParentID)
+		if err != nil {
+			return nil, huma.Error400BadRequest("Invalid parent ID format", err)
+		}
+		newInput.ParentIds = []uuid.UUID{parentID}
 	}
-	newInput.ParentIds = []uuid.UUID{parentID}
 
-	tasks, err := api.app.Adapter().Task().ListTasks(ctx, newInput)
+	tasks, err := api.App().Adapter().Task().ListTasks(ctx, newInput)
 	if err != nil {
 		return nil, huma.Error500InternalServerError("error listing tasks", err)
 	}
-	total, err := api.app.Adapter().Task().CountTasks(ctx, newInput)
+	total, err := api.App().Adapter().Task().CountTasks(ctx, newInput)
 	if err != nil {
 		return nil, huma.Error500InternalServerError("error counting tasks", err)
 	}
@@ -143,12 +146,41 @@ type TaskResponse struct {
 }
 
 func (api *Api) TaskUpdate(ctx context.Context, input *UpdateTaskInput) (*struct{}, error) {
-
+	teamInfo := contextstore.GetContextTeamInfo(ctx)
+	if teamInfo == nil {
+		return nil, huma.Error401Unauthorized("Team not found")
+	}
 	id, err := uuid.Parse(input.TaskID)
 	if err != nil {
 		return nil, huma.Error400BadRequest("Invalid task ID")
 	}
-	err = api.app.Adapter().Task().FindAndUpdateTask(ctx, id, &input.Body)
+	task, err := api.App().Adapter().Task().FindTaskByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if task == nil {
+		return nil, huma.Error404NotFound("Task not found")
+	}
+	if task.AssigneeID == nil && input.Body.AssigneeID != nil {
+		err = api.App().JobService().EnqueAssignedToTaskJob(ctx, &workers.AssignedToTasJobArgs{
+			TaskID:              task.ID,
+			AssignedByMemeberID: teamInfo.Member.ID,
+			AssigneeMemberID:    *input.Body.AssigneeID,
+		})
+		if err != nil {
+			return nil, err
+		}
+	}
+	task.Name = input.Body.Name
+	task.Description = input.Body.Description
+	task.Status = models.TaskStatus(input.Body.Status)
+	task.StartAt = input.Body.StartAt
+	task.EndAt = input.Body.EndAt
+	task.AssigneeID = input.Body.AssigneeID
+	task.ReporterID = input.Body.ReporterID
+	task.ParentID = input.Body.ParentID
+
+	err = api.App().Adapter().Task().UpdateTask(ctx, task)
 	if err != nil {
 		return nil, err
 	}
@@ -164,7 +196,7 @@ func (api *Api) UpdateTaskPositionStatus(ctx context.Context, input *TaskPositio
 	if err != nil {
 		return nil, huma.Error400BadRequest("Invalid task ID")
 	}
-	err = api.app.Task().UpdateTaskRankStatus(ctx, id, input.Body.Position, models.TaskStatus(input.Body.Status))
+	err = api.App().Task().UpdateTaskRankStatus(ctx, id, input.Body.Position, models.TaskStatus(input.Body.Status))
 	if err != nil {
 		return nil, err
 	}
@@ -183,7 +215,7 @@ func (api *Api) TaskDelete(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, huma.Error400BadRequest("Invalid task ID")
 	}
-	err = api.app.Adapter().Task().DeleteTask(ctx, id)
+	err = api.App().Adapter().Task().DeleteTask(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -202,7 +234,7 @@ func (api *Api) TaskGet(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, huma.Error400BadRequest("Invalid task ID")
 	}
-	task, err := api.app.Adapter().Task().FindTaskByID(ctx, id)
+	task, err := api.App().Adapter().Task().FindTaskByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}

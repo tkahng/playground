@@ -171,13 +171,19 @@ func (i *InvitationService) AcceptInvitation(
 	userId uuid.UUID,
 	invitationToken string,
 ) error {
-	invite := &models.TeamMember{}
-	err := i.adapter.TeamInvitation().AcceptInvitation(ctx, i.adapter, userId, invitationToken, invite)
+	teamMember := &models.TeamMember{}
+	err := i.adapter.TeamInvitation().AcceptInvitation(ctx, i.adapter, userId, invitationToken, teamMember)
+	if err != nil {
+		return err
+	}
+	err = i.jobService.EnqueueRefreshSubscriptionQuantityJob(ctx, &workers.RefreshSubscriptionQuantityJobArgs{
+		TeamID: teamMember.TeamID,
+	})
 	if err != nil {
 		return err
 	}
 	err = i.jobService.EnqueueTeamMemberAddedJob(ctx, &workers.NewMemberNotificationJobArgs{
-		TeamID: invite.TeamID,
+		TeamMemberID: teamMember.ID,
 	})
 	if err != nil {
 		return err

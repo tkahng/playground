@@ -65,6 +65,7 @@ type PaymentService interface {
 	VerifyAndUpdateTeamSubscriptionQuantity(ctx context.Context, teamId uuid.UUID) error
 
 	SyncCustomerData(ctx context.Context, customerID string)
+	TeamCanAddMembers(ctx context.Context, teamId uuid.UUID) (bool, error)
 }
 
 type StripeService struct {
@@ -223,6 +224,17 @@ func (srv *StripeService) FindCustomerByUser(ctx context.Context, userId uuid.UU
 	)
 }
 
+func (srv *StripeService) TeamCanAddMembers(ctx context.Context, teamId uuid.UUID) (bool, error) {
+	subscriptions, err := srv.adapter.Subscription().FindActiveSubscriptionsByTeamIds(ctx, teamId)
+	if err != nil {
+		return false, err
+	}
+	if len(subscriptions) > 0 {
+		return true, nil
+	}
+	return false, nil
+}
+
 // VerifyAndUpdateTeamSubscriptionQuantity implements PaymentService.
 func (srv *StripeService) VerifyAndUpdateTeamSubscriptionQuantity(ctx context.Context, teamId uuid.UUID) error {
 	customer, err := srv.adapter.Customer().FindCustomer(ctx, &stores.StripeCustomerFilter{
@@ -232,7 +244,7 @@ func (srv *StripeService) VerifyAndUpdateTeamSubscriptionQuantity(ctx context.Co
 		return err
 	}
 	if customer == nil {
-		return errors.New("no stripe customer id")
+		return nil
 	}
 	sub, err := srv.adapter.Subscription().FindActiveSubscriptionByCustomerId(ctx, customer.ID)
 	if err != nil {
@@ -273,6 +285,13 @@ func (srv *StripeService) VerifyAndUpdateTeamSubscriptionQuantity(ctx context.Co
 			count,
 		)
 		if err != nil {
+			slog.Error(
+				"failed to update stripe subscription quantity",
+				slog.String("team_id", teamId.String()),
+				slog.Int64("count", count),
+				slog.Int64("quantity", sub.Quantity),
+				slog.Any("error", err),
+			)
 			return err
 		}
 		return nil

@@ -9,12 +9,12 @@ import (
 	"time"
 
 	gwebsocket "github.com/gorilla/websocket"
-	"github.com/matryer/is"
+	"github.com/stretchr/testify/assert"
 	"github.com/tkahng/authgo/internal/tools/websocket"
 )
 
 func TestWSHandler(t *testing.T) {
-	is := is.New(t)
+
 	testBytes := []byte("testing")
 
 	upgrader := gwebsocket.Upgrader{ReadBufferSize: 1024, WriteBufferSize: 1024}
@@ -58,26 +58,26 @@ func TestWSHandler(t *testing.T) {
 	defer s.Close()
 	rawWS, _, err := gwebsocket.DefaultDialer.Dial(
 		"ws"+strings.TrimPrefix(s.URL, "http"), nil)
-	is.NoErr(err)
+	assert.NoError(t, err)
 	defer rawWS.Close()
 
 	// once registration is done, the manager should have one client
 	<-doneReg
-	is.Equal(len(manager.Clients()), 1)
+	assert.Equal(t, len(manager.Clients()), 1)
 
 	// write a message to the server; this will be echoed back
 	err = rawWS.WriteMessage(gwebsocket.TextMessage, testBytes)
-	is.NoErr(err)
+	assert.NoError(t, err)
 	_, msg, err := rawWS.ReadMessage()
-	is.NoErr(err)
-	is.Equal(msg, testBytes)
+	assert.NoError(t, err)
+	assert.Equal(t, msg, testBytes)
 
 	// close the connection, which should trigger the server to cleanup and
 	// unregister the client connection
 	rawWS.WriteControl(gwebsocket.CloseMessage, nil, time.Now().Add(1*time.Second))
 	_p := <-doneUnreg
-	is.Equal(len(manager.Clients()), 0)
-	is.Equal(_p, c)
+	assert.Equal(t, len(manager.Clients()), 0)
+	assert.Equal(t, _p, c)
 	time.Sleep(1 * time.Second)
 	//FIXME: seems to be leaking goroutines
 }

@@ -8,6 +8,8 @@ export const RouteMap = {
   HOME: "/",
   LANDING_HOME: "/home",
   ACCOUNT_OVERVIEW: "/account",
+  ACCOUNT_OVERVIEW_TEAMS: "/account/teams",
+  ACCOUNT_OVERVIEW_TEAMS_INVITATION: "/account/teams-invitations",
   SETTINGS: "/account/settings",
   BILLING_SETTINGS: "/account/settings/billing",
 
@@ -21,7 +23,7 @@ export const RouteMap = {
   ADMIN_PRODUCTS: "/admin/products",
   ADMIN_ROLES: "/admin/roles",
   ADMIN_PERMISSIONS: "/admin/permissions",
-
+  ADMIN_JOBS: "/admin/jobs",
   PROTECTED: "/protected",
   PROTECTED_BASIC: "/protected/basic",
   PROTECTED_PRO: "/protected/pro",

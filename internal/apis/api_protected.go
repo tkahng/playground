@@ -18,7 +18,7 @@ func (api *Api) ApiProtected(ctx context.Context, input *struct {
 	if claims == nil {
 		return nil, huma.Error404NotFound("User not found")
 	}
-	dbx := api.app.Db()
+	dbx := api.App().Db()
 	permission, err := repository.Permission.GetOne(
 		ctx,
 		dbx,

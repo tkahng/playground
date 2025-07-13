@@ -25,6 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
+import { useTeam } from "@/hooks/use-team";
 import { createTask } from "@/lib/queries";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -35,8 +36,30 @@ import { z } from "zod";
 
 const formSchema = z.object({
   name: z.string().min(1),
+  // name: string;
   description: z.string().min(0).optional(),
+  // description?: string;
   status: z.enum(["todo", "in_progress", "done"]),
+  // status: "todo" | "in_progress" | "done";
+  assignee_id: z.string().nullable(),
+  //  assignee_id: string | null;
+  created_by_member_id: z.string().nullable(),
+  // created_by_member_id: string | null;
+  end_at: z.string().nullable(),
+  // end_at: string | null;
+  parent_id: z.string().nullable(),
+  // parent_id: string | null;
+  position: z.number().optional(),
+  // position?: number;
+  project_id: z.string(),
+  // project_id: string;
+  rank: z.number().optional(),
+  // rank?: number;
+  reporter_id: z.string().nullable(),
+  // reporter_id: string | null;
+  start_at: z.string().nullable(),
+  // start_at: string | null;
+  team_id: z.string(),
 });
 
 export function CreateProjectTaskDialog({
@@ -47,6 +70,7 @@ export function CreateProjectTaskDialog({
   status: "todo" | "in_progress" | "done";
 }) {
   const { user } = useAuthProvider();
+  const { teamMember, team } = useTeam();
   const [isDialogOpen, setDialogOpen] = useState(false);
   const queryClient = useQueryClient();
   // const navigate = useNavigate();
@@ -56,7 +80,15 @@ export function CreateProjectTaskDialog({
     defaultValues: {
       name: "",
       description: "",
-      status: status,
+      status,
+      assignee_id: null,
+      created_by_member_id: teamMember?.id,
+      end_at: null,
+      parent_id: null,
+      project_id: projectId,
+      reporter_id: null,
+      start_at: null,
+      team_id: team?.id,
     },
   });
 

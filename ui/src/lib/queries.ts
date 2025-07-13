@@ -1,6 +1,7 @@
 import { client } from "@/lib/client";
 import { components, operations } from "@/schema";
 import {
+  JobsParams,
   RefreshTokenInput,
   SigninInput,
   SignupInput,
@@ -915,7 +916,29 @@ export const taskProjectList = async (
   }
   return data;
 };
-
+export const taskQueries = {
+  updateTask: async (
+    token: string,
+    taskId: string,
+    body: components["schemas"]["UpdateTaskDto"]
+  ) => {
+    const { data, error } = await client.PUT(`/api/tasks/{task-id}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      params: {
+        path: {
+          "task-id": taskId,
+        },
+      },
+      body,
+    });
+    if (error) {
+      throw error;
+    }
+    return data;
+  },
+};
 export const taskProjectGet = async (token: string, id: string) => {
   const { data, error } = await client.GET(
     "/api/task-projects/{task-project-id}",
@@ -1013,7 +1036,6 @@ export const taskList = async (
         path: {
           "task-project-id": taskProjectId,
         },
-
         query: args,
       },
     }
@@ -1625,4 +1647,117 @@ export const getTeamInvitationByToken = async (invitationToken: string) => {
     throw error;
   }
   return data;
+};
+
+export const adminJobQueries = {
+  getJob: async (token: string, id: string) => {
+    const { data, error } = await client.GET("/api/admin/jobs/{job-id}", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      params: {
+        path: {
+          "job-id": id,
+        },
+      },
+    });
+    if (error) {
+      throw error;
+    }
+    return data;
+  },
+  getJobs: async (token: string, params?: JobsParams) => {
+    const { data, error } = await client.GET("/api/admin/jobs", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      params: {
+        query: params,
+      },
+    });
+    if (error) {
+      throw error;
+    }
+    return data;
+  },
+
+  updateJob: async (
+    token: string,
+    id: string,
+    job: components["schemas"]["JobUpdateDto"]
+  ) => {
+    const { error } = await client.PUT("/api/admin/jobs/{job-id}", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: job,
+      params: {
+        path: {
+          "job-id": id,
+        },
+      },
+    });
+    if (error) {
+      throw error;
+    }
+    return true;
+  },
+};
+
+export const teamQueries = {
+  getTeamMemberNotifications: async (
+    token: string,
+    teamMemberId: string,
+    page = 0,
+    perPage = 10
+  ) => {
+    const { data, error } = await client.GET(
+      "/api/team-members/{team-member-id}/notifications",
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        params: {
+          path: {
+            "team-member-id": teamMemberId,
+          },
+          query: {
+            page,
+            per_page: perPage,
+            sort_by: "created_at",
+            sort_order: "desc",
+          },
+        },
+      }
+    );
+    if (error) {
+      throw error;
+    }
+    return data;
+  },
+
+  readTeamMemberNotification: async (
+    token: string,
+    teamMemberId: string,
+    notiticationId: string
+  ) => {
+    const { error } = await client.POST(
+      "/api/team-members/{team-member-id}/notifications/{notification-id}/read",
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        params: {
+          path: {
+            "team-member-id": teamMemberId,
+            "notification-id": notiticationId,
+          },
+        },
+      }
+    );
+    if (error) {
+      throw error;
+    }
+    return true;
+  },
 };

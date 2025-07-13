@@ -28,6 +28,12 @@ export const RouteLinks = {
     current: (pathname: string) =>
       pathname.startsWith(RouteMap.ACCOUNT_OVERVIEW),
   },
+  ACCOUNT_OVERVIEW_TEAM_INVITATIONS: {
+    to: RouteMap.ACCOUNT_OVERVIEW_TEAMS_INVITATION,
+    title: "Invitations",
+    current: (pathname: string) =>
+      pathname.startsWith(RouteMap.ACCOUNT_OVERVIEW_TEAMS_INVITATION),
+  },
   DASHBOARD_OVERVIEW: { to: RouteMap.ACCOUNT_OVERVIEW, title: "Overview" },
   TASK_PROJECTS: {
     to: RouteMap.TASK_PROJECTS,
@@ -49,6 +55,11 @@ export const RouteLinks = {
     to: RouteMap.ADMIN_USERS,
     title: "Users",
     current: (pathname: string) => pathname.startsWith(RouteMap.ADMIN_USERS),
+  },
+  ADMIN_DASHBOARD_JOBS: {
+    to: RouteMap.ADMIN_JOBS,
+    title: "Jobs",
+    current: (pathname: string) => pathname.startsWith(RouteMap.ADMIN_JOBS),
   },
   ADMIN_DASHBOARD_ROLES: {
     to: RouteMap.ADMIN_ROLES,
@@ -96,6 +107,7 @@ export const adminHeaderLinks: LinkDto[] = [
   RouteLinks.ADMIN_DASHBOARD_PERMISSIONS,
   RouteLinks.ADMIN_DASHBOARD_PRODUCTS,
   RouteLinks.ADMIN_DASHBOARD_SUBSCRIPTIONS,
+  RouteLinks.ADMIN_DASHBOARD_JOBS,
 ];
 
 export const authenticatedSubHeaderLinks: LinkDto[] = [
@@ -106,6 +118,7 @@ export const authenticatedSubHeaderLinks: LinkDto[] = [
 ];
 export const accountSidebarLinks: LinkDto[] = [
   RouteLinks.ACCOUNT_OVERVIEW_TEAMS,
+  RouteLinks.ACCOUNT_OVERVIEW_TEAM_INVITATIONS,
 ];
 export const settingsSidebarLinks: LinkDto[] = [
   RouteLinks.GENERAL_SETTINGS,
@@ -121,6 +134,7 @@ export const teamLinks = (slug: string): LinkDto[] => [
   createTeamDashboardLink(slug),
   createTeamProjectsLink(slug),
   createTeamSettingsLink(slug),
+  createTeamNotificationsLink(slug),
 ];
 
 export const teamSettingLinks = (slug: string): LinkDto[] => [
@@ -128,7 +142,9 @@ export const teamSettingLinks = (slug: string): LinkDto[] => [
   createTeamBillingSettingsLink(slug),
   createTeamMembersSettingsLink(slug),
 ];
-
+export const teamNotifications = (slug: string): LinkDto[] => [
+  createTeamNotificationsLink(slug),
+];
 export const createTeamDashboardLink = (slug: string) => {
   const path = `/teams/${slug}/dashboard`;
   return {
@@ -151,6 +167,15 @@ export const createTeamSettingsLink = (slug: string) => {
   return {
     to: path,
     title: "Team Settings",
+    current: (pathname: string) => pathname.startsWith(path),
+  };
+};
+
+export const createTeamNotificationsLink = (slug: string) => {
+  const path = `/teams/${slug}/notifications`;
+  return {
+    to: path,
+    title: "Notifications",
     current: (pathname: string) => pathname.startsWith(path),
   };
 };

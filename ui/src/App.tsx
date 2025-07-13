@@ -31,8 +31,11 @@ import PageSectionLayout from "./layouts/page-section";
 import PublicLayout from "./layouts/public-layout";
 import TeamDashboardLayout from "./layouts/team-dashboard-layout";
 import NotFoundPage from "./pages/404";
+import InvitationsPage from "./pages/account/invitations";
 import AccountOverviewPage from "./pages/account/overview";
 import AdminDashboardPage from "./pages/admin/admin-dashboard";
+import JobsEdit from "./pages/admin/jobs/jobs-edit";
+import JobsListPage from "./pages/admin/jobs/jobs-list";
 import ProductEditPage from "./pages/admin/products/products-edit";
 import ProductsListPage from "./pages/admin/products/products-list";
 import SubscriptionsListPage from "./pages/admin/subscriptions/subscription-list";
@@ -53,6 +56,7 @@ import TaskLayout from "./pages/teams/projects/task-layout";
 import TeamBillingSettingPage from "./pages/teams/settings/team-billing-settings";
 import TeamSettingsPage from "./pages/teams/settings/team-general-settings";
 import TeamMembersSettingPage from "./pages/teams/settings/team-members-settings";
+import TeamNotifications from "./pages/teams/settings/team-notifications";
 import UserTeamInvitationRedirectPage from "./pages/teams/user-team-invitation-redirect-page";
 
 function TeamRoutes() {
@@ -84,6 +88,12 @@ function TeamRoutes() {
             <Route index element={<TeamSettingsPage />} />
             <Route path="billing" element={<TeamBillingSettingPage />} />
             <Route path="members" element={<TeamMembersSettingPage />} />
+          </Route>
+          <Route
+            path={`/teams/:teamSlug/notifications`}
+            element={<PageSectionLayout title="Notifications" />}
+          >
+            <Route index element={<TeamNotifications />} />
           </Route>
         </Route>
 
@@ -159,6 +169,10 @@ function App() {
               >
                 <Route element={<PageSectionLayout title="Account Overview" />}>
                   <Route index element={<AccountOverviewPage />} />
+                  <Route
+                    path="teams-invitations"
+                    element={<InvitationsPage />}
+                  />
                 </Route>
                 {/* <Route path="billing" element={<BillingSettingPage />} /> */}
 
@@ -223,6 +237,10 @@ function App() {
                 >
                   <Route index element={<ProductsListPage />} />
                   <Route path=":productId" element={<ProductEditPage />} />
+                </Route>
+                <Route path="jobs" element={<PageSectionLayout title="Jobs" />}>
+                  <Route index element={<JobsListPage />} />
+                  <Route path=":jobId" element={<JobsEdit />} />
                 </Route>
               </Route>
             </Route>

@@ -31,7 +31,7 @@ type UserListFilter struct {
 func (api *Api) AdminUsers(ctx context.Context, input *struct {
 	UserListFilter
 }) (*ApiPaginatedOutput[*ApiUser], error) {
-	adapter := api.app.Adapter()
+	adapter := api.App().Adapter()
 	fmt.Printf("AdminUsers: %v", input.UserListFilter)
 	filter := &stores.UserFilter{}
 	filter.Page = input.Page
@@ -104,8 +104,8 @@ func (api *Api) AdminUsersCreate(ctx context.Context, input *struct {
 }) (*struct {
 	Body *ApiUser
 }, error) {
-	action := api.app.Auth()
-	adapter := api.app.Adapter()
+	action := api.App().Auth()
+	adapter := api.App().Adapter()
 	existingUser, err := adapter.User().FindUser(ctx, &stores.UserFilter{
 		Emails: []string{input.Body.Email},
 	})
@@ -137,8 +137,8 @@ func (api *Api) AdminUsersCreate(ctx context.Context, input *struct {
 func (api *Api) AdminUsersDelete(ctx context.Context, input *struct {
 	ID uuid.UUID `path:"user-id" format:"uuid" required:"true"`
 }) (*struct{}, error) {
-	checker := api.app.Checker()
-	adapter := api.app.Adapter()
+	checker := api.App().Checker()
+	adapter := api.App().Adapter()
 	ok, err := checker.CannotBeSuperUserID(ctx, input.ID)
 	if err != nil {
 		return nil, err
@@ -165,7 +165,7 @@ func (api *Api) AdminUsersUpdate(ctx context.Context, input *struct {
 	ID   uuid.UUID `path:"user-id" format:"uuid" required:"true"`
 	Body UserMutationInput
 }) (*struct{}, error) {
-	adapter := api.app.Adapter()
+	adapter := api.App().Adapter()
 	user, err := adapter.User().FindUserByID(ctx, input.ID)
 	if err != nil {
 		return nil, err
@@ -192,7 +192,7 @@ func (api *Api) AdminUsersUpdatePassword(ctx context.Context, input *struct {
 	ID   uuid.UUID `path:"user-id" format:"uuid" required:"true"`
 	Body UpdateUserPasswordInput
 }) (*struct{}, error) {
-	checker := api.app.Checker()
+	checker := api.App().Checker()
 	ok, err := checker.CannotBeSuperUserID(ctx, input.ID)
 	if err != nil {
 		return nil, err
@@ -200,7 +200,7 @@ func (api *Api) AdminUsersUpdatePassword(ctx context.Context, input *struct {
 	if !ok {
 		return nil, huma.Error400BadRequest("Cannot update super user password")
 	}
-	err = api.app.Adapter().UserAccount().UpdateUserPassword(ctx, input.ID, input.Body.Password)
+	err = api.App().Adapter().UserAccount().UpdateUserPassword(ctx, input.ID, input.Body.Password)
 	if err != nil {
 		return nil, err
 	}
@@ -210,7 +210,7 @@ func (api *Api) AdminUsersUpdatePassword(ctx context.Context, input *struct {
 func (api *Api) AdminUsersGet(ctx context.Context, input *struct {
 	UserID uuid.UUID `path:"user-id" json:"user_id" format:"uuid" required:"true"`
 }) (*struct{ Body *ApiUser }, error) {
-	user, err := api.app.Adapter().User().FindUserByID(ctx, input.UserID)
+	user, err := api.App().Adapter().User().FindUserByID(ctx, input.UserID)
 	if err != nil {
 		return nil, err
 	}

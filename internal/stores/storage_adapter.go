@@ -5,6 +5,7 @@ import "github.com/tkahng/authgo/internal/database"
 var _ StorageAdapterInterface = (*StorageAdapter)(nil)
 
 type StorageAdapterInterface interface {
+	Notification() NotificationStore
 	User() DbUserStoreInterface
 	UserAccount() DbAccountStoreInterface
 	Token() DbTokenStoreInterface
@@ -18,6 +19,7 @@ type StorageAdapterInterface interface {
 	Media() MediaStoreInterface
 	Rbac() DbRbacStoreInterface
 	Task() DbTaskStoreInterface
+	Job() JobStore
 	// WithTx(tx database.Dbx) *StorageAdapter
 	RunInTx(fn func(tx StorageAdapterInterface) error) error
 }
@@ -36,8 +38,16 @@ type StorageAdapter struct {
 	rbac           *DbRbacStore
 	task           *DbTaskStore
 	media          *DbMediaStore
+	notification   *DbNotificationStore
+	job            *DbJobStore
 }
 
+func (s *StorageAdapter) Job() JobStore {
+	return s.job
+}
+func (s *StorageAdapter) Notification() NotificationStore {
+	return s.notification
+}
 func (s *StorageAdapter) Media() MediaStoreInterface {
 	return s.media
 }
@@ -139,5 +149,8 @@ func NewStorageAdapter(db database.Dbx) *StorageAdapter {
 		subscription:   NewDbSubscriptionStore(db),
 		rbac:           NewDbRBACStore(db),
 		task:           NewDbTaskStore(db),
+		job:            NewDbJobStore(db),
+		media:          NewMediaStore(db),
+		notification:   NewDbNotificationStore(db),
 	}
 }

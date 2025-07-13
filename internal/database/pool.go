@@ -32,13 +32,17 @@ func newQueries(ctx context.Context, connString string) (*Queries, error) {
 	return pgInstance, nil
 
 }
-func CreateQueries(ctx context.Context, connString string) *Queries {
+func CreateQueriesContext(ctx context.Context, connString string) *Queries {
 	pool, err := newQueries(ctx, connString)
 	if err != nil {
 		slog.Error("error creating pool.", "error", err)
-		panic(err)
+		panic(fmt.Errorf("error creating pool: %w", err))
 	}
 	return pool
+}
+
+func CreateQueries(connString string) *Queries {
+	return CreateQueriesContext(context.Background(), connString)
 }
 
 func getDbPool(ctx context.Context, connString string) (*pgxpool.Pool, error) {

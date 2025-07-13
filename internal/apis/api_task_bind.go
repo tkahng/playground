@@ -9,10 +9,10 @@ import (
 )
 
 func BindTaskApi(api huma.API, appApi *Api) {
-	// checkTaskOwnerMiddleware := middleware.CheckTaskOwnerMiddleware(api, appApi.app)
-	teamFromTask := middleware.TeamInfoFromTask(api, appApi.app)
-	teamFromProject := middleware.TeamInfoFromTaskProject(api, appApi.app)
-	teamFromPath := middleware.TeamInfoFromParam(api, appApi.app)
+	// checkTaskOwnerMiddleware := middleware.CheckTaskOwnerMiddleware(api, appApi.App())
+	teamFromTask := middleware.TeamInfoFromTask(api, appApi.App())
+	teamFromProject := middleware.TeamInfoFromTaskProject(api, appApi.App())
+	teamFromPath := middleware.TeamInfoFromParam(api, appApi.App())
 
 	taskGroup := huma.NewGroup(api)
 	// taskGroup.UseMiddleware(checkTaskOwnerMiddleware)

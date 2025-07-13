@@ -2,15 +2,18 @@ package core
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/tkahng/authgo/internal/conf"
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/jobs"
 	"github.com/tkahng/authgo/internal/services"
 	"github.com/tkahng/authgo/internal/stores"
+	"github.com/tkahng/authgo/internal/tools/di"
 	"github.com/tkahng/authgo/internal/tools/filesystem"
 	"github.com/tkahng/authgo/internal/tools/logger"
 	"github.com/tkahng/authgo/internal/tools/mailer"
+	"github.com/tkahng/authgo/internal/tools/sse"
 )
 
 func NewAppDecorator(ctx context.Context, cfg conf.EnvConfig, pool database.Dbx) *BaseAppDecorator {
@@ -29,14 +32,14 @@ func NewAppDecorator(ctx context.Context, cfg conf.EnvConfig, pool database.Dbx)
 	jobManager := jobs.NewDbJobManagerDecorator(pool)
 	jobService := services.NewJobServiceDecorator(jobManager)
 	rbacService := services.NewRBACService(adapter)
-	taskService := services.NewTaskService(adapter)
+	taskService := services.NewTaskService(adapter, jobService)
 	paymentClient := services.NewTestPaymentClient()
 	paymentService := services.NewPaymentService(
 		paymentClient,
 		adapter,
 	)
 
-	jobService.RegisterWorkers(mailServiece, paymentService)
+	jobService.RegisterWorkers(mailServiece, paymentService, nil)
 	authService := services.NewAuthServiceDecorator(
 		settings,
 		adapter,
@@ -58,7 +61,6 @@ func NewAppDecorator(ctx context.Context, cfg conf.EnvConfig, pool database.Dbx)
 		settings,
 		l,
 		cfg,
-		mail,
 		authService,
 		paymentService,
 		checker, // pass as ConstraintChecker
@@ -74,22 +76,80 @@ func NewAppDecorator(ctx context.Context, cfg conf.EnvConfig, pool database.Dbx)
 }
 
 type BaseAppDecorator struct {
-	app                *BaseApp
-	AuthFunc           func() services.AuthService
-	CfgFunc            func() *conf.EnvConfig
-	CheckerFunc        func() services.ConstraintChecker
-	DbFunc             func() database.Dbx
-	FsFunc             func() *filesystem.S3FileSystem
-	MailerFunc         func() mailer.Mailer
-	PaymentFunc        func() services.PaymentService
-	RbacFunc           func() services.RBACService
-	TeamFunc           func() services.TeamService
-	TaskFunc           func() services.TaskService
-	AdapterFunc        func() stores.StorageAdapterInterface
-	TeamInvitationFunc func() services.TeamInvitationService
-	JobManagerFunc     func() jobs.JobManager
-	JobServiceFunc     func() services.JobService
+	app                       *BaseApp
+	AuthFunc                  func() services.AuthService
+	CfgFunc                   func() *conf.EnvConfig
+	CheckerFunc               func() services.ConstraintChecker
+	DbFunc                    func() database.Dbx
+	FsFunc                    func() *filesystem.S3FileSystem
+	MailerFunc                func() mailer.Mailer
+	PaymentFunc               func() services.PaymentService
+	RbacFunc                  func() services.RBACService
+	TeamFunc                  func() services.TeamService
+	TaskFunc                  func() services.TaskService
+	AdapterFunc               func() stores.StorageAdapterInterface
+	TeamInvitationFunc        func() services.TeamInvitationService
+	JobManagerFunc            func() jobs.JobManager
+	JobServiceFunc            func() services.JobService
+	LifecycleFunc             func() Lifecycle
+	LoggerFunc                func() *slog.Logger
+	BootstrapFunc             func() error
+	SseManagerFunc            func() sse.Manager
+	NotificationPublisherFunc func() services.Notifier
+	ContainerFunc             func() di.Container
 }
+
+// Container implements App.
+func (b *BaseAppDecorator) Container() di.Container {
+	if b.ContainerFunc != nil {
+		return b.ContainerFunc()
+	}
+	return b.app.Container()
+}
+
+// NotificationPublisher implements App.
+func (b *BaseAppDecorator) NotificationPublisher() services.Notifier {
+	if b.NotificationPublisherFunc != nil {
+		return b.NotificationPublisherFunc()
+	}
+
+	return b.app.NotificationPublisher()
+}
+
+// SseManager implements App.
+func (b *BaseAppDecorator) SseManager() sse.Manager {
+	if b.SseManagerFunc != nil {
+		return b.SseManagerFunc()
+	}
+	return b.app.SseManager()
+}
+
+// Logger implements App.
+func (b *BaseAppDecorator) Logger() *slog.Logger {
+	if b.LoggerFunc != nil {
+		return b.LoggerFunc()
+	}
+	return b.app.Logger()
+}
+
+// BootStrap implements App.
+func (b *BaseAppDecorator) Bootstrap() error {
+	if b.BootstrapFunc != nil {
+		return b.BootstrapFunc()
+	}
+	return b.app.Bootstrap()
+}
+
+// RegisterBaseHooks implements App.
+// Lifecycle implements App.
+func (b *BaseAppDecorator) Lifecycle() Lifecycle {
+	if b.LifecycleFunc != nil {
+		return b.LifecycleFunc()
+	}
+	return b.app.Lifecycle()
+}
+
+// Notifier implements App.
 
 // JobService implements App.
 func (b *BaseAppDecorator) JobService() services.JobService {
@@ -130,11 +190,11 @@ func (b *BaseAppDecorator) Auth() services.AuthService {
 	return b.app.Auth()
 }
 
-func (b *BaseAppDecorator) Cfg() *conf.EnvConfig {
+func (b *BaseAppDecorator) Config() *conf.EnvConfig {
 	if b.CfgFunc != nil {
 		return b.CfgFunc()
 	}
-	return b.app.Cfg()
+	return b.app.Config()
 }
 
 func (b *BaseAppDecorator) Checker() services.ConstraintChecker {

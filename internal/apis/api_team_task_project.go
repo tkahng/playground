@@ -14,6 +14,7 @@ import (
 	"github.com/tkahng/authgo/internal/tools/ai/googleai"
 	"github.com/tkahng/authgo/internal/tools/mapper"
 	"github.com/tkahng/authgo/internal/tools/utils"
+	"github.com/tkahng/authgo/internal/workers"
 )
 
 type TaskProject struct {
@@ -120,11 +121,11 @@ func (api *Api) TeamTaskProjectList(ctx context.Context, input *TeamTaskProjects
 	newInput.Q = input.Q
 	newInput.Statuses = input.Statuses
 	newInput.TeamIds = []uuid.UUID{teamInfo.Team.ID}
-	taskProject, err := api.app.Adapter().Task().ListTaskProjects(ctx, newInput)
+	taskProject, err := api.App().Adapter().Task().ListTaskProjects(ctx, newInput)
 	if err != nil {
 		return nil, err
 	}
-	total, err := api.app.Adapter().Task().CountTaskProjects(ctx, newInput)
+	total, err := api.App().Adapter().Task().CountTaskProjects(ctx, newInput)
 	if err != nil {
 		return nil, err
 	}
@@ -133,7 +134,7 @@ func (api *Api) TeamTaskProjectList(ctx context.Context, input *TeamTaskProjects
 	})
 
 	if input.Expand != nil && slices.Contains(input.Expand, "tasks") {
-		tasks, err := api.app.Adapter().Task().LoadTaskProjectsTasks(ctx, taskProjectIds...)
+		tasks, err := api.App().Adapter().Task().LoadTaskProjectsTasks(ctx, taskProjectIds...)
 		if err != nil {
 			return nil, err
 		}
@@ -173,7 +174,7 @@ func (api *Api) TeamTaskProjectCreate(
 		return nil, huma.Error401Unauthorized("Unauthorized")
 	}
 
-	taskProject, err := api.app.Adapter().Task().CreateTaskProjectWithTasks(ctx, &stores.CreateTaskProjectWithTasksDTO{
+	taskProject, err := api.App().Adapter().Task().CreateTaskProjectWithTasks(ctx, &stores.CreateTaskProjectWithTasksDTO{
 		CreateTaskProjectDTO: stores.CreateTaskProjectDTO{
 			TeamID:      parsedTeamID,
 			MemberID:    teamInfo.Member.ID,
@@ -217,7 +218,7 @@ func (api *Api) TeamTaskProjectCreateWithAi(ctx context.Context, input *TaskProj
 		return nil, huma.Error401Unauthorized("no team info")
 	}
 
-	aiService := googleai.NewAiService(ctx, api.app.Cfg().AiConfig)
+	aiService := googleai.NewAiService(ctx, api.App().Config().AiConfig)
 	taskProjectPlan, err := aiService.GenerateProjectPlan(ctx, input.Body.Input)
 	if err != nil {
 		return nil, err
@@ -238,7 +239,7 @@ func (api *Api) TeamTaskProjectCreateWithAi(ctx context.Context, input *TaskProj
 			}
 		}),
 	}
-	taskProject, err := api.app.Adapter().Task().CreateTaskProjectWithTasks(ctx, &args)
+	taskProject, err := api.App().Adapter().Task().CreateTaskProjectWithTasks(ctx, &args)
 	if err != nil {
 		return nil, err
 	}
@@ -264,7 +265,7 @@ func (api *Api) TeamTaskProjectUpdate(ctx context.Context, input *UpdateTaskProj
 		return nil, huma.Error400BadRequest("Invalid task project id")
 	}
 	payload := input.Body
-	err = api.app.Adapter().Task().UpdateTaskProject(ctx, id, &payload)
+	err = api.App().Adapter().Task().UpdateTaskProject(ctx, id, &payload)
 	if err != nil {
 		return nil, err
 	}
@@ -283,7 +284,7 @@ func (api *Api) TeamTaskProjectDelete(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, huma.Error400BadRequest("Invalid task project id")
 	}
-	err = api.app.Adapter().Task().DeleteTaskProject(ctx, id)
+	err = api.App().Adapter().Task().DeleteTaskProject(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -303,12 +304,12 @@ func (api *Api) TeamTaskProjectGet(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, huma.Error400BadRequest("Invalid task project id")
 	}
-	taskProject, err := api.app.Adapter().Task().FindTaskProjectByID(ctx, id)
+	taskProject, err := api.App().Adapter().Task().FindTaskProjectByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 	if input.Expand != nil && slices.Contains(input.Expand, "tasks") {
-		tasks, err := api.app.Adapter().Task().LoadTaskProjectsTasks(ctx, taskProject.ID)
+		tasks, err := api.App().Adapter().Task().LoadTaskProjectsTasks(ctx, taskProject.ID)
 		if err != nil {
 			return nil, err
 		}
@@ -341,12 +342,20 @@ func (api *Api) TeamTaskProjectTasksCreate(ctx context.Context, input *ApiCreate
 		return nil, huma.Error400BadRequest("Invalid task project id")
 	}
 
-	// modelInput.CreatedByMemberID = payload
-	task, err := api.app.Task().CreateTask(ctx, teamInfo.Team.ID, parsedProjectID, teamInfo.Member.ID, &input.Body)
+	task, err := api.App().Task().CreateTask(ctx, teamInfo.Team.ID, parsedProjectID, teamInfo.Member.ID, &input.Body)
 	if err != nil {
 		return nil, err
 	}
-	err = api.app.Adapter().Task().UpdateTaskProjectUpdateDate(ctx, parsedProjectID)
+	if task.EndAt != nil {
+		err = api.App().JobService().EnqueTaskDueJob(ctx, &workers.TaskDueTodayJobArgs{
+			TaskID:  task.ID,
+			DueDate: *task.EndAt,
+		})
+		if err != nil {
+			return nil, huma.Error500InternalServerError("Failed to create task project update date job")
+		}
+	}
+	err = api.App().Adapter().Task().UpdateTaskProjectUpdateDate(ctx, parsedProjectID)
 	if err != nil {
 		return nil, huma.Error500InternalServerError("Failed to update task project update date")
 	}

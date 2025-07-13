@@ -39,9 +39,11 @@ func AuthMiddleware(api huma.API, app core.App) func(ctx huma.Context, next func
 			return
 		}
 		var token string
-		for _, f := range HumaTokenFuncs {
+		for idx, f := range HumaTokenFuncs {
+			index := idx
 			token = f(ctx)
 			if len(token) > 0 {
+				slog.InfoContext(ctxx, "found token", slog.Int("index", index), slog.String("token", token))
 				break
 			}
 		}

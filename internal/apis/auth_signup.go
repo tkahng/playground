@@ -21,7 +21,7 @@ type SignupInput struct {
 }
 
 func (api *Api) SignUp(ctx context.Context, input *struct{ Body SignupInput }) (*AuthenticatedInfoResponse, error) {
-	action := api.app.Auth()
+	action := api.App().Auth()
 	password := input.Body.Password.String()
 	hash, err := action.Password().HashPassword(password)
 	if err != nil {

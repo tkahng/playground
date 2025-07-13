@@ -4,16 +4,18 @@ import { DataTable } from "@/components/data-table";
 import { accountSidebarLinks } from "@/components/links";
 import { RouteMap } from "@/components/route-map";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
+import { useTeam } from "@/hooks/use-team";
 import { useUserTeams } from "@/hooks/use-user-teams";
 import { GetError } from "@/lib/get-error";
 import { getUserSubscriptions, getUserTeams } from "@/lib/queries";
 import { Team } from "@/schema.types";
 import { useQuery } from "@tanstack/react-query";
 import { PaginationState, Updater } from "@tanstack/react-table";
-import { NavLink, useSearchParams } from "react-router";
+import { NavLink, useNavigate, useSearchParams } from "react-router";
 import { toast } from "sonner";
 
 export default function AccountOverviewPage() {
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const pageIndex = parseInt(searchParams.get("page") || "0", 10);
   const pageSize = parseInt(searchParams.get("per_page") || "10", 10);
@@ -53,9 +55,11 @@ export default function AccountOverviewPage() {
     isError: teamsIsError,
     error: teamsError,
   } = useUserTeams();
-
+  const { setTeam } = useTeam();
   const handleSelectTeam = (team: Team) => {
     toast.success(`Selected team: ${team.name}`);
+    setTeam(team);
+    navigate(`/teams/${team.slug}/dashboard`);
   };
 
   if (isLoading) {

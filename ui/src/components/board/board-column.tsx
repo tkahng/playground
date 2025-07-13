@@ -23,20 +23,20 @@ export type ColumnDragData = {
 
 interface BoardColumnProps {
   column: Column;
-  cars: Task[];
+  cards: Task[];
   isOverlay?: boolean;
   projectId: string;
 }
 
 export const BoardColumn = ({
   column,
-  cars,
+  cards: cards,
   isOverlay,
   projectId,
 }: BoardColumnProps) => {
-  const carIds = useMemo(() => {
-    return cars.map((car) => car.id);
-  }, [cars]);
+  const cardIds = useMemo(() => {
+    return cards.map((card) => card.id);
+  }, [cards]);
 
   const { setNodeRef, transform, transition, isDragging } = useSortable({
     id: column.id,
@@ -77,17 +77,17 @@ export const BoardColumn = ({
     >
       <CardHeader className="p-4 font-semibold border-b-2 flex flex-row items-center justify-between">
         <h1>{column.title}</h1>
-        <Badge variant="outline">{cars.length}</Badge>
+        <Badge variant="outline">{cards.length}</Badge>
       </CardHeader>
       <ScrollArea>
         <CardContent className="flex flex-grow flex-col gap-2 p-2">
-          <SortableContext items={carIds}>
-            {cars.length === 0 ? (
+          <SortableContext items={cardIds}>
+            {cards.length === 0 ? (
               <div className="flex flex-grow items-center justify-center">
                 <p className="">No tasks here.</p>
               </div>
             ) : (
-              cars.map((car) => <TaskCard key={car.id} task={car} />)
+              cards.map((card) => <TaskCard key={card.id} task={card} />)
             )}
           </SortableContext>
           <CreateProjectTaskDialog

@@ -21,7 +21,7 @@ func (api *Api) Stats(ctx context.Context, input *struct{}) (*StatsResponse, err
 	if user == nil {
 		return nil, errors.New("user not found")
 	}
-	stats, err := api.app.Adapter().Task().GetTeamTaskStats(ctx, user.User.ID)
+	stats, err := api.App().Adapter().Task().GetTeamTaskStats(ctx, user.User.ID)
 	if err != nil {
 		return nil, err
 	}

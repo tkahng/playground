@@ -17,6 +17,9 @@ func NewAdapterDecorators() *StorageAdapterDecorator {
 		SubscriptionFunc:   &StripeSubscriptionStoreDecorator{},
 		TaskFunc:           &TaskDecorator{},
 		MediaFunc:          &MediaStoreDecorator{},
+		NotificationFunc:   &NotificationStoreDecorator{},
+		Delegate:           &StorageAdapter{},
+		JobFunc:            &JobStoreDecorator{},
 	}
 }
 
@@ -36,6 +39,10 @@ func NewDbAdapterDecorators(db database.Dbx) *StorageAdapterDecorator {
 		TaskFunc:           NewTaskDecorator(db),
 		MediaFunc:          NewDbMediaStoreDecorator(db),
 		Delegate:           NewStorageAdapter(db),
+		NotificationFunc:   NewNotificationStoreDecorator(db),
+		JobFunc: &JobStoreDecorator{
+			Delegate: NewDbJobStore(db),
+		},
 	}
 }
 
@@ -83,6 +90,7 @@ func NewDbMediaStoreDecorator(db database.Dbx) *MediaStoreDecorator {
 
 type StorageAdapterDecorator struct {
 	Delegate           StorageAdapterInterface
+	NotificationFunc   *NotificationStoreDecorator
 	UserFunc           *UserStoreDecorator
 	UserAccountFunc    *AccountStoreDecorator
 	TokenFunc          *TokenStoreDecorator
@@ -97,9 +105,25 @@ type StorageAdapterDecorator struct {
 	SubscriptionFunc   *StripeSubscriptionStoreDecorator
 	TaskFunc           *TaskDecorator
 	RunInTxFunc        func(fn func(tx StorageAdapterInterface) error) error
+	JobFunc            *JobStoreDecorator
+}
+
+// Job implements StorageAdapterInterface.
+func (s *StorageAdapterDecorator) Job() JobStore {
+	if s.JobFunc != nil {
+		return s.JobFunc
+	}
+	return s.Delegate.Job()
 }
 
 var _ StorageAdapterInterface = (*StorageAdapterDecorator)(nil)
+
+func (s *StorageAdapterDecorator) Notification() NotificationStore {
+	if s.NotificationFunc != nil {
+		return s.NotificationFunc
+	}
+	return s.Delegate.Notification()
+}
 
 // Media implements StorageAdapterInterface.
 func (s *StorageAdapterDecorator) Media() MediaStoreInterface {

@@ -49,11 +49,11 @@ func (api *Api) Me(ctx context.Context, input *struct{}) (*MeOutput, error) {
 	if claims == nil {
 		return nil, huma.Error404NotFound("User not found")
 	}
-	user, err := api.app.Adapter().User().FindUserByID(ctx, claims.User.ID)
+	user, err := api.App().Adapter().User().FindUserByID(ctx, claims.User.ID)
 	if err != nil {
 		return nil, err
 	}
-	accounts, err := api.app.Adapter().UserAccount().GetUserAccounts(ctx, user.ID)
+	accounts, err := api.App().Adapter().UserAccount().GetUserAccounts(ctx, user.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +82,7 @@ func (api *Api) MeUpdate(ctx context.Context, input *struct {
 	if claims == nil {
 		return nil, huma.Error404NotFound("User not found")
 	}
-	adapter := api.app.Adapter()
+	adapter := api.App().Adapter()
 	user, err := adapter.User().FindUserByID(ctx, claims.User.ID)
 	if err != nil {
 		return nil, err
@@ -104,7 +104,7 @@ func (api *Api) MeDelete(ctx context.Context, input *struct{}) (*struct{}, error
 	if claims == nil {
 		return nil, huma.Error404NotFound("User not found")
 	}
-	checker := api.app.Checker()
+	checker := api.App().Checker()
 	ok, err := checker.CannotBeSuperUserID(ctx, claims.User.ID)
 	if err != nil {
 		return nil, err
@@ -120,7 +120,7 @@ func (api *Api) MeDelete(ctx context.Context, input *struct{}) (*struct{}, error
 	if !ok {
 		return nil, huma.Error403Forbidden("You cannot delete a user with active subscriptions")
 	}
-	err = api.app.Adapter().User().DeleteUser(ctx, claims.User.ID)
+	err = api.App().Adapter().User().DeleteUser(ctx, claims.User.ID)
 	if err != nil {
 		return nil, err
 	}

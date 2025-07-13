@@ -31,7 +31,7 @@ func (api *Api) StripeWebhook(ctx context.Context, input *StripeWebhookInput) (*
 		slog.ErrorContext(ctx, "⚠️  Webhook error while parsing basic request", slog.Any("error", err), slog.String("payload", string(payload)))
 		return nil, huma.Error400BadRequest(err.Error())
 	}
-	cfg := api.app.Cfg()
+	cfg := api.App().Config()
 	if cfg == nil {
 		return nil, huma.Error400BadRequest("Missing config")
 	}
@@ -40,7 +40,7 @@ func (api *Api) StripeWebhook(ctx context.Context, input *StripeWebhookInput) (*
 		slog.ErrorContext(ctx, "⚠️  Webhook error while parsing basic request", slog.Any("error", err), slog.String("payload", string(payload)))
 		return nil, huma.Error400BadRequest(err.Error())
 	}
-	payment := api.app.Payment()
+	payment := api.App().Payment()
 	switch event.Type {
 	case stripe.EventTypeProductCreated, stripe.EventTypeProductUpdated:
 		product, err := utils.UnmarshalJSON[stripe.Product](event.Data.Raw)

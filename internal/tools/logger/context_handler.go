@@ -25,19 +25,19 @@ func (h ContextHandler) Handle(ctx context.Context, r slog.Record) error {
 	return h.Handler.Handle(ctx, r)
 }
 
-// WithAttributes adds slog attributes to context
-func WithAttributes(parent context.Context, attrs ...slog.Attr) context.Context {
+// AppendCtx adds an slog attribute to the provided context so that it will be
+// included in any Record created with such context
+func AppendCtx(parent context.Context, attrs ...slog.Attr) context.Context {
 	if parent == nil {
 		parent = context.Background()
 	}
 
-	if existing, ok := parent.Value(slogFields).([]slog.Attr); ok {
-		return context.WithValue(parent, slogFields, append(existing, attrs...))
+	if v, ok := parent.Value(slogFields).([]slog.Attr); ok {
+		v = append(v, attrs...)
+		return context.WithValue(parent, slogFields, v)
 	}
-	return context.WithValue(parent, slogFields, attrs)
-}
 
-// Initialize default logger at package init
-func init() {
-	slog.SetDefault(GetDefaultLogger())
+	v := []slog.Attr{}
+	v = append(v, attrs...)
+	return context.WithValue(parent, slogFields, v)
 }

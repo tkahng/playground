@@ -1,4 +1,4 @@
-import { components } from "@/schema";
+import { components, operations } from "@/schema";
 
 export type SigninInput = components["schemas"]["SigninDto"];
 
@@ -56,8 +56,6 @@ export type UserPermissions = components["schemas"]["PermissionSource"];
 
 export type ErrorModel = components["schemas"]["ErrorModel"];
 
-export type TaskStatus = components["schemas"]["Task"]["status"];
-
 export type UserWithAccounts = components["schemas"]["UserWithAccounts"];
 
 export type TeamMember = components["schemas"]["TeamMember"];
@@ -70,3 +68,15 @@ export type TeamMemberState = {
   currentMember: TeamMember | null;
   members: TeamMember[];
 };
+
+export type TeamMemberNotificationData =
+  components["schemas"]["NotificationPayloadNewTeamMemberNotificationData"];
+
+export type JobsParams = operations["admin-jobs-get"]["parameters"]["query"];
+
+export type TaskCreateParams =
+  operations["task-project-tasks-create"]["requestBody"]["content"]["application/json"];
+
+export type Task = components["schemas"]["Task"];
+
+export type TaskStatus = components["schemas"]["Task"]["status"];

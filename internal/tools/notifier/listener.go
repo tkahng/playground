@@ -2,10 +2,10 @@ package notifier
 
 import (
 	"context"
-	"errors"
 	"sync"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/tkahng/authgo/internal/database"
 )
 
 // Listener interface connects to the database and allows callers to listen to a
@@ -25,7 +25,7 @@ type Listener interface {
 
 // NewListener return a Listener that draws a connection from the supplied Pool. This
 // is somewhat discouraged
-func NewListener(dbp *pgxpool.Pool) Listener {
+func NewListener(dbp database.Dbx) Listener {
 	return &listener{
 		mu:     sync.Mutex{},
 		dbPool: dbp,
@@ -34,7 +34,7 @@ func NewListener(dbp *pgxpool.Pool) Listener {
 
 type listener struct {
 	conn   *pgxpool.Conn
-	dbPool *pgxpool.Pool
+	dbPool database.Dbx
 	mu     sync.Mutex
 }
 
@@ -67,7 +67,7 @@ func (l *listener) Connect(ctx context.Context) error {
 	defer l.mu.Unlock()
 
 	if l.conn != nil {
-		return errors.New("connection already established")
+		return nil
 	}
 
 	conn, err := l.dbPool.Acquire(ctx)

@@ -12,11 +12,19 @@ import (
 )
 
 type TaskFields struct {
-	Name        string            `json:"name" required:"true"`
-	Description *string           `json:"description,omitempty" required:"false"`
-	Status      models.TaskStatus `json:"status" required:"false" enum:"todo,in_progress,done" default:"todo"`
-	Rank        float64           `json:"rank,omitempty" required:"false"`
-	Position    *int64            `json:"position,omitempty" required:"false"`
+	CreatedByMemberID *uuid.UUID        `db:"created_by_member_id" json:"created_by_member_id" nullable:"true"`
+	TeamID            uuid.UUID         `db:"team_id" json:"team_id"`
+	ProjectID         uuid.UUID         `db:"project_id" json:"project_id"`
+	Name              string            `json:"name" required:"true"`
+	Description       *string           `json:"description,omitempty" required:"false"`
+	Status            models.TaskStatus `json:"status" required:"false" enum:"todo,in_progress,done" default:"todo"`
+	StartAt           *time.Time        `db:"start_at" json:"start_at"  nullable:"true"`
+	EndAt             *time.Time        `db:"end_at" json:"end_at" nullable:"true"`
+	AssigneeID        *uuid.UUID        `db:"assignee_id" json:"assignee_id" nullable:"true"`
+	ReporterID        *uuid.UUID        `db:"reporter_id" json:"reporter_id" nullable:"true"`
+	Rank              float64           `json:"rank,omitempty" required:"false"`
+	Position          *int64            `json:"position,omitempty" required:"false"`
+	ParentID          *uuid.UUID        `db:"parent_id" json:"parent_id" nullable:"true"`
 }
 type TaskService interface {
 	CreateTask(ctx context.Context, teamID uuid.UUID, projectID uuid.UUID, createdByMemberID uuid.UUID, input *TaskFields) (*models.Task, error)
@@ -28,6 +36,8 @@ type TaskService interface {
 type taskService struct {
 	// store   TaskStore
 	adapter stores.StorageAdapterInterface
+
+	jobService JobService
 }
 
 // CreateTask implements TaskService.
@@ -40,6 +50,11 @@ func (s *taskService) CreateTask(ctx context.Context, teamID uuid.UUID, projectI
 		Description:       input.Description,
 		Status:            models.TaskStatus(input.Status),
 		Rank:              input.Rank,
+		AssigneeID:        input.AssigneeID,
+		ReporterID:        input.ReporterID,
+		StartAt:           input.StartAt,
+		EndAt:             input.EndAt,
+		ParentID:          input.ParentID,
 	}
 	task, err := s.adapter.Task().CreateTask(ctx, &setter)
 	if err != nil {
@@ -48,9 +63,10 @@ func (s *taskService) CreateTask(ctx context.Context, teamID uuid.UUID, projectI
 	return task, nil
 }
 
-func NewTaskService(adapter stores.StorageAdapterInterface) TaskService {
+func NewTaskService(adapter stores.StorageAdapterInterface, jobService JobService) TaskService {
 	return &taskService{
-		adapter: adapter,
+		adapter:    adapter,
+		jobService: jobService,
 	}
 }
 
@@ -81,6 +97,7 @@ func (s *taskService) UpdateTaskRankStatus(ctx context.Context, taskID uuid.UUID
 		return err
 	}
 	task.Rank = rank
+	task.Status = status
 	err = s.adapter.Task().UpdateTask(ctx, task)
 	if err != nil {
 		return err
