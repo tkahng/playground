@@ -312,7 +312,7 @@ func (app *BaseApp) UseContainer(c di.Container) {
 	app.settings = c.Get(diContextKeySettings).(*conf.AppOptions)
 	app.db = c.Get(diContextKeyDB).(database.Dbx)
 	app.adapter = c.Get(diContextKeyStoreAdapter).(stores.StorageAdapterInterface)
-	app.mail = c.Get(diContextKeyMail).(mailer.Mailer)
+	app.mailService = c.Get(diContextKeyMail).(services.OtpMailService)
 	app.rbac = c.Get(diContextKeyRbacService).(services.RBACService)
 	app.jobManager = c.Get(diContextKeyJobManager).(jobs.JobManager)
 	app.jobService = c.Get(diContextKeyJobService).(services.JobService)

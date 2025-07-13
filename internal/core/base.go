@@ -14,7 +14,6 @@ import (
 	"github.com/tkahng/authgo/internal/tools/filesystem"
 	"github.com/tkahng/authgo/internal/tools/hook"
 	"github.com/tkahng/authgo/internal/tools/logger"
-	"github.com/tkahng/authgo/internal/tools/mailer"
 	"github.com/tkahng/authgo/internal/tools/sse"
 )
 
@@ -30,7 +29,6 @@ type BaseApp struct {
 	adapter stores.StorageAdapterInterface
 
 	logger      *slog.Logger
-	mail        mailer.Mailer
 	mailService services.OtpMailService
 
 	jobManager jobs.JobManager
@@ -133,9 +131,7 @@ func (app *BaseApp) IsBootstrapped() (isBootStrapped bool) {
 	if app.settings == nil {
 		return
 	}
-	if app.mail == nil {
-		return
-	}
+
 	if app.auth == nil {
 		return
 	}
@@ -252,7 +248,6 @@ func newApp(
 	settings *conf.AppOptions,
 	logger *slog.Logger,
 	cfg conf.EnvConfig,
-	mail mailer.Mailer,
 	authService services.AuthService,
 	paymentService services.PaymentService,
 	checker services.ConstraintChecker,
@@ -270,7 +265,6 @@ func newApp(
 		settings:       settings,
 		logger:         logger,
 		cfg:            &cfg,
-		mail:           mail,
 		auth:           authService,
 		payment:        paymentService,
 		checker:        checker,

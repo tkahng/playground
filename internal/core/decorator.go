@@ -61,7 +61,6 @@ func NewAppDecorator(ctx context.Context, cfg conf.EnvConfig, pool database.Dbx)
 		settings,
 		l,
 		cfg,
-		mail,
 		authService,
 		paymentService,
 		checker, // pass as ConstraintChecker
