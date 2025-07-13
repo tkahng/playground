@@ -112,9 +112,9 @@ export function EditProjectTaskDialog({
   return (
     <>
       <DialogHeader>
-        <DialogTitle>Add Task to Project</DialogTitle>
+        <DialogTitle>Edit Task Details</DialogTitle>
         <DialogDescription>
-          Select the Task you want to add to this project
+          <p>{task.name}</p>
         </DialogDescription>
       </DialogHeader>
       <Form {...form}>
