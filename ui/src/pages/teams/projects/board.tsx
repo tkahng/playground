@@ -30,6 +30,7 @@ import { useJsLoaded } from "@/hooks/use-js-loaded";
 import { useProjectTasks } from "@/hooks/use-project-tasks";
 import { groupItems } from "@/lib/array";
 import { GetError } from "@/lib/get-error";
+import { useUpdateTaskPosition } from "@/lib/mutation";
 import { TaskStatus, TeamMember } from "@/schema.types";
 import { toast } from "sonner";
 import { CreateProjectTaskDialog2 } from "./tasks/create-project-task-dialog copy";
@@ -107,7 +108,7 @@ export function MyKanbanBoard({ projectId }: { projectId: string }) {
     setColumns(g);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tasks?.data, projectId]);
-
+  const mutation = useUpdateTaskPosition();
   // Scroll to the right when a new column is added.
   const scrollContainerReference = useRef<HTMLDivElement>(null);
 
@@ -174,31 +175,14 @@ export function MyKanbanBoard({ projectId }: { projectId: string }) {
   }
 
   function handleMoveCardToColumn(columnId: string, index: number, card: Card) {
-    setColumns((previousColumns) =>
-      previousColumns.map((column) => {
-        if (column.id === columnId) {
-          // Remove the card from the column (if it exists) before reinserting it.
-          const updatedItems = column.items.filter(({ id }) => id !== card.id);
-          return {
-            ...column,
-            items: [
-              // Items before the insertion index.
-              ...updatedItems.slice(0, index),
-              // Insert the card.
-              card,
-              // Items after the insertion index.
-              ...updatedItems.slice(index),
-            ],
-          };
-        } else {
-          // Remove the card from other columns.
-          return {
-            ...column,
-            items: column.items.filter(({ id }) => id !== card.id),
-          };
-        }
-      })
-    );
+    if (card.status !== columnId) {
+      mutation.mutate({
+        projectId,
+        taskId: card.id,
+        status: columnId as TaskStatus,
+        position: index,
+      });
+    }
   }
 
   function handleUpdateCardTitle(cardId: string, cardTitle: string) {

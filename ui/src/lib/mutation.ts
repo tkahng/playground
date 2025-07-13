@@ -27,7 +27,7 @@ export function useUpdateTaskPosition() {
     },
     onSuccess: async (_, variables) => {
       await queryClient.invalidateQueries({
-        queryKey: ["project-with-tasks", variables.projectId],
+        queryKey: ["project-tasks", variables.projectId],
       });
       toast.success("Task updated");
     },

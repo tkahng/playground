@@ -97,6 +97,7 @@ func (s *taskService) UpdateTaskRankStatus(ctx context.Context, taskID uuid.UUID
 		return err
 	}
 	task.Rank = rank
+	task.Status = status
 	err = s.adapter.Task().UpdateTask(ctx, task)
 	if err != nil {
 		return err
