@@ -1,22 +1,8 @@
-import {
-  MoreHorizontalIcon,
-  PenIcon,
-  PlusIcon,
-  Trash2Icon,
-} from "lucide-react";
+import { PlusIcon, Trash2Icon } from "lucide-react";
 import type { FormEvent, KeyboardEvent } from "react";
 import { useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import type {
   KanbanBoardCircleColor,
@@ -30,24 +16,15 @@ import {
   KanbanBoardCardDescription,
   KanbanBoardColumn,
   KanbanBoardColumnButton,
-  kanbanBoardColumnClassNames,
   KanbanBoardColumnFooter,
   KanbanBoardColumnHeader,
-  KanbanBoardColumnIconButton,
   KanbanBoardColumnList,
   KanbanBoardColumnListItem,
   KanbanBoardColumnSkeleton,
   KanbanBoardColumnTitle,
-  KanbanBoardExtraMargin,
   KanbanColorCircle,
   useDndEvents,
 } from "@/components/ui/kanban";
-import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 
 import { ConfirmDialog, useDialog } from "@/hooks/use-dialog";
 import { useJsLoaded } from "@/hooks/use-js-loaded";
@@ -94,28 +71,42 @@ type Column = {
   items: Card[];
 };
 
-const KANBAN_BOARD_CIRCLE_COLORS: Record<TaskStatus, KanbanBoardCircleColor> = {
-  todo: "blue",
-  in_progress: "red",
-  done: "green",
-};
-
 export function MyKanbanBoard({ projectId }: { projectId: string }) {
-  const [columns, setColumns] = useState<Column[]>([]);
+  const [columns, setColumns] = useState<Column[]>([
+    {
+      id: "todo",
+      title: "Todo",
+      status: "todo",
+      projectId: projectId,
+      color: "blue",
+      items: [],
+    },
+    {
+      id: "in_progress",
+      title: "In progress",
+      status: "in_progress",
+      projectId: projectId,
+      color: "red",
+      items: [],
+    },
+    {
+      id: "done",
+      title: "Done",
+      status: "done",
+      projectId: projectId,
+      color: "green",
+      items: [],
+    },
+  ]);
   const { data: tasks, isLoading, error, isError } = useProjectTasks(projectId);
   useEffect(() => {
-    const groups = Object.entries(
-      groupItems(tasks?.data || [], (task) => task.status)
-    ).map(([group, items]) => ({
-      id: group,
-      title: group,
-      status: group as "todo" | "in_progress" | "done",
-      projectId: projectId,
-      color:
-        KANBAN_BOARD_CIRCLE_COLORS[group as "todo" | "in_progress" | "done"],
-      items,
+    const groupedItems = groupItems(tasks?.data || [], (task) => task.status);
+    const g = columns.map((c) => ({
+      ...c,
+      items: groupedItems[c.status] || [],
     }));
-    setColumns(groups);
+    setColumns(g);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tasks?.data, projectId]);
 
   // Scroll to the right when a new column is added.
@@ -131,26 +122,6 @@ export function MyKanbanBoard({ projectId }: { projectId: string }) {
   /*
   Column logic
   */
-
-  const handleAddColumn = (title?: string) => {
-    console.log(title);
-    // if (title) {
-    //   flushSync(() => {
-    //     setColumns((previousColumns) => [
-    //       ...previousColumns,
-    //       {
-    //         id: new Date().getTime().toString(),
-    //         title,
-    //         color:
-    //           KANBAN_BOARD_CIRCLE_COLORS[previousColumns.length] ?? "primary",
-    //         items: [],
-    //       },
-    //     ]);
-    //   });
-    // }
-
-    scrollRight();
-  };
 
   function handleDeleteColumn(columnId: string) {
     console.log(columnId);
@@ -453,13 +424,6 @@ export function MyKanbanBoard({ projectId }: { projectId: string }) {
       )}
 
       {/* Add a new column */}
-      {jsLoaded ? (
-        <MyNewKanbanBoardColumn onAddColumn={handleAddColumn} />
-      ) : (
-        <Skeleton className="h-9 w-10.5 flex-shrink-0" />
-      )}
-
-      <KanbanBoardExtraMargin />
     </KanbanBoard>
   );
 }
@@ -471,7 +435,6 @@ function MyKanbanBoardColumn({
   onCardBlur,
   onCardKeyDown,
   onDeleteCard,
-  onDeleteColumn,
   onMoveCardToColumn,
   onUpdateCardTitle,
   onUpdateColumnTitle,
@@ -591,37 +554,6 @@ function MyKanbanBoardColumn({
               <KanbanColorCircle color={column.color} />
               {column.title}
             </KanbanBoardColumnTitle>
-
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <KanbanBoardColumnIconButton ref={moreOptionsButtonReference}>
-                  <MoreHorizontalIcon />
-
-                  <span className="sr-only">
-                    More options for {column.title}
-                  </span>
-                </KanbanBoardColumnIconButton>
-              </DropdownMenuTrigger>
-
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Column</DropdownMenuLabel>
-
-                <DropdownMenuGroup>
-                  <DropdownMenuItem onClick={() => setIsEditingTitle(true)}>
-                    <PenIcon />
-                    Edit Details
-                  </DropdownMenuItem>
-
-                  <DropdownMenuItem
-                    className="text-destructive"
-                    onClick={() => onDeleteColumn(column.id)}
-                  >
-                    <Trash2Icon />
-                    Delete
-                  </DropdownMenuItem>
-                </DropdownMenuGroup>
-              </DropdownMenuContent>
-            </DropdownMenu>
           </>
         )}
       </KanbanBoardColumnHeader>
@@ -698,13 +630,13 @@ function MyKanbanBoardCard({
     previousIsActiveReference.current = isActive;
   }, [isActive, isEditingTitle]);
 
-  function handleBlur() {
-    flushSync(() => {
-      setIsEditingTitle(false);
-    });
+  // function handleBlur() {
+  //   flushSync(() => {
+  //     setIsEditingTitle(false);
+  //   });
 
-    kanbanBoardCardReference.current?.focus();
-  }
+  //   kanbanBoardCardReference.current?.focus();
+  // }
 
   // function handleSubmit(event: FormEvent<HTMLFormElement>) {
   //   event.preventDefault();
@@ -756,7 +688,6 @@ function MyKanbanBoardCard({
       onClick={() => {
         editDialog.props.onOpenChange(true);
         setIsEditingTitle(true);
-        handleBlur();
       }}
       onKeyDown={(event) => {
         if (event.key === " ") {
@@ -788,9 +719,11 @@ function MyKanbanBoardCard({
       </KanbanBoardCardButtonGroup>
       <ConfirmDialog dialogProps={editDialog.props}>
         <EditProjectTaskDialog
-          dialog={editDialog.props}
-          trigger={editDialog.trigger}
           task={card}
+          onFinish={() => {
+            editDialog.props.onOpenChange(false);
+            // handleBlur();
+          }}
         />
       </ConfirmDialog>
     </KanbanBoardCard>
@@ -806,15 +739,17 @@ function MyNewKanbanBoardCard({
   onAddCard: (columnId: string, cardContent: string) => void;
   scrollList: () => void;
 }) {
+  const editDialog = useDialog();
   // const [cardContent, setCardContent] = useState("");
   const newCardButtonReference = useRef<HTMLButtonElement>(null);
   // const submitButtonReference = useRef<HTMLButtonElement>(null);
   // const [showNewCardForm, setShowNewCardForm] = useState(false);
 
   function handleAddCardClick() {
-    flushSync(() => {
-      // setShowNewCardForm(true);
-    });
+    editDialog.props.onOpenChange(true);
+    // flushSync(() => {
+    //   // setShowNewCardForm(true);
+    // });
 
     scrollList();
   }
@@ -904,116 +839,25 @@ function MyNewKanbanBoardCard({
   //   </>
   return (
     <KanbanBoardColumnFooter>
-      <CreateProjectTaskDialog2
-        projectId={column.projectId}
-        status={column.status}
+      <KanbanBoardColumnButton
+        onClick={handleAddCardClick}
+        ref={newCardButtonReference}
       >
-        <KanbanBoardColumnButton
-          onClick={handleAddCardClick}
-          ref={newCardButtonReference}
-        >
-          <PlusIcon />
+        <PlusIcon />
 
-          <span aria-hidden>New card</span>
+        <span aria-hidden>New card</span>
 
-          <span className="sr-only">Add new card to {column.title}</span>
-        </KanbanBoardColumnButton>
-      </CreateProjectTaskDialog2>
-    </KanbanBoardColumnFooter>
-  );
-}
-
-function MyNewKanbanBoardColumn({
-  onAddColumn,
-}: {
-  onAddColumn: (columnTitle?: string) => void;
-}) {
-  const [showEditor, setShowEditor] = useState(false);
-  const newColumnButtonReference = useRef<HTMLButtonElement>(null);
-  const inputReference = useRef<HTMLInputElement>(null);
-
-  function handleAddColumnClick() {
-    flushSync(() => {
-      setShowEditor(true);
-    });
-
-    onAddColumn();
-  }
-
-  function handleCancelClick() {
-    flushSync(() => {
-      setShowEditor(false);
-    });
-
-    newColumnButtonReference.current?.focus();
-  }
-
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const formData = new FormData(event.currentTarget);
-    const columnTitle = formData.get("columnTitle") as string;
-    onAddColumn(columnTitle);
-    if (inputReference.current) {
-      inputReference.current.value = "";
-    }
-  }
-
-  return showEditor ? (
-    <form
-      className={kanbanBoardColumnClassNames}
-      onBlur={(event) => {
-        if (!event.currentTarget.contains(event.relatedTarget)) {
-          handleCancelClick();
-        }
-      }}
-      onSubmit={handleSubmit}
-    >
-      <KanbanBoardColumnHeader>
-        <Input
-          aria-label="Column title"
-          autoFocus
-          name="columnTitle"
-          onKeyDown={(event) => {
-            if (event.key === "Escape") {
-              handleCancelClick();
-            }
+        <span className="sr-only">Add new card to {column.title}</span>
+      </KanbanBoardColumnButton>
+      <ConfirmDialog dialogProps={editDialog.props}>
+        <CreateProjectTaskDialog2
+          projectId={column.projectId}
+          status={column.status}
+          onFinish={() => {
+            editDialog.props.onOpenChange(false);
           }}
-          placeholder="New column title ..."
-          ref={inputReference}
-          required
         />
-      </KanbanBoardColumnHeader>
-
-      <KanbanBoardColumnFooter>
-        <Button size="sm" type="submit">
-          Add
-        </Button>
-
-        <Button
-          onClick={handleCancelClick}
-          size="sm"
-          type="button"
-          variant="outline"
-        >
-          Cancel
-        </Button>
-      </KanbanBoardColumnFooter>
-    </form>
-  ) : (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <Button
-          onClick={handleAddColumnClick}
-          ref={newColumnButtonReference}
-          variant="outline"
-        >
-          <PlusIcon />
-
-          <span className="sr-only">Add column</span>
-        </Button>
-      </TooltipTrigger>
-
-      <TooltipContent>Add a new column to the board</TooltipContent>
-    </Tooltip>
+      </ConfirmDialog>
+    </KanbanBoardColumnFooter>
   );
 }

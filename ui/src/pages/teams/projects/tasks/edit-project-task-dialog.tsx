@@ -22,7 +22,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { DialogProps } from "@/hooks/use-dialog";
 import { createTask } from "@/lib/queries";
 import { Task } from "@/schema.types";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -61,11 +60,10 @@ const formSchema = z.object({
 
 export function EditProjectTaskDialog({
   task,
-  dialog,
+  onFinish,
 }: {
   task: Task;
-  dialog: DialogProps;
-  trigger: () => void;
+  onFinish: () => void;
 }) {
   const { user } = useAuthProvider();
   // const [isDialogOpen, setDialogOpen] = useState(false);
@@ -98,7 +96,7 @@ export function EditProjectTaskDialog({
       await createTask(user.tokens.access_token, task.id, values);
     },
     onSuccess: async () => {
-      dialog.onOpenChange(false);
+      onFinish();
       await queryClient.invalidateQueries({
         queryKey: ["project-with-tasks", task.project_id],
       });

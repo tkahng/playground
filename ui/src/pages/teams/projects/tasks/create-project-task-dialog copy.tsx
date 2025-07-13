@@ -1,12 +1,9 @@
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -27,7 +24,6 @@ import {
 import { useTeam } from "@/hooks/use-team";
 import { useCreateProjectTask } from "@/lib/mutation";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -62,14 +58,13 @@ const formSchema = z.object({
 export function CreateProjectTaskDialog2({
   projectId,
   status,
-  children,
+  onFinish,
 }: {
   projectId: string;
   status: "todo" | "in_progress" | "done";
-  children: React.ReactNode;
+  onFinish: () => void;
 }) {
   const { teamMember, team } = useTeam();
-  const [isDialogOpen, setDialogOpen] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -89,85 +84,85 @@ export function CreateProjectTaskDialog2({
   });
 
   const mutation = useCreateProjectTask(projectId, () => {
-    setDialogOpen(false);
+    onFinish();
   });
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     mutation.mutate(values);
   };
   return (
-    <Dialog open={isDialogOpen} onOpenChange={setDialogOpen}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Add Task to Project</DialogTitle>
-          <DialogDescription>
-            Select the Task you want to add to this project
-          </DialogDescription>
-        </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-            <div className="grid gap-4 py-4">
-              <div className="w-full px-10">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Name</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="Task Name" />
+    // <Dialog open={isDialogOpen} onOpenChange={setDialogOpen}>
+    //   <DialogTrigger asChild>{children}</DialogTrigger>
+    //   <DialogContent className="sm:max-w-[425px]">
+    <>
+      <DialogHeader>
+        <DialogTitle>Add Task to Project</DialogTitle>
+        <DialogDescription>
+          Select the Task you want to add to this project
+        </DialogDescription>
+      </DialogHeader>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+          <div className="grid gap-4 py-4">
+            <div className="w-full px-10">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Name</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="Task Name" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="Task Description" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Status</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl {...field}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select Task Status" />
+                        </SelectTrigger>
                       </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Description</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="Task Description" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="status"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Status</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                      >
-                        <FormControl {...field}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select Task Status" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="todo">Todo</SelectItem>
-                          <SelectItem value="in_progress">
-                            In Progress
-                          </SelectItem>
-                          <SelectItem value="done">Done</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </FormItem>
-                  )}
-                />
-                <DialogFooter>
-                  <Button type="submit">Create Project Task</Button>
-                </DialogFooter>
-              </div>
+                      <SelectContent>
+                        <SelectItem value="todo">Todo</SelectItem>
+                        <SelectItem value="in_progress">In Progress</SelectItem>
+                        <SelectItem value="done">Done</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )}
+              />
+              <DialogFooter>
+                <Button type="submit">Create Project Task</Button>
+              </DialogFooter>
             </div>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
+          </div>
+        </form>
+      </Form>
+    </>
+    //   </DialogContent>
+    // </Dialog>
   );
 }
