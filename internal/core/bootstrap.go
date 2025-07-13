@@ -11,6 +11,7 @@ import (
 	"github.com/tkahng/authgo/internal/services"
 	"github.com/tkahng/authgo/internal/stores"
 	"github.com/tkahng/authgo/internal/tools/di"
+	"github.com/tkahng/authgo/internal/tools/filesystem"
 	"github.com/tkahng/authgo/internal/tools/logger"
 	"github.com/tkahng/authgo/internal/tools/mailer"
 	"github.com/tkahng/authgo/internal/tools/payment"
@@ -38,6 +39,7 @@ const (
 	diContextKeyAuthService       = "auth_service"
 	diContextKeyChecker           = "constraint_checker"
 	diContextKeyInvitationService = "team_invitation_service"
+	diContextKeyFs                = "file_system"
 )
 
 func (s diContextKey) String() string {
@@ -46,8 +48,9 @@ func (s diContextKey) String() string {
 
 func (app *BaseApp) Bootstrap() error {
 	event := &BootstrapEvent{}
+	container := di.New()
 	event.App = app
-
+	event.Container = container
 	err := app.Lifecycle().OnBootstrap().Trigger(event, func(e *BootstrapEvent) error {
 		if err := app.ResetBootstrapState(); err != nil {
 			return err
@@ -277,7 +280,18 @@ func register(container di.Container) error {
 		invitationService := services.NewInvitationService(adapter, *settings, jobService)
 		return invitationService, nil
 	})
-
+	// fs
+	container.AddSingleton(diContextKeyFs, func(c di.Container) (any, error) {
+		config, err := getConfig(c)
+		if err != nil {
+			return nil, err
+		}
+		fs, err := filesystem.NewFileSystem(config.StorageConfig)
+		if err != nil {
+			return nil, err
+		}
+		return fs, nil
+	})
 	return nil
 }
 
@@ -324,5 +338,7 @@ func (app *BaseApp) UseContainer(c di.Container) {
 	app.auth = c.Get(diContextKeyAuthService).(services.AuthService)
 	app.checker = c.Get(diContextKeyChecker).(services.ConstraintChecker)
 	app.teamInvitation = c.Get(diContextKeyInvitationService).(services.TeamInvitationService)
+	app.fs = c.Get(diContextKeyFs).(filesystem.FileSystem)
 	app.container = c
+	app.logger.Info("app dependency container initialized")
 }
