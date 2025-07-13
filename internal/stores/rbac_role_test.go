@@ -18,7 +18,8 @@ import (
 )
 
 func TestListRoles(t *testing.T) {
-	test.Short(t)
+	test.Parallel(t)
+	test.SkipIfShort(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(tx database.Dbx) error {
 		// Create test roles and permissions
@@ -80,7 +81,7 @@ func TestListRoles(t *testing.T) {
 }
 
 func TestCountRoles(t *testing.T) {
-	test.Short(t)
+	test.SkipIfShort(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(tx database.Dbx) error {
 		rbacstore := stores.NewDbRBACStore(tx)
@@ -155,7 +156,7 @@ func TestCountRoles(t *testing.T) {
 }
 
 func TestLoadRolePermissions(t *testing.T) {
-	test.Short(t)
+	test.SkipIfShort(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		rbacStore := stores.NewDbRBACStore(dbxx)
@@ -280,7 +281,8 @@ func TestLoadRolePermissions(t *testing.T) {
 // }
 
 func TestFindOrCreateRole(t *testing.T) {
-	test.Short(t)
+	test.Parallel(t)
+	test.SkipIfShort(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		rbacStore := stores.NewDbRBACStore(dbxx)
@@ -331,7 +333,8 @@ func TestFindOrCreateRole(t *testing.T) {
 	})
 }
 func TestCreateRole(t *testing.T) {
-	test.Short(t)
+	test.Parallel(t)
+	test.SkipIfShort(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		rbacStore := stores.NewDbRBACStore(dbxx)
@@ -387,7 +390,8 @@ func TestCreateRole(t *testing.T) {
 }
 
 func TestUpdateRole(t *testing.T) {
-	test.Short(t)
+	test.Parallel(t)
+	test.SkipIfShort(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		// Create initial role to update
@@ -472,7 +476,8 @@ func TestUpdateRole(t *testing.T) {
 }
 
 func TestDeleteRole(t *testing.T) {
-	test.Short(t)
+	test.Parallel(t)
+	test.SkipIfShort(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		// Create a role to delete
@@ -543,7 +548,8 @@ func TestDeleteRole(t *testing.T) {
 }
 
 func TestDeletePermission(t *testing.T) {
-	test.Short(t)
+	test.Parallel(t)
+	test.SkipIfShort(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		rbacStore := stores.NewDbRBACStore(dbxx)

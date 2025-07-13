@@ -16,7 +16,8 @@ import (
 )
 
 func TestCreateTeam(t *testing.T) {
-	test.Short(t)
+	test.Parallel(t)
+	test.SkipIfShort(t)
 	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 		teamStore := adapter.TeamGroup()
@@ -31,7 +32,8 @@ func TestCreateTeam(t *testing.T) {
 }
 
 func TestUpdateTeam(t *testing.T) {
-	test.Short(t)
+	test.Parallel(t)
+	test.SkipIfShort(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		adapter := stores.NewStorageAdapter(dbxx)
@@ -53,7 +55,8 @@ func TestUpdateTeam(t *testing.T) {
 }
 
 func TestDeleteTeam(t *testing.T) {
-	test.Short(t)
+	test.Parallel(t)
+	test.SkipIfShort(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		adapter := stores.NewStorageAdapter(dbxx)
@@ -71,7 +74,8 @@ func TestDeleteTeam(t *testing.T) {
 }
 
 func TestFindTeamByID(t *testing.T) {
-	test.Short(t)
+	test.Parallel(t)
+	test.SkipIfShort(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		adapter := stores.NewStorageAdapter(dbxx)
@@ -124,7 +128,8 @@ func TestTeamStore_CheckTeamSlug(t *testing.T) {
 }
 
 func TestTeamStore_FindTeamByStripeCustomerId(t *testing.T) {
-	test.Short(t)
+	test.Parallel(t)
+	test.SkipIfShort(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		adapter := stores.NewStorageAdapter(dbxx)
@@ -158,7 +163,8 @@ func TestTeamStore_FindTeamByStripeCustomerId(t *testing.T) {
 }
 
 func TestTeamStore_ListTeams(t *testing.T) {
-	test.Short(t)
+	test.Parallel(t)
+	test.SkipIfShort(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		adapter := stores.NewStorageAdapter(dbxx)
@@ -275,7 +281,8 @@ func TestTeamStore_ListTeams(t *testing.T) {
 	})
 }
 func TestTeamStore_CountTeams(t *testing.T) {
-	test.Short(t)
+	test.Parallel(t)
+	test.SkipIfShort(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		adapter := stores.NewStorageAdapter(dbxx)
@@ -369,7 +376,8 @@ func TestTeamStore_CountTeams(t *testing.T) {
 	})
 }
 func TestTeamStore_FindTeamBySlug(t *testing.T) {
-	test.Short(t)
+	test.Parallel(t)
+	test.SkipIfShort(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		adapter := stores.NewStorageAdapter(dbxx)

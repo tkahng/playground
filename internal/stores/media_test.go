@@ -13,7 +13,8 @@ import (
 )
 
 func TestCreateMedia(t *testing.T) {
-	test.Short(t)
+	test.Parallel(t)
+	test.SkipIfShort(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		userStore := stores.NewDbUserStore(dbxx)
@@ -102,7 +103,7 @@ func TestCreateMedia(t *testing.T) {
 }
 
 func TestFindMediaByID(t *testing.T) {
-	test.Short(t)
+	test.SkipIfShort(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		userStore := stores.NewDbUserStore(dbxx)

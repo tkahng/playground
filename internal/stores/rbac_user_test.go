@@ -14,7 +14,8 @@ import (
 )
 
 func TestListUserPermissionsSource(t *testing.T) {
-	test.Short(t)
+	test.Parallel(t)
+	test.SkipIfShort(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		userStore := stores.NewDbUserStore(dbxx)
@@ -114,7 +115,8 @@ func TestListUserPermissionsSource(t *testing.T) {
 }
 
 func TestCountUserPermissionSource(t *testing.T) {
-	test.Short(t)
+	test.Parallel(t)
+	test.SkipIfShort(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		rbacstore := stores.NewDbRBACStore(dbxx)
@@ -201,7 +203,8 @@ func TestCountUserPermissionSource(t *testing.T) {
 	})
 }
 func TestListUserNotPermissionsSource(t *testing.T) {
-	test.Short(t)
+	test.Parallel(t)
+	test.SkipIfShort(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		// Create test user
@@ -317,7 +320,8 @@ func TestListUserNotPermissionsSource(t *testing.T) {
 	})
 }
 func TestCountNotUserPermissionSource(t *testing.T) {
-	test.Short(t)
+	test.Parallel(t)
+	test.SkipIfShort(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		// Create test user
@@ -411,7 +415,8 @@ func TestCountNotUserPermissionSource(t *testing.T) {
 }
 
 func TestCreateUserRoles(t *testing.T) {
-	test.Short(t)
+	test.Parallel(t)
+	test.SkipIfShort(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		userStore := stores.NewDbUserStore(dbxx)
@@ -463,7 +468,8 @@ func TestCreateUserRoles(t *testing.T) {
 }
 
 func TestGetUserRoles(t *testing.T) {
-	test.Short(t)
+	test.Parallel(t)
+	test.SkipIfShort(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		rbacStore := stores.NewDbRBACStore(dbxx)

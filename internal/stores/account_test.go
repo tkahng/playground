@@ -12,7 +12,8 @@ import (
 )
 
 func TestAccountStore_CRUD(t *testing.T) {
-	test.Short(t)
+	test.Parallel(t)
+	test.SkipIfShort(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		userStore := NewDbUserStore(dbxx)
@@ -77,7 +78,8 @@ func TestAccountStore_CRUD(t *testing.T) {
 }
 
 func TestAccountStore_GetUserAccounts(t *testing.T) {
-	test.Short(t)
+	test.Parallel(t)
+	test.SkipIfShort(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		userStore := NewDbUserStore(dbxx)
@@ -103,7 +105,8 @@ func TestAccountStore_GetUserAccounts(t *testing.T) {
 }
 
 func TestAccountStore_UpdateUserPassword(t *testing.T) {
-	test.Short(t)
+	test.Parallel(t)
+	test.SkipIfShort(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		userStore := NewDbUserStore(dbxx)

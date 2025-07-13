@@ -125,7 +125,8 @@ func TestTeamStore_CountTeamMembers(t *testing.T) {
 }
 
 func TestCreateTeamMember(t *testing.T) {
-	test.Short(t)
+	test.Parallel(t)
+	test.SkipIfShort(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		adapter := stores.NewStorageAdapter(dbxx)
@@ -154,7 +155,8 @@ func TestCreateTeamMember(t *testing.T) {
 }
 
 func TestFindTeamMembersByUserID(t *testing.T) {
-	test.Short(t)
+	test.Parallel(t)
+	test.SkipIfShort(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		adapter := stores.NewStorageAdapter(dbxx)
@@ -187,7 +189,8 @@ func TestFindTeamMembersByUserID(t *testing.T) {
 }
 
 func TestFindLatestTeamMemberByUserID(t *testing.T) {
-	test.Short(t)
+	test.Parallel(t)
+	test.SkipIfShort(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		adapter := stores.NewStorageAdapter(dbxx)
@@ -251,7 +254,8 @@ func TestFindLatestTeamMemberByUserID(t *testing.T) {
 }
 
 func TestUpdateTeamMemberUpdatedAt(t *testing.T) {
-	test.Short(t)
+	test.Parallel(t)
+	test.SkipIfShort(t)
 	ctx, dbx := test.DbSetup()
 	t.Cleanup(func() {
 		_, err := repository.TeamMember.Delete(ctx, dbx, nil)
@@ -321,7 +325,8 @@ func TestUpdateTeamMemberUpdatedAt(t *testing.T) {
 	})
 }
 func TestUpdateTeamMemberSelectedAt(t *testing.T) {
-	test.Short(t)
+	test.Parallel(t)
+	test.SkipIfShort(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		adapter := stores.NewStorageAdapter(dbxx)

@@ -14,7 +14,8 @@ import (
 )
 
 func TestGetUserTaskStats(t *testing.T) {
-	test.Short(t)
+	test.Parallel(t)
+	test.SkipIfShort(t)
 	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 		taskStore := stores.NewDbTaskStore(dbxx)
@@ -83,7 +84,8 @@ func TestGetUserTaskStats(t *testing.T) {
 	})
 }
 func TestLoadTaskProjectsTasks(t *testing.T) {
-	test.Short(t)
+	test.Parallel(t)
+	test.SkipIfShort(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		adapter := stores.NewStorageAdapter(dbxx)
@@ -177,7 +179,8 @@ func TestLoadTaskProjectsTasks(t *testing.T) {
 	})
 }
 func TestFindTaskByID(t *testing.T) {
-	test.Short(t)
+	test.Parallel(t)
+	test.SkipIfShort(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		adapter := stores.NewStorageAdapter(dbxx)
@@ -274,7 +277,8 @@ func TestFindTaskByID(t *testing.T) {
 }
 
 func TestFindLastTaskOrder(t *testing.T) {
-	test.Short(t)
+	test.Parallel(t)
+	test.SkipIfShort(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		adapter := stores.NewStorageAdapter(dbxx)
@@ -368,7 +372,8 @@ func TestFindLastTaskOrder(t *testing.T) {
 	})
 }
 func TestDeleteTask(t *testing.T) {
-	test.Short(t)
+	test.Parallel(t)
+	test.SkipIfShort(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		adapter := stores.NewStorageAdapter(dbxx)
@@ -444,7 +449,8 @@ func TestDeleteTask(t *testing.T) {
 	})
 }
 func TestFindTaskProjectByID(t *testing.T) {
-	test.Short(t)
+	test.Parallel(t)
+	test.SkipIfShort(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		adapter := stores.NewStorageAdapter(dbxx)
@@ -528,7 +534,8 @@ func TestFindTaskProjectByID(t *testing.T) {
 	})
 }
 func TestDeleteTaskProject(t *testing.T) {
-	test.Short(t)
+	test.Parallel(t)
+	test.SkipIfShort(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		adapter := stores.NewStorageAdapter(dbxx)
@@ -595,7 +602,8 @@ func TestDeleteTaskProject(t *testing.T) {
 	})
 }
 func TestListTasks(t *testing.T) {
-	test.Short(t)
+	test.Parallel(t)
+	test.SkipIfShort(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		adapter := stores.NewStorageAdapter(dbxx)
@@ -706,7 +714,8 @@ func TestListTasks(t *testing.T) {
 	})
 }
 func TestCountTasks(t *testing.T) {
-	test.Short(t)
+	test.Parallel(t)
+	test.SkipIfShort(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		adapter := stores.NewStorageAdapter(dbxx)
@@ -795,7 +804,8 @@ func TestCountTasks(t *testing.T) {
 	})
 }
 func TestListTaskProjects(t *testing.T) {
-	test.Short(t)
+	test.Parallel(t)
+	test.SkipIfShort(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		adapter := stores.NewStorageAdapter(dbxx)
@@ -894,7 +904,8 @@ func TestListTaskProjects(t *testing.T) {
 	})
 }
 func TestCountTaskProjects(t *testing.T) {
-	test.Short(t)
+	test.Parallel(t)
+	test.SkipIfShort(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		adapter := stores.NewStorageAdapter(dbxx)
@@ -971,7 +982,8 @@ func TestCountTaskProjects(t *testing.T) {
 	})
 }
 func TestCreateTaskProject(t *testing.T) {
-	test.Short(t)
+	test.Parallel(t)
+	test.SkipIfShort(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		adapter := stores.NewStorageAdapter(dbxx)
@@ -1060,7 +1072,8 @@ func TestCreateTaskProject(t *testing.T) {
 	})
 }
 func TestCreateTaskProjectWithTasks(t *testing.T) {
-	test.Short(t)
+	test.Parallel(t)
+	test.SkipIfShort(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		adapter := stores.NewStorageAdapter(dbxx)
@@ -1168,7 +1181,8 @@ func TestCreateTaskProjectWithTasks(t *testing.T) {
 }
 
 func TestCreateTaskFromInput(t *testing.T) {
-	test.Short(t)
+	test.Parallel(t)
+	test.SkipIfShort(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		adapter := stores.NewStorageAdapter(dbxx)

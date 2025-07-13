@@ -15,7 +15,7 @@ import (
 )
 
 func TestDefineTaskOrderNumberByStatus(t *testing.T) {
-	test.Short(t)
+	test.SkipIfShort(t)
 	ctx, dbx := test.DbSetup()
 	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
 		adapter := stores.NewStorageAdapter(dbxx)
