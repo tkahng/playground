@@ -5,9 +5,9 @@ import (
 	"errors"
 	"time"
 
-	"github.com/tkahng/authgo/internal/database"
-	"github.com/tkahng/authgo/internal/jobs"
-	"github.com/tkahng/authgo/internal/workers"
+	"github.com/tkahng/playground/internal/database"
+	"github.com/tkahng/playground/internal/jobs"
+	"github.com/tkahng/playground/internal/workers"
 )
 
 type JobService interface {

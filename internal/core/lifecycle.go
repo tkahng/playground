@@ -5,8 +5,8 @@ import (
 	"net/http"
 
 	"github.com/danielgtaylor/huma/v2"
-	"github.com/tkahng/authgo/internal/tools/di"
-	"github.com/tkahng/authgo/internal/tools/hook"
+	"github.com/tkahng/playground/internal/tools/di"
+	"github.com/tkahng/playground/internal/tools/hook"
 	"golang.org/x/sync/errgroup"
 )
 

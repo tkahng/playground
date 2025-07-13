@@ -6,7 +6,7 @@ import (
 	"log"
 
 	"github.com/google/generative-ai-go/genai"
-	"github.com/tkahng/authgo/internal/conf"
+	"github.com/tkahng/playground/internal/conf"
 	"google.golang.org/api/option"
 )
 

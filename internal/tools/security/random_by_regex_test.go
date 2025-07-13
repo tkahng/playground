@@ -7,7 +7,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/tkahng/authgo/internal/tools/security"
+	"github.com/tkahng/playground/internal/tools/security"
 )
 
 func TestRandomStringByRegex(t *testing.T) {

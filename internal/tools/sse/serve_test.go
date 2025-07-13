@@ -13,7 +13,7 @@ import (
 	"github.com/danielgtaylor/huma/v2/humatest"
 	humasse "github.com/danielgtaylor/huma/v2/sse"
 	"github.com/stretchr/testify/assert"
-	"github.com/tkahng/authgo/internal/tools/sse"
+	"github.com/tkahng/playground/internal/tools/sse"
 )
 
 type DefaultMessage struct {

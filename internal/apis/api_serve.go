@@ -15,10 +15,10 @@ import (
 	"github.com/go-chi/httprate"
 
 	"github.com/go-chi/cors"
-	"github.com/tkahng/authgo/internal/conf"
-	"github.com/tkahng/authgo/internal/core"
-	"github.com/tkahng/authgo/internal/shared"
-	"github.com/tkahng/authgo/ui"
+	"github.com/tkahng/playground/internal/conf"
+	"github.com/tkahng/playground/internal/core"
+	"github.com/tkahng/playground/internal/shared"
+	"github.com/tkahng/playground/ui"
 )
 
 func NewStartEvent(opts conf.EnvConfig) *core.StartEvent {

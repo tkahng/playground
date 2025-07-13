@@ -3,7 +3,7 @@ package stores
 import (
 	"context"
 
-	"github.com/tkahng/authgo/internal/models"
+	"github.com/tkahng/playground/internal/models"
 )
 
 type CustomerStoreDecorator struct {

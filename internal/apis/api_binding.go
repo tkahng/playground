@@ -6,10 +6,10 @@ import (
 	"net/http"
 
 	"github.com/danielgtaylor/huma/v2"
-	"github.com/tkahng/authgo/internal/core"
-	"github.com/tkahng/authgo/internal/middleware"
-	"github.com/tkahng/authgo/internal/shared"
-	"github.com/tkahng/authgo/internal/tools/types"
+	"github.com/tkahng/playground/internal/core"
+	"github.com/tkahng/playground/internal/middleware"
+	"github.com/tkahng/playground/internal/shared"
+	"github.com/tkahng/playground/internal/tools/types"
 )
 
 func BindMiddlewares(api huma.API, app core.App) {

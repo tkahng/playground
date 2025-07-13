@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/tkahng/authgo/internal/database"
+	"github.com/tkahng/playground/internal/database"
 )
 
 // Listener interface connects to the database and allows callers to listen to a

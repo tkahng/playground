@@ -4,11 +4,11 @@ import (
 	"context"
 	"math"
 
-	"github.com/tkahng/authgo/internal/models"
-	"github.com/tkahng/authgo/internal/shared"
-	"github.com/tkahng/authgo/internal/stores"
-	"github.com/tkahng/authgo/internal/tools/mapper"
-	"github.com/tkahng/authgo/internal/tools/utils"
+	"github.com/tkahng/playground/internal/models"
+	"github.com/tkahng/playground/internal/shared"
+	"github.com/tkahng/playground/internal/stores"
+	"github.com/tkahng/playground/internal/tools/mapper"
+	"github.com/tkahng/playground/internal/tools/utils"
 )
 
 type UserAccountFilter struct {

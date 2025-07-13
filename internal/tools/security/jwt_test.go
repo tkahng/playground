@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/tkahng/authgo/internal/tools/security"
+	"github.com/tkahng/playground/internal/tools/security"
 )
 
 func TestParseUnverifiedJWT(t *testing.T) {

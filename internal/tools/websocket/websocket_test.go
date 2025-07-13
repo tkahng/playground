@@ -10,7 +10,7 @@ import (
 
 	gwebsocket "github.com/gorilla/websocket"
 	"github.com/stretchr/testify/assert"
-	"github.com/tkahng/authgo/internal/tools/websocket"
+	"github.com/tkahng/playground/internal/tools/websocket"
 )
 
 func TestWSHandler(t *testing.T) {

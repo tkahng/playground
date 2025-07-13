@@ -7,9 +7,9 @@ import (
 	"slices"
 
 	"github.com/danielgtaylor/huma/v2"
-	"github.com/tkahng/authgo/internal/contextstore"
-	"github.com/tkahng/authgo/internal/core"
-	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/playground/internal/contextstore"
+	"github.com/tkahng/playground/internal/core"
+	"github.com/tkahng/playground/internal/shared"
 )
 
 func EmailVerifiedMiddleware(api huma.API) func(ctx huma.Context, next func(huma.Context)) {

@@ -4,10 +4,10 @@ import (
 	"errors"
 	"log/slog"
 
-	"github.com/tkahng/authgo/internal/conf"
-	"github.com/tkahng/authgo/internal/database"
-	"github.com/tkahng/authgo/internal/stores"
-	"github.com/tkahng/authgo/internal/tools/di"
+	"github.com/tkahng/playground/internal/conf"
+	"github.com/tkahng/playground/internal/database"
+	"github.com/tkahng/playground/internal/stores"
+	"github.com/tkahng/playground/internal/tools/di"
 )
 
 func getConfig(contianer di.Container) (*conf.EnvConfig, error) {

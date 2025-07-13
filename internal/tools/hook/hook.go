@@ -4,7 +4,7 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/tkahng/authgo/internal/tools/security"
+	"github.com/tkahng/playground/internal/tools/security"
 )
 
 // Handler defines a single Hook handler.

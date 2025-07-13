@@ -1,6 +1,6 @@
 package services
 
-import "github.com/tkahng/authgo/internal/stores"
+import "github.com/tkahng/playground/internal/stores"
 
 type RBACService interface {
 	Adapter() stores.StorageAdapterInterface

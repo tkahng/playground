@@ -7,8 +7,8 @@ import (
 	"github.com/amacneil/dbmate/v2/pkg/dbmate"
 	_ "github.com/amacneil/dbmate/v2/pkg/driver/postgres"
 	"github.com/spf13/cobra"
-	"github.com/tkahng/authgo/internal/conf"
-	database "github.com/tkahng/authgo/internal/database"
+	"github.com/tkahng/playground/internal/conf"
+	database "github.com/tkahng/playground/internal/database"
 )
 
 func NewMigrateCmd() *cobra.Command {

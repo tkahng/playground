@@ -2,7 +2,7 @@ package services
 
 import (
 	"github.com/alexedwards/argon2id"
-	"github.com/tkahng/authgo/internal/tools/security"
+	"github.com/tkahng/playground/internal/tools/security"
 )
 
 type PasswordService interface {

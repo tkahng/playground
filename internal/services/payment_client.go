@@ -13,7 +13,7 @@ import (
 	"github.com/stripe/stripe-go/v82/product"
 	"github.com/stripe/stripe-go/v82/subscription"
 	"github.com/stripe/stripe-go/v82/subscriptionitem"
-	"github.com/tkahng/authgo/internal/conf"
+	"github.com/tkahng/playground/internal/conf"
 )
 
 type StripeClient struct {

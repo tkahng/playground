@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/tkahng/authgo/internal/tools/utils"
+	"github.com/tkahng/playground/internal/tools/utils"
 )
 
 // ParseUnverifiedJWT parses JWT and returns its claims

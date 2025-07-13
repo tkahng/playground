@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/tkahng/authgo/internal/models"
+	"github.com/tkahng/playground/internal/models"
 )
 
 func Test_taskStore_TaskWhere(t *testing.T) {

@@ -12,9 +12,9 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/tkahng/authgo/internal/apis"
-	"github.com/tkahng/authgo/internal/conf"
-	"github.com/tkahng/authgo/internal/core"
+	"github.com/tkahng/playground/internal/apis"
+	"github.com/tkahng/playground/internal/conf"
+	"github.com/tkahng/playground/internal/core"
 )
 
 var port int

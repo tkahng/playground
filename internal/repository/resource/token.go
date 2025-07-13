@@ -4,10 +4,10 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/tkahng/authgo/internal/database"
-	"github.com/tkahng/authgo/internal/models"
-	"github.com/tkahng/authgo/internal/repository"
-	"github.com/tkahng/authgo/internal/tools/types"
+	"github.com/tkahng/playground/internal/database"
+	"github.com/tkahng/playground/internal/models"
+	"github.com/tkahng/playground/internal/repository"
+	"github.com/tkahng/playground/internal/tools/types"
 )
 
 type TokenFilter struct {

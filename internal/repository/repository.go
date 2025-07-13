@@ -3,7 +3,7 @@ package repository
 import (
 	"context"
 
-	"github.com/tkahng/authgo/internal/database"
+	"github.com/tkahng/playground/internal/database"
 )
 
 type Repository[Model any] interface {

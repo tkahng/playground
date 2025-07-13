@@ -5,7 +5,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/stretchr/testify/assert"
-	"github.com/tkahng/authgo/internal/conf"
+	"github.com/tkahng/playground/internal/conf"
 )
 
 func TestJwtService_CreateJwtToken(t *testing.T) {

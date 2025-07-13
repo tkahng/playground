@@ -6,7 +6,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/tkahng/authgo/internal/database"
+	"github.com/tkahng/playground/internal/database"
 )
 
 var (

@@ -2,7 +2,7 @@ package services
 
 import (
 	stripe "github.com/stripe/stripe-go/v82"
-	"github.com/tkahng/authgo/internal/conf"
+	"github.com/tkahng/playground/internal/conf"
 )
 
 type TestPaymentClient struct {

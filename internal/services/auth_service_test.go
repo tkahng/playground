@@ -10,12 +10,12 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
-	"github.com/tkahng/authgo/internal/conf"
-	"github.com/tkahng/authgo/internal/models"
-	"github.com/tkahng/authgo/internal/stores"
-	"github.com/tkahng/authgo/internal/tools/mailer"
-	"github.com/tkahng/authgo/internal/tools/types"
-	"github.com/tkahng/authgo/internal/workers"
+	"github.com/tkahng/playground/internal/conf"
+	"github.com/tkahng/playground/internal/models"
+	"github.com/tkahng/playground/internal/stores"
+	"github.com/tkahng/playground/internal/tools/mailer"
+	"github.com/tkahng/playground/internal/tools/types"
+	"github.com/tkahng/playground/internal/workers"
 )
 
 func TestHandleRefreshToken(t *testing.T) {

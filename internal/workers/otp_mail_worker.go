@@ -5,8 +5,8 @@ import (
 	"log/slog"
 
 	"github.com/google/uuid"
-	"github.com/tkahng/authgo/internal/jobs"
-	"github.com/tkahng/authgo/internal/tools/mailer"
+	"github.com/tkahng/playground/internal/jobs"
+	"github.com/tkahng/playground/internal/tools/mailer"
 )
 
 type OtpEmailJobArgs struct {

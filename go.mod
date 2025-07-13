@@ -1,4 +1,4 @@
-module github.com/tkahng/authgo
+module github.com/tkahng/playground
 
 go 1.24.1
 

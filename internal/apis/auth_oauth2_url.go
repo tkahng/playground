@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/danielgtaylor/huma/v2"
-	"github.com/tkahng/authgo/internal/models"
+	"github.com/tkahng/playground/internal/models"
 )
 
 type OAuth2AuthorizationUrlInput struct {

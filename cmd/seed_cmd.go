@@ -7,13 +7,13 @@ import (
 
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/spf13/cobra"
-	"github.com/tkahng/authgo/internal/conf"
-	"github.com/tkahng/authgo/internal/core"
-	"github.com/tkahng/authgo/internal/database"
-	"github.com/tkahng/authgo/internal/models"
-	"github.com/tkahng/authgo/internal/services"
-	"github.com/tkahng/authgo/internal/stores"
-	"github.com/tkahng/authgo/internal/tools/slug"
+	"github.com/tkahng/playground/internal/conf"
+	"github.com/tkahng/playground/internal/core"
+	"github.com/tkahng/playground/internal/database"
+	"github.com/tkahng/playground/internal/models"
+	"github.com/tkahng/playground/internal/services"
+	"github.com/tkahng/playground/internal/stores"
+	"github.com/tkahng/playground/internal/tools/slug"
 )
 
 func NewSeedCmd() *cobra.Command {

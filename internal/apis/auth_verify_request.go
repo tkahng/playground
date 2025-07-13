@@ -4,9 +4,9 @@ import (
 	"context"
 
 	"github.com/danielgtaylor/huma/v2"
-	"github.com/tkahng/authgo/internal/contextstore"
-	"github.com/tkahng/authgo/internal/tools/mailer"
-	"github.com/tkahng/authgo/internal/workers"
+	"github.com/tkahng/playground/internal/contextstore"
+	"github.com/tkahng/playground/internal/tools/mailer"
+	"github.com/tkahng/playground/internal/workers"
 )
 
 type EmailVerificationInput struct {

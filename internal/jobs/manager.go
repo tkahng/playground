@@ -3,8 +3,8 @@ package jobs
 import (
 	"context"
 
-	"github.com/tkahng/authgo/internal/database"
-	"github.com/tkahng/authgo/internal/models"
+	"github.com/tkahng/playground/internal/database"
+	"github.com/tkahng/playground/internal/models"
 )
 
 type DbJobManager struct {

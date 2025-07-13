@@ -3,7 +3,7 @@ package workers
 import (
 	"context"
 
-	"github.com/tkahng/authgo/internal/jobs"
+	"github.com/tkahng/playground/internal/jobs"
 )
 
 type TeamInvitationJobArgs struct {

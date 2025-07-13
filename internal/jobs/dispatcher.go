@@ -7,7 +7,7 @@ import (
 	"log/slog"
 	"runtime/debug"
 
-	"github.com/tkahng/authgo/internal/models"
+	"github.com/tkahng/playground/internal/models"
 )
 
 // Dispatcher routes jobs to their appropriate handlers based on job kind.

@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/tkahng/authgo/internal/conf"
-	"github.com/tkahng/authgo/internal/tools/security"
+	"github.com/tkahng/playground/internal/conf"
+	"github.com/tkahng/playground/internal/tools/security"
 )
 
 type JwtService interface {

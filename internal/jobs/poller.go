@@ -10,7 +10,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/tkahng/authgo/internal/models"
+	"github.com/tkahng/playground/internal/models"
 	"golang.org/x/sync/errgroup"
 )
 

@@ -3,7 +3,7 @@ package apis
 import (
 	"context"
 
-	"github.com/tkahng/authgo/internal/conf"
+	"github.com/tkahng/playground/internal/conf"
 )
 
 type AppSettingsout struct {

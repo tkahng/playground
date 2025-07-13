@@ -9,10 +9,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	stripe "github.com/stripe/stripe-go/v82"
 
-	"github.com/tkahng/authgo/internal/models"
-	"github.com/tkahng/authgo/internal/stores"
+	"github.com/tkahng/playground/internal/models"
+	"github.com/tkahng/playground/internal/stores"
 
-	"github.com/tkahng/authgo/internal/tools/types"
+	"github.com/tkahng/playground/internal/tools/types"
 )
 
 func TestStripeService_CreateTeamCustomer(t *testing.T) {

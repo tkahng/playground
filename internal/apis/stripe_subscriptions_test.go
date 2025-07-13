@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/danielgtaylor/huma/v2/humatest"
-	"github.com/tkahng/authgo/internal/core"
+	"github.com/tkahng/playground/internal/core"
 )
 
 func TestApi_GetStripeSubscriptions(t *testing.T) {

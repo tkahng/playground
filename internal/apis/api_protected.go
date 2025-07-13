@@ -5,8 +5,8 @@ import (
 	"slices"
 
 	"github.com/danielgtaylor/huma/v2"
-	"github.com/tkahng/authgo/internal/contextstore"
-	"github.com/tkahng/authgo/internal/repository"
+	"github.com/tkahng/playground/internal/contextstore"
+	"github.com/tkahng/playground/internal/repository"
 )
 
 func (api *Api) ApiProtected(ctx context.Context, input *struct {

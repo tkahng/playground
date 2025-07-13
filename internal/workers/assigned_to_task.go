@@ -2,7 +2,7 @@ package workers
 
 import (
 	"github.com/google/uuid"
-	"github.com/tkahng/authgo/internal/jobs"
+	"github.com/tkahng/playground/internal/jobs"
 )
 
 type AssignedToTasJobArgs struct {

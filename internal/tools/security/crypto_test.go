@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/tkahng/authgo/internal/tools/security"
+	"github.com/tkahng/playground/internal/tools/security"
 )
 
 func TestS256Challenge(t *testing.T) {

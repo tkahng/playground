@@ -6,7 +6,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/tkahng/authgo/internal/conf"
+	"github.com/tkahng/playground/internal/conf"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/github"
 )

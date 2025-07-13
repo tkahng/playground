@@ -2,7 +2,7 @@ package services
 
 import (
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/tkahng/authgo/internal/conf"
+	"github.com/tkahng/playground/internal/conf"
 )
 
 var _ JwtService = &JwtServiceDecorator{}

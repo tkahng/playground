@@ -4,9 +4,9 @@ import (
 	"net/http"
 
 	"github.com/danielgtaylor/huma/v2"
-	"github.com/tkahng/authgo/internal/contextstore"
-	"github.com/tkahng/authgo/internal/core"
-	"github.com/tkahng/authgo/internal/models"
+	"github.com/tkahng/playground/internal/contextstore"
+	"github.com/tkahng/playground/internal/core"
+	"github.com/tkahng/playground/internal/models"
 )
 
 func SelectOrCreateOwnerCustomerFromTeam(api huma.API, app core.App) func(ctx huma.Context, next func(huma.Context)) {

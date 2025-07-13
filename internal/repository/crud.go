@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"github.com/tkahng/authgo/internal/models"
+	"github.com/tkahng/playground/internal/models"
 )
 
 var (

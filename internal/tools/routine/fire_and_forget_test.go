@@ -4,7 +4,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/tkahng/authgo/internal/tools/routine"
+	"github.com/tkahng/playground/internal/tools/routine"
 )
 
 func TestFireAndForget(t *testing.T) {

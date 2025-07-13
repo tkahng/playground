@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	"github.com/tkahng/authgo/internal/database"
-	"github.com/tkahng/authgo/internal/models"
+	"github.com/tkahng/playground/internal/database"
+	"github.com/tkahng/playground/internal/models"
 )
 
 type TeamInvitationStoreDecorator struct {

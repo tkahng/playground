@@ -8,7 +8,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/tkahng/authgo/internal/test"
+	"github.com/tkahng/playground/internal/test"
 )
 
 // NB: these tests assume you have a postgres server listening on localhost:5432

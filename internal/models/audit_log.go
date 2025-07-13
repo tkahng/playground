@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/tkahng/authgo/internal/tools/types"
+	"github.com/tkahng/playground/internal/tools/types"
 )
 
 type AuditLog struct {

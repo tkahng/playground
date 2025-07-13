@@ -3,14 +3,14 @@ package core
 import (
 	"log/slog"
 
-	"github.com/tkahng/authgo/internal/conf"
-	"github.com/tkahng/authgo/internal/database"
-	"github.com/tkahng/authgo/internal/jobs"
-	"github.com/tkahng/authgo/internal/services"
-	"github.com/tkahng/authgo/internal/stores"
-	"github.com/tkahng/authgo/internal/tools/di"
-	"github.com/tkahng/authgo/internal/tools/filesystem"
-	"github.com/tkahng/authgo/internal/tools/sse"
+	"github.com/tkahng/playground/internal/conf"
+	"github.com/tkahng/playground/internal/database"
+	"github.com/tkahng/playground/internal/jobs"
+	"github.com/tkahng/playground/internal/services"
+	"github.com/tkahng/playground/internal/stores"
+	"github.com/tkahng/playground/internal/tools/di"
+	"github.com/tkahng/playground/internal/tools/filesystem"
+	"github.com/tkahng/playground/internal/tools/sse"
 )
 
 type App interface {

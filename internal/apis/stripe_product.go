@@ -3,9 +3,9 @@ package apis
 import (
 	"time"
 
-	"github.com/tkahng/authgo/internal/models"
-	"github.com/tkahng/authgo/internal/tools/mapper"
-	"github.com/tkahng/authgo/internal/tools/types"
+	"github.com/tkahng/playground/internal/models"
+	"github.com/tkahng/playground/internal/tools/mapper"
+	"github.com/tkahng/playground/internal/tools/types"
 )
 
 type StripeProduct struct {

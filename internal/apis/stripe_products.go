@@ -3,8 +3,8 @@ package apis
 import (
 	"context"
 
-	"github.com/tkahng/authgo/internal/stores"
-	"github.com/tkahng/authgo/internal/tools/mapper"
+	"github.com/tkahng/playground/internal/stores"
+	"github.com/tkahng/playground/internal/tools/mapper"
 )
 
 type StripeProductsWithPricesInput struct {

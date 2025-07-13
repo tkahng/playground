@@ -2,10 +2,10 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
-	"github.com/tkahng/authgo/internal/conf"
-	"github.com/tkahng/authgo/internal/database"
-	"github.com/tkahng/authgo/internal/services"
-	"github.com/tkahng/authgo/internal/stores"
+	"github.com/tkahng/playground/internal/conf"
+	"github.com/tkahng/playground/internal/database"
+	"github.com/tkahng/playground/internal/services"
+	"github.com/tkahng/playground/internal/stores"
 )
 
 func NewStripeCmd() *cobra.Command {

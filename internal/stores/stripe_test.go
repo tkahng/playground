@@ -9,11 +9,11 @@ import (
 
 	"github.com/Masterminds/squirrel"
 	"github.com/stripe/stripe-go/v82"
-	"github.com/tkahng/authgo/internal/database"
-	"github.com/tkahng/authgo/internal/models"
-	"github.com/tkahng/authgo/internal/stores"
-	"github.com/tkahng/authgo/internal/test"
-	"github.com/tkahng/authgo/internal/tools/types"
+	"github.com/tkahng/playground/internal/database"
+	"github.com/tkahng/playground/internal/models"
+	"github.com/tkahng/playground/internal/stores"
+	"github.com/tkahng/playground/internal/test"
+	"github.com/tkahng/playground/internal/tools/types"
 )
 
 func TestStripeStore_CreateCustomer(t *testing.T) {

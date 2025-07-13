@@ -8,7 +8,7 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/stripe/stripe-go/v82"
 	"github.com/stripe/stripe-go/v82/webhook"
-	"github.com/tkahng/authgo/internal/tools/utils"
+	"github.com/tkahng/playground/internal/tools/utils"
 )
 
 type StripeWebhookInput struct {

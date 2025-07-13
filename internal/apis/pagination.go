@@ -3,7 +3,7 @@ package apis
 import (
 	"math"
 
-	"github.com/tkahng/authgo/internal/repository"
+	"github.com/tkahng/playground/internal/repository"
 )
 
 type SortParams struct {

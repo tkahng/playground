@@ -6,10 +6,10 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
-	"github.com/tkahng/authgo/internal/conf"
-	"github.com/tkahng/authgo/internal/models"
-	"github.com/tkahng/authgo/internal/stores"
-	"github.com/tkahng/authgo/internal/workers"
+	"github.com/tkahng/playground/internal/conf"
+	"github.com/tkahng/playground/internal/models"
+	"github.com/tkahng/playground/internal/stores"
+	"github.com/tkahng/playground/internal/workers"
 )
 
 func TestNewInvitationService(t *testing.T) {

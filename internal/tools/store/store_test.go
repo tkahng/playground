@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/tkahng/authgo/internal/tools/store"
+	"github.com/tkahng/playground/internal/tools/store"
 )
 
 func TestNew(t *testing.T) {

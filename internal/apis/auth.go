@@ -1,6 +1,6 @@
 package apis
 
-import "github.com/tkahng/authgo/internal/models"
+import "github.com/tkahng/playground/internal/models"
 
 type ApiUserInfoTokens struct { // size=360 (0x168), class=384 (0x180)
 	ApiUserInfo

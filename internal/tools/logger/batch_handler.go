@@ -7,7 +7,7 @@ import (
 	"sync"
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
-	"github.com/tkahng/authgo/internal/tools/types"
+	"github.com/tkahng/playground/internal/tools/types"
 )
 
 var _ slog.Handler = (*BatchHandler)(nil)

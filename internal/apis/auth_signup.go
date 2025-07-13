@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/tkahng/authgo/internal/models"
-	"github.com/tkahng/authgo/internal/services"
+	"github.com/tkahng/playground/internal/models"
+	"github.com/tkahng/playground/internal/services"
 )
 
 type RequiredPasswordField string

@@ -1,6 +1,6 @@
 package mailer
 
-import "github.com/tkahng/authgo/internal/tools/utils"
+import "github.com/tkahng/playground/internal/tools/utils"
 
 type LogMailer struct {
 }

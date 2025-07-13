@@ -3,7 +3,7 @@ package repository
 import (
 	"testing"
 
-	"github.com/tkahng/authgo/internal/models"
+	"github.com/tkahng/playground/internal/models"
 )
 
 type buidlerWants struct {

@@ -6,13 +6,13 @@ import (
 	"net/url"
 
 	"github.com/google/uuid"
-	"github.com/tkahng/authgo/internal/conf"
-	"github.com/tkahng/authgo/internal/models"
-	"github.com/tkahng/authgo/internal/shared"
-	"github.com/tkahng/authgo/internal/stores"
-	"github.com/tkahng/authgo/internal/tools/mailer"
-	"github.com/tkahng/authgo/internal/tools/security"
-	"github.com/tkahng/authgo/internal/workers"
+	"github.com/tkahng/playground/internal/conf"
+	"github.com/tkahng/playground/internal/models"
+	"github.com/tkahng/playground/internal/shared"
+	"github.com/tkahng/playground/internal/stores"
+	"github.com/tkahng/playground/internal/tools/mailer"
+	"github.com/tkahng/playground/internal/tools/security"
+	"github.com/tkahng/playground/internal/workers"
 )
 
 type OtpMailService interface {

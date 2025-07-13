@@ -5,8 +5,8 @@ import (
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
-	"github.com/tkahng/authgo/internal/contextstore"
-	"github.com/tkahng/authgo/internal/core"
+	"github.com/tkahng/playground/internal/contextstore"
+	"github.com/tkahng/playground/internal/core"
 )
 
 func CheckTaskOwnerMiddleware(api huma.API, app core.App) func(ctx huma.Context, next func(huma.Context)) {

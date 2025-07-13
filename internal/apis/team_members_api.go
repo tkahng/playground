@@ -10,14 +10,14 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	humasse "github.com/danielgtaylor/huma/v2/sse"
 	"github.com/google/uuid"
-	"github.com/tkahng/authgo/internal/contextstore"
-	"github.com/tkahng/authgo/internal/middleware"
-	"github.com/tkahng/authgo/internal/models"
-	"github.com/tkahng/authgo/internal/notification"
-	"github.com/tkahng/authgo/internal/shared"
-	"github.com/tkahng/authgo/internal/stores"
-	"github.com/tkahng/authgo/internal/tools/mapper"
-	"github.com/tkahng/authgo/internal/tools/sse"
+	"github.com/tkahng/playground/internal/contextstore"
+	"github.com/tkahng/playground/internal/middleware"
+	"github.com/tkahng/playground/internal/models"
+	"github.com/tkahng/playground/internal/notification"
+	"github.com/tkahng/playground/internal/shared"
+	"github.com/tkahng/playground/internal/stores"
+	"github.com/tkahng/playground/internal/tools/mapper"
+	"github.com/tkahng/playground/internal/tools/sse"
 )
 
 func TeamChannel(teamMemberId string) string {

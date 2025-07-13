@@ -5,13 +5,13 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/tkahng/authgo/internal/database"
-	"github.com/tkahng/authgo/internal/jobs"
-	"github.com/tkahng/authgo/internal/models"
-	"github.com/tkahng/authgo/internal/services"
-	"github.com/tkahng/authgo/internal/stores"
-	"github.com/tkahng/authgo/internal/test"
-	"github.com/tkahng/authgo/internal/tools/types"
+	"github.com/tkahng/playground/internal/database"
+	"github.com/tkahng/playground/internal/jobs"
+	"github.com/tkahng/playground/internal/models"
+	"github.com/tkahng/playground/internal/services"
+	"github.com/tkahng/playground/internal/stores"
+	"github.com/tkahng/playground/internal/test"
+	"github.com/tkahng/playground/internal/tools/types"
 )
 
 func TestDefineTaskOrderNumberByStatus(t *testing.T) {

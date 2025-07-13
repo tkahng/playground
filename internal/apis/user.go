@@ -4,8 +4,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/tkahng/authgo/internal/models"
-	"github.com/tkahng/authgo/internal/tools/mapper"
+	"github.com/tkahng/playground/internal/models"
+	"github.com/tkahng/playground/internal/tools/mapper"
 )
 
 type ApiUser struct {

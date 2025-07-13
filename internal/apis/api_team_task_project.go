@@ -7,14 +7,14 @@ import (
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
-	"github.com/tkahng/authgo/internal/contextstore"
-	"github.com/tkahng/authgo/internal/models"
-	"github.com/tkahng/authgo/internal/services"
-	"github.com/tkahng/authgo/internal/stores"
-	"github.com/tkahng/authgo/internal/tools/ai/googleai"
-	"github.com/tkahng/authgo/internal/tools/mapper"
-	"github.com/tkahng/authgo/internal/tools/utils"
-	"github.com/tkahng/authgo/internal/workers"
+	"github.com/tkahng/playground/internal/contextstore"
+	"github.com/tkahng/playground/internal/models"
+	"github.com/tkahng/playground/internal/services"
+	"github.com/tkahng/playground/internal/stores"
+	"github.com/tkahng/playground/internal/tools/ai/googleai"
+	"github.com/tkahng/playground/internal/tools/mapper"
+	"github.com/tkahng/playground/internal/tools/utils"
+	"github.com/tkahng/playground/internal/workers"
 )
 
 type TaskProject struct {

@@ -5,9 +5,9 @@ import (
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
-	"github.com/tkahng/authgo/internal/models"
-	"github.com/tkahng/authgo/internal/shared"
-	"github.com/tkahng/authgo/internal/stores"
+	"github.com/tkahng/playground/internal/models"
+	"github.com/tkahng/playground/internal/shared"
+	"github.com/tkahng/playground/internal/stores"
 )
 
 type ConstaintCheckerStore interface {

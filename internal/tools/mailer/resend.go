@@ -4,7 +4,7 @@ import (
 	"log/slog"
 
 	"github.com/resend/resend-go/v2"
-	"github.com/tkahng/authgo/internal/conf"
+	"github.com/tkahng/playground/internal/conf"
 )
 
 type Message struct {

@@ -5,7 +5,7 @@ import (
 
 	"github.com/google/uuid"
 	stripe "github.com/stripe/stripe-go/v82"
-	"github.com/tkahng/authgo/internal/models"
+	"github.com/tkahng/playground/internal/models"
 )
 
 type StripeSubscriptionStoreDecorator struct {

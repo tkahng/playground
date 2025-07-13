@@ -1,7 +1,7 @@
 package apis
 
 import (
-	"github.com/tkahng/authgo/internal/core"
+	"github.com/tkahng/playground/internal/core"
 )
 
 type Api struct {

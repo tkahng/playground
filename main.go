@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/tkahng/authgo/cmd"
+	"github.com/tkahng/playground/cmd"
 )
 
 func main() {

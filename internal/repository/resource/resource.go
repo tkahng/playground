@@ -10,9 +10,9 @@ import (
 	"strings"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/tkahng/authgo/internal/database"
-	"github.com/tkahng/authgo/internal/repository"
-	"github.com/tkahng/authgo/internal/tools/utils"
+	"github.com/tkahng/playground/internal/database"
+	"github.com/tkahng/playground/internal/repository"
+	"github.com/tkahng/playground/internal/tools/utils"
 )
 
 var (

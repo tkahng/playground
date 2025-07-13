@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
-	"github.com/tkahng/authgo/internal/contextstore"
-	"github.com/tkahng/authgo/internal/models"
+	"github.com/tkahng/playground/internal/contextstore"
+	"github.com/tkahng/playground/internal/models"
 )
 
 type UserStats struct {

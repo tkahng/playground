@@ -3,7 +3,7 @@ package shared
 import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
-	"github.com/tkahng/authgo/internal/models"
+	"github.com/tkahng/playground/internal/models"
 )
 
 // ----------- Authentication Claims -----------------

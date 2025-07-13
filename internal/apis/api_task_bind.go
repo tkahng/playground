@@ -4,8 +4,8 @@ import (
 	"net/http"
 
 	"github.com/danielgtaylor/huma/v2"
-	"github.com/tkahng/authgo/internal/middleware"
-	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/playground/internal/middleware"
+	"github.com/tkahng/playground/internal/shared"
 )
 
 func BindTaskApi(api huma.API, appApi *Api) {

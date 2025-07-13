@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/tkahng/authgo/internal/jobs"
+	"github.com/tkahng/playground/internal/jobs"
 )
 
 type TaskDueTodayJobArgs struct {

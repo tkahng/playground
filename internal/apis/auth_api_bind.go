@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/danielgtaylor/huma/v2"
-	"github.com/tkahng/authgo/internal/shared"
+	"github.com/tkahng/playground/internal/shared"
 )
 
 func BindAuthApi(api huma.API, appApi *Api) {

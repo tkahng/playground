@@ -1,6 +1,6 @@
 package stores
 
-import "github.com/tkahng/authgo/internal/database"
+import "github.com/tkahng/playground/internal/database"
 
 func NewAdapterDecorators() *StorageAdapterDecorator {
 	return &StorageAdapterDecorator{
