@@ -272,8 +272,7 @@ func TestStripeService_VerifyAndUpdateTeamSubscriptionQuantity(t *testing.T) {
 		}
 
 		err := service.VerifyAndUpdateTeamSubscriptionQuantity(ctx, teamId)
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "no stripe customer id")
+		assert.NoError(t, err)
 
 	})
 

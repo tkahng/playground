@@ -107,7 +107,9 @@ func TestInvitationService_AcceptInvitation(t *testing.T) {
 	jobService.EnqueueTeamMemberAddedJobFunc = func(ctx context.Context, job *workers.NewMemberNotificationJobArgs) error {
 		return nil
 	}
-
+	jobService.EnqueueRefreshSubscriptionQuantityJobFunc = func(ctx context.Context, job *workers.RefreshSubscriptionQuantityJobArgs) error {
+		return nil
+	}
 	err := service.AcceptInvitation(ctx, user.ID, "token")
 	assert.NoError(t, err)
 	assert.Equal(t, models.TeamInvitationStatusAccepted, invitation.Status)
@@ -639,6 +641,9 @@ func TestInvitationService_AcceptInvitation_Success(t *testing.T) {
 	}
 	store.TeamMemberFunc.CreateTeamMemberFunc = func(ctx context.Context, teamId, userId uuid.UUID, role models.TeamMemberRole, hasBillingAccess bool) (*models.TeamMember, error) {
 		return &models.TeamMember{}, nil
+	}
+	jobService.EnqueueRefreshSubscriptionQuantityJobFunc = func(ctx context.Context, job *workers.RefreshSubscriptionQuantityJobArgs) error {
+		return nil
 	}
 	store.TeamInvitationFunc.UpdateInvitationFunc = func(ctx context.Context, invitation *models.TeamInvitation) error {
 		invitation.Status = models.TeamInvitationStatusAccepted
