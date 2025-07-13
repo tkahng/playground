@@ -18,5 +18,5 @@ FROM alpine:latest
 RUN apk --no-cache add ca-certificates
 COPY --from=builder /go/bin/app /app
 ENTRYPOINT ["/app", "serve"]
-LABEL Name=authgo Version=0.0.1
+LABEL Name=playground Version=0.0.1
 EXPOSE 8080

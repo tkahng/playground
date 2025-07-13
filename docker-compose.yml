@@ -1,21 +1,5 @@
 services:
-  # db:
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile.database
-  #   # container_name: postgres_with_postgis_pgvector
-  #   platform: linux/arm64
-  #   restart: always
-  #   environment:
-  #     - POSTGRES_USER=${POSTGRES_USER}
-  #     - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-  #     - POSTGRES_DB=${POSTGRES_DB}
-  #   ports:
-  #     - "5432:5432"
-  #   volumes:
-  #     - postgres-data:/var/lib/postgresql/data
   db:
-    # image: tkahng/postgres:17
     build:
       context: .
       dockerfile: Dockerfile.database
@@ -29,17 +13,17 @@ services:
     env_file:
       - .env
 
-  # app:
-  #   depends_on:
-  #     - db
-  #   image: authgo
-  #   build:
-  #     context: .
-  #     dockerfile: ./Dockerfile
-  #   ports:
-  #     - 8080:8080
-  #   env_file:
-  #     - .env
+  app:
+    depends_on:
+      - db
+    image: playground
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    ports:
+      - 8080:8080
+    env_file:
+      - .env
 
 volumes:
   postgres-data:
