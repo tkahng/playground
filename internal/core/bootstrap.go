@@ -14,7 +14,6 @@ import (
 	"github.com/tkahng/authgo/internal/tools/filesystem"
 	"github.com/tkahng/authgo/internal/tools/logger"
 	"github.com/tkahng/authgo/internal/tools/mailer"
-	"github.com/tkahng/authgo/internal/tools/payment"
 	"github.com/tkahng/authgo/internal/tools/sse"
 )
 
@@ -162,7 +161,7 @@ func register(container di.Container) error {
 		if err != nil {
 			return nil, err
 		}
-		paymentClient := payment.NewPaymentClient(config.StripeConfig)
+		paymentClient := services.NewPaymentClient(config.StripeConfig)
 		return paymentClient, nil
 	})
 	// task service
