@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/goforj/godump"
 	"github.com/google/uuid"
 	"github.com/tkahng/authgo/internal/database"
 	"github.com/tkahng/authgo/internal/models"
@@ -404,7 +403,6 @@ func TestDbTeamMemberStore_LoadTeamMembersByUserAndTeamIds(t *testing.T) {
 				t.Fatalf("CreateTeamMember() error = %v", err)
 			}
 		}
-		godump.Dump(teamsSlice)
 		type fields struct {
 			db database.Dbx
 		}
@@ -438,7 +436,6 @@ func TestDbTeamMemberStore_LoadTeamMembersByUserAndTeamIds(t *testing.T) {
 			t.Run(tt.name, func(t *testing.T) {
 				store := stores.NewDbTeamMemberStore(tt.fields.db)
 				got, _ := store.LoadTeamMembersByUserAndTeamIds(tt.args.ctx, tt.args.userId, tt.args.teamIds...)
-				godump.Dump(got)
 				for _, teamMember := range got {
 					if team, ok := teamsMap[teamMember.TeamID]; ok {
 						if teamMember.UserID == nil || *teamMember.UserID != user1.ID {
