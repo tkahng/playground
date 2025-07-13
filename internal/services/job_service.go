@@ -141,6 +141,9 @@ func (j *JobServiceDecorator) EnqueueRefreshSubscriptionQuantityJob(ctx context.
 	if j.EnqueueRefreshSubscriptionQuantityJobFunc != nil {
 		return j.EnqueueRefreshSubscriptionQuantityJobFunc(ctx, job)
 	}
+	if j.Delegate == nil {
+		return errors.New("delegate for EnqueueRefreshSubscriptionQuantityJob in JobService is nil")
+	}
 	return j.Delegate.EnqueueRefreshSubscriptionQuantityJob(ctx, job)
 }
 
