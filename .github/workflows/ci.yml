@@ -33,7 +33,10 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
-          go-version: "1.24.1" # Use Go version 1.23.5
+          cache: true
+          cache-dependency-path: go.sum
+          go-version: "1.24.4" # Use Go version 1.23.5
+
       # Install dependencies
       - name: Install dependencies
         run: go mod tidy
@@ -76,7 +79,9 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
-          go-version: "1.24.1" # Use Go version 1.23.5
+          cache: true
+          cache-dependency-path: go.sum
+          go-version: "1.24.4" #
 
       - name: Run Migrations
         env:
