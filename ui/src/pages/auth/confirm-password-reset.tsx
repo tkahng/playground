@@ -1,8 +1,8 @@
 import { RouteMap } from "@/components/route-map";
 import { Link, useSearchParams } from "react-router";
 
-import { NexusAILandingHeader } from "@/components/nexus-landing-header";
-import { NexusAIMinimalFooter } from "@/components/nexus-minimal-footer";
+import { PlaygroundLandingHeader } from "@/components/nexus-landing-header";
+import { PlaygroundMinimalFooter } from "@/components/nexus-minimal-footer";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -155,7 +155,7 @@ export default function ResetPasswordPage() {
   if (isSuccess) {
     return (
       <div className="flex flex-col min-h-screen">
-        <NexusAILandingHeader />
+        <PlaygroundLandingHeader />
         <main className="flex-1 flex items-center justify-center p-4">
           <Card className="max-w-md w-full">
             <CardHeader className="text-center">
@@ -190,13 +190,13 @@ export default function ResetPasswordPage() {
             </CardFooter>
           </Card>
         </main>
-        <NexusAIMinimalFooter />
+        <PlaygroundMinimalFooter />
       </div>
     );
   }
   return (
     <div className="flex flex-col min-h-screen">
-      <NexusAILandingHeader />
+      <PlaygroundLandingHeader />
       <main className="flex-1 flex items-center justify-center p-4">
         <Card className="max-w-md w-full border-none drop-shadow-sm">
           <CardHeader>
@@ -207,7 +207,7 @@ export default function ResetPasswordPage() {
               Reset Your Password
             </CardTitle>
             <CardDescription className="text-center">
-              Create a new password for your NexusAI account
+              Create a new password for your Playground account
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -352,7 +352,7 @@ export default function ResetPasswordPage() {
           </CardFooter>
         </Card>
       </main>
-      <NexusAIMinimalFooter />
+      <PlaygroundMinimalFooter />
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import { Facebook, Github, Linkedin, Twitter } from "lucide-react";
 import { NavLink } from "react-router";
 // container mx-auto flex h-14 items-center justify-between  lg:px-6
-export function NexusAIFooter() {
+export function PlaygroundFooter() {
   return (
     <footer className="border-t w-full mt-auto bg-background">
       <div className="container mx-auto flex-col items-center justify-between px-4 py-12 md:px-6 lg:px-8">
@@ -129,7 +129,7 @@ export function NexusAIFooter() {
         </div>
         <div className="mt-8 border-t pt-8">
           <p className="text-center text-xs text-gray-500 dark:text-gray-400">
-            © 2023 NexusAI. All rights reserved.
+            © 2023 Playground. All rights reserved.
           </p>
         </div>
       </div>

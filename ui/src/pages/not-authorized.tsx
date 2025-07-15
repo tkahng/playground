@@ -13,9 +13,6 @@ import { Link } from "react-router";
 
 export default function NotAuthorizedPage() {
   return (
-    // <div className="flex flex-col min-h-screen">
-    //   <NexusAILandingHeader />
-    //   <main className="flex-1 flex items-center justify-center p-4">
     <Card className="max-w-md w-full">
       <CardHeader className="text-center">
         <div className="flex justify-center mb-4">
@@ -58,8 +55,5 @@ export default function NotAuthorizedPage() {
         </Button>
       </CardFooter>
     </Card>
-    //   </main>
-    //   <NexusAIMinimalFooter />
-    // </div>
   );
 }

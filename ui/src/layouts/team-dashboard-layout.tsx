@@ -1,6 +1,6 @@
 import { LinkDto, teamLinks } from "@/components/links";
 import { MainNav } from "@/components/main-nav";
-import { NexusAIMinimalFooter } from "@/components/nexus-minimal-footer";
+import { PlaygroundMinimalFooter } from "@/components/nexus-minimal-footer";
 import { RouteMap } from "@/components/route-map";
 import { TeamHeader } from "@/components/team-header";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
@@ -101,7 +101,7 @@ export default function TeamDashboardLayout() {
       <main className="flex-1">
         <Outlet />
       </main>
-      <NexusAIMinimalFooter />
+      <PlaygroundMinimalFooter />
     </div>
   );
 }

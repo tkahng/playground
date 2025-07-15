@@ -1,6 +1,6 @@
 import AuthButton from "@/components/auth-button";
 import { LinkDto } from "@/components/links";
-import NexusAILogo from "@/components/nexus-logo";
+import PlaygroundLogo from "@/components/nexus-logo";
 import { cn } from "@/lib/utils";
 import { Link, useLocation } from "react-router";
 import { NotificationDropdown } from "./notification-dropdown";
@@ -19,7 +19,7 @@ export function TeamHeader({
     <header>
       <nav className={cn("flex h-14 items-center box-border")}>
         <div className="flex flex-grow items-center space-x-4">
-          <NexusAILogo />
+          <PlaygroundLogo />
           <TeamSwitcher />
           <TeamNotification />
           {leftLinks?.length

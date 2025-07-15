@@ -16,7 +16,7 @@ export default function LandingAboutPage() {
     <>
       <LandingTopSection
         {...{
-          heading: "About NexusAI",
+          heading: "About Playground",
           description: `Empowering businesses with cutting-edge AI solutions to drive
                 innovation and growth.`,
         }}
@@ -141,7 +141,7 @@ export default function LandingAboutPage() {
             Our Story
           </h2>
           <p className="text-gray-500 dark:text-gray-400">
-            Founded in 2020, NexusAI emerged from a shared vision to make AI
+            Founded in 2020, Playground emerged from a shared vision to make AI
             accessible and impactful for businesses worldwide. What started as a
             small team of passionate AI enthusiasts has grown into a leading
             force in the AI industry, serving clients across various sectors and
@@ -199,7 +199,8 @@ export default function LandingAboutPage() {
           </h2>
           <p className="mx-auto max-w-[700px] text-gray-500 md:text-xl dark:text-gray-400">
             We're always looking for talented individuals to join our mission.
-            Check out our open positions and become part of the NexusAI family.
+            Check out our open positions and become part of the Playground
+            family.
           </p>
         </div>
         <div className="space-x-4">

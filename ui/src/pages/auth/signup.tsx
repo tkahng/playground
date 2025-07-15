@@ -88,7 +88,7 @@ export default function SignupPage() {
               Create your account
             </CardTitle>
             <CardDescription className="text-center">
-              Enter your details to get started with NexusAI
+              Enter your details to get started with Playground
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-1">

@@ -80,7 +80,7 @@ export default function SigninPage() {
         <Card className="w-full max-w-md">
           <CardHeader className="space-y-1">
             <CardTitle className="text-center text-2xl font-bold">
-              Login to NexusAI
+              Login to Playground
             </CardTitle>
             <CardDescription className="text-center">
               Enter your email and password to access your account

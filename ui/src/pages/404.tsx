@@ -1,5 +1,5 @@
-import { NexusAILandingHeader } from "@/components/nexus-landing-header";
-import { NexusAIMinimalFooter } from "@/components/nexus-minimal-footer";
+import { PlaygroundLandingHeader } from "@/components/nexus-landing-header";
+import { PlaygroundMinimalFooter } from "@/components/nexus-minimal-footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft, Brain, HelpCircle, Home, Search } from "lucide-react";
@@ -8,7 +8,7 @@ import { Link } from "react-router";
 export default function NotFoundPage() {
   return (
     <div className="flex flex-col min-h-screen">
-      <NexusAILandingHeader />
+      <PlaygroundLandingHeader />
       <main className="flex-1 flex items-center justify-center p-4">
         <div className="max-w-md w-full text-center space-y-8">
           <div className="space-y-2">
@@ -63,7 +63,7 @@ export default function NotFoundPage() {
           </div>
         </div>
       </main>
-      <NexusAIMinimalFooter />
+      <PlaygroundMinimalFooter />
     </div>
   );
 }
