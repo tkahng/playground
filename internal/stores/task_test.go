@@ -13,6 +13,142 @@ import (
 	"github.com/tkahng/playground/internal/tools/types"
 )
 
+func CreateUser(adapter stores.StorageAdapterInterface, ctx context.Context, email string) *models.User {
+	user, err := adapter.User().CreateUser(ctx, &models.User{
+		Email: email,
+	})
+	if err != nil {
+		panic(err)
+	}
+	return user
+}
+
+func CreateTeam(adapter stores.StorageAdapterInterface, ctx context.Context, slug string) *models.Team {
+	team, err := adapter.TeamGroup().CreateTeam(ctx, slug, slug)
+	if err != nil {
+		panic(err)
+	}
+	return team
+}
+
+func CreateTeamMember(adapter stores.StorageAdapterInterface, ctx context.Context, team *models.Team, user *models.User, role models.TeamMemberRole, billingAccess bool) *models.TeamMember {
+	member, err := adapter.TeamMember().CreateTeamMember(ctx, team.ID, user.ID, role, billingAccess)
+	if err != nil {
+		panic(err)
+	}
+	return member
+}
+
+func CreateTeamProject(adapter stores.StorageAdapterInterface, ctx context.Context, member *models.TeamMember, name string, description string) *models.TaskProject {
+	taskProject, err := adapter.Task().CreateTaskProject(ctx, &stores.CreateTaskProjectDTO{
+		Name:        name,
+		Status:      models.TaskProjectStatusDone,
+		TeamID:      member.TeamID,
+		MemberID:    member.ID,
+		Description: &description,
+	})
+	if err != nil {
+		panic(err)
+	}
+	return taskProject
+}
+
+func CreateTask(adapter stores.StorageAdapterInterface, ctx context.Context, task *models.Task) *models.Task {
+	task, err := adapter.Task().CreateTask(ctx, task)
+	if err != nil {
+		panic(err)
+	}
+	return task
+}
+
+func TestSearchUserTasks(t *testing.T) {
+	test.Parallel(t)
+	test.SkipIfShort(t)
+	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
+		adapter := stores.NewStorageAdapter(db)
+		user := CreateUser(adapter, ctx, "tkahng@gmail.com")
+		team := CreateTeam(adapter, ctx, "TestTeam")
+		member := CreateTeamMember(adapter, ctx, team, user, models.TeamMemberRoleOwner, true)
+		project := CreateTeamProject(adapter, ctx, member, "Test Project", "Test Project")
+		task1 := &models.Task{
+			ProjectID:         project.ID,
+			Name:              "One",
+			Status:            models.TaskStatusTodo,
+			CreatedByMemberID: types.Pointer(member.ID),
+			TeamID:            team.ID,
+			Description:       types.Pointer("Uno"),
+		}
+		task2 := &models.Task{
+			ProjectID:         project.ID,
+			Name:              "Two",
+			Status:            models.TaskStatusTodo,
+			CreatedByMemberID: types.Pointer(member.ID),
+			TeamID:            team.ID,
+			Description:       types.Pointer("Dos"),
+		}
+
+		CreateTask(adapter, ctx, task1)
+		CreateTask(adapter, ctx, task2)
+
+		t.Run("search one", func(t *testing.T) {
+			tasks, err := adapter.Task().ListTasks(ctx, &stores.TaskFilter{
+				Q: "one",
+			})
+			if err != nil {
+				t.Fatalf("failed to search tasks: %v", err)
+			}
+			if len(tasks) != 1 {
+				t.Fatalf("expected 2 tasks, got %d", len(tasks))
+			}
+			if tasks[0].Name != "One" {
+				t.Fatalf("expected task name to be One, got %s", tasks[0].Name)
+			}
+		})
+		t.Run("search uno", func(t *testing.T) {
+			tasks, err := adapter.Task().ListTasks(ctx, &stores.TaskFilter{
+				Q: "uno",
+			})
+			if err != nil {
+				t.Fatalf("failed to search tasks: %v", err)
+			}
+			if len(tasks) != 1 {
+				t.Fatalf("expected 2 tasks, got %d", len(tasks))
+			}
+			if *tasks[0].Description != "Uno" {
+				t.Fatalf("expected task description to be Uno, got %s", *tasks[0].Description)
+			}
+		})
+		t.Run("search two", func(t *testing.T) {
+			tasks, err := adapter.Task().ListTasks(ctx, &stores.TaskFilter{
+				Q: "two",
+			})
+			if err != nil {
+				t.Fatalf("failed to search tasks: %v", err)
+			}
+			if len(tasks) != 1 {
+				t.Fatalf("expected 2 tasks, got %d", len(tasks))
+			}
+			if tasks[0].Name != "Two" {
+				t.Fatalf("expected task name to be Two, got %s", tasks[0].Name)
+			}
+		})
+		t.Run("search dos", func(t *testing.T) {
+			tasks, err := adapter.Task().ListTasks(ctx, &stores.TaskFilter{
+				Q: "dos",
+			})
+			if err != nil {
+				t.Fatalf("failed to search tasks: %v", err)
+			}
+			if len(tasks) != 1 {
+				t.Fatalf("expected 2 tasks, got %d", len(tasks))
+			}
+			if *tasks[0].Description != "Dos" {
+				t.Fatalf("expected task description to be Dos, got %s", *tasks[0].Description)
+			}
+		})
+	})
+}
+
 func TestGetUserTaskStats(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
@@ -27,7 +163,6 @@ func TestGetUserTaskStats(t *testing.T) {
 			t.Fatalf("failed to create user: %v", err)
 		}
 		member, err := adapter.TeamMember().CreateTeamFromUser(ctx, user)
-		// member, err := adapter.TeamMember().CreateTeamMemberFromUserAndSlug(ctx, user, "TestTeam", models.TeamMemberRoleOwner)
 		if err != nil {
 			t.Fatalf("failed to create team from user: %v", err)
 		}
@@ -1159,11 +1294,7 @@ func TestCreateTaskProjectWithTasks(t *testing.T) {
 					if !reflect.DeepEqual(got.Status, tt.want.Status) {
 						t.Errorf("CreateTaskProjectWithTasks() Status = %v, want %v", got.Status, tt.want.Status)
 					}
-					// if !reflect.DeepEqual(got.UserID, tt.want.UserID) {
-					// 	t.Errorf("CreateTaskProjectWithTasks() UserID = %v, want %v", got.UserID, tt.want.UserID)
-					// }
 
-					// Verify tasks were created
 					tasks, err := taskStore.ListTasks(tt.args.ctx, &stores.TaskFilter{
 						ProjectIds: []uuid.UUID{got.ID},
 					})
