@@ -343,11 +343,13 @@ func BindTeamsApi(api huma.API, appApi *Api) {
 		},
 		appApi.GetInvitationByToken,
 	)
-	appApi.BindTeamMembersSseEvents(api)
+	appApi.BindTeamMembersSseEvents(teamsGroup)
 
 	appApi.BindFindTeamMembersNotifications(teamsGroup)
 
 	appApi.BindReadTeamMembersNotifications(teamsGroup)
 
 	appApi.BindDeleteTeamMembersNotifications(teamsGroup)
+
+	appApi.BindFindTeamMemberByID(teamsGroup)
 }

@@ -436,6 +436,7 @@ func (api *Api) SetCurrentTeam(
 type FindTeamTeamMembersInput struct {
 	PaginatedInput
 	SortParams
+	Q      string `query:"q,omitempty" required:"false"`
 	TeamID string `path:"team-id" required:"true" format:"uuid"`
 }
 
@@ -460,6 +461,7 @@ func (api *Api) FindTeamTeamMembers(
 	filter.SortBy = input.SortBy
 	filter.SortOrder = input.SortOrder
 	filter.TeamIds = []uuid.UUID{teamID}
+	filter.Q = input.Q
 	members, err := api.App().Adapter().TeamMember().FindTeamMembers(ctx, filter)
 	if err != nil {
 		return nil, err

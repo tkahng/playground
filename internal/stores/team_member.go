@@ -214,7 +214,11 @@ func (s *DbTeamMemberStore) filterQuery(qs squirrel.SelectBuilder, filter *TeamM
 		return qs
 	}
 	if filter.Q != "" {
-
+		qs = qs.Join("teams on team_members.team_id = teams.id").Join("users on team_members.user_id = users.id")
+		qs = qs.Where(squirrel.Or{
+			squirrel.ILike{"teams.name": "%" + filter.Q + "%"},
+			squirrel.ILike{"users.email": "%" + filter.Q + "%"},
+		})
 	}
 	if len(filter.Ids) > 0 {
 		qs = qs.Where(squirrel.Eq{models.TeamMemberTable.ID: filter.Ids})
@@ -269,13 +273,14 @@ func (s *DbTeamMemberStore) sortQuery(qs squirrel.SelectBuilder, filter Sortable
 	if filter == nil {
 		return qs // return original query if no filter is provided
 	}
+
 	sortBy, sortOrder := filter.Sort()
 	if sortBy != "" && slices.Contains(repository.TeamMemberBuilder.ColumnNames(), utils.Quote(sortBy)) {
 		qs = qs.OrderBy(utils.Quote(sortBy) + " " + strings.ToUpper(sortOrder))
 	} else if sortBy == "team.name" {
-		qs = qs.Join("teams on team_members.team_id = teams.id").OrderBy("teams.name " + strings.ToUpper(sortOrder))
+		qs = qs.OrderBy("teams.name " + strings.ToUpper(sortOrder))
 	} else if sortBy == "user.email" {
-		qs = qs.Join("users on team_members.user_id = users.id").OrderBy("users.email " + strings.ToUpper(sortOrder))
+		qs = qs.OrderBy("users.email " + strings.ToUpper(sortOrder))
 	} else {
 		slog.Info("sort by field not found in repository columns", "sortBy", sortBy, "sortOrder", sortOrder, "columns", repository.TeamMemberBuilder.ColumnNames())
 	}

@@ -279,3 +279,53 @@ func (api *Api) BindDeleteTeamMembersNotifications(aapi huma.API) {
 		},
 	)
 }
+
+type FindTeamTeamMemberByIDInput struct {
+	TeamID       string `path:"team-id" required:"true" format:"uuid"`
+	TeamMemberID string `path:"team-member-id" required:"true" format:"uuid"`
+}
+
+func (api *Api) BindFindTeamMemberByID(aapi huma.API) {
+	middleware := middleware.TeamInfoFromParam(aapi, api.app)
+	huma.Register(
+		aapi,
+		huma.Operation{
+			OperationID: "find-team-team-member-by-id",
+			Method:      http.MethodGet,
+			Path:        "/teams/{team-id}/team-members/{team-member-id}",
+			Summary:     "find-team-team-member-by-id",
+			Description: "find team team member by id",
+			Tags:        []string{"Team Members"},
+			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+			Middlewares: huma.Middlewares{
+				middleware,
+			},
+		},
+		func(ctx context.Context, input *FindTeamTeamMemberByIDInput) (*ApiOutput[*TeamMember], error) {
+			teamInfo := contextstore.GetContextTeamInfo(ctx)
+			if teamInfo == nil {
+				return nil, huma.Error401Unauthorized("no team info")
+			}
+			memberId, err := uuid.Parse(input.TeamMemberID)
+			if err != nil {
+				return nil, err
+			}
+			otherTeamInfo, err := api.App().Team().FindTeamInfoByMemberID(
+				ctx,
+				memberId,
+			)
+			if err != nil {
+				return nil, err
+			}
+			teamMember := FromTeamMemberModel(&otherTeamInfo.Member)
+			teamMember.Team = FromTeamModel(&otherTeamInfo.Team)
+			teamMember.User = FromUserModel(&otherTeamInfo.User)
+			return &ApiOutput[*TeamMember]{
+				Body: teamMember,
+			}, nil
+		},
+	)
+}

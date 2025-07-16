@@ -461,6 +461,13 @@ func TestDbTeamMemberStore_LoadTeamMembersByUserAndTeamIds(t *testing.T) {
 func TestDbTeamMemberStore_FindTeamMembers(t *testing.T) {
 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewStorageAdapter(db)
+		user := CreateUser(adapter, ctx, "alpha@example.com")
+		user2 := CreateUser(adapter, ctx, "beta@example.com")
+		team := CreateTeam(adapter, ctx, "Team1")
+		teamMember := CreateTeamMember(adapter, ctx, team, user, models.TeamMemberRoleMember, true)
+		teamMember.User = user
+		teamMember2 := CreateTeamMember(adapter, ctx, team, user2, models.TeamMemberRoleMember, true)
+		teamMember2.User = user2
 		type fields struct {
 			db database.Dbx
 		}
@@ -475,7 +482,30 @@ func TestDbTeamMemberStore_FindTeamMembers(t *testing.T) {
 			want    []*models.TeamMember
 			wantErr bool
 		}{
-			// TODO: Add test cases.
+			{
+				name: "find team members alpha",
+				fields: fields{
+					db: db,
+				},
+				args: args{
+					ctx:    ctx,
+					filter: &stores.TeamMemberFilter{Q: "alpha", TeamIds: []uuid.UUID{team.ID}},
+				},
+				want:    []*models.TeamMember{teamMember},
+				wantErr: false,
+			},
+			{
+				name: "find team members beta",
+				fields: fields{
+					db: db,
+				},
+				args: args{
+					ctx:    ctx,
+					filter: &stores.TeamMemberFilter{Q: "beta", TeamIds: []uuid.UUID{team.ID}, PaginatedInput: stores.PaginatedInput{Page: 0, PerPage: 10}},
+				},
+				want:    []*models.TeamMember{teamMember2},
+				wantErr: false,
+			},
 		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
@@ -485,8 +515,41 @@ func TestDbTeamMemberStore_FindTeamMembers(t *testing.T) {
 					t.Errorf("DbTeamMemberStore.FindTeamMembers() error = %v, wantErr %v", err, tt.wantErr)
 					return
 				}
-				if !reflect.DeepEqual(got, tt.want) {
-					t.Errorf("DbTeamMemberStore.FindTeamMembers() = %v, want %v", got, tt.want)
+				if len(got) > 0 {
+					userIds := make([]uuid.UUID, len(got))
+					for idx, member := range got {
+						if member == nil {
+							continue
+						}
+						if member.UserID == nil {
+							continue
+						}
+						userIds[idx] = *member.UserID
+					}
+					users, err := adapter.User().LoadUsersByUserIds(ctx, userIds...)
+					if err != nil {
+						t.Fatalf("LoadUsersByUserIds() error = %v", err)
+					}
+					for idx := range userIds {
+						member := got[idx]
+						if member == nil {
+							continue
+						}
+						user := users[idx]
+						if user == nil {
+							continue
+						}
+						member.User = user
+					}
+
+				}
+				if len(got) != len(tt.want) {
+					t.Errorf("DbTeamMemberStore.FindTeamMembers() = %v, want %v", len(got), len(tt.want))
+				}
+				for idx, item := range got {
+					if item.User.Email != tt.want[idx].User.Email {
+						t.Errorf("DbTeamMemberStore.FindTeamMembers() = %v, want %v", item.ID, tt.want[idx].ID)
+					}
 				}
 			})
 		}
