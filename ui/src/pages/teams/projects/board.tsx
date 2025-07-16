@@ -385,7 +385,7 @@ export function MyKanbanBoard({ projectId }: { projectId: string }) {
     toast.error(err?.detail);
   }
   return (
-    <KanbanBoard ref={scrollContainerReference}>
+    <KanbanBoard ref={scrollContainerReference} className="flex">
       {columns.map((column) =>
         jsLoaded ? (
           <MyKanbanBoardColumn
@@ -506,6 +506,7 @@ function MyKanbanBoardColumn({
       columnId={column.id}
       key={column.id}
       onDropOverColumn={handleDropOverColumn}
+      className=""
     >
       <KanbanBoardColumnHeader>
         {isEditingTitle ? (

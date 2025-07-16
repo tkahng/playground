@@ -1,10 +1,14 @@
 import { KanbanBoardProvider } from "@/components/ui/kanban";
 import { useProject } from "@/hooks/use-project";
+import { useTeam } from "@/hooks/use-team";
 import { TaskStatus } from "@/schema.types";
+import { ChevronLeft } from "lucide-react";
+import { Link } from "react-router";
 import { MyKanbanBoard } from "./board";
 import { ProjectEditDialog } from "./edit-project-dialog";
 
-export default function ProjectEditTest() {
+export default function ProjectEdit() {
+  const { team } = useTeam();
   const { data: project, isLoading: isProjectLoading, error } = useProject();
 
   if (isProjectLoading) return <p>Loading...</p>;
@@ -13,6 +17,13 @@ export default function ProjectEditTest() {
 
   return (
     <div className="flex-1 space-y-6 w-full px-8">
+      <Link
+        to={`/teams/${team?.slug}/projects`}
+        className="flex items-center gap-2 text-sm text-muted-foreground"
+      >
+        <ChevronLeft className="h-4 w-4" />
+        Back to Projects
+      </Link>
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">{project.name}</h1>
         <ProjectEditDialog

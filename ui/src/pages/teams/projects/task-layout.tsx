@@ -1,12 +1,11 @@
 import { Outlet } from "react-router";
-import TaskProjectSidebar from "./task-project-sidebar";
 
 function TaskLayout() {
   return (
     <div className="flex">
-      <div className="w-64">
+      {/* <div className="w-64">
         <TaskProjectSidebar />
-      </div>
+      </div> */}
       <div className="flex-1 space-y-6 w-full">
         <Outlet />
       </div>
