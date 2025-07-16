@@ -90,9 +90,6 @@ export function CreateProjectTaskDialog2({
     mutation.mutate(values);
   };
   return (
-    // <Dialog open={isDialogOpen} onOpenChange={setDialogOpen}>
-    //   <DialogTrigger asChild>{children}</DialogTrigger>
-    //   <DialogContent className="sm:max-w-[425px]">
     <>
       <DialogHeader>
         <DialogTitle>Add Task to Project</DialogTitle>
@@ -103,7 +100,7 @@ export function CreateProjectTaskDialog2({
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
           <div className="grid gap-4 py-4">
-            <div className="w-full px-10">
+            <div className="w-full px-10 space-y-4">
               <FormField
                 control={form.control}
                 name="name"
@@ -154,6 +151,54 @@ export function CreateProjectTaskDialog2({
                   </FormItem>
                 )}
               />
+              {/* <FormField
+                control={form.control}
+                name="end_at"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Date of birth</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant={"outline"}
+                            className={cn(
+                              "w-[240px] pl-3 text-left font-normal",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            {field.value ? (
+                              format(field.value, "PPP")
+                            ) : (
+                              <span>Pick a date</span>
+                            )}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContentNoPortal
+                        className="w-auto p-0"
+                        align="start"
+                      >
+                        <Calendar
+                          mode="single"
+                          selected={
+                            field.value ? new Date(field.value) : undefined
+                          }
+                          onSelect={(selected) => {
+                            field.onChange(selected?.toISOString());
+                          }}
+                          captionLayout="dropdown"
+                        />
+                      </PopoverContentNoPortal>
+                    </Popover>
+                    <FormDescription>
+                      Your date of birth is used to calculate your age.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              /> */}
               <DialogFooter>
                 <Button type="submit">Create Project Task</Button>
               </DialogFooter>
