@@ -7,7 +7,7 @@ export const RouteMap = {
   CONTACT: "/contact",
   HOME: "/",
   LANDING_HOME: "/home",
-  ACCOUNT_OVERVIEW: "/account",
+  ACCOUNT_DASHBOARD: "/account/dashboard",
   ACCOUNT_OVERVIEW_TEAMS: "/account/teams",
   ACCOUNT_OVERVIEW_TEAMS_INVITATION: "/account/teams-invitations",
   SETTINGS: "/account/settings",

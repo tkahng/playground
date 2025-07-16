@@ -31,8 +31,9 @@ import PageSectionLayout from "./layouts/page-section";
 import PublicLayout from "./layouts/public-layout";
 import TeamDashboardLayout from "./layouts/team-dashboard-layout";
 import NotFoundPage from "./pages/404";
+import AccountDashboard from "./pages/account/dashboard";
 import InvitationsPage from "./pages/account/invitations";
-import AccountOverviewPage from "./pages/account/overview";
+import AccountTeamsPage from "./pages/account/teams";
 import AdminDashboardPage from "./pages/admin/admin-dashboard";
 import JobsEdit from "./pages/admin/jobs/jobs-edit";
 import JobsListPage from "./pages/admin/jobs/jobs-list";
@@ -41,7 +42,7 @@ import ProductsListPage from "./pages/admin/products/products-list";
 import SubscriptionsListPage from "./pages/admin/subscriptions/subscription-list";
 import ConfirmPasswordReset from "./pages/auth/confirm-password-reset";
 import ResetPasswordRequestPage from "./pages/auth/reset-password";
-import Dashboard from "./pages/dashboard";
+import Dashboard from "./pages/dasboard";
 import NotAuthorizedPage from "./pages/not-authorized";
 import ProtectedRouteLayout from "./pages/protected-routes/protected-layout";
 import ProtectedRoutePage from "./pages/protected-routes/protected-route-page";
@@ -170,7 +171,8 @@ function App() {
                 element={<DashboardLayout headerLinks={userDashboardLinks} />}
               >
                 <Route element={<PageSectionLayout title="Account Overview" />}>
-                  <Route index element={<AccountOverviewPage />} />
+                  <Route path="dashboard" element={<AccountDashboard />} />
+                  <Route path="teams" element={<AccountTeamsPage />} />
                   <Route
                     path="teams-invitations"
                     element={<InvitationsPage />}

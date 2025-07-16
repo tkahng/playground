@@ -3,13 +3,12 @@ import { PlaygroundFooter } from "@/components/nexus-footer";
 import { PlaygroundLandingHeader } from "@/components/nexus-landing-header";
 import { RouteMap } from "@/components/route-map";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { useTeam } from "@/hooks/use-team";
-import { Navigate, Outlet, useLocation } from "react-router";
+import { Outlet } from "react-router";
 
 export default function RootLayout() {
   const { user } = useAuthProvider();
-  const { team, teamMember } = useTeam();
-  const { pathname } = useLocation();
+  // const { team, teamMember } = useTeam();
+  // const { pathname } = useLocation();
   const isAdmin = user?.roles?.includes("superuser");
   // const isAdminPath = pathname.startsWith(RouteMap.ADMIN);
   const admin = isAdmin
@@ -25,20 +24,21 @@ export default function RootLayout() {
       ]
     : [];
   const links = [...isUser, ...admin] as LinkDto[];
-  if (user) {
-    if (pathname === "/") {
-      if (team && teamMember?.user_id === user.user.id) {
-        return <Navigate to={`/teams/${team.slug}/dashboard`} />;
-      } else {
-        return <Navigate to="/teams" />;
-      }
-    }
-    if (pathname === "/dashboard") {
-      if (team && teamMember?.user_id === user.user.id) {
-        return <Navigate to={`/teams/${team.slug}/dashboard`} />;
-      }
-    }
-  }
+  // if (user) {
+  //   // if (pathname === "/") {
+  //   //   return <Navigate to="/account" />;
+  //   //   // if (team && teamMember?.user_id === user.user.id) {
+  //   //   //   return <Navigate to={`/teams/${team.slug}/dashboard`} />;
+  //   //   // } else {
+  //   //   //   return <Navigate to="/teams" />;
+  //   //   // }
+  //   // }
+  //   // if (pathname === "/dashboard") {
+  //   //   if (team && teamMember?.user_id === user.user.id) {
+  //   //     return <Navigate to={`/teams/${team.slug}/dashboard`} />;
+  //   //   }
+  //   // }
+  // }
   return (
     <>
       <div className="relative flex min-h-screen flex-col">

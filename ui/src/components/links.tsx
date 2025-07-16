@@ -17,16 +17,21 @@ export const RouteLinks = {
   PRICING: { to: RouteMap.PRICING, title: "Pricing" },
   ABOUT: { to: RouteMap.ABOUT, title: "About" },
   // CONTACT: { to: RouteMap.CONTACT, title: "Contact" },
-  DASHBOARD: {
-    to: RouteMap.ACCOUNT_OVERVIEW,
-    title: "Overview",
-    current: (pathname: string) => pathname === RouteMap.ACCOUNT_OVERVIEW,
+  ACCOUNT_DASHBOARD: {
+    to: RouteMap.ACCOUNT_DASHBOARD,
+    title: "Dashboard",
+    current: (pathname: string) => pathname === RouteMap.ACCOUNT_DASHBOARD,
+  },
+  ACCOUNT_TEAMS: {
+    to: RouteMap.ACCOUNT_OVERVIEW_TEAMS,
+    title: "Teams",
+    current: (pathname: string) => pathname === RouteMap.ACCOUNT_OVERVIEW_TEAMS,
   },
   ACCOUNT_OVERVIEW_TEAMS: {
-    to: RouteMap.ACCOUNT_OVERVIEW,
+    to: RouteMap.ACCOUNT_OVERVIEW_TEAMS,
     title: "Teams",
     current: (pathname: string) =>
-      pathname.startsWith(RouteMap.ACCOUNT_OVERVIEW),
+      pathname.startsWith(RouteMap.ACCOUNT_OVERVIEW_TEAMS),
   },
   ACCOUNT_OVERVIEW_TEAM_INVITATIONS: {
     to: RouteMap.ACCOUNT_OVERVIEW_TEAMS_INVITATION,
@@ -34,7 +39,10 @@ export const RouteLinks = {
     current: (pathname: string) =>
       pathname.startsWith(RouteMap.ACCOUNT_OVERVIEW_TEAMS_INVITATION),
   },
-  DASHBOARD_OVERVIEW: { to: RouteMap.ACCOUNT_OVERVIEW, title: "Overview" },
+  DASHBOARD_OVERVIEW: {
+    to: RouteMap.ACCOUNT_OVERVIEW_TEAMS,
+    title: "Overview",
+  },
   TASK_PROJECTS: {
     to: RouteMap.TASK_PROJECTS,
     title: "Projects",
@@ -126,7 +134,8 @@ export const settingsSidebarLinks: LinkDto[] = [
 ];
 
 export const userDashboardLinks: LinkDto[] = [
-  RouteLinks.DASHBOARD,
+  RouteLinks.ACCOUNT_DASHBOARD,
+  RouteLinks.ACCOUNT_TEAMS,
   RouteLinks.SETTINGS,
 ];
 

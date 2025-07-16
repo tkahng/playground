@@ -14,7 +14,7 @@ import { PaginationState, Updater } from "@tanstack/react-table";
 import { NavLink, useNavigate, useSearchParams } from "react-router";
 import { toast } from "sonner";
 
-export default function AccountOverviewPage() {
+export default function AccountTeamsPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const pageIndex = parseInt(searchParams.get("page") || "0", 10);
