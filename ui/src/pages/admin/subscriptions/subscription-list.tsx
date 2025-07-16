@@ -1,6 +1,6 @@
 import { DataTable } from "@/components/data-table";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { adminStripeSubscriptions } from "@/lib/queries";
+import { adminStripeSubscriptions } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
 import { PaginationState, Updater } from "@tanstack/react-table";
 import { useSearchParams } from "react-router";

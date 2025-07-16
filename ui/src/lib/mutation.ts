@@ -2,7 +2,7 @@ import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { TaskCreateParams } from "@/schema.types";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { createTask, taskPositionStatus } from "./queries";
+import { createTask, updateTaskPositionStatus } from "./api";
 
 export function useUpdateTaskPosition() {
   const { user } = useAuthProvider();
@@ -19,7 +19,7 @@ export function useUpdateTaskPosition() {
       position: number;
     }) => {
       if (!user?.tokens.access_token) return;
-      await taskPositionStatus(user?.tokens.access_token, taskId, {
+      await updateTaskPositionStatus(user?.tokens.access_token, taskId, {
         status: status,
         position: position,
       });

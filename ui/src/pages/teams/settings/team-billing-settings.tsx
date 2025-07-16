@@ -3,7 +3,7 @@ import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { teamSettingLinks } from "@/components/links";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { useTeam } from "@/hooks/use-team";
-import { getTeamSubscriptions } from "@/lib/queries";
+import { getTeamSubscriptions } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
 
 export default function TeamBillingSettingPage() {

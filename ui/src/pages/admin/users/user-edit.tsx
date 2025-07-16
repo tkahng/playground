@@ -29,7 +29,7 @@ import {
   removeUserPermission,
   removeUserRole,
   updateUser,
-} from "@/lib/queries";
+} from "@/lib/api";
 import { UserPermissionDialog } from "@/pages/admin/users/user-permissions-dialog";
 import { UserRolesDialog } from "@/pages/admin/users/user-roles-dialog";
 import { zodResolver } from "@hookform/resolvers/zod";

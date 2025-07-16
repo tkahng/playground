@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { useTeam } from "@/hooks/use-team";
-import { createTeamBillingPortalSession } from "@/lib/queries";
+import { createTeamBillingPortalSession } from "@/lib/api";
 import { SubscriptionWithPrice } from "@/schema.types";
 import { ReactNode, useState } from "react";
 import { Link } from "react-router";

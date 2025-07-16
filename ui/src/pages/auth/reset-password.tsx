@@ -12,7 +12,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { requestPasswordReset } from "@/lib/queries";
+import { requestPasswordReset } from "@/lib/api";
 import { useMutation } from "@tanstack/react-query";
 import {
   AlertCircle,

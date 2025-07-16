@@ -2,7 +2,7 @@ import CustomerPortalForm from "@/components/customer-portal-form";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { settingsSidebarLinks } from "@/components/links";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { getUserSubscriptions } from "@/lib/queries";
+import { getUserSubscriptions } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
 
 export default function BillingSettingPage() {

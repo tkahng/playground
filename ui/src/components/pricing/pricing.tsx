@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { useTeam } from "@/hooks/use-team";
-import { createTeamCheckoutSession } from "@/lib/queries";
+import { createTeamCheckoutSession } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 import { ProductWithPrices, SubscriptionWithPrice, User } from "@/schema.types";

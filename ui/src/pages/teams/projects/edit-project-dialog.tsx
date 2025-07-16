@@ -25,7 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { taskProjectUpdate } from "@/lib/queries";
+import { taskProjectUpdate } from "@/lib/api";
 import { TaskStatus } from "@/schema.types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";

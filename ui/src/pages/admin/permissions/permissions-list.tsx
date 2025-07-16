@@ -1,7 +1,7 @@
 import { DataTable } from "@/components/data-table";
 import { RouteMap } from "@/components/route-map";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { deletePermission, permissionsPaginate } from "@/lib/queries";
+import { deletePermission, permissionsPaginate } from "@/lib/api";
 import {
   keepPreviousData,
   useMutation,

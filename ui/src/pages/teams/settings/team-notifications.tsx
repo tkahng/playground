@@ -1,7 +1,7 @@
 import { DataTable } from "@/components/data-table";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { useTeam } from "@/hooks/use-team";
-import { teamQueries } from "@/lib/queries";
+import { teamQueries } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
 import { PaginationState, Updater } from "@tanstack/react-table";
 import { CheckCircle, Circle } from "lucide-react";

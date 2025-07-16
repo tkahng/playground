@@ -1,5 +1,5 @@
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
-import { permissionsList } from "@/lib/queries";
+import { permissionsList } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
 import { Outlet } from "react-router";
 

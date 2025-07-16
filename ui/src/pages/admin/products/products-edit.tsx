@@ -13,7 +13,7 @@ import { ConfirmDialog, useDialog } from "@/hooks/use-dialog";
 import {
   adminStripeProduct,
   adminStripeProductPermissionsDelete,
-} from "@/lib/queries";
+} from "@/lib/api";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronLeft, Trash } from "lucide-react";
 import { Link, useParams } from "react-router";

@@ -1,4 +1,4 @@
-import { taskProjectGet } from "@/lib/queries";
+import { taskProjectGet } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
 import { useParams } from "react-router";
 import { useAuthProvider } from "./use-auth-provider";

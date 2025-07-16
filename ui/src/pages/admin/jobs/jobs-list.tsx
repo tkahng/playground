@@ -1,7 +1,7 @@
 import { DataTable } from "@/components/data-table";
 import { RouteMap } from "@/components/route-map";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { adminJobQueries } from "@/lib/queries";
+import { adminJobQueries } from "@/lib/api";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { PaginationState, Updater } from "@tanstack/react-table";
 import { NavLink, useSearchParams } from "react-router";

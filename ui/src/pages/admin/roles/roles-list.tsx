@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { ConfirmDialog, useDialog } from "@/hooks/use-dialog";
-import { deleteRole, rolesPaginate } from "@/lib/queries";
+import { deleteRole, rolesPaginate } from "@/lib/api";
 import { CreateRoleDialog } from "@/pages/admin/roles/create-role-dialog";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { PaginationState, Updater } from "@tanstack/react-table";

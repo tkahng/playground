@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { useTeam } from "@/hooks/use-team";
-import { teamQueries } from "@/lib/queries";
+import { teamQueries } from "@/lib/api";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Ellipsis, Pencil } from "lucide-react";
 import { useState } from "react";

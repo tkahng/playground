@@ -1,5 +1,5 @@
 import { useNullableLocalStorage } from "@/hooks/use-local-storage";
-import { refreshToken, signIn } from "@/lib/queries";
+import { refreshToken, signIn } from "@/lib/api";
 import { SigninInput, SignupInput, UserInfoTokens } from "@/schema.types";
 import { jwtDecode } from "jwt-decode";
 import React from "react";

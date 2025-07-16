@@ -1,6 +1,6 @@
 import Pricing from "@/components/pricing/pricing";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { getProductsWithPrices, getUserSubscriptions } from "@/lib/queries";
+import { getProductsWithPrices, getUserSubscriptions } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
 
 export default function PricingPage() {

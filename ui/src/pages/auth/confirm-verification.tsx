@@ -1,4 +1,4 @@
-import { confirmVerification } from "@/lib/queries";
+import { confirmVerification } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "react-router";
 // /payment/success?sessionId

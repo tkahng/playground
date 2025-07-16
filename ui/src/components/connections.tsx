@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Icons } from "@/components/ui/icons";
-import { getAuthUrl } from "@/lib/queries";
+import { getAuthUrl } from "@/lib/api";
 import { z } from "zod";
 export const GITHUB_PROVIDER_NAME = "github";
 export const GOOGLE_PROVIDER_NAME = "google";

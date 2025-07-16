@@ -1076,8 +1076,28 @@ export const createTask = async (
   }
   return data;
 };
-
-export const taskPositionStatus = async (
+export const updateTask = async (
+  token: string,
+  taskId: string,
+  args: operations["task-update"]["requestBody"]["content"]["application/json"]
+) => {
+  const { data, error } = await client.PUT("/api/tasks/{task-id}", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    params: {
+      path: {
+        "task-id": taskId,
+      },
+    },
+    body: args,
+  });
+  if (error) {
+    throw error;
+  }
+  return data;
+};
+export const updateTaskPositionStatus = async (
   token: string,
   taskId: string,
   args: operations["update-task-position-status"]["requestBody"]["content"]["application/json"]
@@ -1442,7 +1462,8 @@ export const getTeamTeamMembers = async (
   token: string,
   teamId: string,
   page: number,
-  perPage: number
+  perPage: number,
+  search?: string
 ) => {
   const { data, error } = await client.GET("/api/teams/{team-id}/members", {
     headers: {
@@ -1455,6 +1476,7 @@ export const getTeamTeamMembers = async (
       query: {
         page,
         per_page: perPage,
+        q: search,
       },
     },
   });
@@ -1759,5 +1781,30 @@ export const teamQueries = {
       throw error;
     }
     return true;
+  },
+
+  getTeamMemberById: async (
+    token: string,
+    teamId: string,
+    teamMemberId: string
+  ) => {
+    const { data, error } = await client.GET(
+      "/api/teams/{team-id}/team-members/{team-member-id}",
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        params: {
+          path: {
+            "team-id": teamId,
+            "team-member-id": teamMemberId,
+          },
+        },
+      }
+    );
+    if (error) {
+      throw error;
+    }
+    return data;
   },
 };

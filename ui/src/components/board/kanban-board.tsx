@@ -2,7 +2,7 @@ import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { taskPositionStatus } from "@/lib/queries";
+import { updateTaskPositionStatus } from "@/lib/api";
 import {
   Active,
   DataRef,
@@ -75,7 +75,7 @@ export function KanbanBoard(props: { cards: Task[]; projectId: string }) {
       position: number;
     }) => {
       if (!user?.tokens.access_token) return;
-      await taskPositionStatus(user?.tokens.access_token, taskId, {
+      await updateTaskPositionStatus(user?.tokens.access_token, taskId, {
         status: status,
         position: position,
       });

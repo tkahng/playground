@@ -8,12 +8,12 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { GetError } from "@/lib/get-error";
 import {
   acceptInvitation,
   declineInvitation,
   getTeamInvitationByToken,
-} from "@/lib/queries";
+} from "@/lib/api";
+import { GetError } from "@/lib/get-error";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { ArrowRight, Check, Home } from "lucide-react";
 import { useState } from "react";

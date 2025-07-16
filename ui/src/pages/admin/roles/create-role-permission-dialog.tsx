@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/form";
 import MultipleSelector from "@/components/ui/multiple-selector";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { createRolePermission, permissionsPaginate } from "@/lib/queries";
+import { createRolePermission, permissionsPaginate } from "@/lib/api";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";

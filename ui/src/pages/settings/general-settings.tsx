@@ -12,14 +12,14 @@ import {
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { GetError } from "@/lib/get-error";
 import {
   deleteUser,
   getMe,
   requestVerification,
   resetPassword,
   updateMe,
-} from "@/lib/queries";
+} from "@/lib/api";
+import { GetError } from "@/lib/get-error";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle } from "lucide-react";

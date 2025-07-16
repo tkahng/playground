@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { getStats, getUserSubscriptions, userPaginate } from "@/lib/queries";
+import { getStats, getUserSubscriptions, userPaginate } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
 import { CheckCircle, Cpu, Users, XCircle } from "lucide-react";
 

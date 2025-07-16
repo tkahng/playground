@@ -1545,6 +1545,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/teams/{team-id}/team-members/{team-member-id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * find-team-team-member-by-id
+         * @description find team team member by id
+         */
+        get: operations["find-team-team-member-by-id"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -2242,6 +2262,7 @@ export interface components {
              * @description A URL to the JSON Schema for this object.
              */
             readonly $schema?: string;
+            assignee?: components["schemas"]["TeamMember"];
             assignee_id: string | null;
             children?: components["schemas"]["Task"][] | null;
             /** Format: date-time */
@@ -2258,6 +2279,7 @@ export interface components {
             project_id: string;
             /** Format: double */
             rank: number;
+            reporter?: components["schemas"]["TeamMember"];
             reporter_id: string | null;
             /** Format: date-time */
             start_at: string | null;
@@ -2404,6 +2426,11 @@ export interface components {
             updated_at: string;
         };
         TeamMember: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
             active: boolean;
             /** Format: date-time */
             created_at: string;
@@ -6654,23 +6681,23 @@ export interface operations {
                 };
                 content: {
                     "text/event-stream": ({
-                        data: components["schemas"]["NotificationPayloadNewTeamMemberNotificationData"];
-                        /**
-                         * @description The event name.
-                         * @constant
-                         */
-                        event: "new_team_member";
-                        /** @description The event ID. */
-                        id?: number;
-                        /** @description The retry time in milliseconds. */
-                        retry?: number;
-                    } | {
                         data: components["schemas"]["NotificationPayloadAssignedToTaskNotificationData"];
                         /**
                          * @description The event name.
                          * @constant
                          */
                         event: "assigned_to_task";
+                        /** @description The event ID. */
+                        id?: number;
+                        /** @description The retry time in milliseconds. */
+                        retry?: number;
+                    } | {
+                        data: components["schemas"]["NotificationPayloadNewTeamMemberNotificationData"];
+                        /**
+                         * @description The event name.
+                         * @constant
+                         */
+                        event: "new_team_member";
                         /** @description The event ID. */
                         id?: number;
                         /** @description The retry time in milliseconds. */
@@ -7328,6 +7355,7 @@ export interface operations {
                 per_page?: number;
                 sort_by?: string;
                 sort_order?: "asc" | "desc";
+                q?: string;
             };
             header?: never;
             path: {
@@ -7664,6 +7692,56 @@ export interface operations {
             };
             /** @description Not Found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "find-team-team-member-by-id": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                "team-id": string;
+                "team-member-id": string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TeamMember"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };

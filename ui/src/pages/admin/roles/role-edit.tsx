@@ -18,7 +18,7 @@ import {
   deleteRolePermission,
   getRoleWithPermission,
   updateRole,
-} from "@/lib/queries";
+} from "@/lib/api";
 import { CreateRolePermissionDialog } from "@/pages/admin/roles/create-role-permission-dialog";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
