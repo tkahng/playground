@@ -74,6 +74,8 @@ function TeamRoutes() {
                 path={`/teams/:teamSlug/projects`}
                 element={<ProjectListPage />}
               />
+            </Route>
+            <Route element={<TaskLayout />}>
               <Route
                 path={`/teams/:teamSlug/projects/:projectId`}
                 element={<ProjectEdit />}

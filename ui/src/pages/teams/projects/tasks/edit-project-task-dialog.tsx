@@ -113,9 +113,7 @@ export function EditProjectTaskDialog({
     <>
       <DialogHeader>
         <DialogTitle>Edit Task Details</DialogTitle>
-        <DialogDescription>
-          <p>{task.name}</p>
-        </DialogDescription>
+        <DialogDescription>{task.name}</DialogDescription>
       </DialogHeader>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">

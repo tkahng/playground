@@ -27,12 +27,9 @@ import {
 
 import { ConfirmDialog, useDialog } from "@/hooks/use-dialog";
 import { useJsLoaded } from "@/hooks/use-js-loaded";
-import { useProjectTasks } from "@/hooks/use-project-tasks";
 import { groupItems } from "@/lib/array";
-import { GetError } from "@/lib/get-error";
 import { useUpdateTaskPosition } from "@/lib/mutation";
-import { TaskStatus, TeamMember } from "@/schema.types";
-import { toast } from "sonner";
+import { Task, TaskStatus, TeamMember } from "@/schema.types";
 import { CreateProjectTaskDialog2 } from "./tasks/create-project-task-dialog copy";
 import { EditProjectTaskDialog } from "./tasks/edit-project-task-dialog";
 
@@ -71,7 +68,13 @@ type Column = {
   items: Card[];
 };
 
-export function MyKanbanBoard({ projectId }: { projectId: string }) {
+export function MyKanbanBoard({
+  projectId,
+  tasks,
+}: {
+  projectId: string;
+  tasks: Task[];
+}) {
   const [columns, setColumns] = useState<Column[]>([
     {
       id: "todo",
@@ -98,16 +101,15 @@ export function MyKanbanBoard({ projectId }: { projectId: string }) {
       items: [],
     },
   ]);
-  const { data: tasks, isLoading, error, isError } = useProjectTasks(projectId);
   useEffect(() => {
-    const groupedItems = groupItems(tasks?.data || [], (task) => task.status);
+    const groupedItems = groupItems(tasks || [], (task) => task.status);
     const g = columns.map((c) => ({
       ...c,
       items: groupedItems[c.status] || [],
     }));
     setColumns(g);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tasks?.data, projectId]);
+  }, [tasks]);
   const mutation = useUpdateTaskPosition();
   // Scroll to the right when a new column is added.
   const scrollContainerReference = useRef<HTMLDivElement>(null);
@@ -175,14 +177,12 @@ export function MyKanbanBoard({ projectId }: { projectId: string }) {
   }
 
   function handleMoveCardToColumn(columnId: string, index: number, card: Card) {
-    if (card.status !== columnId) {
-      mutation.mutate({
-        projectId,
-        taskId: card.id,
-        status: columnId as TaskStatus,
-        position: index,
-      });
-    }
+    mutation.mutate({
+      projectId,
+      taskId: card.id,
+      status: columnId as TaskStatus,
+      position: index,
+    });
   }
 
   function handleUpdateCardTitle(cardId: string, cardTitle: string) {
@@ -379,11 +379,7 @@ export function MyKanbanBoard({ projectId }: { projectId: string }) {
   }
 
   const jsLoaded = useJsLoaded();
-  if (isLoading) return <KanbanBoardColumnSkeleton />;
-  if (isError) {
-    const err = GetError(error);
-    toast.error(err?.detail);
-  }
+
   return (
     <KanbanBoard ref={scrollContainerReference} className="flex">
       {columns.map((column) =>
