@@ -381,7 +381,7 @@ export function MyKanbanBoard({
   const jsLoaded = useJsLoaded();
 
   return (
-    <KanbanBoard ref={scrollContainerReference} className="flex">
+    <KanbanBoard ref={scrollContainerReference} className="flex-grow">
       {columns.map((column) =>
         jsLoaded ? (
           <MyKanbanBoardColumn
@@ -502,7 +502,7 @@ function MyKanbanBoardColumn({
       columnId={column.id}
       key={column.id}
       onDropOverColumn={handleDropOverColumn}
-      className=""
+      className="grow"
     >
       <KanbanBoardColumnHeader>
         {isEditingTitle ? (
