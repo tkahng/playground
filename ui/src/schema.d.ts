@@ -1565,6 +1565,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/user-reactions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * create-user-reaction
+         * @description create user reaction
+         */
+        post: operations["create-user-reaction"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/user-reactions/sse": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * user-reaction-sse
+         * @description user-reaction-sse
+         */
+        get: operations["user-reaction-sse"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1917,6 +1957,9 @@ export interface components {
             status: string;
             unique_key: string | null;
         };
+        LatestUserReactionStatsSseEvent: {
+            user_reaction_stats: components["schemas"]["UserReactionStats"];
+        };
         Media: {
             /** Format: date-time */
             created_at: string;
@@ -2050,6 +2093,11 @@ export interface components {
         };
         PingMessage: {
             message: string;
+        };
+        ReactionByCountry: {
+            country: string;
+            /** Format: int64 */
+            total_reactions: number;
         };
         RefreshTokenInput: {
             /**
@@ -2571,6 +2619,31 @@ export interface components {
             /** Format: uri */
             image?: string;
             name?: string;
+        };
+        UserReaction: {
+            city: string;
+            country: string;
+            /** Format: date-time */
+            created_at: string;
+            id: string;
+            ip_address: string;
+            type: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        UserReactionDto: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            type: string;
+        };
+        UserReactionStats: {
+            last_created: components["schemas"]["UserReaction"];
+            top_five_countries: components["schemas"]["ReactionByCountry"][] | null;
+            /** Format: int64 */
+            total_reactions: number;
         };
         UserStats: {
             /**
@@ -7751,6 +7824,115 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "create-user-reaction": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UserReactionDto"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "user-reaction-sse": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/event-stream": ({
+                        data: components["schemas"]["LatestUserReactionStatsSseEvent"];
+                        /**
+                         * @description The event name.
+                         * @constant
+                         */
+                        event: "latest_user_reaction_stats";
+                        /** @description The event ID. */
+                        id?: number;
+                        /** @description The retry time in milliseconds. */
+                        retry?: number;
+                    } | {
+                        data: components["schemas"]["PingMessage"];
+                        /**
+                         * @description The event name.
+                         * @constant
+                         */
+                        event: "ping";
+                        /** @description The event ID. */
+                        id?: number;
+                        /** @description The retry time in milliseconds. */
+                        retry?: number;
+                    })[];
+                };
+            };
+            /** @description Bad Request */
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };
