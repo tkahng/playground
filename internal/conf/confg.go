@@ -35,11 +35,11 @@ type ResendConfig struct {
 }
 
 type SmtpConfig struct {
-	Host      string `env:"SMTP_HOST" required:"false"`
-	Port      string `env:"SMTP_PORT" required:"false"`
-	Username  string `env:"SMTP_USERNAME" required:"false"`
-	EmailPass string `env:"SMTP_PASSWORD" required:"false"`
-	TLS       bool   `env:"SMTP_TLS" required:"false"`
+	Host      string `env:"SMTP_HOST" envDefault:""`
+	Port      string `env:"SMTP_PORT" envDefault:""`
+	Username  string `env:"SMTP_USERNAME" envDefault:""`
+	EmailPass string `env:"SMTP_PASSWORD" envDefault:""`
+	TLS       bool   `env:"SMTP_TLS" envDefault:"false"`
 	Enabled   bool   `env:"SMTP_ENABLED" envDefault:"false"`
 }
 type GithubConfig struct {
