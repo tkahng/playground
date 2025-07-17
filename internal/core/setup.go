@@ -88,6 +88,11 @@ func (app *BaseApp) SetIntegrationServices() {
 	client := services.NewPaymentClient(cfg.StripeConfig)
 	app.payment = services.NewPaymentService(client, adapter)
 	app.teamInvitation = services.NewInvitationService(adapter, *cfg, jobService)
+	app.auth = services.NewAuthService(
+		cfg,
+		jobService,
+		adapter,
+	)
 }
 
 func (app *BaseApp) RegisterWorkers() {

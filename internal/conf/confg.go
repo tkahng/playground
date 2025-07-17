@@ -76,7 +76,9 @@ type Options struct {
 }
 
 func ZeroEnvConfig() EnvConfig {
-	return EnvConfig{}
+	return EnvConfig{
+		AuthOptions: NewTokenOptions(),
+	}
 }
 
 type EnvConfig struct {
