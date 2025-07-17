@@ -74,6 +74,9 @@ var (
 	JobBuilder = NewSQLBuilder[models.JobRow](
 		UuidV7Generator,
 	)
+	UserReactionBuilder = NewSQLBuilder[models.UserReaction](
+		UuidV7Generator,
+	)
 )
 
 var (
@@ -100,4 +103,5 @@ var (
 	TeamInvitation     = NewPostgresRepository(TeamInvitationBuilder)
 	Notification       = NewPostgresRepository(NotificationBuilder)
 	Job                = NewPostgresRepository(JobBuilder)
+	UserReaction       = NewPostgresRepository(UserReactionBuilder)
 )
