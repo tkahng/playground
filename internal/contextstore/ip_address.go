@@ -11,5 +11,9 @@ func SetContextIPAddress(ctx context.Context, ip string) context.Context {
 }
 
 func GetContextIPAddress(ctx context.Context) string {
-	return ctx.Value(contextKeyIPAddress).(string)
+	if ip, ok := ctx.Value(contextKeyIPAddress).(string); ok {
+		return ip
+	} else {
+		return ""
+	} // ctx.Value(contextKeyIPAddress).(string)
 }

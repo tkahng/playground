@@ -12,7 +12,6 @@ import (
 	"github.com/tkahng/playground/internal/contextstore"
 	"github.com/tkahng/playground/internal/middleware"
 	"github.com/tkahng/playground/internal/models"
-	"github.com/tkahng/playground/internal/shared"
 	"github.com/tkahng/playground/internal/tools/geoip"
 	"github.com/tkahng/playground/internal/tools/sse"
 	"github.com/tkahng/playground/internal/userreaction"
@@ -37,9 +36,6 @@ func (a *Api) BindCreateUserReaction(aapi huma.API) {
 			Description: "create user reaction",
 			Tags:        []string{"User Reactions"},
 			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
-			Security: []map[string][]string{{
-				shared.BearerAuthSecurityKey: {},
-			}},
 			Middlewares: huma.Middlewares{
 				ipMiddleware,
 			},
@@ -57,8 +53,8 @@ func (a *Api) BindCreateUserReaction(aapi huma.API) {
 				city, err := geoip.City(ip)
 				if err != nil {
 					slog.ErrorContext(ctx, "error getting city", slog.String("ip", ip), slog.Any("error", err))
-				}
-				if city != nil {
+
+				} else if city != nil {
 					reaction.City = &city.City.Names.English
 					reaction.Country = &city.Country.Names.English
 				}
@@ -84,8 +80,7 @@ type UserReactionSseInput struct {
 }
 
 func (api *Api) BindUserReactionSse(humapi huma.API) {
-	membermiddleware := middleware.TeamInfoFromTeamMemberID(humapi, api.App())
-	hanlder := sse.ServeSSE[TeamMemberSseInput](
+	hanlder := sse.ServeSSE[UserReactionSseInput](
 		func(ctx context.Context, f func(any) error) sse.Client {
 			return sse.NewClient(sse.UserReactionsChannel, f, slog.Default(), func() any {
 				return &PingMessage{
@@ -100,7 +95,7 @@ func (api *Api) BindUserReactionSse(humapi huma.API) {
 			fmt.Println("unregistering client")
 			api.app.SseManager().UnregisterClient(c)
 		},
-		1*time.Second,
+		30*time.Second,
 	)
 	humasse.Register(
 		humapi,
@@ -111,10 +106,8 @@ func (api *Api) BindUserReactionSse(humapi huma.API) {
 			Summary:     "user-reaction-sse",
 			Description: "user-reaction-sse",
 			Tags:        []string{"User Reactions"},
-			Middlewares: huma.Middlewares{
-				membermiddleware,
-			},
-			Errors: []int{http.StatusInternalServerError, http.StatusBadRequest},
+			Middlewares: huma.Middlewares{},
+			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
 		},
 		map[string]any{
 			"latest_user_reaction_stats": &userreaction.LatestUserReactionStatsSseEvent{},
