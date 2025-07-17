@@ -37,7 +37,7 @@ func NewServeCmd() *cobra.Command {
 }
 
 func Run2() error {
-	ctx, firstCancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM, syscall.SIGHUP, syscall.SIGINT)
+	firstCtx, firstCancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM, syscall.SIGHUP, syscall.SIGINT)
 	defer firstCancel()
 	opts := conf.AppConfigGetter()
 	app := core.BootstrappedApp(opts)
@@ -63,7 +63,7 @@ func Run2() error {
 
 		fmt.Printf("quit signal: %q received. starting graceful shutdown\n", quitSignal.String())
 
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		ctx, cancel := context.WithTimeout(firstCtx, 10*time.Second)
 		defer cancel()
 
 		if err := httpServer.Shutdown(ctx); err != nil {
@@ -76,9 +76,9 @@ func Run2() error {
 
 	go func() {
 		slog.Info("Starting poller")
-		if err := app.JobManager().Run(context.Background()); err != nil {
+		if err := app.JobManager().Run(firstCtx); err != nil {
 			slog.ErrorContext(
-				ctx,
+				firstCtx,
 				"error starting poller",
 				slog.Any("error", err),
 			)
@@ -87,7 +87,7 @@ func Run2() error {
 
 	go func() {
 		slog.Info("Starting sse manager")
-		app.SseManager().Run(context.Background())
+		app.SseManager().Run(firstCtx)
 	}()
 
 	fmt.Printf("server running on port %d", app.Config().Options.Port)
