@@ -59,3 +59,9 @@ type App interface {
 
 	EventManager() events.EventManager
 }
+
+type AppContainer interface {
+	SetConfig()
+	SetLogger()
+	SetDb()
+}
