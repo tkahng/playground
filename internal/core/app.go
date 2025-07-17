@@ -5,6 +5,7 @@ import (
 
 	"github.com/tkahng/playground/internal/conf"
 	"github.com/tkahng/playground/internal/database"
+	"github.com/tkahng/playground/internal/events"
 	"github.com/tkahng/playground/internal/jobs"
 	"github.com/tkahng/playground/internal/services"
 	"github.com/tkahng/playground/internal/stores"
@@ -55,4 +56,6 @@ type App interface {
 	SseManager() sse.Manager
 
 	Container() di.Container
+
+	EventManager() events.EventManager
 }

@@ -6,6 +6,7 @@ import (
 
 	"github.com/tkahng/playground/internal/conf"
 	"github.com/tkahng/playground/internal/database"
+	"github.com/tkahng/playground/internal/events"
 	"github.com/tkahng/playground/internal/jobs"
 	"github.com/tkahng/playground/internal/services"
 	"github.com/tkahng/playground/internal/stores"
@@ -15,6 +16,8 @@ import (
 	"github.com/tkahng/playground/internal/tools/mailer"
 	"github.com/tkahng/playground/internal/tools/sse"
 )
+
+var _ App = (*BaseAppDecorator)(nil)
 
 func NewAppDecorator(ctx context.Context, cfg conf.EnvConfig, pool database.Dbx) *BaseAppDecorator {
 	settings := cfg.ToSettings()
@@ -97,6 +100,15 @@ type BaseAppDecorator struct {
 	SseManagerFunc            func() sse.Manager
 	NotificationPublisherFunc func() services.Notifier
 	ContainerFunc             func() di.Container
+	EventManagerFunc          func() events.EventManager
+}
+
+// EventManager implements App.
+func (b *BaseAppDecorator) EventManager() events.EventManager {
+	if b.EventManagerFunc != nil {
+		return b.EventManagerFunc()
+	}
+	return b.app.EventManager()
 }
 
 // Container implements App.
@@ -174,8 +186,6 @@ func (b *BaseAppDecorator) TeamInvitation() services.TeamInvitationService {
 	}
 	return b.app.TeamInvitation()
 }
-
-var _ App = (*BaseAppDecorator)(nil)
 
 func (b *BaseAppDecorator) Adapter() stores.StorageAdapterInterface {
 	if b.AdapterFunc != nil {

@@ -1,4 +1,4 @@
-package userreaction
+package events
 
 import (
 	"context"
@@ -73,7 +73,7 @@ func (i *InternalEventManager) Run(ctx context.Context) error {
 
 func NewEventManager(logger *slog.Logger) *InternalEventManager {
 	loggerAdapter := watermill.NewSlogLogger(logger)
-	pub, sub := NewPubSub()
+	pub, sub := newPubSub()
 	eventBus, err := cqrs.NewEventBusWithConfig(pub, cqrs.EventBusConfig{
 		GeneratePublishTopic: func(params cqrs.GenerateEventPublishTopicParams) (string, error) { return params.EventName, nil },
 		Marshaler:            cqrs.JSONMarshaler{},
@@ -114,7 +114,7 @@ func NewEventManager(logger *slog.Logger) *InternalEventManager {
 
 var _ EventManager = (*InternalEventManager)(nil)
 
-func NewPubSub() (message.Publisher, message.Subscriber) {
+func newPubSub() (message.Publisher, message.Subscriber) {
 	pubSub := gochannel.NewGoChannel(
 		gochannel.Config{
 			OutputChannelBuffer: 10000,

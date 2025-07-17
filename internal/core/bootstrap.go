@@ -7,6 +7,7 @@ import (
 
 	"github.com/tkahng/playground/internal/conf"
 	"github.com/tkahng/playground/internal/database"
+	"github.com/tkahng/playground/internal/events"
 	"github.com/tkahng/playground/internal/jobs"
 	"github.com/tkahng/playground/internal/services"
 	"github.com/tkahng/playground/internal/stores"
@@ -39,6 +40,7 @@ const (
 	diContextKeyChecker           = "constraint_checker"
 	diContextKeyInvitationService = "team_invitation_service"
 	diContextKeyFs                = "file_system"
+	diContextKeyEventManager      = "event_manager"
 )
 
 func (s diContextKey) String() string {
@@ -51,21 +53,17 @@ func (app *BaseApp) Bootstrap() error {
 	event.App = app
 	event.Container = container
 	err := app.Lifecycle().OnBootstrap().Trigger(event, func(e *BootstrapEvent) error {
-		if err := app.ResetBootstrapState(); err != nil {
+		if err := register(app); err != nil {
 			return err
 		}
-		container := di.New()
-		if err := register(container); err != nil {
-			return err
-		}
-		app.UseContainer(container)
 		return nil
 	})
 	return err
 }
 
-func register(container di.Container) error {
+func register(app *BaseApp) error {
 	// add logger
+	container := app.Container()
 	container.AddSingleton(diContextKeyLogger, func(c di.Container) (any, error) {
 		return logger.GetDefaultLogger(), nil
 	})
@@ -103,6 +101,15 @@ func register(container di.Container) error {
 		}
 		adapter := stores.NewStorageAdapter(dbx)
 		return adapter, nil
+	})
+	// add eventmanager
+	container.AddSingleton(diContextKeyEventManager, func(c di.Container) (any, error) {
+		logger, err := getLogger(c)
+		if err != nil {
+			return nil, err
+		}
+		manager := events.NewEventManager(logger)
+		return manager, nil
 	})
 	// add mail service
 	container.AddSingleton(diContextKeyMail, func(c di.Container) (any, error) {

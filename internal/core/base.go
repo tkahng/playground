@@ -6,6 +6,7 @@ import (
 
 	"github.com/tkahng/playground/internal/conf"
 	"github.com/tkahng/playground/internal/database"
+	"github.com/tkahng/playground/internal/events"
 	"github.com/tkahng/playground/internal/jobs"
 	"github.com/tkahng/playground/internal/services"
 	"github.com/tkahng/playground/internal/stores"
@@ -50,6 +51,16 @@ type BaseApp struct {
 	sseManager sse.Manager
 
 	container di.Container
+
+	eventManager events.EventManager
+}
+
+// EventManager implements App.
+func (app *BaseApp) EventManager() events.EventManager {
+	if app.eventManager == nil {
+		panic("event manager not initialized")
+	}
+	return app.eventManager
 }
 
 // Container implements App.
@@ -235,7 +246,7 @@ func (app *BaseApp) RegisterBaseHooks() {
 }
 
 func BootstrappedApp(cfg conf.EnvConfig) *BaseApp {
-	app := &BaseApp{}
+	app := new(BaseApp)
 	if err := app.Bootstrap(); err != nil {
 		panic(fmt.Errorf("failed to bootstrap app: %w", err))
 	}
