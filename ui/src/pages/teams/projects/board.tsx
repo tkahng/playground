@@ -655,13 +655,7 @@ function MyKanbanBoardCard({
         </KanbanBoardCardButton>
       </KanbanBoardCardButtonGroup>
       <ConfirmDialog dialogProps={editDialog.props}>
-        <EditProjectTaskDialog
-          task={card}
-          onFinish={() => {
-            editDialog.props.onOpenChange(false);
-            setIsEditingTitle(false);
-          }}
-        />
+        <EditProjectTaskDialog task={card} props={editDialog.props} />
       </ConfirmDialog>
     </KanbanBoardCard>
   );
