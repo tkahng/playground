@@ -12,7 +12,6 @@ import (
 	"github.com/tkahng/playground/internal/stores"
 
 	"github.com/tkahng/playground/internal/tools/filesystem"
-	"github.com/tkahng/playground/internal/tools/hook"
 	"github.com/tkahng/playground/internal/tools/logger"
 	"github.com/tkahng/playground/internal/tools/sse"
 )
@@ -51,6 +50,14 @@ type BaseApp struct {
 	sseManager sse.Manager
 
 	eventManager events.EventManager
+}
+
+// MailService implements App.
+func (app *BaseApp) MailService() services.OtpMailService {
+	if app.mailService == nil {
+		panic("mail service not initialized")
+	}
+	return app.mailService
 }
 
 // EventManager implements App.
@@ -115,45 +122,6 @@ func (app *BaseApp) Logger() *slog.Logger {
 	return app.logger
 }
 
-func (app *BaseApp) IsBootstrapped() (isBootStrapped bool) {
-	if app.cfg == nil {
-		return
-	}
-	if app.db == nil {
-		return
-	}
-
-	if app.auth == nil {
-		return
-	}
-	if app.team == nil {
-		return
-	}
-	if app.checker == nil {
-		return
-	}
-	if app.rbac == nil {
-		return
-	}
-	if app.task == nil {
-		return
-	}
-	if app.adapter == nil {
-		return
-	}
-	if app.teamInvitation == nil {
-		return
-	}
-	if app.jobManager == nil {
-		return
-	}
-	if app.jobService == nil {
-		return
-	}
-
-	return true
-}
-
 // BootStrap implements App.
 
 // JobManager implements App.
@@ -215,15 +183,6 @@ func (a *BaseApp) Payment() services.PaymentService {
 
 // Mailer implements App.
 // RegisterBaseHooks implements App.
-func (app *BaseApp) RegisterBaseHooks() {
-	app.Lifecycle().OnStart().Bind(&hook.Handler[*StartEvent]{
-		Func: func(se *StartEvent) error {
-			return nil
-		},
-		Priority: -99,
-	})
-
-}
 
 func BootstrappedApp(cfg conf.EnvConfig) *BaseApp {
 	app := new(BaseApp)

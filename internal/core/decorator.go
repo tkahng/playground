@@ -10,7 +10,6 @@ import (
 	"github.com/tkahng/playground/internal/jobs"
 	"github.com/tkahng/playground/internal/services"
 	"github.com/tkahng/playground/internal/stores"
-	"github.com/tkahng/playground/internal/tools/di"
 	"github.com/tkahng/playground/internal/tools/filesystem"
 	"github.com/tkahng/playground/internal/tools/logger"
 	"github.com/tkahng/playground/internal/tools/mailer"
@@ -95,13 +94,21 @@ type BaseAppDecorator struct {
 	BootstrapFunc              func() error
 	SseManagerFunc             func() sse.Manager
 	NotificationPublisherFunc  func() services.Notifier
-	ContainerFunc              func() di.Container
 	EventManagerFunc           func() events.EventManager
 	InitializePrimitivesFunc   func()
 	RegisterWorkersFunc        func()
 	SetBasicServicesFunc       func()
 	SetDbFunc                  func()
 	SetIntegrationServicesFunc func()
+	MailServiceFunc            func() services.OtpMailService
+}
+
+// MailService implements App.
+func (b *BaseAppDecorator) MailService() services.OtpMailService {
+	if b.MailServiceFunc != nil {
+		return b.MailServiceFunc()
+	}
+	return b.app.MailService()
 }
 
 // InitializePrimitives implements App.

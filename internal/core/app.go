@@ -33,8 +33,11 @@ type App interface {
 	JobManager() jobs.JobManager
 
 	JobService() services.JobService
+	// fs -------------------------------------------------------------------------------------
 
 	Fs() filesystem.FileSystem
+	//
+	MailService() services.OtpMailService
 
 	Rbac() services.RBACService
 
