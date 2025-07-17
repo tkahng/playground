@@ -106,6 +106,15 @@ type StorageAdapterDecorator struct {
 	TaskFunc           *TaskDecorator
 	RunInTxFunc        func(fn func(tx StorageAdapterInterface) error) error
 	JobFunc            *JobStoreDecorator
+	UserReactionFunc   *DbUserReactionStoreDectorator
+}
+
+// UserReaction implements StorageAdapterInterface.
+func (s *StorageAdapterDecorator) UserReaction() UserReactionStore {
+	if s.UserReactionFunc != nil {
+		return s.UserReactionFunc
+	}
+	return s.Delegate.UserReaction()
 }
 
 // Job implements StorageAdapterInterface.
