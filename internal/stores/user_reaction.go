@@ -14,13 +14,37 @@ type UserReactionFilter struct {
 	SortParams
 }
 
+type ReactionByCountry struct {
+	Country        string `json:"country"`
+	TotalReactions int64  `json:"total_reactions"`
+}
+
 type UserReactionStore interface {
 	CreateUserReaction(ctx context.Context, input *models.UserReaction) (*models.UserReaction, error)
 	CountUserReactions(ctx context.Context, filter *UserReactionFilter) (int64, error)
+	CountByCountry(ctx context.Context, filter *UserReactionFilter) ([]*ReactionByCountry, error)
 }
 
 type DbUserReactionStore struct {
 	db database.Dbx
+}
+
+// CountByCountry implements UserReactionStore.
+func (d *DbUserReactionStore) CountByCountry(ctx context.Context, filter *UserReactionFilter) ([]*ReactionByCountry, error) {
+	limit, _ := filter.LimitOffset()
+	const query = `
+	SELECT country, COUNT(*) AS total_reactions
+	FROM public.user_reactions
+	WHERE country IS NOT NULL
+	GROUP BY country
+	ORDER BY total_reactions DESC
+	LIMIT $1;
+`
+	res, err := database.QueryAll[*ReactionByCountry](ctx, d.db, query, limit)
+	if err != nil {
+		return nil, err
+	}
+	return res, nil
 }
 
 // CountUserReactions implements UserReactionStore.
@@ -50,6 +74,18 @@ type DbUserReactionStoreDectorator struct {
 	delegate               UserReactionStore
 	CreateUserReactionFunc func(ctx context.Context, input *models.UserReaction) (*models.UserReaction, error)
 	CountUserReactionsFunc func(ctx context.Context, filter *UserReactionFilter) (int64, error)
+	CountByCountryFunc     func(ctx context.Context, filter *UserReactionFilter) ([]*ReactionByCountry, error)
+}
+
+// CountByCountry implements UserReactionStore.
+func (d *DbUserReactionStoreDectorator) CountByCountry(ctx context.Context, filter *UserReactionFilter) ([]*ReactionByCountry, error) {
+	if d.CountByCountryFunc != nil {
+		return d.CountByCountryFunc(ctx, filter)
+	}
+	if d.delegate == nil {
+		return nil, errors.New("delegate for CountByCountry in UserReactionStore is nil")
+	}
+	return d.delegate.CountByCountry(ctx, filter)
 }
 
 // CountUserReactions implements UserReactionStore.
