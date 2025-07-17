@@ -58,7 +58,7 @@ const formSchema = z.object({
   // status: "todo" | "in_progress" | "done";
   assignee_id: z.string().nullable(),
   //  assignee_id: string | null;
-  created_by_member_id: z.string().nullable(),
+  // created_by_member_id: z.string().nullable(),
   // created_by_member_id: string | null;
   end_at: z.string().nullable(),
   // end_at: string | null;
@@ -66,7 +66,7 @@ const formSchema = z.object({
   // parent_id: string | null;
   position: z.number().optional(),
   // position?: number;
-  project_id: z.string(),
+  // project_id: z.string(),
   // project_id: string;
   rank: z.number().optional(),
   // rank?: number;
@@ -74,15 +74,18 @@ const formSchema = z.object({
   // reporter_id: string | null;
   start_at: z.string().nullable(),
   // start_at: string | null;
-  team_id: z.string(),
+  // team_id: z.string(),
 });
 
 export function EditProjectTaskDialog({
   task,
-  onFinish,
-}: {
+}: // props
+{
   task: Task;
-  onFinish: () => void;
+  props: {
+    open: boolean;
+    onOpenChange: React.Dispatch<React.SetStateAction<boolean>>;
+  };
 }) {
   const { user } = useAuthProvider();
   const { teamMember } = useTeam();
@@ -90,6 +93,7 @@ export function EditProjectTaskDialog({
   const assigneeDialog = useDialog();
   // const [isDialogOpen, setDialogOpen] = useState(false);
   const queryClient = useQueryClient();
+  const [search, setSearch] = useState("");
   const [members, setMembers] = useState<TeamMember[]>([]);
   // const [search, setSearch] = useState<string>("");
   // const navigate = useNavigate();
@@ -107,7 +111,7 @@ export function EditProjectTaskDialog({
   });
   useEffect(() => {
     setMembers(data?.data?.length ? data.data : []);
-  }, [data]);
+  }, [data, search]);
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -115,14 +119,14 @@ export function EditProjectTaskDialog({
       description: task.description || "",
       status: task.status,
       assignee_id: task.assignee_id,
-      created_by_member_id: task.created_by_member_id,
+      // created_by_member_id: task.created_by_member_id,
       end_at: task.end_at,
       parent_id: task.parent_id,
-      project_id: task.project_id,
+      // project_id: task.project_id,
       rank: task.rank,
       reporter_id: task.reporter_id,
       start_at: task.start_at,
-      team_id: task.team_id,
+      // team_id: task.team_id,
     },
   });
 
@@ -143,7 +147,6 @@ export function EditProjectTaskDialog({
       });
     },
     onSuccess: async () => {
-      onFinish();
       await queryClient.invalidateQueries({
         queryKey: ["project-with-tasks", task.project_id],
       });
@@ -301,9 +304,11 @@ export function EditProjectTaskDialog({
                           <CommandInput
                             placeholder="Search assignee..."
                             className="h-9"
-                            // onValueChange={(value) => {
-                            //   setSearch(value);
-                            // }}
+                            autoComplete="on"
+                            value={search}
+                            onValueChange={(e) => {
+                              setSearch(e);
+                            }}
                           />
                           <CommandList>
                             <CommandEmpty>No assignee found.</CommandEmpty>

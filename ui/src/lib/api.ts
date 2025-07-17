@@ -917,6 +917,22 @@ export const taskProjectList = async (
   return data;
 };
 export const taskQueries = {
+  findTaskById: async (token: string, taskId: string) => {
+    const { data, error } = await client.GET(`/api/tasks/{task-id}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      params: {
+        path: {
+          "task-id": taskId,
+        },
+      },
+    });
+    if (error) {
+      throw error;
+    }
+    return data;
+  },
   updateTask: async (
     token: string,
     taskId: string,

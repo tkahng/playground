@@ -92,12 +92,7 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
       </CardContent>
 
       <ConfirmDialog dialogProps={editDialog.props}>
-        <EditProjectTaskDialog
-          onFinish={() => {
-            console.log("onFinish");
-          }}
-          task={task.task}
-        />
+        <EditProjectTaskDialog task={task.task} props={editDialog.props} />
       </ConfirmDialog>
     </Card>
   );
