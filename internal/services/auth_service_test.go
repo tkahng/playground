@@ -28,8 +28,8 @@ func TestHandleRefreshToken(t *testing.T) {
 		token:   mockToken,
 		adapter: adapter,
 		// adapter:   adatper,
-		options: &conf.AppOptions{
-			Auth: conf.AuthOptions{
+		config: &conf.EnvConfig{
+			AuthOptions: conf.AuthOptions{
 				RefreshToken: conf.TokenOption{
 					Type:     models.TokenTypesRefreshToken,
 					Secret:   string(models.TokenTypesRefreshToken),
@@ -253,19 +253,17 @@ func TestAuthenticate(t *testing.T) {
 	mockToken := NewJwtService()
 	mockPassword := NewPasswordServiceDecorator()
 
-	settings := (&conf.EnvConfig{
-		AppConfig: conf.AppConfig{
-			AppUrl:        "http://localhost:8080",
-			AppName:       "TestApp",
-			SenderAddress: "tkahng@gmail.com",
-		},
-	}).ToSettings()
-
+	settings := conf.NewEnvConfig()
+	settings.AppConfig = conf.AppConfig{
+		AppUrl:        "http://localhost:8080",
+		AppName:       "TestApp",
+		SenderAddress: "tkahng@gmail.com",
+	}
 	app := &BaseAuthService{
 		adapter:    storeDecorator,
 		token:      mockToken,
 		password:   mockPassword,
-		options:    settings,
+		config:     settings,
 		jobService: jobService,
 	}
 
@@ -332,7 +330,7 @@ func TestAuthenticate(t *testing.T) {
 					Type: string(mailer.EmailTypeVerify),
 				},
 				Message: &mailer.Message{
-					From:    settings.Meta.SenderAddress,
+					From:    settings.AppConfig.SenderAddress,
 					To:      testEmail,
 					Subject: "TestApp - Verify your email address",
 				},
@@ -486,7 +484,7 @@ func TestAuthenticate(t *testing.T) {
 					Type: string(mailer.EmailTypeSecurityPasswordReset),
 				},
 				Message: &mailer.Message{
-					From: settings.Meta.SenderAddress,
+					From: settings.AppConfig.SenderAddress,
 					To:   testEmail,
 				},
 			},

@@ -42,7 +42,7 @@ func NewAppDecorator(ctx context.Context, cfg conf.EnvConfig, pool database.Dbx)
 
 	jobService.RegisterWorkers(mailServiece, paymentService, nil)
 	authService := services.NewAuthServiceDecorator(
-		settings,
+		&cfg,
 		adapter,
 		jobService,
 	)

@@ -55,20 +55,20 @@ var _ AuthService = (*BaseAuthService)(nil)
 type BaseAuthService struct {
 	token      JwtService
 	password   PasswordService
-	options    *conf.AppOptions
+	config     *conf.EnvConfig
 	adapter    stores.StorageAdapterInterface
 	jobService JobService
 }
 
 func NewAuthService(
-	opts *conf.AppOptions,
+	opts *conf.EnvConfig,
 	jobService JobService,
 	adapter stores.StorageAdapterInterface,
 ) AuthService {
 	authService := &BaseAuthService{
 		token:      NewJwtService(),
 		password:   NewPasswordService(),
-		options:    opts,
+		config:     opts,
 		adapter:    adapter,
 		jobService: jobService,
 	}
@@ -90,7 +90,7 @@ func (app *BaseAuthService) Token() JwtService {
 func (app *BaseAuthService) CreateOAuthUrl(ctx context.Context, providerName models.Providers, redirectUrl string) (string, error) {
 	redirectTo := redirectUrl
 	if redirectTo == "" {
-		redirectTo = app.options.Meta.AppUrl
+		redirectTo = app.config.AppConfig.AppUrl
 	}
 	provider := oauth.NewProviderByName(string(providerName))
 	if provider == nil {
@@ -190,7 +190,7 @@ func (app *BaseAuthService) ResetPassword(ctx context.Context, userId uuid.UUID,
 
 // Signout implements AuthActions.
 func (app *BaseAuthService) Signout(ctx context.Context, token string) error {
-	opts := app.options.Auth
+	opts := app.config.AuthOptions
 	var claims shared.RefreshTokenClaims
 	err := app.token.ParseToken(token, opts.RefreshToken, &claims)
 	if err != nil {
@@ -249,7 +249,7 @@ func (app *BaseAuthService) CreateAndPersistStateToken(ctx context.Context, payl
 	if payload == nil {
 		return "", fmt.Errorf("payload is nil")
 	}
-	config := app.options.Auth.StateToken
+	config := app.config.AuthOptions.StateToken
 	claims := shared.ProviderStateClaims{
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: config.ExpiresAt(),
@@ -287,7 +287,7 @@ func (app *BaseAuthService) CreateAuthTokens(ctx context.Context, payload *model
 		return nil, fmt.Errorf("payload is nil")
 	}
 
-	opts := app.options.Auth
+	opts := app.config.AuthOptions
 
 	authToken, err := func() (string, error) {
 		claims := shared.AuthenticationClaims{
@@ -362,7 +362,7 @@ func (app *BaseAuthService) CreateAuthTokens(ctx context.Context, payload *model
 
 // HandleCheckResetPasswordToken implements AuthActions.
 func (app *BaseAuthService) HandleCheckResetPasswordToken(ctx context.Context, tokenHash string) error {
-	opts := app.options.Auth
+	opts := app.config.AuthOptions
 	var claims shared.PasswordResetClaims
 	err := app.token.ParseToken(tokenHash, opts.PasswordResetToken, &claims)
 	if err != nil {
@@ -380,7 +380,7 @@ func (app *BaseAuthService) HandleCheckResetPasswordToken(ctx context.Context, t
 
 // HandlePasswordResetToken implements AuthActions.
 func (app *BaseAuthService) HandlePasswordResetToken(ctx context.Context, token, password string) error {
-	opts := app.options.Auth
+	opts := app.config.AuthOptions
 	var claims shared.PasswordResetClaims
 	err := app.token.ParseToken(token, opts.PasswordResetToken, &claims)
 	if err != nil {
@@ -431,7 +431,7 @@ func (app *BaseAuthService) HandlePasswordResetToken(ctx context.Context, token,
 
 }
 func (app *BaseAuthService) VerifyStateToken(ctx context.Context, token string) (*shared.ProviderStateClaims, error) {
-	opts := app.options.Auth
+	opts := app.config.AuthOptions
 	var claims shared.ProviderStateClaims
 	err := app.token.ParseToken(token, opts.StateToken, &claims)
 	if err != nil {
@@ -448,7 +448,7 @@ func (app *BaseAuthService) VerifyStateToken(ctx context.Context, token string) 
 	return &claims, nil
 }
 func (app *BaseAuthService) HandleAccessToken(ctx context.Context, token string) (*models.UserInfo, error) {
-	opts := app.options.Auth
+	opts := app.config.AuthOptions
 	var claims shared.AuthenticationClaims
 	err := app.token.ParseToken(token, opts.AccessToken, &claims)
 	if err != nil {
@@ -459,7 +459,7 @@ func (app *BaseAuthService) HandleAccessToken(ctx context.Context, token string)
 
 // HandleRefreshToken implements AuthActions.
 func (app *BaseAuthService) HandleRefreshToken(ctx context.Context, token string) (*models.UserInfoTokens, error) {
-	opts := app.options.Auth
+	opts := app.config.AuthOptions
 	var claims shared.RefreshTokenClaims
 	err := app.token.ParseToken(token, opts.RefreshToken, &claims)
 	if err != nil {
@@ -523,11 +523,11 @@ func (app *BaseAuthService) VerifyAndParseOtpToken(ctx context.Context, emailTyp
 	var opt conf.TokenOption
 	switch emailType {
 	case mailer.EmailTypeVerify:
-		opt = app.options.Auth.VerificationToken
+		opt = app.config.AuthOptions.VerificationToken
 	case mailer.EmailTypeConfirmPasswordReset:
-		opt = app.options.Auth.PasswordResetToken
+		opt = app.config.AuthOptions.PasswordResetToken
 	case mailer.EmailTypeSecurityPasswordReset:
-		opt = app.options.Auth.PasswordResetToken
+		opt = app.config.AuthOptions.PasswordResetToken
 	default:
 		return nil, fmt.Errorf("invalid email type")
 	}
