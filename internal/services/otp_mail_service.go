@@ -23,7 +23,7 @@ type OtpMailService interface {
 var _ OtpMailService = (*DbOtpMailService)(nil)
 
 type DbOtpMailService struct {
-	options  *conf.AppOptions
+	options  *conf.EnvConfig
 	adapter  stores.StorageAdapterInterface
 	mail     mailer.Mailer
 	token    JwtService
@@ -31,26 +31,21 @@ type DbOtpMailService struct {
 }
 
 func NewOtpMailService(
-	opts *conf.AppOptions,
-	mail mailer.Mailer,
+	opts *conf.EnvConfig,
 	adapter stores.StorageAdapterInterface,
 ) OtpMailService {
+	var m mailer.Mailer
+	if opts.ResendApiKey != "" {
+		m = mailer.NewResendMailer(opts.ResendConfig)
+	} else {
+		m = &mailer.LogMailer{}
+	}
 	return &DbOtpMailService{
 		options:  opts,
 		adapter:  adapter,
-		mail:     mail,
+		mail:     m,
 		token:    NewJwtService(),
 		password: NewPasswordService(),
-	}
-}
-
-func NewDbOtpMailService(opts *conf.AppOptions, mail mailer.Mailer, token JwtService, password PasswordService, adapter stores.StorageAdapterInterface) DbOtpMailService {
-	return DbOtpMailService{
-		options:  opts,
-		adapter:  adapter,
-		mail:     mail,
-		token:    token,
-		password: password,
 	}
 }
 
@@ -73,15 +68,15 @@ func (app *DbOtpMailService) SendOtpEmail(ctx context.Context, emailType mailer.
 		return fmt.Errorf("user is nil")
 	}
 
-	appOpts := app.options.Meta
+	appOpts := app.options.AppConfig
 	var tokenOpts conf.TokenOption
 	switch emailType {
 	case mailer.EmailTypeVerify:
-		tokenOpts = app.options.Auth.VerificationToken
+		tokenOpts = app.options.AuthOptions.VerificationToken
 	case mailer.EmailTypeSecurityPasswordReset:
-		tokenOpts = app.options.Auth.PasswordResetToken
+		tokenOpts = app.options.AuthOptions.PasswordResetToken
 	case mailer.EmailTypeConfirmPasswordReset:
-		tokenOpts = app.options.Auth.PasswordResetToken
+		tokenOpts = app.options.AuthOptions.PasswordResetToken
 	default:
 		return fmt.Errorf("invalid email type")
 	}
@@ -121,7 +116,7 @@ func (app *DbOtpMailService) SendOtpEmail(ctx context.Context, emailType mailer.
 }
 
 func (app *DbOtpMailService) getSendMailParams(emailType mailer.EmailType, tokenHash string, claims shared.OtpClaims) (*mailer.AllEmailParams, error) {
-	appOpts := app.options.Meta
+	appOpts := app.options.AppConfig
 	var sendMailParams mailer.SendMailParams
 	var ok bool
 	if sendMailParams, ok = mailer.EmailPathMap[emailType]; !ok {
@@ -162,12 +157,12 @@ func (i *DbOtpMailService) CreateConfirmationUrl(tokenhash string) (string, erro
 		"/team-invitation",
 		tokenhash,
 		string(models.TokenTypesInviteToken),
-		i.options.Meta.AppUrl,
+		i.options.AppConfig.AppUrl,
 	)
 	if err != nil {
 		return "", err
 	}
-	appUrl, err := url.Parse(i.options.Meta.AppUrl)
+	appUrl, err := url.Parse(i.options.AppConfig.AppUrl)
 	if err != nil {
 		return "", err
 	}
@@ -203,7 +198,7 @@ func (i *DbOtpMailService) SendTeamInvitationEmail(ctx context.Context, params *
 	// 	Token:           params.TokenHash,
 	// }
 	param.Message = &mailer.Message{
-		From:    i.options.Meta.SenderAddress,
+		From:    i.options.AppConfig.SenderAddress,
 		To:      params.Email,
 		Subject: fmt.Sprintf("Invitation to join %s", params.TeamName),
 		Body:    body,

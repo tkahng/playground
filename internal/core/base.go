@@ -11,7 +11,6 @@ import (
 	"github.com/tkahng/playground/internal/services"
 	"github.com/tkahng/playground/internal/stores"
 
-	"github.com/tkahng/playground/internal/tools/di"
 	"github.com/tkahng/playground/internal/tools/filesystem"
 	"github.com/tkahng/playground/internal/tools/hook"
 	"github.com/tkahng/playground/internal/tools/logger"
@@ -41,16 +40,16 @@ type BaseApp struct {
 	rbac    services.RBACService
 	checker services.ConstraintChecker
 
-	task           services.TaskService
+	task services.TaskService
+
 	team           services.TeamService
 	teamInvitation services.TeamInvitationService
 
 	notifierPublisher services.Notifier
-	fs                filesystem.FileSystem
+
+	fs filesystem.FileSystem
 
 	sseManager sse.Manager
-
-	container di.Container
 
 	eventManager events.EventManager
 }
@@ -61,14 +60,6 @@ func (app *BaseApp) EventManager() events.EventManager {
 		panic("event manager not initialized")
 	}
 	return app.eventManager
-}
-
-// Container implements App.
-func (app *BaseApp) Container() di.Container {
-	if app.container == nil {
-		panic("container not initialized")
-	}
-	return app.container
 }
 
 // NotificationPublisher implements App.

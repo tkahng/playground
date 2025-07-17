@@ -89,6 +89,13 @@ type EnvConfig struct {
 	StripeConfig
 	StorageConfig
 	AiConfig
+	SmtpConfig
+	AuthOptions
+}
+type AppOptions struct {
+	Auth AuthOptions `form:"auth" json:"auth"`
+	Smtp SmtpConfig  `form:"smtp" json:"smtp"`
+	Meta AppConfig   `form:"meta" json:"meta"`
 }
 
 func (c *EnvConfig) ToSettings() *AppOptions {
@@ -105,6 +112,7 @@ func AppConfigGetter() EnvConfig {
 	}); err != nil {
 		panic(err)
 	}
+	config.AuthOptions = NewTokenOptions()
 	return config
 }
 
@@ -118,7 +126,8 @@ func GetConfig[T any]() T {
 	return config
 }
 
-func NewSettings() *AppOptions {
+func NewEnvConfig() *EnvConfig {
 	config := new(EnvConfig)
-	return config.ToSettings()
+	config.AuthOptions = NewTokenOptions()
+	return config
 }

@@ -9,12 +9,12 @@ import (
 	"github.com/tkahng/playground/internal/jobs"
 	"github.com/tkahng/playground/internal/services"
 	"github.com/tkahng/playground/internal/stores"
-	"github.com/tkahng/playground/internal/tools/di"
 	"github.com/tkahng/playground/internal/tools/filesystem"
 	"github.com/tkahng/playground/internal/tools/sse"
 )
 
 type App interface {
+	AppContainer
 	Bootstrap() error
 
 	//  settings -------------------------------------------------------------------------------------
@@ -55,13 +55,13 @@ type App interface {
 
 	SseManager() sse.Manager
 
-	Container() di.Container
-
 	EventManager() events.EventManager
 }
 
 type AppContainer interface {
-	SetConfig()
-	SetLogger()
+	InitializePrimitives()
 	SetDb()
+	SetBasicServices()
+	SetIntegrationServices()
+	RegisterWorkers()
 }

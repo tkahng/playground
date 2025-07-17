@@ -90,7 +90,7 @@ func Run2() error {
 		app.SseManager().Run(context.Background())
 	}()
 
-	fmt.Printf("server running on port %d", app.Config().Port)
+	fmt.Printf("server running on port %d", app.Config().Options.Port)
 
 	if err := httpServer.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
 		return err
