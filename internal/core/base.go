@@ -1,6 +1,7 @@
 package core
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 
@@ -50,6 +51,26 @@ type BaseApp struct {
 	sseManager sse.Manager
 
 	eventManager events.EventManager
+}
+
+// RunBackgroundProcesses implements App.
+func (app *BaseApp) RunBackgroundProcesses(firstCtx context.Context) {
+	go func() {
+		slog.Info("Starting poller")
+		if err := app.JobManager().Run(firstCtx); err != nil {
+			slog.ErrorContext(
+				firstCtx,
+				"error starting poller",
+				slog.Any("error", err),
+			)
+		}
+	}()
+
+	go func() {
+		slog.Info("Starting sse manager")
+		app.SseManager().Run(firstCtx)
+	}()
+
 }
 
 // MailService implements App.

@@ -1,6 +1,7 @@
 package core
 
 import (
+	"context"
 	"log/slog"
 
 	"github.com/tkahng/playground/internal/conf"
@@ -58,6 +59,8 @@ type App interface {
 	SseManager() sse.Manager
 
 	EventManager() events.EventManager
+
+	RunBackgroundProcesses(ctx context.Context)
 }
 
 type AppContainer interface {

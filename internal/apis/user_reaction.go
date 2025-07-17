@@ -19,7 +19,7 @@ import (
 )
 
 type UserReactionDto struct {
-	Type string `json:"type"`
+	Type string `json:"type" required:"true"`
 }
 type UserReactionInput struct {
 	Body UserReactionDto
@@ -68,7 +68,12 @@ func (a *Api) BindCreateUserReaction(aapi huma.API) {
 			if err != nil {
 				return nil, err
 			}
-
+			err = a.App().EventManager().EventBus().Publish(ctx, userreaction.UserReactionCreatedEvent{
+				UserReaction: reaction,
+			})
+			if err != nil {
+				return nil, err
+			}
 			return nil, nil
 		},
 	)
@@ -113,7 +118,6 @@ func (api *Api) BindUserReactionSse(humapi huma.API) {
 		},
 		map[string]any{
 			"latest_user_reaction_stats": &userreaction.LatestUserReactionStatsSseEvent{},
-			"latest_user_reaction":       &userreaction.LatestUserReactionSseEvent{},
 			"ping":                       &PingMessage{},
 		},
 		hanlder,
