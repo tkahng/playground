@@ -2,6 +2,6 @@ package userreaction
 
 import "github.com/tkahng/playground/internal/models"
 
-type UserReactionCreatedEvent struct {
+type UserReactionCreated struct {
 	UserReaction *models.UserReaction
 }

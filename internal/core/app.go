@@ -69,4 +69,5 @@ type AppContainer interface {
 	SetBasicServices()
 	SetIntegrationServices()
 	RegisterWorkers()
+	AddEventHandlers()
 }

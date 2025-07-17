@@ -68,7 +68,7 @@ func (a *Api) BindCreateUserReaction(aapi huma.API) {
 			if err != nil {
 				return nil, err
 			}
-			err = a.App().EventManager().EventBus().Publish(ctx, userreaction.UserReactionCreatedEvent{
+			err = a.App().EventManager().EventBus().Publish(ctx, userreaction.UserReactionCreated{
 				UserReaction: reaction,
 			})
 			if err != nil {
@@ -87,7 +87,7 @@ func (api *Api) BindUserReactionSse(humapi huma.API) {
 	membermiddleware := middleware.TeamInfoFromTeamMemberID(humapi, api.App())
 	hanlder := sse.ServeSSE[TeamMemberSseInput](
 		func(ctx context.Context, f func(any) error) sse.Client {
-			return sse.NewClient("user-reactions", f, slog.Default(), func() any {
+			return sse.NewClient(sse.UserReactionsChannel, f, slog.Default(), func() any {
 				return &PingMessage{
 					Message: "ping",
 				}

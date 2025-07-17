@@ -102,6 +102,14 @@ type BaseAppDecorator struct {
 	SetIntegrationServicesFunc func()
 	MailServiceFunc            func() services.OtpMailService
 	RunBackgroundProcessesFunc func(context.Context)
+	AddEventHandlersFunc       func()
+}
+
+func (b *BaseAppDecorator) AddEventHandlers() {
+	if b.AddEventHandlersFunc != nil {
+		b.AddEventHandlersFunc()
+	}
+	b.app.AddEventHandlers()
 }
 
 // RunBackgroundProcesses implements App.

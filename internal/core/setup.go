@@ -3,7 +3,9 @@ package core
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
+	"github.com/ThreeDotsLabs/watermill/components/cqrs"
 	"github.com/tkahng/playground/internal/conf"
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/events"
@@ -13,7 +15,38 @@ import (
 	"github.com/tkahng/playground/internal/tools/di"
 	"github.com/tkahng/playground/internal/tools/logger"
 	"github.com/tkahng/playground/internal/tools/sse"
+	"github.com/tkahng/playground/internal/userreaction"
 )
+
+func (app *BaseApp) RunBackgroundProcesses(firstCtx context.Context) {
+	go func() {
+		app.Logger().Info("Starting poller")
+		if err := app.JobManager().Run(firstCtx); err != nil {
+			app.Logger().ErrorContext(
+				firstCtx,
+				"error starting poller",
+				slog.Any("error", err),
+			)
+			return
+		}
+	}()
+
+	go func() {
+		app.Logger().Info("Starting sse manager")
+		app.SseManager().Run(firstCtx)
+	}()
+	go func() {
+		app.Logger().Info("Starting event manager")
+		if err := app.EventManager().Run(firstCtx); err != nil {
+			app.Logger().ErrorContext(
+				firstCtx,
+				"error starting event manager",
+				slog.Any("error", err),
+			)
+			return
+		}
+	}()
+}
 
 func (app *BaseApp) Bootstrap() error {
 	event := &BootstrapEvent{}
@@ -26,10 +59,25 @@ func (app *BaseApp) Bootstrap() error {
 		e.App.SetBasicServices()
 		e.App.SetIntegrationServices()
 		e.App.RegisterWorkers()
+		e.App.AddEventHandlers()
 		return nil
 	})
 	return err
 }
+func (app *BaseApp) AddEventHandlers() {
+	userReactionHandler := userreaction.NewUserReactionEventHandler(
+		app.Logger(),
+		app.Adapter().UserReaction(),
+		app.SseManager(),
+	)
+	app.EventManager().AddHandlers(
+		cqrs.NewEventHandler(
+			"UserReactionCreated",
+			userReactionHandler.OnUserReactionCreated,
+		),
+	)
+}
+
 func (app *BaseApp) InitializePrimitives() {
 	opts := conf.AppConfigGetter()
 	app.cfg = &opts

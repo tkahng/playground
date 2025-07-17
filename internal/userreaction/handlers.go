@@ -3,22 +3,28 @@ package userreaction
 import (
 	"context"
 	"log/slog"
+	"time"
 
 	"github.com/tkahng/playground/internal/stores"
+	"github.com/tkahng/playground/internal/tools/limiter"
 	"github.com/tkahng/playground/internal/tools/mapper"
 	"github.com/tkahng/playground/internal/tools/sse"
 )
 
 type UserReactionHandler interface {
-	OnUserReactionCreated(ctx context.Context, event *UserReactionCreatedEvent) error
+	OnUserReactionCreated(ctx context.Context, event *UserReactionCreated) error
 }
 type UserReactionEventHandler struct {
-	logger     *slog.Logger
-	store      stores.UserReactionStore
-	sseManager sse.Manager
+	logger      *slog.Logger
+	store       stores.UserReactionStore
+	sseManager  sse.Manager
+	rateLimiter limiter.Limiter
 }
 
-func (u *UserReactionEventHandler) OnUserReactionCreated(ctx context.Context, event *UserReactionCreatedEvent) error {
+func (u *UserReactionEventHandler) OnUserReactionCreated(ctx context.Context, event *UserReactionCreated) error {
+	if !u.rateLimiter.Allow() {
+		return nil
+	}
 	stats := new(UserReactionStats)
 	stats.LastCreated = FromModelUserReaction(event.UserReaction)
 	recent, err := u.store.CountByCountry(ctx, &stores.UserReactionFilter{
@@ -40,7 +46,7 @@ func (u *UserReactionEventHandler) OnUserReactionCreated(ctx context.Context, ev
 		u.logger.Error("failed to get recent user reactions", slog.Any("error", err))
 	}
 	stats.TotalReactions = count
-	err = u.sseManager.Send("user-reactions", stats)
+	err = u.sseManager.Send(sse.UserReactionsChannel, stats)
 	if err != nil {
 		u.logger.Error("failed to send sse", slog.Any("error", err))
 	}
@@ -49,8 +55,14 @@ func (u *UserReactionEventHandler) OnUserReactionCreated(ctx context.Context, ev
 
 var _ UserReactionHandler = (*UserReactionEventHandler)(nil)
 
-func NewUserReactionEventHandler(logger *slog.Logger, store stores.UserReactionStore) UserReactionHandler {
+func NewUserReactionEventHandler(logger *slog.Logger, store stores.UserReactionStore, sseManager sse.Manager) UserReactionHandler {
 	return &UserReactionEventHandler{
-		store: store,
+		logger:     logger,
+		store:      store,
+		sseManager: sseManager,
+		rateLimiter: limiter.NewRateLimiter(
+			10,
+			10*time.Second,
+		),
 	}
 }
