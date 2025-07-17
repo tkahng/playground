@@ -11,7 +11,7 @@ type UserReaction struct {
 	ID        uuid.UUID  `db:"id" json:"id"`
 	UserID    *uuid.UUID `db:"user_id" json:"user_id"`
 	Type      string     `db:"type" json:"type"`
-	Reaction  *string    `db:"otp" json:"otp"`
+	Reaction  *string    `db:"reaction" json:"reaction"`
 	IpAddress *string    `db:"ip_address" json:"ip_address"`
 	Country   *string    `db:"country" json:"country"`
 	City      *string    `db:"city" json:"city"`
