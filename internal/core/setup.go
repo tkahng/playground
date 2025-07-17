@@ -32,9 +32,7 @@ func (app *BaseApp) Bootstrap() error {
 }
 func (app *BaseApp) InitializePrimitives() {
 	opts := conf.AppConfigGetter()
-	settings := opts.ToSettings()
 	app.cfg = &opts
-	app.settings = settings
 	app.logger = logger.GetDefaultLogger()
 }
 

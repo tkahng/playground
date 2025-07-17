@@ -20,7 +20,6 @@ import (
 var _ App = (*BaseAppDecorator)(nil)
 
 func NewAppDecorator(ctx context.Context, cfg conf.EnvConfig, pool database.Dbx) *BaseAppDecorator {
-	settings := cfg.ToSettings()
 
 	fs := filesystem.NewMockFileSystem(cfg.StorageConfig)
 	adapter := stores.NewDbAdapterDecorators(pool)
@@ -59,7 +58,6 @@ func NewAppDecorator(ctx context.Context, cfg conf.EnvConfig, pool database.Dbx)
 	app := newApp(
 		fs,
 		pool,
-		settings,
 		l,
 		cfg,
 		authService,
@@ -281,10 +279,6 @@ func (b *BaseAppDecorator) Rbac() services.RBACService {
 		return b.RbacFunc()
 	}
 	return b.app.Rbac()
-}
-
-func (b *BaseAppDecorator) Settings() *conf.AppOptions {
-	return b.app.Settings()
 }
 
 func (b *BaseAppDecorator) Task() services.TaskService {

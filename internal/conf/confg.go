@@ -92,18 +92,6 @@ type EnvConfig struct {
 	SmtpConfig
 	AuthOptions
 }
-type AppOptions struct {
-	Auth AuthOptions `form:"auth" json:"auth"`
-	Smtp SmtpConfig  `form:"smtp" json:"smtp"`
-	Meta AppConfig   `form:"meta" json:"meta"`
-}
-
-func (c *EnvConfig) ToSettings() *AppOptions {
-	return &AppOptions{
-		Auth: NewTokenOptions(),
-		Meta: c.AppConfig,
-	}
-}
 
 func AppConfigGetter() EnvConfig {
 	var config EnvConfig

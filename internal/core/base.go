@@ -20,8 +20,7 @@ import (
 var _ App = (*BaseApp)(nil)
 
 type BaseApp struct {
-	cfg      *conf.EnvConfig
-	settings *conf.AppOptions
+	cfg *conf.EnvConfig
 
 	lc Lifecycle
 
@@ -83,15 +82,8 @@ func (app *BaseApp) Config() *conf.EnvConfig {
 	if app.cfg == nil {
 		opts := conf.AppConfigGetter()
 		app.cfg = &opts
-		app.settings = opts.ToSettings()
 	}
 	return app.cfg
-}
-func (a *BaseApp) Settings() *conf.AppOptions {
-	if a.settings == nil {
-		return a.Config().ToSettings()
-	}
-	return a.settings
 }
 
 // check db -------------------------------------------------------------------------------------
@@ -128,9 +120,6 @@ func (app *BaseApp) IsBootstrapped() (isBootStrapped bool) {
 		return
 	}
 	if app.db == nil {
-		return
-	}
-	if app.settings == nil {
 		return
 	}
 
@@ -247,7 +236,6 @@ func BootstrappedApp(cfg conf.EnvConfig) *BaseApp {
 func newApp(
 	fs filesystem.FileSystem,
 	pool database.Dbx,
-	settings *conf.AppOptions,
 	logger *slog.Logger,
 	cfg conf.EnvConfig,
 	authService services.AuthService,
@@ -264,7 +252,6 @@ func newApp(
 	app := &BaseApp{
 		fs:             fs,
 		db:             pool,
-		settings:       settings,
 		logger:         logger,
 		cfg:            &cfg,
 		auth:           authService,
