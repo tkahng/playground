@@ -40,7 +40,7 @@ type DbNotifier struct {
 }
 
 type AssignedToTaskWorker struct {
-	notifier *DbNotifier
+	notifier Notifier
 }
 
 // Work implements workers.AssignedToTaskWorker.
@@ -48,7 +48,7 @@ func (a *AssignedToTaskWorker) Work(ctx context.Context, job *jobs.Job[workers.A
 	return a.notifier.NotifyAssignedToTask(ctx, job.Args.TaskID, job.Args.AssignedByMemeberID, job.Args.AssigneeMemberID)
 }
 
-func NewAssignedToTaskWorker(notifier *DbNotifier) *AssignedToTaskWorker {
+func NewAssignedToTaskWorker(notifier Notifier) *AssignedToTaskWorker {
 	return &AssignedToTaskWorker{
 		notifier: notifier,
 	}

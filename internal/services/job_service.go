@@ -84,7 +84,7 @@ func (d *DbJobService) RegisterWorkers(mail OtpMailService, paymentService Payme
 	jobs.RegisterWorker(d.manager, workers.NewTeamInvitationWorker(mail))
 	jobs.RegisterWorker(d.manager, workers.NewRefreshSubscriptionQuantityWorker(paymentService))
 	jobs.RegisterWorker(d.manager, workers.NewNewMemberNotificationWorker(notification))
-	// jobs.RegisterWorker(d.manager, workers.(mail))
+	jobs.RegisterWorker(d.manager, NewAssignedToTaskWorker(notification))
 }
 
 // EnqueueOtpMailJob implements JobService.
