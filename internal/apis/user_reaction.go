@@ -55,11 +55,13 @@ func (a *Api) BindCreateUserReaction(aapi huma.API) {
 				city, err := geoip.City(ip)
 				if err != nil {
 					slog.ErrorContext(ctx, "error getting city", slog.String("ip", ip), slog.Any("error", err))
-
-				} else if city != nil {
-					reaction.City = &city.City.Names.English
-					reaction.Country = &city.Country.ISOCode
+					return nil, err
 				}
+				if city == nil {
+					return nil, huma.Error400BadRequest("Missing ip address")
+				}
+				reaction.City = &city.City.Names.English
+				reaction.Country = &city.Country.ISOCode
 			} else {
 				return nil, huma.Error400BadRequest("Missing ip address")
 			}
