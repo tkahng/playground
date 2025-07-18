@@ -60,6 +60,8 @@ func (a *Api) BindCreateUserReaction(aapi huma.API) {
 					reaction.City = &city.City.Names.English
 					reaction.Country = &city.Country.ISOCode
 				}
+			} else {
+				return nil, huma.Error400BadRequest("Missing ip address")
 			}
 			reaction.Type = input.Body.Type
 			reaction, err := a.App().Adapter().UserReaction().CreateUserReaction(ctx, reaction)
