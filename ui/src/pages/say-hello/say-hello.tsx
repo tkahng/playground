@@ -90,9 +90,17 @@ export default function SayHelloPage() {
             <div>Total Reactions: {stats?.total_reactions}</div>
             <div>Latest Reactions: From {stats?.last_created?.city}</div>
             <div>
+              {stats.top_five_countries?.map((c) => (
+                <Card key={c.country}>
+                  <div>{c.country}</div>
+                  <div>{c.total_reactions}</div>
+                </Card>
+              ))}
+            </div>
+            <div>
               {stats.last_reactions?.map((r) => (
                 <Card key={r.id} className="bg-primary">
-                  <div>{r.city}</div>
+                  <div>{r.country}</div>
                   <div>{r.created_at}</div>
                 </Card>
               ))}
