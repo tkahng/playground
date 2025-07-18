@@ -58,7 +58,7 @@ func (a *Api) BindCreateUserReaction(aapi huma.API) {
 
 				} else if city != nil {
 					reaction.City = &city.City.Names.English
-					reaction.Country = &city.Country.Names.English
+					reaction.Country = &city.Country.ISOCode
 				}
 			}
 			reaction.Type = input.Body.Type
