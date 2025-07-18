@@ -47,6 +47,7 @@ import NotAuthorizedPage from "./pages/not-authorized";
 import ProtectedRouteLayout from "./pages/protected-routes/protected-layout";
 import ProtectedRoutePage from "./pages/protected-routes/protected-route-page";
 import ProtectedRouteIndex from "./pages/protected-routes/route-index";
+import SayHelloPage from "./pages/say-hello/say-hello";
 import BillingSettingPage from "./pages/settings/billing-settings";
 import AccountSettingsPage from "./pages/settings/general-settings";
 import TeamSelect from "./pages/teams";
@@ -140,6 +141,7 @@ function App() {
               <Route path="/signup" element={<SignupPage />} />
               <Route path="/not-authorized" element={<NotAuthorizedPage />} />
               <Route path="/auth/callback" element={<CallbackComponent />} />
+              <Route path="/say-hello" element={<SayHelloPage />} />
               <Route
                 path="/auth/confirm-verification"
                 element={<ConfirmVerification />}
