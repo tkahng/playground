@@ -58,7 +58,7 @@ func (a *Api) BindCreateUserReaction(aapi huma.API) {
 					return nil, err
 				}
 				if city == nil {
-					return nil, huma.Error400BadRequest("Missing ip address")
+					return nil, huma.Error400BadRequest("failed to get city from ip")
 				}
 				reaction.City = &city.City.Names.English
 				reaction.Country = &city.Country.ISOCode
