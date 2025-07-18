@@ -6,7 +6,7 @@ import {
   UserReactionsSseMessage,
   UserReactionsStats,
 } from "@/schema.types";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -18,7 +18,20 @@ export default function SayHelloPage() {
   );
   const { data: statsData, isLoading: isStatsLoading } = useQuery({
     queryKey: ["user-reactions-stats"],
-    queryFn: userReactionQueries.getStats,
+    queryFn: async () => {
+      return userReactionQueries.getStats();
+    },
+  });
+  const mutation = useMutation({
+    mutationFn: async () => {
+      return userReactionQueries.createReaction();
+    },
+    onSuccess: async () => {
+      toast.success("Success");
+    },
+    onError: async () => {
+      toast.error("Error");
+    },
   });
   useEffect(() => {
     if (statsData) {
@@ -54,12 +67,14 @@ export default function SayHelloPage() {
 
     return () => {};
   }, [sseData, sseError]);
-
+  const onClick = () => {
+    mutation.mutate();
+  };
   return (
     <div>
       <div>SayHelloPage</div>
       <div>
-        <Button>Say Hello</Button>
+        <Button onClick={onClick}>Say Hello</Button>
       </div>
       <div>
         {isStatsLoading ? (
