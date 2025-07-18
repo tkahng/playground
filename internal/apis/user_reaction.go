@@ -28,6 +28,7 @@ type UserReactionInput struct {
 
 func (a *Api) BindCreateUserReaction(aapi huma.API) {
 	ipMiddleware := middleware.IpAddressMiddleware(aapi)
+	rateLimitByIp := middleware.RateLimitByIp(aapi, 12, 1*time.Minute)
 	huma.Register(
 		aapi,
 		huma.Operation{
@@ -40,6 +41,7 @@ func (a *Api) BindCreateUserReaction(aapi huma.API) {
 			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
 			Middlewares: huma.Middlewares{
 				ipMiddleware,
+				rateLimitByIp,
 			},
 		},
 		func(ctx context.Context, input *UserReactionInput) (*struct{}, error) {
