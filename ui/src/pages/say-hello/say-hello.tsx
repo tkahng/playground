@@ -1,20 +1,30 @@
 import { Button } from "@/components/ui/button";
 import { useSSE } from "@/hooks/use-sse";
-import { UserReactionsSseMessage } from "@/schema.types";
-import { useEffect } from "react";
+import { userReactionQueries } from "@/lib/api";
+import {
+  UserReaction,
+  UserReactionsSseMessage,
+  UserReactionsStats,
+} from "@/schema.types";
+import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 export default function SayHelloPage() {
+  const [stats, setStats] = useState<UserReactionsStats | null>(null);
+  const [latestReactions, setLatestReactions] = useState<UserReaction[]>([]);
   const { data: sseData, error: sseError } = useSSE<UserReactionsSseMessage>(
     `/api/user-reactions/sse`
   );
-  //   const query = useQuery({
-  //     queryKey: ["user-reactions-stats"],
-  //     queryFn: async () => {
-  //       const res = await fetch("/api/user-reactions");
-  //       return res.json();
-  //     },
-  //   })
+  const { data: statsData, isLoading: isStatsLoading } = useQuery({
+    queryKey: ["user-reactions-stats"],
+    queryFn: userReactionQueries.getStats,
+  });
+  useEffect(() => {
+    if (statsData) {
+      setStats(statsData);
+    }
+  }, [statsData]);
   useEffect(() => {
     if (sseError) {
       toast.error("Error", {
@@ -25,14 +35,21 @@ export default function SayHelloPage() {
         },
       });
     } else if (sseData) {
-      console.log(sseData);
-      toast.success("Success", {
-        description: sseData.event,
-        action: {
-          label: "Close",
-          onClick: () => console.log("Close"),
-        },
-      });
+      if (sseData.event === "latest_user_reaction_stats") {
+        console.log(sseData);
+        toast.success("Success", {
+          description: sseData.event,
+          action: {
+            label: "Close",
+            onClick: () => console.log("Close"),
+          },
+        });
+        setStats(sseData.data.user_reaction_stats);
+        if (sseData.data.user_reaction_stats.last_created) {
+          const latestReaction = sseData.data.user_reaction_stats.last_created;
+          setLatestReactions((prev) => [...[latestReaction], ...prev]);
+        }
+      }
     }
 
     return () => {};
@@ -41,7 +58,24 @@ export default function SayHelloPage() {
   return (
     <div>
       <div>SayHelloPage</div>
-      <Button>Say Hello</Button>
+      <div>
+        <Button>Say Hello</Button>
+      </div>
+      <div>
+        {isStatsLoading ? (
+          <div>Loading...</div>
+        ) : (
+          <>
+            <div>Total Reactions: {stats?.total_reactions}</div>
+            <div>Latest Reactions: From {stats?.last_created?.city}</div>
+            <div>
+              {latestReactions.map((r) => (
+                <div key={r.id}>{r.city}</div>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }

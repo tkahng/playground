@@ -1605,6 +1605,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/user-reactions/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * user-reaction-stats
+         * @description user-reaction-stats
+         */
+        get: operations["user-reaction-stats"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -2640,7 +2660,12 @@ export interface components {
             type: string;
         };
         UserReactionStats: {
-            last_created: components["schemas"]["UserReaction"];
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            last_created?: components["schemas"]["UserReaction"];
             top_five_countries: components["schemas"]["ReactionByCountry"][] | null;
             /** Format: int64 */
             total_reactions: number;
@@ -7929,6 +7954,44 @@ export interface operations {
                         /** @description The retry time in milliseconds. */
                         retry?: number;
                     })[];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "user-reaction-stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserReactionStats"];
                 };
             };
             /** @description Bad Request */

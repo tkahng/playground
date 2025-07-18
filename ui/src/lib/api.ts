@@ -1837,4 +1837,11 @@ export const userReactionQueries = {
     }
     return data;
   },
+  getStats: async () => {
+    const { data, error } = await client.GET("/api/user-reactions/stats", {});
+    if (error) {
+      throw error;
+    }
+    return data;
+  },
 };

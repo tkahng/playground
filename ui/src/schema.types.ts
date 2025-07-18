@@ -82,6 +82,10 @@ export type Task = components["schemas"]["Task"];
 export type TaskStatus = components["schemas"]["Task"]["status"];
 type ExtractArrayType<T> = T extends Array<infer U> ? U : never;
 
+export type UserReactionsStats = components["schemas"]["UserReactionStats"];
+
+export type UserReaction = components["schemas"]["UserReaction"];
+
 export type UserReactionsSseMessage = ExtractArrayType<
   operations["user-reaction-sse"]["responses"]["200"]["content"]["text/event-stream"]
 >;
