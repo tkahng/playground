@@ -12,7 +12,9 @@ import (
 	"github.com/tkahng/playground/internal/contextstore"
 	"github.com/tkahng/playground/internal/middleware"
 	"github.com/tkahng/playground/internal/models"
+	"github.com/tkahng/playground/internal/stores"
 	"github.com/tkahng/playground/internal/tools/geoip"
+	"github.com/tkahng/playground/internal/tools/mapper"
 	"github.com/tkahng/playground/internal/tools/sse"
 	"github.com/tkahng/playground/internal/userreaction"
 )
@@ -71,6 +73,62 @@ func (a *Api) BindCreateUserReaction(aapi huma.API) {
 				return nil, err
 			}
 			return nil, nil
+		},
+	)
+
+}
+
+type UserReactionStatsOutput struct {
+	LastCreated *userreaction.UserReaction `json:"last_created"`
+}
+
+func (a *Api) BindGetLatestUserReactionStats(aapi huma.API) {
+	huma.Register(
+		aapi,
+		huma.Operation{
+			OperationID: "user-reaction-stats",
+			Method:      http.MethodGet,
+			Path:        "/user-reactions/stats",
+			Summary:     "user-reaction-stats",
+			Description: "user-reaction-stats",
+			Tags:        []string{"User Reactions"},
+			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
+		},
+		func(ctx context.Context, input *struct{}) (*ApiOutput[*userreaction.UserReactionStats], error) {
+			latest, err := a.App().Adapter().UserReaction().GetLastReaction(ctx)
+			if err != nil {
+				return nil, err
+			}
+			event := userreaction.UserReactionCreated{
+				UserReaction: latest,
+			}
+			stats := new(userreaction.UserReactionStats)
+			stats.LastCreated = userreaction.FromModelUserReaction(event.UserReaction)
+			if stats.LastCreated == nil {
+				return nil, fmt.Errorf("failed to get recent user reactions")
+			}
+			recent, err := a.App().Adapter().UserReaction().CountByCountry(ctx, &stores.UserReactionFilter{
+				PaginatedInput: stores.PaginatedInput{
+					PerPage: 5,
+				},
+			})
+			if err != nil {
+				a.App().Logger().Error("failed to get recent user reactions", slog.Any("error", err))
+			}
+			stats.TopFiveCountries = mapper.Map(recent, func(r *stores.ReactionByCountry) userreaction.ReactionByCountry {
+				return userreaction.ReactionByCountry{
+					Country:        r.Country,
+					TotalReactions: r.TotalReactions,
+				}
+			})
+			fmt.Println(stats.TopFiveCountries)
+			count, err := a.App().Adapter().UserReaction().CountUserReactions(ctx, nil)
+			if err != nil {
+				a.App().Logger().Error("failed to get recent user reactions", slog.Any("error", err))
+			}
+			stats.TotalReactions = count
+			fmt.Println(stats)
+			return &ApiOutput[*userreaction.UserReactionStats]{Body: stats}, nil
 		},
 	)
 

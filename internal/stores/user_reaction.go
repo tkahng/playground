@@ -7,6 +7,7 @@ import (
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/repository"
+	"github.com/tkahng/playground/internal/tools/types"
 )
 
 type UserReactionFilter struct {
@@ -20,6 +21,7 @@ type ReactionByCountry struct {
 }
 
 type UserReactionStore interface {
+	GetLastReaction(ctx context.Context) (*models.UserReaction, error)
 	CreateUserReaction(ctx context.Context, input *models.UserReaction) (*models.UserReaction, error)
 	CountUserReactions(ctx context.Context, filter *UserReactionFilter) (int64, error)
 	CountByCountry(ctx context.Context, filter *UserReactionFilter) ([]*ReactionByCountry, error)
@@ -27,6 +29,27 @@ type UserReactionStore interface {
 
 type DbUserReactionStore struct {
 	db database.Dbx
+}
+
+// GetLastReaction implements UserReactionStore.
+func (d *DbUserReactionStore) GetLastReaction(ctx context.Context) (*models.UserReaction, error) {
+	res, err := repository.UserReaction.Get(
+		ctx,
+		d.db,
+		nil,
+		&map[string]string{
+			"created_at": "DESC",
+		},
+		types.Pointer(1),
+		types.Pointer(1),
+	)
+	if err != nil {
+		return nil, err
+	}
+	if len(res) == 0 {
+		return nil, errors.New("no reaction found")
+	}
+	return res[0], nil
 }
 
 // CountByCountry implements UserReactionStore.
@@ -75,6 +98,18 @@ type DbUserReactionStoreDectorator struct {
 	CreateUserReactionFunc func(ctx context.Context, input *models.UserReaction) (*models.UserReaction, error)
 	CountUserReactionsFunc func(ctx context.Context, filter *UserReactionFilter) (int64, error)
 	CountByCountryFunc     func(ctx context.Context, filter *UserReactionFilter) ([]*ReactionByCountry, error)
+	GetLastReactionFunc    func(ctx context.Context) (*models.UserReaction, error)
+}
+
+// GetLastReaction implements UserReactionStore.
+func (d *DbUserReactionStoreDectorator) GetLastReaction(ctx context.Context) (*models.UserReaction, error) {
+	if d.GetLastReactionFunc != nil {
+		return d.GetLastReactionFunc(ctx)
+	}
+	if d.delegate == nil {
+		return nil, errors.New("delegate for GetLastReaction in UserReactionStore is nil")
+	}
+	return d.delegate.GetLastReaction(ctx)
 }
 
 // CountByCountry implements UserReactionStore.
