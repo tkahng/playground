@@ -7,22 +7,29 @@ import (
 	"github.com/tkahng/playground/internal/stores"
 	"github.com/tkahng/playground/internal/tools/mapper"
 	"github.com/tkahng/playground/internal/tools/sse"
+	"golang.org/x/time/rate"
 )
 
 type UserReactionHandler interface {
 	OnUserReactionCreated(ctx context.Context, event *UserReactionCreated) error
 }
 type UserReactionEventHandler struct {
-	logger     *slog.Logger
-	store      stores.UserReactionStore
-	sseManager sse.Manager
-	// rateLimiter limiter.Limiter
+	logger      *slog.Logger
+	store       stores.UserReactionStore
+	sseManager  sse.Manager
+	rateLimiter *rate.Limiter
 }
 
 func (u *UserReactionEventHandler) OnUserReactionCreated(ctx context.Context, event *UserReactionCreated) error {
-	// if !u.rateLimiter.Allow() {
-	// 	return nil
-	// }
+	if !u.rateLimiter.Allow() {
+		u.logger.Info("rate limit exceeded")
+		return nil
+	}
+	r := u.rateLimiter.Reserve()
+	if !r.OK() {
+		u.logger.Info("rate limit reserve exceeded")
+		return nil
+	}
 	stats := new(UserReactionStats)
 	stats.LastCreated = FromModelUserReaction(event.UserReaction)
 	recent, err := u.store.CountByCountry(ctx, &stores.UserReactionFilter{
@@ -57,12 +64,9 @@ var _ UserReactionHandler = (*UserReactionEventHandler)(nil)
 
 func NewUserReactionEventHandler(logger *slog.Logger, store stores.UserReactionStore, sseManager sse.Manager) UserReactionHandler {
 	return &UserReactionEventHandler{
-		logger:     logger,
-		store:      store,
-		sseManager: sseManager,
-		// rateLimiter: limiter.NewRateLimiter(
-		// 	10,
-		// 	10*time.Second,
-		// ),
+		logger:      logger,
+		store:       store,
+		sseManager:  sseManager,
+		rateLimiter: rate.NewLimiter(1, 5),
 	}
 }
