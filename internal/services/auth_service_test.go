@@ -330,7 +330,7 @@ func TestAuthenticate(t *testing.T) {
 					Type: string(mailer.EmailTypeVerify),
 				},
 				Message: &mailer.Message{
-					From:    settings.AppConfig.SenderAddress,
+					From:    settings.SenderAddress,
 					To:      testEmail,
 					Subject: "TestApp - Verify your email address",
 				},
@@ -484,7 +484,7 @@ func TestAuthenticate(t *testing.T) {
 					Type: string(mailer.EmailTypeSecurityPasswordReset),
 				},
 				Message: &mailer.Message{
-					From: settings.AppConfig.SenderAddress,
+					From: settings.SenderAddress,
 					To:   testEmail,
 				},
 			},

@@ -72,11 +72,11 @@ func (app *DbOtpMailService) SendOtpEmail(ctx context.Context, emailType mailer.
 	var tokenOpts conf.TokenOption
 	switch emailType {
 	case mailer.EmailTypeVerify:
-		tokenOpts = app.options.AuthOptions.VerificationToken
+		tokenOpts = app.options.VerificationToken
 	case mailer.EmailTypeSecurityPasswordReset:
-		tokenOpts = app.options.AuthOptions.PasswordResetToken
+		tokenOpts = app.options.PasswordResetToken
 	case mailer.EmailTypeConfirmPasswordReset:
-		tokenOpts = app.options.AuthOptions.PasswordResetToken
+		tokenOpts = app.options.PasswordResetToken
 	default:
 		return fmt.Errorf("invalid email type")
 	}
@@ -157,12 +157,12 @@ func (i *DbOtpMailService) CreateConfirmationUrl(tokenhash string) (string, erro
 		"/team-invitation",
 		tokenhash,
 		string(models.TokenTypesInviteToken),
-		i.options.AppConfig.AppUrl,
+		i.options.AppUrl,
 	)
 	if err != nil {
 		return "", err
 	}
-	appUrl, err := url.Parse(i.options.AppConfig.AppUrl)
+	appUrl, err := url.Parse(i.options.AppUrl)
 	if err != nil {
 		return "", err
 	}
@@ -198,7 +198,7 @@ func (i *DbOtpMailService) SendTeamInvitationEmail(ctx context.Context, params *
 	// 	Token:           params.TokenHash,
 	// }
 	param.Message = &mailer.Message{
-		From:    i.options.AppConfig.SenderAddress,
+		From:    i.options.SenderAddress,
 		To:      params.Email,
 		Subject: fmt.Sprintf("Invitation to join %s", params.TeamName),
 		Body:    body,

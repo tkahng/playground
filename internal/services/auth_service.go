@@ -90,7 +90,7 @@ func (app *BaseAuthService) Token() JwtService {
 func (app *BaseAuthService) CreateOAuthUrl(ctx context.Context, providerName models.Providers, redirectUrl string) (string, error) {
 	redirectTo := redirectUrl
 	if redirectTo == "" {
-		redirectTo = app.config.AppConfig.AppUrl
+		redirectTo = app.config.AppUrl
 	}
 	provider := oauth.NewProviderByName(string(providerName))
 	if provider == nil {
@@ -249,7 +249,7 @@ func (app *BaseAuthService) CreateAndPersistStateToken(ctx context.Context, payl
 	if payload == nil {
 		return "", fmt.Errorf("payload is nil")
 	}
-	config := app.config.AuthOptions.StateToken
+	config := app.config.StateToken
 	claims := shared.ProviderStateClaims{
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: config.ExpiresAt(),
@@ -523,11 +523,11 @@ func (app *BaseAuthService) VerifyAndParseOtpToken(ctx context.Context, emailTyp
 	var opt conf.TokenOption
 	switch emailType {
 	case mailer.EmailTypeVerify:
-		opt = app.config.AuthOptions.VerificationToken
+		opt = app.config.VerificationToken
 	case mailer.EmailTypeConfirmPasswordReset:
-		opt = app.config.AuthOptions.PasswordResetToken
+		opt = app.config.PasswordResetToken
 	case mailer.EmailTypeSecurityPasswordReset:
-		opt = app.config.AuthOptions.PasswordResetToken
+		opt = app.config.PasswordResetToken
 	default:
 		return nil, fmt.Errorf("invalid email type")
 	}
