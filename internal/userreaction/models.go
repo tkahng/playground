@@ -28,20 +28,20 @@ type UserReaction struct {
 	UpdatedAt time.Time `db:"updated_at" json:"updated_at"`
 }
 
-func FromModelUserReaction(userReaction *models.UserReaction) *UserReaction {
-	if userReaction == nil {
+func FromModelUserReaction(ur *models.UserReaction) *UserReaction {
+	if ur == nil {
 		return nil
 	}
-	if userReaction.IpAddress == nil || userReaction.City == nil || userReaction.Country == nil {
+	if ur.IpAddress == nil || ur.City == nil || ur.Country == nil {
 		return nil
 	}
 	return &UserReaction{
-		ID:        userReaction.ID,
-		Type:      userReaction.Type,
-		IpAddress: *userReaction.IpAddress,
-		Country:   *userReaction.Country,
-		City:      *userReaction.City,
-		CreatedAt: userReaction.CreatedAt,
-		UpdatedAt: userReaction.UpdatedAt,
+		ID:        ur.ID,
+		Type:      ur.Type,
+		IpAddress: *ur.IpAddress,
+		Country:   *ur.Country,
+		City:      *ur.City,
+		CreatedAt: ur.CreatedAt,
+		UpdatedAt: ur.UpdatedAt,
 	}
 }

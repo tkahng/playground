@@ -95,11 +95,9 @@ func (a *Api) BindGetLatestUserReactionStats(aapi huma.API) {
 			if err != nil {
 				return nil, err
 			}
-			event := userreaction.UserReactionCreated{
-				UserReaction: latest,
-			}
+
 			stats := new(userreaction.UserReactionStats)
-			stats.LastCreated = userreaction.FromModelUserReaction(event.UserReaction)
+			stats.LastCreated = userreaction.FromModelUserReaction(latest)
 			fmt.Println(stats.LastCreated != nil)
 			recent, err := a.App().Adapter().UserReaction().CountByCountry(ctx, &stores.UserReactionFilter{
 				PaginatedInput: stores.PaginatedInput{

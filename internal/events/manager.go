@@ -58,17 +58,12 @@ func (i *InternalEventManager) Run(ctx context.Context) error {
 	if len(i.eventHandlers) == 0 {
 		return errors.New("no event handlers")
 	}
-	var errs []error
-	for _, handler := range i.eventHandlers {
-		err := i.eventProcessor.AddHandlers(handler)
-		if err != nil {
-			errs = append(errs, err)
-		}
+	err := i.eventProcessor.AddHandlers(i.eventHandlers...)
+	if err != nil {
+		return err
 	}
-	if len(errs) > 0 {
-		return errors.Join(errs...)
-	}
-	return nil
+
+	return i.eventRouter.Run(ctx)
 }
 
 func NewEventManager(logger *slog.Logger) *InternalEventManager {

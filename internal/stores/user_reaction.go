@@ -36,12 +36,22 @@ func (d *DbUserReactionStore) GetLastReaction(ctx context.Context) (*models.User
 	res, err := repository.UserReaction.Get(
 		ctx,
 		d.db,
-		nil,
+		&map[string]any{
+			"city": map[string]any{
+				repository.IsNotNull: nil,
+			},
+			"country": map[string]any{
+				repository.IsNotNull: nil,
+			},
+			"ip_address": map[string]any{
+				repository.IsNotNull: nil,
+			},
+		},
 		&map[string]string{
 			"created_at": "DESC",
 		},
 		types.Pointer(1),
-		types.Pointer(1),
+		types.Pointer(0),
 	)
 	if err != nil {
 		return nil, err

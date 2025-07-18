@@ -3,10 +3,8 @@ package userreaction
 import (
 	"context"
 	"log/slog"
-	"time"
 
 	"github.com/tkahng/playground/internal/stores"
-	"github.com/tkahng/playground/internal/tools/limiter"
 	"github.com/tkahng/playground/internal/tools/mapper"
 	"github.com/tkahng/playground/internal/tools/sse"
 )
@@ -15,16 +13,16 @@ type UserReactionHandler interface {
 	OnUserReactionCreated(ctx context.Context, event *UserReactionCreated) error
 }
 type UserReactionEventHandler struct {
-	logger      *slog.Logger
-	store       stores.UserReactionStore
-	sseManager  sse.Manager
-	rateLimiter limiter.Limiter
+	logger     *slog.Logger
+	store      stores.UserReactionStore
+	sseManager sse.Manager
+	// rateLimiter limiter.Limiter
 }
 
 func (u *UserReactionEventHandler) OnUserReactionCreated(ctx context.Context, event *UserReactionCreated) error {
-	if !u.rateLimiter.Allow() {
-		return nil
-	}
+	// if !u.rateLimiter.Allow() {
+	// 	return nil
+	// }
 	stats := new(UserReactionStats)
 	stats.LastCreated = FromModelUserReaction(event.UserReaction)
 	recent, err := u.store.CountByCountry(ctx, &stores.UserReactionFilter{
@@ -46,7 +44,9 @@ func (u *UserReactionEventHandler) OnUserReactionCreated(ctx context.Context, ev
 		u.logger.Error("failed to get recent user reactions", slog.Any("error", err))
 	}
 	stats.TotalReactions = count
-	err = u.sseManager.Send(sse.UserReactionsChannel, stats)
+	err = u.sseManager.Send(sse.UserReactionsChannel, LatestUserReactionStatsSseEvent{
+		UserReactionStats: stats,
+	})
 	if err != nil {
 		u.logger.Error("failed to send sse", slog.Any("error", err))
 	}
@@ -60,9 +60,9 @@ func NewUserReactionEventHandler(logger *slog.Logger, store stores.UserReactionS
 		logger:     logger,
 		store:      store,
 		sseManager: sseManager,
-		rateLimiter: limiter.NewRateLimiter(
-			10,
-			10*time.Second,
-		),
+		// rateLimiter: limiter.NewRateLimiter(
+		// 	10,
+		// 	10*time.Second,
+		// ),
 	}
 }
