@@ -62,7 +62,7 @@ func (a *Api) BindCreateUserReaction(aapi huma.API) {
 				}
 			}
 			reaction.Type = input.Body.Type
-			_, err := a.App().Adapter().UserReaction().CreateUserReaction(ctx, reaction)
+			reaction, err := a.App().Adapter().UserReaction().CreateUserReaction(ctx, reaction)
 			if err != nil {
 				return nil, err
 			}
