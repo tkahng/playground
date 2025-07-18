@@ -78,10 +78,6 @@ func (a *Api) BindCreateUserReaction(aapi huma.API) {
 
 }
 
-type UserReactionStatsOutput struct {
-	LastCreated *userreaction.UserReaction `json:"last_created"`
-}
-
 func (a *Api) BindGetLatestUserReactionStats(aapi huma.API) {
 	huma.Register(
 		aapi,
@@ -104,9 +100,7 @@ func (a *Api) BindGetLatestUserReactionStats(aapi huma.API) {
 			}
 			stats := new(userreaction.UserReactionStats)
 			stats.LastCreated = userreaction.FromModelUserReaction(event.UserReaction)
-			if stats.LastCreated == nil {
-				return nil, fmt.Errorf("failed to get recent user reactions")
-			}
+			fmt.Println(stats.LastCreated != nil)
 			recent, err := a.App().Adapter().UserReaction().CountByCountry(ctx, &stores.UserReactionFilter{
 				PaginatedInput: stores.PaginatedInput{
 					PerPage: 5,

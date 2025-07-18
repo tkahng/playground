@@ -15,7 +15,7 @@ type ReactionByCountry struct {
 type UserReactionStats struct {
 	TotalReactions   int64               `json:"total_reactions"`
 	TopFiveCountries []ReactionByCountry `json:"top_five_countries"`
-	LastCreated      *UserReaction       `json:"last_created"`
+	LastCreated      *UserReaction       `json:"last_created" required:"false"`
 }
 
 type UserReaction struct {

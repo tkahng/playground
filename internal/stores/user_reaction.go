@@ -47,7 +47,7 @@ func (d *DbUserReactionStore) GetLastReaction(ctx context.Context) (*models.User
 		return nil, err
 	}
 	if len(res) == 0 {
-		return nil, errors.New("no reaction found")
+		return nil, nil
 	}
 	return res[0], nil
 }
