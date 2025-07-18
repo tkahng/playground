@@ -1,5 +1,12 @@
+import CountAnimation from "@/components/count-animation";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { userReactionQueries } from "@/lib/api";
 import { UserReaction, UserReactionsStats } from "@/schema.types";
 import {
@@ -7,31 +14,32 @@ import {
   useEventSourceListener,
 } from "@react-nano/use-event-source";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useReducer } from "react";
+import ReactCountryFlag from "react-country-flag";
 import { toast } from "sonner";
-
 type UserReactionsStats2 = UserReactionsStats & {
   last_reactions: UserReaction[];
 };
 
-// type UserReactionStatsSse = {
-//   user_reaction_stats: UserReactionsStats2;
-// };
 export default function SayHelloPage() {
-  // const [stats, setStats] = useState<UserReactionsStats2 | null>(null);
   function messageReducer(
     state: UserReactionsStats2,
     action: UserReactionsStats2
   ) {
-    const prevLastReactions = state.last_reactions;
+    const prevLastReactions: UserReaction[] = state.last_reactions;
     if (action.last_created) {
       if (!prevLastReactions.some((r) => r.id === action.last_created?.id)) {
         prevLastReactions.push(action.last_created);
+        prevLastReactions.sort(
+          (a, b) =>
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        );
       }
     }
     return {
       ...action,
-      last_reactions: prevLastReactions,
+      last_reactions: prevLastReactions.slice(0, 5),
     };
   }
   const [stats, updateStats] = useReducer(messageReducer, {
@@ -77,7 +85,7 @@ export default function SayHelloPage() {
     return <div>Loading...</div>;
   }
   return (
-    <div className="w-1/2 ml-auto mr-auto">
+    <div className="flex flex-col">
       <div>SayHelloPage</div>
       <div>
         <Button onClick={onClick}>Say Hello</Button>
@@ -88,22 +96,53 @@ export default function SayHelloPage() {
         ) : (
           <>
             <div>Total Reactions: {stats?.total_reactions}</div>
-            <div>Latest Reactions: From {stats?.last_created?.city}</div>
-            <div>
-              {stats.top_five_countries?.map((c) => (
-                <Card key={c.country}>
-                  <div>{c.country}</div>
-                  <div>{c.total_reactions}</div>
+            <CountAnimation number={stats.total_reactions} />
+            <div className="flex grow">
+              {stats.top_five_countries?.map((c, idx) => (
+                <Card key={c.country} className="grow m-2">
+                  <CardHeader>
+                    <CardTitle>
+                      #{idx + 1} {c.country}{" "}
+                    </CardTitle>
+                    <CardAction>
+                      <ReactCountryFlag
+                        countryCode={c.country}
+                        svg
+                        style={{
+                          width: "2rem",
+                          height: "2rem",
+                        }}
+                      />
+                    </CardAction>
+                  </CardHeader>
+                  <CardContent>
+                    Total Reactions: {c.total_reactions}
+                  </CardContent>
                 </Card>
               ))}
             </div>
             <div>
-              {stats.last_reactions?.map((r) => (
-                <Card key={r.id} className="bg-primary">
-                  <div>{r.country}</div>
-                  <div>{r.created_at}</div>
-                </Card>
-              ))}
+              <div className="space-y-2">
+                <AnimatePresence initial={false}>
+                  {stats.last_reactions?.map((record) => (
+                    <motion.div
+                      key={record.id}
+                      layout
+                      initial={{ opacity: 0, x: -400, scale: 0.5 }}
+                      animate={{ opacity: 1, x: 0, scale: 1 }}
+                      exit={{ opacity: 0, x: 200, scale: 1.2 }}
+                      transition={{ duration: 0.6, type: "spring" }}
+                    >
+                      <Card className="shadow-md border border-gray-200 bg-white dark:bg-neutral-900">
+                        <CardContent className="p-4 text-gray-800 dark:text-gray-100">
+                          {record.country}
+                          {new Date(record.created_at).toUTCString()}
+                        </CardContent>
+                      </Card>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              </div>
             </div>
           </>
         )}
