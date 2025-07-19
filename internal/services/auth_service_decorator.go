@@ -35,7 +35,7 @@ type AuthServiceDecorator struct {
 }
 
 func NewAuthServiceDecorator(
-	opts *conf.AppOptions,
+	opts *conf.EnvConfig,
 	adapter stores.StorageAdapterInterface,
 	jobService JobService,
 ) AuthService {
@@ -45,7 +45,7 @@ func NewAuthServiceDecorator(
 	authService.Delegate = &BaseAuthService{
 		token:    tokenService,
 		password: passwordService,
-		options:  opts,
+		config:   opts,
 		adapter:  adapter,
 		jobService: &JobServiceDecorator{
 			Delegate: jobService,

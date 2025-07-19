@@ -1824,3 +1824,24 @@ export const teamQueries = {
     return data;
   },
 };
+
+export const userReactionQueries = {
+  createReaction: async () => {
+    const { data, error } = await client.POST("/api/user-reactions", {
+      body: {
+        type: "hello",
+      },
+    });
+    if (error) {
+      throw error;
+    }
+    return data;
+  },
+  getStats: async () => {
+    const { data, error } = await client.GET("/api/user-reactions/stats", {});
+    if (error) {
+      throw error;
+    }
+    return data;
+  },
+};

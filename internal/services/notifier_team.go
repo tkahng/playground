@@ -252,12 +252,18 @@ func isWithinPast24Hours(t *time.Time, dur time.Duration) bool {
 }
 
 type TaskDueTodayWorker struct {
-	notifier *DbNotifier
+	notifier Notifier
 }
 
 // Work implements workers.TaskDueTodayWorker.
 func (a *TaskDueTodayWorker) Work(ctx context.Context, job *jobs.Job[workers.TaskDueTodayJobArgs]) error {
 	return a.notifier.NotifyTaskDueToday(ctx, job.Args.TaskID)
+}
+
+func NewTaskDueTodayWorker(notifier Notifier) *TaskDueTodayWorker {
+	return &TaskDueTodayWorker{
+		notifier: notifier,
+	}
 }
 
 var _ jobs.Worker[workers.TaskDueTodayJobArgs] = (*TaskDueTodayWorker)(nil)

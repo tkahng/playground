@@ -68,9 +68,3 @@ func NewTokenOptions() AuthOptions {
 		},
 	}
 }
-
-type AppOptions struct {
-	Auth AuthOptions `form:"auth" json:"auth"`
-	Smtp SmtpConfig  `form:"smtp" json:"smtp"`
-	Meta AppConfig   `form:"meta" json:"meta"`
-}

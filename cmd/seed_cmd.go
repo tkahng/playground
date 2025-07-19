@@ -94,8 +94,8 @@ var seedUserCmd = &cobra.Command{
 			verifiedAt = &t
 		}
 		ctx := cmd.Context()
-		cfg := conf.GetConfig[conf.EnvConfig]()
-		app := core.BootstrappedApp( cfg)
+		cfg := conf.AppConfigGetter()
+		app := core.BootstrappedApp(cfg)
 		params := &services.AuthenticationInput{
 			Email:           email,
 			Password:        &password,
@@ -127,8 +127,8 @@ var seedTeam = &cobra.Command{
 		slug := slug.NewSlug(args[1])
 
 		ctx := cmd.Context()
-		cfg := conf.GetConfig[conf.EnvConfig]()
-		app := core.BootstrappedApp( cfg)
+		cfg := conf.AppConfigGetter()
+		app := core.BootstrappedApp(cfg)
 		user, err := app.Adapter().User().FindUser(ctx, &stores.UserFilter{
 			Emails: []string{email},
 		})

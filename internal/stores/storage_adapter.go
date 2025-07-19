@@ -5,6 +5,7 @@ import "github.com/tkahng/playground/internal/database"
 var _ StorageAdapterInterface = (*StorageAdapter)(nil)
 
 type StorageAdapterInterface interface {
+	UserReaction() UserReactionStore
 	Notification() NotificationStore
 	User() DbUserStoreInterface
 	UserAccount() DbAccountStoreInterface
@@ -40,6 +41,12 @@ type StorageAdapter struct {
 	media          *DbMediaStore
 	notification   *DbNotificationStore
 	job            *DbJobStore
+	userReaction   *DbUserReactionStore
+}
+
+// UserReaction implements StorageAdapterInterface.
+func (s *StorageAdapter) UserReaction() UserReactionStore {
+	return s.userReaction
 }
 
 func (s *StorageAdapter) Job() JobStore {
@@ -152,5 +159,6 @@ func NewStorageAdapter(db database.Dbx) *StorageAdapter {
 		job:            NewDbJobStore(db),
 		media:          NewMediaStore(db),
 		notification:   NewDbNotificationStore(db),
+		userReaction:   NewDbUserReactionStore(db),
 	}
 }

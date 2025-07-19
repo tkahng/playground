@@ -110,7 +110,7 @@ func BindApis(api huma.API, appApi *Api) {
 	//  admin routes ----------------------------------------------------------------------------
 	BindAdminApi(api, appApi)
 	// admin stripe products with prices
-
+	BindUserReactionApi(api, appApi)
 }
 
 func AddRoutes(api huma.API, appApi *Api) {

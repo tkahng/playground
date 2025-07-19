@@ -52,7 +52,7 @@ func (r *PostgresRepository[Model]) Get(ctx context.Context, db database.Dbx, wh
 	}
 
 	// Execute the query and scan the results
-	// fmt.Println("query", query, "args", args)
+	// slog.Info("query and args", slog.String("query", query), slog.Any("args", args))
 	items, err := database.QueryAll[*Model](
 		ctx,
 		db,

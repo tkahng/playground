@@ -1,24 +1,25 @@
 package core
 
 import (
+	"context"
 	"log/slog"
 
 	"github.com/tkahng/playground/internal/conf"
 	"github.com/tkahng/playground/internal/database"
+	"github.com/tkahng/playground/internal/events"
 	"github.com/tkahng/playground/internal/jobs"
 	"github.com/tkahng/playground/internal/services"
 	"github.com/tkahng/playground/internal/stores"
-	"github.com/tkahng/playground/internal/tools/di"
 	"github.com/tkahng/playground/internal/tools/filesystem"
 	"github.com/tkahng/playground/internal/tools/sse"
 )
 
 type App interface {
+	AppContainer
 	Bootstrap() error
 
 	//  settings -------------------------------------------------------------------------------------
 	Config() *conf.EnvConfig
-	Settings() *conf.AppOptions
 
 	// store -------------------------------------------------------------------------------------
 	Db() database.Dbx
@@ -33,8 +34,11 @@ type App interface {
 	JobManager() jobs.JobManager
 
 	JobService() services.JobService
+	// fs -------------------------------------------------------------------------------------
 
 	Fs() filesystem.FileSystem
+	//
+	MailService() services.OtpMailService
 
 	Rbac() services.RBACService
 
@@ -54,5 +58,16 @@ type App interface {
 
 	SseManager() sse.Manager
 
-	Container() di.Container
+	EventManager() events.EventManager
+
+	RunBackgroundProcesses(ctx context.Context)
+}
+
+type AppContainer interface {
+	InitializePrimitives()
+	SetDb()
+	SetBasicServices()
+	SetIntegrationServices()
+	RegisterWorkers()
+	AddEventHandlers()
 }

@@ -89,6 +89,8 @@ func TestTeamStore_UpdateTeamMember(t *testing.T) {
 }
 
 func TestTeamStore_CountTeamMembers(t *testing.T) {
+	test.Parallel(t)
+	test.SkipIfShort(t)
 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
 		type fields struct {
 			db database.Dbx
@@ -459,6 +461,8 @@ func TestDbTeamMemberStore_LoadTeamMembersByUserAndTeamIds(t *testing.T) {
 }
 
 func TestDbTeamMemberStore_FindTeamMembers(t *testing.T) {
+	test.Parallel(t)
+	test.SkipIfShort(t)
 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewStorageAdapter(db)
 		user := CreateUser(adapter, ctx, "alpha@example.com")

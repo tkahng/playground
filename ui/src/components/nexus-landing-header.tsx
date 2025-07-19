@@ -18,7 +18,7 @@ export function PlaygroundLandingHeader({
         <div className="flex flex-grow items-center space-x-4">
           <PlaygroundLogo />
           {leftLinks?.length
-            ? leftLinks.map(({ to, title, current }) => (
+            ? leftLinks?.map(({ to, title, current }) => (
                 <Link
                   key={to}
                   className={cn(

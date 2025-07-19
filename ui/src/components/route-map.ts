@@ -4,6 +4,7 @@ export const RouteMap = {
   FEATURES: "/features",
   PRICING: "/pricing",
   ABOUT: "/about",
+  SAY_HELLO: "/say-hello",
   CONTACT: "/contact",
   HOME: "/",
   LANDING_HOME: "/home",

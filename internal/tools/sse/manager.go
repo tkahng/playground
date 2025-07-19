@@ -7,28 +7,6 @@ import (
 	"sync"
 )
 
-type ClientContext interface {
-	ID() string
-	Client() Client
-	Cancel() context.CancelFunc
-}
-type clientContext struct {
-	id     string
-	client Client
-	cancel context.CancelFunc
-}
-
-func (c *clientContext) Client() Client {
-	return c.client
-}
-func (c *clientContext) Cancel() context.CancelFunc {
-	return c.cancel
-}
-
-func (c *clientContext) ID() string {
-	return c.id
-}
-
 type Manager interface {
 	Clients() []Client
 	RegisterClient(context.Context, context.CancelFunc, Client)

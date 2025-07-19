@@ -6,13 +6,12 @@ import (
 
 	"github.com/tkahng/playground/internal/conf"
 	"github.com/tkahng/playground/internal/database"
+	"github.com/tkahng/playground/internal/events"
 	"github.com/tkahng/playground/internal/jobs"
 	"github.com/tkahng/playground/internal/services"
 	"github.com/tkahng/playground/internal/stores"
 
-	"github.com/tkahng/playground/internal/tools/di"
 	"github.com/tkahng/playground/internal/tools/filesystem"
-	"github.com/tkahng/playground/internal/tools/hook"
 	"github.com/tkahng/playground/internal/tools/logger"
 	"github.com/tkahng/playground/internal/tools/sse"
 )
@@ -20,8 +19,7 @@ import (
 var _ App = (*BaseApp)(nil)
 
 type BaseApp struct {
-	cfg      *conf.EnvConfig
-	settings *conf.AppOptions
+	cfg *conf.EnvConfig
 
 	lc Lifecycle
 
@@ -40,24 +38,34 @@ type BaseApp struct {
 	rbac    services.RBACService
 	checker services.ConstraintChecker
 
-	task           services.TaskService
+	task services.TaskService
+
 	team           services.TeamService
 	teamInvitation services.TeamInvitationService
 
 	notifierPublisher services.Notifier
-	fs                filesystem.FileSystem
+
+	fs filesystem.FileSystem
 
 	sseManager sse.Manager
 
-	container di.Container
+	eventManager events.EventManager
 }
 
-// Container implements App.
-func (app *BaseApp) Container() di.Container {
-	if app.container == nil {
-		panic("container not initialized")
+// MailService implements App.
+func (app *BaseApp) MailService() services.OtpMailService {
+	if app.mailService == nil {
+		panic("mail service not initialized")
 	}
-	return app.container
+	return app.mailService
+}
+
+// EventManager implements App.
+func (app *BaseApp) EventManager() events.EventManager {
+	if app.eventManager == nil {
+		panic("event manager not initialized")
+	}
+	return app.eventManager
 }
 
 // NotificationPublisher implements App.
@@ -81,15 +89,8 @@ func (app *BaseApp) Config() *conf.EnvConfig {
 	if app.cfg == nil {
 		opts := conf.AppConfigGetter()
 		app.cfg = &opts
-		app.settings = opts.ToSettings()
 	}
 	return app.cfg
-}
-func (a *BaseApp) Settings() *conf.AppOptions {
-	if a.settings == nil {
-		return a.Config().ToSettings()
-	}
-	return a.settings
 }
 
 // check db -------------------------------------------------------------------------------------
@@ -119,48 +120,6 @@ func (app *BaseApp) Logger() *slog.Logger {
 		app.logger = logger.GetDefaultLogger()
 	}
 	return app.logger
-}
-
-func (app *BaseApp) IsBootstrapped() (isBootStrapped bool) {
-	if app.cfg == nil {
-		return
-	}
-	if app.db == nil {
-		return
-	}
-	if app.settings == nil {
-		return
-	}
-
-	if app.auth == nil {
-		return
-	}
-	if app.team == nil {
-		return
-	}
-	if app.checker == nil {
-		return
-	}
-	if app.rbac == nil {
-		return
-	}
-	if app.task == nil {
-		return
-	}
-	if app.adapter == nil {
-		return
-	}
-	if app.teamInvitation == nil {
-		return
-	}
-	if app.jobManager == nil {
-		return
-	}
-	if app.jobService == nil {
-		return
-	}
-
-	return true
 }
 
 // BootStrap implements App.
@@ -224,18 +183,9 @@ func (a *BaseApp) Payment() services.PaymentService {
 
 // Mailer implements App.
 // RegisterBaseHooks implements App.
-func (app *BaseApp) RegisterBaseHooks() {
-	app.Lifecycle().OnStart().Bind(&hook.Handler[*StartEvent]{
-		Func: func(se *StartEvent) error {
-			return nil
-		},
-		Priority: -99,
-	})
-
-}
 
 func BootstrappedApp(cfg conf.EnvConfig) *BaseApp {
-	app := &BaseApp{}
+	app := new(BaseApp)
 	if err := app.Bootstrap(); err != nil {
 		panic(fmt.Errorf("failed to bootstrap app: %w", err))
 	}
@@ -245,7 +195,6 @@ func BootstrappedApp(cfg conf.EnvConfig) *BaseApp {
 func newApp(
 	fs filesystem.FileSystem,
 	pool database.Dbx,
-	settings *conf.AppOptions,
 	logger *slog.Logger,
 	cfg conf.EnvConfig,
 	authService services.AuthService,
@@ -262,7 +211,6 @@ func newApp(
 	app := &BaseApp{
 		fs:             fs,
 		db:             pool,
-		settings:       settings,
 		logger:         logger,
 		cfg:            &cfg,
 		auth:           authService,

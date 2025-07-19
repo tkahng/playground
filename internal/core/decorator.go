@@ -6,27 +6,26 @@ import (
 
 	"github.com/tkahng/playground/internal/conf"
 	"github.com/tkahng/playground/internal/database"
+	"github.com/tkahng/playground/internal/events"
 	"github.com/tkahng/playground/internal/jobs"
 	"github.com/tkahng/playground/internal/services"
 	"github.com/tkahng/playground/internal/stores"
-	"github.com/tkahng/playground/internal/tools/di"
 	"github.com/tkahng/playground/internal/tools/filesystem"
 	"github.com/tkahng/playground/internal/tools/logger"
 	"github.com/tkahng/playground/internal/tools/mailer"
 	"github.com/tkahng/playground/internal/tools/sse"
 )
 
+var _ App = (*BaseAppDecorator)(nil)
+
 func NewAppDecorator(ctx context.Context, cfg conf.EnvConfig, pool database.Dbx) *BaseAppDecorator {
-	settings := cfg.ToSettings()
 
 	fs := filesystem.NewMockFileSystem(cfg.StorageConfig)
 	adapter := stores.NewDbAdapterDecorators(pool)
 
 	l := logger.GetDefaultLogger()
-	mail := &mailer.LogMailer{}
 	mailServiece := services.NewOtpMailService(
-		settings,
-		mail,
+		&cfg,
 		adapter,
 	)
 	jobManager := jobs.NewDbJobManagerDecorator(pool)
@@ -41,7 +40,7 @@ func NewAppDecorator(ctx context.Context, cfg conf.EnvConfig, pool database.Dbx)
 
 	jobService.RegisterWorkers(mailServiece, paymentService, nil)
 	authService := services.NewAuthServiceDecorator(
-		settings,
+		&cfg,
 		adapter,
 		jobService,
 	)
@@ -52,13 +51,12 @@ func NewAppDecorator(ctx context.Context, cfg conf.EnvConfig, pool database.Dbx)
 	teamService := services.NewTeamService(adapter)
 	invitation := services.NewInvitationService(
 		adapter,
-		*settings,
+		cfg,
 		jobService,
 	)
 	app := newApp(
 		fs,
 		pool,
-		settings,
 		l,
 		cfg,
 		authService,
@@ -76,36 +74,115 @@ func NewAppDecorator(ctx context.Context, cfg conf.EnvConfig, pool database.Dbx)
 }
 
 type BaseAppDecorator struct {
-	app                       *BaseApp
-	AuthFunc                  func() services.AuthService
-	CfgFunc                   func() *conf.EnvConfig
-	CheckerFunc               func() services.ConstraintChecker
-	DbFunc                    func() database.Dbx
-	FsFunc                    func() *filesystem.S3FileSystem
-	MailerFunc                func() mailer.Mailer
-	PaymentFunc               func() services.PaymentService
-	RbacFunc                  func() services.RBACService
-	TeamFunc                  func() services.TeamService
-	TaskFunc                  func() services.TaskService
-	AdapterFunc               func() stores.StorageAdapterInterface
-	TeamInvitationFunc        func() services.TeamInvitationService
-	JobManagerFunc            func() jobs.JobManager
-	JobServiceFunc            func() services.JobService
-	LifecycleFunc             func() Lifecycle
-	LoggerFunc                func() *slog.Logger
-	BootstrapFunc             func() error
-	SseManagerFunc            func() sse.Manager
-	NotificationPublisherFunc func() services.Notifier
-	ContainerFunc             func() di.Container
+	app                        *BaseApp
+	AuthFunc                   func() services.AuthService
+	CfgFunc                    func() *conf.EnvConfig
+	CheckerFunc                func() services.ConstraintChecker
+	DbFunc                     func() database.Dbx
+	FsFunc                     func() *filesystem.S3FileSystem
+	MailerFunc                 func() mailer.Mailer
+	PaymentFunc                func() services.PaymentService
+	RbacFunc                   func() services.RBACService
+	TeamFunc                   func() services.TeamService
+	TaskFunc                   func() services.TaskService
+	AdapterFunc                func() stores.StorageAdapterInterface
+	TeamInvitationFunc         func() services.TeamInvitationService
+	JobManagerFunc             func() jobs.JobManager
+	JobServiceFunc             func() services.JobService
+	LifecycleFunc              func() Lifecycle
+	LoggerFunc                 func() *slog.Logger
+	BootstrapFunc              func() error
+	SseManagerFunc             func() sse.Manager
+	NotificationPublisherFunc  func() services.Notifier
+	EventManagerFunc           func() events.EventManager
+	InitializePrimitivesFunc   func()
+	RegisterWorkersFunc        func()
+	SetBasicServicesFunc       func()
+	SetDbFunc                  func()
+	SetIntegrationServicesFunc func()
+	MailServiceFunc            func() services.OtpMailService
+	RunBackgroundProcessesFunc func(context.Context)
+	AddEventHandlersFunc       func()
+}
+
+func (b *BaseAppDecorator) AddEventHandlers() {
+	if b.AddEventHandlersFunc != nil {
+		b.AddEventHandlersFunc()
+	}
+	b.app.AddEventHandlers()
+}
+
+// RunBackgroundProcesses implements App.
+func (b *BaseAppDecorator) RunBackgroundProcesses(ctx context.Context) {
+	if b.RunBackgroundProcessesFunc != nil {
+		b.RunBackgroundProcessesFunc(ctx)
+		return
+	}
+	b.app.RunBackgroundProcesses(ctx)
+}
+
+// MailService implements App.
+func (b *BaseAppDecorator) MailService() services.OtpMailService {
+	if b.MailServiceFunc != nil {
+		return b.MailServiceFunc()
+	}
+	return b.app.MailService()
+}
+
+// InitializePrimitives implements App.
+func (b *BaseAppDecorator) InitializePrimitives() {
+	if b.InitializePrimitivesFunc != nil {
+		b.InitializePrimitivesFunc()
+		return
+	}
+	b.app.InitializePrimitives()
+}
+
+// RegisterWorkers implements App.
+func (b *BaseAppDecorator) RegisterWorkers() {
+	if b.RegisterWorkersFunc != nil {
+		b.RegisterWorkersFunc()
+		return
+	}
+	b.app.RegisterWorkers()
+}
+
+// SetBasicServices implements App.
+func (b *BaseAppDecorator) SetBasicServices() {
+	if b.SetBasicServicesFunc != nil {
+		b.SetBasicServicesFunc()
+		return
+	}
+	b.app.SetBasicServices()
+}
+
+// SetDb implements App.
+func (b *BaseAppDecorator) SetDb() {
+	if b.SetDbFunc != nil {
+		b.SetDbFunc()
+		return
+	}
+	b.app.SetDb()
+}
+
+// SetIntegrationServices implements App.
+func (b *BaseAppDecorator) SetIntegrationServices() {
+	if b.SetIntegrationServicesFunc != nil {
+		b.SetIntegrationServicesFunc()
+		return
+	}
+	b.app.SetIntegrationServices()
+}
+
+// EventManager implements App.
+func (b *BaseAppDecorator) EventManager() events.EventManager {
+	if b.EventManagerFunc != nil {
+		return b.EventManagerFunc()
+	}
+	return b.app.EventManager()
 }
 
 // Container implements App.
-func (b *BaseAppDecorator) Container() di.Container {
-	if b.ContainerFunc != nil {
-		return b.ContainerFunc()
-	}
-	return b.app.Container()
-}
 
 // NotificationPublisher implements App.
 func (b *BaseAppDecorator) NotificationPublisher() services.Notifier {
@@ -175,8 +252,6 @@ func (b *BaseAppDecorator) TeamInvitation() services.TeamInvitationService {
 	return b.app.TeamInvitation()
 }
 
-var _ App = (*BaseAppDecorator)(nil)
-
 func (b *BaseAppDecorator) Adapter() stores.StorageAdapterInterface {
 	if b.AdapterFunc != nil {
 		return b.AdapterFunc()
@@ -229,10 +304,6 @@ func (b *BaseAppDecorator) Rbac() services.RBACService {
 		return b.RbacFunc()
 	}
 	return b.app.Rbac()
-}
-
-func (b *BaseAppDecorator) Settings() *conf.AppOptions {
-	return b.app.Settings()
 }
 
 func (b *BaseAppDecorator) Task() services.TaskService {

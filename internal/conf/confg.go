@@ -35,11 +35,11 @@ type ResendConfig struct {
 }
 
 type SmtpConfig struct {
-	Host      string `env:"SMTP_HOST" required:"false"`
-	Port      string `env:"SMTP_PORT" required:"false"`
-	Username  string `env:"SMTP_USERNAME" required:"false"`
-	EmailPass string `env:"SMTP_PASSWORD" required:"false"`
-	TLS       bool   `env:"SMTP_TLS" required:"false"`
+	Host      string `env:"SMTP_HOST" envDefault:""`
+	Port      string `env:"SMTP_PORT" envDefault:""`
+	Username  string `env:"SMTP_USERNAME" envDefault:""`
+	EmailPass string `env:"SMTP_PASSWORD" envDefault:""`
+	TLS       bool   `env:"SMTP_TLS" envDefault:"false"`
 	Enabled   bool   `env:"SMTP_ENABLED" envDefault:"false"`
 }
 type GithubConfig struct {
@@ -76,7 +76,9 @@ type Options struct {
 }
 
 func ZeroEnvConfig() EnvConfig {
-	return EnvConfig{}
+	return EnvConfig{
+		AuthOptions: NewTokenOptions(),
+	}
 }
 
 type EnvConfig struct {
@@ -89,13 +91,8 @@ type EnvConfig struct {
 	StripeConfig
 	StorageConfig
 	AiConfig
-}
-
-func (c *EnvConfig) ToSettings() *AppOptions {
-	return &AppOptions{
-		Auth: NewTokenOptions(),
-		Meta: c.AppConfig,
-	}
+	SmtpConfig
+	AuthOptions
 }
 
 func AppConfigGetter() EnvConfig {
@@ -105,6 +102,7 @@ func AppConfigGetter() EnvConfig {
 	}); err != nil {
 		panic(err)
 	}
+	config.AuthOptions = NewTokenOptions()
 	return config
 }
 
@@ -118,7 +116,8 @@ func GetConfig[T any]() T {
 	return config
 }
 
-func NewSettings() *AppOptions {
+func NewEnvConfig() *EnvConfig {
 	config := new(EnvConfig)
-	return config.ToSettings()
+	config.AuthOptions = NewTokenOptions()
+	return config
 }

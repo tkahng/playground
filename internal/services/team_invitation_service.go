@@ -67,7 +67,7 @@ var _ TeamInvitationService = (*InvitationService)(nil)
 
 type InvitationService struct {
 	adapter    stores.StorageAdapterInterface
-	settings   conf.AppOptions
+	settings   conf.EnvConfig
 	jobService JobService
 }
 
@@ -89,7 +89,7 @@ func (i *InvitationService) GetInvitation(ctx context.Context, invitationToken s
 
 func NewInvitationService(
 	adapter stores.StorageAdapterInterface,
-	settings conf.AppOptions,
+	settings conf.EnvConfig,
 	jobService JobService,
 ) TeamInvitationService {
 	return &InvitationService{
@@ -238,7 +238,7 @@ func (i *InvitationService) CreateInvitation(
 		invitation.Role = role
 		invitation.TeamID = teamId
 		invitation.InviterMemberID = member.ID
-		invitation.ExpiresAt = i.settings.Auth.InviteToken.Expires()
+		invitation.ExpiresAt = i.settings.InviteToken.Expires()
 		err = i.adapter.TeamInvitation().CreateInvitation(ctx, invitation)
 		if err != nil {
 			return err
@@ -249,7 +249,7 @@ func (i *InvitationService) CreateInvitation(
 		}
 		existingInvite.Status = models.TeamInvitationStatusPending
 		existingInvite.Role = role
-		existingInvite.ExpiresAt = i.settings.Auth.InviteToken.Expires()
+		existingInvite.ExpiresAt = i.settings.InviteToken.Expires()
 		err = i.adapter.TeamInvitation().UpdateInvitation(ctx, existingInvite)
 		if err != nil {
 			return err
