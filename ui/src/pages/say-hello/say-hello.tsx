@@ -78,7 +78,16 @@ export default function SayHelloPage() {
     <div className="flex flex-col mx-auto max-w-4xl">
       <Card className="items-center">
         <CardTitle>Say Hello</CardTitle>
-        <Button onClick={onClick}>Say Hello</Button>
+        <Button onClick={onClick} asChild>
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileHover={{ scale: 1.2, opacity: 0.8 }}
+            whileTap={{ scale: 0.8, rotate: 60 }}
+            whileInView={{ opacity: 1 }}
+          >
+            Say Hello
+          </motion.div>
+        </Button>
         <CardContent>
           <p>Total Reactions: {stats.total_reactions}</p>
         </CardContent>
