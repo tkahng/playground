@@ -9,6 +9,7 @@ import (
 
 	"github.com/danielgtaylor/huma/v2"
 	humasse "github.com/danielgtaylor/huma/v2/sse"
+	"github.com/go-chi/httprate"
 	"github.com/tkahng/playground/internal/contextstore"
 	"github.com/tkahng/playground/internal/middleware"
 	"github.com/tkahng/playground/internal/models"
@@ -28,7 +29,7 @@ type UserReactionInput struct {
 
 func (a *Api) BindCreateUserReaction(aapi huma.API) {
 	ipMiddleware := middleware.IpAddressMiddleware(aapi)
-	rateLimitByIp := middleware.RateLimitByIp(aapi, 12, 1*time.Minute)
+	rateLimitByIp := middleware.HumaChiMiddleware(httprate.LimitByIP(1, 1*time.Second))
 	huma.Register(
 		aapi,
 		huma.Operation{
@@ -40,8 +41,8 @@ func (a *Api) BindCreateUserReaction(aapi huma.API) {
 			Tags:        []string{"User Reactions"},
 			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
 			Middlewares: huma.Middlewares{
-				ipMiddleware,
 				rateLimitByIp,
+				ipMiddleware,
 			},
 		},
 		func(ctx context.Context, input *UserReactionInput) (*struct{}, error) {
