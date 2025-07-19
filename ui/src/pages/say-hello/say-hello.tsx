@@ -75,7 +75,7 @@ export default function SayHelloPage() {
     return <div>Loading...</div>;
   }
   return (
-    <div className="flex flex-col mx-auto max-w-4xl">
+    <div className="flex flex-col mx-auto max-w-4xl py-6">
       <Card className="items-center">
         <CardTitle>Say Hello</CardTitle>
         <Button onClick={onClick} asChild>
