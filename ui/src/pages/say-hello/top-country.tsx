@@ -1,7 +1,7 @@
 import {
   Card,
   CardAction,
-  CardContent,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -39,7 +39,7 @@ export function TopCountryCard({
           />
         </CardAction>
       </CardHeader>
-      <CardContent>Total Reactions: {country.total_reactions}</CardContent>
+      <CardFooter>Total Reactions: {country.total_reactions}</CardFooter>
     </Card>
   );
 }

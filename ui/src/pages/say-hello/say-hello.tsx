@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardFooter, CardTitle } from "@/components/ui/card";
 import { userReactionQueries } from "@/lib/api";
 import { getCountryName } from "@/lib/get-country-name";
 import { UserReactionsStatsWithReactions } from "@/schema.types";
@@ -12,27 +12,26 @@ import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useReducer } from "react";
 import TimeAgo from "react-timeago";
 import { toast } from "sonner";
-import StatsCard from "./stats-card";
 import { TopCountryCard } from "./top-country";
 
 const maxItems = 3;
+function messageReducer(
+  state: UserReactionsStatsWithReactions,
+  action: UserReactionsStatsWithReactions
+) {
+  return {
+    ...state,
+    ...action,
+    last_reactions: [
+      ...(!!action.last_created &&
+      !state.last_reactions.some((r) => r.id === action.last_created?.id)
+        ? [action.last_created]
+        : []),
+      ...state.last_reactions,
+    ].slice(0, maxItems),
+  };
+}
 export default function SayHelloPage() {
-  function messageReducer(
-    state: UserReactionsStatsWithReactions,
-    action: UserReactionsStatsWithReactions
-  ) {
-    return {
-      ...state,
-      ...action,
-      last_reactions: [
-        ...(!!action.last_created &&
-        !state.last_reactions.some((r) => r.id === action.last_created?.id)
-          ? [action.last_created]
-          : []),
-        ...state.last_reactions,
-      ].slice(0, maxItems),
-    };
-  }
   const [stats, updateStats] = useReducer(messageReducer, {
     top_five_countries: [],
     total_reactions: 0,
@@ -76,17 +75,22 @@ export default function SayHelloPage() {
     return <div>Loading...</div>;
   }
   return (
-    <div className="flex flex-col">
-      <div>SayHelloPage</div>
-      <div>
+    <div className="flex flex-col mx-auto max-w-4xl">
+      <Card className="items-center">
+        <CardTitle>Say Hello</CardTitle>
         <Button onClick={onClick}>Say Hello</Button>
-      </div>
+        <CardContent>
+          <p>Total Reactions: {stats.total_reactions}</p>
+        </CardContent>
+        <CardFooter>
+          <p>Card Footer</p>
+        </CardFooter>
+      </Card>
       <div>
         {isStatsLoading ? (
           <div>Loading...</div>
         ) : (
           <>
-            <StatsCard stats={stats} />
             <div className="flex grow">
               {stats.top_five_countries?.map((c, idx) => {
                 return (
