@@ -2,7 +2,6 @@ package apis
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 	"net/http"
 	"time"
@@ -105,7 +104,6 @@ func (a *Api) BindGetLatestUserReactionStats(aapi huma.API) {
 
 			stats := new(userreaction.UserReactionStats)
 			stats.LastCreated = userreaction.FromModelUserReaction(latest)
-			fmt.Println(stats.LastCreated != nil)
 			recent, err := a.App().Adapter().UserReaction().CountByCountry(ctx, &stores.UserReactionFilter{
 				PaginatedInput: stores.PaginatedInput{
 					PerPage: 5,
@@ -120,13 +118,11 @@ func (a *Api) BindGetLatestUserReactionStats(aapi huma.API) {
 					TotalReactions: r.TotalReactions,
 				}
 			})
-			fmt.Println(stats.TopFiveCountries)
 			count, err := a.App().Adapter().UserReaction().CountUserReactions(ctx, nil)
 			if err != nil {
 				a.App().Logger().Error("failed to get recent user reactions", slog.Any("error", err))
 			}
 			stats.TotalReactions = count
-			fmt.Println(stats)
 			return &ApiOutput[*userreaction.UserReactionStats]{Body: stats}, nil
 		},
 	)
@@ -149,7 +145,6 @@ func (api *Api) BindUserReactionSse(humapi huma.API) {
 			api.app.SseManager().RegisterClient(ctx, cf, c)
 		},
 		func(c sse.Client) {
-			fmt.Println("unregistering client")
 			api.app.SseManager().UnregisterClient(c)
 		},
 		30*time.Second,
