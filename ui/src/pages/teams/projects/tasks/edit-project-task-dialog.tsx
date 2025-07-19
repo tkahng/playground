@@ -46,6 +46,7 @@ import { format } from "date-fns";
 import { CalendarIcon, Check, ChevronsUpDown } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
+import { Link } from "react-router";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -88,7 +89,7 @@ export function EditProjectTaskDialog({
   };
 }) {
   const { user } = useAuthProvider();
-  const { teamMember } = useTeam();
+  const { teamMember, team } = useTeam();
   const endDateDialog = useDialog();
   const assigneeDialog = useDialog();
   // const [isDialogOpen, setDialogOpen] = useState(false);
@@ -164,7 +165,13 @@ export function EditProjectTaskDialog({
       <DialogHeader>
         <DialogTitle>Edit Task Details</DialogTitle>
         <DialogDescription>{task.name}</DialogDescription>
+        <Link
+          to={`/teams/${team?.slug}/projects/${task.project_id}/tasks/${task.id}`}
+        >
+          View Task
+        </Link>
       </DialogHeader>
+
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
           <div className="grid gap-4 py-4">
