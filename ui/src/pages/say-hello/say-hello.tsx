@@ -22,6 +22,7 @@ export default function SayHelloPage() {
     action: UserReactionsStatsWithReactions
   ) {
     return {
+      ...state,
       ...action,
       last_reactions: [
         ...(!!action.last_created &&
