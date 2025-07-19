@@ -18,28 +18,21 @@ import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useReducer } from "react";
 import ReactCountryFlag from "react-country-flag";
 import { toast } from "sonner";
-type UserReactionsStats2 = UserReactionsStats & {
+type UserReactionsStatsWithReactions = UserReactionsStats & {
   last_reactions: UserReaction[];
 };
 
 export default function SayHelloPage() {
   function messageReducer(
-    state: UserReactionsStats2,
-    action: UserReactionsStats2
+    state: UserReactionsStatsWithReactions,
+    action: UserReactionsStatsWithReactions
   ) {
-    const prevLastReactions: UserReaction[] = state.last_reactions;
-    if (action.last_created) {
-      if (!prevLastReactions.some((r) => r.id === action.last_created?.id)) {
-        prevLastReactions.push(action.last_created);
-        prevLastReactions.sort(
-          (a, b) =>
-            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-        );
-      }
-    }
     return {
       ...action,
-      last_reactions: prevLastReactions.slice(0, 5),
+      last_reactions: [
+        ...(action.last_created ? [action.last_created] : []),
+        ...state.last_reactions,
+      ].slice(0, 5),
     };
   }
   const [stats, updateStats] = useReducer(messageReducer, {
@@ -121,17 +114,26 @@ export default function SayHelloPage() {
                 </Card>
               ))}
             </div>
-            <div>
-              <div className="space-y-2">
+            <div className="relative w-full max-w-sm overflow-hidden">
+              <motion.div layout className="space-y-2 relative">
                 <AnimatePresence initial={false}>
                   {stats.last_reactions?.map((record) => (
                     <motion.div
                       key={record.id}
                       layout
-                      initial={{ opacity: 0, x: -400, scale: 0.5 }}
-                      animate={{ opacity: 1, x: 0, scale: 1 }}
-                      exit={{ opacity: 0, x: 200, scale: 1.2 }}
-                      transition={{ duration: 0.6, type: "spring" }}
+                      variants={{
+                        hidden: { opacity: 0, x: -200 },
+                        visible: { opacity: 1, y: 0 },
+                        exit: { opacity: 0, y: 30, position: "absolute" },
+                      }}
+                      initial="hidden"
+                      animate="visible"
+                      exit="exit"
+                      transition={{
+                        type: "spring",
+                        stiffness: 300,
+                        damping: 25,
+                      }}
                     >
                       <Card className="shadow-md border border-gray-200 bg-white dark:bg-neutral-900">
                         <CardContent className="p-4 text-gray-800 dark:text-gray-100">
@@ -142,7 +144,7 @@ export default function SayHelloPage() {
                     </motion.div>
                   ))}
                 </AnimatePresence>
-              </div>
+              </motion.div>
             </div>
           </>
         )}
