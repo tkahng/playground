@@ -1,15 +1,8 @@
-import CountAnimation from "@/components/count-animation";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardAction,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { userReactionQueries } from "@/lib/api";
 import { getCountryName } from "@/lib/get-country-name";
-import { UserReaction, UserReactionsStats } from "@/schema.types";
+import { UserReactionsStatsWithReactions } from "@/schema.types";
 import {
   useEventSource,
   useEventSourceListener,
@@ -17,12 +10,10 @@ import {
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useReducer } from "react";
-import ReactCountryFlag from "react-country-flag";
 import TimeAgo from "react-timeago";
 import { toast } from "sonner";
-type UserReactionsStatsWithReactions = UserReactionsStats & {
-  last_reactions: UserReaction[];
-};
+import StatsCard from "./stats-card";
+import { TopCountryCard } from "./top-country";
 
 const maxItems = 3;
 export default function SayHelloPage() {
@@ -94,32 +85,19 @@ export default function SayHelloPage() {
           <div>Loading...</div>
         ) : (
           <>
-            <div>Total Reactions: {stats?.total_reactions}</div>
-            <CountAnimation number={stats.total_reactions} />
+            <StatsCard stats={stats} />
             <div className="flex grow">
               {stats.top_five_countries?.map((c, idx) => {
-                const countryName = getCountryName(c.country);
                 return (
-                  <Card key={c.country} className="grow m-2">
-                    <CardHeader>
-                      <CardTitle>
-                        #{idx + 1} {countryName}{" "}
-                      </CardTitle>
-                      <CardAction>
-                        <ReactCountryFlag
-                          countryCode={c.country}
-                          svg
-                          style={{
-                            width: "2rem",
-                            height: "2rem",
-                          }}
-                        />
-                      </CardAction>
-                    </CardHeader>
-                    <CardContent>
-                      Total Reactions: {c.total_reactions}
-                    </CardContent>
-                  </Card>
+                  <TopCountryCard
+                    key={c.country}
+                    className="grow m-2"
+                    country={{
+                      ...c,
+                      countryName: getCountryName(c.country) || "",
+                      number: idx,
+                    }}
+                  />
                 );
               })}
             </div>

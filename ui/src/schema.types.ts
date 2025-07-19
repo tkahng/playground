@@ -89,3 +89,7 @@ export type UserReaction = components["schemas"]["UserReaction"];
 export type UserReactionsSseMessage = ExtractArrayType<
   operations["user-reaction-sse"]["responses"]["200"]["content"]["text/event-stream"]
 >;
+
+export type UserReactionsStatsWithReactions = UserReactionsStats & {
+  last_reactions: UserReaction[];
+};
