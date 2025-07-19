@@ -8,6 +8,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { userReactionQueries } from "@/lib/api";
+import { getCountryName } from "@/lib/get-country-name";
 import { UserReaction, UserReactionsStats } from "@/schema.types";
 import {
   useEventSource,
@@ -17,11 +18,13 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useReducer } from "react";
 import ReactCountryFlag from "react-country-flag";
+import TimeAgo from "react-timeago";
 import { toast } from "sonner";
 type UserReactionsStatsWithReactions = UserReactionsStats & {
   last_reactions: UserReaction[];
 };
 
+const maxItems = 3;
 export default function SayHelloPage() {
   function messageReducer(
     state: UserReactionsStatsWithReactions,
@@ -30,9 +33,12 @@ export default function SayHelloPage() {
     return {
       ...action,
       last_reactions: [
-        ...(action.last_created ? [action.last_created] : []),
+        ...(!!action.last_created &&
+        !state.last_reactions.some((r) => r.id === action.last_created?.id)
+          ? [action.last_created]
+          : []),
         ...state.last_reactions,
-      ].slice(0, 5),
+      ].slice(0, maxItems),
     };
   }
   const [stats, updateStats] = useReducer(messageReducer, {
@@ -91,60 +97,67 @@ export default function SayHelloPage() {
             <div>Total Reactions: {stats?.total_reactions}</div>
             <CountAnimation number={stats.total_reactions} />
             <div className="flex grow">
-              {stats.top_five_countries?.map((c, idx) => (
-                <Card key={c.country} className="grow m-2">
-                  <CardHeader>
-                    <CardTitle>
-                      #{idx + 1} {c.country}{" "}
-                    </CardTitle>
-                    <CardAction>
-                      <ReactCountryFlag
-                        countryCode={c.country}
-                        svg
-                        style={{
-                          width: "2rem",
-                          height: "2rem",
-                        }}
-                      />
-                    </CardAction>
-                  </CardHeader>
-                  <CardContent>
-                    Total Reactions: {c.total_reactions}
-                  </CardContent>
-                </Card>
-              ))}
+              {stats.top_five_countries?.map((c, idx) => {
+                const countryName = getCountryName(c.country);
+                return (
+                  <Card key={c.country} className="grow m-2">
+                    <CardHeader>
+                      <CardTitle>
+                        #{idx + 1} {countryName}{" "}
+                      </CardTitle>
+                      <CardAction>
+                        <ReactCountryFlag
+                          countryCode={c.country}
+                          svg
+                          style={{
+                            width: "2rem",
+                            height: "2rem",
+                          }}
+                        />
+                      </CardAction>
+                    </CardHeader>
+                    <CardContent>
+                      Total Reactions: {c.total_reactions}
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
-            <div className="relative w-full max-w-sm overflow-hidden">
-              <motion.div layout className="space-y-2 relative">
-                <AnimatePresence initial={false}>
-                  {stats.last_reactions?.map((record) => (
-                    <motion.div
-                      key={record.id}
-                      layout
-                      variants={{
-                        hidden: { opacity: 0, x: -200 },
-                        visible: { opacity: 1, y: 0 },
-                        exit: { opacity: 0, y: 30, position: "absolute" },
-                      }}
-                      initial="hidden"
-                      animate="visible"
-                      exit="exit"
-                      transition={{
-                        type: "spring",
-                        stiffness: 300,
-                        damping: 25,
-                      }}
-                    >
-                      <Card className="shadow-md border border-gray-200 bg-white dark:bg-neutral-900">
-                        <CardContent className="p-4 text-gray-800 dark:text-gray-100">
-                          {record.country}
-                          {new Date(record.created_at).toUTCString()}
-                        </CardContent>
-                      </Card>
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
-              </motion.div>
+            <div className="flex items-center justify-center space-x-2 py-4">
+              <div className="relative w-full max-w-sm overflow-hidden">
+                <motion.div layout className="space-y-2 relative">
+                  <AnimatePresence initial={false}>
+                    {stats.last_reactions?.map((record) => {
+                      const countryName = getCountryName(record.country);
+                      return (
+                        <motion.div
+                          key={record.id}
+                          layout
+                          variants={{
+                            hidden: { opacity: 0, y: -200 },
+                            visible: { opacity: 1, y: 0 },
+                            exit: { opacity: 0, y: 30, position: "absolute" },
+                          }}
+                          initial="hidden"
+                          animate="visible"
+                          exit="exit"
+                          transition={{
+                            type: "spring",
+                            stiffness: 300,
+                            damping: 25,
+                          }}
+                        >
+                          <Card className="shadow-md border border-gray-200 bg-white dark:bg-neutral-900">
+                            <CardContent className="p-4 text-gray-800 dark:text-gray-100">
+                              {countryName} <TimeAgo date={record.created_at} />
+                            </CardContent>
+                          </Card>
+                        </motion.div>
+                      );
+                    })}
+                  </AnimatePresence>
+                </motion.div>
+              </div>
             </div>
           </>
         )}
