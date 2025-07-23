@@ -1,4 +1,4 @@
-import { PlusIcon, Trash2Icon } from "lucide-react";
+import { Ellipsis, PlusIcon } from "lucide-react";
 import type { FormEvent, KeyboardEvent } from "react";
 import { useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
@@ -34,7 +34,7 @@ import { CreateProjectTaskDialog2 } from "./tasks/create-project-task-dialog cop
 import { EditProjectTaskDialog } from "./tasks/edit-project-task-dialog";
 
 // Types
-type Card = {
+type CardType = {
   id: string;
   name: string;
   assignee_id: string | null;
@@ -65,7 +65,7 @@ type Column = {
   status: TaskStatus;
   projectId: string;
   color: KanbanBoardCircleColor;
-  items: Card[];
+  items: CardType[];
 };
 
 export function MyKanbanBoard({
@@ -176,7 +176,11 @@ export function MyKanbanBoard({
     );
   }
 
-  function handleMoveCardToColumn(columnId: string, index: number, card: Card) {
+  function handleMoveCardToColumn(
+    columnId: string,
+    index: number,
+    card: CardType
+  ) {
     mutation.mutate({
       projectId,
       taskId: card.id,
@@ -428,7 +432,7 @@ function MyKanbanBoardColumn({
   ) => void;
   onDeleteCard: (cardId: string) => void;
   onDeleteColumn: (columnId: string) => void;
-  onMoveCardToColumn: (columnId: string, index: number, card: Card) => void;
+  onMoveCardToColumn: (columnId: string, index: number, card: CardType) => void;
   onUpdateCardTitle: (cardId: string, cardTitle: string) => void;
   onUpdateColumnTitle: (columnId: string, columnTitle: string) => void;
 }) {
@@ -460,7 +464,7 @@ function MyKanbanBoardColumn({
   }
 
   function handleDropOverColumn(dataTransferData: string) {
-    const card = JSON.parse(dataTransferData) as Card;
+    const card = JSON.parse(dataTransferData) as CardType;
     onMoveCardToColumn(column.id, 0, card);
   }
 
@@ -469,7 +473,7 @@ function MyKanbanBoardColumn({
       dataTransferData: string,
       dropDirection: KanbanBoardDropDirection
     ) => {
-      const card = JSON.parse(dataTransferData) as Card;
+      const card = JSON.parse(dataTransferData) as CardType;
       const cardIndex = column.items.findIndex(({ id }) => id === cardId);
       const currentCardIndex = column.items.findIndex(
         ({ id }) => id === card.id
@@ -573,7 +577,7 @@ function MyKanbanBoardCard({
   onCardKeyDown,
   onDeleteCard,
 }: {
-  card: Card;
+  card: CardType;
   isActive: boolean;
   onCardBlur: () => void;
   onCardKeyDown: (
@@ -649,7 +653,7 @@ function MyKanbanBoardCard({
           onClick={() => onDeleteCard(card.id)}
           tooltip="Delete card"
         >
-          <Trash2Icon />
+          <Ellipsis />
 
           <span className="sr-only">Delete card</span>
         </KanbanBoardCardButton>
