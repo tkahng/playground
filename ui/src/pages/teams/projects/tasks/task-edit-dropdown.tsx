@@ -23,7 +23,6 @@ export function TaskEditDropDown({
   task,
   onDelete,
 }: {
-  taskId: string;
   task: Task;
   onDelete: (taskId: string) => void;
 }) {

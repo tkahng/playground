@@ -1,4 +1,4 @@
-import { Ellipsis, PlusIcon } from "lucide-react";
+import { PlusIcon } from "lucide-react";
 import type { FormEvent, KeyboardEvent } from "react";
 import { useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
@@ -7,7 +7,6 @@ import { Input } from "@/components/ui/input";
 import {
   KanbanBoard,
   KanbanBoardCard,
-  KanbanBoardCardButton,
   KanbanBoardCardButtonGroup,
   KanbanBoardCardDescription,
   KanbanBoardCardTitle,
@@ -32,6 +31,7 @@ import { useUpdateTaskPosition } from "@/lib/mutation";
 import { Task, TaskStatus, TeamMember } from "@/schema.types";
 import { CreateProjectTaskDialog2 } from "./tasks/create-project-task-dialog copy";
 import { EditProjectTaskDialog } from "./tasks/edit-project-task-dialog";
+import { TaskEditDropDown } from "./tasks/task-edit-dropdown";
 
 // Types
 type CardType = {
@@ -648,7 +648,8 @@ function MyKanbanBoardCard({
         {card.description}
       </KanbanBoardCardDescription>
       <KanbanBoardCardButtonGroup disabled={isActive}>
-        <KanbanBoardCardButton
+        <TaskEditDropDown task={card} onDelete={() => onDeleteCard(card.id)} />
+        {/* <KanbanBoardCardButton
           className="text-destructive"
           onClick={() => onDeleteCard(card.id)}
           tooltip="Delete card"
@@ -656,7 +657,7 @@ function MyKanbanBoardCard({
           <Ellipsis />
 
           <span className="sr-only">Delete card</span>
-        </KanbanBoardCardButton>
+        </KanbanBoardCardButton> */}
       </KanbanBoardCardButtonGroup>
       <ConfirmDialog dialogProps={editDialog.props}>
         <EditProjectTaskDialog task={card} props={editDialog.props} />
