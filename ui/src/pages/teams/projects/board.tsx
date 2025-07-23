@@ -659,7 +659,6 @@ function MyKanbanBoardCard({
       </ConfirmDialog>
     </KanbanBoardCard>
   );
-  // );
 }
 
 function MyNewKanbanBoardCard({
