@@ -18,12 +18,12 @@ import { Ellipsis, Pencil, Trash } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 
-export function PermissionsActionDropdown({
-  permissionId,
+export function JobsActionDropdown({
+  jobId,
   onDelete,
 }: {
-  permissionId: string;
-  onDelete: (permissionId: string) => void;
+  jobId: string;
+  onDelete: (jobId: string) => void;
 }) {
   const editDialog = useDialog();
   const navigate = useNavigate();
@@ -40,7 +40,7 @@ export function PermissionsActionDropdown({
           <DropdownMenuItem
             onSelect={() => {
               setDropdownOpen(false);
-              navigate(`${RouteMap.ADMIN_PERMISSIONS}/${permissionId}`);
+              navigate(`${RouteMap.ADMIN_JOBS}/${jobId}`);
             }}
           >
             <Button variant="ghost" size="sm">
@@ -86,7 +86,7 @@ export function PermissionsActionDropdown({
                 onClick={() => {
                   console.log("delete");
                   // editDialog.props.onOpenChange(false);
-                  onDelete(permissionId);
+                  onDelete(jobId);
                 }}
               >
                 Delete
