@@ -30,7 +30,7 @@ import { groupItems } from "@/lib/array";
 import { useUpdateTaskPosition } from "@/lib/mutation";
 import { Task, TaskStatus, TeamMember } from "@/schema.types";
 import { CreateProjectTaskDialog2 } from "./tasks/create-project-task-dialog copy";
-import { EditProjectTaskDialog } from "./tasks/edit-project-task-dialog";
+import { EditTaskDialog2 } from "./tasks/edit-project-task-dialog copy";
 import { TaskEditDropdown2 } from "./tasks/task-edit-dropdown-2";
 
 // Types
@@ -587,45 +587,48 @@ function MyKanbanBoardCard({
   onDeleteCard: (cardId: string) => void;
   onUpdateCardTitle: (cardId: string, cardTitle: string) => void;
 }) {
-  const [isEditingTitle, setIsEditingTitle] = useState(false);
-  const kanbanBoardCardReference = useRef<HTMLButtonElement>(null);
+  // const [isEditingTitle, setIsEditingTitle] = useState(false);
+  // const kanbanBoardCardReference = useRef<HTMLButtonElement>(null);
   // This ref tracks the previous `isActive` state. It is used to refocus the
   // card after it was discarded with the keyboard.
-  const previousIsActiveReference = useRef(isActive);
-  // This ref tracks if the card was cancelled via Escape.
-  const wasCancelledReference = useRef(false);
-  const editDialog = useDialog();
-  useEffect(() => {
-    // Maintain focus after the card is picked up and moved.
-    if (isActive && !isEditingTitle) {
-      kanbanBoardCardReference.current?.focus();
-    }
+  // const previousIsActiveReference = useRef(isActive);
+  // // This ref tracks if the card was cancelled via Escape.
+  // const wasCancelledReference = useRef(false);
+  // const editDialog = useDialog();
+  // useEffect(() => {
+  //   // Maintain focus after the card is picked up and moved.
+  //   if (isActive && !isEditingTitle) {
+  //     kanbanBoardCardReference.current?.focus();
+  //   }
 
-    // Refocus the card after it was discarded with the keyboard.
-    if (
-      !isActive &&
-      previousIsActiveReference.current &&
-      wasCancelledReference.current
-    ) {
-      kanbanBoardCardReference.current?.focus();
-      wasCancelledReference.current = false;
-    }
+  //   // Refocus the card after it was discarded with the keyboard.
+  //   if (
+  //     !isActive &&
+  //     previousIsActiveReference.current &&
+  //     wasCancelledReference.current
+  //   ) {
+  //     kanbanBoardCardReference.current?.focus();
+  //     wasCancelledReference.current = false;
+  //   }
 
-    previousIsActiveReference.current = isActive;
-  }, [isActive, isEditingTitle]);
-  function handleEditCardClick() {
-    if (!editDialog.props.open) {
-      editDialog.props.onOpenChange(true);
-      setIsEditingTitle(true);
-    }
-  }
+  //   previousIsActiveReference.current = isActive;
+  // }, [isActive, isEditingTitle]);
+  // function handleEditCardClick() {
+  //   if (!isEditingTitle) {
+  //     // editDialog.props.onOpenChange(true);
+  //     setIsEditingTitle(true);
+  //   }
+  // }
+  const dialogProps = useDialog();
   return (
     <KanbanBoardCard
       data={card}
       isActive={isActive}
       onBlur={onCardBlur}
       onClick={() => {
-        handleEditCardClick();
+        // dialogProps.trigger();
+        dialogProps.props.onOpenChange(true);
+        // handleEditCardClick();
       }}
       onKeyDown={(event) => {
         if (event.key === " ") {
@@ -636,12 +639,12 @@ function MyKanbanBoardCard({
 
         if (event.key === "Escape") {
           // Mark that this card was cancelled.
-          wasCancelledReference.current = true;
+          // wasCancelledReference.current = true;
         }
 
         onCardKeyDown(event, card.id);
       }}
-      ref={kanbanBoardCardReference}
+      // ref={kanbanBoardCardReference}
     >
       <KanbanBoardCardTitle>{card.name}</KanbanBoardCardTitle>
       <KanbanBoardCardDescription>
@@ -655,9 +658,14 @@ function MyKanbanBoardCard({
           />
         </div>
       </KanbanBoardCardButtonGroup>
-      <ConfirmDialog dialogProps={editDialog.props}>
+      <EditTaskDialog2
+        task={card}
+        isDialogOpen={dialogProps.props.open}
+        setDialogOpen={dialogProps.props.onOpenChange}
+      />
+      {/* <ConfirmDialog dialogProps={editDialog.props}>
         <EditProjectTaskDialog task={card} props={editDialog.props} />
-      </ConfirmDialog>
+      </ConfirmDialog> */}
     </KanbanBoardCard>
   );
 }

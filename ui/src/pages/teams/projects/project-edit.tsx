@@ -1,5 +1,5 @@
+import { KanbanBoard } from "@/components/board/kanban-board";
 import { Input } from "@/components/ui/input";
-import { KanbanBoardProvider } from "@/components/ui/kanban";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { useProject } from "@/hooks/use-project";
 import { useTeam } from "@/hooks/use-team";
@@ -9,7 +9,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronLeft } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
-import { MyKanbanBoard } from "./board";
 import { ProjectEditDialog } from "./edit-project-dialog";
 
 export default function ProjectEdit() {
@@ -23,6 +22,20 @@ export default function ProjectEdit() {
     isLoading: isTasksLoading,
     error: tasksError,
   } = useQuery({
+    select: (data) => {
+      const res = data.data?.map((task) => ({
+        task: task,
+        name: task.name,
+        rank: task.rank,
+        columnId: task.status as "todo" | "done" | "in_progress",
+        content: task.description,
+        id: task.id,
+      }));
+      return {
+        meta: data.meta,
+        data: res,
+      };
+    },
     queryKey: ["project-tasks", project?.id],
     queryFn: async () => {
       return await taskList(user!.tokens.access_token, project!.id, {
@@ -81,9 +94,11 @@ export default function ProjectEdit() {
         Create and manage Roles for your applications. Roles contain collections
         of Permissions and can be assigned to Users.
       </p>
-      <KanbanBoardProvider>
+      <KanbanBoard cards={tasks?.data || []} projectId={project.id!} />
+
+      {/* <KanbanBoardProvider>
         <MyKanbanBoard projectId={project.id} tasks={tasks?.data || []} />
-      </KanbanBoardProvider>
+      </KanbanBoardProvider> */}
     </div>
   );
 }

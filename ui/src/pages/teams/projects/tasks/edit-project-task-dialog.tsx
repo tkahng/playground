@@ -49,7 +49,7 @@ export function EditProjectTaskDialog({
   task,
 }: {
   task: Task;
-  props: {
+  props?: {
     open: boolean;
     onOpenChange: React.Dispatch<React.SetStateAction<boolean>>;
   };
