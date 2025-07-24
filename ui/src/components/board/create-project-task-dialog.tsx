@@ -102,7 +102,7 @@ export function CreateProjectTaskDialog({
     onSuccess: async () => {
       setDialogOpen(false);
       await queryClient.invalidateQueries({
-        queryKey: ["project-with-tasks", projectId],
+        queryKey: ["project-tasks", projectId],
       });
       toast.success("Task created successfully");
     },

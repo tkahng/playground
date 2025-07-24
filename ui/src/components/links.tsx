@@ -130,7 +130,7 @@ export const accountSidebarLinks: LinkDto[] = [
 ];
 export const settingsSidebarLinks: LinkDto[] = [
   RouteLinks.GENERAL_SETTINGS,
-  RouteLinks.BILLING_SETTINGS,
+  // RouteLinks.BILLING_SETTINGS,
 ];
 
 export const userDashboardLinks: LinkDto[] = [

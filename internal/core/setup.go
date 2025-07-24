@@ -123,6 +123,7 @@ func (app *BaseApp) SetBasicServices() {
 		app.team,
 		adapter,
 	)
+	app.task = services.NewTaskService(adapter, app.jobService)
 }
 func (app *BaseApp) SetIntegrationServices() {
 	adapter := app.Adapter()

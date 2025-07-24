@@ -105,7 +105,7 @@ export default function TaskEdit() {
     defaultValues: {
       name: task?.name,
       description: task?.description || "",
-      status: task?.status,
+      status: task?.status || "todo",
       assignee_id: task?.assignee_id,
       end_at: task?.end_at,
       parent_id: task?.parent_id,
