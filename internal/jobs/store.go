@@ -54,7 +54,11 @@ const query string = `
 		WHERE status IN ('pending', 'processing')
 		DO UPDATE SET
 			payload = EXCLUDED.payload,
+			status = EXCLUDED.status,
 			run_after = EXCLUDED.run_after,
+			attempts = EXCLUDED.attempts,
+			max_attempts = EXCLUDED.max_attempts,
+			created_at = EXCLUDED.created_at,
 			updated_at = clock_timestamp()
 	`
 
