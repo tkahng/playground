@@ -58,7 +58,7 @@ func AuthMiddleware(api huma.API, app core.App) func(ctx huma.Context, next func
 			return
 		}
 		ctxx = contextstore.SetContextUserInfo(ctxx, user)
-		ctx = WithContext(ctx, ctxx)
+		ctx = huma.WithContext(ctx, ctxx)
 		next(ctx)
 	}
 }

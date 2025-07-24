@@ -19,57 +19,16 @@ import (
 var _ App = (*BaseAppDecorator)(nil)
 
 func NewAppDecorator(ctx context.Context, cfg conf.EnvConfig, pool database.Dbx) *BaseAppDecorator {
-
-	fs := filesystem.NewMockFileSystem(cfg.StorageConfig)
-	adapter := stores.NewDbAdapterDecorators(pool)
-
-	l := logger.GetDefaultLogger()
-	mailServiece := services.NewOtpMailService(
-		&cfg,
-		adapter,
-	)
-	jobManager := jobs.NewDbJobManagerDecorator(pool)
-	jobService := services.NewJobServiceDecorator(jobManager)
-	rbacService := services.NewRBACService(adapter)
-	taskService := services.NewTaskService(adapter, jobService)
-	paymentClient := services.NewTestPaymentClient()
-	paymentService := services.NewPaymentService(
-		paymentClient,
-		adapter,
-	)
-
-	jobService.RegisterWorkers(mailServiece, paymentService, nil)
-	authService := services.NewAuthServiceDecorator(
-		&cfg,
-		adapter,
-		jobService,
-	)
-	checker := services.NewConstraintCheckerService(
-		adapter,
-	)
-
-	teamService := services.NewTeamService(adapter)
-	invitation := services.NewInvitationService(
-		adapter,
-		cfg,
-		jobService,
-	)
-	app := newApp(
-		fs,
-		pool,
-		l,
-		cfg,
-		authService,
-		paymentService,
-		checker, // pass as ConstraintChecker
-		rbacService,
-		taskService,
-		teamService,
-		adapter,
-		invitation,
-		jobManager,
-		jobService,
-	)
+	app := &BaseApp{}
+	app.cfg = &cfg
+	app.logger = logger.GetDefaultLogger()
+	app.db = pool
+	adapter := stores.NewDbAdapterDecorators(app.db)
+	app.adapter = adapter
+	app.SetBasicServices()
+	app.SetIntegrationServices()
+	app.RegisterWorkers()
+	app.AddEventHandlers()
 	return &BaseAppDecorator{app: app}
 }
 
