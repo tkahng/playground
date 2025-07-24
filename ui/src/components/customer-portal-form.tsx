@@ -1,11 +1,17 @@
 import { Button } from "@/components/ui/button";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { useTeam } from "@/hooks/use-team";
-import { createTeamBillingPortalSession } from "@/lib/api";
+import {
+  createTeamBillingPortalSession,
+  getProductsWithPrices,
+  getUserSubscriptions,
+} from "@/lib/api";
 import { SubscriptionWithPrice } from "@/schema.types";
+import { useQuery } from "@tanstack/react-query";
 import { ReactNode, useState } from "react";
 import { Link } from "react-router";
 import { toast } from "sonner";
+import PricingMini from "./pricing/pricing-mini";
 
 type SubscriptionWithPriceAndProduct = SubscriptionWithPrice;
 
@@ -17,6 +23,22 @@ export default function CustomerPortalForm({ subscription }: Props) {
   //   const router = useRouter();
   const { user } = useAuthProvider();
   const { team, teamMember } = useTeam();
+  const {
+    data: products,
+    isPending: isPendingProducts,
+    isError: isErrorProducts,
+    error: errorProducts,
+  } = useQuery({
+    queryKey: ["stripe-products-with-prices"],
+    queryFn: async () => {
+      let userSubs = null;
+      if (user) {
+        userSubs = await getUserSubscriptions(user.tokens.access_token);
+      }
+      const products = await getProductsWithPrices();
+      return { products, userSubs };
+    },
+  });
   // const { pathname: currentPath } = useLocation();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -47,39 +69,53 @@ export default function CustomerPortalForm({ subscription }: Props) {
     window.location.href = redirectUrl;
     setIsSubmitting(false);
   };
-
+  if (isPendingProducts) {
+    return <div>Loading...</div>;
+  }
+  if (isErrorProducts) {
+    return <div>{errorProducts.message}</div>;
+  }
   return (
-    <Card
-      title="Your Plan"
-      description={
-        subscription
-          ? `You are currently on the ${subscription?.price?.product?.name} plan.`
-          : "You are not currently subscribed to any plan."
-      }
-      footer={
-        subscription && (
-          <div className="flex flex-col items-start justify-between sm:flex-row sm:items-center">
-            <p className="pb-4 sm:pb-0">Manage your subscription on Stripe.</p>
-            <Button
-              // variant="slim"
-              onClick={handleStripePortalRequest}
-              // loading={isSubmitting}
-              disabled={isSubmitting || teamMember?.role !== "owner"}
-            >
-              Open customer portal
-            </Button>
-          </div>
-        )
-      }
-    >
-      <div className="mt-8 mb-4 text-xl font-semibold">
-        {subscription ? (
-          `${subscriptionPrice}/${subscription?.price?.interval}`
-        ) : (
-          <Link to="/pricing">Choose your plan</Link>
-        )}
-      </div>
-    </Card>
+    <div>
+      <PricingMini
+        user={user?.user}
+        products={products?.products.data || []}
+        subscription={products?.userSubs}
+      />
+      <Card
+        title="Your Plan"
+        description={
+          subscription
+            ? `You are currently on the ${subscription?.price?.product?.name} plan.`
+            : "You are not currently subscribed to any plan."
+        }
+        footer={
+          subscription && (
+            <div className="flex flex-col items-start justify-between sm:flex-row sm:items-center">
+              <p className="pb-4 sm:pb-0">
+                Manage your subscription on Stripe.
+              </p>
+              <Button
+                // variant="slim"
+                onClick={handleStripePortalRequest}
+                // loading={isSubmitting}
+                disabled={isSubmitting || teamMember?.role !== "owner"}
+              >
+                Open customer portal
+              </Button>
+            </div>
+          )
+        }
+      >
+        <div className="mt-8 mb-4 text-xl font-semibold">
+          {subscription ? (
+            `${subscriptionPrice}/${subscription?.price?.interval}`
+          ) : (
+            <Link to="/pricing">Choose your plan</Link>
+          )}
+        </div>
+      </Card>
+    </div>
   );
 }
 

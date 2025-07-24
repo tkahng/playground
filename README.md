@@ -1,5 +1,22 @@
 # Playground
 
+# Features
+
+- Admin
+  - User Management
+  - Permission and Role Management
+- Teams
+  - Create or join teams.
+  - Invite other users to join your team.
+- Tasks and Projects
+  - Teams can create projects, which are collection of tasks.
+  - Drag and drop kanban board.
+  - Realtime task due alerts
+- Realtime notifications through SSE
+  - when new users join your team
+  - when a task you are following is due
+  - when a task you are following is
+
 # Introduction
 
 # Authentication

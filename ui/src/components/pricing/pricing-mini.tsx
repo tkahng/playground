@@ -1,10 +1,15 @@
 import { Button } from "@/components/ui/button";
+import { useAuthProvider } from "@/hooks/use-auth-provider";
+import { useTeam } from "@/hooks/use-team";
+import { createTeamCheckoutSession } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 import { ProductWithPrices, SubscriptionWithPrice, User } from "@/schema.types";
+import { useMutation } from "@tanstack/react-query";
 
 import { useState } from "react";
-import { Link } from "react-router";
+import { createSearchParams, useNavigate } from "react-router";
+import { toast } from "sonner";
 import { z } from "zod";
 
 interface Props {
@@ -21,9 +26,9 @@ export const formSchema = z.object({
   }),
 });
 
-export default function Pricing({ products, subscription }: Props) {
-  // const { user } = useAuthProvider();
-  // const { team, teamMember } = useTeam();
+export default function PricingMini({ products, subscription }: Props) {
+  const { user } = useAuthProvider();
+  const { team, teamMember } = useTeam();
   const intervals = Array.from(
     new Set(
       products.flatMap((product) =>
@@ -32,41 +37,41 @@ export default function Pricing({ products, subscription }: Props) {
     )
   );
   //   const router = useRouter();
-  // const navigate = useNavigate();
+  const navigate = useNavigate();
   const [billingInterval, setBillingInterval] =
     useState<BillingInterval>("month");
-  // const [priceIdLoading, setPriceIdLoading] = useState<string>();
+  const [priceIdLoading, setPriceIdLoading] = useState<string>();
   // const { pathname: currentPath } = useLocation();
 
-  // const mutation = useMutation({
-  //   mutationFn: async (values: z.infer<typeof formSchema>) => {
-  //     if (!user) {
-  //       toast.error("Please login to checkout.");
-  //       return navigate({
-  //         pathname: "/signin",
-  //         search: createSearchParams({
-  //           redirect_to: window.location.pathname + window.location.search,
-  //         }).toString(),
-  //       });
-  //     }
-  //     if (!team || teamMember?.role !== "owner") {
-  //       toast.error("You must be an owner to checkout.");
-  //       return navigate({
-  //         pathname: `/teams/${team?.slug}/settings/billing`,
-  //       });
-  //     }
-  //     setPriceIdLoading(values.price_id);
-  //     const { url } = await createTeamCheckoutSession(
-  //       user.tokens.access_token,
-  //       { ...values, team_id: team.id }
-  //     );
-  //     setPriceIdLoading(undefined);
-  //     window.location.href = url;
-  //   },
-  // });
-  // function onSubmit(values: z.infer<typeof formSchema>) {
-  //   mutation.mutate(values);
-  // }
+  const mutation = useMutation({
+    mutationFn: async (values: z.infer<typeof formSchema>) => {
+      if (!user) {
+        toast.error("Please login to checkout.");
+        return navigate({
+          pathname: "/signin",
+          search: createSearchParams({
+            redirect_to: window.location.pathname + window.location.search,
+          }).toString(),
+        });
+      }
+      if (!team || teamMember?.role !== "owner") {
+        toast.error("You must be an owner to checkout.");
+        return navigate({
+          pathname: `/teams/${team?.slug}/settings/billing`,
+        });
+      }
+      setPriceIdLoading(values.price_id);
+      const { url } = await createTeamCheckoutSession(
+        user.tokens.access_token,
+        { ...values, team_id: team.id }
+      );
+      setPriceIdLoading(undefined);
+      window.location.href = url;
+    },
+  });
+  function onSubmit(values: z.infer<typeof formSchema>) {
+    mutation.mutate(values);
+  }
 
   if (!products.length) {
     return (
@@ -92,15 +97,8 @@ export default function Pricing({ products, subscription }: Props) {
   } else {
     return (
       <section className="">
-        <div className="max-w-6xl px-4 py-8 mx-auto sm:py-24 sm:px-6 lg:px-8">
+        <div className="max-w-6xl px-4 py-8 mx-auto sm:px-6 lg:px-8">
           <div className="sm:flex sm:flex-col sm:align-center">
-            <h1 className="text-4xl font-extrabold text-primary sm:text-center sm:text-6xl">
-              Pricing Plans
-            </h1>
-            <p className="max-w-2xl m-auto mt-5 text-xl text-secondary-foreground sm:text-center sm:text-2xl">
-              Start building for free, then add a site plan to go live. Account
-              plans unlock additional features.
-            </p>
             <div className="relative self-center mt-6 bg-primary-foreground rounded-lg p-0.5 flex sm:mt-8 border">
               {intervals.includes("month") && (
                 <button
@@ -171,25 +169,7 @@ export default function Pricing({ products, subscription }: Props) {
                         /{billingInterval}
                       </span>
                     </p>
-                    {/* <Button
-                      //   variant="slim"
-                      type="submit"
-                      disabled={priceIdLoading === price.id}
-                      // loading={priceIdLoading === price.id}
-                      onClick={() => onSubmit({ price_id: price.id })}
-                      className="block w-full py-2 mt-8 text-sm font-semibold text-center rounded-md"
-                    >
-                      {subscription ? "Manage" : "Subscribe"}
-                    </Button> */}
                     <Button
-                      asChild
-                      className="block w-full py-2 mt-8 text-sm font-semibold text-center rounded-md"
-                    >
-                      <Link to="/teams/settings/billing">
-                        {subscription ? "Manage" : "Subscribe"}
-                      </Link>
-                    </Button>
-                    {/* <Button
                       //   variant="slim"
                       type="submit"
                       disabled={priceIdLoading === price.id}
@@ -198,7 +178,7 @@ export default function Pricing({ products, subscription }: Props) {
                       className="block w-full py-2 mt-8 text-sm font-semibold text-center rounded-md"
                     >
                       {subscription ? "Manage" : "Subscribe"}
-                    </Button> */}
+                    </Button>
                   </div>
                 </div>
               );
