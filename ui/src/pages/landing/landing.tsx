@@ -10,11 +10,10 @@ export default function Landing() {
           <div className="flex flex-col items-center space-y-4 text-center">
             <div className="space-y-2">
               <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl lg:text-6xl/none">
-                Revolutionize Your Workflow with NexusAI
+                Welcome to the Playground
               </h1>
               <p className="mx-auto max-w-[700px]">
-                Harness the power of artificial intelligence to streamline your
-                tasks, boost productivity, and unlock new possibilities.
+                This is a place of learning and experimentation.
               </p>
             </div>
             <div className="space-x-4">

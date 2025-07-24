@@ -1,15 +1,7 @@
 import LandingTopSection from "@/components/section/landing-top-section";
-import PrimarySection from "@/components/section/primary-section";
 import SecondarySection from "@/components/section/secondary-section";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Globe, Rocket, Shield, Users } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Rocket, Shield, Users } from "lucide-react";
 
 export default function LandingAboutPage() {
   return (
@@ -17,125 +9,50 @@ export default function LandingAboutPage() {
       <LandingTopSection
         {...{
           heading: "About Playground",
-          description: `Empowering businesses with cutting-edge AI solutions to drive
-                innovation and growth.`,
+          description: `A place of learning and experimentation.`,
         }}
       />
       <SecondarySection>
         <Card>
           <CardHeader>
             <Rocket className="h-8 w-8 text-primary mb-2" />
-            <CardTitle>Our Mission</CardTitle>
+            <CardTitle>What this place is for</CardTitle>
           </CardHeader>
           <CardContent>
             <p>
-              To democratize AI technology and make it accessible to businesses
-              of all sizes, enabling them to harness the power of artificial
-              intelligence to solve complex problems and drive innovation.
+              This website is a place for learning and experimentation. Anything
+              I find interesting or useful, I will incorporate into this
+              website.
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader>
             <Users className="h-8 w-8 text-primary mb-2" />
-            <CardTitle>Our Team</CardTitle>
+            <CardTitle>Who am I</CardTitle>
           </CardHeader>
           <CardContent>
-            <p>
-              We are a diverse group of AI experts, data scientists, and
-              software engineers passionate about pushing the boundaries of
-              what's possible with artificial intelligence.
-            </p>
+            <p>Just a lonely developer finding his way through the world.</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader>
             <Shield className="h-8 w-8 text-primary mb-2" />
-            <CardTitle>Our Values</CardTitle>
+            <CardTitle>The website's tech stack</CardTitle>
           </CardHeader>
           <CardContent>
             <ul className="list-disc list-inside space-y-2">
-              <li>Innovation</li>
-              <li>Integrity</li>
-              <li>Collaboration</li>
-              <li>Customer-centricity</li>
+              <li>Golang</li>
+              <li>PostgreSQL</li>
+              <li>React</li>
+              <li>Tailwind</li>
+              <li>Motion</li>
             </ul>
           </CardContent>
         </Card>
       </SecondarySection>
-      <PrimarySection>
-        <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl text-center mb-12">
-          Our Leadership
-        </h2>
-        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-3">
-          <Card>
-            <CardHeader>
-              <img
-                src="/placeholder.svg?height=100&width=100"
-                alt="CEO"
-                width={100}
-                height={100}
-                className="rounded-full mx-auto"
-              />
-              <CardTitle className="text-center">Jane Doe</CardTitle>
-              <CardDescription className="text-center">
-                CEO & Co-founder
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-center">
-                With over 20 years of experience in AI and machine learning,
-                Jane leads our company's vision and strategy.
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <img
-                src="/placeholder.svg?height=100&width=100"
-                alt="CTO"
-                width={100}
-                height={100}
-                className="rounded-full mx-auto"
-              />
-              <CardTitle className="text-center">John Smith</CardTitle>
-              <CardDescription className="text-center">
-                CTO & Co-founder
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-center">
-                John is the technical mastermind behind our AI algorithms and
-                infrastructure, ensuring we stay at the cutting edge of
-                technology.
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <img
-                src="/placeholder.svg?height=100&width=100"
-                alt="COO"
-                width={100}
-                height={100}
-                className="rounded-full mx-auto"
-              />
-              <CardTitle className="text-center">Emily Chen</CardTitle>
-              <CardDescription className="text-center">COO</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-center">
-                Emily oversees our day-to-day operations, ensuring we deliver
-                exceptional value to our customers while scaling our business.
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-      </PrimarySection>
-      <SecondarySection cols={2}>
-        {/* <section className="w-full py-12 md:py-24 lg:py-32">
-        <div className="container px-4 md:px-6">
-          <div className="grid gap-10 px-10 md:gap-16 lg:grid-cols-2"> */}
+
+      {/* <SecondarySection cols={2}>
         <div className="space-y-4">
           <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">
             Our Story
@@ -188,28 +105,7 @@ export default function LandingAboutPage() {
             </li>
           </ul>
         </div>
-        {/* </div>
-        </div>
-      </section> */}
-      </SecondarySection>
-      <PrimarySection>
-        <div className="space-y-2">
-          <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">
-            Join Our Team
-          </h2>
-          <p className="mx-auto max-w-[700px] text-gray-500 md:text-xl dark:text-gray-400">
-            We're always looking for talented individuals to join our mission.
-            Check out our open positions and become part of the Playground
-            family.
-          </p>
-        </div>
-        <div className="space-x-4">
-          <Button size="lg">View Open Positions</Button>
-          <Button variant="outline" size="lg">
-            Learn About Our Culture
-          </Button>
-        </div>
-      </PrimarySection>
+      </SecondarySection> */}
     </>
   );
 }
