@@ -44,7 +44,7 @@ function TeamNotification() {
   );
   useEventSourceListener(
     eventSource,
-    ["new_team_member", "assigned_to_task", "task_due_today"],
+    ["new_team_member", "assigned_to_task", "task_due_today", "task_completed"],
     (evt) => {
       const noti: TeamMemberNotification = JSON.parse(evt.data);
       updateLatestNotification(noti);
