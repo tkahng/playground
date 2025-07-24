@@ -26,8 +26,9 @@ services:
       - .env
 
   loki:
-    image: grafana/loki:2.2.1
+    image: grafana/loki:latest
     command: -config.file=/etc/loki/loki-config.yaml
+    container_name: loki
     ports:
       - 3100:3100
     volumes:
@@ -46,6 +47,35 @@ services:
     depends_on:
       - loki
       - app
+
+  grafana:
+    image: grafana/grafana:latest
+    environment:
+      - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+    depends_on:
+      - loki
+      - app
+    entrypoint:
+      - sh
+      - -euc
+      - |
+        mkdir -p /etc/grafana/provisioning/datasources
+        cat <<EOF > /etc/grafana/provisioning/datasources/ds.yaml
+        apiVersion: 1
+
+        datasources:
+          - name: Loki
+            isDefault: true
+            type: loki
+            access: proxy
+            url: http://loki:3100
+            editable: true
+        EOF
+        /run.sh
+    ports:
+      - "3000:3000"
 
 volumes:
   postgres-data:
