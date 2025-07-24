@@ -1,6 +1,6 @@
 import { landingLinks, LinkDto } from "@/components/links";
-import { PlaygroundFooter } from "@/components/nexus-footer";
-import { PlaygroundLandingHeader } from "@/components/nexus-landing-header";
+import { PlaygroundLandingHeader } from "@/components/playground-landing-header";
+import { PlaygroundMinimalFooter } from "@/components/playground-minimal-footer";
 import { RouteMap } from "@/components/route-map";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { Outlet } from "react-router";
@@ -53,7 +53,7 @@ export default function RootLayout() {
         <main className="flex-grow items-center justify-center">
           <Outlet />
         </main>
-        <PlaygroundFooter />
+        <PlaygroundMinimalFooter />
       </div>
     </>
   );

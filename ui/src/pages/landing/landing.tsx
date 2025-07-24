@@ -1,5 +1,4 @@
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Brain, CheckCircle, Zap } from "lucide-react";
 
 export default function Landing() {
@@ -10,11 +9,10 @@ export default function Landing() {
           <div className="flex flex-col items-center space-y-4 text-center">
             <div className="space-y-2">
               <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl lg:text-6xl/none">
-                Revolutionize Your Workflow with NexusAI
+                Welcome to the Playground
               </h1>
               <p className="mx-auto max-w-[700px]">
-                Harness the power of artificial intelligence to streamline your
-                tasks, boost productivity, and unlock new possibilities.
+                This is a place of learning and experimentation.
               </p>
             </div>
             <div className="space-x-4">
@@ -52,35 +50,6 @@ export default function Landing() {
               <p className="text-gray-500 dark:text-gray-400">
                 Set up custom workflows that trigger automatically as tasks
                 progress through different stages.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-      <section className="flex w-full flex-col items-center py-12 md:py-24 lg:py-32">
-        <div className="container px-4 md:px-6">
-          <div className="grid gap-10 px-10 md:gap-16 lg:grid-cols-2">
-            <div className="space-y-4">
-              <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">
-                Join the AI Revolution
-              </h2>
-              <p className="text-gray-500 dark:text-gray-400">
-                Don't get left behind. Embrace the future of work with NexusAI
-                and stay ahead of the competition.
-              </p>
-            </div>
-            <div className="flex flex-col items-start space-y-4">
-              <form className="flex w-full flex-col items-start gap-4 sm:flex-row sm:gap-2">
-                <Input
-                  className="max-w-lg flex-1"
-                  placeholder="Enter your email"
-                  type="email"
-                />
-                <Button type="submit">Sign Up</Button>
-              </form>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                By signing up, you agree to our Terms of Service and Privacy
-                Policy.
               </p>
             </div>
           </div>
