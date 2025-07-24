@@ -408,7 +408,6 @@ func (s *DbTaskStore) ListTasks(ctx context.Context, input *TaskFilter) ([]*mode
 	iimit, offset := pagination(input)
 	order := ListTasksOrderByFunc(input)
 	where := s.taskWhere(input)
-	fmt.Println(where)
 	data, err := repository.Task.Get(
 		ctx,
 		s.db,

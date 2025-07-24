@@ -133,8 +133,8 @@ type UserReactionSseInput struct {
 }
 
 func (api *Api) BindUserReactionSse(humapi huma.API) {
-	hanlder := sse.ServeSSE[UserReactionSseInput](
-		func(ctx context.Context, f func(any) error) sse.Client {
+	hanlder := sse.ServeSSE(
+		func(ctx context.Context, f func(any) error, input *UserReactionSseInput) sse.Client {
 			return sse.NewClient(sse.UserReactionsChannel, f, slog.Default(), func() any {
 				return &PingMessage{
 					Message: "ping",

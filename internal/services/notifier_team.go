@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log/slog"
 	"time"
 
@@ -236,7 +237,14 @@ func (d *DbNotifier) NotifyMembersOfNewMember(ctx context.Context, teamMemberID 
 	return nil
 }
 
-func isWithinPast24Hours(t *time.Time, dur time.Duration) bool {
+// func isWithinLast24Hours(t *time.Time) bool {
+// 	if t == nil {
+// 		return false
+// 	}
+// 	return t.After(time.Now().Add(-24 * time.Hour))
+// }
+
+func isWithinPastHours(t *time.Time, dur time.Duration) bool {
 	if t == nil {
 		return false
 	}
@@ -283,8 +291,10 @@ func (d *DbNotifier) NotifyTaskDueToday(ctx context.Context, taskID uuid.UUID) e
 		return errors.New("task not found")
 	}
 	// 2. check task end at is now
-	taskEndAtIsNow := isWithinPast24Hours(task.EndAt, 24*time.Hour)
+	taskEndAtIsNow := isWithinPastHours(task.EndAt, 24*time.Hour)
+
 	if taskEndAtIsNow {
+		fmt.Println("task due today")
 		payload := notification.TaskDueTodayNotificationData{
 			TaskID:  task.ID,
 			DueDate: *task.EndAt,
@@ -310,6 +320,7 @@ func (d *DbNotifier) NotifyTaskDueToday(ctx context.Context, taskID uuid.UUID) e
 			notifyMemberIds = append(notifyMemberIds, *task.CreatedByMemberID)
 		}
 		if len(notifyMemberIds) == 0 {
+			fmt.Println("no members to notify")
 			return nil
 		}
 		notifyMembers, err := d.adapter.TeamMember().FindTeamMembers(ctx, &stores.TeamMemberFilter{
@@ -349,6 +360,7 @@ func (d *DbNotifier) NotifyTaskDueToday(ctx context.Context, taskID uuid.UUID) e
 			return err
 		}
 	} else {
+		fmt.Println("task is not due today")
 		return nil
 	}
 	return nil
