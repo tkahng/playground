@@ -46,5 +46,3 @@ var HumaTokenFuncs = []func(huma.Context) string{
 	HumaTokenFromHeader,
 	HumaTokenFromQuery,
 }
-
-// func

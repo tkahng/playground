@@ -2,7 +2,6 @@ package apis
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 	"net/http"
 	"time"
@@ -33,8 +32,8 @@ type MiddlewareFunc func(ctx huma.Context, next func(huma.Context))
 
 func (api *Api) BindTeamMembersSseEvents(humapi huma.API) {
 	membermiddleware := middleware.TeamInfoFromTeamMemberID(humapi, api.App())
-	hanlder := sse.ServeSSE[TeamMemberSseInput](
-		func(ctx context.Context, f func(any) error) sse.Client {
+	hanlder := sse.ServeSSE(
+		func(ctx context.Context, f func(any) error, input *TeamMemberSseInput) sse.Client {
 			teamInfo := contextstore.GetContextTeamInfo(ctx)
 			return sse.NewClient(TeamChannel(teamInfo.Member.ID.String()), f, slog.Default(), func() any {
 				return &PingMessage{
@@ -46,7 +45,6 @@ func (api *Api) BindTeamMembersSseEvents(humapi huma.API) {
 			api.app.SseManager().RegisterClient(ctx, cf, c)
 		},
 		func(c sse.Client) {
-			fmt.Println("unregistering client")
 			api.app.SseManager().UnregisterClient(c)
 		},
 		30*time.Second,
@@ -56,7 +54,7 @@ func (api *Api) BindTeamMembersSseEvents(humapi huma.API) {
 		huma.Operation{
 			OperationID: "team-members-sse-team-member-notifications",
 			Method:      http.MethodGet,
-			Path:        "/team-members/{team-member-id}/notifications/sse",
+			Path:        "/team-members/{team-member-id}/sse",
 			Summary:     "team-members-sse-team-member-notifications",
 			Description: "team-members-sse-team-member-notifications",
 			Tags:        []string{"Team Members"},
@@ -69,11 +67,11 @@ func (api *Api) BindTeamMembersSseEvents(humapi huma.API) {
 			Errors: []int{http.StatusInternalServerError, http.StatusBadRequest},
 		},
 		map[string]any{
+			"task_due_today":   &notification.NotificationPayload[notification.TaskDueTodayNotificationData]{},
 			"new_team_member":  &notification.NotificationPayload[notification.NewTeamMemberNotificationData]{},
 			"assigned_to_task": &notification.NotificationPayload[notification.AssignedToTaskNotificationData]{},
 			"ping":             &PingMessage{},
 		},
-		// api.TeamMembersSseEvents2,
 		hanlder,
 	)
 

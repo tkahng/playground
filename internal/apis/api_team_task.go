@@ -178,6 +178,15 @@ func (api *Api) TaskUpdate(ctx context.Context, input *UpdateTaskInput) (*struct
 	task.Status = models.TaskStatus(input.Body.Status)
 	task.StartAt = input.Body.StartAt
 	task.EndAt = input.Body.EndAt
+	if task.EndAt != nil {
+		err = api.App().JobService().EnqueTaskDueJob(ctx, &workers.TaskDueTodayJobArgs{
+			TaskID:  task.ID,
+			DueDate: *task.EndAt,
+		})
+		if err != nil {
+			return nil, err
+		}
+	}
 	task.AssigneeID = input.Body.AssigneeID
 	task.ReporterID = input.Body.ReporterID
 	task.ParentID = input.Body.ParentID

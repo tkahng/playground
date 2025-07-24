@@ -69,8 +69,17 @@ export type TeamMemberState = {
   members: TeamMember[];
 };
 
-export type TeamMemberNotificationData =
+export type TeamMemberNewMemberNotificationData =
   components["schemas"]["NotificationPayloadNewTeamMemberNotificationData"];
+export type TeamMemberAsignedToTaskNotificationData =
+  components["schemas"]["NotificationPayloadAssignedToTaskNotificationData"];
+
+export type TeamMemberTaskDueTodayNotificationData =
+  components["schemas"]["NotificationPayloadTaskDueTodayNotificationData"];
+export type TeamMemberNotification =
+  | TeamMemberNewMemberNotificationData
+  | TeamMemberTaskDueTodayNotificationData
+  | TeamMemberAsignedToTaskNotificationData;
 
 export type JobsParams = operations["admin-jobs-get"]["parameters"]["query"];
 

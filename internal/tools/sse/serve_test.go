@@ -36,8 +36,8 @@ func TestWSHandler(t *testing.T) {
 	manager := sse.NewManager(slog.Default())
 	go manager.Run(ctx)
 
-	h := sse.ServeSSE[struct{}](
-		func(ctx context.Context, f func(any) error) sse.Client {
+	h := sse.ServeSSE(
+		func(ctx context.Context, f func(any) error, _ *struct{}) sse.Client {
 			return sse.NewClient("test", func(a any) error {
 				err := f(a)
 				messageChan <- struct{}{}

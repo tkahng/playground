@@ -1,25 +1,29 @@
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { useTeam } from "@/hooks/use-team";
-import { TeamMemberNotificationData } from "@/schema.types";
+import { TeamMemberNotification } from "@/schema.types";
 import {
   useEventSource,
   useEventSourceListener,
 } from "@react-nano/use-event-source";
 import { useReducer } from "react";
+import { toast } from "sonner";
 
 function TeamNotification() {
   const { user } = useAuthProvider();
   const { teamMember } = useTeam();
   function messageReducer(
-    state: TeamMemberNotificationData,
-    action: TeamMemberNotificationData
+    state: TeamMemberNotification,
+    action: TeamMemberNotification
   ) {
+    toast.info(action.notification.title, {
+      description: action.notification.body,
+    });
     return {
       ...state,
       ...action,
     };
   }
-  const [stats, updateStats] = useReducer(messageReducer, {
+  const [notification, updateLatestNotification] = useReducer(messageReducer, {
     notification: {
       title: "",
       body: "",
@@ -34,23 +38,28 @@ function TeamNotification() {
   const [eventSource] = useEventSource(
     "/api/team-members/" +
       teamMember?.id +
-      "/notifications/sse?access_token=" +
+      "/sse?access_token=" +
       user?.tokens.access_token,
     false
   );
   useEventSourceListener(
     eventSource,
-    ["new_team_member"],
+    ["new_team_member", "assigned_to_task", "task_due_today"],
     (evt) => {
-      updateStats(JSON.parse(evt.data)?.user_reaction_stats);
+      const noti: TeamMemberNotification = JSON.parse(evt.data);
+      updateLatestNotification(noti);
     },
-    [updateStats]
+    [updateLatestNotification]
   );
+  // useEffect(() => {
+  //   if (notification) {
+  //     toast.info(notification.notification.title, {
+  //       description: notification.notification.body,
+  //     });
+  //   }
+  // }, [notification]);
 
-  if (!user) return <p>User not found</p>;
-  if (!teamMember) return <p>teamMember not found</p>;
-
-  return <div> {stats?.notification.title}</div>;
+  return <div> {notification?.notification.title}</div>;
 }
 
 export default TeamNotification;

@@ -1225,26 +1225,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/team-members/{team-member-id}/notifications/sse": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * team-members-sse-team-member-notifications
-         * @description team-members-sse-team-member-notifications
-         */
-        get: operations["team-members-sse-team-member-notifications"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/team-members/{team-member-id}/notifications/{notification-id}": {
         parameters: {
             query?: never;
@@ -1279,6 +1259,26 @@ export interface paths {
          * @description read team members notifications
          */
         post: operations["read-team-members-notifications"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/team-members/{team-member-id}/sse": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * team-members-sse-team-member-notifications
+         * @description team-members-sse-team-member-notifications
+         */
+        get: operations["team-members-sse-team-member-notifications"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -2042,6 +2042,10 @@ export interface components {
             data: components["schemas"]["NewTeamMemberNotificationData"];
             notification: components["schemas"]["NotificationContent"];
         };
+        NotificationPayloadTaskDueTodayNotificationData: {
+            data: components["schemas"]["TaskDueTodayNotificationData"];
+            notification: components["schemas"]["NotificationContent"];
+        };
         OAuth2AuthorizationUrlOutputBody: {
             /**
              * Format: uri
@@ -2357,6 +2361,11 @@ export interface components {
             team_id: string;
             /** Format: date-time */
             updated_at: string;
+        };
+        TaskDueTodayNotificationData: {
+            /** Format: date-time */
+            due_date: string;
+            task_id: string;
         };
         TaskFields: {
             /**
@@ -6759,90 +6768,6 @@ export interface operations {
             };
         };
     };
-    "team-members-sse-team-member-notifications": {
-        parameters: {
-            query?: {
-                access_token?: string;
-            };
-            header?: never;
-            path: {
-                "team-member-id": string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "text/event-stream": ({
-                        data: components["schemas"]["NotificationPayloadAssignedToTaskNotificationData"];
-                        /**
-                         * @description The event name.
-                         * @constant
-                         */
-                        event: "assigned_to_task";
-                        /** @description The event ID. */
-                        id?: number;
-                        /** @description The retry time in milliseconds. */
-                        retry?: number;
-                    } | {
-                        data: components["schemas"]["NotificationPayloadNewTeamMemberNotificationData"];
-                        /**
-                         * @description The event name.
-                         * @constant
-                         */
-                        event: "new_team_member";
-                        /** @description The event ID. */
-                        id?: number;
-                        /** @description The retry time in milliseconds. */
-                        retry?: number;
-                    } | {
-                        data: components["schemas"]["PingMessage"];
-                        /**
-                         * @description The event name.
-                         * @constant
-                         */
-                        event: "ping";
-                        /** @description The event ID. */
-                        id?: number;
-                        /** @description The retry time in milliseconds. */
-                        retry?: number;
-                    })[];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-            /** @description Unprocessable Entity */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-            /** @description Internal Server Error */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-        };
-    };
     "delete-team-members-notifications": {
         parameters: {
             query?: never;
@@ -6909,6 +6834,101 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "team-members-sse-team-member-notifications": {
+        parameters: {
+            query?: {
+                access_token?: string;
+            };
+            header?: never;
+            path: {
+                "team-member-id": string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/event-stream": ({
+                        data: components["schemas"]["NotificationPayloadAssignedToTaskNotificationData"];
+                        /**
+                         * @description The event name.
+                         * @constant
+                         */
+                        event: "assigned_to_task";
+                        /** @description The event ID. */
+                        id?: number;
+                        /** @description The retry time in milliseconds. */
+                        retry?: number;
+                    } | {
+                        data: components["schemas"]["NotificationPayloadNewTeamMemberNotificationData"];
+                        /**
+                         * @description The event name.
+                         * @constant
+                         */
+                        event: "new_team_member";
+                        /** @description The event ID. */
+                        id?: number;
+                        /** @description The retry time in milliseconds. */
+                        retry?: number;
+                    } | {
+                        data: components["schemas"]["PingMessage"];
+                        /**
+                         * @description The event name.
+                         * @constant
+                         */
+                        event: "ping";
+                        /** @description The event ID. */
+                        id?: number;
+                        /** @description The retry time in milliseconds. */
+                        retry?: number;
+                    } | {
+                        data: components["schemas"]["NotificationPayloadTaskDueTodayNotificationData"];
+                        /**
+                         * @description The event name.
+                         * @constant
+                         */
+                        event: "task_due_today";
+                        /** @description The event ID. */
+                        id?: number;
+                        /** @description The retry time in milliseconds. */
+                        retry?: number;
+                    })[];
+                };
             };
             /** @description Bad Request */
             400: {

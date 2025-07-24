@@ -29,6 +29,9 @@ type manager struct {
 func (m *manager) Send(channel string, data any) error {
 	var errs []error
 	for c := range m.clients {
+		if c == nil {
+			continue
+		}
 		if c.Channel() == channel {
 			err := c.Write(Message{Data: data})
 			if err != nil {

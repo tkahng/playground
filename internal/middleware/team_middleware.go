@@ -42,7 +42,7 @@ func TeamInfoFromTeamMemberID(api huma.API, app core.App) func(ctx huma.Context,
 		}
 
 		ctxx := contextstore.SetContextTeamInfo(rawCtx, teamInfo)
-		ctx = huma.WithContext(ctx, ctxx)
+		ctx = WithContext(ctx, ctxx)
 		next(ctx)
 	}
 }

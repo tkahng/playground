@@ -10,7 +10,7 @@ import (
 func ServeSSE[I any](
 
 	// clientFactory is a function that takes a connection and returns a new Client
-	clientFactory func(context.Context, func(any) error) Client,
+	clientFactory func(context.Context, func(any) error, *I) Client,
 	// onCreate is a function to call once the Client is created (e.g.,
 	// store it in a some collection on the service for later reference)
 	onCreate func(context.Context, context.CancelFunc, Client),
@@ -23,7 +23,7 @@ func ServeSSE[I any](
 ) func(context.Context, *I, humasse.Sender) {
 	return func(ctx context.Context, input *I, send humasse.Sender) {
 		baseCtx, cf := context.WithCancel(ctx)
-		client := clientFactory(baseCtx, send.Data)
+		client := clientFactory(baseCtx, send.Data, input)
 		onCreate(baseCtx, cf, client)
 		client.WriteForever(baseCtx, onDestroy, ping)
 	}
