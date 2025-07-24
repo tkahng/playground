@@ -3,7 +3,6 @@ name: Scan secrets
 on:
   push:
     branches: ["develop"]
-  workflow_dispatch:
 
 permissions:
   contents: read
