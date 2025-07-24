@@ -96,10 +96,6 @@ jobs:
     steps:
       - name: Trigger Dokploy deployment
         shell: bash
-        env:
-          DOKPLOY_URL: ${{ secrets.DOKPLOY_URL }}
-          DOKPLOY_AUTH_TOKEN: ${{ secrets.DOKPLOY_AUTH_TOKEN }}
-          DOKPLOY_APPLICATION_ID: ${{ secrets.DOKPLOY_APPLICATION_ID }}
         run: |
           curl -X 'POST' \
             'https://${{ secrets.DOKPLOY_HOST }}/api/application.deploy' \
