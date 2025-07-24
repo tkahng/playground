@@ -1,8 +1,8 @@
 import { RouteMap } from "@/components/route-map";
 import { Link, useSearchParams } from "react-router";
 
-import { PlaygroundLandingHeader } from "@/components/nexus-landing-header";
-import { PlaygroundMinimalFooter } from "@/components/nexus-minimal-footer";
+import { PlaygroundLandingHeader } from "@/components/playground-landing-header";
+import { PlaygroundMinimalFooter } from "@/components/playground-minimal-footer";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {

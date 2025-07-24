@@ -1,5 +1,5 @@
-import { PlaygroundLandingHeader } from "@/components/nexus-landing-header";
-import { PlaygroundMinimalFooter } from "@/components/nexus-minimal-footer";
+import { PlaygroundLandingHeader } from "@/components/playground-landing-header";
+import { PlaygroundMinimalFooter } from "@/components/playground-minimal-footer";
 import { Outlet } from "react-router";
 
 export default function PublicLayout() {

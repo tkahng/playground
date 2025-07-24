@@ -1,6 +1,6 @@
 import AuthButton from "@/components/auth-button";
 import { LinkDto } from "@/components/links";
-import PlaygroundLogo from "@/components/nexus-logo";
+import PlaygroundLogo from "@/components/playground-logo";
 import { cn } from "@/lib/utils";
 import { Link, useLocation } from "react-router";
 
