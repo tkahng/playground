@@ -15,15 +15,14 @@ export type TopCountry = {
 };
 export function TopCountryCard({
   country,
-  key,
   className,
+  ...props
 }: {
   country: TopCountry;
-  key: string;
   className?: string;
-}) {
+} & React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <Card key={key} className={className}>
+    <Card className={className} {...props}>
       <CardHeader>
         <CardTitle>
           #{country.number + 1} {country.countryName}{" "}
