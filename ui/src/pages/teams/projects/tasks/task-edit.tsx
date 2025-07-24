@@ -19,8 +19,20 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { PopoverContentNoPortal } from "@/components/ui/popover-noportal";
-import { Select } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { TaskContext } from "@/context/task-context";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { useDialog } from "@/hooks/use-dialog";
@@ -30,21 +42,11 @@ import { GetError } from "@/lib/get-error";
 import { useTaskQuery } from "@/lib/queries";
 import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@radix-ui/react-popover";
-import {
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@radix-ui/react-select";
+
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { CalendarIcon, Check, ChevronLeft, ChevronsUpDown } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useParams } from "react-router";
 import { toast } from "sonner";
@@ -142,6 +144,22 @@ export default function TaskEdit() {
       toast.error(`Failed to create task: ${error.message}`);
     },
   });
+  useEffect(() => {
+    if (task) {
+      form.reset({
+        assignee_id: task.assignee_id,
+        description: task.description || "",
+        end_at: task.end_at,
+        name: task.name,
+        parent_id: task.parent_id,
+        rank: task.rank,
+        reporter_id: task.reporter_id,
+        start_at: task.start_at,
+        status: task.status,
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [task, form.reset]);
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     mutation.mutate(values);
   };
@@ -227,6 +245,7 @@ export default function TaskEdit() {
                     </FormItem>
                   )}
                 />
+
                 <FormField
                   control={form.control}
                   name="end_at"
