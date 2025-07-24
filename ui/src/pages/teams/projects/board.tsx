@@ -1,4 +1,4 @@
-import { PlusIcon, Trash2Icon } from "lucide-react";
+import { PlusIcon } from "lucide-react";
 import type { FormEvent, KeyboardEvent } from "react";
 import { useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
@@ -7,7 +7,6 @@ import { Input } from "@/components/ui/input";
 import {
   KanbanBoard,
   KanbanBoardCard,
-  KanbanBoardCardButton,
   KanbanBoardCardButtonGroup,
   KanbanBoardCardDescription,
   KanbanBoardCardTitle,
@@ -31,10 +30,11 @@ import { groupItems } from "@/lib/array";
 import { useUpdateTaskPosition } from "@/lib/mutation";
 import { Task, TaskStatus, TeamMember } from "@/schema.types";
 import { CreateProjectTaskDialog2 } from "./tasks/create-project-task-dialog copy";
-import { EditProjectTaskDialog } from "./tasks/edit-project-task-dialog";
+import { EditTaskDialog2 } from "./tasks/edit-project-task-dialog copy";
+import { TaskEditDropdown2 } from "./tasks/task-edit-dropdown-2";
 
 // Types
-type Card = {
+type CardType = {
   id: string;
   name: string;
   assignee_id: string | null;
@@ -65,7 +65,7 @@ type Column = {
   status: TaskStatus;
   projectId: string;
   color: KanbanBoardCircleColor;
-  items: Card[];
+  items: CardType[];
 };
 
 export function MyKanbanBoard({
@@ -176,7 +176,11 @@ export function MyKanbanBoard({
     );
   }
 
-  function handleMoveCardToColumn(columnId: string, index: number, card: Card) {
+  function handleMoveCardToColumn(
+    columnId: string,
+    index: number,
+    card: CardType
+  ) {
     mutation.mutate({
       projectId,
       taskId: card.id,
@@ -428,7 +432,7 @@ function MyKanbanBoardColumn({
   ) => void;
   onDeleteCard: (cardId: string) => void;
   onDeleteColumn: (columnId: string) => void;
-  onMoveCardToColumn: (columnId: string, index: number, card: Card) => void;
+  onMoveCardToColumn: (columnId: string, index: number, card: CardType) => void;
   onUpdateCardTitle: (cardId: string, cardTitle: string) => void;
   onUpdateColumnTitle: (columnId: string, columnTitle: string) => void;
 }) {
@@ -460,7 +464,7 @@ function MyKanbanBoardColumn({
   }
 
   function handleDropOverColumn(dataTransferData: string) {
-    const card = JSON.parse(dataTransferData) as Card;
+    const card = JSON.parse(dataTransferData) as CardType;
     onMoveCardToColumn(column.id, 0, card);
   }
 
@@ -469,7 +473,7 @@ function MyKanbanBoardColumn({
       dataTransferData: string,
       dropDirection: KanbanBoardDropDirection
     ) => {
-      const card = JSON.parse(dataTransferData) as Card;
+      const card = JSON.parse(dataTransferData) as CardType;
       const cardIndex = column.items.findIndex(({ id }) => id === cardId);
       const currentCardIndex = column.items.findIndex(
         ({ id }) => id === card.id
@@ -573,7 +577,7 @@ function MyKanbanBoardCard({
   onCardKeyDown,
   onDeleteCard,
 }: {
-  card: Card;
+  card: CardType;
   isActive: boolean;
   onCardBlur: () => void;
   onCardKeyDown: (
@@ -583,45 +587,48 @@ function MyKanbanBoardCard({
   onDeleteCard: (cardId: string) => void;
   onUpdateCardTitle: (cardId: string, cardTitle: string) => void;
 }) {
-  const [isEditingTitle, setIsEditingTitle] = useState(false);
-  const kanbanBoardCardReference = useRef<HTMLButtonElement>(null);
+  // const [isEditingTitle, setIsEditingTitle] = useState(false);
+  // const kanbanBoardCardReference = useRef<HTMLButtonElement>(null);
   // This ref tracks the previous `isActive` state. It is used to refocus the
   // card after it was discarded with the keyboard.
-  const previousIsActiveReference = useRef(isActive);
-  // This ref tracks if the card was cancelled via Escape.
-  const wasCancelledReference = useRef(false);
-  const editDialog = useDialog();
-  useEffect(() => {
-    // Maintain focus after the card is picked up and moved.
-    if (isActive && !isEditingTitle) {
-      kanbanBoardCardReference.current?.focus();
-    }
+  // const previousIsActiveReference = useRef(isActive);
+  // // This ref tracks if the card was cancelled via Escape.
+  // const wasCancelledReference = useRef(false);
+  // const editDialog = useDialog();
+  // useEffect(() => {
+  //   // Maintain focus after the card is picked up and moved.
+  //   if (isActive && !isEditingTitle) {
+  //     kanbanBoardCardReference.current?.focus();
+  //   }
 
-    // Refocus the card after it was discarded with the keyboard.
-    if (
-      !isActive &&
-      previousIsActiveReference.current &&
-      wasCancelledReference.current
-    ) {
-      kanbanBoardCardReference.current?.focus();
-      wasCancelledReference.current = false;
-    }
+  //   // Refocus the card after it was discarded with the keyboard.
+  //   if (
+  //     !isActive &&
+  //     previousIsActiveReference.current &&
+  //     wasCancelledReference.current
+  //   ) {
+  //     kanbanBoardCardReference.current?.focus();
+  //     wasCancelledReference.current = false;
+  //   }
 
-    previousIsActiveReference.current = isActive;
-  }, [isActive, isEditingTitle]);
-  function handleEditCardClick() {
-    if (!editDialog.props.open) {
-      editDialog.props.onOpenChange(true);
-      setIsEditingTitle(true);
-    }
-  }
+  //   previousIsActiveReference.current = isActive;
+  // }, [isActive, isEditingTitle]);
+  // function handleEditCardClick() {
+  //   if (!isEditingTitle) {
+  //     // editDialog.props.onOpenChange(true);
+  //     setIsEditingTitle(true);
+  //   }
+  // }
+  const dialogProps = useDialog();
   return (
     <KanbanBoardCard
       data={card}
       isActive={isActive}
       onBlur={onCardBlur}
       onClick={() => {
-        handleEditCardClick();
+        // dialogProps.trigger();
+        dialogProps.props.onOpenChange(true);
+        // handleEditCardClick();
       }}
       onKeyDown={(event) => {
         if (event.key === " ") {
@@ -632,34 +639,35 @@ function MyKanbanBoardCard({
 
         if (event.key === "Escape") {
           // Mark that this card was cancelled.
-          wasCancelledReference.current = true;
+          // wasCancelledReference.current = true;
         }
 
         onCardKeyDown(event, card.id);
       }}
-      ref={kanbanBoardCardReference}
+      // ref={kanbanBoardCardReference}
     >
       <KanbanBoardCardTitle>{card.name}</KanbanBoardCardTitle>
       <KanbanBoardCardDescription>
         {card.description}
       </KanbanBoardCardDescription>
       <KanbanBoardCardButtonGroup disabled={isActive}>
-        <KanbanBoardCardButton
-          className="text-destructive"
-          onClick={() => onDeleteCard(card.id)}
-          tooltip="Delete card"
-        >
-          <Trash2Icon />
-
-          <span className="sr-only">Delete card</span>
-        </KanbanBoardCardButton>
+        <div className="flex flex-row gap-2 justify-end">
+          <TaskEditDropdown2
+            task={card}
+            onDelete={() => onDeleteCard(card.id)}
+          />
+        </div>
       </KanbanBoardCardButtonGroup>
-      <ConfirmDialog dialogProps={editDialog.props}>
+      <EditTaskDialog2
+        task={card}
+        isDialogOpen={dialogProps.props.open}
+        setDialogOpen={dialogProps.props.onOpenChange}
+      />
+      {/* <ConfirmDialog dialogProps={editDialog.props}>
         <EditProjectTaskDialog task={card} props={editDialog.props} />
-      </ConfirmDialog>
+      </ConfirmDialog> */}
     </KanbanBoardCard>
   );
-  // );
 }
 
 function MyNewKanbanBoardCard({

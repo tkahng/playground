@@ -1,22 +1,22 @@
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
-    Command,
-    CommandEmpty,
-    CommandGroup,
-    CommandInput,
-    CommandItem,
-    CommandList,
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
 } from "@/components/ui/command";
 import { DialogFooter } from "@/components/ui/dialog";
 import {
-    Form,
-    FormControl,
-    FormDescription,
-    FormField,
-    FormItem,
-    FormLabel,
-    FormMessage,
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { PopoverContentNoPortal } from "@/components/ui/popover-noportal";
@@ -31,15 +31,15 @@ import { useTaskQuery } from "@/lib/queries";
 import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
 } from "@radix-ui/react-popover";
 import {
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@radix-ui/react-select";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
@@ -49,33 +49,20 @@ import { useForm } from "react-hook-form";
 import { Link, useParams } from "react-router";
 import { toast } from "sonner";
 import { z } from "zod";
+
 const formSchema = z.object({
   name: z.string().min(1),
-  // name: string;
   description: z.string().min(0).optional(),
-  // description?: string;
   status: z.enum(["todo", "in_progress", "done"]),
-  // status: "todo" | "in_progress" | "done";
   assignee_id: z.string().nullable(),
-  //  assignee_id: string | null;
-  // created_by_member_id: z.string().nullable(),
-  // created_by_member_id: string | null;
   end_at: z.string().nullable(),
-  // end_at: string | null;
   parent_id: z.string().nullable(),
-  // parent_id: string | null;
   position: z.number().optional(),
-  // position?: number;
-  // project_id: z.string(),
-  // project_id: string;
   rank: z.number().optional(),
-  // rank?: number;
   reporter_id: z.string().nullable(),
-  // reporter_id: string | null;
   start_at: z.string().nullable(),
-  // start_at: string | null;
-  // team_id: z.string(),
 });
+
 export default function TaskEdit() {
   const { taskId } = useParams<{
     projectId: string;
@@ -118,14 +105,11 @@ export default function TaskEdit() {
       description: task?.description || "",
       status: task?.status,
       assignee_id: task?.assignee_id,
-      // created_by_member_id: task.created_by_member_id,
       end_at: task?.end_at,
       parent_id: task?.parent_id,
-      // project_id: task.project_id,
       rank: task?.rank,
       reporter_id: task?.reporter_id,
       start_at: task?.start_at,
-      // team_id: task.team_id,
     },
   });
 
@@ -152,7 +136,7 @@ export default function TaskEdit() {
       await queryClient.invalidateQueries({
         queryKey: ["task", task?.id],
       });
-      toast.success("Task created successfully");
+      toast.success("Task updated successfully");
     },
     onError: (error) => {
       toast.error(`Failed to create task: ${error.message}`);
@@ -190,7 +174,11 @@ export default function TaskEdit() {
                     <FormItem>
                       <FormLabel>Name</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="Task Name" />
+                        <Input
+                          {...field}
+                          defaultValue={task?.name}
+                          placeholder="Task Name"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -203,7 +191,11 @@ export default function TaskEdit() {
                     <FormItem>
                       <FormLabel>Description</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="Task Description" />
+                        <Input
+                          {...field}
+                          placeholder="Task Description"
+                          defaultValue={task?.description || ""}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -362,7 +354,9 @@ export default function TaskEdit() {
                   )}
                 />
                 <DialogFooter>
-                  <Button type="submit">Update Task</Button>
+                  <Button type="submit" disabled={!form.formState.isDirty}>
+                    Update Task
+                  </Button>
                 </DialogFooter>
               </div>
             </div>

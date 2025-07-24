@@ -1,4 +1,3 @@
-import { RouteMap } from "@/components/route-map";
 import { Button } from "@/components/ui/button";
 import {
   DialogClose,
@@ -14,17 +13,20 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ConfirmDialog, useDialog } from "@/hooks/use-dialog";
+import { useTeam } from "@/hooks/use-team";
+import { Task } from "@/schema.types";
 import { Ellipsis, Pencil, Trash } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 
-export function JobsActionDropdown({
-  jobId,
+export function TaskEditDropDown({
+  task,
   onDelete,
 }: {
-  jobId: string;
-  onDelete: (jobId: string) => void;
+  task: Task;
+  onDelete: (taskId: string) => void;
 }) {
+  const { team } = useTeam();
   const editDialog = useDialog();
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -40,7 +42,9 @@ export function JobsActionDropdown({
           <DropdownMenuItem
             onSelect={() => {
               setDropdownOpen(false);
-              navigate(`${RouteMap.ADMIN_JOBS}/${jobId}`);
+              navigate(
+                `/teams/${team?.slug}/projects/${task.project_id}/tasks/${task.id}`
+              );
             }}
           >
             <Button variant="ghost" size="sm">
@@ -66,7 +70,6 @@ export function JobsActionDropdown({
           <DialogHeader>
             <DialogTitle>Are you absolutely sure?</DialogTitle>
           </DialogHeader>
-          {/* Dialog Content */}
           <DialogDescription>This action cannot be undone.</DialogDescription>
           <DialogFooter>
             <DialogClose asChild>
@@ -74,7 +77,6 @@ export function JobsActionDropdown({
                 variant="outline"
                 onClick={() => {
                   console.log("cancel");
-                  // editDialog.props.onOpenChange(false);
                 }}
               >
                 Cancel
@@ -85,8 +87,7 @@ export function JobsActionDropdown({
                 variant="destructive"
                 onClick={() => {
                   console.log("delete");
-                  // editDialog.props.onOpenChange(false);
-                  onDelete(jobId);
+                  onDelete(task.id);
                 }}
               >
                 Delete
