@@ -453,7 +453,7 @@ type TaskCompletedWorker struct {
 
 // Work implements workers.TaskDueTodayWorker.
 func (a *TaskCompletedWorker) Work(ctx context.Context, job *jobs.Job[workers.TaskCompletedJobArgs]) error {
-	return a.notifier.NotifyTaskDueToday(ctx, job.Args.TaskID)
+	return a.notifier.NotifyTaskCompleted(ctx, job.Args.TaskID, job.Args.CompletedByMemberID, job.Args.CompletedAt)
 }
 
 func NewTaskCompletedWorker(notifier Notifier) *TaskCompletedWorker {
