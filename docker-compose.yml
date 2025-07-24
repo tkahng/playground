@@ -13,6 +13,18 @@ services:
     env_file:
       - .env
 
+  app:
+    depends_on:
+      - db
+    image: playground:latest
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    ports:
+      - 8080:8080
+    env_file:
+      - .env
+
   loki:
     image: grafana/loki:2.2.1
     command: -config.file=/etc/loki/loki-config.yaml
@@ -22,17 +34,18 @@ services:
       - ./loki:/etc/loki
       - ./loki-data:/loki-data
 
-  app:
-    depends_on:
-      - db
-    image: playground
-    build:
-      context: .
-      dockerfile: ./Dockerfile
+  vector:
+    image: timberio/vector:latest-alpine
+    volumes:
+      - ./vector:/etc/vector
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: ["-c", "/etc/vector/vector.yaml"]
     ports:
-      - 8080:8080
-    env_file:
-      - .env
+      - "8686:8686"
+    container_name: vector
+    depends_on:
+      - loki
+      - app
 
 volumes:
   postgres-data:

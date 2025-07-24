@@ -1,6 +1,8 @@
 # Ignore Node.js development dependencies
 node_modules/
+dist/
 ui/node_modules/
+ui/dist/
 # Ignore sensitive environment variables
 .env
 
@@ -8,6 +10,7 @@ ui/node_modules/
 .git/
 
 # Ignore temporary files
+tmp/
 *.tmp
 logs/
 
