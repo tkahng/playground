@@ -1,0 +1,16 @@
+# Ignore Node.js development dependencies
+node_modules/
+ui/node_modules/
+# Ignore sensitive environment variables
+.env
+
+# Ignore Git-related files
+.git/
+
+# Ignore temporary files
+*.tmp
+logs/
+
+.github/
+.vscode/
+*.code-workspace
