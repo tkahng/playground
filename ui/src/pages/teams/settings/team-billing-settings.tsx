@@ -1,6 +1,6 @@
-import CustomerPortalForm from "@/components/customer-portal-form";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { teamSettingLinks } from "@/components/links";
+import TeamCustomerForm from "@/components/team-customer-form";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { useTeam } from "@/hooks/use-team";
 import { getTeamSubscriptions } from "@/lib/api";
@@ -39,7 +39,7 @@ export default function TeamBillingSettingPage() {
     <div className="flex">
       <DashboardSidebar links={teamSettingLinks(team.slug)} />
       <div className="flex-1 space-y-6 p-12 w-full">
-        <CustomerPortalForm subscription={data as null} />
+        <TeamCustomerForm subscription={data as null} />
       </div>
     </div>
   );

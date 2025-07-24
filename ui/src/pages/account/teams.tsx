@@ -6,7 +6,7 @@ import { RouteMap } from "@/components/route-map";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { useTeam } from "@/hooks/use-team";
 import { useUserTeams } from "@/hooks/use-user-teams";
-import { getUserSubscriptions, getUserTeams } from "@/lib/api";
+import { getUserTeams } from "@/lib/api";
 import { GetError } from "@/lib/get-error";
 import { Team } from "@/schema.types";
 import { useQuery } from "@tanstack/react-query";
@@ -32,18 +32,16 @@ export default function AccountTeamsPage() {
   };
   const { user } = useAuthProvider();
   const { data, error, isError, isLoading } = useQuery({
-    queryKey: ["stats"],
+    queryKey: ["get-user-teams", user?.user.id],
     queryFn: async () => {
       if (!user) {
         throw new Error("User not found");
       }
 
       // const stats = await getStats(user.tokens.access_token);
-      const subs = await getUserSubscriptions(user.tokens.access_token);
       const teams = await getUserTeams(user.tokens.access_token);
       return {
         // ...stats,
-        sub: subs,
         teams: teams.data,
       };
     },
