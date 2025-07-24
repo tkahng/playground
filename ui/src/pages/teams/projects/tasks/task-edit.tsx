@@ -180,7 +180,11 @@ export default function TaskEdit() {
           <ChevronLeft className="h-4 w-4" />
           Back to Project
         </Link>
+        <h1 className="text-2xl font-bold">Edit Task</h1>
         <h1 className="text-2xl font-bold">{task?.name}</h1>
+        <p className="text-sm text-muted-foreground">
+          {task?.description || "No description"}
+        </p>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
             <div className="grid gap-4 py-4">
