@@ -31,7 +31,7 @@ import { useUpdateTaskPosition } from "@/lib/mutation";
 import { Task, TaskStatus, TeamMember } from "@/schema.types";
 import { CreateProjectTaskDialog2 } from "./tasks/create-project-task-dialog copy";
 import { EditProjectTaskDialog } from "./tasks/edit-project-task-dialog";
-import { TaskEditDropDown } from "./tasks/task-edit-dropdown";
+import { TaskEditDropdown2 } from "./tasks/task-edit-dropdown-2";
 
 // Types
 type CardType = {
@@ -648,16 +648,12 @@ function MyKanbanBoardCard({
         {card.description}
       </KanbanBoardCardDescription>
       <KanbanBoardCardButtonGroup disabled={isActive}>
-        <TaskEditDropDown task={card} onDelete={() => onDeleteCard(card.id)} />
-        {/* <KanbanBoardCardButton
-          className="text-destructive"
-          onClick={() => onDeleteCard(card.id)}
-          tooltip="Delete card"
-        >
-          <Ellipsis />
-
-          <span className="sr-only">Delete card</span>
-        </KanbanBoardCardButton> */}
+        <div className="flex flex-row gap-2 justify-end">
+          <TaskEditDropdown2
+            task={card}
+            onDelete={() => onDeleteCard(card.id)}
+          />
+        </div>
       </KanbanBoardCardButtonGroup>
       <ConfirmDialog dialogProps={editDialog.props}>
         <EditProjectTaskDialog task={card} props={editDialog.props} />
