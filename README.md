@@ -1,3 +1,5 @@
+[![Build and test](https://github.com/tkahng/playground/actions/workflows/ci.yml/badge.svg)](https://github.com/tkahng/playground/actions/workflows/ci.yml)
+
 # Playground
 
 # Features
