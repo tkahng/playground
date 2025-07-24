@@ -60,6 +60,7 @@ import TeamBillingSettingPage from "./pages/teams/settings/team-billing-settings
 import TeamSettingsPage from "./pages/teams/settings/team-general-settings";
 import TeamMembersSettingPage from "./pages/teams/settings/team-members-settings";
 import TeamNotifications from "./pages/teams/settings/team-notifications";
+import TeamSettingsRedirect from "./pages/teams/team-settings-redirect";
 import UserTeamInvitationRedirectPage from "./pages/teams/user-team-invitation-redirect-page";
 
 function TeamRoutes() {
@@ -205,6 +206,16 @@ function App() {
               <Route
                 // dashboard
                 children={<Route path={`/teams`} element={<TeamSelect />} />}
+                element={<DashboardLayout />}
+              />
+              <Route
+                // dashboard
+                children={
+                  <Route
+                    path={`/teams/settings/billing`}
+                    element={<TeamSettingsRedirect />}
+                  />
+                }
                 element={<DashboardLayout />}
               />
             </Route>

@@ -9,13 +9,14 @@ import { getTeamBySlug } from "@/lib/api";
 import { GetError } from "@/lib/get-error";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
-import { Navigate, Outlet, useParams } from "react-router";
+import { Navigate, Outlet, useLocation, useParams } from "react-router";
 import { toast } from "sonner";
 
 export default function TeamDashboardLayout() {
   const { user } = useAuthProvider();
   const { teamSlug } = useParams<{ teamSlug: string }>();
   const { setTeam, team, teamMember } = useTeam();
+  const { pathname } = useLocation();
   const { isLoading, error, refetch } = useQuery({
     queryKey: ["team-by-slug-layout"],
     queryFn: async () => {
@@ -88,6 +89,15 @@ export default function TeamDashboardLayout() {
       <Navigate
         to={{
           pathname: "/teams",
+        }}
+      />
+    );
+  }
+  if (pathname === "/teams/settings/billing") {
+    return (
+      <Navigate
+        to={{
+          pathname: `/teams/${team.slug}/settings/billing`,
         }}
       />
     );
