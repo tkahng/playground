@@ -51,6 +51,8 @@ Authorization happens on the set of all permissions assigned to a user.
 
 # Admin Features
 
+## Feature list
+
 - Users
 
   - create user
