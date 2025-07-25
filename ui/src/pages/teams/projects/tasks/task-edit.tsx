@@ -46,7 +46,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { CalendarIcon, Check, ChevronLeft, ChevronsUpDown } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useParams } from "react-router";
 import { toast } from "sonner";
@@ -79,10 +79,10 @@ export default function TaskEdit() {
   const { user } = useAuthProvider();
   const { teamMember, team } = useTeam();
   const endAtDialog = useDialog();
-  const assigneeDialog = useDialog();
+  // const assigneeDialog = useDialog();
   const queryClient = useQueryClient();
 
-  const [search, setSearch] = useState<string>("");
+  // const [search, setSearch] = useState<string>("");
   const {
     data: members,
     isLoading: isMembersLoading,
@@ -158,8 +158,7 @@ export default function TaskEdit() {
         status: task.status,
       });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [task, form.reset]);
+  }, [task, form]);
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     mutation.mutate(values);
   };
@@ -196,11 +195,7 @@ export default function TaskEdit() {
                     <FormItem>
                       <FormLabel>Name</FormLabel>
                       <FormControl>
-                        <Input
-                          {...field}
-                          defaultValue={task?.name}
-                          placeholder="Task Name"
-                        />
+                        <Input {...field} placeholder="Task Name" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -213,11 +208,7 @@ export default function TaskEdit() {
                     <FormItem>
                       <FormLabel>Description</FormLabel>
                       <FormControl>
-                        <Input
-                          {...field}
-                          placeholder="Task Description"
-                          defaultValue={task?.description || ""}
-                        />
+                        <Input {...field} placeholder="Task Description" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -305,8 +296,8 @@ export default function TaskEdit() {
                     <FormItem className="flex flex-col">
                       <FormLabel>Assignee</FormLabel>
                       <Popover
-                        open={assigneeDialog.props.open}
-                        onOpenChange={assigneeDialog.props.onOpenChange}
+                      // open={assigneeDialog.props.open}
+                      // onOpenChange={assigneeDialog.props.onOpenChange}
                       >
                         <PopoverTrigger asChild>
                           <FormControl>
@@ -319,9 +310,13 @@ export default function TaskEdit() {
                               )}
                             >
                               {field.value
-                                ? members?.data?.find(
-                                    (language) => language.id === field.value
-                                  )?.user?.email
+                                ? members?.data?.find((member) => {
+                                    console.log(
+                                      member.user?.email,
+                                      field.value
+                                    );
+                                    return member.id === field.value;
+                                  })?.user?.email
                                 : "Select assignee"}
                               <ChevronsUpDown className="opacity-50" />
                             </Button>
@@ -332,38 +327,48 @@ export default function TaskEdit() {
                             <CommandInput
                               placeholder="Search assignee..."
                               className="h-9"
-                              autoComplete="on"
-                              value={search}
-                              onValueChange={(e) => {
-                                setSearch(e);
-                              }}
                             />
                             <CommandList>
                               <CommandEmpty>No assignee found.</CommandEmpty>
                               <CommandGroup>
-                                {!isMembersLoading &&
-                                  members?.data?.map((language) => (
-                                    <CommandItem
-                                      value={language.id}
-                                      key={language.id}
-                                      onSelect={() => {
-                                        form.setValue(
-                                          "assignee_id",
-                                          language.id
-                                        );
-                                      }}
-                                    >
-                                      {language.user?.email}
-                                      <Check
-                                        className={cn(
-                                          "ml-auto",
-                                          language.id === field.value
-                                            ? "opacity-100"
-                                            : "opacity-0"
-                                        )}
-                                      />
-                                    </CommandItem>
-                                  ))}
+                                <CommandItem
+                                  value={"null"}
+                                  key={"null"}
+                                  onSelect={() => {
+                                    form.setValue(field.name, null, {
+                                      shouldDirty: true,
+                                    });
+                                  }}
+                                >
+                                  None
+                                  <Check
+                                    className={cn(
+                                      "ml-auto",
+                                      !field.value ? "opacity-100" : "opacity-0"
+                                    )}
+                                  />
+                                </CommandItem>
+                                {members?.data?.map((member) => (
+                                  <CommandItem
+                                    value={member.user?.email}
+                                    key={member.id}
+                                    onSelect={() => {
+                                      form.setValue(field.name, member.id, {
+                                        shouldDirty: true,
+                                      });
+                                    }}
+                                  >
+                                    {member.user?.email}
+                                    <Check
+                                      className={cn(
+                                        "ml-auto",
+                                        member.id === field.value
+                                          ? "opacity-100"
+                                          : "opacity-0"
+                                      )}
+                                    />
+                                  </CommandItem>
+                                ))}
                               </CommandGroup>
                             </CommandList>
                           </Command>
