@@ -2,6 +2,7 @@ package apis
 
 import (
 	"io"
+	"log/slog"
 	"net/http"
 	"path/filepath"
 	"strings"
@@ -10,15 +11,17 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/danielgtaylor/huma/v2/adapters/humachi"
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/httplog/v3"
 	"github.com/go-chi/httprate"
 
 	"github.com/go-chi/cors"
+	"github.com/tkahng/playground/internal/conf"
 	"github.com/tkahng/playground/internal/shared"
+	"github.com/tkahng/playground/internal/tools/logger"
 	"github.com/tkahng/playground/ui"
 )
 
-func NewServer() (http.Handler, huma.API) {
+func NewServer(opt *conf.EnvConfig) (http.Handler, huma.API) {
 	var api huma.API
 	config := huma.DefaultConfig("My API", "1.0.0")
 	config.Servers = []*huma.Server{{URL: "http://localhost:8080"}}
@@ -43,9 +46,25 @@ func NewServer() (http.Handler, huma.API) {
 		ExposedHeaders:   []string{"Link"},
 		AllowCredentials: true,
 	}))
+	r.Use(httplog.RequestLogger(logger.GetDefaultLogger(), &httplog.Options{
+		// Level defines the verbosity of the request logs:
+		// slog.LevelDebug - log all responses (incl. OPTIONS)
+		// slog.LevelInfo  - log responses (excl. OPTIONS)
+		// slog.LevelWarn  - log 4xx and 5xx responses only (except for 429)
+		// slog.LevelError - log 5xx responses only
+		Level: slog.LevelInfo,
 
-	r.Use(middleware.Logger)
-	r.Use(middleware.Recoverer)
+		// Set log output to Elastic Common Schema (ECS) format.
+		Schema: logger.GetDefaultFormat(&opt.AppConfig),
+
+		// RecoverPanics recovers from panics occurring in the underlying HTTP handlers
+		// and middlewares. It returns HTTP 500 unless response status was already set.
+		//
+		// NOTE: Panics are logged as errors automatically, regardless of this setting.
+		RecoverPanics: true,
+	}))
+	// r.Use(middleware.Logger)
+	// r.Use(middleware.Recoverer)
 	r.Use(httprate.LimitByIP(100, 1*time.Minute))
 	// Handle all other routes by serving index.html (for React Router)
 	r.HandleFunc("/*", func(w http.ResponseWriter, r *http.Request) {

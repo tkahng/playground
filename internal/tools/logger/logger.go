@@ -3,25 +3,26 @@ package logger
 import (
 	"log/slog"
 	"os"
-	"path/filepath"
+
+	"github.com/go-chi/httplog/v3"
+	"github.com/tkahng/playground/internal/conf"
 )
 
 func GetDefaultLogger() *slog.Logger {
-	return slog.New(ContextHandler{
+	opts := conf.GetConfig[conf.AppConfig]()
+	logFormat := GetDefaultFormat(&opts)
+	logger := slog.New(ContextHandler{
 		Handler: slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-			AddSource: true,
-			Level:     nil,
-			ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
-				if a.Key == slog.SourceKey {
-					source, _ := a.Value.Any().(*slog.Source)
-					if source != nil {
-						source.Function = ""
-						source.File = filepath.Base(source.File)
-					}
-				}
-				return a
-			},
+			AddSource:   !(opts.AppEnv == "development"),
+			Level:       slog.LevelInfo,
+			ReplaceAttr: logFormat.ReplaceAttr,
 		}),
 	})
+	slog.SetDefault(logger)
+	return logger
+}
 
+func GetDefaultFormat(opts *conf.AppConfig) *httplog.Schema {
+	isdev := opts.AppEnv == "development"
+	return httplog.SchemaOTEL.Concise(isdev)
 }
