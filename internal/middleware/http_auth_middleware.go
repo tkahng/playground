@@ -10,9 +10,9 @@ import (
 	appHttp "github.com/tkahng/playground/internal/tools/http"
 )
 
-type MiddelwareFunc func(http.Handler) http.Handler
+type HttpMiddelwareFunc func(http.Handler) http.Handler
 
-func HttpAuthMiddleware(app core.App) MiddelwareFunc {
+func HttpAuthMiddleware(app core.App) HttpMiddelwareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
@@ -47,7 +47,7 @@ func HttpAuthMiddleware(app core.App) MiddelwareFunc {
 	}
 }
 
-func HttpRequireAuthMiddleware(app core.App) MiddelwareFunc {
+func HttpRequireAuthMiddleware(app core.App) HttpMiddelwareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
