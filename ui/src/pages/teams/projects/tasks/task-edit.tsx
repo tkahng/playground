@@ -295,10 +295,7 @@ export default function TaskEdit() {
                   render={({ field }) => (
                     <FormItem className="flex flex-col">
                       <FormLabel>Assignee</FormLabel>
-                      <Popover
-                      // open={assigneeDialog.props.open}
-                      // onOpenChange={assigneeDialog.props.onOpenChange}
-                      >
+                      <Popover>
                         <PopoverTrigger asChild>
                           <FormControl>
                             <Button
@@ -311,10 +308,6 @@ export default function TaskEdit() {
                             >
                               {field.value
                                 ? members?.data?.find((member) => {
-                                    console.log(
-                                      member.user?.email,
-                                      field.value
-                                    );
                                     return member.id === field.value;
                                   })?.user?.email
                                 : "Select assignee"}
