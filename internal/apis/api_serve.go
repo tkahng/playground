@@ -21,7 +21,7 @@ import (
 	"github.com/tkahng/playground/ui"
 )
 
-func NewServer(opt *conf.EnvConfig) (http.Handler, huma.API) {
+func NewServer(opt *conf.EnvConfig) (*chi.Mux, huma.API) {
 	var api huma.API
 	config := huma.DefaultConfig("My API", "1.0.0")
 	config.Servers = []*huma.Server{{URL: "http://localhost:8080"}}
