@@ -31,7 +31,7 @@ func TestCalculateMinimumLength(t *testing.T) {
 			want: 4,
 		},
 		{
-			name: "test estimate 1mil length",
+			name: "test estimate 900mil length",
 			args: args{
 				n:            916_132_832,
 				alphabetSize: 62,
