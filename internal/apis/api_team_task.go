@@ -199,9 +199,13 @@ func (api *Api) TaskUpdate(ctx context.Context, input *UpdateTaskInput) (*struct
 	newDueDate := previousDueDate == nil && task.EndAt != nil
 	differentDueDate := previousDueDate != nil && task.EndAt != nil && *previousDueDate != *task.EndAt
 	if newDueDate || differentDueDate {
+		dueDate := *task.EndAt
+		if dueDate.Before(time.Now()) {
+			dueDate = time.Now().Add(10 * time.Second)
+		}
 		err = api.App().JobService().EnqueTaskDueJob(ctx, &workers.TaskDueTodayJobArgs{
 			TaskID:  task.ID,
-			DueDate: *task.EndAt,
+			DueDate: dueDate,
 		})
 		if err != nil {
 			return nil, err
