@@ -20,11 +20,13 @@ func NewMigrateCmd() *cobra.Command {
 
 }
 
+// nolint:exhaustruct
 var migrateCmd = &cobra.Command{
 	Use:   "migrate",
 	Short: "migrate",
 }
 
+// nolint:exhaustruct
 var upCmd = &cobra.Command{
 	Use:   "up",
 	Short: "migrate up",
@@ -34,6 +36,7 @@ var upCmd = &cobra.Command{
 	},
 }
 
+// nolint:exhaustruct
 var testUpCmd = &cobra.Command{
 	Use:   "testup",
 	Short: "migrate testup",
@@ -67,6 +70,7 @@ func migrate(uri string) error {
 	return nil
 }
 
+// nolint:exhaustruct
 var resetCmd = &cobra.Command{
 	Use:   "reset",
 	Short: "migrate reset",

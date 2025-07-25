@@ -227,4 +227,5 @@ func (j *JobStoreDecorator) UpdateJob(ctx context.Context, job *models.JobRow) (
 	return j.Delegate.UpdateJob(ctx, job)
 }
 
+// nolint:exhaustruct
 var _ JobStore = &JobStoreDecorator{}

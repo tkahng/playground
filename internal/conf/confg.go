@@ -76,6 +76,7 @@ type Options struct {
 }
 
 func ZeroEnvConfig() EnvConfig {
+	// nolint:exhaustruct
 	return EnvConfig{
 		AuthOptions: NewTokenOptions(),
 	}

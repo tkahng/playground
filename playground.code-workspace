@@ -47,7 +47,7 @@
     "go.lintOnSave": "workspace",
     "go.lintFlags": [
       "--path-mode=abs",
-      "--fast-only",
+      // "--fast-only",
       "--fix",
       "-c",
       ".golangci-lint.yml"
