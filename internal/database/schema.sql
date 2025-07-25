@@ -358,7 +358,7 @@ CREATE TABLE public.roles (
 --
 
 CREATE TABLE public.schema_migrations (
-    version character varying(128) NOT NULL
+    version character varying NOT NULL
 );
 
 

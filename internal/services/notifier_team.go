@@ -22,6 +22,7 @@ type Notifier interface {
 	NotifyAssignedToTask(ctx context.Context, taskID uuid.UUID, assignedByMemberID uuid.UUID, assigneeMemberID uuid.UUID) error
 
 	NotifyTaskDueToday(ctx context.Context, taskID uuid.UUID) error
+	NotifyTaskCompleted(ctx context.Context, taskID uuid.UUID, completedByMemberID uuid.UUID, completedAt time.Time) error
 }
 
 var _ Notifier = (*DbNotifier)(nil)
@@ -365,3 +366,100 @@ func (d *DbNotifier) NotifyTaskDueToday(ctx context.Context, taskID uuid.UUID) e
 	}
 	return nil
 }
+func (d *DbNotifier) NotifyTaskCompleted(ctx context.Context, taskID uuid.UUID, completedByMemberID uuid.UUID, completedAt time.Time) error {
+	// 1. find task
+	task, err := d.adapter.Task().FindTaskByID(ctx, taskID)
+	if err != nil {
+		return err
+	}
+	if task == nil {
+		return errors.New("task not found")
+	}
+	if task.Status != models.TaskStatusDone {
+		return errors.New("task is not completed")
+	}
+	// 2. check task end at is now
+
+	fmt.Println("task due today")
+	payload := notification.TaskCompletedNotificationData{
+		TaskID:              taskID,
+		CompletedByMemberID: completedByMemberID,
+		CompletedAt:         completedAt,
+	}
+	// 3. send notification to all team members
+	notifcationPaylod := notification.NewNotificationPayload(
+		"Task completed.",
+		task.Name+" was completed today.",
+		payload,
+	)
+	notificationPayloadBytes, err := json.Marshal(notifcationPaylod)
+	if err != nil {
+		return err
+	}
+	var notifyMemberIds []uuid.UUID
+	if task.AssigneeID != nil {
+		notifyMemberIds = append(notifyMemberIds, *task.AssigneeID)
+	}
+	if task.ReporterID != nil {
+		notifyMemberIds = append(notifyMemberIds, *task.ReporterID)
+	}
+	if task.CreatedByMemberID != nil {
+		notifyMemberIds = append(notifyMemberIds, *task.CreatedByMemberID)
+	}
+	if len(notifyMemberIds) == 0 {
+		fmt.Println("no members to notify")
+		return nil
+	}
+	notifyMembers, err := d.adapter.TeamMember().FindTeamMembers(ctx, &stores.TeamMemberFilter{
+		Ids: notifyMemberIds,
+	})
+	if err != nil {
+		return err
+	}
+	var notifications []models.Notification
+	for _, member := range notifyMembers {
+		notification := models.Notification{
+			TeamMemberID: &member.ID,
+			Channel:      "team_member_id:" + member.ID.String(),
+			Type:         payload.Kind(),
+			Payload:      notificationPayloadBytes,
+			Metadata:     map[string]any{},
+		}
+		notifications = append(notifications, notification)
+	}
+
+	_, err = d.adapter.Notification().InsertManyNotifications(ctx, notifications)
+	if err != nil {
+		return err
+	}
+	for _, notification := range notifications {
+		teamMemberID := *notification.TeamMemberID
+		err = d.sseManager.Send("team_member_id:"+teamMemberID.String(), notifcationPaylod)
+		if err != nil {
+			slog.ErrorContext(
+				ctx,
+				"error sending notification",
+				slog.Any("error", err),
+			)
+		}
+	}
+
+	return nil
+}
+
+type TaskCompletedWorker struct {
+	notifier Notifier
+}
+
+// Work implements workers.TaskDueTodayWorker.
+func (a *TaskCompletedWorker) Work(ctx context.Context, job *jobs.Job[workers.TaskCompletedJobArgs]) error {
+	return a.notifier.NotifyTaskCompleted(ctx, job.Args.TaskID, job.Args.CompletedByMemberID, job.Args.CompletedAt)
+}
+
+func NewTaskCompletedWorker(notifier Notifier) *TaskCompletedWorker {
+	return &TaskCompletedWorker{
+		notifier: notifier,
+	}
+}
+
+var _ jobs.Worker[workers.TaskCompletedJobArgs] = (*TaskCompletedWorker)(nil)

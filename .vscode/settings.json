@@ -1,6 +1,117 @@
 {
-  "inlineSQL.enableDBIntegration": false,
-  "inlineSQL.lintSQLFiles": false,
+  "[yaml]": {
+    "editor.defaultFormatter": "redhat.vscode-yaml",
+    "editor.insertSpaces": true,
+    "editor.tabSize": 2,
+    "editor.autoIndent": "keep",
+    "diffEditor.ignoreTrimWhitespace": false,
+    "editor.defaultColorDecorators": "never",
+    "editor.quickSuggestions": {
+      "strings": true,
+      "other": true,
+      "comments": false
+    }
+  },
+  "git.ignoredRepositories": ["/opt/homebrew/.git"],
+  "editor.formatOnSave": true,
+  "editor.quickSuggestions": {
+    "strings": true
+  },
+  "files.exclude": {
+    "/opt/homebrew/": true
+  },
+  "explorer.excludeGitIgnore": false,
+  "[go]": {
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": "always"
+    },
+    "editor.defaultFormatter": "golang.go",
+    "editor.codeLens": true,
+    "editor.codeActionWidget.includeNearbyQuickFixes": true
+  },
+
+  "go.lintTool": "golangci-lint",
+  "go.lintOnSave": "workspace",
+  "go.lintFlags": [
+    "--path-mode=abs",
+    "--fast-only",
+    "--fix",
+    "-c",
+    ".golangci-lint.yml"
+  ],
+  "go.formatTool": "custom",
+  "go.alternateTools": {
+    "customFormatter": "golangci-lint"
+  },
+  "go.formatFlags": ["fmt", "--stdin"],
+  "editor.linkedEditing": true,
+  "css.customData": [".vscode/tailwindcss.json"],
+  "[sql]": {
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "mtxr.sqltools"
+  },
+  "editor.formatOnSaveMode": "file",
+  "[json]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  "[html]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  "editor.formatOnPaste": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll": "always",
+    "source.organizeImports": "always"
+  },
+  "editor.suggest.showReferences": true,
+  "editor.gotoLocation.multipleTypeDefinitions": "gotoAndPeek",
+  "go.enableCodeLens": {
+    "runtest": true
+  },
+  "go.inlayHints.assignVariableTypes": false,
+  "go.inlayHints.parameterNames": false,
+  "gitlens.codeLens.enabled": false,
+  "typescript.referencesCodeLens.enabled": true,
+  "typescript.implementationsCodeLens.enabled": true,
+  "typescript.implementationsCodeLens.showOnInterfaceMethods": true,
+  "typescript.referencesCodeLens.showOnAllFunctions": true,
+  "files.associations": {
+    "*.css": "tailwindcss",
+    "*.scss": "tailwindcss"
+  },
+  "emmet.includeLanguages": {
+    "templ": "html"
+  },
+  "gopls": {
+    "ui.semanticTokens": false
+    // "formatting.gofumpt": true
+  },
+  "editor.codeLens": true,
+  "[typescript]": {
+    "editor.codeActionsOnSave": {
+      "source.fixAll": "always",
+      "source.organizeImports": "always"
+    },
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.suggest.showReferences": true,
+    "editor.codeLens": true,
+    "editor.gotoLocation.multipleTypeDefinitions": "gotoAndPeek"
+  },
+  "[typescriptreact]": {
+    "editor.codeActionsOnSave": {
+      "source.fixAll": "always",
+      "source.organizeImports": "always"
+    },
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.suggest.showReferences": true,
+    "editor.codeLens": true,
+    "editor.gotoLocation.multipleTypeDefinitions": "gotoAndPeek"
+  },
+  "sqltools.queryParams.enableReplace": false, // enables string replacement.
+  // the following regex, will match named params in your variables files
+  "sqltools.queryParams.regex": "\\$[\\d]+|([@:$][\\w]+)",
   "sqltools.connections": [
     {
       "previewLimit": 50,
@@ -10,42 +121,38 @@
       "name": "authgo",
       "database": "authgo",
       "username": "postgres"
+    },
+    {
+      "previewLimit": 50,
+      "server": "localhost",
+      "port": 5432,
+      "driver": "PostgreSQL",
+      "name": "authgo_test",
+      "database": "authgo_test",
+      "username": "postgres"
     }
   ],
-  // "inlineSQL.dbHost": "host.docker.internal",
-  "go.inlayHints.assignVariableTypes": false,
-  "go.inlayHints.parameterNames": false,
-  "goStructTagAutogen.generation": {
-    "template": "json:\"{{snake}}\" db:\"{{snake}}\""
+  "github.copilot.enable": {
+    "*": true,
+    "plaintext": false,
+    "markdown": false,
+    "scminput": false,
+    "go": true
   },
-  "goStructTagAutogen.valueSuggestion": {
-    "json": [
-      "omitempty"
-    ],
-    "required": [
-      "true",
-      "false"
-    ],
-    "nullable": [
-      "true",
-      "false"
-    ]
+  "github.copilot.nextEditSuggestions.enabled": true,
+  "go.coverMode": "atomic",
+  "go.coverOnSingleTestFile": true,
+  "go.coverOnSingleTest": true,
+  "go.coverShowCounts": true,
+  "sqltools.results.reuseTabs": "connection",
+  "workbench.editor.enablePreviewFromCodeNavigation": true,
+  "workbench.editor.enablePreviewFromQuickOpen": true,
+  "workbench.editor.highlightModifiedTabs": true,
+  "yaml.schemas": {
+    "https://golangci-lint.run/jsonschema/golangci.jsonschema.json": "file:///Users/tkahng/GitHub/trk-go/authgo/.golangci-lint.yml"
   },
-  "goStructTagAutogen.tagSuggestion": {
-    "json": {
-      "cases": [
-        "snake"
-      ],
-      "options": [
-        "omitempty",
-        "-"
-      ]
-    },
-    "db": {
-      "cases": [
-        "snake"
-      ],
-      "options": []
-    }
-  },
+  "explorer.fileNesting.enabled": true,
+  "gitlens.views.repositories.pullRequests.enabled": false,
+  "gitlens.views.repositories.autoRefresh": true,
+  "gitlens.views.remotes.pullRequests.enabled": false
 }

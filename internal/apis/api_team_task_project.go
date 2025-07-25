@@ -323,8 +323,8 @@ func (api *Api) TeamTaskProjectGet(ctx context.Context, input *struct {
 }
 
 type ApiCreateTaskWithProjectIdInput struct {
-	TaskProjectID string `path:"task-project-id" json:"task_project_id" required:"true" format:"uuid"`
-	Body          services.TaskFields
+	TaskProjectID string              `path:"task-project-id" json:"task_project_id" required:"true" format:"uuid"`
+	Body          services.TaskFields `json:"body" required:"true"`
 }
 
 func (api *Api) TeamTaskProjectTasksCreate(ctx context.Context, input *ApiCreateTaskWithProjectIdInput) (*TaskResponse, error) {

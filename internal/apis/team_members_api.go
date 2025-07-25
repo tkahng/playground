@@ -67,6 +67,7 @@ func (api *Api) BindTeamMembersSseEvents(humapi huma.API) {
 			Errors: []int{http.StatusInternalServerError, http.StatusBadRequest},
 		},
 		map[string]any{
+			"task_completed":   &notification.NotificationPayload[notification.TaskCompletedNotificationData]{},
 			"task_due_today":   &notification.NotificationPayload[notification.TaskDueTodayNotificationData]{},
 			"new_team_member":  &notification.NotificationPayload[notification.NewTeamMemberNotificationData]{},
 			"assigned_to_task": &notification.NotificationPayload[notification.AssignedToTaskNotificationData]{},

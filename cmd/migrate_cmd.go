@@ -50,6 +50,7 @@ func migrate(uri string) error {
 	db := dbmate.New(u)
 	db.FS = database.Migrations
 	db.MigrationsDir = []string{"./migrations"}
+	db.SchemaFile = "./internal/database/schema.sql"
 	fmt.Println("Migrations:")
 	migrations, err := db.FindMigrations()
 	if err != nil {
@@ -78,6 +79,7 @@ var resetCmd = &cobra.Command{
 		db := dbmate.New(u)
 		db.FS = database.Migrations
 		db.MigrationsDir = []string{"./migrations"}
+		db.SchemaFile = "./internal/database/schema.sql"
 		fmt.Println("Migrations:")
 		migrations, err := db.FindMigrations()
 		if err != nil {

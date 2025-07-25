@@ -2042,6 +2042,10 @@ export interface components {
             data: components["schemas"]["NewTeamMemberNotificationData"];
             notification: components["schemas"]["NotificationContent"];
         };
+        NotificationPayloadTaskCompletedNotificationData: {
+            data: components["schemas"]["TaskCompletedNotificationData"];
+            notification: components["schemas"]["NotificationContent"];
+        };
         NotificationPayloadTaskDueTodayNotificationData: {
             data: components["schemas"]["TaskDueTodayNotificationData"];
             notification: components["schemas"]["NotificationContent"];
@@ -2361,6 +2365,12 @@ export interface components {
             team_id: string;
             /** Format: date-time */
             updated_at: string;
+        };
+        TaskCompletedNotificationData: {
+            /** Format: date-time */
+            completed_at: string;
+            completed_by_member_id: string;
+            task_id: string;
         };
         TaskDueTodayNotificationData: {
             /** Format: date-time */
@@ -6912,6 +6922,17 @@ export interface operations {
                          * @constant
                          */
                         event: "ping";
+                        /** @description The event ID. */
+                        id?: number;
+                        /** @description The retry time in milliseconds. */
+                        retry?: number;
+                    } | {
+                        data: components["schemas"]["NotificationPayloadTaskCompletedNotificationData"];
+                        /**
+                         * @description The event name.
+                         * @constant
+                         */
+                        event: "task_completed";
                         /** @description The event ID. */
                         id?: number;
                         /** @description The retry time in milliseconds. */

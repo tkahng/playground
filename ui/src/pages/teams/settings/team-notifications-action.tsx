@@ -35,7 +35,7 @@ export function TeamNotificationActionDropdown({
     onSuccess: async () => {
       setDropdownOpen(false);
       await queryClient.invalidateQueries({
-        queryKey: ["auth/me"],
+        queryKey: ["team-member-notifications", teamMember?.id],
       });
     },
     onError: () => {

@@ -187,6 +187,16 @@ func (api *Api) TaskUpdate(ctx context.Context, input *UpdateTaskInput) (*struct
 			return nil, err
 		}
 	}
+	if task.Status == models.TaskStatusDone {
+		err = api.App().JobService().EnqueueTaskCompletedJob(ctx, &workers.TaskCompletedJobArgs{
+			TaskID:              id,
+			CompletedByMemberID: teamInfo.Member.ID,
+			CompletedAt:         time.Now(),
+		})
+		if err != nil {
+			return nil, err
+		}
+	}
 	task.AssigneeID = input.Body.AssigneeID
 	task.ReporterID = input.Body.ReporterID
 	task.ParentID = input.Body.ParentID
@@ -199,6 +209,7 @@ func (api *Api) TaskUpdate(ctx context.Context, input *UpdateTaskInput) (*struct
 }
 
 func (api *Api) UpdateTaskPositionStatus(ctx context.Context, input *TaskPositionStatusInput) (*struct{}, error) {
+
 	if input == nil {
 		return nil, huma.Error400BadRequest("Invalid input")
 	}
@@ -207,9 +218,23 @@ func (api *Api) UpdateTaskPositionStatus(ctx context.Context, input *TaskPositio
 	if err != nil {
 		return nil, huma.Error400BadRequest("Invalid task ID")
 	}
+	teamInfo := contextstore.GetContextTeamInfo(ctx)
+	if teamInfo == nil {
+		return nil, huma.Error401Unauthorized("team info not found")
+	}
 	err = api.App().Task().UpdateTaskRankStatus(ctx, id, input.Body.Position, models.TaskStatus(input.Body.Status))
 	if err != nil {
 		return nil, err
+	}
+	if models.TaskStatus(input.Body.Status) == models.TaskStatusDone {
+		err = api.App().JobService().EnqueueTaskCompletedJob(ctx, &workers.TaskCompletedJobArgs{
+			TaskID:              id,
+			CompletedByMemberID: teamInfo.Member.ID,
+			CompletedAt:         time.Now(),
+		})
+		if err != nil {
+			return nil, err
+		}
 	}
 	return nil, nil
 }

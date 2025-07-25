@@ -19,7 +19,7 @@ interface Props {
   subscription: SubscriptionWithPriceAndProduct | null;
 }
 
-export default function CustomerPortalForm({ subscription }: Props) {
+export default function TeamCustomerForm({ subscription }: Props) {
   //   const router = useRouter();
   const { user } = useAuthProvider();
   const { team, teamMember } = useTeam();

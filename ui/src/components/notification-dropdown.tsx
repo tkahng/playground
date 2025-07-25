@@ -57,7 +57,7 @@ export function NotificationDropdown() {
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuItem key={"go-to-notifications"}>
-            <Link to={`/team/${team?.slug}/notifications`} className="w-full">
+            <Link to={`/teams/${team?.slug}/notifications`} className="w-full">
               View all
             </Link>
           </DropdownMenuItem>

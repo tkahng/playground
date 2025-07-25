@@ -69,6 +69,8 @@ export type TeamMemberState = {
   members: TeamMember[];
 };
 
+export type TeamMemberTaskCompletedNotificationData =
+  components["schemas"]["NotificationPayloadTaskCompletedNotificationData"];
 export type TeamMemberNewMemberNotificationData =
   components["schemas"]["NotificationPayloadNewTeamMemberNotificationData"];
 export type TeamMemberAsignedToTaskNotificationData =
@@ -77,6 +79,7 @@ export type TeamMemberAsignedToTaskNotificationData =
 export type TeamMemberTaskDueTodayNotificationData =
   components["schemas"]["NotificationPayloadTaskDueTodayNotificationData"];
 export type TeamMemberNotification =
+  | TeamMemberTaskCompletedNotificationData
   | TeamMemberNewMemberNotificationData
   | TeamMemberTaskDueTodayNotificationData
   | TeamMemberAsignedToTaskNotificationData;

@@ -96,13 +96,24 @@ func (app *BaseApp) Config() *conf.EnvConfig {
 // check db -------------------------------------------------------------------------------------
 
 func (app *BaseApp) Db() database.Dbx {
+	if app.db == nil {
+		if app.cfg != nil {
+			app.SetDb()
+		} else {
+			panic("db not initialized")
+		}
+	}
 	return app.db
 }
 
 // Adapter implements App.
 func (app *BaseApp) Adapter() stores.StorageAdapterInterface {
-	if app.adapter == nil {
-		panic("adapter not initialized")
+	if app.db == nil {
+		if app.cfg != nil {
+			app.SetDb()
+		} else {
+			panic("adapter not initialized")
+		}
 	}
 	return app.adapter
 }
@@ -149,80 +160,61 @@ func (app *BaseApp) TeamInvitation() services.TeamInvitationService {
 }
 
 func (app *BaseApp) Task() services.TaskService {
+	if app.task == nil {
+		panic("task not initialized")
+	}
 	return app.task
 }
 
 func (app *BaseApp) Rbac() services.RBACService {
+	if app.rbac == nil {
+		panic("rbac not initialized")
+	}
 	return app.rbac
 }
 
 func (app *BaseApp) Team() services.TeamService {
+	if app.team == nil {
+		panic("team not initialized")
+	}
 	return app.team
 }
 
 // Checker implements App.
 func (a *BaseApp) Checker() services.ConstraintChecker {
+	if a.checker == nil {
+		panic("checker not initialized")
+	}
 	return a.checker
 }
 
 // Auth implements App.
 func (a *BaseApp) Auth() services.AuthService {
+	if a.auth == nil {
+		panic("auth not initialized")
+	}
 	return a.auth
 }
 
 func (app *BaseApp) Fs() filesystem.FileSystem {
+	if app.fs == nil {
+		panic("fs not initialized")
+	}
 	return app.fs
 }
 
 // Payment implements App.
 func (a *BaseApp) Payment() services.PaymentService {
+	if a.payment == nil {
+		panic("payment not initialized")
+	}
 	return a.payment
 }
-
-// Settings implements App.
-
-// Mailer implements App.
-// RegisterBaseHooks implements App.
 
 func BootstrappedApp(cfg conf.EnvConfig) *BaseApp {
 	app := new(BaseApp)
 	if err := app.Bootstrap(); err != nil {
 		panic(fmt.Errorf("failed to bootstrap app: %w", err))
-	}
-	return app
-}
-
-func newApp(
-	fs filesystem.FileSystem,
-	pool database.Dbx,
-	logger *slog.Logger,
-	cfg conf.EnvConfig,
-	authService services.AuthService,
-	paymentService services.PaymentService,
-	checker services.ConstraintChecker,
-	rbacService services.RBACService,
-	taskService services.TaskService,
-	teamService services.TeamService,
-	adapter stores.StorageAdapterInterface,
-	invitation services.TeamInvitationService,
-	jobManager jobs.JobManager,
-	jobService services.JobService,
-) *BaseApp {
-	app := &BaseApp{
-		fs:             fs,
-		db:             pool,
-		logger:         logger,
-		cfg:            &cfg,
-		auth:           authService,
-		payment:        paymentService,
-		checker:        checker,
-		rbac:           rbacService,
-		task:           taskService,
-		team:           teamService,
-		adapter:        adapter,
-		teamInvitation: invitation,
-		jobManager:     jobManager,
-		jobService:     jobService,
 	}
 	return app
 }

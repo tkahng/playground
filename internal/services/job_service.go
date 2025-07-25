@@ -12,6 +12,8 @@ import (
 
 type JobService interface {
 	WithTx(db database.Dbx) JobService
+
+	EnqueueTaskCompletedJob(ctx context.Context, job *workers.TaskCompletedJobArgs) error
 	EnqueTaskDueJob(ctx context.Context, job *workers.TaskDueTodayJobArgs) error
 	EnqueAssignedToTaskJob(ctx context.Context, job *workers.AssignedToTasJobArgs) error
 	EnqueueTeamMemberAddedJob(ctx context.Context, job *workers.NewMemberNotificationJobArgs) error
@@ -23,6 +25,15 @@ type JobService interface {
 
 type DbJobService struct {
 	manager jobs.JobManager
+}
+
+// EnqueueTaskCompletedJob implements JobService.
+func (d *DbJobService) EnqueueTaskCompletedJob(ctx context.Context, job *workers.TaskCompletedJobArgs) error {
+	return d.manager.Enqueue(ctx, &jobs.EnqueueParams{
+		Args:        job,
+		RunAfter:    time.Now(),
+		MaxAttempts: 3,
+	})
 }
 
 // EnqueTaskDueJob implements JobService.
@@ -86,6 +97,7 @@ func (d *DbJobService) RegisterWorkers(mail OtpMailService, paymentService Payme
 	jobs.RegisterWorker(d.manager, workers.NewNewMemberNotificationWorker(notification))
 	jobs.RegisterWorker(d.manager, NewAssignedToTaskWorker(notification))
 	jobs.RegisterWorker(d.manager, NewTaskDueTodayWorker(notification))
+	jobs.RegisterWorker(d.manager, NewTaskCompletedWorker(notification))
 }
 
 // EnqueueOtpMailJob implements JobService.
@@ -113,6 +125,18 @@ type JobServiceDecorator struct {
 	EnqueueRefreshSubscriptionQuantityJobFunc func(ctx context.Context, job *workers.RefreshSubscriptionQuantityJobArgs) error
 	EnqueAssignedToTaskJobFunc                func(ctx context.Context, job *workers.AssignedToTasJobArgs) error
 	EnqueTaskDueJobFunc                       func(ctx context.Context, job *workers.TaskDueTodayJobArgs) error
+	EnqueueTaskCompletedJobFunc               func(ctx context.Context, job *workers.TaskCompletedJobArgs) error
+}
+
+// EnqueueTaskCompletedJob implements JobService.
+func (j *JobServiceDecorator) EnqueueTaskCompletedJob(ctx context.Context, job *workers.TaskCompletedJobArgs) error {
+	if j.EnqueueTaskCompletedJobFunc != nil {
+		return j.EnqueueTaskCompletedJobFunc(ctx, job)
+	}
+	if j.Delegate == nil {
+		return errors.New("delegate for EnqueueTaskCompletedJob in JobService is nil")
+	}
+	return j.Delegate.EnqueueTaskCompletedJob(ctx, job)
 }
 
 // EnqueTaskDueJob implements JobService.
