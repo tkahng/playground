@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-func TestEstimateLength(t *testing.T) {
+func TestCalculateMinimumLength(t *testing.T) {
 	type args struct {
 		n            int64
 		alphabetSize int64
