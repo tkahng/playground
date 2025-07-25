@@ -6,6 +6,7 @@ import (
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/danielgtaylor/huma/v2/adapters/humachi"
+	"github.com/tkahng/playground/internal/tools/http/queryparam"
 )
 
 func HumaChiMiddleware(mw func(http.Handler) http.Handler) func(ctx huma.Context, next func(huma.Context)) {
@@ -45,4 +46,16 @@ func HumaTokenFromQuery(ctx huma.Context) string {
 var HumaTokenFuncs = []func(huma.Context) string{
 	HumaTokenFromHeader,
 	HumaTokenFromQuery,
+}
+
+func HttpTokenFromHeader(r *http.Request, w http.ResponseWriter) string {
+	return r.Header.Get("Authorization")
+}
+func HttpTokenFromQuery(r *http.Request, w http.ResponseWriter) string {
+	return queryparam.Get(r.URL.RawQuery, "access_token")
+}
+
+var HttpTokenFuncs = []func(r *http.Request, w http.ResponseWriter) string{
+	HttpTokenFromHeader,
+	HttpTokenFromQuery,
 }
