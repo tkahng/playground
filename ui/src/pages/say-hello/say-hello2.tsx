@@ -91,21 +91,21 @@ export default function SayHelloPage() {
     return <div>Loading...</div>;
   }
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+    <div className="min-h-screen bg-secondary p-4">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8 pt-8">
-          <h1 className="text-4xl md:text-6xl font-bold text-gray-800 mb-4">
+          <h1 className="text-4xl md:text-6xl font-bold text-primary mb-4">
             Say Hello
           </h1>
-          <p className="text-lg text-gray-600">
+          <p className="text-lg text-primary">
             Join people around the world in spreading positivity
           </p>
         </div>
 
         {/* Global Counter */}
-        <Card className="mb-8 bg-white/80 backdrop-blur-sm border-0 shadow-lg">
-          <CardContent className="pt-6">
+        <Card className="mb-8 backdrop-blur-sm border-0 shadow-lg">
+          <CardContent className="space-x-4">
             <div className="text-center">
               <div className="flex items-center justify-center gap-2 mb-2">
                 <Globe className="h-6 w-6 text-blue-600" />
@@ -118,59 +118,21 @@ export default function SayHelloPage() {
               </div>
               <p className="text-gray-500">hellos shared worldwide</p>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Top 5 Countries */}
-        <Card className="mb-8 bg-white/80 backdrop-blur-sm border-0 shadow-lg">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-center justify-center">
-              <span className="text-xl">🏆</span>
-              Top 5 Countries
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {stats.top_five_countries?.map(
-                ({ country, total_reactions: count }, index) => (
-                  <div
-                    key={country}
-                    className="flex items-center justify-between p-3 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-r from-yellow-400 to-orange-500 text-white font-bold text-sm">
-                        {index + 1}
-                      </div>
-                      <span className="font-medium text-gray-800">
-                        {country}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg font-bold text-blue-600">
-                        {count}
-                      </span>
-                      <span className="text-sm text-gray-500">hellos</span>
-                    </div>
-                  </div>
-                )
-              )}
+            {/* Say Hello Button */}
+            <div className="flex justify-center">
+              <Button
+                onClick={handleSayHello}
+                size="lg"
+                className="text-2xl px-12 py-8 h-auto bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 transform hover:scale-105 transition-all duration-200 shadow-xl"
+              >
+                👋 Say Hello
+              </Button>
             </div>
           </CardContent>
         </Card>
 
-        {/* Say Hello Button */}
-        <div className="flex justify-center mb-12">
-          <Button
-            onClick={handleSayHello}
-            size="lg"
-            className="text-2xl px-12 py-8 h-auto bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 transform hover:scale-105 transition-all duration-200 shadow-xl"
-          >
-            👋 Say Hello
-          </Button>
-        </div>
-
         {/* Latest Hellos */}
-        <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg">
+        <Card className="mb-8 bg-white/80 backdrop-blur-sm border-0 shadow-lg">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Clock className="h-5 w-5" />
@@ -248,6 +210,42 @@ export default function SayHelloPage() {
                 No hellos yet. Be the first to say hello!
               </div>
             )}
+          </CardContent>
+        </Card>
+        {/* Top 5 Countries */}
+        <Card className="mb-8 bg-white/80 backdrop-blur-sm border-0 shadow-lg">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-center justify-center">
+              <span className="text-xl">🏆</span>
+              Top 5 Countries
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {stats.top_five_countries?.map(
+                ({ country, total_reactions: count }, index) => (
+                  <div
+                    key={country}
+                    className="flex items-center justify-between p-3 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-r from-yellow-400 to-orange-500 text-white font-bold text-sm">
+                        {index + 1}
+                      </div>
+                      <span className="font-medium text-gray-800">
+                        {country}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg font-bold text-blue-600">
+                        {count}
+                      </span>
+                      <span className="text-sm text-gray-500">hellos</span>
+                    </div>
+                  </div>
+                )
+              )}
+            </div>
           </CardContent>
         </Card>
 
