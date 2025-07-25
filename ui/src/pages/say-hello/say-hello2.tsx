@@ -11,6 +11,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { Clock, Globe } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useReducer } from "react";
+import TimeAgo from "react-timeago";
 import { toast } from "sonner";
 
 const maxItems = 3;
@@ -70,22 +71,22 @@ export default function SayHelloPage() {
     mutation.mutate();
   };
 
-  const formatTimestamp = (timestamp: Date) => {
-    const now = new Date();
-    const diffInSeconds = Math.floor(
-      (now.getTime() - timestamp.getTime()) / 1000
-    );
+  // const formatTimestamp = (timestamp: Date) => {
+  //   const now = new Date();
+  //   const diffInSeconds = Math.floor(
+  //     (now.getTime() - timestamp.getTime()) / 1000
+  //   );
 
-    if (diffInSeconds < 60) {
-      return `${diffInSeconds}s ago`;
-    } else if (diffInSeconds < 3600) {
-      return `${Math.floor(diffInSeconds / 60)}m ago`;
-    } else if (diffInSeconds < 86400) {
-      return `${Math.floor(diffInSeconds / 3600)}h ago`;
-    } else {
-      return `${Math.floor(diffInSeconds / 86400)}d ago`;
-    }
-  };
+  //   if (diffInSeconds < 60) {
+  //     return `${diffInSeconds}s ago`;
+  //   } else if (diffInSeconds < 3600) {
+  //     return `${Math.floor(diffInSeconds / 60)}m ago`;
+  //   } else if (diffInSeconds < 86400) {
+  //     return `${Math.floor(diffInSeconds / 3600)}h ago`;
+  //   } else {
+  //     return `${Math.floor(diffInSeconds / 86400)}d ago`;
+  //   }
+  // };
 
   if (isStatsLoading) {
     return <div>Loading...</div>;
@@ -108,22 +109,22 @@ export default function SayHelloPage() {
           <CardContent className="space-x-4">
             <div className="text-center">
               <div className="flex items-center justify-center gap-2 mb-2">
-                <Globe className="h-6 w-6 text-blue-600" />
+                <Globe className="h-6 w-6" />
                 <span className="text-lg font-medium text-primary">
                   Global Hellos
                 </span>
               </div>
-              <div className="text-5xl md:text-7xl font-bold text-blue-600 mb-2">
+              <div className="text-5xl md:text-7xl font-bold text-accent-foreground mb-2">
                 {stats.total_reactions.toLocaleString()}
               </div>
-              <p className="text-gray-500">hellos shared worldwide</p>
+              <p className="text-muted-foreground">hellos shared worldwide</p>
             </div>
             {/* Say Hello Button */}
             <div className="flex justify-center">
               <Button
                 onClick={handleSayHello}
                 size="lg"
-                className="text-2xl px-12 py-8 h-auto bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 transform hover:scale-105 transition-all duration-200 shadow-xl"
+                className="text-2xl px-12 py-8 h-auto bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 transform hover:scale-105 transition-all duration-200 shadow-xl"
                 asChild
               >
                 <motion.div
@@ -132,7 +133,8 @@ export default function SayHelloPage() {
                   whileTap={{ backgroundColor: "rgba(255, 255, 255, 1)" }}
                   whileInView={{ opacity: 1 }}
                 >
-                  👋 Say Hello
+                  {/* 👋 Say Hello */}
+                  Say Hello
                 </motion.div>
               </Button>
             </div>
@@ -140,7 +142,7 @@ export default function SayHelloPage() {
         </Card>
 
         {/* Latest Hellos */}
-        <Card className="mb-8 bg-white/80 backdrop-blur-sm border-0 shadow-lg">
+        <Card className="mb-8  backdrop-blur-sm border-0 shadow-lg">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Clock className="h-5 w-5" />
@@ -178,16 +180,16 @@ export default function SayHelloPage() {
                         >
                           <div
                             key={hello.id}
-                            className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                            className="flex items-center justify-between p-3 bg-secondary rounded-lg hover:bg-secondary transition-colors"
                           >
                             <div className="flex items-center gap-3">
                               <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                              <span className="font-medium text-gray-800">
+                              <span className="font-medium text-secondary-foreground">
                                 Someone from {countryName}
                               </span>
                             </div>
-                            <span className="text-sm text-gray-500">
-                              {formatTimestamp(new Date(hello.created_at))}
+                            <span className="text-sm text-muted-foreground">
+                              <TimeAgo date={hello.created_at} />
                             </span>
                           </div>
                         </motion.div>
@@ -196,34 +198,18 @@ export default function SayHelloPage() {
                   </AnimatePresence>
                 </motion.div>
               )}
-              {/* {stats.last_reactions.map((hello) => (
-                <div
-                  key={hello.id}
-                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                    <span className="font-medium text-gray-800">
-                      Someone from {hello.country}
-                    </span>
-                  </div>
-                  <span className="text-sm text-gray-500">
-                    {formatTimestamp(new Date(hello.created_at))}
-                  </span>
-                </div>
-              ))} */}
             </div>
             {stats.last_reactions.length === 0 && (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-muted-foreground">
                 No hellos yet. Be the first to say hello!
               </div>
             )}
           </CardContent>
         </Card>
         {/* Top 5 Countries */}
-        <Card className="mb-8 bg-white/80 backdrop-blur-sm border-0 shadow-lg">
+        <Card className="mb-8  backdrop-blur-sm border-0 shadow-lg">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-center justify-center">
+            <CardTitle className="flex items-center gap-2">
               <span className="text-xl">🏆</span>
               Top 5 Countries
             </CardTitle>
@@ -234,21 +220,21 @@ export default function SayHelloPage() {
                 ({ country, total_reactions: count }, index) => (
                   <div
                     key={country}
-                    className="flex items-center justify-between p-3 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg"
+                    className="flex items-center justify-between p-3 rounded-lg"
                   >
                     <div className="flex items-center gap-3">
                       <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-r from-yellow-400 to-orange-500 text-white font-bold text-sm">
                         {index + 1}
                       </div>
-                      <span className="font-medium text-gray-800">
+                      <span className="font-medium text-secondary-foreground">
                         {country}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-lg font-bold text-blue-600">
-                        {count}
+                      <span className="text-lg font-bold">{count}</span>
+                      <span className="text-sm text-muted-foreground">
+                        hellos
                       </span>
-                      <span className="text-sm text-gray-500">hellos</span>
                     </div>
                   </div>
                 )
@@ -259,7 +245,7 @@ export default function SayHelloPage() {
 
         {/* Footer */}
         <div className="text-center mt-8 pb-8">
-          <p className="text-gray-500">
+          <p className="text-muted-foreground">
             Spread kindness, one hello at a time 💙
           </p>
         </div>

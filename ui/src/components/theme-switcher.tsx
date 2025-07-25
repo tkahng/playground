@@ -7,8 +7,6 @@ import { Switch } from "@/components/ui/switch";
 export default function ThemeSwitcher() {
   const { setTheme } = useTheme();
   const reducer = (_: boolean, action: boolean) => {
-    console.log(action);
-    console.log(_);
     switch (action) {
       case true:
         setTheme("dark");

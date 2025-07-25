@@ -1,6 +1,5 @@
 import { LinkDto } from "@/components/links";
 import { RouteMap } from "@/components/route-map";
-import { useTheme } from "@/components/theme-provider";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,8 +12,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { Dot } from "lucide-react";
 import { Link, useNavigate } from "react-router";
+import ThemeSwitcher from "./theme-switcher";
 
 type UserNavProps = {
   links: LinkDto[];
@@ -22,7 +21,7 @@ type UserNavProps = {
 
 export function UserNav({ links }: UserNavProps) {
   const { user: auth, logout } = useAuthProvider();
-  const { setTheme, theme } = useTheme();
+  // const { setTheme, theme } = useTheme();
   const user = auth?.user;
   //   const { pathname } = useLocation();
   const isAdmin = auth?.roles?.includes("superuser");
@@ -92,9 +91,10 @@ export function UserNav({ links }: UserNavProps) {
             </DropdownMenuItem>
           </>
         )}
-        <DropdownMenuSeparator />
-        <DropdownMenuGroup>
-          <DropdownMenuItem onClick={() => setTheme("light")}>
+        {/* <DropdownMenuGroup>
+          <DropdownMenuItem> */}
+        {/* </DropdownMenuItem> */}
+        {/* <DropdownMenuItem onClick={() => setTheme("light")}>
             <span>Light</span>
             <Dot className={theme === "light" ? "ml-2" : "hidden"} />
           </DropdownMenuItem>
@@ -105,17 +105,20 @@ export function UserNav({ links }: UserNavProps) {
           <DropdownMenuItem onClick={() => setTheme("system")}>
             <span>System</span>
             <Dot className={theme === "system" ? "ml-2" : "hidden"} />
-          </DropdownMenuItem>
-        </DropdownMenuGroup>
+          </DropdownMenuItem> */}
+        {/* </DropdownMenuGroup> */}
         <DropdownMenuSeparator />
-        <DropdownMenuItem>
-          <Button onClick={handleLogout}>
-            {/* <NavLink onClick={handleLogout} to={RouteMap.HOME}> */}
-            <span>Sign out</span>
-            {/* </NavLink> */}
-          </Button>
-          {/* <DropdownMenuShortcut>⇧⌘Q</DropdownMenuShortcut> */}
-        </DropdownMenuItem>
+        <div className="flex">
+          <DropdownMenuItem>
+            <Button onClick={handleLogout}>
+              {/* <NavLink onClick={handleLogout} to={RouteMap.HOME}> */}
+              <span>Sign out</span>
+              {/* </NavLink> */}
+            </Button>
+            {/* <DropdownMenuShortcut>⇧⌘Q</DropdownMenuShortcut> */}
+          </DropdownMenuItem>
+          <ThemeSwitcher />
+        </div>
       </DropdownMenuContent>
     </DropdownMenu>
   );

@@ -3,7 +3,6 @@ import { LinkDto } from "@/components/links";
 import PlaygroundLogo from "@/components/playground-logo";
 import { cn } from "@/lib/utils";
 import { Link, useLocation } from "react-router";
-import ThemeSwitcher from "./theme-switcher";
 
 export function PlaygroundLandingHeader({
   leftLinks,
@@ -60,7 +59,6 @@ export function PlaygroundLandingHeader({
                 </Link>
               ))
             : null}
-          <ThemeSwitcher />
           <AuthButton />
         </div>
       </nav>

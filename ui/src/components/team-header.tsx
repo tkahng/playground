@@ -6,7 +6,6 @@ import { Link, useLocation } from "react-router";
 import { NotificationDropdown } from "./notification-dropdown";
 import TeamNotification from "./team-notification";
 import TeamSwitcher from "./team-switcher";
-import ThemeSwitcher from "./theme-switcher";
 
 export function TeamHeader({
   leftLinks,
@@ -66,7 +65,6 @@ export function TeamHeader({
               ))
             : null}
           <NotificationDropdown />
-          <ThemeSwitcher />
           <AuthButton />
         </div>
       </nav>
