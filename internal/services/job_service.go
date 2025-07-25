@@ -7,6 +7,7 @@ import (
 
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/jobs"
+	"github.com/tkahng/playground/internal/tools/types"
 	"github.com/tkahng/playground/internal/workers"
 )
 
@@ -31,18 +32,19 @@ type DbJobService struct {
 func (d *DbJobService) EnqueueTaskCompletedJob(ctx context.Context, job *workers.TaskCompletedJobArgs) error {
 	return d.manager.Enqueue(ctx, &jobs.EnqueueParams{
 		Args:        job,
-		RunAfter:    time.Now(),
+		RunAfter:    time.Now().Add(time.Second * 10),
 		MaxAttempts: 3,
+		UniqueKey:   types.Pointer(`task_completed:` + job.TaskID.String()),
 	})
 }
 
 // EnqueTaskDueJob implements JobService.
 func (d *DbJobService) EnqueTaskDueJob(ctx context.Context, job *workers.TaskDueTodayJobArgs) error {
-	uniqueKey := "task_id:" + job.TaskID.String() + ":due_date"
+	uniqueKey := "task_due_today:" + job.TaskID.String()
 	return d.manager.Enqueue(ctx, &jobs.EnqueueParams{
 		Args:        job,
 		UniqueKey:   &uniqueKey,
-		RunAfter:    job.DueDate,
+		RunAfter:    job.DueDate.Add(time.Second * 10),
 		MaxAttempts: 3,
 	})
 }
