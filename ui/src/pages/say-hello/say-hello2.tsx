@@ -98,7 +98,7 @@ export default function SayHelloPage() {
           <h1 className="text-4xl md:text-6xl font-bold text-primary mb-4">
             Say Hello
           </h1>
-          <p className="text-lg text-primary">
+          <p className="text-lg text-muted-foreground">
             Join people around the world in spreading positivity
           </p>
         </div>
@@ -109,7 +109,7 @@ export default function SayHelloPage() {
             <div className="text-center">
               <div className="flex items-center justify-center gap-2 mb-2">
                 <Globe className="h-6 w-6 text-blue-600" />
-                <span className="text-lg font-medium text-gray-700">
+                <span className="text-lg font-medium text-primary">
                   Global Hellos
                 </span>
               </div>
@@ -124,8 +124,16 @@ export default function SayHelloPage() {
                 onClick={handleSayHello}
                 size="lg"
                 className="text-2xl px-12 py-8 h-auto bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 transform hover:scale-105 transition-all duration-200 shadow-xl"
+                asChild
               >
-                👋 Say Hello
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  whileHover={{ backgroundColor: "rgba(220, 220, 220, 1)" }}
+                  whileTap={{ backgroundColor: "rgba(255, 255, 255, 1)" }}
+                  whileInView={{ opacity: 1 }}
+                >
+                  👋 Say Hello
+                </motion.div>
               </Button>
             </div>
           </CardContent>
