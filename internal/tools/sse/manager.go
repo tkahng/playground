@@ -104,6 +104,7 @@ func (m *manager) RegisterClient(ctx context.Context, cf context.CancelFunc, c C
 // UnregisterClient removes the Client from the Manager's store.
 func (m *manager) UnregisterClient(c Client) {
 	done := make(chan struct{})
+	// nolint:exhaustruct
 	rr := regreq{
 		client: c,
 		done:   done,
@@ -121,6 +122,7 @@ func (m *manager) Run(ctx context.Context) {
 			cancel()
 		}
 		delete(m.clients, c)
+		// nolint:errcheck
 		c.Close()
 	}
 

@@ -347,9 +347,13 @@ func (api *Api) TeamTaskProjectTasksCreate(ctx context.Context, input *ApiCreate
 		return nil, err
 	}
 	if task.EndAt != nil {
+		taskDue := *task.EndAt
+		if taskDue.Before(time.Now()) {
+			taskDue = time.Now().Add(10 * time.Second)
+		}
 		err = api.App().JobService().EnqueTaskDueJob(ctx, &workers.TaskDueTodayJobArgs{
 			TaskID:  task.ID,
-			DueDate: *task.EndAt,
+			DueDate: taskDue,
 		})
 		if err != nil {
 			return nil, huma.Error500InternalServerError("Failed to create task project update date job")

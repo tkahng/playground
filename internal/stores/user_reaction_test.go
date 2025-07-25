@@ -30,7 +30,7 @@ func TestDbUserReactionStore_CountUserReactions(t *testing.T) {
 			}
 			reactions = append(reactions, reaction)
 		}
-
+		t.Log(len(reactions))
 		count, err := store.CountUserReactions(ctx, nil)
 		if err != nil {
 			t.Fatalf("Failed to count user reactions: %v", err)
@@ -125,6 +125,7 @@ func TestDbUserReactionStore_CountByCountry(t *testing.T) {
 			}
 			reactions = append(reactions, reaction)
 		}
+		t.Log(len(reactions))
 
 		countryCounts, err := store.CountByCountry(ctx, &UserReactionFilter{
 			PaginatedInput: PaginatedInput{

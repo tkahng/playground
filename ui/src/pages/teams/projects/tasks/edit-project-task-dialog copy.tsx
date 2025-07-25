@@ -96,7 +96,7 @@ export function EditTaskDialog2({
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({
-        queryKey: ["project-with-tasks", task.project_id],
+        queryKey: ["project-tasks", task.project_id],
       });
       toast.success("Task created successfully");
     },

@@ -41,7 +41,7 @@ func Run2() error {
 	opts := conf.AppConfigGetter()
 	app := core.BootstrappedApp(opts)
 	appApi := apis.NewApi(app)
-	srv, api := apis.NewServer()
+	srv, api := apis.NewServer(&opts)
 	apis.AddRoutes(api, appApi)
 	if port == 0 {
 		port = 8080

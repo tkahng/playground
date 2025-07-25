@@ -160,10 +160,32 @@ func (api *Api) TaskUpdate(ctx context.Context, input *UpdateTaskInput) (*struct
 	if err != nil {
 		return nil, err
 	}
+
 	if task == nil {
 		return nil, huma.Error404NotFound("Task not found")
 	}
-	if task.AssigneeID == nil && input.Body.AssigneeID != nil {
+	previousStatus := task.Status
+	previousDueDate := task.EndAt
+	previousAssignee := task.AssigneeID
+
+	task.Name = input.Body.Name
+	task.Description = input.Body.Description
+	task.Status = models.TaskStatus(input.Body.Status)
+	task.StartAt = input.Body.StartAt
+	task.EndAt = input.Body.EndAt
+
+	task.AssigneeID = input.Body.AssigneeID
+	task.ReporterID = input.Body.ReporterID
+	task.ParentID = input.Body.ParentID
+
+	err = api.App().Adapter().Task().UpdateTask(ctx, task)
+	if err != nil {
+		return nil, err
+	}
+
+	newAssignee := previousAssignee == nil && input.Body.AssigneeID != nil
+	differentAssignee := previousAssignee != nil && input.Body.AssigneeID != nil && *previousAssignee != *input.Body.AssigneeID
+	if newAssignee || differentAssignee {
 		err = api.App().JobService().EnqueAssignedToTaskJob(ctx, &workers.AssignedToTasJobArgs{
 			TaskID:              task.ID,
 			AssignedByMemeberID: teamInfo.Member.ID,
@@ -173,21 +195,24 @@ func (api *Api) TaskUpdate(ctx context.Context, input *UpdateTaskInput) (*struct
 			return nil, err
 		}
 	}
-	task.Name = input.Body.Name
-	task.Description = input.Body.Description
-	task.Status = models.TaskStatus(input.Body.Status)
-	task.StartAt = input.Body.StartAt
-	task.EndAt = input.Body.EndAt
-	if task.EndAt != nil {
+
+	newDueDate := previousDueDate == nil && task.EndAt != nil
+	differentDueDate := previousDueDate != nil && task.EndAt != nil && *previousDueDate != *task.EndAt
+	if newDueDate || differentDueDate {
+		dueDate := *task.EndAt
+		if dueDate.Before(time.Now()) {
+			dueDate = time.Now().Add(10 * time.Second)
+		}
 		err = api.App().JobService().EnqueTaskDueJob(ctx, &workers.TaskDueTodayJobArgs{
 			TaskID:  task.ID,
-			DueDate: *task.EndAt,
+			DueDate: dueDate,
 		})
 		if err != nil {
 			return nil, err
 		}
 	}
-	if task.Status == models.TaskStatusDone {
+	newDoneStatus := previousStatus != task.Status && task.Status == models.TaskStatusDone
+	if newDoneStatus {
 		err = api.App().JobService().EnqueueTaskCompletedJob(ctx, &workers.TaskCompletedJobArgs{
 			TaskID:              id,
 			CompletedByMemberID: teamInfo.Member.ID,
@@ -196,14 +221,6 @@ func (api *Api) TaskUpdate(ctx context.Context, input *UpdateTaskInput) (*struct
 		if err != nil {
 			return nil, err
 		}
-	}
-	task.AssigneeID = input.Body.AssigneeID
-	task.ReporterID = input.Body.ReporterID
-	task.ParentID = input.Body.ParentID
-
-	err = api.App().Adapter().Task().UpdateTask(ctx, task)
-	if err != nil {
-		return nil, err
 	}
 	return nil, nil
 }
@@ -222,18 +239,28 @@ func (api *Api) UpdateTaskPositionStatus(ctx context.Context, input *TaskPositio
 	if teamInfo == nil {
 		return nil, huma.Error401Unauthorized("team info not found")
 	}
+	task, err := api.App().Adapter().Task().FindTaskByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if task == nil {
+		return nil, huma.Error404NotFound("Task not found")
+	}
 	err = api.App().Task().UpdateTaskRankStatus(ctx, id, input.Body.Position, models.TaskStatus(input.Body.Status))
 	if err != nil {
 		return nil, err
 	}
+
 	if models.TaskStatus(input.Body.Status) == models.TaskStatusDone {
-		err = api.App().JobService().EnqueueTaskCompletedJob(ctx, &workers.TaskCompletedJobArgs{
-			TaskID:              id,
-			CompletedByMemberID: teamInfo.Member.ID,
-			CompletedAt:         time.Now(),
-		})
-		if err != nil {
-			return nil, err
+		if task.Status != models.TaskStatusDone {
+			err = api.App().JobService().EnqueueTaskCompletedJob(ctx, &workers.TaskCompletedJobArgs{
+				TaskID:              id,
+				CompletedByMemberID: teamInfo.Member.ID,
+				CompletedAt:         time.Now(),
+			})
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 	return nil, nil

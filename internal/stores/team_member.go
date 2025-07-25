@@ -179,9 +179,9 @@ func (s *DbTeamMemberStore) filter(filter *TeamMemberFilter) *map[string]any {
 		return nil
 	}
 	where := make(map[string]any)
-	if filter.Q != "" {
+	// if filter.Q != "" {
 
-	}
+	// }
 	if len(filter.Ids) > 0 {
 		where[models.TeamMemberTable.ID] = map[string]any{
 			"_in": filter.Ids,
@@ -370,10 +370,8 @@ func (s *DbTeamMemberStore) CreateTeamMemberFromUserAndSlug(ctx context.Context,
 			return nil, errors.New("team not found")
 		}
 	}
-	billingAccess := true
-	if role != models.TeamMemberRoleOwner {
-		billingAccess = false
-	}
+	billingAccess := role == models.TeamMemberRoleOwner
+
 	teamMember, err := repository.TeamMember.PostOne(
 		ctx,
 		s.db,

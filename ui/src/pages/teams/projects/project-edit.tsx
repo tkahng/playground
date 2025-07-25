@@ -84,6 +84,7 @@ export default function ProjectEdit() {
       <div>{project.description}</div>
       <div>
         <Input
+          id="search"
           placeholder="Filter tasks..."
           value={input}
           onChange={(e) => setInput(e.target.value)}

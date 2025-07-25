@@ -24,6 +24,7 @@ type AppConfig struct {
 	SenderName    string `env:"SENDER_NAME" envDefault:"info"`
 	SenderAddress string `env:"SENDER_ADDRESS" envDefault:"Hb4k@notifications.k2dv.io"`
 	EncryptionKey string `env:"ENCRYPTION_KEY" envDefault:"12345678901234567890123456789012"` //
+	AppEnv        string `env:"APP_ENV" envDefault:"dev"`
 }
 
 type DBConfig struct {
@@ -76,6 +77,7 @@ type Options struct {
 }
 
 func ZeroEnvConfig() EnvConfig {
+	// nolint:exhaustruct
 	return EnvConfig{
 		AuthOptions: NewTokenOptions(),
 	}

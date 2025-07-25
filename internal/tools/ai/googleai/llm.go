@@ -1,5 +1,7 @@
 package googleai
 
+// nolint:exhaustruct
+
 import (
 	"context"
 	"encoding/json"

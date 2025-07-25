@@ -5,7 +5,6 @@ import (
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/repository"
-	repo "github.com/tkahng/playground/internal/repository"
 )
 
 type UserAccountFilter struct {
@@ -23,7 +22,7 @@ func NewUserAccountRepositoryResource(
 ) *RepositoryResource[models.UserAccount, uuid.UUID, UserAccountFilter] {
 	resource := NewRepositoryResource[models.UserAccount, uuid.UUID](
 		db,
-		repo.UserAccount,
+		repository.UserAccount,
 		func(filter *UserAccountFilter) *map[string]any {
 			where := make(map[string]any)
 			if filter == nil {

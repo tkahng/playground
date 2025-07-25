@@ -47,7 +47,7 @@ import NotAuthorizedPage from "./pages/not-authorized";
 import ProtectedRouteLayout from "./pages/protected-routes/protected-layout";
 import ProtectedRoutePage from "./pages/protected-routes/protected-route-page";
 import ProtectedRouteIndex from "./pages/protected-routes/route-index";
-import SayHelloPage from "./pages/say-hello/say-hello";
+import SayHelloPage from "./pages/say-hello/say-hello2";
 import BillingSettingPage from "./pages/settings/billing-settings";
 import AccountSettingsPage from "./pages/settings/general-settings";
 import TeamSelect from "./pages/teams";

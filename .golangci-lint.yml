@@ -1,5 +1,16 @@
 version: "2"
 linters:
+  settings:
+    exhaustruct:
+      exclude:
+        - '.+/cobra\.Command$'
+        - '.+/*\Decorator$'
+    errcheck:
+      exclude-functions:
+        - io/ioutil.ReadFile
+        - io.Copy(*bytes.Buffer)
+        - io.Copy(os.Stdout)
+
   default: none
   enable:
     - errcheck
