@@ -294,7 +294,12 @@ export function EditProjectTaskDialog({
                           </Button>
                         </FormControl>
                       </PopoverTrigger>
-                      <PopoverContent className="w-[200px] p-0">
+                      <PopoverContent
+                        aria-modal={true}
+                        className={cn("z-50 w-[200px] p-0")}
+                        style={{ pointerEvents: "auto" }}
+                        portal={false}
+                      >
                         <Command>
                           <CommandInput
                             placeholder="Search assignee..."
