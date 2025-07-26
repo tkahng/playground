@@ -114,5 +114,7 @@ jobs:
             'https://${{ secrets.DOKPLOY_HOST }}/api/application.deploy' \
             -H 'accept: application/json' \
             -H 'Content-Type: application/json' \
-            -H "x-api-key: ${{ secrets.DOKPLOY_AUTH_TOKEN }}" \
-            -d '{ "applicationId": "${{ secrets.DOKPLOY_APPLICATION_ID }}" }'
+            -H 'x-api-key: ${{ secrets.DOKPLOY_AUTH_TOKEN }}' \
+            -d '{
+              "applicationId": "${{ secrets.DOKPLOY_APPLICATION_ID }}"
+            }'
