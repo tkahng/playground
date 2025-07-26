@@ -10,5 +10,5 @@ type ShortUrlFilter struct {
 type ShortUrlStore interface {
 	FindByShortCode(ctx context.Context, shortCode string) (*ShortUrl, error)
 	FindBySourceUrl(ctx context.Context, sourceUrl string) (*ShortUrl, error)
-	CreateShortUrl(ctx context.Context, shortUrl *ShortUrl) error
+	SaveShortUrl(ctx context.Context, shortUrl *ShortUrl) error
 }

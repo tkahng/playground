@@ -8,8 +8,13 @@ import (
 	"github.com/tkahng/playground/internal/tools/security"
 )
 
+type UrlShortnerOptions struct {
+	RetryCount int
+}
+
 type UrlShortner struct {
 	store ShortUrlStore
+	opt   UrlShortnerOptions
 }
 
 // generateShortCode implements UrlShortner.
@@ -17,6 +22,7 @@ func (u *UrlShortner) generateShortCode(ctx context.Context) (string, error) {
 	var shortCode string
 	var existingShort *ShortUrl
 	var err error
+	var tries int = u.opt.RetryCount
 	for {
 		shortCode = generateShortCode()
 		existingShort, err = u.store.FindByShortCode(ctx, shortCode)
@@ -26,7 +32,11 @@ func (u *UrlShortner) generateShortCode(ctx context.Context) (string, error) {
 		if existingShort == nil {
 			break
 		}
-		fmt.Printf("Duplicate found, retrying: %s\n", shortCode)
+		fmt.Printf("Duplicate found, retrying: %s\n. Tries left: %d\n", shortCode, tries)
+		tries--
+		if tries == 0 {
+			return "", fmt.Errorf("unable to generate unique short code")
+		}
 	}
 	return shortCode, nil
 }
@@ -45,10 +55,11 @@ func (u *UrlShortner) ShortenUrl(ctx context.Context, sourceUrl string) (string,
 		return "", err
 	}
 	shortUrl := &ShortUrl{
+
 		ShortCode: shortCode,
 		SourceUrl: sourceUrl,
 	}
-	err = u.store.CreateShortUrl(ctx, shortUrl)
+	err = u.store.SaveShortUrl(ctx, shortUrl)
 	if err != nil {
 		return "", err
 	}

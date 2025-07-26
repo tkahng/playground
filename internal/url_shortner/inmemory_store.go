@@ -11,8 +11,8 @@ type InMemoryShortUrlStore struct {
 	sourceUrlStore *store.Store[string, *ShortUrl]
 }
 
-// CreateShortUrl implements ShortUrlStore.
-func (i *InMemoryShortUrlStore) CreateShortUrl(ctx context.Context, shortUrl *ShortUrl) error {
+// SaveShortUrl implements ShortUrlStore.
+func (i *InMemoryShortUrlStore) SaveShortUrl(ctx context.Context, shortUrl *ShortUrl) error {
 	i.shortCodeStore.Set(shortUrl.ShortCode, shortUrl)
 	i.sourceUrlStore.Set(shortUrl.SourceUrl, shortUrl)
 	return nil
