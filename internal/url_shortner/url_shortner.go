@@ -9,7 +9,8 @@ import (
 )
 
 type UrlShortnerOptions struct {
-	RetryCount int
+	RetryCount    int
+	CodeMinLength int
 }
 
 type UrlShortner struct {
@@ -17,8 +18,18 @@ type UrlShortner struct {
 	opt   UrlShortnerOptions
 }
 
-// generateShortCode implements UrlShortner.
-func (u *UrlShortner) generateShortCode(ctx context.Context) (string, error) {
+func NewUrlShortner(store ShortUrlStore) *UrlShortner {
+	return &UrlShortner{
+		store: store,
+		opt: UrlShortnerOptions{
+			RetryCount:    3,
+			CodeMinLength: 3,
+		},
+	}
+}
+
+// GenerateShortCode implements UrlShortner.
+func (u *UrlShortner) GenerateShortCode(ctx context.Context) (string, error) {
 	var shortCode string
 	var existingShort *ShortUrl
 	var err error
@@ -27,7 +38,7 @@ func (u *UrlShortner) generateShortCode(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	minLength := CalculateMinimumLength(totalShortCodeCount)
+	minLength := u.CalculateMinimumLength(totalShortCodeCount)
 	for {
 		shortCode = security.RandomString(int(minLength))
 		existingShort, err = u.store.FindByShortCode(ctx, shortCode)
@@ -55,7 +66,7 @@ func (u *UrlShortner) ShortenUrl(ctx context.Context, sourceUrl string) (string,
 	if existingShort != nil {
 		return existingShort.ShortCode, nil
 	}
-	shortCode, err := u.generateShortCode(ctx)
+	shortCode, err := u.GenerateShortCode(ctx)
 	if err != nil {
 		return "", err
 	}
@@ -71,13 +82,12 @@ func (u *UrlShortner) ShortenUrl(ctx context.Context, sourceUrl string) (string,
 	return shortCode, nil
 }
 
-func NewUrlShortner(store ShortUrlStore) *UrlShortner {
-	return &UrlShortner{
-		store: store,
-	}
-}
-
-func CalculateMinimumLength(n int64) int64 {
-	length := len(security.DefaultRandomAlphabet)
-	return int64(math.Max(float64(security.EstimateLength(n, int64(length))), 4.0))
+func (u *UrlShortner) CalculateMinimumLength(n int64) int64 {
+	return int64(math.Max(
+		float64(security.EstimateLength(
+			n,
+			int64(len(security.DefaultRandomAlphabet)),
+		)),
+		float64(u.opt.CodeMinLength),
+	))
 }
