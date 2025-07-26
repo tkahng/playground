@@ -102,19 +102,3 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: go run . migrate up
-
-  deploy:
-    needs: migrate
-    runs-on: ubuntu-latest
-    steps:
-      - name: Trigger Dokploy deployment
-        shell: bash
-        run: |
-          curl -X 'POST' \
-            "https://${{ secrets.DOKPLOY_HOST }}/api/application.deploy" \
-            -H 'accept: application/json' \
-            -H 'Content-Type: application/json' \
-            -H 'x-api-key: ${{ secrets.DOKPLOY_AUTH_TOKEN }}' \
-            -d '{
-              "applicationId": "${{ secrets.DOKPLOY_APPLICATION_ID }}"
-            }'
