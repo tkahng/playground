@@ -71,23 +71,13 @@ func (u *UrlShortner) ShortenUrl(ctx context.Context, sourceUrl string) (string,
 	return shortCode, nil
 }
 
-func generateShortCode() string {
-	return security.RandomString(6)
-}
-
 func NewUrlShortner(store ShortUrlStore) *UrlShortner {
 	return &UrlShortner{
 		store: store,
 	}
 }
 
-func EstimateLength(n int64, alphabetSize int64) int64 {
-	length := math.Log10(float64(n)) / math.Log10(float64(alphabetSize))
-	fmt.Println("length", length)
-	return int64(math.Ceil(length))
-}
-
 func CalculateMinimumLength(n int64) int64 {
 	length := len(security.DefaultRandomAlphabet)
-	return int64(math.Max(float64(EstimateLength(n, int64(length))), 4.0))
+	return int64(math.Max(float64(security.EstimateLength(n, int64(length))), 4.0))
 }
