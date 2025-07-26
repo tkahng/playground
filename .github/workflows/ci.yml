@@ -115,12 +115,12 @@ jobs:
           DOKPLOY_APPLICATION_ID: ${{ secrets.DOKPLOY_APPLICATION_ID }}
         run: |
           response=$(curl -X 'POST' \
-            'https://${{ secrets.DOKPLOY_HOST }}/api/application.deploy' \
+            'https://$DOKPLOY_URL/api/application.deploy' \
             -H 'accept: application/json' \
             -H 'Content-Type: application/json' \
-            -H 'x-api-key: ${{ secrets.DOKPLOY_AUTH_TOKEN }}' \
+            -H 'x-api-key: $DOKPLOY_AUTH_TOKEN' \
             -d '{
-              "applicationId": "${{ secrets.DOKPLOY_APPLICATION_ID }}"
+              "applicationId": "$DOKPLOY_APPLICATION_ID"
             }' \
             -w "%{http_code}" \
             -o /dev/null \
