@@ -83,11 +83,13 @@ func (u *UrlShortner) ShortenUrl(ctx context.Context, sourceUrl string) (string,
 }
 
 func (u *UrlShortner) CalculateMinimumLength(n int64) int64 {
+	estimate := security.EstimateLength(
+		n,
+		int64(len(security.DefaultRandomAlphabet)),
+	)
+	fmt.Printf("Estimate: %d\n", estimate)
 	return int64(math.Max(
-		float64(security.EstimateLength(
-			n,
-			int64(len(security.DefaultRandomAlphabet)),
-		)),
+		float64(estimate),
 		float64(u.opt.CodeMinLength),
 	))
 }
