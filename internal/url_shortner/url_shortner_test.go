@@ -76,7 +76,7 @@ func TestUrlShortner_CalculateMinimumLength(t *testing.T) {
 	}
 }
 
-func TestUrlShortner_ShortenUrl(t *testing.T) {
+func TestUrlShortner_GenerateShortUrl(t *testing.T) {
 	type fields struct {
 		store ShortUrlStore
 		u     *UrlShortner
@@ -89,7 +89,7 @@ func TestUrlShortner_ShortenUrl(t *testing.T) {
 		name     string
 		setup    func() *fields
 		args     args
-		wantFunc func(string) error
+		wantFunc func(*ShortUrl) error
 		wantErr  bool
 	}{
 		{
@@ -106,8 +106,8 @@ func TestUrlShortner_ShortenUrl(t *testing.T) {
 					u:     short,
 				}
 			},
-			wantFunc: func(s string) error {
-				if len(s) == 3 {
+			wantFunc: func(s *ShortUrl) error {
+				if len(s.ShortCode) == 3 {
 					return nil
 				}
 				return errors.New("short url should be 3 char long")
@@ -131,8 +131,8 @@ func TestUrlShortner_ShortenUrl(t *testing.T) {
 				ctx:       context.Background(),
 				sourceUrl: "https://google.com",
 			},
-			wantFunc: func(s string) error {
-				if len(s) == 4 {
+			wantFunc: func(s *ShortUrl) error {
+				if len(s.ShortCode) == 4 {
 					return nil
 				}
 				return errors.New("short url should be 4 char long")
@@ -159,7 +159,7 @@ func TestUrlShortner_ShortenUrl(t *testing.T) {
 				ctx:       context.Background(),
 				sourceUrl: "https://google.com",
 			},
-			wantFunc: func(string) error {
+			wantFunc: func(s *ShortUrl) error {
 				return nil
 			},
 			wantErr: true,
@@ -168,7 +168,7 @@ func TestUrlShortner_ShortenUrl(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			fields := tt.setup()
-			got, err := fields.u.ShortenUrl(tt.args.ctx, tt.args.sourceUrl)
+			got, err := fields.u.GenerateShortUrl(tt.args.ctx, tt.args.sourceUrl)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("UrlShortner.ShortenUrl() error = %v, wantErr %v", err, tt.wantErr)
 				return

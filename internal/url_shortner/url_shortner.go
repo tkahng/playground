@@ -3,6 +3,7 @@ package urlshortner
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"math"
 
 	"github.com/tkahng/playground/internal/tools/security"
@@ -16,6 +17,12 @@ type UrlShortnerOptions struct {
 type UrlShortner struct {
 	store ShortUrlStore
 	opt   UrlShortnerOptions
+}
+
+type UrlShortnerStub interface {
+	CalculateMinimumLength(n int64) int64
+	GenerateShortCode(ctx context.Context) (string, error)
+	GenerateShortUrl(ctx context.Context, sourceUrl string) (*ShortUrl, error)
 }
 
 func NewUrlShortner(store ShortUrlStore) *UrlShortner {
@@ -48,7 +55,7 @@ func (u *UrlShortner) GenerateShortCode(ctx context.Context) (string, error) {
 		if existingShort == nil {
 			break
 		}
-		fmt.Printf("Duplicate found, retrying: %s\n. Tries left: %d\n", shortCode, tries)
+		slog.Info(fmt.Sprintf("Duplicate found, retrying: %s\n. Tries left: %d\n", shortCode, tries))
 		tries--
 		if tries == 0 {
 			return "", fmt.Errorf("unable to generate unique short code")
@@ -57,29 +64,28 @@ func (u *UrlShortner) GenerateShortCode(ctx context.Context) (string, error) {
 	return shortCode, nil
 }
 
-// ShortenUrl implements UrlShortner.
-func (u *UrlShortner) ShortenUrl(ctx context.Context, sourceUrl string) (string, error) {
+// GenerateShortUrl implements UrlShortner.
+func (u *UrlShortner) GenerateShortUrl(ctx context.Context, sourceUrl string) (*ShortUrl, error) {
 	existingShort, err := u.store.FindBySourceUrl(ctx, sourceUrl)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	if existingShort != nil {
-		return existingShort.ShortCode, nil
+		return existingShort, nil
 	}
 	shortCode, err := u.GenerateShortCode(ctx)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	shortUrl := &ShortUrl{
-
 		ShortCode: shortCode,
 		SourceUrl: sourceUrl,
 	}
 	err = u.store.SaveShortUrl(ctx, shortUrl)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	return shortCode, nil
+	return shortUrl, nil
 }
 
 func (u *UrlShortner) CalculateMinimumLength(n int64) int64 {
@@ -87,7 +93,6 @@ func (u *UrlShortner) CalculateMinimumLength(n int64) int64 {
 		n,
 		int64(len(security.DefaultRandomAlphabet)),
 	)
-	fmt.Printf("Estimate: %d\n", estimate)
 	return int64(math.Max(
 		float64(estimate),
 		float64(u.opt.CodeMinLength),
