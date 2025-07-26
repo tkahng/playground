@@ -99,7 +99,7 @@ func TestUrlShortner_GenerateShortUrl(t *testing.T) {
 				sourceUrl: "https://google.com",
 			},
 			setup: func() *fields {
-				store := NewInMemoryShortUrlStore()
+				store := NewInMemoryShortUrlStoreDecorator()
 				short := NewUrlShortner(store)
 				return &fields{
 					store: store,
