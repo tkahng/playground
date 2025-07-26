@@ -11,6 +11,12 @@ type InMemoryShortUrlStore struct {
 	sourceUrlStore *store.Store[string, *ShortUrl]
 }
 
+// CountShortUrls implements ShortUrlStore.
+func (i *InMemoryShortUrlStore) CountShortUrls(ctx context.Context, filter *ShortUrlFilter) (int64, error) {
+	count := i.shortCodeStore.Length()
+	return int64(count), nil
+}
+
 // SaveShortUrl implements ShortUrlStore.
 func (i *InMemoryShortUrlStore) SaveShortUrl(ctx context.Context, shortUrl *ShortUrl) error {
 	i.shortCodeStore.Set(shortUrl.ShortCode, shortUrl)

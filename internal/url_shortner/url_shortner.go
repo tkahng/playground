@@ -23,8 +23,13 @@ func (u *UrlShortner) generateShortCode(ctx context.Context) (string, error) {
 	var existingShort *ShortUrl
 	var err error
 	var tries int = u.opt.RetryCount
+	totalShortCodeCount, err := u.store.CountShortUrls(ctx, &ShortUrlFilter{})
+	if err != nil {
+		return "", err
+	}
+	minLength := CalculateMinimumLength(totalShortCodeCount)
 	for {
-		shortCode = generateShortCode()
+		shortCode = security.RandomString(int(minLength))
 		existingShort, err = u.store.FindByShortCode(ctx, shortCode)
 		if err != nil {
 			return "", err
@@ -82,6 +87,7 @@ func EstimateLength(n int64, alphabetSize int64) int64 {
 	return int64(math.Ceil(length))
 }
 
-func CalculateMinimumLength(n int64, alphabetSize int64) int64 {
-	return int64(math.Max(float64(EstimateLength(n, alphabetSize)), 4.0))
+func CalculateMinimumLength(n int64) int64 {
+	length := len(security.DefaultRandomAlphabet)
+	return int64(math.Max(float64(EstimateLength(n, int64(length))), 4.0))
 }

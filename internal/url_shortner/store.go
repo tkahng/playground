@@ -11,4 +11,5 @@ type ShortUrlStore interface {
 	FindByShortCode(ctx context.Context, shortCode string) (*ShortUrl, error)
 	FindBySourceUrl(ctx context.Context, sourceUrl string) (*ShortUrl, error)
 	SaveShortUrl(ctx context.Context, shortUrl *ShortUrl) error
+	CountShortUrls(ctx context.Context, filter *ShortUrlFilter) (int64, error)
 }

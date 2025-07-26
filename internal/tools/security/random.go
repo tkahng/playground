@@ -8,13 +8,13 @@ import (
 	"github.com/google/uuid"
 )
 
-const defaultRandomAlphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+const DefaultRandomAlphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
 
 // RandomString generates a cryptographically random string with the specified length.
 //
 // The generated string matches [A-Za-z0-9]+ and it's transparent to URL-encoding.
 func RandomString(length int) string {
-	return RandomStringWithAlphabet(length, defaultRandomAlphabet)
+	return RandomStringWithAlphabet(length, DefaultRandomAlphabet)
 }
 
 // RandomStringWithAlphabet generates a cryptographically random string
@@ -42,7 +42,7 @@ func RandomStringWithAlphabet(length int, alphabet string) string {
 //
 // For a cryptographically random string (but a little bit slower) use RandomString instead.
 func PseudorandomString(length int) string {
-	return PseudorandomStringWithAlphabet(length, defaultRandomAlphabet)
+	return PseudorandomStringWithAlphabet(length, DefaultRandomAlphabet)
 }
 
 // PseudorandomStringWithAlphabet generates a pseudorandom string
