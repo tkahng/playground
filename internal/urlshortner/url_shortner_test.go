@@ -69,7 +69,7 @@ func TestUrlShortner_CalculateMinimumLength(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			store := NewInMemoryShortUrlStore()
 			u := NewUrlShortner(store)
-			if got := u.CalculateMinimumLength(tt.args.n); got != tt.want {
+			if got := u.calculateMinimumLength(tt.args.n); got != tt.want {
 				t.Errorf("UrlShortner.CalculateMinimumLength() = %v, want %v", got, tt.want)
 			}
 		})

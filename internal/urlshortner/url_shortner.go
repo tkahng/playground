@@ -20,9 +20,8 @@ type UrlShortner struct {
 }
 
 type UrlShortnerStub interface {
-	CalculateMinimumLength(n int64) int64
-	GenerateShortCode(ctx context.Context) (string, error)
 	GenerateShortUrl(ctx context.Context, sourceUrl string) (*ShortUrl, error)
+	FindUrlByShortCode(ctx context.Context, shortCode string) (*ShortUrl, error)
 }
 
 func NewUrlShortner(store ShortUrlStore) *UrlShortner {
@@ -35,8 +34,8 @@ func NewUrlShortner(store ShortUrlStore) *UrlShortner {
 	}
 }
 
-// GenerateShortCode implements UrlShortner.
-func (u *UrlShortner) GenerateShortCode(ctx context.Context) (string, error) {
+// generateShortCode implements UrlShortner.
+func (u *UrlShortner) generateShortCode(ctx context.Context) (string, error) {
 	var shortCode string
 	var existingShort *ShortUrl
 	var err error
@@ -45,7 +44,7 @@ func (u *UrlShortner) GenerateShortCode(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	minLength := u.CalculateMinimumLength(totalShortCodeCount)
+	minLength := u.calculateMinimumLength(totalShortCodeCount)
 	for {
 		shortCode = security.RandomString(int(minLength))
 		existingShort, err = u.store.FindByShortCode(ctx, shortCode)
@@ -73,7 +72,7 @@ func (u *UrlShortner) GenerateShortUrl(ctx context.Context, sourceUrl string) (*
 	if existingShort != nil {
 		return existingShort, nil
 	}
-	shortCode, err := u.GenerateShortCode(ctx)
+	shortCode, err := u.generateShortCode(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +87,7 @@ func (u *UrlShortner) GenerateShortUrl(ctx context.Context, sourceUrl string) (*
 	return shortUrl, nil
 }
 
-func (u *UrlShortner) CalculateMinimumLength(n int64) int64 {
+func (u *UrlShortner) calculateMinimumLength(n int64) int64 {
 	estimate := security.EstimateLength(
 		n,
 		int64(len(security.DefaultRandomAlphabet)),
@@ -97,4 +96,8 @@ func (u *UrlShortner) CalculateMinimumLength(n int64) int64 {
 		float64(estimate),
 		float64(u.opt.CodeMinLength),
 	))
+}
+
+func (u *UrlShortner) FindUrlByShortCode(ctx context.Context, shortCode string) (*ShortUrl, error) {
+	return u.store.FindByShortCode(ctx, shortCode)
 }
