@@ -110,6 +110,6 @@ jobs:
       - name: Deploy App to Dokploy
         uses: qbix-tech/dokploy-deploy-action@v1
         with:
-          dokploy_url: https://dokploy.k2dv.io
+          dokploy_url: http://91.99.124.100:3000
           api_key: ${{ secrets.DOKPLOY_AUTH_TOKEN }}
-          application_id: ${{ secrets.DOKPLOY_APPLICATION_ID }}
+          application_id: UtH-sYqz1xNb43i7BnEiJ
