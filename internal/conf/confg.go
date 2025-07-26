@@ -28,7 +28,7 @@ type AppConfig struct {
 }
 
 type DBConfig struct {
-	DatabaseUrl string `env:"DATABASE_URL" envDefault:"postgres://postgres:postgres@localhost:5432/authgo?sslmode=disable"`
+	DatabaseUrl string `env:"DATABASE_URL" envDefault:"postgres://postgres:postgres@localhost:5432/playground?sslmode=disable"`
 }
 
 type ResendConfig struct {
