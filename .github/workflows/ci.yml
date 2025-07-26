@@ -102,3 +102,29 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: go run . migrate up
+
+  deploy:
+    needs: migrate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Dokploy deployment
+        shell: bash
+        env:
+          DOKPLOY_URL: ${{ secrets.DOKPLOY_HOST }}
+          DOKPLOY_AUTH_TOKEN: ${{ secrets.DOKPLOY_AUTH_TOKEN }}
+          DOKPLOY_APPLICATION_ID: ${{ secrets.DOKPLOY_APPLICATION_ID }}
+        run: |
+          response=$(curl -X 'POST' \
+            "https://$DOKPLOY_URL/api/application.deploy" \
+            -H 'accept: application/json' \
+            -H 'Content-Type: application/json' \
+            -H "x-api-key: $DOKPLOY_AUTH_TOKEN" \
+            -d "{\"applicationId\": \"$DOKPLOY_APPLICATION_ID\"}" \
+            -w "%{http_code}" \
+            -o /dev/null \
+            -s)
+
+          if [ "$response" -ne 200 ]; then
+            echo "Deployment failed with status code: $response"
+            exit 1
+          fi
