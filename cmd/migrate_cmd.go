@@ -41,7 +41,7 @@ var testUpCmd = &cobra.Command{
 	Use:   "testup",
 	Short: "migrate testup",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return migrate("postgres://postgres:postgres@localhost:5432/authgo_test?sslmode=disable")
+		return migrate("postgres://postgres:postgres@localhost:5432/playground_test?sslmode=disable")
 	},
 }
 

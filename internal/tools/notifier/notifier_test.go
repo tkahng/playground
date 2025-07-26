@@ -23,7 +23,7 @@ func TestNotifier(t *testing.T) {
 	l := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	ctx, cancel := context.WithCancel(ctx)
 	wg := sync.WaitGroup{}
-	// pool, err := testPool("postgres://postgres:postgres@localhost:5432/authgo_test?sslmode=disable")
+	// pool, err := testPool("postgres://postgres:postgres@localhost:5432/playground_test?sslmode=disable")
 	// expIs.NoErr(err)
 
 	li := NewListener(dbx)
