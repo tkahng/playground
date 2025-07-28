@@ -22,9 +22,7 @@ import (
 )
 
 func NewRouter(app core.App) *chi.Mux {
-
 	r := chi.NewMux()
-
 	r.Use(cors.Handler(cors.Options{
 		// AllowedOrigins:   []string{"https://foo.com"}, // Use this to allow specific origin hosts
 		AllowedOrigins: []string{"*"},

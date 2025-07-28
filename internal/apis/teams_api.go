@@ -3,12 +3,15 @@ package apis
 import (
 	"context"
 	"log/slog"
+	"net/http"
 	"time"
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
 	"github.com/tkahng/playground/internal/contextstore"
+	"github.com/tkahng/playground/internal/middleware"
 	"github.com/tkahng/playground/internal/models"
+	"github.com/tkahng/playground/internal/shared"
 	"github.com/tkahng/playground/internal/stores"
 	"github.com/tkahng/playground/internal/tools/mapper"
 )
@@ -104,6 +107,28 @@ type TeamInfoOutput struct {
 	Body *TeamInfo `json:"body"`
 }
 
+func (api *Api) BindCreateTeam(humaApi huma.API) {
+	emailVerified := middleware.EmailVerifiedMiddleware(humaApi)
+	huma.Register(
+		humaApi,
+		huma.Operation{
+			OperationID: "create-team",
+			Method:      http.MethodPost,
+			Path:        "/teams",
+			Summary:     "create-team",
+			Description: "create a new team",
+			Tags:        []string{"Teams"},
+			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+			Middlewares: huma.Middlewares{
+				emailVerified,
+			},
+		},
+		api.CreateTeam,
+	)
+}
 func (api *Api) CreateTeam(
 	ctx context.Context,
 	input *struct {
@@ -135,6 +160,27 @@ func (api *Api) CreateTeam(
 			Member: FromTeamMemberModel(&team.Member),
 		},
 	}, nil
+}
+
+func (api *Api) BindCheckTeamSlug(
+	humaApi huma.API,
+) {
+	huma.Register(
+		humaApi,
+		huma.Operation{
+			OperationID: "check-team-slug",
+			Method:      http.MethodPost,
+			Path:        "/teams/check-slug",
+			Summary:     "check-team-slug",
+			Description: "check if team slug exists",
+			Tags:        []string{"Teams"},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+			Errors: []int{http.StatusInternalServerError, http.StatusBadRequest},
+		},
+		api.CheckTeamSlug,
+	)
 }
 
 func (api *Api) CheckTeamSlug(
@@ -440,6 +486,26 @@ type FindTeamTeamMembersInput struct {
 	TeamID string `path:"team-id" required:"true" format:"uuid"`
 }
 
+func (api *Api) BindFindTeamTeamMembers(
+	humaApi huma.API,
+) {
+	huma.Register(
+		humaApi,
+		huma.Operation{
+			OperationID: "get-team-team-members",
+			Method:      http.MethodGet,
+			Path:        "/teams/{team-id}/members",
+			Summary:     "get-team-team-members",
+			Description: "get members of a team by team team ID",
+			Tags:        []string{"Teams", "Team Members"},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+			Errors: []int{http.StatusInternalServerError, http.StatusBadRequest},
+		},
+		api.FindTeamTeamMembers,
+	)
+}
 func (api *Api) FindTeamTeamMembers(
 	ctx context.Context,
 	input *FindTeamTeamMembersInput,

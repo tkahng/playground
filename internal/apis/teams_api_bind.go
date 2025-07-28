@@ -15,45 +15,15 @@ func BindTeamsApi(api huma.API, appApi *Api) {
 	requireMember := middleware.RequireTeamMemberRolesMiddleware(api)
 	requiredOwnerMember := middleware.RequireTeamMemberRolesMiddleware(api, models.TeamMemberRoleOwner)
 	checkTeamDelete := middleware.TeamCanDelete(api, appApi.App())
-	emailVerified := middleware.EmailVerifiedMiddleware(api)
+	// emailVerified := middleware.EmailVerifiedMiddleware(api)
 	teamsGroup := huma.NewGroup(api)
 	// get team members
 	//  /api/team-members
 
-	huma.Register(
-		teamsGroup,
-		huma.Operation{
-			OperationID: "get-team-team-members",
-			Method:      http.MethodGet,
-			Path:        "/teams/{team-id}/members",
-			Summary:     "get-team-team-members",
-			Description: "get members of a team by team team ID",
-			Tags:        []string{"Teams", "Team Members"},
-			Security: []map[string][]string{{
-				shared.BearerAuthSecurityKey: {},
-			}},
-			Errors: []int{http.StatusInternalServerError, http.StatusBadRequest},
-		},
-		appApi.FindTeamTeamMembers,
-	)
+	appApi.BindFindTeamTeamMembers(teamsGroup)
 
 	// check team slug
-	huma.Register(
-		teamsGroup,
-		huma.Operation{
-			OperationID: "check-team-slug",
-			Method:      http.MethodPost,
-			Path:        "/teams/check-slug",
-			Summary:     "check-team-slug",
-			Description: "check if a team slug is available",
-			Tags:        []string{"Teams"},
-			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
-			Security: []map[string][]string{{
-				shared.BearerAuthSecurityKey: {},
-			}},
-		},
-		appApi.CheckTeamSlug,
-	)
+	appApi.BindCheckTeamSlug(teamsGroup)
 
 	// get user teams
 	huma.Register(
@@ -74,25 +44,26 @@ func BindTeamsApi(api huma.API, appApi *Api) {
 	)
 
 	// create team
-	huma.Register(
-		teamsGroup,
-		huma.Operation{
-			OperationID: "create-team",
-			Method:      http.MethodPost,
-			Path:        "/teams",
-			Summary:     "create-team",
-			Description: "create a new team",
-			Tags:        []string{"Teams"},
-			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
-			Security: []map[string][]string{{
-				shared.BearerAuthSecurityKey: {},
-			}},
-			Middlewares: huma.Middlewares{
-				emailVerified,
-			},
-		},
-		appApi.CreateTeam,
-	)
+	appApi.BindCreateTeam(teamsGroup)
+	// huma.Register(
+	// 	teamsGroup,
+	// 	huma.Operation{
+	// 		OperationID: "create-team",
+	// 		Method:      http.MethodPost,
+	// 		Path:        "/teams",
+	// 		Summary:     "create-team",
+	// 		Description: "create a new team",
+	// 		Tags:        []string{"Teams"},
+	// 		Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
+	// 		Security: []map[string][]string{{
+	// 			shared.BearerAuthSecurityKey: {},
+	// 		}},
+	// 		Middlewares: huma.Middlewares{
+	// 			emailVerified,
+	// 		},
+	// 	},
+	// 	appApi.CreateTeam,
+	// )
 	// get team
 	huma.Register(
 		teamsGroup,
