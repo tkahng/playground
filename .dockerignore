@@ -17,3 +17,6 @@ logs/
 .github/
 .vscode/
 *.code-workspace
+loki/
+loki-data/
+vector/
