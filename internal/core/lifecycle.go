@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/danielgtaylor/huma/v2"
-	"github.com/tkahng/playground/internal/tools/di"
 	"github.com/tkahng/playground/internal/tools/hook"
 	"golang.org/x/sync/errgroup"
 )
@@ -16,8 +15,7 @@ type WaitEvent struct {
 
 type BootstrapEvent struct {
 	hook.Event
-	App       App
-	Container di.Container
+	App App
 }
 
 type StartEvent struct {

@@ -12,7 +12,6 @@ import (
 	"github.com/tkahng/playground/internal/jobs"
 	"github.com/tkahng/playground/internal/services"
 	"github.com/tkahng/playground/internal/stores"
-	"github.com/tkahng/playground/internal/tools/di"
 	"github.com/tkahng/playground/internal/tools/logger"
 	"github.com/tkahng/playground/internal/tools/sse"
 	"github.com/tkahng/playground/internal/userreaction"
@@ -50,9 +49,7 @@ func (app *BaseApp) RunBackgroundProcesses(firstCtx context.Context) {
 
 func (app *BaseApp) Bootstrap() error {
 	event := &BootstrapEvent{}
-	container := di.New()
 	event.App = app
-	event.Container = container
 	err := app.Lifecycle().OnBootstrap().Trigger(event, func(e *BootstrapEvent) error {
 		e.App.InitializePrimitives()
 		e.App.SetDb()
