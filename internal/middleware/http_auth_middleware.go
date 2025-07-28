@@ -1,10 +1,11 @@
 package middleware
 
 import (
+	"fmt"
 	"log/slog"
 	"net/http"
+	"slices"
 
-	"github.com/go-chi/render"
 	"github.com/tkahng/playground/internal/contextstore"
 	"github.com/tkahng/playground/internal/core"
 	appHttp "github.com/tkahng/playground/internal/tools/http"
@@ -56,7 +57,27 @@ func HttpRequireAuthMiddleware(app core.App) HttpMiddelwareFunc {
 				next.ServeHTTP(w, r)
 				return
 			}
-			_ = render.Render(w, r, appHttp.NewError(http.StatusUnauthorized, "unauthorized"))
+			_ = appHttp.WriteErr(w, r, http.StatusUnauthorized, "you are not authenticated.", nil)
+		})
+	}
+}
+
+func HttpCheckPermissionsMiddleware(app core.App, requiredPermissions ...string) HttpMiddelwareFunc {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if claims := contextstore.GetContextUserInfo(r.Context()); claims != nil {
+				if len(requiredPermissions) == 0 {
+					next.ServeHTTP(w, r)
+					return
+				}
+				for _, p := range claims.Permissions {
+					if slices.Contains(requiredPermissions, p) {
+						next.ServeHTTP(w, r)
+						return
+					}
+				}
+			}
+			_ = appHttp.WriteErr(w, r, http.StatusForbidden, fmt.Sprintf("You do not have the required permissions: %v", requiredPermissions))
 		})
 	}
 }
