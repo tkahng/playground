@@ -130,8 +130,9 @@
         "server": "localhost",
         "port": 5432,
         "driver": "PostgreSQL",
-        "name": "authgo",
-        "database": "authgo",
+        "name": "playground",
+        "group": "playground",
+        "database": "playground",
         "username": "postgres"
       },
       {
@@ -139,19 +140,12 @@
         "server": "localhost",
         "port": 5432,
         "driver": "PostgreSQL",
-        "name": "authgo_test",
-        "database": "authgo_test",
+        "name": "playground test",
+        "group": "playground",
+        "database": "playground_test",
         "username": "postgres"
       }
     ],
-    "github.copilot.enable": {
-      "*": true,
-      "plaintext": false,
-      "markdown": false,
-      "scminput": false,
-      "go": true
-    },
-    "github.copilot.nextEditSuggestions.enabled": true,
     "go.coverMode": "atomic",
     "go.coverOnSingleTestFile": true,
     "go.coverOnSingleTest": true,
