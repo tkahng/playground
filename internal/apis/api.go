@@ -15,12 +15,8 @@ func (a *Api) App() core.App {
 	return a.app
 }
 
-func NewApi(app core.App) *Api {
+func NewAppApi(app core.App) *Api {
 	return &Api{
 		app: app,
 	}
-}
-
-type ApiDecorator struct {
-	*Api
 }

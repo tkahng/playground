@@ -117,8 +117,3 @@ func AddRoutes(api huma.API, appApi *Api) {
 	BindMiddlewares(api, appApi.App())
 	BindApis(api, appApi)
 }
-
-func (a *Api) BindApi(api huma.API) {
-	BindMiddlewares(api, a.App())
-	BindApis(api, a)
-}

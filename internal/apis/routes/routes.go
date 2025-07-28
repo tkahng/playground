@@ -10,9 +10,5 @@ func BindRoutes(r *chi.Mux, app core.App) {
 	authMiddleware := middleware.HttpAuthMiddleware(app)
 	r.Use(authMiddleware)
 
-	r.Route("/api", func(r chi.Router) {
-		r.Route("/ws", func(r chi.Router) {
-			// r.Get("/", app.statsHandler.SseHandler)
-		})
-	})
+	// r.Get("/api/ws", )
 }

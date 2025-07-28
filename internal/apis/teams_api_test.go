@@ -86,7 +86,7 @@ func TestGetGreeting(t *testing.T) {
 	cfg := conf.ZeroEnvConfig()
 	ctx, db := test.DbSetup()
 	app := core.NewAppDecorator(ctx, cfg, db)
-	appApi := apis.NewApi(app)
+	appApi := apis.NewAppApi(app)
 	apis.AddRoutes(api, appApi)
 
 	resp := api.Get("/")
@@ -102,7 +102,7 @@ func TestTeamSlug(t *testing.T) {
 		_, api := humatest.New(t)
 		cfg := conf.ZeroEnvConfig()
 		app := core.NewAppDecorator(ctx, cfg, db)
-		appApi := apis.NewApi(app)
+		appApi := apis.NewAppApi(app)
 		apis.AddRoutes(api, appApi)
 		user, err := createVerifiedUser(app)
 		if err != nil {
@@ -150,7 +150,7 @@ func TestGetTeam_unauthorized(t *testing.T) {
 
 		cfg := conf.ZeroEnvConfig()
 		app := core.NewAppDecorator(ctx, cfg, db)
-		appApi := apis.NewApi(app)
+		appApi := apis.NewAppApi(app)
 		_, api := humatest.New(t)
 		apis.AddRoutes(api, appApi)
 
@@ -170,7 +170,7 @@ func TestGetTeam_invalidID(t *testing.T) {
 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
 		cfg := conf.ZeroEnvConfig()
 		app := core.NewAppDecorator(ctx, cfg, db)
-		appApi := apis.NewApi(app)
+		appApi := apis.NewAppApi(app)
 		_, api := humatest.New(t)
 		apis.AddRoutes(api, appApi)
 		user, err := createVerifiedUser(app)
@@ -205,7 +205,7 @@ func TestGetTeam_success(t *testing.T) {
 
 		cfg := conf.ZeroEnvConfig()
 		app := core.NewAppDecorator(ctx, cfg, db)
-		appApi := apis.NewApi(app)
+		appApi := apis.NewAppApi(app)
 		_, api := humatest.New(t)
 		apis.AddRoutes(api, appApi)
 		user, err := createVerifiedUser(app)
@@ -240,7 +240,7 @@ func TestCreateTeam_SuccessfulCreation(t *testing.T) {
 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
 		cfg := conf.ZeroEnvConfig()
 		app := core.NewAppDecorator(ctx, cfg, db)
-		appApi := apis.NewApi(app)
+		appApi := apis.NewAppApi(app)
 		_, api := humatest.New(t)
 		apis.AddRoutes(api, appApi)
 		user, err := createVerifiedUser(app)
@@ -286,7 +286,7 @@ func TestCreateTeam_emailNotVerified(t *testing.T) {
 
 		cfg := conf.ZeroEnvConfig()
 		app := core.NewAppDecorator(ctx, cfg, db)
-		appApi := apis.NewApi(app)
+		appApi := apis.NewAppApi(app)
 		_, api := humatest.New(t)
 		apis.AddRoutes(api, appApi)
 		user, err := createUnverifiedUser(app)
@@ -322,7 +322,7 @@ func TestUpdateTeam_failedNotOwner(t *testing.T) {
 		cfg := conf.ZeroEnvConfig()
 		app := core.NewAppDecorator(ctx, cfg, db)
 
-		appApi := apis.NewApi(app)
+		appApi := apis.NewAppApi(app)
 		_, api := humatest.New(t)
 		apis.AddRoutes(api, appApi)
 		user1, err := app.Adapter().User().CreateUser(
@@ -396,7 +396,7 @@ func TestUpdateTeam_successOwner(t *testing.T) {
 		cfg := conf.ZeroEnvConfig()
 		app := core.NewAppDecorator(ctx, cfg, db)
 
-		appApi := apis.NewApi(app)
+		appApi := apis.NewAppApi(app)
 		_, api := humatest.New(t)
 		apis.AddRoutes(api, appApi)
 		user1, err := app.Adapter().User().CreateUser(
@@ -448,7 +448,7 @@ func TestDeleteTeam_successOwner(t *testing.T) {
 		cfg := conf.ZeroEnvConfig()
 		app := core.NewAppDecorator(ctx, cfg, db)
 
-		appApi := apis.NewApi(app)
+		appApi := apis.NewAppApi(app)
 		_, api := humatest.New(t)
 		apis.AddRoutes(api, appApi)
 		user1, err := app.Adapter().User().CreateUser(
@@ -494,7 +494,7 @@ func TestDeleteTeam_failNonOwner(t *testing.T) {
 		cfg := conf.ZeroEnvConfig()
 		app := core.NewAppDecorator(ctx, cfg, db)
 
-		appApi := apis.NewApi(app)
+		appApi := apis.NewAppApi(app)
 		_, api := humatest.New(t)
 		apis.AddRoutes(api, appApi)
 		user1, err := app.Adapter().User().CreateUser(
@@ -839,7 +839,7 @@ type TestApi struct {
 func setupApi(t *testing.T, ctx context.Context, db database.Dbx) TestApi {
 	cfg := conf.ZeroEnvConfig()
 	app := core.NewAppDecorator(ctx, cfg, db)
-	appApi := apis.NewApi(app)
+	appApi := apis.NewAppApi(app)
 	_, api := humatest.New(t)
 	apis.AddRoutes(api, appApi)
 	testApi := TestApi{
