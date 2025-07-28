@@ -3,6 +3,7 @@ package http
 import (
 	"fmt"
 	"net/http"
+	"os"
 
 	"github.com/go-chi/render"
 )
@@ -150,4 +151,14 @@ func NewError(status int, msg string, errs ...error) StatusError {
 		Detail: msg,
 		Errors: details,
 	}
+}
+
+func WriteErr(w http.ResponseWriter, r *http.Request, status int, msg string, errs ...error) error {
+	var err = NewError(status, msg, errs...)
+	writeErr := render.Render(w, r, err)
+	if writeErr != nil {
+		// If we can't write the error, log it so we know what happened.
+		fmt.Fprintf(os.Stderr, "could not write error: %v\n", writeErr)
+	}
+	return writeErr
 }
