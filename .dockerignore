@@ -20,3 +20,4 @@ logs/
 loki/
 loki-data/
 vector/
+.air.toml
