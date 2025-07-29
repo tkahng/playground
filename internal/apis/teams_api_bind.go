@@ -4,17 +4,17 @@ import (
 	"net/http"
 
 	"github.com/danielgtaylor/huma/v2"
-	"github.com/tkahng/playground/internal/middleware"
+	"github.com/tkahng/playground/internal/middleware/humamiddleware"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/shared"
 )
 
 func BindTeamsApi(api huma.API, appApi *Api) {
-	teamInfoMiddleware := middleware.TeamInfoFromParam(api, appApi.App())
-	teamInfoSlugMiddleware := middleware.TeamInfoFromTeamSlug(api, appApi.App())
-	requireMember := middleware.RequireTeamMemberRolesMiddleware(api)
-	requiredOwnerMember := middleware.RequireTeamMemberRolesMiddleware(api, models.TeamMemberRoleOwner)
-	checkTeamDelete := middleware.TeamCanDelete(api, appApi.App())
+	teamInfoMiddleware := humamiddleware.TeamInfoFromParam(api, appApi.App())
+	teamInfoSlugMiddleware := humamiddleware.TeamInfoFromTeamSlug(api, appApi.App())
+	requireMember := humamiddleware.RequireTeamMemberRolesMiddleware(api)
+	requiredOwnerMember := humamiddleware.RequireTeamMemberRolesMiddleware(api, models.TeamMemberRoleOwner)
+	checkTeamDelete := humamiddleware.TeamCanDelete(api, appApi.App())
 	// emailVerified := middleware.EmailVerifiedMiddleware(api)
 	teamsGroup := huma.NewGroup(api)
 	// get team members

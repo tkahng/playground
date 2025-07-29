@@ -4,14 +4,14 @@ import (
 	"net/http"
 
 	"github.com/danielgtaylor/huma/v2"
-	"github.com/tkahng/playground/internal/middleware"
+	"github.com/tkahng/playground/internal/middleware/humamiddleware"
 	"github.com/tkahng/playground/internal/shared"
 )
 
 func BindAdminApi(api huma.API, appApi *Api) {
 	adminGroup := huma.NewGroup(api, "/admin")
 	//  admin middleware
-	adminGroup.UseMiddleware(middleware.HumaCheckPermissionsMiddleware(api, appApi.app, "superuser"))
+	adminGroup.UseMiddleware(humamiddleware.HumaCheckPermissionsMiddleware(api, appApi.app, "superuser"))
 	//  admin user list
 	huma.Register(
 		adminGroup,

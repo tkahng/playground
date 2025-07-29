@@ -9,7 +9,7 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
 	"github.com/tkahng/playground/internal/contextstore"
-	"github.com/tkahng/playground/internal/middleware"
+	"github.com/tkahng/playground/internal/middleware/humamiddleware"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/shared"
 	"github.com/tkahng/playground/internal/stores"
@@ -108,7 +108,7 @@ type TeamInfoOutput struct {
 }
 
 func (api *Api) BindCreateTeam(humaApi huma.API) {
-	emailVerified := middleware.HumaEmailVerifiedMiddleware(humaApi, api.App())
+	emailVerified := humamiddleware.HumaEmailVerifiedMiddleware(humaApi, api.App())
 	huma.Register(
 		humaApi,
 		huma.Operation{

@@ -8,14 +8,15 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/tkahng/playground/internal/core"
 	"github.com/tkahng/playground/internal/middleware"
+	"github.com/tkahng/playground/internal/middleware/humamiddleware"
 	"github.com/tkahng/playground/internal/shared"
 	"github.com/tkahng/playground/internal/tools/types"
 )
 
 func BindMiddlewares(api huma.API, app core.App) {
-	api.UseMiddleware(middleware.HumaChiMiddleware(middleware.RecovererMiddleware(app)))
-	api.UseMiddleware(middleware.HumaAuthMiddleware(api, app))
-	api.UseMiddleware(middleware.HumaRequireAuthMiddleware(api, app))
+	api.UseMiddleware(humamiddleware.HumaChiMiddleware(middleware.RecovererMiddleware(app)))
+	api.UseMiddleware(humamiddleware.HumaAuthMiddleware(api, app))
+	api.UseMiddleware(humamiddleware.HumaRequireAuthMiddleware(api, app))
 }
 
 type IndexOutputBody struct {

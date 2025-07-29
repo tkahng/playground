@@ -1,4 +1,4 @@
-package middleware
+package humamiddleware
 
 import (
 	"net/http"
@@ -6,11 +6,12 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/danielgtaylor/huma/v2/adapters/humachi"
 	"github.com/tkahng/playground/internal/core"
+	"github.com/tkahng/playground/internal/middleware"
 	"github.com/tkahng/playground/internal/shared"
 )
 
 func HumaEmailVerifiedMiddleware(api huma.API, a core.App) func(ctx huma.Context, next func(huma.Context)) {
-	return HumaChiMiddleware(HttpEmailVerifiedMiddleware(a))
+	return HumaChiMiddleware(middleware.HttpEmailVerifiedMiddleware(a))
 	// return func(ctx huma.Context, next func(huma.Context)) {
 	// 	rawCtx := ctx.Context()
 	// 	userInfo := contextstore.GetContextUserInfo(rawCtx)
@@ -28,7 +29,7 @@ func HumaEmailVerifiedMiddleware(api huma.API, a core.App) func(ctx huma.Context
 
 // Auth creates a middleware that will authorize requests based on the required scopes for the operation.
 func HumaAuthMiddleware(api huma.API, app core.App) func(ctx huma.Context, next func(huma.Context)) {
-	return HumaChiMiddleware(HttpAuthMiddleware(app))
+	return HumaChiMiddleware(middleware.HttpAuthMiddleware(app))
 	// return func(ctx huma.Context, next func(huma.Context)) {
 	// 	ctxx := ctx.Context()
 	// 	// check if already has user claims
@@ -82,7 +83,7 @@ func HumaRequireAuthMiddleware(api huma.API, app core.App) func(ctx huma.Context
 			next(ctx)
 			return
 		}
-		mw := HttpRequireAuthMiddleware(app)
+		mw := middleware.HttpRequireAuthMiddleware(app)
 		r, w := humachi.Unwrap(ctx)
 		mw(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// r = r.WithContext(ctx.Context())
@@ -129,7 +130,7 @@ func HumaRequireAuthMiddleware(api huma.API, app core.App) func(ctx huma.Context
 }
 
 func HumaCheckPermissionsMiddleware(api huma.API, app core.App, permissions ...string) func(ctx huma.Context, next func(huma.Context)) {
-	return HumaChiMiddleware(HttpCheckPermissionsMiddleware(app, permissions...))
+	return HumaChiMiddleware(middleware.HttpCheckPermissionsMiddleware(app, permissions...))
 	// return func(ctx huma.Context, next func(huma.Context)) {
 
 	// 	if claims := contextstore.GetContextUserInfo(ctx.Context()); claims != nil {

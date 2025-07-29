@@ -1,4 +1,4 @@
-package middleware
+package humamiddleware
 
 import (
 	"net/http"
