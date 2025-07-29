@@ -114,6 +114,8 @@ func (api *Api) AdminUsersCreate(ctx context.Context, input *struct {
 	}
 	user, err := action.Authenticate(ctx, &services.AuthenticationInput{
 		Email:             input.Body.Email,
+		Name:              input.Body.Name,
+		AvatarUrl:         input.Body.Image,
 		Provider:          models.ProvidersCredentials,
 		Password:          &input.Body.Password,
 		Type:              models.ProviderTypeCredentials,

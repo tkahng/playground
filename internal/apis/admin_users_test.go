@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/tkahng/playground/internal/apis"
@@ -12,6 +13,8 @@ import (
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/shared"
 	"github.com/tkahng/playground/internal/test"
+	apphttp "github.com/tkahng/playground/internal/tools/http"
+	"github.com/tkahng/playground/internal/tools/types"
 )
 
 func TestApi_AdminUsersList(t *testing.T) {
@@ -101,24 +104,93 @@ func TestApi_AdminUsersCreate(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
-		// testApi := SetupApi(t, ctx, db)
-		// api := testApi.TestApi
-		// user, err := createAdminUser(testApi.App)
-		// if err != nil {
-		// 	t.Errorf("Error creating user: %v", err)
-		// 	return
-		// }
-		// tokensVerifiedTokens, err := app.Auth().CreateAuthTokensFromEmail(context.Background(), user.User.Email)
-		// if err != nil {
-		// 	t.Errorf("Error creating auth tokens: %v", err)
-		// 	return
-		// }
-		// VerifiedHeader := fmt.Sprintf("Authorization: Bearer %s", tokensVerifiedTokens.Tokens.AccessToken)
-		// resp := api.Post("/admin/users", VerifiedHeader, &apis.CreateAdminUserInput{
-		// 	Email: "user1@example",
-		// })
-		// if resp.Code == 200 {
-		// 	t.Fatalf("Unexpected response: %s", resp.Body.String())
-		// }
+		testApi := SetupApi(t, ctx, db)
+		adminUser := CreateUserWithOptions(t, testApi.App, UserWithEmail("admin@k2dv.io"), UserWithPermission(shared.PermissionNameAdmin))
+		header := createTokenHeader(t, testApi.App, adminUser.User.Email)
+		scenarios := []ApiScenario{
+			{
+				Name:           "admin users create",
+				Method:         http.MethodPost,
+				URL:            "/admin/users",
+				ExpectedStatus: http.StatusOK,
+				Headers:        []string{header},
+				TestAppFactory: func(t testing.TB) *TestApi {
+					return testApi
+				},
+				BeforeTestFunc: func(t testing.TB, app *core.BaseAppDecorator, scenario *ApiScenario) {
+					input := &apis.UserCreateInput{
+						Password: "Password123!",
+						UserMutationInput: &apis.UserMutationInput{
+							Email: "tkahng+01@gmail.com",
+							Name:  types.Pointer("John Doe"),
+						},
+					}
+					data, err := json.Marshal(input)
+					if err != nil {
+						t.Errorf("Error marshalling input: %v", err)
+					}
+					scenario.Body = strings.NewReader(string(data))
+				},
+				AfterTestFunc: func(t testing.TB, app *core.BaseAppDecorator, res *httptest.ResponseRecorder) {
+					var body apis.ApiUser
+					err := json.NewDecoder(res.Body).Decode(&body)
+					if err != nil {
+						t.Errorf("Error decoding response: %v", err)
+					}
+					if body.Email != "tkahng+01@gmail.com" {
+						t.Errorf("Expected user email to be tkahng+01@gmail.com, got %s", body.Email)
+					}
+					if body.Name != nil {
+						name := *body.Name
+						if name != "John Doe" {
+							t.Errorf("Expected user name to be John Doe, got %s", *body.Name)
+						}
+					}
+				},
+			},
+			{
+				Name:           "admin users create email exists",
+				Method:         http.MethodPost,
+				URL:            "/admin/users",
+				ExpectedStatus: http.StatusConflict,
+				Headers:        []string{header},
+				TestAppFactory: func(t testing.TB) *TestApi {
+					return testApi
+				},
+				BeforeTestFunc: func(t testing.TB, app *core.BaseAppDecorator, scenario *ApiScenario) {
+					input := &apis.UserCreateInput{
+						Password: "Password123!",
+						UserMutationInput: &apis.UserMutationInput{
+							Email: "tkahng+01@gmail.com",
+							Name:  types.Pointer("John Doe"),
+						},
+					}
+					data, err := json.Marshal(input)
+					if err != nil {
+						t.Errorf("Error marshalling input: %v", err)
+					}
+					scenario.Body = strings.NewReader(string(data))
+				},
+				AfterTestFunc: func(t testing.TB, app *core.BaseAppDecorator, res *httptest.ResponseRecorder) {
+					var body apphttp.ErrorModel
+					err := json.NewDecoder(res.Body).Decode(&body)
+					if err != nil {
+						t.Errorf("Error decoding response: %v", err)
+					}
+					if body.Detail != "User already exists" {
+						t.Errorf("Expected detail to be User already exists, got %s", body.Detail)
+					}
+					if body.Status != http.StatusConflict {
+						t.Errorf("Expected status to be %d, got %d", http.StatusConflict, body.Status)
+					}
+					if body.Title != "Conflict" {
+						t.Errorf("Expected title to be Conflict, got %s", body.Title)
+					}
+				},
+			},
+		}
+		for _, tt := range scenarios {
+			tt.Test(t)
+		}
 	})
 }
