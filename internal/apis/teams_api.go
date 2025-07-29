@@ -172,12 +172,12 @@ func (api *Api) BindCheckTeamSlug(
 			Method:      http.MethodPost,
 			Path:        "/teams/check-slug",
 			Summary:     "check-team-slug",
-			Description: "check if team slug exists",
+			Description: "check if a team slug is available",
 			Tags:        []string{"Teams"},
+			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
 			Security: []map[string][]string{{
 				shared.BearerAuthSecurityKey: {},
 			}},
-			Errors: []int{http.StatusInternalServerError, http.StatusBadRequest},
 		},
 		api.CheckTeamSlug,
 	)
@@ -223,6 +223,25 @@ type TeamMemberListInput struct {
 type UserListTeamsParams struct {
 	PaginatedInput
 	SortParams
+}
+
+func (api *Api) BindGetUserTeams(humaApi huma.API) {
+	huma.Register(
+		humaApi,
+		huma.Operation{
+			OperationID: "get-user-teams",
+			Method:      http.MethodGet,
+			Path:        "/teams",
+			Summary:     "get-user-teams",
+			Description: "get all teams for a user",
+			Tags:        []string{"Teams"},
+			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+		},
+		api.GetUserTeams,
+	)
 }
 
 func (api *Api) GetUserTeams(
@@ -282,6 +301,28 @@ func (api *Api) GetUserTeams(
 	}, nil
 }
 
+func (api *Api) BindFindTeamInfoBySlug(humaApi huma.API) {
+	teamInfoSlugMiddleware := humamiddleware.TeamInfoFromTeamSlug(humaApi, api.App())
+	huma.Register(
+		humaApi,
+		huma.Operation{
+			OperationID: "get-team-by-slug",
+			Method:      http.MethodGet,
+			Path:        "/teams/slug/{team-slug}",
+			Summary:     "get-team-info-by-slug",
+			Description: "get a team by slug",
+			Tags:        []string{"Teams"},
+			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+			Middlewares: huma.Middlewares{
+				teamInfoSlugMiddleware,
+			},
+		},
+		api.FindTeamInfoBySlug,
+	)
+}
 func (api *Api) FindTeamInfoBySlug(
 	ctx context.Context,
 	input *struct {
@@ -403,6 +444,31 @@ func (api *Api) DeleteTeam(
 	}
 	slog.InfoContext(ctx, "Team deleted successfully", slog.String("team_id", info.Team.ID.String()), slog.String("user_id", info.User.ID.String()))
 	return nil, nil
+}
+
+func (api *Api) BindGetTeam(humaApi huma.API) {
+	teamInfoMiddleware := humamiddleware.TeamInfoFromParam(humaApi, api.App())
+	requireMember := humamiddleware.RequireTeamMemberRolesMiddleware(humaApi)
+	huma.Register(
+		humaApi,
+		huma.Operation{
+			OperationID: "get-team",
+			Method:      http.MethodGet,
+			Path:        "/teams/{team-id}",
+			Summary:     "get-team",
+			Description: "get a team by ID",
+			Tags:        []string{"Teams"},
+			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+			Middlewares: huma.Middlewares{
+				teamInfoMiddleware,
+				requireMember,
+			},
+		},
+		api.GetTeam,
+	)
 }
 
 func (api *Api) GetTeam(
