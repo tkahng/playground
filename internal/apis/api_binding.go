@@ -13,6 +13,7 @@ import (
 )
 
 func BindMiddlewares(api huma.API, app core.App) {
+	api.UseMiddleware(middleware.HumaChiMiddleware(middleware.RecovererMiddleware(app)))
 	api.UseMiddleware(middleware.AuthMiddleware(api, app))
 	api.UseMiddleware(middleware.RequireAuthMiddleware(api))
 }
