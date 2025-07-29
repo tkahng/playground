@@ -13,6 +13,23 @@ import (
 
 type HttpMiddelwareFunc func(http.Handler) http.Handler
 
+func HttpEmailVerifiedMiddleware(app core.App) HttpMiddelwareFunc {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			rawCtx := r.Context()
+			userInfo := contextstore.GetContextUserInfo(rawCtx)
+			if userInfo == nil {
+				_ = appHttp.WriteErr(w, r, http.StatusUnauthorized, "unauthorized. user info not found", nil)
+				return
+			}
+			if userInfo.User.EmailVerifiedAt == nil {
+				_ = appHttp.WriteErr(w, r, http.StatusUnauthorized, "email not verified", nil)
+				return
+			}
+			next.ServeHTTP(w, r)
+		})
+	}
+}
 func HttpAuthMiddleware(app core.App) HttpMiddelwareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
