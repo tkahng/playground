@@ -22,6 +22,17 @@ import (
 	"github.com/tkahng/playground/internal/test"
 )
 
+func createTokenHeader(t testing.TB, app core.App, email string) string {
+	t.Helper()
+	tokensVerifiedTokens, err := app.Auth().CreateAuthTokensFromEmail(context.Background(), email)
+	if err != nil {
+		t.Errorf("Error creating auth tokens: %v", err)
+	}
+	VerifiedHeader := fmt.Sprintf("Authorization: Bearer %s", tokensVerifiedTokens.Tokens.AccessToken)
+	return VerifiedHeader
+
+}
+
 func createTeamAndMember(app core.App, user *models.User, teamName string) (*models.TeamInfoModel, error) {
 
 	team, err := app.Adapter().TeamGroup().CreateTeam(context.Background(), teamName, strings.TrimSpace(teamName))
@@ -42,14 +53,36 @@ func createTeamAndMember(app core.App, user *models.User, teamName string) (*mod
 		Member: *member,
 	}, nil
 }
-func createAdminUser(app core.App) (*models.UserInfo, error) {
+
+func findOrCreateRolePermission(t testing.TB, app core.App, permissionName string) (*models.RolePermission, error) {
+	t.Helper()
+	perm, err := app.Adapter().Rbac().FindOrCreatePermission(context.Background(), permissionName)
+	if err != nil {
+		return nil, err
+	}
+	role, err := app.Adapter().Rbac().FindOrCreateRole(context.Background(), permissionName)
+	if err != nil {
+		return nil, err
+	}
+	err = app.Adapter().Rbac().CreateRolePermissions(context.Background(), role.ID, perm.ID)
+	if err != nil {
+		return nil, err
+	}
+	return &models.RolePermission{
+		RoleID:       perm.ID,
+		PermissionID: role.ID,
+	}, nil
+}
+
+func createAdminUser(t testing.TB, app core.App) *models.UserInfo {
+	t.Helper()
 	nw := time.Now()
 	user, err := app.Adapter().User().CreateUser(context.Background(), &models.User{
 		Email:           "admin@k2dv.io",
 		EmailVerifiedAt: &nw,
 	})
 	if err != nil {
-		return nil, err
+		t.Fatalf("CreateUser() error = %v", err)
 	}
 	_, err = app.Adapter().UserAccount().CreateUserAccount(context.Background(), &models.UserAccount{
 		UserID:            user.ID,
@@ -58,19 +91,19 @@ func createAdminUser(app core.App) (*models.UserInfo, error) {
 		ProviderAccountID: "admin@k2dv.io",
 	})
 	if err != nil {
-		return nil, err
+		t.Fatalf("CreateUserAccount() error = %v", err)
 	}
-	role, err := app.Adapter().Rbac().FindRoleByName(context.Background(), shared.PermissionNameAdmin)
+	role, err := findOrCreateRolePermission(t, app, shared.PermissionNameAdmin)
 	if err != nil {
-		return nil, err
+		t.Fatalf("CreateUserAccount() error = %v", err)
 	}
-	err = app.Adapter().Rbac().CreateUserRoles(context.Background(), user.ID, role.ID)
+	err = app.Adapter().Rbac().CreateUserRoles(context.Background(), user.ID, role.RoleID)
 	if err != nil {
-		return nil, err
+		t.Fatalf("CreateUserAccount() error = %v", err)
 	}
 	return &models.UserInfo{
 		User: *user,
-	}, nil
+	}
 }
 func createVerifiedUser(app core.App) (*models.UserInfo, error) {
 	nw := time.Now()
@@ -123,14 +156,14 @@ type TestApi struct {
 	Router  http.Handler
 }
 
-func SetupApi(t testing.TB, ctx context.Context, db database.Dbx) TestApi {
+func SetupApi(t testing.TB, ctx context.Context, db database.Dbx) *TestApi {
 	t.Helper()
 	cfg := conf.ZeroEnvConfig()
 	app := core.NewAppDecorator(ctx, cfg, db)
 	appApi := apis.NewAppApi(app)
 	router, api := test.NewHumaApi(t)
 	apis.AddRoutes(api, appApi)
-	testApi := TestApi{
+	testApi := &TestApi{
 		TestApi: api,
 		Api:     *appApi,
 		App:     app,
@@ -203,8 +236,8 @@ type ApiScenario struct {
 	// test hooks
 	// ---------------------------------------------------------------
 
-	// TestAppFactory func(t testing.TB) *core.BaseAppDecorator
-	BeforeTestFunc func(t testing.TB, app *core.BaseAppDecorator)
+	TestAppFactory func(t testing.TB) *TestApi
+	BeforeTestFunc func(t testing.TB, app *core.BaseAppDecorator, scenario *ApiScenario)
 	AfterTestFunc  func(t testing.TB, app *core.BaseAppDecorator, res *httptest.ResponseRecorder)
 }
 
@@ -281,9 +314,9 @@ func (scenario *ApiScenario) normalizedName() string {
 }
 
 func (scenario *ApiScenario) test(t testing.TB) {
-	testApi := SetupApi(t, context.Background(), nil)
+	testApi := scenario.TestAppFactory(t)
 	if scenario.BeforeTestFunc != nil {
-		scenario.BeforeTestFunc(t, testApi.App)
+		scenario.BeforeTestFunc(t, testApi.App, scenario)
 	}
 	var args []any
 	if len(scenario.Headers) != 0 {
@@ -299,7 +332,7 @@ func (scenario *ApiScenario) test(t testing.TB) {
 	if recorder.Code != scenario.ExpectedStatus {
 		t.Errorf("Expected status code %d, got %d", scenario.ExpectedStatus, recorder.Code)
 	}
-	if len(scenario.ExpectedContent) == 0 && len(scenario.NotExpectedContent) == 0 {
+	if len(scenario.ExpectedContent) == 0 && len(scenario.NotExpectedContent) == 0 && scenario.AfterTestFunc == nil {
 		if len(recorder.Body.String()) != 0 {
 			t.Errorf("Expected empty body, got \n%v", recorder.Body.String())
 		}
