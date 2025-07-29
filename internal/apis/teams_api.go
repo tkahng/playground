@@ -108,7 +108,7 @@ type TeamInfoOutput struct {
 }
 
 func (api *Api) BindCreateTeam(humaApi huma.API) {
-	emailVerified := middleware.EmailVerifiedMiddleware(humaApi)
+	emailVerified := middleware.HumaEmailVerifiedMiddleware(humaApi, api.App())
 	huma.Register(
 		humaApi,
 		huma.Operation{

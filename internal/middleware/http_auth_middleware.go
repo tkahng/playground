@@ -6,12 +6,29 @@ import (
 	"net/http"
 	"slices"
 
+	"github.com/danielgtaylor/huma/v2"
 	"github.com/tkahng/playground/internal/contextstore"
 	"github.com/tkahng/playground/internal/core"
 	appHttp "github.com/tkahng/playground/internal/tools/http"
 )
 
-type HttpMiddelwareFunc func(http.Handler) http.Handler
+type HttpMiddelwareFunc func(next http.Handler) http.Handler
+
+func Unwrap(ctx huma.Context) (*http.Request, http.ResponseWriter) {
+	for {
+		if c, ok := ctx.(interface{ Unwrap() huma.Context }); ok {
+			ctx = c.Unwrap()
+			continue
+		}
+		break
+	}
+	if c, ok := ctx.(interface {
+		Unwrap() (*http.Request, http.ResponseWriter)
+	}); ok {
+		return c.Unwrap()
+	}
+	panic("this context does not implement Unwrap")
+}
 
 func HttpEmailVerifiedMiddleware(app core.App) HttpMiddelwareFunc {
 	return func(next http.Handler) http.Handler {

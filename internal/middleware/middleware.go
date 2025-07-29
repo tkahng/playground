@@ -39,7 +39,11 @@ var HumaTokenFuncs = []func(huma.Context) string{
 }
 
 func HttpTokenFromHeader(r *http.Request, w http.ResponseWriter) string {
-	return r.Header.Get("Authorization")
+	bearer := r.Header.Get("Authorization")
+	if len(bearer) > 7 && strings.ToUpper(bearer[0:6]) == "BEARER" {
+		return bearer[7:]
+	}
+	return ""
 }
 func HttpTokenFromQuery(r *http.Request, w http.ResponseWriter) string {
 	return queryparam.Get(r.URL.RawQuery, "access_token")

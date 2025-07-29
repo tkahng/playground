@@ -11,7 +11,7 @@ import (
 func BindAdminApi(api huma.API, appApi *Api) {
 	adminGroup := huma.NewGroup(api, "/admin")
 	//  admin middleware
-	adminGroup.UseMiddleware(middleware.CheckPermissionsMiddleware(api, "superuser"))
+	adminGroup.UseMiddleware(middleware.HumaCheckPermissionsMiddleware(api, appApi.app, "superuser"))
 	//  admin user list
 	huma.Register(
 		adminGroup,

@@ -14,8 +14,8 @@ import (
 
 func BindMiddlewares(api huma.API, app core.App) {
 	api.UseMiddleware(middleware.HumaChiMiddleware(middleware.RecovererMiddleware(app)))
-	api.UseMiddleware(middleware.AuthMiddleware(api, app))
-	api.UseMiddleware(middleware.RequireAuthMiddleware(api))
+	api.UseMiddleware(middleware.HumaAuthMiddleware(api, app))
+	api.UseMiddleware(middleware.HumaRequireAuthMiddleware(api, app))
 }
 
 type IndexOutputBody struct {

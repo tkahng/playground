@@ -3,6 +3,7 @@ package apis_test
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"strings"
 	"testing"
 	"time"
@@ -82,12 +83,9 @@ func createUnverifiedUser(app *core.BaseAppDecorator) (*models.UserInfo, error) 
 }
 
 func TestGetGreeting(t *testing.T) {
-	_, api := humatest.New(t)
-	cfg := conf.ZeroEnvConfig()
 	ctx, db := test.DbSetup()
-	app := core.NewAppDecorator(ctx, cfg, db)
-	appApi := apis.NewAppApi(app)
-	apis.AddRoutes(api, appApi)
+	testApi := setupApi(t, ctx, db)
+	api := testApi.TestApi
 
 	resp := api.Get("/")
 	if !strings.Contains(resp.Body.String(), "public") {
@@ -99,11 +97,9 @@ func TestTeamSlug(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
-		_, api := humatest.New(t)
-		cfg := conf.ZeroEnvConfig()
-		app := core.NewAppDecorator(ctx, cfg, db)
-		appApi := apis.NewAppApi(app)
-		apis.AddRoutes(api, appApi)
+		testApi := setupApi(t, ctx, db)
+		app := testApi.App
+		api := testApi.TestApi
 		user, err := createVerifiedUser(app)
 		if err != nil {
 			t.Errorf("Error creating user: %v", err)
@@ -147,13 +143,8 @@ func TestGetTeam_unauthorized(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
-
-		cfg := conf.ZeroEnvConfig()
-		app := core.NewAppDecorator(ctx, cfg, db)
-		appApi := apis.NewAppApi(app)
-		_, api := humatest.New(t)
-		apis.AddRoutes(api, appApi)
-
+		testApi := setupApi(t, ctx, db)
+		api := testApi.TestApi
 		t.Run("Unauthorized access", func(t *testing.T) {
 			resp := api.Get("/teams/"+uuid.NewString(), "")
 			if resp.Code == 200 {
@@ -168,11 +159,9 @@ func TestGetTeam_invalidID(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
-		cfg := conf.ZeroEnvConfig()
-		app := core.NewAppDecorator(ctx, cfg, db)
-		appApi := apis.NewAppApi(app)
-		_, api := humatest.New(t)
-		apis.AddRoutes(api, appApi)
+		testApi := setupApi(t, ctx, db)
+		app := testApi.App
+		api := testApi.TestApi
 		user, err := createVerifiedUser(app)
 		if err != nil {
 			t.Errorf("Error creating user: %v", err)
@@ -202,12 +191,9 @@ func TestGetTeam_success(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
-
-		cfg := conf.ZeroEnvConfig()
-		app := core.NewAppDecorator(ctx, cfg, db)
-		appApi := apis.NewAppApi(app)
-		_, api := humatest.New(t)
-		apis.AddRoutes(api, appApi)
+		testApi := setupApi(t, ctx, db)
+		app := testApi.App
+		api := testApi.TestApi
 		user, err := createVerifiedUser(app)
 		if err != nil {
 			t.Errorf("Error creating user: %v", err)
@@ -238,11 +224,9 @@ func TestCreateTeam_SuccessfulCreation(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
-		cfg := conf.ZeroEnvConfig()
-		app := core.NewAppDecorator(ctx, cfg, db)
-		appApi := apis.NewAppApi(app)
-		_, api := humatest.New(t)
-		apis.AddRoutes(api, appApi)
+		testApi := setupApi(t, ctx, db)
+		app := testApi.App
+		api := testApi.TestApi
 		user, err := createVerifiedUser(app)
 		if err != nil {
 			t.Errorf("Error creating user: %v", err)
@@ -283,12 +267,9 @@ func TestCreateTeam_emailNotVerified(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
-
-		cfg := conf.ZeroEnvConfig()
-		app := core.NewAppDecorator(ctx, cfg, db)
-		appApi := apis.NewAppApi(app)
-		_, api := humatest.New(t)
-		apis.AddRoutes(api, appApi)
+		testApi := setupApi(t, ctx, db)
+		app := testApi.App
+		api := testApi.TestApi
 		user, err := createUnverifiedUser(app)
 		if err != nil {
 			t.Errorf("Error creating user: %v", err)
@@ -319,12 +300,9 @@ func TestUpdateTeam_failedNotOwner(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
-		cfg := conf.ZeroEnvConfig()
-		app := core.NewAppDecorator(ctx, cfg, db)
-
-		appApi := apis.NewAppApi(app)
-		_, api := humatest.New(t)
-		apis.AddRoutes(api, appApi)
+		testApi := setupApi(t, ctx, db)
+		app := testApi.App
+		api := testApi.TestApi
 		user1, err := app.Adapter().User().CreateUser(
 			ctx,
 			&models.User{
@@ -393,12 +371,9 @@ func TestUpdateTeam_successOwner(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
-		cfg := conf.ZeroEnvConfig()
-		app := core.NewAppDecorator(ctx, cfg, db)
-
-		appApi := apis.NewAppApi(app)
-		_, api := humatest.New(t)
-		apis.AddRoutes(api, appApi)
+		testApi := setupApi(t, ctx, db)
+		app := testApi.App
+		api := testApi.TestApi
 		user1, err := app.Adapter().User().CreateUser(
 			ctx,
 			&models.User{
@@ -445,12 +420,9 @@ func TestDeleteTeam_successOwner(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
-		cfg := conf.ZeroEnvConfig()
-		app := core.NewAppDecorator(ctx, cfg, db)
-
-		appApi := apis.NewAppApi(app)
-		_, api := humatest.New(t)
-		apis.AddRoutes(api, appApi)
+		testApi := setupApi(t, ctx, db)
+		app := testApi.App
+		api := testApi.TestApi
 		user1, err := app.Adapter().User().CreateUser(
 			ctx,
 			&models.User{
@@ -491,12 +463,10 @@ func TestDeleteTeam_failNonOwner(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
-		cfg := conf.ZeroEnvConfig()
-		app := core.NewAppDecorator(ctx, cfg, db)
+		testApi := setupApi(t, ctx, db)
+		app := testApi.App
+		api := testApi.TestApi
 
-		appApi := apis.NewAppApi(app)
-		_, api := humatest.New(t)
-		apis.AddRoutes(api, appApi)
 		user1, err := app.Adapter().User().CreateUser(
 			ctx,
 			&models.User{
@@ -556,61 +526,6 @@ func TestDeleteTeam_failNonOwner(t *testing.T) {
 	})
 }
 
-// func TestGetActiveTeamMember_success(t *testing.T) {
-// 	test.DbSetup()
-// 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
-// 		cfg := conf.ZeroEnvConfig()
-// 		app := core.NewAppDecorator(ctx, cfg, db)
-
-// 		appApi := apis.NewApi(app)
-// 		_, api := humatest.New(t)
-// 		apis.AddRoutes(api, appApi)
-// 		user1, err := app.Adapter().User().CreateUser(
-// 			ctx,
-// 			&models.User{
-// 				Email: "user1@example",
-// 			},
-// 		)
-// 		if err != nil {
-// 			t.Errorf("Error creating user: %v", err)
-// 			return
-// 		}
-
-// 		member1, err := app.Team().CreateTeamWithOwner(
-// 			ctx,
-// 			"test team",
-// 			"test-team",
-// 			user1.ID,
-// 		)
-// 		if err != nil {
-// 			t.Errorf("Error creating user: %v", err)
-// 			return
-// 		}
-// 		if member1 == nil {
-// 			t.Errorf("Error creating user: %v", err)
-// 			return
-// 		}
-
-// 		tokensVerifiedTokens, err := app.Auth().CreateAuthTokensFromEmail(ctx, user1.Email)
-// 		if err != nil {
-// 			t.Errorf("Error creating auth tokens: %v", err)
-// 			return
-// 		}
-// 		VerifiedHeader := fmt.Sprintf("Authorization: Bearer %s", tokensVerifiedTokens.Tokens.AccessToken)
-// 		resp := api.Get("/team-members/active", VerifiedHeader)
-// 		if resp.Code != 200 {
-// 			t.Fatalf("Unexpected response: %s", resp.Body.String())
-// 		}
-// 		obj, err := utils.UnmarshalJSON[models.TeamMember](resp.Body.Bytes())
-// 		if err != nil {
-// 			t.Fatalf("error marshaling response: %v", err)
-// 		}
-// 		if obj.ID != member1.Member.ID {
-// 			t.Fatalf("wrong member id. expected: %v, got: %v", member1.Member.ID, obj.ID)
-// 		}
-// 	})
-// }
-
 func TestGetActiveTeamMember_nomember(t *testing.T) {
 	test.DbSetup()
 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
@@ -641,253 +556,26 @@ func TestGetActiveTeamMember_nomember(t *testing.T) {
 	})
 }
 
-// func TestGetUserTeamMembers_basic(t *testing.T) {
-// 	test.DbSetup()
-// 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
-// 		cfg := conf.ZeroEnvConfig()
-// 		app := core.NewAppDecorator(ctx, cfg, db)
-
-// 		appApi := apis.NewApi(app)
-// 		_, api := humatest.New(t)
-// 		apis.AddRoutes(api, appApi)
-// 		user1, err := app.Adapter().User().CreateUser(
-// 			ctx,
-// 			&models.User{
-// 				Email: "user1@example",
-// 			},
-// 		)
-// 		if err != nil {
-// 			t.Errorf("Error creating user: %v", err)
-// 			return
-// 		}
-
-// 		member1, err := app.Team().CreateTeamWithOwner(
-// 			ctx,
-// 			"test team",
-// 			"test-team",
-// 			user1.ID,
-// 		)
-// 		if err != nil {
-// 			t.Errorf("Error creating user: %v", err)
-// 			return
-// 		}
-// 		if member1 == nil {
-// 			t.Errorf("Error creating user: %v", err)
-// 			return
-// 		}
-
-// 		tokensVerifiedTokens, err := app.Auth().CreateAuthTokensFromEmail(ctx, user1.Email)
-// 		if err != nil {
-// 			t.Errorf("Error creating auth tokens: %v", err)
-// 			return
-// 		}
-// 		VerifiedHeader := fmt.Sprintf("Authorization: Bearer %s", tokensVerifiedTokens.Tokens.AccessToken)
-// 		resp := api.Get("/team-members", VerifiedHeader)
-// 		if resp.Code != 200 {
-// 			t.Fatalf("Unexpected response: %s", resp.Body.String())
-// 		}
-// 		obj, err := utils.UnmarshalJSON[apis.ApiPaginatedResponse[*apis.TeamMember]](resp.Body.Bytes())
-// 		if err != nil {
-// 			t.Fatalf("error marshaling response: %v", err)
-// 		}
-// 		if len(obj.Data) == 0 || obj.Data[0].ID != member1.Member.ID {
-// 			t.Fatalf("wrong member id. expected: %v, got: %v", member1.Member.ID, obj.Data[0].ID)
-// 		}
-// 	})
-// }
-
-// func TestGetUserTeamMembers_sortbyname(t *testing.T) {
-// 	test.DbSetup()
-// 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
-// 		cfg := conf.ZeroEnvConfig()
-// 		app := core.NewAppDecorator(ctx, cfg, db)
-
-// 		appApi := apis.NewApi(app)
-// 		_, api := humatest.New(t)
-// 		apis.AddRoutes(api, appApi)
-// 		user1, err := app.Adapter().User().CreateUser(
-// 			ctx,
-// 			&models.User{
-// 				Email: "user1@example",
-// 			},
-// 		)
-// 		if err != nil {
-// 			t.Errorf("Error creating user: %v", err)
-// 			return
-// 		}
-
-// 		member1, err := app.Team().CreateTeamWithOwner(
-// 			ctx,
-// 			"test team a",
-// 			"test-team a",
-// 			user1.ID,
-// 		)
-// 		if err != nil {
-// 			t.Errorf("Error creating user: %v", err)
-// 			return
-// 		}
-// 		if member1 == nil {
-// 			t.Errorf("Error creating user: %v", err)
-// 			return
-// 		}
-// 		member2, err := app.Team().CreateTeamWithOwner(
-// 			ctx,
-// 			"test team b",
-// 			"test-team b",
-// 			user1.ID,
-// 		)
-// 		if err != nil {
-// 			t.Errorf("Error creating user: %v", err)
-// 			return
-// 		}
-// 		if member2 == nil {
-// 			t.Errorf("Error creating user: %v", err)
-// 			return
-// 		}
-
-// 		tokensVerifiedTokens, err := app.Auth().CreateAuthTokensFromEmail(ctx, user1.Email)
-// 		if err != nil {
-// 			t.Errorf("Error creating auth tokens: %v", err)
-// 			return
-// 		}
-// 		VerifiedHeader := fmt.Sprintf("Authorization: Bearer %s", tokensVerifiedTokens.Tokens.AccessToken)
-// 		resp := api.Get("/team-members?sort_by=team.name&sort_order=asc", VerifiedHeader)
-// 		if resp.Code != 200 {
-// 			t.Fatalf("Unexpected response: %s", resp.Body.String())
-// 		}
-// 		obj, err := utils.UnmarshalJSON[apis.ApiPaginatedResponse[*apis.TeamMember]](resp.Body.Bytes())
-// 		if err != nil {
-// 			t.Fatalf("error marshaling response: %v", err)
-// 		}
-// 		if len(obj.Data) == 0 || obj.Data[0].ID != member1.Member.ID {
-// 			t.Fatalf("wrong member id. expected: %v, got: %v", member1.Member.ID, obj.Data[0].ID)
-// 		}
-// 	})
-// }
-// func TestGetUserTeamMembers_sortbyname2(t *testing.T) {
-// 	test.DbSetup()
-// 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
-
-// 		api, app, _ := setupApi(t, ctx, db)
-// 		user1, err := app.Adapter().User().CreateUser(
-// 			ctx,
-// 			&models.User{
-// 				Email: "user1@example",
-// 			},
-// 		)
-// 		if err != nil {
-// 			t.Errorf("Error creating user: %v", err)
-// 			return
-// 		}
-
-// 		member1, err := app.Team().CreateTeamWithOwner(
-// 			ctx,
-// 			"test team a",
-// 			"test-team a",
-// 			user1.ID,
-// 		)
-// 		if err != nil {
-// 			t.Errorf("Error creating user: %v", err)
-// 			return
-// 		}
-// 		if member1 == nil {
-// 			t.Errorf("Error creating user: %v", err)
-// 			return
-// 		}
-// 		member2, err := app.Team().CreateTeamWithOwner(
-// 			ctx,
-// 			"test team b",
-// 			"test-team b",
-// 			user1.ID,
-// 		)
-// 		if err != nil {
-// 			t.Errorf("Error creating user: %v", err)
-// 			return
-// 		}
-// 		if member2 == nil {
-// 			t.Errorf("Error creating user: %v", err)
-// 			return
-// 		}
-
-// 		tokensVerifiedTokens, err := app.Auth().CreateAuthTokensFromEmail(ctx, user1.Email)
-// 		if err != nil {
-// 			t.Errorf("Error creating auth tokens: %v", err)
-// 			return
-// 		}
-// 		VerifiedHeader := fmt.Sprintf("Authorization: Bearer %s", tokensVerifiedTokens.Tokens.AccessToken)
-// 		resp := api.Get("/team-members?sort_by=team.name&sort_order=desc", VerifiedHeader)
-// 		if resp.Code != 200 {
-// 			t.Fatalf("Unexpected response: %s", resp.Body.String())
-// 		}
-// 		obj, err := utils.UnmarshalJSON[apis.ApiPaginatedResponse[*apis.TeamMember]](resp.Body.Bytes())
-// 		if err != nil {
-// 			t.Fatalf("error marshaling response: %v", err)
-// 		}
-// 		if len(obj.Data) == 0 || obj.Data[0].ID != member2.Member.ID {
-// 			t.Fatalf("wrong member id. expected: %v, got: %v", member2.Member.ID, obj.Data[0].ID)
-// 		}
-// 	})
-// }
-
 type TestApi struct {
 	TestApi humatest.TestAPI
 	Api     apis.Api
-	App     core.App
+	App     *core.BaseAppDecorator
 	Cfg     conf.EnvConfig
+	Router  http.Handler
 }
 
 func setupApi(t *testing.T, ctx context.Context, db database.Dbx) TestApi {
 	cfg := conf.ZeroEnvConfig()
 	app := core.NewAppDecorator(ctx, cfg, db)
 	appApi := apis.NewAppApi(app)
-	_, api := humatest.New(t)
+	router, api := test.NewHumaApi(t)
 	apis.AddRoutes(api, appApi)
 	testApi := TestApi{
 		TestApi: api,
 		Api:     *appApi,
 		App:     app,
 		Cfg:     cfg,
+		Router:  router,
 	}
 	return testApi
 }
-
-// func TestApi_GetUserTeams(t *testing.T) {
-// 	test.DbSetup()
-// 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
-// 		// _, app, _ := setupApi(t, ctx, db)
-// 		type fields struct {
-// 			app core.App
-// 		}
-// 		type args struct {
-// 			ctx   context.Context
-// 			input *shared.UserListTeamsParams
-// 		}
-// 		tests := []struct {
-// 			name    string
-// 			fields  fields
-// 			args    args
-// 			want    *apis.ApiPaginatedOutput[*shared.Team]
-// 			wantErr bool
-// 		}{
-// 			{
-// 				name:    "",
-// 				fields:  fields{},
-// 				args:    args{},
-// 				want:    &apis.ApiPaginatedOutput[*shared.Team]{},
-// 				wantErr: false,
-// 			},
-// 		}
-// 		for _, tt := range tests {
-// 			t.Run(tt.name, func(t *testing.T) {
-// 				// got, err := app.Team().GetUserTeams(ctx, tt.args.input)
-// 				// if (err != nil) != tt.wantErr {
-// 				// 	t.Errorf("Api.GetUserTeams() error = %v, wantErr %v", err, tt.wantErr)
-// 				// 	return
-// 				// }
-// 				// if !reflect.DeepEqual(got, tt.want) {
-// 				// 	t.Errorf("Api.GetUserTeams() = %v, want %v", got, tt.want)
-// 				// }
-// 			})
-// 		}
-// 	})
-// }
