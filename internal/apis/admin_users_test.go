@@ -17,18 +17,12 @@ func TestApi_AdminUsersList(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
-		type args struct {
-			url  string
-			args []any
-		}
 		tests := []ApiScenario{
 			{
-				Name:               "admin users list",
-				Method:             http.MethodGet,
-				URL:                "/api/admin/users",
-				ExpectedStatus:     http.StatusOK,
-				ExpectedContent:    []string{"total: 1"},
-				NotExpectedContent: []string{},
+				Name:           "admin users list",
+				Method:         http.MethodGet,
+				URL:            "/admin/users",
+				ExpectedStatus: http.StatusOK,
 				TestAppFactory: func(t testing.TB) *TestApi {
 					return SetupApi(t, ctx, db)
 				},

@@ -54,37 +54,37 @@ func createTeamAndMember(app core.App, user *models.User, teamName string) (*mod
 	}, nil
 }
 
-func findOrCreateRolePermission(t testing.TB, app core.App, permissionName string) (*models.RolePermission, error) {
-	t.Helper()
-	perm, err := app.Adapter().Rbac().FindOrCreatePermission(context.Background(), permissionName)
+func findOrCreateRolePermission(t testing.TB, app core.App, permissionName string) *models.RolePermission {
+	ctx := context.Background()
+	perm, err := app.Adapter().Rbac().FindOrCreatePermission(ctx, permissionName)
 	if err != nil {
-		return nil, err
+		t.Fatalf("FindOrCreatePermission() error = %v", err)
 	}
-	role, err := app.Adapter().Rbac().FindOrCreateRole(context.Background(), permissionName)
+	role, err := app.Adapter().Rbac().FindOrCreateRole(ctx, permissionName)
 	if err != nil {
-		return nil, err
+		t.Fatalf("FindOrCreateRole() error = %v", err)
 	}
-	err = app.Adapter().Rbac().CreateRolePermissions(context.Background(), role.ID, perm.ID)
+	err = app.Adapter().Rbac().CreateRolePermissions(ctx, role.ID, perm.ID)
 	if err != nil {
-		return nil, err
+		t.Fatalf("CreateRolePermissions() error = %v, roleID: %v, permissionID: %v", err, role.ID, perm.ID)
 	}
 	return &models.RolePermission{
 		RoleID:       perm.ID,
 		PermissionID: role.ID,
-	}, nil
+	}
 }
 
 func createAdminUser(t testing.TB, app core.App) *models.UserInfo {
-	t.Helper()
+	ctx := context.Background()
 	nw := time.Now()
-	user, err := app.Adapter().User().CreateUser(context.Background(), &models.User{
+	user, err := app.Adapter().User().CreateUser(ctx, &models.User{
 		Email:           "admin@k2dv.io",
 		EmailVerifiedAt: &nw,
 	})
 	if err != nil {
 		t.Fatalf("CreateUser() error = %v", err)
 	}
-	_, err = app.Adapter().UserAccount().CreateUserAccount(context.Background(), &models.UserAccount{
+	_, err = app.Adapter().UserAccount().CreateUserAccount(ctx, &models.UserAccount{
 		UserID:            user.ID,
 		Provider:          models.ProvidersCredentials,
 		Type:              models.ProviderTypeCredentials,
@@ -93,11 +93,15 @@ func createAdminUser(t testing.TB, app core.App) *models.UserInfo {
 	if err != nil {
 		t.Fatalf("CreateUserAccount() error = %v", err)
 	}
-	role, err := findOrCreateRolePermission(t, app, shared.PermissionNameAdmin)
+	err = app.Adapter().Rbac().EnsureRoleAndPermissions(ctx, shared.PermissionNameAdmin, shared.PermissionNameAdmin)
 	if err != nil {
-		t.Fatalf("CreateUserAccount() error = %v", err)
+		t.Fatalf("EnsureRoleAndPermissions() error = %v", err)
 	}
-	err = app.Adapter().Rbac().CreateUserRoles(context.Background(), user.ID, role.RoleID)
+	perm, err := app.Adapter().Rbac().FindOrCreatePermission(ctx, shared.PermissionNameAdmin)
+	if err != nil {
+		t.Fatalf("FindOrCreatePermission() error = %v", err)
+	}
+	err = app.Adapter().Rbac().CreateUserPermissions(ctx, user.ID, perm.ID)
 	if err != nil {
 		t.Fatalf("CreateUserAccount() error = %v", err)
 	}

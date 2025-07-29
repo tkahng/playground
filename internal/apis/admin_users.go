@@ -44,7 +44,7 @@ func (api *Api) AdminUsersList(ctx context.Context, input *struct {
 	filter.Emails = input.Emails
 	filter.RoleIds = utils.ParseValidUUIDs(input.RoleIds...)
 	filter.EmailVerified = input.EmailVerified
-
+	fmt.Printf("AdminUserfilter: %v", filter)
 	users, err := adapter.User().FindUsers(ctx, filter)
 	if err != nil {
 		return nil, err
