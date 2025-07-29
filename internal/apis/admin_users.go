@@ -28,7 +28,7 @@ type UserListFilter struct {
 	Expand        []string                  `query:"expand,omitempty" required:"false" minimum:"1" uniqueItems:"true" enum:"roles,permissions,accounts,subscriptions"`
 }
 
-func (api *Api) AdminUsers(ctx context.Context, input *struct {
+func (api *Api) AdminUsersList(ctx context.Context, input *struct {
 	UserListFilter
 }) (*ApiPaginatedOutput[*ApiUser], error) {
 	adapter := api.App().Adapter()

@@ -27,7 +27,7 @@ func BindAdminApi(api huma.API, appApi *Api) {
 				shared.BearerAuthSecurityKey: {},
 			}},
 		},
-		appApi.AdminUsers,
+		appApi.AdminUsersList,
 	)
 	// admin user get
 	huma.Register(

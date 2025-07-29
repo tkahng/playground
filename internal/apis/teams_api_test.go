@@ -3,88 +3,20 @@ package apis_test
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"strings"
 	"testing"
-	"time"
 
-	"github.com/danielgtaylor/huma/v2/humatest"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/tkahng/playground/internal/apis"
-	"github.com/tkahng/playground/internal/conf"
-	"github.com/tkahng/playground/internal/core"
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/test"
 )
 
-func createTeamAndMember(app core.App, user *models.User, teamName string) (*models.TeamInfoModel, error) {
-
-	team, err := app.Adapter().TeamGroup().CreateTeam(context.Background(), teamName, strings.TrimSpace(teamName))
-	if err != nil {
-		return nil, err
-	}
-	member, err := app.Adapter().TeamMember().CreateTeamMember(context.Background(), team.ID, user.ID, models.TeamMemberRoleOwner, true)
-	if err != nil {
-		return nil, err
-	}
-	return &models.TeamInfoModel{
-		Team: *team,
-		User: models.User{
-			ID:              user.ID,
-			Name:            user.Name,
-			EmailVerifiedAt: user.EmailVerifiedAt,
-		},
-		Member: *member,
-	}, nil
-}
-func createVerifiedUser(app core.App) (*models.UserInfo, error) {
-	nw := time.Now()
-	user, err := app.Adapter().User().CreateUser(context.Background(), &models.User{
-		Email:           "authenticated@example.com",
-		EmailVerifiedAt: &nw,
-	})
-	if err != nil {
-		return nil, err
-	}
-	_, err = app.Adapter().UserAccount().CreateUserAccount(context.Background(), &models.UserAccount{
-		UserID:            user.ID,
-		Provider:          models.ProvidersGoogle,
-		Type:              "oauth",
-		ProviderAccountID: "google-123",
-	})
-	if err != nil {
-		return nil, err
-	}
-	return &models.UserInfo{
-		User: *user,
-	}, nil
-}
-func createUnverifiedUser(app *core.BaseAppDecorator) (*models.UserInfo, error) {
-	user, err := app.Adapter().User().CreateUser(context.Background(), &models.User{
-		Email: "authenticated@example.com",
-	})
-	if err != nil {
-		return nil, err
-	}
-	_, err = app.Adapter().UserAccount().CreateUserAccount(context.Background(), &models.UserAccount{
-		UserID:            user.ID,
-		Provider:          models.ProvidersGoogle,
-		Type:              "oauth",
-		ProviderAccountID: "google-123",
-	})
-	if err != nil {
-		return nil, err
-	}
-	return &models.UserInfo{
-		User: *user,
-	}, nil
-}
-
 func TestGetGreeting(t *testing.T) {
 	ctx, db := test.DbSetup()
-	testApi := setupApi(t, ctx, db)
+	testApi := SetupApi(t, ctx, db)
 	api := testApi.TestApi
 
 	resp := api.Get("/")
@@ -97,7 +29,7 @@ func TestTeamSlug(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
-		testApi := setupApi(t, ctx, db)
+		testApi := SetupApi(t, ctx, db)
 		app := testApi.App
 		api := testApi.TestApi
 		user, err := createVerifiedUser(app)
@@ -143,7 +75,7 @@ func TestGetTeam_unauthorized(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
-		testApi := setupApi(t, ctx, db)
+		testApi := SetupApi(t, ctx, db)
 		api := testApi.TestApi
 		t.Run("Unauthorized access", func(t *testing.T) {
 			resp := api.Get("/teams/"+uuid.NewString(), "")
@@ -159,7 +91,7 @@ func TestGetTeam_invalidID(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
-		testApi := setupApi(t, ctx, db)
+		testApi := SetupApi(t, ctx, db)
 		app := testApi.App
 		api := testApi.TestApi
 		user, err := createVerifiedUser(app)
@@ -191,7 +123,7 @@ func TestGetTeam_success(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
-		testApi := setupApi(t, ctx, db)
+		testApi := SetupApi(t, ctx, db)
 		app := testApi.App
 		api := testApi.TestApi
 		user, err := createVerifiedUser(app)
@@ -224,7 +156,7 @@ func TestCreateTeam_SuccessfulCreation(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
-		testApi := setupApi(t, ctx, db)
+		testApi := SetupApi(t, ctx, db)
 		app := testApi.App
 		api := testApi.TestApi
 		user, err := createVerifiedUser(app)
@@ -267,7 +199,7 @@ func TestCreateTeam_emailNotVerified(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
-		testApi := setupApi(t, ctx, db)
+		testApi := SetupApi(t, ctx, db)
 		app := testApi.App
 		api := testApi.TestApi
 		user, err := createUnverifiedUser(app)
@@ -300,7 +232,7 @@ func TestUpdateTeam_failedNotOwner(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
-		testApi := setupApi(t, ctx, db)
+		testApi := SetupApi(t, ctx, db)
 		app := testApi.App
 		api := testApi.TestApi
 		user1, err := app.Adapter().User().CreateUser(
@@ -371,7 +303,7 @@ func TestUpdateTeam_successOwner(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
-		testApi := setupApi(t, ctx, db)
+		testApi := SetupApi(t, ctx, db)
 		app := testApi.App
 		api := testApi.TestApi
 		user1, err := app.Adapter().User().CreateUser(
@@ -420,7 +352,7 @@ func TestDeleteTeam_successOwner(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
-		testApi := setupApi(t, ctx, db)
+		testApi := SetupApi(t, ctx, db)
 		app := testApi.App
 		api := testApi.TestApi
 		user1, err := app.Adapter().User().CreateUser(
@@ -463,7 +395,7 @@ func TestDeleteTeam_failNonOwner(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
-		testApi := setupApi(t, ctx, db)
+		testApi := SetupApi(t, ctx, db)
 		app := testApi.App
 		api := testApi.TestApi
 
@@ -529,7 +461,7 @@ func TestDeleteTeam_failNonOwner(t *testing.T) {
 func TestGetActiveTeamMember_nomember(t *testing.T) {
 	test.DbSetup()
 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
-		testApi := setupApi(t, ctx, db)
+		testApi := SetupApi(t, ctx, db)
 		app := testApi.App
 		api := testApi.TestApi
 		user1, err := app.Adapter().User().CreateUser(
@@ -554,28 +486,4 @@ func TestGetActiveTeamMember_nomember(t *testing.T) {
 			t.Fatalf("Unexpected response: %s", resp.Body.String())
 		}
 	})
-}
-
-type TestApi struct {
-	TestApi humatest.TestAPI
-	Api     apis.Api
-	App     *core.BaseAppDecorator
-	Cfg     conf.EnvConfig
-	Router  http.Handler
-}
-
-func setupApi(t *testing.T, ctx context.Context, db database.Dbx) TestApi {
-	cfg := conf.ZeroEnvConfig()
-	app := core.NewAppDecorator(ctx, cfg, db)
-	appApi := apis.NewAppApi(app)
-	router, api := test.NewHumaApi(t)
-	apis.AddRoutes(api, appApi)
-	testApi := TestApi{
-		TestApi: api,
-		Api:     *appApi,
-		App:     app,
-		Cfg:     cfg,
-		Router:  router,
-	}
-	return testApi
 }
