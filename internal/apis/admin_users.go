@@ -220,5 +220,8 @@ func (api *Api) AdminUsersGet(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
+	if user == nil {
+		return nil, huma.Error404NotFound("User not found")
+	}
 	return &struct{ Body *ApiUser }{Body: FromUserModel(user)}, nil
 }

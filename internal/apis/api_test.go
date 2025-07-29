@@ -143,6 +143,17 @@ func UserWithEmail(email string) UserOptionFunc {
 		opt.account.ProviderAccountID = email
 	}
 }
+func UserWithProviderType(providerType models.ProviderTypes) UserOptionFunc {
+	return func(opt *CreateUserOption) {
+		opt.account.Type = providerType
+	}
+}
+
+func UserWithProvider(provider models.Providers) UserOptionFunc {
+	return func(opt *CreateUserOption) {
+		opt.account.Provider = provider
+	}
+}
 func UserWithName(name string) UserOptionFunc {
 	return func(opt *CreateUserOption) {
 		opt.user.Name = &name
@@ -180,8 +191,8 @@ func CreateUserWithOptions(t testing.TB, app core.App, options ...UserOptionFunc
 			Name:  types.Pointer("Test User"),
 		},
 		account: &models.UserAccount{
-			Provider:          models.ProvidersGoogle,
-			Type:              models.ProviderTypeOAuth,
+			Provider:          models.ProvidersCredentials,
+			Type:              models.ProviderTypeCredentials,
 			ProviderAccountID: "tkahng+01@gmail.com",
 		},
 	}

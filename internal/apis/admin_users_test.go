@@ -13,6 +13,7 @@ import (
 	"github.com/tkahng/playground/internal/apis"
 	"github.com/tkahng/playground/internal/core"
 	"github.com/tkahng/playground/internal/database"
+	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/shared"
 	"github.com/tkahng/playground/internal/stores"
 	"github.com/tkahng/playground/internal/test"
@@ -338,6 +339,78 @@ func TestApi_AdminUsersUpdate(t *testing.T) {
 					}
 					if body.Title != "Not Found" {
 						t.Errorf("Expected title to be Not Found, got %s", body.Title)
+					}
+				},
+			},
+		}
+		for _, tt := range scenarios {
+			tt.Test(t)
+		}
+	})
+}
+func TestApi_AdminUsersUpdatePassword(t *testing.T) {
+	test.Parallel(t)
+	test.SkipIfShort(t)
+	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
+		testApi := SetupApi(t, ctx, db)
+		adminUser := CreateUserWithOptions(t, testApi.App, UserWithEmail("admin@k2dv.io"), UserWithPermission(shared.PermissionNameAdmin))
+		header := createTokenHeader(t, testApi.App, adminUser.User.Email)
+		scenarios := []ApiScenario{
+			{
+				Name:           "admin users update user password",
+				Method:         http.MethodPut,
+				URL:            "/admin/users/",
+				ExpectedStatus: http.StatusNoContent,
+				Headers:        []string{header},
+				TestAppFactory: func(t testing.TB) *TestApi {
+					return testApi
+				},
+				BeforeTestFunc: func(t testing.TB, app *core.BaseAppDecorator, scenario *ApiScenario) {
+					user1 := CreateUserWithOptions(
+						t,
+						testApi.App,
+						UserWithEmail("user1@example.com"),
+						UserWithName("User 1"),
+						UserWithPassword("password"),
+						UserWithProvider(models.ProvidersCredentials),
+						UserWithProviderType(models.ProviderTypeCredentials),
+					)
+					scenario.URL = fmt.Sprintf("/admin/users/%s/password", user1.User.ID)
+					input := &apis.UpdateUserPasswordInput{
+						Password: "password2",
+					}
+					scenario.Body = JsonToReader(t, input)
+				},
+				AfterTestFunc: func(t testing.TB, app *core.BaseAppDecorator, res *httptest.ResponseRecorder) {
+					user, err := app.Adapter().User().FindUser(ctx, &stores.UserFilter{
+						Emails: []string{"user1@example.com"},
+					})
+					if err != nil {
+						t.Errorf("Error getting user: %v", err)
+					}
+					if user == nil {
+						t.Errorf("Expected user to not be nil, got %v", user)
+					}
+					account, err := app.Adapter().UserAccount().FindUserAccount(ctx, &stores.UserAccountFilter{
+						UserIds: []uuid.UUID{
+							user.ID,
+						},
+					})
+					if err != nil {
+						t.Errorf("Error getting user account: %v", err)
+					}
+					if account == nil {
+						t.Errorf("Expected user account to not be nil, got %v", account)
+					}
+					if account.Password == nil {
+						t.Errorf("Expected user account password to not be nil, got %v", account.Password)
+					}
+					match, err := app.Auth().Password().VerifyPassword(*account.Password, "password2")
+					if err != nil {
+						t.Errorf("Error verifying password: %v", err)
+					}
+					if !match {
+						t.Errorf("Expected user account password to be password2, got %s", *account.Password)
 					}
 				},
 			},
