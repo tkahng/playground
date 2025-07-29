@@ -3,6 +3,7 @@ package apis_test
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -12,6 +13,7 @@ import (
 	"github.com/tkahng/playground/internal/core"
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/shared"
+	"github.com/tkahng/playground/internal/stores"
 	"github.com/tkahng/playground/internal/test"
 	apphttp "github.com/tkahng/playground/internal/tools/http"
 	"github.com/tkahng/playground/internal/tools/types"
@@ -185,6 +187,46 @@ func TestApi_AdminUsersCreate(t *testing.T) {
 					}
 					if body.Title != "Conflict" {
 						t.Errorf("Expected title to be Conflict, got %s", body.Title)
+					}
+				},
+			},
+		}
+		for _, tt := range scenarios {
+			tt.Test(t)
+		}
+	})
+}
+
+func TestApi_AdminUsersDelete(t *testing.T) {
+	test.Parallel(t)
+	test.SkipIfShort(t)
+	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
+		testApi := SetupApi(t, ctx, db)
+		adminUser := CreateUserWithOptions(t, testApi.App, UserWithEmail("admin@k2dv.io"), UserWithPermission(shared.PermissionNameAdmin))
+		header := createTokenHeader(t, testApi.App, adminUser.User.Email)
+		scenarios := []ApiScenario{
+			{
+				Name:           "admin users delete user",
+				Method:         http.MethodDelete,
+				URL:            "/admin/users/",
+				ExpectedStatus: http.StatusNoContent,
+				Headers:        []string{header},
+				TestAppFactory: func(t testing.TB) *TestApi {
+					return testApi
+				},
+				BeforeTestFunc: func(t testing.TB, app *core.BaseAppDecorator, scenario *ApiScenario) {
+					user1 := CreateUserWithOptions(t, testApi.App, UserWithEmail("user1@example.com"))
+					scenario.URL = fmt.Sprintf("/admin/users/%s", user1.User.ID)
+				},
+				AfterTestFunc: func(t testing.TB, app *core.BaseAppDecorator, res *httptest.ResponseRecorder) {
+					user, err := app.Adapter().User().FindUser(ctx, &stores.UserFilter{
+						Emails: []string{"user1@example.com"},
+					})
+					if err != nil {
+						t.Errorf("Error getting user: %v", err)
+					}
+					if user != nil {
+						t.Errorf("Expected user to be nil, got %v", user)
 					}
 				},
 			},

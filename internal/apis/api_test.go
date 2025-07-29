@@ -490,3 +490,11 @@ func (scenario *ApiScenario) test(t testing.TB) {
 		scenario.AfterTestFunc(t, testApi.App, recorder)
 	}
 }
+
+func JsonToReader(t testing.TB, input any) *strings.Reader {
+	data, err := json.Marshal(input)
+	if err != nil {
+		t.Errorf("Error marshalling input: %v", err)
+	}
+	return strings.NewReader(string(data))
+}
