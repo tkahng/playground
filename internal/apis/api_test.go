@@ -143,6 +143,11 @@ func UserWithEmail(email string) UserOptionFunc {
 		opt.account.ProviderAccountID = email
 	}
 }
+func UserWithName(name string) UserOptionFunc {
+	return func(opt *CreateUserOption) {
+		opt.user.Name = &name
+	}
+}
 
 func UserWithPassword(password string) UserOptionFunc {
 	return func(opt *CreateUserOption) {
