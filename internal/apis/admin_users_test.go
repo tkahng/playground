@@ -420,3 +420,62 @@ func TestApi_AdminUsersUpdatePassword(t *testing.T) {
 		}
 	})
 }
+
+func TestApi_AdminUsersGet(t *testing.T) {
+	test.Parallel(t)
+	test.SkipIfShort(t)
+	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
+		testApi := SetupApi(t, ctx, db)
+		adminUser := CreateUserWithOptions(t, testApi.App, UserWithEmail("admin@k2dv.io"), UserWithPermission(shared.PermissionNameAdmin))
+		header := createTokenHeader(t, testApi.App, adminUser.User.Email)
+		user1 := CreateUserWithOptions(t, testApi.App, UserWithEmail("user1@example.com"))
+		tests := []ApiScenario{
+			{
+				Name:           "admin users get user1",
+				Method:         http.MethodGet,
+				URL:            "/admin/users/" + user1.User.ID.String(),
+				ExpectedStatus: http.StatusOK,
+				Headers:        []string{header},
+				TestAppFactory: func(t testing.TB) *TestApi {
+					return testApi
+				},
+				AfterTestFunc: func(t testing.TB, app *core.BaseAppDecorator, res *httptest.ResponseRecorder) {
+					var body apis.ApiUser
+					err := json.NewDecoder(res.Body).Decode(&body)
+					if err != nil {
+						t.Errorf("Error decoding response: %v", err)
+					}
+					if body.Email != user1.User.Email {
+						t.Errorf("Expected user email to be user1@example.com, got %s", body.Email)
+					}
+				},
+			},
+			{
+				Name:           "admin users get not existing user",
+				Method:         http.MethodGet,
+				URL:            "/admin/users/" + uuid.NewString(),
+				ExpectedStatus: http.StatusNotFound,
+				Headers:        []string{header},
+				TestAppFactory: func(t testing.TB) *TestApi {
+					return testApi
+				},
+				AfterTestFunc: func(t testing.TB, app *core.BaseAppDecorator, res *httptest.ResponseRecorder) {
+					var body apphttp.ErrorModel
+					err := json.NewDecoder(res.Body).Decode(&body)
+					if err != nil {
+						t.Errorf("Error decoding response: %v", err)
+					}
+					if body.Detail != "User not found" {
+						t.Errorf("Expected error detail to be User not found, got %s", body.Detail)
+					}
+					if body.Title != "Not Found" {
+						t.Errorf("Expected error title to be Not Found, got %s", body.Title)
+					}
+				},
+			},
+		}
+		for _, tt := range tests {
+			tt.Test(t)
+		}
+	})
+}
