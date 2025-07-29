@@ -153,6 +153,13 @@ func (api *Api) AdminUsersDelete(ctx context.Context, input *struct {
 	if !ok {
 		return nil, huma.Error400BadRequest("Cannot delete user with active subscription")
 	}
+	user, err := adapter.User().FindUserByID(ctx, input.ID)
+	if err != nil {
+		return nil, err
+	}
+	if user == nil {
+		return nil, huma.Error404NotFound("User not found")
+	}
 	err = adapter.User().DeleteUser(ctx, input.ID)
 	if err != nil {
 		return nil, err

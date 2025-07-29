@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/tkahng/playground/internal/apis"
 	"github.com/tkahng/playground/internal/core"
 	"github.com/tkahng/playground/internal/database"
@@ -227,6 +228,35 @@ func TestApi_AdminUsersDelete(t *testing.T) {
 					}
 					if user != nil {
 						t.Errorf("Expected user to be nil, got %v", user)
+					}
+				},
+			},
+			{
+				Name:           "admin users delete non existing user",
+				Method:         http.MethodDelete,
+				URL:            "/admin/users/",
+				ExpectedStatus: http.StatusNotFound,
+				Headers:        []string{header},
+				TestAppFactory: func(t testing.TB) *TestApi {
+					return testApi
+				},
+				BeforeTestFunc: func(t testing.TB, app *core.BaseAppDecorator, scenario *ApiScenario) {
+					scenario.URL = fmt.Sprintf("/admin/users/%s", uuid.New().String())
+				},
+				AfterTestFunc: func(t testing.TB, app *core.BaseAppDecorator, res *httptest.ResponseRecorder) {
+					var body apphttp.ErrorModel
+					err := json.NewDecoder(res.Body).Decode(&body)
+					if err != nil {
+						t.Errorf("Error decoding response: %v", err)
+					}
+					if body.Detail != "User not found" {
+						t.Errorf("Expected detail to be User not found, got %s", body.Detail)
+					}
+					if body.Status != http.StatusNotFound {
+						t.Errorf("Expected status to be %d, got %d", http.StatusNotFound, body.Status)
+					}
+					if body.Title != "Not Found" {
+						t.Errorf("Expected title to be Not Found, got %s", body.Title)
 					}
 				},
 			},
