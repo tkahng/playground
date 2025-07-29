@@ -336,7 +336,20 @@ func BindAdminApi(api huma.API, appApi *Api) {
 		appApi.AdminRolesCreatePermissions,
 	)
 	// admin roles delete permissions
-	huma.Register(adminGroup, huma.Operation{OperationID: "admin-roles-delete-permissions", Method: http.MethodDelete, Path: "/roles/{roleId}/permissions/{permissionId}", Summary: "Delete role permissions", Description: "Delete role permissions", Tags: []string{"Admin", "Roles", "Permissions"}, Errors: []int{http.StatusNotFound}, Security: []map[string][]string{{shared.BearerAuthSecurityKey: {}}}}, appApi.AdminRolesDeletePermissions)
+	huma.Register(
+		adminGroup,
+		huma.Operation{
+			OperationID: "admin-roles-delete-permissions",
+			Method:      http.MethodDelete,
+			Path:        "/roles/{roleId}/permissions/{permissionId}",
+			Summary:     "Delete role permissions",
+			Description: "Delete role permissions",
+			Tags:        []string{"Admin", "Roles", "Permissions"},
+			Errors:      []int{http.StatusNotFound},
+			Security:    []map[string][]string{{shared.BearerAuthSecurityKey: {}}},
+		},
+		appApi.AdminRolesDeletePermissions,
+	)
 	// admin roles delete
 	huma.Register(adminGroup, huma.Operation{OperationID: "admin-roles-delete", Method: http.MethodDelete, Path: "/roles/{id}", Summary: "Delete role", Description: "Delete role", Tags: []string{"Admin", "Roles"}, Errors: []int{http.StatusNotFound}, Security: []map[string][]string{{shared.BearerAuthSecurityKey: {}}}}, appApi.AdminRolesDelete)
 	// admin permissions list
