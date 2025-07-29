@@ -52,5 +52,4 @@ func HumaRequireAuthMiddleware(api huma.API, app core.App) func(ctx huma.Context
 
 func HumaCheckPermissionsMiddleware(api huma.API, app core.App, permissions ...string) func(ctx huma.Context, next func(huma.Context)) {
 	return HumaChiMiddleware(middleware.HttpCheckPermissionsMiddleware(app, permissions...))
-
 }
