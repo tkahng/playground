@@ -59,7 +59,6 @@ func (api *Api) AdminUserAccounts(ctx context.Context, input *UserAccountFilter)
 	filter.UserIds = utils.ParseValidUUIDs(input.UserIds...)
 	filter.Providers = input.Providers
 	filter.ProviderTypes = input.ProviderTypes
-
 	data, err := api.App().Adapter().UserAccount().ListUserAccounts(ctx, filter)
 	if err != nil {
 		return nil, err
