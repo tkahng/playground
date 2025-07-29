@@ -88,9 +88,11 @@ func HttpRequireAuthMiddleware(app core.App) HttpMiddelwareFunc {
 			ctx := r.Context()
 			// check if already has user claims
 			if claims := contextstore.GetContextUserInfo(ctx); claims != nil {
+				slog.InfoContext(ctx, "user already authenticated")
 				next.ServeHTTP(w, r)
 				return
 			}
+			slog.InfoContext(ctx, "user not authenticated")
 			_ = appHttp.WriteErr(w, r, http.StatusUnauthorized, "you are not authenticated.", nil)
 		})
 	}
