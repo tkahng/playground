@@ -3,6 +3,7 @@ package middleware
 import (
 	"log/slog"
 	"net/http"
+	"runtime/debug"
 
 	"github.com/tkahng/playground/internal/core"
 	apphttp "github.com/tkahng/playground/internal/tools/http"
@@ -10,20 +11,30 @@ import (
 
 func HttpRecovererMiddleware(app core.App) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fn := func(w http.ResponseWriter, r *http.Request) {
 			defer func() {
-				if err := recover(); err != nil {
-					slog.Error("Recovered from panic", slog.Any("error", err))
-					_ = apphttp.WriteErr(
-						w,
-						r,
-						http.StatusInternalServerError,
-						"internal server error",
+				if rvr := recover(); rvr != nil {
+					if rvr == http.ErrAbortHandler {
+						// we don't recover http.ErrAbortHandler so the response
+						// to the client is aborted, this should not be logged
+						panic(rvr)
+					}
+
+					slog.Error(
+						"recovered from panic",
+						slog.Any("panic", rvr),
+						slog.Any("stack", string(debug.Stack())),
 					)
-					return
+
+					if r.Header.Get("Connection") != "Upgrade" {
+						_ = apphttp.WriteErr(w, r, http.StatusInternalServerError, "internal server error")
+					}
 				}
 			}()
+
 			next.ServeHTTP(w, r)
-		})
+		}
+
+		return http.HandlerFunc(fn)
 	}
 }
