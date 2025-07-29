@@ -75,11 +75,9 @@ func HttpAuthMiddleware(app core.App) HttpMiddelwareFunc {
 				return
 			}
 			var token string
-			for idx, f := range HttpTokenFuncs {
-				index := idx
+			for _, f := range HttpTokenFuncs {
 				token = f(r, w)
 				if len(token) > 0 {
-					slog.InfoContext(ctx, "found token", slog.Int("index", index), slog.String("token", token))
 					break
 				}
 			}

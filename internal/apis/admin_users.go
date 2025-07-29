@@ -2,7 +2,6 @@ package apis
 
 import (
 	"context"
-	"fmt"
 	"slices"
 	"time"
 
@@ -32,7 +31,6 @@ func (api *Api) AdminUsersList(ctx context.Context, input *struct {
 	UserListFilter
 }) (*ApiPaginatedOutput[*ApiUser], error) {
 	adapter := api.App().Adapter()
-	fmt.Printf("AdminUsers: %v", input.UserListFilter)
 	filter := &stores.UserFilter{}
 	filter.Page = input.Page
 	filter.PerPage = input.PerPage
@@ -44,7 +42,6 @@ func (api *Api) AdminUsersList(ctx context.Context, input *struct {
 	filter.Emails = input.Emails
 	filter.RoleIds = utils.ParseValidUUIDs(input.RoleIds...)
 	filter.EmailVerified = input.EmailVerified
-	fmt.Printf("AdminUserfilter: %v", filter)
 	users, err := adapter.User().FindUsers(ctx, filter)
 	if err != nil {
 		return nil, err
