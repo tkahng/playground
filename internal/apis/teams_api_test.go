@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -12,6 +13,7 @@ import (
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/test"
+	"github.com/tkahng/playground/internal/tools/types"
 )
 
 func TestGetGreeting(t *testing.T) {
@@ -30,44 +32,19 @@ func TestTeamSlug(t *testing.T) {
 	test.SkipIfShort(t)
 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
-		app := testApi.App
 		api := testApi.TestApi
-		user, err := createVerifiedUser(app)
-		if err != nil {
-			t.Errorf("Error creating user: %v", err)
-			return
-		}
-		tokensVerifiedTokens, err := app.Auth().CreateAuthTokensFromEmail(context.Background(), user.User.Email)
-		if err != nil {
-			t.Errorf("Error creating auth tokens: %v", err)
-			return
-		}
-		_, err = app.Adapter().TeamGroup().CreateTeam(context.Background(), "test team",
-			"public")
-		if err != nil {
-			t.Errorf("Error creating team: %v", err)
-			return
-		}
-		VerifiedHeader := fmt.Sprintf("Authorization: Bearer %s", tokensVerifiedTokens.Tokens.AccessToken)
-		resp := api.Post("/teams/check-slug", VerifiedHeader, struct {
+		user := CreateUserWithOptions(t, testApi.App, UserWithVerified(types.Pointer(time.Now())))
+		_ = CreateTeamAndMemberWithOptions(t, testApi.App, &user.User, TeamWithName("public"))
+		tokensVerifiedTokens := createTokenHeader(t, testApi.App, user.User.Email)
+
+		resp := api.Post("/teams/check-slug", tokensVerifiedTokens, struct {
 			Slug string `json:"slug" required:"true"`
 		}{
 			Slug: "public",
 		},
 		)
 		t.Log("response code", resp.Code)
-		// if resp.Code != 200 {
-		// 	t.Fatalf("Unexpected response: %s", resp.Body.String())
-		// }
-		// resp2 := api.Post("/teams/check-slug", VerifiedHeader, struct {
-		// 	Slug string `json:"slug" required:"true"`
-		// }{
-		// 	Slug: "baba",
-		// },
-		// )
-		// if !strings.Contains(resp2.Body.String(), "true") {
-		// 	t.Fatalf("Unexpected response: %s", resp2.Body.String())
-		// }
+
 	})
 }
 
@@ -92,23 +69,12 @@ func TestGetTeam_invalidID(t *testing.T) {
 	test.SkipIfShort(t)
 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
-		app := testApi.App
 		api := testApi.TestApi
-		user, err := createVerifiedUser(app)
-		if err != nil {
-			t.Errorf("Error creating user: %v", err)
-			return
-		}
-
+		user := CreateUserWithOptions(t, testApi.App, UserWithVerified(types.Pointer(time.Now())))
 		teamIdString := uuid.NewString()
-		tokensVerifiedTokens, err := app.Auth().CreateAuthTokensFromEmail(context.Background(), user.User.Email)
-		if err != nil {
-			t.Errorf("Error creating auth tokens: %v", err)
-			return
-		}
-		VerifiedHeader := fmt.Sprintf("Authorization: Bearer %s", tokensVerifiedTokens.Tokens.AccessToken)
+		tokensVerifiedTokens := createTokenHeader(t, testApi.App, user.User.Email)
 
-		resp := api.Get("/teams/"+teamIdString+"23", VerifiedHeader)
+		resp := api.Get("/teams/"+teamIdString+"23", tokensVerifiedTokens)
 		if resp.Code == 200 {
 			t.Fatalf("Unexpected response: %s", resp.Body.String())
 		}
@@ -126,11 +92,7 @@ func TestGetTeam_success(t *testing.T) {
 		testApi := SetupApi(t, ctx, db)
 		app := testApi.App
 		api := testApi.TestApi
-		user, err := createVerifiedUser(app)
-		if err != nil {
-			t.Errorf("Error creating user: %v", err)
-			return
-		}
+		user := CreateUserWithOptions(t, testApi.App, UserWithVerified(types.Pointer(time.Now())))
 		team, err := createTeamAndMember(app, &user.User, "test team")
 		if err != nil {
 			t.Errorf("Error creating user: %v", err)
@@ -226,8 +188,6 @@ func TestCreateTeam_emailNotVerified(t *testing.T) {
 	},
 	)
 }
-
-// test team update api when not owner and fail
 func TestUpdateTeam_failedNotOwner(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
@@ -235,67 +195,46 @@ func TestUpdateTeam_failedNotOwner(t *testing.T) {
 		testApi := SetupApi(t, ctx, db)
 		app := testApi.App
 		api := testApi.TestApi
-		user1, err := app.Adapter().User().CreateUser(
-			ctx,
-			&models.User{
-				Email: "user1@example",
-			},
+		user1 := CreateUserWithOptions(
+			t,
+			testApi.App,
+			UserWithVerified(types.Pointer(time.Now())),
+			UserWithEmail("user1@example"),
 		)
-		if err != nil {
-			t.Errorf("Error creating user: %v", err)
-			return
-		}
+		team := CreateTeamAndMemberWithOptions(t, app, &user1.User)
+		user2 := CreateUserWithOptions(
+			t,
+			testApi.App,
+			UserWithVerified(types.Pointer(time.Now())),
+			UserWithEmail("user2@example"),
+		)
 
-		member1, err := app.Team().CreateTeamWithOwner(
-			ctx,
-			"test team",
-			"test-team",
-			user1.ID,
+		_ = CreateTeamMemberWithOptions(
+			t,
+			app,
+			team.Team.ID,
+			user2.User.ID,
+			TeamWithRole(models.TeamMemberRoleMember),
+			TeamWithBilling(false),
 		)
-		if err != nil {
-			t.Errorf("Error creating user: %v", err)
-			return
-		}
-		user2, err := app.Adapter().User().CreateUser(
-			ctx,
-			&models.User{
-				Email: "user2@example",
-			},
-		)
-		if err != nil {
-			t.Errorf("Error creating user: %v", err)
-			return
-		}
-		member2, err := app.Adapter().TeamMember().CreateTeamMember(
-			ctx,
-			member1.Team.ID,
-			user2.ID,
-			models.TeamMemberRoleMember,
-			false,
-		)
-		if member2 == nil {
-			t.Errorf("Error creating user: %v", err)
-			return
-		}
 		// create
-		tokensVerifiedTokens, err := app.Auth().CreateAuthTokensFromEmail(ctx, user2.Email)
-		if err != nil {
-			t.Errorf("Error creating auth tokens: %v", err)
-			return
-		}
-		VerifiedHeader := fmt.Sprintf("Authorization: Bearer %s", tokensVerifiedTokens.Tokens.AccessToken)
-		resp := api.Put("/teams/"+member1.Team.ID.String(), VerifiedHeader, &apis.UpdateTeamInput{
-			TeamID: member1.Team.ID.String(),
+		VerifiedHeader := createTokenHeader(t, app, user2.User.Email)
+		resp := api.Put("/teams/"+team.Team.ID.String(), VerifiedHeader, &apis.UpdateTeamInput{
+			TeamID: team.Team.ID.String(),
 			Body: apis.UpdateTeamDto{
 				Name: "test team",
 				Slug: "test-team",
 			},
 		})
 		if resp.Code == 200 {
+			t.Fatalf("Unexpected response: %v", resp.Code)
+		}
+		if resp.Code != 403 {
+			t.Fatalf("Unexpected response: %v", resp.Code)
+		}
+		if !strings.Contains(resp.Body.String(), "You do not have the required team member role") {
 			t.Fatalf("Unexpected response: %s", resp.Body.String())
 		}
-		assert.Equal(t, 403, resp.Code)
-		assert.Contains(t, resp.Body.String(), "You do not have the required team member role")
 	})
 }
 

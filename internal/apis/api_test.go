@@ -13,18 +13,22 @@ import (
 	"time"
 
 	"github.com/danielgtaylor/huma/v2/humatest"
+	"github.com/google/uuid"
 	"github.com/tkahng/playground/internal/apis"
 	"github.com/tkahng/playground/internal/conf"
 	"github.com/tkahng/playground/internal/core"
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/models"
-	"github.com/tkahng/playground/internal/shared"
+	"github.com/tkahng/playground/internal/services"
 	"github.com/tkahng/playground/internal/test"
+
+	"github.com/tkahng/playground/internal/tools/types"
 )
 
 func createTokenHeader(t testing.TB, app core.App, email string) string {
 	t.Helper()
-	tokensVerifiedTokens, err := app.Auth().CreateAuthTokensFromEmail(context.Background(), email)
+	ctx := context.Background()
+	tokensVerifiedTokens, err := app.Auth().CreateAuthTokensFromEmail(ctx, email)
 	if err != nil {
 		t.Errorf("Error creating auth tokens: %v", err)
 	}
@@ -34,12 +38,12 @@ func createTokenHeader(t testing.TB, app core.App, email string) string {
 }
 
 func createTeamAndMember(app core.App, user *models.User, teamName string) (*models.TeamInfoModel, error) {
-
-	team, err := app.Adapter().TeamGroup().CreateTeam(context.Background(), teamName, strings.TrimSpace(teamName))
+	ctx := context.Background()
+	team, err := app.Adapter().TeamGroup().CreateTeam(ctx, teamName, strings.TrimSpace(teamName))
 	if err != nil {
 		return nil, err
 	}
-	member, err := app.Adapter().TeamMember().CreateTeamMember(context.Background(), team.ID, user.ID, models.TeamMemberRoleOwner, true)
+	member, err := app.Adapter().TeamMember().CreateTeamMember(ctx, team.ID, user.ID, models.TeamMemberRoleOwner, true)
 	if err != nil {
 		return nil, err
 	}
@@ -54,71 +58,186 @@ func createTeamAndMember(app core.App, user *models.User, teamName string) (*mod
 	}, nil
 }
 
-func findOrCreateRolePermission(t testing.TB, app core.App, permissionName string) *models.RolePermission {
-	ctx := context.Background()
-	perm, err := app.Adapter().Rbac().FindOrCreatePermission(ctx, permissionName)
-	if err != nil {
-		t.Fatalf("FindOrCreatePermission() error = %v", err)
-	}
-	role, err := app.Adapter().Rbac().FindOrCreateRole(ctx, permissionName)
-	if err != nil {
-		t.Fatalf("FindOrCreateRole() error = %v", err)
-	}
-	err = app.Adapter().Rbac().CreateRolePermissions(ctx, role.ID, perm.ID)
-	if err != nil {
-		t.Fatalf("CreateRolePermissions() error = %v, roleID: %v, permissionID: %v", err, role.ID, perm.ID)
-	}
-	return &models.RolePermission{
-		RoleID:       perm.ID,
-		PermissionID: role.ID,
+type TeamOptionFunc func(opt *CreateTeamOptions)
+
+type CreateTeamOptions struct {
+	teamName string
+	role     models.TeamMemberRole
+	billing  bool
+}
+
+func TeamWithName(name string) TeamOptionFunc {
+	return func(opt *CreateTeamOptions) {
+		opt.teamName = name
 	}
 }
 
-func createAdminUser(t testing.TB, app core.App) *models.UserInfo {
+func TeamWithRole(role models.TeamMemberRole) TeamOptionFunc {
+	return func(opt *CreateTeamOptions) {
+		opt.role = role
+	}
+}
+
+func TeamWithBilling(billing bool) TeamOptionFunc {
+	return func(opt *CreateTeamOptions) {
+		opt.billing = billing
+	}
+}
+
+func CreateTeamAndMemberWithOptions(t testing.TB, app core.App, user *models.User, optFunc ...TeamOptionFunc) *models.TeamInfoModel {
 	ctx := context.Background()
-	nw := time.Now()
+	option := &CreateTeamOptions{
+		teamName: user.Email,
+		role:     models.TeamMemberRoleOwner,
+		billing:  true,
+	}
+	for _, optFunc := range optFunc {
+		optFunc(option)
+	}
+	teamName := option.teamName
+	team, err := app.Adapter().TeamGroup().CreateTeam(ctx, teamName, strings.TrimSpace(teamName))
+	if err != nil {
+		t.Fatalf("Error creating team: %v", err)
+	}
+	member, err := app.Adapter().TeamMember().CreateTeamMember(ctx, team.ID, user.ID, option.role, option.billing)
+	if err != nil {
+		t.Fatalf("Error creating team member: %v", err)
+	}
+	return &models.TeamInfoModel{
+		Team: *team,
+		User: models.User{
+			ID:              user.ID,
+			Name:            user.Name,
+			EmailVerifiedAt: user.EmailVerifiedAt,
+		},
+		Member: *member,
+	}
+}
+
+func CreateTeamMemberWithOptions(t testing.TB, app core.App, teamID uuid.UUID, userId uuid.UUID, optFunc ...TeamOptionFunc) *models.TeamMember {
+	ctx := context.Background()
+	option := &CreateTeamOptions{
+		role:    models.TeamMemberRoleOwner,
+		billing: true,
+	}
+	for _, optFunc := range optFunc {
+		optFunc(option)
+	}
+	member, err := app.Adapter().TeamMember().CreateTeamMember(ctx, teamID, userId, option.role, option.billing)
+	if err != nil {
+		t.Fatalf("Error creating team member: %v", err)
+	}
+	return member
+}
+
+type UserOptionFunc func(opt *CreateUserOption)
+type CreateUserOption struct {
+	user    *models.User
+	account *models.UserAccount
+	perms   []string
+}
+
+func UserWithEmail(email string) UserOptionFunc {
+	return func(opt *CreateUserOption) {
+		opt.user.Email = email
+		opt.account.ProviderAccountID = email
+	}
+}
+
+func UserWithPassword(password string) UserOptionFunc {
+	return func(opt *CreateUserOption) {
+		passwordService := services.NewPasswordService()
+		hp, err := passwordService.HashPassword(password)
+		if err != nil {
+			panic(err)
+		}
+		opt.account.Password = &hp
+	}
+}
+
+func UserWithVerified(emailVerifiedAt *time.Time) UserOptionFunc {
+	return func(opt *CreateUserOption) {
+		opt.user.EmailVerifiedAt = emailVerifiedAt
+	}
+}
+
+func UserWithPermission(perms ...string) UserOptionFunc {
+	return func(opt *CreateUserOption) {
+		opt.perms = perms
+	}
+}
+
+func CreateUserWithOptions(t testing.TB, app core.App, options ...UserOptionFunc) *models.UserInfo {
+	ctx := context.Background()
+	opts := &CreateUserOption{
+		user: &models.User{
+			Email: "tkahng+01@gmail.com",
+			Name:  types.Pointer("Test User"),
+		},
+		account: &models.UserAccount{
+			Provider:          models.ProvidersGoogle,
+			Type:              models.ProviderTypeOAuth,
+			ProviderAccountID: "tkahng+01@gmail.com",
+		},
+	}
+	for _, option := range options {
+		option(opts)
+	}
+
 	user, err := app.Adapter().User().CreateUser(ctx, &models.User{
-		Email:           "admin@k2dv.io",
-		EmailVerifiedAt: &nw,
+		Email:           opts.user.Email,
+		Name:            opts.user.Name,
+		EmailVerifiedAt: opts.user.EmailVerifiedAt,
+		Image:           opts.user.Image,
 	})
 	if err != nil {
 		t.Fatalf("CreateUser() error = %v", err)
 	}
-	_, err = app.Adapter().UserAccount().CreateUserAccount(ctx, &models.UserAccount{
+	account, err := app.Adapter().UserAccount().CreateUserAccount(ctx, &models.UserAccount{
 		UserID:            user.ID,
-		Provider:          models.ProvidersCredentials,
-		Type:              models.ProviderTypeCredentials,
-		ProviderAccountID: "admin@k2dv.io",
+		Provider:          opts.account.Provider,
+		Type:              opts.account.Type,
+		ProviderAccountID: opts.account.ProviderAccountID,
+		Password:          opts.account.Password,
+		AccessToken:       opts.account.AccessToken,
+		RefreshToken:      opts.account.RefreshToken,
+		IDToken:           opts.account.IDToken,
+		ExpiresAt:         opts.account.ExpiresAt,
+		Scope:             opts.account.Scope,
+		SessionState:      opts.account.SessionState,
+		TokenType:         opts.account.TokenType,
 	})
 	if err != nil {
 		t.Fatalf("CreateUserAccount() error = %v", err)
 	}
-	err = app.Adapter().Rbac().EnsureRoleAndPermissions(ctx, shared.PermissionNameAdmin, shared.PermissionNameAdmin)
-	if err != nil {
-		t.Fatalf("EnsureRoleAndPermissions() error = %v", err)
-	}
-	perm, err := app.Adapter().Rbac().FindOrCreatePermission(ctx, shared.PermissionNameAdmin)
-	if err != nil {
-		t.Fatalf("FindOrCreatePermission() error = %v", err)
-	}
-	err = app.Adapter().Rbac().CreateUserPermissions(ctx, user.ID, perm.ID)
-	if err != nil {
-		t.Fatalf("CreateUserAccount() error = %v", err)
+	user.Accounts = append(user.Accounts, account)
+	if len(opts.perms) > 0 {
+		perm, err := app.Adapter().Rbac().FindOrCreatePermission(ctx, opts.perms[0])
+		if err != nil {
+			t.Fatalf("FindOrCreatePermission() error = %v", err)
+		}
+		err = app.Adapter().Rbac().CreateUserPermissions(ctx, user.ID, perm.ID)
+		if err != nil {
+			t.Fatalf("CreateUserAccount() error = %v", err)
+		}
 	}
 	return &models.UserInfo{
 		User: *user,
 	}
+
 }
+
 func createVerifiedUser(app core.App) (*models.UserInfo, error) {
 	nw := time.Now()
-	user, err := app.Adapter().User().CreateUser(context.Background(), &models.User{
+	ctx := context.Background()
+	user, err := app.Adapter().User().CreateUser(ctx, &models.User{
 		Email:           "authenticated@example.com",
 		EmailVerifiedAt: &nw,
 	})
 	if err != nil {
 		return nil, err
 	}
-	_, err = app.Adapter().UserAccount().CreateUserAccount(context.Background(), &models.UserAccount{
+	_, err = app.Adapter().UserAccount().CreateUserAccount(ctx, &models.UserAccount{
 		UserID:            user.ID,
 		Provider:          models.ProvidersGoogle,
 		Type:              "oauth",
@@ -132,13 +251,14 @@ func createVerifiedUser(app core.App) (*models.UserInfo, error) {
 	}, nil
 }
 func createUnverifiedUser(app *core.BaseAppDecorator) (*models.UserInfo, error) {
-	user, err := app.Adapter().User().CreateUser(context.Background(), &models.User{
+	ctx := context.Background()
+	user, err := app.Adapter().User().CreateUser(ctx, &models.User{
 		Email: "authenticated@example.com",
 	})
 	if err != nil {
 		return nil, err
 	}
-	_, err = app.Adapter().UserAccount().CreateUserAccount(context.Background(), &models.UserAccount{
+	_, err = app.Adapter().UserAccount().CreateUserAccount(ctx, &models.UserAccount{
 		UserID:            user.ID,
 		Provider:          models.ProvidersGoogle,
 		Type:              "oauth",
