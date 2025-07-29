@@ -14,20 +14,20 @@ import (
 	"github.com/tkahng/playground/internal/tools/http/queryparam"
 )
 
-func HttpTokenFromHeader(r *http.Request, w http.ResponseWriter) string {
+func TokenFromHeader(r *http.Request, w http.ResponseWriter) string {
 	bearer := r.Header.Get("Authorization")
 	if len(bearer) > 7 && strings.ToUpper(bearer[0:6]) == "BEARER" {
 		return bearer[7:]
 	}
 	return ""
 }
-func HttpTokenFromQuery(r *http.Request, w http.ResponseWriter) string {
+func TokenFromQuery(r *http.Request, w http.ResponseWriter) string {
 	return queryparam.Get(r.URL.RawQuery, "access_token")
 }
 
 var HttpTokenFuncs = []func(r *http.Request, w http.ResponseWriter) string{
-	HttpTokenFromHeader,
-	HttpTokenFromQuery,
+	TokenFromHeader,
+	TokenFromQuery,
 }
 
 type HttpMiddelwareFunc func(next http.Handler) http.Handler

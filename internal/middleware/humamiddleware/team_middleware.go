@@ -33,7 +33,3 @@ func TeamInfoFromParam(api huma.API, app core.App) func(ctx huma.Context, next f
 func RequireTeamMemberRolesMiddleware(api huma.API, roles ...models.TeamMemberRole) func(ctx huma.Context, next func(huma.Context)) {
 	return HumaChiMiddleware(middleware.RequireTeamMemberRolesMiddleware(roles...))
 }
-
-func LatestTeamMiddleware(api huma.API, app core.App) func(ctx huma.Context, next func(huma.Context)) {
-	return HumaChiMiddleware(middleware.LatestTeamMiddleware(app))
-}
