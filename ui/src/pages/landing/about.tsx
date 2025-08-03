@@ -1,4 +1,5 @@
 import LandingTopSection from "@/components/section/landing-top-section";
+import PrimarySection from "@/components/section/primary-section";
 import SecondarySection from "@/components/section/secondary-section";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Rocket, Shield, Users } from "lucide-react";
@@ -51,61 +52,20 @@ export default function LandingAboutPage() {
           </CardContent>
         </Card>
       </SecondarySection>
-
-      {/* <SecondarySection cols={2}>
-        <div className="space-y-4">
-          <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">
-            Our Story
-          </h2>
-          <p className="text-gray-500 dark:text-gray-400">
-            Founded in 2020, Playground emerged from a shared vision to make AI
-            accessible and impactful for businesses worldwide. What started as a
-            small team of passionate AI enthusiasts has grown into a leading
-            force in the AI industry, serving clients across various sectors and
-            continents.
-          </p>
-          <p className="text-gray-500 dark:text-gray-400">
-            Our journey has been marked by continuous innovation, overcoming
-            challenges, and celebrating successes alongside our clients. Today,
-            we're proud to be at the forefront of the AI revolution, helping
-            businesses transform their operations and unlock new possibilities.
-          </p>
-        </div>
-        <div className="space-y-4">
-          <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">
-            Our Impact
-          </h2>
-          <ul className="grid gap-4">
-            <li className="flex items-center gap-4">
-              <Globe className="h-8 w-8 text-primary" />
-              <div>
-                <h3 className="font-bold">Global Reach</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Serving clients in over 50 countries
-                </p>
-              </div>
-            </li>
-            <li className="flex items-center gap-4">
-              <Users className="h-8 w-8 text-primary" />
-              <div>
-                <h3 className="font-bold">Growing Community</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Over 1 million users and counting
-                </p>
-              </div>
-            </li>
-            <li className="flex items-center gap-4">
-              <Rocket className="h-8 w-8 text-primary" />
-              <div>
-                <h3 className="font-bold">Driving Innovation</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  100+ patents filed in AI technology
-                </p>
-              </div>
-            </li>
-          </ul>
-        </div>
-      </SecondarySection> */}
+      <PrimarySection>
+        <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl text-center mb-12">
+          Credits
+        </h2>
+        shapes by LAFS from{" "}
+        <a
+          href="https://thenounproject.com/browse/icons/term/shapes/"
+          target="_blank"
+          title="shapes Icons"
+        >
+          Noun Project
+        </a>{" "}
+        (CC BY 3.0)
+      </PrimarySection>
     </>
   );
 }
