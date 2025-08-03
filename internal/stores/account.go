@@ -59,14 +59,15 @@ var (
 
 func (u *DbAccountStore) ListUserAccounts(ctx context.Context, input *UserAccountFilter) ([]*models.UserAccount, error) {
 	where := u.filter(input)
+	limit, offset := input.Pagination()
 	sort := repository.UserAccountBuilder.Sort(input)
 	data, err := repository.UserAccount.Get(
 		ctx,
 		u.db,
 		where,
 		sort,
-		types.Pointer(int(input.Page)),
-		types.Pointer(int(input.PerPage)),
+		types.Pointer(limit),
+		types.Pointer(offset),
 	)
 	if err != nil {
 		return nil, err

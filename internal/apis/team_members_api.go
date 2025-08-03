@@ -10,7 +10,7 @@ import (
 	humasse "github.com/danielgtaylor/huma/v2/sse"
 	"github.com/google/uuid"
 	"github.com/tkahng/playground/internal/contextstore"
-	"github.com/tkahng/playground/internal/middleware"
+	"github.com/tkahng/playground/internal/middleware/humamiddleware"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/notification"
 	"github.com/tkahng/playground/internal/shared"
@@ -31,7 +31,7 @@ type TeamMemberSseInput struct {
 type MiddlewareFunc func(ctx huma.Context, next func(huma.Context))
 
 func (api *Api) BindTeamMembersSseEvents(humapi huma.API) {
-	membermiddleware := middleware.TeamInfoFromTeamMemberID(humapi, api.App())
+	membermiddleware := humamiddleware.TeamInfoFromTeamMemberID(humapi, api.App())
 	hanlder := sse.ServeSSE(
 		func(ctx context.Context, f func(any) error, input *TeamMemberSseInput) sse.Client {
 			teamInfo := contextstore.GetContextTeamInfo(ctx)
@@ -129,7 +129,7 @@ func FromModelNotification(notification *models.Notification) *Notification {
 	}
 }
 func (api *Api) BindFindTeamMembersNotifications(aapi huma.API) {
-	teamInfoFromMember := middleware.TeamInfoFromTeamMemberID(aapi, api.app)
+	teamInfoFromMember := humamiddleware.TeamInfoFromTeamMemberID(aapi, api.app)
 	huma.Register(
 		aapi,
 		huma.Operation{
@@ -185,7 +185,7 @@ type ReadTeamMembersNotificationsInput struct {
 }
 
 func (api *Api) BindReadTeamMembersNotifications(aapi huma.API) {
-	teamMemberMiddleware := middleware.TeamInfoFromTeamMemberID(aapi, api.app)
+	teamMemberMiddleware := humamiddleware.TeamInfoFromTeamMemberID(aapi, api.app)
 	huma.Register(
 		aapi,
 		huma.Operation{
@@ -236,7 +236,7 @@ func (api *Api) BindReadTeamMembersNotifications(aapi huma.API) {
 }
 
 func (api *Api) BindDeleteTeamMembersNotifications(aapi huma.API) {
-	teamMemberMiddleware := middleware.TeamInfoFromTeamMemberID(aapi, api.app)
+	teamMemberMiddleware := humamiddleware.TeamInfoFromTeamMemberID(aapi, api.app)
 	huma.Register(
 		aapi,
 		huma.Operation{
@@ -285,7 +285,7 @@ type FindTeamTeamMemberByIDInput struct {
 }
 
 func (api *Api) BindFindTeamMemberByID(aapi huma.API) {
-	middleware := middleware.TeamInfoFromParam(aapi, api.app)
+	middleware := humamiddleware.TeamInfoFromParam(aapi, api.app)
 	huma.Register(
 		aapi,
 		huma.Operation{

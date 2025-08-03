@@ -22,6 +22,8 @@ services:
       dockerfile: ./Dockerfile
     ports:
       - 8080:8080
+    environment:
+      - postgres://postgres:postgres@database:5432/authgo?sslmode=disable
     env_file:
       - .env
 

@@ -4,14 +4,14 @@ import (
 	"net/http"
 
 	"github.com/danielgtaylor/huma/v2"
-	"github.com/tkahng/playground/internal/middleware"
+	"github.com/tkahng/playground/internal/middleware/humamiddleware"
 	"github.com/tkahng/playground/internal/shared"
 )
 
 func BindAdminApi(api huma.API, appApi *Api) {
 	adminGroup := huma.NewGroup(api, "/admin")
 	//  admin middleware
-	adminGroup.UseMiddleware(middleware.CheckPermissionsMiddleware(api, "superuser"))
+	adminGroup.UseMiddleware(humamiddleware.HumaCheckPermissionsMiddleware(api, appApi.app, "superuser"))
 	//  admin user list
 	huma.Register(
 		adminGroup,
@@ -27,7 +27,7 @@ func BindAdminApi(api huma.API, appApi *Api) {
 				shared.BearerAuthSecurityKey: {},
 			}},
 		},
-		appApi.AdminUsers,
+		appApi.AdminUsersList,
 	)
 	// admin user get
 	huma.Register(
@@ -336,7 +336,20 @@ func BindAdminApi(api huma.API, appApi *Api) {
 		appApi.AdminRolesCreatePermissions,
 	)
 	// admin roles delete permissions
-	huma.Register(adminGroup, huma.Operation{OperationID: "admin-roles-delete-permissions", Method: http.MethodDelete, Path: "/roles/{roleId}/permissions/{permissionId}", Summary: "Delete role permissions", Description: "Delete role permissions", Tags: []string{"Admin", "Roles", "Permissions"}, Errors: []int{http.StatusNotFound}, Security: []map[string][]string{{shared.BearerAuthSecurityKey: {}}}}, appApi.AdminRolesDeletePermissions)
+	huma.Register(
+		adminGroup,
+		huma.Operation{
+			OperationID: "admin-roles-delete-permissions",
+			Method:      http.MethodDelete,
+			Path:        "/roles/{roleId}/permissions/{permissionId}",
+			Summary:     "Delete role permissions",
+			Description: "Delete role permissions",
+			Tags:        []string{"Admin", "Roles", "Permissions"},
+			Errors:      []int{http.StatusNotFound},
+			Security:    []map[string][]string{{shared.BearerAuthSecurityKey: {}}},
+		},
+		appApi.AdminRolesDeletePermissions,
+	)
 	// admin roles delete
 	huma.Register(adminGroup, huma.Operation{OperationID: "admin-roles-delete", Method: http.MethodDelete, Path: "/roles/{id}", Summary: "Delete role", Description: "Delete role", Tags: []string{"Admin", "Roles"}, Errors: []int{http.StatusNotFound}, Security: []map[string][]string{{shared.BearerAuthSecurityKey: {}}}}, appApi.AdminRolesDelete)
 	// admin permissions list

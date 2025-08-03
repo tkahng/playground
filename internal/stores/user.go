@@ -95,9 +95,6 @@ func (s *DbUserStore) sort(filter Sortable) *map[string]string {
 // FindUsers implements DbUserStoreInterface.
 func (s *DbUserStore) FindUsers(ctx context.Context, filter *UserFilter) ([]*models.User, error) {
 	where := s.filter(filter)
-	if where == nil {
-		return nil, nil // no filter, return empty slice
-	}
 	sort := s.sort(filter)
 	limit, offset := pagination(filter)
 	users, err := repository.User.Get(

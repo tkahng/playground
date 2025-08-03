@@ -40,8 +40,9 @@ func Run2() error {
 	defer firstCancel()
 	opts := conf.AppConfigGetter()
 	app := core.BootstrappedApp(opts)
-	appApi := apis.NewApi(app)
-	srv, api := apis.NewServer(&opts)
+	r := apis.NewRouter(app)
+	appApi := apis.NewAppApi(app)
+	api := apis.NewApi(app, r)
 	apis.AddRoutes(api, appApi)
 	if port == 0 {
 		port = 8080
@@ -49,7 +50,7 @@ func Run2() error {
 
 	httpServer := &http.Server{
 		Addr:    fmt.Sprintf(":%d", port),
-		Handler: srv,
+		Handler: r,
 	}
 	serverShutdownErr := make(chan error, 1)
 

@@ -4,15 +4,15 @@ import (
 	"net/http"
 
 	"github.com/danielgtaylor/huma/v2"
-	"github.com/tkahng/playground/internal/middleware"
+	"github.com/tkahng/playground/internal/middleware/humamiddleware"
 	"github.com/tkahng/playground/internal/shared"
 )
 
 func BindStripeApi(api huma.API, appApi *Api) {
-	selectCustomerFromUser := middleware.SelectCustomerFromUser(api, appApi.App())
-	selectCustomerFromTeam := middleware.SelectCustomerFromTeam(api, appApi.App())
-	selectOrCreateOwnerCustomerFromTeam := middleware.SelectOrCreateOwnerCustomerFromTeam(api, appApi.App())
-	teamInfoFromParam := middleware.TeamInfoFromParam(api, appApi.App())
+	selectCustomerFromUser := humamiddleware.SelectCustomerFromUser(api, appApi.App())
+	selectCustomerFromTeam := humamiddleware.SelectCustomerFromTeam(api, appApi.App())
+	selectOrCreateOwnerCustomerFromTeam := humamiddleware.SelectOrCreateOwnerCustomerFromTeam(api, appApi.App())
+	teamInfoFromParam := humamiddleware.TeamInfoFromParam(api, appApi.App())
 	stripeGroup := huma.NewGroup(api)
 
 	// stripe webhook

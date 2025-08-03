@@ -8,13 +8,15 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/tkahng/playground/internal/core"
 	"github.com/tkahng/playground/internal/middleware"
+	"github.com/tkahng/playground/internal/middleware/humamiddleware"
 	"github.com/tkahng/playground/internal/shared"
 	"github.com/tkahng/playground/internal/tools/types"
 )
 
 func BindMiddlewares(api huma.API, app core.App) {
-	api.UseMiddleware(middleware.AuthMiddleware(api, app))
-	api.UseMiddleware(middleware.RequireAuthMiddleware(api))
+	api.UseMiddleware(humamiddleware.HumaChiMiddleware(middleware.RecovererMiddleware(app)))
+	api.UseMiddleware(humamiddleware.HumaAuthMiddleware(api, app))
+	api.UseMiddleware(humamiddleware.HumaRequireAuthMiddleware(api, app))
 }
 
 type IndexOutputBody struct {
@@ -78,25 +80,6 @@ func BindApis(api huma.API, appApi *Api) {
 	// ---- Teams
 	BindTeamsApi(api, appApi)
 
-	// ---- notifications
-	// sse.Register(
-	// 	api,
-	// 	huma.Operation{
-	// 		OperationID: "notifications-sse",
-	// 		Method:      http.MethodGet,
-	// 		Path:        "/notifications/sse",
-	// 		Summary:     "Notifications SSE",
-	// 		Description: "Notifications SSE",
-	// 		Tags:        []string{"Notifications"},
-	// 		Errors:      []int{http.StatusNotFound},
-	// 		Security: []map[string][]string{{
-	// 			shared.BearerAuthSecurityKey: {},
-	// 		}},
-	// 	}, map[string]any{
-	// 		// Mapping of event type name to Go struct for that event.
-	// 		"message": models.Notification{},
-	// 	},
-	// 	appApi.NotificationsSsefunc)
 	// stats routes -------------------------------------------------------------------------------------------------
 	BindStatsApi(api, appApi)
 
@@ -116,9 +99,4 @@ func BindApis(api huma.API, appApi *Api) {
 func AddRoutes(api huma.API, appApi *Api) {
 	BindMiddlewares(api, appApi.App())
 	BindApis(api, appApi)
-}
-
-func (a *Api) BindApi(api huma.API) {
-	BindMiddlewares(api, a.App())
-	BindApis(api, a)
 }

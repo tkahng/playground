@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/danielgtaylor/huma/v2/humatest"
 	"github.com/tkahng/playground/internal/core"
+	"github.com/tkahng/playground/internal/test"
 )
 
 func TestApi_GetStripeSubscriptions(t *testing.T) {
@@ -27,8 +27,8 @@ func TestApi_GetStripeSubscriptions(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			appApi := NewApi(tt.fields.app)
-			_, api := humatest.New(t)
+			appApi := NewAppApi(tt.fields.app)
+			_, api := test.NewHumaApi(t)
 
 			AddRoutes(api, appApi)
 			resp := api.GetCtx(tt.args.ctx, "/api/subscriptions/active", tt.args.input)

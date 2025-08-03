@@ -4,15 +4,15 @@ import (
 	"net/http"
 
 	"github.com/danielgtaylor/huma/v2"
-	"github.com/tkahng/playground/internal/middleware"
+	"github.com/tkahng/playground/internal/middleware/humamiddleware"
 	"github.com/tkahng/playground/internal/shared"
 )
 
 func BindTaskApi(api huma.API, appApi *Api) {
 	// checkTaskOwnerMiddleware := middleware.CheckTaskOwnerMiddleware(api, appApi.App())
-	teamFromTask := middleware.TeamInfoFromTask(api, appApi.App())
-	teamFromProject := middleware.TeamInfoFromTaskProject(api, appApi.App())
-	teamFromPath := middleware.TeamInfoFromParam(api, appApi.App())
+	teamFromTask := humamiddleware.TeamInfoFromTask(api, appApi.App())
+	teamFromProject := humamiddleware.TeamInfoFromTaskProject(api, appApi.App())
+	teamFromPath := humamiddleware.TeamInfoFromParam(api, appApi.App())
 
 	taskGroup := huma.NewGroup(api)
 	// taskGroup.UseMiddleware(checkTaskOwnerMiddleware)

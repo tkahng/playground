@@ -4,136 +4,35 @@ import (
 	"net/http"
 
 	"github.com/danielgtaylor/huma/v2"
-	"github.com/tkahng/playground/internal/middleware"
+	"github.com/tkahng/playground/internal/middleware/humamiddleware"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/shared"
 )
 
 func BindTeamsApi(api huma.API, appApi *Api) {
-	teamInfoMiddleware := middleware.TeamInfoFromParam(api, appApi.App())
-	teamInfoSlugMiddleware := middleware.TeamInfoFromTeamSlug(api, appApi.App())
-	requireMember := middleware.RequireTeamMemberRolesMiddleware(api)
-	requiredOwnerMember := middleware.RequireTeamMemberRolesMiddleware(api, models.TeamMemberRoleOwner)
-	checkTeamDelete := middleware.TeamCanDelete(api, appApi.App())
-	emailVerified := middleware.EmailVerifiedMiddleware(api)
+	teamInfoMiddleware := humamiddleware.TeamInfoFromParam(api, appApi.App())
+	requiredOwnerMember := humamiddleware.RequireTeamMemberRolesMiddleware(api, models.TeamMemberRoleOwner)
+	checkTeamDelete := humamiddleware.TeamCanDelete(api, appApi.App())
+	// emailVerified := middleware.EmailVerifiedMiddleware(api)
 	teamsGroup := huma.NewGroup(api)
 	// get team members
 	//  /api/team-members
 
-	huma.Register(
-		teamsGroup,
-		huma.Operation{
-			OperationID: "get-team-team-members",
-			Method:      http.MethodGet,
-			Path:        "/teams/{team-id}/members",
-			Summary:     "get-team-team-members",
-			Description: "get members of a team by team team ID",
-			Tags:        []string{"Teams", "Team Members"},
-			Security: []map[string][]string{{
-				shared.BearerAuthSecurityKey: {},
-			}},
-			Errors: []int{http.StatusInternalServerError, http.StatusBadRequest},
-		},
-		appApi.FindTeamTeamMembers,
-	)
+	appApi.BindFindTeamTeamMembers(teamsGroup)
 
 	// check team slug
-	huma.Register(
-		teamsGroup,
-		huma.Operation{
-			OperationID: "check-team-slug",
-			Method:      http.MethodPost,
-			Path:        "/teams/check-slug",
-			Summary:     "check-team-slug",
-			Description: "check if a team slug is available",
-			Tags:        []string{"Teams"},
-			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
-			Security: []map[string][]string{{
-				shared.BearerAuthSecurityKey: {},
-			}},
-		},
-		appApi.CheckTeamSlug,
-	)
+	appApi.BindCheckTeamSlug(teamsGroup)
 
 	// get user teams
-	huma.Register(
-		teamsGroup,
-		huma.Operation{
-			OperationID: "get-user-teams",
-			Method:      http.MethodGet,
-			Path:        "/teams",
-			Summary:     "get-user-teams",
-			Description: "get all teams for a user",
-			Tags:        []string{"Teams"},
-			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
-			Security: []map[string][]string{{
-				shared.BearerAuthSecurityKey: {},
-			}},
-		},
-		appApi.GetUserTeams,
-	)
+	appApi.BindGetUserTeams(teamsGroup)
 
 	// create team
-	huma.Register(
-		teamsGroup,
-		huma.Operation{
-			OperationID: "create-team",
-			Method:      http.MethodPost,
-			Path:        "/teams",
-			Summary:     "create-team",
-			Description: "create a new team",
-			Tags:        []string{"Teams"},
-			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
-			Security: []map[string][]string{{
-				shared.BearerAuthSecurityKey: {},
-			}},
-			Middlewares: huma.Middlewares{
-				emailVerified,
-			},
-		},
-		appApi.CreateTeam,
-	)
+	appApi.BindCreateTeam(teamsGroup)
+
 	// get team
-	huma.Register(
-		teamsGroup,
-		huma.Operation{
-			OperationID: "get-team",
-			Method:      http.MethodGet,
-			Path:        "/teams/{team-id}",
-			Summary:     "get-team",
-			Description: "get a team by ID",
-			Tags:        []string{"Teams"},
-			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
-			Security: []map[string][]string{{
-				shared.BearerAuthSecurityKey: {},
-			}},
-			Middlewares: huma.Middlewares{
-				teamInfoMiddleware,
-				requireMember,
-			},
-		},
-		appApi.GetTeam,
-	)
+	appApi.BindGetTeam(teamsGroup)
 	// get team by slug
-	huma.Register(
-		teamsGroup,
-		huma.Operation{
-			OperationID: "get-team-by-slug",
-			Method:      http.MethodGet,
-			Path:        "/teams/slug/{team-slug}",
-			Summary:     "get-team-info-by-slug",
-			Description: "get a team by slug",
-			Tags:        []string{"Teams"},
-			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
-			Security: []map[string][]string{{
-				shared.BearerAuthSecurityKey: {},
-			}},
-			Middlewares: huma.Middlewares{
-				teamInfoSlugMiddleware,
-			},
-		},
-		appApi.FindTeamInfoBySlug,
-	)
+	appApi.BindFindTeamInfoBySlug(teamsGroup)
 
 	// update team
 	huma.Register(

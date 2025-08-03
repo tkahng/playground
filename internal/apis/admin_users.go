@@ -2,7 +2,6 @@ package apis
 
 import (
 	"context"
-	"fmt"
 	"slices"
 	"time"
 
@@ -28,11 +27,10 @@ type UserListFilter struct {
 	Expand        []string                  `query:"expand,omitempty" required:"false" minimum:"1" uniqueItems:"true" enum:"roles,permissions,accounts,subscriptions"`
 }
 
-func (api *Api) AdminUsers(ctx context.Context, input *struct {
+func (api *Api) AdminUsersList(ctx context.Context, input *struct {
 	UserListFilter
 }) (*ApiPaginatedOutput[*ApiUser], error) {
 	adapter := api.App().Adapter()
-	fmt.Printf("AdminUsers: %v", input.UserListFilter)
 	filter := &stores.UserFilter{}
 	filter.Page = input.Page
 	filter.PerPage = input.PerPage
@@ -44,7 +42,6 @@ func (api *Api) AdminUsers(ctx context.Context, input *struct {
 	filter.Emails = input.Emails
 	filter.RoleIds = utils.ParseValidUUIDs(input.RoleIds...)
 	filter.EmailVerified = input.EmailVerified
-
 	users, err := adapter.User().FindUsers(ctx, filter)
 	if err != nil {
 		return nil, err
@@ -117,6 +114,8 @@ func (api *Api) AdminUsersCreate(ctx context.Context, input *struct {
 	}
 	user, err := action.Authenticate(ctx, &services.AuthenticationInput{
 		Email:             input.Body.Email,
+		Name:              input.Body.Name,
+		AvatarUrl:         input.Body.Image,
 		Provider:          models.ProvidersCredentials,
 		Password:          &input.Body.Password,
 		Type:              models.ProviderTypeCredentials,
@@ -153,6 +152,13 @@ func (api *Api) AdminUsersDelete(ctx context.Context, input *struct {
 	}
 	if !ok {
 		return nil, huma.Error400BadRequest("Cannot delete user with active subscription")
+	}
+	user, err := adapter.User().FindUserByID(ctx, input.ID)
+	if err != nil {
+		return nil, err
+	}
+	if user == nil {
+		return nil, huma.Error404NotFound("User not found")
 	}
 	err = adapter.User().DeleteUser(ctx, input.ID)
 	if err != nil {
@@ -213,6 +219,9 @@ func (api *Api) AdminUsersGet(ctx context.Context, input *struct {
 	user, err := api.App().Adapter().User().FindUserByID(ctx, input.UserID)
 	if err != nil {
 		return nil, err
+	}
+	if user == nil {
+		return nil, huma.Error404NotFound("User not found")
 	}
 	return &struct{ Body *ApiUser }{Body: FromUserModel(user)}, nil
 }
