@@ -1,6 +1,6 @@
 import Pricing from "@/components/pricing/pricing";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { getProductsWithPrices, getUserSubscriptions } from "@/lib/api";
+import { getProductsWithPrices } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
 
 export default function PricingPage() {
@@ -13,12 +13,12 @@ export default function PricingPage() {
   } = useQuery({
     queryKey: ["stripe-products-with-prices"],
     queryFn: async () => {
-      let userSubs = null;
-      if (user) {
-        userSubs = await getUserSubscriptions(user.tokens.access_token);
-      }
+      // let userSubs = null;
+      // if (user) {
+      //   userSubs = await getUserSubscriptions(user.tokens.access_token);
+      // }
       const products = await getProductsWithPrices();
-      return { products, userSubs };
+      return { products, userSubs: null };
     },
   });
   if (isPendingProducts) {
