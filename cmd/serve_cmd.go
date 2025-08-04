@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -60,8 +61,8 @@ func Run2() error {
 
 		quitSignal := <-quit
 		signal.Stop(quit)
-
-		fmt.Printf("quit signal: %q received. starting graceful shutdown\n", quitSignal.String())
+		slog.Info(fmt.Sprintf("quit signal: %q received. starting graceful shutdown\n", quitSignal.String()), slog.String("signal", quitSignal.String()))
+		firstCancel()
 
 		ctx, cancel := context.WithTimeout(firstCtx, 10*time.Second)
 		defer cancel()
@@ -76,7 +77,7 @@ func Run2() error {
 
 	app.RunBackgroundProcesses(firstCtx)
 
-	fmt.Printf("server running on port %d", app.Config().Options.Port)
+	slog.Info("starting server", slog.Int("port", port))
 
 	if err := httpServer.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
 		return err
