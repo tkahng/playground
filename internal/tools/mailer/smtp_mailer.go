@@ -13,9 +13,21 @@ type SmtpMailer struct {
 	client *mail.Client
 }
 
-func (s *SmtpMailer) SendEmail(params *Message) error {
-	return nil
+// Send implements Mailer.
+func (s *SmtpMailer) Send(message *Message) error {
+	msg := mail.NewMsg()
+	if err := msg.From(message.From); err != nil {
+		return err
+	}
+	if err := msg.To(message.To); err != nil {
+		return err
+	}
+	msg.Subject(message.Subject)
+	msg.SetBodyString(mail.TypeMultipartMixed, message.Body)
+	return s.client.Send(msg)
 }
+
+var _ Mailer = (*SmtpMailer)(nil)
 
 func NewSmtpMailer(cfg conf.SmtpConfig) *SmtpMailer {
 	client, err := mail.NewClient(

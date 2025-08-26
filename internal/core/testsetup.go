@@ -98,8 +98,11 @@ func TestingSetIntegrationServices(app *BaseApp) {
 	adapter := app.Adapter()
 	cfg := app.Config()
 	jobService := app.JobService()
-	m := &mailer.LogMailer{}
-	app.mailService = services.NewTestOtpMailService(
+	m := &mailer.TestMailer{
+		Mailer: &mailer.LogMailer{},
+		Wg:     nil,
+	}
+	app.mailService = services.NewOtpMailService(
 		cfg,
 		adapter,
 		m,

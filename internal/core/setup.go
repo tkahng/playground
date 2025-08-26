@@ -12,6 +12,7 @@ import (
 	"github.com/tkahng/playground/internal/services"
 	"github.com/tkahng/playground/internal/stores"
 	"github.com/tkahng/playground/internal/tools/logger"
+	"github.com/tkahng/playground/internal/tools/mailer"
 	"github.com/tkahng/playground/internal/tools/sse"
 	"github.com/tkahng/playground/internal/userreaction"
 )
@@ -68,7 +69,6 @@ func SetDb(app *BaseApp) {
 
 func SetBasicServices(app *BaseApp) {
 	logger := app.Logger()
-	cfg := app.Config()
 	adapter := app.Adapter()
 	dbx := app.Db()
 
@@ -78,11 +78,6 @@ func SetBasicServices(app *BaseApp) {
 
 	app.eventManager = events.NewEventManager(logger)
 	app.sseManager = sse.NewManager(logger)
-
-	app.mailService = services.NewOtpMailService(
-		cfg,
-		adapter,
-	)
 
 	app.jobManager = jobs.NewDbJobManager(dbx)
 	app.jobService = services.NewJobService(app.jobManager)
@@ -98,9 +93,11 @@ func SetIntegrationServices(app *BaseApp) {
 	adapter := app.Adapter()
 	cfg := app.Config()
 	jobService := app.JobService()
+	m := mailer.NewSmtpMailer(cfg.SmtpConfig)
 	app.mailService = services.NewOtpMailService(
 		cfg,
 		adapter,
+		m,
 	)
 
 	client := services.NewPaymentClient(cfg.StripeConfig)

@@ -33,25 +33,6 @@ type DbOtpMailService struct {
 func NewOtpMailService(
 	opts *conf.EnvConfig,
 	adapter stores.StorageAdapterInterface,
-) OtpMailService {
-	var m mailer.Mailer
-	if opts.ResendApiKey != "" {
-		m = mailer.NewResendMailer(opts.ResendConfig)
-	} else {
-		m = &mailer.LogMailer{}
-	}
-	return &DbOtpMailService{
-		options:  opts,
-		adapter:  adapter,
-		mail:     m,
-		token:    NewJwtService(),
-		password: NewPasswordService(),
-	}
-}
-
-func NewTestOtpMailService(
-	opts *conf.EnvConfig,
-	adapter stores.StorageAdapterInterface,
 	mailer mailer.Mailer,
 ) OtpMailService {
 	return &DbOtpMailService{
