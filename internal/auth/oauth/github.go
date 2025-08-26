@@ -14,7 +14,7 @@ import (
 // }
 
 // func NewGithubProvider() *GithubConfig {
-// 	return &GithubConfig{OAuth2ProviderConfig{
+// 	return &GithubConfig{BaseProvider{
 // 		// ctx:         context.Background(),
 // 		// displayName: "GitHub",
 // 		// pkce:        true, // technically is not supported yet but it is safe as the PKCE params are just ignored
@@ -33,7 +33,7 @@ import (
 // }
 
 type GithubConfig struct {
-	OAuth2ProviderConfig
+	BaseProvider
 }
 
 var _ ProviderConfig = (*GithubConfig)(nil)
