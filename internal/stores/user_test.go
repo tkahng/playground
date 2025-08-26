@@ -2,7 +2,6 @@ package stores_test
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"reflect"
 	"testing"
@@ -17,8 +16,8 @@ import (
 func TestUserStore_CRUD(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
+
+	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		store := stores.NewDbUserStore(dbxx)
 
 		// CreateUser
@@ -88,15 +87,14 @@ func TestUserStore_CRUD(t *testing.T) {
 			t.Errorf("User should be deleted, got = %v", deleted)
 		}
 
-		return errors.New("rollback")
 	})
 }
 
 func TestUserStore_LoadUsersByUserIds(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
+
+	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		store := stores.NewDbUserStore(dbxx)
 		user1, err := store.CreateUser(ctx, &models.User{Email: "loaduser1@example.com"})
 		if err != nil {
@@ -117,7 +115,7 @@ func TestUserStore_LoadUsersByUserIds(t *testing.T) {
 		if users[0] == nil || users[1] == nil {
 			t.Errorf("Expected non-nil users, got: %v", users)
 		}
-		return errors.New("rollback")
+
 	})
 }
 
@@ -128,8 +126,8 @@ func ptrString(s string) *string {
 func TestUserStore_FindUserById(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
+
+	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		p := stores.NewDbUserStore(dbxx)
 		type fields struct {
 			db database.Dbx
@@ -206,6 +204,5 @@ func TestUserStore_FindUserById(t *testing.T) {
 			})
 		}
 
-		return errors.New("rollback")
 	})
 }
