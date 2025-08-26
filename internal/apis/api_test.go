@@ -471,11 +471,11 @@ func (scenario *ApiScenario) test(t testing.TB) {
 	recorder := testApi.TestApi.Do(scenario.Method, scenario.URL, args...)
 
 	if recorder.Code != scenario.ExpectedStatus {
-		t.Errorf("Expected status code %d, got %d", scenario.ExpectedStatus, recorder.Code)
+		t.Fatalf("Expected status code %d, got %d", scenario.ExpectedStatus, recorder.Code)
 	}
 	if len(scenario.ExpectedContent) == 0 && len(scenario.NotExpectedContent) == 0 && scenario.AfterTestFunc == nil {
 		if len(recorder.Body.String()) != 0 {
-			t.Errorf("Expected empty body, got \n%v", recorder.Body.String())
+			t.Fatalf("Expected empty body, got \n%v", recorder.Body.String())
 		}
 	} else {
 		// normalize json response format
@@ -491,14 +491,14 @@ func (scenario *ApiScenario) test(t testing.TB) {
 
 		for _, item := range scenario.ExpectedContent {
 			if !strings.Contains(normalizedBody, item) {
-				t.Errorf("Cannot find %v in response body \n%v", item, normalizedBody)
+				t.Fatalf("Cannot find %v in response body \n%v", item, normalizedBody)
 				break
 			}
 		}
 
 		for _, item := range scenario.NotExpectedContent {
 			if strings.Contains(normalizedBody, item) {
-				t.Errorf("Didn't expect %v in response body \n%v", item, normalizedBody)
+				t.Fatalf("Didn't expect %v in response body \n%v", item, normalizedBody)
 				break
 			}
 		}

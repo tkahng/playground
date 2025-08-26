@@ -22,7 +22,7 @@ func (api *Api) RequestPasswordReset(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	if ok {
+	if !ok {
 		return nil, huma.Error400BadRequest("Cannot reset password for super user")
 	}
 	action := api.App().Auth()
@@ -76,7 +76,7 @@ func (api *Api) ResetPassword(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	if ok {
+	if !ok {
 		return nil, huma.Error400BadRequest("Cannot reset password for super user")
 	}
 	action := api.App().Auth()

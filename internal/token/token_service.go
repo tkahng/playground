@@ -14,11 +14,24 @@ import (
 type TokenService interface {
 	GenerateToken(ctx context.Context, email string, emailType models.TokenTypes) (string, error)
 	ValidateToken(ctx context.Context, token string, emailType models.TokenTypes) (string, error)
+	CheckToken(ctx context.Context, token string, emailType models.TokenTypes) error
 }
 
 type TokenServiceImpl struct {
 	opts  *conf.EnvConfig
 	store stores.DbTokenStoreInterface
+}
+
+// CheckToken implements TokenService.
+func (t *TokenServiceImpl) CheckToken(ctx context.Context, token string, emailType models.TokenTypes) error {
+	dbtoken, err := t.store.GetTokenByValueTypeExpires(ctx, token, emailType, time.Now())
+	if err != nil {
+		return err
+	}
+	if dbtoken == nil {
+		return fmt.Errorf("token not found")
+	}
+	return nil
 }
 
 // ValidateToken implements TokenService.

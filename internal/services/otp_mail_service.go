@@ -44,6 +44,7 @@ func NewOtpMailService(
 		mail:     mailer,
 		jwt:      NewJwtService(),
 		password: NewPasswordService(),
+		token:    token,
 	}
 }
 
@@ -79,6 +80,11 @@ func (app *DbOtpMailService) SendOtpEmail(ctx context.Context, emailType mailer.
 		return fmt.Errorf("invalid email type")
 	}
 
+	tokenHash, err := app.token.GenerateToken(ctx, user.Email, tokenOpts.Type)
+	if err != nil {
+		return fmt.Errorf("error at creating verification token: %w", err)
+	}
+
 	claims := shared.OtpClaims{}
 	claims.ExpiresAt = tokenOpts.ExpiresAt()
 	claims.Type = tokenOpts.Type
@@ -87,22 +93,6 @@ func (app *DbOtpMailService) SendOtpEmail(ctx context.Context, emailType mailer.
 	claims.Token = security.GenerateTokenKey()
 	claims.Otp = security.GenerateOtp(6)
 	claims.RedirectTo = appOpts.AppUrl
-
-	tokenHash, err := app.jwt.CreateJwtToken(claims, tokenOpts.Secret)
-	if err != nil {
-		return fmt.Errorf("error at creating verification token: %w", err)
-	}
-	dto := &stores.CreateTokenDTO{
-		Expires:    claims.ExpiresAt.Time,
-		Token:      claims.Token,
-		Type:       models.TokenTypes(claims.Type),
-		Identifier: claims.Email,
-		UserID:     &claims.UserId,
-	}
-	err = adapter.Token().SaveToken(ctx, dto)
-	if err != nil {
-		return fmt.Errorf("error at creating verification token: %w", err)
-	}
 
 	sendMailParams, err := app.getSendMailParams(emailType, tokenHash, claims)
 	if err != nil {

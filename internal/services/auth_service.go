@@ -367,20 +367,14 @@ func (app *BaseAuthService) CreateAuthTokens(ctx context.Context, payload *model
 
 // HandleCheckResetPasswordToken implements AuthActions.
 func (app *BaseAuthService) HandleCheckResetPasswordToken(ctx context.Context, tokenHash string) error {
-	opts := app.config.AuthOptions
-	var claims shared.PasswordResetClaims
-	err := app.jwt.ParseToken(tokenHash, opts.PasswordResetToken, &claims)
-	if err != nil {
-		return fmt.Errorf("error verifying password reset token: %w", err)
-	}
-	token, err := app.adapter.Token().GetToken(ctx, claims.Token)
-	if err != nil {
-		return err
-	}
-	if token == nil {
-		return fmt.Errorf("token not found")
-	}
-	return nil
+	// opts := app.config.AuthOptions
+	// var claims shared.PasswordResetClaims
+	// err := app.jwt.ParseToken(tokenHash, opts.PasswordResetToken, &claims)
+	// if err != nil {
+	// 	return fmt.Errorf("error verifying password reset token: %w", err)
+	// }
+	return app.token.CheckToken(ctx, tokenHash, models.TokenTypesPasswordResetToken)
+
 }
 
 // HandlePasswordResetToken implements AuthActions.
