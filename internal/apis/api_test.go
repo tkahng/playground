@@ -266,7 +266,7 @@ func createVerifiedUser(app core.App) (*models.UserInfo, error) {
 		User: *user,
 	}, nil
 }
-func createUnverifiedUser(app *core.BaseAppDecorator) (*models.UserInfo, error) {
+func createUnverifiedUser(app *core.BaseApp) (*models.UserInfo, error) {
 	ctx := context.Background()
 	user, err := app.Adapter().User().CreateUser(ctx, &models.User{
 		Email: "authenticated@example.com",
@@ -291,7 +291,7 @@ func createUnverifiedUser(app *core.BaseAppDecorator) (*models.UserInfo, error) 
 type TestApi struct {
 	TestApi humatest.TestAPI
 	Api     apis.Api
-	App     *core.BaseAppDecorator
+	App     *core.BaseApp
 	Cfg     conf.EnvConfig
 	Router  http.Handler
 }
@@ -299,7 +299,7 @@ type TestApi struct {
 func SetupApi(t testing.TB, ctx context.Context, db database.Dbx) *TestApi {
 	t.Helper()
 	cfg := conf.ZeroEnvConfig()
-	app := core.NewAppDecorator(ctx, cfg, db)
+	app := core.NewTestApp(ctx, cfg, db)
 	appApi := apis.NewAppApi(app)
 	router, api := test.NewHumaApi(t)
 	apis.AddRoutes(api, appApi)
@@ -377,8 +377,8 @@ type ApiScenario struct {
 	// ---------------------------------------------------------------
 
 	TestAppFactory func(t testing.TB) *TestApi
-	BeforeTestFunc func(t testing.TB, app *core.BaseAppDecorator, scenario *ApiScenario)
-	AfterTestFunc  func(t testing.TB, app *core.BaseAppDecorator, res *httptest.ResponseRecorder)
+	BeforeTestFunc func(t testing.TB, app *core.BaseApp, scenario *ApiScenario)
+	AfterTestFunc  func(t testing.TB, app *core.BaseApp, res *httptest.ResponseRecorder)
 }
 
 // Test executes the test scenario.

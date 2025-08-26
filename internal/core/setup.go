@@ -91,7 +91,7 @@ func (app *BaseApp) SetDb() {
 
 	app.db = queries
 
-	adapter := stores.NewDbAdapterDecorators(app.db)
+	adapter := stores.NewStorageAdapter(app.db)
 	app.adapter = adapter
 }
 

@@ -53,7 +53,7 @@ func TestApi_AdminUserAccounts(t *testing.T) {
 				TestAppFactory: func(t testing.TB) *TestApi {
 					return testApi
 				},
-				AfterTestFunc: func(t testing.TB, app *core.BaseAppDecorator, res *httptest.ResponseRecorder) {
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, res *httptest.ResponseRecorder) {
 					var body apis.ApiPaginatedResponse[*apis.UserAccountOutput]
 					err := json.NewDecoder(res.Body).Decode(&body)
 					if err != nil {
@@ -73,7 +73,7 @@ func TestApi_AdminUserAccounts(t *testing.T) {
 				TestAppFactory: func(t testing.TB) *TestApi {
 					return testApi
 				},
-				AfterTestFunc: func(t testing.TB, app *core.BaseAppDecorator, res *httptest.ResponseRecorder) {
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, res *httptest.ResponseRecorder) {
 					var body apis.ApiPaginatedResponse[*apis.UserAccountOutput]
 					err := json.NewDecoder(res.Body).Decode(&body)
 					if err != nil {

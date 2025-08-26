@@ -40,7 +40,7 @@ func TestApi_AdminUsersList(t *testing.T) {
 				TestAppFactory: func(t testing.TB) *TestApi {
 					return testApi
 				},
-				AfterTestFunc: func(t testing.TB, app *core.BaseAppDecorator, res *httptest.ResponseRecorder) {
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, res *httptest.ResponseRecorder) {
 					var body apis.ApiPaginatedResponse[*apis.ApiUser]
 					err := json.NewDecoder(res.Body).Decode(&body)
 					if err != nil {
@@ -60,7 +60,7 @@ func TestApi_AdminUsersList(t *testing.T) {
 				TestAppFactory: func(t testing.TB) *TestApi {
 					return testApi
 				},
-				AfterTestFunc: func(t testing.TB, app *core.BaseAppDecorator, res *httptest.ResponseRecorder) {
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, res *httptest.ResponseRecorder) {
 					var body apis.ApiPaginatedResponse[*apis.ApiUser]
 					err := json.NewDecoder(res.Body).Decode(&body)
 					if err != nil {
@@ -83,7 +83,7 @@ func TestApi_AdminUsersList(t *testing.T) {
 				TestAppFactory: func(t testing.TB) *TestApi {
 					return testApi
 				},
-				AfterTestFunc: func(t testing.TB, app *core.BaseAppDecorator, res *httptest.ResponseRecorder) {
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, res *httptest.ResponseRecorder) {
 					var body apis.ApiPaginatedResponse[*apis.ApiUser]
 					err := json.NewDecoder(res.Body).Decode(&body)
 					if err != nil {
@@ -121,7 +121,7 @@ func TestApi_AdminUsersCreate(t *testing.T) {
 				TestAppFactory: func(t testing.TB) *TestApi {
 					return testApi
 				},
-				BeforeTestFunc: func(t testing.TB, app *core.BaseAppDecorator, scenario *ApiScenario) {
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
 					input := &apis.UserCreateInput{
 						Password: "Password123!",
 						UserMutationInput: &apis.UserMutationInput{
@@ -135,7 +135,7 @@ func TestApi_AdminUsersCreate(t *testing.T) {
 					}
 					scenario.Body = strings.NewReader(string(data))
 				},
-				AfterTestFunc: func(t testing.TB, app *core.BaseAppDecorator, res *httptest.ResponseRecorder) {
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, res *httptest.ResponseRecorder) {
 					var body apis.ApiUser
 					err := json.NewDecoder(res.Body).Decode(&body)
 					if err != nil {
@@ -161,7 +161,7 @@ func TestApi_AdminUsersCreate(t *testing.T) {
 				TestAppFactory: func(t testing.TB) *TestApi {
 					return testApi
 				},
-				BeforeTestFunc: func(t testing.TB, app *core.BaseAppDecorator, scenario *ApiScenario) {
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
 					input := &apis.UserCreateInput{
 						Password: "Password123!",
 						UserMutationInput: &apis.UserMutationInput{
@@ -175,7 +175,7 @@ func TestApi_AdminUsersCreate(t *testing.T) {
 					}
 					scenario.Body = strings.NewReader(string(data))
 				},
-				AfterTestFunc: func(t testing.TB, app *core.BaseAppDecorator, res *httptest.ResponseRecorder) {
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, res *httptest.ResponseRecorder) {
 					var body apphttp.ErrorModel
 					err := json.NewDecoder(res.Body).Decode(&body)
 					if err != nil {
@@ -216,11 +216,11 @@ func TestApi_AdminUsersDelete(t *testing.T) {
 				TestAppFactory: func(t testing.TB) *TestApi {
 					return testApi
 				},
-				BeforeTestFunc: func(t testing.TB, app *core.BaseAppDecorator, scenario *ApiScenario) {
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
 					user1 := CreateUserWithOptions(t, testApi.App, UserWithEmail("user1@example.com"))
 					scenario.URL = fmt.Sprintf("/admin/users/%s", user1.User.ID)
 				},
-				AfterTestFunc: func(t testing.TB, app *core.BaseAppDecorator, res *httptest.ResponseRecorder) {
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, res *httptest.ResponseRecorder) {
 					user, err := app.Adapter().User().FindUser(ctx, &stores.UserFilter{
 						Emails: []string{"user1@example.com"},
 					})
@@ -241,10 +241,10 @@ func TestApi_AdminUsersDelete(t *testing.T) {
 				TestAppFactory: func(t testing.TB) *TestApi {
 					return testApi
 				},
-				BeforeTestFunc: func(t testing.TB, app *core.BaseAppDecorator, scenario *ApiScenario) {
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
 					scenario.URL = fmt.Sprintf("/admin/users/%s", uuid.New().String())
 				},
-				AfterTestFunc: func(t testing.TB, app *core.BaseAppDecorator, res *httptest.ResponseRecorder) {
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, res *httptest.ResponseRecorder) {
 					var body apphttp.ErrorModel
 					err := json.NewDecoder(res.Body).Decode(&body)
 					if err != nil {
@@ -284,7 +284,7 @@ func TestApi_AdminUsersUpdate(t *testing.T) {
 				TestAppFactory: func(t testing.TB) *TestApi {
 					return testApi
 				},
-				BeforeTestFunc: func(t testing.TB, app *core.BaseAppDecorator, scenario *ApiScenario) {
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
 					user1 := CreateUserWithOptions(t, testApi.App, UserWithEmail("user1@example.com"), UserWithName("User 1"))
 					scenario.URL = fmt.Sprintf("/admin/users/%s", user1.User.ID)
 					input := &apis.UserMutationInput{
@@ -293,7 +293,7 @@ func TestApi_AdminUsersUpdate(t *testing.T) {
 					}
 					scenario.Body = JsonToReader(t, input)
 				},
-				AfterTestFunc: func(t testing.TB, app *core.BaseAppDecorator, res *httptest.ResponseRecorder) {
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, res *httptest.ResponseRecorder) {
 					user, err := app.Adapter().User().FindUser(ctx, &stores.UserFilter{
 						Emails: []string{"user1@example.com"},
 					})
@@ -317,7 +317,7 @@ func TestApi_AdminUsersUpdate(t *testing.T) {
 				TestAppFactory: func(t testing.TB) *TestApi {
 					return testApi
 				},
-				BeforeTestFunc: func(t testing.TB, app *core.BaseAppDecorator, scenario *ApiScenario) {
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
 					scenario.URL = fmt.Sprintf("/admin/users/%s", uuid.New().String())
 					input := &apis.UserMutationInput{
 						Email: "user1@example.com",
@@ -325,7 +325,7 @@ func TestApi_AdminUsersUpdate(t *testing.T) {
 					}
 					scenario.Body = JsonToReader(t, input)
 				},
-				AfterTestFunc: func(t testing.TB, app *core.BaseAppDecorator, res *httptest.ResponseRecorder) {
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, res *httptest.ResponseRecorder) {
 					var body apphttp.ErrorModel
 					err := json.NewDecoder(res.Body).Decode(&body)
 					if err != nil {
@@ -365,7 +365,7 @@ func TestApi_AdminUsersUpdatePassword(t *testing.T) {
 				TestAppFactory: func(t testing.TB) *TestApi {
 					return testApi
 				},
-				BeforeTestFunc: func(t testing.TB, app *core.BaseAppDecorator, scenario *ApiScenario) {
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
 					user1 := CreateUserWithOptions(
 						t,
 						testApi.App,
@@ -381,7 +381,7 @@ func TestApi_AdminUsersUpdatePassword(t *testing.T) {
 					}
 					scenario.Body = JsonToReader(t, input)
 				},
-				AfterTestFunc: func(t testing.TB, app *core.BaseAppDecorator, res *httptest.ResponseRecorder) {
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, res *httptest.ResponseRecorder) {
 					user, err := app.Adapter().User().FindUser(ctx, &stores.UserFilter{
 						Emails: []string{"user1@example.com"},
 					})
@@ -439,7 +439,7 @@ func TestApi_AdminUsersGet(t *testing.T) {
 				TestAppFactory: func(t testing.TB) *TestApi {
 					return testApi
 				},
-				AfterTestFunc: func(t testing.TB, app *core.BaseAppDecorator, res *httptest.ResponseRecorder) {
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, res *httptest.ResponseRecorder) {
 					var body apis.ApiUser
 					err := json.NewDecoder(res.Body).Decode(&body)
 					if err != nil {
@@ -459,7 +459,7 @@ func TestApi_AdminUsersGet(t *testing.T) {
 				TestAppFactory: func(t testing.TB) *TestApi {
 					return testApi
 				},
-				AfterTestFunc: func(t testing.TB, app *core.BaseAppDecorator, res *httptest.ResponseRecorder) {
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, res *httptest.ResponseRecorder) {
 					var body apphttp.ErrorModel
 					err := json.NewDecoder(res.Body).Decode(&body)
 					if err != nil {
