@@ -102,6 +102,7 @@ func TestingSetIntegrationServices(app *BaseApp) {
 		Mailer: &mailer.LogMailer{},
 		Wg:     nil,
 	}
+	app.mailer = m
 	app.mailService = services.NewOtpMailService(
 		cfg,
 		adapter,
