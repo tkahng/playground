@@ -106,7 +106,7 @@ func TestDbTokenStore_GetTokenByValueTypeExpires(t *testing.T) {
 				Type:       models.TokenTypesAccessToken,
 				Identifier: "user@example.com",
 				Expires:    time.Now().Add(-1 * time.Hour),
-				Token:      "tok_test_123",
+				Token:      "tok_test_1234",
 				UserID:     nil,
 				Otp:        nil,
 			}
