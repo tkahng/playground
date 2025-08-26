@@ -10,6 +10,7 @@ import (
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/shared"
 	"github.com/tkahng/playground/internal/stores"
+	"github.com/tkahng/playground/internal/token"
 	"github.com/tkahng/playground/internal/tools/mailer"
 	"github.com/tkahng/playground/internal/tools/security"
 	"github.com/tkahng/playground/internal/workers"
@@ -26,7 +27,8 @@ type DbOtpMailService struct {
 	options  *conf.EnvConfig
 	adapter  stores.StorageAdapterInterface
 	mail     mailer.Mailer
-	token    JwtService
+	token    token.TokenService
+	jwt      JwtService
 	password PasswordService
 }
 
@@ -34,12 +36,13 @@ func NewOtpMailService(
 	opts *conf.EnvConfig,
 	adapter stores.StorageAdapterInterface,
 	mailer mailer.Mailer,
+	token token.TokenService,
 ) OtpMailService {
 	return &DbOtpMailService{
 		options:  opts,
 		adapter:  adapter,
 		mail:     mailer,
-		token:    NewJwtService(),
+		jwt:      NewJwtService(),
 		password: NewPasswordService(),
 	}
 }
@@ -53,7 +56,7 @@ func (app *DbOtpMailService) SendOtpEmail(ctx context.Context, emailType mailer.
 	if app.options == nil {
 		return fmt.Errorf("app options is nil")
 	}
-	if app.token == nil {
+	if app.jwt == nil {
 		return fmt.Errorf("token service is nil")
 	}
 	if app.mail == nil {
@@ -85,7 +88,7 @@ func (app *DbOtpMailService) SendOtpEmail(ctx context.Context, emailType mailer.
 	claims.Otp = security.GenerateOtp(6)
 	claims.RedirectTo = appOpts.AppUrl
 
-	tokenHash, err := app.token.CreateJwtToken(claims, tokenOpts.Secret)
+	tokenHash, err := app.jwt.CreateJwtToken(claims, tokenOpts.Secret)
 	if err != nil {
 		return fmt.Errorf("error at creating verification token: %w", err)
 	}

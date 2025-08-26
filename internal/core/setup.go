@@ -11,6 +11,7 @@ import (
 	"github.com/tkahng/playground/internal/jobs"
 	"github.com/tkahng/playground/internal/services"
 	"github.com/tkahng/playground/internal/stores"
+	"github.com/tkahng/playground/internal/token"
 	"github.com/tkahng/playground/internal/tools/logger"
 	"github.com/tkahng/playground/internal/tools/mailer"
 	"github.com/tkahng/playground/internal/tools/sse"
@@ -71,7 +72,7 @@ func SetBasicServices(app *BaseApp) {
 	logger := app.Logger()
 	adapter := app.Adapter()
 	dbx := app.Db()
-
+	cfg := app.Config()
 	app.rbac = services.NewRBACService(adapter)
 	app.team = services.NewTeamService(adapter)
 	app.checker = services.NewConstraintCheckerService(adapter)
@@ -87,17 +88,20 @@ func SetBasicServices(app *BaseApp) {
 		adapter,
 	)
 	app.task = services.NewTaskService(adapter, app.jobService)
+	app.token = token.NewTokenService(cfg, adapter.Token())
 }
 
 func SetIntegrationServices(app *BaseApp) {
 	adapter := app.Adapter()
 	cfg := app.Config()
 	jobService := app.JobService()
+	tokenService := app.Token()
 	m := mailer.NewSmtpMailer(cfg.SmtpConfig)
 	app.mailService = services.NewOtpMailService(
 		cfg,
 		adapter,
 		m,
+		tokenService,
 	)
 
 	client := services.NewPaymentClient(cfg.StripeConfig)
@@ -107,6 +111,7 @@ func SetIntegrationServices(app *BaseApp) {
 		cfg,
 		jobService,
 		adapter,
+		tokenService,
 	)
 }
 

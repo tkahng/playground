@@ -11,6 +11,7 @@ import (
 	"github.com/tkahng/playground/internal/jobs"
 	"github.com/tkahng/playground/internal/services"
 	"github.com/tkahng/playground/internal/stores"
+	"github.com/tkahng/playground/internal/token"
 
 	"github.com/tkahng/playground/internal/tools/filesystem"
 	"github.com/tkahng/playground/internal/tools/logger"
@@ -43,6 +44,8 @@ type BaseApp struct {
 	checker services.ConstraintChecker
 
 	task services.TaskService
+
+	token token.TokenService
 
 	team           services.TeamService
 	teamInvitation services.TeamInvitationService
@@ -161,6 +164,13 @@ func (app *BaseApp) JobService() services.JobService {
 		panic("job service not initialized")
 	}
 	return app.jobService
+}
+
+func (app *BaseApp) Token() token.TokenService {
+	if app.token == nil {
+		panic("token not initialized")
+	}
+	return app.token
 }
 
 // TeamInvitation implements App.

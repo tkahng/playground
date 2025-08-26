@@ -14,6 +14,7 @@ import (
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/shared"
 	"github.com/tkahng/playground/internal/stores"
+	"github.com/tkahng/playground/internal/token"
 	"github.com/tkahng/playground/internal/tools/mailer"
 	"github.com/tkahng/playground/internal/tools/security"
 	"github.com/tkahng/playground/internal/workers"
@@ -53,24 +54,27 @@ type AuthService interface {
 var _ AuthService = (*BaseAuthService)(nil)
 
 type BaseAuthService struct {
-	token      JwtService
-	password   PasswordService
-	config     *conf.EnvConfig
-	adapter    stores.StorageAdapterInterface
-	jobService JobService
+	token        JwtService
+	password     PasswordService
+	config       *conf.EnvConfig
+	adapter      stores.StorageAdapterInterface
+	jobService   JobService
+	tokenService token.TokenService
 }
 
 func NewAuthService(
 	opts *conf.EnvConfig,
 	jobService JobService,
 	adapter stores.StorageAdapterInterface,
+	tokenService token.TokenService,
 ) AuthService {
 	authService := &BaseAuthService{
-		token:      NewJwtService(),
-		password:   NewPasswordService(),
-		config:     opts,
-		adapter:    adapter,
-		jobService: jobService,
+		token:        NewJwtService(),
+		password:     NewPasswordService(),
+		config:       opts,
+		adapter:      adapter,
+		jobService:   jobService,
+		tokenService: tokenService,
 	}
 
 	return authService
