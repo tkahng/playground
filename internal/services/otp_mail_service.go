@@ -117,7 +117,6 @@ func (app *DbOtpMailService) SendOtpEmail(ctx context.Context, emailType mailer.
 		UserID:     &claims.UserId,
 	}
 	err = adapter.Token().SaveToken(ctx, dto)
-	// err = app.authStore.SaveToken(ctx, dto)
 	if err != nil {
 		return fmt.Errorf("error at creating verification token: %w", err)
 	}
@@ -127,10 +126,10 @@ func (app *DbOtpMailService) SendOtpEmail(ctx context.Context, emailType mailer.
 		return fmt.Errorf("error at getting send mail params: %w", err)
 	}
 
-	return app.mail.Send(sendMailParams.Message)
+	return app.mail.Send(sendMailParams)
 }
 
-func (app *DbOtpMailService) getSendMailParams(emailType mailer.EmailType, tokenHash string, claims shared.OtpClaims) (*mailer.AllEmailParams, error) {
+func (app *DbOtpMailService) getSendMailParams(emailType mailer.EmailType, tokenHash string, claims shared.OtpClaims) (*mailer.Message, error) {
 	appOpts := app.options.AppConfig
 	var sendMailParams mailer.SendMailParams
 	var ok bool
@@ -155,16 +154,12 @@ func (app *DbOtpMailService) getSendMailParams(emailType mailer.EmailType, token
 	}
 	message := &mailer.Message{
 		From:    appOpts.SenderAddress,
-		To:      common.Email,
+		To:      claims.Email,
 		Subject: fmt.Sprintf(sendMailParams.Subject, appOpts.AppName),
 		Body:    mailer.GenerateBody("body", sendMailParams.Template, common),
 	}
-	allEmailParams := &mailer.AllEmailParams{
-		SendMailParams: &sendMailParams,
-		CommonParams:   common,
-		Message:        message,
-	}
-	return allEmailParams, nil
+
+	return message, nil
 }
 
 func (i *DbOtpMailService) CreateConfirmationUrl(tokenhash string) (string, error) {

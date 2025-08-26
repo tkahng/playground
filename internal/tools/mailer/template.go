@@ -35,7 +35,7 @@ var (
 		EmailTypeVerify: {
 			Type:         EmailTypeVerify,
 			Subject:      "%s - Verify your email address",
-			TemplatePath: "/api/auth/verify",
+			TemplatePath: "/confirm-verification",
 			Template:     DefaultConfirmationMail,
 		},
 		EmailTypeConfirmPasswordReset: {
@@ -83,22 +83,7 @@ type CommonParams struct {
 }
 
 type AllEmailParams struct {
-	*SendMailParams
-	*CommonParams
 	*Message
-}
-
-func GenerateConfirmationURL(base string, path string, token, tokenType, redirectTo string) (string, error) {
-	parsedURL, err := url.Parse(base)
-	if err != nil {
-		return "", err
-	}
-	parsedURL.Path = path
-	params, err := GetPathParams(parsedURL.String(), token, tokenType, redirectTo)
-	if err != nil {
-		return "", err
-	}
-	return parsedURL.ResolveReference(params).String(), nil
 }
 
 func GetPathParams(filepath string, token, tokenType, redirectTo string) (*url.URL, error) {

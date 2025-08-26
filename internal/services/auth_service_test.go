@@ -326,9 +326,6 @@ func TestAuthenticate(t *testing.T) {
 			expectedError: false,
 			checkMail:     true,
 			checkWant: &mailer.AllEmailParams{
-				SendMailParams: &mailer.SendMailParams{
-					Type: string(mailer.EmailTypeVerify),
-				},
 				Message: &mailer.Message{
 					From:    settings.SenderAddress,
 					To:      testEmail,
@@ -480,9 +477,6 @@ func TestAuthenticate(t *testing.T) {
 			expectedError: false,
 			checkMail:     false,
 			checkWant: &mailer.AllEmailParams{
-				SendMailParams: &mailer.SendMailParams{
-					Type: string(mailer.EmailTypeSecurityPasswordReset),
-				},
 				Message: &mailer.Message{
 					From: settings.SenderAddress,
 					To:   testEmail,
