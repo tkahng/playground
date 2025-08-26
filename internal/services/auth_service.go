@@ -54,12 +54,12 @@ type AuthService interface {
 var _ AuthService = (*BaseAuthService)(nil)
 
 type BaseAuthService struct {
-	token        JwtService
-	password     PasswordService
-	config       *conf.EnvConfig
-	adapter      stores.StorageAdapterInterface
-	jobService   JobService
-	tokenService token.TokenService
+	jwt        JwtService
+	password   PasswordService
+	config     *conf.EnvConfig
+	adapter    stores.StorageAdapterInterface
+	jobService JobService
+	token      token.TokenService
 }
 
 func NewAuthService(
@@ -69,12 +69,12 @@ func NewAuthService(
 	tokenService token.TokenService,
 ) AuthService {
 	authService := &BaseAuthService{
-		token:        NewJwtService(),
-		password:     NewPasswordService(),
-		config:       opts,
-		adapter:      adapter,
-		jobService:   jobService,
-		tokenService: tokenService,
+		jwt:        NewJwtService(),
+		password:   NewPasswordService(),
+		config:     opts,
+		adapter:    adapter,
+		jobService: jobService,
+		token:      tokenService,
 	}
 
 	return authService
@@ -87,7 +87,7 @@ func (app *BaseAuthService) Password() PasswordService {
 
 // Token implements AuthService.
 func (app *BaseAuthService) Token() JwtService {
-	return app.token
+	return app.jwt
 }
 
 // CreateOAuthUrl implements AuthService.
@@ -195,7 +195,7 @@ func (app *BaseAuthService) ResetPassword(ctx context.Context, userId uuid.UUID,
 func (app *BaseAuthService) Signout(ctx context.Context, token string) error {
 	opts := app.config.AuthOptions
 	var claims shared.RefreshTokenClaims
-	err := app.token.ParseToken(token, opts.RefreshToken, &claims)
+	err := app.jwt.ParseToken(token, opts.RefreshToken, &claims)
 	if err != nil {
 		return fmt.Errorf("error verifying refresh token: %w", err)
 	}
@@ -259,7 +259,7 @@ func (app *BaseAuthService) CreateAndPersistStateToken(ctx context.Context, payl
 		},
 		ProviderStatePayload: *payload,
 	}
-	token, err := app.token.CreateJwtToken(claims, config.Secret)
+	token, err := app.jwt.CreateJwtToken(claims, config.Secret)
 	if err != nil {
 		return token, err
 	}
@@ -305,7 +305,7 @@ func (app *BaseAuthService) CreateAuthTokens(ctx context.Context, payload *model
 				Permissions: payload.Permissions,
 			},
 		}
-		token, err := app.token.CreateJwtToken(claims, opts.AccessToken.Secret)
+		token, err := app.jwt.CreateJwtToken(claims, opts.AccessToken.Secret)
 		if err != nil {
 			return token, err
 		}
@@ -315,43 +315,45 @@ func (app *BaseAuthService) CreateAuthTokens(ctx context.Context, payload *model
 		return nil, err
 	}
 
-	tokenKey := security.GenerateTokenKey()
-
-	refreshToken, err := func() (string, error) {
-
-		claims := shared.RefreshTokenClaims{
-			Type:             models.TokenTypesRefreshToken,
-			RegisteredClaims: jwt.RegisteredClaims{ExpiresAt: opts.RefreshToken.ExpiresAt()},
-			RefreshTokenPayload: shared.RefreshTokenPayload{
-				UserId: payload.User.ID,
-				Email:  payload.User.Email,
-				Token:  tokenKey,
-			},
-		}
-
-		token, err := app.token.CreateJwtToken(claims, opts.RefreshToken.Secret)
-		if err != nil {
-			return token, err
-		}
-		err = app.adapter.Token().SaveToken(
-			ctx,
-			&stores.CreateTokenDTO{
-				Type:       models.TokenTypesRefreshToken,
-				Identifier: claims.Email,
-				Expires:    opts.RefreshToken.Expires(),
-				Token:      claims.Token,
-				UserID:     &claims.UserId,
-			},
-		)
-		if err != nil {
-			return token, err
-		}
-		return token, nil
-	}()
-
+	// tokenKey := security.GenerateTokenKey()
+	refreshToken, err := app.token.GenerateToken(ctx, payload.User.Email, models.TokenTypesRefreshToken)
 	if err != nil {
 		return nil, err
 	}
+	// refreshToken, err := func() (string, error) {
+	// 	claims := shared.RefreshTokenClaims{
+	// 		Type:             models.TokenTypesRefreshToken,
+	// 		RegisteredClaims: jwt.RegisteredClaims{ExpiresAt: opts.RefreshToken.ExpiresAt()},
+	// 		RefreshTokenPayload: shared.RefreshTokenPayload{
+	// 			UserId: payload.User.ID,
+	// 			Email:  payload.User.Email,
+	// 			Token:  tokenKey,
+	// 		},
+	// 	}
+
+	// 	token, err := app.jwt.CreateJwtToken(claims, opts.RefreshToken.Secret)
+	// 	if err != nil {
+	// 		return token, err
+	// 	}
+	// 	err = app.adapter.Token().SaveToken(
+	// 		ctx,
+	// 		&stores.CreateTokenDTO{
+	// 			Type:       models.TokenTypesRefreshToken,
+	// 			Identifier: claims.Email,
+	// 			Expires:    opts.RefreshToken.Expires(),
+	// 			Token:      claims.Token,
+	// 			UserID:     &claims.UserId,
+	// 		},
+	// 	)
+	// 	if err != nil {
+	// 		return token, err
+	// 	}
+	// 	return token, nil
+	// }()
+
+	// if err != nil {
+	// 	return nil, err
+	// }
 	return &models.UserInfoTokens{
 		UserInfo: *payload,
 		Tokens: models.TokenDto{
@@ -367,7 +369,7 @@ func (app *BaseAuthService) CreateAuthTokens(ctx context.Context, payload *model
 func (app *BaseAuthService) HandleCheckResetPasswordToken(ctx context.Context, tokenHash string) error {
 	opts := app.config.AuthOptions
 	var claims shared.PasswordResetClaims
-	err := app.token.ParseToken(tokenHash, opts.PasswordResetToken, &claims)
+	err := app.jwt.ParseToken(tokenHash, opts.PasswordResetToken, &claims)
 	if err != nil {
 		return fmt.Errorf("error verifying password reset token: %w", err)
 	}
@@ -385,7 +387,7 @@ func (app *BaseAuthService) HandleCheckResetPasswordToken(ctx context.Context, t
 func (app *BaseAuthService) HandlePasswordResetToken(ctx context.Context, token, password string) error {
 	opts := app.config.AuthOptions
 	var claims shared.PasswordResetClaims
-	err := app.token.ParseToken(token, opts.PasswordResetToken, &claims)
+	err := app.jwt.ParseToken(token, opts.PasswordResetToken, &claims)
 	if err != nil {
 		return fmt.Errorf("error verifying password reset token: %w", err)
 	}
@@ -436,7 +438,7 @@ func (app *BaseAuthService) HandlePasswordResetToken(ctx context.Context, token,
 func (app *BaseAuthService) VerifyStateToken(ctx context.Context, token string) (*shared.ProviderStateClaims, error) {
 	opts := app.config.AuthOptions
 	var claims shared.ProviderStateClaims
-	err := app.token.ParseToken(token, opts.StateToken, &claims)
+	err := app.jwt.ParseToken(token, opts.StateToken, &claims)
 	if err != nil {
 		return nil, fmt.Errorf("error verifying state token: %w", err)
 	}
@@ -453,7 +455,7 @@ func (app *BaseAuthService) VerifyStateToken(ctx context.Context, token string) 
 func (app *BaseAuthService) HandleAccessToken(ctx context.Context, token string) (*models.UserInfo, error) {
 	opts := app.config.AuthOptions
 	var claims shared.AuthenticationClaims
-	err := app.token.ParseToken(token, opts.AccessToken, &claims)
+	err := app.jwt.ParseToken(token, opts.AccessToken, &claims)
 	if err != nil {
 		return nil, fmt.Errorf("error verifying access token: %w", err)
 	}
@@ -462,21 +464,21 @@ func (app *BaseAuthService) HandleAccessToken(ctx context.Context, token string)
 
 // HandleRefreshToken implements AuthActions.
 func (app *BaseAuthService) HandleRefreshToken(ctx context.Context, token string) (*models.UserInfoTokens, error) {
-	opts := app.config.AuthOptions
-	var claims shared.RefreshTokenClaims
-	err := app.token.ParseToken(token, opts.RefreshToken, &claims)
-	if err != nil {
-		return nil, fmt.Errorf("error verifying refresh token: %w", err)
-	}
-	_, err = app.adapter.Token().GetToken(ctx, claims.Token)
+	// opts := app.config.AuthOptions
+	// var claims shared.RefreshTokenClaims
+	// err := app.jwt.ParseToken(token, opts.RefreshToken, &claims)
+	// if err != nil {
+	// 	return nil, fmt.Errorf("error verifying refresh token: %w", err)
+	// }
+	res, err := app.token.ValidateToken(ctx, token, models.TokenTypesRefreshToken)
 	if err != nil {
 		return nil, fmt.Errorf("error getting token: %w", err) // corrected to return nil before the error
 	}
-	err = app.adapter.Token().DeleteToken(ctx, claims.Token)
-	if err != nil {
-		return nil, fmt.Errorf("error deleting token: %w", err)
-	}
-	info, err := app.adapter.User().GetUserInfo(ctx, claims.Email)
+	// err = app.adapter.Token().DeleteToken(ctx, res.Token)
+	// if err != nil {
+	// 	return nil, fmt.Errorf("error deleting token: %w", err)
+	// }
+	info, err := app.adapter.User().GetUserInfo(ctx, res)
 	if err != nil {
 		return nil, err
 	}
@@ -536,7 +538,7 @@ func (app *BaseAuthService) VerifyAndParseOtpToken(ctx context.Context, emailTyp
 	}
 	var err error
 	var claims shared.OtpClaims
-	err = app.token.ParseToken(token, opt, &claims)
+	err = app.jwt.ParseToken(token, opt, &claims)
 	if err != nil {
 		return nil, fmt.Errorf("error at parsing token: %w", err)
 	}
