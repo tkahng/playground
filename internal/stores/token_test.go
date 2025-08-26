@@ -1,6 +1,7 @@
 package stores_test
 
 import (
+	"context"
 	"errors"
 	"testing"
 	"time"
@@ -71,24 +72,50 @@ func TestTokenStore_CRUD(t *testing.T) {
 			assert.Nil(t, got)
 		})
 
-		t.Run("VerifyTokenStorage", func(t *testing.T) {
-			tok2 := &stores.CreateTokenDTO{
-				Type:       models.TokenTypesVerificationToken,
-				Identifier: "user3@example.com",
+		return errors.New("rollback")
+	})
+}
+
+func TestDbTokenStore_GetTokenByValueTypeExpires(t *testing.T) {
+	test.Parallel(t)
+	test.SkipIfShort(t)
+	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
+		store := stores.NewPostgresTokenStore(db)
+		// opts := conf.ZeroEnvConfig()
+
+		t.Run("GetTokenByValueTypeExpires-success", func(t *testing.T) {
+
+			tok := &stores.CreateTokenDTO{
+				Type:       models.TokenTypesAccessToken,
+				Identifier: "user@example.com",
 				Expires:    time.Now().Add(1 * time.Hour),
-				Token:      "tok_verify",
-				UserID:     &user.ID,
+				Token:      "tok_test_123",
+				UserID:     nil,
 				Otp:        nil,
 			}
-			err := store.SaveToken(ctx, tok2)
+			err := store.SaveToken(ctx, tok)
 			assert.NoError(t, err)
-			err = store.VerifyTokenStorage(ctx, "tok_verify")
+			got, err := store.GetTokenByValueTypeExpires(ctx, tok.Token, tok.Type, time.Now())
 			assert.NoError(t, err)
-			got, err := store.GetToken(ctx, "tok_verify")
-			assert.ErrorIs(t, err, shared.ErrTokenNotFound)
-			assert.Nil(t, got)
+			assert.NotNil(t, got)
+			assert.Equal(t, tok.Token, got.Token)
 		})
+		t.Run("GetTokenByValueTypeExpires-fail expired", func(t *testing.T) {
 
-		return errors.New("rollback")
+			tok := &stores.CreateTokenDTO{
+				Type:       models.TokenTypesAccessToken,
+				Identifier: "user@example.com",
+				Expires:    time.Now().Add(-1 * time.Hour),
+				Token:      "tok_test_123",
+				UserID:     nil,
+				Otp:        nil,
+			}
+			err := store.SaveToken(ctx, tok)
+			assert.NoError(t, err)
+			got, err := store.GetTokenByValueTypeExpires(ctx, tok.Token, tok.Type, tok.Expires)
+			assert.NoError(t, err)
+			assert.NotNil(t, got)
+			assert.Equal(t, tok.Token, got.Token)
+		})
 	})
 }

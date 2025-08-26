@@ -24,14 +24,40 @@ type CreateTokenDTO struct {
 
 type DbTokenStoreInterface interface {
 	GetToken(ctx context.Context, token string) (*models.Token, error)
+	GetTokenByValueTypeExpires(ctx context.Context, value string, tokenType models.TokenTypes, expires time.Time) (*models.Token, error)
 	SaveToken(ctx context.Context, token *CreateTokenDTO) error
 	DeleteToken(ctx context.Context, token string) error
-	VerifyTokenStorage(ctx context.Context, token string) error
 }
 
 type DbTokenStore struct {
 	db database.Dbx
 }
+
+// GetTokenByValueTypeExpires implements DbTokenStoreInterface.
+func (p *DbTokenStore) GetTokenByValueTypeExpires(ctx context.Context, value string, tokenType models.TokenTypes, expires time.Time) (*models.Token, error) {
+	res, err := repository.Token.GetOne(ctx,
+		p.db,
+		&map[string]any{
+			"type": map[string]any{
+				"_eq": tokenType,
+			},
+			"token": map[string]any{
+				"_eq": value,
+			},
+			"expires": map[string]any{
+				"_gte": expires,
+			},
+		})
+	if err != nil {
+		return nil, fmt.Errorf("error at getting token: %w", err)
+	}
+	if res == nil {
+		return nil, shared.ErrTokenNotFound
+	}
+	return res, nil
+}
+
+var _ DbTokenStoreInterface = (*DbTokenStore)(nil)
 
 func NewPostgresTokenStore(db database.Dbx) *DbTokenStore {
 	return &DbTokenStore{
@@ -86,21 +112,6 @@ func (a *DbTokenStore) DeleteToken(ctx context.Context, token string) error {
 			"_eq": token,
 		},
 	})
-	if err != nil {
-		return fmt.Errorf("error at deleting token: %w", err)
-	}
-	return nil
-}
-
-func (a *DbTokenStore) VerifyTokenStorage(ctx context.Context, token string) error {
-	res, err := a.GetToken(ctx, token)
-	if err != nil {
-		return err
-	}
-	if res == nil {
-		return fmt.Errorf("token not found")
-	}
-	err = a.DeleteToken(ctx, token)
 	if err != nil {
 		return fmt.Errorf("error at deleting token: %w", err)
 	}
