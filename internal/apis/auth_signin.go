@@ -26,7 +26,7 @@ func (api *Api) SignIn(ctx context.Context, input *struct {
 }) (*AuthenticatedInfoResponse, error) {
 	action := api.App().Auth()
 	password := input.Body.Password.String()
-	hash, err := action.Password().HashPassword(password)
+	hash, err := api.App().Password().HashPassword(password)
 	if err != nil {
 		return nil, fmt.Errorf("error hashing password: %w", err)
 	}

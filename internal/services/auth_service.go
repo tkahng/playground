@@ -22,10 +22,6 @@ import (
 )
 
 type AuthService interface {
-	// properties -----------------------------------------------------------------------------------------------------------
-
-	Password() PasswordService
-
 	// handlers -----------------------------------------------------------------------------------------------------------
 
 	HandlePasswordResetRequest(ctx context.Context, email string) error
@@ -77,16 +73,6 @@ func NewAuthService(
 	}
 
 	return authService
-}
-
-// Password implements AuthService.
-func (app *BaseAuthService) Password() PasswordService {
-	return app.password
-}
-
-// Token implements AuthService.
-func (app *BaseAuthService) Token() JwtService {
-	return app.jwt
 }
 
 // CreateOAuthUrl implements AuthService.
