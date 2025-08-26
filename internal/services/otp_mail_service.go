@@ -220,27 +220,3 @@ func (i *DbOtpMailService) SendTeamInvitationEmail(ctx context.Context, params *
 	}
 	return i.mail.Send(param.Message)
 }
-
-type OtpMailDecorator struct {
-	Delegate                DbOtpMailService
-	SendOtpEmailFunc        func(ctx context.Context, emailType mailer.EmailType, userId uuid.UUID) error
-	SendInvitationEmailFunc func(ctx context.Context, params *workers.TeamInvitationJobArgs) error
-}
-
-// SendTeamInvitationEmail implements OtpMailService.
-func (o *OtpMailDecorator) SendTeamInvitationEmail(ctx context.Context, params *workers.TeamInvitationJobArgs) error {
-	if o.SendInvitationEmailFunc != nil {
-		return o.SendInvitationEmailFunc(ctx, params)
-	}
-	return o.Delegate.SendTeamInvitationEmail(ctx, params)
-}
-
-// SendOtpEmail implements OtpMailService.
-func (o *OtpMailDecorator) SendOtpEmail(ctx context.Context, emailType mailer.EmailType, userId uuid.UUID) error {
-	if o.SendOtpEmailFunc != nil {
-		return o.SendOtpEmailFunc(ctx, emailType, userId)
-	}
-	return o.Delegate.SendOtpEmail(ctx, emailType, userId)
-}
-
-var _ OtpMailService = (*OtpMailDecorator)(nil)
