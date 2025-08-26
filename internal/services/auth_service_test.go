@@ -13,7 +13,6 @@ import (
 	"github.com/tkahng/playground/internal/conf"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/stores"
-	"github.com/tkahng/playground/internal/tools/mailer"
 	"github.com/tkahng/playground/internal/tools/types"
 	"github.com/tkahng/playground/internal/workers"
 )
@@ -278,7 +277,7 @@ func TestAuthenticate(t *testing.T) {
 		setupMocks    func()
 		expectedError bool
 		checkMail     bool
-		checkWant     *mailer.AllEmailParams
+		// checkWant     *mailer.AllEmailParams
 	}{
 		{
 			name: "user does not exist, create user and account",
@@ -325,13 +324,13 @@ func TestAuthenticate(t *testing.T) {
 			},
 			expectedError: false,
 			checkMail:     true,
-			checkWant: &mailer.AllEmailParams{
-				Message: &mailer.Message{
-					From:    settings.SenderAddress,
-					To:      testEmail,
-					Subject: "TestApp - Verify your email address",
-				},
-			},
+			// checkWant: &mailer.AllEmailParams{
+			// 	Message: &mailer.Message{
+			// 		From:    settings.SenderAddress,
+			// 		To:      testEmail,
+			// 		Subject: "TestApp - Verify your email address",
+			// 	},
+			// },
 		},
 		{
 			name: "user exists, account exists, correct password",
@@ -476,12 +475,12 @@ func TestAuthenticate(t *testing.T) {
 			},
 			expectedError: false,
 			checkMail:     false,
-			checkWant: &mailer.AllEmailParams{
-				Message: &mailer.Message{
-					From: settings.SenderAddress,
-					To:   testEmail,
-				},
-			},
+			// checkWant: &mailer.AllEmailParams{
+			// 	Message: &mailer.Message{
+			// 		From: settings.SenderAddress,
+			// 		To:   testEmail,
+			// 	},
+			// },
 		},
 	}
 

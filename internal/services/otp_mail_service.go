@@ -197,21 +197,11 @@ func (i *DbOtpMailService) SendTeamInvitationEmail(ctx context.Context, params *
 	}
 	params.ConfirmationURL = confUrl
 	body := mailer.GenerateBody("body", string(mailer.DefaultTeamInviteMail), params)
-	param := &mailer.AllEmailParams{}
-	// param.SendMailParams = &mailer.SendMailParams{
-	// 	Template: string(mailer.DefaultTeamInviteMail),
-	// }
-	// param.CommonParams = &mailer.CommonParams{
-	// 	ConfirmationURL: params.ConfirmationURL,
-	// 	Email:           params.Email,
-	// 	SiteURL:         i.options.Meta.AppUrl,
-	// 	Token:           params.TokenHash,
-	// }
-	param.Message = &mailer.Message{
+	message := &mailer.Message{
 		From:    i.options.SenderAddress,
 		To:      params.Email,
 		Subject: fmt.Sprintf("Invitation to join %s", params.TeamName),
 		Body:    body,
 	}
-	return i.mail.Send(param.Message)
+	return i.mail.Send(message)
 }
