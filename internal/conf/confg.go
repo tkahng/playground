@@ -79,6 +79,14 @@ type Options struct {
 func ZeroEnvConfig() EnvConfig {
 	// nolint:exhaustruct
 	return EnvConfig{
+		AppConfig: AppConfig{
+			AppUrl:        "http://127.0.0.1:8080",
+			AppName:       "Playground",
+			SenderName:    "info",
+			SenderAddress: "Hb4k@notifications.k2dv.io",
+			EncryptionKey: "12345678901234567890123456789012",
+			AppEnv:        "dev",
+		},
 		AuthOptions: NewTokenOptions(),
 	}
 }
