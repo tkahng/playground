@@ -113,7 +113,6 @@ func (app *BaseAuthService) CreateOAuthUrl(ctx context.Context, providerName mod
 		Token:      security.GenerateTokenKey(),
 	}
 	if provider.Pkce() {
-
 		info.CodeVerifier = security.RandomString(43)
 		info.CodeChallenge = security.S256Challenge(info.CodeVerifier)
 		info.CodeChallengeMethod = "S256"
