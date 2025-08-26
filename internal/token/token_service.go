@@ -2,6 +2,7 @@ package token
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/tkahng/playground/internal/conf"
@@ -11,10 +12,8 @@ import (
 )
 
 type TokenService interface {
-	GenerateEmailVerificationToken(ctx context.Context, email string) (string, error)
-	VerifyEmailVerificationToken(ctx context.Context, token string) (string, error)
-	GenerateResetPasswordToken(ctx context.Context, email string) (string, error)
-	VerifyResetPasswordToken(ctx context.Context, token string) (string, error)
+	GenerateToken(ctx context.Context, email string, emailType models.TokenTypes) (string, error)
+	ValidateToken(ctx context.Context, token string, emailType models.TokenTypes) (string, error)
 }
 
 type TokenServiceImpl struct {
@@ -22,41 +21,9 @@ type TokenServiceImpl struct {
 	store stores.DbTokenStoreInterface
 }
 
-// GenerateEmailVerificationToken implements TokenService.
-func (t *TokenServiceImpl) GenerateEmailVerificationToken(ctx context.Context, email string) (string, error) {
-	token := security.GenerateTokenKey()
-	expiry := t.opts.AuthOptions.VerificationToken.Duration
-	err := t.store.SaveToken(ctx, &stores.CreateTokenDTO{
-		Type:       models.TokenTypesVerificationToken,
-		Token:      token,
-		Identifier: email,
-		Expires:    time.Now().Add(time.Duration(expiry) * time.Second),
-	})
-	if err != nil {
-		return "", err
-	}
-	return token, nil
-}
-
-// GenerateResetPasswordToken implements TokenService.
-func (t *TokenServiceImpl) GenerateResetPasswordToken(ctx context.Context, email string) (string, error) {
-	token := security.GenerateTokenKey()
-	expiry := t.opts.AuthOptions.PasswordResetToken.Duration
-	err := t.store.SaveToken(ctx, &stores.CreateTokenDTO{
-		Type:       models.TokenTypesPasswordResetToken,
-		Token:      token,
-		Identifier: email,
-		Expires:    time.Now().Add(time.Duration(expiry) * time.Second),
-	})
-	if err != nil {
-		return "", err
-	}
-	return token, nil
-}
-
-// VerifyEmailVerificationToken implements TokenService.
-func (t *TokenServiceImpl) VerifyEmailVerificationToken(ctx context.Context, token string) (string, error) {
-	dbtoken, err := t.store.GetToken(ctx, token)
+// ValidateToken implements TokenService.
+func (t *TokenServiceImpl) ValidateToken(ctx context.Context, token string, emailType models.TokenTypes) (string, error) {
+	dbtoken, err := t.store.GetTokenByValueTypeExpires(ctx, token, emailType, time.Now())
 	if err != nil {
 		return "", err
 	}
@@ -70,9 +37,31 @@ func (t *TokenServiceImpl) VerifyEmailVerificationToken(ctx context.Context, tok
 	return dbtoken.Identifier, nil
 }
 
-// VerifyResetPasswordToken implements TokenService.
-func (t *TokenServiceImpl) VerifyResetPasswordToken(ctx context.Context, token string) (string, error) {
-	panic("unimplemented")
+// GenerateToken implements TokenService.
+func (t *TokenServiceImpl) GenerateToken(ctx context.Context, email string, emailType models.TokenTypes) (string, error) {
+	token := security.GenerateTokenKey()
+	var opt conf.TokenOption
+	switch emailType {
+	case models.TokenTypesVerificationToken:
+		opt = t.opts.AuthOptions.VerificationToken
+	case models.TokenTypesPasswordResetToken:
+		opt = t.opts.AuthOptions.PasswordResetToken
+	case models.TokenTypesRefreshToken:
+		opt = t.opts.AuthOptions.RefreshToken
+	default:
+		return "", fmt.Errorf("invalid email type %v", emailType)
+	}
+	expiry := opt.Duration
+	err := t.store.SaveToken(ctx, &stores.CreateTokenDTO{
+		Type:       emailType,
+		Token:      token,
+		Identifier: email,
+		Expires:    time.Now().Add(time.Duration(expiry) * time.Second),
+	})
+	if err != nil {
+		return "", err
+	}
+	return token, nil
 }
 
 var _ TokenService = (*TokenServiceImpl)(nil)
