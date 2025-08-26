@@ -14,7 +14,9 @@ type RequestPasswordResetInput struct {
 type RequestPasswordResetOutput struct {
 }
 
-func (api *Api) RequestPasswordReset(ctx context.Context, input *struct{ Body *RequestPasswordResetInput }) (*RequestPasswordResetOutput, error) {
+func (api *Api) RequestPasswordReset(ctx context.Context, input *struct {
+	Body *RequestPasswordResetInput `json:"body" required:"true"`
+}) (*RequestPasswordResetOutput, error) {
 	checker := api.App().Checker()
 	ok, err := checker.CannotBeSuperUserEmail(ctx, input.Body.Email)
 	if err != nil {
@@ -46,7 +48,9 @@ type ConfirmPasswordResetInput struct {
 	ConfirmPassword string `form:"confirm_password" json:"confirm_password"`
 }
 
-func (api *Api) ConfirmPasswordReset(ctx context.Context, input *struct{ Body *ConfirmPasswordResetInput }) (*RequestPasswordResetOutput, error) {
+func (api *Api) ConfirmPasswordReset(ctx context.Context, input *struct {
+	Body *ConfirmPasswordResetInput `json:"body" required:"true"`
+}) (*RequestPasswordResetOutput, error) {
 	action := api.App().Auth()
 	err := action.HandlePasswordResetToken(ctx, input.Body.Token, input.Body.Password)
 	if err != nil {
@@ -60,7 +64,9 @@ type PasswordResetInput struct {
 	NewPassword      string `form:"new_password" json:"new_password"`
 }
 
-func (api *Api) ResetPassword(ctx context.Context, input *struct{ Body PasswordResetInput }) (*struct{}, error) {
+func (api *Api) ResetPassword(ctx context.Context, input *struct {
+	Body PasswordResetInput `json:"body" required:"true"`
+}) (*struct{}, error) {
 	claims := contextstore.GetContextUserInfo(ctx)
 	if claims == nil {
 		return nil, huma.Error404NotFound("User not found")
