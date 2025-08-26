@@ -385,25 +385,29 @@ func (app *BaseAuthService) HandleCheckResetPasswordToken(ctx context.Context, t
 
 // HandlePasswordResetToken implements AuthActions.
 func (app *BaseAuthService) HandlePasswordResetToken(ctx context.Context, token, password string) error {
-	opts := app.config.AuthOptions
-	var claims shared.PasswordResetClaims
-	err := app.jwt.ParseToken(token, opts.PasswordResetToken, &claims)
+	// opts := app.config.AuthOptions
+	// var claims shared.PasswordResetClaims
+	// err := app.jwt.ParseToken(token, opts.PasswordResetToken, &claims)
+	// if err != nil {
+	// 	return fmt.Errorf("error verifying password reset token: %w", err)
+	// }
+	// _, err = app.adapter.Token().GetToken(ctx, token) // corrected 'tokne' to 'token'
+	// if err != nil {
+	// 	return err
+	// }
+	// err = app.adapter.Token().DeleteToken(ctx, token) // corrected to use 'app.token'
+	// if err != nil {
+	// 	return fmt.Errorf("error deleting token: %w", err)
+	// }
+	claims, err := app.token.ValidateToken(ctx, token, models.TokenTypesPasswordResetToken)
 	if err != nil {
-		return fmt.Errorf("error verifying password reset token: %w", err)
-	}
-	_, err = app.adapter.Token().GetToken(ctx, token) // corrected 'tokne' to 'token'
-	if err != nil {
-		return err
-	}
-	err = app.adapter.Token().DeleteToken(ctx, token) // corrected to use 'app.token'
-	if err != nil {
-		return fmt.Errorf("error deleting token: %w", err)
+		return fmt.Errorf("error getting token: %w", err)
 	}
 
 	user, err := app.adapter.User().FindUser(
 		ctx,
 		&stores.UserFilter{
-			Emails: []string{claims.Email},
+			Emails: []string{claims},
 		},
 	)
 	if err != nil {
@@ -487,22 +491,26 @@ func (app *BaseAuthService) HandleRefreshToken(ctx context.Context, token string
 }
 
 func (app *BaseAuthService) HandleVerificationToken(ctx context.Context, token string) error {
-	claims, err := app.VerifyAndParseOtpToken(ctx, mailer.EmailTypeVerify, token)
-	if err != nil {
-		return fmt.Errorf("error verifying verification token: %w", err)
-	}
-	_, err = app.adapter.Token().GetToken(ctx, claims.Token)
+	// claims, err := app.VerifyAndParseOtpToken(ctx, mailer.EmailTypeVerify, token)
+	// if err != nil {
+	// 	return fmt.Errorf("error verifying verification token: %w", err)
+	// }
+	// _, err = app.adapter.Token().GetToken(ctx, claims.Token)
+	// if err != nil {
+	// 	return fmt.Errorf("error getting token: %w", err)
+	// }
+	// err = app.adapter.Token().DeleteToken(ctx, claims.Token)
+	// if err != nil {
+	// 	return fmt.Errorf("error deleting token: %w", err)
+	// }
+	claims, err := app.token.ValidateToken(ctx, token, models.TokenTypesVerificationToken)
 	if err != nil {
 		return fmt.Errorf("error getting token: %w", err)
-	}
-	err = app.adapter.Token().DeleteToken(ctx, claims.Token)
-	if err != nil {
-		return fmt.Errorf("error deleting token: %w", err)
 	}
 	user, err := app.adapter.User().FindUser(
 		ctx,
 		&stores.UserFilter{
-			Emails: []string{claims.Email},
+			Emails: []string{claims},
 		},
 	)
 	if err != nil {
