@@ -14,6 +14,10 @@ type TxManagerImpl struct {
 	db database.Dbx
 }
 
+func NewTxManager(db database.Dbx) *TxManagerImpl {
+	return &TxManagerImpl{db: db}
+}
+
 // RunInTxContext implements TxManager.
 func (t *TxManagerImpl) RunInTxContext(ctx context.Context, fn func(ctx context.Context) error) error {
 	return t.db.RunInTxContext(context.Background(), fn)
