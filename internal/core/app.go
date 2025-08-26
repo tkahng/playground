@@ -44,6 +44,7 @@ type App interface {
 	Rbac() services.RBACService
 
 	Payment() services.PaymentService
+	Password() services.PasswordService
 
 	Auth() services.AuthService
 

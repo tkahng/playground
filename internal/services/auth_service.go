@@ -64,10 +64,12 @@ func NewAuthService(
 	jobService JobService,
 	adapter stores.StorageAdapterInterface,
 	tokenService token.TokenService,
+	jwt JwtService,
+	password PasswordService,
 ) AuthService {
 	authService := &BaseAuthService{
-		jwt:        NewJwtService(),
-		password:   NewPasswordService(),
+		jwt:        jwt,
+		password:   password,
 		config:     opts,
 		adapter:    adapter,
 		jobService: jobService,

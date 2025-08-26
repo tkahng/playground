@@ -76,7 +76,8 @@ func SetBasicServices(app *BaseApp) {
 	app.rbac = services.NewRBACService(adapter)
 	app.team = services.NewTeamService(adapter)
 	app.checker = services.NewConstraintCheckerService(adapter)
-
+	app.jwt = services.NewJwtService()
+	app.password = services.NewPasswordService()
 	app.eventManager = events.NewEventManager(logger)
 	app.sseManager = sse.NewManager(logger)
 
@@ -96,7 +97,12 @@ func SetIntegrationServices(app *BaseApp) {
 	cfg := app.Config()
 	jobService := app.JobService()
 	tokenService := app.Token()
+	passwordService := app.Password()
+	jwtService := app.Jwt()
+
 	m := mailer.NewSmtpMailer(cfg.SmtpConfig)
+
+	app.mailer = m
 	app.mailService = services.NewOtpMailService(
 		cfg,
 		adapter,
@@ -112,6 +118,8 @@ func SetIntegrationServices(app *BaseApp) {
 		jobService,
 		adapter,
 		tokenService,
+		jwtService,
+		passwordService,
 	)
 }
 

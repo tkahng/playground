@@ -34,10 +34,13 @@ type BaseApp struct {
 	mailer      mailer.Mailer
 	mailService services.OtpMailService
 
+	jwt services.JwtService
+
 	jobManager jobs.JobManager
 	jobService services.JobService
 
-	payment services.PaymentService
+	payment  services.PaymentService
+	password services.PasswordService
 
 	auth    services.AuthService
 	rbac    services.RBACService
@@ -57,6 +60,20 @@ type BaseApp struct {
 	sseManager sse.Manager
 
 	eventManager events.EventManager
+}
+
+func (app *BaseApp) Jwt() services.JwtService {
+	if app.jwt == nil {
+		panic("jwt not initialized")
+	}
+	return app.jwt
+}
+
+func (app *BaseApp) Password() services.PasswordService {
+	if app.password == nil {
+		panic("password not initialized")
+	}
+	return app.password
 }
 
 // Mailer implements App.

@@ -100,6 +100,8 @@ func TestingSetIntegrationServices(app *BaseApp) {
 	adapter := app.Adapter()
 	cfg := app.Config()
 	jobService := app.JobService()
+	passwordService := app.Password()
+	jwtService := app.Jwt()
 	m := &mailer.TestMailer{
 		Mailer: &mailer.LogMailer{},
 		Wg:     nil,
@@ -121,6 +123,8 @@ func TestingSetIntegrationServices(app *BaseApp) {
 		jobService,
 		adapter,
 		tokenService,
+		jwtService,
+		passwordService,
 	)
 }
 
