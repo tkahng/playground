@@ -15,8 +15,6 @@ import (
 )
 
 type App interface {
-	AppContainer
-	Bootstrap() error
 
 	//  settings -------------------------------------------------------------------------------------
 	Config() *conf.EnvConfig
@@ -61,13 +59,4 @@ type App interface {
 	EventManager() events.EventManager
 
 	RunBackgroundProcesses(ctx context.Context)
-}
-
-type AppContainer interface {
-	InitializePrimitives()
-	SetDb()
-	SetBasicServices()
-	SetIntegrationServices()
-	RegisterWorkers()
-	AddEventHandlers()
 }

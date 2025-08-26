@@ -16,24 +16,29 @@ import (
 	"github.com/tkahng/playground/internal/userreaction"
 )
 
-func NewApp(cfg conf.EnvConfig) *BaseApp {
+func NewTestApp(ctx context.Context, cfg conf.EnvConfig, pool database.Dbx) *BaseApp {
 	app := new(BaseApp)
-	if err := Bootstrap(app); err != nil {
+	if err := TestingBootstrap(app, &cfg, pool); err != nil {
 		panic(fmt.Errorf("failed to bootstrap app: %w", err))
 	}
 	return app
 }
-func Bootstrap(app *BaseApp) error {
-	InitializePrimitives(app)
-	SetDb(app)
-	SetBasicServices(app)
-	SetIntegrationServices(app)
-	RegisterWorkers(app)
-	AddEventHandlers(app)
+
+func TestingBootstrap(app *BaseApp, cfg *conf.EnvConfig, pool database.Dbx) error {
+	app.cfg = cfg
+	app.logger = logger.GetDefaultLogger()
+	app.db = pool
+	adapter := stores.NewStorageAdapter(app.db)
+	app.adapter = adapter
+
+	TestingSetBasicServices(app)
+	TestingSetIntegrationServices(app)
+	TestingRegisterWorkers(app)
+	TestingAddEventHandlers(app)
 	return nil
 }
 
-func AddEventHandlers(app *BaseApp) {
+func TestingAddEventHandlers(app *BaseApp) {
 	userReactionHandler := userreaction.NewUserReactionEventHandler(
 		app.Logger(),
 		app.Adapter().UserReaction(),
@@ -47,13 +52,13 @@ func AddEventHandlers(app *BaseApp) {
 	)
 }
 
-func InitializePrimitives(app *BaseApp) {
-	opts := conf.AppConfigGetter()
+func TestingInitializePrimitives(app *BaseApp) {
+	opts := conf.ZeroEnvConfig()
 	app.cfg = &opts
 	app.logger = logger.GetDefaultLogger()
 }
 
-func SetDb(app *BaseApp) {
+func TestingSetDb(app *BaseApp) {
 	queries := database.CreateQueries(app.cfg.Db.DatabaseUrl)
 
 	if err := queries.Pool().Ping(context.Background()); err != nil {
@@ -66,9 +71,8 @@ func SetDb(app *BaseApp) {
 	app.adapter = adapter
 }
 
-func SetBasicServices(app *BaseApp) {
+func TestingSetBasicServices(app *BaseApp) {
 	logger := app.Logger()
-	cfg := app.Config()
 	adapter := app.Adapter()
 	dbx := app.Db()
 
@@ -78,11 +82,6 @@ func SetBasicServices(app *BaseApp) {
 
 	app.eventManager = events.NewEventManager(logger)
 	app.sseManager = sse.NewManager(logger)
-
-	app.mailService = services.NewOtpMailService(
-		cfg,
-		adapter,
-	)
 
 	app.jobManager = jobs.NewDbJobManager(dbx)
 	app.jobService = services.NewJobService(app.jobManager)
@@ -94,16 +93,16 @@ func SetBasicServices(app *BaseApp) {
 	app.task = services.NewTaskService(adapter, app.jobService)
 }
 
-func SetIntegrationServices(app *BaseApp) {
+func TestingSetIntegrationServices(app *BaseApp) {
 	adapter := app.Adapter()
 	cfg := app.Config()
 	jobService := app.JobService()
-	app.mailService = services.NewOtpMailService(
+	app.mailService = services.NewTestOtpMailService(
 		cfg,
 		adapter,
 	)
 
-	client := services.NewPaymentClient(cfg.StripeConfig)
+	client := services.NewTestPaymentClient()
 	app.payment = services.NewPaymentService(client, adapter)
 	app.teamInvitation = services.NewInvitationService(adapter, *cfg, jobService)
 	app.auth = services.NewAuthService(
@@ -113,6 +112,6 @@ func SetIntegrationServices(app *BaseApp) {
 	)
 }
 
-func RegisterWorkers(app *BaseApp) {
+func TestingRegisterWorkers(app *BaseApp) {
 	app.JobService().RegisterWorkers(app.mailService, app.Payment(), app.NotificationPublisher())
 }

@@ -49,6 +49,21 @@ func NewOtpMailService(
 	}
 }
 
+func NewTestOtpMailService(
+	opts *conf.EnvConfig,
+	adapter stores.StorageAdapterInterface,
+) OtpMailService {
+	var m mailer.Mailer
+	m = &mailer.LogMailer{}
+	return &DbOtpMailService{
+		options:  opts,
+		adapter:  adapter,
+		mail:     m,
+		token:    NewJwtService(),
+		password: NewPasswordService(),
+	}
+}
+
 func (app *DbOtpMailService) SendOtpEmail(ctx context.Context, emailType mailer.EmailType, userId uuid.UUID) error {
 	adapter := app.adapter
 	user, err := adapter.User().FindUserByID(ctx, userId)

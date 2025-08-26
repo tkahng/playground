@@ -1,7 +1,8 @@
 package core
 
 import (
-	"fmt"
+	"context"
+
 	"log/slog"
 
 	"github.com/tkahng/playground/internal/conf"
@@ -98,7 +99,7 @@ func (app *BaseApp) Config() *conf.EnvConfig {
 func (app *BaseApp) Db() database.Dbx {
 	if app.db == nil {
 		if app.cfg != nil {
-			app.SetDb()
+			SetDb(app)
 		} else {
 			panic("db not initialized")
 		}
@@ -110,7 +111,7 @@ func (app *BaseApp) Db() database.Dbx {
 func (app *BaseApp) Adapter() stores.StorageAdapterInterface {
 	if app.db == nil {
 		if app.cfg != nil {
-			app.SetDb()
+			SetDb(app)
 		} else {
 			panic("adapter not initialized")
 		}
@@ -210,11 +211,32 @@ func (a *BaseApp) Payment() services.PaymentService {
 	}
 	return a.payment
 }
+func (app *BaseApp) RunBackgroundProcesses(firstCtx context.Context) {
+	go func() {
+		app.Logger().Info("Starting poller")
+		if err := app.JobManager().Run(firstCtx); err != nil {
+			app.Logger().ErrorContext(
+				firstCtx,
+				"error starting poller",
+				slog.Any("error", err),
+			)
+			return
+		}
+	}()
 
-func BootstrappedApp(cfg conf.EnvConfig) *BaseApp {
-	app := new(BaseApp)
-	if err := app.Bootstrap(); err != nil {
-		panic(fmt.Errorf("failed to bootstrap app: %w", err))
-	}
-	return app
+	go func() {
+		app.Logger().Info("Starting sse manager")
+		app.SseManager().Run(firstCtx)
+	}()
+	go func() {
+		app.Logger().Info("Starting event manager")
+		if err := app.EventManager().Run(firstCtx); err != nil {
+			app.Logger().ErrorContext(
+				firstCtx,
+				"error starting event manager",
+				slog.Any("error", err),
+			)
+			return
+		}
+	}()
 }

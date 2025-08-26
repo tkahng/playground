@@ -40,7 +40,7 @@ func Run2() error {
 	firstCtx, firstCancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM, syscall.SIGHUP, syscall.SIGINT)
 	defer firstCancel()
 	opts := conf.AppConfigGetter()
-	app := core.BootstrappedApp(opts)
+	app := core.NewApp(opts)
 	r := apis.NewRouter(app)
 	appApi := apis.NewAppApi(app)
 	api := apis.NewApi(app, r)
