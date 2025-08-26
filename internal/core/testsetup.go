@@ -12,6 +12,7 @@ import (
 	"github.com/tkahng/playground/internal/services"
 	"github.com/tkahng/playground/internal/stores"
 	"github.com/tkahng/playground/internal/tools/logger"
+	"github.com/tkahng/playground/internal/tools/mailer"
 	"github.com/tkahng/playground/internal/tools/sse"
 	"github.com/tkahng/playground/internal/userreaction"
 )
@@ -97,9 +98,11 @@ func TestingSetIntegrationServices(app *BaseApp) {
 	adapter := app.Adapter()
 	cfg := app.Config()
 	jobService := app.JobService()
+	m := &mailer.LogMailer{}
 	app.mailService = services.NewTestOtpMailService(
 		cfg,
 		adapter,
+		m,
 	)
 
 	client := services.NewTestPaymentClient()

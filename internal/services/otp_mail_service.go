@@ -52,13 +52,12 @@ func NewOtpMailService(
 func NewTestOtpMailService(
 	opts *conf.EnvConfig,
 	adapter stores.StorageAdapterInterface,
+	mailer mailer.Mailer,
 ) OtpMailService {
-	var m mailer.Mailer
-	m = &mailer.LogMailer{}
 	return &DbOtpMailService{
 		options:  opts,
 		adapter:  adapter,
-		mail:     m,
+		mail:     mailer,
 		token:    NewJwtService(),
 		password: NewPasswordService(),
 	}

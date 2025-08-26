@@ -14,6 +14,7 @@ import (
 
 	"github.com/tkahng/playground/internal/tools/filesystem"
 	"github.com/tkahng/playground/internal/tools/logger"
+	"github.com/tkahng/playground/internal/tools/mailer"
 	"github.com/tkahng/playground/internal/tools/sse"
 )
 
@@ -27,7 +28,9 @@ type BaseApp struct {
 	db      database.Dbx
 	adapter stores.StorageAdapterInterface
 
-	logger      *slog.Logger
+	logger *slog.Logger
+
+	mailer      mailer.Mailer
 	mailService services.OtpMailService
 
 	jobManager jobs.JobManager
@@ -51,6 +54,14 @@ type BaseApp struct {
 	sseManager sse.Manager
 
 	eventManager events.EventManager
+}
+
+// Mailer implements App.
+func (app *BaseApp) Mailer() mailer.Mailer {
+	if app.mailer == nil {
+		panic("mailer not initialized")
+	}
+	return app.mailer
 }
 
 // MailService implements App.
