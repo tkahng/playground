@@ -64,4 +64,11 @@ func (t *TokenServiceImpl) GenerateToken(ctx context.Context, email string, emai
 	return token, nil
 }
 
+func NewTokenService(opts *conf.EnvConfig, store stores.DbTokenStoreInterface) TokenService {
+	return &TokenServiceImpl{
+		opts:  opts,
+		store: store,
+	}
+}
+
 var _ TokenService = (*TokenServiceImpl)(nil)
