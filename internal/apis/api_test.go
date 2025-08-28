@@ -23,6 +23,7 @@ import (
 	"github.com/tkahng/playground/internal/test"
 
 	"github.com/tkahng/playground/internal/core"
+	"github.com/tkahng/playground/internal/tools/mailer"
 	"github.com/tkahng/playground/internal/tools/types"
 )
 
@@ -287,6 +288,15 @@ func createUnverifiedUser(app *core.BaseApp) (*models.UserInfo, error) {
 	return &models.UserInfo{
 		User: *user,
 	}, nil
+}
+func ExtractTestMailer(t *testing.T, testApi *TestApi) *mailer.TestMailer {
+	var testMailer *mailer.TestMailer
+	if m, ok := testApi.App.Mailer().(*mailer.TestMailer); ok {
+		testMailer = m
+	} else {
+		t.Fatal("mailer is not a TestMailer")
+	}
+	return testMailer
 }
 
 type TestApi struct {

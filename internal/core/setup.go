@@ -73,11 +73,12 @@ func SetBasicServices(app *BaseApp) {
 	adapter := app.Adapter()
 	dbx := app.Db()
 	cfg := app.Config()
+	passWordService := services.NewPasswordService()
+	app.password = passWordService
 	app.rbac = services.NewRBACService(adapter)
 	app.team = services.NewTeamService(adapter)
 	app.checker = services.NewConstraintCheckerService(adapter)
 	app.jwt = services.NewJwtService()
-	app.password = services.NewPasswordService()
 	app.eventManager = events.NewEventManager(logger)
 	app.sseManager = sse.NewManager(logger)
 

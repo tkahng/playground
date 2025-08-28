@@ -78,6 +78,10 @@ func TestingSetBasicServices(app *BaseApp) {
 	adapter := app.Adapter()
 	dbx := app.Db()
 	cfg := app.Config()
+	passWordService := services.NewPasswordService()
+	app.password = passWordService
+	jwtService := services.NewJwtService()
+	app.jwt = jwtService
 	app.rbac = services.NewRBACService(adapter)
 	app.team = services.NewTeamService(adapter)
 	app.checker = services.NewConstraintCheckerService(adapter)
