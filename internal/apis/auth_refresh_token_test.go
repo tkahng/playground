@@ -45,12 +45,13 @@ func TestApi_RefreshToken(t *testing.T) {
 					}
 					scenario.Body = strings.NewReader(string(data))
 				},
-				AfterTestFunc: func(t testing.TB, app *core.BaseApp, res *httptest.ResponseRecorder) {
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
 					var body apis.ApiOutput[*apis.ApiUserInfoTokens]
 					err := json.NewDecoder(res.Body).Decode(&body)
 					if err != nil {
 						t.Errorf("Error decoding response: %v", err)
 					}
+					// tokens, err := app.Adapter().Token().GetToken(ctx, )
 				},
 			},
 		}

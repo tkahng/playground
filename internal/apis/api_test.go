@@ -389,7 +389,7 @@ type ApiScenario struct {
 
 	TestAppFactory func(t testing.TB) *TestApi
 	BeforeTestFunc func(t testing.TB, app *core.BaseApp, scenario *ApiScenario)
-	AfterTestFunc  func(t testing.TB, app *core.BaseApp, res *httptest.ResponseRecorder)
+	AfterTestFunc  func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder)
 }
 
 // Test executes the test scenario.
@@ -514,7 +514,7 @@ func (scenario *ApiScenario) test(t testing.TB) {
 		}
 	}
 	if scenario.AfterTestFunc != nil {
-		scenario.AfterTestFunc(t, testApi.App, recorder)
+		scenario.AfterTestFunc(t, testApi.App, scenario, recorder)
 	}
 }
 

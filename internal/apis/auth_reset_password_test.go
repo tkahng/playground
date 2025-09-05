@@ -51,7 +51,7 @@ func TestApi_ResetPassword(t *testing.T) {
 					// testMailer.Wg = &sync.WaitGroup{}
 					// testMailer.Wg.Add(1)
 				},
-				AfterTestFunc: func(t testing.TB, app *core.BaseApp, res *httptest.ResponseRecorder) {
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
 					// testMailer.Wg.Wait()
 					err := app.JobManager().PollOnce(ctx)
 					if err != nil {
@@ -93,7 +93,7 @@ func TestApi_ResetPassword(t *testing.T) {
 					}
 					scenario.URL = "/auth/check-password-reset?token=" + checktoken
 				},
-				AfterTestFunc: func(t testing.TB, app *core.BaseApp, res *httptest.ResponseRecorder) {
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
 
 				},
 			},
@@ -122,7 +122,7 @@ func TestApi_ResetPassword(t *testing.T) {
 					scenario.Body = strings.NewReader(string(data))
 
 				},
-				AfterTestFunc: func(t testing.TB, app *core.BaseApp, res *httptest.ResponseRecorder) {
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
 					authTokens, err := app.Auth().Authenticate(ctx, &services.AuthenticationInput{
 						Email:             userInfo.User.Email,
 						Password:          types.Pointer("SomePassword123!"),
