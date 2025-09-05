@@ -36,7 +36,11 @@ export default function SignupPage() {
   const redirectTo = params.get("redirect_to");
   const email = params.get("email");
   const navigateTo =
-    email && token ? `/team-invitation` : redirectTo ? redirectTo : "/";
+    email && token
+      ? `/team-invitation`
+      : redirectTo
+      ? redirectTo
+      : "/account/dashboard";
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setLoading(true);
