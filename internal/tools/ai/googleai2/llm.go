@@ -46,6 +46,7 @@ var (
 		Required: []string{"tasks", "project"},
 	}
 	config = &genai.GenerateContentConfig{
+		ResponseMIMEType: "application/json",
 		SystemInstruction: genai.NewContentFromText(`# System Prompt For ChatGPT
 
 ## Objective and Scope
