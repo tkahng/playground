@@ -23,7 +23,7 @@ type SignupInput struct {
 func (api *Api) SignUp(ctx context.Context, input *struct{ Body SignupInput }) (*AuthenticatedInfoResponse, error) {
 	action := api.App().Auth()
 	password := input.Body.Password.String()
-	hash, err := action.Password().HashPassword(password)
+	hash, err := api.app.Password().HashPassword(password)
 	if err != nil {
 		return nil, fmt.Errorf("error hashing password: %w", err)
 	}

@@ -11,20 +11,22 @@ import (
 
 type SigninDto struct {
 	Email    string                `json:"email" form:"email" format:"email" example:"admin@k2dv.io"`
-	Password RequiredPasswordField `json:"password" form:"password" minimum:"8" example:"Password123!"`
+	Password RequiredPasswordField `json:"password" form:"password" minimum:"8" example:"Password123!" required:"true"`
 }
 
 type AuthenticatedInfoResponse struct {
 	// SetCookieOutput
 	SetCookie []http.Cookie `header:"Set-Cookie"`
 
-	Body ApiUserInfoTokens `json:"body"`
+	Body ApiUserInfoTokens `json:"body" required:"true"`
 }
 
-func (api *Api) SignIn(ctx context.Context, input *struct{ Body *SigninDto }) (*AuthenticatedInfoResponse, error) {
+func (api *Api) SignIn(ctx context.Context, input *struct {
+	Body *SigninDto `json:"body" required:"true"`
+}) (*AuthenticatedInfoResponse, error) {
 	action := api.App().Auth()
 	password := input.Body.Password.String()
-	hash, err := action.Password().HashPassword(password)
+	hash, err := api.App().Password().HashPassword(password)
 	if err != nil {
 		return nil, fmt.Errorf("error hashing password: %w", err)
 	}

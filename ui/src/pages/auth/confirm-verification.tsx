@@ -12,10 +12,10 @@ export default function ConfirmVerification() {
     queryKey: ["confirm-verification"],
     queryFn: async () => {
       if (!token) {
-        throw new Error("Missing session ID");
+        throw new Error("Missing token");
       }
       if (!type) {
-        throw new Error("Missing access token");
+        throw new Error("Missing type");
       }
       await confirmVerification(token, type);
       if (redirect) {

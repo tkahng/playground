@@ -6,6 +6,7 @@ import (
 
 type OtpInput struct {
 	Token string `query:"token" json:"token" required:"true"`
+	Type  string `query:"type" json:"type" required:"true"`
 }
 
 func (api *Api) Verify(ctx context.Context, input *OtpInput) (*struct{}, error) {

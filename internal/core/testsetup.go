@@ -18,24 +18,29 @@ import (
 	"github.com/tkahng/playground/internal/userreaction"
 )
 
-func NewApp(cfg conf.EnvConfig) *BaseApp {
+func NewTestApp(ctx context.Context, cfg conf.EnvConfig, pool database.Dbx) *BaseApp {
 	app := new(BaseApp)
-	if err := Bootstrap(app); err != nil {
+	if err := TestingBootstrap(app, &cfg, pool); err != nil {
 		panic(fmt.Errorf("failed to bootstrap app: %w", err))
 	}
 	return app
 }
-func Bootstrap(app *BaseApp) error {
-	InitializePrimitives(app)
-	SetDb(app)
-	SetBasicServices(app)
-	SetIntegrationServices(app)
-	RegisterWorkers(app)
-	AddEventHandlers(app)
+
+func TestingBootstrap(app *BaseApp, cfg *conf.EnvConfig, pool database.Dbx) error {
+	app.cfg = cfg
+	app.logger = logger.GetDefaultLogger()
+	app.db = pool
+	adapter := stores.NewStorageAdapter(app.db)
+	app.adapter = adapter
+
+	TestingSetBasicServices(app)
+	TestingSetIntegrationServices(app)
+	TestingRegisterWorkers(app)
+	TestingAddEventHandlers(app)
 	return nil
 }
 
-func AddEventHandlers(app *BaseApp) {
+func TestingAddEventHandlers(app *BaseApp) {
 	userReactionHandler := userreaction.NewUserReactionEventHandler(
 		app.Logger(),
 		app.Adapter().UserReaction(),
@@ -49,13 +54,13 @@ func AddEventHandlers(app *BaseApp) {
 	)
 }
 
-func InitializePrimitives(app *BaseApp) {
-	opts := conf.AppConfigGetter()
+func TestingInitializePrimitives(app *BaseApp) {
+	opts := conf.ZeroEnvConfig()
 	app.cfg = &opts
 	app.logger = logger.GetDefaultLogger()
 }
 
-func SetDb(app *BaseApp) {
+func TestingSetDb(app *BaseApp) {
 	queries := database.CreateQueries(app.cfg.Db.DatabaseUrl)
 
 	if err := queries.Pool().Ping(context.Background()); err != nil {
@@ -68,17 +73,19 @@ func SetDb(app *BaseApp) {
 	app.adapter = adapter
 }
 
-func SetBasicServices(app *BaseApp) {
+func TestingSetBasicServices(app *BaseApp) {
 	logger := app.Logger()
 	adapter := app.Adapter()
 	dbx := app.Db()
 	cfg := app.Config()
 	passWordService := services.NewPasswordService()
 	app.password = passWordService
+	jwtService := services.NewJwtService()
+	app.jwt = jwtService
 	app.rbac = services.NewRBACService(adapter)
 	app.team = services.NewTeamService(adapter)
 	app.checker = services.NewConstraintCheckerService(adapter)
-	app.jwt = services.NewJwtService()
+
 	app.eventManager = events.NewEventManager(logger)
 	app.sseManager = sse.NewManager(logger)
 
@@ -93,17 +100,18 @@ func SetBasicServices(app *BaseApp) {
 	app.token = token.NewTokenService(cfg, adapter.Token())
 }
 
-func SetIntegrationServices(app *BaseApp) {
+func TestingSetIntegrationServices(app *BaseApp) {
 	adapter := app.Adapter()
 	cfg := app.Config()
 	jobService := app.JobService()
-	tokenService := app.Token()
 	passwordService := app.Password()
 	jwtService := app.Jwt()
-
-	m := mailer.NewResendMailer(cfg.ResendConfig)
-
+	m := &mailer.TestMailer{
+		Mailer: &mailer.LogMailer{},
+		Wg:     nil,
+	}
 	app.mailer = m
+	tokenService := app.Token()
 	app.mailService = services.NewOtpMailService(
 		cfg,
 		adapter,
@@ -111,7 +119,7 @@ func SetIntegrationServices(app *BaseApp) {
 		tokenService,
 	)
 
-	client := services.NewPaymentClient(cfg.StripeConfig)
+	client := services.NewTestPaymentClient()
 	app.payment = services.NewPaymentService(client, adapter)
 	app.teamInvitation = services.NewInvitationService(adapter, *cfg, jobService)
 	app.auth = services.NewAuthService(
@@ -124,6 +132,6 @@ func SetIntegrationServices(app *BaseApp) {
 	)
 }
 
-func RegisterWorkers(app *BaseApp) {
+func TestingRegisterWorkers(app *BaseApp) {
 	app.JobService().RegisterWorkers(app.mailService, app.Payment(), app.NotificationPublisher())
 }

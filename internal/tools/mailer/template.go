@@ -35,7 +35,7 @@ var (
 		EmailTypeVerify: {
 			Type:         EmailTypeVerify,
 			Subject:      "%s - Verify your email address",
-			TemplatePath: "/api/auth/verify",
+			TemplatePath: "/confirm-verification",
 			Template:     DefaultConfirmationMail,
 		},
 		EmailTypeConfirmPasswordReset: {
@@ -60,7 +60,11 @@ type SendMailParams struct {
 	Template     string
 }
 
-func (p *SendMailParams) GeneratePath(appUrl *url.URL, token string, tokenType string, redirectTo string) (string, error) {
+func (p *SendMailParams) GeneratePath(baseUrl string, token string, tokenType string, redirectTo string) (string, error) {
+	appUrl, err := url.Parse(baseUrl)
+	if err != nil {
+		return "", err
+	}
 	path, err := GetPathParams(p.TemplatePath, token, tokenType, redirectTo)
 	if err != nil {
 		return "", nil
@@ -80,25 +84,6 @@ type CommonParams struct {
 	Token           string `json:"token"`
 	TokenHash       string `json:"token_hash"`
 	RedirectTo      string `json:"redirect_to"`
-}
-
-type AllEmailParams struct {
-	*SendMailParams
-	*CommonParams
-	*Message
-}
-
-func GenerateConfirmationURL(base string, path string, token, tokenType, redirectTo string) (string, error) {
-	parsedURL, err := url.Parse(base)
-	if err != nil {
-		return "", err
-	}
-	parsedURL.Path = path
-	params, err := GetPathParams(parsedURL.String(), token, tokenType, redirectTo)
-	if err != nil {
-		return "", err
-	}
-	return parsedURL.ResolveReference(params).String(), nil
 }
 
 func GetPathParams(filepath string, token, tokenType, redirectTo string) (*url.URL, error) {
@@ -141,7 +126,7 @@ func GenerateBody[T any](name string, mailTemplate string, params T) string {
 const DefaultInviteMail = `<h2>You have been invited</h2>
 <p>You have been invited to create a user on {{ .SiteURL }}. Follow this link to accept the invite:</p>
 <p><a href="{{ .ConfirmationURL }}">Accept the invite</a></p>
-<p>Alternatively, enter the code: {{ .Token }}</p>`
+`
 
 const DefaultTeamInviteMail = `<h2>You have been invited</h2>
 <p>You have been invited to joint team {{ .TeamName }} by {{ .InvitedByEmail }}. Follow this link to accept the invite:</p>
@@ -151,7 +136,6 @@ const DefaultConfirmationMail = `<h2>Confirm your email</h2>
 
 <p>Follow this link to confirm your email:</p>
 <p><a href="{{ .ConfirmationURL }}">Confirm your email address</a></p>
-<p>Alternatively, enter the code: {{ .Token }}</p>
 `
 
 const DefaultSecurityPasswordResetMail = `<h2>Your password has been reset due to security concerns</h2>
@@ -159,26 +143,22 @@ const DefaultSecurityPasswordResetMail = `<h2>Your password has been reset due t
 <p>For your security, we have reset your password to a temporary password.</p>
 <p>If you wish to sign in with your email/password account, please reset your password by clicking the link below:</p>
 <p><a href="{{ .ConfirmationURL }}">Reset password</a></p>
-<p>Alternatively, enter the code: {{ .Token }}</p>`
+`
 
 const DefaultRecoveryMail = `<h2>Reset password</h2>
-
-<p>Follow this link to reset the password for your user:</p>
+<p>Follow this link to reset the your password:</p>
 <p><a href="{{ .ConfirmationURL }}">Reset password</a></p>
-<p>Alternatively, enter the code: {{ .Token }}</p>`
+`
 
 const DefaultultMagicLinkMail = `<h2>Magic Link</h2>
-
 <p>Follow this link to login:</p>
 <p><a href="{{ .ConfirmationURL }}">Log In</a></p>
-<p>Alternatively, enter the code: {{ .Token }}</p>`
+`
 
 const DefaultultEmailChangeMail = `<h2>Confirm email address change</h2>
-
 <p>Follow this link to confirm the update of your email address from {{ .Email }} to {{ .NewEmail }}:</p>
 <p><a href="{{ .ConfirmationURL }}">Change email address</a></p>
-<p>Alternatively, enter the code: {{ .Token }}</p>`
+`
 
 const DefaultultReauthenticateMail = `<h2>Confirm reauthentication</h2>
-
 <p>Enter the code: {{ .Token }}</p>`

@@ -28,7 +28,7 @@ func OAuth2ConfigFromEnv(cfg conf.EnvConfig) {
 	if cfg.GithubClientId != "" && cfg.GithubClientSecret != "" {
 		Providers[NameGithub] = wrapFactory(func() ProviderConfig {
 			return &GithubConfig{
-				OAuth2ProviderConfig{
+				BaseProvider{
 					ClientID:     cfg.GithubClientId,
 					ClientSecret: cfg.GithubClientSecret,
 					Name:         "GitHub",
@@ -47,7 +47,7 @@ func OAuth2ConfigFromEnv(cfg conf.EnvConfig) {
 	if cfg.GoogleClientId != "" && cfg.GoogleClientSecret != "" {
 		Providers[NameGoogle] = wrapFactory(func() ProviderConfig {
 			return &GoogleConfig{
-				OAuth2ProviderConfig: OAuth2ProviderConfig{
+				BaseProvider: BaseProvider{
 					Name:         "Google",
 					ClientID:     cfg.GoogleClientId,
 					ClientSecret: cfg.GoogleClientSecret,
@@ -69,7 +69,7 @@ func OAuth2ConfigFromEnv(cfg conf.EnvConfig) {
 const NameGithub = "github"
 const NameGoogle = "google"
 
-type OAuth2ProviderConfig struct {
+type BaseProvider struct {
 	ClientID     string
 	ClientSecret string
 	Enabled      bool
@@ -82,11 +82,11 @@ type OAuth2ProviderConfig struct {
 	RedirectURL  string
 }
 
-func (c OAuth2ProviderConfig) Pkce() bool {
+func (c BaseProvider) Pkce() bool {
 	return c.PKCE
 }
 
-func (p *OAuth2ProviderConfig) oauth2Config() *oauth2.Config {
+func (p *BaseProvider) oauth2Config() *oauth2.Config {
 	return &oauth2.Config{
 		RedirectURL:  p.RedirectURL,
 		ClientID:     p.ClientID,
@@ -99,7 +99,7 @@ func (p *OAuth2ProviderConfig) oauth2Config() *oauth2.Config {
 	}
 }
 
-func (p *OAuth2ProviderConfig) FetchTokenOptions(verifier string) []oauth2.AuthCodeOption {
+func (p *BaseProvider) FetchTokenOptions(verifier string) []oauth2.AuthCodeOption {
 	var opts = []oauth2.AuthCodeOption{
 		oauth2.AccessTypeOffline,
 		oauth2.ApprovalForce,
@@ -112,22 +112,22 @@ func (p *OAuth2ProviderConfig) FetchTokenOptions(verifier string) []oauth2.AuthC
 }
 
 // BuildAuthURL implements Provider.BuildAuthURL() interface method.
-func (p *OAuth2ProviderConfig) BuildAuthURL(state string, opts ...oauth2.AuthCodeOption) string {
+func (p *BaseProvider) BuildAuthURL(state string, opts ...oauth2.AuthCodeOption) string {
 	return p.oauth2Config().AuthCodeURL(state, opts...)
 }
 
 // FetchToken implements Provider.FetchToken() interface method.
-func (p *OAuth2ProviderConfig) FetchToken(ctx context.Context, code string, opts ...oauth2.AuthCodeOption) (*oauth2.Token, error) {
+func (p *BaseProvider) FetchToken(ctx context.Context, code string, opts ...oauth2.AuthCodeOption) (*oauth2.Token, error) {
 	return p.oauth2Config().Exchange(ctx, code, opts...)
 }
 
 // Client implements Provider.Client() interface method.
-func (p *OAuth2ProviderConfig) Client(ctx context.Context, token *oauth2.Token) *http.Client {
+func (p *BaseProvider) Client(ctx context.Context, token *oauth2.Token) *http.Client {
 	return p.oauth2Config().Client(ctx, token)
 }
 
 // FetchRawUserInfo implements Provider.FetchRawUserInfo() interface method.
-func (p *OAuth2ProviderConfig) FetchRawUserInfo(ctx context.Context, token *oauth2.Token) ([]byte, error) {
+func (p *BaseProvider) FetchRawUserInfo(ctx context.Context, token *oauth2.Token) ([]byte, error) {
 	req, err := http.NewRequestWithContext(ctx, "GET", p.UserInfoURL, nil)
 	if err != nil {
 		return nil, err
@@ -137,7 +137,7 @@ func (p *OAuth2ProviderConfig) FetchRawUserInfo(ctx context.Context, token *oaut
 }
 
 // sendRawUserInfoRequest sends the specified user info request and return its raw response body.
-func (p *OAuth2ProviderConfig) sendRawUserInfoRequest(ctx context.Context, req *http.Request, token *oauth2.Token) ([]byte, error) {
+func (p *BaseProvider) sendRawUserInfoRequest(ctx context.Context, req *http.Request, token *oauth2.Token) ([]byte, error) {
 	client := p.Client(ctx, token)
 
 	res, err := client.Do(req)

@@ -1,9 +1,13 @@
 package services
 
 import (
+	"errors"
+
 	stripe "github.com/stripe/stripe-go/v82"
 	"github.com/tkahng/playground/internal/conf"
 )
+
+var testPaymentErr = errors.New("this is a test payment client")
 
 type TestPaymentClient struct {
 	ConfigFunc                        func() *conf.StripeConfig
@@ -37,7 +41,7 @@ func (t *TestPaymentClient) CreateBillingPortalSession(customerId string, config
 	if t.CreateBillingPortalSessionFunc != nil {
 		return t.CreateBillingPortalSessionFunc(customerId, configurationId)
 	}
-	return nil, nil
+	return nil, testPaymentErr
 }
 
 // CreateCheckoutSession implements PaymentClient.
@@ -45,7 +49,7 @@ func (t *TestPaymentClient) CreateCheckoutSession(customerId string, priceId str
 	if t.CreateCheckoutSessionFunc != nil {
 		return t.CreateCheckoutSessionFunc(customerId, priceId, quantity, trialDays)
 	}
-	return nil, nil
+	return nil, testPaymentErr
 }
 
 // CreateCustomer implements PaymentClient.
@@ -53,7 +57,7 @@ func (t *TestPaymentClient) CreateCustomer(email string, name *string) (*stripe.
 	if t.CreateCustomerFunc != nil {
 		return t.CreateCustomerFunc(email, name)
 	}
-	return nil, nil
+	return nil, testPaymentErr
 }
 
 // CreatePortalConfiguration implements PaymentClient.
@@ -61,7 +65,7 @@ func (t *TestPaymentClient) CreatePortalConfiguration(input ...*stripe.BillingPo
 	if t.CreatePortalConfigurationFunc != nil {
 		return t.CreatePortalConfigurationFunc(input...)
 	}
-	return "", nil
+	return "", testPaymentErr
 }
 
 // FindAllPrices implements PaymentClient.
@@ -69,7 +73,7 @@ func (t *TestPaymentClient) FindAllPrices() ([]*stripe.Price, error) {
 	if t.FindAllPricesFunc != nil {
 		return t.FindAllPricesFunc()
 	}
-	return nil, nil
+	return nil, testPaymentErr
 }
 
 // FindAllProducts implements PaymentClient.
@@ -77,7 +81,7 @@ func (t *TestPaymentClient) FindAllProducts() ([]*stripe.Product, error) {
 	if t.FindAllProductsFunc != nil {
 		return t.FindAllProductsFunc()
 	}
-	return nil, nil
+	return nil, testPaymentErr
 }
 
 // FindCheckoutSessionByStripeId implements PaymentClient.
@@ -85,7 +89,7 @@ func (t *TestPaymentClient) FindCheckoutSessionByStripeId(stripeId string) (*str
 	if t.FindCheckoutSessionByStripeIdFunc != nil {
 		return t.FindCheckoutSessionByStripeIdFunc(stripeId)
 	}
-	return nil, nil
+	return nil, testPaymentErr
 }
 
 // FindOrCreateCustomer implements PaymentClient.
@@ -93,7 +97,7 @@ func (t *TestPaymentClient) FindOrCreateCustomer(email string, name *string) (*s
 	if t.FindOrCreateCustomerFunc != nil {
 		return t.FindOrCreateCustomerFunc(email, name)
 	}
-	return nil, nil
+	return nil, testPaymentErr
 }
 
 // FindSubscriptionByStripeId implements PaymentClient.
@@ -101,7 +105,7 @@ func (t *TestPaymentClient) FindSubscriptionByStripeId(stripeId string) (*stripe
 	if t.FindSubscriptionByStripeIdFunc != nil {
 		return t.FindSubscriptionByStripeIdFunc(stripeId)
 	}
-	return nil, nil
+	return nil, testPaymentErr
 }
 
 // UpdateCustomer implements PaymentClient.
@@ -109,7 +113,7 @@ func (t *TestPaymentClient) UpdateCustomer(customerId string, params *stripe.Cus
 	if t.UpdateCustomerFunc != nil {
 		return t.UpdateCustomerFunc(customerId, params)
 	}
-	return nil, nil
+	return nil, testPaymentErr
 }
 
 // UpdateItemQuantity implements PaymentClient.
@@ -117,7 +121,7 @@ func (t *TestPaymentClient) UpdateItemQuantity(itemId string, priceId string, co
 	if t.UpdateItemQuantityFunc != nil {
 		return t.UpdateItemQuantityFunc(itemId, priceId, count)
 	}
-	return nil, nil
+	return nil, testPaymentErr
 }
 
 var _ PaymentClient = &TestPaymentClient{}

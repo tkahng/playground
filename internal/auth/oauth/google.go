@@ -8,7 +8,7 @@ import (
 )
 
 type GoogleConfig struct {
-	OAuth2ProviderConfig
+	BaseProvider
 }
 
 var _ ProviderConfig = (*GoogleConfig)(nil)

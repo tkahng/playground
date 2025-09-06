@@ -2,18 +2,28 @@ package stores
 
 import (
 	"context"
+	"time"
 
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/models"
 )
 
 type TokenStoreDecorator struct {
-	Delegate               *DbTokenStore
-	DeleteTokenFunc        func(ctx context.Context, token string) error
-	GetTokenFunc           func(ctx context.Context, token string) (*models.Token, error)
-	SaveTokenFunc          func(ctx context.Context, token *CreateTokenDTO) error
-	VerifyTokenStorageFunc func(ctx context.Context, token string) error
-	WithTxFunc             func(dbx database.Dbx) *TokenStoreDecorator
+	Delegate                *DbTokenStore
+	DeleteTokenFunc         func(ctx context.Context, token string) error
+	GetTokenFunc            func(ctx context.Context, token string) (*models.Token, error)
+	GetTokenByValueTypeFunc func(ctx context.Context, value string, tokenType models.TokenTypes) (*models.Token, error)
+	SaveTokenFunc           func(ctx context.Context, token *CreateTokenDTO) error
+	VerifyTokenStorageFunc  func(ctx context.Context, token string) error
+	WithTxFunc              func(dbx database.Dbx) *TokenStoreDecorator
+}
+
+// GetTokenByValueTypeExpires implements DbTokenStoreInterface.
+func (t *TokenStoreDecorator) GetTokenByValueTypeExpires(ctx context.Context, value string, tokenType models.TokenTypes, expires time.Time) (*models.Token, error) {
+	if t.GetTokenByValueTypeFunc != nil {
+		return t.GetTokenByValueTypeFunc(ctx, value, tokenType)
+	}
+	return t.Delegate.GetTokenByValueTypeExpires(ctx, value, tokenType, expires)
 }
 
 func NewTokenStoreDecorator(db database.Dbx) *TokenStoreDecorator {
@@ -64,14 +74,6 @@ func (t *TokenStoreDecorator) SaveToken(ctx context.Context, token *CreateTokenD
 		return t.SaveTokenFunc(ctx, token)
 	}
 	return t.Delegate.SaveToken(ctx, token)
-}
-
-// VerifyTokenStorage implements DbTokenStoreInterface.
-func (t *TokenStoreDecorator) VerifyTokenStorage(ctx context.Context, token string) error {
-	if t.VerifyTokenStorageFunc != nil {
-		return t.VerifyTokenStorageFunc(ctx, token)
-	}
-	return t.Delegate.VerifyTokenStorage(ctx, token)
 }
 
 var _ DbTokenStoreInterface = (*TokenStoreDecorator)(nil)

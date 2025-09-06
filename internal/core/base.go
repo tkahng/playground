@@ -1,7 +1,8 @@
 package core
 
 import (
-	"fmt"
+	"context"
+
 	"log/slog"
 
 	"github.com/tkahng/playground/internal/conf"
@@ -10,9 +11,11 @@ import (
 	"github.com/tkahng/playground/internal/jobs"
 	"github.com/tkahng/playground/internal/services"
 	"github.com/tkahng/playground/internal/stores"
+	"github.com/tkahng/playground/internal/token"
 
 	"github.com/tkahng/playground/internal/tools/filesystem"
 	"github.com/tkahng/playground/internal/tools/logger"
+	"github.com/tkahng/playground/internal/tools/mailer"
 	"github.com/tkahng/playground/internal/tools/sse"
 )
 
@@ -26,19 +29,26 @@ type BaseApp struct {
 	db      database.Dbx
 	adapter stores.StorageAdapterInterface
 
-	logger      *slog.Logger
+	logger *slog.Logger
+
+	mailer      mailer.Mailer
 	mailService services.OtpMailService
+
+	jwt services.JwtService
 
 	jobManager jobs.JobManager
 	jobService services.JobService
 
-	payment services.PaymentService
+	payment  services.PaymentService
+	password services.PasswordService
 
 	auth    services.AuthService
 	rbac    services.RBACService
 	checker services.ConstraintChecker
 
 	task services.TaskService
+
+	token token.TokenService
 
 	team           services.TeamService
 	teamInvitation services.TeamInvitationService
@@ -50,6 +60,28 @@ type BaseApp struct {
 	sseManager sse.Manager
 
 	eventManager events.EventManager
+}
+
+func (app *BaseApp) Jwt() services.JwtService {
+	if app.jwt == nil {
+		panic("jwt not initialized")
+	}
+	return app.jwt
+}
+
+func (app *BaseApp) Password() services.PasswordService {
+	if app.password == nil {
+		panic("password not initialized")
+	}
+	return app.password
+}
+
+// Mailer implements App.
+func (app *BaseApp) Mailer() mailer.Mailer {
+	if app.mailer == nil {
+		panic("mailer not initialized")
+	}
+	return app.mailer
 }
 
 // MailService implements App.
@@ -98,7 +130,7 @@ func (app *BaseApp) Config() *conf.EnvConfig {
 func (app *BaseApp) Db() database.Dbx {
 	if app.db == nil {
 		if app.cfg != nil {
-			app.SetDb()
+			SetDb(app)
 		} else {
 			panic("db not initialized")
 		}
@@ -110,7 +142,7 @@ func (app *BaseApp) Db() database.Dbx {
 func (app *BaseApp) Adapter() stores.StorageAdapterInterface {
 	if app.db == nil {
 		if app.cfg != nil {
-			app.SetDb()
+			SetDb(app)
 		} else {
 			panic("adapter not initialized")
 		}
@@ -149,6 +181,13 @@ func (app *BaseApp) JobService() services.JobService {
 		panic("job service not initialized")
 	}
 	return app.jobService
+}
+
+func (app *BaseApp) Token() token.TokenService {
+	if app.token == nil {
+		panic("token not initialized")
+	}
+	return app.token
 }
 
 // TeamInvitation implements App.
@@ -210,11 +249,32 @@ func (a *BaseApp) Payment() services.PaymentService {
 	}
 	return a.payment
 }
+func (app *BaseApp) RunBackgroundProcesses(firstCtx context.Context) {
+	go func() {
+		app.Logger().Info("Starting poller")
+		if err := app.JobManager().Run(firstCtx); err != nil {
+			app.Logger().ErrorContext(
+				firstCtx,
+				"error starting poller",
+				slog.Any("error", err),
+			)
+			return
+		}
+	}()
 
-func BootstrappedApp(cfg conf.EnvConfig) *BaseApp {
-	app := new(BaseApp)
-	if err := app.Bootstrap(); err != nil {
-		panic(fmt.Errorf("failed to bootstrap app: %w", err))
-	}
-	return app
+	go func() {
+		app.Logger().Info("Starting sse manager")
+		app.SseManager().Run(firstCtx)
+	}()
+	go func() {
+		app.Logger().Info("Starting event manager")
+		if err := app.EventManager().Run(firstCtx); err != nil {
+			app.Logger().ErrorContext(
+				firstCtx,
+				"error starting event manager",
+				slog.Any("error", err),
+			)
+			return
+		}
+	}()
 }

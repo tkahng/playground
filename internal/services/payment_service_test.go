@@ -314,6 +314,9 @@ func TestStripeService_VerifyAndUpdateTeamSubscriptionQuantity(t *testing.T) {
 		adapter.TeamMemberFunc.CountTeamMembersFunc = func(ctx context.Context, filter *stores.TeamMemberFilter) (int64, error) {
 			return int64(0), nil
 		}
+		client.UpdateItemQuantityFunc = func(itemID string, priceID string, quantity int64) (*stripe.SubscriptionItem, error) {
+			return nil, nil
+		}
 
 		err := service.VerifyAndUpdateTeamSubscriptionQuantity(ctx, teamId)
 		assert.NoError(t, err)

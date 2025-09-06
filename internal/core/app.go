@@ -10,13 +10,13 @@ import (
 	"github.com/tkahng/playground/internal/jobs"
 	"github.com/tkahng/playground/internal/services"
 	"github.com/tkahng/playground/internal/stores"
+	"github.com/tkahng/playground/internal/token"
 	"github.com/tkahng/playground/internal/tools/filesystem"
+	"github.com/tkahng/playground/internal/tools/mailer"
 	"github.com/tkahng/playground/internal/tools/sse"
 )
 
 type App interface {
-	AppContainer
-	Bootstrap() error
 
 	//  settings -------------------------------------------------------------------------------------
 	Config() *conf.EnvConfig
@@ -38,13 +38,17 @@ type App interface {
 
 	Fs() filesystem.FileSystem
 	//
+	Mailer() mailer.Mailer
 	MailService() services.OtpMailService
 
 	Rbac() services.RBACService
 
 	Payment() services.PaymentService
+	Password() services.PasswordService
 
 	Auth() services.AuthService
+
+	Token() token.TokenService
 
 	Team() services.TeamService
 
@@ -61,13 +65,4 @@ type App interface {
 	EventManager() events.EventManager
 
 	RunBackgroundProcesses(ctx context.Context)
-}
-
-type AppContainer interface {
-	InitializePrimitives()
-	SetDb()
-	SetBasicServices()
-	SetIntegrationServices()
-	RegisterWorkers()
-	AddEventHandlers()
 }

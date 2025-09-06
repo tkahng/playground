@@ -10,6 +10,7 @@ import (
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/shared"
 	"github.com/tkahng/playground/internal/stores"
+	"github.com/tkahng/playground/internal/token"
 	"github.com/tkahng/playground/internal/tools/mailer"
 	"github.com/tkahng/playground/internal/tools/security"
 	"github.com/tkahng/playground/internal/workers"
@@ -26,26 +27,24 @@ type DbOtpMailService struct {
 	options  *conf.EnvConfig
 	adapter  stores.StorageAdapterInterface
 	mail     mailer.Mailer
-	token    JwtService
+	token    token.TokenService
+	jwt      JwtService
 	password PasswordService
 }
 
 func NewOtpMailService(
 	opts *conf.EnvConfig,
 	adapter stores.StorageAdapterInterface,
+	mailer mailer.Mailer,
+	token token.TokenService,
 ) OtpMailService {
-	var m mailer.Mailer
-	if opts.ResendApiKey != "" {
-		m = mailer.NewResendMailer(opts.ResendConfig)
-	} else {
-		m = &mailer.LogMailer{}
-	}
 	return &DbOtpMailService{
 		options:  opts,
 		adapter:  adapter,
-		mail:     m,
-		token:    NewJwtService(),
+		mail:     mailer,
+		jwt:      NewJwtService(),
 		password: NewPasswordService(),
+		token:    token,
 	}
 }
 
@@ -58,7 +57,7 @@ func (app *DbOtpMailService) SendOtpEmail(ctx context.Context, emailType mailer.
 	if app.options == nil {
 		return fmt.Errorf("app options is nil")
 	}
-	if app.token == nil {
+	if app.jwt == nil {
 		return fmt.Errorf("token service is nil")
 	}
 	if app.mail == nil {
@@ -81,6 +80,11 @@ func (app *DbOtpMailService) SendOtpEmail(ctx context.Context, emailType mailer.
 		return fmt.Errorf("invalid email type")
 	}
 
+	tokenHash, err := app.token.GenerateToken(ctx, user.Email, tokenOpts.Type)
+	if err != nil {
+		return fmt.Errorf("error at creating verification token: %w", err)
+	}
+
 	claims := shared.OtpClaims{}
 	claims.ExpiresAt = tokenOpts.ExpiresAt()
 	claims.Type = tokenOpts.Type
@@ -90,32 +94,15 @@ func (app *DbOtpMailService) SendOtpEmail(ctx context.Context, emailType mailer.
 	claims.Otp = security.GenerateOtp(6)
 	claims.RedirectTo = appOpts.AppUrl
 
-	tokenHash, err := app.token.CreateJwtToken(claims, tokenOpts.Secret)
-	if err != nil {
-		return fmt.Errorf("error at creating verification token: %w", err)
-	}
-	dto := &stores.CreateTokenDTO{
-		Expires:    claims.ExpiresAt.Time,
-		Token:      claims.Token,
-		Type:       models.TokenTypes(claims.Type),
-		Identifier: claims.Email,
-		UserID:     &claims.UserId,
-	}
-	err = adapter.Token().SaveToken(ctx, dto)
-	// err = app.authStore.SaveToken(ctx, dto)
-	if err != nil {
-		return fmt.Errorf("error at creating verification token: %w", err)
-	}
-
 	sendMailParams, err := app.getSendMailParams(emailType, tokenHash, claims)
 	if err != nil {
 		return fmt.Errorf("error at getting send mail params: %w", err)
 	}
 
-	return app.mail.Send(sendMailParams.Message)
+	return app.mail.Send(sendMailParams)
 }
 
-func (app *DbOtpMailService) getSendMailParams(emailType mailer.EmailType, tokenHash string, claims shared.OtpClaims) (*mailer.AllEmailParams, error) {
+func (app *DbOtpMailService) getSendMailParams(emailType mailer.EmailType, tokenHash string, claims shared.OtpClaims) (*mailer.Message, error) {
 	appOpts := app.options.AppConfig
 	var sendMailParams mailer.SendMailParams
 	var ok bool
@@ -140,19 +127,15 @@ func (app *DbOtpMailService) getSendMailParams(emailType mailer.EmailType, token
 	}
 	message := &mailer.Message{
 		From:    appOpts.SenderAddress,
-		To:      common.Email,
+		To:      claims.Email,
 		Subject: fmt.Sprintf(sendMailParams.Subject, appOpts.AppName),
 		Body:    mailer.GenerateBody("body", sendMailParams.Template, common),
 	}
-	allEmailParams := &mailer.AllEmailParams{
-		SendMailParams: &sendMailParams,
-		CommonParams:   common,
-		Message:        message,
-	}
-	return allEmailParams, nil
+
+	return message, nil
 }
 
-func (i *DbOtpMailService) CreateConfirmationUrl(tokenhash string) (string, error) {
+func (i *DbOtpMailService) CreateTeamConfirmationUrl(tokenhash string) (string, error) {
 	path, err := mailer.GetPathParams(
 		"/team-invitation",
 		tokenhash,
@@ -181,51 +164,17 @@ func (i *DbOtpMailService) SendTeamInvitationEmail(ctx context.Context, params *
 		return fmt.Errorf("team name is empty")
 	}
 
-	confUrl, err := i.CreateConfirmationUrl(params.TokenHash)
+	confUrl, err := i.CreateTeamConfirmationUrl(params.TokenHash)
 	if err != nil {
 		return err
 	}
 	params.ConfirmationURL = confUrl
 	body := mailer.GenerateBody("body", string(mailer.DefaultTeamInviteMail), params)
-	param := &mailer.AllEmailParams{}
-	// param.SendMailParams = &mailer.SendMailParams{
-	// 	Template: string(mailer.DefaultTeamInviteMail),
-	// }
-	// param.CommonParams = &mailer.CommonParams{
-	// 	ConfirmationURL: params.ConfirmationURL,
-	// 	Email:           params.Email,
-	// 	SiteURL:         i.options.Meta.AppUrl,
-	// 	Token:           params.TokenHash,
-	// }
-	param.Message = &mailer.Message{
+	message := &mailer.Message{
 		From:    i.options.SenderAddress,
 		To:      params.Email,
 		Subject: fmt.Sprintf("Invitation to join %s", params.TeamName),
 		Body:    body,
 	}
-	return i.mail.Send(param.Message)
+	return i.mail.Send(message)
 }
-
-type OtpMailDecorator struct {
-	Delegate                DbOtpMailService
-	SendOtpEmailFunc        func(ctx context.Context, emailType mailer.EmailType, userId uuid.UUID) error
-	SendInvitationEmailFunc func(ctx context.Context, params *workers.TeamInvitationJobArgs) error
-}
-
-// SendTeamInvitationEmail implements OtpMailService.
-func (o *OtpMailDecorator) SendTeamInvitationEmail(ctx context.Context, params *workers.TeamInvitationJobArgs) error {
-	if o.SendInvitationEmailFunc != nil {
-		return o.SendInvitationEmailFunc(ctx, params)
-	}
-	return o.Delegate.SendTeamInvitationEmail(ctx, params)
-}
-
-// SendOtpEmail implements OtpMailService.
-func (o *OtpMailDecorator) SendOtpEmail(ctx context.Context, emailType mailer.EmailType, userId uuid.UUID) error {
-	if o.SendOtpEmailFunc != nil {
-		return o.SendOtpEmailFunc(ctx, emailType, userId)
-	}
-	return o.Delegate.SendOtpEmail(ctx, emailType, userId)
-}
-
-var _ OtpMailService = (*OtpMailDecorator)(nil)

@@ -16,12 +16,14 @@ import (
 	"github.com/google/uuid"
 	"github.com/tkahng/playground/internal/apis"
 	"github.com/tkahng/playground/internal/conf"
-	"github.com/tkahng/playground/internal/core"
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/models"
+
 	"github.com/tkahng/playground/internal/services"
 	"github.com/tkahng/playground/internal/test"
 
+	"github.com/tkahng/playground/internal/core"
+	"github.com/tkahng/playground/internal/tools/mailer"
 	"github.com/tkahng/playground/internal/tools/types"
 )
 
@@ -266,7 +268,7 @@ func createVerifiedUser(app core.App) (*models.UserInfo, error) {
 		User: *user,
 	}, nil
 }
-func createUnverifiedUser(app *core.BaseAppDecorator) (*models.UserInfo, error) {
+func createUnverifiedUser(app *core.BaseApp) (*models.UserInfo, error) {
 	ctx := context.Background()
 	user, err := app.Adapter().User().CreateUser(ctx, &models.User{
 		Email: "authenticated@example.com",
@@ -287,11 +289,20 @@ func createUnverifiedUser(app *core.BaseAppDecorator) (*models.UserInfo, error) 
 		User: *user,
 	}, nil
 }
+func ExtractTestMailer(t *testing.T, testApi *TestApi) *mailer.TestMailer {
+	var testMailer *mailer.TestMailer
+	if m, ok := testApi.App.Mailer().(*mailer.TestMailer); ok {
+		testMailer = m
+	} else {
+		t.Fatal("mailer is not a TestMailer")
+	}
+	return testMailer
+}
 
 type TestApi struct {
 	TestApi humatest.TestAPI
 	Api     apis.Api
-	App     *core.BaseAppDecorator
+	App     *core.BaseApp
 	Cfg     conf.EnvConfig
 	Router  http.Handler
 }
@@ -299,7 +310,7 @@ type TestApi struct {
 func SetupApi(t testing.TB, ctx context.Context, db database.Dbx) *TestApi {
 	t.Helper()
 	cfg := conf.ZeroEnvConfig()
-	app := core.NewAppDecorator(ctx, cfg, db)
+	app := core.NewTestApp(ctx, cfg, db)
 	appApi := apis.NewAppApi(app)
 	router, api := test.NewHumaApi(t)
 	apis.AddRoutes(api, appApi)
@@ -377,8 +388,8 @@ type ApiScenario struct {
 	// ---------------------------------------------------------------
 
 	TestAppFactory func(t testing.TB) *TestApi
-	BeforeTestFunc func(t testing.TB, app *core.BaseAppDecorator, scenario *ApiScenario)
-	AfterTestFunc  func(t testing.TB, app *core.BaseAppDecorator, res *httptest.ResponseRecorder)
+	BeforeTestFunc func(t testing.TB, app *core.BaseApp, scenario *ApiScenario)
+	AfterTestFunc  func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder)
 }
 
 // Test executes the test scenario.
@@ -470,11 +481,11 @@ func (scenario *ApiScenario) test(t testing.TB) {
 	recorder := testApi.TestApi.Do(scenario.Method, scenario.URL, args...)
 
 	if recorder.Code != scenario.ExpectedStatus {
-		t.Errorf("Expected status code %d, got %d", scenario.ExpectedStatus, recorder.Code)
+		t.Fatalf("Expected status code %d, got %d", scenario.ExpectedStatus, recorder.Code)
 	}
 	if len(scenario.ExpectedContent) == 0 && len(scenario.NotExpectedContent) == 0 && scenario.AfterTestFunc == nil {
 		if len(recorder.Body.String()) != 0 {
-			t.Errorf("Expected empty body, got \n%v", recorder.Body.String())
+			t.Fatalf("Expected empty body, got \n%v", recorder.Body.String())
 		}
 	} else {
 		// normalize json response format
@@ -490,20 +501,20 @@ func (scenario *ApiScenario) test(t testing.TB) {
 
 		for _, item := range scenario.ExpectedContent {
 			if !strings.Contains(normalizedBody, item) {
-				t.Errorf("Cannot find %v in response body \n%v", item, normalizedBody)
+				t.Fatalf("Cannot find %v in response body \n%v", item, normalizedBody)
 				break
 			}
 		}
 
 		for _, item := range scenario.NotExpectedContent {
 			if strings.Contains(normalizedBody, item) {
-				t.Errorf("Didn't expect %v in response body \n%v", item, normalizedBody)
+				t.Fatalf("Didn't expect %v in response body \n%v", item, normalizedBody)
 				break
 			}
 		}
 	}
 	if scenario.AfterTestFunc != nil {
-		scenario.AfterTestFunc(t, testApi.App, recorder)
+		scenario.AfterTestFunc(t, testApi.App, scenario, recorder)
 	}
 }
 

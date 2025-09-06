@@ -19,7 +19,7 @@ import (
 type TestApi struct {
 	TestApi humatest.TestAPI
 	Api     apis.Api
-	App     *core.BaseAppDecorator
+	App     *core.BaseApp
 	Cfg     conf.EnvConfig
 	Router  http.Handler
 }
@@ -27,7 +27,7 @@ type TestApi struct {
 func SetupApi(t *testing.T, ctx context.Context, db database.Dbx) TestApi {
 	t.Helper()
 	cfg := conf.ZeroEnvConfig()
-	app := core.NewAppDecorator(ctx, cfg, db)
+	app := core.NewTestApp(ctx, cfg, db)
 	appApi := apis.NewAppApi(app)
 	router, api := test.NewHumaApi(t)
 	apis.AddRoutes(api, appApi)
@@ -104,9 +104,9 @@ type ApiScenario struct {
 	// test hooks
 	// ---------------------------------------------------------------
 
-	TestAppFactory func(t testing.TB) *core.BaseAppDecorator
+	TestAppFactory func(t testing.TB) *core.BaseApp
 	// BeforeTestFunc func(t testing.TB, app *TestApp, e *core.ServeEvent)
-	AfterTestFunc func(t testing.TB, app *core.BaseAppDecorator, res *http.Response)
+	AfterTestFunc func(t testing.TB, app *core.BaseApp, res *http.Response)
 }
 
 // Test executes the test scenario.

@@ -14,6 +14,7 @@ import (
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/shared"
 	"github.com/tkahng/playground/internal/stores"
+	"github.com/tkahng/playground/internal/token"
 	"github.com/tkahng/playground/internal/tools/mailer"
 	"github.com/tkahng/playground/internal/tools/security"
 	"github.com/tkahng/playground/internal/workers"
@@ -21,12 +22,6 @@ import (
 )
 
 type AuthService interface {
-	// properties -----------------------------------------------------------------------------------------------------------
-
-	Password() PasswordService
-	Token() JwtService
-	// Mail() MailService
-
 	// handlers -----------------------------------------------------------------------------------------------------------
 
 	HandlePasswordResetRequest(ctx context.Context, email string) error
@@ -46,44 +41,50 @@ type AuthService interface {
 	FetchAuthUser(ctx context.Context, code string, parsedState *shared.ProviderStateClaims) (*oauth.AuthUser, error)
 	VerifyAndParseOtpToken(ctx context.Context, emailType mailer.EmailType, token string) (*shared.OtpClaims, error)
 	Authenticate(ctx context.Context, params *AuthenticationInput) (*models.User, error)
+	Signup(ctx context.Context, params *SingupInput) (*models.User, error)
 	CreateAuthTokensFromEmail(ctx context.Context, email string) (*models.UserInfoTokens, error)
-	// SendOtpEmail(emailType mailer.EmailType, ctx context.Context, user *models.User, adapter stores.StorageAdapterInterface) error
 }
 
 var _ AuthService = (*BaseAuthService)(nil)
 
 type BaseAuthService struct {
-	token      JwtService
+	jwt        JwtService
 	password   PasswordService
 	config     *conf.EnvConfig
 	adapter    stores.StorageAdapterInterface
 	jobService JobService
+	token      token.TokenService
+}
+type SingupInput struct {
+	Name     string `json:"name"`
+	Email    string `json:"email" format:"email" required:"true"`
+	Password string `json:"password" required:"true" minLength:"8" maxLength:"100"`
+}
+
+// // Signup implements AuthService.
+func (app *BaseAuthService) Signup(ctx context.Context, params *SingupInput) (*models.User, error) {
+	// userInfo := app.adapter.User().GetUserInfo()
+	return nil, nil
 }
 
 func NewAuthService(
 	opts *conf.EnvConfig,
 	jobService JobService,
 	adapter stores.StorageAdapterInterface,
+	tokenService token.TokenService,
+	jwt JwtService,
+	password PasswordService,
 ) AuthService {
 	authService := &BaseAuthService{
-		token:      NewJwtService(),
-		password:   NewPasswordService(),
+		jwt:        jwt,
+		password:   password,
 		config:     opts,
 		adapter:    adapter,
 		jobService: jobService,
+		token:      tokenService,
 	}
 
 	return authService
-}
-
-// Password implements AuthService.
-func (app *BaseAuthService) Password() PasswordService {
-	return app.password
-}
-
-// Token implements AuthService.
-func (app *BaseAuthService) Token() JwtService {
-	return app.token
 }
 
 // CreateOAuthUrl implements AuthService.
@@ -109,7 +110,6 @@ func (app *BaseAuthService) CreateOAuthUrl(ctx context.Context, providerName mod
 		Token:      security.GenerateTokenKey(),
 	}
 	if provider.Pkce() {
-
 		info.CodeVerifier = security.RandomString(43)
 		info.CodeChallenge = security.S256Challenge(info.CodeVerifier)
 		info.CodeChallengeMethod = "S256"
@@ -192,7 +192,7 @@ func (app *BaseAuthService) ResetPassword(ctx context.Context, userId uuid.UUID,
 func (app *BaseAuthService) Signout(ctx context.Context, token string) error {
 	opts := app.config.AuthOptions
 	var claims shared.RefreshTokenClaims
-	err := app.token.ParseToken(token, opts.RefreshToken, &claims)
+	err := app.jwt.ParseToken(token, opts.RefreshToken, &claims)
 	if err != nil {
 		return fmt.Errorf("error verifying refresh token: %w", err)
 	}
@@ -256,7 +256,7 @@ func (app *BaseAuthService) CreateAndPersistStateToken(ctx context.Context, payl
 		},
 		ProviderStatePayload: *payload,
 	}
-	token, err := app.token.CreateJwtToken(claims, config.Secret)
+	token, err := app.jwt.CreateJwtToken(claims, config.Secret)
 	if err != nil {
 		return token, err
 	}
@@ -302,7 +302,7 @@ func (app *BaseAuthService) CreateAuthTokens(ctx context.Context, payload *model
 				Permissions: payload.Permissions,
 			},
 		}
-		token, err := app.token.CreateJwtToken(claims, opts.AccessToken.Secret)
+		token, err := app.jwt.CreateJwtToken(claims, opts.AccessToken.Secret)
 		if err != nil {
 			return token, err
 		}
@@ -312,43 +312,45 @@ func (app *BaseAuthService) CreateAuthTokens(ctx context.Context, payload *model
 		return nil, err
 	}
 
-	tokenKey := security.GenerateTokenKey()
-
-	refreshToken, err := func() (string, error) {
-
-		claims := shared.RefreshTokenClaims{
-			Type:             models.TokenTypesRefreshToken,
-			RegisteredClaims: jwt.RegisteredClaims{ExpiresAt: opts.RefreshToken.ExpiresAt()},
-			RefreshTokenPayload: shared.RefreshTokenPayload{
-				UserId: payload.User.ID,
-				Email:  payload.User.Email,
-				Token:  tokenKey,
-			},
-		}
-
-		token, err := app.token.CreateJwtToken(claims, opts.RefreshToken.Secret)
-		if err != nil {
-			return token, err
-		}
-		err = app.adapter.Token().SaveToken(
-			ctx,
-			&stores.CreateTokenDTO{
-				Type:       models.TokenTypesRefreshToken,
-				Identifier: claims.Email,
-				Expires:    opts.RefreshToken.Expires(),
-				Token:      claims.Token,
-				UserID:     &claims.UserId,
-			},
-		)
-		if err != nil {
-			return token, err
-		}
-		return token, nil
-	}()
-
+	// tokenKey := security.GenerateTokenKey()
+	refreshToken, err := app.token.GenerateToken(ctx, payload.User.Email, models.TokenTypesRefreshToken)
 	if err != nil {
 		return nil, err
 	}
+	// refreshToken, err := func() (string, error) {
+	// 	claims := shared.RefreshTokenClaims{
+	// 		Type:             models.TokenTypesRefreshToken,
+	// 		RegisteredClaims: jwt.RegisteredClaims{ExpiresAt: opts.RefreshToken.ExpiresAt()},
+	// 		RefreshTokenPayload: shared.RefreshTokenPayload{
+	// 			UserId: payload.User.ID,
+	// 			Email:  payload.User.Email,
+	// 			Token:  tokenKey,
+	// 		},
+	// 	}
+
+	// 	token, err := app.jwt.CreateJwtToken(claims, opts.RefreshToken.Secret)
+	// 	if err != nil {
+	// 		return token, err
+	// 	}
+	// 	err = app.adapter.Token().SaveToken(
+	// 		ctx,
+	// 		&stores.CreateTokenDTO{
+	// 			Type:       models.TokenTypesRefreshToken,
+	// 			Identifier: claims.Email,
+	// 			Expires:    opts.RefreshToken.Expires(),
+	// 			Token:      claims.Token,
+	// 			UserID:     &claims.UserId,
+	// 		},
+	// 	)
+	// 	if err != nil {
+	// 		return token, err
+	// 	}
+	// 	return token, nil
+	// }()
+
+	// if err != nil {
+	// 	return nil, err
+	// }
 	return &models.UserInfoTokens{
 		UserInfo: *payload,
 		Tokens: models.TokenDto{
@@ -362,43 +364,20 @@ func (app *BaseAuthService) CreateAuthTokens(ctx context.Context, payload *model
 
 // HandleCheckResetPasswordToken implements AuthActions.
 func (app *BaseAuthService) HandleCheckResetPasswordToken(ctx context.Context, tokenHash string) error {
-	opts := app.config.AuthOptions
-	var claims shared.PasswordResetClaims
-	err := app.token.ParseToken(tokenHash, opts.PasswordResetToken, &claims)
-	if err != nil {
-		return fmt.Errorf("error verifying password reset token: %w", err)
-	}
-	token, err := app.adapter.Token().GetToken(ctx, claims.Token)
-	if err != nil {
-		return err
-	}
-	if token == nil {
-		return fmt.Errorf("token not found")
-	}
-	return nil
+	return app.token.CheckToken(ctx, tokenHash, models.TokenTypesPasswordResetToken)
 }
 
 // HandlePasswordResetToken implements AuthActions.
 func (app *BaseAuthService) HandlePasswordResetToken(ctx context.Context, token, password string) error {
-	opts := app.config.AuthOptions
-	var claims shared.PasswordResetClaims
-	err := app.token.ParseToken(token, opts.PasswordResetToken, &claims)
+	claims, err := app.token.ValidateToken(ctx, token, models.TokenTypesPasswordResetToken)
 	if err != nil {
-		return fmt.Errorf("error verifying password reset token: %w", err)
-	}
-	_, err = app.adapter.Token().GetToken(ctx, token) // corrected 'tokne' to 'token'
-	if err != nil {
-		return err
-	}
-	err = app.adapter.Token().DeleteToken(ctx, token) // corrected to use 'app.token'
-	if err != nil {
-		return fmt.Errorf("error deleting token: %w", err)
+		return fmt.Errorf("error getting token: %w", err)
 	}
 
 	user, err := app.adapter.User().FindUser(
 		ctx,
 		&stores.UserFilter{
-			Emails: []string{claims.Email},
+			Emails: []string{claims},
 		},
 	)
 	if err != nil {
@@ -433,7 +412,7 @@ func (app *BaseAuthService) HandlePasswordResetToken(ctx context.Context, token,
 func (app *BaseAuthService) VerifyStateToken(ctx context.Context, token string) (*shared.ProviderStateClaims, error) {
 	opts := app.config.AuthOptions
 	var claims shared.ProviderStateClaims
-	err := app.token.ParseToken(token, opts.StateToken, &claims)
+	err := app.jwt.ParseToken(token, opts.StateToken, &claims)
 	if err != nil {
 		return nil, fmt.Errorf("error verifying state token: %w", err)
 	}
@@ -450,7 +429,7 @@ func (app *BaseAuthService) VerifyStateToken(ctx context.Context, token string) 
 func (app *BaseAuthService) HandleAccessToken(ctx context.Context, token string) (*models.UserInfo, error) {
 	opts := app.config.AuthOptions
 	var claims shared.AuthenticationClaims
-	err := app.token.ParseToken(token, opts.AccessToken, &claims)
+	err := app.jwt.ParseToken(token, opts.AccessToken, &claims)
 	if err != nil {
 		return nil, fmt.Errorf("error verifying access token: %w", err)
 	}
@@ -459,21 +438,21 @@ func (app *BaseAuthService) HandleAccessToken(ctx context.Context, token string)
 
 // HandleRefreshToken implements AuthActions.
 func (app *BaseAuthService) HandleRefreshToken(ctx context.Context, token string) (*models.UserInfoTokens, error) {
-	opts := app.config.AuthOptions
-	var claims shared.RefreshTokenClaims
-	err := app.token.ParseToken(token, opts.RefreshToken, &claims)
-	if err != nil {
-		return nil, fmt.Errorf("error verifying refresh token: %w", err)
-	}
-	_, err = app.adapter.Token().GetToken(ctx, claims.Token)
+	// opts := app.config.AuthOptions
+	// var claims shared.RefreshTokenClaims
+	// err := app.jwt.ParseToken(token, opts.RefreshToken, &claims)
+	// if err != nil {
+	// 	return nil, fmt.Errorf("error verifying refresh token: %w", err)
+	// }
+	res, err := app.token.ValidateToken(ctx, token, models.TokenTypesRefreshToken)
 	if err != nil {
 		return nil, fmt.Errorf("error getting token: %w", err) // corrected to return nil before the error
 	}
-	err = app.adapter.Token().DeleteToken(ctx, claims.Token)
-	if err != nil {
-		return nil, fmt.Errorf("error deleting token: %w", err)
-	}
-	info, err := app.adapter.User().GetUserInfo(ctx, claims.Email)
+	// err = app.adapter.Token().DeleteToken(ctx, res.Token)
+	// if err != nil {
+	// 	return nil, fmt.Errorf("error deleting token: %w", err)
+	// }
+	info, err := app.adapter.User().GetUserInfo(ctx, res)
 	if err != nil {
 		return nil, err
 	}
@@ -482,22 +461,14 @@ func (app *BaseAuthService) HandleRefreshToken(ctx context.Context, token string
 }
 
 func (app *BaseAuthService) HandleVerificationToken(ctx context.Context, token string) error {
-	claims, err := app.VerifyAndParseOtpToken(ctx, mailer.EmailTypeVerify, token)
-	if err != nil {
-		return fmt.Errorf("error verifying verification token: %w", err)
-	}
-	_, err = app.adapter.Token().GetToken(ctx, claims.Token)
+	claims, err := app.token.ValidateToken(ctx, token, models.TokenTypesVerificationToken)
 	if err != nil {
 		return fmt.Errorf("error getting token: %w", err)
-	}
-	err = app.adapter.Token().DeleteToken(ctx, claims.Token)
-	if err != nil {
-		return fmt.Errorf("error deleting token: %w", err)
 	}
 	user, err := app.adapter.User().FindUser(
 		ctx,
 		&stores.UserFilter{
-			Emails: []string{claims.Email},
+			Emails: []string{claims},
 		},
 	)
 	if err != nil {
@@ -533,14 +504,12 @@ func (app *BaseAuthService) VerifyAndParseOtpToken(ctx context.Context, emailTyp
 	}
 	var err error
 	var claims shared.OtpClaims
-	err = app.token.ParseToken(token, opt, &claims)
+	err = app.jwt.ParseToken(token, opt, &claims)
 	if err != nil {
 		return nil, fmt.Errorf("error at parsing token: %w", err)
 	}
 	return &claims, nil
 }
-
-// methods
 
 func (app *BaseAuthService) CreateUserAndAccount(ctx context.Context, params *AuthenticationInput, adapter stores.StorageAdapterInterface) (*models.User, error) {
 	user, err := adapter.User().CreateUser(

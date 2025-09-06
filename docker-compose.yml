@@ -1,8 +1,9 @@
 services:
   db:
-    build:
-      context: .
-      dockerfile: Dockerfile.database
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile.database
+    image: postgres:17
     container_name: database
     platform: linux/arm64
     ports:
