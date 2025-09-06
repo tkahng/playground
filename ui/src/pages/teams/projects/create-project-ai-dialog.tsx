@@ -81,9 +81,7 @@ export function CreateProjectAiDialog() {
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Create Project with AI</DialogTitle>
-          <DialogDescription>
-            Create a new project to manage tasks and projects.
-          </DialogDescription>
+          <DialogDescription>Create a project with AI.</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
@@ -94,9 +92,9 @@ export function CreateProjectAiDialog() {
                   name="input"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Project Name</FormLabel>
+                      <FormLabel>Instructions</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="Project Name" />
+                        <Input {...field} placeholder="Describe the project" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
