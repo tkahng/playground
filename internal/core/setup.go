@@ -101,7 +101,7 @@ func SetIntegrationServices(app *BaseApp) {
 	passwordService := app.Password()
 	jwtService := app.Jwt()
 
-	m := mailer.NewSmtpMailer(cfg.SmtpConfig)
+	m := mailer.NewResendMailer(cfg.ResendConfig)
 
 	app.mailer = m
 	app.mailService = services.NewOtpMailService(
