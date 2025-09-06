@@ -135,7 +135,7 @@ func (app *DbOtpMailService) getSendMailParams(emailType mailer.EmailType, token
 	return message, nil
 }
 
-func (i *DbOtpMailService) CreateConfirmationUrl(tokenhash string) (string, error) {
+func (i *DbOtpMailService) CreateTeamConfirmationUrl(tokenhash string) (string, error) {
 	path, err := mailer.GetPathParams(
 		"/team-invitation",
 		tokenhash,
@@ -164,7 +164,7 @@ func (i *DbOtpMailService) SendTeamInvitationEmail(ctx context.Context, params *
 		return fmt.Errorf("team name is empty")
 	}
 
-	confUrl, err := i.CreateConfirmationUrl(params.TokenHash)
+	confUrl, err := i.CreateTeamConfirmationUrl(params.TokenHash)
 	if err != nil {
 		return err
 	}
