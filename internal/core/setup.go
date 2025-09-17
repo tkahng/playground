@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/ThreeDotsLabs/watermill/components/cqrs"
+	"github.com/tkahng/playground/internal/auth"
 	"github.com/tkahng/playground/internal/conf"
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/events"
@@ -122,6 +123,8 @@ func SetIntegrationServices(app *BaseApp) {
 		jwtService,
 		passwordService,
 	)
+	auth2 := auth.NewAuthService(adapter)
+	app.auth2 = auth2
 }
 
 func RegisterWorkers(app *BaseApp) {
