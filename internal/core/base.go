@@ -5,6 +5,7 @@ import (
 
 	"log/slog"
 
+	"github.com/tkahng/playground/internal/auth"
 	"github.com/tkahng/playground/internal/conf"
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/events"
@@ -42,7 +43,9 @@ type BaseApp struct {
 	payment  services.PaymentService
 	password services.PasswordService
 
-	auth    services.AuthService
+	auth  services.AuthService
+	auth2 auth.AuthService
+
 	rbac    services.RBACService
 	checker services.ConstraintChecker
 
@@ -233,6 +236,14 @@ func (a *BaseApp) Auth() services.AuthService {
 		panic("auth not initialized")
 	}
 	return a.auth
+}
+
+// Auth2 implements App.
+func (a *BaseApp) Auth2() auth.AuthService {
+	if a.auth2 == nil {
+		panic("auth2 not initialized")
+	}
+	return a.auth2
 }
 
 func (app *BaseApp) Fs() filesystem.FileSystem {

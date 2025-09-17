@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/tkahng/playground/internal/models"
+	"github.com/tkahng/playground/internal/stores"
 )
 
 type SignupInput struct {
@@ -53,3 +54,35 @@ type AuthService interface {
 	// - if user with email exists, and they have another oauth account, it will update the oauth account.
 	OAuth2Signin(ctx context.Context, params *OAuth2SigninInput) (*models.UserInfoTokens, error)
 }
+
+type AuthServiceImpl struct {
+	adapter stores.StorageAdapterInterface
+}
+
+func NewAuthService(adapter stores.StorageAdapterInterface) AuthService {
+	return &AuthServiceImpl{
+		adapter: adapter,
+	}
+}
+
+// OAuth2Signin implements AuthService.
+func (a *AuthServiceImpl) OAuth2Signin(ctx context.Context, params *OAuth2SigninInput) (*models.UserInfoTokens, error) {
+	panic("unimplemented")
+}
+
+// Signin implements AuthService.
+func (a *AuthServiceImpl) Signin(ctx context.Context, params *SigninInput) (*models.UserInfoTokens, error) {
+	panic("unimplemented")
+}
+
+// Signout implements AuthService.
+func (a *AuthServiceImpl) Signout(ctx context.Context, refreshToken string) error {
+	panic("unimplemented")
+}
+
+// Signup implements AuthService.
+func (a *AuthServiceImpl) Signup(ctx context.Context, params *SignupInput) (*models.UserInfoTokens, error) {
+	panic("unimplemented")
+}
+
+var _ AuthService = (*AuthServiceImpl)(nil)
