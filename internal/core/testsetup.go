@@ -131,7 +131,7 @@ func TestingSetIntegrationServices(app *BaseApp) {
 		jwtService,
 		passwordService,
 	)
-	auth2 := auth.NewAuthService(adapter)
+	auth2 := auth.NewAuthService(adapter, passwordService, jwtService)
 	app.auth2 = auth2
 }
 
