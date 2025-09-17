@@ -10,6 +10,7 @@ import (
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/shared"
 	"github.com/tkahng/playground/internal/stores"
+	"github.com/tkahng/playground/internal/token"
 )
 
 type (
@@ -59,7 +60,7 @@ type AuthService interface {
 	OAuth2Signin(ctx context.Context, params *OAuth2SigninInput) (*models.UserInfoTokens, error)
 
 	// GenerateAuthTokens
-	GenerateAuthTokens(ctx context.Context, user *models.User) (*models.UserInfoTokens, error)
+	GenerateAuthTokens(ctx context.Context, email string) (*models.UserInfoTokens, error)
 }
 type (
 	PasswordService interface {
@@ -72,22 +73,75 @@ type (
 	}
 )
 
+func NewAuthService(
+	config *conf.EnvConfig,
+	adapter stores.StorageAdapterInterface,
+	password PasswordService,
+	jwt JwtService,
+	token token.TokenService,
+) AuthService {
+	return &AuthServiceImpl{
+		config:   config,
+		adapter:  adapter,
+		password: password,
+		jwt:      jwt,
+		token:    token,
+	}
+}
+
 type AuthServiceImpl struct {
+	config   *conf.EnvConfig
 	adapter  stores.StorageAdapterInterface
 	password PasswordService
 	jwt      JwtService
+	token    token.TokenService
 }
 
 // GenerateAuthTokens implements AuthService.
-func (a *AuthServiceImpl) GenerateAuthTokens(ctx context.Context, user *models.User) (*models.UserInfoTokens, error) {
-	panic("unimplemented")
-}
-
-func NewAuthService(adapter stores.StorageAdapterInterface, password PasswordService, jwt JwtService) AuthService {
-	return &AuthServiceImpl{
-		adapter:  adapter,
-		password: password,
+func (a *AuthServiceImpl) GenerateAuthTokens(ctx context.Context, email string) (*models.UserInfoTokens, error) {
+	userInfo, err := a.adapter.User().GetUserInfo(ctx, email)
+	if err != nil {
+		return nil, err
 	}
+	opts := a.config.AuthOptions
+
+	authToken, err := func() (string, error) {
+		claims := shared.AuthenticationClaims{
+			Type: models.TokenTypesAccessToken,
+			RegisteredClaims: jwt.RegisteredClaims{
+				ExpiresAt: opts.AccessToken.ExpiresAt(),
+			},
+			AuthenticationPayload: shared.AuthenticationPayload{
+				UserId:      userInfo.User.ID,
+				Email:       userInfo.User.Email,
+				Roles:       userInfo.Roles,
+				Permissions: userInfo.Permissions,
+			},
+		}
+		token, err := a.jwt.CreateJwtToken(claims, opts.AccessToken.Secret)
+		if err != nil {
+			return token, err
+		}
+		return token, nil
+	}()
+	if err != nil {
+		return nil, err
+	}
+
+	refreshToken, err := a.token.GenerateToken(ctx, userInfo.User.Email, models.TokenTypesRefreshToken)
+	if err != nil {
+		return nil, err
+	}
+
+	return &models.UserInfoTokens{
+		UserInfo: *userInfo,
+		Tokens: models.TokenDto{
+			AccessToken:  authToken,
+			RefreshToken: refreshToken,
+			ExpiresIn:    opts.AccessToken.Duration,
+			TokenType:    "Bearer",
+		},
+	}, nil
 }
 
 // OAuth2Signin implements AuthService.
@@ -143,7 +197,7 @@ func (a *AuthServiceImpl) Signup(ctx context.Context, params *SignupInput) (*mod
 	if err != nil {
 		return nil, err
 	}
-	tokens, err := a.GenerateAuthTokens(ctx, user)
+	tokens, err := a.GenerateAuthTokens(ctx, params.Email)
 	if err != nil {
 		return nil, err
 	}

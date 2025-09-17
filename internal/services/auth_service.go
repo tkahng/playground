@@ -305,45 +305,11 @@ func (app *BaseAuthService) CreateAuthTokens(ctx context.Context, payload *model
 		return nil, err
 	}
 
-	// tokenKey := security.GenerateTokenKey()
 	refreshToken, err := app.token.GenerateToken(ctx, payload.User.Email, models.TokenTypesRefreshToken)
 	if err != nil {
 		return nil, err
 	}
-	// refreshToken, err := func() (string, error) {
-	// 	claims := shared.RefreshTokenClaims{
-	// 		Type:             models.TokenTypesRefreshToken,
-	// 		RegisteredClaims: jwt.RegisteredClaims{ExpiresAt: opts.RefreshToken.ExpiresAt()},
-	// 		RefreshTokenPayload: shared.RefreshTokenPayload{
-	// 			UserId: payload.User.ID,
-	// 			Email:  payload.User.Email,
-	// 			Token:  tokenKey,
-	// 		},
-	// 	}
 
-	// 	token, err := app.jwt.CreateJwtToken(claims, opts.RefreshToken.Secret)
-	// 	if err != nil {
-	// 		return token, err
-	// 	}
-	// 	err = app.adapter.Token().SaveToken(
-	// 		ctx,
-	// 		&stores.CreateTokenDTO{
-	// 			Type:       models.TokenTypesRefreshToken,
-	// 			Identifier: claims.Email,
-	// 			Expires:    opts.RefreshToken.Expires(),
-	// 			Token:      claims.Token,
-	// 			UserID:     &claims.UserId,
-	// 		},
-	// 	)
-	// 	if err != nil {
-	// 		return token, err
-	// 	}
-	// 	return token, nil
-	// }()
-
-	// if err != nil {
-	// 	return nil, err
-	// }
 	return &models.UserInfoTokens{
 		UserInfo: *payload,
 		Tokens: models.TokenDto{
