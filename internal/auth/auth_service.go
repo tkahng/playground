@@ -2,8 +2,10 @@ package auth
 
 import (
 	"context"
+	"errors"
 	"time"
 
+	"github.com/danielgtaylor/huma/v2"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/tkahng/playground/internal/conf"
@@ -61,6 +63,11 @@ type AuthService interface {
 	// - if user with email exists, and they have another oauth account, it will update the oauth account.
 	OAuth2Signin(ctx context.Context, params *OAuth2SigninInput) (*models.UserInfoTokens, error)
 
+	RefreshToken(ctx context.Context, refreshToken string) (*models.UserInfoTokens, error)
+
+	SendEmailVerification(ctx context.Context, email string) error
+	ValidateEmailVerification(ctx context.Context, code string) error
+
 	// GenerateAuthTokens
 	GenerateAuthTokens(ctx context.Context, email string) (*models.UserInfoTokens, error)
 }
@@ -103,6 +110,54 @@ type AuthServiceImpl struct {
 	jwt      JwtService
 	token    token.TokenService
 	job      JobService
+}
+
+// SendEmailVerification implements AuthService.
+func (a *AuthServiceImpl) SendEmailVerification(ctx context.Context, email string) error {
+	user, err := a.adapter.User().FindUser(ctx, &stores.UserFilter{
+		Emails: []string{email},
+	})
+	if err != nil {
+		return err
+	}
+	if user == nil {
+		return shared.ErrUserNotFound
+	}
+	err = a.job.EnqueueOtpMailJob(ctx, &workers.OtpEmailJobArgs{
+		UserID: user.ID,
+		Type:   mailer.EmailTypeConfirmPasswordReset,
+	})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// ValidateEmailVerification implements AuthService.
+func (a *AuthServiceImpl) ValidateEmailVerification(ctx context.Context, code string) error {
+	email, err := a.token.ValidateToken(ctx, code, models.TokenTypesVerificationToken)
+	if err != nil {
+		return err
+	}
+	user, err := a.adapter.User().FindUser(ctx, &stores.UserFilter{
+		Emails: []string{email},
+	})
+	if err != nil {
+		return err
+	}
+	if user == nil {
+		return shared.ErrUserNotFound
+	}
+	if user.EmailVerifiedAt != nil {
+		return errors.New("user email already verified")
+	}
+	now := time.Now()
+	user.EmailVerifiedAt = &now
+	err = a.adapter.User().UpdateUser(ctx, user)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // GenerateAuthTokens implements AuthService.
@@ -152,21 +207,6 @@ func (a *AuthServiceImpl) GenerateAuthTokens(ctx context.Context, email string) 
 	}, nil
 }
 
-// OAuth2Signin implements AuthService.
-func (a *AuthServiceImpl) OAuth2Signin(ctx context.Context, params *OAuth2SigninInput) (*models.UserInfoTokens, error) {
-	panic("unimplemented")
-}
-
-// Signin implements AuthService.
-func (a *AuthServiceImpl) Signin(ctx context.Context, params *SigninInput) (*models.UserInfoTokens, error) {
-	panic("unimplemented")
-}
-
-// Signout implements AuthService.
-func (a *AuthServiceImpl) Signout(ctx context.Context, refreshToken string) error {
-	panic("unimplemented")
-}
-
 // Signup implements AuthService.
 // Signup credentials user.
 //
@@ -205,10 +245,7 @@ func (a *AuthServiceImpl) Signup(ctx context.Context, params *SignupInput) (*mod
 	if err != nil {
 		return nil, err
 	}
-	err = a.job.EnqueueOtpMailJob(ctx, &workers.OtpEmailJobArgs{
-		UserID: user.ID,
-		Type:   mailer.EmailTypeConfirmPasswordReset,
-	})
+	err = a.SendEmailVerification(ctx, params.Email)
 	if err != nil {
 		return nil, err
 	}
@@ -217,6 +254,66 @@ func (a *AuthServiceImpl) Signup(ctx context.Context, params *SignupInput) (*mod
 		return nil, err
 	}
 	return tokens, nil
+}
+
+// Signin implements AuthService.
+// Signin credentials user.
+// If user with given email exists and has a credentials account, it will check password.
+func (a *AuthServiceImpl) Signin(ctx context.Context, params *SigninInput) (*models.UserInfoTokens, error) {
+	user, err := a.adapter.User().FindUser(ctx, &stores.UserFilter{
+		Emails: []string{params.Email},
+	})
+	if err != nil {
+		return nil, err
+	}
+	if user == nil {
+		return nil, shared.ErrUserNotFound
+	}
+	account, err := a.adapter.UserAccount().FindUserAccount(ctx, &stores.UserAccountFilter{
+		UserIds:   []uuid.UUID{user.ID},
+		Providers: []models.Providers{models.ProvidersCredentials},
+	})
+	if err != nil {
+		return nil, err
+	}
+	if account == nil {
+		return nil, shared.ErrAccountNotFound
+	}
+	match, err := a.password.VerifyPassword(*account.Password, params.Password)
+	if err != nil {
+		return nil, err
+	}
+	if !match {
+		return nil, shared.ErrPasswordIncorrect
+	}
+	tokens, err := a.GenerateAuthTokens(ctx, params.Email)
+	if err != nil {
+		return nil, err
+	}
+	return tokens, nil
+}
+
+// OAuth2Signin implements AuthService.
+func (a *AuthServiceImpl) OAuth2Signin(ctx context.Context, params *OAuth2SigninInput) (*models.UserInfoTokens, error) {
+	panic("unimplemented")
+}
+
+// RefreshToken implements AuthService.
+func (a *AuthServiceImpl) RefreshToken(ctx context.Context, refreshToken string) (*models.UserInfoTokens, error) {
+	email, err := a.token.ValidateToken(ctx, refreshToken, models.TokenTypesRefreshToken)
+	if err != nil {
+		return nil, huma.Error400BadRequest("Invalid refresh token")
+	}
+	claims, err := a.GenerateAuthTokens(ctx, email)
+	if err != nil {
+		return nil, err
+	}
+	return claims, nil
+}
+
+// Signout implements AuthService.
+func (a *AuthServiceImpl) Signout(ctx context.Context, refreshToken string) error {
+	panic("unimplemented")
 }
 
 var _ AuthService = (*AuthServiceImpl)(nil)

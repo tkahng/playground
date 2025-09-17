@@ -9,12 +9,10 @@ type RefreshTokenInput struct {
 }
 
 func (api *Api) RefreshToken(ctx context.Context, input *struct{ Body *RefreshTokenInput }) (*AuthenticatedInfoResponse, error) {
-	action := api.App().Auth()
-	claims, err := action.HandleRefreshToken(ctx, input.Body.RefreshToken)
+	claims, err := api.App().Auth2().RefreshToken(ctx, input.Body.RefreshToken)
 	if err != nil {
 		return nil, err
 	}
-
 	return &AuthenticatedInfoResponse{
 		Body: *ToApiUserInfoTokens(claims),
 	}, nil
