@@ -12,9 +12,9 @@ import (
 )
 
 type TokenService interface {
-	GenerateToken(ctx context.Context, email string, emailType models.TokenTypes) (string, error)
-	ValidateToken(ctx context.Context, token string, emailType models.TokenTypes) (string, error)
-	CheckToken(ctx context.Context, token string, emailType models.TokenTypes) error
+	GenerateToken(ctx context.Context, email string, tokenType models.TokenTypes) (string, error)
+	ValidateToken(ctx context.Context, token string, tokenType models.TokenTypes) (string, error)
+	CheckToken(ctx context.Context, token string, tokenType models.TokenTypes) error
 }
 
 type TokenServiceImpl struct {
@@ -23,8 +23,8 @@ type TokenServiceImpl struct {
 }
 
 // CheckToken implements TokenService.
-func (t *TokenServiceImpl) CheckToken(ctx context.Context, token string, emailType models.TokenTypes) error {
-	dbtoken, err := t.store.GetTokenByValueTypeExpires(ctx, token, emailType, time.Now())
+func (t *TokenServiceImpl) CheckToken(ctx context.Context, token string, tokenType models.TokenTypes) error {
+	dbtoken, err := t.store.GetTokenByValueTypeExpires(ctx, token, tokenType, time.Now())
 	if err != nil {
 		return err
 	}
@@ -35,8 +35,8 @@ func (t *TokenServiceImpl) CheckToken(ctx context.Context, token string, emailTy
 }
 
 // ValidateToken implements TokenService.
-func (t *TokenServiceImpl) ValidateToken(ctx context.Context, token string, emailType models.TokenTypes) (string, error) {
-	dbtoken, err := t.store.GetTokenByValueTypeExpires(ctx, token, emailType, time.Now())
+func (t *TokenServiceImpl) ValidateToken(ctx context.Context, token string, tokenType models.TokenTypes) (string, error) {
+	dbtoken, err := t.store.GetTokenByValueTypeExpires(ctx, token, tokenType, time.Now())
 	if err != nil {
 		return "", err
 	}
@@ -51,10 +51,10 @@ func (t *TokenServiceImpl) ValidateToken(ctx context.Context, token string, emai
 }
 
 // GenerateToken implements TokenService.
-func (t *TokenServiceImpl) GenerateToken(ctx context.Context, email string, emailType models.TokenTypes) (string, error) {
+func (t *TokenServiceImpl) GenerateToken(ctx context.Context, email string, tokenType models.TokenTypes) (string, error) {
 	token := security.GenerateTokenKey()
 	var opt conf.TokenOption
-	switch emailType {
+	switch tokenType {
 	case models.TokenTypesVerificationToken:
 		opt = t.opts.AuthOptions.VerificationToken
 	case models.TokenTypesPasswordResetToken:
@@ -62,11 +62,11 @@ func (t *TokenServiceImpl) GenerateToken(ctx context.Context, email string, emai
 	case models.TokenTypesRefreshToken:
 		opt = t.opts.AuthOptions.RefreshToken
 	default:
-		return "", fmt.Errorf("invalid email type %v", emailType)
+		return "", fmt.Errorf("invalid email type %v", tokenType)
 	}
 	expiry := opt.Duration
 	err := t.store.SaveToken(ctx, &stores.CreateTokenDTO{
-		Type:       emailType,
+		Type:       tokenType,
 		Token:      token,
 		Identifier: email,
 		Expires:    time.Now().Add(time.Duration(expiry) * time.Second),
