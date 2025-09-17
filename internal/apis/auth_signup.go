@@ -4,8 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/tkahng/playground/internal/models"
-	"github.com/tkahng/playground/internal/services"
+	"github.com/tkahng/playground/internal/auth"
 )
 
 type RequiredPasswordField string
@@ -21,33 +20,47 @@ type SignupInput struct {
 }
 
 func (api *Api) SignUp(ctx context.Context, input *struct{ Body SignupInput }) (*AuthenticatedInfoResponse, error) {
-	action := api.App().Auth()
-	password := input.Body.Password.String()
-	hash, err := api.app.Password().HashPassword(password)
+	dto, err := api.App().Auth2().Signup(ctx, &auth.SignupInput{
+		Email:    input.Body.Email,
+		Name:     input.Body.Name,
+		Password: input.Body.Password.String(),
+	})
 	if err != nil {
-		return nil, fmt.Errorf("error hashing password: %w", err)
-	}
-	params := &services.AuthenticationInput{
-		Email:             input.Body.Email,
-		Provider:          models.ProvidersCredentials,
-		Password:          &password,
-		HashPassword:      &hash,
-		Type:              models.ProviderTypeCredentials,
-		Name:              input.Body.Name,
-		ProviderAccountID: input.Body.Email,
-	}
-	user, err := action.Authenticate(ctx, params)
-	if err != nil {
-		return nil, fmt.Errorf("error authenticating user: %w", err)
-	}
-	dto, err := action.CreateAuthTokensFromEmail(ctx, user.Email)
-	if err != nil {
-		return nil, fmt.Errorf("error creating auth dto: %w", err)
-	}
-	if dto == nil {
 		return nil, fmt.Errorf("error creating auth dto: %w", err)
 	}
 	return &AuthenticatedInfoResponse{
 		Body: *ToApiUserInfoTokens(dto),
 	}, nil
 }
+
+// func (api *Api) SignUp(ctx context.Context, input *struct{ Body SignupInput }) (*AuthenticatedInfoResponse, error) {
+// 	action := api.App().Auth()
+// 	password := input.Body.Password.String()
+// 	hash, err := api.app.Password().HashPassword(password)
+// 	if err != nil {
+// 		return nil, fmt.Errorf("error hashing password: %w", err)
+// 	}
+// 	params := &services.AuthenticationInput{
+// 		Email:             input.Body.Email,
+// 		Provider:          models.ProvidersCredentials,
+// 		Password:          &password,
+// 		HashPassword:      &hash,
+// 		Type:              models.ProviderTypeCredentials,
+// 		Name:              input.Body.Name,
+// 		ProviderAccountID: input.Body.Email,
+// 	}
+// 	user, err := action.Authenticate(ctx, params)
+// 	if err != nil {
+// 		return nil, fmt.Errorf("error authenticating user: %w", err)
+// 	}
+// 	dto, err := action.CreateAuthTokensFromEmail(ctx, user.Email)
+// 	if err != nil {
+// 		return nil, fmt.Errorf("error creating auth dto: %w", err)
+// 	}
+// 	if dto == nil {
+// 		return nil, fmt.Errorf("error creating auth dto: %w", err)
+// 	}
+// 	return &AuthenticatedInfoResponse{
+// 		Body: *ToApiUserInfoTokens(dto),
+// 	}, nil
+// }
