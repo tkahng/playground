@@ -37,13 +37,15 @@ func NewOtpMailService(
 	adapter stores.StorageAdapterInterface,
 	mailer mailer.Mailer,
 	token token.TokenService,
+	jwt JwtService,
+	password PasswordService,
 ) OtpMailService {
 	return &DbOtpMailService{
 		options:  opts,
 		adapter:  adapter,
 		mail:     mailer,
-		jwt:      NewJwtService(),
-		password: NewPasswordService(),
+		jwt:      jwt,
+		password: password,
 		token:    token,
 	}
 }

@@ -11,6 +11,8 @@ import (
 	"github.com/tkahng/playground/internal/shared"
 	"github.com/tkahng/playground/internal/stores"
 	"github.com/tkahng/playground/internal/token"
+	"github.com/tkahng/playground/internal/tools/mailer"
+	"github.com/tkahng/playground/internal/workers"
 )
 
 type (
@@ -71,6 +73,9 @@ type (
 		ParseToken(token string, config conf.TokenOption, data any) error
 		CreateJwtToken(payload jwt.Claims, signingKey string) (string, error)
 	}
+	JobService interface {
+		EnqueueOtpMailJob(ctx context.Context, args *workers.OtpEmailJobArgs) error
+	}
 )
 
 func NewAuthService(
@@ -79,6 +84,7 @@ func NewAuthService(
 	password PasswordService,
 	jwt JwtService,
 	token token.TokenService,
+	job JobService,
 ) AuthService {
 	return &AuthServiceImpl{
 		config:   config,
@@ -86,6 +92,7 @@ func NewAuthService(
 		password: password,
 		jwt:      jwt,
 		token:    token,
+		job:      job,
 	}
 }
 
@@ -95,6 +102,7 @@ type AuthServiceImpl struct {
 	password PasswordService
 	jwt      JwtService
 	token    token.TokenService
+	job      JobService
 }
 
 // GenerateAuthTokens implements AuthService.
@@ -193,6 +201,13 @@ func (a *AuthServiceImpl) Signup(ctx context.Context, params *SignupInput) (*mod
 		Provider: models.ProvidersCredentials,
 		Type:     models.ProviderTypeCredentials,
 		Password: &hashedPassword,
+	})
+	if err != nil {
+		return nil, err
+	}
+	err = a.job.EnqueueOtpMailJob(ctx, &workers.OtpEmailJobArgs{
+		UserID: user.ID,
+		Type:   mailer.EmailTypeConfirmPasswordReset,
 	})
 	if err != nil {
 		return nil, err

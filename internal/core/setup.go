@@ -110,6 +110,8 @@ func SetIntegrationServices(app *BaseApp) {
 		adapter,
 		m,
 		tokenService,
+		jwtService,
+		passwordService,
 	)
 
 	client := services.NewPaymentClient(cfg.StripeConfig)
@@ -123,7 +125,7 @@ func SetIntegrationServices(app *BaseApp) {
 		jwtService,
 		passwordService,
 	)
-	auth2 := auth.NewAuthService(cfg, adapter, passwordService, jwtService, tokenService)
+	auth2 := auth.NewAuthService(cfg, adapter, passwordService, jwtService, tokenService, jobService)
 	app.auth2 = auth2
 }
 

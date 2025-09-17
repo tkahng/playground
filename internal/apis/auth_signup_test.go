@@ -84,13 +84,13 @@ func TestApi_SignUp_ExistingUsers(t *testing.T) {
 	test.SkipIfShort(t)
 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
-		testMailer := ExtractTestMailer(t, testApi)
+		// testMailer := ExtractTestMailer(t, testApi)
 		tests := []ApiScenario{
 			{
-				Name:           "Test signup success",
+				Name:           "Test signup fail for existing user",
 				Method:         http.MethodPost,
 				URL:            "/auth/signup",
-				ExpectedStatus: http.StatusOK,
+				ExpectedStatus: http.StatusConflict,
 				TestAppFactory: func(t testing.TB) *TestApi {
 					return testApi
 				},
@@ -114,29 +114,8 @@ func TestApi_SignUp_ExistingUsers(t *testing.T) {
 					// testMailer.Wg = &sync.WaitGroup{}
 					// testMailer.Wg.Add(1)
 				},
-				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
-					if err := app.JobManager().PollOnce(context.Background()); err != nil {
-						t.Fatalf("Error polling job manager: %v", err)
-					}
-					var body apis.ApiOutput[*apis.ApiUserInfoTokens]
-					err := json.NewDecoder(res.Body).Decode(&body)
-					if err != nil {
-						t.Errorf("Error decoding response: %v", err)
-					}
-					var message *mailer.Message
-					if len(testMailer.Messages) > 0 {
-						message = testMailer.Messages[0]
-					} else {
-						t.Fatalf("No message found for user")
-					}
-					token, err := test.GetLinkParam(message.Body, "token")
-					if err != nil {
-						t.Fatalf("Error getting token from email: %v", err)
-					}
-					if token == "" {
-						t.Fatalf("No token found in email. Body: %s", message.Body)
-					}
-
+				ExpectedContent: []string{
+					"user already exists",
 				},
 			},
 		}

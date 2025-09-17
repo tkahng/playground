@@ -118,6 +118,8 @@ func TestingSetIntegrationServices(app *BaseApp) {
 		adapter,
 		m,
 		tokenService,
+		jwtService,
+		passwordService,
 	)
 
 	client := services.NewTestPaymentClient()
@@ -131,7 +133,7 @@ func TestingSetIntegrationServices(app *BaseApp) {
 		jwtService,
 		passwordService,
 	)
-	auth2 := auth.NewAuthService(cfg, adapter, passwordService, jwtService, tokenService)
+	auth2 := auth.NewAuthService(cfg, adapter, passwordService, jwtService, tokenService, jobService)
 	app.auth2 = auth2
 }
 
