@@ -41,7 +41,6 @@ type AuthService interface {
 	FetchAuthUser(ctx context.Context, code string, parsedState *shared.ProviderStateClaims) (*oauth.AuthUser, error)
 	VerifyAndParseOtpToken(ctx context.Context, emailType mailer.EmailType, token string) (*shared.OtpClaims, error)
 	Authenticate(ctx context.Context, params *AuthenticationInput) (*models.User, error)
-	Signup(ctx context.Context, params *SingupInput) (*models.User, error)
 	CreateAuthTokensFromEmail(ctx context.Context, email string) (*models.UserInfoTokens, error)
 }
 
@@ -59,12 +58,6 @@ type SingupInput struct {
 	Name     string `json:"name"`
 	Email    string `json:"email" format:"email" required:"true"`
 	Password string `json:"password" required:"true" minLength:"8" maxLength:"100"`
-}
-
-// // Signup implements AuthService.
-func (app *BaseAuthService) Signup(ctx context.Context, params *SingupInput) (*models.User, error) {
-	// userInfo := app.adapter.User().GetUserInfo()
-	return nil, nil
 }
 
 func NewAuthService(
