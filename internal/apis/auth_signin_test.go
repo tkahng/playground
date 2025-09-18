@@ -19,12 +19,6 @@ func TestApi_SignIn(t *testing.T) {
 	test.SkipIfShort(t)
 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
-		// var testMailer *mailer.TestMailer
-		// if m, ok := testApi.App.Mailer().(*mailer.TestMailer); ok {
-		// 	testMailer = m
-		// } else {
-		// 	t.Fatal("mailer is not a TestMailer")
-		// }
 
 		tests := []ApiScenario{
 			{
@@ -51,8 +45,6 @@ func TestApi_SignIn(t *testing.T) {
 						t.Errorf("Error marshalling input: %v", err)
 					}
 					scenario.Body = strings.NewReader(string(data))
-					// testMailer.Wg = &sync.WaitGroup{}
-					// testMailer.Wg.Add(1)
 				},
 				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
 					var body apis.ApiOutput[*apis.ApiUserInfoTokens]

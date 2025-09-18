@@ -8,7 +8,7 @@ import (
 )
 
 type EmailVerificationInput struct {
-	Token string `json:"token" form:"token" query:"token" path:"token" required:"true"`
+	Token string `json:"token" form:"token" query:"token" required:"true"`
 }
 
 func (api *Api) RequestVerification(ctx context.Context, input *struct{}) (*struct{}, error) {

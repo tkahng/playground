@@ -163,6 +163,20 @@ func BindAuthApi(api huma.API, appApi *Api) {
 		},
 		appApi.RequestVerification,
 	)
+	// confirm verification -------------------------------------------------------------
+	huma.Register(
+		api,
+		huma.Operation{
+			OperationID: "confirm-verification",
+			Method:      http.MethodPost,
+			Path:        "/auth/confirm-verification",
+			Summary:     "Confirm Email verification request",
+			Description: "Confirm Request email verification",
+			Tags:        []string{"Auth", "Verify"},
+			Errors:      []int{http.StatusNotFound},
+		},
+		appApi.VerifyEmail,
+	)
 	// request password reset -------------------------------------------------------------
 	huma.Register(
 		api,

@@ -125,7 +125,7 @@ func (a *AuthServiceImpl) SendEmailVerification(ctx context.Context, email strin
 	}
 	err = a.job.EnqueueOtpMailJob(ctx, &workers.OtpEmailJobArgs{
 		UserID: user.ID,
-		Type:   mailer.EmailTypeConfirmPasswordReset,
+		Type:   mailer.EmailTypeVerify,
 	})
 	if err != nil {
 		return err
