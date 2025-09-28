@@ -19,7 +19,7 @@ type StorageConfig struct {
 	Region       string `env:"STORAGE_REGION" required:"true" json:"region"`
 }
 type AppConfig struct {
-	AppUrl        string `env:"APP_URL" envDefault:"http://127.0.0.1:8080"`
+	AppUrl        string `env:"APP_URL" envDefault:"http://localhost:8080"`
 	AppName       string `env:"APP_NAME" envDefault:"Playground"`
 	SenderName    string `env:"SENDER_NAME" envDefault:"info"`
 	SenderAddress string `env:"SENDER_ADDRESS" envDefault:"Hb4k@notifications.k2dv.io"`
@@ -71,7 +71,6 @@ type AiConfig struct {
 
 type Options struct {
 	Debug bool `doc:"Enable debug logging" default:"true" short:"d"`
-
 	Host string `doc:"Hostname to listen on." default:"localhost"`
 	Port int    `doc:"Port to listen on." short:"p" default:"8080"`
 }
@@ -80,7 +79,7 @@ func ZeroEnvConfig() EnvConfig {
 	// nolint:exhaustruct
 	return EnvConfig{
 		AppConfig: AppConfig{
-			AppUrl:        "http://127.0.0.1:8080",
+			AppUrl:        "http://localhost:8080",
 			AppName:       "Playground",
 			SenderName:    "info",
 			SenderAddress: "Hb4k@notifications.k2dv.io",
