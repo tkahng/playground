@@ -10,6 +10,7 @@ import (
 	"github.com/tkahng/playground/internal/services"
 )
 
+// TODO: redirect to /auth/callback with refresh token
 func (api *Api) OAuth2CallbackPost(ctx context.Context, input *OAuth2CallbackInput) (*AuthenticatedInfoResponse, error) {
 
 	dto, err := OAuth2Callback(ctx, api, input)
