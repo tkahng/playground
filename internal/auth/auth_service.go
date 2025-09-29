@@ -239,6 +239,7 @@ func (a *AuthServiceImpl) Signup(ctx context.Context, params *SignupInput) (*mod
 	_, err = a.adapter.UserAccount().CreateUserAccount(ctx, &models.UserAccount{
 		UserID:   user.ID,
 		Provider: models.ProvidersCredentials,
+		ProviderAccountID: user.ID.String(),
 		Type:     models.ProviderTypeCredentials,
 		Password: &hashedPassword,
 	})
