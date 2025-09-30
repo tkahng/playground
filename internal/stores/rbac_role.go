@@ -3,7 +3,6 @@ package stores
 import (
 	"context"
 	"fmt"
-	"log"
 	"log/slog"
 	"strings"
 
@@ -189,7 +188,15 @@ func (p *DbRbacStore) EnsureRoleAndPermissions(ctx context.Context, roleName str
 		}
 		err = p.CreateRolePermissions(ctx, role.ID, perm.ID)
 		if err != nil && !database.IsUniqConstraintErr(err) {
-			log.Println(err)
+			slog.ErrorContext(
+				ctx,
+				"error creating role permission",
+				slog.Any("error", err),
+				slog.String("role", role.Name),
+				slog.String("permission", perm.Name),
+				slog.String("role_id", role.ID.String()),
+				slog.String("permission_id", perm.ID.String()),
+			)
 		}
 	}
 	return nil
