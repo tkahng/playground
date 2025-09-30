@@ -11,10 +11,7 @@ import (
 
 var (
 	//go:embed migrations
-	Migrations embed.FS
-
-	//go:embed migrations
-	migrations embed.FS
+	migrationsFs embed.FS
 )
 
 type Migrator interface {
@@ -34,7 +31,7 @@ func NewMigrator(config *MigratorConfig) Migrator {
 		panic(fmt.Errorf("error parsing database url for migrator: %w", err))
 	}
 	dm := dbmate.New(u)
-	dm.FS = migrations
+	dm.FS = migrationsFs
 	dm.AutoDumpSchema = config.AutoDumpSchema
 	dm.MigrationsDir = []string{"./migrations"}
 	dm.SchemaFile = "./internal/database/schema.sql"
