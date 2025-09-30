@@ -10,7 +10,3 @@ bootstrap:
 setupuser1:
 	go run . seed user tkahng+01@gmail.com Password123! true
 	go run . seed team tkahng+01@gmail.com team1
-
-.PHONY: dev-reset
-migrate-reset:
-	dbmate drop
