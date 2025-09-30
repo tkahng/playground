@@ -80,8 +80,8 @@ func TestApi_ResetPassword(t *testing.T) {
 			},
 			{
 				Name:           "Test reset password check success",
-				Method:         http.MethodGet,
-				URL:            "/auth/check-password-reset?token=",
+				Method:         http.MethodPost,
+				URL:            "/auth/check-password-reset",
 				ExpectedStatus: http.StatusNoContent,
 				TestAppFactory: func(t testing.TB) *TestApi {
 					return testApi
@@ -91,7 +91,16 @@ func TestApi_ResetPassword(t *testing.T) {
 					if err != nil {
 						t.Fatalf("Error getting token from email: %v", err)
 					}
-					scenario.URL = "/auth/check-password-reset?token=" + checktoken
+					dto := struct{
+						Token string `json:"token"`
+					}{
+						Token: checktoken,
+					}
+					data, err := json.Marshal(dto)
+					if err != nil {
+						t.Fatalf("Error marshalling input: %v", err)
+					}
+					scenario.Body = strings.NewReader(string(data))
 				},
 				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
 

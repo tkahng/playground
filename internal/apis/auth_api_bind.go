@@ -210,14 +210,14 @@ func BindAuthApi(api huma.API, appApi *Api) {
 		api,
 		huma.Operation{
 			OperationID: "check-password-reset",
-			Method:      http.MethodGet,
+			Method:      http.MethodPost,
 			Path:        "/auth/check-password-reset",
 			Summary:     "Check password reset",
 			Description: "Check password reset",
 			Tags:        []string{"Auth"},
 			Errors:      []int{http.StatusNotFound},
 		},
-		appApi.CheckPasswordResetGet,
+		appApi.CheckPasswordReset,
 	)
 	// password reset
 	huma.Register(
