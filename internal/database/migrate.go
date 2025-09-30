@@ -19,6 +19,7 @@ var (
 
 type Migrator interface {
 	Migrate() error
+	DumpSchema() error
 	Reset() error
 }
 type MigratorConfig struct {
@@ -47,6 +48,9 @@ type migrator struct {
 // Migrate implements Migrator.
 func (m *migrator) Migrate() error {
 	return m.dm.CreateAndMigrate()
+}
+func (m *migrator) DumpSchema() error {
+	return m.dm.DumpSchema()
 }
 
 // Reset implements Migrator.

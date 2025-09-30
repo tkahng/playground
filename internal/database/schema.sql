@@ -1,3 +1,8 @@
+\restrict yYJKIs3Mz4vzeWw82kQZRjPOBYRN8r36kz0PbhCxdaRSNZOP3ghCtA47TBbiVQk
+
+-- Dumped from database version 17.6 (Debian 17.6-1.pgdg13+1)
+-- Dumped by pg_dump version 18.0
+
 SET statement_timeout = 0;
 SET lock_timeout = 0;
 SET idle_in_transaction_session_timeout = 0;
@@ -1496,6 +1501,8 @@ ALTER TABLE ONLY public.user_sessions
 --
 -- PostgreSQL database dump complete
 --
+
+\unrestrict yYJKIs3Mz4vzeWw82kQZRjPOBYRN8r36kz0PbhCxdaRSNZOP3ghCtA47TBbiVQk
 
 
 --

@@ -1,10 +1,6 @@
 package cmd
 
 import (
-	"fmt"
-	"net/url"
-
-	"github.com/amacneil/dbmate/v2/pkg/dbmate"
 	_ "github.com/amacneil/dbmate/v2/pkg/driver/postgres"
 	"github.com/spf13/cobra"
 	"github.com/tkahng/playground/internal/conf"
@@ -12,10 +8,10 @@ import (
 )
 
 func NewMigrateCmd() *cobra.Command {
-
+	migrateCmd.PersistentFlags().Bool("test", false, "is for test?")
 	migrateCmd.AddCommand(upCmd)
-	migrateCmd.AddCommand(testUpCmd)
 	migrateCmd.AddCommand(resetCmd)
+	migrateCmd.AddCommand(makeSchema)
 	return migrateCmd
 
 }
@@ -32,75 +28,68 @@ var upCmd = &cobra.Command{
 	Short: "migrate up",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		cfg := conf.GetConfig[conf.DBConfig]()
-		return migrate(cfg.DatabaseUrl)
+		isTest, err := cmd.Flags().GetBool("test")
+		if err != nil {
+			return err
+		}
+		mConfig := database.MigratorConfig{
+			AutoDumpSchema:  false,
+		}
+		if isTest {
+			mConfig.DatabaseUrl = cfg.TestDatabaseUrl
+		} else {
+			mConfig.DatabaseUrl = cfg.DatabaseUrl
+		}
+		
+		migrator := database.NewMigrator(&mConfig)
+		return migrator.Migrate()
 	},
 }
 
-// nolint:exhaustruct
-var testUpCmd = &cobra.Command{
-	Use:   "testup",
-	Short: "migrate testup",
-	RunE: func(cmd *cobra.Command, args []string) error {
-		return migrate("postgres://postgres:postgres@localhost:5432/playground_test?sslmode=disable")
-	},
-}
-
-func migrate(uri string) error {
-	u, err := url.Parse(uri)
-	if err != nil {
-		return err
-	}
-	db := dbmate.New(u)
-	db.FS = database.Migrations
-	db.MigrationsDir = []string{"./migrations"}
-	db.SchemaFile = "./internal/database/schema.sql"
-	fmt.Println("Migrations:")
-	migrations, err := db.FindMigrations()
-	if err != nil {
-		return err
-	}
-	for _, m := range migrations {
-		fmt.Println(m.Version, m.FilePath)
-	}
-	fmt.Println("\nApplying...")
-	err = db.CreateAndMigrate()
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-// nolint:exhaustruct
 var resetCmd = &cobra.Command{
 	Use:   "reset",
 	Short: "migrate reset",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		cfg := conf.GetConfig[conf.DBConfig]()
-		u, err := url.Parse(cfg.DatabaseUrl)
+		isTest, err := cmd.Flags().GetBool("test")
 		if err != nil {
 			return err
 		}
-		db := dbmate.New(u)
-		db.FS = database.Migrations
-		db.MigrationsDir = []string{"./migrations"}
-		db.SchemaFile = "./internal/database/schema.sql"
-		fmt.Println("Migrations:")
-		migrations, err := db.FindMigrations()
-		if err != nil {
-			return err
+		mConfig := database.MigratorConfig{
+			AutoDumpSchema:  false,
 		}
-		for _, m := range migrations {
-			fmt.Println(m.Version, m.FilePath)
+		if isTest {
+			mConfig.DatabaseUrl = cfg.TestDatabaseUrl
+		} else {
+			mConfig.DatabaseUrl = cfg.DatabaseUrl
 		}
-		fmt.Println("\nApplying...")
-		err = db.Drop()
-		if err != nil {
-			return err
-		}
-		err = db.CreateAndMigrate()
-		if err != nil {
-			return err
-		}
-		return nil
+		
+		migrator := database.NewMigrator(&mConfig)
+		return migrator.Reset()
 	},
 }
+var makeSchema = &cobra.Command{
+	Use:   "schema",
+	Short: "migrate schema",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		cfg := conf.GetConfig[conf.DBConfig]()
+		isTest, err := cmd.Flags().GetBool("test")
+		if err != nil {
+			return err
+		}
+		mConfig := database.MigratorConfig{
+			AutoDumpSchema:  true,
+		}
+		if isTest {
+			mConfig.DatabaseUrl = cfg.TestDatabaseUrl
+		} else {
+			mConfig.DatabaseUrl = cfg.DatabaseUrl
+		}
+		
+		migrator := database.NewMigrator(&mConfig)
+		return migrator.DumpSchema()
+	},
+}
+
+
+
