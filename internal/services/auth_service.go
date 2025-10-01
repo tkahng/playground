@@ -68,6 +68,7 @@ func NewAuthService(
 	jwt JwtService,
 	password PasswordService,
 ) AuthService {
+	oauth.OAuth2ConfigFromEnv(*opts)
 	authService := &BaseAuthService{
 		jwt:        jwt,
 		password:   password,
@@ -375,11 +376,11 @@ func (app *BaseAuthService) VerifyStateToken(ctx context.Context, token string) 
 	if err != nil {
 		return nil, fmt.Errorf("error verifying state token: %w", err)
 	}
-	_, err = app.adapter.Token().GetToken(ctx, token) // corrected 'tokne' to 'token'
+	_, err = app.adapter.Token().GetToken(ctx, claims.Token) 
 	if err != nil {
 		return nil, err
 	}
-	err = app.adapter.Token().DeleteToken(ctx, token) // corrected to use 'app.token'
+	err = app.adapter.Token().DeleteToken(ctx, claims.Token) 
 	if err != nil {
 		return nil, fmt.Errorf("error deleting token: %w", err)
 	}

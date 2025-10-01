@@ -41,6 +41,9 @@ type (
 		AccessToken       *string
 		RefreshToken      *string
 	}
+	OAuth2UrlInput struct {
+		Provider models.Providers
+	}
 )
 
 type AuthService interface {
@@ -56,7 +59,10 @@ type AuthService interface {
 	// Signout user.
 	// if given refresh token is valid, it will delete the refresh token.
 	Signout(ctx context.Context, refreshToken string) error
+
+	OAuth2Url(ctx context.Context, provider *OAuth2SigninInput) (string, error)
 	// OAuth2Signin user.
+	// the callback handlers will call this method
 	//
 	// - if user with email does not exist, it will create a new user and a oauth account.
 	//
@@ -110,6 +116,11 @@ type AuthServiceImpl struct {
 	jwt      JwtService
 	token    token.TokenService
 	job      JobService
+}
+
+// OAuth2Url implements AuthService.
+func (a *AuthServiceImpl) OAuth2Url(ctx context.Context, provider *OAuth2SigninInput) (string, error) {
+	panic("unimplemented")
 }
 
 // SendEmailVerification implements AuthService.
@@ -237,11 +248,11 @@ func (a *AuthServiceImpl) Signup(ctx context.Context, params *SignupInput) (*mod
 		return nil, err
 	}
 	_, err = a.adapter.UserAccount().CreateUserAccount(ctx, &models.UserAccount{
-		UserID:   user.ID,
-		Provider: models.ProvidersCredentials,
+		UserID:            user.ID,
+		Provider:          models.ProvidersCredentials,
 		ProviderAccountID: user.ID.String(),
-		Type:     models.ProviderTypeCredentials,
-		Password: &hashedPassword,
+		Type:              models.ProviderTypeCredentials,
+		Password:          &hashedPassword,
 	})
 	if err != nil {
 		return nil, err
