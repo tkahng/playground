@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 
+	"github.com/tkahng/playground/internal/auth"
 	"github.com/tkahng/playground/internal/conf"
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/events"
@@ -47,6 +48,7 @@ type App interface {
 	Password() services.PasswordService
 
 	Auth() services.AuthService
+	Auth2() auth.AuthService
 
 	Token() token.TokenService
 

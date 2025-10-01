@@ -32,10 +32,13 @@ func (api *Api) RequestPasswordReset(ctx context.Context, input *struct {
 	}
 	return nil, nil
 }
-
-func (api *Api) CheckPasswordResetGet(ctx context.Context, input *OtpInput) (*struct{}, error) {
+func (api *Api) CheckPasswordReset(ctx context.Context, input *struct{
+	Body *struct {
+		Token string `json:"token" required:"true"`
+	}
+}) (*struct{}, error) {
 	action := api.App().Auth()
-	err := action.HandleCheckResetPasswordToken(ctx, input.Token)
+	err := action.HandleCheckResetPasswordToken(ctx, input.Body.Token)
 	if err != nil {
 		return nil, err
 	}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"slices"
 	"testing"
 
 	"github.com/google/uuid"
@@ -18,6 +19,7 @@ func TestUserStore_CRUD(t *testing.T) {
 	test.SkipIfShort(t)
 
 	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
+		adapter := stores.NewStorageAdapter(dbxx)
 		store := stores.NewDbUserStore(dbxx)
 
 		// CreateUser
@@ -49,7 +51,13 @@ func TestUserStore_CRUD(t *testing.T) {
 		}
 
 		// AssignUserRoles (with role)
-		roleName := "basic"
+		roleName := "role1"
+		perm1 := "perm1"
+		perm2 := "perm2"
+		err = adapter.Rbac().EnsureRoleAndPermissions(ctx, roleName, perm1, perm2)
+		if err != nil {
+			t.Errorf("EnsureRoleAndPermissions() error = %v", err)
+		}
 		// Assume a role named "basic" exists in your DB for this test to pass
 		err = store.AssignUserRoles(ctx, user.ID, roleName)
 		if err != nil {
@@ -70,6 +78,15 @@ func TestUserStore_CRUD(t *testing.T) {
 		}
 		if info != nil && info.User.Name != nil && *info.User.Name != "Updated Name" {
 			t.Errorf("GetUserInfo() name = %v, want 'Updated Name'", info.User.Name)
+		}
+		if !slices.Contains(info.Roles, roleName) {
+			t.Errorf("GetUserInfo() roles = %v, want %v", info.Roles, roleName)
+		}
+		if !slices.Contains(info.Permissions, perm1) {
+			t.Errorf("GetUserInfo() permissions = %v, want %v", info.Permissions, perm1)
+		}
+		if !slices.Contains(info.Permissions, perm2) {
+			t.Errorf("GetUserInfo() permissions = %v, want %v", info.Permissions, perm2)
 		}
 
 		// DeleteUser

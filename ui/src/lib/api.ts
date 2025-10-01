@@ -62,9 +62,7 @@ export const refreshToken = async (
   return data;
 };
 
-export const signUp = async (
-  args: SignupInput
-): Promise<UserInfoTokens | null> => {
+export const signUp = async (args: SignupInput): Promise<UserInfoTokens> => {
   const {
     data,
     error,

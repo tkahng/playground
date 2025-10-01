@@ -5,8 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/tkahng/playground/internal/models"
-	"github.com/tkahng/playground/internal/services"
+	"github.com/tkahng/playground/internal/auth"
 )
 
 type SigninDto struct {
@@ -21,28 +20,46 @@ type AuthenticatedInfoResponse struct {
 	Body ApiUserInfoTokens `json:"body" required:"true"`
 }
 
+//	func (api *Api) SignIn(ctx context.Context, input *struct {
+//		Body *SigninDto `json:"body" required:"true"`
+//	}) (*AuthenticatedInfoResponse, error) {
+//
+//		action := api.App().Auth()
+//		password := input.Body.Password.String()
+//		hash, err := api.App().Password().HashPassword(password)
+//		if err != nil {
+//			return nil, fmt.Errorf("error hashing password: %w", err)
+//		}
+//		params := &services.AuthenticationInput{
+//			Email:             input.Body.Email,
+//			Provider:          models.ProvidersCredentials,
+//			Password:          &password,
+//			HashPassword:      &hash,
+//			Type:              models.ProviderTypeCredentials,
+//			ProviderAccountID: input.Body.Email,
+//		}
+//		user, err := action.Authenticate(ctx, params)
+//		if err != nil {
+//			return nil, fmt.Errorf("error authenticating user: %w", err)
+//		}
+//		dto, err := action.CreateAuthTokensFromEmail(ctx, user.Email)
+//		if err != nil {
+//			return nil, fmt.Errorf("error creating auth dto: %w", err)
+//		}
+//		if dto == nil {
+//			return nil, fmt.Errorf("error creating auth dto: %w", err)
+//		}
+//		return &AuthenticatedInfoResponse{
+//			Body: *ToApiUserInfoTokens(dto),
+//		}, nil
+//	}
 func (api *Api) SignIn(ctx context.Context, input *struct {
 	Body *SigninDto `json:"body" required:"true"`
 }) (*AuthenticatedInfoResponse, error) {
-	action := api.App().Auth()
-	password := input.Body.Password.String()
-	hash, err := api.App().Password().HashPassword(password)
-	if err != nil {
-		return nil, fmt.Errorf("error hashing password: %w", err)
-	}
-	params := &services.AuthenticationInput{
-		Email:             input.Body.Email,
-		Provider:          models.ProvidersCredentials,
-		Password:          &password,
-		HashPassword:      &hash,
-		Type:              models.ProviderTypeCredentials,
-		ProviderAccountID: input.Body.Email,
-	}
-	user, err := action.Authenticate(ctx, params)
-	if err != nil {
-		return nil, fmt.Errorf("error authenticating user: %w", err)
-	}
-	dto, err := action.CreateAuthTokensFromEmail(ctx, user.Email)
+	dto, err := api.App().Auth2().Signin(ctx, &auth.SigninInput{
+		Email:    input.Body.Email,
+		Password: input.Body.Password.String(),
+	})
 	if err != nil {
 		return nil, fmt.Errorf("error creating auth dto: %w", err)
 	}
@@ -52,5 +69,4 @@ func (api *Api) SignIn(ctx context.Context, input *struct {
 	return &AuthenticatedInfoResponse{
 		Body: *ToApiUserInfoTokens(dto),
 	}, nil
-
 }

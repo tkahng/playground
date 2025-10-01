@@ -44,7 +44,7 @@ jobs:
         run: go mod tidy
 
       - name: Setup Test DB
-        run: go run . migrate testup
+        run: go run . migrate up --test
 
       - name: Run tests
         run: go test -v ./... -race -coverprofile=coverage.txt

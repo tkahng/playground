@@ -5,6 +5,7 @@ import { RouteMap } from "@/components/route-map";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { Outlet } from "react-router";
 
+// TODO: always check for refreshtoken query param and get auth.
 export default function RootLayout() {
   const { user } = useAuthProvider();
   // const { team, teamMember } = useTeam();

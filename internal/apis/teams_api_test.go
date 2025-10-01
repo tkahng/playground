@@ -157,37 +157,37 @@ func TestCreateTeam_SuccessfulCreation(t *testing.T) {
 	})
 }
 
-//	func TestCreateTeam_emailNotVerified(t *testing.T) {
-//		test.Parallel(t)
-//		test.SkipIfShort(t)
-//		test.WithTx(t, func(ctx context.Context, db database.Dbx) {
-//			testApi := SetupApi(t, ctx, db)
-//			app := testApi.App
-//			api := testApi.TestApi
-//			user, err := createUnverifiedUser(app)
-//			if err != nil {
-//				t.Errorf("Error creating user: %v", err)
-//				return
-//			}
-//			// create
-//			tokensVerifiedTokens, err := app.Auth().CreateAuthTokensFromEmail(ctx, user.User.Email)
-//			if err != nil {
-//				t.Errorf("Error creating auth tokens: %v", err)
-//				return
-//			}
-//			VerifiedHeader := fmt.Sprintf("Authorization: Bearer %s", tokensVerifiedTokens.Tokens.AccessToken)
-//			resp := api.Post("/teams", VerifiedHeader, &apis.CreateTeamInput{
-//				Name: "test team",
-//				Slug: "test-team",
-//			})
-//			if resp.Code == 200 {
-//				t.Fatalf("Unexpected response: %s", resp.Body.String())
-//			}
-//			assert.Equal(t, 401, resp.Code)
-//			assert.Contains(t, resp.Body.String(), "email not verified")
-//		},
-//		)
-//	}
+func TestCreateTeam_emailNotVerified(t *testing.T) {
+	test.Parallel(t)
+	test.SkipIfShort(t)
+	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
+		testApi := SetupApi(t, ctx, db)
+		app := testApi.App
+		api := testApi.TestApi
+		user, err := createUnverifiedUser(app)
+		if err != nil {
+			t.Errorf("Error creating user: %v", err)
+			return
+		}
+		// create
+		tokensVerifiedTokens, err := app.Auth().CreateAuthTokensFromEmail(ctx, user.User.Email)
+		if err != nil {
+			t.Errorf("Error creating auth tokens: %v", err)
+			return
+		}
+		VerifiedHeader := fmt.Sprintf("Authorization: Bearer %s", tokensVerifiedTokens.Tokens.AccessToken)
+		resp := api.Post("/teams", VerifiedHeader, &apis.CreateTeamInput{
+			Name: "test team",
+			Slug: "test-team",
+		})
+		if resp.Code == 200 {
+			t.Fatalf("Unexpected response: %s", resp.Body.String())
+		}
+		assert.Equal(t, 401, resp.Code)
+		assert.Contains(t, resp.Body.String(), "email not verified")
+	},
+	)
+}
 func TestUpdateTeam_failedNotOwner(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)

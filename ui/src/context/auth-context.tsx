@@ -1,5 +1,5 @@
 import { useNullableLocalStorage } from "@/hooks/use-local-storage";
-import { refreshToken, signIn } from "@/lib/api";
+import { refreshToken, signIn, signUp as signUpApi } from "@/lib/api";
 import { SigninInput, SignupInput, UserInfoTokens } from "@/schema.types";
 import { jwtDecode } from "jwt-decode";
 import React from "react";
@@ -42,8 +42,8 @@ export const AuthProvider: React.FC<{
     null
   );
   // const values = React.useMemo(() => {
-  const signUp = async (args: SignupInput): Promise<UserInfoTokens> => {
-    const data = await signIn(args);
+  const signUp2 = async (args: SignupInput): Promise<UserInfoTokens> => {
+    const data = await signUpApi(args);
     setUser(data);
     return data;
   };
@@ -101,7 +101,14 @@ export const AuthProvider: React.FC<{
 
   return (
     <AuthContext.Provider
-      value={{ user, signUp, login, logout, checkAuth, getOrRefreshToken }}
+      value={{
+        user,
+        signUp: signUp2,
+        login,
+        logout,
+        checkAuth,
+        getOrRefreshToken,
+      }}
     >
       {children}
     </AuthContext.Provider>

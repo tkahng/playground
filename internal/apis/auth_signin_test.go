@@ -19,12 +19,6 @@ func TestApi_SignIn(t *testing.T) {
 	test.SkipIfShort(t)
 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
-		// var testMailer *mailer.TestMailer
-		// if m, ok := testApi.App.Mailer().(*mailer.TestMailer); ok {
-		// 	testMailer = m
-		// } else {
-		// 	t.Fatal("mailer is not a TestMailer")
-		// }
 
 		tests := []ApiScenario{
 			{
@@ -36,6 +30,12 @@ func TestApi_SignIn(t *testing.T) {
 					return testApi
 				},
 				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+					_ = CreateUserWithOptions(
+						t,
+						testApi.App,
+						UserWithPassword("Password123!"),
+						UserWithEmail("test@example.com"),
+					)
 					dto := apis.SigninDto{
 						Email:    "test@example.com",
 						Password: "Password123!",
@@ -45,29 +45,13 @@ func TestApi_SignIn(t *testing.T) {
 						t.Errorf("Error marshalling input: %v", err)
 					}
 					scenario.Body = strings.NewReader(string(data))
-					// testMailer.Wg = &sync.WaitGroup{}
-					// testMailer.Wg.Add(1)
 				},
 				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
-					// testMailer.Wg.Wait()
 					var body apis.ApiOutput[*apis.ApiUserInfoTokens]
 					err := json.NewDecoder(res.Body).Decode(&body)
 					if err != nil {
 						t.Errorf("Error decoding response: %v", err)
 					}
-					// var message *mailer.Message
-					// if len(testMailer.Messages) > 0 {
-					// 	message = testMailer.Messages[0]
-					// } else {
-					// 	t.Fatalf("No message found for user")
-					// }
-					// token, err := test.GetLinkParam(message.Body, "token")
-					// if err != nil {
-					// 	t.Fatalf("Error getting token from email: %v", err)
-					// }
-					// if token == "" {
-					// 	t.Fatalf("No token found in email. Body: %s", message.Body)
-					// }
 				},
 			},
 		}

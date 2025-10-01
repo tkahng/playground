@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/ThreeDotsLabs/watermill/components/cqrs"
+	"github.com/tkahng/playground/internal/auth"
 	"github.com/tkahng/playground/internal/conf"
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/events"
@@ -117,6 +118,8 @@ func TestingSetIntegrationServices(app *BaseApp) {
 		adapter,
 		m,
 		tokenService,
+		jwtService,
+		passwordService,
 	)
 
 	client := services.NewTestPaymentClient()
@@ -130,6 +133,8 @@ func TestingSetIntegrationServices(app *BaseApp) {
 		jwtService,
 		passwordService,
 	)
+	auth2 := auth.NewAuthService(cfg, adapter, passwordService, jwtService, tokenService, jobService)
+	app.auth2 = auth2
 }
 
 func TestingRegisterWorkers(app *BaseApp) {

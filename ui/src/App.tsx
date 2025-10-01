@@ -151,7 +151,7 @@ function App() {
               <Route path="/auth/callback" element={<CallbackComponent />} />
               <Route path="/say-hello" element={<SayHelloPage />} />
               <Route
-                path="/auth/confirm-verification"
+                path="/confirm-verification"
                 element={<ConfirmVerification />}
               />
               <Route
