@@ -21,29 +21,29 @@ var migrateCmd = &cobra.Command{
 	Use:   "migrate",
 	Short: "migrate",
 }
+func migrateUp(cmd *cobra.Command, args []string) error {
+	cfg := conf.GetConfig[conf.DBConfig]()
+	isTest, err := cmd.Flags().GetBool("test")
+	if err != nil {
+		return err
+	}
+	mConfig := database.MigratorConfig{
+		AutoDumpSchema: false,
+	}
+	if isTest {
+		mConfig.DatabaseUrl = cfg.TestDatabaseUrl
+	} else {
+		mConfig.DatabaseUrl = cfg.DatabaseUrl
+	}
 
-// nolint:exhaustruct
+	migrator := database.NewMigrator(&mConfig)
+	return migrator.Migrate()
+}
+
 var upCmd = &cobra.Command{
 	Use:   "up",
 	Short: "migrate up",
-	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg := conf.GetConfig[conf.DBConfig]()
-		isTest, err := cmd.Flags().GetBool("test")
-		if err != nil {
-			return err
-		}
-		mConfig := database.MigratorConfig{
-			AutoDumpSchema:  false,
-		}
-		if isTest {
-			mConfig.DatabaseUrl = cfg.TestDatabaseUrl
-		} else {
-			mConfig.DatabaseUrl = cfg.DatabaseUrl
-		}
-		
-		migrator := database.NewMigrator(&mConfig)
-		return migrator.Migrate()
-	},
+	RunE: migrateUp,
 }
 
 var resetCmd = &cobra.Command{
