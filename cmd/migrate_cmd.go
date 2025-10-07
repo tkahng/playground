@@ -37,7 +37,7 @@ func migrateUp(cmd *cobra.Command, args []string) error {
 	}
 
 	migrator := database.NewMigrator(&mConfig)
-	return migrator.Migrate()
+	return migrator.CreateAndMigrate()
 }
 
 var upCmd = &cobra.Command{

@@ -15,12 +15,14 @@ var (
 )
 
 type Migrator interface {
-	Migrate() error
+	CreateAndMigrate() error
 	DumpSchema() error
 	Reset() error
+	Rollback() error
+	Drop() error
 }
 type MigratorConfig struct {
-	DatabaseUrl string
+	DatabaseUrl    string
 	AutoDumpSchema bool
 }
 
@@ -42,25 +44,30 @@ type migrator struct {
 	dm *dbmate.DB
 }
 
-// Migrate implements Migrator.
-func (m *migrator) Migrate() error {
+// CreateAndMigrate implements Migrator.
+func (m *migrator) CreateAndMigrate() error {
 	return m.dm.CreateAndMigrate()
 }
 func (m *migrator) DumpSchema() error {
 	return m.dm.DumpSchema()
 }
+func (m *migrator) Rollback() error {
+	return m.dm.Rollback()
+}
+
+func (m *migrator) Drop() error {
+	return m.dm.Drop()
+}
 
 // Reset implements Migrator.
 func (m *migrator) Reset() error {
-		err := m.dm.Drop()
-		if err != nil {
-			return err
-		}
-		err = m.dm.CreateAndMigrate()
-		if err != nil {
-			return err
-		}
-		return nil
+	err := m.dm.Drop()
+	if err != nil {
+		return err
+	}
+	err = m.dm.CreateAndMigrate()
+	if err != nil {
+		return err
+	}
+	return nil
 }
-
-
