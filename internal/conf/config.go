@@ -1,6 +1,8 @@
 package conf
 
 import (
+	"fmt"
+
 	"github.com/caarlos0/env/v11"
 	_ "github.com/joho/godotenv/autoload"
 )
@@ -28,8 +30,23 @@ type AppConfig struct {
 }
 
 type DBConfig struct {
-	DatabaseUrl string `env:"DATABASE_URL" envDefault:"postgres://postgres:postgres@localhost:5432/playground?sslmode=disable"`
+	User     string `env:"DATABASE_USER,expand" envDefault:"postgres"`
+	Password string `env:"DATABASE_PASSWORD,expand" envDefault:"postgres"`
+	Host     string `env:"DATABASE_HOST,expand" envDefault:"localhost"`
+	Port     string `env:"DATABASE_PORT,expand" envDefault:"5432"`
+	Db       string `env:"DATABASE_DB,expand" envDefault:"playground"`
+	SSL      string `env:"DATABASE_SSL,expand" envDefault:"disable"`
+	// DatabaseUrl     string `env:"DATABASE_URL" envDefault:"postgres://postgres:postgres@localhost:5432/playground?sslmode=disable"`
+	DatabaseUrl     string `env:"DATABASE_URL,expand" envDefault:"postgres://${DATABASE_USER}:${DATABASE_PASSWORD}@${DATABASE_HOST}:${DATABASE_PORT}/${DATABASE_DB}?sslmode=${DATABASE_SSL}"`
 	TestDatabaseUrl string `env:"TEST_DATABASE_URL" envDefault:"postgres://postgres:postgres@localhost:5432/playground_test?sslmode=disable"`
+}
+
+func (c *DBConfig) GetUrl() string {
+	url := fmt.Sprintf(
+		"postgres://%s:%s@%s:%s/%s?sslmode=%s",
+		c.User, c.Password, c.Host, c.Port, c.Db, c.SSL,
+	)
+	return url
 }
 
 type ResendConfig struct {
@@ -71,9 +88,9 @@ type AiConfig struct {
 }
 
 type Options struct {
-	Debug bool `doc:"Enable debug logging" default:"true" short:"d"`
-	Host string `doc:"Hostname to listen on." default:"localhost"`
-	Port int    `doc:"Port to listen on." short:"p" default:"8080"`
+	Debug bool   `doc:"Enable debug logging" default:"true" short:"d"`
+	Host  string `doc:"Hostname to listen on." default:"localhost"`
+	Port  int    `doc:"Port to listen on." short:"p" default:"8080"`
 }
 
 func ZeroEnvConfig() EnvConfig {
