@@ -29,7 +29,6 @@ func NewServeCmd() *cobra.Command {
 				fmt.Fprintf(os.Stderr, "%s\n", err)
 				os.Exit(1)
 			}
-			// serve(ctx)
 		},
 	}
 	serveCmd.Flags().IntVarP(&port, "port", "p", 8080, "Port to listen on")
