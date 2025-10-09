@@ -65,6 +65,14 @@ type BaseApp struct {
 	eventManager events.EventManager
 }
 
+// Migrator implements App.
+// func (app *BaseApp) Migrator() database.Migrator {
+// 	if app.migrator == nil {
+// 		panic("migrator not initialized")
+// 	}
+// 	return app.migrator
+// }
+
 func (app *BaseApp) Jwt() services.JwtService {
 	if app.jwt == nil {
 		panic("jwt not initialized")

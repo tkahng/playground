@@ -15,12 +15,15 @@ var (
 )
 
 type Migrator interface {
-	Migrate() error
+	CreateAndMigrate() error
 	DumpSchema() error
 	Reset() error
+	Rollback() error
+	Drop() error
+	Status() (int, error)
 }
 type MigratorConfig struct {
-	DatabaseUrl string
+	DatabaseUrl    string
 	AutoDumpSchema bool
 }
 
@@ -35,32 +38,43 @@ func NewMigrator(config *MigratorConfig) Migrator {
 	dm.AutoDumpSchema = config.AutoDumpSchema
 	dm.MigrationsDir = []string{"./migrations"}
 	dm.SchemaFile = "./internal/database/schema.sql"
-	return &migrator{dm: dm}
+	return &DbmateMigrator{dm: dm}
 }
 
-type migrator struct {
+type DbmateMigrator struct {
 	dm *dbmate.DB
 }
 
-// Migrate implements Migrator.
-func (m *migrator) Migrate() error {
+// CreateAndMigrate implements Migrator.
+func (m *DbmateMigrator) CreateAndMigrate() error {
 	return m.dm.CreateAndMigrate()
 }
-func (m *migrator) DumpSchema() error {
+func (m *DbmateMigrator) DumpSchema() error {
 	return m.dm.DumpSchema()
+}
+func (m *DbmateMigrator) Rollback() error {
+	return m.dm.Rollback()
+}
+
+func (m *DbmateMigrator) Drop() error {
+	return m.dm.Drop()
+}
+func (m *DbmateMigrator) Status() (int, error) {
+	return m.dm.Status(true)
+}
+func (m *DbmateMigrator) FindMigrations() ([]dbmate.Migration, error) {
+	return m.dm.FindMigrations()
 }
 
 // Reset implements Migrator.
-func (m *migrator) Reset() error {
-		err := m.dm.Drop()
-		if err != nil {
-			return err
-		}
-		err = m.dm.CreateAndMigrate()
-		if err != nil {
-			return err
-		}
-		return nil
+func (m *DbmateMigrator) Reset() error {
+	err := m.dm.Drop()
+	if err != nil {
+		return err
+	}
+	err = m.dm.CreateAndMigrate()
+	if err != nil {
+		return err
+	}
+	return nil
 }
-
-

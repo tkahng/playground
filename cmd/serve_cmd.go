@@ -15,6 +15,7 @@ import (
 	"github.com/tkahng/playground/internal/apis"
 	"github.com/tkahng/playground/internal/conf"
 	"github.com/tkahng/playground/internal/core"
+	database "github.com/tkahng/playground/internal/database"
 )
 
 var port int
@@ -29,17 +30,29 @@ func NewServeCmd() *cobra.Command {
 				fmt.Fprintf(os.Stderr, "%s\n", err)
 				os.Exit(1)
 			}
-			// serve(ctx)
 		},
 	}
 	serveCmd.Flags().IntVarP(&port, "port", "p", 8080, "Port to listen on")
 	return serveCmd
 }
 
+func migrate(dbUrl string) error {
+	mConfig := database.MigratorConfig{
+		DatabaseUrl: dbUrl,
+	}
+	migrator := database.NewMigrator(&mConfig)
+	return migrator.CreateAndMigrate()
+}
+
 func Run2() error {
 	firstCtx, firstCancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM, syscall.SIGHUP, syscall.SIGINT)
 	defer firstCancel()
 	opts := conf.AppConfigGetter()
+
+	// migrate database
+	if err := migrate(opts.Db.GetDatabaseUrl()); err != nil {
+		return err
+	}
 	app := core.NewApp(opts)
 	r := apis.NewRouter(app)
 	appApi := apis.NewAppApi(app)

@@ -62,7 +62,8 @@ func TestingInitializePrimitives(app *BaseApp) {
 }
 
 func TestingSetDb(app *BaseApp) {
-	queries := database.CreateQueries(app.cfg.Db.DatabaseUrl)
+
+	queries := database.CreateQueries(app.cfg.Db.GetDatabaseUrl())
 
 	if err := queries.Pool().Ping(context.Background()); err != nil {
 		panic(fmt.Errorf("failed to ping db: %w", err))
