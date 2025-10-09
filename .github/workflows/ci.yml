@@ -45,7 +45,7 @@ jobs:
 
       - name: Setup Test DB
         env:
-          DATABASE_NAME: playground_test
+          DATABASE_DB: playground_test
         run: go run . migrate up
 
       - name: Run tests
