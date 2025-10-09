@@ -121,7 +121,7 @@ jobs:
             -H 'Accept: application/json' \
             -H 'Content-Type: application/json' \
             -H "X-API-Key: $DOKPLOY_API_KEY" \
-            -d "{\"applicationId\": \"$DOKPLOY_APPLICATION_ID\"}" \
+            -d "{\"applicationId\": \"$DOKPLOY_APPLICATION_ID\",\"title\": \"github deploy\",\"description\": \"github deploy\"}" \
             -w "%{http_code}" \
             -o /dev/null \
             -s)
