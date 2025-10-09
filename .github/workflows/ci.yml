@@ -116,24 +116,9 @@ jobs:
           DOKPLOY_API_KEY: ${{ secrets.DOKPLOY_AUTH_TOKEN }}
           DOKPLOY_APPLICATION_ID: ${{ secrets.DOKPLOY_APPLICATION_ID }}
         run: |
-          response=$(curl -X 'POST' \
-            "$DOKPLOY_URL/api/application.deploy" \
-            -H 'Accept: application/json' \
+          curl -X 'POST' \
+            "${{ secrets.DOKPLOY_HOST }}/api/application.deploy" \
+            -H 'accept: application/json' \
+            -H "x-api-key: ${{ secrets.DOKPLOY_AUTH_TOKEN }}" \
             -H 'Content-Type: application/json' \
-            -H "X-API-Key: $DOKPLOY_API_KEY" \
-            -d "{\"applicationId\": \"$DOKPLOY_APPLICATION_ID\",\"title\": \"github deploy\",\"description\": \"github deploy\"}" \
-            -w "%{http_code}" \
-            -o /dev/null \
-            -s)
-
-          if [ "$response" -ne 200 ]; then
-            echo "Deployment failed with status code: $response"
-            exit 1
-          fi
-
-      # - name: Deploy App to Dokploy
-      #   uses: qbix-tech/dokploy-deploy-action@v1
-      #   with:
-      #     dokploy_url: https://dokploy.k2dv.io
-      #     api_key: ${{ secrets.DOKPLOY_AUTH_TOKEN }}
-      #     application_id: UtH-sYqz1xNb43i7BnEiJ
+            -d '{"applicationId": "${{ secrets.DOKPLOY_APPLICATION_ID }}"}'
