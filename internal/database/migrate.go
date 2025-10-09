@@ -20,6 +20,7 @@ type Migrator interface {
 	Reset() error
 	Rollback() error
 	Drop() error
+	Status() (int, error)
 }
 type MigratorConfig struct {
 	DatabaseUrl    string
@@ -57,6 +58,12 @@ func (m *DbmateMigrator) Rollback() error {
 
 func (m *DbmateMigrator) Drop() error {
 	return m.dm.Drop()
+}
+func (m *DbmateMigrator) Status() (int, error) {
+	return m.dm.Status(true)
+}
+func (m *DbmateMigrator) FindMigrations() ([]dbmate.Migration, error) {
+	return m.dm.FindMigrations()
 }
 
 // Reset implements Migrator.

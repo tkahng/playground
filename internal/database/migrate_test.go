@@ -3,6 +3,9 @@ package database_test
 import (
 	"testing"
 
+	_ "github.com/amacneil/dbmate/v2/pkg/driver/postgres"
+	"github.com/google/uuid"
+	"github.com/tkahng/playground/internal/conf"
 	"github.com/tkahng/playground/internal/database"
 )
 
@@ -18,33 +21,33 @@ func TestNewMigrator(t *testing.T) {
 	})
 }
 
-func TestDbmateMigrator_CreateAndMigrate(t *testing.T) {
-	tests := []struct {
-		name    string // description of this test case
-		wantErr bool
-	}{
-		{
-			name:    "create and migrate succeeded",
-			wantErr: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			// TODO: construct the receiver type.
-			var m database.Migrator
-			m = database.NewMigrator(&database.MigratorConfig{
-				DatabaseUrl: "postgres://postgres:postgres@localhost:5432/playground_migrator_test?sslmode=disable",
-			})
-			gotErr := m.CreateAndMigrate()
-			if gotErr != nil {
-				if !tt.wantErr {
-					t.Errorf("CreateAndMigrate() failed: %v", gotErr)
-				}
-				return
+func TestDbmateMigrator_CreateAndMigrate_Status_Drop(t *testing.T) {
+	t.Run("create and migrate, status and drop succeeded", func(t *testing.T) {
+		dbName := uuid.NewString()
+		cfg := conf.GetConfig[conf.DBConfig]()
+		cfg.Db = dbName
+		mConfig := database.MigratorConfig{
+			AutoDumpSchema: false,
+			DatabaseUrl:    cfg.GetUrl(),
+		}
+		m := database.NewMigrator(&mConfig)
+		defer func() {
+			err := m.Drop()
+			if err != nil {
+				t.Errorf("Drop() failed: %v", err)
 			}
-			if tt.wantErr {
-				t.Fatal("CreateAndMigrate() succeeded unexpectedly")
-			}
-		})
-	}
+		}()
+
+		gotErr := m.CreateAndMigrate()
+		if gotErr != nil {
+			t.Errorf("Create() failed: %v", gotErr)
+		}
+		status, gotErr := m.Status()
+		if gotErr != nil {
+			t.Errorf("Status() failed: %v", gotErr)
+		}
+		if status != 0 {
+			t.Errorf("Status() = %v, want 0", status)
+		}
+	})
 }
