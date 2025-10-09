@@ -44,7 +44,9 @@ jobs:
         run: go mod tidy
 
       - name: Setup Test DB
-        run: go run . migrate up --test
+        env:
+          DATABASE_NAME: playground_test
+        run: go run . migrate up
 
       - name: Run tests
         run: go test -v ./... -race -coverprofile=coverage.txt
@@ -84,32 +86,32 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  migrate:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+  # migrate:
+  #   needs: build
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v4
 
-      - name: Set up Go
-        uses: actions/setup-go@v4
-        with:
-          cache: true
-          cache-dependency-path: go.sum
-          go-version: "1.24.5" #
+  #     - name: Set up Go
+  #       uses: actions/setup-go@v4
+  #       with:
+  #         cache: true
+  #         cache-dependency-path: go.sum
+  #         go-version: "1.24.5" #
 
-      - name: Run Migrations
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        run: go run . migrate up
+  #     - name: Run Migrations
+  #       env:
+  #         DATABASE_URL: ${{ secrets.DATABASE_URL }}
+  #       run: go run . migrate up
 
   deploy:
     runs-on: ubuntu-latest
-    needs: migrate
+    needs: build
     steps:
       - name: Deploy App to Dokploy
         uses: qbix-tech/dokploy-deploy-action@v1
         with:
-          dokploy_url: http://91.99.124.100:3000
+          dokploy_url: https://dokploy.k2dv.io
           api_key: ${{ secrets.DOKPLOY_AUTH_TOKEN }}
           application_id: UtH-sYqz1xNb43i7BnEiJ
