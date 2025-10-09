@@ -37,30 +37,30 @@ func NewMigrator(config *MigratorConfig) Migrator {
 	dm.AutoDumpSchema = config.AutoDumpSchema
 	dm.MigrationsDir = []string{"./migrations"}
 	dm.SchemaFile = "./internal/database/schema.sql"
-	return &migrator{dm: dm}
+	return &DbmateMigrator{dm: dm}
 }
 
-type migrator struct {
+type DbmateMigrator struct {
 	dm *dbmate.DB
 }
 
 // CreateAndMigrate implements Migrator.
-func (m *migrator) CreateAndMigrate() error {
+func (m *DbmateMigrator) CreateAndMigrate() error {
 	return m.dm.CreateAndMigrate()
 }
-func (m *migrator) DumpSchema() error {
+func (m *DbmateMigrator) DumpSchema() error {
 	return m.dm.DumpSchema()
 }
-func (m *migrator) Rollback() error {
+func (m *DbmateMigrator) Rollback() error {
 	return m.dm.Rollback()
 }
 
-func (m *migrator) Drop() error {
+func (m *DbmateMigrator) Drop() error {
 	return m.dm.Drop()
 }
 
 // Reset implements Migrator.
-func (m *migrator) Reset() error {
+func (m *DbmateMigrator) Reset() error {
 	err := m.dm.Drop()
 	if err != nil {
 		return err
