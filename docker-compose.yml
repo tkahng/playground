@@ -10,19 +10,12 @@ services:
       - ./traefik:/etc/traefik/dynamic
 
   db:
-    # build:
-    #   context: .
-    #   dockerfile: Dockerfile.database
-    #   args:
-    #     POSTGRES_VERSION: 17
-    image: postgres:17
+    image: tkahng/postgres:17
     container_name: database
     platform: linux/arm64
     ports:
       - "5432:5432"
-    # command: postgres -c config_file=/etc/postgresql/postgresql.conf
     volumes:
-      # - postgres18-data:/var/lib/postgresql/data
       - postgres-data:/var/lib/postgresql/data
     env_file:
       - .env
