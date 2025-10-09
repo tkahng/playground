@@ -91,7 +91,7 @@ func TestDBConfig_DatabaseUrl(t *testing.T) {
 			}()
 			tt.setEnv()
 			c := conf.GetConfig[conf.DBConfig]()
-			got := c.DatabaseUrl
+			got := c.GetUrl()
 			if got != tt.want {
 				t.Errorf("GetUrl() = %v, want %v", got, tt.want)
 			}
