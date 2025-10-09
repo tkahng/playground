@@ -57,7 +57,11 @@ func InitializePrimitives(app *BaseApp) {
 }
 
 func SetDb(app *BaseApp) {
-	queries := database.CreateQueries(app.cfg.Db.DatabaseUrl)
+	migrator := database.NewMigrator(&database.MigratorConfig{
+		DatabaseUrl: app.cfg.Db.GetUrl(),
+	})
+	app.migrator = migrator
+	queries := database.CreateQueries(app.cfg.Db.GetUrl())
 
 	if err := queries.Pool().Ping(context.Background()); err != nil {
 		panic(fmt.Errorf("failed to ping db: %w", err))
