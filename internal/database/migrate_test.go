@@ -28,7 +28,7 @@ func TestDbmateMigrator_CreateAndMigrate_Status_Drop(t *testing.T) {
 		cfg.Db = dbName
 		mConfig := database.MigratorConfig{
 			AutoDumpSchema: false,
-			DatabaseUrl:    cfg.GetUrl(),
+			DatabaseUrl:    cfg.GetDatabaseUrl(),
 		}
 		m := database.NewMigrator(&mConfig)
 		defer func() {

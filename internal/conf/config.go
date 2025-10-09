@@ -36,12 +36,10 @@ type DBConfig struct {
 	Port     string `env:"DATABASE_PORT,expand" envDefault:"5432"`
 	Db       string `env:"DATABASE_DB,expand" envDefault:"playground"`
 	SSL      string `env:"DATABASE_SSL,expand" envDefault:"disable"`
-	// DatabaseUrl     string `env:"DATABASE_URL" envDefault:"postgres://postgres:postgres@localhost:5432/playground?sslmode=disable"`
-	DatabaseUrl     string `env:"DATABASE_URL,expand" envDefault:"postgres://${DATABASE_USER}:${DATABASE_PASSWORD}@${DATABASE_HOST}:${DATABASE_PORT}/${DATABASE_DB}?sslmode=${DATABASE_SSL}"`
-	TestDatabaseUrl string `env:"TEST_DATABASE_URL" envDefault:"postgres://postgres:postgres@localhost:5432/playground_test?sslmode=disable"`
+	// DatabaseUrl string `env:"DATABASE_URL,expand" envDefault:"postgres://${DATABASE_USER}:${DATABASE_PASSWORD}@${DATABASE_HOST}:${DATABASE_PORT}/${DATABASE_DB}?sslmode=${DATABASE_SSL}"`
 }
 
-func (c *DBConfig) GetUrl() string {
+func (c *DBConfig) GetDatabaseUrl() string {
 	url := fmt.Sprintf(
 		"postgres://%s:%s@%s:%s/%s?sslmode=%s",
 		c.User, c.Password, c.Host, c.Port, c.Db, c.SSL,
@@ -96,6 +94,14 @@ type Options struct {
 func ZeroEnvConfig() EnvConfig {
 	// nolint:exhaustruct
 	return EnvConfig{
+		Db: DBConfig{
+			User:     "postgres",
+			Password: "postgres",
+			Host:     "localhost",
+			Port:     "5432",
+			Db:       "playground_test",
+			SSL:      "disable",
+		},
 		AppConfig: AppConfig{
 			AppUrl:        "http://localhost:8080",
 			AppName:       "Playground",
