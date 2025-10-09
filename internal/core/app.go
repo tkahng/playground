@@ -24,7 +24,6 @@ type App interface {
 
 	// store -------------------------------------------------------------------------------------
 	Db() database.Dbx
-	Migrator() database.Migrator
 	Adapter() stores.StorageAdapterInterface
 
 	// lifecycle

@@ -27,8 +27,6 @@ type BaseApp struct {
 
 	lc Lifecycle
 
-	migrator database.Migrator
-
 	db      database.Dbx
 	adapter stores.StorageAdapterInterface
 
@@ -68,12 +66,12 @@ type BaseApp struct {
 }
 
 // Migrator implements App.
-func (app *BaseApp) Migrator() database.Migrator {
-	if app.migrator == nil {
-		panic("migrator not initialized")
-	}
-	return app.migrator
-}
+// func (app *BaseApp) Migrator() database.Migrator {
+// 	if app.migrator == nil {
+// 		panic("migrator not initialized")
+// 	}
+// 	return app.migrator
+// }
 
 func (app *BaseApp) Jwt() services.JwtService {
 	if app.jwt == nil {

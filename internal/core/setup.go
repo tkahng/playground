@@ -57,10 +57,6 @@ func InitializePrimitives(app *BaseApp) {
 }
 
 func SetDb(app *BaseApp) {
-	migrator := database.NewMigrator(&database.MigratorConfig{
-		DatabaseUrl: app.cfg.Db.GetDatabaseUrl(),
-	})
-	app.migrator = migrator
 	queries := database.CreateQueries(app.cfg.Db.GetDatabaseUrl())
 
 	if err := queries.Pool().Ping(context.Background()); err != nil {
