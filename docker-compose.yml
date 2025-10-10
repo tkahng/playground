@@ -10,13 +10,13 @@ services:
       - ./traefik:/etc/traefik/dynamic
 
   db:
-    image: tkahng/postgres:17
+    image: tkahng/postgres:18
     container_name: database
     platform: linux/arm64
     ports:
       - "5432:5432"
     volumes:
-      - postgres-data:/var/lib/postgresql/data
+      - postgres-data18:/var/lib/postgresql/data
     environment:
       - POSTGRES_USER=${DATABASE_USER}
       - POSTGRES_PASSWORD=${DATABASE_PASSWORD}
@@ -88,3 +88,4 @@ services:
 
 volumes:
   postgres-data:
+  postgres-data18:
