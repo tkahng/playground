@@ -6,8 +6,8 @@ create table if not exists public.users (
     email_verified_at timestamptz,
     name character varying,
     image text,
-    created_at timestamptz not null default now(),
-    updated_at timestamptz not null default now()
+    created_at timestamptz not null default clock_timestamp(),
+    updated_at timestamptz not null default clock_timestamp()
 );
 -- this trigger will set the "updated_at" column to the current timestamptz for every update
 CREATE TRIGGER handle_users_updated_at before

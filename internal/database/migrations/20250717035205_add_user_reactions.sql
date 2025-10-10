@@ -8,8 +8,8 @@ create table if not exists public.user_reactions (
     country text,
     city text,
     metadata jsonb,
-    created_at timestamptz not null default now(),
-    updated_at timestamptz not null default now()
+    created_at timestamptz not null default clock_timestamp(),
+    updated_at timestamptz not null default clock_timestamp()
 );
 create trigger handle_user_reactions_updated_at before
 update on public.user_reactions for each row execute procedure set_current_timestamp_updated_at();

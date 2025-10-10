@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS public.logs (
     source text,
     message text NOT NULL,
     data jsonb NOT NULL,
-    created_at timestamptz NOT NULL DEFAULT now()
+    created_at timestamptz not null default clock_timestamp()
 );
 -- Step 3: Indexes for common queries
 CREATE INDEX IF NOT EXISTS idx_logs_created_at ON public.logs (created_at);

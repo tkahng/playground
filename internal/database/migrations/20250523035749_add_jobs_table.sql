@@ -6,7 +6,7 @@ CREATE TABLE public.jobs (
     unique_key TEXT,
     payload JSONB NOT NULL DEFAULT '{}'::jsonb,
     status public.job_status NOT NULL DEFAULT 'pending',
-    run_after TIMESTAMPTZ NOT NULL DEFAULT now(),
+    run_after timestamptz not null default clock_timestamp(),
     attempts INT NOT NULL DEFAULT 0,
     max_attempts INT NOT NULL DEFAULT 3,
     last_error TEXT,

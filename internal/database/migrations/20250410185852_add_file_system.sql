@@ -10,8 +10,8 @@ create table if not exists public.media (
         extension varchar(32) not null,
         mime_type varchar(128) not null,
         size bigint not null,
-        created_at timestamp with time zone not null default now(),
-        updated_at timestamp with time zone not null default now(),
+        created_at timestamptz not null default clock_timestamp(),
+        updated_at timestamptz not null default clock_timestamp(),
         constraint media_disk_directory_filename_extension unique(disk, directory, filename, extension)
 );
 CREATE TRIGGER handle_media_updated_at before

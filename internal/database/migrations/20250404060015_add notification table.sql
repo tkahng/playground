@@ -2,8 +2,8 @@
 -- Create "notifications" table
 CREATE TABLE "notifications" (
     "id" uuid NOT NULL DEFAULT uuidv7(),
-    "created_at" timestamptz NOT NULL DEFAULT now(),
-    "updated_at" timestamptz NOT NULL DEFAULT now(),
+    "created_at" timestamptz not null default clock_timestamp(),
+    "updated_at" timestamptz not null default clock_timestamp(),
     "read_at" timestamptz,
     "channel" text not null,
     "payload" jsonb not null,

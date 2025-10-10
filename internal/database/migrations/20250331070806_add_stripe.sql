@@ -17,8 +17,8 @@ create table public.stripe_customers (
     billing_address jsonb,
     -- Stores your customer's payment instruments.
     payment_method jsonb,
-    created_at timestamptz not null default now(),
-    updated_at timestamptz not null default now(),
+    created_at timestamptz not null default clock_timestamp(),
+    updated_at timestamptz not null default clock_timestamp(),
     CONSTRAINT stripe_customers_only_one_reference_check CHECK (
         (
             user_id IS NOT NULL
@@ -48,8 +48,8 @@ create table public.stripe_products (
     image text,
     -- Set of key-value pairs, used to store additional information about the object in a structured format.
     metadata jsonb not null,
-    created_at timestamptz not null default now(),
-    updated_at timestamptz not null default now()
+    created_at timestamptz not null default clock_timestamp(),
+    updated_at timestamptz not null default clock_timestamp()
 );
 CREATE TRIGGER handle_stripe_products_updated_at before
 update on public.stripe_products for each row execute procedure set_current_timestamp_updated_at();
@@ -81,8 +81,8 @@ create table public.stripe_prices (
     trial_period_days bigint,
     -- Set of key-value pairs, used to store additional information about the object in a structured format.
     metadata jsonb not null,
-    created_at timestamptz not null default now(),
-    updated_at timestamptz not null default now()
+    created_at timestamptz not null default clock_timestamp(),
+    updated_at timestamptz not null default clock_timestamp()
 );
 CREATE TRIGGER handle_stripe_prices_updated_at before
 update on public.stripe_prices for each row execute procedure set_current_timestamp_updated_at();
@@ -122,11 +122,11 @@ create table public.stripe_subscriptions (
     -- If true the subscription has been canceled by the user and will be deleted at the end of the billing period.
     cancel_at_period_end boolean not null default false,
     -- Time at which the subscription was created.
-    created timestamptz not null default now(),
+    created timestamptz not null default clock_timestamp(),
     -- Start of the current period that the subscription has been invoiced for.
-    current_period_start timestamptz not null default now(),
+    current_period_start timestamptz not null default clock_timestamp(),
     -- End of the current period that the subscription has been invoiced for. At the end of this period, a new invoice will be created.
-    current_period_end timestamptz not null default now(),
+    current_period_end timestamptz not null default clock_timestamp(),
     -- If the subscription has ended, the timestamptz of the date the subscription ended.
     ended_at timestamptz null,
     -- A date in the future at which the subscription will automatically get canceled.
@@ -137,8 +137,8 @@ create table public.stripe_subscriptions (
     trial_start timestamptz null,
     -- If the subscription has a trial, the end of that trial.
     trial_end timestamptz null,
-    created_at timestamptz not null default now(),
-    updated_at timestamptz not null default now()
+    created_at timestamptz not null default clock_timestamp(),
+    updated_at timestamptz not null default clock_timestamp()
 );
 CREATE TRIGGER handle_stripe_subscriptions_updated_at before
 update on public.stripe_subscriptions for each row execute procedure set_current_timestamp_updated_at();
@@ -157,8 +157,8 @@ create table public.stripe_webhook_events (
     event_creation_date timestamptz not null,
     -- stripe.event.request.id
     request_id text null,
-    created_at timestamptz not null default now(),
-    updated_at timestamptz not null default now()
+    created_at timestamptz not null default clock_timestamp(),
+    updated_at timestamptz not null default clock_timestamp()
 );
 CREATE TRIGGER handle_stripe_webhook_events_updated_at before
 update on public.stripe_webhook_events for each row execute procedure set_current_timestamp_updated_at();

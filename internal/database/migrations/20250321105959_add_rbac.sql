@@ -9,8 +9,8 @@ CREATE TABLE if not exists public.roles (
     -- code of the role. "role:admin", "role:user"
     description text,
     -- description of the role
-    created_at timestamptz not null default now(),
-    updated_at timestamptz not null default now()
+    created_at timestamptz not null default clock_timestamp(),
+    updated_at timestamptz not null default clock_timestamp()
 );
 CREATE TRIGGER handle_roles_updated_at before
 update on public.roles for each row execute procedure set_current_timestamp_updated_at();
@@ -24,8 +24,8 @@ CREATE TABLE if not exists public.permissions (
     -- code of the role. "role:admin", "role:user"
     description text,
     -- description of the role
-    created_at timestamptz not null default now(),
-    updated_at timestamptz not null default now()
+    created_at timestamptz not null default clock_timestamp(),
+    updated_at timestamptz not null default clock_timestamp()
 );
 CREATE TRIGGER handle_permissions_updated_at before
 update on public.permissions for each row execute procedure set_current_timestamp_updated_at();

@@ -4,8 +4,8 @@ CREATE TABLE IF NOT EXISTS teams (
     id uuid primary key default uuidv7(),
     name VARCHAR(255) NOT NULL,
     slug VARCHAR(255) NOT NULL UNIQUE,
-    created_at timestamptz not null default now(),
-    updated_at timestamptz not null default now()
+    created_at timestamptz not null default clock_timestamp(),
+    updated_at timestamptz not null default clock_timestamp()
 );
 create trigger handle_teams_updated_at before
 update on public.teams for each row execute procedure set_current_timestamp_updated_at();
@@ -20,9 +20,9 @@ CREATE TABLE IF NOT EXISTS team_members (
         active boolean NOT NULL DEFAULT true,
         role team_member_role NOT NULL,
         has_billing_access boolean NOT NULL DEFAULT false,
-        last_selected_at timestamptz not null default now(),
-        created_at timestamptz not null default now(),
-        updated_at timestamptz not null default now(),
+        last_selected_at timestamptz not null default clock_timestamp(),
+        created_at timestamptz not null default clock_timestamp(),
+        updated_at timestamptz not null default clock_timestamp(),
         constraint team_members_user_id_team_id unique (user_id, team_id)
 );
 CREATE TRIGGER handle_team_members_updated_at BEFORE
@@ -38,8 +38,8 @@ CREATE TABLE IF NOT EXISTS team_invitations (
     token text NOT NULL UNIQUE,
     "status" team_invitation_status DEFAULT 'pending' NOT NULL,
     expires_at timestamptz NOT NULL,
-    created_at timestamptz not null default now(),
-    updated_at timestamptz not null default now(),
+    created_at timestamptz not null default clock_timestamp(),
+    updated_at timestamptz not null default clock_timestamp(),
     constraint team_invitations_email_team_id unique (email, team_id)
 );
 -- migrate:down

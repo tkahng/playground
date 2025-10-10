@@ -31,8 +31,8 @@ create table if not exists public.tokens (
     identifier text not null,
     expires timestamptz not null,
     token text not null unique,
-    created_at timestamptz not null default now(),
-    updated_at timestamptz not null default now(),
+    created_at timestamptz not null default clock_timestamp(),
+    updated_at timestamptz not null default clock_timestamp(),
     -- metadata jsonb,
     constraint tokens_type_identifier_token_not_empty check (
         not_empty(identifier)
@@ -62,8 +62,8 @@ create table if not exists public.user_accounts (
     scope text,
     session_state text,
     token_type text,
-    created_at timestamptz not null default now(),
-    updated_at timestamptz not null default now(),
+    created_at timestamptz not null default clock_timestamp(),
+    updated_at timestamptz not null default clock_timestamp(),
     -- compound unique constraint on user_id and provider
     -- constraint user_accounts_type_identifier_token_not_empty check (
     --     char_length(type) > 0
@@ -82,8 +82,8 @@ create table if not exists public.user_sessions (
     "user_id" uuid not null references public.users on delete cascade on update cascade,
     expires timestamptz not null,
     "session_token" varchar(255) not null unique,
-    created_at timestamptz not null default now(),
-    updated_at timestamptz not null default now(),
+    created_at timestamptz not null default clock_timestamp(),
+    updated_at timestamptz not null default clock_timestamp(),
     constraint user_sessions_token_not_empty check (not_empty("session_token"))
 );
 CREATE TRIGGER handle_user_sessions_updated_at before
