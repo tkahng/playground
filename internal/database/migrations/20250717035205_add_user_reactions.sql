@@ -1,6 +1,6 @@
 -- migrate:up
 create table if not exists public.user_reactions (
-    id uuid not null primary key default gen_random_uuid(),
+    id uuid not null primary key default uuidv7(),
     user_id uuid references public.users on delete cascade on update cascade,
     type text not null,
     reaction text,

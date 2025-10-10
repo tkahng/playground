@@ -1,7 +1,7 @@
 -- migrate:up
 --------------- USER TABLE START -----------------------------------------------------------------------
 create table if not exists public.users (
-    id uuid not null primary key default gen_random_uuid(),
+    id uuid not null primary key default uuidv7(),
     email character varying unique not null,
     email_verified_at timestamptz,
     name character varying,

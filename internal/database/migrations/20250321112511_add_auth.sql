@@ -22,7 +22,7 @@ create type public.token_types as enum (
     'state_token'
 );
 create table if not exists public.tokens (
-    id uuid primary key default gen_random_uuid(),
+    id uuid primary key default uuidv7(),
     type public.token_types not null,
     user_id uuid references public.users on delete cascade on update cascade,
     -- type text not null,
@@ -43,7 +43,7 @@ CREATE TRIGGER handle_tokens_updated_at before
 update on public.tokens for each row execute procedure set_current_timestamp_updated_at();
 -- -------------- USER ACCOUNTS TABLE START -----------------------------------------------------------------------
 create table if not exists public.user_accounts (
-    id uuid primary key default gen_random_uuid(),
+    id uuid primary key default uuidv7(),
     "user_id" uuid not null references public.users on delete cascade on update cascade,
     type provider_types not null,
     provider providers not null,
@@ -78,7 +78,7 @@ CREATE TRIGGER handle_user_accounts_updated_at before
 update on public.user_accounts for each row execute procedure set_current_timestamp_updated_at();
 -- -------------- USER SESSIONS TABLE START -----------------------------------------------------------------------
 create table if not exists public.user_sessions (
-    id uuid primary key default gen_random_uuid(),
+    id uuid primary key default uuidv7(),
     "user_id" uuid not null references public.users on delete cascade on update cascade,
     expires timestamptz not null,
     "session_token" varchar(255) not null unique,

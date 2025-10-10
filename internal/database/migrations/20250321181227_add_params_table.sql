@@ -1,6 +1,6 @@
 -- migrate:up
 create table if not exists public.app_params (
-    id uuid primary key default gen_random_uuid(),
+    id uuid primary key default uuidv7(),
     name text not null unique,
     value jsonb not null,
     created_at timestamptz not null default now(),

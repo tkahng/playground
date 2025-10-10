@@ -1,8 +1,8 @@
 -- migrate:up
 -- roles
 CREATE TABLE if not exists public.roles (
-    id uuid primary key default gen_random_uuid(),
-    -- id uuid primary key default gen_random_uuid(),
+    id uuid primary key default uuidv7(),
+    -- id uuid primary key default uuidv7(),
     name varchar(150) not null unique,
     -- name of the role. e.g. admin, user
     -- code varchar(100) not null unique,
@@ -16,8 +16,8 @@ CREATE TRIGGER handle_roles_updated_at before
 update on public.roles for each row execute procedure set_current_timestamp_updated_at();
 -- permissions
 CREATE TABLE if not exists public.permissions (
-    id uuid primary key default gen_random_uuid(),
-    -- id uuid primary key default gen_random_uuid(),
+    id uuid primary key default uuidv7(),
+    -- id uuid primary key default uuidv7(),
     name varchar(150) not null unique,
     -- name of the permission in ${action}:${resource}. e.g. read:users, user
     -- code varchar(100) not null unique,

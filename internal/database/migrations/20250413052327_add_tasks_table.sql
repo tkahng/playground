@@ -6,7 +6,7 @@
 create type "task_project_status" as enum ('todo', 'in_progress', 'done');
 -- project table  ----------------------------------------------------------------------
 create table if not exists public.task_projects (
-    id uuid primary key default gen_random_uuid(),
+    id uuid primary key default uuidv7(),
     team_id uuid not null references public.teams on delete cascade on update cascade,
     created_by_member_id uuid references public.team_members on delete
     set null on update cascade,
@@ -30,7 +30,7 @@ update on public.task_projects for each row execute procedure set_current_timest
 create type "task_status" as enum ('todo', 'in_progress', 'done');
 -- tasks table  ----------------------------------------------------------------------
 create table if not exists public.tasks (
-    id uuid primary key default gen_random_uuid(),
+    id uuid primary key default uuidv7(),
     -- user_id uuid not null references public.users on delete cascade on update cascade,
     team_id uuid not null references public.teams on delete cascade on update cascade,
     created_by_member_id uuid references public.team_members on delete

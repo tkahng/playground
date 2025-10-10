@@ -1,7 +1,7 @@
 -- migrate:up
 create type public.job_status AS ENUM ('pending', 'processing', 'done', 'failed');
 CREATE TABLE public.jobs (
-    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    id uuid PRIMARY KEY DEFAULT uuidv7(),
     kind TEXT NOT NULL,
     unique_key TEXT,
     payload JSONB NOT NULL DEFAULT '{}'::jsonb,

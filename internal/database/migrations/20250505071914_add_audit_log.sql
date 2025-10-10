@@ -2,7 +2,7 @@
 -- Step 1: Create ENUM type for log levels
 -- Step 2: Create logs table
 CREATE TABLE IF NOT EXISTS public.logs (
-    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    id uuid PRIMARY KEY DEFAULT uuidv7(),
     level int NOT NULL DEFAULT 0,
     source text,
     message text NOT NULL,

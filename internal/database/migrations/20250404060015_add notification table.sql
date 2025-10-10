@@ -1,7 +1,7 @@
 -- migrate:up
 -- Create "notifications" table
 CREATE TABLE "notifications" (
-    "id" uuid NOT NULL DEFAULT gen_random_uuid(),
+    "id" uuid NOT NULL DEFAULT uuidv7(),
     "created_at" timestamptz NOT NULL DEFAULT now(),
     "updated_at" timestamptz NOT NULL DEFAULT now(),
     "read_at" timestamptz,

@@ -1,6 +1,6 @@
 -- migrate:up
 create table if not exists public.media (
-    id uuid primary key default gen_random_uuid(),
+    id uuid primary key default uuidv7(),
     user_id uuid references public.users on delete
     set null on update cascade,
         disk varchar(32) not null,
