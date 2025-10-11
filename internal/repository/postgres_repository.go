@@ -52,7 +52,7 @@ func (r *PostgresRepository[Model]) Get(ctx context.Context, db database.Dbx, wh
 	}
 
 	// Execute the query and scan the results
-	// slog.Info("query and args", slog.String("query", query), slog.Any("args", args))
+	slog.Info("query and args", slog.String("query", query), slog.Any("args", args))
 	items, err := database.QueryAll[*Model](
 		ctx,
 		db,
@@ -142,7 +142,7 @@ func (r *PostgresRepository[Model]) PostExec(ctx context.Context, dbx database.D
 		query += fmt.Sprintf(" (%s) VALUES %s", fields, values)
 	}
 	// Execute the query and scan the results
-	// fmt.Println("query", query, "args", args)
+	fmt.Println("query", query, "args", args)
 	result, err := database.Exec(
 		ctx,
 		dbx,
@@ -167,10 +167,10 @@ func (r *PostgresRepository[Model]) Post(ctx context.Context, dbx database.Dbx, 
 	} else if fields != "" && values != "" {
 		query += fmt.Sprintf(" (%s) VALUES %s", fields, values)
 	}
-	query += fmt.Sprintf(" RETURNING %s", r.builder.FieldString(""))
+	query += fmt.Sprintf(" RETURNING %s", r.builder.ReturningFields())
 
 	// Execute the query and scan the results
-	// fmt.Println("query", query, "args", args)
+	fmt.Println("query", query, "args", args)
 	result, err := database.QueryAll[*Model](
 		ctx,
 		dbx,

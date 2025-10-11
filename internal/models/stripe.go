@@ -118,8 +118,8 @@ type StripePrice struct {
 	Active          bool                       `db:"active" json:"active"`
 	UnitAmount      *int64                     `db:"unit_amount" json:"unit_amount"`
 	Currency        string                     `db:"currency" json:"currency"`
-	Type            StripePricingType          `db:"type" json:"type" required:"true" enum:"one_time,recurring"`
-	Interval        *StripePricingPlanInterval `db:"interval" json:"interval,omitempty" enum:"day,week,month,year"`
+	Type            StripePricingType          `db:"type,quote" json:"type" required:"true" enum:"one_time,recurring"`
+	Interval        *StripePricingPlanInterval `db:"interval,quote" json:"interval,omitempty" enum:"day,week,month,year"`
 	IntervalCount   *int64                     `db:"interval_count" json:"interval_count"`
 	TrialPeriodDays *int64                     `db:"trial_period_days" json:"trial_period_days"`
 	Metadata        map[string]string          `db:"metadata" json:"metadata"`

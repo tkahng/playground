@@ -17,6 +17,15 @@ import (
 type Field struct {
 	Idx  int
 	Name string
+	// QuoteIdentifier is true if the table name should be quoted
+	QuoteIdentifier bool
+}
+
+func (f *Field) Identifier() string {
+	if f.QuoteIdentifier {
+		return DefaultQuoteIdentifierFunc(f.Name)
+	}
+	return f.Name
 }
 
 type Relation struct {
@@ -30,17 +39,76 @@ type Relation struct {
 }
 
 type SQLBuilder[Model any] struct {
-	table        string
-	keys         []string
-	idColumnName string // Name of the primary key column
-	fields       []Field
-	columnNames  []string
-	relations    map[string]Relation
-	operations   map[string]func(string, ...string) string
-	identifier   func(string) string
-	parameter    func(reflect.Value, *[]any) string
-	generator    func(reflect.StructField, *[]any) (string, error)
-	insertID     bool // If true, the id value read from the model will be insert into the database. default false
+
+	// schemaName is the name of the database schema. default "public"
+	schemaName string
+
+	// tableName is the name of the database table
+	tableName string
+
+	// quoteIdentifier is true if the table name should be quoted.
+	// instead of `select * from schemaName.tableName`, use `select * from schemaName.\"tableName\"`
+	quoteIdentifier bool
+
+	// idColumnName is the name of the primary key column
+	idColumnName string
+
+	// fields are columns of the table. their order is by the order of the struct fields
+	fields []*Field
+
+	columnNames []string
+
+	relations  map[string]*Relation
+	operations map[string]func(string, ...string) string
+	identifier func(string) string
+	parameter  func(reflect.Value, *[]any) string
+	generator  func(reflect.StructField, *[]any) (string, error)
+	insertID   bool // If true, the id value read from the model will be insert into the database. default false
+}
+
+func (b *SQLBuilder[Model]) ReturningFields() string {
+	// panic("unimplemented")
+	var result []string
+	for _, field := range b.fields {
+		result = append(result, b.Table()+"."+field.Identifier())
+	}
+
+	return strings.Join(result, ",")
+}
+
+func (b *SQLBuilder[Model]) ColumnNames() []string {
+	// Returns the column names
+	return b.columnNames
+}
+
+// Returns the column names with proper identifier formatting
+func (b *SQLBuilder[Model]) Fields() []*Field {
+	// Returns the fields with their indices and names
+	return b.fields
+}
+
+func (b *SQLBuilder[Model]) ColumnNamesTablePrefix() []string {
+	// Returns the column names with the table prefix
+	var prefixedNames []string
+	for _, name := range b.fields {
+		prefixedNames = append(prefixedNames, b.Identifier(b.tableName)+"."+b.Identifier(name.Name))
+	}
+	return prefixedNames
+}
+
+// Returns the table name with proper identifier formatting
+func (b *SQLBuilder[Model]) Table() string {
+	return b.Identifier(b.tableName)
+}
+
+// Returns a comma-separated list of field names with proper identifier formatting
+func (b *SQLBuilder[Model]) FieldString(prefix string) string {
+	var result []string
+	for _, field := range b.fields {
+		result = append(result, prefix+b.Identifier(field.Name))
+	}
+
+	return strings.Join(result, ",")
 }
 
 // IdColumnName implements SQLBuilderInterface.
@@ -57,7 +125,15 @@ func (b *SQLBuilder[Model]) Generator() func(reflect.StructField, *[]any) (strin
 }
 
 func (b *SQLBuilder[Model]) Identifier(name string) string {
-	return b.identifier(name)
+	if b.quoteIdentifier {
+		return fmt.Sprintf("\"%s\"", name)
+	}
+	return name
+}
+
+func (b *SQLBuilder[Model]) Parameter(value reflect.Value, args *[]any) string {
+	*args = append(*args, value.Interface())
+	return fmt.Sprintf("$%d", len(*args))
 }
 
 type SQLBuilderInterface interface {
@@ -65,9 +141,10 @@ type SQLBuilderInterface interface {
 	Table() string
 	ColumnNames() []string
 	ColumnNamesTablePrefix() []string
-	Fields() []Field
+	Fields() []*Field
 	FieldString(prefix string) string
 	Where(where *map[string]any, args *[]any, run func(string) []string) string
+	WhereError(ctx context.Context, where *map[string]any, args *[]any, run func(string) []string) (ret string, err error)
 	IdColumnName() string
 	InsertID() bool
 	Generator() func(reflect.StructField, *[]any) (string, error)
@@ -91,6 +168,7 @@ func UuidV7Generator[Model any](builder *SQLBuilder[Model]) error {
 		}
 		return id.String(), nil
 	}
+	builder.insertID = true
 	return nil
 }
 
@@ -133,84 +211,146 @@ const (
 	IsNotNull = "_isnotnull"
 )
 
-var nilOps = []string{
-	"_isnull", "_isnotnull",
+var (
+	nilOps = []string{
+		IsNull, IsNotNull,
+	}
+	quoteIdentifierList = []string{
+		"type", "interval",
+	}
+)
+
+// OperatorSQLBuilderFunc is a function that returns the appropriate SQL expression for a given operator
+type OperatorSQLBuilderFunc func(string, ...string) string
+
+var operatorFuncMap = map[string]OperatorSQLBuilderFunc{
+	Eq:     func(key string, values ...string) string { return fmt.Sprintf("%s = %s", key, values[0]) },
+	Neq:    func(key string, values ...string) string { return fmt.Sprintf("%s != %s", key, values[0]) },
+	Gt:     func(key string, values ...string) string { return fmt.Sprintf("%s > %s", key, values[0]) },
+	Gte:    func(key string, values ...string) string { return fmt.Sprintf("%s >= %s", key, values[0]) },
+	Lt:     func(key string, values ...string) string { return fmt.Sprintf("%s < %s", key, values[0]) },
+	Lte:    func(key string, values ...string) string { return fmt.Sprintf("%s <= %s", key, values[0]) },
+	Like:   func(key string, values ...string) string { return fmt.Sprintf("%s LIKE %s", key, values[0]) },
+	Nlike:  func(key string, values ...string) string { return fmt.Sprintf("%s NOT LIKE %s", key, values[0]) },
+	Ilike:  func(key string, values ...string) string { return fmt.Sprintf("%s ILIKE %s", key, values[0]) },
+	Nilike: func(key string, values ...string) string { return fmt.Sprintf("%s NOT ILIKE %s", key, values[0]) },
+	In: func(key string, values ...string) string {
+		return fmt.Sprintf("%s IN (%s)", key, strings.Join(values, ","))
+	},
+	Nin: func(key string, values ...string) string {
+		return fmt.Sprintf("%s NOT IN (%s)", key, strings.Join(values, ","))
+	},
+	IsNull:    func(key string, values ...string) string { return fmt.Sprintf("%s IS NULL", key) },
+	IsNotNull: func(key string, values ...string) string { return fmt.Sprintf("%s IS NOT NULL", key) },
+}
+
+func DefaultParameterFunc(value reflect.Value, args *[]any) string {
+	*args = append(*args, value.Interface())
+	return fmt.Sprintf("$%d", len(*args))
+}
+
+func DefaultQuoteIdentifierFunc(name string) string {
+	if ok := slices.Contains(quoteIdentifierList, name); ok {
+		return fmt.Sprintf("\"%s\"", name)
+	}
+	return name
 }
 
 func NewSQLBuilder[Model any](opts ...SQLBuilderOptions[Model]) *SQLBuilder[Model] {
-	operations := map[string]func(string, ...string) string{
-		Eq:     func(key string, values ...string) string { return fmt.Sprintf("%s = %s", key, values[0]) },
-		Neq:    func(key string, values ...string) string { return fmt.Sprintf("%s != %s", key, values[0]) },
-		Gt:     func(key string, values ...string) string { return fmt.Sprintf("%s > %s", key, values[0]) },
-		Gte:    func(key string, values ...string) string { return fmt.Sprintf("%s >= %s", key, values[0]) },
-		Lt:     func(key string, values ...string) string { return fmt.Sprintf("%s < %s", key, values[0]) },
-		Lte:    func(key string, values ...string) string { return fmt.Sprintf("%s <= %s", key, values[0]) },
-		Like:   func(key string, values ...string) string { return fmt.Sprintf("%s LIKE %s", key, values[0]) },
-		Nlike:  func(key string, values ...string) string { return fmt.Sprintf("%s NOT LIKE %s", key, values[0]) },
-		Ilike:  func(key string, values ...string) string { return fmt.Sprintf("%s ILIKE %s", key, values[0]) },
-		Nilike: func(key string, values ...string) string { return fmt.Sprintf("%s NOT ILIKE %s", key, values[0]) },
-		In: func(key string, values ...string) string {
-			return fmt.Sprintf("%s IN (%s)", key, strings.Join(values, ","))
-		},
-		Nin: func(key string, values ...string) string {
-			return fmt.Sprintf("%s NOT IN (%s)", key, strings.Join(values, ","))
-		},
-		IsNull:    func(key string, values ...string) string { return fmt.Sprintf("%s IS NULL", key) },
-		IsNotNull: func(key string, values ...string) string { return fmt.Sprintf("%s IS NOT NULL", key) },
-	}
-	identifier := func(name string) string {
-		return fmt.Sprintf("\"%s\"", name)
-	}
-	parameter := func(value reflect.Value, args *[]any) string {
-		*args = append(*args, value.Interface())
-		return fmt.Sprintf("$%d", len(*args))
-	}
-	// Reflect on the Model type to extract metadata
-	_type := reflect.TypeFor[Model]()
 
-	table := strings.ToLower(_type.Name())
-	var fields []Field
-	var columnNames []string
-	relations := map[string]Relation{}
-	operations_ := map[string]func(string, ...string) string{}
+	// Reflect on the Model type to extract metadata
+	var _type reflect.Type = reflect.TypeFor[Model]()
+
+	// default table name to lowercase model name
+	var tableName string = strings.ToLower(_type.Name())
+	// schema is public by default
+	var schema string = "public"
+
+	var modelFields []*Field
+	var modelColumnNames []string
+	var modelRelations map[string]*Relation = map[string]*Relation{}
+	var modelOperations map[string]func(string, ...string) string = map[string]func(string, ...string) string{}
+
+	result := &SQLBuilder[Model]{
+		schemaName:      schema,
+		tableName:       tableName,
+		columnNames:     modelColumnNames,
+		fields:          modelFields,
+		relations:       modelRelations,
+		operations:      modelOperations,
+		identifier:      DefaultQuoteIdentifierFunc,
+		parameter:       DefaultParameterFunc,
+		generator:       nil,
+		insertID:        false,
+		quoteIdentifier: false,
+	}
+	// iterate over the fields of the model type
 	for idx := range _type.NumField() {
 		_field := _type.Field(idx)
 
+		// "_" named field is the model information
 		if _field.Name == "_" {
-			// Field named "_" is model information
-			if tag := _field.Tag.Get("db"); tag != "" {
-				table = strings.Split(tag, ",")[0]
+			if dbTagTableName := _field.Tag.Get("db"); dbTagTableName != "" {
+				fieldTag, err := SplitTagValueOptions(dbTagTableName)
+				if err != nil {
+					panic(err)
+				}
+				for _, option := range fieldTag.Options {
+					if option.Key == "schema" {
+						result.schemaName = option.Value
+					}
+				}
+				tableName = fieldTag.Value
 			}
+			continue
+
 		} else {
 			// Other fields are model attributes
-			if tag := _field.Tag.Get("db"); tag != "" {
-				if _field.Tag.Get("table") != "" {
+			if dbTagFieldName := _field.Tag.Get("db"); dbTagFieldName != "" {
+				// split db tag value
+				var fieldName string
+				var fieldOptions []string
+				for idx, value := range strings.Split(dbTagFieldName, ",") {
+					if idx == 0 {
+						fieldName = value
+					} else {
+						fieldOptions = append(fieldOptions, value)
+					}
+				}
+				if fieldName == "" {
+					panic("no field name at ")
+				}
+				// if table tag is set, it's a relation
+				if table := _field.Tag.Get("table"); table != "" {
 					// Relation field detected
-					through := _field.Tag.Get("through")
-					throughs := strings.Split(through, ",")
+					throughs := strings.Split(_field.Tag.Get("through"), ",")
 					var throught, throughf, efield string
 					if len(throughs) == 3 {
 						throught = throughs[0]
 						throughf = throughs[1]
 						efield = throughs[2]
 					}
-					relations[tag] = Relation{
+					modelRelations[fieldName] = &Relation{
 						one:          _field.Type.Kind() == reflect.Struct,
 						src:          _field.Tag.Get("src"),
 						dest:         _field.Tag.Get("dest"),
-						table:        _field.Tag.Get("table"),
+						table:        table,
 						through:      throught,
 						throughField: throughf,
 						endField:     efield,
 					}
 				} else {
-					// Primitive fields detected
-					name := strings.Split(tag, ",")[0]
-					fields = append(fields, Field{idx, name})
-					columnNames = append(columnNames, name)
+					// Primitive fields detected.
+					// This are selectable columns of the table
+
+					field := &Field{Idx: idx, Name: fieldName}
+					// get the fieldName of the field
+					modelFields = append(modelFields, field)
+					modelColumnNames = append(modelColumnNames, fieldName)
+
 					// Add base operations for the field
-					for key, value := range operations {
-						operations_[name+key] = value
+					for key, value := range operatorFuncMap {
+						modelOperations[fieldName+key] = value
 					}
 
 					// Check if the field has a method named "Operations"
@@ -220,7 +360,7 @@ func NewSQLBuilder[Model any](opts ...SQLBuilderOptions[Model]) *SQLBuilder[Mode
 						value := reflect.ValueOf(model).FieldByName(_field.Name)
 						operations := _method.Func.Call([]reflect.Value{value})[0].Interface()
 						for key, value := range operations.(map[string]func(string, ...string) string) {
-							operations_[name+key] = value
+							modelOperations[fieldName+key] = value
 						}
 					}
 				}
@@ -228,19 +368,6 @@ func NewSQLBuilder[Model any](opts ...SQLBuilderOptions[Model]) *SQLBuilder[Mode
 		}
 	}
 
-	result := &SQLBuilder[Model]{
-		table:        table,
-		columnNames:  columnNames,
-		keys:         []string{fields[0].Name},
-		idColumnName: fields[0].Name, // Assuming the first field is the primary key
-		fields:       fields,
-		relations:    relations,
-		operations:   operations_,
-		identifier:   identifier,
-		parameter:    parameter,
-		generator:    nil,
-		insertID:     false,
-	}
 	for _, opt := range opts {
 		if err := opt(result); err != nil {
 			slog.Error("Error applying SQLBuilder option", slog.Any("error", err))
@@ -248,58 +375,21 @@ func NewSQLBuilder[Model any](opts ...SQLBuilderOptions[Model]) *SQLBuilder[Mode
 		}
 	}
 
-	registry[table] = result
+	registry[tableName] = result
 
 	return result
-}
-func (b *SQLBuilder[Model]) ColumnNames() []string {
-	var prefixedNames []string
-	for _, name := range b.columnNames {
-		prefixedNames = append(prefixedNames, b.identifier(name))
-	}
-	return prefixedNames
-}
-
-// Returns the column names with proper identifier formatting
-func (b *SQLBuilder[Model]) Fields() []Field {
-	// Returns the fields with their indices and names
-	return b.fields
-}
-
-func (b *SQLBuilder[Model]) ColumnNamesTablePrefix() []string {
-	// Returns the column names with the table prefix
-	var prefixedNames []string
-	for _, name := range b.columnNames {
-		prefixedNames = append(prefixedNames, b.identifier(b.table)+"."+b.identifier(name))
-	}
-	return prefixedNames
-}
-
-// Returns the table name with proper identifier formatting
-func (b *SQLBuilder[Model]) Table() string {
-	return b.identifier(b.table)
-}
-
-// Returns a comma-separated list of field names with proper identifier formatting
-func (b *SQLBuilder[Model]) FieldString(prefix string) string {
-	var result []string
-	for _, field := range b.fields {
-		result = append(result, prefix+b.identifier(field.Name))
-	}
-
-	return strings.Join(result, ",")
 }
 
 func (b *SQLBuilder[Model]) ValuesError(values *[]Model, args *[]any, keys *[]any) (fields string, vals string, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			slog.Error("Error occurred during values generation", slog.Any("error", r),
-				slog.String("table", b.table),
+				slog.String("table", b.tableName),
 				slog.Any("values", values),
 				slog.Any("args", args),
 				slog.Any("keys", keys),
 			)
-			err = fmt.Errorf("error generating values for table %s", b.table)
+			err = fmt.Errorf("error generating values for table %s", b.tableName)
 		}
 	}()
 	fields, vals, err = b.Values(values, args, keys)
@@ -333,25 +423,23 @@ func (b *SQLBuilder[Model]) Values(values *[]Model, args *[]any, keys *[]any) (f
 	// Generate the field names for the VALUES clause
 	var fieldsArray []string
 	for idx, field := range b.fields {
-		if idx == 0 {
-			// The first field is the primary key
 
+		// first item is the primary key.
+		if idx == 0 {
+			// primary keys are often database generated,
+			// in which case they are not included in the INSERT INTO clause
+			// If insertID is true, we will provide the primary key,
+			// so include it in the INSERT INTO clause
 			if b.insertID {
-				if b.generator != nil {
-					// If a generator function is provided, primary key will be generated
-					fieldsArray = append(fieldsArray, b.identifier(field.Name))
-				} else {
-					// If skipIdInsert is true, skip inserting the primary key field
-					fieldsArray = append(fieldsArray, b.identifier(field.Name))
-				}
+				fieldsArray = append(fieldsArray, field.Identifier())
 			}
-			// Otherwise, add the primary key field to the VALUES clause
 		} else {
+			// Skip timestamp fields
 			if slices.Contains(timestampNames, field.Name) {
-				continue // Skip timestamp fields
+				continue
 			}
 			// Other fields are added to the VALUES clause
-			fieldsArray = append(fieldsArray, b.identifier(field.Name))
+			fieldsArray = append(fieldsArray, field.Identifier())
 		}
 	}
 
@@ -364,10 +452,15 @@ func (b *SQLBuilder[Model]) Values(values *[]Model, args *[]any, keys *[]any) (f
 		// Generate the values for the current model
 		items := []string{}
 		for idx, field := range b.fields {
+			// first item is the primary key.
 			if idx == 0 {
-				// The first field is the primary key
-
+				// primary keys are often database generated,
+				// in which case they are not included in the VALUES clause
+				//
+				// If insertID is true, we will provide the primary key,
+				// so include it in the VALUES clause
 				if b.insertID {
+					//
 					if b.generator != nil {
 						// If a generator function is provided, use it to generate the key
 						id, err := b.generator(_type.Field(field.Idx), keys)
@@ -400,11 +493,11 @@ func (b *SQLBuilder[Model]) SetError(set *Model, args *[]any, where *map[string]
 	defer func() {
 		if r := recover(); r != nil {
 			slog.Error("Error occurred during Set generation", slog.Any("error", r),
-				slog.String("table", b.table),
+				slog.String("table", b.tableName),
 				slog.Any("set", set),
 				slog.Any("where", where),
 			)
-			err = fmt.Errorf("error generating Set for table %s", b.table)
+			err = fmt.Errorf("error generating Set for table %s", b.tableName)
 		}
 	}()
 	ret = b.Set(set, args, where)
@@ -463,7 +556,7 @@ func (b *SQLBuilder[Model]) Set(set *Model, args *[]any, where *map[string]any) 
 			}
 		} else {
 			// Other fields are added to the SET clause
-			result = append(result, b.identifier(field.Name)+"="+b.parameter(_value.Field(field.Idx), args))
+			result = append(result, b.Identifier(field.Name)+"="+b.parameter(_value.Field(field.Idx), args))
 		}
 	}
 
@@ -482,7 +575,7 @@ func (b *SQLBuilder[Model]) Order(order *map[string]string) string {
 	// fmt.Println("columnnames", b.columnNames)
 	for key, val := range *order {
 		if slices.Contains(b.columnNames, key) {
-			result = append(result, fmt.Sprintf("%s %s", b.identifier(key), strings.ToUpper(val)))
+			result = append(result, fmt.Sprintf("%s %s", b.Identifier(key), strings.ToUpper(val)))
 		}
 	}
 
@@ -496,10 +589,10 @@ func (b *SQLBuilder[Model]) WhereError(ctx context.Context, where *map[string]an
 	defer func() {
 		if r := recover(); r != nil {
 			slog.ErrorContext(ctx, "Error occurred during where generation", slog.Any("error", r),
-				slog.String("table", b.table),
+				slog.String("table", b.tableName),
 				slog.Any("where", where),
 			)
-			err = fmt.Errorf("error generating where for table %s. check your filters", b.table)
+			err = fmt.Errorf("error generating where for table %s. check your filters", b.tableName)
 		}
 	}()
 	ret = b.Where(where, args, run)
@@ -548,25 +641,34 @@ func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any, run func(s
 
 	// Otherwise, construct the WHERE clause based on the field names and operations
 	result := []string{}
-	for key, item := range *where {
+
+	// iterate over the where map,
+	// each key is a field or column name
+	// each value will be a map of operators and values
+	for fieldName, operatorValueMap := range *where {
 		// fmt.Println("key", key, "item", item)
-		for op, value := range item.(map[string]any) {
+
+		// iterate over the map of operators and values,
+		// each key is a operator code(_eq, _gt, etc)
+		// each value will be a map of operators and values
+		for opName, opValue := range operatorValueMap.(map[string]any) {
 			// fmt.Println("operation", op, "value", value)
-			if handler, ok := b.operations[key+op]; ok {
+
+			// if this f
+			if opFunc, ok := b.operations[fieldName+opName]; ok {
 				// Primitive field condition detected
 				// slog.Info("Processing primitive field condition", slog.String("key", key), slog.String("operation", op), slog.Any("value", value))
-				if value == nil {
+				if opValue == nil {
 					// slog.Warn("Nil value detected for key", slog.String("key", key), slog.String("operation", op))
-
-					if slices.Contains(nilOps, op) {
+					if slices.Contains(nilOps, opName) {
 						// slog.Info("Nil operation detected, adding to result", slog.String("key", key))
 						// If the value is nil and the operation is a nil operation, send it
-						result = append(result, handler(b.identifier(key)))
+						result = append(result, opFunc(b.Identifier(fieldName)))
 					}
 					continue // Skip nil values for non-nil operations
 				}
 
-				_value := reflect.ValueOf(value)
+				_value := reflect.ValueOf(opValue)
 				if !_value.IsValid() {
 					slog.Info("value is invalid")
 					continue
@@ -577,15 +679,15 @@ func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any, run func(s
 				}
 				if _value.Kind() == reflect.String {
 					// String values are passed to operation handler as single parameter
-					result = append(result, handler(b.identifier(key), b.parameter(_value, args)))
-				} else if it, ok := value.(time.Time); ok {
+					result = append(result, opFunc(b.Identifier(fieldName), b.parameter(_value, args)))
+				} else if it, ok := opValue.(time.Time); ok {
 					_newValue := reflect.ValueOf(it.Format(time.RFC3339Nano))
-					result = append(result, handler(b.identifier(key), b.parameter(_newValue, args)))
-				} else if it, ok := value.(fmt.Stringer); ok {
+					result = append(result, opFunc(b.Identifier(fieldName), b.parameter(_newValue, args)))
+				} else if it, ok := opValue.(fmt.Stringer); ok {
 					_newValue := reflect.ValueOf(it.String())
 					if _newValue.Kind() == reflect.String {
 						// If the value implements fmt.Stringer, use its String method
-						result = append(result, handler(b.identifier(key), b.parameter(_newValue, args)))
+						result = append(result, opFunc(b.Identifier(fieldName), b.parameter(_newValue, args)))
 					}
 				} else if _value.Kind() == reflect.Slice || _value.Kind() == reflect.Array {
 					// Slice or array values are passed to operation handler as a list of parameters
@@ -598,12 +700,12 @@ func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any, run func(s
 							items = append(items, b.parameter(reflect.ValueOf(it.String()), args))
 						}
 					}
-					result = append(result, handler(b.identifier(key), items...))
+					result = append(result, opFunc(b.Identifier(fieldName), items...))
 				}
 
 			} else {
 				// Relation field condition detected
-				if relation, ok := b.relations[key]; ok {
+				if relation, ok := b.relations[fieldName]; ok {
 					var builder SQLBuilderInterface
 					// Get the target SQLBuilder for the relation
 					if bld, ok := registry[relation.table]; !ok {
@@ -614,35 +716,37 @@ func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any, run func(s
 					}
 
 					// Construct the sub-query for the related table
-					where := item.(map[string]any)
+					where := operatorValueMap.(map[string]any)
+
+					//
 					var query string
 					if relation.through != "" {
 						//goland:noinspection Annotator
 						query = fmt.Sprintf(
 							`SELECT %s FROM %s join %s on %s.%s = %s.%s`,
-							b.identifier(relation.dest),
-							b.identifier(relation.through),
+							b.Identifier(relation.dest),
+							b.Identifier(relation.through),
 							builder.Table(),
 							builder.Table(),
-							b.identifier(relation.endField),
-							b.identifier(relation.through),
-							b.identifier(relation.throughField),
+							b.Identifier(relation.endField),
+							b.Identifier(relation.through),
+							b.Identifier(relation.throughField),
 						)
 					} else {
 						//goland:noinspection Annotator
-						query = fmt.Sprintf("SELECT %s FROM %s", b.identifier(relation.dest), builder.Table())
+						query = fmt.Sprintf("SELECT %s FROM %s", b.Identifier(relation.dest), builder.Table())
 					}
 					if expr := builder.Where(&where, args, run); expr != "" {
 						query += fmt.Sprintf(" WHERE %s", expr)
 					}
 					if run == nil {
 						if inop, ok := b.operations[relation.src+"_in"]; ok {
-							result = append(result, inop(b.identifier(relation.src), query))
+							result = append(result, inop(b.Identifier(relation.src), query))
 						}
 						// If no run function is provided, sub-query is added to the main query
 					} else {
 						if inop, ok := b.operations[relation.src+"_in"]; ok {
-							result = append(result, inop(b.identifier(relation.src), run(query)...))
+							result = append(result, inop(b.Identifier(relation.src), run(query)...))
 						}
 						// If a run function is provided, sub-query is executed and its result is added to the main query
 					}
