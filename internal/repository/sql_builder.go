@@ -15,7 +15,9 @@ import (
 )
 
 type Field struct {
-	Idx  int
+	// Idx is the index of the field
+	Idx int
+	// Name is the unquoted name of the field. this might be formatted by the Identifier function
 	Name string
 	// QuoteIdentifier is true if the table name should be quoted
 	QuoteIdentifier bool
