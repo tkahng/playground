@@ -2,51 +2,56 @@ package repository
 
 import (
 	"testing"
-
-	"github.com/tkahng/playground/internal/models"
 )
 
-type buidlerWants struct {
-	skipIdGeneration bool
-	generator        bool
-}
-
-func TestNewSQLBuilder(t *testing.T) {
-	type args struct {
-		opts []SQLBuilderOptions[models.User]
-	}
+func Test_splitTagValueOptions(t *testing.T) {
 	tests := []struct {
-		name string
-		args args
-		want buidlerWants
+		name string // description of this test case
+		// Named input parameters for target function.
+		tagValue string
+		value    string
+		options  []string
 	}{
 		{
-			name: "Test case 1",
-			args: args{opts: []SQLBuilderOptions[models.User]{
-				UuidV7Generator[models.User],
-			}},
-			want: buidlerWants{skipIdGeneration: false, generator: true}, // expected result here
+			name:     "split regular comma separated value",
+			tagValue: "notifications,quoted",
+			value:    "notifications",
+			options:  []string{"quoted"},
 		},
 		{
-			name: "Test case 2",
-			args: args{opts: []SQLBuilderOptions[models.User]{}},
-			want: buidlerWants{skipIdGeneration: false, generator: false}, // expected result here
+			name:     "split no options",
+			tagValue: "notifications",
+			value:    "notifications",
+			options:  nil,
 		},
-		// TODO: Add more test cases.
+		{
+			name:     "split comma only",
+			tagValue: ",",
+			value:    "",
+			options:  nil,
+		},
+		{
+			name:     "split comma only",
+			tagValue: ",hello",
+			value:    "",
+			options:  []string{"hello"},
+		},
+		{
+			name:     "empty",
+			tagValue: "",
+			value:    "",
+			options:  nil,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := NewSQLBuilder(tt.args.opts...)
-			if got.insertID != tt.want.skipIdGeneration {
-				t.Errorf("NewSQLBuilder() skipIdGeneration = %v, want %v", got.insertID, tt.want.skipIdGeneration)
+			got, got2 := splitTagValueOptions(tt.tagValue)
+			if got != tt.value {
+				t.Errorf("splitDbTag() = %v, want %v", got, tt.value)
 			}
-			if tt.want.generator {
-				if got.generator == nil {
-					t.Errorf("NewSQLBuilder() idGenerator = nil, want non-nil")
-				}
-			} else {
-				if got.generator != nil {
-					t.Errorf("NewSQLBuilder() idGenerator non-nil, want nil")
+			for idx, item := range tt.options {
+				if got2[idx] != item {
+					t.Errorf("splitDbTag() = %v, want %v", got2[idx], item)
 				}
 			}
 		})
