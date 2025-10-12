@@ -16,7 +16,6 @@ func Test_splitTagValueOptions(t *testing.T) {
 			name: "split regular comma separated value",
 			tag:  `db:"notifications,quoted"`,
 			want: &FieldTag{
-				Tag:   `db`,
 				Value: "notifications",
 				Options: []*TagOption{
 					{
@@ -30,7 +29,6 @@ func Test_splitTagValueOptions(t *testing.T) {
 			name: "many options",
 			tag:  `db:"notifications,schema=public,quoted,table=users"`,
 			want: &FieldTag{
-				Tag:   `db`,
 				Value: "notifications",
 				Options: []*TagOption{
 					{
@@ -52,7 +50,6 @@ func Test_splitTagValueOptions(t *testing.T) {
 			name: "split comma with kv option",
 			tag:  `db:"notifications,quoted=true"`,
 			want: &FieldTag{
-				Tag:   `db`,
 				Value: "notifications",
 				Options: []*TagOption{
 					{
@@ -66,40 +63,30 @@ func Test_splitTagValueOptions(t *testing.T) {
 			name: "split no options",
 			tag:  `db:"notifications"`,
 			want: &FieldTag{
-				Tag:   "db",
 				Value: "notifications",
 			},
 		},
 		{
 			name: "split comma only",
 			tag:  `db:","`,
-			want: &FieldTag{
-				Tag: "db",
-			},
+			want: &FieldTag{},
 		},
 		{
 			name: "split comma with option only",
-			tag:  `db",hello"`,
+			tag:  `db:",hello"`,
 			want: &FieldTag{
-				Tag:     "db",
 				Options: []*TagOption{{Key: "hello", Value: "true"}},
 			},
 		},
 		{
 			name: "empty",
 			tag:  `db:""`,
-			// want: &FieldTag{
-			// 	Key: "db",
-			// },
-			wantErr: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tag, err := SplitTagValueOptions(tt.tag)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("error splitting tag value: %v", err)
-			}
+			newVar := getTagValue(tt.tag)
+			tag := ParseFieldTag(newVar)
 			if !reflect.DeepEqual(tag, tt.want) {
 				t.Errorf("deep equal failed. got %v, want %v", tag, tt.want)
 			}
@@ -123,17 +110,22 @@ func TestParseTagOption(t *testing.T) {
 			s:    "somevalue",
 			want: &TagOption{
 				Key:   "somevalue",
-				Value: "",
+				Value: "true",
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := ParseTagOption(tt.s)
-			// TODO: update the condition below to compare got with tt.want.
-			if true {
-				t.Errorf("ParseTagOption() = %v, want %v", got, tt.want)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("deep equal failed. got %v, want %v", got, tt.want)
 			}
 		})
 	}
+}
+
+func getTagValue(s string) string {
+	tag := reflect.StructTag(s)
+	value := tag.Get("db")
+	return value
 }

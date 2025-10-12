@@ -4,15 +4,36 @@ import (
 	"strings"
 )
 
-// abstraction of a field tag.
+// FieldTag is an abstraction of a field tag.
 //
 // given that:
 //
 //	type Foo struct {
-//	    Field1 string `tag1="value", tag2:"value,option1name,option2name=value"`
+//	    Field1 string `tag1="value1", tag2:"value2,option1name,option2name=value2"`
 //	}
 //
 // this would produced 2 FieldTag instances, one with two options and one without.
+//
+//	var fieldTags = []FieldTag{
+//		{
+//			Tag:   "tag1",
+//			Value: "value1",
+//		},
+//		{
+//			Tag:   "tag2",
+//			Value: "value2",
+//			Options: []*TagOption{
+//				{
+//					Key:   "option1name",
+//					Value: "true",
+//				},
+//				{
+//					Key:   "option2name",
+//					Value: "value2",
+//				},
+//			},
+//		},
+//	}
 //
 // `tag:"value"` and `tag:"value,option1,option2=value"`
 //
@@ -25,6 +46,7 @@ type FieldTag struct {
 	Options []*TagOption
 }
 
+// GetOptionValue returns the value of the option with the given key if it exists.
 func (t *FieldTag) GetOptionValue(key string) string {
 	for _, option := range t.Options {
 		if option.Key == key {
@@ -34,6 +56,31 @@ func (t *FieldTag) GetOptionValue(key string) string {
 	return ""
 }
 
+// ParseFieldTag returns the field tag with the given name if it exists.
+// otherwise it returns nil
+func ParseFieldTag(tagContent string) *FieldTag {
+	if tagContent == "" {
+		return nil
+	}
+	var mainValue string
+	var options []*TagOption
+	for idx, item := range strings.Split(tagContent, ",") {
+		if idx == 0 {
+			mainValue = item
+		} else {
+			if option := ParseTagOption(item); option != nil {
+				options = append(options, option)
+			}
+		}
+	}
+	fieldTag := &FieldTag{
+		Value:   mainValue,
+		Options: options,
+	}
+	return fieldTag
+
+}
+
 // TagOption represents a key=value properties of a field tag.
 //
 // The contents of the tags themselves are comma separated values,
@@ -41,29 +88,34 @@ func (t *FieldTag) GetOptionValue(key string) string {
 //
 // `tag:"value,option1,option2=valueA,option3=valueB,option4"`
 //
-// options are either `option.key=option.value` or just `option`.
+// options are either `option.key=option.value` or just `option`, in which case the value is `true`.
 type TagOption struct {
 	Key   string
 	Value string
 }
 
+// ParseTagOption returns a TagOption from a string.
 func ParseTagOption(s string) *TagOption {
 	if s == "" {
 		return nil
 	}
 	var option TagOption
-	for idx, item := range strings.Split(s, "=") {
-		switch idx {
-		case 0:
-			option.Key = item
-		case 1:
-			option.Value = item
-		default:
-
+	items := strings.Split(s, "=")
+	if len(items) == 1 {
+		if items[0] == "" {
+			return nil
 		}
-
+		option.Key = items[0]
+		option.Value = "true"
+		return &option
+	} else if len(items) == 2 {
+		option.Key = items[0]
+		option.Value = items[1]
+		return &option
+	} else {
+		return nil
 	}
-	return &option
+
 }
 
 func SplitTagValueOptions(inutValue string) (*FieldTag, error) {
