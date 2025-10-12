@@ -59,16 +59,17 @@ func (t *FieldTag) GetOptionValue(key string) string {
 // ParseFieldTag returns the field tag with the given name if it exists.
 // otherwise it returns nil
 func ParseFieldTag(tagContent string) *FieldTag {
-	if tagContent == "" {
-		return nil
-	}
 	var mainValue string
 	var options []*TagOption
 	for idx, item := range strings.Split(tagContent, ",") {
+		cleanedItem := strings.TrimSpace(item)
+		if cleanedItem == "" {
+			continue
+		}
 		if idx == 0 {
-			mainValue = item
+			mainValue = cleanedItem
 		} else {
-			if option := ParseTagOption(item); option != nil {
+			if option := ParseTagOption(cleanedItem); option != nil {
 				options = append(options, option)
 			}
 		}
@@ -102,15 +103,16 @@ func ParseTagOption(s string) *TagOption {
 	var option TagOption
 	items := strings.Split(s, "=")
 	if len(items) == 1 {
-		if items[0] == "" {
+		firstItem := strings.TrimSpace(items[0])
+		if firstItem == "" {
 			return nil
 		}
-		option.Key = items[0]
+		option.Key = firstItem
 		option.Value = "true"
 		return &option
 	} else if len(items) == 2 {
-		option.Key = items[0]
-		option.Value = items[1]
+		option.Key = strings.TrimSpace(items[0])
+		option.Value = strings.TrimSpace(items[1])
 		return &option
 	} else {
 		return nil
