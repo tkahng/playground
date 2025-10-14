@@ -1,6 +1,9 @@
 package repository_test
 
 import (
+	"context"
+	"fmt"
+	"testing"
 	"time"
 
 	"github.com/tkahng/playground/internal/database/repository"
@@ -57,3 +60,110 @@ var (
 		repository.InsertID,
 	)
 )
+
+type builderWhereTest[T any] struct {
+	name string // description of this test case
+	// Named input parameters for target function.
+	builder *repository.SQLBuilder[T]
+	where   *map[string]any
+	args    *[]any
+	want    string
+	wantErr bool
+}
+
+func TestSQLBuilder_Models_WhereError(t *testing.T) {
+
+	tests := []builderWhereTest[A]{
+		{
+			name:    "a: where id _eq hello",
+			builder: ABuilder,
+			where: &map[string]any{
+				"id": map[string]any{
+					"_eq": "hello",
+				},
+			},
+			args:    &[]any{},
+			wantErr: false,
+			want:    "SELECT a.id,a.age FROM a WHERE a.id = $1",
+		},
+		{
+			name:    "a: where id _eq hello, age _eq 10",
+			builder: ABuilder,
+			where: &map[string]any{
+				"id": map[string]any{
+					"_eq": "hello",
+				},
+				"age": map[string]any{
+					"_eq": 10,
+				},
+			},
+			args:    &[]any{},
+			wantErr: false,
+			want:    "SELECT a.id,a.age FROM a WHERE a.id = $1 AND a.age = $2",
+		},
+		{
+			name:    "a: where id _eq hello or age _eq 10",
+			builder: ABuilder,
+			where: &map[string]any{
+				"_or": []map[string]any{
+					{
+						"id": map[string]any{
+							"_eq": "hello",
+						},
+					},
+					{
+						"age": map[string]any{
+							"_eq": 10,
+						},
+					},
+				},
+			},
+			args:    &[]any{},
+			wantErr: false,
+			want:    "SELECT a.id,a.age FROM a WHERE (a.id = $1 OR a.age = $2)",
+		},
+		{
+			name:    "a: where id _eq hello and age _eq 10",
+			builder: ABuilder,
+			where: &map[string]any{
+				"_and": []map[string]any{
+					{
+						"id": map[string]any{
+							"_eq": "hello",
+						},
+					},
+					{
+						"age": map[string]any{
+							"_eq": 10,
+						},
+					},
+				},
+			},
+			args:    &[]any{},
+			wantErr: false,
+			want:    "SELECT a.id,a.age FROM a WHERE (a.id = $1 OR a.age = $2)",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			testWhere(t, tt)
+		})
+	}
+}
+
+func testWhere[A any](t *testing.T, tt builderWhereTest[A]) {
+	query := fmt.Sprintf("SELECT %s FROM %s", tt.builder.QualifiedColumnNamesJoined(), tt.builder.TableName())
+	got, gotErr := tt.builder.WhereError(context.Background(), tt.where, tt.args, nil)
+	query += fmt.Sprintf(" WHERE %s", got)
+	if gotErr != nil {
+		if !tt.wantErr {
+			t.Errorf("WhereError() failed: %v", gotErr)
+		}
+	}
+	if tt.wantErr {
+		t.Fatal("WhereError() succeeded unexpectedly")
+	}
+	if query != tt.want {
+		t.Errorf("WhereError() = %v, want %v", query, tt.want)
+	}
+}
