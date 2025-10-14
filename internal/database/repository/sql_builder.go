@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"reflect"
 	"slices"
+	"sort"
 	"strings"
 	"time"
 
@@ -113,6 +114,10 @@ type Field struct {
 // These contain information needed to traverse across tables
 // through subqueries and joins.
 type Relation struct {
+	// Idx is the index of the field in its struct. used for reflection.
+	Idx int
+
+	fieldName string
 	// table is the name of the related table
 	table string
 
@@ -182,6 +187,17 @@ type SQLBuilder[Model any] struct {
 	generator  func(reflect.StructField, *[]any) (string, error)
 
 	insertID bool // If true, the id value read from the model will be insert into the database. default false
+}
+
+// GetRelationByName returns the relation with the given name.
+// returns nil if the relation is not found
+func (b *SQLBuilder[Model]) GetRelationByName(name string) *Relation {
+	for _, field := range b.relations {
+		if field.fieldName == name {
+			return field
+		}
+	}
+	return nil
 }
 
 // GetFieldByName returns the field with the given name.
@@ -364,6 +380,8 @@ func NewSQLBuilder[Model any](opts ...SQLBuilderOptions[Model]) *SQLBuilder[Mode
 					// Relation field detected
 					var relation Relation
 					relation.table = table
+					relation.fieldName = fieldName
+					relation.Idx = idx
 
 					if src := _field.Tag.Get("src"); src != "" {
 						relation.src = src
@@ -389,7 +407,7 @@ func NewSQLBuilder[Model any](opts ...SQLBuilderOptions[Model]) *SQLBuilder[Mode
 						}
 					}
 
-					modelRelations[fieldName] = &relation
+					modelRelations[relation.fieldName] = &relation
 
 				} else {
 					// Primitive fields detected.
@@ -490,6 +508,37 @@ func GenerateParameterPlaceholder(value reflect.Value, args *[]any) string {
 // args is a slice of any:
 //
 //	var args = []any{"John", []string{"admin", "user"}}
+type fieldIdx struct {
+	Name string
+	Idx  int
+}
+
+func (b *SQLBuilder[Model]) getSortedFields(where *map[string]any) []*fieldIdx {
+	fields := []*fieldIdx{}
+	for key := range *where {
+		if field := b.GetFieldByName(key); field != nil {
+			fields = append(fields, &fieldIdx{
+				Name: key,
+				Idx:  field.Idx,
+			})
+		} else if relation := b.GetRelationByName(key); relation != nil {
+			fields = append(fields, &fieldIdx{
+				Name: key,
+				Idx:  relation.Idx,
+			})
+		} else {
+			slog.Error("Unknown field or relation", slog.String("field", key))
+			panic(fmt.Sprintf("Unknown field or relation: %s", key))
+		}
+	}
+	if len(fields) > 1 {
+		sort.Slice(fields, func(i, j int) bool {
+			return fields[i].Idx < fields[j].Idx
+		})
+	}
+	return fields
+}
+
 func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any) string {
 	if where == nil {
 		return ""
@@ -532,9 +581,125 @@ func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any) string {
 	// Otherwise, construct the WHERE clause based on the field names and operations
 	result := []string{}
 
-	keys := make([]string, 0)
-	for k := range *where {
-		keys = append(keys, k)
+	fieldIdxs := b.getSortedFields(where)
+	for _, fieldIdx := range fieldIdxs {
+		var whereFieldName string = fieldIdx.Name
+		if whereFieldValue, ok := (*where)[fieldIdx.Name]; ok {
+			expr, ok := whereFieldValue.(map[string]any)
+			if ok {
+				for whereOp, whereOpValue := range expr {
+					// if this field and operation is registered, go ahead.
+					// if not, it might be a relational field
+					if opFunc, ok := b.operations[whereFieldName+whereOp]; ok {
+						var whereField *Field = b.MustGetFieldByName(whereFieldName)
+						// Primitive field condition detected
+						//
+						// if the value is nil, it should use the _isNil, _isNotNil operations
+						if whereOpValue == nil {
+							if slices.Contains(nilOps, whereOp) {
+								// If the value is nil and the operation is a nil operation, send it
+								result = append(result, opFunc(whereField.ColumnName))
+							} else {
+								// If the value is nil and the operation is not a nil operation, ignore it
+								panic("nil value for non-nil operation " + whereOp)
+							}
+							continue
+						}
+
+						_value := reflect.ValueOf(whereOpValue)
+
+						// If the value is a pointer, dereference it
+						if _value.Kind() == reflect.Pointer && !_value.IsNil() {
+							_value = _value.Elem()
+						}
+
+						if !_value.IsValid() {
+							panic(fmt.Sprintf("value is invalid for field %s and operation %s for model %s", whereFieldName, whereOp, b.TableName()))
+						}
+						// String values are passed
+						// time values are formatted as strings
+						// fmt.Stringer values are called cast then called String method
+						if (_value.Kind() == reflect.Slice || _value.Kind() == reflect.Array) && _value.Type().Elem().Kind() != reflect.Uint8 {
+							// Slice or array values are iterated and check for string types.
+							items := []string{}
+							for i := range _value.Len() {
+								_valueItem := _value.Index(i)
+								item := convert(_valueItem)
+								items = append(items, GenerateParameterPlaceholder(reflect.ValueOf(item), args))
+							}
+							result = append(result, opFunc(whereField.QualifiedColumnName, items...))
+
+						} else {
+							item := convert(_value)
+							result = append(result, opFunc(whereField.QualifiedColumnName, GenerateParameterPlaceholder(reflect.ValueOf(item), args)))
+						}
+
+					} else {
+						// this field name and opation is not registered.
+						// Relation field condition detected
+						if relation := b.GetRelationByName(whereFieldName); relation != nil {
+							var relatedBuilder SQLBuilderInterface
+							// Get the target SQLBuilder for the relation
+							if bld, ok := registry[relation.table]; !ok {
+								panic(fmt.Sprintf("relation %s not found for model %s", relation.table, b.tableName))
+							} else {
+								// Get the target SQLBuilder for the relation
+								relatedBuilder = bld
+							}
+
+							// Construct the sub-query for the related table
+							relationWhere := expr
+
+							// query is the subquery we need to generate.
+							var query string
+
+							var relatedDestField = relatedBuilder.MustGetFieldByName(relation.dest)
+							var srcField = b.MustGetFieldByName(relation.src)
+							// if through is not empty
+							// it is a many-to-many relation
+							if relation.through != "" {
+								var throughBuilder SQLBuilderInterface
+								// Get the target SQLBuilder for the relation
+								if bld, ok := registry[relation.through]; !ok {
+									panic(fmt.Sprintf("relation through %s not found for model %s", relation.through, b.tableName))
+								} else {
+									// Get the target SQLBuilder for the relation
+									throughBuilder = bld
+								}
+
+								var throughTableName = throughBuilder.TableName()
+								var throughSrcField = throughBuilder.MustGetFieldByName(relation.throughSrc)
+								var throughDestField = throughBuilder.MustGetFieldByName(relation.throughDest)
+								query = fmt.Sprintf(
+									`SELECT %s FROM %s join %s on %s.%s = %s.%s`,
+									// SELECT
+									throughSrcField.QualifiedColumnName,
+									// FROM
+									throughTableName,
+									// join
+									relatedBuilder.TableName(),
+									// on
+									relatedBuilder.TableName(),
+									relatedDestField.ColumnName,
+									// =
+									throughTableName,
+									throughDestField.ColumnName,
+								)
+							} else {
+								//goland:noinspection Annotator
+								query = fmt.Sprintf("SELECT %s FROM %s", relatedDestField.QualifiedColumnName, relatedBuilder.TableName())
+							}
+							if expr := relatedBuilder.Where(&relationWhere, args); expr != "" {
+								query += fmt.Sprintf(" WHERE %s", expr)
+							}
+							if inop, ok := b.operations[srcField.Name+"_in"]; ok {
+								result = append(result, inop(srcField.QualifiedColumnName, query))
+							}
+						}
+					}
+				}
+			}
+		}
 	}
 
 	// iterate over the where map,
@@ -545,150 +710,124 @@ func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any) string {
 	//
 	// "name", map[string]any{"_eq": "John"}
 	// "friends", map[string]any{"name": map[string]any{"_in": []string{"admin", "user"}}}
-	for whereFieldName, whereFieldValue := range *where {
-		// iterate over the map of operators and values,
-		//
-		// each key is a operator code(_eq, _gt, etc)
-		// each value will be a map of operators and values
-		for whereOp, whereOpValue := range whereFieldValue.(map[string]any) {
-			// if this field and operation is registered, go ahead.
-			// if not, it might be a relational field
-			if opFunc, ok := b.operations[whereFieldName+whereOp]; ok {
-				var whereField *Field = b.MustGetFieldByName(whereFieldName)
-				// Primitive field condition detected
-				//
-				// if the value is nil, it should use the _isNil, _isNotNil operations
+	// for whereFieldName, whereFieldValue := range *where {
+	// 	// iterate over the map of operators and values,
+	// 	//
+	// 	// each key is a operator code(_eq, _gt, etc)
+	// 	// each value will be a map of operators and values
+	// 	for whereOp, whereOpValue := range whereFieldValue.(map[string]any) {
+	// 		// if this field and operation is registered, go ahead.
+	// 		// if not, it might be a relational field
+	// 		if opFunc, ok := b.operations[whereFieldName+whereOp]; ok {
+	// 			var whereField *Field = b.MustGetFieldByName(whereFieldName)
+	// 			// Primitive field condition detected
+	// 			//
+	// 			// if the value is nil, it should use the _isNil, _isNotNil operations
 
-				if whereOpValue == nil {
-					if slices.Contains(nilOps, whereOp) {
-						// If the value is nil and the operation is a nil operation, send it
-						result = append(result, opFunc(whereField.ColumnName))
-					} else {
-						// If the value is nil and the operation is not a nil operation, ignore it
-						panic("nil value for non-nil operation " + whereOp)
-					}
-					continue
-				}
+	// 			if whereOpValue == nil {
+	// 				if slices.Contains(nilOps, whereOp) {
+	// 					// If the value is nil and the operation is a nil operation, send it
+	// 					result = append(result, opFunc(whereField.ColumnName))
+	// 				} else {
+	// 					// If the value is nil and the operation is not a nil operation, ignore it
+	// 					panic("nil value for non-nil operation " + whereOp)
+	// 				}
+	// 				continue
+	// 			}
 
-				_value := reflect.ValueOf(whereOpValue)
+	// 			_value := reflect.ValueOf(whereOpValue)
 
-				// If the value is a pointer, dereference it
-				if _value.Kind() == reflect.Pointer && !_value.IsNil() {
-					_value = _value.Elem()
-				}
+	// 			// If the value is a pointer, dereference it
+	// 			if _value.Kind() == reflect.Pointer && !_value.IsNil() {
+	// 				_value = _value.Elem()
+	// 			}
 
-				if !_value.IsValid() {
-					panic(fmt.Sprintf("value is invalid for field %s and operation %s for model %s", whereFieldName, whereOp, b.TableName()))
-				}
-				// String values are passed
-				// time values are formatted as strings
-				// fmt.Stringer values are called cast then called String method
-				// slice or array values are iterated and
-				if _value.Kind() == reflect.Slice || _value.Kind() == reflect.Array {
-					// Slice or array values are iterated and check for string types.
-					items := []string{}
-					for i := range _value.Len() {
-						_valueItem := _value.Index(i)
-						item := convert(_valueItem)
-						items = append(items, GenerateParameterPlaceholder(reflect.ValueOf(item), args))
-					}
-					result = append(result, opFunc(whereField.QualifiedColumnName, items...))
-				} else {
-					item := convert(_value)
-					result = append(result, opFunc(whereField.QualifiedColumnName, GenerateParameterPlaceholder(reflect.ValueOf(item), args)))
-				}
-				// if _value.Kind() == reflect.String {
-				// 	// String values are passed
-				// 	result = append(result, opFunc(whereField.QualifiedColumnName, GenerateParameterPlaceholder(_value, args)))
-				// } else if isNumeric(_value) {
+	// 			if !_value.IsValid() {
+	// 				panic(fmt.Sprintf("value is invalid for field %s and operation %s for model %s", whereFieldName, whereOp, b.TableName()))
+	// 			}
+	// 			// String values are passed
+	// 			// time values are formatted as strings
+	// 			// fmt.Stringer values are called cast then called String method
+	// 			// slice or array values are iterated and
+	// 			if _value.Kind() == reflect.Slice || _value.Kind() == reflect.Array {
+	// 				// Slice or array values are iterated and check for string types.
+	// 				items := []string{}
+	// 				for i := range _value.Len() {
+	// 					_valueItem := _value.Index(i)
+	// 					item := convert(_valueItem)
+	// 					items = append(items, GenerateParameterPlaceholder(reflect.ValueOf(item), args))
+	// 				}
+	// 				result = append(result, opFunc(whereField.QualifiedColumnName, items...))
+	// 			} else {
+	// 				item := convert(_value)
+	// 				result = append(result, opFunc(whereField.QualifiedColumnName, GenerateParameterPlaceholder(reflect.ValueOf(item), args)))
+	// 			}
 
-				// } else if it, ok := whereOpValue.(time.Time); ok {
-				// 	// Time values are formatted.
-				// 	_timeValue := reflect.ValueOf(it.Format(time.RFC3339Nano))
-				// 	result = append(result, opFunc(whereField.QualifiedColumnName, GenerateParameterPlaceholder(_timeValue, args)))
-				// } else if it, ok := whereOpValue.(fmt.Stringer); ok {
-				// 	// If the value implements fmt.Stringer, use its String method
-				// 	slog.Info("stringer", slog.String("wherefiedleQualifiedColumnName", whereField.QualifiedColumnName), slog.String("stringer", it.String()))
-				// 	result = append(result, opFunc(whereField.QualifiedColumnName, GenerateParameterPlaceholder(reflect.ValueOf(it.String()), args)))
-				// } else if _value.Kind() == reflect.Slice || _value.Kind() == reflect.Array {
-				// 	// Slice or array values are iterated and check for string types.
-				// 	items := []string{}
-				// 	for i := range _value.Len() {
-				// 		if _value.Index(i).Kind() == reflect.String {
-				// 			items = append(items, GenerateParameterPlaceholder(_value.Index(i), args))
-				// 		} else if it, ok := _value.Index(i).Interface().(fmt.Stringer); ok {
-				// 			// If the value implements fmt.Stringer, use its String method
-				// 			items = append(items, GenerateParameterPlaceholder(reflect.ValueOf(it.String()), args))
-				// 		}
-				// 	}
-				// 	result = append(result, opFunc(whereField.QualifiedColumnName, items...))
-				// }
+	// 		} else {
+	// 			// this field name and opation is not registered.
+	// 			// Relation field condition detected
+	// 			if relation := b.GetRelationByName(whereFieldName); relation != nil {
+	// 				var relatedBuilder SQLBuilderInterface
+	// 				// Get the target SQLBuilder for the relation
+	// 				if bld, ok := registry[relation.table]; !ok {
+	// 					panic(fmt.Sprintf("relation %s not found for model %s", relation.table, b.tableName))
+	// 				} else {
+	// 					// Get the target SQLBuilder for the relation
+	// 					relatedBuilder = bld
+	// 				}
 
-			} else {
-				// this field name and opation is not registered.
-				// Relation field condition detected
-				if relation, ok := b.relations[whereFieldName]; ok {
-					var relatedBuilder SQLBuilderInterface
-					// Get the target SQLBuilder for the relation
-					if bld, ok := registry[relation.table]; !ok {
-						panic(fmt.Sprintf("relation %s not found for model %s", relation.table, b.tableName))
-					} else {
-						// Get the target SQLBuilder for the relation
-						relatedBuilder = bld
-					}
+	// 				// Construct the sub-query for the related table
+	// 				relationWhere := whereFieldValue.(map[string]any)
 
-					// Construct the sub-query for the related table
-					relationWhere := whereFieldValue.(map[string]any)
+	// 				// query is the subquery we need to generate.
+	// 				var query string
 
-					// query is the subquery we need to generate.
-					var query string
+	// 				var relatedDestField = relatedBuilder.MustGetFieldByName(relation.dest)
+	// 				var srcField = b.MustGetFieldByName(relation.src)
+	// 				// if through is not empty
+	// 				// it is a many-to-many relation
+	// 				if relation.through != "" {
+	// 					var throughBuilder SQLBuilderInterface
+	// 					// Get the target SQLBuilder for the relation
+	// 					if bld, ok := registry[relation.through]; !ok {
+	// 						panic(fmt.Sprintf("relation through %s not found for model %s", relation.through, b.tableName))
+	// 					} else {
+	// 						// Get the target SQLBuilder for the relation
+	// 						throughBuilder = bld
+	// 					}
 
-					var relatedDestField = relatedBuilder.MustGetFieldByName(relation.dest)
-					var srcField = b.MustGetFieldByName(relation.src)
-					// if through is not empty
-					// it is a many-to-many relation
-					if relation.through != "" {
-						var throughBuilder SQLBuilderInterface
-						// Get the target SQLBuilder for the relation
-						if bld, ok := registry[relation.through]; !ok {
-							panic(fmt.Sprintf("relation through %s not found for model %s", relation.through, b.tableName))
-						} else {
-							// Get the target SQLBuilder for the relation
-							throughBuilder = bld
-						}
-
-						var throughTableName = throughBuilder.TableName()
-						var throughSrcField = throughBuilder.MustGetFieldByName(relation.throughSrc)
-						var throughDestField = throughBuilder.MustGetFieldByName(relation.throughDest)
-						query = fmt.Sprintf(
-							`SELECT %s FROM %s join %s on %s.%s = %s.%s`,
-							// SELECT
-							throughSrcField.QualifiedColumnName,
-							// FROM
-							throughTableName,
-							// join
-							relatedBuilder.TableName(),
-							// on
-							relatedBuilder.TableName(),
-							relatedDestField.ColumnName,
-							// =
-							throughTableName,
-							throughDestField.ColumnName,
-						)
-					} else {
-						//goland:noinspection Annotator
-						query = fmt.Sprintf("SELECT %s FROM %s", relatedDestField.QualifiedColumnName, relatedBuilder.TableName())
-					}
-					if expr := relatedBuilder.Where(&relationWhere, args); expr != "" {
-						query += fmt.Sprintf(" WHERE %s", expr)
-					}
-					if inop, ok := b.operations[srcField.Name+"_in"]; ok {
-						result = append(result, inop(srcField.QualifiedColumnName, query))
-					}
-				}
-			}
-		}
-	}
+	// 					var throughTableName = throughBuilder.TableName()
+	// 					var throughSrcField = throughBuilder.MustGetFieldByName(relation.throughSrc)
+	// 					var throughDestField = throughBuilder.MustGetFieldByName(relation.throughDest)
+	// 					query = fmt.Sprintf(
+	// 						`SELECT %s FROM %s join %s on %s.%s = %s.%s`,
+	// 						// SELECT
+	// 						throughSrcField.QualifiedColumnName,
+	// 						// FROM
+	// 						throughTableName,
+	// 						// join
+	// 						relatedBuilder.TableName(),
+	// 						// on
+	// 						relatedBuilder.TableName(),
+	// 						relatedDestField.ColumnName,
+	// 						// =
+	// 						throughTableName,
+	// 						throughDestField.ColumnName,
+	// 					)
+	// 				} else {
+	// 					//goland:noinspection Annotator
+	// 					query = fmt.Sprintf("SELECT %s FROM %s", relatedDestField.QualifiedColumnName, relatedBuilder.TableName())
+	// 				}
+	// 				if expr := relatedBuilder.Where(&relationWhere, args); expr != "" {
+	// 					query += fmt.Sprintf(" WHERE %s", expr)
+	// 				}
+	// 				if inop, ok := b.operations[srcField.Name+"_in"]; ok {
+	// 					result = append(result, inop(srcField.QualifiedColumnName, query))
+	// 				}
+	// 			}
+	// 		}
+	// 	}
+	// }
 
 	return strings.Join(result, " AND ")
 }
@@ -803,6 +942,9 @@ func (b *SQLBuilder[Model]) SetError(set *Model, args *[]any, where *map[string]
 }
 
 func convert(_field reflect.Value) string {
+	if _field.Kind() == reflect.Pointer {
+		_field = _field.Elem()
+	}
 	switch _field.Kind() {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		return fmt.Sprintf("%d", _field.Int())
@@ -814,10 +956,11 @@ func convert(_field reflect.Value) string {
 		return fmt.Sprintf("%f", _field.Complex())
 	case reflect.String:
 		return _field.String()
-
 	default:
-		if u, ok := _field.Interface().(uuid.UUID); ok {
-			return u.String()
+		if it, ok := _field.Interface().([]byte); ok {
+			return string(it)
+		} else if it, ok := _field.Interface().(uuid.UUID); ok {
+			return it.String()
 		} else if it, ok := _field.Interface().(time.Time); ok {
 			_newValue := reflect.ValueOf(it.Format(time.RFC3339Nano))
 			return _newValue.String()
