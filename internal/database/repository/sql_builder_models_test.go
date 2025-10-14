@@ -153,7 +153,7 @@ func TestSQLBuilder_Models_WhereError(t *testing.T) {
 
 func testWhere[A any](t *testing.T, tt builderWhereTest[A]) {
 	query := fmt.Sprintf("SELECT %s FROM %s", tt.builder.QualifiedColumnNamesJoined(), tt.builder.TableName())
-	got, gotErr := tt.builder.WhereError(context.Background(), tt.where, tt.args, nil)
+	got, gotErr := tt.builder.WhereError(context.Background(), tt.where, tt.args)
 	query += fmt.Sprintf(" WHERE %s", got)
 	if gotErr != nil {
 		if !tt.wantErr {

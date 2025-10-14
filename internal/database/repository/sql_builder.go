@@ -150,8 +150,8 @@ type SQLBuilderInterface interface {
 	Fields() []*Field
 	GetFieldByName(name string) *Field
 	MustGetFieldByName(name string) *Field
-	Where(where *map[string]any, args *[]any, run func(string) []string) string
-	WhereError(ctx context.Context, where *map[string]any, args *[]any, run func(string) []string) (ret string, err error)
+	Where(where *map[string]any, args *[]any) string
+	WhereError(ctx context.Context, where *map[string]any, args *[]any) (ret string, err error)
 	IdFieldName() string
 	InsertID() bool
 	Generator() func(reflect.StructField, *[]any) (string, error)
@@ -437,7 +437,7 @@ func NewSQLBuilder[Model any](opts ...SQLBuilderOptions[Model]) *SQLBuilder[Mode
 
 var timestampNames = []string{"created_at", "updated_at"}
 
-func (b *SQLBuilder[Model]) WhereError(ctx context.Context, where *map[string]any, args *[]any, run func(string) []string) (ret string, err error) {
+func (b *SQLBuilder[Model]) WhereError(ctx context.Context, where *map[string]any, args *[]any) (ret string, err error) {
 	if where == nil {
 		return "", nil
 	}
@@ -450,23 +450,8 @@ func (b *SQLBuilder[Model]) WhereError(ctx context.Context, where *map[string]an
 			err = fmt.Errorf("error generating where for table %s. check your filters", b.tableName)
 		}
 	}()
-	ret = b.Where(where, args, run)
+	ret = b.Where(where, args)
 	return
-}
-
-func isNumeric(v reflect.Value) bool {
-	switch v.Kind() {
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		return true
-	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
-		return true
-	case reflect.Float32, reflect.Float64:
-		return true
-	case reflect.Complex64, reflect.Complex128:
-		return true
-	default:
-		return false
-	}
 }
 
 // GenerateParameterPlaceholder returns the numbered parameter placeholder,
@@ -505,7 +490,7 @@ func GenerateParameterPlaceholder(value reflect.Value, args *[]any) string {
 // args is a slice of any:
 //
 //	var args = []any{"John", []string{"admin", "user"}}
-func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any, run func(string) []string) string {
+func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any) string {
 	if where == nil {
 		return ""
 	}
@@ -516,7 +501,7 @@ func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any, run func(s
 		// in case of _not, the value is a map[string]any
 		expr, ok := item.(map[string]any)
 		if ok {
-			return "NOT (" + b.Where(&expr, args, run) + ")"
+			return "NOT (" + b.Where(&expr, args) + ")"
 		}
 	} else if items, ok := (*where)["_and"]; ok {
 		// in case of _and, the value is a []map[string]any
@@ -525,7 +510,7 @@ func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any, run func(s
 		if ok {
 			for _, item := range ands {
 				expr := item
-				result = append(result, b.Where(&expr, args, run))
+				result = append(result, b.Where(&expr, args))
 			}
 		}
 
@@ -537,7 +522,7 @@ func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any, run func(s
 		if ok {
 			for _, item := range orWheres {
 				expr := item
-				result = append(result, b.Where(&expr, args, run))
+				result = append(result, b.Where(&expr, args))
 			}
 		}
 
@@ -546,6 +531,11 @@ func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any, run func(s
 
 	// Otherwise, construct the WHERE clause based on the field names and operations
 	result := []string{}
+
+	keys := make([]string, 0)
+	for k := range *where {
+		keys = append(keys, k)
+	}
 
 	// iterate over the where map,
 	//
@@ -689,17 +679,11 @@ func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any, run func(s
 						//goland:noinspection Annotator
 						query = fmt.Sprintf("SELECT %s FROM %s", relatedDestField.QualifiedColumnName, relatedBuilder.TableName())
 					}
-					if expr := relatedBuilder.Where(&relationWhere, args, run); expr != "" {
+					if expr := relatedBuilder.Where(&relationWhere, args); expr != "" {
 						query += fmt.Sprintf(" WHERE %s", expr)
 					}
-					if run == nil {
-						if inop, ok := b.operations[srcField.Name+"_in"]; ok {
-							result = append(result, inop(srcField.QualifiedColumnName, query))
-						}
-					} else {
-						if inop, ok := b.operations[srcField.Name+"_in"]; ok {
-							result = append(result, inop(srcField.QualifiedColumnName, run(query)...))
-						}
+					if inop, ok := b.operations[srcField.Name+"_in"]; ok {
+						result = append(result, inop(srcField.QualifiedColumnName, query))
 					}
 				}
 			}

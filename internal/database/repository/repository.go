@@ -49,7 +49,7 @@ func (r *PostgresRepository[Model]) Get(ctx context.Context, db database.Dbx, wh
 	var args []any
 	//goland:noinspection Annotator
 	query := fmt.Sprintf("SELECT %s FROM %s", r.builder.QualifiedColumnNamesJoined(), r.builder.TableName())
-	if expr, err := r.builder.WhereError(ctx, where, &args, nil); err != nil {
+	if expr, err := r.builder.WhereError(ctx, where, &args); err != nil {
 		return nil, err
 	} else if expr != "" {
 		query += fmt.Sprintf(" WHERE %s", expr)
@@ -96,7 +96,7 @@ func (r *PostgresRepository[Model]) Put(ctx context.Context, dbx database.Dbx, m
 		}
 		//goland:noinspection Annotator
 		query := fmt.Sprintf("UPDATE %s SET %s", r.builder.TableName(), set)
-		if expr, err := r.builder.WhereError(ctx, &where, &args, nil); err != nil {
+		if expr, err := r.builder.WhereError(ctx, &where, &args); err != nil {
 			return nil, err
 		} else if expr != "" {
 			query += fmt.Sprintf(" WHERE %s", expr)
@@ -219,7 +219,7 @@ func (r *PostgresRepository[Model]) DeleteReturn(ctx context.Context, dbx databa
 	args := []any{}
 	//goland:noinspection Annotator
 	query := fmt.Sprintf("DELETE FROM %s", r.builder.TableName())
-	if expr, err := r.builder.WhereError(ctx, where, &args, nil); err != nil {
+	if expr, err := r.builder.WhereError(ctx, where, &args); err != nil {
 		return nil, err
 	} else if expr != "" {
 		query += fmt.Sprintf(" WHERE %s", expr)
@@ -247,7 +247,7 @@ func (r *PostgresRepository[Model]) Delete(ctx context.Context, dbx database.Dbx
 	args := []any{}
 	//goland:noinspection Annotator
 	query := fmt.Sprintf("DELETE FROM %s", r.builder.TableName())
-	if expr, err := r.builder.WhereError(ctx, where, &args, nil); err != nil {
+	if expr, err := r.builder.WhereError(ctx, where, &args); err != nil {
 		return 0, err
 	} else if expr != "" {
 		query += fmt.Sprintf(" WHERE %s", expr)
@@ -274,7 +274,7 @@ func (r *PostgresRepository[Model]) Count(ctx context.Context, dbx database.Dbx,
 	args := []any{}
 	//goland:noinspection Annotator
 	query := fmt.Sprintf("SELECT COUNT(*) FROM %s", r.builder.TableName())
-	if expr, err := r.builder.WhereError(ctx, where, &args, nil); err != nil {
+	if expr, err := r.builder.WhereError(ctx, where, &args); err != nil {
 		return 0, err
 	} else if expr != "" {
 		query += fmt.Sprintf(" WHERE %s", expr)
