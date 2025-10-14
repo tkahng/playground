@@ -27,6 +27,15 @@ func MustFindOne[T any](t *testing.T, repo Repository[T], db database.Dbx, arg *
 	return res
 }
 
+func MustCountAll[T any](t *testing.T, repo Repository[T], db database.Dbx) int64 {
+	t.Helper()
+	res, err := repo.Count(context.Background(), db, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return res
+}
+
 func MustFindAll[T any](t *testing.T, repo Repository[T], db database.Dbx, arg *map[string]any) []*T {
 	t.Helper()
 	res, err := repo.Get(context.Background(), db, arg, nil, nil, nil)
@@ -34,6 +43,29 @@ func MustFindAll[T any](t *testing.T, repo Repository[T], db database.Dbx, arg *
 		t.Fatal(err)
 	}
 	return res
+}
+
+func MustCreateUserAndAccount(t *testing.T, db database.Dbx, fns ...func(*models.User, *models.UserAccount)) (*models.User, *models.UserAccount) {
+	t.Helper()
+	uid := uuid.NewString()
+	user := &models.User{
+		Email: uid + "@example.com",
+		Name:  &uid,
+	}
+	pw := "Password123!"
+	res := &models.UserAccount{
+		Type:              models.ProviderTypeCredentials,
+		ProviderAccountID: uid,
+		Provider:          models.ProvidersCredentials,
+		Password:          &pw,
+	}
+	for _, fn := range fns {
+		fn(user, res)
+	}
+	user = MustCreate(t, User, db, user)
+	res.UserID = user.ID
+	res = MustCreate(t, UserAccount, db, res)
+	return user, res
 }
 
 func MustCreateUser(t *testing.T, db database.Dbx, fns ...func(*models.User)) *models.User {

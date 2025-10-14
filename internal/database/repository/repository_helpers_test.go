@@ -6,6 +6,7 @@ import (
 
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/database/repository"
+	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/test"
 )
 
@@ -62,6 +63,55 @@ func TestInitRbac(t *testing.T) {
 		})
 		if len(rolesWithPermissions) != 3 {
 			t.Errorf("expected 2 roles with permissions, got %d", len(rolesWithPermissions))
+		}
+	})
+}
+
+func TestMustCreateUserAndAccount(t *testing.T) {
+	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
+		tests := []struct {
+			name string // description of this test case
+			// Named input parameters for target function.
+			db        database.Dbx
+			fns       []func(*models.User, *models.UserAccount)
+			predicate func(*models.User, *models.UserAccount)
+		}{
+			{
+				name: "Create user and account with defaults",
+				db:   db,
+				fns:  []func(*models.User, *models.UserAccount){},
+				predicate: func(user *models.User, account *models.UserAccount) {
+					if user == nil {
+						t.Errorf("expected user, got nil")
+					}
+					if account == nil {
+						t.Errorf("expected account, got nil")
+					}
+				},
+			},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				got, got2 := repository.MustCreateUserAndAccount(t, tt.db, tt.fns...)
+				tt.predicate(got, got2)
+			})
+		}
+	})
+}
+
+func TestMustCreateUserAndAccount_Randomize(t *testing.T) {
+	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
+		var count int64 = 100
+		for range count {
+			repository.MustCreateUserAndAccount(t, db)
+		}
+		userCount := repository.MustCountAll(t, repository.User, db)
+		if userCount != count {
+			t.Errorf("expected at least 10 users, got %d", userCount)
+		}
+		countAcc := repository.MustCountAll(t, repository.User, db)
+		if countAcc != count {
+			t.Errorf("expected at least 10 accounts, got %d", countAcc)
 		}
 	})
 }
