@@ -11,6 +11,7 @@ import (
 )
 
 func NewHumaApi(tb testing.TB, configs ...huma.Config) (http.Handler, humatest.TestAPI) {
+	tb.Helper()
 	for _, config := range configs {
 		if config.OpenAPI == nil {
 			panic("custom huma.Config structs must specify a value for OpenAPI")
