@@ -146,7 +146,6 @@
         "username": "postgres"
       }
     ],
-    "go.coverMode": "atomic",
     "go.coverOnSingleTestFile": true,
     "go.coverOnSingleTest": true,
     "go.coverShowCounts": true,
@@ -160,6 +159,9 @@
     "explorer.fileNesting.enabled": true,
     "gitlens.views.repositories.pullRequests.enabled": false,
     "gitlens.views.repositories.autoRefresh": true,
-    "gitlens.views.remotes.pullRequests.enabled": false
+    "gitlens.views.remotes.pullRequests.enabled": false,
+    "go.testExplorer.showDynamicSubtestsInEditor": true,
+    "testing.followRunningTest": true,
+    "testing.showAllMessages": true
   }
 }
