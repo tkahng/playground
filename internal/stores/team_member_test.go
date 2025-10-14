@@ -254,7 +254,7 @@ func TestFindLatestTeamMemberByUserID(t *testing.T) {
 func TestUpdateTeamMemberUpdatedAt(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	ctx, dbx := test.DbSetup(t)
+	ctx, dbx := test.DbSetupTesting(t)
 	t.Cleanup(func() {
 		_, err := repository.TeamMember.Delete(ctx, dbx, nil)
 		if err != nil {

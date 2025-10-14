@@ -14,7 +14,7 @@ import (
 )
 
 func TestPoller_Run(t *testing.T) {
-	ctx, dbx := test.DbSetup(t)
+	ctx, dbx := test.DbSetupTesting(t)
 
 	// test.WithTx(t, func(ctx context.Context, dbx database.Dbx) {
 

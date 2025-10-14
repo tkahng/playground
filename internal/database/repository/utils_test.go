@@ -81,6 +81,7 @@ func Test_splitTagValueOptions(t *testing.T) {
 		{
 			name: "empty",
 			tag:  `db:""`,
+			want: &FieldTag{},
 		},
 	}
 	for _, tt := range tests {

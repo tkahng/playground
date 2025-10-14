@@ -19,7 +19,7 @@ import (
 // -e POSTGRES_PASSWORD=postgres postgres
 
 func TestNotifier(t *testing.T) {
-	ctx, dbx := test.DbSetup(t)
+	ctx, dbx := test.DbSetupTesting(t)
 	l := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	ctx, cancel := context.WithCancel(ctx)
 	wg := sync.WaitGroup{}

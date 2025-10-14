@@ -17,7 +17,7 @@ import (
 )
 
 func TestGetGreeting(t *testing.T) {
-	ctx, db := test.DbSetup(t)
+	ctx, db := test.DbSetupTesting(t)
 	testApi := SetupApi(t, ctx, db)
 	api := testApi.TestApi
 

@@ -17,7 +17,7 @@ import (
 )
 
 func TestConstraintCheckerService_CannotHaveValidSubscription(t *testing.T) {
-	ctx, dbx := test.DbSetup(t)
+	ctx, dbx := test.DbSetupTesting(t)
 
 	_ = dbx.RunInTx(func(tx database.Dbx) error {
 		adapter := stores.NewStorageAdapter(tx)
@@ -312,7 +312,7 @@ func TestConstraintCheckerService_CannotBeSuperUserEmailAndRoleName(t *testing.T
 	})
 }
 func TestConstraintCheckerService_CannotBeSuperUserID(t *testing.T) {
-	ctx, dbx := test.DbSetup(t)
+	ctx, dbx := test.DbSetupTesting(t)
 
 	_ = dbx.RunInTx(func(tx database.Dbx) error {
 		adapter := stores.NewStorageAdapter(tx)
