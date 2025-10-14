@@ -187,6 +187,9 @@ func (s *DbTeamGroupStore) CreateTeam(ctx context.Context, name string, slug str
 }
 
 func (s *DbTeamGroupStore) ListTeams(ctx context.Context, params *TeamFilter) ([]*models.Team, error) {
+	if params == nil {
+		params = &TeamFilter{}
+	}
 	where := s.filter(params)
 	limit, offset := params.LimitOffset()
 	sort := s.sort(params)

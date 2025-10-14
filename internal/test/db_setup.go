@@ -31,8 +31,7 @@ func DbSetup() (context.Context, *database.Queries) {
 
 func WithTx(t *testing.T, fn func(ctx context.Context, db database.Dbx)) {
 	t.Helper()
-	DbSetup()
-	ctx := context.Background()
+	ctx, dbx := DbSetup()
 	tx, err := dbx.Begin(ctx)
 	if err != nil {
 		t.Fatal(err)
