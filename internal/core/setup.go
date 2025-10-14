@@ -26,6 +26,13 @@ func NewApp(cfg conf.EnvConfig) *BaseApp {
 	}
 	return app
 }
+func NewAppContext(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
+	app := new(BaseApp)
+	if err := Bootstrap(app); err != nil {
+		panic(fmt.Errorf("failed to bootstrap app: %w", err))
+	}
+	return app
+}
 func Bootstrap(app *BaseApp) error {
 	InitializePrimitives(app)
 	SetDb(app)
@@ -57,7 +64,7 @@ func InitializePrimitives(app *BaseApp) {
 }
 
 func SetDb(app *BaseApp) {
-	queries := database.CreateQueries(app.cfg.Db.GetDatabaseUrl())
+	queries := database.CreateSingletonQueriesContext(context.Background(), app.cfg.Db.GetDatabaseUrl())
 
 	if err := queries.Pool().Ping(context.Background()); err != nil {
 		panic(fmt.Errorf("failed to ping db: %w", err))

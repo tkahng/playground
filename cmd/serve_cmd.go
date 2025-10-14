@@ -70,7 +70,7 @@ func Run2() error {
 
 	go func() {
 		quit := make(chan os.Signal, 1)
-		signal.Notify(quit, syscall.SIGTERM, syscall.SIGINT)
+		signal.Notify(quit, os.Interrupt, syscall.SIGTERM, syscall.SIGHUP, syscall.SIGINT)
 
 		quitSignal := <-quit
 		signal.Stop(quit)

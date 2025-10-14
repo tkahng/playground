@@ -16,33 +16,33 @@ var (
 	pgOnce     sync.Once
 )
 
-func newQueries(ctx context.Context, connString string) (*Queries, error) {
+func CreateSingletonQueriesContext(ctx context.Context, connString string) *Queries {
 	pgOnce.Do(func() {
 		pool, err := getDbPool(ctx, connString)
 		if err != nil {
 			slog.Error("error creating pool.", "error", err)
+			panic(err)
 		}
 		pgInstance = &Queries{
 			db: pool,
 		}
 	})
 	if pgInstance == nil {
-		return nil, fmt.Errorf("error at error: %w", nil)
+		panic(fmt.Errorf("pgInstance is nil"))
 	}
-	return pgInstance, nil
 
+	return pgInstance
 }
+
 func CreateQueriesContext(ctx context.Context, connString string) *Queries {
-	pool, err := newQueries(ctx, connString)
+	pool, err := getDbPool(ctx, connString)
 	if err != nil {
 		slog.Error("error creating pool.", "error", err)
-		panic(fmt.Errorf("error creating pool: %w", err))
+		panic(err)
 	}
-	return pool
-}
-
-func CreateQueries(connString string) *Queries {
-	return CreateQueriesContext(context.Background(), connString)
+	return &Queries{
+		db: pool,
+	}
 }
 
 func getDbPool(ctx context.Context, connString string) (*pgxpool.Pool, error) {

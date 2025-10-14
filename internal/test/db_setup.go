@@ -24,7 +24,7 @@ func DbSetupTesting(t *testing.T) (context.Context, *database.Queries) {
 func DbSetup() (context.Context, *database.Queries) {
 	ctxOnce.Do(func() {
 		ctxInstance = context.Background()
-		dbx = database.CreateQueriesContext(ctxInstance, "postgres://postgres:postgres@localhost:5432/playground_test?sslmode=disable")
+		dbx = database.CreateSingletonQueriesContext(ctxInstance, "postgres://postgres:postgres@localhost:5432/playground_test?sslmode=disable")
 	})
 	return ctxInstance, dbx
 }
