@@ -327,7 +327,7 @@ func (s *QueryResource[Model, Key, Filter]) Create(ctx context.Context, model *M
 	qs := sq.Insert(s.builder.TableName()).
 		Columns(fieldsArray...).
 		Values(valuesArray...).
-		Suffix(fmt.Sprintf("RETURNING %s", s.builder.FieldString("")))
+		Suffix(fmt.Sprintf("RETURNING %s", s.builder.ColumnNamesJoined()))
 	res, err := database.QueryWithBuilder[*Model](ctx, s.db, qs.PlaceholderFormat(sq.Dollar))
 	if err != nil {
 		return nil, fmt.Errorf("error creating model: %w", err)
@@ -416,7 +416,7 @@ func (s *QueryResource[Model, Key, Filter]) Update(ctx context.Context, model *M
 			qs = qs.Set(field.Name, _field.Interface())
 		}
 	}
-	qs = qs.Suffix(fmt.Sprintf("RETURNING %s", s.builder.FieldString("")))
+	qs = qs.Suffix(fmt.Sprintf("RETURNING %s", s.builder.ColumnNamesJoined()))
 
 	res, err := database.QueryWithBuilder[*Model](ctx, s.db, qs.PlaceholderFormat(sq.Dollar))
 	if err != nil {

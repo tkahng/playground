@@ -237,6 +237,11 @@ func (b *SQLBuilder[Model]) ColumnNames() []string {
 	return fieldNames
 }
 
+// ColumnNames returns the names of the columns, not the qualified column names.
+func (b *SQLBuilder[Model]) ColumnNamesJoined() string {
+	return strings.Join(b.ColumnNames(), ",")
+}
+
 // QualifiedColumnNames returns the formatted column names with the table prefix.
 func (b *SQLBuilder[Model]) QualifiedColumnNames() []string {
 	// Returns the column names with the table prefix
@@ -247,31 +252,17 @@ func (b *SQLBuilder[Model]) QualifiedColumnNames() []string {
 	return fieldNames
 }
 
+// QualifiedColumnNames returns the formatted column names with the table prefix.
+func (b *SQLBuilder[Model]) QualifiedColumnNamesJoined() string {
+	return strings.Join(b.QualifiedColumnNames(), ",")
+}
+
 // TableName Returns the table name with proper identifier formatting
 func (b *SQLBuilder[Model]) TableName() string {
 	if b.quoteIdentifier {
 		return utils.Quote(b.tableName)
 	}
 	return b.tableName
-}
-
-func (b *SQLBuilder[Model]) ReturningFields() string {
-	var result []string
-	for _, field := range b.fields {
-		result = append(result, b.TableName()+"."+field.ColumnName)
-	}
-
-	return strings.Join(result, ",")
-}
-
-// Returns a comma-separated list of field names with proper identifier formatting
-func (b *SQLBuilder[Model]) FieldString(prefix string) string {
-	var result []string
-	for _, field := range b.fields {
-		result = append(result, prefix+field.ColumnName)
-	}
-
-	return strings.Join(b.FieldNames(), ",")
 }
 
 // IdFieldName implements SQLBuilderInterface.
@@ -285,11 +276,6 @@ func (b *SQLBuilder[Model]) InsertID() bool {
 func (b *SQLBuilder[Model]) Generator() func(reflect.StructField, *[]any) (string, error) {
 	// Returns the generator function for the primary key field
 	return b.generator
-}
-
-func (b *SQLBuilder[Model]) Parameter(value reflect.Value, args *[]any) string {
-	*args = append(*args, value.Interface())
-	return fmt.Sprintf("$%d", len(*args))
 }
 
 var registry = map[string]SQLBuilderInterface{}
@@ -682,21 +668,6 @@ func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any, run func(s
 	return strings.Join(result, " AND ")
 }
 
-func (b *SQLBuilder[Model]) Sort(filter Sortable) *map[string]string {
-	if filter == nil {
-		return nil
-	}
-	sortBy, sortOrder := filter.Sort()
-	if sortBy != "" && slices.Contains(b.FieldNames(), sortBy) {
-		return &map[string]string{
-			sortBy: sortOrder,
-		}
-	} else {
-		slog.Info("sort by field not found in repository columns", "sortBy", sortBy, "sortOrder", sortOrder, "columns", b.FieldNames())
-		return nil // Return nil if the sortBy field is not found in the repository columns
-	}
-}
-
 func (b *SQLBuilder[Model]) ValuesError(values *[]Model, args *[]any, keys *[]any) (fields string, vals string, err error) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -861,6 +832,50 @@ func (b *SQLBuilder[Model]) Set(set *Model, args *[]any, where *map[string]any) 
 	}
 
 	return strings.Join(result, ",")
+}
+
+func (b *SQLBuilder[Model]) SortError(filter Sortable) (sort *map[string]string, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			slog.Error("Error occurred during Sort generation", slog.Any("error", r),
+				slog.String("table", b.tableName),
+				slog.Any("fitler", filter),
+			)
+			err = fmt.Errorf("error generating Set for table %s", b.tableName)
+		}
+	}()
+	sort = b.Sort(filter)
+	return
+}
+
+func (b *SQLBuilder[Model]) Sort(filter Sortable) *map[string]string {
+	if filter == nil {
+		return nil
+	}
+	sortBy, sortOrder := filter.Sort()
+	if sortBy != "" && slices.Contains(b.FieldNames(), sortBy) {
+		return &map[string]string{
+			sortBy: sortOrder,
+		}
+	} else {
+		slog.Info("sort by field not found in repository columns", "sortBy", sortBy, "sortOrder", sortOrder, "columns", b.FieldNames())
+		return nil // Return nil if the sortBy field is not found in the repository columns
+	}
+}
+
+// OrderError is a wrapper around Order that recovers from panics
+func (b *SQLBuilder[Model]) OrderError(order *map[string]string) (res string, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			slog.Error("Error occurred during Sort generation", slog.Any("error", r),
+				slog.String("table", b.tableName),
+				slog.Any("order", order),
+			)
+			err = fmt.Errorf("error generating Order for table %s", b.tableName)
+		}
+	}()
+	res = b.Order(order)
+	return
 }
 
 // Constructs the ORDER BY clause for a query

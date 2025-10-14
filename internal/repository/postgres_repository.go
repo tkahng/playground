@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"strings"
 
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/models"
@@ -34,15 +33,15 @@ func (r *PostgresRepository[Model]) Builder() SQLBuilderInterface {
 func (r *PostgresRepository[Model]) Get(ctx context.Context, db database.Dbx, where *map[string]any, order *map[string]string, limit *int, offset *int) ([]*Model, error) {
 	var args []any
 	//goland:noinspection Annotator
-	query := fmt.Sprintf("SELECT %s FROM %s", r.builder.FieldString(""), r.builder.TableName())
-	expr, err := r.builder.WhereError(ctx, where, &args, nil)
-	if err != nil {
+	query := fmt.Sprintf("SELECT %s FROM %s", r.builder.QualifiedColumnNamesJoined(), r.builder.TableName())
+	if expr, err := r.builder.WhereError(ctx, where, &args, nil); err != nil {
 		return nil, err
-	}
-	if expr != "" {
+	} else if expr != "" {
 		query += fmt.Sprintf(" WHERE %s", expr)
 	}
-	if orderexpr := r.builder.Order(order); orderexpr != "" {
+	if orderexpr, err := r.builder.OrderError(order); err != nil {
+		return nil, err
+	} else if orderexpr != "" {
 		query += fmt.Sprintf(" ORDER BY %s", orderexpr)
 	}
 	if limit != nil {
@@ -52,8 +51,9 @@ func (r *PostgresRepository[Model]) Get(ctx context.Context, db database.Dbx, wh
 		query += fmt.Sprintf(" OFFSET %d", *offset)
 	}
 
+	slog.Debug("query and args", slog.String("query", query), slog.Any("args", args))
+
 	// Execute the query and scan the results
-	slog.Info("query and args", slog.String("query", query), slog.Any("args", args))
 	items, err := database.QueryAll[*Model](
 		ctx,
 		db,
@@ -86,7 +86,8 @@ func (r *PostgresRepository[Model]) Put(ctx context.Context, dbx database.Dbx, m
 		} else if expr != "" {
 			query += fmt.Sprintf(" WHERE %s", expr)
 		}
-		query += fmt.Sprintf(" RETURNING %s", r.builder.FieldString(""))
+
+		query += fmt.Sprintf(" RETURNING %s", r.builder.ColumnNamesJoined())
 
 		items, err := database.QueryAll[*Model](
 			ctx,
@@ -143,7 +144,7 @@ func (r *PostgresRepository[Model]) PostExec(ctx context.Context, dbx database.D
 		query += fmt.Sprintf(" (%s) VALUES %s", fields, values)
 	}
 	// Execute the query and scan the results
-	fmt.Println("query", query, "args", args)
+	slog.Debug("query and args", slog.String("query", query), slog.Any("args", args))
 	result, err := database.Exec(
 		ctx,
 		dbx,
@@ -168,10 +169,10 @@ func (r *PostgresRepository[Model]) Post(ctx context.Context, dbx database.Dbx, 
 	} else if fields != "" && values != "" {
 		query += fmt.Sprintf(" (%s) VALUES %s", fields, values)
 	}
-	query += fmt.Sprintf(" RETURNING %s", strings.Join(r.builder.ColumnNames(), ","))
+	query += fmt.Sprintf(" RETURNING %s", r.builder.ColumnNamesJoined())
 
 	// Execute the query and scan the results
-	fmt.Println("query", query, "args", args)
+	slog.Debug("query and args", slog.String("query", query), slog.Any("args", args))
 	result, err := database.QueryAll[*Model](
 		ctx,
 		dbx,
@@ -208,8 +209,9 @@ func (r *PostgresRepository[Model]) DeleteReturn(ctx context.Context, dbx databa
 	} else if expr != "" {
 		query += fmt.Sprintf(" WHERE %s", expr)
 	}
-	query += fmt.Sprintf(" RETURNING %s", r.builder.FieldString(""))
+	query += fmt.Sprintf(" RETURNING %s", r.builder.ColumnNamesJoined())
 
+	slog.Debug("query and args", slog.String("query", query), slog.Any("args", args))
 	// Execute the query and scan the results
 	result, err := database.QueryAll[*Model](
 		ctx,
@@ -235,8 +237,8 @@ func (r *PostgresRepository[Model]) Delete(ctx context.Context, dbx database.Dbx
 	} else if expr != "" {
 		query += fmt.Sprintf(" WHERE %s", expr)
 	}
-	// query += fmt.Sprintf(" RETURNING %s", r.builder.Fields(""))
 
+	slog.Debug("query and args", slog.String("query", query), slog.Any("args", args))
 	// Execute the query and scan the results
 	result, err := database.Exec(
 		ctx,
@@ -263,11 +265,10 @@ func (r *PostgresRepository[Model]) Count(ctx context.Context, dbx database.Dbx,
 		query += fmt.Sprintf(" WHERE %s", expr)
 	}
 
+	slog.Debug("query and args", slog.String("query", query), slog.Any("args", args))
 	// Execute the query and scan the results
-	// fmt.Println("query", query, "args", args)
 	count, err := database.Count(ctx, dbx, query, args...)
 
-	// result, err := r.builder.Scan(dbx.Query(ctx, query, args...))
 	if err != nil {
 		slog.ErrorContext(ctx, "Error executing Get query", slog.String("query", query), slog.Any("args", args), slog.Any("error", err))
 		return 0, err
