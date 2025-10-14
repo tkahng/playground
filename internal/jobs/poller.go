@@ -166,32 +166,3 @@ func (p *DbPoller) PollOnce(ctx context.Context) error {
 
 	return g.Wait()
 }
-
-type DbPollerDecorator struct {
-	Delegate     *DbPoller
-	RunFunc      func(ctx context.Context) error
-	PollOnceFunc func(ctx context.Context) error
-}
-
-// PollOnce implements Poller.
-func (d *DbPollerDecorator) PollOnce(ctx context.Context) error {
-	if d.PollOnceFunc != nil {
-		return d.PollOnceFunc(ctx)
-	}
-	return d.Delegate.PollOnce(ctx)
-}
-
-var _ Poller = (*DbPollerDecorator)(nil)
-
-func (d *DbPollerDecorator) Run(ctx context.Context) error {
-	if d.RunFunc != nil {
-		return d.RunFunc(ctx)
-	}
-	return d.Delegate.Run(ctx)
-}
-
-func NewDbPollerDecorator(store JobStore, dispatcher Dispatcher, opts ...PollerOptsFunc) *DbPollerDecorator {
-	return &DbPollerDecorator{
-		Delegate: NewDbPoller(store, dispatcher, opts...),
-	}
-}
