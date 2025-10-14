@@ -329,6 +329,7 @@ func NewSQLBuilder[Model any](opts ...SQLBuilderOptions[Model]) *SQLBuilder[Mode
 
 		// first field is the info field _ struct{}
 		if idx == 0 {
+
 			if _field.Name == "_" {
 				// tag should be db with table name
 				// or else panic

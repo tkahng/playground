@@ -29,3 +29,21 @@ type AD struct {
 	AID string   `db:"a_id" json:"a_id"`
 	DID string   `db:"d_id" json:"d_id"`
 }
+
+// var (
+// 	ABuilder = repository.NewSQLBuilder[A](
+// 		repository.UuidV7Generator,
+// 	)
+// 	BBuilder = repository.NewSQLBuilder[B](
+// 		repository.UuidV7Generator,
+// 	)
+// 	CBuilder = repository.NewSQLBuilder[C](
+// 		repository.UuidV7Generator,
+// 	)
+// 	DBuilder = repository.NewSQLBuilder[D](
+// 		repository.UuidV7Generator,
+// 	)
+// 	ADBuilder = repository.NewSQLBuilder[AD](
+// 		repository.InsertID,
+// 	)
+// )
