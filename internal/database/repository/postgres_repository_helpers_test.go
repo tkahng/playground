@@ -47,26 +47,20 @@ func TestInitRbac(t *testing.T) {
 		rolesWithPermissions = repository.MustFindAll(t, repository.Role, dbx, &map[string]any{
 			"_or": []map[string]any{
 				{
-					"permissions": map[string]any{
-						"name": map[string]any{
-							"_eq": "admin",
-						},
+					"name": map[string]any{
+						"_eq": "admin",
 					},
 				},
 				{
-					"_and": []map[string]any{
-						{
-							"permissions": map[string]any{
-								"name": map[string]any{
-									"_eq": "advanced",
-								},
-							},
+					"permissions": map[string]any{
+						"name": map[string]any{
+							"_eq": "pro",
 						},
 					},
 				},
 			},
 		})
-		if len(rolesWithPermissions) != 2 {
+		if len(rolesWithPermissions) != 3 {
 			t.Errorf("expected 2 roles with permissions, got %d", len(rolesWithPermissions))
 		}
 	})
