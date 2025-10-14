@@ -420,7 +420,41 @@ func NewSQLBuilder[Model any](opts ...SQLBuilderOptions[Model]) *SQLBuilder[Mode
 
 var timestampNames = []string{"created_at", "updated_at"}
 
-// Constructs the WHERE clause for a query
+func (b *SQLBuilder[Model]) WhereError(ctx context.Context, where *map[string]any, args *[]any, run func(string) []string) (ret string, err error) {
+	if where == nil {
+		return "", nil
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			slog.ErrorContext(ctx, "Error occurred during where generation", slog.Any("error", r),
+				slog.String("table", b.tableName),
+				slog.Any("where", where),
+			)
+			err = fmt.Errorf("error generating where for table %s. check your filters", b.tableName)
+		}
+	}()
+	ret = b.Where(where, args, run)
+	return
+}
+
+// Where constructs the WHERE clause for a query.
+//
+// where is a map[string]any:
+//
+//	var where = map[string]any{
+//		"name": map[string]any{
+//			"_eq": "John",
+//		},
+//		"roles": map[string]any{
+//			"name": map[string]any{
+//				"_in": []string{"admin", "user"},
+//			},
+//		},
+//	}
+//
+// args is a slice of any:
+//
+//	var args = []any{"John", []string{"admin", "user"}}
 func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any, run func(string) []string) string {
 	if where == nil {
 		return ""
@@ -468,15 +502,16 @@ func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any, run func(s
 	// each value will be a map of operators and values
 	for whereFieldName, whereFieldOperation := range *where {
 		// fmt.Println("key", key, "item", item)
-		var whereField *Field = b.GetFieldByName(whereFieldName)
+
 		// iterate over the map of operators and values,
 		// each key is a operator code(_eq, _gt, etc)
 		// each value will be a map of operators and values
 		for whereOp, whereOpValue := range whereFieldOperation.(map[string]any) {
 			// fmt.Println("operation", op, "value", value)
-
-			// if this f
+			// if this field and operation is registered, go ahead.
+			// if not, it might be a relational field
 			if opFunc, ok := b.operations[whereFieldName+whereOp]; ok {
+				var whereField *Field = b.GetFieldByName(whereFieldName)
 				// Primitive field condition detected
 				// slog.Info("Processing primitive field condition", slog.String("key", key), slog.String("operation", op), slog.Any("value", value))
 				// if the value is nil,
@@ -505,13 +540,15 @@ func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any, run func(s
 					// String values are passed to operation handler as single parameter
 					result = append(result, opFunc(whereField.Identifier(), DefaultParameterFunc(_value, args)))
 				} else if it, ok := whereOpValue.(time.Time); ok {
-					_newValue := reflect.ValueOf(it.Format(time.RFC3339Nano))
-					result = append(result, opFunc(whereField.Identifier(), DefaultParameterFunc(_newValue, args)))
+					// Time values are formatted.
+					_timeValue := reflect.ValueOf(it.Format(time.RFC3339Nano))
+					result = append(result, opFunc(whereField.Identifier(), DefaultParameterFunc(_timeValue, args)))
 				} else if it, ok := whereOpValue.(fmt.Stringer); ok {
-					_newValue := reflect.ValueOf(it.String())
-					if _newValue.Kind() == reflect.String {
+					// If the value implements fmt.Stringer, use its String method
+					_stringValue := reflect.ValueOf(it.String())
+					if _stringValue.Kind() == reflect.String {
 						// If the value implements fmt.Stringer, use its String method
-						result = append(result, opFunc(whereField.Identifier(), DefaultParameterFunc(_newValue, args)))
+						result = append(result, opFunc(whereField.Identifier(), DefaultParameterFunc(_stringValue, args)))
 					}
 				} else if _value.Kind() == reflect.Slice || _value.Kind() == reflect.Array {
 					// Slice or array values are passed to operation handler as a list of parameters
@@ -528,6 +565,7 @@ func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any, run func(s
 				}
 
 			} else {
+				// this field name and opation is not registered.
 				// Relation field condition detected
 				if relation, ok := b.relations[whereFieldName]; ok {
 					var relatedBuilder SQLBuilderInterface
@@ -596,14 +634,12 @@ func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any, run func(s
 					}
 					if run == nil {
 						if inop, ok := b.operations[srcField.Name+"_in"]; ok {
-							result = append(result, inop(b.Identifier(relation.src), query))
+							result = append(result, inop(srcField.Identifier(), query))
 						}
-						// If no run function is provided, sub-query is added to the main query
 					} else {
-						if inop, ok := b.operations[relation.src+"_in"]; ok {
-							result = append(result, inop(b.Identifier(relation.src), run(query)...))
+						if inop, ok := b.operations[srcField.Name+"_in"]; ok {
+							result = append(result, inop(srcField.Identifier(), run(query)...))
 						}
-						// If a run function is provided, sub-query is executed and its result is added to the main query
 					}
 				}
 			}
@@ -811,21 +847,4 @@ func (b *SQLBuilder[Model]) Order(order *map[string]string) string {
 	}
 
 	return strings.Join(result, ",")
-}
-
-func (b *SQLBuilder[Model]) WhereError(ctx context.Context, where *map[string]any, args *[]any, run func(string) []string) (ret string, err error) {
-	if where == nil {
-		return "", nil
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			slog.ErrorContext(ctx, "Error occurred during where generation", slog.Any("error", r),
-				slog.String("table", b.tableName),
-				slog.Any("where", where),
-			)
-			err = fmt.Errorf("error generating where for table %s. check your filters", b.tableName)
-		}
-	}()
-	ret = b.Where(where, args, run)
-	return
 }
