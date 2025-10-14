@@ -332,10 +332,12 @@ func NewSQLBuilder[Model any](opts ...SQLBuilderOptions[Model]) *SQLBuilder[Mode
 			if dbTagValue := _field.Tag.Get("db"); dbTagValue != "" {
 				fieldTag := ParseFieldTag(dbTagValue)
 				if fieldTag == nil {
-					panic("failed to parse db tag value")
+					panic("failed to parse info db tag value")
 				}
 				// fieldTag.GetOptionValue("quote")
 				tableName = fieldTag.Value
+			} else {
+				panic("db info value not set")
 			}
 		} else {
 			// Other fields are model attributes
