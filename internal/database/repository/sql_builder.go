@@ -956,6 +956,8 @@ func convert(_field reflect.Value) string {
 		return fmt.Sprintf("%f", _field.Complex())
 	case reflect.String:
 		return _field.String()
+	case reflect.Bool:
+		return fmt.Sprintf("%t", _field.Bool())
 	default:
 		if it, ok := _field.Interface().([]byte); ok {
 			return string(it)
