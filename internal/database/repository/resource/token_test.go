@@ -95,7 +95,7 @@ func TestNewTokenRepositoryResource_FilterFunc(t *testing.T) {
 
 func TestTokenRepositoryResource_Create(t *testing.T) {
 
-	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
+	test.WithSingletonTx(t, func(ctx context.Context, db database.Dbx) {
 		resource := NewTokenRepositoryResource(db)
 
 		t.Run("Create with valid data", func(t *testing.T) {
@@ -131,7 +131,7 @@ func TestTokenRepositoryResource_Create(t *testing.T) {
 
 func TestTokenRepositoryResource_Filter(t *testing.T) {
 
-	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
+	test.WithSingletonTx(t, func(ctx context.Context, db database.Dbx) {
 		resource := NewTokenRepositoryResource(db)
 		userResource := NewUserRepositoryResource(db)
 		user, _ := userResource.Create(ctx, &models.User{

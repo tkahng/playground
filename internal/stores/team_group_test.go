@@ -17,7 +17,7 @@ import (
 func TestCreateTeam(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
+	test.WithSingletonTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 		teamStore := adapter.TeamGroup()
 		team, err := teamStore.CreateTeam(ctx, "Test Team", "test-team-slug")
@@ -33,7 +33,7 @@ func TestCreateTeam(t *testing.T) {
 func TestUpdateTeam(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
+	test.WithSingletonTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 		teamStore := adapter.TeamGroup()
 		team, err := teamStore.CreateTeam(ctx, "Old Name", "old-name-slug")
@@ -55,7 +55,7 @@ func TestUpdateTeam(t *testing.T) {
 func TestDeleteTeam(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
+	test.WithSingletonTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 		teamStore := adapter.TeamGroup() // Create a team to delete
 		team, err := teamStore.CreateTeam(ctx, "ToDelete", "to-delete-slug")
@@ -73,7 +73,7 @@ func TestDeleteTeam(t *testing.T) {
 func TestFindTeamByID(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
+	test.WithSingletonTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 		teamStore := adapter.TeamGroup()
 		team, err := teamStore.CreateTeam(ctx, "FindMe", "find-me-slug")
@@ -126,7 +126,7 @@ func TestTeamStore_CheckTeamSlug(t *testing.T) {
 func TestTeamStore_FindTeamByStripeCustomerId(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
+	test.WithSingletonTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 		stripeID := "cus_test_123"
 		team, err := adapter.TeamGroup().CreateTeam(ctx, "StripeTeam", "stripe-team-slug")
@@ -160,7 +160,7 @@ func TestTeamStore_FindTeamByStripeCustomerId(t *testing.T) {
 func TestTeamStore_ListTeams(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
+	test.WithSingletonTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 		teamStore := adapter.TeamGroup()
 		teamMemberStore := adapter.TeamMember()
@@ -275,7 +275,7 @@ func TestTeamStore_ListTeams(t *testing.T) {
 func TestTeamStore_CountTeams(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
+	test.WithSingletonTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 		teamStore := adapter.TeamGroup()
 		userStore := adapter.User()
@@ -368,7 +368,7 @@ func TestTeamStore_CountTeams(t *testing.T) {
 func TestTeamStore_FindTeamBySlug(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
+	test.WithSingletonTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 		teamStore := adapter.TeamGroup()
 

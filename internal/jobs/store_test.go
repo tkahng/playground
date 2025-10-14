@@ -17,7 +17,7 @@ import (
 func TestDbJobStore_SaveJob(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
+	test.WithSingletonTx(t, func(ctx context.Context, db database.Dbx) {
 		// ctx, db := test.DbSetup()
 
 		// // test.WithTx(t, func(ctx context.Context, dbx database.Dbx) {
@@ -102,7 +102,7 @@ func TestDbJobStore_SaveJob(t *testing.T) {
 func TestDbJobStore_SaveManyJobs(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
+	test.WithSingletonTx(t, func(ctx context.Context, db database.Dbx) {
 		type fields struct {
 			db Db
 		}
@@ -171,7 +171,7 @@ func TestDbJobStore_SaveManyJobs(t *testing.T) {
 func TestDbJobStore_ClaimPendingJobs(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
+	test.WithSingletonTx(t, func(ctx context.Context, db database.Dbx) {
 		type fields struct {
 			db Db
 		}
@@ -248,7 +248,7 @@ func TestDbJobStore_ClaimPendingJobs(t *testing.T) {
 func TestDbJobStore_MarkDone(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
+	test.WithSingletonTx(t, func(ctx context.Context, db database.Dbx) {
 		type fields struct {
 			db database.Dbx
 		}
@@ -330,7 +330,7 @@ func TestDbJobStore_MarkDone(t *testing.T) {
 func TestDbJobStore_MarkFailed(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
+	test.WithSingletonTx(t, func(ctx context.Context, db database.Dbx) {
 		type fields struct {
 			db database.Dbx
 		}
@@ -412,7 +412,7 @@ func TestDbJobStore_MarkFailed(t *testing.T) {
 func TestDbJobStore_RescheduleJob(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
+	test.WithSingletonTx(t, func(ctx context.Context, db database.Dbx) {
 		type fields struct {
 			db database.Dbx
 		}
@@ -501,7 +501,7 @@ func (j testJob) Kind() string { return "test_job" }
 
 func TestEnqueuer(t *testing.T) {
 	t.Run("Enqueue single job", func(t *testing.T) {
-		test.WithTx(t, func(ctx context.Context, tx database.Dbx) {
+		test.WithSingletonTx(t, func(ctx context.Context, tx database.Dbx) {
 			enqueuer := NewDbJobManager(tx)
 			job := testJob{Message: "hello"}
 			runAfter := time.Now().Add(1 * time.Hour)
@@ -525,7 +525,7 @@ func TestEnqueuer(t *testing.T) {
 	})
 
 	t.Run("Enqueue with unique key", func(t *testing.T) {
-		test.WithTx(t, func(ctx context.Context, tx database.Dbx) {
+		test.WithSingletonTx(t, func(ctx context.Context, tx database.Dbx) {
 			enqueuer := NewDbJobManager(tx)
 			uniqueKey := "unique_123"
 			job := testJob{Message: "unique"}
@@ -561,7 +561,7 @@ func TestEnqueuer(t *testing.T) {
 	})
 
 	t.Run("EnqueueMany batch insert", func(t *testing.T) {
-		test.WithTx(t, func(ctx context.Context, tx database.Dbx) {
+		test.WithSingletonTx(t, func(ctx context.Context, tx database.Dbx) {
 			enqueuer := NewDbJobManager(tx)
 			params := []*EnqueueParams{
 				{

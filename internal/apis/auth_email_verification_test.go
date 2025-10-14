@@ -18,7 +18,7 @@ import (
 func TestApi_RequestVerification(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
+	test.WithSingletonTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
 		testMailer := ExtractTestMailer(t, testApi)
 
@@ -75,7 +75,7 @@ func TestApi_RequestVerification(t *testing.T) {
 func TestApi_VerifyEmail(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
+	test.WithSingletonTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
 		testMailer := ExtractTestMailer(t, testApi)
 

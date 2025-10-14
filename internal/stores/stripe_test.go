@@ -19,7 +19,7 @@ import (
 func TestStripeStore_CreateCustomer(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
+	test.WithSingletonTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 
 		user, err := adapter.User().CreateUser(ctx, &models.User{
@@ -171,7 +171,7 @@ func TestStripeStore_CreateCustomer(t *testing.T) {
 func TestStripeStore_ProductAndPrice(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
+	test.WithSingletonTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 
 		// UpsertProduct
@@ -253,7 +253,7 @@ func TestStripeStore_ProductAndPrice(t *testing.T) {
 func TestStripeStore_UpsertProductAndPrice(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
+	test.WithSingletonTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 		stripeProduct := &models.StripeProduct{
 			ID:          "prod_stripe_1",
@@ -296,7 +296,7 @@ func TestStripeStore_UpsertProductAndPrice(t *testing.T) {
 func TestStripeStore_FindCustomer(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
+	test.WithSingletonTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 		user, err := adapter.User().CreateUser(ctx, &models.User{Email: "findcustomer@example.com"})
 		if err != nil {
@@ -324,7 +324,7 @@ func TestStripeStore_FindCustomer(t *testing.T) {
 func TestStripeStore_FindSubscriptionsWithPriceProductByIds(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
+	test.WithSingletonTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 		user, err := adapter.User().CreateUser(ctx, &models.User{Email: "sub@example.com"})
 		if err != nil {
@@ -406,7 +406,7 @@ func TestStripeStore_FindSubscriptionsWithPriceProductByIds(t *testing.T) {
 func TestStripeStore_FindActiveSubscriptionsByTeamIds(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
+	test.WithSingletonTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 
 		user, err := adapter.User().CreateUser(ctx, &models.User{Email: "sub@example.com"})
@@ -532,7 +532,7 @@ func loadPricesWithProduct(ctx context.Context, withPrice *models.StripeSubscrip
 func TestStripeStore_FindActiveSubscriptionsByCustomerIds(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
+	test.WithSingletonTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 		user, err := adapter.User().CreateUser(ctx, &models.User{Email: "sub@example.com"})
 		if err != nil {
@@ -628,7 +628,7 @@ func TestStripeStore_FindActiveSubscriptionsByCustomerIds(t *testing.T) {
 func TestStripeStore_FindActiveSubscriptionsByUserIds(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
+	test.WithSingletonTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 
 		user, err := adapter.User().CreateUser(ctx, &models.User{Email: "sub@example.com"})
@@ -732,7 +732,7 @@ func TestStripeStore_FindActiveSubscriptionsByUserIds(t *testing.T) {
 func TestStripeStore_UpsertSubscriptionFromStripe(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
+	test.WithSingletonTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 
 		user, err := adapter.User().CreateUser(ctx, &models.User{Email: "sub@example.com"})

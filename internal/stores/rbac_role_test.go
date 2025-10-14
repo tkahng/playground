@@ -19,7 +19,7 @@ import (
 func TestListRoles(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	test.WithTx(t, func(ctx context.Context, tx database.Dbx) {
+	test.WithSingletonTx(t, func(ctx context.Context, tx database.Dbx) {
 		// Create test roles and permissions
 		rbacstore := stores.NewDbRBACStore(tx)
 		err := rbacstore.EnsureRoleAndPermissions(
@@ -80,7 +80,7 @@ func TestListRoles(t *testing.T) {
 
 func TestCountRoles(t *testing.T) {
 	test.SkipIfShort(t)
-	test.WithTx(t, func(ctx context.Context, tx database.Dbx) {
+	test.WithSingletonTx(t, func(ctx context.Context, tx database.Dbx) {
 		rbacstore := stores.NewDbRBACStore(tx)
 		err := rbacstore.EnsureRoleAndPermissions(
 			ctx,
@@ -154,7 +154,7 @@ func TestCountRoles(t *testing.T) {
 
 func TestLoadRolePermissions(t *testing.T) {
 	test.SkipIfShort(t)
-	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
+	test.WithSingletonTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		rbacStore := stores.NewDbRBACStore(dbxx)
 		err := rbacStore.EnsureRoleAndPermissions(ctx, "basic", "basic")
 		if err != nil {
@@ -279,7 +279,7 @@ func TestLoadRolePermissions(t *testing.T) {
 func TestFindOrCreateRole(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
+	test.WithSingletonTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		rbacStore := stores.NewDbRBACStore(dbxx)
 		type args struct {
 			ctx      context.Context
@@ -330,7 +330,7 @@ func TestFindOrCreateRole(t *testing.T) {
 func TestCreateRole(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
+	test.WithSingletonTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		rbacStore := stores.NewDbRBACStore(dbxx)
 		type args struct {
 			ctx  context.Context
@@ -386,7 +386,7 @@ func TestCreateRole(t *testing.T) {
 func TestUpdateRole(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
+	test.WithSingletonTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		// Create initial role to update
 		rbacStore := stores.NewDbRBACStore(dbxx)
 		role, err := rbacStore.CreateRole(ctx, &stores.CreateRoleDto{
@@ -471,7 +471,7 @@ func TestUpdateRole(t *testing.T) {
 func TestDeleteRole(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
+	test.WithSingletonTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		// Create a role to delete
 		rbacStore := stores.NewDbRBACStore(dbxx)
 		role, err := rbacStore.CreateRole(ctx, &stores.CreateRoleDto{
@@ -542,7 +542,7 @@ func TestDeleteRole(t *testing.T) {
 func TestDeletePermission(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
+	test.WithSingletonTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		rbacStore := stores.NewDbRBACStore(dbxx)
 		// Create a permission to delete
 		permission, err := rbacStore.CreatePermission(ctx, "permission_to_delete", nil)

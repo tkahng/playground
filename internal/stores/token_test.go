@@ -15,7 +15,7 @@ import (
 
 func TestTokenStore_CRUD(t *testing.T) {
 	test.SkipIfShort(t)
-	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
+	test.WithSingletonTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		userStore := stores.NewDbUserStore(dbxx)
 		store := stores.NewPostgresTokenStore(dbxx)
 		user, err := userStore.CreateUser(ctx, &models.User{
@@ -74,7 +74,7 @@ func TestTokenStore_CRUD(t *testing.T) {
 func TestDbTokenStore_GetTokenByValueTypeExpires(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
+	test.WithSingletonTx(t, func(ctx context.Context, db database.Dbx) {
 		store := stores.NewPostgresTokenStore(db)
 		// opts := conf.ZeroEnvConfig()
 

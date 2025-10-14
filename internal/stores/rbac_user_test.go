@@ -15,7 +15,7 @@ import (
 func TestListUserPermissionsSource(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
+	test.WithSingletonTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		userStore := stores.NewDbUserStore(dbxx)
 		rbacStore := stores.NewDbRBACStore(dbxx)
 		// Create test user
@@ -115,7 +115,7 @@ func TestListUserPermissionsSource(t *testing.T) {
 func TestCountUserPermissionSource(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
+	test.WithSingletonTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		rbacstore := stores.NewDbRBACStore(dbxx)
 		userstore := stores.NewDbUserStore(dbxx)
 		// Create test user
@@ -202,7 +202,7 @@ func TestCountUserPermissionSource(t *testing.T) {
 func TestListUserNotPermissionsSource(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
+	test.WithSingletonTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		// Create test user
 		userstore := stores.NewDbUserStore(dbxx)
 		rbacstore := stores.NewDbRBACStore(dbxx)
@@ -318,7 +318,7 @@ func TestListUserNotPermissionsSource(t *testing.T) {
 func TestCountNotUserPermissionSource(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
+	test.WithSingletonTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		// Create test user
 		userstore := stores.NewDbUserStore(dbxx)
 		rbacstore := stores.NewDbRBACStore(dbxx)
@@ -412,7 +412,7 @@ func TestCountNotUserPermissionSource(t *testing.T) {
 func TestCreateUserRoles(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
+	test.WithSingletonTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		userStore := stores.NewDbUserStore(dbxx)
 		rbacStore := stores.NewDbRBACStore(dbxx)
 		// Create a user
@@ -464,7 +464,7 @@ func TestCreateUserRoles(t *testing.T) {
 func TestGetUserRoles(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
+	test.WithSingletonTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		rbacStore := stores.NewDbRBACStore(dbxx)
 		userStore := stores.NewDbUserStore(dbxx)
 		err := rbacStore.EnsureRoleAndPermissions(ctx, "basic", "basic")

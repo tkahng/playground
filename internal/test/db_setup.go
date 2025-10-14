@@ -16,12 +16,12 @@ var (
 	dbx         *database.Queries
 )
 
-func DbSetupTesting(t *testing.T) (context.Context, *database.Queries) {
+func SingletonDbSetupTest(t *testing.T) (context.Context, *database.Queries) {
 	t.Helper()
-	return DbSetup()
+	return dbSetup()
 }
 
-func DbSetup() (context.Context, *database.Queries) {
+func dbSetup() (context.Context, *database.Queries) {
 	ctxOnce.Do(func() {
 		ctxInstance = context.Background()
 		dbx = database.CreateSingletonQueriesContext(ctxInstance, "postgres://postgres:postgres@localhost:5432/playground_test?sslmode=disable")
@@ -29,9 +29,9 @@ func DbSetup() (context.Context, *database.Queries) {
 	return ctxInstance, dbx
 }
 
-func WithTx(t *testing.T, fn func(ctx context.Context, db database.Dbx)) {
+func WithSingletonTx(t *testing.T, fn func(ctx context.Context, db database.Dbx)) {
 	t.Helper()
-	ctx, dbx := DbSetup()
+	ctx, dbx := dbSetup()
 	tx, err := dbx.Begin(ctx)
 	if err != nil {
 		t.Fatal(err)

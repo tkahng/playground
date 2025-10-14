@@ -14,7 +14,7 @@ import (
 func TestAccountStore_CRUD(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
+	test.WithSingletonTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		userStore := NewDbUserStore(dbxx)
 		user, err := userStore.CreateUser(ctx, &models.User{
 			Email: "test@example.com",
@@ -79,7 +79,7 @@ func TestAccountStore_CRUD(t *testing.T) {
 func TestAccountStore_GetUserAccounts(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
+	test.WithSingletonTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		userStore := NewDbUserStore(dbxx)
 		store := NewDbAccountStore(dbxx)
 		user1, err := userStore.CreateUser(ctx, &models.User{Email: "user1@example.com"})
@@ -105,7 +105,7 @@ func TestAccountStore_GetUserAccounts(t *testing.T) {
 func TestAccountStore_UpdateUserPassword(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
+	test.WithSingletonTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		userStore := NewDbUserStore(dbxx)
 		store := NewDbAccountStore(dbxx)
 		user, err := userStore.CreateUser(ctx, &models.User{Email: "pwuser@example.com"})

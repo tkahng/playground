@@ -18,7 +18,7 @@ func TestUserStore_CRUD(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
 
-	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
+	test.WithSingletonTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 		store := stores.NewDbUserStore(dbxx)
 
@@ -111,7 +111,7 @@ func TestUserStore_LoadUsersByUserIds(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
 
-	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
+	test.WithSingletonTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		store := stores.NewDbUserStore(dbxx)
 		user1, err := store.CreateUser(ctx, &models.User{Email: "loaduser1@example.com"})
 		if err != nil {
@@ -144,7 +144,7 @@ func TestUserStore_FindUserById(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
 
-	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
+	test.WithSingletonTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		p := stores.NewDbUserStore(dbxx)
 		type fields struct {
 			db database.Dbx
