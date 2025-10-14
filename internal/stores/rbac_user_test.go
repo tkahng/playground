@@ -2,7 +2,6 @@ package stores_test
 
 import (
 	"context"
-	"errors"
 	"reflect"
 	"testing"
 
@@ -16,8 +15,7 @@ import (
 func TestListUserPermissionsSource(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
+	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		userStore := stores.NewDbUserStore(dbxx)
 		rbacStore := stores.NewDbRBACStore(dbxx)
 		// Create test user
@@ -110,15 +108,14 @@ func TestListUserPermissionsSource(t *testing.T) {
 				}
 			})
 		}
-		return errors.New("rollback")
+
 	})
 }
 
 func TestCountUserPermissionSource(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
+	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		rbacstore := stores.NewDbRBACStore(dbxx)
 		userstore := stores.NewDbUserStore(dbxx)
 		// Create test user
@@ -199,14 +196,13 @@ func TestCountUserPermissionSource(t *testing.T) {
 				}
 			})
 		}
-		return errors.New("rollback")
+
 	})
 }
 func TestListUserNotPermissionsSource(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
+	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		// Create test user
 		userstore := stores.NewDbUserStore(dbxx)
 		rbacstore := stores.NewDbRBACStore(dbxx)
@@ -316,14 +312,13 @@ func TestListUserNotPermissionsSource(t *testing.T) {
 				}
 			})
 		}
-		return errors.New("rollback")
+
 	})
 }
 func TestCountNotUserPermissionSource(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
+	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		// Create test user
 		userstore := stores.NewDbUserStore(dbxx)
 		rbacstore := stores.NewDbRBACStore(dbxx)
@@ -410,15 +405,14 @@ func TestCountNotUserPermissionSource(t *testing.T) {
 				}
 			})
 		}
-		return errors.New("rollback")
+
 	})
 }
 
 func TestCreateUserRoles(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
+	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		userStore := stores.NewDbUserStore(dbxx)
 		rbacStore := stores.NewDbRBACStore(dbxx)
 		// Create a user
@@ -427,12 +421,12 @@ func TestCreateUserRoles(t *testing.T) {
 		})
 		if err != nil {
 			t.Errorf("failed to create user: %v", err)
-			return err
+			t.Fatalf("got err %s", err.Error())
 		}
 		role, err := rbacStore.FindOrCreateRole(ctx, "basic")
 		if err != nil {
 			t.Errorf("failed to create role: %v", err)
-			return err
+			t.Fatalf("got err %s", err.Error())
 		}
 		type args struct {
 			ctx     context.Context
@@ -463,25 +457,24 @@ func TestCreateUserRoles(t *testing.T) {
 				}
 			})
 		}
-		return test.ErrEndTest
+
 	})
 }
 
 func TestGetUserRoles(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
+	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		rbacStore := stores.NewDbRBACStore(dbxx)
 		userStore := stores.NewDbUserStore(dbxx)
 		err := rbacStore.EnsureRoleAndPermissions(ctx, "basic", "basic")
 		if err != nil {
-			return err
+			t.Fatalf("got err %s", err.Error())
 		}
 
 		role, err := rbacStore.FindOrCreateRole(ctx, "basic")
 		if err != nil {
-			return err
+			t.Fatalf("got err %s", err.Error())
 		}
 		user, err := userStore.CreateUser(
 			ctx,
@@ -490,12 +483,12 @@ func TestGetUserRoles(t *testing.T) {
 			},
 		)
 		if err != nil {
-			return err
+			t.Fatalf("got err %s", err.Error())
 		}
 
 		err = rbacStore.CreateUserRoles(ctx, user.ID, role.ID)
 		if err != nil {
-			return err
+			t.Fatalf("got err %s", err.Error())
 		}
 
 		type args struct {
@@ -536,6 +529,6 @@ func TestGetUserRoles(t *testing.T) {
 				}
 			})
 		}
-		return errors.New("rollback")
+
 	})
 }

@@ -19,25 +19,24 @@ import (
 func TestStripeStore_CreateCustomer(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
+	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 
 		user, err := adapter.User().CreateUser(ctx, &models.User{
 			Email: "tkahng@gmail.com",
 		})
 		if err != nil {
-			return err
+			t.Fatalf("got err %s", err.Error())
 		}
 		user2, err := adapter.User().CreateUser(ctx, &models.User{
 			Email: "user2@gmail.com",
 		})
 		if err != nil {
-			return err
+			t.Fatalf("got err %s", err.Error())
 		}
 		team, err := adapter.TeamGroup().CreateTeam(ctx, "test", "test")
 		if err != nil {
-			return err
+			t.Fatalf("got err %s", err.Error())
 		}
 
 		type fields struct {
@@ -165,15 +164,14 @@ func TestStripeStore_CreateCustomer(t *testing.T) {
 				}
 			})
 		}
-		return errors.New("rollback")
+
 	})
 }
 
 func TestStripeStore_ProductAndPrice(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
+	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 
 		// UpsertProduct
@@ -249,15 +247,13 @@ func TestStripeStore_ProductAndPrice(t *testing.T) {
 			t.Errorf("ListPrices() = %v, want at least 1", prices)
 		}
 
-		return errors.New("rollback")
 	})
 }
 
 func TestStripeStore_UpsertProductAndPrice(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
+	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 		stripeProduct := &models.StripeProduct{
 			ID:          "prod_stripe_1",
@@ -293,15 +289,14 @@ func TestStripeStore_UpsertProductAndPrice(t *testing.T) {
 		if err != nil {
 			t.Fatalf("UpsertPrice() error = %v", err)
 		}
-		return errors.New("rollback")
+
 	})
 }
 
 func TestStripeStore_FindCustomer(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
+	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 		user, err := adapter.User().CreateUser(ctx, &models.User{Email: "findcustomer@example.com"})
 		if err != nil {
@@ -322,15 +317,14 @@ func TestStripeStore_FindCustomer(t *testing.T) {
 		if err != nil || found == nil || found.ID != "cus_find_1" {
 			t.Errorf("FindCustomer() = %v, err = %v", found, err)
 		}
-		return errors.New("rollback")
+
 	})
 }
 
 func TestStripeStore_FindSubscriptionsWithPriceProductByIds(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
+	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 		user, err := adapter.User().CreateUser(ctx, &models.User{Email: "sub@example.com"})
 		if err != nil {
@@ -405,15 +399,14 @@ func TestStripeStore_FindSubscriptionsWithPriceProductByIds(t *testing.T) {
 		if withPrice.StripeCustomer == nil || withPrice.StripeCustomer.ID != customer.ID {
 			t.Errorf("FindSubscriptionWithPriceById() StripeCustomer = %v, want %v", withPrice.StripeCustomer, customer.ID)
 		}
-		return errors.New("rollback")
+
 	})
 }
 
 func TestStripeStore_FindActiveSubscriptionsByTeamIds(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
+	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 
 		user, err := adapter.User().CreateUser(ctx, &models.User{Email: "sub@example.com"})
@@ -508,7 +501,7 @@ func TestStripeStore_FindActiveSubscriptionsByTeamIds(t *testing.T) {
 		if withPrice.Price.Product == nil || withPrice.Price.Product.ID != product.ID {
 			t.Errorf("FindSubscriptionWithPriceById() Product = %v, want %v", withPrice.Price.Product, product.ID)
 		}
-		return errors.New("rollback")
+
 	})
 }
 
@@ -539,8 +532,7 @@ func loadPricesWithProduct(ctx context.Context, withPrice *models.StripeSubscrip
 func TestStripeStore_FindActiveSubscriptionsByCustomerIds(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
+	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 		user, err := adapter.User().CreateUser(ctx, &models.User{Email: "sub@example.com"})
 		if err != nil {
@@ -630,14 +622,13 @@ func TestStripeStore_FindActiveSubscriptionsByCustomerIds(t *testing.T) {
 		if withPrice.Price.Product == nil || withPrice.Price.Product.ID != product.ID {
 			t.Errorf("FindSubscriptionWithPriceById() Product = %v, want %v", withPrice.Price.Product, product.ID)
 		}
-		return errors.New("rollback")
+
 	})
 }
 func TestStripeStore_FindActiveSubscriptionsByUserIds(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
+	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 
 		user, err := adapter.User().CreateUser(ctx, &models.User{Email: "sub@example.com"})
@@ -734,15 +725,14 @@ func TestStripeStore_FindActiveSubscriptionsByUserIds(t *testing.T) {
 		if withPrice.Price.Product == nil || withPrice.Price.Product.ID != product.ID {
 			t.Errorf("FindSubscriptionWithPriceById() Product = %v, want %v", withPrice.Price.Product, product.ID)
 		}
-		return errors.New("rollback")
+
 	})
 }
 
 func TestStripeStore_UpsertSubscriptionFromStripe(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
+	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 
 		user, err := adapter.User().CreateUser(ctx, &models.User{Email: "sub@example.com"})
@@ -803,7 +793,7 @@ func TestStripeStore_UpsertSubscriptionFromStripe(t *testing.T) {
 		if err != nil {
 			t.Fatalf("UpsertSubscriptionFromStripe() error = %v", err)
 		}
-		return errors.New("rollback")
+
 	})
 }
 func TestSelectStripePriceColumns(t *testing.T) {

@@ -27,7 +27,7 @@ func UserCompareFunc(got, want models.User) bool {
 }
 
 func TestRepository(t *testing.T) {
-	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
+	test.WithTx(t, func(ctx context.Context, tx database.Dbx) {
 
 	})
 }

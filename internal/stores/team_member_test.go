@@ -2,7 +2,6 @@ package stores_test
 
 import (
 	"context"
-	"errors"
 	"log/slog"
 	"reflect"
 	"testing"
@@ -129,8 +128,7 @@ func TestTeamStore_CountTeamMembers(t *testing.T) {
 func TestCreateTeamMember(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
+	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 		teamStore := adapter.TeamGroup()
 		userStore := adapter.User()
@@ -152,15 +150,14 @@ func TestCreateTeamMember(t *testing.T) {
 		if member.TeamID != team.ID || member.UserID == nil || *member.UserID != userID {
 			t.Errorf("CreateTeamMember() = %v, want teamID %v and userID %v", member, team.ID, userID)
 		}
-		return errors.New("rollback")
+
 	})
 }
 
 func TestFindTeamMembersByUserID(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
+	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 		teamStore := adapter.TeamMember()
 		userStore := adapter.User()
@@ -186,15 +183,14 @@ func TestFindTeamMembersByUserID(t *testing.T) {
 		if len(members) == 0 || *members[0].UserID != userID {
 			t.Errorf("FindTeamMembersByUserID() = %v, want userID %v", members, userID)
 		}
-		return errors.New("rollback")
+
 	})
 }
 
 func TestFindLatestTeamMemberByUserID(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
+	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 		teamStore := adapter.TeamGroup()
 		userStore := adapter.User()
@@ -251,7 +247,7 @@ func TestFindLatestTeamMemberByUserID(t *testing.T) {
 		if latest.ID != teamMember1.ID {
 			t.Errorf("FindLatestTeamMemberByUserID() = %v, want teamMember2 ID %v", latest.ID, teamMember2.ID)
 		}
-		return errors.New("rollback")
+
 	})
 }
 
@@ -274,7 +270,7 @@ func TestUpdateTeamMemberUpdatedAt(t *testing.T) {
 		}
 	})
 
-	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
+	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 
 		team, err := adapter.TeamGroup().CreateTeam(ctx, "UpdateMemberTeam", "update-member-team-slug")
@@ -323,14 +319,13 @@ func TestUpdateTeamMemberUpdatedAt(t *testing.T) {
 				updated.UpdatedAt,
 			)
 		}
-		return errors.New("rollback")
+
 	})
 }
 func TestUpdateTeamMemberSelectedAt(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
+	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 		teamStore := adapter.TeamMember()
 		userStore := adapter.User()
@@ -375,7 +370,7 @@ func TestUpdateTeamMemberSelectedAt(t *testing.T) {
 		if !updated.LastSelectedAt.After(original) {
 			t.Errorf("LastSelectedAt not updated recently: %v", updated.LastSelectedAt)
 		}
-		return errors.New("rollback")
+
 	})
 }
 

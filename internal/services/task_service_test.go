@@ -16,8 +16,7 @@ import (
 
 func TestDefineTaskOrderNumberByStatus(t *testing.T) {
 	test.SkipIfShort(t)
-	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
+	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 
 		taskService := services.NewTaskService(adapter, services.NewJobService(jobs.NewDbJobManager(dbxx)))
@@ -152,6 +151,6 @@ func TestDefineTaskOrderNumberByStatus(t *testing.T) {
 				}
 			})
 		}
-		return test.ErrEndTest
+		
 	})
 }

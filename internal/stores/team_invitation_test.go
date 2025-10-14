@@ -1,7 +1,7 @@
 package stores_test
 
 import (
-	"errors"
+	"context"
 	"testing"
 	"time"
 
@@ -16,8 +16,7 @@ import (
 func TestTeamStore_InvitationCRUD(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
+	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 		store := stores.NewDbTeamInvitationStore(dbxx)
 		user, err := adapter.User().CreateUser(
@@ -117,15 +116,14 @@ func TestTeamStore_InvitationCRUD(t *testing.T) {
 			t.Errorf("FindInvitationByID (expired) = %v, err = %v", found, err)
 		}
 
-		return errors.New("rollback")
+		
 	})
 }
 
 func TestInvitationStore_CRUD(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
+	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 		teamStore := stores.NewDbTeamInvitationStore(dbxx)
 
@@ -204,14 +202,13 @@ func TestInvitationStore_CRUD(t *testing.T) {
 			t.Errorf("UpdateInvitation() did not update status: %v, err = %v", updated, err)
 		}
 
-		return errors.New("rollback")
+		
 	})
 }
 func TestTeamStore_FindPendingInvitation(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
+	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 		invitationStore := stores.NewDbTeamInvitationStore(dbxx)
 
@@ -303,6 +300,6 @@ func TestTeamStore_FindPendingInvitation(t *testing.T) {
 			t.Errorf("Expected nil for other team, got %v", other)
 		}
 
-		return errors.New("rollback")
+		
 	})
 }

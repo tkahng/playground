@@ -1,7 +1,7 @@
 package stores
 
 import (
-	"errors"
+	"context"
 	"testing"
 
 	"github.com/google/uuid"
@@ -14,8 +14,7 @@ import (
 func TestAccountStore_CRUD(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
+	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		userStore := NewDbUserStore(dbxx)
 		user, err := userStore.CreateUser(ctx, &models.User{
 			Email: "test@example.com",
@@ -73,15 +72,14 @@ func TestAccountStore_CRUD(t *testing.T) {
 			assert.Nil(t, linkedAccount)
 		})
 
-		return errors.New("rollback")
+		
 	})
 }
 
 func TestAccountStore_GetUserAccounts(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
+	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		userStore := NewDbUserStore(dbxx)
 		store := NewDbAccountStore(dbxx)
 		user1, err := userStore.CreateUser(ctx, &models.User{Email: "user1@example.com"})
@@ -100,15 +98,14 @@ func TestAccountStore_GetUserAccounts(t *testing.T) {
 		assert.Len(t, results, 2)
 		assert.Equal(t, user1.ID, results[0][0].UserID)
 		assert.Equal(t, user2.ID, results[1][0].UserID)
-		return errors.New("rollback")
+		
 	})
 }
 
 func TestAccountStore_UpdateUserPassword(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
+	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		userStore := NewDbUserStore(dbxx)
 		store := NewDbAccountStore(dbxx)
 		user, err := userStore.CreateUser(ctx, &models.User{Email: "pwuser@example.com"})
@@ -123,6 +120,6 @@ func TestAccountStore_UpdateUserPassword(t *testing.T) {
 		updated, err := store.FindUserAccountByUserIdAndProvider(ctx, user.ID, models.ProvidersCredentials)
 		assert.NoError(t, err)
 		assert.NotNil(t, updated.Password)
-		return errors.New("rollback")
+		
 	})
 }

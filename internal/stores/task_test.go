@@ -221,8 +221,7 @@ func TestGetUserTaskStats(t *testing.T) {
 func TestLoadTaskProjectsTasks(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
+	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 
 		user, err := adapter.User().CreateUser(ctx, &models.User{
@@ -310,14 +309,13 @@ func TestLoadTaskProjectsTasks(t *testing.T) {
 				}
 			})
 		}
-		return test.ErrEndTest
+		
 	})
 }
 func TestFindTaskByID(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
+	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 		teamstore := adapter.TeamMember()
 		taskStore := adapter.Task()
@@ -407,15 +405,14 @@ func TestFindTaskByID(t *testing.T) {
 				}
 			})
 		}
-		return test.ErrEndTest
+		
 	})
 }
 
 func TestFindLastTaskOrder(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
+	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 
 		user, err := adapter.User().CreateUser(
@@ -503,14 +500,13 @@ func TestFindLastTaskOrder(t *testing.T) {
 				}
 			})
 		}
-		return test.ErrEndTest
+		
 	})
 }
 func TestDeleteTask(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
+	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 		user, err := adapter.User().CreateUser(ctx, &models.User{
 			Email: "tkahng@gmail.com",
@@ -580,14 +576,13 @@ func TestDeleteTask(t *testing.T) {
 				}
 			})
 		}
-		return test.ErrEndTest
+		
 	})
 }
 func TestFindTaskProjectByID(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
+	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 		userStore := adapter.User()
 		teamstore := adapter.TeamMember()
@@ -665,14 +660,13 @@ func TestFindTaskProjectByID(t *testing.T) {
 				}
 			})
 		}
-		return test.ErrEndTest
+		
 	})
 }
 func TestDeleteTaskProject(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
+	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 		userStore := adapter.User()
 		teamstore := adapter.TeamMember()
@@ -733,14 +727,13 @@ func TestDeleteTaskProject(t *testing.T) {
 				}
 			})
 		}
-		return test.ErrEndTest
+		
 	})
 }
 func TestListTasks(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
+	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 		userStore := adapter.User()
 		teamstore := adapter.TeamMember()
@@ -845,14 +838,13 @@ func TestListTasks(t *testing.T) {
 				}
 			})
 		}
-		return test.ErrEndTest
+		
 	})
 }
 func TestCountTasks(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
+	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 		userStore := adapter.User()
 		teamstore := adapter.TeamMember()
@@ -935,14 +927,13 @@ func TestCountTasks(t *testing.T) {
 				}
 			})
 		}
-		return test.ErrEndTest
+		
 	})
 }
 func TestListTaskProjects(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
+	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 		userStore := adapter.User()
 		teamstore := adapter.TeamMember()
@@ -1035,14 +1026,13 @@ func TestListTaskProjects(t *testing.T) {
 				}
 			})
 		}
-		return test.ErrEndTest
+		
 	})
 }
 func TestCountTaskProjects(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
+	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 		userStore := adapter.User()
 		teamstore := adapter.TeamMember()
@@ -1113,14 +1103,13 @@ func TestCountTaskProjects(t *testing.T) {
 				}
 			})
 		}
-		return test.ErrEndTest
+		
 	})
 }
 func TestCreateTaskProject(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
+	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 		userStore := adapter.User()
 		teamstore := adapter.TeamMember()
@@ -1203,14 +1192,13 @@ func TestCreateTaskProject(t *testing.T) {
 				}
 			})
 		}
-		return test.ErrEndTest
+		
 	})
 }
 func TestCreateTaskProjectWithTasks(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
+	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 		userStore := adapter.User()
 		teamstore := adapter.TeamMember()
@@ -1307,15 +1295,14 @@ func TestCreateTaskProjectWithTasks(t *testing.T) {
 				}
 			})
 		}
-		return test.ErrEndTest
+		
 	})
 }
 
 func TestCreateTaskFromInput(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
+	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 		userStore := adapter.User()
 		teamstore := adapter.TeamMember()
@@ -1410,7 +1397,7 @@ func TestCreateTaskFromInput(t *testing.T) {
 				}
 			})
 		}
-		return test.ErrEndTest
+		
 	})
 }
 

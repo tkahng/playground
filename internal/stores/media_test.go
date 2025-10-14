@@ -15,15 +15,14 @@ import (
 func TestCreateMedia(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
+	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		userStore := stores.NewDbUserStore(dbxx)
 		mediaStore := stores.NewMediaStore(dbxx)
 		user, err := userStore.CreateUser(ctx, &models.User{
 			Email: "test@example.com",
 		})
 		if err != nil {
-			return err
+			t.Fatalf("got err %s", err.Error())
 		}
 		type args struct {
 			ctx   context.Context
@@ -98,21 +97,20 @@ func TestCreateMedia(t *testing.T) {
 				}
 			})
 		}
-		return test.ErrEndTest
+
 	})
 }
 
 func TestFindMediaByID(t *testing.T) {
 	test.SkipIfShort(t)
-	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
+	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		userStore := stores.NewDbUserStore(dbxx)
 		mediaStore := stores.NewMediaStore(dbxx)
 		user, err := userStore.CreateUser(ctx, &models.User{
 			Email: "test@example.com",
 		})
 		if err != nil {
-			return err
+			t.Fatalf("got err %s", err.Error())
 		}
 
 		media, err := mediaStore.CreateMedia(ctx, &models.Medium{
@@ -126,7 +124,7 @@ func TestFindMediaByID(t *testing.T) {
 			Size:             1024,
 		})
 		if err != nil {
-			return err
+			t.Fatalf("got err %s", err.Error())
 		}
 
 		type args struct {
@@ -185,6 +183,6 @@ func TestFindMediaByID(t *testing.T) {
 				}
 			})
 		}
-		return test.ErrEndTest
+
 	})
 }
