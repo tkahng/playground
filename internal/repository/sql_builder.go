@@ -327,38 +327,46 @@ func NewSQLBuilder[Model any](opts ...SQLBuilderOptions[Model]) *SQLBuilder[Mode
 	for idx := range _type.NumField() {
 		_field := _type.Field(idx)
 
-		// "_" named field is the model information
-		if _field.Name == "_" {
-			if dbTagValue := _field.Tag.Get("db"); dbTagValue != "" {
-				fieldTag := ParseFieldTag(dbTagValue)
-				if fieldTag == nil {
-					panic("failed to parse info db tag value")
+		// first field is the info field _ struct{}
+		//
+		if idx == 0 {
+			if _field.Name == "_" {
+				if dbTagValue := _field.Tag.Get("db"); dbTagValue != "" {
+					fieldTag := ParseFieldTag(dbTagValue)
+					if fieldTag == nil {
+						panic("failed to parse info db tag value")
+					}
+					// fieldTag.GetOptionValue("quote")
+					tableName = fieldTag.Value
+				} else {
+					panic("db info value not set")
 				}
-				// fieldTag.GetOptionValue("quote")
-				tableName = fieldTag.Value
 			} else {
-				panic("db info value not set")
+				panic("first field must be info field")
 			}
+
 		} else {
 			// Other fields are model attributes
 			if dbTagValue := _field.Tag.Get("db"); dbTagValue != "" {
 				// split db tag value
 				var fieldName string
 				var columnName string
-				var fieldOptions []string
-				var quoteIdentifier bool
-				for idx, value := range strings.Split(dbTagValue, ",") {
-					if idx == 0 {
-						fieldName = value
-						columnName = value
-					} else {
-						fieldOptions = append(fieldOptions, value)
-					}
+				var isId bool
+
+				fieldTag := ParseFieldTag(dbTagValue)
+				if fieldTag == nil {
+					panic("failed to parse info db tag value")
 				}
-				if slices.Contains(fieldOptions, "quote") {
-					quoteIdentifier = true
-					columnName = utils.Quote(columnName)
+				fieldName = fieldTag.Value
+				if quote := fieldTag.GetOptionValue("quote"); quote == "true" {
+					columnName = utils.Quote(fieldName)
+				} else {
+					columnName = fieldName
 				}
+				if idIdTag := fieldTag.GetOptionValue("id"); idIdTag == "true" {
+					isId = true
+				}
+
 				if fieldName == "" {
 					panic(fmt.Sprintf("fieldName not set at struct field idx %d of %s", idx, tableName))
 				}
@@ -399,7 +407,13 @@ func NewSQLBuilder[Model any](opts ...SQLBuilderOptions[Model]) *SQLBuilder[Mode
 					// Primitive fields detected.
 					// This are selectable columns of the table
 
-					field := &Field{Idx: idx, Name: fieldName, QuoteIdentifier: quoteIdentifier, ColumnName: columnName}
+					field := &Field{
+						Idx:                 idx,
+						Name:                fieldName,
+						ColumnName:          columnName,
+						QualifiedColumnName: tableName + "." + columnName,
+						IsID:                isId,
+					}
 					// get the fieldName of the field
 					modelFields = append(modelFields, field)
 
