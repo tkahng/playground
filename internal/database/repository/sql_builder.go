@@ -522,14 +522,12 @@ func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any, run func(s
 
 		return "(" + strings.Join(result, " AND ") + ")"
 	} else if ors, ok := (*where)["_or"]; ok {
-		slog.Info("Processing OR condition", slog.Any("ors", ors))
 		result := []string{}
 
 		orWheres, ok := ors.([]map[string]any)
 		if ok {
 			for _, item := range orWheres {
 				expr := item
-				slog.Info("Processing OR item", slog.Any("item", item))
 				result = append(result, b.Where(&expr, args, run))
 			}
 		}
