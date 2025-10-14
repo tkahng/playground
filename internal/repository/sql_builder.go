@@ -156,7 +156,7 @@ type SQLBuilderInterface interface {
 	ColumnNames() []string
 	QualifiedColumnNames() []string
 	Fields() []*Field
-	// FieldString(prefix string) string
+	GetFieldByName(name string) *Field
 	MustGetFieldByName(name string) *Field
 	Where(where *map[string]any, args *[]any, run func(string) []string) string
 	WhereError(ctx context.Context, where *map[string]any, args *[]any, run func(string) []string) (ret string, err error)
@@ -304,11 +304,6 @@ func InsertID[Model any](builder *SQLBuilder[Model]) error {
 	}
 	builder.insertID = true
 	return nil
-}
-
-func DefaultParameterFunc(value reflect.Value, args *[]any) string {
-	*args = append(*args, value.Interface())
-	return fmt.Sprintf("$%d", len(*args))
 }
 
 func NewSQLBuilder[Model any](opts ...SQLBuilderOptions[Model]) *SQLBuilder[Model] {
@@ -467,6 +462,24 @@ func (b *SQLBuilder[Model]) WhereError(ctx context.Context, where *map[string]an
 	return
 }
 
+// GenerateParameterPlaceholder returns the numbered parameter placeholder,
+// e.g. $1, $2, etc,
+// their numbers are incremented for each call as it adds them to the args slice.
+// the total number of placeholders created is equal to the length of the args slice.
+//
+// value is reflect.Value,
+// args is a slice of any.
+//
+// every time build the parameter placeholder, you call this function
+// with the reflect.Value of the value to insert, and a pointer to a slice of args.
+// for each call, the function adds the underlying value of value and adds it to the args slice.
+// then the numer in the placeholder is generated from the length of the args slice,
+// which is also the current input value's placeholder number, and its index in the args slice.
+func GenerateParameterPlaceholder(value reflect.Value, args *[]any) string {
+	*args = append(*args, value.Interface())
+	return fmt.Sprintf("$%d", len(*args))
+}
+
 // Where constructs the WHERE clause for a query.
 //
 // where is a map[string]any:
@@ -574,27 +587,27 @@ func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any, run func(s
 				}
 				if _value.Kind() == reflect.String {
 					// String values are passed to operation handler as single parameter
-					result = append(result, opFunc(whereField.Identifier(), DefaultParameterFunc(_value, args)))
+					result = append(result, opFunc(whereField.Identifier(), GenerateParameterPlaceholder(_value, args)))
 				} else if it, ok := whereOpValue.(time.Time); ok {
 					// Time values are formatted.
 					_timeValue := reflect.ValueOf(it.Format(time.RFC3339Nano))
-					result = append(result, opFunc(whereField.Identifier(), DefaultParameterFunc(_timeValue, args)))
+					result = append(result, opFunc(whereField.Identifier(), GenerateParameterPlaceholder(_timeValue, args)))
 				} else if it, ok := whereOpValue.(fmt.Stringer); ok {
 					// If the value implements fmt.Stringer, use its String method
 					_stringValue := reflect.ValueOf(it.String())
 					if _stringValue.Kind() == reflect.String {
 						// If the value implements fmt.Stringer, use its String method
-						result = append(result, opFunc(whereField.Identifier(), DefaultParameterFunc(_stringValue, args)))
+						result = append(result, opFunc(whereField.Identifier(), GenerateParameterPlaceholder(_stringValue, args)))
 					}
 				} else if _value.Kind() == reflect.Slice || _value.Kind() == reflect.Array {
 					// Slice or array values are passed to operation handler as a list of parameters
 					items := []string{}
 					for i := range _value.Len() {
 						if _value.Index(i).Kind() == reflect.String {
-							items = append(items, DefaultParameterFunc(_value.Index(i), args))
+							items = append(items, GenerateParameterPlaceholder(_value.Index(i), args))
 						} else if it, ok := _value.Index(i).Interface().(fmt.Stringer); ok {
 							// If the value implements fmt.Stringer, use its String method
-							items = append(items, DefaultParameterFunc(reflect.ValueOf(it.String()), args))
+							items = append(items, GenerateParameterPlaceholder(reflect.ValueOf(it.String()), args))
 						}
 					}
 					result = append(result, opFunc(whereField.Identifier(), items...))
@@ -718,7 +731,9 @@ func (b *SQLBuilder[Model]) Values(values *[]Model, args *[]any, keys *[]any) (f
 			// in which case they are not included in the INSERT INTO clause
 			// If insertID is true, we will provide the primary key,
 			// so include it in the INSERT INTO clause
-			if b.insertID {
+			if b.InsertID() {
+				// use field.ColumnName for insert. qualifying the column name
+				// with the table name will result in error.
 				fieldsArray = append(fieldsArray, field.ColumnName)
 			}
 		} else {
@@ -727,18 +742,18 @@ func (b *SQLBuilder[Model]) Values(values *[]Model, args *[]any, keys *[]any) (f
 				continue
 			}
 			// Other fields are added to the VALUES clause
-			fieldsArray = append(fieldsArray, field.Identifier())
+			fieldsArray = append(fieldsArray, field.ColumnName)
 		}
 	}
 
 	// Generate the field values for the VALUES clause
-	result := []string{}
+	valuesArray := []string{}
 	for _, model := range *values {
 		_type := reflect.TypeOf(model)
 		_value := reflect.ValueOf(model)
 
 		// Generate the values for the current model
-		items := []string{}
+		values := []string{}
 		for idx, field := range b.fields {
 			// first item is the primary key.
 			if idx == 0 {
@@ -747,7 +762,7 @@ func (b *SQLBuilder[Model]) Values(values *[]Model, args *[]any, keys *[]any) (f
 				//
 				// If insertID is true, we will provide the primary key,
 				// so include it in the VALUES clause
-				if b.insertID {
+				if b.InsertID() {
 					//
 					if b.generator != nil {
 						// If a generator function is provided, use it to generate the key
@@ -755,9 +770,9 @@ func (b *SQLBuilder[Model]) Values(values *[]Model, args *[]any, keys *[]any) (f
 						if err != nil {
 							return "", "", fmt.Errorf("error generating primary key for field %s: %w", field.Name, err)
 						}
-						items = append(items, DefaultParameterFunc(reflect.ValueOf(id), args))
+						values = append(values, GenerateParameterPlaceholder(reflect.ValueOf(id), args))
 					} else {
-						items = append(items, DefaultParameterFunc(_value.Field(field.Idx), args))
+						values = append(values, GenerateParameterPlaceholder(_value.Field(field.Idx), args))
 					}
 				}
 			} else {
@@ -765,15 +780,15 @@ func (b *SQLBuilder[Model]) Values(values *[]Model, args *[]any, keys *[]any) (f
 					continue // Skip timestamp fields
 				}
 				// Other fields are added to the VALUES clause
-				items = append(items, DefaultParameterFunc(_value.Field(field.Idx), args))
+				values = append(values, GenerateParameterPlaceholder(_value.Field(field.Idx), args))
 			}
 		}
 
-		result = append(result, "("+strings.Join(items, ",")+")")
+		valuesArray = append(valuesArray, "("+strings.Join(values, ",")+")")
 	}
 
 	fields = strings.Join(fieldsArray, ",")
-	vals = strings.Join(result, ",")
+	vals = strings.Join(valuesArray, ",")
 	return fields, vals, nil
 }
 
@@ -844,7 +859,7 @@ func (b *SQLBuilder[Model]) Set(set *Model, args *[]any, where *map[string]any) 
 			}
 		} else {
 			// Other fields are added to the SET clause
-			result = append(result, field.ColumnName+"="+DefaultParameterFunc(_value.Field(field.Idx), args))
+			result = append(result, field.ColumnName+"="+GenerateParameterPlaceholder(_value.Field(field.Idx), args))
 		}
 	}
 
