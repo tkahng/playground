@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/tkahng/playground/internal/tools/utils"
 )
 
 const (
@@ -88,8 +87,16 @@ var operatorFuncMap = map[string]OperatorSQLBuilderFunc{
 type Field struct {
 	// Idx is the index of the field in its struct. used for reflection.
 	Idx int
-	// Name is the raw name of the field. this might be formatted by the Identifier function
+
+	// Name is the name of the field of the model.
 	Name string
+
+	// ColumnName is formatted name of the column of the table
+	ColumnName string
+
+	// IsID is true if the field is the primary key
+	IsID bool
+
 	// QuoteIdentifier is true if the table name should be quoted
 	QuoteIdentifier bool
 }
@@ -139,11 +146,11 @@ type Relation struct {
 type SQLBuilderInterface interface {
 	Identifier(name string) string
 	TableName() string
+	FieldNames() []string
 	ColumnNames() []string
-	ColumnNamesTablePrefix() []string
 	Fields() []*Field
-	FieldString(prefix string) string
-	GetFieldByName(name string) *Field
+	// FieldString(prefix string) string
+	MustGetFieldByName(name string) *Field
 	Where(where *map[string]any, args *[]any, run func(string) []string) string
 	WhereError(ctx context.Context, where *map[string]any, args *[]any, run func(string) []string) (ret string, err error)
 	IdColumnName() string
@@ -180,8 +187,20 @@ type SQLBuilder[Model any] struct {
 	insertID bool // If true, the id value read from the model will be insert into the database. default false
 }
 
-// GetFieldByName returns the field with the given name, not a quoted name
+// GetFieldByName returns the field with the given name.
+// returns nil if the field is not found
 func (b *SQLBuilder[Model]) GetFieldByName(name string) *Field {
+	for _, field := range b.fields {
+		if field.Name == name {
+			return field
+		}
+	}
+	return nil
+}
+
+// MustGetFieldByName returns the field with the given field name.
+// panics if the field is not found
+func (b *SQLBuilder[Model]) MustGetFieldByName(name string) *Field {
 	for _, field := range b.fields {
 		if field.Name == name {
 			return field
@@ -190,8 +209,11 @@ func (b *SQLBuilder[Model]) GetFieldByName(name string) *Field {
 	panic(fmt.Sprintf("field %s not found for model %s", name, b.tableName))
 }
 
+// Fields returns the fields
+func (b *SQLBuilder[Model]) Fields() []*Field {
+	return b.fields
+}
 func (b *SQLBuilder[Model]) ReturningFields() string {
-	// panic("unimplemented")
 	var result []string
 	for _, field := range b.fields {
 		result = append(result, b.TableName()+"."+field.Identifier())
@@ -200,23 +222,23 @@ func (b *SQLBuilder[Model]) ReturningFields() string {
 	return strings.Join(result, ",")
 }
 
-func (b *SQLBuilder[Model]) ColumnNames() []string {
-	// Returns the column names
-	return b.columnNames
-}
-
-// Fields returns the fields
-func (b *SQLBuilder[Model]) Fields() []*Field {
-	return b.fields
-}
-
-func (b *SQLBuilder[Model]) ColumnNamesTablePrefix() []string {
-	// Returns the column names with the table prefix
-	var prefixedNames []string
+// FieldNames returns the names of the fields, not the qualified column names.
+func (b *SQLBuilder[Model]) FieldNames() []string {
+	var fieldNames []string
 	for _, field := range b.fields {
-		prefixedNames = append(prefixedNames, b.TableName()+"."+field.Identifier())
+		fieldNames = append(fieldNames, field.Name)
 	}
-	return prefixedNames
+	return fieldNames
+}
+
+// ColumnNames returns the column names with the table prefix.
+func (b *SQLBuilder[Model]) ColumnNames() []string {
+	// Returns the column names with the table prefix
+	var fieldNames []string
+	for _, field := range b.fields {
+		fieldNames = append(fieldNames, field.ColumnName)
+	}
+	return fieldNames
 }
 
 // Returns the table name with proper identifier formatting
@@ -234,7 +256,7 @@ func (b *SQLBuilder[Model]) FieldString(prefix string) string {
 		result = append(result, prefix+b.Identifier(field.Name))
 	}
 
-	return strings.Join(result, ",")
+	return strings.Join(b.FieldNames(), ",")
 }
 
 // IdColumnName implements SQLBuilderInterface.
@@ -386,7 +408,7 @@ func NewSQLBuilder[Model any](opts ...SQLBuilderOptions[Model]) *SQLBuilder[Mode
 					// Primitive fields detected.
 					// This are selectable columns of the table
 
-					field := &Field{Idx: idx, Name: fieldName, QuoteIdentifier: quoteIdentifier}
+					field := &Field{Idx: idx, Name: fieldName, QuoteIdentifier: quoteIdentifier, ColumnName: DefaultQuoteIdentifierFunc(fieldName)}
 					// get the fieldName of the field
 					modelFields = append(modelFields, field)
 
@@ -522,7 +544,7 @@ func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any, run func(s
 			// if this field and operation is registered, go ahead.
 			// if not, it might be a relational field
 			if opFunc, ok := b.operations[whereFieldName+whereOp]; ok {
-				var whereField *Field = b.GetFieldByName(whereFieldName)
+				var whereField *Field = b.MustGetFieldByName(whereFieldName)
 				// Primitive field condition detected
 				// slog.Info("Processing primitive field condition", slog.String("key", key), slog.String("operation", op), slog.Any("value", value))
 				// if the value is nil,
@@ -594,8 +616,8 @@ func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any, run func(s
 					// query is the subquery we need to generate.
 					var query string
 
-					var relatedDestField = relatedBuilder.GetFieldByName(relation.dest)
-					var srcField = b.GetFieldByName(relation.src)
+					var relatedDestField = relatedBuilder.MustGetFieldByName(relation.dest)
+					var srcField = b.MustGetFieldByName(relation.src)
 					// if through is not empty
 					// it is a many-to-many relation
 					if relation.through != "" {
@@ -609,8 +631,8 @@ func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any, run func(s
 						}
 
 						var throughTableName = throughBuilder.TableName()
-						var throughSrcField = throughBuilder.GetFieldByName(relation.throughSrc)
-						var throughDestField = throughBuilder.GetFieldByName(relation.throughDest)
+						var throughSrcField = throughBuilder.MustGetFieldByName(relation.throughSrc)
+						var throughDestField = throughBuilder.MustGetFieldByName(relation.throughDest)
 						// query = fmt.Sprintf(
 						// 	`SELECT %s FROM %s join %s on %s.%s = %s.%s`,
 						// 	b.identifier(relation.dest),
@@ -665,12 +687,12 @@ func (b *SQLBuilder[Model]) Sort(filter Sortable) *map[string]string {
 		return nil
 	}
 	sortBy, sortOrder := filter.Sort()
-	if sortBy != "" && slices.Contains(b.ColumnNames(), utils.Quote(sortBy)) {
+	if sortBy != "" && slices.Contains(b.FieldNames(), sortBy) {
 		return &map[string]string{
 			sortBy: sortOrder,
 		}
 	} else {
-		slog.Info("sort by field not found in repository columns", "sortBy", sortBy, "sortOrder", sortOrder, "columns", b.ColumnNames())
+		slog.Info("sort by field not found in repository columns", "sortBy", sortBy, "sortOrder", sortOrder, "columns", b.FieldNames())
 		return nil // Return nil if the sortBy field is not found in the repository columns
 	}
 }

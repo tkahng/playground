@@ -12,7 +12,6 @@ import (
 	"github.com/tkahng/playground/internal/repository"
 	"github.com/tkahng/playground/internal/shared"
 	"github.com/tkahng/playground/internal/tools/mapper"
-	"github.com/tkahng/playground/internal/tools/utils"
 )
 
 type PermissionFilter struct {
@@ -33,7 +32,7 @@ func (p *DbRbacStore) ListPermissions(ctx context.Context, input *PermissionFilt
 	// q = ViewApplyPagination(q, pageInput)
 	q = ListPermissionsFilterFunc(q, input)
 	q = queryPagination(q, input)
-	if input.SortBy != "" && slices.Contains(repository.PermissionBuilder.ColumnNames(), utils.Quote(input.SortBy)) {
+	if input.SortBy != "" && slices.Contains(repository.PermissionBuilder.FieldNames(), input.SortBy) {
 		q = q.OrderBy(input.SortBy + " " + strings.ToUpper(input.SortOrder))
 	}
 	data, err := database.QueryWithBuilder[*models.Permission](ctx, p.db, q.PlaceholderFormat(squirrel.Dollar))

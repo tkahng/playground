@@ -9,7 +9,6 @@ import (
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/repository"
-	"github.com/tkahng/playground/internal/tools/utils"
 )
 
 type MediaStoreInterface interface {
@@ -150,12 +149,12 @@ func (s *DbMediaStore) sort(filter Sortable) *map[string]string {
 	}
 
 	sortBy, sortOrder := filter.Sort()
-	if sortBy != "" && slices.Contains(repository.MediaBuilder.ColumnNames(), utils.Quote(sortBy)) {
+	if sortBy != "" && slices.Contains(repository.MediaBuilder.FieldNames(), sortBy) {
 		return &map[string]string{
 			sortBy: sortOrder,
 		}
 	} else {
-		slog.Info("sort by field not found in repository columns", "sortBy", sortBy, "sortOrder", sortOrder, "columns", repository.UserBuilder.ColumnNames())
+		slog.Info("sort by field not found in repository columns", "sortBy", sortBy, "sortOrder", sortOrder, "columns", repository.UserBuilder.FieldNames())
 	}
 
 	return nil // default no sorting

@@ -15,7 +15,6 @@ import (
 	"github.com/tkahng/playground/internal/repository"
 	"github.com/tkahng/playground/internal/tools/mapper"
 	"github.com/tkahng/playground/internal/tools/types"
-	"github.com/tkahng/playground/internal/tools/utils"
 )
 
 type TeamMemberListInput struct {
@@ -275,14 +274,14 @@ func (s *DbTeamMemberStore) sortQuery(qs squirrel.SelectBuilder, filter Sortable
 	}
 
 	sortBy, sortOrder := filter.Sort()
-	if sortBy != "" && slices.Contains(repository.TeamMemberBuilder.ColumnNames(), utils.Quote(sortBy)) {
-		qs = qs.OrderBy(utils.Quote(sortBy) + " " + strings.ToUpper(sortOrder))
+	if sortBy != "" && slices.Contains(repository.TeamMemberBuilder.FieldNames(), sortBy) {
+		qs = qs.OrderBy(sortBy + " " + strings.ToUpper(sortOrder))
 	} else if sortBy == "team.name" {
 		qs = qs.OrderBy("teams.name " + strings.ToUpper(sortOrder))
 	} else if sortBy == "user.email" {
 		qs = qs.OrderBy("users.email " + strings.ToUpper(sortOrder))
 	} else {
-		slog.Info("sort by field not found in repository columns", "sortBy", sortBy, "sortOrder", sortOrder, "columns", repository.TeamMemberBuilder.ColumnNames())
+		slog.Info("sort by field not found in repository columns", "sortBy", sortBy, "sortOrder", sortOrder, "columns", repository.TeamMemberBuilder.FieldNames())
 	}
 	return qs
 }
@@ -293,12 +292,12 @@ func (s *DbTeamMemberStore) sortQuery(qs squirrel.SelectBuilder, filter Sortable
 // 	}
 
 // 	sortBy, sortOrder := filter.Sort()
-// 	if sortBy != "" && slices.Contains(repository.TeamMemberBuilder.ColumnNames(), utils.Quote(sortBy)) {
+// 	if sortBy != "" && slices.Contains(repository.TeamMemberBuilder.FieldNames(), sortBy) {
 // 		return &map[string]string{
 // 			sortBy: sortOrder,
 // 		}
 // 	} else {
-// 		slog.Info("sort by field not found in repository columns", "sortBy", sortBy, "sortOrder", sortOrder, "columns", repository.UserBuilder.ColumnNames())
+// 		slog.Info("sort by field not found in repository columns", "sortBy", sortBy, "sortOrder", sortOrder, "columns", repository.UserBuilder.FieldNames())
 // 	}
 
 // 	return nil // default no sorting
@@ -469,7 +468,7 @@ func (s *DbTeamMemberStore) FindLatestTeamMemberByUserID(ctx context.Context, us
 func (s *DbTeamMemberStore) FindTeamMembersByUserID(ctx context.Context, userId uuid.UUID, paginate *TeamMemberListInput) ([]*models.TeamMember, error) {
 	limit, offset := pagination(&paginate.PaginatedInput)
 	orderby := make(map[string]string)
-	if paginate.SortBy != "" && paginate.SortOrder != "" && slices.Contains(repository.TeamMemberBuilder.ColumnNames(), utils.Quote(paginate.SortBy)) {
+	if paginate.SortBy != "" && paginate.SortOrder != "" && slices.Contains(repository.TeamMemberBuilder.FieldNames(), paginate.SortBy) {
 		orderby[paginate.SortBy] = paginate.SortOrder
 	} else {
 		orderby["last_selected_at"] = "DESC"
@@ -479,7 +478,7 @@ func (s *DbTeamMemberStore) FindTeamMembersByUserID(ctx context.Context, userId 
 	qs = qs.Where(squirrel.Eq{"active": true})
 	if paginate.SortBy == "team.name" {
 		qs = qs.Join("teams on team_members.team_id = teams.id").OrderBy("teams.name " + strings.ToUpper(paginate.SortOrder))
-	} else if slices.Contains(repository.TeamMemberBuilder.ColumnNames(), utils.Quote(paginate.SortBy)) {
+	} else if slices.Contains(repository.TeamMemberBuilder.FieldNames(), paginate.SortBy) {
 		qs = qs.OrderBy(paginate.SortBy + " " + strings.ToUpper(paginate.SortOrder))
 	} else {
 		qs = qs.OrderBy("last_selected_at DESC")

@@ -12,7 +12,6 @@ import (
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/repository"
 	"github.com/tkahng/playground/internal/tools/types"
-	"github.com/tkahng/playground/internal/tools/utils"
 )
 
 type NotificationStore interface {
@@ -162,7 +161,7 @@ func (s *DbNotificationStore) filter(args *NotificationFilter) *map[string]any {
 
 func (d *DbNotificationStore) sort(filter *NotificationFilter) *map[string]string {
 	sortBy, sortOrder := filter.Sort()
-	if slices.Contains(repository.NotificationBuilder.ColumnNames(), utils.Quote(sortBy)) {
+	if slices.Contains(repository.NotificationBuilder.FieldNames(), sortBy) {
 		return &map[string]string{
 			sortBy: strings.ToUpper(sortOrder),
 		}

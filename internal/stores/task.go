@@ -15,7 +15,6 @@ import (
 	"github.com/tkahng/playground/internal/repository"
 	"github.com/tkahng/playground/internal/tools/mapper"
 	"github.com/tkahng/playground/internal/tools/types"
-	"github.com/tkahng/playground/internal/tools/utils"
 )
 
 type DbTaskStoreInterface interface { // size=16 (0x10)
@@ -394,7 +393,7 @@ func (s *DbTaskStore) DeleteTaskProject(ctx context.Context, taskProjectID uuid.
 }
 func ListTasksOrderByFunc(input *TaskFilter) *map[string]string {
 	sortBy, sortOrder := input.Sort()
-	if slices.Contains(repository.TaskBuilder.ColumnNames(), utils.Quote(sortBy)) {
+	if slices.Contains(repository.TaskBuilder.FieldNames(), sortBy) {
 		return &map[string]string{
 			sortBy: strings.ToUpper(sortOrder),
 		}
@@ -481,7 +480,7 @@ func (*DbTaskStore) TaskProjectWhere(task *TaskProjectsFilter) *map[string]any {
 
 func ListTaskProjectsOrderByFunc(input *TaskProjectsFilter) *map[string]string {
 	sortBy, sortOrder := input.Sort()
-	if slices.Contains(repository.TaskProjectBuilder.ColumnNames(), utils.Quote(sortBy)) {
+	if slices.Contains(repository.TaskProjectBuilder.FieldNames(), sortBy) {
 		return &map[string]string{
 			sortBy: strings.ToUpper(sortOrder),
 		}

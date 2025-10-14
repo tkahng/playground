@@ -12,7 +12,6 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/repository"
-	"github.com/tkahng/playground/internal/tools/utils"
 )
 
 var (
@@ -90,12 +89,12 @@ func (p *RepositoryResource[M, K, F]) sort(filter *F) *map[string]string {
 	}
 	if sortable, ok := any(filter).(repository.Sortable); ok {
 		sortBy, sortOrder := sortable.Sort()
-		if sortBy != "" && slices.Contains(p.repository.Builder().ColumnNames(), utils.Quote(sortBy)) {
+		if sortBy != "" && slices.Contains(p.repository.Builder().FieldNames(), sortBy) {
 			return &map[string]string{
 				sortBy: sortOrder,
 			}
 		} else {
-			slog.Info("sort by field not found in repository columns", "sortBy", sortBy, "sortOrder", sortOrder, "columns", p.repository.Builder().ColumnNames())
+			slog.Info("sort by field not found in repository columns", "sortBy", sortBy, "sortOrder", sortOrder, "columns", p.repository.Builder().FieldNames())
 		}
 	} else {
 		slog.Info("filter does not implement Sortable, returning nil")
@@ -267,7 +266,7 @@ func (p *QueryResource[M, K, F]) sort(qs sq.SelectBuilder, filter *F) sq.SelectB
 		return qs
 	} else if sortable, ok := any(filter).(repository.Sortable); ok {
 		sortby, sortOrder := sortable.Sort()
-		if sortby != "" && slices.Contains(p.builder.ColumnNames(), utils.Quote(sortby)) {
+		if sortby != "" && slices.Contains(p.builder.FieldNames(), sortby) {
 			qs = qs.OrderBy(p.builder.Identifier(sortby) + " " + strings.ToUpper(sortOrder))
 			return qs
 		}
@@ -355,7 +354,7 @@ func (s *QueryResource[Model, Key, Filter]) Delete(ctx context.Context, id Key) 
 // Default filter implementation if no custom filter function is provided
 // Find implements Resource.
 func (s *QueryResource[Model, Key, Filter]) Find(ctx context.Context, filter *Filter) ([]*Model, error) {
-	qs := sq.Select(s.builder.ColumnNamesTablePrefix()...).
+	qs := sq.Select(s.builder.ColumnNames()...).
 		From(s.builder.TableName())
 
 	// Apply filters, sorting, and pagination
@@ -372,7 +371,7 @@ func (s *QueryResource[Model, Key, Filter]) Find(ctx context.Context, filter *Fi
 
 // FindOne implements Resource.
 func (s *QueryResource[Model, Key, Filter]) FindOne(ctx context.Context, filter *Filter) (*Model, error) {
-	qs := sq.Select(s.builder.ColumnNamesTablePrefix()...).
+	qs := sq.Select(s.builder.ColumnNames()...).
 		From(s.builder.TableName())
 	// Apply filters, sorting, and pagination
 	qs = s.filter(qs, filter).Limit(1)
@@ -388,7 +387,7 @@ func (s *QueryResource[Model, Key, Filter]) FindOne(ctx context.Context, filter 
 
 // FindByID implements Resource.
 func (s *QueryResource[Model, Key, Filter]) FindByID(ctx context.Context, id Key) (*Model, error) {
-	qs := sq.Select(s.builder.ColumnNamesTablePrefix()...).
+	qs := sq.Select(s.builder.ColumnNames()...).
 		From(s.builder.TableName()).Where(sq.Eq{s.builder.IdColumnName(): id}).Limit(1)
 	res, err := database.QueryWithBuilder[*Model](ctx, s.db, qs.PlaceholderFormat(sq.Dollar))
 	if err != nil {

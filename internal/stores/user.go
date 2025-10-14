@@ -14,7 +14,6 @@ import (
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/tools/mapper"
 	"github.com/tkahng/playground/internal/tools/types"
-	"github.com/tkahng/playground/internal/tools/utils"
 
 	"github.com/stephenafamo/scan"
 	"github.com/stephenafamo/scan/pgxscan"
@@ -81,12 +80,12 @@ func (s *DbUserStore) sort(filter Sortable) *map[string]string {
 	}
 
 	sortBy, sortOrder := filter.Sort()
-	if sortBy != "" && slices.Contains(repository.UserBuilder.ColumnNames(), utils.Quote(sortBy)) {
+	if sortBy != "" && slices.Contains(repository.UserBuilder.FieldNames(), sortBy) {
 		return &map[string]string{
 			sortBy: sortOrder,
 		}
 	} else {
-		slog.Info("sort by field not found in repository columns", "sortBy", sortBy, "sortOrder", sortOrder, "columns", repository.UserBuilder.ColumnNames())
+		slog.Info("sort by field not found in repository columns", "sortBy", sortBy, "sortOrder", sortOrder, "columns", repository.UserBuilder.FieldNames())
 	}
 
 	return nil // default no sorting
