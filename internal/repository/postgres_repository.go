@@ -33,7 +33,7 @@ func (r *PostgresRepository[Model]) Builder() SQLBuilderInterface {
 func (r *PostgresRepository[Model]) Get(ctx context.Context, db database.Dbx, where *map[string]any, order *map[string]string, limit *int, offset *int) ([]*Model, error) {
 	var args []any
 	//goland:noinspection Annotator
-	query := fmt.Sprintf("SELECT %s FROM %s", r.builder.FieldString(""), r.builder.Table())
+	query := fmt.Sprintf("SELECT %s FROM %s", r.builder.FieldString(""), r.builder.TableName())
 	expr, err := r.builder.WhereError(ctx, where, &args, nil)
 	if err != nil {
 		return nil, err
@@ -79,7 +79,7 @@ func (r *PostgresRepository[Model]) Put(ctx context.Context, dbx database.Dbx, m
 			return nil, err
 		}
 		//goland:noinspection Annotator
-		query := fmt.Sprintf("UPDATE %s SET %s", r.builder.Table(), set)
+		query := fmt.Sprintf("UPDATE %s SET %s", r.builder.TableName(), set)
 		if expr, err := r.builder.WhereError(ctx, &where, &args, nil); err != nil {
 			return nil, err
 		} else if expr != "" {
@@ -135,7 +135,7 @@ func (r *PostgresRepository[Model]) GetOne(ctx context.Context, dbx database.Dbx
 func (r *PostgresRepository[Model]) PostExec(ctx context.Context, dbx database.Dbx, models []Model) (int64, error) {
 	args := []any{}
 	//goland:noinspection Annotator
-	query := fmt.Sprintf("INSERT INTO %s", r.builder.Table())
+	query := fmt.Sprintf("INSERT INTO %s", r.builder.TableName())
 	if fields, values, err := r.builder.ValuesError(&models, &args, nil); err != nil {
 		return 0, err
 	} else if fields != "" && values != "" {
@@ -161,7 +161,7 @@ func (r *PostgresRepository[Model]) PostExec(ctx context.Context, dbx database.D
 func (r *PostgresRepository[Model]) Post(ctx context.Context, dbx database.Dbx, models []Model) ([]*Model, error) {
 	args := []any{}
 	//goland:noinspection Annotator
-	query := fmt.Sprintf("INSERT INTO %s", r.builder.Table())
+	query := fmt.Sprintf("INSERT INTO %s", r.builder.TableName())
 	if fields, values, err := r.builder.ValuesError(&models, &args, nil); err != nil {
 		return nil, err
 	} else if fields != "" && values != "" {
@@ -201,7 +201,7 @@ func (r *PostgresRepository[Model]) PostOne(ctx context.Context, dbx database.Db
 func (r *PostgresRepository[Model]) DeleteReturn(ctx context.Context, dbx database.Dbx, where *map[string]any) ([]*Model, error) {
 	args := []any{}
 	//goland:noinspection Annotator
-	query := fmt.Sprintf("DELETE FROM %s", r.builder.Table())
+	query := fmt.Sprintf("DELETE FROM %s", r.builder.TableName())
 	if expr, err := r.builder.WhereError(ctx, where, &args, nil); err != nil {
 		return nil, err
 	} else if expr != "" {
@@ -228,7 +228,7 @@ func (r *PostgresRepository[Model]) DeleteReturn(ctx context.Context, dbx databa
 func (r *PostgresRepository[Model]) Delete(ctx context.Context, dbx database.Dbx, where *map[string]any) (int64, error) {
 	args := []any{}
 	//goland:noinspection Annotator
-	query := fmt.Sprintf("DELETE FROM %s", r.builder.Table())
+	query := fmt.Sprintf("DELETE FROM %s", r.builder.TableName())
 	if expr, err := r.builder.WhereError(ctx, where, &args, nil); err != nil {
 		return 0, err
 	} else if expr != "" {
@@ -255,7 +255,7 @@ func (r *PostgresRepository[Model]) Delete(ctx context.Context, dbx database.Dbx
 func (r *PostgresRepository[Model]) Count(ctx context.Context, dbx database.Dbx, where *map[string]any) (int64, error) {
 	args := []any{}
 	//goland:noinspection Annotator
-	query := fmt.Sprintf("SELECT COUNT(*) FROM %s", r.builder.Table())
+	query := fmt.Sprintf("SELECT COUNT(*) FROM %s", r.builder.TableName())
 	if expr, err := r.builder.WhereError(ctx, where, &args, nil); err != nil {
 		return 0, err
 	} else if expr != "" {

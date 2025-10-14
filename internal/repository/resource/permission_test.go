@@ -22,7 +22,7 @@ func TestNewPermissionQueryResource_FilterFunc(t *testing.T) {
 		filterFunc := repo.filter
 
 		t.Run("nil filter returns empty map", func(t *testing.T) {
-			qs := squirrel.Select(models.PermissionTable.Columns...).From(repo.builder.Table())
+			qs := squirrel.Select(models.PermissionTable.Columns...).From(repo.builder.TableName())
 			where := filterFunc(qs, nil)
 			sql, args, err := where.ToSql()
 			fmt.Println("SQL:", sql)
@@ -33,7 +33,7 @@ func TestNewPermissionQueryResource_FilterFunc(t *testing.T) {
 		})
 
 		t.Run("Q filter", func(t *testing.T) {
-			qs := squirrel.Select(models.PermissionTable.Columns...).From(repo.builder.Table())
+			qs := squirrel.Select(models.PermissionTable.Columns...).From(repo.builder.TableName())
 			filter := &PermissionsFilter{
 				Q: "test",
 			}
@@ -47,7 +47,7 @@ func TestNewPermissionQueryResource_FilterFunc(t *testing.T) {
 		})
 
 		t.Run("Ids filter", func(t *testing.T) {
-			qs := squirrel.Select(models.PermissionTable.Columns...).From(repo.builder.Table())
+			qs := squirrel.Select(models.PermissionTable.Columns...).From(repo.builder.TableName())
 			id1 := uuid.New()
 			id2 := uuid.New()
 			filter := &PermissionsFilter{
@@ -63,7 +63,7 @@ func TestNewPermissionQueryResource_FilterFunc(t *testing.T) {
 		})
 
 		t.Run("Ids filter", func(t *testing.T) {
-			qs := squirrel.Select(models.PermissionTable.Columns...).From(repo.builder.Table())
+			qs := squirrel.Select(models.PermissionTable.Columns...).From(repo.builder.TableName())
 			id1 := uuid.New()
 			id2 := uuid.New()
 			filter := &PermissionsFilter{
@@ -79,7 +79,7 @@ func TestNewPermissionQueryResource_FilterFunc(t *testing.T) {
 		})
 
 		t.Run("Names filter", func(t *testing.T) {
-			qs := squirrel.Select(models.PermissionTable.Columns...).From(repo.builder.Table())
+			qs := squirrel.Select(models.PermissionTable.Columns...).From(repo.builder.TableName())
 			filter := &PermissionsFilter{
 				Names: []string{"read", "write"},
 			}
@@ -93,7 +93,7 @@ func TestNewPermissionQueryResource_FilterFunc(t *testing.T) {
 		})
 
 		t.Run("RoleId filter", func(t *testing.T) {
-			qs := squirrel.Select(models.PermissionTable.Columns...).From(repo.builder.Table())
+			qs := squirrel.Select(models.PermissionTable.Columns...).From(repo.builder.TableName())
 			roleId := uuid.New()
 			filter := &PermissionsFilter{
 				RoleId: roleId,
@@ -107,7 +107,7 @@ func TestNewPermissionQueryResource_FilterFunc(t *testing.T) {
 			assert.Equal(t, expected, sql)
 		})
 		t.Run("RoleId filter", func(t *testing.T) {
-			qs := squirrel.Select(models.PermissionTable.Columns...).From(repo.builder.Table())
+			qs := squirrel.Select(models.PermissionTable.Columns...).From(repo.builder.TableName())
 			roleId := uuid.New()
 			filter := &PermissionsFilter{
 				RoleId: roleId,

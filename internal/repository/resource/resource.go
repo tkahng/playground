@@ -277,8 +277,8 @@ func (p *QueryResource[M, K, F]) sort(qs sq.SelectBuilder, filter *F) sq.SelectB
 
 // Count implements Resource.
 func (s *QueryResource[Model, Key, Filter]) Count(ctx context.Context, filter *Filter) (int64, error) {
-	qs := sq.Select("COUNT(" + s.builder.Table() + ".*)").
-		From(s.builder.Table())
+	qs := sq.Select("COUNT(" + s.builder.TableName() + ".*)").
+		From(s.builder.TableName())
 
 	qs = s.filter(qs, filter)
 
@@ -324,7 +324,7 @@ func (s *QueryResource[Model, Key, Filter]) Create(ctx context.Context, model *M
 			valuesArray = append(valuesArray, _field.Interface())
 		}
 	}
-	qs := sq.Insert(s.builder.Table()).
+	qs := sq.Insert(s.builder.TableName()).
 		Columns(fieldsArray...).
 		Values(valuesArray...).
 		Suffix(fmt.Sprintf("RETURNING %s", s.builder.FieldString("")))
@@ -340,7 +340,7 @@ func (s *QueryResource[Model, Key, Filter]) Create(ctx context.Context, model *M
 
 // Delete implements Resource.
 func (s *QueryResource[Model, Key, Filter]) Delete(ctx context.Context, id Key) error {
-	qs := sq.Delete(s.builder.Table()).
+	qs := sq.Delete(s.builder.TableName()).
 		Where(sq.Eq{s.builder.IdColumnName(): id})
 	count, err := database.ExecWithBuilder(ctx, s.db, qs.PlaceholderFormat(sq.Dollar))
 	if err != nil {
@@ -356,7 +356,7 @@ func (s *QueryResource[Model, Key, Filter]) Delete(ctx context.Context, id Key) 
 // Find implements Resource.
 func (s *QueryResource[Model, Key, Filter]) Find(ctx context.Context, filter *Filter) ([]*Model, error) {
 	qs := sq.Select(s.builder.ColumnNamesTablePrefix()...).
-		From(s.builder.Table())
+		From(s.builder.TableName())
 
 	// Apply filters, sorting, and pagination
 	qs = s.filter(qs, filter)
@@ -373,7 +373,7 @@ func (s *QueryResource[Model, Key, Filter]) Find(ctx context.Context, filter *Fi
 // FindOne implements Resource.
 func (s *QueryResource[Model, Key, Filter]) FindOne(ctx context.Context, filter *Filter) (*Model, error) {
 	qs := sq.Select(s.builder.ColumnNamesTablePrefix()...).
-		From(s.builder.Table())
+		From(s.builder.TableName())
 	// Apply filters, sorting, and pagination
 	qs = s.filter(qs, filter).Limit(1)
 	res, err := database.QueryWithBuilder[*Model](ctx, s.db, qs.PlaceholderFormat(sq.Dollar))
@@ -389,7 +389,7 @@ func (s *QueryResource[Model, Key, Filter]) FindOne(ctx context.Context, filter 
 // FindByID implements Resource.
 func (s *QueryResource[Model, Key, Filter]) FindByID(ctx context.Context, id Key) (*Model, error) {
 	qs := sq.Select(s.builder.ColumnNamesTablePrefix()...).
-		From(s.builder.Table()).Where(sq.Eq{s.builder.IdColumnName(): id}).Limit(1)
+		From(s.builder.TableName()).Where(sq.Eq{s.builder.IdColumnName(): id}).Limit(1)
 	res, err := database.QueryWithBuilder[*Model](ctx, s.db, qs.PlaceholderFormat(sq.Dollar))
 	if err != nil {
 		return nil, fmt.Errorf("error finding model by ID: %w", err)
@@ -406,7 +406,7 @@ func (s *QueryResource[Model, Key, Filter]) Update(ctx context.Context, model *M
 		return nil, nil
 	}
 	_value := reflect.ValueOf(*model)
-	qs := sq.Update(s.builder.Table())
+	qs := sq.Update(s.builder.TableName())
 	for _, field := range s.builder.Fields() {
 		if field.Name == s.builder.IdColumnName() {
 			_field := _value.Field(field.Idx)

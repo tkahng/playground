@@ -102,14 +102,33 @@ func (f *Field) Identifier() string {
 // These contain information needed to traverse across tables
 // through subqueries and joins.
 type Relation struct {
+	// table is the name of the related table
 	table string
-	one   bool
-	src   string
-	dest  string
 
-	through      string
-	throughField string
-	endField     string
+	one bool
+
+	// src is the field of the current table that will be used for the join.
+	// usually this is the primary key.
+	src string
+
+	// dest is the field of the related table that will be used for the join.
+	//
+	// usually this is the foreign key of the related table
+	// that references the current table by its primary key.
+	//
+	// but for m2m relationships, this is the related tables primary key,
+	// which references the through table by its foreign key.
+	dest string
+
+	// through is the name of the join table for m2m relationships.
+	// this is only used for the through m2m relationship.
+	through string
+
+	// throughDest is the field of the through table that will be used for the join.
+	throughDest string
+
+	// throughSrc is the field of the through table that will be used for the join.
+	throughSrc string
 }
 
 type SQLBuilder[Model any] struct {
@@ -144,7 +163,7 @@ func (b *SQLBuilder[Model]) ReturningFields() string {
 	// panic("unimplemented")
 	var result []string
 	for _, field := range b.fields {
-		result = append(result, b.Table()+"."+field.Identifier())
+		result = append(result, b.TableName()+"."+field.Identifier())
 	}
 
 	return strings.Join(result, ",")
@@ -164,15 +183,18 @@ func (b *SQLBuilder[Model]) Fields() []*Field {
 func (b *SQLBuilder[Model]) ColumnNamesTablePrefix() []string {
 	// Returns the column names with the table prefix
 	var prefixedNames []string
-	for _, name := range b.fields {
-		prefixedNames = append(prefixedNames, b.Identifier(b.tableName)+"."+b.Identifier(name.Name))
+	for _, field := range b.fields {
+		prefixedNames = append(prefixedNames, b.TableName()+"."+field.Identifier())
 	}
 	return prefixedNames
 }
 
 // Returns the table name with proper identifier formatting
-func (b *SQLBuilder[Model]) Table() string {
-	return b.Identifier(b.tableName)
+func (b *SQLBuilder[Model]) TableName() string {
+	if b.quoteIdentifier {
+		return DefaultQuoteIdentifierFunc(b.tableName)
+	}
+	return b.tableName
 }
 
 // Returns a comma-separated list of field names with proper identifier formatting
@@ -212,7 +234,7 @@ func (b *SQLBuilder[Model]) Parameter(value reflect.Value, args *[]any) string {
 
 type SQLBuilderInterface interface {
 	Identifier(name string) string
-	Table() string
+	TableName() string
 	ColumnNames() []string
 	ColumnNamesTablePrefix() []string
 	Fields() []*Field
@@ -299,6 +321,7 @@ func NewSQLBuilder[Model any](opts ...SQLBuilderOptions[Model]) *SQLBuilder[Mode
 				// split db tag value
 				var fieldName string
 				var fieldOptions []string
+				var quoteIdentifier bool
 				for idx, value := range strings.Split(dbTagValue, ",") {
 					if idx == 0 {
 						fieldName = value
@@ -306,56 +329,53 @@ func NewSQLBuilder[Model any](opts ...SQLBuilderOptions[Model]) *SQLBuilder[Mode
 						fieldOptions = append(fieldOptions, value)
 					}
 				}
-				if fieldName == "" {
-					panic("no field name at ")
+				if slices.Contains(fieldOptions, "quote") {
+					quoteIdentifier = true
 				}
-				// if table tag is set, it's a relation
-				// if table := _field.Tag.Get("table"); table != "" {
-				// 	// Relation field detected
-				// 	throughs := strings.Split(_field.Tag.Get("through"), ",")
-				// 	var throught, throughf, efield string
-				// 	if len(throughs) == 3 {
-				// 		throught = throughs[0]
-				// 		throughf = throughs[1]
-				// 		efield = throughs[2]
-				// 	}
-				// 	modelRelations[fieldName] = &Relation{
-				// 		one:          _field.Type.Kind() == reflect.Struct,
-				// 		src:          _field.Tag.Get("src"),
-				// 		dest:         _field.Tag.Get("dest"),
-				// 		table:        table,
-				// 		through:      throught,
-				// 		throughField: throughf,
-				// 		endField:     efield,
-				// 	}
-				// }
+				if fieldName == "" {
+					panic(fmt.Sprintf("fieldName not set at struct field idx %d of %s", idx, tableName))
+				}
 
 				// if table tag is set, it's a relation
 				if table := _field.Tag.Get("table"); table != "" {
 					// Relation field detected
-					throughs := strings.Split(_field.Tag.Get("through"), ",")
-					var throught, throughf, efield string
-					if len(throughs) == 3 {
-						throught = throughs[0]
-						throughf = throughs[1]
-						efield = throughs[2]
+					var relation Relation
+					relation.table = table
+
+					if src := _field.Tag.Get("src"); src != "" {
+						relation.src = src
+					} else {
+						panic(fmt.Sprintf("src not set at struct field name %s of %s", fieldName, tableName))
 					}
-					modelRelations[fieldName] = &Relation{
-						one:          _field.Type.Kind() == reflect.Struct,
-						src:          _field.Tag.Get("src"),
-						dest:         _field.Tag.Get("dest"),
-						table:        table,
-						through:      throught,
-						throughField: throughf,
-						endField:     efield,
+					if dest := _field.Tag.Get("dest"); dest != "" {
+						relation.dest = dest
+					} else {
+						panic(fmt.Sprintf("dest not set at struct field name %s of %s", fieldName, tableName))
 					}
+					if through := _field.Tag.Get("through"); through != "" {
+						relation.through = through
+						if throughDest := _field.Tag.Get("through_dest"); throughDest != "" {
+							relation.throughDest = throughDest
+						} else {
+							panic(fmt.Sprintf("through_dest not set at struct field name %s of %s", fieldName, tableName))
+						}
+						if throughSrc := _field.Tag.Get("through_src"); throughSrc != "" {
+							relation.throughSrc = throughSrc
+						} else {
+							panic(fmt.Sprintf("through_src not set at struct field name %s of %s", fieldName, tableName))
+						}
+					}
+
+					modelRelations[fieldName] = &relation
+
 				} else {
 					// Primitive fields detected.
 					// This are selectable columns of the table
 
-					field := &Field{Idx: idx, Name: fieldName}
+					field := &Field{Idx: idx, Name: fieldName, QuoteIdentifier: quoteIdentifier}
 					// get the fieldName of the field
 					modelFields = append(modelFields, field)
+
 					modelColumnNames = append(modelColumnNames, fieldName)
 
 					// Add base operations for the field
@@ -516,15 +536,15 @@ func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any, run func(s
 					var query string
 
 					var dest string = b.Identifier(relation.dest)
-					var related string = relatedBuilder.Table()
+					var related string = relatedBuilder.TableName()
 					// if through is not empty
 					// it is a many-to-many relation
 					if relation.through != "" {
 						//goland:noinspection Annotator
 
 						var through = b.Identifier(relation.through)
-						var endField = b.Identifier(relation.endField)
-						throughField := b.Identifier(relation.throughField)
+						var endField = b.Identifier(relation.throughSrc)
+						throughField := b.Identifier(relation.throughDest)
 
 						query = fmt.Sprintf(
 							// SELECT dest FROM through join related on related.endField = through.throughField`
@@ -542,7 +562,7 @@ func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any, run func(s
 						)
 					} else {
 						//goland:noinspection Annotator
-						query = fmt.Sprintf("SELECT %s FROM %s", b.Identifier(relation.dest), relatedBuilder.Table())
+						query = fmt.Sprintf("SELECT %s FROM %s", b.Identifier(relation.dest), relatedBuilder.TableName())
 					}
 					if expr := relatedBuilder.Where(&where, args, run); expr != "" {
 						query += fmt.Sprintf(" WHERE %s", expr)
