@@ -42,7 +42,7 @@ func TestNewPermissionQueryResource_FilterFunc(t *testing.T) {
 			assert.NoError(t, err)
 			assert.NotNil(t, sql)
 			assert.Equal(t, 2, len(args))
-			expected := "SELECT id, name, description, created_at, updated_at FROM permissions WHERE (name ILIKE ? OR description ILIKE ?)"
+			expected := "SELECT id, name, description, created_at, updated_at FROM public.permissions WHERE (name ILIKE ? OR description ILIKE ?)"
 			assert.Equal(t, expected, sql)
 		})
 
@@ -58,7 +58,7 @@ func TestNewPermissionQueryResource_FilterFunc(t *testing.T) {
 			assert.NoError(t, err)
 			assert.NotNil(t, sql)
 			assert.Equal(t, 2, len(args))
-			expected := "SELECT id, name, description, created_at, updated_at FROM permissions WHERE id IN (?,?)"
+			expected := "SELECT id, name, description, created_at, updated_at FROM public.permissions WHERE id IN (?,?)"
 			assert.Equal(t, expected, sql)
 		})
 
@@ -74,7 +74,7 @@ func TestNewPermissionQueryResource_FilterFunc(t *testing.T) {
 			assert.NoError(t, err)
 			assert.NotNil(t, sql)
 			assert.Equal(t, 2, len(args))
-			expected := "SELECT id, name, description, created_at, updated_at FROM permissions WHERE id IN (?,?)"
+			expected := "SELECT id, name, description, created_at, updated_at FROM public.permissions WHERE id IN (?,?)"
 			assert.Equal(t, expected, sql)
 		})
 
@@ -88,7 +88,7 @@ func TestNewPermissionQueryResource_FilterFunc(t *testing.T) {
 			assert.NoError(t, err)
 			assert.NotNil(t, sql)
 			assert.Equal(t, 2, len(args))
-			expected := "SELECT id, name, description, created_at, updated_at FROM permissions WHERE name IN (?,?)"
+			expected := "SELECT id, name, description, created_at, updated_at FROM public.permissions WHERE name IN (?,?)"
 			assert.Equal(t, expected, sql)
 		})
 
@@ -103,7 +103,7 @@ func TestNewPermissionQueryResource_FilterFunc(t *testing.T) {
 			assert.NoError(t, err)
 			assert.NotNil(t, sql)
 			assert.Equal(t, 2, len(args))
-			expected := "SELECT id, name, description, created_at, updated_at FROM permissions JOIN role_permissions on permissions.id = role_permissions.permission_id and role_permissions.role_id = ? WHERE role_permissions.role_id = ?"
+			expected := "SELECT id, name, description, created_at, updated_at FROM public.permissions JOIN role_permissions on permissions.id = role_permissions.permission_id and role_permissions.role_id = ? WHERE role_permissions.role_id = ?"
 			assert.Equal(t, expected, sql)
 		})
 		t.Run("RoleId filter", func(t *testing.T) {
@@ -117,7 +117,7 @@ func TestNewPermissionQueryResource_FilterFunc(t *testing.T) {
 			assert.NoError(t, err)
 			assert.NotNil(t, sql)
 			assert.Equal(t, 2, len(args))
-			expected := "SELECT id, name, description, created_at, updated_at FROM permissions JOIN role_permissions on permissions.id = role_permissions.permission_id and role_permissions.role_id = ? WHERE role_permissions.role_id = ?"
+			expected := "SELECT id, name, description, created_at, updated_at FROM public.permissions JOIN role_permissions on permissions.id = role_permissions.permission_id and role_permissions.role_id = ? WHERE role_permissions.role_id = ?"
 			assert.Equal(t, expected, sql)
 		})
 	})

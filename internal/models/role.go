@@ -13,7 +13,7 @@ type Role struct {
 	Description *string       `db:"description" json:"description,omitempty"`
 	CreatedAt   time.Time     `db:"created_at" json:"created_at"`
 	UpdatedAt   time.Time     `db:"updated_at" json:"updated_at"`
-	Permissions []*Permission `db:"permissions" src:"id" dest:"id" table:"permissions" through:"role_permissions" through_src:"role_id" through_dest:"permission_id" json:"permissions,omitempty"`
+	Permissions []*Permission `db:"permissions" src:"id" dest:"id" table:"public.permissions" through:"role_permissions" through_src:"role_id" through_dest:"permission_id" json:"permissions,omitempty"`
 	Users       []*User       `db:"users" src:"id" dest:"id" table:"users" through:"user_roles" through_src:"role_id" through_dest:"user_id" json:"users,omitempty"`
 }
 
@@ -38,7 +38,7 @@ var RoleTable = roleTable{
 }
 
 type Permission struct {
-	_           struct{}         `db:"permissions" json:"-"`
+	_           struct{}         `db:"public.permissions" json:"-"`
 	ID          uuid.UUID        `db:"id" json:"id"`
 	Name        string           `db:"name" json:"name"`
 	Description *string          `db:"description" json:"description,omitempty"`

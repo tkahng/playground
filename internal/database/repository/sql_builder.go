@@ -108,14 +108,6 @@ type Field struct {
 	QuoteIdentifier bool
 }
 
-// Identifier returns the field name with proper identifier formatting
-func (f *Field) Identifier() string {
-	if f.QuoteIdentifier {
-		return utils.Quote(f.Name)
-	}
-	return f.Name
-}
-
 // Relation represents a models relational fields
 //
 // These contain information needed to traverse across tables
@@ -462,6 +454,21 @@ func (b *SQLBuilder[Model]) WhereError(ctx context.Context, where *map[string]an
 	return
 }
 
+func isNumeric(v reflect.Value) bool {
+	switch v.Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return true
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+		return true
+	case reflect.Float32, reflect.Float64:
+		return true
+	case reflect.Complex64, reflect.Complex128:
+		return true
+	default:
+		return false
+	}
+}
+
 // GenerateParameterPlaceholder returns the numbered parameter placeholder,
 // e.g. $1, $2, etc,
 // their numbers are incremented for each call as it adds them to the args slice.
@@ -474,7 +481,7 @@ func (b *SQLBuilder[Model]) WhereError(ctx context.Context, where *map[string]an
 // with the reflect.Value of the value to insert, and a pointer to a slice of args.
 // for each call, the function adds the underlying value of value and adds it to the args slice.
 // then the numer in the placeholder is generated from the length of the args slice,
-// which is also the current input value's placeholder number, and its index in the args slice.
+// which is also the current input value's placeholder number, and its index in the args slice.–
 func GenerateParameterPlaceholder(value reflect.Value, args *[]any) string {
 	*args = append(*args, value.Interface())
 	return fmt.Sprintf("$%d", len(*args))
@@ -547,6 +554,7 @@ func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any, run func(s
 	// "name", map[string]any{"_eq": "John"}
 	// "friends", map[string]any{"name": map[string]any{"_in": []string{"admin", "user"}}}
 	for whereFieldName, whereFieldValue := range *where {
+		slog.Info("where", slog.String("wherefieldname", whereFieldName))
 		// iterate over the map of operators and values,
 		//
 		// each key is a operator code(_eq, _gt, etc)
@@ -585,29 +593,45 @@ func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any, run func(s
 				// time values are formatted as strings
 				// fmt.Stringer values are called cast then called String method
 				// slice or array values are iterated and
-				if _value.Kind() == reflect.String {
-					// String values are passed
-					result = append(result, opFunc(whereField.Identifier(), GenerateParameterPlaceholder(_value, args)))
-				} else if it, ok := whereOpValue.(time.Time); ok {
-					// Time values are formatted.
-					_timeValue := reflect.ValueOf(it.Format(time.RFC3339Nano))
-					result = append(result, opFunc(whereField.Identifier(), GenerateParameterPlaceholder(_timeValue, args)))
-				} else if it, ok := whereOpValue.(fmt.Stringer); ok {
-					// If the value implements fmt.Stringer, use its String method
-					result = append(result, opFunc(whereField.Identifier(), GenerateParameterPlaceholder(reflect.ValueOf(it.String()), args)))
-				} else if _value.Kind() == reflect.Slice || _value.Kind() == reflect.Array {
+				if _value.Kind() == reflect.Slice || _value.Kind() == reflect.Array {
 					// Slice or array values are iterated and check for string types.
 					items := []string{}
 					for i := range _value.Len() {
-						if _value.Index(i).Kind() == reflect.String {
-							items = append(items, GenerateParameterPlaceholder(_value.Index(i), args))
-						} else if it, ok := _value.Index(i).Interface().(fmt.Stringer); ok {
-							// If the value implements fmt.Stringer, use its String method
-							items = append(items, GenerateParameterPlaceholder(reflect.ValueOf(it.String()), args))
-						}
+						_valueItem := _value.Index(i)
+						item := convert(_valueItem)
+						items = append(items, GenerateParameterPlaceholder(reflect.ValueOf(item), args))
 					}
-					result = append(result, opFunc(whereField.Identifier(), items...))
+					result = append(result, opFunc(whereField.QualifiedColumnName, items...))
+				} else {
+					item := convert(_value)
+					result = append(result, opFunc(whereField.QualifiedColumnName, GenerateParameterPlaceholder(reflect.ValueOf(item), args)))
 				}
+				// if _value.Kind() == reflect.String {
+				// 	// String values are passed
+				// 	result = append(result, opFunc(whereField.QualifiedColumnName, GenerateParameterPlaceholder(_value, args)))
+				// } else if isNumeric(_value) {
+
+				// } else if it, ok := whereOpValue.(time.Time); ok {
+				// 	// Time values are formatted.
+				// 	_timeValue := reflect.ValueOf(it.Format(time.RFC3339Nano))
+				// 	result = append(result, opFunc(whereField.QualifiedColumnName, GenerateParameterPlaceholder(_timeValue, args)))
+				// } else if it, ok := whereOpValue.(fmt.Stringer); ok {
+				// 	// If the value implements fmt.Stringer, use its String method
+				// 	slog.Info("stringer", slog.String("wherefiedleQualifiedColumnName", whereField.QualifiedColumnName), slog.String("stringer", it.String()))
+				// 	result = append(result, opFunc(whereField.QualifiedColumnName, GenerateParameterPlaceholder(reflect.ValueOf(it.String()), args)))
+				// } else if _value.Kind() == reflect.Slice || _value.Kind() == reflect.Array {
+				// 	// Slice or array values are iterated and check for string types.
+				// 	items := []string{}
+				// 	for i := range _value.Len() {
+				// 		if _value.Index(i).Kind() == reflect.String {
+				// 			items = append(items, GenerateParameterPlaceholder(_value.Index(i), args))
+				// 		} else if it, ok := _value.Index(i).Interface().(fmt.Stringer); ok {
+				// 			// If the value implements fmt.Stringer, use its String method
+				// 			items = append(items, GenerateParameterPlaceholder(reflect.ValueOf(it.String()), args))
+				// 		}
+				// 	}
+				// 	result = append(result, opFunc(whereField.QualifiedColumnName, items...))
+				// }
 
 			} else {
 				// this field name and opation is not registered.
@@ -660,30 +684,30 @@ func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any, run func(s
 							// SELECT dest FROM through join related on related.endField = through.throughField`
 							`SELECT %s FROM %s join %s on %s.%s = %s.%s`,
 							// SELECT
-							throughSrcField.Identifier(),
+							throughSrcField.QualifiedColumnName,
 							// FROM
 							throughTableName,
 							// join
 							relatedBuilder.TableName(),
 							relatedBuilder.TableName(),
-							relatedDestField.Identifier(),
+							relatedDestField.ColumnName,
 							throughTableName,
-							throughDestField.Identifier(),
+							throughDestField.ColumnName,
 						)
 					} else {
 						//goland:noinspection Annotator
-						query = fmt.Sprintf("SELECT %s FROM %s", relatedDestField.Identifier(), relatedBuilder.TableName())
+						query = fmt.Sprintf("SELECT %s FROM %s", relatedDestField.QualifiedColumnName, relatedBuilder.TableName())
 					}
 					if expr := relatedBuilder.Where(&relationWhere, args, run); expr != "" {
 						query += fmt.Sprintf(" WHERE %s", expr)
 					}
 					if run == nil {
 						if inop, ok := b.operations[srcField.Name+"_in"]; ok {
-							result = append(result, inop(srcField.Identifier(), query))
+							result = append(result, inop(srcField.QualifiedColumnName, query))
 						}
 					} else {
 						if inop, ok := b.operations[srcField.Name+"_in"]; ok {
-							result = append(result, inop(srcField.Identifier(), run(query)...))
+							result = append(result, inop(srcField.QualifiedColumnName, run(query)...))
 						}
 					}
 				}
@@ -803,6 +827,33 @@ func (b *SQLBuilder[Model]) SetError(set *Model, args *[]any, where *map[string]
 	return
 }
 
+func convert(_field reflect.Value) string {
+	switch _field.Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return fmt.Sprintf("%d", _field.Int())
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		return fmt.Sprintf("%d", _field.Uint())
+	case reflect.Float32, reflect.Float64:
+		return fmt.Sprintf("%f", _field.Float())
+	case reflect.Complex64, reflect.Complex128:
+		return fmt.Sprintf("%f", _field.Complex())
+	case reflect.String:
+		return _field.String()
+
+	default:
+		if u, ok := _field.Interface().(uuid.UUID); ok {
+			return u.String()
+		} else if it, ok := _field.Interface().(time.Time); ok {
+			_newValue := reflect.ValueOf(it.Format(time.RFC3339Nano))
+			return _newValue.String()
+		} else if it, ok := _field.Interface().(fmt.Stringer); ok {
+			return it.String()
+		} else {
+			panic("Invalid identifier type")
+		}
+	}
+}
+
 // Constructs the SET clause for an UPDATE query
 func (b *SQLBuilder[Model]) Set(set *Model, args *[]any, where *map[string]any) string {
 	if set == nil {
@@ -825,33 +876,35 @@ func (b *SQLBuilder[Model]) Set(set *Model, args *[]any, where *map[string]any) 
 				}
 
 				// Set the WHERE clause condition based on the field type
-				switch _field.Kind() {
-				case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-					(*where)[field.Name] = map[string]any{"_eq": fmt.Sprintf("%d", _field.Int())}
-				case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-					(*where)[field.Name] = map[string]any{"_eq": fmt.Sprintf("%d", _field.Uint())}
-				case reflect.Float32, reflect.Float64:
-					(*where)[field.Name] = map[string]any{"_eq": fmt.Sprintf("%f", _field.Float())}
-				case reflect.Complex64, reflect.Complex128:
-					(*where)[field.Name] = map[string]any{"_eq": fmt.Sprintf("%f", _field.Complex())}
-				case reflect.String:
-					(*where)[field.Name] = map[string]any{"_eq": _field.String()}
-				default:
-					if u, ok := _field.Interface().(uuid.UUID); ok {
-						(*where)[field.Name] = map[string]any{"_eq": u.String()}
-					} else if it, ok := _field.Interface().(time.Time); ok {
-						_newValue := reflect.ValueOf(it.Format(time.RFC3339Nano))
-						(*where)[field.Name] = map[string]any{"_eq": _newValue.String()}
-					} else if it, ok := _field.Interface().(fmt.Stringer); ok {
-						_newValue := reflect.ValueOf(it.String())
-						if _newValue.Kind() == reflect.String {
-							// If the value implements fmt.Stringer, use its String method
-							(*where)[field.Name] = map[string]any{"_eq": _newValue.String()}
-						}
-					} else {
-						panic("Invalid identifier type")
-					}
-				}
+				val := convert(_field)
+				(*where)[field.Name] = map[string]any{"_eq": val}
+				// switch _field.Kind() {
+				// case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+				// 	(*where)[field.Name] = map[string]any{"_eq": fmt.Sprintf("%d", _field.Int())}
+				// case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+				// 	(*where)[field.Name] = map[string]any{"_eq": fmt.Sprintf("%d", _field.Uint())}
+				// case reflect.Float32, reflect.Float64:
+				// 	(*where)[field.Name] = map[string]any{"_eq": fmt.Sprintf("%f", _field.Float())}
+				// case reflect.Complex64, reflect.Complex128:
+				// 	(*where)[field.Name] = map[string]any{"_eq": fmt.Sprintf("%f", _field.Complex())}
+				// case reflect.String:
+				// 	(*where)[field.Name] = map[string]any{"_eq": _field.String()}
+				// default:
+				// 	if u, ok := _field.Interface().(uuid.UUID); ok {
+				// 		(*where)[field.Name] = map[string]any{"_eq": u.String()}
+				// 	} else if it, ok := _field.Interface().(time.Time); ok {
+				// 		_newValue := reflect.ValueOf(it.Format(time.RFC3339Nano))
+				// 		(*where)[field.Name] = map[string]any{"_eq": _newValue.String()}
+				// 	} else if it, ok := _field.Interface().(fmt.Stringer); ok {
+				// 		_newValue := reflect.ValueOf(it.String())
+				// 		if _newValue.Kind() == reflect.String {
+				// 			// If the value implements fmt.Stringer, use its String method
+				// 			(*where)[field.Name] = map[string]any{"_eq": _newValue.String()}
+				// 		}
+				// 	} else {
+				// 		panic("Invalid identifier type")
+				// 	}
+				// }
 			}
 		} else {
 			// Other fields are added to the SET clause
