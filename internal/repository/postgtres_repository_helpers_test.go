@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/repository"
@@ -34,6 +35,53 @@ func MustFindAll[T any](t *testing.T, repo repository.Repository[T], db database
 		t.Fatal(err)
 	}
 	return res
+}
+
+func MustCreateUser(t *testing.T, db database.Dbx, fns ...func(*models.User)) *models.User {
+	t.Helper()
+	uid := uuid.NewString()
+	user := &models.User{
+		Email: uid + "@example.com",
+		Name:  &uid,
+	}
+	for _, fn := range fns {
+		fn(user)
+	}
+	return MustCreate(t, repository.User, db, user)
+}
+func MustCreateAccount(t *testing.T, db database.Dbx, fns ...func(*models.UserAccount)) *models.UserAccount {
+	t.Helper()
+	uid := uuid.NewString()
+	pw := "Password123!"
+	res := &models.UserAccount{
+		Type:              models.ProviderTypeCredentials,
+		ProviderAccountID: uid,
+		Provider:          models.ProvidersCredentials,
+		Password:          &pw,
+	}
+	for _, fn := range fns {
+		fn(res)
+	}
+	return MustCreate(t, repository.UserAccount, db, res)
+}
+func MustFindRoleByName(t *testing.T, db database.Dbx, name string) *models.Role {
+	t.Helper()
+	return MustFindOne(t, repository.Role, db, &map[string]any{"name": name})
+}
+func MustCreateUserRoleByName(t *testing.T, db database.Dbx, userId uuid.UUID, name string) *models.UserRole {
+	t.Helper()
+	role := MustFindRoleByName(t, db, name)
+	return MustCreate(t, repository.UserRole, db, &models.UserRole{UserID: userId, RoleID: role.ID})
+}
+func MustFindPermissionByName(t *testing.T, db database.Dbx, name string) *models.Permission {
+	t.Helper()
+	return MustFindOne(t, repository.Permission, db, &map[string]any{"name": name})
+}
+func MustCreateRolePermissionByName(t *testing.T, db database.Dbx, roleName, permissionName string) *models.RolePermission {
+	t.Helper()
+	role := MustFindRoleByName(t, db, roleName)
+	permission := MustFindPermissionByName(t, db, permissionName)
+	return MustCreate(t, repository.RolePermission, db, &models.RolePermission{PermissionID: permission.ID, RoleID: role.ID})
 }
 
 func InitRbac(t *testing.T, db database.Dbx) {
