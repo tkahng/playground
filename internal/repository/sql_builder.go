@@ -328,15 +328,15 @@ func NewSQLBuilder[Model any](opts ...SQLBuilderOptions[Model]) *SQLBuilder[Mode
 		_field := _type.Field(idx)
 
 		// first field is the info field _ struct{}
-		//
 		if idx == 0 {
 			if _field.Name == "_" {
+				// tag should be db with table name
+				// or else panic
 				if dbTagValue := _field.Tag.Get("db"); dbTagValue != "" {
 					fieldTag := ParseFieldTag(dbTagValue)
 					if fieldTag == nil {
 						panic("failed to parse info db tag value")
 					}
-					// fieldTag.GetOptionValue("quote")
 					tableName = fieldTag.Value
 				} else {
 					panic("db info value not set")
@@ -363,7 +363,7 @@ func NewSQLBuilder[Model any](opts ...SQLBuilderOptions[Model]) *SQLBuilder[Mode
 				} else {
 					columnName = fieldName
 				}
-				if idIdTag := fieldTag.GetOptionValue("id"); idIdTag == "true" {
+				if idIdTag := fieldTag.GetOptionValue("pk"); idIdTag == "true" {
 					isId = true
 				}
 
