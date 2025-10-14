@@ -170,8 +170,6 @@ type SQLBuilder[Model any] struct {
 
 	relations  map[string]*Relation
 	operations map[string]func(string, ...string) string
-	identifier func(string) string
-	parameter  func(reflect.Value, *[]any) string
 	generator  func(reflect.StructField, *[]any) (string, error)
 	insertID   bool // If true, the id value read from the model will be insert into the database. default false
 }
@@ -183,7 +181,7 @@ func (b *SQLBuilder[Model]) GetFieldByName(name string) *Field {
 			return field
 		}
 	}
-	return nil
+	panic(fmt.Sprintf("field %s not found for model %s", name, b.tableName))
 }
 
 func (b *SQLBuilder[Model]) ReturningFields() string {
@@ -404,8 +402,6 @@ func NewSQLBuilder[Model any](opts ...SQLBuilderOptions[Model]) *SQLBuilder[Mode
 		fields:          modelFields,
 		relations:       modelRelations,
 		operations:      modelOperations,
-		identifier:      DefaultQuoteIdentifierFunc,
-		parameter:       DefaultParameterFunc,
 		generator:       nil,
 		insertID:        false,
 		quoteIdentifier: false,
@@ -470,9 +466,9 @@ func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any, run func(s
 	// iterate over the where map,
 	// each key is a field or column name
 	// each value will be a map of operators and values
-	for whereField, whereFieldOperation := range *where {
+	for whereFieldName, whereFieldOperation := range *where {
 		// fmt.Println("key", key, "item", item)
-
+		var whereField *Field = b.GetFieldByName(whereFieldName)
 		// iterate over the map of operators and values,
 		// each key is a operator code(_eq, _gt, etc)
 		// each value will be a map of operators and values
@@ -480,20 +476,23 @@ func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any, run func(s
 			// fmt.Println("operation", op, "value", value)
 
 			// if this f
-			if opFunc, ok := b.operations[whereField+whereOp]; ok {
+			if opFunc, ok := b.operations[whereFieldName+whereOp]; ok {
 				// Primitive field condition detected
 				// slog.Info("Processing primitive field condition", slog.String("key", key), slog.String("operation", op), slog.Any("value", value))
+				// if the value is nil,
+				// it should use the _isNil, _isNotNil operations
 				if whereOpValue == nil {
 					// slog.Warn("Nil value detected for key", slog.String("key", key), slog.String("operation", op))
 					if slices.Contains(nilOps, whereOp) {
 						// slog.Info("Nil operation detected, adding to result", slog.String("key", key))
 						// If the value is nil and the operation is a nil operation, send it
-						result = append(result, opFunc(b.Identifier(whereField)))
+						result = append(result, opFunc(whereField.Identifier()))
 					}
 					continue // Skip nil values for non-nil operations
 				}
 
 				_value := reflect.ValueOf(whereOpValue)
+
 				if !_value.IsValid() {
 					slog.Info("value is invalid")
 					continue
@@ -504,82 +503,99 @@ func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any, run func(s
 				}
 				if _value.Kind() == reflect.String {
 					// String values are passed to operation handler as single parameter
-					result = append(result, opFunc(b.Identifier(whereField), b.parameter(_value, args)))
+					result = append(result, opFunc(whereField.Identifier(), DefaultParameterFunc(_value, args)))
 				} else if it, ok := whereOpValue.(time.Time); ok {
 					_newValue := reflect.ValueOf(it.Format(time.RFC3339Nano))
-					result = append(result, opFunc(b.Identifier(whereField), b.parameter(_newValue, args)))
+					result = append(result, opFunc(whereField.Identifier(), DefaultParameterFunc(_newValue, args)))
 				} else if it, ok := whereOpValue.(fmt.Stringer); ok {
 					_newValue := reflect.ValueOf(it.String())
 					if _newValue.Kind() == reflect.String {
 						// If the value implements fmt.Stringer, use its String method
-						result = append(result, opFunc(b.Identifier(whereField), b.parameter(_newValue, args)))
+						result = append(result, opFunc(whereField.Identifier(), DefaultParameterFunc(_newValue, args)))
 					}
 				} else if _value.Kind() == reflect.Slice || _value.Kind() == reflect.Array {
 					// Slice or array values are passed to operation handler as a list of parameters
 					items := []string{}
 					for i := range _value.Len() {
 						if _value.Index(i).Kind() == reflect.String {
-							items = append(items, b.parameter(_value.Index(i), args))
+							items = append(items, DefaultParameterFunc(_value.Index(i), args))
 						} else if it, ok := _value.Index(i).Interface().(fmt.Stringer); ok {
 							// If the value implements fmt.Stringer, use its String method
-							items = append(items, b.parameter(reflect.ValueOf(it.String()), args))
+							items = append(items, DefaultParameterFunc(reflect.ValueOf(it.String()), args))
 						}
 					}
-					result = append(result, opFunc(b.Identifier(whereField), items...))
+					result = append(result, opFunc(whereField.Identifier(), items...))
 				}
 
 			} else {
 				// Relation field condition detected
-				if relation, ok := b.relations[whereField]; ok {
+				if relation, ok := b.relations[whereFieldName]; ok {
 					var relatedBuilder SQLBuilderInterface
 					// Get the target SQLBuilder for the relation
 					if bld, ok := registry[relation.table]; !ok {
-						continue
+						panic(fmt.Sprintf("relation %s not found for model %s", relation.table, b.tableName))
 					} else {
 						// Get the target SQLBuilder for the relation
 						relatedBuilder = bld
 					}
 
 					// Construct the sub-query for the related table
-					where := whereFieldOperation.(map[string]any)
+					relationWhere := whereFieldOperation.(map[string]any)
 
 					// query is the subquery we need to generate.
 					var query string
 
-					var dest string = b.Identifier(relation.dest)
-					var related string = relatedBuilder.TableName()
+					var relatedDestField = relatedBuilder.GetFieldByName(relation.dest)
+					var srcField = b.GetFieldByName(relation.src)
 					// if through is not empty
 					// it is a many-to-many relation
 					if relation.through != "" {
-						//goland:noinspection Annotator
+						var throughBuilder SQLBuilderInterface
+						// Get the target SQLBuilder for the relation
+						if bld, ok := registry[relation.through]; !ok {
+							panic(fmt.Sprintf("relation through %s not found for model %s", relation.through, b.tableName))
+						} else {
+							// Get the target SQLBuilder for the relation
+							throughBuilder = bld
+						}
 
-						var through = b.Identifier(relation.through)
-						var throughSrc = b.Identifier(relation.throughSrc)
-						var throughDest = b.Identifier(relation.throughDest)
-
+						var throughTableName = throughBuilder.TableName()
+						var throughSrcField = throughBuilder.GetFieldByName(relation.throughSrc)
+						var throughDestField = throughBuilder.GetFieldByName(relation.throughDest)
+						// query = fmt.Sprintf(
+						// 	`SELECT %s FROM %s join %s on %s.%s = %s.%s`,
+						// 	b.identifier(relation.dest),
+						// 	b.identifier(relation.through),
+						// 	builder.Table(),
+						// 	builder.Table(),
+						// 	b.identifier(relation.endField),
+						// 	b.identifier(relation.through),
+						// 	b.identifier(relation.throughField),
+						// )
 						query = fmt.Sprintf(
 							// SELECT dest FROM through join related on related.endField = through.throughField`
 							// SELECT dest FROM through join related on related.endField = through.throughField`
 							`SELECT %s FROM %s join %s on %s.%s = %s.%s`,
 							// SELECT
-							dest,
+							throughSrcField.Identifier(),
 							// FROM
-							through,
-							related,
-							related,
-							throughSrc,
-							through,
-							throughDest,
+							throughTableName,
+							// join
+							relatedBuilder.TableName(),
+							relatedBuilder.TableName(),
+							relatedDestField.Identifier(),
+							throughTableName,
+							throughDestField.Identifier(),
 						)
 					} else {
 						//goland:noinspection Annotator
-						query = fmt.Sprintf("SELECT %s FROM %s", b.Identifier(relation.dest), relatedBuilder.TableName())
+						query = fmt.Sprintf("SELECT %s FROM %s", relatedDestField.Identifier(), relatedBuilder.TableName())
 					}
-					if expr := relatedBuilder.Where(&where, args, run); expr != "" {
+					if expr := relatedBuilder.Where(&relationWhere, args, run); expr != "" {
 						query += fmt.Sprintf(" WHERE %s", expr)
 					}
 					if run == nil {
-						if inop, ok := b.operations[relation.src+"_in"]; ok {
+						if inop, ok := b.operations[srcField.Name+"_in"]; ok {
 							result = append(result, inop(b.Identifier(relation.src), query))
 						}
 						// If no run function is provided, sub-query is added to the main query
@@ -682,9 +698,9 @@ func (b *SQLBuilder[Model]) Values(values *[]Model, args *[]any, keys *[]any) (f
 						if err != nil {
 							return "", "", fmt.Errorf("error generating primary key for field %s: %w", field.Name, err)
 						}
-						items = append(items, b.parameter(reflect.ValueOf(id), args))
+						items = append(items, DefaultParameterFunc(reflect.ValueOf(id), args))
 					} else {
-						items = append(items, b.parameter(_value.Field(field.Idx), args))
+						items = append(items, DefaultParameterFunc(_value.Field(field.Idx), args))
 					}
 				}
 			} else {
@@ -692,7 +708,7 @@ func (b *SQLBuilder[Model]) Values(values *[]Model, args *[]any, keys *[]any) (f
 					continue // Skip timestamp fields
 				}
 				// Other fields are added to the VALUES clause
-				items = append(items, b.parameter(_value.Field(field.Idx), args))
+				items = append(items, DefaultParameterFunc(_value.Field(field.Idx), args))
 			}
 		}
 
@@ -771,7 +787,7 @@ func (b *SQLBuilder[Model]) Set(set *Model, args *[]any, where *map[string]any) 
 			}
 		} else {
 			// Other fields are added to the SET clause
-			result = append(result, b.Identifier(field.Name)+"="+b.parameter(_value.Field(field.Idx), args))
+			result = append(result, b.Identifier(field.Name)+"="+DefaultParameterFunc(_value.Field(field.Idx), args))
 		}
 	}
 
