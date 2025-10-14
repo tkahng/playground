@@ -549,44 +549,46 @@ func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any, run func(s
 	// "name", map[string]any{"_eq": "John"}
 	// "friends", map[string]any{"name": map[string]any{"_in": []string{"admin", "user"}}}
 	for whereFieldName, whereFieldValue := range *where {
-		// fmt.Println("key", key, "item", item)
-
 		// iterate over the map of operators and values,
 		//
 		// each key is a operator code(_eq, _gt, etc)
 		// each value will be a map of operators and values
 		for whereOp, whereOpValue := range whereFieldValue.(map[string]any) {
-			// fmt.Println("operation", op, "value", value)
 			// if this field and operation is registered, go ahead.
 			// if not, it might be a relational field
 			if opFunc, ok := b.operations[whereFieldName+whereOp]; ok {
 				var whereField *Field = b.MustGetFieldByName(whereFieldName)
 				// Primitive field condition detected
-				// slog.Info("Processing primitive field condition", slog.String("key", key), slog.String("operation", op), slog.Any("value", value))
-				// if the value is nil,
-				// it should use the _isNil, _isNotNil operations
+				//
+				// if the value is nil, it should use the _isNil, _isNotNil operations
 				if whereOpValue == nil {
-					// slog.Warn("Nil value detected for key", slog.String("key", key), slog.String("operation", op))
 					if slices.Contains(nilOps, whereOp) {
-						// slog.Info("Nil operation detected, adding to result", slog.String("key", key))
 						// If the value is nil and the operation is a nil operation, send it
 						result = append(result, opFunc(whereField.ColumnName))
+					} else {
+						// If the value is nil and the operation is not a nil operation, ignore it
+						panic("nil value for non-nil operation " + whereOp)
 					}
-					continue // Skip nil values for non-nil operations
+
 				}
 
 				_value := reflect.ValueOf(whereOpValue)
 
 				if !_value.IsValid() {
-					slog.Info("value is invalid")
-					continue
+					panic(fmt.Sprintf("value is invalid for field %s and operation %s for model %s", whereFieldName, whereOp, b.TableName()))
 				}
+
+				// If the value is a pointer, dereference it
 				if _value.Kind() == reflect.Pointer && !_value.IsNil() {
-					// If the value is a pointer, dereference it
 					_value = _value.Elem()
 				}
+
+				// String values are passed
+				// time values are formatted as strings
+				// fmt.Stringer values are called cast then called String method
+				// slice or array values are iterated and
 				if _value.Kind() == reflect.String {
-					// String values are passed to operation handler as single parameter
+					// String values are passed
 					result = append(result, opFunc(whereField.Identifier(), GenerateParameterPlaceholder(_value, args)))
 				} else if it, ok := whereOpValue.(time.Time); ok {
 					// Time values are formatted.
@@ -594,13 +596,9 @@ func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any, run func(s
 					result = append(result, opFunc(whereField.Identifier(), GenerateParameterPlaceholder(_timeValue, args)))
 				} else if it, ok := whereOpValue.(fmt.Stringer); ok {
 					// If the value implements fmt.Stringer, use its String method
-					_stringValue := reflect.ValueOf(it.String())
-					if _stringValue.Kind() == reflect.String {
-						// If the value implements fmt.Stringer, use its String method
-						result = append(result, opFunc(whereField.Identifier(), GenerateParameterPlaceholder(_stringValue, args)))
-					}
+					result = append(result, opFunc(whereField.Identifier(), GenerateParameterPlaceholder(reflect.ValueOf(it.String()), args)))
 				} else if _value.Kind() == reflect.Slice || _value.Kind() == reflect.Array {
-					// Slice or array values are passed to operation handler as a list of parameters
+					// Slice or array values are iterated and check for string types.
 					items := []string{}
 					for i := range _value.Len() {
 						if _value.Index(i).Kind() == reflect.String {
