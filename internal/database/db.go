@@ -18,6 +18,7 @@ type Dbx interface {
 	RunInTx(fn func(Dbx) error) error
 	QueryRow(ctx context.Context, sql string, arguments ...any) pgx.Row
 	RunInTxContext(ctx context.Context, fn func(context.Context) error) error
+	Close()
 }
 
 // type TxFunc
@@ -26,6 +27,11 @@ var _ Dbx = (*Queries)(nil)
 
 type Queries struct {
 	db *pgxpool.Pool
+}
+
+// Close implements Dbx.
+func (v *Queries) Close() {
+	v.db.Close()
 }
 
 // Acquire implements Dbx.
@@ -80,6 +86,10 @@ var _ Dbx = (*txQueries)(nil)
 
 type txQueries struct {
 	db pgx.Tx
+}
+
+// Close implements Dbx.
+func (v *txQueries) Close() {
 }
 
 // Acquire implements Dbx.
