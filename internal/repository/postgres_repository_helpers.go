@@ -65,7 +65,7 @@ func MustCreateAccount(t *testing.T, db database.Dbx, fns ...func(*models.UserAc
 }
 func MustFindRoleByName(t *testing.T, db database.Dbx, name string) *models.Role {
 	t.Helper()
-	return MustFindOne(t, Role, db, &map[string]any{"name": name})
+	return MustFindOne(t, Role, db, &map[string]any{"name": map[string]any{"_eq": name}})
 }
 func MustCreateRoleByName(t *testing.T, db database.Dbx, name string) *models.Role {
 	t.Helper()
@@ -86,7 +86,7 @@ func MustCreateUserRoleByName(t *testing.T, db database.Dbx, userId uuid.UUID, n
 }
 func MustFindPermissionByName(t *testing.T, db database.Dbx, name string) *models.Permission {
 	t.Helper()
-	return MustFindOne(t, Permission, db, &map[string]any{"name": name})
+	return MustFindOne(t, Permission, db, &map[string]any{"name": map[string]any{"_eq": name}})
 }
 func MustCreatePermissionByName(t *testing.T, db database.Dbx, name string) *models.Permission {
 	t.Helper()
