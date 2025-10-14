@@ -54,35 +54,39 @@ var (
 	}
 )
 
-// OperatorSQLBuilderFunc is a function that returns the appropriate SQL expression for a given operator
-type OperatorSQLBuilderFunc func(string, ...string) string
+// OperatorSQLBuilderFunc is a function that returns the appropriate SQL expression for a given operator.
+//
+// for the operator _gte, the function will return "column >= value"
+//
+// for the operator _in, the function will return "column IN (value1, value2, value3)"
+type OperatorSQLBuilderFunc func(col string, values ...string) string
 
+// operatorFuncMap is a map operator names to their corresponding OperatorSQLBuilderFunc
 var operatorFuncMap = map[string]OperatorSQLBuilderFunc{
-	Eq:     func(key string, values ...string) string { return fmt.Sprintf("%s = %s", key, values[0]) },
-	Neq:    func(key string, values ...string) string { return fmt.Sprintf("%s != %s", key, values[0]) },
-	Gt:     func(key string, values ...string) string { return fmt.Sprintf("%s > %s", key, values[0]) },
-	Gte:    func(key string, values ...string) string { return fmt.Sprintf("%s >= %s", key, values[0]) },
-	Lt:     func(key string, values ...string) string { return fmt.Sprintf("%s < %s", key, values[0]) },
-	Lte:    func(key string, values ...string) string { return fmt.Sprintf("%s <= %s", key, values[0]) },
-	Like:   func(key string, values ...string) string { return fmt.Sprintf("%s LIKE %s", key, values[0]) },
-	Nlike:  func(key string, values ...string) string { return fmt.Sprintf("%s NOT LIKE %s", key, values[0]) },
-	Ilike:  func(key string, values ...string) string { return fmt.Sprintf("%s ILIKE %s", key, values[0]) },
-	Nilike: func(key string, values ...string) string { return fmt.Sprintf("%s NOT ILIKE %s", key, values[0]) },
-	In: func(key string, values ...string) string {
-		return fmt.Sprintf("%s IN (%s)", key, strings.Join(values, ","))
+	Eq:     func(col string, values ...string) string { return fmt.Sprintf("%s = %s", col, values[0]) },
+	Neq:    func(col string, values ...string) string { return fmt.Sprintf("%s != %s", col, values[0]) },
+	Gt:     func(col string, values ...string) string { return fmt.Sprintf("%s > %s", col, values[0]) },
+	Gte:    func(col string, values ...string) string { return fmt.Sprintf("%s >= %s", col, values[0]) },
+	Lt:     func(col string, values ...string) string { return fmt.Sprintf("%s < %s", col, values[0]) },
+	Lte:    func(col string, values ...string) string { return fmt.Sprintf("%s <= %s", col, values[0]) },
+	Like:   func(col string, values ...string) string { return fmt.Sprintf("%s LIKE %s", col, values[0]) },
+	Nlike:  func(col string, values ...string) string { return fmt.Sprintf("%s NOT LIKE %s", col, values[0]) },
+	Ilike:  func(col string, values ...string) string { return fmt.Sprintf("%s ILIKE %s", col, values[0]) },
+	Nilike: func(col string, values ...string) string { return fmt.Sprintf("%s NOT ILIKE %s", col, values[0]) },
+	In: func(col string, values ...string) string {
+		return fmt.Sprintf("%s IN (%s)", col, strings.Join(values, ","))
 	},
-	Nin: func(key string, values ...string) string {
-		return fmt.Sprintf("%s NOT IN (%s)", key, strings.Join(values, ","))
+	Nin: func(col string, values ...string) string {
+		return fmt.Sprintf("%s NOT IN (%s)", col, strings.Join(values, ","))
 	},
-	IsNull:    func(key string, values ...string) string { return fmt.Sprintf("%s IS NULL", key) },
-	IsNotNull: func(key string, values ...string) string { return fmt.Sprintf("%s IS NOT NULL", key) },
+	IsNull:    func(col string, values ...string) string { return fmt.Sprintf("%s IS NULL", col) },
+	IsNotNull: func(col string, values ...string) string { return fmt.Sprintf("%s IS NOT NULL", col) },
 }
 
 // Field represents a column of a table, or
 // a selectable scalar field of a model.
-// these
 type Field struct {
-	// Idx is the index of the field
+	// Idx is the index of the field in its struct. used for reflection.
 	Idx int
 	// Name is the raw name of the field. this might be formatted by the Identifier function
 	Name string
@@ -90,6 +94,7 @@ type Field struct {
 	QuoteIdentifier bool
 }
 
+// Identifier returns the field name with proper identifier formatting
 func (f *Field) Identifier() string {
 	if f.QuoteIdentifier {
 		return DefaultQuoteIdentifierFunc(f.Name)
@@ -108,13 +113,15 @@ type Relation struct {
 	one bool
 
 	// src is the field of the current table that will be used for the join.
-	// usually this is the primary key.
+	// this is usually the primary key of the current table.
+	// this is the field that will perform the IN filter result of the subquery
 	src string
 
 	// dest is the field of the related table that will be used for the join.
 	//
 	// usually this is the foreign key of the related table
 	// that references the current table by its primary key.
+	// during filters this field is selected from the related table in the subquery
 	//
 	// but for m2m relationships, this is the related tables primary key,
 	// which references the through table by its foreign key.
@@ -171,7 +178,8 @@ type SQLBuilder[Model any] struct {
 	relations  map[string]*Relation
 	operations map[string]func(string, ...string) string
 	generator  func(reflect.StructField, *[]any) (string, error)
-	insertID   bool // If true, the id value read from the model will be insert into the database. default false
+
+	insertID bool // If true, the id value read from the model will be insert into the database. default false
 }
 
 // GetFieldByName returns the field with the given name, not a quoted name
@@ -199,9 +207,8 @@ func (b *SQLBuilder[Model]) ColumnNames() []string {
 	return b.columnNames
 }
 
-// Returns the column names with proper identifier formatting
+// Fields returns the fields
 func (b *SQLBuilder[Model]) Fields() []*Field {
-	// Returns the fields with their indices and names
 	return b.fields
 }
 
@@ -498,15 +505,21 @@ func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any, run func(s
 	result := []string{}
 
 	// iterate over the where map,
-	// each key is a field or column name
-	// each value will be a map of operators and values
-	for whereFieldName, whereFieldOperation := range *where {
+	//
+	// key is a field or column name (e.g. name, email, etc)
+	//
+	// value will be a map of operators and values
+	//
+	// "name", map[string]any{"_eq": "John"}
+	// "friends", map[string]any{"name": map[string]any{"_in": []string{"admin", "user"}}}
+	for whereFieldName, whereFieldValue := range *where {
 		// fmt.Println("key", key, "item", item)
 
 		// iterate over the map of operators and values,
+		//
 		// each key is a operator code(_eq, _gt, etc)
 		// each value will be a map of operators and values
-		for whereOp, whereOpValue := range whereFieldOperation.(map[string]any) {
+		for whereOp, whereOpValue := range whereFieldValue.(map[string]any) {
 			// fmt.Println("operation", op, "value", value)
 			// if this field and operation is registered, go ahead.
 			// if not, it might be a relational field
@@ -578,7 +591,7 @@ func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any, run func(s
 					}
 
 					// Construct the sub-query for the related table
-					relationWhere := whereFieldOperation.(map[string]any)
+					relationWhere := whereFieldValue.(map[string]any)
 
 					// query is the subquery we need to generate.
 					var query string
