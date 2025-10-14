@@ -110,8 +110,6 @@ type Relation struct {
 	// table is the name of the related table
 	table string
 
-	one bool
-
 	// src is the field of the current table that will be used for the join.
 	// this is usually the primary key of the current table.
 	// this is the field that will perform the IN filter result of the subquery
@@ -328,7 +326,7 @@ func NewSQLBuilder[Model any](opts ...SQLBuilderOptions[Model]) *SQLBuilder[Mode
 				if fieldTag == nil {
 					panic("failed to parse db tag value")
 				}
-
+				// fieldTag.GetOptionValue("quote")
 				tableName = fieldTag.Value
 			}
 		} else {

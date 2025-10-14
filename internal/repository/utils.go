@@ -119,20 +119,3 @@ func ParseTagOption(s string) *TagOption {
 	}
 
 }
-
-func SplitTagValueOptions(inutValue string) (*FieldTag, error) {
-	var mainValue string
-	var options []*TagOption
-	for idx, item := range strings.Split(inutValue, ",") {
-		if idx == 0 {
-			mainValue = item
-		} else {
-			options = append(options, ParseTagOption(item))
-		}
-	}
-	return &FieldTag{
-		Tag:     mainValue,
-		Value:   mainValue,
-		Options: options,
-	}, nil
-}
