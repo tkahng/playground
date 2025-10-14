@@ -21,26 +21,32 @@ import (
 
 func NewTestApp(ctx context.Context, cfg conf.EnvConfig, pool database.Dbx) *BaseApp {
 	app := new(BaseApp)
-	if err := TestingBootstrap(app, &cfg, pool); err != nil {
+	app.appCtx = ctx
+	if err := TestingBootstrapInject(app, &cfg, pool); err != nil {
 		panic(fmt.Errorf("failed to bootstrap app: %w", err))
 	}
 	return app
 }
 
-func TestingBootstrap(app *BaseApp, cfg *conf.EnvConfig, pool database.Dbx) error {
+func TestingBootstrapInject(app *BaseApp, cfg *conf.EnvConfig, pool database.Dbx) error {
 	app.cfg = cfg
-	app.logger = logger.GetDefaultLogger()
-	app.db = pool
-	adapter := stores.NewStorageAdapter(app.db)
-	app.adapter = adapter
-
+	TestingInitializePrimitives(app)
+	TestingSetDbSingleton(app)
 	TestingSetBasicServices(app)
 	TestingSetIntegrationServices(app)
 	TestingRegisterWorkers(app)
 	TestingAddEventHandlers(app)
 	return nil
 }
-
+func TestingBootstrap(app *BaseApp) error {
+	TestingInitializePrimitives(app)
+	TestingSetDbSingleton(app)
+	TestingSetBasicServices(app)
+	TestingSetIntegrationServices(app)
+	TestingRegisterWorkers(app)
+	TestingAddEventHandlers(app)
+	return nil
+}
 func TestingAddEventHandlers(app *BaseApp) {
 	userReactionHandler := userreaction.NewUserReactionEventHandler(
 		app.Logger(),
@@ -56,16 +62,31 @@ func TestingAddEventHandlers(app *BaseApp) {
 }
 
 func TestingInitializePrimitives(app *BaseApp) {
-	opts := conf.ZeroEnvConfig()
-	app.cfg = &opts
+	if app.cfg == nil {
+		opts := conf.AppConfigGetter()
+		app.cfg = &opts
+	}
 	app.logger = logger.GetDefaultLogger()
 }
 
+func TestingSetDbSingleton(app *BaseApp) {
+	if app.db == nil {
+		queries := database.CreateSingletonQueriesContext(app.Context(), app.cfg.Db.GetDatabaseUrl())
+		if err := queries.Pool().Ping(app.Context()); err != nil {
+			panic(fmt.Errorf("failed to ping db: %w", err))
+		}
+		app.db = queries
+	}
+	if app.adapter == nil {
+		adapter := stores.NewStorageAdapter(app.db)
+		app.adapter = adapter
+	}
+}
 func TestingSetDb(app *BaseApp) {
 
-	queries := database.CreateSingletonQueriesContext(context.Background(), app.cfg.Db.GetDatabaseUrl())
+	queries := database.CreateQueriesContext(app.Context(), app.cfg.Db.GetDatabaseUrl())
 
-	if err := queries.Pool().Ping(context.Background()); err != nil {
+	if err := queries.Pool().Ping(app.Context()); err != nil {
 		panic(fmt.Errorf("failed to ping db: %w", err))
 	}
 
@@ -76,14 +97,16 @@ func TestingSetDb(app *BaseApp) {
 }
 
 func TestingSetBasicServices(app *BaseApp) {
+	cfg := app.Config()
 	logger := app.Logger()
+
 	adapter := app.Adapter()
 	dbx := app.Db()
-	cfg := app.Config()
-	passWordService := services.NewPasswordService()
-	app.password = passWordService
-	jwtService := services.NewJwtService()
-	app.jwt = jwtService
+
+	app.password = services.NewPasswordService()
+
+	app.jwt = services.NewJwtService()
+
 	app.rbac = services.NewRBACService(adapter)
 	app.team = services.NewTeamService(adapter)
 	app.checker = services.NewConstraintCheckerService(adapter)
@@ -106,14 +129,17 @@ func TestingSetIntegrationServices(app *BaseApp) {
 	adapter := app.Adapter()
 	cfg := app.Config()
 	jobService := app.JobService()
+	tokenService := app.Token()
 	passwordService := app.Password()
 	jwtService := app.Jwt()
+
 	m := &mailer.TestMailer{
 		Mailer: &mailer.LogMailer{},
 		Wg:     nil,
 	}
+
 	app.mailer = m
-	tokenService := app.Token()
+
 	app.mailService = services.NewOtpMailService(
 		cfg,
 		adapter,

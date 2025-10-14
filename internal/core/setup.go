@@ -28,6 +28,8 @@ func NewApp(cfg conf.EnvConfig) *BaseApp {
 }
 func NewAppContext(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 	app := new(BaseApp)
+	app.appCtx = ctx
+	app.cfg = &cfg
 	if err := Bootstrap(app); err != nil {
 		panic(fmt.Errorf("failed to bootstrap app: %w", err))
 	}
@@ -58,35 +60,42 @@ func AddEventHandlers(app *BaseApp) {
 }
 
 func InitializePrimitives(app *BaseApp) {
-	opts := conf.AppConfigGetter()
-	app.cfg = &opts
+	if app.cfg == nil {
+		opts := conf.AppConfigGetter()
+		app.cfg = &opts
+	}
 	app.logger = logger.GetDefaultLogger()
 }
 
 func SetDb(app *BaseApp) {
-	queries := database.CreateSingletonQueriesContext(context.Background(), app.cfg.Db.GetDatabaseUrl())
-
-	if err := queries.Pool().Ping(context.Background()); err != nil {
-		panic(fmt.Errorf("failed to ping db: %w", err))
+	if app.db == nil {
+		queries := database.CreateSingletonQueriesContext(app.Context(), app.cfg.Db.GetDatabaseUrl())
+		if err := queries.Pool().Ping(app.Context()); err != nil {
+			panic(fmt.Errorf("failed to ping db: %w", err))
+		}
+		app.db = queries
 	}
-
-	app.db = queries
-
-	adapter := stores.NewStorageAdapter(app.db)
-	app.adapter = adapter
+	if app.adapter == nil {
+		adapter := stores.NewStorageAdapter(app.db)
+		app.adapter = adapter
+	}
 }
 
 func SetBasicServices(app *BaseApp) {
+	cfg := app.Config()
 	logger := app.Logger()
+
 	adapter := app.Adapter()
 	dbx := app.Db()
-	cfg := app.Config()
-	passWordService := services.NewPasswordService()
-	app.password = passWordService
+
+	app.password = services.NewPasswordService()
+
+	app.jwt = services.NewJwtService()
+
 	app.rbac = services.NewRBACService(adapter)
 	app.team = services.NewTeamService(adapter)
 	app.checker = services.NewConstraintCheckerService(adapter)
-	app.jwt = services.NewJwtService()
+
 	app.eventManager = events.NewEventManager(logger)
 	app.sseManager = sse.NewManager(logger)
 
@@ -112,6 +121,7 @@ func SetIntegrationServices(app *BaseApp) {
 	m := mailer.NewResendMailer(cfg.ResendConfig)
 
 	app.mailer = m
+
 	app.mailService = services.NewOtpMailService(
 		cfg,
 		adapter,
