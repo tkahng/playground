@@ -23,6 +23,8 @@ import (
 var _ App = (*BaseApp)(nil)
 
 type BaseApp struct {
+	appCtx context.Context
+
 	cfg *conf.EnvConfig
 
 	lc Lifecycle
@@ -65,13 +67,9 @@ type BaseApp struct {
 	eventManager events.EventManager
 }
 
-// Migrator implements App.
-// func (app *BaseApp) Migrator() database.Migrator {
-// 	if app.migrator == nil {
-// 		panic("migrator not initialized")
-// 	}
-// 	return app.migrator
-// }
+func (b *BaseApp) Context() context.Context {
+	return b.appCtx
+}
 
 func (app *BaseApp) Jwt() services.JwtService {
 	if app.jwt == nil {

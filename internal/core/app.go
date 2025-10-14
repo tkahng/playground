@@ -18,6 +18,7 @@ import (
 )
 
 type App interface {
+	Context() context.Context
 
 	//  settings -------------------------------------------------------------------------------------
 	Config() *conf.EnvConfig
