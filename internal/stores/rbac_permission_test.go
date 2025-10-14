@@ -628,7 +628,7 @@ func TestCreateRolePermissions(t *testing.T) {
 func TestEnsureRoleAndPermissions(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	test.DbSetup()
+
 	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		rbacStore := stores.NewDbRBACStore(dbxx)
 		type args struct {

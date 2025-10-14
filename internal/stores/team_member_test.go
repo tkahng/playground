@@ -16,7 +16,7 @@ import (
 )
 
 func TestTeamStore_UpdateTeamMember(t *testing.T) {
-	test.DbSetup()
+
 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewStorageAdapter(db)
 		user, err := adapter.User().CreateUser(ctx, &models.User{
@@ -254,7 +254,7 @@ func TestFindLatestTeamMemberByUserID(t *testing.T) {
 func TestUpdateTeamMemberUpdatedAt(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	ctx, dbx := test.DbSetup()
+	ctx, dbx := test.DbSetup(t)
 	t.Cleanup(func() {
 		_, err := repository.TeamMember.Delete(ctx, dbx, nil)
 		if err != nil {
@@ -375,7 +375,7 @@ func TestUpdateTeamMemberSelectedAt(t *testing.T) {
 }
 
 func TestDbTeamMemberStore_LoadTeamMembersByUserAndTeamIds(t *testing.T) {
-	test.DbSetup()
+
 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewStorageAdapter(db)
 		user1, err := adapter.User().CreateUser(ctx, &models.User{

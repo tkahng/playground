@@ -500,7 +500,6 @@ type testJob struct {
 func (j testJob) Kind() string { return "test_job" }
 
 func TestEnqueuer(t *testing.T) {
-	test.DbSetup()
 	t.Run("Enqueue single job", func(t *testing.T) {
 		test.WithTx(t, func(ctx context.Context, tx database.Dbx) {
 			enqueuer := NewDbJobManager(tx)

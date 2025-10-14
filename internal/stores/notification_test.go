@@ -14,7 +14,7 @@ import (
 )
 
 func TestNotificationStore_CreateNotification(t *testing.T) {
-	test.DbSetup()
+
 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
 		store := stores.NewDbNotificationStore(db)
 
@@ -33,7 +33,7 @@ func TestNotificationStore_CreateNotification(t *testing.T) {
 }
 
 func TestNotificationStore_CreateManyNotifications(t *testing.T) {
-	test.DbSetup()
+
 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
 		store := stores.NewDbNotificationStore(db)
 

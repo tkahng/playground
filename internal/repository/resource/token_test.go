@@ -94,7 +94,7 @@ func TestNewTokenRepositoryResource_FilterFunc(t *testing.T) {
 }
 
 func TestTokenRepositoryResource_Create(t *testing.T) {
-	test.DbSetup()
+
 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
 		resource := NewTokenRepositoryResource(db)
 
@@ -130,7 +130,7 @@ func TestTokenRepositoryResource_Create(t *testing.T) {
 }
 
 func TestTokenRepositoryResource_Filter(t *testing.T) {
-	test.DbSetup()
+
 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
 		resource := NewTokenRepositoryResource(db)
 		userResource := NewUserRepositoryResource(db)

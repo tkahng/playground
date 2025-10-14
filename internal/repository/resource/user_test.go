@@ -243,7 +243,7 @@ func TestNewUserRepositoryResource_PaginationFunc(t *testing.T) {
 }
 
 func TestUserRepository_create(t *testing.T) {
-	test.DbSetup()
+
 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
 		userResource := NewUserRepositoryResource(db)
 		user, err := userResource.Create(ctx, &models.User{
@@ -337,7 +337,7 @@ func TestUserRepository_create(t *testing.T) {
 }
 
 func TestUserRepsository_find(t *testing.T) {
-	test.DbSetup()
+
 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
 		usersInput := []*models.User{
 			{

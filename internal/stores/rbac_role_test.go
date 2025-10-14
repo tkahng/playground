@@ -208,7 +208,7 @@ func TestLoadRolePermissions(t *testing.T) {
 
 // func TestGetUserPermissions(t *testing.T) {
 // 	test.Short(t)
-// 	ctx, dbx := test.DbSetup()
+// 	ctx, dbx := test.DbSetupTesting(t)
 // 	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
 // 		rbacStore := stores.NewDbRBACStore(dbxx)
 // 		userStore := stores.NewDbUserStore(dbxx)

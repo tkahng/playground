@@ -16,7 +16,8 @@ var (
 	dbx         *database.Queries
 )
 
-func DbSetup() (context.Context, *database.Queries) {
+func DbSetup(t *testing.T) (context.Context, *database.Queries) {
+	t.Helper()
 	ctxOnce.Do(func() {
 		ctxInstance = context.Background()
 		dbx = database.CreateQueriesContext(ctxInstance, "postgres://postgres:postgres@localhost:5432/playground_test?sslmode=disable")
@@ -26,7 +27,7 @@ func DbSetup() (context.Context, *database.Queries) {
 
 func WithTx(t *testing.T, fn func(ctx context.Context, db database.Dbx)) {
 	t.Helper()
-	DbSetup()
+	DbSetup(t)
 	ctx := context.Background()
 	tx, err := dbx.Begin(ctx)
 	if err != nil {

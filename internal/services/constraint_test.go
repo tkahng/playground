@@ -17,7 +17,7 @@ import (
 )
 
 func TestConstraintCheckerService_CannotHaveValidSubscription(t *testing.T) {
-	ctx, dbx := test.DbSetup()
+	ctx, dbx := test.DbSetup(t)
 
 	_ = dbx.RunInTx(func(tx database.Dbx) error {
 		adapter := stores.NewStorageAdapter(tx)
@@ -105,7 +105,7 @@ func TestConstraintCheckerService_CannotHaveValidSubscription(t *testing.T) {
 	})
 }
 func TestConstraintCheckerService_CannotBeAdminOrBasicName(t *testing.T) {
-	test.DbSetup()
+
 	test.WithTx(t, func(ctx context.Context, dbx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbx)
 		type fields struct {
@@ -161,7 +161,7 @@ func TestConstraintCheckerService_CannotBeAdminOrBasicName(t *testing.T) {
 	})
 }
 func TestConstraintCheckerService_CannotBeAdminOrBasicRoleAndPermissionName(t *testing.T) {
-	test.DbSetup()
+
 	test.WithTx(t, func(ctx context.Context, dbx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbx)
 		type fields struct {
@@ -237,7 +237,7 @@ func TestConstraintCheckerService_CannotBeAdminOrBasicRoleAndPermissionName(t *t
 
 }
 func TestConstraintCheckerService_CannotBeSuperUserEmailAndRoleName(t *testing.T) {
-	test.DbSetup()
+
 	test.WithTx(t, func(ctx context.Context, dbx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbx)
 		type fields struct {
@@ -312,7 +312,7 @@ func TestConstraintCheckerService_CannotBeSuperUserEmailAndRoleName(t *testing.T
 	})
 }
 func TestConstraintCheckerService_CannotBeSuperUserID(t *testing.T) {
-	ctx, dbx := test.DbSetup()
+	ctx, dbx := test.DbSetup(t)
 
 	_ = dbx.RunInTx(func(tx database.Dbx) error {
 		adapter := stores.NewStorageAdapter(tx)
@@ -418,7 +418,7 @@ func TestConstraintCheckerService_CannotBeSuperUserID(t *testing.T) {
 	})
 }
 func TestConstraintCheckerService_CannotBeSuperUserEmail(t *testing.T) {
-	test.DbSetup()
+
 	test.WithTx(t, func(ctx context.Context, dbx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbx)
 

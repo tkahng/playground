@@ -17,7 +17,7 @@ import (
 )
 
 func TestGetGreeting(t *testing.T) {
-	ctx, db := test.DbSetup()
+	ctx, db := test.DbSetup(t)
 	testApi := SetupApi(t, ctx, db)
 	api := testApi.TestApi
 
@@ -398,7 +398,7 @@ func TestDeleteTeam_failNonOwner(t *testing.T) {
 }
 
 func TestGetActiveTeamMember_nomember(t *testing.T) {
-	test.DbSetup()
+
 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
 		app := testApi.App

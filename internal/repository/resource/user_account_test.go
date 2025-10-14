@@ -48,7 +48,7 @@ func TestNewUserAccountRepositoryResource_FilterFunc(t *testing.T) {
 }
 
 func TestUserAccountRepositoryResource_Create(t *testing.T) {
-	test.DbSetup()
+
 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
 		userResource := User
 		accountResource := UserAccount
@@ -104,7 +104,7 @@ func TestUserAccountRepositoryResource_Create(t *testing.T) {
 }
 
 func TestUserAccountRepsository_find(t *testing.T) {
-	test.DbSetup()
+
 	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
 		userResource := User
 		user1, err := userResource.Create(ctx, db, &models.User{
