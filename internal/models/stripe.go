@@ -17,8 +17,8 @@ type StripeProduct struct {
 	CreatedAt   time.Time         `db:"created_at" json:"created_at"`
 	UpdatedAt   time.Time         `db:"updated_at" json:"updated_at"`
 	Prices      []*StripePrice    `db:"prices" src:"id" dest:"product_id" table:"stripe_prices" json:"prices,omitempty"`
-	Roles       []*Role           `db:"roles" src:"id" dest:"product_id" table:"roles" through:"product_roles,role_id,id" json:"roles,omitempty"`
-	Permissions []*Permission     `db:"permissions" src:"id" dest:"product_id" table:"permissions" through:"product_permissions,permission_id,id" json:"permissions,omitempty"`
+	Roles       []*Role           `db:"roles" src:"id" dest:"id" table:"roles" through:"product_roles" through_src:"product_id" through_dest:"role_id" json:"roles,omitempty"`
+	Permissions []*Permission     `db:"permissions" src:"id" dest:"id" table:"permissions" through:"product_permissions" through_src:"product_id" through_dest:"permission_id" json:"permissions,omitempty"`
 }
 
 // type StripeProduct

@@ -13,8 +13,8 @@ type Role struct {
 	Description *string       `db:"description" json:"description,omitempty"`
 	CreatedAt   time.Time     `db:"created_at" json:"created_at"`
 	UpdatedAt   time.Time     `db:"updated_at" json:"updated_at"`
-	Permissions []*Permission `db:"permissions" src:"id" dest:"role_id" table:"permissions" through:"role_permissions,permission_id,id" json:"permissions,omitempty"`
-	Users       []*User       `db:"users" src:"id" dest:"role_id" table:"users" through:"user_roles,user_id,id" json:"users,omitempty"`
+	Permissions []*Permission `db:"permissions" src:"id" dest:"id" table:"permissions" through:"role_permissions" through_src:"role_id" through_dest:"permission_id" json:"permissions,omitempty"`
+	Users       []*User       `db:"users" src:"id" dest:"id" table:"users" through:"user_roles" through_src:"role_id" through_dest:"user_id" json:"users,omitempty"`
 }
 
 type roleTable struct {
@@ -44,9 +44,9 @@ type Permission struct {
 	Description *string          `db:"description" json:"description,omitempty"`
 	CreatedAt   time.Time        `db:"created_at" json:"created_at"`
 	UpdatedAt   time.Time        `db:"updated_at" json:"updated_at"`
-	Roles       []*Role          `db:"roles" src:"id" dest:"permission_id" table:"roles" through:"role_permissions,role_id,id" json:"roles,omitempty"`
-	Users       []*User          `db:"users" src:"id" dest:"permission_id" table:"users" through:"user_permissions,user_id,id" json:"users,omitempty"`
-	Products    []*StripeProduct `db:"products" src:"id" dest:"permission_id" table:"stripe_products" through:"product_permissions,product_id,id" json:"products,omitempty"`
+	Roles       []*Role          `db:"roles" src:"id" dest:"id" table:"roles" through:"role_permissions" through_src:"permission_id" through_dest:"role_id" json:"roles,omitempty"`
+	Users       []*User          `db:"users" src:"id" dest:"id" table:"users" through:"user_permissions" through_src:"permission_id" through_dest:"user_id" json:"users,omitempty"`
+	Products    []*StripeProduct `db:"products" src:"id" dest:"id" table:"stripe_products" through:"product_permissions" through_src:"permission_id" through_dest:"product_id" json:"products,omitempty"`
 }
 
 type permissionTable struct {
