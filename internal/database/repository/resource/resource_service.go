@@ -12,8 +12,8 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
 	"github.com/tkahng/playground/internal/database"
+	"github.com/tkahng/playground/internal/database/repository"
 	"github.com/tkahng/playground/internal/models"
-	"github.com/tkahng/playground/internal/repository"
 )
 
 type ResourceService[Model any, Key comparable, Filter any] interface {

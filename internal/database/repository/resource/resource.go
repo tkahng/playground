@@ -11,7 +11,7 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/tkahng/playground/internal/database"
-	"github.com/tkahng/playground/internal/repository"
+	"github.com/tkahng/playground/internal/database/repository"
 )
 
 var (

@@ -17,7 +17,7 @@ import (
 
 	"github.com/stephenafamo/scan"
 	"github.com/stephenafamo/scan/pgxscan"
-	"github.com/tkahng/playground/internal/repository"
+	"github.com/tkahng/playground/internal/database/repository"
 )
 
 type UserFilter struct {

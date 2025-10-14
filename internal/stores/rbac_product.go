@@ -5,8 +5,8 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/tkahng/playground/internal/database"
+	"github.com/tkahng/playground/internal/database/repository"
 	"github.com/tkahng/playground/internal/models"
-	"github.com/tkahng/playground/internal/repository"
 	"github.com/tkahng/playground/internal/shared"
 	"github.com/tkahng/playground/internal/tools/mapper"
 )

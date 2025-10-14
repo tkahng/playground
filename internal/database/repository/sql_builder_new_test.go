@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/tkahng/playground/internal/repository"
+	"github.com/tkahng/playground/internal/database/repository"
 )
 
 func TestNewSQLBuilder_Success(t *testing.T) {
