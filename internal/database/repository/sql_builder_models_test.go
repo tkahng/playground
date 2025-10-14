@@ -1,5 +1,7 @@
 package repository_test
 
+import "github.com/tkahng/playground/internal/database/repository"
+
 type A struct {
 	_  struct{} `db:"a" json:"-"`
 	ID string   `db:"id" json:"id"`
@@ -30,20 +32,20 @@ type AD struct {
 	DID string   `db:"d_id" json:"d_id"`
 }
 
-// var (
-// 	ABuilder = repository.NewSQLBuilder[A](
-// 		repository.UuidV7Generator,
-// 	)
-// 	BBuilder = repository.NewSQLBuilder[B](
-// 		repository.UuidV7Generator,
-// 	)
-// 	CBuilder = repository.NewSQLBuilder[C](
-// 		repository.UuidV7Generator,
-// 	)
-// 	DBuilder = repository.NewSQLBuilder[D](
-// 		repository.UuidV7Generator,
-// 	)
-// 	ADBuilder = repository.NewSQLBuilder[AD](
-// 		repository.InsertID,
-// 	)
-// )
+var (
+	ABuilder = repository.NewSQLBuilder[A](
+		repository.UuidV7Generator,
+	)
+	BBuilder = repository.NewSQLBuilder[B](
+		repository.UuidV7Generator,
+	)
+	CBuilder = repository.NewSQLBuilder[C](
+		repository.UuidV7Generator,
+	)
+	DBuilder = repository.NewSQLBuilder[D](
+		repository.UuidV7Generator,
+	)
+	ADBuilder = repository.NewSQLBuilder[AD](
+		repository.InsertID,
+	)
+)
