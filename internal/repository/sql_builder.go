@@ -131,6 +131,23 @@ type Relation struct {
 	throughSrc string
 }
 
+type SQLBuilderInterface interface {
+	Identifier(name string) string
+	TableName() string
+	ColumnNames() []string
+	ColumnNamesTablePrefix() []string
+	Fields() []*Field
+	FieldString(prefix string) string
+	GetFieldByName(name string) *Field
+	Where(where *map[string]any, args *[]any, run func(string) []string) string
+	WhereError(ctx context.Context, where *map[string]any, args *[]any, run func(string) []string) (ret string, err error)
+	IdColumnName() string
+	InsertID() bool
+	Generator() func(reflect.StructField, *[]any) (string, error)
+
+	Sort(filter Sortable) *map[string]string
+}
+
 type SQLBuilder[Model any] struct {
 
 	// schemaName is the name of the database schema. default "public"
@@ -157,6 +174,16 @@ type SQLBuilder[Model any] struct {
 	parameter  func(reflect.Value, *[]any) string
 	generator  func(reflect.StructField, *[]any) (string, error)
 	insertID   bool // If true, the id value read from the model will be insert into the database. default false
+}
+
+// GetFieldByName returns the field with the given name, not a quoted name
+func (b *SQLBuilder[Model]) GetFieldByName(name string) *Field {
+	for _, field := range b.fields {
+		if field.Name == name {
+			return field
+		}
+	}
+	return nil
 }
 
 func (b *SQLBuilder[Model]) ReturningFields() string {
@@ -230,22 +257,6 @@ func (b *SQLBuilder[Model]) Identifier(name string) string {
 func (b *SQLBuilder[Model]) Parameter(value reflect.Value, args *[]any) string {
 	*args = append(*args, value.Interface())
 	return fmt.Sprintf("$%d", len(*args))
-}
-
-type SQLBuilderInterface interface {
-	Identifier(name string) string
-	TableName() string
-	ColumnNames() []string
-	ColumnNamesTablePrefix() []string
-	Fields() []*Field
-	FieldString(prefix string) string
-	Where(where *map[string]any, args *[]any, run func(string) []string) string
-	WhereError(ctx context.Context, where *map[string]any, args *[]any, run func(string) []string) (ret string, err error)
-	IdColumnName() string
-	InsertID() bool
-	Generator() func(reflect.StructField, *[]any) (string, error)
-
-	Sort(filter Sortable) *map[string]string
 }
 
 var registry = map[string]SQLBuilderInterface{}
@@ -543,8 +554,8 @@ func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any, run func(s
 						//goland:noinspection Annotator
 
 						var through = b.Identifier(relation.through)
-						var endField = b.Identifier(relation.throughSrc)
-						throughField := b.Identifier(relation.throughDest)
+						var throughSrc = b.Identifier(relation.throughSrc)
+						var throughDest = b.Identifier(relation.throughDest)
 
 						query = fmt.Sprintf(
 							// SELECT dest FROM through join related on related.endField = through.throughField`
@@ -556,9 +567,9 @@ func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any, run func(s
 							through,
 							related,
 							related,
-							endField,
+							throughSrc,
 							through,
-							throughField,
+							throughDest,
 						)
 					} else {
 						//goland:noinspection Annotator
