@@ -22,25 +22,27 @@ import (
 func NewTestApp(ctx context.Context, cfg conf.EnvConfig, pool database.Dbx) *BaseApp {
 	app := new(BaseApp)
 	app.appCtx = ctx
-	if err := TestingBootstrapInject(app, &cfg, pool); err != nil {
+	app.cfg = &cfg
+	app.db = pool
+	if err := TestingBootstrap(app); err != nil {
 		panic(fmt.Errorf("failed to bootstrap app: %w", err))
 	}
 	return app
 }
 
-func TestingBootstrapInject(app *BaseApp, cfg *conf.EnvConfig, pool database.Dbx) error {
-	app.cfg = cfg
-	TestingInitializePrimitives(app)
-	TestingSetDbSingleton(app)
-	TestingSetBasicServices(app)
-	TestingSetIntegrationServices(app)
-	TestingRegisterWorkers(app)
-	TestingAddEventHandlers(app)
-	return nil
+func NewTestAppContext(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
+	app := new(BaseApp)
+	app.appCtx = ctx
+	app.cfg = &cfg
+	if err := TestingBootstrap(app); err != nil {
+		panic(fmt.Errorf("failed to bootstrap app: %w", err))
+	}
+	return app
 }
+
 func TestingBootstrap(app *BaseApp) error {
 	TestingInitializePrimitives(app)
-	TestingSetDbSingleton(app)
+	TestingSetDb(app)
 	TestingSetBasicServices(app)
 	TestingSetIntegrationServices(app)
 	TestingRegisterWorkers(app)
