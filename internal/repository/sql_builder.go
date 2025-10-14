@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/tkahng/playground/internal/tools/utils"
 )
 
 const (
@@ -47,9 +48,6 @@ const (
 var (
 	nilOps = []string{
 		IsNull, IsNotNull,
-	}
-	quoteIdentifierList = []string{
-		"type", "interval",
 	}
 )
 
@@ -89,10 +87,19 @@ type Field struct {
 	Idx int
 
 	// Name is the name of the field of the model.
+	//
+	// eg: id, type, email
 	Name string
 
 	// ColumnName is formatted name of the column of the table
+	//
+	// eg: id, "type", email
 	ColumnName string
+
+	// QualifiedColumnName is formatted name of the column of the table
+	//
+	// eg: schema.table.id, schema.table."type", schema.table.email
+	QualifiedColumnName string
 
 	// IsID is true if the field is the primary key
 	IsID bool
@@ -104,7 +111,7 @@ type Field struct {
 // Identifier returns the field name with proper identifier formatting
 func (f *Field) Identifier() string {
 	if f.QuoteIdentifier {
-		return DefaultQuoteIdentifierFunc(f.Name)
+		return utils.Quote(f.Name)
 	}
 	return f.Name
 }
@@ -144,16 +151,16 @@ type Relation struct {
 }
 
 type SQLBuilderInterface interface {
-	Identifier(name string) string
 	TableName() string
 	FieldNames() []string
 	ColumnNames() []string
+	QualifiedColumnNames() []string
 	Fields() []*Field
 	// FieldString(prefix string) string
 	MustGetFieldByName(name string) *Field
 	Where(where *map[string]any, args *[]any, run func(string) []string) string
 	WhereError(ctx context.Context, where *map[string]any, args *[]any, run func(string) []string) (ret string, err error)
-	IdColumnName() string
+	IdFieldName() string
 	InsertID() bool
 	Generator() func(reflect.StructField, *[]any) (string, error)
 
@@ -177,8 +184,6 @@ type SQLBuilder[Model any] struct {
 
 	// fields are columns of the table. their order is by the order of the struct fields
 	fields []*Field
-
-	columnNames []string
 
 	relations  map[string]*Relation
 	operations map[string]func(string, ...string) string
@@ -213,14 +218,6 @@ func (b *SQLBuilder[Model]) MustGetFieldByName(name string) *Field {
 func (b *SQLBuilder[Model]) Fields() []*Field {
 	return b.fields
 }
-func (b *SQLBuilder[Model]) ReturningFields() string {
-	var result []string
-	for _, field := range b.fields {
-		result = append(result, b.TableName()+"."+field.Identifier())
-	}
-
-	return strings.Join(result, ",")
-}
 
 // FieldNames returns the names of the fields, not the qualified column names.
 func (b *SQLBuilder[Model]) FieldNames() []string {
@@ -231,9 +228,8 @@ func (b *SQLBuilder[Model]) FieldNames() []string {
 	return fieldNames
 }
 
-// ColumnNames returns the column names with the table prefix.
+// ColumnNames returns the names of the columns, not the qualified column names.
 func (b *SQLBuilder[Model]) ColumnNames() []string {
-	// Returns the column names with the table prefix
 	var fieldNames []string
 	for _, field := range b.fields {
 		fieldNames = append(fieldNames, field.ColumnName)
@@ -241,26 +237,45 @@ func (b *SQLBuilder[Model]) ColumnNames() []string {
 	return fieldNames
 }
 
-// Returns the table name with proper identifier formatting
+// QualifiedColumnNames returns the formatted column names with the table prefix.
+func (b *SQLBuilder[Model]) QualifiedColumnNames() []string {
+	// Returns the column names with the table prefix
+	var fieldNames []string
+	for _, field := range b.fields {
+		fieldNames = append(fieldNames, field.QualifiedColumnName)
+	}
+	return fieldNames
+}
+
+// TableName Returns the table name with proper identifier formatting
 func (b *SQLBuilder[Model]) TableName() string {
 	if b.quoteIdentifier {
-		return DefaultQuoteIdentifierFunc(b.tableName)
+		return utils.Quote(b.tableName)
 	}
 	return b.tableName
+}
+
+func (b *SQLBuilder[Model]) ReturningFields() string {
+	var result []string
+	for _, field := range b.fields {
+		result = append(result, b.TableName()+"."+field.ColumnName)
+	}
+
+	return strings.Join(result, ",")
 }
 
 // Returns a comma-separated list of field names with proper identifier formatting
 func (b *SQLBuilder[Model]) FieldString(prefix string) string {
 	var result []string
 	for _, field := range b.fields {
-		result = append(result, prefix+b.Identifier(field.Name))
+		result = append(result, prefix+field.ColumnName)
 	}
 
 	return strings.Join(b.FieldNames(), ",")
 }
 
-// IdColumnName implements SQLBuilderInterface.
-func (b *SQLBuilder[Model]) IdColumnName() string {
+// IdFieldName implements SQLBuilderInterface.
+func (b *SQLBuilder[Model]) IdFieldName() string {
 	return b.idColumnName
 }
 func (b *SQLBuilder[Model]) InsertID() bool {
@@ -270,13 +285,6 @@ func (b *SQLBuilder[Model]) InsertID() bool {
 func (b *SQLBuilder[Model]) Generator() func(reflect.StructField, *[]any) (string, error) {
 	// Returns the generator function for the primary key field
 	return b.generator
-}
-
-func (b *SQLBuilder[Model]) Identifier(name string) string {
-	if b.quoteIdentifier {
-		return fmt.Sprintf("\"%s\"", name)
-	}
-	return name
 }
 
 func (b *SQLBuilder[Model]) Parameter(value reflect.Value, args *[]any) string {
@@ -317,13 +325,6 @@ func DefaultParameterFunc(value reflect.Value, args *[]any) string {
 	return fmt.Sprintf("$%d", len(*args))
 }
 
-func DefaultQuoteIdentifierFunc(name string) string {
-	if ok := slices.Contains(quoteIdentifierList, name); ok {
-		return fmt.Sprintf("\"%s\"", name)
-	}
-	return name
-}
-
 func NewSQLBuilder[Model any](opts ...SQLBuilderOptions[Model]) *SQLBuilder[Model] {
 
 	// Reflect on the Model type to extract metadata
@@ -333,7 +334,6 @@ func NewSQLBuilder[Model any](opts ...SQLBuilderOptions[Model]) *SQLBuilder[Mode
 	var tableName string = strings.ToLower(_type.Name())
 
 	var modelFields []*Field
-	var modelColumnNames []string
 	var modelRelations map[string]*Relation = map[string]*Relation{}
 	var modelOperations map[string]func(string, ...string) string = map[string]func(string, ...string) string{}
 
@@ -356,17 +356,20 @@ func NewSQLBuilder[Model any](opts ...SQLBuilderOptions[Model]) *SQLBuilder[Mode
 			if dbTagValue := _field.Tag.Get("db"); dbTagValue != "" {
 				// split db tag value
 				var fieldName string
+				var columnName string
 				var fieldOptions []string
 				var quoteIdentifier bool
 				for idx, value := range strings.Split(dbTagValue, ",") {
 					if idx == 0 {
 						fieldName = value
+						columnName = value
 					} else {
 						fieldOptions = append(fieldOptions, value)
 					}
 				}
 				if slices.Contains(fieldOptions, "quote") {
 					quoteIdentifier = true
+					columnName = utils.Quote(columnName)
 				}
 				if fieldName == "" {
 					panic(fmt.Sprintf("fieldName not set at struct field idx %d of %s", idx, tableName))
@@ -408,11 +411,9 @@ func NewSQLBuilder[Model any](opts ...SQLBuilderOptions[Model]) *SQLBuilder[Mode
 					// Primitive fields detected.
 					// This are selectable columns of the table
 
-					field := &Field{Idx: idx, Name: fieldName, QuoteIdentifier: quoteIdentifier, ColumnName: DefaultQuoteIdentifierFunc(fieldName)}
+					field := &Field{Idx: idx, Name: fieldName, QuoteIdentifier: quoteIdentifier, ColumnName: columnName}
 					// get the fieldName of the field
 					modelFields = append(modelFields, field)
-
-					modelColumnNames = append(modelColumnNames, fieldName)
 
 					// Add base operations for the field
 					for key, value := range operatorFuncMap {
@@ -425,7 +426,6 @@ func NewSQLBuilder[Model any](opts ...SQLBuilderOptions[Model]) *SQLBuilder[Mode
 	}
 	result := &SQLBuilder[Model]{
 		tableName:       tableName,
-		columnNames:     modelColumnNames,
 		fields:          modelFields,
 		relations:       modelRelations,
 		operations:      modelOperations,
@@ -554,7 +554,7 @@ func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any, run func(s
 					if slices.Contains(nilOps, whereOp) {
 						// slog.Info("Nil operation detected, adding to result", slog.String("key", key))
 						// If the value is nil and the operation is a nil operation, send it
-						result = append(result, opFunc(whereField.Identifier()))
+						result = append(result, opFunc(whereField.ColumnName))
 					}
 					continue // Skip nil values for non-nil operations
 				}
@@ -731,7 +731,7 @@ func (b *SQLBuilder[Model]) Values(values *[]Model, args *[]any, keys *[]any) (f
 			// If insertID is true, we will provide the primary key,
 			// so include it in the INSERT INTO clause
 			if b.insertID {
-				fieldsArray = append(fieldsArray, field.Identifier())
+				fieldsArray = append(fieldsArray, field.ColumnName)
 			}
 		} else {
 			// Skip timestamp fields
@@ -856,7 +856,7 @@ func (b *SQLBuilder[Model]) Set(set *Model, args *[]any, where *map[string]any) 
 			}
 		} else {
 			// Other fields are added to the SET clause
-			result = append(result, b.Identifier(field.Name)+"="+DefaultParameterFunc(_value.Field(field.Idx), args))
+			result = append(result, field.ColumnName+"="+DefaultParameterFunc(_value.Field(field.Idx), args))
 		}
 	}
 
@@ -864,6 +864,8 @@ func (b *SQLBuilder[Model]) Set(set *Model, args *[]any, where *map[string]any) 
 }
 
 // Constructs the ORDER BY clause for a query
+// order is a map[string]string{"field1": "asc", "field2": "desc"}
+// which will be converted to "field1 ASC, field2 DESC"
 func (b *SQLBuilder[Model]) Order(order *map[string]string) string {
 	// fmt.Println("order", order)
 	if order == nil {
@@ -872,10 +874,14 @@ func (b *SQLBuilder[Model]) Order(order *map[string]string) string {
 
 	// Generate the field names for the ORDER BY clause
 	result := []string{}
+
 	// fmt.Println("columnnames", b.columnNames)
+
 	for key, val := range *order {
-		if slices.Contains(b.columnNames, key) {
-			result = append(result, fmt.Sprintf("%s %s", b.Identifier(key), strings.ToUpper(val)))
+		// if key is in FieldNames, add it to the ORDER BY clause
+		if slices.Contains(b.FieldNames(), key) {
+			field := b.MustGetFieldByName(key)
+			result = append(result, fmt.Sprintf("%s %s", field.ColumnName, strings.ToUpper(val)))
 		}
 	}
 

@@ -130,11 +130,11 @@ func (s *DbUserStore) filter(filter *UserFilter) *map[string]any {
 	if filter.EmailVerified.IsSet {
 		emailverified := filter.EmailVerified.Value
 		if emailverified {
-			where[models.UserTable.EmailVerifiedAt] = map[string]any{
+			where["email_verified_at"] = map[string]any{
 				repository.IsNotNull: nil,
 			}
 		} else {
-			where[models.UserTable.EmailVerifiedAt] = map[string]any{
+			where["email_verified_at"] = map[string]any{
 				repository.IsNull: nil,
 			}
 		}

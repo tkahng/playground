@@ -122,7 +122,7 @@ func (p *RepositoryResourceService[M, K, F]) Create(ctx context.Context, dbx dat
 
 func (p *RepositoryResourceService[M, K, F]) idWhere(id K) *map[string]any {
 	where := map[string]any{
-		p.repository.Builder().IdColumnName(): map[string]any{
+		p.repository.Builder().IdFieldName(): map[string]any{
 			"_eq": id,
 		},
 	}
@@ -259,7 +259,8 @@ func (p *QueryResourceService[M, K, F]) sort(qs sq.SelectBuilder, filter *F) sq.
 	} else if sortable, ok := any(filter).(repository.Sortable); ok {
 		sortby, sortOrder := sortable.Sort()
 		if sortby != "" && slices.Contains(p.builder.FieldNames(), sortby) {
-			qs = qs.OrderBy(p.builder.Identifier(sortby) + " " + strings.ToUpper(sortOrder))
+			field := p.builder.MustGetFieldByName(sortby)
+			qs = qs.OrderBy(field.ColumnName + " " + strings.ToUpper(sortOrder))
 			return qs
 		}
 	}
@@ -288,15 +289,15 @@ func (s *QueryResourceService[Model, Key, Filter]) Create(ctx context.Context, d
 	_value := reflect.ValueOf(*model)
 	_type := reflect.TypeOf(*model)
 	var fieldsArray []string
-	var valuesArray []interface{}
+	var valuesArray []any
 	for _, field := range s.builder.Fields() {
-		if field.Name == s.builder.IdColumnName() {
+		if field.Name == s.builder.IdFieldName() {
 			if gen := s.builder.Generator(); gen != nil {
 				id, err := gen(_type.Field(field.Idx), nil)
 				if err != nil {
 					return nil, fmt.Errorf("error generating primary key for field %s: %w", field.Name, err)
 				}
-				fieldsArray = append(fieldsArray, s.builder.Identifier(field.Name))
+				fieldsArray = append(fieldsArray, field.ColumnName)
 				valuesArray = append(valuesArray, id)
 			}
 			if s.builder.InsertID() {
@@ -305,13 +306,13 @@ func (s *QueryResourceService[Model, Key, Filter]) Create(ctx context.Context, d
 			if _field := _value.Field(field.Idx); !_field.IsValid() || _field.IsZero() {
 				continue
 			} else {
-				fieldsArray = append(fieldsArray, s.builder.Identifier(field.Name))
+				fieldsArray = append(fieldsArray, field.ColumnName)
 				valuesArray = append(valuesArray, _field.Interface())
 			}
 		}
 		_field := _value.Field(field.Idx)
 		if _field.IsValid() && !_field.IsZero() {
-			fieldsArray = append(fieldsArray, s.builder.Identifier(field.Name))
+			fieldsArray = append(fieldsArray, field.ColumnName)
 			valuesArray = append(valuesArray, _field.Interface())
 		}
 	}
@@ -332,7 +333,7 @@ func (s *QueryResourceService[Model, Key, Filter]) Create(ctx context.Context, d
 // Delete implements Resource.
 func (s *QueryResourceService[Model, Key, Filter]) Delete(ctx context.Context, dbx database.Dbx, id Key) error {
 	qs := sq.Delete(s.builder.TableName()).
-		Where(sq.Eq{s.builder.IdColumnName(): id})
+		Where(sq.Eq{s.builder.IdFieldName(): id})
 	count, err := database.ExecWithBuilder(ctx, dbx, qs.PlaceholderFormat(sq.Dollar))
 	if err != nil {
 		return fmt.Errorf("error deleting model: %w", err)
@@ -346,7 +347,7 @@ func (s *QueryResourceService[Model, Key, Filter]) Delete(ctx context.Context, d
 // Default filter implementation if no custom filter function is provided
 // Find implements Resource.
 func (s *QueryResourceService[Model, Key, Filter]) Find(ctx context.Context, dbx database.Dbx, filter *Filter) ([]*Model, error) {
-	qs := sq.Select(s.builder.ColumnNames()...).
+	qs := sq.Select(s.builder.QualifiedColumnNames()...).
 		From(s.builder.TableName())
 
 	// Apply filters, sorting, and pagination
@@ -363,7 +364,7 @@ func (s *QueryResourceService[Model, Key, Filter]) Find(ctx context.Context, dbx
 
 // FindOne implements Resource.
 func (s *QueryResourceService[Model, Key, Filter]) FindOne(ctx context.Context, dbx database.Dbx, filter *Filter) (*Model, error) {
-	qs := sq.Select(s.builder.ColumnNames()...).
+	qs := sq.Select(s.builder.QualifiedColumnNames()...).
 		From(s.builder.TableName())
 	// Apply filters, sorting, and pagination
 	qs = s.filter(qs, filter).Limit(1)
@@ -379,8 +380,8 @@ func (s *QueryResourceService[Model, Key, Filter]) FindOne(ctx context.Context, 
 
 // FindByID implements Resource.
 func (s *QueryResourceService[Model, Key, Filter]) FindByID(ctx context.Context, dbx database.Dbx, id Key) (*Model, error) {
-	qs := sq.Select(s.builder.ColumnNames()...).
-		From(s.builder.TableName()).Where(sq.Eq{s.builder.IdColumnName(): id}).Limit(1)
+	qs := sq.Select(s.builder.QualifiedColumnNames()...).
+		From(s.builder.TableName()).Where(sq.Eq{s.builder.IdFieldName(): id}).Limit(1)
 	res, err := database.QueryWithBuilder[*Model](ctx, dbx, qs.PlaceholderFormat(sq.Dollar))
 	if err != nil {
 		return nil, fmt.Errorf("error finding model by ID: %w", err)
@@ -399,9 +400,9 @@ func (s *QueryResourceService[Model, Key, Filter]) Update(ctx context.Context, d
 	_value := reflect.ValueOf(*model)
 	qs := sq.Update(s.builder.TableName())
 	for _, field := range s.builder.Fields() {
-		if field.Name == s.builder.IdColumnName() {
+		if field.Name == s.builder.IdFieldName() {
 			_field := _value.Field(field.Idx)
-			qs = qs.Where(sq.Eq{s.builder.IdColumnName(): _field.Interface()})
+			qs = qs.Where(sq.Eq{s.builder.IdFieldName(): _field.Interface()})
 		} else {
 			_field := _value.Field(field.Idx)
 			qs = qs.Set(field.Name, _field.Interface())

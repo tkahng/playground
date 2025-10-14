@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"strings"
 
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/models"
@@ -167,7 +168,7 @@ func (r *PostgresRepository[Model]) Post(ctx context.Context, dbx database.Dbx, 
 	} else if fields != "" && values != "" {
 		query += fmt.Sprintf(" (%s) VALUES %s", fields, values)
 	}
-	query += fmt.Sprintf(" RETURNING %s", r.builder.ReturningFields())
+	query += fmt.Sprintf(" RETURNING %s", strings.Join(r.builder.ColumnNames(), ","))
 
 	// Execute the query and scan the results
 	fmt.Println("query", query, "args", args)
