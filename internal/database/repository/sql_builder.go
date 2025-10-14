@@ -559,6 +559,7 @@ func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any, run func(s
 				// Primitive field condition detected
 				//
 				// if the value is nil, it should use the _isNil, _isNotNil operations
+
 				if whereOpValue == nil {
 					if slices.Contains(nilOps, whereOp) {
 						// If the value is nil and the operation is a nil operation, send it
@@ -567,20 +568,19 @@ func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any, run func(s
 						// If the value is nil and the operation is not a nil operation, ignore it
 						panic("nil value for non-nil operation " + whereOp)
 					}
-
+					continue
 				}
 
 				_value := reflect.ValueOf(whereOpValue)
-
-				if !_value.IsValid() {
-					panic(fmt.Sprintf("value is invalid for field %s and operation %s for model %s", whereFieldName, whereOp, b.TableName()))
-				}
 
 				// If the value is a pointer, dereference it
 				if _value.Kind() == reflect.Pointer && !_value.IsNil() {
 					_value = _value.Elem()
 				}
 
+				if !_value.IsValid() {
+					panic(fmt.Sprintf("value is invalid for field %s and operation %s for model %s", whereFieldName, whereOp, b.TableName()))
+				}
 				// String values are passed
 				// time values are formatted as strings
 				// fmt.Stringer values are called cast then called String method
