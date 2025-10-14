@@ -67,6 +67,9 @@ type BaseApp struct {
 	eventManager events.EventManager
 }
 
+func (b *BaseApp) Close() {
+	b.db.Close()
+}
 func (b *BaseApp) Context() context.Context {
 	return b.appCtx
 }

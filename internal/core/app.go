@@ -18,6 +18,8 @@ import (
 )
 
 type App interface {
+	Close()
+
 	Context() context.Context
 
 	//  settings -------------------------------------------------------------------------------------
