@@ -297,7 +297,7 @@ func (s *QueryResource[Model, Key, Filter]) Create(ctx context.Context, model *M
 	_value := reflect.ValueOf(*model)
 	_type := reflect.TypeOf(*model)
 	var fieldsArray []string
-	var valuesArray []interface{}
+	var valuesArray []any
 	for _, field := range s.builder.Fields() {
 		if field.Name == s.builder.IdColumnName() {
 			if gen := s.builder.Generator(); gen != nil {
