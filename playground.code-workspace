@@ -42,7 +42,9 @@
       "editor.codeLens": true,
       "editor.codeActionWidget.includeNearbyQuickFixes": true
     },
-
+    "go.testEnvVars": {
+      "DATABASE_DB": "playground_test"
+    },
     "go.lintTool": "golangci-lint",
     "go.lintOnSave": "workspace",
     "go.lintFlags": [

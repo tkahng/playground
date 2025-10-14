@@ -24,7 +24,7 @@ func NewTestApp(ctx context.Context, cfg conf.EnvConfig, pool database.Dbx) *Bas
 	app.appCtx = ctx
 	app.cfg = &cfg
 	app.db = pool
-	if err := TestingBootstrap(app); err != nil {
+	if err := TestingBootstrapSingleton(app); err != nil {
 		panic(fmt.Errorf("failed to bootstrap app: %w", err))
 	}
 	return app
@@ -39,7 +39,15 @@ func NewTestAppContext(ctx context.Context, cfg conf.EnvConfig) *BaseApp {
 	}
 	return app
 }
-
+func TestingBootstrapSingleton(app *BaseApp) error {
+	TestingInitializePrimitives(app)
+	TestingSetDbSingleton(app)
+	TestingSetBasicServices(app)
+	TestingSetIntegrationServices(app)
+	TestingRegisterWorkers(app)
+	TestingAddEventHandlers(app)
+	return nil
+}
 func TestingBootstrap(app *BaseApp) error {
 	TestingInitializePrimitives(app)
 	TestingSetDb(app)
@@ -65,23 +73,22 @@ func TestingAddEventHandlers(app *BaseApp) {
 
 func TestingInitializePrimitives(app *BaseApp) {
 	if app.cfg == nil {
-		opts := conf.AppConfigGetter()
+		opts := conf.ZeroEnvConfig()
 		app.cfg = &opts
 	}
 	app.logger = logger.GetDefaultLogger()
 }
 
 func TestingSetDbSingleton(app *BaseApp) {
-	if app.db == nil {
-		queries := database.CreateSingletonQueriesContext(app.Context(), app.cfg.Db.GetDatabaseUrl())
-		if err := queries.Pool().Ping(app.Context()); err != nil {
-			panic(fmt.Errorf("failed to ping db: %w", err))
-		}
-		app.db = queries
-	}
+	// if app.db == nil {
+	// 	queries := database.CreateSingletonQueriesContext(app.Context(), app.cfg.Db.GetDatabaseUrl())
+	// 	if err := queries.Pool().Ping(app.Context()); err != nil {
+	// 		panic(fmt.Errorf("failed to ping db: %w", err))
+	// 	}
+	// 	app.db = queries
+	// }
 	if app.adapter == nil {
-		adapter := stores.NewStorageAdapter(app.db)
-		app.adapter = adapter
+		app.adapter = stores.NewStorageAdapter(app.db)
 	}
 }
 func TestingSetDb(app *BaseApp) {
@@ -94,8 +101,8 @@ func TestingSetDb(app *BaseApp) {
 
 	app.db = queries
 
-	adapter := stores.NewStorageAdapter(app.db)
-	app.adapter = adapter
+	app.adapter = stores.NewStorageAdapter(app.db)
+
 }
 
 func TestingSetBasicServices(app *BaseApp) {

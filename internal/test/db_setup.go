@@ -22,21 +22,19 @@ var (
 )
 
 func SingletonDbSetup(t *testing.T) (context.Context, *database.Queries) {
-	t.Helper()
-	return singletonDbSetup()
+	return singletonDbSetup(TestDbUrl)
 }
 
-func singletonDbSetup() (context.Context, *database.Queries) {
+func singletonDbSetup(url string) (context.Context, *database.Queries) {
 	ctxOnce.Do(func() {
 		ctxInstance = context.Background()
-		dbx = database.CreateSingletonQueriesContext(ctxInstance, "postgres://postgres:postgres@localhost:5432/playground_test?sslmode=disable")
+		dbx = database.CreateSingletonQueriesContext(ctxInstance, url)
 	})
 	return ctxInstance, dbx
 }
 
 func WithSingletonTx(t *testing.T, fn func(ctx context.Context, db database.Dbx)) {
-	t.Helper()
-	ctx, dbx := singletonDbSetup()
+	ctx, dbx := singletonDbSetup(TestDbUrl)
 	tx, err := dbx.Begin(ctx)
 	if err != nil {
 		t.Fatal(err)
