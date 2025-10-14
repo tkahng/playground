@@ -513,11 +513,13 @@ func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any, run func(s
 	// Check for special conditions
 	// _not, _and, and _or are used for logical operations
 	if item, ok := (*where)["_not"]; ok {
+		// in case of _not, the value is a map[string]any
 		expr, ok := item.(map[string]any)
 		if ok {
 			return "NOT (" + b.Where(&expr, args, run) + ")"
 		}
 	} else if items, ok := (*where)["_and"]; ok {
+		// in case of _and, the value is a []map[string]any
 		result := []string{}
 		ands, ok := items.([]map[string]any)
 		if ok {
@@ -529,8 +531,8 @@ func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any, run func(s
 
 		return "(" + strings.Join(result, " AND ") + ")"
 	} else if ors, ok := (*where)["_or"]; ok {
+		// in case of _and, the value is a []map[string]any
 		result := []string{}
-
 		orWheres, ok := ors.([]map[string]any)
 		if ok {
 			for _, item := range orWheres {
@@ -554,7 +556,6 @@ func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any, run func(s
 	// "name", map[string]any{"_eq": "John"}
 	// "friends", map[string]any{"name": map[string]any{"_in": []string{"admin", "user"}}}
 	for whereFieldName, whereFieldValue := range *where {
-		slog.Info("where", slog.String("wherefieldname", whereFieldName))
 		// iterate over the map of operators and values,
 		//
 		// each key is a operator code(_eq, _gt, etc)
@@ -669,19 +670,7 @@ func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any, run func(s
 						var throughTableName = throughBuilder.TableName()
 						var throughSrcField = throughBuilder.MustGetFieldByName(relation.throughSrc)
 						var throughDestField = throughBuilder.MustGetFieldByName(relation.throughDest)
-						// query = fmt.Sprintf(
-						// 	`SELECT %s FROM %s join %s on %s.%s = %s.%s`,
-						// 	b.identifier(relation.dest),
-						// 	b.identifier(relation.through),
-						// 	builder.Table(),
-						// 	builder.Table(),
-						// 	b.identifier(relation.endField),
-						// 	b.identifier(relation.through),
-						// 	b.identifier(relation.throughField),
-						// )
 						query = fmt.Sprintf(
-							// SELECT dest FROM through join related on related.endField = through.throughField`
-							// SELECT dest FROM through join related on related.endField = through.throughField`
 							`SELECT %s FROM %s join %s on %s.%s = %s.%s`,
 							// SELECT
 							throughSrcField.QualifiedColumnName,
@@ -689,8 +678,10 @@ func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any, run func(s
 							throughTableName,
 							// join
 							relatedBuilder.TableName(),
+							// on
 							relatedBuilder.TableName(),
 							relatedDestField.ColumnName,
+							// =
 							throughTableName,
 							throughDestField.ColumnName,
 						)
@@ -878,33 +869,6 @@ func (b *SQLBuilder[Model]) Set(set *Model, args *[]any, where *map[string]any) 
 				// Set the WHERE clause condition based on the field type
 				val := convert(_field)
 				(*where)[field.Name] = map[string]any{"_eq": val}
-				// switch _field.Kind() {
-				// case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-				// 	(*where)[field.Name] = map[string]any{"_eq": fmt.Sprintf("%d", _field.Int())}
-				// case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-				// 	(*where)[field.Name] = map[string]any{"_eq": fmt.Sprintf("%d", _field.Uint())}
-				// case reflect.Float32, reflect.Float64:
-				// 	(*where)[field.Name] = map[string]any{"_eq": fmt.Sprintf("%f", _field.Float())}
-				// case reflect.Complex64, reflect.Complex128:
-				// 	(*where)[field.Name] = map[string]any{"_eq": fmt.Sprintf("%f", _field.Complex())}
-				// case reflect.String:
-				// 	(*where)[field.Name] = map[string]any{"_eq": _field.String()}
-				// default:
-				// 	if u, ok := _field.Interface().(uuid.UUID); ok {
-				// 		(*where)[field.Name] = map[string]any{"_eq": u.String()}
-				// 	} else if it, ok := _field.Interface().(time.Time); ok {
-				// 		_newValue := reflect.ValueOf(it.Format(time.RFC3339Nano))
-				// 		(*where)[field.Name] = map[string]any{"_eq": _newValue.String()}
-				// 	} else if it, ok := _field.Interface().(fmt.Stringer); ok {
-				// 		_newValue := reflect.ValueOf(it.String())
-				// 		if _newValue.Kind() == reflect.String {
-				// 			// If the value implements fmt.Stringer, use its String method
-				// 			(*where)[field.Name] = map[string]any{"_eq": _newValue.String()}
-				// 		}
-				// 	} else {
-				// 		panic("Invalid identifier type")
-				// 	}
-				// }
 			}
 		} else {
 			// Other fields are added to the SET clause

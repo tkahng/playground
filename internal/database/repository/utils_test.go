@@ -69,19 +69,17 @@ func Test_splitTagValueOptions(t *testing.T) {
 		{
 			name: "split comma only",
 			tag:  `db:","`,
-			want: &FieldTag{},
+			want: nil,
 		},
 		{
 			name: "split comma with option only",
 			tag:  `db:",hello"`,
-			want: &FieldTag{
-				Options: []*TagOption{{Key: "hello", Value: "true"}},
-			},
+			want: nil,
 		},
 		{
 			name: "empty",
 			tag:  `db:""`,
-			want: &FieldTag{},
+			want: nil,
 		},
 	}
 	for _, tt := range tests {

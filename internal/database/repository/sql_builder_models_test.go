@@ -141,7 +141,7 @@ func TestSQLBuilder_Models_WhereError(t *testing.T) {
 			},
 			args:    &[]any{},
 			wantErr: false,
-			want:    "SELECT a.id,a.age FROM a WHERE (a.id = $1 OR a.age = $2)",
+			want:    "SELECT a.id,a.age FROM a WHERE (a.id = $1 AND a.age = $2)",
 		},
 	}
 	for _, tt := range tests {

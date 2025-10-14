@@ -63,10 +63,10 @@ func ParseFieldTag(tagContent string) *FieldTag {
 	var options []*TagOption
 	for idx, item := range strings.Split(tagContent, ",") {
 		cleanedItem := strings.TrimSpace(item)
-		if cleanedItem == "" {
-			continue
-		}
 		if idx == 0 {
+			if cleanedItem == "" {
+				return nil
+			}
 			mainValue = cleanedItem
 		} else {
 			if option := ParseTagOption(cleanedItem); option != nil {
@@ -77,6 +77,9 @@ func ParseFieldTag(tagContent string) *FieldTag {
 	fieldTag := &FieldTag{
 		Value:   mainValue,
 		Options: options,
+	}
+	if fieldTag.Value == "" {
+		return nil
 	}
 	return fieldTag
 
