@@ -1,5 +1,7 @@
 -- migrate:up
-create table if not exists public.app_params (
+-- create app schema
+CREATE SCHEMA IF NOT EXISTS app;
+create table if not exists app.params (
     id uuid primary key default uuidv7(),
     name text not null unique,
     value jsonb not null,
@@ -7,7 +9,9 @@ create table if not exists public.app_params (
     updated_at timestamptz not null default clock_timestamp()
 );
 CREATE TRIGGER handle_app_params_updated_at before
-update on public.app_params for each row execute procedure set_current_timestamp_updated_at();
+update on app.params for each row execute procedure utility.set_current_timestamp_updated_at();
 -- migrate:down
-drop table if exists public.app_params;
-drop trigger if exists handle_app_params_updated_at on public.app_params;
+drop trigger if exists handle_app_params_updated_at on app.params;
+drop table if exists app.params;
+-- drop app schema
+DROP SCHEMA IF EXISTS app;
