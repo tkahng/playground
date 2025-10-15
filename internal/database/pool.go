@@ -4,44 +4,18 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"sync"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-var (
-	pgInstance *Queries
-	pgOnce     sync.Once
-)
-
-// CreateSingletonQueriesContext creates a singleton pool.
-// It reuses the same pool for all request with a sync.Once.Do.
-func CreateSingletonQueriesContext(ctx context.Context, connString string) *Queries {
-	pgOnce.Do(func() {
-		pool, err := getDbPool(ctx, connString)
-		if err != nil {
-			slog.Error("error creating pool.", "error", err)
-			panic(err)
-		}
-		pgInstance = &Queries{
-			db: pool,
-		}
-	})
-	if pgInstance == nil {
-		panic(fmt.Errorf("pgInstance is nil"))
-	}
-
-	return pgInstance
-}
-
 // CreateNewQueriesContext creates a new pool.
 func CreateNewQueriesContext(ctx context.Context, connString string) *Queries {
 	pool, err := getDbPool(ctx, connString)
 	if err != nil {
 		slog.Error("CreateNewQueriesContext: error creating pool.", "error", err)
-		panic(err)
+		panic(err.Error())
 	}
 	return &Queries{
 		db: pool,
