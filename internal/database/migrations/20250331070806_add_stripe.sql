@@ -33,7 +33,7 @@ create table public.stripe_customers (
     )
 );
 CREATE TRIGGER handle_stripe_customers_updated_at before
-update on public.stripe_customers for each row execute procedure set_current_timestamp_updated_at();
+update on public.stripe_customers for each row execute procedure utility.set_current_timestamp_updated_at();
 --------------- CUSTOMERS TABLE END -----------------------------------------------------------------------
 create table public.stripe_products (
     -- Product ID from Stripe, e.g. prod_1234.
@@ -52,7 +52,7 @@ create table public.stripe_products (
     updated_at timestamptz not null default clock_timestamp()
 );
 CREATE TRIGGER handle_stripe_products_updated_at before
-update on public.stripe_products for each row execute procedure set_current_timestamp_updated_at();
+update on public.stripe_products for each row execute procedure utility.set_current_timestamp_updated_at();
 create type public.stripe_pricing_type as enum ('one_time', 'recurring');
 create type public.stripe_pricing_plan_interval as enum ('day', 'week', 'month', 'year');
 --------------- PRICES TYPE ENUM END -----------------------------------------------------------------------
@@ -85,7 +85,7 @@ create table public.stripe_prices (
     updated_at timestamptz not null default clock_timestamp()
 );
 CREATE TRIGGER handle_stripe_prices_updated_at before
-update on public.stripe_prices for each row execute procedure set_current_timestamp_updated_at();
+update on public.stripe_prices for each row execute procedure utility.set_current_timestamp_updated_at();
 /**
  * STRIPE_SUBSCRIPTIONS
  * Note: stripe_subscriptions are created and managed in Stripe and synced to our DB via Stripe webhooks.
@@ -141,7 +141,7 @@ create table public.stripe_subscriptions (
     updated_at timestamptz not null default clock_timestamp()
 );
 CREATE TRIGGER handle_stripe_subscriptions_updated_at before
-update on public.stripe_subscriptions for each row execute procedure set_current_timestamp_updated_at();
+update on public.stripe_subscriptions for each row execute procedure utility.set_current_timestamp_updated_at();
 --------------- STRIPE_SUBSCRIPTIONS TABLE END -----------------------------------------------------------------------
 --------------- STRIPE WEBHOOK EVENTS TABLE START -----------------------------------------------------------------------
 create table public.stripe_webhook_events (
@@ -161,7 +161,7 @@ create table public.stripe_webhook_events (
     updated_at timestamptz not null default clock_timestamp()
 );
 CREATE TRIGGER handle_stripe_webhook_events_updated_at before
-update on public.stripe_webhook_events for each row execute procedure set_current_timestamp_updated_at();
+update on public.stripe_webhook_events for each row execute procedure utility.set_current_timestamp_updated_at();
 --------------- STRIPE WEBHOOK EVENTS TABLE END -----------------------------------------------------------------------
 -- migrate:down
 -- Drop the stripe_webhook_events table

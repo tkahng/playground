@@ -12,7 +12,7 @@ create table if not exists public.user_reactions (
     updated_at timestamptz not null default clock_timestamp()
 );
 create trigger handle_user_reactions_updated_at before
-update on public.user_reactions for each row execute procedure set_current_timestamp_updated_at();
+update on public.user_reactions for each row execute procedure utility.set_current_timestamp_updated_at();
 -- migrate:down
 drop trigger if exists handle_user_reactions_updated_at on public.user_reactions;
 drop table if exists public.user_reactions;

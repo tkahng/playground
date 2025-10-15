@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS teams (
     updated_at timestamptz not null default clock_timestamp()
 );
 create trigger handle_teams_updated_at before
-update on public.teams for each row execute procedure set_current_timestamp_updated_at();
+update on public.teams for each row execute procedure utility.set_current_timestamp_updated_at();
 -- team member roles enum ------------------------------------------------
 CREATE TYPE team_member_role AS ENUM ('owner', 'member', 'guest');
 -- team members table ------------------------------------------------------
@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS team_members (
         constraint team_members_user_id_team_id unique (user_id, team_id)
 );
 CREATE TRIGGER handle_team_members_updated_at BEFORE
-UPDATE ON public.team_members FOR EACH ROW EXECUTE PROCEDURE set_current_timestamp_updated_at();
+UPDATE ON public.team_members FOR EACH ROW EXECUTE PROCEDURE utility.set_current_timestamp_updated_at();
 -- team invitation table ------------------------------------------------------
 create type team_invitation_status as enum ('pending', 'accepted', 'declined', 'cancelled');
 CREATE TABLE IF NOT EXISTS team_invitations (

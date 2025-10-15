@@ -25,7 +25,7 @@ create table if not exists public.task_projects (
 );
 -- project table updated_at trigger  ----------------------------------------------------------------------
 create trigger handle_task_projects_updated_at before
-update on public.task_projects for each row execute procedure set_current_timestamp_updated_at();
+update on public.task_projects for each row execute procedure utility.set_current_timestamp_updated_at();
 -- tasks status ----------------------------------------------------------------------
 create type "task_status" as enum ('todo', 'in_progress', 'done');
 -- tasks table  ----------------------------------------------------------------------
@@ -53,7 +53,7 @@ create table if not exists public.tasks (
 );
 -- tasks table updated_at trigger  ----------------------------------------------------------------------
 create trigger handle_tasks_updated_at before
-update on public.tasks for each row execute procedure set_current_timestamp_updated_at();
+update on public.tasks for each row execute procedure utility.set_current_timestamp_updated_at();
 ------------------------------
 ------------------------------
 ------------------------------
