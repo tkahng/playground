@@ -54,8 +54,8 @@ func Run2() error {
 		return err
 	}
 	app := core.NewApp(opts)
-	appApi := apis.NewBaseAppApi(app)
-	apis.AddRoutesApi(appApi)
+	appApi := apis.NewAppApiWithRouter(app)
+	appApi.RegisterRoutes()
 	if port == 0 {
 		port = 8080
 	}

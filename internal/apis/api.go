@@ -47,9 +47,16 @@ func (a *Api) App() core.App {
 	return a.app
 }
 
-func NewBaseAppApi(app core.App) *Api {
+func NewAppApiWithRouter(app core.App) *Api {
 	router := NewRouter(app)
 	api := NewApiGroup(router)
+	return &Api{
+		app:    app,
+		api:    api,
+		router: router,
+	}
+}
+func NewAppApi(app core.App, router chi.Router, api huma.API) *Api {
 	return &Api{
 		app:    app,
 		api:    api,

@@ -13,7 +13,7 @@ import (
 	"github.com/tkahng/playground/internal/tools/types"
 )
 
-func AddRoutesApi(appApi *Api) {
+func (appApi *Api) RegisterRoutes() {
 	bindMiddlewares(appApi.Api(), appApi.App())
 	bindApis(appApi.Api(), appApi)
 }
