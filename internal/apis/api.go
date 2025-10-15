@@ -22,6 +22,7 @@ import (
 
 type Api struct {
 	app core.App
+	api huma.API
 }
 
 func (a *Api) App() core.App {
@@ -98,7 +99,7 @@ func NewRouter(app core.App) *chi.Mux {
 	return r
 }
 
-func NewApi(app core.App, r *chi.Mux) huma.API {
+func NewApiGroup(r *chi.Mux) huma.API {
 	var api huma.API
 	config := huma.DefaultConfig("My API", "1.0.0")
 	config.Servers = []*huma.Server{{URL: "http://localhost:8080"}}

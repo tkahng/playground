@@ -298,7 +298,9 @@ func NewApp(config *conf.EnvConfig) *BaseApp {
 	db := database.CreateQueriesContext(context.Background(), config.Db.GetDatabaseUrl())
 	payment := services.NewPaymentClient(config.StripeConfig)
 	mailer := mailer.NewSmtpMailer(config.SmtpConfig)
+	logger := logger.GetDefaultLogger()
 	app.db = db
+	app.logger = logger
 	app.cfg = config
 	app.paymentClient = payment
 	app.mailer = mailer
@@ -311,6 +313,8 @@ func NewTestBaseApp(config *conf.EnvConfig, db database.Dbx) *BaseApp {
 	app := new(BaseApp)
 	payment := services.NewTestPaymentClient()
 	mailer := mailer.NewTestMailer()
+	logger := logger.GetDefaultLogger()
+	app.logger = logger
 	app.db = db
 	app.cfg = config
 	app.paymentClient = payment
