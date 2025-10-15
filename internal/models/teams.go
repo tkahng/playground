@@ -13,8 +13,8 @@ type Team struct {
 	Slug           string          `db:"slug" json:"slug"`
 	CreatedAt      time.Time       `db:"created_at" json:"created_at"`
 	UpdatedAt      time.Time       `db:"updated_at" json:"updated_at"`
-	Members        []*TeamMember   `db:"members" src:"id" dest:"team_id" table:"team_members" json:"members,omitempty"`
-	StripeCustomer *StripeCustomer `db:"stripe_customer" src:"id" dest:"team_id" table:"stripe_customers" json:"stripe_customer,omitempty" required:"false"`
+	Members        []*TeamMember   `db:"members" src:"id" dest:"team_id" table:"public.team_members" json:"members,omitempty"`
+	StripeCustomer *StripeCustomer `db:"stripe_customer" src:"id" dest:"team_id" table:"public.stripe_customers" json:"stripe_customer,omitempty" required:"false"`
 }
 
 type teamTable struct {

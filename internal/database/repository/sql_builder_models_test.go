@@ -84,7 +84,7 @@ func TestSQLBuilder_Models_WhereError(t *testing.T) {
 			},
 			args:    &[]any{},
 			wantErr: false,
-			want:    "SELECT a.id,a.age FROM a WHERE a.id = $1",
+			want:    "SELECT public.a.id,public.a.age FROM public.a WHERE public.a.id = $1",
 		},
 		{
 			name:    "a: where id _eq hello, age _eq 10",
@@ -99,7 +99,7 @@ func TestSQLBuilder_Models_WhereError(t *testing.T) {
 			},
 			args:    &[]any{},
 			wantErr: false,
-			want:    "SELECT a.id,a.age FROM a WHERE a.id = $1 AND a.age = $2",
+			want:    "SELECT public.a.id,public.a.age FROM public.a WHERE public.a.id = $1 AND public.a.age = $2",
 		},
 		{
 			name:    "a: where id _eq hello or age _eq 10",
@@ -120,7 +120,7 @@ func TestSQLBuilder_Models_WhereError(t *testing.T) {
 			},
 			args:    &[]any{},
 			wantErr: false,
-			want:    "SELECT a.id,a.age FROM a WHERE (a.id = $1 OR a.age = $2)",
+			want:    "SELECT public.a.id,public.a.age FROM public.a WHERE (public.a.id = $1 OR public.a.age = $2)",
 		},
 		{
 			name:    "a: where id _eq hello and age _eq 10",
@@ -141,7 +141,7 @@ func TestSQLBuilder_Models_WhereError(t *testing.T) {
 			},
 			args:    &[]any{},
 			wantErr: false,
-			want:    "SELECT a.id,a.age FROM a WHERE (a.id = $1 AND a.age = $2)",
+			want:    "SELECT public.a.id,public.a.age FROM public.a WHERE (public.a.id = $1 AND public.a.age = $2)",
 		},
 	}
 	for _, tt := range tests {
