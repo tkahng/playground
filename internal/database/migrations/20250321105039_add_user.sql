@@ -1,6 +1,9 @@
+-------------------------------------------------------------------------------------------------------------------
 -- migrate:up
---------------- USER TABLE START -----------------------------------------------------------------------
-create table if not exists public.users (
+-- create auth schema
+CREATE SCHEMA IF NOT EXISTS auth;
+-- create users table
+create table if not exists auth.users (
     id uuid not null primary key default uuidv7(),
     email character varying unique not null,
     email_verified_at timestamptz,
@@ -9,10 +12,14 @@ create table if not exists public.users (
     created_at timestamptz not null default clock_timestamp(),
     updated_at timestamptz not null default clock_timestamp()
 );
--- this trigger will set the "updated_at" column to the current timestamptz for every update
-CREATE TRIGGER handle_users_updated_at before
-update on public.users for each row execute procedure set_current_timestamp_updated_at();
+-- create users table updated_at trigger
+CREATE TRIGGER handle_auth_users_updated_at before
+update on auth.users for each row execute procedure utility.set_current_timestamp_updated_at();
+-------------------------------------------------------------------------------------------------------------------
 -- migrate:down
-drop trigger if exists handle_users_updated_at on public.users;
+-- drop users table updated_at trigger
+drop trigger if exists handle_auth_users_updated_at on auth.users;
 -- Drop the users table
-DROP TABLE IF EXISTS public.users;
+DROP TABLE IF EXISTS auth.users;
+-- drop auth schema
+DROP SCHEMA IF EXISTS auth;

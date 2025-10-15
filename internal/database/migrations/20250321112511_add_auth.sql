@@ -1,16 +1,14 @@
 -- migrate:up
-create or replace function not_empty(input text) returns boolean language plpgsql stable as $$ begin return (char_length(input) > 0);
-end;
-$$;
-create type public.provider_types as enum ('oauth', 'credentials');
-create type public.providers as enum (
+-- create enums
+create type auth.provider_types as enum ('oauth', 'credentials');
+create type auth.providers as enum (
     'google',
     'apple',
     'facebook',
     'github',
     'credentials'
 );
-create type public.token_types as enum (
+create type auth.token_types as enum (
     'access_token',
     'recovery_token',
     'invite_token',
@@ -21,12 +19,11 @@ create type public.token_types as enum (
     'password_reset_token',
     'state_token'
 );
-create table if not exists public.tokens (
+-- create tokens table
+create table if not exists auth.tokens (
     id uuid primary key default uuidv7(),
-    type public.token_types not null,
-    user_id uuid references public.users on delete cascade on update cascade,
-    -- type text not null,
-    -- email or username
+    type auth.token_types not null,
+    user_id uuid references auth.users on delete cascade on update cascade,
     otp varchar(255),
     identifier text not null,
     expires timestamptz not null,
@@ -35,16 +32,16 @@ create table if not exists public.tokens (
     updated_at timestamptz not null default clock_timestamp(),
     -- metadata jsonb,
     constraint tokens_type_identifier_token_not_empty check (
-        not_empty(identifier)
-        and not_empty(token)
+        utility.not_empty(identifier)
+        and utility.not_empty(token)
     )
 );
-CREATE TRIGGER handle_tokens_updated_at before
-update on public.tokens for each row execute procedure set_current_timestamp_updated_at();
--- -------------- USER ACCOUNTS TABLE START -----------------------------------------------------------------------
-create table if not exists public.user_accounts (
+CREATE TRIGGER handle_auth_tokens_updated_at before
+update on auth.tokens for each row execute procedure utility.set_current_timestamp_updated_at();
+-- create user accounts table
+create table if not exists auth.user_accounts (
     id uuid primary key default uuidv7(),
-    "user_id" uuid not null references public.users on delete cascade on update cascade,
+    user_id uuid not null references auth.users on delete cascade on update cascade,
     type provider_types not null,
     provider providers not null,
     /**
@@ -53,7 +50,7 @@ create table if not exists public.user_accounts (
      * - email: The user's email address.
      * - credentials: `id` returned from the `authorize()` callback
      */
-    "provider_account_id" varchar(255) not null,
+    provider_account_id varchar(255) not null,
     password text,
     refresh_token text,
     access_token text,
@@ -64,41 +61,33 @@ create table if not exists public.user_accounts (
     token_type text,
     created_at timestamptz not null default clock_timestamp(),
     updated_at timestamptz not null default clock_timestamp(),
-    -- compound unique constraint on user_id and provider
-    -- constraint user_accounts_type_identifier_token_not_empty check (
-    --     char_length(type) > 0
-    --     and char_length(identifier) > 0
-    --     and char_length(token) > 0
-    -- ),
-    -- constraint user_accounts_user_id_type_provider_account_id_not_empty check ("user_id", type, provider, "provider_account_id"),
-    constraint user_accounts_provider_provider_account_id_unique unique (provider, "provider_account_id"),
-    constraint user_accounts_user_id_provider_unique unique ("user_id", provider)
+    constraint user_accounts_provider_provider_account_id_unique unique (provider, provider_account_id),
+    constraint user_accounts_user_id_provider_unique unique (user_id, provider)
 );
-CREATE TRIGGER handle_user_accounts_updated_at before
-update on public.user_accounts for each row execute procedure set_current_timestamp_updated_at();
--- -------------- USER SESSIONS TABLE START -----------------------------------------------------------------------
-create table if not exists public.user_sessions (
+CREATE TRIGGER handle_auth_user_accounts_updated_at before
+update on auth.user_accounts for each row execute procedure utility.set_current_timestamp_updated_at();
+-- create user sessions
+create table if not exists auth.user_sessions (
     id uuid primary key default uuidv7(),
-    "user_id" uuid not null references public.users on delete cascade on update cascade,
+    user_id uuid not null references auth.users on delete cascade on update cascade,
     expires timestamptz not null,
-    "session_token" varchar(255) not null unique,
+    session_token varchar(255) not null unique,
     created_at timestamptz not null default clock_timestamp(),
     updated_at timestamptz not null default clock_timestamp(),
-    constraint user_sessions_token_not_empty check (not_empty("session_token"))
+    constraint user_sessions_token_not_empty check (not_empty(session_token))
 );
-CREATE TRIGGER handle_user_sessions_updated_at before
-update on public.user_sessions for each row execute procedure set_current_timestamp_updated_at();
+CREATE TRIGGER handle_auth_user_sessions_updated_at before
+update on auth.user_sessions for each row execute procedure utility.set_current_timestamp_updated_at();
 -- migrate:down
-drop trigger if exists handle_user_sessions_updated_at on public.user_sessions;
-alter table public.user_sessions drop constraint if exists user_sessions_token_not_empty;
-drop table if exists public.user_sessions;
-drop trigger if exists handle_user_accounts_updated_at on public.user_accounts;
-alter table public.user_accounts drop constraint if exists user_accounts_user_id_provider_unique;
-drop table if exists public.user_accounts;
-drop trigger if exists handle_tokens_updated_at on public.tokens;
-alter table public.tokens drop constraint if exists tokens_type_identifier_token_not_empty;
-drop table if exists public.tokens;
-drop type if exists public.provider_types;
-drop type if exists public.providers;
-drop type if exists public.token_types;
-drop function if exists not_empty(text);
+drop trigger if exists handle_auth_user_sessions_updated_at on auth.user_sessions;
+alter table auth.user_sessions drop constraint if exists user_sessions_token_not_empty;
+drop table if exists auth.user_sessions;
+drop trigger if exists handle_auth_user_accounts_updated_at on auth.user_accounts;
+alter table auth.user_accounts drop constraint if exists user_accounts_user_id_provider_unique;
+drop table if exists auth.user_accounts;
+drop trigger if exists handle_auth_tokens_updated_at on auth.tokens;
+alter table auth.tokens drop constraint if exists tokens_type_identifier_token_not_empty;
+drop table if exists auth.tokens;
+drop type if exists auth.provider_types;
+drop type if exists auth.providers;
+drop type if exists auth.token_types;
