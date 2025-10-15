@@ -13,6 +13,7 @@ type Dbx interface {
 	Acquire(ctx context.Context) (c *pgxpool.Conn, err error)
 	SendBatch(ctx context.Context, b *pgx.Batch) pgx.BatchResults
 	Begin(ctx context.Context) (pgx.Tx, error)
+	BeginTx(ctx context.Context, opts pgx.TxOptions) (pgx.Tx, error)
 	Query(ctx context.Context, sql string, arguments ...any) (pgx.Rows, error)
 	Exec(ctx context.Context, sql string, arguments ...any) (pgconn.CommandTag, error)
 	RunInTx(fn func(Dbx) error) error
@@ -57,6 +58,11 @@ func (v *Queries) Begin(ctx context.Context) (pgx.Tx, error) {
 	return v.db.Begin(ctx)
 }
 
+// Begin implements Dbx.
+func (v *Queries) BeginTx(ctx context.Context, opts pgx.TxOptions) (pgx.Tx, error) {
+	return v.db.BeginTx(ctx, opts)
+}
+
 // SendBatch implements Dbx.
 func (v *Queries) SendBatch(ctx context.Context, b *pgx.Batch) pgx.BatchResults {
 	return v.db.SendBatch(ctx, b)
@@ -87,6 +93,11 @@ var _ Dbx = (*txQueries)(nil)
 
 type txQueries struct {
 	db pgx.Tx
+}
+
+// BeginTx implements Dbx.
+func (v *txQueries) BeginTx(ctx context.Context, opts pgx.TxOptions) (pgx.Tx, error) {
+	return v.db.Begin(ctx)
 }
 
 // Close implements Dbx.
