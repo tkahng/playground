@@ -295,7 +295,7 @@ func (app *BaseApp) RunBackgroundProcesses(firstCtx context.Context) {
 
 func NewApp(config *conf.EnvConfig) *BaseApp {
 	app := new(BaseApp)
-	db := database.CreateQueriesContext(context.Background(), config.Db.GetDatabaseUrl())
+	db := database.CreateNewQueriesContext(context.Background(), config.Db.GetDatabaseUrl())
 	payment := services.NewPaymentClient(config.StripeConfig)
 	mailer := mailer.NewResendMailer(config.ResendConfig)
 	logger := logger.GetDefaultLogger()

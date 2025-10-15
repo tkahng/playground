@@ -16,6 +16,8 @@ var (
 	pgOnce     sync.Once
 )
 
+// CreateSingletonQueriesContext creates a singleton pool.
+// It reuses the same pool for all request with a sync.Once.Do.
 func CreateSingletonQueriesContext(ctx context.Context, connString string) *Queries {
 	pgOnce.Do(func() {
 		pool, err := getDbPool(ctx, connString)
@@ -34,10 +36,11 @@ func CreateSingletonQueriesContext(ctx context.Context, connString string) *Quer
 	return pgInstance
 }
 
-func CreateQueriesContext(ctx context.Context, connString string) *Queries {
+// CreateNewQueriesContext creates a new pool.
+func CreateNewQueriesContext(ctx context.Context, connString string) *Queries {
 	pool, err := getDbPool(ctx, connString)
 	if err != nil {
-		slog.Error("error creating pool.", "error", err)
+		slog.Error("CreateNewQueriesContext: error creating pool.", "error", err)
 		panic(err)
 	}
 	return &Queries{

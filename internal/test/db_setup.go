@@ -60,7 +60,7 @@ func WithTx(t *testing.T, cfg *conf.EnvConfig, fn func(ctx context.Context, db d
 	t.Helper()
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	dbx := database.CreateQueriesContext(ctx, cfg.Db.GetDatabaseUrl())
+	dbx := database.CreateNewQueriesContext(ctx, cfg.Db.GetDatabaseUrl())
 	tx, err := dbx.Begin(ctx)
 	if err != nil {
 		t.Fatal(err)
