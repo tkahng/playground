@@ -31,6 +31,7 @@ type Queries struct {
 
 // Close calls close on the underlying pool.
 func (v *Queries) Close() {
+	slog.Info("close called on Queries. calling close on pool.")
 	v.db.Close()
 }
 
@@ -90,6 +91,7 @@ type txQueries struct {
 
 // Close implements Dbx.
 func (v *txQueries) Close() {
+	slog.Info("close called on txQueries, nothing to do.")
 }
 
 // Acquire implements Dbx.

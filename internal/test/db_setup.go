@@ -56,10 +56,11 @@ func WithSingletonTx(t *testing.T, fn func(ctx context.Context, db database.Dbx)
 }
 
 // WithNewTx creates a new pool connection, runs the test within that transaciton, rolls back, and closes the pool.
-func WithNewTx(t *testing.T, cfg *conf.EnvConfig, fn func(ctx context.Context, db database.Dbx)) {
+func WithNewTx(t *testing.T, fn func(ctx context.Context, db database.Dbx)) {
 	t.Helper()
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+	cfg := conf.ZeroEnvConfig()
 	dbx := database.CreateNewQueriesContext(ctx, cfg.Db.GetDatabaseUrl())
 	tx, err := dbx.Begin(ctx)
 	if err != nil {
