@@ -213,6 +213,7 @@ func (b *SQLBuilder[Model]) GetFieldByName(name string) *Field {
 }
 
 // MustGetFieldByName returns the field with the given field name.
+// name is the field name of the model, without its schema, table, or quotes.
 // panics if the field is not found
 func (b *SQLBuilder[Model]) MustGetFieldByName(name string) *Field {
 	for _, field := range b.fields {
@@ -220,7 +221,7 @@ func (b *SQLBuilder[Model]) MustGetFieldByName(name string) *Field {
 			return field
 		}
 	}
-	panic(fmt.Sprintf("field %s not found for model %s", name, b.tableName))
+	panic(fmt.Sprintf("could not get field by name: field %s not found for model %s", name, b.tableName))
 }
 
 // Fields returns the fields
