@@ -1,7 +1,5 @@
 -------------------------------------------------------------------------------------------------------------------
 -- migrate:up
--- create auth schema
-CREATE SCHEMA IF NOT EXISTS auth;
 -- create users table
 create table if not exists auth.users (
     id uuid not null primary key default uuidv7(),
@@ -21,5 +19,3 @@ update on auth.users for each row execute procedure utility.set_current_timestam
 drop trigger if exists handle_auth_users_updated_at on auth.users;
 -- Drop the users table
 DROP TABLE IF EXISTS auth.users;
--- drop auth schema
-DROP SCHEMA IF EXISTS auth;
