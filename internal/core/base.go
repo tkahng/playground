@@ -67,6 +67,21 @@ type BaseApp struct {
 	eventManager events.EventManager
 }
 
+// Start implements App.
+func (b *BaseApp) Start() {
+	panic("unimplemented")
+}
+
+// Stop implements App.
+func (b *BaseApp) Stop() {
+	panic("unimplemented")
+}
+
+// Wait implements App.
+func (b *BaseApp) Wait() {
+	panic("unimplemented")
+}
+
 func (b *BaseApp) Close() {
 	b.db.Close()
 }
