@@ -26,7 +26,7 @@ import (
 )
 
 type AuthUser struct {
-	_               struct{}          `db:"auth.users" json:"-"`
+	_               struct{}          `db:"users" schema:"auth" json:"-"`
 	ID              uuid.UUID         `db:"id" json:"id"`
 	Email           string            `db:"email" json:"email"`
 	EmailVerifiedAt *time.Time        `db:"email_verified_at" json:"email_verified_at"`

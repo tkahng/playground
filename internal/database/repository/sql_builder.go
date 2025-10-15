@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"reflect"
+	"runtime/debug"
 	"slices"
 	"sort"
 	"strings"
@@ -268,9 +269,9 @@ func (b *SQLBuilder[Model]) QualifiedColumnNamesJoined() string {
 // TableName Returns the table name with proper identifier formatting
 func (b *SQLBuilder[Model]) TableName() string {
 	if b.quoteIdentifier {
-		return utils.Quote(b.tableName)
+		return b.schemaName + "." + utils.Quote(b.tableName)
 	}
-	return b.tableName
+	return b.schemaName + "." + b.tableName
 }
 
 // IdFieldName implements SQLBuilderInterface.
@@ -322,10 +323,14 @@ func NewSQLBuilder[Model any](opts ...SQLBuilderOptions[Model]) *SQLBuilder[Mode
 	// default table name to lowercase model name
 	var tableName string = strings.ToLower(_type.Name())
 
+	// default quote identifier to true
+	var quoteIdentifier bool = false
+
 	var modelFields []*Field
 	var modelRelations map[string]*Relation = map[string]*Relation{}
 	var modelOperations map[string]func(string, ...string) string = map[string]func(string, ...string) string{}
 
+	var schemaName string = "public"
 	// iterate over the fields of the model type
 	for idx := range _type.NumField() {
 		_field := _type.Field(idx)
@@ -342,6 +347,13 @@ func NewSQLBuilder[Model any](opts ...SQLBuilderOptions[Model]) *SQLBuilder[Mode
 						panic("failed to parse info db tag value")
 					}
 					tableName = fieldTag.Value
+
+					if quote := fieldTag.GetOptionValue("quote"); quote == "true" {
+						quoteIdentifier = true
+					}
+					if schemaTagValue := _field.Tag.Get("schema"); schemaTagValue != "" {
+						schemaName = schemaTagValue
+					}
 				} else {
 					panic("db info value not set")
 				}
@@ -417,7 +429,7 @@ func NewSQLBuilder[Model any](opts ...SQLBuilderOptions[Model]) *SQLBuilder[Mode
 						Idx:                 idx,
 						Name:                fieldName,
 						ColumnName:          columnName,
-						QualifiedColumnName: tableName + "." + columnName,
+						QualifiedColumnName: schemaName + "." + tableName + "." + columnName,
 						IsID:                isId,
 					}
 					// get the fieldName of the field
@@ -439,7 +451,8 @@ func NewSQLBuilder[Model any](opts ...SQLBuilderOptions[Model]) *SQLBuilder[Mode
 		operations:      modelOperations,
 		generator:       nil,
 		insertID:        false,
-		quoteIdentifier: false,
+		quoteIdentifier: quoteIdentifier,
+		schemaName:      schemaName,
 	}
 	for _, opt := range opts {
 		if err := opt(result); err != nil {
@@ -448,7 +461,7 @@ func NewSQLBuilder[Model any](opts ...SQLBuilderOptions[Model]) *SQLBuilder[Mode
 		}
 	}
 
-	registry[tableName] = result
+	registry[schemaName+"."+tableName] = result
 
 	return result
 }
@@ -464,6 +477,7 @@ func (b *SQLBuilder[Model]) WhereError(ctx context.Context, where *map[string]an
 			slog.ErrorContext(ctx, "Error occurred during where generation", slog.Any("error", r),
 				slog.String("table", b.tableName),
 				slog.Any("where", where),
+				slog.Any("stacktrace", string(debug.Stack())),
 			)
 			err = fmt.Errorf("error generating where for table %s. check your filters", b.tableName)
 		}
