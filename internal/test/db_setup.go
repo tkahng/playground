@@ -5,40 +5,18 @@ import (
 	"fmt"
 	"log/slog"
 	"runtime/debug"
-	"sync"
 	"testing"
 
 	"github.com/tkahng/playground/internal/conf"
 	"github.com/tkahng/playground/internal/database"
 )
 
-const (
-	TestDbUrl = "postgres://postgres:postgres@localhost:5432/playground_test?sslmode=disable"
-)
-
-var (
-	ctxInstance context.Context
-	ctxOnce     sync.Once
-	dbx         *database.Queries
-)
-
-func SingletonDbSetup(t *testing.T) (context.Context, *database.Queries) {
-	return singletonDbSetup(TestDbUrl)
-}
-
-func singletonDbSetup(url string) (context.Context, *database.Queries) {
-	ctxOnce.Do(func() {
-		ctxInstance = context.Background()
-		dbx = database.CreateSingletonQueriesContext(ctxInstance, url)
-	})
-	return ctxInstance, dbx
-}
-
 // WithNewTx creates a new pool connection, runs the test within that transaciton, rolls back, and closes the pool.
 func WithNewTx(t *testing.T, fn func(ctx context.Context, db database.Dbx)) {
 	t.Helper()
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	// ctx, cancel := context.WithCancel(context.Background())
+	// defer cancel()
+	ctx := context.Background()
 	cfg := conf.ZeroEnvConfig()
 	dbx := database.CreateNewQueriesContext(ctx, cfg.Db.GetDatabaseUrl())
 	tx, err := dbx.Begin(ctx)

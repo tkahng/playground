@@ -75,6 +75,7 @@ func (b *BaseApp) PaymentClient() services.PaymentClient {
 // Start implements App.
 
 func (b *BaseApp) Close() {
+	slog.Info("closing app.")
 	b.db.Close()
 }
 

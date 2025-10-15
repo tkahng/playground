@@ -8,7 +8,8 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/tkahng/playground/internal/test"
+	"github.com/tkahng/playground/internal/conf"
+	"github.com/tkahng/playground/internal/database"
 )
 
 // NB: these tests assume you have a postgres server listening on localhost:5432
@@ -19,9 +20,10 @@ import (
 // -e POSTGRES_PASSWORD=postgres postgres
 
 func TestNotifier(t *testing.T) {
-	ctx, dbx := test.SingletonDbSetup(t)
+	cfg := conf.ZeroEnvConfig()
+	dbx := database.CreateNewQueriesContext(context.Background(), cfg.Db.GetDatabaseUrl())
 	l := slog.New(slog.NewJSONHandler(os.Stdout, nil))
-	ctx, cancel := context.WithCancel(ctx)
+	ctx, cancel := context.WithCancel(context.Background())
 	wg := sync.WaitGroup{}
 	// pool, err := testPool("postgres://postgres:postgres@localhost:5432/playground_test?sslmode=disable")
 	// expIs.NoErr(err)
