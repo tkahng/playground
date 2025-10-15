@@ -68,25 +68,9 @@ type BaseApp struct {
 }
 
 // Start implements App.
-func (b *BaseApp) Start() {
-	panic("unimplemented")
-}
-
-// Stop implements App.
-func (b *BaseApp) Stop() {
-	panic("unimplemented")
-}
-
-// Wait implements App.
-func (b *BaseApp) Wait() {
-	panic("unimplemented")
-}
 
 func (b *BaseApp) Close() {
 	b.db.Close()
-}
-func (b *BaseApp) Context() context.Context {
-	return b.appCtx
 }
 
 func (app *BaseApp) Jwt() services.JwtService {

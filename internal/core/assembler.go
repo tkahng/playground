@@ -1,6 +1,7 @@
 package core
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/ThreeDotsLabs/watermill/components/cqrs"
@@ -98,8 +99,8 @@ func (a *Assembler) SetBasicServices(app *BaseApp) {
 // SetDatasource implements Initiator.
 func (a *Assembler) SetDatasource(app *BaseApp) {
 	if app.db == nil {
-		queries := database.CreateSingletonQueriesContext(app.Context(), app.cfg.Db.GetDatabaseUrl())
-		if err := queries.Pool().Ping(app.Context()); err != nil {
+		queries := database.CreateSingletonQueriesContext(context.Background(), app.cfg.Db.GetDatabaseUrl())
+		if err := queries.Pool().Ping(context.Background()); err != nil {
 			panic(fmt.Errorf("failed to ping db: %w", err))
 		}
 		app.db = queries

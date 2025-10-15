@@ -81,8 +81,8 @@ func TestingInitializePrimitives(app *BaseApp) {
 
 func TestingSetDbSingleton(app *BaseApp) {
 	// if app.db == nil {
-	// 	queries := database.CreateSingletonQueriesContext(app.Context(), app.cfg.Db.GetDatabaseUrl())
-	// 	if err := queries.Pool().Ping(app.Context()); err != nil {
+	// 	queries := database.CreateSingletonQueriesContext(context.Background(), app.cfg.Db.GetDatabaseUrl())
+	// 	if err := queries.Pool().Ping(context.Background()); err != nil {
 	// 		panic(fmt.Errorf("failed to ping db: %w", err))
 	// 	}
 	// 	app.db = queries
@@ -93,9 +93,9 @@ func TestingSetDbSingleton(app *BaseApp) {
 }
 func TestingSetDb(app *BaseApp) {
 
-	queries := database.CreateQueriesContext(app.Context(), app.cfg.Db.GetDatabaseUrl())
+	queries := database.CreateQueriesContext(context.Background(), app.cfg.Db.GetDatabaseUrl())
 
-	if err := queries.Pool().Ping(app.Context()); err != nil {
+	if err := queries.Pool().Ping(context.Background()); err != nil {
 		panic(fmt.Errorf("failed to ping db: %w", err))
 	}
 

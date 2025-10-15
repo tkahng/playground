@@ -18,12 +18,7 @@ import (
 )
 
 type App interface {
-	Start()
-	Wait()
-	Stop()
 	Close()
-
-	Context() context.Context
 
 	//  settings -------------------------------------------------------------------------------------
 	Config() *conf.EnvConfig
