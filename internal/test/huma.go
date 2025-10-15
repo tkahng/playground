@@ -1,7 +1,6 @@
 package test
 
 import (
-	"net/http"
 	"testing"
 
 	"github.com/danielgtaylor/huma/v2"
@@ -10,7 +9,7 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-func NewHumaApi(tb testing.TB, configs ...huma.Config) (http.Handler, humatest.TestAPI) {
+func NewHumaApi(tb testing.TB, configs ...huma.Config) (chi.Router, humatest.TestAPI) {
 	tb.Helper()
 	for _, config := range configs {
 		if config.OpenAPI == nil {

@@ -311,9 +311,9 @@ func SetupApi(t testing.TB, ctx context.Context, db database.Dbx) *TestApi {
 	t.Helper()
 	cfg := conf.ZeroEnvConfig()
 	app := core.NewTestBaseApp(cfg, db)
-	appApi := apis.NewBaseAppApi(app)
+	appApi := &apis.Api{}
 	router, api := test.NewHumaApi(t)
-	apis.AddRoutes(api, appApi)
+	apis.AddRoutesApi(appApi)
 	testApi := &TestApi{
 		TestApi: api,
 		Api:     *appApi,

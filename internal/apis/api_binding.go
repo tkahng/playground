@@ -13,7 +13,12 @@ import (
 	"github.com/tkahng/playground/internal/tools/types"
 )
 
-func BindMiddlewares(api huma.API, app core.App) {
+func AddRoutesApi(appApi *Api) {
+	bindMiddlewares(appApi.Api(), appApi.App())
+	bindApis(appApi.Api(), appApi)
+}
+
+func bindMiddlewares(api huma.API, app core.App) {
 	api.UseMiddleware(humamiddleware.HumaChiMiddleware(middleware.RecovererMiddleware(app)))
 	api.UseMiddleware(humamiddleware.HumaAuthMiddleware(api, app))
 	api.UseMiddleware(humamiddleware.HumaRequireAuthMiddleware(api, app))
@@ -27,7 +32,7 @@ type IndexOutput struct {
 	Body IndexOutputBody `json:"body"`
 }
 
-func BindApis(api huma.API, appApi *Api) {
+func bindApis(api huma.API, appApi *Api) {
 	huma.Get(api, "/", func(ctx context.Context, input *struct {
 		Page types.OmittableNullable[string] `query:"page" required:"false"`
 	}) (*IndexOutput, error) {
@@ -94,9 +99,4 @@ func BindApis(api huma.API, appApi *Api) {
 	BindAdminApi(api, appApi)
 	// admin stripe products with prices
 	BindUserReactionApi(api, appApi)
-}
-
-func AddRoutes(api huma.API, appApi *Api) {
-	BindMiddlewares(api, appApi.App())
-	BindApis(api, appApi)
 }

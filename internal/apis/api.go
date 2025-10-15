@@ -21,8 +21,23 @@ import (
 )
 
 type Api struct {
-	app core.App
-	api huma.API
+	app    core.App
+	api    huma.API
+	router chi.Router
+}
+
+func (a *Api) Api() huma.API {
+	if a.api == nil {
+		panic("api not initialized for api")
+	}
+	return a.api
+}
+
+func (a *Api) Router() chi.Router {
+	if a.router == nil {
+		panic("router not initialized for api")
+	}
+	return a.router
 }
 
 func (a *Api) App() core.App {
@@ -33,8 +48,12 @@ func (a *Api) App() core.App {
 }
 
 func NewBaseAppApi(app core.App) *Api {
+	router := NewRouter(app)
+	api := NewApiGroup(router)
 	return &Api{
-		app: app,
+		app:    app,
+		api:    api,
+		router: router,
 	}
 }
 
@@ -99,7 +118,7 @@ func NewRouter(app core.App) *chi.Mux {
 	return r
 }
 
-func NewApiGroup(r *chi.Mux) huma.API {
+func NewApiGroup(r chi.Router) huma.API {
 	var api huma.API
 	config := huma.DefaultConfig("My API", "1.0.0")
 	config.Servers = []*huma.Server{{URL: "http://localhost:8080"}}

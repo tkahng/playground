@@ -297,7 +297,7 @@ func NewApp(config *conf.EnvConfig) *BaseApp {
 	app := new(BaseApp)
 	db := database.CreateQueriesContext(context.Background(), config.Db.GetDatabaseUrl())
 	payment := services.NewPaymentClient(config.StripeConfig)
-	mailer := mailer.NewSmtpMailer(config.SmtpConfig)
+	mailer := mailer.NewResendMailer(config.ResendConfig)
 	logger := logger.GetDefaultLogger()
 	app.db = db
 	app.logger = logger

@@ -54,17 +54,15 @@ func Run2() error {
 		return err
 	}
 	app := core.NewApp(opts)
-	r := apis.NewRouter(app)
 	appApi := apis.NewBaseAppApi(app)
-	api := apis.NewApiGroup(r)
-	apis.AddRoutes(api, appApi)
+	apis.AddRoutesApi(appApi)
 	if port == 0 {
 		port = 8080
 	}
 
 	httpServer := &http.Server{
 		Addr:    fmt.Sprintf(":%d", port),
-		Handler: r,
+		Handler: appApi.Router(),
 	}
 	serverShutdownErr := make(chan error, 1)
 
