@@ -66,9 +66,7 @@ func WithNewTx(t *testing.T, fn func(ctx context.Context, db database.Dbx)) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer func() {
-		dbx.Close()
-	}()
+	defer dbx.Close()
 	// nolint:errcheck
 	defer tx.Rollback(ctx)
 	// panic handle
