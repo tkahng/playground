@@ -18,7 +18,7 @@ func TestTokenServiceImpl_GenerateToken(t *testing.T) {
 		test.WithSingletonTx(t, func(ctx context.Context, db database.Dbx) {
 			cfg := conf.ZeroEnvConfig()
 			store := stores.NewPostgresTokenStore(db)
-			tokenService := token.NewTokenService(&cfg, store)
+			tokenService := token.NewTokenService(cfg, store)
 			email := "admin@k2dv.io"
 			token, err := tokenService.GenerateToken(ctx, email, models.TokenTypesVerificationToken)
 			if err != nil {
@@ -41,7 +41,7 @@ func TestTokenServiceImpl_GenerateToken(t *testing.T) {
 			cfg := conf.ZeroEnvConfig()
 			cfg.AuthOptions.VerificationToken.Duration = 1
 			store := stores.NewPostgresTokenStore(db)
-			tokenService := token.NewTokenService(&cfg, store)
+			tokenService := token.NewTokenService(cfg, store)
 			email := "admin@k2dv.io"
 			token, err := tokenService.GenerateToken(ctx, email, models.TokenTypesVerificationToken)
 			if err != nil {

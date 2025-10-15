@@ -55,7 +55,7 @@ func Run2() error {
 	}
 	app := core.NewApp(opts)
 	r := apis.NewRouter(app)
-	appApi := apis.NewAppApi(app)
+	appApi := apis.NewBaseAppApi(app)
 	api := apis.NewApi(app, r)
 	apis.AddRoutes(api, appApi)
 	if port == 0 {

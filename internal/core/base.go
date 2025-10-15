@@ -23,11 +23,7 @@ import (
 var _ App = (*BaseApp)(nil)
 
 type BaseApp struct {
-	appCtx context.Context
-
 	cfg *conf.EnvConfig
-
-	lc Lifecycle
 
 	db      database.Dbx
 	adapter stores.StorageAdapterInterface
@@ -42,8 +38,9 @@ type BaseApp struct {
 	jobManager jobs.JobManager
 	jobService services.JobService
 
-	payment  services.PaymentService
-	password services.PasswordService
+	paymentClient services.PaymentClient
+	payment       services.PaymentService
+	password      services.PasswordService
 
 	auth  services.AuthService
 	auth2 auth.AuthService
@@ -65,6 +62,14 @@ type BaseApp struct {
 	sseManager sse.Manager
 
 	eventManager events.EventManager
+}
+
+// PaymentClient implements App.
+func (b *BaseApp) PaymentClient() services.PaymentClient {
+	if b.paymentClient == nil {
+		panic("payment client not initialized")
+	}
+	return b.paymentClient
 }
 
 // Start implements App.
@@ -131,7 +136,7 @@ func (app *BaseApp) SseManager() sse.Manager {
 func (app *BaseApp) Config() *conf.EnvConfig {
 	if app.cfg == nil {
 		opts := conf.AppConfigGetter()
-		app.cfg = &opts
+		app.cfg = opts
 	}
 	return app.cfg
 }
@@ -140,32 +145,22 @@ func (app *BaseApp) Config() *conf.EnvConfig {
 
 func (app *BaseApp) Db() database.Dbx {
 	if app.db == nil {
-		if app.cfg != nil {
-			SetDb(app)
-		} else {
-			panic("db not initialized")
-		}
+		panic("db not initialized")
+
 	}
 	return app.db
 }
 
 // Adapter implements App.
 func (app *BaseApp) Adapter() stores.StorageAdapterInterface {
-	if app.db == nil {
-		if app.cfg != nil {
-			SetDb(app)
+	if app.adapter == nil {
+		if app.db != nil {
+			app.adapter = stores.NewStorageAdapter(app.db)
 		} else {
-			panic("adapter not initialized")
+			panic("db not initialized")
 		}
 	}
 	return app.adapter
-}
-
-func (app *BaseApp) Lifecycle() Lifecycle {
-	if app.lc == nil {
-		app.lc = NewLifecycle(app.logger)
-	}
-	return app.lc
 }
 
 // check logging -------------------------------------------------------------------------------------
@@ -296,4 +291,31 @@ func (app *BaseApp) RunBackgroundProcesses(firstCtx context.Context) {
 			return
 		}
 	}()
+}
+
+func NewApp(config *conf.EnvConfig) *BaseApp {
+	app := new(BaseApp)
+	db := database.CreateQueriesContext(context.Background(), config.Db.GetDatabaseUrl())
+	payment := services.NewPaymentClient(config.StripeConfig)
+	mailer := mailer.NewSmtpMailer(config.SmtpConfig)
+	app.db = db
+	app.cfg = config
+	app.paymentClient = payment
+	app.mailer = mailer
+	assembler := NewAssembler()
+	assembler.AssembleApp(app)
+	return app
+}
+
+func NewTestBaseApp(config *conf.EnvConfig, db database.Dbx) *BaseApp {
+	app := new(BaseApp)
+	payment := services.NewTestPaymentClient()
+	mailer := mailer.NewTestMailer()
+	app.db = db
+	app.cfg = config
+	app.paymentClient = payment
+	app.mailer = mailer
+	assembler := NewAssembler()
+	assembler.AssembleApp(app)
+	return app
 }

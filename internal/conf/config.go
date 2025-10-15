@@ -91,9 +91,9 @@ type Options struct {
 	Port  int    `doc:"Port to listen on." short:"p" default:"8080"`
 }
 
-func ZeroEnvConfig() EnvConfig {
+func ZeroEnvConfig() *EnvConfig {
 	// nolint:exhaustruct
-	return EnvConfig{
+	return &EnvConfig{
 		Db: DBConfig{
 			User:     "postgres",
 			Password: "postgres",
@@ -128,7 +128,7 @@ type EnvConfig struct {
 	AuthOptions
 }
 
-func AppConfigGetter() EnvConfig {
+func AppConfigGetter() *EnvConfig {
 	var config EnvConfig
 	if err := env.ParseWithOptions(&config, env.Options{
 		RequiredIfNoDef: true,
@@ -136,7 +136,7 @@ func AppConfigGetter() EnvConfig {
 		panic(err)
 	}
 	config.AuthOptions = NewTokenOptions()
-	return config
+	return &config
 }
 
 func GetConfig[T any]() T {

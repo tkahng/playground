@@ -1,45 +1,34 @@
 package core
 
 import (
-	"context"
-	"fmt"
-
 	"github.com/ThreeDotsLabs/watermill/components/cqrs"
 	"github.com/tkahng/playground/internal/auth"
-	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/events"
 	"github.com/tkahng/playground/internal/jobs"
 	"github.com/tkahng/playground/internal/services"
 	"github.com/tkahng/playground/internal/stores"
 	"github.com/tkahng/playground/internal/token"
-	"github.com/tkahng/playground/internal/tools/logger"
 	"github.com/tkahng/playground/internal/tools/sse"
 	"github.com/tkahng/playground/internal/userreaction"
 )
 
 type Assembler struct {
-	provider Provider
 }
 
-func NewInitiatorBase(provider Provider) *Assembler {
-	return &Assembler{
-		provider: provider,
-	}
+func NewAssembler() *Assembler {
+	return &Assembler{}
+}
+func (a *Assembler) AssembleApp(app *BaseApp) {
+	a.configure(app)
+	a.setDatasource(app)
+	a.setBasicServices(app)
+	a.setIntegrationServices(app)
+	a.registerWorkers(app)
+	a.addEventHandlers(app)
 }
 
-func (a *Assembler) AssembleNewApp() *BaseApp {
-	app := new(BaseApp)
-	a.Configure(app)
-	a.SetDatasource(app)
-	a.SetBasicServices(app)
-	a.SetIntegrationServices(app)
-	a.RegisterWorkers(app)
-	a.AddEventHandlers(app)
-	return app
-}
-
-// AddEventHandlers implements Initiator.
-func (a *Assembler) AddEventHandlers(app *BaseApp) {
+// addEventHandlers implements Initiator.
+func (a *Assembler) addEventHandlers(app *BaseApp) {
 	userReactionHandler := userreaction.NewUserReactionEventHandler(
 		app.Logger(),
 		app.Adapter().UserReaction(),
@@ -53,21 +42,41 @@ func (a *Assembler) AddEventHandlers(app *BaseApp) {
 	)
 }
 
-// Configure implements Initiator.
-func (a *Assembler) Configure(app *BaseApp) {
-	app.cfg = a.provider.Config()
-	app.db = a.provider.Db()
-	app.mailer = a.provider.Mailer()
-	app.logger = logger.GetDefaultLogger()
+// configure implements Initiator.
+func (a *Assembler) configure(app *BaseApp) {
+	if app.cfg == nil {
+		panic("config not initialized")
+	}
+	if app.db == nil {
+		panic("db not initialized")
+	}
+	if app.mailer == nil {
+		panic("mailer not initialized")
+	}
+	if app.logger == nil {
+		panic("logger not initialized")
+	}
+	// if app.cfg == nil {
+	// 	app.cfg = conf.AppConfigGetter()
+	// }
+	// if app.db == nil {
+	// 	app.db = database.CreateSingletonQueriesContext(context.Background(), app.cfg.Db.GetDatabaseUrl())
+	// }
+	// if app.mailer == nil {
+	// 	app.mailer = mailer.NewSmtpMailer(app.cfg.SmtpConfig)
+	// }
+	// if app.logger == nil {
+	// 	app.logger = logger.GetDefaultLogger()
+	// }
 }
 
-// RegisterWorkers implements Initiator.
-func (a *Assembler) RegisterWorkers(app *BaseApp) {
+// registerWorkers implements Initiator.
+func (a *Assembler) registerWorkers(app *BaseApp) {
 	app.JobService().RegisterWorkers(app.mailService, app.Payment(), app.NotificationPublisher())
 }
 
-// SetBasicServices implements Initiator.
-func (a *Assembler) SetBasicServices(app *BaseApp) {
+// setBasicServices implements Initiator.
+func (a *Assembler) setBasicServices(app *BaseApp) {
 	cfg := app.Config()
 	logger := app.Logger()
 
@@ -96,31 +105,29 @@ func (a *Assembler) SetBasicServices(app *BaseApp) {
 	app.token = token.NewTokenService(cfg, adapter.Token())
 }
 
-// SetDatasource implements Initiator.
-func (a *Assembler) SetDatasource(app *BaseApp) {
-	if app.db == nil {
-		queries := database.CreateSingletonQueriesContext(context.Background(), app.cfg.Db.GetDatabaseUrl())
-		if err := queries.Pool().Ping(context.Background()); err != nil {
-			panic(fmt.Errorf("failed to ping db: %w", err))
-		}
-		app.db = queries
-	}
-	if app.adapter == nil {
-		adapter := stores.NewStorageAdapter(app.db)
-		app.adapter = adapter
-	}
+// setDatasource implements Initiator.
+func (a *Assembler) setDatasource(app *BaseApp) {
+	// if app.db == nil {
+	// 	queries := database.CreateSingletonQueriesContext(context.Background(), app.cfg.Db.GetDatabaseUrl())
+	// 	if err := queries.Pool().Ping(context.Background()); err != nil {
+	// 		panic(fmt.Errorf("failed to ping db: %w", err))
+	// 	}
+	// 	app.db = queries
+	// }
+	// if app.adapter == nil {
+	adapter := stores.NewStorageAdapter(app.db)
+	app.adapter = adapter
+	// }
 }
 
-// SetIntegrationServices implements Initiator.
-func (a *Assembler) SetIntegrationServices(app *BaseApp) {
+// setIntegrationServices implements Initiator.
+func (a *Assembler) setIntegrationServices(app *BaseApp) {
 	adapter := app.Adapter()
 	cfg := app.Config()
 	jobService := app.JobService()
 	tokenService := app.Token()
 	passwordService := app.Password()
 	jwtService := app.Jwt()
-
-	app.mailer = a.provider.Mailer()
 
 	app.mailService = services.NewOtpMailService(
 		cfg,
@@ -131,7 +138,7 @@ func (a *Assembler) SetIntegrationServices(app *BaseApp) {
 		passwordService,
 	)
 
-	client := a.provider.Payment()
+	client := app.paymentClient
 	app.payment = services.NewPaymentService(client, adapter)
 	app.teamInvitation = services.NewInvitationService(adapter, *cfg, jobService)
 	app.auth = services.NewAuthService(

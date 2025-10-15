@@ -303,15 +303,15 @@ type TestApi struct {
 	TestApi humatest.TestAPI
 	Api     apis.Api
 	App     *core.BaseApp
-	Cfg     conf.EnvConfig
+	Cfg     *conf.EnvConfig
 	Router  http.Handler
 }
 
 func SetupApi(t testing.TB, ctx context.Context, db database.Dbx) *TestApi {
 	t.Helper()
 	cfg := conf.ZeroEnvConfig()
-	app := core.NewTestApp(ctx, cfg, db)
-	appApi := apis.NewAppApi(app)
+	app := core.NewTestBaseApp(cfg, db)
+	appApi := apis.NewBaseAppApi(app)
 	router, api := test.NewHumaApi(t)
 	apis.AddRoutes(api, appApi)
 	testApi := &TestApi{

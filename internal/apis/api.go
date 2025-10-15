@@ -31,7 +31,7 @@ func (a *Api) App() core.App {
 	return a.app
 }
 
-func NewAppApi(app core.App) *Api {
+func NewBaseAppApi(app core.App) *Api {
 	return &Api{
 		app: app,
 	}

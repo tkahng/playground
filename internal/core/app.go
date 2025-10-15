@@ -27,8 +27,6 @@ type App interface {
 	Db() database.Dbx
 	Adapter() stores.StorageAdapterInterface
 
-	// lifecycle
-	Lifecycle() Lifecycle
 	Logger() *slog.Logger
 
 	// jobs -------------------------------------------------------------------------------------
@@ -45,6 +43,7 @@ type App interface {
 
 	Rbac() services.RBACService
 
+	PaymentClient() services.PaymentClient
 	Payment() services.PaymentService
 	Password() services.PasswordService
 
