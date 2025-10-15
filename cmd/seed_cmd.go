@@ -36,6 +36,8 @@ var seedRolesCmd = &cobra.Command{
 		conf := conf.GetConfig[conf.DBConfig]()
 
 		dbx := database.CreateSingletonQueriesContext(ctx, conf.GetDatabaseUrl())
+		defer dbx.Close()
+
 		rbacStore := stores.NewDbRBACStore(dbx)
 		err := rbacStore.EnsureRoleAndPermissions(ctx, "superuser", "superuser", "advanced", "pro", "basic")
 		if err != nil {

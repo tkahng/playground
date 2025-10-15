@@ -44,6 +44,7 @@ var stripeRolesCmd = &cobra.Command{
 		stripeconfig := conf.GetConfig[conf.StripeConfig]()
 
 		dbx := database.CreateSingletonQueriesContext(ctx, dbconf.GetDatabaseUrl())
+		defer dbx.Close()
 		adapter := stores.NewStorageAdapter(dbx)
 		client := services.NewPaymentClient(stripeconfig)
 		service := services.NewPaymentService(client, adapter)
