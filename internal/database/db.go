@@ -29,7 +29,7 @@ type Queries struct {
 	db *pgxpool.Pool
 }
 
-// Close implements Dbx.
+// Close calls close on the underlying pool.
 func (v *Queries) Close() {
 	v.db.Close()
 }
