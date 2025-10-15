@@ -41,8 +41,8 @@ type TeamMember struct {
 	LastSelectedAt   time.Time      `db:"last_selected_at" json:"last_selected_at"`
 	CreatedAt        time.Time      `db:"created_at" json:"created_at"`
 	UpdatedAt        time.Time      `db:"updated_at" json:"updated_at"`
-	Team             *Team          `db:"team" src:"team_id" dest:"id" table:"team" json:"team,omitempty"`
-	User             *ApiUser       `db:"user" src:"user_id" dest:"id" table:"users" json:"user,omitempty"`
+	Team             *Team          `db:"team" src:"team_id" dest:"id" table:"public.team" json:"team,omitempty"`
+	User             *ApiUser       `db:"user" src:"user_id" dest:"id" table:"public.users" json:"user,omitempty"`
 }
 
 type Team struct {
@@ -52,8 +52,8 @@ type Team struct {
 	Slug           string          `db:"slug" json:"slug"`
 	CreatedAt      time.Time       `db:"created_at" json:"created_at"`
 	UpdatedAt      time.Time       `db:"updated_at" json:"updated_at"`
-	Members        []*TeamMember   `db:"members" src:"id" dest:"team_id" table:"team_members" json:"members,omitempty"`
-	StripeCustomer *StripeCustomer `db:"stripe_customer" src:"id" dest:"team_id" table:"stripe_customers" json:"stripe_customer,omitempty" required:"false"`
+	Members        []*TeamMember   `db:"members" src:"id" dest:"team_id" table:"public.team_members" json:"members,omitempty"`
+	StripeCustomer *StripeCustomer `db:"stripe_customer" src:"id" dest:"team_id" table:"public.stripe_customers" json:"stripe_customer,omitempty" required:"false"`
 }
 type TeamWithMember struct {
 	Team
@@ -808,8 +808,8 @@ type TeamInvitation struct {
 	ExpiresAt       time.Time            `db:"expires_at" json:"expires_at"`
 	CreatedAt       time.Time            `db:"created_at" json:"created_at"`
 	UpdatedAt       time.Time            `db:"updated_at" json:"updated_at"`
-	Team            *Team                `db:"team" src:"team_id" dest:"id" table:"teams" json:"team,omitempty"`
-	InviterMember   *TeamMember          `db:"inviter_member" src:"inviter_member_id" dest:"id" table:"member" json:"inviter_member,omitempty"`
+	Team            *Team                `db:"team" src:"team_id" dest:"id" table:"public.teams" json:"team,omitempty"`
+	InviterMember   *TeamMember          `db:"inviter_member" src:"inviter_member_id" dest:"id" table:"public.member" json:"inviter_member,omitempty"`
 }
 
 func FromTeamInvitationModel(team *models.TeamInvitation) *TeamInvitation {

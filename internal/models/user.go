@@ -15,12 +15,12 @@ type User struct {
 	Image           *string         `db:"image" json:"image"`
 	CreatedAt       time.Time       `db:"created_at" json:"created_at"`
 	UpdatedAt       time.Time       `db:"updated_at" json:"updated_at"`
-	Accounts        []*UserAccount  `db:"accounts" src:"id" dest:"user_id" table:"user_accounts" json:"accounts,omitempty"`
-	Roles           []*Role         `db:"roles" src:"id" dest:"id" table:"roles" through:"user_roles" through_src:"user_id" through_dest:"role_id" json:"roles,omitempty"`
-	Permissions     []*Permission   `db:"permissions" src:"id" dest:"user_id" table:"permissions" through:"user_permissions" through_src:"user_id" through_dest:"permission_id"  json:"permissions,omitempty"`
-	AiUsages        []*AiUsage      `db:"ai_usages" src:"id" dest:"user_id" table:"ai_usages" json:"ai_usages,omitempty"`
-	StripeCustomer  *StripeCustomer `db:"stripe_customer" src:"id" dest:"user_id" table:"stripe_customers" json:"stripe_customer,omitempty"`
-	TeamMembers     []*TeamMember   `db:"team_members" src:"id" dest:"user_id" table:"team_members" json:"team_members,omitempty"`
+	Accounts        []*UserAccount  `db:"accounts" src:"id" dest:"user_id" table:"public.user_accounts" json:"accounts,omitempty"`
+	Roles           []*Role         `db:"roles" src:"id" dest:"id" table:"public.roles" through:"public.user_roles" through_src:"user_id" through_dest:"role_id" json:"roles,omitempty"`
+	Permissions     []*Permission   `db:"permissions" src:"id" dest:"user_id" table:"public.permissions" through:"public.user_permissions" through_src:"user_id" through_dest:"permission_id"  json:"permissions,omitempty"`
+	AiUsages        []*AiUsage      `db:"ai_usages" src:"id" dest:"user_id" table:"public.ai_usages" json:"ai_usages,omitempty"`
+	StripeCustomer  *StripeCustomer `db:"stripe_customer" src:"id" dest:"user_id" table:"public.stripe_customers" json:"stripe_customer,omitempty"`
+	TeamMembers     []*TeamMember   `db:"team_members" src:"id" dest:"user_id" table:"public.team_members" json:"team_members,omitempty"`
 }
 
 type userTable struct {

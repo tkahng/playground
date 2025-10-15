@@ -18,5 +18,5 @@ type UserReaction struct {
 	Metadata  []byte     `db:"metadata" json:"metadata"`
 	CreatedAt time.Time  `db:"created_at" json:"created_at"`
 	UpdatedAt time.Time  `db:"updated_at" json:"updated_at"`
-	User      *User      `db:"users" src:"user_id" dest:"id" table:"users" json:"user,omitempty"`
+	User      *User      `db:"users" src:"user_id" dest:"id" table:"public.users" json:"user,omitempty"`
 }

@@ -42,8 +42,8 @@ type StripePrice struct {
 	Metadata        map[string]string          `db:"metadata" json:"metadata"`
 	CreatedAt       time.Time                  `db:"created_at" json:"created_at"`
 	UpdatedAt       time.Time                  `db:"updated_at" json:"updated_at"`
-	Product         *StripeProduct             `db:"product" src:"product_id" dest:"id" table:"stripe_products" json:"product,omitempty"`
-	Subscriptions   []*StripeSubscription      `db:"subscriptions" src:"id" dest:"price_id" table:"stripe_subscriptions" json:"subscriptions,omitempty"`
+	Product         *StripeProduct             `db:"product" src:"product_id" dest:"id" table:"public.stripe_products" json:"product,omitempty"`
+	Subscriptions   []*StripeSubscription      `db:"subscriptions" src:"id" dest:"price_id" table:"public.stripe_subscriptions" json:"subscriptions,omitempty"`
 }
 
 func FromModelPrice(price *models.StripePrice) *StripePrice {

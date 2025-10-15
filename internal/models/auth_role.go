@@ -13,8 +13,8 @@ type AuthRole struct {
 	Description *string           `db:"description" json:"description,omitempty"`
 	CreatedAt   time.Time         `db:"created_at" json:"created_at"`
 	UpdatedAt   time.Time         `db:"updated_at" json:"updated_at"`
-	Permissions []*AuthPermission `db:"permissions" src:"id" dest:"id" table:"permissions" through:"role_permissions" through_src:"role_id" through_dest:"permission_id" json:"permissions,omitempty"`
-	Users       []*AuthUser       `db:"users" src:"id" dest:"id" table:"users" through:"user_roles" through_src:"role_id" through_dest:"user_id" json:"users,omitempty"`
+	Permissions []*AuthPermission `db:"permissions" src:"id" dest:"id" table:"public.permissions" through:"public.role_permissions" through_src:"role_id" through_dest:"permission_id" json:"permissions,omitempty"`
+	Users       []*AuthUser       `db:"users" src:"id" dest:"id" table:"public.users" through:"public.user_roles" through_src:"role_id" through_dest:"user_id" json:"users,omitempty"`
 }
 
 type AuthPermission struct {
@@ -24,9 +24,9 @@ type AuthPermission struct {
 	Description *string          `db:"description" json:"description,omitempty"`
 	CreatedAt   time.Time        `db:"created_at" json:"created_at"`
 	UpdatedAt   time.Time        `db:"updated_at" json:"updated_at"`
-	Roles       []*Role          `db:"roles" src:"id" dest:"id" table:"roles" through:"role_permissions" through_src:"permission_id" through_dest:"role_id" json:"roles,omitempty"`
-	Users       []*User          `db:"users" src:"id" dest:"id" table:"users" through:"user_permissions" through_src:"permission_id" through_dest:"user_id" json:"users,omitempty"`
-	Products    []*StripeProduct `db:"products" src:"id" dest:"id" table:"stripe_products" through:"product_permissions" through_src:"permission_id" through_dest:"product_id" json:"products,omitempty"`
+	Roles       []*Role          `db:"roles" src:"id" dest:"id" table:"public.roles" through:"public.role_permissions" through_src:"permission_id" through_dest:"role_id" json:"roles,omitempty"`
+	Users       []*User          `db:"users" src:"id" dest:"id" table:"public.users" through:"public.user_permissions" through_src:"permission_id" through_dest:"user_id" json:"users,omitempty"`
+	Products    []*StripeProduct `db:"products" src:"id" dest:"id" table:"public.stripe_products" through:"public.product_permissions" through_src:"permission_id" through_dest:"product_id" json:"products,omitempty"`
 }
 
 type AuthPermissionSource struct {

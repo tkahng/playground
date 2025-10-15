@@ -68,8 +68,8 @@ type TeamInvitation struct {
 	ExpiresAt       time.Time            `db:"expires_at" json:"expires_at"`
 	CreatedAt       time.Time            `db:"created_at" json:"created_at"`
 	UpdatedAt       time.Time            `db:"updated_at" json:"updated_at"`
-	Team            *Team                `db:"team" src:"team_id" dest:"id" table:"teams" json:"team,omitempty"`
-	InviterMember   *TeamMember          `db:"inviter_member" src:"inviter_member_id" dest:"id" table:"member" json:"inviter_member,omitempty"`
+	Team            *Team                `db:"team" src:"team_id" dest:"id" table:"public.teams" json:"team,omitempty"`
+	InviterMember   *TeamMember          `db:"inviter_member" src:"inviter_member_id" dest:"id" table:"public.member" json:"inviter_member,omitempty"`
 }
 
 type teamInvitationTable struct {
@@ -113,8 +113,8 @@ type TeamMember struct {
 	LastSelectedAt   time.Time      `db:"last_selected_at" json:"last_selected_at"`
 	CreatedAt        time.Time      `db:"created_at" json:"created_at"`
 	UpdatedAt        time.Time      `db:"updated_at" json:"updated_at"`
-	Team             *Team          `db:"team" src:"team_id" dest:"id" table:"team" json:"team,omitempty"`
-	User             *User          `db:"user" src:"user_id" dest:"id" table:"users" json:"user,omitempty"`
+	Team             *Team          `db:"team" src:"team_id" dest:"id" table:"public.team" json:"team,omitempty"`
+	User             *User          `db:"user" src:"user_id" dest:"id" table:"public.users" json:"user,omitempty"`
 }
 
 type teamMemberTable struct {

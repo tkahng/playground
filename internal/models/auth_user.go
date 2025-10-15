@@ -9,9 +9,9 @@
 //		Image           *string        `db:"image" json:"image"`
 //		CreatedAt       time.Time      `db:"created_at" json:"created_at"`
 //		UpdatedAt       time.Time      `db:"updated_at" json:"updated_at"`
-//		Accounts        []*UserAccount `db:"accounts" src:"id" dest:"user_id" table:"auth.user_accounts" json:"accounts,omitempty"`
-//		Roles           []*Role        `db:"roles" src:"id" dest:"id" table:"auth.roles" through_table:"auth.user_roles" through_src:"user_id" through_dest:"role_id" json:"roles,omitempty"`
-//		Permissions     []*Permission  `db:"permissions" src:"id" dest:"id" table:"auth.permissions" through_table:"auth.user_permissions" through_src:"user_id" through_dest:"permission_id" json:"permissions,omitempty"`
+//		Accounts        []*UserAccount `db:"accounts" src:"id" dest:"user_id" table:"public.auth.user_accounts" json:"accounts,omitempty"`
+//		Roles           []*Role        `db:"roles" src:"id" dest:"id" table:"public.auth.roles" through_table:"public.auth.user_roles" through_src:"user_id" through_dest:"role_id" json:"roles,omitempty"`
+//		Permissions     []*Permission  `db:"permissions" src:"id" dest:"id" table:"public.auth.permissions" through_table:"public.auth.user_permissions" through_src:"user_id" through_dest:"permission_id" json:"permissions,omitempty"`
 //	}
 //
 // _               struct{}       `db:"auth.users" json:"-"`
@@ -34,7 +34,7 @@ type AuthUser struct {
 	Image           *string           `db:"image" json:"image"`
 	CreatedAt       time.Time         `db:"created_at" json:"created_at"`
 	UpdatedAt       time.Time         `db:"updated_at" json:"updated_at"`
-	Accounts        []*UserAccount    `db:"accounts" src:"id" dest:"user_id" table:"auth.user_accounts" json:"accounts,omitempty"`
-	Roles           []*AuthRole       `db:"roles" src:"id" dest:"id" table:"auth.roles" through_table:"auth.user_roles" through_src:"user_id" through_dest:"role_id" json:"roles,omitempty"`
-	Permissions     []*AuthPermission `db:"permissions" src:"id" dest:"id" table:"auth.permissions" through_table:"auth.user_permissions" through_src:"user_id" through_dest:"permission_id" json:"permissions,omitempty"`
+	Accounts        []*UserAccount    `db:"accounts" src:"id" dest:"user_id" table:"public.auth.user_accounts" json:"accounts,omitempty"`
+	Roles           []*AuthRole       `db:"roles" src:"id" dest:"id" table:"public.auth.roles" through_table:"public.auth.user_roles" through_src:"user_id" through_dest:"role_id" json:"roles,omitempty"`
+	Permissions     []*AuthPermission `db:"permissions" src:"id" dest:"id" table:"public.auth.permissions" through_table:"public.auth.user_permissions" through_src:"user_id" through_dest:"permission_id" json:"permissions,omitempty"`
 }

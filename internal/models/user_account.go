@@ -48,7 +48,7 @@ type UserAccount struct {
 	TokenType         *string       `db:"token_type" json:"token_type"`
 	CreatedAt         time.Time     `db:"created_at" json:"created_at"`
 	UpdatedAt         time.Time     `db:"updated_at" json:"updated_at"`
-	User              *User         `db:"user" src:"user_id" dest:"id" table:"users" json:"user,omitempty"`
+	User              *User         `db:"user" src:"user_id" dest:"id" table:"public.users" json:"user,omitempty"`
 }
 
 type userAccountTable struct {

@@ -105,9 +105,9 @@ type Notification struct {
 	TeamID       *uuid.UUID     `db:"team_id" json:"team_id,omitempty"`
 	Metadata     map[string]any `db:"metadata" json:"metadata"`
 	Type         string         `db:"type" json:"type"`
-	User         *ApiUser       `db:"user" src:"user_id" dest:"id" table:"users" json:"user,omitempty"`
-	TeamMember   *TeamMember    `db:"team_member" src:"team_member_id" dest:"id" table:"team_members" json:"team_member,omitempty"`
-	Team         *Team          `db:"team" src:"team_id" dest:"id" table:"teams" json:"team,omitempty"`
+	User         *ApiUser       `db:"user" src:"user_id" dest:"id" table:"public.users" json:"user,omitempty"`
+	TeamMember   *TeamMember    `db:"team_member" src:"team_member_id" dest:"id" table:"public.team_members" json:"team_member,omitempty"`
+	Team         *Team          `db:"team" src:"team_id" dest:"id" table:"public.teams" json:"team,omitempty"`
 }
 
 func FromModelNotification(notification *models.Notification) *Notification {

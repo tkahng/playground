@@ -17,7 +17,7 @@ type Token struct {
 	Token      string     `db:"token" json:"token"`
 	CreatedAt  time.Time  `db:"created_at" json:"created_at"`
 	UpdatedAt  time.Time  `db:"updated_at" json:"updated_at"`
-	User       *User      `db:"users" src:"user_id" dest:"id" table:"users" json:"user,omitempty"`
+	User       *User      `db:"users" src:"user_id" dest:"id" table:"public.users" json:"user,omitempty"`
 }
 
 type TokenTypes string
@@ -46,7 +46,7 @@ type Medium struct {
 	Size             int64      `db:"size" json:"size"`
 	CreatedAt        time.Time  `db:"created_at" json:"created_at"`
 	UpdatedAt        time.Time  `db:"updated_at" json:"updated_at"`
-	User             *User      `db:"users" src:"user_id" dest:"id" table:"users" json:"user,omitempty"`
+	User             *User      `db:"users" src:"user_id" dest:"id" table:"public.users" json:"user,omitempty"`
 }
 
 type AiUsage struct {
@@ -58,5 +58,5 @@ type AiUsage struct {
 	TotalTokens      int64     `db:"total_tokens" json:"total_tokens"`
 	CreatedAt        time.Time `db:"created_at" json:"created_at"`
 	UpdatedAt        time.Time `db:"updated_at" json:"updated_at"`
-	User             *User     `db:"user" src:"user_id" dest:"id" table:"users" json:"user,omitempty"`
+	User             *User     `db:"user" src:"user_id" dest:"id" table:"public.users" json:"user,omitempty"`
 }

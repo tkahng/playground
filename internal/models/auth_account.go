@@ -23,5 +23,5 @@ type AuthAccount struct {
 	TokenType         *string       `db:"token_type" json:"token_type"`
 	CreatedAt         time.Time     `db:"created_at" json:"created_at"`
 	UpdatedAt         time.Time     `db:"updated_at" json:"updated_at"`
-	User              *User         `db:"user" src:"user_id" dest:"id" table:"auth.users" json:"user,omitempty"`
+	User              *User         `db:"user" src:"user_id" dest:"id" table:"public.auth.users" json:"user,omitempty"`
 }

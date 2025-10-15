@@ -52,7 +52,7 @@ func TestNewSQLBuilder_Fail(t *testing.T) {
 			fn: func() {
 				type a struct {
 					_    struct{} `db:"a"`
-					Name string   `db:"name" table:"b"`
+					Name string   `db:"name" table:"public.b"`
 				}
 				_ = repository.NewSQLBuilder[a]()
 			},
@@ -63,7 +63,7 @@ func TestNewSQLBuilder_Fail(t *testing.T) {
 			fn: func() {
 				type a struct {
 					_    struct{} `db:"a"`
-					Name string   `db:"name" table:"b" src:"id"`
+					Name string   `db:"name" table:"public.b" src:"id"`
 				}
 				_ = repository.NewSQLBuilder[a]()
 			},
@@ -74,7 +74,7 @@ func TestNewSQLBuilder_Fail(t *testing.T) {
 			fn: func() {
 				type a struct {
 					_    struct{} `db:"a"`
-					Name string   `db:"name" table:"b" src:"id" dest:"id" through:"ab"`
+					Name string   `db:"name" table:"public.b" src:"id" dest:"id" through:"public.ab"`
 				}
 				_ = repository.NewSQLBuilder[a]()
 			},
@@ -85,7 +85,7 @@ func TestNewSQLBuilder_Fail(t *testing.T) {
 			fn: func() {
 				type a struct {
 					_    struct{} `db:"a"`
-					Name string   `db:"name" table:"b" src:"id" dest:"id" through:"ab" through_dest:"id"`
+					Name string   `db:"name" table:"public.b" src:"id" dest:"id" through:"public.ab" through_dest:"id"`
 				}
 				_ = repository.NewSQLBuilder[a]()
 			},
