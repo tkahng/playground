@@ -98,6 +98,7 @@ var seedUserCmd = &cobra.Command{
 		ctx := cmd.Context()
 		cfg := conf.AppConfigGetter()
 		app := core.NewApp(cfg)
+		defer app.Close()
 		params := &services.AuthenticationInput{
 			Email:           email,
 			Password:        &password,
