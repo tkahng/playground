@@ -2,7 +2,9 @@ package test
 
 import (
 	"context"
-	"errors"
+	"fmt"
+	"log/slog"
+	"runtime/debug"
 	"sync"
 	"testing"
 
@@ -15,7 +17,6 @@ const (
 )
 
 var (
-	ErrEndTest  = errors.New("end test. rollback transaction")
 	ctxInstance context.Context
 	ctxOnce     sync.Once
 	dbx         *database.Queries
@@ -54,9 +55,8 @@ func WithSingletonTx(t *testing.T, fn func(ctx context.Context, db database.Dbx)
 	fn(ctx, database.NewTxQueries(tx))
 }
 
-// hello
-
-func WithTx(t *testing.T, cfg *conf.EnvConfig, fn func(ctx context.Context, db database.Dbx)) {
+// WithNewTx creates a new pool connection, runs the test within that transaciton, rolls back, and closes the pool.
+func WithNewTx(t *testing.T, cfg *conf.EnvConfig, fn func(ctx context.Context, db database.Dbx)) {
 	t.Helper()
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -73,11 +73,12 @@ func WithTx(t *testing.T, cfg *conf.EnvConfig, fn func(ctx context.Context, db d
 	// panic handle
 	defer func() {
 		if recErr := recover(); recErr != nil {
+			slog.ErrorContext(ctx, "recovered from panic in transaction.", slog.Any("error", fmt.Sprint(recErr)), slog.Any("stacktrace", string(debug.Stack())))
 			err := tx.Rollback(ctx)
 			if err != nil {
 				t.Error(err)
 			}
-			t.Fatal(recErr)
+			t.Fatal(fmt.Sprint(recErr))
 		}
 	}()
 	fn(ctx, database.NewTxQueries(tx))
