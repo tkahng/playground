@@ -244,7 +244,7 @@ func TestNewUserRepositoryResource_PaginationFunc(t *testing.T) {
 
 func TestUserRepository_create(t *testing.T) {
 
-	test.WithSingletonTx(t, func(ctx context.Context, db database.Dbx) {
+	test.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
 		userResource := NewUserRepositoryResource(db)
 		user, err := userResource.Create(ctx, &models.User{
 			Name:  types.Pointer("Test User"),
@@ -338,7 +338,7 @@ func TestUserRepository_create(t *testing.T) {
 
 func TestUserRepsository_find(t *testing.T) {
 
-	test.WithSingletonTx(t, func(ctx context.Context, db database.Dbx) {
+	test.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
 		usersInput := []*models.User{
 			{
 				Name:            types.Pointer("Alpha User"),

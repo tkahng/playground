@@ -15,7 +15,7 @@ import (
 
 func TestTokenServiceImpl_GenerateToken(t *testing.T) {
 	t.Run("Test success generate and validate token", func(t *testing.T) {
-		test.WithSingletonTx(t, func(ctx context.Context, db database.Dbx) {
+		test.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
 			cfg := conf.ZeroEnvConfig()
 			store := stores.NewPostgresTokenStore(db)
 			tokenService := token.NewTokenService(cfg, store)
@@ -37,7 +37,7 @@ func TestTokenServiceImpl_GenerateToken(t *testing.T) {
 		})
 	})
 	t.Run("Test success generate and validate token", func(t *testing.T) {
-		test.WithSingletonTx(t, func(ctx context.Context, db database.Dbx) {
+		test.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
 			cfg := conf.ZeroEnvConfig()
 			cfg.AuthOptions.VerificationToken.Duration = 1
 			store := stores.NewPostgresTokenStore(db)

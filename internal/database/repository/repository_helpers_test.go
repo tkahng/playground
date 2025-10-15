@@ -12,7 +12,7 @@ import (
 
 func TestInitRbac(t *testing.T) {
 	t.Parallel()
-	test.WithSingletonTx(t, func(ctx context.Context, dbx database.Dbx) {
+	test.WithNewTx(t, func(ctx context.Context, dbx database.Dbx) {
 		// init
 		repository.InitRbac(t, dbx)
 		// find all
@@ -68,7 +68,7 @@ func TestInitRbac(t *testing.T) {
 }
 
 func TestMustCreateUserAndAccount(t *testing.T) {
-	test.WithSingletonTx(t, func(ctx context.Context, db database.Dbx) {
+	test.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
 		tests := []struct {
 			name string // description of this test case
 			// Named input parameters for target function.
@@ -100,7 +100,7 @@ func TestMustCreateUserAndAccount(t *testing.T) {
 }
 
 func TestMustCreateUserAndAccount_Randomize(t *testing.T) {
-	test.WithSingletonTx(t, func(ctx context.Context, db database.Dbx) {
+	test.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
 		var count int64 = 100
 		for range count {
 			repository.MustCreateUserAndAccount(t, db)

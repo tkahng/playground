@@ -17,7 +17,7 @@ import (
 )
 
 func TestGetGreeting(t *testing.T) {
-	test.WithSingletonTx(t, func(ctx context.Context, db database.Dbx) {
+	test.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
 		api := testApi.TestApi
 
@@ -31,7 +31,7 @@ func TestGetGreeting(t *testing.T) {
 func TestTeamSlug(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	test.WithSingletonTx(t, func(ctx context.Context, db database.Dbx) {
+	test.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
 		api := testApi.TestApi
 		user := CreateUserWithOptions(t, testApi.App, UserWithVerified(types.Pointer(time.Now())))
@@ -52,7 +52,7 @@ func TestTeamSlug(t *testing.T) {
 func TestGetTeam_unauthorized(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	test.WithSingletonTx(t, func(ctx context.Context, db database.Dbx) {
+	test.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
 		api := testApi.TestApi
 		t.Run("Unauthorized access", func(t *testing.T) {
@@ -68,7 +68,7 @@ func TestGetTeam_unauthorized(t *testing.T) {
 func TestGetTeam_invalidID(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	test.WithSingletonTx(t, func(ctx context.Context, db database.Dbx) {
+	test.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
 		api := testApi.TestApi
 		user := CreateUserWithOptions(t, testApi.App, UserWithVerified(types.Pointer(time.Now())))
@@ -89,7 +89,7 @@ func TestGetTeam_invalidID(t *testing.T) {
 func TestGetTeam_success(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	test.WithSingletonTx(t, func(ctx context.Context, db database.Dbx) {
+	test.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
 		app := testApi.App
 		api := testApi.TestApi
@@ -118,7 +118,7 @@ func TestGetTeam_success(t *testing.T) {
 func TestCreateTeam_SuccessfulCreation(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	test.WithSingletonTx(t, func(ctx context.Context, db database.Dbx) {
+	test.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
 		app := testApi.App
 		api := testApi.TestApi
@@ -161,7 +161,7 @@ func TestCreateTeam_SuccessfulCreation(t *testing.T) {
 func TestCreateTeam_emailNotVerified(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	test.WithSingletonTx(t, func(ctx context.Context, db database.Dbx) {
+	test.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
 		app := testApi.App
 		api := testApi.TestApi
@@ -192,7 +192,7 @@ func TestCreateTeam_emailNotVerified(t *testing.T) {
 func TestUpdateTeam_failedNotOwner(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	test.WithSingletonTx(t, func(ctx context.Context, db database.Dbx) {
+	test.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
 		app := testApi.App
 		api := testApi.TestApi
@@ -242,7 +242,7 @@ func TestUpdateTeam_failedNotOwner(t *testing.T) {
 func TestUpdateTeam_successOwner(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	test.WithSingletonTx(t, func(ctx context.Context, db database.Dbx) {
+	test.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
 		app := testApi.App
 		api := testApi.TestApi
@@ -291,7 +291,7 @@ func TestUpdateTeam_successOwner(t *testing.T) {
 func TestDeleteTeam_successOwner(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	test.WithSingletonTx(t, func(ctx context.Context, db database.Dbx) {
+	test.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
 		app := testApi.App
 		api := testApi.TestApi
@@ -334,7 +334,7 @@ func TestDeleteTeam_successOwner(t *testing.T) {
 func TestDeleteTeam_failNonOwner(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	test.WithSingletonTx(t, func(ctx context.Context, db database.Dbx) {
+	test.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
 		app := testApi.App
 		api := testApi.TestApi
@@ -400,7 +400,7 @@ func TestDeleteTeam_failNonOwner(t *testing.T) {
 
 func TestGetActiveTeamMember_nomember(t *testing.T) {
 
-	test.WithSingletonTx(t, func(ctx context.Context, db database.Dbx) {
+	test.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
 		app := testApi.App
 		api := testApi.TestApi

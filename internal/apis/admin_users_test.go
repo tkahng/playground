@@ -24,7 +24,7 @@ import (
 func TestApi_AdminUsersList(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	test.WithSingletonTx(t, func(ctx context.Context, db database.Dbx) {
+	test.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
 		adminUser := CreateUserWithOptions(t, testApi.App, UserWithEmail("admin@k2dv.io"), UserWithPermission(shared.PermissionNameAdmin))
 		header := createTokenHeader(t, testApi.App, adminUser.User.Email)
@@ -107,7 +107,7 @@ func TestApi_AdminUsersList(t *testing.T) {
 func TestApi_AdminUsersCreate(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	test.WithSingletonTx(t, func(ctx context.Context, db database.Dbx) {
+	test.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
 		adminUser := CreateUserWithOptions(t, testApi.App, UserWithEmail("admin@k2dv.io"), UserWithPermission(shared.PermissionNameAdmin))
 		header := createTokenHeader(t, testApi.App, adminUser.User.Email)
@@ -202,7 +202,7 @@ func TestApi_AdminUsersCreate(t *testing.T) {
 func TestApi_AdminUsersDelete(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	test.WithSingletonTx(t, func(ctx context.Context, db database.Dbx) {
+	test.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
 		adminUser := CreateUserWithOptions(t, testApi.App, UserWithEmail("admin@k2dv.io"), UserWithPermission(shared.PermissionNameAdmin))
 		header := createTokenHeader(t, testApi.App, adminUser.User.Email)
@@ -270,7 +270,7 @@ func TestApi_AdminUsersDelete(t *testing.T) {
 func TestApi_AdminUsersUpdate(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	test.WithSingletonTx(t, func(ctx context.Context, db database.Dbx) {
+	test.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
 		adminUser := CreateUserWithOptions(t, testApi.App, UserWithEmail("admin@k2dv.io"), UserWithPermission(shared.PermissionNameAdmin))
 		header := createTokenHeader(t, testApi.App, adminUser.User.Email)
@@ -351,7 +351,7 @@ func TestApi_AdminUsersUpdate(t *testing.T) {
 func TestApi_AdminUsersUpdatePassword(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	test.WithSingletonTx(t, func(ctx context.Context, db database.Dbx) {
+	test.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
 		adminUser := CreateUserWithOptions(t, testApi.App, UserWithEmail("admin@k2dv.io"), UserWithPermission(shared.PermissionNameAdmin))
 		header := createTokenHeader(t, testApi.App, adminUser.User.Email)
@@ -424,7 +424,7 @@ func TestApi_AdminUsersUpdatePassword(t *testing.T) {
 func TestApi_AdminUsersGet(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	test.WithSingletonTx(t, func(ctx context.Context, db database.Dbx) {
+	test.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
 		adminUser := CreateUserWithOptions(t, testApi.App, UserWithEmail("admin@k2dv.io"), UserWithPermission(shared.PermissionNameAdmin))
 		header := createTokenHeader(t, testApi.App, adminUser.User.Email)

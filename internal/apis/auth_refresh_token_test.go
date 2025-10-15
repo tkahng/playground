@@ -17,7 +17,7 @@ import (
 func TestApi_RefreshToken(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	test.WithSingletonTx(t, func(ctx context.Context, db database.Dbx) {
+	test.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
 
 		userInfo := CreateUserWithOptions(t, testApi.App, UserWithPassword("Password123!"))

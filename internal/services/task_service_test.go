@@ -16,7 +16,7 @@ import (
 
 func TestDefineTaskOrderNumberByStatus(t *testing.T) {
 	test.SkipIfShort(t)
-	test.WithSingletonTx(t, func(ctx context.Context, dbxx database.Dbx) {
+	test.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 
 		taskService := services.NewTaskService(adapter, services.NewJobService(jobs.NewDbJobManager(dbxx)))
