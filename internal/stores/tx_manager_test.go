@@ -14,7 +14,7 @@ import (
 
 func TestTxManagerImpl_RunInTxContext(t *testing.T) {
 	t.Run("test transaction manager succeed in creating user and account", func(t *testing.T) {
-		test.WithSingletonTx(t, func(ctx context.Context, db database.Dbx) {
+		test.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
 			store := stores.NewTxManager(db)
 			userStore := stores.NewDbUserStore(db)
 			accountStore := stores.NewDbAccountStore(db)
@@ -54,7 +54,7 @@ func TestTxManagerImpl_RunInTxContext(t *testing.T) {
 		})
 	})
 	t.Run("test transaction manager succeed in creating user and account but error at end", func(t *testing.T) {
-		test.WithSingletonTx(t, func(ctx context.Context, db database.Dbx) {
+		test.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
 			store := stores.NewTxManager(db)
 			userStore := stores.NewDbUserStore(db)
 			accountStore := stores.NewDbAccountStore(db)
@@ -94,7 +94,7 @@ func TestTxManagerImpl_RunInTxContext(t *testing.T) {
 		})
 	})
 	t.Run("test transaction manager succeed in creating user but error before account created", func(t *testing.T) {
-		test.WithSingletonTx(t, func(ctx context.Context, db database.Dbx) {
+		test.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
 			store := stores.NewTxManager(db)
 			userStore := stores.NewDbUserStore(db)
 			accountStore := stores.NewDbAccountStore(db)

@@ -64,7 +64,7 @@ func CreateTask(adapter stores.StorageAdapterInterface, ctx context.Context, tas
 func TestSearchUserTasks(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	test.WithSingletonTx(t, func(ctx context.Context, db database.Dbx) {
+	test.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewStorageAdapter(db)
 		user := CreateUser(adapter, ctx, "tkahng@gmail.com")
 		team := CreateTeam(adapter, ctx, "TestTeam")
@@ -152,7 +152,7 @@ func TestSearchUserTasks(t *testing.T) {
 func TestGetUserTaskStats(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	test.WithSingletonTx(t, func(ctx context.Context, dbxx database.Dbx) {
+	test.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 		taskStore := stores.NewDbTaskStore(dbxx)
 		user, err := adapter.User().CreateUser(ctx, &models.User{
@@ -221,7 +221,7 @@ func TestGetUserTaskStats(t *testing.T) {
 func TestLoadTaskProjectsTasks(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	test.WithSingletonTx(t, func(ctx context.Context, dbxx database.Dbx) {
+	test.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 
 		user, err := adapter.User().CreateUser(ctx, &models.User{
@@ -315,7 +315,7 @@ func TestLoadTaskProjectsTasks(t *testing.T) {
 func TestFindTaskByID(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	test.WithSingletonTx(t, func(ctx context.Context, dbxx database.Dbx) {
+	test.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 		teamstore := adapter.TeamMember()
 		taskStore := adapter.Task()
@@ -412,7 +412,7 @@ func TestFindTaskByID(t *testing.T) {
 func TestFindLastTaskOrder(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	test.WithSingletonTx(t, func(ctx context.Context, dbxx database.Dbx) {
+	test.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 
 		user, err := adapter.User().CreateUser(
@@ -506,7 +506,7 @@ func TestFindLastTaskOrder(t *testing.T) {
 func TestDeleteTask(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	test.WithSingletonTx(t, func(ctx context.Context, dbxx database.Dbx) {
+	test.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 		user, err := adapter.User().CreateUser(ctx, &models.User{
 			Email: "tkahng@gmail.com",
@@ -582,7 +582,7 @@ func TestDeleteTask(t *testing.T) {
 func TestFindTaskProjectByID(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	test.WithSingletonTx(t, func(ctx context.Context, dbxx database.Dbx) {
+	test.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 		userStore := adapter.User()
 		teamstore := adapter.TeamMember()
@@ -666,7 +666,7 @@ func TestFindTaskProjectByID(t *testing.T) {
 func TestDeleteTaskProject(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	test.WithSingletonTx(t, func(ctx context.Context, dbxx database.Dbx) {
+	test.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 		userStore := adapter.User()
 		teamstore := adapter.TeamMember()
@@ -733,7 +733,7 @@ func TestDeleteTaskProject(t *testing.T) {
 func TestListTasks(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	test.WithSingletonTx(t, func(ctx context.Context, dbxx database.Dbx) {
+	test.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 		userStore := adapter.User()
 		teamstore := adapter.TeamMember()
@@ -844,7 +844,7 @@ func TestListTasks(t *testing.T) {
 func TestCountTasks(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	test.WithSingletonTx(t, func(ctx context.Context, dbxx database.Dbx) {
+	test.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 		userStore := adapter.User()
 		teamstore := adapter.TeamMember()
@@ -933,7 +933,7 @@ func TestCountTasks(t *testing.T) {
 func TestListTaskProjects(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	test.WithSingletonTx(t, func(ctx context.Context, dbxx database.Dbx) {
+	test.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 		userStore := adapter.User()
 		teamstore := adapter.TeamMember()
@@ -1032,7 +1032,7 @@ func TestListTaskProjects(t *testing.T) {
 func TestCountTaskProjects(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	test.WithSingletonTx(t, func(ctx context.Context, dbxx database.Dbx) {
+	test.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 		userStore := adapter.User()
 		teamstore := adapter.TeamMember()
@@ -1109,7 +1109,7 @@ func TestCountTaskProjects(t *testing.T) {
 func TestCreateTaskProject(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	test.WithSingletonTx(t, func(ctx context.Context, dbxx database.Dbx) {
+	test.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 		userStore := adapter.User()
 		teamstore := adapter.TeamMember()
@@ -1198,7 +1198,7 @@ func TestCreateTaskProject(t *testing.T) {
 func TestCreateTaskProjectWithTasks(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	test.WithSingletonTx(t, func(ctx context.Context, dbxx database.Dbx) {
+	test.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 		userStore := adapter.User()
 		teamstore := adapter.TeamMember()
@@ -1302,7 +1302,7 @@ func TestCreateTaskProjectWithTasks(t *testing.T) {
 func TestCreateTaskFromInput(t *testing.T) {
 	test.Parallel(t)
 	test.SkipIfShort(t)
-	test.WithSingletonTx(t, func(ctx context.Context, dbxx database.Dbx) {
+	test.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 		userStore := adapter.User()
 		teamstore := adapter.TeamMember()
