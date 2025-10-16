@@ -20,8 +20,8 @@ type Role struct {
 	Description *string       `db:"description" json:"description,omitempty"`
 	CreatedAt   time.Time     `db:"created_at" json:"created_at"`
 	UpdatedAt   time.Time     `db:"updated_at" json:"updated_at"`
-	Permissions []*Permission `db:"permissions" src:"id" dest:"role_id" table:"public.permissions" through:"public.role_permissions,permission_id,id" json:"permissions,omitempty"`
-	Users       []*ApiUser    `db:"users" src:"id" dest:"role_id" table:"public.users" through:"public.user_roles,user_id,id" json:"users,omitempty"`
+	Permissions []*Permission `db:"permissions" src:"id" dest:"role_id" table:"auth.permissions" through:"auth.role_permissions,permission_id,id" json:"permissions,omitempty"`
+	Users       []*ApiUser    `db:"users" src:"id" dest:"role_id" table:"auth.users" through:"auth.user_roles,user_id,id" json:"users,omitempty"`
 }
 
 func FromModelRole(role *models.Role) *Role {

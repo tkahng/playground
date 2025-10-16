@@ -278,8 +278,8 @@ const (
 	LoadTaskProjectsTasksQuery = `
 SELECT tp.id as key,
         json_agg(to_json(t.*)) AS "data"
-FROM public.task_projects tp
-        LEFT JOIN public.tasks t ON tp.id = t.project_id
+FROM task.task_projects tp
+        LEFT JOIN task.tasks t ON tp.id = t.project_id
 WHERE tp.id = ANY ($1::uuid [])
 GROUP BY tp.id;`
 )

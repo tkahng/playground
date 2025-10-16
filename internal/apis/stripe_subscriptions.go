@@ -68,8 +68,8 @@ type StripeCustomer struct {
 	PaymentMethod  *map[string]string    `db:"payment_method" json:"payment_method"`
 	CreatedAt      time.Time             `db:"created_at" json:"created_at"`
 	UpdatedAt      time.Time             `db:"updated_at" json:"updated_at"`
-	Team           *Team                 `db:"team" src:"team_id" dest:"id" table:"public.teams" json:"team,omitempty"`
-	User           *ApiUser              `db:"user" src:"user_id" dest:"id" table:"public.users" json:"user,omitempty"`
+	Team           *Team                 `db:"team" src:"team_id" dest:"id" table:"team.teams" json:"team,omitempty"`
+	User           *ApiUser              `db:"user" src:"user_id" dest:"id" table:"auth.users" json:"user,omitempty"`
 	Subscriptions  []*StripeSubscription `db:"subscriptions" src:"id" dest:"stripe_customer_id" table:"public.stripe_subscriptions" json:"subscriptions,omitempty"`
 }
 

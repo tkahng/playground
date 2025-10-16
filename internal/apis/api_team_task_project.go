@@ -32,9 +32,9 @@ type TaskProject struct {
 	Rank              float64                  `db:"rank" json:"rank"`
 	CreatedAt         time.Time                `db:"created_at" json:"created_at"`
 	UpdatedAt         time.Time                `db:"updated_at" json:"updated_at"`
-	CreatedByMember   *TeamMember              `db:"created_by_member" src:"created_by_member_id" dest:"id" table:"public.team_members" json:"created_by_member,omitempty"`
-	Team              *Team                    `db:"team" src:"team_id" dest:"id" table:"public.teams" json:"team,omitempty"`
-	Tasks             []*Task                  `db:"tasks" src:"id" dest:"project_id" table:"public.tasks" json:"tasks,omitempty"`
+	CreatedByMember   *TeamMember              `db:"created_by_member" src:"created_by_member_id" dest:"id" table:"team.team_members" json:"created_by_member,omitempty"`
+	Team              *Team                    `db:"team" src:"team_id" dest:"id" table:"team.teams" json:"team,omitempty"`
+	Tasks             []*Task                  `db:"tasks" src:"id" dest:"project_id" table:"task.tasks" json:"tasks,omitempty"`
 }
 
 func FromModelProject(task *models.TaskProject) *TaskProject {

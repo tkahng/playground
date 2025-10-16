@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/tkahng/playground/internal/tools/store"
 	"github.com/tkahng/playground/internal/tools/utils"
 )
 
@@ -300,8 +299,6 @@ func (b *SQLBuilder[Model]) Generator() func(reflect.StructField, *[]any) (strin
 // registry holds all of the SQLBuilderInterface created during buildtime.
 var registry = map[string]SQLBuilderInterface{}
 
-var SqlBuilderStore = store.New(map[string]SQLBuilderInterface{})
-
 type SQLBuilderOptions[Model any] func(*SQLBuilder[Model]) error
 
 func UuidV7Generator[Model any](builder *SQLBuilder[Model]) error {
@@ -473,7 +470,6 @@ func NewSQLBuilder[Model any](opts ...SQLBuilderOptions[Model]) *SQLBuilder[Mode
 			panic(fmt.Sprintf("Error applying SQLBuilder option: %v", err))
 		}
 	}
-	SqlBuilderStore.Set(schemaName+"."+tableName, result)
 	registry[schemaName+"."+tableName] = result
 
 	return result
@@ -927,14 +923,19 @@ func (b *SQLBuilder[Model]) Sort(filter Sortable) *map[string]string {
 		return nil
 	}
 	sortBy, sortOrder := filter.Sort()
-	if sortBy != "" && slices.Contains(b.FieldNames(), sortBy) {
+	sortBy = strings.TrimSpace(sortBy)
+	sortOrder = strings.TrimSpace(sortOrder)
+	if sortBy == "" || sortOrder == "" {
+		return nil
+	}
+	if slices.Contains(b.FieldNames(), sortBy) {
 		return &map[string]string{
 			sortBy: sortOrder,
 		}
-	} else {
-		slog.Info("sort by field not found in repository columns", "sortBy", sortBy, "sortOrder", sortOrder, "columns", b.FieldNames())
-		return nil // Return nil if the sortBy field is not found in the repository columns
 	}
+	slog.Info("sort by field not found in repository columns", "sortBy", sortBy, "sortOrder", sortOrder, "columns", b.FieldNames())
+	return nil // Return nil if the sortBy field is not found in the repository columns
+
 }
 
 // OrderError is a wrapper around Order that recovers from panics

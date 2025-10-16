@@ -240,30 +240,30 @@ func (p *DbRbacStore) filter(q squirrel.SelectBuilder, filter *RoleListFilter) s
 	if filter.Q != "" {
 		sq = sq.Where(
 			squirrel.Or{
-				squirrel.ILike{"name": "%" + filter.Q + "%"},
-				squirrel.ILike{"description": "%" + filter.Q + "%"},
+				squirrel.ILike{"auth.roles.name": "%" + filter.Q + "%"},
+				squirrel.ILike{"auth.roles.description": "%" + filter.Q + "%"},
 			})
 	}
 	if len(filter.Names) > 0 {
 		sq = sq.Where(
 			squirrel.Eq{
-				"name": filter.Names,
+				"auth.roles.name": filter.Names,
 			},
 		)
 	}
 	if len(filter.Ids) > 0 {
 		sq = sq.Where(
 			squirrel.Eq{
-				"id": filter.Ids,
+				"auth.roles.id": filter.Ids,
 			},
 		)
 	}
 	if filter.UserId != uuid.Nil {
 		if filter.Reverse == "user" {
-			sq = sq.LeftJoin("user_roles"+" on "+"roles.id"+" = "+"user_roles"+"."+"role_id"+" and "+"user_roles"+"."+"user_id"+" = ?", filter.UserId)
-			sq = sq.Where("user_roles.role_id is null")
+			sq = sq.LeftJoin("auth.user_roles"+" on "+"auth.roles.id"+" = "+"auth.user_roles"+"."+"role_id"+" and "+"auth.user_roles"+"."+"user_id"+" = ?", filter.UserId)
+			sq = sq.Where("auth.user_roles.role_id is null")
 		} else {
-			sq = sq.Join("user_roles on roles.id = user_roles.role_id").Where(squirrel.Eq{"user_roles.user_id": filter.UserId})
+			sq = sq.Join("auth.user_roles on auth.roles.id = auth.user_roles.role_id").Where(squirrel.Eq{"auth.user_roles.user_id": filter.UserId})
 		}
 	}
 	return sq

@@ -42,7 +42,7 @@ type TeamMember struct {
 	CreatedAt        time.Time      `db:"created_at" json:"created_at"`
 	UpdatedAt        time.Time      `db:"updated_at" json:"updated_at"`
 	Team             *Team          `db:"team" src:"team_id" dest:"id" table:"public.team" json:"team,omitempty"`
-	User             *ApiUser       `db:"user" src:"user_id" dest:"id" table:"public.users" json:"user,omitempty"`
+	User             *ApiUser       `db:"user" src:"user_id" dest:"id" table:"auth.users" json:"user,omitempty"`
 }
 
 type Team struct {

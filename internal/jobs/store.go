@@ -43,7 +43,7 @@ type DbJobStore struct {
 }
 
 const query string = `
-		INSERT INTO jobs (id, kind, unique_key, payload, status, run_after, attempts, max_attempts, created_at, updated_at)
+		INSERT INTO app.jobs (id, kind, unique_key, payload, status, run_after, attempts, max_attempts, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, 'pending', $5, 0, $6, clock_timestamp(), clock_timestamp())
 		ON CONFLICT (unique_key)
 		WHERE status IN ('pending', 'processing')
@@ -178,9 +178,9 @@ func NewDbJobStore(db Db) *DbJobStore {
 
 func (s *DbJobStore) ClaimPendingJobs(ctx context.Context, limit int) ([]*models.JobRow, error) {
 	rows, err := s.db.Query(ctx, `
-		UPDATE jobs SET status='processing', updated_at=clock_timestamp(), attempts=attempts+1
+		UPDATE app.jobs SET status='processing', updated_at=clock_timestamp(), attempts=attempts+1
 		WHERE id IN (
-			SELECT id FROM jobs
+			SELECT id FROM app.jobs
 			WHERE status='pending' AND run_after <= clock_timestamp() AND attempts < max_attempts
 			ORDER BY run_after
 			LIMIT $1
@@ -209,14 +209,14 @@ func (s *DbJobStore) ClaimPendingJobs(ctx context.Context, limit int) ([]*models
 
 func (s *DbJobStore) MarkDone(ctx context.Context, id uuid.UUID) error {
 	_, err := s.db.Exec(ctx, `
-		UPDATE jobs SET status='done', updated_at=clock_timestamp() WHERE id=$1
+		UPDATE app.jobs SET status='done', updated_at=clock_timestamp() WHERE id=$1
 	`, id)
 	return err
 }
 
 func (s *DbJobStore) MarkFailed(ctx context.Context, id uuid.UUID, reason string) error {
 	_, err := s.db.Exec(ctx, `
-		UPDATE jobs SET status='failed', last_error=$2, updated_at=clock_timestamp()
+		UPDATE app.jobs SET status='failed', last_error=$2, updated_at=clock_timestamp()
 		WHERE id=$1 AND attempts >= max_attempts
 	`, id, reason)
 	return err
@@ -224,7 +224,7 @@ func (s *DbJobStore) MarkFailed(ctx context.Context, id uuid.UUID, reason string
 
 func (s *DbJobStore) RescheduleJob(ctx context.Context, id uuid.UUID, delay time.Duration) error {
 	_, err := s.db.Exec(ctx, `
-		UPDATE jobs SET run_after = clock_timestamp() + $2, updated_at = clock_timestamp(), status = 'pending'
+		UPDATE app.jobs SET run_after = clock_timestamp() + $2, updated_at = clock_timestamp(), status = 'pending'
 		WHERE id = $1
 	`, id, delay)
 	return err

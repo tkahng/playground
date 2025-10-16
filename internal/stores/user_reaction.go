@@ -67,7 +67,7 @@ func (d *DbUserReactionStore) CountByCountry(ctx context.Context, filter *UserRe
 	limit, _ := filter.LimitOffset()
 	const query = `
 	SELECT country, COUNT(*) AS total_reactions
-	FROM public.user_reactions
+	FROM sayhello.user_reactions
 	WHERE country IS NOT NULL
 	GROUP BY country
 	ORDER BY total_reactions DESC

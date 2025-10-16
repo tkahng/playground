@@ -71,8 +71,8 @@ func (p *DbRbacStore) LoadProductPermissions(ctx context.Context, productIds ...
 					),
 					'[]'
 			) AS data
-	FROM public.product_permissions rp
-			LEFT JOIN public.permissions p ON p.id = rp.permission_id
+	FROM billing.product_permissions rp
+			LEFT JOIN auth.permissions p ON p.id = rp.permission_id
 			WHERE rp.product_id = ANY (
 					$1::text []
 			)
