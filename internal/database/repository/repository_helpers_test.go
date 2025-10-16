@@ -9,7 +9,11 @@ import (
 	"github.com/tkahng/playground/internal/models"
 )
 
-func TestInitRbac(t *testing.T) {
+var (
+	roleNames, permissionNames = []string{"admin", "advanced", "pro", "basic"}, []string{"admin", "advanced", "pro", "basic"}
+)
+
+func TestAuth_UserAccountRbac(t *testing.T) {
 	t.Parallel()
 	database.WithNewTx(t, func(ctx context.Context, dbx database.Dbx) {
 		// init

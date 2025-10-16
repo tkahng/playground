@@ -10,7 +10,48 @@ import (
 	"github.com/tkahng/playground/internal/tools/types"
 )
 
+type queryOptions struct {
+	lock  bool
+	where *map[string]any
+	order *map[string]string
+	limit *int
+	skip  *int
+}
+
+type QueryOptionFunc func(options *queryOptions)
+
+func GetWithWhere(where *map[string]any) QueryOptionFunc {
+	return func(options *queryOptions) {
+		options.where = where
+	}
+}
+
+func GetWithOrder(order *map[string]string) QueryOptionFunc {
+	return func(options *queryOptions) {
+		options.order = order
+	}
+}
+
+func GetWithLimit(limit *int) QueryOptionFunc {
+	return func(options *queryOptions) {
+		options.limit = limit
+	}
+}
+
+func GetWithSkip(skip *int) QueryOptionFunc {
+	return func(options *queryOptions) {
+		options.skip = skip
+	}
+}
+
+func GetWithLock() QueryOptionFunc {
+	return func(options *queryOptions) {
+		options.lock = true
+	}
+}
+
 type Repository[Model any] interface {
+	GetWithOptions(ctx context.Context, dbx database.Dbx, options ...QueryOptionFunc) ([]*Model, error)
 	Get(ctx context.Context, dbx database.Dbx, where *map[string]any, order *map[string]string, limit *int, skip *int) ([]*Model, error)
 	GetOne(ctx context.Context, dbx database.Dbx, where *map[string]any) (*Model, error)
 	Put(ctx context.Context, dbx database.Dbx, models []Model) ([]*Model, error)
@@ -18,21 +59,16 @@ type Repository[Model any] interface {
 	PostOne(ctx context.Context, dbx database.Dbx, model *Model) (*Model, error)
 	Post(ctx context.Context, dbx database.Dbx, models []Model) ([]*Model, error)
 	PostExec(ctx context.Context, dbx database.Dbx, models []Model) (int64, error)
-
-	DeleteReturn(ctx context.Context, dbx database.Dbx, where *map[string]any) ([]*Model, error)
 	Delete(ctx context.Context, dbx database.Dbx, where *map[string]any) (int64, error)
 	Count(ctx context.Context, dbx database.Dbx, where *map[string]any) (int64, error)
 	Builder() SQLBuilderInterface
 }
 
-// PostgresRepository provides CRUD operations for Postgres
 type PostgresRepository[Model any] struct {
 	builder *SQLBuilder[Model]
 }
 
 var _ Repository[models.User] = (*PostgresRepository[models.User])(nil)
-
-// NewPostgresRepository initializes a new PostgresRepository
 
 func NewPostgresRepository[Model any](builder *SQLBuilder[Model]) *PostgresRepository[Model] {
 	return &PostgresRepository[Model]{
@@ -82,6 +118,13 @@ func (r *PostgresRepository[Model]) Get(ctx context.Context, db database.Dbx, wh
 
 	return items, nil
 }
+func (r *PostgresRepository[Model]) GetWithOptions(ctx context.Context, db database.Dbx, options ...QueryOptionFunc) ([]*Model, error) {
+	var opts queryOptions
+	for _, option := range options {
+		option(&opts)
+	}
+	return r.Get(ctx, db, opts.where, opts.order, opts.limit, opts.skip)
+}
 
 // Put updates existing records in the database
 func (r *PostgresRepository[Model]) Put(ctx context.Context, dbx database.Dbx, models []Model) ([]*Model, error) {
@@ -119,33 +162,6 @@ func (r *PostgresRepository[Model]) Put(ctx context.Context, dbx database.Dbx, m
 	}
 
 	return result, nil
-}
-
-func (r *PostgresRepository[Model]) PutOne(ctx context.Context, dbx database.Dbx, model *Model) (*Model, error) {
-	if model == nil {
-		return nil, nil
-	}
-	result, err := r.Put(ctx, dbx, []Model{*model})
-	if err != nil {
-		return nil, err
-	}
-	if len(result) == 0 {
-		return nil, nil
-	}
-	re := result[0]
-	return re, nil
-}
-
-func (r *PostgresRepository[Model]) GetOne(ctx context.Context, dbx database.Dbx, where *map[string]any) (*Model, error) {
-	result, err := r.Get(ctx, dbx, where, nil, types.Pointer(1), nil)
-	if err != nil {
-		return nil, err
-	}
-	if len(result) == 0 {
-		return nil, nil
-	}
-	re := result[0]
-	return re, nil
 }
 
 // Post inserts new records into the database
@@ -202,46 +218,6 @@ func (r *PostgresRepository[Model]) Post(ctx context.Context, dbx database.Dbx, 
 	return result, nil
 }
 
-// Patch updates existing records in the database
-func (r *PostgresRepository[Model]) PostOne(ctx context.Context, dbx database.Dbx, models *Model) (*Model, error) {
-	data, err := r.Post(ctx, dbx, []Model{*models})
-	if err != nil {
-		return nil, err
-	}
-	if len(data) == 0 {
-		return nil, nil
-	}
-	return data[0], nil
-}
-
-// DeleteReturn removes records from the database based on the provided filters
-func (r *PostgresRepository[Model]) DeleteReturn(ctx context.Context, dbx database.Dbx, where *map[string]any) ([]*Model, error) {
-	args := []any{}
-	//goland:noinspection Annotator
-	query := fmt.Sprintf("DELETE FROM %s", r.builder.TableName())
-	if expr, err := r.builder.WhereError(ctx, where, &args); err != nil {
-		return nil, err
-	} else if expr != "" {
-		query += fmt.Sprintf(" WHERE %s", expr)
-	}
-	query += fmt.Sprintf(" RETURNING %s", r.builder.ColumnNamesJoined())
-
-	slog.Debug("query and args", slog.String("query", query), slog.Any("args", args))
-	// Execute the query and scan the results
-	result, err := database.QueryAll[*Model](
-		ctx,
-		dbx,
-		query,
-		args...,
-	)
-	if err != nil {
-		slog.ErrorContext(ctx, "Error executing Delete query", slog.String("query", query), slog.Any("args", args), slog.Any("error", err))
-		return nil, err
-	}
-
-	return result, nil
-}
-
 // DeleteReturn removes records from the database based on the provided filters
 func (r *PostgresRepository[Model]) Delete(ctx context.Context, dbx database.Dbx, where *map[string]any) (int64, error) {
 	args := []any{}
@@ -290,4 +266,44 @@ func (r *PostgresRepository[Model]) Count(ctx context.Context, dbx database.Dbx,
 	}
 
 	return count, nil
+}
+
+/*
+
+Extended Methods
+
+these methods are for convienience
+
+*/
+
+// GetOne returns the first record that matches the provided filters
+func (r *PostgresRepository[Model]) GetOne(ctx context.Context, dbx database.Dbx, where *map[string]any) (*Model, error) {
+	result, err := r.Get(ctx, dbx, where, nil, types.Pointer(1), nil)
+	return handleErrAndGetFirstItem(result, err)
+}
+
+// PostOne creates a record in the database
+func (r *PostgresRepository[Model]) PostOne(ctx context.Context, dbx database.Dbx, models *Model) (*Model, error) {
+	data, err := r.Post(ctx, dbx, []Model{*models})
+	return handleErrAndGetFirstItem(data, err)
+}
+
+// Patch updates an existing record in the database
+func (r *PostgresRepository[Model]) PutOne(ctx context.Context, dbx database.Dbx, model *Model) (*Model, error) {
+	if model == nil {
+		return nil, nil
+	}
+	result, err := r.Put(ctx, dbx, []Model{*model})
+	return handleErrAndGetFirstItem(result, err)
+}
+
+func handleErrAndGetFirstItem[Model any](result []*Model, err error) (*Model, error) {
+	if err != nil {
+		return nil, err
+	}
+	if len(result) == 0 {
+		return nil, nil
+	}
+	re := result[0]
+	return re, nil
 }

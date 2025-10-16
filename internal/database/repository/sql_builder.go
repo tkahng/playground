@@ -216,12 +216,17 @@ func (b *SQLBuilder[Model]) GetFieldByName(name string) *Field {
 // name is the field name of the model, without its schema, table, or quotes.
 // panics if the field is not found
 func (b *SQLBuilder[Model]) MustGetFieldByName(name string) *Field {
-	for _, field := range b.fields {
-		if field.Name == name {
-			return field
+	var field *Field
+	for _, f := range b.fields {
+		if f.Name == name {
+			field = f
+			break
 		}
 	}
-	panic(fmt.Sprintf("could not get field by name: field %s not found for model %s", name, b.tableName))
+	if field == nil {
+		panic(fmt.Sprintf("could not get field by name: field %s not found for model %s", name, b.tableName))
+	}
+	return field
 }
 
 // Fields returns the fields
@@ -855,18 +860,20 @@ func convert(_field reflect.Value) string {
 	case reflect.Bool:
 		return fmt.Sprintf("%t", _field.Bool())
 	default:
+		var val string
 		if it, ok := _field.Interface().([]byte); ok {
-			return string(it)
+			val = string(it)
 		} else if it, ok := _field.Interface().(uuid.UUID); ok {
-			return it.String()
+			val = it.String()
 		} else if it, ok := _field.Interface().(time.Time); ok {
 			_newValue := reflect.ValueOf(it.Format(time.RFC3339Nano))
-			return _newValue.String()
+			val = _newValue.String()
 		} else if it, ok := _field.Interface().(fmt.Stringer); ok {
-			return it.String()
+			val = it.String()
 		} else {
 			panic("Invalid identifier type")
 		}
+		return val
 	}
 }
 
