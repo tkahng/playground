@@ -2,7 +2,7 @@
 -- migrate:up
 -- create users table
 create table if not exists auth.users (
-    id uuid not null primary key default uuidv7(),
+    id uuid primary key default uuidv7(),
     email character varying unique not null,
     email_verified_at timestamptz,
     name character varying,
