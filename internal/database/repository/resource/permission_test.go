@@ -11,12 +11,11 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/database/repository"
-	"github.com/tkahng/playground/internal/test"
 )
 
 func TestNewPermissionQueryResource_FilterFunc(t *testing.T) {
 
-	test.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
+	database.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
 		repo := NewPermissionQueryResource(db)
 
 		filterFunc := repo.filter

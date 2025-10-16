@@ -9,11 +9,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/stores"
-	"github.com/tkahng/playground/internal/test"
 )
 
 func TestPoller_Run(t *testing.T) {
-	test.WithNewTx(t, func(ctx context.Context, dbx database.Dbx) {
+	database.WithNewTx(t, func(ctx context.Context, dbx database.Dbx) {
 		type fields struct {
 			Store      JobStore
 			Dispatcher Dispatcher

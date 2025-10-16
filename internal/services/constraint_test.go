@@ -12,13 +12,12 @@ import (
 	"github.com/tkahng/playground/internal/services"
 	"github.com/tkahng/playground/internal/shared"
 	"github.com/tkahng/playground/internal/stores"
-	"github.com/tkahng/playground/internal/test"
 	"github.com/tkahng/playground/internal/tools/types"
 )
 
 func TestConstraintCheckerService_CannotHaveValidSubscription(t *testing.T) {
 
-	test.WithNewTx(t, func(ctx context.Context, tx database.Dbx) {
+	database.WithNewTx(t, func(ctx context.Context, tx database.Dbx) {
 		adapter := stores.NewStorageAdapter(tx)
 		userStore := adapter.User()
 
@@ -104,7 +103,7 @@ func TestConstraintCheckerService_CannotHaveValidSubscription(t *testing.T) {
 }
 func TestConstraintCheckerService_CannotBeAdminOrBasicName(t *testing.T) {
 
-	test.WithNewTx(t, func(ctx context.Context, dbx database.Dbx) {
+	database.WithNewTx(t, func(ctx context.Context, dbx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbx)
 		type fields struct {
 			db  database.Dbx
@@ -160,7 +159,7 @@ func TestConstraintCheckerService_CannotBeAdminOrBasicName(t *testing.T) {
 }
 func TestConstraintCheckerService_CannotBeAdminOrBasicRoleAndPermissionName(t *testing.T) {
 
-	test.WithNewTx(t, func(ctx context.Context, dbx database.Dbx) {
+	database.WithNewTx(t, func(ctx context.Context, dbx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbx)
 		type fields struct {
 			db  database.Dbx
@@ -236,7 +235,7 @@ func TestConstraintCheckerService_CannotBeAdminOrBasicRoleAndPermissionName(t *t
 }
 func TestConstraintCheckerService_CannotBeSuperUserEmailAndRoleName(t *testing.T) {
 
-	test.WithNewTx(t, func(ctx context.Context, dbx database.Dbx) {
+	database.WithNewTx(t, func(ctx context.Context, dbx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbx)
 		type fields struct {
 			db  database.Dbx
@@ -310,7 +309,7 @@ func TestConstraintCheckerService_CannotBeSuperUserEmailAndRoleName(t *testing.T
 	})
 }
 func TestConstraintCheckerService_CannotBeSuperUserID(t *testing.T) {
-	test.WithNewTx(t, func(ctx context.Context, tx database.Dbx) {
+	database.WithNewTx(t, func(ctx context.Context, tx database.Dbx) {
 		adapter := stores.NewStorageAdapter(tx)
 		rbacStore := adapter.Rbac()
 		userStore := adapter.User()
@@ -414,7 +413,7 @@ func TestConstraintCheckerService_CannotBeSuperUserID(t *testing.T) {
 }
 func TestConstraintCheckerService_CannotBeSuperUserEmail(t *testing.T) {
 
-	test.WithNewTx(t, func(ctx context.Context, dbx database.Dbx) {
+	database.WithNewTx(t, func(ctx context.Context, dbx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbx)
 
 		type fields struct {

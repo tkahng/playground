@@ -9,12 +9,11 @@ import (
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/stores"
-	"github.com/tkahng/playground/internal/test"
 )
 
 func TestTxManagerImpl_RunInTxContext(t *testing.T) {
 	t.Run("test transaction manager succeed in creating user and account", func(t *testing.T) {
-		test.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
+		database.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
 			store := stores.NewTxManager(db)
 			userStore := stores.NewDbUserStore(db)
 			accountStore := stores.NewDbAccountStore(db)
@@ -54,7 +53,7 @@ func TestTxManagerImpl_RunInTxContext(t *testing.T) {
 		})
 	})
 	t.Run("test transaction manager succeed in creating user and account but error at end", func(t *testing.T) {
-		test.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
+		database.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
 			store := stores.NewTxManager(db)
 			userStore := stores.NewDbUserStore(db)
 			accountStore := stores.NewDbAccountStore(db)
@@ -94,7 +93,7 @@ func TestTxManagerImpl_RunInTxContext(t *testing.T) {
 		})
 	})
 	t.Run("test transaction manager succeed in creating user but error before account created", func(t *testing.T) {
-		test.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
+		database.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
 			store := stores.NewTxManager(db)
 			userStore := stores.NewDbUserStore(db)
 			accountStore := stores.NewDbAccountStore(db)

@@ -9,13 +9,12 @@ import (
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/stores"
-	"github.com/tkahng/playground/internal/test"
 	"github.com/tkahng/playground/internal/token"
 )
 
 func TestTokenServiceImpl_GenerateToken(t *testing.T) {
 	t.Run("Test success generate and validate token", func(t *testing.T) {
-		test.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
+		database.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
 			cfg := conf.ZeroEnvConfig()
 			store := stores.NewPostgresTokenStore(db)
 			tokenService := token.NewTokenService(cfg, store)
@@ -37,7 +36,7 @@ func TestTokenServiceImpl_GenerateToken(t *testing.T) {
 		})
 	})
 	t.Run("Test success generate and validate token", func(t *testing.T) {
-		test.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
+		database.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
 			cfg := conf.ZeroEnvConfig()
 			cfg.AuthOptions.VerificationToken.Duration = 1
 			store := stores.NewPostgresTokenStore(db)

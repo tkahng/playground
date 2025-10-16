@@ -15,7 +15,7 @@ import (
 func TestCreateMedia(t *testing.T) {
 	t.Parallel()
 	test.SkipIfShort(t)
-	test.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
+	database.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		userStore := stores.NewDbUserStore(dbxx)
 		mediaStore := stores.NewMediaStore(dbxx)
 		user, err := userStore.CreateUser(ctx, &models.User{
@@ -103,7 +103,7 @@ func TestCreateMedia(t *testing.T) {
 
 func TestFindMediaByID(t *testing.T) {
 	test.SkipIfShort(t)
-	test.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
+	database.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		userStore := stores.NewDbUserStore(dbxx)
 		mediaStore := stores.NewMediaStore(dbxx)
 		user, err := userStore.CreateUser(ctx, &models.User{

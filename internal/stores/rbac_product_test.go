@@ -14,7 +14,7 @@ import (
 func TestCreateProductPermissions(t *testing.T) {
 	t.Parallel()
 	test.SkipIfShort(t)
-	test.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
+	database.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 		permission, err := adapter.Rbac().FindOrCreatePermission(ctx, "basic")
 		if err != nil {
@@ -67,7 +67,7 @@ func TestCreateProductPermissions(t *testing.T) {
 func TestCreateProductRoles(t *testing.T) {
 	t.Parallel()
 	test.SkipIfShort(t)
-	test.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
+	database.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 		role, err := adapter.Rbac().FindOrCreateRole(ctx, "basic")
 		if err != nil {

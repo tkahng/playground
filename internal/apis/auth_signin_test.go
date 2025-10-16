@@ -17,7 +17,7 @@ import (
 func TestApi_SignIn(t *testing.T) {
 	t.Parallel()
 	test.SkipIfShort(t)
-	test.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
+	database.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
 
 		tests := []ApiScenario{

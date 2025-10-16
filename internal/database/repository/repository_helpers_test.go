@@ -7,12 +7,11 @@ import (
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/database/repository"
 	"github.com/tkahng/playground/internal/models"
-	"github.com/tkahng/playground/internal/test"
 )
 
 func TestInitRbac(t *testing.T) {
 	t.Parallel()
-	test.WithNewTx(t, func(ctx context.Context, dbx database.Dbx) {
+	database.WithNewTx(t, func(ctx context.Context, dbx database.Dbx) {
 		// init
 		repository.InitRbac(t, dbx)
 		// find all
@@ -68,7 +67,7 @@ func TestInitRbac(t *testing.T) {
 }
 
 func TestMustCreateUserAndAccount(t *testing.T) {
-	test.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
+	database.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
 		tests := []struct {
 			name string // description of this test case
 			// Named input parameters for target function.
@@ -100,7 +99,7 @@ func TestMustCreateUserAndAccount(t *testing.T) {
 }
 
 func TestMustCreateUserAndAccount_Randomize(t *testing.T) {
-	test.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
+	database.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
 		var count int64 = 100
 		for range count {
 			repository.MustCreateUserAndAccount(t, db)
