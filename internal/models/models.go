@@ -50,7 +50,7 @@ type Medium struct {
 }
 
 type AiUsage struct {
-	_                struct{}  `db:"ai_usages" json:"-"`
+	_                struct{}  `db:"ai_usages" schema:"app" json:"-"`
 	ID               uuid.UUID `db:"id,pk" json:"id"`
 	UserID           uuid.UUID `db:"user_id" json:"user_id"`
 	PromptTokens     int64     `db:"prompt_tokens" json:"prompt_tokens"`

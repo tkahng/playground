@@ -7,8 +7,8 @@ import (
 )
 
 type StripeProduct struct {
-	_           struct{}          `db:"stripe_products" json:"-"`
-	ID          string            `db:"id" json:"id"`
+	_           struct{}          `db:"stripe_products" schema:"billing" json:"-"`
+	ID          string            `db:"id,pk" json:"id"`
 	Active      bool              `db:"active" json:"active"`
 	Name        string            `db:"name" json:"name"`
 	Description *string           `db:"description" json:"description"`
@@ -122,7 +122,7 @@ const (
 // ToModelsStripePricingPlanInterval converts a StripePricingPlanInterval to models.StripePricingPlanInterval
 
 type StripePrice struct {
-	_               struct{}                   `db:"stripe_prices" json:"-"`
+	_               struct{}                   `db:"stripe_prices" schema:"billing" json:"-"`
 	ID              string                     `db:"id" json:"id"`
 	ProductID       string                     `db:"product_id" json:"product_id"`
 	LookupKey       *string                    `db:"lookup_key" json:"lookup_key"`
@@ -244,7 +244,7 @@ func (s StripeSubscriptionStatus) String() string {
 }
 
 type StripeSubscription struct {
-	_                  struct{}                 `db:"stripe_subscriptions" json:"-"`
+	_                  struct{}                 `db:"stripe_subscriptions" schema:"billing" json:"-"`
 	ID                 string                   `db:"id" json:"id"`
 	StripeCustomerID   string                   `db:"stripe_customer_id" json:"stripe_customer_id"`
 	Status             StripeSubscriptionStatus `db:"status" json:"status"`
@@ -386,7 +386,7 @@ const (
 )
 
 type StripeCustomer struct {
-	_              struct{}              `db:"stripe_customers" json:"-"`
+	_              struct{}              `db:"stripe_customers" schema:"billing" json:"-"`
 	ID             string                `db:"id" json:"id"`
 	Email          string                `db:"email" json:"email"`
 	Name           *string               `db:"name" json:"name,omitempty" required:"false"`
