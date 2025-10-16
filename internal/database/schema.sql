@@ -1,4 +1,4 @@
-\restrict W88AtFBc1d0o0wGoc0gDtlZwIeB8Exj6GnhcwCMVUFZCuoj8TlnMhbyHrq8pcVw
+\restrict DdGXYZkZCIBgwXAeaofQXrBxWqOl0EQbfHS7JeCppIbcd2eScxaQGAOgnoZ1QUY
 
 -- Dumped from database version 18.0 (Debian 18.0-1.pgdg13+3)
 -- Dumped by pg_dump version 18.0
@@ -269,20 +269,6 @@ CREATE TABLE app.ai_usages (
 
 
 --
--- Name: audit_logs; Type: TABLE; Schema: app; Owner: -
---
-
-CREATE TABLE app.audit_logs (
-    id uuid DEFAULT uuidv7() NOT NULL,
-    level integer DEFAULT 0 NOT NULL,
-    source text,
-    message text NOT NULL,
-    data jsonb DEFAULT '{}'::jsonb NOT NULL,
-    created_at timestamp with time zone DEFAULT clock_timestamp() NOT NULL
-);
-
-
---
 -- Name: jobs; Type: TABLE; Schema: app; Owner: -
 --
 
@@ -302,15 +288,15 @@ CREATE TABLE app.jobs (
 
 
 --
--- Name: params; Type: TABLE; Schema: app; Owner: -
+-- Name: logs; Type: TABLE; Schema: app; Owner: -
 --
 
-CREATE TABLE app.params (
+CREATE TABLE app.logs (
     id uuid DEFAULT uuidv7() NOT NULL,
-    name text NOT NULL,
-    value jsonb NOT NULL,
-    created_at timestamp with time zone DEFAULT clock_timestamp() NOT NULL,
-    updated_at timestamp with time zone DEFAULT clock_timestamp() NOT NULL
+    level integer DEFAULT 0 NOT NULL,
+    message text DEFAULT ''::text NOT NULL,
+    data jsonb DEFAULT '{}'::jsonb NOT NULL,
+    created_at timestamp with time zone DEFAULT clock_timestamp() NOT NULL
 );
 
 
@@ -726,14 +712,6 @@ ALTER TABLE ONLY app.ai_usages
 
 
 --
--- Name: audit_logs audit_logs_pkey; Type: CONSTRAINT; Schema: app; Owner: -
---
-
-ALTER TABLE ONLY app.audit_logs
-    ADD CONSTRAINT audit_logs_pkey PRIMARY KEY (id);
-
-
---
 -- Name: jobs jobs_pkey; Type: CONSTRAINT; Schema: app; Owner: -
 --
 
@@ -742,19 +720,11 @@ ALTER TABLE ONLY app.jobs
 
 
 --
--- Name: params params_name_key; Type: CONSTRAINT; Schema: app; Owner: -
+-- Name: logs logs_pkey; Type: CONSTRAINT; Schema: app; Owner: -
 --
 
-ALTER TABLE ONLY app.params
-    ADD CONSTRAINT params_name_key UNIQUE (name);
-
-
---
--- Name: params params_pkey; Type: CONSTRAINT; Schema: app; Owner: -
---
-
-ALTER TABLE ONLY app.params
-    ADD CONSTRAINT params_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY app.logs
+    ADD CONSTRAINT logs_pkey PRIMARY KEY (id);
 
 
 --
@@ -1073,28 +1043,28 @@ ALTER TABLE ONLY task.tasks
 -- Name: idx_logs_created_at; Type: INDEX; Schema: app; Owner: -
 --
 
-CREATE INDEX idx_logs_created_at ON app.audit_logs USING btree (created_at);
+CREATE INDEX idx_logs_created_at ON app.logs USING btree (created_at);
 
 
 --
 -- Name: idx_logs_data_gin; Type: INDEX; Schema: app; Owner: -
 --
 
-CREATE INDEX idx_logs_data_gin ON app.audit_logs USING gin (data);
+CREATE INDEX idx_logs_data_gin ON app.logs USING gin (data);
 
 
 --
 -- Name: idx_logs_level; Type: INDEX; Schema: app; Owner: -
 --
 
-CREATE INDEX idx_logs_level ON app.audit_logs USING btree (level);
+CREATE INDEX idx_logs_level ON app.logs USING btree (level);
 
 
 --
--- Name: idx_logs_source; Type: INDEX; Schema: app; Owner: -
+-- Name: idx_logs_message; Type: INDEX; Schema: app; Owner: -
 --
 
-CREATE INDEX idx_logs_source ON app.audit_logs USING btree (source);
+CREATE INDEX idx_logs_message ON app.logs USING btree (message);
 
 
 --
@@ -1109,13 +1079,6 @@ CREATE INDEX jobs_polling_idx ON app.jobs USING btree (status, run_after, attemp
 --
 
 CREATE UNIQUE INDEX uniq_jobs_active_key ON app.jobs USING btree (unique_key) WHERE (status = ANY (ARRAY['pending'::app.job_status, 'processing'::app.job_status]));
-
-
---
--- Name: params handle_app_params_updated_at; Type: TRIGGER; Schema: app; Owner: -
---
-
-CREATE TRIGGER handle_app_params_updated_at BEFORE UPDATE ON app.params FOR EACH ROW EXECUTE FUNCTION utility.set_current_timestamp_updated_at();
 
 
 --
@@ -1559,7 +1522,7 @@ ALTER TABLE ONLY task.tasks
 -- PostgreSQL database dump complete
 --
 
-\unrestrict W88AtFBc1d0o0wGoc0gDtlZwIeB8Exj6GnhcwCMVUFZCuoj8TlnMhbyHrq8pcVw
+\unrestrict DdGXYZkZCIBgwXAeaofQXrBxWqOl0EQbfHS7JeCppIbcd2eScxaQGAOgnoZ1QUY
 
 
 --
@@ -1573,7 +1536,6 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20250321105959'),
     ('20250321112511'),
     ('20250321181226'),
-    ('20250321181227'),
     ('20250331070804'),
     ('20250331070805'),
     ('20250331070807'),
