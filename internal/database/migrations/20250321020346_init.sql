@@ -2,7 +2,7 @@
 -- create utility schema
 CREATE SCHEMA IF NOT EXISTS utility;
 -- create update timestamp function
-CREATE FUNCTION IF NOT EXISTS utility.set_current_timestamp_updated_at() RETURNS TRIGGER AS $$
+create or replace function utility.set_current_timestamp_updated_at() RETURNS TRIGGER AS $$
 DECLARE _new record;
 BEGIN _new := NEW;
 _new."updated_at" = clock_timestamp();

@@ -42,8 +42,8 @@ update on auth.tokens for each row execute procedure utility.set_current_timesta
 create table if not exists auth.user_accounts (
     id uuid primary key default uuidv7(),
     user_id uuid not null references auth.users on delete cascade on update cascade,
-    type provider_types not null,
-    provider providers not null,
+    type auth.provider_types not null,
+    provider auth.providers not null,
     /**
      * This value depends on the type of the provider being used to create the account.
      * - oauth/oidc: The OAuth account's id, returned from the `profile()` callback.
@@ -74,7 +74,7 @@ create table if not exists auth.user_sessions (
     session_token varchar(255) not null unique,
     created_at timestamptz not null default clock_timestamp(),
     updated_at timestamptz not null default clock_timestamp(),
-    constraint user_sessions_token_not_empty check (not_empty(session_token))
+    constraint user_sessions_token_not_empty check (utility.not_empty(session_token))
 );
 CREATE TRIGGER handle_auth_user_sessions_updated_at before
 update on auth.user_sessions for each row execute procedure utility.set_current_timestamp_updated_at();
