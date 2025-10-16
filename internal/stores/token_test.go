@@ -72,7 +72,7 @@ func TestTokenStore_CRUD(t *testing.T) {
 }
 
 func TestDbTokenStore_GetTokenByValueTypeExpires(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 	test.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
 		store := stores.NewPostgresTokenStore(db)

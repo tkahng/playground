@@ -17,7 +17,7 @@ import (
 )
 
 func TestStripeStore_CreateCustomer(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 	test.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
@@ -169,7 +169,7 @@ func TestStripeStore_CreateCustomer(t *testing.T) {
 }
 
 func TestStripeStore_ProductAndPrice(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 	test.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
@@ -251,7 +251,7 @@ func TestStripeStore_ProductAndPrice(t *testing.T) {
 }
 
 func TestStripeStore_UpsertProductAndPrice(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 	test.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
@@ -294,7 +294,7 @@ func TestStripeStore_UpsertProductAndPrice(t *testing.T) {
 }
 
 func TestStripeStore_FindCustomer(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 	test.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
@@ -322,7 +322,7 @@ func TestStripeStore_FindCustomer(t *testing.T) {
 }
 
 func TestStripeStore_FindSubscriptionsWithPriceProductByIds(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 	test.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
@@ -404,7 +404,7 @@ func TestStripeStore_FindSubscriptionsWithPriceProductByIds(t *testing.T) {
 }
 
 func TestStripeStore_FindActiveSubscriptionsByTeamIds(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 	test.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
@@ -530,7 +530,7 @@ func loadPricesWithProduct(ctx context.Context, withPrice *models.StripeSubscrip
 	return nil
 }
 func TestStripeStore_FindActiveSubscriptionsByCustomerIds(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 	test.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
@@ -626,7 +626,7 @@ func TestStripeStore_FindActiveSubscriptionsByCustomerIds(t *testing.T) {
 	})
 }
 func TestStripeStore_FindActiveSubscriptionsByUserIds(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 	test.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
@@ -730,7 +730,7 @@ func TestStripeStore_FindActiveSubscriptionsByUserIds(t *testing.T) {
 }
 
 func TestStripeStore_UpsertSubscriptionFromStripe(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 	test.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)

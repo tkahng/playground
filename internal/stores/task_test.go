@@ -62,7 +62,7 @@ func CreateTask(adapter stores.StorageAdapterInterface, ctx context.Context, tas
 }
 
 func TestSearchUserTasks(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 	test.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewStorageAdapter(db)
@@ -150,7 +150,7 @@ func TestSearchUserTasks(t *testing.T) {
 }
 
 func TestGetUserTaskStats(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 	test.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
@@ -219,7 +219,7 @@ func TestGetUserTaskStats(t *testing.T) {
 	})
 }
 func TestLoadTaskProjectsTasks(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 	test.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
@@ -313,7 +313,7 @@ func TestLoadTaskProjectsTasks(t *testing.T) {
 	})
 }
 func TestFindTaskByID(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 	test.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
@@ -410,7 +410,7 @@ func TestFindTaskByID(t *testing.T) {
 }
 
 func TestFindLastTaskOrder(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 	test.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
@@ -504,7 +504,7 @@ func TestFindLastTaskOrder(t *testing.T) {
 	})
 }
 func TestDeleteTask(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 	test.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
@@ -580,7 +580,7 @@ func TestDeleteTask(t *testing.T) {
 	})
 }
 func TestFindTaskProjectByID(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 	test.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
@@ -664,7 +664,7 @@ func TestFindTaskProjectByID(t *testing.T) {
 	})
 }
 func TestDeleteTaskProject(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 	test.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
@@ -731,7 +731,7 @@ func TestDeleteTaskProject(t *testing.T) {
 	})
 }
 func TestListTasks(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 	test.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
@@ -842,7 +842,7 @@ func TestListTasks(t *testing.T) {
 	})
 }
 func TestCountTasks(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 	test.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
@@ -931,7 +931,7 @@ func TestCountTasks(t *testing.T) {
 	})
 }
 func TestListTaskProjects(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 	test.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
@@ -1030,7 +1030,7 @@ func TestListTaskProjects(t *testing.T) {
 	})
 }
 func TestCountTaskProjects(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 	test.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
@@ -1107,7 +1107,7 @@ func TestCountTaskProjects(t *testing.T) {
 	})
 }
 func TestCreateTaskProject(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 	test.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
@@ -1196,7 +1196,7 @@ func TestCreateTaskProject(t *testing.T) {
 	})
 }
 func TestCreateTaskProjectWithTasks(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 	test.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
@@ -1300,7 +1300,7 @@ func TestCreateTaskProjectWithTasks(t *testing.T) {
 }
 
 func TestCreateTaskFromInput(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 	test.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)

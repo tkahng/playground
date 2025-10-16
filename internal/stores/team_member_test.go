@@ -86,7 +86,7 @@ func TestTeamStore_UpdateTeamMember(t *testing.T) {
 }
 
 func TestTeamStore_CountTeamMembers(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 	test.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
 		type fields struct {
@@ -124,7 +124,7 @@ func TestTeamStore_CountTeamMembers(t *testing.T) {
 }
 
 func TestCreateTeamMember(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 	test.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
@@ -153,7 +153,7 @@ func TestCreateTeamMember(t *testing.T) {
 }
 
 func TestFindTeamMembersByUserID(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 	test.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
@@ -186,7 +186,7 @@ func TestFindTeamMembersByUserID(t *testing.T) {
 }
 
 func TestFindLatestTeamMemberByUserID(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 	test.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
@@ -250,7 +250,7 @@ func TestFindLatestTeamMemberByUserID(t *testing.T) {
 }
 
 func TestUpdateTeamMemberUpdatedAt(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 	test.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
@@ -305,7 +305,7 @@ func TestUpdateTeamMemberUpdatedAt(t *testing.T) {
 	})
 }
 func TestUpdateTeamMemberSelectedAt(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 	test.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
@@ -438,7 +438,7 @@ func TestDbTeamMemberStore_LoadTeamMembersByUserAndTeamIds(t *testing.T) {
 }
 
 func TestDbTeamMemberStore_FindTeamMembers(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 	test.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewStorageAdapter(db)

@@ -14,7 +14,7 @@ import (
 )
 
 func TestTeamStore_InvitationCRUD(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 	test.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
@@ -121,7 +121,7 @@ func TestTeamStore_InvitationCRUD(t *testing.T) {
 }
 
 func TestInvitationStore_CRUD(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 	test.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
@@ -206,7 +206,7 @@ func TestInvitationStore_CRUD(t *testing.T) {
 	})
 }
 func TestTeamStore_FindPendingInvitation(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 	test.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)

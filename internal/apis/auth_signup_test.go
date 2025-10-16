@@ -18,7 +18,7 @@ import (
 )
 
 func TestApi_SignUp(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 	test.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
@@ -80,7 +80,7 @@ func TestApi_SignUp(t *testing.T) {
 }
 
 func TestApi_SignUp_ExistingUsers(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 	test.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)

@@ -17,7 +17,7 @@ import (
 )
 
 func TestListRoles(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 	test.WithNewTx(t, func(ctx context.Context, tx database.Dbx) {
 		// Create test roles and permissions
@@ -277,7 +277,7 @@ func TestLoadRolePermissions(t *testing.T) {
 // }
 
 func TestFindOrCreateRole(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 	test.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		rbacStore := stores.NewDbRBACStore(dbxx)
@@ -328,7 +328,7 @@ func TestFindOrCreateRole(t *testing.T) {
 	})
 }
 func TestCreateRole(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 	test.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		rbacStore := stores.NewDbRBACStore(dbxx)
@@ -384,7 +384,7 @@ func TestCreateRole(t *testing.T) {
 }
 
 func TestUpdateRole(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 	test.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		// Create initial role to update
@@ -469,7 +469,7 @@ func TestUpdateRole(t *testing.T) {
 }
 
 func TestDeleteRole(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 	test.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		// Create a role to delete
@@ -540,7 +540,7 @@ func TestDeleteRole(t *testing.T) {
 }
 
 func TestDeletePermission(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 	test.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		rbacStore := stores.NewDbRBACStore(dbxx)

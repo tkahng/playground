@@ -12,7 +12,7 @@ import (
 )
 
 func TestDbUserReactionStore_CountUserReactions(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 	test.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
 		store := NewDbUserReactionStore(db)
@@ -62,7 +62,7 @@ func TestNewDbUserReactionStore(t *testing.T) {
 }
 
 func TestDbUserReactionStore_CreateUserReaction(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 	test.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
 		store := NewDbUserReactionStore(db)
@@ -81,7 +81,7 @@ func TestDbUserReactionStore_CreateUserReaction(t *testing.T) {
 }
 
 func TestDbUserReactionStore_CountByCountry(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 	test.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
 		store := NewDbUserReactionStore(db)

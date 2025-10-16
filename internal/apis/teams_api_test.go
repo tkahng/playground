@@ -29,7 +29,7 @@ func TestGetGreeting(t *testing.T) {
 }
 
 func TestTeamSlug(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 	test.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
@@ -50,7 +50,7 @@ func TestTeamSlug(t *testing.T) {
 }
 
 func TestGetTeam_unauthorized(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 	test.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
@@ -66,7 +66,7 @@ func TestGetTeam_unauthorized(t *testing.T) {
 }
 
 func TestGetTeam_invalidID(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 	test.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
@@ -87,7 +87,7 @@ func TestGetTeam_invalidID(t *testing.T) {
 }
 
 func TestGetTeam_success(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 	test.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
@@ -116,7 +116,7 @@ func TestGetTeam_success(t *testing.T) {
 
 }
 func TestCreateTeam_SuccessfulCreation(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 	test.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
@@ -159,7 +159,7 @@ func TestCreateTeam_SuccessfulCreation(t *testing.T) {
 }
 
 func TestCreateTeam_emailNotVerified(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 	test.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
@@ -190,7 +190,7 @@ func TestCreateTeam_emailNotVerified(t *testing.T) {
 	)
 }
 func TestUpdateTeam_failedNotOwner(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 	test.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
@@ -240,7 +240,7 @@ func TestUpdateTeam_failedNotOwner(t *testing.T) {
 }
 
 func TestUpdateTeam_successOwner(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 	test.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
@@ -289,7 +289,7 @@ func TestUpdateTeam_successOwner(t *testing.T) {
 }
 
 func TestDeleteTeam_successOwner(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 	test.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
@@ -332,7 +332,7 @@ func TestDeleteTeam_successOwner(t *testing.T) {
 	})
 }
 func TestDeleteTeam_failNonOwner(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 	test.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)

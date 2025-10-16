@@ -15,7 +15,7 @@ import (
 )
 
 func TestFindPermissionsByIds(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 	test.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		// Create test permissions
@@ -111,7 +111,7 @@ func TestFindPermissionsByIds(t *testing.T) {
 }
 
 func TestListPermissions(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 	test.WithNewTx(t, func(ctx context.Context, tx database.Dbx) {
 		rbacstore := stores.NewDbRBACStore(tx)
@@ -173,7 +173,7 @@ func TestListPermissions(t *testing.T) {
 }
 
 func TestCountPermissions(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 	test.WithNewTx(t, func(ctx context.Context, tx database.Dbx) {
 		rbacstore := stores.NewDbRBACStore(tx)
@@ -240,7 +240,7 @@ func TestCountPermissions(t *testing.T) {
 }
 
 func TestDeleteRolePermissions(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 	test.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		// Create a role and permission to test deletion
@@ -320,7 +320,7 @@ func TestDeleteRolePermissions(t *testing.T) {
 }
 
 func TestFindOrCreatePermission(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 	test.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		rbacStore := stores.NewDbRBACStore(dbxx)
@@ -372,7 +372,7 @@ func TestFindOrCreatePermission(t *testing.T) {
 }
 
 func TestCreatePermission(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 	test.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		rbacStore := stores.NewDbRBACStore(dbxx)
@@ -433,7 +433,7 @@ func TestCreatePermission(t *testing.T) {
 	})
 }
 func TestFindPermissionById(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 	test.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		rbacStore := stores.NewDbRBACStore(dbxx)
@@ -496,7 +496,7 @@ func TestFindPermissionById(t *testing.T) {
 }
 
 func TestUpdatePermission(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 	test.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		// Create initial permission to update
@@ -578,7 +578,7 @@ func TestUpdatePermission(t *testing.T) {
 	})
 }
 func TestCreateRolePermissions(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 	test.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		rbacStore := stores.NewDbRBACStore(dbxx)
@@ -626,7 +626,7 @@ func TestCreateRolePermissions(t *testing.T) {
 }
 
 func TestEnsureRoleAndPermissions(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 
 	test.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {

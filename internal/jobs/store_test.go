@@ -15,7 +15,7 @@ import (
 )
 
 func TestDbJobStore_SaveJob(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 	test.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
 		// ctx, db := test.DbSetup()
@@ -100,7 +100,7 @@ func TestDbJobStore_SaveJob(t *testing.T) {
 }
 
 func TestDbJobStore_SaveManyJobs(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 	test.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
 		type fields struct {
@@ -169,7 +169,7 @@ func TestDbJobStore_SaveManyJobs(t *testing.T) {
 }
 
 func TestDbJobStore_ClaimPendingJobs(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 	test.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
 		type fields struct {
@@ -246,7 +246,7 @@ func TestDbJobStore_ClaimPendingJobs(t *testing.T) {
 }
 
 func TestDbJobStore_MarkDone(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 	test.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
 		type fields struct {
@@ -328,7 +328,7 @@ func TestDbJobStore_MarkDone(t *testing.T) {
 }
 
 func TestDbJobStore_MarkFailed(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 	test.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
 		type fields struct {
@@ -410,7 +410,7 @@ func TestDbJobStore_MarkFailed(t *testing.T) {
 }
 
 func TestDbJobStore_RescheduleJob(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 	test.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
 		type fields struct {

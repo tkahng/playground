@@ -13,7 +13,7 @@ import (
 )
 
 func TestCreateMedia(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 	test.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		userStore := stores.NewDbUserStore(dbxx)

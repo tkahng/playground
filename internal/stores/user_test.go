@@ -15,7 +15,7 @@ import (
 )
 
 func TestUserStore_CRUD(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 
 	test.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
@@ -108,7 +108,7 @@ func TestUserStore_CRUD(t *testing.T) {
 }
 
 func TestUserStore_LoadUsersByUserIds(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 
 	test.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
@@ -141,7 +141,7 @@ func ptrString(s string) *string {
 }
 
 func TestUserStore_FindUserById(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 
 	test.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {

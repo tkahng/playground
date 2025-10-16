@@ -13,7 +13,7 @@ import (
 )
 
 func TestListUserPermissionsSource(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 	test.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		userStore := stores.NewDbUserStore(dbxx)
@@ -113,7 +113,7 @@ func TestListUserPermissionsSource(t *testing.T) {
 }
 
 func TestCountUserPermissionSource(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 	test.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		rbacstore := stores.NewDbRBACStore(dbxx)
@@ -200,7 +200,7 @@ func TestCountUserPermissionSource(t *testing.T) {
 	})
 }
 func TestListUserNotPermissionsSource(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 	test.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		// Create test user
@@ -316,7 +316,7 @@ func TestListUserNotPermissionsSource(t *testing.T) {
 	})
 }
 func TestCountNotUserPermissionSource(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 	test.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		// Create test user
@@ -410,7 +410,7 @@ func TestCountNotUserPermissionSource(t *testing.T) {
 }
 
 func TestCreateUserRoles(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 	test.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		userStore := stores.NewDbUserStore(dbxx)
@@ -462,7 +462,7 @@ func TestCreateUserRoles(t *testing.T) {
 }
 
 func TestGetUserRoles(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
 	test.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		rbacStore := stores.NewDbRBACStore(dbxx)
