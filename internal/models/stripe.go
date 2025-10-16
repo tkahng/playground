@@ -20,6 +20,17 @@ type StripeProduct struct {
 	Roles       []*Role           `db:"roles" src:"id" dest:"id" table:"public.roles" through:"public.product_roles" through_src:"product_id" through_dest:"role_id" json:"roles,omitempty"`
 	Permissions []*Permission     `db:"permissions" src:"id" dest:"id" table:"public.permissions" through:"public.product_permissions" through_src:"product_id" through_dest:"permission_id" json:"permissions,omitempty"`
 }
+type ProductRole struct {
+	_         struct{}  `db:"product_roles" schema:"billing" json:"-"`
+	ProductID string    `db:"product_id" json:"product_id"`
+	RoleID    uuid.UUID `db:"role_id" json:"role_id"`
+}
+
+type ProductPermission struct {
+	_            struct{}  `db:"product_permissions" schema:"billing" json:"-"`
+	ProductID    string    `db:"product_id" json:"product_id"`
+	PermissionID uuid.UUID `db:"permission_id" json:"permission_id"`
+}
 
 // type StripeProduct
 

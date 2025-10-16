@@ -7,7 +7,7 @@ import (
 )
 
 type Role struct {
-	_           struct{}      `db:"roles" json:"-"`
+	_           struct{}      `db:"roles" schema:"auth" json:"-"`
 	ID          uuid.UUID     `db:"id" json:"id"`
 	Name        string        `db:"name" json:"name"`
 	Description *string       `db:"description" json:"description,omitempty"`
@@ -38,7 +38,7 @@ var RoleTable = roleTable{
 }
 
 type Permission struct {
-	_           struct{}         `db:"permissions" json:"-"`
+	_           struct{}         `db:"permissions" schema:"auth" json:"-"`
 	ID          uuid.UUID        `db:"id" json:"id"`
 	Name        string           `db:"name" json:"name"`
 	Description *string          `db:"description" json:"description,omitempty"`
@@ -91,30 +91,19 @@ type PermissionSource struct {
 }
 
 type UserRole struct {
-	_      struct{}  `db:"user_roles" json:"-"`
+	_      struct{}  `db:"user_roles" schema:"auth" json:"-"`
 	UserID uuid.UUID `db:"user_id" json:"user_id"`
 	RoleID uuid.UUID `db:"role_id" json:"role_id"`
 }
-type ProductRole struct {
-	_         struct{}  `db:"product_roles" json:"-"`
-	ProductID string    `db:"product_id" json:"product_id"`
-	RoleID    uuid.UUID `db:"role_id" json:"role_id"`
-}
 
 type UserPermission struct {
-	_            struct{}  `db:"user_permissions" json:"-"`
+	_            struct{}  `db:"user_permissions" schema:"auth" json:"-"`
 	UserID       uuid.UUID `db:"user_id" json:"user_id"`
 	PermissionID uuid.UUID `db:"permission_id" json:"permission_id"`
 }
 
 type RolePermission struct {
-	_            struct{}  `db:"role_permissions" json:"-"`
+	_            struct{}  `db:"role_permissions" schema:"auth" json:"-"`
 	RoleID       uuid.UUID `db:"role_id" json:"role_id"`
-	PermissionID uuid.UUID `db:"permission_id" json:"permission_id"`
-}
-
-type ProductPermission struct {
-	_            struct{}  `db:"product_permissions" json:"-"`
-	ProductID    string    `db:"product_id" json:"product_id"`
 	PermissionID uuid.UUID `db:"permission_id" json:"permission_id"`
 }
