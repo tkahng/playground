@@ -51,21 +51,21 @@ func (s *DbSubscriptionStore) FindActiveSubscriptionsByCustomerIds(ctx context.C
 		Where(squirrel.Or{
 			squirrel.And{
 				squirrel.Eq{
-					"stripe_subscriptions.stripe_customer_id": customerIds,
+					"billing.stripe_subscriptions.stripe_customer_id": customerIds,
 				},
 				squirrel.Eq{
-					"stripe_subscriptions.status": models.StripeSubscriptionStatusActive,
+					"billing.stripe_subscriptions.status": models.StripeSubscriptionStatusActive,
 				},
 			},
 			squirrel.And{
 				squirrel.Eq{
-					"stripe_subscriptions.stripe_customer_id": customerIds,
+					"billing.stripe_subscriptions.stripe_customer_id": customerIds,
 				},
 				squirrel.Eq{
-					"stripe_subscriptions.status": models.StripeSubscriptionStatusTrialing,
+					"billing.stripe_subscriptions.status": models.StripeSubscriptionStatusTrialing,
 				},
 				squirrel.Gt{
-					"stripe_subscriptions.trial_end": time.Now().Format(time.RFC3339Nano),
+					"billing.stripe_subscriptions.trial_end": time.Now().Format(time.RFC3339Nano),
 				},
 			},
 		})
@@ -102,13 +102,13 @@ func (s *DbSubscriptionStore) FindActiveSubscriptionsByTeamIds(ctx context.Conte
 			},
 			squirrel.And{
 				squirrel.Eq{
-					"stripe_customers.team_id": teamIds,
+					"billing.stripe_customers.team_id": teamIds,
 				},
 				squirrel.Eq{
-					"stripe_subscriptions.status": models.StripeSubscriptionStatusTrialing,
+					"billing.stripe_subscriptions.status": models.StripeSubscriptionStatusTrialing,
 				},
 				squirrel.Gt{
-					"stripe_subscriptions.trial_end": time.Now().Format(time.RFC3339Nano),
+					"billing.stripe_subscriptions.trial_end": time.Now().Format(time.RFC3339Nano),
 				},
 			},
 		})
@@ -133,25 +133,25 @@ func (s *DbSubscriptionStore) FindActiveSubscriptionsByUserIds(ctx context.Conte
 	qs = SelectStripeCustomerColumns(qs, "stripe_customer")
 	qs = qs.
 		From("billing.stripe_subscriptions").
-		Join("billing.stripe_customers ON stripe_subscriptions.stripe_customer_id = stripe_customers.id").
+		Join("billing.stripe_customers ON billing.stripe_subscriptions.stripe_customer_id = billing.stripe_customers.id").
 		Where(squirrel.Or{
 			squirrel.And{
 				squirrel.Eq{
-					"stripe_customers.user_id": userIds,
+					"billing.stripe_customers.user_id": userIds,
 				},
 				squirrel.Eq{
-					"stripe_subscriptions.status": models.StripeSubscriptionStatusActive,
+					"billing.stripe_subscriptions.status": models.StripeSubscriptionStatusActive,
 				},
 			},
 			squirrel.And{
 				squirrel.Eq{
-					"stripe_customers.user_id": userIds,
+					"billing.stripe_customers.user_id": userIds,
 				},
 				squirrel.Eq{
-					"stripe_subscriptions.status": models.StripeSubscriptionStatusTrialing,
+					"billing.stripe_subscriptions.status": models.StripeSubscriptionStatusTrialing,
 				},
 				squirrel.Gt{
-					"stripe_subscriptions.trial_end": time.Now().Format(time.RFC3339Nano),
+					"billing.stripe_subscriptions.trial_end": time.Now().Format(time.RFC3339Nano),
 				},
 			},
 		})

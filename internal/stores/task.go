@@ -220,7 +220,7 @@ func (s *DbTaskStore) GetTaskFirstPosition(ctx context.Context, projectID uuid.U
 	var rank float64
 	query := `
 		SELECT rank 
-		FROM tasks 
+		FROM task.tasks 
 		WHERE project_id = $1 AND status = $2 AND id != $3
 		ORDER BY rank ASC 
 		LIMIT 1
@@ -233,7 +233,7 @@ func (s *DbTaskStore) GetTaskLastPosition(ctx context.Context, projectID uuid.UU
 	var rank float64
 	query := `
 		SELECT rank 
-		FROM tasks 
+		FROM task.tasks 
 		WHERE project_id = $1 AND status = $2 AND id != $3
 		ORDER BY rank DESC 
 		LIMIT 1
@@ -245,7 +245,7 @@ func (s *DbTaskStore) GetTaskLastPosition(ctx context.Context, projectID uuid.UU
 func (s *DbTaskStore) GetTaskPositions(ctx context.Context, projectID uuid.UUID, status models.TaskStatus, excludeID uuid.UUID, offset int64) ([]float64, error) {
 	query := `
 		SELECT rank 
-		FROM tasks 
+		FROM task.tasks 
 		WHERE project_id = $1 AND status = $2 AND id != $3
 		ORDER BY rank ASC 
 		LIMIT $4 OFFSET $5
@@ -705,7 +705,7 @@ func (s *DbTaskStore) CalculateTaskRankStatus(ctx context.Context, taskId uuid.U
 }
 
 func (s *DbTaskStore) UpdateTaskProjectUpdateDate(ctx context.Context, taskProjectID uuid.UUID) error {
-	q := squirrel.Update("task_projects").
+	q := squirrel.Update("task.task_projects").
 		Where("id = ?", taskProjectID).
 		Set("updated_at", time.Now())
 
@@ -770,7 +770,7 @@ WITH project_stats AS (
         COUNT(*) FILTER (
             WHERE tp.status = 'done'
         ) as completed_projects
-    FROM task_projects tp
+    FROM task.task_projects tp
     WHERE tp.team_id = $1
 ),
 task_stats AS (
@@ -778,7 +778,7 @@ task_stats AS (
         COUNT(*) FILTER (
             WHERE t.status = 'done'
         ) as completed_tasks
-    FROM tasks t
+    FROM task.tasks t
     WHERE t.team_id = $1
 )
 SELECT ps.total_projects,

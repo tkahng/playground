@@ -103,7 +103,7 @@ func TestNewPermissionQueryResource_FilterFunc(t *testing.T) {
 			assert.NoError(t, err)
 			assert.NotNil(t, sql)
 			assert.Equal(t, 2, len(args))
-			expected := "SELECT auth.permissions.id, auth.permissions.name, auth.permissions.description, auth.permissions.created_at, auth.permissions.updated_at FROM auth.permissions JOIN role_permissions on permissions.id = role_permissions.permission_id and role_permissions.role_id = ? WHERE role_permissions.role_id = ?"
+			expected := "SELECT auth.permissions.id, auth.permissions.name, auth.permissions.description, auth.permissions.created_at, auth.permissions.updated_at FROM auth.permissions JOIN auth.role_permissions on auth.permissions.id = auth.role_permissions.permission_id and auth.role_permissions.role_id = ? WHERE auth.role_permissions.role_id = ?"
 			assert.Equal(t, expected, sql)
 		})
 		t.Run("RoleId filter", func(t *testing.T) {
@@ -117,7 +117,7 @@ func TestNewPermissionQueryResource_FilterFunc(t *testing.T) {
 			assert.NoError(t, err)
 			assert.NotNil(t, sql)
 			assert.Equal(t, 2, len(args))
-			expected := "SELECT auth.permissions.id, auth.permissions.name, auth.permissions.description, auth.permissions.created_at, auth.permissions.updated_at FROM auth.permissions JOIN role_permissions on permissions.id = role_permissions.permission_id and role_permissions.role_id = ? WHERE role_permissions.role_id = ?"
+			expected := "SELECT auth.permissions.id, auth.permissions.name, auth.permissions.description, auth.permissions.created_at, auth.permissions.updated_at FROM auth.permissions JOIN auth.role_permissions on auth.permissions.id = auth.role_permissions.permission_id and auth.role_permissions.role_id = ? WHERE auth.role_permissions.role_id = ?"
 			assert.Equal(t, expected, sql)
 		})
 	})

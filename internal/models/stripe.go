@@ -73,7 +73,7 @@ var StripeProductTable = stripeProductTable{
 	Permissions: "permissions",
 }
 
-var StripeProductTableName = "stripe_products"
+var StripeProductTableName = "billing.stripe_products"
 
 var StripeProductTablePrefix = stripeProductTable{
 	Columns: []string{
@@ -159,7 +159,7 @@ type stripePriceTable struct {
 	Subscriptions   string
 }
 
-var StripePriceTableName = "stripe_prices"
+var StripePriceTableName = "billing.stripe_prices"
 
 var StripePriceTable = stripePriceTable{
 	Columns: []string{
@@ -291,7 +291,7 @@ type stripeSubscriptionTable struct {
 	Price              string
 }
 
-var StripeSubscriptionTableName = "stripe_subscriptions"
+var StripeSubscriptionTableName = "billing.stripe_subscriptions"
 var StripeSubscriptionTable = stripeSubscriptionTable{
 	Columns: []string{
 		"id",
@@ -420,7 +420,7 @@ type stripeCustomerTable struct {
 	Subscriptions  string
 }
 
-var StripeCustomerTableName = "stripe_customers"
+var StripeCustomerTableName = "billing.stripe_customers"
 
 var StripeCustomerTable = stripeCustomerTable{
 	Columns: []string{

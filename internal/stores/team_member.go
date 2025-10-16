@@ -213,7 +213,7 @@ func (s *DbTeamMemberStore) filterQuery(qs squirrel.SelectBuilder, filter *TeamM
 		return qs
 	}
 	if filter.Q != "" {
-		qs = qs.Join("org.teams on org.team_members.team_id = orgs.teams.id").Join("auth.users on org.team_members.user_id = auth.users.id")
+		qs = qs.Join("org.teams on org.team_members.team_id = org.teams.id").Join("auth.users on org.team_members.user_id = auth.users.id")
 		qs = qs.Where(squirrel.Or{
 			squirrel.ILike{"org.teams.name": "%" + filter.Q + "%"},
 			squirrel.ILike{"auth.users.email": "%" + filter.Q + "%"},

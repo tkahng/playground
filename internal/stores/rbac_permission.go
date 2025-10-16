@@ -257,7 +257,7 @@ func (p *DbRbacStore) CreateRolePermissions(ctx context.Context, roleId uuid.UUI
 
 func (p *DbRbacStore) LoadRolePermissions(ctx context.Context, roleIds ...uuid.UUID) ([][]*models.Permission, error) {
 	const (
-		GetRolePermissionsQuery = `
+		GetRolePermissionsQuery string = `
 		SELECT rp.role_id as key,
 			COALESCE(
 					json_agg(

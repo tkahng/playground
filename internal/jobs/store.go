@@ -42,7 +42,7 @@ type DbJobStore struct {
 	db Db
 }
 
-const query string = `
+const query string = `--sql
 		INSERT INTO app.jobs (id, kind, unique_key, payload, status, run_after, attempts, max_attempts, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, 'pending', $5, 0, $6, clock_timestamp(), clock_timestamp())
 		ON CONFLICT (unique_key)

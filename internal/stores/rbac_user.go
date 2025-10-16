@@ -252,7 +252,7 @@ func (p *DbRbacStore) CountNotUserPermissionSource(ctx context.Context, userId u
 
 func (p *DbRbacStore) ListUserPermissionsSource(ctx context.Context, userId uuid.UUID, limit int64, offset int64) ([]*models.PermissionSource, error) {
 	const (
-		QueryUserPermissionSource string = `
+		QueryUserPermissionSource string = `--sql
 	WITH -- Get permissions assigned through roles
 	role_based_permissions AS (
 		SELECT p.*,
@@ -340,7 +340,7 @@ func (p *DbRbacStore) ListUserPermissionsSource(ctx context.Context, userId uuid
 }
 
 func (p *DbRbacStore) CountUserPermissionSource(ctx context.Context, userId uuid.UUID) (int64, error) {
-	const QueryUserPermissionSourceCount string = `
+	const QueryUserPermissionSourceCount string = `--sql
 WITH -- Get permissions assigned through roles
 role_based_permissions AS (
     SELECT p.*,
