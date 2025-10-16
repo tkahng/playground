@@ -37,7 +37,7 @@ import (
 //
 // `tag:"value"` and `tag:"value,option1,option2=value"`
 //
-// `db:"notifications,quoted,schema=public"`
+// `db:"notifications,quoted" schema:"public"`
 //
 // ${Key}:"${Value},${Options.0.Key},${Options.1.Key}=${SomeValue}"
 type FieldTag struct {
