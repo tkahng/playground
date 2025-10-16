@@ -27,7 +27,7 @@ type PermissionFilter struct {
 }
 
 func (p *DbRbacStore) ListPermissions(ctx context.Context, input *PermissionFilter) ([]*models.Permission, error) {
-	q := squirrel.Select("permissions.*").From("permissions")
+	q := squirrel.Select("auth.permissions.*").From("auth.permissions")
 
 	// q = ViewApplyPagination(q, pageInput)
 	q = ListPermissionsFilterFunc(q, input)
@@ -44,7 +44,7 @@ func (p *DbRbacStore) ListPermissions(ctx context.Context, input *PermissionFilt
 
 // CountPermissions implements AdminCrudActions.
 func (p *DbRbacStore) CountPermissions(ctx context.Context, filter *PermissionFilter) (int64, error) {
-	q := squirrel.Select("COUNT(permissions.*)").From("permissions")
+	q := squirrel.Select("COUNT(auth.permissions.*)").From("auth.permissions")
 
 	// q = ViewApplyPagination(q, pageInput)
 	q = ListPermissionsFilterFunc(q, filter)
@@ -67,44 +67,44 @@ func ListPermissionsFilterFunc(sq squirrel.SelectBuilder, filter *PermissionFilt
 	if filter.Q != "" {
 		sq = sq.Where(
 			squirrel.Or{
-				squirrel.ILike{"name": "%" + filter.Q + "%"},
-				squirrel.ILike{"description": "%" + filter.Q + "%"},
+				squirrel.ILike{"auth.permissions.name": "%" + filter.Q + "%"},
+				squirrel.ILike{"auth.permissions.description": "%" + filter.Q + "%"},
 			},
 		)
 
 	}
 	if len(filter.Names) > 0 {
-		sq = sq.Where(squirrel.Eq{"name": filter.Names})
+		sq = sq.Where(squirrel.Eq{"auth.permissions.name": filter.Names})
 	}
 	if len(filter.Ids) > 0 {
-		sq = sq.Where(squirrel.Eq{"id": filter.Ids})
+		sq = sq.Where(squirrel.Eq{"auth.permissions.id": filter.Ids})
 	}
 
 	if filter.RoleId != uuid.Nil {
 		if filter.RoleReverse {
 			sq = sq.LeftJoin(
-				"role_permissions"+" on "+"permissions.id"+" = "+"role_permissions"+"."+"permission_id"+" and "+"role_permissions"+"."+"role_id"+" = ?",
+				"auth.role_permissions"+" on "+"auth.permissions.id"+" = "+"auth.role_permissions"+"."+"permission_id"+" and "+"auth.role_permissions"+"."+"role_id"+" = ?",
 				filter.RoleId,
 			)
-			sq = sq.Where("role_permissions.permission_id is null")
+			sq = sq.Where("auth.role_permissions.permission_id is null")
 
 		} else {
-			sq = sq.Join("role_permissions on permissions.id = role_permissions.permission_id and role_permissions.role_id = ?", filter.RoleId).
-				Where(squirrel.Eq{"role_permissions.role_id": filter.RoleId})
+			sq = sq.Join("auth.role_permissions on auth.permissions.id = auth.role_permissions.permission_id and auth.role_permissions.role_id = ?", filter.RoleId).
+				Where(squirrel.Eq{"auth.role_permissions.role_id": filter.RoleId})
 
 		}
 	}
 	if filter.ProductID != "" {
 		if filter.ProductReverse {
 			sq = sq.LeftJoin(
-				"product_permissions"+" on "+"permissions.id"+" = "+"product_permissions"+"."+"permission_id"+" and "+"product_permissions"+"."+"product_id"+" = ?",
+				"billing.product_permissions"+" on "+"auth.permissions.id"+" = "+"billing.product_permissions"+"."+"permission_id"+" and "+"billing.product_permissions"+"."+"product_id"+" = ?",
 				filter.ProductID,
 			)
-			sq = sq.Where("product_permissions.permission_id is null")
+			sq = sq.Where("billing.product_permissions.permission_id is null")
 
 		} else {
-			sq = sq.Join("product_permissions on permissions.id = product_permissions.permission_id and product_permissions.product_id = ?", filter.ProductID).
-				Where(squirrel.Eq{"product_permissions.product_id": filter.ProductID})
+			sq = sq.Join("billing.product_permissions on auth.permissions.id = billing.product_permissions.permission_id and billing.product_permissions.product_id = ?", filter.ProductID).
+				Where(squirrel.Eq{"billing.product_permissions.product_id": filter.ProductID})
 
 		}
 	}
@@ -112,7 +112,7 @@ func ListPermissionsFilterFunc(sq squirrel.SelectBuilder, filter *PermissionFilt
 }
 
 func (p *DbRbacStore) FindPermission(ctx context.Context, filter *PermissionFilter) (*models.Permission, error) {
-	q := squirrel.Select("permissions.*").From("permissions")
+	q := squirrel.Select("auth.permissions.*").From("auth.permissions")
 	q = ListPermissionsFilterFunc(q, filter)
 	q = q.Limit(1)
 	data, err := database.QueryWithBuilder[*models.Permission](ctx, p.db, q.PlaceholderFormat(squirrel.Dollar))

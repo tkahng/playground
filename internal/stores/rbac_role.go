@@ -203,7 +203,7 @@ func (p *DbRbacStore) EnsureRoleAndPermissions(ctx context.Context, roleName str
 }
 
 func (p *DbRbacStore) CountRoles(ctx context.Context, filter *RoleListFilter) (int64, error) {
-	q := squirrel.Select("COUNT(roles.*)").From("roles")
+	q := squirrel.Select("COUNT(auth.roles.*)").From("auth.roles")
 
 	q = p.filter(q, filter)
 
@@ -218,7 +218,7 @@ func (p *DbRbacStore) CountRoles(ctx context.Context, filter *RoleListFilter) (i
 	return data[0].Count, nil
 }
 func (p *DbRbacStore) ListRoles(ctx context.Context, input *RoleListFilter) ([]*models.Role, error) {
-	q := squirrel.Select("roles.*").From("roles")
+	q := squirrel.Select("auth.roles.*").From("auth.roles")
 
 	q = p.filter(q, input)
 	q = queryPagination(q, input)

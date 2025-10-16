@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/tkahng/playground/internal/tools/store"
 	"github.com/tkahng/playground/internal/tools/utils"
 )
 
@@ -288,7 +289,18 @@ func (b *SQLBuilder[Model]) Generator() func(reflect.StructField, *[]any) (strin
 	return b.generator
 }
 
+// registry
+//
+//
+//
+//
+//
+//
+
+// registry holds all of the SQLBuilderInterface created during buildtime.
 var registry = map[string]SQLBuilderInterface{}
+
+var SqlBuilderStore = store.New(map[string]SQLBuilderInterface{})
 
 type SQLBuilderOptions[Model any] func(*SQLBuilder[Model]) error
 
@@ -461,7 +473,7 @@ func NewSQLBuilder[Model any](opts ...SQLBuilderOptions[Model]) *SQLBuilder[Mode
 			panic(fmt.Sprintf("Error applying SQLBuilder option: %v", err))
 		}
 	}
-
+	SqlBuilderStore.Set(schemaName+"."+tableName, result)
 	registry[schemaName+"."+tableName] = result
 
 	return result
@@ -716,133 +728,6 @@ func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any) string {
 			}
 		}
 	}
-
-	// iterate over the where map,
-	//
-	// key is a field or column name (e.g. name, email, etc)
-	//
-	// value will be a map of operators and values
-	//
-	// "name", map[string]any{"_eq": "John"}
-	// "friends", map[string]any{"name": map[string]any{"_in": []string{"admin", "user"}}}
-	// for whereFieldName, whereFieldValue := range *where {
-	// 	// iterate over the map of operators and values,
-	// 	//
-	// 	// each key is a operator code(_eq, _gt, etc)
-	// 	// each value will be a map of operators and values
-	// 	for whereOp, whereOpValue := range whereFieldValue.(map[string]any) {
-	// 		// if this field and operation is registered, go ahead.
-	// 		// if not, it might be a relational field
-	// 		if opFunc, ok := b.operations[whereFieldName+whereOp]; ok {
-	// 			var whereField *Field = b.MustGetFieldByName(whereFieldName)
-	// 			// Primitive field condition detected
-	// 			//
-	// 			// if the value is nil, it should use the _isNil, _isNotNil operations
-
-	// 			if whereOpValue == nil {
-	// 				if slices.Contains(nilOps, whereOp) {
-	// 					// If the value is nil and the operation is a nil operation, send it
-	// 					result = append(result, opFunc(whereField.ColumnName))
-	// 				} else {
-	// 					// If the value is nil and the operation is not a nil operation, ignore it
-	// 					panic("nil value for non-nil operation " + whereOp)
-	// 				}
-	// 				continue
-	// 			}
-
-	// 			_value := reflect.ValueOf(whereOpValue)
-
-	// 			// If the value is a pointer, dereference it
-	// 			if _value.Kind() == reflect.Pointer && !_value.IsNil() {
-	// 				_value = _value.Elem()
-	// 			}
-
-	// 			if !_value.IsValid() {
-	// 				panic(fmt.Sprintf("value is invalid for field %s and operation %s for model %s", whereFieldName, whereOp, b.TableName()))
-	// 			}
-	// 			// String values are passed
-	// 			// time values are formatted as strings
-	// 			// fmt.Stringer values are called cast then called String method
-	// 			// slice or array values are iterated and
-	// 			if _value.Kind() == reflect.Slice || _value.Kind() == reflect.Array {
-	// 				// Slice or array values are iterated and check for string types.
-	// 				items := []string{}
-	// 				for i := range _value.Len() {
-	// 					_valueItem := _value.Index(i)
-	// 					item := convert(_valueItem)
-	// 					items = append(items, GenerateParameterPlaceholder(reflect.ValueOf(item), args))
-	// 				}
-	// 				result = append(result, opFunc(whereField.QualifiedColumnName, items...))
-	// 			} else {
-	// 				item := convert(_value)
-	// 				result = append(result, opFunc(whereField.QualifiedColumnName, GenerateParameterPlaceholder(reflect.ValueOf(item), args)))
-	// 			}
-
-	// 		} else {
-	// 			// this field name and opation is not registered.
-	// 			// Relation field condition detected
-	// 			if relation := b.GetRelationByName(whereFieldName); relation != nil {
-	// 				var relatedBuilder SQLBuilderInterface
-	// 				// Get the target SQLBuilder for the relation
-	// 				if bld, ok := registry[relation.table]; !ok {
-	// 					panic(fmt.Sprintf("relation %s not found for model %s", relation.table, b.tableName))
-	// 				} else {
-	// 					// Get the target SQLBuilder for the relation
-	// 					relatedBuilder = bld
-	// 				}
-
-	// 				// Construct the sub-query for the related table
-	// 				relationWhere := whereFieldValue.(map[string]any)
-
-	// 				// query is the subquery we need to generate.
-	// 				var query string
-
-	// 				var relatedDestField = relatedBuilder.MustGetFieldByName(relation.dest)
-	// 				var srcField = b.MustGetFieldByName(relation.src)
-	// 				// if through is not empty
-	// 				// it is a many-to-many relation
-	// 				if relation.through != "" {
-	// 					var throughBuilder SQLBuilderInterface
-	// 					// Get the target SQLBuilder for the relation
-	// 					if bld, ok := registry[relation.through]; !ok {
-	// 						panic(fmt.Sprintf("relation through %s not found for model %s", relation.through, b.tableName))
-	// 					} else {
-	// 						// Get the target SQLBuilder for the relation
-	// 						throughBuilder = bld
-	// 					}
-
-	// 					var throughTableName = throughBuilder.TableName()
-	// 					var throughSrcField = throughBuilder.MustGetFieldByName(relation.throughSrc)
-	// 					var throughDestField = throughBuilder.MustGetFieldByName(relation.throughDest)
-	// 					query = fmt.Sprintf(
-	// 						`SELECT %s FROM %s join %s on %s.%s = %s.%s`,
-	// 						// SELECT
-	// 						throughSrcField.QualifiedColumnName,
-	// 						// FROM
-	// 						throughTableName,
-	// 						// join
-	// 						relatedBuilder.TableName(),
-	// 						// on
-	// 						relatedBuilder.TableName(),
-	// 						relatedDestField.ColumnName,
-	// 						// =
-	// 						throughTableName,
-	// 						throughDestField.ColumnName,
-	// 					)
-	// 				} else {
-	// 					//goland:noinspection Annotator
-	// 					query = fmt.Sprintf("SELECT %s FROM %s", relatedDestField.QualifiedColumnName, relatedBuilder.TableName())
-	// 				}
-	// 				if expr := relatedBuilder.Where(&relationWhere, args); expr != "" {
-	// 					query += fmt.Sprintf(" WHERE %s", expr)
-	// 				}
-	// 				if inop, ok := b.operations[srcField.Name+"_in"]; ok {
-	// 					result = append(result, inop(srcField.QualifiedColumnName, query))
-	// 				}
-	// 			}
-	// 		}
-	// 	}
-	// }
 
 	return strings.Join(result, " AND ")
 }

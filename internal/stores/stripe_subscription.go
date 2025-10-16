@@ -89,15 +89,15 @@ func (s *DbSubscriptionStore) FindActiveSubscriptionsByTeamIds(ctx context.Conte
 	qs = SelectStripeSubscriptionColumns(qs, "")
 	qs = SelectStripeCustomerColumns(qs, "stripe_customer")
 	qs = qs.
-		From("stripe_subscriptions").
-		Join("stripe_customers ON stripe_subscriptions.stripe_customer_id = stripe_customers.id").
+		From("billing.stripe_subscriptions").
+		Join("billing.stripe_customers ON billing.stripe_subscriptions.stripe_customer_id = billing.stripe_customers.id").
 		Where(squirrel.Or{
 			squirrel.And{
 				squirrel.Eq{
-					"stripe_customers.team_id": teamIds,
+					"billing.stripe_customers.team_id": teamIds,
 				},
 				squirrel.Eq{
-					"stripe_subscriptions.status": models.StripeSubscriptionStatusActive,
+					"billing.stripe_subscriptions.status": models.StripeSubscriptionStatusActive,
 				},
 			},
 			squirrel.And{
@@ -132,8 +132,8 @@ func (s *DbSubscriptionStore) FindActiveSubscriptionsByUserIds(ctx context.Conte
 	qs = SelectStripeSubscriptionColumns(qs, "")
 	qs = SelectStripeCustomerColumns(qs, "stripe_customer")
 	qs = qs.
-		From("stripe_subscriptions").
-		Join("stripe_customers ON stripe_subscriptions.stripe_customer_id = stripe_customers.id").
+		From("billing.stripe_subscriptions").
+		Join("billing.stripe_customers ON stripe_subscriptions.stripe_customer_id = stripe_customers.id").
 		Where(squirrel.Or{
 			squirrel.And{
 				squirrel.Eq{
@@ -175,7 +175,6 @@ func (s *DbSubscriptionStore) FindSubscriptionsWithPriceProductByIds(ctx context
 	qs = SelectStripePriceColumns(qs, "price")
 	qs = SelectStripeProductColumns(qs, "price.product")
 	qs = qs.From(models.StripeSubscriptionTableName).
-		// Join("stripe_customers ON stripe_subscriptions.stripe_customer_id = stripe_customers.id").
 		Join(models.StripeCustomerTableName + " ON " + models.StripeSubscriptionTablePrefix.StripeCustomerID + " = " + models.StripeCustomerTablePrefix.ID).
 		Join(models.StripePriceTableName + " ON " + models.StripeSubscriptionTablePrefix.PriceID + " = " + models.StripePriceTablePrefix.ID).
 		Join(models.StripeProductTableName + " ON " + models.StripePriceTablePrefix.ProductID + " = " + models.StripeProductTablePrefix.ID).
@@ -231,7 +230,7 @@ func (s *DbSubscriptionStore) UpsertSubscriptionFromStripe(ctx context.Context, 
 }
 
 func (s *DbSubscriptionStore) UpsertSubscription(ctx context.Context, sub *models.StripeSubscription) error {
-	q := squirrel.Insert("stripe_subscriptions").
+	q := squirrel.Insert("billing.stripe_subscriptions").
 		Columns(
 			"id",
 			"stripe_customer_id",
