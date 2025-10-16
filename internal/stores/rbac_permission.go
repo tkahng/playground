@@ -278,8 +278,8 @@ func (p *DbRbacStore) LoadRolePermissions(ctx context.Context, roleIds ...uuid.U
 					),
 					'[]'
 			) AS data
-	FROM public.role_permissions rp
-			LEFT JOIN public.permissions p ON p.id = rp.permission_id
+	FROM auth.role_permissions rp
+			LEFT JOIN auth.permissions p ON p.id = rp.permission_id
 			WHERE rp.role_id = ANY (
 					$1::uuid []
 			)

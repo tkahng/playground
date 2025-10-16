@@ -220,7 +220,7 @@ func (s *DbTeamMemberStore) filterQuery(qs squirrel.SelectBuilder, filter *TeamM
 		})
 	}
 	if len(filter.Ids) > 0 {
-		qs = qs.Where(squirrel.Eq{models.TeamMemberTable.ID: filter.Ids})
+		qs = qs.Where(squirrel.Eq{"org.team_members.id": filter.Ids})
 
 	}
 	if len(filter.Roles) > 0 {
