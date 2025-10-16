@@ -105,11 +105,11 @@ func TestMustCreateUserAndAccount_Randomize(t *testing.T) {
 		for range count {
 			repository.MustCreateUserAndAccount(t, db)
 		}
-		userCount := repository.MustCountAll(t, repository.User, db)
+		userCount := repository.MustCountAll(t, repository.User, db, &map[string]any{})
 		if userCount != count {
 			t.Errorf("expected at least 10 users, got %d", userCount)
 		}
-		countAcc := repository.MustCountAll(t, repository.User, db)
+		countAcc := repository.MustCountAll(t, repository.User, db, &map[string]any{})
 		if countAcc != count {
 			t.Errorf("expected at least 10 accounts, got %d", countAcc)
 		}

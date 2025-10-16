@@ -1,7 +1,6 @@
 package repository
 
 import (
-	"context"
 	"testing"
 
 	"github.com/google/uuid"
@@ -11,7 +10,7 @@ import (
 
 func MustCreate[T any](t *testing.T, repo Repository[T], db database.Dbx, arg *T) *T {
 	t.Helper()
-	res, err := repo.PostOne(context.Background(), db, arg)
+	res, err := repo.PostOne(t.Context(), db, arg)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -20,16 +19,16 @@ func MustCreate[T any](t *testing.T, repo Repository[T], db database.Dbx, arg *T
 
 func MustFindOne[T any](t *testing.T, repo Repository[T], db database.Dbx, arg *map[string]any) *T {
 	t.Helper()
-	res, err := repo.GetOne(context.Background(), db, arg)
+	res, err := repo.GetOne(t.Context(), db, arg)
 	if err != nil {
 		t.Fatal(err)
 	}
 	return res
 }
 
-func MustCountAll[T any](t *testing.T, repo Repository[T], db database.Dbx) int64 {
+func MustCountAll[T any](t *testing.T, repo Repository[T], db database.Dbx, arg *map[string]any) int64 {
 	t.Helper()
-	res, err := repo.Count(context.Background(), db, nil)
+	res, err := repo.Count(t.Context(), db, arg)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -38,7 +37,7 @@ func MustCountAll[T any](t *testing.T, repo Repository[T], db database.Dbx) int6
 
 func MustFindAll[T any](t *testing.T, repo Repository[T], db database.Dbx, arg *map[string]any) []*T {
 	t.Helper()
-	res, err := repo.Get(context.Background(), db, arg, nil, nil, nil)
+	res, err := repo.Get(t.Context(), db, arg, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
