@@ -31,30 +31,30 @@ func NewPermissionQueryResource(
 			if filter.Q != "" {
 				qs = qs.Where(
 					sq.Or{
-						sq.ILike{"name": "%" + filter.Q + "%"},
-						sq.ILike{"description": "%" + filter.Q + "%"},
+						sq.ILike{"auth.permissions.name": "%" + filter.Q + "%"},
+						sq.ILike{"auth.permissions.description": "%" + filter.Q + "%"},
 					},
 				)
 
 			}
 			if len(filter.Names) > 0 {
-				qs = qs.Where(sq.Eq{"name": filter.Names})
+				qs = qs.Where(sq.Eq{"auth.permissions.name": filter.Names})
 			}
 			if len(filter.Ids) > 0 {
-				qs = qs.Where(sq.Eq{"id": filter.Ids})
+				qs = qs.Where(sq.Eq{"auth.permissions.id": filter.Ids})
 			}
 
 			if filter.RoleId != uuid.Nil {
 				if filter.RoleReverse {
 					qs = qs.LeftJoin(
-						"role_permissions"+" on "+"permissions.id"+" = "+"role_permissions"+"."+"permission_id"+" and "+"role_permissions"+"."+"role_id"+" = ?",
+						"auth.role_permissions"+" on "+"auth.permissions.id"+" = "+"auth.role_permissions"+"."+"permission_id"+" and "+"auth.role_permissions"+"."+"role_id"+" = ?",
 						filter.RoleId,
 					)
-					qs = qs.Where("role_permissions.permission_id is null")
+					qs = qs.Where("auth.role_permissions.permission_id is null")
 
 				} else {
-					qs = qs.Join("role_permissions on permissions.id = role_permissions.permission_id and role_permissions.role_id = ?", filter.RoleId).
-						Where(sq.Eq{"role_permissions.role_id": filter.RoleId})
+					qs = qs.Join("auth.role_permissions on auth.permissions.id = auth.role_permissions.permission_id and auth.role_permissions.role_id = ?", filter.RoleId).
+						Where(sq.Eq{"auth.role_permissions.role_id": filter.RoleId})
 
 				}
 			}

@@ -11,7 +11,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/database/repository"
-	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/test"
 )
 
@@ -23,7 +22,7 @@ func TestNewPermissionQueryResource_FilterFunc(t *testing.T) {
 		filterFunc := repo.filter
 
 		t.Run("nil filter returns empty map", func(t *testing.T) {
-			qs := squirrel.Select(models.PermissionTable.Columns...).From(repo.builder.TableName())
+			qs := squirrel.Select(repository.PermissionBuilder.QualifiedColumnNames()...).From(repo.builder.TableName())
 			where := filterFunc(qs, nil)
 			sql, args, err := where.ToSql()
 			fmt.Println("SQL:", sql)
@@ -43,12 +42,12 @@ func TestNewPermissionQueryResource_FilterFunc(t *testing.T) {
 			assert.NoError(t, err)
 			assert.NotNil(t, sql)
 			assert.Equal(t, 2, len(args))
-			expected := "SELECT id, name, description, created_at, updated_at FROM auth.permissions WHERE (name ILIKE ? OR description ILIKE ?)"
+			expected := "SELECT auth.permissions.id, auth.permissions.name, auth.permissions.description, auth.permissions.created_at, auth.permissions.updated_at FROM auth.permissions WHERE (auth.permissions.name ILIKE ? OR auth.permissions.description ILIKE ?)"
 			assert.Equal(t, expected, sql)
 		})
 
 		t.Run("Ids filter", func(t *testing.T) {
-			qs := squirrel.Select(models.PermissionTable.Columns...).From(repo.builder.TableName())
+			qs := squirrel.Select(repository.PermissionBuilder.QualifiedColumnNames()...).From(repo.builder.TableName())
 			id1 := uuid.New()
 			id2 := uuid.New()
 			filter := &PermissionsFilter{
@@ -59,12 +58,12 @@ func TestNewPermissionQueryResource_FilterFunc(t *testing.T) {
 			assert.NoError(t, err)
 			assert.NotNil(t, sql)
 			assert.Equal(t, 2, len(args))
-			expected := "SELECT id, name, description, created_at, updated_at FROM auth.permissions WHERE id IN (?,?)"
+			expected := "SELECT auth.permissions.id, auth.permissions.name, auth.permissions.description, auth.permissions.created_at, auth.permissions.updated_at FROM auth.permissions WHERE auth.permissions.id IN (?,?)"
 			assert.Equal(t, expected, sql)
 		})
 
 		t.Run("Ids filter", func(t *testing.T) {
-			qs := squirrel.Select(models.PermissionTable.Columns...).From(repo.builder.TableName())
+			qs := squirrel.Select(repository.PermissionBuilder.QualifiedColumnNames()...).From(repo.builder.TableName())
 			id1 := uuid.New()
 			id2 := uuid.New()
 			filter := &PermissionsFilter{
@@ -75,12 +74,12 @@ func TestNewPermissionQueryResource_FilterFunc(t *testing.T) {
 			assert.NoError(t, err)
 			assert.NotNil(t, sql)
 			assert.Equal(t, 2, len(args))
-			expected := "SELECT id, name, description, created_at, updated_at FROM auth.permissions WHERE id IN (?,?)"
+			expected := "SELECT auth.permissions.id, auth.permissions.name, auth.permissions.description, auth.permissions.created_at, auth.permissions.updated_at FROM auth.permissions WHERE auth.permissions.id IN (?,?)"
 			assert.Equal(t, expected, sql)
 		})
 
 		t.Run("Names filter", func(t *testing.T) {
-			qs := squirrel.Select(models.PermissionTable.Columns...).From(repo.builder.TableName())
+			qs := squirrel.Select(repository.PermissionBuilder.QualifiedColumnNames()...).From(repo.builder.TableName())
 			filter := &PermissionsFilter{
 				Names: []string{"read", "write"},
 			}
@@ -89,12 +88,12 @@ func TestNewPermissionQueryResource_FilterFunc(t *testing.T) {
 			assert.NoError(t, err)
 			assert.NotNil(t, sql)
 			assert.Equal(t, 2, len(args))
-			expected := "SELECT id, name, description, created_at, updated_at FROM auth.permissions WHERE name IN (?,?)"
+			expected := "SELECT auth.permissions.id, auth.permissions.name, auth.permissions.description, auth.permissions.created_at, auth.permissions.updated_at FROM auth.permissions WHERE auth.permissions.name IN (?,?)"
 			assert.Equal(t, expected, sql)
 		})
 
 		t.Run("RoleId filter", func(t *testing.T) {
-			qs := squirrel.Select(models.PermissionTable.Columns...).From(repo.builder.TableName())
+			qs := squirrel.Select(repository.PermissionBuilder.QualifiedColumnNames()...).From(repo.builder.TableName())
 			roleId := uuid.New()
 			filter := &PermissionsFilter{
 				RoleId: roleId,
@@ -104,11 +103,11 @@ func TestNewPermissionQueryResource_FilterFunc(t *testing.T) {
 			assert.NoError(t, err)
 			assert.NotNil(t, sql)
 			assert.Equal(t, 2, len(args))
-			expected := "SELECT id, name, description, created_at, updated_at FROM auth.permissions JOIN role_permissions on permissions.id = role_permissions.permission_id and role_permissions.role_id = ? WHERE role_permissions.role_id = ?"
+			expected := "SELECT auth.permissions.id, auth.permissions.name, auth.permissions.description, auth.permissions.created_at, auth.permissions.updated_at FROM auth.permissions JOIN role_permissions on permissions.id = role_permissions.permission_id and role_permissions.role_id = ? WHERE role_permissions.role_id = ?"
 			assert.Equal(t, expected, sql)
 		})
 		t.Run("RoleId filter", func(t *testing.T) {
-			qs := squirrel.Select(models.PermissionTable.Columns...).From(repo.builder.TableName())
+			qs := squirrel.Select(repository.PermissionBuilder.QualifiedColumnNames()...).From(repo.builder.TableName())
 			roleId := uuid.New()
 			filter := &PermissionsFilter{
 				RoleId: roleId,
@@ -118,7 +117,7 @@ func TestNewPermissionQueryResource_FilterFunc(t *testing.T) {
 			assert.NoError(t, err)
 			assert.NotNil(t, sql)
 			assert.Equal(t, 2, len(args))
-			expected := "SELECT id, name, description, created_at, updated_at FROM auth.permissions JOIN role_permissions on permissions.id = role_permissions.permission_id and role_permissions.role_id = ? WHERE role_permissions.role_id = ?"
+			expected := "SELECT auth.permissions.id, auth.permissions.name, auth.permissions.description, auth.permissions.created_at, auth.permissions.updated_at FROM auth.permissions JOIN role_permissions on permissions.id = role_permissions.permission_id and role_permissions.role_id = ? WHERE role_permissions.role_id = ?"
 			assert.Equal(t, expected, sql)
 		})
 	})
