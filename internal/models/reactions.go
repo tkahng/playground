@@ -7,7 +7,7 @@ import (
 )
 
 type UserReaction struct {
-	_         struct{}   `db:"user_reactions" json:"-"`
+	_         struct{}   `db:"user_reactions" schema:"sayhello" json:"-"`
 	ID        uuid.UUID  `db:"id" json:"id"`
 	UserID    *uuid.UUID `db:"user_id" json:"user_id"`
 	Type      string     `db:"type" json:"type"`
@@ -18,5 +18,5 @@ type UserReaction struct {
 	Metadata  []byte     `db:"metadata" json:"metadata"`
 	CreatedAt time.Time  `db:"created_at" json:"created_at"`
 	UpdatedAt time.Time  `db:"updated_at" json:"updated_at"`
-	User      *User      `db:"users" src:"user_id" dest:"id" table:"public.users" json:"user,omitempty"`
+	User      *User      `db:"users" src:"user_id" dest:"id" table:"auth.users" json:"user,omitempty"`
 }

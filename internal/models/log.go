@@ -7,7 +7,7 @@ import (
 )
 
 type Log struct {
-	_         struct{}   `db:"logs" json:"-"`
+	_         struct{}   `db:"logs" schema:"app" json:"-"`
 	ID        uuid.UUID  `db:"id,pk" json:"id"`
 	Level     slog.Level `db:"level" json:"level"`
 	Source    *string    `db:"source" json:"source"`

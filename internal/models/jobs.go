@@ -17,7 +17,7 @@ const (
 )
 
 type JobRow struct {
-	_           struct{}  `db:"jobs" json:"-"`
+	_           struct{}  `db:"jobs" schema:"app" json:"-"`
 	ID          uuid.UUID `db:"id" json:"id"`
 	Kind        string    `db:"kind" json:"kind"`
 	UniqueKey   *string   `db:"unique_key" json:"unique_key"`

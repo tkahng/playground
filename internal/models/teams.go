@@ -7,14 +7,14 @@ import (
 )
 
 type Team struct {
-	_              struct{}        `db:"teams" json:"-"`
+	_              struct{}        `db:"teams" schema:"org" json:"-"`
 	ID             uuid.UUID       `db:"id" json:"id"`
 	Name           string          `db:"name" json:"name"`
 	Slug           string          `db:"slug" json:"slug"`
 	CreatedAt      time.Time       `db:"created_at" json:"created_at"`
 	UpdatedAt      time.Time       `db:"updated_at" json:"updated_at"`
-	Members        []*TeamMember   `db:"members" src:"id" dest:"team_id" table:"public.team_members" json:"members,omitempty"`
-	StripeCustomer *StripeCustomer `db:"stripe_customer" src:"id" dest:"team_id" table:"public.stripe_customers" json:"stripe_customer,omitempty" required:"false"`
+	Members        []*TeamMember   `db:"members" src:"id" dest:"team_id" table:"org.team_members" json:"members,omitempty"`
+	StripeCustomer *StripeCustomer `db:"stripe_customer" src:"id" dest:"team_id" table:"billing.stripe_customers" json:"stripe_customer,omitempty" required:"false"`
 }
 
 type teamTable struct {
@@ -57,7 +57,7 @@ const (
 )
 
 type TeamInvitation struct {
-	_               struct{}             `db:"team_invitations" json:"-"`
+	_               struct{}             `db:"team_invitations" schema:"org" json:"-"`
 	ID              uuid.UUID            `db:"id" json:"id"`
 	TeamID          uuid.UUID            `db:"team_id" json:"team_id"`
 	InviterMemberID uuid.UUID            `db:"inviter_member_id" json:"inviter_member_id"`
@@ -68,8 +68,8 @@ type TeamInvitation struct {
 	ExpiresAt       time.Time            `db:"expires_at" json:"expires_at"`
 	CreatedAt       time.Time            `db:"created_at" json:"created_at"`
 	UpdatedAt       time.Time            `db:"updated_at" json:"updated_at"`
-	Team            *Team                `db:"team" src:"team_id" dest:"id" table:"public.teams" json:"team,omitempty"`
-	InviterMember   *TeamMember          `db:"inviter_member" src:"inviter_member_id" dest:"id" table:"public.member" json:"inviter_member,omitempty"`
+	Team            *Team                `db:"team" src:"team_id" dest:"id" table:"org.teams" json:"team,omitempty"`
+	InviterMember   *TeamMember          `db:"inviter_member" src:"inviter_member_id" dest:"id" table:"org.team_members" json:"inviter_member,omitempty"`
 }
 
 type teamInvitationTable struct {
@@ -103,7 +103,7 @@ var TeamInvitationTable = teamInvitationTable{
 }
 
 type TeamMember struct {
-	_                struct{}       `db:"team_members" json:"-"`
+	_                struct{}       `db:"team_members" schema:"org" json:"-"`
 	ID               uuid.UUID      `db:"id" json:"id"`
 	TeamID           uuid.UUID      `db:"team_id" json:"team_id"`
 	UserID           *uuid.UUID     `db:"user_id" json:"user_id"`
@@ -113,8 +113,8 @@ type TeamMember struct {
 	LastSelectedAt   time.Time      `db:"last_selected_at" json:"last_selected_at"`
 	CreatedAt        time.Time      `db:"created_at" json:"created_at"`
 	UpdatedAt        time.Time      `db:"updated_at" json:"updated_at"`
-	Team             *Team          `db:"team" src:"team_id" dest:"id" table:"public.team" json:"team,omitempty"`
-	User             *User          `db:"user" src:"user_id" dest:"id" table:"public.users" json:"user,omitempty"`
+	Team             *Team          `db:"team" src:"team_id" dest:"id" table:"org.team" json:"team,omitempty"`
+	User             *User          `db:"user" src:"user_id" dest:"id" table:"auth.users" json:"user,omitempty"`
 }
 
 type teamMemberTable struct {
