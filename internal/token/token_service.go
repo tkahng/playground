@@ -56,11 +56,11 @@ func (t *TokenServiceImpl) GenerateToken(ctx context.Context, email string, toke
 	var opt conf.TokenOption
 	switch tokenType {
 	case models.TokenTypesVerificationToken:
-		opt = t.opts.AuthOptions.VerificationToken
+		opt = t.opts.VerificationToken
 	case models.TokenTypesPasswordResetToken:
-		opt = t.opts.AuthOptions.PasswordResetToken
+		opt = t.opts.PasswordResetToken
 	case models.TokenTypesRefreshToken:
-		opt = t.opts.AuthOptions.RefreshToken
+		opt = t.opts.RefreshToken
 	default:
 		return "", fmt.Errorf("invalid email type %v", tokenType)
 	}

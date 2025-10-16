@@ -319,19 +319,19 @@ func InsertID[Model any](builder *SQLBuilder[Model]) error {
 func NewSQLBuilder[Model any](opts ...SQLBuilderOptions[Model]) *SQLBuilder[Model] {
 
 	// Reflect on the Model type to extract metadata
-	var _type reflect.Type = reflect.TypeFor[Model]()
+	var _type = reflect.TypeFor[Model]()
 
 	// default table name to lowercase model name
-	var tableName string = strings.ToLower(_type.Name())
+	var tableName = strings.ToLower(_type.Name())
 
 	// default quote identifier to true
-	var quoteIdentifier bool = false
+	var quoteIdentifier = false
 
 	var modelFields []*Field
-	var modelRelations map[string]*Relation = map[string]*Relation{}
-	var modelOperations map[string]func(string, ...string) string = map[string]func(string, ...string) string{}
+	var modelRelations = map[string]*Relation{}
+	var modelOperations = map[string]func(string, ...string) string{}
 
-	var schemaName string = "public"
+	var schemaName = "public"
 	// iterate over the fields of the model type
 	for idx := range _type.NumField() {
 		_field := _type.Field(idx)
@@ -598,7 +598,7 @@ func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any) string {
 
 	fieldIdxs := b.getSortedFields(where)
 	for _, fieldIdx := range fieldIdxs {
-		var whereFieldName string = fieldIdx.Name
+		var whereFieldName = fieldIdx.Name
 		if whereFieldValue, ok := (*where)[fieldIdx.Name]; ok {
 			expr, ok := whereFieldValue.(map[string]any)
 			if ok {
@@ -606,7 +606,7 @@ func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any) string {
 					// if this field and operation is registered, go ahead.
 					// if not, it might be a relational field
 					if opFunc, ok := b.operations[whereFieldName+whereOp]; ok {
-						var whereField *Field = b.MustGetFieldByName(whereFieldName)
+						var whereField = b.MustGetFieldByName(whereFieldName)
 						// Primitive field condition detected
 						//
 						// if the value is nil, it should use the _isNil, _isNotNil operations

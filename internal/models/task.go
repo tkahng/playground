@@ -7,7 +7,7 @@ import (
 )
 
 type Task struct {
-	_                 struct{}     `db:"tasks" json:"-"`
+	_                 struct{}     `db:"tasks" schema:"task" json:"-"`
 	ID                uuid.UUID    `db:"id" json:"id"`
 	CreatedByMemberID *uuid.UUID   `db:"created_by_member_id" json:"created_by_member_id" nullable:"true"`
 	TeamID            uuid.UUID    `db:"team_id" json:"team_id"`
@@ -32,7 +32,7 @@ type Task struct {
 }
 
 type TaskProject struct {
-	_                 struct{}          `db:"task_projects" json:"-"`
+	_                 struct{}          `db:"task_projects" schema:"task" json:"-"`
 	ID                uuid.UUID         `db:"id" json:"id"`
 	CreatedByMemberID *uuid.UUID        `db:"created_by_member_id" json:"created_by_member_id" nullable:"true"`
 	TeamID            uuid.UUID         `db:"team_id" json:"team_id"`

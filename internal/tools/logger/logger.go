@@ -13,7 +13,7 @@ func GetDefaultLogger() *slog.Logger {
 	logFormat := GetDefaultFormat(&opts)
 	logger := slog.New(ContextHandler{
 		Handler: slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-			AddSource:   !(opts.AppEnv == "development"),
+			AddSource:   opts.AppEnv != "development",
 			Level:       slog.LevelInfo,
 			ReplaceAttr: logFormat.ReplaceAttr,
 		}),
