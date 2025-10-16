@@ -108,8 +108,6 @@ create table billing.stripe_subscriptions (
     -- Subscription ID from Stripe, e.g. sub_1234.
     id text primary key,
     stripe_customer_id text not null references billing.stripe_customers,
-    -- user_id uuid references auth.users on delete cascade on update cascade not null,
-    -- team_id uuid references public.teams on delete cascade on update cascade not null,
     -- The status of the subscription object, one of stripe_subscription_status type above.
     status billing.stripe_subscription_status not null,
     -- Set of key-value pairs, used to store additional information about the object in a structured format.

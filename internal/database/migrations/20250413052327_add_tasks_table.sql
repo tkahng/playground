@@ -28,7 +28,6 @@ create type task.task_status as enum ('todo', 'in_progress', 'done');
 -- tasks table  ----------------------------------------------------------------------
 create table if not exists task.tasks (
     id uuid primary key default uuidv7(),
-    -- user_id uuid not null references public.users on delete cascade on update cascade,
     team_id uuid not null references org.teams on delete cascade on update cascade,
     created_by_member_id uuid references org.team_members on delete
     set null on update cascade,
