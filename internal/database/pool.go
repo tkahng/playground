@@ -75,9 +75,9 @@ func getCustomDataTypes(ctx context.Context, pool *pgxpool.Pool) ([]*pgtype.Type
 	}
 
 	dataTypeNames := []string{
-		"providers",
+		"auth.providers",
 		// An underscore prefix is an array type in pgtypes.
-		"_providers",
+		"auth._providers",
 	}
 
 	var typesToRegister []*pgtype.Type
