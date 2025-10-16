@@ -20,6 +20,13 @@ import (
 	"github.com/tkahng/playground/ui"
 )
 
+type API interface {
+	Api() huma.API
+	RegisterRoutes()
+	Router() chi.Router
+	App() core.App
+}
+
 type Api struct {
 	app    core.App
 	api    huma.API
