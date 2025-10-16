@@ -12,7 +12,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/danielgtaylor/huma/v2"
+	"github.com/danielgtaylor/huma/v2/adapters/humachi"
 	"github.com/danielgtaylor/huma/v2/humatest"
+	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/tkahng/playground/internal/apis"
 	"github.com/tkahng/playground/internal/conf"
@@ -20,7 +23,6 @@ import (
 	"github.com/tkahng/playground/internal/models"
 
 	"github.com/tkahng/playground/internal/services"
-	"github.com/tkahng/playground/internal/test"
 
 	"github.com/tkahng/playground/internal/core"
 	"github.com/tkahng/playground/internal/tools/mailer"
@@ -311,7 +313,7 @@ func SetupApi(t testing.TB, ctx context.Context, db database.Dbx) *TestApi {
 	t.Helper()
 	cfg := conf.ZeroEnvConfig()
 	app := core.NewTestBaseApp(cfg, db)
-	router, api := test.NewHumaApi(t)
+	router, api := NewHumaApi(t)
 	appApi := apis.NewAppApi(app, router, api)
 	appApi.RegisterRoutes()
 	testApi := &TestApi{
@@ -322,6 +324,31 @@ func SetupApi(t testing.TB, ctx context.Context, db database.Dbx) *TestApi {
 		Router:  router,
 	}
 	return testApi
+}
+func NewHumaApi(tb testing.TB, configs ...huma.Config) (chi.Router, humatest.TestAPI) {
+	tb.Helper()
+	for _, config := range configs {
+		if config.OpenAPI == nil {
+			panic("custom huma.Config structs must specify a value for OpenAPI")
+		}
+	}
+	if len(configs) == 0 {
+		configs = append(configs, huma.Config{
+			OpenAPI: &huma.OpenAPI{
+				Info: &huma.Info{
+					Title:   "Test API",
+					Version: "1.0.0",
+				},
+			},
+			Formats: map[string]huma.Format{
+				"application/json": huma.DefaultJSONFormat,
+				"json":             huma.DefaultJSONFormat,
+			},
+			DefaultFormat: "application/json",
+		})
+	}
+	r := chi.NewMux()
+	return r, humatest.Wrap(tb, humachi.New(r, configs[0]))
 }
 
 // ApiScenario defines a single api request test case/scenario.

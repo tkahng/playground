@@ -12,6 +12,7 @@ import (
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/stores"
 	"github.com/tkahng/playground/internal/test"
+	"github.com/tkahng/playground/internal/tools/types"
 )
 
 func TestUserStore_CRUD(t *testing.T) {
@@ -26,7 +27,7 @@ func TestUserStore_CRUD(t *testing.T) {
 		email := "testuser@example.com"
 		user, err := store.CreateUser(ctx, &models.User{
 			Email: email,
-			Name:  ptrString("Test User"),
+			Name:  types.Pointer("Test User"),
 		})
 		if err != nil {
 			t.Fatalf("CreateUser() error = %v", err)
@@ -65,7 +66,7 @@ func TestUserStore_CRUD(t *testing.T) {
 		}
 
 		// UpdateUser
-		user.Name = ptrString("Updated Name")
+		user.Name = types.Pointer("Updated Name")
 		err = store.UpdateUser(ctx, user)
 		if err != nil {
 			t.Errorf("UpdateUser() error = %v", err)
@@ -134,10 +135,6 @@ func TestUserStore_LoadUsersByUserIds(t *testing.T) {
 		}
 
 	})
-}
-
-func ptrString(s string) *string {
-	return &s
 }
 
 func TestUserStore_FindUserById(t *testing.T) {
