@@ -1,18 +1,18 @@
 -- migrate:up
 -- enum for stripe_customer_types. 'user' or 'team'
-create type public.stripe_customer_type as enum ('user', 'team');
-create table public.stripe_customers (
+create type billing.stripe_customer_type as enum ('user', 'team');
+create table billing.stripe_customers (
     -- UUID from auth.users
-    -- id uuid references public.users on delete cascade on update cascade not null primary key,
+    -- id uuid references auth.users on delete cascade on update cascade not null primary key,
     id text primary key,
     -- -- The user's customer ID in Stripe. User must not be able to update this.
     -- stripe_id text not null unique,
     email text not null,
     name text,
     -- The type of customer, either 'user' or 'team'.
-    customer_type public.stripe_customer_type not null,
-    user_id uuid unique references public.users on delete cascade on update cascade,
-    team_id uuid unique references public.teams on delete cascade on update cascade,
+    customer_type billing.stripe_customer_type not null,
+    user_id uuid unique references auth.users on delete cascade on update cascade,
+    team_id uuid unique references org.teams on delete cascade on update cascade,
     -- The customer's billing address, stored in JSON format.
     billing_address jsonb,
     -- Stores your customer's payment instruments.
@@ -33,9 +33,9 @@ create table public.stripe_customers (
     )
 );
 CREATE TRIGGER handle_stripe_customers_updated_at before
-update on public.stripe_customers for each row execute procedure utility.set_current_timestamp_updated_at();
+update on billing.stripe_customers for each row execute procedure utility.set_current_timestamp_updated_at();
 --------------- CUSTOMERS TABLE END -----------------------------------------------------------------------
-create table public.stripe_products (
+create table billing.stripe_products (
     -- Product ID from Stripe, e.g. prod_1234.
     id text primary key,
     -- Whether the product is currently available for purchase.
@@ -52,17 +52,17 @@ create table public.stripe_products (
     updated_at timestamptz not null default clock_timestamp()
 );
 CREATE TRIGGER handle_stripe_products_updated_at before
-update on public.stripe_products for each row execute procedure utility.set_current_timestamp_updated_at();
-create type public.stripe_pricing_type as enum ('one_time', 'recurring');
-create type public.stripe_pricing_plan_interval as enum ('day', 'week', 'month', 'year');
+update on billing.stripe_products for each row execute procedure utility.set_current_timestamp_updated_at();
+create type billing.stripe_pricing_type as enum ('one_time', 'recurring');
+create type billing.stripe_pricing_plan_interval as enum ('day', 'week', 'month', 'year');
 --------------- PRICES TYPE ENUM END -----------------------------------------------------------------------
 --
 --------------- PRICES TABLE START -----------------------------------------------------------------------
-create table public.stripe_prices (
+create table billing.stripe_prices (
     -- Price ID from Stripe, e.g. price_1234.
     id text primary key,
     -- The ID of the prduct that this price belongs to.
-    product_id text not null references public.stripe_products,
+    product_id text not null references billing.stripe_products,
     -- lookup_key
     lookup_key text,
     -- Whether the price can be used for new purchases.
@@ -72,9 +72,9 @@ create table public.stripe_prices (
     -- Three-letter ISO currency code, in lowercase.
     currency text not null check (char_length(currency) = 3),
     -- One of `one_time` or `recurring` depending on whether the price is for a one-time purchase or a recurring (subscription) purchase.
-    type public.stripe_pricing_type not null,
+    type billing.stripe_pricing_type not null,
     -- The frequency at which a subscription is billed. One of `day`, `week`, `month` or `year`.
-    interval public.stripe_pricing_plan_interval,
+    interval billing.stripe_pricing_plan_interval,
     -- The number of intervals (specified in the `interval` attribute) between subscription billings. For example, `interval=month` and `interval_count=3` bills every 3 months.
     interval_count bigint,
     -- Default number of trial days when subscribing a customer to this price using [`trial_from_plan=true`](https://stripe.com/docs/api#create_subscription-trial_from_plan).
@@ -85,13 +85,13 @@ create table public.stripe_prices (
     updated_at timestamptz not null default clock_timestamp()
 );
 CREATE TRIGGER handle_stripe_prices_updated_at before
-update on public.stripe_prices for each row execute procedure utility.set_current_timestamp_updated_at();
+update on billing.stripe_prices for each row execute procedure utility.set_current_timestamp_updated_at();
 /**
  * STRIPE_SUBSCRIPTIONS
  * Note: stripe_subscriptions are created and managed in Stripe and synced to our DB via Stripe webhooks.
  */
 --------------- STRIPE_SUBSCRIPTIONS TYPE ENUM START -----------------------------------------------------------------------
-create type public.stripe_subscription_status as enum (
+create type billing.stripe_subscription_status as enum (
     'trialing',
     'active',
     'canceled',
@@ -104,18 +104,18 @@ create type public.stripe_subscription_status as enum (
 --------------- STRIPE_SUBSCRIPTIONS TYPE ENUM END -----------------------------------------------------------------------
 --
 --------------- STRIPE_SUBSCRIPTIONS TABLE START -----------------------------------------------------------------------
-create table public.stripe_subscriptions (
+create table billing.stripe_subscriptions (
     -- Subscription ID from Stripe, e.g. sub_1234.
     id text primary key,
-    stripe_customer_id text not null references public.stripe_customers,
-    -- user_id uuid references public.users on delete cascade on update cascade not null,
+    stripe_customer_id text not null references billing.stripe_customers,
+    -- user_id uuid references auth.users on delete cascade on update cascade not null,
     -- team_id uuid references public.teams on delete cascade on update cascade not null,
     -- The status of the subscription object, one of stripe_subscription_status type above.
-    status public.stripe_subscription_status not null,
+    status billing.stripe_subscription_status not null,
     -- Set of key-value pairs, used to store additional information about the object in a structured format.
     metadata jsonb not null,
     item_id text not null,
-    price_id text not null references public.stripe_prices,
+    price_id text not null references billing.stripe_prices,
     -- item_id text not null,
     -- Quantity multiplied by the unit amount of the price creates the amount of the subscription. Can be used to charge multiple seats.
     quantity bigint not null,
@@ -141,10 +141,10 @@ create table public.stripe_subscriptions (
     updated_at timestamptz not null default clock_timestamp()
 );
 CREATE TRIGGER handle_stripe_subscriptions_updated_at before
-update on public.stripe_subscriptions for each row execute procedure utility.set_current_timestamp_updated_at();
+update on billing.stripe_subscriptions for each row execute procedure utility.set_current_timestamp_updated_at();
 --------------- STRIPE_SUBSCRIPTIONS TABLE END -----------------------------------------------------------------------
 --------------- STRIPE WEBHOOK EVENTS TABLE START -----------------------------------------------------------------------
-create table public.stripe_webhook_events (
+create table billing.stripe_webhook_events (
     -- event.id from Stripe
     id text primary key,
     -- event.type from Stripe
@@ -161,28 +161,28 @@ create table public.stripe_webhook_events (
     updated_at timestamptz not null default clock_timestamp()
 );
 CREATE TRIGGER handle_stripe_webhook_events_updated_at before
-update on public.stripe_webhook_events for each row execute procedure utility.set_current_timestamp_updated_at();
+update on billing.stripe_webhook_events for each row execute procedure utility.set_current_timestamp_updated_at();
 --------------- STRIPE WEBHOOK EVENTS TABLE END -----------------------------------------------------------------------
 -- migrate:down
 -- Drop the stripe_webhook_events table
-DROP TRIGGER IF EXISTS handle_stripe_webhook_events_updated_at on public.stripe_webhook_events;
-DROP TABLE IF EXISTS public.stripe_webhook_events;
+DROP TRIGGER IF EXISTS handle_stripe_webhook_events_updated_at on billing.stripe_webhook_events;
+DROP TABLE IF EXISTS billing.stripe_webhook_events;
 -- Drop the stripe_subscriptions table
-DROP TRIGGER IF EXISTS handle_stripe_subscriptions_updated_at on public.stripe_subscriptions;
-DROP TABLE IF EXISTS public.stripe_subscriptions;
+DROP TRIGGER IF EXISTS handle_stripe_subscriptions_updated_at on billing.stripe_subscriptions;
+DROP TABLE IF EXISTS billing.stripe_subscriptions;
 -- Drop the stripe_subscription_status type
-DROP TYPE IF EXISTS public.stripe_subscription_status;
+DROP TYPE IF EXISTS billing.stripe_subscription_status;
 -- Drop the stripe_prices table
-DROP TRIGGER IF EXISTS handle_stripe_prices_updated_at on public.stripe_prices;
-DROP TABLE IF EXISTS public.stripe_prices;
+DROP TRIGGER IF EXISTS handle_stripe_prices_updated_at on billing.stripe_prices;
+DROP TABLE IF EXISTS billing.stripe_prices;
 -- Drop the stripe_subscription_status type
-DROP TYPE IF EXISTS public.stripe_pricing_plan_interval;
-DROP TYPE IF EXISTS public.stripe_pricing_type;
+DROP TYPE IF EXISTS billing.stripe_pricing_plan_interval;
+DROP TYPE IF EXISTS billing.stripe_pricing_type;
 -- Drop the stripe_products table
-DROP TRIGGER IF EXISTS handle_stripe_products_updated_at on public.stripe_products;
-DROP TABLE IF EXISTS public.stripe_products;
+DROP TRIGGER IF EXISTS handle_stripe_products_updated_at on billing.stripe_products;
+DROP TABLE IF EXISTS billing.stripe_products;
 -- Drop the stripe_customers table
-DROP TRIGGER IF EXISTS handle_stripe_customers_updated_at on public.stripe_customers;
-DROP TABLE IF EXISTS public.stripe_customers;
+DROP TRIGGER IF EXISTS handle_stripe_customers_updated_at on billing.stripe_customers;
+DROP TABLE IF EXISTS billing.stripe_customers;
 -- Drop the stripe_customer_type type
-DROP TYPE IF EXISTS public.stripe_customer_type;
+DROP TYPE IF EXISTS billing.stripe_customer_type;
