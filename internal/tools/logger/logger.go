@@ -10,12 +10,12 @@ import (
 
 func GetDefaultLogger() *slog.Logger {
 	opts := conf.GetConfig[conf.AppConfig]()
-	logFormat := GetDefaultFormat(&opts)
+	isNotProduction := opts.AppEnv != "production"
 	logger := slog.New(ContextHandler{
 		Handler: slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-			AddSource:   opts.AppEnv != "development",
+			AddSource:   isNotProduction,
 			Level:       slog.LevelInfo,
-			ReplaceAttr: logFormat.ReplaceAttr,
+			ReplaceAttr: httplog.SchemaOTEL.Concise(isNotProduction).ReplaceAttr,
 		}),
 	})
 	slog.SetDefault(logger)
@@ -23,6 +23,6 @@ func GetDefaultLogger() *slog.Logger {
 }
 
 func GetDefaultFormat(opts *conf.AppConfig) *httplog.Schema {
-	isdev := opts.AppEnv == "development"
-	return httplog.SchemaOTEL.Concise(isdev)
+	isNotProduction := opts.AppEnv != "production"
+	return httplog.SchemaOTEL.Concise(isNotProduction)
 }

@@ -48,7 +48,6 @@ func Run2() error {
 	firstCtx, firstCancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM, syscall.SIGHUP, syscall.SIGINT)
 	defer firstCancel()
 	opts := conf.AppConfigGetter()
-
 	// migrate database
 	if err := migrate(opts.Db.GetDatabaseUrl()); err != nil {
 		return err
