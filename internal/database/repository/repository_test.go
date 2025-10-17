@@ -7,6 +7,7 @@ import (
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/database/repository"
 	"github.com/tkahng/playground/internal/models"
+	"github.com/tkahng/playground/internal/tools/types"
 )
 
 var (
@@ -80,9 +81,15 @@ func TestMustCreateUserAndAccount(t *testing.T) {
 			predicate func(*models.User, *models.UserAccount)
 		}{
 			{
-				name: "Create user and account with defaults",
+				name: "Create user and credential account",
 				db:   db,
-				fns:  []func(*models.User, *models.UserAccount){},
+				fns: []func(user *models.User, account *models.UserAccount){
+					func(user *models.User, account *models.UserAccount) {
+						user.Name = types.Pointer("credential")
+						account.Type = models.ProviderTypeCredentials
+						account.Provider = models.ProvidersCredentials
+					},
+				},
 				predicate: func(user *models.User, account *models.UserAccount) {
 					if user == nil {
 						t.Errorf("expected user, got nil")
@@ -90,13 +97,78 @@ func TestMustCreateUserAndAccount(t *testing.T) {
 					if account == nil {
 						t.Errorf("expected account, got nil")
 					}
+					if user.Name != types.Pointer("credential") {
+						t.Errorf("expected user name to be credential, got %s", *user.Name)
+					}
+					if account.Type != models.ProviderTypeCredentials {
+						t.Errorf("expected account type to be credentials, got %s", account.Type)
+					}
+					if account.Provider != models.ProvidersCredentials {
+						t.Errorf("expected account provider to be credentials, got %s", account.Provider)
+					}
+				},
+			},
+			{
+				name: "create google account",
+				db:   db,
+				fns: []func(user *models.User, account *models.UserAccount){
+					func(user *models.User, account *models.UserAccount) {
+						user.Name = types.Pointer("google")
+						account.Type = models.ProviderTypeOAuth
+						account.Provider = models.ProvidersGoogle
+					},
+				},
+				predicate: func(user *models.User, account *models.UserAccount) {
+					if user == nil {
+						t.Errorf("expected user, got nil")
+					}
+					if account == nil {
+						t.Errorf("expected account, got nil")
+					}
+					if user.Name != types.Pointer("google") {
+						t.Errorf("expected user name to be google, got %s", *user.Name)
+					}
+					if account.Type != models.ProviderTypeOAuth {
+						t.Errorf("expected account type to be oauth, got %s", account.Type)
+					}
+					if account.Provider != models.ProvidersGoogle {
+						t.Errorf("expected account provider to be google, got %s", account.Provider)
+					}
+				},
+			},
+			{
+				name: "create github account",
+				db:   db,
+				fns: []func(user *models.User, account *models.UserAccount){
+					func(user *models.User, account *models.UserAccount) {
+						user.Name = types.Pointer("github")
+						account.Type = models.ProviderTypeOAuth
+						account.Provider = models.ProvidersGithub
+					},
+				},
+				predicate: func(user *models.User, account *models.UserAccount) {
+					if user == nil {
+						t.Errorf("expected user, got nil")
+					}
+					if account == nil {
+						t.Errorf("expected account, got nil")
+					}
+					if user.Name != types.Pointer("github") {
+						t.Errorf("expected user name to be github, got %s", *user.Name)
+					}
+					if account.Type != models.ProviderTypeOAuth {
+						t.Errorf("expected account type to be oauth, got %s", account.Type)
+					}
+					if account.Provider != models.ProvidersGithub {
+						t.Errorf("expected account provider to be github, got %s", account.Provider)
+					}
 				},
 			},
 		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				got, got2 := repository.MustCreateUserAndAccount(t, tt.db, tt.fns...)
-				tt.predicate(got, got2)
+				user, account := repository.MustCreateUserAndAccount(t, tt.db, tt.fns...)
+				tt.predicate(user, account)
 			})
 		}
 	})

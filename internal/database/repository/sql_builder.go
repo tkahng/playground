@@ -157,7 +157,7 @@ type SQLBuilderInterface interface {
 	GetFieldByName(name string) *Field
 	MustGetFieldByName(name string) *Field
 	Where(where *map[string]any, args *[]any) string
-	WhereError(ctx context.Context, where *map[string]any, args *[]any) (ret string, err error)
+	WhereError(ctx context.Context, where *map[string]any, args *[]any) (string, error)
 	IdFieldName() string
 	InsertID() bool
 	Generator() func(reflect.StructField, *[]any) (string, error)
@@ -216,13 +216,7 @@ func (b *SQLBuilder[Model]) GetFieldByName(name string) *Field {
 // name is the field name of the model, without its schema, table, or quotes.
 // panics if the field is not found
 func (b *SQLBuilder[Model]) MustGetFieldByName(name string) *Field {
-	var field *Field
-	for _, f := range b.fields {
-		if f.Name == name {
-			field = f
-			break
-		}
-	}
+	var field *Field = b.GetFieldByName(name)
 	if field == nil {
 		panic(fmt.Sprintf("could not get field by name: field %s not found for model %s", name, b.tableName))
 	}
@@ -619,7 +613,10 @@ func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any) string {
 					// if this field and operation is registered, go ahead.
 					// if not, it might be a relational field
 					if opFunc, ok := b.operations[whereFieldName+whereOp]; ok {
-						var whereField = b.MustGetFieldByName(whereFieldName)
+						var whereField = b.GetFieldByName(whereFieldName)
+						if whereField == nil {
+							panic(fmt.Sprintf("could not get field by name: field %s not found for model %s", whereFieldName, b.tableName))
+						}
 						// Primitive field condition detected
 						//
 						// if the value is nil, it should use the _isNil, _isNotNil operations
@@ -681,8 +678,14 @@ func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any) string {
 							// query is the subquery we need to generate.
 							var query string
 
-							var relatedDestField = relatedBuilder.MustGetFieldByName(relation.dest)
-							var srcField = b.MustGetFieldByName(relation.src)
+							var relatedDestField = relatedBuilder.GetFieldByName(relation.dest)
+							if relatedDestField == nil {
+								panic(fmt.Sprintf("could not get field by name: dest field %s not found for model %s for relation to %s", relation.dest, relatedBuilder.TableName(), b.tableName))
+							}
+							var srcField = b.GetFieldByName(relation.src)
+							if srcField == nil {
+								panic(fmt.Sprintf("could not get field by name: src field %s not found for model %s", relation.src, b.tableName))
+							}
 							// if through is not empty
 							// it is a many-to-many relation
 							if relation.through != "" {
@@ -696,8 +699,14 @@ func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any) string {
 								}
 
 								var throughTableName = throughBuilder.TableName()
-								var throughSrcField = throughBuilder.MustGetFieldByName(relation.throughSrc)
-								var throughDestField = throughBuilder.MustGetFieldByName(relation.throughDest)
+								var throughSrcField = throughBuilder.GetFieldByName(relation.throughSrc)
+								if throughSrcField == nil {
+									panic(fmt.Sprintf("could not get field by name: through src field %s not found for model %s for relation to %s", relation.dest, throughBuilder.TableName(), b.tableName))
+								}
+								var throughDestField = throughBuilder.GetFieldByName(relation.throughDest)
+								if throughDestField == nil {
+									panic(fmt.Sprintf("could not get field by name: dest field %s not found for model %s for relation to %s", relation.dest, relatedBuilder.TableName(), relatedBuilder.TableName()))
+								}
 								query = fmt.Sprintf(
 									`SELECT %s FROM %s join %s on %s.%s = %s.%s`,
 									// SELECT
@@ -956,8 +965,36 @@ func (b *SQLBuilder[Model]) OrderError(order *map[string]string) (res string, er
 			err = fmt.Errorf("error generating Order for table %s", b.tableName)
 		}
 	}()
-	res = b.Order(order)
+	res, err = b.orderError(order)
 	return
+}
+
+// Constructs the ORDER BY clause for a query
+// order is a map[string]string{"field1": "asc", "field2": "desc"}
+// which will be converted to "field1 ASC, field2 DESC"
+func (b *SQLBuilder[Model]) orderError(order *map[string]string) (string, error) {
+	// fmt.Println("order", order)
+	if order == nil {
+		return "", nil
+	}
+
+	// Generate the field names for the ORDER BY clause
+	result := []string{}
+
+	// fmt.Println("columnnames", b.columnNames)
+
+	for key, val := range *order {
+		// if key is in FieldNames, add it to the ORDER BY clause
+		if slices.Contains(b.FieldNames(), key) {
+			field := b.GetFieldByName(key)
+			if field == nil {
+				return "", fmt.Errorf("orderable field %s not found for model %s", key, b.tableName)
+			}
+			result = append(result, fmt.Sprintf("%s %s", field.QualifiedColumnName, strings.ToUpper(val)))
+		}
+	}
+
+	return strings.Join(result, ","), nil
 }
 
 // Constructs the ORDER BY clause for a query
