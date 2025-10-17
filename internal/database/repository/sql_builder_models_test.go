@@ -75,7 +75,7 @@ func TestSQLBuilder_Models_WhereError(t *testing.T) {
 
 	tests := []builderWhereTest[A]{
 		{
-			name:    "a: where id _eq hello",
+			name:    "a: where id_eq_hello",
 			builder: ABuilder,
 			where: &map[string]any{
 				"id": map[string]any{
@@ -87,7 +87,19 @@ func TestSQLBuilder_Models_WhereError(t *testing.T) {
 			want:    "SELECT public.a.id,public.a.age FROM public.a WHERE public.a.id = $1",
 		},
 		{
-			name:    "a: where id _eq hello, age _eq 10",
+			name:    "a: where age_eq_10",
+			builder: ABuilder,
+			where: &map[string]any{
+				"age": map[string]any{
+					"_eq": 10,
+				},
+			},
+			args:    &[]any{},
+			wantErr: false,
+			want:    "SELECT public.a.id,public.a.age FROM public.a WHERE public.a.age = $1",
+		},
+		{
+			name:    "a: where id_eq_hello, age_eq_10",
 			builder: ABuilder,
 			where: &map[string]any{
 				"id": map[string]any{
@@ -102,7 +114,7 @@ func TestSQLBuilder_Models_WhereError(t *testing.T) {
 			want:    "SELECT public.a.id,public.a.age FROM public.a WHERE public.a.id = $1 AND public.a.age = $2",
 		},
 		{
-			name:    "a: where id _eq hello or age _eq 10",
+			name:    "a: where id_eq_hello or age_eq_10",
 			builder: ABuilder,
 			where: &map[string]any{
 				"_or": []map[string]any{
