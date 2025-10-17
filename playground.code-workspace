@@ -160,8 +160,6 @@
     "go.testExplorer.showDynamicSubtestsInEditor": true,
     "testing.followRunningTest": true,
     "testing.showAllMessages": true,
-    "sqltools.codelensLanguages": ["sql", "go"],
-    "sqltools.completionLanguages": ["sql", "go"],
     "inlineSQL.enableDBIntegration": true,
     "inlineSQL.lintSQLFiles": false
   }
