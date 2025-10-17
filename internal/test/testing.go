@@ -1,6 +1,9 @@
 package test
 
-import "testing"
+import (
+	"slices"
+	"testing"
+)
 
 func SkipIfShort(t *testing.T) {
 	if testing.Short() {
@@ -36,12 +39,20 @@ func TestSliceItemsOrderByFunc[T any](t *testing.T, got []T, fn func(first T, se
 	}
 }
 
-func TestSliceItemsByFunc[T any](t *testing.T, predicateName string, items []T, predicate func(item T) bool) {
+func TestSliceEveryFunc[T any](t *testing.T, msg string, items []T, predicate func(item T) bool) {
 	t.Helper()
-	for _, item := range items {
+	for idx, item := range items {
 		if predicate(item) {
 			continue
 		}
-		t.Errorf("test %s: predicate %s returned false for item %v", t.Name(), predicateName, item)
+		t.Errorf("test %s: %s - predicate failed for item %d: item %v", t.Name(), msg, idx, item)
 	}
+}
+
+func TestSliceSomeFunc[T any](t *testing.T, msg string, items []T, predicate func(item T) bool) {
+	t.Helper()
+	if slices.ContainsFunc(items, predicate) {
+		return
+	}
+	t.Errorf("test %s: %s - no items matched predicate", t.Name(), msg)
 }

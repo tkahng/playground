@@ -2,24 +2,38 @@ package repository_test
 
 import (
 	"context"
+	"slices"
 	"testing"
 
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/database/repository"
 	"github.com/tkahng/playground/internal/models"
+	"github.com/tkahng/playground/internal/test"
 	"github.com/tkahng/playground/internal/tools/types"
 )
 
 var (
-	roleNames, permissionNames = []string{"admin", "advanced", "pro", "basic"}, []string{"admin", "advanced", "pro", "basic"}
+	knownRoleNames, knwonPermissionNames                     = []string{"admin", "advanced", "pro", "basic"}, []string{"admin", "advanced", "pro", "basic"}
+	knownRoleNamesPermissionsMap         map[string][]string = map[string][]string{
+		"basic":    {"basic"},
+		"pro":      {"basic", "pro"},
+		"advanced": {"basic", "pro", "advanced"},
+		"admin":    {"basic", "pro", "advanced", "admin"},
+	}
 )
 
 func TestAuth_UserAccountRbac(t *testing.T) {
 	t.Parallel()
 	database.WithNewTx(t, func(ctx context.Context, dbx database.Dbx) {
-		// init
+		/*
+		  init rbac
+		*/
 		repository.InitRbac(t, dbx)
-		// find all
+		/*
+			find all
+			4 roles
+			4 permissions
+		*/
 		roles := repository.MustFindAll(t, repository.Role, dbx, nil)
 		if len(roles) != 4 {
 			t.Errorf("expected 4 roles, got %d", len(roles))
@@ -28,28 +42,37 @@ func TestAuth_UserAccountRbac(t *testing.T) {
 		if len(permissions) != 4 {
 			t.Errorf("expected 4 permissions, got %d", len(permissions))
 		}
-		// find roles with permissions
-		rolesWithPermissions := repository.MustFindAll(t, repository.Role, dbx, &map[string]any{
-			"permissions": map[string]any{
-				"name": map[string]any{
-					"_eq": "admin",
-				},
-			},
-		})
-		if len(rolesWithPermissions) != 1 && rolesWithPermissions[0].Name != "admin" {
-			t.Errorf("expected 1 roles with permissions, got %d", len(rolesWithPermissions))
-		}
-		rolesWithPermissions = repository.MustFindAll(t, repository.Role, dbx, &map[string]any{
+		/*
+			find roles with basic permission.
+			there should be 4, one for each role
+		*/
+		// roles with basic permission
+		rolesWithBasicPermission := repository.MustFindAll(t, repository.Role, dbx, &map[string]any{
 			"permissions": map[string]any{
 				"name": map[string]any{
 					"_eq": "basic",
 				},
 			},
 		})
-		if len(rolesWithPermissions) != 4 {
-			t.Errorf("expected 4 roles with permissions, got %d", len(rolesWithPermissions))
+		// should be 4
+		if len(rolesWithBasicPermission) != 4 {
+			t.Errorf("expected 4 roles with basic permissions, got %d", len(rolesWithBasicPermission))
 		}
-		rolesWithPermissions = repository.MustFindAll(t, repository.Role, dbx, &map[string]any{
+		// every role name should be known
+		test.TestSliceEveryFunc(t, "every role name should be known", rolesWithBasicPermission, func(role *models.Role) bool {
+			return slices.Contains(knownRoleNames, role.Name)
+		})
+		rolesWithBasicPermission = repository.MustFindAll(t, repository.Role, dbx, &map[string]any{
+			"permissions": map[string]any{
+				"name": map[string]any{
+					"_eq": "basic",
+				},
+			},
+		})
+		if len(rolesWithBasicPermission) != 4 {
+			t.Errorf("expected 4 roles with permissions, got %d", len(rolesWithBasicPermission))
+		}
+		rolesWithBasicPermission = repository.MustFindAll(t, repository.Role, dbx, &map[string]any{
 			"_or": []map[string]any{
 				{
 					"name": map[string]any{
@@ -65,8 +88,8 @@ func TestAuth_UserAccountRbac(t *testing.T) {
 				},
 			},
 		})
-		if len(rolesWithPermissions) != 3 {
-			t.Errorf("expected 2 roles with permissions, got %d", len(rolesWithPermissions))
+		if len(rolesWithBasicPermission) != 3 {
+			t.Errorf("expected 2 roles with permissions, got %d", len(rolesWithBasicPermission))
 		}
 	})
 }
