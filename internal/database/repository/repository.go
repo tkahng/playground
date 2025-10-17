@@ -11,36 +11,35 @@ import (
 )
 
 type queryOptions struct {
-	lock  bool
-	where *map[string]any
-	order *map[string]string
-	limit *int
-	skip  *int
+	lock   bool
+	where  *map[string]any
+	order  *map[string]string
+	limit  *int
+	offset *int
 }
 
 type QueryOptionFunc func(options *queryOptions)
 
-func GetWithWhere(where *map[string]any) QueryOptionFunc {
+func WithLimit(limit int) QueryOptionFunc {
+	return func(r *queryOptions) {
+		r.limit = &limit
+	}
+}
+func WithOffset(offset int) QueryOptionFunc {
+	return func(r *queryOptions) {
+		r.offset = &offset
+	}
+}
+
+func WithWhere(where *map[string]any) QueryOptionFunc {
 	return func(options *queryOptions) {
 		options.where = where
 	}
 }
 
-func GetWithOrder(order *map[string]string) QueryOptionFunc {
+func WithOrder(order *map[string]string) QueryOptionFunc {
 	return func(options *queryOptions) {
 		options.order = order
-	}
-}
-
-func GetWithLimit(limit *int) QueryOptionFunc {
-	return func(options *queryOptions) {
-		options.limit = limit
-	}
-}
-
-func GetWithSkip(skip *int) QueryOptionFunc {
-	return func(options *queryOptions) {
-		options.skip = skip
 	}
 }
 
@@ -123,7 +122,7 @@ func (r *PostgresRepository[Model]) GetWithOptions(ctx context.Context, db datab
 	for _, option := range options {
 		option(&opts)
 	}
-	return r.Get(ctx, db, opts.where, opts.order, opts.limit, opts.skip)
+	return r.Get(ctx, db, opts.where, opts.order, opts.limit, opts.offset)
 }
 
 // Put updates existing records in the database

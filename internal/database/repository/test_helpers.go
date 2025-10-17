@@ -8,6 +8,7 @@ import (
 	"github.com/tkahng/playground/internal/models"
 )
 
+/* –––– */
 func MustCreate[T any](t *testing.T, repo Repository[T], db database.Dbx, arg *T) *T {
 	t.Helper()
 	res, err := repo.PostOne(t.Context(), db, arg)
@@ -134,8 +135,8 @@ func MustFindOrCreatePermissionByName(t *testing.T, db database.Dbx, name string
 }
 func MustCreateRolePermissionByName(t *testing.T, db database.Dbx, roleName, permissionName string) *models.RolePermission {
 	t.Helper()
-	role := MustFindRoleByName(t, db, roleName)
-	permission := MustFindPermissionByName(t, db, permissionName)
+	role := MustFindOrCreateRoleByName(t, db, roleName)
+	permission := MustFindOrCreatePermissionByName(t, db, permissionName)
 	return MustCreate(t, RolePermission, db, &models.RolePermission{PermissionID: permission.ID, RoleID: role.ID})
 }
 
@@ -161,4 +162,24 @@ func InitRbac(t *testing.T, db database.Dbx) {
 	MustCreateRolePermissionByName(t, db, "pro", "pro")
 	MustCreateRolePermissionByName(t, db, "pro", "basic")
 	MustCreateRolePermissionByName(t, db, "basic", "basic")
+}
+
+// CreateRolesAndPermissions creates roles, permissions, and the relations between them based of off a map of role names and slices of permission names
+// for example:
+//
+//	CreateRolesAndPermissions(t, db, map[string][]string{
+//		"admin":    {"admin", "advanced", "pro", "basic"},
+//		"advanced": {"advanced", "pro", "basic"},
+//		"pro":      {"pro", "basic"},
+//		"basic":    {"basic"},
+//	})
+func CreateRolesAndPermissions(t *testing.T, db database.Dbx, rolePermissionsMap map[string][]string) {
+	t.Helper()
+	for roleName, permissionNames := range rolePermissionsMap {
+		role := MustCreateRoleByName(t, db, roleName)
+		for _, permissionName := range permissionNames {
+			permission := MustFindOrCreatePermissionByName(t, db, permissionName)
+			MustCreate(t, RolePermission, db, &models.RolePermission{PermissionID: permission.ID, RoleID: role.ID})
+		}
+	}
 }

@@ -56,3 +56,13 @@ func TestSliceSomeFunc[T any](t *testing.T, msg string, items []T, predicate fun
 	}
 	t.Errorf("test %s: %s - no items matched predicate", t.Name(), msg)
 }
+func TestSliceEveryUniqueFunc[T any, K comparable](t *testing.T, msg string, items []T, getKey func(T) K) {
+	seen := make(map[K]struct{})
+	for idx, item := range items {
+		key := getKey(item)
+		if _, exists := seen[key]; exists {
+			t.Errorf("test %s: %s - item at index %d, key %v is not unique", t.Name(), msg, idx, key)
+		}
+		seen[key] = struct{}{}
+	}
+}
