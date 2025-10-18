@@ -34,14 +34,14 @@ func TestAuth_UserAccountRbac(t *testing.T) {
 
 		// init rbac
 		t.Run("initiating rbac. should not panic", func(t *testing.T) {
-			repository.CreateRolesAndPermissions(t, dbx, knownRoleNamesPermissionsMap)
+			repository.CreateRolesAndPermissions(t, ctx, dbx, knownRoleNamesPermissionsMap)
 		})
 
 		// find all 4 roles and 4 permissions
 		// map role names to roles, map permission names to permissions
 		t.Run("find all 4 roles and 4 permissions", func(t *testing.T) {
 			// find all roles
-			*roles = repository.MustFindAll(t, repository.Role, dbx, nil)
+			*roles = repository.MustFindWithOptionsCtx(t, t.Context(), repository.Role, dbx)
 
 			tempRoleNameMap := *roleNameMap
 			// map role names to roles
@@ -56,7 +56,7 @@ func TestAuth_UserAccountRbac(t *testing.T) {
 			}
 
 			// find all permissions
-			*permissions = repository.MustFindAll(t, repository.Permission, dbx, nil)
+			*permissions = repository.MustFindWithOptionsCtx(t, t.Context(), repository.Permission, dbx)
 
 			tempPermissionNameMap := *permissionNameMap
 			// map permission names to permissions
@@ -77,17 +77,20 @@ func TestAuth_UserAccountRbac(t *testing.T) {
 			// iterate over all roles
 			for _, role := range *roles {
 				// find each role's permissions by querying the permission's roles names
-				rolePermissions := repository.MustFindAll(
+				rolePermissions := repository.MustFindWithOptionsCtx(
 					t,
+					t.Context(),
 					repository.Permission,
 					dbx,
-					&map[string]any{
-						"roles": map[string]any{
-							"name": map[string]any{
-								"_eq": role.Name,
+					repository.WithWhere(
+						&map[string]any{
+							"roles": map[string]any{
+								"name": map[string]any{
+									"_eq": role.Name,
+								},
 							},
 						},
-					},
+					),
 				)
 				// assigned the found permissions to the role
 				role.Permissions = rolePermissions
@@ -124,13 +127,16 @@ func TestAuth_UserAccountRbac(t *testing.T) {
 		t.Run("find roles with basic permission", func(t *testing.T) {
 			// find roles with basic permission.
 			// there should be 4, each role should have basic permission
-			rolesWithBasicPermission := repository.MustFindAll(t, repository.Role, dbx, &map[string]any{
-				"permissions": map[string]any{
-					"name": map[string]any{
-						"_eq": "basic",
+			rolesWithBasicPermission := repository.MustFindWithOptionsCtx(t, t.Context(), repository.Role, dbx,
+				repository.WithWhere(
+					&map[string]any{
+						"permissions": map[string]any{
+							"name": map[string]any{
+								"_eq": "basic",
+							},
+						},
 					},
-				},
-			})
+				))
 			// should be 4
 			if len(rolesWithBasicPermission) != 4 {
 				t.Errorf("expected 4 roles with basic permissions, got %d", len(rolesWithBasicPermission))
@@ -151,22 +157,26 @@ func TestAuth_UserAccountRbac(t *testing.T) {
 			// 2 roles with advanced permission(admin and advanced)
 			// 2 roles with names in basic and pro
 			basicProNames := []string{"basic", "pro"}
-			permAdvNamesInBasicProRoles := repository.MustFindAll(t, repository.Role, dbx, &map[string]any{
-				"_or": []map[string]any{
-					{
-						"permissions": map[string]any{
-							"name": map[string]any{
-								"_eq": "advanced",
+			permAdvNamesInBasicProRoles := repository.MustFindWithOptionsCtx(t, t.Context(), repository.Role, dbx,
+				repository.WithWhere(
+					&map[string]any{
+						"_or": []map[string]any{
+							{
+								"permissions": map[string]any{
+									"name": map[string]any{
+										"_eq": "advanced",
+									},
+								},
+							},
+							{
+								"name": map[string]any{
+									"_in": basicProNames,
+								},
 							},
 						},
 					},
-					{
-						"name": map[string]any{
-							"_in": basicProNames,
-						},
-					},
-				},
-			})
+				),
+			)
 			// total 4
 			if len(permAdvNamesInBasicProRoles) != 4 {
 				t.Errorf("expected 4 roles with permissions, got %d", len(permAdvNamesInBasicProRoles))
@@ -181,24 +191,11 @@ func TestAuth_UserAccountRbac(t *testing.T) {
 				}
 			}
 
-			rolesWithBasicOrProName = repository.MustFindAll(t, repository.Role, dbx, &map[string]any{
-				"_or": []map[string]any{
-					{
-						"name": map[string]any{
-							"_eq": "superuser",
-						},
-					},
-					{
-						"permissions": map[string]any{
-							"name": map[string]any{
-								"_eq": "pro",
-							},
-						},
-					},
-				},
-			})
-			if len(rolesWithBasicOrProName) != 3 {
-				t.Errorf("expected 2 roles with permissions, got %d", len(rolesWithBasicOrProName))
+			if len(rolesWithBasicOrProName) != 2 {
+				t.Errorf("expected 2 roles of name basic or pro, got %d roles, names %v\n", len(rolesWithBasicOrProName), rolesWithBasicOrProName)
+			}
+			if len(rolesWithAdvPerms) != 2 {
+				t.Errorf("expected 2 roles with advanced permissions, got %d roles, names %v\n", len(rolesWithAdvPerms), rolesWithAdvPerms)
 			}
 		})
 	})
@@ -301,7 +298,7 @@ func TestMustCreateUserAndAccount(t *testing.T) {
 		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				user, account := repository.MustCreateUserAndAccount(t, tt.db, tt.fns...)
+				user, account := repository.MustCreateUserAndAccount(t, ctx, tt.db, tt.fns...)
 				tt.predicate(user, account)
 			})
 		}
@@ -312,13 +309,13 @@ func TestMustCreateUserAndAccount_Randomize(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		var count int64 = 100
 		for range count {
-			repository.MustCreateUserAndAccount(t, db)
+			repository.MustCreateUserAndAccount(t, ctx, db)
 		}
-		userCount := repository.MustCountAll(t, repository.User, db, &map[string]any{})
+		userCount := repository.MustCountAllCtx(t, ctx, repository.User, db, &map[string]any{})
 		if userCount != count {
 			t.Errorf("expected at least 10 users, got %d", userCount)
 		}
-		countAcc := repository.MustCountAll(t, repository.User, db, &map[string]any{})
+		countAcc := repository.MustCountAllCtx(t, ctx, repository.User, db, &map[string]any{})
 		if countAcc != count {
 			t.Errorf("expected at least 10 accounts, got %d", countAcc)
 		}
