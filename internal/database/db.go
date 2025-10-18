@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 
 	"github.com/jackc/pgx/v5"
@@ -14,10 +15,10 @@ type Dbx interface {
 	SendBatch(ctx context.Context, b *pgx.Batch) pgx.BatchResults
 	Begin(ctx context.Context) (pgx.Tx, error)
 	BeginTx(ctx context.Context, opts pgx.TxOptions) (pgx.Tx, error)
-	Query(ctx context.Context, sql string, arguments ...any) (pgx.Rows, error)
 	Exec(ctx context.Context, sql string, arguments ...any) (pgconn.CommandTag, error)
-	RunInTx(fn func(Dbx) error) error
+	Query(ctx context.Context, sql string, arguments ...any) (pgx.Rows, error)
 	QueryRow(ctx context.Context, sql string, arguments ...any) pgx.Row
+	RunInTx(fn func(Dbx) error) error
 	RunInTxContext(ctx context.Context, fn func(context.Context) error) error
 	Close()
 }
@@ -53,12 +54,12 @@ func (v *Queries) QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
 	return v.db.QueryRow(ctx, sql, args...)
 }
 
-// Begin implements Dbx.
 func (v *Queries) Begin(ctx context.Context) (pgx.Tx, error) {
-	return v.db.Begin(ctx)
+	return v.BeginTx(ctx, pgx.TxOptions{})
 }
 
-// Begin implements Dbx.
+// BeginTx acquires a connection from the Pool and starts a transaction with pgx.TxOptions determining the transaction mode.
+// Unlike database/sql, the context only affects the begin command. i.e. there is no auto-rollback on context cancellation.
 func (v *Queries) BeginTx(ctx context.Context, opts pgx.TxOptions) (pgx.Tx, error) {
 	return v.db.BeginTx(ctx, opts)
 }
@@ -106,8 +107,8 @@ func (v *txQueries) Close() {
 }
 
 // Acquire implements Dbx.
-func (v *txQueries) Acquire(ctx context.Context) (c *pgxpool.Conn, err error) {
-	return nil, nil
+func (v *txQueries) Acquire(ctx context.Context) (*pgxpool.Conn, error) {
+	return nil, errors.New("cannot aquire on db in transaction.")
 }
 
 // RunInTxContext implements Dbx.
@@ -146,11 +147,18 @@ func (v *txQueries) Exec(ctx context.Context, sql string, args ...any) (pgconn.C
 	return v.db.Exec(ctx, sql, args...)
 }
 
+// RunInTx
+//
+// Deprecated: use RunInTxContext
 func (v *txQueries) RunInTx(fn func(Dbx) error) error {
 	return WithTx(v, fn)
 }
 
+// WithTx
+//
+// Deprecated: use WithTxContext
 func WithTx(dbx Dbx, fn func(tx Dbx) error) error {
+	// TODO: add timeout
 	ctx := context.Background() // Use the appropriate context as needed
 	tx, err := dbx.Begin(ctx)
 	if err != nil {

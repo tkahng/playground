@@ -72,7 +72,10 @@ func TestSliceEveryUniqueFunc[T any, K comparable](t *testing.T, msg string, ite
 // CompareFields compares specific fields of two structs (a and b) by name.
 // It returns true if all specified fields are equal, along with an empty string.
 // If any specified field is not equal, it returns false and a message detailing the first difference.
-func CompareFields(a, b interface{}, fieldNames []string) (bool, string) {
+func CompareFields(a, b any, fieldNames ...string) (bool, string) {
+	if len(fieldNames) == 0 {
+		return reflect.DeepEqual(a, b), ""
+	}
 	// Ensure both inputs are structs and of the same concrete type
 	valA := reflect.ValueOf(a)
 	valB := reflect.ValueOf(b)

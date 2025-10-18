@@ -8,8 +8,47 @@ import (
 	"github.com/tkahng/playground/internal/models"
 )
 
-/* –––– */
-func MustCreate[T any](t *testing.T, repo Repository[T], db database.Dbx, arg *T) *T {
+type RepositoryScenario[T any] interface {
+	Get(t testing.TB, opts ...QueryOptionFunc)
+	Post(t testing.TB, models []*T)
+	Put(t testing.TB, models []*T)
+	Delete(t testing.TB, where *map[string]any)
+}
+
+// GetScenario is the test environment for the repository get method.
+// it should contain
+type GetScenario[T any] struct {
+	OptFuncs []QueryOptionFunc
+	testFunc func(t testing.TB, res []*T)
+}
+
+type PostScenario[T any] struct {
+	Args     []*T
+	testFunc func(t testing.TB, args, res []*T)
+}
+
+// func DefaultPostScenarioTestFunc[T any](t testing.TB, args, res []*T, fieldNames ...string) {
+// 	t.Helper()
+// 	if len(args) != len(res) {
+// 		t.Errorf("PostOne() got = %d, want %d", len(args), len(res))
+// 	}
+// 	for i, arg := range args {
+// 		if arg.ID != res[i].ID {
+// 			t.Errorf("PostOne() got = %s, want %s", arg.ID, res[i].ID)
+// 		}
+// 	}
+// }
+
+type RepositoryScenarioImpl[T any] struct {
+	repo Repository[T]
+	db   database.Dbx
+}
+
+func (r RepositoryScenarioImpl[T]) test(t testing.TB) {
+
+}
+
+func MustCreate[T any](t testing.TB, repo Repository[T], db database.Dbx, arg *T) *T {
 	t.Helper()
 	res, err := repo.PostOne(t.Context(), db, arg)
 	if err != nil {
@@ -18,7 +57,7 @@ func MustCreate[T any](t *testing.T, repo Repository[T], db database.Dbx, arg *T
 	return res
 }
 
-func MustFindOne[T any](t *testing.T, repo Repository[T], db database.Dbx, arg *map[string]any) *T {
+func MustFindOne[T any](t testing.TB, repo Repository[T], db database.Dbx, arg *map[string]any) *T {
 	t.Helper()
 	res, err := repo.GetOne(t.Context(), db, arg)
 	if err != nil {
@@ -27,7 +66,7 @@ func MustFindOne[T any](t *testing.T, repo Repository[T], db database.Dbx, arg *
 	return res
 }
 
-func MustCountAll[T any](t *testing.T, repo Repository[T], db database.Dbx, arg *map[string]any) int64 {
+func MustCountAll[T any](t testing.TB, repo Repository[T], db database.Dbx, arg *map[string]any) int64 {
 	t.Helper()
 	res, err := repo.Count(t.Context(), db, arg)
 	if err != nil {
@@ -36,7 +75,7 @@ func MustCountAll[T any](t *testing.T, repo Repository[T], db database.Dbx, arg 
 	return res
 }
 
-func MustFindAll[T any](t *testing.T, repo Repository[T], db database.Dbx, arg *map[string]any) []*T {
+func MustFindAll[T any](t testing.TB, repo Repository[T], db database.Dbx, arg *map[string]any) []*T {
 	t.Helper()
 	res, err := repo.Get(t.Context(), db, arg, nil, nil, nil)
 	if err != nil {
@@ -45,7 +84,7 @@ func MustFindAll[T any](t *testing.T, repo Repository[T], db database.Dbx, arg *
 	return res
 }
 
-func MustCreateUserAndAccount(t *testing.T, db database.Dbx, fns ...func(*models.User, *models.UserAccount)) (*models.User, *models.UserAccount) {
+func MustCreateUserAndAccount(t testing.TB, db database.Dbx, fns ...func(*models.User, *models.UserAccount)) (*models.User, *models.UserAccount) {
 	t.Helper()
 	uid := uuid.NewString()
 	user := &models.User{
@@ -68,7 +107,7 @@ func MustCreateUserAndAccount(t *testing.T, db database.Dbx, fns ...func(*models
 	return user, res
 }
 
-func MustCreateUser(t *testing.T, db database.Dbx, fns ...func(*models.User)) *models.User {
+func MustCreateUser(t testing.TB, db database.Dbx, fns ...func(*models.User)) *models.User {
 	t.Helper()
 	uid := uuid.NewString()
 	user := &models.User{
@@ -80,7 +119,7 @@ func MustCreateUser(t *testing.T, db database.Dbx, fns ...func(*models.User)) *m
 	}
 	return MustCreate(t, User, db, user)
 }
-func MustCreateAccount(t *testing.T, db database.Dbx, fns ...func(*models.UserAccount)) *models.UserAccount {
+func MustCreateAccount(t testing.TB, db database.Dbx, fns ...func(*models.UserAccount)) *models.UserAccount {
 	t.Helper()
 	uid := uuid.NewString()
 	pw := "Password123!"
@@ -95,15 +134,15 @@ func MustCreateAccount(t *testing.T, db database.Dbx, fns ...func(*models.UserAc
 	}
 	return MustCreate(t, UserAccount, db, res)
 }
-func MustFindRoleByName(t *testing.T, db database.Dbx, name string) *models.Role {
+func MustFindRoleByName(t testing.TB, db database.Dbx, name string) *models.Role {
 	t.Helper()
 	return MustFindOne(t, Role, db, &map[string]any{"name": map[string]any{"_eq": name}})
 }
-func MustCreateRoleByName(t *testing.T, db database.Dbx, name string) *models.Role {
+func MustCreateRoleByName(t testing.TB, db database.Dbx, name string) *models.Role {
 	t.Helper()
 	return MustCreate(t, Role, db, &models.Role{Name: name})
 }
-func MustFindOrCreateRoleByName(t *testing.T, db database.Dbx, name string) *models.Role {
+func MustFindOrCreateRoleByName(t testing.TB, db database.Dbx, name string) *models.Role {
 	t.Helper()
 	role := MustFindRoleByName(t, db, name)
 	if role == nil {
@@ -111,21 +150,21 @@ func MustFindOrCreateRoleByName(t *testing.T, db database.Dbx, name string) *mod
 	}
 	return role
 }
-func MustCreateUserRoleByName(t *testing.T, db database.Dbx, userId uuid.UUID, name string) *models.UserRole {
+func MustCreateUserRoleByName(t testing.TB, db database.Dbx, userId uuid.UUID, name string) *models.UserRole {
 	t.Helper()
 	role := MustFindRoleByName(t, db, name)
 	return MustCreate(t, UserRole, db, &models.UserRole{UserID: userId, RoleID: role.ID})
 }
-func MustFindPermissionByName(t *testing.T, db database.Dbx, name string) *models.Permission {
+func MustFindPermissionByName(t testing.TB, db database.Dbx, name string) *models.Permission {
 	t.Helper()
 	return MustFindOne(t, Permission, db, &map[string]any{"name": map[string]any{"_eq": name}})
 }
-func MustCreatePermissionByName(t *testing.T, db database.Dbx, name string) *models.Permission {
+func MustCreatePermissionByName(t testing.TB, db database.Dbx, name string) *models.Permission {
 	t.Helper()
 	return MustCreate(t, Permission, db, &models.Permission{Name: name})
 }
 
-func MustFindOrCreatePermissionByName(t *testing.T, db database.Dbx, name string) *models.Permission {
+func MustFindOrCreatePermissionByName(t testing.TB, db database.Dbx, name string) *models.Permission {
 	t.Helper()
 	role := MustFindPermissionByName(t, db, name)
 	if role == nil {
@@ -133,14 +172,14 @@ func MustFindOrCreatePermissionByName(t *testing.T, db database.Dbx, name string
 	}
 	return role
 }
-func MustCreateRolePermissionByName(t *testing.T, db database.Dbx, roleName, permissionName string) *models.RolePermission {
+func MustCreateRolePermissionByName(t testing.TB, db database.Dbx, roleName, permissionName string) *models.RolePermission {
 	t.Helper()
 	role := MustFindOrCreateRoleByName(t, db, roleName)
 	permission := MustFindOrCreatePermissionByName(t, db, permissionName)
 	return MustCreate(t, RolePermission, db, &models.RolePermission{PermissionID: permission.ID, RoleID: role.ID})
 }
 
-func InitRbac(t *testing.T, db database.Dbx) {
+func InitRbac(t testing.TB, db database.Dbx) {
 	t.Helper()
 	MustCreateRoleByName(t, db, "admin")
 	MustCreateRoleByName(t, db, "advanced")
@@ -173,7 +212,7 @@ func InitRbac(t *testing.T, db database.Dbx) {
 //		"pro":      {"pro", "basic"},
 //		"basic":    {"basic"},
 //	})
-func CreateRolesAndPermissions(t *testing.T, db database.Dbx, rolePermissionsMap map[string][]string) {
+func CreateRolesAndPermissions(t testing.TB, db database.Dbx, rolePermissionsMap map[string][]string) {
 	t.Helper()
 	for roleName, permissionNames := range rolePermissionsMap {
 		role := MustCreateRoleByName(t, db, roleName)
