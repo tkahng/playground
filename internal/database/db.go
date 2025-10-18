@@ -200,7 +200,7 @@ func WithTxContext(ctx context.Context, dbx Dbx, fn func(context.Context) error)
 	tx, beginErr := db.Begin(ctx)
 	if beginErr != nil {
 		slog.Error("error starting transaction", slog.Any("error", beginErr))
-		returnErr = beginErr
+		returnErr = errors.New("there was an error starting a transaction")
 		return
 	}
 
@@ -209,7 +209,7 @@ func WithTxContext(ctx context.Context, dbx Dbx, fn func(context.Context) error)
 			slog.ErrorContext(ctx, "recovered from panic in transaction.", slog.String("errorMessage", fmt.Sprint(recErr)), slog.Any("stacktrace", string(debug.Stack())))
 			rollBackErr := tx.Rollback(context.Background())
 			if rollBackErr != nil {
-				slog.ErrorContext(ctx, "error rolling back transaction", slog.Any("error", rollBackErr))
+				slog.ErrorContext(ctx, "error rolling back transaction from recovering panic.", slog.Any("error", rollBackErr))
 				returnErr = errors.New("there was an error while recovering from a failure")
 				return
 			}
@@ -218,9 +218,9 @@ func WithTxContext(ctx context.Context, dbx Dbx, fn func(context.Context) error)
 	txCtx := setContextTx(ctx, &txQueries{db: tx})
 	fnErr := fn(txCtx)
 	if fnErr == nil {
-		if commitErr := tx.Commit(ctx); commitErr != nil {
+		if commitErr := tx.Commit(context.Background()); commitErr != nil {
 			slog.ErrorContext(ctx, "error committing transaction", slog.Any("error", commitErr))
-			returnErr = commitErr
+			returnErr = errors.New("there was an error while committing a transaction")
 			return
 		}
 	} else {
@@ -228,7 +228,7 @@ func WithTxContext(ctx context.Context, dbx Dbx, fn func(context.Context) error)
 		rollbackErr := tx.Rollback(ctx)
 		if rollbackErr != nil {
 			slog.ErrorContext(ctx, "error rolling back transaction", slog.Any("error", rollbackErr))
-			returnErr = rollbackErr
+			returnErr = errors.New("there was an error while recovering from a failure")
 			return
 		}
 	}
