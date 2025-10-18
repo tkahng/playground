@@ -77,27 +77,24 @@ func (s *StorageAdapter) Price() DbPriceStoreInterface {
 func (s *StorageAdapter) Product() DbProductStoreInterface {
 	return s.product
 }
-func (s *StorageAdapter) WithTx(tx database.Dbx) *StorageAdapter {
-	return &StorageAdapter{
-		db:             tx,
-		user:           s.user.WithTx(tx),
-		userAccount:    s.userAccount.WithTx(tx),
-		token:          s.token.WithTx(tx),
-		teamGroup:      s.teamGroup.WithTx(tx),
-		teamMember:     s.teamMember.WithTx(tx),
-		teamInvitation: s.teamInvitation.WithTx(tx),
-		customer:       s.customer.WithTx(tx),
-		price:          s.price.WithTx(tx),
-		product:        s.product.WithTx(tx),
-		subscription:   s.subscription.WithTx(tx),
-		rbac:           s.rbac.WithTx(tx),
-	}
-}
 
 // RunInTx implements StorageAdapterInterface.
 func (s *StorageAdapter) RunInTx(fn func(tx StorageAdapterInterface) error) error {
-	return s.db.RunInTx(func(d database.Dbx) error {
-		tx := s.WithTx(d)
+	return s.db.RunInTx(func(db database.Dbx) error {
+		tx := &StorageAdapter{
+			db:             db,
+			user:           s.user.WithTx(db),
+			userAccount:    s.userAccount.WithTx(db),
+			token:          s.token.WithTx(db),
+			teamGroup:      s.teamGroup.WithTx(db),
+			teamMember:     s.teamMember.WithTx(db),
+			teamInvitation: s.teamInvitation.WithTx(db),
+			customer:       s.customer.WithTx(db),
+			price:          s.price.WithTx(db),
+			product:        s.product.WithTx(db),
+			subscription:   s.subscription.WithTx(db),
+			rbac:           s.rbac.WithTx(db),
+		}
 		return fn(tx)
 	})
 }

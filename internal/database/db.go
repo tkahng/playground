@@ -32,9 +32,9 @@ type Dbx interface {
 	Close()
 	// RunInTx
 	//
-	// Deprecated: use RunInTxContext
+	// Deprecated: use RunInTxCtx
 	RunInTx(fn func(Dbx) error) error
-	RunInTxContext(ctx context.Context, fn func(context.Context) error) error
+	RunInTxCtx(ctx context.Context, fn func(context.Context) error) error
 }
 
 // type TxFunc
@@ -89,7 +89,7 @@ func (v *Queries) RunInTx(fn func(Dbx) error) error {
 	return WithTx(v, fn)
 }
 
-func (v *Queries) RunInTxContext(ctx context.Context, fn func(context.Context) error) error {
+func (v *Queries) RunInTxCtx(ctx context.Context, fn func(context.Context) error) error {
 	return WithTxContext(ctx, v, fn)
 }
 
@@ -113,8 +113,8 @@ func (v *txQueries) Close() {
 	slog.Info("close called on txQueries, nothing to do.")
 }
 
-// RunInTxContext implements Dbx.
-func (v *txQueries) RunInTxContext(ctx context.Context, fn func(context.Context) error) error {
+// RunInTxCtx implements Dbx.
+func (v *txQueries) RunInTxCtx(ctx context.Context, fn func(context.Context) error) error {
 	return WithTxContext(ctx, v, fn)
 }
 
@@ -147,7 +147,7 @@ func (v *txQueries) Exec(ctx context.Context, sql string, args ...any) (pgconn.C
 
 // RunInTx
 //
-// Deprecated: use RunInTxContext
+// Deprecated: use RunInTxCtx
 func (v *txQueries) RunInTx(fn func(Dbx) error) error {
 	return WithTx(v, fn)
 }

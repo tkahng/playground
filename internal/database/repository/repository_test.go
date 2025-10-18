@@ -23,7 +23,7 @@ var (
 )
 
 func TestAuth_UserAccountRbac(t *testing.T) {
-	database.WithNewTx(t, func(ctx context.Context, dbx database.Dbx) {
+	database.WithNewTestTx(t, func(ctx context.Context, dbx database.Dbx) {
 
 		var (
 			roles             *[]*models.Role                = &[]*models.Role{}
@@ -206,7 +206,7 @@ func TestAuth_UserAccountRbac(t *testing.T) {
 
 func TestMustCreateUserAndAccount(t *testing.T) {
 	t.Parallel()
-	database.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		tests := []struct {
 			name string // description of this test case
 			// Named input parameters for target function.
@@ -309,7 +309,7 @@ func TestMustCreateUserAndAccount(t *testing.T) {
 }
 
 func TestMustCreateUserAndAccount_Randomize(t *testing.T) {
-	database.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		var count int64 = 100
 		for range count {
 			repository.MustCreateUserAndAccount(t, db)

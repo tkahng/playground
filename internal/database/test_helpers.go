@@ -10,17 +10,18 @@ import (
 	"github.com/tkahng/playground/internal/conf"
 )
 
-// WithNewTx creates a new pool connection, runs the test within that transaciton, rolls back, and closes the pool.
-func WithNewTx(t *testing.T, fn func(ctx context.Context, db Dbx)) {
+// WithNewTestTx creates a new pool connection, runs the test within that transaciton, rolls back, and closes the pool.
+func WithNewTestTx(t *testing.T, fn func(ctx context.Context, db Dbx)) {
 	t.Helper()
+	// TODO: add context timeout
 	// ctx, cancel := context.WithCancel(context.Background())
 	// defer cancel()
-	ctx := context.Background()
+	ctx := t.Context()
 	cfg := conf.ZeroEnvConfig()
 	dbx := CreateNewQueriesContext(ctx, cfg.Db.GetDatabaseUrl())
-	tx, err := dbx.Begin(ctx)
-	if err != nil {
-		t.Fatal(err)
+	tx, beginErr := dbx.Begin(ctx)
+	if beginErr != nil {
+		t.Fatal(beginErr)
 	}
 	defer dbx.Close()
 	// nolint:errcheck
@@ -29,9 +30,10 @@ func WithNewTx(t *testing.T, fn func(ctx context.Context, db Dbx)) {
 	defer func() {
 		if recErr := recover(); recErr != nil {
 			slog.ErrorContext(ctx, "recovered from panic in transaction.", slog.Any("error", fmt.Sprint(recErr)), slog.Any("stacktrace", string(debug.Stack())))
-			err := tx.Rollback(ctx)
-			if err != nil {
-				t.Error(err)
+			rollBackErr := tx.Rollback(ctx)
+			if rollBackErr != nil {
+				slog.ErrorContext(ctx, "recovered from panic in transaction.", slog.Any("error", fmt.Sprint(recErr)), slog.Any("stacktrace", string(debug.Stack())))
+				t.Error(rollBackErr)
 			}
 			t.Fatal(fmt.Sprint(recErr))
 		}

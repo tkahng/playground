@@ -15,7 +15,7 @@ import (
 
 func TestNewPermissionQueryResource_FilterFunc(t *testing.T) {
 
-	database.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		repo := NewPermissionQueryResource(db)
 
 		filterFunc := repo.filter

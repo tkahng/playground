@@ -17,7 +17,7 @@ import (
 func TestFindPermissionsByIds(t *testing.T) {
 	t.Parallel()
 	test.SkipIfShort(t)
-	database.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
+	database.WithNewTestTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		// Create test permissions
 		rbacstore := stores.NewDbRBACStore(dbxx)
 		// userstore := stores.NewPostgresUserStore(dbxx)
@@ -113,7 +113,7 @@ func TestFindPermissionsByIds(t *testing.T) {
 func TestListPermissions(t *testing.T) {
 	t.Parallel()
 	test.SkipIfShort(t)
-	database.WithNewTx(t, func(ctx context.Context, tx database.Dbx) {
+	database.WithNewTestTx(t, func(ctx context.Context, tx database.Dbx) {
 		rbacstore := stores.NewDbRBACStore(tx)
 		err := rbacstore.EnsureRoleAndPermissions(
 			ctx,
@@ -175,7 +175,7 @@ func TestListPermissions(t *testing.T) {
 func TestCountPermissions(t *testing.T) {
 	t.Parallel()
 	test.SkipIfShort(t)
-	database.WithNewTx(t, func(ctx context.Context, tx database.Dbx) {
+	database.WithNewTestTx(t, func(ctx context.Context, tx database.Dbx) {
 		rbacstore := stores.NewDbRBACStore(tx)
 		err := rbacstore.EnsureRoleAndPermissions(
 			ctx,
@@ -242,7 +242,7 @@ func TestCountPermissions(t *testing.T) {
 func TestDeleteRolePermissions(t *testing.T) {
 	t.Parallel()
 	test.SkipIfShort(t)
-	database.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
+	database.WithNewTestTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		// Create a role and permission to test deletion
 		rbacStore := stores.NewDbRBACStore(dbxx)
 		role, err := rbacStore.CreateRole(ctx, &stores.CreateRoleDto{
@@ -322,7 +322,7 @@ func TestDeleteRolePermissions(t *testing.T) {
 func TestFindOrCreatePermission(t *testing.T) {
 	t.Parallel()
 	test.SkipIfShort(t)
-	database.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
+	database.WithNewTestTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		rbacStore := stores.NewDbRBACStore(dbxx)
 		type args struct {
 			ctx            context.Context
@@ -374,7 +374,7 @@ func TestFindOrCreatePermission(t *testing.T) {
 func TestCreatePermission(t *testing.T) {
 	t.Parallel()
 	test.SkipIfShort(t)
-	database.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
+	database.WithNewTestTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		rbacStore := stores.NewDbRBACStore(dbxx)
 		description := "test description"
 
@@ -435,7 +435,7 @@ func TestCreatePermission(t *testing.T) {
 func TestFindPermissionById(t *testing.T) {
 	t.Parallel()
 	test.SkipIfShort(t)
-	database.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
+	database.WithNewTestTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		rbacStore := stores.NewDbRBACStore(dbxx)
 		// Create a test permission to find
 		permission, err := rbacStore.CreatePermission(ctx, "test_permission", nil)
@@ -498,7 +498,7 @@ func TestFindPermissionById(t *testing.T) {
 func TestUpdatePermission(t *testing.T) {
 	t.Parallel()
 	test.SkipIfShort(t)
-	database.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
+	database.WithNewTestTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		// Create initial permission to update
 		rbacStore := stores.NewDbRBACStore(dbxx)
 		permission, err := rbacStore.CreatePermission(ctx, "initial_permission", nil)
@@ -580,7 +580,7 @@ func TestUpdatePermission(t *testing.T) {
 func TestCreateRolePermissions(t *testing.T) {
 	t.Parallel()
 	test.SkipIfShort(t)
-	database.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
+	database.WithNewTestTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		rbacStore := stores.NewDbRBACStore(dbxx)
 		role, err := rbacStore.FindOrCreateRole(ctx, "basic")
 		if err != nil {
@@ -629,7 +629,7 @@ func TestEnsureRoleAndPermissions(t *testing.T) {
 	t.Parallel()
 	test.SkipIfShort(t)
 
-	database.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
+	database.WithNewTestTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		rbacStore := stores.NewDbRBACStore(dbxx)
 		type args struct {
 			ctx             context.Context

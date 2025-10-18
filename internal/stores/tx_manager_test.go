@@ -11,14 +11,14 @@ import (
 	"github.com/tkahng/playground/internal/stores"
 )
 
-func TestTxManagerImpl_RunInTxContext(t *testing.T) {
+func TestTxManagerImpl_RunInTxCtx(t *testing.T) {
 	t.Run("test transaction manager succeed in creating user and account", func(t *testing.T) {
-		database.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
+		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 			store := stores.NewTxManager(db)
 			userStore := stores.NewDbUserStore(db)
 			accountStore := stores.NewDbAccountStore(db)
 
-			err := store.RunInTxContext(ctx, func(newCtx context.Context) error {
+			err := store.RunInTxCtx(ctx, func(newCtx context.Context) error {
 				user := &models.User{
 					Email: "test@example.com",
 				}
@@ -53,12 +53,12 @@ func TestTxManagerImpl_RunInTxContext(t *testing.T) {
 		})
 	})
 	t.Run("test transaction manager succeed in creating user and account but error at end", func(t *testing.T) {
-		database.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
+		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 			store := stores.NewTxManager(db)
 			userStore := stores.NewDbUserStore(db)
 			accountStore := stores.NewDbAccountStore(db)
 
-			err := store.RunInTxContext(ctx, func(newCtx context.Context) error {
+			err := store.RunInTxCtx(ctx, func(newCtx context.Context) error {
 				user := &models.User{
 					Email: "test@example.com",
 				}
@@ -93,12 +93,12 @@ func TestTxManagerImpl_RunInTxContext(t *testing.T) {
 		})
 	})
 	t.Run("test transaction manager succeed in creating user but error before account created", func(t *testing.T) {
-		database.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
+		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 			store := stores.NewTxManager(db)
 			userStore := stores.NewDbUserStore(db)
 			accountStore := stores.NewDbAccountStore(db)
 
-			err := store.RunInTxContext(ctx, func(newCtx context.Context) error {
+			err := store.RunInTxCtx(ctx, func(newCtx context.Context) error {
 				user := &models.User{
 					Email: "test@example.com",
 				}

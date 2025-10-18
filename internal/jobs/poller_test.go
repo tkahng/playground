@@ -12,7 +12,7 @@ import (
 )
 
 func TestPoller_Run(t *testing.T) {
-	database.WithNewTx(t, func(ctx context.Context, dbx database.Dbx) {
+	database.WithNewTestTx(t, func(ctx context.Context, dbx database.Dbx) {
 		type fields struct {
 			Store      JobStore
 			Dispatcher Dispatcher

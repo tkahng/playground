@@ -14,7 +14,7 @@ import (
 
 func TestNotificationStore_CreateNotification(t *testing.T) {
 
-	database.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		store := stores.NewDbNotificationStore(db)
 
 		notification := &models.Notification{
@@ -33,7 +33,7 @@ func TestNotificationStore_CreateNotification(t *testing.T) {
 
 func TestNotificationStore_CreateManyNotifications(t *testing.T) {
 
-	database.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		store := stores.NewDbNotificationStore(db)
 
 		notifications := []models.Notification{

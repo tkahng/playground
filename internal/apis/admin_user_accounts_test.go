@@ -18,7 +18,7 @@ import (
 func TestApi_AdminUserAccounts(t *testing.T) {
 	t.Parallel()
 	test.SkipIfShort(t)
-	database.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
 		adminUser := CreateUserWithOptions(
 			t,

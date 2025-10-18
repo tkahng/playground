@@ -17,7 +17,7 @@ import (
 
 func TestConstraintCheckerService_CannotHaveValidSubscription(t *testing.T) {
 
-	database.WithNewTx(t, func(ctx context.Context, tx database.Dbx) {
+	database.WithNewTestTx(t, func(ctx context.Context, tx database.Dbx) {
 		adapter := stores.NewStorageAdapter(tx)
 		userStore := adapter.User()
 
@@ -103,7 +103,7 @@ func TestConstraintCheckerService_CannotHaveValidSubscription(t *testing.T) {
 }
 func TestConstraintCheckerService_CannotBeAdminOrBasicName(t *testing.T) {
 
-	database.WithNewTx(t, func(ctx context.Context, dbx database.Dbx) {
+	database.WithNewTestTx(t, func(ctx context.Context, dbx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbx)
 		type fields struct {
 			db  database.Dbx
@@ -159,7 +159,7 @@ func TestConstraintCheckerService_CannotBeAdminOrBasicName(t *testing.T) {
 }
 func TestConstraintCheckerService_CannotBeAdminOrBasicRoleAndPermissionName(t *testing.T) {
 
-	database.WithNewTx(t, func(ctx context.Context, dbx database.Dbx) {
+	database.WithNewTestTx(t, func(ctx context.Context, dbx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbx)
 		type fields struct {
 			db  database.Dbx
@@ -235,7 +235,7 @@ func TestConstraintCheckerService_CannotBeAdminOrBasicRoleAndPermissionName(t *t
 }
 func TestConstraintCheckerService_CannotBeSuperUserEmailAndRoleName(t *testing.T) {
 
-	database.WithNewTx(t, func(ctx context.Context, dbx database.Dbx) {
+	database.WithNewTestTx(t, func(ctx context.Context, dbx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbx)
 		type fields struct {
 			db  database.Dbx
@@ -309,7 +309,7 @@ func TestConstraintCheckerService_CannotBeSuperUserEmailAndRoleName(t *testing.T
 	})
 }
 func TestConstraintCheckerService_CannotBeSuperUserID(t *testing.T) {
-	database.WithNewTx(t, func(ctx context.Context, tx database.Dbx) {
+	database.WithNewTestTx(t, func(ctx context.Context, tx database.Dbx) {
 		adapter := stores.NewStorageAdapter(tx)
 		rbacStore := adapter.Rbac()
 		userStore := adapter.User()
@@ -413,7 +413,7 @@ func TestConstraintCheckerService_CannotBeSuperUserID(t *testing.T) {
 }
 func TestConstraintCheckerService_CannotBeSuperUserEmail(t *testing.T) {
 
-	database.WithNewTx(t, func(ctx context.Context, dbx database.Dbx) {
+	database.WithNewTestTx(t, func(ctx context.Context, dbx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbx)
 
 		type fields struct {

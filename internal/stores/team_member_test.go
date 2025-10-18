@@ -15,7 +15,7 @@ import (
 
 func TestTeamStore_UpdateTeamMember(t *testing.T) {
 
-	database.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewStorageAdapter(db)
 		user, err := adapter.User().CreateUser(ctx, &models.User{
 			Email: "testuser@example.com",
@@ -88,7 +88,7 @@ func TestTeamStore_UpdateTeamMember(t *testing.T) {
 func TestTeamStore_CountTeamMembers(t *testing.T) {
 	t.Parallel()
 	test.SkipIfShort(t)
-	database.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		type fields struct {
 			db database.Dbx
 		}
@@ -126,7 +126,7 @@ func TestTeamStore_CountTeamMembers(t *testing.T) {
 func TestCreateTeamMember(t *testing.T) {
 	t.Parallel()
 	test.SkipIfShort(t)
-	database.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
+	database.WithNewTestTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 		teamStore := adapter.TeamGroup()
 		userStore := adapter.User()
@@ -155,7 +155,7 @@ func TestCreateTeamMember(t *testing.T) {
 func TestFindTeamMembersByUserID(t *testing.T) {
 	t.Parallel()
 	test.SkipIfShort(t)
-	database.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
+	database.WithNewTestTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 		teamStore := adapter.TeamMember()
 		userStore := adapter.User()
@@ -188,7 +188,7 @@ func TestFindTeamMembersByUserID(t *testing.T) {
 func TestFindLatestTeamMemberByUserID(t *testing.T) {
 	t.Parallel()
 	test.SkipIfShort(t)
-	database.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
+	database.WithNewTestTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 		teamStore := adapter.TeamGroup()
 		userStore := adapter.User()
@@ -252,7 +252,7 @@ func TestFindLatestTeamMemberByUserID(t *testing.T) {
 func TestUpdateTeamMemberUpdatedAt(t *testing.T) {
 	t.Parallel()
 	test.SkipIfShort(t)
-	database.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
+	database.WithNewTestTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 
 		team, err := adapter.TeamGroup().CreateTeam(ctx, "UpdateMemberTeam", "update-member-team-slug")
@@ -307,7 +307,7 @@ func TestUpdateTeamMemberUpdatedAt(t *testing.T) {
 func TestUpdateTeamMemberSelectedAt(t *testing.T) {
 	t.Parallel()
 	test.SkipIfShort(t)
-	database.WithNewTx(t, func(ctx context.Context, dbxx database.Dbx) {
+	database.WithNewTestTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 		teamStore := adapter.TeamMember()
 		userStore := adapter.User()
@@ -358,7 +358,7 @@ func TestUpdateTeamMemberSelectedAt(t *testing.T) {
 
 func TestDbTeamMemberStore_LoadTeamMembersByUserAndTeamIds(t *testing.T) {
 
-	database.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewStorageAdapter(db)
 		user1, err := adapter.User().CreateUser(ctx, &models.User{
 			Email: "user1@example.com",
@@ -440,7 +440,7 @@ func TestDbTeamMemberStore_LoadTeamMembersByUserAndTeamIds(t *testing.T) {
 func TestDbTeamMemberStore_FindTeamMembers(t *testing.T) {
 	t.Parallel()
 	test.SkipIfShort(t)
-	database.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewStorageAdapter(db)
 		user := CreateUser(adapter, ctx, "alpha@example.com")
 		user2 := CreateUser(adapter, ctx, "beta@example.com")
