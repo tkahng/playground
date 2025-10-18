@@ -44,9 +44,9 @@ type RepositoryScenarioImpl[T any] struct {
 	db   database.Dbx
 }
 
-func (r RepositoryScenarioImpl[T]) test(t testing.TB) {
+// func (r RepositoryScenarioImpl[T]) test(t testing.TB) {
 
-}
+// }
 
 func MustCreate[T any](t testing.TB, repo Repository[T], db database.Dbx, arg *T) *T {
 	t.Helper()

@@ -20,3 +20,10 @@ func getContextTx(ctx context.Context) Dbx {
 		return nil
 	}
 }
+func GetContextOrDefaultDbx(ctx context.Context, dbx Dbx) Dbx {
+	tx := getContextTx(ctx)
+	if tx != nil {
+		return tx
+	}
+	return dbx
+}

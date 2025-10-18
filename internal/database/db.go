@@ -3,24 +3,38 @@ package database
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
+	"runtime/debug"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-type Dbx interface {
-	Acquire(ctx context.Context) (c *pgxpool.Conn, err error)
-	SendBatch(ctx context.Context, b *pgx.Batch) pgx.BatchResults
-	Begin(ctx context.Context) (pgx.Tx, error)
-	BeginTx(ctx context.Context, opts pgx.TxOptions) (pgx.Tx, error)
-	Exec(ctx context.Context, sql string, arguments ...any) (pgconn.CommandTag, error)
+type Executor interface {
 	Query(ctx context.Context, sql string, arguments ...any) (pgx.Rows, error)
+	Exec(ctx context.Context, sql string, arguments ...any) (pgconn.CommandTag, error)
 	QueryRow(ctx context.Context, sql string, arguments ...any) pgx.Row
+	SendBatch(ctx context.Context, b *pgx.Batch) pgx.BatchResults
+}
+
+type Dbx interface {
+	Executor
+
+	Begin(ctx context.Context) (pgx.Tx, error)
+
+	BeginTx(ctx context.Context, opts pgx.TxOptions) (pgx.Tx, error)
+
+	// Close
+	//
+	// Close calls close on the underlying pool.
+	Close()
+	// RunInTx
+	//
+	// Deprecated: use RunInTxContext
 	RunInTx(fn func(Dbx) error) error
 	RunInTxContext(ctx context.Context, fn func(context.Context) error) error
-	Close()
 }
 
 // type TxFunc
@@ -35,19 +49,12 @@ type Queries struct {
 func (v *Queries) Close() {
 	slog.Info("close called on Queries. calling close on pool.")
 	v.db.Close()
+
 }
 
 // Acquire implements Dbx.
 func (v *Queries) Acquire(ctx context.Context) (c *pgxpool.Conn, err error) {
 	return v.db.Acquire(ctx)
-}
-
-func GetContextOrDefaultDbx(ctx context.Context, dbx Dbx) Dbx {
-	tx := getContextTx(ctx)
-	if tx != nil {
-		return tx
-	}
-	return dbx
 }
 
 func (v *Queries) QueryRow(ctx context.Context, sql string, args ...any) pgx.Row {
@@ -69,10 +76,6 @@ func (v *Queries) SendBatch(ctx context.Context, b *pgx.Batch) pgx.BatchResults 
 	return v.db.SendBatch(ctx, b)
 }
 
-func (v *Queries) Pool() *pgxpool.Pool {
-	return v.db
-}
-
 func (v *Queries) Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error) {
 	return v.db.Query(ctx, sql, args...)
 }
@@ -87,7 +90,7 @@ func (v *Queries) RunInTx(fn func(Dbx) error) error {
 }
 
 func (v *Queries) RunInTxContext(ctx context.Context, fn func(context.Context) error) error {
-	return WithTxContext(v, ctx, fn)
+	return WithTxContext(ctx, v, fn)
 }
 
 var _ Dbx = (*txQueries)(nil)
@@ -96,7 +99,11 @@ type txQueries struct {
 	db pgx.Tx
 }
 
-// BeginTx implements Dbx.
+func NewTxQueries(tx pgx.Tx) *txQueries {
+	return &txQueries{db: tx}
+}
+
+// BeginTx for txQueries will simply call the Begin, start
 func (v *txQueries) BeginTx(ctx context.Context, opts pgx.TxOptions) (pgx.Tx, error) {
 	return v.db.Begin(ctx)
 }
@@ -106,14 +113,9 @@ func (v *txQueries) Close() {
 	slog.Info("close called on txQueries, nothing to do.")
 }
 
-// Acquire implements Dbx.
-func (v *txQueries) Acquire(ctx context.Context) (*pgxpool.Conn, error) {
-	return nil, errors.New("cannot aquire on db in transaction.")
-}
-
 // RunInTxContext implements Dbx.
 func (v *txQueries) RunInTxContext(ctx context.Context, fn func(context.Context) error) error {
-	return WithTxContext(v, ctx, fn)
+	return WithTxContext(ctx, v, fn)
 }
 
 // QueryRow implements Dbx.
@@ -135,10 +137,6 @@ func (v *txQueries) Commit(ctx context.Context) error {
 	return v.db.Commit(ctx)
 }
 
-func NewTxQueries(tx pgx.Tx) *txQueries {
-	return &txQueries{db: tx}
-}
-
 func (v *txQueries) Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error) {
 	return v.db.Query(ctx, sql, args...)
 }
@@ -158,7 +156,6 @@ func (v *txQueries) RunInTx(fn func(Dbx) error) error {
 //
 // Deprecated: use WithTxContext
 func WithTx(dbx Dbx, fn func(tx Dbx) error) error {
-	// TODO: add timeout
 	ctx := context.Background() // Use the appropriate context as needed
 	tx, err := dbx.Begin(ctx)
 	if err != nil {
@@ -192,17 +189,31 @@ func WithTx(dbx Dbx, fn func(tx Dbx) error) error {
 
 	return err
 }
-func WithTxContext(dbx Dbx, ctx context.Context, fn func(context.Context) error) error {
+
+// WithTxContext
+//
+// creates a new transaction from the dbx, and embeds it in the provided context ctx.
+// it is then passed to the given function fn, which can check the context for the embedded transaction
+// and use it as needed.
+func WithTxContext(ctx context.Context, dbx Dbx, fn func(context.Context) error) (returnErr error) {
+	existingTx := GetContextOrDefaultDbx(ctx, dbx)
+	if existingTx != nil {
+		return fn(ctx)
+	}
 	tx, err := dbx.Begin(ctx)
 	if err != nil {
 		slog.Error("error starting transaction", slog.Any("error", err))
-		return err
+		returnErr = err
+		return
 	}
 
 	defer func() {
-		if err := recover(); err != nil {
-			err := tx.Rollback(ctx)
-			if err != nil {
+		if recErr := recover(); recErr != nil {
+			slog.ErrorContext(ctx, "recovered from panic in transaction.", slog.String("errorMessage", fmt.Sprint(recErr)), slog.Any("stacktrace", string(debug.Stack())))
+			rollBackErr := tx.Rollback(context.Background())
+			if rollBackErr != nil {
+				slog.ErrorContext(ctx, "error rolling back transaction", slog.Any("error", rollBackErr))
+				returnErr = errors.New("there was an error while recovering from a failure")
 				return
 			}
 		}
