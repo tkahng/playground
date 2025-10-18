@@ -39,6 +39,14 @@ func Count(ctx context.Context, db Dbx, query string, args ...any) (int64, error
 	ctxDbx := GetContextOrDefaultDbx(ctx, db)
 	return pgxscan.One(ctx, ctxDbx, scan.SingleColumnMapper[int64], query, args...)
 }
+func QueryOneSingleColumn[T any](ctx context.Context, db Dbx, query string, args ...any) (T, error) {
+	ctxDbx := GetContextOrDefaultDbx(ctx, db)
+	return pgxscan.One(ctx, ctxDbx, scan.SingleColumnMapper[T], query, args...)
+}
+func QueryManySingleColumn[T any](ctx context.Context, db Dbx, query string, args ...any) ([]T, error) {
+	ctxDbx := GetContextOrDefaultDbx(ctx, db)
+	return pgxscan.All(ctx, ctxDbx, scan.SingleColumnMapper[T], query, args...)
+}
 
 func Exec(ctx context.Context, db Dbx, query string, args ...any) (int64, error) {
 	ctxDbx := GetContextOrDefaultDbx(ctx, db)

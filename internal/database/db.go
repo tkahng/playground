@@ -12,6 +12,30 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+type contextKey string
+
+const (
+	txContextKey contextKey = "tx_context_key"
+)
+
+func setContextTx(ctx context.Context, tx Dbx) context.Context {
+	return context.WithValue(ctx, txContextKey, tx)
+}
+func getContextTx(ctx context.Context) Dbx {
+	if tx, ok := ctx.Value(txContextKey).(Dbx); ok {
+		return tx
+	} else {
+		return nil
+	}
+}
+func GetContextOrDefaultDbx(ctx context.Context, dbx Dbx) Dbx {
+	tx := getContextTx(ctx)
+	if tx != nil {
+		return tx
+	}
+	return dbx
+}
+
 type Executor interface {
 	Query(ctx context.Context, sql string, arguments ...any) (pgx.Rows, error)
 	Exec(ctx context.Context, sql string, arguments ...any) (pgconn.CommandTag, error)
@@ -24,7 +48,7 @@ type Dbx interface {
 
 	Begin(ctx context.Context) (pgx.Tx, error)
 
-	BeginTx(ctx context.Context, opts pgx.TxOptions) (pgx.Tx, error)
+	BeginTx(ctx context.Context, opts ...func(*pgx.TxOptions)) (pgx.Tx, error)
 
 	// Close
 	//
@@ -57,13 +81,18 @@ func (v *Queries) QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
 }
 
 func (v *Queries) Begin(ctx context.Context) (pgx.Tx, error) {
-	return v.BeginTx(ctx, pgx.TxOptions{})
+	opt := &pgx.TxOptions{}
+	return v.db.BeginTx(ctx, *opt)
 }
 
 // BeginTx acquires a connection from the Pool and starts a transaction with pgx.TxOptions determining the transaction mode.
 // Unlike database/sql, the context only affects the begin command. i.e. there is no auto-rollback on context cancellation.
-func (v *Queries) BeginTx(ctx context.Context, opts pgx.TxOptions) (pgx.Tx, error) {
-	return v.db.BeginTx(ctx, opts)
+func (v *Queries) BeginTx(ctx context.Context, opts ...func(*pgx.TxOptions)) (pgx.Tx, error) {
+	opt := &pgx.TxOptions{}
+	for _, f := range opts {
+		f(opt)
+	}
+	return v.db.BeginTx(ctx, *opt)
 }
 
 // SendBatch implements Dbx.
@@ -98,12 +127,19 @@ func NewTxQueries(tx pgx.Tx) *txQueries {
 	return &txQueries{db: tx}
 }
 
-// BeginTx for txQueries will simply call the Begin, start
-func (v *txQueries) BeginTx(ctx context.Context, opts pgx.TxOptions) (pgx.Tx, error) {
+// BeginTx for txQueries will simply call the Begin, starting a pseudo nested transaction.
+// the opts will be ignored
+func (v *txQueries) BeginTx(ctx context.Context, opts ...func(*pgx.TxOptions)) (pgx.Tx, error) {
 	return v.db.Begin(ctx)
 }
 
-// Close implements Dbx.
+// Begin for txQueries will simply call the Begin, starting a pseudo nested transaction.
+// the opts will be ignored
+func (v *txQueries) Begin(ctx context.Context) (pgx.Tx, error) {
+	return v.db.Begin(ctx)
+}
+
+// Close is a no-op. this is here to implement Dbx
 func (v *txQueries) Close() {
 	slog.Info("close called on txQueries, nothing to do.")
 }
@@ -116,11 +152,6 @@ func (v *txQueries) RunInTxCtx(ctx context.Context, fn func(context.Context) err
 // QueryRow implements Dbx.
 func (v *txQueries) QueryRow(ctx context.Context, sql string, arguments ...any) pgx.Row {
 	return v.db.QueryRow(ctx, sql, arguments...)
-}
-
-// Begin implements Dbx.
-func (v *txQueries) Begin(ctx context.Context) (pgx.Tx, error) {
-	return v.db.Begin(ctx)
 }
 
 // SendBatch implements Dbx.
@@ -190,9 +221,9 @@ func WithTx(dbx Dbx, fn func(tx Dbx) error) error {
 // creates a new transaction from the dbx, and embeds it in the provided context ctx.
 // it is then passed to the given function fn, which can check the context for the embedded transaction
 // and use it as needed.
-func WithTxContext(ctx context.Context, dbx Dbx, fn func(context.Context) error) (returnErr error) {
+func WithTxContext(ctx context.Context, dbx Dbx, fn func(context.Context) error, opts ...func(*pgx.TxOptions)) (returnErr error) {
 	db := GetContextOrDefaultDbx(ctx, dbx)
-	tx, beginErr := db.Begin(ctx)
+	tx, beginErr := db.BeginTx(ctx, opts...)
 	if beginErr != nil {
 		slog.Error("error starting transaction", slog.Any("error", beginErr))
 		returnErr = errors.New("there was an error starting a transaction")

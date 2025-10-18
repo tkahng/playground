@@ -216,8 +216,18 @@ func (s *DbTaskStore) CountItems(ctx context.Context, projectID uuid.UUID, statu
 	// return count, err
 }
 
+type QueryAdapter struct {
+	query string
+	args  []any
+	err   error
+}
+
+func (a *QueryAdapter) ToSql() (string, []any, error) {
+	return a.query, a.args, a.err
+}
 func (s *DbTaskStore) GetTaskFirstPosition(ctx context.Context, projectID uuid.UUID, status models.TaskStatus, excludeID uuid.UUID) (float64, error) {
 	var rank float64
+	var err error
 	query := `
 		SELECT rank 
 		FROM task.tasks 
@@ -225,12 +235,13 @@ func (s *DbTaskStore) GetTaskFirstPosition(ctx context.Context, projectID uuid.U
 		ORDER BY rank ASC 
 		LIMIT 1
 	`
-	err := s.db.QueryRow(ctx, query, projectID, status, excludeID).Scan(&rank)
+	rank, err = database.QueryOneSingleColumn[float64](ctx, s.db, query, projectID, status, excludeID)
 	return rank, err
 }
 
 func (s *DbTaskStore) GetTaskLastPosition(ctx context.Context, projectID uuid.UUID, status models.TaskStatus, excludeID uuid.UUID) (float64, error) {
 	var rank float64
+	var err error
 	query := `
 		SELECT rank 
 		FROM task.tasks 
@@ -238,7 +249,7 @@ func (s *DbTaskStore) GetTaskLastPosition(ctx context.Context, projectID uuid.UU
 		ORDER BY rank DESC 
 		LIMIT 1
 	`
-	err := s.db.QueryRow(ctx, query, projectID, status, excludeID).Scan(&rank)
+	rank, err = database.QueryOneSingleColumn[float64](ctx, s.db, query, projectID, status, excludeID)
 	return rank, err
 }
 
@@ -250,23 +261,30 @@ func (s *DbTaskStore) GetTaskPositions(ctx context.Context, projectID uuid.UUID,
 		ORDER BY rank ASC 
 		LIMIT $4 OFFSET $5
 	`
+	return database.QueryManySingleColumn[float64](ctx, s.db, query, projectID, status, excludeID, 2, offset)
+	// query := `
+	// 	SELECT rank
+	// 	FROM tasks
+	// 	WHERE project_id = $1 AND status = $2 AND id != $3
+	// 	ORDER BY rank ASC
+	// 	LIMIT $4 OFFSET $5
+	// `
+	// rows, err := s.db.Query(ctx, query, projectID, status, excludeID, 2, offset)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// defer rows.Close()
 
-	rows, err := s.db.Query(ctx, query, projectID, status, excludeID, 2, offset)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
+	// var ranks []float64
+	// for rows.Next() {
+	// 	var pos float64
+	// 	if err := rows.Scan(&pos); err != nil {
+	// 		return nil, err
+	// 	}
+	// 	ranks = append(ranks, pos)
+	// }
 
-	var ranks []float64
-	for rows.Next() {
-		var pos float64
-		if err := rows.Scan(&pos); err != nil {
-			return nil, err
-		}
-		ranks = append(ranks, pos)
-	}
-
-	return ranks, rows.Err()
+	// return ranks, rows.Err()
 }
 func NewDbTaskStore(db database.Dbx) *DbTaskStore {
 	return &DbTaskStore{
