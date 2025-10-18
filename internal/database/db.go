@@ -114,7 +114,7 @@ func (v *Queries) RunInTx(fn func(Dbx) error) error {
 }
 
 func (v *Queries) RunInTxCtx(ctx context.Context, fn func(context.Context) error) error {
-	return WithTxContext(ctx, v, fn)
+	return WithCtxTx(ctx, v, fn)
 }
 
 var _ Dbx = (*txQueries)(nil)
@@ -146,7 +146,7 @@ func (v *txQueries) Close() {
 
 // RunInTxCtx implements Dbx.
 func (v *txQueries) RunInTxCtx(ctx context.Context, fn func(context.Context) error) error {
-	return WithTxContext(ctx, v, fn)
+	return WithCtxTx(ctx, v, fn)
 }
 
 // QueryRow implements Dbx.
@@ -176,6 +176,51 @@ func (v *txQueries) Exec(ctx context.Context, sql string, args ...any) (pgconn.C
 // Deprecated: use RunInTxCtx
 func (v *txQueries) RunInTx(fn func(Dbx) error) error {
 	return WithTx(v, fn)
+}
+
+// WithTxWithContext
+//
+// WithTxWithContext is like WithTx, but it takes a context as a parameter.
+func WithTxWithContext(ctx context.Context, dbx Dbx, fn func(tx Dbx) error, opts ...func(*pgx.TxOptions)) (returnErr error) {
+	tx, beginErr := dbx.BeginTx(ctx, opts...)
+	if beginErr != nil {
+		slog.Error("error starting transaction", slog.Any("error", beginErr))
+		returnErr = errors.New("there was an error starting a transaction")
+		return
+	}
+
+	defer func() {
+		if recErr := recover(); recErr != nil {
+			slog.ErrorContext(ctx, "recovered from panic in transaction.", slog.String("errorMessage", fmt.Sprint(recErr)), slog.Any("stacktrace", string(debug.Stack())))
+			rollBackErr := tx.Rollback(context.Background())
+			if rollBackErr != nil {
+				slog.ErrorContext(ctx, "error rolling back transaction from recovering panic.", slog.Any("error", rollBackErr))
+				returnErr = errors.New("there was an error while recovering from a failure")
+				return
+			}
+		}
+	}()
+	fnErr := fn(&txQueries{db: tx})
+
+	if fnErr != nil {
+		// we have fn error.
+		slog.ErrorContext(ctx, "error in transaction function. rolling back.", slog.Any("error", fnErr))
+		// rolling back
+		if rollbackErr := tx.Rollback(ctx); rollbackErr != nil {
+			slog.ErrorContext(ctx, "error rolling back transaction", slog.Any("error", rollbackErr))
+			returnErr = errors.New("there was an error while recovering from a failure")
+			return
+		}
+		returnErr = fnErr
+		return
+	} else {
+		if commitErr := tx.Commit(context.Background()); commitErr != nil {
+			slog.ErrorContext(ctx, "error committing transaction", slog.Any("error", commitErr))
+			returnErr = errors.New("there was an error while committing a transaction")
+			return
+		}
+	}
+	return
 }
 
 // WithTx
@@ -216,12 +261,12 @@ func WithTx(dbx Dbx, fn func(tx Dbx) error) error {
 	return err
 }
 
-// WithTxContext
+// WithCtxTx
 //
 // creates a new transaction from the dbx, and embeds it in the provided context ctx.
 // it is then passed to the given function fn, which can check the context for the embedded transaction
 // and use it as needed.
-func WithTxContext(ctx context.Context, dbx Dbx, fn func(context.Context) error, opts ...func(*pgx.TxOptions)) (returnErr error) {
+func WithCtxTx(ctx context.Context, dbx Dbx, fn func(context.Context) error, opts ...func(*pgx.TxOptions)) (returnErr error) {
 	db := GetContextOrDefaultDbx(ctx, dbx)
 	tx, beginErr := db.BeginTx(ctx, opts...)
 	if beginErr != nil {
@@ -260,6 +305,5 @@ func WithTxContext(ctx context.Context, dbx Dbx, fn func(context.Context) error,
 		returnErr = fnErr
 		return
 	}
-
-	return beginErr
+	return
 }
