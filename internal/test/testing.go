@@ -1,6 +1,8 @@
 package test
 
 import (
+	"fmt"
+	"reflect"
 	"slices"
 	"testing"
 )
@@ -65,4 +67,54 @@ func TestSliceEveryUniqueFunc[T any, K comparable](t *testing.T, msg string, ite
 		}
 		seen[key] = struct{}{}
 	}
+}
+
+// CompareFields compares specific fields of two structs (a and b) by name.
+// It returns true if all specified fields are equal, along with an empty string.
+// If any specified field is not equal, it returns false and a message detailing the first difference.
+func CompareFields(a, b interface{}, fieldNames []string) (bool, string) {
+	// Ensure both inputs are structs and of the same concrete type
+	valA := reflect.ValueOf(a)
+	valB := reflect.ValueOf(b)
+
+	// Check if the inputs are pointers; if so, dereference them
+	if valA.Kind() == reflect.Ptr {
+		valA = valA.Elem()
+	}
+	if valB.Kind() == reflect.Ptr {
+		valB = valB.Elem()
+	}
+
+	if valA.Kind() != reflect.Struct || valB.Kind() != reflect.Struct {
+		return false, "Both inputs must be structs or pointers to structs"
+	}
+
+	if valA.Type() != valB.Type() {
+		return false, fmt.Sprintf("Struct types are different: %v vs %v", valA.Type(), valB.Type())
+	}
+
+	for _, fieldName := range fieldNames {
+		// Get the field by name
+		fieldA := valA.FieldByName(fieldName)
+		fieldB := valB.FieldByName(fieldName)
+
+		// Check if the field exists
+		if !fieldA.IsValid() || !fieldB.IsValid() {
+			return false, fmt.Sprintf("Field '%s' not found in struct", fieldName)
+		}
+
+		// Compare the field values using DeepEqual
+		// For slices ([]byte in your Log example) or complex types,
+		// DeepEqual is the correct comparison method.
+		if !reflect.DeepEqual(fieldA.Interface(), fieldB.Interface()) {
+			return false, fmt.Sprintf(
+				"Field '%s' differs: a is '%v', b is '%v'",
+				fieldName,
+				fieldA.Interface(),
+				fieldB.Interface(),
+			)
+		}
+	}
+
+	return true, ""
 }
