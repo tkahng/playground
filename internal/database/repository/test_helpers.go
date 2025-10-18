@@ -142,19 +142,7 @@ func MustCreateRoleByName(t testing.TB, db database.Dbx, name string) *models.Ro
 	t.Helper()
 	return MustCreate(t, Role, db, &models.Role{Name: name})
 }
-func MustFindOrCreateRoleByName(t testing.TB, db database.Dbx, name string) *models.Role {
-	t.Helper()
-	role := MustFindRoleByName(t, db, name)
-	if role == nil {
-		role = MustCreateRoleByName(t, db, name)
-	}
-	return role
-}
-func MustCreateUserRoleByName(t testing.TB, db database.Dbx, userId uuid.UUID, name string) *models.UserRole {
-	t.Helper()
-	role := MustFindRoleByName(t, db, name)
-	return MustCreate(t, UserRole, db, &models.UserRole{UserID: userId, RoleID: role.ID})
-}
+
 func MustFindPermissionByName(t testing.TB, db database.Dbx, name string) *models.Permission {
 	t.Helper()
 	return MustFindOne(t, Permission, db, &map[string]any{"name": map[string]any{"_eq": name}})
@@ -172,42 +160,12 @@ func MustFindOrCreatePermissionByName(t testing.TB, db database.Dbx, name string
 	}
 	return role
 }
-func MustCreateRolePermissionByName(t testing.TB, db database.Dbx, roleName, permissionName string) *models.RolePermission {
-	t.Helper()
-	role := MustFindOrCreateRoleByName(t, db, roleName)
-	permission := MustFindOrCreatePermissionByName(t, db, permissionName)
-	return MustCreate(t, RolePermission, db, &models.RolePermission{PermissionID: permission.ID, RoleID: role.ID})
-}
-
-func InitRbac(t testing.TB, db database.Dbx) {
-	t.Helper()
-	MustCreateRoleByName(t, db, "admin")
-	MustCreateRoleByName(t, db, "advanced")
-	MustCreateRoleByName(t, db, "pro")
-	MustCreateRoleByName(t, db, "basic")
-
-	MustCreatePermissionByName(t, db, "admin")
-	MustCreatePermissionByName(t, db, "advanced")
-	MustCreatePermissionByName(t, db, "pro")
-	MustCreatePermissionByName(t, db, "basic")
-
-	MustCreateRolePermissionByName(t, db, "admin", "admin")
-	MustCreateRolePermissionByName(t, db, "admin", "advanced")
-	MustCreateRolePermissionByName(t, db, "admin", "pro")
-	MustCreateRolePermissionByName(t, db, "admin", "basic")
-	MustCreateRolePermissionByName(t, db, "advanced", "advanced")
-	MustCreateRolePermissionByName(t, db, "advanced", "pro")
-	MustCreateRolePermissionByName(t, db, "advanced", "basic")
-	MustCreateRolePermissionByName(t, db, "pro", "pro")
-	MustCreateRolePermissionByName(t, db, "pro", "basic")
-	MustCreateRolePermissionByName(t, db, "basic", "basic")
-}
 
 // CreateRolesAndPermissions creates roles, permissions, and the relations between them based of off a map of role names and slices of permission names
 // for example:
 //
 //	CreateRolesAndPermissions(t, db, map[string][]string{
-//		"admin":    {"admin", "advanced", "pro", "basic"},
+//		"superuser":    {"superuser", "advanced", "pro", "basic"},
 //		"advanced": {"advanced", "pro", "basic"},
 //		"pro":      {"pro", "basic"},
 //		"basic":    {"basic"},
