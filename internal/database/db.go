@@ -52,11 +52,6 @@ func (v *Queries) Close() {
 
 }
 
-// Acquire implements Dbx.
-func (v *Queries) Acquire(ctx context.Context) (c *pgxpool.Conn, err error) {
-	return v.db.Acquire(ctx)
-}
-
 func (v *Queries) QueryRow(ctx context.Context, sql string, args ...any) pgx.Row {
 	return v.db.QueryRow(ctx, sql, args...)
 }
