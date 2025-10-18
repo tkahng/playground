@@ -30,14 +30,14 @@ type ResourceService[Model any, Key comparable, Filter any] interface {
 var _ ResourceService[any, any, any] = (*RepositoryResourceService[any, any, any])(nil)
 
 type RepositoryResourceService[M any, K comparable, F any] struct {
-	repository   *repository.PostgresRepository[M]
+	repository   repository.Repository[M]
 	filterFn     func(filter *F) *map[string]any
 	sortFn       func(filter *F) *map[string]string
 	paginationFn func(filter *F) (limit, offset int)
 }
 
 func NewRepositoryResourceService[M any, K comparable, F any](
-	repository *repository.PostgresRepository[M],
+	repository repository.Repository[M],
 	filterFn func(filter *F) *map[string]any,
 	sortFn func(filter *F) *map[string]string,
 	paginationFn func(filter *F) (limit, offset int),

@@ -34,7 +34,7 @@ var _ Resource[any, any, any] = (*RepositoryResource[any, any, any])(nil)
 
 type RepositoryResource[M any, K comparable, F any] struct {
 	db           database.Dbx
-	repository   *repository.PostgresRepository[M]
+	repository   repository.Repository[M]
 	filterFn     func(filter *F) *map[string]any
 	sortFn       func(filter *F) *map[string]string
 	paginationFn func(filter *F) (limit, offset int)
@@ -42,7 +42,7 @@ type RepositoryResource[M any, K comparable, F any] struct {
 
 func NewRepositoryResource[M any, K comparable, F any](
 	db database.Dbx,
-	repository *repository.PostgresRepository[M],
+	repository repository.Repository[M],
 	filterFn func(filter *F) *map[string]any,
 	sortFn func(filter *F) *map[string]string,
 	paginationFn func(filter *F) (limit, offset int),
