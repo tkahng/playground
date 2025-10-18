@@ -13,12 +13,12 @@ import (
 )
 
 var (
-	knownRoleNames, knwonPermissionNames                     = []string{"admin", "advanced", "pro", "basic"}, []string{"admin", "advanced", "pro", "basic"}
+	knownRoleNames, knwonPermissionNames                     = []string{"superuser", "advanced", "pro", "basic"}, []string{"superuser", "advanced", "pro", "basic"}
 	knownRoleNamesPermissionsMap         map[string][]string = map[string][]string{
-		"basic":    {"basic"},
-		"pro":      {"basic", "pro"},
-		"advanced": {"basic", "pro", "advanced"},
-		"admin":    {"basic", "pro", "advanced", "admin"},
+		"basic":     {"basic"},
+		"pro":       {"basic", "pro"},
+		"advanced":  {"basic", "pro", "advanced"},
+		"superuser": {"basic", "pro", "advanced", "superuser"},
 	}
 )
 
@@ -73,7 +73,7 @@ func TestAuth_UserAccountRbac(t *testing.T) {
 
 		// populate all roles.permissions relation by querying the permission's roles names
 		// compare the roles.permissions relation with the knownRoleNamesPermissionsMap
-		t.Run("find each role's permissions by querying the permission's roles names.", func(t *testing.T) {
+		t.Run("find each role's permissions by querying the permission's roles names, then assign them to the role's permissions relation field.", func(t *testing.T) {
 			// iterate over all roles
 			for _, role := range *roles {
 				// find each role's permissions by querying the permission's roles names
@@ -145,11 +145,11 @@ func TestAuth_UserAccountRbac(t *testing.T) {
 			})
 
 		})
-		t.Run("roles with advanced permission and with names basic and pro", func(t *testing.T) {
+		t.Run("roles with advanced permission or with names basic and pro", func(t *testing.T) {
 			// roles with advanced permission and with names in basic and pro
 			//
-			// roles that have advanced permission and with names in basic and pro.
-			// should be 4, two with advanced permission, two in name list.
+			// 2 roles with advanced permission(admin and advanced)
+			// 2 roles with names in basic and pro
 			basicProNames := []string{"basic", "pro"}
 			permAdvNamesInBasicProRoles := repository.MustFindAll(t, repository.Role, dbx, &map[string]any{
 				"_or": []map[string]any{
@@ -185,7 +185,7 @@ func TestAuth_UserAccountRbac(t *testing.T) {
 				"_or": []map[string]any{
 					{
 						"name": map[string]any{
-							"_eq": "admin",
+							"_eq": "superuser",
 						},
 					},
 					{

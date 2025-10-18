@@ -522,14 +522,14 @@ func GenerateParameterPlaceholder(value reflect.Value, args *[]any) string {
 //		},
 //		"roles": map[string]any{
 //			"name": map[string]any{
-//				"_in": []string{"admin", "user"},
+//				"_in": []string{"superuser", "user"},
 //			},
 //		},
 //	}
 //
 // args is a slice of any:
 //
-//	var args = []any{"John", []string{"admin", "user"}}
+//	var args = []any{"John", []string{"superuser", "user"}}
 type fieldIdx struct {
 	Name string
 	Idx  int
