@@ -226,6 +226,8 @@ func WithTxContext(ctx context.Context, dbx Dbx, fn func(context.Context) error)
 			returnErr = errors.New("there was an error while recovering from a failure")
 			return
 		}
+		returnErr = fnErr
+		return
 	}
 
 	return beginErr
