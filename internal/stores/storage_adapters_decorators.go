@@ -1,6 +1,10 @@
 package stores
 
-import "github.com/tkahng/playground/internal/database"
+import (
+	"context"
+
+	"github.com/tkahng/playground/internal/database"
+)
 
 func NewAdapterDecorators() *StorageAdapterDecorator {
 	return &StorageAdapterDecorator{
@@ -105,8 +109,17 @@ type StorageAdapterDecorator struct {
 	SubscriptionFunc   *StripeSubscriptionStoreDecorator
 	TaskFunc           *TaskDecorator
 	RunInTxFunc        func(fn func(tx StorageAdapterInterface) error) error
+	RunInTxCtxFunc     func(fn func(ctx context.Context) error) error
 	JobFunc            *JobStoreDecorator
 	UserReactionFunc   *DbUserReactionStoreDectorator
+}
+
+// RunInTxCtx implements StorageAdapterInterface.
+func (s *StorageAdapterDecorator) RunInTxCtx(ctx context.Context, fn func(txCtx context.Context) error) error {
+	if s.RunInTxCtxFunc != nil {
+		return s.RunInTxCtxFunc(fn)
+	}
+	return s.Delegate.RunInTxCtx(ctx, fn)
 }
 
 // UserReaction implements StorageAdapterInterface.

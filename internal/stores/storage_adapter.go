@@ -1,6 +1,10 @@
 package stores
 
-import "github.com/tkahng/playground/internal/database"
+import (
+	"context"
+
+	"github.com/tkahng/playground/internal/database"
+)
 
 var _ StorageAdapterInterface = (*StorageAdapter)(nil)
 
@@ -22,6 +26,7 @@ type StorageAdapterInterface interface {
 	Task() DbTaskStoreInterface
 	Job() JobStore
 	// WithTx(tx database.Dbx) *StorageAdapter
+	RunInTxCtx(ctx context.Context, fn func(txCtx context.Context) error) error
 	RunInTx(fn func(tx StorageAdapterInterface) error) error
 }
 type StorageAdapter struct {
@@ -97,6 +102,10 @@ func (s *StorageAdapter) RunInTx(fn func(tx StorageAdapterInterface) error) erro
 		}
 		return fn(tx)
 	})
+}
+
+func (s *StorageAdapter) RunInTxCtx(ctx context.Context, fn func(txCtx context.Context) error) error {
+	return s.db.RunInTxCtx(ctx, fn)
 }
 
 func (s *StorageAdapter) Rbac() DbRbacStoreInterface {
