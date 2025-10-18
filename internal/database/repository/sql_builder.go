@@ -723,7 +723,7 @@ func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any) string {
 									throughDestField.ColumnName,
 								)
 							} else {
-								//goland:noinspection Annotator
+
 								query = fmt.Sprintf("SELECT %s FROM %s", relatedDestField.QualifiedColumnName, relatedBuilder.TableName())
 							}
 							if expr := relatedBuilder.Where(&relationWhere, args); expr != "" {
@@ -836,7 +836,7 @@ func (b *SQLBuilder[Model]) Values(values *[]Model, args *[]any, keys *[]any) (f
 	return fields, vals, nil
 }
 
-func (b *SQLBuilder[Model]) SetError(set *Model, args *[]any, where *map[string]any) (ret string, err error) {
+func (b *SQLBuilder[Model]) SetError(set *Model, args *[]any, where *map[string]any) (ret string, returnErr error) {
 	defer func() {
 		if r := recover(); r != nil {
 			slog.Error("Error occurred during Set generation", slog.Any("error", r),
@@ -844,13 +844,22 @@ func (b *SQLBuilder[Model]) SetError(set *Model, args *[]any, where *map[string]
 				slog.Any("set", set),
 				slog.Any("where", where),
 			)
-			err = fmt.Errorf("error generating Set for table %s", b.tableName)
+			returnErr = fmt.Errorf("error generating Set for table %s", b.tableName)
 		}
 	}()
 	ret = b.Set(set, args, where)
 	return
 }
 
+// convert converts a reflect.Value to a string.
+//
+// most sql drivers can handle most types, but some cases are ambiguous, or need more refinement.
+//
+// time.Time cannot be used as its fmt.Stringer, but instead needs to be RFC3339Nano formatted.
+// so we want to explicitly convert them
+//
+// uuid.UUID underlying type is [16]byte, making it ambiguous from just []byte, which is a common column type.
+// in this case we first check for strict []byte, them uuid.UUID, then either string([]byte) or (uuid.UUID).String().
 func convert(_field reflect.Value) string {
 	if _field.Kind() == reflect.Pointer {
 		_field = _field.Elem()

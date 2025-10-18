@@ -82,7 +82,7 @@ func (r *PostgresRepository[Model]) Builder() SQLBuilderInterface {
 // Get retrieves records from the database based on the provided filters
 func (r *PostgresRepository[Model]) Get(ctx context.Context, db database.Dbx, where *map[string]any, order *map[string]string, limit *int, offset *int) ([]*Model, error) {
 	var args []any
-	//goland:noinspection Annotator
+
 	query := fmt.Sprintf("SELECT %s FROM %s", r.builder.QualifiedColumnNamesJoined(), r.builder.TableName())
 	if expr, err := r.builder.WhereError(ctx, where, &args); err != nil {
 		return nil, err
@@ -136,7 +136,7 @@ func (r *PostgresRepository[Model]) Put(ctx context.Context, dbx database.Dbx, m
 		if err != nil {
 			return nil, err
 		}
-		//goland:noinspection Annotator
+
 		query := fmt.Sprintf("UPDATE %s SET %s", r.builder.TableName(), set)
 		if expr, err := r.builder.WhereError(ctx, &where, &args); err != nil {
 			return nil, err
@@ -166,13 +166,16 @@ func (r *PostgresRepository[Model]) Put(ctx context.Context, dbx database.Dbx, m
 // Post inserts new records into the database
 func (r *PostgresRepository[Model]) PostExec(ctx context.Context, dbx database.Dbx, models []Model) (int64, error) {
 	args := []any{}
-	//goland:noinspection Annotator
+
+	// INSERT INTO ${TABLE_NAME}
 	query := fmt.Sprintf("INSERT INTO %s", r.builder.TableName())
 	if fields, values, err := r.builder.ValuesError(&models, &args, nil); err != nil {
 		return 0, err
 	} else if fields != "" && values != "" {
+		// (${FIELDS}) VALUES ${VALUES}
 		query += fmt.Sprintf(" (%s) VALUES %s", fields, values)
 	}
+
 	// Execute the query and scan the results
 	slog.Debug("query and args", slog.String("query", query), slog.Any("args", args))
 	result, err := database.Exec(
@@ -192,13 +195,16 @@ func (r *PostgresRepository[Model]) PostExec(ctx context.Context, dbx database.D
 // Post inserts new records into the database
 func (r *PostgresRepository[Model]) Post(ctx context.Context, dbx database.Dbx, models []Model) ([]*Model, error) {
 	args := []any{}
-	//goland:noinspection Annotator
+
+	// INSERT INTO ${TABLE_NAME}
 	query := fmt.Sprintf("INSERT INTO %s", r.builder.TableName())
 	if fields, values, err := r.builder.ValuesError(&models, &args, nil); err != nil {
 		return nil, err
 	} else if fields != "" && values != "" {
+		// (${FIELDS}) VALUES ${VALUES}
 		query += fmt.Sprintf(" (%s) VALUES %s", fields, values)
 	}
+	// RETURNING ${COLUMNS}
 	query += fmt.Sprintf(" RETURNING %s", r.builder.ColumnNamesJoined())
 
 	// Execute the query and scan the results
@@ -220,7 +226,7 @@ func (r *PostgresRepository[Model]) Post(ctx context.Context, dbx database.Dbx, 
 // DeleteReturn removes records from the database based on the provided filters
 func (r *PostgresRepository[Model]) Delete(ctx context.Context, dbx database.Dbx, where *map[string]any) (int64, error) {
 	args := []any{}
-	//goland:noinspection Annotator
+
 	query := fmt.Sprintf("DELETE FROM %s", r.builder.TableName())
 	if expr, err := r.builder.WhereError(ctx, where, &args); err != nil {
 		return 0, err
@@ -247,11 +253,13 @@ func (r *PostgresRepository[Model]) Delete(ctx context.Context, dbx database.Dbx
 // Count returns the number of records that match the provided filters
 func (r *PostgresRepository[Model]) Count(ctx context.Context, dbx database.Dbx, where *map[string]any) (int64, error) {
 	args := []any{}
-	//goland:noinspection Annotator
+
+	// SELECT COUNT(*) FROM ${TABLE_NAME}
 	query := fmt.Sprintf("SELECT COUNT(*) FROM %s", r.builder.TableName())
 	if expr, err := r.builder.WhereError(ctx, where, &args); err != nil {
 		return 0, err
 	} else if expr != "" {
+		// WHERE ${WHERE}
 		query += fmt.Sprintf(" WHERE %s", expr)
 	}
 
@@ -296,6 +304,9 @@ func (r *PostgresRepository[Model]) PutOne(ctx context.Context, dbx database.Dbx
 	return handleErrAndGetFirstItem(result, err)
 }
 
+// handleErrAndGetFirstItem is an adapter for slice return types to single return types.
+// it takes any slice of pointers and an error,
+// and returns the first item in the slice or nil if the error is not nil
 func handleErrAndGetFirstItem[Model any](result []*Model, err error) (*Model, error) {
 	if err != nil {
 		return nil, err
