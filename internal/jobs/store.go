@@ -60,6 +60,7 @@ const query string = `--sql
 
 // SaveJob implements JobStore.
 func (s *DbJobStore) SaveJob(ctx context.Context, job *EnqueueParams) error {
+	db := database.GetContextOrDefaultDbx(ctx, s.db)
 	payload, err := json.Marshal(job.Args)
 	if err != nil {
 		return fmt.Errorf("marshal args: %w", err)
@@ -71,7 +72,7 @@ func (s *DbJobStore) SaveJob(ctx context.Context, job *EnqueueParams) error {
 		return fmt.Errorf("generate uuid: %w", err)
 	}
 
-	_, err = s.db.Exec(ctx, query, id, job.Args.Kind(), job.UniqueKey, payload, job.RunAfter, job.MaxAttempts)
+	_, err = db.Exec(ctx, query, id, job.Args.Kind(), job.UniqueKey, payload, job.RunAfter, job.MaxAttempts)
 
 	return err
 }
