@@ -18,9 +18,9 @@ type StripeProduct struct {
 	Metadata    map[string]string `db:"metadata" json:"metadata"`
 	CreatedAt   time.Time         `db:"created_at" json:"created_at"`
 	UpdatedAt   time.Time         `db:"updated_at" json:"updated_at"`
-	Prices      []*StripePrice    `db:"prices" src:"id" dest:"product_id" table:"public.stripe_prices" json:"prices,omitempty"`
-	Roles       []*Role           `db:"roles" src:"id" dest:"product_id" table:"auth.roles" through:"public.product_roles,role_id,id" json:"roles,omitempty"`
-	Permissions []*Permission     `db:"permissions" src:"id" dest:"product_id" table:"auth.permissions" through:"public.product_permissions,permission_id,id" json:"permissions,omitempty"`
+	Prices      []*StripePrice    `db:"prices" src:"id" dest:"product_id" table:"stripe_prices" json:"prices,omitempty"`
+	Roles       []*Role           `db:"roles" src:"id" dest:"product_id" table:"roles" through:"product_roles,role_id,id" json:"roles,omitempty"`
+	Permissions []*Permission     `db:"permissions" src:"id" dest:"product_id" table:"permissions" through:"product_permissions,permission_id,id" json:"permissions,omitempty"`
 }
 
 func FromModelProduct(product *models.StripeProduct) *StripeProduct {
