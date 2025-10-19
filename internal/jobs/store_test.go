@@ -29,7 +29,7 @@ func TestDbJobStore_SaveJob(t *testing.T) {
 		// 	}
 		// })
 		type fields struct {
-			db Db
+			db database.Dbx
 		}
 		type args struct {
 			ctx context.Context
@@ -104,7 +104,7 @@ func TestDbJobStore_SaveManyJobs(t *testing.T) {
 	test.SkipIfShort(t)
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		type fields struct {
-			db Db
+			db database.Dbx
 		}
 		type args struct {
 			ctx  context.Context
@@ -173,7 +173,7 @@ func TestDbJobStore_ClaimPendingJobs(t *testing.T) {
 	test.SkipIfShort(t)
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		type fields struct {
-			db Db
+			db database.Dbx
 		}
 		type args struct {
 			jobs  []*EnqueueParams

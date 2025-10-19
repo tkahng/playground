@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/models"
 )
 
@@ -39,7 +40,7 @@ type JobStore interface {
 	RunInTx(ctx context.Context, fn func(JobStore) error) error
 }
 type DbJobStore struct {
-	db Db
+	db database.Dbx
 }
 
 const query string = `--sql
@@ -93,7 +94,8 @@ func (e *DbJobStore) SaveManyJobs(ctx context.Context, jobs ...*EnqueueParams) e
 	return nil
 }
 func (e *DbJobStore) processBatch(ctx context.Context, jobs []*EnqueueParams) error {
-	tx, err := e.db.Begin(ctx)
+	db := database.GetContextOrDefaultDbx(ctx, e.db)
+	tx, err := db.Begin(ctx)
 	if err != nil {
 		return fmt.Errorf("begin transaction: %w", err)
 	}
@@ -155,13 +157,14 @@ func (e *DbJobStore) executeBatch(ctx context.Context, tx pgx.Tx, batch *pgx.Bat
 var _ JobStore = (*DbJobStore)(nil)
 
 func (s *DbJobStore) RunInTx(ctx context.Context, fn func(JobStore) error) error {
-	tx, err := s.db.Begin(ctx)
+	db := database.GetContextOrDefaultDbx(ctx, s.db)
+	tx, err := db.Begin(ctx)
 	if err != nil {
 		return fmt.Errorf("begin transaction: %w", err)
 	}
 	defer tx.Rollback(ctx)
 
-	err = fn(&DbJobStore{db: tx})
+	err = fn(&DbJobStore{db: database.NewTxQueries(tx)})
 	if err == nil {
 		if err := tx.Commit(ctx); err != nil {
 			return fmt.Errorf("commit transaction: %w", err)
@@ -170,14 +173,15 @@ func (s *DbJobStore) RunInTx(ctx context.Context, fn func(JobStore) error) error
 	return err
 }
 
-func NewDbJobStore(db Db) *DbJobStore {
+func NewDbJobStore(db database.Dbx) *DbJobStore {
 	return &DbJobStore{
 		db: db,
 	}
 }
 
 func (s *DbJobStore) ClaimPendingJobs(ctx context.Context, limit int) ([]*models.JobRow, error) {
-	rows, err := s.db.Query(ctx, `
+	db := database.GetContextOrDefaultDbx(ctx, s.db)
+	rows, err := db.Query(ctx, `
 		UPDATE app.jobs SET status='processing', updated_at=clock_timestamp(), attempts=attempts+1
 		WHERE id IN (
 			SELECT id FROM app.jobs
@@ -208,14 +212,16 @@ func (s *DbJobStore) ClaimPendingJobs(ctx context.Context, limit int) ([]*models
 }
 
 func (s *DbJobStore) MarkDone(ctx context.Context, id uuid.UUID) error {
-	_, err := s.db.Exec(ctx, `
+	db := database.GetContextOrDefaultDbx(ctx, s.db)
+	_, err := db.Exec(ctx, `
 		UPDATE app.jobs SET status='done', updated_at=clock_timestamp() WHERE id=$1
 	`, id)
 	return err
 }
 
 func (s *DbJobStore) MarkFailed(ctx context.Context, id uuid.UUID, reason string) error {
-	_, err := s.db.Exec(ctx, `
+	db := database.GetContextOrDefaultDbx(ctx, s.db)
+	_, err := db.Exec(ctx, `
 		UPDATE app.jobs SET status='failed', last_error=$2, updated_at=clock_timestamp()
 		WHERE id=$1 AND attempts >= max_attempts
 	`, id, reason)
@@ -223,7 +229,8 @@ func (s *DbJobStore) MarkFailed(ctx context.Context, id uuid.UUID, reason string
 }
 
 func (s *DbJobStore) RescheduleJob(ctx context.Context, id uuid.UUID, delay time.Duration) error {
-	_, err := s.db.Exec(ctx, `
+	db := database.GetContextOrDefaultDbx(ctx, s.db)
+	_, err := db.Exec(ctx, `
 		UPDATE app.jobs SET run_after = clock_timestamp() + $2, updated_at = clock_timestamp(), status = 'pending'
 		WHERE id = $1
 	`, id, delay)

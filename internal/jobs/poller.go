@@ -106,12 +106,12 @@ func (p *DbPoller) Run(ctx context.Context) error {
 
 func (p *DbPoller) PollOnce(ctx context.Context) error {
 	// Use a timeout for the transaction itself
-	txCtx, cancel := context.WithTimeout(ctx, p.opts.Timeout)
-	defer cancel()
+	firstCancelCtx, firstCancelFunc := context.WithTimeout(ctx, p.opts.Timeout)
+	defer firstCancelFunc()
 
 	var claimedJobs []*models.JobRow
-	err := p.Store.RunInTx(txCtx, func(js JobStore) error {
-		jobs, err := js.ClaimPendingJobs(txCtx, p.opts.Size)
+	err := p.Store.RunInTx(firstCancelCtx, func(js JobStore) error {
+		jobs, err := js.ClaimPendingJobs(firstCancelCtx, p.opts.Size)
 		if err != nil {
 			return fmt.Errorf("claim jobs: %w", err)
 		}
@@ -135,29 +135,29 @@ func (p *DbPoller) PollOnce(ctx context.Context) error {
 			defer func() { <-sem }()
 
 			// Set timeout for this job
-			jobCtx, cancel := context.WithTimeout(gctx, p.opts.Timeout)
+			jobTimeoutCtx, cancel := context.WithTimeout(gctx, p.opts.Timeout)
 			defer cancel()
 
-			dispatchErr := p.Dispatcher.Dispatch(jobCtx, job)
+			dispatchErr := p.Dispatcher.Dispatch(jobTimeoutCtx, job)
 
 			// Use new transaction to mark result
-			markErr := p.Store.RunInTx(jobCtx, func(js JobStore) error {
+			markErr := p.Store.RunInTx(jobTimeoutCtx, func(js JobStore) error {
 				if dispatchErr != nil {
-					slog.ErrorContext(jobCtx, "job failed", "error", dispatchErr, "job_id", job.ID.String())
+					slog.ErrorContext(jobTimeoutCtx, "job failed", "error", dispatchErr, "job_id", job.ID.String())
 
 					if job.Attempts >= job.MaxAttempts {
-						return js.MarkFailed(jobCtx, job.ID, dispatchErr.Error())
+						return js.MarkFailed(jobTimeoutCtx, job.ID, dispatchErr.Error())
 					}
 					// Reschedule with exponential backoff
 					delay := time.Duration(math.Pow(2, float64(job.Attempts))) * time.Second
-					return js.RescheduleJob(jobCtx, job.ID, delay)
+					return js.RescheduleJob(jobTimeoutCtx, job.ID, delay)
 				}
 
-				return js.MarkDone(jobCtx, job.ID)
+				return js.MarkDone(jobTimeoutCtx, job.ID)
 
 			})
 			if markErr != nil {
-				slog.ErrorContext(jobCtx, "error updating job status", "error", markErr, "job_id", job.ID.String())
+				slog.ErrorContext(jobTimeoutCtx, "error updating job status", "error", markErr, "job_id", job.ID.String())
 			}
 
 			return nil // always return nil to allow others to proceed
