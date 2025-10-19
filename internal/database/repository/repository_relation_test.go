@@ -321,15 +321,3 @@ func TestMustCreateUserAndAccount_Randomize(t *testing.T) {
 		}
 	})
 }
-
-// func TestPost(t *testing.T) {
-// 	database.WithNewTx(t, func(ctx context.Context, db database.Dbx) {
-// 		testfunc := func() {
-// 			var userInput *models.User = new(models.User)
-// 			var userInputs []*models.User = []*models.User{userInput}
-// 			res, err := repository.post(t, repository.User, db, userInput)
-// 		}
-// 	})
-// }
-
-// func RepositoryPostTestFunc[T any](t testing.TB, repo repository.Repository[any], db database.Dbx, arg *map[string]any)

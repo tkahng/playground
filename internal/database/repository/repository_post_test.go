@@ -69,7 +69,7 @@ func TestUserRepositoryPost(t *testing.T) {
 			ArgsFunc: func(t testing.TB, scenario *PostScenario[models.User]) []models.User {
 				var args []models.User
 				for i := range 10 {
-					t.Log(i)
+
 					args = append(args, models.User{
 						Name:  types.Pointer("Name:" + fmt.Sprint(i)),
 						Email: fmt.Sprint(i) + "@email.com",
@@ -106,7 +106,7 @@ func TestUserAccountRepositoryPost(t *testing.T) {
 				dbx := scenario.Dbx
 				var userArgs []models.User
 				for i := range 10 {
-					t.Log(i)
+
 					userArgs = append(userArgs, models.User{
 						Name:  types.Pointer("Name:" + fmt.Sprint(i)),
 						Email: fmt.Sprint(i) + "@email.com",
@@ -115,7 +115,7 @@ func TestUserAccountRepositoryPost(t *testing.T) {
 				users := MustCreateManyCtx(t, t.Context(), User, dbx, userArgs)
 				var userAccountArgs []models.UserAccount
 				for i := range 10 {
-					t.Log(i)
+
 					user := users[i]
 					userAccountArgs = append(userAccountArgs, models.UserAccount{
 						UserID:            user.ID,
@@ -159,7 +159,7 @@ func TestTeamRepositoryPost(t *testing.T) {
 				var teamArgs []models.Team
 
 				for i := range 10 {
-					t.Log(i)
+
 					teamArgs = append(teamArgs, models.Team{
 						Name: "name:" + fmt.Sprint(i),
 						Slug: "slug:" + fmt.Sprint(i),
@@ -174,6 +174,66 @@ func TestTeamRepositoryPost(t *testing.T) {
 				// check name. string pointer.
 				assert.Equal(t, arg.Name, res.Name, "name should be equal.")
 				assert.Equal(t, arg.Slug, res.Slug, "slug should be equal.")
+				assert.NotEqual(t, arg.ID, res.ID, "ID should not be equal since it is generated on db side, arg will have zero value uuid.UUID")
+			},
+		},
+	}
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		for _, scenario := range scenarios {
+			t.Run(scenario.Name, func(t *testing.T) {
+				database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+					scenario.Dbx = db
+					PostTestScenarioFunc(t, ctx, scenario)
+				})
+			})
+		}
+	})
+}
+func TestTeamMemberRepositoryPost(t *testing.T) {
+	scenarios := []*PostScenario[models.TeamMember]{
+		{
+			Name: "creating 10 unique team members from numbers",
+			ArgsFunc: func(t testing.TB, scenario *PostScenario[models.TeamMember]) []models.TeamMember {
+				dbx := scenario.Dbx
+				var userArgs []models.User
+				for i := range 10 {
+
+					userArgs = append(userArgs, models.User{
+						Name:  types.Pointer("Name:" + fmt.Sprint(i)),
+						Email: fmt.Sprint(i) + "@email.com",
+					})
+				}
+				users := MustCreateManyCtx(t, t.Context(), User, dbx, userArgs)
+				var teamArgs []models.Team
+				for i := range 10 {
+
+					teamArgs = append(teamArgs, models.Team{
+						Name: "name:" + fmt.Sprint(i),
+						Slug: "slug:" + fmt.Sprint(i),
+					})
+				}
+				teams := MustCreateManyCtx(t, t.Context(), Team, dbx, teamArgs)
+				var teamMemberArgs []models.TeamMember
+
+				for i := range 10 {
+
+					teamMemberArgs = append(teamMemberArgs, models.TeamMember{
+						TeamID: teams[i].ID,
+						UserID: &users[i].ID,
+						Active: true,
+						Role:   models.TeamMemberRoleMember,
+					})
+				}
+				return teamMemberArgs
+			},
+			Repo:      TeamMember,
+			SetupFunc: func(t testing.TB, scenario *PostScenario[models.TeamMember]) {},
+			TestFunc: func(t testing.TB, arg, res *models.TeamMember) {
+				t.Helper()
+				// check name. string pointer.
+				assert.Equal(t, arg.UserID, res.UserID, "user id should be equal.")
+				assert.Equal(t, arg.TeamID, res.TeamID, "slug should be equal.")
+				assert.Equal(t, arg.Role, res.Role, "role should be equal.")
 				assert.NotEqual(t, arg.ID, res.ID, "ID should not be equal since it is generated on db side, arg will have zero value uuid.UUID")
 			},
 		},
