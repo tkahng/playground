@@ -1,0 +1,152 @@
+package repository
+
+import (
+	"context"
+	"fmt"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/tkahng/playground/internal/database"
+	"github.com/tkahng/playground/internal/models"
+	"github.com/tkahng/playground/internal/tools/types"
+)
+
+type PostScenario[T any] struct {
+	// Name is the name of the scenario
+	Name string
+	// Dbx is the database connection
+	Dbx database.Dbx
+	// Repo is the repository to be tested
+	Repo Repository[T]
+	// Args is the arguments to be passed to the repository
+	Args []T
+	// ArgsFunc returns the arguments to be passed to the repository. this is for arguments that need some computation.
+	ArgsFunc func(t testing.TB, scenario *PostScenario[T]) []T
+	// SetupFunc is the function to setup the test
+	SetupFunc func(t testing.TB, scenario *PostScenario[T])
+	// TestFunc is the function to verify the post result
+	TestFunc func(t testing.TB, args, res *T)
+	// ㅉantErr indicates whether the test should expect an error
+	WantErr bool
+	// CauseErr enables manual transaction failure for testing
+	CauseErr error
+}
+
+// PostTestScenarioFunc runs a single test scenario
+func PostTestScenarioFunc[T any](t testing.TB, ctx context.Context, scenario *PostScenario[T]) {
+	t.Helper()
+	dbx := scenario.Dbx
+	repo := scenario.Repo
+	var res []*T
+	err := dbx.RunInTxCtx(ctx, func(txCtx context.Context) error {
+		args := scenario.Args
+		if scenario.ArgsFunc != nil {
+			args = scenario.ArgsFunc(t, scenario)
+		}
+		if scenario.SetupFunc != nil {
+			scenario.SetupFunc(t, scenario)
+		}
+		var txRes, err = repo.Post(txCtx, dbx, args)
+		if err != nil {
+			return err
+		}
+		res = txRes
+		for i, arg := range args {
+			r := res[i]
+			scenario.TestFunc(t, &arg, r)
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+func TestUserRepositoryPost(t *testing.T) {
+
+	scenarios := []*PostScenario[models.User]{
+		{
+			Name: "creating 10 unique users from numbers",
+			ArgsFunc: func(t testing.TB, scenario *PostScenario[models.User]) []models.User {
+				var args []models.User
+				for i := range 10 {
+					t.Log(i)
+					args = append(args, models.User{
+						Name:  types.Pointer("Name:" + fmt.Sprint(i)),
+						Email: fmt.Sprint(i) + "@email.com",
+					})
+				}
+				return args
+			},
+			Repo:      User,
+			SetupFunc: func(t testing.TB, scenario *PostScenario[models.User]) {},
+			TestFunc: func(t testing.TB, arg, res *models.User) {
+				t.Helper()
+				assert.Equal(t, arg.Name, res.Name, "Name should be the same")
+				assert.Equal(t, arg.Email, res.Email, "Email should be the same")
+				assert.NotEqual(t, arg.ID, res.ID, "ID should not be equal since it is generated on db side, arg will have zero value uuid.UUID")
+			},
+		},
+	}
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		for _, scenario := range scenarios {
+			t.Run(scenario.Name, func(t *testing.T) {
+				database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+					scenario.Dbx = db
+					PostTestScenarioFunc(t, ctx, scenario)
+				})
+			})
+		}
+	})
+}
+func TestUserAccountRepositoryPost(t *testing.T) {
+	scenarios := []*PostScenario[models.UserAccount]{
+		{
+			Name: "creating 10 unique users and their accounts from numbers",
+			ArgsFunc: func(t testing.TB, scenario *PostScenario[models.UserAccount]) []models.UserAccount {
+				dbx := scenario.Dbx
+				var userArgs []models.User
+				for i := range 10 {
+					t.Log(i)
+					userArgs = append(userArgs, models.User{
+						Name:  types.Pointer("Name:" + fmt.Sprint(i)),
+						Email: fmt.Sprint(i) + "@email.com",
+					})
+				}
+				users := MustCreateManyCtx(t, t.Context(), User, dbx, userArgs)
+				var userAccountArgs []models.UserAccount
+				for i := range 10 {
+					t.Log(i)
+					user := users[i]
+					userAccountArgs = append(userAccountArgs, models.UserAccount{
+						UserID:            user.ID,
+						Provider:          models.ProvidersCredentials,
+						ProviderAccountID: user.Email,
+						Type:              models.ProviderTypeCredentials,
+					})
+				}
+				return userAccountArgs
+			},
+			Repo:      UserAccount,
+			SetupFunc: func(t testing.TB, scenario *PostScenario[models.UserAccount]) {},
+			TestFunc: func(t testing.TB, arg, res *models.UserAccount) {
+				t.Helper()
+				// check name. string pointer.
+				assert.Equal(t, arg.UserID, res.UserID, "user id should be equal.")
+				assert.Equal(t, arg.Provider, res.Provider, "provider should be equal.")
+				assert.Equal(t, arg.ProviderAccountID, res.ProviderAccountID, "provider account id should be equal.")
+				assert.Equal(t, arg.Type, res.Type, "type should be equal.")
+				assert.NotEqual(t, arg.ID, res.ID, "ID should not be equal since it is generated on db side, arg will have zero value uuid.UUID")
+			},
+		},
+	}
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		for _, scenario := range scenarios {
+			t.Run(scenario.Name, func(t *testing.T) {
+				database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+					scenario.Dbx = db
+					PostTestScenarioFunc(t, ctx, scenario)
+				})
+			})
+		}
+	})
+}
