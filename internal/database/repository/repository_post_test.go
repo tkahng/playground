@@ -150,3 +150,42 @@ func TestUserAccountRepositoryPost(t *testing.T) {
 		}
 	})
 }
+
+func TestTeamRepositoryPost(t *testing.T) {
+	scenarios := []*PostScenario[models.Team]{
+		{
+			Name: "creating 10 unique teams from numbers",
+			ArgsFunc: func(t testing.TB, scenario *PostScenario[models.Team]) []models.Team {
+				var teamArgs []models.Team
+
+				for i := range 10 {
+					t.Log(i)
+					teamArgs = append(teamArgs, models.Team{
+						Name: "name:" + fmt.Sprint(i),
+						Slug: "slug:" + fmt.Sprint(i),
+					})
+				}
+				return teamArgs
+			},
+			Repo:      Team,
+			SetupFunc: func(t testing.TB, scenario *PostScenario[models.Team]) {},
+			TestFunc: func(t testing.TB, arg, res *models.Team) {
+				t.Helper()
+				// check name. string pointer.
+				assert.Equal(t, arg.Name, res.Name, "name should be equal.")
+				assert.Equal(t, arg.Slug, res.Slug, "slug should be equal.")
+				assert.NotEqual(t, arg.ID, res.ID, "ID should not be equal since it is generated on db side, arg will have zero value uuid.UUID")
+			},
+		},
+	}
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		for _, scenario := range scenarios {
+			t.Run(scenario.Name, func(t *testing.T) {
+				database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+					scenario.Dbx = db
+					PostTestScenarioFunc(t, ctx, scenario)
+				})
+			})
+		}
+	})
+}
