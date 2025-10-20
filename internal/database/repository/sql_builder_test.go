@@ -1,18 +1,16 @@
-package repository_test
+package repository
 
 import (
 	"context"
 	"fmt"
 	"testing"
 	"time"
-
-	"github.com/tkahng/playground/internal/database/repository"
 )
 
 func TestNewSQLBuilder_Success(t *testing.T) {
 	t.Parallel()
 	t.Run("success", func(t *testing.T) {
-		builder := repository.NewSQLBuilder[A]()
+		builder := NewSQLBuilder[A]()
 		if builder == nil {
 			t.Errorf("expected builder to not be nil")
 		}
@@ -34,7 +32,7 @@ func TestNewSQLBuilder_Fail(t *testing.T) {
 				type a struct {
 					Name string
 				}
-				_ = repository.NewSQLBuilder[a]()
+				_ = NewSQLBuilder[a]()
 			},
 		},
 		{
@@ -45,7 +43,7 @@ func TestNewSQLBuilder_Fail(t *testing.T) {
 					_    struct{}
 					Name string
 				}
-				_ = repository.NewSQLBuilder[a]()
+				_ = NewSQLBuilder[a]()
 			},
 		},
 		{
@@ -56,7 +54,7 @@ func TestNewSQLBuilder_Fail(t *testing.T) {
 					_    struct{} `db:"a"`
 					Name string   `db:"name" table:"public.b"`
 				}
-				_ = repository.NewSQLBuilder[a]()
+				_ = NewSQLBuilder[a]()
 			},
 		},
 		{
@@ -67,7 +65,7 @@ func TestNewSQLBuilder_Fail(t *testing.T) {
 					_    struct{} `db:"a"`
 					Name string   `db:"name" table:"public.b" src:"id"`
 				}
-				_ = repository.NewSQLBuilder[a]()
+				_ = NewSQLBuilder[a]()
 			},
 		},
 		{
@@ -78,7 +76,7 @@ func TestNewSQLBuilder_Fail(t *testing.T) {
 					_    struct{} `db:"a"`
 					Name string   `db:"name" table:"public.b" src:"id" dest:"id" through:"public.ab"`
 				}
-				_ = repository.NewSQLBuilder[a]()
+				_ = NewSQLBuilder[a]()
 			},
 		},
 		{
@@ -89,7 +87,7 @@ func TestNewSQLBuilder_Fail(t *testing.T) {
 					_    struct{} `db:"a"`
 					Name string   `db:"name" table:"public.b" src:"id" dest:"id" through:"public.ab" through_dest:"id"`
 				}
-				_ = repository.NewSQLBuilder[a]()
+				_ = NewSQLBuilder[a]()
 			},
 		},
 	}
@@ -145,27 +143,27 @@ type AD struct {
 }
 
 var (
-	ABuilder = repository.NewSQLBuilder[A](
-		repository.UuidV7Generator,
+	ABuilder = NewSQLBuilder[A](
+		UuidV7Generator,
 	)
-	BBuilder = repository.NewSQLBuilder[B](
-		repository.UuidV7Generator,
+	BBuilder = NewSQLBuilder[B](
+		UuidV7Generator,
 	)
-	CBuilder = repository.NewSQLBuilder[C](
-		repository.UuidV7Generator,
+	CBuilder = NewSQLBuilder[C](
+		UuidV7Generator,
 	)
-	DBuilder = repository.NewSQLBuilder[D](
-		repository.UuidV7Generator,
+	DBuilder = NewSQLBuilder[D](
+		UuidV7Generator,
 	)
-	ADBuilder = repository.NewSQLBuilder[AD](
-		repository.InsertID,
+	ADBuilder = NewSQLBuilder[AD](
+		InsertID,
 	)
 )
 
 type builderWhereTest[T any] struct {
 	name string // description of this test case
 	// Named input parameters for target function.
-	builder *repository.SQLBuilder[T]
+	builder *SQLBuilder[T]
 	where   *map[string]any
 	args    *[]any
 	want    string

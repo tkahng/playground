@@ -23,11 +23,11 @@ type PostScenario[T any] struct {
 	// Args is the arguments to be passed to the repository
 	Args []T
 	// ArgsFunc returns the arguments to be passed to the repository. this is for arguments that need some computation.
-	ArgsFunc func(t testing.TB, scenario *PostScenario[T]) []T
+	ArgsFunc func(t testing.TB, ctx context.Context, scenario *PostScenario[T]) []T
 	// SetupFunc is the function to setup the test
-	SetupFunc func(t testing.TB, scenario *PostScenario[T])
+	SetupFunc func(t testing.TB, ctx context.Context, scenario *PostScenario[T])
 	// TestFunc is the function to verify the post result
-	TestFunc func(t testing.TB, args, res *T)
+	TestFunc func(t testing.TB, ctx context.Context, args, res *T)
 	// ㅉantErr indicates whether the test should expect an error
 	WantErr bool
 	// CauseErr enables manual transaction failure for testing
@@ -40,35 +40,29 @@ func PostTestScenarioFunc[T any](t testing.TB, ctx context.Context, scenario *Po
 	dbx := scenario.Dbx
 	repo := scenario.Repo
 	var res []*T
-	err := dbx.RunInTxCtx(ctx, func(txCtx context.Context) error {
-		args := scenario.Args
-		if scenario.ArgsFunc != nil {
-			args = scenario.ArgsFunc(t, scenario)
-		}
-		if scenario.SetupFunc != nil {
-			scenario.SetupFunc(t, scenario)
-		}
-		var txRes, err = repo.Post(txCtx, dbx, args)
-		if err != nil {
-			return err
-		}
-		res = txRes
-		for i, arg := range args {
-			r := res[i]
-			scenario.TestFunc(t, &arg, r)
-		}
-		return nil
-	})
+	args := scenario.Args
+	if scenario.ArgsFunc != nil {
+		args = scenario.ArgsFunc(t, ctx, scenario)
+	}
+	if scenario.SetupFunc != nil {
+		scenario.SetupFunc(t, ctx, scenario)
+	}
+	var txRes, err = repo.Post(ctx, dbx, args)
 	if err != nil {
 		t.Fatal(err)
 	}
+	res = txRes
+	for i, arg := range args {
+		r := res[i]
+		scenario.TestFunc(t, ctx, &arg, r)
+	}
 }
 func TestRepositoryPost_User(t *testing.T) {
-
+	t.Parallel()
 	scenarios := []*PostScenario[models.User]{
 		{
 			Name: "creating 10 unique users from numbers",
-			ArgsFunc: func(t testing.TB, scenario *PostScenario[models.User]) []models.User {
+			ArgsFunc: func(t testing.TB, ctx context.Context, scenario *PostScenario[models.User]) []models.User {
 				var args []models.User
 				for i := range 10 {
 
@@ -80,8 +74,8 @@ func TestRepositoryPost_User(t *testing.T) {
 				return args
 			},
 			Repo:      User,
-			SetupFunc: func(t testing.TB, scenario *PostScenario[models.User]) {},
-			TestFunc: func(t testing.TB, arg, res *models.User) {
+			SetupFunc: func(t testing.TB, ctx context.Context, scenario *PostScenario[models.User]) {},
+			TestFunc: func(t testing.TB, ctx context.Context, arg, res *models.User) {
 				t.Helper()
 				assert.Equal(t, arg.Name, res.Name, "Name should be the same")
 				assert.Equal(t, arg.Email, res.Email, "Email should be the same")
@@ -89,24 +83,21 @@ func TestRepositoryPost_User(t *testing.T) {
 			},
 		},
 	}
-	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-		for _, scenario := range scenarios {
-			t.Run(scenario.Name, func(t *testing.T) {
-				database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-					scenario.Dbx = db
-					PostTestScenarioFunc(t, ctx, scenario)
-				})
+	for _, scenario := range scenarios {
+		t.Run(scenario.Name, func(t *testing.T) {
+			database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+				scenario.Dbx = db
+				PostTestScenarioFunc(t, ctx, scenario)
 			})
-		}
-	})
+		})
+	}
 }
 func TestRepositoryPost_UserAccount(t *testing.T) {
 	t.Parallel()
-
 	scenarios := []*PostScenario[models.UserAccount]{
 		{
 			Name: "creating 10 unique users and their accounts from numbers",
-			ArgsFunc: func(t testing.TB, scenario *PostScenario[models.UserAccount]) []models.UserAccount {
+			ArgsFunc: func(t testing.TB, ctx context.Context, scenario *PostScenario[models.UserAccount]) []models.UserAccount {
 				dbx := scenario.Dbx
 				var userArgs []models.User
 				for i := range 10 {
@@ -116,7 +107,7 @@ func TestRepositoryPost_UserAccount(t *testing.T) {
 						Email: fmt.Sprint(i) + "@email.com",
 					})
 				}
-				users := MustCreateManyCtx(t, t.Context(), User, dbx, userArgs)
+				users := MustCreateManyCtx(t, ctx, User, dbx, userArgs)
 				var userAccountArgs []models.UserAccount
 				for i := range 10 {
 
@@ -131,8 +122,8 @@ func TestRepositoryPost_UserAccount(t *testing.T) {
 				return userAccountArgs
 			},
 			Repo:      UserAccount,
-			SetupFunc: func(t testing.TB, scenario *PostScenario[models.UserAccount]) {},
-			TestFunc: func(t testing.TB, arg, res *models.UserAccount) {
+			SetupFunc: func(t testing.TB, ctx context.Context, scenario *PostScenario[models.UserAccount]) {},
+			TestFunc: func(t testing.TB, ctx context.Context, arg, res *models.UserAccount) {
 				t.Helper()
 				// check name. string pointer.
 				assert.Equal(t, arg.UserID, res.UserID, "user id should be equal.")
@@ -143,25 +134,22 @@ func TestRepositoryPost_UserAccount(t *testing.T) {
 			},
 		},
 	}
-	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-		for _, scenario := range scenarios {
-			t.Run(scenario.Name, func(t *testing.T) {
-				database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-					scenario.Dbx = db
-					PostTestScenarioFunc(t, ctx, scenario)
-				})
+	for _, scenario := range scenarios {
+		t.Run(scenario.Name, func(t *testing.T) {
+			database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+				scenario.Dbx = db
+				PostTestScenarioFunc(t, ctx, scenario)
 			})
-		}
-	})
+		})
+	}
 }
 
 func TestRepositoryPost_Team(t *testing.T) {
 	t.Parallel()
-
 	scenarios := []*PostScenario[models.Team]{
 		{
 			Name: "creating 10 unique teams from numbers",
-			ArgsFunc: func(t testing.TB, scenario *PostScenario[models.Team]) []models.Team {
+			ArgsFunc: func(t testing.TB, ctx context.Context, scenario *PostScenario[models.Team]) []models.Team {
 				var teamArgs []models.Team
 
 				for i := range 10 {
@@ -174,8 +162,8 @@ func TestRepositoryPost_Team(t *testing.T) {
 				return teamArgs
 			},
 			Repo:      Team,
-			SetupFunc: func(t testing.TB, scenario *PostScenario[models.Team]) {},
-			TestFunc: func(t testing.TB, arg, res *models.Team) {
+			SetupFunc: func(t testing.TB, ctx context.Context, scenario *PostScenario[models.Team]) {},
+			TestFunc: func(t testing.TB, ctx context.Context, arg, res *models.Team) {
 				t.Helper()
 				// check name. string pointer.
 				assert.Equal(t, arg.Name, res.Name, "name should be equal.")
@@ -184,24 +172,21 @@ func TestRepositoryPost_Team(t *testing.T) {
 			},
 		},
 	}
-	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-		for _, scenario := range scenarios {
-			t.Run(scenario.Name, func(t *testing.T) {
-				database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-					scenario.Dbx = db
-					PostTestScenarioFunc(t, ctx, scenario)
-				})
+	for _, scenario := range scenarios {
+		t.Run(scenario.Name, func(t *testing.T) {
+			database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+				scenario.Dbx = db
+				PostTestScenarioFunc(t, ctx, scenario)
 			})
-		}
-	})
+		})
+	}
 }
 func TestRepositoryPost_TeamMember(t *testing.T) {
 	t.Parallel()
-
 	scenarios := []*PostScenario[models.TeamMember]{
 		{
 			Name: "creating 10 unique team members from numbers",
-			ArgsFunc: func(t testing.TB, scenario *PostScenario[models.TeamMember]) []models.TeamMember {
+			ArgsFunc: func(t testing.TB, ctx context.Context, scenario *PostScenario[models.TeamMember]) []models.TeamMember {
 				dbx := scenario.Dbx
 				var userArgs []models.User
 				for i := range 10 {
@@ -211,7 +196,7 @@ func TestRepositoryPost_TeamMember(t *testing.T) {
 						Email: fmt.Sprint(i) + "@email.com",
 					})
 				}
-				users := MustCreateManyCtx(t, t.Context(), User, dbx, userArgs)
+				users := MustCreateManyCtx(t, ctx, User, dbx, userArgs)
 				var teamArgs []models.Team
 				for i := range 10 {
 
@@ -220,7 +205,7 @@ func TestRepositoryPost_TeamMember(t *testing.T) {
 						Slug: "slug:" + fmt.Sprint(i),
 					})
 				}
-				teams := MustCreateManyCtx(t, t.Context(), Team, dbx, teamArgs)
+				teams := MustCreateManyCtx(t, ctx, Team, dbx, teamArgs)
 				var teamMemberArgs []models.TeamMember
 
 				for i := range 10 {
@@ -235,8 +220,8 @@ func TestRepositoryPost_TeamMember(t *testing.T) {
 				return teamMemberArgs
 			},
 			Repo:      TeamMember,
-			SetupFunc: func(t testing.TB, scenario *PostScenario[models.TeamMember]) {},
-			TestFunc: func(t testing.TB, arg, res *models.TeamMember) {
+			SetupFunc: func(t testing.TB, ctx context.Context, scenario *PostScenario[models.TeamMember]) {},
+			TestFunc: func(t testing.TB, ctx context.Context, arg, res *models.TeamMember) {
 				t.Helper()
 				// check name. string pointer.
 				assert.Equal(t, arg.UserID, res.UserID, "user id should be equal.")
@@ -246,34 +231,31 @@ func TestRepositoryPost_TeamMember(t *testing.T) {
 			},
 		},
 	}
-	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-		for _, scenario := range scenarios {
-			t.Run(scenario.Name, func(t *testing.T) {
-				database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-					scenario.Dbx = db
-					PostTestScenarioFunc(t, ctx, scenario)
-				})
+	for _, scenario := range scenarios {
+		t.Run(scenario.Name, func(t *testing.T) {
+			database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+				scenario.Dbx = db
+				PostTestScenarioFunc(t, ctx, scenario)
 			})
-		}
-	})
+		})
+	}
 }
 func TestRepositoryPost_TeamInvitation(t *testing.T) {
 	t.Parallel()
-
 	scenarios := []*PostScenario[models.TeamInvitation]{
 		{
 			Name: "creating 10 unique team invitations from 1 team.",
-			ArgsFunc: func(t testing.TB, scenario *PostScenario[models.TeamInvitation]) []models.TeamInvitation {
+			ArgsFunc: func(t testing.TB, ctx context.Context, scenario *PostScenario[models.TeamInvitation]) []models.TeamInvitation {
 				dbx := scenario.Dbx
-				teams := MustCreateOneCtx(t, t.Context(), Team, dbx, &models.Team{
+				teams := MustCreateOneCtx(t, ctx, Team, dbx, &models.Team{
 					Name: "name:" + fmt.Sprint(1),
 					Slug: "slug:" + fmt.Sprint(1),
 				})
-				user := MustCreateOneCtx(t, t.Context(), User, dbx, &models.User{
+				user := MustCreateOneCtx(t, ctx, User, dbx, &models.User{
 					Name:  types.Pointer("Name:" + fmt.Sprint(1)),
 					Email: fmt.Sprint(1) + "@email.com",
 				})
-				owner := MustCreateOneCtx(t, t.Context(), TeamMember, dbx, &models.TeamMember{
+				owner := MustCreateOneCtx(t, ctx, TeamMember, dbx, &models.TeamMember{
 					UserID: &user.ID,
 					TeamID: teams.ID,
 					Active: true,
@@ -296,8 +278,8 @@ func TestRepositoryPost_TeamInvitation(t *testing.T) {
 				return teamMemberArgs
 			},
 			Repo:      TeamInvitation,
-			SetupFunc: func(t testing.TB, scenario *PostScenario[models.TeamInvitation]) {},
-			TestFunc: func(t testing.TB, arg, res *models.TeamInvitation) {
+			SetupFunc: func(t testing.TB, ctx context.Context, scenario *PostScenario[models.TeamInvitation]) {},
+			TestFunc: func(t testing.TB, ctx context.Context, arg, res *models.TeamInvitation) {
 				t.Helper()
 				// check name. string pointer.
 				assert.Equal(t, arg.InviterMemberID, res.InviterMemberID, "InviterMemberID should be equal.")
@@ -311,14 +293,12 @@ func TestRepositoryPost_TeamInvitation(t *testing.T) {
 			},
 		},
 	}
-	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-		for _, scenario := range scenarios {
-			t.Run(scenario.Name, func(t *testing.T) {
-				database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-					scenario.Dbx = db
-					PostTestScenarioFunc(t, ctx, scenario)
-				})
+	for _, scenario := range scenarios {
+		t.Run(scenario.Name, func(t *testing.T) {
+			database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+				scenario.Dbx = db
+				PostTestScenarioFunc(t, ctx, scenario)
 			})
-		}
-	})
+		})
+	}
 }

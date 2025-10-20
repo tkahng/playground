@@ -25,12 +25,12 @@ func WithNewTestTx(t *testing.T, fn func(ctx context.Context, db Dbx)) {
 	}
 	defer dbx.Close()
 	// nolint:errcheck
-	defer tx.Rollback(ctx)
+	defer tx.Rollback(context.Background())
 	// panic handle
 	defer func() {
 		if recErr := recover(); recErr != nil {
 			slog.ErrorContext(ctx, "recovered from panic in transaction.", slog.Any("error", fmt.Sprint(recErr)), slog.Any("stacktrace", string(debug.Stack())))
-			rollBackErr := tx.Rollback(ctx)
+			rollBackErr := tx.Rollback(context.Background())
 			if rollBackErr != nil {
 				slog.ErrorContext(ctx, "recovered from panic in transaction.", slog.Any("error", fmt.Sprint(recErr)), slog.Any("stacktrace", string(debug.Stack())))
 				t.Error(rollBackErr)

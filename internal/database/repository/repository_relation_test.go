@@ -1,4 +1,4 @@
-package repository_test
+package repository
 
 import (
 	"context"
@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/tkahng/playground/internal/database"
-	"github.com/tkahng/playground/internal/database/repository"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/test"
 	"github.com/tkahng/playground/internal/tools/types"
@@ -23,6 +22,7 @@ var (
 )
 
 func TestAuth_UserAccountRbac(t *testing.T) {
+	t.Parallel()
 	database.WithNewTestTx(t, func(ctx context.Context, dbx database.Dbx) {
 
 		var (
@@ -34,14 +34,14 @@ func TestAuth_UserAccountRbac(t *testing.T) {
 
 		// init rbac
 		t.Run("initiating rbac. should not panic", func(t *testing.T) {
-			repository.CreateRolesAndPermissions(t, ctx, dbx, knownRoleNamesPermissionsMap)
+			CreateRolesAndPermissions(t, ctx, dbx, knownRoleNamesPermissionsMap)
 		})
 
 		// find all 4 roles and 4 permissions
 		// map role names to roles, map permission names to permissions
 		t.Run("find all 4 roles and 4 permissions", func(t *testing.T) {
 			// find all roles
-			*roles = repository.MustFindWithOptionsCtx(t, t.Context(), repository.Role, dbx)
+			*roles = MustFindWithOptionsCtx(t, t.Context(), Role, dbx)
 
 			tempRoleNameMap := *roleNameMap
 			// map role names to roles
@@ -56,7 +56,7 @@ func TestAuth_UserAccountRbac(t *testing.T) {
 			}
 
 			// find all permissions
-			*permissions = repository.MustFindWithOptionsCtx(t, t.Context(), repository.Permission, dbx)
+			*permissions = MustFindWithOptionsCtx(t, t.Context(), Permission, dbx)
 
 			tempPermissionNameMap := *permissionNameMap
 			// map permission names to permissions
@@ -77,12 +77,12 @@ func TestAuth_UserAccountRbac(t *testing.T) {
 			// iterate over all roles
 			for _, role := range *roles {
 				// find each role's permissions by querying the permission's roles names
-				rolePermissions := repository.MustFindWithOptionsCtx(
+				rolePermissions := MustFindWithOptionsCtx(
 					t,
 					t.Context(),
-					repository.Permission,
+					Permission,
 					dbx,
-					repository.WithWhere(
+					WithWhere(
 						&map[string]any{
 							"roles": map[string]any{
 								"name": map[string]any{
@@ -127,8 +127,8 @@ func TestAuth_UserAccountRbac(t *testing.T) {
 		t.Run("find roles with basic permission", func(t *testing.T) {
 			// find roles with basic permission.
 			// there should be 4, each role should have basic permission
-			rolesWithBasicPermission := repository.MustFindWithOptionsCtx(t, t.Context(), repository.Role, dbx,
-				repository.WithWhere(
+			rolesWithBasicPermission := MustFindWithOptionsCtx(t, t.Context(), Role, dbx,
+				WithWhere(
 					&map[string]any{
 						"permissions": map[string]any{
 							"name": map[string]any{
@@ -157,8 +157,8 @@ func TestAuth_UserAccountRbac(t *testing.T) {
 			// 2 roles with advanced permission(admin and advanced)
 			// 2 roles with names in basic and pro
 			basicProNames := []string{"basic", "pro"}
-			permAdvNamesInBasicProRoles := repository.MustFindWithOptionsCtx(t, t.Context(), repository.Role, dbx,
-				repository.WithWhere(
+			permAdvNamesInBasicProRoles := MustFindWithOptionsCtx(t, t.Context(), Role, dbx,
+				WithWhere(
 					&map[string]any{
 						"_or": []map[string]any{
 							{
@@ -298,7 +298,7 @@ func TestMustCreateUserAndAccount(t *testing.T) {
 		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				user, account := repository.MustCreateUserAndAccount(t, ctx, tt.db, tt.fns...)
+				user, account := MustCreateUserAndAccount(t, ctx, tt.db, tt.fns...)
 				tt.predicate(user, account)
 			})
 		}
@@ -309,13 +309,13 @@ func TestMustCreateUserAndAccount_Randomize(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		var count int64 = 100
 		for range count {
-			repository.MustCreateUserAndAccount(t, ctx, db)
+			MustCreateUserAndAccount(t, ctx, db)
 		}
-		userCount := repository.MustCountAllCtx(t, ctx, repository.User, db, &map[string]any{})
+		userCount := MustCountAllCtx(t, ctx, User, db, &map[string]any{})
 		if userCount != count {
 			t.Errorf("expected at least 10 users, got %d", userCount)
 		}
-		countAcc := repository.MustCountAllCtx(t, ctx, repository.User, db, &map[string]any{})
+		countAcc := MustCountAllCtx(t, ctx, User, db, &map[string]any{})
 		if countAcc != count {
 			t.Errorf("expected at least 10 accounts, got %d", countAcc)
 		}
