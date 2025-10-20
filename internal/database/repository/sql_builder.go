@@ -958,7 +958,7 @@ func (b *SQLBuilder[Model]) Sort(filter Sortable) *map[string]string {
 			sortBy: sortOrder,
 		}
 	}
-	slog.Info("sort by field not found in repository columns", "sortBy", sortBy, "sortOrder", sortOrder, "columns", b.FieldNames())
+	slog.Warn("sort by field not found in repository columns", "sortBy", sortBy, "sortOrder", sortOrder, "columns", b.FieldNames())
 	return nil // Return nil if the sortBy field is not found in the repository columns
 
 }
