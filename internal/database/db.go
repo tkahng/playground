@@ -58,6 +58,7 @@ type Dbx interface {
 	//
 	// Deprecated: use RunInTxCtx
 	RunInTx(fn func(Dbx) error) error
+	RunInTx2(ctx context.Context, fn func(Dbx) error) error
 	RunInTxCtx(ctx context.Context, fn func(context.Context) error) error
 }
 
@@ -110,7 +111,12 @@ func (v *Queries) Exec(ctx context.Context, sql string, args ...any) (pgconn.Com
 
 // RunInTx implements Dbx.
 func (v *Queries) RunInTx(fn func(Dbx) error) error {
-	return WithTx(v, fn)
+	return WithTx(context.Background(), v, fn)
+}
+
+// RunInTx2 implements Dbx.
+func (v *Queries) RunInTx2(ctx context.Context, fn func(Dbx) error) error {
+	return WithTx(ctx, v, fn)
 }
 
 func (v *Queries) RunInTxCtx(ctx context.Context, fn func(context.Context) error) error {
@@ -175,14 +181,17 @@ func (v *txQueries) Exec(ctx context.Context, sql string, args ...any) (pgconn.C
 //
 // Deprecated: use RunInTxCtx
 func (v *txQueries) RunInTx(fn func(Dbx) error) error {
-	return WithTx(v, fn)
+	return WithTx(context.Background(), v, fn)
+}
+
+func (v *txQueries) RunInTx2(ctx context.Context, fn func(Dbx) error) error {
+	return WithTx(ctx, v, fn)
 }
 
 // WithTx
 //
 // Deprecated: use WithTxContext
-func WithTx(dbx Dbx, fn func(tx Dbx) error) (returnErr error) {
-	ctx := context.Background() // Use the appropriate context as needed
+func WithTx(ctx context.Context, dbx Dbx, fn func(tx Dbx) error) (returnErr error) {
 	contextOrDefaultDb := GetContextOrDefaultDbx(ctx, dbx)
 	tx, beginErr := contextOrDefaultDb.BeginTx(ctx)
 	if beginErr != nil {
