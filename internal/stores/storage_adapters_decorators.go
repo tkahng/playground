@@ -109,9 +109,18 @@ type StorageAdapterDecorator struct {
 	SubscriptionFunc   *StripeSubscriptionStoreDecorator
 	TaskFunc           *TaskDecorator
 	RunInTxFunc        func(fn func(tx StorageAdapterInterface) error) error
+	RunInTx2Func       func(ctx context.Context, fn func(tx StorageAdapterInterface) error) error
 	RunInTxCtxFunc     func(fn func(ctx context.Context) error) error
 	JobFunc            *JobStoreDecorator
 	UserReactionFunc   *DbUserReactionStoreDectorator
+}
+
+// RunInTx2 implements StorageAdapterInterface.
+func (s *StorageAdapterDecorator) RunInTx2(ctx context.Context, fn func(tx StorageAdapterInterface) error) error {
+	if s.RunInTx2Func != nil {
+		return s.RunInTx2Func(ctx, fn)
+	}
+	return s.Delegate.RunInTx2(ctx, fn)
 }
 
 // RunInTxCtx implements StorageAdapterInterface.

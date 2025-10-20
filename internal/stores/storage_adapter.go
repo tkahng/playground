@@ -28,6 +28,7 @@ type StorageAdapterInterface interface {
 	// WithTx(tx database.Dbx) *StorageAdapter
 	RunInTxCtx(ctx context.Context, fn func(txCtx context.Context) error) error
 	RunInTx(fn func(tx StorageAdapterInterface) error) error
+	RunInTx2(ctx context.Context, fn func(tx StorageAdapterInterface) error) error
 }
 type StorageAdapter struct {
 	db             database.Dbx
