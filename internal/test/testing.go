@@ -2,10 +2,34 @@ package test
 
 import (
 	"fmt"
+	"math/rand"
 	"reflect"
 	"slices"
 	"testing"
+	"time"
 )
+
+type RandomSelector[T any] interface {
+	Select() T
+}
+
+type RandomeSelectorImpl[T any] struct {
+	options []T
+	r       *rand.Rand
+}
+
+func (r *RandomeSelectorImpl[T]) Select() T {
+	return r.options[r.r.Intn(len(r.options))]
+}
+
+func NewRandomeSelector[T any](options ...T) RandomSelector[T] {
+	src := rand.NewSource(time.Now().UnixNano())
+	r := rand.New(src)
+	return &RandomeSelectorImpl[T]{
+		options: options,
+		r:       r,
+	}
+}
 
 func SkipIfShort(t *testing.T) {
 	if testing.Short() {
