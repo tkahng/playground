@@ -101,7 +101,7 @@ func (r *PostgresRepository[Model]) Get(ctx context.Context, db database.Dbx, wh
 		query += fmt.Sprintf(" OFFSET %d", *offset)
 	}
 
-	slog.Info("query and args", slog.String("query", query), slog.Any("args", args))
+	slog.DebugContext(ctx, "query and args", slog.String("query", query), slog.Any("args", args))
 
 	// Execute the query and scan the results
 	items, err := database.QueryAll[*Model](
