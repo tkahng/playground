@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"runtime/debug"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -192,7 +193,7 @@ func WithTx(dbx Dbx, fn func(tx Dbx) error) (returnErr error) {
 
 	defer func() {
 		if recErr := recover(); recErr != nil {
-			slog.ErrorContext(ctx, "error in transaction function. rolling back.", slog.Any("error", beginErr))
+			slog.ErrorContext(ctx, "error in transaction function. rolling back.", slog.Any("error", errors.New(fmt.Sprint(recErr))), slog.String("stacktrace", string(debug.Stack())))
 			if rollbackErr := tx.Rollback(ctx); rollbackErr != nil {
 				slog.ErrorContext(ctx, "error rolling back transaction", slog.Any("error", rollbackErr))
 				returnErr = errors.New("there was an error while recovering from a failure")
@@ -204,7 +205,7 @@ func WithTx(dbx Dbx, fn func(tx Dbx) error) (returnErr error) {
 	}()
 	// txCtx := setContextTx(ctx, &txQueries{db: tx})
 	if fnErr := fn(NewTxQueries(tx)); fnErr != nil {
-		slog.ErrorContext(ctx, "error in transaction function. rolling back.", slog.Any("error", beginErr))
+		slog.ErrorContext(ctx, "error in transaction function. rolling back.", slog.Any("error", fnErr))
 		if rollbackErr := tx.Rollback(ctx); rollbackErr != nil {
 			slog.ErrorContext(ctx, "error rolling back transaction", slog.Any("error", rollbackErr))
 			returnErr = errors.New("there was an error while recovering from a failure")
@@ -238,7 +239,7 @@ func WithCtxTx(ctx context.Context, dbx Dbx, fn func(context.Context) error, opt
 
 	defer func() {
 		if recErr := recover(); recErr != nil {
-			slog.ErrorContext(ctx, "error in transaction function. rolling back.", slog.Any("error", beginErr))
+			slog.ErrorContext(ctx, "error in transaction function. rolling back.", slog.Any("error", errors.New(fmt.Sprint(recErr))), slog.String("stacktrace", string(debug.Stack())))
 			if rollbackErr := tx.Rollback(ctx); rollbackErr != nil {
 				slog.ErrorContext(ctx, "error rolling back transaction", slog.Any("error", rollbackErr))
 				returnErr = errors.New("there was an error while recovering from a failure")
@@ -250,7 +251,7 @@ func WithCtxTx(ctx context.Context, dbx Dbx, fn func(context.Context) error, opt
 	}()
 	txCtx := setContextTx(ctx, &txQueries{db: tx})
 	if fnErr := fn(txCtx); fnErr != nil {
-		slog.ErrorContext(ctx, "error in transaction function. rolling back.", slog.Any("error", beginErr))
+		slog.ErrorContext(ctx, "error in transaction function. rolling back.", slog.Any("error", fnErr))
 		if rollbackErr := tx.Rollback(ctx); rollbackErr != nil {
 			slog.ErrorContext(ctx, "error rolling back transaction", slog.Any("error", rollbackErr))
 			returnErr = errors.New("there was an error while recovering from a failure")
