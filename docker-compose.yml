@@ -16,7 +16,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - postgres-data18:/var/lib/postgresql/data
+      - postgres-data:/var/lib/postgresql/data
     environment:
       - POSTGRES_USER=${DATABASE_USER}
       - POSTGRES_PASSWORD=${DATABASE_PASSWORD}
@@ -88,4 +88,3 @@ services:
 
 volumes:
   postgres-data:
-  postgres-data18:
