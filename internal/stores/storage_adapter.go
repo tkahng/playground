@@ -85,7 +85,31 @@ func (s *StorageAdapter) Product() DbProductStoreInterface {
 
 // RunInTx implements StorageAdapterInterface.
 func (s *StorageAdapter) RunInTx(fn func(tx StorageAdapterInterface) error) error {
-	return s.db.RunInTx(func(db database.Dbx) error {
+	return s.db.RunInTx2(context.Background(), func(db database.Dbx) error {
+		tx := &StorageAdapter{
+			db:             db,
+			user:           s.user.WithTx(db),
+			userAccount:    s.userAccount.WithTx(db),
+			token:          s.token.WithTx(db),
+			teamGroup:      s.teamGroup.WithTx(db),
+			teamMember:     s.teamMember.WithTx(db),
+			teamInvitation: s.teamInvitation.WithTx(db),
+			customer:       s.customer.WithTx(db),
+			price:          s.price.WithTx(db),
+			product:        s.product.WithTx(db),
+			subscription:   s.subscription.WithTx(db),
+			rbac:           s.rbac.WithTx(db),
+			task:           s.task.WithTx(db),
+			media:          s.media.WithTx(db),
+			notification:   s.notification.WithTx(db),
+			job:            s.job.WithTx(db),
+			userReaction:   s.userReaction.WithTx(db),
+		}
+		return fn(tx)
+	})
+}
+func (s *StorageAdapter) RunInTx2(ctx context.Context, fn func(tx StorageAdapterInterface) error) error {
+	return s.db.RunInTx2(ctx, func(db database.Dbx) error {
 		tx := &StorageAdapter{
 			db:             db,
 			user:           s.user.WithTx(db),
