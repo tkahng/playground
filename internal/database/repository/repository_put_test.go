@@ -60,7 +60,7 @@ func PutTestScenarioFunc[T any](t testing.TB, ctx context.Context, scenario *Put
 	}
 }
 func TestRepositoryPut_User(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 	scenarios := []*PutScenario[models.User]{
 		{
 			Name: "creating 10 unique users from numbers, then updating them",
@@ -117,7 +117,7 @@ func TestRepositoryPut_User(t *testing.T) {
 	}
 }
 func TestRepositoryPut_UserAccount(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 	scenarios := []*PutScenario[models.UserAccount]{
 		{
 			Name: "creating 10 unique users and their accounts from numbers, then updating them",
@@ -226,7 +226,7 @@ func TestRepositoryPut_UserAccount(t *testing.T) {
 }
 
 func TestRepositoryPut_Team(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 	scenarios := []*PutScenario[models.Team]{
 		{
 			Name: "creating 10 unique teams from numbers",
@@ -269,7 +269,7 @@ func TestRepositoryPut_Team(t *testing.T) {
 	}
 }
 func TestRepositoryPut_TeamMember(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 	scenarios := []*PutScenario[models.TeamMember]{
 		{
 			Name: "creating 10 unique team members from numbers, then updating them",
@@ -339,7 +339,7 @@ func TestRepositoryPut_TeamMember(t *testing.T) {
 	}
 }
 func TestRepositoryPut_TeamInvitation(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 	scenarios := []*PutScenario[models.TeamInvitation]{
 		{
 			Name: "creating 10 unique team invitations from 1 team.",

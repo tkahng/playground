@@ -92,6 +92,13 @@ func TestSliceEveryUniqueFunc[T any, K comparable](t *testing.T, msg string, ite
 		seen[key] = struct{}{}
 	}
 }
+func ReturnResultOrFail[T any](t *testing.T, fn func() (T, error)) T {
+	result, err := fn()
+	if err != nil {
+		t.Fatal(err)
+	}
+	return result
+}
 
 // CompareFields compares specific fields of two structs (a and b) by name.
 // It returns true if all specified fields are equal, along with an empty string.

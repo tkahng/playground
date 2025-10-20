@@ -58,7 +58,7 @@ func PostTestScenarioFunc[T any](t testing.TB, ctx context.Context, scenario *Po
 	}
 }
 func TestRepositoryPost_User(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 	scenarios := []*PostScenario[models.User]{
 		{
 			Name: "creating 10 unique users from numbers",
@@ -93,7 +93,7 @@ func TestRepositoryPost_User(t *testing.T) {
 	}
 }
 func TestRepositoryPost_UserAccount(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 	scenarios := []*PostScenario[models.UserAccount]{
 		{
 			Name: "creating 10 unique users and their accounts from numbers",
@@ -145,7 +145,7 @@ func TestRepositoryPost_UserAccount(t *testing.T) {
 }
 
 func TestRepositoryPost_Team(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 	scenarios := []*PostScenario[models.Team]{
 		{
 			Name: "creating 10 unique teams from numbers",
@@ -182,7 +182,7 @@ func TestRepositoryPost_Team(t *testing.T) {
 	}
 }
 func TestRepositoryPost_TeamMember(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 	scenarios := []*PostScenario[models.TeamMember]{
 		{
 			Name: "creating 10 unique team members from numbers",
@@ -241,7 +241,7 @@ func TestRepositoryPost_TeamMember(t *testing.T) {
 	}
 }
 func TestRepositoryPost_TeamInvitation(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 	scenarios := []*PostScenario[models.TeamInvitation]{
 		{
 			Name: "creating 10 unique team invitations from 1 team.",
