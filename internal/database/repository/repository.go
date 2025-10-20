@@ -234,7 +234,7 @@ func (r *PostgresRepository[Model]) Delete(ctx context.Context, dbx database.Dbx
 		query += fmt.Sprintf(" WHERE %s", expr)
 	}
 
-	slog.Debug("query and args", slog.String("query", query), slog.Any("args", args))
+	slog.Info("query and args", slog.String("query", query), slog.Any("args", args))
 	// Execute the query and scan the results
 	result, err := database.Exec(
 		ctx,

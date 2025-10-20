@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/models"
+	"github.com/tkahng/playground/internal/test"
 	"github.com/tkahng/playground/internal/tools/types"
 )
 
@@ -74,8 +75,41 @@ func TestRepositoryDelete_User(t *testing.T) {
 			TestFunc: func(t testing.TB, ctx context.Context, scenario *DeleteScenario[models.User], res int64) {
 				t.Helper()
 				count := MustCountAllCtx(t, ctx, User, scenario.Dbx, &map[string]any{})
-				assert.Equal(t, int64(0), res)
+				assert.Equal(t, int64(10), res)
 				assert.Equal(t, int64(0), count)
+			},
+		},
+		{
+			Name: "10 users, randomly set email_verified_at, delete all verified",
+			ArgsFunc: func(t testing.TB, ctx context.Context, scenario *DeleteScenario[models.User]) *map[string]any {
+				var args []models.User
+				selector := test.NewRandomeSelector(nil, types.Pointer(time.Now()))
+				for i := range 10 {
+					args = append(args, models.User{
+						Name:            types.Pointer("Name:" + fmt.Sprint(i)),
+						Email:           fmt.Sprint(i) + "@email.com",
+						EmailVerifiedAt: selector.Select(),
+					})
+				}
+				_ = MustCreateManyCtx(t, ctx, User, scenario.Dbx, args)
+				return &map[string]any{
+					"email_verified_at": map[string]any{
+						"_isnotnull": nil,
+					},
+				}
+			},
+			Repo:      User,
+			SetupFunc: func(t testing.TB, ctx context.Context, scenario *DeleteScenario[models.User]) {},
+			TestFunc: func(t testing.TB, ctx context.Context, scenario *DeleteScenario[models.User], res int64) {
+				t.Helper()
+				// find all remaining users
+				remaining := MustFindWithOptionsCtx(t, ctx, User, scenario.Dbx)
+				for _, user := range remaining {
+					// they should not be verified.
+					assert.Nil(t, user.EmailVerifiedAt)
+				}
+
+				assert.Equal(t, int64(10), res+int64(len(remaining)))
 			},
 		},
 	}
@@ -123,7 +157,7 @@ func TestRepositoryDelete_UserAccount(t *testing.T) {
 				t.Helper()
 				userCount := MustCountAllCtx(t, ctx, User, scenario.Dbx, &map[string]any{})
 				userAccountCount := MustCountAllCtx(t, ctx, UserAccount, scenario.Dbx, &map[string]any{})
-				assert.Equal(t, int64(0), res)
+				assert.Equal(t, int64(10), res)
 				assert.Equal(t, int64(10), userCount)
 				assert.Equal(t, int64(0), userAccountCount)
 			},
@@ -162,7 +196,7 @@ func TestRepositoryDelete_Team(t *testing.T) {
 			TestFunc: func(t testing.TB, ctx context.Context, scenario *DeleteScenario[models.Team], res int64) {
 				t.Helper()
 				count := MustCountAllCtx(t, ctx, User, scenario.Dbx, &map[string]any{})
-				assert.Equal(t, int64(0), res)
+				assert.Equal(t, int64(10), res)
 				assert.Equal(t, int64(0), count)
 			},
 		},
@@ -223,7 +257,7 @@ func TestRepositoryDelete_TeamMember(t *testing.T) {
 				userCount := MustCountAllCtx(t, ctx, User, scenario.Dbx, &map[string]any{})
 				teamCount := MustCountAllCtx(t, ctx, Team, scenario.Dbx, &map[string]any{})
 				teamMemberCount := MustCountAllCtx(t, ctx, TeamMember, scenario.Dbx, &map[string]any{})
-				assert.Equal(t, int64(0), res)
+				assert.Equal(t, int64(10), res)
 				assert.Equal(t, int64(0), teamMemberCount)
 				assert.Equal(t, int64(10), teamCount)
 				assert.Equal(t, int64(10), userCount)
@@ -286,7 +320,7 @@ func TestRepositoryDelete_TeamInvitation(t *testing.T) {
 				teamCount := MustCountAllCtx(t, ctx, Team, scenario.Dbx, &map[string]any{})
 				teamMemberCount := MustCountAllCtx(t, ctx, TeamMember, scenario.Dbx, &map[string]any{})
 				userCount := MustCountAllCtx(t, ctx, User, scenario.Dbx, &map[string]any{})
-				assert.Equal(t, int64(0), res)
+				assert.Equal(t, int64(10), res)
 				assert.Equal(t, int64(0), invitationCOunt)
 				assert.Equal(t, int64(1), teamCount)
 				assert.Equal(t, int64(1), teamMemberCount)
