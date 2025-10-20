@@ -31,6 +31,12 @@ type DbUserReactionStore struct {
 	db database.Dbx
 }
 
+func (d DbUserReactionStore) WithTx(db database.Dbx) *DbUserReactionStore {
+	return &DbUserReactionStore{
+		db: db,
+	}
+}
+
 // GetLastReaction implements UserReactionStore.
 func (d *DbUserReactionStore) GetLastReaction(ctx context.Context) (*models.UserReaction, error) {
 	res, err := repository.UserReaction.Get(

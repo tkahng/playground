@@ -29,6 +29,12 @@ func NewMediaStore(dbx database.Dbx) *DbMediaStore {
 	}
 }
 
+func (s *DbMediaStore) WithTx(dbx database.Dbx) *DbMediaStore {
+	return &DbMediaStore{
+		dbx: dbx,
+	}
+}
+
 func (s *DbMediaStore) UpdateMedia(ctx context.Context, media *models.Medium) (*models.Medium, error) {
 	data, err := repository.Media.PutOne(
 		ctx,

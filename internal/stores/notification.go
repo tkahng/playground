@@ -56,6 +56,12 @@ func NewDbNotificationStore(db database.Dbx) *DbNotificationStore {
 	}
 }
 
+func (s *DbNotificationStore) WithTx(db database.Dbx) *DbNotificationStore {
+	return &DbNotificationStore{
+		db: db,
+	}
+}
+
 func (s *DbNotificationStore) CreateNotification(ctx context.Context, notification *models.Notification) (*models.Notification, error) {
 	return repository.Notification.PostOne(
 		ctx,

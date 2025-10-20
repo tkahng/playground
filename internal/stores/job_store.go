@@ -143,7 +143,7 @@ func (d *DbJobStore) UpdateJob(ctx context.Context, job *models.JobRow) (*models
 	return repository.Job.PutOne(ctx, d.db, job)
 }
 
-func (d *DbJobStore) WithTx(db database.Dbx) JobStore {
+func (d *DbJobStore) WithTx(db database.Dbx) *DbJobStore {
 	return &DbJobStore{
 		db: db,
 	}
