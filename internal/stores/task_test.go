@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/stores"
@@ -309,7 +310,7 @@ func TestLoadTaskProjectsTasks(t *testing.T) {
 				}
 			})
 		}
-		
+
 	})
 }
 func TestFindTaskByID(t *testing.T) {
@@ -405,7 +406,7 @@ func TestFindTaskByID(t *testing.T) {
 				}
 			})
 		}
-		
+
 	})
 }
 
@@ -500,7 +501,7 @@ func TestFindLastTaskOrder(t *testing.T) {
 				}
 			})
 		}
-		
+
 	})
 }
 func TestDeleteTask(t *testing.T) {
@@ -576,7 +577,7 @@ func TestDeleteTask(t *testing.T) {
 				}
 			})
 		}
-		
+
 	})
 }
 func TestFindTaskProjectByID(t *testing.T) {
@@ -660,7 +661,7 @@ func TestFindTaskProjectByID(t *testing.T) {
 				}
 			})
 		}
-		
+
 	})
 }
 func TestDeleteTaskProject(t *testing.T) {
@@ -727,7 +728,7 @@ func TestDeleteTaskProject(t *testing.T) {
 				}
 			})
 		}
-		
+
 	})
 }
 func TestListTasks(t *testing.T) {
@@ -838,7 +839,7 @@ func TestListTasks(t *testing.T) {
 				}
 			})
 		}
-		
+
 	})
 }
 func TestCountTasks(t *testing.T) {
@@ -927,7 +928,7 @@ func TestCountTasks(t *testing.T) {
 				}
 			})
 		}
-		
+
 	})
 }
 func TestListTaskProjects(t *testing.T) {
@@ -1026,7 +1027,7 @@ func TestListTaskProjects(t *testing.T) {
 				}
 			})
 		}
-		
+
 	})
 }
 func TestCountTaskProjects(t *testing.T) {
@@ -1103,7 +1104,7 @@ func TestCountTaskProjects(t *testing.T) {
 				}
 			})
 		}
-		
+
 	})
 }
 func TestCreateTaskProject(t *testing.T) {
@@ -1174,25 +1175,16 @@ func TestCreateTaskProject(t *testing.T) {
 					if got == nil {
 						t.Errorf("CreateTaskProject() got = nil, want %v", tt.want)
 					}
-					// if !reflect.DeepEqual(got.Name, tt.want.Name) {
-					// 	t.Errorf("CreateTaskProject() Name = %v, want %v", got.Name, tt.want.Name)
-					// }
-					// if !reflect.DeepEqual(got.Description, tt.want.Description) {
-					// 	t.Errorf("CreateTaskProject() Description = %v, want %v", got.Description, tt.want.Description)
-					// }
-					// if !reflect.DeepEqual(got.Status, tt.want.Status) {
-					// 	t.Errorf("CreateTaskProject() Status = %v, want %v", got.Status, tt.want.Status)
-					// }
-					// if !reflect.DeepEqual(got.Rank, tt.want.Rank) {
-					// 	t.Errorf("CreateTaskProject() Rank = %v, want %v", got.Rank, tt.want.Rank)
-					// }
-					// if !reflect.DeepEqual(got.UserID, tt.want.UserID) {
-					// 	t.Errorf("CreateTaskProject() UserID = %v, want %v", got.UserID, tt.want.UserID)
-					// }
+					assert.Equal(t, got.Name, tt.want.Name)
+					assert.Equal(t, got.Description, tt.want.Description)
+					assert.Equal(t, got.Status, tt.want.Status)
+					assert.Equal(t, got.Rank, tt.want.Rank)
+					assert.Equal(t, got.TeamID, tt.want.TeamID)
+					assert.Equal(t, got.CreatedByMemberID, tt.want.CreatedByMemberID)
 				}
 			})
 		}
-		
+
 	})
 }
 func TestCreateTaskProjectWithTasks(t *testing.T) {
@@ -1243,13 +1235,13 @@ func TestCreateTaskProjectWithTasks(t *testing.T) {
 						Tasks: []stores.CreateTaskProjectTaskDTO{
 							{
 								Name:        "Test Task 1",
-								Rank:        1000,
+								Rank:        0,
 								Description: types.Pointer("Test Description 1"),
 								Status:      models.TaskStatusDone,
 							},
 							{
 								Name:        "Test Task 2",
-								Rank:        2000,
+								Rank:        1000,
 								Description: types.Pointer("Test Description 2"),
 								Status:      models.TaskStatusDone,
 							},
@@ -1257,10 +1249,28 @@ func TestCreateTaskProjectWithTasks(t *testing.T) {
 					},
 				},
 				want: &models.TaskProject{
-
-					Name:        "Test Project",
-					Description: types.Pointer("Test Description"),
-					Status:      models.TaskProjectStatusDone,
+					TeamID:            member.TeamID,
+					Name:              "Test Project",
+					Description:       types.Pointer("Test Description"),
+					Status:            models.TaskProjectStatusDone,
+					CreatedByMemberID: types.Pointer(member.ID),
+					Tasks: []*models.Task{
+						{
+							Name:              "Test Task 1",
+							Rank:              0,
+							TeamID:            member.TeamID,
+							Description:       types.Pointer("Test Description 1"),
+							Status:            models.TaskStatusDone,
+							CreatedByMemberID: types.Pointer(member.ID),
+						}, {
+							Name:              "Test Task 2",
+							Rank:              1000,
+							TeamID:            member.TeamID,
+							Description:       types.Pointer("Test Description 2"),
+							Status:            models.TaskStatusDone,
+							CreatedByMemberID: types.Pointer(member.ID),
+						},
+					},
 				},
 				wantErr: false,
 			},
@@ -1273,15 +1283,11 @@ func TestCreateTaskProjectWithTasks(t *testing.T) {
 					return
 				}
 				if tt.want != nil {
-					if !reflect.DeepEqual(got.Name, tt.want.Name) {
-						t.Errorf("CreateTaskProjectWithTasks() Name = %v, want %v", got.Name, tt.want.Name)
-					}
-					if !reflect.DeepEqual(got.Description, tt.want.Description) {
-						t.Errorf("CreateTaskProjectWithTasks() Description = %v, want %v", got.Description, tt.want.Description)
-					}
-					if !reflect.DeepEqual(got.Status, tt.want.Status) {
-						t.Errorf("CreateTaskProjectWithTasks() Status = %v, want %v", got.Status, tt.want.Status)
-					}
+					assert.Equal(t, tt.want.Name, got.Name)
+					assert.Equal(t, tt.want.Description, got.Description)
+					assert.Equal(t, tt.want.Status, got.Status)
+					assert.Equal(t, tt.want.TeamID, got.TeamID)
+					assert.Equal(t, tt.want.CreatedByMemberID, got.CreatedByMemberID)
 
 					tasks, err := taskStore.ListTasks(tt.args.ctx, &stores.TaskFilter{
 						ProjectIds: []uuid.UUID{got.ID},
@@ -1289,13 +1295,19 @@ func TestCreateTaskProjectWithTasks(t *testing.T) {
 					if err != nil {
 						t.Errorf("Failed to list tasks: %v", err)
 					}
-					if len(tasks) != len(tt.args.input.Tasks) {
-						t.Errorf("Expected %d tasks, got %d", len(tt.args.input.Tasks), len(tasks))
+					assert.Equal(t, len(tasks), len(tt.want.Tasks))
+					for i, task := range tasks {
+						assert.Equal(t, tt.want.Tasks[i].Name, task.Name)
+						assert.Equal(t, tt.want.Tasks[i].Rank, task.Rank)
+						assert.Equal(t, tt.want.Tasks[i].Description, task.Description)
+						assert.Equal(t, tt.want.Tasks[i].Status, task.Status)
+						assert.Equal(t, tt.want.Tasks[i].TeamID, task.TeamID)
+						assert.Equal(t, tt.want.Tasks[i].CreatedByMemberID, task.CreatedByMemberID)
 					}
 				}
 			})
 		}
-		
+
 	})
 }
 
@@ -1358,12 +1370,13 @@ func TestCreateTaskFromInput(t *testing.T) {
 					},
 				},
 				want: &models.Task{
-					TeamID:      member.TeamID,
-					ProjectID:   taskProject.ID,
-					Name:        "Test Task",
-					Description: types.Pointer("Test Description"),
-					Status:      models.TaskStatusDone,
-					Rank:        1000,
+					TeamID:            member.TeamID,
+					ProjectID:         taskProject.ID,
+					CreatedByMemberID: types.Pointer(member.ID),
+					Name:              "Test Task",
+					Description:       types.Pointer("Test Description"),
+					Status:            models.TaskStatusDone,
+					Rank:              1000,
 				},
 				wantErr: false,
 			},
@@ -1376,141 +1389,127 @@ func TestCreateTaskFromInput(t *testing.T) {
 					return
 				}
 				if tt.want != nil {
-					if !reflect.DeepEqual(got.Name, tt.want.Name) {
-						t.Errorf("CreateTask() Name = %v, want %v", got.Name, tt.want.Name)
-					}
-					if !reflect.DeepEqual(got.Description, tt.want.Description) {
-						t.Errorf("CreateTask() Description = %v, want %v", got.Description, tt.want.Description)
-					}
-					if !reflect.DeepEqual(got.Status, tt.want.Status) {
-						t.Errorf("CreateTask() Status = %v, want %v", got.Status, tt.want.Status)
-					}
-					if !reflect.DeepEqual(got.Rank, tt.want.Rank) {
-						t.Errorf("CreateTask() Rank = %v, want %v", got.Rank, tt.want.Rank)
-					}
-					// if !reflect.DeepEqual(got.UserID, tt.want.UserID) {
-					// 	t.Errorf("CreateTask() UserID = %v, want %v", got.UserID, tt.want.UserID)
-					// }
-					if !reflect.DeepEqual(got.ProjectID, tt.want.ProjectID) {
-						t.Errorf("CreateTask() ProjectID = %v, want %v", got.ProjectID, tt.want.ProjectID)
-					}
+					assert.Equal(t, tt.want.TeamID, got.TeamID)
+					assert.Equal(t, tt.want.ProjectID, got.ProjectID)
+					assert.Equal(t, tt.want.CreatedByMemberID, got.CreatedByMemberID)
+					assert.Equal(t, tt.want.Name, got.Name)
+					assert.Equal(t, tt.want.Description, got.Description)
+					assert.Equal(t, tt.want.Status, got.Status)
+					assert.Equal(t, tt.want.Rank, got.Rank)
+
 				}
 			})
 		}
-		
+
 	})
 }
 
-// func TestUpdateTask(t *testing.T) {
-// 	test.Short(t)
-// 	ctx, dbx := test.DbSetupTesting(t)
-// 	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
-// 		userStore := stores.NewPostgresUserStore(dbxx)
-// 		user, err := userStore.CreateUser(ctx, &models.User{
-// 			Email: "tkahng@gmail.com",
-// 		})
-// 		if err != nil {
-// 			t.Fatalf("failed to create user: %v", err)
-// 		}
-// 		member, err := queries.CreateTeamFromUser(ctx, dbxx, user)
-// 		if err != nil {
-// 			t.Fatalf("failed to create team from user: %v", err)
-// 		}
-// 		taskProject, err := queries.CreateTaskProject(ctx, dbxx, &stores.CreateTaskProjectDTO{
-// 			Name:     "Test Project",
-// 			Status:   models.TaskProjectStatusDone,
-// 			TeamID:   member.TeamID,
-// 			MemberID: member.ID,
-// 		})
-// 		if err != nil {
-// 			t.Fatalf("failed to create task project: %v", err)
-// 		}
-// 		task, err := queries.CreateTask(ctx, dbxx, taskProject.ID, &shared.CreateTaskBaseDTO{
-// 			Name:        "Test Task",
-// 			Description: types.Pointer("Test Description"),
-// 			Status:      shared.TaskStatusDone,
-// 			Rank:       1000,
-// 			TeamID:      member.TeamID,
-// 			CreatedBy:   member.ID,
-// 		})
-// 		if err != nil {
-// 			t.Fatalf("failed to create task: %v", err)
-// 		}
+func TestFindAndUpdateTask(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, dbxx database.Dbx) {
+		adapter := stores.NewStorageAdapter(dbxx)
+		userStore := adapter.User()
+		queries := adapter.Task()
+		user, err := userStore.CreateUser(ctx, &models.User{
+			Email: "tkahng@gmail.com",
+		})
+		if err != nil {
+			t.Fatalf("failed to create user: %v", err)
+		}
+		member, err := adapter.TeamMember().CreateTeamFromUser(ctx, user)
+		if err != nil {
+			t.Fatalf("failed to create team from user: %v", err)
+		}
+		taskProject, err := queries.CreateTaskProject(ctx, &stores.CreateTaskProjectDTO{
+			Name:     "Test Project",
+			Status:   models.TaskProjectStatusDone,
+			TeamID:   member.TeamID,
+			MemberID: member.ID,
+		})
+		if err != nil {
+			t.Fatalf("failed to create task project: %v", err)
+		}
+		task, err := queries.CreateTask(ctx, &models.Task{
+			ProjectID:         taskProject.ID,
+			Name:              "Test Task",
+			Description:       types.Pointer("Test Description"),
+			Status:            models.TaskStatusDone,
+			Rank:              0,
+			TeamID:            member.TeamID,
+			CreatedByMemberID: types.Pointer(member.ID),
+		})
+		if err != nil {
+			t.Fatalf("failed to create task: %v", err)
+		}
 
-// 		type args struct {
-// 			ctx    context.Context
-// 			db     database.Dbx
-// 			taskID uuid.UUID
-// 			input  *shared.UpdateTaskBaseDTO
-// 		}
-// 		tests := []struct {
-// 			name    string
-// 			args    args
-// 			wantErr bool
-// 		}{
-// 			{
-// 				name: "update task successfully",
-// 				args: args{
-// 					ctx:    ctx,
-// 					db:     dbxx,
-// 					taskID: task.ID,
-// 					input: &shared.UpdateTaskBaseDTO{
-// 						Name:        "Updated Task",
-// 						Description: types.Pointer("Updated Description"),
-// 						Status:      shared.TaskStatusInProgress,
-// 						Rank:       2000,
-// 						ParentID:    nil,
-// 					},
-// 				},
-// 				wantErr: false,
-// 			},
-// 			{
-// 				name: "update non-existing task",
-// 				args: args{
-// 					ctx:    ctx,
-// 					db:     dbxx,
-// 					taskID: uuid.New(),
-// 					input: &shared.UpdateTaskBaseDTO{
-// 						Name:   "Updated Task",
-// 						Status: shared.TaskStatusInProgress,
-// 					},
-// 				},
-// 				wantErr: true,
-// 			},
-// 		}
-// 		for _, tt := range tests {
-// 			t.Run(tt.name, func(t *testing.T) {
-// 				err := queries.UpdateTask(tt.args.ctx, tt.args.db, tt.args.taskID, tt.args.input)
-// 				if (err != nil) != tt.wantErr {
-// 					t.Errorf("UpdateTask() error = %v, wantErr %v", err, tt.wantErr)
-// 					return
-// 				}
+		type args struct {
+			ctx    context.Context
+			db     database.Dbx
+			taskID uuid.UUID
+			input  *stores.UpdateTaskDto
+		}
+		tests := []struct {
+			name    string
+			args    args
+			wantErr bool
+		}{
+			{
+				name: "update task successfully",
+				args: args{
+					ctx:    ctx,
+					db:     dbxx,
+					taskID: task.ID,
+					input: &stores.UpdateTaskDto{
+						Name:        "Updated Task",
+						Description: types.Pointer("Updated Description"),
+						Status:      models.TaskStatusInProgress,
+						ParentID:    nil,
+					},
+				},
+				wantErr: false,
+			},
+			{
+				name: "update non-existing task",
+				args: args{
+					ctx:    ctx,
+					db:     dbxx,
+					taskID: uuid.New(),
+					input: &stores.UpdateTaskDto{
+						Name:   "Updated Task",
+						Status: models.TaskStatusInProgress,
+					},
+				},
+				wantErr: true,
+			},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				err := queries.FindAndUpdateTask(tt.args.ctx, tt.args.taskID, tt.args.input)
+				if (err != nil) != tt.wantErr {
+					t.Errorf("UpdateTask() error = %v, wantErr %v", err, tt.wantErr)
+					return
+				}
 
-// 				if !tt.wantErr {
-// 					// Verify task was updated
-// 					updatedTask, err := queries.FindTaskByID(tt.args.ctx, tt.args.db, tt.args.taskID)
-// 					if err != nil {
-// 						t.Errorf("Failed to get updated task: %v", err)
-// 						return
-// 					}
-// 					if updatedTask.Name != tt.args.input.Name {
-// 						t.Errorf("Task name not updated. got = %v, want %v", updatedTask.Name, tt.args.input.Name)
-// 					}
-// 					if *updatedTask.Description != *tt.args.input.Description {
-// 						t.Errorf("Task description not updated. got = %v, want %v", *updatedTask.Description, *tt.args.input.Description)
-// 					}
-// 					if updatedTask.Status != models.TaskStatus(tt.args.input.Status) {
-// 						t.Errorf("Task status not updated. got = %v, want %v", updatedTask.Status, tt.args.input.Status)
-// 					}
-// 					if updatedTask.Rank != tt.args.input.Rank {
-// 						t.Errorf("Task order not updated. got = %v, want %v", updatedTask.Rank, tt.args.input.Rank)
-// 					}
-// 				}
-// 			})
-// 		}
-// 		return test.EndTestErr
-// 	})
-// }
+				if !tt.wantErr {
+					// Verify task was updated
+					updatedTask, err := queries.FindTaskByID(tt.args.ctx, tt.args.taskID)
+					if err != nil {
+						t.Errorf("Failed to get updated task: %v", err)
+						return
+					}
+					assert.Equal(t, tt.args.input.Name, updatedTask.Name)
+					assert.Equal(t, tt.args.input.Description, updatedTask.Description)
+					assert.Equal(t, tt.args.input.Status, updatedTask.Status)
+					assert.Equal(t, tt.args.input.ParentID, updatedTask.ParentID)
+					assert.Equal(t, tt.args.input.StartAt, updatedTask.StartAt)
+					assert.Equal(t, tt.args.input.EndAt, updatedTask.EndAt)
+					assert.Equal(t, tt.args.input.AssigneeID, updatedTask.AssigneeID)
+					assert.Equal(t, tt.args.input.ReporterID, updatedTask.ReporterID)
+				}
+			})
+		}
+	})
+}
+
 // func TestUpdateTaskProjectUpdateDate(t *testing.T) {
 // 	test.Short(t)
 // 	ctx, dbx := test.DbSetupTesting(t)

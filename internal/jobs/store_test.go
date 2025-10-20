@@ -18,16 +18,6 @@ func TestDbJobStore_SaveJob(t *testing.T) {
 	t.Parallel()
 	test.SkipIfShort(t)
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-		// ctx, db := test.DbSetup()
-
-		// // test.WithTx(t, func(ctx context.Context, dbx database.Dbx) {
-
-		// t.Cleanup(func() {
-		// 	_, err := repository.Job.Delete(ctx, db, &map[string]any{})
-		// 	if err != nil {
-		// 		t.Error(err)
-		// 	}
-		// })
 		type fields struct {
 			db database.Dbx
 		}

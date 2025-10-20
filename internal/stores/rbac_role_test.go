@@ -74,7 +74,7 @@ func TestListRoles(t *testing.T) {
 				}
 			})
 		}
-		
+
 	})
 }
 
@@ -148,7 +148,7 @@ func TestCountRoles(t *testing.T) {
 				}
 			})
 		}
-		
+
 	})
 }
 
@@ -202,79 +202,9 @@ func TestLoadRolePermissions(t *testing.T) {
 				}
 			})
 		}
-		
+
 	})
 }
-
-// func TestGetUserPermissions(t *testing.T) {
-// 	test.Short(t)
-// 	ctx, dbx := test.DbSetupTesting(t)
-// 	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
-// 		rbacStore := stores.NewDbRBACStore(dbxx)
-// 		userStore := stores.NewDbUserStore(dbxx)
-// 		permission, err := rbacStore.FindOrCreatePermission(ctx, "basic")
-// 		if err != nil {
-// 			t.Fatalf("failed to find or create permission: %v", err)
-// 		}
-// 		user, err := userStore.CreateUser(
-// 			ctx,
-// 			&models.User{
-// 				Email: "test@test.com",
-// 			},
-// 		)
-// 		if err != nil {
-// 			return err
-// 		}
-// 		err = rbacStore.CreateUserPermissions(ctx, user.ID, permission.ID)
-// 		if err != nil {
-// 			return err
-// 		}
-// 		type args struct {
-// 			ctx     context.Context
-// 			db      database.Dbx
-// 			userIds []uuid.UUID
-// 		}
-// 		tests := []struct {
-// 			name    string
-// 			args    args
-// 			want    [][]*models.Permission
-// 			wantErr bool
-// 		}{
-// 			{
-// 				name: "get user permissions",
-// 				args: args{
-// 					ctx: ctx,
-
-// 					userIds: []uuid.UUID{user.ID},
-// 				},
-// 				want: [][]*models.Permission{
-// 					{
-// 						{
-// 							Name: "basic",
-// 						},
-// 					},
-// 				},
-// 				wantErr: false,
-// 			},
-// 		}
-// 		for _, tt := range tests {
-// 			t.Run(tt.name, func(t *testing.T) {
-// 				got, err := rbacStore.GetUserPermissions(tt.args.ctx, tt.args.userIds...)
-// 				if (err != nil) != tt.wantErr {
-// 					t.Errorf("GetUserPermissions() error = %v, wantErr %v", err, tt.wantErr)
-// 					return
-// 				}
-// 				if !reflect.DeepEqual(len(got[0]), len(tt.want[0])) {
-// 					t.Errorf("GetUserPermissions() = %v, want %v", len(got[0]), len(tt.want[0]))
-// 				}
-// 				if !reflect.DeepEqual(got[0][0].Name, tt.want[0][0].Name) {
-// 					t.Errorf("GetUserPermissions() = %v, want %v", got[0][0].Name, tt.want[0][0].Name)
-// 				}
-// 			})
-// 		}
-// 		
-// 	})
-// }
 
 func TestFindOrCreateRole(t *testing.T) {
 	t.Parallel()
@@ -324,7 +254,7 @@ func TestFindOrCreateRole(t *testing.T) {
 				}
 			})
 		}
-		
+
 	})
 }
 func TestCreateRole(t *testing.T) {
@@ -379,7 +309,7 @@ func TestCreateRole(t *testing.T) {
 				}
 			})
 		}
-		
+
 	})
 }
 
@@ -464,7 +394,7 @@ func TestUpdateRole(t *testing.T) {
 				}
 			})
 		}
-		
+
 	})
 }
 
@@ -535,7 +465,7 @@ func TestDeleteRole(t *testing.T) {
 				}
 			})
 		}
-		
+
 	})
 }
 
@@ -595,6 +525,6 @@ func TestDeletePermission(t *testing.T) {
 				}
 			})
 		}
-		
+
 	})
 }
