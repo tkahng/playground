@@ -624,7 +624,7 @@ func (s *DbTaskStore) CalculateTaskRankStatus(ctx context.Context, taskId uuid.U
 				},
 			},
 			&map[string]string{
-				"order": "ASC",
+				"rank": "ASC",
 			},
 			types.Pointer(1),
 			nil,
@@ -651,7 +651,7 @@ func (s *DbTaskStore) CalculateTaskRankStatus(ctx context.Context, taskId uuid.U
 			},
 		},
 		&map[string]string{
-			"order": "ASC",
+			"rank": "ASC",
 		},
 		types.Pointer(1),
 		types.Pointer(int(position)),
@@ -680,7 +680,7 @@ func (s *DbTaskStore) CalculateTaskRankStatus(ctx context.Context, taskId uuid.U
 				},
 			},
 			&map[string]string{
-				"order": "ASC",
+				"rank": "ASC",
 			},
 			types.Pointer(1),
 			types.Pointer(int(position-1)),
@@ -706,7 +706,7 @@ func (s *DbTaskStore) CalculateTaskRankStatus(ctx context.Context, taskId uuid.U
 			},
 		},
 		&map[string]string{
-			"order": "ASC",
+			"rank": "ASC",
 		},
 		types.Pointer(1),
 		types.Pointer(int(position+1)),

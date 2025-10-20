@@ -343,6 +343,8 @@ func (s *DbTeamMemberStore) CreateTeamFromUser(ctx context.Context, user *models
 	return teamMember, nil
 }
 
+// CreateTeamMemberFromUserAndSlug creates a team member from a user and a team slug.
+// If the team does not exist, it will be created.
 func (s *DbTeamMemberStore) CreateTeamMemberFromUserAndSlug(ctx context.Context, user *models.User, slug string, role models.TeamMemberRole) (*models.TeamMember, error) {
 	team, err := repository.Team.GetOne(
 		ctx,

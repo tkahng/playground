@@ -1610,135 +1610,188 @@ func TestUpdateTaskProject(t *testing.T) {
 	})
 }
 
-// func TestUpdateTaskPositionStatus(t *testing.T) {
-// 	test.Short(t)
-// 	ctx, dbx := test.DbSetupTesting(t)
-// 	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
-// 		userStore := stores.NewPostgresUserStore(dbxx)
-// 		user, err := userStore.CreateUser(ctx, &models.User{
-// 			Email: "tkahng@gmail.com",
-// 		})
-// 		if err != nil {
-// 			t.Fatalf("failed to create user: %v", err)
-// 		}
-// 		member, err := queries.CreateTeamFromUser(ctx, dbxx, user)
-// 		if err != nil {
-// 			t.Fatalf("failed to create team from user: %v", err)
-// 		}
-// 		taskProject, err := queries.CreateTaskProject(ctx, dbxx, &stores.CreateTaskProjectDTO{
-// 			Name:     "Test Project",
-// 			Status:   models.TaskProjectStatusDone,
-// 			TeamID:   member.TeamID,
-// 			MemberID: member.ID,
-// 		})
-// 		if err != nil {
-// 			t.Fatalf("failed to create task project: %v", err)
-// 		}
-//
-// 		task1, err := queries.CreateTask(ctx, dbxx, taskProject.ID, &shared.CreateTaskBaseDTO{
-// 			Name:      "Task 1",
-// 			Status:    shared.TaskStatusDone,
-// 			Rank:     0,
-// 			CreatedBy: member.ID,
-// 			TeamID:    member.TeamID,
-// 		})
-// 		if err != nil {
-// 			t.Fatalf("failed to create task: %v", err)
-// 		}
-//
-// 		task2, err := queries.CreateTask(ctx, dbxx, taskProject.ID, &shared.CreateTaskBaseDTO{
-// 			Name:      "Task 2",
-// 			Status:    shared.TaskStatusDone,
-// 			Rank:     1000,
-// 			CreatedBy: member.ID,
-// 			TeamID:    member.TeamID,
-// 		})
-// 		if err != nil {
-// 			t.Fatalf("failed to create task: %v", err)
-// 		}
-//
-// 		type args struct {
-// 			ctx      context.Context
-// 			db       database.Dbx
-// 			taskID   uuid.UUID
-// 			position int64
-// 			status   models.TaskStatus
-// 		}
-// 		tests := []struct {
-// 			name    string
-// 			args    args
-// 			wantErr bool
-// 		}{
-// 			{
-// 				name: "update task position status successfully",
-// 				args: args{
-// 					ctx:      ctx,
-// 					db:       dbxx,
-// 					taskID:   task1.ID,
-// 					position: 1,
-// 					status:   models.TaskStatusDone,
-// 				},
-// 				wantErr: false,
-// 			},
-// 			{
-// 				name: "update non-existing task position status",
-// 				args: args{
-// 					ctx:      ctx,
-// 					db:       dbxx,
-// 					taskID:   uuid.New(),
-// 					position: 0,
-// 					status:   models.TaskStatusDone,
-// 				},
-// 				wantErr: true,
-// 			},
-// 			{
-// 				name: "move task to first position",
-// 				args: args{
-// 					ctx:      ctx,
-// 					db:       dbxx,
-// 					taskID:   task2.ID,
-// 					position: 0,
-// 					status:   models.TaskStatusDone,
-// 				},
-// 				wantErr: false,
-// 			},
-// 		}
-// 		for _, tt := range tests {
-// 			t.Run(tt.name, func(t *testing.T) {
-// 				err := queries.UpdateTaskPositionStatus(tt.args.ctx, tt.args.db, tt.args.taskID, tt.args.position, tt.args.status)
-// 				if (err != nil) != tt.wantErr {
-// 					t.Errorf("UpdateTaskPositionStatus() error = %v, wantErr %v", err, tt.wantErr)
-// 					return
-// 				}
-//
-// 				if !tt.wantErr {
-// 					// Verify task was updated
-// 					updatedTask, err := queries.FindTaskByID(tt.args.ctx, tt.args.db, tt.args.taskID)
-// 					if err != nil {
-// 						t.Errorf("Failed to get updated task: %v", err)
-// 						return
-// 					}
-//
-// 					if updatedTask.Status != tt.args.status {
-// 						t.Errorf("Task status not updated. got = %v, want %v", updatedTask.Status, tt.args.status)
-// 					}
-//
-// 					// Get task project to verify update date
-// 					taskProject, err := queries.FindTaskProjectByID(tt.args.ctx, tt.args.db, updatedTask.ProjectID)
-// 					if err != nil {
-// 						t.Errorf("Failed to get task project: %v", err)
-// 						return
-// 					}
-//
-// 					if taskProject.UpdatedAt.IsZero() {
-// 						t.Error("Task project update date not updated")
-// 					}
-// 				}
-// 			})
-// 		}
-// 		return test.EndTestErr
-// 	})
-// }
+func TestUpdateTaskPositionStatus(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, dbxx database.Dbx) {
+		adapter := stores.NewStorageAdapter(dbxx)
+		taskStore := adapter.Task()
+		userStore := adapter.User()
+		user, err := userStore.CreateUser(ctx, &models.User{
+			Email: "tkahng@gmail.com",
+		})
+		if err != nil {
+			t.Fatalf("failed to create user: %v", err)
+		}
+		member, err := adapter.TeamMember().CreateTeamMemberFromUserAndSlug(ctx, user, "TestTeam", models.TeamMemberRoleOwner)
+		if err != nil {
+			t.Fatalf("failed to create team from user: %v", err)
+		}
+		taskProject, err := taskStore.CreateTaskProject(ctx, &stores.CreateTaskProjectDTO{
+			Name:     "Test Project",
+			Status:   models.TaskProjectStatusDone,
+			TeamID:   member.TeamID,
+			MemberID: member.ID,
+		})
+		if err != nil {
+			t.Fatalf("failed to create task project: %v", err)
+		}
+
+		task1, err := taskStore.CreateTask(ctx, &models.Task{
+			Name:              "Task 1",
+			Status:            models.TaskStatusDone,
+			ProjectID:         taskProject.ID,
+			Rank:              0,
+			CreatedByMemberID: &member.ID,
+			TeamID:            member.TeamID,
+			CreatedByMember:   member,
+		})
+		if err != nil {
+			t.Fatalf("failed to create task: %v", err)
+		}
+
+		task2, err := taskStore.CreateTask(ctx, &models.Task{
+			Name:              "Task 2",
+			Status:            models.TaskStatusDone,
+			ProjectID:         taskProject.ID,
+			Rank:              1000,
+			CreatedByMemberID: &member.ID,
+			TeamID:            member.TeamID,
+			CreatedByMember:   member,
+		})
+		if err != nil {
+			t.Fatalf("failed to create task: %v", err)
+		}
+
+		task3, err := taskStore.CreateTask(ctx, &models.Task{
+			Name:              "Task 3",
+			Status:            models.TaskStatusDone,
+			ProjectID:         taskProject.ID,
+			Rank:              2000,
+			CreatedByMemberID: &member.ID,
+			TeamID:            member.TeamID,
+			CreatedByMember:   member,
+		})
+		if err != nil {
+			t.Fatalf("failed to create task: %v", err)
+		}
+
+		type args struct {
+			ctx      context.Context
+			db       database.Dbx
+			taskID   uuid.UUID
+			position int64
+			status   models.TaskStatus
+		}
+		tests := []struct {
+			name    string
+			args    args
+			wantErr bool
+		}{
+			{
+				name: "update task1 from position 0 to 1: task2, task1, task3",
+				args: args{
+					ctx:      ctx,
+					db:       dbxx,
+					taskID:   task1.ID,
+					position: 1,
+					status:   models.TaskStatusDone,
+				},
+				wantErr: false,
+			},
+			{
+				name: "update non-existing task position status",
+				args: args{
+					ctx:      ctx,
+					db:       dbxx,
+					taskID:   uuid.New(),
+					position: 0,
+					status:   models.TaskStatusDone,
+				},
+				wantErr: true,
+			},
+			{
+				name: "update task3 from position 2 to 0:  task3, task2, task1",
+				args: args{
+					ctx:      ctx,
+					db:       dbxx,
+					taskID:   task3.ID,
+					position: 0,
+					status:   models.TaskStatusDone,
+				},
+				wantErr: false,
+			},
+			{
+				name: "update task2 from position 1 to 2:  task3, task1, task2",
+				args: args{
+					ctx:      ctx,
+					db:       dbxx,
+					taskID:   task2.ID,
+					position: 2,
+					status:   models.TaskStatusDone,
+				},
+				wantErr: false,
+			},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				err := taskStore.UpdateTaskRankStatus(tt.args.ctx, tt.args.taskID, tt.args.position, tt.args.status)
+				if (err != nil) != tt.wantErr {
+					t.Errorf("UpdateTaskPositionStatus() error = %v, wantErr %v", err, tt.wantErr)
+					return
+				}
+
+				if !tt.wantErr {
+					// Verify task was updated
+					updatedTask, err := taskStore.FindTaskByID(tt.args.ctx, tt.args.taskID)
+					if err != nil {
+						t.Errorf("Failed to get updated task: %v", err)
+						return
+					}
+					if updatedTask.Status != tt.args.status {
+						t.Errorf("Task status not updated. got = %v, want %v", updatedTask.Status, tt.args.status)
+					}
+					// find position of updated task in project by ordering by rank.
+					updatedTasks, listTaskErr := taskStore.ListTasks(tt.args.ctx, &stores.TaskFilter{
+						SortParams: stores.SortParams{
+							SortBy:    "rank",
+							SortOrder: "asc",
+						},
+						ProjectIds: []uuid.UUID{taskProject.ID},
+					})
+					if listTaskErr != nil {
+						t.Errorf("Failed to get updated task: %v", err)
+						return
+					}
+					taskNames := make([]string, len(updatedTasks))
+					taskRank := make([]float64, len(updatedTasks))
+					for i, task := range updatedTasks {
+						taskNames[i] = task.Name
+						taskRank[i] = task.Rank
+					}
+					t.Logf("updated tasks: %v", taskNames)
+					t.Logf("updated tasks rank: %v", taskRank)
+					// Get task project to verify update date
+					newTaskProject, err := taskStore.FindTaskProjectByID(tt.args.ctx, updatedTask.ProjectID)
+					if err != nil {
+						t.Errorf("Failed to get task project: %v", err)
+						return
+					}
+					for i, task := range updatedTasks {
+						if task.ID == tt.args.taskID {
+							if i != int(tt.args.position) {
+								t.Errorf("Task position not updated. got = %v, want %v", i, tt.args.position)
+							}
+						}
+					}
+					// Get task project to verify update date
+
+					if !newTaskProject.UpdatedAt.After(taskProject.UpdatedAt) {
+						t.Errorf("Task project update date not updated. original = %v, udpated %v", taskProject.UpdatedAt, newTaskProject.UpdatedAt)
+					}
+				}
+			})
+		}
+	})
+}
 
 // func TestDefineTaskOrderNumberByStatus(t *testing.T) {
 // 	test.Short(t)
