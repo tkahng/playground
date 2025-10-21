@@ -58,6 +58,69 @@ func PostTestScenarioFunc[T any](t testing.TB, ctx context.Context, scenario *Po
 		scenario.TestFunc(t, ctx, &arg, r)
 	}
 }
+func TestRepositoryPost_TeamInvitation(t *testing.T) {
+	// t.Parallel()
+	scenarios := []*PostScenario[models.TeamInvitation]{
+		{
+			Name: "creating 10 unique team invitations from 1 team.",
+			ArgsFunc: func(t testing.TB, ctx context.Context, scenario *PostScenario[models.TeamInvitation]) []models.TeamInvitation {
+				dbx := scenario.Dbx
+				teams := MustCreateOneCtx(t, ctx, Team, dbx, &models.Team{
+					Name: "name:" + fmt.Sprint(1),
+					Slug: "slug:" + fmt.Sprint(1),
+				})
+				user := MustCreateOneCtx(t, ctx, User, dbx, &models.User{
+					Name:  types.Pointer("Name:" + fmt.Sprint(1)),
+					Email: fmt.Sprint(1) + "@email.com",
+				})
+				owner := MustCreateOneCtx(t, ctx, TeamMember, dbx, &models.TeamMember{
+					UserID: &user.ID,
+					TeamID: teams.ID,
+					Active: true,
+					Role:   models.TeamMemberRoleOwner,
+				})
+
+				var invitationArgs []models.TeamInvitation
+
+				for i := range 10 {
+					invitationArgs = append(invitationArgs, models.TeamInvitation{
+						TeamID:          teams.ID,
+						InviterMemberID: owner.ID,
+						Email:           "inviteuser" + fmt.Sprint(i) + "@email.com",
+						Role:            models.TeamMemberRoleMember,
+						Token:           uuid.NewString(),
+						Status:          models.TeamInvitationStatusPending,
+						ExpiresAt:       time.Now().Add(time.Hour * 7),
+					})
+				}
+				return invitationArgs
+			},
+			Repo:      TeamInvitation,
+			SetupFunc: func(t testing.TB, ctx context.Context, scenario *PostScenario[models.TeamInvitation]) {},
+			TestFunc: func(t testing.TB, ctx context.Context, arg, res *models.TeamInvitation) {
+				t.Helper()
+				// check name. string pointer.
+				assert.Equal(t, arg.InviterMemberID, res.InviterMemberID, "InviterMemberID should be equal.")
+				assert.Equal(t, arg.TeamID, res.TeamID, "team should be equal.")
+				assert.Equal(t, arg.Role, res.Role, "role should be equal.")
+				assert.Equal(t, arg.Status, res.Status, "status should be equal.")
+				assert.Equal(t, arg.Email, res.Email, "email should be equal.")
+				assert.Equal(t, arg.Token, res.Token, "token should be equal.")
+				assert.True(t, arg.ExpiresAt.Equal(res.ExpiresAt), "expiresAt should be true.")
+				assert.NotEqual(t, arg.ID, res.ID, "ID should not be equal since it is generated on db side, arg will have zero value uuid.UUID")
+			},
+		},
+	}
+	for _, scenario := range scenarios {
+		t.Run(scenario.Name, func(t *testing.T) {
+			database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+				scenario.Dbx = db
+				PostTestScenarioFunc(t, ctx, scenario)
+			})
+		})
+	}
+}
+
 func TestRepositoryPost_User(t *testing.T) {
 	// t.Parallel()
 	scenarios := []*PostScenario[models.User]{
@@ -228,68 +291,6 @@ func TestRepositoryPost_TeamMember(t *testing.T) {
 				assert.Equal(t, arg.UserID, res.UserID, "user id should be equal.")
 				assert.Equal(t, arg.TeamID, res.TeamID, "slug should be equal.")
 				assert.Equal(t, arg.Role, res.Role, "role should be equal.")
-				assert.NotEqual(t, arg.ID, res.ID, "ID should not be equal since it is generated on db side, arg will have zero value uuid.UUID")
-			},
-		},
-	}
-	for _, scenario := range scenarios {
-		t.Run(scenario.Name, func(t *testing.T) {
-			database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-				scenario.Dbx = db
-				PostTestScenarioFunc(t, ctx, scenario)
-			})
-		})
-	}
-}
-func TestRepositoryPost_TeamInvitation(t *testing.T) {
-	// t.Parallel()
-	scenarios := []*PostScenario[models.TeamInvitation]{
-		{
-			Name: "creating 10 unique team invitations from 1 team.",
-			ArgsFunc: func(t testing.TB, ctx context.Context, scenario *PostScenario[models.TeamInvitation]) []models.TeamInvitation {
-				dbx := scenario.Dbx
-				teams := MustCreateOneCtx(t, ctx, Team, dbx, &models.Team{
-					Name: "name:" + fmt.Sprint(1),
-					Slug: "slug:" + fmt.Sprint(1),
-				})
-				user := MustCreateOneCtx(t, ctx, User, dbx, &models.User{
-					Name:  types.Pointer("Name:" + fmt.Sprint(1)),
-					Email: fmt.Sprint(1) + "@email.com",
-				})
-				owner := MustCreateOneCtx(t, ctx, TeamMember, dbx, &models.TeamMember{
-					UserID: &user.ID,
-					TeamID: teams.ID,
-					Active: true,
-					Role:   models.TeamMemberRoleOwner,
-				})
-
-				var invitationArgs []models.TeamInvitation
-
-				for i := range 10 {
-					invitationArgs = append(invitationArgs, models.TeamInvitation{
-						TeamID:          teams.ID,
-						InviterMemberID: owner.ID,
-						Email:           "inviteuser" + fmt.Sprint(i) + "@email.com",
-						Role:            models.TeamMemberRoleMember,
-						Token:           uuid.NewString(),
-						Status:          models.TeamInvitationStatusPending,
-						ExpiresAt:       time.Now().Add(time.Hour * 7),
-					})
-				}
-				return invitationArgs
-			},
-			Repo:      TeamInvitation,
-			SetupFunc: func(t testing.TB, ctx context.Context, scenario *PostScenario[models.TeamInvitation]) {},
-			TestFunc: func(t testing.TB, ctx context.Context, arg, res *models.TeamInvitation) {
-				t.Helper()
-				// check name. string pointer.
-				assert.Equal(t, arg.InviterMemberID, res.InviterMemberID, "InviterMemberID should be equal.")
-				assert.Equal(t, arg.TeamID, res.TeamID, "team should be equal.")
-				assert.Equal(t, arg.Role, res.Role, "role should be equal.")
-				assert.Equal(t, arg.Status, res.Status, "status should be equal.")
-				assert.Equal(t, arg.Email, res.Email, "email should be equal.")
-				assert.Equal(t, arg.Token, res.Token, "token should be equal.")
-				assert.True(t, arg.ExpiresAt.Equal(res.ExpiresAt), "expiresAt should be true.")
 				assert.NotEqual(t, arg.ID, res.ID, "ID should not be equal since it is generated on db side, arg will have zero value uuid.UUID")
 			},
 		},
