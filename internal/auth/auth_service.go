@@ -120,7 +120,7 @@ type AuthServiceImpl struct {
 
 // OAuth2Url implements AuthService.
 func (a *AuthServiceImpl) OAuth2Url(ctx context.Context, provider *OAuth2SigninInput) (string, error) {
-	panic("unimplemented")
+	return "", nil
 }
 
 // SendEmailVerification implements AuthService.
@@ -307,7 +307,7 @@ func (a *AuthServiceImpl) Signin(ctx context.Context, params *SigninInput) (*mod
 
 // OAuth2Signin implements AuthService.
 func (a *AuthServiceImpl) OAuth2Signin(ctx context.Context, params *OAuth2SigninInput) (*models.UserInfoTokens, error) {
-	panic("unimplemented")
+	return nil, errors.ErrUnsupported
 }
 
 // RefreshToken implements AuthService.
@@ -325,7 +325,7 @@ func (a *AuthServiceImpl) RefreshToken(ctx context.Context, refreshToken string)
 
 // Signout implements AuthService.
 func (a *AuthServiceImpl) Signout(ctx context.Context, refreshToken string) error {
-	panic("unimplemented")
+	return errors.ErrUnsupported
 }
 
 var _ AuthService = (*AuthServiceImpl)(nil)
