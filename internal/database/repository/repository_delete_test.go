@@ -38,14 +38,14 @@ type DeleteScenario[T any] struct {
 // DeleteTestScenarioFunc runs a single test scenario
 func DeleteTestScenarioFunc[T any](t testing.TB, ctx context.Context, scenario *DeleteScenario[T]) {
 	t.Helper()
+	if scenario.SetupFunc != nil {
+		scenario.SetupFunc(t, ctx, scenario)
+	}
 	dbx := scenario.Dbx
 	repo := scenario.Repo
 	args := scenario.Args
 	if scenario.ArgsFunc != nil {
 		args = scenario.ArgsFunc(t, ctx, scenario)
-	}
-	if scenario.SetupFunc != nil {
-		scenario.SetupFunc(t, ctx, scenario)
 	}
 	var txRes, err = repo.Delete(ctx, dbx, args)
 	if err != nil {

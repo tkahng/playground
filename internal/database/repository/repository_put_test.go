@@ -38,6 +38,9 @@ type PutScenario[T any] struct {
 // PutTestScenarioFunc runs a single test scenario
 func PutTestScenarioFunc[T any](t testing.TB, ctx context.Context, scenario *PutScenario[T]) {
 	t.Helper()
+	if scenario.SetupFunc != nil {
+		scenario.SetupFunc(t, ctx, scenario)
+	}
 	dbx := scenario.Dbx
 	repo := scenario.Repo
 	var res []*T
@@ -45,9 +48,6 @@ func PutTestScenarioFunc[T any](t testing.TB, ctx context.Context, scenario *Put
 	args = scenario.Args
 	if scenario.ArgsFunc != nil {
 		args = scenario.ArgsFunc(t, ctx, scenario)
-	}
-	if scenario.SetupFunc != nil {
-		scenario.SetupFunc(t, ctx, scenario)
 	}
 	var txRes, err = repo.Put(ctx, dbx, args)
 	if err != nil {

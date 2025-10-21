@@ -37,15 +37,15 @@ type PostScenario[T any] struct {
 // PostTestScenarioFunc runs a single test scenario
 func PostTestScenarioFunc[T any](t testing.TB, ctx context.Context, scenario *PostScenario[T]) {
 	t.Helper()
+	if scenario.SetupFunc != nil {
+		scenario.SetupFunc(t, ctx, scenario)
+	}
 	dbx := scenario.Dbx
 	repo := scenario.Repo
 	var res []*T
 	args := scenario.Args
 	if scenario.ArgsFunc != nil {
 		args = scenario.ArgsFunc(t, ctx, scenario)
-	}
-	if scenario.SetupFunc != nil {
-		scenario.SetupFunc(t, ctx, scenario)
 	}
 	var txRes, err = repo.Post(ctx, dbx, args)
 	if err != nil {
