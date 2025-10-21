@@ -17,4 +17,4 @@ services:
       - "4000:4000"
       - "8081:8080"
     volumes:
-      - ./traefik:/etc/traefik/dynamic
+      - ./traefik/develop/dynamic:/etc/traefik/dynamic
