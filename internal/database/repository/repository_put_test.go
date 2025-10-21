@@ -71,7 +71,7 @@ func TestRepositoryPut_User(t *testing.T) {
 				var args []models.User
 				timeOpions := []*time.Time{
 					types.Pointer(time.Now()),
-					types.Pointer(time.Now().Add(time.Hour * -24)),
+					types.Pointer(time.Now().UTC().Add(time.Hour * -24)),
 					nil,
 				}
 				emailVerifiedAtSelector := test.NewRandomeSelector(timeOpions...)
@@ -153,7 +153,7 @@ func TestRepositoryPut_UserAccount(t *testing.T) {
 							RefreshToken:      types.Pointer(uuid.NewString()),
 							AccessToken:       types.Pointer(uuid.NewString()),
 							IDToken:           types.Pointer(uuid.NewString()),
-							ExpiresAt:         types.Pointer(time.Now().Add(time.Hour * 24).Unix()),
+							ExpiresAt:         types.Pointer(time.Now().UTC().Add(time.Hour * 24).Unix()),
 						})
 					case models.ProvidersApple:
 						userAccountArgs = append(userAccountArgs, models.UserAccount{
@@ -164,7 +164,7 @@ func TestRepositoryPut_UserAccount(t *testing.T) {
 							RefreshToken:      types.Pointer(uuid.NewString()),
 							AccessToken:       types.Pointer(uuid.NewString()),
 							IDToken:           types.Pointer(uuid.NewString()),
-							ExpiresAt:         types.Pointer(time.Now().Add(time.Hour * 24).Unix()),
+							ExpiresAt:         types.Pointer(time.Now().UTC().Add(time.Hour * 24).Unix()),
 						})
 					case models.ProvidersCredentials:
 						userAccountArgs = append(userAccountArgs, models.UserAccount{
@@ -198,7 +198,7 @@ func TestRepositoryPut_UserAccount(t *testing.T) {
 						userAccount.RefreshToken = types.Pointer(uuid.NewString())
 						userAccount.AccessToken = types.Pointer(uuid.NewString())
 						userAccount.IDToken = types.Pointer(uuid.NewString())
-						userAccount.ExpiresAt = types.Pointer(time.Now().Add(time.Hour * 24).Unix())
+						userAccount.ExpiresAt = types.Pointer(time.Now().UTC().Add(time.Hour * 24).Unix())
 					}
 				}
 				return userAccountPutArgs
@@ -374,7 +374,7 @@ func TestRepositoryPut_TeamInvitation(t *testing.T) {
 						Role:            models.TeamMemberRoleMember,
 						Token:           uuid.NewString(),
 						Status:          models.TeamInvitationStatusPending,
-						ExpiresAt:       time.Now().Add(time.Hour * 7),
+						ExpiresAt:       time.Now().UTC().Add(time.Hour * 7),
 					})
 				}
 				invitations := MustCreateManyCtx(t, ctx, TeamInvitation, dbx, invitationArgs)
@@ -383,7 +383,7 @@ func TestRepositoryPut_TeamInvitation(t *testing.T) {
 				for i := range 10 {
 					invitation := *invitations[i]
 					invitation.Token = uuid.NewString()
-					invitation.ExpiresAt = time.Now().Add(time.Hour * 7)
+					invitation.ExpiresAt = time.Now().UTC().Add(time.Hour * 7)
 					invitation.Role = models.TeamMemberRoleGuest
 					invitation.Status = models.TeamInvitationStatusAccepted
 					updatedInvitationArgs = append(updatedInvitationArgs, invitation)

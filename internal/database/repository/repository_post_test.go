@@ -92,7 +92,7 @@ func TestRepositoryPost_TeamInvitation(t *testing.T) {
 						Role:            models.TeamMemberRoleMember,
 						Token:           uuid.NewString(),
 						Status:          models.TeamInvitationStatusPending,
-						ExpiresAt:       time.Now().Add(time.Hour * 7),
+						ExpiresAt:       time.Now().UTC().Add(time.Hour * 7),
 					})
 				}
 				return invitationArgs
