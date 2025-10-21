@@ -13,6 +13,9 @@ import (
 
 type TokenService interface {
 	GenerateToken(ctx context.Context, email string, tokenType models.TokenTypes) (string, error)
+	// ValidateToken uses the token, tokenType and the current time to validate the token.
+	// If the token is valid, it delete the token, and return the email asscoiated with the token.
+	// If the token is not valid, it will return an error.
 	ValidateToken(ctx context.Context, token string, tokenType models.TokenTypes) (string, error)
 	CheckToken(ctx context.Context, token string, tokenType models.TokenTypes) error
 }
@@ -34,7 +37,9 @@ func (t *TokenServiceImpl) CheckToken(ctx context.Context, token string, tokenTy
 	return nil
 }
 
-// ValidateToken implements TokenService.
+// ValidateToken uses the token, tokenType and the current time to validate the token.
+// If the token is valid, it delete the token, and return the email asscoiated with the token.
+// If the token is not valid, it will return an error.
 func (t *TokenServiceImpl) ValidateToken(ctx context.Context, token string, tokenType models.TokenTypes) (string, error) {
 	dbtoken, err := t.store.GetTokenByValueTypeExpires(ctx, token, tokenType, time.Now())
 	if err != nil {
