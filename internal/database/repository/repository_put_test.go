@@ -43,7 +43,6 @@ func PutTestScenarioFunc[T any](t testing.TB, ctx context.Context, scenario *Put
 	}
 	dbx := scenario.Dbx
 	repo := scenario.Repo
-	var res []*T
 	var args []T
 	args = scenario.Args
 	if scenario.ArgsFunc != nil {
@@ -56,9 +55,8 @@ func PutTestScenarioFunc[T any](t testing.TB, ctx context.Context, scenario *Put
 		}
 		t.Fatal(err)
 	}
-	res = txRes
 	for i, arg := range args {
-		r := res[i]
+		r := txRes[i]
 		scenario.TestFunc(t, ctx, &arg, r)
 	}
 }
@@ -84,11 +82,11 @@ func TestRepositoryPut_User(t *testing.T) {
 				users := MustCreateManyCtx(t, ctx, User, scenario.Dbx, args)
 				var userArgs []models.User
 				for i := range 10 {
-					user := *users[i]
+					user := users[i]
 					user.Name = types.Pointer(*user.Name + " updated")
 					user.Email = user.Email + " updated"
 					user.EmailVerifiedAt = emailVerifiedAtSelector.Select()
-					userArgs = append(userArgs, user)
+					userArgs = append(userArgs, *user)
 				}
 				return userArgs
 			},
