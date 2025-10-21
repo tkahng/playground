@@ -1,4 +1,26 @@
 services:
+  traefik:
+    image: traefik:v3
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    command:
+      # Enable Docker provider
+      # - "--providers.docker=true"
+      # - "--providers.docker.exposedbydefault=false"
+      # API and dashboard (optional, for debugging)
+      - "--api.insecure=true"
+      - "--entrypoints.web.address=:4000"
+      - "--log.level=DEBUG"
+      # Entry point configuration
+      - "--providers.file.directory=/etc/traefik/dynamic"
+      - "--providers.file.watch=true" # Add this
+    ports:
+      - "4000:4000"
+      - "8081:8080"
+    volumes:
+      - ./traefik/dynamic:/etc/traefik/dynamic
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
   db:
     image: tkahng/postgres:18
     container_name: database
