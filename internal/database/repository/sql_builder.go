@@ -287,14 +287,6 @@ func (b *SQLBuilder[Model]) Generator() func(reflect.StructField, *[]any) (strin
 	return b.generator
 }
 
-// registry
-//
-//
-//
-//
-//
-//
-
 // registry holds all of the SQLBuilderInterface created during buildtime.
 var registry = map[string]SQLBuilderInterface{}
 
@@ -560,7 +552,6 @@ func (b *SQLBuilder[Model]) getSortedFields(where *map[string]any) []*fieldIdx {
 	}
 	return fields
 }
-
 func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any) string {
 	if where == nil {
 		return ""
