@@ -35,7 +35,7 @@ type DBConfig struct {
 	Host     string `env:"DATABASE_HOST,expand" envDefault:"localhost"`
 	Port     string `env:"DATABASE_PORT,expand" envDefault:"5432"`
 	Db       string `env:"DATABASE_DB,expand" envDefault:"playground"`
-	SSL      string `env:"DATABASE_SSL,expand" envDefault:"disable"`
+	SSL      string `env:"DATABASE_SSL,expand" envDefault:"disable"` // sslmode: disable, prefer, require, verify-ca, verify-full, allow
 	// DatabaseUrl string `env:"DATABASE_URL,expand" envDefault:"postgres://${DATABASE_USER}:${DATABASE_PASSWORD}@${DATABASE_HOST}:${DATABASE_PORT}/${DATABASE_DB}?sslmode=${DATABASE_SSL}"`
 }
 
