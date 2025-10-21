@@ -51,6 +51,9 @@ func PutTestScenarioFunc[T any](t testing.TB, ctx context.Context, scenario *Put
 	}
 	var txRes, err = repo.Put(ctx, dbx, args)
 	if err != nil {
+		if scenario.WantErr {
+			return
+		}
 		t.Fatal(err)
 	}
 	res = txRes

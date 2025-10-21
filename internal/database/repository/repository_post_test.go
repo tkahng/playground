@@ -49,6 +49,9 @@ func PostTestScenarioFunc[T any](t testing.TB, ctx context.Context, scenario *Po
 	}
 	var txRes, err = repo.Post(ctx, dbx, args)
 	if err != nil {
+		if scenario.WantErr {
+			return
+		}
 		t.Fatal(err)
 	}
 	res = txRes

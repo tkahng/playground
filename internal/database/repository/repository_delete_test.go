@@ -49,6 +49,9 @@ func DeleteTestScenarioFunc[T any](t testing.TB, ctx context.Context, scenario *
 	}
 	var txRes, err = repo.Delete(ctx, dbx, args)
 	if err != nil {
+		if scenario.WantErr {
+			return
+		}
 		t.Fatal(err)
 	}
 	scenario.TestFunc(t, ctx, scenario, txRes)
