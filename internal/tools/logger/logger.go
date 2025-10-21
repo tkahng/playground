@@ -11,10 +11,14 @@ import (
 func GetDefaultLogger() *slog.Logger {
 	opts := conf.GetConfig[conf.AppConfig]()
 	isNotProduction := opts.AppEnv != "production"
+	level := slog.LevelInfo
+	if opts.AppEnv == "debug" {
+		level = slog.LevelDebug
+	}
 	logger := slog.New(ContextHandler{
 		Handler: slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
 			AddSource:   isNotProduction,
-			Level:       slog.LevelInfo,
+			Level:       level,
 			ReplaceAttr: httplog.SchemaOTEL.Concise(isNotProduction).ReplaceAttr,
 		}),
 	})
