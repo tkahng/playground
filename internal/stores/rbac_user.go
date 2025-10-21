@@ -6,8 +6,8 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/tkahng/playground/internal/database"
+	"github.com/tkahng/playground/internal/database/repository"
 	"github.com/tkahng/playground/internal/models"
-	"github.com/tkahng/playground/internal/repository"
 	"github.com/tkahng/playground/internal/shared"
 	"github.com/tkahng/playground/internal/tools/mapper"
 	"github.com/tkahng/playground/internal/tools/types"
@@ -119,9 +119,9 @@ role_based_permissions AS (
         rp.role_id,
 		NULL::text as product_id,
         NULL::uuid AS direct_assignment -- Null indicates not directly assigned
-    FROM public.user_roles ur
-        JOIN public.role_permissions rp ON ur.role_id = rp.role_id
-        JOIN public.permissions p ON rp.permission_id = p.id
+    FROM auth.user_roles ur
+        JOIN auth.role_permissions rp ON ur.role_id = rp.role_id
+        JOIN auth.permissions p ON rp.permission_id = p.id
     WHERE ur.user_id = $1
 ),
 -- Get permissions assigned directly to user
@@ -131,8 +131,8 @@ direct_permissions AS (
 		NULL::text as product_id,
         -- Null indicates not from a role
         up.user_id AS direct_assignment
-    FROM public.user_permissions up
-        JOIN public.permissions p ON up.permission_id = p.id
+    FROM auth.user_permissions up
+        JOIN auth.permissions p ON up.permission_id = p.id
     WHERE up.user_id = $1
 ),
 -- Get permissions assigned through products
@@ -145,7 +145,7 @@ direct_permissions AS (
 --         JOIN public.stripe_prices sprice ON ss.price_id = sprice.id
 --         JOIN public.stripe_products sproduct ON sprice.product_id = sproduct.id
 --         JOIN public.product_permissions pr ON sproduct.id = pr.product_id
---         JOIN public.permissions p ON pr.permission_id = p.id
+--         JOIN auth.permissions p ON pr.permission_id = p.id
 -- WHERE ss.user_id = $1
 --         AND ss.status IN ('active', 'trialing')
 -- ),
@@ -171,7 +171,7 @@ SELECT p.id,
 	array []::text [] AS product_ids,
     -- Boolean indicating if permission is directly assigned
     false AS is_directly_assigned
-FROM public.permissions p
+FROM auth.permissions p
     LEFT JOIN combined_permissions cp ON p.id = cp.id
 WHERE cp.id IS NULL
 GROUP BY p.id
@@ -196,9 +196,9 @@ func (p *DbRbacStore) CountNotUserPermissionSource(ctx context.Context, userId u
 			rp.role_id,
 			NULL::text as product_id,
 			NULL::uuid AS direct_assignment -- Null indicates not directly assigned
-		FROM public.user_roles ur
-			JOIN public.role_permissions rp ON ur.role_id = rp.role_id
-			JOIN public.permissions p ON rp.permission_id = p.id
+		FROM auth.user_roles ur
+			JOIN auth.role_permissions rp ON ur.role_id = rp.role_id
+			JOIN auth.permissions p ON rp.permission_id = p.id
 		WHERE ur.user_id = $1
 	),
 	-- Get permissions assigned directly to user
@@ -208,8 +208,8 @@ func (p *DbRbacStore) CountNotUserPermissionSource(ctx context.Context, userId u
 			NULL::text as product_id,
 			-- Null indicates not from a role
 			up.user_id AS direct_assignment
-		FROM public.user_permissions up
-			JOIN public.permissions p ON up.permission_id = p.id
+		FROM auth.user_permissions up
+			JOIN auth.permissions p ON up.permission_id = p.id
 		WHERE up.user_id = $1
 	),
 	-- Get permissions assigned through products
@@ -222,7 +222,7 @@ func (p *DbRbacStore) CountNotUserPermissionSource(ctx context.Context, userId u
 	--         JOIN public.stripe_prices sprice ON ss.price_id = sprice.id
 	--         JOIN public.stripe_products sproduct ON sprice.product_id = sproduct.id
 	--         JOIN public.product_permissions pr ON sproduct.id = pr.product_id
-	--         JOIN public.permissions p ON pr.permission_id = p.id
+	--         JOIN auth.permissions p ON pr.permission_id = p.id
 	-- WHERE ss.user_id = $1
 	--         AND ss.status IN ('active', 'trialing')
 	-- ),
@@ -238,7 +238,7 @@ func (p *DbRbacStore) CountNotUserPermissionSource(ctx context.Context, userId u
 		-- FROM product_permissions
 	) -- Final result with aggregated role information
 	SELECT COUNT(DISTINCT p.id)
-	FROM public.permissions p
+	FROM auth.permissions p
 		LEFT JOIN combined_permissions cp ON p.id = cp.id
 	WHERE cp.id IS NULL;`
 	)
@@ -252,16 +252,16 @@ func (p *DbRbacStore) CountNotUserPermissionSource(ctx context.Context, userId u
 
 func (p *DbRbacStore) ListUserPermissionsSource(ctx context.Context, userId uuid.UUID, limit int64, offset int64) ([]*models.PermissionSource, error) {
 	const (
-		QueryUserPermissionSource string = `
+		QueryUserPermissionSource string = `--sql
 	WITH -- Get permissions assigned through roles
 	role_based_permissions AS (
 		SELECT p.*,
 			rp.role_id,
 			NULL::text as product_id,
 			NULL::uuid AS direct_assignment -- Null indicates not directly assigned
-		FROM public.user_roles ur
-			JOIN public.role_permissions rp ON ur.role_id = rp.role_id
-			JOIN public.permissions p ON rp.permission_id = p.id
+		FROM auth.user_roles ur
+			JOIN auth.role_permissions rp ON ur.role_id = rp.role_id
+			JOIN auth.permissions p ON rp.permission_id = p.id
 		WHERE ur.user_id = $1
 	),
 	-- Get permissions assigned directly to user
@@ -271,8 +271,8 @@ func (p *DbRbacStore) ListUserPermissionsSource(ctx context.Context, userId uuid
 			NULL::text as product_id,
 			-- Null indicates not from a role
 			up.user_id AS direct_assignment
-		FROM public.user_permissions up
-			JOIN public.permissions p ON up.permission_id = p.id
+		FROM auth.user_permissions up
+			JOIN auth.permissions p ON up.permission_id = p.id
 		WHERE up.user_id = $1
 	),
 	-- Get permissions assigned through products
@@ -285,7 +285,7 @@ func (p *DbRbacStore) ListUserPermissionsSource(ctx context.Context, userId uuid
 	--         JOIN public.stripe_prices sprice ON ss.price_id = sprice.id
 	--         JOIN public.stripe_products sproduct ON sprice.product_id = sproduct.id
 	--         JOIN public.product_permissions pr ON sproduct.id = pr.product_id
-	--         JOIN public.permissions p ON pr.permission_id = p.id
+	--         JOIN auth.permissions p ON pr.permission_id = p.id
 	-- WHERE ss.user_id = $1
 	--         AND ss.status IN ('active', 'trialing')
 	-- ),
@@ -340,16 +340,16 @@ func (p *DbRbacStore) ListUserPermissionsSource(ctx context.Context, userId uuid
 }
 
 func (p *DbRbacStore) CountUserPermissionSource(ctx context.Context, userId uuid.UUID) (int64, error) {
-	const QueryUserPermissionSourceCount string = `
+	const QueryUserPermissionSourceCount string = `--sql
 WITH -- Get permissions assigned through roles
 role_based_permissions AS (
     SELECT p.*,
         rp.role_id,
 		NULL::text as product_id,
         NULL::uuid AS direct_assignment -- Null indicates not directly assigned
-    FROM public.user_roles ur
-        JOIN public.role_permissions rp ON ur.role_id = rp.role_id
-        JOIN public.permissions p ON rp.permission_id = p.id
+    FROM auth.user_roles ur
+        JOIN auth.role_permissions rp ON ur.role_id = rp.role_id
+        JOIN auth.permissions p ON rp.permission_id = p.id
     WHERE ur.user_id = $1
 ),
 -- Get permissions assigned directly to user
@@ -359,8 +359,8 @@ direct_permissions AS (
 		NULL::text as product_id,
         -- Null indicates not from a role
         up.user_id AS direct_assignment
-    FROM public.user_permissions up
-        JOIN public.permissions p ON up.permission_id = p.id
+    FROM auth.user_permissions up
+        JOIN auth.permissions p ON up.permission_id = p.id
     WHERE up.user_id = $1
 ),
 -- Get permissions assigned through products
@@ -373,7 +373,7 @@ direct_permissions AS (
 --         JOIN public.stripe_prices sprice ON ss.price_id = sprice.id
 --         JOIN public.stripe_products sproduct ON sprice.product_id = sproduct.id
 --         JOIN public.product_permissions pr ON sproduct.id = pr.product_id
---         JOIN public.permissions p ON pr.permission_id = p.id
+--         JOIN auth.permissions p ON pr.permission_id = p.id
 -- WHERE ss.user_id = $1
 --         AND ss.status IN ('active', 'trialing')
 -- ),
@@ -441,8 +441,8 @@ func (p *DbRbacStore) GetUserRoles(ctx context.Context, userIds ...uuid.UUID) ([
 					),
 					'[]'
 			) AS data
-	FROM public.user_roles rp
-			LEFT JOIN public.roles p ON p.id = rp.role_id
+	FROM auth.user_roles rp
+			LEFT JOIN auth.roles p ON p.id = rp.role_id
 			WHERE rp.user_id = ANY (
 					$1::uuid []
 			)
@@ -491,8 +491,8 @@ func GetUserPermissions(ctx context.Context, db database.Dbx, userIds ...uuid.UU
 					),
 					'[]'
 			) AS data
-	FROM public.user_permissions rp
-			LEFT JOIN public.permissions p ON p.id = rp.permission_id
+	FROM auth.user_permissions rp
+			LEFT JOIN auth.permissions p ON p.id = rp.permission_id
 	WHERE rp.user_id = ANY ($1::uuid [])
 	GROUP BY rp.user_id;`
 	)

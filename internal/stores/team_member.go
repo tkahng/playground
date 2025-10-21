@@ -11,11 +11,10 @@ import (
 	"github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
 	"github.com/tkahng/playground/internal/database"
+	"github.com/tkahng/playground/internal/database/repository"
 	"github.com/tkahng/playground/internal/models"
-	"github.com/tkahng/playground/internal/repository"
 	"github.com/tkahng/playground/internal/tools/mapper"
 	"github.com/tkahng/playground/internal/tools/types"
-	"github.com/tkahng/playground/internal/tools/utils"
 )
 
 type TeamMemberListInput struct {
@@ -126,7 +125,7 @@ func (s *DbTeamMemberStore) LoadTeamMembersByUserAndTeamIds(ctx context.Context,
 	return memberMap, nil
 }
 func (s *DbTeamMemberStore) CountTeamMembers(ctx context.Context, filter *TeamMemberFilter) (int64, error) {
-	qs := squirrel.Select("COUNT(team_members.*)").From("team_members")
+	qs := squirrel.Select("COUNT(org.team_members.*)").From("org.team_members")
 	qs = s.filterQuery(qs, filter)
 	c, err := database.QueryWithBuilder[database.CountOutput](
 		ctx,
@@ -148,7 +147,7 @@ func (s *DbTeamMemberStore) CountTeamMembers(ctx context.Context, filter *TeamMe
 	return c[0].Count, nil
 }
 func (s *DbTeamMemberStore) FindTeamMembers(ctx context.Context, filter *TeamMemberFilter) ([]*models.TeamMember, error) {
-	qs := squirrel.Select("team_members.*").From("team_members")
+	qs := squirrel.Select("org.team_members.*").From("org.team_members")
 	qs = s.filterQuery(qs, filter)
 	qs = s.sortQuery(qs, filter)
 	qs = queryPagination(qs, filter)
@@ -214,14 +213,14 @@ func (s *DbTeamMemberStore) filterQuery(qs squirrel.SelectBuilder, filter *TeamM
 		return qs
 	}
 	if filter.Q != "" {
-		qs = qs.Join("teams on team_members.team_id = teams.id").Join("users on team_members.user_id = users.id")
+		qs = qs.Join("org.teams on org.team_members.team_id = org.teams.id").Join("auth.users on org.team_members.user_id = auth.users.id")
 		qs = qs.Where(squirrel.Or{
-			squirrel.ILike{"teams.name": "%" + filter.Q + "%"},
-			squirrel.ILike{"users.email": "%" + filter.Q + "%"},
+			squirrel.ILike{"org.teams.name": "%" + filter.Q + "%"},
+			squirrel.ILike{"auth.users.email": "%" + filter.Q + "%"},
 		})
 	}
 	if len(filter.Ids) > 0 {
-		qs = qs.Where(squirrel.Eq{models.TeamMemberTable.ID: filter.Ids})
+		qs = qs.Where(squirrel.Eq{"org.team_members.id": filter.Ids})
 
 	}
 	if len(filter.Roles) > 0 {
@@ -275,14 +274,18 @@ func (s *DbTeamMemberStore) sortQuery(qs squirrel.SelectBuilder, filter Sortable
 	}
 
 	sortBy, sortOrder := filter.Sort()
-	if sortBy != "" && slices.Contains(repository.TeamMemberBuilder.ColumnNames(), utils.Quote(sortBy)) {
-		qs = qs.OrderBy(utils.Quote(sortBy) + " " + strings.ToUpper(sortOrder))
+	if sortBy == "" || sortOrder == "" {
+		return qs
+	}
+
+	if sortBy != "" && slices.Contains(repository.TeamMemberBuilder.FieldNames(), sortBy) {
+		qs = qs.OrderBy(sortBy + " " + strings.ToUpper(sortOrder))
 	} else if sortBy == "team.name" {
-		qs = qs.OrderBy("teams.name " + strings.ToUpper(sortOrder))
+		qs = qs.OrderBy("org.teams.name " + strings.ToUpper(sortOrder))
 	} else if sortBy == "user.email" {
 		qs = qs.OrderBy("users.email " + strings.ToUpper(sortOrder))
 	} else {
-		slog.Info("sort by field not found in repository columns", "sortBy", sortBy, "sortOrder", sortOrder, "columns", repository.TeamMemberBuilder.ColumnNames())
+		slog.Info("sort by field not found in repository columns", "sortBy", sortBy, "sortOrder", sortOrder, "columns", repository.TeamMemberBuilder.FieldNames())
 	}
 	return qs
 }
@@ -293,12 +296,12 @@ func (s *DbTeamMemberStore) sortQuery(qs squirrel.SelectBuilder, filter Sortable
 // 	}
 
 // 	sortBy, sortOrder := filter.Sort()
-// 	if sortBy != "" && slices.Contains(repository.TeamMemberBuilder.ColumnNames(), utils.Quote(sortBy)) {
+// 	if sortBy != "" && slices.Contains(repository.TeamMemberBuilder.FieldNames(), sortBy) {
 // 		return &map[string]string{
 // 			sortBy: sortOrder,
 // 		}
 // 	} else {
-// 		slog.Info("sort by field not found in repository columns", "sortBy", sortBy, "sortOrder", sortOrder, "columns", repository.UserBuilder.ColumnNames())
+// 		slog.Info("sort by field not found in repository columns", "sortBy", sortBy, "sortOrder", sortOrder, "columns", repository.UserBuilder.FieldNames())
 // 	}
 
 // 	return nil // default no sorting
@@ -340,6 +343,8 @@ func (s *DbTeamMemberStore) CreateTeamFromUser(ctx context.Context, user *models
 	return teamMember, nil
 }
 
+// CreateTeamMemberFromUserAndSlug creates a team member from a user and a team slug.
+// If the team does not exist, it will be created.
 func (s *DbTeamMemberStore) CreateTeamMemberFromUserAndSlug(ctx context.Context, user *models.User, slug string, role models.TeamMemberRole) (*models.TeamMember, error) {
 	team, err := repository.Team.GetOne(
 		ctx,
@@ -431,7 +436,7 @@ func (s *DbTeamMemberStore) UpdateTeamMember(ctx context.Context, member *models
 
 // UpdateTeamMemberSelectedAt implements TeamQueryer.
 func (s *DbTeamMemberStore) UpdateTeamMemberSelectedAt(ctx context.Context, teamId, userId uuid.UUID) error {
-	qquery := squirrel.Update("team_members").
+	qquery := squirrel.Update("org.team_members").
 		Where(squirrel.Eq{models.TeamMemberTable.TeamID: teamId}).
 		Where(squirrel.Eq{models.TeamMemberTable.UserID: userId}).
 		Set(models.TeamMemberTable.LastSelectedAt, time.Now())
@@ -469,20 +474,20 @@ func (s *DbTeamMemberStore) FindLatestTeamMemberByUserID(ctx context.Context, us
 func (s *DbTeamMemberStore) FindTeamMembersByUserID(ctx context.Context, userId uuid.UUID, paginate *TeamMemberListInput) ([]*models.TeamMember, error) {
 	limit, offset := pagination(&paginate.PaginatedInput)
 	orderby := make(map[string]string)
-	if paginate.SortBy != "" && paginate.SortOrder != "" && slices.Contains(repository.TeamMemberBuilder.ColumnNames(), utils.Quote(paginate.SortBy)) {
+	if paginate.SortBy != "" && paginate.SortOrder != "" && slices.Contains(repository.TeamMemberBuilder.FieldNames(), paginate.SortBy) {
 		orderby[paginate.SortBy] = paginate.SortOrder
 	} else {
 		orderby["last_selected_at"] = "DESC"
 	}
-	qs := squirrel.Select("team_members.*").From("team_members")
-	qs = qs.Where(squirrel.Eq{"user_id": userId})
-	qs = qs.Where(squirrel.Eq{"active": true})
+	qs := squirrel.Select("org.team_members.*").From("org.team_members")
+	qs = qs.Where(squirrel.Eq{"org.team_members.user_id": userId})
+	qs = qs.Where(squirrel.Eq{"org.team_members.active": true})
 	if paginate.SortBy == "team.name" {
-		qs = qs.Join("teams on team_members.team_id = teams.id").OrderBy("teams.name " + strings.ToUpper(paginate.SortOrder))
-	} else if slices.Contains(repository.TeamMemberBuilder.ColumnNames(), utils.Quote(paginate.SortBy)) {
+		qs = qs.Join("org.teams on org.team_members.team_id = org.teams.id").OrderBy("org.teams.name " + strings.ToUpper(paginate.SortOrder))
+	} else if slices.Contains(repository.TeamMemberBuilder.FieldNames(), paginate.SortBy) {
 		qs = qs.OrderBy(paginate.SortBy + " " + strings.ToUpper(paginate.SortOrder))
 	} else {
-		qs = qs.OrderBy("last_selected_at DESC")
+		qs = qs.OrderBy("org.team_members.last_selected_at DESC")
 	}
 	qs = qs.Limit(uint64(limit)).Offset(uint64(offset))
 	teamMembers, err := database.QueryWithBuilder[*models.TeamMember](ctx, s.db, qs.PlaceholderFormat(squirrel.Dollar))

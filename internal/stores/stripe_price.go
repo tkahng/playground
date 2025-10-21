@@ -6,8 +6,8 @@ import (
 	"github.com/Masterminds/squirrel"
 	"github.com/stripe/stripe-go/v82"
 	"github.com/tkahng/playground/internal/database"
+	"github.com/tkahng/playground/internal/database/repository"
 	"github.com/tkahng/playground/internal/models"
-	"github.com/tkahng/playground/internal/repository"
 	"github.com/tkahng/playground/internal/tools/mapper"
 	"github.com/tkahng/playground/internal/tools/types"
 	"github.com/tkahng/playground/internal/tools/utils"
@@ -31,7 +31,7 @@ func (s *DbPriceStore) WithTx(tx database.Dbx) *DbPriceStore {
 
 func (s *DbPriceStore) UpsertPrice(ctx context.Context, price *models.StripePrice) error {
 	dbx := s.db
-	q := squirrel.Insert("stripe_prices").Columns("id", "product_id", "lookup_key", "active", "unit_amount", "currency", "type", "interval", "interval_count", "trial_period_days", "metadata").Values(price.ID, price.ProductID, price.LookupKey, price.Active, price.UnitAmount, price.Currency, price.Type, price.Interval, price.IntervalCount, price.TrialPeriodDays, price.Metadata).Suffix(`
+	q := squirrel.Insert("billing.stripe_prices").Columns("id", "product_id", "lookup_key", "active", "unit_amount", "currency", "type", "interval", "interval_count", "trial_period_days", "metadata").Values(price.ID, price.ProductID, price.LookupKey, price.Active, price.UnitAmount, price.Currency, price.Type, price.Interval, price.IntervalCount, price.TrialPeriodDays, price.Metadata).Suffix(`
 		ON CONFLICT(id) DO UPDATE SET 
 			product_id = EXCLUDED.product_id,
 			lookup_key = EXCLUDED.lookup_key,

@@ -32,7 +32,7 @@ func (p Providers) String() string {
 }
 
 type UserAccount struct {
-	_                 struct{}      `db:"user_accounts" json:"-"`
+	_                 struct{}      `db:"user_accounts" schema:"auth" json:"-"`
 	ID                uuid.UUID     `db:"id" json:"id"`
 	UserID            uuid.UUID     `db:"user_id" json:"user_id"`
 	Type              ProviderTypes `db:"type" json:"type"`
@@ -48,7 +48,7 @@ type UserAccount struct {
 	TokenType         *string       `db:"token_type" json:"token_type"`
 	CreatedAt         time.Time     `db:"created_at" json:"created_at"`
 	UpdatedAt         time.Time     `db:"updated_at" json:"updated_at"`
-	User              *User         `db:"user" src:"user_id" dest:"id" table:"users" json:"user,omitempty"`
+	User              *User         `db:"user" src:"user_id" dest:"id" table:"auth.users" json:"user,omitempty"`
 }
 
 type userAccountTable struct {

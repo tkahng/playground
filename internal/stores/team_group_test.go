@@ -2,7 +2,6 @@ package stores_test
 
 import (
 	"context"
-	"errors"
 
 	"testing"
 
@@ -16,9 +15,9 @@ import (
 )
 
 func TestCreateTeam(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
-	test.WithTx(t, func(ctx context.Context, dbxx database.Dbx) {
+	database.WithNewTestTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 		teamStore := adapter.TeamGroup()
 		team, err := teamStore.CreateTeam(ctx, "Test Team", "test-team-slug")
@@ -32,10 +31,9 @@ func TestCreateTeam(t *testing.T) {
 }
 
 func TestUpdateTeam(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
-	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
+	database.WithNewTestTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 		teamStore := adapter.TeamGroup()
 		team, err := teamStore.CreateTeam(ctx, "Old Name", "old-name-slug")
@@ -50,15 +48,14 @@ func TestUpdateTeam(t *testing.T) {
 		if updated.Name != newName {
 			t.Errorf("UpdateTeam() = %v, want name %v", updated, newName)
 		}
-		return errors.New("rollback")
+
 	})
 }
 
 func TestDeleteTeam(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
-	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
+	database.WithNewTestTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 		teamStore := adapter.TeamGroup() // Create a team to delete
 		team, err := teamStore.CreateTeam(ctx, "ToDelete", "to-delete-slug")
@@ -69,15 +66,14 @@ func TestDeleteTeam(t *testing.T) {
 		if err != nil {
 			t.Errorf("DeleteTeam() error = %v", err)
 		}
-		return errors.New("rollback")
+
 	})
 }
 
 func TestFindTeamByID(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
-	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
+	database.WithNewTestTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 		teamStore := adapter.TeamGroup()
 		team, err := teamStore.CreateTeam(ctx, "FindMe", "find-me-slug")
@@ -91,7 +87,7 @@ func TestFindTeamByID(t *testing.T) {
 		if found == nil || found.ID != team.ID {
 			t.Errorf("FindTeamByID() = %v, want %v", found, team.ID)
 		}
-		return errors.New("rollback")
+
 	})
 }
 
@@ -128,10 +124,9 @@ func TestTeamStore_CheckTeamSlug(t *testing.T) {
 }
 
 func TestTeamStore_FindTeamByStripeCustomerId(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
-	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
+	database.WithNewTestTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 		stripeID := "cus_test_123"
 		team, err := adapter.TeamGroup().CreateTeam(ctx, "StripeTeam", "stripe-team-slug")
@@ -158,15 +153,14 @@ func TestTeamStore_FindTeamByStripeCustomerId(t *testing.T) {
 		if found == nil || found.ID != team.ID {
 			t.Errorf("FindTeamByStripeCustomerId() = %v, want %v", found, team.ID)
 		}
-		return errors.New("rollback")
+
 	})
 }
 
 func TestTeamStore_ListTeams(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
-	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
+	database.WithNewTestTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 		teamStore := adapter.TeamGroup()
 		teamMemberStore := adapter.TeamMember()
@@ -276,15 +270,12 @@ func TestTeamStore_ListTeams(t *testing.T) {
 		if len(pagedTeams) != 2 {
 			t.Errorf("ListTeams(paginate) got %d, want 2", len(pagedTeams))
 		}
-
-		return errors.New("rollback")
 	})
 }
 func TestTeamStore_CountTeams(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
-	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
+	database.WithNewTestTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 		teamStore := adapter.TeamGroup()
 		userStore := adapter.User()
@@ -372,14 +363,12 @@ func TestTeamStore_CountTeams(t *testing.T) {
 			t.Errorf("CountTeams(no match) = %d, want 0", noneCount)
 		}
 
-		return errors.New("rollback")
 	})
 }
 func TestTeamStore_FindTeamBySlug(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
-	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
+	database.WithNewTestTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 		teamStore := adapter.TeamGroup()
 
@@ -407,6 +396,5 @@ func TestTeamStore_FindTeamBySlug(t *testing.T) {
 			t.Errorf("FindTeamBySlug(non-existent) = %v, want nil", notFound)
 		}
 
-		return errors.New("rollback")
 	})
 }

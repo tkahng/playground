@@ -9,27 +9,17 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/tkahng/playground/internal/database"
+	"github.com/tkahng/playground/internal/database/repository"
 	"github.com/tkahng/playground/internal/models"
-	"github.com/tkahng/playground/internal/repository"
 	"github.com/tkahng/playground/internal/test"
 )
 
 func TestDbJobStore_SaveJob(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
-	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
-		// ctx, db := test.DbSetup()
-
-		// // test.WithTx(t, func(ctx context.Context, dbx database.Dbx) {
-
-		// t.Cleanup(func() {
-		// 	_, err := repository.Job.Delete(ctx, db, &map[string]any{})
-		// 	if err != nil {
-		// 		t.Error(err)
-		// 	}
-		// })
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		type fields struct {
-			db Db
+			db database.Dbx
 		}
 		type args struct {
 			ctx context.Context
@@ -100,11 +90,11 @@ func TestDbJobStore_SaveJob(t *testing.T) {
 }
 
 func TestDbJobStore_SaveManyJobs(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
-	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		type fields struct {
-			db Db
+			db database.Dbx
 		}
 		type args struct {
 			ctx  context.Context
@@ -169,11 +159,11 @@ func TestDbJobStore_SaveManyJobs(t *testing.T) {
 }
 
 func TestDbJobStore_ClaimPendingJobs(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
-	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		type fields struct {
-			db Db
+			db database.Dbx
 		}
 		type args struct {
 			jobs  []*EnqueueParams
@@ -246,9 +236,9 @@ func TestDbJobStore_ClaimPendingJobs(t *testing.T) {
 }
 
 func TestDbJobStore_MarkDone(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
-	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		type fields struct {
 			db database.Dbx
 		}
@@ -328,9 +318,9 @@ func TestDbJobStore_MarkDone(t *testing.T) {
 }
 
 func TestDbJobStore_MarkFailed(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
-	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		type fields struct {
 			db database.Dbx
 		}
@@ -410,9 +400,9 @@ func TestDbJobStore_MarkFailed(t *testing.T) {
 }
 
 func TestDbJobStore_RescheduleJob(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
-	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		type fields struct {
 			db database.Dbx
 		}
@@ -500,9 +490,8 @@ type testJob struct {
 func (j testJob) Kind() string { return "test_job" }
 
 func TestEnqueuer(t *testing.T) {
-	test.DbSetup()
 	t.Run("Enqueue single job", func(t *testing.T) {
-		test.WithTx(t, func(ctx context.Context, tx database.Dbx) {
+		database.WithNewTestTx(t, func(ctx context.Context, tx database.Dbx) {
 			enqueuer := NewDbJobManager(tx)
 			job := testJob{Message: "hello"}
 			runAfter := time.Now().Add(1 * time.Hour)
@@ -526,7 +515,7 @@ func TestEnqueuer(t *testing.T) {
 	})
 
 	t.Run("Enqueue with unique key", func(t *testing.T) {
-		test.WithTx(t, func(ctx context.Context, tx database.Dbx) {
+		database.WithNewTestTx(t, func(ctx context.Context, tx database.Dbx) {
 			enqueuer := NewDbJobManager(tx)
 			uniqueKey := "unique_123"
 			job := testJob{Message: "unique"}
@@ -562,7 +551,7 @@ func TestEnqueuer(t *testing.T) {
 	})
 
 	t.Run("EnqueueMany batch insert", func(t *testing.T) {
-		test.WithTx(t, func(ctx context.Context, tx database.Dbx) {
+		database.WithNewTestTx(t, func(ctx context.Context, tx database.Dbx) {
 			enqueuer := NewDbJobManager(tx)
 			params := []*EnqueueParams{
 				{

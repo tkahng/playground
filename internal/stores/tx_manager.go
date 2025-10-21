@@ -7,7 +7,7 @@ import (
 )
 
 type TxManager interface {
-	RunInTxContext(ctx context.Context, fn func(ctx context.Context) error) error
+	RunInTxCtx(ctx context.Context, fn func(ctx context.Context) error) error
 }
 
 type TxManagerImpl struct {
@@ -18,9 +18,9 @@ func NewTxManager(db database.Dbx) *TxManagerImpl {
 	return &TxManagerImpl{db: db}
 }
 
-// RunInTxContext implements TxManager.
-func (t *TxManagerImpl) RunInTxContext(ctx context.Context, fn func(ctx context.Context) error) error {
-	return t.db.RunInTxContext(context.Background(), fn)
+// RunInTxCtx implements TxManager.
+func (t *TxManagerImpl) RunInTxCtx(ctx context.Context, fn func(ctx context.Context) error) error {
+	return t.db.RunInTxCtx(ctx, fn)
 }
 
 var _ TxManager = (*TxManagerImpl)(nil)

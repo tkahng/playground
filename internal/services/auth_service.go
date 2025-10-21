@@ -376,11 +376,11 @@ func (app *BaseAuthService) VerifyStateToken(ctx context.Context, token string) 
 	if err != nil {
 		return nil, fmt.Errorf("error verifying state token: %w", err)
 	}
-	_, err = app.adapter.Token().GetToken(ctx, claims.Token) 
+	_, err = app.adapter.Token().GetToken(ctx, claims.Token)
 	if err != nil {
 		return nil, err
 	}
-	err = app.adapter.Token().DeleteToken(ctx, claims.Token) 
+	err = app.adapter.Token().DeleteToken(ctx, claims.Token)
 	if err != nil {
 		return nil, fmt.Errorf("error deleting token: %w", err)
 	}
@@ -608,7 +608,7 @@ func (app *BaseAuthService) authenticateNewAccount(ctx context.Context, user *mo
 		return nil, fmt.Errorf("user is nil")
 	}
 	var resetPassword bool
-	err := app.adapter.RunInTx(func(tx stores.StorageAdapterInterface) error {
+	err := app.adapter.RunInTx(ctx, func(tx stores.StorageAdapterInterface) error {
 		var err error
 		resetPassword, err = app.CheckAndResetCredentialsPassword(ctx, user, params, app.adapter)
 		if err != nil {
@@ -650,8 +650,7 @@ func (app *BaseAuthService) authenticateNewAccount(ctx context.Context, user *mo
 }
 func (app *BaseAuthService) authenticateNewUser(ctx context.Context, params *AuthenticationInput) (*models.User, error) {
 	var user *models.User
-	err := app.adapter.RunInTx(func(tx stores.StorageAdapterInterface) error {
-
+	err := app.adapter.RunInTx(ctx, func(tx stores.StorageAdapterInterface) error {
 		newUser, err := app.CreateUserAndAccount(ctx, params, app.adapter)
 		user = newUser
 		return err

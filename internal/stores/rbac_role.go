@@ -4,13 +4,14 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"slices"
 	"strings"
 
 	"github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
 	"github.com/tkahng/playground/internal/database"
+	"github.com/tkahng/playground/internal/database/repository"
 	"github.com/tkahng/playground/internal/models"
-	"github.com/tkahng/playground/internal/repository"
 )
 
 type RoleListFilter struct {
@@ -177,6 +178,10 @@ func (p *DbRbacStore) EnsureRoleAndPermissions(ctx context.Context, roleName str
 	if err != nil {
 		return err
 	}
+	existingPermissionIds, err := p.FindRolePermissionIds(ctx, role.ID)
+	if err != nil {
+		return err
+	}
 	for _, permissionName := range permissionNames {
 		perm, err := p.FindOrCreatePermission(ctx, permissionName)
 		if err != nil {
@@ -184,6 +189,9 @@ func (p *DbRbacStore) EnsureRoleAndPermissions(ctx context.Context, roleName str
 			continue
 		}
 		if perm == nil {
+			continue
+		}
+		if slices.Contains(existingPermissionIds, perm.ID) {
 			continue
 		}
 		err = p.CreateRolePermissions(ctx, role.ID, perm.ID)
@@ -203,7 +211,7 @@ func (p *DbRbacStore) EnsureRoleAndPermissions(ctx context.Context, roleName str
 }
 
 func (p *DbRbacStore) CountRoles(ctx context.Context, filter *RoleListFilter) (int64, error) {
-	q := squirrel.Select("COUNT(roles.*)").From("roles")
+	q := squirrel.Select("COUNT(auth.roles.*)").From("auth.roles")
 
 	q = p.filter(q, filter)
 
@@ -218,7 +226,7 @@ func (p *DbRbacStore) CountRoles(ctx context.Context, filter *RoleListFilter) (i
 	return data[0].Count, nil
 }
 func (p *DbRbacStore) ListRoles(ctx context.Context, input *RoleListFilter) ([]*models.Role, error) {
-	q := squirrel.Select("roles.*").From("roles")
+	q := squirrel.Select("auth.roles.*").From("auth.roles")
 
 	q = p.filter(q, input)
 	q = queryPagination(q, input)
@@ -240,30 +248,30 @@ func (p *DbRbacStore) filter(q squirrel.SelectBuilder, filter *RoleListFilter) s
 	if filter.Q != "" {
 		sq = sq.Where(
 			squirrel.Or{
-				squirrel.ILike{"name": "%" + filter.Q + "%"},
-				squirrel.ILike{"description": "%" + filter.Q + "%"},
+				squirrel.ILike{"auth.roles.name": "%" + filter.Q + "%"},
+				squirrel.ILike{"auth.roles.description": "%" + filter.Q + "%"},
 			})
 	}
 	if len(filter.Names) > 0 {
 		sq = sq.Where(
 			squirrel.Eq{
-				"name": filter.Names,
+				"auth.roles.name": filter.Names,
 			},
 		)
 	}
 	if len(filter.Ids) > 0 {
 		sq = sq.Where(
 			squirrel.Eq{
-				"id": filter.Ids,
+				"auth.roles.id": filter.Ids,
 			},
 		)
 	}
 	if filter.UserId != uuid.Nil {
 		if filter.Reverse == "user" {
-			sq = sq.LeftJoin("user_roles"+" on "+"roles.id"+" = "+"user_roles"+"."+"role_id"+" and "+"user_roles"+"."+"user_id"+" = ?", filter.UserId)
-			sq = sq.Where("user_roles.role_id is null")
+			sq = sq.LeftJoin("auth.user_roles"+" on "+"auth.roles.id"+" = "+"auth.user_roles"+"."+"role_id"+" and "+"auth.user_roles"+"."+"user_id"+" = ?", filter.UserId)
+			sq = sq.Where("auth.user_roles.role_id is null")
 		} else {
-			sq = sq.Join("user_roles on roles.id = user_roles.role_id").Where(squirrel.Eq{"user_roles.user_id": filter.UserId})
+			sq = sq.Join("auth.user_roles on auth.roles.id = auth.user_roles.role_id").Where(squirrel.Eq{"auth.user_roles.user_id": filter.UserId})
 		}
 	}
 	return sq

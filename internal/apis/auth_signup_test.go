@@ -18,9 +18,9 @@ import (
 )
 
 func TestApi_SignUp(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
-	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
 		testMailer := ExtractTestMailer(t, testApi)
 
@@ -80,9 +80,9 @@ func TestApi_SignUp(t *testing.T) {
 }
 
 func TestApi_SignUp_ExistingUsers(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
-	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
 		// testMailer := ExtractTestMailer(t, testApi)
 		tests := []ApiScenario{

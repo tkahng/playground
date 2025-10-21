@@ -6,7 +6,7 @@ import (
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/tkahng/playground/internal/contextstore"
-	"github.com/tkahng/playground/internal/repository"
+	"github.com/tkahng/playground/internal/database/repository"
 )
 
 func (api *Api) ApiProtected(ctx context.Context, input *struct {

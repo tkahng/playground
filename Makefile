@@ -1,8 +1,15 @@
 .PHONY: bootstrap
+
 bootstrap:
+	go run . migrate up
+	go run . seed roles
+	go run . stripe sync
+	go run . stripe role
+
+.PHONY: reset
+reset:
 	go run . migrate reset
 	go run . seed roles
-	go run . superuser create admin@k2dv.io Password123! 
 	go run . stripe sync
 	go run . stripe role
 

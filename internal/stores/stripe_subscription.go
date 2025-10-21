@@ -12,8 +12,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/stripe/stripe-go/v82"
 	"github.com/tkahng/playground/internal/database"
+	"github.com/tkahng/playground/internal/database/repository"
 	"github.com/tkahng/playground/internal/models"
-	"github.com/tkahng/playground/internal/repository"
 	"github.com/tkahng/playground/internal/tools/mapper"
 	"github.com/tkahng/playground/internal/tools/types"
 	"github.com/tkahng/playground/internal/tools/utils"
@@ -51,21 +51,21 @@ func (s *DbSubscriptionStore) FindActiveSubscriptionsByCustomerIds(ctx context.C
 		Where(squirrel.Or{
 			squirrel.And{
 				squirrel.Eq{
-					"stripe_subscriptions.stripe_customer_id": customerIds,
+					"billing.stripe_subscriptions.stripe_customer_id": customerIds,
 				},
 				squirrel.Eq{
-					"stripe_subscriptions.status": models.StripeSubscriptionStatusActive,
+					"billing.stripe_subscriptions.status": models.StripeSubscriptionStatusActive,
 				},
 			},
 			squirrel.And{
 				squirrel.Eq{
-					"stripe_subscriptions.stripe_customer_id": customerIds,
+					"billing.stripe_subscriptions.stripe_customer_id": customerIds,
 				},
 				squirrel.Eq{
-					"stripe_subscriptions.status": models.StripeSubscriptionStatusTrialing,
+					"billing.stripe_subscriptions.status": models.StripeSubscriptionStatusTrialing,
 				},
 				squirrel.Gt{
-					"stripe_subscriptions.trial_end": time.Now().Format(time.RFC3339Nano),
+					"billing.stripe_subscriptions.trial_end": time.Now().Format(time.RFC3339Nano),
 				},
 			},
 		})
@@ -89,26 +89,26 @@ func (s *DbSubscriptionStore) FindActiveSubscriptionsByTeamIds(ctx context.Conte
 	qs = SelectStripeSubscriptionColumns(qs, "")
 	qs = SelectStripeCustomerColumns(qs, "stripe_customer")
 	qs = qs.
-		From("stripe_subscriptions").
-		Join("stripe_customers ON stripe_subscriptions.stripe_customer_id = stripe_customers.id").
+		From("billing.stripe_subscriptions").
+		Join("billing.stripe_customers ON billing.stripe_subscriptions.stripe_customer_id = billing.stripe_customers.id").
 		Where(squirrel.Or{
 			squirrel.And{
 				squirrel.Eq{
-					"stripe_customers.team_id": teamIds,
+					"billing.stripe_customers.team_id": teamIds,
 				},
 				squirrel.Eq{
-					"stripe_subscriptions.status": models.StripeSubscriptionStatusActive,
+					"billing.stripe_subscriptions.status": models.StripeSubscriptionStatusActive,
 				},
 			},
 			squirrel.And{
 				squirrel.Eq{
-					"stripe_customers.team_id": teamIds,
+					"billing.stripe_customers.team_id": teamIds,
 				},
 				squirrel.Eq{
-					"stripe_subscriptions.status": models.StripeSubscriptionStatusTrialing,
+					"billing.stripe_subscriptions.status": models.StripeSubscriptionStatusTrialing,
 				},
 				squirrel.Gt{
-					"stripe_subscriptions.trial_end": time.Now().Format(time.RFC3339Nano),
+					"billing.stripe_subscriptions.trial_end": time.Now().Format(time.RFC3339Nano),
 				},
 			},
 		})
@@ -132,26 +132,26 @@ func (s *DbSubscriptionStore) FindActiveSubscriptionsByUserIds(ctx context.Conte
 	qs = SelectStripeSubscriptionColumns(qs, "")
 	qs = SelectStripeCustomerColumns(qs, "stripe_customer")
 	qs = qs.
-		From("stripe_subscriptions").
-		Join("stripe_customers ON stripe_subscriptions.stripe_customer_id = stripe_customers.id").
+		From("billing.stripe_subscriptions").
+		Join("billing.stripe_customers ON billing.stripe_subscriptions.stripe_customer_id = billing.stripe_customers.id").
 		Where(squirrel.Or{
 			squirrel.And{
 				squirrel.Eq{
-					"stripe_customers.user_id": userIds,
+					"billing.stripe_customers.user_id": userIds,
 				},
 				squirrel.Eq{
-					"stripe_subscriptions.status": models.StripeSubscriptionStatusActive,
+					"billing.stripe_subscriptions.status": models.StripeSubscriptionStatusActive,
 				},
 			},
 			squirrel.And{
 				squirrel.Eq{
-					"stripe_customers.user_id": userIds,
+					"billing.stripe_customers.user_id": userIds,
 				},
 				squirrel.Eq{
-					"stripe_subscriptions.status": models.StripeSubscriptionStatusTrialing,
+					"billing.stripe_subscriptions.status": models.StripeSubscriptionStatusTrialing,
 				},
 				squirrel.Gt{
-					"stripe_subscriptions.trial_end": time.Now().Format(time.RFC3339Nano),
+					"billing.stripe_subscriptions.trial_end": time.Now().Format(time.RFC3339Nano),
 				},
 			},
 		})
@@ -175,7 +175,6 @@ func (s *DbSubscriptionStore) FindSubscriptionsWithPriceProductByIds(ctx context
 	qs = SelectStripePriceColumns(qs, "price")
 	qs = SelectStripeProductColumns(qs, "price.product")
 	qs = qs.From(models.StripeSubscriptionTableName).
-		// Join("stripe_customers ON stripe_subscriptions.stripe_customer_id = stripe_customers.id").
 		Join(models.StripeCustomerTableName + " ON " + models.StripeSubscriptionTablePrefix.StripeCustomerID + " = " + models.StripeCustomerTablePrefix.ID).
 		Join(models.StripePriceTableName + " ON " + models.StripeSubscriptionTablePrefix.PriceID + " = " + models.StripePriceTablePrefix.ID).
 		Join(models.StripeProductTableName + " ON " + models.StripePriceTablePrefix.ProductID + " = " + models.StripeProductTablePrefix.ID).
@@ -231,7 +230,7 @@ func (s *DbSubscriptionStore) UpsertSubscriptionFromStripe(ctx context.Context, 
 }
 
 func (s *DbSubscriptionStore) UpsertSubscription(ctx context.Context, sub *models.StripeSubscription) error {
-	q := squirrel.Insert("stripe_subscriptions").
+	q := squirrel.Insert("billing.stripe_subscriptions").
 		Columns(
 			"id",
 			"stripe_customer_id",
@@ -427,13 +426,15 @@ func SelectStripeSubscriptionColumns(qs squirrel.SelectBuilder, prefix string) s
 }
 
 type DbSubscriptionStoreInterface interface {
+	// main subscription queries
 	FindActiveSubscriptionsByCustomerIds(ctx context.Context, customerIds ...string) ([]*models.StripeSubscription, error)
+	FindActiveSubscriptionByCustomerId(ctx context.Context, customerId string) (*models.StripeSubscription, error)
+	// main team subscription queries
 	FindActiveSubscriptionsByTeamIds(ctx context.Context, teamIds ...uuid.UUID) ([]*models.StripeSubscription, error)
 	FindActiveSubscriptionsByUserIds(ctx context.Context, userIds ...uuid.UUID) ([]*models.StripeSubscription, error)
 	FindSubscriptionsWithPriceProductByIds(ctx context.Context, subscriptionIds ...string) ([]*models.StripeSubscription, error)
 	UpsertSubscriptionFromStripe(ctx context.Context, sub *stripe.Subscription) error
 	UpsertSubscription(ctx context.Context, sub *models.StripeSubscription) error
-	FindActiveSubscriptionByCustomerId(ctx context.Context, customerId string) (*models.StripeSubscription, error)
 	IsFirstSubscription(ctx context.Context, customerID string) (bool, error)
 	ListSubscriptions(ctx context.Context, input *StripeSubscriptionListFilter) ([]*models.StripeSubscription, error)
 	CountSubscriptions(ctx context.Context, filter *StripeSubscriptionListFilter) (int64, error)

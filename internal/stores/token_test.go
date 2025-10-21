@@ -2,7 +2,6 @@ package stores_test
 
 import (
 	"context"
-	"errors"
 	"testing"
 	"time"
 
@@ -16,16 +15,13 @@ import (
 
 func TestTokenStore_CRUD(t *testing.T) {
 	test.SkipIfShort(t)
-	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
+	database.WithNewTestTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		userStore := stores.NewDbUserStore(dbxx)
 		store := stores.NewPostgresTokenStore(dbxx)
 		user, err := userStore.CreateUser(ctx, &models.User{
 			Email: "user@example.com",
 		})
-		if err != nil {
-			return err
-		}
+		assert.NoError(t, err)
 		tokenStr := "tok_test_123"
 		tok := &stores.CreateTokenDTO{
 			Type:       models.TokenTypes(models.TokenTypesAccessToken),
@@ -72,14 +68,13 @@ func TestTokenStore_CRUD(t *testing.T) {
 			assert.Nil(t, got)
 		})
 
-		return errors.New("rollback")
 	})
 }
 
 func TestDbTokenStore_GetTokenByValueTypeExpires(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
-	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		store := stores.NewPostgresTokenStore(db)
 		// opts := conf.ZeroEnvConfig()
 

@@ -2,8 +2,6 @@ package stores_test
 
 import (
 	"context"
-	"errors"
-	"log/slog"
 	"reflect"
 	"testing"
 	"time"
@@ -11,14 +9,13 @@ import (
 	"github.com/google/uuid"
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/models"
-	"github.com/tkahng/playground/internal/repository"
 	"github.com/tkahng/playground/internal/stores"
 	"github.com/tkahng/playground/internal/test"
 )
 
 func TestTeamStore_UpdateTeamMember(t *testing.T) {
-	test.DbSetup()
-	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
+
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewStorageAdapter(db)
 		user, err := adapter.User().CreateUser(ctx, &models.User{
 			Email: "testuser@example.com",
@@ -89,9 +86,9 @@ func TestTeamStore_UpdateTeamMember(t *testing.T) {
 }
 
 func TestTeamStore_CountTeamMembers(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
-	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		type fields struct {
 			db database.Dbx
 		}
@@ -127,10 +124,9 @@ func TestTeamStore_CountTeamMembers(t *testing.T) {
 }
 
 func TestCreateTeamMember(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
-	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
+	database.WithNewTestTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 		teamStore := adapter.TeamGroup()
 		userStore := adapter.User()
@@ -152,15 +148,14 @@ func TestCreateTeamMember(t *testing.T) {
 		if member.TeamID != team.ID || member.UserID == nil || *member.UserID != userID {
 			t.Errorf("CreateTeamMember() = %v, want teamID %v and userID %v", member, team.ID, userID)
 		}
-		return errors.New("rollback")
+
 	})
 }
 
 func TestFindTeamMembersByUserID(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
-	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
+	database.WithNewTestTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 		teamStore := adapter.TeamMember()
 		userStore := adapter.User()
@@ -186,15 +181,14 @@ func TestFindTeamMembersByUserID(t *testing.T) {
 		if len(members) == 0 || *members[0].UserID != userID {
 			t.Errorf("FindTeamMembersByUserID() = %v, want userID %v", members, userID)
 		}
-		return errors.New("rollback")
+
 	})
 }
 
 func TestFindLatestTeamMemberByUserID(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
-	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
+	database.WithNewTestTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 		teamStore := adapter.TeamGroup()
 		userStore := adapter.User()
@@ -251,30 +245,14 @@ func TestFindLatestTeamMemberByUserID(t *testing.T) {
 		if latest.ID != teamMember1.ID {
 			t.Errorf("FindLatestTeamMemberByUserID() = %v, want teamMember2 ID %v", latest.ID, teamMember2.ID)
 		}
-		return errors.New("rollback")
+
 	})
 }
 
 func TestUpdateTeamMemberUpdatedAt(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
-	ctx, dbx := test.DbSetup()
-	t.Cleanup(func() {
-		_, err := repository.TeamMember.Delete(ctx, dbx, nil)
-		if err != nil {
-			slog.ErrorContext(ctx, "Error deleting team members", slog.Any("error", err))
-		}
-		_, err = repository.Team.Delete(ctx, dbx, nil)
-		if err != nil {
-			slog.ErrorContext(ctx, "Error deleting teams", slog.Any("error", err))
-		}
-		_, err = repository.User.Delete(ctx, dbx, nil)
-		if err != nil {
-			slog.ErrorContext(ctx, "Error deleting users", slog.Any("error", err))
-		}
-	})
-
-	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
+	database.WithNewTestTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 
 		team, err := adapter.TeamGroup().CreateTeam(ctx, "UpdateMemberTeam", "update-member-team-slug")
@@ -323,14 +301,13 @@ func TestUpdateTeamMemberUpdatedAt(t *testing.T) {
 				updated.UpdatedAt,
 			)
 		}
-		return errors.New("rollback")
+
 	})
 }
 func TestUpdateTeamMemberSelectedAt(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
-	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
+	database.WithNewTestTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbxx)
 		teamStore := adapter.TeamMember()
 		userStore := adapter.User()
@@ -375,13 +352,13 @@ func TestUpdateTeamMemberSelectedAt(t *testing.T) {
 		if !updated.LastSelectedAt.After(original) {
 			t.Errorf("LastSelectedAt not updated recently: %v", updated.LastSelectedAt)
 		}
-		return errors.New("rollback")
+
 	})
 }
 
 func TestDbTeamMemberStore_LoadTeamMembersByUserAndTeamIds(t *testing.T) {
-	test.DbSetup()
-	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
+
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewStorageAdapter(db)
 		user1, err := adapter.User().CreateUser(ctx, &models.User{
 			Email: "user1@example.com",
@@ -461,9 +438,9 @@ func TestDbTeamMemberStore_LoadTeamMembersByUserAndTeamIds(t *testing.T) {
 }
 
 func TestDbTeamMemberStore_FindTeamMembers(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
-	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewStorageAdapter(db)
 		user := CreateUser(adapter, ctx, "alpha@example.com")
 		user2 := CreateUser(adapter, ctx, "beta@example.com")

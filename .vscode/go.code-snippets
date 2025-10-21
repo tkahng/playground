@@ -21,6 +21,22 @@
   // 			"\${1:operator}: userId.String(),
   // 		},`
   //   },
+  "Option Function": {
+    "prefix": "gooption",
+    "body": [
+      "func With${1:FieldName}(${2:field} ${3:type}) ${4:Type}Option {",
+      "\treturn func(r *${4:Type}) {",
+      "\t\tr.${1:FieldName} = ${2:field}",
+      "\t}",
+      "}"
+    ],
+    "description": "Generate an option function for Go options pattern"
+  },
+  "Option Type": {
+    "prefix": "gooptiontype",
+    "body": "type ${1:Type}Option func(*${1:Type})",
+    "description": "Generate option type definition"
+  },
   "short assignment": {
     "prefix": "sa",
     "body": ":=",

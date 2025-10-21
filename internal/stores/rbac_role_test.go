@@ -2,15 +2,14 @@ package stores_test
 
 import (
 	"context"
-	"errors"
 
 	"reflect"
 	"testing"
 
 	"github.com/google/uuid"
 	"github.com/tkahng/playground/internal/database"
+	"github.com/tkahng/playground/internal/database/repository"
 	"github.com/tkahng/playground/internal/models"
-	"github.com/tkahng/playground/internal/repository"
 
 	"github.com/tkahng/playground/internal/shared"
 	"github.com/tkahng/playground/internal/stores"
@@ -18,10 +17,9 @@ import (
 )
 
 func TestListRoles(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
-	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx(func(tx database.Dbx) error {
+	database.WithNewTestTx(t, func(ctx context.Context, tx database.Dbx) {
 		// Create test roles and permissions
 		rbacstore := stores.NewDbRBACStore(tx)
 		err := rbacstore.EnsureRoleAndPermissions(
@@ -76,14 +74,13 @@ func TestListRoles(t *testing.T) {
 				}
 			})
 		}
-		return test.ErrEndTest
+
 	})
 }
 
 func TestCountRoles(t *testing.T) {
 	test.SkipIfShort(t)
-	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx(func(tx database.Dbx) error {
+	database.WithNewTestTx(t, func(ctx context.Context, tx database.Dbx) {
 		rbacstore := stores.NewDbRBACStore(tx)
 		err := rbacstore.EnsureRoleAndPermissions(
 			ctx,
@@ -151,14 +148,13 @@ func TestCountRoles(t *testing.T) {
 				}
 			})
 		}
-		return test.ErrEndTest
+
 	})
 }
 
 func TestLoadRolePermissions(t *testing.T) {
 	test.SkipIfShort(t)
-	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
+	database.WithNewTestTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		rbacStore := stores.NewDbRBACStore(dbxx)
 		err := rbacStore.EnsureRoleAndPermissions(ctx, "basic", "basic")
 		if err != nil {
@@ -206,85 +202,14 @@ func TestLoadRolePermissions(t *testing.T) {
 				}
 			})
 		}
-		return errors.New("rollback")
+
 	})
 }
 
-// func TestGetUserPermissions(t *testing.T) {
-// 	test.Short(t)
-// 	ctx, dbx := test.DbSetup()
-// 	_ = dbx.RunInTx( func(dbxx database.Dbx) error {
-// 		rbacStore := stores.NewDbRBACStore(dbxx)
-// 		userStore := stores.NewDbUserStore(dbxx)
-// 		permission, err := rbacStore.FindOrCreatePermission(ctx, "basic")
-// 		if err != nil {
-// 			t.Fatalf("failed to find or create permission: %v", err)
-// 		}
-// 		user, err := userStore.CreateUser(
-// 			ctx,
-// 			&models.User{
-// 				Email: "test@test.com",
-// 			},
-// 		)
-// 		if err != nil {
-// 			return err
-// 		}
-// 		err = rbacStore.CreateUserPermissions(ctx, user.ID, permission.ID)
-// 		if err != nil {
-// 			return err
-// 		}
-// 		type args struct {
-// 			ctx     context.Context
-// 			db      database.Dbx
-// 			userIds []uuid.UUID
-// 		}
-// 		tests := []struct {
-// 			name    string
-// 			args    args
-// 			want    [][]*models.Permission
-// 			wantErr bool
-// 		}{
-// 			{
-// 				name: "get user permissions",
-// 				args: args{
-// 					ctx: ctx,
-
-// 					userIds: []uuid.UUID{user.ID},
-// 				},
-// 				want: [][]*models.Permission{
-// 					{
-// 						{
-// 							Name: "basic",
-// 						},
-// 					},
-// 				},
-// 				wantErr: false,
-// 			},
-// 		}
-// 		for _, tt := range tests {
-// 			t.Run(tt.name, func(t *testing.T) {
-// 				got, err := rbacStore.GetUserPermissions(tt.args.ctx, tt.args.userIds...)
-// 				if (err != nil) != tt.wantErr {
-// 					t.Errorf("GetUserPermissions() error = %v, wantErr %v", err, tt.wantErr)
-// 					return
-// 				}
-// 				if !reflect.DeepEqual(len(got[0]), len(tt.want[0])) {
-// 					t.Errorf("GetUserPermissions() = %v, want %v", len(got[0]), len(tt.want[0]))
-// 				}
-// 				if !reflect.DeepEqual(got[0][0].Name, tt.want[0][0].Name) {
-// 					t.Errorf("GetUserPermissions() = %v, want %v", got[0][0].Name, tt.want[0][0].Name)
-// 				}
-// 			})
-// 		}
-// 		return errors.New("rollback")
-// 	})
-// }
-
 func TestFindOrCreateRole(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
-	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
+	database.WithNewTestTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		rbacStore := stores.NewDbRBACStore(dbxx)
 		type args struct {
 			ctx      context.Context
@@ -329,14 +254,13 @@ func TestFindOrCreateRole(t *testing.T) {
 				}
 			})
 		}
-		return errors.New("rollback")
+
 	})
 }
 func TestCreateRole(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
-	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
+	database.WithNewTestTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		rbacStore := stores.NewDbRBACStore(dbxx)
 		type args struct {
 			ctx  context.Context
@@ -385,15 +309,14 @@ func TestCreateRole(t *testing.T) {
 				}
 			})
 		}
-		return errors.New("rollback")
+
 	})
 }
 
 func TestUpdateRole(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
-	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
+	database.WithNewTestTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		// Create initial role to update
 		rbacStore := stores.NewDbRBACStore(dbxx)
 		role, err := rbacStore.CreateRole(ctx, &stores.CreateRoleDto{
@@ -471,15 +394,14 @@ func TestUpdateRole(t *testing.T) {
 				}
 			})
 		}
-		return errors.New("rollback")
+
 	})
 }
 
 func TestDeleteRole(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
-	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
+	database.WithNewTestTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		// Create a role to delete
 		rbacStore := stores.NewDbRBACStore(dbxx)
 		role, err := rbacStore.CreateRole(ctx, &stores.CreateRoleDto{
@@ -543,15 +465,14 @@ func TestDeleteRole(t *testing.T) {
 				}
 			})
 		}
-		return errors.New("rollback")
+
 	})
 }
 
 func TestDeletePermission(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
-	ctx, dbx := test.DbSetup()
-	_ = dbx.RunInTx(func(dbxx database.Dbx) error {
+	database.WithNewTestTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		rbacStore := stores.NewDbRBACStore(dbxx)
 		// Create a permission to delete
 		permission, err := rbacStore.CreatePermission(ctx, "permission_to_delete", nil)
@@ -604,6 +525,6 @@ func TestDeletePermission(t *testing.T) {
 				}
 			})
 		}
-		return errors.New("rollback")
+
 	})
 }

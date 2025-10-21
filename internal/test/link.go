@@ -13,8 +13,7 @@ var (
 
 func GetLinkParam(html, paramName string) (string, error) {
 	// Compile regex to extract href value
-	re := regexp.MustCompile(`href\s*=\s*"([^"]+)"`)
-	matches := re.FindStringSubmatch(html)
+	matches := LinkRegex.FindStringSubmatch(html)
 	if len(matches) < 2 {
 		return "", fmt.Errorf("no link found in HTML")
 	}

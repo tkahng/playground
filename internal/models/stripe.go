@@ -7,8 +7,8 @@ import (
 )
 
 type StripeProduct struct {
-	_           struct{}          `db:"stripe_products" json:"-"`
-	ID          string            `db:"id" json:"id"`
+	_           struct{}          `db:"stripe_products" schema:"billing" json:"-"`
+	ID          string            `db:"id,pk" json:"id"`
 	Active      bool              `db:"active" json:"active"`
 	Name        string            `db:"name" json:"name"`
 	Description *string           `db:"description" json:"description"`
@@ -16,9 +16,20 @@ type StripeProduct struct {
 	Metadata    map[string]string `db:"metadata" json:"metadata"`
 	CreatedAt   time.Time         `db:"created_at" json:"created_at"`
 	UpdatedAt   time.Time         `db:"updated_at" json:"updated_at"`
-	Prices      []*StripePrice    `db:"prices" src:"id" dest:"product_id" table:"stripe_prices" json:"prices,omitempty"`
-	Roles       []*Role           `db:"roles" src:"id" dest:"product_id" table:"roles" through:"product_roles,role_id,id" json:"roles,omitempty"`
-	Permissions []*Permission     `db:"permissions" src:"id" dest:"product_id" table:"permissions" through:"product_permissions,permission_id,id" json:"permissions,omitempty"`
+	Prices      []*StripePrice    `db:"prices" src:"id" dest:"product_id" table:"billing.stripe_prices" json:"prices,omitempty"`
+	Roles       []*Role           `db:"roles" src:"id" dest:"id" table:"auth.roles" through:"billing.product_roles" through_src:"product_id" through_dest:"role_id" json:"roles,omitempty"`
+	Permissions []*Permission     `db:"permissions" src:"id" dest:"id" table:"auth.permissions" through:"billing.product_permissions" through_src:"product_id" through_dest:"permission_id" json:"permissions,omitempty"`
+}
+type ProductRole struct {
+	_         struct{}  `db:"product_roles" schema:"billing" json:"-"`
+	ProductID string    `db:"product_id" json:"product_id"`
+	RoleID    uuid.UUID `db:"role_id" json:"role_id"`
+}
+
+type ProductPermission struct {
+	_            struct{}  `db:"product_permissions" schema:"billing" json:"-"`
+	ProductID    string    `db:"product_id" json:"product_id"`
+	PermissionID uuid.UUID `db:"permission_id" json:"permission_id"`
 }
 
 // type StripeProduct
@@ -62,7 +73,7 @@ var StripeProductTable = stripeProductTable{
 	Permissions: "permissions",
 }
 
-var StripeProductTableName = "stripe_products"
+var StripeProductTableName = "billing.stripe_products"
 
 var StripeProductTablePrefix = stripeProductTable{
 	Columns: []string{
@@ -111,22 +122,22 @@ const (
 // ToModelsStripePricingPlanInterval converts a StripePricingPlanInterval to models.StripePricingPlanInterval
 
 type StripePrice struct {
-	_               struct{}                   `db:"stripe_prices" json:"-"`
+	_               struct{}                   `db:"stripe_prices" schema:"billing" json:"-"`
 	ID              string                     `db:"id" json:"id"`
 	ProductID       string                     `db:"product_id" json:"product_id"`
 	LookupKey       *string                    `db:"lookup_key" json:"lookup_key"`
 	Active          bool                       `db:"active" json:"active"`
 	UnitAmount      *int64                     `db:"unit_amount" json:"unit_amount"`
 	Currency        string                     `db:"currency" json:"currency"`
-	Type            StripePricingType          `db:"type" json:"type" required:"true" enum:"one_time,recurring"`
-	Interval        *StripePricingPlanInterval `db:"interval" json:"interval,omitempty" enum:"day,week,month,year"`
+	Type            StripePricingType          `db:"type,quote" json:"type" required:"true" enum:"one_time,recurring"`
+	Interval        *StripePricingPlanInterval `db:"interval,quote" json:"interval,omitempty" enum:"day,week,month,year"`
 	IntervalCount   *int64                     `db:"interval_count" json:"interval_count"`
 	TrialPeriodDays *int64                     `db:"trial_period_days" json:"trial_period_days"`
 	Metadata        map[string]string          `db:"metadata" json:"metadata"`
 	CreatedAt       time.Time                  `db:"created_at" json:"created_at"`
 	UpdatedAt       time.Time                  `db:"updated_at" json:"updated_at"`
-	Product         *StripeProduct             `db:"product" src:"product_id" dest:"id" table:"stripe_products" json:"product,omitempty"`
-	Subscriptions   []*StripeSubscription      `db:"subscriptions" src:"id" dest:"price_id" table:"stripe_subscriptions" json:"subscriptions,omitempty"`
+	Product         *StripeProduct             `db:"product" src:"product_id" dest:"id" table:"billing.stripe_products" json:"product,omitempty"`
+	Subscriptions   []*StripeSubscription      `db:"subscriptions" src:"id" dest:"price_id" table:"billing.stripe_subscriptions" json:"subscriptions,omitempty"`
 }
 
 type stripePriceTable struct {
@@ -148,7 +159,7 @@ type stripePriceTable struct {
 	Subscriptions   string
 }
 
-var StripePriceTableName = "stripe_prices"
+var StripePriceTableName = "billing.stripe_prices"
 
 var StripePriceTable = stripePriceTable{
 	Columns: []string{
@@ -233,7 +244,7 @@ func (s StripeSubscriptionStatus) String() string {
 }
 
 type StripeSubscription struct {
-	_                  struct{}                 `db:"stripe_subscriptions" json:"-"`
+	_                  struct{}                 `db:"stripe_subscriptions" schema:"billing" json:"-"`
 	ID                 string                   `db:"id" json:"id"`
 	StripeCustomerID   string                   `db:"stripe_customer_id" json:"stripe_customer_id"`
 	Status             StripeSubscriptionStatus `db:"status" json:"status"`
@@ -252,8 +263,8 @@ type StripeSubscription struct {
 	TrialEnd           *time.Time               `db:"trial_end" json:"trial_end"`
 	CreatedAt          time.Time                `db:"created_at" json:"created_at"`
 	UpdatedAt          time.Time                `db:"updated_at" json:"updated_at"`
-	StripeCustomer     *StripeCustomer          `db:"stripe_customer" src:"stripe_customer_id" dest:"id" table:"stripe_customers" json:"stripe_customer,omitempty"`
-	Price              *StripePrice             `db:"price" src:"price_id" dest:"id" table:"stripe_prices" json:"price,omitempty"`
+	StripeCustomer     *StripeCustomer          `db:"stripe_customer" src:"stripe_customer_id" dest:"id" table:"billing.stripe_customers" json:"stripe_customer,omitempty"`
+	Price              *StripePrice             `db:"price" src:"price_id" dest:"id" table:"billing.stripe_prices" json:"price,omitempty"`
 }
 
 type stripeSubscriptionTable struct {
@@ -280,7 +291,7 @@ type stripeSubscriptionTable struct {
 	Price              string
 }
 
-var StripeSubscriptionTableName = "stripe_subscriptions"
+var StripeSubscriptionTableName = "billing.stripe_subscriptions"
 var StripeSubscriptionTable = stripeSubscriptionTable{
 	Columns: []string{
 		"id",
@@ -375,7 +386,7 @@ const (
 )
 
 type StripeCustomer struct {
-	_              struct{}              `db:"stripe_customers" json:"-"`
+	_              struct{}              `db:"stripe_customers" schema:"billing" json:"-"`
 	ID             string                `db:"id" json:"id"`
 	Email          string                `db:"email" json:"email"`
 	Name           *string               `db:"name" json:"name,omitempty" required:"false"`
@@ -386,9 +397,9 @@ type StripeCustomer struct {
 	PaymentMethod  *map[string]string    `db:"payment_method" json:"payment_method"`
 	CreatedAt      time.Time             `db:"created_at" json:"created_at"`
 	UpdatedAt      time.Time             `db:"updated_at" json:"updated_at"`
-	Team           *Team                 `db:"team" src:"team_id" dest:"id" table:"teams" json:"team,omitempty"`
-	User           *User                 `db:"user" src:"user_id" dest:"id" table:"users" json:"user,omitempty"`
-	Subscriptions  []*StripeSubscription `db:"subscriptions" src:"id" dest:"stripe_customer_id" table:"stripe_subscriptions" json:"subscriptions,omitempty"`
+	Team           *Team                 `db:"team" src:"team_id" dest:"id" table:"org.teams" json:"team,omitempty"`
+	User           *User                 `db:"user" src:"user_id" dest:"id" table:"auth.users" json:"user,omitempty"`
+	Subscriptions  []*StripeSubscription `db:"subscriptions" src:"id" dest:"stripe_customer_id" table:"billing.stripe_subscriptions" json:"subscriptions,omitempty"`
 	// scannable
 }
 
@@ -409,7 +420,7 @@ type stripeCustomerTable struct {
 	Subscriptions  string
 }
 
-var StripeCustomerTableName = "stripe_customers"
+var StripeCustomerTableName = "billing.stripe_customers"
 
 var StripeCustomerTable = stripeCustomerTable{
 	Columns: []string{

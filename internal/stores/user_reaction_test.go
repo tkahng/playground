@@ -12,9 +12,9 @@ import (
 )
 
 func TestDbUserReactionStore_CountUserReactions(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
-	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		store := NewDbUserReactionStore(db)
 		var reactions []*models.UserReaction
 		for range 10 {
@@ -62,9 +62,9 @@ func TestNewDbUserReactionStore(t *testing.T) {
 }
 
 func TestDbUserReactionStore_CreateUserReaction(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
-	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		store := NewDbUserReactionStore(db)
 		_, err := store.CreateUserReaction(ctx, &models.UserReaction{
 			Reaction:  types.Pointer("hello"),
@@ -81,9 +81,9 @@ func TestDbUserReactionStore_CreateUserReaction(t *testing.T) {
 }
 
 func TestDbUserReactionStore_CountByCountry(t *testing.T) {
-	test.Parallel(t)
+	t.Parallel()
 	test.SkipIfShort(t)
-	test.WithTx(t, func(ctx context.Context, db database.Dbx) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		store := NewDbUserReactionStore(db)
 		var reactions []*models.UserReaction
 		for range 10 {

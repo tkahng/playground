@@ -48,29 +48,26 @@ func Run2() error {
 	firstCtx, firstCancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM, syscall.SIGHUP, syscall.SIGINT)
 	defer firstCancel()
 	opts := conf.AppConfigGetter()
-
 	// migrate database
 	if err := migrate(opts.Db.GetDatabaseUrl()); err != nil {
 		return err
 	}
 	app := core.NewApp(opts)
-	r := apis.NewRouter(app)
-	appApi := apis.NewAppApi(app)
-	api := apis.NewApi(app, r)
-	apis.AddRoutes(api, appApi)
+	appApi := apis.NewAppApiWithRouter(app)
+	appApi.RegisterRoutes()
 	if port == 0 {
 		port = 8080
 	}
 
 	httpServer := &http.Server{
-		Addr:    fmt.Sprintf(":%d", port),
-		Handler: r,
+		Addr:    fmt.Sprintf("0.0.0.0:%d", port),
+		Handler: appApi.Router(),
 	}
 	serverShutdownErr := make(chan error, 1)
 
 	go func() {
 		quit := make(chan os.Signal, 1)
-		signal.Notify(quit, syscall.SIGTERM, syscall.SIGINT)
+		signal.Notify(quit, os.Interrupt, syscall.SIGTERM, syscall.SIGHUP, syscall.SIGINT)
 
 		quitSignal := <-quit
 		signal.Stop(quit)
@@ -84,7 +81,7 @@ func Run2() error {
 			serverShutdownErr <- err
 			return
 		}
-
+		appApi.App().Close()
 		serverShutdownErr <- nil
 	}()
 

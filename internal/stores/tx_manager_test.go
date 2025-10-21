@@ -9,17 +9,16 @@ import (
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/stores"
-	"github.com/tkahng/playground/internal/test"
 )
 
-func TestTxManagerImpl_RunInTxContext(t *testing.T) {
+func TestTxManagerImpl_RunInTxCtx(t *testing.T) {
 	t.Run("test transaction manager succeed in creating user and account", func(t *testing.T) {
-		test.WithTx(t, func(ctx context.Context, db database.Dbx) {
+		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 			store := stores.NewTxManager(db)
 			userStore := stores.NewDbUserStore(db)
 			accountStore := stores.NewDbAccountStore(db)
 
-			err := store.RunInTxContext(ctx, func(newCtx context.Context) error {
+			err := store.RunInTxCtx(ctx, func(newCtx context.Context) error {
 				user := &models.User{
 					Email: "test@example.com",
 				}
@@ -54,12 +53,12 @@ func TestTxManagerImpl_RunInTxContext(t *testing.T) {
 		})
 	})
 	t.Run("test transaction manager succeed in creating user and account but error at end", func(t *testing.T) {
-		test.WithTx(t, func(ctx context.Context, db database.Dbx) {
-			store := stores.NewTxManager(db)
+		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+			txManager := stores.NewTxManager(db)
 			userStore := stores.NewDbUserStore(db)
 			accountStore := stores.NewDbAccountStore(db)
 
-			err := store.RunInTxContext(ctx, func(newCtx context.Context) error {
+			txErr := txManager.RunInTxCtx(ctx, func(newCtx context.Context) error {
 				user := &models.User{
 					Email: "test@example.com",
 				}
@@ -83,23 +82,22 @@ func TestTxManagerImpl_RunInTxContext(t *testing.T) {
 				assert.Equal(t, int64(1), accountCount)
 				return errors.New("error at end of transaction")
 			})
-			assert.Error(t, err)
-			count, err := userStore.CountUsers(ctx, nil)
-			assert.NoError(t, err)
+			assert.Error(t, txErr)
+			count, userCountErr := userStore.CountUsers(ctx, nil)
+			assert.NoError(t, userCountErr)
 			assert.Equal(t, int64(0), count)
-			accountCount, err := accountStore.CountUserAccounts(ctx, nil)
-			assert.NoError(t, err)
+			accountCount, userAccountCountErr := accountStore.CountUserAccounts(ctx, nil)
+			assert.NoError(t, userAccountCountErr)
 			assert.Equal(t, int64(0), accountCount)
-			assert.NoError(t, err)
 		})
 	})
 	t.Run("test transaction manager succeed in creating user but error before account created", func(t *testing.T) {
-		test.WithTx(t, func(ctx context.Context, db database.Dbx) {
+		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 			store := stores.NewTxManager(db)
 			userStore := stores.NewDbUserStore(db)
 			accountStore := stores.NewDbAccountStore(db)
 
-			err := store.RunInTxContext(ctx, func(newCtx context.Context) error {
+			err := store.RunInTxCtx(ctx, func(newCtx context.Context) error {
 				user := &models.User{
 					Email: "test@example.com",
 				}

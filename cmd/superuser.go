@@ -41,7 +41,8 @@ var superuserCreate = &cobra.Command{
 		ctx := cmd.Context()
 		confdb := conf.GetConfig[conf.DBConfig]()
 
-		dbx := database.CreateQueriesContext(ctx, confdb.GetDatabaseUrl())
+		dbx := database.CreateNewQueriesContext(ctx, confdb.GetDatabaseUrl())
+		defer dbx.Close()
 		userStore := stores.NewDbUserStore(dbx)
 		adapter := stores.NewStorageAdapter(dbx)
 		// authStore := stores.NewDbAuthStore(dbx)

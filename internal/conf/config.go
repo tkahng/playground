@@ -25,8 +25,8 @@ type AppConfig struct {
 	AppName       string `env:"APP_NAME" envDefault:"Playground"`
 	SenderName    string `env:"SENDER_NAME" envDefault:"info"`
 	SenderAddress string `env:"SENDER_ADDRESS" envDefault:"Hb4k@notifications.k2dv.io"`
-	EncryptionKey string `env:"ENCRYPTION_KEY" envDefault:"12345678901234567890123456789012"` //
-	AppEnv        string `env:"APP_ENV" envDefault:"dev"`
+	EncryptionKey string `env:"ENCRYPTION_KEY" envDefault:"12345678901234567890123456789012"`
+	AppEnv        string `env:"APP_ENV" envDefault:"development"` // can be development, staging, production
 }
 
 type DBConfig struct {
@@ -35,7 +35,7 @@ type DBConfig struct {
 	Host     string `env:"DATABASE_HOST,expand" envDefault:"localhost"`
 	Port     string `env:"DATABASE_PORT,expand" envDefault:"5432"`
 	Db       string `env:"DATABASE_DB,expand" envDefault:"playground"`
-	SSL      string `env:"DATABASE_SSL,expand" envDefault:"disable"`
+	SSL      string `env:"DATABASE_SSL,expand" envDefault:"disable"` // sslmode: disable, prefer, require, verify-ca, verify-full, allow
 	// DatabaseUrl string `env:"DATABASE_URL,expand" envDefault:"postgres://${DATABASE_USER}:${DATABASE_PASSWORD}@${DATABASE_HOST}:${DATABASE_PORT}/${DATABASE_DB}?sslmode=${DATABASE_SSL}"`
 }
 
@@ -91,9 +91,9 @@ type Options struct {
 	Port  int    `doc:"Port to listen on." short:"p" default:"8080"`
 }
 
-func ZeroEnvConfig() EnvConfig {
+func ZeroEnvConfig() *EnvConfig {
 	// nolint:exhaustruct
-	return EnvConfig{
+	return &EnvConfig{
 		Db: DBConfig{
 			User:     "postgres",
 			Password: "postgres",
@@ -128,7 +128,7 @@ type EnvConfig struct {
 	AuthOptions
 }
 
-func AppConfigGetter() EnvConfig {
+func AppConfigGetter() *EnvConfig {
 	var config EnvConfig
 	if err := env.ParseWithOptions(&config, env.Options{
 		RequiredIfNoDef: true,
@@ -136,7 +136,7 @@ func AppConfigGetter() EnvConfig {
 		panic(err)
 	}
 	config.AuthOptions = NewTokenOptions()
-	return config
+	return &config
 }
 
 func GetConfig[T any]() T {

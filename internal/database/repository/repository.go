@@ -1,0 +1,319 @@
+package repository
+
+import (
+	"context"
+	"fmt"
+	"log/slog"
+
+	"github.com/tkahng/playground/internal/database"
+	"github.com/tkahng/playground/internal/models"
+	"github.com/tkahng/playground/internal/tools/types"
+)
+
+type queryOptions struct {
+	lock   bool
+	where  *map[string]any
+	order  *map[string]string
+	limit  *int
+	offset *int
+}
+
+type QueryOptionFunc func(options *queryOptions)
+
+func WithLimit(limit int) QueryOptionFunc {
+	return func(r *queryOptions) {
+		r.limit = &limit
+	}
+}
+func WithOffset(offset int) QueryOptionFunc {
+	return func(r *queryOptions) {
+		r.offset = &offset
+	}
+}
+
+func WithWhere(where *map[string]any) QueryOptionFunc {
+	return func(options *queryOptions) {
+		options.where = where
+	}
+}
+
+func WithOrder(order *map[string]string) QueryOptionFunc {
+	return func(options *queryOptions) {
+		options.order = order
+	}
+}
+
+func GetWithLock() QueryOptionFunc {
+	return func(options *queryOptions) {
+		options.lock = true
+	}
+}
+
+type Repository[Model any] interface {
+	GetWithOptions(ctx context.Context, dbx database.Dbx, options ...QueryOptionFunc) ([]*Model, error)
+	Get(ctx context.Context, dbx database.Dbx, where *map[string]any, order *map[string]string, limit *int, skip *int) ([]*Model, error)
+	GetOne(ctx context.Context, dbx database.Dbx, where *map[string]any) (*Model, error)
+	Put(ctx context.Context, dbx database.Dbx, models []Model) ([]*Model, error)
+	PutOne(ctx context.Context, dbx database.Dbx, model *Model) (*Model, error)
+	PostOne(ctx context.Context, dbx database.Dbx, model *Model) (*Model, error)
+	Post(ctx context.Context, dbx database.Dbx, models []Model) ([]*Model, error)
+	PostExec(ctx context.Context, dbx database.Dbx, models []Model) (int64, error)
+	Delete(ctx context.Context, dbx database.Dbx, where *map[string]any) (int64, error)
+	Count(ctx context.Context, dbx database.Dbx, where *map[string]any) (int64, error)
+	Builder() SQLBuilderInterface
+}
+
+type PostgresRepository[Model any] struct {
+	builder *SQLBuilder[Model]
+}
+
+var _ Repository[models.User] = (*PostgresRepository[models.User])(nil)
+
+func NewPostgresRepository[Model any](builder *SQLBuilder[Model]) *PostgresRepository[Model] {
+	return &PostgresRepository[Model]{
+		builder: builder,
+	}
+}
+
+func (r *PostgresRepository[Model]) Builder() SQLBuilderInterface {
+	return r.builder
+}
+
+// Get retrieves records from the database based on the provided filters
+func (r *PostgresRepository[Model]) Get(ctx context.Context, db database.Dbx, where *map[string]any, order *map[string]string, limit *int, offset *int) ([]*Model, error) {
+	var args []any
+
+	query := fmt.Sprintf("SELECT %s FROM %s", r.builder.QualifiedColumnNamesJoined(), r.builder.TableName())
+	if expr, err := r.builder.WhereError(ctx, where, &args); err != nil {
+		return nil, err
+	} else if expr != "" {
+		query += fmt.Sprintf(" WHERE %s", expr)
+	}
+	if orderexpr, err := r.builder.OrderError(order); err != nil {
+		return nil, err
+	} else if orderexpr != "" {
+		query += fmt.Sprintf(" ORDER BY %s", orderexpr)
+	}
+	if limit != nil {
+		query += fmt.Sprintf(" LIMIT %d", *limit)
+	}
+	if offset != nil {
+		query += fmt.Sprintf(" OFFSET %d", *offset)
+	}
+
+	slog.DebugContext(ctx, "query and args", slog.String("query", query), slog.Any("args", args))
+
+	// Execute the query and scan the results
+	items, err := database.QueryAll[*Model](
+		ctx,
+		db,
+		query,
+		args...,
+	)
+	if err != nil {
+		slog.ErrorContext(ctx, "Error executing Get query", slog.String("query", query), slog.Any("args", args), slog.Any("error", err))
+		return nil, err
+	}
+
+	return items, nil
+}
+func (r *PostgresRepository[Model]) GetWithOptions(ctx context.Context, db database.Dbx, options ...QueryOptionFunc) ([]*Model, error) {
+	var opts queryOptions
+	for _, option := range options {
+		option(&opts)
+	}
+	return r.Get(ctx, db, opts.where, opts.order, opts.limit, opts.offset)
+}
+
+// Put updates existing records in the database
+func (r *PostgresRepository[Model]) Put(ctx context.Context, dbx database.Dbx, models []Model) ([]*Model, error) {
+	result := []*Model{}
+
+	for _, model := range models {
+		args := []any{}
+		where := map[string]any{}
+		set, err := r.builder.SetError(&model, &args, &where)
+		if err != nil {
+			return nil, err
+		}
+
+		query := fmt.Sprintf("UPDATE %s SET %s", r.builder.TableName(), set)
+		if expr, err := r.builder.WhereError(ctx, &where, &args); err != nil {
+			return nil, err
+		} else if expr != "" {
+			query += fmt.Sprintf(" WHERE %s", expr)
+		}
+
+		query += fmt.Sprintf(" RETURNING %s", r.builder.ColumnNamesJoined())
+
+		items, err := database.QueryAll[*Model](
+			ctx,
+			dbx,
+			query,
+			args...,
+		)
+		if err != nil {
+			slog.ErrorContext(ctx, "Error executing Put query", slog.String("query", query), slog.Any("args", args), slog.Any("error", err))
+			return nil, err
+		}
+
+		result = append(result, items...)
+	}
+
+	return result, nil
+}
+
+// Post inserts new records into the database
+func (r *PostgresRepository[Model]) PostExec(ctx context.Context, dbx database.Dbx, models []Model) (int64, error) {
+	args := []any{}
+
+	// INSERT INTO ${TABLE_NAME}
+	query := fmt.Sprintf("INSERT INTO %s", r.builder.TableName())
+	if fields, values, err := r.builder.ValuesError(&models, &args, nil); err != nil {
+		return 0, err
+	} else if fields != "" && values != "" {
+		// (${FIELDS}) VALUES ${VALUES}
+		query += fmt.Sprintf(" (%s) VALUES %s", fields, values)
+	}
+
+	// Execute the query and scan the results
+	slog.Debug("query and args", slog.String("query", query), slog.Any("args", args))
+	result, err := database.Exec(
+		ctx,
+		dbx,
+		query,
+		args...,
+	)
+	if err != nil {
+		slog.ErrorContext(ctx, "Error executing Post query", slog.String("query", query), slog.Any("args", args), slog.Any("error", err))
+		return 0, err
+	}
+
+	return result, nil
+}
+
+// Post inserts new records into the database
+func (r *PostgresRepository[Model]) Post(ctx context.Context, dbx database.Dbx, models []Model) ([]*Model, error) {
+	args := []any{}
+
+	// INSERT INTO ${TABLE_NAME}
+	query := fmt.Sprintf("INSERT INTO %s", r.builder.TableName())
+	if fields, values, err := r.builder.ValuesError(&models, &args, nil); err != nil {
+		return nil, err
+	} else if fields != "" && values != "" {
+		// (${FIELDS}) VALUES ${VALUES}
+		query += fmt.Sprintf(" (%s) VALUES %s", fields, values)
+	}
+	// RETURNING ${COLUMNS}
+	query += fmt.Sprintf(" RETURNING %s", r.builder.ColumnNamesJoined())
+
+	// Execute the query and scan the results
+	slog.Debug("query and args", slog.String("query", query), slog.Any("args", args))
+	result, err := database.QueryAll[*Model](
+		ctx,
+		dbx,
+		query,
+		args...,
+	)
+	if err != nil {
+		slog.ErrorContext(ctx, "Error executing Post query", slog.String("query", query), slog.Any("args", args), slog.Any("error", err))
+		return nil, err
+	}
+
+	return result, nil
+}
+
+// DeleteReturn removes records from the database based on the provided filters
+func (r *PostgresRepository[Model]) Delete(ctx context.Context, dbx database.Dbx, where *map[string]any) (int64, error) {
+	args := []any{}
+
+	query := fmt.Sprintf("DELETE FROM %s", r.builder.TableName())
+	if expr, err := r.builder.WhereError(ctx, where, &args); err != nil {
+		return 0, err
+	} else if expr != "" {
+		query += fmt.Sprintf(" WHERE %s", expr)
+	}
+
+	slog.Debug("query and args", slog.String("query", query), slog.Any("args", args))
+	// Execute the query and scan the results
+	result, err := database.Exec(
+		ctx,
+		dbx,
+		query,
+		args...,
+	)
+	if err != nil {
+		slog.ErrorContext(ctx, "Error executing Delete query", slog.String("query", query), slog.Any("args", args), slog.Any("error", err))
+		return 0, err
+	}
+
+	return result, nil
+}
+
+// Count returns the number of records that match the provided filters
+func (r *PostgresRepository[Model]) Count(ctx context.Context, dbx database.Dbx, where *map[string]any) (int64, error) {
+	args := []any{}
+
+	// SELECT COUNT(*) FROM ${TABLE_NAME}
+	query := fmt.Sprintf("SELECT COUNT(*) FROM %s", r.builder.TableName())
+	if expr, err := r.builder.WhereError(ctx, where, &args); err != nil {
+		return 0, err
+	} else if expr != "" {
+		// WHERE ${WHERE}
+		query += fmt.Sprintf(" WHERE %s", expr)
+	}
+
+	slog.Debug("query and args", slog.String("query", query), slog.Any("args", args))
+	// Execute the query and scan the results
+	count, err := database.Count(ctx, dbx, query, args...)
+
+	if err != nil {
+		slog.ErrorContext(ctx, "Error executing Get query", slog.String("query", query), slog.Any("args", args), slog.Any("error", err))
+		return 0, err
+	}
+
+	return count, nil
+}
+
+/*
+
+Extended Methods
+
+these methods are for convienience
+
+*/
+
+// GetOne returns the first record that matches the provided filters
+func (r *PostgresRepository[Model]) GetOne(ctx context.Context, dbx database.Dbx, where *map[string]any) (*Model, error) {
+	result, err := r.Get(ctx, dbx, where, nil, types.Pointer(1), nil)
+	return handleErrAndGetFirstItem(result, err)
+}
+
+// PostOne creates a record in the database
+func (r *PostgresRepository[Model]) PostOne(ctx context.Context, dbx database.Dbx, models *Model) (*Model, error) {
+	data, err := r.Post(ctx, dbx, []Model{*models})
+	return handleErrAndGetFirstItem(data, err)
+}
+
+// Patch updates an existing record in the database
+func (r *PostgresRepository[Model]) PutOne(ctx context.Context, dbx database.Dbx, model *Model) (*Model, error) {
+	if model == nil {
+		return nil, nil
+	}
+	result, err := r.Put(ctx, dbx, []Model{*model})
+	return handleErrAndGetFirstItem(result, err)
+}
+
+// handleErrAndGetFirstItem is an adapter for slice return types to single return types.
+// it takes any slice of pointers and an error,
+// and returns the first item in the slice or nil if the error is not nil
+func handleErrAndGetFirstItem[Model any](result []*Model, err error) (*Model, error) {
+	if err != nil {
+		return nil, err
+	}
+	if len(result) == 0 {
+		return nil, nil
+	}
+	re := result[0]
+	return re, nil
+}

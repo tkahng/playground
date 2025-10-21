@@ -42,9 +42,8 @@
       "editor.codeLens": true,
       "editor.codeActionWidget.includeNearbyQuickFixes": true
     },
-
-    "go.lintTool": "golangci-lint",
-    "go.lintOnSave": "workspace",
+    "go.lintTool": "golangci-lint-v2",
+    // "go.lintFlags": ["--path-mode=abs", "--fast-only"],
     "go.lintFlags": [
       "--path-mode=abs",
       "--fast-only",
@@ -54,8 +53,9 @@
     ],
     "go.formatTool": "custom",
     "go.alternateTools": {
-      "customFormatter": "golangci-lint"
+      "customFormatter": "golangci-lint-v2"
     },
+    "go.lintOnSave": "workspace",
     "go.formatFlags": ["fmt", "--stdin"],
     "editor.linkedEditing": true,
     "css.customData": [".vscode/tailwindcss.json"],
@@ -121,9 +121,6 @@
       "editor.codeLens": true,
       "editor.gotoLocation.multipleTypeDefinitions": "gotoAndPeek"
     },
-    "sqltools.queryParams.enableReplace": false, // enables string replacement.
-    // the following regex, will match named params in your variables files
-    "sqltools.queryParams.regex": "\\$[\\d]+|([@:$][\\w]+)",
     "sqltools.connections": [
       {
         "previewLimit": 50,
@@ -146,7 +143,6 @@
         "username": "postgres"
       }
     ],
-    "go.coverMode": "atomic",
     "go.coverOnSingleTestFile": true,
     "go.coverOnSingleTest": true,
     "go.coverShowCounts": true,
@@ -160,6 +156,11 @@
     "explorer.fileNesting.enabled": true,
     "gitlens.views.repositories.pullRequests.enabled": false,
     "gitlens.views.repositories.autoRefresh": true,
-    "gitlens.views.remotes.pullRequests.enabled": false
+    "gitlens.views.remotes.pullRequests.enabled": false,
+    "go.testExplorer.showDynamicSubtestsInEditor": true,
+    "testing.followRunningTest": true,
+    "testing.showAllMessages": true,
+    "inlineSQL.enableDBIntegration": true,
+    "inlineSQL.lintSQLFiles": false
   }
 }

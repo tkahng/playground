@@ -7,7 +7,7 @@ import (
 )
 
 type Task struct {
-	_                 struct{}     `db:"tasks" json:"-"`
+	_                 struct{}     `db:"tasks" schema:"task" json:"-"`
 	ID                uuid.UUID    `db:"id" json:"id"`
 	CreatedByMemberID *uuid.UUID   `db:"created_by_member_id" json:"created_by_member_id" nullable:"true"`
 	TeamID            uuid.UUID    `db:"team_id" json:"team_id"`
@@ -23,16 +23,16 @@ type Task struct {
 	ParentID          *uuid.UUID   `db:"parent_id" json:"parent_id" nullable:"true"`
 	CreatedAt         time.Time    `db:"created_at" json:"created_at"`
 	UpdatedAt         time.Time    `db:"updated_at" json:"updated_at"`
-	Children          []*Task      `db:"children" src:"id" dest:"parent_id" table:"tasks" json:"children,omitempty"`
-	CreatedByMember   *TeamMember  `db:"created_by_member" src:"created_by_member_id" dest:"id" table:"team_members" json:"created_by_member,omitempty"`
-	Assignee          *TeamMember  `db:"assignee" src:"assignee_id" dest:"id" table:"team_members" json:"assignee,omitempty"`
-	Reporter          *TeamMember  `db:"reporter" src:"reporter_id" dest:"id" table:"team_members" json:"reporter,omitempty"`
-	Team              *Team        `db:"team" src:"team_id" dest:"id" table:"teams" json:"team,omitempty"`
-	Project           *TaskProject `db:"project" src:"project_id" dest:"id" table:"task_projects" json:"project,omitempty"`
+	Children          []*Task      `db:"children" src:"id" dest:"parent_id" table:"task.tasks" json:"children,omitempty"`
+	CreatedByMember   *TeamMember  `db:"created_by_member" src:"created_by_member_id" dest:"id" table:"org.team_members" json:"created_by_member,omitempty"`
+	Assignee          *TeamMember  `db:"assignee" src:"assignee_id" dest:"id" table:"org.team_members" json:"assignee,omitempty"`
+	Reporter          *TeamMember  `db:"reporter" src:"reporter_id" dest:"id" table:"org.team_members" json:"reporter,omitempty"`
+	Team              *Team        `db:"team" src:"team_id" dest:"id" table:"org.teams" json:"team,omitempty"`
+	Project           *TaskProject `db:"project" src:"project_id" dest:"id" table:"task.task_projects" json:"project,omitempty"`
 }
 
 type TaskProject struct {
-	_                 struct{}          `db:"task_projects" json:"-"`
+	_                 struct{}          `db:"task_projects" schema:"task" json:"-"`
 	ID                uuid.UUID         `db:"id" json:"id"`
 	CreatedByMemberID *uuid.UUID        `db:"created_by_member_id" json:"created_by_member_id" nullable:"true"`
 	TeamID            uuid.UUID         `db:"team_id" json:"team_id"`
@@ -46,9 +46,9 @@ type TaskProject struct {
 	Rank              float64           `db:"rank" json:"rank"`
 	CreatedAt         time.Time         `db:"created_at" json:"created_at"`
 	UpdatedAt         time.Time         `db:"updated_at" json:"updated_at"`
-	CreatedByMember   *TeamMember       `db:"created_by_member" src:"created_by_member_id" dest:"id" table:"team_members" json:"created_by_member,omitempty"`
-	Team              *Team             `db:"team" src:"team_id" dest:"id" table:"teams" json:"team,omitempty"`
-	Tasks             []*Task           `db:"tasks" src:"id" dest:"project_id" table:"tasks" json:"tasks,omitempty"`
+	CreatedByMember   *TeamMember       `db:"created_by_member" src:"created_by_member_id" dest:"id" table:"org.team_members" json:"created_by_member,omitempty"`
+	Team              *Team             `db:"team" src:"team_id" dest:"id" table:"org.teams" json:"team,omitempty"`
+	Tasks             []*Task           `db:"tasks" src:"id" dest:"project_id" table:"task.tasks" json:"tasks,omitempty"`
 }
 
 const (

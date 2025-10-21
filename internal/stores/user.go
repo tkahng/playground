@@ -14,11 +14,10 @@ import (
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/tools/mapper"
 	"github.com/tkahng/playground/internal/tools/types"
-	"github.com/tkahng/playground/internal/tools/utils"
 
 	"github.com/stephenafamo/scan"
 	"github.com/stephenafamo/scan/pgxscan"
-	"github.com/tkahng/playground/internal/repository"
+	"github.com/tkahng/playground/internal/database/repository"
 )
 
 type UserFilter struct {
@@ -81,12 +80,12 @@ func (s *DbUserStore) sort(filter Sortable) *map[string]string {
 	}
 
 	sortBy, sortOrder := filter.Sort()
-	if sortBy != "" && slices.Contains(repository.UserBuilder.ColumnNames(), utils.Quote(sortBy)) {
+	if sortBy != "" && slices.Contains(repository.UserBuilder.FieldNames(), sortBy) {
 		return &map[string]string{
 			sortBy: sortOrder,
 		}
 	} else {
-		slog.Info("sort by field not found in repository columns", "sortBy", sortBy, "sortOrder", sortOrder, "columns", repository.UserBuilder.ColumnNames())
+		slog.Info("sort by field not found in repository columns", "sortBy", sortBy, "sortOrder", sortOrder, "columns", repository.UserBuilder.FieldNames())
 	}
 
 	return nil // default no sorting
@@ -131,11 +130,11 @@ func (s *DbUserStore) filter(filter *UserFilter) *map[string]any {
 	if filter.EmailVerified.IsSet {
 		emailverified := filter.EmailVerified.Value
 		if emailverified {
-			where[models.UserTable.EmailVerifiedAt] = map[string]any{
+			where["email_verified_at"] = map[string]any{
 				repository.IsNotNull: nil,
 			}
 		} else {
-			where[models.UserTable.EmailVerifiedAt] = map[string]any{
+			where["email_verified_at"] = map[string]any{
 				repository.IsNull: nil,
 			}
 		}
@@ -305,30 +304,30 @@ user_role_permissions AS (
     SELECT ur.user_id AS user_id,
         p.name AS permission,
         r.name AS role
-    FROM public.user_roles ur
-        JOIN public.roles r ON ur.role_id = r.id
-        JOIN public.role_permissions rp ON ur.role_id = rp.role_id
-        JOIN public.permissions p ON rp.permission_id = p.id
+    FROM auth.user_roles ur
+        JOIN auth.roles r ON ur.role_id = r.id
+        JOIN auth.role_permissions rp ON ur.role_id = rp.role_id
+        JOIN auth.permissions p ON rp.permission_id = p.id
 ),
 user_direct_permissions AS (
     SELECT up.user_id AS user_id,
         p.name AS permission,
         NULL::text AS role
-    FROM public.user_permissions up
-        JOIN public.permissions p ON up.permission_id = p.id
+    FROM auth.user_permissions up
+        JOIN auth.permissions p ON up.permission_id = p.id
 ),
 -- user_sub_role_permissions AS (
 --     SELECT u.id AS user_id,
 --         p.name AS permission,
 --         r.name AS role
 --     FROM public.stripe_subscriptions s
---         JOIN public.users u ON s.user_id = u.id
+--         JOIN auth.users u ON s.user_id = u.id
 --         JOIN public.stripe_prices price ON s.price_id = price.id
 --         JOIN public.stripe_products product ON price.product_id = product.id
 --         JOIN public.product_roles pr ON product.id = pr.product_id
---         JOIN public.roles r ON pr.role_id = r.id
---         JOIN public.role_permissions rp ON r.id = rp.role_id
---         JOIN public.permissions p ON rp.permission_id = p.id
+--         JOIN auth.roles r ON pr.role_id = r.id
+--         JOIN auth.role_permissions rp ON r.id = rp.role_id
+--         JOIN auth.permissions p ON rp.permission_id = p.id
 -- ),
 combined_permissions AS (
     SELECT *
@@ -344,10 +343,10 @@ SELECT u.id AS user_id,
     u.email AS email,
     array_remove(ARRAY_AGG(DISTINCT p.role), NULL)::text [] AS roles,
     array_remove(ARRAY_AGG(DISTINCT p.permission), NULL)::text [] AS permissions,
-    array_remove(ARRAY_AGG(DISTINCT ua.provider), NULL)::public.providers [] AS providers
-FROM public.users u
+    array_remove(ARRAY_AGG(DISTINCT ua.provider), NULL)::auth.providers [] AS providers
+FROM auth.users u
     LEFT JOIN combined_permissions p ON u.id = p.user_id
-    LEFT JOIN public.user_accounts ua ON u.id = ua.user_id
+    LEFT JOIN auth.user_accounts ua ON u.id = ua.user_id
 WHERE u.email = $1
 GROUP BY u.id
 LIMIT 1;

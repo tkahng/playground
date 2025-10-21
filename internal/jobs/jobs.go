@@ -1,10 +1,6 @@
 package jobs
 
 import (
-	"context"
-
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/tkahng/playground/internal/models"
 )
 
@@ -33,10 +29,4 @@ type JobArgs interface {
 	// which worker should work the old kind. Job kinds can be renamed safely
 	// over multiple deploys using the JobArgsWithKindAliases interface.
 	Kind() string
-}
-type Db interface {
-	SendBatch(ctx context.Context, b *pgx.Batch) pgx.BatchResults
-	Exec(ctx context.Context, sql string, arguments ...any) (pgconn.CommandTag, error)
-	Begin(ctx context.Context) (pgx.Tx, error)
-	Query(ctx context.Context, sql string, arguments ...any) (pgx.Rows, error)
 }

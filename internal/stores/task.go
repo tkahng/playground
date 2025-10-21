@@ -11,11 +11,10 @@ import (
 	"github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
 	"github.com/tkahng/playground/internal/database"
+	"github.com/tkahng/playground/internal/database/repository"
 	"github.com/tkahng/playground/internal/models"
-	"github.com/tkahng/playground/internal/repository"
 	"github.com/tkahng/playground/internal/tools/mapper"
 	"github.com/tkahng/playground/internal/tools/types"
-	"github.com/tkahng/playground/internal/tools/utils"
 )
 
 type DbTaskStoreInterface interface { // size=16 (0x10)
@@ -217,57 +216,75 @@ func (s *DbTaskStore) CountItems(ctx context.Context, projectID uuid.UUID, statu
 	// return count, err
 }
 
+type QueryAdapter struct {
+	query string
+	args  []any
+	err   error
+}
+
+func (a *QueryAdapter) ToSql() (string, []any, error) {
+	return a.query, a.args, a.err
+}
 func (s *DbTaskStore) GetTaskFirstPosition(ctx context.Context, projectID uuid.UUID, status models.TaskStatus, excludeID uuid.UUID) (float64, error) {
 	var rank float64
+	var err error
 	query := `
 		SELECT rank 
-		FROM tasks 
+		FROM task.tasks 
 		WHERE project_id = $1 AND status = $2 AND id != $3
 		ORDER BY rank ASC 
 		LIMIT 1
 	`
-	err := s.db.QueryRow(ctx, query, projectID, status, excludeID).Scan(&rank)
+	rank, err = database.QueryOneSingleColumn[float64](ctx, s.db, query, projectID, status, excludeID)
 	return rank, err
 }
 
 func (s *DbTaskStore) GetTaskLastPosition(ctx context.Context, projectID uuid.UUID, status models.TaskStatus, excludeID uuid.UUID) (float64, error) {
 	var rank float64
+	var err error
 	query := `
 		SELECT rank 
-		FROM tasks 
+		FROM task.tasks 
 		WHERE project_id = $1 AND status = $2 AND id != $3
 		ORDER BY rank DESC 
 		LIMIT 1
 	`
-	err := s.db.QueryRow(ctx, query, projectID, status, excludeID).Scan(&rank)
+	rank, err = database.QueryOneSingleColumn[float64](ctx, s.db, query, projectID, status, excludeID)
 	return rank, err
 }
 
 func (s *DbTaskStore) GetTaskPositions(ctx context.Context, projectID uuid.UUID, status models.TaskStatus, excludeID uuid.UUID, offset int64) ([]float64, error) {
 	query := `
 		SELECT rank 
-		FROM tasks 
+		FROM task.tasks 
 		WHERE project_id = $1 AND status = $2 AND id != $3
 		ORDER BY rank ASC 
 		LIMIT $4 OFFSET $5
 	`
+	return database.QueryManySingleColumn[float64](ctx, s.db, query, projectID, status, excludeID, 2, offset)
+	// query := `
+	// 	SELECT rank
+	// 	FROM tasks
+	// 	WHERE project_id = $1 AND status = $2 AND id != $3
+	// 	ORDER BY rank ASC
+	// 	LIMIT $4 OFFSET $5
+	// `
+	// rows, err := s.db.Query(ctx, query, projectID, status, excludeID, 2, offset)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// defer rows.Close()
 
-	rows, err := s.db.Query(ctx, query, projectID, status, excludeID, 2, offset)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
+	// var ranks []float64
+	// for rows.Next() {
+	// 	var pos float64
+	// 	if err := rows.Scan(&pos); err != nil {
+	// 		return nil, err
+	// 	}
+	// 	ranks = append(ranks, pos)
+	// }
 
-	var ranks []float64
-	for rows.Next() {
-		var pos float64
-		if err := rows.Scan(&pos); err != nil {
-			return nil, err
-		}
-		ranks = append(ranks, pos)
-	}
-
-	return ranks, rows.Err()
+	// return ranks, rows.Err()
 }
 func NewDbTaskStore(db database.Dbx) *DbTaskStore {
 	return &DbTaskStore{
@@ -279,8 +296,8 @@ const (
 	LoadTaskProjectsTasksQuery = `
 SELECT tp.id as key,
         json_agg(to_json(t.*)) AS "data"
-FROM public.task_projects tp
-        LEFT JOIN public.tasks t ON tp.id = t.project_id
+FROM task.task_projects tp
+        LEFT JOIN task.tasks t ON tp.id = t.project_id
 WHERE tp.id = ANY ($1::uuid [])
 GROUP BY tp.id;`
 )
@@ -394,7 +411,7 @@ func (s *DbTaskStore) DeleteTaskProject(ctx context.Context, taskProjectID uuid.
 }
 func ListTasksOrderByFunc(input *TaskFilter) *map[string]string {
 	sortBy, sortOrder := input.Sort()
-	if slices.Contains(repository.TaskBuilder.ColumnNames(), utils.Quote(sortBy)) {
+	if slices.Contains(repository.TaskBuilder.FieldNames(), sortBy) {
 		return &map[string]string{
 			sortBy: strings.ToUpper(sortOrder),
 		}
@@ -481,7 +498,7 @@ func (*DbTaskStore) TaskProjectWhere(task *TaskProjectsFilter) *map[string]any {
 
 func ListTaskProjectsOrderByFunc(input *TaskProjectsFilter) *map[string]string {
 	sortBy, sortOrder := input.Sort()
-	if slices.Contains(repository.TaskProjectBuilder.ColumnNames(), utils.Quote(sortBy)) {
+	if slices.Contains(repository.TaskProjectBuilder.FieldNames(), sortBy) {
 		return &map[string]string{
 			sortBy: strings.ToUpper(sortOrder),
 		}
@@ -607,7 +624,7 @@ func (s *DbTaskStore) CalculateTaskRankStatus(ctx context.Context, taskId uuid.U
 				},
 			},
 			&map[string]string{
-				"order": "ASC",
+				"rank": "ASC",
 			},
 			types.Pointer(1),
 			nil,
@@ -634,7 +651,7 @@ func (s *DbTaskStore) CalculateTaskRankStatus(ctx context.Context, taskId uuid.U
 			},
 		},
 		&map[string]string{
-			"order": "ASC",
+			"rank": "ASC",
 		},
 		types.Pointer(1),
 		types.Pointer(int(position)),
@@ -663,7 +680,7 @@ func (s *DbTaskStore) CalculateTaskRankStatus(ctx context.Context, taskId uuid.U
 				},
 			},
 			&map[string]string{
-				"order": "ASC",
+				"rank": "ASC",
 			},
 			types.Pointer(1),
 			types.Pointer(int(position-1)),
@@ -689,7 +706,7 @@ func (s *DbTaskStore) CalculateTaskRankStatus(ctx context.Context, taskId uuid.U
 			},
 		},
 		&map[string]string{
-			"order": "ASC",
+			"rank": "ASC",
 		},
 		types.Pointer(1),
 		types.Pointer(int(position+1)),
@@ -706,7 +723,7 @@ func (s *DbTaskStore) CalculateTaskRankStatus(ctx context.Context, taskId uuid.U
 }
 
 func (s *DbTaskStore) UpdateTaskProjectUpdateDate(ctx context.Context, taskProjectID uuid.UUID) error {
-	q := squirrel.Update("task_projects").
+	q := squirrel.Update("task.task_projects").
 		Where("id = ?", taskProjectID).
 		Set("updated_at", time.Now())
 
@@ -771,7 +788,7 @@ WITH project_stats AS (
         COUNT(*) FILTER (
             WHERE tp.status = 'done'
         ) as completed_projects
-    FROM task_projects tp
+    FROM task.task_projects tp
     WHERE tp.team_id = $1
 ),
 task_stats AS (
@@ -779,7 +796,7 @@ task_stats AS (
         COUNT(*) FILTER (
             WHERE t.status = 'done'
         ) as completed_tasks
-    FROM tasks t
+    FROM task.tasks t
     WHERE t.team_id = $1
 )
 SELECT ps.total_projects,

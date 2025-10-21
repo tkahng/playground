@@ -5,8 +5,8 @@ import (
 	"errors"
 
 	"github.com/tkahng/playground/internal/database"
+	"github.com/tkahng/playground/internal/database/repository"
 	"github.com/tkahng/playground/internal/models"
-	"github.com/tkahng/playground/internal/repository"
 	"github.com/tkahng/playground/internal/tools/types"
 )
 
@@ -29,6 +29,12 @@ type UserReactionStore interface {
 
 type DbUserReactionStore struct {
 	db database.Dbx
+}
+
+func (d DbUserReactionStore) WithTx(db database.Dbx) *DbUserReactionStore {
+	return &DbUserReactionStore{
+		db: db,
+	}
 }
 
 // GetLastReaction implements UserReactionStore.
@@ -67,7 +73,7 @@ func (d *DbUserReactionStore) CountByCountry(ctx context.Context, filter *UserRe
 	limit, _ := filter.LimitOffset()
 	const query = `
 	SELECT country, COUNT(*) AS total_reactions
-	FROM public.user_reactions
+	FROM sayhello.user_reactions
 	WHERE country IS NOT NULL
 	GROUP BY country
 	ORDER BY total_reactions DESC

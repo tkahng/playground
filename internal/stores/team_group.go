@@ -7,10 +7,9 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/tkahng/playground/internal/database"
+	"github.com/tkahng/playground/internal/database/repository"
 	"github.com/tkahng/playground/internal/models"
-	"github.com/tkahng/playground/internal/repository"
 	"github.com/tkahng/playground/internal/tools/mapper"
-	"github.com/tkahng/playground/internal/tools/utils"
 )
 
 type TeamFilter struct {
@@ -188,6 +187,9 @@ func (s *DbTeamGroupStore) CreateTeam(ctx context.Context, name string, slug str
 }
 
 func (s *DbTeamGroupStore) ListTeams(ctx context.Context, params *TeamFilter) ([]*models.Team, error) {
+	if params == nil {
+		params = &TeamFilter{}
+	}
 	where := s.filter(params)
 	limit, offset := params.LimitOffset()
 	sort := s.sort(params)
@@ -211,7 +213,7 @@ func (s *DbTeamGroupStore) sort(params *TeamFilter) *map[string]string {
 	}
 	order := make(map[string]string)
 	if params.SortBy != "" {
-		if slices.Contains(repository.TeamBuilder.ColumnNames(), utils.Quote(params.SortBy)) {
+		if slices.Contains(repository.TeamBuilder.FieldNames(), params.SortBy) {
 			order[params.SortBy] = params.SortOrder
 		}
 	}
@@ -347,7 +349,7 @@ func (s *DbTeamGroupStore) CheckTeamSlug(ctx context.Context, slug string) (bool
 // 	if params.SortBy != "" && params.SortOrder != "" {
 // 		if params.SortBy == "team_members.last_selected_at" {
 // 			qs = qs.OrderBy("team_members.last_selected_at " + strings.ToUpper(params.SortOrder))
-// 		} else if slices.Contains(repository.TeamBuilder.ColumnNames(), utils.Quote(params.SortBy)) {
+// 		} else if slices.Contains(repository.TeamBuilder.FieldNames(), params.SortBy) {
 // 			qs = qs.OrderBy(params.SortBy + " " + strings.ToUpper(params.SortOrder))
 // 		}
 // 	} else {

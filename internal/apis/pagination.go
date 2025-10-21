@@ -3,7 +3,7 @@ package apis
 import (
 	"math"
 
-	"github.com/tkahng/playground/internal/repository"
+	"github.com/tkahng/playground/internal/database/repository"
 )
 
 type SortParams struct {

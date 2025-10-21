@@ -1,6 +1,10 @@
 package stores
 
-import "github.com/tkahng/playground/internal/database"
+import (
+	"context"
+
+	"github.com/tkahng/playground/internal/database"
+)
 
 var _ StorageAdapterInterface = (*StorageAdapter)(nil)
 
@@ -22,7 +26,8 @@ type StorageAdapterInterface interface {
 	Task() DbTaskStoreInterface
 	Job() JobStore
 	// WithTx(tx database.Dbx) *StorageAdapter
-	RunInTx(fn func(tx StorageAdapterInterface) error) error
+	RunInTxCtx(ctx context.Context, fn func(txCtx context.Context) error) error
+	RunInTx(ctx context.Context, fn func(tx StorageAdapterInterface) error) error
 }
 type StorageAdapter struct {
 	db             database.Dbx
@@ -77,29 +82,35 @@ func (s *StorageAdapter) Price() DbPriceStoreInterface {
 func (s *StorageAdapter) Product() DbProductStoreInterface {
 	return s.product
 }
-func (s *StorageAdapter) WithTx(tx database.Dbx) *StorageAdapter {
-	return &StorageAdapter{
-		db:             tx,
-		user:           s.user.WithTx(tx),
-		userAccount:    s.userAccount.WithTx(tx),
-		token:          s.token.WithTx(tx),
-		teamGroup:      s.teamGroup.WithTx(tx),
-		teamMember:     s.teamMember.WithTx(tx),
-		teamInvitation: s.teamInvitation.WithTx(tx),
-		customer:       s.customer.WithTx(tx),
-		price:          s.price.WithTx(tx),
-		product:        s.product.WithTx(tx),
-		subscription:   s.subscription.WithTx(tx),
-		rbac:           s.rbac.WithTx(tx),
-	}
-}
 
 // RunInTx implements StorageAdapterInterface.
-func (s *StorageAdapter) RunInTx(fn func(tx StorageAdapterInterface) error) error {
-	return s.db.RunInTx(func(d database.Dbx) error {
-		tx := s.WithTx(d)
+func (s *StorageAdapter) RunInTx(ctx context.Context, fn func(tx StorageAdapterInterface) error) error {
+	return s.db.RunInTx(ctx, func(db database.Dbx) error {
+		tx := &StorageAdapter{
+			db:             db,
+			user:           s.user.WithTx(db),
+			userAccount:    s.userAccount.WithTx(db),
+			token:          s.token.WithTx(db),
+			teamGroup:      s.teamGroup.WithTx(db),
+			teamMember:     s.teamMember.WithTx(db),
+			teamInvitation: s.teamInvitation.WithTx(db),
+			customer:       s.customer.WithTx(db),
+			price:          s.price.WithTx(db),
+			product:        s.product.WithTx(db),
+			subscription:   s.subscription.WithTx(db),
+			rbac:           s.rbac.WithTx(db),
+			task:           s.task.WithTx(db),
+			media:          s.media.WithTx(db),
+			notification:   s.notification.WithTx(db),
+			job:            s.job.WithTx(db),
+			userReaction:   s.userReaction.WithTx(db),
+		}
 		return fn(tx)
 	})
+}
+
+func (s *StorageAdapter) RunInTxCtx(ctx context.Context, fn func(txCtx context.Context) error) error {
+	return s.db.RunInTxCtx(ctx, fn)
 }
 
 func (s *StorageAdapter) Rbac() DbRbacStoreInterface {

@@ -7,7 +7,7 @@ import (
 )
 
 type Token struct {
-	_          struct{}   `db:"tokens" json:"-"`
+	_          struct{}   `db:"tokens" schema:"auth" json:"-"`
 	ID         uuid.UUID  `db:"id" json:"id"`
 	Type       TokenTypes `db:"type" json:"type"`
 	UserID     *uuid.UUID `db:"user_id" json:"user_id"`
@@ -17,7 +17,7 @@ type Token struct {
 	Token      string     `db:"token" json:"token"`
 	CreatedAt  time.Time  `db:"created_at" json:"created_at"`
 	UpdatedAt  time.Time  `db:"updated_at" json:"updated_at"`
-	User       *User      `db:"users" src:"user_id" dest:"id" table:"users" json:"user,omitempty"`
+	User       *User      `db:"users" src:"user_id" dest:"id" table:"auth.users" json:"user,omitempty"`
 }
 
 type TokenTypes string
@@ -34,7 +34,7 @@ const (
 )
 
 type Medium struct {
-	_                struct{}   `db:"media" json:"-"`
+	_                struct{}   `db:"media" schema:"storage" json:"-"`
 	ID               uuid.UUID  `db:"id" json:"id"`
 	UserID           *uuid.UUID `db:"user_id" json:"user_id"`
 	Disk             string     `db:"disk" json:"disk"`
@@ -46,11 +46,11 @@ type Medium struct {
 	Size             int64      `db:"size" json:"size"`
 	CreatedAt        time.Time  `db:"created_at" json:"created_at"`
 	UpdatedAt        time.Time  `db:"updated_at" json:"updated_at"`
-	User             *User      `db:"users" src:"user_id" dest:"id" table:"users" json:"user,omitempty"`
+	User             *User      `db:"users" src:"user_id" dest:"id" table:"auth.users" json:"user,omitempty"`
 }
 
 type AiUsage struct {
-	_                struct{}  `db:"ai_usages" json:"-"`
+	_                struct{}  `db:"ai_usages" schema:"app" json:"-"`
 	ID               uuid.UUID `db:"id,pk" json:"id"`
 	UserID           uuid.UUID `db:"user_id" json:"user_id"`
 	PromptTokens     int64     `db:"prompt_tokens" json:"prompt_tokens"`
@@ -58,5 +58,5 @@ type AiUsage struct {
 	TotalTokens      int64     `db:"total_tokens" json:"total_tokens"`
 	CreatedAt        time.Time `db:"created_at" json:"created_at"`
 	UpdatedAt        time.Time `db:"updated_at" json:"updated_at"`
-	User             *User     `db:"user" src:"user_id" dest:"id" table:"users" json:"user,omitempty"`
+	User             *User     `db:"user" src:"user_id" dest:"id" table:"auth.users" json:"user,omitempty"`
 }

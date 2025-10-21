@@ -8,8 +8,8 @@ import (
 	"github.com/Masterminds/squirrel"
 	"github.com/stripe/stripe-go/v82"
 	"github.com/tkahng/playground/internal/database"
+	"github.com/tkahng/playground/internal/database/repository"
 	"github.com/tkahng/playground/internal/models"
-	"github.com/tkahng/playground/internal/repository"
 	"github.com/tkahng/playground/internal/tools/mapper"
 	"github.com/tkahng/playground/internal/tools/types"
 	"github.com/tkahng/playground/internal/tools/utils"
@@ -35,8 +35,8 @@ func (s *DbProductStore) WithTx(tx database.Dbx) *DbProductStore {
 }
 
 func (s *DbProductStore) FindProduct(ctx context.Context, filter *StripeProductFilter) (*models.StripeProduct, error) {
-	q := squirrel.Select("stripe_products.*").
-		From("stripe_products")
+	q := squirrel.Select("billing.stripe_products.*").
+		From("billing.stripe_products")
 
 	q = s.listProductFilterFuncQuery(q, filter)
 	data, err := database.QueryWithBuilder[*models.StripeProduct](ctx, s.db, q.Limit(1).PlaceholderFormat(squirrel.Dollar))
@@ -50,8 +50,8 @@ func (s *DbProductStore) FindProduct(ctx context.Context, filter *StripeProductF
 }
 
 func (s *DbProductStore) ListProducts(ctx context.Context, input *StripeProductFilter) ([]*models.StripeProduct, error) {
-	q := squirrel.Select("stripe_products.*").
-		From("stripe_products")
+	q := squirrel.Select("billing.stripe_products.*").
+		From("billing.stripe_products")
 
 	q = queryPagination(q, input)
 	q = s.listProductFilterFuncQuery(q, input)
@@ -65,7 +65,7 @@ func (s *DbProductStore) ListProducts(ctx context.Context, input *StripeProductF
 
 func (s *DbProductStore) CountProducts(ctx context.Context, filter *StripeProductFilter) (int64, error) {
 	q := squirrel.Select("COUNT(stripe_products.*)").
-		From("stripe_products")
+		From("billing.stripe_products")
 
 	q = s.listProductFilterFuncQuery(q, filter)
 	data, err := database.QueryWithBuilder[database.CountOutput](ctx, s.db, q.PlaceholderFormat(squirrel.Dollar))
@@ -94,7 +94,7 @@ func (s *DbProductStore) FindProductById(ctx context.Context, productId string) 
 }
 func (s *DbProductStore) UpsertProduct(ctx context.Context, product *models.StripeProduct) error {
 	dbx := s.db
-	q := squirrel.Insert("stripe_products").
+	q := squirrel.Insert("billing.stripe_products").
 		Columns(
 			"id",
 			"active",

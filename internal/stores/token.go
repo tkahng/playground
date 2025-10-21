@@ -7,8 +7,8 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/tkahng/playground/internal/database"
+	"github.com/tkahng/playground/internal/database/repository"
 	"github.com/tkahng/playground/internal/models"
-	"github.com/tkahng/playground/internal/repository"
 	"github.com/tkahng/playground/internal/shared"
 )
 
@@ -107,7 +107,7 @@ func (a *DbTokenStore) SaveToken(ctx context.Context, token *CreateTokenDTO) err
 }
 
 func (a *DbTokenStore) DeleteToken(ctx context.Context, token string) error {
-	_, err := repository.Token.DeleteReturn(ctx, a.db, &map[string]any{
+	_, err := repository.Token.Delete(ctx, a.db, &map[string]any{
 		"token": map[string]any{
 			"_eq": token,
 		},

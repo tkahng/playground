@@ -8,11 +8,10 @@ import (
 	"github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
 	"github.com/tkahng/playground/internal/database"
+	"github.com/tkahng/playground/internal/database/repository"
 	"github.com/tkahng/playground/internal/models"
-	"github.com/tkahng/playground/internal/repository"
 	"github.com/tkahng/playground/internal/shared"
 	"github.com/tkahng/playground/internal/tools/mapper"
-	"github.com/tkahng/playground/internal/tools/utils"
 )
 
 type PermissionFilter struct {
@@ -28,12 +27,12 @@ type PermissionFilter struct {
 }
 
 func (p *DbRbacStore) ListPermissions(ctx context.Context, input *PermissionFilter) ([]*models.Permission, error) {
-	q := squirrel.Select("permissions.*").From("permissions")
+	q := squirrel.Select("auth.permissions.*").From("auth.permissions")
 
 	// q = ViewApplyPagination(q, pageInput)
 	q = ListPermissionsFilterFunc(q, input)
 	q = queryPagination(q, input)
-	if input.SortBy != "" && slices.Contains(repository.PermissionBuilder.ColumnNames(), utils.Quote(input.SortBy)) {
+	if input.SortBy != "" && slices.Contains(repository.PermissionBuilder.FieldNames(), input.SortBy) {
 		q = q.OrderBy(input.SortBy + " " + strings.ToUpper(input.SortOrder))
 	}
 	data, err := database.QueryWithBuilder[*models.Permission](ctx, p.db, q.PlaceholderFormat(squirrel.Dollar))
@@ -45,7 +44,7 @@ func (p *DbRbacStore) ListPermissions(ctx context.Context, input *PermissionFilt
 
 // CountPermissions implements AdminCrudActions.
 func (p *DbRbacStore) CountPermissions(ctx context.Context, filter *PermissionFilter) (int64, error) {
-	q := squirrel.Select("COUNT(permissions.*)").From("permissions")
+	q := squirrel.Select("COUNT(auth.permissions.*)").From("auth.permissions")
 
 	// q = ViewApplyPagination(q, pageInput)
 	q = ListPermissionsFilterFunc(q, filter)
@@ -68,44 +67,44 @@ func ListPermissionsFilterFunc(sq squirrel.SelectBuilder, filter *PermissionFilt
 	if filter.Q != "" {
 		sq = sq.Where(
 			squirrel.Or{
-				squirrel.ILike{"name": "%" + filter.Q + "%"},
-				squirrel.ILike{"description": "%" + filter.Q + "%"},
+				squirrel.ILike{"auth.permissions.name": "%" + filter.Q + "%"},
+				squirrel.ILike{"auth.permissions.description": "%" + filter.Q + "%"},
 			},
 		)
 
 	}
 	if len(filter.Names) > 0 {
-		sq = sq.Where(squirrel.Eq{"name": filter.Names})
+		sq = sq.Where(squirrel.Eq{"auth.permissions.name": filter.Names})
 	}
 	if len(filter.Ids) > 0 {
-		sq = sq.Where(squirrel.Eq{"id": filter.Ids})
+		sq = sq.Where(squirrel.Eq{"auth.permissions.id": filter.Ids})
 	}
 
 	if filter.RoleId != uuid.Nil {
 		if filter.RoleReverse {
 			sq = sq.LeftJoin(
-				"role_permissions"+" on "+"permissions.id"+" = "+"role_permissions"+"."+"permission_id"+" and "+"role_permissions"+"."+"role_id"+" = ?",
+				"auth.role_permissions"+" on "+"auth.permissions.id"+" = "+"auth.role_permissions"+"."+"permission_id"+" and "+"auth.role_permissions"+"."+"role_id"+" = ?",
 				filter.RoleId,
 			)
-			sq = sq.Where("role_permissions.permission_id is null")
+			sq = sq.Where("auth.role_permissions.permission_id is null")
 
 		} else {
-			sq = sq.Join("role_permissions on permissions.id = role_permissions.permission_id and role_permissions.role_id = ?", filter.RoleId).
-				Where(squirrel.Eq{"role_permissions.role_id": filter.RoleId})
+			sq = sq.Join("auth.role_permissions on auth.permissions.id = auth.role_permissions.permission_id and auth.role_permissions.role_id = ?", filter.RoleId).
+				Where(squirrel.Eq{"auth.role_permissions.role_id": filter.RoleId})
 
 		}
 	}
 	if filter.ProductID != "" {
 		if filter.ProductReverse {
 			sq = sq.LeftJoin(
-				"product_permissions"+" on "+"permissions.id"+" = "+"product_permissions"+"."+"permission_id"+" and "+"product_permissions"+"."+"product_id"+" = ?",
+				"billing.product_permissions"+" on "+"auth.permissions.id"+" = "+"billing.product_permissions"+"."+"permission_id"+" and "+"billing.product_permissions"+"."+"product_id"+" = ?",
 				filter.ProductID,
 			)
-			sq = sq.Where("product_permissions.permission_id is null")
+			sq = sq.Where("billing.product_permissions.permission_id is null")
 
 		} else {
-			sq = sq.Join("product_permissions on permissions.id = product_permissions.permission_id and product_permissions.product_id = ?", filter.ProductID).
-				Where(squirrel.Eq{"product_permissions.product_id": filter.ProductID})
+			sq = sq.Join("billing.product_permissions on auth.permissions.id = billing.product_permissions.permission_id and billing.product_permissions.product_id = ?", filter.ProductID).
+				Where(squirrel.Eq{"billing.product_permissions.product_id": filter.ProductID})
 
 		}
 	}
@@ -113,7 +112,7 @@ func ListPermissionsFilterFunc(sq squirrel.SelectBuilder, filter *PermissionFilt
 }
 
 func (p *DbRbacStore) FindPermission(ctx context.Context, filter *PermissionFilter) (*models.Permission, error) {
-	q := squirrel.Select("permissions.*").From("permissions")
+	q := squirrel.Select("auth.permissions.*").From("auth.permissions")
 	q = ListPermissionsFilterFunc(q, filter)
 	q = q.Limit(1)
 	data, err := database.QueryWithBuilder[*models.Permission](ctx, p.db, q.PlaceholderFormat(squirrel.Dollar))
@@ -241,6 +240,27 @@ func (p *DbRbacStore) UpdatePermission(ctx context.Context, id uuid.UUID, roledt
 	return nil
 }
 
+func (p *DbRbacStore) FindRolePermissionIds(ctx context.Context, roleId uuid.UUID) ([]uuid.UUID, error) {
+	data, err := repository.RolePermission.GetWithOptions(
+		ctx,
+		p.db,
+		repository.WithWhere(&map[string]any{
+			"role_id": map[string]any{
+				"_eq": roleId,
+			},
+		}))
+
+	if err != nil {
+		return nil, err
+	}
+	var ids []uuid.UUID
+	for _, rp := range data {
+		ids = append(ids, rp.PermissionID)
+	}
+	return ids, nil
+
+}
+
 func (p *DbRbacStore) CreateRolePermissions(ctx context.Context, roleId uuid.UUID, permissionIds ...uuid.UUID) error {
 	var permissions []models.RolePermission
 	for _, perm := range permissionIds {
@@ -258,7 +278,7 @@ func (p *DbRbacStore) CreateRolePermissions(ctx context.Context, roleId uuid.UUI
 
 func (p *DbRbacStore) LoadRolePermissions(ctx context.Context, roleIds ...uuid.UUID) ([][]*models.Permission, error) {
 	const (
-		GetRolePermissionsQuery = `
+		GetRolePermissionsQuery string = `
 		SELECT rp.role_id as key,
 			COALESCE(
 					json_agg(
@@ -279,8 +299,8 @@ func (p *DbRbacStore) LoadRolePermissions(ctx context.Context, roleIds ...uuid.U
 					),
 					'[]'
 			) AS data
-	FROM public.role_permissions rp
-			LEFT JOIN public.permissions p ON p.id = rp.permission_id
+	FROM auth.role_permissions rp
+			LEFT JOIN auth.permissions p ON p.id = rp.permission_id
 			WHERE rp.role_id = ANY (
 					$1::uuid []
 			)

@@ -7,14 +7,14 @@ import (
 )
 
 type Role struct {
-	_           struct{}      `db:"roles" json:"-"`
+	_           struct{}      `db:"roles" schema:"auth" json:"-"`
 	ID          uuid.UUID     `db:"id" json:"id"`
 	Name        string        `db:"name" json:"name"`
 	Description *string       `db:"description" json:"description,omitempty"`
 	CreatedAt   time.Time     `db:"created_at" json:"created_at"`
 	UpdatedAt   time.Time     `db:"updated_at" json:"updated_at"`
-	Permissions []*Permission `db:"permissions" src:"id" dest:"role_id" table:"permissions" through:"role_permissions,permission_id,id" json:"permissions,omitempty"`
-	Users       []*User       `db:"users" src:"id" dest:"role_id" table:"users" through:"user_roles,user_id,id" json:"users,omitempty"`
+	Permissions []*Permission `db:"permissions" src:"id" dest:"id" table:"auth.permissions" through:"auth.role_permissions" through_src:"role_id" through_dest:"permission_id" json:"permissions,omitempty"`
+	Users       []*User       `db:"users" src:"id" dest:"id" table:"auth.users" through:"auth.user_roles" through_src:"role_id" through_dest:"user_id" json:"users,omitempty"`
 }
 
 type roleTable struct {
@@ -38,15 +38,15 @@ var RoleTable = roleTable{
 }
 
 type Permission struct {
-	_           struct{}         `db:"permissions" json:"-"`
+	_           struct{}         `db:"permissions" schema:"auth" json:"-"`
 	ID          uuid.UUID        `db:"id" json:"id"`
 	Name        string           `db:"name" json:"name"`
 	Description *string          `db:"description" json:"description,omitempty"`
 	CreatedAt   time.Time        `db:"created_at" json:"created_at"`
 	UpdatedAt   time.Time        `db:"updated_at" json:"updated_at"`
-	Roles       []*Role          `db:"roles" src:"id" dest:"permission_id" table:"roles" through:"role_permissions,role_id,id" json:"roles,omitempty"`
-	Users       []*User          `db:"users" src:"id" dest:"permission_id" table:"users" through:"user_permissions,user_id,id" json:"users,omitempty"`
-	Products    []*StripeProduct `db:"products" src:"id" dest:"permission_id" table:"stripe_products" through:"product_permissions,product_id,id" json:"products,omitempty"`
+	Roles       []*Role          `db:"roles" src:"id" dest:"id" table:"auth.roles" through:"auth.role_permissions" through_src:"permission_id" through_dest:"role_id" json:"roles,omitempty"`
+	Users       []*User          `db:"users" src:"id" dest:"id" table:"auth.users" through:"auth.user_permissions" through_src:"permission_id" through_dest:"user_id" json:"users,omitempty"`
+	Products    []*StripeProduct `db:"products" src:"id" dest:"id" table:"billing.stripe_products" through:"billing.product_permissions" through_src:"permission_id" through_dest:"product_id" json:"products,omitempty"`
 }
 
 type permissionTable struct {
@@ -91,30 +91,19 @@ type PermissionSource struct {
 }
 
 type UserRole struct {
-	_      struct{}  `db:"user_roles" json:"-"`
+	_      struct{}  `db:"user_roles" schema:"auth" json:"-"`
 	UserID uuid.UUID `db:"user_id" json:"user_id"`
 	RoleID uuid.UUID `db:"role_id" json:"role_id"`
 }
-type ProductRole struct {
-	_         struct{}  `db:"product_roles" json:"-"`
-	ProductID string    `db:"product_id" json:"product_id"`
-	RoleID    uuid.UUID `db:"role_id" json:"role_id"`
-}
 
 type UserPermission struct {
-	_            struct{}  `db:"user_permissions" json:"-"`
+	_            struct{}  `db:"user_permissions" schema:"auth" json:"-"`
 	UserID       uuid.UUID `db:"user_id" json:"user_id"`
 	PermissionID uuid.UUID `db:"permission_id" json:"permission_id"`
 }
 
 type RolePermission struct {
-	_            struct{}  `db:"role_permissions" json:"-"`
+	_            struct{}  `db:"role_permissions" schema:"auth" json:"-"`
 	RoleID       uuid.UUID `db:"role_id" json:"role_id"`
-	PermissionID uuid.UUID `db:"permission_id" json:"permission_id"`
-}
-
-type ProductPermission struct {
-	_            struct{}  `db:"product_permissions" json:"-"`
-	ProductID    string    `db:"product_id" json:"product_id"`
 	PermissionID uuid.UUID `db:"permission_id" json:"permission_id"`
 }

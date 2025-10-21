@@ -9,10 +9,9 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/tkahng/playground/internal/database"
+	"github.com/tkahng/playground/internal/database/repository"
 	"github.com/tkahng/playground/internal/models"
-	"github.com/tkahng/playground/internal/repository"
 	"github.com/tkahng/playground/internal/tools/types"
-	"github.com/tkahng/playground/internal/tools/utils"
 )
 
 type JobFilter struct {
@@ -93,7 +92,7 @@ func (d *DbJobStore) filter(filter *JobFilter) *map[string]any {
 
 func (d *DbJobStore) sort(filter *JobFilter) *map[string]string {
 	sortBy, sortOrder := filter.Sort()
-	if slices.Contains(repository.JobBuilder.ColumnNames(), utils.Quote(sortBy)) {
+	if slices.Contains(repository.JobBuilder.FieldNames(), sortBy) {
 		return &map[string]string{
 			sortBy: strings.ToUpper(sortOrder),
 		}
@@ -144,7 +143,7 @@ func (d *DbJobStore) UpdateJob(ctx context.Context, job *models.JobRow) (*models
 	return repository.Job.PutOne(ctx, d.db, job)
 }
 
-func (d *DbJobStore) WithTx(db database.Dbx) JobStore {
+func (d *DbJobStore) WithTx(db database.Dbx) *DbJobStore {
 	return &DbJobStore{
 		db: db,
 	}

@@ -26,7 +26,8 @@ var stripeSyncCmd = &cobra.Command{
 		dbconf := conf.GetConfig[conf.DBConfig]()
 		stripeconfig := conf.GetConfig[conf.StripeConfig]()
 
-		dbx := database.CreateQueriesContext(ctx, dbconf.GetDatabaseUrl())
+		dbx := database.CreateNewQueriesContext(ctx, dbconf.GetDatabaseUrl())
+		defer dbx.Close()
 		adapter := stores.NewStorageAdapter(dbx)
 		client := services.NewPaymentClient(stripeconfig)
 		service := services.NewPaymentService(client, adapter)
@@ -43,7 +44,8 @@ var stripeRolesCmd = &cobra.Command{
 		dbconf := conf.GetConfig[conf.DBConfig]()
 		stripeconfig := conf.GetConfig[conf.StripeConfig]()
 
-		dbx := database.CreateQueriesContext(ctx, dbconf.GetDatabaseUrl())
+		dbx := database.CreateNewQueriesContext(ctx, dbconf.GetDatabaseUrl())
+		defer dbx.Close()
 		adapter := stores.NewStorageAdapter(dbx)
 		client := services.NewPaymentClient(stripeconfig)
 		service := services.NewPaymentService(client, adapter)

@@ -5,12 +5,14 @@ http:
       service: backend
       entryPoints:
         - web
+      priority: 100 # Add this
 
     frontend:
       rule: "PathPrefix(`/`)"
       service: frontend
       entryPoints:
         - web
+      priority: 1 # Add this
 
   services:
     backend:

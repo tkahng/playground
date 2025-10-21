@@ -35,7 +35,9 @@ var seedRolesCmd = &cobra.Command{
 		ctx := cmd.Context()
 		conf := conf.GetConfig[conf.DBConfig]()
 
-		dbx := database.CreateQueriesContext(ctx, conf.GetDatabaseUrl())
+		dbx := database.CreateNewQueriesContext(ctx, conf.GetDatabaseUrl())
+		defer dbx.Close()
+
 		rbacStore := stores.NewDbRBACStore(dbx)
 		err := rbacStore.EnsureRoleAndPermissions(ctx, "superuser", "superuser", "advanced", "pro", "basic")
 		if err != nil {
@@ -96,6 +98,7 @@ var seedUserCmd = &cobra.Command{
 		ctx := cmd.Context()
 		cfg := conf.AppConfigGetter()
 		app := core.NewApp(cfg)
+		defer app.Close()
 		params := &services.AuthenticationInput{
 			Email:           email,
 			Password:        &password,
@@ -129,6 +132,7 @@ var seedTeam = &cobra.Command{
 		ctx := cmd.Context()
 		cfg := conf.AppConfigGetter()
 		app := core.NewApp(cfg)
+		defer app.Close()
 		user, err := app.Adapter().User().FindUser(ctx, &stores.UserFilter{
 			Emails: []string{email},
 		})

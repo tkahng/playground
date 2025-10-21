@@ -4,45 +4,22 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"sync"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-var (
-	pgInstance *Queries
-	pgOnce     sync.Once
-)
-
-func newQueries(ctx context.Context, connString string) (*Queries, error) {
-	pgOnce.Do(func() {
-		pool, err := getDbPool(ctx, connString)
-		if err != nil {
-			slog.Error("error creating pool.", "error", err)
-		}
-		pgInstance = &Queries{
-			db: pool,
-		}
-	})
-	if pgInstance == nil {
-		return nil, fmt.Errorf("error at error: %w", nil)
-	}
-	return pgInstance, nil
-
-}
-func CreateQueriesContext(ctx context.Context, connString string) *Queries {
-	pool, err := newQueries(ctx, connString)
+// CreateNewQueriesContext creates a new pool.
+func CreateNewQueriesContext(ctx context.Context, connString string) *Queries {
+	pool, err := getDbPool(ctx, connString)
 	if err != nil {
-		slog.Error("error creating pool.", "error", err)
-		panic(fmt.Errorf("error creating pool: %w", err))
+		slog.Error("CreateNewQueriesContext: error creating pool.", "error", err)
+		panic(err.Error())
 	}
-	return pool
-}
-
-func CreateQueries(connString string) *Queries {
-	return CreateQueriesContext(context.Background(), connString)
+	return &Queries{
+		db: pool,
+	}
 }
 
 func getDbPool(ctx context.Context, connString string) (*pgxpool.Pool, error) {
@@ -98,9 +75,9 @@ func getCustomDataTypes(ctx context.Context, pool *pgxpool.Pool) ([]*pgtype.Type
 	}
 
 	dataTypeNames := []string{
-		"providers",
+		"auth.providers",
 		// An underscore prefix is an array type in pgtypes.
-		"_providers",
+		"auth._providers",
 	}
 
 	var typesToRegister []*pgtype.Type
