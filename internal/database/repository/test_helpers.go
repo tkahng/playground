@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"slices"
 	"testing"
 
 	"github.com/google/uuid"
@@ -163,4 +164,30 @@ func CreateRolesAndPermissions(t testing.TB, ctx context.Context, db database.Db
 			MustCreateOneCtx(t, ctx, RolePermission, db, &models.RolePermission{PermissionID: permission.ID, RoleID: role.ID})
 		}
 	}
+}
+
+func AssignRoleToUser(t testing.TB, ctx context.Context, db database.Dbx, userId uuid.UUID, roleNames ...string) {
+	t.Helper()
+	userRoles := MustFindWithOptionsCtx(t, ctx, UserRole, db, WithWhere(&map[string]any{
+		"user_id": map[string]any{
+			"_eq": userId,
+		},
+	}))
+	var userRoleIds []uuid.UUID
+	for _, userRole := range userRoles {
+		userRoleIds = append(userRoleIds, userRole.RoleID)
+	}
+	var userRoleArgs []models.UserRole
+	for _, roleName := range roleNames {
+		role := MustFindRoleByName(t, ctx, db, roleName)
+		if slices.Contains(userRoleIds, role.ID) {
+			continue
+		}
+		userRoleArgs = append(userRoleArgs, models.UserRole{
+			UserID: userId,
+			RoleID: role.ID,
+		})
+	}
+	t.Helper()
+	_ = MustCreateManyCtx(t, ctx, UserRole, db, userRoleArgs)
 }
