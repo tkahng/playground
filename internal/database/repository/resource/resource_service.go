@@ -94,10 +94,10 @@ func (p *RepositoryResourceService[M, K, F]) sort(filter *F) *map[string]string 
 				sortBy: sortOrder,
 			}
 		} else {
-			slog.Info("sort by field not found in repository columns", "sortBy", sortBy, "sortOrder", sortOrder, "columns", p.repository.Builder().FieldNames())
+			slog.Warn("sort by field not found in repository columns", "sortBy", sortBy, "sortOrder", sortOrder, "columns", p.repository.Builder().FieldNames())
 		}
 	} else {
-		slog.Info("filter does not implement Sortable, returning nil")
+		slog.Warn("filter does not implement Sortable, returning nil")
 	}
 	return nil // default no sorting
 }
