@@ -136,9 +136,10 @@ func CreateTeamMemberWithOptions(t testing.TB, app core.App, teamID uuid.UUID, u
 
 type UserOptionFunc func(opt *CreateUserOption)
 type CreateUserOption struct {
-	user    *models.User
-	account *models.UserAccount
-	perms   []string
+	user      *models.User
+	account   *models.UserAccount
+	perms     []string
+	roleNames []string
 }
 
 func UserWithEmail(email string) UserOptionFunc {
@@ -184,6 +185,11 @@ func UserWithVerified(emailVerifiedAt *time.Time) UserOptionFunc {
 func UserWithPermission(perms ...string) UserOptionFunc {
 	return func(opt *CreateUserOption) {
 		opt.perms = perms
+	}
+}
+func UserWithRoles(roleNames ...string) UserOptionFunc {
+	return func(opt *CreateUserOption) {
+		opt.roleNames = roleNames
 	}
 }
 
@@ -232,15 +238,30 @@ func CreateUserWithOptions(t testing.TB, app core.App, options ...UserOptionFunc
 	}
 	user.Accounts = append(user.Accounts, account)
 	if len(opts.perms) > 0 {
-		perm, err := app.Adapter().Rbac().FindOrCreatePermission(ctx, opts.perms[0])
-		if err != nil {
-			t.Fatalf("FindOrCreatePermission() error = %v", err)
-		}
-		err = app.Adapter().Rbac().CreateUserPermissions(ctx, user.ID, perm.ID)
-		if err != nil {
-			t.Fatalf("CreateUserAccount() error = %v", err)
+		for _, perm := range opts.perms {
+			perm, err := app.Adapter().Rbac().FindOrCreatePermission(ctx, perm)
+			if err != nil {
+				t.Fatalf("FindOrCreatePermission() error = %v", err)
+			}
+			err = app.Adapter().Rbac().CreateUserPermissions(ctx, user.ID, perm.ID)
+			if err != nil {
+				t.Fatalf("CreateUserAccount() error = %v", err)
+			}
 		}
 	}
+	if len(opts.roleNames) > 0 {
+		for _, roleName := range opts.roleNames {
+			role, err := app.Adapter().Rbac().FindOrCreateRole(ctx, roleName)
+			if err != nil {
+				t.Fatalf("FindOrCreatePermission() error = %v", err)
+			}
+			err = app.Adapter().Rbac().CreateUserRoles(ctx, user.ID, role.ID)
+			if err != nil {
+				t.Fatalf("CreateUserAccount() error = %v", err)
+			}
+		}
+	}
+
 	return &models.UserInfo{
 		User: *user,
 	}
