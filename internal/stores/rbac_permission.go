@@ -240,6 +240,27 @@ func (p *DbRbacStore) UpdatePermission(ctx context.Context, id uuid.UUID, roledt
 	return nil
 }
 
+func (p *DbRbacStore) FindRolePermissionIds(ctx context.Context, roleId uuid.UUID) ([]uuid.UUID, error) {
+	data, err := repository.RolePermission.GetWithOptions(
+		ctx,
+		p.db,
+		repository.WithWhere(&map[string]any{
+			"role_id": map[string]any{
+				"_eq": roleId,
+			},
+		}))
+
+	if err != nil {
+		return nil, err
+	}
+	var ids []uuid.UUID
+	for _, rp := range data {
+		ids = append(ids, rp.PermissionID)
+	}
+	return ids, nil
+
+}
+
 func (p *DbRbacStore) CreateRolePermissions(ctx context.Context, roleId uuid.UUID, permissionIds ...uuid.UUID) error {
 	var permissions []models.RolePermission
 	for _, perm := range permissionIds {

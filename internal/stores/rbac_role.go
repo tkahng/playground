@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"slices"
 	"strings"
 
 	"github.com/Masterminds/squirrel"
@@ -177,6 +178,10 @@ func (p *DbRbacStore) EnsureRoleAndPermissions(ctx context.Context, roleName str
 	if err != nil {
 		return err
 	}
+	existingPermissionIds, err := p.FindRolePermissionIds(ctx, role.ID)
+	if err != nil {
+		return err
+	}
 	for _, permissionName := range permissionNames {
 		perm, err := p.FindOrCreatePermission(ctx, permissionName)
 		if err != nil {
@@ -184,6 +189,9 @@ func (p *DbRbacStore) EnsureRoleAndPermissions(ctx context.Context, roleName str
 			continue
 		}
 		if perm == nil {
+			continue
+		}
+		if slices.Contains(existingPermissionIds, perm.ID) {
 			continue
 		}
 		err = p.CreateRolePermissions(ctx, role.ID, perm.ID)
