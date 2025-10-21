@@ -18,9 +18,12 @@ type Migrator interface {
 	CreateAndMigrate() error
 	DumpSchema() error
 	Reset() error
+	// Rollback rolls back the most recent migration
 	Rollback() error
+	// Drop drops the current database (if it exists)
 	Drop() error
 	Status() (int, error)
+	NewMigration(name string) error
 }
 type MigratorConfig struct {
 	DatabaseUrl    string
@@ -43,6 +46,11 @@ func NewMigrator(config *MigratorConfig) Migrator {
 
 type DbmateMigrator struct {
 	dm *dbmate.DB
+}
+
+// NewMigration implements Migrator.
+func (m *DbmateMigrator) NewMigration(name string) error {
+	return m.dm.NewMigration(name)
 }
 
 // CreateAndMigrate implements Migrator.
