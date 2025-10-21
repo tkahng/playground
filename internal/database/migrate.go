@@ -50,7 +50,10 @@ type DbmateMigrator struct {
 
 // NewMigration implements Migrator.
 func (m *DbmateMigrator) NewMigration(name string) error {
-	return m.dm.NewMigration(name)
+	m.dm.MigrationsDir = []string{"./internal/database/migrations"}
+	err := m.dm.NewMigration(name)
+	m.dm.MigrationsDir = []string{"./migrations"}
+	return err
 }
 
 // CreateAndMigrate implements Migrator.
