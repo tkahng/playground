@@ -90,7 +90,7 @@ func TestDbTokenStore_GetTokenByValueTypeExpires(t *testing.T) {
 			}
 			err := store.SaveToken(ctx, tok)
 			assert.NoError(t, err)
-			got, err := store.GetTokenByValueTypeExpires(ctx, tok.Token, tok.Type, time.Now())
+			got, err := store.GetTokenByValueTypeExpires(ctx, tok.Token, tok.Type, time.Now().UTC())
 			assert.NoError(t, err)
 			assert.NotNil(t, got)
 			assert.Equal(t, tok.Token, got.Token)
@@ -107,10 +107,9 @@ func TestDbTokenStore_GetTokenByValueTypeExpires(t *testing.T) {
 			}
 			err := store.SaveToken(ctx, tok)
 			assert.NoError(t, err)
-			got, err := store.GetTokenByValueTypeExpires(ctx, tok.Token, tok.Type, tok.Expires)
-			assert.NoError(t, err)
-			assert.NotNil(t, got)
-			assert.Equal(t, tok.Token, got.Token)
+			got, err := store.GetTokenByValueTypeExpires(ctx, tok.Token, tok.Type, time.Now().UTC())
+			assert.EqualError(t, err, "token not found")
+			assert.Nil(t, got)
 		})
 	})
 }
