@@ -108,7 +108,7 @@ func TestRepositoryPost_TeamInvitation(t *testing.T) {
 				assert.Equal(t, arg.Status, res.Status, "status should be equal.")
 				assert.Equal(t, arg.Email, res.Email, "email should be equal.")
 				assert.Equal(t, arg.Token, res.Token, "token should be equal.")
-				assert.True(t, arg.ExpiresAt.Equal(res.ExpiresAt), "expiresAt should be true.")
+				assert.WithinDuration(t, arg.ExpiresAt, res.ExpiresAt, time.Second, "expiresAt should be equal.")
 				assert.NotEqual(t, arg.ID, res.ID, "ID should not be equal since it is generated on db side, arg will have zero value uuid.UUID")
 			},
 		},
