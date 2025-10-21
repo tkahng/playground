@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/models"
+	"github.com/tkahng/playground/internal/tools/logger"
 	"github.com/tkahng/playground/internal/tools/types"
 )
 
@@ -60,6 +61,7 @@ func PostTestScenarioFunc[T any](t testing.TB, ctx context.Context, scenario *Po
 }
 func TestRepositoryPost_TeamInvitation(t *testing.T) {
 	// t.Parallel()
+	_ = logger.GetDefaultLogger()
 	scenarios := []*PostScenario[models.TeamInvitation]{
 		{
 			Name: "creating 10 unique team invitations from 1 team.",

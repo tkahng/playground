@@ -11,6 +11,7 @@ import (
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/test"
+	"github.com/tkahng/playground/internal/tools/logger"
 	"github.com/tkahng/playground/internal/tools/types"
 )
 
@@ -62,6 +63,7 @@ func PutTestScenarioFunc[T any](t testing.TB, ctx context.Context, scenario *Put
 }
 func TestRepositoryPut_User(t *testing.T) {
 	// t.Parallel()
+	_ = logger.GetDefaultLogger()
 	scenarios := []*PutScenario[models.User]{
 		{
 			Name: "creating 10 unique users from numbers, then updating them",
@@ -341,9 +343,10 @@ func TestRepositoryPut_TeamMember(t *testing.T) {
 }
 func TestRepositoryPut_TeamInvitation(t *testing.T) {
 	// t.Parallel()
+	_ = logger.GetDefaultLogger()
 	scenarios := []*PutScenario[models.TeamInvitation]{
 		{
-			Name: "creating 10 unique team invitations from 1 team.",
+			Name: "creating 10 unique team invitations from 1 team. then updating them",
 			ArgsFunc: func(t testing.TB, ctx context.Context, scenario *PutScenario[models.TeamInvitation]) []models.TeamInvitation {
 				dbx := scenario.Dbx
 				teams := MustCreateOneCtx(t, ctx, Team, dbx, &models.Team{
