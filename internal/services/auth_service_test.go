@@ -41,7 +41,7 @@ package services
 // 			},
 // 		},
 // 	}
-
+//
 // 	testCases := []struct {
 // 		name          string
 // 		token         string
@@ -70,7 +70,7 @@ package services
 // 				mockToken.CreateJwtTokenFunc = func(payload jwt.Claims, signingKey string) (string, error) {
 // 					return "new.valid.token.here", nil
 // 				}
-
+//
 // 				adapter.UserFunc.GetUserInfoFunc = func(ctx context.Context, email string) (*models.UserInfo, error) {
 // 					return &models.UserInfo{
 // 						User: models.User{
@@ -108,16 +108,16 @@ package services
 // 			expectedError: true,
 // 		},
 // 	}
-
+//
 // 	for _, tc := range testCases {
 // 		t.Run(tc.name, func(t *testing.T) {
-
+//
 // 			if tc.setupMocks != nil {
 // 				tc.setupMocks()
 // 			}
-
+//
 // 			result, err := app.HandleRefreshToken(ctx, tc.token)
-
+//
 // 			if tc.expectedError {
 // 				assert.Error(t, err)
 // 				assert.Nil(t, result)
@@ -125,11 +125,12 @@ package services
 // 				assert.NoError(t, err)
 // 				assert.NotNil(t, result)
 // 			}
-
+//
 // 			// mockStorage.AssertExpectations(t)
 // 		})
 // 	}
 // }
+
 // func TestResetPassword(t *testing.T) {
 // 	ctx := context.Background()
 // 	storageDecorators := stores.NewAdapterDecorators()
@@ -138,7 +139,7 @@ package services
 // 		adapter:  storageDecorators,
 // 		password: passwordManager,
 // 	}
-
+//
 // 	testUserId := uuid.New()
 // 	testOldPassword := "oldPassword123"
 // 	testNewPassword := "newPassword123"
@@ -157,7 +158,7 @@ package services
 // 	}
 // 	fmt.Println("testHashedPassword", testHashedPassword)
 // 	fmt.Println("testNewHashedPassword", testNewHashedPassword)
-
+//
 // 	testCases := []struct {
 // 		name          string
 // 		userId        uuid.UUID
@@ -225,28 +226,29 @@ package services
 // 			expectedError: true,
 // 		},
 // 	}
-
+//
 // 	for _, tc := range testCases {
 // 		t.Run(tc.name, func(t *testing.T) {
 // 			// mockStorage.ExpectedCalls = nil
 // 			// mockStorage.Calls = nil
-
+//
 // 			if tc.setupMocks != nil {
 // 				tc.setupMocks()
 // 			}
-
+//
 // 			err := app.ResetPassword(ctx, tc.userId, tc.oldPassword, tc.newPassword)
-
+//
 // 			if tc.expectedError {
 // 				assert.Error(t, err)
 // 			} else {
 // 				assert.NoError(t, err)
 // 			}
-
+//
 // 			// mockStorage.AssertExpectations(t)
 // 		})
 // 	}
 // }
+//
 
 // func TestAuthenticate(t *testing.T) {
 // 	ctx := context.Background()
@@ -255,7 +257,7 @@ package services
 // 	jobService := NewJobServiceDecorator(nil)
 // 	mockToken := NewJwtService()
 // 	mockPassword := NewPasswordServiceDecorator()
-
+//
 // 	settings := conf.NewEnvConfig()
 // 	settings.AppConfig = conf.AppConfig{
 // 		AppUrl:        "http://localhost:8080",
@@ -269,12 +271,12 @@ package services
 // 		config:     settings,
 // 		jobService: jobService,
 // 	}
-
+//
 // 	testUserId := uuid.New()
 // 	testEmail := "test@example.com"
 // 	testPasswordStr := "password123"
 // 	testHashedPassword := "hashedPassword123"
-
+//
 // 	testCases := []struct {
 // 		name          string
 // 		input         *AuthenticationInput
@@ -324,7 +326,7 @@ package services
 // 					return nil // Simulate token saving
 // 				}
 // 				// mockStorage.On("SaveToken", ctx, mock.Anything).Return(nil)
-
+//
 // 			},
 // 			expectedError: false,
 // 			checkMail:     true,
@@ -487,13 +489,13 @@ package services
 // 			// },
 // 		},
 // 	}
-
+//
 // 	for _, tc := range testCases {
 // 		t.Run(tc.name, func(t *testing.T) {
 // 			if tc.setupMocks != nil {
 // 				tc.setupMocks()
 // 			}
-
+//
 // 			result, err := app.Authenticate(ctx, tc.input)
 // 			if tc.expectedError {
 // 				assert.Error(t, err)
@@ -503,9 +505,9 @@ package services
 // 				assert.NotNil(t, result)
 // 			}
 // 			if tc.checkMail {
-
+//
 // 			}
-
+//
 // 		})
 // 	}
 // }
