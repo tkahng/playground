@@ -1,14 +1,4 @@
 services:
-  proxy:
-    image: traefik:v3
-    command:
-      - "--providers.file.directory=/etc/traefik/dynamic"
-      - "--entrypoints.web.address=:4000"
-    ports:
-      - "4000:4000"
-    volumes:
-      - ./traefik:/etc/traefik/dynamic
-
   db:
     image: tkahng/postgres:18
     container_name: database
