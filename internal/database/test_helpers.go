@@ -16,7 +16,8 @@ func WithNewTestTx(t *testing.T, fn func(ctx context.Context, db Dbx)) {
 	// TODO: add context timeout
 	// ctx, cancel := context.WithCancel(context.Background())
 	// defer cancel()
-	ctx := t.Context()
+	// ctx := t.Context()
+	ctx := context.Background()
 	cfg := conf.ZeroEnvConfig()
 	dbx := CreateNewQueriesContext(ctx, cfg.Db.GetDatabaseUrl())
 	tx, beginErr := dbx.Begin(ctx)
