@@ -24,6 +24,7 @@ func NewAdapterDecorators() *StorageAdapterDecorator {
 		NotificationFunc:   &NotificationStoreDecorator{},
 		Delegate:           &StorageAdapter{},
 		JobFunc:            &JobStoreDecorator{},
+		UserReactionFunc:   &DbUserReactionStoreDectorator{},
 	}
 }
 
@@ -108,25 +109,24 @@ type StorageAdapterDecorator struct {
 	PriceFunc          *StripePriceStoreDecorator
 	SubscriptionFunc   *StripeSubscriptionStoreDecorator
 	TaskFunc           *TaskDecorator
-	RunInTxFunc        func(fn func(tx StorageAdapterInterface) error) error
-	RunInTx2Func       func(ctx context.Context, fn func(tx StorageAdapterInterface) error) error
-	RunInTxCtxFunc     func(fn func(ctx context.Context) error) error
+	RunInTxFunc        func(ctx context.Context, fn func(tx StorageAdapterInterface) error) error
+	RunInTxCtxFunc     func(ctx context.Context, fn func(ctx context.Context) error) error
 	JobFunc            *JobStoreDecorator
 	UserReactionFunc   *DbUserReactionStoreDectorator
 }
 
-// RunInTx2 implements StorageAdapterInterface.
-func (s *StorageAdapterDecorator) RunInTx2(ctx context.Context, fn func(tx StorageAdapterInterface) error) error {
-	if s.RunInTx2Func != nil {
-		return s.RunInTx2Func(ctx, fn)
+// RunInTx implements StorageAdapterInterface.
+func (s *StorageAdapterDecorator) RunInTx(ctx context.Context, fn func(tx StorageAdapterInterface) error) error {
+	if s.RunInTxFunc != nil {
+		return s.RunInTxFunc(ctx, fn)
 	}
-	return s.Delegate.RunInTx2(ctx, fn)
+	return s.Delegate.RunInTx(ctx, fn)
 }
 
 // RunInTxCtx implements StorageAdapterInterface.
 func (s *StorageAdapterDecorator) RunInTxCtx(ctx context.Context, fn func(txCtx context.Context) error) error {
 	if s.RunInTxCtxFunc != nil {
-		return s.RunInTxCtxFunc(fn)
+		return s.RunInTxCtxFunc(ctx, fn)
 	}
 	return s.Delegate.RunInTxCtx(ctx, fn)
 }
@@ -212,6 +212,9 @@ func (s *StorageAdapterDecorator) Cleanup() {
 	if s.RunInTxFunc != nil {
 		s.RunInTxFunc = nil // Clear the function to avoid memory leaks
 	}
+	if s.RunInTxCtxFunc != nil {
+		s.RunInTxCtxFunc = nil // Clear the function to avoid memory leaks
+	}
 }
 
 // Customer implements StorageAdapterInterface.
@@ -236,14 +239,6 @@ func (s *StorageAdapterDecorator) Product() DbProductStoreInterface {
 		return s.ProductFunc
 	}
 	return s.Delegate.Product()
-}
-
-// RunInTx implements StorageAdapterInterface.
-func (s *StorageAdapterDecorator) RunInTx(fn func(tx StorageAdapterInterface) error) error {
-	if s.RunInTxFunc != nil {
-		return s.RunInTxFunc(fn)
-	}
-	return s.Delegate.RunInTx(fn)
 }
 
 // Subscription implements StorageAdapterInterface.

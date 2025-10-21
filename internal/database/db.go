@@ -56,8 +56,6 @@ type Dbx interface {
 	Close()
 	// RunInTx
 	//
-	// Deprecated: use RunInTxCtx
-	RunInTx(fn func(Dbx) error) error
 	RunInTx2(ctx context.Context, fn func(Dbx) error) error
 	RunInTxCtx(ctx context.Context, fn func(context.Context) error) error
 }
@@ -107,11 +105,6 @@ func (v *Queries) Query(ctx context.Context, sql string, args ...any) (pgx.Rows,
 
 func (v *Queries) Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error) {
 	return v.db.Exec(ctx, sql, args...)
-}
-
-// RunInTx implements Dbx.
-func (v *Queries) RunInTx(fn func(Dbx) error) error {
-	return WithTx(context.Background(), v, fn)
 }
 
 // RunInTx2 implements Dbx.
@@ -175,13 +168,6 @@ func (v *txQueries) Query(ctx context.Context, sql string, args ...any) (pgx.Row
 
 func (v *txQueries) Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error) {
 	return v.db.Exec(ctx, sql, args...)
-}
-
-// RunInTx
-//
-// Deprecated: use RunInTxCtx
-func (v *txQueries) RunInTx(fn func(Dbx) error) error {
-	return WithTx(context.Background(), v, fn)
 }
 
 func (v *txQueries) RunInTx2(ctx context.Context, fn func(Dbx) error) error {
