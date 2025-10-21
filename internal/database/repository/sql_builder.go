@@ -553,9 +553,9 @@ func (b *SQLBuilder[Model]) getSortedFields(where *map[string]any) []*fieldIdx {
 	return fields
 }
 
-func (b *SQLBuilder[Model]) Where2(where *map[string]any, args *[]any) string {
+func (b *SQLBuilder[Model]) Where2(where *map[string]any, args *[]any) (ret string, retErr error) {
 	if where == nil {
-		return ""
+		return
 	}
 
 	// Check for special conditions
@@ -564,7 +564,8 @@ func (b *SQLBuilder[Model]) Where2(where *map[string]any, args *[]any) string {
 		// in case of _not, the value is a map[string]any
 		expr, ok := item.(map[string]any)
 		if ok {
-			return "NOT (" + b.Where(&expr, args) + ")"
+			ret = "NOT (" + b.Where(&expr, args) + ")"
+			return
 		}
 	} else if items, ok := (*where)["_and"]; ok {
 		// in case of _and, the value is a []map[string]any
@@ -577,7 +578,8 @@ func (b *SQLBuilder[Model]) Where2(where *map[string]any, args *[]any) string {
 			}
 		}
 
-		return "(" + strings.Join(result, " AND ") + ")"
+		ret = "(" + strings.Join(result, " AND ") + ")"
+		return
 	} else if ors, ok := (*where)["_or"]; ok {
 		// in case of _and, the value is a []map[string]any
 		result := []string{}
@@ -589,7 +591,8 @@ func (b *SQLBuilder[Model]) Where2(where *map[string]any, args *[]any) string {
 			}
 		}
 
-		return "(" + strings.Join(result, " OR ") + ")"
+		ret = "(" + strings.Join(result, " OR ") + ")"
+		return
 	}
 
 	// Otherwise, construct the WHERE clause based on the field names and operations
@@ -731,7 +734,8 @@ func (b *SQLBuilder[Model]) Where2(where *map[string]any, args *[]any) string {
 		}
 	}
 
-	return strings.Join(result, " AND ")
+	ret = strings.Join(result, " AND ")
+	return
 }
 
 func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any) string {
