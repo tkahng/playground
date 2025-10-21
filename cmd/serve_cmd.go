@@ -81,7 +81,7 @@ func Run2() error {
 			serverShutdownErr <- err
 			return
 		}
-
+		appApi.App().Close()
 		serverShutdownErr <- nil
 	}()
 
