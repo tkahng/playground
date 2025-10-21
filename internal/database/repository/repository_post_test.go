@@ -42,21 +42,19 @@ func PostTestScenarioFunc[T any](t testing.TB, ctx context.Context, scenario *Po
 	}
 	dbx := scenario.Dbx
 	repo := scenario.Repo
-	var res []*T
 	args := scenario.Args
 	if scenario.ArgsFunc != nil {
 		args = scenario.ArgsFunc(t, ctx, scenario)
 	}
-	var txRes, err = repo.Post(ctx, dbx, args)
+	txRes, err := repo.Post(ctx, dbx, args)
 	if err != nil {
 		if scenario.WantErr {
 			return
 		}
 		t.Fatal(err)
 	}
-	res = txRes
 	for i, arg := range args {
-		r := res[i]
+		r := txRes[i]
 		scenario.TestFunc(t, ctx, &arg, r)
 	}
 }
@@ -265,10 +263,10 @@ func TestRepositoryPost_TeamInvitation(t *testing.T) {
 					Role:   models.TeamMemberRoleOwner,
 				})
 
-				var teamMemberArgs []models.TeamInvitation
+				var invitationArgs []models.TeamInvitation
 
 				for i := range 10 {
-					teamMemberArgs = append(teamMemberArgs, models.TeamInvitation{
+					invitationArgs = append(invitationArgs, models.TeamInvitation{
 						TeamID:          teams.ID,
 						InviterMemberID: owner.ID,
 						Email:           "inviteuser" + fmt.Sprint(i) + "@email.com",
@@ -278,7 +276,7 @@ func TestRepositoryPost_TeamInvitation(t *testing.T) {
 						ExpiresAt:       time.Now().Add(time.Hour * 7),
 					})
 				}
-				return teamMemberArgs
+				return invitationArgs
 			},
 			Repo:      TeamInvitation,
 			SetupFunc: func(t testing.TB, ctx context.Context, scenario *PostScenario[models.TeamInvitation]) {},
@@ -291,7 +289,7 @@ func TestRepositoryPost_TeamInvitation(t *testing.T) {
 				assert.Equal(t, arg.Status, res.Status, "status should be equal.")
 				assert.Equal(t, arg.Email, res.Email, "email should be equal.")
 				assert.Equal(t, arg.Token, res.Token, "token should be equal.")
-				assert.True(t, arg.ExpiresAt.Equal(res.ExpiresAt), "expiresAt should be equal.")
+				assert.True(t, arg.ExpiresAt.Equal(res.ExpiresAt), "expiresAt should be true.")
 				assert.NotEqual(t, arg.ID, res.ID, "ID should not be equal since it is generated on db side, arg will have zero value uuid.UUID")
 			},
 		},
