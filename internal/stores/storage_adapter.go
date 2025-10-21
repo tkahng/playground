@@ -85,7 +85,7 @@ func (s *StorageAdapter) Product() DbProductStoreInterface {
 
 // RunInTx implements StorageAdapterInterface.
 func (s *StorageAdapter) RunInTx(ctx context.Context, fn func(tx StorageAdapterInterface) error) error {
-	return s.db.RunInTx2(ctx, func(db database.Dbx) error {
+	return s.db.RunInTx(ctx, func(db database.Dbx) error {
 		tx := &StorageAdapter{
 			db:             db,
 			user:           s.user.WithTx(db),
