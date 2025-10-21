@@ -12,7 +12,7 @@ func GetDefaultLogger() *slog.Logger {
 	opts := conf.GetConfig[conf.AppConfig]()
 	isNotProduction := opts.AppEnv != "production"
 	level := slog.LevelInfo
-	if opts.AppEnv == "debug" {
+	if opts.AppEnv == "development" {
 		level = slog.LevelDebug
 	}
 	logger := slog.New(ContextHandler{
