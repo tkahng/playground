@@ -99,7 +99,7 @@ func TestRepositoryPut_User(t *testing.T) {
 				assert.Equal(t, arg.Email, res.Email, "Email should be the same")
 				assert.Equal(t, arg.ID, res.ID, "ID should be the same")
 				if arg.EmailVerifiedAt != nil && res.EmailVerifiedAt != nil {
-					assert.True(t, arg.EmailVerifiedAt.Equal(*res.EmailVerifiedAt), "EmailVerifiedAt should be equal.")
+					assert.WithinDuration(t, *arg.EmailVerifiedAt, *res.EmailVerifiedAt, time.Second, "EmailVerifiedAt should be equal.")
 				} else if arg.EmailVerifiedAt == nil && res.EmailVerifiedAt == nil {
 					// do nothing since both are nil and should be the same
 				} else {

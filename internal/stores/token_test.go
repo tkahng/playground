@@ -83,7 +83,7 @@ func TestDbTokenStore_GetTokenByValueTypeExpires(t *testing.T) {
 			tok := &stores.CreateTokenDTO{
 				Type:       models.TokenTypesAccessToken,
 				Identifier: "user@example.com",
-				Expires:    time.Now().Add(1 * time.Hour),
+				Expires:    time.Now().UTC().Add(1 * time.Hour),
 				Token:      "tok_test_123",
 				UserID:     nil,
 				Otp:        nil,
@@ -100,7 +100,7 @@ func TestDbTokenStore_GetTokenByValueTypeExpires(t *testing.T) {
 			tok := &stores.CreateTokenDTO{
 				Type:       models.TokenTypesAccessToken,
 				Identifier: "user@example.com",
-				Expires:    time.Now().Add(-1 * time.Hour),
+				Expires:    time.Now().UTC().Add(-1 * time.Hour),
 				Token:      "tok_test_1234",
 				UserID:     nil,
 				Otp:        nil,
