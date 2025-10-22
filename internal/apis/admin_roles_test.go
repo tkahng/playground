@@ -16,21 +16,11 @@ import (
 	"github.com/tkahng/playground/internal/test"
 )
 
-var (
-	knownRoleNames, knwonPermissionNames                     = []string{"superuser", "advanced", "pro", "basic"}, []string{"superuser", "advanced", "pro", "basic"}
-	knownRoleNamesPermissionsMap         map[string][]string = map[string][]string{
-		"basic":     {"basic"},
-		"pro":       {"basic", "pro"},
-		"advanced":  {"basic", "pro", "advanced"},
-		"superuser": {"basic", "pro", "advanced", "superuser"},
-	}
-)
-
 func TestApi_AdminRolesList(t *testing.T) {
 	// t.Parallel()
 	test.SkipIfShort(t)
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-		repository.CreateRolesAndPermissions(t, ctx, db, knownRoleNamesPermissionsMap)
+		repository.CreateRolesAndPermissions(t, ctx, db, shared.KnownRoleNamesPermissionsMap)
 		testApi := SetupApi(t, ctx, db)
 		adminUser := CreateUserWithOptions(
 			t,
