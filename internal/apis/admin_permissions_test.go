@@ -33,6 +33,48 @@ func TestApi_AdminPermissionsList(t *testing.T) {
 		header := createTokenHeader(t, testApi.App, adminUser.User.Email)
 		tests := []ApiScenario{
 			{
+				Name:           "admin permission list get named",
+				Method:         http.MethodGet,
+				URL:            "/admin/permissions?names=" + shared.PermissionNameAdmin,
+				ExpectedStatus: http.StatusOK,
+				Headers:        []string{header},
+				TestAppFactory: func(t testing.TB) *TestApi {
+					return testApi
+				},
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+					var expectedCount int = 1
+					var body apis.ApiPaginatedResponse[*apis.Permission]
+					err := json.NewDecoder(res.Body).Decode(&body)
+					if err != nil {
+						t.Errorf("Error decoding response: %v", err)
+					}
+					if len(body.Data) != expectedCount {
+						t.Errorf("Expected %d permissions, got %d", expectedCount, len(body.Data))
+					}
+				},
+			},
+			{
+				Name:           "admin permission list get named",
+				Method:         http.MethodGet,
+				URL:            "/admin/permissions?names=" + shared.PermissionNameAdmin,
+				ExpectedStatus: http.StatusOK,
+				Headers:        []string{header},
+				TestAppFactory: func(t testing.TB) *TestApi {
+					return testApi
+				},
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+					var expectedCount int = 1
+					var body apis.ApiPaginatedResponse[*apis.Permission]
+					err := json.NewDecoder(res.Body).Decode(&body)
+					if err != nil {
+						t.Errorf("Error decoding response: %v", err)
+					}
+					if len(body.Data) != expectedCount {
+						t.Errorf("Expected %d permissions, got %d", expectedCount, len(body.Data))
+					}
+				},
+			},
+			{
 				Name:           "admin permission list all",
 				Method:         http.MethodGet,
 				URL:            "/admin/permissions",
@@ -42,13 +84,14 @@ func TestApi_AdminPermissionsList(t *testing.T) {
 					return testApi
 				},
 				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+					var expectedCount int = 4
 					var body apis.ApiPaginatedResponse[*apis.Permission]
 					err := json.NewDecoder(res.Body).Decode(&body)
 					if err != nil {
 						t.Errorf("Error decoding response: %v", err)
 					}
-					if len(body.Data) != 4 {
-						t.Errorf("Expected 4 permissions, got %d", len(body.Data))
+					if len(body.Data) != expectedCount {
+						t.Errorf("Expected %d permissions, got %d", expectedCount, len(body.Data))
 					}
 				},
 			},
