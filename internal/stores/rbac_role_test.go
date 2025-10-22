@@ -18,22 +18,12 @@ import (
 
 func TestListRoles(t *testing.T) {
 	t.Parallel()
-	test.SkipIfShort(t)
+	// _ = logger.GetDefaultLogger()
 	database.WithNewTestTx(t, func(ctx context.Context, tx database.Dbx) {
 		// Create test roles and permissions
 		rbacstore := stores.NewDbRBACStore(tx)
-		err := rbacstore.EnsureRoleAndPermissions(
-			ctx,
-			shared.PermissionNameAdmin,
-			shared.PermissionNameAdmin,
-			shared.PermissionNameBasic,
-		)
-		if err != nil {
-			t.Fatalf("failed to ensure role and permissions: %v", err)
-		}
+		repository.CreateRolesAndPermissions(t, ctx, tx, shared.KnownRoleNamesPermissionsMap)
 		type args struct {
-			ctx   context.Context
-			db    database.Dbx
 			input *stores.RoleListFilter
 		}
 		tests := []struct {
@@ -43,28 +33,55 @@ func TestListRoles(t *testing.T) {
 			wantErr   bool
 		}{
 			{
-				name: "Test List Roles",
+				name: "Test List Roles with names superuser or basic",
 				args: args{
-					ctx: ctx,
-					db:  tx,
+					input: &stores.RoleListFilter{
+						Names: []string{
+							shared.PermissionNameBasic,
+							shared.PermissionNameAdmin,
+						},
+						PaginatedInput: stores.PaginatedInput{
+							Page:    0,
+							PerPage: 10,
+						},
+					},
+				},
+				wantCount: 2,
+				wantErr:   false,
+			},
+			{
+				name: "Test List Roles with names superuser",
+				args: args{
 					input: &stores.RoleListFilter{
 						Names: []string{
 							shared.PermissionNameAdmin,
 						},
 						PaginatedInput: stores.PaginatedInput{
 							Page:    0,
-							PerPage: 20,
+							PerPage: 10,
 						},
 					},
 				},
 				wantCount: 1,
 				wantErr:   false,
 			},
+			{
+				name: "Test List Roles all",
+				args: args{
+					input: &stores.RoleListFilter{
+						PaginatedInput: stores.PaginatedInput{
+							Page:    0,
+							PerPage: 10,
+						},
+					},
+				},
+				wantCount: 4,
+				wantErr:   false,
+			},
 		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				store := stores.NewDbRBACStore(tx)
-				got, err := store.ListRoles(tt.args.ctx, tt.args.input)
+				got, err := rbacstore.ListRoles(ctx, tt.args.input)
 				if (err != nil) != tt.wantErr {
 					t.Errorf("ListRoles() error = %v, wantErr %v", err, tt.wantErr)
 					return

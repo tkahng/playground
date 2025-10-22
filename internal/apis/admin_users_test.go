@@ -22,7 +22,7 @@ import (
 )
 
 func TestApi_AdminUsersList(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 	test.SkipIfShort(t)
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
@@ -105,7 +105,7 @@ func TestApi_AdminUsersList(t *testing.T) {
 }
 
 func TestApi_AdminUsersCreate(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 	test.SkipIfShort(t)
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
@@ -200,7 +200,7 @@ func TestApi_AdminUsersCreate(t *testing.T) {
 }
 
 func TestApi_AdminUsersDelete(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 	test.SkipIfShort(t)
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
@@ -268,7 +268,7 @@ func TestApi_AdminUsersDelete(t *testing.T) {
 	})
 }
 func TestApi_AdminUsersUpdate(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 	test.SkipIfShort(t)
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
@@ -349,7 +349,7 @@ func TestApi_AdminUsersUpdate(t *testing.T) {
 	})
 }
 func TestApi_AdminUsersUpdatePassword(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 	test.SkipIfShort(t)
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
@@ -422,7 +422,7 @@ func TestApi_AdminUsersUpdatePassword(t *testing.T) {
 }
 
 func TestApi_AdminUsersGet(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 	test.SkipIfShort(t)
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)

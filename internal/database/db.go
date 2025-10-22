@@ -209,7 +209,7 @@ func WithTx(ctx context.Context, dbx Dbx, fn func(tx Dbx) error) (returnErr erro
 		returnErr = fnErr
 		return
 	} else {
-		if commitErr := tx.Commit(context.Background()); commitErr != nil {
+		if commitErr := tx.Commit(ctx); commitErr != nil {
 			slog.ErrorContext(ctx, "error committing transaction", slog.Any("error", commitErr))
 			returnErr = errors.New("there was an error while committing a transaction")
 			return
@@ -255,7 +255,7 @@ func WithCtxTx(ctx context.Context, dbx Dbx, fn func(context.Context) error, opt
 		returnErr = fnErr
 		return
 	} else {
-		if commitErr := tx.Commit(context.Background()); commitErr != nil {
+		if commitErr := tx.Commit(ctx); commitErr != nil {
 			slog.ErrorContext(ctx, "error committing transaction", slog.Any("error", commitErr))
 			returnErr = errors.New("there was an error while committing a transaction")
 			return

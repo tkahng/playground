@@ -19,7 +19,7 @@ import (
 )
 
 func TestApi_ResetPassword(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 	test.SkipIfShort(t)
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
@@ -91,7 +91,7 @@ func TestApi_ResetPassword(t *testing.T) {
 					if err != nil {
 						t.Fatalf("Error getting token from email: %v", err)
 					}
-					dto := struct{
+					dto := struct {
 						Token string `json:"token"`
 					}{
 						Token: checktoken,
