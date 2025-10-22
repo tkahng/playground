@@ -16,7 +16,7 @@ import (
 )
 
 func TestApi_AdminUserAccounts(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 	test.SkipIfShort(t)
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)

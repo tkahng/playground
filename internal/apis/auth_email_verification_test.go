@@ -16,7 +16,7 @@ import (
 )
 
 func TestApi_RequestVerification(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 	test.SkipIfShort(t)
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
@@ -73,7 +73,7 @@ func TestApi_RequestVerification(t *testing.T) {
 }
 
 func TestApi_VerifyEmail(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 	test.SkipIfShort(t)
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)

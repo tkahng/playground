@@ -17,7 +17,7 @@ import (
 )
 
 func TestApi_AdminPermissionsList(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 	test.SkipIfShort(t)
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		repository.CreateRolesAndPermissions(t, ctx, db, shared.KnownRoleNamesPermissionsMap)
