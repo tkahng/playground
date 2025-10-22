@@ -21,8 +21,7 @@ type RoleListFilter struct {
 	Ids       []uuid.UUID `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
 	Names     []string    `query:"names,omitempty" required:"false" minimum:"1" maximum:"100"`
 	UserId    uuid.UUID   `query:"user_id,omitempty" required:"false" format:"uuid"`
-	UserIds   []uuid.UUID `query:"user_ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
-	Reverse   string      `query:"reverse,omitempty" required:"false" doc:"When true, it will return the roles that do not match the filter criteria" enum:"user,product"`
+	Reverse   bool        `query:"reverse,omitempty" required:"false" doc:"When true, it will return the roles that do not match the filter criteria" enum:"user,product"`
 	ProductId string      `query:"product_id,omitempty" required:"false"`
 	Expand    []string    `query:"expand,omitempty" required:"false" minimum:"1" maximum:"100" enum:"users,permissions"`
 }
@@ -268,7 +267,7 @@ func (p *DbRbacStore) filter(q squirrel.SelectBuilder, filter *RoleListFilter) s
 		)
 	}
 	if filter.UserId != uuid.Nil {
-		if filter.Reverse == "user" {
+		if filter.Reverse {
 			sq = sq.LeftJoin("auth.user_roles"+" on "+"auth.roles.id"+" = "+"auth.user_roles"+"."+"role_id"+" and "+"auth.user_roles"+"."+"user_id"+" = ?", filter.UserId)
 			sq = sq.Where("auth.user_roles.role_id is null")
 		} else {

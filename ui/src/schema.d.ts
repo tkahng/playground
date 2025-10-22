@@ -3447,11 +3447,9 @@ export interface operations {
                 q?: string;
                 ids?: string[] | null;
                 names?: string[] | null;
-                user_ids?: string[] | null;
                 user_id?: string;
                 /** @description When true, it will return the roles that do not match the filter criteria */
-                reverse?: "user" | "product";
-                product_id?: string;
+                reverse?: boolean;
                 sort_by?: string;
                 sort_order?: "asc" | "desc";
                 expand?: ("users" | "permissions")[] | null;

@@ -56,7 +56,7 @@ export function UserRolesDialog({
       }
       const { data } = await rolesPaginate(user.tokens.access_token, {
         user_id: userId,
-        reverse: "user",
+        reverse: true,
         page: 0,
         per_page: 50,
       });
