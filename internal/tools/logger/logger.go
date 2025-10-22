@@ -17,7 +17,7 @@ func GetDefaultLogger() *slog.Logger {
 	}
 	logger := slog.New(ContextHandler{
 		Handler: slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-			AddSource:   isNotProduction,
+			// AddSource:   isNotProduction,
 			Level:       level,
 			ReplaceAttr: httplog.SchemaOTEL.Concise(isNotProduction).ReplaceAttr,
 		}),
