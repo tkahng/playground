@@ -33,7 +33,28 @@ func TestApi_AdminPermissionsList(t *testing.T) {
 		header := createTokenHeader(t, testApi.App, adminUser.User.Email)
 		tests := []ApiScenario{
 			{
-				Name:           "admin permission list get named",
+				Name:           "admin permission list get superuser, basic by name",
+				Method:         http.MethodGet,
+				URL:            "/admin/permissions?names=" + shared.PermissionNameAdmin + "," + shared.PermissionNameBasic,
+				ExpectedStatus: http.StatusOK,
+				Headers:        []string{header},
+				TestAppFactory: func(t testing.TB) *TestApi {
+					return testApi
+				},
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+					var expectedCount int = 2
+					var body apis.ApiPaginatedResponse[*apis.Permission]
+					err := json.NewDecoder(res.Body).Decode(&body)
+					if err != nil {
+						t.Errorf("Error decoding response: %v", err)
+					}
+					if len(body.Data) != expectedCount {
+						t.Errorf("Expected %d permissions, got %d", expectedCount, len(body.Data))
+					}
+				},
+			},
+			{
+				Name:           "admin permission list get superuser by name",
 				Method:         http.MethodGet,
 				URL:            "/admin/permissions?names=" + shared.PermissionNameAdmin,
 				ExpectedStatus: http.StatusOK,

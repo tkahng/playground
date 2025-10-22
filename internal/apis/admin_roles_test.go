@@ -43,6 +43,48 @@ func TestApi_AdminRolesList(t *testing.T) {
 		header := createTokenHeader(t, testApi.App, adminUser.User.Email)
 		tests := []ApiScenario{
 			{
+				Name:           "admin roles list get superuser, basic by name",
+				Method:         http.MethodGet,
+				URL:            "/admin/roles?names=" + shared.PermissionNameAdmin + "," + shared.PermissionNameBasic,
+				ExpectedStatus: http.StatusOK,
+				Headers:        []string{header},
+				TestAppFactory: func(t testing.TB) *TestApi {
+					return testApi
+				},
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+					var body apis.ApiPaginatedResponse[*apis.Role]
+					var expectedCount int = 2
+					err := json.NewDecoder(res.Body).Decode(&body)
+					if err != nil {
+						t.Errorf("Error decoding response: %v", err)
+					}
+					if len(body.Data) != expectedCount {
+						t.Errorf("Expected %d roles, got %d", expectedCount, len(body.Data))
+					}
+				},
+			},
+			{
+				Name:           "admin roles list get superuser by name",
+				Method:         http.MethodGet,
+				URL:            "/admin/roles?names=" + shared.PermissionNameAdmin,
+				ExpectedStatus: http.StatusOK,
+				Headers:        []string{header},
+				TestAppFactory: func(t testing.TB) *TestApi {
+					return testApi
+				},
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+					var body apis.ApiPaginatedResponse[*apis.Role]
+					var expectedCount int = 1
+					err := json.NewDecoder(res.Body).Decode(&body)
+					if err != nil {
+						t.Errorf("Error decoding response: %v", err)
+					}
+					if len(body.Data) != expectedCount {
+						t.Errorf("Expected %d roles, got %d", expectedCount, len(body.Data))
+					}
+				},
+			},
+			{
 				Name:           "admin roles list all",
 				Method:         http.MethodGet,
 				URL:            "/admin/roles",
@@ -53,12 +95,13 @@ func TestApi_AdminRolesList(t *testing.T) {
 				},
 				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
 					var body apis.ApiPaginatedResponse[*apis.Role]
+					var expectedCount int = 4
 					err := json.NewDecoder(res.Body).Decode(&body)
 					if err != nil {
 						t.Errorf("Error decoding response: %v", err)
 					}
-					if len(body.Data) != 4 {
-						t.Errorf("Expected 4 roles, got %d", len(body.Data))
+					if len(body.Data) != expectedCount {
+						t.Errorf("Expected %d roles, got %d", expectedCount, len(body.Data))
 					}
 				},
 			},
