@@ -150,8 +150,8 @@ func (api *Api) AdminPermissionsList(ctx context.Context, input *struct {
 	store := api.App().Adapter().Rbac()
 	fmt.Println(input)
 	filter := new(stores.PermissionFilter)
-	filter.Page = input.PerPage
-	filter.PerPage = input.Page
+	filter.Page = input.Page
+	filter.PerPage = input.PerPage
 	filter.Ids = utils.ParseValidUUIDs(input.Ids...)
 	filter.Names = input.Names
 	filter.Q = input.Q
