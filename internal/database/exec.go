@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/stephenafamo/scan"
 	"github.com/stephenafamo/scan/pgxscan"
@@ -12,21 +13,24 @@ type QueryBuilder interface {
 }
 
 func QueryWithBuilder[T any](ctx context.Context, db Dbx, query QueryBuilder) ([]T, error) {
-	ctxDbx := GetContextOrDefaultDbx(ctx, db)
 	sql, args, err := query.ToSql()
 	// fmt.Println("query", sql, "args", args)
+
+	slog.DebugContext(ctx, "Query With Builder:", slog.String("query", sql), slog.Any("args", args))
 	if err != nil {
 		return nil, err
 	}
-	return QueryAll[T](ctx, ctxDbx, sql, args...)
+	return QueryAll[T](ctx, db, sql, args...)
 }
 func ExecWithBuilder(ctx context.Context, db Dbx, query QueryBuilder) (int64, error) {
-	ctxDbx := GetContextOrDefaultDbx(ctx, db)
 	sql, args, err := query.ToSql()
 	if err != nil {
 		return 0, err
 	}
-	result, err := Exec(ctx, ctxDbx, sql, args...)
+	// fmt.Println("query", sql, "args", args)
+
+	slog.DebugContext(ctx, "Exec With Builder:", slog.String("query", sql), slog.Any("args", args))
+	result, err := Exec(ctx, db, sql, args...)
 	return result, err
 }
 
