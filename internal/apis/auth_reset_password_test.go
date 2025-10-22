@@ -91,7 +91,7 @@ func TestApi_ResetPassword(t *testing.T) {
 					if err != nil {
 						t.Fatalf("Error getting token from email: %v", err)
 					}
-					dto := struct{
+					dto := struct {
 						Token string `json:"token"`
 					}{
 						Token: checktoken,
