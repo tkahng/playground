@@ -3,6 +3,7 @@ package apis_test
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -30,8 +31,96 @@ func TestApi_AdminPermissionsList(t *testing.T) {
 			UserWithProvider(models.ProvidersCredentials),
 			UserWithProviderType(models.ProviderTypeCredentials),
 		)
+
 		header := createTokenHeader(t, testApi.App, adminUser.User.Email)
 		tests := []ApiScenario{
+			{
+				Name:           "admin permission list get by basic role id reversed",
+				Method:         http.MethodGet,
+				URL:            "/admin/permissions",
+				ExpectedStatus: http.StatusOK,
+				Headers:        []string{header},
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+					role := repository.MustFindOneCtx(t, ctx, repository.Role, app.Db(), &map[string]any{
+						"name": map[string]any{
+							"_eq": shared.PermissionNameBasic,
+						},
+					})
+					scenario.URL = fmt.Sprintf("/admin/permissions?role_id=%s&role_reverse=true", role.ID.String())
+				},
+				TestAppFactory: func(t testing.TB) *TestApi {
+					return testApi
+				},
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+					var expectedCount int = 3
+					var body apis.ApiPaginatedResponse[*apis.Permission]
+					err := json.NewDecoder(res.Body).Decode(&body)
+					if err != nil {
+						t.Errorf("Error decoding response: %v", err)
+					}
+					if len(body.Data) != expectedCount {
+						t.Errorf("Expected %d permissions, got %d", expectedCount, len(body.Data))
+					}
+				},
+			},
+			{
+				Name:           "admin permission list get by advanced role id",
+				Method:         http.MethodGet,
+				URL:            "/admin/permissions",
+				ExpectedStatus: http.StatusOK,
+				Headers:        []string{header},
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+					role := repository.MustFindOneCtx(t, ctx, repository.Role, app.Db(), &map[string]any{
+						"name": map[string]any{
+							"_eq": shared.PermissionNameAdvanced,
+						},
+					})
+					scenario.URL = fmt.Sprintf("/admin/permissions?role_id=%s", role.ID.String())
+				},
+				TestAppFactory: func(t testing.TB) *TestApi {
+					return testApi
+				},
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+					var expectedCount int = 3
+					var body apis.ApiPaginatedResponse[*apis.Permission]
+					err := json.NewDecoder(res.Body).Decode(&body)
+					if err != nil {
+						t.Errorf("Error decoding response: %v", err)
+					}
+					if len(body.Data) != expectedCount {
+						t.Errorf("Expected %d permissions, got %d", expectedCount, len(body.Data))
+					}
+				},
+			},
+			{
+				Name:           "admin permission list get by admin role id",
+				Method:         http.MethodGet,
+				URL:            "/admin/permissions",
+				ExpectedStatus: http.StatusOK,
+				Headers:        []string{header},
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+					role := repository.MustFindOneCtx(t, ctx, repository.Role, app.Db(), &map[string]any{
+						"name": map[string]any{
+							"_eq": shared.PermissionNameAdmin,
+						},
+					})
+					scenario.URL = fmt.Sprintf("/admin/permissions?role_id=%s", role.ID.String())
+				},
+				TestAppFactory: func(t testing.TB) *TestApi {
+					return testApi
+				},
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+					var expectedCount int = 4
+					var body apis.ApiPaginatedResponse[*apis.Permission]
+					err := json.NewDecoder(res.Body).Decode(&body)
+					if err != nil {
+						t.Errorf("Error decoding response: %v", err)
+					}
+					if len(body.Data) != expectedCount {
+						t.Errorf("Expected %d permissions, got %d", expectedCount, len(body.Data))
+					}
+				},
+			},
 			{
 				Name:           "admin permission list get superuser, basic by name",
 				Method:         http.MethodGet,

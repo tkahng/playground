@@ -157,7 +157,7 @@ func (api *Api) AdminPermissionsList(ctx context.Context, input *struct {
 	filter.Q = input.Q
 	if len(input.RoleId) > 0 {
 		roleId, err := uuid.Parse(input.RoleId)
-		if err != nil && input.RoleId != "" {
+		if err != nil && roleId != uuid.Nil {
 			return nil, huma.Error400BadRequest("Invalid role ID format", err)
 		} else {
 			filter.RoleId = roleId
