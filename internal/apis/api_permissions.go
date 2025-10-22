@@ -14,8 +14,8 @@ func (api *Api) PermissionsList(ctx context.Context, input *struct {
 	PermissionsListParams
 }) (*ApiPaginatedOutput[*Permission], error) {
 	filter := new(stores.PermissionFilter)
-	filter.Page = input.PerPage
-	filter.PerPage = input.Page
+	filter.Page = input.Page
+	filter.PerPage = input.PerPage
 	filter.Ids = utils.ParseValidUUIDs(input.Ids...)
 	filter.Names = input.Names
 	filter.Q = input.Q
