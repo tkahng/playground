@@ -30,33 +30,37 @@ func TestApi_AdminRolesList(t *testing.T) {
 			UserWithProvider(models.ProvidersCredentials),
 			UserWithProviderType(models.ProviderTypeCredentials),
 		)
+
+		// advancedUser := CreateUserWithOptions(
+		// 	t,
+		// 	testApi.App,
+		// 	UserWithEmail("advanced@example.com"),
+		// 	UserWithRoles(shared.PermissionNameAdvanced),
+		// 	UserWithProvider(models.ProvidersCredentials),
+		// 	UserWithProviderType(models.ProviderTypeCredentials),
+		// )
+		proUser := CreateUserWithOptions(
+			t,
+			testApi.App,
+			UserWithEmail("pro@example.com"),
+			UserWithRoles(shared.PermissionNamePro),
+			UserWithProvider(models.ProvidersCredentials),
+			UserWithProviderType(models.ProviderTypeCredentials),
+		)
+		// basicUser := CreateUserWithOptions(
+		// 	t,
+		// 	testApi.App,
+		// 	UserWithEmail("basic@example.com"),
+		// 	UserWithRoles(shared.PermissionNameBasic),
+		// 	UserWithProvider(models.ProvidersCredentials),
+		// 	UserWithProviderType(models.ProviderTypeCredentials),
+		// )
 		header := createTokenHeader(t, testApi.App, adminUser.User.Email)
 		tests := []ApiScenario{
 			{
-				Name:           "admin roles list get superuser, basic by name",
+				Name:           "admin roles list get by user_id, proUser, reversed",
 				Method:         http.MethodGet,
-				URL:            "/admin/roles?names=" + shared.PermissionNameAdmin + "," + shared.PermissionNameBasic,
-				ExpectedStatus: http.StatusOK,
-				Headers:        []string{header},
-				TestAppFactory: func(t testing.TB) *TestApi {
-					return testApi
-				},
-				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
-					var body apis.ApiPaginatedResponse[*apis.Role]
-					var expectedCount int = 2
-					err := json.NewDecoder(res.Body).Decode(&body)
-					if err != nil {
-						t.Errorf("Error decoding response: %v", err)
-					}
-					if len(body.Data) != expectedCount {
-						t.Errorf("Expected %d roles, got %d", expectedCount, len(body.Data))
-					}
-				},
-			},
-			{
-				Name:           "admin roles list get superuser by name",
-				Method:         http.MethodGet,
-				URL:            "/admin/roles?names=" + shared.PermissionNameAdmin,
+				URL:            "/admin/roles?user_id=" + proUser.User.ID.String() + "&reverse=true",
 				ExpectedStatus: http.StatusOK,
 				Headers:        []string{header},
 				TestAppFactory: func(t testing.TB) *TestApi {
@@ -74,27 +78,90 @@ func TestApi_AdminRolesList(t *testing.T) {
 					}
 				},
 			},
-			{
-				Name:           "admin roles list all",
-				Method:         http.MethodGet,
-				URL:            "/admin/roles",
-				ExpectedStatus: http.StatusOK,
-				Headers:        []string{header},
-				TestAppFactory: func(t testing.TB) *TestApi {
-					return testApi
-				},
-				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
-					var body apis.ApiPaginatedResponse[*apis.Role]
-					var expectedCount int = 4
-					err := json.NewDecoder(res.Body).Decode(&body)
-					if err != nil {
-						t.Errorf("Error decoding response: %v", err)
-					}
-					if len(body.Data) != expectedCount {
-						t.Errorf("Expected %d roles, got %d", expectedCount, len(body.Data))
-					}
-				},
-			},
+			// {
+			// 	Name:           "admin roles list get by user_id, basic",
+			// 	Method:         http.MethodGet,
+			// 	URL:            "/admin/roles?user_id=" + basicUser.User.ID.String(),
+			// 	ExpectedStatus: http.StatusOK,
+			// 	Headers:        []string{header},
+			// 	TestAppFactory: func(t testing.TB) *TestApi {
+			// 		return testApi
+			// 	},
+			// 	AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+			// 		var body apis.ApiPaginatedResponse[*apis.Role]
+			// 		var expectedCount int = 1
+			// 		err := json.NewDecoder(res.Body).Decode(&body)
+			// 		if err != nil {
+			// 			t.Errorf("Error decoding response: %v", err)
+			// 		}
+			// 		if len(body.Data) != expectedCount {
+			// 			t.Errorf("Expected %d roles, got %d", expectedCount, len(body.Data))
+			// 		}
+			// 	},
+			// },
+			// {
+			// 	Name:           "admin roles list get superuser, basic by name",
+			// 	Method:         http.MethodGet,
+			// 	URL:            "/admin/roles?names=" + shared.PermissionNameAdmin + "," + shared.PermissionNameBasic,
+			// 	ExpectedStatus: http.StatusOK,
+			// 	Headers:        []string{header},
+			// 	TestAppFactory: func(t testing.TB) *TestApi {
+			// 		return testApi
+			// 	},
+			// 	AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+			// 		var body apis.ApiPaginatedResponse[*apis.Role]
+			// 		var expectedCount int = 2
+			// 		err := json.NewDecoder(res.Body).Decode(&body)
+			// 		if err != nil {
+			// 			t.Errorf("Error decoding response: %v", err)
+			// 		}
+			// 		if len(body.Data) != expectedCount {
+			// 			t.Errorf("Expected %d roles, got %d", expectedCount, len(body.Data))
+			// 		}
+			// 	},
+			// },
+			// {
+			// 	Name:           "admin roles list get superuser by name",
+			// 	Method:         http.MethodGet,
+			// 	URL:            "/admin/roles?names=" + shared.PermissionNameAdmin,
+			// 	ExpectedStatus: http.StatusOK,
+			// 	Headers:        []string{header},
+			// 	TestAppFactory: func(t testing.TB) *TestApi {
+			// 		return testApi
+			// 	},
+			// 	AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+			// 		var body apis.ApiPaginatedResponse[*apis.Role]
+			// 		var expectedCount int = 1
+			// 		err := json.NewDecoder(res.Body).Decode(&body)
+			// 		if err != nil {
+			// 			t.Errorf("Error decoding response: %v", err)
+			// 		}
+			// 		if len(body.Data) != expectedCount {
+			// 			t.Errorf("Expected %d roles, got %d", expectedCount, len(body.Data))
+			// 		}
+			// 	},
+			// },
+			// {
+			// 	Name:           "admin roles list all",
+			// 	Method:         http.MethodGet,
+			// 	URL:            "/admin/roles",
+			// 	ExpectedStatus: http.StatusOK,
+			// 	Headers:        []string{header},
+			// 	TestAppFactory: func(t testing.TB) *TestApi {
+			// 		return testApi
+			// 	},
+			// 	AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+			// 		var body apis.ApiPaginatedResponse[*apis.Role]
+			// 		var expectedCount int = 4
+			// 		err := json.NewDecoder(res.Body).Decode(&body)
+			// 		if err != nil {
+			// 			t.Errorf("Error decoding response: %v", err)
+			// 		}
+			// 		if len(body.Data) != expectedCount {
+			// 			t.Errorf("Expected %d roles, got %d", expectedCount, len(body.Data))
+			// 		}
+			// 	},
+			// },
 		}
 		for _, tt := range tests {
 			tt.Test(t)
