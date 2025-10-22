@@ -345,7 +345,7 @@ export const getUserAccounts = async (token: string, id: string) => {
   const { data, error } = await client.GET("/api/admin/user-accounts", {
     params: {
       query: {
-        user_id: id,
+        user_ids: [id],
         page: 0,
         per_page: 50,
       },
@@ -1177,11 +1177,9 @@ export const getStats = async (token: string) => {
 };
 
 export const checkPasswordReset = async (token: string) => {
-  const { data, error } = await client.GET("/api/auth/check-password-reset", {
-    params: {
-      query: {
-        token,
-      },
+  const { data, error } = await client.POST("/api/auth/check-password-reset", {
+    body: {
+      token,
     },
   });
   if (error) {

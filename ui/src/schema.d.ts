@@ -556,13 +556,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        get?: never;
+        put?: never;
         /**
          * Check password reset
          * @description Check password reset
          */
-        get: operations["check-password-reset"];
-        put?: never;
-        post?: never;
+        post: operations["check-password-reset"];
         delete?: never;
         options?: never;
         head?: never;
@@ -583,6 +583,26 @@ export interface paths {
          * @description Confirm password reset
          */
         post: operations["confirm-password-reset"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/confirm-verification": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirm Email verification request
+         * @description Confirm Request email verification
+         */
+        post: operations["confirm-verification"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1810,6 +1830,14 @@ export interface components {
             assignee_member_id: string;
             task_id: string;
         };
+        "Check-password-resetRequest": {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            token: string;
+        };
         "Check-team-slugRequest": {
             /**
              * Format: uri
@@ -2065,6 +2093,7 @@ export interface components {
              */
             readonly $schema?: string;
             token: string;
+            type: string;
         };
         PasswordResetInput: {
             /**
@@ -3418,6 +3447,7 @@ export interface operations {
                 q?: string;
                 ids?: string[] | null;
                 names?: string[] | null;
+                user_ids?: string[] | null;
                 user_id?: string;
                 /** @description When true, it will return the roles that do not match the filter criteria */
                 reverse?: "user" | "product";
@@ -4673,14 +4703,16 @@ export interface operations {
     };
     "check-password-reset": {
         parameters: {
-            query: {
-                token: string;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["Check-password-resetRequest"];
+            };
+        };
         responses: {
             /** @description No Content */
             204: {
@@ -4725,11 +4757,58 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: {
+        requestBody: {
             content: {
                 "application/json": components["schemas"]["ConfirmPasswordResetInput"];
             };
         };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "confirm-verification": {
+        parameters: {
+            query: {
+                token: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
         responses: {
             /** @description No Content */
             204: {
@@ -5039,7 +5118,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: {
+        requestBody: {
             content: {
                 "application/json": components["schemas"]["RequestPasswordResetInput"];
             };
@@ -5124,7 +5203,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: {
+        requestBody: {
             content: {
                 "application/json": components["schemas"]["SigninDto"];
             };
@@ -5311,6 +5390,7 @@ export interface operations {
         parameters: {
             query: {
                 token: string;
+                type: string;
             };
             header?: never;
             path?: never;
