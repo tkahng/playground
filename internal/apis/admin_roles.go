@@ -87,7 +87,7 @@ type RoleListFilter struct {
 	Q         string   `query:"q,omitempty" required:"false"`
 	Ids       []string `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
 	Names     []string `query:"names,omitempty" required:"false" minimum:"1" maximum:"100"`
-	UserId    string   `query:"user_id,omitempty" required:"false" format:"uuid"`
+	UserIds   []string `query:"user_ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
 	Reverse   string   `query:"reverse,omitempty" required:"false" doc:"When true, it will return the roles that do not match the filter criteria" enum:"user,product"`
 	ProductId string   `query:"product_id,omitempty" required:"false"`
 }
@@ -100,17 +100,14 @@ type RolesListParams struct {
 
 func ToRoleListFilter(input *RolesListParams) (*stores.RoleListFilter, error) {
 	filter := &stores.RoleListFilter{}
-	filter.Page = input.PerPage
-	filter.PerPage = input.Page
+	filter.Page = input.Page
+	filter.PerPage = input.PerPage
 	filter.Q = input.Q
 	filter.Ids = utils.ParseValidUUIDs(input.Ids...)
 	filter.Names = input.Names
-	if input.UserId != "" {
-		id, err := uuid.Parse(input.UserId)
-		if err != nil {
-			return nil, err
-		}
-		filter.UserId = id
+	if len(input.UserIds) > 0 {
+		ids := utils.ParseValidUUIDs(input.UserIds...)
+		filter.UserIds = ids
 	}
 	if input.ProductId != "" {
 		filter.ProductId = input.ProductId
