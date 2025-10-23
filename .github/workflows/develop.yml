@@ -89,6 +89,8 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     needs: build
+    environment:
+      name: "testing"
     steps:
       - name: Deploy App to Dokploy
         uses: qbix-tech/dokploy-deploy-action@v1
