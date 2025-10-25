@@ -26,9 +26,8 @@ type UserStoreDecorator struct {
 }
 
 func NewUserStoreDecorator(db database.Dbx) *UserStoreDecorator {
-	delegate := NewDbUserStore(db)
 	return &UserStoreDecorator{
-		Delegate: delegate,
+		Delegate: NewDbUserStore(db),
 	}
 }
 
