@@ -20,7 +20,7 @@ func TestApi_RequestVerification(t *testing.T) {
 	test.SkipIfShort(t)
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
-		testMailer := ExtractTestMailer(t, testApi)
+		testMailer := ExtractTestMailer(t, testApi.App)
 
 		tests := []ApiScenario{
 			{
@@ -77,7 +77,7 @@ func TestApi_VerifyEmail(t *testing.T) {
 	test.SkipIfShort(t)
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
-		testMailer := ExtractTestMailer(t, testApi)
+		testMailer := ExtractTestMailer(t, testApi.App)
 
 		tests := []ApiScenario{
 			{
