@@ -34,10 +34,6 @@ jobs:
           cache-dependency-path: go.sum
           go-version: "1.24.5" # Use Go version 1.23.5
 
-      # Install dependencies
-      - name: Install dependencies
-        run: go mod tidy
-
       - name: Setup Test DB
         env:
           DATABASE_DB: playground_test
