@@ -11,7 +11,6 @@ import (
 func BindStripeApi(api huma.API, appApi *Api) {
 	selectCustomerFromUser := humamiddleware.SelectCustomerFromUser(api, appApi.App())
 	selectCustomerFromTeam := humamiddleware.SelectCustomerFromTeam(api, appApi.App())
-	selectOrCreateOwnerCustomerFromTeam := humamiddleware.SelectOrCreateOwnerCustomerFromTeam(api, appApi.App())
 	teamInfoFromParam := humamiddleware.TeamInfoFromParam(api, appApi.App())
 	stripeGroup := huma.NewGroup(api)
 
@@ -152,7 +151,7 @@ func BindStripeApi(api huma.API, appApi *Api) {
 			Security:    []map[string][]string{{shared.BearerAuthSecurityKey: {}}},
 			Middlewares: huma.Middlewares{
 				teamInfoFromParam,
-				selectOrCreateOwnerCustomerFromTeam,
+				selectCustomerFromTeam,
 			},
 		},
 		appApi.CreateTeamCheckoutSession,
@@ -171,7 +170,7 @@ func BindStripeApi(api huma.API, appApi *Api) {
 			Security:    []map[string][]string{{shared.BearerAuthSecurityKey: {}}},
 			Middlewares: huma.Middlewares{
 				teamInfoFromParam,
-				selectOrCreateOwnerCustomerFromTeam,
+				selectCustomerFromTeam,
 			},
 		},
 		appApi.StripeTeamBillingPortal,
