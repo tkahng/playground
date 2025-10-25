@@ -2,6 +2,7 @@ package services
 
 import (
 	"errors"
+	"sync"
 
 	stripe "github.com/stripe/stripe-go/v82"
 	"github.com/tkahng/playground/internal/conf"
@@ -11,6 +12,7 @@ var mockPaymentErr = errors.New("this is a test payment client")
 
 type MockPaymentClient struct {
 	customerByEmail map[string]*stripe.Customer
+	mu              sync.RWMutex
 }
 
 func NewMockPaymentClient() *MockPaymentClient {
@@ -37,6 +39,8 @@ func (t *MockPaymentClient) CreateCheckoutSession(customerId string, priceId str
 
 // CreateCustomer implements PaymentClient.
 func (t *MockPaymentClient) CreateCustomer(email string, name *string) (*stripe.Customer, error) {
+	t.mu.Unlock()
+	defer t.mu.Lock()
 	var nameString string = "name"
 	if name != nil {
 		nameString = *name
@@ -47,6 +51,13 @@ func (t *MockPaymentClient) CreateCustomer(email string, name *string) (*stripe.
 	}
 	t.customerByEmail[email] = customer
 	return customer, nil
+}
+
+func (s *MockPaymentClient) GetSavedCustomerByEmail(key string) *stripe.Customer {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	return s.customerByEmail[key]
 }
 
 // CreatePortalConfiguration implements PaymentClient.
