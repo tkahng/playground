@@ -312,7 +312,7 @@ func NewApp(config *conf.EnvConfig) *BaseApp {
 
 func NewTestBaseApp(config *conf.EnvConfig, db database.Dbx) *BaseApp {
 	app := new(BaseApp)
-	payment := services.NewTestPaymentClient()
+	payment := services.NewMockPaymentClient()
 	mailer := mailer.NewTestMailer()
 	logger := logger.GetDefaultLogger()
 	app.logger = logger
