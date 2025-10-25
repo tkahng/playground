@@ -142,22 +142,42 @@ func (api *Api) CreateTeam(
 	if info == nil {
 		return nil, huma.Error401Unauthorized("unauthorized")
 	}
-	team, err := api.App().Team().CreateTeamWithOwner(
-		ctx,
-		input.Body.Name,
-		input.Body.Slug,
-		info.User.ID,
-	)
-	if err != nil {
-		return nil, err
-	}
-	if team == nil {
-		return nil, huma.Error500InternalServerError("team not found")
+	user := &info.User
+	var teamInfo *models.TeamInfoModel
+	runInTxErr := api.App().Adapter().RunInTxCtx(ctx, func(txCtx context.Context) error {
+		teamInfoTx, err := api.App().Team().CreateTeamWithOwner(
+			txCtx,
+			input.Body.Name,
+			input.Body.Slug,
+			user.ID,
+		)
+		if err != nil {
+			return err
+		}
+		if teamInfoTx == nil {
+			return huma.Error500InternalServerError("team not found")
+		}
+		team := &teamInfoTx.Team
+
+		_, err = api.App().Payment().CreateTeamCustomer(
+			txCtx,
+			team,
+			user,
+		)
+		if err != nil {
+			return err
+		}
+
+		teamInfo = teamInfoTx
+		return nil
+	})
+	if runInTxErr != nil {
+		return nil, runInTxErr
 	}
 	return &TeamWithMemberOutput{
 		Body: &TeamWithMember{
-			Team:   *FromTeamModel(&team.Team),
-			Member: FromTeamMemberModel(&team.Member),
+			Team:   *FromTeamModel(&teamInfo.Team),
+			Member: FromTeamMemberModel(&teamInfo.Member),
 		},
 	}, nil
 }
@@ -758,8 +778,8 @@ func (api *Api) CencelInvitation(
 	if userInfo == nil {
 		return nil, huma.Error401Unauthorized("Unauthorized. No user info")
 	}
-	teamInfo := contextstore.GetContextTeamInfo(ctx)
-	if teamInfo == nil {
+	teamInfoTx := contextstore.GetContextTeamInfo(ctx)
+	if teamInfoTx == nil {
 		return nil, huma.Error401Unauthorized("Unauthorized. No team info")
 	}
 	parsedTeamId, err := uuid.Parse(input.TeamID)
@@ -773,7 +793,7 @@ func (api *Api) CencelInvitation(
 	err = api.App().TeamInvitation().CancelInvitation(
 		ctx,
 		parsedTeamId,
-		teamInfo.User.ID,
+		teamInfoTx.User.ID,
 		parsedInvitationId,
 	)
 	if err != nil {
