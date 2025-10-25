@@ -28,11 +28,13 @@ var (
 		},
 	}
 	ProMonthlyPrice = &stripe.Price{
-		ID:         "price_pro_month_usd_5000",
-		Product:    ProProduct,
-		Active:     true,
-		Currency:   stripe.CurrencyUSD,
-		UnitAmount: 5000,
+		ID:            "price_pro_month_usd_5000",
+		Product:       ProProduct,
+		Active:        true,
+		Currency:      stripe.CurrencyUSD,
+		Type:          stripe.PriceTypeRecurring,
+		BillingScheme: stripe.PriceBillingSchemePerUnit,
+		UnitAmount:    5000,
 		Recurring: &stripe.PriceRecurring{
 			Interval:      stripe.PriceRecurringIntervalMonth,
 			IntervalCount: 1,
@@ -47,6 +49,7 @@ var (
 		Active:        true,
 		Currency:      stripe.CurrencyUSD,
 		BillingScheme: stripe.PriceBillingSchemePerUnit,
+		Type:          stripe.PriceTypeRecurring,
 		UnitAmount:    50000,
 		Recurring: &stripe.PriceRecurring{
 			Interval:      stripe.PriceRecurringIntervalYear,
@@ -62,6 +65,7 @@ var (
 		Active:        true,
 		Currency:      stripe.CurrencyUSD,
 		BillingScheme: stripe.PriceBillingSchemePerUnit,
+		Type:          stripe.PriceTypeRecurring,
 		UnitAmount:    8500,
 		Recurring: &stripe.PriceRecurring{
 			Interval:      stripe.PriceRecurringIntervalYear,
@@ -77,6 +81,7 @@ var (
 		Active:        true,
 		Currency:      stripe.CurrencyUSD,
 		BillingScheme: stripe.PriceBillingSchemePerUnit,
+		Type:          stripe.PriceTypeRecurring,
 		UnitAmount:    85000,
 		Recurring: &stripe.PriceRecurring{
 			Interval:      stripe.PriceRecurringIntervalYear,
