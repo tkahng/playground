@@ -1,0 +1,43 @@
+name: Test
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: tkahng/postgres:18
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: playground_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      # Set up Go environment
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          cache: true
+          cache-dependency-path: go.sum
+          go-version: "1.24.5" # Use Go version 1.23.5
+
+      - name: Setup Test DB
+        env:
+          DATABASE_DB: playground_test
+        run: go run . migrate up
+
+      - name: Run tests
+        run: go test -v ./... -race -coverprofile=coverage.txt

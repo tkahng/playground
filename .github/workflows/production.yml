@@ -1,4 +1,4 @@
-name: Build and test
+name: Build and test in production
 on:
   push:
     branches: ["main"]
@@ -38,10 +38,6 @@ jobs:
           cache: true
           cache-dependency-path: go.sum
           go-version: "1.24.5" # Use Go version 1.23.5
-
-      # Install dependencies
-      - name: Install dependencies
-        run: go mod tidy
 
       - name: Setup Test DB
         env:
