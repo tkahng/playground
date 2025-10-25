@@ -116,7 +116,7 @@ type MockPaymentClient struct {
 	ConfigFunc                        func() *conf.StripeConfig
 	CreateBillingPortalSessionFunc    func(customerId string, configurationId string) (*stripe.BillingPortalSession, error)
 	CreateCheckoutSessionFunc         func(customerId string, priceId string, quantity int64, trialDays *int64) (*stripe.CheckoutSession, error)
-	CreateCustomerFunc                func(email string, name *string) (*stripe.Customer, error)
+	CreateCustomerFunc                func(email string, name *string, metadata *map[string]string) (*stripe.Customer, error)
 	CreatePortalConfigurationFunc     func(input ...*stripe.BillingPortalConfigurationFeaturesSubscriptionUpdateProductParams) (string, error)
 	FindAllPricesFunc                 func() ([]*stripe.Price, error)
 	FindAllProductsFunc               func() ([]*stripe.Product, error)
@@ -128,7 +128,9 @@ type MockPaymentClient struct {
 }
 
 func NewMockPaymentClient() *MockPaymentClient {
-	return &MockPaymentClient{}
+	return &MockPaymentClient{
+		CustomerByEmail: make(map[string]*stripe.Customer),
+	}
 }
 
 // Config implements PaymentClient.
@@ -155,20 +157,25 @@ func (t *MockPaymentClient) CreateCheckoutSession(customerId string, priceId str
 	return nil, mockPaymentErr
 }
 
-func (t *MockPaymentClient) CreateCustomer(email string, name *string) (*stripe.Customer, error) {
+func (t *MockPaymentClient) CreateCustomer(email string, name *string, metadata *map[string]string) (*stripe.Customer, error) {
 	if t.CreateCustomerFunc != nil {
-		return t.CreateCustomerFunc(email, name)
+		return t.CreateCustomerFunc(email, name, metadata)
 	}
 	var nameString string
+	var meta map[string]string
 	if name != nil {
 		nameString = *name
 	} else {
 		nameString = uuid.NewString()
 	}
+	if metadata != nil {
+		meta = *metadata
+	}
 	customer := &stripe.Customer{
-		ID:    fmt.Sprintf("cus_%s-%s", email, nameString),
-		Email: email,
-		Name:  nameString,
+		ID:       fmt.Sprintf("cus_%s-%s", email, nameString),
+		Email:    email,
+		Name:     nameString,
+		Metadata: meta,
 	}
 	t.CustomerByEmail[email] = customer
 	return customer, nil

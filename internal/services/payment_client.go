@@ -44,10 +44,13 @@ func (c *StripeClient) Config() *conf.StripeConfig {
 	return c.config
 }
 
-func (c *StripeClient) CreateCustomer(email string, name *string) (*stripe.Customer, error) {
+func (c *StripeClient) CreateCustomer(email string, name *string, metadata *map[string]string) (*stripe.Customer, error) {
 	params := &stripe.CustomerParams{
 		Name:  name,
 		Email: stripe.String(email),
+	}
+	if metadata != nil {
+		params.Metadata = *metadata
 	}
 	return customer.New(params)
 }
@@ -112,7 +115,7 @@ func (c *StripeClient) FindAllPrices() ([]*stripe.Price, error) {
 func (c *StripeClient) FindOrCreateCustomer(email string, name *string) (*stripe.Customer, error) {
 	cs, _ := c.findCustomerByEmailAndUserId(email, name)
 	if cs == nil {
-		return c.CreateCustomer(email, name)
+		return c.CreateCustomer(email, name, nil)
 	}
 	return cs, nil
 }
