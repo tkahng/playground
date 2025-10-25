@@ -19,21 +19,6 @@ import (
 	"github.com/tkahng/playground/internal/tools/utils"
 )
 
-type PaymentClient interface {
-	Config() *conf.StripeConfig
-	CreateBillingPortalSession(customerId string, configurationId string) (*stripe.BillingPortalSession, error)
-	CreateCheckoutSession(customerId string, priceId string, quantity int64, trialDays *int64) (*stripe.CheckoutSession, error)
-	CreateCustomer(email string, name *string, metadata *map[string]string) (*stripe.Customer, error)
-	CreatePortalConfiguration(input ...*stripe.BillingPortalConfigurationFeaturesSubscriptionUpdateProductParams) (string, error)
-	FindAllPrices() ([]*stripe.Price, error)
-	FindAllProducts() ([]*stripe.Product, error)
-	FindCheckoutSessionByStripeId(stripeId string) (*stripe.CheckoutSession, error)
-	FindOrCreateCustomer(email string, name *string) (*stripe.Customer, error)
-	FindSubscriptionByStripeId(stripeId string) (*stripe.Subscription, error)
-	UpdateCustomer(customerId string, params *stripe.CustomerParams) (*stripe.Customer, error)
-	UpdateItemQuantity(itemId string, priceId string, count int64) (*stripe.SubscriptionItem, error)
-}
-
 type PaymentService interface {
 	Client() PaymentClient
 
@@ -65,6 +50,21 @@ type PaymentService interface {
 	VerifyAndUpdateTeamSubscriptionQuantity(ctx context.Context, teamId uuid.UUID) error
 
 	TeamCanAddMembers(ctx context.Context, teamId uuid.UUID) (bool, error)
+}
+
+type PaymentClient interface {
+	Config() *conf.StripeConfig
+	CreateBillingPortalSession(customerId string, configurationId string) (*stripe.BillingPortalSession, error)
+	CreateCheckoutSession(customerId string, priceId string, quantity int64, trialDays *int64) (*stripe.CheckoutSession, error)
+	CreateCustomer(email string, name *string, metadata *map[string]string) (*stripe.Customer, error)
+	CreatePortalConfiguration(input ...*stripe.BillingPortalConfigurationFeaturesSubscriptionUpdateProductParams) (string, error)
+	FindAllPrices() ([]*stripe.Price, error)
+	FindAllProducts() ([]*stripe.Product, error)
+	FindCheckoutSessionByStripeId(stripeId string) (*stripe.CheckoutSession, error)
+	FindOrCreateCustomer(email string, name *string) (*stripe.Customer, error)
+	FindSubscriptionByStripeId(stripeId string) (*stripe.Subscription, error)
+	UpdateCustomer(customerId string, params *stripe.CustomerParams) (*stripe.Customer, error)
+	UpdateItemQuantity(itemId string, priceId string, count int64) (*stripe.SubscriptionItem, error)
 }
 
 type StripeService struct {
