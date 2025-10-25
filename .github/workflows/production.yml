@@ -1,4 +1,4 @@
-name: Build and test
+name: Build and test in production
 on:
   push:
     branches: ["main"]
