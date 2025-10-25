@@ -2,13 +2,54 @@ package database
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"runtime/debug"
+	"sync"
 	"testing"
 
 	"github.com/tkahng/playground/internal/conf"
 )
+
+var (
+	ErrEndTest  = errors.New("end test. rollback transaction")
+	ctxInstance context.Context
+	ctxOnce     sync.Once
+	dbx         *Queries
+)
+
+func DbSetup(cfg *conf.EnvConfig) (context.Context, *Queries) {
+	ctxOnce.Do(func() {
+		ctxInstance = context.Background()
+		dbx = CreateNewQueriesContext(ctxInstance, cfg.Db.GetDatabaseUrl())
+	})
+	return ctxInstance, dbx
+}
+
+func WithSingletonTestTx(t *testing.T, fn func(ctx context.Context, db Dbx)) {
+	DbSetup(conf.ZeroEnvConfig())
+	ctx := ctxInstance
+	tx, err := dbx.Begin(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// nolint:errcheck
+	defer tx.Rollback(ctx)
+	// panic handle
+	defer func() {
+		if recErr := recover(); recErr != nil {
+			slog.ErrorContext(ctx, "recovered from panic in transaction.", slog.Any("error", fmt.Sprint(recErr)), slog.Any("stacktrace", string(debug.Stack())))
+			rollBackErr := tx.Rollback(ctx)
+			if rollBackErr != nil {
+				slog.ErrorContext(ctx, "recovered from panic in transaction.", slog.Any("error", fmt.Sprint(recErr)), slog.Any("stacktrace", string(debug.Stack())))
+				t.Error(rollBackErr)
+			}
+			t.Fatal(fmt.Sprint(recErr))
+		}
+	}()
+	fn(ctx, NewTxQueries(tx))
+}
 
 // WithNewTestTx creates a new pool connection, runs the test within that transaciton, rolls back, and closes the pool.
 func WithNewTestTx(t *testing.T, fn func(ctx context.Context, db Dbx)) {
