@@ -39,6 +39,8 @@ func TestStripeService_CreateTeamCustomer(t *testing.T) {
 				assert.Equal(t, cus.Email, result.Email, "customer email should be the same")
 				assert.Equal(t, cus.Metadata["team_id"], team1.ID.String(), "customer metadata should be the same")
 				assert.Equal(t, cus.Metadata["customer_type"], string(models.StripeCustomerTypeTeam), "customer metadata should be the same")
+			} else {
+				t.Fatal("customer not found")
 			}
 		})
 	})
@@ -91,6 +93,8 @@ func TestStripeService_CreateUserCustomer(t *testing.T) {
 				assert.Equal(t, cus.Email, result.Email, "customer email should be the same")
 				assert.Equal(t, cus.Metadata["user_id"], user1.ID.String(), "customer metadata should be the same")
 				assert.Equal(t, cus.Metadata["customer_type"], string(models.StripeCustomerTypeUser), "customer metadata should be the same")
+			} else {
+				assert.Fail(t, "customer should be created")
 			}
 		})
 
