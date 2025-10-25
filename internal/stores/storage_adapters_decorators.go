@@ -52,44 +52,38 @@ func NewDbAdapterDecorators(db database.Dbx) *StorageAdapterDecorator {
 }
 
 func NewCustomerStoreDecorator(db database.Dbx) *CustomerStoreDecorator {
-	delegate := NewDbCustomerStore(db)
 	return &CustomerStoreDecorator{
-		Delegate: delegate,
+		Delegate: NewDbCustomerStore(db),
 	}
 }
 
 func NewStripeProductStoreDecorator(db database.Dbx) *StripeProductStoreDecorator {
-	delegate := NewDbProductStore(db)
 	return &StripeProductStoreDecorator{
-		Delegate: delegate,
+		Delegate: NewDbProductStore(db),
 	}
 }
 
 func NewStripePriceStoreDecorator(db database.Dbx) *StripePriceStoreDecorator {
-	delegate := NewDbPriceStore(db)
 	return &StripePriceStoreDecorator{
-		Delegate: delegate,
+		Delegate: NewDbPriceStore(db),
 	}
 }
 
 func NewStripeSubscriptionStoreDecorator(db database.Dbx) *StripeSubscriptionStoreDecorator {
-	delegate := NewDbSubscriptionStore(db)
 	return &StripeSubscriptionStoreDecorator{
-		Delegate: delegate,
+		Delegate: NewDbSubscriptionStore(db),
 	}
 }
 
 func NewTaskDecorator(db database.Dbx) *TaskDecorator {
-	delegate := NewDbTaskStore(db)
 	return &TaskDecorator{
-		Delegate: delegate,
+		Delegate: NewDbTaskStore(db),
 	}
 }
 
 func NewDbMediaStoreDecorator(db database.Dbx) *MediaStoreDecorator {
-	delegate := NewMediaStore(db)
 	return &MediaStoreDecorator{
-		Delegate: delegate,
+		Delegate: NewMediaStore(db),
 	}
 }
 
