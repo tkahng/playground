@@ -21,6 +21,7 @@ import (
 	"github.com/tkahng/playground/internal/conf"
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/models"
+	"github.com/tkahng/playground/internal/stores"
 
 	"github.com/tkahng/playground/internal/services"
 
@@ -264,6 +265,15 @@ func ExtractTestPaymentClient(t *testing.T, app core.App) *services.MockPaymentC
 		t.Fatal("mailer is not a TestMailer")
 	}
 	return paymenClient
+}
+func ExtractAdapterDecorator(t *testing.T, app core.App) *stores.StorageAdapterDecorator {
+	var adapter *stores.StorageAdapterDecorator
+	if m, ok := app.Adapter().(*stores.StorageAdapterDecorator); ok {
+		adapter = m
+	} else {
+		t.Fatal("mailer is not a TestMailer")
+	}
+	return adapter
 }
 
 type TestApi struct {
