@@ -30,7 +30,7 @@ func DbSetup(cfg *conf.EnvConfig) (context.Context, *Queries) {
 func WithSingletonTestTx(t *testing.T, fn func(ctx context.Context, db Dbx)) {
 	DbSetup(conf.ZeroEnvConfig())
 	ctx := ctxInstance
-	tx, err := dbx.Begin(ctx)
+	tx, err := dbx.BeginTx(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -61,7 +61,7 @@ func WithNewTestTx(t *testing.T, fn func(ctx context.Context, db Dbx)) {
 	ctx := context.Background()
 	cfg := conf.ZeroEnvConfig()
 	dbx := CreateNewQueriesContext(ctx, cfg.Db.GetDatabaseUrl())
-	tx, beginErr := dbx.Begin(ctx)
+	tx, beginErr := dbx.BeginTx(ctx)
 	if beginErr != nil {
 		t.Fatal(beginErr)
 	}

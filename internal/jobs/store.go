@@ -96,7 +96,7 @@ func (e *DbJobStore) SaveManyJobs(ctx context.Context, jobs ...*EnqueueParams) e
 }
 func (e *DbJobStore) processBatch(ctx context.Context, jobs []*EnqueueParams) error {
 	db := database.GetContextOrDefaultDbx(ctx, e.db)
-	tx, err := db.Begin(ctx)
+	tx, err := db.BeginTx(ctx)
 	if err != nil {
 		return fmt.Errorf("begin transaction: %w", err)
 	}
@@ -159,7 +159,7 @@ var _ JobStore = (*DbJobStore)(nil)
 
 func (s *DbJobStore) RunInTx(ctx context.Context, fn func(JobStore) error) error {
 	db := database.GetContextOrDefaultDbx(ctx, s.db)
-	tx, err := db.Begin(ctx)
+	tx, err := db.BeginTx(ctx)
 	if err != nil {
 		return fmt.Errorf("begin transaction: %w", err)
 	}
