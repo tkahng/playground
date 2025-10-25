@@ -296,11 +296,18 @@ func (app *BaseApp) RunBackgroundProcesses(firstCtx context.Context) {
 
 func NewApp(config *conf.EnvConfig) *BaseApp {
 	app := new(BaseApp)
+
 	db := database.CreateNewQueriesContext(context.Background(), config.Db.GetDatabaseUrl())
+	adapter := stores.NewStorageAdapter(db)
+
 	payment := services.NewPaymentClient(config.StripeConfig)
+
 	mailer := mailer.NewResendMailer(config.ResendConfig)
+
 	logger := logger.GetDefaultLogger()
+
 	app.db = db
+	app.adapter = adapter
 	app.logger = logger
 	app.cfg = config
 	app.paymentClient = payment
@@ -312,11 +319,17 @@ func NewApp(config *conf.EnvConfig) *BaseApp {
 
 func NewTestBaseApp(config *conf.EnvConfig, db database.Dbx) *BaseApp {
 	app := new(BaseApp)
+	adapter := stores.NewDbAdapterDecorators(db)
+
 	payment := services.NewMockPaymentClient()
+
 	mailer := mailer.NewTestMailer()
+
 	logger := logger.GetDefaultLogger()
+
 	app.logger = logger
 	app.db = db
+	app.adapter = adapter
 	app.cfg = config
 	app.paymentClient = payment
 	app.mailer = mailer

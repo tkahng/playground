@@ -6,7 +6,6 @@ import (
 	"github.com/tkahng/playground/internal/events"
 	"github.com/tkahng/playground/internal/jobs"
 	"github.com/tkahng/playground/internal/services"
-	"github.com/tkahng/playground/internal/stores"
 	"github.com/tkahng/playground/internal/token"
 	"github.com/tkahng/playground/internal/tools/sse"
 	"github.com/tkahng/playground/internal/userreaction"
@@ -115,8 +114,8 @@ func (a *Assembler) setDatasource(app *BaseApp) {
 	// 	app.db = queries
 	// }
 	// if app.adapter == nil {
-	adapter := stores.NewStorageAdapter(app.db)
-	app.adapter = adapter
+	// adapter := stores.NewStorageAdapter(app.db)
+	// app.adapter = adapter
 	// }
 }
 
