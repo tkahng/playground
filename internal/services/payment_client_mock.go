@@ -2,6 +2,7 @@ package services
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/google/uuid"
 	stripe "github.com/stripe/stripe-go/v82"
@@ -27,6 +28,8 @@ var (
 			"index": "2",
 		},
 	}
+)
+var (
 	ProMonthlyPrice = &stripe.Price{
 		ID:            "price_pro_month_usd_5000",
 		Product:       ProProduct,
@@ -91,6 +94,9 @@ var (
 			"index": "4",
 		},
 	}
+)
+
+var (
 	Products = []*stripe.Product{
 		ProProduct,
 		AdvancedProduct,
@@ -140,6 +146,7 @@ func (t *MockPaymentClient) CreateCustomer(email string, name *string) (*stripe.
 		nameString = uuid.NewString()
 	}
 	customer := &stripe.Customer{
+		ID:    fmt.Sprintf("cus_%s-%s", email, nameString),
 		Email: email,
 		Name:  nameString,
 	}
