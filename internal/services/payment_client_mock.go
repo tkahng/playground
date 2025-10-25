@@ -112,7 +112,19 @@ var (
 var mockPaymentErr = errors.New("this is a test payment client")
 
 type MockPaymentClient struct {
-	CustomerByEmail map[string]*stripe.Customer
+	CustomerByEmail                   map[string]*stripe.Customer
+	ConfigFunc                        func() *conf.StripeConfig
+	CreateBillingPortalSessionFunc    func(customerId string, configurationId string) (*stripe.BillingPortalSession, error)
+	CreateCheckoutSessionFunc         func(customerId string, priceId string, quantity int64, trialDays *int64) (*stripe.CheckoutSession, error)
+	CreateCustomerFunc                func(email string, name *string) (*stripe.Customer, error)
+	CreatePortalConfigurationFunc     func(input ...*stripe.BillingPortalConfigurationFeaturesSubscriptionUpdateProductParams) (string, error)
+	FindAllPricesFunc                 func() ([]*stripe.Price, error)
+	FindAllProductsFunc               func() ([]*stripe.Product, error)
+	FindCheckoutSessionByStripeIdFunc func(stripeId string) (*stripe.CheckoutSession, error)
+	FindOrCreateCustomerFunc          func(email string, name *string) (*stripe.Customer, error)
+	FindSubscriptionByStripeIdFunc    func(stripeId string) (*stripe.Subscription, error)
+	UpdateCustomerFunc                func(customerId string, params *stripe.CustomerParams) (*stripe.Customer, error)
+	UpdateItemQuantityFunc            func(itemId string, priceId string, count int64) (*stripe.SubscriptionItem, error)
 }
 
 func NewMockPaymentClient() *MockPaymentClient {
@@ -121,24 +133,32 @@ func NewMockPaymentClient() *MockPaymentClient {
 
 // Config implements PaymentClient.
 func (t *MockPaymentClient) Config() *conf.StripeConfig {
-
+	if t.ConfigFunc != nil {
+		return t.ConfigFunc()
+	}
 	return nil
 }
 
 // CreateBillingPortalSession implements PaymentClient.
 func (t *MockPaymentClient) CreateBillingPortalSession(customerId string, configurationId string) (*stripe.BillingPortalSession, error) {
-
+	if t.CreateBillingPortalSessionFunc != nil {
+		return t.CreateBillingPortalSessionFunc(customerId, configurationId)
+	}
 	return nil, mockPaymentErr
 }
 
 // CreateCheckoutSession implements PaymentClient.
 func (t *MockPaymentClient) CreateCheckoutSession(customerId string, priceId string, quantity int64, trialDays *int64) (*stripe.CheckoutSession, error) {
-
+	if t.CreateCheckoutSessionFunc != nil {
+		return t.CreateCheckoutSessionFunc(customerId, priceId, quantity, trialDays)
+	}
 	return nil, mockPaymentErr
 }
 
-// CreateCustomer implements PaymentClient.
 func (t *MockPaymentClient) CreateCustomer(email string, name *string) (*stripe.Customer, error) {
+	if t.CreateCustomerFunc != nil {
+		return t.CreateCustomerFunc(email, name)
+	}
 	var nameString string
 	if name != nil {
 		nameString = *name
@@ -156,49 +176,65 @@ func (t *MockPaymentClient) CreateCustomer(email string, name *string) (*stripe.
 
 // CreatePortalConfiguration implements PaymentClient.
 func (t *MockPaymentClient) CreatePortalConfiguration(input ...*stripe.BillingPortalConfigurationFeaturesSubscriptionUpdateProductParams) (string, error) {
-
+	if t.CreatePortalConfigurationFunc != nil {
+		return t.CreatePortalConfigurationFunc(input...)
+	}
 	return "", mockPaymentErr
 }
 
 // FindAllPrices implements PaymentClient.
 func (t *MockPaymentClient) FindAllPrices() ([]*stripe.Price, error) {
-
+	if t.FindAllPricesFunc != nil {
+		return t.FindAllPricesFunc()
+	}
 	return nil, mockPaymentErr
 }
 
 // FindAllProducts implements PaymentClient.
 func (t *MockPaymentClient) FindAllProducts() ([]*stripe.Product, error) {
-
+	if t.FindAllProductsFunc != nil {
+		return t.FindAllProductsFunc()
+	}
 	return nil, mockPaymentErr
 }
 
 // FindCheckoutSessionByStripeId implements PaymentClient.
 func (t *MockPaymentClient) FindCheckoutSessionByStripeId(stripeId string) (*stripe.CheckoutSession, error) {
-
+	if t.FindCheckoutSessionByStripeIdFunc != nil {
+		return t.FindCheckoutSessionByStripeIdFunc(stripeId)
+	}
 	return nil, mockPaymentErr
 }
 
 // FindOrCreateCustomer implements PaymentClient.
 func (t *MockPaymentClient) FindOrCreateCustomer(email string, name *string) (*stripe.Customer, error) {
-
+	if t.FindOrCreateCustomerFunc != nil {
+		return t.FindOrCreateCustomerFunc(email, name)
+	}
 	return nil, mockPaymentErr
 }
 
 // FindSubscriptionByStripeId implements PaymentClient.
 func (t *MockPaymentClient) FindSubscriptionByStripeId(stripeId string) (*stripe.Subscription, error) {
-
+	if t.FindSubscriptionByStripeIdFunc != nil {
+		return t.FindSubscriptionByStripeIdFunc(stripeId)
+	}
 	return nil, mockPaymentErr
 }
 
 // UpdateCustomer implements PaymentClient.
 func (t *MockPaymentClient) UpdateCustomer(customerId string, params *stripe.CustomerParams) (*stripe.Customer, error) {
-
+	if t.UpdateCustomerFunc != nil {
+		return t.UpdateCustomerFunc(customerId, params)
+	}
 	return nil, mockPaymentErr
 }
 
 // UpdateItemQuantity implements PaymentClient.
 func (t *MockPaymentClient) UpdateItemQuantity(itemId string, priceId string, count int64) (*stripe.SubscriptionItem, error) {
-
+	if t.UpdateItemQuantityFunc != nil {
+		return t.UpdateItemQuantityFunc(itemId, priceId, count)
+	}
 	return nil, mockPaymentErr
 }
 
