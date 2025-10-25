@@ -15,7 +15,7 @@ import (
 
 func TestTeamService_AddMember_Success(t *testing.T) {
 	adapterDecorator := stores.NewAdapterDecorators()
-	service := &teamService{
+	service := &TeamServiceImpl{
 		adapter: adapterDecorator,
 	}
 
@@ -43,7 +43,7 @@ func TestTeamService_AddMember_Success(t *testing.T) {
 
 func TestTeamService_AddMember_Error(t *testing.T) {
 	adapterDecorator := stores.NewAdapterDecorators()
-	service := &teamService{
+	service := &TeamServiceImpl{
 		adapter: adapterDecorator,
 	}
 
@@ -64,7 +64,7 @@ func TestTeamService_AddMember_Error(t *testing.T) {
 }
 func TestTeamService_CreateTeam_Success(t *testing.T) {
 	adapterDecorator := stores.NewAdapterDecorators()
-	service := &teamService{
+	service := &TeamServiceImpl{
 		adapter: adapterDecorator,
 	}
 
@@ -109,7 +109,7 @@ func TestTeamService_CreateTeam_Success(t *testing.T) {
 
 func TestTeamService_CreateTeam_SlugExists(t *testing.T) {
 	adapterDecorator := stores.NewAdapterDecorators()
-	service := &teamService{
+	service := &TeamServiceImpl{
 		adapter: adapterDecorator,
 	}
 
@@ -133,7 +133,7 @@ func TestTeamService_CreateTeam_SlugExists(t *testing.T) {
 
 func TestTeamService_CreateTeam_CheckTeamSlugError(t *testing.T) {
 	adapterDecorator := stores.NewAdapterDecorators()
-	service := &teamService{
+	service := &TeamServiceImpl{
 		adapter: adapterDecorator,
 	}
 
@@ -158,7 +158,7 @@ func TestTeamService_CreateTeam_CheckTeamSlugError(t *testing.T) {
 
 func TestTeamService_CreateTeam_CreateTeamWithOwnerMemberError(t *testing.T) {
 	adapterDecorator := stores.NewAdapterDecorators()
-	service := &teamService{
+	service := &TeamServiceImpl{
 		adapter: adapterDecorator,
 	}
 
@@ -190,7 +190,7 @@ func TestTeamService_CreateTeam_CreateTeamWithOwnerMemberError(t *testing.T) {
 
 func TestTeamService_UpdateTeam_Success(t *testing.T) {
 	adapterDecorator := stores.NewAdapterDecorators()
-	service := &teamService{
+	service := &TeamServiceImpl{
 		adapter: adapterDecorator,
 	}
 
@@ -212,7 +212,7 @@ func TestTeamService_UpdateTeam_Success(t *testing.T) {
 
 func TestTeamService_UpdateTeam_Error(t *testing.T) {
 	adapterDecorator := stores.NewAdapterDecorators()
-	service := &teamService{
+	service := &TeamServiceImpl{
 		adapter: adapterDecorator,
 	}
 
@@ -234,7 +234,7 @@ func TestTeamService_UpdateTeam_Error(t *testing.T) {
 
 func TestTeamService_UpdateTeam_TeamNotFound(t *testing.T) {
 	adapterDecorator := stores.NewAdapterDecorators()
-	service := &teamService{
+	service := &TeamServiceImpl{
 		adapter: adapterDecorator,
 	}
 
