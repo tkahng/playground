@@ -50,8 +50,8 @@ type PaymentService interface {
 	CreateUserCustomer(ctx context.Context, user *models.User) (*models.StripeCustomer, error)
 	CreateTeamCustomer(ctx context.Context, team *models.Team, user *models.User) (*models.StripeCustomer, error)
 
-	FindCustomerByUser(ctx context.Context, userId uuid.UUID) (*models.StripeCustomer, error)
-	FindCustomerByTeam(ctx context.Context, teamId uuid.UUID) (*models.StripeCustomer, error)
+	FindCustomerByUserId(ctx context.Context, userId uuid.UUID) (*models.StripeCustomer, error)
+	FindCustomerByTeamId(ctx context.Context, teamId uuid.UUID) (*models.StripeCustomer, error)
 
 	CreateBillingPortalSession(ctx context.Context, stripeCustomerId string) (string, error)
 	CreateCheckoutSession(ctx context.Context, stripeCustomerId string, priceId string) (string, error)
@@ -64,7 +64,6 @@ type PaymentService interface {
 
 	VerifyAndUpdateTeamSubscriptionQuantity(ctx context.Context, teamId uuid.UUID) error
 
-	SyncCustomerData(ctx context.Context, customerID string)
 	TeamCanAddMembers(ctx context.Context, teamId uuid.UUID) (bool, error)
 }
 
@@ -72,11 +71,6 @@ type StripeService struct {
 	logger  *slog.Logger
 	client  PaymentClient
 	adapter stores.StorageAdapterInterface
-}
-
-// SyncCustomerData implements PaymentService.
-func (srv *StripeService) SyncCustomerData(ctx context.Context, customerID string) {
-	panic("unimplemented")
 }
 
 // Adapter implements PaymentService.
@@ -96,39 +90,7 @@ func NewPaymentService(
 		adapter: adapter,
 	}
 }
-func (s *StripeService) LoadPricesWithProductByPriceIds(ctx context.Context, priceIds ...string) ([]*models.StripePrice, error) {
-	if len(priceIds) == 0 {
-		return nil, nil
-	}
-	prices, err := s.adapter.Price().LoadPricesByIds(ctx, priceIds...)
-	if err != nil {
-		return nil, err
-	}
-	productIds := mapper.Map(prices, func(price *models.StripePrice) string {
-		if price == nil || price.ProductID == "" {
-			return ""
-		}
-		return price.ProductID
-	})
-	products, err := s.adapter.Product().LoadProductsByIds(ctx, productIds...)
-	if err != nil {
-		return nil, err
-	}
-	for i, price := range prices {
-		if price == nil {
-			continue
-		}
-		product := products[i]
-		if product == nil {
-			continue
-		}
-		if product.ID != price.ProductID {
-			continue
-		}
-		price.Product = product
-	}
-	return prices, nil
-}
+
 func (s *StripeService) UpsertSubscriptionFromStripe(ctx context.Context, sub *stripe.Subscription) error {
 	if sub == nil {
 		return nil
@@ -204,8 +166,8 @@ func (srv *StripeService) CreateUserCustomer(ctx context.Context, user *models.U
 	return srv.adapter.Customer().CreateCustomer(ctx, stripeCustomer)
 }
 
-// FindCustomerByTeam implements PaymentService.
-func (srv *StripeService) FindCustomerByTeam(ctx context.Context, teamId uuid.UUID) (*models.StripeCustomer, error) {
+// FindCustomerByTeamId implements PaymentService.
+func (srv *StripeService) FindCustomerByTeamId(ctx context.Context, teamId uuid.UUID) (*models.StripeCustomer, error) {
 	return srv.adapter.Customer().FindCustomer(
 		ctx,
 		&stores.StripeCustomerFilter{
@@ -214,8 +176,8 @@ func (srv *StripeService) FindCustomerByTeam(ctx context.Context, teamId uuid.UU
 	)
 }
 
-// FindCustomerByUser implements PaymentService.
-func (srv *StripeService) FindCustomerByUser(ctx context.Context, userId uuid.UUID) (*models.StripeCustomer, error) {
+// FindCustomerByUserId implements PaymentService.
+func (srv *StripeService) FindCustomerByUserId(ctx context.Context, userId uuid.UUID) (*models.StripeCustomer, error) {
 	return srv.adapter.Customer().FindCustomer(
 		ctx,
 		&stores.StripeCustomerFilter{

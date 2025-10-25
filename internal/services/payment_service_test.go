@@ -112,7 +112,7 @@ func TestStripeService_FindCustomerByTeam(t *testing.T) {
 			return customer, nil
 		}
 		// store.On("FindCustomer", ctx, mock.AnythingOfType("*models.StripeCustomer")).Return(customer, nil)
-		result, err := service.FindCustomerByTeam(ctx, teamId)
+		result, err := service.FindCustomerByTeamId(ctx, teamId)
 		assert.NoError(t, err)
 		assert.Equal(t, customer, result)
 	})
@@ -126,7 +126,7 @@ func TestStripeService_FindCustomerByTeam(t *testing.T) {
 			return nil, errors.New("db error")
 		}
 		// store.On("FindCustomer", ctx, mock.AnythingOfType("*models.StripeCustomer")).Return(nil, errors.New("db error"))
-		result, err := service.FindCustomerByTeam(ctx, teamId)
+		result, err := service.FindCustomerByTeamId(ctx, teamId)
 		assert.Error(t, err)
 		assert.Nil(t, result)
 
@@ -146,7 +146,7 @@ func TestStripeService_FindCustomerByUser(t *testing.T) {
 		adapter.CustomerFunc.FindCustomerFunc = func(ctx context.Context, filter *stores.StripeCustomerFilter) (*models.StripeCustomer, error) {
 			return customer, nil
 		}
-		result, err := service.FindCustomerByUser(ctx, userId)
+		result, err := service.FindCustomerByUserId(ctx, userId)
 		assert.NoError(t, err)
 		assert.Equal(t, customer, result)
 
@@ -160,7 +160,7 @@ func TestStripeService_FindCustomerByUser(t *testing.T) {
 		adapter.CustomerFunc.FindCustomerFunc = func(ctx context.Context, filter *stores.StripeCustomerFilter) (*models.StripeCustomer, error) {
 			return nil, errors.New("db error")
 		}
-		result, err := service.FindCustomerByUser(ctx, userId)
+		result, err := service.FindCustomerByUserId(ctx, userId)
 		assert.Error(t, err)
 		assert.Nil(t, result)
 
