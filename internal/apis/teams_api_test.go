@@ -2,6 +2,7 @@ package apis_test
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"testing"
@@ -11,7 +12,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/tkahng/playground/internal/apis"
 	"github.com/tkahng/playground/internal/database"
+	"github.com/tkahng/playground/internal/database/repository"
 	"github.com/tkahng/playground/internal/models"
+	"github.com/tkahng/playground/internal/stores"
 	"github.com/tkahng/playground/internal/test"
 	"github.com/tkahng/playground/internal/tools/types"
 )
@@ -111,73 +114,101 @@ func TestGetTeam_success(t *testing.T) {
 	)
 
 }
-func TestCreateTeam_SuccessfulCreation(t *testing.T) {
-	// t.Parallel()
-	test.SkipIfShort(t)
-	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-		testApi := SetupApi(t, ctx, db)
-		app := testApi.App
-		api := testApi.TestApi
-		user := CreateUserWithOptions(t, testApi.App, UserWithVerified(types.Pointer(time.Now())))
-		tokensVerifiedTokens, err := app.Auth().CreateAuthTokensFromEmail(ctx, user.User.Email)
-		if err != nil {
-			t.Errorf("Error creating auth tokens: %v", err)
-			return
-		}
-		VerifiedHeader := fmt.Sprintf("Authorization: Bearer %s", tokensVerifiedTokens.Tokens.AccessToken)
-		sdasd := struct {
-			Name             string
-			ctxUserInfo      *models.UserInfo
-			createTeamErr    error
-			createTeamResult *models.TeamInfoModel
-			expectedErr      error
-			expectedOutput   *apis.TeamOutput
-			header           string
-			body             *apis.CreateTeamInput
-		}{
-			header: VerifiedHeader,
-			body: &apis.CreateTeamInput{
+
+func TestCreateTeam_Failed(t *testing.T) {
+	t.Run("failed: unknown error during db customer creation", func(t *testing.T) {
+		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+			appApi := SetupApi(t, ctx, db)
+			adapter := ExtractAdapterDecorator(t, appApi.App)
+			var customerStore *stores.CustomerStoreDecorator
+			if m, ok := adapter.Customer().(*stores.CustomerStoreDecorator); ok {
+				customerStore = m
+			} else {
+				t.Fatal("mailer is not a TestMailer")
+			}
+			customerStore.CreateCustomerFunc = func(ctx context.Context, customer *models.StripeCustomer) (*models.StripeCustomer, error) {
+				return nil, errors.New("unknown error")
+			}
+			user := CreateUserWithOptions(t, appApi.App, UserWithVerified(types.Pointer(time.Now())))
+			tokensVerifiedTokens, err := appApi.App.Auth().CreateAuthTokensFromEmail(ctx, user.User.Email)
+			if err != nil {
+				t.Errorf("Error creating auth tokens: %v", err)
+				return
+			}
+			VerifiedHeader := fmt.Sprintf("Authorization: Bearer %s", tokensVerifiedTokens.Tokens.AccessToken)
+
+			resp := appApi.TestApi.Post("/teams", VerifiedHeader, &apis.CreateTeamInput{
 				Name: "test team",
 				Slug: "test-team",
-			},
-		}
+			})
+			assert.Equal(t, 500, resp.Code, "expected 500 status code")
+			assert.Contains(t, resp.Body.String(), "unknown error")
+			teamCount := repository.MustCountAllCtx(t, ctx, repository.Team, db, nil)
+			assert.Equal(t, 0, int(teamCount))
+			customerCount := repository.MustCountAllCtx(t, ctx, repository.StripeCustomer, db, nil)
+			assert.Equal(t, 0, int(customerCount))
+			teamMembers := repository.MustFindWithOptionsCtx(t, ctx, repository.TeamMember, db)
+			assert.Equal(t, 0, len(teamMembers))
+		})
+	})
+	t.Run("failed: emailNotVerified", func(t *testing.T) {
+		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+			appApi := SetupApi(t, ctx, db)
+			user := CreateUserWithOptions(t, appApi.App)
+			tokensVerifiedTokens, err := appApi.App.Auth().CreateAuthTokensFromEmail(ctx, user.User.Email)
+			if err != nil {
+				t.Errorf("Error creating auth tokens: %v", err)
+				return
+			}
+			VerifiedHeader := fmt.Sprintf("Authorization: Bearer %s", tokensVerifiedTokens.Tokens.AccessToken)
 
-		resp := api.Post("/teams", sdasd.header, sdasd.body)
-		if resp.Code != 200 {
-			t.Errorf("Api.GetStripeSubscriptions() = %v, want %v", resp.Code, 200)
-		}
-
+			resp := appApi.TestApi.Post("/teams", VerifiedHeader, &apis.CreateTeamInput{
+				Name: "test team",
+				Slug: "test-team",
+			})
+			assert.Equal(t, 401, resp.Code, "expected 401 status code")
+			assert.Contains(t, resp.Body.String(), "email not verified", "expected error message containing 'email not verified'")
+			teamCount := repository.MustCountAllCtx(t, ctx, repository.Team, db, nil)
+			assert.Equal(t, 0, int(teamCount))
+			customerCount := repository.MustCountAllCtx(t, ctx, repository.StripeCustomer, db, nil)
+			assert.Equal(t, 0, int(customerCount))
+			teamMembers := repository.MustFindWithOptionsCtx(t, ctx, repository.TeamMember, db)
+			assert.Equal(t, 0, len(teamMembers))
+		})
 	})
 }
 
-func TestCreateTeam_emailNotVerified(t *testing.T) {
-	// t.Parallel()
-	test.SkipIfShort(t)
-	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-		testApi := SetupApi(t, ctx, db)
-		app := testApi.App
-		api := testApi.TestApi
-		user := CreateUserWithOptions(t, app)
+func TestCreateTeam_Success(t *testing.T) {
+	t.Run("success: create team", func(t *testing.T) {
+		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+			appApi := SetupApi(t, ctx, db)
+			user := CreateUserWithOptions(t, appApi.App, UserWithVerified(types.Pointer(time.Now())))
+			tokensVerifiedTokens, err := appApi.App.Auth().CreateAuthTokensFromEmail(ctx, user.User.Email)
+			if err != nil {
+				t.Errorf("Error creating auth tokens: %v", err)
+				return
+			}
+			VerifiedHeader := fmt.Sprintf("Authorization: Bearer %s", tokensVerifiedTokens.Tokens.AccessToken)
 
-		// create
-		tokensVerifiedTokens, err := app.Auth().CreateAuthTokensFromEmail(ctx, user.User.Email)
-		if err != nil {
-			t.Errorf("Error creating auth tokens: %v", err)
-			return
-		}
-		VerifiedHeader := fmt.Sprintf("Authorization: Bearer %s", tokensVerifiedTokens.Tokens.AccessToken)
-		resp := api.Post("/teams", VerifiedHeader, &apis.CreateTeamInput{
-			Name: "test team",
-			Slug: "test-team",
+			resp := appApi.TestApi.Post("/teams", VerifiedHeader, &apis.CreateTeamInput{
+				Name: "test team",
+				Slug: "test-team",
+			})
+			if resp.Code != 200 {
+				t.Errorf("Api.GetStripeSubscriptions() = %v, want %v", resp.Code, 200)
+			}
+			teamCount := repository.MustCountAllCtx(t, ctx, repository.Team, db, nil)
+			assert.Equal(t, 1, int(teamCount))
+			customerCount := repository.MustCountAllCtx(t, ctx, repository.StripeCustomer, db, nil)
+			assert.Equal(t, 1, int(customerCount))
+			teamMembers := repository.MustFindWithOptionsCtx(t, ctx, repository.TeamMember, db)
+			assert.Equal(t, 1, len(teamMembers))
+			assert.Equal(t, models.TeamMemberRoleOwner, teamMembers[0].Role)
 		})
-		if resp.Code == 200 {
-			t.Fatalf("Unexpected response: %s", resp.Body.String())
-		}
-		assert.Equal(t, 401, resp.Code)
-		assert.Contains(t, resp.Body.String(), "email not verified")
-	},
-	)
+	})
+
 }
+
 func TestUpdateTeam_failedNotOwner(t *testing.T) {
 	// t.Parallel()
 	test.SkipIfShort(t)
