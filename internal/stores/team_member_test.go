@@ -10,6 +10,7 @@ import (
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/stores"
+	"github.com/tkahng/playground/internal/stores/testutils"
 	"github.com/tkahng/playground/internal/test"
 )
 
@@ -442,12 +443,12 @@ func TestDbTeamMemberStore_FindTeamMembers(t *testing.T) {
 	test.SkipIfShort(t)
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewStorageAdapter(db)
-		user := CreateUser(adapter, ctx, "alpha@example.com")
-		user2 := CreateUser(adapter, ctx, "beta@example.com")
-		team := CreateTeam(adapter, ctx, "Team1")
-		teamMember := CreateTeamMember(adapter, ctx, team, user, models.TeamMemberRoleMember, true)
+		user := testutils.CreateUser(adapter, ctx, "alpha@example.com")
+		user2 := testutils.CreateUser(adapter, ctx, "beta@example.com")
+		team := testutils.CreateTeam(adapter, ctx, "Team1")
+		teamMember := testutils.CreateTeamMember(adapter, ctx, team, user, models.TeamMemberRoleMember, true)
 		teamMember.User = user
-		teamMember2 := CreateTeamMember(adapter, ctx, team, user2, models.TeamMemberRoleMember, true)
+		teamMember2 := testutils.CreateTeamMember(adapter, ctx, team, user2, models.TeamMemberRoleMember, true)
 		teamMember2.User = user2
 		type fields struct {
 			db database.Dbx
