@@ -8,6 +8,96 @@ import (
 	"github.com/tkahng/playground/internal/conf"
 )
 
+var (
+	ProProduct = &stripe.Product{
+		ID:          "prod_pro",
+		Name:        "Pro",
+		Description: "Pro product description",
+		Active:      true,
+		Metadata: map[string]string{
+			"index": "1",
+		},
+	}
+	AdvancedProduct = &stripe.Product{
+		ID:          "prod_advanced",
+		Name:        "Advanced",
+		Description: "Advanced product description",
+		Active:      true,
+		Metadata: map[string]string{
+			"index": "2",
+		},
+	}
+	ProMonthlyPrice = &stripe.Price{
+		ID:         "price_pro_month_usd_5000",
+		Product:    ProProduct,
+		Active:     true,
+		Currency:   stripe.CurrencyUSD,
+		UnitAmount: 5000,
+		Recurring: &stripe.PriceRecurring{
+			Interval:      stripe.PriceRecurringIntervalMonth,
+			IntervalCount: 1,
+		},
+		Metadata: map[string]string{
+			"index": "1",
+		},
+	}
+	ProYearlyPrice = &stripe.Price{
+		ID:            "price_pro_year_usd_50000",
+		Product:       ProProduct,
+		Active:        true,
+		Currency:      stripe.CurrencyUSD,
+		BillingScheme: stripe.PriceBillingSchemePerUnit,
+		UnitAmount:    50000,
+		Recurring: &stripe.PriceRecurring{
+			Interval:      stripe.PriceRecurringIntervalYear,
+			IntervalCount: 1,
+		},
+		Metadata: map[string]string{
+			"index": "2",
+		},
+	}
+	AdvancedMonthlyPrice = &stripe.Price{
+		ID:            "price_advanced_month_usd_8500",
+		Product:       AdvancedProduct,
+		Active:        true,
+		Currency:      stripe.CurrencyUSD,
+		BillingScheme: stripe.PriceBillingSchemePerUnit,
+		UnitAmount:    8500,
+		Recurring: &stripe.PriceRecurring{
+			Interval:      stripe.PriceRecurringIntervalYear,
+			IntervalCount: 1,
+		},
+		Metadata: map[string]string{
+			"index": "3",
+		},
+	}
+	AdvancedYearlyPrice = &stripe.Price{
+		ID:            "price_advanced_year_usd_85000",
+		Product:       AdvancedProduct,
+		Active:        true,
+		Currency:      stripe.CurrencyUSD,
+		BillingScheme: stripe.PriceBillingSchemePerUnit,
+		UnitAmount:    85000,
+		Recurring: &stripe.PriceRecurring{
+			Interval:      stripe.PriceRecurringIntervalYear,
+			IntervalCount: 1,
+		},
+		Metadata: map[string]string{
+			"index": "4",
+		},
+	}
+	Products = []*stripe.Product{
+		ProProduct,
+		AdvancedProduct,
+	}
+	Prices = []*stripe.Price{
+		ProMonthlyPrice,
+		ProYearlyPrice,
+		AdvancedMonthlyPrice,
+		AdvancedYearlyPrice,
+	}
+)
+
 var mockPaymentErr = errors.New("this is a test payment client")
 
 type MockPaymentClient struct {
