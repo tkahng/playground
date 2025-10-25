@@ -22,7 +22,7 @@ func TestApi_SignUp(t *testing.T) {
 	test.SkipIfShort(t)
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
-		testMailer := ExtractTestMailer(t, testApi)
+		testMailer := ExtractTestMailer(t, testApi.App)
 
 		tests := []ApiScenario{
 			{
@@ -84,7 +84,7 @@ func TestApi_SignUp_ExistingUsers(t *testing.T) {
 	test.SkipIfShort(t)
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
-		// testMailer := ExtractTestMailer(t, testApi)
+		// testMailer := ExtractTestMailer(t, testApi.App)
 		tests := []ApiScenario{
 			{
 				Name:           "Test signup fail for existing user",

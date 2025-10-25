@@ -312,14 +312,23 @@ func createUnverifiedUser(app *core.BaseApp) (*models.UserInfo, error) {
 		User: *user,
 	}, nil
 }
-func ExtractTestMailer(t *testing.T, testApi *TestApi) *mailer.TestMailer {
+func ExtractTestMailer(t *testing.T, testApi core.App) *mailer.TestMailer {
 	var testMailer *mailer.TestMailer
-	if m, ok := testApi.App.Mailer().(*mailer.TestMailer); ok {
+	if m, ok := testApi.Mailer().(*mailer.TestMailer); ok {
 		testMailer = m
 	} else {
 		t.Fatal("mailer is not a TestMailer")
 	}
 	return testMailer
+}
+func ExtractTestPaymentClient(t *testing.T, app core.App) *services.MockPaymentClient {
+	var paymenClient *services.MockPaymentClient
+	if m, ok := app.PaymentClient().(*services.MockPaymentClient); ok {
+		paymenClient = m
+	} else {
+		t.Fatal("mailer is not a TestMailer")
+	}
+	return paymenClient
 }
 
 type TestApi struct {
