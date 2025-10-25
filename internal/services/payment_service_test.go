@@ -121,36 +121,37 @@ func TestStripeService_CreateUserCustomer(t *testing.T) {
 }
 
 func TestStripeService_FindCustomerByTeam(t *testing.T) {
-	ctx := context.Background()
-	teamId := uuid.New()
-	customer := &models.StripeCustomer{ID: "cus_789", TeamID: types.Pointer(teamId)}
-
-	t.Run("success", func(t *testing.T) {
-		adapter := stores.NewAdapterDecorators()
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		adpt := stores.NewDbAdapterDecorators(db)
 		client := NewMockPaymentClient()
-		service := NewPaymentService(client, adapter)
-		adapter.CustomerFunc.FindCustomerFunc = func(ctx context.Context, filter *stores.StripeCustomerFilter) (*models.StripeCustomer, error) {
-			return customer, nil
-		}
-		// store.On("FindCustomer", ctx, mock.AnythingOfType("*models.StripeCustomer")).Return(customer, nil)
-		result, err := service.FindCustomerByTeamId(ctx, teamId)
-		assert.NoError(t, err)
-		assert.Equal(t, customer, result)
-	})
+		service := &StripeService{client: client, adapter: adpt}
 
-	t.Run("store error", func(t *testing.T) {
-		adapter := stores.NewAdapterDecorators()
+		userInfo := storeTestutils.CreateUserWithOptions(t, adpt)
+		teamInfo := storeTestutils.CreateTeamAndMemberWithOptions(t, adpt, &userInfo.User)
 
-		client := NewMockPaymentClient()
-		service := NewPaymentService(client, adapter)
-		adapter.CustomerFunc.FindCustomerFunc = func(ctx context.Context, filter *stores.StripeCustomerFilter) (*models.StripeCustomer, error) {
-			return nil, errors.New("db error")
-		}
-		// store.On("FindCustomer", ctx, mock.AnythingOfType("*models.StripeCustomer")).Return(nil, errors.New("db error"))
-		result, err := service.FindCustomerByTeamId(ctx, teamId)
-		assert.Error(t, err)
-		assert.Nil(t, result)
+		team := &teamInfo.Team
+		user := &userInfo.User
 
+		customer := TestHelperCreateTeamCustomer(t, service, team, user)
+		teamId := teamInfo.Team.ID
+
+		t.Run("success", func(t *testing.T) {
+
+			// store.On("FindCustomer", ctx, mock.AnythingOfType("*models.StripeCustomer")).Return(customer, nil)
+			result, err := service.FindCustomerByTeamId(ctx, teamId)
+			assert.NoError(t, err)
+			assert.Equal(t, customer, result)
+		})
+
+		t.Run("store error", func(t *testing.T) {
+
+			adpt.CustomerFunc.FindCustomerFunc = func(ctx context.Context, filter *stores.StripeCustomerFilter) (*models.StripeCustomer, error) {
+				return nil, errors.New("db error")
+			}
+			result, err := service.FindCustomerByTeamId(ctx, teamId)
+			assert.Error(t, err)
+			assert.Nil(t, result)
+		})
 	})
 }
 
