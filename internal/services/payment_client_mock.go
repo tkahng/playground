@@ -3,6 +3,7 @@ package services
 import (
 	"errors"
 
+	"github.com/google/uuid"
 	stripe "github.com/stripe/stripe-go/v82"
 	"github.com/tkahng/playground/internal/conf"
 )
@@ -132,9 +133,11 @@ func (t *MockPaymentClient) CreateCheckoutSession(customerId string, priceId str
 
 // CreateCustomer implements PaymentClient.
 func (t *MockPaymentClient) CreateCustomer(email string, name *string) (*stripe.Customer, error) {
-	var nameString string = "name"
+	var nameString string
 	if name != nil {
 		nameString = *name
+	} else {
+		nameString = uuid.NewString()
 	}
 	customer := &stripe.Customer{
 		Email: email,
