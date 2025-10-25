@@ -13,3 +13,10 @@ func TestHelperCreateTeamCustomer(t *testing.T, srv PaymentService, team *models
 	}
 	return cus
 }
+func TestHelperCreateUserCustomer(t *testing.T, srv PaymentService, user *models.User) *models.StripeCustomer {
+	cus, err := srv.CreateUserCustomer(t.Context(), user)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return cus
+}
