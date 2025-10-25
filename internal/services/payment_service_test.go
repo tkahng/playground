@@ -75,11 +75,11 @@ func TestStripeService_CreateUserCustomer(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 			// init
-			adpt := stores.NewDbAdapterDecorators(db)
+			adapter := stores.NewDbAdapterDecorators(db)
 			client := NewMockPaymentClient()
-			service := &StripeService{client: client, adapter: adpt}
+			service := &StripeService{client: client, adapter: adapter}
 			// setup
-			userInfo1 := storeTestutils.CreateUserWithOptions(t, adpt)
+			userInfo1 := storeTestutils.CreateUserWithOptions(t, adapter)
 			user1 := &userInfo1.User
 			// test
 			result, err := service.CreateUserCustomer(ctx, user1)
@@ -99,11 +99,11 @@ func TestStripeService_CreateUserCustomer(t *testing.T) {
 	t.Run("client error", func(t *testing.T) {
 		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 			// init
-			adpt := stores.NewDbAdapterDecorators(db)
+			adapter := stores.NewDbAdapterDecorators(db)
 			client := NewMockPaymentClient()
-			service := &StripeService{client: client, adapter: adpt}
+			service := &StripeService{client: client, adapter: adapter}
 			// setup
-			userInfo1 := storeTestutils.CreateUserWithOptions(t, adpt)
+			userInfo1 := storeTestutils.CreateUserWithOptions(t, adapter)
 			user1 := &userInfo1.User
 
 			client.CreateCustomerFunc = func(email string, name *string, metadata *map[string]string) (*stripe.Customer, error) {
@@ -122,12 +122,12 @@ func TestStripeService_CreateUserCustomer(t *testing.T) {
 
 func TestStripeService_FindCustomerByTeam(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-		adpt := stores.NewDbAdapterDecorators(db)
+		adapter := stores.NewDbAdapterDecorators(db)
 		client := NewMockPaymentClient()
-		service := &StripeService{client: client, adapter: adpt}
+		service := &StripeService{client: client, adapter: adapter}
 
-		userInfo := storeTestutils.CreateUserWithOptions(t, adpt)
-		teamInfo := storeTestutils.CreateTeamAndMemberWithOptions(t, adpt, &userInfo.User)
+		userInfo := storeTestutils.CreateUserWithOptions(t, adapter)
+		teamInfo := storeTestutils.CreateTeamAndMemberWithOptions(t, adapter, &userInfo.User)
 
 		team := &teamInfo.Team
 		user := &userInfo.User
@@ -145,7 +145,7 @@ func TestStripeService_FindCustomerByTeam(t *testing.T) {
 
 		t.Run("store error", func(t *testing.T) {
 
-			adpt.CustomerFunc.FindCustomerFunc = func(ctx context.Context, filter *stores.StripeCustomerFilter) (*models.StripeCustomer, error) {
+			adapter.CustomerFunc.FindCustomerFunc = func(ctx context.Context, filter *stores.StripeCustomerFilter) (*models.StripeCustomer, error) {
 				return nil, errors.New("db error")
 			}
 			result, err := service.FindCustomerByTeamId(ctx, teamId)
@@ -156,38 +156,37 @@ func TestStripeService_FindCustomerByTeam(t *testing.T) {
 }
 
 func TestStripeService_FindCustomerByUser(t *testing.T) {
-	ctx := context.Background()
-	userId := uuid.New()
-	customer := &models.StripeCustomer{ID: "cus_101", UserID: types.Pointer(userId)}
-
-	t.Run("success", func(t *testing.T) {
-		adapter := stores.NewAdapterDecorators()
-
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		adapter := stores.NewDbAdapterDecorators(db)
 		client := NewMockPaymentClient()
-		service := NewPaymentService(client, adapter)
-		adapter.CustomerFunc.FindCustomerFunc = func(ctx context.Context, filter *stores.StripeCustomerFilter) (*models.StripeCustomer, error) {
-			return customer, nil
-		}
-		result, err := service.FindCustomerByUserId(ctx, userId)
-		assert.NoError(t, err)
-		assert.Equal(t, customer, result)
+		service := &StripeService{client: client, adapter: adapter}
 
-	})
+		userInfo := storeTestutils.CreateUserWithOptions(t, adapter)
 
-	t.Run("store error", func(t *testing.T) {
-		adapter := stores.NewAdapterDecorators()
+		user := &userInfo.User
 
-		client := NewMockPaymentClient()
-		service := NewPaymentService(client, adapter)
-		adapter.CustomerFunc.FindCustomerFunc = func(ctx context.Context, filter *stores.StripeCustomerFilter) (*models.StripeCustomer, error) {
-			return nil, errors.New("db error")
-		}
-		result, err := service.FindCustomerByUserId(ctx, userId)
-		assert.Error(t, err)
-		assert.Nil(t, result)
+		customer := TestHelperCreateUserCustomer(t, service, user)
 
+		t.Run("success", func(t *testing.T) {
+
+			// store.On("FindCustomer", ctx, mock.AnythingOfType("*models.StripeCustomer")).Return(customer, nil)
+			result, err := service.FindCustomerByUserId(ctx, user.ID)
+			assert.NoError(t, err)
+			assert.Equal(t, customer, result)
+		})
+
+		t.Run("store error", func(t *testing.T) {
+
+			adapter.CustomerFunc.FindCustomerFunc = func(ctx context.Context, filter *stores.StripeCustomerFilter) (*models.StripeCustomer, error) {
+				return nil, errors.New("db error")
+			}
+			result, err := service.FindCustomerByUserId(ctx, user.ID)
+			assert.Error(t, err)
+			assert.Nil(t, result)
+		})
 	})
 }
+
 func TestStripeService_VerifyAndUpdateTeamSubscriptionQuantity(t *testing.T) {
 	ctx := context.Background()
 	teamId := uuid.New()
