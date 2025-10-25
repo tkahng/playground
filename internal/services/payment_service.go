@@ -23,7 +23,7 @@ type PaymentClient interface {
 	Config() *conf.StripeConfig
 	CreateBillingPortalSession(customerId string, configurationId string) (*stripe.BillingPortalSession, error)
 	CreateCheckoutSession(customerId string, priceId string, quantity int64, trialDays *int64) (*stripe.CheckoutSession, error)
-	CreateCustomer(email string, name *string) (*stripe.Customer, error)
+	CreateCustomer(email string, name *string, metadata *map[string]string) (*stripe.Customer, error)
 	CreatePortalConfiguration(input ...*stripe.BillingPortalConfigurationFeaturesSubscriptionUpdateProductParams) (string, error)
 	FindAllPrices() ([]*stripe.Price, error)
 	FindAllProducts() ([]*stripe.Product, error)
@@ -130,7 +130,10 @@ func (s *StripeService) UpsertSubscriptionFromStripe(ctx context.Context, sub *s
 
 // CreateTeamCustomer implements PaymentService.
 func (srv *StripeService) CreateTeamCustomer(ctx context.Context, team *models.Team, user *models.User) (*models.StripeCustomer, error) {
-	customer, err := srv.client.CreateCustomer(user.Email, &team.Name)
+	customer, err := srv.client.CreateCustomer(user.Email, &team.Name, &map[string]string{
+		"team_id":       team.ID.String(),
+		"customer_type": string(models.StripeCustomerTypeTeam),
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -149,7 +152,10 @@ func (srv *StripeService) CreateTeamCustomer(ctx context.Context, team *models.T
 
 // CreateUserCustomer implements PaymentService.
 func (srv *StripeService) CreateUserCustomer(ctx context.Context, user *models.User) (*models.StripeCustomer, error) {
-	customer, err := srv.client.CreateCustomer(user.Email, user.Name)
+	customer, err := srv.client.CreateCustomer(user.Email, user.Name, &map[string]string{
+		"user_id":       user.ID.String(),
+		"customer_type": string(models.StripeCustomerTypeUser),
+	})
 	if err != nil {
 		return nil, err
 	}
