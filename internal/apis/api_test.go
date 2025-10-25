@@ -41,27 +41,6 @@ func createTokenHeader(t testing.TB, app core.App, email string) string {
 
 }
 
-func createTeamAndMember(app core.App, user *models.User, teamName string) (*models.TeamInfoModel, error) {
-	ctx := context.Background()
-	team, err := app.Adapter().TeamGroup().CreateTeam(ctx, teamName, strings.TrimSpace(teamName))
-	if err != nil {
-		return nil, err
-	}
-	member, err := app.Adapter().TeamMember().CreateTeamMember(ctx, team.ID, user.ID, models.TeamMemberRoleOwner, true)
-	if err != nil {
-		return nil, err
-	}
-	return &models.TeamInfoModel{
-		Team: *team,
-		User: models.User{
-			ID:              user.ID,
-			Name:            user.Name,
-			EmailVerifiedAt: user.EmailVerifiedAt,
-		},
-		Member: *member,
-	}, nil
-}
-
 type TeamOptionFunc func(opt *CreateTeamOptions)
 
 type CreateTeamOptions struct {
@@ -268,50 +247,6 @@ func CreateUserWithOptions(t testing.TB, app core.App, options ...UserOptionFunc
 
 }
 
-func createVerifiedUser(app core.App) (*models.UserInfo, error) {
-	nw := time.Now()
-	ctx := context.Background()
-	user, err := app.Adapter().User().CreateUser(ctx, &models.User{
-		Email:           "authenticated@example.com",
-		EmailVerifiedAt: &nw,
-	})
-	if err != nil {
-		return nil, err
-	}
-	_, err = app.Adapter().UserAccount().CreateUserAccount(ctx, &models.UserAccount{
-		UserID:            user.ID,
-		Provider:          models.ProvidersGoogle,
-		Type:              "oauth",
-		ProviderAccountID: "google-123",
-	})
-	if err != nil {
-		return nil, err
-	}
-	return &models.UserInfo{
-		User: *user,
-	}, nil
-}
-func createUnverifiedUser(app *core.BaseApp) (*models.UserInfo, error) {
-	ctx := context.Background()
-	user, err := app.Adapter().User().CreateUser(ctx, &models.User{
-		Email: "authenticated@example.com",
-	})
-	if err != nil {
-		return nil, err
-	}
-	_, err = app.Adapter().UserAccount().CreateUserAccount(ctx, &models.UserAccount{
-		UserID:            user.ID,
-		Provider:          models.ProvidersGoogle,
-		Type:              "oauth",
-		ProviderAccountID: "google-123",
-	})
-	if err != nil {
-		return nil, err
-	}
-	return &models.UserInfo{
-		User: *user,
-	}, nil
-}
 func ExtractTestMailer(t *testing.T, testApi core.App) *mailer.TestMailer {
 	var testMailer *mailer.TestMailer
 	if m, ok := testApi.Mailer().(*mailer.TestMailer); ok {
