@@ -94,11 +94,7 @@ func TestGetTeam_success(t *testing.T) {
 		app := testApi.App
 		api := testApi.TestApi
 		user := CreateUserWithOptions(t, testApi.App, UserWithVerified(types.Pointer(time.Now())))
-		team, err := createTeamAndMember(app, &user.User, "test team")
-		if err != nil {
-			t.Errorf("Error creating user: %v", err)
-			return
-		}
+		team := CreateTeamAndMemberWithOptions(t, app, &user.User, TeamWithName("test team"))
 		teamIdString := team.Team.ID.String()
 		// team, err :=
 		tokensVerifiedTokens, err := app.Auth().CreateAuthTokensFromEmail(context.Background(), user.User.Email)
@@ -122,12 +118,8 @@ func TestCreateTeam_SuccessfulCreation(t *testing.T) {
 		testApi := SetupApi(t, ctx, db)
 		app := testApi.App
 		api := testApi.TestApi
-		user, err := createVerifiedUser(app)
-		if err != nil {
-			t.Errorf("Error creating user: %v", err)
-			return
-		}
-		tokensVerifiedTokens, err := app.Auth().CreateAuthTokensFromEmail(context.Background(), user.User.Email)
+		user := CreateUserWithOptions(t, testApi.App, UserWithVerified(types.Pointer(time.Now())))
+		tokensVerifiedTokens, err := app.Auth().CreateAuthTokensFromEmail(ctx, user.User.Email)
 		if err != nil {
 			t.Errorf("Error creating auth tokens: %v", err)
 			return
@@ -165,11 +157,8 @@ func TestCreateTeam_emailNotVerified(t *testing.T) {
 		testApi := SetupApi(t, ctx, db)
 		app := testApi.App
 		api := testApi.TestApi
-		user, err := createUnverifiedUser(app)
-		if err != nil {
-			t.Errorf("Error creating user: %v", err)
-			return
-		}
+		user := CreateUserWithOptions(t, app)
+
 		// create
 		tokensVerifiedTokens, err := app.Auth().CreateAuthTokensFromEmail(ctx, user.User.Email)
 		if err != nil {
