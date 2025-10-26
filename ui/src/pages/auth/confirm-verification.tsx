@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button";
 import { confirmVerification } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "react-router";
@@ -35,7 +36,10 @@ export default function ConfirmVerification() {
   return (
     <div className="flex w-full flex-col items-center justify-center">
       <h2>Email Confirm Success</h2>
-      <p>Thank you for your payment.</p>
+      <p>Thank you for your verifying your email.</p>
+      <Button asChild>
+        <a href="/">Go Home</a>
+      </Button>
     </div>
   );
 }
