@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/tkahng/playground/internal/conf"
+	"github.com/tkahng/playground/internal/tools/logger"
 )
 
 var (
@@ -58,6 +59,7 @@ func WithNewTestTx(t *testing.T, fn func(ctx context.Context, db Dbx)) {
 	// ctx, cancel := context.WithCancel(context.Background())
 	// defer cancel()
 	// ctx := t.Context()
+	_ = logger.GetDefaultLogger()
 	ctx := context.Background()
 	cfg := conf.ZeroEnvConfig()
 	dbx := CreateNewQueriesContext(ctx, cfg.Db.GetDatabaseUrl())
