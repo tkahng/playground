@@ -8,7 +8,7 @@ import (
 	"github.com/tkahng/playground/internal/shared"
 )
 
-func BindStripeApi(api huma.API, appApi *Api) {
+func bindStripeApi(api huma.API, appApi *Api) {
 	selectCustomerFromUser := humamiddleware.SelectCustomerFromUser(api, appApi.App())
 	selectCustomerFromTeam := humamiddleware.SelectCustomerFromTeam(api, appApi.App())
 	teamInfoFromParam := humamiddleware.TeamInfoFromParam(api, appApi.App())

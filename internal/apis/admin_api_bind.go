@@ -8,7 +8,7 @@ import (
 	"github.com/tkahng/playground/internal/shared"
 )
 
-func BindAdminApi(api huma.API, appApi *Api) {
+func bindAdminApi(api huma.API, appApi *Api) {
 	adminGroup := huma.NewGroup(api, "/admin")
 	//  admin middleware
 	adminGroup.UseMiddleware(humamiddleware.HumaCheckPermissionsMiddleware(api, appApi.app, "superuser"))

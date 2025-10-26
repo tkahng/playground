@@ -9,7 +9,6 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
 	"github.com/tkahng/playground/internal/contextstore"
-	"github.com/tkahng/playground/internal/middleware/humamiddleware"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/shared"
 	"github.com/tkahng/playground/internal/stores"
@@ -107,8 +106,7 @@ type TeamInfoOutput struct {
 	Body *TeamInfo `json:"body"`
 }
 
-func (api *Api) BindCreateTeam(humaApi huma.API) {
-	emailVerified := humamiddleware.HumaEmailVerifiedMiddleware(humaApi, api.App())
+func (api *Api) bindCreateTeam(humaApi huma.API) {
 	huma.Register(
 		humaApi,
 		huma.Operation{
@@ -123,7 +121,7 @@ func (api *Api) BindCreateTeam(humaApi huma.API) {
 				shared.BearerAuthSecurityKey: {},
 			}},
 			Middlewares: huma.Middlewares{
-				emailVerified,
+				api.middlewares.EmailVerified,
 			},
 		},
 		api.CreateTeam,
@@ -182,7 +180,7 @@ func (api *Api) CreateTeam(
 	}, nil
 }
 
-func (api *Api) BindCheckTeamSlug(
+func (api *Api) bindCheckTeamSlug(
 	humaApi huma.API,
 ) {
 	huma.Register(
@@ -245,7 +243,7 @@ type UserListTeamsParams struct {
 	SortParams
 }
 
-func (api *Api) BindGetUserTeams(humaApi huma.API) {
+func (api *Api) bindGetUserTeams(humaApi huma.API) {
 	huma.Register(
 		humaApi,
 		huma.Operation{
@@ -321,8 +319,7 @@ func (api *Api) GetUserTeams(
 	}, nil
 }
 
-func (api *Api) BindFindTeamInfoBySlug(humaApi huma.API) {
-	teamInfoSlugMiddleware := humamiddleware.TeamInfoFromTeamSlug(humaApi, api.App())
+func (api *Api) bindFindTeamInfoBySlug(humaApi huma.API) {
 	huma.Register(
 		humaApi,
 		huma.Operation{
@@ -337,7 +334,7 @@ func (api *Api) BindFindTeamInfoBySlug(humaApi huma.API) {
 				shared.BearerAuthSecurityKey: {},
 			}},
 			Middlewares: huma.Middlewares{
-				teamInfoSlugMiddleware,
+				api.middlewares.TeamInfoFromTeamSlug,
 			},
 		},
 		api.FindTeamInfoBySlug,
@@ -410,6 +407,29 @@ func (api *Api) GetActiveTeamMember(
 	}, nil
 }
 
+func (api *Api) bindUpdateTeam(humaApi huma.API) {
+	huma.Register(
+		humaApi,
+		huma.Operation{
+			OperationID: "update-team",
+			Method:      http.MethodPut,
+			Path:        "/teams/{team-id}",
+			Summary:     "update-team",
+			Description: "update a team by ID",
+			Tags:        []string{"Teams"},
+			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+			Middlewares: huma.Middlewares{
+				api.middlewares.TeamInfoFromParam,
+				api.middlewares.TeamRequiredOwnerMember,
+			},
+		},
+		api.UpdateTeam,
+	)
+}
+
 type UpdateTeamInput struct {
 	TeamID string `path:"team-id" required:"true"`
 	Body   UpdateTeamDto
@@ -466,9 +486,7 @@ func (api *Api) DeleteTeam(
 	return nil, nil
 }
 
-func (api *Api) BindGetTeam(humaApi huma.API) {
-	teamInfoMiddleware := humamiddleware.TeamInfoFromParam(humaApi, api.App())
-	requireMember := humamiddleware.RequireTeamMemberRolesMiddleware(humaApi)
+func (api *Api) bindGetTeam(humaApi huma.API) {
 	huma.Register(
 		humaApi,
 		huma.Operation{
@@ -483,8 +501,8 @@ func (api *Api) BindGetTeam(humaApi huma.API) {
 				shared.BearerAuthSecurityKey: {},
 			}},
 			Middlewares: huma.Middlewares{
-				teamInfoMiddleware,
-				requireMember,
+				api.middlewares.TeamInfoFromParam,
+				api.middlewares.TeamRequiredAnyMember,
 			},
 		},
 		api.GetTeam,
@@ -572,7 +590,7 @@ type FindTeamTeamMembersInput struct {
 	TeamID string `path:"team-id" required:"true" format:"uuid"`
 }
 
-func (api *Api) BindFindTeamTeamMembers(
+func (api *Api) bindFindTeamTeamMembers(
 	humaApi huma.API,
 ) {
 	huma.Register(

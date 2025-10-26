@@ -7,7 +7,7 @@ import (
 	"github.com/tkahng/playground/internal/shared"
 )
 
-func BindMediaApi(api huma.API, appApi *Api) {
+func bindMediaApi(api huma.API, appApi *Api) {
 	mediaGroup := huma.NewGroup(api)
 	huma.Register(
 		mediaGroup,
