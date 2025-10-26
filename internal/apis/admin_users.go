@@ -78,7 +78,7 @@ func (api *Api) AdminUsersList(ctx context.Context, input *struct {
 
 	return &ApiPaginatedOutput[*ApiUser]{
 		Body: ApiPaginatedResponse[*ApiUser]{
-			Data: mapper.Map(users, FromUserModel),
+			Data: mapper.Map(users, fromUserModel),
 			Meta: ApiGenerateMeta(&input.PaginatedInput, count),
 		},
 	}, nil
@@ -128,7 +128,7 @@ func (api *Api) AdminUsersCreate(ctx context.Context, input *struct {
 	return &struct {
 		Body *ApiUser
 	}{
-		Body: FromUserModel(user),
+		Body: fromUserModel(user),
 	}, nil
 
 }
@@ -223,5 +223,5 @@ func (api *Api) AdminUsersGet(ctx context.Context, input *struct {
 	if user == nil {
 		return nil, huma.Error404NotFound("User not found")
 	}
-	return &struct{ Body *ApiUser }{Body: FromUserModel(user)}, nil
+	return &struct{ Body *ApiUser }{Body: fromUserModel(user)}, nil
 }

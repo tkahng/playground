@@ -43,7 +43,7 @@ func (api *Api) PermissionsList(ctx context.Context, input *struct {
 	return &ApiPaginatedOutput[*Permission]{
 		Body: ApiPaginatedResponse[*Permission]{
 
-			Data: mapper.Map(permissions, FromModelPermission),
+			Data: mapper.Map(permissions, fromModelPermission),
 			Meta: ApiGenerateMeta(&input.PaginatedInput, count),
 		},
 	}, nil
