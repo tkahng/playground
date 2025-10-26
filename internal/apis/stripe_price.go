@@ -46,7 +46,7 @@ type StripePrice struct {
 	Subscriptions   []*StripeSubscription      `db:"subscriptions" src:"id" dest:"price_id" table:"stripe_subscriptions" json:"subscriptions,omitempty"`
 }
 
-func FromModelPrice(price *models.StripePrice) *StripePrice {
+func fromModelPrice(price *models.StripePrice) *StripePrice {
 	if price == nil {
 		return nil
 	}
@@ -68,7 +68,7 @@ func FromModelPrice(price *models.StripePrice) *StripePrice {
 		Metadata:        price.Metadata,
 		CreatedAt:       price.CreatedAt,
 		UpdatedAt:       price.UpdatedAt,
-		Product:         FromModelProduct(price.Product),
-		Subscriptions:   mapper.Map(price.Subscriptions, FromModelSubscription),
+		Product:         fromModelProduct(price.Product),
+		Subscriptions:   mapper.Map(price.Subscriptions, fromModelSubscription),
 	}
 }

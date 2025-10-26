@@ -24,7 +24,7 @@ type Role struct {
 	Users       []*ApiUser    `db:"users" src:"id" dest:"role_id" table:"users" through:"user_roles,user_id,id" json:"users,omitempty"`
 }
 
-func FromModelRole(role *models.Role) *Role {
+func fromModelRole(role *models.Role) *Role {
 	if role == nil {
 		return nil
 	}
@@ -34,8 +34,8 @@ func FromModelRole(role *models.Role) *Role {
 		Description: role.Description,
 		CreatedAt:   role.CreatedAt,
 		UpdatedAt:   role.UpdatedAt,
-		Permissions: mapper.Map(role.Permissions, FromModelPermission),
-		Users:       mapper.Map(role.Users, FromUserModel),
+		Permissions: mapper.Map(role.Permissions, fromModelPermission),
+		Users:       mapper.Map(role.Users, fromUserModel),
 	}
 }
 
@@ -57,7 +57,7 @@ type PermissionSource struct {
 	IsDirectly  bool        `db:"is_directly_assigned" json:"is_directly_assigned"`
 }
 
-func FromModelPermissionSource(permission *models.PermissionSource) *PermissionSource {
+func fromModelPermissionSource(permission *models.PermissionSource) *PermissionSource {
 	if permission == nil {
 		return nil
 	}
@@ -73,7 +73,7 @@ func FromModelPermissionSource(permission *models.PermissionSource) *PermissionS
 	}
 }
 
-func FromModelPermission(permission *models.Permission) *Permission {
+func fromModelPermission(permission *models.Permission) *Permission {
 	return &Permission{
 		ID:          permission.ID,
 		Name:        permission.Name,
@@ -155,7 +155,7 @@ func (api *Api) AdminRolesList(ctx context.Context, input *struct {
 	}
 	return &ApiPaginatedOutput[*Role]{
 		Body: ApiPaginatedResponse[*Role]{
-			Data: mapper.Map(roles, FromModelRole),
+			Data: mapper.Map(roles, fromModelRole),
 			Meta: ApiGenerateMeta(&input.PaginatedInput, count),
 		},
 	}, nil
@@ -190,7 +190,7 @@ func (api *Api) AdminRolesCreate(ctx context.Context, input *struct {
 		return nil, huma.Error500InternalServerError("Failed to create role")
 	}
 	return &struct{ Body Role }{
-		Body: *FromModelRole(role),
+		Body: *fromModelRole(role),
 	}, nil
 }
 
@@ -258,7 +258,7 @@ func (api *Api) AdminRolesUpdate(ctx context.Context, input *struct {
 		return nil, err
 	}
 	return &struct{ Body *Role }{
-		Body: FromModelRole(role),
+		Body: fromModelRole(role),
 	}, nil
 }
 func (api *Api) AdminUserRolesDelete(ctx context.Context, input *struct {
@@ -373,7 +373,7 @@ func (api *Api) AdminRolesGet(ctx context.Context, input *struct {
 		}
 	}
 	return &struct{ Body Role }{
-		Body: *FromModelRole(role),
+		Body: *fromModelRole(role),
 	}, nil
 }
 

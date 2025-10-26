@@ -60,7 +60,7 @@ func (api *Api) AdminStripeSubscriptions(ctx context.Context,
 	}
 	return &ApiPaginatedOutput[*StripeSubscription]{
 		Body: ApiPaginatedResponse[*StripeSubscription]{
-			Data: mapper.Map(subscriptions, FromModelSubscription),
+			Data: mapper.Map(subscriptions, fromModelSubscription),
 			Meta: ApiGenerateMeta(&input.PaginatedInput, count),
 		},
 	}, nil
@@ -85,7 +85,7 @@ func (api *Api) AdminStripeSubscriptionsGet(ctx context.Context,
 	if len(subscriptions) == 0 {
 		return nil, nil
 	}
-	return &struct{ Body *StripeSubscription }{Body: FromModelSubscription(subscriptions[0])}, nil
+	return &struct{ Body *StripeSubscription }{Body: fromModelSubscription(subscriptions[0])}, nil
 }
 
 func ToStripeProductListFilter(input *StripeProductListParams) (*stores.StripeProductFilter, error) {
@@ -142,7 +142,7 @@ func (api *Api) AdminStripeProducts(ctx context.Context,
 	}
 	return &ApiPaginatedOutput[*StripeProduct]{
 		Body: ApiPaginatedResponse[*StripeProduct]{
-			Data: mapper.Map(products, FromModelProduct),
+			Data: mapper.Map(products, fromModelProduct),
 			Meta: ApiGenerateMeta(&input.PaginatedInput, count),
 		},
 	}, nil
@@ -186,7 +186,7 @@ func (api *Api) AdminStripeProductsGet(ctx context.Context,
 	return &struct {
 		Body *StripeProduct
 	}{
-		Body: FromModelProduct(product),
+		Body: fromModelProduct(product),
 	}, nil
 }
 

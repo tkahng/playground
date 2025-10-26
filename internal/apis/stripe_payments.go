@@ -150,6 +150,6 @@ func (api *Api) StripeCheckoutSessionGet(ctx context.Context, input *StripeCheck
 
 	}
 	return &CheckoutSessionOutput{
-		Body: *FromModelSubscription(cs),
+		Body: *fromModelSubscription(cs),
 	}, nil
 }

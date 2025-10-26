@@ -59,7 +59,7 @@ type TeamWithMember struct {
 	Member *TeamMember `json:"member,omitempty"`
 }
 
-func FromTeamModel(team *models.Team) *Team {
+func fromTeamModel(team *models.Team) *Team {
 	if team == nil {
 		return nil
 	}
@@ -69,10 +69,10 @@ func FromTeamModel(team *models.Team) *Team {
 		Slug:      team.Slug,
 		CreatedAt: team.CreatedAt,
 		UpdatedAt: team.UpdatedAt,
-		Members:   mapper.Map(team.Members, FromTeamMemberModel),
+		Members:   mapper.Map(team.Members, fromTeamMemberModel),
 	}
 }
-func FromTeamMemberModel(member *models.TeamMember) *TeamMember {
+func fromTeamMemberModel(member *models.TeamMember) *TeamMember {
 	if member == nil {
 		return nil
 	}
@@ -86,8 +86,8 @@ func FromTeamMemberModel(member *models.TeamMember) *TeamMember {
 		LastSelectedAt:   member.LastSelectedAt,
 		CreatedAt:        member.CreatedAt,
 		UpdatedAt:        member.UpdatedAt,
-		Team:             FromTeamModel(member.Team),
-		User:             FromUserModel(member.User),
+		Team:             fromTeamModel(member.Team),
+		User:             fromUserModel(member.User),
 	}
 }
 
@@ -174,8 +174,8 @@ func (api *Api) CreateTeam(
 	}
 	return &TeamWithMemberOutput{
 		Body: &TeamWithMember{
-			Team:   *FromTeamModel(&teamInfo.Team),
-			Member: FromTeamMemberModel(&teamInfo.Member),
+			Team:   *fromTeamModel(&teamInfo.Team),
+			Member: fromTeamMemberModel(&teamInfo.Member),
 		},
 	}, nil
 }
@@ -301,8 +301,8 @@ func (api *Api) GetUserTeams(
 			member := members[idx]
 			member.User = &info.User
 			teamWithMember := &TeamWithMember{
-				Team:   *FromTeamModel(team),
-				Member: FromTeamMemberModel(member),
+				Team:   *fromTeamModel(team),
+				Member: fromTeamMemberModel(member),
 			}
 			teamsWithMember = append(teamsWithMember, teamWithMember)
 		}
@@ -355,9 +355,9 @@ func (api *Api) FindTeamInfoBySlug(
 	}
 	return &TeamInfoOutput{
 		Body: &TeamInfo{
-			Team:   *FromTeamModel(&info.Team),
-			Member: *FromTeamMemberModel(&info.Member),
-			User:   *FromUserModel(&info.User),
+			Team:   *fromTeamModel(&info.Team),
+			Member: *fromTeamMemberModel(&info.Member),
+			User:   *fromUserModel(&info.User),
 		},
 	}, nil
 }
@@ -376,7 +376,7 @@ func (api *Api) FindTeamMemberBySlug(
 		return nil, huma.Error401Unauthorized("unauthorized")
 	}
 	return &TeamMemberOutput{
-		Body: FromTeamMemberModel(&info.Member),
+		Body: fromTeamMemberModel(&info.Member),
 	}, nil
 }
 
@@ -403,7 +403,7 @@ func (api *Api) GetActiveTeamMember(
 		return nil, huma.Error404NotFound("team not found")
 	}
 	return &TeamMemberOutput{
-		Body: FromTeamMemberModel(team),
+		Body: fromTeamMemberModel(team),
 	}, nil
 }
 
@@ -459,7 +459,7 @@ func (api *Api) UpdateTeam(
 		return nil, huma.Error500InternalServerError("team not found")
 	}
 	return &TeamOutput{
-		Body: FromTeamModel(team),
+		Body: fromTeamModel(team),
 	}, nil
 }
 
@@ -534,7 +534,7 @@ func (api *Api) GetTeam(
 		return nil, huma.Error404NotFound("team not found")
 	}
 	return &TeamOutput{
-		Body: FromTeamModel(team),
+		Body: fromTeamModel(team),
 	}, nil
 }
 
@@ -670,7 +670,7 @@ func (api *Api) FindTeamTeamMembers(
 	}
 	return &ApiPaginatedOutput[*TeamMember]{
 		Body: ApiPaginatedResponse[*TeamMember]{
-			Data: mapper.Map(members, FromTeamMemberModel),
+			Data: mapper.Map(members, fromTeamMemberModel),
 			Meta: ApiGenerateMeta(&input.PaginatedInput, count),
 		},
 	}, nil
@@ -850,7 +850,7 @@ type TeamInvitation struct {
 	InviterMember   *TeamMember          `db:"inviter_member" src:"inviter_member_id" dest:"id" table:"member" json:"inviter_member,omitempty"`
 }
 
-func FromTeamInvitationModel(team *models.TeamInvitation) *TeamInvitation {
+func fromTeamInvitationModel(team *models.TeamInvitation) *TeamInvitation {
 	if team == nil {
 		return nil
 	}
@@ -865,8 +865,8 @@ func FromTeamInvitationModel(team *models.TeamInvitation) *TeamInvitation {
 		ExpiresAt:       team.ExpiresAt,
 		CreatedAt:       team.CreatedAt,
 		UpdatedAt:       team.UpdatedAt,
-		Team:            FromTeamModel(team.Team),
-		InviterMember:   FromTeamMemberModel(team.InviterMember),
+		Team:            fromTeamModel(team.Team),
+		InviterMember:   fromTeamMemberModel(team.InviterMember),
 	}
 }
 func (api *Api) FindInvitations(
@@ -910,7 +910,7 @@ func (api *Api) FindInvitations(
 
 	return &ApiPaginatedOutput[*TeamInvitation]{
 		Body: ApiPaginatedResponse[*TeamInvitation]{
-			Data: mapper.Map(invitations, FromTeamInvitationModel),
+			Data: mapper.Map(invitations, fromTeamInvitationModel),
 			Meta: ApiGenerateMeta(&input.PaginatedInput, count),
 		},
 	}, nil
@@ -992,7 +992,7 @@ func (api *Api) GetUserTeamInvitations(
 	}
 	return &ApiPaginatedOutput[*TeamInvitation]{
 		Body: ApiPaginatedResponse[*TeamInvitation]{
-			Data: mapper.Map(invitations, FromTeamInvitationModel),
+			Data: mapper.Map(invitations, fromTeamInvitationModel),
 			Meta: ApiGenerateMeta(&input.PaginatedInput, count),
 		},
 	}, nil
@@ -1042,7 +1042,7 @@ func (api *Api) GetInvitationByToken(
 		}
 	}
 	return &ApiOutput[*TeamInvitation]{
-		Body: FromTeamInvitationModel(invitation),
+		Body: fromTeamInvitationModel(invitation),
 	}, nil
 }
 

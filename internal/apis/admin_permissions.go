@@ -123,7 +123,7 @@ func (api *Api) AdminUserPermissionSourceList(ctx context.Context, input *struct
 	return &ApiPaginatedOutput[*PermissionSource]{
 		Body: ApiPaginatedResponse[*PermissionSource]{
 
-			Data: mapper.Map(userPermissionSources, FromModelPermissionSource),
+			Data: mapper.Map(userPermissionSources, fromModelPermissionSource),
 			Meta: ApiGenerateMeta(&input.PaginatedInput, count),
 		},
 	}, nil
@@ -180,7 +180,7 @@ func (api *Api) AdminPermissionsList(ctx context.Context, input *struct {
 	return &ApiPaginatedOutput[*Permission]{
 		Body: ApiPaginatedResponse[*Permission]{
 
-			Data: mapper.Map(permissions, FromModelPermission),
+			Data: mapper.Map(permissions, fromModelPermission),
 			Meta: ApiGenerateMeta(&input.PaginatedInput, count),
 		},
 	}, nil
@@ -212,7 +212,7 @@ func (api *Api) AdminPermissionsCreate(ctx context.Context, input *struct {
 		return nil, huma.Error500InternalServerError("Failed to create permission")
 	}
 	return &struct{ Body Permission }{
-		Body: *FromModelPermission(data),
+		Body: *fromModelPermission(data),
 	}, nil
 }
 
@@ -284,7 +284,7 @@ func (api *Api) AdminPermissionsUpdate(ctx context.Context, input *struct {
 		return nil, err
 	}
 	return &struct{ Body Permission }{
-		Body: *FromModelPermission(permission),
+		Body: *fromModelPermission(permission),
 	}, nil
 }
 
@@ -305,6 +305,6 @@ func (api *Api) AdminPermissionsGet(ctx context.Context, input *struct {
 		return nil, huma.Error404NotFound("Permission not found")
 	}
 	return &struct{ Body *Permission }{
-		Body: FromModelPermission(permission),
+		Body: fromModelPermission(permission),
 	}, nil
 }
