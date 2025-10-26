@@ -12,6 +12,7 @@ import (
 	"github.com/tkahng/playground/internal/core"
 	appHttp "github.com/tkahng/playground/internal/tools/http"
 	"github.com/tkahng/playground/internal/tools/http/queryparam"
+	"github.com/tkahng/playground/internal/tools/logger"
 )
 
 func TokenFromHeader(r *http.Request, w http.ResponseWriter) string {
@@ -65,6 +66,7 @@ func HttpEmailVerifiedMiddleware(app core.App) HttpMiddelwareFunc {
 		})
 	}
 }
+
 func HttpAuthMiddleware(app core.App) HttpMiddelwareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -92,6 +94,11 @@ func HttpAuthMiddleware(app core.App) HttpMiddelwareFunc {
 				return
 			}
 			ctx = contextstore.SetContextUserInfo(ctx, user)
+			ctx = logger.AppendCtx(
+				ctx,
+				slog.String("user_id", user.User.ID.String()),
+				slog.String("email", user.User.Email),
+			)
 			r = r.WithContext(ctx)
 			next.ServeHTTP(w, r)
 		})
