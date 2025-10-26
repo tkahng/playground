@@ -7,7 +7,7 @@ import (
 	"github.com/tkahng/playground/internal/shared"
 )
 
-func BindAuthApi(api huma.API, appApi *Api) {
+func bindAuthApi(api huma.API, appApi *Api) {
 	huma.Register(
 		api,
 		huma.Operation{

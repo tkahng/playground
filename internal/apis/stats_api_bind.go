@@ -7,7 +7,7 @@ import (
 	"github.com/tkahng/playground/internal/shared"
 )
 
-func BindStatsApi(api huma.API, appApi *Api) {
+func bindStatsApi(api huma.API, appApi *Api) {
 	statsGroup := huma.NewGroup(api)
 	huma.Register(
 		statsGroup,

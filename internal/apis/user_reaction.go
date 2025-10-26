@@ -26,7 +26,7 @@ type UserReactionInput struct {
 	Body UserReactionDto
 }
 
-func (a *Api) BindCreateUserReaction(aapi huma.API) {
+func (a *Api) bindCreateUserReaction(aapi huma.API) {
 	ipMiddleware := humamiddleware.IpAddressMiddleware(aapi)
 	rateLimitByIp := humamiddleware.HumaChiMiddleware(httprate.LimitByIP(1, 1*time.Second))
 	huma.Register(
@@ -84,7 +84,7 @@ func (a *Api) BindCreateUserReaction(aapi huma.API) {
 
 }
 
-func (a *Api) BindGetLatestUserReactionStats(aapi huma.API) {
+func (a *Api) bindGetLatestUserReactionStats(aapi huma.API) {
 	huma.Register(
 		aapi,
 		huma.Operation{
@@ -132,7 +132,7 @@ func (a *Api) BindGetLatestUserReactionStats(aapi huma.API) {
 type UserReactionSseInput struct {
 }
 
-func (api *Api) BindUserReactionSse(humapi huma.API) {
+func (api *Api) bindUserReactionSse(humapi huma.API) {
 	hanlder := sse.ServeSSE(
 		func(ctx context.Context, f func(any) error, input *UserReactionSseInput) sse.Client {
 			return sse.NewClient(sse.UserReactionsChannel, f, slog.Default(), func() any {
