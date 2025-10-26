@@ -1,66 +1,56 @@
 package logger
 
-import (
-	"context"
-	"encoding/json"
-	"io"
-	"log"
-	"log/slog"
+// type PrettyHandlerOptions struct {
+// 	SlogOpts slog.HandlerOptions
+// }
 
-	"github.com/fatih/color"
-)
+// type PrettyHandler struct {
+// 	slog.Handler
+// 	l *log.Logger
+// }
 
-type PrettyHandlerOptions struct {
-	SlogOpts slog.HandlerOptions
-}
+// func (h *PrettyHandler) Handle(ctx context.Context, r slog.Record) error {
+// 	level := r.Level.String() + ":"
 
-type PrettyHandler struct {
-	slog.Handler
-	l *log.Logger
-}
+// 	switch r.Level {
+// 	case slog.LevelDebug:
+// 		level = color.MagentaString(level)
+// 	case slog.LevelInfo:
+// 		level = color.BlueString(level)
+// 	case slog.LevelWarn:
+// 		level = color.YellowString(level)
+// 	case slog.LevelError:
+// 		level = color.RedString(level)
+// 	}
 
-func (h *PrettyHandler) Handle(ctx context.Context, r slog.Record) error {
-	level := r.Level.String() + ":"
+// 	fields := make(map[string]interface{}, r.NumAttrs())
+// 	r.Attrs(func(a slog.Attr) bool {
+// 		fields[a.Key] = a.Value.Any()
 
-	switch r.Level {
-	case slog.LevelDebug:
-		level = color.MagentaString(level)
-	case slog.LevelInfo:
-		level = color.BlueString(level)
-	case slog.LevelWarn:
-		level = color.YellowString(level)
-	case slog.LevelError:
-		level = color.RedString(level)
-	}
+// 		return true
+// 	})
 
-	fields := make(map[string]interface{}, r.NumAttrs())
-	r.Attrs(func(a slog.Attr) bool {
-		fields[a.Key] = a.Value.Any()
+// 	b, err := json.MarshalIndent(fields, "", "  ")
+// 	if err != nil {
+// 		return err
+// 	}
 
-		return true
-	})
+// 	timeStr := r.Time.Format("[15:05:05.000]")
+// 	msg := color.CyanString(r.Message)
 
-	b, err := json.MarshalIndent(fields, "", "  ")
-	if err != nil {
-		return err
-	}
+// 	h.l.Println(timeStr, level, msg, color.WhiteString(string(b)))
 
-	timeStr := r.Time.Format("[15:05:05.000]")
-	msg := color.CyanString(r.Message)
+// 	return nil
+// }
 
-	h.l.Println(timeStr, level, msg, color.WhiteString(string(b)))
+// func NewPrettyHandler(
+// 	out io.Writer,
+// 	opts PrettyHandlerOptions,
+// ) *PrettyHandler {
+// 	h := &PrettyHandler{
+// 		Handler: slog.NewJSONHandler(out, &opts.SlogOpts),
+// 		l:       log.New(out, "", 0),
+// 	}
 
-	return nil
-}
-
-func NewPrettyHandler(
-	out io.Writer,
-	opts PrettyHandlerOptions,
-) *PrettyHandler {
-	h := &PrettyHandler{
-		Handler: slog.NewJSONHandler(out, &opts.SlogOpts),
-		l:       log.New(out, "", 0),
-	}
-
-	return h
-}
+// 	return h
+// }
