@@ -3,7 +3,9 @@ package apis
 import (
 	"context"
 	"fmt"
+	"net/http"
 
+	"github.com/danielgtaylor/huma/v2"
 	"github.com/tkahng/playground/internal/auth"
 )
 
@@ -19,6 +21,21 @@ type SignupInput struct {
 	Name     *string               `json:"name"`
 }
 
+func (a *Api) bindSingup(api huma.API) {
+	huma.Register(
+		api,
+		huma.Operation{
+			OperationID: "signup",
+			Method:      http.MethodPost,
+			Path:        "/auth/signup",
+			Summary:     "Sign up",
+			Description: "Count the number of colors for all themes",
+			Tags:        []string{"Auth"},
+			Errors:      []int{http.StatusNotFound},
+		},
+		a.SignUp,
+	)
+}
 func (api *Api) SignUp(ctx context.Context, input *struct{ Body SignupInput }) (*AuthenticatedInfoResponse, error) {
 	dto, err := api.App().Auth2().Signup(ctx, &auth.SignupInput{
 		Email:    input.Body.Email,

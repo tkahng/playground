@@ -8,33 +8,11 @@ import (
 )
 
 func bindAuthApi(api huma.API, appApi *Api) {
-	huma.Register(
-		api,
-		huma.Operation{
-			OperationID: "signup",
-			Method:      http.MethodPost,
-			Path:        "/auth/signup",
-			Summary:     "Sign up",
-			Description: "Count the number of colors for all themes",
-			Tags:        []string{"Auth"},
-			Errors:      []int{http.StatusNotFound},
-		},
-		appApi.SignUp,
-	)
+
+	// signup -------------------------------------------------------------
+	appApi.bindSingup(api)
 	// signin -------------------------------------------------------------
-	huma.Register(
-		api,
-		huma.Operation{
-			OperationID: "signin",
-			Method:      http.MethodPost,
-			Path:        "/auth/signin",
-			Summary:     "Sign in",
-			Description: "Count the number of colors for all themes",
-			Tags:        []string{"Auth"},
-			Errors:      []int{http.StatusNotFound},
-		},
-		appApi.SignIn,
-	)
+	appApi.bindSignin(api)
 	//  me get ---------------------------------------------------------------
 	huma.Register(
 		api,
@@ -166,19 +144,7 @@ func bindAuthApi(api huma.API, appApi *Api) {
 		appApi.RequestVerification,
 	)
 	// confirm verification -------------------------------------------------------------
-	huma.Register(
-		api,
-		huma.Operation{
-			OperationID: "confirm-verification",
-			Method:      http.MethodPost,
-			Path:        "/auth/confirm-verification",
-			Summary:     "Confirm Email verification request",
-			Description: "Confirm Request email verification",
-			Tags:        []string{"Auth", "Verify"},
-			Errors:      []int{http.StatusNotFound},
-		},
-		appApi.VerifyEmail,
-	)
+	appApi.bindVerifyEmail(api)
 	// request password reset -------------------------------------------------------------
 	huma.Register(
 		api,
