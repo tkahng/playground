@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/danielgtaylor/huma/v2"
-	"github.com/tkahng/playground/internal/shared"
 )
 
 func bindAuthApi(api huma.API, appApi *Api) {
@@ -55,38 +54,11 @@ func bindAuthApi(api huma.API, appApi *Api) {
 		appApi.VerifyPost,
 	)
 	// request verification -------------------------------------------------------------
-	huma.Register(
-		api,
-		huma.Operation{
-			OperationID: "request-verification",
-			Method:      http.MethodPost,
-			Path:        "/auth/request-verification",
-			Summary:     "Email verification request",
-			Description: "Request email verification",
-			Tags:        []string{"Auth", "Verify"},
-			Errors:      []int{http.StatusNotFound},
-			Security: []map[string][]string{{
-				shared.BearerAuthSecurityKey: {},
-			}},
-		},
-		appApi.RequestVerification,
-	)
+	appApi.bindRequestVerification(api)
 	// confirm verification -------------------------------------------------------------
 	appApi.bindVerifyEmail(api)
 	// request password reset -------------------------------------------------------------
-	huma.Register(
-		api,
-		huma.Operation{
-			OperationID: "request-password-reset",
-			Method:      http.MethodPost,
-			Path:        "/auth/request-password-reset",
-			Summary:     "Request password reset",
-			Description: "Request password reset",
-			Tags:        []string{"Auth"},
-			Errors:      []int{http.StatusNotFound},
-		},
-		appApi.RequestPasswordReset,
-	)
+	appApi.bindRequestPasswordReset(api)
 	// confirm password reset -------------------------------------------------------------
 	huma.Register(
 		api,
