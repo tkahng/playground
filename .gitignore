@@ -24,3 +24,5 @@ migrate
 .env*
 tmp
 .data/
+# Added by goreleaser init:
+dist/
