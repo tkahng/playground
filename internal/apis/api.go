@@ -40,6 +40,9 @@ type ApiMiddlewares struct {
 	EmailVerified            HumaMiddlewareFunc
 	TeamRequiredOwnerMember  HumaMiddlewareFunc
 	TeamRequiredAnyMember    HumaMiddlewareFunc
+	Auth                     HumaMiddlewareFunc
+	RequireAuth              HumaMiddlewareFunc
+	Recoverer                HumaMiddlewareFunc
 }
 
 func newApiMiddlewares(api huma.API, app core.App) *ApiMiddlewares {
@@ -55,6 +58,9 @@ func newApiMiddlewares(api huma.API, app core.App) *ApiMiddlewares {
 		EmailVerified:            humamiddleware.HumaEmailVerifiedMiddleware(api, app),
 		TeamRequiredOwnerMember:  humamiddleware.RequireTeamMemberRolesMiddleware(api, models.TeamMemberRoleOwner),
 		TeamRequiredAnyMember:    humamiddleware.RequireTeamMemberRolesMiddleware(api),
+		Auth:                     humamiddleware.HumaAuthMiddleware(api, app),
+		RequireAuth:              humamiddleware.HumaRequireAuthMiddleware(api, app),
+		Recoverer:                humamiddleware.HumaChiMiddleware(middleware.RecovererMiddleware(app)),
 	}
 }
 
@@ -81,7 +87,7 @@ func (api *Api) Middlewares() *ApiMiddlewares {
 var _ API = (*Api)(nil)
 
 func (api *Api) RegisterRoutes() {
-	bindMiddlewares(api.Api(), api.App())
+	bindMiddlewares(api)
 	bindApis(api.Api(), api)
 }
 func bindApis(api huma.API, appApi *Api) {
@@ -104,10 +110,11 @@ func bindApis(api huma.API, appApi *Api) {
 	// admin stripe products with prices
 	bindUserReactionApi(api, appApi)
 }
-func bindMiddlewares(api huma.API, app core.App) {
-	api.UseMiddleware(humamiddleware.HumaChiMiddleware(middleware.RecovererMiddleware(app)))
-	api.UseMiddleware(humamiddleware.HumaAuthMiddleware(api, app))
-	api.UseMiddleware(humamiddleware.HumaRequireAuthMiddleware(api, app))
+
+func bindMiddlewares(api API) {
+	api.Api().UseMiddleware(api.Middlewares().Recoverer)
+	api.Api().UseMiddleware(api.Middlewares().Auth)
+	api.Api().UseMiddleware(api.Middlewares().RequireAuth)
 }
 
 func (api *Api) Api() huma.API {
