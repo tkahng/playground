@@ -22,7 +22,6 @@ import (
 	"github.com/tkahng/playground/internal/middleware/humamiddleware"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/shared"
-	"github.com/tkahng/playground/internal/tools/logger"
 	"github.com/tkahng/playground/internal/tools/types"
 	"github.com/tkahng/playground/ui"
 )
@@ -171,7 +170,7 @@ func NewRouter(app core.App) *chi.Mux {
 		Level: slog.LevelInfo,
 
 		// Set log output to Elastic Common Schema (ECS) format.
-		Schema: logger.GetDefaultFormat(&app.Config().AppConfig),
+		Schema: httplog.SchemaOTEL.Concise(true),
 
 		// RecoverPanics recovers from panics occurring in the underlying HTTP handlers
 		// and middlewares. It returns HTTP 500 unless response status was already set.
