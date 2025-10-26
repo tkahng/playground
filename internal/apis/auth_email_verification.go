@@ -8,6 +8,7 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/tkahng/playground/internal/contextstore"
 	"github.com/tkahng/playground/internal/models"
+	"github.com/tkahng/playground/internal/shared"
 	"github.com/tkahng/playground/internal/tools/types"
 )
 
@@ -15,6 +16,24 @@ type EmailVerificationPostInput struct {
 	Token string `json:"token" form:"token" required:"true"`
 }
 
+func (a *Api) bindRequestVerification(api huma.API) {
+	huma.Register(
+		api,
+		huma.Operation{
+			OperationID: "request-verification",
+			Method:      http.MethodPost,
+			Path:        "/auth/request-verification",
+			Summary:     "Email verification request",
+			Description: "Request email verification",
+			Tags:        []string{"Auth", "Verify"},
+			Errors:      []int{http.StatusNotFound},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+		},
+		a.RequestVerification,
+	)
+}
 func (api *Api) RequestVerification(ctx context.Context, input *struct{}) (*struct{}, error) {
 	claims := contextstore.GetContextUserInfo(ctx)
 	if claims == nil {

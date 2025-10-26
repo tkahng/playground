@@ -2,6 +2,7 @@ package apis
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/tkahng/playground/internal/contextstore"
@@ -14,6 +15,21 @@ type RequestPasswordResetInput struct {
 type RequestPasswordResetOutput struct {
 }
 
+func (a *Api) bindRequestPasswordReset(api huma.API) {
+	huma.Register(
+		api,
+		huma.Operation{
+			OperationID: "request-password-reset",
+			Method:      http.MethodPost,
+			Path:        "/auth/request-password-reset",
+			Summary:     "Request password reset",
+			Description: "Request password reset",
+			Tags:        []string{"Auth"},
+			Errors:      []int{http.StatusNotFound},
+		},
+		a.RequestPasswordReset,
+	)
+}
 func (api *Api) RequestPasswordReset(ctx context.Context, input *struct {
 	Body *RequestPasswordResetInput `json:"body" required:"true"`
 }) (*RequestPasswordResetOutput, error) {
@@ -32,7 +48,7 @@ func (api *Api) RequestPasswordReset(ctx context.Context, input *struct {
 	}
 	return nil, nil
 }
-func (api *Api) CheckPasswordReset(ctx context.Context, input *struct{
+func (api *Api) CheckPasswordReset(ctx context.Context, input *struct {
 	Body *struct {
 		Token string `json:"token" required:"true"`
 	}
