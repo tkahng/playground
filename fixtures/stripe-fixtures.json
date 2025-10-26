@@ -22,7 +22,7 @@
       "path": "/v1/prices",
       "method": "post",
       "params": {
-        "lookup_key": "price_pro_month_usd",
+        "lookup_key": "price_pro_month_usd_5000",
         "product": "${prod_pro:id}",
         "currency": "usd",
         "billing_scheme": "per_unit",
@@ -42,7 +42,7 @@
       "path": "/v1/prices",
       "method": "post",
       "params": {
-        "lookup_key": "price_pro_year_usd",
+        "lookup_key": "price_pro_year_usd_50000",
         "product": "${prod_pro:id}",
         "currency": "usd",
         "billing_scheme": "per_unit",
@@ -76,7 +76,7 @@
       "path": "/v1/prices",
       "method": "post",
       "params": {
-        "lookup_key": "price_advanced_month_usd",
+        "lookup_key": "price_advanced_month_usd_8500",
         "product": "${prod_advanced:id}",
         "currency": "usd",
         "billing_scheme": "per_unit",
@@ -96,7 +96,7 @@
       "path": "/v1/prices",
       "method": "post",
       "params": {
-        "lookup_key": "price_advanced_year_usd",
+        "lookup_key": "price_advanced_year_usd_85000",
         "product": "${prod_advanced:id}",
         "currency": "usd",
         "billing_scheme": "per_unit",
