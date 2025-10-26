@@ -13,7 +13,7 @@ func openFs(f embed.FS, path string) (*geoip2.Reader, error) {
 	if err != nil {
 		return nil, err
 	}
-	return geoip2.FromBytes(data)
+	return geoip2.OpenBytes(data)
 }
 
 func City(ip string) (*geoip2.City, error) {
