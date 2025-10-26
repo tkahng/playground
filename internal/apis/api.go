@@ -81,9 +81,9 @@ func (api *Api) Middlewares() *ApiMiddlewares {
 
 var _ API = (*Api)(nil)
 
-func (appApi *Api) RegisterRoutes() {
-	bindMiddlewares(appApi.Api(), appApi.App())
-	bindApis(appApi.Api(), appApi)
+func (api *Api) RegisterRoutes() {
+	bindMiddlewares(api.Api(), api.App())
+	bindApis(api.Api(), api)
 }
 func bindApis(api huma.API, appApi *Api) {
 	// Misc routes ------------------------------------
@@ -111,25 +111,25 @@ func bindMiddlewares(api huma.API, app core.App) {
 	api.UseMiddleware(humamiddleware.HumaRequireAuthMiddleware(api, app))
 }
 
-func (a *Api) Api() huma.API {
-	if a.api == nil {
+func (api *Api) Api() huma.API {
+	if api.api == nil {
 		panic("api not initialized for api")
 	}
-	return a.api
+	return api.api
 }
 
-func (a *Api) Router() chi.Router {
-	if a.router == nil {
+func (api *Api) Router() chi.Router {
+	if api.router == nil {
 		panic("router not initialized for api")
 	}
-	return a.router
+	return api.router
 }
 
-func (a *Api) App() core.App {
-	if a.app == nil {
+func (api *Api) App() core.App {
+	if api.app == nil {
 		panic("app not initialized for api")
 	}
-	return a.app
+	return api.app
 }
 
 func NewAppApiWithRouter(app core.App) *Api {
@@ -144,9 +144,10 @@ func NewAppApiWithRouter(app core.App) *Api {
 }
 func NewAppApi(app core.App, router chi.Router, api huma.API) *Api {
 	return &Api{
-		app:    app,
-		api:    api,
-		router: router,
+		app:         app,
+		api:         api,
+		router:      router,
+		middlewares: newApiMiddlewares(api, app),
 	}
 }
 

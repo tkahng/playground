@@ -26,7 +26,7 @@ type UserReactionInput struct {
 	Body UserReactionDto
 }
 
-func (a *Api) bindCreateUserReaction(aapi huma.API) {
+func (api *Api) bindCreateUserReaction(aapi huma.API) {
 	ipMiddleware := humamiddleware.IpAddressMiddleware(aapi)
 	rateLimitByIp := humamiddleware.HumaChiMiddleware(httprate.LimitByIP(1, 1*time.Second))
 	huma.Register(
@@ -68,11 +68,11 @@ func (a *Api) bindCreateUserReaction(aapi huma.API) {
 				return nil, huma.Error400BadRequest("Missing ip address")
 			}
 			reaction.Type = input.Body.Type
-			reaction, err := a.App().Adapter().UserReaction().CreateUserReaction(ctx, reaction)
+			reaction, err := api.App().Adapter().UserReaction().CreateUserReaction(ctx, reaction)
 			if err != nil {
 				return nil, err
 			}
-			err = a.App().EventManager().EventBus().Publish(ctx, userreaction.UserReactionCreated{
+			err = api.App().EventManager().EventBus().Publish(ctx, userreaction.UserReactionCreated{
 				UserReaction: reaction,
 			})
 			if err != nil {
@@ -84,7 +84,7 @@ func (a *Api) bindCreateUserReaction(aapi huma.API) {
 
 }
 
-func (a *Api) bindGetLatestUserReactionStats(aapi huma.API) {
+func (api *Api) bindGetLatestUserReactionStats(aapi huma.API) {
 	huma.Register(
 		aapi,
 		huma.Operation{
@@ -97,20 +97,20 @@ func (a *Api) bindGetLatestUserReactionStats(aapi huma.API) {
 			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
 		},
 		func(ctx context.Context, input *struct{}) (*ApiOutput[*userreaction.UserReactionStats], error) {
-			latest, err := a.App().Adapter().UserReaction().GetLastReaction(ctx)
+			latest, err := api.App().Adapter().UserReaction().GetLastReaction(ctx)
 			if err != nil {
 				return nil, err
 			}
 
 			stats := new(userreaction.UserReactionStats)
 			stats.LastCreated = userreaction.FromModelUserReaction(latest)
-			recent, err := a.App().Adapter().UserReaction().CountByCountry(ctx, &stores.UserReactionFilter{
+			recent, err := api.App().Adapter().UserReaction().CountByCountry(ctx, &stores.UserReactionFilter{
 				PaginatedInput: stores.PaginatedInput{
 					PerPage: 5,
 				},
 			})
 			if err != nil {
-				a.App().Logger().Error("failed to get recent user reactions", slog.Any("error", err))
+				api.App().Logger().Error("failed to get recent user reactions", slog.Any("error", err))
 			}
 			stats.TopFiveCountries = mapper.Map(recent, func(r *stores.ReactionByCountry) userreaction.ReactionByCountry {
 				return userreaction.ReactionByCountry{
@@ -118,9 +118,9 @@ func (a *Api) bindGetLatestUserReactionStats(aapi huma.API) {
 					TotalReactions: r.TotalReactions,
 				}
 			})
-			count, err := a.App().Adapter().UserReaction().CountUserReactions(ctx, nil)
+			count, err := api.App().Adapter().UserReaction().CountUserReactions(ctx, nil)
 			if err != nil {
-				a.App().Logger().Error("failed to get recent user reactions", slog.Any("error", err))
+				api.App().Logger().Error("failed to get recent user reactions", slog.Any("error", err))
 			}
 			stats.TotalReactions = count
 			return &ApiOutput[*userreaction.UserReactionStats]{Body: stats}, nil
