@@ -7,18 +7,33 @@ import (
 )
 
 type StripeProduct struct {
-	_           struct{}          `db:"stripe_products" schema:"billing" json:"-"`
-	ID          string            `db:"id,pk" json:"id"`
-	Active      bool              `db:"active" json:"active"`
-	Name        string            `db:"name" json:"name"`
-	Description *string           `db:"description" json:"description"`
-	Image       *string           `db:"image" json:"image"`
-	Metadata    map[string]string `db:"metadata" json:"metadata"`
-	CreatedAt   time.Time         `db:"created_at" json:"created_at"`
-	UpdatedAt   time.Time         `db:"updated_at" json:"updated_at"`
-	Prices      []*StripePrice    `db:"prices" src:"id" dest:"product_id" table:"billing.stripe_prices" json:"prices,omitempty"`
-	Roles       []*Role           `db:"roles" src:"id" dest:"id" table:"auth.roles" through:"billing.product_roles" through_src:"product_id" through_dest:"role_id" json:"roles,omitempty"`
-	Permissions []*Permission     `db:"permissions" src:"id" dest:"id" table:"auth.permissions" through:"billing.product_permissions" through_src:"product_id" through_dest:"permission_id" json:"permissions,omitempty"`
+	_ struct{} `db:"stripe_products" schema:"billing" json:"-"`
+	// ID is a UUID
+	ID string `db:"id,pk" json:"id"`
+	// Active is whether the product is active.
+	Active bool `db:"active" json:"active"`
+	// Name is a string
+	Name string `db:"name" json:"name"`
+	// Description is a string
+	Description *string `db:"description" json:"description"`
+	// Image is a URL
+	Image *string `db:"image" json:"image"`
+	// Metadata is a key value pair of strings.
+	//
+	// - index: int. The index of the product in the list of products.
+	//
+	// - customer_type: user|team. The type of the customer.
+	Metadata map[string]string `db:"metadata" json:"metadata"`
+	// CreatedAt
+	CreatedAt time.Time `db:"created_at" json:"created_at"`
+	// UpdatedAt
+	UpdatedAt time.Time `db:"updated_at" json:"updated_at"`
+	// Prices
+	Prices []*StripePrice `db:"prices" src:"id" dest:"product_id" table:"billing.stripe_prices" json:"prices,omitempty"`
+	// Roles
+	Roles []*Role `db:"roles" src:"id" dest:"id" table:"auth.roles" through:"billing.product_roles" through_src:"product_id" through_dest:"role_id" json:"roles,omitempty"`
+	// Permissions
+	Permissions []*Permission `db:"permissions" src:"id" dest:"id" table:"auth.permissions" through:"billing.product_permissions" through_src:"product_id" through_dest:"permission_id" json:"permissions,omitempty"`
 }
 type ProductRole struct {
 	_         struct{}  `db:"product_roles" schema:"billing" json:"-"`
@@ -122,22 +137,41 @@ const (
 // ToModelsStripePricingPlanInterval converts a StripePricingPlanInterval to models.StripePricingPlanInterval
 
 type StripePrice struct {
-	_               struct{}                   `db:"stripe_prices" schema:"billing" json:"-"`
-	ID              string                     `db:"id" json:"id"`
-	ProductID       string                     `db:"product_id" json:"product_id"`
-	LookupKey       *string                    `db:"lookup_key" json:"lookup_key"`
-	Active          bool                       `db:"active" json:"active"`
-	UnitAmount      *int64                     `db:"unit_amount" json:"unit_amount"`
-	Currency        string                     `db:"currency" json:"currency"`
-	Type            StripePricingType          `db:"type,quote" json:"type" required:"true" enum:"one_time,recurring"`
-	Interval        *StripePricingPlanInterval `db:"interval,quote" json:"interval,omitempty" enum:"day,week,month,year"`
-	IntervalCount   *int64                     `db:"interval_count" json:"interval_count"`
-	TrialPeriodDays *int64                     `db:"trial_period_days" json:"trial_period_days"`
-	Metadata        map[string]string          `db:"metadata" json:"metadata"`
-	CreatedAt       time.Time                  `db:"created_at" json:"created_at"`
-	UpdatedAt       time.Time                  `db:"updated_at" json:"updated_at"`
-	Product         *StripeProduct             `db:"product" src:"product_id" dest:"id" table:"billing.stripe_products" json:"product,omitempty"`
-	Subscriptions   []*StripeSubscription      `db:"subscriptions" src:"id" dest:"price_id" table:"billing.stripe_subscriptions" json:"subscriptions,omitempty"`
+	_ struct{} `db:"stripe_prices" schema:"billing" json:"-"`
+	// ID is a UUID
+	ID string `db:"id" json:"id"`
+	// ProductID
+	ProductID string `db:"product_id" json:"product_id"`
+	// LookupKey
+	LookupKey *string `db:"lookup_key" json:"lookup_key"`
+	// Active
+	Active bool `db:"active" json:"active"`
+	// UnitAmount
+	UnitAmount *int64 `db:"unit_amount" json:"unit_amount"`
+	// Currency
+	Currency string `db:"currency" json:"currency"`
+	// Type
+	Type StripePricingType `db:"type,quote" json:"type" required:"true" enum:"one_time,recurring"`
+	// Interval
+	Interval *StripePricingPlanInterval `db:"interval,quote" json:"interval,omitempty" enum:"day,week,month,year"`
+	// TrialPeriodDays
+	TrialPeriodDays *int64 `db:"trial_period_days" json:"trial_period_days"`
+	// IntervalCount
+	IntervalCount *int64 `db:"interval_count" json:"interval_count"`
+	// Metadata is a key value pair of strings.
+	//
+	// - index: int. The index of the product in the list of products.
+	//
+	// - customer_type: user|team. The type of the customer.
+	Metadata map[string]string `db:"metadata" json:"metadata"`
+	// CreatedAt
+	CreatedAt time.Time `db:"created_at" json:"created_at"`
+	// UpdatedAt
+	UpdatedAt time.Time `db:"updated_at" json:"updated_at"`
+	// Product
+	Product *StripeProduct `db:"product" src:"product_id" dest:"id" table:"billing.stripe_products" json:"product,omitempty"`
+	// Subscriptions
+	Subscriptions []*StripeSubscription `db:"subscriptions" src:"id" dest:"price_id" table:"billing.stripe_subscriptions" json:"subscriptions,omitempty"`
 }
 
 type stripePriceTable struct {
@@ -244,27 +278,51 @@ func (s StripeSubscriptionStatus) String() string {
 }
 
 type StripeSubscription struct {
-	_                  struct{}                 `db:"stripe_subscriptions" schema:"billing" json:"-"`
-	ID                 string                   `db:"id" json:"id"`
-	StripeCustomerID   string                   `db:"stripe_customer_id" json:"stripe_customer_id"`
-	Status             StripeSubscriptionStatus `db:"status" json:"status"`
-	Metadata           map[string]string        `db:"metadata" json:"metadata"`
-	ItemID             string                   `db:"item_id" json:"item_id"`
-	PriceID            string                   `db:"price_id" json:"price_id"`
-	Quantity           int64                    `db:"quantity" json:"quantity"`
-	CancelAtPeriodEnd  bool                     `db:"cancel_at_period_end" json:"cancel_at_period_end"`
-	Created            time.Time                `db:"created" json:"created"`
-	CurrentPeriodStart time.Time                `db:"current_period_start" json:"current_period_start"`
-	CurrentPeriodEnd   time.Time                `db:"current_period_end" json:"current_period_end"`
-	EndedAt            *time.Time               `db:"ended_at" json:"ended_at"`
-	CancelAt           *time.Time               `db:"cancel_at" json:"cancel_at"`
-	CanceledAt         *time.Time               `db:"canceled_at" json:"canceled_at"`
-	TrialStart         *time.Time               `db:"trial_start" json:"trial_start"`
-	TrialEnd           *time.Time               `db:"trial_end" json:"trial_end"`
-	CreatedAt          time.Time                `db:"created_at" json:"created_at"`
-	UpdatedAt          time.Time                `db:"updated_at" json:"updated_at"`
-	StripeCustomer     *StripeCustomer          `db:"stripe_customer" src:"stripe_customer_id" dest:"id" table:"billing.stripe_customers" json:"stripe_customer,omitempty"`
-	Price              *StripePrice             `db:"price" src:"price_id" dest:"id" table:"billing.stripe_prices" json:"price,omitempty"`
+	_ struct{} `db:"stripe_subscriptions" schema:"billing" json:"-"`
+	// ID
+	ID string `db:"id" json:"id"`
+	// StripeCustomerID
+	StripeCustomerID string `db:"stripe_customer_id" json:"stripe_customer_id"`
+	// Status
+	Status StripeSubscriptionStatus `db:"status" json:"status"`
+	// Metadata
+	//
+	// - team_id | user_id: ID of the team or user the subscription belongs to
+	//
+	// - customer_type: "team" or "user"
+	Metadata map[string]string `db:"metadata" json:"metadata"`
+	// ItemID
+	ItemID string `db:"item_id" json:"item_id"`
+	// PriceID
+	PriceID string `db:"price_id" json:"price_id"`
+	// Quantity
+	Quantity int64 `db:"quantity" json:"quantity"`
+	// CancelAtPeriodEnd
+	CancelAtPeriodEnd bool `db:"cancel_at_period_end" json:"cancel_at_period_end"`
+	// Created
+	Created time.Time `db:"created" json:"created"`
+	// CurrentPeriodStart
+	CurrentPeriodStart time.Time `db:"current_period_start" json:"current_period_start"`
+	// CurrentPeriodEnd
+	CurrentPeriodEnd time.Time `db:"current_period_end" json:"current_period_end"`
+	// EndedAt
+	EndedAt *time.Time `db:"ended_at" json:"ended_at"`
+	// CancelAt
+	CancelAt *time.Time `db:"cancel_at" json:"cancel_at"`
+	// CanceledAt
+	CanceledAt *time.Time `db:"canceled_at" json:"canceled_at"`
+	// TrialStart
+	TrialStart *time.Time `db:"trial_start" json:"trial_start"`
+	// TrialEnd
+	TrialEnd *time.Time `db:"trial_end" json:"trial_end"`
+	// CreatedAt
+	CreatedAt time.Time `db:"created_at" json:"created_at"`
+	// UpdatedAt
+	UpdatedAt time.Time `db:"updated_at" json:"updated_at"`
+	// StripeCustomer
+	StripeCustomer *StripeCustomer `db:"stripe_customer" src:"stripe_customer_id" dest:"id" table:"billing.stripe_customers" json:"stripe_customer,omitempty"`
+	// Price
+	Price *StripePrice `db:"price" src:"price_id" dest:"id" table:"billing.stripe_prices" json:"price,omitempty"`
 }
 
 type stripeSubscriptionTable struct {
@@ -386,21 +444,33 @@ const (
 )
 
 type StripeCustomer struct {
-	_              struct{}              `db:"stripe_customers" schema:"billing" json:"-"`
-	ID             string                `db:"id" json:"id"`
-	Email          string                `db:"email" json:"email"`
-	Name           *string               `db:"name" json:"name,omitempty" required:"false"`
-	UserID         *uuid.UUID            `db:"user_id" json:"user_id,omitempty" required:"false"`
-	TeamID         *uuid.UUID            `db:"team_id" json:"team_id,omitempty" required:"false"`
-	CustomerType   StripeCustomerType    `db:"customer_type" json:"customer_type" enum:"user,team"`
-	BillingAddress *map[string]string    `db:"billing_address" json:"billing_address"`
-	PaymentMethod  *map[string]string    `db:"payment_method" json:"payment_method"`
-	CreatedAt      time.Time             `db:"created_at" json:"created_at"`
-	UpdatedAt      time.Time             `db:"updated_at" json:"updated_at"`
-	Team           *Team                 `db:"team" src:"team_id" dest:"id" table:"org.teams" json:"team,omitempty"`
-	User           *User                 `db:"user" src:"user_id" dest:"id" table:"auth.users" json:"user,omitempty"`
-	Subscriptions  []*StripeSubscription `db:"subscriptions" src:"id" dest:"stripe_customer_id" table:"billing.stripe_subscriptions" json:"subscriptions,omitempty"`
-	// scannable
+	_ struct{} `db:"stripe_customers" schema:"billing" json:"-"`
+	// ID
+	ID string `db:"id" json:"id"`
+	// Email
+	Email string `db:"email" json:"email"`
+	// Name
+	Name *string `db:"name" json:"name,omitempty" required:"false"`
+	// UserID
+	UserID *uuid.UUID `db:"user_id" json:"user_id,omitempty" required:"false"`
+	// TeamID
+	TeamID *uuid.UUID `db:"team_id" json:"team_id,omitempty" required:"false"`
+	// CustomerType
+	CustomerType StripeCustomerType `db:"customer_type" json:"customer_type" enum:"user,team"`
+	// BillingAddress
+	BillingAddress *map[string]string `db:"billing_address" json:"billing_address"`
+	// PaymentMethod
+	PaymentMethod *map[string]string `db:"payment_method" json:"payment_method"`
+	// CreatedAt
+	CreatedAt time.Time `db:"created_at" json:"created_at"`
+	// UpdatedAt
+	UpdatedAt time.Time `db:"updated_at" json:"updated_at"`
+	// Team
+	Team *Team `db:"team" src:"team_id" dest:"id" table:"org.teams" json:"team,omitempty"`
+	// User
+	User *User `db:"user" src:"user_id" dest:"id" table:"auth.users" json:"user,omitempty"`
+	// Subscriptions
+	Subscriptions []*StripeSubscription `db:"subscriptions" src:"id" dest:"stripe_customer_id" table:"billing.stripe_subscriptions" json:"subscriptions,omitempty"`
 }
 
 type stripeCustomerTable struct {
