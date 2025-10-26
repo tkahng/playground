@@ -30,7 +30,7 @@ type TeamMemberSseInput struct {
 
 type MiddlewareFunc func(ctx huma.Context, next func(huma.Context))
 
-func (api *Api) BindTeamMembersSseEvents(humapi huma.API) {
+func (api *Api) bindTeamMembersSseEvents(humapi huma.API) {
 	membermiddleware := humamiddleware.TeamInfoFromTeamMemberID(humapi, api.App())
 	hanlder := sse.ServeSSE(
 		func(ctx context.Context, f func(any) error, input *TeamMemberSseInput) sse.Client {
@@ -128,7 +128,7 @@ func FromModelNotification(notification *models.Notification) *Notification {
 		Team:         FromTeamModel(notification.Team),
 	}
 }
-func (api *Api) BindFindTeamMembersNotifications(aapi huma.API) {
+func (api *Api) bindFindTeamMembersNotifications(aapi huma.API) {
 	teamInfoFromMember := humamiddleware.TeamInfoFromTeamMemberID(aapi, api.app)
 	huma.Register(
 		aapi,
@@ -184,7 +184,7 @@ type ReadTeamMembersNotificationsInput struct {
 	TeamMemberID   string `path:"team-member-id" required:"true" format:"uuid"`
 }
 
-func (api *Api) BindReadTeamMembersNotifications(aapi huma.API) {
+func (api *Api) bindReadTeamMembersNotifications(aapi huma.API) {
 	teamMemberMiddleware := humamiddleware.TeamInfoFromTeamMemberID(aapi, api.app)
 	huma.Register(
 		aapi,
@@ -235,7 +235,7 @@ func (api *Api) BindReadTeamMembersNotifications(aapi huma.API) {
 	)
 }
 
-func (api *Api) BindDeleteTeamMembersNotifications(aapi huma.API) {
+func (api *Api) bindDeleteTeamMembersNotifications(aapi huma.API) {
 	teamMemberMiddleware := humamiddleware.TeamInfoFromTeamMemberID(aapi, api.app)
 	huma.Register(
 		aapi,
@@ -284,7 +284,7 @@ type FindTeamTeamMemberByIDInput struct {
 	TeamMemberID string `path:"team-member-id" required:"true" format:"uuid"`
 }
 
-func (api *Api) BindFindTeamMemberByID(aapi huma.API) {
+func (api *Api) bindFindTeamMemberByID(aapi huma.API) {
 	middleware := humamiddleware.TeamInfoFromParam(aapi, api.app)
 	huma.Register(
 		aapi,

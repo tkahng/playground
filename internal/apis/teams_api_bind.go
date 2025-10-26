@@ -4,57 +4,32 @@ import (
 	"net/http"
 
 	"github.com/danielgtaylor/huma/v2"
-	"github.com/tkahng/playground/internal/middleware/humamiddleware"
-	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/shared"
 )
 
-func BindTeamsApi(api huma.API, appApi *Api) {
-	teamInfoMiddleware := humamiddleware.TeamInfoFromParam(api, appApi.App())
-	requiredOwnerMember := humamiddleware.RequireTeamMemberRolesMiddleware(api, models.TeamMemberRoleOwner)
-	checkTeamDelete := humamiddleware.TeamCanDelete(api, appApi.App())
-	// emailVerified := middleware.EmailVerifiedMiddleware(api)
+func bindTeamsApi(api huma.API, appApi *Api) {
 	teamsGroup := huma.NewGroup(api)
 	// get team members
 	//  /api/team-members
 
-	appApi.BindFindTeamTeamMembers(teamsGroup)
+	appApi.bindFindTeamTeamMembers(teamsGroup)
 
 	// check team slug
-	appApi.BindCheckTeamSlug(teamsGroup)
+	appApi.bindCheckTeamSlug(teamsGroup)
 
 	// get user teams
-	appApi.BindGetUserTeams(teamsGroup)
+	appApi.bindGetUserTeams(teamsGroup)
 
 	// create team
-	appApi.BindCreateTeam(teamsGroup)
+	appApi.bindCreateTeam(teamsGroup)
 
 	// get team
-	appApi.BindGetTeam(teamsGroup)
+	appApi.bindGetTeam(teamsGroup)
 	// get team by slug
-	appApi.BindFindTeamInfoBySlug(teamsGroup)
+	appApi.bindFindTeamInfoBySlug(teamsGroup)
 
 	// update team
-	huma.Register(
-		teamsGroup,
-		huma.Operation{
-			OperationID: "update-team",
-			Method:      http.MethodPut,
-			Path:        "/teams/{team-id}",
-			Summary:     "update-team",
-			Description: "update a team by ID",
-			Tags:        []string{"Teams"},
-			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
-			Security: []map[string][]string{{
-				shared.BearerAuthSecurityKey: {},
-			}},
-			Middlewares: huma.Middlewares{
-				teamInfoMiddleware,
-				requiredOwnerMember,
-			},
-		},
-		appApi.UpdateTeam,
-	)
+	appApi.bindUpdateTeam(teamsGroup)
 
 	// delete team
 	huma.Register(
@@ -71,9 +46,9 @@ func BindTeamsApi(api huma.API, appApi *Api) {
 				shared.BearerAuthSecurityKey: {},
 			}},
 			Middlewares: huma.Middlewares{
-				teamInfoMiddleware,
-				requiredOwnerMember,
-				checkTeamDelete,
+				appApi.middlewares.TeamInfoFromParam,
+				appApi.middlewares.TeamRequiredOwnerMember,
+				appApi.middlewares.TeamCanDelete,
 			},
 		},
 		appApi.DeleteTeam,
@@ -96,8 +71,8 @@ func BindTeamsApi(api huma.API, appApi *Api) {
 				shared.BearerAuthSecurityKey: {},
 			}},
 			Middlewares: huma.Middlewares{
-				teamInfoMiddleware,
-				requiredOwnerMember,
+				appApi.middlewares.TeamInfoFromParam,
+				appApi.middlewares.TeamRequiredOwnerMember,
 			},
 		},
 		appApi.CreateInvitation,
@@ -118,8 +93,8 @@ func BindTeamsApi(api huma.API, appApi *Api) {
 				shared.BearerAuthSecurityKey: {},
 			}},
 			Middlewares: huma.Middlewares{
-				teamInfoMiddleware,
-				requiredOwnerMember,
+				appApi.middlewares.TeamInfoFromParam,
+				appApi.middlewares.TeamRequiredOwnerMember,
 			},
 		},
 		appApi.CencelInvitation,
@@ -141,7 +116,7 @@ func BindTeamsApi(api huma.API, appApi *Api) {
 				shared.BearerAuthSecurityKey: {},
 			}},
 			Middlewares: huma.Middlewares{
-				teamInfoMiddleware,
+				appApi.middlewares.TeamInfoFromParam,
 			},
 		},
 		appApi.FindInvitations,
@@ -242,13 +217,13 @@ func BindTeamsApi(api huma.API, appApi *Api) {
 		},
 		appApi.GetInvitationByToken,
 	)
-	appApi.BindTeamMembersSseEvents(teamsGroup)
+	appApi.bindTeamMembersSseEvents(teamsGroup)
 
-	appApi.BindFindTeamMembersNotifications(teamsGroup)
+	appApi.bindFindTeamMembersNotifications(teamsGroup)
 
-	appApi.BindReadTeamMembersNotifications(teamsGroup)
+	appApi.bindReadTeamMembersNotifications(teamsGroup)
 
-	appApi.BindDeleteTeamMembersNotifications(teamsGroup)
+	appApi.bindDeleteTeamMembersNotifications(teamsGroup)
 
-	appApi.BindFindTeamMemberByID(teamsGroup)
+	appApi.bindFindTeamMemberByID(teamsGroup)
 }

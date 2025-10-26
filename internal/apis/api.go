@@ -18,14 +18,49 @@ import (
 	"github.com/go-chi/httprate"
 	"github.com/tkahng/playground/internal/core"
 	"github.com/tkahng/playground/internal/middleware"
+
 	"github.com/tkahng/playground/internal/middleware/humamiddleware"
+	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/shared"
 	"github.com/tkahng/playground/internal/tools/logger"
 	"github.com/tkahng/playground/internal/tools/types"
 	"github.com/tkahng/playground/ui"
 )
 
-type AppApi interface {
+type HumaMiddlewareFunc func(ctx huma.Context, next func(huma.Context))
+
+type ApiMiddlewares struct {
+	SelectCustomerFromUser   HumaMiddlewareFunc
+	SelectCustomerFromTeam   HumaMiddlewareFunc
+	TeamInfoFromParam        HumaMiddlewareFunc
+	TeamInfoFromTask         HumaMiddlewareFunc
+	TeamInfoFromTaskProject  HumaMiddlewareFunc
+	TeamInfoFromTeamMemberID HumaMiddlewareFunc
+	TeamInfoFromTeamSlug     HumaMiddlewareFunc
+	TeamCanDelete            HumaMiddlewareFunc
+	EmailVerified            HumaMiddlewareFunc
+	TeamRequiredOwnerMember  HumaMiddlewareFunc
+	TeamRequiredAnyMember    HumaMiddlewareFunc
+}
+
+func newApiMiddlewares(api huma.API, app core.App) *ApiMiddlewares {
+	return &ApiMiddlewares{
+		SelectCustomerFromUser:   humamiddleware.SelectCustomerFromUser(api, app),
+		SelectCustomerFromTeam:   humamiddleware.SelectCustomerFromTeam(api, app),
+		TeamInfoFromParam:        humamiddleware.TeamInfoFromParam(api, app),
+		TeamInfoFromTask:         humamiddleware.TeamInfoFromTask(api, app),
+		TeamInfoFromTaskProject:  humamiddleware.TeamInfoFromTaskProject(api, app),
+		TeamInfoFromTeamMemberID: humamiddleware.TeamInfoFromTeamMemberID(api, app),
+		TeamInfoFromTeamSlug:     humamiddleware.TeamInfoFromTeamSlug(api, app),
+		TeamCanDelete:            humamiddleware.TeamCanDelete(api, app),
+		EmailVerified:            humamiddleware.HumaEmailVerifiedMiddleware(api, app),
+		TeamRequiredOwnerMember:  humamiddleware.RequireTeamMemberRolesMiddleware(api, models.TeamMemberRoleOwner),
+		TeamRequiredAnyMember:    humamiddleware.RequireTeamMemberRolesMiddleware(api),
+	}
+}
+
+type API interface {
+	Middlewares() *ApiMiddlewares
 	Api() huma.API
 	RegisterRoutes()
 	Router() chi.Router
@@ -33,16 +68,47 @@ type AppApi interface {
 }
 
 type Api struct {
-	app    core.App
-	api    huma.API
-	router chi.Router
+	app         core.App
+	api         huma.API
+	router      chi.Router
+	middlewares *ApiMiddlewares
 }
 
-var _ AppApi = (*Api)(nil)
+// Middlewares implements AppApi.
+func (api *Api) Middlewares() *ApiMiddlewares {
+	return api.middlewares
+}
+
+var _ API = (*Api)(nil)
 
 func (appApi *Api) RegisterRoutes() {
 	bindMiddlewares(appApi.Api(), appApi.App())
 	bindApis(appApi.Api(), appApi)
+}
+func bindApis(api huma.API, appApi *Api) {
+	// Misc routes ------------------------------------
+	bindMiscApi(api, appApi)
+	// signup -------------------------------------------------------------
+	bindAuthApi(api, appApi)
+	// ---- Upload File
+	bindMediaApi(api, appApi)
+	// ---- Teams
+	bindTeamsApi(api, appApi)
+	// stats routes -------------------------------------------------------------------------------------------------
+	bindStatsApi(api, appApi)
+	// ---- task routes -------------------------------------------------------------------------------------------------
+	bindTaskApi(api, appApi)
+	// stripe routes -------------------------------------------------------------------------------------------------
+	bindStripeApi(api, appApi)
+	//  admin routes ----------------------------------------------------------------------------
+	bindAdminApi(api, appApi)
+	// admin stripe products with prices
+	bindUserReactionApi(api, appApi)
+}
+func bindMiddlewares(api huma.API, app core.App) {
+	api.UseMiddleware(humamiddleware.HumaChiMiddleware(middleware.RecovererMiddleware(app)))
+	api.UseMiddleware(humamiddleware.HumaAuthMiddleware(api, app))
+	api.UseMiddleware(humamiddleware.HumaRequireAuthMiddleware(api, app))
 }
 
 func (a *Api) Api() huma.API {
@@ -68,11 +134,12 @@ func (a *Api) App() core.App {
 
 func NewAppApiWithRouter(app core.App) *Api {
 	router := NewRouter(app)
-	api := NewApiGroup(router)
+	api := newApiGroup(router)
 	return &Api{
-		app:    app,
-		api:    api,
-		router: router,
+		app:         app,
+		api:         api,
+		router:      router,
+		middlewares: newApiMiddlewares(api, app),
 	}
 }
 func NewAppApi(app core.App, router chi.Router, api huma.API) *Api {
@@ -144,7 +211,7 @@ func NewRouter(app core.App) *chi.Mux {
 	return r
 }
 
-func NewApiGroup(r chi.Router) huma.API {
+func newApiGroup(r chi.Router) huma.API {
 	var api huma.API
 	config := huma.DefaultConfig("My API", "1.0.0")
 	config.Servers = []*huma.Server{{URL: "http://localhost:8080"}}
@@ -162,12 +229,6 @@ func NewApiGroup(r chi.Router) huma.API {
 	return grp
 }
 
-func bindMiddlewares(api huma.API, app core.App) {
-	api.UseMiddleware(humamiddleware.HumaChiMiddleware(middleware.RecovererMiddleware(app)))
-	api.UseMiddleware(humamiddleware.HumaAuthMiddleware(api, app))
-	api.UseMiddleware(humamiddleware.HumaRequireAuthMiddleware(api, app))
-}
-
 type IndexOutputBody struct {
 	Access string `json:"access"`
 }
@@ -176,36 +237,7 @@ type IndexOutput struct {
 	Body IndexOutputBody `json:"body"`
 }
 
-func bindApis(api huma.API, appApi *Api) {
-
-	// Misc routes ------------------------------------
-	BindMiscApi(api, appApi)
-	// signup -------------------------------------------------------------
-	BindAuthApi(api, appApi)
-
-	// ---- Upload File
-	BindMediaApi(api, appApi)
-
-	// ---- Teams
-	BindTeamsApi(api, appApi)
-
-	// stats routes -------------------------------------------------------------------------------------------------
-	BindStatsApi(api, appApi)
-
-	// ---- task routes -------------------------------------------------------------------------------------------------
-	BindTaskApi(api, appApi)
-
-	// stripe routes -------------------------------------------------------------------------------------------------
-
-	BindStripeApi(api, appApi)
-
-	//  admin routes ----------------------------------------------------------------------------
-	BindAdminApi(api, appApi)
-	// admin stripe products with prices
-	BindUserReactionApi(api, appApi)
-}
-
-func BindMiscApi(api huma.API, appApi *Api) {
+func bindMiscApi(api huma.API, appApi *Api) {
 	huma.Get(api, "/", func(ctx context.Context, input *struct {
 		Page types.OmittableNullable[string] `query:"page" required:"false"`
 	}) (*IndexOutput, error) {
