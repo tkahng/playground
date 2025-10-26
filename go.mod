@@ -38,8 +38,6 @@ require (
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/lithammer/shortuuid/v3 v3.0.7 // indirect
-	github.com/mattn/go-colorable v0.1.14 // indirect
-	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/oklog/ulid v1.3.1 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/sony/gobreaker v1.0.0 // indirect
@@ -66,7 +64,6 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sts v1.38.9 // indirect
 	github.com/aws/smithy-go v1.23.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/fatih/color v1.18.0
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/go-chi/httplog/v3 v3.3.0
 	github.com/go-chi/render v1.0.3
