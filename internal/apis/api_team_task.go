@@ -39,7 +39,7 @@ type Task struct {
 	Project           *TaskProject      `db:"project" src:"project_id" dest:"id" table:"task_projects" json:"project,omitempty"`
 }
 
-func FromModelTask(task *models.Task) *Task {
+func fromModelTask(task *models.Task) *Task {
 	if task == nil {
 		return nil
 	}
@@ -59,10 +59,10 @@ func FromModelTask(task *models.Task) *Task {
 		ParentID:          task.ParentID,
 		CreatedAt:         task.CreatedAt,
 		UpdatedAt:         task.UpdatedAt,
-		Children:          mapper.Map(task.Children, FromModelTask),
-		CreatedByMember:   FromTeamMemberModel(task.CreatedByMember),
-		Team:              FromTeamModel(task.Team),
-		Project:           FromModelProject(task.Project),
+		Children:          mapper.Map(task.Children, fromModelTask),
+		CreatedByMember:   fromTeamMemberModel(task.CreatedByMember),
+		Team:              fromTeamModel(task.Team),
+		Project:           fromModelProject(task.Project),
 	}
 }
 
@@ -137,7 +137,7 @@ func (api *Api) TeamTaskList(ctx context.Context, input *TeamTaskListParams) (*T
 	}
 	return &TaskListResponse{
 		Body: &ApiPaginatedResponse[*Task]{
-			Data: mapper.Map(tasks, FromModelTask),
+			Data: mapper.Map(tasks, fromModelTask),
 			Meta: ApiGenerateMeta(&input.PaginatedInput, total),
 		},
 	}, nil
@@ -301,7 +301,7 @@ func (api *Api) TaskGet(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	outputTask := FromModelTask(task)
+	outputTask := fromModelTask(task)
 	if outputTask != nil {
 		if outputTask.AssigneeID != nil {
 			teamMemberId := *outputTask.AssigneeID
@@ -309,9 +309,9 @@ func (api *Api) TaskGet(ctx context.Context, input *struct {
 			if err != nil {
 				return nil, err
 			}
-			outputTask.Assignee = FromTeamMemberModel(&taskTeamInfo.Member)
-			outputTask.Assignee.User = FromUserModel(&taskTeamInfo.User)
-			outputTask.Assignee.Team = FromTeamModel(&taskTeamInfo.Team)
+			outputTask.Assignee = fromTeamMemberModel(&taskTeamInfo.Member)
+			outputTask.Assignee.User = fromUserModel(&taskTeamInfo.User)
+			outputTask.Assignee.Team = fromTeamModel(&taskTeamInfo.Team)
 		}
 	}
 	return &TaskResponse{

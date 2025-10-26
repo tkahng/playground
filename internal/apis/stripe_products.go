@@ -47,7 +47,7 @@ func (api *Api) StripeProductsWithPrices(ctx context.Context, input *StripeProdu
 	}
 
 	return &ApiPaginatedOutput[*StripeProduct]{Body: ApiPaginatedResponse[*StripeProduct]{
-		Data: mapper.Map(products, FromModelProduct),
+		Data: mapper.Map(products, fromModelProduct),
 		Meta: ApiGenerateMeta(&input.PaginatedInput, count),
 	}}, nil
 }

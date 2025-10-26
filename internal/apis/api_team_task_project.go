@@ -37,7 +37,7 @@ type TaskProject struct {
 	Tasks             []*Task                  `db:"tasks" src:"id" dest:"project_id" table:"tasks" json:"tasks,omitempty"`
 }
 
-func FromModelProject(task *models.TaskProject) *TaskProject {
+func fromModelProject(task *models.TaskProject) *TaskProject {
 	if task == nil {
 		return nil
 	}
@@ -55,9 +55,9 @@ func FromModelProject(task *models.TaskProject) *TaskProject {
 		Rank:              task.Rank,
 		CreatedAt:         task.CreatedAt,
 		UpdatedAt:         task.UpdatedAt,
-		CreatedByMember:   FromTeamMemberModel(task.CreatedByMember),
-		Team:              FromTeamModel(task.Team),
-		Tasks:             mapper.Map(task.Tasks, FromModelTask),
+		CreatedByMember:   fromTeamMemberModel(task.CreatedByMember),
+		Team:              fromTeamModel(task.Team),
+		Tasks:             mapper.Map(task.Tasks, fromModelTask),
 	}
 }
 
@@ -145,7 +145,7 @@ func (api *Api) TeamTaskProjectList(ctx context.Context, input *TeamTaskProjects
 	return &TaskProjectListResponse{
 		Body: &ApiPaginatedResponse[*TaskProject]{
 			Data: mapper.Map(taskProject, func(taskProject *models.TaskProject) *TaskProject {
-				return FromModelProject(taskProject)
+				return fromModelProject(taskProject)
 			}),
 			Meta: ApiGenerateMeta(&input.PaginatedInput, total),
 		},
@@ -198,7 +198,7 @@ func (api *Api) TeamTaskProjectCreate(
 	return &struct {
 		Body *TaskProject
 	}{
-		Body: FromModelProject(taskProject),
+		Body: fromModelProject(taskProject),
 	}, nil
 }
 
@@ -246,7 +246,7 @@ func (api *Api) TeamTaskProjectCreateWithAi(ctx context.Context, input *TaskProj
 	return &struct {
 		Body *TaskProject
 	}{
-		Body: FromModelProject(taskProject),
+		Body: fromModelProject(taskProject),
 	}, nil
 }
 
@@ -318,7 +318,7 @@ func (api *Api) TeamTaskProjectGet(ctx context.Context, input *struct {
 		}
 	}
 	return &TaskProjectResponse{
-		Body: FromModelProject(taskProject),
+		Body: fromModelProject(taskProject),
 	}, nil
 }
 
@@ -364,6 +364,6 @@ func (api *Api) TeamTaskProjectTasksCreate(ctx context.Context, input *ApiCreate
 		return nil, huma.Error500InternalServerError("Failed to update task project update date")
 	}
 	return &TaskResponse{
-		Body: FromModelTask(task),
+		Body: fromModelTask(task),
 	}, nil
 }

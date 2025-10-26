@@ -23,7 +23,7 @@ type StripeProduct struct {
 	Permissions []*Permission     `db:"permissions" src:"id" dest:"product_id" table:"permissions" through:"product_permissions,permission_id,id" json:"permissions,omitempty"`
 }
 
-func FromModelProduct(product *models.StripeProduct) *StripeProduct {
+func fromModelProduct(product *models.StripeProduct) *StripeProduct {
 	if product == nil {
 		return nil
 	}
@@ -36,9 +36,9 @@ func FromModelProduct(product *models.StripeProduct) *StripeProduct {
 		Metadata:    product.Metadata,
 		CreatedAt:   product.CreatedAt,
 		UpdatedAt:   product.UpdatedAt,
-		Prices:      mapper.Map(product.Prices, FromModelPrice),
-		Permissions: mapper.Map(product.Permissions, FromModelPermission),
-		Roles:       mapper.Map(product.Roles, FromModelRole),
+		Prices:      mapper.Map(product.Prices, fromModelPrice),
+		Permissions: mapper.Map(product.Permissions, fromModelPermission),
+		Roles:       mapper.Map(product.Roles, fromModelRole),
 	}
 }
 

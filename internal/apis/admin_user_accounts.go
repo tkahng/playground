@@ -69,7 +69,7 @@ func (api *Api) AdminUserAccounts(ctx context.Context, input *UserAccountFilter)
 	}
 	return &ApiPaginatedOutput[*UserAccountOutput]{
 		Body: ApiPaginatedResponse[*UserAccountOutput]{
-			Data: mapper.Map(data, FromModelUserAccountOutput),
+			Data: mapper.Map(data, fromModelUserAccountOutput),
 			Meta: ApiGenerateMeta(&input.PaginatedInput, count),
 		},
 	}, nil

@@ -73,7 +73,7 @@ func ToApiUserInfoTokens(userInfo *models.UserInfoTokens) *ApiUserInfoTokens {
 	}
 	return &ApiUserInfoTokens{
 		ApiUserInfo: ApiUserInfo{
-			User:        *FromUserModel(&userInfo.User),
+			User:        *fromUserModel(&userInfo.User),
 			Roles:       userInfo.Roles,
 			Permissions: userInfo.Permissions,
 			Providers:   userInfo.Providers,

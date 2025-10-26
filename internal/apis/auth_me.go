@@ -21,7 +21,7 @@ type UserAccountOutput struct {
 	UpdatedAt         time.Time            `db:"updated_at" json:"updated_at"`
 }
 
-func FromModelUserAccountOutput(u *models.UserAccount) *UserAccountOutput {
+func fromModelUserAccountOutput(u *models.UserAccount) *UserAccountOutput {
 	if u == nil {
 		return nil
 	}
@@ -64,8 +64,8 @@ func (api *Api) Me(ctx context.Context, input *struct{}) (*MeOutput, error) {
 
 	return &MeOutput{
 		Body: &UserWithAccounts{
-			ApiUser:  FromUserModel(user),
-			Accounts: mapper.Map(acc, FromModelUserAccountOutput),
+			ApiUser:  fromUserModel(user),
+			Accounts: mapper.Map(acc, fromModelUserAccountOutput),
 		},
 	}, nil
 

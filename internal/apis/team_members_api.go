@@ -110,7 +110,7 @@ type Notification struct {
 	Team         *Team          `db:"team" src:"team_id" dest:"id" table:"teams" json:"team,omitempty"`
 }
 
-func FromModelNotification(notification *models.Notification) *Notification {
+func fromModelNotification(notification *models.Notification) *Notification {
 	return &Notification{
 		ID:           notification.ID,
 		CreatedAt:    notification.CreatedAt,
@@ -123,9 +123,9 @@ func FromModelNotification(notification *models.Notification) *Notification {
 		TeamID:       notification.TeamID,
 		Metadata:     notification.Metadata,
 		Type:         notification.Type,
-		User:         FromUserModel(notification.User),
-		TeamMember:   FromTeamMemberModel(notification.TeamMember),
-		Team:         FromTeamModel(notification.Team),
+		User:         fromUserModel(notification.User),
+		TeamMember:   fromTeamMemberModel(notification.TeamMember),
+		Team:         fromTeamModel(notification.Team),
 	}
 }
 func (api *Api) bindFindTeamMembersNotifications(aapi huma.API) {
@@ -172,7 +172,7 @@ func (api *Api) bindFindTeamMembersNotifications(aapi huma.API) {
 			return &ApiPaginatedOutput[*Notification]{
 				Body: ApiPaginatedResponse[*Notification]{
 					Meta: ApiGenerateMeta(&input.PaginatedInput, count),
-					Data: mapper.Map(notifications, FromModelNotification),
+					Data: mapper.Map(notifications, fromModelNotification),
 				},
 			}, nil
 		},
@@ -319,9 +319,9 @@ func (api *Api) bindFindTeamMemberByID(aapi huma.API) {
 			if err != nil {
 				return nil, err
 			}
-			teamMember := FromTeamMemberModel(&otherTeamInfo.Member)
-			teamMember.Team = FromTeamModel(&otherTeamInfo.Team)
-			teamMember.User = FromUserModel(&otherTeamInfo.User)
+			teamMember := fromTeamMemberModel(&otherTeamInfo.Member)
+			teamMember.Team = fromTeamModel(&otherTeamInfo.Team)
+			teamMember.User = fromUserModel(&otherTeamInfo.User)
 			return &ApiOutput[*TeamMember]{
 				Body: teamMember,
 			}, nil

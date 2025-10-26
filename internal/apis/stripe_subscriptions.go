@@ -73,7 +73,7 @@ type StripeCustomer struct {
 	Subscriptions  []*StripeSubscription `db:"subscriptions" src:"id" dest:"stripe_customer_id" table:"stripe_subscriptions" json:"subscriptions,omitempty"`
 }
 
-func FromModelCustomer(sub *models.StripeCustomer) *StripeCustomer {
+func fromModelCustomer(sub *models.StripeCustomer) *StripeCustomer {
 	if sub == nil {
 		return nil
 	}
@@ -88,13 +88,13 @@ func FromModelCustomer(sub *models.StripeCustomer) *StripeCustomer {
 		PaymentMethod:  sub.PaymentMethod,
 		CreatedAt:      sub.CreatedAt,
 		UpdatedAt:      sub.UpdatedAt,
-		Team:           FromTeamModel(sub.Team),
-		User:           FromUserModel(sub.User),
-		Subscriptions:  mapper.Map(sub.Subscriptions, FromModelSubscription),
+		Team:           fromTeamModel(sub.Team),
+		User:           fromUserModel(sub.User),
+		Subscriptions:  mapper.Map(sub.Subscriptions, fromModelSubscription),
 	}
 }
 
-func FromModelSubscription(sub *models.StripeSubscription) *StripeSubscription {
+func fromModelSubscription(sub *models.StripeSubscription) *StripeSubscription {
 	if sub == nil {
 		return nil
 	}
@@ -117,8 +117,8 @@ func FromModelSubscription(sub *models.StripeSubscription) *StripeSubscription {
 		CreatedAt:          sub.CreatedAt,
 		UpdatedAt:          sub.UpdatedAt,
 		ItemID:             sub.ItemID,
-		StripeCustomer:     FromModelCustomer(sub.StripeCustomer),
-		Price:              FromModelPrice(sub.Price),
+		StripeCustomer:     fromModelCustomer(sub.StripeCustomer),
+		Price:              fromModelPrice(sub.Price),
 	}
 }
 
@@ -154,7 +154,7 @@ func (api *Api) GetStripeSubscriptions(ctx context.Context, input *struct{}) (*s
 	output := &struct {
 		Body *StripeSubscription `json:"body,omitempty" required:"false"`
 	}{
-		Body: FromModelSubscription(subWithPriceProduct),
+		Body: fromModelSubscription(subWithPriceProduct),
 	}
 
 	return output, nil
@@ -179,7 +179,7 @@ func (api *Api) GetTeamStripeSubscriptions(ctx context.Context, input *struct {
 	output := &struct {
 		Body *StripeSubscription `json:"body,omitempty" required:"false"`
 	}{
-		Body: FromModelSubscription(subWithPriceProduct),
+		Body: fromModelSubscription(subWithPriceProduct),
 	}
 
 	return output, nil
