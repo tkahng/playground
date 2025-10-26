@@ -12,7 +12,8 @@
         "name": "Pro",
         "description": "Pro product description",
         "metadata": {
-          "index": 1
+          "index": 1,
+          "customer_type": "team"
         }
       }
     },
@@ -21,7 +22,7 @@
       "path": "/v1/prices",
       "method": "post",
       "params": {
-        "lookup_key": "price_pro_month_usd_5000",
+        "lookup_key": "price_pro_month_usd",
         "product": "${prod_pro:id}",
         "currency": "usd",
         "billing_scheme": "per_unit",
@@ -29,6 +30,10 @@
         "recurring": {
           "interval": "month",
           "interval_count": 1
+        },
+        "metadata": {
+          "index": 1,
+          "customer_type": "team"
         }
       }
     },
@@ -37,7 +42,7 @@
       "path": "/v1/prices",
       "method": "post",
       "params": {
-        "lookup_key": "price_pro_year_usd_50000",
+        "lookup_key": "price_pro_year_usd",
         "product": "${prod_pro:id}",
         "currency": "usd",
         "billing_scheme": "per_unit",
@@ -45,6 +50,10 @@
         "recurring": {
           "interval": "year",
           "interval_count": 1
+        },
+        "metadata": {
+          "index": 2,
+          "customer_type": "team"
         }
       }
     },
@@ -57,7 +66,8 @@
         "name": "Advanced",
         "description": "Advanced product description",
         "metadata": {
-          "index": 2
+          "index": 2,
+          "customer_type": "team"
         }
       }
     },
@@ -66,7 +76,7 @@
       "path": "/v1/prices",
       "method": "post",
       "params": {
-        "lookup_key": "price_advanced_month_usd_8500",
+        "lookup_key": "price_advanced_month_usd",
         "product": "${prod_advanced:id}",
         "currency": "usd",
         "billing_scheme": "per_unit",
@@ -74,6 +84,10 @@
         "recurring": {
           "interval": "month",
           "interval_count": 1
+        },
+        "metadata": {
+          "index": 3,
+          "customer_type": "team"
         }
       }
     },
@@ -82,7 +96,7 @@
       "path": "/v1/prices",
       "method": "post",
       "params": {
-        "lookup_key": "price_advanced_year_usd_85000",
+        "lookup_key": "price_advanced_year_usd",
         "product": "${prod_advanced:id}",
         "currency": "usd",
         "billing_scheme": "per_unit",
@@ -90,6 +104,10 @@
         "recurring": {
           "interval": "year",
           "interval_count": 1
+        },
+        "metadata": {
+          "index": 4,
+          "customer_type": "team"
         }
       }
     }
