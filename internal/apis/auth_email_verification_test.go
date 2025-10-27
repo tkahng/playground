@@ -2,11 +2,13 @@ package apis_test
 
 import (
 	"context"
-	"fmt"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
+	"github.com/tkahng/playground/internal/apis"
 	"github.com/tkahng/playground/internal/auth"
 	"github.com/tkahng/playground/internal/core"
 	"github.com/tkahng/playground/internal/database"
@@ -114,8 +116,14 @@ func TestApi_VerifyEmail(t *testing.T) {
 					}
 					header := createTokenHeader(t, testApi.App, userInfo.User.Email)
 					scenario.Headers = append(scenario.Headers, header)
-					scenario.URL = fmt.Sprintf("/auth/confirm-verification?token=%s", token)
-
+					dto := apis.EmailVerificationPostInput{
+						Token: token,
+					}
+					data, err := json.Marshal(dto)
+					if err != nil {
+						t.Errorf("Error marshalling input: %v", err)
+					}
+					scenario.Body = strings.NewReader(string(data))
 				},
 			},
 		}
