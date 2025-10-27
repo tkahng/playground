@@ -95,7 +95,12 @@ func (api *Api) VerifyEmail(ctx context.Context, input *struct{ Body EmailVerifi
 			return huma.Error404NotFound("userInfo not found")
 		}
 		user := &userInfo.User
-
+		// update user's email_verified_at if it has not been set
+		user.EmailVerifiedAt = types.Pointer(time.Now())
+		err = api.App().Adapter().User().UpdateUser(txCtx, user)
+		if err != nil {
+			return err
+		}
 		// create user customer
 		_, err = api.App().Payment().CreateUserCustomer(
 			txCtx,
@@ -105,12 +110,6 @@ func (api *Api) VerifyEmail(ctx context.Context, input *struct{ Body EmailVerifi
 			return err
 		}
 
-		// update user's email_verified_at if it has not been set
-		user.EmailVerifiedAt = types.Pointer(time.Now())
-		err = api.App().Adapter().User().UpdateUser(txCtx, user)
-		if err != nil {
-			return err
-		}
 		return nil
 	})
 	if runInTxErr != nil {
