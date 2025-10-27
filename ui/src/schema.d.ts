@@ -786,12 +786,14 @@ export interface paths {
         };
         /**
          * Verify
+         * @deprecated
          * @description Verify
          */
         get: operations["verify-get"];
         put?: never;
         /**
          * Verify
+         * @deprecated
          * @description Verify
          */
         post: operations["verify-post"];
@@ -1908,6 +1910,14 @@ export interface components {
             readonly $schema?: string;
             name: string;
             slug: string;
+        };
+        EmailVerificationPostInput: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             */
+            readonly $schema?: string;
+            token: string;
         };
         ErrorDetail: {
             /** @description Where the error occurred, e.g. 'body.items[3].tags' or 'path.thing-id' */
@@ -4799,14 +4809,16 @@ export interface operations {
     };
     "confirm-verification": {
         parameters: {
-            query: {
-                token: string;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmailVerificationPostInput"];
+            };
+        };
         responses: {
             /** @description No Content */
             204: {
