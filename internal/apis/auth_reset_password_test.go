@@ -48,11 +48,9 @@ func TestApi_ResetPassword(t *testing.T) {
 						t.Errorf("Error marshalling input: %v", err)
 					}
 					scenario.Body = strings.NewReader(string(data))
-					// testMailer.Wg = &sync.WaitGroup{}
-					// testMailer.Wg.Add(1)
+
 				},
 				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
-					// testMailer.Wg.Wait()
 					err := app.JobManager().PollOnce(ctx)
 					if err != nil {
 						t.Fatalf("Error polling job: %v", err)

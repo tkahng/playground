@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
-	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -43,8 +42,6 @@ func TestApi_SignUp(t *testing.T) {
 						t.Errorf("Error marshalling input: %v", err)
 					}
 					scenario.Body = strings.NewReader(string(data))
-					testMailer.Wg = &sync.WaitGroup{}
-					testMailer.Wg.Add(1)
 				},
 				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
 					if err := app.JobManager().PollOnce(context.Background()); err != nil {
@@ -111,8 +108,6 @@ func TestApi_SignUp_ExistingUsers(t *testing.T) {
 						t.Errorf("Error marshalling input: %v", err)
 					}
 					scenario.Body = strings.NewReader(string(data))
-					// testMailer.Wg = &sync.WaitGroup{}
-					// testMailer.Wg.Add(1)
 				},
 				ExpectedContent: []string{
 					"user already exists",

@@ -4,119 +4,24 @@ import (
 	"net/http"
 
 	"github.com/danielgtaylor/huma/v2"
-	"github.com/tkahng/playground/internal/shared"
 )
 
 func bindAuthApi(api huma.API, appApi *Api) {
-	huma.Register(
-		api,
-		huma.Operation{
-			OperationID: "signup",
-			Method:      http.MethodPost,
-			Path:        "/auth/signup",
-			Summary:     "Sign up",
-			Description: "Count the number of colors for all themes",
-			Tags:        []string{"Auth"},
-			Errors:      []int{http.StatusNotFound},
-		},
-		appApi.SignUp,
-	)
+
+	// signup -------------------------------------------------------------
+	appApi.bindSingup(api)
 	// signin -------------------------------------------------------------
-	huma.Register(
-		api,
-		huma.Operation{
-			OperationID: "signin",
-			Method:      http.MethodPost,
-			Path:        "/auth/signin",
-			Summary:     "Sign in",
-			Description: "Count the number of colors for all themes",
-			Tags:        []string{"Auth"},
-			Errors:      []int{http.StatusNotFound},
-		},
-		appApi.SignIn,
-	)
+	appApi.bindSignin(api)
 	//  me get ---------------------------------------------------------------
-	huma.Register(
-		api,
-		huma.Operation{
-			OperationID: "me",
-			Method:      http.MethodGet,
-			Path:        "/auth/me",
-			Summary:     "Me",
-			Description: "Me",
-			Tags:        []string{"Auth"},
-			Errors:      []int{http.StatusUnauthorized, http.StatusNotFound},
-			Security: []map[string][]string{
-				{shared.BearerAuthSecurityKey: {}},
-			},
-		},
-		appApi.Me,
-	)
+	appApi.bindMe(api)
 	// me update -------------------------------------------------------------
-	huma.Register(
-		api,
-		huma.Operation{
-			OperationID: "meUpdate",
-			Method:      http.MethodPut,
-			Path:        "/auth/me",
-			Summary:     "Me Update",
-			Description: "Me Update",
-			Tags:        []string{"Auth"},
-			Errors:      []int{http.StatusUnauthorized, http.StatusNotFound},
-			Security: []map[string][]string{{
-				shared.BearerAuthSecurityKey: {},
-			}},
-		},
-		appApi.MeUpdate,
-	)
+	appApi.bindMeUpdate(api)
 	// me delete -------------------------------------------------------------
-	huma.Register(
-		api,
-		huma.Operation{
-			OperationID: "me-delete",
-			Method:      http.MethodDelete,
-			Path:        "/auth/me",
-			Summary:     "Me delete",
-			Description: "Me delete",
-			Tags:        []string{"Auth", "Me"},
-			Errors:      []int{http.StatusUnauthorized, http.StatusNotFound},
-			Security: []map[string][]string{{
-				shared.BearerAuthSecurityKey: {},
-			}},
-		},
-		appApi.MeDelete,
-	)
+	appApi.bindMeDelete(api)
 	// refresh token -------------------------------------------------------------
-	huma.Register(
-		api,
-		huma.Operation{
-			OperationID: "refresh-token",
-			Method:      http.MethodPost,
-			Path:        "/auth/refresh-token",
-			Summary:     "Refresh token",
-			Description: "Count the number of colors for all themes",
-			Tags:        []string{"Auth"},
-			Errors:      []int{http.StatusNotFound},
-		},
-		appApi.RefreshToken,
-	)
+	appApi.bindRefreshToken(api)
 	// signout -------------------------------------------------------------
-	huma.Register(
-		api,
-		huma.Operation{
-			OperationID: "signout",
-			Method:      http.MethodPost,
-			Path:        "/auth/signout",
-			Summary:     "Signout",
-			Description: "Signout",
-			Tags:        []string{"Auth"},
-			Errors:      []int{http.StatusUnauthorized, http.StatusNotFound},
-			Security: []map[string][]string{{
-				shared.BearerAuthSecurityKey: {},
-			}},
-		},
-		appApi.Signout,
-	)
+	appApi.bindSignout(api)
 	// verify email -------------------------------------------------------------
 	huma.Register(
 		api,
@@ -126,6 +31,7 @@ func bindAuthApi(api huma.API, appApi *Api) {
 			Path:        "/auth/verify",
 			Summary:     "Verify",
 			Description: "Verify",
+			Deprecated:  true,
 			Tags:        []string{"Auth", "Verify"},
 			Errors:      []int{http.StatusNotFound, http.StatusBadRequest},
 		},
@@ -141,56 +47,18 @@ func bindAuthApi(api huma.API, appApi *Api) {
 			Path:        "/auth/verify",
 			Summary:     "Verify",
 			Description: "Verify",
+			Deprecated:  true,
 			Tags:        []string{"Auth", "Verify"},
 			Errors:      []int{http.StatusNotFound, http.StatusBadRequest},
 		},
 		appApi.VerifyPost,
 	)
 	// request verification -------------------------------------------------------------
-	huma.Register(
-		api,
-		huma.Operation{
-			OperationID: "request-verification",
-			Method:      http.MethodPost,
-			Path:        "/auth/request-verification",
-			Summary:     "Email verification request",
-			Description: "Request email verification",
-			Tags:        []string{"Auth", "Verify"},
-			Errors:      []int{http.StatusNotFound},
-			Security: []map[string][]string{{
-				shared.BearerAuthSecurityKey: {},
-			}},
-		},
-		appApi.RequestVerification,
-	)
+	appApi.bindRequestVerification(api)
 	// confirm verification -------------------------------------------------------------
-	huma.Register(
-		api,
-		huma.Operation{
-			OperationID: "confirm-verification",
-			Method:      http.MethodPost,
-			Path:        "/auth/confirm-verification",
-			Summary:     "Confirm Email verification request",
-			Description: "Confirm Request email verification",
-			Tags:        []string{"Auth", "Verify"},
-			Errors:      []int{http.StatusNotFound},
-		},
-		appApi.VerifyEmail,
-	)
+	appApi.bindVerifyEmail(api)
 	// request password reset -------------------------------------------------------------
-	huma.Register(
-		api,
-		huma.Operation{
-			OperationID: "request-password-reset",
-			Method:      http.MethodPost,
-			Path:        "/auth/request-password-reset",
-			Summary:     "Request password reset",
-			Description: "Request password reset",
-			Tags:        []string{"Auth"},
-			Errors:      []int{http.StatusNotFound},
-		},
-		appApi.RequestPasswordReset,
-	)
+	appApi.bindRequestPasswordReset(api)
 	// confirm password reset -------------------------------------------------------------
 	huma.Register(
 		api,

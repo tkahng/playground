@@ -156,9 +156,9 @@ func UserWithPassword(password string) UserOptionFunc {
 	}
 }
 
-func UserWithVerified(emailVerifiedAt *time.Time) UserOptionFunc {
+func UserWithVerified(emailVerifiedAt time.Time) UserOptionFunc {
 	return func(opt *CreateUserOption) {
-		opt.user.EmailVerifiedAt = emailVerifiedAt
+		opt.user.EmailVerifiedAt = &emailVerifiedAt
 	}
 }
 
@@ -174,6 +174,7 @@ func UserWithRoles(roleNames ...string) UserOptionFunc {
 }
 
 func CreateUserWithOptions(t testing.TB, app core.App, options ...UserOptionFunc) *models.UserInfo {
+	t.Helper()
 	ctx := context.Background()
 	opts := &CreateUserOption{
 		user: &models.User{
@@ -248,7 +249,7 @@ func CreateUserWithOptions(t testing.TB, app core.App, options ...UserOptionFunc
 
 }
 
-func ExtractTestMailer(t *testing.T, testApi core.App) *mailer.TestMailer {
+func ExtractTestMailer(t testing.TB, testApi core.App) *mailer.TestMailer {
 	var testMailer *mailer.TestMailer
 	if m, ok := testApi.Mailer().(*mailer.TestMailer); ok {
 		testMailer = m
@@ -257,7 +258,7 @@ func ExtractTestMailer(t *testing.T, testApi core.App) *mailer.TestMailer {
 	}
 	return testMailer
 }
-func ExtractTestPaymentClient(t *testing.T, app core.App) *services.MockPaymentClient {
+func ExtractTestPaymentClient(t testing.TB, app core.App) *services.MockPaymentClient {
 	var paymenClient *services.MockPaymentClient
 	if m, ok := app.PaymentClient().(*services.MockPaymentClient); ok {
 		paymenClient = m
@@ -266,7 +267,8 @@ func ExtractTestPaymentClient(t *testing.T, app core.App) *services.MockPaymentC
 	}
 	return paymenClient
 }
-func ExtractAdapterDecorator(t *testing.T, app core.App) *stores.StorageAdapterDecorator {
+
+func ExtractAdapterDecorator(t testing.TB, app core.App) *stores.StorageAdapterDecorator {
 	var adapter *stores.StorageAdapterDecorator
 	if m, ok := app.Adapter().(*stores.StorageAdapterDecorator); ok {
 		adapter = m
@@ -398,7 +400,7 @@ type ApiScenario struct {
 //
 // Example:
 //
-//	func TestListExample(t *testing.T) {
+//	func TestListExample(t testing.TB) {
 //	    scenario := tests.ApiScenario{
 //	        Name:           "list example collection",
 //	        Method:         http.MethodGet,
@@ -419,6 +421,7 @@ type ApiScenario struct {
 //	    scenario.Test(t)
 //	}
 func (scenario *ApiScenario) Test(t *testing.T) {
+	t.Helper()
 	t.Run(scenario.normalizedName(), func(t *testing.T) {
 		scenario.test(t)
 	})
@@ -467,6 +470,7 @@ func (scenario *ApiScenario) normalizedName() string {
 }
 
 func (scenario *ApiScenario) test(t testing.TB) {
+	t.Helper()
 	testApi := scenario.TestAppFactory(t)
 	if scenario.BeforeTestFunc != nil {
 		scenario.BeforeTestFunc(t, testApi.App, scenario)
@@ -521,6 +525,7 @@ func (scenario *ApiScenario) test(t testing.TB) {
 }
 
 func JsonToReader(t testing.TB, input any) *strings.Reader {
+	t.Helper()
 	data, err := json.Marshal(input)
 	if err != nil {
 		t.Errorf("Error marshalling input: %v", err)
