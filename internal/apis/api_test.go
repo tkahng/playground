@@ -249,7 +249,7 @@ func CreateUserWithOptions(t testing.TB, app core.App, options ...UserOptionFunc
 
 }
 
-func ExtractTestMailer(t *testing.T, testApi core.App) *mailer.TestMailer {
+func ExtractTestMailer(t testing.TB, testApi core.App) *mailer.TestMailer {
 	var testMailer *mailer.TestMailer
 	if m, ok := testApi.Mailer().(*mailer.TestMailer); ok {
 		testMailer = m
@@ -258,7 +258,7 @@ func ExtractTestMailer(t *testing.T, testApi core.App) *mailer.TestMailer {
 	}
 	return testMailer
 }
-func ExtractTestPaymentClient(t *testing.T, app core.App) *services.MockPaymentClient {
+func ExtractTestPaymentClient(t testing.TB, app core.App) *services.MockPaymentClient {
 	var paymenClient *services.MockPaymentClient
 	if m, ok := app.PaymentClient().(*services.MockPaymentClient); ok {
 		paymenClient = m
@@ -267,7 +267,8 @@ func ExtractTestPaymentClient(t *testing.T, app core.App) *services.MockPaymentC
 	}
 	return paymenClient
 }
-func ExtractAdapterDecorator(t *testing.T, app core.App) *stores.StorageAdapterDecorator {
+
+func ExtractAdapterDecorator(t testing.TB, app core.App) *stores.StorageAdapterDecorator {
 	var adapter *stores.StorageAdapterDecorator
 	if m, ok := app.Adapter().(*stores.StorageAdapterDecorator); ok {
 		adapter = m
@@ -399,7 +400,7 @@ type ApiScenario struct {
 //
 // Example:
 //
-//	func TestListExample(t *testing.T) {
+//	func TestListExample(t testing.TB) {
 //	    scenario := tests.ApiScenario{
 //	        Name:           "list example collection",
 //	        Method:         http.MethodGet,
