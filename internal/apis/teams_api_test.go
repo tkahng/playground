@@ -16,7 +16,6 @@ import (
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/stores"
 	"github.com/tkahng/playground/internal/test"
-	"github.com/tkahng/playground/internal/tools/types"
 )
 
 func TestGetGreeting(t *testing.T) {
@@ -37,7 +36,7 @@ func TestTeamSlug(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
 		api := testApi.TestApi
-		user := CreateUserWithOptions(t, testApi.App, UserWithVerified(types.Pointer(time.Now())))
+		user := CreateUserWithOptions(t, testApi.App, UserWithVerified(time.Now()))
 		_ = CreateTeamAndMemberWithOptions(t, testApi.App, &user.User, TeamWithName("public"))
 		tokensVerifiedTokens := createTokenHeader(t, testApi.App, user.User.Email)
 
@@ -74,7 +73,7 @@ func TestGetTeam_invalidID(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
 		api := testApi.TestApi
-		user := CreateUserWithOptions(t, testApi.App, UserWithVerified(types.Pointer(time.Now())))
+		user := CreateUserWithOptions(t, testApi.App, UserWithVerified(time.Now()))
 		teamIdString := uuid.NewString()
 		tokensVerifiedTokens := createTokenHeader(t, testApi.App, user.User.Email)
 
@@ -96,7 +95,7 @@ func TestGetTeam_success(t *testing.T) {
 		testApi := SetupApi(t, ctx, db)
 		app := testApi.App
 		api := testApi.TestApi
-		user := CreateUserWithOptions(t, testApi.App, UserWithVerified(types.Pointer(time.Now())))
+		user := CreateUserWithOptions(t, testApi.App, UserWithVerified(time.Now()))
 		team := CreateTeamAndMemberWithOptions(t, app, &user.User, TeamWithName("test team"))
 		teamIdString := team.Team.ID.String()
 		// team, err :=
@@ -129,7 +128,7 @@ func TestCreateTeam_Failed(t *testing.T) {
 			customerStore.CreateCustomerFunc = func(ctx context.Context, customer *models.StripeCustomer) (*models.StripeCustomer, error) {
 				return nil, errors.New("unknown error")
 			}
-			user := CreateUserWithOptions(t, appApi.App, UserWithVerified(types.Pointer(time.Now())))
+			user := CreateUserWithOptions(t, appApi.App, UserWithVerified(time.Now()))
 			tokensVerifiedTokens, err := appApi.App.Auth().CreateAuthTokensFromEmail(ctx, user.User.Email)
 			if err != nil {
 				t.Errorf("Error creating auth tokens: %v", err)
@@ -182,7 +181,7 @@ func TestCreateTeam_Success(t *testing.T) {
 	t.Run("success: create team", func(t *testing.T) {
 		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 			appApi := SetupApi(t, ctx, db)
-			user := CreateUserWithOptions(t, appApi.App, UserWithVerified(types.Pointer(time.Now())))
+			user := CreateUserWithOptions(t, appApi.App, UserWithVerified(time.Now()))
 			tokensVerifiedTokens, err := appApi.App.Auth().CreateAuthTokensFromEmail(ctx, user.User.Email)
 			if err != nil {
 				t.Errorf("Error creating auth tokens: %v", err)
@@ -219,14 +218,14 @@ func TestUpdateTeam_failedNotOwner(t *testing.T) {
 		user1 := CreateUserWithOptions(
 			t,
 			testApi.App,
-			UserWithVerified(types.Pointer(time.Now())),
+			UserWithVerified(time.Now()),
 			UserWithEmail("user1@example"),
 		)
 		team := CreateTeamAndMemberWithOptions(t, app, &user1.User)
 		user2 := CreateUserWithOptions(
 			t,
 			testApi.App,
-			UserWithVerified(types.Pointer(time.Now())),
+			UserWithVerified(time.Now()),
 			UserWithEmail("user2@example"),
 		)
 

@@ -156,9 +156,9 @@ func UserWithPassword(password string) UserOptionFunc {
 	}
 }
 
-func UserWithVerified(emailVerifiedAt *time.Time) UserOptionFunc {
+func UserWithVerified(emailVerifiedAt time.Time) UserOptionFunc {
 	return func(opt *CreateUserOption) {
-		opt.user.EmailVerifiedAt = emailVerifiedAt
+		opt.user.EmailVerifiedAt = &emailVerifiedAt
 	}
 }
 
@@ -174,6 +174,7 @@ func UserWithRoles(roleNames ...string) UserOptionFunc {
 }
 
 func CreateUserWithOptions(t testing.TB, app core.App, options ...UserOptionFunc) *models.UserInfo {
+	t.Helper()
 	ctx := context.Background()
 	opts := &CreateUserOption{
 		user: &models.User{
@@ -419,6 +420,7 @@ type ApiScenario struct {
 //	    scenario.Test(t)
 //	}
 func (scenario *ApiScenario) Test(t *testing.T) {
+	t.Helper()
 	t.Run(scenario.normalizedName(), func(t *testing.T) {
 		scenario.test(t)
 	})
@@ -467,6 +469,7 @@ func (scenario *ApiScenario) normalizedName() string {
 }
 
 func (scenario *ApiScenario) test(t testing.TB) {
+	t.Helper()
 	testApi := scenario.TestAppFactory(t)
 	if scenario.BeforeTestFunc != nil {
 		scenario.BeforeTestFunc(t, testApi.App, scenario)
@@ -521,6 +524,7 @@ func (scenario *ApiScenario) test(t testing.TB) {
 }
 
 func JsonToReader(t testing.TB, input any) *strings.Reader {
+	t.Helper()
 	data, err := json.Marshal(input)
 	if err != nil {
 		t.Errorf("Error marshalling input: %v", err)

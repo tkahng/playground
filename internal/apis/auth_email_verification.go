@@ -40,7 +40,7 @@ func (api *Api) RequestVerification(ctx context.Context, input *struct{}) (*stru
 		return nil, huma.Error404NotFound("User not found")
 	}
 	if claims.User.EmailVerifiedAt != nil {
-		return nil, huma.Error404NotFound("Email already verified")
+		return nil, huma.Error409Conflict("Email already verified")
 	}
 	err := api.App().Auth2().SendEmailVerification(ctx, claims.User.Email)
 
