@@ -1,24 +1,20 @@
 import { Button } from "@/components/ui/button";
 import { confirmVerification } from "@/lib/api";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { useSearchParams } from "react-router";
 // /payment/success?sessionId
 export default function ConfirmVerification() {
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token");
-  const type = searchParams.get("type");
   const redirect = searchParams.get("redirect_to");
 
-  const { isPending, isError, error } = useQuery({
-    queryKey: ["confirm-verification"],
-    queryFn: async () => {
+  const { isPending, isError, error } = useMutation({
+    mutationKey: ["confirm-verification"],
+    mutationFn: async () => {
       if (!token) {
         throw new Error("Missing token");
       }
-      if (!type) {
-        throw new Error("Missing type");
-      }
-      await confirmVerification(token, type);
+      await confirmVerification(token);
       if (redirect) {
         window.location.href = redirect;
       }

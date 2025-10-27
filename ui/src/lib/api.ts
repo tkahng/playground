@@ -875,10 +875,9 @@ export const requestVerification = async (token: string) => {
   return true;
 };
 
-export const confirmVerification = async (token: string, type: string) => {
-  const { error } = await client.POST("/api/auth/verify", {
+export const confirmVerification = async (token: string) => {
+  const { error } = await client.POST("/api/auth/confirm-verification", {
     body: {
-      type,
       token,
     },
   });
