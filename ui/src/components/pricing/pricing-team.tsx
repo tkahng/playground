@@ -1,10 +1,10 @@
+import { TeamSelectDialog } from "@/components/pricing/team-select-dialog";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 import { ProductWithPrices, SubscriptionWithPrice, User } from "@/schema.types";
 
 import { useState } from "react";
-import { Link } from "react-router";
 import { z } from "zod";
 
 interface Props {
@@ -138,14 +138,11 @@ export default function PricingTeam({ products, subscription }: Props) {
                       /{billingInterval}
                     </span>
                   </p>
-                  <Button
-                    asChild
-                    className="block w-full py-2 mt-8 text-sm font-semibold text-center rounded-md"
-                  >
-                    <Link to="/teams/settings/billing">
-                      {subscription ? "Manage" : "Subscribe"}
-                    </Link>
-                  </Button>
+                  <TeamSelectDialog>
+                    <Button className="block w-full py-2 mt-8 text-sm font-semibold text-center rounded-md">
+                      "Subscribe"
+                    </Button>
+                  </TeamSelectDialog>
                 </div>
               </div>
             );
