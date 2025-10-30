@@ -1,6 +1,8 @@
 import { CreateTeamDialog } from "@/components/create-team-dialog";
+import { CreateTeamDisabledTooltip } from "@/components/create-team-disabled-tooltip";
 import { DataTable } from "@/components/data-table";
 import { RouteMap } from "@/components/route-map";
+import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { useUserTeams } from "@/hooks/use-user-teams";
 import { Team } from "@/schema.types";
 import { PaginationState, Updater } from "@tanstack/react-table";
@@ -8,6 +10,8 @@ import { NavLink, useSearchParams } from "react-router";
 import { toast } from "sonner";
 
 export default function TeamSelect() {
+  const { user } = useAuthProvider();
+  const isVerified = !!user?.user?.email_verified_at;
   const [searchParams, setSearchParams] = useSearchParams();
   const pageIndex = parseInt(searchParams.get("page") || "0", 10);
   const pageSize = parseInt(searchParams.get("per_page") || "10", 10);
@@ -39,7 +43,10 @@ export default function TeamSelect() {
     <div className="space-y-6 mx-auto px-8 py-8 justify-start items-stretch flex-1 max-w-[1200px]">
       <div className="flex items-center justify-between">
         <p>Create and manage Teams for your applications.</p>
-        <CreateTeamDialog />
+        <div className="flex items-center space-x-2">
+          <CreateTeamDialog />
+          {!isVerified && <CreateTeamDisabledTooltip />}
+        </div>
       </div>
 
       <DataTable
