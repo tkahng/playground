@@ -66,6 +66,7 @@ export default function PricingMini({ products, subscription }: Props) {
         { ...values, team_id: team.id }
       );
       setPriceIdLoading(undefined);
+
       window.location.href = url;
     },
   });
@@ -145,9 +146,8 @@ export default function PricingMini({ products, subscription }: Props) {
                   className={cn(
                     "flex flex-col rounded-lg shadow-sm divide-y divide-zinc-600",
                     {
-                      "border border-pink-500": subscription
-                        ? product.name === subscription?.price?.product?.name
-                        : product.name === "Freelancer",
+                      "border border-pink-500":
+                        product.name === subscription?.price?.product?.name,
                     },
                     "flex-1", // This makes the flex item grow to fill the space
                     "basis-1/3", // Assuming you want each card to take up roughly a third of the container's width
