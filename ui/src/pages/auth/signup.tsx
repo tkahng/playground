@@ -38,11 +38,18 @@ export default function SignupPage() {
   const email = params.get("email");
 
   let navigateTo: string;
+  const searchParams: URLSearchParams = new URLSearchParams();
   if (email?.length && token?.length) {
     navigateTo = `/team-invitation`;
+    searchParams.set("token", token);
+    searchParams.set("email", email);
   } else if (redirectTo?.length) {
-    navigateTo = redirectTo;
-    params.delete("redirect_to");
+    const newUrl = new URL(decodeURIComponent(redirectTo), "http://localhost");
+    console.log("newUrl", newUrl);
+    navigateTo = newUrl.pathname;
+    for (const [key, value] of newUrl.searchParams) {
+      searchParams.set(key, value);
+    }
   } else {
     navigateTo = "/account/dashboard";
   }
@@ -57,7 +64,10 @@ export default function SignupPage() {
         name: input.name,
       });
       setLoading(false);
-      navigate({ pathname: navigateTo, search: params.toString() });
+      navigate({
+        pathname: navigateTo,
+        search: searchParams.toString(),
+      });
     } catch (error) {
       if (error instanceof Error) {
         toast.error(error.message, {
