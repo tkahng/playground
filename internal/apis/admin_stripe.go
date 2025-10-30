@@ -37,7 +37,9 @@ func ToStripeSubscriptionListFilter(input *StripeSubscriptionListParams) (*store
 	filter.TeamIDs = utils.ParseValidUUIDs(input.TeamIDs...)
 	filter.UserIDs = utils.ParseValidUUIDs(input.UserIDs...)
 	filter.Expand = input.Expand
-
+	filter.Q = input.Q
+	filter.SortBy = input.SortBy
+	filter.SortOrder = input.SortOrder
 	return filter, nil
 }
 
