@@ -15,7 +15,7 @@ export default function ConfirmVerification() {
         throw new Error("Missing token");
       }
       await confirmVerification(token);
-      if (redirect) {
+      if (redirect?.length) {
         window.location.href = redirect;
       }
     },
