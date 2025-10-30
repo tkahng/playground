@@ -60,87 +60,15 @@ func bindAuthApi(api huma.API, appApi *Api) {
 	// request password reset -------------------------------------------------------------
 	appApi.bindRequestPasswordReset(api)
 	// confirm password reset -------------------------------------------------------------
-	huma.Register(
-		api,
-		huma.Operation{
-			OperationID: "confirm-password-reset",
-			Method:      http.MethodPost,
-			Path:        "/auth/confirm-password-reset",
-			Summary:     "Confirm password reset",
-			Description: "Confirm password reset",
-			Tags:        []string{"Auth"},
-			Errors:      []int{http.StatusNotFound},
-		},
-		appApi.ConfirmPasswordReset,
-	)
+	appApi.bindConfirmPasswordReset(api)
 	// check password reset -------------------------------------------------------------
-	huma.Register(
-		api,
-		huma.Operation{
-			OperationID: "check-password-reset",
-			Method:      http.MethodPost,
-			Path:        "/auth/check-password-reset",
-			Summary:     "Check password reset",
-			Description: "Check password reset",
-			Tags:        []string{"Auth"},
-			Errors:      []int{http.StatusNotFound},
-		},
-		appApi.CheckPasswordReset,
-	)
+	appApi.bindCheckPasswordReset(api)
 	// password reset
-	huma.Register(
-		api,
-		huma.Operation{
-			OperationID: "reset-password",
-			Method:      http.MethodPost,
-			Path:        "/auth/password-reset",
-			Summary:     "Reset Password",
-			Description: "Reset Password",
-			Tags:        []string{"Auth"},
-			Errors:      []int{http.StatusNotFound},
-		},
-		appApi.ResetPassword,
-	)
-
-	huma.Register(
-		api,
-		huma.Operation{
-			OperationID: "oauth2-callback-get",
-			Method:      http.MethodGet,
-			Path:        "/auth/callback",
-			Summary:     "OAuth2 Callback (GET)",
-			Description: "Handle OAuth2 callback (GET)",
-			Tags:        []string{"Auth", "OAuth2"},
-			Errors:      []int{http.StatusNotFound},
-		},
-		appApi.OAuth2CallbackGet,
-	)
-
-	huma.Register(
-		api,
-		huma.Operation{
-			OperationID: "oauth2-callback-post",
-			Method:      http.MethodPost,
-			Path:        "/auth/callback",
-			Summary:     "OAuth2 Callback (POST)",
-			Description: "Handle OAuth2 callback (POST)",
-			Tags:        []string{"Auth", "OAuth2"},
-			Errors:      []int{http.StatusNotFound},
-		},
-		appApi.OAuth2CallbackPost,
-	)
-
-	huma.Register(
-		api,
-		huma.Operation{
-			OperationID: "oauth2-authorization-url",
-			Method:      http.MethodGet,
-			Path:        "/auth/authorization-url",
-			Summary:     "OAuth2 Authorization URL",
-			Description: "Get OAuth2 authorization URL",
-			Tags:        []string{"Auth", "OAuth2"},
-			Errors:      []int{http.StatusNotFound},
-		},
-		appApi.OAuth2AuthorizationUrl,
-	)
+	appApi.bindResetPassword(api)
+	// oauth2 callback get
+	appApi.bindOath2CallbackGet(api)
+	// oauth2 callback post
+	appApi.bindOAuth2CallbackPost(api)
+	// oauth2 authorization url
+	appApi.bindOauth2AuthorizationUrl(api)
 }

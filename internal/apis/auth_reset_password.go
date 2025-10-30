@@ -48,6 +48,22 @@ func (api *Api) RequestPasswordReset(ctx context.Context, input *struct {
 	}
 	return nil, nil
 }
+func (a *Api) bindCheckPasswordReset(api huma.API) {
+	huma.Register(
+		api,
+		huma.Operation{
+			OperationID: "check-password-reset",
+			Method:      http.MethodPost,
+			Path:        "/auth/check-password-reset",
+			Summary:     "Check password reset",
+			Description: "Check password reset",
+			Tags:        []string{"Auth"},
+			Errors:      []int{http.StatusNotFound},
+		},
+		a.CheckPasswordReset,
+	)
+}
+
 func (api *Api) CheckPasswordReset(ctx context.Context, input *struct {
 	Body *struct {
 		Token string `json:"token" required:"true"`
@@ -67,6 +83,22 @@ type ConfirmPasswordResetInput struct {
 	ConfirmPassword string `form:"confirm_password" json:"confirm_password"`
 }
 
+func (a *Api) bindConfirmPasswordReset(api huma.API) {
+	huma.Register(
+		api,
+		huma.Operation{
+			OperationID: "confirm-password-reset",
+			Method:      http.MethodPost,
+			Path:        "/auth/confirm-password-reset",
+			Summary:     "Confirm password reset",
+			Description: "Confirm password reset",
+			Tags:        []string{"Auth"},
+			Errors:      []int{http.StatusNotFound},
+		},
+		a.ConfirmPasswordReset,
+	)
+}
+
 func (api *Api) ConfirmPasswordReset(ctx context.Context, input *struct {
 	Body *ConfirmPasswordResetInput `json:"body" required:"true"`
 }) (*RequestPasswordResetOutput, error) {
@@ -81,6 +113,22 @@ func (api *Api) ConfirmPasswordReset(ctx context.Context, input *struct {
 type PasswordResetInput struct {
 	PreviousPassword string `form:"previous_password" json:"previous_password"`
 	NewPassword      string `form:"new_password" json:"new_password"`
+}
+
+func (a *Api) bindResetPassword(api huma.API) {
+	huma.Register(
+		api,
+		huma.Operation{
+			OperationID: "reset-password",
+			Method:      http.MethodPost,
+			Path:        "/auth/password-reset",
+			Summary:     "Reset Password",
+			Description: "Reset Password",
+			Tags:        []string{"Auth"},
+			Errors:      []int{http.StatusNotFound},
+		},
+		a.ResetPassword,
+	)
 }
 
 func (api *Api) ResetPassword(ctx context.Context, input *struct {

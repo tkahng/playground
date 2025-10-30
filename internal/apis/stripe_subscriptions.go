@@ -2,12 +2,14 @@ package apis
 
 import (
 	"context"
+	"net/http"
 	"time"
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
 	"github.com/tkahng/playground/internal/contextstore"
 	"github.com/tkahng/playground/internal/models"
+	"github.com/tkahng/playground/internal/shared"
 	"github.com/tkahng/playground/internal/tools/mapper"
 )
 
@@ -137,6 +139,28 @@ type StripeSubscriptionGetParams struct {
 	StripeSubscriptionExpand
 }
 
+func (a *Api) bindGetStripeSubscriptions(api huma.API) {
+	huma.Register(
+		api,
+		huma.Operation{
+			OperationID: "subscriptions-active",
+			Method:      http.MethodGet,
+			Path:        "/subscriptions/active",
+			Summary:     "subscriptions-active",
+			Description: "get active user subscriptions",
+			Tags:        []string{"Stripe", "Subscriptions"},
+			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+			Middlewares: huma.Middlewares{
+				a.middlewares.SelectCustomerFromUser,
+			},
+		},
+		a.GetStripeSubscriptions,
+	)
+}
+
 func (api *Api) GetStripeSubscriptions(ctx context.Context, input *struct{}) (*struct {
 	Body *StripeSubscription `json:"body,omitempty" required:"false"`
 }, error) {
@@ -159,6 +183,28 @@ func (api *Api) GetStripeSubscriptions(ctx context.Context, input *struct{}) (*s
 
 	return output, nil
 
+}
+func (a *Api) bindGetTeamStripeSubscriptions(stripeGroup huma.API) {
+	huma.Register(
+		stripeGroup,
+		huma.Operation{
+			OperationID: "team-subscriptions-active",
+			Method:      http.MethodGet,
+			Path:        "/teams/{team-id}/subscriptions/active",
+			Summary:     "team-subscriptions-active",
+			Description: "get active team subscriptions",
+			Tags:        []string{"Stripe", "Subscriptions", "Team"},
+			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+			Middlewares: huma.Middlewares{
+				a.middlewares.TeamInfoFromParam,
+				a.middlewares.SelectCustomerFromTeam,
+			},
+		},
+		a.GetTeamStripeSubscriptions,
+	)
 }
 func (api *Api) GetTeamStripeSubscriptions(ctx context.Context, input *struct {
 	TeamID string `path:"team-id" json:"team_id" format:"uuid" required:"true"`
