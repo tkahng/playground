@@ -13,7 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { useTabs2 } from "@/hooks/use-tabs";
+import { useTabs } from "@/hooks/use-tabs";
 import {
   deleteRolePermission,
   getRoleWithPermission,
@@ -41,7 +41,7 @@ const formSchema = z.object({
 });
 export default function RoleEdit() {
   const navigate = useNavigate();
-  const { tab, onClick } = useTabs2<string>("general", [
+  const { tab, onClick } = useTabs<string>("general", [
     "general",
     "permissions",
   ]);

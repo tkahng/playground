@@ -1,6 +1,6 @@
 import { useSearchParams } from "react-router";
 
-export function useTabs2<T extends string = string>(
+export function useTabs<T extends string = string>(
   defaultValue: T,
   allowed: readonly T[]
 ) {
