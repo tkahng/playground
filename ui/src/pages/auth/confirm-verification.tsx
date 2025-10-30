@@ -38,7 +38,7 @@ export default function ConfirmVerification() {
       )}
       {!user && (
         <Button asChild>
-          <a href="/login">Login</a>
+          <a href="/signin">Sign In</a>
         </Button>
       )}
     </div>

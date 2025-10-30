@@ -95,7 +95,13 @@ func GetPathParams(filepath string, token, tokenType, redirectTo string) (*url.U
 			path = p
 		}
 	}
-	path.RawQuery = fmt.Sprintf("token=%s&type=%s&redirect_to=%s", url.QueryEscape(token), url.QueryEscape(tokenType), encodeRedirectURL(redirectTo))
+	q := path.Query()
+	q.Add("token", url.QueryEscape(token))
+	q.Add("type", url.QueryEscape(tokenType))
+	if redirectTo != "" {
+		q.Add("redirect_to", encodeRedirectURL(redirectTo))
+	}
+	path.RawQuery = q.Encode()
 	return path, nil
 }
 
