@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { ProductWithPrices, SubscriptionWithPrice, User } from "@/schema.types";
 
 import { useState } from "react";
-import { Link, useLocation } from "react-router";
+import { Link } from "react-router";
 import { z } from "zod";
 
 interface Props {
@@ -31,7 +31,7 @@ export default function PricingTeam({ products, subscription }: Props) {
     "month",
     "year",
   ]);
-  const location = useLocation();
+
   // const { team, teamMember } = useTeam();
   const intervals = Array.from(
     new Set(
@@ -164,8 +164,12 @@ export default function PricingTeam({ products, subscription }: Props) {
                     >
                       <Link
                         to={{
-                          pathname: location.pathname,
-                          search: location.search,
+                          pathname: "/signin",
+                          search:
+                            "redirect_to=" +
+                            encodeURIComponent(
+                              location.pathname + location.search
+                            ),
                         }}
                       >
                         Subscribe
