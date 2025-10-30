@@ -22,7 +22,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserDetailContext } from "@/context/user-detail-context";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { ConfirmDialog, useDialog } from "@/hooks/use-dialog";
-import { useTabs } from "@/hooks/use-tabs";
+import { useTabs2 } from "@/hooks/use-tabs";
 import {
   adminResetUserPassword,
   getUserInfo,
@@ -54,7 +54,11 @@ const updatePasswordSchema = z.object({
 
 export default function UserEdit() {
   // const navigate = useNavigate();
-  const { tab, onClick } = useTabs("profile");
+  const { tab, onClick } = useTabs2<string>("profile", [
+    "profile",
+    "permissions",
+    "roles",
+  ]);
   const queryClient = useQueryClient();
   const { user } = useAuthProvider();
   const { userId } = useParams<{ userId: string }>();
