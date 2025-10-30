@@ -13,7 +13,7 @@ interface Props {
   subscription: SubscriptionWithPrice | null;
 }
 
-type BillingInterval = "lifetime" | "year" | "month";
+type BillingInterval = "year" | "month";
 
 export const formSchema = z.object({
   price_id: z.string().min(2, {

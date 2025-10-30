@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
+import { useTabs2 } from "@/hooks/use-tabs";
 import { useTeam } from "@/hooks/use-team";
 import { createTeamCheckoutSession } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -8,7 +9,7 @@ import { ProductWithPrices, SubscriptionWithPrice, User } from "@/schema.types";
 import { useMutation } from "@tanstack/react-query";
 
 import { useState } from "react";
-import { createSearchParams, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -18,7 +19,7 @@ interface Props {
   subscription: SubscriptionWithPrice | null;
 }
 
-type BillingInterval = "lifetime" | "year" | "month";
+type BillingInterval = "year" | "month";
 
 export const formSchema = z.object({
   price_id: z.string().min(2, {
@@ -29,6 +30,11 @@ export const formSchema = z.object({
 export default function PricingMini({ products, subscription }: Props) {
   const { user } = useAuthProvider();
   const { team, teamMember } = useTeam();
+  const { onClick, tab } = useTabs2<BillingInterval>("month", [
+    "month",
+    "year",
+  ]);
+
   const intervals = Array.from(
     new Set(
       products.flatMap((product) =>
@@ -38,8 +44,11 @@ export default function PricingMini({ products, subscription }: Props) {
   );
   //   const router = useRouter();
   const navigate = useNavigate();
-  const [billingInterval, setBillingInterval] =
-    useState<BillingInterval>("month");
+  const [billingInterval, setBillingInterval] = useState<BillingInterval>(tab);
+  const handleIntervalSelect = (interval: BillingInterval) => {
+    onClick(interval);
+    setBillingInterval(interval);
+  };
   const [priceIdLoading, setPriceIdLoading] = useState<string>();
   // const { pathname: currentPath } = useLocation();
 
@@ -49,9 +58,9 @@ export default function PricingMini({ products, subscription }: Props) {
         toast.error("Please login to checkout.");
         return navigate({
           pathname: "/signin",
-          search: createSearchParams({
-            redirect_to: window.location.pathname + window.location.search,
-          }).toString(),
+          search:
+            "redirect_to=" +
+            encodeURIComponent(location.pathname + location.search),
         });
       }
       if (!team || teamMember?.role !== "owner") {
@@ -103,7 +112,7 @@ export default function PricingMini({ products, subscription }: Props) {
             <div className="relative self-center mt-6 bg-primary-foreground rounded-lg p-0.5 flex sm:mt-8 border">
               {intervals.includes("month") && (
                 <button
-                  onClick={() => setBillingInterval("month")}
+                  onClick={() => handleIntervalSelect("month")}
                   type="button"
                   className={`${
                     billingInterval === "month"
@@ -116,7 +125,7 @@ export default function PricingMini({ products, subscription }: Props) {
               )}
               {intervals.includes("year") && (
                 <button
-                  onClick={() => setBillingInterval("year")}
+                  onClick={() => handleIntervalSelect("year")}
                   type="button"
                   className={`${
                     billingInterval === "year"
