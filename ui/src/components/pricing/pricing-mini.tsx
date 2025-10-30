@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { useTabs2 } from "@/hooks/use-tabs";
+import { useTabs } from "@/hooks/use-tabs";
 import { useTeam } from "@/hooks/use-team";
 import { createTeamCheckoutSession } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -30,10 +30,7 @@ export const formSchema = z.object({
 export default function PricingMini({ products, subscription }: Props) {
   const { user } = useAuthProvider();
   const { team, teamMember } = useTeam();
-  const { onClick, tab } = useTabs2<BillingInterval>("month", [
-    "month",
-    "year",
-  ]);
+  const { onClick, tab } = useTabs<BillingInterval>("month", ["month", "year"]);
 
   const intervals = Array.from(
     new Set(

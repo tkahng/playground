@@ -1,7 +1,7 @@
 import { TeamSelectDialog } from "@/components/pricing/team-select-dialog";
 import { Button } from "@/components/ui/button";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { useTabs2 } from "@/hooks/use-tabs";
+import { useTabs } from "@/hooks/use-tabs";
 import { cn } from "@/lib/utils";
 
 import { ProductWithPrices, SubscriptionWithPrice, User } from "@/schema.types";
@@ -27,10 +27,7 @@ export const formSchema = z.object({
 export default function PricingTeam({ products, subscription }: Props) {
   const { user } = useAuthProvider();
 
-  const { onClick, tab } = useTabs2<BillingInterval>("month", [
-    "month",
-    "year",
-  ]);
+  const { onClick, tab } = useTabs<BillingInterval>("month", ["month", "year"]);
 
   // const { team, teamMember } = useTeam();
   const intervals = Array.from(
