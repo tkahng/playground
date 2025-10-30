@@ -48,7 +48,6 @@ import ProtectedRouteLayout from "./pages/protected-routes/protected-layout";
 import ProtectedRoutePage from "./pages/protected-routes/protected-route-page";
 import ProtectedRouteIndex from "./pages/protected-routes/route-index";
 import SayHelloPage from "./pages/say-hello/say-hello2";
-import BillingSettingPage from "./pages/settings/billing-settings";
 import AccountSettingsPage from "./pages/settings/general-settings";
 import TeamSelect from "./pages/teams";
 import TeamDashboard from "./pages/teams/dashboard";
@@ -143,7 +142,7 @@ function App() {
               <Route path="/about" element={<LandingAboutPage />} />
               <Route path="/contact" element={<LandingContactPage />} />
             </Route>
-            {/* Dashboard routes */}
+            {/* auth routes */}
             <Route element={<PublicLayout />}>
               <Route path="/signin" element={<Signin />} />
               <Route path="/signup" element={<SignupPage />} />
@@ -163,18 +162,17 @@ function App() {
                 element={<ResetPasswordRequestPage />}
               />
               <Route
-                // dashboard
                 path={`/team-invitation`}
                 element={<UserTeamInvitationRedirectPage />}
               />
             </Route>
-
+            {/* payemnt */}
             <Route element={<AuthenticatedLayoutOutlet />}>
               <Route path={RouteMap.PAYMENT}>
                 <Route path="success" element={<PaymentSuccessPage />} />
               </Route>
             </Route>
-
+            {/* account routes */}
             <Route element={<AuthenticatedLayoutOutlet />}>
               <Route
                 path={`/account`}
@@ -182,6 +180,8 @@ function App() {
               >
                 <Route element={<PageSectionLayout title="Account Overview" />}>
                   <Route path="dashboard" element={<AccountDashboard />} />
+                </Route>
+                <Route element={<PageSectionLayout title="Teams Overview" />}>
                   <Route path="teams" element={<AccountTeamsPage />} />
                   <Route
                     path="teams-invitations"
@@ -192,10 +192,10 @@ function App() {
 
                 <Route element={<PageSectionLayout title="Account Settings" />}>
                   <Route path="settings" element={<AccountSettingsPage />} />
-                  <Route
+                  {/* <Route
                     path="settings/billing"
                     element={<BillingSettingPage />}
-                  />
+                  /> */}
                 </Route>
               </Route>
               <Route
