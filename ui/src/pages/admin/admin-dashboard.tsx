@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { getStats, getUserSubscriptions, userPaginate } from "@/lib/api";
+import { adminStripeSubscriptions, getStats, userPaginate } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
 import { CheckCircle, Cpu, Users, XCircle } from "lucide-react";
 
@@ -15,7 +15,11 @@ export default function AdminDashboardPage() {
       }
 
       const stats = await getStats(user.tokens.access_token);
-      const subs = await getUserSubscriptions(user.tokens.access_token);
+      const subs = await adminStripeSubscriptions(user.tokens.access_token, {
+        page: 0,
+        per_page: 1,
+        status: ["active", "trialing"],
+      });
       const users = await userPaginate(user.tokens.access_token, {
         page: 0,
         per_page: 1,
@@ -27,7 +31,7 @@ export default function AdminDashboardPage() {
       });
       return {
         ...stats,
-        sub: subs,
+        subsCount: subs.meta.total,
         userCount: users.meta.total,
         verifiedUserCount: VerifiedUsers.meta.total,
       };
@@ -49,10 +53,10 @@ export default function AdminDashboardPage() {
         <div className="col-span-3 gap-6 grid">
           <Card>
             <CardHeader>
-              <CardTitle>Current Plan</CardTitle>
+              <CardTitle>Subscriptions</CardTitle>
             </CardHeader>
             <CardContent className="text-4xl font-bold">
-              {data.sub?.price?.product?.name || "No Plan"}
+              {data?.subsCount || 0}
             </CardContent>
           </Card>
           <Card>
