@@ -36,6 +36,7 @@ const formSchema = z.object({
 
 export function CreateTeamDialog() {
   const { user } = useAuthProvider();
+  const isUserVerified = !!user?.user?.email_verified_at;
   const { setTeam } = useTeam();
   const navigate = useNavigate();
   const [isDialogOpen, setDialogOpen] = useState(false);
@@ -77,7 +78,9 @@ export function CreateTeamDialog() {
   return (
     <Dialog open={isDialogOpen} onOpenChange={setDialogOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline">Create Team</Button>
+        <Button variant="outline" disabled={!isUserVerified}>
+          Create Team
+        </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>

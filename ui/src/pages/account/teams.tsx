@@ -1,4 +1,5 @@
 import { CreateTeamDialog } from "@/components/create-team-dialog";
+import { CreateTeamDisabledTooltip } from "@/components/create-team-disabled-tooltip";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { DataTable } from "@/components/data-table";
 import { accountSidebarLinks } from "@/components/links";
@@ -31,6 +32,7 @@ export default function AccountTeamsPage() {
     });
   };
   const { user } = useAuthProvider();
+  const isUserVerified = !!user?.user?.email_verified_at;
   const { data, error, isError, isLoading } = useQuery({
     queryKey: ["get-user-teams", user?.user.id],
     queryFn: async () => {
@@ -83,7 +85,10 @@ export default function AccountTeamsPage() {
         <div className="mx-auto px-8 py-8 justify-start items-stretch flex-1 max-w-[1200px]">
           <div className="flex items-center justify-between">
             <p>Create and manage Teams for your applications.</p>
-            <CreateTeamDialog />
+            <div className="flex items-center space-x-2">
+              <CreateTeamDialog />
+              {!isUserVerified && <CreateTeamDisabledTooltip />}
+            </div>
           </div>
 
           <DataTable
