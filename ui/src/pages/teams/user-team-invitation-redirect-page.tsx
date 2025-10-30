@@ -17,12 +17,13 @@ import { GetError } from "@/lib/get-error";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { ArrowRight, Check, Home } from "lucide-react";
 import { useState } from "react";
-import { Navigate, useNavigate } from "react-router";
+import { Navigate, useLocation, useNavigate } from "react-router";
 import { toast } from "sonner";
 
 export default function UserTeamInvitationRedirectPage() {
   const [disabled, setDisabled] = useState(false);
-  const params = new URLSearchParams(window.location.search);
+  const { search } = useLocation();
+  const params = new URLSearchParams(search);
   const navigate = useNavigate();
   const { user } = useAuthProvider();
   const token = params.get("token");
