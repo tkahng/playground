@@ -1,4 +1,3 @@
-import { CreateTeamDialog } from "@/components/create-team-dialog";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { DataTable } from "@/components/data-table";
 import { accountSidebarLinks } from "@/components/links";
@@ -35,7 +34,6 @@ export default function InvitationsPage() {
         throw new Error("User not found");
       }
 
-      // const stats = await getStats(user.tokens.access_token);
       const teams = await getUserTeamInvitations(
         user.tokens.access_token,
         pageIndex,
@@ -71,8 +69,7 @@ export default function InvitationsPage() {
       <div className="flex-1 space-y-6 p-12 w-full">
         <div className="mx-auto px-8 py-8 justify-start items-stretch flex-1 max-w-[1200px]">
           <div className="flex items-center justify-between">
-            <p>Create and manage Teams for your applications.</p>
-            <CreateTeamDialog />
+            <p>Mange your team invitations.</p>
           </div>
 
           <DataTable
