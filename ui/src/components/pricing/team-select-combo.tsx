@@ -15,7 +15,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { useDialog } from "@/hooks/use-dialog";
+import { DialogProps } from "@/hooks/use-dialog";
 import { useUserTeams } from "@/hooks/use-user-teams";
 import { Team } from "@/schema.types";
 import { Check, ChevronsUpDown } from "lucide-react";
@@ -23,10 +23,10 @@ import { useState } from "react";
 
 export type TeamSelectProps = {
   onTeamSelect: (team: Team) => void;
+  props: DialogProps;
 };
-export function TeamSelect({ onTeamSelect }: TeamSelectProps) {
+export function TeamSelect({ onTeamSelect, props }: TeamSelectProps) {
   // const navigate = useNavigate();
-  const { props } = useDialog();
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
   const { data, error: teamsError, isLoading: teamsLoading } = useUserTeams();
 

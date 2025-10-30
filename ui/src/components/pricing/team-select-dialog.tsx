@@ -10,6 +10,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { useDialog } from "@/hooks/use-dialog";
 import { useUserTeams } from "@/hooks/use-user-teams";
 import { Team } from "@/schema.types";
 import { PropsWithChildren, useState } from "react";
@@ -18,6 +19,7 @@ import { Link } from "react-router";
 export function TeamSelectDialog({ children }: PropsWithChildren<unknown>) {
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
   const { data, error: teamsError, isLoading: teamsLoading } = useUserTeams();
+  const { props: selectProps } = useDialog();
   if (teamsLoading) {
     return <div>Loading...</div>;
   }
@@ -43,7 +45,7 @@ export function TeamSelectDialog({ children }: PropsWithChildren<unknown>) {
         </DialogHeader>
 
         <div className="grid gap-4">
-          <TeamSelect onTeamSelect={handleSelectTeam} />
+          <TeamSelect onTeamSelect={handleSelectTeam} props={selectProps} />
         </div>
         <DialogFooter>
           <DialogClose asChild>
