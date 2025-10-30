@@ -212,7 +212,7 @@ func (c *StripeClient) CreatePortalConfiguration(input ...*stripe.BillingPortalC
 	return result.ID, nil
 }
 
-func (c *StripeClient) CreateBillingPortalSession(customerId string, configurationId string) (*stripe.BillingPortalSession, error) {
+func (c *StripeClient) CreateBillingPortalSession(customerId string, configurationId string, retunrUrl string) (*stripe.BillingPortalSession, error) {
 	params := &stripe.BillingPortalSessionParams{
 		Configuration: stripe.String(configurationId),
 		Customer:      stripe.String(customerId),
