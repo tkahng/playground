@@ -177,9 +177,14 @@ export function TeamSelectDialog({ children }: PropsWithChildren<unknown>) {
           <DialogClose asChild>
             <Button variant="outline">Cancel</Button>
           </DialogClose>
-          <Button asChild>
-            <Link to={`/teams/${selectedSLug}/settings/billing`}>Continue</Link>
-          </Button>
+          {selectedSLug && (
+            <Button asChild>
+              <Link to={`/teams/${selectedSLug}/settings/billing`}>
+                Continue
+              </Link>
+            </Button>
+          )}
+          {!selectedSLug && <Button disabled>Continue</Button>}
         </DialogFooter>
       </DialogContent>
     </Dialog>
