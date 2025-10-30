@@ -216,7 +216,7 @@ func (c *StripeClient) CreateBillingPortalSession(customerId string, configurati
 	params := &stripe.BillingPortalSessionParams{
 		Configuration: stripe.String(configurationId),
 		Customer:      stripe.String(customerId),
-		ReturnURL:     stripe.String(c.config.StripeAppUrl + "/settings/billing"),
+		ReturnURL:     stripe.String(retunrUrl),
 	}
 	return bs.New(params)
 }
