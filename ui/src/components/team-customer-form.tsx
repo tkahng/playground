@@ -4,7 +4,6 @@ import { useTeam } from "@/hooks/use-team";
 import {
   createTeamBillingPortalSession,
   getProductsWithPrices,
-  getUserSubscriptions,
 } from "@/lib/api";
 import { SubscriptionWithPrice } from "@/schema.types";
 import { useQuery } from "@tanstack/react-query";
@@ -31,12 +30,12 @@ export default function TeamCustomerForm({ subscription }: Props) {
   } = useQuery({
     queryKey: ["stripe-products-with-prices"],
     queryFn: async () => {
-      let userSubs = null;
-      if (user) {
-        userSubs = await getUserSubscriptions(user.tokens.access_token);
-      }
+      // let userSubs = null;
+      // if (user) {
+      //   userSubs = await getUserSubscriptions(user.tokens.access_token);
+      // }
       const products = await getProductsWithPrices();
-      return { products, userSubs };
+      return { products };
     },
   });
   // const { pathname: currentPath } = useLocation();
@@ -80,7 +79,7 @@ export default function TeamCustomerForm({ subscription }: Props) {
       <PricingMini
         user={user?.user}
         products={products?.products.data || []}
-        subscription={products?.userSubs}
+        subscription={null}
       />
       <Card
         title="Your Plan"
