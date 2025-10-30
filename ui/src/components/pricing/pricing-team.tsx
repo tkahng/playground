@@ -1,10 +1,13 @@
 import { TeamSelectDialog } from "@/components/pricing/team-select-dialog";
 import { Button } from "@/components/ui/button";
+import { useAuthProvider } from "@/hooks/use-auth-provider";
+import { useTabs2 } from "@/hooks/use-tabs";
 import { cn } from "@/lib/utils";
 
 import { ProductWithPrices, SubscriptionWithPrice, User } from "@/schema.types";
 
 import { useState } from "react";
+import { Link, useLocation } from "react-router";
 import { z } from "zod";
 
 interface Props {
@@ -13,7 +16,7 @@ interface Props {
   subscription: SubscriptionWithPrice | null;
 }
 
-type BillingInterval = "lifetime" | "year" | "month";
+type BillingInterval = "year" | "month";
 
 export const formSchema = z.object({
   price_id: z.string().min(2, {
@@ -22,7 +25,13 @@ export const formSchema = z.object({
 });
 
 export default function PricingTeam({ products, subscription }: Props) {
-  // const { user } = useAuthProvider();
+  const { user } = useAuthProvider();
+
+  const { onClick, tab } = useTabs2<BillingInterval>("month", [
+    "month",
+    "year",
+  ]);
+  const location = useLocation();
   // const { team, teamMember } = useTeam();
   const intervals = Array.from(
     new Set(
@@ -32,9 +41,12 @@ export default function PricingTeam({ products, subscription }: Props) {
     )
   );
 
-  const [billingInterval, setBillingInterval] =
-    useState<BillingInterval>("month");
+  const [billingInterval, setBillingInterval] = useState<BillingInterval>(tab);
 
+  const handleIntervalSelect = (interval: BillingInterval) => {
+    onClick(interval);
+    setBillingInterval(interval);
+  };
   if (!products.length) {
     return (
       <section className="">
@@ -71,7 +83,7 @@ export default function PricingTeam({ products, subscription }: Props) {
           <div className="relative self-center mt-6 bg-primary-foreground rounded-lg p-0.5 flex sm:mt-8 border">
             {intervals.includes("month") && (
               <button
-                onClick={() => setBillingInterval("month")}
+                onClick={() => handleIntervalSelect("month")}
                 type="button"
                 className={`${
                   billingInterval === "month"
@@ -84,7 +96,7 @@ export default function PricingTeam({ products, subscription }: Props) {
             )}
             {intervals.includes("year") && (
               <button
-                onClick={() => setBillingInterval("year")}
+                onClick={() => handleIntervalSelect("year")}
                 type="button"
                 className={`${
                   billingInterval === "year"
@@ -138,11 +150,28 @@ export default function PricingTeam({ products, subscription }: Props) {
                       /{billingInterval}
                     </span>
                   </p>
-                  <TeamSelectDialog>
-                    <Button className="block w-full py-2 mt-8 text-sm font-semibold text-center rounded-md">
-                      "Subscribe"
+                  {user && (
+                    <TeamSelectDialog>
+                      <Button className="block w-full py-2 mt-8 text-sm font-semibold text-center rounded-md">
+                        Subscribe
+                      </Button>
+                    </TeamSelectDialog>
+                  )}
+                  {!user && (
+                    <Button
+                      className="block w-full py-2 mt-8 text-sm font-semibold text-center rounded-md"
+                      asChild
+                    >
+                      <Link
+                        to={{
+                          pathname: location.pathname,
+                          search: location.search,
+                        }}
+                      >
+                        Subscribe
+                      </Link>
                     </Button>
-                  </TeamSelectDialog>
+                  )}
                 </div>
               </div>
             );
