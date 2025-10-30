@@ -114,7 +114,7 @@ var mockPaymentErr = errors.New("this is a test payment client")
 type MockPaymentClient struct {
 	CustomerByEmail                   map[string]*stripe.Customer
 	ConfigFunc                        func() *conf.StripeConfig
-	CreateBillingPortalSessionFunc    func(customerId string, configurationId string) (*stripe.BillingPortalSession, error)
+	CreateBillingPortalSessionFunc    func(customerId string, configurationId string, retunrUrl string) (*stripe.BillingPortalSession, error)
 	CreateCheckoutSessionFunc         func(customerId string, priceId string, quantity int64, trialDays *int64) (*stripe.CheckoutSession, error)
 	CreateCustomerFunc                func(email string, name *string, metadata *map[string]string) (*stripe.Customer, error)
 	CreatePortalConfigurationFunc     func(input ...*stripe.BillingPortalConfigurationFeaturesSubscriptionUpdateProductParams) (string, error)
@@ -142,9 +142,9 @@ func (t *MockPaymentClient) Config() *conf.StripeConfig {
 }
 
 // CreateBillingPortalSession implements PaymentClient.
-func (t *MockPaymentClient) CreateBillingPortalSession(customerId string, configurationId string) (*stripe.BillingPortalSession, error) {
+func (t *MockPaymentClient) CreateBillingPortalSession(customerId string, configurationId string, retunrUrl string) (*stripe.BillingPortalSession, error) {
 	if t.CreateBillingPortalSessionFunc != nil {
-		return t.CreateBillingPortalSessionFunc(customerId, configurationId)
+		return t.CreateBillingPortalSessionFunc(customerId, configurationId, retunrUrl)
 	}
 	return nil, mockPaymentErr
 }

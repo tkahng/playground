@@ -54,7 +54,7 @@ type PaymentService interface {
 
 type PaymentClient interface {
 	Config() *conf.StripeConfig
-	CreateBillingPortalSession(customerId string, configurationId string) (*stripe.BillingPortalSession, error)
+	CreateBillingPortalSession(customerId string, configurationId string, retunrUrl string) (*stripe.BillingPortalSession, error)
 	CreateCheckoutSession(customerId string, priceId string, quantity int64, trialDays *int64) (*stripe.CheckoutSession, error)
 	CreateCustomer(email string, name *string, metadata *map[string]string) (*stripe.Customer, error)
 	CreatePortalConfiguration(input ...*stripe.BillingPortalConfigurationFeaturesSubscriptionUpdateProductParams) (string, error)
@@ -500,7 +500,7 @@ func (srv *StripeService) CreateBillingPortalSession(ctx context.Context, stripe
 	if team == nil {
 		return "", errors.New("team not found")
 	}
-
+	returnUrl := srv.client.Config().StripeAppUrl + `/teams/` + team.Slug + `/settings/billing`
 	sub, err := srv.adapter.Subscription().FindActiveSubscriptionByCustomerId(ctx, stripeCustomerId)
 	if err != nil {
 		return "", err
@@ -548,7 +548,7 @@ func (srv *StripeService) CreateBillingPortalSession(ctx context.Context, stripe
 	if err != nil {
 		return "", err
 	}
-	url, err := srv.client.CreateBillingPortalSession(stripeCustomerId, config)
+	url, err := srv.client.CreateBillingPortalSession(stripeCustomerId, config, returnUrl)
 	if err != nil {
 		log.Println(err)
 		return "", errors.New("failed to create checkout session")
