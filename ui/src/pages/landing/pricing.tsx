@@ -1,4 +1,4 @@
-import Pricing from "@/components/pricing/pricing";
+import PricingTeam from "@/components/pricing/pricing-team";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { getProductsWithPrices } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
@@ -28,7 +28,7 @@ export default function PricingPage() {
     return <div>Error: {errorProducts.message}</div>;
   }
   return (
-    <Pricing
+    <PricingTeam
       user={user?.user}
       products={products?.products.data || []}
       subscription={products?.userSubs}
