@@ -112,6 +112,7 @@
       "editor.gotoLocation.multipleTypeDefinitions": "gotoAndPeek"
     },
     "[typescriptreact]": {
+      "typescript.preferences.importModuleSpecifier": "non-relative",
       "editor.codeActionsOnSave": {
         "source.fixAll": "always",
         "source.organizeImports": "always"
