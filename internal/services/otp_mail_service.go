@@ -69,7 +69,6 @@ func (app *DbOtpMailService) SendOtpEmail(ctx context.Context, emailType mailer.
 		return fmt.Errorf("user is nil")
 	}
 
-	appOpts := app.options.AppConfig
 	var tokenOpts conf.TokenOption
 	switch emailType {
 	case mailer.EmailTypeVerify:
@@ -94,7 +93,6 @@ func (app *DbOtpMailService) SendOtpEmail(ctx context.Context, emailType mailer.
 	claims.Email = user.Email
 	claims.Token = security.GenerateTokenKey()
 	claims.Otp = security.GenerateOtp(6)
-	claims.RedirectTo = appOpts.AppUrl
 
 	sendMailParams, err := app.getSendMailParams(emailType, tokenHash, claims)
 	if err != nil {
