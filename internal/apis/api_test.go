@@ -148,7 +148,7 @@ func UserWithName(name string) UserOptionFunc {
 func UserWithPassword(password string) UserOptionFunc {
 	return func(opt *CreateUserOption) {
 		passwordService := services.NewHashService()
-		hp, err := passwordService.HashPassword(password)
+		hp, err := passwordService.Hash(password)
 		if err != nil {
 			panic(err)
 		}

@@ -405,7 +405,7 @@ func TestApi_AdminUsersUpdatePassword(t *testing.T) {
 					if account.Password == nil {
 						t.Errorf("Expected user account password to not be nil, got %v", account.Password)
 					}
-					match, err := app.Password().VerifyPassword(*account.Password, "password2")
+					match, err := app.Password().Verify("password2", *account.Password)
 					if err != nil {
 						t.Errorf("Error verifying password: %v", err)
 					}

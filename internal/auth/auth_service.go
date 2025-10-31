@@ -91,8 +91,8 @@ type PasswordManager interface {
 
 type (
 	PasswordService interface {
-		HashPassword(password string) (string, error)
-		VerifyPassword(hashedPassword, password string) (match bool, err error)
+		Hash(input string) (string, error)
+		Verify(value, hash string) (match bool, err error)
 	}
 	JwtService interface {
 		ParseToken(token string, config conf.TokenOption, data any) error
@@ -248,7 +248,7 @@ func (a *AuthServiceImpl) Signup(ctx context.Context, params *SignupInput) (*mod
 		return nil, shared.ErrUserExists
 	}
 	// create a new user and a credentials account.
-	hashedPassword, err := a.password.HashPassword(params.Password)
+	hashedPassword, err := a.password.Hash(params.Password)
 	if err != nil {
 		return nil, err
 	}
@@ -303,7 +303,7 @@ func (a *AuthServiceImpl) Signin(ctx context.Context, params *SigninInput) (*mod
 	if account == nil {
 		return nil, shared.ErrAccountNotFound
 	}
-	match, err := a.password.VerifyPassword(*account.Password, params.Password)
+	match, err := a.password.Verify(params.Password, *account.Password)
 	if err != nil {
 		return nil, err
 	}

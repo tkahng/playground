@@ -38,7 +38,7 @@ type UserAccount struct {
 	Type              ProviderTypes `db:"type" json:"type"`
 	Provider          Providers     `db:"provider" json:"provider"`
 	ProviderAccountID string        `db:"provider_account_id" json:"provider_account_id"`
-	Password          *string       `db:"password" json:"password"`
+	Password          *string       `db:"password" json:"password"` // Password is the hash of the password
 	RefreshToken      *string       `db:"refresh_token" json:"refresh_token"`
 	AccessToken       *string       `db:"access_token" json:"access_token"`
 	ExpiresAt         *int64        `db:"expires_at" json:"expires_at"`

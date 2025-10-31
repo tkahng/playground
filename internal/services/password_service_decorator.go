@@ -10,8 +10,8 @@ var (
 
 type PasswordServiceDecorator struct {
 	Delegate           HashService
-	HashPasswordFunc   func(password string) (string, error)
-	VerifyPasswordFunc func(hashedPassword string, password string) (match bool, err error)
+	HashPasswordFunc   func(input string) (string, error)
+	VerifyPasswordFunc func(val string, hash string) (match bool, err error)
 }
 
 func NewPasswordServiceDecorator() *PasswordServiceDecorator {
@@ -25,21 +25,21 @@ func (p *PasswordServiceDecorator) Cleanup() {
 	p.VerifyPasswordFunc = nil
 }
 
-func (p *PasswordServiceDecorator) HashPassword(password string) (string, error) {
+func (p *PasswordServiceDecorator) Hash(input string) (string, error) {
 	if p.HashPasswordFunc != nil {
-		return p.HashPasswordFunc(password)
+		return p.HashPasswordFunc(input)
 	}
 	if p.Delegate == nil {
 		return "", ErrDelegateNil
 	}
-	return p.Delegate.HashPassword(password)
+	return p.Delegate.Hash(input)
 }
-func (p *PasswordServiceDecorator) VerifyPassword(hashedPassword string, password string) (match bool, err error) {
+func (p *PasswordServiceDecorator) Verify(value, hash string) (match bool, err error) {
 	if p.VerifyPasswordFunc != nil {
-		return p.VerifyPasswordFunc(hashedPassword, password)
+		return p.VerifyPasswordFunc(value, hash)
 	}
 	if p.Delegate == nil {
 		return false, ErrDelegateNil
 	}
-	return p.Delegate.VerifyPassword(hashedPassword, password)
+	return p.Delegate.Verify(value, hash)
 }
