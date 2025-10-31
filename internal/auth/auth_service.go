@@ -360,7 +360,7 @@ func (a *AuthServiceImpl) Signout(ctx context.Context, refreshToken string) erro
 }
 
 func (a *AuthServiceImpl) ConfirmPasswordReset(ctx context.Context, token string, password string) error {
-	claims, err := a.token.ValidateToken(ctx, token, models.TokenTypesPasswordResetToken)
+	email, err := a.token.ValidateToken(ctx, token, models.TokenTypesPasswordResetToken)
 	if err != nil {
 		return fmt.Errorf("error getting token: %w", err)
 	}
@@ -368,7 +368,7 @@ func (a *AuthServiceImpl) ConfirmPasswordReset(ctx context.Context, token string
 	user, err := a.adapter.User().FindUser(
 		ctx,
 		&stores.UserFilter{
-			Emails: []string{claims},
+			Emails: []string{email},
 		},
 	)
 	if err != nil {
@@ -387,6 +387,16 @@ func (a *AuthServiceImpl) ConfirmPasswordReset(ctx context.Context, token string
 	}
 	if account == nil {
 		return fmt.Errorf("user account not found")
+	}
+	if account.Password == nil {
+		a.logger.ErrorContext(
+			ctx,
+			"user account does not have password",
+			slog.String("user_id", user.ID.String()),
+			slog.String("account_id", account.ID.String()),
+			slog.String("provider", account.Provider.String()),
+		)
+		return fmt.Errorf("user account does not have password")
 	}
 	hash, err := a.hash.Hash(password)
 	if err != nil {
