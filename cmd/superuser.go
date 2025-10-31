@@ -1,18 +1,16 @@
 package cmd
 
 import (
+	"context"
 	"errors"
 	"slices"
 
-	"github.com/alexedwards/argon2id"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/spf13/cobra"
+	"github.com/tkahng/playground/internal/auth"
 	"github.com/tkahng/playground/internal/conf"
-	"github.com/tkahng/playground/internal/database"
-	"github.com/tkahng/playground/internal/models"
+	"github.com/tkahng/playground/internal/core"
 	"github.com/tkahng/playground/internal/stores"
-	"github.com/tkahng/playground/internal/tools/security"
-	"github.com/tkahng/playground/internal/tools/types"
 )
 
 func NewSuperuserCmd() *cobra.Command {
@@ -30,74 +28,70 @@ var superuserCreate = &cobra.Command{
 	Example: "superuser create admin@k2dv.io Password123!",
 	Short:   "create superuser",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if len(args) != 2 {
-			return errors.New("missing email and password arguments")
-		}
+		return CreateSuperuser(cmd.Context(), core.NewApp(conf.AppConfigGetter()), args)
+	},
+}
 
-		if args[0] == "" || is.EmailFormat.Validate(args[0]) != nil {
-			return errors.New("mrror missing or invalid email address")
-		}
+func CreateSuperuser(ctx context.Context, app core.App, args []string) error {
+	if len(args) != 2 {
+		return errors.New("missing email and password arguments")
+	}
 
-		ctx := cmd.Context()
-		confdb := conf.GetConfig[conf.DBConfig]()
-
-		dbx := database.CreateNewQueriesContext(ctx, confdb.GetDatabaseUrl())
-		defer dbx.Close()
-		userStore := stores.NewDbUserStore(dbx)
-		adapter := stores.NewStorageAdapter(dbx)
-		// authStore := stores.NewDbAuthStore(dbx)
-
-		rbacStore := stores.NewDbRBACStore(dbx)
-		err := rbacStore.EnsureRoleAndPermissions(ctx, "superuser", "superuser")
-		if err != nil {
-			return err
-		}
-
-		user, err := userStore.FindUser(ctx, &stores.UserFilter{
-			Emails: []string{args[0]},
-		})
-		if err != nil {
-			return err
-		}
-		role, err := rbacStore.FindRoleByName(ctx, "superuser")
-		if err != nil {
-			return err
-		}
-		if user == nil {
-			hash, err := security.CreateHash(args[1], argon2id.DefaultParams)
-			if err != nil {
-				return err
-			}
-			user, err = adapter.User().CreateUser(ctx, &models.User{
-				Email: args[0],
+	if args[0] == "" || is.EmailFormat.Validate(args[0]) != nil {
+		return errors.New("mrror missing or invalid email address")
+	}
+	defer app.Close()
+	adapter := app.Adapter()
+	userStore := adapter.User()
+	rbacStore := adapter.Rbac()
+	user, err := userStore.FindUser(ctx, &stores.UserFilter{
+		Emails: []string{args[0]},
+	})
+	if err != nil {
+		return err
+	}
+	role, err := rbacStore.FindRoleByName(ctx, "superuser")
+	if err != nil {
+		return err
+	}
+	if role == nil {
+		return errors.New("superuser role not found")
+	}
+	if user == nil {
+		txErr := app.Adapter().RunInTxCtx(ctx, func(txCtx context.Context) error {
+			userInfo, err := app.Auth().Signup(txCtx, &auth.SignupInput{
+				Email:    args[0],
+				Password: args[1],
+				Verified: true,
 			})
 			if err != nil {
 				return err
 			}
-			account := &models.UserAccount{
-				Provider:          models.ProvidersCredentials,
-				ProviderAccountID: args[0],
-				UserID:            user.ID,
-				Type:              models.ProviderTypeCredentials,
-				Password:          types.Pointer(hash),
+			err = adapter.Rbac().CreateUserRoles(txCtx, userInfo.User.ID, role.ID)
+			if err != nil {
+				return err
 			}
-			_, err = adapter.UserAccount().CreateUserAccount(ctx, account)
+			_, err = app.Payment().CreateUserCustomer(txCtx, &userInfo.User)
+			if err != nil {
+				return err
+			}
+			return nil
+		})
+		if txErr != nil {
+			return err
+		}
+	}
+	if user != nil {
+		claims, err := adapter.User().GetUserInfo(ctx, args[0])
+		if err != nil {
+			return err
+		}
+		if !slices.Contains(claims.Roles, "superuser") {
+			err = adapter.Rbac().CreateUserRoles(ctx, user.ID, role.ID)
 			if err != nil {
 				return err
 			}
 		}
-		if user != nil {
-			claims, err := adapter.User().GetUserInfo(ctx, args[0])
-			if err != nil {
-				return err
-			}
-			if !slices.Contains(claims.Roles, "superuser") {
-				err = adapter.Rbac().CreateUserRoles(ctx, user.ID, role.ID)
-				if err != nil {
-					return err
-				}
-			}
-		}
-		return nil
-	},
+	}
+	return nil
 }
