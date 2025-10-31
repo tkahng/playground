@@ -18,11 +18,7 @@ func NewHashService() HashService {
 }
 
 func (b *hashService) Hash(input string) (string, error) {
-	hashedPassword, err := security.CreateHash(input, argon2id.DefaultParams)
-	if err != nil {
-		return "", err
-	}
-	return hashedPassword, nil
+	return security.CreateHash(input, argon2id.DefaultParams)
 }
 
 func (b *hashService) Verify(value, hash string) (bool, error) {
