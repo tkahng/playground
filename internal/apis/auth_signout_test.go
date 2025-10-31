@@ -11,47 +11,43 @@ import (
 	"github.com/tkahng/playground/internal/apis"
 	"github.com/tkahng/playground/internal/core"
 	"github.com/tkahng/playground/internal/database"
+	"github.com/tkahng/playground/internal/database/repository"
 	"github.com/tkahng/playground/internal/test"
 )
 
-func TestApi_RefreshToken(t *testing.T) {
+func TestApi_Signout(t *testing.T) {
 	// t.Parallel()
 	test.SkipIfShort(t)
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
-
-		userInfo := CreateUserWithOptions(t, testApi.App, UserWithPassword("Password123!"))
-
+		// testMailer := ExtractTestMailer(t, testApi.App)
 		tests := []ApiScenario{
 			{
-				Name:           "Test refresh token success",
+				Name:           "Test signup success",
 				Method:         http.MethodPost,
-				URL:            "/auth/refresh-token",
-				ExpectedStatus: http.StatusOK,
+				URL:            "/auth/signout",
+				ExpectedStatus: http.StatusNoContent,
 				TestAppFactory: func(t testing.TB) *TestApi {
 					return testApi
 				},
 				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
-					tokens, err := app.Auth().GenerateAuthTokens(ctx, userInfo.User.Email)
-					if err != nil {
-						t.Errorf("Error creating auth tokens: %v", err)
-					}
-					dto := apis.RefreshTokenInput{
-						RefreshToken: tokens.Tokens.RefreshToken,
+					user := CreateUserWithOptions(t, app)
+					tokenHeader, refreshToken := createAccessHeaderAndRefreshToken(t, app, user.User.Email)
+					dto := apis.SignoutDto{
+						RefreshToken: refreshToken,
 					}
 					data, err := json.Marshal(dto)
 					if err != nil {
 						t.Errorf("Error marshalling input: %v", err)
 					}
+					scenario.Headers = []string{tokenHeader}
 					scenario.Body = strings.NewReader(string(data))
 				},
 				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
-					var body apis.ApiOutput[*apis.ApiUserInfoTokens]
-					err := json.NewDecoder(res.Body).Decode(&body)
-					if err != nil {
-						t.Errorf("Error decoding response: %v", err)
+					count := repository.MustCountAllCtx(t, t.Context(), repository.Token, app.Db(), nil)
+					if count != 0 {
+						t.Errorf("Expected token count to be 0, got %v", count)
 					}
-					// tokens, err := app.Adapter().Token().GetToken(ctx, )
 				},
 			},
 		}

@@ -82,7 +82,7 @@ func (a *Assembler) setBasicServices(app *BaseApp) {
 	adapter := app.Adapter()
 	dbx := app.Db()
 
-	app.password = services.NewPasswordService()
+	app.hash = services.NewHashService()
 
 	app.jwt = services.NewJwtService()
 
@@ -121,11 +121,12 @@ func (a *Assembler) setDatasource(app *BaseApp) {
 
 // setIntegrationServices implements Initiator.
 func (a *Assembler) setIntegrationServices(app *BaseApp) {
+	logger := app.Logger()
 	adapter := app.Adapter()
 	cfg := app.Config()
 	jobService := app.JobService()
 	tokenService := app.Token()
-	passwordService := app.Password()
+	hashService := app.Hash()
 	jwtService := app.Jwt()
 
 	app.mailService = services.NewOtpMailService(
@@ -134,20 +135,13 @@ func (a *Assembler) setIntegrationServices(app *BaseApp) {
 		app.mailer,
 		tokenService,
 		jwtService,
-		passwordService,
+		hashService,
 	)
 
 	client := app.paymentClient
 	app.payment = services.NewPaymentService(client, adapter)
 	app.teamInvitation = services.NewInvitationService(adapter, *cfg, jobService)
-	app.auth = services.NewAuthService(
-		cfg,
-		jobService,
-		adapter,
-		tokenService,
-		jwtService,
-		passwordService,
-	)
-	auth2 := auth.NewAuthService(cfg, adapter, passwordService, jwtService, tokenService, jobService)
-	app.auth2 = auth2
+
+	app.auth = auth.NewAuthService(cfg, logger, adapter, hashService, jwtService, tokenService, jobService)
+
 }

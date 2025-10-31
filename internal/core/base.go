@@ -40,10 +40,9 @@ type BaseApp struct {
 
 	paymentClient services.PaymentClient
 	payment       services.PaymentService
-	password      services.PasswordService
+	hash          services.HashService
 
-	auth  services.AuthService
-	auth2 auth.AuthService
+	auth auth.AuthService
 
 	rbac    services.RBACService
 	checker services.ConstraintChecker
@@ -86,11 +85,11 @@ func (app *BaseApp) Jwt() services.JwtService {
 	return app.jwt
 }
 
-func (app *BaseApp) Password() services.PasswordService {
-	if app.password == nil {
-		panic("password not initialized")
+func (app *BaseApp) Hash() services.HashService {
+	if app.hash == nil {
+		panic("hash not initialized")
 	}
-	return app.password
+	return app.hash
 }
 
 // Mailer implements App.
@@ -235,19 +234,11 @@ func (a *BaseApp) Checker() services.ConstraintChecker {
 }
 
 // Auth implements App.
-func (a *BaseApp) Auth() services.AuthService {
+func (a *BaseApp) Auth() auth.AuthService {
 	if a.auth == nil {
-		panic("auth not initialized")
-	}
-	return a.auth
-}
-
-// Auth2 implements App.
-func (a *BaseApp) Auth2() auth.AuthService {
-	if a.auth2 == nil {
 		panic("auth2 not initialized")
 	}
-	return a.auth2
+	return a.auth
 }
 
 func (app *BaseApp) Fs() filesystem.FileSystem {

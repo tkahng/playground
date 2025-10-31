@@ -6,9 +6,26 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/danielgtaylor/huma/v2"
+	"github.com/tkahng/playground/internal/auth"
 	"github.com/tkahng/playground/internal/models"
-	"github.com/tkahng/playground/internal/services"
 )
+
+func (a *Api) bindOAuth2CallbackPost(api huma.API) {
+	huma.Register(
+		api,
+		huma.Operation{
+			OperationID: "oauth2-callback-post",
+			Method:      http.MethodPost,
+			Path:        "/auth/callback",
+			Summary:     "OAuth2 Callback (POST)",
+			Description: "Handle OAuth2 callback (POST)",
+			Tags:        []string{"Auth", "OAuth2"},
+			Errors:      []int{http.StatusNotFound},
+		},
+		a.OAuth2CallbackPost,
+	)
+}
 
 // TODO: redirect to /auth/callback with refresh token
 func (api *Api) OAuth2CallbackPost(ctx context.Context, input *OAuth2CallbackInput) (*AuthenticatedInfoResponse, error) {
@@ -43,6 +60,21 @@ type OAuth2CallbackGetResponse struct {
 	Url    string `header:"Location"`
 }
 
+func (a *Api) bindOath2CallbackGet(api huma.API) {
+	huma.Register(
+		api,
+		huma.Operation{
+			OperationID: "oauth2-callback-get",
+			Method:      http.MethodGet,
+			Path:        "/auth/callback",
+			Summary:     "OAuth2 Callback (GET)",
+			Description: "Handle OAuth2 callback (GET)",
+			Tags:        []string{"Auth", "OAuth2"},
+			Errors:      []int{http.StatusNotFound},
+		},
+		a.OAuth2CallbackGet,
+	)
+}
 func (api *Api) OAuth2CallbackGet(ctx context.Context, input *OAuth2CallbackInput) (*OAuth2CallbackGetResponse, error) {
 
 	dto, err := OAuth2Callback(ctx, api, input)
@@ -108,23 +140,22 @@ func OAuth2Callback(ctx context.Context, api *Api, input *OAuth2CallbackInput) (
 	if err != nil {
 		return nil, fmt.Errorf("error at Oatuh2Callback: %w", err)
 	}
-	params := &services.AuthenticationInput{
+	params := &auth.OAuth2SigninInput{
 		AvatarUrl:         &authUser.AvatarURL,
 		Email:             authUser.Email,
 		Name:              &authUser.Username,
 		EmailVerifiedAt:   &authUser.Expiry,
 		Provider:          models.Providers(parsedState.Provider),
-		Type:              models.ProviderTypeOAuth,
 		ProviderAccountID: authUser.Id,
 		AccessToken:       &authUser.AccessToken,
 		RefreshToken:      &authUser.RefreshToken,
 	}
-	user, err := action.Authenticate(ctx, params)
+	user, err := action.OAuth2Signin(ctx, params)
 	if err != nil {
 		return nil, fmt.Errorf("error at Oatuh2Callback: %w", err)
 
 	}
-	dto, err := action.CreateAuthTokensFromEmail(ctx, user.Email)
+	dto, err := action.GenerateAuthTokens(ctx, user.User.Email)
 	if err != nil || dto == nil {
 		return nil, fmt.Errorf("error creating auth dto: %w", err)
 	}

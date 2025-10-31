@@ -110,7 +110,7 @@ func TestApi_VerifyEmail(t *testing.T) {
 			URL:            "/auth/confirm-verification",
 			ExpectedStatus: http.StatusInternalServerError,
 			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
-				userInfo, err := app.Auth2().Signup(t.Context(), &auth.SignupInput{
+				userInfo, err := app.Auth().Signup(t.Context(), &auth.SignupInput{
 					Email:    "test2@example.com",
 					Password: "Password123!",
 				})
@@ -170,7 +170,7 @@ func TestApi_VerifyEmail(t *testing.T) {
 			ExpectedStatus: http.StatusNoContent,
 			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
 				testMailer := ExtractTestMailer(t, app)
-				userInfo, err := app.Auth2().Signup(t.Context(), &auth.SignupInput{
+				userInfo, err := app.Auth().Signup(t.Context(), &auth.SignupInput{
 					Email:    "test1@example.com",
 					Password: "Password123!",
 				})

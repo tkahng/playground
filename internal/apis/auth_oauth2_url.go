@@ -2,6 +2,7 @@ package apis
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/tkahng/playground/internal/models"
@@ -18,11 +19,27 @@ type OAuth2AuthorizationUrlOutput struct {
 	} `json:"body"`
 }
 
+func (a *Api) bindOauth2AuthorizationUrl(api huma.API) {
+	huma.Register(
+		api,
+		huma.Operation{
+			OperationID: "oauth2-authorization-url",
+			Method:      http.MethodGet,
+			Path:        "/auth/authorization-url",
+			Summary:     "OAuth2 Authorization URL",
+			Description: "Get OAuth2 authorization URL",
+			Tags:        []string{"Auth", "OAuth2"},
+			Errors:      []int{http.StatusNotFound},
+		},
+		a.OAuth2AuthorizationUrl,
+	)
+}
+
 func (api *Api) OAuth2AuthorizationUrl(ctx context.Context, input *OAuth2AuthorizationUrlInput) (*OAuth2AuthorizationUrlOutput, error) {
 	if input == nil {
 		return nil, huma.Error400BadRequest("input is required")
 	}
-	res, err := api.App().Auth().CreateOAuthUrl(
+	res, err := api.App().Auth().OAuth2Url(
 		ctx,
 		models.Providers(input.Provider),
 		input.RedirectTo,

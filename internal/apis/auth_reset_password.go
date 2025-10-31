@@ -42,19 +42,35 @@ func (api *Api) RequestPasswordReset(ctx context.Context, input *struct {
 		return nil, huma.Error400BadRequest("Cannot reset password for super user")
 	}
 	action := api.App().Auth()
-	err = action.HandlePasswordResetRequest(ctx, input.Body.Email)
+	err = action.RequestPasswordReset(ctx, input.Body.Email)
 	if err != nil {
 		return nil, err
 	}
 	return nil, nil
 }
+func (a *Api) bindCheckPasswordReset(api huma.API) {
+	huma.Register(
+		api,
+		huma.Operation{
+			OperationID: "check-password-reset",
+			Method:      http.MethodPost,
+			Path:        "/auth/check-password-reset",
+			Summary:     "Check password reset",
+			Description: "Check password reset",
+			Tags:        []string{"Auth"},
+			Errors:      []int{http.StatusNotFound},
+		},
+		a.CheckPasswordReset,
+	)
+}
+
 func (api *Api) CheckPasswordReset(ctx context.Context, input *struct {
 	Body *struct {
 		Token string `json:"token" required:"true"`
 	}
 }) (*struct{}, error) {
 	action := api.App().Auth()
-	err := action.HandleCheckResetPasswordToken(ctx, input.Body.Token)
+	err := action.CheckPasswordResetToken(ctx, input.Body.Token)
 	if err != nil {
 		return nil, err
 	}
@@ -67,11 +83,26 @@ type ConfirmPasswordResetInput struct {
 	ConfirmPassword string `form:"confirm_password" json:"confirm_password"`
 }
 
+func (a *Api) bindConfirmPasswordReset(api huma.API) {
+	huma.Register(
+		api,
+		huma.Operation{
+			OperationID: "confirm-password-reset",
+			Method:      http.MethodPost,
+			Path:        "/auth/confirm-password-reset",
+			Summary:     "Confirm password reset",
+			Description: "Confirm password reset",
+			Tags:        []string{"Auth"},
+			Errors:      []int{http.StatusNotFound},
+		},
+		a.ConfirmPasswordReset,
+	)
+}
+
 func (api *Api) ConfirmPasswordReset(ctx context.Context, input *struct {
 	Body *ConfirmPasswordResetInput `json:"body" required:"true"`
 }) (*RequestPasswordResetOutput, error) {
-	action := api.App().Auth()
-	err := action.HandlePasswordResetToken(ctx, input.Body.Token, input.Body.Password)
+	err := api.App().Auth().ConfirmPasswordReset(ctx, input.Body.Token, input.Body.Password)
 	if err != nil {
 		return nil, err
 	}
@@ -81,6 +112,22 @@ func (api *Api) ConfirmPasswordReset(ctx context.Context, input *struct {
 type PasswordResetInput struct {
 	PreviousPassword string `form:"previous_password" json:"previous_password"`
 	NewPassword      string `form:"new_password" json:"new_password"`
+}
+
+func (a *Api) bindResetPassword(api huma.API) {
+	huma.Register(
+		api,
+		huma.Operation{
+			OperationID: "reset-password",
+			Method:      http.MethodPost,
+			Path:        "/auth/password-reset",
+			Summary:     "Reset Password",
+			Description: "Reset Password",
+			Tags:        []string{"Auth"},
+			Errors:      []int{http.StatusNotFound},
+		},
+		a.ResetPassword,
+	)
 }
 
 func (api *Api) ResetPassword(ctx context.Context, input *struct {
@@ -98,8 +145,7 @@ func (api *Api) ResetPassword(ctx context.Context, input *struct {
 	if !ok {
 		return nil, huma.Error400BadRequest("Cannot reset password for super user")
 	}
-	action := api.App().Auth()
-	err = action.ResetPassword(ctx, claims.User.ID, input.Body.PreviousPassword, input.Body.NewPassword)
+	err = api.App().Auth().UpdatePassword(ctx, claims.User.ID, input.Body.PreviousPassword, input.Body.NewPassword)
 	if err != nil {
 		return nil, err
 	}

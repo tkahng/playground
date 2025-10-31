@@ -1,8 +1,6 @@
 package apis
 
 import (
-	"context"
-	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
@@ -22,47 +20,8 @@ import (
 	"github.com/tkahng/playground/internal/middleware/humamiddleware"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/shared"
-	"github.com/tkahng/playground/internal/tools/types"
 	"github.com/tkahng/playground/ui"
 )
-
-type HumaMiddlewareFunc func(ctx huma.Context, next func(huma.Context))
-
-type ApiMiddlewares struct {
-	SelectCustomerFromUser   HumaMiddlewareFunc
-	SelectCustomerFromTeam   HumaMiddlewareFunc
-	TeamInfoFromParam        HumaMiddlewareFunc
-	TeamInfoFromTask         HumaMiddlewareFunc
-	TeamInfoFromTaskProject  HumaMiddlewareFunc
-	TeamInfoFromTeamMemberID HumaMiddlewareFunc
-	TeamInfoFromTeamSlug     HumaMiddlewareFunc
-	TeamCanDelete            HumaMiddlewareFunc
-	EmailVerified            HumaMiddlewareFunc
-	TeamRequiredOwnerMember  HumaMiddlewareFunc
-	TeamRequiredAnyMember    HumaMiddlewareFunc
-	Auth                     HumaMiddlewareFunc
-	RequireAuth              HumaMiddlewareFunc
-	Recoverer                HumaMiddlewareFunc
-}
-
-func newApiMiddlewares(api huma.API, app core.App) *ApiMiddlewares {
-	return &ApiMiddlewares{
-		SelectCustomerFromUser:   humamiddleware.SelectCustomerFromUser(api, app),
-		SelectCustomerFromTeam:   humamiddleware.SelectCustomerFromTeam(api, app),
-		TeamInfoFromParam:        humamiddleware.TeamInfoFromParam(api, app),
-		TeamInfoFromTask:         humamiddleware.TeamInfoFromTask(api, app),
-		TeamInfoFromTaskProject:  humamiddleware.TeamInfoFromTaskProject(api, app),
-		TeamInfoFromTeamMemberID: humamiddleware.TeamInfoFromTeamMemberID(api, app),
-		TeamInfoFromTeamSlug:     humamiddleware.TeamInfoFromTeamSlug(api, app),
-		TeamCanDelete:            humamiddleware.TeamCanDelete(api, app),
-		EmailVerified:            humamiddleware.HumaEmailVerifiedMiddleware(api, app),
-		TeamRequiredOwnerMember:  humamiddleware.RequireTeamMemberRolesMiddleware(api, models.TeamMemberRoleOwner),
-		TeamRequiredAnyMember:    humamiddleware.RequireTeamMemberRolesMiddleware(api),
-		Auth:                     humamiddleware.HumaAuthMiddleware(api, app),
-		RequireAuth:              humamiddleware.HumaRequireAuthMiddleware(api, app),
-		Recoverer:                humamiddleware.HumaChiMiddleware(middleware.RecovererMiddleware(app)),
-	}
-}
 
 type API interface {
 	Middlewares() *ApiMiddlewares
@@ -89,32 +48,6 @@ var _ API = (*Api)(nil)
 func (api *Api) RegisterRoutes() {
 	bindMiddlewares(api)
 	bindApis(api.Api(), api)
-}
-func bindApis(api huma.API, appApi *Api) {
-	// Misc routes ------------------------------------
-	bindMiscApi(api, appApi)
-	// signup -------------------------------------------------------------
-	bindAuthApi(api, appApi)
-	// ---- Upload File
-	bindMediaApi(api, appApi)
-	// ---- Teams
-	bindTeamsApi(api, appApi)
-	// stats routes -------------------------------------------------------------------------------------------------
-	bindStatsApi(api, appApi)
-	// ---- task routes -------------------------------------------------------------------------------------------------
-	bindTaskApi(api, appApi)
-	// stripe routes -------------------------------------------------------------------------------------------------
-	bindStripeApi(api, appApi)
-	//  admin routes ----------------------------------------------------------------------------
-	bindAdminApi(api, appApi)
-	// admin stripe products with prices
-	bindUserReactionApi(api, appApi)
-}
-
-func bindMiddlewares(api API) {
-	api.Api().UseMiddleware(api.Middlewares().Recoverer)
-	api.Api().UseMiddleware(api.Middlewares().Auth)
-	api.Api().UseMiddleware(api.Middlewares().RequireAuth)
 }
 
 func (api *Api) Api() huma.API {
@@ -236,55 +169,40 @@ func newApiGroup(r chi.Router) huma.API {
 	return grp
 }
 
-type IndexOutputBody struct {
-	Access string `json:"access"`
+type HumaMiddlewareFunc func(ctx huma.Context, next func(huma.Context))
+
+type ApiMiddlewares struct {
+	SelectCustomerFromUser   HumaMiddlewareFunc
+	SelectCustomerFromTeam   HumaMiddlewareFunc
+	TeamInfoFromParam        HumaMiddlewareFunc
+	TeamInfoFromTask         HumaMiddlewareFunc
+	TeamInfoFromTaskProject  HumaMiddlewareFunc
+	TeamInfoFromTeamMemberID HumaMiddlewareFunc
+	TeamInfoFromTeamSlug     HumaMiddlewareFunc
+	TeamCanDelete            HumaMiddlewareFunc
+	EmailVerified            HumaMiddlewareFunc
+	TeamRequiredOwnerMember  HumaMiddlewareFunc
+	TeamRequiredAnyMember    HumaMiddlewareFunc
+	Auth                     HumaMiddlewareFunc
+	RequireAuth              HumaMiddlewareFunc
+	Recoverer                HumaMiddlewareFunc
 }
 
-type IndexOutput struct {
-	Body IndexOutputBody `json:"body"`
-}
-
-func bindMiscApi(api huma.API, appApi *Api) {
-	huma.Get(api, "/", func(ctx context.Context, input *struct {
-		Page types.OmittableNullable[string] `query:"page" required:"false"`
-	}) (*IndexOutput, error) {
-		fmt.Println("input", input)
-		return &IndexOutput{
-			Body: IndexOutputBody{
-				Access: "public",
-			},
-		}, nil
-	})
-
-	//  public list of permissions -----------------------------------------------------------
-	huma.Register(
-		api,
-		huma.Operation{
-			OperationID: "permissions-list",
-			Method:      http.MethodGet,
-			Path:        "/permissions",
-			Summary:     "permissions list",
-			Description: "List of permissions",
-			Tags:        []string{"Permissions"},
-			Errors:      []int{http.StatusNotFound},
-		},
-		appApi.PermissionsList,
-	)
-	// protected test routes -----------------------------------------------------------
-	huma.Register(
-		api,
-		huma.Operation{
-			OperationID: "api-protected",
-			Method:      http.MethodGet,
-			Path:        "/protected/{permission-name}",
-			Summary:     "Api protected",
-			Description: "Api protected",
-			Tags:        []string{"Protected"},
-			Errors:      []int{http.StatusNotFound},
-			Security: []map[string][]string{{
-				shared.BearerAuthSecurityKey: {},
-			}},
-		},
-		appApi.ApiProtected,
-	)
+func newApiMiddlewares(api huma.API, app core.App) *ApiMiddlewares {
+	return &ApiMiddlewares{
+		SelectCustomerFromUser:   humamiddleware.SelectCustomerFromUser(api, app),
+		SelectCustomerFromTeam:   humamiddleware.SelectCustomerFromTeam(api, app),
+		TeamInfoFromParam:        humamiddleware.TeamInfoFromParam(api, app),
+		TeamInfoFromTask:         humamiddleware.TeamInfoFromTask(api, app),
+		TeamInfoFromTaskProject:  humamiddleware.TeamInfoFromTaskProject(api, app),
+		TeamInfoFromTeamMemberID: humamiddleware.TeamInfoFromTeamMemberID(api, app),
+		TeamInfoFromTeamSlug:     humamiddleware.TeamInfoFromTeamSlug(api, app),
+		TeamCanDelete:            humamiddleware.TeamCanDelete(api, app),
+		EmailVerified:            humamiddleware.HumaEmailVerifiedMiddleware(api, app),
+		TeamRequiredOwnerMember:  humamiddleware.RequireTeamMemberRolesMiddleware(api, models.TeamMemberRoleOwner),
+		TeamRequiredAnyMember:    humamiddleware.RequireTeamMemberRolesMiddleware(api),
+		Auth:                     humamiddleware.HumaAuthMiddleware(api, app),
+		RequireAuth:              humamiddleware.HumaRequireAuthMiddleware(api, app),
+		Recoverer:                humamiddleware.HumaChiMiddleware(middleware.RecovererMiddleware(app)),
+	}
 }

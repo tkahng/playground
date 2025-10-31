@@ -27,7 +27,7 @@ func (a *Api) bindRefreshToken(api huma.API) {
 	)
 }
 func (api *Api) RefreshToken(ctx context.Context, input *struct{ Body *RefreshTokenInput }) (*AuthenticatedInfoResponse, error) {
-	claims, err := api.App().Auth2().RefreshToken(ctx, input.Body.RefreshToken)
+	claims, err := api.App().Auth().RefreshToken(ctx, input.Body.RefreshToken)
 	if err != nil {
 		return nil, err
 	}

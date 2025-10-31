@@ -33,8 +33,7 @@ func (a *Api) bindSignout(api huma.API) {
 }
 
 func (api *Api) Signout(ctx context.Context, input *struct{ Body SignoutDto }) (*struct{}, error) {
-	action := api.App().Auth()
-	err := action.Signout(ctx, input.Body.RefreshToken)
+	err := api.App().Auth().Signout(ctx, input.Body.RefreshToken)
 	if err != nil {
 		return nil, fmt.Errorf("error signing out: %w", err)
 	}

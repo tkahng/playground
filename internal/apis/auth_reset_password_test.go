@@ -9,13 +9,12 @@ import (
 	"testing"
 
 	"github.com/tkahng/playground/internal/apis"
+	"github.com/tkahng/playground/internal/auth"
 	"github.com/tkahng/playground/internal/core"
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/models"
-	"github.com/tkahng/playground/internal/services"
 	"github.com/tkahng/playground/internal/test"
 	"github.com/tkahng/playground/internal/tools/mailer"
-	"github.com/tkahng/playground/internal/tools/types"
 )
 
 func TestApi_ResetPassword(t *testing.T) {
@@ -70,7 +69,7 @@ func TestApi_ResetPassword(t *testing.T) {
 					if stoken == "" {
 						t.Fatalf("No token found in email. Body: %s", message.Body)
 					}
-					err = app.Auth().HandleCheckResetPasswordToken(ctx, stoken)
+					err = app.Auth().CheckPasswordResetToken(ctx, stoken)
 					if err != nil {
 						t.Fatalf("Error verifying token: %v, body: %s", err, message.Body)
 					}
@@ -107,7 +106,7 @@ func TestApi_ResetPassword(t *testing.T) {
 			{
 				Name:           "Test reset password confirm success",
 				Method:         http.MethodPost,
-				URL:            "/auth/confirm-password-reset?token",
+				URL:            "/auth/confirm-password-reset",
 				ExpectedStatus: http.StatusNoContent,
 				TestAppFactory: func(t testing.TB) *TestApi {
 					return testApi
@@ -130,12 +129,9 @@ func TestApi_ResetPassword(t *testing.T) {
 
 				},
 				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
-					authTokens, err := app.Auth().Authenticate(ctx, &services.AuthenticationInput{
-						Email:             userInfo.User.Email,
-						Password:          types.Pointer("SomePassword123!"),
-						Provider:          models.ProvidersCredentials,
-						ProviderAccountID: userInfo.User.Email,
-						Type:              models.ProviderTypeCredentials,
+					authTokens, err := app.Auth().Signin(ctx, &auth.SigninInput{
+						Email:    userInfo.User.Email,
+						Password: "SomePassword123!",
 					})
 					if err != nil {
 						t.Fatalf("Error authenticating user: %v", err)
