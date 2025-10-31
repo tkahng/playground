@@ -121,6 +121,7 @@ func (a *Assembler) setDatasource(app *BaseApp) {
 
 // setIntegrationServices implements Initiator.
 func (a *Assembler) setIntegrationServices(app *BaseApp) {
+	logger := app.Logger()
 	adapter := app.Adapter()
 	cfg := app.Config()
 	jobService := app.JobService()
@@ -148,6 +149,6 @@ func (a *Assembler) setIntegrationServices(app *BaseApp) {
 		jwtService,
 		hashService,
 	)
-	auth2 := auth.NewAuthService(cfg, adapter, hashService, jwtService, tokenService, jobService)
+	auth2 := auth.NewAuthService(cfg, logger, adapter, hashService, jwtService, tokenService, jobService)
 	app.auth2 = auth2
 }
