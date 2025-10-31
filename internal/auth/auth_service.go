@@ -122,6 +122,7 @@ type (
 
 func NewAuthService(
 	config *conf.EnvConfig,
+	logger *slog.Logger,
 	adapter stores.StorageAdapterInterface,
 	hash HashService,
 	jwt JwtService,
@@ -145,6 +146,7 @@ type AuthServiceImpl struct {
 	jwt     JwtService
 	token   token.TokenService
 	job     JobService
+	logger  *slog.Logger
 }
 
 // OAuth2Url implements AuthService.
