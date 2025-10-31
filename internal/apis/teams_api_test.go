@@ -99,7 +99,7 @@ func TestGetTeam_success(t *testing.T) {
 		team := CreateTeamAndMemberWithOptions(t, app, &user.User, TeamWithName("test team"))
 		teamIdString := team.Team.ID.String()
 		// team, err :=
-		tokensVerifiedTokens, err := app.Auth().CreateAuthTokensFromEmail(context.Background(), user.User.Email)
+		tokensVerifiedTokens, err := app.Auth2().GenerateAuthTokens(context.Background(), user.User.Email)
 		if err != nil {
 			t.Errorf("Error creating auth tokens: %v", err)
 			return
@@ -129,7 +129,7 @@ func TestCreateTeam_Failed(t *testing.T) {
 				return nil, errors.New("unknown error")
 			}
 			user := CreateUserWithOptions(t, appApi.App, UserWithVerified(time.Now()))
-			tokensVerifiedTokens, err := appApi.App.Auth().CreateAuthTokensFromEmail(ctx, user.User.Email)
+			tokensVerifiedTokens, err := appApi.App.Auth2().GenerateAuthTokens(ctx, user.User.Email)
 			if err != nil {
 				t.Errorf("Error creating auth tokens: %v", err)
 				return
@@ -154,7 +154,7 @@ func TestCreateTeam_Failed(t *testing.T) {
 		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 			appApi := SetupApi(t, ctx, db)
 			user := CreateUserWithOptions(t, appApi.App)
-			tokensVerifiedTokens, err := appApi.App.Auth().CreateAuthTokensFromEmail(ctx, user.User.Email)
+			tokensVerifiedTokens, err := appApi.App.Auth2().GenerateAuthTokens(ctx, user.User.Email)
 			if err != nil {
 				t.Errorf("Error creating auth tokens: %v", err)
 				return
@@ -182,7 +182,7 @@ func TestCreateTeam_Success(t *testing.T) {
 		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 			appApi := SetupApi(t, ctx, db)
 			user := CreateUserWithOptions(t, appApi.App, UserWithVerified(time.Now()))
-			tokensVerifiedTokens, err := appApi.App.Auth().CreateAuthTokensFromEmail(ctx, user.User.Email)
+			tokensVerifiedTokens, err := appApi.App.Auth2().GenerateAuthTokens(ctx, user.User.Email)
 			if err != nil {
 				t.Errorf("Error creating auth tokens: %v", err)
 				return
@@ -288,7 +288,7 @@ func TestUpdateTeam_successOwner(t *testing.T) {
 		}
 
 		// create
-		tokensVerifiedTokens, err := app.Auth().CreateAuthTokensFromEmail(ctx, user1.Email)
+		tokensVerifiedTokens, err := app.Auth2().GenerateAuthTokens(ctx, user1.Email)
 		if err != nil {
 			t.Errorf("Error creating auth tokens: %v", err)
 			return
@@ -337,7 +337,7 @@ func TestDeleteTeam_successOwner(t *testing.T) {
 		}
 
 		// create
-		tokensVerifiedTokens, err := app.Auth().CreateAuthTokensFromEmail(ctx, user1.Email)
+		tokensVerifiedTokens, err := app.Auth2().GenerateAuthTokens(ctx, user1.Email)
 		if err != nil {
 			t.Errorf("Error creating auth tokens: %v", err)
 			return
@@ -401,7 +401,7 @@ func TestDeleteTeam_failNonOwner(t *testing.T) {
 			return
 		}
 		// create
-		tokensVerifiedTokens, err := app.Auth().CreateAuthTokensFromEmail(ctx, user2.Email)
+		tokensVerifiedTokens, err := app.Auth2().GenerateAuthTokens(ctx, user2.Email)
 		if err != nil {
 			t.Errorf("Error creating auth tokens: %v", err)
 			return
@@ -434,7 +434,7 @@ func TestGetActiveTeamMember_nomember(t *testing.T) {
 			return
 		}
 
-		tokensVerifiedTokens, err := app.Auth().CreateAuthTokensFromEmail(ctx, user1.Email)
+		tokensVerifiedTokens, err := app.Auth2().GenerateAuthTokens(ctx, user1.Email)
 		if err != nil {
 			t.Errorf("Error creating auth tokens: %v", err)
 			return

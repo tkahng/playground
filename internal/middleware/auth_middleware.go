@@ -87,7 +87,7 @@ func HttpAuthMiddleware(app core.App) HttpMiddelwareFunc {
 				next.ServeHTTP(w, r)
 				return
 			}
-			user, err := app.Auth().HandleAccessToken(ctx, token)
+			user, err := app.Auth2().VerifyAccessToken(ctx, token)
 			if err != nil {
 				slog.ErrorContext(ctx, "failed to handle access token", slog.Any("error", err))
 				next.ServeHTTP(w, r)
