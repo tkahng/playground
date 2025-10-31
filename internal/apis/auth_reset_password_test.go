@@ -106,7 +106,7 @@ func TestApi_ResetPassword(t *testing.T) {
 			{
 				Name:           "Test reset password confirm success",
 				Method:         http.MethodPost,
-				URL:            "/auth/confirm-password-reset?token",
+				URL:            "/auth/confirm-password-reset",
 				ExpectedStatus: http.StatusNoContent,
 				TestAppFactory: func(t testing.TB) *TestApi {
 					return testApi
@@ -129,7 +129,7 @@ func TestApi_ResetPassword(t *testing.T) {
 
 				},
 				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
-					authTokens, err := app.Auth().Signup(ctx, &auth.SignupInput{
+					authTokens, err := app.Auth().Signin(ctx, &auth.SigninInput{
 						Email:    userInfo.User.Email,
 						Password: "SomePassword123!",
 					})
