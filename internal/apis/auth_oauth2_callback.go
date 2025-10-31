@@ -7,8 +7,8 @@ import (
 	"net/url"
 
 	"github.com/danielgtaylor/huma/v2"
+	"github.com/tkahng/playground/internal/auth"
 	"github.com/tkahng/playground/internal/models"
-	"github.com/tkahng/playground/internal/services"
 )
 
 func (a *Api) bindOAuth2CallbackPost(api huma.API) {
@@ -125,7 +125,7 @@ type CallbackOutput struct {
 }
 
 func OAuth2Callback(ctx context.Context, api *Api, input *OAuth2CallbackInput) (*CallbackOutput, error) {
-	action := api.App().Auth()
+	action := api.App().Auth2()
 	parsedState, err := action.VerifyStateToken(ctx, input.State)
 	if err != nil {
 		return nil, err
@@ -140,23 +140,22 @@ func OAuth2Callback(ctx context.Context, api *Api, input *OAuth2CallbackInput) (
 	if err != nil {
 		return nil, fmt.Errorf("error at Oatuh2Callback: %w", err)
 	}
-	params := &services.AuthenticationInput{
+	params := &auth.OAuth2SigninInput{
 		AvatarUrl:         &authUser.AvatarURL,
 		Email:             authUser.Email,
 		Name:              &authUser.Username,
 		EmailVerifiedAt:   &authUser.Expiry,
 		Provider:          models.Providers(parsedState.Provider),
-		Type:              models.ProviderTypeOAuth,
 		ProviderAccountID: authUser.Id,
 		AccessToken:       &authUser.AccessToken,
 		RefreshToken:      &authUser.RefreshToken,
 	}
-	user, err := action.Authenticate(ctx, params)
+	user, err := action.OAuth2Signin(ctx, params)
 	if err != nil {
 		return nil, fmt.Errorf("error at Oatuh2Callback: %w", err)
 
 	}
-	dto, err := action.CreateAuthTokensFromEmail(ctx, user.Email)
+	dto, err := action.GenerateAuthTokens(ctx, user.User.Email)
 	if err != nil || dto == nil {
 		return nil, fmt.Errorf("error creating auth dto: %w", err)
 	}

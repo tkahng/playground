@@ -2,27 +2,32 @@ package auth
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
+	"github.com/tkahng/playground/internal/auth/oauth"
 	"github.com/tkahng/playground/internal/models"
+	"github.com/tkahng/playground/internal/shared"
 	"github.com/tkahng/playground/internal/stores"
+	"github.com/tkahng/playground/internal/tools/security"
+	"golang.org/x/oauth2"
 )
 
 type (
 	OAuth2SigninInput struct {
-		Email             string
-		Name              *string
-		AvatarUrl         *string
-		EmailVerifiedAt   *time.Time
-		Provider          models.Providers
-		ProviderAccountID string
-		UserId            *uuid.UUID
-		AccessToken       *string
-		RefreshToken      *string
+		Email             string           `json:"email" required:"true" format:"email" maxLength:"100"`
+		Name              *string          `json:"name"`
+		AvatarUrl         *string          `json:"avatar_url"`
+		EmailVerifiedAt   *time.Time       `json:"email_verified_at"`
+		Provider          models.Providers `json:"provider"`
+		ProviderAccountID string           `json:"provider_account_id"`
+		UserId            *uuid.UUID       `json:"user_id"`
+		AccessToken       *string          `json:"access_token"`
+		RefreshToken      *string          `json:"refresh_token"`
+		RedirectTo        string           `json:"redirect_to"`
+		Expiry            time.Time        `json:"expiry"`
 	}
 	OAuth2UrlInput struct {
 		Provider models.Providers
@@ -30,7 +35,7 @@ type (
 )
 
 type Oauth2Authenticator interface {
-	OAuth2Url(ctx context.Context, provider *OAuth2SigninInput) (string, error)
+	OAuth2Url(ctx context.Context, provider models.Providers, redirectUrl string) (string, error)
 	// OAuth2Signin user.
 	// the callback handlers will call this method
 	//
@@ -38,16 +43,117 @@ type Oauth2Authenticator interface {
 	//
 	// - if user with email exists, and they have another oauth account, it will update the oauth account.
 	OAuth2Signin(ctx context.Context, params *OAuth2SigninInput) (*models.UserInfoTokens, error)
+	VerifyStateToken(ctx context.Context, token string) (*ProviderStateClaims, error)
+	CreateAndPersistStateToken(ctx context.Context, payload *ProviderStatePayload) (string, error)
+	FetchAuthUser(ctx context.Context, code string, parsedState *ProviderStateClaims) (*oauth.AuthUser, error)
 }
 
 // OAuth2Url implements AuthService.
-func (a *AuthServiceImpl) OAuth2Url(ctx context.Context, provider *OAuth2SigninInput) (string, error) {
-	return "", nil
+func (a *AuthServiceImpl) OAuth2Url(ctx context.Context, providerInput models.Providers, redirectUrl string) (string, error) {
+	redirectTo := redirectUrl
+	if redirectTo == "" {
+		redirectTo = a.config.AppUrl
+	}
+	provider := oauth.NewProviderByName(string(providerInput))
+	if provider == nil {
+		return "", fmt.Errorf("provider %v not found", providerInput)
+	}
+	if !provider.Active() {
+		return "", fmt.Errorf("provider %v is not enabled", providerInput)
+	}
+	urlOpts := []oauth2.AuthCodeOption{
+		oauth2.AccessTypeOffline,
+	}
+	info := &ProviderStatePayload{
+		Type:       models.TokenTypesStateToken,
+		Provider:   providerInput,
+		RedirectTo: redirectTo,
+		Token:      security.GenerateTokenKey(),
+	}
+	if provider.Pkce() {
+		info.CodeVerifier = security.RandomString(43)
+		info.CodeChallenge = security.S256Challenge(info.CodeVerifier)
+		info.CodeChallengeMethod = "S256"
+		urlOpts = append(urlOpts,
+			oauth2.SetAuthURLParam("code_challenge", info.CodeChallenge),
+			oauth2.SetAuthURLParam("code_challenge_method", info.CodeChallengeMethod),
+		)
+	}
+	state, err := a.CreateAndPersistStateToken(ctx, info)
+	if err != nil {
+		return "", err
+	}
+	res := provider.BuildAuthURL(state, urlOpts...)
+	if res == "" {
+		return "", fmt.Errorf("error at building auth url")
+	}
+	return res, nil
 }
 
 // OAuth2Signin implements AuthService.
 func (a *AuthServiceImpl) OAuth2Signin(ctx context.Context, params *OAuth2SigninInput) (*models.UserInfoTokens, error) {
-	return nil, errors.ErrUnsupported
+	var existingUser *models.User
+	// check if user with email exists.
+	existingUser, userErr := a.adapter.User().FindUser(ctx, &stores.UserFilter{
+		Emails: []string{params.Email},
+	})
+	if userErr != nil {
+		return nil, userErr
+	}
+	// if user exists:
+	if existingUser != nil {
+		// check if user has another oauth account of the same provider
+		existingUserAccount, userAccountErr := a.adapter.UserAccount().FindUserAccount(ctx, &stores.UserAccountFilter{
+			Providers: []models.Providers{params.Provider},
+			UserIds:   []uuid.UUID{existingUser.ID},
+		})
+		if userAccountErr != nil {
+			return nil, userAccountErr
+		}
+		if existingUserAccount != nil {
+			return nil, shared.ErrAccountProviderConflict
+		}
+	}
+	// create user and account. these should run inside a transaction.
+	// if params.Verified is true, set email_verified_at and skip email verification
+	txErr := a.adapter.RunInTxCtx(ctx, func(txCtx context.Context) error {
+		var newUser *models.User
+		if existingUser == nil {
+			user, err := a.adapter.User().CreateUser(txCtx, &models.User{
+				Name:            params.Name,
+				Email:           params.Email,
+				EmailVerifiedAt: params.EmailVerifiedAt,
+				Image:           params.AvatarUrl,
+			})
+			if err != nil {
+				return err
+			}
+			newUser = user
+		} else {
+			newUser = existingUser
+		}
+		// create oauth account
+		_, err := a.adapter.UserAccount().CreateUserAccount(txCtx, &models.UserAccount{
+			UserID:            newUser.ID,
+			Provider:          models.ProvidersCredentials,
+			ProviderAccountID: newUser.ID.String(),
+			Type:              models.ProviderTypeOAuth,
+			RefreshToken:      params.RefreshToken,
+			AccessToken:       params.AccessToken,
+		})
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+	if txErr != nil {
+		return nil, txErr
+	}
+	tokens, euserErr := a.GenerateAuthTokens(ctx, params.Email)
+	if euserErr != nil {
+		return nil, euserErr
+	}
+	return tokens, nil
 }
 
 type ProviderStateClaims struct {
@@ -92,4 +198,44 @@ func (a *AuthServiceImpl) CreateAndPersistStateToken(ctx context.Context, payloa
 		return token, err
 	}
 	return token, nil
+}
+func (a *AuthServiceImpl) VerifyStateToken(ctx context.Context, token string) (*ProviderStateClaims, error) {
+	opts := a.config.AuthOptions
+	var claims ProviderStateClaims
+	err := a.jwt.ParseToken(token, opts.StateToken, &claims)
+	if err != nil {
+		return nil, fmt.Errorf("error verifying state token: %w", err)
+	}
+	_, err = a.adapter.Token().GetToken(ctx, claims.Token)
+	if err != nil {
+		return nil, err
+	}
+	err = a.adapter.Token().DeleteToken(ctx, claims.Token)
+	if err != nil {
+		return nil, fmt.Errorf("error deleting token: %w", err)
+	}
+	return &claims, nil
+}
+func (a *AuthServiceImpl) FetchAuthUser(ctx context.Context, code string, parsedState *ProviderStateClaims) (*oauth.AuthUser, error) {
+	var provider = oauth.NewProviderByName(parsedState.Provider.String())
+	if provider == nil {
+		return nil, fmt.Errorf("provider %v not found", parsedState.Provider)
+	}
+	if !provider.Active() {
+		return nil, fmt.Errorf("provider %v is not enabled", parsedState.Provider)
+	}
+	opts := provider.FetchTokenOptions(parsedState.CodeVerifier)
+
+	// fetch token
+	token, err := provider.FetchToken(ctx, code, opts...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch OAuth2 token. %w", err)
+	}
+
+	// fetch external auth user
+	authUser, err := provider.FetchAuthUser(ctx, token)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch OAuth2 user. %w", err)
+	}
+	return authUser, nil
 }
