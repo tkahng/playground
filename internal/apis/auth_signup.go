@@ -37,7 +37,7 @@ func (a *Api) bindSingup(api huma.API) {
 	)
 }
 func (api *Api) SignUp(ctx context.Context, input *struct{ Body SignupInput }) (*AuthenticatedInfoResponse, error) {
-	dto, err := api.App().Auth2().Signup(ctx, &auth.SignupInput{
+	dto, err := api.App().Auth().Signup(ctx, &auth.SignupInput{
 		Email:    input.Body.Email,
 		Name:     input.Body.Name,
 		Password: input.Body.Password.String(),

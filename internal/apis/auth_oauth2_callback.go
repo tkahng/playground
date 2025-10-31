@@ -125,7 +125,7 @@ type CallbackOutput struct {
 }
 
 func OAuth2Callback(ctx context.Context, api *Api, input *OAuth2CallbackInput) (*CallbackOutput, error) {
-	action := api.App().Auth2()
+	action := api.App().Auth()
 	parsedState, err := action.VerifyStateToken(ctx, input.State)
 	if err != nil {
 		return nil, err

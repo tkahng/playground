@@ -69,7 +69,7 @@ func TestApi_ResetPassword(t *testing.T) {
 					if stoken == "" {
 						t.Fatalf("No token found in email. Body: %s", message.Body)
 					}
-					err = app.Auth2().CheckPasswordResetToken(ctx, stoken)
+					err = app.Auth().CheckPasswordResetToken(ctx, stoken)
 					if err != nil {
 						t.Fatalf("Error verifying token: %v, body: %s", err, message.Body)
 					}
@@ -129,7 +129,7 @@ func TestApi_ResetPassword(t *testing.T) {
 
 				},
 				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
-					authTokens, err := app.Auth2().Signup(ctx, &auth.SignupInput{
+					authTokens, err := app.Auth().Signup(ctx, &auth.SignupInput{
 						Email:    userInfo.User.Email,
 						Password: "SomePassword123!",
 					})

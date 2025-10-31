@@ -21,7 +21,7 @@ func (api *Api) VerifyPost(ctx context.Context, input *struct{ Body *OtpInput })
 }
 
 func verify(api *Api, ctx context.Context, input *OtpInput) (*struct{}, error) {
-	action := api.App().Auth2()
+	action := api.App().Auth()
 	switch input.Type {
 	case models.TokenTypesVerificationToken:
 		err := action.ValidateEmailVerification(ctx, input.Token)

@@ -33,7 +33,7 @@ import (
 func createTokenHeader(t testing.TB, app core.App, email string) string {
 	t.Helper()
 	ctx := context.Background()
-	tokensVerifiedTokens, err := app.Auth2().GenerateAuthTokens(ctx, email)
+	tokensVerifiedTokens, err := app.Auth().GenerateAuthTokens(ctx, email)
 	if err != nil {
 		t.Errorf("Error creating auth tokens: %v", err)
 	}
@@ -43,7 +43,7 @@ func createTokenHeader(t testing.TB, app core.App, email string) string {
 func createAccessHeaderAndRefreshToken(t testing.TB, app core.App, email string) (header string, refreshToken string) {
 	t.Helper()
 	ctx := context.Background()
-	tokensVerifiedTokens, err := app.Auth2().GenerateAuthTokens(ctx, email)
+	tokensVerifiedTokens, err := app.Auth().GenerateAuthTokens(ctx, email)
 	if err != nil {
 		t.Errorf("Error creating auth tokens: %v", err)
 	}

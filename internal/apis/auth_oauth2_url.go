@@ -39,7 +39,7 @@ func (api *Api) OAuth2AuthorizationUrl(ctx context.Context, input *OAuth2Authori
 	if input == nil {
 		return nil, huma.Error400BadRequest("input is required")
 	}
-	res, err := api.App().Auth2().OAuth2Url(
+	res, err := api.App().Auth().OAuth2Url(
 		ctx,
 		models.Providers(input.Provider),
 		input.RedirectTo,
