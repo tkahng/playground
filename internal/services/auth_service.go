@@ -68,7 +68,6 @@ func NewAuthService(
 	jwt JwtService,
 	hash HashService,
 ) AuthService {
-	oauth.OAuth2ConfigFromEnv(*opts)
 	authService := &BaseAuthService{
 		jwt:        jwt,
 		hash:       hash,
