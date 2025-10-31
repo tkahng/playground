@@ -47,7 +47,6 @@ type App interface {
 	Payment() services.PaymentService
 	Hash() services.HashService
 
-	Auth() services.AuthService
 	Auth2() auth.AuthService
 
 	Token() token.TokenService
