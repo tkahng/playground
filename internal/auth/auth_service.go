@@ -90,7 +90,7 @@ type PasswordManager interface {
 }
 
 type (
-	PasswordService interface {
+	HashService interface {
 		Hash(input string) (string, error)
 		Verify(value, hash string) (match bool, err error)
 	}
@@ -106,28 +106,28 @@ type (
 func NewAuthService(
 	config *conf.EnvConfig,
 	adapter stores.StorageAdapterInterface,
-	password PasswordService,
+	hash HashService,
 	jwt JwtService,
 	token token.TokenService,
 	job JobService,
 ) AuthService {
 	return &AuthServiceImpl{
-		config:   config,
-		adapter:  adapter,
-		password: password,
-		jwt:      jwt,
-		token:    token,
-		job:      job,
+		config:  config,
+		adapter: adapter,
+		hash:    hash,
+		jwt:     jwt,
+		token:   token,
+		job:     job,
 	}
 }
 
 type AuthServiceImpl struct {
-	config   *conf.EnvConfig
-	adapter  stores.StorageAdapterInterface
-	password PasswordService
-	jwt      JwtService
-	token    token.TokenService
-	job      JobService
+	config  *conf.EnvConfig
+	adapter stores.StorageAdapterInterface
+	hash    HashService
+	jwt     JwtService
+	token   token.TokenService
+	job     JobService
 }
 
 // OAuth2Url implements AuthService.
@@ -248,7 +248,7 @@ func (a *AuthServiceImpl) Signup(ctx context.Context, params *SignupInput) (*mod
 		return nil, shared.ErrUserExists
 	}
 	// create a new user and a credentials account.
-	hashedPassword, err := a.password.Hash(params.Password)
+	hashedPassword, err := a.hash.Hash(params.Password)
 	if err != nil {
 		return nil, err
 	}
@@ -303,7 +303,7 @@ func (a *AuthServiceImpl) Signin(ctx context.Context, params *SigninInput) (*mod
 	if account == nil {
 		return nil, shared.ErrAccountNotFound
 	}
-	match, err := a.password.Verify(params.Password, *account.Password)
+	match, err := a.hash.Verify(params.Password, *account.Password)
 	if err != nil {
 		return nil, err
 	}

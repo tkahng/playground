@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestPasswordService_HashAndVerifyPassword(t *testing.T) {
+func TestHashService_HashAndVerifyPassword(t *testing.T) {
 	service := NewHashService()
 	password := "mySecretPassword123!"
 	hash, err := service.Hash(password)
