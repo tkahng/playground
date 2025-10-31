@@ -42,7 +42,6 @@ type BaseApp struct {
 	payment       services.PaymentService
 	hash          services.HashService
 
-	auth  services.AuthService
 	auth2 auth.AuthService
 
 	rbac    services.RBACService
@@ -232,14 +231,6 @@ func (a *BaseApp) Checker() services.ConstraintChecker {
 		panic("checker not initialized")
 	}
 	return a.checker
-}
-
-// Auth implements App.
-func (a *BaseApp) Auth() services.AuthService {
-	if a.auth == nil {
-		panic("auth not initialized")
-	}
-	return a.auth
 }
 
 // Auth2 implements App.

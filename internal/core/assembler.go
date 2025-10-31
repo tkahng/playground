@@ -145,12 +145,4 @@ func (a *Assembler) setIntegrationServices(app *BaseApp) {
 	auth2 := auth.NewAuthService(cfg, logger, adapter, hashService, jwtService, tokenService, jobService)
 	app.auth2 = auth2
 
-	app.auth = services.NewAuthService(
-		cfg,
-		jobService,
-		adapter,
-		tokenService,
-		jwtService,
-		hashService,
-	)
 }
