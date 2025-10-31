@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"net/url"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/tkahng/playground/internal/conf"
 	"github.com/tkahng/playground/internal/models"
-	"github.com/tkahng/playground/internal/shared"
 	"github.com/tkahng/playground/internal/stores"
 	"github.com/tkahng/playground/internal/token"
 	"github.com/tkahng/playground/internal/tools/mailer"
@@ -50,6 +50,20 @@ func NewOtpMailService(
 	}
 }
 
+type OtpClaims struct {
+	jwt.RegisteredClaims
+	OtpPayload
+}
+
+type OtpPayload struct {
+	UserId     uuid.UUID         `json:"user_id,omitempty"`
+	Email      string            `json:"email,omitempty"`
+	Token      string            `json:"token"`
+	Type       models.TokenTypes `json:"type"`
+	Otp        string            `json:"otp,omitempty"`
+	RedirectTo string            `json:"redirect_to,omitempty"`
+}
+
 func (app *DbOtpMailService) SendOtpEmail(ctx context.Context, emailType mailer.EmailType, userId uuid.UUID) error {
 	adapter := app.adapter
 	user, err := adapter.User().FindUserByID(ctx, userId)
@@ -86,7 +100,7 @@ func (app *DbOtpMailService) SendOtpEmail(ctx context.Context, emailType mailer.
 		return fmt.Errorf("error at creating verification token: %w", err)
 	}
 
-	claims := shared.OtpClaims{}
+	claims := OtpClaims{}
 	claims.ExpiresAt = tokenOpts.ExpiresAt()
 	claims.Type = tokenOpts.Type
 	claims.UserId = user.ID
@@ -102,7 +116,7 @@ func (app *DbOtpMailService) SendOtpEmail(ctx context.Context, emailType mailer.
 	return app.mail.Send(sendMailParams)
 }
 
-func (app *DbOtpMailService) getSendMailParams(emailType mailer.EmailType, tokenHash string, claims shared.OtpClaims) (*mailer.Message, error) {
+func (app *DbOtpMailService) getSendMailParams(emailType mailer.EmailType, tokenHash string, claims OtpClaims) (*mailer.Message, error) {
 	appOpts := app.options.AppConfig
 	var sendMailParams mailer.SendMailParams
 	var ok bool
