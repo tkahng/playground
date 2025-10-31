@@ -43,4 +43,8 @@ var (
 		status:  404,
 		Message: "account not found",
 	}
+	ErrAccountProviderConflict = &AppError{
+		status:  409,
+		Message: "account provider conflict",
+	}
 )
