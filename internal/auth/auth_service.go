@@ -10,6 +10,7 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
+	"github.com/tkahng/playground/internal/auth/oauth"
 	"github.com/tkahng/playground/internal/conf"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/shared"
@@ -57,6 +58,7 @@ func NewAuthService(
 	token token.TokenService,
 	job JobService,
 ) AuthService {
+	oauth.OAuth2ConfigFromEnv(*config)
 	return &AuthServiceImpl{
 		config:  config,
 		adapter: adapter,
