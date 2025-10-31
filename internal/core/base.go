@@ -40,7 +40,7 @@ type BaseApp struct {
 
 	paymentClient services.PaymentClient
 	payment       services.PaymentService
-	password      services.HashService
+	hash          services.HashService
 
 	auth  services.AuthService
 	auth2 auth.AuthService
@@ -86,11 +86,11 @@ func (app *BaseApp) Jwt() services.JwtService {
 	return app.jwt
 }
 
-func (app *BaseApp) Password() services.HashService {
-	if app.password == nil {
-		panic("password not initialized")
+func (app *BaseApp) Hash() services.HashService {
+	if app.hash == nil {
+		panic("hash not initialized")
 	}
-	return app.password
+	return app.hash
 }
 
 // Mailer implements App.

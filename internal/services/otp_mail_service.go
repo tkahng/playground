@@ -24,12 +24,12 @@ type OtpMailService interface {
 var _ OtpMailService = (*DbOtpMailService)(nil)
 
 type DbOtpMailService struct {
-	options  *conf.EnvConfig
-	adapter  stores.StorageAdapterInterface
-	mail     mailer.Mailer
-	token    token.TokenService
-	jwt      JwtService
-	password HashService
+	options *conf.EnvConfig
+	adapter stores.StorageAdapterInterface
+	mail    mailer.Mailer
+	token   token.TokenService
+	jwt     JwtService
+	hash    HashService
 }
 
 func NewOtpMailService(
@@ -38,15 +38,15 @@ func NewOtpMailService(
 	mailer mailer.Mailer,
 	token token.TokenService,
 	jwt JwtService,
-	password HashService,
+	hash HashService,
 ) OtpMailService {
 	return &DbOtpMailService{
-		options:  opts,
-		adapter:  adapter,
-		mail:     mailer,
-		jwt:      jwt,
-		password: password,
-		token:    token,
+		options: opts,
+		adapter: adapter,
+		mail:    mailer,
+		jwt:     jwt,
+		hash:    hash,
+		token:   token,
 	}
 }
 
