@@ -39,7 +39,17 @@ func createTokenHeader(t testing.TB, app core.App, email string) string {
 	}
 	VerifiedHeader := fmt.Sprintf("Authorization: Bearer %s", tokensVerifiedTokens.Tokens.AccessToken)
 	return VerifiedHeader
-
+}
+func createAccessHeaderAndRefreshToken(t testing.TB, app core.App, email string) (header string, refreshToken string) {
+	t.Helper()
+	ctx := context.Background()
+	tokensVerifiedTokens, err := app.Auth().CreateAuthTokensFromEmail(ctx, email)
+	if err != nil {
+		t.Errorf("Error creating auth tokens: %v", err)
+	}
+	header = fmt.Sprintf("Authorization: Bearer %s", tokensVerifiedTokens.Tokens.AccessToken)
+	refreshToken = tokensVerifiedTokens.Tokens.RefreshToken
+	return
 }
 
 type TeamOptionFunc func(opt *CreateTeamOptions)
@@ -346,6 +356,13 @@ type ApiScenario struct {
 	//	strings.NewReader(`{"title":"abc"}`)
 	Body io.Reader
 
+	// ResponseBody specifies the expected response body.
+	//
+	// For example:
+	//
+	//	strings.NewReader(`{"title":"abc"}`)
+	ResponseBody io.Reader
+
 	// Headers specifies the headers to send with the request (e.g. "Authorization": "abc")
 	Headers []string
 
@@ -495,6 +512,7 @@ func (scenario *ApiScenario) test(t testing.TB) {
 		}
 	} else {
 		// normalize json response format
+		scenario.ResponseBody = recorder.Body
 		buffer := new(bytes.Buffer)
 		err := json.Compact(buffer, recorder.Body.Bytes())
 		var normalizedBody string
