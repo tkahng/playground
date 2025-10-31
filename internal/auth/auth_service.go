@@ -77,6 +77,18 @@ type AuthService interface {
 	// GenerateAuthTokens
 	GenerateAuthTokens(ctx context.Context, email string) (*models.UserInfoTokens, error)
 }
+
+type PasswordManager interface {
+	// ConfirmPasswordReset finalizes the password reset process by providing a valid token and a new password
+	ConfirmPasswordReset(ctx context.Context, token, password string) error
+	// CheckPasswordResetToken checks if the token is valid
+	CheckPasswordResetToken(ctx context.Context, token string) error
+	// RequestPasswordReset sends password reset email
+	RequestPasswordReset(ctx context.Context, email string) error
+	// UpdatePassword updates user's password given that the current password is provided correctly
+	UpdatePassword(ctx context.Context, userId uuid.UUID, oldPassword, newPassword string) error
+}
+
 type (
 	PasswordService interface {
 		HashPassword(password string) (string, error)
