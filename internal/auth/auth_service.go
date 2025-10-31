@@ -202,53 +202,6 @@ func (a *AuthServiceImpl) ValidateEmailVerification(ctx context.Context, code st
 	return nil
 }
 
-// GenerateAuthTokens implements AuthService.
-func (a *AuthServiceImpl) GenerateAuthTokens(ctx context.Context, email string) (*models.UserInfoTokens, error) {
-	userInfo, err := a.adapter.User().GetUserInfo(ctx, email)
-	if err != nil {
-		return nil, err
-	}
-	opts := a.config.AuthOptions
-
-	authToken, err := func() (string, error) {
-		claims := shared.AuthenticationClaims{
-			Type: models.TokenTypesAccessToken,
-			RegisteredClaims: jwt.RegisteredClaims{
-				ExpiresAt: opts.AccessToken.ExpiresAt(),
-			},
-			AuthenticationPayload: shared.AuthenticationPayload{
-				UserId:      userInfo.User.ID,
-				Email:       userInfo.User.Email,
-				Roles:       userInfo.Roles,
-				Permissions: userInfo.Permissions,
-			},
-		}
-		token, err := a.jwt.CreateJwtToken(claims, opts.AccessToken.Secret)
-		if err != nil {
-			return token, err
-		}
-		return token, nil
-	}()
-	if err != nil {
-		return nil, err
-	}
-
-	refreshToken, err := a.token.GenerateToken(ctx, userInfo.User.Email, models.TokenTypesRefreshToken)
-	if err != nil {
-		return nil, err
-	}
-
-	return &models.UserInfoTokens{
-		UserInfo: *userInfo,
-		Tokens: models.TokenDto{
-			AccessToken:  authToken,
-			RefreshToken: refreshToken,
-			ExpiresIn:    opts.AccessToken.Duration,
-			TokenType:    "Bearer",
-		},
-	}, nil
-}
-
 // Signup implements AuthService.
 // Signup credentials user.
 //
@@ -341,22 +294,13 @@ func (a *AuthServiceImpl) OAuth2Signin(ctx context.Context, params *OAuth2Signin
 	return nil, errors.ErrUnsupported
 }
 
-// RefreshToken implements AuthService.
-func (a *AuthServiceImpl) RefreshToken(ctx context.Context, refreshToken string) (*models.UserInfoTokens, error) {
-	email, err := a.token.ValidateToken(ctx, refreshToken, models.TokenTypesRefreshToken)
-	if err != nil {
-		return nil, huma.Error400BadRequest("Invalid refresh token")
-	}
-	claims, err := a.GenerateAuthTokens(ctx, email)
-	if err != nil {
-		return nil, err
-	}
-	return claims, nil
-}
-
 // Signout implements AuthService.
 func (a *AuthServiceImpl) Signout(ctx context.Context, refreshToken string) error {
-	return errors.ErrUnsupported
+	_, err := a.token.ValidateToken(ctx, refreshToken, models.TokenTypesRefreshToken)
+	if err != nil {
+		return fmt.Errorf("error verifying refresh token: %w", err)
+	}
+	return nil
 }
 
 func (a *AuthServiceImpl) ConfirmPasswordReset(ctx context.Context, token string, password string) error {
@@ -476,6 +420,89 @@ func (a *AuthServiceImpl) UpdatePassword(ctx context.Context, userId uuid.UUID, 
 		return fmt.Errorf("error updating user password: %w", err)
 	}
 	return nil
+}
+
+type authenticationClaims struct {
+	jwt.RegisteredClaims
+	Type models.TokenTypes `json:"type"`
+	authenticationPayload
+}
+
+type authenticationPayload struct {
+	UserId      uuid.UUID `json:"user_id"`
+	Email       string    `json:"email"`
+	Roles       []string  `json:"roles"`
+	Permissions []string  `json:"permissions"`
+}
+
+// GenerateAuthTokens implements AuthService.
+func (a *AuthServiceImpl) GenerateAuthTokens(ctx context.Context, email string) (*models.UserInfoTokens, error) {
+	userInfo, err := a.adapter.User().GetUserInfo(ctx, email)
+	if err != nil {
+		return nil, err
+	}
+	opts := a.config.AuthOptions
+
+	authToken, err := func() (string, error) {
+		claims := authenticationClaims{
+			Type: models.TokenTypesAccessToken,
+			RegisteredClaims: jwt.RegisteredClaims{
+				ExpiresAt: opts.AccessToken.ExpiresAt(),
+			},
+			authenticationPayload: authenticationPayload{
+				UserId:      userInfo.User.ID,
+				Email:       userInfo.User.Email,
+				Roles:       userInfo.Roles,
+				Permissions: userInfo.Permissions,
+			},
+		}
+		token, err := a.jwt.CreateJwtToken(claims, opts.AccessToken.Secret)
+		if err != nil {
+			return token, err
+		}
+		return token, nil
+	}()
+	if err != nil {
+		return nil, err
+	}
+
+	refreshToken, err := a.token.GenerateToken(ctx, userInfo.User.Email, models.TokenTypesRefreshToken)
+	if err != nil {
+		return nil, err
+	}
+
+	return &models.UserInfoTokens{
+		UserInfo: *userInfo,
+		Tokens: models.TokenDto{
+			AccessToken:  authToken,
+			RefreshToken: refreshToken,
+			ExpiresIn:    opts.AccessToken.Duration,
+			TokenType:    "Bearer",
+		},
+	}, nil
+}
+
+func (a *AuthServiceImpl) VerifyAccessToken(ctx context.Context, token string) (*models.UserInfo, error) {
+	opts := a.config.AuthOptions
+	var claims authenticationClaims
+	err := a.jwt.ParseToken(token, opts.AccessToken, &claims)
+	if err != nil {
+		return nil, fmt.Errorf("error verifying access token: %w", err)
+	}
+	return a.adapter.User().GetUserInfo(ctx, claims.Email)
+}
+
+// RefreshToken implements AuthService.
+func (a *AuthServiceImpl) RefreshToken(ctx context.Context, refreshToken string) (*models.UserInfoTokens, error) {
+	email, err := a.token.ValidateToken(ctx, refreshToken, models.TokenTypesRefreshToken)
+	if err != nil {
+		return nil, huma.Error400BadRequest("Invalid refresh token")
+	}
+	claims, err := a.GenerateAuthTokens(ctx, email)
+	if err != nil {
+		return nil, err
+	}
+	return claims, nil
 }
 
 var _ AuthService = (*AuthServiceImpl)(nil)
