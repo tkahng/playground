@@ -3,15 +3,13 @@ package cmd
 import (
 	"errors"
 	"log/slog"
-	"time"
 
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/spf13/cobra"
+	"github.com/tkahng/playground/internal/auth"
 	"github.com/tkahng/playground/internal/conf"
 	"github.com/tkahng/playground/internal/core"
 	"github.com/tkahng/playground/internal/database"
-	"github.com/tkahng/playground/internal/models"
-	"github.com/tkahng/playground/internal/services"
 	"github.com/tkahng/playground/internal/stores"
 	"github.com/tkahng/playground/internal/tools/slug"
 )
@@ -90,25 +88,17 @@ var seedUserCmd = &cobra.Command{
 		email := args[0]
 		password := args[1]
 		verirfied := args[2]
-		var verifiedAt *time.Time
-		if verirfied == "true" {
-			t := time.Now()
-			verifiedAt = &t
-		}
 		ctx := cmd.Context()
 		cfg := conf.AppConfigGetter()
 		app := core.NewApp(cfg)
 		defer app.Close()
-		params := &services.AuthenticationInput{
-			Email:           email,
-			Password:        &password,
-			EmailVerifiedAt: verifiedAt,
-			Provider:        models.ProvidersCredentials,
-			Type:            models.ProviderTypeCredentials,
-		}
-		_, err := app.Auth().Authenticate(
+		_, err := app.Auth2().Signup(
 			ctx,
-			params,
+			&auth.SignupInput{
+				Email:    email,
+				Password: password,
+				Verified: verirfied == "true",
+			},
 		)
 		return err
 	},

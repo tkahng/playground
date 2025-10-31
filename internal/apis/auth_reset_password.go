@@ -41,8 +41,8 @@ func (api *Api) RequestPasswordReset(ctx context.Context, input *struct {
 	if !ok {
 		return nil, huma.Error400BadRequest("Cannot reset password for super user")
 	}
-	action := api.App().Auth()
-	err = action.HandlePasswordResetRequest(ctx, input.Body.Email)
+	action := api.App().Auth2()
+	err = action.RequestPasswordReset(ctx, input.Body.Email)
 	if err != nil {
 		return nil, err
 	}
@@ -69,8 +69,8 @@ func (api *Api) CheckPasswordReset(ctx context.Context, input *struct {
 		Token string `json:"token" required:"true"`
 	}
 }) (*struct{}, error) {
-	action := api.App().Auth()
-	err := action.HandleCheckResetPasswordToken(ctx, input.Body.Token)
+	action := api.App().Auth2()
+	err := action.CheckPasswordResetToken(ctx, input.Body.Token)
 	if err != nil {
 		return nil, err
 	}
@@ -102,8 +102,7 @@ func (a *Api) bindConfirmPasswordReset(api huma.API) {
 func (api *Api) ConfirmPasswordReset(ctx context.Context, input *struct {
 	Body *ConfirmPasswordResetInput `json:"body" required:"true"`
 }) (*RequestPasswordResetOutput, error) {
-	action := api.App().Auth()
-	err := action.HandlePasswordResetToken(ctx, input.Body.Token, input.Body.Password)
+	err := api.App().Auth2().ConfirmPasswordReset(ctx, input.Body.Token, input.Body.Password)
 	if err != nil {
 		return nil, err
 	}
@@ -146,8 +145,7 @@ func (api *Api) ResetPassword(ctx context.Context, input *struct {
 	if !ok {
 		return nil, huma.Error400BadRequest("Cannot reset password for super user")
 	}
-	action := api.App().Auth()
-	err = action.ResetPassword(ctx, claims.User.ID, input.Body.PreviousPassword, input.Body.NewPassword)
+	err = api.App().Auth2().UpdatePassword(ctx, claims.User.ID, input.Body.PreviousPassword, input.Body.NewPassword)
 	if err != nil {
 		return nil, err
 	}

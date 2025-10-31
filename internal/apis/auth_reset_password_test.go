@@ -70,7 +70,7 @@ func TestApi_ResetPassword(t *testing.T) {
 					if stoken == "" {
 						t.Fatalf("No token found in email. Body: %s", message.Body)
 					}
-					err = app.Auth().HandleCheckResetPasswordToken(ctx, stoken)
+					err = app.Auth2().CheckPasswordResetToken(ctx, stoken)
 					if err != nil {
 						t.Fatalf("Error verifying token: %v, body: %s", err, message.Body)
 					}
