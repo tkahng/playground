@@ -92,7 +92,7 @@ var seedUserCmd = &cobra.Command{
 		cfg := conf.AppConfigGetter()
 		app := core.NewApp(cfg)
 		defer app.Close()
-		_, err := app.Auth2().Signup(
+		_, err := app.Auth().Signup(
 			ctx,
 			&auth.SignupInput{
 				Email:    email,

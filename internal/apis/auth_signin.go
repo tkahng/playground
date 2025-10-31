@@ -39,7 +39,7 @@ func (a *Api) bindSignin(api huma.API) {
 func (api *Api) SignIn(ctx context.Context, input *struct {
 	Body *SigninDto `json:"body" required:"true"`
 }) (*AuthenticatedInfoResponse, error) {
-	dto, err := api.App().Auth2().Signin(ctx, &auth.SigninInput{
+	dto, err := api.App().Auth().Signin(ctx, &auth.SigninInput{
 		Email:    input.Body.Email,
 		Password: input.Body.Password.String(),
 	})

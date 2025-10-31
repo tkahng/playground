@@ -42,7 +42,7 @@ func (api *Api) RequestVerification(ctx context.Context, input *struct{}) (*stru
 	if claims.User.EmailVerifiedAt != nil {
 		return nil, huma.Error409Conflict("Email already verified")
 	}
-	err := api.App().Auth2().SendEmailVerification(ctx, claims.User.Email)
+	err := api.App().Auth().SendEmailVerification(ctx, claims.User.Email)
 
 	if err != nil {
 		return nil, err

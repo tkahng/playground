@@ -233,8 +233,8 @@ func (a *BaseApp) Checker() services.ConstraintChecker {
 	return a.checker
 }
 
-// Auth2 implements App.
-func (a *BaseApp) Auth2() auth.AuthService {
+// Auth implements App.
+func (a *BaseApp) Auth() auth.AuthService {
 	if a.auth2 == nil {
 		panic("auth2 not initialized")
 	}

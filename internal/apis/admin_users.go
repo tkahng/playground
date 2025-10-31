@@ -111,7 +111,7 @@ func (api *Api) AdminUsersCreate(ctx context.Context, input *struct {
 	if existingUser != nil {
 		return nil, huma.Error409Conflict("User already exists")
 	}
-	user, err := api.App().Auth2().Signup(ctx, &auth.SignupInput{
+	user, err := api.App().Auth().Signup(ctx, &auth.SignupInput{
 		Email:    input.Body.Email,
 		Name:     input.Body.Name,
 		Password: input.Body.Password,
