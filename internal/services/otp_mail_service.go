@@ -29,7 +29,7 @@ type DbOtpMailService struct {
 	mail     mailer.Mailer
 	token    token.TokenService
 	jwt      JwtService
-	password PasswordService
+	password HashService
 }
 
 func NewOtpMailService(
@@ -38,7 +38,7 @@ func NewOtpMailService(
 	mailer mailer.Mailer,
 	token token.TokenService,
 	jwt JwtService,
-	password PasswordService,
+	password HashService,
 ) OtpMailService {
 	return &DbOtpMailService{
 		options:  opts,

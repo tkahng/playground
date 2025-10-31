@@ -5,20 +5,20 @@ import (
 	"github.com/tkahng/playground/internal/tools/security"
 )
 
-type PasswordService interface {
+type HashService interface {
 	HashPassword(password string) (string, error)
 	VerifyPassword(hashedPassword, password string) (match bool, err error)
 }
 
-type passwordService struct {
+type hashService struct {
 }
 
-func NewPasswordService() PasswordService {
-	return &passwordService{}
+func NewHashService() HashService {
+	return &hashService{}
 }
 
 // HashPassword implements PasswordManager.
-func (b *passwordService) HashPassword(password string) (string, error) {
+func (b *hashService) HashPassword(password string) (string, error) {
 	hashedPassword, err := security.CreateHash(password, argon2id.DefaultParams)
 	if err != nil {
 		return "", err
@@ -27,6 +27,6 @@ func (b *passwordService) HashPassword(password string) (string, error) {
 }
 
 // VerifyPassword implements PasswordManager.
-func (b *passwordService) VerifyPassword(hashedPassword string, password string) (bool, error) {
+func (b *hashService) VerifyPassword(hashedPassword string, password string) (bool, error) {
 	return security.ComparePasswordAndHash(password, hashedPassword)
 }

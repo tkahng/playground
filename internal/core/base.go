@@ -40,7 +40,7 @@ type BaseApp struct {
 
 	paymentClient services.PaymentClient
 	payment       services.PaymentService
-	password      services.PasswordService
+	password      services.HashService
 
 	auth  services.AuthService
 	auth2 auth.AuthService
@@ -86,7 +86,7 @@ func (app *BaseApp) Jwt() services.JwtService {
 	return app.jwt
 }
 
-func (app *BaseApp) Password() services.PasswordService {
+func (app *BaseApp) Password() services.HashService {
 	if app.password == nil {
 		panic("password not initialized")
 	}
