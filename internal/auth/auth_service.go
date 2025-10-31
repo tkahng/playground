@@ -24,6 +24,7 @@ type (
 		Email    string  `json:"email" required:"true" format:"email" maxLength:"100"`
 		Name     *string `json:"name"`
 		Password string  `json:"password" required:"true" minLength:"8" maxLength:"100"`
+		Verified bool    `json:"verified" required:"false" default:"false"`
 	}
 	SigninInput struct {
 		Email    string `json:"email" required:"true" format:"email" maxLength:"100"`
@@ -49,19 +50,8 @@ type (
 )
 
 type AuthService interface {
-	// Signup credentials user.
-	//
-	// - if user with email does not exist, it will create a new user and a credentials account.
-	//
-	// - if user with email exists, and they have another credentials account or oauth account, it will return error.
-	Signup(ctx context.Context, params *SignupInput) (*models.UserInfoTokens, error)
-	// Signin credentials user.
-	// If user with given email exists and has a credentials account, it will check password.
-	Signin(ctx context.Context, params *SigninInput) (*models.UserInfoTokens, error)
-	// Signout user.
-	// if given refresh token is valid, it will delete the refresh token.
-	Signout(ctx context.Context, refreshToken string) error
-
+	CredentialsAuthenticator
+	PasswordManager
 	OAuth2Url(ctx context.Context, provider *OAuth2SigninInput) (string, error)
 	// OAuth2Signin user.
 	// the callback handlers will call this method
@@ -71,6 +61,7 @@ type AuthService interface {
 	// - if user with email exists, and they have another oauth account, it will update the oauth account.
 	OAuth2Signin(ctx context.Context, params *OAuth2SigninInput) (*models.UserInfoTokens, error)
 
+	VerifyAccessToken(ctx context.Context, token string) (*models.UserInfo, error)
 	RefreshToken(ctx context.Context, refreshToken string) (*models.UserInfoTokens, error)
 
 	SendEmailVerification(ctx context.Context, email string) error
@@ -219,31 +210,49 @@ func (a *AuthServiceImpl) Signup(ctx context.Context, params *SignupInput) (*mod
 	if existingUser != nil {
 		return nil, shared.ErrUserExists
 	}
-	// create a new user and a credentials account.
+	// hash password
 	hashedPassword, err := a.hash.Hash(params.Password)
 	if err != nil {
 		return nil, err
 	}
-	user, err := a.adapter.User().CreateUser(ctx, &models.User{
-		Name:  params.Name,
-		Email: params.Email,
+	// create user and account. these should run inside a transaction.
+	// if params.Verified is true, set email_verified_at and skip email verification
+	txErr := a.adapter.RunInTxCtx(ctx, func(txCtx context.Context) error {
+		u := &models.User{
+			Name:  params.Name,
+			Email: params.Email,
+		}
+		// if params.Verified is true, set email_verified_at
+		if params.Verified {
+			now := time.Now()
+			u.EmailVerifiedAt = &now
+		}
+		user, err := a.adapter.User().CreateUser(txCtx, u)
+		if err != nil {
+			return err
+		}
+		_, err = a.adapter.UserAccount().CreateUserAccount(txCtx, &models.UserAccount{
+			UserID:            user.ID,
+			Provider:          models.ProvidersCredentials,
+			ProviderAccountID: user.ID.String(),
+			Type:              models.ProviderTypeCredentials,
+			Password:          &hashedPassword,
+		})
+		if err != nil {
+			return err
+		}
+		// if params.Verified is true, skip email verification
+		if params.Verified {
+			return nil
+		}
+		err = a.SendEmailVerification(txCtx, params.Email)
+		if err != nil {
+			return err
+		}
+		return nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	_, err = a.adapter.UserAccount().CreateUserAccount(ctx, &models.UserAccount{
-		UserID:            user.ID,
-		Provider:          models.ProvidersCredentials,
-		ProviderAccountID: user.ID.String(),
-		Type:              models.ProviderTypeCredentials,
-		Password:          &hashedPassword,
-	})
-	if err != nil {
-		return nil, err
-	}
-	err = a.SendEmailVerification(ctx, params.Email)
-	if err != nil {
-		return nil, err
+	if txErr != nil {
+		return nil, txErr
 	}
 	tokens, err := a.GenerateAuthTokens(ctx, params.Email)
 	if err != nil {
