@@ -6,8 +6,8 @@ import (
 )
 
 type HashService interface {
-	HashPassword(password string) (string, error)
-	VerifyPassword(hashedPassword, password string) (match bool, err error)
+	Hash(input string) (string, error)
+	Verify(value, hash string) (match bool, err error)
 }
 
 type hashService struct {
@@ -17,16 +17,14 @@ func NewHashService() HashService {
 	return &hashService{}
 }
 
-// HashPassword implements PasswordManager.
-func (b *hashService) HashPassword(password string) (string, error) {
-	hashedPassword, err := security.CreateHash(password, argon2id.DefaultParams)
+func (b *hashService) Hash(input string) (string, error) {
+	hashedPassword, err := security.CreateHash(input, argon2id.DefaultParams)
 	if err != nil {
 		return "", err
 	}
 	return hashedPassword, nil
 }
 
-// VerifyPassword implements PasswordManager.
-func (b *hashService) VerifyPassword(hashedPassword string, password string) (bool, error) {
-	return security.ComparePasswordAndHash(password, hashedPassword)
+func (b *hashService) Verify(value, hash string) (bool, error) {
+	return security.ComparePasswordAndHash(value, hash)
 }

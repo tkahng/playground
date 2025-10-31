@@ -164,12 +164,12 @@ func (app *BaseAuthService) ResetPassword(ctx context.Context, userId uuid.UUID,
 		return fmt.Errorf("user account not found")
 	}
 
-	if match, err := app.password.VerifyPassword(*account.Password, oldPassword); err != nil {
+	if match, err := app.password.Verify(oldPassword, *account.Password); err != nil {
 		return fmt.Errorf("error at comparing password: %w", err)
 	} else if !match {
 		return fmt.Errorf("password is incorrect")
 	}
-	hash, err := app.password.HashPassword(newPassword)
+	hash, err := app.password.Hash(newPassword)
 	if err != nil {
 		return fmt.Errorf("error at hashing password: %w", err)
 	}
@@ -357,7 +357,7 @@ func (app *BaseAuthService) HandlePasswordResetToken(ctx context.Context, token,
 	if account == nil {
 		return fmt.Errorf("user account not found")
 	}
-	hash, err := app.password.HashPassword(password)
+	hash, err := app.password.Hash(password)
 	if err != nil {
 		return fmt.Errorf("error at hashing password: %w", err)
 	}
@@ -595,7 +595,7 @@ func (app *BaseAuthService) Authenticate(ctx context.Context, params *Authentica
 		if params.Password == nil || account.Password == nil {
 			return nil, fmt.Errorf("password or account password is nil")
 		}
-		if match, err := app.password.VerifyPassword(*account.Password, *params.Password); err != nil {
+		if match, err := app.password.Verify(*params.Password, *account.Password); err != nil {
 			return nil, fmt.Errorf("error at comparing password: %w", err)
 		} else if !match {
 			return nil, fmt.Errorf("password is incorrect")
@@ -686,7 +686,7 @@ func (app *BaseAuthService) HashInputPassword(params *AuthenticationInput) error
 			if params.Password == nil {
 				return fmt.Errorf("password is nil")
 			}
-			if pw, err := app.password.HashPassword(*params.Password); err != nil {
+			if pw, err := app.password.Hash(*params.Password); err != nil {
 				return fmt.Errorf("error at hashing password: %w", err)
 			} else {
 				params.HashPassword = &pw
@@ -755,7 +755,7 @@ func (app *BaseAuthService) CheckAndResetCredentialsPassword(ctx context.Context
 		return false, nil
 	}
 	randomPassword := security.RandomString(20)
-	hash, err := app.password.HashPassword(randomPassword)
+	hash, err := app.password.Hash(randomPassword)
 	if err != nil {
 		return false, fmt.Errorf("error at hashing password: %w", err)
 	}
