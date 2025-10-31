@@ -48,7 +48,7 @@ var _ AuthService = (*BaseAuthService)(nil)
 
 type BaseAuthService struct {
 	jwt        JwtService
-	password   PasswordService
+	password   HashService
 	config     *conf.EnvConfig
 	adapter    stores.StorageAdapterInterface
 	jobService JobService
@@ -66,7 +66,7 @@ func NewAuthService(
 	adapter stores.StorageAdapterInterface,
 	tokenService token.TokenService,
 	jwt JwtService,
-	password PasswordService,
+	password HashService,
 ) AuthService {
 	oauth.OAuth2ConfigFromEnv(*opts)
 	authService := &BaseAuthService{

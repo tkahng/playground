@@ -9,14 +9,14 @@ var (
 )
 
 type PasswordServiceDecorator struct {
-	Delegate           PasswordService
+	Delegate           HashService
 	HashPasswordFunc   func(password string) (string, error)
 	VerifyPasswordFunc func(hashedPassword string, password string) (match bool, err error)
 }
 
 func NewPasswordServiceDecorator() *PasswordServiceDecorator {
 	return &PasswordServiceDecorator{
-		Delegate: NewPasswordService(),
+		Delegate: NewHashService(),
 	}
 }
 

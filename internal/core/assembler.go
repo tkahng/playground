@@ -82,7 +82,7 @@ func (a *Assembler) setBasicServices(app *BaseApp) {
 	adapter := app.Adapter()
 	dbx := app.Db()
 
-	app.password = services.NewPasswordService()
+	app.password = services.NewHashService()
 
 	app.jwt = services.NewJwtService()
 
