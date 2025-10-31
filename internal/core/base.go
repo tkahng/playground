@@ -42,7 +42,7 @@ type BaseApp struct {
 	payment       services.PaymentService
 	hash          services.HashService
 
-	auth2 auth.AuthService
+	auth auth.AuthService
 
 	rbac    services.RBACService
 	checker services.ConstraintChecker
@@ -235,10 +235,10 @@ func (a *BaseApp) Checker() services.ConstraintChecker {
 
 // Auth implements App.
 func (a *BaseApp) Auth() auth.AuthService {
-	if a.auth2 == nil {
+	if a.auth == nil {
 		panic("auth2 not initialized")
 	}
-	return a.auth2
+	return a.auth
 }
 
 func (app *BaseApp) Fs() filesystem.FileSystem {
