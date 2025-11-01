@@ -21,7 +21,7 @@ func TestApi_SignUp(t *testing.T) {
 	test.SkipIfShort(t)
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
-		testMailer := ExtractTestMailer(t, testApi.App)
+		testMailer := core.ExtractTestMailer(t, testApi.App)
 
 		tests := []ApiScenario{
 			{

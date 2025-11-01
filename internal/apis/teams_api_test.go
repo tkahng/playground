@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/tkahng/playground/internal/apis"
+	"github.com/tkahng/playground/internal/core"
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/database/repository"
 	"github.com/tkahng/playground/internal/models"
@@ -118,7 +119,7 @@ func TestCreateTeam_Failed(t *testing.T) {
 	t.Run("failed: unknown error during db customer creation", func(t *testing.T) {
 		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 			appApi := SetupApi(t, ctx, db)
-			adapter := ExtractAdapterDecorator(t, appApi.App)
+			adapter := core.ExtractAdapterDecorator(t, appApi.App)
 			var customerStore *stores.CustomerStoreDecorator
 			if m, ok := adapter.Customer().(*stores.CustomerStoreDecorator); ok {
 				customerStore = m
