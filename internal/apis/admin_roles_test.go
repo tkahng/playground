@@ -22,32 +22,32 @@ func TestApi_AdminRolesList(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		repository.CreateRolesAndPermissions(t, ctx, db, shared.KnownRoleNamesPermissionsMap)
 		testApi := SetupApi(t, ctx, db)
-		adminUser := CreateUserWithOptions(
+		adminUser := core.CreateUserWithOptions(
 			t,
 			testApi.App,
-			UserWithEmail("admin@k2dv.io"),
-			UserWithRoles(shared.PermissionNameAdmin),
-			UserWithProvider(models.ProvidersCredentials),
-			UserWithProviderType(models.ProviderTypeCredentials),
+			core.UserWithEmail("admin@k2dv.io"),
+			core.UserWithRoles(shared.PermissionNameAdmin),
+			core.UserWithProvider(models.ProvidersCredentials),
+			core.UserWithProviderType(models.ProviderTypeCredentials),
 		)
 
-		basicUser := CreateUserWithOptions(
+		basicUser := core.CreateUserWithOptions(
 			t,
 			testApi.App,
-			UserWithEmail("basic@example.com"),
-			UserWithRoles(shared.PermissionNameBasic),
-			UserWithProvider(models.ProvidersCredentials),
-			UserWithProviderType(models.ProviderTypeCredentials),
+			core.UserWithEmail("basic@example.com"),
+			core.UserWithRoles(shared.PermissionNameBasic),
+			core.UserWithProvider(models.ProvidersCredentials),
+			core.UserWithProviderType(models.ProviderTypeCredentials),
 		)
-		doubleRoleUser := CreateUserWithOptions(
+		doubleRoleUser := core.CreateUserWithOptions(
 			t,
 			testApi.App,
-			UserWithEmail("double@example.com"),
-			UserWithRoles(shared.PermissionNameBasic, shared.PermissionNamePro),
-			UserWithProvider(models.ProvidersCredentials),
-			UserWithProviderType(models.ProviderTypeCredentials),
+			core.UserWithEmail("double@example.com"),
+			core.UserWithRoles(shared.PermissionNameBasic, shared.PermissionNamePro),
+			core.UserWithProvider(models.ProvidersCredentials),
+			core.UserWithProviderType(models.ProviderTypeCredentials),
 		)
-		header := CreateTokenHeader(t, testApi.App, adminUser.User.Email)
+		header := core.CreateTokenHeader(t, testApi.App, adminUser.User.Email)
 		tests := []ApiScenario{
 			{
 				Name:           "admin roles list get by user_id, pro and basic, reversed",

@@ -39,14 +39,14 @@ func TestApi_RequestVerification(t *testing.T) {
 					return testApi
 				},
 				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
-					userInfo := CreateUserWithOptions(
+					userInfo := core.CreateUserWithOptions(
 						t,
 						testApi.App,
-						UserWithPassword("Password123!"),
-						UserWithEmail("test2@example.com"),
-						UserWithVerified(time.Now()),
+						core.UserWithPassword("Password123!"),
+						core.UserWithEmail("test2@example.com"),
+						core.UserWithVerified(time.Now()),
 					)
-					header := CreateTokenHeader(t, testApi.App, userInfo.User.Email)
+					header := core.CreateTokenHeader(t, testApi.App, userInfo.User.Email)
 					scenario.Headers = append(scenario.Headers, header)
 				},
 				ExpectedContent: []string{
@@ -62,13 +62,13 @@ func TestApi_RequestVerification(t *testing.T) {
 					return testApi
 				},
 				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
-					userInfo := CreateUserWithOptions(
+					userInfo := core.CreateUserWithOptions(
 						t,
 						testApi.App,
-						UserWithPassword("Password123!"),
-						UserWithEmail("test1@example.com"),
+						core.UserWithPassword("Password123!"),
+						core.UserWithEmail("test1@example.com"),
 					)
-					header := CreateTokenHeader(t, testApi.App, userInfo.User.Email)
+					header := core.CreateTokenHeader(t, testApi.App, userInfo.User.Email)
 					scenario.Headers = append(scenario.Headers, header)
 
 				},
@@ -135,7 +135,7 @@ func TestApi_VerifyEmail(t *testing.T) {
 				if token == "" {
 					t.Fatalf("No token found in email. Body: %s", message.Body)
 				}
-				header := CreateTokenHeader(t, app, userInfo.User.Email)
+				header := core.CreateTokenHeader(t, app, userInfo.User.Email)
 				scenario.Headers = append(scenario.Headers, header)
 				dto := apis.EmailVerificationPostInput{
 					Token: token,
@@ -193,7 +193,7 @@ func TestApi_VerifyEmail(t *testing.T) {
 				if token == "" {
 					t.Fatalf("No token found in email. Body: %s", message.Body)
 				}
-				header := CreateTokenHeader(t, app, userInfo.User.Email)
+				header := core.CreateTokenHeader(t, app, userInfo.User.Email)
 				scenario.Headers = append(scenario.Headers, header)
 				dto := apis.EmailVerificationPostInput{
 					Token: token,

@@ -37,9 +37,9 @@ func TestTeamSlug(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
 		api := testApi.TestApi
-		user := CreateUserWithOptions(t, testApi.App, UserWithVerified(time.Now()))
-		_ = CreateTeamAndMemberWithOptions(t, testApi.App, &user.User, TeamWithName("public"))
-		tokensVerifiedTokens := CreateTokenHeader(t, testApi.App, user.User.Email)
+		user := core.CreateUserWithOptions(t, testApi.App, core.UserWithVerified(time.Now()))
+		_ = core.CreateTeamAndMemberWithOptions(t, testApi.App, &user.User, core.TeamWithName("public"))
+		tokensVerifiedTokens := core.CreateTokenHeader(t, testApi.App, user.User.Email)
 
 		resp := api.Post("/teams/check-slug", tokensVerifiedTokens, struct {
 			Slug string `json:"slug" required:"true"`
@@ -74,9 +74,9 @@ func TestGetTeam_invalidID(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
 		api := testApi.TestApi
-		user := CreateUserWithOptions(t, testApi.App, UserWithVerified(time.Now()))
+		user := core.CreateUserWithOptions(t, testApi.App, core.UserWithVerified(time.Now()))
 		teamIdString := uuid.NewString()
-		tokensVerifiedTokens := CreateTokenHeader(t, testApi.App, user.User.Email)
+		tokensVerifiedTokens := core.CreateTokenHeader(t, testApi.App, user.User.Email)
 
 		resp := api.Get("/teams/"+teamIdString+"23", tokensVerifiedTokens)
 		if resp.Code == 200 {
@@ -96,8 +96,8 @@ func TestGetTeam_success(t *testing.T) {
 		testApi := SetupApi(t, ctx, db)
 		app := testApi.App
 		api := testApi.TestApi
-		user := CreateUserWithOptions(t, testApi.App, UserWithVerified(time.Now()))
-		team := CreateTeamAndMemberWithOptions(t, app, &user.User, TeamWithName("test team"))
+		user := core.CreateUserWithOptions(t, testApi.App, core.UserWithVerified(time.Now()))
+		team := core.CreateTeamAndMemberWithOptions(t, app, &user.User, core.TeamWithName("test team"))
 		teamIdString := team.Team.ID.String()
 		// team, err :=
 		tokensVerifiedTokens, err := app.Auth().GenerateAuthTokens(context.Background(), user.User.Email)
@@ -129,7 +129,7 @@ func TestCreateTeam_Failed(t *testing.T) {
 			customerStore.CreateCustomerFunc = func(ctx context.Context, customer *models.StripeCustomer) (*models.StripeCustomer, error) {
 				return nil, errors.New("unknown error")
 			}
-			user := CreateUserWithOptions(t, appApi.App, UserWithVerified(time.Now()))
+			user := core.CreateUserWithOptions(t, appApi.App, core.UserWithVerified(time.Now()))
 			tokensVerifiedTokens, err := appApi.App.Auth().GenerateAuthTokens(ctx, user.User.Email)
 			if err != nil {
 				t.Errorf("Error creating auth tokens: %v", err)
@@ -154,7 +154,7 @@ func TestCreateTeam_Failed(t *testing.T) {
 	t.Run("failed: emailNotVerified", func(t *testing.T) {
 		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 			appApi := SetupApi(t, ctx, db)
-			user := CreateUserWithOptions(t, appApi.App)
+			user := core.CreateUserWithOptions(t, appApi.App)
 			tokensVerifiedTokens, err := appApi.App.Auth().GenerateAuthTokens(ctx, user.User.Email)
 			if err != nil {
 				t.Errorf("Error creating auth tokens: %v", err)
@@ -182,7 +182,7 @@ func TestCreateTeam_Success(t *testing.T) {
 	t.Run("success: create team", func(t *testing.T) {
 		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 			appApi := SetupApi(t, ctx, db)
-			user := CreateUserWithOptions(t, appApi.App, UserWithVerified(time.Now()))
+			user := core.CreateUserWithOptions(t, appApi.App, core.UserWithVerified(time.Now()))
 			tokensVerifiedTokens, err := appApi.App.Auth().GenerateAuthTokens(ctx, user.User.Email)
 			if err != nil {
 				t.Errorf("Error creating auth tokens: %v", err)
@@ -216,30 +216,30 @@ func TestUpdateTeam_failedNotOwner(t *testing.T) {
 		testApi := SetupApi(t, ctx, db)
 		app := testApi.App
 		api := testApi.TestApi
-		user1 := CreateUserWithOptions(
+		user1 := core.CreateUserWithOptions(
 			t,
 			testApi.App,
-			UserWithVerified(time.Now()),
-			UserWithEmail("user1@example"),
+			core.UserWithVerified(time.Now()),
+			core.UserWithEmail("user1@example"),
 		)
-		team := CreateTeamAndMemberWithOptions(t, app, &user1.User)
-		user2 := CreateUserWithOptions(
+		team := core.CreateTeamAndMemberWithOptions(t, app, &user1.User)
+		user2 := core.CreateUserWithOptions(
 			t,
 			testApi.App,
-			UserWithVerified(time.Now()),
-			UserWithEmail("user2@example"),
+			core.UserWithVerified(time.Now()),
+			core.UserWithEmail("user2@example"),
 		)
 
-		_ = CreateTeamMemberWithOptions(
+		_ = core.CreateTeamMemberWithOptions(
 			t,
 			app,
 			team.Team.ID,
 			user2.User.ID,
-			TeamWithRole(models.TeamMemberRoleMember),
-			TeamWithBilling(false),
+			core.TeamWithRole(models.TeamMemberRoleMember),
+			core.TeamWithBilling(false),
 		)
 		// create
-		VerifiedHeader := CreateTokenHeader(t, app, user2.User.Email)
+		VerifiedHeader := core.CreateTokenHeader(t, app, user2.User.Email)
 		resp := api.Put("/teams/"+team.Team.ID.String(), VerifiedHeader, &apis.UpdateTeamInput{
 			TeamID: team.Team.ID.String(),
 			Body: apis.UpdateTeamDto{

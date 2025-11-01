@@ -26,10 +26,10 @@ func TestApi_AdminUsersList(t *testing.T) {
 	test.SkipIfShort(t)
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
-		adminUser := CreateUserWithOptions(t, testApi.App, UserWithEmail("admin@k2dv.io"), UserWithPermission(shared.PermissionNameAdmin))
-		header := CreateTokenHeader(t, testApi.App, adminUser.User.Email)
-		user1 := CreateUserWithOptions(t, testApi.App, UserWithEmail("user1@example.com"))
-		user2 := CreateUserWithOptions(t, testApi.App, UserWithEmail("user2@example.com"))
+		adminUser := core.CreateUserWithOptions(t, testApi.App, core.UserWithEmail("admin@k2dv.io"), core.UserWithPermission(shared.PermissionNameAdmin))
+		header := core.CreateTokenHeader(t, testApi.App, adminUser.User.Email)
+		user1 := core.CreateUserWithOptions(t, testApi.App, core.UserWithEmail("user1@example.com"))
+		user2 := core.CreateUserWithOptions(t, testApi.App, core.UserWithEmail("user2@example.com"))
 		tests := []ApiScenario{
 			{
 				Name:           "admin users list all",
@@ -109,8 +109,8 @@ func TestApi_AdminUsersCreate(t *testing.T) {
 	test.SkipIfShort(t)
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
-		adminUser := CreateUserWithOptions(t, testApi.App, UserWithEmail("admin@k2dv.io"), UserWithPermission(shared.PermissionNameAdmin))
-		header := CreateTokenHeader(t, testApi.App, adminUser.User.Email)
+		adminUser := core.CreateUserWithOptions(t, testApi.App, core.UserWithEmail("admin@k2dv.io"), core.UserWithPermission(shared.PermissionNameAdmin))
+		header := core.CreateTokenHeader(t, testApi.App, adminUser.User.Email)
 		scenarios := []ApiScenario{
 			{
 				Name:           "admin users create",
@@ -204,8 +204,8 @@ func TestApi_AdminUsersDelete(t *testing.T) {
 	test.SkipIfShort(t)
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
-		adminUser := CreateUserWithOptions(t, testApi.App, UserWithEmail("admin@k2dv.io"), UserWithPermission(shared.PermissionNameAdmin))
-		header := CreateTokenHeader(t, testApi.App, adminUser.User.Email)
+		adminUser := core.CreateUserWithOptions(t, testApi.App, core.UserWithEmail("admin@k2dv.io"), core.UserWithPermission(shared.PermissionNameAdmin))
+		header := core.CreateTokenHeader(t, testApi.App, adminUser.User.Email)
 		scenarios := []ApiScenario{
 			{
 				Name:           "admin users delete user",
@@ -217,7 +217,7 @@ func TestApi_AdminUsersDelete(t *testing.T) {
 					return testApi
 				},
 				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
-					user1 := CreateUserWithOptions(t, testApi.App, UserWithEmail("user1@example.com"))
+					user1 := core.CreateUserWithOptions(t, testApi.App, core.UserWithEmail("user1@example.com"))
 					scenario.URL = fmt.Sprintf("/admin/users/%s", user1.User.ID)
 				},
 				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
@@ -272,8 +272,8 @@ func TestApi_AdminUsersUpdate(t *testing.T) {
 	test.SkipIfShort(t)
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
-		adminUser := CreateUserWithOptions(t, testApi.App, UserWithEmail("admin@k2dv.io"), UserWithPermission(shared.PermissionNameAdmin))
-		header := CreateTokenHeader(t, testApi.App, adminUser.User.Email)
+		adminUser := core.CreateUserWithOptions(t, testApi.App, core.UserWithEmail("admin@k2dv.io"), core.UserWithPermission(shared.PermissionNameAdmin))
+		header := core.CreateTokenHeader(t, testApi.App, adminUser.User.Email)
 		scenarios := []ApiScenario{
 			{
 				Name:           "admin users update user",
@@ -285,7 +285,7 @@ func TestApi_AdminUsersUpdate(t *testing.T) {
 					return testApi
 				},
 				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
-					user1 := CreateUserWithOptions(t, testApi.App, UserWithEmail("user1@example.com"), UserWithName("User 1"))
+					user1 := core.CreateUserWithOptions(t, testApi.App, core.UserWithEmail("user1@example.com"), core.UserWithName("User 1"))
 					scenario.URL = fmt.Sprintf("/admin/users/%s", user1.User.ID)
 					input := &apis.UserMutationInput{
 						Email: "user1@example.com",
@@ -353,8 +353,8 @@ func TestApi_AdminUsersUpdatePassword(t *testing.T) {
 	test.SkipIfShort(t)
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
-		adminUser := CreateUserWithOptions(t, testApi.App, UserWithEmail("admin@k2dv.io"), UserWithPermission(shared.PermissionNameAdmin))
-		header := CreateTokenHeader(t, testApi.App, adminUser.User.Email)
+		adminUser := core.CreateUserWithOptions(t, testApi.App, core.UserWithEmail("admin@k2dv.io"), core.UserWithPermission(shared.PermissionNameAdmin))
+		header := core.CreateTokenHeader(t, testApi.App, adminUser.User.Email)
 		scenarios := []ApiScenario{
 			{
 				Name:           "admin users update user password",
@@ -366,14 +366,14 @@ func TestApi_AdminUsersUpdatePassword(t *testing.T) {
 					return testApi
 				},
 				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
-					user1 := CreateUserWithOptions(
+					user1 := core.CreateUserWithOptions(
 						t,
 						testApi.App,
-						UserWithEmail("user1@example.com"),
-						UserWithName("User 1"),
-						UserWithPassword("password"),
-						UserWithProvider(models.ProvidersCredentials),
-						UserWithProviderType(models.ProviderTypeCredentials),
+						core.UserWithEmail("user1@example.com"),
+						core.UserWithName("User 1"),
+						core.UserWithPassword("password"),
+						core.UserWithProvider(models.ProvidersCredentials),
+						core.UserWithProviderType(models.ProviderTypeCredentials),
 					)
 					scenario.URL = fmt.Sprintf("/admin/users/%s/password", user1.User.ID)
 					input := &apis.UpdateUserPasswordInput{
@@ -426,9 +426,9 @@ func TestApi_AdminUsersGet(t *testing.T) {
 	test.SkipIfShort(t)
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
-		adminUser := CreateUserWithOptions(t, testApi.App, UserWithEmail("admin@k2dv.io"), UserWithPermission(shared.PermissionNameAdmin))
-		header := CreateTokenHeader(t, testApi.App, adminUser.User.Email)
-		user1 := CreateUserWithOptions(t, testApi.App, UserWithEmail("user1@example.com"))
+		adminUser := core.CreateUserWithOptions(t, testApi.App, core.UserWithEmail("admin@k2dv.io"), core.UserWithPermission(shared.PermissionNameAdmin))
+		header := core.CreateTokenHeader(t, testApi.App, adminUser.User.Email)
+		user1 := core.CreateUserWithOptions(t, testApi.App, core.UserWithEmail("user1@example.com"))
 		tests := []ApiScenario{
 			{
 				Name:           "admin users get user1",
