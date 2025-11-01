@@ -11,7 +11,9 @@ import (
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/shared"
 	"github.com/tkahng/playground/internal/stores"
+	"github.com/tkahng/playground/internal/tools/mailer"
 	"github.com/tkahng/playground/internal/tools/security"
+	"github.com/tkahng/playground/internal/workers"
 	"golang.org/x/oauth2"
 )
 
@@ -93,6 +95,7 @@ func (a *AuthServiceImpl) OAuth2Url(ctx context.Context, providerInput models.Pr
 // OAuth2Signin implements AuthService.
 func (a *AuthServiceImpl) OAuth2Signin(ctx context.Context, params *OAuth2SigninInput) (*models.UserInfoTokens, error) {
 	var existingUser *models.User
+	var resetPassword bool
 	// check if user with email exists.
 	existingUser, userErr := a.adapter.User().FindUser(ctx, &stores.UserFilter{
 		Emails: []string{params.Email},
@@ -113,6 +116,10 @@ func (a *AuthServiceImpl) OAuth2Signin(ctx context.Context, params *OAuth2Signin
 		if existingUserAccount != nil {
 			return nil, shared.ErrAccountProviderConflict
 		}
+		// check if user is unverified with credentials account
+		if existingUser.EmailVerifiedAt == nil {
+			resetPassword = true
+		}
 	}
 	// create user and account. these should run inside a transaction.
 	// if params.Verified is true, set email_verified_at and skip email verification
@@ -131,6 +138,12 @@ func (a *AuthServiceImpl) OAuth2Signin(ctx context.Context, params *OAuth2Signin
 			newUser = user
 		} else {
 			newUser = existingUser
+		}
+		if resetPassword {
+			err := a.randomizeAccountPassword(txCtx, newUser)
+			if err != nil {
+				return err
+			}
 		}
 		// create oauth account
 		_, err := a.adapter.UserAccount().CreateUserAccount(txCtx, &models.UserAccount{
@@ -154,6 +167,37 @@ func (a *AuthServiceImpl) OAuth2Signin(ctx context.Context, params *OAuth2Signin
 		return nil, euserErr
 	}
 	return tokens, nil
+}
+
+func (a *AuthServiceImpl) randomizeAccountPassword(txCtx context.Context, newUser *models.User) error {
+	credentialsAccount, credentialsAccountErr := a.adapter.UserAccount().FindUserAccount(txCtx, &stores.UserAccountFilter{
+		Providers: []models.Providers{models.ProvidersCredentials},
+		UserIds:   []uuid.UUID{newUser.ID},
+	})
+	if credentialsAccountErr != nil {
+		return credentialsAccountErr
+	}
+	if credentialsAccount == nil {
+		return fmt.Errorf("credentials account not found")
+	}
+	randomPassword := security.RandomString(20)
+	hash, err := a.hash.Hash(randomPassword)
+	if err != nil {
+		return err
+	}
+	credentialsAccount.Password = &hash
+	err = a.adapter.UserAccount().UpdateUserAccount(txCtx, credentialsAccount)
+	if err != nil {
+		return err
+	}
+	err = a.job.EnqueueOtpMailJob(txCtx, &workers.OtpEmailJobArgs{
+		UserID: newUser.ID,
+		Type:   mailer.EmailTypeSecurityPasswordReset,
+	})
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 type ProviderStateClaims struct {
