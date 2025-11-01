@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"time"
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/tkahng/playground/internal/auth"
 	"github.com/tkahng/playground/internal/models"
+	"github.com/tkahng/playground/internal/tools/types"
 )
 
 func (a *Api) bindOAuth2CallbackPost(api huma.API) {
@@ -144,7 +146,7 @@ func OAuth2Callback(ctx context.Context, api *Api, input *OAuth2CallbackInput) (
 		AvatarUrl:         &authUser.AvatarURL,
 		Email:             authUser.Email,
 		Name:              &authUser.Username,
-		EmailVerifiedAt:   &authUser.Expiry,
+		EmailVerifiedAt:   types.Pointer(time.Now()),
 		Provider:          models.Providers(parsedState.Provider),
 		ProviderAccountID: authUser.Id,
 		AccessToken:       &authUser.AccessToken,
@@ -155,12 +157,8 @@ func OAuth2Callback(ctx context.Context, api *Api, input *OAuth2CallbackInput) (
 		return nil, fmt.Errorf("error at Oatuh2Callback: %w", err)
 
 	}
-	dto, err := action.GenerateAuthTokens(ctx, user.User.Email)
-	if err != nil || dto == nil {
-		return nil, fmt.Errorf("error creating auth dto: %w", err)
-	}
 	return &CallbackOutput{
-		ApiUserInfoTokens: *ToApiUserInfoTokens(dto),
+		ApiUserInfoTokens: *ToApiUserInfoTokens(user),
 		RedirectTo:        parsedState.RedirectTo,
 	}, nil
 }
