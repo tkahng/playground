@@ -28,7 +28,9 @@ var superuserCreate = &cobra.Command{
 	Example: "superuser create admin@k2dv.io Password123!",
 	Short:   "create superuser",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return CreateSuperuser(cmd.Context(), core.NewApp(conf.AppConfigGetter()), args)
+		app := core.NewApp(conf.AppConfigGetter())
+		defer app.Close()
+		return CreateSuperuser(cmd.Context(), app, args)
 	},
 }
 
@@ -40,7 +42,6 @@ func CreateSuperuser(ctx context.Context, app core.App, args []string) error {
 	if args[0] == "" || is.EmailFormat.Validate(args[0]) != nil {
 		return errors.New("mrror missing or invalid email address")
 	}
-	defer app.Close()
 	adapter := app.Adapter()
 	userStore := adapter.User()
 	rbacStore := adapter.Rbac()
