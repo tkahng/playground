@@ -39,7 +39,7 @@ func TestTeamSlug(t *testing.T) {
 		api := testApi.TestApi
 		user := CreateUserWithOptions(t, testApi.App, UserWithVerified(time.Now()))
 		_ = CreateTeamAndMemberWithOptions(t, testApi.App, &user.User, TeamWithName("public"))
-		tokensVerifiedTokens := createTokenHeader(t, testApi.App, user.User.Email)
+		tokensVerifiedTokens := CreateTokenHeader(t, testApi.App, user.User.Email)
 
 		resp := api.Post("/teams/check-slug", tokensVerifiedTokens, struct {
 			Slug string `json:"slug" required:"true"`
@@ -76,7 +76,7 @@ func TestGetTeam_invalidID(t *testing.T) {
 		api := testApi.TestApi
 		user := CreateUserWithOptions(t, testApi.App, UserWithVerified(time.Now()))
 		teamIdString := uuid.NewString()
-		tokensVerifiedTokens := createTokenHeader(t, testApi.App, user.User.Email)
+		tokensVerifiedTokens := CreateTokenHeader(t, testApi.App, user.User.Email)
 
 		resp := api.Get("/teams/"+teamIdString+"23", tokensVerifiedTokens)
 		if resp.Code == 200 {
@@ -239,7 +239,7 @@ func TestUpdateTeam_failedNotOwner(t *testing.T) {
 			TeamWithBilling(false),
 		)
 		// create
-		VerifiedHeader := createTokenHeader(t, app, user2.User.Email)
+		VerifiedHeader := CreateTokenHeader(t, app, user2.User.Email)
 		resp := api.Put("/teams/"+team.Team.ID.String(), VerifiedHeader, &apis.UpdateTeamInput{
 			TeamID: team.Team.ID.String(),
 			Body: apis.UpdateTeamDto{

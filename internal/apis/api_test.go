@@ -27,7 +27,7 @@ import (
 	"github.com/tkahng/playground/internal/tools/types"
 )
 
-func createTokenHeader(t testing.TB, app core.App, email string) string {
+func CreateTokenHeader(t testing.TB, app core.App, email string) string {
 	t.Helper()
 	ctx := context.Background()
 	tokensVerifiedTokens, err := app.Auth().GenerateAuthTokens(ctx, email)
@@ -37,7 +37,7 @@ func createTokenHeader(t testing.TB, app core.App, email string) string {
 	VerifiedHeader := fmt.Sprintf("Authorization: Bearer %s", tokensVerifiedTokens.Tokens.AccessToken)
 	return VerifiedHeader
 }
-func createAccessHeaderAndRefreshToken(t testing.TB, app core.App, email string) (header string, refreshToken string) {
+func CreateAccessHeaderAndRefreshToken(t testing.TB, app core.App, email string) (header string, refreshToken string) {
 	t.Helper()
 	ctx := context.Background()
 	tokensVerifiedTokens, err := app.Auth().GenerateAuthTokens(ctx, email)

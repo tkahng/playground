@@ -28,7 +28,7 @@ func TestApi_AdminUserAccounts(t *testing.T) {
 			UserWithProvider(models.ProvidersApple),
 			UserWithProviderType(models.ProviderTypeOAuth),
 		)
-		header := createTokenHeader(t, testApi.App, adminUser.User.Email)
+		header := CreateTokenHeader(t, testApi.App, adminUser.User.Email)
 		_ = CreateUserWithOptions(
 			t,
 			testApi.App,

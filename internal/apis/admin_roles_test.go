@@ -47,7 +47,7 @@ func TestApi_AdminRolesList(t *testing.T) {
 			UserWithProvider(models.ProvidersCredentials),
 			UserWithProviderType(models.ProviderTypeCredentials),
 		)
-		header := createTokenHeader(t, testApi.App, adminUser.User.Email)
+		header := CreateTokenHeader(t, testApi.App, adminUser.User.Email)
 		tests := []ApiScenario{
 			{
 				Name:           "admin roles list get by user_id, pro and basic, reversed",
