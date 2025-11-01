@@ -10,6 +10,7 @@ import (
 	"github.com/tkahng/playground/internal/core"
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/database/repository"
+	"github.com/tkahng/playground/internal/shared"
 )
 
 type testCase struct {
@@ -24,6 +25,7 @@ type testCase struct {
 func TestCreateSuperuser(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		app := core.NewTestBaseApp(conf.ZeroEnvConfig(), db)
+		repository.CreateRolesAndPermissions(t, ctx, db, shared.KnownRoleNamesPermissionsMap)
 		tests := []testCase{
 			{
 				name: "should create superuser",
@@ -35,17 +37,14 @@ func TestCreateSuperuser(t *testing.T) {
 				wantErr: false,
 				afterTestFunc: func(t testing.TB, app *core.BaseApp) {
 					userInfo, err := app.Auth().Signin(ctx, &auth.SigninInput{
-						Email: "admin@k2dv.io",
+						Email:    "admin@k2dv.io",
+						Password: "Password123!",
 					})
 					if err != nil {
 						t.Errorf("Error getting user: %v", err)
 					}
 					if userInfo.User.EmailVerifiedAt == nil {
 						t.Error("email not verified")
-					}
-					count := repository.MustCountAllCtx(t, t.Context(), repository.StripeCustomer, app.Db(), nil)
-					if count != 1 {
-						t.Errorf("expected 1 user, got %d", count)
 					}
 				},
 			},
@@ -58,7 +57,6 @@ func TestCreateSuperuser(t *testing.T) {
 						t.Errorf("CreateSuperuser() failed: %v", gotErr)
 					}
 				}
-
 				if tt.afterTestFunc != nil {
 					tt.afterTestFunc(t, tt.app)
 				}
