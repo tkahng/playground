@@ -46,6 +46,10 @@ func TestCreateSuperuser(t *testing.T) {
 					if userInfo.User.EmailVerifiedAt == nil {
 						t.Error("email not verified")
 					}
+					count := repository.MustCountAllCtx(t, ctx, repository.StripeCustomer, app.Db(), nil)
+					if count != 1 {
+						t.Errorf("expected 1 stripe customer, got %d", count)
+					}
 				},
 			},
 		}
