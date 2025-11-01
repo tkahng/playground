@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/tkahng/playground/internal/apis"
+	"github.com/tkahng/playground/internal/core"
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/database/repository"
 	"github.com/tkahng/playground/internal/models"
@@ -38,7 +39,7 @@ func TestTeamSlug(t *testing.T) {
 		api := testApi.TestApi
 		user := CreateUserWithOptions(t, testApi.App, UserWithVerified(time.Now()))
 		_ = CreateTeamAndMemberWithOptions(t, testApi.App, &user.User, TeamWithName("public"))
-		tokensVerifiedTokens := createTokenHeader(t, testApi.App, user.User.Email)
+		tokensVerifiedTokens := CreateTokenHeader(t, testApi.App, user.User.Email)
 
 		resp := api.Post("/teams/check-slug", tokensVerifiedTokens, struct {
 			Slug string `json:"slug" required:"true"`
@@ -75,7 +76,7 @@ func TestGetTeam_invalidID(t *testing.T) {
 		api := testApi.TestApi
 		user := CreateUserWithOptions(t, testApi.App, UserWithVerified(time.Now()))
 		teamIdString := uuid.NewString()
-		tokensVerifiedTokens := createTokenHeader(t, testApi.App, user.User.Email)
+		tokensVerifiedTokens := CreateTokenHeader(t, testApi.App, user.User.Email)
 
 		resp := api.Get("/teams/"+teamIdString+"23", tokensVerifiedTokens)
 		if resp.Code == 200 {
@@ -118,7 +119,7 @@ func TestCreateTeam_Failed(t *testing.T) {
 	t.Run("failed: unknown error during db customer creation", func(t *testing.T) {
 		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 			appApi := SetupApi(t, ctx, db)
-			adapter := ExtractAdapterDecorator(t, appApi.App)
+			adapter := core.ExtractAdapterDecorator(t, appApi.App)
 			var customerStore *stores.CustomerStoreDecorator
 			if m, ok := adapter.Customer().(*stores.CustomerStoreDecorator); ok {
 				customerStore = m
@@ -238,7 +239,7 @@ func TestUpdateTeam_failedNotOwner(t *testing.T) {
 			TeamWithBilling(false),
 		)
 		// create
-		VerifiedHeader := createTokenHeader(t, app, user2.User.Email)
+		VerifiedHeader := CreateTokenHeader(t, app, user2.User.Email)
 		resp := api.Put("/teams/"+team.Team.ID.String(), VerifiedHeader, &apis.UpdateTeamInput{
 			TeamID: team.Team.ID.String(),
 			Body: apis.UpdateTeamDto{

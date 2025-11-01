@@ -21,16 +21,13 @@ import (
 	"github.com/tkahng/playground/internal/conf"
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/models"
-	"github.com/tkahng/playground/internal/stores"
-
 	"github.com/tkahng/playground/internal/services"
 
 	"github.com/tkahng/playground/internal/core"
-	"github.com/tkahng/playground/internal/tools/mailer"
 	"github.com/tkahng/playground/internal/tools/types"
 )
 
-func createTokenHeader(t testing.TB, app core.App, email string) string {
+func CreateTokenHeader(t testing.TB, app core.App, email string) string {
 	t.Helper()
 	ctx := context.Background()
 	tokensVerifiedTokens, err := app.Auth().GenerateAuthTokens(ctx, email)
@@ -40,7 +37,7 @@ func createTokenHeader(t testing.TB, app core.App, email string) string {
 	VerifiedHeader := fmt.Sprintf("Authorization: Bearer %s", tokensVerifiedTokens.Tokens.AccessToken)
 	return VerifiedHeader
 }
-func createAccessHeaderAndRefreshToken(t testing.TB, app core.App, email string) (header string, refreshToken string) {
+func CreateAccessHeaderAndRefreshToken(t testing.TB, app core.App, email string) (header string, refreshToken string) {
 	t.Helper()
 	ctx := context.Background()
 	tokensVerifiedTokens, err := app.Auth().GenerateAuthTokens(ctx, email)
@@ -257,35 +254,6 @@ func CreateUserWithOptions(t testing.TB, app core.App, options ...UserOptionFunc
 		User: *user,
 	}
 
-}
-
-func ExtractTestMailer(t testing.TB, testApi core.App) *mailer.TestMailer {
-	var testMailer *mailer.TestMailer
-	if m, ok := testApi.Mailer().(*mailer.TestMailer); ok {
-		testMailer = m
-	} else {
-		t.Fatal("mailer is not a TestMailer")
-	}
-	return testMailer
-}
-func ExtractTestPaymentClient(t testing.TB, app core.App) *services.MockPaymentClient {
-	var paymenClient *services.MockPaymentClient
-	if m, ok := app.PaymentClient().(*services.MockPaymentClient); ok {
-		paymenClient = m
-	} else {
-		t.Fatal("mailer is not a TestMailer")
-	}
-	return paymenClient
-}
-
-func ExtractAdapterDecorator(t testing.TB, app core.App) *stores.StorageAdapterDecorator {
-	var adapter *stores.StorageAdapterDecorator
-	if m, ok := app.Adapter().(*stores.StorageAdapterDecorator); ok {
-		adapter = m
-	} else {
-		t.Fatal("mailer is not a TestMailer")
-	}
-	return adapter
 }
 
 type TestApi struct {

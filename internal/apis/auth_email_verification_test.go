@@ -27,7 +27,7 @@ func TestApi_RequestVerification(t *testing.T) {
 	test.SkipIfShort(t)
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
-		testMailer := ExtractTestMailer(t, testApi.App)
+		testMailer := core.ExtractTestMailer(t, testApi.App)
 
 		tests := []ApiScenario{
 			{
@@ -46,7 +46,7 @@ func TestApi_RequestVerification(t *testing.T) {
 						UserWithEmail("test2@example.com"),
 						UserWithVerified(time.Now()),
 					)
-					header := createTokenHeader(t, testApi.App, userInfo.User.Email)
+					header := CreateTokenHeader(t, testApi.App, userInfo.User.Email)
 					scenario.Headers = append(scenario.Headers, header)
 				},
 				ExpectedContent: []string{
@@ -68,7 +68,7 @@ func TestApi_RequestVerification(t *testing.T) {
 						UserWithPassword("Password123!"),
 						UserWithEmail("test1@example.com"),
 					)
-					header := createTokenHeader(t, testApi.App, userInfo.User.Email)
+					header := CreateTokenHeader(t, testApi.App, userInfo.User.Email)
 					scenario.Headers = append(scenario.Headers, header)
 
 				},
@@ -120,7 +120,7 @@ func TestApi_VerifyEmail(t *testing.T) {
 				if err := app.JobManager().PollOnce(context.Background()); err != nil {
 					t.Fatalf("Error polling job manager: %v", err)
 				}
-				testMailer := ExtractTestMailer(t, app)
+				testMailer := core.ExtractTestMailer(t, app)
 				var message *mailer.Message
 
 				if len(testMailer.Messages) > 0 {
@@ -135,7 +135,7 @@ func TestApi_VerifyEmail(t *testing.T) {
 				if token == "" {
 					t.Fatalf("No token found in email. Body: %s", message.Body)
 				}
-				header := createTokenHeader(t, app, userInfo.User.Email)
+				header := CreateTokenHeader(t, app, userInfo.User.Email)
 				scenario.Headers = append(scenario.Headers, header)
 				dto := apis.EmailVerificationPostInput{
 					Token: token,
@@ -169,7 +169,7 @@ func TestApi_VerifyEmail(t *testing.T) {
 			URL:            "/auth/confirm-verification",
 			ExpectedStatus: http.StatusNoContent,
 			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
-				testMailer := ExtractTestMailer(t, app)
+				testMailer := core.ExtractTestMailer(t, app)
 				userInfo, err := app.Auth().Signup(t.Context(), &auth.SignupInput{
 					Email:    "test1@example.com",
 					Password: "Password123!",
@@ -193,7 +193,7 @@ func TestApi_VerifyEmail(t *testing.T) {
 				if token == "" {
 					t.Fatalf("No token found in email. Body: %s", message.Body)
 				}
-				header := createTokenHeader(t, app, userInfo.User.Email)
+				header := CreateTokenHeader(t, app, userInfo.User.Email)
 				scenario.Headers = append(scenario.Headers, header)
 				dto := apis.EmailVerificationPostInput{
 					Token: token,

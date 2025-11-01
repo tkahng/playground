@@ -32,7 +32,7 @@ func TestApi_AdminPermissionsList(t *testing.T) {
 			UserWithProviderType(models.ProviderTypeCredentials),
 		)
 
-		header := createTokenHeader(t, testApi.App, adminUser.User.Email)
+		header := CreateTokenHeader(t, testApi.App, adminUser.User.Email)
 		tests := []ApiScenario{
 			{
 				Name:           "admin permission list get by basic role id reversed",

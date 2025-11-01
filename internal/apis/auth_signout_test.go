@@ -32,7 +32,7 @@ func TestApi_Signout(t *testing.T) {
 				},
 				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
 					user := CreateUserWithOptions(t, app)
-					tokenHeader, refreshToken := createAccessHeaderAndRefreshToken(t, app, user.User.Email)
+					tokenHeader, refreshToken := CreateAccessHeaderAndRefreshToken(t, app, user.User.Email)
 					dto := apis.SignoutDto{
 						RefreshToken: refreshToken,
 					}
