@@ -17,6 +17,7 @@ import (
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/stores"
 	"github.com/tkahng/playground/internal/test"
+	"github.com/tkahng/playground/internal/tools/utils"
 )
 
 func TestGetGreeting(t *testing.T) {
@@ -126,10 +127,10 @@ func TestCreateTeam_Failed(t *testing.T) {
 			} else {
 				t.Fatal("mailer is not a TestMailer")
 			}
+			user := core.CreateUserWithOptions(t, appApi.App, core.UserWithVerified(time.Now()))
 			customerStore.CreateCustomerFunc = func(ctx context.Context, customer *models.StripeCustomer) (*models.StripeCustomer, error) {
 				return nil, errors.New("unknown error")
 			}
-			user := core.CreateUserWithOptions(t, appApi.App, core.UserWithVerified(time.Now()))
 			tokensVerifiedTokens, err := appApi.App.Auth().GenerateAuthTokens(ctx, user.User.Email)
 			if err != nil {
 				t.Errorf("Error creating auth tokens: %v", err)
@@ -146,7 +147,7 @@ func TestCreateTeam_Failed(t *testing.T) {
 			teamCount := repository.MustCountAllCtx(t, ctx, repository.Team, db, nil)
 			assert.Equal(t, 0, int(teamCount))
 			customerCount := repository.MustCountAllCtx(t, ctx, repository.StripeCustomer, db, nil)
-			assert.Equal(t, 0, int(customerCount))
+			assert.Equal(t, 1, int(customerCount))
 			teamMembers := repository.MustFindWithOptionsCtx(t, ctx, repository.TeamMember, db)
 			assert.Equal(t, 0, len(teamMembers))
 		})
@@ -197,10 +198,14 @@ func TestCreateTeam_Success(t *testing.T) {
 			if resp.Code != 200 {
 				t.Errorf("Api.GetStripeSubscriptions() = %v, want %v", resp.Code, 200)
 			}
-			teamCount := repository.MustCountAllCtx(t, ctx, repository.Team, db, nil)
-			assert.Equal(t, 1, int(teamCount))
-			customerCount := repository.MustCountAllCtx(t, ctx, repository.StripeCustomer, db, nil)
-			assert.Equal(t, 1, int(customerCount))
+			teamRes, err := utils.UnmarshalJSON[apis.Team](resp.Body.Bytes())
+			assert.NoError(t, err)
+
+			team := repository.MustFindOneCtx(t, ctx, repository.Team, db, nil)
+			assert.NotNil(t, team)
+			customer, customerErr := appApi.App.Payment().FindCustomerByTeamId(ctx, teamRes.ID)
+			assert.NoError(t, customerErr)
+			assert.NotNil(t, customer)
 			teamMembers := repository.MustFindWithOptionsCtx(t, ctx, repository.TeamMember, db)
 			assert.Equal(t, 1, len(teamMembers))
 			assert.Equal(t, models.TeamMemberRoleOwner, teamMembers[0].Role)

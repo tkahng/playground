@@ -13,6 +13,7 @@ import (
 	"github.com/tkahng/playground/internal/stores"
 	"github.com/tkahng/playground/internal/tools/mailer"
 	"github.com/tkahng/playground/internal/tools/security"
+	"github.com/tkahng/playground/internal/tools/types"
 	"github.com/tkahng/playground/internal/workers"
 	"golang.org/x/oauth2"
 )
@@ -140,7 +141,12 @@ func (a *AuthServiceImpl) OAuth2Signin(ctx context.Context, params *OAuth2Signin
 			newUser = existingUser
 		}
 		if resetPassword {
-			err := a.randomizeAccountPassword(txCtx, newUser)
+			newUser.EmailVerifiedAt = types.Pointer(time.Now())
+			err := a.adapter.User().UpdateUser(txCtx, newUser)
+			if err != nil {
+				return err
+			}
+			err = a.randomizeAccountPassword(txCtx, newUser)
 			if err != nil {
 				return err
 			}
@@ -148,8 +154,8 @@ func (a *AuthServiceImpl) OAuth2Signin(ctx context.Context, params *OAuth2Signin
 		// create oauth account
 		_, err := a.adapter.UserAccount().CreateUserAccount(txCtx, &models.UserAccount{
 			UserID:            newUser.ID,
-			Provider:          models.ProvidersCredentials,
-			ProviderAccountID: newUser.ID.String(),
+			Provider:          params.Provider,
+			ProviderAccountID: params.ProviderAccountID,
 			Type:              models.ProviderTypeOAuth,
 			RefreshToken:      params.RefreshToken,
 			AccessToken:       params.AccessToken,

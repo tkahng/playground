@@ -161,6 +161,12 @@ func UserWithProviderType(providerType models.ProviderTypes) UserOptionFunc {
 func UserWithProvider(provider models.Providers) UserOptionFunc {
 	return func(opt *CreateUserOption) {
 		opt.account.Provider = provider
+		if provider == models.ProvidersCredentials {
+			opt.account.Type = models.ProviderTypeCredentials
+		} else {
+			opt.account.Type = models.ProviderTypeOAuth
+			opt.user.EmailVerifiedAt = types.Pointer(time.Now())
+		}
 	}
 }
 func UserWithName(name string) UserOptionFunc {
@@ -179,7 +185,11 @@ func UserWithPassword(password string) UserOptionFunc {
 		opt.account.Password = &hp
 	}
 }
-
+func UserWithVerifiedNow() UserOptionFunc {
+	return func(opt *CreateUserOption) {
+		opt.user.EmailVerifiedAt = types.Pointer(time.Now())
+	}
+}
 func UserWithVerified(emailVerifiedAt time.Time) UserOptionFunc {
 	return func(opt *CreateUserOption) {
 		opt.user.EmailVerifiedAt = &emailVerifiedAt
@@ -266,7 +276,12 @@ func CreateUserWithOptions(t testing.TB, app App, options ...UserOptionFunc) *mo
 			}
 		}
 	}
-
+	if opts.user.EmailVerifiedAt != nil {
+		_, err := app.Payment().CreateUserCustomer(ctx, user)
+		if err != nil {
+			t.Fatalf("CreateUserCustomer() error = %v", err)
+		}
+	}
 	return &models.UserInfo{
 		User: *user,
 	}

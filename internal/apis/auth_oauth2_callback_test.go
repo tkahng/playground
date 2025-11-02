@@ -3,6 +3,7 @@ package apis_test
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 	"time"
 
@@ -126,4 +127,60 @@ func TestOAuth2Signin_Fail_unknown_error_during_customer_creation_rollback_every
 			}
 		})
 	})
+}
+
+func TestOAuth2Signin_Success_Existing_Credential_Unverified(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		app := core.NewTestBaseApp(conf.ZeroEnvConfig(), db)
+		mailer := core.ExtractTestMailer(t, app)
+		existingUser := core.CreateUserWithOptions(
+			t,
+			app,
+			core.UserWithPassword("password"),
+			core.UserWithProvider(models.ProvidersCredentials),
+		)
+		param := &auth.OAuth2SigninInput{
+			Email:             existingUser.User.Email,
+			EmailVerifiedAt:   types.Pointer(time.Now()),
+			Provider:          models.ProvidersApple,
+			ProviderAccountID: "provider_account_id",
+			AccessToken:       types.Pointer("access_token"),
+			RefreshToken:      types.Pointer("refresh_token"),
+			RedirectTo:        "",
+			Expiry:            time.Now(),
+		}
+		_, gotErr := apis.OAuth2Signin(ctx, app, param)
+		if gotErr != nil {
+			t.Errorf("AuthServiceImpl.OAuth2Signin() error = %v", gotErr)
+		}
+		pollErr := app.JobManager().PollOnce(ctx)
+		if pollErr != nil {
+			t.Errorf("AuthServiceImpl.OAuth2Signin() poll error = %v", pollErr)
+		}
+		user := repository.MustFindOneCtx(t, ctx, repository.User, db, nil)
+		if user == nil {
+			t.Errorf("AuthServiceImpl.OAuth2Signin() user = %v", user)
+		}
+		if user.EmailVerifiedAt == nil {
+			t.Errorf("Expected emailVerifiedAt to not be nil")
+		}
+		customer := repository.MustFindOneCtx(t, ctx, repository.StripeCustomer, db, nil)
+		if customer == nil {
+			t.Errorf("AuthServiceImpl.OAuth2Signin() customer = %v", customer)
+		}
+		if customer.Email != existingUser.User.Email {
+			t.Errorf("AuthServiceImpl.OAuth2Signin() customer.Email = %v", customer.Email)
+		}
+		if customer.UserID == nil {
+			t.Errorf("AuthServiceImpl.OAuth2Signin() customer.userId = %v", customer.UserID)
+		}
+		if len(mailer.Messages) != 1 {
+			t.Errorf("Expected 1 email to be sent, got %d", len(mailer.Messages))
+		}
+		mail := mailer.Messages[0]
+		if !strings.Contains(mail.Body, "Reset password") {
+			t.Errorf("Expected reset password email to be sent, got %s", mail.Body)
+		}
+	})
+
 }
