@@ -111,6 +111,7 @@ var (
 var mockPaymentErr = errors.New("this is a test payment client")
 
 type MockPaymentClient struct {
+	subscriptionItems                 []*stripe.SubscriptionItem
 	CustomerByEmail                   map[string]*stripe.Customer
 	Customers                         []*stripe.Customer
 	ConfigFunc                        func() *conf.StripeConfig
@@ -134,7 +135,15 @@ func (t *MockPaymentClient) GetCustomerByFunc(fn func(*stripe.Customer) bool) *s
 		}
 	}
 	return nil
+}
 
+func (t *MockPaymentClient) GetUpdateSubscriptionInput(fn func(*stripe.SubscriptionItem) bool) *stripe.SubscriptionItem {
+	for _, input := range t.subscriptionItems {
+		if fn(input) {
+			return input
+		}
+	}
+	return nil
 }
 
 func NewMockPaymentClient() *MockPaymentClient {
@@ -258,7 +267,16 @@ func (t *MockPaymentClient) UpdateItemQuantity(itemId string, priceId string, co
 	if t.UpdateItemQuantityFunc != nil {
 		return t.UpdateItemQuantityFunc(itemId, priceId, count)
 	}
-	return nil, mockPaymentErr
+	item := &stripe.SubscriptionItem{
+		ID: itemId,
+		Price: &stripe.Price{
+			ID: priceId,
+		},
+		Quantity: count,
+	}
+
+	t.subscriptionItems = append(t.subscriptionItems, item)
+	return item, nil
 }
 
 var _ PaymentClient = &MockPaymentClient{}
