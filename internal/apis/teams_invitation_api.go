@@ -14,7 +14,7 @@ import (
 
 type InviteTeamMemberDto struct {
 	Email string `json:"email" required:"true"`
-	Role  string `json:"role" required:"true"`
+	Role  string `json:"role" required:"true" enum:"owner,member,guest"`
 }
 type InviteTeamMemberInput struct {
 	TeamID string              `path:"team-id" required:"true" format:"uuid"`
