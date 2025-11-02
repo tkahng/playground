@@ -21,6 +21,8 @@ type TeamInfo struct {
 	Member TeamMember `json:"member"`
 }
 
+// TeamMemberRole
+// enum:"owner,member,guest"
 type TeamMemberRole string
 
 const (
