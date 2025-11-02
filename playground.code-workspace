@@ -161,6 +161,7 @@
     "go.testExplorer.showDynamicSubtestsInEditor": true,
     "testing.followRunningTest": true,
     "testing.showAllMessages": true,
+    "go.testFlags": ["-race"],
     "inlineSQL.enableDBIntegration": true,
     "inlineSQL.lintSQLFiles": false
   }
