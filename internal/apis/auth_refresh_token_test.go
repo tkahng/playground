@@ -20,7 +20,7 @@ func TestApi_RefreshToken(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
 
-		userInfo := CreateUserWithOptions(t, testApi.App, UserWithPassword("Password123!"))
+		userInfo := core.CreateUserWithOptions(t, testApi.App, core.UserWithPassword("Password123!"))
 
 		tests := []ApiScenario{
 			{

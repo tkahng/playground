@@ -27,8 +27,8 @@ func TestApi_Me(t *testing.T) {
 					return testApi
 				},
 				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
-					user := CreateUserWithOptions(t, app, UserWithEmail("me@me.com"))
-					authToken := CreateTokenHeader(t, app, user.User.Email)
+					user := core.CreateUserWithOptions(t, app, core.UserWithEmail("me@me.com"))
+					authToken := core.CreateTokenHeader(t, app, user.User.Email)
 					scenario.Headers = []string{authToken}
 				},
 				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {

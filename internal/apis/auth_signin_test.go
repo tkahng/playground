@@ -30,11 +30,11 @@ func TestApi_SignIn(t *testing.T) {
 					return testApi
 				},
 				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
-					_ = CreateUserWithOptions(
+					_ = core.CreateUserWithOptions(
 						t,
 						testApi.App,
-						UserWithPassword("Password123!"),
-						UserWithEmail("test@example.com"),
+						core.UserWithPassword("Password123!"),
+						core.UserWithEmail("test@example.com"),
 					)
 					dto := apis.SigninDto{
 						Email:    "test@example.com",

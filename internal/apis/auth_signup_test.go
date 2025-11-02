@@ -92,11 +92,11 @@ func TestApi_SignUp_ExistingUsers(t *testing.T) {
 					return testApi
 				},
 				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
-					existingUser := CreateUserWithOptions(
+					existingUser := core.CreateUserWithOptions(
 						t,
 						testApi.App,
-						UserWithPassword("Password123!"),
-						UserWithEmail("existing1@example.com"),
+						core.UserWithPassword("Password123!"),
+						core.UserWithEmail("existing1@example.com"),
 					)
 					assert.NotNil(t, existingUser, "User should not be nil")
 					dto := apis.SignupInput{

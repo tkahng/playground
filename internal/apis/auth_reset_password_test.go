@@ -22,7 +22,7 @@ func TestApi_ResetPassword(t *testing.T) {
 	test.SkipIfShort(t)
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
-		userInfo := CreateUserWithOptions(t, testApi.App, UserWithPassword("Password123!"))
+		userInfo := core.CreateUserWithOptions(t, testApi.App, core.UserWithPassword("Password123!"))
 		var testMailer *mailer.TestMailer
 		if m, ok := testApi.App.Mailer().(*mailer.TestMailer); ok {
 			testMailer = m

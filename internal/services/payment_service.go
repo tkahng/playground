@@ -130,6 +130,13 @@ func (s *StripeService) UpsertSubscriptionFromStripe(ctx context.Context, sub *s
 
 // CreateTeamCustomer implements PaymentService.
 func (srv *StripeService) CreateTeamCustomer(ctx context.Context, team *models.Team, user *models.User) (*models.StripeCustomer, error) {
+	existingCustomer, err := srv.FindCustomerByTeamId(ctx, team.ID)
+	if err != nil {
+		return nil, err
+	}
+	if existingCustomer != nil {
+		return nil, errors.New("customer already exists in db for team")
+	}
 	customer, err := srv.client.CreateCustomer(user.Email, &team.Name, &map[string]string{
 		"team_id":       team.ID.String(),
 		"customer_type": string(models.StripeCustomerTypeTeam),
@@ -152,6 +159,13 @@ func (srv *StripeService) CreateTeamCustomer(ctx context.Context, team *models.T
 
 // CreateUserCustomer implements PaymentService.
 func (srv *StripeService) CreateUserCustomer(ctx context.Context, user *models.User) (*models.StripeCustomer, error) {
+	existingCustomer, err := srv.FindCustomerByUserId(ctx, user.ID)
+	if err != nil {
+		return nil, err
+	}
+	if existingCustomer != nil {
+		return nil, errors.New("customer already exists in db for user")
+	}
 	customer, err := srv.client.CreateCustomer(user.Email, user.Name, &map[string]string{
 		"user_id":       user.ID.String(),
 		"customer_type": string(models.StripeCustomerTypeUser),
