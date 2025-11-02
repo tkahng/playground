@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stripe/stripe-go/v82"
 	"github.com/tkahng/playground/internal/apis"
 	"github.com/tkahng/playground/internal/core"
 	"github.com/tkahng/playground/internal/database"
@@ -114,6 +115,9 @@ func TestApi_AcceptInvitation(t *testing.T) {
 				if err := app.Payment().FindAndUpsertAllProducts(ctx); err != nil {
 					t.Fatal(err)
 				}
+				if err := app.Payment().FindAndUpsertAllPrices(ctx); err != nil {
+					t.Fatal(err)
+				}
 				// init team
 				ownerUserInfo := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
 				teamInfo := core.CreateTeamAndMemberWithOptions(t, app, &ownerUserInfo.User)
@@ -130,7 +134,7 @@ func TestApi_AcceptInvitation(t *testing.T) {
 					CancelAtPeriodEnd:  false,
 					Created:            time.Now(),
 					CurrentPeriodStart: time.Now(),
-					CurrentPeriodEnd:   time.Now(),
+					CurrentPeriodEnd:   time.Now().UTC().Add(30 * 24 * time.Hour),
 				}
 				_ = repository.MustCreateOneCtx(t, ctx, repository.StripeSubscription, app.Db(), sub)
 				// send invitation and get token
@@ -163,10 +167,16 @@ func TestApi_AcceptInvitation(t *testing.T) {
 					err := app.JobManager().PollOnce(ctx)
 					assert.NoError(t, err)
 				}
-				// check paymentclient updated item quantity
-
-				// check new team added notificiation
-
+				paymentClient := core.ExtractTestPaymentClient(t, app)
+				item := paymentClient.GetUpdateSubscriptionInput(func(si *stripe.SubscriptionItem) bool {
+					if si.ID == "item_1" {
+						return true
+					}
+					return false
+				})
+				assert.NotNil(t, item)
+				assert.Equal(t, int64(2), item.Quantity)
+				assert.Equal(t, "price_pro_month_usd_5000", item.Price.ID)
 			},
 		},
 		// {
