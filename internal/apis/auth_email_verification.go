@@ -95,6 +95,9 @@ func (api *Api) VerifyEmail(ctx context.Context, input *struct{ Body EmailVerifi
 			return huma.Error404NotFound("userInfo not found")
 		}
 		user := &userInfo.User
+		if user.EmailVerifiedAt != nil {
+			return huma.Error409Conflict("Email already verified")
+		}
 		// update user's email_verified_at if it has not been set
 		user.EmailVerifiedAt = types.Pointer(time.Now())
 		err = api.App().Adapter().User().UpdateUser(txCtx, user)

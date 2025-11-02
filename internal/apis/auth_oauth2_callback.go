@@ -9,6 +9,7 @@ import (
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/tkahng/playground/internal/auth"
+	"github.com/tkahng/playground/internal/core"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/tools/types"
 )
@@ -152,7 +153,7 @@ func OAuth2Callback(ctx context.Context, api *Api, input *OAuth2CallbackInput) (
 		AccessToken:       &authUser.AccessToken,
 		RefreshToken:      &authUser.RefreshToken,
 	}
-	user, err := action.OAuth2Signin(ctx, params)
+	user, err := OAuth2Signin(ctx, api.App(), params)
 	if err != nil {
 		return nil, fmt.Errorf("error at Oatuh2Callback: %w", err)
 
@@ -161,4 +162,30 @@ func OAuth2Callback(ctx context.Context, api *Api, input *OAuth2CallbackInput) (
 		ApiUserInfoTokens: *ToApiUserInfoTokens(user),
 		RedirectTo:        parsedState.RedirectTo,
 	}, nil
+}
+
+func OAuth2Signin(ctx context.Context, app core.App, input *auth.OAuth2SigninInput) (*models.UserInfoTokens, error) {
+	var output *models.UserInfoTokens
+	txErr := app.Adapter().RunInTxCtx(ctx, func(txCtx context.Context) error {
+		user, err := app.Auth().OAuth2Signin(txCtx, input)
+		if err != nil {
+			return err
+		}
+		existingCustomer, err := app.Payment().FindCustomerByUserId(txCtx, user.User.ID)
+		if err != nil {
+			return err
+		}
+		if existingCustomer == nil {
+			_, err = app.Payment().CreateUserCustomer(txCtx, &user.User)
+			if err != nil {
+				return err
+			}
+		}
+		output = user
+		return nil
+	})
+	if txErr != nil {
+		return nil, txErr
+	}
+	return output, nil
 }
