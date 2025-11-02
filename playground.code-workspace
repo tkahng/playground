@@ -137,6 +137,8 @@
         "other": true,
         "comments": false
       }
-    }
+    },
+    "editor.stickyScroll.defaultModel": "indentationModel",
+    "workbench.settings.showAISearchToggle": false
   }
 }

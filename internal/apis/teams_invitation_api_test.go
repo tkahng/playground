@@ -253,3 +253,151 @@ func TestApi_AcceptInvitation(t *testing.T) {
 		})
 	}
 }
+func TestApi_RejectInvitation(t *testing.T) {
+	inviteeEmail := "VY7o1@example.com"
+	tests := []ApiScenario{
+		{
+			Name:           "success: decline invitation",
+			Method:         http.MethodPost,
+			URL:            "/team-invitations/decline",
+			ExpectedStatus: http.StatusNoContent,
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+				ctx := t.Context()
+				if err := app.Payment().FindAndUpsertAllProducts(ctx); err != nil {
+					t.Fatal(err)
+				}
+				if err := app.Payment().FindAndUpsertAllPrices(ctx); err != nil {
+					t.Fatal(err)
+				}
+				// init team
+				ownerUserInfo := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
+				teamInfo := core.CreateTeamAndMemberWithOptions(t, app, &ownerUserInfo.User)
+				teamCustomer, err := app.Payment().FindCustomerByTeamId(ctx, teamInfo.Team.ID)
+				assert.NoError(t, err)
+				sub := core.CreateStripeSubscriptionWithOptions(
+					t,
+					app,
+					teamCustomer.ID,
+					core.SubscriptionWithID("sub_1"),
+					core.SubscriptionWithItemID("item_1"),
+					core.SubscriptionWithPriceID("price_pro_month_usd_5000"),
+				)
+				scenario.Store.Set("subscription", sub)
+				// send invitation and get token
+				err = app.TeamInvitation().CreateInvitation(
+					ctx,
+					teamInfo.Team.ID,
+					teamInfo.User.ID,
+					inviteeEmail,
+					models.TeamMemberRoleMember,
+					true,
+				)
+				assert.NoError(t, err)
+				if err := app.JobManager().PollOnce(ctx); err != nil {
+					t.Fatal(err)
+				}
+				token := ExtractFistMessageTokenFromMailer(t, app)
+
+				// create invitee user
+				inviteeUserInfo := core.CreateUserWithOptions(t, app, core.UserWithEmail(inviteeEmail), core.UserWithVerifiedNow())
+				body := apis.CheckValidInvitationDto{
+					Token: token,
+				}
+				scenario.Body = JsonToReader(t, body)
+				header := core.CreateTokenHeader(t, app, inviteeUserInfo.User.Email)
+				scenario.Headers = append(scenario.Headers, header)
+			},
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+				ctx := t.Context()
+				for range 5 {
+					err := app.JobManager().PollOnce(ctx)
+					assert.NoError(t, err)
+				}
+				paymentClient := core.ExtractTestPaymentClient(t, app)
+				assert.Len(t, paymentClient.SubscriptionItems, 0)
+				count := repository.MustCountAllCtx(t, ctx, repository.TeamMember, app.Db(), nil)
+				assert.Equal(t, int64(1), count)
+				invitationCount := repository.MustFindOneCtx(t, ctx, repository.TeamInvitation, app.Db(), nil)
+				assert.Equal(t, models.TeamInvitationStatusDeclined, invitationCount.Status)
+
+			},
+		},
+		{
+			Name:           "fail: user mismatch",
+			Method:         http.MethodPost,
+			URL:            "/team-invitations/decline",
+			ExpectedStatus: http.StatusInternalServerError,
+			ExpectedContent: []string{
+				"user does not match invitation",
+			},
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+				ctx := t.Context()
+				if err := app.Payment().FindAndUpsertAllProducts(ctx); err != nil {
+					t.Fatal(err)
+				}
+				if err := app.Payment().FindAndUpsertAllPrices(ctx); err != nil {
+					t.Fatal(err)
+				}
+				// init team
+				ownerUserInfo := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
+				teamInfo := core.CreateTeamAndMemberWithOptions(t, app, &ownerUserInfo.User)
+				teamCustomer, err := app.Payment().FindCustomerByTeamId(ctx, teamInfo.Team.ID)
+				assert.NoError(t, err)
+				sub := core.CreateStripeSubscriptionWithOptions(
+					t,
+					app,
+					teamCustomer.ID,
+					core.SubscriptionWithID("sub_1"),
+					core.SubscriptionWithItemID("item_1"),
+					core.SubscriptionWithPriceID("price_pro_month_usd_5000"),
+				)
+				scenario.Store.Set("subscription", sub)
+				// send invitation and get token
+				err = app.TeamInvitation().CreateInvitation(
+					ctx,
+					teamInfo.Team.ID,
+					teamInfo.User.ID,
+					inviteeEmail,
+					models.TeamMemberRoleMember,
+					true,
+				)
+				assert.NoError(t, err)
+				if err := app.JobManager().PollOnce(ctx); err != nil {
+					t.Fatal(err)
+				}
+				token := ExtractFistMessageTokenFromMailer(t, app)
+
+				// create invitee user
+				_ = core.CreateUserWithOptions(t, app, core.UserWithEmail(inviteeEmail), core.UserWithVerifiedNow())
+				body := apis.CheckValidInvitationDto{
+					Token: token,
+				}
+				otherUserInfo := core.CreateUserWithOptions(t, app, core.UserWithEmail("other@example"), core.UserWithVerifiedNow())
+				scenario.Body = JsonToReader(t, body)
+				header := core.CreateTokenHeader(t, app, otherUserInfo.User.Email)
+				scenario.Headers = append(scenario.Headers, header)
+			},
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+				ctx := t.Context()
+				for range 5 {
+					err := app.JobManager().PollOnce(ctx)
+					assert.NoError(t, err)
+				}
+				paymentClient := core.ExtractTestPaymentClient(t, app)
+				assert.Len(t, paymentClient.SubscriptionItems, 0)
+				invitationCount := repository.MustFindOneCtx(t, ctx, repository.TeamInvitation, app.Db(), nil)
+				assert.Equal(t, models.TeamInvitationStatusPending, invitationCount.Status)
+			},
+		},
+	}
+	for _, tt := range tests {
+		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+			testApi := SetupApi(t, ctx, db)
+			tt.TestAppFactory = func(t testing.TB) *TestApi {
+				return testApi
+			}
+			tt.Store = store.New[string, any](nil)
+			tt.Test(t)
+		})
+	}
+}
