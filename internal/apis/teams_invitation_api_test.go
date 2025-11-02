@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/tkahng/playground/internal/apis"
@@ -110,13 +111,30 @@ func TestApi_AcceptInvitation(t *testing.T) {
 			ExpectedStatus: http.StatusNoContent,
 			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
 				ctx := t.Context()
-
+				if err := app.Payment().FindAndUpsertAllProducts(ctx); err != nil {
+					t.Fatal(err)
+				}
 				// init team
 				ownerUserInfo := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
 				teamInfo := core.CreateTeamAndMemberWithOptions(t, app, &ownerUserInfo.User)
-
+				teamCustomer, err := app.Payment().FindCustomerByTeamId(ctx, teamInfo.Team.ID)
+				assert.NoError(t, err)
+				sub := &models.StripeSubscription{
+					ID:                 "sub_1",
+					StripeCustomerID:   teamCustomer.ID,
+					Status:             models.StripeSubscriptionStatusActive,
+					Metadata:           map[string]string{},
+					ItemID:             "item_1",
+					PriceID:            "price_pro_month_usd_5000",
+					Quantity:           1,
+					CancelAtPeriodEnd:  false,
+					Created:            time.Now(),
+					CurrentPeriodStart: time.Now(),
+					CurrentPeriodEnd:   time.Now(),
+				}
+				_ = repository.MustCreateOneCtx(t, ctx, repository.StripeSubscription, app.Db(), sub)
 				// send invitation and get token
-				err := app.TeamInvitation().CreateInvitation(
+				err = app.TeamInvitation().CreateInvitation(
 					ctx,
 					teamInfo.Team.ID,
 					teamInfo.User.ID,
@@ -141,28 +159,14 @@ func TestApi_AcceptInvitation(t *testing.T) {
 			},
 			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
 				ctx := t.Context()
-				for range 2 {
+				for range 5 {
 					err := app.JobManager().PollOnce(ctx)
 					assert.NoError(t, err)
 				}
-				// mailer := core.ExtractTestMailer(t, app)
-				// assert.Len(t, mailer.Messages, 1)
-				// raw := html.UnescapeString(mailer.Messages[0].Body)
-				// fmt.Println(raw)
-				// stoken, err := test.GetLinkParam(raw, "token")
-				// assert.NoError(t, err)
-				// team := repository.MustFindOneCtx(t, ctx, repository.Team, app.Db(), nil)
-				// assert.NotNil(t, team)
-				// member := repository.MustFindOneCtx(t, ctx, repository.TeamMember, app.Db(), nil)
-				// assert.NotNil(t, member)
-				// invitation := repository.MustFindOneCtx(t, ctx, repository.TeamInvitation, app.Db(), nil)
-				// assert.NotNil(t, invitation)
-				// assert.Equal(t, invitation.Token, stoken)
-				// assert.Equal(t, invitation.Email, "VY7o1@example.com")
-				// assert.Equal(t, invitation.Status, models.TeamInvitationStatusPending)
-				// assert.Equal(t, invitation.Role, models.TeamMemberRoleMember)
-				// assert.Equal(t, invitation.TeamID, team.ID)
-				// assert.Equal(t, invitation.InviterMemberID, member.ID)
+				// check paymentclient updated item quantity
+
+				// check new team added notificiation
+
 			},
 		},
 		// {
