@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stripe/stripe-go/v82"
 	"github.com/tkahng/playground/internal/apis"
 	"github.com/tkahng/playground/internal/auth"
@@ -184,6 +185,50 @@ func TestOAuth2Signin_Success_Existing_Credential_Unverified(t *testing.T) {
 	})
 
 }
+func TestOAuth2Signin_Failed_Existing_Credential_Unverified_unknown_error(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		app := core.NewTestBaseApp(conf.ZeroEnvConfig(), db)
+		mailer := core.ExtractTestMailer(t, app)
+		paymentClient := core.ExtractTestPaymentClient(t, app)
+
+		existingUser := core.CreateUserWithOptions(
+			t,
+			app,
+			core.UserWithPassword("password"),
+			core.UserWithProvider(models.ProvidersCredentials),
+		)
+		param := &auth.OAuth2SigninInput{
+			Email:             existingUser.User.Email,
+			EmailVerifiedAt:   types.Pointer(time.Now()),
+			Provider:          models.ProvidersApple,
+			ProviderAccountID: "provider_account_id",
+			AccessToken:       types.Pointer("access_token"),
+			RefreshToken:      types.Pointer("refresh_token"),
+			RedirectTo:        "",
+			Expiry:            time.Now(),
+		}
+		paymentClient.CreateCustomerFunc = func(email string, name *string, metadata *map[string]string) (*stripe.Customer, error) {
+			return nil, errors.New("unknown error")
+		}
+		_, gotErr := apis.OAuth2Signin(ctx, app, param)
+		assert.Equal(t, gotErr.Error(), "unknown error")
+		pollErr := app.JobManager().PollOnce(ctx)
+		if pollErr != nil {
+			t.Errorf("AuthServiceImpl.OAuth2Signin() poll error = %v", pollErr)
+		}
+		user := repository.MustFindOneCtx(t, ctx, repository.User, db, nil)
+		if user == nil {
+			t.Errorf("AuthServiceImpl.OAuth2Signin() user = %v", user)
+		}
+		if user.EmailVerifiedAt != nil {
+			t.Errorf("Expected emailVerifiedAt to be nil")
+		}
+		customer := repository.MustFindOneCtx(t, ctx, repository.StripeCustomer, db, nil)
+		assert.Nil(t, customer)
+		assert.Empty(t, mailer.Messages)
+	})
+
+}
 func TestOAuth2Signin_Success_Existing_Credential_Verified(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		app := core.NewTestBaseApp(conf.ZeroEnvConfig(), db)
@@ -213,6 +258,7 @@ func TestOAuth2Signin_Success_Existing_Credential_Verified(t *testing.T) {
 		if pollErr != nil {
 			t.Errorf("AuthServiceImpl.OAuth2Signin() poll error = %v", pollErr)
 		}
+		// user
 		user := repository.MustFindOneCtx(t, ctx, repository.User, db, nil)
 		if user == nil {
 			t.Errorf("AuthServiceImpl.OAuth2Signin() user = %v", user)
@@ -220,6 +266,26 @@ func TestOAuth2Signin_Success_Existing_Credential_Verified(t *testing.T) {
 		if user.EmailVerifiedAt == nil {
 			t.Errorf("Expected emailVerifiedAt to not be nil")
 		}
+		// check accounts
+		accountCount := repository.MustCountAllCtx(t, ctx, repository.UserAccount, db, nil)
+		if accountCount != 2 {
+			t.Errorf("AuthServiceImpl.OAuth2Signin() customerCount = %v", accountCount)
+		}
+		oauth2Account := repository.MustFindOneCtx(t, ctx, repository.UserAccount, db, &map[string]any{
+			"user_id": map[string]any{
+				"_eq": user.ID,
+			},
+			"provider": map[string]any{
+				"_eq": models.ProvidersApple,
+			},
+		})
+		if oauth2Account == nil {
+			t.Errorf("AuthServiceImpl.OAuth2Signin() oauth2Account = %v", oauth2Account)
+		}
+		if oauth2Account.ProviderAccountID != param.ProviderAccountID {
+			t.Errorf("AuthServiceImpl.OAuth2Signin() oauth2Account.ProviderAccountID = %v", oauth2Account.ProviderAccountID)
+		}
+		// check customer
 		customerCount := repository.MustCountAllCtx(t, ctx, repository.StripeCustomer, db, nil)
 		if customerCount != 1 {
 			t.Errorf("AuthServiceImpl.OAuth2Signin() customerCount = %v", customerCount)
@@ -237,6 +303,7 @@ func TestOAuth2Signin_Success_Existing_Credential_Verified(t *testing.T) {
 		if len(mailer.Messages) != 0 {
 			t.Errorf("Expected 0 email to be sent, got %d", len(mailer.Messages))
 		}
+		// sign in
 		signInRes, signInErr := app.Auth().Signin(ctx, &auth.SigninInput{
 			Email:    user.Email,
 			Password: "password",
