@@ -15,9 +15,7 @@ import (
 
 func TestTeamService_AddMember_Success(t *testing.T) {
 	adapterDecorator := stores.NewAdapterDecorators()
-	service := &TeamServiceImpl{
-		adapter: adapterDecorator,
-	}
+	service := NewTeamService(adapterDecorator)
 
 	ctx := context.Background()
 	teamID := uuid.New()
@@ -43,9 +41,7 @@ func TestTeamService_AddMember_Success(t *testing.T) {
 
 func TestTeamService_AddMember_Error(t *testing.T) {
 	adapterDecorator := stores.NewAdapterDecorators()
-	service := &TeamServiceImpl{
-		adapter: adapterDecorator,
-	}
+	service := NewTeamService(adapterDecorator)
 
 	ctx := context.Background()
 	teamID := uuid.New()
@@ -64,9 +60,7 @@ func TestTeamService_AddMember_Error(t *testing.T) {
 }
 func TestTeamService_CreateTeam_Success(t *testing.T) {
 	adapterDecorator := stores.NewAdapterDecorators()
-	service := &TeamServiceImpl{
-		adapter: adapterDecorator,
-	}
+	service := NewTeamService(adapterDecorator)
 
 	ctx := context.Background()
 	name := "Test Team"
@@ -109,9 +103,7 @@ func TestTeamService_CreateTeam_Success(t *testing.T) {
 
 func TestTeamService_CreateTeam_SlugExists(t *testing.T) {
 	adapterDecorator := stores.NewAdapterDecorators()
-	service := &TeamServiceImpl{
-		adapter: adapterDecorator,
-	}
+	service := NewTeamService(adapterDecorator)
 
 	ctx := context.Background()
 	name := "Test Team"
@@ -133,9 +125,7 @@ func TestTeamService_CreateTeam_SlugExists(t *testing.T) {
 
 func TestTeamService_CreateTeam_CheckTeamSlugError(t *testing.T) {
 	adapterDecorator := stores.NewAdapterDecorators()
-	service := &TeamServiceImpl{
-		adapter: adapterDecorator,
-	}
+	service := NewTeamService(adapterDecorator)
 
 	ctx := context.Background()
 	name := "Test Team"
@@ -158,9 +148,7 @@ func TestTeamService_CreateTeam_CheckTeamSlugError(t *testing.T) {
 
 func TestTeamService_CreateTeam_CreateTeamWithOwnerMemberError(t *testing.T) {
 	adapterDecorator := stores.NewAdapterDecorators()
-	service := &TeamServiceImpl{
-		adapter: adapterDecorator,
-	}
+	service := NewTeamService(adapterDecorator)
 
 	ctx := context.Background()
 	name := "Test Team"
@@ -190,9 +178,7 @@ func TestTeamService_CreateTeam_CreateTeamWithOwnerMemberError(t *testing.T) {
 
 func TestTeamService_UpdateTeam_Success(t *testing.T) {
 	adapterDecorator := stores.NewAdapterDecorators()
-	service := &TeamServiceImpl{
-		adapter: adapterDecorator,
-	}
+	service := NewTeamService(adapterDecorator)
 
 	ctx := context.Background()
 	teamID := uuid.New()
@@ -212,9 +198,7 @@ func TestTeamService_UpdateTeam_Success(t *testing.T) {
 
 func TestTeamService_UpdateTeam_Error(t *testing.T) {
 	adapterDecorator := stores.NewAdapterDecorators()
-	service := &TeamServiceImpl{
-		adapter: adapterDecorator,
-	}
+	service := NewTeamService(adapterDecorator)
 
 	ctx := context.Background()
 	teamID := uuid.New()
@@ -234,9 +218,7 @@ func TestTeamService_UpdateTeam_Error(t *testing.T) {
 
 func TestTeamService_UpdateTeam_TeamNotFound(t *testing.T) {
 	adapterDecorator := stores.NewAdapterDecorators()
-	service := &TeamServiceImpl{
-		adapter: adapterDecorator,
-	}
+	service := NewTeamService(adapterDecorator)
 
 	ctx := context.Background()
 	teamID := uuid.New()
