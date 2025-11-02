@@ -107,17 +107,17 @@ func CreateTeamAndMemberWithOptions(t testing.TB, app App, user *models.User, op
 	if err != nil {
 		t.Fatalf("Error creating team: %v", err)
 	}
+	_, err = app.Payment().CreateTeamCustomer(ctx, team, user)
+	if err != nil {
+		t.Fatalf("Error creating team: %v", err)
+	}
 	member, err := app.Adapter().TeamMember().CreateTeamMember(ctx, team.ID, user.ID, option.role, option.billing)
 	if err != nil {
 		t.Fatalf("Error creating team member: %v", err)
 	}
 	return &models.TeamInfoModel{
-		Team: *team,
-		User: models.User{
-			ID:              user.ID,
-			Name:            user.Name,
-			EmailVerifiedAt: user.EmailVerifiedAt,
-		},
+		Team:   *team,
+		User:   *user,
 		Member: *member,
 	}
 }

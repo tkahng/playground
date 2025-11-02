@@ -32,7 +32,12 @@ func TestStripeService_CreateTeamCustomer(t *testing.T) {
 			result, err := service.CreateTeamCustomer(ctx, team1, user1)
 			// assert
 			assert.NoError(t, err)
-			if cus, ok := client.CustomerByEmail[user1.Email]; ok {
+			if cus := client.GetCustomerByFunc(func(c *stripe.Customer) bool {
+				if c.Email == user1.Email && c.Name == team1.Name {
+					return true
+				}
+				return false
+			}); cus != nil {
 				assert.Equal(t, cus.ID, result.ID, "customer id should be the same")
 				assert.Equal(t, &cus.Name, result.Name, "customer name should be the same")
 				assert.Equal(t, cus.Email, result.Email, "customer email should be the same")
