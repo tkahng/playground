@@ -1,4 +1,4 @@
-package services
+package services_test
 
 import (
 	"context"
@@ -8,14 +8,13 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/tkahng/playground/internal/models"
+	"github.com/tkahng/playground/internal/services"
 	"github.com/tkahng/playground/internal/stores"
 )
 
-// MockTeamStore implements TeamStore for testing
-
 func TestTeamService_AddMember_Success(t *testing.T) {
 	adapterDecorator := stores.NewAdapterDecorators()
-	service := NewTeamService(adapterDecorator)
+	service := services.NewTeamService(adapterDecorator)
 
 	ctx := context.Background()
 	teamID := uuid.New()
@@ -41,7 +40,7 @@ func TestTeamService_AddMember_Success(t *testing.T) {
 
 func TestTeamService_AddMember_Error(t *testing.T) {
 	adapterDecorator := stores.NewAdapterDecorators()
-	service := NewTeamService(adapterDecorator)
+	service := services.NewTeamService(adapterDecorator)
 
 	ctx := context.Background()
 	teamID := uuid.New()
@@ -60,7 +59,7 @@ func TestTeamService_AddMember_Error(t *testing.T) {
 }
 func TestTeamService_CreateTeam_Success(t *testing.T) {
 	adapterDecorator := stores.NewAdapterDecorators()
-	service := NewTeamService(adapterDecorator)
+	service := services.NewTeamService(adapterDecorator)
 
 	ctx := context.Background()
 	name := "Test Team"
@@ -103,7 +102,7 @@ func TestTeamService_CreateTeam_Success(t *testing.T) {
 
 func TestTeamService_CreateTeam_SlugExists(t *testing.T) {
 	adapterDecorator := stores.NewAdapterDecorators()
-	service := NewTeamService(adapterDecorator)
+	service := services.NewTeamService(adapterDecorator)
 
 	ctx := context.Background()
 	name := "Test Team"
@@ -125,7 +124,7 @@ func TestTeamService_CreateTeam_SlugExists(t *testing.T) {
 
 func TestTeamService_CreateTeam_CheckTeamSlugError(t *testing.T) {
 	adapterDecorator := stores.NewAdapterDecorators()
-	service := NewTeamService(adapterDecorator)
+	service := services.NewTeamService(adapterDecorator)
 
 	ctx := context.Background()
 	name := "Test Team"
@@ -148,7 +147,7 @@ func TestTeamService_CreateTeam_CheckTeamSlugError(t *testing.T) {
 
 func TestTeamService_CreateTeam_CreateTeamWithOwnerMemberError(t *testing.T) {
 	adapterDecorator := stores.NewAdapterDecorators()
-	service := NewTeamService(adapterDecorator)
+	service := services.NewTeamService(adapterDecorator)
 
 	ctx := context.Background()
 	name := "Test Team"
@@ -178,7 +177,7 @@ func TestTeamService_CreateTeam_CreateTeamWithOwnerMemberError(t *testing.T) {
 
 func TestTeamService_UpdateTeam_Success(t *testing.T) {
 	adapterDecorator := stores.NewAdapterDecorators()
-	service := NewTeamService(adapterDecorator)
+	service := services.NewTeamService(adapterDecorator)
 
 	ctx := context.Background()
 	teamID := uuid.New()
@@ -198,7 +197,7 @@ func TestTeamService_UpdateTeam_Success(t *testing.T) {
 
 func TestTeamService_UpdateTeam_Error(t *testing.T) {
 	adapterDecorator := stores.NewAdapterDecorators()
-	service := NewTeamService(adapterDecorator)
+	service := services.NewTeamService(adapterDecorator)
 
 	ctx := context.Background()
 	teamID := uuid.New()
@@ -218,7 +217,7 @@ func TestTeamService_UpdateTeam_Error(t *testing.T) {
 
 func TestTeamService_UpdateTeam_TeamNotFound(t *testing.T) {
 	adapterDecorator := stores.NewAdapterDecorators()
-	service := NewTeamService(adapterDecorator)
+	service := services.NewTeamService(adapterDecorator)
 
 	ctx := context.Background()
 	teamID := uuid.New()
