@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stripe/stripe-go/v82"
@@ -17,6 +16,7 @@ import (
 	"github.com/tkahng/playground/internal/database/repository"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/test"
+	"github.com/tkahng/playground/internal/tools/store"
 )
 
 func TestApi_CreateInvitation(t *testing.T) {
@@ -123,20 +123,15 @@ func TestApi_AcceptInvitation(t *testing.T) {
 				teamInfo := core.CreateTeamAndMemberWithOptions(t, app, &ownerUserInfo.User)
 				teamCustomer, err := app.Payment().FindCustomerByTeamId(ctx, teamInfo.Team.ID)
 				assert.NoError(t, err)
-				sub := &models.StripeSubscription{
-					ID:                 "sub_1",
-					StripeCustomerID:   teamCustomer.ID,
-					Status:             models.StripeSubscriptionStatusActive,
-					Metadata:           map[string]string{},
-					ItemID:             "item_1",
-					PriceID:            "price_pro_month_usd_5000",
-					Quantity:           1,
-					CancelAtPeriodEnd:  false,
-					Created:            time.Now(),
-					CurrentPeriodStart: time.Now(),
-					CurrentPeriodEnd:   time.Now().UTC().Add(30 * 24 * time.Hour),
-				}
-				_ = repository.MustCreateOneCtx(t, ctx, repository.StripeSubscription, app.Db(), sub)
+				sub := core.CreateStripeSubscriptionWithOptions(
+					t,
+					app,
+					teamCustomer.ID,
+					core.SubscriptionWithID("sub_1"),
+					core.SubscriptionWithItemID("item_1"),
+					core.SubscriptionWithPriceID("price_pro_month_usd_5000"),
+				)
+				scenario.Store.Set("subscription", sub)
 				// send invitation and get token
 				err = app.TeamInvitation().CreateInvitation(
 					ctx,
@@ -168,39 +163,84 @@ func TestApi_AcceptInvitation(t *testing.T) {
 					assert.NoError(t, err)
 				}
 				paymentClient := core.ExtractTestPaymentClient(t, app)
+				sub := scenario.Store.Get("subscription").(*models.StripeSubscription)
 				item := paymentClient.GetUpdateSubscriptionInput(func(si *stripe.SubscriptionItem) bool {
-					if si.ID == "item_1" {
+					if si.ID == sub.ItemID {
 						return true
 					}
 					return false
 				})
+				count := repository.MustCountAllCtx(t, ctx, repository.TeamMember, app.Db(), nil)
 				assert.NotNil(t, item)
-				assert.Equal(t, int64(2), item.Quantity)
-				assert.Equal(t, "price_pro_month_usd_5000", item.Price.ID)
+				assert.Equal(t, count, item.Quantity)
+				assert.Equal(t, sub.PriceID, item.Price.ID)
 			},
 		},
-		// {
-		// 	Name:           "fail: create invitation by non-owner member",
-		// 	Method:         http.MethodPost,
-		// 	URL:            "/teams/{team-id}/invitations",
-		// 	ExpectedStatus: http.StatusForbidden,
-		// 	BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
-		// 		user := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
-		// 		team := core.CreateTeamAndMemberWithOptions(t, app, &user.User, core.TeamWithRole(models.TeamMemberRoleMember))
-		// 		scenario.URL = fmt.Sprintf("/teams/%s/invitations", team.Team.ID)
-		// 		body := apis.InviteTeamMemberDto{
-		// 			Email: "VY7o1@example.com",
-		// 			Role:  string(apis.TeamMemberRoleMember),
-		// 		}
-		// 		scenario.Body = JsonToReader(t, body)
-		// 		header := core.CreateTokenHeader(t, app, user.User.Email)
-		// 		scenario.Headers = append(scenario.Headers, header)
-		// 	},
-		// 	ExpectedContent: []string{
-		// 		"Forbidden",
-		// 		"You do not have the required team member role",
-		// 	},
-		// },
+		{
+			Name:           "fail: user mismatch",
+			Method:         http.MethodPost,
+			URL:            "/team-invitations/accept",
+			ExpectedStatus: http.StatusInternalServerError,
+			ExpectedContent: []string{
+				"user does not match invitation",
+			},
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+				ctx := t.Context()
+				if err := app.Payment().FindAndUpsertAllProducts(ctx); err != nil {
+					t.Fatal(err)
+				}
+				if err := app.Payment().FindAndUpsertAllPrices(ctx); err != nil {
+					t.Fatal(err)
+				}
+				// init team
+				ownerUserInfo := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
+				teamInfo := core.CreateTeamAndMemberWithOptions(t, app, &ownerUserInfo.User)
+				teamCustomer, err := app.Payment().FindCustomerByTeamId(ctx, teamInfo.Team.ID)
+				assert.NoError(t, err)
+				sub := core.CreateStripeSubscriptionWithOptions(
+					t,
+					app,
+					teamCustomer.ID,
+					core.SubscriptionWithID("sub_1"),
+					core.SubscriptionWithItemID("item_1"),
+					core.SubscriptionWithPriceID("price_pro_month_usd_5000"),
+				)
+				scenario.Store.Set("subscription", sub)
+				// send invitation and get token
+				err = app.TeamInvitation().CreateInvitation(
+					ctx,
+					teamInfo.Team.ID,
+					teamInfo.User.ID,
+					inviteeEmail,
+					models.TeamMemberRoleMember,
+					true,
+				)
+				assert.NoError(t, err)
+				if err := app.JobManager().PollOnce(ctx); err != nil {
+					t.Fatal(err)
+				}
+				token := ExtractFistMessageTokenFromMailer(t, app)
+
+				// create invitee user
+				_ = core.CreateUserWithOptions(t, app, core.UserWithEmail(inviteeEmail), core.UserWithVerifiedNow())
+				body := apis.CheckValidInvitationDto{
+					Token: token,
+				}
+				otherUserInfo := core.CreateUserWithOptions(t, app, core.UserWithEmail("other@example"), core.UserWithVerifiedNow())
+				scenario.Body = JsonToReader(t, body)
+				header := core.CreateTokenHeader(t, app, otherUserInfo.User.Email)
+				scenario.Headers = append(scenario.Headers, header)
+			},
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+				ctx := t.Context()
+				for range 5 {
+					err := app.JobManager().PollOnce(ctx)
+					assert.NoError(t, err)
+				}
+				paymentClient := core.ExtractTestPaymentClient(t, app)
+				assert.Len(t, paymentClient.SubscriptionItems, 0)
+			},
+		},
 	}
 	for _, tt := range tests {
 		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
@@ -208,6 +248,7 @@ func TestApi_AcceptInvitation(t *testing.T) {
 			tt.TestAppFactory = func(t testing.TB) *TestApi {
 				return testApi
 			}
+			tt.Store = store.New[string, any](nil)
 			tt.Test(t)
 		})
 	}
