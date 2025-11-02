@@ -184,3 +184,69 @@ func TestOAuth2Signin_Success_Existing_Credential_Unverified(t *testing.T) {
 	})
 
 }
+func TestOAuth2Signin_Success_Existing_Credential_Verified(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		app := core.NewTestBaseApp(conf.ZeroEnvConfig(), db)
+		mailer := core.ExtractTestMailer(t, app)
+		existingUser := core.CreateUserWithOptions(
+			t,
+			app,
+			core.UserWithPassword("password"),
+			core.UserWithVerifiedNow(),
+			core.UserWithProvider(models.ProvidersCredentials),
+		)
+		param := &auth.OAuth2SigninInput{
+			Email:             existingUser.User.Email,
+			EmailVerifiedAt:   types.Pointer(time.Now()),
+			Provider:          models.ProvidersApple,
+			ProviderAccountID: "provider_account_id",
+			AccessToken:       types.Pointer("access_token"),
+			RefreshToken:      types.Pointer("refresh_token"),
+			RedirectTo:        "",
+			Expiry:            time.Now(),
+		}
+		_, gotErr := apis.OAuth2Signin(ctx, app, param)
+		if gotErr != nil {
+			t.Errorf("AuthServiceImpl.OAuth2Signin() error = %v", gotErr)
+		}
+		pollErr := app.JobManager().PollOnce(ctx)
+		if pollErr != nil {
+			t.Errorf("AuthServiceImpl.OAuth2Signin() poll error = %v", pollErr)
+		}
+		user := repository.MustFindOneCtx(t, ctx, repository.User, db, nil)
+		if user == nil {
+			t.Errorf("AuthServiceImpl.OAuth2Signin() user = %v", user)
+		}
+		if user.EmailVerifiedAt == nil {
+			t.Errorf("Expected emailVerifiedAt to not be nil")
+		}
+		customerCount := repository.MustCountAllCtx(t, ctx, repository.StripeCustomer, db, nil)
+		if customerCount != 1 {
+			t.Errorf("AuthServiceImpl.OAuth2Signin() customerCount = %v", customerCount)
+		}
+		customer := repository.MustFindOneCtx(t, ctx, repository.StripeCustomer, db, nil)
+		if customer == nil {
+			t.Errorf("AuthServiceImpl.OAuth2Signin() customer = %v", customer)
+		}
+		if customer.Email != existingUser.User.Email {
+			t.Errorf("AuthServiceImpl.OAuth2Signin() customer.Email = %v", customer.Email)
+		}
+		if customer.UserID == nil {
+			t.Errorf("AuthServiceImpl.OAuth2Signin() customer.userId = %v", customer.UserID)
+		}
+		if len(mailer.Messages) != 0 {
+			t.Errorf("Expected 0 email to be sent, got %d", len(mailer.Messages))
+		}
+		signInRes, signInErr := app.Auth().Signin(ctx, &auth.SigninInput{
+			Email:    user.Email,
+			Password: "password",
+		})
+		if signInErr != nil {
+			t.Errorf("AuthServiceImpl.OAuth2Signin() signInErr = %v", signInErr)
+		}
+		if signInRes == nil {
+			t.Errorf("AuthServiceImpl.OAuth2Signin() signInRes = %v", signInRes)
+		}
+	})
+
+}
