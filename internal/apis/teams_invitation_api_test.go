@@ -2,6 +2,7 @@ package apis_test
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"html"
 	"net/http"
@@ -15,6 +16,7 @@ import (
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/database/repository"
 	"github.com/tkahng/playground/internal/models"
+	"github.com/tkahng/playground/internal/notification"
 	"github.com/tkahng/playground/internal/test"
 	"github.com/tkahng/playground/internal/tools/store"
 	"github.com/tkahng/playground/internal/tools/utils"
@@ -117,6 +119,7 @@ func TestApi_AcceptInvitation(t *testing.T) {
 				// init team
 				teamInfo := CreateTeamAndOwner(t, app)
 				sub := CreateTeamSubscription(t, app, teamInfo)
+				scenario.Store.Set("teamInfo", teamInfo)
 				scenario.Store.Set("subscription", sub)
 				// send invitation and get token
 				err := app.TeamInvitation().CreateInvitation(
@@ -160,6 +163,25 @@ func TestApi_AcceptInvitation(t *testing.T) {
 				assert.NotNil(t, item)
 				assert.Equal(t, count, item.Quantity)
 				assert.Equal(t, sub.PriceID, item.Price.ID)
+				// notifications
+				teamInfo := scenario.Store.Get("teamInfo").(*models.TeamInfoModel)
+				notifications := repository.MustFindWithOptionsCtx(t, ctx, repository.Notification, app.Db())
+				assert.Len(t, notifications, 1)
+				noti := notifications[0]
+				payloadString := noti.Payload
+				var payload notification.NotificationPayload[notification.NewTeamMemberNotificationData]
+				err := json.Unmarshal(payloadString, &payload)
+				assert.NoError(t, err)
+				assert.Equal(t, teamInfo.Team.ID, payload.Data.TeamID)
+				assert.Equal(t, &teamInfo.Member.ID, noti.TeamMemberID)
+				member := repository.MustFindOneCtx(t, ctx, repository.TeamMember, app.Db(), &map[string]any{
+					"user": map[string]any{
+						"email": map[string]any{
+							"_eq": inviteeEmail,
+						},
+					},
+				})
+				assert.Equal(t, member.ID, payload.Data.TeamMemberID)
 			},
 		},
 		{
