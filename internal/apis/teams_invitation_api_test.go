@@ -168,12 +168,15 @@ func TestApi_AcceptInvitation(t *testing.T) {
 				notifications := repository.MustFindWithOptionsCtx(t, ctx, repository.Notification, app.Db())
 				assert.Len(t, notifications, 1)
 				noti := notifications[0]
+
 				payloadString := noti.Payload
 				var payload notification.NotificationPayload[notification.NewTeamMemberNotificationData]
 				err := json.Unmarshal(payloadString, &payload)
+
 				assert.NoError(t, err)
 				assert.Equal(t, teamInfo.Team.ID, payload.Data.TeamID)
 				assert.Equal(t, &teamInfo.Member.ID, noti.TeamMemberID)
+
 				member := repository.MustFindOneCtx(t, ctx, repository.TeamMember, app.Db(), &map[string]any{
 					"user": map[string]any{
 						"email": map[string]any{
