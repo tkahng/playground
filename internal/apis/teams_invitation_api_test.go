@@ -113,28 +113,13 @@ func TestApi_AcceptInvitation(t *testing.T) {
 			ExpectedStatus: http.StatusNoContent,
 			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
 				ctx := t.Context()
-				if err := app.Payment().FindAndUpsertAllProducts(ctx); err != nil {
-					t.Fatal(err)
-				}
-				if err := app.Payment().FindAndUpsertAllPrices(ctx); err != nil {
-					t.Fatal(err)
-				}
+				core.CreateProductsAndPrices(t, app)
 				// init team
-				ownerUserInfo := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
-				teamInfo := core.CreateTeamAndMemberWithOptions(t, app, &ownerUserInfo.User)
-				teamCustomer, err := app.Payment().FindCustomerByTeamId(ctx, teamInfo.Team.ID)
-				assert.NoError(t, err)
-				sub := core.CreateStripeSubscriptionWithOptions(
-					t,
-					app,
-					teamCustomer.ID,
-					core.SubscriptionWithID("sub_1"),
-					core.SubscriptionWithItemID("item_1"),
-					core.SubscriptionWithPriceID("price_pro_month_usd_5000"),
-				)
+				teamInfo := CreateTeamAndOwner(t, app)
+				sub := CreateTeamSubscription(t, app, teamInfo)
 				scenario.Store.Set("subscription", sub)
 				// send invitation and get token
-				err = app.TeamInvitation().CreateInvitation(
+				err := app.TeamInvitation().CreateInvitation(
 					ctx,
 					teamInfo.Team.ID,
 					teamInfo.User.ID,
@@ -187,28 +172,13 @@ func TestApi_AcceptInvitation(t *testing.T) {
 			},
 			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
 				ctx := t.Context()
-				if err := app.Payment().FindAndUpsertAllProducts(ctx); err != nil {
-					t.Fatal(err)
-				}
-				if err := app.Payment().FindAndUpsertAllPrices(ctx); err != nil {
-					t.Fatal(err)
-				}
+				core.CreateProductsAndPrices(t, app)
 				// init team
-				ownerUserInfo := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
-				teamInfo := core.CreateTeamAndMemberWithOptions(t, app, &ownerUserInfo.User)
-				teamCustomer, err := app.Payment().FindCustomerByTeamId(ctx, teamInfo.Team.ID)
-				assert.NoError(t, err)
-				sub := core.CreateStripeSubscriptionWithOptions(
-					t,
-					app,
-					teamCustomer.ID,
-					core.SubscriptionWithID("sub_1"),
-					core.SubscriptionWithItemID("item_1"),
-					core.SubscriptionWithPriceID("price_pro_month_usd_5000"),
-				)
+				teamInfo := CreateTeamAndOwner(t, app)
+				sub := CreateTeamSubscription(t, app, teamInfo)
 				scenario.Store.Set("subscription", sub)
 				// send invitation and get token
-				err = app.TeamInvitation().CreateInvitation(
+				err := app.TeamInvitation().CreateInvitation(
 					ctx,
 					teamInfo.Team.ID,
 					teamInfo.User.ID,
@@ -264,28 +234,13 @@ func TestApi_RejectInvitation(t *testing.T) {
 			ExpectedStatus: http.StatusNoContent,
 			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
 				ctx := t.Context()
-				if err := app.Payment().FindAndUpsertAllProducts(ctx); err != nil {
-					t.Fatal(err)
-				}
-				if err := app.Payment().FindAndUpsertAllPrices(ctx); err != nil {
-					t.Fatal(err)
-				}
+				core.CreateProductsAndPrices(t, app)
 				// init team
-				ownerUserInfo := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
-				teamInfo := core.CreateTeamAndMemberWithOptions(t, app, &ownerUserInfo.User)
-				teamCustomer, err := app.Payment().FindCustomerByTeamId(ctx, teamInfo.Team.ID)
-				assert.NoError(t, err)
-				sub := core.CreateStripeSubscriptionWithOptions(
-					t,
-					app,
-					teamCustomer.ID,
-					core.SubscriptionWithID("sub_1"),
-					core.SubscriptionWithItemID("item_1"),
-					core.SubscriptionWithPriceID("price_pro_month_usd_5000"),
-				)
+				teamInfo := CreateTeamAndOwner(t, app)
+				sub := CreateTeamSubscription(t, app, teamInfo)
 				scenario.Store.Set("subscription", sub)
 				// send invitation and get token
-				err = app.TeamInvitation().CreateInvitation(
+				err := app.TeamInvitation().CreateInvitation(
 					ctx,
 					teamInfo.Team.ID,
 					teamInfo.User.ID,
@@ -333,28 +288,13 @@ func TestApi_RejectInvitation(t *testing.T) {
 			},
 			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
 				ctx := t.Context()
-				if err := app.Payment().FindAndUpsertAllProducts(ctx); err != nil {
-					t.Fatal(err)
-				}
-				if err := app.Payment().FindAndUpsertAllPrices(ctx); err != nil {
-					t.Fatal(err)
-				}
+				core.CreateProductsAndPrices(t, app)
 				// init team
-				ownerUserInfo := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
-				teamInfo := core.CreateTeamAndMemberWithOptions(t, app, &ownerUserInfo.User)
-				teamCustomer, err := app.Payment().FindCustomerByTeamId(ctx, teamInfo.Team.ID)
-				assert.NoError(t, err)
-				sub := core.CreateStripeSubscriptionWithOptions(
-					t,
-					app,
-					teamCustomer.ID,
-					core.SubscriptionWithID("sub_1"),
-					core.SubscriptionWithItemID("item_1"),
-					core.SubscriptionWithPriceID("price_pro_month_usd_5000"),
-				)
+				teamInfo := CreateTeamAndOwner(t, app)
+				sub := CreateTeamSubscription(t, app, teamInfo)
 				scenario.Store.Set("subscription", sub)
 				// send invitation and get token
-				err = app.TeamInvitation().CreateInvitation(
+				err := app.TeamInvitation().CreateInvitation(
 					ctx,
 					teamInfo.Team.ID,
 					teamInfo.User.ID,
@@ -412,23 +352,13 @@ func TestApi_FindUserInvitations(t *testing.T) {
 			ExpectedStatus: http.StatusOK,
 			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
 				ctx := t.Context()
-				core.CreateProductsAndPrices(t, ctx, app)
+				core.CreateProductsAndPrices(t, app)
 				// init team
-				ownerUserInfo := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
-				teamInfo := core.CreateTeamAndMemberWithOptions(t, app, &ownerUserInfo.User)
-				teamCustomer, err := app.Payment().FindCustomerByTeamId(ctx, teamInfo.Team.ID)
-				assert.NoError(t, err)
-				sub := core.CreateStripeSubscriptionWithOptions(
-					t,
-					app,
-					teamCustomer.ID,
-					core.SubscriptionWithID("sub_1"),
-					core.SubscriptionWithItemID("item_1"),
-					core.SubscriptionWithPriceID("price_pro_month_usd_5000"),
-				)
+				teamInfo := CreateTeamAndOwner(t, app)
+				sub := CreateTeamSubscription(t, app, teamInfo)
 				scenario.Store.Set("subscription", sub)
 				// send invitation and get token
-				err = app.TeamInvitation().CreateInvitation(
+				err := app.TeamInvitation().CreateInvitation(
 					ctx,
 					teamInfo.Team.ID,
 					teamInfo.User.ID,
@@ -471,4 +401,23 @@ func TestApi_FindUserInvitations(t *testing.T) {
 			tt.Test(t)
 		})
 	}
+}
+
+func CreateTeamAndOwner(t testing.TB, app *core.BaseApp) *models.TeamInfoModel {
+	ownerUserInfo := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
+	teamInfo := core.CreateTeamAndMemberWithOptions(t, app, &ownerUserInfo.User)
+	return teamInfo
+}
+func CreateTeamSubscription(t testing.TB, app *core.BaseApp, teamInfo *models.TeamInfoModel) *models.StripeSubscription {
+	teamCustomer, err := app.Payment().FindCustomerByTeamId(t.Context(), teamInfo.Team.ID)
+	assert.NoError(t, err)
+	sub := core.CreateStripeSubscriptionWithOptions(
+		t,
+		app,
+		teamCustomer.ID,
+		core.SubscriptionWithID("sub_1"),
+		core.SubscriptionWithItemID("item_1"),
+		core.SubscriptionWithPriceID("price_pro_month_usd_5000"),
+	)
+	return sub
 }

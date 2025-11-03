@@ -344,11 +344,11 @@ func CreateUserWithOptions(t testing.TB, app App, options ...UserOptionFunc) *mo
 
 }
 
-func CreateProductsAndPrices(t testing.TB, ctx context.Context, app *BaseApp) {
-	if err := app.Payment().FindAndUpsertAllProducts(ctx); err != nil {
+func CreateProductsAndPrices(t testing.TB, app *BaseApp) {
+	if err := app.Payment().FindAndUpsertAllProducts(t.Context()); err != nil {
 		t.Fatal(err)
 	}
-	if err := app.Payment().FindAndUpsertAllPrices(ctx); err != nil {
+	if err := app.Payment().FindAndUpsertAllPrices(t.Context()); err != nil {
 		t.Fatal(err)
 	}
 }
