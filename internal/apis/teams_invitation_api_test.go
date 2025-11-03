@@ -17,6 +17,7 @@ import (
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/test"
 	"github.com/tkahng/playground/internal/tools/store"
+	"github.com/tkahng/playground/internal/tools/utils"
 )
 
 func TestApi_CreateInvitation(t *testing.T) {
@@ -387,6 +388,76 @@ func TestApi_RejectInvitation(t *testing.T) {
 				assert.Len(t, paymentClient.SubscriptionItems, 0)
 				invitationCount := repository.MustFindOneCtx(t, ctx, repository.TeamInvitation, app.Db(), nil)
 				assert.Equal(t, models.TeamInvitationStatusPending, invitationCount.Status)
+			},
+		},
+	}
+	for _, tt := range tests {
+		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+			testApi := SetupApi(t, ctx, db)
+			tt.TestAppFactory = func(t testing.TB) *TestApi {
+				return testApi
+			}
+			tt.Store = store.New[string, any](nil)
+			tt.Test(t)
+		})
+	}
+}
+func TestApi_FindUserInvitations(t *testing.T) {
+	inviteeEmail := "VY7o1@example.com"
+	tests := []ApiScenario{
+		{
+			Name:           "success: find user invitations 1 pending",
+			Method:         http.MethodGet,
+			URL:            "/team-invitations",
+			ExpectedStatus: http.StatusOK,
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+				ctx := t.Context()
+				core.CreateProductsAndPrices(t, ctx, app)
+				// init team
+				ownerUserInfo := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
+				teamInfo := core.CreateTeamAndMemberWithOptions(t, app, &ownerUserInfo.User)
+				teamCustomer, err := app.Payment().FindCustomerByTeamId(ctx, teamInfo.Team.ID)
+				assert.NoError(t, err)
+				sub := core.CreateStripeSubscriptionWithOptions(
+					t,
+					app,
+					teamCustomer.ID,
+					core.SubscriptionWithID("sub_1"),
+					core.SubscriptionWithItemID("item_1"),
+					core.SubscriptionWithPriceID("price_pro_month_usd_5000"),
+				)
+				scenario.Store.Set("subscription", sub)
+				// send invitation and get token
+				err = app.TeamInvitation().CreateInvitation(
+					ctx,
+					teamInfo.Team.ID,
+					teamInfo.User.ID,
+					inviteeEmail,
+					models.TeamMemberRoleMember,
+					true,
+				)
+				assert.NoError(t, err)
+				if err := app.JobManager().PollOnce(ctx); err != nil {
+					t.Fatal(err)
+				}
+				// token := ExtractFistMessageTokenFromMailer(t, app)
+
+				// create invitee user
+				inviteeUserInfo := core.CreateUserWithOptions(t, app, core.UserWithEmail(inviteeEmail), core.UserWithVerifiedNow())
+				// body := apis.CheckValidInvitationDto{
+				// 	Token: token,
+				// }
+				// scenario.Body = JsonToReader(t, body)
+				header := core.CreateTokenHeader(t, app, inviteeUserInfo.User.Email)
+				scenario.Headers = append(scenario.Headers, header)
+			},
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+				// ctx := t.Context()
+				resp, err := utils.UnmarshalJSON[apis.ApiPaginatedResponse[*apis.TeamInvitation]](res.Body.Bytes())
+				assert.NoError(t, err)
+				assert.Len(t, resp.Data, 1)
+				assert.Equal(t, apis.TeamInvitationStatusPending, resp.Data[0].Status)
+
 			},
 		},
 	}
