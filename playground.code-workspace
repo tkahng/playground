@@ -80,6 +80,7 @@
       "editor.codeLens": true,
       "editor.gotoLocation.multipleTypeDefinitions": "gotoAndPeek"
     },
+    "typescript.referencesCodeLens.enabled": true,
     "[typescriptreact]": {
       "typescript.preferences.importModuleSpecifier": "non-relative",
       "editor.codeActionsOnSave": {
