@@ -46,14 +46,14 @@ const (
 )
 
 // TeamInvitationStatus
-// enum:"pending,accepted,declined,canceled"
+// enum:"'pending', 'accepted', 'declined', 'cancelled'"
 type TeamInvitationStatus string
 
 const (
 	TeamInvitationStatusPending  TeamInvitationStatus = "pending"
 	TeamInvitationStatusAccepted TeamInvitationStatus = "accepted"
 	TeamInvitationStatusDeclined TeamInvitationStatus = "declined"
-	TeamInvitationStatusCanceled TeamInvitationStatus = "canceled"
+	TeamInvitationStatusCanceled TeamInvitationStatus = "cancelled"
 )
 
 type TeamInvitation struct {

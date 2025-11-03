@@ -249,6 +249,129 @@ func TestApi_AcceptInvitation(t *testing.T) {
 		})
 	}
 }
+func TestApi_CancelInvitation(t *testing.T) {
+	inviteeEmail := "VY7o1@example.com"
+	tests := []ApiScenario{
+		{
+			Name:           "success: cancel invitation",
+			Method:         http.MethodDelete,
+			URL:            "/teams/{team-id}/invitations/{invitation-id}",
+			ExpectedStatus: http.StatusNoContent,
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+				ctx := t.Context()
+				core.CreateProductsAndPrices(t, app)
+				// init team
+				teamInfo := CreateTeamAndOwner(t, app)
+				sub := CreateTeamSubscription(t, app, teamInfo)
+				scenario.Store.Set("teamInfo", teamInfo)
+				scenario.Store.Set("subscription", sub)
+				// send invitation and get token
+				err := app.TeamInvitation().CreateInvitation(
+					ctx,
+					teamInfo.Team.ID,
+					teamInfo.User.ID,
+					inviteeEmail,
+					models.TeamMemberRoleMember,
+					true,
+				)
+				assert.NoError(t, err)
+				if err := app.JobManager().PollOnce(ctx); err != nil {
+					t.Fatal(err)
+				}
+				token := ExtractFistMessageTokenFromMailer(t, app)
+				assert.NotEmpty(t, token)
+				invite := repository.MustFindOneCtx(t, ctx, repository.TeamInvitation, app.Db(), &map[string]any{
+					"token": map[string]any{
+						"_eq": token,
+					},
+				})
+				assert.NotNil(t, invite)
+				scenario.Store.Set("invite", invite)
+				scenario.URL = fmt.Sprintf("/teams/%s/invitations/%s", teamInfo.Team.ID, invite.ID)
+				header := core.CreateTokenHeader(t, app, teamInfo.User.Email)
+				scenario.Headers = append(scenario.Headers, header)
+			},
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+				ctx := t.Context()
+				invite := scenario.Store.Get("invite").(*models.TeamInvitation)
+				updatedInvite := repository.MustFindOneCtx(t, ctx, repository.TeamInvitation, app.Db(), &map[string]any{
+					"id": map[string]any{
+						"_eq": invite.ID,
+					},
+				})
+				assert.NotNil(t, updatedInvite)
+				assert.Equal(t, models.TeamInvitationStatusCanceled, updatedInvite.Status)
+			},
+		},
+		{
+			Name:           "fail: not owner",
+			Method:         http.MethodDelete,
+			URL:            "/teams/{team-id}/invitations/{invitation-id}",
+			ExpectedStatus: http.StatusForbidden,
+			ExpectedContent: []string{
+				"You do not have the required team member roles: [owner]",
+			},
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+				ctx := t.Context()
+				core.CreateProductsAndPrices(t, app)
+				// init team
+				teamInfo := CreateTeamAndOwner(t, app)
+				otherUserInfo := core.CreateUserWithOptions(t, app, core.UserWithEmail("other@example"), core.UserWithVerifiedNow())
+				otherMember := core.CreateTeamMemberWithOptions(t, app, teamInfo.Team.ID, otherUserInfo.User.ID, core.TeamWithRole(models.TeamMemberRoleMember))
+				assert.NotNil(t, otherMember)
+				sub := CreateTeamSubscription(t, app, teamInfo)
+				scenario.Store.Set("teamInfo", teamInfo)
+				scenario.Store.Set("subscription", sub)
+				// send invitation and get token
+				err := app.TeamInvitation().CreateInvitation(
+					ctx,
+					teamInfo.Team.ID,
+					teamInfo.User.ID,
+					inviteeEmail,
+					models.TeamMemberRoleMember,
+					true,
+				)
+				assert.NoError(t, err)
+				if err := app.JobManager().PollOnce(ctx); err != nil {
+					t.Fatal(err)
+				}
+				token := ExtractFistMessageTokenFromMailer(t, app)
+				assert.NotEmpty(t, token)
+				invite := repository.MustFindOneCtx(t, ctx, repository.TeamInvitation, app.Db(), &map[string]any{
+					"token": map[string]any{
+						"_eq": token,
+					},
+				})
+				assert.NotNil(t, invite)
+				scenario.Store.Set("invite", invite)
+				scenario.URL = fmt.Sprintf("/teams/%s/invitations/%s", teamInfo.Team.ID, invite.ID)
+				header := core.CreateTokenHeader(t, app, otherUserInfo.User.Email)
+				scenario.Headers = append(scenario.Headers, header)
+			},
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+				ctx := t.Context()
+				invite := scenario.Store.Get("invite").(*models.TeamInvitation)
+				updatedInvite := repository.MustFindOneCtx(t, ctx, repository.TeamInvitation, app.Db(), &map[string]any{
+					"id": map[string]any{
+						"_eq": invite.ID,
+					},
+				})
+				assert.NotNil(t, updatedInvite)
+				assert.Equal(t, models.TeamInvitationStatusPending, updatedInvite.Status)
+			},
+		},
+	}
+	for _, tt := range tests {
+		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+			testApi := SetupApi(t, ctx, db)
+			tt.TestAppFactory = func(t testing.TB) *TestApi {
+				return testApi
+			}
+			tt.Store = store.New[string, any](nil)
+			tt.Test(t)
+		})
+	}
+}
 func TestApi_RejectInvitation(t *testing.T) {
 	inviteeEmail := "VY7o1@example.com"
 	tests := []ApiScenario{

@@ -167,7 +167,7 @@ const (
 	TeamInvitationStatusPending  TeamInvitationStatus = "pending"
 	TeamInvitationStatusAccepted TeamInvitationStatus = "accepted"
 	TeamInvitationStatusDeclined TeamInvitationStatus = "declined"
-	TeamInvitationStatusCanceled TeamInvitationStatus = "canceled"
+	TeamInvitationStatusCanceled TeamInvitationStatus = "cancelled"
 )
 
 type TeamInvitation struct {
@@ -178,7 +178,7 @@ type TeamInvitation struct {
 	Email           string               `db:"email" json:"email"`
 	Role            TeamMemberRole       `db:"role" json:"role"`
 	Token           string               `db:"token" json:"token"`
-	Status          TeamInvitationStatus `db:"status" json:"status" enum:"pending,accepted,declined,canceled"`
+	Status          TeamInvitationStatus `db:"status" json:"status" enum:"pending,accepted,declined,cancelled"`
 	ExpiresAt       time.Time            `db:"expires_at" json:"expires_at"`
 	CreatedAt       time.Time            `db:"created_at" json:"created_at"`
 	UpdatedAt       time.Time            `db:"updated_at" json:"updated_at"`
