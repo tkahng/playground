@@ -41,19 +41,9 @@ func (t *TeamServiceImpl) FindTeamInfoByMemberID(ctx context.Context, teamMember
 		return nil, err
 	}
 	if member == nil {
-		slog.ErrorContext(
-			ctx,
-			"team member not found",
-			slog.String("teamMemberID", teamMemberID.String()),
-		)
 		return nil, errors.New("team member not found")
 	}
 	if member.UserID == nil {
-		slog.ErrorContext(
-			ctx,
-			"user id not found on team member",
-			slog.String("teamMemberID", teamMemberID.String()),
-		)
 		return nil, errors.New("user id not found")
 	}
 
