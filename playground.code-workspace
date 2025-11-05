@@ -140,7 +140,6 @@
       }
     },
     "editor.stickyScroll.defaultModel": "indentationModel",
-    "workbench.settings.showAISearchToggle": false,
-    "tooltitude.shadowInspectionEnabled": true
+    "workbench.settings.showAISearchToggle": false
   }
 }
