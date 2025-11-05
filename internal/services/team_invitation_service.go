@@ -22,45 +22,13 @@ type TeamInvitationMailParams struct {
 }
 
 type TeamInvitationService interface {
-	CreateInvitation(
-		ctx context.Context,
-		teamId uuid.UUID,
-		invitingUserId uuid.UUID,
-		inviteeEmail string,
-		role models.TeamMemberRole,
-		resend bool,
-	) error
-	CheckValidInvitation(
-		ctx context.Context,
-		userId uuid.UUID,
-		invitationToken string,
-	) (bool, error)
-	GetInvitation(
-		ctx context.Context,
-		invitationToken string,
-	) (*models.TeamInvitation, error)
-	AcceptInvitation(
-		ctx context.Context,
-		userId uuid.UUID,
-		invitationToken string,
-	) error
-	RejectInvitation(
-		ctx context.Context,
-		userId uuid.UUID,
-		invitationToken string,
-	) error
-
-	CancelInvitation(
-		ctx context.Context,
-		teamId uuid.UUID,
-		userId uuid.UUID,
-		invitationId uuid.UUID,
-	) error
-
-	FindInvitations(
-		ctx context.Context,
-		teamId uuid.UUID,
-	) ([]*models.TeamInvitation, error)
+	CreateInvitation(ctx context.Context, teamId uuid.UUID, invitingUserId uuid.UUID, inviteeEmail string, role models.TeamMemberRole, resend bool) error
+	CheckValidInvitation(ctx context.Context, userId uuid.UUID, invitationToken string) (bool, error)
+	GetInvitation(ctx context.Context, invitationToken string) (*models.TeamInvitation, error)
+	AcceptInvitation(ctx context.Context, userId uuid.UUID, invitationToken string) error
+	RejectInvitation(ctx context.Context, userId uuid.UUID, invitationToken string) error
+	CancelInvitation(ctx context.Context, teamId uuid.UUID, userId uuid.UUID, invitationId uuid.UUID) error
+	FindInvitations(ctx context.Context, teamId uuid.UUID) ([]*models.TeamInvitation, error)
 }
 
 var _ TeamInvitationService = (*InvitationService)(nil)

@@ -1971,7 +1971,8 @@ export interface components {
              */
             readonly $schema?: string;
             email: string;
-            role: string;
+            /** @enum {string} */
+            role: "owner" | "member" | "guest";
         };
         Job: {
             /**
@@ -2103,7 +2104,8 @@ export interface components {
              */
             readonly $schema?: string;
             token: string;
-            type: string;
+            /** @enum {string} */
+            type: "invite_token" | "verification_token" | "password_reset_token" | "state_token";
         };
         PasswordResetInput: {
             /**
@@ -2544,7 +2546,7 @@ export interface components {
             inviter_member_id: string;
             role: string;
             /** @enum {string} */
-            status: "pending" | "accepted" | "declined" | "canceled";
+            status: "pending" | "accepted" | "declined" | "cancelled";
             team?: components["schemas"]["Team"];
             team_id: string;
             token: string;
@@ -5400,7 +5402,7 @@ export interface operations {
         parameters: {
             query: {
                 token: string;
-                type: string;
+                type: "invite_token" | "verification_token" | "password_reset_token" | "state_token";
             };
             header?: never;
             path?: never;

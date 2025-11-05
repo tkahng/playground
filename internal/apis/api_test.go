@@ -20,6 +20,7 @@ import (
 	"github.com/tkahng/playground/internal/conf"
 	"github.com/tkahng/playground/internal/core"
 	"github.com/tkahng/playground/internal/database"
+	"github.com/tkahng/playground/internal/tools/store"
 )
 
 type TestApi struct {
@@ -145,6 +146,7 @@ type ApiScenario struct {
 	TestAppFactory func(t testing.TB) *TestApi
 	BeforeTestFunc func(t testing.TB, app *core.BaseApp, scenario *ApiScenario)
 	AfterTestFunc  func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder)
+	Store          *store.Store[string, any]
 }
 
 // Test executes the test scenario.

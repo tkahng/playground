@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/google/uuid"
 	stripe "github.com/stripe/stripe-go/v82"
 	"github.com/tkahng/playground/internal/conf"
 )
@@ -112,7 +111,9 @@ var (
 var mockPaymentErr = errors.New("this is a test payment client")
 
 type MockPaymentClient struct {
+	SubscriptionItems                 []*stripe.SubscriptionItem
 	CustomerByEmail                   map[string]*stripe.Customer
+	Customers                         []*stripe.Customer
 	ConfigFunc                        func() *conf.StripeConfig
 	CreateBillingPortalSessionFunc    func(customerId string, configurationId string, retunrUrl string) (*stripe.BillingPortalSession, error)
 	CreateCheckoutSessionFunc         func(customerId string, priceId string, quantity int64, trialDays *int64) (*stripe.CheckoutSession, error)
@@ -125,6 +126,24 @@ type MockPaymentClient struct {
 	FindSubscriptionByStripeIdFunc    func(stripeId string) (*stripe.Subscription, error)
 	UpdateCustomerFunc                func(customerId string, params *stripe.CustomerParams) (*stripe.Customer, error)
 	UpdateItemQuantityFunc            func(itemId string, priceId string, count int64) (*stripe.SubscriptionItem, error)
+}
+
+func (t *MockPaymentClient) GetCustomerByFunc(fn func(*stripe.Customer) bool) *stripe.Customer {
+	for _, customer := range t.Customers {
+		if fn(customer) {
+			return customer
+		}
+	}
+	return nil
+}
+
+func (t *MockPaymentClient) GetUpdateSubscriptionInput(fn func(*stripe.SubscriptionItem) bool) *stripe.SubscriptionItem {
+	for _, input := range t.SubscriptionItems {
+		if fn(input) {
+			return input
+		}
+	}
+	return nil
 }
 
 func NewMockPaymentClient() *MockPaymentClient {
@@ -166,7 +185,7 @@ func (t *MockPaymentClient) CreateCustomer(email string, name *string, metadata 
 	if name != nil {
 		nameString = *name
 	} else {
-		nameString = uuid.NewString()
+		nameString = ""
 	}
 	if metadata != nil {
 		meta = *metadata
@@ -178,6 +197,7 @@ func (t *MockPaymentClient) CreateCustomer(email string, name *string, metadata 
 		Metadata: meta,
 	}
 	t.CustomerByEmail[email] = customer
+	t.Customers = append(t.Customers, customer)
 	return customer, nil
 }
 
@@ -194,7 +214,7 @@ func (t *MockPaymentClient) FindAllPrices() ([]*stripe.Price, error) {
 	if t.FindAllPricesFunc != nil {
 		return t.FindAllPricesFunc()
 	}
-	return nil, mockPaymentErr
+	return Prices, nil
 }
 
 // FindAllProducts implements PaymentClient.
@@ -202,7 +222,7 @@ func (t *MockPaymentClient) FindAllProducts() ([]*stripe.Product, error) {
 	if t.FindAllProductsFunc != nil {
 		return t.FindAllProductsFunc()
 	}
-	return nil, mockPaymentErr
+	return Products, nil
 }
 
 // FindCheckoutSessionByStripeId implements PaymentClient.
@@ -217,6 +237,11 @@ func (t *MockPaymentClient) FindCheckoutSessionByStripeId(stripeId string) (*str
 func (t *MockPaymentClient) FindOrCreateCustomer(email string, name *string) (*stripe.Customer, error) {
 	if t.FindOrCreateCustomerFunc != nil {
 		return t.FindOrCreateCustomerFunc(email, name)
+	}
+	for _, customer := range t.CustomerByEmail {
+		if customer.Email == email {
+			return customer, nil
+		}
 	}
 	return nil, mockPaymentErr
 }
@@ -242,7 +267,16 @@ func (t *MockPaymentClient) UpdateItemQuantity(itemId string, priceId string, co
 	if t.UpdateItemQuantityFunc != nil {
 		return t.UpdateItemQuantityFunc(itemId, priceId, count)
 	}
-	return nil, mockPaymentErr
+	item := &stripe.SubscriptionItem{
+		ID: itemId,
+		Price: &stripe.Price{
+			ID: priceId,
+		},
+		Quantity: count,
+	}
+
+	t.SubscriptionItems = append(t.SubscriptionItems, item)
+	return item, nil
 }
 
 var _ PaymentClient = &MockPaymentClient{}

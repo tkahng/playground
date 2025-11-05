@@ -250,7 +250,7 @@ func RequireTeamMemberRolesMiddleware(roles ...models.TeamMemberRole) HttpMiddel
 					w,
 					r,
 					http.StatusForbidden,
-					fmt.Sprintf("You do not have the required team member role: %v", info.Member.Role),
+					fmt.Sprintf("You do not have the required team member roles: %v", roles),
 				)
 			} else {
 				_ = appHttp.WriteErr(

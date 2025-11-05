@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/tkahng/playground/internal/database/repository"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/services"
 	"github.com/tkahng/playground/internal/stores"
@@ -107,19 +108,74 @@ func CreateTeamAndMemberWithOptions(t testing.TB, app App, user *models.User, op
 	if err != nil {
 		t.Fatalf("Error creating team: %v", err)
 	}
+	_, err = app.Payment().CreateTeamCustomer(ctx, team, user)
+	if err != nil {
+		t.Fatalf("Error creating team: %v", err)
+	}
 	member, err := app.Adapter().TeamMember().CreateTeamMember(ctx, team.ID, user.ID, option.role, option.billing)
 	if err != nil {
 		t.Fatalf("Error creating team member: %v", err)
 	}
 	return &models.TeamInfoModel{
-		Team: *team,
-		User: models.User{
-			ID:              user.ID,
-			Name:            user.Name,
-			EmailVerifiedAt: user.EmailVerifiedAt,
-		},
+		Team:   *team,
+		User:   *user,
 		Member: *member,
 	}
+}
+
+type SubscriptionOptionFunc func(opt *models.StripeSubscription)
+
+func SubscriptionWithItemID(itemID string) SubscriptionOptionFunc {
+	return func(opt *models.StripeSubscription) {
+		opt.ItemID = itemID
+	}
+}
+func SubscriptionWithID(ID string) SubscriptionOptionFunc {
+	return func(opt *models.StripeSubscription) {
+		opt.ID = ID
+	}
+}
+func SubscriptionWithPriceID(priceID string) SubscriptionOptionFunc {
+	return func(opt *models.StripeSubscription) {
+		opt.PriceID = priceID
+	}
+}
+func SubscriptionWithQuantity(quantity int) SubscriptionOptionFunc {
+	return func(opt *models.StripeSubscription) {
+		opt.Quantity = int64(quantity)
+	}
+}
+func SubscriptionWithCancelAtPeriodEnd(cancelAtPeriodEnd bool) SubscriptionOptionFunc {
+	return func(opt *models.StripeSubscription) {
+		opt.CancelAtPeriodEnd = cancelAtPeriodEnd
+	}
+}
+
+func SubscriptionWithStatus(status models.StripeSubscriptionStatus) SubscriptionOptionFunc {
+	return func(opt *models.StripeSubscription) {
+		opt.Status = status
+	}
+}
+
+func CreateStripeSubscriptionWithOptions(t testing.TB, app App, customerId string, optFunc ...SubscriptionOptionFunc) *models.StripeSubscription {
+	t.Helper()
+	sub := &models.StripeSubscription{
+		ID:                 "sub_1",
+		StripeCustomerID:   customerId,
+		Status:             models.StripeSubscriptionStatusActive,
+		Metadata:           map[string]string{},
+		ItemID:             "item_1",
+		PriceID:            "price_pro_month_usd_5000",
+		Quantity:           1,
+		CancelAtPeriodEnd:  false,
+		Created:            time.Now(),
+		CurrentPeriodStart: time.Now(),
+		CurrentPeriodEnd:   time.Now().UTC().Add(30 * 24 * time.Hour),
+	}
+	for _, optFunc := range optFunc {
+		optFunc(sub)
+	}
+	return repository.MustCreateOneCtx(t, t.Context(), repository.StripeSubscription, app.Db(), sub)
 }
 
 func CreateTeamMemberWithOptions(t testing.TB, app App, teamID uuid.UUID, userId uuid.UUID, optFunc ...TeamOptionFunc) *models.TeamMember {
@@ -286,4 +342,13 @@ func CreateUserWithOptions(t testing.TB, app App, options ...UserOptionFunc) *mo
 		User: *user,
 	}
 
+}
+
+func CreateProductsAndPrices(t testing.TB, app *BaseApp) {
+	if err := app.Payment().FindAndUpsertAllProducts(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+	if err := app.Payment().FindAndUpsertAllPrices(t.Context()); err != nil {
+		t.Fatal(err)
+	}
 }

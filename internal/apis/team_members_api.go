@@ -19,6 +19,46 @@ import (
 	"github.com/tkahng/playground/internal/tools/sse"
 )
 
+type TeamMember struct {
+	_                struct{}       `db:"team_members" json:"-"`
+	ID               uuid.UUID      `db:"id" json:"id"`
+	TeamID           uuid.UUID      `db:"team_id" json:"team_id"`
+	UserID           *uuid.UUID     `db:"user_id" json:"user_id"`
+	Active           bool           `db:"active" json:"active"`
+	Role             TeamMemberRole `db:"role" json:"role" enum:"owner,member,guest"`
+	HasBillingAccess bool           `db:"has_billing_access" json:"has_billing_access"`
+	LastSelectedAt   time.Time      `db:"last_selected_at" json:"last_selected_at"`
+	CreatedAt        time.Time      `db:"created_at" json:"created_at"`
+	UpdatedAt        time.Time      `db:"updated_at" json:"updated_at"`
+	Team             *Team          `db:"team" src:"team_id" dest:"id" table:"team" json:"team,omitempty"`
+	User             *ApiUser       `db:"user" src:"user_id" dest:"id" table:"users" json:"user,omitempty"`
+}
+type TeamMemberOutput struct {
+	Body *TeamMember `json:"body"`
+}
+
+func (api *Api) GetActiveTeamMember(
+	ctx context.Context,
+	input *struct{},
+) (
+	*TeamMemberOutput,
+	error,
+) {
+	info := contextstore.GetContextUserInfo(ctx)
+	if info == nil {
+		return nil, huma.Error401Unauthorized("unauthorized")
+	}
+	team, err := api.App().Team().GetActiveTeamMember(ctx, info.User.ID)
+	if err != nil {
+		return nil, err
+	}
+	if team == nil {
+		return nil, huma.Error404NotFound("team not found")
+	}
+	return &TeamMemberOutput{
+		Body: fromTeamMemberModel(team),
+	}, nil
+}
 func TeamChannel(teamMemberId string) string {
 	return "team_member_id:" + teamMemberId
 }
@@ -327,4 +367,117 @@ func (api *Api) bindFindTeamMemberByID(aapi huma.API) {
 			}, nil
 		},
 	)
+}
+
+func (api *Api) bindFindTeamTeamMembers(
+	humaApi huma.API,
+) {
+	huma.Register(
+		humaApi,
+		huma.Operation{
+			OperationID: "get-team-team-members",
+			Method:      http.MethodGet,
+			Path:        "/teams/{team-id}/members",
+			Summary:     "get-team-team-members",
+			Description: "get members of a team by team team ID",
+			Tags:        []string{"Teams", "Team Members"},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+			Errors: []int{http.StatusInternalServerError, http.StatusBadRequest},
+		},
+		api.FindTeamTeamMembers,
+	)
+}
+
+type FindTeamTeamMembersInput struct {
+	PaginatedInput
+	SortParams
+	Q      string `query:"q,omitempty" required:"false"`
+	TeamID string `path:"team-id" required:"true" format:"uuid"`
+}
+
+func (api *Api) FindTeamTeamMembers(
+	ctx context.Context,
+	input *FindTeamTeamMembersInput,
+) (
+	*ApiPaginatedOutput[*TeamMember],
+	error,
+) {
+	teamID, err := uuid.Parse(input.TeamID)
+	if err != nil {
+		return nil, huma.Error400BadRequest("invalid team ID")
+	}
+	info := contextstore.GetContextUserInfo(ctx)
+	if info == nil {
+		return nil, huma.Error401Unauthorized("unauthorized")
+	}
+	filter := &stores.TeamMemberFilter{}
+	filter.Page = input.Page
+	filter.PerPage = input.PerPage
+	filter.SortBy = input.SortBy
+	filter.SortOrder = input.SortOrder
+	filter.TeamIds = []uuid.UUID{teamID}
+	filter.Q = input.Q
+	members, err := api.App().Adapter().TeamMember().FindTeamMembers(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+	if len(members) > 0 {
+		userIds := make([]uuid.UUID, len(members))
+		for idx, member := range members {
+			if member == nil {
+				continue
+			}
+			if member.UserID == nil {
+				continue
+			}
+			userIds[idx] = *member.UserID
+		}
+		users, err := api.App().Adapter().User().LoadUsersByUserIds(ctx, userIds...)
+		if err != nil {
+			return nil, err
+		}
+		for idx := range userIds {
+			member := members[idx]
+			if member == nil {
+				continue
+			}
+			user := users[idx]
+			if user == nil {
+				continue
+			}
+			member.User = user
+		}
+
+	}
+	count, err := api.App().Adapter().TeamMember().CountTeamMembers(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+	return &ApiPaginatedOutput[*TeamMember]{
+		Body: ApiPaginatedResponse[*TeamMember]{
+			Data: mapper.Map(members, fromTeamMemberModel),
+			Meta: ApiGenerateMeta(&input.PaginatedInput, count),
+		},
+	}, nil
+}
+
+func fromTeamMemberModel(member *models.TeamMember) *TeamMember {
+	if member == nil {
+		return nil
+	}
+	return &TeamMember{
+		ID:               member.ID,
+		TeamID:           member.TeamID,
+		UserID:           member.UserID,
+		Active:           member.Active,
+		Role:             TeamMemberRole(member.Role),
+		HasBillingAccess: member.HasBillingAccess,
+		LastSelectedAt:   member.LastSelectedAt,
+		CreatedAt:        member.CreatedAt,
+		UpdatedAt:        member.UpdatedAt,
+		Team:             fromTeamModel(member.Team),
+		User:             fromUserModel(member.User),
+	}
 }

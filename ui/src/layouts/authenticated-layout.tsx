@@ -1,11 +1,6 @@
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { useEffect, useRef } from "react";
-import {
-  createSearchParams,
-  Navigate,
-  Outlet,
-  useLocation,
-} from "react-router";
+import { Navigate, Outlet, useLocation } from "react-router";
 
 export default function AuthenticatedLayout() {
   const location = useLocation();
@@ -29,9 +24,9 @@ export default function AuthenticatedLayout() {
       <Navigate
         to={{
           pathname: "/signin",
-          search: createSearchParams({
-            redirect_to: location.pathname + location.search,
-          }).toString(),
+          search:
+            "redirect_to=" +
+            encodeURIComponent(location.pathname + location.search),
         }}
       />
     );
