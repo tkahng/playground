@@ -10,6 +10,7 @@ import (
 	"github.com/tkahng/playground/internal/contextstore"
 	"github.com/tkahng/playground/internal/core"
 	"github.com/tkahng/playground/internal/models"
+	"github.com/tkahng/playground/internal/stores"
 	appHttp "github.com/tkahng/playground/internal/tools/http"
 )
 
@@ -32,13 +33,24 @@ func TeamInfoFromTeamMemberID(app core.App) HttpMiddelwareFunc {
 				_ = appHttp.WriteErr(w, r, http.StatusBadRequest, "error parsing team member id", err)
 				return
 			}
-			teamInfo, err := app.Team().FindTeamInfoByMemberID(rawCtx, parsedTeamMemberID)
+			teamMember, err := app.Adapter().TeamMember().FindTeamMember(rawCtx, &stores.TeamMemberFilter{
+				Ids: []uuid.UUID{parsedTeamMemberID},
+			})
+			if err != nil {
+				_ = appHttp.WriteErr(w, r, http.StatusInternalServerError, "error getting team member", err)
+				return
+			}
+			if teamMember == nil {
+				_ = appHttp.WriteErr(w, r, http.StatusNotFound, "team member not found", nil)
+				return
+			}
+			teamInfo, err := app.Team().FindTeamInfo(rawCtx, teamMember.TeamID, userInfo.User.ID)
 			if err != nil {
 				_ = appHttp.WriteErr(w, r, http.StatusInternalServerError, "error getting team info", err)
 				return
 			}
 			if teamInfo == nil {
-				_ = appHttp.WriteErr(w, r, http.StatusNotFound, "team not found", nil)
+				_ = appHttp.WriteErr(w, r, http.StatusNotFound, "team info not found", nil)
 				return
 			}
 
@@ -260,38 +272,6 @@ func RequireTeamMemberRolesMiddleware(roles ...models.TeamMemberRole) HttpMiddel
 					fmt.Sprintf("You do not have the required team member roles: %v", roles),
 				)
 			}
-		})
-	}
-}
-
-func LatestTeamMiddleware(app core.App) HttpMiddelwareFunc {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			rawCtx := r.Context()
-			userInfo := contextstore.GetContextUserInfo(rawCtx)
-			if userInfo == nil {
-				next.ServeHTTP(w, r)
-				return
-			}
-			info, err := app.Team().FindLatestTeamInfo(rawCtx, userInfo.User.ID)
-			if err != nil {
-				slog.ErrorContext(
-					rawCtx,
-					"error getting team info",
-					slog.String("user_id", userInfo.User.ID.String()),
-					slog.Any("error", err),
-				)
-				next.ServeHTTP(w, r)
-				return
-			}
-			if info == nil {
-				next.ServeHTTP(w, r)
-				return
-			}
-
-			ctxx := contextstore.SetContextTeamInfo(rawCtx, info)
-			r = r.WithContext(ctxx)
-			next.ServeHTTP(w, r)
 		})
 	}
 }
