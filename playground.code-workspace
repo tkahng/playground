@@ -140,6 +140,10 @@
       }
     },
     "editor.stickyScroll.defaultModel": "indentationModel",
-    "workbench.settings.showAISearchToggle": false
+    "workbench.settings.showAISearchToggle": false,
+    "typescript.referencesCodeLens.showOnAllFunctions": true,
+    "typescript.preferences.importModuleSpecifier": "non-relative",
+    "javascript.referencesCodeLens.showOnAllFunctions": true,
+    "javascript.referencesCodeLens.enabled": true
   }
 }
