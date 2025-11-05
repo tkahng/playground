@@ -7,8 +7,12 @@ import (
 	"github.com/tkahng/playground/internal/models"
 )
 
-func TeamInfoFromTeamMemberID(api huma.API, app core.App) func(ctx huma.Context, next func(huma.Context)) {
-	return HumaChiMiddleware(middleware.TeamInfoFromTeamMemberID(app))
+func UserIsMemberWithID(api huma.API, app core.App) func(ctx huma.Context, next func(huma.Context)) {
+	return HumaChiMiddleware(middleware.UserIsMemberWithID(app))
+}
+
+func TeamInfoFromUserAndMemberID(api huma.API, app core.App) func(ctx huma.Context, next func(huma.Context)) {
+	return HumaChiMiddleware(middleware.TeamInfoFromUserAndMemberID(app))
 }
 func TeamCanDelete(api huma.API, app core.App) func(ctx huma.Context, next func(huma.Context)) {
 	return HumaChiMiddleware(middleware.TeamCanDelete(app))

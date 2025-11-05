@@ -14,7 +14,37 @@ import (
 	appHttp "github.com/tkahng/playground/internal/tools/http"
 )
 
-func TeamInfoFromTeamMemberID(app core.App) HttpMiddelwareFunc {
+// UserIsMemberWithID middleware ensures that the user is the member with id {team-member-id}
+func UserIsMemberWithID(app core.App) HttpMiddelwareFunc {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			rawCtx := r.Context()
+			userInfo := contextstore.GetContextTeamInfo(rawCtx)
+			if userInfo == nil {
+				_ = appHttp.WriteErr(w, r, http.StatusUnauthorized, "unauthorized at middleware", nil)
+				return
+			}
+			teamMemberID := appHttp.GetParam(r, "team-member-id")
+			if teamMemberID == "" {
+				_ = appHttp.WriteErr(w, r, http.StatusBadRequest, "team slug is required", nil)
+				return
+			}
+			parsedTeamMemberID, err := uuid.Parse(teamMemberID)
+			if err != nil {
+				_ = appHttp.WriteErr(w, r, http.StatusBadRequest, "error parsing team member id", err)
+				return
+			}
+			if userInfo.Member.ID != parsedTeamMemberID {
+				_ = appHttp.WriteErr(w, r, http.StatusUnauthorized, "unauthorized at middleware", nil)
+				return
+			}
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
+// TeamInfoFromUserAndMemberID finds the team info from the userId and teamId of the member of {team-member-id}
+func TeamInfoFromUserAndMemberID(app core.App) HttpMiddelwareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			rawCtx := r.Context()
