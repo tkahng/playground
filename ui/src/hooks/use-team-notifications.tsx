@@ -1,7 +1,7 @@
-import { teamQueries } from "@/lib/api";
+import { useAuthProvider } from "@/hooks/use-auth-provider";
+import { useTeam } from "@/hooks/use-team";
+import { getTeamMemberNotifications } from "@/lib/team-queries";
 import { useQuery } from "@tanstack/react-query";
-import { useAuthProvider } from "./use-auth-provider";
-import { useTeam } from "./use-team";
 
 export function useTeamNotifications() {
   const { user } = useAuthProvider();
@@ -20,7 +20,7 @@ export function useTeamNotifications() {
       if (!teamMember?.id) {
         throw new Error("Current team member team ID is required");
       }
-      const notifications = await teamQueries.getTeamMemberNotifications(
+      const notifications = await getTeamMemberNotifications(
         user.tokens.access_token,
         teamMember!.id,
         0,

@@ -37,9 +37,10 @@ import { TaskContext } from "@/context/task-context";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { useDialog } from "@/hooks/use-dialog";
 import { useTeam } from "@/hooks/use-team";
-import { getTeamTeamMembers, updateTask } from "@/lib/api";
+import { updateTask } from "@/lib/api";
 import { GetError } from "@/lib/get-error";
 import { useTaskQuery } from "@/lib/queries";
+import { getTeamTeamMembers } from "@/lib/team-queries";
 import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 

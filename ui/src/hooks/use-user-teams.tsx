@@ -1,4 +1,4 @@
-import { getUserTeams } from "@/lib/api";
+import { getUserTeams } from "@/lib/team-queries";
 import { useQuery } from "@tanstack/react-query";
 import { useAuthProvider } from "./use-auth-provider";
 

@@ -7,8 +7,8 @@ import { RouteMap } from "@/components/route-map";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { useTeam } from "@/hooks/use-team";
 import { useUserTeams } from "@/hooks/use-user-teams";
-import { getUserTeams } from "@/lib/api";
 import { GetError } from "@/lib/get-error";
+import { getUserTeams } from "@/lib/team-queries";
 import { Team } from "@/schema.types";
 import { useQuery } from "@tanstack/react-query";
 import { PaginationState, Updater } from "@tanstack/react-table";
@@ -118,7 +118,7 @@ export default function AccountTeamsPage() {
                   }
                   return (
                     <span className="text-gray-500">
-                      {members[0].role || "Member"}
+                      {members[0]?.role || "Member"}
                     </span>
                   );
                 },
