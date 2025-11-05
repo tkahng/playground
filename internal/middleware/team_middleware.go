@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"fmt"
-	"log/slog"
 	"net/http"
 	"slices"
 
@@ -14,8 +13,8 @@ import (
 	appHttp "github.com/tkahng/playground/internal/tools/http"
 )
 
-// UserIsMemberWithID middleware ensures that the user is the member with id {team-member-id}
-func UserIsMemberWithID(app core.App) HttpMiddelwareFunc {
+// MemberIdBelongsToUser middleware ensures that the user is the member with id {team-member-id}
+func MemberIdBelongsToUser(app core.App) HttpMiddelwareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			rawCtx := r.Context()
@@ -91,10 +90,10 @@ func TeamInfoFromUserAndMemberID(app core.App) HttpMiddelwareFunc {
 	}
 }
 
+// TeamCanDelete middleware checks whether the team can be deleted, i.e. it has no valid subscriptions
 func TeamCanDelete(app core.App) HttpMiddelwareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			slog.Info("starting TeamCanDelete middleware")
 			rawCtx := r.Context()
 			teamInfo := contextstore.GetContextTeamInfo(rawCtx)
 			if teamInfo == nil {
@@ -115,6 +114,9 @@ func TeamCanDelete(app core.App) HttpMiddelwareFunc {
 	}
 }
 
+// TeamInfoFromTask captures the {task-id} path param to query its teamId, and along with the user info, queries the teamInfo membership.
+// If the user has membership in the team of the task, that teamInfo is added to the context, and the request is forwarded to the next middleware,
+// otherwise it returns an error
 func TeamInfoFromTask(app core.App) HttpMiddelwareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -149,7 +151,7 @@ func TeamInfoFromTask(app core.App) HttpMiddelwareFunc {
 				return
 			}
 			if teamInfo == nil {
-				_ = appHttp.WriteErr(w, r, http.StatusNotFound, "team not found", nil)
+				_ = appHttp.WriteErr(w, r, http.StatusUnauthorized, "you are not part of the task's team", nil)
 				return
 			}
 
@@ -160,6 +162,8 @@ func TeamInfoFromTask(app core.App) HttpMiddelwareFunc {
 	}
 }
 
+// TeamInfoFromTaskProject captures the {"task-project-id"} path param to query its teamId, and along with the user info, queries the teamInfo membership.
+// If the user has membership in the team of the task project, that teamInfo is added to the context and the request is forwarded to the next middleware, otherwise it returns an error
 func TeamInfoFromTaskProject(app core.App) HttpMiddelwareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -205,6 +209,8 @@ func TeamInfoFromTaskProject(app core.App) HttpMiddelwareFunc {
 	}
 }
 
+// TeamInfoFromTeamSlug captures the {team-slug} path param, and along with the user info, queries the teamInfo.
+// If the user has membership in the team of {team-slug}, that teamInfo is added to the context, otherwise it returns an error
 func TeamInfoFromTeamSlug(app core.App) HttpMiddelwareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -236,6 +242,8 @@ func TeamInfoFromTeamSlug(app core.App) HttpMiddelwareFunc {
 	}
 }
 
+// TeamInfoFromParam captures the {team-id} path param, and along with the user info, queries the teamInfo.
+// If the user has membership in the team of the task project, that teamInfo is added to the context, otherwise it returns an error
 func TeamInfoFromParam(app core.App) HttpMiddelwareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -264,7 +272,6 @@ func TeamInfoFromParam(app core.App) HttpMiddelwareFunc {
 				_ = appHttp.WriteErr(w, r, http.StatusNotFound, "team not found", nil)
 				return
 			}
-			slog.Info("found team info")
 			ctxx := contextstore.SetContextTeamInfo(rawCtx, teamInfo)
 			r = r.WithContext(ctxx)
 			next.ServeHTTP(w, r)
@@ -272,19 +279,17 @@ func TeamInfoFromParam(app core.App) HttpMiddelwareFunc {
 	}
 }
 
+// RequireTeamMemberRolesMiddleware checks if the member has the required team member roles
 func RequireTeamMemberRolesMiddleware(roles ...models.TeamMemberRole) HttpMiddelwareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			slog.Info("starting RequireTeamMemberRolesMiddleware")
 			rawCtx := r.Context()
 			if info := contextstore.GetContextTeamInfo(rawCtx); info != nil {
-				slog.Info("found team info in context")
 				if len(roles) == 0 {
 					next.ServeHTTP(w, r)
 					return
 				}
 				if slices.Contains(roles, info.Member.Role) {
-					slog.Info("user has required team member role")
 					next.ServeHTTP(w, r)
 					return
 				}

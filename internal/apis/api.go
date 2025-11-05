@@ -172,37 +172,49 @@ func newApiGroup(r chi.Router) huma.API {
 type HumaMiddlewareFunc func(ctx huma.Context, next func(huma.Context))
 
 type ApiMiddlewares struct {
-	SelectCustomerFromUser   HumaMiddlewareFunc
-	SelectCustomerFromTeam   HumaMiddlewareFunc
-	TeamInfoFromParam        HumaMiddlewareFunc
-	TeamInfoFromTask         HumaMiddlewareFunc
-	TeamInfoFromTaskProject  HumaMiddlewareFunc
-	TeamInfoFromTeamMemberID HumaMiddlewareFunc
-	TeamInfoFromTeamSlug     HumaMiddlewareFunc
-	TeamCanDelete            HumaMiddlewareFunc
-	EmailVerified            HumaMiddlewareFunc
-	TeamRequiredOwnerMember  HumaMiddlewareFunc
-	TeamRequiredAnyMember    HumaMiddlewareFunc
-	Auth                     HumaMiddlewareFunc
-	RequireAuth              HumaMiddlewareFunc
-	Recoverer                HumaMiddlewareFunc
+	// customer middlewares
+	SelectCustomerFromUser HumaMiddlewareFunc
+	SelectCustomerFromTeam HumaMiddlewareFunc
+	// team info middlewares
+	TeamInfoFromParam           HumaMiddlewareFunc
+	TeamInfoFromTeamSlug        HumaMiddlewareFunc
+	TeamInfoFromUserAndMemberID HumaMiddlewareFunc
+	TeamInfoFromTask            HumaMiddlewareFunc
+	TeamInfoFromTaskProject     HumaMiddlewareFunc
+	// check middlewares
+	MemberIdBelongsToUser   HumaMiddlewareFunc
+	TeamCanDelete           HumaMiddlewareFunc
+	EmailVerified           HumaMiddlewareFunc
+	TeamRequiredOwnerMember HumaMiddlewareFunc
+	TeamRequiredAnyMember   HumaMiddlewareFunc
+	// auth middlewares
+	Auth        HumaMiddlewareFunc
+	RequireAuth HumaMiddlewareFunc
+	// common middlewares
+	Recoverer HumaMiddlewareFunc
 }
 
 func newApiMiddlewares(api huma.API, app core.App) *ApiMiddlewares {
 	return &ApiMiddlewares{
-		SelectCustomerFromUser:   humamiddleware.SelectCustomerFromUser(api, app),
-		SelectCustomerFromTeam:   humamiddleware.SelectCustomerFromTeam(api, app),
-		TeamInfoFromParam:        humamiddleware.TeamInfoFromParam(api, app),
-		TeamInfoFromTask:         humamiddleware.TeamInfoFromTask(api, app),
-		TeamInfoFromTaskProject:  humamiddleware.TeamInfoFromTaskProject(api, app),
-		TeamInfoFromTeamMemberID: humamiddleware.TeamInfoFromTeamMemberID(api, app),
-		TeamInfoFromTeamSlug:     humamiddleware.TeamInfoFromTeamSlug(api, app),
-		TeamCanDelete:            humamiddleware.TeamCanDelete(api, app),
-		EmailVerified:            humamiddleware.HumaEmailVerifiedMiddleware(api, app),
-		TeamRequiredOwnerMember:  humamiddleware.RequireTeamMemberRolesMiddleware(api, models.TeamMemberRoleOwner),
-		TeamRequiredAnyMember:    humamiddleware.RequireTeamMemberRolesMiddleware(api),
-		Auth:                     humamiddleware.HumaAuthMiddleware(api, app),
-		RequireAuth:              humamiddleware.HumaRequireAuthMiddleware(api, app),
-		Recoverer:                humamiddleware.HumaChiMiddleware(middleware.RecovererMiddleware(app)),
+		// customer middlewares
+		SelectCustomerFromUser: humamiddleware.SelectCustomerFromUser(api, app),
+		SelectCustomerFromTeam: humamiddleware.SelectCustomerFromTeam(api, app),
+		// team info middlewares
+		TeamInfoFromParam:           humamiddleware.TeamInfoFromParam(api, app),
+		TeamInfoFromTeamSlug:        humamiddleware.TeamInfoFromTeamSlug(api, app),
+		TeamInfoFromUserAndMemberID: humamiddleware.TeamInfoFromUserAndMemberID(api, app),
+		TeamInfoFromTask:            humamiddleware.TeamInfoFromTask(api, app),
+		TeamInfoFromTaskProject:     humamiddleware.TeamInfoFromTaskProject(api, app),
+		// check middlewares
+		MemberIdBelongsToUser:   humamiddleware.MemberIdBelongsToUser(api, app),
+		TeamCanDelete:           humamiddleware.TeamCanDelete(api, app),
+		EmailVerified:           humamiddleware.HumaEmailVerifiedMiddleware(api, app),
+		TeamRequiredOwnerMember: humamiddleware.RequireTeamMemberRolesMiddleware(api, models.TeamMemberRoleOwner),
+		TeamRequiredAnyMember:   humamiddleware.RequireTeamMemberRolesMiddleware(api),
+		// auth middlewares
+		Auth:        humamiddleware.HumaAuthMiddleware(api, app),
+		RequireAuth: humamiddleware.HumaRequireAuthMiddleware(api, app),
+		// common middlewares
+		Recoverer: humamiddleware.HumaChiMiddleware(middleware.RecovererMiddleware(app)),
 	}
 }

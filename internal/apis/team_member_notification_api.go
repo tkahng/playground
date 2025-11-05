@@ -10,7 +10,6 @@ import (
 	humasse "github.com/danielgtaylor/huma/v2/sse"
 	"github.com/google/uuid"
 	"github.com/tkahng/playground/internal/contextstore"
-	"github.com/tkahng/playground/internal/middleware/humamiddleware"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/notification"
 	"github.com/tkahng/playground/internal/shared"
@@ -29,7 +28,8 @@ type TeamMemberSseInput struct {
 }
 
 func (api *Api) bindTeamMembersSseEvents(humapi huma.API) {
-	membermiddleware := humamiddleware.TeamInfoFromTeamMemberID(humapi, api.App())
+	teamInfoFromMemberId := api.Middlewares().TeamInfoFromUserAndMemberID
+	userIsMember := api.Middlewares().MemberIdBelongsToUser
 	hanlder := sse.ServeSSE(
 		func(ctx context.Context, f func(any) error, input *TeamMemberSseInput) sse.Client {
 			teamInfo := contextstore.GetContextTeamInfo(ctx)
@@ -60,7 +60,8 @@ func (api *Api) bindTeamMembersSseEvents(humapi huma.API) {
 				shared.BearerAuthSecurityKey: {},
 			}},
 			Middlewares: huma.Middlewares{
-				membermiddleware,
+				teamInfoFromMemberId,
+				userIsMember,
 			},
 			Errors: []int{http.StatusInternalServerError, http.StatusBadRequest},
 		},
@@ -127,7 +128,8 @@ func fromModelNotification(notification *models.Notification) *Notification {
 	}
 }
 func (api *Api) bindFindTeamMembersNotifications(aapi huma.API) {
-	teamInfoFromMember := api.Middlewares().TeamInfoFromTeamMemberID
+	teamInfoFromMember := api.Middlewares().TeamInfoFromUserAndMemberID
+	userIsMember := api.Middlewares().MemberIdBelongsToUser
 	huma.Register(
 		aapi,
 		huma.Operation{
@@ -143,6 +145,7 @@ func (api *Api) bindFindTeamMembersNotifications(aapi huma.API) {
 			}},
 			Middlewares: huma.Middlewares{
 				teamInfoFromMember,
+				userIsMember,
 			},
 		},
 		func(ctx context.Context, input *TeamMembersNotificationsInput) (*ApiPaginatedOutput[*Notification], error) {
@@ -183,7 +186,8 @@ type ReadTeamMembersNotificationsInput struct {
 }
 
 func (api *Api) bindReadTeamMembersNotifications(aapi huma.API) {
-	teamMemberMiddleware := api.Middlewares().TeamInfoFromTeamMemberID
+	teamMemberMiddleware := api.Middlewares().TeamInfoFromUserAndMemberID
+	userIsMember := api.Middlewares().MemberIdBelongsToUser
 	huma.Register(
 		aapi,
 		huma.Operation{
@@ -199,6 +203,7 @@ func (api *Api) bindReadTeamMembersNotifications(aapi huma.API) {
 			}},
 			Middlewares: huma.Middlewares{
 				teamMemberMiddleware,
+				userIsMember,
 			},
 		},
 		func(ctx context.Context, input *ReadTeamMembersNotificationsInput) (*struct{}, error) {
@@ -234,7 +239,8 @@ func (api *Api) bindReadTeamMembersNotifications(aapi huma.API) {
 }
 
 func (api *Api) bindDeleteTeamMembersNotifications(aapi huma.API) {
-	teamMemberMiddleware := api.Middlewares().TeamInfoFromTeamMemberID
+	teamMemberMiddleware := api.Middlewares().TeamInfoFromUserAndMemberID
+	userIsMember := api.Middlewares().MemberIdBelongsToUser
 	huma.Register(
 		aapi,
 		huma.Operation{
@@ -250,6 +256,7 @@ func (api *Api) bindDeleteTeamMembersNotifications(aapi huma.API) {
 			}},
 			Middlewares: huma.Middlewares{
 				teamMemberMiddleware,
+				userIsMember,
 			},
 		},
 		func(ctx context.Context, input *ReadTeamMembersNotificationsInput) (*struct{}, error) {

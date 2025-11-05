@@ -36,29 +36,6 @@ type TeamMemberOutput struct {
 	Body *TeamMember `json:"body"`
 }
 
-func (api *Api) GetActiveTeamMember(
-	ctx context.Context,
-	input *struct{},
-) (
-	*TeamMemberOutput,
-	error,
-) {
-	info := contextstore.GetContextUserInfo(ctx)
-	if info == nil {
-		return nil, huma.Error401Unauthorized("unauthorized")
-	}
-	team, err := api.App().Team().GetActiveTeamMember(ctx, info.User.ID)
-	if err != nil {
-		return nil, err
-	}
-	if team == nil {
-		return nil, huma.Error404NotFound("team not found")
-	}
-	return &TeamMemberOutput{
-		Body: fromTeamMemberModel(team),
-	}, nil
-}
-
 type FindTeamTeamMemberByIDInput struct {
 	TeamID       string `path:"team-id" required:"true" format:"uuid"`
 	TeamMemberID string `path:"team-member-id" required:"true" format:"uuid"`
@@ -109,9 +86,7 @@ func (api *Api) bindFindTeamMemberByID(aapi huma.API) {
 	)
 }
 
-func (api *Api) bindFindTeamTeamMembers(
-	humaApi huma.API,
-) {
+func (api *Api) bindFindTeamTeamMembers(humaApi huma.API) {
 	huma.Register(
 		humaApi,
 		huma.Operation{
@@ -137,13 +112,7 @@ type FindTeamTeamMembersInput struct {
 	TeamID string `path:"team-id" required:"true" format:"uuid"`
 }
 
-func (api *Api) FindTeamTeamMembers(
-	ctx context.Context,
-	input *FindTeamTeamMembersInput,
-) (
-	*ApiPaginatedOutput[*TeamMember],
-	error,
-) {
+func (api *Api) FindTeamTeamMembers(ctx context.Context, input *FindTeamTeamMembersInput) (*ApiPaginatedOutput[*TeamMember], error) {
 	teamID, err := uuid.Parse(input.TeamID)
 	if err != nil {
 		return nil, huma.Error400BadRequest("invalid team ID")
@@ -221,3 +190,95 @@ func fromTeamMemberModel(member *models.TeamMember) *TeamMember {
 		User:             fromUserModel(member.User),
 	}
 }
+
+func (api *Api) GetActiveTeamMember(ctx context.Context, input *struct{}) (*TeamMemberOutput, error) {
+	info := contextstore.GetContextUserInfo(ctx)
+	if info == nil {
+		return nil, huma.Error401Unauthorized("unauthorized")
+	}
+	team, err := api.App().Team().GetActiveTeamMember(ctx, info.User.ID)
+	if err != nil {
+		return nil, err
+	}
+	if team == nil {
+		return nil, huma.Error404NotFound("team not found")
+	}
+	return &TeamMemberOutput{
+		Body: fromTeamMemberModel(team),
+	}, nil
+}
+
+type UpdateTeamMemberDto struct {
+	Active           bool           `json:"active"`
+	Role             TeamMemberRole `json:"role" enum:"owner,member,guest"`
+	HasBillingAccess bool           `json:"has_billing_access"`
+}
+type UpdateTeamsTeamMemberInput struct {
+	TeamMemberID string `path:"team-member-id" required:"true" format:"uuid"`
+	Body         UpdateTeamMemberDto
+}
+
+// func (api *Api) UpdateTeamMemberBind(humaApi huma.API) {
+// 	teamInfo := api.Middlewares().TeamInfoFromUserAndMemberID
+// 	ownerRole := api.Middlewares().TeamRequiredOwnerMember
+// 	huma.Register(
+// 		humaApi,
+// 		huma.Operation{
+// 			OperationID: "update-team-member",
+// 			Method:      http.MethodPut,
+// 			Path:        "/team-members/{team-member-id}",
+// 			Summary:     "update-team-member",
+// 			Description: "update a team member",
+// 			Tags:        []string{"Team Members"},
+// 			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
+// 			Security: []map[string][]string{{
+// 				shared.BearerAuthSecurityKey: {},
+// 			}},
+// 			Middlewares: huma.Middlewares{
+// 				teamInfo,
+// 				ownerRole,
+// 			},
+// 		},
+// 		func(ctx context.Context, input *UpdateTeamsTeamMemberInput) (*ApiOutput[*TeamMember], error) {
+// 			teamInfo := contextstore.GetContextTeamInfo(ctx)
+// 			if teamInfo == nil {
+// 				return nil, huma.Error401Unauthorized("no team info")
+// 			}
+// 			memberId, err := uuid.Parse(input.TeamMemberID)
+// 			if err != nil {
+// 				return nil, err
+// 			}
+// 			member, err := api.App().Adapter().TeamMember().FindTeamMember(ctx, &stores.TeamMemberFilter{
+// 				Ids: []uuid.UUID{memberId},
+// 			})
+// 			if err != nil {
+// 				return nil, err
+// 			}
+// 			if member == nil {
+// 				return nil, huma.Error404NotFound("team member not found")
+// 			}
+
+// 			member.Active = input.Body.Active
+// 			member.Role = models.TeamMemberRole(input.Body.Role)
+// 			member.HasBillingAccess = input.Body.HasBillingAccess
+// 			updatedMember, err = api.App().Adapter().TeamMember().UpdateTeamMember(ctx, member)
+// 			if err != nil {
+// 				return nil, err
+// 			}
+// 			otherTeamInfo, err := api.App().Team().FindTeamInfoByMemberID(ctx, memberId)
+// 			if err != nil {
+// 				return nil, err
+// 			}
+// 			if otherTeamInfo == nil {
+// 				return nil, huma.Error404NotFound("team not found")
+// 			}
+
+// 			teamMember := fromTeamMemberModel(&otherTeamInfo.Member)
+// 			teamMember.Team = fromTeamModel(&otherTeamInfo.Team)
+// 			teamMember.User = fromUserModel(&otherTeamInfo.User)
+// 			return &ApiOutput[*TeamMember]{
+// 				Body: teamMember,
+// 			}, nil
+// 		},
+// 	)
+// }
