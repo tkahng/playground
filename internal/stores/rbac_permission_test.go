@@ -578,7 +578,7 @@ func TestUpdatePermission(t *testing.T) {
 	})
 }
 func TestCreateRolePermissions(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 	test.SkipIfShort(t)
 	database.WithNewTestTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		rbacStore := stores.NewDbRBACStore(dbxx)
