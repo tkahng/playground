@@ -90,7 +90,7 @@ func (api *Api) bindCreateTeam(humaApi huma.API) {
 				shared.BearerAuthSecurityKey: {},
 			}},
 			Middlewares: huma.Middlewares{
-				api.middlewares.EmailVerified,
+				api.Middlewares().GetEmailVerified(),
 			},
 		},
 		api.CreateTeam,
@@ -303,7 +303,7 @@ func (api *Api) bindFindTeamInfoBySlug(humaApi huma.API) {
 				shared.BearerAuthSecurityKey: {},
 			}},
 			Middlewares: huma.Middlewares{
-				api.middlewares.TeamInfoFromTeamSlug,
+				api.Middlewares().GetTeamInfoFromTeamSlug(),
 			},
 		},
 		api.FindTeamInfoBySlug,
@@ -364,8 +364,8 @@ func (api *Api) bindUpdateTeam(humaApi huma.API) {
 				shared.BearerAuthSecurityKey: {},
 			}},
 			Middlewares: huma.Middlewares{
-				api.middlewares.TeamInfoFromParam,
-				api.middlewares.TeamRequiredOwnerMember,
+				api.Middlewares().GetTeamInfoFromParam(),
+				api.Middlewares().GetTeamRequiredOwnerMember(),
 			},
 		},
 		api.UpdateTeam,
@@ -443,8 +443,8 @@ func (api *Api) bindGetTeam(humaApi huma.API) {
 				shared.BearerAuthSecurityKey: {},
 			}},
 			Middlewares: huma.Middlewares{
-				api.middlewares.TeamInfoFromParam,
-				api.middlewares.TeamRequiredAnyMember,
+				api.Middlewares().GetTeamInfoFromParam(),
+				api.Middlewares().GetTeamRequiredAnyMember(),
 			},
 		},
 		api.GetTeam,

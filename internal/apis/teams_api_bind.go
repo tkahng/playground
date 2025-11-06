@@ -55,9 +55,9 @@ func bindTeamsApi(appApi *Api) {
 				shared.BearerAuthSecurityKey: {},
 			}},
 			Middlewares: huma.Middlewares{
-				appApi.middlewares.TeamInfoFromParam,
-				appApi.middlewares.TeamRequiredOwnerMember,
-				appApi.middlewares.TeamCanDelete,
+				appApi.Middlewares().GetTeamInfoFromParam(),
+				appApi.Middlewares().GetTeamRequiredOwnerMember(),
+				appApi.Middlewares().GetTeamCanDelete(),
 			},
 		},
 		appApi.DeleteTeam,
@@ -80,8 +80,8 @@ func bindTeamsApi(appApi *Api) {
 				shared.BearerAuthSecurityKey: {},
 			}},
 			Middlewares: huma.Middlewares{
-				appApi.middlewares.TeamInfoFromParam,
-				appApi.middlewares.TeamRequiredOwnerMember,
+				appApi.Middlewares().GetTeamInfoFromParam(),
+				appApi.Middlewares().GetTeamRequiredOwnerMember(),
 			},
 		},
 		appApi.CreateInvitation,
@@ -102,8 +102,8 @@ func bindTeamsApi(appApi *Api) {
 				shared.BearerAuthSecurityKey: {},
 			}},
 			Middlewares: huma.Middlewares{
-				appApi.middlewares.TeamInfoFromParam,
-				appApi.middlewares.TeamRequiredOwnerMember,
+				appApi.Middlewares().GetTeamInfoFromParam(),
+				appApi.Middlewares().GetTeamRequiredOwnerMember(),
 			},
 		},
 		appApi.CencelInvitation,
@@ -125,7 +125,7 @@ func bindTeamsApi(appApi *Api) {
 				shared.BearerAuthSecurityKey: {},
 			}},
 			Middlewares: huma.Middlewares{
-				appApi.middlewares.TeamInfoFromParam,
+				appApi.Middlewares().GetTeamInfoFromParam(),
 			},
 		},
 		appApi.FindInvitations,

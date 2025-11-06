@@ -258,6 +258,38 @@ type ApiMiddlewares struct {
 	Recoverer HumaMiddlewareFunc
 }
 
+func (a *ApiMiddlewares) GetEmailVerified() HumaMiddlewareFunc {
+	return a.EmailVerified
+}
+
+func (a *ApiMiddlewares) GetTeamCanDelete() HumaMiddlewareFunc {
+	return a.TeamCanDelete
+}
+
+func (a *ApiMiddlewares) GetTeamRequiredAnyMember() HumaMiddlewareFunc {
+	return a.TeamRequiredAnyMember
+}
+
+func (a *ApiMiddlewares) GetTeamRequiredOwnerMember() HumaMiddlewareFunc {
+	return a.TeamRequiredOwnerMember
+}
+
+func (a *ApiMiddlewares) GetTeamInfoFromTeamSlug() HumaMiddlewareFunc {
+	return a.TeamInfoFromTeamSlug
+}
+
+func (a *ApiMiddlewares) GetTeamInfoFromParam() HumaMiddlewareFunc {
+	return a.TeamInfoFromParam
+}
+
+func (a *ApiMiddlewares) GetSelectCustomerFromTeam() HumaMiddlewareFunc {
+	return a.SelectCustomerFromTeam
+}
+
+func (a *ApiMiddlewares) GetSelectCustomerFromUser() HumaMiddlewareFunc {
+	return a.SelectCustomerFromUser
+}
+
 func newApiMiddlewares(app core.App) *ApiMiddlewares {
 	return &ApiMiddlewares{
 		// customer middlewares

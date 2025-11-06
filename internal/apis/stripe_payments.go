@@ -41,8 +41,8 @@ func (a *Api) bindCreateTeamCheckoutSession(stripeGroup huma.API) {
 			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
 			Security:    []map[string][]string{{shared.BearerAuthSecurityKey: {}}},
 			Middlewares: huma.Middlewares{
-				a.middlewares.TeamInfoFromParam,
-				a.middlewares.SelectCustomerFromTeam,
+				a.Middlewares().GetTeamInfoFromParam(),
+				a.Middlewares().GetSelectCustomerFromTeam(),
 			},
 		},
 		a.CreateTeamCheckoutSession,
@@ -82,7 +82,7 @@ func (a *Api) bindCreateUserCheckoutSession(stripeGroup huma.API) {
 			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
 			Security:    []map[string][]string{{shared.BearerAuthSecurityKey: {}}},
 			Middlewares: huma.Middlewares{
-				a.middlewares.SelectCustomerFromUser,
+				a.Middlewares().GetSelectCustomerFromUser(),
 			},
 		},
 		a.CreateUserCheckoutSession,
@@ -123,7 +123,7 @@ func (a *Api) bindStripeBillingPortal(stripeGroup huma.API) {
 			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
 			Security:    []map[string][]string{{shared.BearerAuthSecurityKey: {}}},
 			Middlewares: huma.Middlewares{
-				a.middlewares.SelectCustomerFromUser,
+				a.Middlewares().GetSelectCustomerFromUser(),
 			},
 		},
 		a.StripeBillingPortal,
@@ -161,8 +161,8 @@ func (a *Api) bindStripeTeamBillingPortal(stripeGroup huma.API) {
 			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
 			Security:    []map[string][]string{{shared.BearerAuthSecurityKey: {}}},
 			Middlewares: huma.Middlewares{
-				a.middlewares.TeamInfoFromParam,
-				a.middlewares.SelectCustomerFromTeam,
+				a.Middlewares().GetTeamInfoFromParam(),
+				a.Middlewares().GetSelectCustomerFromTeam(),
 			},
 		},
 		a.StripeTeamBillingPortal,
