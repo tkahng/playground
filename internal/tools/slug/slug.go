@@ -15,6 +15,7 @@ func NewSlug(title string) string {
 
 	// Replace spaces with dashes
 	slug = strings.ReplaceAll(slug, " ", "-")
+	slug = strings.ReplaceAll(slug, "_", "-")
 	slug = regex.ReplaceAllString(slug, "")
 
 	return slug
