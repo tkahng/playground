@@ -19,7 +19,6 @@ func TeamMemberFromParam(app core.App) HttpMiddelwareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// context
-			rawCtx := r.Context()
 			// get team-member-id
 			key := "team-member-id"
 			teamMemberID := appHttp.GetParam(r, key)
@@ -28,6 +27,7 @@ func TeamMemberFromParam(app core.App) HttpMiddelwareFunc {
 				next.ServeHTTP(w, r)
 				return
 			}
+			rawCtx := r.Context()
 			// parse team-member-id to uuid
 			parsedTeamMemberID, err := uuid.Parse(teamMemberID)
 			if err != nil {
@@ -80,7 +80,6 @@ func TeamFromParam(app core.App) HttpMiddelwareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// context
-			rawCtx := r.Context()
 			// get team-id
 			key := "team-id"
 			teamId := appHttp.GetParam(r, key)
@@ -93,7 +92,7 @@ func TeamFromParam(app core.App) HttpMiddelwareFunc {
 			parsedTeamID, err := uuid.Parse(teamId)
 			if err != nil {
 				slog.ErrorContext(
-					rawCtx,
+					r.Context(),
 					"error while parsing teamID in TeamFromParam middleware",
 					slog.Any("error", err),
 					slog.String(key, teamId),
@@ -101,6 +100,7 @@ func TeamFromParam(app core.App) HttpMiddelwareFunc {
 				_ = appHttp.WriteErr(w, r, http.StatusBadRequest, "error parsing team id. invalid UUID format")
 				return
 			}
+			rawCtx := r.Context()
 			// query team from team-id.
 			// do not filter by active, we will filter it later
 			team, err := app.Adapter().TeamGroup().FindTeamByID(rawCtx, parsedTeamID)
@@ -123,6 +123,52 @@ func TeamFromParam(app core.App) HttpMiddelwareFunc {
 					rawCtx,
 					"no team with given team-id found",
 					slog.String(key, teamId),
+				)
+				next.ServeHTTP(w, r)
+				return
+			}
+			// add team to context
+			newCtx := contextstore.SetContextTeam(rawCtx, team)
+			r = r.WithContext(newCtx)
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+func TeamFromParamSlug(app core.App) HttpMiddelwareFunc {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// context
+			// get team-id
+			key := "team-slug"
+			teamSlug := appHttp.GetParam(r, key)
+			// if team-id is empty then move on
+			if teamSlug == "" {
+				next.ServeHTTP(w, r)
+				return
+			}
+			rawCtx := r.Context()
+			// query team from team-slug.
+			// do not filter by active, we will filter it later
+			team, err := app.Adapter().TeamGroup().FindTeamBySlug(rawCtx, teamSlug)
+			if err != nil {
+				slog.ErrorContext(
+					rawCtx,
+					"error while querying team in TeamFromParam middleware",
+					slog.Any("error", err),
+					slog.String(key, teamSlug),
+				)
+				_ = appHttp.WriteErr(w, r, http.StatusInternalServerError, "error while querying team")
+				return
+			}
+			// if team id was not nil and valid uuid,
+			// it is reasonable to assume that the team exists,
+			// assuming the uuid was provided within our system.
+			// however this is not a security check, so we will log it and move on.
+			if team == nil {
+				slog.WarnContext(
+					rawCtx,
+					"no team with given team-slug found",
+					slog.String(key, teamSlug),
 				)
 				next.ServeHTTP(w, r)
 				return

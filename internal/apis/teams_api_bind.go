@@ -15,6 +15,7 @@ func bindTeamsApi(appApi *Api) {
 	teamsGroup.UseMiddleware(
 		humamiddleware.HumaChiMiddlewares(
 			middleware.TeamFromParam(app),
+			middleware.TeamFromParamSlug(app),
 			middleware.TeamMemberFromParam(app),
 		)...,
 	)
