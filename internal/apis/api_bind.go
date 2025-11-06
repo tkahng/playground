@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/danielgtaylor/huma/v2"
+	"github.com/tkahng/playground/internal/middleware"
 	"github.com/tkahng/playground/internal/middleware/humamiddleware"
 	"github.com/tkahng/playground/internal/shared"
 	"github.com/tkahng/playground/internal/tools/types"
@@ -33,9 +34,13 @@ func bindApis(appApi *Api) {
 }
 func bindMiddlewares(api API) {
 	api.Api().UseMiddleware(humamiddleware.HumaOperationSecurityMiddleware())
-	api.Api().UseMiddleware(api.Middlewares().GetRecoverer())
-	api.Api().UseMiddleware(api.Middlewares().GetAuth())
-	api.Api().UseMiddleware(api.Middlewares().GetRequireAuth())
+	api.Api().UseMiddleware(
+		humamiddleware.HumaChiMiddlewares(
+			middleware.RecovererMiddleware(),
+			middleware.HttpAuthMiddleware(api.App()),
+			middleware.HttpRequireAuthMiddleware(),
+		)...,
+	)
 }
 
 type IndexOutputBody struct {
