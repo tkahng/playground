@@ -86,6 +86,13 @@ func (api *Api) bindFindTeamMemberByID(aapi huma.API) {
 	)
 }
 
+type FindTeamTeamMembersInput struct {
+	PaginatedInput
+	SortParams
+	Q      string `query:"q,omitempty" required:"false"`
+	TeamID string `path:"team-id" required:"true" format:"uuid"`
+}
+
 func (api *Api) bindFindTeamTeamMembers(humaApi huma.API) {
 	huma.Register(
 		humaApi,
@@ -101,75 +108,67 @@ func (api *Api) bindFindTeamTeamMembers(humaApi huma.API) {
 			}},
 			Errors: []int{http.StatusInternalServerError, http.StatusBadRequest},
 		},
-		api.FindTeamTeamMembers,
-	)
-}
+		func(ctx context.Context, input *FindTeamTeamMembersInput) (*ApiPaginatedOutput[*TeamMember], error) {
+			team := contextstore.GetContextTeam(ctx)
+			if team == nil {
+				return nil, huma.Error404NotFound("team not found")
+			}
+			teamID := team.ID
+			info := contextstore.GetContextUserInfo(ctx)
+			if info == nil {
+				return nil, huma.Error401Unauthorized("unauthorized")
+			}
+			filter := &stores.TeamMemberFilter{}
+			filter.Page = input.Page
+			filter.PerPage = input.PerPage
+			filter.SortBy = input.SortBy
+			filter.SortOrder = input.SortOrder
+			filter.TeamIds = []uuid.UUID{teamID}
+			filter.Q = input.Q
+			members, err := api.App().Adapter().TeamMember().FindTeamMembers(ctx, filter)
+			if err != nil {
+				return nil, err
+			}
+			if len(members) > 0 {
+				userIds := make([]uuid.UUID, len(members))
+				for idx, member := range members {
+					if member == nil {
+						continue
+					}
+					if member.UserID == nil {
+						continue
+					}
+					userIds[idx] = *member.UserID
+				}
+				users, err := api.App().Adapter().User().LoadUsersByUserIds(ctx, userIds...)
+				if err != nil {
+					return nil, err
+				}
+				for idx := range userIds {
+					member := members[idx]
+					if member == nil {
+						continue
+					}
+					user := users[idx]
+					if user == nil {
+						continue
+					}
+					member.User = user
+				}
 
-type FindTeamTeamMembersInput struct {
-	PaginatedInput
-	SortParams
-	Q      string `query:"q,omitempty" required:"false"`
-	TeamID string `path:"team-id" required:"true" format:"uuid"`
-}
-
-func (api *Api) FindTeamTeamMembers(ctx context.Context, input *FindTeamTeamMembersInput) (*ApiPaginatedOutput[*TeamMember], error) {
-	teamID, err := uuid.Parse(input.TeamID)
-	if err != nil {
-		return nil, huma.Error400BadRequest("invalid team ID")
-	}
-	info := contextstore.GetContextUserInfo(ctx)
-	if info == nil {
-		return nil, huma.Error401Unauthorized("unauthorized")
-	}
-	filter := &stores.TeamMemberFilter{}
-	filter.Page = input.Page
-	filter.PerPage = input.PerPage
-	filter.SortBy = input.SortBy
-	filter.SortOrder = input.SortOrder
-	filter.TeamIds = []uuid.UUID{teamID}
-	filter.Q = input.Q
-	members, err := api.App().Adapter().TeamMember().FindTeamMembers(ctx, filter)
-	if err != nil {
-		return nil, err
-	}
-	if len(members) > 0 {
-		userIds := make([]uuid.UUID, len(members))
-		for idx, member := range members {
-			if member == nil {
-				continue
 			}
-			if member.UserID == nil {
-				continue
+			count, err := api.App().Adapter().TeamMember().CountTeamMembers(ctx, filter)
+			if err != nil {
+				return nil, err
 			}
-			userIds[idx] = *member.UserID
-		}
-		users, err := api.App().Adapter().User().LoadUsersByUserIds(ctx, userIds...)
-		if err != nil {
-			return nil, err
-		}
-		for idx := range userIds {
-			member := members[idx]
-			if member == nil {
-				continue
-			}
-			user := users[idx]
-			if user == nil {
-				continue
-			}
-			member.User = user
-		}
-
-	}
-	count, err := api.App().Adapter().TeamMember().CountTeamMembers(ctx, filter)
-	if err != nil {
-		return nil, err
-	}
-	return &ApiPaginatedOutput[*TeamMember]{
-		Body: ApiPaginatedResponse[*TeamMember]{
-			Data: mapper.Map(members, fromTeamMemberModel),
-			Meta: ApiGenerateMeta(&input.PaginatedInput, count),
+			return &ApiPaginatedOutput[*TeamMember]{
+				Body: ApiPaginatedResponse[*TeamMember]{
+					Data: mapper.Map(members, fromTeamMemberModel),
+					Meta: ApiGenerateMeta(&input.PaginatedInput, count),
+				},
+			}, nil
 		},
-	}, nil
+	)
 }
 
 func fromTeamMemberModel(member *models.TeamMember) *TeamMember {
@@ -272,8 +271,6 @@ type RemoveTeamMemberInput struct {
 }
 
 func (api *Api) RemoveTeamMemberFromTeamBind(humaApi huma.API) {
-	teamInfo := api.Middlewares().GetTeamInfoFromUserAndMemberID()
-	ownerRole := api.Middlewares().GetTeamRequiredOwnerMember()
 	huma.Register(
 		humaApi,
 		huma.Operation{
@@ -288,8 +285,8 @@ func (api *Api) RemoveTeamMemberFromTeamBind(humaApi huma.API) {
 				shared.BearerAuthSecurityKey: {},
 			}},
 			Middlewares: huma.Middlewares{
-				teamInfo,
-				ownerRole,
+				api.Middlewares().GetTeamInfoFromUserAndMemberID(),
+				api.Middlewares().GetTeamRequiredOwnerMember(),
 			},
 		},
 		func(ctx context.Context, input *UpdateTeamsTeamMemberInput) (*struct{}, error) {
