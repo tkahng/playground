@@ -16,3 +16,11 @@ func HumaChiMiddleware(mw func(http.Handler) http.Handler) func(ctx huma.Context
 		})).ServeHTTP(w, r)
 	}
 }
+
+func HumaChiMiddlewares(mws ...func(http.Handler) http.Handler) []func(ctx huma.Context, next func(huma.Context)) {
+	var middlewares []func(ctx huma.Context, next func(huma.Context))
+	for _, mw := range mws {
+		middlewares = append(middlewares, HumaChiMiddleware(mw))
+	}
+	return middlewares
+}

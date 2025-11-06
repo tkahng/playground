@@ -23,7 +23,7 @@ func GetLoggerSingleton(cfg *conf.AppConfig) *slog.Logger {
 }
 func getLogger(cfg *conf.AppConfig) *slog.Logger {
 	level := slog.LevelInfo
-	if cfg.AppEnv == "development" {
+	if cfg.Debug {
 		level = slog.LevelDebug
 	}
 	// logger := slog.New(
@@ -37,6 +37,7 @@ func getLogger(cfg *conf.AppConfig) *slog.Logger {
 	logger := slog.New(ContextHandler{
 		Handler: slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
 			Level:       level,
+			AddSource:   true,
 			ReplaceAttr: httplog.SchemaOTEL.Concise(true).ReplaceAttr,
 		}),
 	})

@@ -27,6 +27,7 @@ type AppConfig struct {
 	SenderAddress string `env:"SENDER_ADDRESS" envDefault:"Hb4k@notifications.k2dv.io"`
 	EncryptionKey string `env:"ENCRYPTION_KEY" envDefault:"12345678901234567890123456789012"`
 	AppEnv        string `env:"APP_ENV" envDefault:"development"` // can be development, staging, production
+	Debug         bool   `env:"DEBUG" envDefault:"false"`
 }
 
 type DBConfig struct {
@@ -92,24 +93,15 @@ type Options struct {
 }
 
 func ZeroEnvConfig() *EnvConfig {
+	appEnv := GetConfig[AppConfig]()
+	dbEnv := GetConfig[DBConfig]()
+	if dbEnv.Db == "playground" {
+		dbEnv.Db = "playground_test"
+	}
 	// nolint:exhaustruct
 	return &EnvConfig{
-		Db: DBConfig{
-			User:     "postgres",
-			Password: "postgres",
-			Host:     "localhost",
-			Port:     "5432",
-			Db:       "playground_test",
-			SSL:      "disable",
-		},
-		AppConfig: AppConfig{
-			AppUrl:        "http://localhost:8080",
-			AppName:       "Playground",
-			SenderName:    "info",
-			SenderAddress: "Hb4k@notifications.k2dv.io",
-			EncryptionKey: "12345678901234567890123456789012",
-			AppEnv:        "dev",
-		},
+		Db:          dbEnv,
+		AppConfig:   appEnv,
 		AuthOptions: NewTokenOptions(),
 	}
 }
